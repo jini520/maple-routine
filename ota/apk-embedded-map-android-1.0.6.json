@@ -1,0 +1,1169 @@
+{
+ "_comment": "1.0.6 Play 바이너리(versionCode 21)의 임베드 에셋 이름표 — 기기 logcat 의 embeddedAssetFileMap 에서 뽑았다([[ADR-191]] · release.md 규칙 6). 저장소가 만들 수 있는 값이 아니라 기기에서 읽어 온 사실이다. 못박기를 비우는 날 이 파일도 함께 치운다.",
+ "fingerprint": "3df849c014ea95bb7b0b9dd506094148b0fdc508",
+ "appVersion": "1.0.6",
+ "versionCode": 21,
+ "capturedAt": "2026-08-30",
+ "assets": {
+  "0fc8c15deb10bd228da387db0500e631": {
+   "ext": "webp",
+   "name": "_core_src_assets_themes_blackmagebackground"
+  },
+  "082f1ff61285ea952c8b0d7685cb24a2": {
+   "ext": "webp",
+   "name": "_core_src_assets_themes_hontailbackground"
+  },
+  "778ffc9fe8773a878e9c30a6304784de": {
+   "ext": "png",
+   "name": "__node_modules_reactnavigation_elements_lib_module_assets_backicon"
+  },
+  "c79c3606a1cf168006ad3979763c7e0c": {
+   "ext": "png",
+   "name": "__node_modules_reactnavigation_elements_lib_module_assets_backicon"
+  },
+  "02bc1fa7c0313217bde2d65ccbff40c9": {
+   "ext": "png",
+   "name": "__node_modules_reactnavigation_elements_lib_module_assets_backicon"
+  },
+  "35ba0eaec5a4f5ed12ca16fabeae451d": {
+   "ext": "png",
+   "name": "__node_modules_reactnavigation_elements_lib_module_assets_backicon"
+  },
+  "0a328cd9c1afd0afe8e3b1ec5165b1b4": {
+   "ext": "png",
+   "name": "__node_modules_reactnavigation_elements_lib_module_assets_backiconmask"
+  },
+  "3cd68ccdb8938e3711da2e8831b85493": {
+   "ext": "png",
+   "name": "__node_modules_reactnavigation_elements_lib_module_assets_clearicon"
+  },
+  "61ca7e64b7d605716c57706cef640b9a": {
+   "ext": "png",
+   "name": "__node_modules_reactnavigation_elements_lib_module_assets_clearicon"
+  },
+  "aff2c65b39a296d4f7e96d0f58169170": {
+   "ext": "png",
+   "name": "__node_modules_reactnavigation_elements_lib_module_assets_clearicon"
+  },
+  "d8e7601e3df962f83c62371ac14964d8": {
+   "ext": "png",
+   "name": "__node_modules_reactnavigation_elements_lib_module_assets_clearicon"
+  },
+  "0747a1317bbe9c6fc340b889ef8ab3ae": {
+   "ext": "png",
+   "name": "__node_modules_reactnavigation_elements_lib_module_assets_closeicon"
+  },
+  "d84e297c3b3e49a614248143d53e40ca": {
+   "ext": "png",
+   "name": "__node_modules_reactnavigation_elements_lib_module_assets_closeicon"
+  },
+  "1190ab078c57159f4245a328118fcd9a": {
+   "ext": "png",
+   "name": "__node_modules_reactnavigation_elements_lib_module_assets_closeicon"
+  },
+  "78c625386b4d0690b421eb0fc78f7b9c": {
+   "ext": "png",
+   "name": "__node_modules_reactnavigation_elements_lib_module_assets_closeicon"
+  },
+  "4403c6117ec30c859bc95d70ce4a71d3": {
+   "ext": "png",
+   "name": "__node_modules_reactnavigation_elements_lib_module_assets_searchicon"
+  },
+  "069d99eb1fa6712c0b9034a58c6b57dd": {
+   "ext": "png",
+   "name": "__node_modules_reactnavigation_elements_lib_module_assets_searchicon"
+  },
+  "c3273c9e5321f20d1e42c2efae2578c4": {
+   "ext": "png",
+   "name": "__node_modules_reactnavigation_elements_lib_module_assets_searchicon"
+  },
+  "286d67d3f74808a60a78d3ebf1a5fb57": {
+   "ext": "png",
+   "name": "__node_modules_reactnavigation_elements_lib_module_assets_searchicon"
+  },
+  "a291de4922b107e7c8989b38d2c2dfa2": {
+   "ext": "png",
+   "name": "_core_src_assets_items_rings_berserker_ring"
+  },
+  "597a259aaa952e0fd5769f0ca43154af": {
+   "ext": "png",
+   "name": "_core_src_assets_items_rings_clean_defense_ring"
+  },
+  "2ade8ba7b3afc348b82217e031bf5e1c": {
+   "ext": "png",
+   "name": "_core_src_assets_items_rings_clean_stance_ring"
+  },
+  "282e0739374cc7174c7f7ce8cd953305": {
+   "ext": "png",
+   "name": "_core_src_assets_items_rings_cleansing_ring"
+  },
+  "4f7318a101e72147401038895256a9fd": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_rings_continuous_ring"
+  },
+  "11b593900b61e70969bda6779d21137e": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_rings_crisis_hm_ring"
+  },
+  "b297cc3a58b562f1850a3f065a77e92b": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_rings_crisis_h_ring"
+  },
+  "16c3786006c68915b5cae30b0e701d12": {
+   "ext": "png",
+   "name": "_core_src_assets_items_rings_crisis_m_ring"
+  },
+  "c0cf35becc84ba418dab9d85bd5d7ec1": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_rings_critical_damage_ring"
+  },
+  "823920091f38752b301b5f6e551221a7": {
+   "ext": "png",
+   "name": "_core_src_assets_items_rings_critical_defense_ring"
+  },
+  "04bfa0102faa1abc8c67a85f79a63357": {
+   "ext": "png",
+   "name": "_core_src_assets_items_rings_critical_shift_ring"
+  },
+  "19fc46a41a3307ba18072d4f2801a0af": {
+   "ext": "png",
+   "name": "_core_src_assets_items_rings_durability_ring"
+  },
+  "b1a556855ffc246eee1a6501ab760d72": {
+   "ext": "png",
+   "name": "_core_src_assets_items_rings_health_cut_ring"
+  },
+  "9d37269c5e17866672df5228d99357b1": {
+   "ext": "png",
+   "name": "_core_src_assets_items_rings_level_jump_ring"
+  },
+  "3da9df353beca358e0623feb687d1902": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_rings_limit_ring"
+  },
+  "63d33076614d3ac4830b0caa3d32720d": {
+   "ext": "png",
+   "name": "_core_src_assets_items_rings_mana_cut_ring"
+  },
+  "0eecbf84f66a89cc16433d028bfe8f75": {
+   "ext": "png",
+   "name": "_core_src_assets_items_rings_overdrive_ring"
+  },
+  "0703c84165b2981ed022f96fca658408": {
+   "ext": "png",
+   "name": "_core_src_assets_items_rings_reflective_ring"
+  },
+  "b7d257b6a1c9d60b3c316e039227a0a1": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_rings_ring_of_restraint"
+  },
+  "a3363810392ca431b225bed49435f164": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_rings_risk_taker_ring"
+  },
+  "19f0bcf8de6d9bdcfdf4b9c9a5298dc5": {
+   "ext": "png",
+   "name": "_core_src_assets_items_rings_stance_shift_ring"
+  },
+  "f00fc1ef1a1697b2164d5f1c45212232": {
+   "ext": "png",
+   "name": "_core_src_assets_items_rings_swift_ring"
+  },
+  "1f89f00fc9352204416d91a7be3f0e7a": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_rings_totalling_ring"
+  },
+  "1a3dc02acaa2361a2f841f6bcae29e92": {
+   "ext": "png",
+   "name": "_core_src_assets_items_rings_tower_boost_ring"
+  },
+  "ebd63db94e6b963da224f0baa5e62994": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_rings_ultimatum_ring"
+  },
+  "7794b9096d2b916069dd8a8d2d814851": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_rings_weapon_jump_ring"
+  },
+  "ffac62ea9ac5143cc434e5beab047c4f": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_adversary_resolve"
+  },
+  "31376865cddb2b302108f714f168c179": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_adversary_resolve_piece"
+  },
+  "95ca615f036fc77b90079c759f8ecb84": {
+   "ext": "png",
+   "name": "_core_src_assets_items_boss_ring_box_black"
+  },
+  "ab90411e1a0a2df5facf7fe0f353dd9b": {
+   "ext": "png",
+   "name": "_core_src_assets_items_boss_ring_box_green"
+  },
+  "aa2ba5ca9ad47e56b07db0a5091e076a": {
+   "ext": "png",
+   "name": "_core_src_assets_items_boss_ring_box_life"
+  },
+  "194038111b572800d018407c85aedb30": {
+   "ext": "png",
+   "name": "_core_src_assets_items_boss_ring_box_red"
+  },
+  "d61fd1f0836d7dd7e151b3653d5e3441": {
+   "ext": "png",
+   "name": "_core_src_assets_items_boss_ring_box_white"
+  },
+  "9639c15259badce0c7859c01383a2121": {
+   "ext": "png",
+   "name": "_core_src_assets_items_box_eternel_adversary"
+  },
+  "efc92f78f4d960981e8144ee16c33578": {
+   "ext": "png",
+   "name": "_core_src_assets_items_box_eternel_bardrix"
+  },
+  "edaafafde7fea854443750795609e99e": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_box_eternel_bellona"
+  },
+  "cf3ff5be9d51d9531f6852ddec89583c": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_box_eternel_destiny"
+  },
+  "a5f1de5a435d5a933b265867497dfdf6": {
+   "ext": "png",
+   "name": "_core_src_assets_items_box_eternel_jupiter"
+  },
+  "9252c4a5f8c18d39471ed6d9a96502ad": {
+   "ext": "png",
+   "name": "_core_src_assets_items_box_eternel_kaling"
+  },
+  "5d980812056b0824550844b2e6e00125": {
+   "ext": "png",
+   "name": "_core_src_assets_items_box_eternel_kalos"
+  },
+  "32907649f596440dbc9779b0701cb0ff": {
+   "ext": "png",
+   "name": "_core_src_assets_items_box_eternel_limbo"
+  },
+  "ce888db1818e6ca1e31902965119a21f": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_box_eternel_maerin"
+  },
+  "e5c88b80b4ddf208ebf951937012fd71": {
+   "ext": "png",
+   "name": "_core_src_assets_items_box_eternel_maleficstar"
+  },
+  "58b247da21c6f958d506aa5d69318cde": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_box_solerda_maerin_high"
+  },
+  "cfa0b37fa9eb9e768090ab8c59c09726": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_bright_boss_eye_acc"
+  },
+  "c0a84ad465e75faf5eb444f431b44fc9": {
+   "ext": "png",
+   "name": "_core_src_assets_items_bright_boss_face_acc"
+  },
+  "33552bce56274d7fffcac7702c3d7956": {
+   "ext": "png",
+   "name": "_core_src_assets_items_bright_boss_merit"
+  },
+  "c9e25815caf9d6bfaaa875ab189e2feb": {
+   "ext": "png",
+   "name": "_core_src_assets_items_bright_boss_pendant"
+  },
+  "b19cc5d05c8a55b1415c94b39f20b74f": {
+   "ext": "png",
+   "name": "_core_src_assets_items_bright_boss_ring"
+  },
+  "603da7943ccf2e9c7307d8b588c6bdbb": {
+   "ext": "png",
+   "name": "_core_src_assets_items_bright_boss_ring2"
+  },
+  "f13423f26cd4b2f4a204fa8032310df4": {
+   "ext": "png",
+   "name": "_core_src_assets_items_core_gemstone_mirror"
+  },
+  "a7e1e434f9803eb42ce9aad8230b600f": {
+   "ext": "png",
+   "name": "_core_src_assets_items_core_gemstone_mitra"
+  },
+  "a895a6ce7c9b9c56ae17bd728316ed1a": {
+   "ext": "png",
+   "name": "_core_src_assets_items_cube_bronze_additional"
+  },
+  "21163c819db1811c8f00d58c9c87eaf4": {
+   "ext": "png",
+   "name": "_core_src_assets_items_cube_gold"
+  },
+  "03d74cb4a6c79fdb5e52f90cb1f5eeae": {
+   "ext": "png",
+   "name": "_core_src_assets_items_cube_silver"
+  },
+  "18c220fb689eae360ae7a0c750675da3": {
+   "ext": "png",
+   "name": "_core_src_assets_items_dark_boss_badge"
+  },
+  "2b1cd474cae3bc39e132b4e550a2f51f": {
+   "ext": "png",
+   "name": "_core_src_assets_items_dark_boss_belt"
+  },
+  "ced5df4403fb2679332c3554d39a45b5": {
+   "ext": "png",
+   "name": "_core_src_assets_items_dark_boss_box"
+  },
+  "14a1ff61bd282b5b6d2463a6d6a55926": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_dark_boss_box_maerin"
+  },
+  "c04ca5da0abb8ff49363e68b13c44734": {
+   "ext": "png",
+   "name": "_core_src_assets_items_dark_boss_complete_heart"
+  },
+  "38bdb97d5b193b1bb6170dae6a74baca": {
+   "ext": "png",
+   "name": "_core_src_assets_items_dark_boss_earring"
+  },
+  "92ae3ac65b01bd072bb965af12c524d6": {
+   "ext": "png",
+   "name": "_core_src_assets_items_dark_boss_emblem"
+  },
+  "f0c56ac231e18183ec8102d768ab3e5e": {
+   "ext": "png",
+   "name": "_core_src_assets_items_dark_boss_eye_acc"
+  },
+  "70eef152972b561e9c2e5fd17afd4833": {
+   "ext": "png",
+   "name": "_core_src_assets_items_dark_boss_face_acc"
+  },
+  "90a062b3378e13b46f5b2801a42ad47c": {
+   "ext": "png",
+   "name": "_core_src_assets_items_dark_boss_pendant"
+  },
+  "8024bd2b240e2e95a7e04e0e7cdbe9a9": {
+   "ext": "png",
+   "name": "_core_src_assets_items_dark_boss_pocket"
+  },
+  "8861d26d4e8c8e9443eb5d193791b4c0": {
+   "ext": "png",
+   "name": "_core_src_assets_items_dark_boss_ring"
+  },
+  "c6bc2e8f3dc02d5d036389e37fb4054d": {
+   "ext": "png",
+   "name": "_core_src_assets_items_dawn_boss_earring"
+  },
+  "612c1780b6ac41eb56874d5eeb05e8ca": {
+   "ext": "png",
+   "name": "_core_src_assets_items_dawn_boss_face_acc"
+  },
+  "0e93142bde5a53ac36878841a84e3549": {
+   "ext": "png",
+   "name": "_core_src_assets_items_dawn_boss_pendant"
+  },
+  "10d1a7ea702782b1247c6698f7e38724": {
+   "ext": "png",
+   "name": "_core_src_assets_items_dawn_boss_ring"
+  },
+  "8299c006e65291e0911daedaffc62ffe": {
+   "ext": "png",
+   "name": "_core_src_assets_items_erion_piece"
+  },
+  "32208bf9a1f78e919dbcf43c4f741c1a": {
+   "ext": "png",
+   "name": "_core_src_assets_items_except_belt"
+  },
+  "b1c316285da7362ad4a25e64c5aeecb1": {
+   "ext": "png",
+   "name": "_core_src_assets_items_except_earring"
+  },
+  "13b591db4b103f8a7679ad3b1a1bf4e1": {
+   "ext": "png",
+   "name": "_core_src_assets_items_except_eye_acc"
+  },
+  "a65929813ef92dce303b155381c0beed": {
+   "ext": "png",
+   "name": "_core_src_assets_items_except_face_acc"
+  },
+  "bcb04105a644d8efa7383b346c2e7063": {
+   "ext": "png",
+   "name": "_core_src_assets_items_except_merit"
+  },
+  "130b1652b23825dc5b9dd4ece823523b": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_frag_destiny"
+  },
+  "5fcf37fdaab7347addec1d0b46c4d2dc": {
+   "ext": "png",
+   "name": "_core_src_assets_items_frag_eternel_bardrix"
+  },
+  "78e3a017c387be278d5c348384ce4c03": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_frag_eternel_bellona"
+  },
+  "e8f0024f601447e038583f1dd8d37c82": {
+   "ext": "png",
+   "name": "_core_src_assets_items_frag_eternel_jupiter"
+  },
+  "b8f3e9283bb1969a305f05ba05a8e433": {
+   "ext": "png",
+   "name": "_core_src_assets_items_frag_eternel_limbo"
+  },
+  "2d1cc25b5275d23f55153a9d97955a8b": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_intense_power_crystal_monthly"
+  },
+  "6102c6e5be6a92219898e6762481284c": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_intense_power_crystal_weekly"
+  },
+  "9350885fc3d6b9e8569dd3bfbfa780a2": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_kaling_link"
+  },
+  "f30d7c2d798b6586b6f962950c9f197b": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_kaling_link_piece"
+  },
+  "f1d10cb3c0acae001c8be9fe661ea224": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_kalos_will"
+  },
+  "281381c0917948932787a0d49cec28a7": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_kalos_will_piece"
+  },
+  "d7c2669d19af44400bcaae272b3109f7": {
+   "ext": "png",
+   "name": "_core_src_assets_items_luminous_moonshine_potion"
+  },
+  "bf0a96840b607ed0a7cf367be8a761fe": {
+   "ext": "png",
+   "name": "_core_src_assets_items_magical_weapon_scroll_coupon"
+  },
+  "09c70d5389d7fed28e3d0df589536003": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_maleficstar_shard"
+  },
+  "37cf5e583089ce64d4fbc6de7cbc13e7": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_maleficstar_shard_piece"
+  },
+  "d3b46fffafc6d98e747edd05e10e15a6": {
+   "ext": "png",
+   "name": "_core_src_assets_items_papulatus_mark"
+  },
+  "5fe1b6b56cb440a16ad248a26840ed4f": {
+   "ext": "png",
+   "name": "_core_src_assets_items_premium_accessory_scroll_coupon"
+  },
+  "a5b6880a8183943b5b52fa14727021f6": {
+   "ext": "png",
+   "name": "_core_src_assets_items_premium_petequip_scroll_coupon"
+  },
+  "c3a042ceb174fe60a63445232f7a951c": {
+   "ext": "png",
+   "name": "_core_src_assets_items_sole_10"
+  },
+  "e687767c3890ebae0dc9b19519c1f99a": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_sole_1000"
+  },
+  "97813aaa8fa09264fbaa9addca9eea16": {
+   "ext": "png",
+   "name": "_core_src_assets_items_sole_200"
+  },
+  "72be729c885cf7e40c5c18dc4db69b21": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_sole_500"
+  },
+  "48f48bd08433fa22d42d403567157e19": {
+   "ext": "webp",
+   "name": "_core_src_assets_items_spell_trace"
+  },
+  "1b61ed93ab2f55b694539b8428cf0a34": {
+   "ext": "png",
+   "name": "_core_src_assets_items_whetstone_faith"
+  },
+  "000eff42089607c66c4b0491c3a3036c": {
+   "ext": "png",
+   "name": "_core_src_assets_items_whetstone_life"
+  },
+  "28a342e874815943a2855ba7d1cb5b6a": {
+   "ext": "png",
+   "name": "_core_src_assets_worlds_arcane"
+  },
+  "b0136710b2ab61356c29726a70cf10e5": {
+   "ext": "png",
+   "name": "_core_src_assets_worlds_aurora"
+  },
+  "6f4da3829d781cb058f17713584925a0": {
+   "ext": "png",
+   "name": "_core_src_assets_worlds_bera"
+  },
+  "a88ef8adc312fd3243e8e6d076470d05": {
+   "ext": "png",
+   "name": "_core_src_assets_worlds_challengers"
+  },
+  "ed70c74d87168dacc536d26a2d6f73fb": {
+   "ext": "png",
+   "name": "_core_src_assets_worlds_croa"
+  },
+  "1ef1a0990fde0028d2bd4f749c0c30b9": {
+   "ext": "png",
+   "name": "_core_src_assets_worlds_elysium"
+  },
+  "29fe6925fbbdbf3cc9fb99933e6b8303": {
+   "ext": "png",
+   "name": "_core_src_assets_worlds_enosis"
+  },
+  "06e6e289f0e12e601b04f4280a16eaa1": {
+   "ext": "png",
+   "name": "_core_src_assets_worlds_eos"
+  },
+  "e1fc90c56945899921bd8a00e2f8a599": {
+   "ext": "png",
+   "name": "_core_src_assets_worlds_helios"
+  },
+  "75136c8c2f55007b95fe290ea7fb6fc7": {
+   "ext": "png",
+   "name": "_core_src_assets_worlds_luna"
+  },
+  "0b16ff01902bf7d1a9d9342e48ba4e8f": {
+   "ext": "png",
+   "name": "_core_src_assets_worlds_nova"
+  },
+  "794d12d7f42068a659301ad469d6014c": {
+   "ext": "png",
+   "name": "_core_src_assets_worlds_red"
+  },
+  "4f8db9b40c7afc4dbc4656bff5693859": {
+   "ext": "png",
+   "name": "_core_src_assets_worlds_scania"
+  },
+  "12308968a7ae7e18e9b9cb86835232e3": {
+   "ext": "png",
+   "name": "_core_src_assets_worlds_union"
+  },
+  "bb8fe4337291e6db6bd547b3dca554e7": {
+   "ext": "png",
+   "name": "_core_src_assets_worlds_zenith"
+  },
+  "ca75abef7e8b7187835acbe4b0139394": {
+   "ext": "webp",
+   "name": "_core_src_assets_guide_contentmanage_02auto"
+  },
+  "a2b73651f764d6a96ef24e097b98144c": {
+   "ext": "webp",
+   "name": "_core_src_assets_guide_contentmanage_05dropdown"
+  },
+  "2d1716b5f1809a07885fe92602308b0e": {
+   "ext": "webp",
+   "name": "_core_src_assets_guide_contentmanage_03manual"
+  },
+  "7bb2b2219398a0b446524c53559020ab": {
+   "ext": "webp",
+   "name": "_core_src_assets_guide_contentmanage_04manual"
+  },
+  "8167689bbf008d3283c9f60cd56f7fc7": {
+   "ext": "webp",
+   "name": "_core_src_assets_guide_contentmanage_01mode"
+  },
+  "8d4f731069483fc8b43e5c53c1aea1c6": {
+   "ext": "webp",
+   "name": "_core_src_assets_guide_bossmanage_04manual"
+  },
+  "a48f77a2c661ff0cb0533be94189d698": {
+   "ext": "webp",
+   "name": "_core_src_assets_guide_bossparty_03manage"
+  },
+  "724005ebd6cf3d3ae0783cbeb2a4a250": {
+   "ext": "webp",
+   "name": "_core_src_assets_guide_bossparty_02modal"
+  },
+  "ed97c91962eb9c237b72b006dc6a4d9f": {
+   "ext": "webp",
+   "name": "_core_src_assets_guide_bossprofitrecord_01list"
+  },
+  "a1db695454f0f6dc0f9979279d45b0c5": {
+   "ext": "webp",
+   "name": "_core_src_assets_guide_dropitemrecord_01button"
+  },
+  "d14af12c828eb24ad159330fa25c9700": {
+   "ext": "webp",
+   "name": "_core_src_assets_guide_dropitemrecord_03confirm"
+  },
+  "1c015844c0400365e40379740ad5394e": {
+   "ext": "webp",
+   "name": "_core_src_assets_guide_dropitemrecord_02sheet"
+  },
+  "39698eef18fce5fb2645fe109a471b3e": {
+   "ext": "webp",
+   "name": "_core_src_assets_guide_dropitemprice_03button"
+  },
+  "8f06f0bf634db3615f9333c9e2e4f847": {
+   "ext": "webp",
+   "name": "_core_src_assets_guide_dropitemprice_02button"
+  },
+  "d646a0ef5c27001c16375fb5d7d8b9a8": {
+   "ext": "webp",
+   "name": "_core_src_assets_guide_dropitemprice_04pad"
+  },
+  "f5ef88b25a89fe4de5d8254595739325": {
+   "ext": "webp",
+   "name": "_core_src_assets_guide_dropitemprice_06popover"
+  },
+  "823704b0d7f93406394d4ecf675d9585": {
+   "ext": "webp",
+   "name": "_core_src_assets_guide_dropitemprice_01screen"
+  },
+  "3b6c4ee27dd5853f20a40d3b2f84f8ec": {
+   "ext": "webp",
+   "name": "_core_src_assets_guide_dropitemprice_05steper"
+  },
+  "3b41f6f9304cf55e2e443c982dab708d": {
+   "ext": "webp",
+   "name": "_core_src_assets_guide_charactermanage_01open"
+  },
+  "a09f31a2ee6e3146caa7d5a22e1a83a5": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_adversary"
+  },
+  "d59f037d56b19b28c4ddfc6f52fac71c": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_ancientgodmitra"
+  },
+  "f9d9aa03f096b3599824c86986b7a46c": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_arcanus"
+  },
+  "cc320ff01fa9991920402206a1456db4": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_armordragon"
+  },
+  "775f620018e3684406c98a19916d6e47": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_baekyeon"
+  },
+  "447b6fdf4ae494165fc7618ddd57cc22": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_bardrix"
+  },
+  "8005d7eee35868d9f6c011833a302074": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_bellona"
+  },
+  "b5e14d21586852c692d8aee317b44d4c": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_blackmage"
+  },
+  "941a537089a8e0514b6b79a2291fd85b": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_crimsonqueen"
+  },
+  "a4c66f280273259338fb62248d070f52": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_damien"
+  },
+  "f7283a0fcea09373d6efd0c01e04723e": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_darknell"
+  },
+  "1eeb7b1774b7c68c5328f3fc45940490": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_gloom"
+  },
+  "9f0b3c24d7c463363cf5c8a582740cba": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_jupiter"
+  },
+  "cd764beeb09f42d9cf89461f22488cf9": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_kaling"
+  },
+  "c929b8956d503d9215dff3a826e55805": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_kalos"
+  },
+  "dabc984422997dde5801423e9afa266b": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_limbo"
+  },
+  "71284462fbd1089d7eb156de1b220487": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_lotus"
+  },
+  "384c77687c234ed8c864d98effc7cbb3": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_lucid"
+  },
+  "611c8896e2dcfa4abddfcba32aa2c2b7": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_maerin"
+  },
+  "d6a210d0be7f8dbb81a97f9ffcf9026a": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_magnus"
+  },
+  "6dccfe768964c93609b8b2193019192d": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_maleficstar"
+  },
+  "ceccca88b72eb0ad76debfeba0a93a52": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_papulatus"
+  },
+  "ec97ccf918cd7348855cd5e02467a2b8": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_pierre"
+  },
+  "51f953b44e628a22bea3f1b344470c10": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_senya"
+  },
+  "4b3201092d949eb97052c66283163aac": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_seren"
+  },
+  "8245c17f23ad824ad7667757b6c2b460": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_slime"
+  },
+  "bcbe7c84655911ee3588887f8ae88248": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_vellum"
+  },
+  "cb9d9aca345d1074a23a52c54f197431": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_verushilla"
+  },
+  "8127ccd013848dc656f8f81e502a8d5e": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_vonbon"
+  },
+  "ebb44da3ad313c51861dda81a1178e97": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_will"
+  },
+  "5048d830e5961b64d425bf688c639ca5": {
+   "ext": "webp",
+   "name": "_core_src_assets_bosses_zakum"
+  },
+  "12cd86f703ce45fb3ef8088464896253": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_screen_0"
+  },
+  "bb08de9f9d26596b33fe0aa4882debf4": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_screen_1"
+  },
+  "f8eb8c7d926fc3e55d56676835a939e9": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_screen_2"
+  },
+  "c711c1511ccac87fc68e50c8446449cc": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_screen_3"
+  },
+  "c3d5f43e4704e633723b8d4915475803": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_screen_4"
+  },
+  "f2c5dcdc24c5fda6e0123e6ad5a2151a": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_screen_5"
+  },
+  "36cdce4794bc8ded53b57773d39a7184": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_screen_6"
+  },
+  "7a4a53022ea7687a9a08d0a304be3934": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_screen_7"
+  },
+  "295caaa1e5142ee3b91d53935241aa51": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_screen_8"
+  },
+  "6f205ee05be52d96e39a8be4402595b0": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_screen_9"
+  },
+  "e30075e5349a9a1cdd87f364c763a0a9": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_screen_10"
+  },
+  "723f3f02170e28f2046a45cb900b4d8d": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_screen_11"
+  },
+  "5cf5e134e5cab9979b32de746e422b9d": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_screen_12"
+  },
+  "6b3e54cfbc2ebc776d8f2834bbc0106e": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_screen_13"
+  },
+  "073ade72a2af39b3d9ce3d448c594f4c": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_screen_14"
+  },
+  "2b60dc3fd1b29b7deefa03a8948787a7": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_screen_15"
+  },
+  "930f287271f005d29316e6f74adc43c4": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_pre_0"
+  },
+  "2781b6200152f9403381958162e2cbc5": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_pre_1"
+  },
+  "83871ced060ad8cf36bbb6ef8819a13e": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_pre_2"
+  },
+  "2c14f7840319f521350ddf9f1e47e328": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_pre_3"
+  },
+  "c2cb259daacb3b76e0ed9e733d29317d": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_pre_4"
+  },
+  "ce47180ff41b08b652265bbb587deb3a": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_pre_5"
+  },
+  "3a00fd1b4183846373de57f84dd63d46": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_pre_6"
+  },
+  "36029dc0766e71afd0fc0e46638d2700": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_pre_7"
+  },
+  "000098797954dd112ce016aa0263bcb1": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_loop_0"
+  },
+  "7808a5e9faf053f50333f20021299b26": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_loop_1"
+  },
+  "d1f18c641d142912469dc3c11ff1ed9e": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_loop_2"
+  },
+  "8021c6383d8032d792bcf9ccf3a6d721": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_loop_3"
+  },
+  "fb7788e6f87df2d3eb3f4c53e463397d": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_loop_4"
+  },
+  "e7594b6e4ebcbedafc6635e0f00d28e9": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_loop_5"
+  },
+  "63be7db56918fa4fa69107fd4a34d097": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_loop_6"
+  },
+  "c00b551653956513582c1fd2bf14fb19": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_loop_7"
+  },
+  "63ab82defb8c3ada188804835868c6fc": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_loop_8"
+  },
+  "65a28d3e24cb43393c3f1a5a5916735a": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_loop_9"
+  },
+  "442b5002555d777b1d1301360b2a7663": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_loop_10"
+  },
+  "bf8830f18e726d24350dad1f207a2c2f": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_loop_11"
+  },
+  "8c32c33a49057b5ba90c313f642108c5": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_loop_12"
+  },
+  "1661094487471fd766e25f370c41a9a5": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_loop_13"
+  },
+  "c4cffad0b6139b58cb95e1422a8c37d3": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_loop_14"
+  },
+  "663849fc6f4f9ee6c44bf9e3dc7aed38": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_loop_15"
+  },
+  "eb460d4ebde30b6005bcf460e962e4fc": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_loop_16"
+  },
+  "ea8d0efa16a3bf7d1390876250c70183": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_loop_17"
+  },
+  "5bbba15a0eb8b4e99b726597e642bedb": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_loop_18"
+  },
+  "5f0e29c246936b1bdcdae17e67a03e43": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_loop_19"
+  },
+  "770fd79e7f00d43bcc9c57866beaf323": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_loop_20"
+  },
+  "92e674ce023f8b9e2282ffbba1f610eb": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_loop_21"
+  },
+  "353b7c071d0d350265caa6154b0c2552": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_loop_22"
+  },
+  "d51f2bb2fc7c84d0d77c836c2879c523": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_loop_23"
+  },
+  "6134832b917d4f373cb71345f9e02943": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_end_0"
+  },
+  "f953d49b6a787e70c09d8e3d317e9c50": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_end_1"
+  },
+  "640de7f77f08b1c90e042eb128dfb4e4": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_end_2"
+  },
+  "8b6a043bed66cdfcbc5824c708a8d9c4": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_end_3"
+  },
+  "eddefb2ca8a4b963092358e7669afd2c": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_end_4"
+  },
+  "b1c2c108ec25588c47fd3a4f0bab4bb1": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_end_5"
+  },
+  "437f1f58fc0803ddd651dcb101abc831": {
+   "ext": "webp",
+   "name": "_core_src_assets_dropeffect_end_6"
+  },
+  "687e3125d018f7f94cb3091dbec32672": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_arcs"
+  },
+  "b5f9aca9c40b453c2d46c088572a48da": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_arcana"
+  },
+  "5b47c71b47eea073d52ff1330cb07657": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_arteria"
+  },
+  "24ba2a6bd932fc344dfae74e7fb3e116": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_carcion"
+  },
+  "a406b50c3077a37bb458505672713865": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_cernium"
+  },
+  "a2f6bf3e98da50ace58efdad5f21326c": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_chewchew"
+  },
+  "326423f3b6aa8c4477d4329030d7e504": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_critias"
+  },
+  "2d8af0e9db1c29659b0a2f05ab7184ba": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_dowonkyung"
+  },
+  "36fd6c052cff6600d13f1b57330b11f7": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_esfera"
+  },
+  "1fb8f348241b5e99fae8d932939cf547": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_fallenworldtree"
+  },
+  "1169e3133d05ecdf38ab852b81e50b7b": {
+   "ext": "jpg",
+   "name": "_core_src_assets_maps_flagrace"
+  },
+  "f586a2f076b05ff35b54e8bfb79b880a": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_geardrak"
+  },
+  "0a33114d229131fb35ec789027c627d6": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_hallofheroes"
+  },
+  "3966668dc7dfe6dc8b647f4db5a4befe": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_haven"
+  },
+  "a39d8c0a75646bd386ae373202c02828": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_lacheln"
+  },
+  "da0833d9d6719c09d85f2c408895ef02": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_limen"
+  },
+  "dc83febc264cef0d3059e4e633fb299f": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_monsterpark"
+  },
+  "ae88c40ec7af1ab8d430df92a4b2e287": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_moonbridge"
+  },
+  "2b647bd20f5c02cc9abaf141ac3bf2fe": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_morass"
+  },
+  "180a1ecfde8e09db9bab54d695ac4884": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_muruengraid"
+  },
+  "4d1637981098b32560ec4d53c3f32b0c": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_odium"
+  },
+  "662cc16b0afa5bf910f2897848b81b61": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_roadofvanishing"
+  },
+  "321ab9c9adc691a66cc4948f2394a940": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_tallahart"
+  },
+  "c8b681e116147d3693e1b6d2c2d9f4a3": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_thelabyrinthofsuffering"
+  },
+  "b5c371bb65420a41c0f76c8a9d76ed08": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_icons_arcs"
+  },
+  "84e24ee8d4f0313ab98a7706bf02a8dd": {
+   "ext": "png",
+   "name": "_core_src_assets_maps_icons_anglercompany"
+  },
+  "d5284c5bfc80ed9a6e359ab5f22343d1": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_icons_arcana"
+  },
+  "9ca19283f708890a91423e7bbc899aab": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_icons_arteria"
+  },
+  "9f44ad61c66101c021315a36d10e54cd": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_icons_carcion"
+  },
+  "ae63c7e4b6a5e268eae86063f69c6052": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_icons_cernium"
+  },
+  "ee918c7479a6bd8491d4fd4013fe812e": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_icons_chewchew"
+  },
+  "495b878969e60d1706062c269b962295": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_icons_critias"
+  },
+  "8d765092dfb4017264cc73c7715a8296": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_icons_dowonkyung"
+  },
+  "be2c2ac531e2fdce92b269499f5029ce": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_icons_esfera"
+  },
+  "00041aa16a0104b8016f6d211c373af9": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_icons_fallenworldtree"
+  },
+  "4656a528ce4cead3347a8e1b0f1ae0ec": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_icons_geardrak"
+  },
+  "ffb24cfd73abb6807f4cc23ef6517c2f": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_icons_haven"
+  },
+  "329256f2d9951351280443ed262fa4ae": {
+   "ext": "png",
+   "name": "_core_src_assets_maps_icons_highmountain"
+  },
+  "22729b96c9762180e5f5cae0ad426d5d": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_icons_lacheln"
+  },
+  "6ae4a80b06cd5f1c806f7d555613395a": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_icons_limen"
+  },
+  "50a14d7b48043d03302888d093dc987b": {
+   "ext": "png",
+   "name": "_core_src_assets_maps_icons_monsterpark"
+  },
+  "dd4a24fb4307ef3fe823fb8ba861ac55": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_icons_moonbridge"
+  },
+  "7038a58ab02cfb308418bcf189ba5e98": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_icons_morass"
+  },
+  "12518152cf10ccfb09542504a0e66a48": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_icons_muruengraid"
+  },
+  "21a888522f271e1f287baaca530210ae": {
+   "ext": "png",
+   "name": "_core_src_assets_maps_icons_nightmareparadise"
+  },
+  "5a1fb051ab759404644077793d95cb10": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_icons_odium"
+  },
+  "7bf31bc97e9c3a9f584c84f9e49eaba5": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_icons_roadofvanishing"
+  },
+  "ff6713ebca667d7f213879428105d509": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_icons_tallahart"
+  },
+  "9ac0ac436b02924ba2836d648eb8c852": {
+   "ext": "webp",
+   "name": "_core_src_assets_maps_icons_thelabyrinthofsuffering"
+  }
+ }
+}

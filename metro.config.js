@@ -10,6 +10,16 @@ const { CSS_ENTRY, INLINE_REM } = require('./nativewind.config')
 
 const config = getDefaultConfig(__dirname)
 
+// 안드로이드 «옛 바이너리 호환» 에셋 경로([[ADR-191]]). **환경변수가 있을 때만** 걸린다 —
+// `OTA_LEGACY_ASSET_MAP` 이 가리키는 APK 이름표로 `httpServerLocation` 을 역산해, 1.0.6 바이너리가
+// 자기 드로어블을 다시 찾게 만든다. 평소 빌드·개발 서버는 이 줄을 그냥 지나간다.
+if (process.env.OTA_LEGACY_ASSET_MAP) {
+  config.transformer.assetPlugins = [
+    ...(config.transformer.assetPlugins ?? []),
+    require.resolve('./scripts/ota-legacy-asset-paths.cjs'),
+  ]
+}
+
 // NativeWind 를 씌운다([[ADR-128]] 3단계). 이 래퍼는 트랜스포머를 갈아끼우고 설정을 새로 만들어
 // 돌려주므로, 결과에 `config.resolver` 를 통째로 대입하지 말 것 — 그쪽이 심어 둔 것이 지워진다.
 module.exports = withNativeWind(config, {

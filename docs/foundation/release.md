@@ -512,6 +512,42 @@ const PINNED_RUNTIME_VERSIONS = {
 > 가리키므로, 네이티브를 고쳤으면 **스토어 빌드**로 가야 한다. 그리고 새 스토어 바이너리를
 > 규칙 1~3 을 지켜 구운 뒤에는 **이 상수를 지운다** — 그때부터 트리 계산값이 곧 바이너리의 값이다.
 
+### 규칙 6 — 못박았으면 **에셋 이름표도** 함께 준다 ([[ADR-191]])
+
+지문을 못박는다는 것은 «번들이 지금 트리로는 못 만드는 바이너리를 겨냥한다» 는 뜻이다. 그러면
+지문 말고 하나가 더 갈린다 — **안드로이드 이미지의 리소스 이름**.
+
+안드로이드는 APK 에 박힌 이미지를 파일이 아니라 드로어블 **리소스**로 들고, 그 이름을 에셋의
+소스 경로(`httpServerLocation`)에서 파생한다. [[ADR-155]] 가 `packages/core` 를 `src` 로 옮기면서
+그 이름이 `_core_src_assets_…` → `src_assets_…` 로 바뀌었고, 1.0.7 을 그대로 내보냈다가 **앱
+이미지 273개가 전부 빈칸**이 됐다(iOS 는 파일 경로로 풀어 멀쩡했다).
+
+**이름표는 기기에서 뽑는다** — 저장소가 만들 수 있는 값이 아니다.
+
+```bash
+adb -s <기기> logcat -c && adb -s <기기> logcat -v time > logcat.txt &
+adb -s <기기> shell am force-stop com.mapleroutine.app
+adb -s <기기> shell monkey -p com.mapleroutine.app -c android.intent.category.LAUNCHER 1
+# 부팅 로그의 `embeddedAssetFileMap: <md5>,<ext> => file:///android_res/<폴더>/<이름>.<ext>` 를
+# {"<md5>": {"ext": "...", "name": "..."}} 로 접는다
+```
+
+그 표를 주고 발행한다. **주지 않으면 스크립트가 발행을 거부한다.**
+
+```bash
+OTA_LEGACY_ASSET_MAP=apk-embedded-map.json OTA_ASSET_REPORT=asset-report.jsonl \
+  node scripts/publish-rn-ota.mjs
+```
+
+`metro.config.js` 가 그때만 역산 플러그인을 걸고(`scripts/ota-legacy-asset-paths.cjs`), export 뒤
+스크립트가 이름표 **전 항목**을 대조해 하나라도 어긋나면 멈춘다.
+
+> ⚠️ **플러그인과 못박기는 함께 죽는다.** 새 스토어 바이너리의 드로어블은 `src_assets_…` 라,
+> 상수를 비우는 날 이름표도 함께 치우지 않으면 **같은 사고가 거울처럼 뒤집혀** 일어난다.
+>
+> ⚠️ **정적 대조가 실기기 확인을 대신하지 않는다.** 1.0.7 은 에셋 누락 0 · 해시 손상 0 · 키 집합
+> 정상이었고 화면만 빈칸이었다. 발행 뒤 **실기기에서 그림이 뜨는 것을 눈으로 본다.**
+
 JS 만 바뀌었는지는 지문이 안 말해 주므로 **사람이 확인한다.** 1.0.7 발행 때 본 것: 새 네이티브
 의존성 0(늘어난 `@gorhom/portal`·`zustand` 는 순수 JS) · 로컬 Expo 모듈 셋의 JS API diff 0줄 ·
 `app.json` 이 1.0.6 과 바이트 동일 · 폰트 0개 · `react-native`·`expo` 버전 동일(Hermes 바이트코드
