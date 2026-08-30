@@ -13,6 +13,25 @@ Xcode 아카이브다. 저장소 루트가 곧 Expo 프로젝트라 둘 다 루�
 > `build:test-ads`) 표가 있었다. 그 스크립트들은 캐패시터 앱의 것이었고 앱과 함께 사라졌다.
 > 아래 ‘폐기된 정책’ 참고.
 
+## 다음 스토어 릴리스에서 같이 할 일
+
+> **네이티브 트리에서 AdMob 앱 ID를 걷는다.** 2026-08-31에 앱 ID를 환경 변수로 옮겼지만
+> (`EXPO_PUBLIC_ADS_APP_ID_ANDROID`·`..._IOS`, `app.config.js`), 커밋된 prebuild 산출물에는
+> 옛 값이 그대로 남아 있다.
+>
+> ```
+> android/app/src/main/AndroidManifest.xml   com.google.android.gms.ads.APPLICATION_ID
+> ios/app/Info.plist                         GADApplicationIdentifier
+> ```
+>
+> 지금 걷지 않은 이유는 `android/` 가 지문 소스라서다. 값을 바꾸면 지문이 달라지고 스토어에
+> 나가 있는 바이너리가 받던 OTA가 끊긴다. **다음 스토어 바이너리를 만들 때는 어차피 지문이
+> 새로 잡히므로, 그때 함께 정리한다**(사용자 결정, 2026-08-31).
+>
+> 할 일은 이것이다. `.env` 를 채운 상태로 prebuild 를 돌려 네이티브 파일이 환경 변수 값으로
+> 다시 써지는지 확인하고, 그 트리에서 바이너리를 굽는다. 아래 규칙 1~4 를 그대로 따르면 된다.
+> 자세한 배경은 [../features/ads.md](../features/ads.md).
+
 ## 릴리스는 노트를 쓰는 것으로 시작한다 ([[ADR-119]])
 
 **버전을 올리기 전이 아니라, 올리면서 `src/data/release-notes.ts` 에 그 버전의 항목을

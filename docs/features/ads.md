@@ -78,6 +78,11 @@ Android와 iOS는 값이 서로 다르다. AdMob이 두 플랫폼을 별개의 �
 >
 > 값을 제대로 채우면 지문은 옮기기 전과 **완전히 같다**(2026-08-31 측정).
 >
+> 커밋된 prebuild 산출물(`android/app/src/main/AndroidManifest.xml`·`ios/app/Info.plist`)에는
+> 아직 옛 값이 남아 있다. 지금 걷으면 지문이 달라져서 지금 나가 있는 스토어 바이너리의 OTA가
+> 끊기므로, **다음 스토어 릴리스 때 같이 정리한다**(사용자 결정, 2026-08-31 ·
+> [../foundation/release.md](../foundation/release.md) 맨 위).
+>
 > | 상태 | 지문 |
 > |---|---|
 > | 옮기기 전 | `72740141be5ab18548ab6d66146dce0730b32df0` |
