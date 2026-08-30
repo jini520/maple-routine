@@ -238,7 +238,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       readFileSync(legacyReportPath, 'utf-8').split('\n'),
     )
     const broken = coverage.mismatched.length + coverage.missing.length
-    console.log(`      에셋 이름 대조: 일치 ${coverage.matched} · 어긋남 ${coverage.mismatched.length} · 번들에 없음 ${coverage.missing.length}`)
+    console.log(
+      `      에셋 이름 대조: 일치 ${coverage.matched} · 어긋남 ${coverage.mismatched.length} · 번들에 없음 ${coverage.missing.length}` +
+        ` · 일부러 뺌 ${coverage.unembedded} ([[ADR-192]])`,
+    )
     if (broken > 0) {
       for (const row of [...coverage.mismatched, ...coverage.missing].slice(0, 10)) {
         console.error(`  ${row.hash} 기대 "${row.expected}" 실제 "${row.actual ?? '(번들에 없음)'}"`)

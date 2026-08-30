@@ -146,8 +146,19 @@ function summarizeLegacyAssetCoverage(apkMap, reportLines) {
   const mismatched = []
   const missing = []
   let matched = 0
+  let unembedded = 0
   for (const [hash, entry] of Object.entries(apkMap)) {
     const row = byHash.get(hash)
+
+    // **일부러 뺀 것**([[ADR-192]]) — 원본 바이트를 바꿔 APK 드로어블 대신 파일로 내려받게 한
+    // 에셋이다. 번들에 **없어야** 정상이고, 도로 나타났다면 그 바이트 변경이 풀렸다는 뜻이라
+    // 밀도 확대 경로로 되돌아간다. 그래서 «있음» 쪽을 막는다.
+    if (entry.replacedByDownload === true) {
+      if (row === undefined) unembedded += 1
+      else mismatched.push({ hash, expected: '(번들에 없어야 한다 — ADR-192)', actual: row.identifier })
+      continue
+    }
+
     if (row === undefined) {
       missing.push({ hash, expected: entry.name })
     } else if (row.identifier !== entry.name) {
@@ -157,7 +168,7 @@ function summarizeLegacyAssetCoverage(apkMap, reportLines) {
     }
   }
 
-  return { matched, mismatched, missing }
+  return { matched, mismatched, missing, unembedded }
 }
 
 module.exports.summarizeLegacyAssetCoverage = summarizeLegacyAssetCoverage
