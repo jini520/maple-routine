@@ -7,11 +7,13 @@
  "assets": {
   "0fc8c15deb10bd228da387db0500e631": {
    "ext": "webp",
-   "name": "_core_src_assets_themes_blackmagebackground"
+   "name": "_core_src_assets_themes_blackmagebackground",
+   "replacedByDownload": true
   },
   "082f1ff61285ea952c8b0d7685cb24a2": {
    "ext": "webp",
-   "name": "_core_src_assets_themes_hontailbackground"
+   "name": "_core_src_assets_themes_hontailbackground",
+   "replacedByDownload": true
   },
   "778ffc9fe8773a878e9c30a6304784de": {
    "ext": "png",
@@ -1165,5 +1167,6 @@
    "ext": "webp",
    "name": "_core_src_assets_maps_icons_thelabyrinthofsuffering"
   }
- }
+ },
+ "_replacedByDownload_comment": "[[ADR-192]] — 이 항목들은 **일부러** 번들에서 뺐다. 원본 바이트를 바꿔 md5 가 달라졌고, 그래서 expo-updates 가 APK 드로어블 대신 파일로 내려받는다(밀도 3배 확대를 피한다). 관문은 이것들이 번들에 **없어야** 통과시키고, 도로 나타나면 «바이트 변경이 풀렸다» 로 막는다."
 }

@@ -46,7 +46,7 @@ describe('summarizeLegacyAssetCoverage — 발행 관문', () => {
       row(['aaa'], '_core_src_assets_themes_blackmagebackground'),
       row(['bbb'], '_core_src_assets_bosses_adversary'),
     ])
-    expect(result).toEqual({ matched: 2, mismatched: [], missing: [] })
+    expect(result).toEqual({ matched: 2, mismatched: [], missing: [], unembedded: 0 })
   })
 
   // 이것이 1.0.7 의 상태다 — 이름이 새 트리 것으로 파생돼 APK 에 없는 것을 찾는다.
@@ -70,6 +70,37 @@ describe('summarizeLegacyAssetCoverage — 발행 관문', () => {
     const result = summarizeLegacyAssetCoverage(apk, [row(['aaa'], '_core_src_assets_themes_blackmagebackground')])
     expect(result.matched).toBe(1)
     expect(result.missing).toEqual([{ hash: 'bbb', expected: '_core_src_assets_bosses_adversary' }])
+  })
+
+  // **일부러 뺀 것**([[ADR-192]]) — 바이트를 바꿔 APK 드로어블 대신 내려받게 한 에셋이다.
+  // 번들에 없어야 정상이고, 도로 나타나면 바이트 변경이 풀린 것이라 막아야 한다.
+  describe('replacedByDownload — 일부러 임베드에서 뺀 에셋', () => {
+    const apkWithReplaced = {
+      ...apk,
+      ccc: { ext: 'webp', name: '_core_src_assets_themes_blackmagebackground', replacedByDownload: true },
+    }
+    const 나머지 = [
+      row(['aaa'], '_core_src_assets_themes_blackmagebackground'),
+      row(['bbb'], '_core_src_assets_bosses_adversary'),
+    ]
+
+    it('번들에 없으면 통과하고 따로 센다', () => {
+      const result = summarizeLegacyAssetCoverage(apkWithReplaced, 나머지)
+      expect(result.matched).toBe(2)
+      expect(result.unembedded).toBe(1)
+      expect(result.missing).toEqual([])
+      expect(result.mismatched).toEqual([])
+    })
+
+    it('도로 나타나면 막는다 — 바이트 변경이 풀렸다는 뜻이다', () => {
+      const result = summarizeLegacyAssetCoverage(apkWithReplaced, [
+        ...나머지,
+        row(['ccc'], '_core_src_assets_themes_blackmagebackground'),
+      ])
+      expect(result.unembedded).toBe(0)
+      expect(result.mismatched).toHaveLength(1)
+      expect(result.mismatched[0].hash).toBe('ccc')
+    })
   })
 
   // 같은 에셋이 워커·플랫폼마다 여러 줄로 나온다 — 접어서 세지 않으면 수가 부풀거나 어긋난다.
