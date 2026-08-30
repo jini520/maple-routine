@@ -150,9 +150,12 @@ function summarizeLegacyAssetCoverage(apkMap, reportLines) {
   for (const [hash, entry] of Object.entries(apkMap)) {
     const row = byHash.get(hash)
 
-    // **일부러 뺀 것**([[ADR-192]]) — 원본 바이트를 바꿔 APK 드로어블 대신 파일로 내려받게 한
-    // 에셋이다. 번들에 **없어야** 정상이고, 도로 나타났다면 그 바이트 변경이 풀렸다는 뜻이라
-    // 밀도 확대 경로로 되돌아간다. 그래서 «있음» 쪽을 막는다.
+    // **일부러 뺀 것** — 원본 바이트를 바꿔 APK 드로어블 대신 파일로 내려받게 만든 에셋을 위한
+    // 갈래다. 번들에 **없어야** 정상이고, 도로 나타났다면 그 바이트 변경이 풀렸다는 뜻이므로
+    // «있음» 쪽을 막는다(예외를 «무시» 가 아니라 반대 방향의 검사로 둔다).
+    //
+    // **지금 이 표식을 단 항목은 없다.** 처음 쓴 자리([[ADR-192]])가 반증돼 되돌아갔고, 갈래만
+    // 남겨 둔다 — 임베드에서 빼는 판단이 다시 필요해지면 그때 표에 표식을 단다.
     if (entry.replacedByDownload === true) {
       if (row === undefined) unembedded += 1
       else mismatched.push({ hash, expected: '(번들에 없어야 한다 — ADR-192)', actual: row.identifier })

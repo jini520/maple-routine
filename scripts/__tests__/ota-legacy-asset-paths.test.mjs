@@ -72,8 +72,9 @@ describe('summarizeLegacyAssetCoverage — 발행 관문', () => {
     expect(result.missing).toEqual([{ hash: 'bbb', expected: '_core_src_assets_bosses_adversary' }])
   })
 
-  // **일부러 뺀 것**([[ADR-192]]) — 바이트를 바꿔 APK 드로어블 대신 내려받게 한 에셋이다.
+  // **일부러 뺀 것** — 바이트를 바꿔 APK 드로어블 대신 내려받게 만든 에셋을 위한 갈래다.
   // 번들에 없어야 정상이고, 도로 나타나면 바이트 변경이 풀린 것이라 막아야 한다.
+  // (지금 표식을 단 항목은 없다 — 처음 쓴 자리가 반증돼 되돌아갔다.)
   describe('replacedByDownload — 일부러 임베드에서 뺀 에셋', () => {
     const apkWithReplaced = {
       ...apk,
