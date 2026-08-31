@@ -1,10 +1,33 @@
 # Live Update (OTA)
 
-> **범위**: 스토어 심사 없이 JS 번들을 배포하는 OTA: 프로토콜·호스팅·사용자 동의형 UX·관찰용 UI·적용 경로의 복구 장치. 그리고 **끝난 캐패시터 앱을 스토어로 보내는 관**([[ADR-154]], 진행 중).
-> **관련 소스**: 포트 `src/native/live-update.ts` · 어댑터 `src/native/adapters/rn-live-update.ts`(expo-updates) · 스토어 `src/features/live-update/store.ts` · 모달 `src/app/UpdatePromptModal.tsx` · 설정 섹션 `src/app/settings/AppUpdateSection.tsx` · `src/storage/last-run-bundle-version.ts` · 매니페스트 Worker `workers/ota-manifest/` · 배포 `scripts/publish-rn-ota.mjs` · GitHub Releases `live-update-rn` · `app.json` 의 `expo.updates` · 캐패시터 최종 매니페스트 `ota/`.
-> **관련 ADR**: [[ADR-137]](현행 프로토콜) [[ADR-154]](캐패시터 종료) [[ADR-119]]·[[ADR-126]](릴리스 노트) [[ADR-026]](관찰용 UI) · ⛔ 이지만 🔗 로 살아남은 것. ADR-027 결정 1·4·7 · [[ADR-117]] 결정 1·2·5·7·8 · ADR-022 결정 6 · ADR-024(버전 형식). **관련 문서**: [../foundation/release.md](../foundation/release.md), [settings.md](./settings.md), [splash.md](./splash.md), [boss-profit.md](./boss-profit.md).
->
-> ⚠️ **이 문서의 ‘정책’은 RN 앱(`expo-updates`)의 것이다.** @capgo 시절 프로토콜·베타 채널·리로드 커버는 캐패시터 앱과 함께 사라졌고 아래 ‘폐기된 정책’에만 남는다.
+> **범위**: 스토어 심사 없이 JS 번들을 배포하는 OTA. 프로토콜 · 호스팅 · 사용자 동의형 UX ·
+> 관찰용 UI · 적용 경로의 복구 장치가 여기 있다.
+> **여기 없는 것**: 스토어 릴리스 절차는 [../foundation/release.md](../foundation/release.md),
+> 설정 화면의 업데이트 섹션은 [settings.md](./settings.md).
+> **관련 문서**: [splash.md](./splash.md) · [boss-profit.md](./boss-profit.md)
+
+> **이 문서의 정책은 RN 앱(`expo-updates`)의 것이다.** @capgo 시절 프로토콜과 베타 채널, 리로드
+> 커버는 캐패시터 앱과 함께 사라졌고 아래 [폐기된 정책](#폐기된-정책-history)에만 남는다.
+
+## 관련 소스
+
+| 구분 | 파일 | 하는 일 |
+|---|---|---|
+| 포트 | `src/native/live-update.ts` | 계약 |
+| 어댑터 | `src/native/adapters/rn-live-update.ts` | `expo-updates` |
+| 상태 | `src/features/live-update/store.ts` | 확인 · 다운로드 · 적용 |
+| 화면 | `src/app/UpdatePromptModal.tsx` | 동의 모달 |
+| 화면 | `src/app/settings/AppUpdateSection.tsx` | 설정의 업데이트 섹션 |
+| 저장 | `src/storage/last-run-bundle-version.ts` | 적용 직후 안내를 띄울지 판정 |
+| 서버 | `workers/ota-manifest/` | 매니페스트 Worker |
+| 배포 | `scripts/publish-rn-ota.mjs` | 발행. 산출물은 GitHub Releases `live-update-rn` |
+| 설정 | `app.json` 의 `expo.updates` | 런타임 버전과 매니페스트 URL |
+
+**관련 ADR**: [[ADR-137]](현행 프로토콜) · [[ADR-154]](캐패시터 종료) ·
+[[ADR-119]]·[[ADR-126]](릴리스 노트) · [[ADR-026]](관찰용 UI)
+
+**폐기됐지만 이 문서가 그 결정 일부를 아직 따르는 것**: ⛔ ADR-027 결정 1·4·7 · ADR-117 결정
+1·2·5·7·8 · ADR-022 결정 6 · ADR-024(버전 형식). **각 파일 배너의 🔗 줄에 적힌 것만 살아 있다.**
 
 ## 정책: Expo Updates v1, 호스팅은 자체 ([[ADR-137]])
 
@@ -188,7 +211,7 @@ OTA 를 낼수록 둘은 계속 벌어진다. 1.0.8 을 OTA 로 내도 `binaryAp
 > 앱에 붙잡아 둔다. 그래서 캐패시터 매니페스트가 ‘이 플랫폼은 이제 스토어로 가야 한다’를 직접 말한다.
 
 - **`storeRequiredPlatforms?: string[]`**. 값은 `'android'`·`'ios'`. 판정은 포함 여부 하나다.
-- **판정은 버전 비교보다 앞에 선다.** 그래야 ⓐ 갱신이 끝난 플랫폼에 `up-to-date` 를 안 돌려주고
+- **판정은 버전 비교보다 먼저 한다.** 그래야 ⓐ 갱신이 끝난 플랫폼에 `up-to-date` 를 안 돌려주고
   ⓑ **`manifest.version` 이 사용자 번들과 같아도 게이트가 켜진다.**
 - **선택 필드다**. 필수 검사에 넣으면 옛 매니페스트를 읽는 기존 설치본이 전부 `check-error` 로 떨어진다.
 
@@ -222,17 +245,25 @@ OTA 를 낼수록 둘은 계속 벌어진다. 1.0.8 을 OTA 로 내도 `binaryAp
 
 ## 폐기된 정책 (history)
 
-- ~~`@capgo/capacitor-updater` 플러그인 + 자체 매니페스트(`latest.json`) 프로토콜~~ → **`expo-updates` v1**(🗑 [[ADR-022]] → [[ADR-137]]). 호스팅을 GitHub Releases 로 둔다는 판단만 그대로 남았다.
+- ~~`@capgo/capacitor-updater` 플러그인 + 자체 매니페스트(`latest.json`) 프로토콜~~ → **`expo-updates` v1**(🗑 [[ADR-022]] →
+[[ADR-137]]). 호스팅을 GitHub Releases 로 둔다는 판단만 그대로 남았다.
 - ~~번들 호스팅 = Cloudflare R2~~ → GitHub Releases(카드 등록 불필요)(🗑 [[ADR-022]]).
 - ~~네이티브 `versionName` = `1.0`(2단)~~ → `1.0.0`(3단)(🗑 [[ADR-024]]).
-- ~~베타 채널(`live-update-beta`) · 빌드 시점 채널 분리 · `import.meta.env.VITE_LIVE_UPDATE_CHANNEL`~~ → **폐기**([[ADR-137]] 결정 7). 사이드로딩 베타를 위한 것이었고 App Store 출시(2026-08-06)로 용도가 끝났다. 그리고 그것이 core 의 `import.meta.env` 벽을 없앴다(Metro 에 `import.meta` 가 없다).
+- ~~베타 채널(`live-update-beta`) · 빌드 시점 채널 분리 · `import.meta.env.VITE_LIVE_UPDATE_CHANNEL`~~ → **폐기**([[ADR-137]] 결정
+7). 사이드로딩 베타를 위한 것이었고 App Store 출시(2026-08-06)로 용도가 끝났다. 그리고 그것이 core 의 `import.meta.env` 벽을 없앴다(Metro 에
+`import.meta` 가 없다).
 - ~~1.0.0 리셋과 production 채널 전환(2026-08-04)~~ → 캐패시터 채널의 사건이다. 현행 RN 채널은 `live-update-rn` 이고 버전은 `package.json` 을 따른다.
-- ~~리로드 커버 스플래시(`SplashScreen.show()` · `androidScaleType: CENTER_CROP` · `#boot-cover`)~~ → RN 은 문서를 다시 로드하지 않아 덮을 구간이 없다. `SplashScreenPort.show()` 는 **no-op** 이다(🗑 [[ADR-027]] 정정 → [splash.md](./splash.md)).
-- ~~`LiveUpdatePort` 가 프로토콜을 드러낸다(`httpGet` · `download({url, checksum})` · `applyBundle(id)`)~~ → **행위로 다시 그었다**(`check` · `download(onProgress)` · `apply`)([[ADR-137]] 결정 6).
+- ~~리로드 커버 스플래시(`SplashScreen.show()` · `androidScaleType: CENTER_CROP` · `#boot-cover`)~~ → RN 은 문서를 다시 로드하지 않아 덮을
+구간이 없다. `SplashScreenPort.show()` 는 **no-op** 이다(🗑 [[ADR-027]] 정정 → [splash.md](./splash.md)).
+- ~~`LiveUpdatePort` 가 프로토콜을 드러낸다(`httpGet` · `download({url, checksum})` · `applyBundle(id)`)~~ → **행위로 다시
+그었다**(`check` · `download(onProgress)` · `apply`)([[ADR-137]] 결정 6).
 - ~~조용한 자동 다운로드·적용~~ → 사용자 동의형(부팅은 체크만)(⛔ [[ADR-027]] 결정 1, 지금도 유효).
 - ~~배포 = Play Console 내부 테스트 트랙~~ → APK 직접 사이드로딩(🗑 [[ADR-024]] 정정). 지금은 스토어 정식 배포다.
-- ~~`notifyAppReady` 를 번들 실행 직후 첫 문장에서 호출~~ → **첫 렌더 커밋 뒤**(`AppShell` 마운트 effect)(🗑 [[ADR-022]] 결정 6 → ⛔ [[ADR-117]] 결정 2) → **RN 에는 그 API 자체가 없다**(네이티브 `ErrorRecovery`).
-- ~~매니페스트 `notes?: string`(항목 전체를 이어 붙인 평문 한 덩어리)~~ → **`highlights: string[]`(핵심 목록 3~4줄)**([[ADR-119]] → [[ADR-126]] 결정 2). 그 형식이 겨냥한 소비자가 업데이트 모달이었고, 그리는 방식이 정해지면서 형식도 함께 정해졌다.
+- ~~`notifyAppReady` 를 번들 실행 직후 첫 문장에서 호출~~ → **첫 렌더 커밋 뒤**(`AppShell` 마운트 effect)(🗑 [[ADR-022]] 결정 6 → ⛔
+[[ADR-117]] 결정 2) → **RN 에는 그 API 자체가 없다**(네이티브 `ErrorRecovery`).
+- ~~매니페스트 `notes?: string`(항목 전체를 이어 붙인 평문 한 덩어리)~~ → **`highlights: string[]`(핵심 목록 3~4줄)**([[ADR-119]] →
+[[ADR-126]] 결정 2). 그 형식이 겨냥한 소비자가 업데이트 모달이었고, 그리는 방식이 정해지면서 형식도 함께 정해졌다.
 - ~~`apply()` 는 커버를 먼저 씌우고 그 뒤에 적용~~ → **`closeBossProfitDb()` → 커버 → 적용**(⛔ [[ADR-117]] 결정 1, 지금도 유효).
 - ~~적용 실패 시의 처리 없음(`void apply()`)~~ → **12초 타임아웃 + catch → `'apply-error'`**(⛔ [[ADR-117]] 결정 1, 지금도 유효).
-- ~~셀룰러 데이터 경고(`@capacitor/network`)~~ → RN 에 짝이 없어 **도달하지 않는 분기**로 남았다(⛔ [[ADR-027]] 결정 6). 되살리려면 `@react-native-community/netinfo` 가 선행 조건이다.
+- ~~셀룰러 데이터 경고(`@capacitor/network`)~~ → RN 에 짝이 없어 **도달하지 않는 분기**로 남았다(⛔ [[ADR-027]] 결정 6). 되살리려면
+`@react-native-community/netinfo` 가 선행 조건이다.
