@@ -149,7 +149,7 @@
 
 - **난이도를 가리지 않고 통합해 보여준다**([[ADR-040]] 결정 1). `getBossDropCandidates(boss)` 가 전
   난이도 장비와 소비를 이름과 slot으로 중복 제거하고 등장 난이도를 붙인다. 각 타일에 그 난이도를
-  약자 컬러 칩(`DifficultyChip`)으로 표기한다.
+  약자 컬러 배지(`components/atoms/DifficultyBadge`)로 표기한다.
 - **고정 드롭은 읽기 전용이다**([[ADR-040]] 결정 3). 값이 난이도마다 달라 선택 기능을 없앴다.
   `getBossFixedDrops(boss)` 로 난이도별 그룹을 보여주기만 한다.
 - **카테고리 헤더 아이콘**([[ADR-040]] 결정 4): 장비 `Sword`, 소비 `FlaskConical`, 고정 `Pin`.
