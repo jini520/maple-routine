@@ -1,6 +1,14 @@
-import { EQUIP_MESO_CAP, maxMesoRateOf, mesoPercentOf } from '../meso-rate'
+import {
+  CHALLENGERS_MESO_PERCENT,
+  EQUIP_MESO_CAP,
+  challengersMesoOf,
+  jobMesoOf,
+  maxMesoRateOf,
+  mesoPercentOf,
+} from '../meso-rate'
 import type {
   NexonAbilityResponse,
+  NexonCharacterSkillResponse,
   NexonItemEquipmentItem,
   NexonItemEquipmentResponse,
   NexonSymbolEquipmentResponse,
@@ -26,6 +34,7 @@ const EMPTY_ABILITY: NexonAbilityResponse = {}
 const EMPTY_SYMBOL: NexonSymbolEquipmentResponse = {}
 const EMPTY_UNION: NexonUnionRaiderResponse = {}
 const EMPTY_ARTIFACT: NexonUnionArtifactResponse = {}
+const EMPTY_SKILL: NexonCharacterSkillResponse = {}
 
 /** 축 하나만 채워 넣고 나머지는 비운다 — 합이 곧 그 축의 값이다. */
 function only(sources: {
@@ -34,6 +43,8 @@ function only(sources: {
   symbol?: NexonSymbolEquipmentResponse
   unionRaider?: NexonUnionRaiderResponse
   unionArtifact?: NexonUnionArtifactResponse
+  skill?: NexonCharacterSkillResponse
+  jobClass?: string | null
 }) {
   return maxMesoRateOf({
     itemEquipment: sources.itemEquipment ?? EMPTY_EQUIP,
@@ -41,6 +52,8 @@ function only(sources: {
     symbol: sources.symbol ?? EMPTY_SYMBOL,
     unionRaider: sources.unionRaider ?? EMPTY_UNION,
     unionArtifact: sources.unionArtifact ?? EMPTY_ARTIFACT,
+    skill: sources.skill ?? EMPTY_SKILL,
+    jobClass: sources.jobClass ?? null,
   })
 }
 
@@ -147,6 +160,8 @@ describe('어빌리티 — 프리셋 넷 중 최댓값', () => {
         symbol: EMPTY_SYMBOL,
         unionRaider: EMPTY_UNION,
         unionArtifact: EMPTY_ARTIFACT,
+        skill: EMPTY_SKILL,
+        jobClass: null,
       }),
     ).toBe(40)
   })
@@ -248,6 +263,8 @@ describe('실데이터 회귀 — 2026-08-28 실측 캐릭터(렌)', () => {
         symbol: { symbol: [{ symbol_meso_rate: '0%' }, { symbol_meso_rate: '13%' }] },
         unionRaider: { union_raider_stat: ['STR 100 증가', INC(4)], union_raider_preset_1: null },
         unionArtifact: { union_artifact_effect: [{ name: '올스탯 150 증가' }, { name: INC(12) }] },
+        skill: EMPTY_SKILL,
+        jobClass: '패스파인더',
       }),
     ).toBe(149)
   })
@@ -256,5 +273,91 @@ describe('실데이터 회귀 — 2026-08-28 실측 캐릭터(렌)', () => {
 describe('빈 응답', () => {
   it('아무것도 없으면 0 이다 — 던지지 않는다', () => {
     expect(only({})).toBe(0)
+  })
+})
+
+/** 실응답을 그대로 옮긴 설명문 — `\r\n` 까지 같다(사용자 제공 2026-09-01). */
+const 챌린저스설명 =
+  '[마스터 레벨 : 1]\r\n챌린저스 월드에서 사파이어, 다이아몬드, 마스터, 챌린저, 슈퍼챌린저 티어를 달성한 자에게 적용되는 특별한 능력이다.'
+
+describe('챌린저스 — 이름과 설명문 둘로 가른다', () => {
+  it('그 설명문을 든 챌린저스가 있으면 20% 다', () => {
+    expect(
+      challengersMesoOf({
+        character_skill: [
+          { skill_name: '무기 숙련', skill_description: '무기의 숙련도를 올린다.' },
+          { skill_name: '챌린저스', skill_description: 챌린저스설명 },
+        ],
+      }),
+    ).toBe(CHALLENGERS_MESO_PERCENT)
+  })
+
+  it('티어가 다른 챌린저스는 0 이다 — 그 다섯이 아니면 이 버프가 아니다', () => {
+    expect(
+      challengersMesoOf({
+        character_skill: [
+          {
+            skill_name: '챌린저스',
+            skill_description:
+              '[마스터 레벨 : 1]\r\n챌린저스 월드에서 브론즈, 실버, 골드, 플래티넘 티어를 달성한 자에게 적용되는 특별한 능력이다.',
+          },
+        ],
+      }),
+    ).toBe(0)
+  })
+
+  it('이름이 같아도 설명문이 비면 0 이다 — 레벨과 effect 로는 못 가른다', () => {
+    expect(challengersMesoOf({ character_skill: [{ skill_name: '챌린저스' }] })).toBe(0)
+  })
+
+  it('스킬이 없거나 응답이 비어도 던지지 않는다', () => {
+    expect(challengersMesoOf({})).toBe(0)
+    expect(challengersMesoOf({ character_skill: null })).toBe(0)
+  })
+})
+
+describe('직업이 스스로 갖는 메획 — 섀도어의 「그리드」', () => {
+  it('섀도어면 20% 다', () => {
+    expect(jobMesoOf('섀도어')).toBe(20)
+  })
+
+  it('다른 직업은 0 이다', () => {
+    expect(jobMesoOf('나이트로드')).toBe(0)
+    expect(jobMesoOf('듀얼블레이더')).toBe(0)
+  })
+
+  it('직업을 모르면 0 이다 — 캐시가 아직 안 따뜻할 수 있다', () => {
+    expect(jobMesoOf(null)).toBe(0)
+    expect(jobMesoOf(undefined)).toBe(0)
+    expect(jobMesoOf('')).toBe(0)
+  })
+})
+
+describe('maxMesoRateOf — 챌린저스와 그리드도 합산 통에 든다', () => {
+  it('챌린저스만 켜지면 20 이다', () => {
+    expect(only({ skill: { character_skill: [{ skill_name: '챌린저스', skill_description: 챌린저스설명 }] } })).toBe(20)
+  })
+
+  it('섀도어면 그리드로 20 이다', () => {
+    expect(only({ jobClass: '섀도어' })).toBe(20)
+  })
+
+  it('둘이 겹치면 더해진다 — 서로 다른 축이다', () => {
+    expect(
+      only({
+        skill: { character_skill: [{ skill_name: '챌린저스', skill_description: 챌린저스설명 }] },
+        jobClass: '섀도어',
+      }),
+    ).toBe(40)
+  })
+
+  it('장비 캡 밖이다 — 100 을 채운 장비 위에 그대로 얹힌다', () => {
+    expect(
+      only({
+        itemEquipment: { item_equipment: [item([POT(100)])] },
+        skill: { character_skill: [{ skill_name: '챌린저스', skill_description: 챌린저스설명 }] },
+        jobClass: '섀도어',
+      }),
+    ).toBe(140)
   })
 })

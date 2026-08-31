@@ -1293,10 +1293,10 @@ describe('메소 획득량 ([[ADR-177]])', () => {
     await 누르기(view, '사냥')
     await 루디고르기(view)
 
-    const 켜는줄 = view.getByTestId('income-sheet-boosts')
-    expect(within(켜는줄).queryByTestId('income-sheet-meso-rate')).toBeNull()
-    // 켜는 줄의 글자는 라벨 하나뿐이다 — 켜는 것은 체크박스와 그림이다.
-    expect(켜는줄).toHaveTextContent('소비 아이템')
+    const 켜는칸 = view.getByTestId('income-sheet-boosts')
+    expect(within(켜는칸).queryByTestId('income-sheet-meso-rate')).toBeNull()
+    // 켜는 칸의 글자는 라벨 하나뿐이다 — 켜는 것은 체크박스와 그림이다.
+    expect(켜는칸).toHaveTextContent('소비 아이템')
     expect(view.getByTestId('income-sheet-meso-rate')).toHaveTextContent('149%')
   })
 
@@ -1419,39 +1419,52 @@ describe('큰 숫자의 정체 ([[ADR-087]] 정정 1)', () => {
 })
 
 /**
- * 사냥 폼의 줄 배치 ([[ADR-178]] 정정 5, 사용자 지정 2026-08-29).
+ * 사냥 폼의 줄 배치 (사용자 지정 2026-09-01).
  *
- * 「어디서」를 정하는 짝(지역·사냥터)은 **한 줄**이고, 켜고 끄는 것 둘은 **값 줄 위**로 빠지며
- * 알약 테두리 대신 **체크박스**가 상태를 말한다.
+ * 지역과 사냥터는 **각각 자기 줄**이다 — 나란히 세우면 둘 다 이름이 잘렸다. 그 대신 소비 아이템과
+ * 메소 획득량이 **한 줄**로 합쳐져 높이를 되찾는다. 켜고 끄는 것은 알약 테두리가 아니라
+ * **체크박스**가 상태를 말한다([[ADR-178]] 정정 5).
  */
-describe('사냥 폼의 줄 배치 ([[ADR-178]] 정정 5)', () => {
+describe('사냥 폼의 줄 배치 (사용자 지정 2026-09-01)', () => {
   async function 사냥열기(view: Rendered): Promise<void> {
     await 누르기(view, '사냥')
   }
 
-  it('지역과 사냥터가 **한 줄**에 선다', async () => {
+  // 나란히 세우면 「츄츄 아일랜드」 도 「풍화된 기쁨과 분노의 땅」 도 잘린다 — 고른 것이 온전히
+  // 읽히는 쪽을 택했다(사용자 지정 2026-09-01).
+  it('지역과 사냥터가 **각각 자기 줄**에 선다', async () => {
     const view = await 그리기()
     await 사냥열기(view)
 
-    const 한줄 = view.getByTestId('income-sheet-where')
-    expect(within(한줄).getByTestId('income-sheet-region-trigger')).toBeTruthy()
-    expect(within(한줄).getByTestId('income-sheet-ground-trigger')).toBeTruthy()
+    // 둘을 한 칸에 묶던 줄이 없다 — 있으면 다시 나란히 선 것이다.
+    expect(view.queryByTestId('income-sheet-where')).toBeNull()
+    expect(view.getByTestId('income-sheet-region-trigger')).toBeTruthy()
+    expect(view.getByTestId('income-sheet-ground-trigger')).toBeTruthy()
   })
 
-  // 지역은 길어야 「츄츄 아일랜드」 인데 사냥터는 「풍화된 기쁨과 분노의 땅」 까지 간다 —
-  // 반씩 나누면 긴 쪽만 잘린다(사용자 지정 2026-08-29).
-  it('사냥터가 지역보다 **넓다**', async () => {
+  it('소비 아이템과 메소 획득량이 **한 줄**에 선다', async () => {
     const view = await 그리기()
     await 사냥열기(view)
 
-    const 지역 = flattenStyle(view.getByTestId('income-sheet-region-slot').props.style) as {
+    const 한줄 = view.getByTestId('income-sheet-meso-line')
+    expect(within(한줄).getByTestId('income-sheet-boosts')).toBeTruthy()
+    expect(within(한줄).getByTestId('income-sheet-meso-rate')).toBeTruthy()
+  })
+
+  // 켜는 칸은 라벨 다섯 글자와 체크박스 둘이 함께 서고 값 칸은 라벨과 숫자 하나뿐이다
+  // (사용자 지정 2026-09-01).
+  it('소비 아이템이 메소 획득량의 **두 배**로 넓다', async () => {
+    const view = await 그리기()
+    await 사냥열기(view)
+
+    const 소비 = flattenStyle(view.getByTestId('income-sheet-boosts').props.style) as {
       flex: number
     }
-    const 사냥터 = flattenStyle(view.getByTestId('income-sheet-ground-slot').props.style) as {
+    const 메획 = flattenStyle(view.getByTestId('income-sheet-meso-rate-slot').props.style) as {
       flex: number
     }
 
-    expect(사냥터.flex).toBeGreaterThan(지역.flex)
+    expect(소비.flex).toBe(메획.flex * 2)
   })
 
   it('켜고 끄는 것은 **체크박스**다 — 눌리면 상태가 뒤집힌다', async () => {

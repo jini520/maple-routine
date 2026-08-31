@@ -15,7 +15,7 @@
  *
  *   장비   = max(현재·프리셋 셋)  ← **프리셋마다** min(잠재 + 에디셔널, 100)
  *   어빌   = max(현재·프리셋 셋)
- *   최대치 = 장비 + 어빌 + 유니온 공격대 + 심볼 + 유니온 아티팩트
+ *   최대치 = 장비 + 어빌 + 유니온 공격대 + 심볼 + 유니온 아티팩트 + 챌린저스 + 직업 스킬
  *
  * **축별 최댓값을 더하면 그것이 실제로 도달 가능한 세팅**이다 — 장비 프리셋과 어빌리티 프리셋은
  * 서로 독립적으로 전환되므로 조합(4×4)을 다 셀 필요가 없다.
@@ -25,6 +25,7 @@
  */
 import type {
   NexonAbilityResponse,
+  NexonCharacterSkillResponse,
   NexonItemEquipmentItem,
   NexonItemEquipmentResponse,
   NexonSymbolEquipmentResponse,
@@ -143,13 +144,66 @@ function artifactMeso(response: NexonUnionArtifactResponse): number {
   return sum((response.union_artifact_effect ?? []).map((each) => mesoPercentOf(each.name)))
 }
 
-/** 다섯을 한 번에 넘긴다 — 하나라도 못 읽으면 최대치를 셀 수 없으므로 부분 성공을 안 만든다. */
+/**
+ * 챌린저스 월드 버프가 주는 메획(%) — **사용자 확정 2026-09-01**([[ADR-006]]).
+ *
+ * 장비 캡 밖이다(심볼과 같다) — 세팅이 아니라 월드가 주는 값이라 100% 를 채운 장비 위에 그대로
+ * 얹힌다.
+ */
+export const CHALLENGERS_MESO_PERCENT = 20
+
+const CHALLENGERS_SKILL_NAME = '챌린저스'
+
+/**
+ * 버프를 **받는 티어 다섯**. 설명문에 이 다섯이 다 적혀 있어야 그 스킬이다.
+ *
+ * 이름만으로 가르면 틀린다 — 아래 티어도 같은 이름의 스킬을 들 수 있고, 그때는 메획이 안 붙는다.
+ * `skill_level` 은 늘 1 이고 `skill_effect` 는 빈 문자열이라 **가를 수 있는 칸이 설명문뿐**이다
+ * (사용자 확인 2026-09-01).
+ */
+const CHALLENGERS_TIERS = ['사파이어', '다이아몬드', '마스터', '챌린저', '슈퍼챌린저'] as const
+
+/** 챌린저스 버프가 주는 메획(%) — 못 찾으면 0. */
+export function challengersMesoOf(response: NexonCharacterSkillResponse): number {
+  const granted = (response.character_skill ?? []).some(
+    (each) =>
+      each.skill_name === CHALLENGERS_SKILL_NAME &&
+      CHALLENGERS_TIERS.every((tier) => (each.skill_description ?? '').includes(tier)),
+  )
+  return granted ? CHALLENGERS_MESO_PERCENT : 0
+}
+
+/**
+ * **직업이 스스로 갖는 메획**(%) — 지금은 섀도어의 「그리드」 하나다(사용자 확정 2026-09-01).
+ *
+ * 스킬 응답을 안 본다: 그 직업이면 늘 켜져 있는 값이라 조회가 언제나 같은 답을 준다
+ * (사용자 지정 2026-09-01). 직업이 늘면 이 표에 한 줄을 더한다.
+ */
+export const JOB_MESO_PERCENTS: Readonly<Record<string, number>> = { 섀도어: 20 }
+
+/**
+ * `jobClass` 는 `character/list` 가 준 직업 이름이고 캐시에 실려 온다. **모르면 0** 이다 —
+ * 캐시가 아직 안 따뜻한 캐릭터가 있고, 그때 아무 값이나 얹으면 금액이 조용히 틀린다.
+ */
+export function jobMesoOf(jobClass: string | null | undefined): number {
+  return JOB_MESO_PERCENTS[jobClass ?? ''] ?? 0
+}
+
+/**
+ * 일곱을 한 번에 넘긴다 — 하나라도 못 읽으면 최대치를 셀 수 없으므로 부분 성공을 안 만든다.
+ *
+ * `jobClass` 만 응답이 아니라 **캐시에서 온다**(`character/list` 가 준 값) — 부르는 쪽이 채운다.
+ */
 export interface MesoRateSources {
   itemEquipment: NexonItemEquipmentResponse
   ability: NexonAbilityResponse
   symbol: NexonSymbolEquipmentResponse
   unionRaider: NexonUnionRaiderResponse
   unionArtifact: NexonUnionArtifactResponse
+  /** 0차 스킬 목록 — 여기서 보는 것은 챌린저스 하나다. */
+  skill: NexonCharacterSkillResponse
+  /** 직업 이름. 모르면 `null` 이고 그때 직업 스킬 몫은 0 이다. */
+  jobClass: string | null
 }
 
 /** 도달 가능한 **최대 메소 획득량**(%). 축별 최댓값의 합이다. */
@@ -159,6 +213,8 @@ export function maxMesoRateOf(sources: MesoRateSources): number {
     maxAbilityMeso(sources.ability) +
     symbolMeso(sources.symbol) +
     unionMeso(sources.unionRaider) +
-    artifactMeso(sources.unionArtifact)
+    artifactMeso(sources.unionArtifact) +
+    challengersMesoOf(sources.skill) +
+    jobMesoOf(sources.jobClass)
   )
 }
