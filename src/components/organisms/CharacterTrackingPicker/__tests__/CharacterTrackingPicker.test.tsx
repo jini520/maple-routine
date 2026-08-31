@@ -608,7 +608,7 @@ describe('CharacterTrackingPicker — 로딩/빈/실패 상태 ([[ADR-053]] · [
 
   // [[ADR-114]] 결정 2·3: 배너의 액션도 원인별이다 — 재시도가 통하지 않는 셋에는 없다.
   it.each([
-    ['rateLimited' as const, '호출 한도를 초과했습니다 — 서비스 단계 키인지 확인해주세요'],
+    ['rateLimited' as const, '호출 한도를 초과했습니다. 서비스 단계 키인지 확인해주세요'],
     ['invalidApiKey' as const, 'API 키가 유효하지 않아 목록을 갱신하지 못했습니다'],
     ['characterUnavailable' as const, '이 계정의 캐릭터를 조회할 수 없습니다'],
   ])('%s 배너는 원인만 말하고 액션을 주지 않는다', async (kind, message) => {

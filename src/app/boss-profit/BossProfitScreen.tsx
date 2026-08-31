@@ -22,7 +22,7 @@
 // | ADR | 웹이 손으로 한 일 | RN |
 // |---|---|---|
 // | 077 | 히스토리를 중첩 라우트 + `<Outlet />` 으로 얹어 언마운트를 막았다 | 하위 페이지가 **루트 스택 push** 라 이 화면이 트리에 남는다 |
-// | 085·112 | `fixed` 헤더 + 실측 spacer + 매 커밋 layout effect | 헤더가 스크롤 뷰의 **형제**라 spacer 도 실측도 없다(`PageHeader` 파일 머리) |
+// | 085·112 | `fixed` 헤더 + 실측 spacer + 매 커밋 layout effect | 헤더가 **흐름 안**이라 뺄 자리가 없어 spacer 도 실측도 없다(`PageHeader` 파일 머리) |
 // | 099 | 문서 스크롤을 화면 컨테이너로 옮겼다 | `ScrollView` 가 기본값 |
 // | 100 결정 2 | 헤더 + spacer 를 래퍼로 묶어 셸 안에 | 헤더가 `ScreenScroll` 의 `header` 다 |
 // | 073 | 목록을 `transform` 으로 내리고 인디케이터를 얹었다 | `RefreshControl` ([[ADR-130]]) |
@@ -182,7 +182,8 @@ export function BossProfitScreen(): React.JSX.Element {
   } = useAnchoredPopover()
 
   // [[ADR-080]]: 기간·탭이 바뀌면 최상단으로. RN 에는 그 처방이 웹에서 없애던 깨진 프레임이 없지만
-  // (헤더가 스크롤 뷰의 형제라 화면 밖으로 날아갈 수 없다) **관찰 가능한 동작**은 그대로 지킨다 —
+  // (헤더가 `sticky` 가 아니라 그냥 콘텐츠라 오프셋과 어긋날 두 값이 없다 — `PageHeader` 파일
+  // 머리) **관찰 가능한 동작**은 그대로 지킨다 —
   // 기간을 옮기면 목록 처음부터 본다. 목적지가 0 인 것은 웹과 같다([[ADR-082]] 실패로 확인).
   useLayoutEffect(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: false })

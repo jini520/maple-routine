@@ -1,6 +1,6 @@
 /**
  * `AdsPort` 의 RN 구현([[ADR-128]] 결정 4 — 밖으로 나가는 시그니처는 Capacitor 구현과 한 글자도
- * 다르지 않다). 정책은 [[ADR-090]](탭 전환 전면광고 + 3중 노출 게이트) · `features/ads.md`.
+ * 다르지 않다). ID 배선과 테스트 광고 판정은 `features/ads.md`.
  *
  * ## 지금 이 어댑터를 부르는 곳은 **없다** ([[ADR-150]])
  *
@@ -36,7 +36,7 @@
  * **검증되지 않은 것** — 실기기에서 광고가 실제로 뜨는 것. 아래 테스트가 흉내 내는 것은 SDK 의
  * 동작이 아니라 **SDK 가 우리에게 주는 모양**뿐이고, 그 위의 런타임은 실기기 몫이다. 스토어 게시
  * 전에는 AdMob 이 *"limited ad serving"* 이라 광고가 안 뜨는 것이 버그가 아니라는 점도 함께
- * 기억할 것(`features/ads.md` 선행 조건 표).
+ * 기억할 것.
  */
 
 import { Platform } from 'react-native'
@@ -48,11 +48,15 @@ import type { AdsPort } from '../ports'
 import { toAdsEnv } from './ads-env'
 
 /**
- * 이 빌드·이 플랫폼에서 쓸 광고 단위 ID. 판정은 전부 core 가 하고 여기서는 값만 모아 넘긴다.
+ * 이 빌드와 이 플랫폼에서 쓸 광고 단위 ID. 판정은 `native/ads.ts` 가 하고 여기서는 값만 모아
+ * 넘긴다.
  *
- * `process.env.EXPO_PUBLIC_*` 은 `babel-preset-expo` 가 번들에 리터럴로 인라인하는 **빌드 시점**
- * 값이다(웹 쪽 `import.meta.env` 와 같은 성질). `__DEV__` 를 함께 넘기는 이유와 그것이 테스트 광고
- * 쪽으로만 기우는 이유는 `ads-env.ts` 상단에 있다.
+ * **환경 변수를 여기서 읽는 이유**는 `babel-preset-expo` 가 `process.env.EXPO_PUBLIC_*` 을 번들에
+ * 리터럴로 바꿔 넣기 때문이다. 키를 변수로 만들거나 객체로 감싸면 치환이 안 되고 값이 비어서
+ * 나간다. 그래서 이 네 줄은 반드시 `process.env.EXPO_PUBLIC_이름` 형태 그대로여야 한다.
+ *
+ * 실 광고 단위 ID 두 개는 저장소에 없다. 빌드할 때 넣고, 안 넣으면 광고가 안 나간다.
+ * `__DEV__` 를 함께 넘기는 이유는 `ads-env.ts` 위쪽 주석에 있다.
  */
 function adId(): string | null {
   return resolveInterstitialAdId(
@@ -64,12 +68,16 @@ function adId(): string | null {
         liveUpdateChannel: process.env.EXPO_PUBLIC_LIVE_UPDATE_CHANNEL,
       }),
     ),
+    {
+      android: process.env.EXPO_PUBLIC_ADS_INTERSTITIAL_ANDROID,
+      ios: process.env.EXPO_PUBLIC_ADS_INTERSTITIAL_IOS,
+    },
   )
 }
 
 /**
  * 사전 로드해 둔 광고. 플러그인이 "로드됐는지" 묻는 API 를 주지 않아 어댑터가 들고 있는 것은
- * Capacitor 시절과 같고(`features/ads.md` 어댑터 경계), RN 에서는 그 대상이 플래그가 아니라
+ * Capacitor 시절과 같고, RN 에서는 그 대상이 플래그가 아니라
  * **광고 인스턴스**다 — `show()` 를 그 인스턴스에 걸어야 하기 때문이다.
  */
 let loadedAd: InterstitialAd | null = null

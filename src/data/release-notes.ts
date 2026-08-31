@@ -100,7 +100,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     highlights: [
       '하단 탭바 개편 및 today 페이지 추가',
       '여러 메이플 ID의 캐릭터를 함께 관리',
-      '보스 「벨로나」 추가',
+      '보스 ‘벨로나’ 추가',
       '앱 기능 확장을 위한 구조 업데이트 및 마이그레이션',
     ],
     // 항목의 근거는 `rn-migration` 분기점(PR #203 머지) 이후 머지된 PR #204~#227 이고,
@@ -123,7 +123,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
       },
       {
         category: 'feature',
-        text: '보스 「벨로나」 추가',
+        text: '보스 ‘벨로나’ 추가',
       },
       {
         category: 'improvement',
@@ -156,7 +156,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     items: [
       {
         category: 'fix',
-        text: 'API 키를 입력한 뒤 화면이 넘어가지 않고 「화면을 표시하지 못했습니다」에서 멈추던 문제 수정',
+        text: 'API 키를 입력한 뒤 화면이 넘어가지 않고 ‘화면을 표시하지 못했습니다’에서 멈추던 문제 수정',
       },
     ],
   },
@@ -182,7 +182,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
       },
       {
         category: 'feature',
-        text: '기능 설명 추가 — 기능별 사용법을 분류해 안내',
+        text: '기능 설명 추가(기능별 사용법을 분류해 안내)',
       },
       {
         category: 'improvement',
@@ -231,7 +231,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     version: '1.0.3',
     date: '2026-08-09',
     items: [
-      { category: 'feature', text: '개발 노트 추가 — 버전별 변경 내역 확인' },
+      { category: 'feature', text: '개발 노트 추가(버전별 변경 내역 확인)' },
       { category: 'feature', text: 'API 키 발급 가이드 추가' },
       { category: 'improvement', text: '설정 화면 항목별 정리' },
       { category: 'improvement', text: 'API 키 만료·오류 시 재입력 화면으로 바로 이동' },

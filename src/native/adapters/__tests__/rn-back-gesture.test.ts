@@ -64,7 +64,7 @@ describe('나머지 둘은 네이티브 스택이 소유한다', () => {
   })
 
   // 동기 `throw` 로 두면 `await` 없이 `.catch()` 만 단 호출부에서 예외가 그대로 터진다
-  // (`not-implemented.ts`·`rn-hunting-timer.ts` 와 같은 판단).
+  // (거부하는 다른 어댑터들과 같은 판단).
   it.each(cases)('%s() 는 동기 throw 가 아니라 거부된 Promise 다', async (_name, call) => {
     let result: unknown
     expect(() => {

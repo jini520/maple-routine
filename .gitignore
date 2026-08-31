@@ -49,3 +49,7 @@ android/keystore.properties
 
 # macOS
 .DS_Store
+
+# 로컬 빌드 설정. 값은 .env.example 참고
+.env
+.env.local

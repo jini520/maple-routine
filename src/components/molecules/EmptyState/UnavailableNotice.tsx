@@ -28,7 +28,7 @@ const COPY = {
   outOfRange: {
     icon: InfoIcon,
     title: '이 기간은 조회할 수 없습니다',
-    description: '조회 가능한 기간(최근 14일)을 지나 확인할 수 없습니다 — 처치 기록이 없다는 뜻은 아닙니다',
+    description: '조회 가능한 기간(최근 14일)을 지나 확인할 수 없습니다. 처치 기록이 없다는 뜻은 아닙니다',
     box: 'border border-border bg-info-tint',
     iconColor: 'text-info-ink',
   },

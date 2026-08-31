@@ -256,12 +256,13 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
     origin: 'web',
   },
   // ── 여기부터 RN 에서 새로 생긴 화면 ([[ADR-132]] 결정 1·12 · [[ADR-144]] 결정 1) ──
-  // 웹에는 없다. `path` 는 대조용이 아니라 이름표다. 탭 셋 중 today 만 아직 자리표시자이고,
-  // 유틸리티는 도구 목록([[ADR-168]])·가계부는 캘린더([[ADR-169]])다. 하위 페이지 둘은 진짜 화면이다 —
-  // 캐릭터 관리는 웹뷰 앱에서 설정의 모달이 하던 일이고, 아이템 분배 계산기는 웹에 없던 도구다.
+  // 웹에는 없다. `path` 는 대조용이 아니라 이름표다. 탭 셋은 전부 진짜 화면이 됐다 — today 는
+  // 위젯 격자([[ADR-147]])·유틸리티는 도구 목록([[ADR-168]])·가계부는 캘린더([[ADR-169]])다.
+  // 하위 페이지 둘도 진짜 화면이다. 캐릭터 관리는 웹뷰 앱에서 설정의 모달이 하던 일이고,
+  // 아이템 분배 계산기는 웹에 없던 도구다.
   { path: '/today', screen: 'TodayScreen', target: { kind: 'tab', route: 'Today' }, origin: 'rn' },
-  // 사냥 수익(`/profit/hunting`)·지출(`/spend`) 두 행이 **여기 있었다.** 둘은 `UnderConstruction`
-  // 껍데기였고([[ADR-132]] 결정 12 — 자리를 예약하던 장치), 그 자리가 가계부로 정해지면서 삭제됐다
+  // 사냥 수익(`/profit/hunting`)·지출(`/spend`) 두 행이 **여기 있었다.** 둘은 자리를 예약하던
+  // **개발 진행중** 자리표시자였고([[ADR-132]] 결정 12), 그 자리가 가계부로 정해지면서 삭제됐다
   // ([[ADR-169]] 결정 1·2). 되살릴 근거는 그 ADR 과 git 이 들고 있다.
   { path: '/cashbook', screen: 'CashbookScreen', target: { kind: 'tab', route: 'Cashbook' }, origin: 'rn' },
   { path: '/utility', screen: 'UtilityScreen', target: { kind: 'tab', route: 'Utility' }, origin: 'rn' },

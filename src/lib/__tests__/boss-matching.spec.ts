@@ -431,7 +431,7 @@ describe('compareBossOrder ([[ADR-186]])', () => {
 })
 
 // ADR-055 결정 3: 수동 선택 12개 한도의 카운트 규칙을 여기 한 곳에만 둔다. 화면의
-// BOSSES_BY_TAB은 weekly와 eventWeekly를 합치며 출처 구분을 잃으므로, 주기·시즌 여부는
+// 관리 화면의 주간 섹션은 weekly와 eventWeekly를 합쳐 출처 구분을 잃으므로, 주기·시즌 여부는
 // 반드시 참조표(getBossCycleByName·isSeasonBossName)로 되찾아야 한다.
 describe('getBossCycleByName (ADR-055)', () => {
   it('weekly·eventWeekly 소속 보스는 weekly다', () => {

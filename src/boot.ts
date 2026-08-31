@@ -2,7 +2,6 @@ import {
   setAdsPort,
   setBackGesturePort,
   setColorSchemePort,
-  setHuntingTimerPort,
   setKeyboardPort,
   setLiveUpdatePort,
   setNotificationsPort,
@@ -16,7 +15,6 @@ import { setPreferencesPort, setSqlitePort } from './storage/ports'
 import { rnAdsPort } from './native/adapters/rn-ads'
 import { rnBackGesturePort } from './native/adapters/rn-back-gesture'
 import { rnColorSchemePort } from './native/adapters/rn-color-scheme'
-import { rnHuntingTimerPort } from './native/adapters/rn-hunting-timer'
 import { rnKeyboardPort } from './native/adapters/rn-keyboard'
 import { rnNotificationsPort } from './native/adapters/rn-notifications'
 import { rnSplashScreenPort } from './native/adapters/rn-splash-screen'
@@ -76,7 +74,6 @@ export function installPorts(): void {
   setAdsPort(rnAdsPort)
   setBackGesturePort(rnBackGesturePort)
   setColorSchemePort(rnColorSchemePort)
-  setHuntingTimerPort(rnHuntingTimerPort)
   setKeyboardPort(rnKeyboardPort)
   setNotificationsPort(rnNotificationsPort)
   setSplashScreenPort(rnSplashScreenPort)

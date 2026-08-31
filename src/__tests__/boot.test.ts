@@ -50,7 +50,6 @@ import { rnLiveUpdatePort } from '../native/adapters/rn-live-update'
 import { rnAdsPort } from '../native/adapters/rn-ads'
 import { rnBackGesturePort } from '../native/adapters/rn-back-gesture'
 import { rnColorSchemePort } from '../native/adapters/rn-color-scheme'
-import { rnHuntingTimerPort } from '../native/adapters/rn-hunting-timer'
 import { rnKeyboardPort } from '../native/adapters/rn-keyboard'
 import { rnNotificationsPort } from '../native/adapters/rn-notifications'
 import { rnSplashScreenPort } from '../native/adapters/rn-splash-screen'
@@ -66,7 +65,6 @@ const WIRED: [string, () => unknown, unknown][] = [
   ['getSqlitePort', storagePorts.getSqlitePort, rnSqlitePort],
   ['getAdsPort', nativePorts.getAdsPort, rnAdsPort],
   ['getColorSchemePort', nativePorts.getColorSchemePort, rnColorSchemePort],
-  ['getHuntingTimerPort', nativePorts.getHuntingTimerPort, rnHuntingTimerPort],
   ['getKeyboardPort', nativePorts.getKeyboardPort, rnKeyboardPort],
   ['getNotificationsPort', nativePorts.getNotificationsPort, rnNotificationsPort],
   ['getSplashScreenPort', nativePorts.getSplashScreenPort, rnSplashScreenPort],
@@ -95,7 +93,7 @@ describe('installPorts()', () => {
       /^get[A-Za-z]+Port$/.test(key),
     )
 
-    expect(declared.length).toBe(13)
+    expect(declared.length).toBe(12)
     expect([...declared].sort()).toEqual(WIRED.map(([name]) => name).sort())
   })
 
