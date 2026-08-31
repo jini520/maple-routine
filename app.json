@@ -2,7 +2,7 @@
   "expo": {
     "name": "메이플 루틴",
     "slug": "maple-routine",
-    "version": "1.0.8",
+    "version": "1.0.7",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
