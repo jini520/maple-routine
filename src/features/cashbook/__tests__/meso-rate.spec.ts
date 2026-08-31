@@ -8,12 +8,16 @@ jest.mock('../../../storage/meso-rate-cache', () => ({
   setCachedMesoRate: jest.fn(),
 }))
 jest.mock('../../../nexon/meso-rate', () => ({ fetchMesoRate: jest.fn() }))
+jest.mock('../../../storage/character-basic-cache', () => ({ getCachedCharacterBasic: jest.fn() }))
 
 const { getAuthConfig } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
 const { getCachedMesoRate, setCachedMesoRate } = jest.requireMock(
   '../../../storage/meso-rate-cache',
 ) as Record<string, jest.Mock>
 const { fetchMesoRate } = jest.requireMock('../../../nexon/meso-rate') as Record<string, jest.Mock>
+const { getCachedCharacterBasic } = jest.requireMock(
+  '../../../storage/character-basic-cache',
+) as Record<string, jest.Mock>
 
 const { loadMesoRate } = require('../meso-rate') as typeof import('../meso-rate')
 
@@ -22,12 +26,13 @@ beforeEach(() => {
   getCachedMesoRate.mockReset().mockResolvedValue(null)
   setCachedMesoRate.mockReset().mockResolvedValue(undefined)
   fetchMesoRate.mockReset().mockResolvedValue(149)
+  getCachedCharacterBasic.mockReset().mockResolvedValue(null)
 })
 
 it('읽히면 자동값이다 — 그 값으로 캐시를 갱신한다', async () => {
   await expect(loadMesoRate('ocid-1')).resolves.toEqual({ kind: 'read', percent: 149 })
 
-  expect(fetchMesoRate).toHaveBeenCalledWith('api-key', 'ocid-1')
+  expect(fetchMesoRate).toHaveBeenCalledWith('api-key', 'ocid-1', null)
   expect(setCachedMesoRate).toHaveBeenCalledWith('ocid-1', 149)
 })
 
@@ -66,4 +71,29 @@ it('캐시 쓰기가 실패해도 읽은 값은 그대로 낸다', async () => {
   setCachedMesoRate.mockRejectedValue(new Error('디스크 꽉참'))
 
   await expect(loadMesoRate('ocid-1')).resolves.toEqual({ kind: 'read', percent: 149 })
+})
+
+// 「그리드」는 직업이 정하는 값이라 스킬 조회를 안 거친다(사용자 지정 2026-09-01) — 직업 이름은
+// `character/list` 가 캐시에 남겨 둔 것을 그대로 쓴다.
+it('캐시에 든 직업 이름을 함께 넘긴다', async () => {
+  getCachedCharacterBasic.mockResolvedValue({ profile: { name: '루디', level: 294, jobClass: '섀도어' } })
+
+  await loadMesoRate('ocid-1')
+
+  expect(fetchMesoRate).toHaveBeenCalledWith('api-key', 'ocid-1', '섀도어')
+})
+
+it('캐시가 아직 안 따뜻하면 직업을 모르는 채로 부른다 — 아무 값이나 얹지 않는다', async () => {
+  getCachedCharacterBasic.mockResolvedValue({ profile: { name: '루디', level: 294 } })
+
+  await loadMesoRate('ocid-1')
+
+  expect(fetchMesoRate).toHaveBeenCalledWith('api-key', 'ocid-1', null)
+})
+
+it('직업 캐시를 못 읽어도 메획 조회는 그대로 돈다', async () => {
+  getCachedCharacterBasic.mockRejectedValue(new Error('디스크 깨짐'))
+
+  await expect(loadMesoRate('ocid-1')).resolves.toEqual({ kind: 'read', percent: 149 })
+  expect(fetchMesoRate).toHaveBeenCalledWith('api-key', 'ocid-1', null)
 })

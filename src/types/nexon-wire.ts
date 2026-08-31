@@ -179,3 +179,22 @@ export interface NexonUnionArtifactResponse {
   union_artifact_effect?: NexonUnionArtifactEffect[] | null
   union_artifact_crystal?: NexonUnionArtifactCrystal[] | null
 }
+
+/**
+ * 스킬 하나. **`skill_effect` 로는 못 가른다** — 챌린저스는 그 칸이 빈 문자열이고 레벨도 늘 1 이라
+ * 설명문만이 티어를 말한다(사용자 확인 2026-09-01).
+ */
+export interface NexonCharacterSkill {
+  skill_name?: string | null
+  skill_description?: string | null
+}
+
+/**
+ * 스킬 목록(`character/skill`). **차수를 지정해서 부른다** — 챌린저스는 0차에 있다
+ * (사용자 확인 2026-09-01, [[ADR-006]]).
+ *
+ * 메획을 읽는 다섯과 달리 이 응답에서 보는 것은 **이름과 설명 두 칸**뿐이다.
+ */
+export interface NexonCharacterSkillResponse {
+  character_skill?: NexonCharacterSkill[] | null
+}
