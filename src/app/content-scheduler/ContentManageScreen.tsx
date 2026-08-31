@@ -50,6 +50,7 @@ import {
   SparklesIcon,
   SwordsIcon,
 } from '../../lib/icons'
+import { Badge } from '../../components/atoms/Badge/Badge'
 import { TABULAR_NUMS } from '../../lib/text-styles'
 import { useScreenNavigation } from '../use-screen-navigation'
 
@@ -244,12 +245,9 @@ export function ContentManageScreen(): React.JSX.Element {
                         <GroupIcon className="h-3.5 w-3.5 text-third-ink" strokeWidth={2} aria-hidden />
                       </View>
                       <Text className="text-xs font-bold text-text">{group.label}</Text>
-                      <Text
-                        style={TABULAR_NUMS}
-                        className="ml-auto rounded-full bg-surface-2 px-2.5 py-1 text-xs font-medium text-text-muted"
-                      >
+                      <Badge variant="muted" style={TABULAR_NUMS} className="ml-auto">
                         {trackedCount}/{group.items.length}
-                      </Text>
+                      </Badge>
                     </View>
                   )}
                   <View className="gap-2">
@@ -285,9 +283,9 @@ export function ContentManageScreen(): React.JSX.Element {
                               {displayName}
                             </Text>
                             {tag !== null && (
-                              <Text className="shrink-0 rounded-full bg-surface-2 px-2.5 py-1 text-xs font-medium text-text-muted">
+                              <Badge variant="muted" className="shrink-0">
                                 {tag}
-                              </Text>
+                              </Badge>
                             )}
                           </Pressable>
 

@@ -29,7 +29,7 @@ const FIXED_BOX_PATHS = [
   join(SRC, 'app', 'today', 'widgets'),
   join(SRC, 'navigation', 'BottomBar.tsx'),
   join(SRC, 'components', 'molecules', 'CharacterRail', 'CharacterPortrait.tsx'),
-  join(SRC, 'components', 'atoms', 'DifficultyBadge', 'DifficultyBadge.tsx'),
+  join(SRC, 'components', 'atoms', 'Badge', 'Badge.tsx'),
 ]
 
 /** 위 목록을 파일로 편다 — 항목이 디렉터리일 수도 파일일 수도 있다. */
@@ -173,7 +173,7 @@ describe('[[ADR-152]] 결정 5 — 칸에 묶인 글자는 `fixed` 다', () => {
 
   it('고정칸이 쓰는 글자 컴포넌트도 고정칸이다 — 한 겹 아래에서 새는 자리를 막는다', () => {
     // `<Text fixed>` 만 검사하면 **자식 컴포넌트가 그리는 글자**가 그대로 샌다. 실제로 그렇게
-    // 샜다: 76px 타일 안의 `DifficultyBadge` 가 자기 `<Text>` 를 갖고 있어 배수를 그대로 받았다.
+    // 샜다: 76px 타일 안의 난이도 배지가 자기 `<Text>` 를 갖고 있어 배수를 그대로 받았다.
     // 그 컴포넌트들은 `fixed` 프롭을 받는 대신 **자기 자신이 고정칸**이어야 한다(상자가 `h-5` 처럼
     // 고정이라 어느 호출부에서도 글자를 못 키운다).
     const drawsText = new Set(textRenderingComponentFiles())

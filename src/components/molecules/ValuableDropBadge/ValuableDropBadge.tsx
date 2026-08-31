@@ -25,7 +25,7 @@ import { Text } from '../../atoms/Text/Text'
 //
 // ① `linear-gradient(135deg, …)` → `LinearGradient` 의 대각선 두 점. CSS 135deg 는 "왼쪽 위 →
 //    오른쪽 아래"라 `start {0,0}` · `end {1,1}` 이다. 두 점을 **둘 다 명시**한다(기본값에 기대면
-//    뒤집혔을 때 조용히 다른 그림이 된다 — `DifficultyBadge` 와 같은 규칙).
+//    뒤집혔을 때 조용히 다른 그림이 된다 — `Badge` 의 난이도 variant 와 같은 규칙).
 // ② `box-shadow` 글로우 → `boxShadow`(RN 0.76+). iOS 전용 `shadow*` 로 쓰면 안드로이드에서는
 //    `elevation` 밖에 없어 **색 있는 글로우가 통째로 사라진다**. 고가 신호는 골드 색 자체라 그것을
 //    잃으면 뜻이 안 남는다.

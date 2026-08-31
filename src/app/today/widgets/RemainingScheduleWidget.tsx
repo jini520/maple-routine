@@ -56,7 +56,7 @@
 import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
-import { DifficultyBadge } from '../../../components/atoms/DifficultyBadge/DifficultyBadge'
+import { Badge } from '../../../components/atoms/Badge/Badge'
 import { Text } from '../../../components/atoms/Text/Text'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { faceCropStyle } from '../../../lib/face-crop'
@@ -165,17 +165,18 @@ function Amounts(props: { items: CycleItems }): React.JSX.Element {
 
 /** 상태 배지 — 톤 둘뿐이라 `Badge` atom(primary/third)이 아니라 여기서 인라인으로 둔다. */
 function StatusBadge(props: { testID: string; tone: 'clear' | 'issue'; label: string }): React.JSX.Element {
-  const tone =
-    props.tone === 'clear' ? 'bg-secondary-tint text-secondary-ink' : 'bg-error-tint text-error-ink'
-
+  // 같은 줄에 서는 난이도 배지가 `mini` 라 이것도 `mini` 다(사용자 규칙 2026-09-01 —
+  // 같은 곳에 서는 배지는 같은 크기를 쓴다).
   return (
-    <Text
-      fixed
+    <Badge
+      variant={props.tone === 'clear' ? 'secondary' : 'error'}
+      size="mini"
+      weight="bold"
       testID={props.testID}
-      className={`shrink-0 rounded-full px-2 py-0.5 text-11 font-bold ${tone}`}
+      className="shrink-0"
     >
       {props.label}
-    </Text>
+    </Badge>
   )
 }
 
@@ -221,7 +222,7 @@ function NameChip(props: { name: string }): React.JSX.Element {
 }
 
 /**
- * 보스 한 줄 — 난이도는 **공용 `DifficultyBadge`** 가 그린다(사용자 지정).
+ * 보스 한 줄 — 난이도는 **공용 `Badge`** 가 그린다(사용자 지정).
  *
  * 이 화면만의 표기를 새로 만들지 않는 것이 요점이다. 같은 난이도가 보스 스케줄러·수익 화면과
  * 다른 색으로 보이면 그것이 같은 값이라는 것을 사람이 알아볼 수 없다.
@@ -230,7 +231,9 @@ function BossChip(props: { boss: RemainingBossView }): React.JSX.Element {
   return (
     <View testID="schedule-detail-boss" className="flex-row items-center gap-1">
       {/* 작은 크기 — 20px 배지가 줄 높이를 혼자 정하고 있었다([[ADR-147]] 정정 40). */}
-      <DifficultyBadge difficulty={props.boss.difficulty} size="small" />
+      <Badge variant={props.boss.difficulty} size="mini">
+        {props.boss.difficulty}
+      </Badge>
       <Text fixed numberOfLines={1} className="text-11 leading-tight text-text">
         {props.boss.name}
       </Text>

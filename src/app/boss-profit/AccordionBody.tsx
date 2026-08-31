@@ -21,6 +21,7 @@ import { formatMesoShort } from '../../lib/boss-profit-delta'
 import { sumDropPayout } from '../../lib/drop-price'
 
 import { AnimatedMeso } from '../../components/atoms/AnimatedMeso/AnimatedMeso'
+import { Badge } from '../../components/atoms/Badge/Badge'
 import { Text } from '../../components/atoms/Text/Text'
 import { UnavailableNotice } from '../../components/molecules/EmptyState/UnavailableNotice'
 import { RefreshCwIcon } from '../../lib/icons'
@@ -107,9 +108,7 @@ export function WeeklySubtotalRow(props: { subtotal: BossProfitWeeklySubtotal })
       </View>
 
       {subtotal.state === 'inProgress' && (
-        <View className="rounded-full bg-primary-tint px-2 py-0.5">
-          <Text className="text-10 font-semibold text-primary-ink">진행 중</Text>
-        </View>
+        <Badge variant="primary">진행 중</Badge>
       )}
 
       {staticLabel !== undefined && <Text className="text-xs text-text-muted">{staticLabel}</Text>}

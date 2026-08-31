@@ -148,9 +148,7 @@ function IconBadge({
 
 function VersionBadge({ version }: { version: string | null }): React.JSX.Element {
   return (
-    <Text className="rounded-full border border-border px-2.5 py-1 text-xs font-semibold text-text-muted tabular-nums">
-      v{version}
-    </Text>
+    <Badge variant="outline" className="tabular-nums">v{version}</Badge>
   )
 }
 
@@ -263,7 +261,7 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
               <View className="gap-2">
                 <Title>새 업데이트가 있어요</Title>
                 <BadgeRow>
-                  {state.channel === 'beta' && <Badge tone="primary">beta</Badge>}
+                  {state.channel === 'beta' && <Badge variant="primary">beta</Badge>}
                   <VersionBadge version={state.availableVersion} />
                 </BadgeRow>
                 <Note>다운로드 크기 {sizeText}</Note>

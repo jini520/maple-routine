@@ -32,7 +32,7 @@ import { isValuableDrop } from '../../lib/valuable-drops'
 import type { RecordedDrop } from '../../types/drops'
 
 import { AnimatedMeso } from '../../components/atoms/AnimatedMeso/AnimatedMeso'
-import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
+import { Badge } from '../../components/atoms/Badge/Badge'
 import { Text } from '../../components/atoms/Text/Text'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { MinusIcon, PlusIcon } from '../../lib/icons'
@@ -194,7 +194,9 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           // 최대값에 높이를 맡기면 지시자 종류가 바뀔 때마다 행 높이가 흔들린다.
           className="h-6 w-full flex-row items-center gap-1.5"
         >
-          <DifficultyBadge difficulty={row.difficulty} />
+          <Badge variant={row.difficulty}>
+            {row.difficulty}
+          </Badge>
           <Text numberOfLines={1} className="shrink text-sm font-semibold text-text">
             {row.boss}
           </Text>
@@ -236,13 +238,13 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
               잡은 것이고 가격 미확정은 참조 데이터에 값이 없는 것이라, 둘 다 "0메소 벌었다"가
               아니다. 그래서 그 자리는 금액이 아니라 배지가 선다. */}
           {!row.isComplete ? (
-            <View className="shrink-0 rounded-full bg-surface-2 px-2 py-0.5">
-              <Text className="text-xs font-medium text-text-muted">미완료</Text>
-            </View>
+            <Badge variant="muted" className="shrink-0">
+              미완료
+            </Badge>
           ) : isPriceUnknown ? (
-            <View className="shrink-0 rounded-full bg-primary-tint px-2 py-0.5">
-              <Text className="text-xs font-medium text-primary-ink">가격 미확정</Text>
-            </View>
+            <Badge variant="primary" className="shrink-0">
+              가격 미확정
+            </Badge>
           ) : // 아이템이 섞이면 **금액 아래에 칩이 선다** — 그 존재가 곧 "이 숫자는 결정석만이
           // 아니다"라는 표시이고, 동시에 내역을 여는 버튼이다(사용자 지정 2026-08-10). 값을 매긴
           // 아이템이 없으면 **래퍼조차 만들지 않는다** — 그 행의 트리가 종전과 달라지지 않아야

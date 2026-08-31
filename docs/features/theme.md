@@ -539,7 +539,7 @@ x=413/800(**51.6%**)이라 `center` 로 두면 화면에서 오른쪽으로 치�
 
 | 자리 | 값 | 이유 |
 |---|---|---|
-| `components/atoms/DifficultyBadge` | 5난이도 하드코딩 팔레트 | 게임 고유 난이도 색이라 테마를 따라가면 의미가 깨진다([[ADR-006]]) |
+| `components/atoms/Badge` 의 난이도 variant | 5난이도 하드코딩 팔레트 | 게임 고유 난이도 색이라 테마를 따라가면 의미가 깨진다([[ADR-006]]) |
 | 고가 드롭 골드 연출 | `app/boss-profit/valuable-card-glow.ts` · `valuable-row-glow.ts`(`#f7d00d` 계열) | 전 테마 공통 네온 골드 |
 | 네이티브 브랜드색 | 스플래시 배경 `#F58B0F`([splash.md](./splash.md)) | 앱 실행 전이라 선택 테마를 모르는 시점이다 |
 
