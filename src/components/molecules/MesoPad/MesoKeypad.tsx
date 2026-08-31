@@ -28,7 +28,7 @@ export function MesoKeypad(props: { onKey: (key: MesoKey) => void }): React.JSX.
               className={
                 key === 'del' || key === '00'
                   ? 'text-lg font-medium text-text-muted'
-                  : 'text-[23px] font-medium tracking-[-.015em] text-text'
+                  : 'text-23 font-medium tracking-[-.015em] text-text'
               }
               style={TABULAR_NUMS}
             >

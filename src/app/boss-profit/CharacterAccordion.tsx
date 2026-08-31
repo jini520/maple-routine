@@ -370,7 +370,7 @@ export function CharacterAccordion(props: {
                 className="h-5 shrink-0 flex-row items-center rounded-full bg-primary-tint px-2"
               >
                 <Text
-                  className="text-[11px] font-bold leading-none text-primary-ink"
+                  className="text-11 font-bold leading-none text-primary-ink"
                   style={TABULAR_NUMS}
                 >
                   아이템 +{formatMesoShort(itemTotal)}

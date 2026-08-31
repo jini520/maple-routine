@@ -94,7 +94,7 @@ function ItemThumb(props: { name: string; slot?: string; level?: number }): Reac
       )}
       {props.level !== undefined && (
         <View className="absolute -bottom-1 -right-1 rounded-full bg-primary px-1 py-px">
-          <Text className="text-[8px] font-bold leading-none text-on-primary">lv{props.level}</Text>
+          <Text className="text-8 font-bold leading-none text-on-primary">lv{props.level}</Text>
         </View>
       )}
     </View>
@@ -114,7 +114,7 @@ function FixedDropIcon(props: { icon: FixedDropIconSpec }): React.JSX.Element {
         <View className="h-8 w-8 rounded-md bg-surface-2" role="img" aria-label={icon.itemName} />
       )}
       <View className="absolute -bottom-1 -right-1 rounded-full bg-primary px-1 py-px">
-        <Text className="text-[8px] font-bold leading-none text-on-primary" style={TABULAR_NUMS}>
+        <Text className="text-8 font-bold leading-none text-on-primary" style={TABULAR_NUMS}>
           {icon.count}개
         </Text>
       </View>
@@ -134,7 +134,7 @@ function EffectToggle(props: { on: boolean; onToggle: () => void }): React.JSX.E
       onPress={props.onToggle}
       className="ml-auto shrink-0 flex-row items-center gap-1.5"
     >
-      <Text className="text-[11px] font-semibold text-text-muted">드롭 연출</Text>
+      <Text className="text-11 font-semibold text-text-muted">드롭 연출</Text>
       <View className={`h-4 w-7 shrink-0 flex-row items-center rounded-full ${props.on ? 'bg-primary' : 'bg-border-strong'}`}>
         <View className="h-3 w-3 rounded-full bg-white" style={{ transform: [{ translateX: props.on ? 14 : 2 }] }} />
       </View>
@@ -360,7 +360,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                               >
                                 {on && (
                                   <View className="absolute right-1 top-1 h-4 w-4 items-center justify-center rounded-full bg-primary">
-                                    <Text className="text-[10px] text-on-primary">✓</Text>
+                                    <Text className="text-10 text-on-primary">✓</Text>
                                   </View>
                                 )}
                                 {/* 가격이 **입력된** 타일에만 수익 배지가 붙는다(사용자 지정
@@ -383,7 +383,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                                   level={boxDrop?.ringLevel}
                                 />
                                 <View className="h-8 w-full items-center justify-center">
-                                  <Text numberOfLines={2} className="text-center text-[10px] leading-tight text-text">
+                                  <Text numberOfLines={2} className="text-center text-10 leading-tight text-text">
                                     {displayName}
                                   </Text>
                                 </View>
@@ -554,12 +554,12 @@ function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
               >
                 {item === entry.name && (
                   <View className="absolute right-1 top-1 h-4 w-4 items-center justify-center rounded-full bg-primary">
-                    <Text className="text-[10px] text-on-primary">✓</Text>
+                    <Text className="text-10 text-on-primary">✓</Text>
                   </View>
                 )}
                 <ItemThumb name={entry.name} />
                 <View className="h-8 w-full items-center justify-center">
-                  <Text numberOfLines={2} className="text-center text-[10px] leading-tight text-text">
+                  <Text numberOfLines={2} className="text-center text-10 leading-tight text-text">
                     {entry.name}
                   </Text>
                 </View>

@@ -202,7 +202,7 @@ export function ItemRevenuePopover(props: {
         />
         {listed.length === 0 ? (
           // 아이템이 없어도 상자는 뜬다(결정석/합계를 말해야 하므로) — 목록 자리에 그 사실을 쓴다.
-          <Text className="py-1.5 text-center text-[11px] text-text-disabled">기록된 아이템이 없어요</Text>
+          <Text className="py-1.5 text-center text-11 text-text-disabled">기록된 아이템이 없어요</Text>
         ) : (
           <ScrollView style={{ maxHeight: ITEM_LIST_MAX_HEIGHT }} contentContainerClassName="gap-1.5">
             {listed.map((drop, index) => {
@@ -219,13 +219,13 @@ export function ItemRevenuePopover(props: {
                     <View className="h-5 w-5 shrink-0 rounded bg-surface-2" />
                   )}
                   <View className="min-w-0 flex-1">
-                    <Text numberOfLines={1} className="text-[11px] font-semibold text-text">
+                    <Text numberOfLines={1} className="text-11 font-semibold text-text">
                       {drop.itemName}
                       {drop.ringLevel !== undefined && ` ${drop.ringLevel}레벨`}
                     </Text>
                     {/* 나눠 가졌을 때만 그 분배를 말한다 — 1인이면 나눈 것이 없다. */}
                     {drop.priceState === 'entered' && share > 1 && (
-                      <Text className="text-[10px] text-text-muted" style={TABULAR_NUMS}>
+                      <Text className="text-10 text-text-muted" style={TABULAR_NUMS}>
                         {formatMesoShort(drop.priceMeso ?? 0)} ÷ {share}인
                       </Text>
                     )}
@@ -235,11 +235,11 @@ export function ItemRevenuePopover(props: {
                       조용히 거짓이 된다. 합산에서 0으로 접히는 것(`dropPayoutMeso`)과 화면이
                       말하는 것은 다른 층이다. */}
                   {drop.priceState === 'entered' ? (
-                    <Text className="shrink-0 text-[11px] font-bold text-text" style={TABULAR_NUMS}>
+                    <Text className="shrink-0 text-11 font-bold text-text" style={TABULAR_NUMS}>
                       {formatMesoShort(dropPayoutMeso(drop))}
                     </Text>
                   ) : (
-                    <Text className="shrink-0 text-[10px] text-text-disabled">미입력</Text>
+                    <Text className="shrink-0 text-10 text-text-disabled">미입력</Text>
                   )}
                 </View>
               )
@@ -248,11 +248,11 @@ export function ItemRevenuePopover(props: {
         )}
         {props.weeklyLines !== undefined && props.weeklyLines.length > 0 && (
           <View className="mt-2 gap-1 border-t border-border pt-2">
-            <Text className="text-[10px] font-bold tracking-wide text-text-muted">주차별</Text>
+            <Text className="text-10 font-bold tracking-wide text-text-muted">주차별</Text>
             {props.weeklyLines.map((line) => (
               <View key={line.periodKey} className="flex-row items-center justify-between">
-                <Text className="text-[11px] text-text-muted">{line.label}</Text>
-                <Text className="text-[11px] font-semibold text-text" style={TABULAR_NUMS}>
+                <Text className="text-11 text-text-muted">{line.label}</Text>
+                <Text className="text-11 font-semibold text-text" style={TABULAR_NUMS}>
                   {line.meso.toLocaleString()} 메소
                 </Text>
               </View>
@@ -261,21 +261,21 @@ export function ItemRevenuePopover(props: {
         )}
         <View className="mt-2 gap-1 border-t border-border pt-2">
           <View className="flex-row items-center justify-between">
-            <Text className="text-[11px] text-text-muted">결정석</Text>
-            <Text className="text-[11px] font-semibold text-text" style={TABULAR_NUMS}>
+            <Text className="text-11 text-text-muted">결정석</Text>
+            <Text className="text-11 font-semibold text-text" style={TABULAR_NUMS}>
               {props.crystalMeso.toLocaleString()}
             </Text>
           </View>
           <View className="flex-row items-center justify-between">
-            <Text className="text-[11px] text-text-muted">아이템</Text>
+            <Text className="text-11 text-text-muted">아이템</Text>
             {/* 아이템 쪽만 잉크를 준다 — 카드·행 칩과 같은 색이라 "그 색이 이 몫"이 이어진다. */}
-            <Text className="text-[11px] font-semibold text-primary-ink" style={TABULAR_NUMS}>
+            <Text className="text-11 font-semibold text-primary-ink" style={TABULAR_NUMS}>
               {props.itemMeso.toLocaleString()}
             </Text>
           </View>
           <View className="flex-row items-center justify-between border-t border-border pt-1">
-            <Text className="text-[11px] font-semibold text-text-muted">합계</Text>
-            <Text className="text-[11px] font-bold text-text" style={TABULAR_NUMS}>
+            <Text className="text-11 font-semibold text-text-muted">합계</Text>
+            <Text className="text-11 font-bold text-text" style={TABULAR_NUMS}>
               {(props.crystalMeso + props.itemMeso).toLocaleString()}
             </Text>
           </View>

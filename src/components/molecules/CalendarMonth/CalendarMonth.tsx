@@ -181,7 +181,7 @@ export function CalendarMonth(props: CalendarMonthProps): React.JSX.Element {
                 <Text
                   testID={`calendar-income-${day.dateKey}`}
                   numberOfLines={1}
-                  className="text-[9px] leading-3 text-rise-ink"
+                  className="text-9 leading-3 text-rise-ink"
                   style={TABULAR_NUMS}
                 >
                   {amounts.incomeMeso > 0 ? `+${formatMesoCompact(amounts.incomeMeso)}` : ' '}
@@ -189,7 +189,7 @@ export function CalendarMonth(props: CalendarMonthProps): React.JSX.Element {
                 <Text
                   testID={`calendar-expense-${day.dateKey}`}
                   numberOfLines={1}
-                  className="text-[9px] leading-3 text-fall-ink"
+                  className="text-9 leading-3 text-fall-ink"
                   style={TABULAR_NUMS}
                 >
                   {amounts.expenseMeso > 0 ? `−${formatMesoCompact(amounts.expenseMeso)}` : ' '}

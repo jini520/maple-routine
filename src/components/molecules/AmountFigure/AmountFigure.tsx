@@ -111,7 +111,7 @@ export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
    */
   // NativeWind 는 클래스 문자열을 **빌드 때** 읽으므로 여기에 상수를 보간하면 안 된다 —
   // 아래 두 상수와 **같은 수**를 손으로 적고, 그 사실을 `AmountFigure.test` 가 붙든다.
-  const digits = `text-[30px] font-bold leading-[38px] tracking-[-.03em] ${
+  const digits = `text-30 font-bold leading-[38px] tracking-[-.03em] ${
     empty ? 'text-text-disabled' : 'text-text'
   }`
 
@@ -140,7 +140,7 @@ export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
           }`}
         >
           <RotateCcwIcon className="h-3 w-3 text-text-muted" strokeWidth={2.5} aria-hidden />
-          <Text className="text-[11px] font-semibold text-text-muted">초기화</Text>
+          <Text className="text-11 font-semibold text-text-muted">초기화</Text>
         </Pressable>
         )}
 
@@ -208,7 +208,7 @@ export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
         // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
         <Text
           testID={`${props.testID}-hint`}
-          className={`text-right text-[11px] ${
+          className={`text-right text-11 ${
             props.hintBlocked === true ? 'text-error-ink' : 'text-text-muted'
           }`}
           style={TABULAR_NUMS}

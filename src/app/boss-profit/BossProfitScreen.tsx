@@ -456,7 +456,7 @@ export function BossProfitScreen(): React.JSX.Element {
                 onPress={togglePeriodPopover}
                 className="ml-auto h-6 shrink-0 flex-row items-center gap-0.5 rounded-full border border-border px-2.5"
               >
-                <Text className="text-[11px] font-semibold text-text-muted">자세히 보기</Text>
+                <Text className="text-11 font-semibold text-text-muted">자세히 보기</Text>
                 <ChevronDownIcon
                   className="h-3 w-3 shrink-0 text-text-muted"
                   strokeWidth={2.5}

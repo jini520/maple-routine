@@ -172,7 +172,7 @@ function StatusBadge(props: { testID: string; tone: 'clear' | 'issue'; label: st
     <Text
       fixed
       testID={props.testID}
-      className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${tone}`}
+      className={`shrink-0 rounded-full px-2 py-0.5 text-11 font-bold ${tone}`}
     >
       {props.label}
     </Text>
@@ -199,7 +199,7 @@ function Portrait(props: { row: ScheduleRowView }): React.JSX.Element {
           testID="schedule-face-fallback"
           className="h-full w-full items-center justify-center bg-primary"
         >
-          <Text fixed className="text-[13px] font-bold text-on-primary">?</Text>
+          <Text fixed className="text-13 font-bold text-on-primary">?</Text>
         </View>
       )}
     </View>
@@ -213,7 +213,7 @@ function NameChip(props: { name: string }): React.JSX.Element {
       fixed
       testID="schedule-detail-chip"
       numberOfLines={1}
-      className="rounded-md bg-surface-2 px-1.5 py-0.5 text-[11px] leading-tight text-text"
+      className="rounded-md bg-surface-2 px-1.5 py-0.5 text-11 leading-tight text-text"
     >
       {props.name}
     </Text>
@@ -231,7 +231,7 @@ function BossChip(props: { boss: RemainingBossView }): React.JSX.Element {
     <View testID="schedule-detail-boss" className="flex-row items-center gap-1">
       {/* 작은 크기 — 20px 배지가 줄 높이를 혼자 정하고 있었다([[ADR-147]] 정정 40). */}
       <DifficultyBadge difficulty={props.boss.difficulty} size="small" />
-      <Text fixed numberOfLines={1} className="text-[11px] leading-tight text-text">
+      <Text fixed numberOfLines={1} className="text-11 leading-tight text-text">
         {props.boss.name}
       </Text>
     </View>
@@ -306,7 +306,7 @@ function ScheduleRow(props: {
         fixed
         testID="schedule-name"
         numberOfLines={1}
-        className="min-w-0 flex-1 text-[13px] font-semibold text-text"
+        className="min-w-0 flex-1 text-13 font-semibold text-text"
       >
         {row.characterName}
       </Text>
@@ -360,7 +360,7 @@ export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
     <View testID="widget-remaining-schedule" className="p-3">
       {/* 제목 줄이 곧 탭 줄이다 — 합계 `N개` 가 있던 자리에 세그먼트가 선다([[ADR-181]] 결정 1·4). */}
       <View className="flex-row items-center border-b border-border-strong pb-2">
-        <Text fixed className="text-[11px] font-bold text-text-muted">남은 스케줄</Text>
+        <Text fixed className="text-11 font-bold text-text-muted">남은 스케줄</Text>
         <View className="ml-auto">
           <Segment
             options={CYCLE_LABELS}
@@ -375,7 +375,7 @@ export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
       </View>
 
       {data.schedule.length === 0 ? (
-        <Text fixed className="pt-2.5 text-[13px] text-text-muted">추적 중인 캐릭터가 없습니다</Text>
+        <Text fixed className="pt-2.5 text-13 text-text-muted">추적 중인 캐릭터가 없습니다</Text>
       ) : (
         orderForCycle(data.schedule, cycle).map((row, index) => (
           <ScheduleRow

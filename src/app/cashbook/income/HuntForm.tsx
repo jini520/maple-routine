@@ -72,11 +72,11 @@ function ForceBadge(props: { region: HuntingRegion; force: number }): React.JSX.
       className="flex-row items-center gap-1 rounded-full bg-surface-2 px-1.5 py-0.5"
     >
       {icon === null ? (
-        <Text className="text-[10px] font-semibold text-text-muted">{label.split(' ')[0]}</Text>
+        <Text className="text-10 font-semibold text-text-muted">{label.split(' ')[0]}</Text>
       ) : (
         <Image source={icon} className="h-3.5 w-3.5" resizeMode="contain" aria-hidden />
       )}
-      <Text className="text-[11px] font-semibold text-text-muted" style={TABULAR_NUMS}>
+      <Text className="text-11 font-semibold text-text-muted" style={TABULAR_NUMS}>
         {props.force}
       </Text>
     </View>
@@ -101,10 +101,10 @@ function GroundOptionRow(props: {
       </Text>
       <View className="ml-auto flex-row shrink-0 items-center gap-2">
         <ForceBadge region={props.region} force={props.ground.force} />
-        <Text className="text-[11px] text-text-muted" style={TABULAR_NUMS}>
+        <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>
           {levelLabelOf(props.ground)}
         </Text>
-        <Text className="text-[11px] text-text-muted" style={TABULAR_NUMS}>
+        <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>
           {props.ground.mobs}마리
         </Text>
       </View>
@@ -416,14 +416,14 @@ export function HuntForm(
           className="flex-row items-center justify-end gap-2 pb-1"
         >
           <ForceBadge region={huntRegion} force={huntGround.force} />
-          <Text className="text-[11px] text-text-muted" style={TABULAR_NUMS}>
+          <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>
             {levelLabelOf(huntGround)}
           </Text>
           {/* **감소한 마릿수**를 적는다(사용자 지정 2026-08-28) — 사냥터 목록은 맵의 제원
               (40마리)을 적지만 이 줄은 «실제로 잡는 수» 다. 그것이 곧 계산에 드는 값이다. */}
           <Text
             testID="income-sheet-killed-mobs"
-            className="text-[11px] text-text-muted"
+            className="text-11 text-text-muted"
             style={TABULAR_NUMS}
           >
             {killedMobsOf(huntGround.mobs, missedMobs)}마리

@@ -108,7 +108,7 @@ export function WeeklySubtotalRow(props: { subtotal: BossProfitWeeklySubtotal })
 
       {subtotal.state === 'inProgress' && (
         <View className="rounded-full bg-primary-tint px-2 py-0.5">
-          <Text className="text-[10px] font-semibold text-primary-ink">진행 중</Text>
+          <Text className="text-10 font-semibold text-primary-ink">진행 중</Text>
         </View>
       )}
 
@@ -135,8 +135,8 @@ export function WeeklySubtotalRow(props: { subtotal: BossProfitWeeklySubtotal })
           <Text
             className={
               subtotal.state === 'failed'
-                ? 'text-[11px] font-semibold text-error-ink'
-                : 'text-[11px] font-semibold text-primary-ink'
+                ? 'text-11 font-semibold text-error-ink'
+                : 'text-11 font-semibold text-primary-ink'
             }
           >
             {actionLabel}
@@ -160,7 +160,7 @@ export function WeeklySubtotalRow(props: { subtotal: BossProfitWeeklySubtotal })
               aria-expanded={isItemPopoverOpen}
               className="h-5 shrink-0 flex-row items-center rounded-full bg-primary-tint px-2"
             >
-              <Text className="text-[11px] font-bold leading-none text-primary-ink" style={TABULAR_NUMS}>
+              <Text className="text-11 font-bold leading-none text-primary-ink" style={TABULAR_NUMS}>
                 아이템 +{formatMesoShort(itemMeso)}
               </Text>
             </Pressable>
@@ -190,7 +190,7 @@ export function MonthlyAccordionBody(props: {
     <View className="border-t border-border">
       {props.weeklySubtotals.length > 0 && (
         <>
-          <Text className="bg-surface-2 px-4 pb-1 pt-3 text-[11px] font-bold tracking-wide text-text-muted">
+          <Text className="bg-surface-2 px-4 pb-1 pt-3 text-11 font-bold tracking-wide text-text-muted">
             주간 보스 수익 · 주차별 합계
           </Text>
           {props.weeklySubtotals.map((subtotal) => (
@@ -201,7 +201,7 @@ export function MonthlyAccordionBody(props: {
 
       {(props.bossRows.length > 0 || !isMonthlyBossQueryable) && (
         <>
-          <Text className="bg-surface-2 px-4 pb-1 pt-3 text-[11px] font-bold tracking-wide text-text-muted">
+          <Text className="bg-surface-2 px-4 pb-1 pt-3 text-11 font-bold tracking-wide text-text-muted">
             월간 보스 수익
           </Text>
           {props.bossRows.length > 0 ? (

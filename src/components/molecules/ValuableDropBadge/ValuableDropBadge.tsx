@@ -118,7 +118,7 @@ export function ValuableDropBadge(props: {
       </View>
       {extra > 0 && (
         <Text
-          className="text-[10px] font-bold leading-none"
+          className="text-10 font-bold leading-none"
           style={{ color: BADGE_INK, ...TABULAR_NUMS }}
         >
           +{extra}

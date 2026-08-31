@@ -43,7 +43,7 @@ const SIZES = {
     icon: 'h-4 w-4',
     // min-w 고정 + tabular-nums 라 1↔6 을 오가도 −/+ 가 제자리에 있다.
     valueSlot: 'min-w-[66px] justify-center gap-0.5',
-    value: 'text-[19px] font-extrabold leading-none tracking-[-.03em]',
+    value: 'text-19 font-extrabold leading-none tracking-[-.03em]',
     marker: null,
   },
 } as const

@@ -239,14 +239,14 @@ export function ResetCountdownWidget({ w, h, data }: WidgetProps): React.JSX.Ele
   if (variant === 'tiny') {
     return (
       <View testID="widget-reset-countdown" className="flex-1 items-center justify-center gap-0.5 p-2">
-        <Title sizeClass="text-[9px]" />
+        <Title sizeClass="text-9" />
         <Label cycle="daily" sizeClass="text-[10.5px]" />
         {/* 1x1 은 초를 넣을 자리가 물리적으로 없다 — 가장 큰 단위 하나뿐이다. */}
         <Value
           cycle="daily"
           remainingMs={remainingOf(resets.daily, nowMs)}
           granularity="largest"
-          sizeClass="text-[14px]"
+          sizeClass="text-sm"
         />
       </View>
     )
@@ -255,17 +255,17 @@ export function ResetCountdownWidget({ w, h, data }: WidgetProps): React.JSX.Ele
   if (variant === 'wide') {
     return (
       <View testID="widget-reset-countdown" className="flex-1 justify-center gap-1 p-3">
-        <Title sizeClass="text-[10px]" />
+        <Title sizeClass="text-10" />
         <View className="flex-row items-center gap-2">
           {(['daily', 'weekly', 'monthly'] as const).map((cycle) => (
             <View key={cycle} testID={`reset-cell-${cycle}`} className="min-w-0 flex-1">
-              <Label cycle={cycle} sizeClass="text-[11px]" />
+              <Label cycle={cycle} sizeClass="text-11" />
               {/* 셋을 가로로 나눠 쓰느라 한 칸이 좁다 — 여기서는 일일도 분까지다. */}
               <Value
                 cycle={cycle}
                 remainingMs={remainingOf(resets[cycle], nowMs)}
                 granularity="minute"
-                sizeClass="text-[16px]"
+                sizeClass="text-base"
               />
             </View>
           ))}
@@ -277,7 +277,7 @@ export function ResetCountdownWidget({ w, h, data }: WidgetProps): React.JSX.Ele
   if (variant === 'compact') {
     return (
       <View testID="widget-reset-countdown" className="flex-1 justify-center gap-2 p-3">
-        <Title sizeClass="text-[10px]" />
+        <Title sizeClass="text-10" />
         {(['daily', 'weekly', 'monthly'] as const).map((cycle) => (
           <Row key={cycle} cycle={cycle} countdown={resets[cycle]} nowMs={nowMs} withBar />
         ))}
@@ -288,7 +288,7 @@ export function ResetCountdownWidget({ w, h, data }: WidgetProps): React.JSX.Ele
   // 2x1 — 월간은 대개 멀어 지금 급한 것이 아니다.
   return (
     <View testID="widget-reset-countdown" className="flex-1 justify-center gap-1 p-3">
-      <Title sizeClass="text-[10px]" />
+      <Title sizeClass="text-10" />
       {(['daily', 'weekly'] as const).map((cycle) => (
         <Row key={cycle} cycle={cycle} countdown={resets[cycle]} nowMs={nowMs} withBar={false} />
       ))}

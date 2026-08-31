@@ -134,14 +134,14 @@ function ValuableDrought(props: { summary: ValuableDroughtSummary; now: Date }):
       </View>
       <View className="shrink">
         {/* 잎을 키운 만큼 글자도 한 단계씩 올린다(사용자 지정 2026-08-01) — 제목 `text-sm`→`text-base`,
-            아래 줄 `text-[10px]`→`text-[11px]`. 아래 줄을 `text-xs`(12px)까지 올리지 않는 이유는 목록
+            아래 줄 `text-10`→`text-11`. 아래 줄을 `text-xs`(12px)까지 올리지 않는 이유는 목록
             문장이 12px 라, 같아지면 요약과 본문의 위계가 사라진다. */}
         <Text className={`text-base font-bold ${style.ink}`}>
           {formatValuableDroughtHeadline(weeks, headlineIndex)}
         </Text>
         {/* 이번 주에 먹었으면 그게 곧 마지막이라 "마지막 에픽 빔!"을 뺀다 — 아직 진행 중인 주를
             "마지막"이라 부르면 어색하다. 1주 이상은 실제로 지난 일이라 붙인다. */}
-        <Text className="text-[11px] leading-tight text-text-muted">
+        <Text className="text-11 leading-tight text-text-muted">
           {weeks === 0 ? '' : '마지막 에픽 빔! '}
           {label.primary}
           {items !== '' && ` · ${items}`}
@@ -197,7 +197,7 @@ function DropHistoryEntry(props: {
           <Text>
             <Text
               testID="valuable-drop-inline"
-              className="text-[11px] font-bold"
+              className="text-11 font-bold"
               style={{ backgroundColor: VALUABLE_INLINE_BG, color: VALUABLE_INLINE_INK }}
             >
               {/* 아이콘은 문장 안 인라인 이미지다 — 크기를 명시해야 RN 이 줄 안에 앉힌다. 웹의
@@ -258,7 +258,7 @@ function DropHistoryPeriodSection(props: {
           {label.secondary !== label.primary && (
             <Text
               testID="drop-history-period-range"
-              className="text-center text-[10px] leading-tight text-text-muted"
+              className="text-center text-10 leading-tight text-text-muted"
               style={TABULAR_NUMS}
             >
               {label.secondary}

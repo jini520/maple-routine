@@ -73,8 +73,8 @@ const DIFFICULTY_BADGE_STYLES: Record<BossDifficulty, DifficultyBadgeStyle> = {
  * 그대로 옮겨 온 값이고, **같은 난이도가 화면마다 다른 색이면 같은 값인 줄 모르기** 때문이다.
  */
 const SIZE = {
-  default: { box: 'h-5 px-2.5', text: 'text-[10px]' },
-  small: { box: 'h-4 px-1.5', text: 'text-[9px]' },
+  default: { box: 'h-5 px-2.5', text: 'text-10' },
+  small: { box: 'h-4 px-1.5', text: 'text-9' },
 } as const
 
 /**

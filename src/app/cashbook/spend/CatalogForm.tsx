@@ -121,7 +121,7 @@ function ItemTile(props: {
               />
             )}
             {/* `shrink` 가 없으면 긴 이름이 그림을 타일 밖으로 밀어낸다. */}
-            <Text numberOfLines={2} className="shrink text-center text-[11px] leading-4 text-text">
+            <Text numberOfLines={2} className="shrink text-center text-11 leading-4 text-text">
               {props.label}
             </Text>
           </View>
@@ -131,7 +131,7 @@ function ItemTile(props: {
             <Text
               numberOfLines={1}
               adjustsFontSizeToFit
-              className={`text-[11px] ${props.selected ? 'text-primary-ink' : 'text-text-muted'}`}
+              className={`text-11 ${props.selected ? 'text-primary-ink' : 'text-text-muted'}`}
               style={TABULAR_NUMS}
             >
               {props.price}
@@ -269,11 +269,11 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
                 사라진다. 자리는 남기고 **못 고르게** 한다.
               */}
               <View className="flex-row items-center gap-1.5">
-                <Text className="text-[11px] text-text-disabled">{group.group}</Text>
+                <Text className="text-11 text-text-disabled">{group.group}</Text>
                 {!group.active && (
                   <Text
                     testID={`spend-sheet-closed-${group.group}`}
-                    className="text-[11px] text-text-disabled"
+                    className="text-11 text-text-disabled"
                   >
                     · 이벤트 기간이 아닙니다
                   </Text>
@@ -341,7 +341,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
             // 앱이 하나를 골라 수량을 막으면 그 고름이 곧 추정이 된다([[ADR-006]]).
             <Text
               testID="spend-sheet-limit"
-              className="-mt-1 text-[11px] leading-4 text-text-disabled"
+              className="-mt-1 text-11 leading-4 text-text-disabled"
             >
               한도 · {item.limit}
             </Text>

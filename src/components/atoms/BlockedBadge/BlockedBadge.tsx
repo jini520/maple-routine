@@ -24,7 +24,7 @@ import { Text } from '../Text/Text'
 export function BlockedBadge(): React.JSX.Element {
   return (
     <View className="shrink-0 rounded-full bg-surface-2 px-2 py-[3px]">
-      <Text fixed className="text-[11px] font-semibold text-text-muted">
+      <Text fixed className="text-11 font-semibold text-text-muted">
         진행 불가
       </Text>
     </View>

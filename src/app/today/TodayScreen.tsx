@@ -220,7 +220,7 @@ export function TodayScreen(): React.JSX.Element {
             <PageHeaderTitleRow>
               <View className="shrink flex-row items-center gap-2">
                 <Text className="shrink-0 text-lg font-semibold text-text">today</Text>
-                <Text className="shrink text-[15px] text-text-muted" numberOfLines={1}>
+                <Text className="shrink text-15 text-text-muted" numberOfLines={1}>
                   {/* 스케줄러 두 화면이 «선택된 캐릭터의 `syncedAt`» 을 쓰는 자리다. 이 화면에는
                       선택이 없으므로 **페이지 전체 기준** 값을 쓴다 — 보스 수익 스토어의
                       `lastSyncedAt` 이 이미 그 뜻이고, 건너뛴 진입에서도 갱신된다([[ADR-111]]). */}
