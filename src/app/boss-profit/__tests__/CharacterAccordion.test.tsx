@@ -16,7 +16,7 @@
 import { act, fireEvent } from '@testing-library/react-native'
 
 import weeklyBossesData from '../../../data/weekly-bosses.json'
-import { clearCountUpMemory } from '../../../lib/use-count-up'
+import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import valuableDropsData from '../../../data/valuable-drops.json'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss-matching'
 import { formatMesoShort } from '../../../lib/boss-profit-delta'

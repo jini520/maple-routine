@@ -5,7 +5,7 @@
 // [[ADR-124]] 가 드롭 가격에서 지키는 것과 같은 원칙이다.
 import { act, fireEvent } from '@testing-library/react-native'
 
-import { clearCountUpMemory } from '../../../lib/use-count-up'
+import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import type { WeeklySubtotalState } from '../../../features/boss-profit/store'
 
 import { flattenStyle } from '../../../components/__tests__/render-atom'

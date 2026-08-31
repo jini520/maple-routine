@@ -7,7 +7,7 @@
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
-import { clearCountUpMemory } from '../../../../lib/use-count-up'
+import { clearCountUpMemory } from '../../../../hooks/useCountUp'
 import { AmountFigure } from '../AmountFigure'
 
 // 카운트업의 기억은 **모듈 수준**이라 케이스 사이로 샌다([[ADR-087]] 결정 8) — 안 지우면 앞
