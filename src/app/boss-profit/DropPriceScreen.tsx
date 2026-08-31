@@ -145,14 +145,14 @@ function EntryRow(props: {
               {drop.ringLevel !== undefined && ` ${drop.ringLevel}레벨`}
             </Text>
             {drop.quantity > 1 && (
-              <Text className="shrink-0 text-[11px] text-text-muted" style={TABULAR_NUMS}>
+              <Text className="shrink-0 text-11 text-text-muted" style={TABULAR_NUMS}>
                 ×{drop.quantity}
               </Text>
             )}
           </View>
           <View className="mt-1 flex-row items-center gap-1.5">
             <DifficultyBadge difficulty={props.entry.difficulty} />
-            <Text numberOfLines={1} className="shrink text-[11px] text-text-muted">
+            <Text numberOfLines={1} className="shrink text-11 text-text-muted">
               {props.entry.boss}
               {shareLabel}
             </Text>

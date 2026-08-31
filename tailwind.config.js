@@ -20,6 +20,7 @@
 // `theme.colors` 키와 그쪽이 내는 변수 이름을 직접 대조한다).
 const jobThemes = require('./src/data/job-themes.json')
 const { theme } = require('./tailwind-v4-axes.cjs')
+const { fontSize, fontWeight } = require('./typography.cjs')
 
 /** `job-themes.json` 항목에서 색 토큰이 **아닌** 필드. 나머지는 전부 38토큰이다. */
 const NON_TOKEN_FIELDS = new Set(['mode', 'category', 'background'])
@@ -50,6 +51,7 @@ const colors = {
   'panel-border': 'var(--color-panel-border)',
 }
 
+
 module.exports = {
   // `global.css` 의 `@source` 가 아니라 여기서 스캔 범위를 정한다(v3 방식). `android/`·`ios/` 를
   // 안 훑도록 두 갈래만 적는다.
@@ -58,5 +60,7 @@ module.exports = {
   // `extend` 가 아니라 **교체**다 — `extend` 로 더하면 v3 의 옛 계단(`rounded-sm` = 2px)이 남아
   // 웹과 다른 값이 그대로 산다. 색도 같은 이유로 교체다: v3 기본 팔레트(`red-500` 등)를 남겨 두면
   // 테마를 안 따라가는 색을 쓰고도 빌드가 성공한다.
-  theme: { ...theme, colors },
+  // 글자 계단도 **교체**다 — `extend` 로 더하면 줄 높이 없는 기본 이름이 살아남는다
+  // (`typography.cjs` 머리말).
+  theme: { ...theme, colors, fontSize, fontWeight },
 }

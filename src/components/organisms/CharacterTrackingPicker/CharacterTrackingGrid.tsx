@@ -188,7 +188,7 @@ export function CharacterTrackingGrid(props: CharacterTrackingGridProps): React.
         <View testID="unavailable-roster" className="mt-4">
           <View className="mb-1.5 flex-row items-center gap-1.5">
             <BanIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2} aria-hidden />
-            <Text className="text-[11px] font-bold tracking-wide text-text-muted">
+            <Text className="text-11 font-bold tracking-wide text-text-muted">
               조회할 수 없는 캐릭터
             </Text>
           </View>

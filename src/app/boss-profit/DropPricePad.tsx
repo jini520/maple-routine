@@ -116,13 +116,13 @@ export function DropPricePadContent(
             <View className="h-9 w-9 shrink-0 rounded-lg border border-border bg-surface-2" />
           )}
           <View className="min-w-0 flex-1">
-            <Text numberOfLines={1} className="text-[15px] font-bold tracking-[-.012em] text-text">
+            <Text numberOfLines={1} className="text-15 font-bold tracking-[-.012em] text-text">
               {props.drop.itemName}
               {props.drop.ringLevel !== undefined && ` ${props.drop.ringLevel}레벨`}
             </Text>
             <View className="mt-0.5 flex-row items-center gap-1.5">
               <DifficultyBadge difficulty={props.difficulty} />
-              <Text numberOfLines={1} className="shrink text-[11px] text-text-muted">
+              <Text numberOfLines={1} className="shrink text-11 text-text-muted">
                 {props.boss} · {props.characterName}
               </Text>
             </View>
@@ -161,7 +161,7 @@ export function DropPricePadContent(
             >
               <Text className="text-text">−</Text>
             </Pressable>
-            <Text className="min-w-[30px] text-center text-[13px] font-semibold text-text" style={TABULAR_NUMS}>
+            <Text className="min-w-[30px] text-center text-13 font-semibold text-text" style={TABULAR_NUMS}>
               {share}인
             </Text>
             <Pressable
@@ -178,7 +178,7 @@ export function DropPricePadContent(
           </View>
         </View>
         {/* 높이를 항상 차지한다 — 1인일 때 사라지면 그 줄만큼 키패드가 위아래로 튄다. */}
-        <Text className="mt-1.5 min-h-4 text-right text-[11px] text-text-muted" style={TABULAR_NUMS}>
+        <Text className="mt-1.5 min-h-4 text-right text-11 text-text-muted" style={TABULAR_NUMS}>
           {meso > 0 && share > 1 ? `1인당 ${perPerson.toLocaleString()} 메소` : ''}
         </Text>
       </View>
@@ -210,7 +210,7 @@ export function DropPricePadContent(
             meso === 0 ? ' opacity-40' : ''
           }`}
         >
-          <Text className="text-[15px] font-bold text-on-primary">
+          <Text className="text-15 font-bold text-on-primary">
             {props.progress !== undefined ? '다음' : '저장'}
           </Text>
         </Pressable>

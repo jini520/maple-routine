@@ -48,7 +48,7 @@ export function Segment<T extends string>(props: {
             className={`rounded-full px-2.5 py-0.5 ${isSelected ? 'bg-primary-tint' : ''}`}
           >
             <Text
-              className={`text-[11px] font-semibold ${
+              className={`text-11 font-semibold ${
                 isSelected ? 'text-primary-ink' : 'text-text-muted'
               }`}
             >

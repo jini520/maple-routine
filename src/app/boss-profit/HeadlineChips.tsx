@@ -127,7 +127,7 @@ export function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGro
           style={{ top: '100%' }}
           className="absolute left-0 z-20 mt-1.5 min-w-[168px] rounded-[12px] border border-border bg-surface p-2 shadow-lg"
         >
-          <Text className="px-1 pb-1.5 text-[11px] font-bold tracking-wide text-text-muted">월드별 판매 현황</Text>
+          <Text className="px-1 pb-1.5 text-11 font-bold tracking-wide text-text-muted">월드별 판매 현황</Text>
           <View className="gap-1">
             {worlds.map((summary) => {
               const emblemUrl = worldEmblemUrl(summary.world)
@@ -194,7 +194,7 @@ export function DeltaChip(props: {
       {delta.direction === 'down' && (
         <ArrowDownIcon className={`h-2.5 w-2.5 shrink-0 ${ink}`} strokeWidth={3} aria-hidden />
       )}
-      <Text className={`text-[11px] font-bold leading-none ${ink}`} style={TABULAR_NUMS}>
+      <Text className={`text-11 font-bold leading-none ${ink}`} style={TABULAR_NUMS}>
         {formatProfitDeltaBody(delta)}
       </Text>
     </View>

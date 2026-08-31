@@ -66,7 +66,7 @@ export function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Eleme
     // 글꼴 line-height가 그대로 행 높이에 실려 드롭 유무로 행이 튄다.
     return (
       <View className="ml-auto h-6 shrink-0 flex-row items-center rounded-full border border-dashed border-primary bg-primary-tint px-2.5">
-        <Text className="text-[11px] font-bold text-primary-ink">＋ 드롭 추가</Text>
+        <Text className="text-11 font-bold text-primary-ink">＋ 드롭 추가</Text>
       </View>
     )
   }
@@ -94,7 +94,7 @@ export function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Eleme
                 영향을 주지 않는다. */}
             {drop.ringLevel !== undefined && (
               <View className="absolute -bottom-1 -right-0.5 rounded-full bg-primary px-0.5 py-px">
-                <Text className="text-[8px] font-bold leading-none text-on-primary">lv{drop.ringLevel}</Text>
+                <Text className="text-8 font-bold leading-none text-on-primary">lv{drop.ringLevel}</Text>
               </View>
             )}
           </View>
@@ -105,7 +105,7 @@ export function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Eleme
           className="h-6 w-6 items-center justify-center rounded-md border-[1.5px] border-surface bg-surface-2"
           style={{ marginLeft: -2, zIndex: 0 }}
         >
-          <Text className="text-[10px] font-bold text-text-muted">+{extra}</Text>
+          <Text className="text-10 font-bold text-text-muted">+{extra}</Text>
         </View>
       )}
     </View>
@@ -261,7 +261,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
                 aria-expanded={isItemPopoverOpen}
                 className="h-5 shrink-0 flex-row items-center rounded-full bg-primary-tint px-2"
               >
-                <Text className="text-[11px] font-bold leading-none text-primary-ink" style={TABULAR_NUMS}>
+                <Text className="text-11 font-bold leading-none text-primary-ink" style={TABULAR_NUMS}>
                   아이템 +{formatMesoShort(dropTotal)}
                 </Text>
               </Pressable>

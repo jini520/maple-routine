@@ -172,9 +172,9 @@ export function CharacterIssuePopover(props: {
         className="absolute rotate-45 border-l border-t border-border bg-surface"
       />
       <Text className="text-xs font-bold text-text">{copy.title}</Text>
-      <Text className="mt-1 text-[11px] leading-relaxed text-text-muted">{copy.body}</Text>
+      <Text className="mt-1 text-11 leading-relaxed text-text-muted">{copy.body}</Text>
       <Pressable role="button" onPress={props.onClose} className="mt-2 self-start">
-        <Text className="text-[11px] font-semibold text-primary-ink underline">닫기</Text>
+        <Text className="text-11 font-semibold text-primary-ink underline">닫기</Text>
       </Pressable>
     </View>
   )

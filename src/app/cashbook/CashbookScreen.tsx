@@ -215,11 +215,11 @@ function SourceRow(props: {
 }): React.JSX.Element {
   return (
     <View className="flex-row items-baseline gap-1.5">
-      <Text className="text-[11px] text-text-muted">{props.label}</Text>
+      <Text className="text-11 text-text-muted">{props.label}</Text>
       <Text
         testID={props.testID}
         numberOfLines={1}
-        className={`text-[11px] font-medium ${props.tone}`}
+        className={`text-11 font-medium ${props.tone}`}
         style={TABULAR_NUMS}
       >
         {props.sign}
@@ -280,7 +280,7 @@ function PeriodSummary(props: { incomeMeso: number; expenseMeso: number }): Reac
       className="flex-row items-end justify-between gap-3 rounded-xl bg-surface px-3.5 py-3"
     >
       <View className="shrink">
-        <Text className="text-[10px] tracking-wide text-text-muted">순 수익</Text>
+        <Text className="text-10 tracking-wide text-text-muted">순 수익</Text>
         {/* `leading-none` 이라 큰 글자가 자기 줄 높이로 카드를 밀지 않는다 — 카드가 낮아야 격자가
             주간 보기에서 스크롤 없이 남는다([[ADR-170]] 정정 2). */}
         <Text
@@ -295,7 +295,7 @@ function PeriodSummary(props: { incomeMeso: number; expenseMeso: number }): Reac
           {formatMesoCompact(Math.abs(net))}{' '}
           {/* 단위는 **작은 글자로 격하하되 사이에 진짜 공백**을 남긴다([[ADR-046]] 과 같은 처방) —
               마진으로만 띄우면 읽히는 문자열이 「N메소」로 붙어 스크린리더가 이어 읽는다. */}
-          <Text className="text-[11px] font-bold text-text-muted">메소</Text>
+          <Text className="text-11 font-bold text-text-muted">메소</Text>
         </Text>
       </View>
 
@@ -540,7 +540,7 @@ function DayRecordRow(props: {
           // 갈래마다 세는 것이 다르다(`×2` · `12마리` · `3건 · 미입력 2`) — 그 분기는 화면이 아니라
           // `recordCountLabelOf` 가 든다([[ADR-147]] 결정 8).
           // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
-          <Text numberOfLines={1} className="shrink-0 text-[11px] text-text-muted" style={TABULAR_NUMS}>
+          <Text numberOfLines={1} className="shrink-0 text-11 text-text-muted" style={TABULAR_NUMS}>
             {countLabel}
           </Text>
         )}

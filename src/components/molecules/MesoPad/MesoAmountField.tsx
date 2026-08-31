@@ -53,7 +53,7 @@ export function MesoAmountField(props: {
   unitPicker?: React.ReactNode
 }): React.JSX.Element {
   const mesoHelpers = props.mesoHelpers ?? true
-  const amountClass = `text-[32px] font-bold leading-none tracking-[-.03em] ${
+  const amountClass = `text-32 font-bold leading-none tracking-[-.03em] ${
     props.meso === 0 ? 'text-text-disabled' : 'text-text'
   }`
   return (
@@ -74,7 +74,7 @@ export function MesoAmountField(props: {
           }`}
         >
           <RotateCcwIcon className="h-3 w-3 text-text-muted" strokeWidth={2.5} aria-hidden />
-          <Text className="text-[11px] font-semibold text-text-muted">초기화</Text>
+          <Text className="text-11 font-semibold text-text-muted">초기화</Text>
         </Pressable>
         {props.editable === true ? (
           /*
@@ -113,7 +113,7 @@ export function MesoAmountField(props: {
           }`}
         >
           {props.unitPicker}
-          <Text className="ml-auto text-right text-[11px] text-text-muted" style={TABULAR_NUMS}>
+          <Text className="ml-auto text-right text-11 text-text-muted" style={TABULAR_NUMS}>
             {mesoHelpers && props.meso > 0 ? formatMesoUnits(props.meso) : ''}
           </Text>
         </View>
@@ -131,7 +131,7 @@ export function MesoAmountField(props: {
               onPress={() => props.onChange(Math.min(MAX_MESO, props.meso + quick.value))}
               className="h-7 justify-center rounded-full border border-border px-2.5 active:bg-surface-2"
             >
-              <Text className="text-[11px] font-semibold text-text-muted" style={TABULAR_NUMS}>
+              <Text className="text-11 font-semibold text-text-muted" style={TABULAR_NUMS}>
                 {quick.label}
               </Text>
             </Pressable>

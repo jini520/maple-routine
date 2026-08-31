@@ -113,7 +113,7 @@ export function PartySizeModal(props: {
 
             <View className="absolute inset-x-[18px] bottom-3">
               <Text
-                className="text-[10px] font-bold tracking-[.16em] text-text-muted"
+                className="text-10 font-bold tracking-[.16em] text-text-muted"
                 style={MEDIA_TEXT_SHADOW_STYLE}
               >
                 {props.cycleLabel}
