@@ -38,7 +38,7 @@
 | 원천 | `features/boss-profit/drop-history-store` | 드롭 위젯 셋이 같은 투영을 공유한다 |
 | 판정 | `features/boss-scheduler/displayed-bosses.ts` 의 `displayedBosses` | **화면과 같은 함수를 부른다**([[ADR-147]] 결정 8) |
 | 판정 | `features/content-scheduler/displayed-contents.ts` 의 `displayedDailyContents` | 같다 |
-| 판정 | `lib/shared-contents.ts` 의 `getSharedContentGroups` | 공유 컨텐츠 계열 묶기(`onlyWhenScheduled`) |
+| 판정 | `lib/scheduler-content-scope.ts` 의 `getSharedContentGroups` | 공유 컨텐츠 계열 묶기(`onlyWhenScheduled`) |
 | 저장 | `storage/character-selection` 의 `getRepresentativeCharacter` | 대표 캐릭터 |
 
 **관련 ADR**: [[ADR-147]](이 화면의 설계 전부) · [[ADR-153]](수익 위젯이 읽는 값: ‘지금 기간’) ·
