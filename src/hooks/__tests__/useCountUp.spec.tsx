@@ -1,6 +1,12 @@
 /** @jest-environment jsdom */
 import { act, cleanup, render, screen } from '@testing-library/react'
-import { COUNT_UP_DURATION_MS, clearCountUpMemory, easeOutExpo, useCountUp } from '../useCountUp'
+import {
+  COUNT_UP_DURATION_MS,
+  COUNT_UP_MEMORY_LIMIT,
+  clearCountUpMemory,
+  easeOutExpo,
+  useCountUp,
+} from '../useCountUp'
 
 // vitest 의 `vi.stubGlobal` 짝. jest 에는 없어서 여기서 최소한으로 만든다 — 원래 값을 기억해 두고
 // `unstubAllGlobals()` 가 되돌린다 ([[ADR-157]]).
@@ -102,6 +108,8 @@ describe('useCountUp', () => {
     const { rerender } = render(<Probe identity="a" value={2000} />)
     rerender(<Probe identity="a" value={1000} />)
 
+    // 첫 프레임이 원점이라 형제 케이스들처럼 한 번 태워 보낸다.
+    advance(0)
     advance(COUNT_UP_DURATION_MS / 2)
     expect(displayed()).toBeLessThan(2000)
     expect(displayed()).toBeGreaterThan(1000)
@@ -211,6 +219,54 @@ describe('useCountUp', () => {
     view.rerender(<Probe identity="b" value={7000} />)
     expect(displayed()).toBe(7000)
     expect(frames.size).toBe(0)
+  })
+
+  // 원점을 effect 가 돈 시각으로 잡으면 첫 프레임이 늦은 만큼 애니메이션이 깎인다. 이 곡선은
+  // 앞부분이 가팔라서 100ms 만 밀려도 거리의 86% 를 건너뛴다.
+  it('첫 프레임이 늦게 와도 그 프레임을 원점으로 삼는다', async () => {
+    const { rerender } = render(<Probe identity="a" value={0} />)
+    rerender(<Probe identity="a" value={1000} />)
+
+    // JS 스레드가 밀려 첫 프레임이 200ms 늦게 왔다.
+    advance(200)
+    expect(displayed()).toBe(0)
+
+    // 늦은 만큼 깎이지 않고 여기서부터 350ms 를 쓴다.
+    advance(COUNT_UP_DURATION_MS / 2)
+    expect(displayed()).toBeGreaterThan(0)
+    expect(displayed()).toBeLessThan(1000)
+
+    advance(COUNT_UP_DURATION_MS)
+    expect(displayed()).toBe(1000)
+  })
+
+  // 가계부는 시트를 열 때마다 새 키를 발급해서(`nextAmountIdentity`) 상한이 없으면 기억이 자라기만
+  // 한다. 밀려난 키는 굴러가는 대신 목표에서 그냥 나타난다.
+  it('기억이 상한을 넘으면 가장 오래 안 쓴 키부터 버린다', async () => {
+    render(<Probe identity="oldest" value={100} />).unmount()
+    for (let i = 0; i < COUNT_UP_MEMORY_LIMIT; i += 1) {
+      render(<Probe identity={`filler-${i}`} value={i} />).unmount()
+    }
+
+    render(<Probe identity="oldest" value={500} />)
+    expect(displayed()).toBe(500)
+    expect(frames.size).toBe(0)
+  })
+
+  // 오래된 순서가 아니라 **안 쓴 순서**여야 한다. 총 수익 헤드라인처럼 일찍 만들어져 계속 쓰이는
+  // 키가 밀려나면 기간을 옮길 때마다 숫자가 굴러가지 않는다.
+  it('상한이 차도 최근에 쓴 키는 밀려나지 않는다', async () => {
+    render(<Probe identity="early" value={100} />).unmount()
+    for (let i = 0; i < COUNT_UP_MEMORY_LIMIT - 1; i += 1) {
+      render(<Probe identity={`filler-${i}`} value={i} />).unmount()
+    }
+    // `early` 를 다시 써서 맨 뒤로 보낸다. 이제 맨 앞은 `filler-0` 이다.
+    render(<Probe identity="early" value={100} />).unmount()
+    render(<Probe identity="overflow" value={1} />).unmount()
+
+    render(<Probe identity="early" value={700} />)
+    advance(0)
+    expect(displayed()).toBe(100)
   })
 
   // 리셋한 값이 그 identity 의 기억이 된다 — 되돌아왔을 때 여기서 이어져야 한다.
