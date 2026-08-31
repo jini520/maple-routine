@@ -157,8 +157,8 @@ export function getSupportedDifficulties(bossName: string): BossDifficulty[] {
   return BOSS_DIFFICULTIES_BY_NAME.get(bossName) ?? []
 }
 
-// ADR-055 결정 3: 수동 추적 항목 중 "주간 12개 한도에 잡히는" 보스 수. 화면의 BOSSES_BY_TAB은
-// weekly와 eventWeekly를 합치며 출처 구분을 잃고, 저장 배열은 월간 보스까지 kind: 'boss'로
+// ADR-055 결정 3: 수동 추적 항목 중 "주간 12개 한도에 잡히는" 보스 수. 관리 화면의 주간 섹션은
+// weekly와 eventWeekly를 합쳐 출처 구분을 잃고, 저장 배열은 월간 보스까지 kind: 'boss'로
 // 함께 담으므로, 주기와 시즌 여부를 참조표에서 되찾아야 한다. 제외 규칙은
 // countClearedWeeklyBosses([[ADR-031]] 결정 1)와 같아야 한다 — 어긋나면 선택은 12/12인데
 // 처치 카운트는 11/12로 표시되는 모순이 생긴다.

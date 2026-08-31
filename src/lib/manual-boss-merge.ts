@@ -39,7 +39,7 @@ export function mergeManualBossList(
   tracked: ManualTrackedItem[],
   synced: BossContent[],
 ): BossContent[] {
-  // ADR-035 결정 20: weekly-bosses.json 정규 순서(보스 관리 페이지 BOSSES_BY_TAB와 동일)로 정렬한다.
+  // ADR-035 결정 20: weekly-bosses.json 정규 순서(보스 관리 화면의 목록과 동일)로 정렬한다.
   // **비교자는 boss-matching의 공용 compareBossOrder다**([[ADR-186]] 결정 2 — [[ADR-036]]에서 사설
   // 사본을 흡수한 뒤, 정렬 키 셋까지 그 함수 하나로 합쳤다). 그래서 참조 밖 보스끼리도 난이도·
   // 이름으로 완전히 갈린다 — 종전의 «멤버십 순서 유지»(안정 정렬에 기댄 계약)를 이것이 덮는다.

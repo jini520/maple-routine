@@ -287,8 +287,8 @@ export function BossManageScreen(): React.JSX.Element {
   return (
     <ScreenScroll
       header={
-        // 제목~탭~(자동)토글까지 화면 상단에 고정하고 그 아래 보스 목록만 스크롤 — 스케줄러 화면과
-        // 동일 패턴(`design-system.md` "스크롤 영역").
+        // 제목~(자동)토글도 목록과 **함께 스크롤된다**([[ADR-131]]) — 헤더는 `ScreenScroll` 의 첫
+        // 자식이다. 스케줄러 화면과 같은 패턴이다(`design-system.md` "스크롤 영역").
         <PageHeader>
           {/* **← 가 없다**([[ADR-145]] 결정 1) — 이 화면은 하위 페이지가 아니라 스케줄 그룹의 하위
               탭이라 pop 할 스택이 없고, 뒤로 가는 일은 하단바가 진다([[ADR-132]] 결정 3). 같은 이유로
