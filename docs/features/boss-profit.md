@@ -43,9 +43,9 @@
 | 계산 | `lib/boss-profit-period.ts` | 기간 키 계산과 기간 상태 판정 |
 | 계산 | `lib/boss-profit-delta.ts` | 직전 기간 대비 증감 |
 | 계산 | `lib/drop-price.ts` | 드롭 판매가를 수익으로 환산 |
-| 계산 | `lib/use-count-up.ts` | 카운트업 tween |
 | 계산 | `lib/world-emblem.ts` · `lib/item-icons.ts` | 월드 엠블럼과 결정석 아이콘 |
 | 계산 | `lib/boss-matching.ts` | 보스 정렬 순서, `WEEKLY_BOSS_CLEAR_LIMIT`, `WEEKLY_CRYSTAL_SALE_LIMIT`, `isSeasonBossName` |
+| 훅 | `hooks/useCountUp.ts` | 금액이 바뀌면 목표까지 굴러가는 숫자([[ADR-087]]). `AnimatedMeso` 와 `AmountFigure` 가 부른다 |
 | 참조 | `src/data/boss-crystal-prices.json` | 결정석 정가 |
 | 참조 | `src/data/weekly-bosses.json` | 보스 목록과 정규 순서 |
 | 참조 | `src/data/boss-portrait-icon-crops.json` | 보스 초상화 크롭 |

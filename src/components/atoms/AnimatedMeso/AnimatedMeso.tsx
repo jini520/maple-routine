@@ -1,4 +1,4 @@
-import { useCountUp } from '../../../lib/use-count-up'
+import { useCountUp } from '../../../hooks/useCountUp'
 
 /**
  * 값이 바뀌면 목표까지 굴러가는 메소 숫자 ([[ADR-087]] 결정 6).
@@ -16,7 +16,7 @@ import { useCountUp } from '../../../lib/use-count-up'
  * ## 모션이 여기 살아 있는 이유 (step 3 계획과 다른 점)
  *
  * 이 phase 의 지시는 *"`AnimatedMeso` 는 CSS 전환에 의존하니 골격만"* 이었으나 **전제가 틀렸다** —
- * 카운트업은 CSS 가 아니라 `src/lib/use-count-up` 의 순수 JS 훅이다(`requestAnimationFrame` +
+ * 카운트업은 CSS 가 아니라 `src/hooks/useCountUp` 의 순수 JS 훅이다(`requestAnimationFrame` +
  * `performance.now`, 둘 다 RN 에 있다). step 7 이 다루는 것은 `index.css` 의 `@keyframes` 8종이고
  * 카운트업은 그 목록에 없다. 그래서 흉내가 아니라 **웹과 같은 구현이 그대로 돈다** — 코드도 웹의
  * 세 줄과 한 글자도 다르지 않다.

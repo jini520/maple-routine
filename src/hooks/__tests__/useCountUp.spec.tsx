@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
 import { act, cleanup, render, screen } from '@testing-library/react'
-import { COUNT_UP_DURATION_MS, clearCountUpMemory, easeOutExpo, useCountUp } from '../use-count-up'
+import { COUNT_UP_DURATION_MS, clearCountUpMemory, easeOutExpo, useCountUp } from '../useCountUp'
 
 // vitest 의 `vi.stubGlobal` 짝. jest 에는 없어서 여기서 최소한으로 만든다 — 원래 값을 기억해 두고
 // `unstubAllGlobals()` 가 되돌린다 ([[ADR-157]]).
