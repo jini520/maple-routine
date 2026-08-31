@@ -196,7 +196,7 @@ API 키를 기기에 저장해 직접 호출하는 방식이라 이 원칙을 �
 | [117](./adr/ADR-117.md) | 🟡 부분 폐기 🔗 | OTA 적용 경로 복구 장치 | OTA 적용 경로 자체는 [[ADR-137]] 이 `expo-updates` 로 바꿨다(`capacitor.config.ts`·`index.html`·`main.tsx` 에 걸던 장치는 없다). |
 | [118](./adr/ADR-118.md) | 🟢 유효 | 설정 화면 5행 + 하위 페이지 3 |  |
 | [119](./adr/ADR-119.md) | 🟡 부분 폐기 | 개발 노트는 진실 원천 한 벌에서 두 갈래로 | 원천(`src/data/release-notes.ts`)은 유효. `publish-live-update.mjs` 경로는 죽었다([[ADR-137]]·[[ADR-154]]). |
-| [120](./adr/ADR-120.md) | 🟡 부분 폐기 | 하위 페이지는 스택으로 연다 | «스택으로 연다» 는 유효(`@react-navigation/native-stack`). 자체 구현 955줄은 삭제됐다. |
+| [120](./adr/ADR-120.md) | 🟡 부분 폐기 | 하위 페이지는 스택으로 연다 | «스택으로 연다» 는 유효(`@react-navigation/native-stack`). 자체 구현 955줄은 삭제됐다. 결정 13·14·15(웹 청크 분할·`lazy`)는 RN 에 안 넘어왔고 결정 15 의 `lib/preloaded-screen.tsx` 는 삭제됐다. |
 | [121](./adr/ADR-121.md) | 🟢 유효 | 보스 카드를 탭해 파티 인원·난이도를 고친다 |  |
 | [122](./adr/ADR-122.md) | ⛔ 폐기 | 스크림 위 패널 테두리는 모드마다 반대 | CSS `data-mode` 전용 결정이라 RN 에 대응물이 없다. 결정 8 폐기 사실은 [[ADR-064]] 쪽에 남는다. |
 | [123](./adr/ADR-123.md) | ⛔ 폐기 🔗 | 경계 페이드에서 backdrop-filter 를 뺀다 | RN 에 `backdrop-filter` 가 없어 되붙일 방법 자체가 없다. |
