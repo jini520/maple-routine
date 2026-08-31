@@ -2,7 +2,7 @@
 //
 // 갈린 것 셋
 // ① **라우터 프로브가 없다** — 안내를 누르면 `navigate('SettingsFeatureGuide', { guideId })` 가
-//    불리는지를 본다(웹의 `buildGuidePath` 자리 · `routes.ts`).
+//    불리는지를 본다(웹이 경로를 조립하던 자리 · `routes.ts`).
 // ② `getByRole('tab', { name })` → **탭 글자에서 위로 올라가** 잡고, `aria-selected` 는
 //    `accessibilityState.selected` 로 읽는다(RN 에 `tablist` 컨테이너 역할이 없다 —
 //    `SettingsFeatureGuideListScreen.tsx` 파일 머리 ②).

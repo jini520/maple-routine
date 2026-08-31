@@ -17,10 +17,11 @@
 // ② **탭 줄의 `role="tablist"` 가 사라지고 `aria-selected` 만 남는다.** RN 접근성에 `tablist`
 //    컨테이너 역할이 없어(`role` 이 받는 값 목록에 없다) 남겨도 조용히 버려진다 — 실제로 선택
 //    상태를 나르는 것은 각 탭의 `aria-selected` 이고 그것은 그대로 산다.
-// ③ **경로가 아니라 파라미터로 민다.** 웹은 `buildGuidePath(SELF_PATH, id)` 로 경로를 조립했는데
-//    (`lib/guide-route.ts` — 목록이 안내 카탈로그를 import 하지 않게 하려는 것이 그 함수의 요점),
-//    RN 은 라우트 이름 + `{ guideId }` 다. **그 요점은 그대로 지켜진다** — 여기서 `FEATURE_GUIDES`
-//    를 읽는 것은 목록 행(제목·그룹)을 그리기 위해서지 본문 때문이 아니다.
+// ③ **경로가 아니라 파라미터로 민다.** 웹은 경로를 조립하는 작은 모듈을 따로 뒀는데, 목록이 안내
+//    카탈로그를 import 하지 않게 하려는 것이 그 요점이었다. RN 은 라우트 이름 + `{ guideId }` 라
+//    조립할 경로가 없어 그 요점이 저절로 지켜지고, 그래서 그 모듈은 삭제됐다([[ADR-125]] 결정 7
+//    정정). 여기서 `FEATURE_GUIDES` 를 읽는 것은 목록 행(제목·그룹)을 그리기 위해서지 본문 때문이
+//    아니다.
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
