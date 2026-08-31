@@ -32,6 +32,7 @@
 import { useBottomSheetInternal } from '@gorhom/bottom-sheet'
 import { useEffect, useRef } from 'react'
 import {
+  Platform,
   Text as RNText,
   TextInput as RNTextInput,
   useWindowDimensions,
@@ -68,11 +69,35 @@ function targetOf(event: FocusEvent | undefined): number | undefined {
 export type TextProps = Clamped<RNTextProps>
 export type TextInputProps = Clamped<RNTextInputProps>
 
-export function Text({ fixed = false, ...rest }: TextProps): React.JSX.Element {
+/**
+ * 앱 전체가 쓰는 글꼴 ([[ADR-196]]). 두 플랫폼이 **같은 글꼴을 봐야** 같은 코드가 같은 크기로
+ * 그려진다. 시스템 글꼴에 맡기면 iOS 는 SF + Apple SD Gothic Neo, 안드로이드는 Roboto + Noto Sans
+ * CJK 가 잡혀 줄 상자 높이가 21~28% 갈렸다(실측 2026-09-01).
+ *
+ * 굵기는 400·500·600·700·800 다섯을 심었다. 안드로이드는 `res/font/xml_pretendard.xml` 패밀리가
+ * 굵기를 가르므로 `fontWeight` 가 그대로 먹는다(굵기마다 이름을 나눌 필요가 없다).
+ */
+// 가변 폰트 하나를 두 플랫폼이 쓰는데 **가리키는 이름이 다르다**. iOS 는 폰트 안의 Family 이름
+// (`Pretendard Variable`)으로 찾고, 안드로이드는 `res/font/xml_pretendard.xml` 패밀리의 리소스
+// 이름(`Pretendard`)으로 찾는다.
+export const APP_FONT_FAMILY = Platform.OS === 'ios' ? 'Pretendard Variable' : 'Pretendard'
+
+/**
+ * `includeFontPadding` 은 **안드로이드 전용**이고 기본이 `true` 다. 글꼴의 ascent/descent 만큼
+ * 글자 상자 위아래에 여백을 더 붙여, 줄 높이를 명시해도 안드로이드만 더 커진다(실측 2026-09-01 —
+ * 같은 배지가 iOS 20.0 · 안드로이드 20.6 논리단위). 끄면 줄 높이가 상자를 그대로 정한다.
+ * iOS 는 이 속성을 무시한다.
+ */
+const BASE_TEXT_STYLE = { fontFamily: APP_FONT_FAMILY, includeFontPadding: false } as const
+
+export function Text({ fixed = false, style, ...rest }: TextProps): React.JSX.Element {
   const { fontScale } = useWindowDimensions()
 
-  // 계산한 프롭이 **뒤에** 온다 — 스프레드로 들어온 값이 클램프를 못 이기게.
-  return <RNText {...rest} {...fontScalingProps(fontScale, fixed)} />
+  // 글꼴이 **맨 앞**이라 호출부가 덮을 수 있다. 계산한 프롭이 **뒤에** 온다 — 스프레드로 들어온
+  // 값이 클램프를 못 이기게.
+  return (
+    <RNText {...rest} style={[BASE_TEXT_STYLE, style]} {...fontScalingProps(fontScale, fixed)} />
+  )
 }
 
 /**
@@ -248,7 +273,7 @@ export function TextInput({
       keyboardType={keyboardType}
       {...(numeric ? { value } : { defaultValue: value })}
       style={[
-        { padding: 0, includeFontPadding: false, textAlignVertical: 'center' },
+        { ...BASE_TEXT_STYLE, padding: 0, includeFontPadding: false, textAlignVertical: 'center' },
         rest.style,
       ]}
       onFocus={handleFocus}
