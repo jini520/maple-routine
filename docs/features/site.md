@@ -1,8 +1,24 @@
 # 안내 사이트 (mapleroutine.store)
 
-> **범위**: 스토어가 요구하는 개인정보 처리방침·지원 URL, 그리고 **앱 밖에서 끝내야 하는 절차의 안내**를 서빙하는 최소 정적 사이트. 앱 기능을 웹으로 옮기는 것이 아니다.
-> **관련 소스**: `site/`(템플릿·스타일·페이지 마크다운·`images/`) · `PRIVACY.md`(**개인정보 처리방침 원본**) · `scripts/build-site.mjs` · `.github/workflows/pages.yml` · `npm run build:site`.
-> **관련 ADR**: ADR-090(광고 도입: 이 사이트가 필요해진 이유) · [[ADR-110]](API 키 발급 가이드). **관련 문서**: [ads.md](./ads.md), [onboarding.md](./onboarding.md), [../foundation/product.md](../foundation/product.md).
+> **범위**: 스토어가 요구하는 개인정보 처리방침과 지원 URL, 그리고 **앱 밖에서 끝내야 하는 절차의
+> 안내**를 서빙하는 최소 정적 사이트. 앱 기능을 웹으로 옮기는 것이 아니다.
+> **관련 문서**: [ads.md](./ads.md) · [onboarding.md](./onboarding.md) ·
+> [../foundation/product.md](../foundation/product.md)
+
+## 관련 소스
+
+| 파일 | 하는 일 |
+|---|---|
+| `site/template.html` | 공통 셸(헤더·푸터·메타). `{{title}}` · `{{description}}` · `{{content}}` 치환 |
+| `site/style.css` | 라이트·다크 대응. 표는 자체 가로 스크롤, 본문 이미지는 폭에 맞춘다 |
+| `site/index.md` · `support.md` · `api-key.md` | 페이지 본문 |
+| `site/images/api-key/` | 발급 가이드 스크린샷 7장. **저장소에 커밋한다**(재생성 불가) |
+| `site/app-ads.txt` | AdMob 판매 권한 선언 |
+| `PRIVACY.md` | **개인정보 처리방침 원본.** 저장소 루트에 있다 |
+| `scripts/build-site.mjs` | 빌드(`npm run build:site` → `dist-site/`) |
+| `.github/workflows/pages.yml` | 배포 |
+
+**관련 ADR**: ⛔ ADR-090(광고 도입. 이 사이트가 필요해진 이유) · [[ADR-110]](API 키 발급 가이드)
 
 ## 왜 있는가
 
