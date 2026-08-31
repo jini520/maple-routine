@@ -121,7 +121,7 @@ export interface RepresentativeView {
  * 라벨(일퀘·주간퀘·주간 보스·**검마**)은 위젯이 붙인다 — 「검마」는 월간 보스가 하나뿐이라 성립하는
  * 이름이라([[ADR-147]] 정정 3) 참조 데이터에서 파생시키지 않는다.
  */
-/** 아코디언 본문의 보스 한 줄 — 난이도는 공용 `DifficultyBadge` 가 그린다. */
+/** 아코디언 본문의 보스 한 줄 — 난이도는 공용 `Badge` 가 그린다. */
 export interface RemainingBossView {
   name: string
   difficulty: BossDifficulty

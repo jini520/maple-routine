@@ -4,7 +4,7 @@
 // (NativeWind 는 못 만든 유틸리티를 그냥 안 낸다 — 에러가 아니다). 화면에서만 드러나는 종류의
 // 실패라 여기서 막는다.
 //
-// 임의값(`text-10`)도 막는다. 크기는 만들어지지만 **줄 높이가 안 붙어** 플랫폼마다 줄 상자가
+// 임의값(`text-[10px]`)도 막는다. 크기는 만들어지지만 **줄 높이가 안 붙어** 플랫폼마다 줄 상자가
 // 갈린다(실측 2026-09-01 — 10px 글자가 iOS 12.0 · 안드로이드 15.2).
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'

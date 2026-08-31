@@ -127,7 +127,7 @@ L 0.13~0.15 라 **스크림을 완전 불투명 검정으로 만들어도 1.07 �
        텍스트 키커 10px text-text-muted / 이름 text-xl font-extrabold text-text, 둘 다 MEDIA_TEXT_SHADOW
 경계   본문에 border-t border-border   ← media-scope **바깥**
 본문   p-[18px] · 필드 간격 18
-난이도 라벨 + DifficultyBadge 세그먼트(미선택 = 같은 뱃지 + opacity-40)
+난이도 라벨 + 난이도 배지 세그먼트(미선택 = 같은 뱃지 + opacity-40)
 파티   라벨 행: Users 14 + "파티 인원"(text-xs font-bold tracking-[.06em] text-text-muted)
               + Badge tone="primary" 로 `n / max` (tabular-nums)
        스테퍼: 전폭 h-10(40) rounded-full border-border bg-surface p-1
@@ -669,7 +669,7 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
   이 앱은 edge-to-edge 라 IME 가 인셋으로만 오고 창은 안 줄어든다(계측: 키보드 312dp 에 창 높이 변화 0).
   그 프롭은 ‘매니페스트가 뭐라 적혀 있나’가 아니라 **‘창이 실제로 어떻게 되나’** 를 말하는 자리다.
 - **칸에 묶인 글자는 `fixed` 를 준다**. today 위젯 전부 · 하단바 라벨 · 캐릭터 레일 초상의 폴백
-  이니셜 · `DifficultyBadge`(상자가 `h-5`/`h-4` 고정이라 **모든 호출부에서**). 기준은 ‘작아 보인다’
+  이니셜 · `Badge` 의 `chip`·`mini` 크기(상자가 `h-5`/`h-4` 고정이라 **자동으로**). 기준은 ‘작아 보인다’
   가 아니라 **‘상자가 글자를 따라 커지는가’** 다. 패딩으로 자라는 배지·버튼은 예외가 **아니다**
   (글자가 커지면 상자도 커진다).
 - 새 화면을 그릴 때 크기를 고를 자유는 그대로다. 다만 `text-[8px]`~`[11px]` 대역은 **하한이 곧

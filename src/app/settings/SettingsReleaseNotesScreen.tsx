@@ -84,7 +84,7 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
                 >
                   {note.version}
                 </Text>
-                {note.version === runningVersion && <Badge tone="primary">사용 중</Badge>}
+                {note.version === runningVersion && <Badge variant="primary">사용 중</Badge>}
                 <Text style={TABULAR_NUMS} className="ml-auto text-xs text-text-disabled">
                   {note.date}
                 </Text>
@@ -117,7 +117,7 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
                                 third 다. */}
                             {item.requiresStoreUpdate === true && (
                               <View className="flex-row">
-                                <Badge tone="third">스토어 업데이트 필요</Badge>
+                                <Badge variant="third">스토어 업데이트 필요</Badge>
                               </View>
                             )}
                           </View>

@@ -43,18 +43,12 @@ export function BossSectionHeader(props: BossSectionHeaderProps): React.JSX.Elem
 
       <View className="flex-row items-center gap-2">
         {seasonState !== null && (
-          <Text
-            className={
-              seasonState === 'complete'
-                ? 'rounded-full bg-secondary-tint px-2.5 py-1 text-xs font-bold text-secondary-ink'
-                : 'rounded-full bg-primary-tint px-2.5 py-1 text-xs font-semibold text-primary-ink'
-            }
-          >
+          <Badge variant={seasonState === 'complete' ? 'secondary' : 'primary'}>
             {`season ${seasonState === 'complete' ? '완료' : '미완료'}`}
-          </Text>
+          </Badge>
         )}
         {clearCount !== null && clearLimit !== null && (
-          <Badge tone="primary">
+          <Badge variant="primary">
             {clearCount}/{clearLimit}
           </Badge>
         )}

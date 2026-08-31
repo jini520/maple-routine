@@ -45,7 +45,7 @@ import { isValuableDrop } from '../../lib/valuable-drops'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types'
 import type { DropCandidate, DropCategory, RecordedDrop, SelectableDropCategory } from '../../types/drops'
 
-import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
+import { Badge } from '../../components/atoms/Badge/Badge'
 import { ProfitIcon } from '../../components/atoms/ProfitIcon/ProfitIcon'
 import { Text } from '../../components/atoms/Text/Text'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
@@ -295,7 +295,9 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
               {props.isComplete ? (
                 // 완료: 완료된 난이도만 표시(선택 불가). 미완료 토글과 동일하게 오른쪽 끝 정렬.
                 <View className="ml-auto">
-                  <DifficultyBadge difficulty={props.difficulty} />
+                  <Badge variant={props.difficulty}>
+                    {props.difficulty}
+                  </Badge>
                 </View>
               ) : (
                 // 미완료: 드롭 테이블 난이도를 선택 버튼으로 나열(오른쪽 끝 정렬), 선택 안 된 것은 흐림 처리
@@ -311,7 +313,9 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                         onPress={() => selectDifficulty(difficulty)}
                         className={active ? '' : 'opacity-40'}
                       >
-                        <DifficultyBadge difficulty={difficulty} />
+                        <Badge variant={difficulty}>
+                          {difficulty}
+                        </Badge>
                       </Pressable>
                     )
                   })}
@@ -419,7 +423,9 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                         >
                           <View className="rounded-xl border border-border bg-surface px-2 pb-3 pt-1">
                             <View className="flex-row">
-                              <DifficultyBadge difficulty={group.difficulty} />
+                              <Badge variant={group.difficulty}>
+                                {group.difficulty}
+                              </Badge>
                             </View>
                             <View className="mt-1.5 flex-row flex-wrap items-center justify-center gap-x-2 gap-y-2.5">
                               {group.items.flatMap((item) =>

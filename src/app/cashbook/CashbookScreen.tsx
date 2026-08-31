@@ -51,7 +51,8 @@ import { Pressable, RefreshControl, View } from 'react-native'
 
 import { Text } from '../../components/atoms/Text/Text'
 import { CalendarMonth } from '../../components/molecules/CalendarMonth/CalendarMonth'
-import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
+import { Badge } from '../../components/atoms/Badge/Badge'
+import { DIFFICULTY_SHORT } from '../../lib/boss-difficulty'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { ProfitIcon } from '../../components/atoms/ProfitIcon/ProfitIcon'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
@@ -387,7 +388,7 @@ function chunkBosses(bosses: readonly DefeatedBoss[]): DefeatedBoss[][] {
  * 펼친 결정석 줄의 **타일 판**([[ADR-172]] 정정 1) — 그날 잡은 보스를 초상으로 편다.
  *
  * **새로 만든 그림이 0개**다([[ADR-170]] 결정 9 와 같은 태도). 초상은 `BossPortrait`, 난이도는
- * `DifficultyBadge`, 슬러그는 `findPortraitSlug` — 셋 다 보스 수익 탭의 보스 행이 쓰는 그것이다.
+ * `Badge`, 슬러그는 `findPortraitSlug` — 셋 다 보스 수익 탭의 보스 행이 쓰는 그것이다.
  *
  * **마리당 금액을 안 적는다.** 줄 머리가 합계를 이미 들고 있고, 마리당 금액은 파티원 수·정가와
  * 함께 봐야 뜻이 생긴다(그 자리가 보스 수익 탭이다). 여기서 답하는 질문은 «얼마» 가 아니라 «무엇» 이다.
@@ -453,7 +454,9 @@ function DefeatedBossTiles(props: { rowKey: string; bosses: readonly DefeatedBos
                   shape="square"
                 />
                 <View className="absolute bottom-0.5 left-0.5">
-                  <DifficultyBadge difficulty={boss.difficulty} size="small" short />
+                  <Badge variant={boss.difficulty} size="mini">
+                    {DIFFICULTY_SHORT[boss.difficulty]}
+                  </Badge>
                 </View>
               </View>
             </View>

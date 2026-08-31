@@ -69,8 +69,7 @@ import { getSupportedDifficulties, type MatchedBoss } from '../../lib/boss-match
 import { getMaxPartySize } from '../../lib/boss-crystal-prices'
 import { isChallengersWorld } from '../../lib/world-emblem'
 
-import { BlockedBadge } from '../../components/atoms/BlockedBadge/BlockedBadge'
-import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
+import { Badge } from '../../components/atoms/Badge/Badge'
 import { Text } from '../../components/atoms/Text/Text'
 import { BossSectionHeader } from '../../components/molecules/BossSectionHeader/BossSectionHeader'
 import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
@@ -131,7 +130,9 @@ function BossCard(props: {
 
         <View className="h-full flex-row items-center justify-between px-[14px]">
           <View className="flex-row items-center gap-2">
-            <DifficultyBadge difficulty={boss.difficulty} />
+            <Badge variant={boss.difficulty}>
+              {boss.difficulty}
+            </Badge>
             <Text className="text-sm font-medium text-text" style={MEDIA_TEXT_SHADOW_STYLE}>
               {bossName}
             </Text>
@@ -148,24 +149,22 @@ function BossCard(props: {
                 완료 여부는 게임이 준 스냅샷이지 이 캐릭터가 잡을 수 있다는 뜻이 아니다. */}
             {/* [[ADR-187]] 결정 2 — 주간 12마리를 채우면 남은 미처치 보스는 「마감」이다. **완료로
                 칠하지 않는다**: 안 잡은 보스를 완료로 두면 그 거짓이 보스 수익의 결정석 금액이
-                된다. 배색은 `BlockedBadge` 의 것을 그대로 쓴다(실패도 경고도 아니고 «이번 주엔
+                된다. 배색은 `Badge` 의 `muted` 톤을 그대로 쓴다(실패도 경고도 아니고 «이번 주엔
                 차례가 없다» 는 사실이라 눌린 회색이다 — 새 색을 만들지 않는다).
                 우선순위는 「진행 불가」 > 「마감」 > 「완료」 — 요구 레벨에 못 미치는 보스는
                 한도와 무관하게 애초에 못 잡는다. */}
             {props.isBlocked === true ? (
-              <BlockedBadge />
+              <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
             ) : boss.isWeeklyLimitClosed ? (
               // **「완료」와 같은 상자다**(사용자 지정) — 자리를 대신하는 배지라 크기가 다르면 같은
               // 자리에서 배지가 커졌다 작아졌다 하며 카드 오른쪽 끝이 흔들린다. 갈리는 것은 색뿐이고,
-              // 그 색은 `BlockedBadge` 의 것이다(실패도 경고도 아닌 «차례가 아니다» — 눌린 회색).
-              <Text className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-bold text-text-muted">
+              // 그 색은 `Badge` 의 `muted` 톤이다(실패도 경고도 아닌 «차례가 아니다» — 눌린 회색).
+              <Badge variant="muted" weight="bold">
                 마감
-              </Text>
+              </Badge>
             ) : (
               boss.isComplete && (
-                <Text className="rounded-full bg-secondary-tint px-2.5 py-1 text-xs font-bold text-secondary-ink">
-                  완료
-                </Text>
+                <Badge variant="secondary">완료</Badge>
               )
             )}
           </View>

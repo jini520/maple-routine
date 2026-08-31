@@ -35,7 +35,7 @@ import { getItemIconUrl } from '../../lib/item-icons'
 import type { BossDifficulty } from '../../types'
 import type { RecordedDrop } from '../../types/drops'
 
-import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
+import { Badge } from '../../components/atoms/Badge/Badge'
 import { Text } from '../../components/atoms/Text/Text'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { ChevronLeftIcon } from '../../lib/icons'
@@ -121,7 +121,9 @@ export function DropPricePadContent(
               {props.drop.ringLevel !== undefined && ` ${props.drop.ringLevel}레벨`}
             </Text>
             <View className="mt-0.5 flex-row items-center gap-1.5">
-              <DifficultyBadge difficulty={props.difficulty} />
+              <Badge variant={props.difficulty}>
+                {props.difficulty}
+              </Badge>
               <Text numberOfLines={1} className="shrink text-11 text-text-muted">
                 {props.boss} · {props.characterName}
               </Text>

@@ -31,6 +31,7 @@ import { View } from 'react-native'
 import type { LiveUpdateStatus, LiveUpdateStore } from '../../features/live-update/store'
 
 import { Button } from '../../components/atoms/Button/Button'
+import { Badge } from '../../components/atoms/Badge/Badge'
 import { Card } from '../../components/atoms/Card/Card'
 import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
 import { Text } from '../../components/atoms/Text/Text'
@@ -100,9 +101,7 @@ export function AppUpdateSection(props: AppUpdateSectionProps): React.JSX.Elemen
         <Text className="text-sm font-medium text-text">현재 버전</Text>
         <View className="flex-row items-center gap-2">
           {state.channel === 'beta' && (
-            <Text className="rounded-full bg-primary-tint px-2 py-0.5 text-xs font-semibold text-primary-ink">
-              beta
-            </Text>
+            <Badge variant="primary">beta</Badge>
           )}
           <Text className="text-sm text-text-muted">{displayedVersion}</Text>
         </View>

@@ -144,7 +144,7 @@ export function PartySizeModal(props: {
                   <Text className="text-xs font-bold tracking-[.06em] text-text-muted">파티 인원</Text>
                 </View>
                 {/* 주간 n/12 배지와 같은 컴포넌트다 — 신규 스타일을 만들지 않는다. */}
-                <Badge tone="primary" style={TABULAR_NUMS}>
+                <Badge variant="primary" style={TABULAR_NUMS}>
                   {props.partySize} / {props.maxPartySize}
                 </Badge>
               </View>
