@@ -17,7 +17,6 @@ import { Image, Pressable, View } from 'react-native'
 
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
-import { parseMesoText } from '../../../components/molecules/MesoPad/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import {
   SelectField,
@@ -50,7 +49,7 @@ import type { ImageAssetRef } from '../../../types/image-asset'
 import type { HuntingGround, HuntingRegion } from '../../../types/hunting-grounds'
 import { nextAmountIdentity } from '../amount-identity'
 import { FieldRow, QuantityStepper } from '../sheet-fields'
-import { CharacterField, SaveRow, type IncomeFormProps } from './form-shared'
+import { CharacterField, FragmentFields, SaveRow, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from './use-sheet-submit'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
@@ -559,33 +558,12 @@ export function HuntCalculatorForm(
         <Text className="ml-1.5 shrink-0 text-xs text-text-muted">메소</Text>
       </FieldRow>
 
-      {/* **직접 입력**이다([[ADR-175]] 결정 8) — 앱이 추정하면 틀린 값을 확신 있게 적는 셈이다.
-          스테퍼가 아니라 **치는 칸**인 이유는 30분에 10개 내외라 8소재면 80개가 넘어서다. */}
-      <FieldRow label="솔 에르다 조각">
-        <SheetTextInput
-          testID="income-sheet-fragments"
-          value={fragments === 0 ? '' : fragments.toLocaleString()}
-          onChangeText={(text) => setFragments(parseMesoText(fragments, text))}
-          keyboardType="number-pad"
-          placeholder="0"
-          className="flex-1 text-right text-sm font-semibold text-text"
-          style={TABULAR_NUMS}
-        />
-        <Text className="ml-1.5 shrink-0 text-xs text-text-muted">개</Text>
-      </FieldRow>
-
-      <FieldRow label="조각 가격">
-        <SheetTextInput
-          testID="income-sheet-fragment-price"
-          value={fragmentPrice === 0 ? '' : fragmentPrice.toLocaleString()}
-          onChangeText={(text) => setFragmentPrice(parseMesoText(fragmentPrice, text))}
-          keyboardType="number-pad"
-          placeholder="0"
-          className="flex-1 text-right text-sm font-semibold text-text"
-          style={TABULAR_NUMS}
-        />
-        <Text className="ml-1.5 shrink-0 text-xs text-text-muted">메소</Text>
-      </FieldRow>
+      <FragmentFields
+        fragments={fragments}
+        fragmentPrice={fragmentPrice}
+        onChangeFragments={setFragments}
+        onChangeFragmentPrice={setFragmentPrice}
+      />
 
       <AmountFigure
         // **사냥의 큰 숫자는 합계**다([[ADR-175]] 결정 1) — 획득 메소 + 조각 × 가격. 앱이 세므로 못 친다.
