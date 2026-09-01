@@ -97,19 +97,19 @@ describe('줄 상자 ([[ADR-178]] 정정 2·3)', () => {
   })
 
   /**
-   * 단위 글자(`조`·`억`·`만`·`천`)는 숫자보다 **한 단계 작다**([[ADR-202]] 결정 10).
+   * 단위 글자(`조`·`억`·`만`·`천`)는 숫자보다 **계단 한 칸 아래**다([[ADR-202]] 결정 10).
    *
-   * 크기만 인라인으로 얹는다 — 줄 높이까지 주면 안드로이드에서 안긴 `Text` 가 줄 상자를 흔든다.
+   * `text-2xl` 안에 `text-xl` 을 안친 것이라 줄 높이 28 이 함께 온다. 그 줄 높이가 바깥 줄 상자를
+   * 흔들지 않는 것은 안드로이드에서 잰 값이다(실측 2026-09-02 — 큰 숫자 줄이 픽셀 단위로 같다).
    */
   it('단위 글자는 숫자보다 한 단계 작다', async () => {
     const view = await renderAtom(<AmountFigure value={850_000_000} unit="메소" testID="amount" />)
 
-    const 억 = flattenStyle(view.getByText('억').props.style) as {
-      fontSize: number
-      lineHeight?: number
-    }
+    const 억 = flattenStyle(view.getByText('억').props.style) as { fontSize: number }
+    const 숫자 = flattenStyle(view.getByTestId('amount').props.style) as { fontSize: number }
+
     expect(억.fontSize).toBe(20)
-    expect(억.lineHeight).toBeUndefined()
+    expect(억.fontSize).toBeLessThan(숫자.fontSize)
   })
 
   /**
@@ -139,6 +139,7 @@ describe('줄 상자 ([[ADR-178]] 정정 2·3)', () => {
 
     const 숫자 = flattenStyle(view.getByTestId('amount').props.style) as { fontSize: number }
     // 폭 0 짜리 투명 글자(ZWSP)가 숫자와 같은 크기여야 한다 — 작아지면 기준선이 다시 갈린다.
+    // 둘 다 `text-2xl` 이라 계단이 움직여도 함께 움직인다.
     const 심긴글자 = flattenStyle(view.getByText('\u200B').props.style) as {
       fontSize: number
       opacity: number
