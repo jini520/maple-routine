@@ -94,17 +94,48 @@ function openingTextTags(source: string): string[] {
 
 const FILES = sourceFiles(SRC)
 
-/** 글자를 그리는 자체 컴포넌트 파일 — 「글자 atom 을 import 한다」가 곧 그 정의다. */
-function textRenderingComponentFiles(): string[] {
-  return sourceFiles(join(SRC, 'components')).filter((file) => {
-    if (ATOMS.includes(file)) return false
-    const source = readFileSync(file, 'utf8')
-    return source.includes("/Text/Text'") || source.includes("/TextInput/TextInput'")
-  })
+/** `{ Badge, type BadgeVariant }` → `['Badge', 'BadgeVariant']`. 여기서는 경로만 따지므로 타입도 든다. */
+function namedSpecifiers(clause: string): string[] {
+  const braces = /\{([^}]*)\}/.exec(clause)
+  if (braces === null) return []
+  return braces[1]
+    .split(',')
+    .map((raw) => raw.trim().replace(/^type\s+/, '').split(/\s+/)[0])
+    .filter((name) => name !== '')
+}
+
+/** 상대 경로 하나를 **실제 파일**로. 디렉터리를 가리키면 그 안의 `index` 다. */
+function resolveModule(base: string): string | null {
+  const candidates = [`${base}.tsx`, `${base}.ts`, join(base, 'index.ts'), join(base, 'index.tsx')]
+  return candidates.find((candidate) => existsSync(candidate)) ?? null
 }
 
 /**
- * 이 파일이 상대 경로로 가져오는 모듈들의 **절대 경로**.
+ * 배럴이 이 이름들을 **어느 파일에서** 내보내는가([[ADR-200]]).
+ *
+ * **배럴은 비쳐 보여야 한다.** 안 그러면 배럴을 쓰는 파일이 전부 `atoms/index.ts` 하나를 가리켜
+ * 「이 부품이 글자를 그리나」가 판별이 안 된다. 실제로 그렇게 멀었다: [[ADR-200]] 이 import 를
+ * 배럴로 바꾸자 `src/components` 아래 31개 파일이 탐지기 눈에서 사라졌고, 아래 「새는 자리」
+ * 단언이 빈 집합을 검사하며 통과했다.
+ *
+ * `atoms/Icon`·`atoms/Spinner` 처럼 배럴이 배럴을 내보내는 자리가 있어 한 겹 더 판다.
+ */
+function barrelTargets(barrel: string, names: string[], depth = 0): string[] {
+  if (depth > 3) return []
+  const source = readFileSync(barrel, 'utf8')
+  const out: string[] = []
+  for (const match of source.matchAll(/export\s*\{([^}]*)\}\s*from\s*'(\.[^']+)'/g)) {
+    if (!namedSpecifiers(`{${match[1]}}`).some((name) => names.includes(name))) continue
+    const target = resolveModule(join(dirname(barrel), match[2]))
+    if (target === null) continue
+    if (/index\.tsx?$/.test(target)) out.push(...barrelTargets(target, names, depth + 1))
+    else out.push(target)
+  }
+  return out
+}
+
+/**
+ * 이 파일이 상대 경로로 가져오는 모듈들의 **절대 경로**. 배럴은 가져간 이름의 파일로 편다.
  *
  * 이름(`<CharacterRow>`)이 아니라 경로로 판정한다 — 위젯 파일 안에 같은 이름의 **로컬 함수**가
  * 사는 경우가 실제로 있고(`WeeklyBossProfitWidget`), 이름만 보면 그것을 molecule 로 오인한다.
@@ -112,13 +143,25 @@ function textRenderingComponentFiles(): string[] {
 function localImportTargets(file: string): string[] {
   const source = readFileSync(file, 'utf8')
   const out: string[] = []
-  for (const match of source.matchAll(/from\s*'(\.[^']+)'/g)) {
-    const base = join(dirname(file), match[1])
-    for (const candidate of [`${base}.tsx`, `${base}.ts`]) {
-      if (existsSync(candidate)) out.push(candidate)
-    }
+  for (const match of source.matchAll(/import\s+([^'";]*?)\s*from\s*'(\.[^']+)'/g)) {
+    const target = resolveModule(join(dirname(file), match[2]))
+    if (target === null) continue
+    if (/index\.tsx?$/.test(target)) out.push(...barrelTargets(target, namedSpecifiers(match[1])))
+    else out.push(target)
   }
   return out
+}
+
+/**
+ * 글자를 그리는 자체 컴포넌트 파일 — 「글자 atom 을 import 한다」가 곧 그 정의다.
+ *
+ * 문자열로 경로를 찾지 않고 `localImportTargets` 로 **푼 결과**를 본다. 깊은 경로와 배럴 두 모양이
+ * 섞여 있어(`'../Text/Text'` · `'../../atoms'`) 문자열로는 한쪽만 잡힌다.
+ */
+function textRenderingComponentFiles(): string[] {
+  return sourceFiles(join(SRC, 'components')).filter(
+    (file) => !ATOMS.includes(file) && localImportTargets(file).some((t) => ATOMS.includes(t)),
+  )
 }
 
 describe('[[ADR-152]] 결정 4 — 글자는 atom 한 곳에서만 나온다', () => {
