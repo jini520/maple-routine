@@ -24,9 +24,7 @@ import { Pressable, View } from 'react-native'
 import { formatBytes } from '../../lib/format-bytes'
 import type { CacheDataGroupId, CacheDataSelection } from '../../storage/cache-data'
 
-import { Button } from '../../components/atoms/Button/Button'
-import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
-import { Text } from '../../components/atoms/Text/Text'
+import { Button, Text } from '../../components/atoms'
 import { Modal } from '../../components/organisms/Modal/Modal'
 import { CheckIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../lib/text-styles'
@@ -96,8 +94,8 @@ export function CacheClearConfirm(props: CacheClearConfirmProps): React.JSX.Elem
               return (
                 <Pressable
                   key={group.id}
-                  // 다중 선택이라 역할이 button 이 아니라 checkbox 다 — 이 화면에서 유일하게
-                  // `aria-selected` 로 갈아타지 않은 자리이고, 그것이 옳다.
+                  // 다중 선택이라 역할이 button 이 아니라 checkbox 다 — 이 화면에서 `aria-selected`
+                  // 로 안 갈아탄 자리가 여기뿐이고, 그것이 옳다.
                   role="checkbox"
                   aria-checked={isSelected}
                   aria-label={group.label}
@@ -160,20 +158,16 @@ export function CacheClearConfirm(props: CacheClearConfirmProps): React.JSX.Elem
             <Button
               variant="danger"
               disabled={isConfirmDisabled}
-              aria-busy={props.isClearing}
+              busy={props.isClearing}
               onPress={() => props.onConfirm(selection)}
-              className={`flex-row items-center justify-center gap-2${
+              className={`flex-row items-center justify-center${
                 isConfirmDisabled ? ' opacity-50' : ''
               }`}
             >
-              {/* ADR-061 결정 5·9 — 스피너 + 말줄임표 없는 '~중' 라벨. 이 버튼은 최대 10초
-                  (CLEAR_TIMEOUT_MS) 걸리고 되돌릴 수 없어 라벨이 특히 중요하다. */}
-              {props.isClearing && <MapleSpinner size={16} />}
-              {props.isClearing
-                ? '삭제 중'
-                : selectedBytes !== null
-                  ? `삭제 (${formatBytes(selectedBytes)})`
-                  : '삭제'}
+              {/* 대기 중에도 이 라벨이 자리를 지켜 버튼 폭이 안 줄고, 스크린리더는 그대로 읽는다
+                  ([[ADR-061]] 정정 3). 최대 10초(CLEAR_TIMEOUT_MS) 걸리고 되돌릴 수 없는
+                  버튼이라 그 둘이 특히 중요하다. */}
+              {selectedBytes !== null ? `삭제 (${formatBytes(selectedBytes)})` : '삭제'}
             </Button>
           </View>
         </View>

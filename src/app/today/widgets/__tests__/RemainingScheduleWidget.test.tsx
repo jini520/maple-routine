@@ -348,13 +348,15 @@ describe('펼침도 그 탭의 것만이다 ([[ADR-181]] 결정 7)', () => {
     expect(view.queryAllByTestId('schedule-toggle')).toHaveLength(1)
   })
 
-  it('보스 배지가 작은 크기다 — 20px 배지가 줄 높이를 혼자 정하고 있었다([[ADR-147]] 정정 40)', async () => {
+  // 20px 배지가 줄 높이를 혼자 정하고 있었다([[ADR-147]] 정정 40). 이제 상자에 높이를 안 박고
+  // 여백이 높이를 만들므로([[ADR-195]] 정정 3), 「작다」는 **글자 크기**로 잰다.
+  it('보스 배지가 작은 크기다 — 본문보다 작은 칩 계단을 쓴다', async () => {
     const view = await 위젯([스케줄행()])
 
     await 탭(view, '월간')
     await 펼치기(view)
 
-    expect(Number(flattenStyle(view.getByText('하드').parent?.props.style).height)).toBe(16)
+    expect(Number(flattenStyle(view.getByText('하드').props.style).fontSize)).toBe(9)
   })
 
   // `[주간 퀘스트] 타락한 세계수 주간 임무` 와 `… 정화에 대한 보답` 이 **둘 다 「타락한 세계수」** 로

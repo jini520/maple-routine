@@ -37,7 +37,7 @@ export const RECORD_TABLE_NAMES: readonly string[] = [
   'boss_profit_records',
   'boss_drop_records',
   'boss_profit_period_checks',
-  // 손입력이 유일한 원천이라 API 로 되살릴 길이 **0%** 다([[ADR-170]] 결정 2). 여기 안 넣으면
+  // 손입력에서만 오는 값이라 API 로 되살릴 길이 **0%** 다([[ADR-170]] 결정 2). 여기 안 넣으면
   // 아래 차집합 파생이 이 둘을 «지워도 되는 것» 으로 끌어간다.
   'income_records',
   'spend_records',

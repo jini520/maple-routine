@@ -3,7 +3,7 @@
 //
 // ── 옮기지 않은 계약 여섯 ────────────────────────────────────────────────────────────
 //
-// ① **당김 제스처 시뮬레이션 다섯**([[ADR-072]]·[[ADR-073]]) — 임계 넘김/미달·목록 `transform`·
+// ① **당김 제스처 시뮬레이션 다섯**([[ADR-072]]) — 임계 넘김/미달·목록 `transform`·
 //    전환 켜고 끄기는 이제 OS 가 갖는다([[ADR-130]]). 남는 계약은 *"당김이 헤더 버튼과 같은
 //    재조회를 부르는가"* 와 *"의미 없는 기간에서는 꺼지는가"* 둘이고 그것은 본다.
 // ② **`fixed` 헤더 + 실측 spacer + `ADR-112` 한 커밋 반영** — 헤더가 스크롤 뷰의 형제라 spacer 도
@@ -28,7 +28,7 @@ import {
   type BossProfitWeeklySubtotal } from '../../../features/boss-profit/store'
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss-matching'
 import { getCurrentBossProfitPeriod } from '../../../lib/boss-profit-period'
-import { clearCountUpMemory } from '../../../lib/use-count-up'
+import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import type { RecordedDrop } from '../../../types/drops'
 
 import { 테스트_안전영역 } from '../../../components/__tests__/render-atom'

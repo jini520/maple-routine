@@ -88,8 +88,8 @@ export async function getTrackedCharacterOcids(): Promise<string[] | null> {
 }
 
 // ADR-143 결정 4: 참조 무결성은 **쓰는 쪽**이 지킨다 — 저장된 대표가 새 목록에 없으면 그 키를
-// 지운다. 판정을 목록 저장 안에 두는 이유는 "저장 시점"이 곧 대표가 목록을 벗어날 수 있는 유일한
-// 순간이라서다. 지우고 나면 규칙대로 첫 번째가 (읽는 쪽에서) 임시 대표가 된다.
+// 지운다. 판정을 목록 저장 안에 두는 이유는 대표가 목록을 벗어날 수 있는 순간이 "저장 시점"
+// 하나뿐이라서다. 지우고 나면 규칙대로 첫 번째가 (읽는 쪽에서) 임시 대표가 된다.
 async function pruneDanglingRepresentative(ocids: string[]): Promise<void> {
   const representative = await preferences.get(representativeCharacterKey())
   if (representative !== null && !ocids.includes(representative)) {

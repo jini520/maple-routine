@@ -33,7 +33,6 @@
 //    사라지고(줄바꿈 품질만 달라진다) WORD JOINER 는 **core 가 문자열에 박아 두므로** 그대로 온다.
 import { useEffect, useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
-import { Path } from 'react-native-svg'
 
 import {
   useDropHistoryStore,
@@ -55,16 +54,14 @@ import type {
 import { getItemIconUrl } from '../../lib/item-icons'
 import { isValuableDrop } from '../../lib/valuable-drops'
 
-import { Text } from '../../components/atoms/Text/Text'
+import { MapleLeaf, Text } from '../../components/atoms'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
-import { MAPLE_LEAF_PATH } from '../../components/mapleLeafPath'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { DROUGHT_GLOW_FILTER, DROUGHT_TIER_STYLES } from '../../lib/drought-tier-styles'
 import { ArrowLeftIcon, ScrollTextIcon } from '../../lib/icons'
-import { Svg } from '../../lib/nativewind-interop'
 import { TABULAR_NUMS } from '../../lib/text-styles'
 import { useTopSafeAreaPx } from '../../lib/top-safe-area'
 import { useScreenNavigation } from '../use-screen-navigation'
@@ -103,8 +100,8 @@ function ValuableDrought(props: { summary: ValuableDroughtSummary; now: Date }):
   return (
     <View
       testID="valuable-drought"
-      // 웹의 `data-drought-tier` 자리 — RN 에는 데이터 속성이 없어 접근성 이름으로 옮긴다. 테스트가
-      // 단계를 지목하는 유일한 통로이고, 스크린리더에도 단계가 문구로만 남는 것보다 낫다.
+      // 웹의 `data-drought-tier` 자리 — RN 에는 데이터 속성이 없어 접근성 이름으로 옮긴다. 테스트는
+      // 이 이름으로만 단계를 지목할 수 있고, 스크린리더에도 단계가 문구로만 남는 것보다 낫다.
       aria-label={`고가 드롭 미획득 ${tier}단계`}
       className="flex-row items-center justify-center gap-2.5"
     >
@@ -124,24 +121,18 @@ function ValuableDrought(props: { summary: ValuableDroughtSummary; now: Date }):
           ...(style.glow ? { filter: DROUGHT_GLOW_FILTER } : {}),
         }}
       >
-        <Svg
-          width={DROUGHT_LEAF_SIZE}
-          height={Math.round(DROUGHT_LEAF_SIZE * (130 / 127))}
-          viewBox="0 0 127 130"
-        >
-          <Path d={MAPLE_LEAF_PATH} fill={style.leaf} />
-        </Svg>
+        <MapleLeaf size={DROUGHT_LEAF_SIZE} fill={style.leaf} />
       </View>
       <View className="shrink">
         {/* 잎을 키운 만큼 글자도 한 단계씩 올린다(사용자 지정 2026-08-01) — 제목 `text-sm`→`text-base`,
-            아래 줄 `text-[10px]`→`text-[11px]`. 아래 줄을 `text-xs`(12px)까지 올리지 않는 이유는 목록
+            아래 줄 `text-10`→`text-11`. 아래 줄을 `text-xs`(12px)까지 올리지 않는 이유는 목록
             문장이 12px 라, 같아지면 요약과 본문의 위계가 사라진다. */}
         <Text className={`text-base font-bold ${style.ink}`}>
           {formatValuableDroughtHeadline(weeks, headlineIndex)}
         </Text>
         {/* 이번 주에 먹었으면 그게 곧 마지막이라 "마지막 에픽 빔!"을 뺀다 — 아직 진행 중인 주를
             "마지막"이라 부르면 어색하다. 1주 이상은 실제로 지난 일이라 붙인다. */}
-        <Text className="text-[11px] leading-tight text-text-muted">
+        <Text className="text-11 leading-tight text-text-muted">
           {weeks === 0 ? '' : '마지막 에픽 빔! '}
           {label.primary}
           {items !== '' && ` · ${items}`}
@@ -197,7 +188,7 @@ function DropHistoryEntry(props: {
           <Text>
             <Text
               testID="valuable-drop-inline"
-              className="text-[11px] font-bold"
+              className="text-11 font-bold"
               style={{ backgroundColor: VALUABLE_INLINE_BG, color: VALUABLE_INLINE_INK }}
             >
               {/* 아이콘은 문장 안 인라인 이미지다 — 크기를 명시해야 RN 이 줄 안에 앉힌다. 웹의
@@ -258,7 +249,7 @@ function DropHistoryPeriodSection(props: {
           {label.secondary !== label.primary && (
             <Text
               testID="drop-history-period-range"
-              className="text-center text-[10px] leading-tight text-text-muted"
+              className="text-center text-10 leading-tight text-text-muted"
               style={TABULAR_NUMS}
             >
               {label.secondary}

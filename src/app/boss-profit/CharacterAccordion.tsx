@@ -32,7 +32,9 @@
 // ② **글로우 맥동 → `boxShadow` 두 겹의 교차 페이드.** RN 은 `box-shadow` 를 키프레임으로
 //    보간하지 않으므로 파라미터를 굴릴 수 없다. 대신 두 끝점(0%/100% 와 50%)을 각각 가진 겹을
 //    반대 방향 `opacity` 로 교차시킨다 — **끝점 둘은 웹과 정확히 같고** 중간만 파라미터 보간이
-//    아니라 알파 교차다. `keyframes-parity.test.ts` 가 웹 CSS 에서 그 두 끝점을 읽어 대조한다.
+//    아니라 알파 교차다. 그 두 끝점을 웹 CSS 와 대조하던 `keyframes-parity.test.ts` 는 웹 소스와
+//    함께 지워졌다([[ADR-155]]·[[ADR-156]]). 지금 끝점을 지키는 것은 `valuable-card-glow.ts` 의
+//    출처 표기뿐이다.
 // ③ **펼치면 맥동만 멈춘다**(결정 4). 웹은 복합 선택자로 `animation: none` 을 덮었고, 여기서는
 //    맥동 겹을 렌더하지 않고 정적 폴백 그림자만 남긴다. 그것이 웹의 `animation: none` 이 고정하는
 //    바로 그 값(`.valuable-drop-card` 의 `box-shadow`)이다.
@@ -67,8 +69,7 @@ import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss-matching'
 import type { PopoverAnchorGeometry } from '../../lib/popover-anchor'
 import weeklyBossesData from '../../data/weekly-bosses.json'
 
-import { AnimatedMeso } from '../../components/atoms/AnimatedMeso/AnimatedMeso'
-import { Text } from '../../components/atoms/Text/Text'
+import { AnimatedNumber, Text } from '../../components/atoms'
 import { ValuableDropBadge } from '../../components/molecules/ValuableDropBadge/ValuableDropBadge'
 import { ChevronDownIcon, ChevronUpIcon } from '../../lib/icons'
 import { AnimatedView } from '../../lib/nativewind-interop'
@@ -352,7 +353,7 @@ export function CharacterAccordion(props: {
                 className={`text-sm font-bold ${hasItemRevenue ? 'text-primary-ink' : 'text-text'}`}
                 style={TABULAR_NUMS}
               >
-                <AnimatedMeso
+                <AnimatedNumber
                   identity={`character|${group.ocid}|${loadedTab}|${loadedPeriodKey}`}
                   value={totalMeso}
                 />
@@ -370,7 +371,7 @@ export function CharacterAccordion(props: {
                 className="h-5 shrink-0 flex-row items-center rounded-full bg-primary-tint px-2"
               >
                 <Text
-                  className="text-[11px] font-bold leading-none text-primary-ink"
+                  className="text-11 font-bold leading-none text-primary-ink"
                   style={TABULAR_NUMS}
                 >
                   아이템 +{formatMesoShort(itemTotal)}

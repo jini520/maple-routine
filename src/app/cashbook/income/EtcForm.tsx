@@ -8,7 +8,7 @@
 import { useState } from 'react'
 import { View } from 'react-native'
 
-import { Text } from '../../../components/atoms/Text/Text'
+import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { formatMesoUnits } from '../../../lib/drop-price'
@@ -22,9 +22,10 @@ import {
 import { pointToMeso } from '../../../lib/spend-catalog'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import { nextAmountIdentity } from '../amount-identity'
-import { FieldRow, FieldTextInput } from '../sheet-fields'
+import { FieldRow } from '../sheet-fields'
 import { CharacterField, SaveRow, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from './use-sheet-submit'
+import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
 export function EtcForm(
   props: IncomeFormProps & {
@@ -88,7 +89,7 @@ export function EtcForm(
       <CharacterField characters={props.characters} selected={ocid} onSelect={setOcid} />
 
       <FieldRow label="내용" labelTestID="income-sheet-name-label">
-        <FieldTextInput
+        <SheetTextInput
           value={name}
           onChangeText={setName}
           placeholder="내용"
@@ -122,7 +123,7 @@ export function EtcForm(
             </Text>
           </Text>
           <View className="flex-1 flex-row items-center justify-end">
-            <FieldTextInput
+            <SheetTextInput
               testID="income-sheet-rate"
               value={rateText}
               onChangeText={setRateText}

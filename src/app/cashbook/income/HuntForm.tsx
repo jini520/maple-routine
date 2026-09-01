@@ -12,7 +12,7 @@
 import { useRef, useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
-import { Text } from '../../../components/atoms/Text/Text'
+import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { parseMesoText } from '../../../components/molecules/MesoPad/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
@@ -46,9 +46,10 @@ import { TABULAR_NUMS } from '../../../lib/text-styles'
 import type { ImageAssetRef } from '../../../types/image-asset'
 import type { HuntingGround, HuntingRegion } from '../../../types/hunting-grounds'
 import { nextAmountIdentity } from '../amount-identity'
-import { FieldRow, FieldTextInput, QuantityStepper } from '../sheet-fields'
+import { FieldRow, QuantityStepper } from '../sheet-fields'
 import { CharacterField, SaveRow, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from './use-sheet-submit'
+import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
 /** 「lv.294」·「lv.200-201」 — 원 자료의 표기를 그대로 되돌린다. */
 function levelLabelOf(ground: HuntingGround): string {
@@ -72,11 +73,11 @@ function ForceBadge(props: { region: HuntingRegion; force: number }): React.JSX.
       className="flex-row items-center gap-1 rounded-full bg-surface-2 px-1.5 py-0.5"
     >
       {icon === null ? (
-        <Text className="text-[10px] font-semibold text-text-muted">{label.split(' ')[0]}</Text>
+        <Text className="text-10 font-semibold text-text-muted">{label.split(' ')[0]}</Text>
       ) : (
         <Image source={icon} className="h-3.5 w-3.5" resizeMode="contain" aria-hidden />
       )}
-      <Text className="text-[11px] font-semibold text-text-muted" style={TABULAR_NUMS}>
+      <Text className="text-11 font-semibold text-text-muted" style={TABULAR_NUMS}>
         {props.force}
       </Text>
     </View>
@@ -101,10 +102,10 @@ function GroundOptionRow(props: {
       </Text>
       <View className="ml-auto flex-row shrink-0 items-center gap-2">
         <ForceBadge region={props.region} force={props.ground.force} />
-        <Text className="text-[11px] text-text-muted" style={TABULAR_NUMS}>
+        <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>
           {levelLabelOf(props.ground)}
         </Text>
-        <Text className="text-[11px] text-text-muted" style={TABULAR_NUMS}>
+        <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>
           {props.ground.mobs}마리
         </Text>
       </View>
@@ -406,14 +407,14 @@ export function HuntForm(
           className="flex-row items-center justify-end gap-2 pb-1"
         >
           <ForceBadge region={huntRegion} force={huntGround.force} />
-          <Text className="text-[11px] text-text-muted" style={TABULAR_NUMS}>
+          <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>
             {levelLabelOf(huntGround)}
           </Text>
           {/* **감소한 마릿수**를 적는다(사용자 지정 2026-08-28) — 사냥터 목록은 맵의 제원
               (40마리)을 적지만 이 줄은 «실제로 잡는 수» 다. 그것이 곧 계산에 드는 값이다. */}
           <Text
             testID="income-sheet-killed-mobs"
-            className="text-[11px] text-text-muted"
+            className="text-11 text-text-muted"
             style={TABULAR_NUMS}
           >
             {killedMobsOf(huntGround.mobs, missedMobs)}마리
@@ -487,7 +488,7 @@ export function HuntForm(
           <FieldRow label="메소 획득량">
             {ocid !== null && mesoRate.kind === 'fallback' ? (
               <>
-                <FieldTextInput
+                <SheetTextInput
                   testID="income-sheet-meso-rate-input"
                   value={mesoRateText}
                   onChangeText={(text) => setMesoRateText(text.replace(/[^\d]/g, ''))}
@@ -553,7 +554,7 @@ export function HuntForm(
       {/* **직접 입력**이다([[ADR-175]] 결정 8) — 앱이 추정하면 틀린 값을 확신 있게 적는 셈이다.
           스테퍼가 아니라 **치는 칸**인 이유는 30분에 10개 내외라 8소재면 80개가 넘어서다. */}
       <FieldRow label="솔 에르다 조각">
-        <FieldTextInput
+        <SheetTextInput
           testID="income-sheet-fragments"
           value={fragments === 0 ? '' : fragments.toLocaleString()}
           onChangeText={(text) => setFragments(parseMesoText(fragments, text))}
@@ -566,7 +567,7 @@ export function HuntForm(
       </FieldRow>
 
       <FieldRow label="조각 가격">
-        <FieldTextInput
+        <SheetTextInput
           testID="income-sheet-fragment-price"
           value={fragmentPrice === 0 ? '' : fragmentPrice.toLocaleString()}
           onChangeText={(text) => setFragmentPrice(parseMesoText(fragmentPrice, text))}

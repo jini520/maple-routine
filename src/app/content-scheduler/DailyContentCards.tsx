@@ -22,12 +22,9 @@ import { matchDailyQuestRegionSlug, stripDailyQuestPrefix } from '../../lib/dail
 import type { DailyContent } from '../../types'
 import { Image, View } from 'react-native'
 
-import { Badge } from '../../components/atoms/Badge/Badge'
-import { Card } from '../../components/atoms/Card/Card'
-import { ProgressBar } from '../../components/atoms/ProgressBar/ProgressBar'
-import { Text } from '../../components/atoms/Text/Text'
+import { Badge, Card, ProgressBar, Text } from '../../components/atoms'
 import { MEDIA_TEXT_SHADOW_STYLE } from '../../lib/text-styles'
-import { BlockedBadge, QuestStateBadge } from './content-badges'
+import { QUEST_STATE_LABELS, QUEST_STATE_VARIANT } from './content-badges'
 import { MediaCard, MediaCardArt } from '../../components/molecules/MediaCardArt/MediaCardArt'
 
 // "몬스터파크"만 배경+아이콘 카드로 확장한다 — 다른 kind: 'contents' 항목이 생기면 그때
@@ -71,9 +68,13 @@ export function DailyQuestCard(props: {
 
         {/* [[ADR-162]] 결정 3 — 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
         {props.isBlocked === true ? (
-          <BlockedBadge />
+          <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
         ) : (
-          content.questState !== null && <QuestStateBadge questState={content.questState} />
+          content.questState !== null && (
+            <Badge variant={QUEST_STATE_VARIANT[content.questState]}>
+              {QUEST_STATE_LABELS[content.questState]}
+            </Badge>
+          )
         )}
       </View>
     </MediaCard>
@@ -114,9 +115,9 @@ export function MonsterParkCard(props: {
 
         {/* [[ADR-162]] 결정 3 — 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
           {props.isBlocked === true ? (
-            <BlockedBadge />
+            <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
           ) : (
-            <Badge tone="third">
+            <Badge variant="third">
               {content.nowCount}/{content.maxCount}
             </Badge>
           )}
@@ -159,7 +160,7 @@ export function renderDailyContentCard(
         <Text className="shrink text-sm text-text">
           {content.name} · {content.nowCount}/{content.maxCount}
         </Text>
-        {isBlocked && <BlockedBadge />}
+        {isBlocked && <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>}
       </View>
       {!isBlocked && content.maxCount > 0 && (
         <ProgressBar

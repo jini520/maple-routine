@@ -67,9 +67,7 @@ import {
 } from '../../lib/boss-profit-period'
 import { sumDropPayout } from '../../lib/drop-price'
 
-import { AnimatedMeso } from '../../components/atoms/AnimatedMeso/AnimatedMeso'
-import { ProfitIcon } from '../../components/atoms/ProfitIcon/ProfitIcon'
-import { Text } from '../../components/atoms/Text/Text'
+import { AnimatedNumber, ProfitIcon, Text } from '../../components/atoms'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
@@ -206,6 +204,11 @@ export function BossProfitScreen(): React.JSX.Element {
     onRetry: () => void retryPeriod(),
   })
 
+  const totalMeso = characterGroups.reduce(
+    (sum, group) => sum + groupTotalMeso(group, dropsByRowKey),
+    0,
+  )
+
   if (isEmpty) {
     // 헤더 셸을 쓰지 않는 가지라(제목 줄이 목록 없이 혼자 선다) 상단 안전영역을 여기서 먹는다 —
     // 웹의 `min-h-[calc(100dvh …)]` 자리는 `flex-1` 이다(탭 상자가 이미 탭바를 뺀 크기다).
@@ -243,10 +246,6 @@ export function BossProfitScreen(): React.JSX.Element {
   // **현재 기간은 백필 가능성을 묻지 않는다**([[ADR-067]] 결정 2 정정 2) — 조회일이 미래라
   // `isPeriodQueryable` 이 false 지만 그건 "조회 불가"가 아니라 실시간 동기화가 원천이라는 뜻이다.
   const periodQueryable = isCurrentPeriod || isPeriodQueryable(tab, periodKey, now)
-  const totalMeso = characterGroups.reduce(
-    (sum, group) => sum + groupTotalMeso(group, dropsByRowKey),
-    0,
-  )
   // 이 기간의 아이템 몫. 월간 탭은 주간 수익이 소계로만 들어오므로 그쪽 몫도 더해야 결정석과
   // 정확히 갈린다([[ADR-124]] 결정 7 정정).
   const periodItemMeso = characterGroups.reduce(
@@ -442,7 +441,7 @@ export function BossProfitScreen(): React.JSX.Element {
               >
                 {/* [[ADR-087]] 정정 1: **이 키에만 기간이 없다** — 기간이 바뀌어도 같은 자리의 같은
                     뜻을 가진 하나의 숫자로 보고 굴린다("기간 이동은 총 수익만", 사용자 결정). */}
-                <AnimatedMeso identity={`total|${loadedTab}`} value={totalMeso} />{' '}
+                <AnimatedNumber identity={`total|${loadedTab}`} value={totalMeso} />{' '}
                 <Text className="text-xs font-bold text-text-muted">메소</Text>
               </Text>
               {/* **증감 칩은 뺀 채로 둔다**([[ADR-124]] 결정 7, 2026-08-10) — 총 수익에서는 뜻이
@@ -456,7 +455,7 @@ export function BossProfitScreen(): React.JSX.Element {
                 onPress={togglePeriodPopover}
                 className="ml-auto h-6 shrink-0 flex-row items-center gap-0.5 rounded-full border border-border px-2.5"
               >
-                <Text className="text-[11px] font-semibold text-text-muted">자세히 보기</Text>
+                <Text className="text-11 font-semibold text-text-muted">자세히 보기</Text>
                 <ChevronDownIcon
                   className="h-3 w-3 shrink-0 text-text-muted"
                   strokeWidth={2.5}

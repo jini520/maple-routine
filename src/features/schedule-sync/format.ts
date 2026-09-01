@@ -82,7 +82,7 @@ export function formatRosterError(error: ScheduleSyncError, place: RosterErrorPl
         description: '입력하신 API 키가 서비스 단계 키인지 확인해주세요',
       }
     // ADR-067 결정 1 + ADR-068 결정 4: 이 계정의 캐릭터를 조회할 수 없다(영구). 재시도 버튼을
-    // 주지 않는다 — 눌러도 같은 400이다. 계정을 바꾸는 것이 유일한 탈출구이고 그 경로는 설정
+    // 주지 않는다 — 눌러도 같은 400이다. 빠져나가려면 계정을 바꾸는 수밖에 없고 그 경로는 설정
     // (피커)·계정 선택(온보딩)에 이미 있다.
     case 'characterUnavailable':
       return {

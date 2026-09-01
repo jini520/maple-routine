@@ -121,7 +121,7 @@ export interface RepresentativeView {
  * 라벨(일퀘·주간퀘·주간 보스·**검마**)은 위젯이 붙인다 — 「검마」는 월간 보스가 하나뿐이라 성립하는
  * 이름이라([[ADR-147]] 정정 3) 참조 데이터에서 파생시키지 않는다.
  */
-/** 아코디언 본문의 보스 한 줄 — 난이도는 공용 `DifficultyBadge` 가 그린다. */
+/** 아코디언 본문의 보스 한 줄 — 난이도는 공용 `Badge` 가 그린다. */
 export interface RemainingBossView {
   name: string
   difficulty: BossDifficulty
@@ -199,7 +199,7 @@ export interface WeeklyProfitView extends ProfitSplit {
   totalMeso: number
   /**
    * 이번 주에 **기록이 하나라도 있는가**. `totalMeso` 가 0 인 두 경우(«0메소를 벌었다» 와 «아직
-   * 아무것도 없다»)를 위젯이 가르는 유일한 근거다 — 그 구분이 사라지면 큰 `0` 이 사실을 단정한다.
+   * 아무것도 없다»)를 위젯이 가를 근거가 이것뿐이다 — 그 구분이 사라지면 큰 `0` 이 사실을 단정한다.
    */
   hasRecords: boolean
   /** 기간 범위(«8월 14일 ~ 8월 20일») — 4x3 헤더만 쓴다. `formatBossProfitPeriodLabel` 의 `secondary`. */

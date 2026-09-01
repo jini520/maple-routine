@@ -115,7 +115,7 @@ function toSharedEntry(entry: CatalogEntry, scope: 'world' | 'account'): SharedC
  * - **계열 순서**는 `sharedGroupOrder` 가 손으로 적는다. 배열을 이어 읽은 첫 등장 순서는
  *   「몬스터파크 · 메이플 유니온 · 에픽던전」이라 사용자가 지정한 순서와 다르다.
  * - **계열 안의 항목 순서**는 `worldShared` → `accountShared` 를 이어 읽은 순서 그대로다.
- *   「메이플 유니온」이 월드 하나 + 계정 하나로 갈리는 유일한 계열이고, 그 둘의 순서가 이것으로
+ *   월드 하나 + 계정 하나로 갈리는 계열은 「메이플 유니온」뿐이고, 그 둘의 순서가 이것으로
  *   정해진다.
  *
  * `sharedGroupOrder` 에 없는 계열은 **버리지 않고 뒤에 붙인다** — 카탈로그에 항목을 더하고 순서를

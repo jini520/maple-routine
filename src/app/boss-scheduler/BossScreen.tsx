@@ -6,14 +6,10 @@
 //
 // ══ RN 으로 옮기며 **사라진** 것 넷 — 컨텐츠 스케줄러와 같다 ═══════════════════════════
 //
-// ① **`usePullToRefresh` 훅과 `PullToRefreshIndicator`**([[ADR-130]] 결정 1). 당김을
-//    `RefreshControl` 이 맡는다. **step 4 와 같은 배선이어야 한다** — 두 탭이 같은 제스처에 다르게
-//    반응하면 그 자체가 회귀다. [[ADR-072]] 결정 2·10 은 글자 그대로 지켜진다. **[[ADR-073]]
-//    결정 1 은 아니다** — *"헤더는 제자리, 목록만 내려간다"* 는 헤더가 스크롤 뷰의 형제일 때의
-//    그림이었고, [[ADR-131]] 이 헤더를 스크롤 뷰 **안**으로 넣으면서 iOS 에서는 러버밴드에 헤더도
-//    함께 내려간다(안드로이드는 콘텐츠를 안 움직이고 글로우만 그린다). **전제가 사라진 것이지
-//    회귀가 아니다.** [[ADR-074]] 의 마크 결정 넷이 폐기되는 자리가 [[ADR-130]] 이다.
-// ② **`resolveContentOffsetPx` 로 목록을 내리던 `transform`**([[ADR-073]] 결정 6) — OS 가 한다.
+// ① **당김을 손으로 만들던 제스처 훅과 커스텀 인디케이터**([[ADR-130]] 결정 1). 지금은
+//    `RefreshControl` 이 맡는다. **컨텐츠 스케줄러와 같은 배선이어야 한다** — 두 탭이 같은 제스처에
+//    다르게 반응하면 그 자체가 회귀다. [[ADR-072]] 결정 2·10 은 글자 그대로 지켜진다.
+// ② **목록을 손가락 따라 내리던 `transform`**([[ADR-130]] 결정 1) — 그 일을 OS 가 한다.
 // ③ **`useScreenStackStore` 의 깊이로 당김을 끄던 배선**([[ADR-120]] 결정 10). 하위 페이지는 루트
 //    스택에 **덮여** 올라오므로 아래 화면의 스크롤 뷰에 손가락이 닿지 않는다.
 // ④ **`<Outlet />`**([[ADR-077]] 언마운트 금지). 관리 페이지는 형제 라우트가 아니라 **형제 탭**이라
@@ -32,7 +28,7 @@
 //    을 받던 라우트 파라미터도 **설정 화면으로 통째로 옮겨갔다** — 추적 목록은 [[ADR-042]] 이후 앱
 //    전역 하나인데 그것을 고르는 자리만 다섯이었다. 남은 흔적은 빈 상태 CTA 하나이고, 그것도 모달이
 //    아니라 **설정 탭을 피커가 열린 채로** 연다.
-// ③ **카드 눌림 피드백이 절반만 온다**([[ADR-121]] 결정 1 — 이 카드의 **유일한** 어포던스다).
+// ③ **카드 눌림 피드백이 절반만 온다**([[ADR-121]] 결정 1 — 이 카드의 어포던스가 그것뿐이다).
 //    `active:scale-[.985]` 는 NativeWind 가 그대로 낸다(실측). `active:brightness-110` 은 **조용히
 //    사라진다** — NativeWind 가 `brightness-*` 를 네이티브 `filter` 로 내보내지 않는다. 탈출구인
 //    `style={({pressed}) => …}` 함수도 못 쓴다: NativeWind 가 `Pressable` 의 style **함수를 통째로
@@ -69,9 +65,7 @@ import { getSupportedDifficulties, type MatchedBoss } from '../../lib/boss-match
 import { getMaxPartySize } from '../../lib/boss-crystal-prices'
 import { isChallengersWorld } from '../../lib/world-emblem'
 
-import { BlockedBadge } from '../../components/atoms/BlockedBadge/BlockedBadge'
-import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
-import { Text } from '../../components/atoms/Text/Text'
+import { Badge, Text } from '../../components/atoms'
 import { BossSectionHeader } from '../../components/molecules/BossSectionHeader/BossSectionHeader'
 import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
@@ -131,7 +125,9 @@ function BossCard(props: {
 
         <View className="h-full flex-row items-center justify-between px-[14px]">
           <View className="flex-row items-center gap-2">
-            <DifficultyBadge difficulty={boss.difficulty} />
+            <Badge variant={boss.difficulty}>
+              {boss.difficulty}
+            </Badge>
             <Text className="text-sm font-medium text-text" style={MEDIA_TEXT_SHADOW_STYLE}>
               {bossName}
             </Text>
@@ -148,24 +144,22 @@ function BossCard(props: {
                 완료 여부는 게임이 준 스냅샷이지 이 캐릭터가 잡을 수 있다는 뜻이 아니다. */}
             {/* [[ADR-187]] 결정 2 — 주간 12마리를 채우면 남은 미처치 보스는 「마감」이다. **완료로
                 칠하지 않는다**: 안 잡은 보스를 완료로 두면 그 거짓이 보스 수익의 결정석 금액이
-                된다. 배색은 `BlockedBadge` 의 것을 그대로 쓴다(실패도 경고도 아니고 «이번 주엔
+                된다. 배색은 `Badge` 의 `muted` 톤을 그대로 쓴다(실패도 경고도 아니고 «이번 주엔
                 차례가 없다» 는 사실이라 눌린 회색이다 — 새 색을 만들지 않는다).
                 우선순위는 「진행 불가」 > 「마감」 > 「완료」 — 요구 레벨에 못 미치는 보스는
                 한도와 무관하게 애초에 못 잡는다. */}
             {props.isBlocked === true ? (
-              <BlockedBadge />
+              <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
             ) : boss.isWeeklyLimitClosed ? (
               // **「완료」와 같은 상자다**(사용자 지정) — 자리를 대신하는 배지라 크기가 다르면 같은
               // 자리에서 배지가 커졌다 작아졌다 하며 카드 오른쪽 끝이 흔들린다. 갈리는 것은 색뿐이고,
-              // 그 색은 `BlockedBadge` 의 것이다(실패도 경고도 아닌 «차례가 아니다» — 눌린 회색).
-              <Text className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-bold text-text-muted">
+              // 그 색은 `Badge` 의 `muted` 톤이다(실패도 경고도 아닌 «차례가 아니다» — 눌린 회색).
+              <Badge variant="muted" weight="bold">
                 마감
-              </Text>
+              </Badge>
             ) : (
               boss.isComplete && (
-                <Text className="rounded-full bg-secondary-tint px-2.5 py-1 text-xs font-bold text-secondary-ink">
-                  완료
-                </Text>
+                <Badge variant="secondary">완료</Badge>
               )
             )}
           </View>

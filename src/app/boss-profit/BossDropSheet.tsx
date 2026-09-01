@@ -45,9 +45,7 @@ import { isValuableDrop } from '../../lib/valuable-drops'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types'
 import type { DropCandidate, DropCategory, RecordedDrop, SelectableDropCategory } from '../../types/drops'
 
-import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
-import { ProfitIcon } from '../../components/atoms/ProfitIcon/ProfitIcon'
-import { Text } from '../../components/atoms/Text/Text'
+import { Badge, ProfitIcon, Text } from '../../components/atoms'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { DropEffectOverlay } from '../../components/organisms/DropEffectOverlay/DropEffectOverlay'
@@ -69,7 +67,7 @@ const DISPLAY_ORDER: SelectableDropCategory[] = ['equipment', 'consumable']
 
 interface BossDropSheetProps {
   boss: string
-  // 수익 리스트 행의 난이도. 미완료면 시트 안 난이도 토글의 기본값, 완료면 유일하게 표시할 난이도.
+  // 수익 리스트 행의 난이도. 미완료면 시트 안 난이도 토글의 기본값, 완료면 그 난이도만 표시한다.
   difficulty: BossDifficulty
   // 완료 여부(수익 리스트 행 기준). true면 난이도 토글 없이 완료 난이도만 표시, false면 토글 노출.
   isComplete: boolean
@@ -94,7 +92,7 @@ function ItemThumb(props: { name: string; slot?: string; level?: number }): Reac
       )}
       {props.level !== undefined && (
         <View className="absolute -bottom-1 -right-1 rounded-full bg-primary px-1 py-px">
-          <Text className="text-[8px] font-bold leading-none text-on-primary">lv{props.level}</Text>
+          <Text className="text-8 font-bold leading-none text-on-primary">lv{props.level}</Text>
         </View>
       )}
     </View>
@@ -114,7 +112,7 @@ function FixedDropIcon(props: { icon: FixedDropIconSpec }): React.JSX.Element {
         <View className="h-8 w-8 rounded-md bg-surface-2" role="img" aria-label={icon.itemName} />
       )}
       <View className="absolute -bottom-1 -right-1 rounded-full bg-primary px-1 py-px">
-        <Text className="text-[8px] font-bold leading-none text-on-primary" style={TABULAR_NUMS}>
+        <Text className="text-8 font-bold leading-none text-on-primary" style={TABULAR_NUMS}>
           {icon.count}개
         </Text>
       </View>
@@ -134,7 +132,7 @@ function EffectToggle(props: { on: boolean; onToggle: () => void }): React.JSX.E
       onPress={props.onToggle}
       className="ml-auto shrink-0 flex-row items-center gap-1.5"
     >
-      <Text className="text-[11px] font-semibold text-text-muted">드롭 연출</Text>
+      <Text className="text-11 font-semibold text-text-muted">드롭 연출</Text>
       <View className={`h-4 w-7 shrink-0 flex-row items-center rounded-full ${props.on ? 'bg-primary' : 'bg-border-strong'}`}>
         <View className="h-3 w-3 rounded-full bg-white" style={{ transform: [{ translateX: props.on ? 14 : 2 }] }} />
       </View>
@@ -295,7 +293,9 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
               {props.isComplete ? (
                 // 완료: 완료된 난이도만 표시(선택 불가). 미완료 토글과 동일하게 오른쪽 끝 정렬.
                 <View className="ml-auto">
-                  <DifficultyBadge difficulty={props.difficulty} />
+                  <Badge variant={props.difficulty}>
+                    {props.difficulty}
+                  </Badge>
                 </View>
               ) : (
                 // 미완료: 드롭 테이블 난이도를 선택 버튼으로 나열(오른쪽 끝 정렬), 선택 안 된 것은 흐림 처리
@@ -311,7 +311,9 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                         onPress={() => selectDifficulty(difficulty)}
                         className={active ? '' : 'opacity-40'}
                       >
-                        <DifficultyBadge difficulty={difficulty} />
+                        <Badge variant={difficulty}>
+                          {difficulty}
+                        </Badge>
                       </Pressable>
                     )
                   })}
@@ -360,7 +362,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                               >
                                 {on && (
                                   <View className="absolute right-1 top-1 h-4 w-4 items-center justify-center rounded-full bg-primary">
-                                    <Text className="text-[10px] text-on-primary">✓</Text>
+                                    <Text className="text-10 text-on-primary">✓</Text>
                                   </View>
                                 )}
                                 {/* 가격이 **입력된** 타일에만 수익 배지가 붙는다(사용자 지정
@@ -383,7 +385,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                                   level={boxDrop?.ringLevel}
                                 />
                                 <View className="h-8 w-full items-center justify-center">
-                                  <Text numberOfLines={2} className="text-center text-[10px] leading-tight text-text">
+                                  <Text numberOfLines={2} className="text-center text-10 leading-tight text-text">
                                     {displayName}
                                   </Text>
                                 </View>
@@ -419,7 +421,9 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                         >
                           <View className="rounded-xl border border-border bg-surface px-2 pb-3 pt-1">
                             <View className="flex-row">
-                              <DifficultyBadge difficulty={group.difficulty} />
+                              <Badge variant={group.difficulty}>
+                                {group.difficulty}
+                              </Badge>
                             </View>
                             <View className="mt-1.5 flex-row flex-wrap items-center justify-center gap-x-2 gap-y-2.5">
                               {group.items.flatMap((item) =>
@@ -554,12 +558,12 @@ function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
               >
                 {item === entry.name && (
                   <View className="absolute right-1 top-1 h-4 w-4 items-center justify-center rounded-full bg-primary">
-                    <Text className="text-[10px] text-on-primary">✓</Text>
+                    <Text className="text-10 text-on-primary">✓</Text>
                   </View>
                 )}
                 <ItemThumb name={entry.name} />
                 <View className="h-8 w-full items-center justify-center">
-                  <Text numberOfLines={2} className="text-center text-[10px] leading-tight text-text">
+                  <Text numberOfLines={2} className="text-center text-10 leading-tight text-text">
                     {entry.name}
                   </Text>
                 </View>

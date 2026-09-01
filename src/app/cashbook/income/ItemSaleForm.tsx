@@ -10,7 +10,7 @@
 import { useState } from 'react'
 import { View } from 'react-native'
 
-import { Text } from '../../../components/atoms/Text/Text'
+import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { parseMesoText } from '../../../components/molecules/MesoPad/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
@@ -18,9 +18,10 @@ import { formatMesoUnits } from '../../../lib/drop-price'
 import { netProceedsMeso, type FeePercent } from '../../../lib/item-split'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import { nextAmountIdentity } from '../amount-identity'
-import { FieldRow, FieldTextInput } from '../sheet-fields'
+import { FieldRow } from '../sheet-fields'
 import { CharacterField, SaveRow, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from './use-sheet-submit'
+import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
 /**
  * 수수료 조각 셋 — **「없음」 이 첫 조각이고 기본값**이다([[ADR-170]] 정정 9 ②).
@@ -74,7 +75,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
       <CharacterField characters={props.characters} selected={ocid} onSelect={setOcid} />
 
       <FieldRow label="판매 아이템" labelTestID="income-sheet-name-label">
-        <FieldTextInput
+        <SheetTextInput
           value={name}
           onChangeText={setName}
           placeholder="아이템 명"
@@ -85,7 +86,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
       {/* **치는 자리는 여기**다([[ADR-170]] 정정 9 ④) — 큰 숫자는 합계라 못 친다. 이름 아래에
           서는 이유는 계산 차례 그대로이기 때문이다: 무엇을 · 얼마에 · 몇 % 떼고 → 합계. */}
       <FieldRow label="판매 대금">
-        <FieldTextInput
+        <SheetTextInput
           testID="income-sheet-gross"
           value={gross === 0 ? '' : gross.toLocaleString()}
           onChangeText={(text) => setGross(parseMesoText(gross, text))}

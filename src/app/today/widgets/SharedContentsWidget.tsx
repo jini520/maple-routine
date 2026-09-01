@@ -71,7 +71,7 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { Text } from '../../../components/atoms/Text/Text'
+import { Text } from '../../../components/atoms'
 import { CheckIcon, CircleQuestionMarkIcon } from '../../../lib/icons'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import type { SharedContentGroupView, SharedContentItemView } from '../view-model'
@@ -193,7 +193,7 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
   return (
     <View testID="widget-shared-contents" className="p-3">
       <View className="flex-row items-center border-b border-border-strong pb-2">
-        <Text fixed className="text-[11px] font-bold text-text-muted">계정 및 메이플 ID 공유 컨텐츠</Text>
+        <Text fixed className="text-11 font-bold text-text-muted">계정 및 메이플 ID 공유 컨텐츠</Text>
         <Pressable
           testID="shared-note-toggle"
           role="button"
@@ -211,8 +211,8 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
             aria-hidden
           />
         </Pressable>
-        <Text fixed className="ml-auto text-[12px] text-text-muted">
-          <Text fixed testID="shared-total" style={TABULAR_NUMS} className="text-[12px] font-extrabold text-text">
+        <Text fixed className="ml-auto text-xs text-text-muted">
+          <Text fixed testID="shared-total" style={TABULAR_NUMS} className="text-xs font-extrabold text-text">
             {data.sharedRemaining}
           </Text>
           개

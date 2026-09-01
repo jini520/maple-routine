@@ -15,7 +15,7 @@
  * 표는 `lib/drought-tier-styles` 에 있어 드롭 히스토리 화면과 **같은 한 벌**이다(양쪽이 각자 들면
  * 한 단계가 두 화면에서 다른 색으로 늙는다).
  *
- * **0단계만 배경이 바뀐다**(`primary-tint`) — 격자에서 유일하게 축하하는 타일이라 그 한 자리에만
+ * **0단계만 배경이 바뀐다**(`primary-tint`) — 격자에서 축하하는 타일이 그것뿐이라 그 한 자리에만
  * 강조색을 쓴다. 나머지 단계는 기본 배경이고, 슬픔은 잎이 진다.
  *
  * ## 문구는 마운트당 한 번 고른다
@@ -33,14 +33,11 @@
 
 import { useState } from 'react'
 import { View } from 'react-native'
-import { Path } from 'react-native-svg'
 
 import { formatValuableDroughtHeadline } from '../../../lib/drop-history'
 
-import { Text } from '../../../components/atoms/Text/Text'
-import { MAPLE_LEAF_PATH } from '../../../components/mapleLeafPath'
+import { MapleLeaf, Text } from '../../../components/atoms'
 import { DROUGHT_GLOW_FILTER, DROUGHT_TIER_STYLES } from '../../../lib/drought-tier-styles'
-import { Svg } from '../../../lib/nativewind-interop'
 import type { WidgetHeight } from '../../../lib/widget-layout'
 import type { DroughtView } from '../view-model'
 import type { WidgetProps } from './types'
@@ -112,13 +109,7 @@ function Leaf(props: { tier: number; sizePx: number }): React.JSX.Element {
         ...(style.glow ? { filter: DROUGHT_GLOW_FILTER } : {}),
       }}
     >
-      <Svg
-        width={props.sizePx}
-        height={Math.round(props.sizePx * (130 / 127))}
-        viewBox="0 0 127 130"
-      >
-        <Path d={MAPLE_LEAF_PATH} fill={style.leaf} />
-      </Svg>
+      <MapleLeaf size={props.sizePx} fill={style.leaf} />
     </View>
   )
 }
@@ -130,7 +121,7 @@ function WeeksChip(props: { weeksSince: number }): React.JSX.Element {
       testID="drought-weeks"
       className="shrink-0 rounded-full border border-border bg-surface-2 px-1.5 py-0.5"
     >
-      <Text fixed numberOfLines={1} className="text-[11px] font-bold text-text-muted">
+      <Text fixed numberOfLines={1} className="text-11 font-bold text-text-muted">
         {weeksLabel(props.weeksSince)}
       </Text>
     </View>
@@ -147,17 +138,9 @@ function WeeksChip(props: { weeksSince: number }): React.JSX.Element {
 function BlankLeaf(props: { sizePx: number }): React.JSX.Element {
   return (
     <View testID="drought-blank-leaf" aria-hidden style={{ opacity: 0.28 }}>
-      {/* 색은 테마 토큰에서 온다 — `fill="currentColor"` 의 값은 `Svg` 의 `color` 이고, NativeWind 의
-          `text-*` 가 그 자리를 채운다(`MapleSpinner` 가 쓰는 것과 같은 경로). 잎 램프의 하드코딩
-          hex 를 여기서 흉내 내면 라이트·다크 한쪽에서 반드시 죽는다. */}
-      <Svg
-        width={props.sizePx}
-        height={Math.round(props.sizePx * (130 / 127))}
-        viewBox="0 0 127 130"
-        className="text-text-disabled"
-      >
-        <Path d={MAPLE_LEAF_PATH} fill="currentColor" />
-      </Svg>
+      {/* 색이 테마 토큰이라 `fill` 이 아니라 클래스로 준다. 잎 램프의 하드코딩 hex 를 여기서
+          흉내 내면 라이트·다크 한쪽에서 반드시 죽는다. */}
+      <MapleLeaf size={props.sizePx} className="text-text-disabled" />
     </View>
   )
 }
@@ -168,7 +151,7 @@ function NoRecord(props: { variant: Variant }): React.JSX.Element {
     return (
       <View testID="widget-valuable-drought" className="flex-1 flex-row items-center gap-3 p-3">
         <BlankLeaf sizePx={24} />
-        <Text fixed testID="drought-no-record" numberOfLines={1} className="flex-1 text-[12px] text-text-muted">
+        <Text fixed testID="drought-no-record" numberOfLines={1} className="flex-1 text-xs text-text-muted">
           {NO_RECORD_NOTE}
         </Text>
       </View>
@@ -194,7 +177,7 @@ function NoRecord(props: { variant: Variant }): React.JSX.Element {
   return (
     <View testID="widget-valuable-drought" className="flex-1 flex-row items-center gap-2.5 p-3">
       <BlankLeaf sizePx={20} />
-      <Text fixed testID="drought-no-record" numberOfLines={2} className="flex-1 text-[11px] text-text-muted">
+      <Text fixed testID="drought-no-record" numberOfLines={2} className="flex-1 text-11 text-text-muted">
         {NO_RECORD_NOTE}
       </Text>
     </View>
@@ -218,7 +201,7 @@ export function ValuableDroughtWidget({ w, h, data }: WidgetProps): React.JSX.El
   // **모서리를 함께 둥글린다.** `Card` 는 `rounded-[14px]` 를 갖되 `overflow-hidden` 은 **일부러**
   // 안 건다(클리핑은 호출부의 일이라고 그 atom 이 적어 뒀다 — 미디어 스코프·글로우가 그 자유를
   // 쓴다). 그래서 타일 전체를 칠하는 배경이 사각이면 **네 모서리에서 카드의 둥근 테두리 안쪽을
-  // 덮어** 테두리가 잘려 보인다. 이 위젯이 today 에서 유일하게 타일 전면을 칠한다.
+  // 덮어** 테두리가 잘려 보인다. today 에서 타일 전면을 칠하는 위젯은 이것뿐이다.
   //
   // 반지름이 13인 것은 14가 아니라서다 — 배경은 테두리 **안쪽** 상자를 채우므로 바깥 반지름에서
   // 테두리 1px 을 뺀 값이 정확히 겹친다.
@@ -232,7 +215,7 @@ export function ValuableDroughtWidget({ w, h, data }: WidgetProps): React.JSX.El
         className={`flex-1 items-center justify-center gap-1.5 p-3 ${surface}`}
       >
         <Leaf tier={view.tier} sizePx={LEAF_PX.compact} />
-        <Text fixed testID="drought-headline" numberOfLines={1} className={`text-[14px] font-bold ${ink}`}>
+        <Text fixed testID="drought-headline" numberOfLines={1} className={`text-sm font-bold ${ink}`}>
           {headline}
         </Text>
         <Text
@@ -255,7 +238,7 @@ export function ValuableDroughtWidget({ w, h, data }: WidgetProps): React.JSX.El
         className={`flex-1 flex-row items-center gap-2 p-3 ${surface}`}
       >
         <Leaf tier={view.tier} sizePx={LEAF_PX.mini} />
-        <Text fixed testID="drought-headline" numberOfLines={1} className={`min-w-0 flex-1 text-[13px] font-bold ${ink}`}>
+        <Text fixed testID="drought-headline" numberOfLines={1} className={`min-w-0 flex-1 text-13 font-bold ${ink}`}>
           {headline}
         </Text>
         <WeeksChip weeksSince={view.weeksSince} />
@@ -271,7 +254,7 @@ export function ValuableDroughtWidget({ w, h, data }: WidgetProps): React.JSX.El
     >
       <Leaf tier={view.tier} sizePx={LEAF_PX.wide} />
       <View className="min-w-0 flex-1 gap-0.5">
-        <Text fixed testID="drought-headline" numberOfLines={1} className={`text-[14px] font-bold ${ink}`}>
+        <Text fixed testID="drought-headline" numberOfLines={1} className={`text-sm font-bold ${ink}`}>
           {headline}
         </Text>
         <Text fixed testID="drought-last" numberOfLines={1} className="text-[11.5px] text-text-muted">

@@ -7,7 +7,7 @@
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
-import { clearCountUpMemory } from '../../../../lib/use-count-up'
+import { clearCountUpMemory } from '../../../../hooks/useCountUp'
 import { AmountFigure } from '../AmountFigure'
 
 // 카운트업의 기억은 **모듈 수준**이라 케이스 사이로 샌다([[ADR-087]] 결정 8) — 안 지우면 앞
@@ -130,16 +130,15 @@ describe('AmountFigure', () => {
  * 2026-08-29). **상자와 기준선은 글자가 만들고** 치는 칸은 그 위에 얹는다.
  */
 describe('기준선 ([[ADR-178]] 정정 2)', () => {
-  it('치는 칸일 때도 **글자가 상자를 만든다** — 같은 값이 뒤에 선다', async () => {
+  // [[ADR-178]] 정정 5 — 숫자는 하나만 그린다. 겹쳐 세우던 글자를 걷었다.
+  it('치는 칸일 때는 **칸 하나만** 그린다 — 겹쳐 세우지 않는다', async () => {
     const view = await renderAtom(
       <AmountFigure value={700_000} unit="메소" testID="amount" onChangeValue={jest.fn()} />,
     )
 
-    // 보이는 값은 칸이 든다.
     expect(view.getByTestId('amount').props.value).toBe('700,000')
-    // 그 뒤에 **같은 글자**가 서서 상자와 기준선을 만든다 — 없으면 단위가 기준선을 잃는다.
-    // 그 글자는 `aria-hidden` 이라(읽어 주는 것은 칸이다) 기본 쿼리에서 숨는다.
-    expect(view.getByText('700,000', { includeHiddenElements: true })).toBeTruthy()
+    // 같은 값을 그리는 글자가 뒤에 없다 — 있으면 안드로이드에서 둘 다 그려져 이중으로 보인다.
+    expect(view.queryByText('700,000', { includeHiddenElements: true })).toBeNull()
   })
 
   it('못 치는 자리에서는 그 글자가 곧 보이는 숫자다 — 상자가 하나뿐이다', async () => {

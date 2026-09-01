@@ -287,7 +287,7 @@ const INCOME_RECORDS_REBUILD_TABLE = 'income_records_rebuild'
  * **`income_records.meso_amount` 의 `NOT NULL` 을 뗀다**([[ADR-176]], 이슈 #265).
  *
  * `ensureColumn` 은 «없는 칸을 더하는» 길뿐이고 **SQLite 는 `ALTER TABLE` 로 기존 칸의 제약을 못
- * 고친다.** 테이블을 다시 쓰는 것이 유일한 길이다 — 새 테이블 → 복사 → DROP → RENAME.
+ * 고친다.** 테이블을 다시 쓰는 수밖에 없다 — 새 테이블 → 복사 → DROP → RENAME.
  *
  * 지키는 것 넷:
  *
@@ -354,7 +354,7 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   for (const table of TABLE_DEFINITIONS) {
     await db.execute(table.createSql)
   }
-  // **칸의 «모양» 을 바꾸는 유일한 수단이라 `ensureColumn` 들보다 먼저 선다**([[ADR-176]] ③).
+  // **칸의 «모양» 은 이 길로만 바꿀 수 있어 `ensureColumn` 들보다 먼저 선다**([[ADR-176]] ③).
   await rebuildIncomeRecords(db)
   await ensureColumn(db, 'boss_profit_records', 'world', 'TEXT')
   // [[ADR-172]] — `world` 와 같은 사정이다. 이미 보스를 기록해 둔 기기에는 CREATE 가 안 붙인다.

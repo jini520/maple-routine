@@ -16,8 +16,11 @@ import { dirname, join, relative } from 'node:path'
 
 const SRC = join(__dirname, '..')
 
-/** 이 규칙의 **유일한 예외** — 클램프를 실제로 거는 곳이라 원본을 가져와야 한다. */
-const ATOM = join(SRC, 'components', 'atoms', 'Text', 'Text.tsx')
+/** 이 규칙의 예외. 클램프를 실제로 거는 atom 둘이라 원본을 가져와야 한다([[ADR-152]] 정정 1). */
+const ATOMS = [
+  join(SRC, 'components', 'atoms', 'Text', 'Text.tsx'),
+  join(SRC, 'components', 'atoms', 'TextInput', 'TextInput.tsx'),
+]
 
 /**
  * 칸에 묶여 글자를 못 키우는 자리([[ADR-152]] 결정 5) — **여기의 `<Text>` 는 전부 `fixed` 다.**
@@ -29,7 +32,7 @@ const FIXED_BOX_PATHS = [
   join(SRC, 'app', 'today', 'widgets'),
   join(SRC, 'navigation', 'BottomBar.tsx'),
   join(SRC, 'components', 'molecules', 'CharacterRail', 'CharacterPortrait.tsx'),
-  join(SRC, 'components', 'atoms', 'DifficultyBadge', 'DifficultyBadge.tsx'),
+  join(SRC, 'components', 'atoms', 'Badge', 'Badge.tsx'),
 ]
 
 /** 위 목록을 파일로 편다 — 항목이 디렉터리일 수도 파일일 수도 있다. */
@@ -91,15 +94,48 @@ function openingTextTags(source: string): string[] {
 
 const FILES = sourceFiles(SRC)
 
-/** 글자를 그리는 자체 컴포넌트 파일 — 「`Text` atom 을 import 한다」가 곧 그 정의다. */
-function textRenderingComponentFiles(): string[] {
-  return sourceFiles(join(SRC, 'components')).filter(
-    (file) => file !== ATOM && readFileSync(file, 'utf8').includes("/Text/Text'"),
-  )
+/** `{ Badge, type BadgeVariant }` → `['Badge', 'BadgeVariant']`. 여기서는 경로만 따지므로 타입도 든다. */
+function namedSpecifiers(clause: string): string[] {
+  const braces = /\{([^}]*)\}/.exec(clause)
+  if (braces === null) return []
+  return braces[1]
+    .split(',')
+    .map((raw) => raw.trim().replace(/^type\s+/, '').split(/\s+/)[0])
+    .filter((name) => name !== '')
+}
+
+/** 상대 경로 하나를 **실제 파일**로. 디렉터리를 가리키면 그 안의 `index` 다. */
+function resolveModule(base: string): string | null {
+  const candidates = [`${base}.tsx`, `${base}.ts`, join(base, 'index.ts'), join(base, 'index.tsx')]
+  return candidates.find((candidate) => existsSync(candidate)) ?? null
 }
 
 /**
- * 이 파일이 상대 경로로 가져오는 모듈들의 **절대 경로**.
+ * 배럴이 이 이름들을 **어느 파일에서** 내보내는가([[ADR-200]]).
+ *
+ * **배럴은 비쳐 보여야 한다.** 안 그러면 배럴을 쓰는 파일이 전부 `atoms/index.ts` 하나를 가리켜
+ * 「이 부품이 글자를 그리나」가 판별이 안 된다. 실제로 그렇게 멀었다: [[ADR-200]] 이 import 를
+ * 배럴로 바꾸자 `src/components` 아래 31개 파일이 탐지기 눈에서 사라졌고, 아래 「새는 자리」
+ * 단언이 빈 집합을 검사하며 통과했다.
+ *
+ * `atoms/Icon`·`atoms/Spinner` 처럼 배럴이 배럴을 내보내는 자리가 있어 한 겹 더 판다.
+ */
+function barrelTargets(barrel: string, names: string[], depth = 0): string[] {
+  if (depth > 3) return []
+  const source = readFileSync(barrel, 'utf8')
+  const out: string[] = []
+  for (const match of source.matchAll(/export\s*\{([^}]*)\}\s*from\s*'(\.[^']+)'/g)) {
+    if (!namedSpecifiers(`{${match[1]}}`).some((name) => names.includes(name))) continue
+    const target = resolveModule(join(dirname(barrel), match[2]))
+    if (target === null) continue
+    if (/index\.tsx?$/.test(target)) out.push(...barrelTargets(target, names, depth + 1))
+    else out.push(target)
+  }
+  return out
+}
+
+/**
+ * 이 파일이 상대 경로로 가져오는 모듈들의 **절대 경로**. 배럴은 가져간 이름의 파일로 편다.
  *
  * 이름(`<CharacterRow>`)이 아니라 경로로 판정한다 — 위젯 파일 안에 같은 이름의 **로컬 함수**가
  * 사는 경우가 실제로 있고(`WeeklyBossProfitWidget`), 이름만 보면 그것을 molecule 로 오인한다.
@@ -107,13 +143,25 @@ function textRenderingComponentFiles(): string[] {
 function localImportTargets(file: string): string[] {
   const source = readFileSync(file, 'utf8')
   const out: string[] = []
-  for (const match of source.matchAll(/from\s*'(\.[^']+)'/g)) {
-    const base = join(dirname(file), match[1])
-    for (const candidate of [`${base}.tsx`, `${base}.ts`]) {
-      if (existsSync(candidate)) out.push(candidate)
-    }
+  for (const match of source.matchAll(/import\s+([^'";]*?)\s*from\s*'(\.[^']+)'/g)) {
+    const target = resolveModule(join(dirname(file), match[2]))
+    if (target === null) continue
+    if (/index\.tsx?$/.test(target)) out.push(...barrelTargets(target, namedSpecifiers(match[1])))
+    else out.push(target)
   }
   return out
+}
+
+/**
+ * 글자를 그리는 자체 컴포넌트 파일 — 「글자 atom 을 import 한다」가 곧 그 정의다.
+ *
+ * 문자열로 경로를 찾지 않고 `localImportTargets` 로 **푼 결과**를 본다. 깊은 경로와 배럴 두 모양이
+ * 섞여 있어(`'../Text/Text'` · `'../../atoms'`) 문자열로는 한쪽만 잡힌다.
+ */
+function textRenderingComponentFiles(): string[] {
+  return sourceFiles(join(SRC, 'components')).filter(
+    (file) => !ATOMS.includes(file) && localImportTargets(file).some((t) => ATOMS.includes(t)),
+  )
 }
 
 describe('[[ADR-152]] 결정 4 — 글자는 atom 한 곳에서만 나온다', () => {
@@ -122,7 +170,7 @@ describe('[[ADR-152]] 결정 4 — 글자는 atom 한 곳에서만 나온다', (
   })
 
   it('`react-native` 에서 `Text`·`TextInput` 을 직접 가져오는 곳은 atom 뿐이다', () => {
-    const offenders = FILES.filter((file) => file !== ATOM)
+    const offenders = FILES.filter((file) => !ATOMS.includes(file))
       .filter((file) =>
         reactNativeImportNames(readFileSync(file, 'utf8')).some(
           (name) => name === 'Text' || name === 'TextInput',
@@ -134,9 +182,9 @@ describe('[[ADR-152]] 결정 4 — 글자는 atom 한 곳에서만 나온다', (
   })
 
   it('atom 은 원본을 가져온다 — 예외가 실제로 그 자리에 있다', () => {
-    expect(reactNativeImportNames(readFileSync(ATOM, 'utf8'))).toEqual(
-      expect.arrayContaining(['Text', 'TextInput']),
-    )
+    const imported = ATOMS.flatMap((atom) => reactNativeImportNames(readFileSync(atom, 'utf8')))
+
+    expect(imported).toEqual(expect.arrayContaining(['Text', 'TextInput']))
   })
 
   /**
@@ -155,8 +203,10 @@ describe('[[ADR-152]] 결정 4 — 글자는 atom 한 곳에서만 나온다', (
       readFileSync(file, 'utf8').includes('BottomSheetTextInput'),
     ).map((file) => relative(SRC, file))
 
-    // 아톰의 주석은 «왜 안 쓰는가» 를 적으므로 이름이 나온다 — 코드가 아니라 글이다.
-    expect(offenders.filter((file) => !file.endsWith('Text.tsx'))).toEqual([])
+    // 「왜 안 쓰는가」를 적는 주석에는 이름이 나온다 — 코드가 아니라 글이다. 그 설명은 아톰과,
+    // 값을 채우는 훅에 있다([[ADR-170]] 정정 18 이 그 코드를 아톰 밖으로 옮겼다).
+    const 설명하는_파일 = ['components/atoms/TextInput/TextInput.tsx', 'hooks/useSheetKeyboardTarget.ts']
+    expect(offenders.filter((file) => !설명하는_파일.includes(file))).toEqual([])
   })
 })
 
@@ -173,7 +223,7 @@ describe('[[ADR-152]] 결정 5 — 칸에 묶인 글자는 `fixed` 다', () => {
 
   it('고정칸이 쓰는 글자 컴포넌트도 고정칸이다 — 한 겹 아래에서 새는 자리를 막는다', () => {
     // `<Text fixed>` 만 검사하면 **자식 컴포넌트가 그리는 글자**가 그대로 샌다. 실제로 그렇게
-    // 샜다: 76px 타일 안의 `DifficultyBadge` 가 자기 `<Text>` 를 갖고 있어 배수를 그대로 받았다.
+    // 샜다: 76px 타일 안의 난이도 배지가 자기 `<Text>` 를 갖고 있어 배수를 그대로 받았다.
     // 그 컴포넌트들은 `fixed` 프롭을 받는 대신 **자기 자신이 고정칸**이어야 한다(상자가 `h-5` 처럼
     // 고정이라 어느 호출부에서도 글자를 못 키운다).
     const drawsText = new Set(textRenderingComponentFiles())

@@ -26,7 +26,7 @@
 //    `textShadowColor/Offset/Radius` 세 프롭이라 두 겹(웹은 그림자 둘)을 못 겹친다 — 강한 쪽
 //    하나만 남긴다. `linear-gradient` 베일은 `expo-linear-gradient` 로 그린다.
 // ④ `border-t` 경계선은 `media-scope` **바깥**이다 — 다크 테마는 media-surface ≈ surface 이고
-//    검은마법사는 값이 완전히 같아(#1C1319) 이 선이 유일한 경계다. 웹과 같은 자리에 그대로 둔다.
+//    검은마법사는 값이 완전히 같아(#1C1319) 경계가 이 선뿐이다. 웹과 같은 자리에 그대로 둔다.
 // ⑤ `space-y`/`gap-[18px]` 은 `gap-*` 로, `tabular-nums` 는 스타일로(`lib/text-styles.ts`).
 import { Pressable, View } from 'react-native'
 
@@ -41,8 +41,7 @@ import { UsersIcon, XIcon } from '../../../lib/icons'
 import { MEDIA_TEXT_SHADOW_STYLE, TABULAR_NUMS } from '../../../lib/text-styles'
 import { useThemeAppearance } from '../../../theme/context'
 import { MediaScope } from '../../../theme/MediaScope'
-import { Badge } from '../../atoms/Badge/Badge'
-import { Text } from '../../atoms/Text/Text'
+import { Badge, Text } from '../../atoms'
 import { DifficultySegment } from '../../molecules/DifficultySegment/DifficultySegment'
 import { MediaCardArt } from '../../molecules/MediaCardArt/MediaCardArt'
 import { PartySizeStepper } from '../../molecules/PartySizeStepper/PartySizeStepper'
@@ -113,7 +112,7 @@ export function PartySizeModal(props: {
 
             <View className="absolute inset-x-[18px] bottom-3">
               <Text
-                className="text-[10px] font-bold tracking-[.16em] text-text-muted"
+                className="text-10 font-bold tracking-[.16em] text-text-muted"
                 style={MEDIA_TEXT_SHADOW_STYLE}
               >
                 {props.cycleLabel}
@@ -144,7 +143,7 @@ export function PartySizeModal(props: {
                   <Text className="text-xs font-bold tracking-[.06em] text-text-muted">파티 인원</Text>
                 </View>
                 {/* 주간 n/12 배지와 같은 컴포넌트다 — 신규 스타일을 만들지 않는다. */}
-                <Badge tone="primary" style={TABULAR_NUMS}>
+                <Badge variant="primary" style={TABULAR_NUMS}>
                   {props.partySize} / {props.maxPartySize}
                 </Badge>
               </View>

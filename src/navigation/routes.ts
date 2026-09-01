@@ -22,7 +22,7 @@ import type { NavigatorScreenParams } from '@react-navigation/native'
 /**
  * 탭 내비게이터의 화면 아홉 — **그룹이 아니라 페이지다**([[ADR-132]] 결정 1).
  *
- * 아홉째가 `BossManage` 다([[ADR-145]] 결정 1) — **웹의 하위 경로가 여기서만 탭인 유일한 자리**다.
+ * 아홉째가 `BossManage` 다([[ADR-145]] 결정 1) — **웹의 하위 경로가 탭이 되는 자리는 여기뿐이다**.
  * 그 화면을 여는 버튼이 [[ADR-140]] 뒤로 보스 스케줄러 헤더에 하나 남아 있었고, 하단바가 이미
  * «스케줄 안의 자리들» 을 그리고 있는데 그 목록에만 없었다.
  *
@@ -191,7 +191,7 @@ export interface RouteRow {
  * 때문**이다. [[ADR-120]] 결정 11 이 구현 중에 경로를 `about` 의 **자식**으로 정정했고
  * (`/settings/privacy` 로 두면 about 이 즉시 사라진 자리에 처방침이 밀려 들어와 밀려 나가는 화면
  * 없이 배경만 바뀌는 프레임이 보인다), `app-capacitor` 의 라우트도 그렇게 되어 있다. 이 앱에서
- * 유일하게 2단인 스택이다. 계획서 표도 함께 고쳤다.
+ * 스택이 2단이 되는 자리는 여기뿐이다. 계획서 표도 함께 고쳤다.
  */
 export const ROUTE_TABLE: readonly RouteRow[] = [
   { path: '/', screen: 'ContentScreen', target: { kind: 'initial', route: 'Content' }, origin: 'web' },
@@ -206,7 +206,7 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
   },
 
   { path: '/boss', screen: 'BossScreen', target: { kind: 'tab', route: 'Boss' }, origin: 'web' },
-  // **웹 경로인데 `push` 가 아닌 유일한 행**([[ADR-145]] 결정 1) — 웹에서는 `/boss` 위로 밀려
+  // **웹 경로인데 `push` 가 아닌 행은 이것뿐이다**([[ADR-145]] 결정 1) — 웹에서는 `/boss` 위로 밀려
   // 올라오는 하위 페이지이고, RN 에서는 스케줄 그룹의 셋째 하위 탭이다. `origin` 은 그대로 `web`
   // 이다(대조할 경로가 실재한다 — 갈린 것은 «어디로 갔는가» 뿐이다).
   { path: '/boss/manage', screen: 'BossManageScreen', target: { kind: 'tab', route: 'BossManage' }, origin: 'web' },

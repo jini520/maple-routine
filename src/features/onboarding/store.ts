@@ -25,7 +25,7 @@ export interface OnboardingStore extends OnboardingState {
   submitApiKey(apiKey: string): Promise<void>
   selectTrackingMode(mode: TrackingMode): Promise<void>
   submitContentCharacters(ocids: string[]): Promise<void>
-  // ADR-115 결정 10 · ADR-116 결정 1: 저장된 키로 앞으로 갈 수 없게 됐을 때 부르는 유일한 진입점.
+  // ADR-115 결정 10 · ADR-116 결정 1: 저장된 키로 앞으로 갈 수 없게 됐을 때는 여기로만 들어온다.
   // 원인은 무효 키(400 OPENAPI00005 · 401/403)와 429 둘이고, 사슬은 하나이며 문구만 갈린다.
   // 알리기만 하고(모달) 이동·삭제는 하지 않는다 — 그것은 아래 confirmApiKeyNotice 가 한다.
   noticeApiKeyIssue(kind: ApiKeyNoticeKind): void

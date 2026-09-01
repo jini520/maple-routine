@@ -520,7 +520,7 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
 | 자리 | 값 |
 |---|---|
 | 본문 | **그 탭의 항목만**. 일간 → 일퀘 · 주간 → 주간퀘 + 주간 보스 · 월간 → 검마 |
-| 보스 난이도 | **공용 `DifficultyBadge`**(작은 크기, [[ADR-147]] 정정 40). 이 화면만의 표기를 새로 만들지 않는다 |
+| 보스 난이도 | **공용 `Badge`** 의 난이도 variant(`size="mini"`, [[ADR-147]] 정정 40). 이 화면만의 표기를 새로 만들지 않는다 |
 | 보스 차례 | **`weekly-bosses.json` 정규 순서**([[ADR-186]]). 보스 스케줄러와 **같은 함수**(`displayedBosses`)가 세우므로 이 화면에 정렬 코드가 없다. 퀘스트 칩은 종전대로 표시 목록 순서 |
 | 항목 이름 | **일일은 지역명까지**(`[일일 퀘스트] 소멸의 여로 조사` → `소멸의 여로`) · **주간은 접두어만**([[ADR-147]] 정정 41) · 그 밖은 원문 |
 | 여닫기 | 행을 누르면 열리고 **같은 행을 다시 누르면 닫힌다** |
@@ -573,7 +573,7 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
   `sumDropPayout(collectGroupDrops(...))` 이고, 둘의 합이 `groupTotalMeso` 와 같다(이번 주 계산에는
   주차별 소계가 언제나 비어 있다).
 - **금액은 `formatMesoShort` 로 접는다**. 두 벌로 만들면 이 타일과 보스 수익 화면이 다르게 접는다.
-  그래서 **카운트업(`AnimatedMeso`)을 쓰지 않는다**: 그 컴포넌트는 `toLocaleString()` 의 자릿수 전체를
+  그래서 **카운트업(`AnimatedNumber`)을 쓰지 않는다**: 그것은 `toLocaleString()` 의 자릿수 전체를
   굴리는 물건이라 접힌 표기와 애초에 짝이 맞지 않고, [[ADR-087]] 결정 6이 카운트업을 건 범위도
   보스 수익 화면이다.
 - **기록이 없으면 스택 바·분해 금액 자리에 그 한 줄이 뜬다**. 0/0 인 바와 ‘결정석 0 · 아이템 0’은

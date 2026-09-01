@@ -487,7 +487,7 @@ Metro 엔 있어도 jest 에 없어**(실측: `require.context is not a function
 넘겼으므로 **참고할 옛 디자인이 없다** → step 5(오버레이 계층)와 함께 정한다. 여기서 조용히 새 화면을
 만들지 않는다.
 
-**③ `RefreshControl` 과 `PullToRefreshIndicator` 는 겹치는 물건이다.** 갈래를 적어 둔다 —
+**③ `RefreshControl` 과 웹의 커스텀 당김 인디케이터는 겹치는 물건이다.** 갈래를 적어 둔다 —
 `RefreshControl` 이 공짜로 주는 것은 [[ADR-072]]·[[ADR-073]] 이 손으로 만든 것 대부분이고(감쇠·임계·
 정착·UI 스레드 이동 → [[ADR-073]] 「남은 검증」의 *60fps* 질문이 **사라진다**), 줄 수 없는 것은
 정확히 [[ADR-074]] 가 정한 마크다(커스텀 그림 불가 · 당김 진행률을 안 알려줘 **드로잉이 원리적으로
@@ -669,9 +669,8 @@ RN 은 형제 순서가 곧 그리는 순서라, 없으면 페이드가 목록 *
 호출부가 생겨 `lib/color-alpha.ts` 로 뺐다([[ADR-094]] 결정 1).
 
 **남긴 미결 하나** — 당겨서 새로고침을 `RefreshControl` 로 갈지 [[ADR-074]] 의 커스텀 마크로 갈지는
-**제품 결정**이라 이 셸이 어느 쪽도 배선하지 않았다(그 갈래표는 step 4 가
-`PullToRefreshIndicator` 주석에 적어 뒀고, `RefreshControl` 을 고르면 그 ADR 의 결정 넷을 폐기해야
-한다). → **step 4 에서 `RefreshControl` 로 닫혔고**([[ADR-130]]) 이 셸은 `refreshControl` 프롭 하나를
+**제품 결정**이라 이 셸이 어느 쪽도 배선하지 않았다(그 갈래표는 step 4 가 인디케이터 컴포넌트
+주석에 적어 뒀고, `RefreshControl` 을 고르면 그 ADR 의 결정 넷을 폐기해야 한다). → **step 4 에서 `RefreshControl` 로 닫혔고**([[ADR-130]]) 이 셸은 `refreshControl` 프롭 하나를
 받아 `ScrollView` 로 넘긴다.
 
 #### 3-7단계 결과 — `@keyframes` 7종 (2026-08-12, **눈으로 판정할 것을 숫자로 붙들어 둔다**)
@@ -688,8 +687,8 @@ RN 은 형제 순서가 곧 그리는 순서라, 없으면 페이드가 목록 *
 | `valuable-drop-glow`·`-spin`·`-row-pulse` | `app/boss-profit/*` 의 카드·행 | — | **4단계** |
 
 곁가지 둘도 함께 왔다 — `ProgressBar` 의 `transition-[width]`(CSS 트랜지션)와 `Toast` 의 진입
-트랜지션. 그리고 **아무것도 안 고쳤는데 살아난 것이 둘** 있다: `LoadingState` 의 스피너와
-`PullToRefreshIndicator` 의 재조회 링은 파일이 한 줄도 안 바뀌었는데 스피너가 돌기 시작하며 따라왔다.
+트랜지션. 그리고 **아무것도 안 고쳤는데 살아난 것이 둘** 있다: `LoadingState` 의 스피너와 당김
+인디케이터의 재조회 링은 파일이 한 줄도 안 바뀌었는데 스피너가 돌기 시작하며 따라왔다.
 
 **"8종"은 틀린 수였다.** 이 문서가 일곱을 적고 *"외"* 를 붙여 어림잡았는데 실제로는 그 일곱이
 전부다. 고친 것은 숫자가 아니라 **세는 주체**다 — `keyframes-parity.test.ts` 가 `index.css` 를 읽어
@@ -1111,8 +1110,8 @@ RN 에서는 우리가 그 해석을 대신하므로 **틀려도 에러가 안 �
 순수 함수로 떼어 케이스로 고정하고, 값(필터·마스크·투명도)은 **core 의 상수를 읽어 대조한다** — 손으로
 적으면 두 벌이 되고 웹이 바뀌어도 조용히 통과한다.
 
-**사라진 것 넷.** 전부 구조가 대신한다 — ① `usePullToRefresh` 훅과 `PullToRefreshIndicator` 배선
-② `resolveContentOffsetPx` 로 목록을 내리던 `transform`([[ADR-073]] 결정 6) ③ `useScreenStackStore`
+**사라진 것 넷.** 전부 구조가 대신한다 — ① 당김을 손으로 만들던 훅과 커스텀 인디케이터 배선
+② 목록을 손가락 따라 내리던 `transform`([[ADR-073]] 결정 6) ③ `useScreenStackStore`
 깊이로 당김을 끄던 배선([[ADR-120]] 결정 10 — 하위 페이지가 **덮여** 올라와 손가락이 안 닿는다)
 ④ `<Outlet />`([[ADR-077]] 언마운트 금지 — 관리 페이지가 루트 스택 push 라 내비게이터가 그 계약을
 지킨다). [[ADR-098]] 결정 1(이동 전에 스크롤을 0으로)도 함께 사라진다 — 스크롤이 화면과 함께 죽어
@@ -1225,8 +1224,8 @@ string length` 가 난다. `normalize-tree.ts` 가 그런 프롭을 `<element:�
 그래서 **축소만 남고 밝기는 못 온다.** 남는 길은 카드마다 `onPressIn/Out` 상태를 두는 것뿐인데,
 "눌렸다"를 알리는 일은 축소가 이미 하므로 그 값을 치르지 않았다(육안 대조 목록 2번).
 
-**사라진 것 넷.** 컨텐츠 스케줄러와 같다 — `usePullToRefresh`·`PullToRefreshIndicator` 배선 ·
-`resolveContentOffsetPx` transform · `useScreenStackStore` 깊이 게이트 · `<Outlet />`. 관리 페이지
+**사라진 것 넷.** 컨텐츠 스케줄러와 같다 — 당김 훅과 커스텀 인디케이터 배선 · 목록을 내리던
+transform · `useScreenStackStore` 깊이 게이트 · `<Outlet />`. 관리 페이지
 쪽은 여기에 **`StackScreen` 통째와 `PARENT_PATH` 상수**가 더해진다([[ADR-120]] — 넷이 전부 루트
 스택의 성질이다). `renderPartyStepper` 의 인라인 마크업도 사라졌다 — 3단계가 두 호출부를
 `PartySizeStepper`(molecule)로 모아 두었으므로 `size="compact"` 로 부르기만 한다.
@@ -1455,7 +1454,7 @@ step 5 가 이미 뒀다). ④ `CharacterAccordion` 이 **파일로 나왔다**(
 
 ##### 사라진 것 · 생긴 것
 
-**사라진 것**: `<Outlet />` · `usePullToRefresh` 배선과 `PullToRefreshIndicator` · `resolveContentOffsetPx`
+**사라진 것**: `<Outlet />` · 당김 훅 배선과 커스텀 인디케이터 · 목록을 내리던
 `transform` · `useScreenStackStore` 깊이 게이트 · `useMeasuredHeight` 와 spacer · `stickyOffset()` ·
 스크롤·바깥 탭으로 팝오버 닫는 코드(이슈 팝오버는 **카드와 함께 스크롤**된다) · 아이템 칩의
 `stopPropagation`/`preventDefault`/`tabIndex`/`onKeyDown` 네 줄.
@@ -1718,9 +1717,9 @@ live-update 스토어가 `import.meta.env` 를 모듈 최상위에서 읽어 **i
 
 **ⓒ 정리 대상 (동작에 영향 없음)**
 
-- `PullToRefreshIndicator` 가 **고아가 확정됐다** — [[ADR-130]] 결정 5 가 *"고아 확정은 step 5·7 이 같은
-  선택을 물려받은 뒤"* 로 미뤄 둔 조건이 충족됐다(제품 참조 0건, 남은 것은 주석과 자체 테스트뿐).
-  삭제는 이 단계 범위 밖이라 손대지 않았다
+- 당김 인디케이터 컴포넌트가 **고아가 확정됐다** — [[ADR-130]] 결정 5 가 *"고아 확정은 step 5·7 이
+  같은 선택을 물려받은 뒤"* 로 미뤄 둔 조건이 충족됐다(제품 참조 0건, 남은 것은 주석과 자체
+  테스트뿐). 삭제는 이 단계 범위 밖이라 손대지 않았다 → **2026-09-01 에 지웠다**([[ADR-130]] 결정 5)
 - `character-groups.ts` 가 **`packages/core` 로 갈 후보**다(뷰 0줄 · `@core/*` 만 참조 — 파일 머리에
   적어 두었다). 4단계 규칙이 core 무수정이라 옮기지 않았다
 

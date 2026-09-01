@@ -1,13 +1,13 @@
 /**
  * 위젯 6 — **초기화 카운트다운**([[ADR-147]] 결정 6 · 정정 13).
  *
- * ## 목적지가 없는 유일한 타일이다
+ * ## 목적지가 없는 타일은 이것뿐이다
  *
  * 초기화 시각은 이 타일이 다 말하고 더 볼 화면이 없다 — 그래서 레지스트리에 `target` 이 없고
  * `WidgetGrid` 가 `Pressable` 로 감싸지 않는다(갈 데 없는 것을 누르게 두면 무반응이 «고장» 으로
  * 읽힌다).
  *
- * ## 시계를 읽는 유일한 위젯이다 ([[ADR-147]] 정정 39, 사용자 지시)
+ * ## 시계를 읽는 위젯은 이것뿐이다 ([[ADR-147]] 정정 39, 사용자 지시)
  *
  * 원래는 안 읽었다 — 뷰모델이 `now` 하나로 계산해 내려 주는 것이 결정 4 였다. **일일이 초까지 세고
  * 1초마다 다시 그리게 되면서** 그 규칙을 이 위젯에서만 뒤집는다. 뷰모델 전체를 1초마다 다시 만들면
@@ -42,9 +42,9 @@
  */
 
 import { useEffect, useState } from 'react'
-import { View, type DimensionValue } from 'react-native'
+import { View } from 'react-native'
 
-import { Text } from '../../../components/atoms/Text/Text'
+import { ProgressBar, Text } from '../../../components/atoms'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import type { WidgetHeight } from '../../../lib/widget-layout'
 import type { ResetCountdown, ResetCountdownView } from '../view-model'
@@ -144,12 +144,15 @@ function remainingOf(countdown: ResetCountdown, nowMs: number): number {
   return Math.max(0, countdown.atMs - nowMs)
 }
 
-/** 주기의 어디쯤인가 — 지난 몫이다. `periodMs` 를 뷰모델이 함께 주는 이유는 그쪽 주석이 갖는다. */
-function elapsedWidth(countdown: ResetCountdown, remainingMs: number): DimensionValue {
-  if (countdown.periodMs <= 0) return '0%'
+/**
+ * 주기의 어디쯤인가 — 지난 몫이다. `periodMs` 를 뷰모델이 함께 주는 이유는 그쪽 주석이 갖는다.
+ * 0~100 으로 자르는 것은 `ProgressBar` 가 클램프하지 않기 때문이다.
+ */
+function elapsedPercent(countdown: ResetCountdown, remainingMs: number): number {
+  if (countdown.periodMs <= 0) return 0
   const elapsed = Math.min(Math.max(countdown.periodMs - remainingMs, 0), countdown.periodMs)
   // 소수 둘로 끊는 것은 정밀도가 아니라 안정성 때문이다(위젯 3 의 스택 바와 같은 이유).
-  return `${Number(((elapsed / countdown.periodMs) * 100).toFixed(2))}%`
+  return Number(((elapsed / countdown.periodMs) * 100).toFixed(2))
 }
 
 function Label(props: { cycle: CycleKey; sizeClass: string }): React.JSX.Element {
@@ -185,16 +188,14 @@ function Value(props: {
   )
 }
 
-/** 2x2 만 그리는 진행 바 — 위젯 3 의 스택 바와 같은 트랙·같은 색이다. */
+/** 2x2 만 그리는 진행 바. `aria` 를 안 주는 것은 바로 위 `Value` 가 같은 값을 글자로 말해서다. */
 function ElapsedBar(props: { countdown: ResetCountdown; remainingMs: number }): React.JSX.Element {
   return (
-    <View testID="reset-bar" className="h-1 w-full overflow-hidden rounded-full bg-track">
-      <View
-        testID="reset-bar-fill"
-        className="h-1 bg-primary"
-        style={{ width: elapsedWidth(props.countdown, props.remainingMs) }}
-      />
-    </View>
+    <ProgressBar
+      percent={elapsedPercent(props.countdown, props.remainingMs)}
+      height="thin"
+      fillTestId="reset-bar-fill"
+    />
   )
 }
 
@@ -239,14 +240,14 @@ export function ResetCountdownWidget({ w, h, data }: WidgetProps): React.JSX.Ele
   if (variant === 'tiny') {
     return (
       <View testID="widget-reset-countdown" className="flex-1 items-center justify-center gap-0.5 p-2">
-        <Title sizeClass="text-[9px]" />
+        <Title sizeClass="text-9" />
         <Label cycle="daily" sizeClass="text-[10.5px]" />
         {/* 1x1 은 초를 넣을 자리가 물리적으로 없다 — 가장 큰 단위 하나뿐이다. */}
         <Value
           cycle="daily"
           remainingMs={remainingOf(resets.daily, nowMs)}
           granularity="largest"
-          sizeClass="text-[14px]"
+          sizeClass="text-sm"
         />
       </View>
     )
@@ -255,17 +256,17 @@ export function ResetCountdownWidget({ w, h, data }: WidgetProps): React.JSX.Ele
   if (variant === 'wide') {
     return (
       <View testID="widget-reset-countdown" className="flex-1 justify-center gap-1 p-3">
-        <Title sizeClass="text-[10px]" />
+        <Title sizeClass="text-10" />
         <View className="flex-row items-center gap-2">
           {(['daily', 'weekly', 'monthly'] as const).map((cycle) => (
             <View key={cycle} testID={`reset-cell-${cycle}`} className="min-w-0 flex-1">
-              <Label cycle={cycle} sizeClass="text-[11px]" />
+              <Label cycle={cycle} sizeClass="text-11" />
               {/* 셋을 가로로 나눠 쓰느라 한 칸이 좁다 — 여기서는 일일도 분까지다. */}
               <Value
                 cycle={cycle}
                 remainingMs={remainingOf(resets[cycle], nowMs)}
                 granularity="minute"
-                sizeClass="text-[16px]"
+                sizeClass="text-base"
               />
             </View>
           ))}
@@ -277,7 +278,7 @@ export function ResetCountdownWidget({ w, h, data }: WidgetProps): React.JSX.Ele
   if (variant === 'compact') {
     return (
       <View testID="widget-reset-countdown" className="flex-1 justify-center gap-2 p-3">
-        <Title sizeClass="text-[10px]" />
+        <Title sizeClass="text-10" />
         {(['daily', 'weekly', 'monthly'] as const).map((cycle) => (
           <Row key={cycle} cycle={cycle} countdown={resets[cycle]} nowMs={nowMs} withBar />
         ))}
@@ -288,7 +289,7 @@ export function ResetCountdownWidget({ w, h, data }: WidgetProps): React.JSX.Ele
   // 2x1 — 월간은 대개 멀어 지금 급한 것이 아니다.
   return (
     <View testID="widget-reset-countdown" className="flex-1 justify-center gap-1 p-3">
-      <Title sizeClass="text-[10px]" />
+      <Title sizeClass="text-10" />
       {(['daily', 'weekly'] as const).map((cycle) => (
         <Row key={cycle} cycle={cycle} countdown={resets[cycle]} nowMs={nowMs} withBar={false} />
       ))}

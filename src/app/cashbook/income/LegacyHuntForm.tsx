@@ -12,9 +12,10 @@ import { useState } from 'react'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { formatMesoUnits } from '../../../lib/drop-price'
 import { nextAmountIdentity } from '../amount-identity'
-import { FieldRow, FieldTextInput } from '../sheet-fields'
+import { FieldRow } from '../sheet-fields'
 import { CharacterField, SaveRow, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from './use-sheet-submit'
+import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
 export function LegacyHuntForm(props: IncomeFormProps): React.JSX.Element {
   const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
@@ -36,7 +37,7 @@ export function LegacyHuntForm(props: IncomeFormProps): React.JSX.Element {
       <CharacterField characters={props.characters} selected={ocid} onSelect={setOcid} />
 
       <FieldRow label="사냥터" labelTestID="income-sheet-name-label">
-        <FieldTextInput
+        <SheetTextInput
           value={name}
           onChangeText={setName}
           placeholder="사냥터"

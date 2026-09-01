@@ -14,7 +14,8 @@ import { formatMesoUnits } from '../../../lib/drop-price'
 import { RotateCcwIcon } from '../../../lib/icons'
 import { MESO_QUICK_ADDS } from '../../../lib/meso-quick-adds'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
-import { Text, TextInput } from '../../atoms/Text/Text'
+import { Text } from '../../atoms'
+import { SheetTextInput } from '../SheetTextInput/SheetTextInput'
 import { MAX_MESO, parseMesoText } from './meso-pad'
 
 export function MesoAmountField(props: {
@@ -47,13 +48,13 @@ export function MesoAmountField(props: {
    * 단위를 고르는 것 — **금액에 속하는 축**이라 여기 산다([[ADR-170]] 정정 6).
    *
    * 억/만 보조 줄과 **같은 줄**에 왼쪽으로 놓인다(그 줄은 11px 글자 하나라 거의 비어 있었다).
-   * 지출 시트의 「기타」가 넘기는 통화 칩 셋이 유일한 호출부이고, **안 넘기면 그 줄은 전과
+   * 넘기는 곳은 지출 시트의 「기타」 하나이고(통화 칩 셋), **안 넘기면 그 줄은 전과
    * 한 픽셀도 안 다르다** — 드롭 판매가는 통화가 하나뿐이라 안 넘긴다.
    */
   unitPicker?: React.ReactNode
 }): React.JSX.Element {
   const mesoHelpers = props.mesoHelpers ?? true
-  const amountClass = `text-[32px] font-bold leading-none tracking-[-.03em] ${
+  const amountClass = `text-32 font-bold leading-none tracking-[-.03em] ${
     props.meso === 0 ? 'text-text-disabled' : 'text-text'
   }`
   return (
@@ -74,7 +75,7 @@ export function MesoAmountField(props: {
           }`}
         >
           <RotateCcwIcon className="h-3 w-3 text-text-muted" strokeWidth={2.5} aria-hidden />
-          <Text className="text-[11px] font-semibold text-text-muted">초기화</Text>
+          <Text className="text-11 font-semibold text-text-muted">초기화</Text>
         </Pressable>
         {props.editable === true ? (
           /*
@@ -84,7 +85,7 @@ export function MesoAmountField(props: {
            *
            * 값이 콤마째 돌아오므로 다음 타건도 콤마째 들어온다 — 걷는 일은 `parseMesoText` 가 한다.
            */
-          <TextInput
+          <SheetTextInput
             testID={props.amountTestID}
             aria-label="금액"
             value={props.meso === 0 ? '' : props.meso.toLocaleString()}
@@ -113,7 +114,7 @@ export function MesoAmountField(props: {
           }`}
         >
           {props.unitPicker}
-          <Text className="ml-auto text-right text-[11px] text-text-muted" style={TABULAR_NUMS}>
+          <Text className="ml-auto text-right text-11 text-text-muted" style={TABULAR_NUMS}>
             {mesoHelpers && props.meso > 0 ? formatMesoUnits(props.meso) : ''}
           </Text>
         </View>
@@ -131,7 +132,7 @@ export function MesoAmountField(props: {
               onPress={() => props.onChange(Math.min(MAX_MESO, props.meso + quick.value))}
               className="h-7 justify-center rounded-full border border-border px-2.5 active:bg-surface-2"
             >
-              <Text className="text-[11px] font-semibold text-text-muted" style={TABULAR_NUMS}>
+              <Text className="text-11 font-semibold text-text-muted" style={TABULAR_NUMS}>
                 {quick.label}
               </Text>
             </Pressable>

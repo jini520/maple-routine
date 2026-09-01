@@ -14,14 +14,14 @@
 //    은 `cssInterop` 에 등록돼 있지 않고(등록하면 `currentColor` 한 색만 통한다), 이 링은 **한
 //    `<Svg>` 안에서 두 색**(찬 칸 `primary` · 빈 칸 `border`)을 써야 하므로 테마에서 직접 읽는다.
 // ④ **접근성 이름이 `<Svg>` 가 아니라 그것을 감싸는 `View` 로 올라간다** — `BossPortrait` 와 같은
-//    방식이다. 링이 진행률의 유일한 표현이므로(정정 7 — `n/12` 텍스트 보류) 이름은 남아야 하고,
+//    방식이다. 진행률을 링만 표현하므로(정정 7 — `n/12` 텍스트 보류) 이름은 남아야 하고,
 //    `role="img"` + `aria-label` 의 **문구는 웹과 한 글자도 다르지 않다.**
 import { Image, View, type ImageStyle } from 'react-native'
 import { Circle } from 'react-native-svg'
 
 import type { BossCycle } from '../../types'
 
-import { Text } from '../../components/atoms/Text/Text'
+import { Text } from '../../components/atoms'
 import { Svg } from '../../lib/nativewind-interop'
 import { useThemeAppearance } from '../../theme/context'
 
@@ -74,7 +74,7 @@ export function AvatarClearRing(props: { cleared: number; total: number; cycle: 
   const isSingleSegment = props.total === 1
 
   return (
-    // 레이블은 링이 갖는다(정정 7 — `n/12` 텍스트 보류라 링이 진행률의 유일한 표현이다). 주기는
+    // 레이블은 링이 갖는다(정정 7 — `n/12` 텍스트 보류라 진행률을 링만 표현한다). 주기는
     // 탭을 따라간다([[ADR-059]] 결정 7) — 두 탭이 같은 컴포넌트를 쓰므로 "주간"으로 고정하면
     // 월간 탭에서 거짓말이 된다.
     <View

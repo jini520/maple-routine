@@ -36,7 +36,7 @@ export interface ColorSchemePort {
  * `scrollbar-color` 를 문서에 건다 — 전부 DOM 이라 구현이 갖는다. 상태바·내비바 명암은 이 포트가
  * 아니라 호출부(`features/theme/store.ts`)가 계속 맡는다: 그건 이미 자기 포트가 있다.
  *
- * 타입 두 개를 import 하는 유일한 자리다(둘 다 `import type` 이라 런타임 의존은 여전히 0).
+ * 타입 두 개를 import 하는 자리가 여기뿐이다(둘 다 `import type` 이라 런타임 의존은 여전히 0).
  */
 export interface ThemeAppearancePort {
   apply(theme: ThemeName, definition: ThemeDefinition): void
@@ -46,7 +46,7 @@ export interface ThemeAppearancePort {
  * 전면광고 ([[ADR-090]] 결정 4).
  *
  * 광고 단위 ID·테스트 광고 판정은 `native/ads.ts` 의 순수 함수가 갖고 있고 어댑터가 그것을 쓴다 —
- * 그 게이트가 이 프로젝트에서 가장 비싼 실수(실 ID로 자기 광고 클릭)의 유일한 방어선이라 플랫폼
+ * 이 프로젝트에서 가장 비싼 실수(실 ID로 자기 광고 클릭)를 막는 것이 그 게이트뿐이라 플랫폼
  * 구현마다 다시 쓰이면 안 된다.
  */
 export interface AdsPort {

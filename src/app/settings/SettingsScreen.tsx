@@ -48,8 +48,7 @@ import { useContentSchedulerStore } from '../../features/content-scheduler/store
 import { formatBytes } from '../../lib/format-bytes'
 
 import packageJson from '../../../package.json'
-import { Card } from '../../components/atoms/Card/Card'
-import { Text } from '../../components/atoms/Text/Text'
+import { Badge, Card, Text } from '../../components/atoms'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import type { TabParamList } from '../../navigation/routes'
@@ -214,9 +213,7 @@ export function SettingsScreen(): React.JSX.Element {
 /** 설정 행의 현재값 배지 — 값을 고르는 두 행이 공유한다. */
 function ValueBadge(props: { children: React.ReactNode }): React.JSX.Element {
   return (
-    <Text className="rounded-full border border-border px-3 py-1 text-xs font-medium text-text-muted">
-      {props.children}
-    </Text>
+    <Badge variant="outline">{props.children}</Badge>
   )
 }
 

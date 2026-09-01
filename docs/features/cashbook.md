@@ -67,7 +67,7 @@
 | 큰 숫자 | `components/molecules/AmountFigure/` | 큰 숫자 + 힌트 한 줄 + 초기화(같은 줄). **저장 바로 위**에 놓이고 자기 윗선을 안 긋는다([[ADR-173]] 결정 1·2·9). 칠 때는 친 값, 손을 떼면 `displayValue` 로 **굴러간다**(`useCountUp`) |
 | 축 고르개 | `components/molecules/Segment/` | 통화·형태·단계. **종류 칩과 모양이 다르다**([[ADR-173]] 결정 3). 같은 알약 세 종류가 안 읽히던 것이 다시 짠 이유였다 |
 | 글자→값 | `components/molecules/MesoPad/meso-pad.ts` 의 `parseMesoText` | OS 키보드가 넣은 글자에서 숫자만 남긴다. `MesoAmountField`·`MesoKeypad` 는 **드롭 판매가 전용**으로 남는다([[ADR-124]] 결정 5) |
-| 보스 타일 | `components/molecules/BossPortrait/`(`shape`) · `components/atoms/DifficultyBadge/`(`short`) + `app/boss-profit/character-groups.ts` 의 `findPortraitSlug` | 펼친 결정석 줄이 그리는 네모 타일([[ADR-172]] 정정 1·2). **셋 다 보스 수익 탭이 쓰는 그것**이고, 프롭 둘이 ‘네모’와 ‘한 글자 표기’만 더한다 |
+| 보스 타일 | `components/molecules/BossPortrait/`(`shape`) · `components/atoms/Badge/`(난이도 variant + `DIFFICULTY_SHORT`) + `app/boss-profit/character-groups.ts` 의 `findPortraitSlug` | 펼친 결정석 줄이 그리는 네모 타일([[ADR-172]] 정정 1·2). **셋 다 보스 수익 탭이 쓰는 그것**이고, 프롭 둘이 ‘네모’와 ‘한 글자 표기’만 더한다 |
 | 캐릭터 고르개 | `components/organisms/SelectField/` + `app/cashbook/character-options.ts` | 라벨–값 줄 모양의 커스텀 드롭다운. 세로 배치는 `AccountSelect/place-dropdown` 을 그대로 쓴다 |
 | 당겨서 새로고침 | `features/cashbook/records.ts` 의 `refreshCashbook` + `app/use-pull-refresh.ts` | **동기화 → 날짜 캐기 → 다시 읽기** 차례([[ADR-170]] 정정 8). 보스 수익 탭의 당김과 같은 재조회를 부른다 |
 | 낡은 숫자 묻기 | `features/cashbook/records.ts` 의 `cashbookDataRevision` + 화면의 `useFocusEffect` | 다시 들어올 때 **‘내가 읽은 판 ≠ 지금 판’** 이면만 다시 읽는다([[ADR-189]]). 판은 저장 계층이 관리한다. `storage/boss-drops`·`storage/boss-profit` 둘 |
@@ -502,7 +502,7 @@ SpendSheet    껍데기: 시트 상자 · 종류 하나 · 스크롤 키
   ~~큰 것부터~~ 는 [[ADR-172]] 정정 1 에서 죽은 한 줄이다). 정렬은 공용 `compareBossOrder`
   (`lib/boss-matching`)가 하고, 정렬에만 쓰이던 마리당 `payoutMeso` 는 함께 사라졌다.
   **이름은 없다**(정정 3). 초상이 그것을 대신하고, 읽어 주는 이름은 초상이 ‘난이도 + 보스’로 제공한다.
-  그림 둘(`BossPortrait`·`DifficultyBadge`)은 보스 수익 탭의 행이 쓰는 그것 그대로다. 같은 보스가
+  그림 둘(`BossPortrait`·난이도 배지)은 보스 수익 탭의 행이 쓰는 그것 그대로다. 같은 보스가
   두 화면에서 다르게 생기면 안 된다. 갈리는 것 둘: 초상이 **네모**이고(`shape="square"`, 기본은
   원형이라 저쪽 호출부는 안 바뀐다), 난이도 글자가 **한 글자**다(`E`·`N`·`H`·`C`·`EX`.
   **색은 한 값도 안 갈린다**).

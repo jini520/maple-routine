@@ -27,7 +27,7 @@
 
 | 구분 | 파일 | 하는 일 |
 |---|---|---|
-| 화면 | `app/boss-scheduler/BossScreen.tsx` | 스케줄러 화면. `BossCard` 와 `DifficultyBadge` 를 export 한다 |
+| 화면 | `app/boss-scheduler/BossScreen.tsx` | 스케줄러 화면. `BossCard` 를 export 한다 |
 | 화면 | `app/boss-scheduler/BossManageScreen.tsx` | 보스 관리 화면. 하단바 스케줄 그룹의 세 번째 탭(`BossManage`) |
 | 상태 | `features/boss-scheduler/store.ts` | 동기화, 추적 목록, `partyFilter` |
 | 상태 | `features/boss-scheduler/displayed-bosses.ts` | **어떤 보스를 보여줄지 판정한다.** 아래 [표시 판정](#표시-판정은-화면이-아니라-displayed-bossests-가-한다) |
@@ -137,9 +137,10 @@ ADR-073(인디케이터) · ADR-098(헤더 고정). **각 파일 배너의 🔗 
 [[ADR-187]] 결정 2(2026-08-30)다. 등록(추적)과 실제 처치가 어긋나면 `12/12` 인데 미처치 카드가
 남는다. 그 카드는 **‘완료’ 자리에 ‘마감’ 배지**를 단다.
 
-- **배지가 늘지 않고 바뀐다.** `BlockedBadge` 와 같은 규칙, 같은 배색이다([[ADR-162]] 결정 3).
+- **배지가 늘지 않고 바뀐다.** ‘진행 불가’ 배지와 같은 규칙, 같은 배색이다([[ADR-162]] 결정 3).
 - **상자는 ‘완료’와 똑같다**(`px-2.5 py-1 text-xs font-bold`, [[ADR-187]] 정정 1). 자리를 대신하는
-  배지라 크기가 다르면 카드 오른쪽 끝이 배지에 따라 흔들린다. 다른 것은 색뿐이다.
+  배지라 크기가 다르면 카드 오른쪽 끝이 배지에 따라 흔들린다. 다른 것은 색뿐이다. ‘진행 불가’도
+  2026-08-31 부터 같은 상자다([[ADR-094]] 결정 3 의 정정).
 - **우선순위는 ‘진행 불가’ > ‘마감’ > ‘완료’** 다.
 - **판정은 `lib/boss-matching` 의 `isWeeklyClearLimitReached` 한 곳에서만 한다.** `displayedBosses`
   가 그 결과를 `isWeeklyLimitClosed` 로 함께 넘긴다. today가 같은 판정을 따로 다시 하면
@@ -264,7 +265,7 @@ ADR-073(인디케이터) · ADR-098(헤더 고정). **각 파일 배너의 🔗 
 공통으로 첫 인자만 넘긴다**(⛔ ADR-072 결정 3).
 
 **제스처와 인디케이터는 RN `RefreshControl` 이 맡는다**([[ADR-130]] 결정 1). 웹에서 손으로 만들던
-`usePullToRefresh` 훅과 `PullToRefreshIndicator`, 목록을 내리던 `transform` 은 RN에서 전부 없앴다.
+당김 훅과 커스텀 인디케이터, 목록을 내리던 `transform` 은 RN에서 전부 없앴다.
 두 플랫폼 다 인디케이터 안에 커스텀 뷰를 넣지 못하고, 안드로이드는 당김 거리조차 알려주지 않는다.
 그래서 ⛔ ADR-074의 단풍잎 링 결정 넷도 함께 폐기됐다. 색만 테마에서 넘긴다.
 
@@ -362,7 +363,7 @@ Modal.Panel maxWidth="max-w-2xs"(288) · align="center"   ← 키보드를 안 �
 
 ### 난이도 배지
 
-`DifficultyBadge` 이고 `BossScreen.tsx` 가 export 한다. 게임 UI의 난이도 배지 시각 언어(글로시
+`Badge` 의 난이도 variant 다([[ADR-195]] 결정 2). 게임 UI의 난이도 배지 시각 언어(글로시
 캡슐형)를 따른다. 값은 게임 스크린샷에서 픽셀을 뽑은 근사값이다.
 
 ```
@@ -482,7 +483,7 @@ Modal.Panel maxWidth="max-w-2xs"(288) · align="center"   ← 키보드를 안 �
 2줄  (활성 시, border-t) 난이도 세그먼트
 선택 표시  테두리와 색. 체크 원 없음. 미추적 border-border bg-surface / 추적 border-primary bg-primary-tint
 수동 토글  초상화 + 보스명 영역이 버튼(aria-label={보스명})
-난이도 세그먼트  선택은 DifficultyBadge 풀컬러, 미선택은 같은 배지 + opacity-40
+난이도 세그먼트  선택은 난이도 배지 풀컬러, 미선택은 같은 배지 + opacity-40
 파티 스테퍼  보더 pill 안 Users 아이콘 + −/값/+, 1~getMaxPartySize(boss, difficulty) 경계 비활성화,
              탭 즉시 저장(size="compact", 28px. 모달은 40px default)
 ```
@@ -527,7 +528,7 @@ Modal.Panel maxWidth="max-w-2xs"(288) · align="center"   ← 키보드를 안 �
 
 ### 미선택 난이도 칩
 
-[[ADR-121]] 결정 4(2026-08-10)다. **미선택도 `DifficultyBadge` 풀컬러 그대로 두고 `opacity-40` 만
+[[ADR-121]] 결정 4(2026-08-10)다. **미선택도 난이도 배지 풀컬러 그대로 두고 `opacity-40` 만
 건다.** 선택과 미선택은 선명도 차이로만 갈린다. 모달과 관리 화면이 **같은 처리를 공유한다.** 한쪽만
 바꾸면 두 화면의 같은 칩이 다르게 보인다.
 
@@ -619,8 +620,8 @@ Modal.Panel maxWidth="max-w-2xs"(288) · align="center"   ← 키보드를 안 �
 - ~~당김 인디케이터 안에 문구 없이 단풍잎 외곽선 링을 그리고, 당김 구간은 진행률만큼 그려지다 손을
   떼면 회전한다(⛔ ADR-074 결정 2·3·4·6)~~ → **RN `RefreshControl` 의 기본 인디케이터**([[ADR-130]]
   결정 1, 2026-08-13). 두 플랫폼 다 인디케이터에 커스텀 뷰를 넣지 못하고 안드로이드는 당김 거리조차
-  주지 않는다. `usePullToRefresh` 훅과 `PullToRefreshIndicator`, 목록을 내리던 `transform` 도 함께
-  없앴다. **문구 없음(결정 1)과 `aria-hidden`(결정 7)은 살아남는다.** 플랫폼이 같은 답을 낸다.
+  주지 않는다. 당김 훅과 커스텀 인디케이터, 목록을 내리던 `transform` 도 함께 없앴다. 마크를 그리던
+  코드는 2026-09-01 에 지웠고, 그로써 ⛔ ADR-074 는 살아남는 결정이 하나도 없다.
 
 ### 캐릭터 목록
 

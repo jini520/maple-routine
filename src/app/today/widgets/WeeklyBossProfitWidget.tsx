@@ -8,7 +8,7 @@
  * 비교**다: 이번 주 수익이 결정석에서 왔는지 아이템 판매에서 왔는지는 그 자체로 이번 주의 사실이라
  * 다른 기간을 조회하지 않는다. 색은 [[ADR-142]] 링과 같은 짝이다(`primary` = 결정석 · `third` = 아이템).
  *
- * ## 0 을 그리는 유일한 위젯이다
+ * ## 0 을 그리는 위젯은 이것뿐이다
  *
  * «큰 0 을 그리지 않는다»([[ADR-147]] 결정 5)를 이 타일에서만 뒤집는다(사용자 지시). 그 규칙이
  * 지키려던 것 — «없다» 와 «모른다» 를 가르는 일 — 은 옆의 한 줄(*아직 이번 주 기록이 없습니다*)이
@@ -18,7 +18,7 @@
  * ## 금액은 접고, 굴리지 않는다
  *
  * `formatMesoShort` 를 쓴다 — 접는 규칙을 두 벌로 만들면 이 타일과 보스 수익 화면이 다르게 접는다.
- * 그래서 **카운트업(`AnimatedMeso`)도 안 쓴다**: 그쪽은 `toLocaleString()` 의 자릿수 전체를 굴리는
+ * 그래서 **카운트업(`useCountUp`)도 안 쓴다**: 그쪽은 `toLocaleString()` 의 자릿수 전체를 굴리는
  * 물건이라 접힌 표기(`12.0억`)와 애초에 짝이 맞지 않고, [[ADR-087]] 결정 6이 카운트업을 건 범위도
  * 보스 수익 화면이다.
  *
@@ -39,14 +39,14 @@ import { Image, View, type DimensionValue } from 'react-native'
 
 import { formatMesoShort } from '../../../lib/boss-profit-delta'
 
-import { Text } from '../../../components/atoms/Text/Text'
+import { Text } from '../../../components/atoms'
 import { faceCropStyle } from '../../../lib/face-crop'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import type { WidgetHeight } from '../../../lib/widget-layout'
 import type { ProfitSplit, WeeklyProfitCharacterView, WeeklyProfitView } from '../view-model'
 import type { WidgetProps } from './types'
 
-/** 기록이 없을 때 옆에 서는 한 줄 — 큰 `0` 이 «없다» 로 읽히지 않게 하는 유일한 장치다. */
+/** 기록이 없을 때 옆에 서는 한 줄 — 큰 `0` 이 «없다» 로 읽히지 않게 막는 것이 이 줄뿐이다. */
 const NO_RECORD_NOTE = '아직 이번 주 기록이 없습니다'
 
 const PERIOD_LABEL = '이번 주'
@@ -136,7 +136,7 @@ function Amount(props: { meso: number; sizeClass: string }): React.JSX.Element {
         {formatMesoShort(props.meso)}
       </Text>
       {/* 숫자와 단위 사이는 마진이 아니라 **실제 공백 문자**다([[ADR-046]] 트레이드오프). */}
-      <Text fixed className="text-[12px] font-semibold text-text-muted"> 메소</Text>
+      <Text fixed className="text-xs font-semibold text-text-muted"> 메소</Text>
     </Text>
   )
 }
@@ -191,8 +191,8 @@ function Breakdown(props: {
       {splitOf(props.split).map((segment) => (
         <View key={segment.key} className="flex-row items-center gap-1">
           <View className={LEGEND_DOT_CLASS[segment.key]} />
-          <Text fixed className="text-[11px] text-text-muted">{SEGMENT_LABEL[segment.key]}</Text>
-          <Text fixed style={TABULAR_NUMS} className="text-[11px] font-semibold text-text">
+          <Text fixed className="text-11 text-text-muted">{SEGMENT_LABEL[segment.key]}</Text>
+          <Text fixed style={TABULAR_NUMS} className="text-11 font-semibold text-text">
             {formatMesoShort(segment.meso)}
           </Text>
         </View>
@@ -203,7 +203,7 @@ function Breakdown(props: {
 
 function Note(): React.JSX.Element {
   return (
-    <Text fixed testID="profit-note" numberOfLines={1} className="text-[11px] text-text-muted">
+    <Text fixed testID="profit-note" numberOfLines={1} className="text-11 text-text-muted">
       {NO_RECORD_NOTE}
     </Text>
   )
@@ -248,7 +248,7 @@ function Face(props: { character: WeeklyProfitCharacterView }): React.JSX.Elemen
           testID="profit-character-face-fallback"
           className="h-full w-full items-center justify-center bg-primary"
         >
-          <Text fixed className="text-[13px] font-bold text-on-primary">?</Text>
+          <Text fixed className="text-13 font-bold text-on-primary">?</Text>
         </View>
       )}
     </View>
@@ -270,7 +270,7 @@ function CharacterRow(props: {
             testID="profit-character-rank"
             numberOfLines={1}
             style={{ minWidth: RANK_MIN_WIDTH_PX, ...TABULAR_NUMS }}
-            className="shrink-0 text-[11px] font-bold text-text-disabled"
+            className="shrink-0 text-11 font-bold text-text-disabled"
           >
             {rankLabel(props.rank)}
           </Text>
@@ -286,7 +286,7 @@ function CharacterRow(props: {
         {props.character.characterName}
       </Text>
       {props.withSplit && (
-        <Text fixed testID="profit-character-split" numberOfLines={1} className="shrink-0 text-[11px] text-text-muted">
+        <Text fixed testID="profit-character-split" numberOfLines={1} className="shrink-0 text-11 text-text-muted">
           {splitOf(props.character)
             .map((segment) => `${SEGMENT_LABEL[segment.key]} ${formatMesoShort(segment.meso)}`)
             .join(' · ')}
@@ -322,7 +322,7 @@ function CharacterList(props: {
 }
 
 function PeriodLabel(): React.JSX.Element {
-  return <Text fixed className="text-[11px] font-bold text-text-muted">{PERIOD_LABEL}</Text>
+  return <Text fixed className="text-11 font-bold text-text-muted">{PERIOD_LABEL}</Text>
 }
 
 /**
@@ -334,8 +334,8 @@ function PeriodLabel(): React.JSX.Element {
 function PeriodHeader(props: { range: string }): React.JSX.Element {
   return (
     <View testID="profit-period-header" className="flex-row items-baseline justify-between gap-2">
-      <Text fixed className="text-[11px] font-bold text-text-muted">{PERIOD_LABEL} 보스 수익</Text>
-      <Text fixed testID="profit-period-range" numberOfLines={1} className="shrink text-[11px] text-text-muted">
+      <Text fixed className="text-11 font-bold text-text-muted">{PERIOD_LABEL} 보스 수익</Text>
+      <Text fixed testID="profit-period-range" numberOfLines={1} className="shrink text-11 text-text-muted">
         {props.range}
       </Text>
     </View>
@@ -350,7 +350,7 @@ export function WeeklyBossProfitWidget({ w, h, data }: WidgetProps): React.JSX.E
     return (
       <View testID="widget-weekly-boss-profit" className="flex-1 justify-center gap-0.5 p-3">
         <PeriodLabel />
-        <Amount meso={profit.totalMeso} sizeClass="text-[20px]" />
+        <Amount meso={profit.totalMeso} sizeClass="text-xl" />
         {!profit.hasRecords && <Note />}
       </View>
     )
@@ -361,7 +361,7 @@ export function WeeklyBossProfitWidget({ w, h, data }: WidgetProps): React.JSX.E
       <View testID="widget-weekly-boss-profit" className="flex-1 justify-center gap-2 p-3">
         <View className="gap-0.5">
           <PeriodLabel />
-          <Amount meso={profit.totalMeso} sizeClass="text-[22px]" />
+          <Amount meso={profit.totalMeso} sizeClass="text-22" />
         </View>
         <SplitBlock profit={profit} column />
       </View>
@@ -374,7 +374,7 @@ export function WeeklyBossProfitWidget({ w, h, data }: WidgetProps): React.JSX.E
         <View className="flex-1 justify-center gap-2">
           <View className="gap-0.5">
             <PeriodLabel />
-            <Amount meso={profit.totalMeso} sizeClass="text-[24px]" />
+            <Amount meso={profit.totalMeso} sizeClass="text-2xl" />
           </View>
           <SplitBlock profit={profit} column={false} />
         </View>
@@ -391,7 +391,7 @@ export function WeeklyBossProfitWidget({ w, h, data }: WidgetProps): React.JSX.E
     <View testID="widget-weekly-boss-profit" className="gap-2 p-3.5">
       <View className="gap-1">
         <PeriodHeader range={profit.periodRange} />
-        <Amount meso={profit.totalMeso} sizeClass="text-[32px]" />
+        <Amount meso={profit.totalMeso} sizeClass="text-32" />
       </View>
       <SplitBlock profit={profit} column={false} spread />
       {profit.topCharacters.length > 0 && (

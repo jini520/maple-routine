@@ -76,14 +76,14 @@ describe('ApiKeyForm', () => {
     expect(stateOf(submitButton(view)).disabled).toBe(true)
   })
 
-  it('isSubmitting이면 버튼이 로딩 스피너로 바뀌고 "확인" 텍스트는 감춘다', async () => {
+  it('isSubmitting이면 스피너가 라벨을 덮는다 — 라벨은 폭과 스크린리더를 위해 남는다', async () => {
     const view = await renderAtom(<ApiKeyForm isSubmitting={true} onSubmit={jest.fn()} />)
 
-    expect(view.getByText('확인 중')).toBeTruthy()
-    expect(view.queryByText('확인')).toBeNull()
+    // [[ADR-061]] 정정 3 — 라벨을 지우지 않고 가린다. 지우면 버튼 폭이 줄고 스크린리더가 읽을
+    // 것이 없다.
+    expect(view.getByText('확인')).toBeTruthy()
     expect(stateOf(submitButton(view)).busy).toBe(true)
-    // [[ADR-061]] 결정 1: 16px 버튼 안은 트레일 링이다. 스피너는 `aria-hidden` 이라 기본 쿼리에
-    // 안 잡힌다(그 자체가 계약이다 — 무엇이 진행 중인지는 옆 라벨이 말한다).
+    // 스피너는 `aria-hidden` 이라 기본 쿼리에 안 잡힌다.
     expect(view.getByTestId('maple-spinner', { includeHiddenElements: true })).toBeTruthy()
   })
 

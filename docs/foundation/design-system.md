@@ -60,7 +60,16 @@ Primary(테마 공통): rounded-full bg-primary text-on-primary font-semibold ho
 Outline:            rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-text hover:bg-primary-tint
 Text(라이트): text-[#8A7362] hover:text-[#5B4636]   Text(다크): text-neutral-500 hover:text-neutral-300
 ```
-`Outline` 은 **주 CTA 옆/아래에 서는 부 동작**용이다(2026-08-08, 온보딩 API 키 화면의 "API 키 발급 방법 보기"가 첫 사용처: [features/onboarding.md](../features/onboarding.md)). `danger` 와 같은 테두리 pill 형태이되 색이 중립(`border`/`text`)이라 파괴적 동작과 헷갈리지 않고, hover 는 새 색을 만들지 않고 `primary-tint` 를 쓴다(선택 카드 hover 와 같은 값). **변형 클래스는 `Button.tsx` 가 아니라 `Button/variants.ts` 의 `BUTTON_VARIANT_CLASS` 에 있다**. 외부 URL로 나가는 이동은 `<button>` 이 아니라 `<a>` 여야 하므로(링크 시맨틱·`target`/`rel`) 겉모습만 입힐 길이 필요한데, 컴포넌트 파일이 컴포넌트 아닌 값을 함께 export 하면 fast refresh 가 깨진다(`react-refresh/only-export-components`). `Button` 자신도 같은 상수를 쓰므로 두 벌이 되지 않는다.
+`Outline` 은 **주 CTA 옆/아래에 서는 부 동작**용이다(2026-08-08, 온보딩 API 키 화면의 "API 키 발급 방법 보기"가 첫 사용처: [features/onboarding.md](../features/onboarding.md)). `danger` 와 같은 테두리 pill 형태이되 색이 중립(`border`/`text`)이라 파괴적 동작과 헷갈리지 않고, hover 는 새 색을 만들지 않고 `primary-tint` 를 쓴다(선택 카드 hover 와 같은 값). 
+**RN 에서 이 규정은 두 벌로 갈린다**([[ADR-198]] 결정 2). 상자 클래스는 `BUTTON_VARIANT_CLASS`, 글자 클래스는 `BUTTON_VARIANT_TEXT_CLASS` 이고 둘 다 `components/atoms/Button/variants.ts` 에 있다(결정 3). RN 은 글자 스타일이 상자에서 자식 `Text` 로 상속되지 않아서, 한 벌로 두면 라벨이 색도 굵기도 없이 그려진다. 에러는 안 난다.
+
+호출부가 알아야 할 것도 그래서 갈린다.
+
+- **글자 유틸(`text-*`·`font-*`)은 `className` 이 아니라 `textClassName` 으로 준다.** 상자에 주면 무시되고, 그때도 에러가 없다.
+- **폭·정렬·간격은 호출부가 준다.** 변형은 색·테두리·여백·글자만 정한다([[ADR-198]] 결정 1). 라운딩만 예외로 atom 이 못박아 디자인 원칙 2 를 지킨다.
+- **`hover:` 는 없다.** 네이티브에서 NativeWind 가 그 클래스를 조용히 버린다. 눌림 피드백은 `active:` 라는 다른 축이다([[ADR-198]] 결정 4).
+- **외부 URL 로 나가는 버튼은 `role="link"` 를 준다.** 웹의 `<a>` 자리다. 겉모습만 빌리려고 변형 표를 직접 가져다 쓰지 않는다.
+
 **입력 필드**
 ```
 라이트: rounded-[10px] bg-white border border-[#F0DFD1] px-4 py-3 text-[#2B1B10]
@@ -127,7 +136,7 @@ L 0.13~0.15 라 **스크림을 완전 불투명 검정으로 만들어도 1.07 �
        텍스트 키커 10px text-text-muted / 이름 text-xl font-extrabold text-text, 둘 다 MEDIA_TEXT_SHADOW
 경계   본문에 border-t border-border   ← media-scope **바깥**
 본문   p-[18px] · 필드 간격 18
-난이도 라벨 + DifficultyBadge 세그먼트(미선택 = 같은 뱃지 + opacity-40)
+난이도 라벨 + 난이도 배지 세그먼트(미선택 = 같은 뱃지 + opacity-40)
 파티   라벨 행: Users 14 + "파티 인원"(text-xs font-bold tracking-[.06em] text-text-muted)
               + Badge tone="primary" 로 `n / max` (tabular-nums)
        스테퍼: 전폭 h-10(40) rounded-full border-border bg-surface p-1
@@ -201,7 +210,7 @@ CTA:    rounded-full bg-primary text-on-primary font-semibold hover:bg-primary-h
 - **"조회 불가"에는 이 컴포넌트를 쓰지 않는다**. 아래 `UnavailableNotice` 참고([error-resilience.md](./error-resilience.md) 원칙 2).
 - 배지(둥근 배경 박스)는 아래 "아이콘" 절의 *배경 없이 단독* 규칙에 대한 **명시적 예외**다. 빈 상태 배지는 아이콘이 아니라 **일러스트 자리**로 취급한다.
 
-### 로딩 표현 (`components/LoadingState`, `components/MapleSweepSpinner`): [[ADR-061]], 구현 완료 2026-07-30
+### 로딩 표현 (`molecules/LoadingState`, `atoms/Spinner`): [[ADR-061]], 구현 완료 2026-07-30
 "기다리는 중"을 표시하는 모든 자리가 지키는 규칙. 세 상태(**조회 중 / 확정된 빈 상태 / 확인 불가·실패**)는 항상 서로 구분 가능해야 한다([error-resilience.md](./error-resilience.md) 원칙 2). 그래서 로딩은 빈 상태의 어법(점선 박스·배지+CTA)을 쓰지 않는다.
 
 **스피너는 2종, 크기로 갈린다.**
@@ -230,11 +239,15 @@ inline: 스피너 24px:             보스 수익 과거 기간 백필
 - **목록·카드가 들어올 자리에만 쓴다.** 모달 안(캐릭터 관리 피커)이나 화면 전체 대기(온보딩 시드·예열)는 이미 자기 껍데기가 있거나 뒤에 카드가 오지 않으므로 카드를 씌우지 않고 **스피너 + 문구만** 둔다.
 - **캐시가 남아 있으면 쓰지 않는다**. 재검증(SWR) 중에는 기존 내용을 그대로 보여준다(ADR-016). 이 카드는 "보여줄 것이 하나도 없을 때"만.
 
-**버튼 내부 대기**. `MapleSpinner size={16}` + 라벨 병기(`gap-2`), `aria-busy` + `disabled`. 라벨을 지우지 않는 이유는 파괴적 동작(캐시 삭제·연결 해제)에서 무엇이 진행 중인지 글자로 확인돼야 하기 때문이고, 형태를 하나로 맞추려고 조회성 버튼에도 같은 규칙을 쓴다.
+**버튼 내부 대기**. `<Button busy={isBusy}>확인</Button>` 하나로 끝난다([[ADR-061]] 정정 3). 라벨이 `opacity-0` 으로 가려지고 그 자리에 `MapleSpinner size={16}` 이 겹쳐 그려진다. **호출부가 스피너를 직접 넣지 않는다.**
+
+- **라벨을 지우지 않고 가리는 이유가 둘이다.** 대기 전 폭이 그대로 남아 버튼이 안 줄어들고, 스크린리더는 라벨을 그대로 읽는다.
+- **스피너 색은 `Button` 이 정한다.** variant 의 라벨 색과 같은 토큰이고 호출부가 못 어긴다. 손으로 주던 시절 여섯 곳 전부 색을 안 줘서 검정으로 떨어져 있었다.
+- `aria-busy` 는 `busy` 가 켠다. `disabled` 는 호출부 몫이다 — 대기 중에 못 누르게 하는 것은 버튼 모양이 아니라 화면의 판단이다.
 
 **문구 규칙**. 말줄임표가 붙는 `~중...`은 **새로고침 옆 `조회 중...` 한 곳**에만 남는다(그 자리는 "마지막 동기화 3분 전" 시각 표시를 잠시 대체하는 라벨이라 짧아야 한다).
 ```
-버튼 안:  ~중 (말줄임표 없음)   확인 중 · 삭제 중 · 해제 중 · 적용 중
+버튼 안:  라벨이 가려져 문구가 없다 ([[ADR-061]] 정정 3)
 그 밖:    ~하고 있어요          불러오고 있어요 · 캐릭터 정보를 준비하고 있어요 (N/M)
 말줄임표: ...(마침표 3개)로 통일. …(1글자) 금지
 ```
@@ -333,7 +346,9 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 `pr` 은 chevron 자리를 비워 두는 값이다. chevron 크기·`right` 를 옮기면 함께 조정한다(따로 두면 글자가 화살표 밑으로 들어간다).
 
 ### 진행률 바 프리미티브
-`role="progressbar"` + `aria-valuenow/min/max`, track `h-1.5 w-full rounded-full bg-track` + fill `h-1.5 rounded-full bg-primary`. **결정형 진행률은 예외 없이 이것 하나**([[ADR-061]] 결정 6). 온보딩 예열·계정 변경 예열·캐릭터 관리 저장·OTA 다운로드·컨텐츠 진행률이 모두 같은 스타일이다. 새 색/모양/두께 신설 금지.
+`role="progressbar"` + `aria-valuenow/min/max`, track `h-1.5 w-full rounded-full bg-track` + fill `h-full rounded-full bg-primary`. **결정형 진행률은 이 프리미티브 하나**([[ADR-061]] 결정 6). 온보딩 예열·계정 변경 예열·캐릭터 관리 저장·OTA 다운로드·컨텐츠 진행률이 모두 같은 스타일이다. 새 색·모양 신설 금지.
+
+두께만 축이 하나 열려 있다([[ADR-061]] 정정 4). `ProgressBar` 의 `height` 프롭이 `base`(`h-1.5`)와 `thin`(`h-1`) 둘을 받고, `thin` 을 쓰는 곳은 `today` 의 2x2 초기화 타일뿐이다. 세 번째 값은 두지 않는다.
 
 ### 체크박스: **채운 상자는 언제나 `primary`** ([[ADR-182]] 정정 1, 2026-08-30)
 켠 상자는 `bg-primary` + `border-primary`, 그 안의 체크는 `text-on-primary`. 안 켠 것은 **테두리만**(`border-border`, 배경이 있는 자리면 `border-border-strong`). 크기·모서리는 자리마다 다르다(설정·가계부 18px `rounded-md`, today 위젯 12px `rounded-[3px]`). 고정하는 것은 **색** 하나다.
@@ -394,9 +409,9 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
   `translateY` 오프셋 계산은 **전부 사라졌다**(🗑 ADR-072·ADR-073).
 - **적용 화면**: `today` · 컨텐츠 · 보스 · 보스 수익. 하위 페이지·설정에는 없다.
 - **끄는 조건 둘은 남는다**. 빈 상태, 그리고 새로고침이 의미 없는 기간(보스 수익).
-- **단풍잎 마크는 살아 있다**(🟡 [[ADR-074]]). `components/molecules/PullToRefreshIndicator` 가
-  컨텐츠·보스 화면에서 그린다. `RefreshControl` 이 자기 스피너를 그리는 자리에서만 그 마크가
-  폐기됐다([[ADR-130]]). 임계값·저항 곡선 상수는 `lib/pull-to-refresh.ts` 에 그대로 있다.
+- **커스텀 당김 마크는 없다**(⛔ [[ADR-074]]). 두 플랫폼 다 인디케이터에 커스텀 뷰를 넣지 못하고
+  안드로이드는 당김 거리조차 주지 않는다. 마크를 그리던 컴포넌트와 임계값·저항 곡선 상수는
+  2026-09-01 에 지웠다.
 
 ### 레이아웃
 - 전체 너비: 모바일 단일 컬럼, max-width 제한 없음(하이브리드 앱이라 데스크톱 와이드 미고려).
@@ -655,7 +670,7 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
   **OS 외관**을 따른다: OS 가 라이트인 채 앱 테마만 다크면 iOS 가 `#1A1A1C`(대비 **1.13**)를 그려
   **안 보인다**. 호출부가 직접 주면 그쪽이 이기고, `text-muted` 가 아닌 이유는 **자리표시자가 값이
   아니라 힌트**라서다. **`className`(`placeholder:…`)으로 쓰지 말 것**. 그 변형은 native 프리셋에서만
-  `placeholderTextColor` 로 컴파일되는데 jest 는 `NATIVEWIND_OS` 를 안 세워 web 프리셋으로 돈다
+  `placeholderTextColor` 로 컴파일된다(jest 도 이제 native 프리셋으로 돈다 — [[ADR-179]] 정정 1)
   (앱에서는 되고 테스트로는 못 보는 자리가 된다).
 - **글자를 치는 줄에는 최소 높이를 준다**(`min-h-7`). iOS 는 칸이 **내용의 글자 종류대로** 자기 키를
   잰다(한글 20 · 영문 14). 줄을 안 못 박으면 타건마다 줄이, 시트가 크는 구조에서는 **시트 전체가**
@@ -669,7 +684,7 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
   이 앱은 edge-to-edge 라 IME 가 인셋으로만 오고 창은 안 줄어든다(계측: 키보드 312dp 에 창 높이 변화 0).
   그 프롭은 ‘매니페스트가 뭐라 적혀 있나’가 아니라 **‘창이 실제로 어떻게 되나’** 를 말하는 자리다.
 - **칸에 묶인 글자는 `fixed` 를 준다**. today 위젯 전부 · 하단바 라벨 · 캐릭터 레일 초상의 폴백
-  이니셜 · `DifficultyBadge`(상자가 `h-5`/`h-4` 고정이라 **모든 호출부에서**). 기준은 ‘작아 보인다’
+  이니셜 · `Badge` 의 `chip`·`mini` 크기(상자가 `h-5`/`h-4` 고정이라 **자동으로**). 기준은 ‘작아 보인다’
   가 아니라 **‘상자가 글자를 따라 커지는가’** 다. 패딩으로 자라는 배지·버튼은 예외가 **아니다**
   (글자가 커지면 상자도 커진다).
 - 새 화면을 그릴 때 크기를 고를 자유는 그대로다. 다만 `text-[8px]`~`[11px]` 대역은 **하한이 곧
@@ -688,12 +703,45 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 
 ## 아이콘
 - **라이브러리: `lucide-react`**(확정). 새 아이콘은 이 라이브러리에서만. 다른 아이콘 **라이브러리** 혼용은 계속 금지다.
-- **예외: 도메인 아이덴티티 아이콘은 직접 그린다**([[ADR-066]], 2026-07-31). 그 기능을 대표하는 자리에 한해 커스텀 SVG를 허용하되, **lucide 규격을 지키는 것이 조건**이다: 24 그리드 · `fill="none"` · `stroke="currentColor"` · `strokeLinecap`/`strokeLinejoin` `round` · 기본 `strokeWidth` 2 · 크기는 `className`이 정한다(`width`/`height` 속성은 lucide와 같은 24 폴백까지만: CSS가 속성보다 우선하므로 `h-5 w-5`가 항상 이기고, 폴백이 없으면 `className` 없이 쓸 때 인라인 SVG 기본값 300×150으로 부푼다). 규격을 지켜야 같은 줄에 선 lucide 아이콘과 선 굵기·광학 크기가 어긋나지 않는다. 겹침 표현은 `clipPath`·`mask`가 아니라 **뒤 요소의 선을 끊어서**(한 문서에 여러 번 렌더되면 마스크 `id`가 중복된다). 현재 해당: `ProfitIcon`(수익: 동전 더미 + 앞 동전).
+- **예외: 도메인 아이덴티티 아이콘은 직접 그린다**([[ADR-066]], 2026-07-31). 그 기능을 대표하는 자리에 한해 커스텀 SVG를 허용하되, **lucide 규격을 지키는 것이 조건**이다: 24 그리드 · `fill="none"` · `stroke="currentColor"` · `strokeLinecap`/`strokeLinejoin` `round` · 기본 `strokeWidth` 2 · 크기는 `className`이 정한다(`width`/`height` 속성은 lucide와 같은 24 폴백까지만: CSS가 속성보다 우선하므로 `h-5 w-5`가 항상 이기고, 폴백이 없으면 `className` 없이 쓸 때 인라인 SVG 기본값 300×150으로 부푼다). 규격을 지켜야 같은 줄에 선 lucide 아이콘과 선 굵기·광학 크기가 어긋나지 않는다. 겹침 표현은 `clipPath`·`mask`가 아니라 **뒤 요소의 선을 끊어서**(한 문서에 여러 번 렌더되면 마스크 `id`가 중복된다). 현재 해당: `ProfitIcon`(수익: 동전 더미 + 앞 동전) · `GearIcon`(하단바 톱니).
+- **앱이 직접 그리는 SVG 는 두 디렉터리에 산다**([[ADR-199]]). 가르는 기준은 **움직이냐**다.
+
+| 디렉터리 | 무엇 | 가져오는 법 |
+|---|---|---|
+| `atoms/Icon/` | `GearIcon` · `ProfitIcon` · `MapleLeaf`(브랜드 마크) | `import { ProfitIcon } from 'components/atoms/Icon'` |
+| `atoms/Spinner/` | `MapleSpinner`(16px) · `MapleSweepSpinner`(24px 이상) | `import { MapleSweepSpinner } from 'components/atoms/Spinner'` |
+
+- **뿌리는 `SvgFrame` 이 그린다**(`Icon/icon-base.tsx`). `size` → `width`·`height`, `className` → 색, 격자(`viewBox` + 비율)까지가 그 일이고 **칠에는 의견이 없다.** 격자는 둘이다 — lucide 24 정사각(`LUCIDE_GRID`)과 단풍잎 127×130(`LEAF_GRID`).
+- **lucide 규격을 받는 것은 `IconSvg` 다** = `SvgFrame` + 선 프리셋. **새 lucide 계열 아이콘은 이것을 쓰고 좌표만 갖는다.** 뿌리를 직접 그리면 규격이 파일마다 갈리는데, 어긋나도 그림은 나와서 화면을 자세히 보기 전에는 모른다.
+- **채운 그림에 `IconSvg` 를 쓰면 안 된다.** `stroke` 는 SVG 상속 속성이라 뿌리에 두면 자식이 전부 받아 2px 윤곽선이 얹힌다(실측). `MapleLeaf` 와 스윕 스피너가 `SvgFrame` 을 직접 쓰는 이유다.
+- 프롭은 `IconProps` 하나다(하단바가 lucide 아이콘과 바꿔 끼우므로 이름이 같아야 한다).
 - `strokeWidth`: 하단 탭바 `1.5`, 소형 액션(새로고침 등) `2`.
 - 아이콘 컨테이너(둥근 배경 박스)로 감싸지 않는다. 강조색 아이콘을 배경 없이 단독으로. **예외 2곳**: 빈 상태 배지(위 `EmptyState`, [[ADR-060]]. 아이콘이 아니라 일러스트 자리)와 드롭 시트 카테고리 헤더.
 - 현재 사용: 하단 탭바 `ListChecks`(컨텐츠)/`Swords`(보스)/`ProfitIcon`(수익, 커스텀)/`Settings`(설정), 새로고침 `RefreshCw`, 보스 카드 파티 배지 `Users`, 파티 스테퍼 `Minus`/`Plus`.
 - **RN 하단바의 활성 아이콘은 ‘면’이다. 다만 가려서 채운다**([[ADR-132]] 정정 25). fill 과 stroke 가 같은 색이라, **안쪽에 선이 있는 그림은 채우는 순간 그 선이 사라진다**(조준경 → 원판, 달력 → 체크 소실). 통째로 채우는 것은 안쪽에 의미가 없는 넷뿐이고(`LayoutDashboard`·`Wrench`·`ShoppingCart`·`Swords`), 톱니와 수익은 **커스텀이라 채울 자리를 고른다**. `GearIcon` 은 lucide `settings` 와 같은 좌표를 한 패스로 다시 그려 `fillRule="evenodd"` 로 가운데를 비우고(설정 화면들은 계속 lucide `Settings` 를 쓴다), `ProfitIcon` 은 동전 두 개만 채우고 단을 그리는 호는 선으로 남긴다. **채우지 못하는 넷(달력·지갑·목록·조준경)은 대신 획을 굵힌다**(1.5 → 2.75, [[ADR-132]] 정정 27). 채우기와 굵히기는 **배타**다(둘 다 주면 채운 그림이 과해진다). **채운 그림에서는 구멍을 키운다**(톱니 r 3 → 4.5). 둘레의 획이 구멍 안쪽을 먹어 원래 크기로는 ‘덩어리 속 점’이 된다.
 - **커스텀 SVG 에 `fill` 프롭을 열 때는 `?? 'none'` 을 붙일 것.** `undefined` 를 그대로 내려보내면 `react-native-svg` 가 뿌리의 `fill="none"` 을 상속하지 않고 **검정**으로 떨어뜨린다. 안 채우는 자리에서 아이콘이 새까매진다.
+
+## NativeWind 가 안 가로채는 컴포넌트 ([[ADR-197]])
+
+`className` 은 `react-native` 의 기본 컴포넌트(`View`·`Text`·`Pressable`)에만 자동으로 붙는다.
+아래 넷은 **등록해야 붙고, 등록을 빼먹어도 에러가 안 난다**. 색과 크기만 조용히 사라진다.
+
+| 쓸 것 | 어디서 가져오나 |
+|---|---|
+| SVG 를 그리는 컴포넌트 | `import { Svg } from 'lib/nativewind-interop'` |
+| 그라디언트 배경 | `import { LinearGradient } from 'lib/nativewind-interop'` |
+| 애니메이션이 붙는 상자 | `import { AnimatedView } from 'lib/nativewind-interop'` |
+| lucide 아이콘 | `import { Users } from 'lib/icons'` |
+| 커스텀 아이콘 | `import { ProfitIcon } from 'components/atoms/Icon'` |
+
+- **`react-native-svg` 에서 직접 가져와도 되는 것은 자식 도형뿐이다**(`Path`·`Circle`·`Defs` 등).
+  그것들은 `className` 을 안 받는다. 뿌리인 `Svg` 는 반드시 `lib/nativewind-interop` 에서.
+- **새 lucide 아이콘은 `lib/icons.ts` 에 먼저 더한다.** 배럴(`from 'lucide-react-native'`)에서 바로
+  가져오면 클래스가 무시되고 번들도 1.8MB 커진다.
+- **아이콘에 `testID` 를 주지 말 것.** lucide 가 그것을 `data-testid` 로 바꿔서 `getByTestId` 가 못
+  찾는다. 감싸는 `View` 에 준다.
+- `View` 에 `animationName`·`transitionProperty` 를 주면 RN 이 모르는 키라 조용히 버린다.
+  애니메이션이 붙는 상자는 `AnimatedView` 여야 한다.
 
 ## 폐기된 정책 (history)
 

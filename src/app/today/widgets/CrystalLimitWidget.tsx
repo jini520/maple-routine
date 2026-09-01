@@ -35,7 +35,7 @@
 import { View } from 'react-native'
 import { Circle } from 'react-native-svg'
 
-import { Text } from '../../../components/atoms/Text/Text'
+import { Text } from '../../../components/atoms'
 import { Svg } from '../../../lib/nativewind-interop'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import type { WidgetHeight } from '../../../lib/widget-layout'
@@ -195,7 +195,7 @@ function RestWorlds(props: { rest: CrystalLimitView[] }): React.JSX.Element | nu
   if (props.rest.length === 0) return null
 
   return (
-    <Text fixed testID="crystal-rest" numberOfLines={1} className="text-[11px] text-text-muted">
+    <Text fixed testID="crystal-rest" numberOfLines={1} className="text-11 text-text-muted">
       {props.rest.length === 1
         ? `${props.rest[0].world} ${remainingOf(props.rest[0])}개 남음`
         : `외 ${props.rest.length}개 월드`}
@@ -206,8 +206,8 @@ function RestWorlds(props: { rest: CrystalLimitView[] }): React.JSX.Element | nu
 function Empty(props: { variant: Variant }): React.JSX.Element {
   return (
     <View testID="widget-crystal-limit" className="flex-1 justify-center gap-1 p-3">
-      {props.variant !== 'tiny' && <Title sizeClass="text-[10px]" />}
-      <Text fixed testID="crystal-empty" numberOfLines={2} className="text-[11px] text-text-muted">
+      {props.variant !== 'tiny' && <Title sizeClass="text-10" />}
+      <Text fixed testID="crystal-empty" numberOfLines={2} className="text-11 text-text-muted">
         {EMPTY_NOTE}
       </Text>
     </View>
@@ -222,7 +222,7 @@ export function CrystalLimitWidget({ w, h, data }: WidgetProps): React.JSX.Eleme
 
   const [first, ...rest] = worlds
 
-  // 월드 이름이 사라지는 유일한 크기다 — 월드가 여럿이면 첫 월드만 말하는 셈이라 **월드가 하나인
+  // 월드 이름이 사라지는 크기는 이것뿐이다 — 월드가 여럿이면 첫 월드만 말하는 셈이라 **월드가 하나인
   // 사용자에게만 정직하다.** 접근성 이름은 링이 계속 월드를 말한다.
   if (variant === 'tiny') {
     return (
@@ -237,9 +237,9 @@ export function CrystalLimitWidget({ w, h, data }: WidgetProps): React.JSX.Eleme
       <View testID="widget-crystal-limit" className="flex-1 flex-row items-center gap-2.5 p-3">
         <Ring view={first} sizePx={RING_PX.mini} />
         <View className="min-w-0 flex-1 gap-0.5">
-          <Title sizeClass="text-[10px]" />
+          <Title sizeClass="text-10" />
           <WorldName world={first.world} sizeClass="text-[12.5px] font-semibold" />
-          <Remaining view={first} sizeClass="text-[11px]" />
+          <Remaining view={first} sizeClass="text-11" />
         </View>
       </View>
     )
@@ -249,11 +249,11 @@ export function CrystalLimitWidget({ w, h, data }: WidgetProps): React.JSX.Eleme
     return (
       <View testID="widget-crystal-limit" className="flex-1 items-center justify-center gap-1.5 p-3">
         {/* 2x1 이 말하는 것을 더 큰 타일이 안 말할 이유가 없다 — 제목은 여기서도 선다. */}
-        <Title sizeClass="text-[10px]" />
+        <Title sizeClass="text-10" />
         <Ring view={first} sizePx={RING_PX.compact} />
         <View className="items-center gap-0.5">
-          <WorldName world={first.world} sizeClass="text-[13px] font-semibold" />
-          <Remaining view={first} sizeClass="text-[11px]" />
+          <WorldName world={first.world} sizeClass="text-13 font-semibold" />
+          <Remaining view={first} sizeClass="text-11" />
         </View>
         <RestWorlds rest={rest} />
       </View>
@@ -267,8 +267,8 @@ export function CrystalLimitWidget({ w, h, data }: WidgetProps): React.JSX.Eleme
         <View key={view.world} testID="crystal-world-cell" className="min-w-0 flex-1 flex-row items-center gap-1.5">
           <Ring view={view} sizePx={RING_PX.wide} />
           <View className="min-w-0 flex-1 gap-0.5">
-            <WorldName world={view.world} sizeClass="text-[12px] font-semibold" />
-            <Remaining view={view} sizeClass="text-[11px]" />
+            <WorldName world={view.world} sizeClass="text-xs font-semibold" />
+            <Remaining view={view} sizeClass="text-11" />
           </View>
         </View>
       ))}

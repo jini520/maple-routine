@@ -2,7 +2,7 @@ import { Pressable, View } from 'react-native'
 
 import { MinusIcon, PlusIcon, UsersIcon } from '../../../lib/icons'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
-import { Text } from '../../atoms/Text/Text'
+import { Text } from '../../atoms'
 
 // 파티원 수 스테퍼 — 보스 관리 페이지 행과 파티 인원 모달이 공유한다(ADR-121 결정 7).
 //
@@ -43,7 +43,7 @@ const SIZES = {
     icon: 'h-4 w-4',
     // min-w 고정 + tabular-nums 라 1↔6 을 오가도 −/+ 가 제자리에 있다.
     valueSlot: 'min-w-[66px] justify-center gap-0.5',
-    value: 'text-[19px] font-extrabold leading-none tracking-[-.03em]',
+    value: 'text-19 font-extrabold leading-none tracking-[-.03em]',
     marker: null,
   },
 } as const

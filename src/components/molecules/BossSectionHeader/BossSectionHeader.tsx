@@ -13,8 +13,7 @@
 // `Badge tone="primary"` 다.
 import { View } from 'react-native'
 
-import { Badge } from '../../atoms/Badge/Badge'
-import { Text } from '../../atoms/Text/Text'
+import { Badge, Text } from '../../atoms'
 import type { BossCycle } from '../../../types'
 
 const CYCLE_LABEL: Record<BossCycle, string> = {
@@ -43,18 +42,12 @@ export function BossSectionHeader(props: BossSectionHeaderProps): React.JSX.Elem
 
       <View className="flex-row items-center gap-2">
         {seasonState !== null && (
-          <Text
-            className={
-              seasonState === 'complete'
-                ? 'rounded-full bg-secondary-tint px-2.5 py-1 text-xs font-bold text-secondary-ink'
-                : 'rounded-full bg-primary-tint px-2.5 py-1 text-xs font-semibold text-primary-ink'
-            }
-          >
+          <Badge variant={seasonState === 'complete' ? 'secondary' : 'primary'}>
             {`season ${seasonState === 'complete' ? '완료' : '미완료'}`}
-          </Text>
+          </Badge>
         )}
         {clearCount !== null && clearLimit !== null && (
-          <Badge tone="primary">
+          <Badge variant="primary">
             {clearCount}/{clearLimit}
           </Badge>
         )}

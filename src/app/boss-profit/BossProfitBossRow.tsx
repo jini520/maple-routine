@@ -31,9 +31,7 @@ import { getItemIconUrl } from '../../lib/item-icons'
 import { isValuableDrop } from '../../lib/valuable-drops'
 import type { RecordedDrop } from '../../types/drops'
 
-import { AnimatedMeso } from '../../components/atoms/AnimatedMeso/AnimatedMeso'
-import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
-import { Text } from '../../components/atoms/Text/Text'
+import { AnimatedNumber, Badge, Text } from '../../components/atoms'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { MinusIcon, PlusIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../lib/text-styles'
@@ -66,7 +64,7 @@ export function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Eleme
     // 글꼴 line-height가 그대로 행 높이에 실려 드롭 유무로 행이 튄다.
     return (
       <View className="ml-auto h-6 shrink-0 flex-row items-center rounded-full border border-dashed border-primary bg-primary-tint px-2.5">
-        <Text className="text-[11px] font-bold text-primary-ink">＋ 드롭 추가</Text>
+        <Text className="text-11 font-bold text-primary-ink">＋ 드롭 추가</Text>
       </View>
     )
   }
@@ -94,7 +92,7 @@ export function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Eleme
                 영향을 주지 않는다. */}
             {drop.ringLevel !== undefined && (
               <View className="absolute -bottom-1 -right-0.5 rounded-full bg-primary px-0.5 py-px">
-                <Text className="text-[8px] font-bold leading-none text-on-primary">lv{drop.ringLevel}</Text>
+                <Text className="text-8 font-bold leading-none text-on-primary">lv{drop.ringLevel}</Text>
               </View>
             )}
           </View>
@@ -105,7 +103,7 @@ export function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Eleme
           className="h-6 w-6 items-center justify-center rounded-md border-[1.5px] border-surface bg-surface-2"
           style={{ marginLeft: -2, zIndex: 0 }}
         >
-          <Text className="text-[10px] font-bold text-text-muted">+{extra}</Text>
+          <Text className="text-10 font-bold text-text-muted">+{extra}</Text>
         </View>
       )}
     </View>
@@ -150,7 +148,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
       }
       style={TABULAR_NUMS}
     >
-      <AnimatedMeso
+      <AnimatedNumber
         identity={`boss|${row.ocid}|${row.boss}|${row.difficulty}|${row.periodKey}`}
         value={(row.payoutMeso ?? 0) + dropTotal}
       />
@@ -159,7 +157,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
   )
 
   // [[ADR-063]]: 예외 메시지를 그대로 렌더하던 인라인 문단을 걷어내고 토스트로 알린다 — 개발자용
-  // 문구와 SQLite 네이티브 원문이 사용자에게 새던 유일한 자리였다. 문구는 보스 관리 화면과 같아
+  // 문구와 SQLite 네이티브 원문이 사용자에게 새는 자리가 여기뿐이었다. 문구는 보스 관리 화면과 같아
   // 두 경로가 통일된다.
   async function handleChange(delta: number): Promise<void> {
     const next = clamp(partySize + delta, 1, row.maxPartySize)
@@ -194,7 +192,9 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           // 최대값에 높이를 맡기면 지시자 종류가 바뀔 때마다 행 높이가 흔들린다.
           className="h-6 w-full flex-row items-center gap-1.5"
         >
-          <DifficultyBadge difficulty={row.difficulty} />
+          <Badge variant={row.difficulty}>
+            {row.difficulty}
+          </Badge>
           <Text numberOfLines={1} className="shrink text-sm font-semibold text-text">
             {row.boss}
           </Text>
@@ -236,13 +236,13 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
               잡은 것이고 가격 미확정은 참조 데이터에 값이 없는 것이라, 둘 다 "0메소 벌었다"가
               아니다. 그래서 그 자리는 금액이 아니라 배지가 선다. */}
           {!row.isComplete ? (
-            <View className="shrink-0 rounded-full bg-surface-2 px-2 py-0.5">
-              <Text className="text-xs font-medium text-text-muted">미완료</Text>
-            </View>
+            <Badge variant="muted" className="shrink-0">
+              미완료
+            </Badge>
           ) : isPriceUnknown ? (
-            <View className="shrink-0 rounded-full bg-primary-tint px-2 py-0.5">
-              <Text className="text-xs font-medium text-primary-ink">가격 미확정</Text>
-            </View>
+            <Badge variant="primary" className="shrink-0">
+              가격 미확정
+            </Badge>
           ) : // 아이템이 섞이면 **금액 아래에 칩이 선다** — 그 존재가 곧 "이 숫자는 결정석만이
           // 아니다"라는 표시이고, 동시에 내역을 여는 버튼이다(사용자 지정 2026-08-10). 값을 매긴
           // 아이템이 없으면 **래퍼조차 만들지 않는다** — 그 행의 트리가 종전과 달라지지 않아야
@@ -261,7 +261,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
                 aria-expanded={isItemPopoverOpen}
                 className="h-5 shrink-0 flex-row items-center rounded-full bg-primary-tint px-2"
               >
-                <Text className="text-[11px] font-bold leading-none text-primary-ink" style={TABULAR_NUMS}>
+                <Text className="text-11 font-bold leading-none text-primary-ink" style={TABULAR_NUMS}>
                   아이템 +{formatMesoShort(dropTotal)}
                 </Text>
               </Pressable>

@@ -26,8 +26,9 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { useCountUp } from '../../../lib/use-count-up'
-import { Text, TextInput } from '../../atoms/Text/Text'
+import { useCountUp } from '../../../hooks/useCountUp'
+import { Text } from '../../atoms'
+import { SheetTextInput } from '../SheetTextInput/SheetTextInput'
 import { RotateCcwIcon } from '../../../lib/icons'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import { parseMesoText } from '../MesoPad/meso-pad'
@@ -87,6 +88,71 @@ export interface AmountFigureProps {
 const FIGURE_FONT_SIZE = 30
 const FIGURE_LINE_HEIGHT = 38
 
+/**
+ * 큰 숫자 한 칸. **굴러가는 상태를 여기 가둔다**([[ADR-087]] 정정 3).
+ *
+ * `useCountUp` 은 350ms 동안 매 프레임 `setState` 를 부른다. 그 상태가 부모에 있으면 부모 트리가
+ * 프레임마다 다시 그려진다.
+ *
+ * **못 치는 자리와 치는 자리를 한 컴포넌트가 그린다.** 갈래마다 잎을 따로 두면 갈래가 바뀔 때
+ * 훅이 다시 마운트되고, 그때 기억(`lastDisplayedByIdentity`)에서 옛 값을 꺼내 **굴러 버린다** —
+ * 「무엇을 세는지가 바뀌면 안 굴러간다」([[ADR-173]] 결정 12)가 깨진다. 테스트가 그것을 잡는다.
+ *
+ * 같은 이유로 `atoms/AnimatedNumber` 를 못 쓴다. 그쪽은 글자만 내는 잎이라 칸을 못 그리고,
+ * 칸만 갈라내면 위의 재마운트가 난다.
+ */
+function AmountValue(props: {
+  testID: string
+  identity: string
+  value: number
+  settled: number
+  approximateMark: string
+  readOnly: boolean
+  onChangeValue: (next: number) => void
+}): React.JSX.Element {
+  const [focused, setFocused] = useState(false)
+  const rolled = useCountUp(props.identity, focused ? props.value : props.settled)
+  const shown = focused ? props.value : rolled
+  const empty = shown === 0
+  /**
+   * 큰 숫자의 **줄 상자를 못 박는다**([[ADR-178]] 결정 1 · 정정 2).
+   *
+   * `leading-none` 은 줄높이를 글자 크기와 같게 만든다 — 30px 글자에 30px 상자다. 아톰이 두
+   * 플랫폼을 맞추려고 패딩과 글꼴 여백을 지워 둔 터라([[ADR-170]] 정정 13) 그 상자에 ascent 가
+   * 안 들어가 **초점을 받으면 글자 위가 잘렸다**. 줄높이를 **글자보다 크게** 잡아 그 자리를 만든다.
+   */
+  // NativeWind 는 클래스 문자열을 **빌드 때** 읽으므로 여기에 상수를 보간하면 안 된다 —
+  // `AmountFigure.test` 의 두 상수와 **같은 수**를 손으로 적는다.
+  const digits = `text-right text-30 font-bold leading-[38px] tracking-[-.03em] ${
+    empty ? 'text-text-disabled' : 'text-text'
+  }`
+
+  if (props.readOnly) {
+    return (
+      <Text testID={props.testID} className={digits} style={TABULAR_NUMS}>
+        {props.approximateMark}
+        {shown.toLocaleString()}
+      </Text>
+    )
+  }
+
+  return (
+    <SheetTextInput
+      testID={props.testID}
+      aria-label="금액"
+      // 0 일 때 비우는 이유: 「0」 을 값으로 두면 그 뒤에 친 숫자가 붙어 자릿수가 하나 는다.
+      value={empty ? '' : shown.toLocaleString()}
+      onChangeText={(text) => props.onChangeValue(parseMesoText(props.value, text))}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      keyboardType="number-pad"
+      placeholder="0"
+      className={digits}
+      style={TABULAR_NUMS}
+    />
+  )
+}
+
 export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
   /**
    * **칠 때는 친 값, 손을 떼면 보여 줄 값**([[ADR-173]] 결정 6).
@@ -94,14 +160,13 @@ export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
    * 치는 동안 굴리면 한 자를 칠 때마다 숫자가 움직여 무엇을 치는지 안 읽힌다. 그래서 커서가
    * 있는 동안에는 카운트업의 결과를 안 쓰고 친 값을 그대로 그린다.
    */
-  const [focused, setFocused] = useState(false)
   const settled = props.displayValue ?? props.value
-  const rolled = useCountUp(props.identity ?? props.testID, focused ? props.value : settled)
-  const shown = focused ? props.value : rolled
-
-  const empty = shown === 0
-  /** 어림 표식 — 0 에는 안 붙는다(어림할 것이 없다). */
-  const approximateMark = props.approximate === true && !empty ? '≈ ' : ''
+  /**
+   * 0 판정은 **목표**로 한다. 구르는 중간값으로 하면 색이 프레임마다 흔들리고, 무엇보다 부모가
+   * 그 값을 알아야 해서 굴러가는 상태가 여기로 올라온다([[ADR-087]] 정정 3).
+   */
+  /** 어림 표식 — 0 에는 안 붙는다(어림할 것이 없다). 목표로 판정한다(구르는 중에 안 흔들리게). */
+  const approximateMark = props.approximate === true && settled !== 0 ? '≈ ' : ''
   /**
    * 큰 숫자의 **줄 상자를 못 박는다**([[ADR-178]] 결정 1 · 정정 2).
    *
@@ -111,9 +176,6 @@ export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
    */
   // NativeWind 는 클래스 문자열을 **빌드 때** 읽으므로 여기에 상수를 보간하면 안 된다 —
   // 아래 두 상수와 **같은 수**를 손으로 적고, 그 사실을 `AmountFigure.test` 가 붙든다.
-  const digits = `text-[30px] font-bold leading-[38px] tracking-[-.03em] ${
-    empty ? 'text-text-disabled' : 'text-text'
-  }`
 
   return (
     <View testID={`${props.testID}-figure`} className="gap-1">
@@ -140,51 +202,27 @@ export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
           }`}
         >
           <RotateCcwIcon className="h-3 w-3 text-text-muted" strokeWidth={2.5} aria-hidden />
-          <Text className="text-[11px] font-semibold text-text-muted">초기화</Text>
+          <Text className="text-11 font-semibold text-text-muted">초기화</Text>
         </Pressable>
         )}
 
         {/*
-          **보이는 글자는 언제나 `Text` 다**([[ADR-178]] 정정 2·4).
+          숫자는 **하나만 그린다**([[ADR-178]] 정정 5). 못 치는 자리는 `Text`, 치는 자리는 칸이다.
 
-          단위(「메소」)는 숫자와 **기준선을 맞춰야** 하는데, `items-baseline` 은 `TextInput` 에는
-          안 먹는다 — Yoga 는 글자 노드에만 기준선을 주고 그 밖에는 **상자 밑변**으로 떨어진다.
-          그래서 치는 칸 옆의 단위가 숫자 기준선 위로 떠 보였다(사용자 보고 2026-08-29).
-
-          그래서 **상자와 기준선은 `Text` 가 만들고**, 치는 칸은 그 위에 얹는다. 글꼴·크기·줄높이가
-          같으므로 둘의 기준선은 글꼴 지표와 무관하게 **정의상 같다** — 이 자리에서 픽셀을 손으로
-          맞추지 않는 이유가 그것이다. 못 치는 자리에서는 그 글자가 곧 보이는 숫자다.
+          정정 4 는 칸 위에 `Text` 를 겹치고 칸의 글자를 투명하게 했었다. 그것을 걷었다 — 안드로이드
+          에서 그 투명이 안 먹어 두 글자가 함께 그려졌다(실기기 확인). 칸의 글자가 `Text` 보다
+          약 1dp 아래 앉는 차이는 그대로 두기로 했다(사용자 결정).
         */}
         <View className="flex-1">
-          <Text
-            testID={props.readOnly === true ? props.testID : undefined}
-            aria-hidden={props.readOnly !== true}
-            className={`text-right ${digits}`}
-            style={TABULAR_NUMS}
-          >
-            {approximateMark}
-            {shown.toLocaleString()}
-          </Text>
-          {props.readOnly !== true && (
-            <TextInput
-              testID={props.testID}
-              aria-label="금액"
-              // 0 일 때 비우는 이유: 「0」 을 값으로 두면 그 뒤에 친 숫자가 붙어 자릿수가 하나 는다.
-              value={empty ? '' : shown.toLocaleString()}
-              onChangeText={(text) => props.onChangeValue(parseMesoText(props.value, text))}
-              onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
-              keyboardType="number-pad"
-              placeholder="0"
-              className={`text-right ${digits}`}
-              style={[
-                TABULAR_NUMS,
-                { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
-                // **그리지 않는다** — 입력과 커서만 맡는다([[ADR-178]] 정정 4).
-                { color: 'transparent' },
-              ]}
-            />
-          )}
+          <AmountValue
+            testID={props.testID}
+            identity={props.identity ?? props.testID}
+            value={props.value}
+            settled={settled}
+            approximateMark={approximateMark}
+            readOnly={props.readOnly === true}
+            onChangeValue={props.onChangeValue}
+          />
         </View>
 
         {/*
@@ -208,7 +246,7 @@ export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
         // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
         <Text
           testID={`${props.testID}-hint`}
-          className={`text-right text-[11px] ${
+          className={`text-right text-11 ${
             props.hintBlocked === true ? 'text-error-ink' : 'text-text-muted'
           }`}
           style={TABULAR_NUMS}

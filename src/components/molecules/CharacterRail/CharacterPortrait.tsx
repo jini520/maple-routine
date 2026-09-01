@@ -17,7 +17,7 @@ import { Circle, Defs, Path, TextPath, Text as SvgText } from 'react-native-svg'
 
 import { Svg } from '../../../lib/nativewind-interop'
 import { useThemeAppearance } from '../../../theme/context'
-import { Text } from '../../atoms/Text/Text'
+import { Text } from '../../atoms'
 import {
   PORTRAIT_CENTER_X,
   PORTRAIT_CENTER_Y,

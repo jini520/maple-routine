@@ -18,15 +18,11 @@ import { matchWeeklyRegionalQuestSlug } from '../../lib/weekly-regional-quest-ma
 import type { WeeklyContent } from '../../types'
 import { Image, View } from 'react-native'
 
-import { Badge } from '../../components/atoms/Badge/Badge'
-import { Card } from '../../components/atoms/Card/Card'
-import { ProgressBar } from '../../components/atoms/ProgressBar/ProgressBar'
-import { Text } from '../../components/atoms/Text/Text'
+import { Badge, Card, ProgressBar, Text } from '../../components/atoms'
 import { MEDIA_TEXT_SHADOW_STYLE } from '../../lib/text-styles'
 import {
-  BlockedBadge,
-  CategoryBadge,
-  QuestStateBadge,
+  QUEST_STATE_LABELS,
+  QUEST_STATE_VARIANT,
   renderWeeklyQuestStatus,
   stripGuildPrefix,
 } from './content-badges'
@@ -76,14 +72,20 @@ export function EpicDungeonCard(props: {
 
       <View className="h-full flex-row items-center justify-between px-[14px]">
         <View className="flex-row items-center gap-2">
-          <CategoryBadge label="에픽 던전" variant="epicDungeon" />
+          <Badge variant="epicDungeon">에픽 던전</Badge>
           <Text className="text-sm font-medium text-text" style={MEDIA_TEXT_SHADOW_STYLE}>
             {displayName}
           </Text>
         </View>
 
         {/* [[ADR-162]] 결정 3 — 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
-        {props.isBlocked === true ? <BlockedBadge /> : <QuestStateBadge questState={questState} />}
+        {props.isBlocked === true ? (
+          <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
+        ) : (
+          <Badge variant={QUEST_STATE_VARIANT[questState]}>
+            {QUEST_STATE_LABELS[questState]}
+          </Badge>
+        )}
       </View>
     </MediaCard>
   )
@@ -128,9 +130,13 @@ export function WeeklyRegionalContentCard(props: {
 
         {/* [[ADR-162]] 결정 3 — 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
         {props.isBlocked === true ? (
-          <BlockedBadge />
+          <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
         ) : (
-          questState !== null && <QuestStateBadge questState={questState} />
+          questState !== null && (
+            <Badge variant={QUEST_STATE_VARIANT[questState]}>
+              {QUEST_STATE_LABELS[questState]}
+            </Badge>
+          )
         )}
       </View>
     </MediaCard>
@@ -165,7 +171,11 @@ export function WeeklyQuestCard(props: {
         </View>
 
         {/* [[ADR-162]] 결정 3 — 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
-        {props.isBlocked === true ? <BlockedBadge /> : renderWeeklyQuestStatus(content, backgroundSlug)}
+        {props.isBlocked === true ? (
+          <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
+        ) : (
+          renderWeeklyQuestStatus(content, backgroundSlug)
+        )}
       </View>
     </MediaCard>
   )
@@ -188,13 +198,17 @@ export function MapleUnionDragonCard(props: {
 
       <View className="h-full flex-row items-center justify-between px-[14px]">
         <View className="flex-row items-center gap-2">
-          <CategoryBadge label="유니온" variant="mapleUnion" />
+          <Badge variant="mapleUnion">유니온</Badge>
           <Text className="text-sm font-medium text-text" style={MEDIA_TEXT_SHADOW_STYLE}>
             {displayName}
           </Text>
         </View>
 
-        {content.questState !== null && <QuestStateBadge questState={content.questState} />}
+        {content.questState !== null && (
+          <Badge variant={QUEST_STATE_VARIANT[content.questState]}>
+            {QUEST_STATE_LABELS[content.questState]}
+          </Badge>
+        )}
       </View>
     </MediaCard>
   )
@@ -215,13 +229,13 @@ export function GuildUndergroundWaterwayCard(props: {
 
       <View className="h-full flex-row items-center justify-between px-[14px]">
         <View className="flex-row items-center gap-2">
-          <CategoryBadge label="길드" variant="guild" />
+          <Badge variant="guild">길드</Badge>
           <Text className="text-sm font-medium text-text" style={MEDIA_TEXT_SHADOW_STYLE}>
             {displayName}
           </Text>
         </View>
 
-        <Badge tone="third">{content.nowCount}점</Badge>
+        <Badge variant="third">{content.nowCount}점</Badge>
       </View>
     </MediaCard>
   )
@@ -244,13 +258,13 @@ export function GuildMissionPointsCard(props: {
       <View className="h-full flex-col">
         <View className="h-20 shrink-0 flex-row items-center justify-between px-[14px]">
           <View className="flex-row items-center gap-2">
-            <CategoryBadge label="길드" variant="guild" />
+            <Badge variant="guild">길드</Badge>
             <Text className="text-sm font-medium text-text" style={MEDIA_TEXT_SHADOW_STYLE}>
               {displayName}
             </Text>
           </View>
 
-          <Badge tone="third">
+          <Badge variant="third">
             {content.nowCount}/{content.maxCount}
           </Badge>
         </View>
@@ -285,13 +299,15 @@ export function GuildFlagRaceCard(props: {
 
       <View className="h-full flex-row items-center justify-between px-[14px]">
         <View className="flex-row items-center gap-2">
-          <CategoryBadge label="길드" variant="guild" />
+          <Badge variant="guild">길드</Badge>
           <Text className="text-sm font-medium text-text" style={MEDIA_TEXT_SHADOW_STYLE}>
             {displayName}
           </Text>
         </View>
 
-        <QuestStateBadge questState={questState} />
+        <Badge variant={QUEST_STATE_VARIANT[questState]}>
+            {QUEST_STATE_LABELS[questState]}
+          </Badge>
       </View>
     </MediaCard>
   )
@@ -340,7 +356,7 @@ export function renderWeeklyContentCard(
         <Text className="shrink text-sm text-text">
           {content.name} · {content.nowCount}/{content.maxCount}
         </Text>
-        {isBlocked && <BlockedBadge />}
+        {isBlocked && <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>}
       </View>
       {!isBlocked && content.maxCount > 0 && (
         <ProgressBar

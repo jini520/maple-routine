@@ -1,4 +1,4 @@
-// 온보딩 — 앱을 처음 여는 사람이 보는 유일한 화면([[ADR-016]] · [[ADR-035]] · [[ADR-061]] ·
+// 온보딩 — 앱을 처음 여는 사람은 이 화면만 본다([[ADR-016]] · [[ADR-035]] · [[ADR-061]] ·
 // [[ADR-083]] · [[ADR-086]]).
 //
 // **단계는 라우트가 아니라 `status` switch 다.** 웹과 같고, 그래서 뒤로 갈 UI 가 없다 — 잠기면 출구가
@@ -35,8 +35,7 @@ import {
   setRepresentativeCharacter,
 } from '../../storage/character-selection'
 
-import { MapleSweepSpinner } from '../../components/atoms/MapleSweepSpinner/MapleSweepSpinner'
-import { Text } from '../../components/atoms/Text/Text'
+import { MapleSweepSpinner, Text } from '../../components/atoms'
 import { ApiKeyForm } from './ApiKeyForm'
 import { ContentCharacterStep } from './ContentCharacterStep'
 import { OnboardingStep } from './OnboardingStep'

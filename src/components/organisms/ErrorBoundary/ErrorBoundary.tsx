@@ -48,8 +48,7 @@ import { View } from 'react-native'
 import { hideSplashScreen } from '../../../native/splash-screen'
 
 import { AlertTriangleIcon, RotateCcwIcon } from '../../../lib/icons'
-import { Button } from '../../atoms/Button/Button'
-import { Text } from '../../atoms/Text/Text'
+import { Button, Text } from '../../atoms'
 
 interface ErrorBoundaryProps {
   children: ReactNode
@@ -70,7 +69,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
     // 리포팅은 미도입이라 개발 중 확인용으로만 남긴다 — 프로덕션에서도 콘솔은 사용자에게 보이지
-    // 않으므로 무해하고, 실기기 원격 디버깅에서는 유일한 단서가 된다.
+    // 않으므로 무해하고, 실기기 원격 디버깅에서는 단서가 이것뿐이다.
     console.error('[ErrorBoundary]', error, info.componentStack)
 
     // 폴백이 뜨는 것과 같은 커밋에서 스플래시를 내린다([[ADR-117]] 결정 6, 위 ⑵).

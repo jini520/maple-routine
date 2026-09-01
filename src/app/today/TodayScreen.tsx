@@ -26,7 +26,7 @@
  *   옛 스냅샷을 그린다. 당김·헤더 버튼(아래)은 셋을 모두 새로 읽으므로 사용자가 원하면 즉시 풀린다.
  * - **`drop-history` 는 이 셋과 다른 축이다** — 예열 목록에 없고([[ADR-147]] 열린 질문: 더할지는
  *   실측 뒤에) 네트워크도 안 탄다(전 기간 SQLite 통독, [[ADR-071]]). 그래서 동기화 트리거 수에
- *   들지 않고, 이 화면이 그 스토어의 유일한 자동 호출자다.
+ *   들지 않고, 그 스토어를 자동으로 부르는 화면은 여기뿐이다.
  *
  * **step 0 의 단일 비행이 이 자리를 안전하게 만든다** — 게이트 플래그는 성공이 아니라 *시도*를
  * 기록하고 신선도는 호출이 **끝나야** 참이 되므로, 이 화면의 동기화가 날아가는 중에 스케줄 탭으로
@@ -56,7 +56,7 @@ import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getRepresentativeCharacter } from '../../storage/character-selection'
 import type { CharacterBasicProfile } from '../../types'
 
-import { Text } from '../../components/atoms/Text/Text'
+import { Text } from '../../components/atoms'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -220,7 +220,7 @@ export function TodayScreen(): React.JSX.Element {
             <PageHeaderTitleRow>
               <View className="shrink flex-row items-center gap-2">
                 <Text className="shrink-0 text-lg font-semibold text-text">today</Text>
-                <Text className="shrink text-[15px] text-text-muted" numberOfLines={1}>
+                <Text className="shrink text-15 text-text-muted" numberOfLines={1}>
                   {/* 스케줄러 두 화면이 «선택된 캐릭터의 `syncedAt`» 을 쓰는 자리다. 이 화면에는
                       선택이 없으므로 **페이지 전체 기준** 값을 쓴다 — 보스 수익 스토어의
                       `lastSyncedAt` 이 이미 그 뜻이고, 건너뛴 진입에서도 갱신된다([[ADR-111]]). */}

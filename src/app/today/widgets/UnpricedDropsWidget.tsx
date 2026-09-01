@@ -23,7 +23,7 @@
 
 import { View } from 'react-native'
 
-import { Text } from '../../../components/atoms/Text/Text'
+import { Text } from '../../../components/atoms'
 import { ChevronRightIcon } from '../../../lib/icons'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import type { WidgetHeight } from '../../../lib/widget-layout'
@@ -93,7 +93,7 @@ function Cta(props: { prefix?: string }): React.JSX.Element {
  */
 function ItemRow(props: { drop: UnpricedDropView }): React.JSX.Element {
   return (
-    <Text fixed testID="unpriced-item" numberOfLines={1} className="text-[12px] text-text">
+    <Text fixed testID="unpriced-item" numberOfLines={1} className="text-xs text-text">
       {props.drop.itemName}
       {props.drop.ringLevel !== undefined && ` ${props.drop.ringLevel}레벨`}
     </Text>
@@ -131,12 +131,12 @@ function Done(props: { variant: Variant }): React.JSX.Element {
       <View testID="widget-unpriced-drops" className="flex-1 items-center justify-center gap-1 p-2">
         <DoneMark sizePx={22} />
         {/* 타일 이름이 아니라 **끝났다는 사실**을 남긴다 — 1x1 에는 라벨이 없어서 이 한 줄이
-            «무엇이 0건인가» 를 말하는 유일한 자리다. */}
+            «무엇이 0건인가» 를 말하는 자리가 여기뿐이다. */}
         <Text
           fixed
           testID="unpriced-done"
           numberOfLines={3}
-          className="text-center text-[10px] leading-[11px] text-text-muted"
+          className="text-center text-10 leading-[11px] text-text-muted"
         >
           {DONE_NOTE}
         </Text>
@@ -165,8 +165,8 @@ function Done(props: { variant: Variant }): React.JSX.Element {
     <View testID="widget-unpriced-drops" className="flex-1 flex-row items-center gap-2.5 p-3">
       <DoneMark sizePx={32} />
       <View className="flex-1">
-        <Text fixed className="text-[11px] font-semibold text-text-muted">{TITLE}</Text>
-        <Text fixed testID="unpriced-done" numberOfLines={1} className="mt-0.5 text-[11px] text-text-muted">
+        <Text fixed className="text-11 font-semibold text-text-muted">{TITLE}</Text>
+        <Text fixed testID="unpriced-done" numberOfLines={1} className="mt-0.5 text-11 text-text-muted">
           {DONE_NOTE}
         </Text>
       </View>
@@ -183,7 +183,7 @@ export function UnpricedDropsWidget({ w, h, data }: WidgetProps): React.JSX.Elem
   if (variant === 'tiny') {
     return (
       <View testID="widget-unpriced-drops" className="flex-1 items-center justify-center gap-1 p-2">
-        <Text fixed style={TABULAR_NUMS} className="text-[18px] font-extrabold text-text">
+        <Text fixed style={TABULAR_NUMS} className="text-lg font-extrabold text-text">
           {count}
         </Text>
         <Text fixed numberOfLines={1} className="text-[9.5px] text-text-muted">
@@ -202,7 +202,7 @@ export function UnpricedDropsWidget({ w, h, data }: WidgetProps): React.JSX.Elem
       <View testID="widget-unpriced-drops" className="flex-1 justify-center gap-2 p-3">
         <View className="flex-row items-center gap-2">
           <CountBadge count={count} sizePx={28} textPx={13} />
-          <Text fixed numberOfLines={1} className="min-w-0 flex-1 text-[11px] font-bold text-text-muted">
+          <Text fixed numberOfLines={1} className="min-w-0 flex-1 text-11 font-bold text-text-muted">
             {TITLE}
           </Text>
         </View>
@@ -220,7 +220,7 @@ export function UnpricedDropsWidget({ w, h, data }: WidgetProps): React.JSX.Elem
     <View testID="widget-unpriced-drops" className="flex-1 flex-row items-center gap-2.5 p-3">
       <CountBadge count={count} sizePx={36} textPx={16} />
       <View className="min-w-0 flex-1 gap-0.5">
-        <Text fixed numberOfLines={1} className="text-[12px] font-bold text-text">
+        <Text fixed numberOfLines={1} className="text-xs font-bold text-text">
           {TITLE}
         </Text>
         <Cta />

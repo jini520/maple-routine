@@ -54,9 +54,7 @@ import { getItemIconUrl } from '../../lib/item-icons'
 import { isValuableDrop } from '../../lib/valuable-drops'
 import type { RecordedDrop } from '../../types/drops'
 
-import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
-import { ProfitIcon } from '../../components/atoms/ProfitIcon/ProfitIcon'
-import { Text } from '../../components/atoms/Text/Text'
+import { Badge, ProfitIcon, Text } from '../../components/atoms'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
@@ -145,14 +143,16 @@ function EntryRow(props: {
               {drop.ringLevel !== undefined && ` ${drop.ringLevel}레벨`}
             </Text>
             {drop.quantity > 1 && (
-              <Text className="shrink-0 text-[11px] text-text-muted" style={TABULAR_NUMS}>
+              <Text className="shrink-0 text-11 text-text-muted" style={TABULAR_NUMS}>
                 ×{drop.quantity}
               </Text>
             )}
           </View>
           <View className="mt-1 flex-row items-center gap-1.5">
-            <DifficultyBadge difficulty={props.entry.difficulty} />
-            <Text numberOfLines={1} className="shrink text-[11px] text-text-muted">
+            <Badge variant={props.entry.difficulty}>
+              {props.entry.difficulty}
+            </Badge>
+            <Text numberOfLines={1} className="shrink text-11 text-text-muted">
               {props.entry.boss}
               {shareLabel}
             </Text>
@@ -324,25 +324,19 @@ export function DropPriceScreen(): React.JSX.Element {
                 </View>
                 <View className="mt-2.5 flex-row flex-wrap items-center gap-1.5">
                   {entered > 0 && (
-                    <View className="h-6 justify-center rounded-full bg-primary-tint px-2.5">
-                      <Text className="text-xs font-bold text-primary-ink" style={TABULAR_NUMS}>
-                        입력 {entered}
-                      </Text>
-                    </View>
+                    <Badge variant="primary" weight="bold" style={TABULAR_NUMS}>
+                      입력 {entered}
+                    </Badge>
                   )}
                   {excluded > 0 && (
-                    <View className="h-6 justify-center rounded-full bg-surface-2 px-2.5">
-                      <Text className="text-xs font-semibold text-text-disabled" style={TABULAR_NUMS}>
-                        기록 안함 {excluded}
-                      </Text>
-                    </View>
+                    <Badge variant="disabled" style={TABULAR_NUMS}>
+                      기록 안함 {excluded}
+                    </Badge>
                   )}
                   {unpriced > 0 && (
-                    <View className="h-6 justify-center rounded-full border border-dashed border-border px-2.5">
-                      <Text className="text-xs font-semibold text-text-disabled" style={TABULAR_NUMS}>
-                        미입력 {unpriced}
-                      </Text>
-                    </View>
+                    <Badge variant="dashed" style={TABULAR_NUMS}>
+                      미입력 {unpriced}
+                    </Badge>
                   )}
                   {unpriced === 0 && (
                     <Text className="text-xs font-semibold text-text-muted">

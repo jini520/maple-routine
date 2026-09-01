@@ -30,10 +30,7 @@ import { View } from 'react-native'
 
 import type { LiveUpdateStatus, LiveUpdateStore } from '../../features/live-update/store'
 
-import { Button } from '../../components/atoms/Button/Button'
-import { Card } from '../../components/atoms/Card/Card'
-import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
-import { Text } from '../../components/atoms/Text/Text'
+import { Badge, Button, Card, Text } from '../../components/atoms'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
 
 /** 이 카드가 **읽는** 것 — core 스토어에서 그대로 뽑아 두 벌이 되지 않게 한다. */
@@ -100,9 +97,7 @@ export function AppUpdateSection(props: AppUpdateSectionProps): React.JSX.Elemen
         <Text className="text-sm font-medium text-text">현재 버전</Text>
         <View className="flex-row items-center gap-2">
           {state.channel === 'beta' && (
-            <Text className="rounded-full bg-primary-tint px-2 py-0.5 text-xs font-semibold text-primary-ink">
-              beta
-            </Text>
+            <Badge variant="primary">beta</Badge>
           )}
           <Text className="text-sm text-text-muted">{displayedVersion}</Text>
         </View>
@@ -123,16 +118,13 @@ export function AppUpdateSection(props: AppUpdateSectionProps): React.JSX.Elemen
               void actions.check()
             }}
             disabled={isBusy}
-            aria-busy={isBusy}
-            className={`w-full flex-row items-center justify-center gap-2${
+            busy={isBusy}
+            className={`w-full flex-row items-center justify-center${
               isBusy ? ' opacity-50' : ''
             }`}
             textClassName="text-sm"
           >
-            {/* ADR-061 결정 5: 네트워크 왕복이라 disabled만으로는 진행 중인지 멈춘 건지
-                구분되지 않는다 — 스피너 + '~중' 라벨로 바꾼다. */}
-            {isBusy && <MapleSpinner size={16} />}
-            {isBusy ? '확인 중' : '업데이트 확인'}
+            업데이트 확인
           </Button>
         </View>
       )}

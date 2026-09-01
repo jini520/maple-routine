@@ -5,9 +5,13 @@
 // (`variants.ts` 참고). 한 벌로 되돌리면 라벨이 색도 굵기도 없이 그려지는데, 그 실패는 조용하다.
 import { Text } from 'react-native'
 
-import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
+import { findAllOfType, flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
 import { Button } from '../Button'
-import { BUTTON_VARIANT_CLASS, BUTTON_VARIANT_TEXT_CLASS } from '../variants'
+import {
+  BUTTON_VARIANT_CLASS,
+  BUTTON_VARIANT_SPINNER_CLASS,
+  BUTTON_VARIANT_TEXT_CLASS,
+} from '../variants'
 
 describe('Button', () => {
   it('primary — 채움 상자 + `on-primary` 글자(웹에서 상속으로 받던 16px)', async () => {
@@ -113,5 +117,89 @@ describe('Button', () => {
     const button = getByRole('button', { name: '저장하기' })
     expect(button.props.accessibilityState).toMatchObject({ disabled: true })
   })
+})
 
+// 라벨을 지우지 않고 **가린다** — 폭이 그대로 남고 스크린리더도 라벨을 그대로 읽는다.
+describe('Button — busy ([[ADR-061]] 정정 3)', () => {
+  it('라벨이 트리에 남는다 — 지우면 폭이 줄고 스크린리더가 읽을 것이 없다', async () => {
+    const { getByText, getByRole } = await renderAtom(
+      <Button variant="primary" busy>
+        확인
+      </Button>,
+    )
+
+    expect(getByText('확인')).toBeTruthy()
+    // RN 은 `aria-busy` 를 `accessibilityState.busy` 로 옮긴다.
+    expect(getByRole('button').props.accessibilityState).toMatchObject({ busy: true })
+  })
+
+  it('라벨은 `opacity-0` 으로 가려진다 — 크기와 두께는 대기 전과 같다', async () => {
+    const 평소 = flattenStyle((await renderAtom(<Button variant="primary">확인</Button>)).getByText('확인').props.style)
+    const 대기 = flattenStyle(
+      (await renderAtom(
+        <Button variant="primary" busy>
+          확인
+        </Button>,
+      )).getByText('확인').props.style,
+    )
+
+    expect(평소.opacity).toBeUndefined()
+    expect(대기.opacity).toBe(0)
+    // 폭을 만드는 값들이 그대로여야 대기 전 폭이 유지된다.
+    expect(대기.fontSize).toBe(평소.fontSize)
+    expect(대기.fontWeight).toBe(평소.fontWeight)
+  })
+
+  it('스피너는 라벨 위에 겹친다 — 자리를 차지하면 폭이 늘어난다', async () => {
+    const { getByTestId } = await renderAtom(
+      <Button variant="primary" busy>
+        확인
+      </Button>,
+    )
+
+    // `inset-0` 은 RN 0.71+ 의 `inset` 축약으로 풀린다(네 변을 따로 안 적는다).
+    expect(flattenStyle(getByTestId('button-busy').props.style)).toMatchObject({
+      position: 'absolute',
+      inset: 0,
+      alignItems: 'center',
+      justifyContent: 'center',
+    })
+  })
+
+  it('안 바쁠 때는 스피너가 아예 없다', async () => {
+    const { queryByTestId } = await renderAtom(<Button variant="primary">확인</Button>)
+
+    expect(queryByTestId('button-busy')).toBeNull()
+  })
+
+  // 호출부가 색을 주던 시절 여섯 곳 전부 안 줘서 검정으로 떨어져 있었다.
+  it('스피너 색이 variant 의 라벨 색과 같다', async () => {
+    const cases = [
+      ['primary', 기본테마.onPrimary],
+      ['danger', 기본테마.errorInk],
+      ['outline', 기본테마.text],
+      ['text', 기본테마.textMuted],
+    ] as const
+
+    for (const [variant, color] of cases) {
+      const tree = (
+        await renderAtom(
+          <Button variant={variant} busy>
+            확인
+          </Button>,
+        )
+      ).toJSON()
+      const [spinner] = findAllOfType(tree, 'RNSVGSvgView')
+
+      expect(spinner?.props.color).toBe(color)
+    }
+  })
+
+  it('스피너 색 표가 라벨 색 표와 같은 토큰을 쓴다 — 두 표가 갈리면 색이 어긋난다', () => {
+    for (const variant of Object.keys(BUTTON_VARIANT_CLASS) as (keyof typeof BUTTON_VARIANT_CLASS)[]) {
+      expect(BUTTON_VARIANT_TEXT_CLASS[variant].split(' ')).toContain(
+        BUTTON_VARIANT_SPINNER_CLASS[variant],
+      )
+    }
+  })
 })

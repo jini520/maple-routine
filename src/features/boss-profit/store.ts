@@ -81,7 +81,7 @@ export interface BossProfitWeeklySubtotal {
   /**
    * 그 주에 기록된 드롭([[ADR-124]] 결정 7 정정). `totalMeso` 에 이미 환산돼 들어 있다.
    *
-   * **합이 아니라 목록으로 들고 있는 이유**: 월간 탭에서는 소계가 유일한 주간 수익 원천이라
+   * **합이 아니라 목록으로 들고 있는 이유**: 월간 탭에서는 주간 수익이 소계에서만 나오므로
    * ① 총 수익에서 결정석/아이템을 가르는 데 쓰이고(합이면 충분했다) ② 주차 소계 행의 내역
    * 팝오버가 **아이템을 낱개로** 보여줘야 한다(2026-08-10 사용자 요청). 합만 들고 있으면 ②를
    * 할 수 없어 [[ADR-071]] 결정 10 이 짚은 월간 탭의 한계가 그대로 남는다.
@@ -172,7 +172,7 @@ export interface BossProfitStore extends BossProfitState {
   goToNextPeriod(): Promise<void>
   /**
    * 지금 보고 있는 (tab, periodKey)를 다시 로드한다([[ADR-068]] 결정 1·2). 재시도(`failed`)와
-   * 조회(`notChecked`) 두 상태가 사용자에게 주는 유일한 행동이고 둘 다 같은 일을 한다 —
+   * 조회(`notChecked`) 두 상태가 사용자에게 주는 행동이 이것뿐이고 둘 다 같은 일을 한다 —
    * 그 기간의 미확인 target을 다시 백필한다. `refresh` 로는 대신할 수 없다(현재 기간으로 되돌린다).
    */
   retryPeriod(): Promise<void>
@@ -715,7 +715,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
 
     // ADR-076: 보고 있는 기간이 "진행 중인 주를 품은 지난 달"(7월 5주차 = 7/30~8/5)이면 그 화면에서
     // 새로고침할 수 있고, 그때는 **보던 기간을 유지**한다 — 동기화·자동 기록·스냅샷 갱신은 그대로
-    // 하고(그것이 진행 중인 주의 기록을 만드는 유일한 경로다) 화면 반영만 loadPeriod에 넘긴다.
+    // 하고(진행 중인 주의 기록은 그 길로만 만들어진다) 화면 반영만 loadPeriod에 넘긴다.
     const viewedPeriodKey = get().periodKey
     const refreshInPlace = containsInProgressWeek(tab, viewedPeriodKey, now)
 
@@ -1056,7 +1056,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         staleCharacterNames.push(result.characterName)
         staleOcids.add(result.ocid)
         // 영구(조회 불가)와 일시(그 외)를 카드에서도 갈라 말한다([[ADR-068]] 결정 3) — 전자는
-        // 재시도가 무의미하고 추적 해제가 유일한 조치다.
+        // 재시도가 무의미하고 할 수 있는 것이 추적 해제뿐이다.
         characterIssues[result.ocid] =
           result.error?.kind === 'characterUnavailable' ? 'unavailable' : 'failed'
       }

@@ -1,5 +1,5 @@
 /**
- * 두 시트가 함께 쓰는 **폼 부품 둘**([[ADR-173]] 결정 1·18).
+ * 두 시트가 함께 쓰는 **폼 부품 셋**([[ADR-173]] 결정 1·18).
  *
  * 지출·수입 시트는 뼈대가 같다(결정 10) — 라벨–값 줄과 스테퍼는 그 뼈대의 부품이라 한 벌만 둔다.
  * 원래 `SpendSheet` 안에 살았고, 사냥 계산기가 같은 줄·같은 스테퍼를 쓰게 되면서 여기로 나왔다
@@ -10,66 +10,10 @@
  */
 import { Pressable, View } from 'react-native'
 
-import { Text, TextInput, type TextInputProps } from '../../components/atoms/Text/Text'
+import { Text } from '../../components/atoms'
 import { formatDayLabel, shiftDateKey } from '../../lib/calendar-month'
 import { ChevronLeftIcon, ChevronRightIcon, MinusIcon, PlusIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../lib/text-styles'
-
-/**
- * 라벨–값 줄의 **값 칸**([[ADR-178]] 결정 1 · 정정 4).
- *
- * ## 무엇이 어긋났나
- *
- * 같은 줄에 선 값과 단위(`10` · `개`)의 세로가 안 맞는다는 보고가 **세 번** 있었다. 세 번 다 단위
- * 쪽을 고쳤고 세 번 다 빗나갔다. 네 번째 화면이 변수를 갈라 줬다:
- *
- * | 값의 정체 | 단위와 맞나 |
- * |---|---|
- * | `Text`(획득 메소) | **맞는다** |
- * | `TextInput`(조각 · 조각 가격) | 안 맞는다 |
- *
- * 같은 줄·같은 정렬·같은 단위인데 **값이 `TextInput` 일 때만** 어긋난다. 즉 문제는 정렬도 단위도
- * 아니고 **`TextInput` 의 글자가 `Text` 와 다른 자리에 앉는다**는 것이다(플랫폼이 칸 안에서 글자를
- * 세우는 방식이 글자 노드와 다르다).
- *
- * ## 그래서 보이는 글자는 **언제나 `Text`** 다
- *
- * 칸은 그 위에 **글자색을 투명하게** 해서 얹는다 — 입력·커서만 맡고 그리지는 않는다. 그러면 값이
- * 맞아 보이던 그 줄(`Text`)과 **같은 조건**이 되므로, 두 글꼴 크기의 차이를 픽셀로 맞출 일이 없다.
- *
- * **조합이 도는 칸(글자 키보드)에는 안 쓴다.** 한글은 IME 가 칸 안에서 조합을 쥐고 있어
- * ([[ADR-170]] 정정 12) 부모 상태가 한 글자 늦는데, 그리는 쪽이 부모 상태면 **조합 중인 글자가
- * 안 보인다**. 그런 칸은 옆에 단위도 없다 — 어긋날 짝이 없다.
- */
-function isNumeric(keyboardType: TextInputProps['keyboardType']): boolean {
-  return (
-    keyboardType === 'number-pad' ||
-    keyboardType === 'numeric' ||
-    keyboardType === 'decimal-pad' ||
-    keyboardType === 'phone-pad'
-  )
-}
-
-/** 칸을 글자 위에 정확히 겹친다 — 자리는 글자가 정하고 칸은 입력만 맡는다. */
-const OVERLAY = { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 } as const
-
-export function FieldTextInput({ style, ...rest }: TextInputProps): React.JSX.Element {
-  if (!isNumeric(rest.keyboardType)) return <TextInput {...rest} style={style} />
-
-  const value = typeof rest.value === 'string' ? rest.value : ''
-  return (
-    <View className="flex-1">
-      {/*
-        **보이는 글자** — 자리도 이 글자가 정한다. 비어 있으면 빈 칸 하나로 높이를 지킨다(칸의
-        자리표시자가 그 위에 그려진다 — `placeholderTextColor` 는 글자색과 따로 논다).
-      */}
-      <Text aria-hidden className={rest.className} style={style}>
-        {value === '' ? ' ' : value}
-      </Text>
-      <TextInput {...rest} style={[style, OVERLAY, { color: 'transparent' }]} />
-    </View>
-  )
-}
 
 /**
  * 머리의 **날짜 고르개**([[ADR-178]] 정정 6, 사용자 지정 2026-08-29) — **두 시트가 함께 쓴다**.

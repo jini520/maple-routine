@@ -5,8 +5,8 @@ import { addKeyboardVisibilityListener } from '../native/keyboard'
 /**
  * 키보드가 떠 있는가 — 웹 `AppShell` 의 `isKeyboardVisible` state 자리.
  *
- * **RN 의 `Keyboard` 를 직접 듣지 않고 포트를 거친다.** 1단계가 만든 `rn-keyboard.ts` 가 그 판정의
- * 유일한 자리이고(iOS 의 `will` 계열을 안 쓰는 이유·안드로이드에서 이벤트가 아예 안 올 수 있다는
+ * **RN 의 `Keyboard` 를 직접 듣지 않고 포트를 거친다.** 그 판정은 1단계가 만든 `rn-keyboard.ts` 에서만 하는
+ * 자리이고(iOS 의 `will` 계열을 안 쓰는 이유·안드로이드에서 이벤트가 아예 안 올 수 있다는
  * 사실이 거기 적혀 있다), 화면 코드가 직접 들으면 그 판단이 두 벌이 된다([[ADR-005]] 어댑터 경계).
  *
  * ## 탭바를 숨기는 것은 이 훅이 아니다

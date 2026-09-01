@@ -68,9 +68,7 @@ import {
 } from 'react-native'
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 
-import { GearIcon } from '../components/atoms/GearIcon/GearIcon'
-import { ProfitIcon } from '../components/atoms/ProfitIcon/ProfitIcon'
-import { Text } from '../components/atoms/Text/Text'
+import { GearIcon, ProfitIcon, Text } from '../components/atoms'
 import { BAR_LIFT, resolveBottomBarMetrics } from '../lib/bottom-bar-metrics'
 import { useBottomSafeAreaPx } from '../lib/bottom-safe-area'
 import {
@@ -192,8 +190,8 @@ interface ShadowLayer {
  * `shadowOpacity` · `shadowRadius` · `shadowOffset` 은 **iOS 전용 프롭**이다. 그것으로 쓰는 동안
  * 정정 22 가 맞춰 둔 층은 **안드로이드에 하나도 도달하지 않았고**, 거기서는 `elevation` 의 기본
  * 그림자가 바 · 알약 · ← 셋을 같은 세기로 그렸다. 폴백 알약이 분홍이라 그 부재가 안 보였을 뿐이고
- * (색으로 이미 갈렸으니까), 그 색을 빼는 순간(`bar-colors` 의 `neutralPlate`) **그림자가 유일한
- * 층 장치**가 된다 — 그래서 이 변경과 그 변경은 한 쌍이다.
+ * (색으로 이미 갈렸으니까), 그 색을 빼는 순간(`bar-colors` 의 `neutralPlate`) **층을 그리는 것이
+ * 그림자뿐**이 된다 — 그래서 이 변경과 그 변경은 한 쌍이다.
  *
  * `boxShadow` 는 RN 0.76+ 가 양 플랫폼에 같은 그림자를 그리는 자리다(안드로이드는 새 아키텍처
  * 전용 — 이 앱은 `newArchEnabled=true`).

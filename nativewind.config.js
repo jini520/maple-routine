@@ -26,8 +26,25 @@ const COMPILED_CSS_PATH = path.join(__dirname, 'node_modules/.cache/nativewind-j
  */
 const INLINE_REM = 16
 
+/**
+ * jest 가 컴파일할 플랫폼 ([[ADR-179]] 정정 1).
+ *
+ * NativeWind 는 이 값이 없거나 `web` 이면 **web 프리셋**으로 컴파일한다
+ * (`nativewind/dist/tailwind/index.js`). Metro 는 `options.platform` 을 넣지만 jest 는 아무도 안
+ * 넣어서, 그동안 테스트가 앱과 **다른 값**을 보고 있었다.
+ *
+ * `ios` 인 이유는 jest 의 `Platform.OS` 가 `ios` 라서다. 코드 분기와 스타일 컴파일이 같은
+ * 플랫폼을 봐야 한 테스트 안에서 앞뒤가 맞는다.
+ *
+ * **두 네이티브 플랫폼은 `elevation` 하나만 갈린다**(실측 — 컴파일 결과를 통째로 비교했다).
+ * 안드로이드가 `.shadow`(3) · `.shadow-lg`(8) · `.elevation` 에 그 값을 더하고 나머지는 글자까지
+ * 같다. 그 하나는 `src/__tests__/nativewind-preset.test.ts` 가 따로 지킨다.
+ */
+const JEST_NATIVEWIND_OS = 'ios'
+
 module.exports = {
   COMPILED_CSS_PATH,
   CSS_ENTRY,
   INLINE_REM,
+  JEST_NATIVEWIND_OS,
 }

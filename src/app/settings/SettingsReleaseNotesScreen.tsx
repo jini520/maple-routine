@@ -30,9 +30,7 @@ import {
   RELEASE_NOTE_CATEGORY_ORDER,
 } from '../../data/release-notes'
 
-import { Badge } from '../../components/atoms/Badge/Badge'
-import { Card } from '../../components/atoms/Card/Card'
-import { Text } from '../../components/atoms/Text/Text'
+import { Badge, Card, Text } from '../../components/atoms'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
@@ -84,7 +82,7 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
                 >
                   {note.version}
                 </Text>
-                {note.version === runningVersion && <Badge tone="primary">사용 중</Badge>}
+                {note.version === runningVersion && <Badge variant="primary">사용 중</Badge>}
                 <Text style={TABULAR_NUMS} className="ml-auto text-xs text-text-disabled">
                   {note.date}
                 </Text>
@@ -117,7 +115,7 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
                                 third 다. */}
                             {item.requiresStoreUpdate === true && (
                               <View className="flex-row">
-                                <Badge tone="third">스토어 업데이트 필요</Badge>
+                                <Badge variant="third">스토어 업데이트 필요</Badge>
                               </View>
                             )}
                           </View>

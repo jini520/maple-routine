@@ -31,8 +31,8 @@
 // ── 「계속하기」는 하단에 **고정**된다 ([[ADR-144]] 정정 2, 사용자 지정 2026-08-18) ──────────
 //
 // 설정 하위 페이지의 「저장」과 같은 액션 바다 — 본문이 그 화면과 **같은 두 층**이라, 캐릭터가 많은
-// 계정에서는 본문 끝의 CTA 가 화면 밖에 있게 된다. 되돌릴 UI 가 없는 단계라([[ADR-116]]) 유일한
-// 전진 버튼이 그 자리에 있으면 안 된다.
+// 계정에서는 본문 끝의 CTA 가 화면 밖에 있게 된다. 되돌릴 UI 가 없는 단계라([[ADR-116]]) 앞으로
+// 갈 버튼이 그것 하나뿐인데, 그것이 화면 밖에 있으면 안 된다.
 //
 // **그래서 이 단계가 단계 셸(`OnboardingStep`)을 직접 두른다.** 바의 활성 조건이 `useCharacterManage`
 // 안에 있어 그 훅을 부르는 컴포넌트가 스크롤과 바 **둘 다의 조상**이어야 하고, 훅은 조건부로 못
@@ -43,9 +43,7 @@ import { View } from 'react-native'
 
 import { useApiKeyNotice } from '../../features/onboarding/use-api-key-notice'
 
-import { Button } from '../../components/atoms/Button/Button'
-import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
-import { Text } from '../../components/atoms/Text/Text'
+import { Button, Text } from '../../components/atoms'
 import { CharacterManageBody } from '../../components/organisms/CharacterManage/CharacterManageBody'
 import { useCharacterManage } from '../../components/organisms/CharacterManage/use-character-manage'
 import { useReorderScroll } from '../../components/organisms/CharacterManage/use-reorder-scroll'
@@ -78,15 +76,13 @@ export function ContentCharacterStep(props: ContentCharacterStepProps): React.JS
         <Button
           variant="primary"
           disabled={isSubmitDisabled}
-          aria-busy={props.isSubmitting}
+          busy={props.isSubmitting}
           onPress={() => props.onSubmit(manage.selectedOcids, manage.representativeOcid)}
           // 웹의 `disabled:opacity-50` 은 CSS 의사 클래스라 RN 의 `disabled` 프롭과 이어지지
           // 않는다 — 그대로 두면 비활성 버튼이 멀쩡한 색으로 보인다(설정 화면과 같은 처방).
-          className={`w-full flex-row items-center justify-center gap-2${isSubmitDisabled ? ' opacity-50' : ''}`}
+          className={`w-full flex-row items-center justify-center${isSubmitDisabled ? ' opacity-50' : ''}`}
         >
-          {/* [[ADR-061]] 결정 5·9 — 스피너 + 말줄임표 없는 '~중' 라벨 */}
-          {props.isSubmitting && <MapleSpinner size={16} />}
-          {props.isSubmitting ? '저장 중' : '계속하기'}
+          계속하기
         </Button>
       }
     >

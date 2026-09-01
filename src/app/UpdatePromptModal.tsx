@@ -40,11 +40,7 @@ import { View } from 'react-native'
 
 import type { LiveUpdateStatus, LiveUpdateStore } from '../features/live-update/store'
 
-import { Badge } from '../components/atoms/Badge/Badge'
-import { Button } from '../components/atoms/Button/Button'
-import { MapleSweepSpinner } from '../components/atoms/MapleSweepSpinner/MapleSweepSpinner'
-import { ProgressBar } from '../components/atoms/ProgressBar/ProgressBar'
-import { Text } from '../components/atoms/Text/Text'
+import { Badge, Button, MapleSweepSpinner, ProgressBar, Text } from '../components/atoms'
 import { Modal } from '../components/organisms/Modal/Modal'
 import {
   AlertTriangleIcon,
@@ -69,7 +65,7 @@ const MODAL_STATUSES: ReadonlySet<LiveUpdateStatus> = new Set([
   // ADR-117 결정 7: 둘 다 사용자가 [지금 적용]을 눌러 시작한 흐름이라 위 분류를 그대로 따른다.
   'applying',
   'apply-error',
-  // ADR-126 결정 4: 적용·재시작이 끝난 직후 1회. 부팅 때 뒤늦게 판정되는 유일한 상태다.
+  // ADR-126 결정 4: 적용·재시작이 끝난 직후 1회. 부팅 때 뒤늦게 판정되는 상태는 이것뿐이다.
   'updated',
 ])
 
@@ -148,9 +144,7 @@ function IconBadge({
 
 function VersionBadge({ version }: { version: string | null }): React.JSX.Element {
   return (
-    <Text className="rounded-full border border-border px-2.5 py-1 text-xs font-semibold text-text-muted tabular-nums">
-      v{version}
-    </Text>
+    <Badge variant="outline" className="tabular-nums">v{version}</Badge>
   )
 }
 
@@ -263,7 +257,7 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
               <View className="gap-2">
                 <Title>새 업데이트가 있어요</Title>
                 <BadgeRow>
-                  {state.channel === 'beta' && <Badge tone="primary">beta</Badge>}
+                  {state.channel === 'beta' && <Badge variant="primary">beta</Badge>}
                   <VersionBadge version={state.availableVersion} />
                 </BadgeRow>
                 <Note>다운로드 크기 {sizeText}</Note>
@@ -326,8 +320,14 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
           {status === 'downloading' && (
             <View className="gap-3">
               <Title>다운로드 중</Title>
-              {/* ADR-061 결정 6: 결정형 진행률은 예외 없이 h-1.5 프리미티브 하나. */}
-              <ProgressBar percent={state.downloadProgress} animated fillTestId="update-progress-bar" />
+              {/* ADR-061 결정 6: 결정형 진행률은 예외 없이 h-1.5 프리미티브 하나.
+                  `animated` 를 쓰는 유일한 호출부이기도 하다. 여기만 값이 연속으로 흐른다. */}
+              <ProgressBar
+                percent={state.downloadProgress}
+                animated
+                aria={{ now: state.downloadProgress, max: 100 }}
+                fillTestId="update-progress-bar"
+              />
               <Text className="text-center text-xs font-medium text-text-muted tabular-nums">
                 {state.downloadProgress}%
               </Text>

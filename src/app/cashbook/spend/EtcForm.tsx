@@ -1,7 +1,7 @@
 /**
  * 「기타」 폼([[ADR-178]] 결정 3) — 갈래 넷에 안 드는 지출.
  *
- * **캐시가 사는 유일한 자리**다([[ADR-166]] 정정 1 ④) — 통화를 여기서만 고른다. 그리고 **지출액
+ * **캐시는 여기서만 산다**([[ADR-166]] 정정 1 ④) — 통화도 여기서만 고른다. 그리고 **지출액
  * × 수량**이다([[ADR-173]] 결정 17) — 세는 것이 «몇 회» 라 수량은 스테퍼 그대로다.
  *
  * **합계는 언제나 메소**다(결정 11) — 캐시만 예외인데, 환산을 안 하므로([[ADR-166]] 정정 2 ①)
@@ -9,7 +9,7 @@
  */
 import { useState } from 'react'
 
-import { Text } from '../../../components/atoms/Text/Text'
+import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { parseMesoText } from '../../../components/molecules/MesoPad/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
@@ -23,7 +23,7 @@ import {
 import { pointToMeso } from '../../../lib/spend-catalog'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import { nextAmountIdentity } from '../amount-identity'
-import { FieldRow, FieldTextInput, QuantityStepper } from '../sheet-fields'
+import { FieldRow, QuantityStepper } from '../sheet-fields'
 import {
   CategoryChips,
   CharacterRow,
@@ -33,6 +33,7 @@ import {
   type SpendFormProps,
 } from './form-shared'
 import { useSpendSubmit } from './use-spend-submit'
+import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
 export function EtcForm(props: SpendFormProps): React.JSX.Element {
   const editing = props.editing !== undefined
@@ -99,7 +100,7 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
       <CharacterRow characters={props.characters} selected={ocid} onSelect={setOcid} />
 
       <FieldRow label="사용처" labelTestID="spend-sheet-name-label">
-        <FieldTextInput
+        <SheetTextInput
           testID="spend-sheet-name"
           value={name}
           onChangeText={setName}
@@ -120,7 +121,7 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
 
       {/* **통화 밑**이다 — 무엇으로 내는지를 정한 다음에 얼마인지를 친다. */}
       <FieldRow label="지출액">
-        <FieldTextInput
+        <SheetTextInput
           testID="spend-sheet-unit-price"
           value={typed === 0 ? '' : typed.toLocaleString()}
           onChangeText={(text) => setTyped(parseMesoText(typed, text))}

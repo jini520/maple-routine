@@ -30,7 +30,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
 })
 
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
-import { clearCountUpMemory } from '../../../lib/use-count-up'
+import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import { IncomeSheet } from '../IncomeSheet'
 
 // 큰 숫자의 카운트업 기억은 **모듈 수준**이라 케이스 사이로 샌다([[ADR-087]] 결정 8).

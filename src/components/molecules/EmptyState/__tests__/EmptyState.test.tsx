@@ -102,7 +102,7 @@ describe('EmptyState', () => {
       <EmptyState size="page" icon="leaf" title="표시할 캐릭터가 없습니다" />,
     )
 
-    expect(getByTestId('empty-state-leaf', HIDDEN)).toBeTruthy()
+    expect(getByTestId('maple-leaf', HIDDEN)).toBeTruthy()
   })
 
   it('lucide 아이콘을 주면 단풍잎 마크는 그리지 않는다', async () => {
@@ -110,7 +110,7 @@ describe('EmptyState', () => {
       <EmptyState icon={SwordsIcon} title="추적할 주간 보스가 없습니다" />,
     )
 
-    expect(queryByTestId('empty-state-leaf', HIDDEN)).toBeNull()
+    expect(queryByTestId('maple-leaf', HIDDEN)).toBeNull()
   })
 
   // 웹은 `fill-primary-ink` 로 색을 줬다. RN 에는 `fill` 스타일이 없어 `text-*` → `color` 프롭 →
@@ -120,7 +120,7 @@ describe('EmptyState', () => {
       <EmptyState size="page" icon="leaf" title="표시할 캐릭터가 없습니다" />,
     )
 
-    expect(getByTestId('empty-state-leaf', HIDDEN).props.color).toBe(기본테마.primaryInk)
+    expect(getByTestId('maple-leaf', HIDDEN).props.color).toBe(기본테마.primaryInk)
   })
 
 })

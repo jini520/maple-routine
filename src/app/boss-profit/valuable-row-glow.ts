@@ -26,8 +26,8 @@ export const VALUABLE_ROW_TINT = 'rgba(247, 208, 13, 0.05)'
  * `@keyframes valuable-drop-row-pulse` + `animation: … 2.6s ease-in-out infinite`.
  *
  * 웹은 `0%,100%` 를 한 블록으로 묶어 두 값만 적는다(0.03 → 0.1). RN 은 `from`·`50%`·`to` 세 마디라
- * 첫 값이 두 번 나온다 — `FLOAT_ANIMATION` 과 같은 형태이고, `keyframes-parity.test.ts` 가 웹
- * `index.css` 를 실제로 읽어 이 값들과 대조한다.
+ * 첫 값이 두 번 나온다. `FLOAT_ANIMATION` 과 같은 형태다. 웹 `index.css` 와 대조하던 테스트는
+ * 없다(파일 머리).
  */
 export const VALUABLE_ROW_PULSE = {
   animationName: {

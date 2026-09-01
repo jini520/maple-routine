@@ -118,19 +118,19 @@ describe('AppUpdateSection', () => {
     const view = await render({ status: 'downloading', downloadProgress: 42 })
 
     expect(view.getByText('다운로드 중 42%')).toBeTruthy()
-    expect(buttonOf(view, '확인 중').props.accessibilityState).toMatchObject({
+    expect(buttonOf(view, '업데이트 확인').props.accessibilityState).toMatchObject({
       disabled: true,
       busy: true,
     })
   })
 
   // [[ADR-061]] 결정 5: 네트워크 왕복이라 disabled 만으로는 진행 중인지 멈춘 건지 구분되지 않는다.
-  it('확인 중에는 버튼이 "확인 중" 라벨로 바뀐다', async () => {
+  // 정정 3 이 그 신호를 라벨에서 스피너로 옮겼다 — 라벨은 가려진 채 자리를 지킨다.
+  it('확인 중에는 버튼이 대기 상태가 되고 라벨은 자리를 지킨다', async () => {
     const view = await render({ status: 'checking' })
 
     expect(view.getByText('확인하고 있어요')).toBeTruthy()
-    expect(view.getByText('확인 중')).toBeTruthy()
-    expect(view.queryByText('업데이트 확인')).toBeNull()
+    expect(buttonOf(view, '업데이트 확인').props.accessibilityState).toMatchObject({ busy: true })
   })
 
   // [[ADR-061]] 결정 9: 말줄임표는 '...'(마침표 3개)로 통일하고 한 글자 '…' 는 쓰지 않는다.

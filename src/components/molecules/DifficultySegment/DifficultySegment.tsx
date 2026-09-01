@@ -1,7 +1,7 @@
 import type { BossDifficulty } from '../../../types'
 import { Pressable, View } from 'react-native'
 
-import { DifficultyBadge } from '../../atoms/DifficultyBadge/DifficultyBadge'
+import { Badge } from '../../atoms'
 
 // 난이도 세그먼트 — 보스 관리 페이지 행과 파티 인원 모달이 공유한다(ADR-121 결정 4).
 //
@@ -45,7 +45,9 @@ export function DifficultySegment(props: {
             }}
             className={`rounded-full${isSelected ? '' : ' opacity-40'}`}
           >
-            <DifficultyBadge difficulty={difficulty} />
+            <Badge variant={difficulty}>
+              {difficulty}
+            </Badge>
           </Pressable>
         )
       })}

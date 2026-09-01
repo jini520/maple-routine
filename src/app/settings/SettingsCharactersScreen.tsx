@@ -37,8 +37,7 @@ import {
   setRepresentativeCharacter,
 } from '../../storage/character-selection'
 
-import { Button } from '../../components/atoms/Button/Button'
-import { Text } from '../../components/atoms/Text/Text'
+import { Button, Text } from '../../components/atoms'
 import { CharacterManageBody } from '../../components/organisms/CharacterManage/CharacterManageBody'
 import { useCharacterManage } from '../../components/organisms/CharacterManage/use-character-manage'
 import { useReorderScroll } from '../../components/organisms/CharacterManage/use-reorder-scroll'

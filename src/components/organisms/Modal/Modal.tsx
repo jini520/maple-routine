@@ -30,7 +30,7 @@ import type { ReactNode } from 'react'
 import { Modal as RNModal, Pressable, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { Card } from '../../atoms/Card/Card'
+import { Card } from '../../atoms'
 
 export interface ModalProps {
   onClose: () => void

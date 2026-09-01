@@ -46,7 +46,7 @@ import { isChallengersWorld } from '../../lib/world-emblem'
 import type { BossDifficulty } from '../../types'
 
 import { BossSectionHeader } from '../../components/molecules/BossSectionHeader/BossSectionHeader'
-import { Text } from '../../components/atoms/Text/Text'
+import { Text } from '../../components/atoms'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
 import { DifficultySegment } from '../../components/molecules/DifficultySegment/DifficultySegment'

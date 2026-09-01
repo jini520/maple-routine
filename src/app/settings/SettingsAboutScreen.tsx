@@ -10,7 +10,7 @@
 //    `RootNavigator` 의 `animation`·`gestureEnabled`). 남는 것은 화면 내용뿐이다.
 // ② **`<Outlet />` 이 사라진다.** 처방침은 이 화면의 자식 라우트가 아니라 루트 스택 위로 push 된다.
 //    그래도 **부모-자식 관계는 그대로 산다** — 이 화면이 밀고, 뒤로가면 이 화면으로 돌아온다
-//    (이 앱에서 유일한 2단 스택인 것도 그대로다).
+//    (이 앱에서 스택이 2단이 되는 자리가 여기뿐인 것도 그대로다).
 // ③ **`ScreenScroll` 이 명시적으로 필요하다.** 웹은 `StackScreen` 이 스크롤 상자를 겸했다.
 //    `hasTabBar={false}` 인 이유는 스택 위로 올라간 화면에는 탭바가 없기 때문이다([[ADR-120]] 결정 4).
 //
@@ -42,8 +42,7 @@ import { Pressable, View } from 'react-native'
 import { useLiveUpdateStore } from '../../features/live-update/store'
 
 import packageJson from '../../../package.json'
-import { Card } from '../../components/atoms/Card/Card'
-import { Text } from '../../components/atoms/Text/Text'
+import { Card, Text } from '../../components/atoms'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -103,8 +102,8 @@ export function SettingsAboutScreen(): React.JSX.Element {
 
           **앱을 벗어나지 않는다**([[ADR-120]] 결정 11) — 사본을 만드는 것이 아니라 같은 사이트를
           싣을 뿐이라 "법적 문서를 두 벌로 만들지 않는다"는 원칙은 그대로다. 그래서 외부 링크
-          행(`SettingsLinkRow`)이 아니라 **하위 페이지로 미는 행**이고, 이 앱에서 유일하게 2단이
-          되는 스택이다.
+          행(`SettingsLinkRow`)이 아니라 **하위 페이지로 미는 행**이고, 이 앱에서 스택이 2단이
+          되는 자리가 여기뿐이다.
         */}
         <Card className="px-6">
           <SettingsRow

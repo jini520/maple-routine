@@ -49,11 +49,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useFocusEffect } from '@react-navigation/native'
 import { Pressable, RefreshControl, View } from 'react-native'
 
-import { Text } from '../../components/atoms/Text/Text'
+import { Badge, ProfitIcon, Text } from '../../components/atoms'
 import { CalendarMonth } from '../../components/molecules/CalendarMonth/CalendarMonth'
-import { DifficultyBadge } from '../../components/atoms/DifficultyBadge/DifficultyBadge'
+import { DIFFICULTY_SHORT } from '../../lib/boss-difficulty'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
-import { ProfitIcon } from '../../components/atoms/ProfitIcon/ProfitIcon'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { SpeedDial } from '../../components/organisms/SpeedDial/SpeedDial'
 import { SPEED_DIAL_SPACE_PX } from '../../components/organisms/SpeedDial/speed-dial-metrics'
@@ -215,11 +214,11 @@ function SourceRow(props: {
 }): React.JSX.Element {
   return (
     <View className="flex-row items-baseline gap-1.5">
-      <Text className="text-[11px] text-text-muted">{props.label}</Text>
+      <Text className="text-11 text-text-muted">{props.label}</Text>
       <Text
         testID={props.testID}
         numberOfLines={1}
-        className={`text-[11px] font-medium ${props.tone}`}
+        className={`text-11 font-medium ${props.tone}`}
         style={TABULAR_NUMS}
       >
         {props.sign}
@@ -280,7 +279,7 @@ function PeriodSummary(props: { incomeMeso: number; expenseMeso: number }): Reac
       className="flex-row items-end justify-between gap-3 rounded-xl bg-surface px-3.5 py-3"
     >
       <View className="shrink">
-        <Text className="text-[10px] tracking-wide text-text-muted">순 수익</Text>
+        <Text className="text-10 tracking-wide text-text-muted">순 수익</Text>
         {/* `leading-none` 이라 큰 글자가 자기 줄 높이로 카드를 밀지 않는다 — 카드가 낮아야 격자가
             주간 보기에서 스크롤 없이 남는다([[ADR-170]] 정정 2). */}
         <Text
@@ -295,7 +294,7 @@ function PeriodSummary(props: { incomeMeso: number; expenseMeso: number }): Reac
           {formatMesoCompact(Math.abs(net))}{' '}
           {/* 단위는 **작은 글자로 격하하되 사이에 진짜 공백**을 남긴다([[ADR-046]] 과 같은 처방) —
               마진으로만 띄우면 읽히는 문자열이 「N메소」로 붙어 스크린리더가 이어 읽는다. */}
-          <Text className="text-[11px] font-bold text-text-muted">메소</Text>
+          <Text className="text-11 font-bold text-text-muted">메소</Text>
         </Text>
       </View>
 
@@ -387,7 +386,7 @@ function chunkBosses(bosses: readonly DefeatedBoss[]): DefeatedBoss[][] {
  * 펼친 결정석 줄의 **타일 판**([[ADR-172]] 정정 1) — 그날 잡은 보스를 초상으로 편다.
  *
  * **새로 만든 그림이 0개**다([[ADR-170]] 결정 9 와 같은 태도). 초상은 `BossPortrait`, 난이도는
- * `DifficultyBadge`, 슬러그는 `findPortraitSlug` — 셋 다 보스 수익 탭의 보스 행이 쓰는 그것이다.
+ * `Badge`, 슬러그는 `findPortraitSlug` — 셋 다 보스 수익 탭의 보스 행이 쓰는 그것이다.
  *
  * **마리당 금액을 안 적는다.** 줄 머리가 합계를 이미 들고 있고, 마리당 금액은 파티원 수·정가와
  * 함께 봐야 뜻이 생긴다(그 자리가 보스 수익 탭이다). 여기서 답하는 질문은 «얼마» 가 아니라 «무엇» 이다.
@@ -447,13 +446,15 @@ function DefeatedBossTiles(props: { rowKey: string; bosses: readonly DefeatedBos
               <View testID={`cashbook-boss-tile-${boss.boss}|${boss.difficulty}`}>
                 <BossPortrait
                   portraitSlug={findPortraitSlug(boss.boss)}
-                  // 이름 줄이 없어졌으므로 **여기가 그 정보를 드는 유일한 자리**다.
+                  // 이름 줄이 없어졌으므로 **그 정보는 여기서만 말한다**.
                   label={`${boss.difficulty} ${boss.boss}`}
                   size={BOSS_TILE_PX}
                   shape="square"
                 />
                 <View className="absolute bottom-0.5 left-0.5">
-                  <DifficultyBadge difficulty={boss.difficulty} size="small" short />
+                  <Badge variant={boss.difficulty} size="mini">
+                    {DIFFICULTY_SHORT[boss.difficulty]}
+                  </Badge>
                 </View>
               </View>
             </View>
@@ -540,7 +541,7 @@ function DayRecordRow(props: {
           // 갈래마다 세는 것이 다르다(`×2` · `12마리` · `3건 · 미입력 2`) — 그 분기는 화면이 아니라
           // `recordCountLabelOf` 가 든다([[ADR-147]] 결정 8).
           // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
-          <Text numberOfLines={1} className="shrink-0 text-[11px] text-text-muted" style={TABULAR_NUMS}>
+          <Text numberOfLines={1} className="shrink-0 text-11 text-text-muted" style={TABULAR_NUMS}>
             {countLabel}
           </Text>
         )}

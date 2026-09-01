@@ -36,7 +36,7 @@ import type { CharacterPickerEntry } from '../../../types'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { BanIcon, StarIcon } from '../../../lib/icons'
 import { useThemeAppearance } from '../../../theme/context'
-import { Text } from '../../atoms/Text/Text'
+import { Text } from '../../atoms'
 
 // [[ADR-015]]: character/basic 이 주는 300x300 전신 룩에서 얼굴만 보이도록 확대·정렬해 자른다.
 // 헤어스타일/포즈에 따라 완벽히 얼굴만 나오지 않을 수 있는 근사치다(ADR-015 미확정 항목).
@@ -99,7 +99,7 @@ export function CharacterTrackingGrid(props: CharacterTrackingGridProps): React.
   function card(entry: CharacterPickerEntry): React.JSX.Element {
     const isChecked = checkedOcids.includes(entry.ocid)
     // [[ADR-068]] 결정 4: 조회 불가 항목은 **해제만** 가능하다 — 고를 수 없는 후보를 새로 고르게
-    // 하면 그 즉시 매 동기화 실패로 이어진다. 이미 추적 중인 경우의 해제는 유일한 탈출구라 막지 않는다.
+    // 하면 그 즉시 매 동기화 실패로 이어진다. 이미 추적 중이면 해제가 하나뿐인 탈출구라 막지 않는다.
     const isUnavailable = entry.unavailable === true
     const canToggle = !isUnavailable || isChecked
     const emblemUrl = entry.world !== undefined ? worldEmblemUrl(entry.world) : null
@@ -188,7 +188,7 @@ export function CharacterTrackingGrid(props: CharacterTrackingGridProps): React.
         <View testID="unavailable-roster" className="mt-4">
           <View className="mb-1.5 flex-row items-center gap-1.5">
             <BanIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2} aria-hidden />
-            <Text className="text-[11px] font-bold tracking-wide text-text-muted">
+            <Text className="text-11 font-bold tracking-wide text-text-muted">
               조회할 수 없는 캐릭터
             </Text>
           </View>

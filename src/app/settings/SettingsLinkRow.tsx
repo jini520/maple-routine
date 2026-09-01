@@ -14,13 +14,13 @@
 //
 // ── 지금 이 컴포넌트를 쓰는 화면은 없다 ──────────────────────────────────────────────
 //
-// 유일한 호출부였던 개인정보 처리방침이 [[ADR-120]] 결정 11 로 **앱 안 하위 페이지**가 되면서
+// 하나뿐이던 호출부, 개인정보 처리방침이 [[ADR-120]] 결정 11 로 **앱 안 하위 페이지**가 되면서
 // (`SettingsAboutScreen` 이 `SettingsRow` 로 연다) 웹에서도 사용처가 0 이다. 그래도 옮기는 이유는
 // [[ADR-118]] 결정 4 의 "행 우측 표기 5종"이 이 프리미티브로 고정돼 있어서다 — 다섯 중 하나를
 // 지우면 다음에 외부 링크 행이 필요할 때 규격이 아니라 그때의 즉흥이 다시 자리를 잡는다.
 import { Linking, Pressable, View } from 'react-native'
 
-import { Text } from '../../components/atoms/Text/Text'
+import { Text } from '../../components/atoms'
 import { ExternalLinkIcon } from '../../lib/icons'
 import { SETTINGS_ROW_CLASS } from './row-class'
 

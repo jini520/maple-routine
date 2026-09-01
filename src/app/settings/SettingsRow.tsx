@@ -21,7 +21,7 @@
 // 병기」를 지키고 있어 이름을 유지해야 한다.
 import { Pressable, View } from 'react-native'
 
-import { Text } from '../../components/atoms/Text/Text'
+import { Text } from '../../components/atoms'
 import { ChevronRightIcon } from '../../lib/icons'
 import { SETTINGS_ROW_CLASS } from './row-class'
 

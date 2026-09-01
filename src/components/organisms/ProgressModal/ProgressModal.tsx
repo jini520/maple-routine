@@ -7,8 +7,7 @@
 // 그것을 `onClose` 로 잇는다) — 웹에서 오버레이 클릭이 무시되던 것과 같은 뜻이다.
 import { View } from 'react-native'
 
-import { ProgressBar } from '../../atoms/ProgressBar/ProgressBar'
-import { Text } from '../../atoms/Text/Text'
+import { ProgressBar, Text } from '../../atoms'
 import { Modal } from '../Modal/Modal'
 
 export interface ProgressModalProps {
