@@ -286,6 +286,7 @@ describe('「기타」를 메포·캐시로 적어도 저장된다 (목이 아�
       pointPer100mMeso: null,
       cashAmount: null,
       hunt: {
+        mode: 'calculator',
         characterLevel: 294,
         missedMobs: 1,
         boosts: ['union-wealth'],
@@ -300,6 +301,7 @@ describe('「기타」를 메포·캐시로 적어도 저장된다 (목이 아�
     const rows = await getIncomeRecordsBetween('2026-08-28', '2026-08-28')
     expect(rows.find((row) => row.id === 'meso')?.mesoAmount).toBe(250_000_000)
     expect(rows.find((row) => row.id === 'hunt')?.hunt).toEqual({
+      mode: 'calculator',
       characterLevel: 294,
       missedMobs: 1,
       boosts: ['union-wealth'],

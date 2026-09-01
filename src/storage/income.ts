@@ -69,23 +69,52 @@ export interface IncomeRecord {
   /** 뗀 몫. **판매 대금 = `mesoAmount` + 이것** 이다 — 요율만으로는 내림 때문에 역산이 안 된다. */
   saleFeeMeso: number | null
   /**
-   * 「사냥」 갈래의 **계산 입력**([[ADR-175]] 결정 9) — 없으면 수정 시트가 못 열린다.
+   * 「사냥」 갈래를 **어떻게 적었나**([[ADR-175]] 결정 9 · [[ADR-201]] 결정 3).
    *
-   * 합계(`mesoAmount`)만 남기면 사냥 기록을 다시 열 때 빈 계산기가 서고, 무엇이든 만지는 순간
-   * 금액이 덮인다([[ADR-171]] 결정 2 가 걸어 둔 «그 시트가 채워져 열린다» 가 깨진다).
+   * 합계(`mesoAmount`)만 남기면 사냥 기록을 다시 열 때 빈 시트가 서고, 무엇이든 만지는 순간
+   * 금액이 덮인다([[ADR-171]] 결정 2 가 걸어 둔 계약이 깨진다). 그래서 적을 때 쓴 값을 함께 남긴다.
    *
-   * **다른 갈래에서는 전부 `null`** 이고, [[ADR-175]] 이전에 적힌 사냥 행도 그렇다 — 그때는
-   * 계산기 대신 금액을 직접 치는 옛 모양으로 연다(없는 입력을 지어내지 않는다).
+   * **다른 갈래에서는 전부 `null`** 이다. [[ADR-175]] 이전에 적힌 사냥 행도 `null` 인데, 그 행은
+   * 수동 입력으로 연다 — 조각이 없어 합계가 곧 획득 메소이고 그것은 지어낸 값이 아니다
+   * ([[ADR-201]] 결정 4).
    *
    * 사냥터는 여기가 아니라 `item` 에 **이름 그대로** 들어간다(전역 유일이라 지역이 따라온다).
+   * 수동 입력에는 그 칸이 없어 새 행은 `item` 이 비고, 옛 행의 이름은 그대로 들고 간다(결정 7).
    */
   hunt: HuntingIncomeDetail | null
   memo: string | null
   recordedAt: string
 }
 
-/** 사냥 계산에 쓴 입력 한 벌 — 여섯이 **함께 있거나 함께 없다**. */
-export interface HuntingIncomeDetail {
+/**
+ * 사냥을 적은 두 모양([[ADR-201]] 결정 1). `mode` 가 어느 쪽인지 말한다.
+ *
+ * **가르는 이유는 칸이 서로 안 겹쳐서다.** 계산기는 사냥터가 정해져야 도는 값을 들고, 수동은 그
+ * 값이 아예 없다. 한 벌로 두면 수동 행에 뜻 없는 0 이 들어가고, 읽는 쪽이 그것을 진짜 값으로
+ * 읽는다.
+ */
+export type HuntingIncomeDetail = HuntingCalculatorDetail | HuntingManualDetail
+
+/** 수동으로 적은 사냥([[ADR-201]] 결정 1) — 앱이 셀 근거가 없어 획득 메소를 사람이 친다. */
+export interface HuntingManualDetail {
+  mode: 'manual'
+  /**
+   * 사용자가 친 획득 메소. 합계(`mesoAmount`)는 여기에 `fragments × fragmentPrice` 를 더한 값이다.
+   *
+   * **합계에서 빼서 되돌리지 않고 그대로 저장한다**([[ADR-201]] 결정 3). 이 저장소가
+   * `characterLevel`·`mesoRate` 를 다시 안 재는 것과 같은 이유이고, 되돌리는 길을 고르면 수동인지
+   * 아닌지를 가릴 칸이 따로 필요해 결국 두 칸이 된다.
+   */
+  typedMeso: number
+  /** 솔 에르다 조각 개수. 계산기와 같은 값이라 양쪽에 다 있다. */
+  fragments: number
+  /** 조각 개당 메소. */
+  fragmentPrice: number
+}
+
+/** 계산기로 적은 사냥 — 계산에 쓴 입력 한 벌이고 일곱이 **함께 있거나 함께 없다**. */
+export interface HuntingCalculatorDetail {
+  mode: 'calculator'
   /**
    * **그때의** 캐릭터 레벨. `null` = 캐릭터를 안 골랐다(페널티 0 — [[ADR-175]] 결정 6).
    *
@@ -118,16 +147,37 @@ export interface HuntingIncomeDetail {
   mesoRate: number
 }
 
+/** 칸 하나를 숫자로. 없거나 `NULL` 이면 `null` 이다. */
+function numberOrNull(value: unknown): number | null {
+  return (value as number | null | undefined) ?? null
+}
+
 /**
- * 일곱 칸 ↔ 한 덩어리. **`hunt_missed_mobs` 가 있으면 계산기로 적힌 행**이다 — 나머지는 0 일 수
- * 있지만(조각을 안 먹은 사냥) 효율은 언제나 세그먼트가 고른 값이 들어간다.
+ * 여덟 칸 ↔ 한 덩어리. 어느 모양인지는 **칸 둘이 가른다**([[ADR-201]] 결정 3).
+ *
+ * `hunt_typed_meso` 가 있으면 수동이고, 없는데 `hunt_missed_mobs` 가 있으면 계산기다. 둘 다 없으면
+ * [[ADR-175]] 이전에 적힌 행이라 `null` 이고, 그 행은 수동 입력 폼이 합계를 그대로 받아 연다.
+ *
+ * **친 메소가 `0` 이어도 수동이다.** 조각만 먹은 사냥이 그렇다. `0` 과 `NULL` 이 갈리는 자리라
+ * `??` 로 접으면 그 행이 계산기 행으로 둔갑한다.
  */
 function rowToHunt(row: Record<string, unknown>): HuntingIncomeDetail | null {
-  const missed = row.hunt_missed_mobs as number | null | undefined
-  if (missed === null || missed === undefined) return null
+  const typedMeso = numberOrNull(row.hunt_typed_meso)
+  if (typedMeso !== null) {
+    return {
+      mode: 'manual',
+      typedMeso,
+      fragments: numberOrNull(row.hunt_fragments) ?? 0,
+      fragmentPrice: numberOrNull(row.hunt_fragment_price) ?? 0,
+    }
+  }
+
+  const missed = numberOrNull(row.hunt_missed_mobs)
+  if (missed === null) return null
 
   const boosts = (row.hunt_boosts as string | null | undefined) ?? ''
   return {
+    mode: 'calculator',
     characterLevel: (row.hunt_character_level as number | null | undefined) ?? null,
     missedMobs: missed,
     boosts: boosts === '' ? [] : boosts.split(','),
@@ -140,9 +190,17 @@ function rowToHunt(row: Record<string, unknown>): HuntingIncomeDetail | null {
   }
 }
 
-/** 한 덩어리 → 칸 일곱. 없으면 전부 `null` 이다(다른 갈래의 행이 그렇다). */
+/**
+ * 한 덩어리 → 칸 여덟. 없으면 전부 `null` 이다(다른 갈래의 행이 그렇다).
+ *
+ * **수동 행은 계산기 칸 넷을 비운다**([[ADR-201]] 결정 3). 0 을 채우면 그 행이 «놓친 마릿수 0 으로
+ * 센 행» 처럼 읽힌다. 비어 있는 것이 곧 앱이 센 값이 아니라는 뜻이다.
+ */
 function huntToValues(hunt: HuntingIncomeDetail | null): Array<number | string | null> {
-  if (hunt === null) return [null, null, null, null, null, null, null]
+  if (hunt === null) return [null, null, null, null, null, null, null, null]
+  if (hunt.mode === 'manual') {
+    return [null, null, null, null, hunt.fragments, hunt.fragmentPrice, null, hunt.typedMeso]
+  }
   return [
     hunt.characterLevel,
     hunt.missedMobs,
@@ -151,6 +209,7 @@ function huntToValues(hunt: HuntingIncomeDetail | null): Array<number | string |
     hunt.fragments,
     hunt.fragmentPrice,
     hunt.mesoRate,
+    null,
   ]
 }
 
@@ -159,9 +218,9 @@ const INSERT_SQL = `
     (id, ocid, earned_on, category, item, meso_amount, sale_fee_percent, sale_fee_meso,
      point_amount, point_per_100m_meso, cash_amount,
      hunt_character_level, hunt_missed_mobs, hunt_boosts, hunt_sojae, hunt_fragments,
-     hunt_fragment_price, hunt_meso_rate,
+     hunt_fragment_price, hunt_meso_rate, hunt_typed_meso,
      memo, recorded_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
@@ -191,7 +250,7 @@ const UPDATE_SQL = `
     sale_fee_percent = ?, sale_fee_meso = ?,
     point_amount = ?, point_per_100m_meso = ?, cash_amount = ?,
     hunt_character_level = ?, hunt_missed_mobs = ?, hunt_boosts = ?, hunt_sojae = ?,
-    hunt_fragments = ?, hunt_fragment_price = ?, hunt_meso_rate = ?,
+    hunt_fragments = ?, hunt_fragment_price = ?, hunt_meso_rate = ?, hunt_typed_meso = ?,
     memo = ?
   WHERE id = ?
 `

@@ -705,6 +705,7 @@ describe('사냥 줄의 이름과 셈', () => {
     pointPer100mMeso: null,
     cashAmount: null,
     hunt: {
+      mode: 'calculator' as const,
       characterLevel: 294,
       missedMobs: 0,
       boosts: [],
@@ -734,6 +735,24 @@ describe('사냥 줄의 이름과 셈', () => {
     const rows = await loadDayRecords('2026-08-21')
 
     expect(recordCountLabelOf(rows[0])).toBe('2재획')
+  })
+
+  // 수동으로 적은 행에는 소재 줄이 없다([[ADR-201]] 결정 1) — 셀 것이 없으니 칸도 안 선다.
+  it('수동으로 적은 행은 세는 칸이 없다', async () => {
+    income.getIncomeRecordsBetween.mockResolvedValue([
+      {
+        ...사냥기록,
+        item: null,
+        hunt: { mode: 'manual' as const, typedMeso: 41_760_000, fragments: 0, fragmentPrice: 0 },
+      },
+    ])
+    const { loadDayRecords, recordCountLabelOf, recordTitleOf } =
+      require('../records') as typeof import('../records')
+
+    const rows = await loadDayRecords('2026-08-21')
+
+    expect(recordTitleOf(rows[0])).toBe('루디 · 사냥')
+    expect(recordCountLabelOf(rows[0])).toBeNull()
   })
 
   // [[ADR-175]] 이전에 적힌 사냥 행은 계산 입력이 없다 — 셀 것이 없으니 칸도 안 선다.

@@ -661,11 +661,12 @@ export function recordCountLabelOf(entry: DayRecord): string | null {
    * 사냥은 **몇 재획을 돌았나**다(사용자 지정 2026-08-29) — 보스 줄의 「n마리」와 **같은 자리·같은
    * 모양**이라 화면은 아무것도 안 가른다(그 칸이 하나뿐이다).
    *
-   * [[ADR-175]] 이전에 적힌 행은 계산 입력이 없어 셀 것이 없다 — 그때는 칸이 안 선다.
+   * **계산기로 적힌 행만** 그 수를 안다([[ADR-201]] 결정 1). 수동으로 적은 행에는 소재 줄이 없고,
+   * [[ADR-175]] 이전 행은 계산 입력 자체가 없다. 둘 다 칸이 안 선다.
    */
   // `!= null` 인 이유: 계산기 이전 행은 `null` 이고, 옛 저장분을 읽는 자리에서는 칸이 **아예
-  // 없을** 수도 있다(`undefined`). 둘 다 «셀 것이 없다» 다.
-  if (entry.kind === 'income' && entry.record.hunt != null) {
+  // 없을** 수도 있다(`undefined`). 둘 다 셀 것이 없다.
+  if (entry.kind === 'income' && entry.record.hunt?.mode === 'calculator') {
     return `${entry.record.hunt.sojae}재획`
   }
   return null

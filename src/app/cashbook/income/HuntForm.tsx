@@ -188,6 +188,13 @@ export function HuntForm(
   },
 ): React.JSX.Element {
   const editing = props.editing !== undefined
+  /**
+   * 이 폼이 되살릴 수 있는 입력([[ADR-201]] 결정 3). **계산기로 적힌 행일 때만** 값이 있다.
+   *
+   * 수동으로 적힌 행은 이 폼으로 안 열리지만(`IncomeSheet` 가 갈라 준다) 타입이 그 사실을 모르므로
+   * 여기서 한 번 좁힌다. 아래 상태들은 이 값 하나만 본다.
+   */
+  const detail = props.editing?.hunt?.mode === 'calculator' ? props.editing.hunt : null
   const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
   /**
    * 캐릭터 레벨을 상태로 드는 이유는 **그때의 값**이어야 하기 때문이다([[ADR-175]] 결정 9):
@@ -195,37 +202,35 @@ export function HuntForm(
    * 사용자가 고르개로 캐릭터를 **바꾸면** 그 캐릭터의 지금 레벨로 갈아 끼운다 — 그건 사용자가 한 일이다.
    */
   const [huntLevel, setHuntLevel] = useState<number | null>(
-    props.editing?.hunt?.characterLevel ??
+    detail?.characterLevel ??
       props.characters.find((each) => each.ocid === props.editing?.ocid)?.level ??
       null,
   )
   /** 고른 사냥터 이름 — 지역은 여기서 따라온다(이름이 전역 유일이다, [[ADR-175]] 결정 2). */
   const [groundName, setGroundName] = useState<string | null>(
-    props.editing?.hunt === null ? null : (props.editing?.item ?? null),
+    detail === null ? null : (props.editing?.item ?? null),
   )
   /** 고른 지역. 사냥터를 아직 안 골랐어도 지역만 골라 둔 상태가 있다. */
   const [regionSlug, setRegionSlug] = useState<string | null>(() => {
-    const name = props.editing?.hunt === null ? null : (props.editing?.item ?? null)
+    const name = detail === null ? null : (props.editing?.item ?? null)
     return name === null ? null : (findHuntingGround(name)?.region.slug ?? null)
   })
   /**
    * 고르는 것은 **놓치는 마릿수**(0~4)이지 퍼센트가 아니다([[ADR-175]] 결정 3) — 효율 %는 맵이
    * 정하는 라벨이라 맵을 바꾸면 같은 조각의 글자가 달라진다.
    */
-  const [missedMobs, setMissedMobs] = useState(props.editing?.hunt?.missedMobs ?? 0)
-  const [boosts, setBoosts] = useState<readonly string[]>(props.editing?.hunt?.boosts ?? [])
-  const [sojae, setSojae] = useState(props.editing?.hunt?.sojae ?? 1)
-  const [fragments, setFragments] = useState(props.editing?.hunt?.fragments ?? 0)
-  const [fragmentPrice, setFragmentPrice] = useState(props.editing?.hunt?.fragmentPrice ?? 0)
+  const [missedMobs, setMissedMobs] = useState(detail?.missedMobs ?? 0)
+  const [boosts, setBoosts] = useState<readonly string[]>(detail?.boosts ?? [])
+  const [sojae, setSojae] = useState(detail?.sojae ?? 1)
+  const [fragments, setFragments] = useState(detail?.fragments ?? 0)
+  const [fragmentPrice, setFragmentPrice] = useState(detail?.fragmentPrice ?? 0)
   /**
    * 캐릭터의 메소 획득량([[ADR-177]]) — **읽었으면 못 치고, 못 읽었으면 치는 칸**이 된다(결정 7).
    *
    * 수정으로 열면 **그때의 값**이 자동값으로 선다(결정 8) — 레벨과 같은 이유다.
    */
   const [mesoRate, setMesoRate] = useState<MesoRateLoad | { kind: 'loading' }>(
-    props.editing?.hunt === undefined || props.editing.hunt === null
-      ? { kind: 'fallback', percent: null }
-      : { kind: 'read', percent: props.editing.hunt.mesoRate },
+    detail === null ? { kind: 'fallback', percent: null } : { kind: 'read', percent: detail.mesoRate },
   )
   /** 폴백 칸에 친 글자 — 지우는 중간 상태가 있어 숫자가 아니라 글자로 든다. */
   const [mesoRateText, setMesoRateText] = useState('')
@@ -613,6 +618,7 @@ export function HuntForm(
             // **계산 입력을 함께 남긴다**([[ADR-175]] 결정 9) — 없으면 수정 시트가 빈 계산기로 열려
             // 만지는 순간 금액이 덮인다.
             hunt: {
+              mode: 'calculator',
               characterLevel: huntLevel,
               missedMobs,
               boosts: [...boosts],

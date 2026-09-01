@@ -2,7 +2,7 @@
 //
 // `boss-profit.spec.ts` 와 같은 방식으로 **DB 커넥션만** 가짜로 바꾼다 — SQL 문자열과 파라미터
 // 순서가 검증 대상이라 그 위를 목으로 덮으면 안 된다.
-import type { IncomeRecord } from '../income'
+import type { HuntingCalculatorDetail, HuntingManualDetail, IncomeRecord } from '../income'
 
 jest.mock('../sqlite/db', () => ({
   getBossProfitDb: jest.fn(),
@@ -65,7 +65,9 @@ describe('insertIncomeRecord', () => {
       null,
       null,
       null,
-      // 사냥 계산 입력 일곱([[ADR-175]] 결정 9 + [[ADR-177]] 결정 8) — 아이템 판매라 전부 비어 있다.
+      // 사냥 칸 여덟([[ADR-175]] 결정 9 · [[ADR-177]] 결정 8 · [[ADR-201]] 결정 3) — 아이템
+      // 판매라 전부 비어 있다.
+      null,
       null,
       null,
       null,
@@ -293,19 +295,21 @@ describe('판매 수수료 칸 둘 ([[ADR-170]] 정정 9)', () => {
 
 // ── 메소 획득량 칸([[ADR-177]] 결정 8) ────────────────────────────────────────────────
 describe('hunt_meso_rate — 그때의 메소 획득량', () => {
+  const 계산기입력: HuntingCalculatorDetail = {
+    mode: 'calculator',
+    characterLevel: 294,
+    missedMobs: 1,
+    boosts: ['union', 'potion'],
+    sojae: 2,
+    fragments: 83,
+    fragmentPrice: 8_000_000,
+    mesoRate: 149,
+  }
   const 계산기행: IncomeRecord = {
     ...sample,
     category: '사냥',
     item: '밤의 길 3',
-    hunt: {
-      characterLevel: 294,
-      missedMobs: 1,
-      boosts: ['union', 'potion'],
-      sojae: 2,
-      fragments: 83,
-      fragmentPrice: 8_000_000,
-      mesoRate: 149,
-    },
+    hunt: 계산기입력,
   }
 
   it('넣을 때 칸 일곱째로 실린다', async () => {
@@ -322,7 +326,7 @@ describe('hunt_meso_rate — 그때의 메소 획득량', () => {
   it('고칠 때도 함께 갈아 끼운다', async () => {
     const { updateIncomeRecord } = require('../income') as typeof import('../income')
 
-    await updateIncomeRecord({ ...계산기행, hunt: { ...계산기행.hunt!, mesoRate: 161 } })
+    await updateIncomeRecord({ ...계산기행, hunt: { ...계산기입력, mesoRate: 161 } })
 
     const [sql, values] = runMock.mock.calls[0]
     expect(sql).toContain('hunt_meso_rate = ?')
@@ -365,7 +369,7 @@ describe('hunt_meso_rate — 그때의 메소 획득량', () => {
 
     const [record] = await getIncomeRecordsBetween('2026-08-20', '2026-08-26')
 
-    expect(record.hunt?.mesoRate).toBe(0)
+    expect(record.hunt).toMatchObject({ mode: 'calculator', mesoRate: 0 })
   })
 
   it('값이 있으면 그대로 읽는다', async () => {
@@ -387,6 +391,154 @@ describe('hunt_meso_rate — 그때의 메소 획득량', () => {
 
     const [record] = await getIncomeRecordsBetween('2026-08-20', '2026-08-26')
 
-    expect(record.hunt?.mesoRate).toBe(149)
+    expect(record.hunt).toMatchObject({ mode: 'calculator', mesoRate: 149 })
+  })
+})
+
+// ── 수동 입력 칸([[ADR-201]] 결정 3) ──────────────────────────────────────────────────
+describe('hunt_typed_meso — 수동으로 적힌 사냥', () => {
+  const 수동입력: HuntingManualDetail = {
+    mode: 'manual',
+    typedMeso: 1_000_000_000,
+    fragments: 83,
+    fragmentPrice: 8_000_000,
+  }
+  const 수동행: IncomeRecord = {
+    ...sample,
+    category: '사냥',
+    item: null,
+    mesoAmount: 1_664_000_000,
+    hunt: 수동입력,
+  }
+
+  it('계산기 칸을 비우고 친 메소만 싣는다', async () => {
+    const { insertIncomeRecord } = require('../income') as typeof import('../income')
+
+    await insertIncomeRecord(수동행)
+
+    const [sql, values] = runMock.mock.calls[0]
+    expect(sql).toContain('hunt_typed_meso')
+    // 사냥 칸 여덟 — 레벨 · 놓침 · 아이템 · 소재 · 조각 · 조각가 · 메획 · **친 메소**.
+    // 계산기 칸 넷이 null 인 것이 «앱이 센 값이 아니다» 를 말한다.
+    expect(values.slice(11, 19)).toEqual([
+      null,
+      null,
+      null,
+      null,
+      83,
+      8_000_000,
+      null,
+      1_000_000_000,
+    ])
+  })
+
+  it('고칠 때도 함께 갈아 끼운다', async () => {
+    const { updateIncomeRecord } = require('../income') as typeof import('../income')
+
+    await updateIncomeRecord({ ...수동행, hunt: { ...수동입력, typedMeso: 2_000_000_000 } })
+
+    const [sql, values] = runMock.mock.calls[0]
+    expect(sql).toContain('hunt_typed_meso = ?')
+    expect(values).toEqual(expect.arrayContaining([2_000_000_000]))
+  })
+
+  it('값이 있으면 수동으로 읽는다 — 계산기 칸을 안 본다', async () => {
+    queryMock.mockResolvedValue({
+      values: [
+        {
+          id: 'inc-1',
+          earned_on: '2026-08-23',
+          category: '사냥',
+          item: null,
+          meso_amount: 1_664_000_000,
+          hunt_missed_mobs: null,
+          hunt_fragments: 83,
+          hunt_fragment_price: 8_000_000,
+          hunt_typed_meso: 1_000_000_000,
+          recorded_at: '2026-08-23T05:00:00.000Z',
+        },
+      ],
+    })
+    const { getIncomeRecordsBetween } = require('../income') as typeof import('../income')
+
+    const [record] = await getIncomeRecordsBetween('2026-08-20', '2026-08-26')
+
+    expect(record.hunt).toEqual({
+      mode: 'manual',
+      typedMeso: 1_000_000_000,
+      fragments: 83,
+      fragmentPrice: 8_000_000,
+    })
+  })
+
+  // 조각을 안 넣은 수동 행 — 합계가 곧 친 메소다.
+  it('조각이 없으면 0 으로 읽는다', async () => {
+    queryMock.mockResolvedValue({
+      values: [
+        {
+          id: 'inc-1',
+          earned_on: '2026-08-23',
+          category: '사냥',
+          meso_amount: 500_000_000,
+          hunt_typed_meso: 500_000_000,
+          recorded_at: '2026-08-23T05:00:00.000Z',
+        },
+      ],
+    })
+    const { getIncomeRecordsBetween } = require('../income') as typeof import('../income')
+
+    const [record] = await getIncomeRecordsBetween('2026-08-20', '2026-08-26')
+
+    expect(record.hunt).toEqual({
+      mode: 'manual',
+      typedMeso: 500_000_000,
+      fragments: 0,
+      fragmentPrice: 0,
+    })
+  })
+
+  // 친 메소가 0 이어도 **수동으로 적힌 행**이다 — 조각만 먹은 사냥이 그렇다.
+  // `0` 과 `NULL` 이 갈리는 자리라, 여기서 접히면 그 행이 계산기 행으로 둔갑한다.
+  it('친 메소가 0 이어도 수동으로 읽는다', async () => {
+    queryMock.mockResolvedValue({
+      values: [
+        {
+          id: 'inc-1',
+          earned_on: '2026-08-23',
+          category: '사냥',
+          meso_amount: 664_000_000,
+          hunt_typed_meso: 0,
+          hunt_fragments: 83,
+          hunt_fragment_price: 8_000_000,
+          recorded_at: '2026-08-23T05:00:00.000Z',
+        },
+      ],
+    })
+    const { getIncomeRecordsBetween } = require('../income') as typeof import('../income')
+
+    const [record] = await getIncomeRecordsBetween('2026-08-20', '2026-08-26')
+
+    expect(record.hunt?.mode).toBe('manual')
+  })
+
+  // [[ADR-175]] 이전에 적힌 행 — 칸이 여덟 다 비어 있다. 지어낼 것이 없으므로 `null` 이다.
+  it('칸이 전부 비면 여전히 null 이다', async () => {
+    queryMock.mockResolvedValue({
+      values: [
+        {
+          id: 'inc-1',
+          earned_on: '2026-08-23',
+          category: '사냥',
+          item: '엘리시움',
+          meso_amount: 1_200_000_000,
+          recorded_at: '2026-08-23T05:00:00.000Z',
+        },
+      ],
+    })
+    const { getIncomeRecordsBetween } = require('../income') as typeof import('../income')
+
+    const [record] = await getIncomeRecordsBetween('2026-08-20', '2026-08-26')
+
+    expect(record.hunt).toBeNull()
   })
 })

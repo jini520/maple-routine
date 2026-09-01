@@ -1025,6 +1025,7 @@ describe('사냥 계산기 ([[ADR-175]])', () => {
         pointPer100mMeso: null,
         cashAmount: null,
         hunt: {
+          mode: 'calculator' as const,
           characterLevel: 294,
           missedMobs: 3,
           boosts: ['union', 'potion'],
@@ -1342,6 +1343,7 @@ describe('메소 획득량 ([[ADR-177]])', () => {
         pointPer100mMeso: null,
         cashAmount: null,
         hunt: {
+          mode: 'calculator' as const,
           characterLevel: 294,
           missedMobs: 0,
           boosts: [],
