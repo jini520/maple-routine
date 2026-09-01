@@ -11,6 +11,11 @@
 import { Pressable, View } from 'react-native'
 
 import { Text } from '../../components/atoms'
+import {
+  acceptMesoText,
+  settleMesoText,
+} from '../../components/molecules/MesoPad/meso-pad'
+import { SheetTextInput } from '../../components/molecules/SheetTextInput/SheetTextInput'
 import { CheckIcon } from '../../lib/icons'
 import { formatDayLabel, shiftDateKey } from '../../lib/calendar-month'
 import { ChevronLeftIcon, ChevronRightIcon, MinusIcon, PlusIcon } from '../../lib/icons'
@@ -87,6 +92,33 @@ export function CheckBox(props: { checked: boolean }): React.JSX.Element {
         <CheckIcon className="h-3 w-3 text-on-primary" strokeWidth={2.5} aria-hidden />
       )}
     </View>
+  )
+}
+
+/**
+ * 금액을 받는 칸 — **글자를 들고** 셈은 부르는 쪽이 한다([[ADR-203]]).
+ *
+ * 커서가 빠질 때 앞자리 0 을 걷는 것이 이 부품의 일이다(결정 2). 칸마다 손으로 달면 한 곳이
+ * 빠졌을 때 그 칸만 조용히 안 정리된다.
+ *
+ * 키보드는 숫자판 그대로다 — 값이 글자가 된 것과 무엇으로 치느냐는 다른 이야기다(결정 3).
+ */
+export function AmountInput(props: {
+  testID: string
+  value: string
+  onChange: (next: string) => void
+}): React.JSX.Element {
+  return (
+    <SheetTextInput
+      testID={props.testID}
+      value={props.value}
+      onChangeText={(text) => props.onChange(acceptMesoText(props.value, text))}
+      onBlur={() => props.onChange(settleMesoText(props.value))}
+      keyboardType="number-pad"
+      placeholder="0"
+      className="flex-1 text-right text-sm font-semibold text-text"
+      style={TABULAR_NUMS}
+    />
   )
 }
 

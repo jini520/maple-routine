@@ -661,7 +661,7 @@ describe('아이템 구매', () => {
 
     await 관세고르기(view, '10%')
 
-    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('850,000,000')
+    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('850000000')
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('9억 3500만')
   })
 
@@ -1028,7 +1028,7 @@ describe('기타 — 금액 × 수량 ([[ADR-173]] 결정 17)', () => {
 
     // 60,000 메포 ÷ 1,180 × 1억 = 5,084,745,762 메소.
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('50억 8474만 5762')
-    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('30,000')
+    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('30000')
   })
 
   it('저장에 총합과 수량이 함께 실린다', async () => {
@@ -1484,7 +1484,7 @@ describe('「아이템 구매」의 종류 ([[ADR-173]] 정정 1)', () => {
 
     await 종류고르기(view, '소비')
 
-    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('12,000')
+    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('12000')
   })
 
   /**
@@ -1606,7 +1606,7 @@ describe('되짚어 여는 식 ([[ADR-173]] 정정 1)', () => {
       within(view.getByTestId('spend-sheet-item-kind')).getByLabelText('소비').props
         .accessibilityState?.selected,
     ).toBe(true)
-    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('12,000')
+    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('12000')
     expect(view.getByTestId('spend-sheet-quantity').props.value).toBe('300')
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('360만')
   })
@@ -1644,7 +1644,7 @@ describe('되짚어 여는 식 ([[ADR-173]] 정정 1)', () => {
       tariffMeso: null,
     })
 
-    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('10,000')
+    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('10000')
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('3만')
   })
 })
@@ -1896,7 +1896,7 @@ describe('날짜 바꾸기 ([[ADR-178]] 정정 7)', () => {
 
     await 아이디로누르기(view, 'spend-sheet-date-prev')
 
-    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('30,000')
+    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('30000')
   })
 
   it('목록 갈래의 둘째 화면에서도 바꾼다', async () => {

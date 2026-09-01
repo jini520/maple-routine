@@ -11,7 +11,7 @@ import { useState } from 'react'
 
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
-import { parseMesoText } from '../../../components/molecules/MesoPad/meso-pad'
+import { mesoTextOf, mesoValueOf } from '../../../components/molecules/MesoPad/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import {
   FREE_CURRENCY_LABELS,
@@ -20,8 +20,7 @@ import {
   type FreeCurrency,
 } from '../../../lib/free-currency'
 import { pointToMeso } from '../../../lib/spend-catalog'
-import { TABULAR_NUMS } from '../../../lib/text-styles'
-import { FieldRow, QuantityStepper } from '../sheet-fields'
+import { AmountInput, FieldRow, QuantityStepper } from '../sheet-fields'
 import {
   CategoryChips,
   CharacterRow,
@@ -39,12 +38,12 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
   const [name, setName] = useState(props.editing?.item ?? '')
   const [quantity, setQuantity] = useState(props.editing?.quantity ?? 1)
   /** 친 값을 **되짚는다** — `단가 = 저장된 총액 ÷ 수량`([[ADR-173]] 정정 1). */
-  const [typed, setTyped] = useState(() => {
-    if (props.editing === undefined) return 0
+  const [typedText, setTypedText] = useState(() => {
+    if (props.editing === undefined) return ''
     const count = props.editing.quantity ?? 1
     const total =
       props.editing.mesoAmount ?? props.editing.pointAmount ?? props.editing.cashAmount ?? 0
-    return Math.round(total / count)
+    return mesoTextOf(Math.round(total / count))
   })
   /** 수정으로 열 때는 **찬 칸이 통화를 되짚는다** — 캐시 칸이 차 있으면 캐시로 열려야 한다. */
   const [currency, setCurrency] = useState<FreeCurrency>(
@@ -62,6 +61,7 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
   })
   const { saving, submit, remove } = useSpendSubmit(props)
 
+  const typed = mesoValueOf(typedText)
   const usesPoint = currency === 'point'
   const typedRate = Number(rateText)
   const rate = usesPoint && rateText !== '' && Number.isFinite(typedRate) ? typedRate : null
@@ -108,15 +108,7 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
 
       {/* **통화 밑**이다 — 무엇으로 내는지를 정한 다음에 얼마인지를 친다. */}
       <FieldRow label="금액">
-        <SheetTextInput
-          testID="spend-sheet-unit-price"
-          value={typed === 0 ? '' : typed.toLocaleString()}
-          onChangeText={(text) => setTyped(parseMesoText(typed, text))}
-          keyboardType="number-pad"
-          placeholder="0"
-          className="flex-1 text-right text-sm font-semibold text-text"
-          style={TABULAR_NUMS}
-        />
+        <AmountInput testID="spend-sheet-unit-price" value={typedText} onChange={setTypedText} />
         {/* 통화를 고르는 자리라 숫자만 있으면 무엇으로 낸 것인지 줄에서 사라진다
             ([[ADR-170]] 정정 14 ④) — 큰 숫자가 이미 하는 일을 이 줄도 한다. */}
         <Text

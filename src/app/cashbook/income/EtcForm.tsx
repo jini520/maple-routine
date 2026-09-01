@@ -13,7 +13,7 @@ import { View } from 'react-native'
 
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
-import { parseMesoText } from '../../../components/molecules/MesoPad/meso-pad'
+import { mesoTextOf, mesoValueOf } from '../../../components/molecules/MesoPad/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import {
   FREE_CURRENCY_LABELS,
@@ -23,7 +23,7 @@ import {
   type FreeCurrency,
 } from '../../../lib/free-currency'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
-import { FieldRow, QuantityStepper } from '../sheet-fields'
+import { AmountInput, FieldRow, QuantityStepper } from '../sheet-fields'
 import { CharacterField, SaveRow, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from './use-sheet-submit'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
@@ -43,12 +43,12 @@ export function EtcForm(
    *
    * `quantity` 가 없던 시절의 행은 `null` 이라 수량 1 로 열리고, 그 행은 총액이 곧 금액이다.
    */
-  const [typed, setTyped] = useState(() => {
-    if (props.editing === undefined) return 0
+  const [typedText, setTypedText] = useState(() => {
+    if (props.editing === undefined) return ''
     const count = props.editing.quantity ?? 1
     const total =
       props.editing.mesoAmount ?? props.editing.pointAmount ?? props.editing.cashAmount ?? 0
-    return Math.round(total / count)
+    return mesoTextOf(Math.round(total / count))
   })
   /**
    * 수정으로 열 때는 **찬 칸이 통화를 되짚는다**(지출 시트와 같은 방식) — 캐시 칸이 차 있으면
@@ -67,6 +67,7 @@ export function EtcForm(
   )
   const { saving, submit, remove } = useSheetSubmit(props)
 
+  const typed = mesoValueOf(typedText)
   const usesPoint = currency === 'point'
   const rate = /^\d+$/.test(rateText) && Number(rateText) > 0 ? Number(rateText) : null
   /** **언제나 곱한다** — 금액 × 수량([[ADR-202]] 결정 3). 지출 「기타」와 같은 식이다. */
@@ -105,15 +106,7 @@ export function EtcForm(
 
       {/* **통화 밑**이다 — 무엇으로 받았는지를 정한 다음에 얼마인지를 친다(지출 시트와 같은 차례). */}
       <FieldRow label="금액">
-        <SheetTextInput
-          testID="income-sheet-unit-price"
-          value={typed === 0 ? '' : typed.toLocaleString()}
-          onChangeText={(text) => setTyped(parseMesoText(typed, text))}
-          keyboardType="number-pad"
-          placeholder="0"
-          className="flex-1 text-right text-sm font-semibold text-text"
-          style={TABULAR_NUMS}
-        />
+        <AmountInput testID="income-sheet-unit-price" value={typedText} onChange={setTypedText} />
         {/* 숫자만 있으면 무엇으로 받은 것인지 줄에서 사라진다([[ADR-170]] 정정 14 ④). 이 줄이 묻는
             것은 **얼마인가**라 라벨이 아니라 단위다 — 캐시는 「원」이고 큰 숫자와 같은 말이 된다. */}
         <Text

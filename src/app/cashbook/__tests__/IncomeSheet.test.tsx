@@ -73,7 +73,7 @@ async function 아이디로누르기(view: Rendered, testID: string): Promise<vo
 }
 
 /**
- * 큰 숫자를 **직접 치는** 갈래로 연다 — 금액 칸의 성질(콤마·자리표시자·키보드)을 여기서 본다.
+ * 금액 칸의 성질(글자·자리표시자·키보드)을 여기서 본다.
  *
  * 그 갈래가 「사냥」 이었는데 [[ADR-175]] 로 사냥이 **계산기**가 되면서(큰 숫자는 못 치는 합계다)
  * 「기타」로 옮겼다. 아이템 판매의 큰 숫자도 합계라 못 친다([[ADR-170]] 정정 9 ④) — 직접 치는
@@ -217,23 +217,58 @@ describe('금액 — OS 숫자 키보드다 ([[ADR-170]] 정정 4 · [[ADR-173]]
     expect(view.getByTestId('income-sheet-unit-price').props.keyboardType).toBe('number-pad')
   })
 
-  it('친 값이 콤마째 선다', async () => {
+  // 칸은 **친 글자 그대로**다([[ADR-203]] 결정 1) — 콤마는 밑의 큰 숫자가 단위로 대신한다.
+  it('친 글자가 그대로 선다', async () => {
     const view = await 직접치는시트()
 
     await 치기(view, '1200')
 
-    expect(view.getByTestId('income-sheet-unit-price').props.value).toBe('1,200')
+    expect(view.getByTestId('income-sheet-unit-price').props.value).toBe('1200')
     // 큰 숫자는 `금액 × 수량` 이고 수량 기본값이 1 이라 친 값이 곧 합계다.
     expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('1200')
   })
 
-  // 칸이 콤마를 그리므로 다음 타건은 콤마째 들어온다 — 그것을 걷어야 값이 안 깨진다.
+  // 붙여넣기·자동완성이 숫자 아닌 것을 들여보낸다 — 그것을 걷어야 값이 안 깨진다.
   it('콤마가 섞여 들어와도 값이 안 깨진다', async () => {
     const view = await 직접치는시트()
 
     await 치기(view, '1,2000')
 
-    expect(view.getByTestId('income-sheet-unit-price').props.value).toBe('12,000')
+    expect(view.getByTestId('income-sheet-unit-price').props.value).toBe('12000')
+  })
+
+  /**
+   * **가운데를 고쳐도 칸이 안 비워진다**([[ADR-203]] 결정 1).
+   *
+   * 값에서 글자를 다시 만들던 때는 `80000000000` 에서 `8` 을 지운 `0000000000` 이 0 으로 접혀
+   * 칸이 통째로 비었다 — 처음부터 다시 쳐야 했다(사용자 보고 2026-09-02).
+   */
+  it('앞자리를 지워도 나머지가 남는다 — 처음부터 다시 안 친다', async () => {
+    const view = await 직접치는시트()
+    await 치기(view, '80000000000')
+
+    // 커서를 8 뒤에 두고 지운 결과가 이 글자다.
+    await 치기(view, '0000000000')
+
+    expect(view.getByTestId('income-sheet-unit-price').props.value).toBe('0000000000')
+
+    // 그 자리에 6 을 치면 원하던 값이 된다.
+    await 치기(view, '60000000000')
+
+    expect(view.getByTestId('income-sheet-unit-price').props.value).toBe('60000000000')
+  })
+
+  // 정리는 **커서가 빠질 때**만 한다(결정 2) — 타건마다 하면 위의 편집이 다시 깨진다.
+  it('커서가 빠지면 앞자리 0 을 걷는다', async () => {
+    const view = await 직접치는시트()
+    await 치기(view, '0000000000')
+
+    await act(async () => {
+      fireEvent(view.getByTestId('income-sheet-unit-price'), 'blur')
+    })
+
+    expect(view.getByTestId('income-sheet-unit-price').props.value).toBe('')
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
 
   // 「0」 을 값으로 두면 그 뒤에 친 숫자가 붙어 자릿수가 하나 는다.
@@ -338,7 +373,7 @@ describe('판매 수수료 ([[ADR-170]] 정정 9)', () => {
     await 누르기(view, '5%')
     await 누르기(view, '3%')
 
-    expect(view.getByTestId('income-sheet-gross').props.value).toBe('1,200,000,000')
+    expect(view.getByTestId('income-sheet-gross').props.value).toBe('1200000000')
     // 못 치는 숫자는 칸이 아니라 글자다 — 초기화 버튼도 없다.
     expect(view.getByTestId('income-sheet-amount').props.value).toBeUndefined()
     expect(view.queryByLabelText('금액 초기화')).toBeNull()
@@ -503,7 +538,7 @@ describe('수정 모드 ([[ADR-173]] 결정 15)', () => {
     const view = await 그리기({ editing: 판매기록, onDelete: jest.fn() })
 
     expect(view.getByTestId('income-sheet-name-label')).toHaveTextContent('판매 아이템')
-    expect(view.getByTestId('income-sheet-gross').props.value).toBe('1,200,000,000')
+    expect(view.getByTestId('income-sheet-gross').props.value).toBe('1200000000')
     expect(view.getByTestId('income-sheet-character-trigger')).toBeTruthy()
   })
 
@@ -517,7 +552,7 @@ describe('수정 모드 ([[ADR-173]] 결정 15)', () => {
       onDelete: jest.fn(),
     })
 
-    expect(view.getByTestId('income-sheet-gross').props.value).toBe('1,200,000,000')
+    expect(view.getByTestId('income-sheet-gross').props.value).toBe('1200000000')
     expect(view.getByLabelText('5%').props.accessibilityState?.selected).toBe(true)
   })
 })
@@ -633,7 +668,7 @@ describe('통화 ([[ADR-170]] 정정 15)', () => {
       })
 
       // 총액(60,000,000)을 그대로 금액 칸에 넣으면 저장 한 번에 1.2억이 된다.
-      expect(view.getByTestId('income-sheet-unit-price').props.value).toBe('30,000,000')
+      expect(view.getByTestId('income-sheet-unit-price').props.value).toBe('30000000')
       expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('6천만')
     })
 
@@ -660,7 +695,7 @@ describe('통화 ([[ADR-170]] 정정 15)', () => {
         onDelete: jest.fn(),
       })
 
-      expect(view.getByTestId('income-sheet-unit-price').props.value).toBe('15,000')
+      expect(view.getByTestId('income-sheet-unit-price').props.value).toBe('15000')
       expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('1만 5000')
     })
   })
@@ -1052,14 +1087,14 @@ describe('사냥 계산기 ([[ADR-175]])', () => {
     expect(view.getByLabelText('소재 늘리기')).toBeTruthy()
   })
 
-  // 칸이 콤마를 그리므로 다음 타건은 콤마째 들어온다 — 조각 가격과 같은 파서를 쓴다.
+  // 붙여넣기가 숫자 아닌 것을 들여보낸다 — 조각 가격과 같은 규칙을 쓴다.
   it('조각 칸도 콤마가 섞여 들어와 값이 안 깨진다', async () => {
     const view = await 그리기()
     await 누르기(view, '사냥')
 
     await 아이디로치기(view, 'income-sheet-fragments', '1,2340')
 
-    expect(view.getByTestId('income-sheet-fragments').props.value).toBe('12,340')
+    expect(view.getByTestId('income-sheet-fragments').props.value).toBe('12340')
   })
 
   it('사냥터를 안 골라도 조각만으로 적을 수 있다 — 계산기가 반쯤 찬 상태다', async () => {
@@ -1155,7 +1190,7 @@ describe('사냥 계산기 ([[ADR-175]])', () => {
     expect(view.getByLabelText('유니온의 부').props.accessibilityState?.checked).toBe(true)
     expect(view.getByTestId('income-sheet-sojae')).toHaveTextContent('3')
     expect(view.getByTestId('income-sheet-fragments').props.value).toBe('7')
-    expect(view.getByTestId('income-sheet-fragment-price').props.value).toBe('8,000,000')
+    expect(view.getByTestId('income-sheet-fragment-price').props.value).toBe('8000000')
   })
 
   // 계산기로 적힌 기록은 계산기로 열린다([[ADR-201]] 결정 5). 모드를 고르는 칸은 안 뜬다.
@@ -1271,7 +1306,7 @@ describe('사냥 수동 입력 ([[ADR-201]])', () => {
     const view = await 그리기({ editing: 옛사냥행, onDelete: jest.fn() })
 
     expect(view.queryByTestId('income-sheet-region-trigger')).toBeNull()
-    expect(view.getByTestId('income-sheet-hunt-meso').props.value).toBe('1,200,000,000')
+    expect(view.getByTestId('income-sheet-hunt-meso').props.value).toBe('1200000000')
     expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('12억')
     // 모드는 기록이 정했다 — 바꾸는 칸이 없다(결정 5).
     expect(view.queryByLabelText('직접 입력')).toBeNull()
@@ -1742,7 +1777,7 @@ describe('날짜 바꾸기 ([[ADR-178]] 정정 6)', () => {
 
     await 아이디로누르기(view, 'income-sheet-date-prev')
 
-    expect(view.getByTestId('income-sheet-gross').props.value).toBe('1,200,000,000')
+    expect(view.getByTestId('income-sheet-gross').props.value).toBe('1200000000')
   })
 
   it('수정으로 열어도 바꿀 수 있다 — 그 기록이 다른 날로 옮겨 간다', async () => {
@@ -1791,7 +1826,7 @@ describe('어림값 표식', () => {
     await 아이디로누르기(view, 'income-sheet-ground-trigger')
     await 아이디로누르기(view, 'income-sheet-ground-option-밤의 길 3')
 
-    // 「획득 메소」 줄은 AmountFigure 가 아니라 콤마 표기 그대로다.
+    // 「획득 메소」 줄은 앱이 센 값을 그리는 자리라 콤마 표기 그대로다.
     expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 21,168,000')
     // 큰 숫자는 한국어 단위로 접혀 선다([[ADR-202]] 결정 9).
     expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('≈ 2116만 8000')

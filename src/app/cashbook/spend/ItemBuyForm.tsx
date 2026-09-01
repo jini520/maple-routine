@@ -17,12 +17,11 @@ import { useState } from 'react'
 
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
-import { parseMesoText } from '../../../components/molecules/MesoPad/meso-pad'
+import { mesoTextOf, mesoValueOf } from '../../../components/molecules/MesoPad/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { SPEND_TARIFF_PERCENT, withTariffMeso } from '../../../lib/spend-catalog'
-import { TABULAR_NUMS } from '../../../lib/text-styles'
 import { SPEND_ITEM_KINDS, countsQuantity, type SpendItemKind } from '../../../storage/spend'
-import { FieldRow } from '../sheet-fields'
+import { AmountInput, FieldRow } from '../sheet-fields'
 import {
   CategoryChips,
   CharacterRow,
@@ -45,7 +44,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
   const editing = props.editing !== undefined
   const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
   const [name, setName] = useState(props.editing?.item ?? '')
-  const [quantity, setQuantity] = useState(props.editing?.quantity ?? 1)
+  const [quantityText, setQuantityText] = useState(mesoTextOf(props.editing?.quantity ?? 1))
   /**
    * 친 값을 **되짚는다** — `단가 = (저장된 총액 − 관세분) ÷ 수량`([[ADR-173]] 정정 1).
    *
@@ -53,11 +52,11 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
    * 1,028,500,000 으로 열렸다). 나눗셈은 언제나 나누어떨어진다 — 저장된 총액이
    * `단가 × 수량 (+ 관세분)` 으로 만들어진 값이라서다.
    */
-  const [typed, setTyped] = useState(() => {
-    if (props.editing === undefined) return 0
+  const [typedText, setTypedText] = useState(() => {
+    if (props.editing === undefined) return ''
     const count = props.editing.quantity ?? 1
     const total = props.editing.mesoAmount ?? 0
-    return Math.round((total - (props.editing.tariffMeso ?? 0)) / count)
+    return mesoTextOf(Math.round((total - (props.editing.tariffMeso ?? 0)) / count))
   })
   const [hasTariff, setHasTariff] = useState(props.editing?.tariffMeso != null)
   /** **`null` 은 정정 1 이전 행이고 장비다**([[ADR-173]] 정정 1 결정 4). */
@@ -66,6 +65,8 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
   )
   const { saving, submit, remove } = useSpendSubmit(props)
 
+  const typed = mesoValueOf(typedText)
+  const quantity = mesoValueOf(quantityText)
   /** **곱할 것이 있는가** — 장비는 하나를 사므로 없다([[ADR-173]] 정정 1 결정 1·2). */
   const counts = countsQuantity(itemKind)
   /** 관세를 얹기 **전**의 값 — 곱할 것이 없으면 친 값 그대로다. */
@@ -84,7 +85,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
    */
   function selectItemKind(next: SpendItemKind): void {
     setItemKind(next)
-    setQuantity(1)
+    setQuantityText('1')
     setHasTariff(false)
   }
 
@@ -120,15 +121,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
       {/* **늘 선다**([[ADR-202]] 결정 2) — 자리가 `종류` 바로 밑이라 장비의 줄 차례가
           `종류 · 구매 비용 · 관세` 가 된다(사용자 지정 2026-09-02). */}
       <FieldRow label={counts ? '단가' : '구매 비용'}>
-        <SheetTextInput
-          testID="spend-sheet-unit-price"
-          value={typed === 0 ? '' : typed.toLocaleString()}
-          onChangeText={(text) => setTyped(parseMesoText(typed, text))}
-          keyboardType="number-pad"
-          placeholder="0"
-          className="flex-1 text-right text-sm font-semibold text-text"
-          style={TABULAR_NUMS}
-        />
+        <AmountInput testID="spend-sheet-unit-price" value={typedText} onChange={setTypedText} />
         <Text
           testID="spend-sheet-unit-price-unit"
           className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted"
@@ -162,14 +155,10 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
         // 적는다» 고 한 근거는 **「기타」가 자유 입력이라 앱이 무엇을 세는지 모른다**는 것이었는데,
         // 여기서 세는 것은 **아이템**이라 그 근거가 성립하지 않는다. 「기타」는 그대로 비어 있다.
         <FieldRow label="수량">
-          <SheetTextInput
+          <AmountInput
             testID="spend-sheet-quantity"
-            value={quantity === 0 ? '' : quantity.toLocaleString()}
-            onChangeText={(text) => setQuantity(parseMesoText(quantity, text))}
-            keyboardType="number-pad"
-            placeholder="0"
-            className="flex-1 text-right text-sm font-semibold text-text"
-            style={TABULAR_NUMS}
+            value={quantityText}
+            onChange={setQuantityText}
           />
           <Text
             testID="spend-sheet-quantity-unit"

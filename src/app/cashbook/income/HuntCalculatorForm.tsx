@@ -17,6 +17,7 @@ import { Image, Pressable, View } from 'react-native'
 
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
+import { mesoTextOf, mesoValueOf } from '../../../components/molecules/MesoPad/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import {
   SelectField,
@@ -201,8 +202,8 @@ export function HuntCalculatorForm(
   const [missedMobs, setMissedMobs] = useState(detail?.missedMobs ?? 0)
   const [boosts, setBoosts] = useState<readonly string[]>(detail?.boosts ?? [])
   const [sojae, setSojae] = useState(detail?.sojae ?? 1)
-  const [fragments, setFragments] = useState(detail?.fragments ?? 0)
-  const [fragmentPrice, setFragmentPrice] = useState(detail?.fragmentPrice ?? 0)
+  const [fragmentsText, setFragmentsText] = useState(mesoTextOf(detail?.fragments ?? 0))
+  const [fragmentPriceText, setFragmentPriceText] = useState(mesoTextOf(detail?.fragmentPrice ?? 0))
   /**
    * 캐릭터의 메소 획득량([[ADR-177]]) — **읽었으면 못 치고, 못 읽었으면 치는 칸**이 된다(결정 7).
    *
@@ -255,6 +256,8 @@ export function HuntCalculatorForm(
   const huntInput = { characterLevel: huntLevel, missedMobs, boostPercent, boostMultiplier, sojae }
   /** 사냥터를 안 골랐으면 0 이다 — 계산기가 반쯤 찬 상태이고, 그때도 조각 값은 선다. */
   const huntMeso = huntGround === null ? 0 : huntingMesoOf({ ...huntInput, ground: huntGround })
+  const fragments = mesoValueOf(fragmentsText)
+  const fragmentPrice = mesoValueOf(fragmentPriceText)
   const huntTotal = huntingTotalOf({ ...huntInput, ground: huntGround, fragments, fragmentPrice })
   /** 사냥은 **합계가 0 보다 크면** 된다 — 사냥터를 안 골라도 조각만 적을 수 있다. */
   const canSave = huntTotal > 0
@@ -527,10 +530,10 @@ export function HuntCalculatorForm(
       </FieldRow>
 
       <FragmentFields
-        fragments={fragments}
-        fragmentPrice={fragmentPrice}
-        onChangeFragments={setFragments}
-        onChangeFragmentPrice={setFragmentPrice}
+        fragments={fragmentsText}
+        fragmentPrice={fragmentPriceText}
+        onChangeFragments={setFragmentsText}
+        onChangeFragmentPrice={setFragmentPriceText}
       />
 
       <AmountFigure

@@ -12,11 +12,10 @@ import { View } from 'react-native'
 
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
-import { parseMesoText } from '../../../components/molecules/MesoPad/meso-pad'
+import { mesoTextOf, mesoValueOf } from '../../../components/molecules/MesoPad/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { netProceedsMeso, type FeePercent } from '../../../lib/item-split'
-import { TABULAR_NUMS } from '../../../lib/text-styles'
-import { FieldRow } from '../sheet-fields'
+import { AmountInput, FieldRow } from '../sheet-fields'
 import { CharacterField, SaveRow, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from './use-sheet-submit'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
@@ -47,14 +46,15 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
    * 치는 값은 **판매 대금**이다 — 행에 남는 것은 수수료를 뗀 값이라, 되짚을 때 뗀 몫을 되돌린다
    * ([[ADR-170]] 정정 9 ⑤). 요율만 들고 역산하면 내림 때문에 1 메소가 어긋난다.
    */
-  const [gross, setGross] = useState(
-    (props.editing?.mesoAmount ?? 0) + (props.editing?.saleFeeMeso ?? 0),
+  const [grossText, setGrossText] = useState(
+    mesoTextOf((props.editing?.mesoAmount ?? 0) + (props.editing?.saleFeeMeso ?? 0)),
   )
   const [feePercent, setFeePercent] = useState<FeePercent | null>(
     props.editing?.saleFeePercent ?? null,
   )
   const { saving, submit, remove } = useSheetSubmit(props)
 
+  const gross = mesoValueOf(grossText)
   /** [[ADR-168]] 의 계산을 **그대로 부른다** — 수수료 쪽을 내림한다(= 손에 남는 쪽이 커진다). */
   const net = feePercent === null ? gross : netProceedsMeso(gross, feePercent)
   const canSave = gross > 0
@@ -75,15 +75,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
       {/* **치는 자리는 여기**다([[ADR-170]] 정정 9 ④) — 큰 숫자는 합계라 못 친다. 이름 아래에
           서는 이유는 계산 차례 그대로이기 때문이다: 무엇을 · 얼마에 · 몇 % 떼고 → 합계. */}
       <FieldRow label="판매 대금">
-        <SheetTextInput
-          testID="income-sheet-gross"
-          value={gross === 0 ? '' : gross.toLocaleString()}
-          onChangeText={(text) => setGross(parseMesoText(gross, text))}
-          keyboardType="number-pad"
-          placeholder="0"
-          className="flex-1 text-right text-sm font-semibold text-text"
-          style={TABULAR_NUMS}
-        />
+        <AmountInput testID="income-sheet-gross" value={grossText} onChange={setGrossText} />
         {/* 큰 숫자는 **수수료를 뗀 합계**라(정정 9 ④) 이 줄과 축이 같은지 헷갈린다 —
             둘 다 메소라는 것을 여기서 말한다([[ADR-170]] 정정 14 ④). */}
         <Text
