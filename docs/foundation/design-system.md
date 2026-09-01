@@ -403,9 +403,9 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
   `translateY` 오프셋 계산은 **전부 사라졌다**(🗑 ADR-072·ADR-073).
 - **적용 화면**: `today` · 컨텐츠 · 보스 · 보스 수익. 하위 페이지·설정에는 없다.
 - **끄는 조건 둘은 남는다**. 빈 상태, 그리고 새로고침이 의미 없는 기간(보스 수익).
-- **단풍잎 마크는 살아 있다**(🟡 [[ADR-074]]). `components/molecules/PullToRefreshIndicator` 가
-  컨텐츠·보스 화면에서 그린다. `RefreshControl` 이 자기 스피너를 그리는 자리에서만 그 마크가
-  폐기됐다([[ADR-130]]). 임계값·저항 곡선 상수는 `lib/pull-to-refresh.ts` 에 그대로 있다.
+- **커스텀 당김 마크는 없다**(⛔ [[ADR-074]]). 두 플랫폼 다 인디케이터에 커스텀 뷰를 넣지 못하고
+  안드로이드는 당김 거리조차 주지 않는다. 마크를 그리던 컴포넌트와 임계값·저항 곡선 상수는
+  2026-09-01 에 지웠다.
 
 ### 레이아웃
 - 전체 너비: 모바일 단일 컬럼, max-width 제한 없음(하이브리드 앱이라 데스크톱 와이드 미고려).

@@ -128,7 +128,7 @@ RN 의 sticky 는 **스크롤 뷰의 직계 자식**만 붙일 수 있다. 그�
 | `useNavigate('/profit/drops')` | `navigation.navigate('DropHistory')` | 루트 스택 push([[ADR-120]]) |
 | `navigate('/boss?openPicker=1')` | `navigate('Tabs', { screen: 'Settings', params: { openPicker: true } })` | 받는 쪽이 보스 → **설정** 으로 옮겼다([[ADR-140]]) — 열어 두고 보낸다는 계약은 그대로 |
 | `<Outlet />` | 없음 | 하위 페이지가 루트 스택 위로 올라온다 |
-| `usePullToRefresh` + 인디케이터 | `RefreshControl` | [[ADR-130]] |
+| 손으로 만든 당김 훅 + 커스텀 인디케이터 | `RefreshControl` | [[ADR-130]] |
 | `useScreenStackStore` 깊이 게이트 | 없음 | 하위 페이지가 덮어 손가락이 안 닿는다 |
 | `useMeasuredHeight` + spacer | 없음 | 헤더가 **흐름 안**이라 뺄 자리가 없다([[ADR-085]]·[[ADR-112]] 구조 만족) |
 | `window`/컨테이너 `scroll` 로 팝오버 닫기 | 없음 | 아이템 팝오버는 별도 네이티브 윈도우(step 6), 이슈 팝오버는 **카드와 함께 스크롤된다** |

@@ -609,8 +609,8 @@ mask `linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)`)이다.
   사라졌다. 네이티브 스택이 화면을 덮어 push 하므로 아래 화면의 스크롤이 보일 일이 없다.
 - ~~당김 인디케이터 안에 문구 없이 단풍잎 외곽선 링을 그리고, 당김 구간은 진행률만큼 그려지다 손을
   떼면 회전한다. 헤더는 제자리에 고정되고 목록 블록만 손가락을 따라 내려간다(⛔ ADR-073·ADR-074)~~ →
-  **RN `RefreshControl` 의 기본 인디케이터**([[ADR-130]] 결정 1, 2026-08-13). `usePullToRefresh` 훅과
-  `PullToRefreshIndicator`, 목록을 내리던 `transform` 도 함께 없앴다.
+  **RN `RefreshControl` 의 기본 인디케이터**([[ADR-130]] 결정 1, 2026-08-13). 당김 훅과 커스텀
+  인디케이터, 목록을 내리던 `transform` 도 함께 없앴다.
 - ~~컨텐츠 관리 화면은 `/content` 의 **중첩 라우트**이고 셸은 공용 `StackScreen`(포털 오버레이 + 푸시·팝
   + 가장자리 스와이프 백)이며 뒤로 가기는 `navigate(-1)` 이다(🟡 [[ADR-120]])~~ → **루트 스택 push**
   (`ContentManage`). 스택도 스와이프 백도 네이티브가 준다.
