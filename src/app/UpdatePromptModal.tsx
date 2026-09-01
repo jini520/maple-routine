@@ -324,8 +324,14 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
           {status === 'downloading' && (
             <View className="gap-3">
               <Title>다운로드 중</Title>
-              {/* ADR-061 결정 6: 결정형 진행률은 예외 없이 h-1.5 프리미티브 하나. */}
-              <ProgressBar percent={state.downloadProgress} animated fillTestId="update-progress-bar" />
+              {/* ADR-061 결정 6: 결정형 진행률은 예외 없이 h-1.5 프리미티브 하나.
+                  `animated` 를 쓰는 유일한 호출부이기도 하다. 여기만 값이 연속으로 흐른다. */}
+              <ProgressBar
+                percent={state.downloadProgress}
+                animated
+                aria={{ now: state.downloadProgress, max: 100 }}
+                fillTestId="update-progress-bar"
+              />
               <Text className="text-center text-xs font-medium text-text-muted tabular-nums">
                 {state.downloadProgress}%
               </Text>

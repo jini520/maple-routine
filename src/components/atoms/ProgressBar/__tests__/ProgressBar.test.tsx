@@ -20,11 +20,23 @@ describe('ProgressBar', () => {
       borderRadius: 9999,
       backgroundColor: 기본테마.track,
     })
+    // 채움은 자기 높이를 갖지 않고 트랙을 채운다 — 둘이 각자 알면 한쪽만 바뀔 때 어긋난다
+    // ([[ADR-147]] 정정 18 이 위젯 3 에서 낸 회귀).
     expect(flattenStyle(fill.props.style)).toMatchObject({
-      height: 6,
+      height: '100%',
       borderRadius: 9999,
       backgroundColor: 기본테마.primary,
     })
+  })
+
+  it('height="thin"이면 트랙만 h-1이 되고 채움은 그대로 따라온다 ([[ADR-061]] 정정 4)', async () => {
+    const { getByTestId } = await renderAtom(
+      <ProgressBar percent={40} height="thin" fillTestId="fill" />,
+    )
+
+    const fill = getByTestId('fill')
+    expect(flattenStyle(fill.parent?.props.style).height).toBe(4) // h-1
+    expect(flattenStyle(fill.props.style).height).toBe('100%')
   })
 
   it('채움 너비를 percent로 준다', async () => {
@@ -45,8 +57,8 @@ describe('ProgressBar', () => {
 
   // `animated` 는 **폭 트랜지션의 on/off** 다(step 7). Reanimated 는 CSS 트랜지션 키를 `style` 에서
   // 걷어 자기가 들고 가므로 `props.style` 로는 있으나 없으나 같아 보인다 — 그래서 그 키가 실제로
-  // 전달됐는지는 `jestInlineStyle`(Reanimated 가 테스트용으로 남기는 원본)로 본다. 값 자체가 웹의
-  // Tailwind 기본값과 같은지는 `src/__tests__/keyframes-parity.test.ts` 가 프리셋을 읽어 지킨다.
+  // 전달됐는지는 `jestInlineStyle`(Reanimated 가 테스트용으로 남기는 원본)로 본다. 값이 Tailwind 의
+  // `transition-[width]` 와 같은지를 대조하던 테스트는 없다(`WIDTH_TRANSITION` 주석 참고).
   it('animated 면 폭 트랜지션이 붙는다', async () => {
     const { getByTestId } = await renderAtom(
       <ProgressBar percent={10} animated fillTestId="fill" />,
@@ -84,8 +96,8 @@ describe('ProgressBar', () => {
       expect(track?.props.accessibilityValue).toEqual({ now: 7, min: 0, max: 14 })
     })
 
-    // 9곳 중 UpdatePromptModal 한 곳만 역할·값 없이 그린다. 지금 붙이면 화면이 바뀌므로
-    // ([[ADR-094]] 결정 4) 옵션으로 두고, 접근성 보강은 별도 변경으로 다룬다.
+    // 호출부는 지금 일곱이 전부 `aria` 를 준다(마지막 하나였던 `UpdatePromptModal` 을 채웠다).
+    // 프롭이 아직 선택이라 이 분기가 남아 있고, 그 분기의 계약을 여기서 고정한다.
     it('aria를 안 주면 역할도 값도 내지 않는다', async () => {
       const { getByTestId } = await renderAtom(<ProgressBar percent={50} fillTestId="fill" />)
 

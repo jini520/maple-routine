@@ -346,7 +346,9 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 `pr` 은 chevron 자리를 비워 두는 값이다. chevron 크기·`right` 를 옮기면 함께 조정한다(따로 두면 글자가 화살표 밑으로 들어간다).
 
 ### 진행률 바 프리미티브
-`role="progressbar"` + `aria-valuenow/min/max`, track `h-1.5 w-full rounded-full bg-track` + fill `h-1.5 rounded-full bg-primary`. **결정형 진행률은 예외 없이 이것 하나**([[ADR-061]] 결정 6). 온보딩 예열·계정 변경 예열·캐릭터 관리 저장·OTA 다운로드·컨텐츠 진행률이 모두 같은 스타일이다. 새 색/모양/두께 신설 금지.
+`role="progressbar"` + `aria-valuenow/min/max`, track `h-1.5 w-full rounded-full bg-track` + fill `h-full rounded-full bg-primary`. **결정형 진행률은 이 프리미티브 하나**([[ADR-061]] 결정 6). 온보딩 예열·계정 변경 예열·캐릭터 관리 저장·OTA 다운로드·컨텐츠 진행률이 모두 같은 스타일이다. 새 색·모양 신설 금지.
+
+두께만 축이 하나 열려 있다([[ADR-061]] 정정 4). `ProgressBar` 의 `height` 프롭이 `base`(`h-1.5`)와 `thin`(`h-1`) 둘을 받고, `thin` 을 쓰는 곳은 `today` 의 2x2 초기화 타일뿐이다. 세 번째 값은 두지 않는다.
 
 ### 체크박스: **채운 상자는 언제나 `primary`** ([[ADR-182]] 정정 1, 2026-08-30)
 켠 상자는 `bg-primary` + `border-primary`, 그 안의 체크는 `text-on-primary`. 안 켠 것은 **테두리만**(`border-border`, 배경이 있는 자리면 `border-border-strong`). 크기·모서리는 자리마다 다르다(설정·가계부 18px `rounded-md`, today 위젯 12px `rounded-[3px]`). 고정하는 것은 **색** 하나다.
