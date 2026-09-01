@@ -69,7 +69,7 @@ const MODAL_STATUSES: ReadonlySet<LiveUpdateStatus> = new Set([
   // ADR-117 결정 7: 둘 다 사용자가 [지금 적용]을 눌러 시작한 흐름이라 위 분류를 그대로 따른다.
   'applying',
   'apply-error',
-  // ADR-126 결정 4: 적용·재시작이 끝난 직후 1회. 부팅 때 뒤늦게 판정되는 유일한 상태다.
+  // ADR-126 결정 4: 적용·재시작이 끝난 직후 1회. 부팅 때 뒤늦게 판정되는 상태는 이것뿐이다.
   'updated',
 ])
 

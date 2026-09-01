@@ -99,7 +99,7 @@ export function CharacterTrackingGrid(props: CharacterTrackingGridProps): React.
   function card(entry: CharacterPickerEntry): React.JSX.Element {
     const isChecked = checkedOcids.includes(entry.ocid)
     // [[ADR-068]] 결정 4: 조회 불가 항목은 **해제만** 가능하다 — 고를 수 없는 후보를 새로 고르게
-    // 하면 그 즉시 매 동기화 실패로 이어진다. 이미 추적 중인 경우의 해제는 유일한 탈출구라 막지 않는다.
+    // 하면 그 즉시 매 동기화 실패로 이어진다. 이미 추적 중이면 해제가 하나뿐인 탈출구라 막지 않는다.
     const isUnavailable = entry.unavailable === true
     const canToggle = !isUnavailable || isChecked
     const emblemUrl = entry.world !== undefined ? worldEmblemUrl(entry.world) : null

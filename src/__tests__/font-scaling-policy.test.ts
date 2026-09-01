@@ -16,8 +16,11 @@ import { dirname, join, relative } from 'node:path'
 
 const SRC = join(__dirname, '..')
 
-/** 이 규칙의 **유일한 예외** — 클램프를 실제로 거는 곳이라 원본을 가져와야 한다. */
-const ATOM = join(SRC, 'components', 'atoms', 'Text', 'Text.tsx')
+/** 이 규칙의 예외. 클램프를 실제로 거는 atom 둘이라 원본을 가져와야 한다([[ADR-152]] 정정 1). */
+const ATOMS = [
+  join(SRC, 'components', 'atoms', 'Text', 'Text.tsx'),
+  join(SRC, 'components', 'atoms', 'TextInput', 'TextInput.tsx'),
+]
 
 /**
  * 칸에 묶여 글자를 못 키우는 자리([[ADR-152]] 결정 5) — **여기의 `<Text>` 는 전부 `fixed` 다.**
@@ -91,11 +94,13 @@ function openingTextTags(source: string): string[] {
 
 const FILES = sourceFiles(SRC)
 
-/** 글자를 그리는 자체 컴포넌트 파일 — 「`Text` atom 을 import 한다」가 곧 그 정의다. */
+/** 글자를 그리는 자체 컴포넌트 파일 — 「글자 atom 을 import 한다」가 곧 그 정의다. */
 function textRenderingComponentFiles(): string[] {
-  return sourceFiles(join(SRC, 'components')).filter(
-    (file) => file !== ATOM && readFileSync(file, 'utf8').includes("/Text/Text'"),
-  )
+  return sourceFiles(join(SRC, 'components')).filter((file) => {
+    if (ATOMS.includes(file)) return false
+    const source = readFileSync(file, 'utf8')
+    return source.includes("/Text/Text'") || source.includes("/TextInput/TextInput'")
+  })
 }
 
 /**
@@ -122,7 +127,7 @@ describe('[[ADR-152]] 결정 4 — 글자는 atom 한 곳에서만 나온다', (
   })
 
   it('`react-native` 에서 `Text`·`TextInput` 을 직접 가져오는 곳은 atom 뿐이다', () => {
-    const offenders = FILES.filter((file) => file !== ATOM)
+    const offenders = FILES.filter((file) => !ATOMS.includes(file))
       .filter((file) =>
         reactNativeImportNames(readFileSync(file, 'utf8')).some(
           (name) => name === 'Text' || name === 'TextInput',
@@ -134,9 +139,9 @@ describe('[[ADR-152]] 결정 4 — 글자는 atom 한 곳에서만 나온다', (
   })
 
   it('atom 은 원본을 가져온다 — 예외가 실제로 그 자리에 있다', () => {
-    expect(reactNativeImportNames(readFileSync(ATOM, 'utf8'))).toEqual(
-      expect.arrayContaining(['Text', 'TextInput']),
-    )
+    const imported = ATOMS.flatMap((atom) => reactNativeImportNames(readFileSync(atom, 'utf8')))
+
+    expect(imported).toEqual(expect.arrayContaining(['Text', 'TextInput']))
   })
 
   /**

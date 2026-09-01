@@ -141,7 +141,7 @@ export function onboardingReducer(state: OnboardingState, event: OnboardingEvent
         status: 'completed',
       }
 
-    // ADR-115 결정 10: status를 바꾸지 않는 유일한 이벤트다. 뒤에 원래 화면이 그대로 남아
+    // ADR-115 결정 10: status를 안 바꾸는 이벤트는 이것뿐이다. 뒤에 원래 화면이 그대로 남아
     // 있어야 사용자가 "무엇을 하다 이렇게 됐는지"를 보면서 이유를 읽는다.
     case 'API_KEY_NOTICED':
       // ADR-116 결정 2: 이미 알림이 떠 있으면 **덮어쓰지 않는다**. 두 원인 모두 처방이 "키를 다시

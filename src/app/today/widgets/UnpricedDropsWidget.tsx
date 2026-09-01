@@ -131,7 +131,7 @@ function Done(props: { variant: Variant }): React.JSX.Element {
       <View testID="widget-unpriced-drops" className="flex-1 items-center justify-center gap-1 p-2">
         <DoneMark sizePx={22} />
         {/* 타일 이름이 아니라 **끝났다는 사실**을 남긴다 — 1x1 에는 라벨이 없어서 이 한 줄이
-            «무엇이 0건인가» 를 말하는 유일한 자리다. */}
+            «무엇이 0건인가» 를 말하는 자리가 여기뿐이다. */}
         <Text
           fixed
           testID="unpriced-done"

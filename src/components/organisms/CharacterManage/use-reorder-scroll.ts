@@ -31,7 +31,7 @@ export interface ReorderScroll {
 export interface ReorderScrollWiring {
   /** `ScreenScroll` 의 `ref` 로 넘긴다. */
   scrollRef: React.RefObject<ScrollView | null>
-  /** `ScreenScroll` 의 `onScroll` 로 넘긴다 — 이것이 오프셋의 유일한 출처다. */
+  /** `ScreenScroll` 의 `onScroll` 로 넘긴다 — 오프셋은 여기서만 온다. */
   onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => void
   scroll: ReorderScroll
 }

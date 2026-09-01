@@ -72,7 +72,7 @@ export interface MediaArtNaturalSize {
 }
 
 /**
- * 번들 에셋의 고유 크기 — 크롭 기하의 유일한 실측 입력이다(파일 머리).
+ * 번들 에셋의 고유 크기 — 크롭 기하가 실측으로 받는 값은 이것뿐이다(파일 머리).
  *
  * jest 에서는 에셋이 `{ testUri }` 대역이라 크기가 없다([[ADR-129]] 의 `image-asset.native.ts`) —
  * 그때는 `null` 이라 호출부가 `cover` 로 떨어지고, 기하 계약은 순수 함수 케이스가 지킨다.

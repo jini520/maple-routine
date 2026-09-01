@@ -222,7 +222,7 @@ export function CrystalLimitWidget({ w, h, data }: WidgetProps): React.JSX.Eleme
 
   const [first, ...rest] = worlds
 
-  // 월드 이름이 사라지는 유일한 크기다 — 월드가 여럿이면 첫 월드만 말하는 셈이라 **월드가 하나인
+  // 월드 이름이 사라지는 크기는 이것뿐이다 — 월드가 여럿이면 첫 월드만 말하는 셈이라 **월드가 하나인
   // 사용자에게만 정직하다.** 접근성 이름은 링이 계속 월드를 말한다.
   if (variant === 'tiny') {
     return (

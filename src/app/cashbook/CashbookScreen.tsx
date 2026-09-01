@@ -448,7 +448,7 @@ function DefeatedBossTiles(props: { rowKey: string; bosses: readonly DefeatedBos
               <View testID={`cashbook-boss-tile-${boss.boss}|${boss.difficulty}`}>
                 <BossPortrait
                   portraitSlug={findPortraitSlug(boss.boss)}
-                  // 이름 줄이 없어졌으므로 **여기가 그 정보를 드는 유일한 자리**다.
+                  // 이름 줄이 없어졌으므로 **그 정보는 여기서만 말한다**.
                   label={`${boss.difficulty} ${boss.boss}`}
                   size={BOSS_TILE_PX}
                   shape="square"

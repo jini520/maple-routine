@@ -695,6 +695,27 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 - **RN 하단바의 활성 아이콘은 ‘면’이다. 다만 가려서 채운다**([[ADR-132]] 정정 25). fill 과 stroke 가 같은 색이라, **안쪽에 선이 있는 그림은 채우는 순간 그 선이 사라진다**(조준경 → 원판, 달력 → 체크 소실). 통째로 채우는 것은 안쪽에 의미가 없는 넷뿐이고(`LayoutDashboard`·`Wrench`·`ShoppingCart`·`Swords`), 톱니와 수익은 **커스텀이라 채울 자리를 고른다**. `GearIcon` 은 lucide `settings` 와 같은 좌표를 한 패스로 다시 그려 `fillRule="evenodd"` 로 가운데를 비우고(설정 화면들은 계속 lucide `Settings` 를 쓴다), `ProfitIcon` 은 동전 두 개만 채우고 단을 그리는 호는 선으로 남긴다. **채우지 못하는 넷(달력·지갑·목록·조준경)은 대신 획을 굵힌다**(1.5 → 2.75, [[ADR-132]] 정정 27). 채우기와 굵히기는 **배타**다(둘 다 주면 채운 그림이 과해진다). **채운 그림에서는 구멍을 키운다**(톱니 r 3 → 4.5). 둘레의 획이 구멍 안쪽을 먹어 원래 크기로는 ‘덩어리 속 점’이 된다.
 - **커스텀 SVG 에 `fill` 프롭을 열 때는 `?? 'none'` 을 붙일 것.** `undefined` 를 그대로 내려보내면 `react-native-svg` 가 뿌리의 `fill="none"` 을 상속하지 않고 **검정**으로 떨어뜨린다. 안 채우는 자리에서 아이콘이 새까매진다.
 
+## NativeWind 가 안 가로채는 컴포넌트 ([[ADR-197]])
+
+`className` 은 `react-native` 의 기본 컴포넌트(`View`·`Text`·`Pressable`)에만 자동으로 붙는다.
+아래 넷은 **등록해야 붙고, 등록을 빼먹어도 에러가 안 난다**. 색과 크기만 조용히 사라진다.
+
+| 쓸 것 | 어디서 가져오나 |
+|---|---|
+| SVG 를 그리는 컴포넌트 | `import { Svg } from 'lib/nativewind-interop'` |
+| 그라디언트 배경 | `import { LinearGradient } from 'lib/nativewind-interop'` |
+| 애니메이션이 붙는 상자 | `import { AnimatedView } from 'lib/nativewind-interop'` |
+| lucide 아이콘 | `import { Users } from 'lib/icons'` |
+
+- **`react-native-svg` 에서 직접 가져와도 되는 것은 자식 도형뿐이다**(`Path`·`Circle`·`Defs` 등).
+  그것들은 `className` 을 안 받는다. 뿌리인 `Svg` 는 반드시 `lib/nativewind-interop` 에서.
+- **새 lucide 아이콘은 `lib/icons.ts` 에 먼저 더한다.** 배럴(`from 'lucide-react-native'`)에서 바로
+  가져오면 클래스가 무시되고 번들도 1.8MB 커진다.
+- **아이콘에 `testID` 를 주지 말 것.** lucide 가 그것을 `data-testid` 로 바꿔서 `getByTestId` 가 못
+  찾는다. 감싸는 `View` 에 준다.
+- `View` 에 `animationName`·`transitionProperty` 를 주면 RN 이 모르는 키라 조용히 버린다.
+  애니메이션이 붙는 상자는 `AnimatedView` 여야 한다.
+
 ## 폐기된 정책 (history)
 
 - ~~하단바 활성 강조색은 `primary-ink` 를 `text` 쪽으로 ‘읽힐 때까지’ 민 값(대비 4.5 보장)~~ → **테마의 메인 컬러를 그대로 쓰고, 다크에서만 명도를 올린다**([[ADR-132]] 정정 23, 2026-08-14, 사용자 판정). 옛 규칙은 대비를 얻는 대신 **채도를 잃었다**. 머쉬맘의 주황 `#F58B0F` 이 갈색 `#8F5014`, 엔젤릭버스터의 분홍이 `#924774` 가 됐다. 옛 문장이 겨눈 ‘머쉬맘에서 대비 1.89’는 지금도 사실이고(라이트 원색 1.84~3.43), 그 값을 감수하는 쪽을 **사용자가 선택**한 것이다. 활성 자리는 이제 색 하나가 아니라 유리판·그림자(정정 22)·강조색이 함께 진다.

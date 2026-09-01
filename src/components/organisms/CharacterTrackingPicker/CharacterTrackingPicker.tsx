@@ -215,7 +215,7 @@ export function CharacterTrackingPicker(props: CharacterTrackingPickerProps): Re
         }}
       >
         {/* 자체 오버레이라 `Modal.Card` 를 안 쓴다 — 스크림 위 테두리 톤다운은 직접 붙인다
-            ([[ADR-122]]: 라이트에서만 테두리를 배경색에 녹이고, 다크에서는 그것이 유일한 경계라
+            ([[ADR-122]]: 라이트에서만 테두리를 배경색에 녹이고, 다크에서는 경계가 그것뿐이라
             그대로 둔다. 그 판정은 토큰 안에서 끝나 있다). */}
         <Card className="max-h-full w-full max-w-sm border-panel-border p-6">
           <View className="mb-4 shrink-0 gap-1">

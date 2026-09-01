@@ -177,7 +177,7 @@ function toRecordedDrop(record: StoredDropRecord): RecordedDrop {
     ringLevel: record.ringLevel,
     quantity: record.quantity,
     // ⚠️ 가격 셋을 여기 빠뜨리면 **난이도가 확정되는 순간** 그 주 가격이 전부 날아간다 —
-    // 타입 에러가 나지 않으므로(전부 optional) 테스트가 유일한 방어선이다([[ADR-124]] 결정 4).
+    // 타입 에러가 나지 않으므로(전부 optional) 이걸 막는 것은 테스트뿐이다([[ADR-124]] 결정 4).
     priceState: record.priceState,
     priceMeso: record.priceMeso,
     priceShare: record.priceShare,
@@ -202,7 +202,7 @@ function compareStoredDrops(a: StoredDropRecord, b: StoredDropRecord): number {
  *   나올 수 없는 아이템은 거짓 기록이고, 표시하는 것보다 삭제가 안전하다. 잘못된 환산 가치가
  *   계산에 섞이는 것이 기록 한 줄을 잃는 것보다 나쁘다.
  * - 확정 난이도에 **이미 드롭이 있으면 그 뒤에 이어 붙인다**. 같은 아이템이 두 번 들어갈 수 있지만
- *   실제로 두 개를 먹은 경우와 구분할 수 없어 임의로 합치지 않는다 — 고아를 남기지 않는 유일한 선택.
+ *   실제로 두 개를 먹은 경우와 구분할 수 없어 임의로 합치지 않는다 — 고아를 안 남기려면 이 길뿐이다.
  * - 옛 키가 없으면 `null`(할 일 없음)이라 매번 호출해도 안전하다(멱등).
  */
 export function planConfirmedDifficultyDropMigration(

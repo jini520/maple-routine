@@ -14,7 +14,8 @@ import { formatMesoUnits } from '../../../lib/drop-price'
 import { RotateCcwIcon } from '../../../lib/icons'
 import { MESO_QUICK_ADDS } from '../../../lib/meso-quick-adds'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
-import { Text, TextInput } from '../../atoms/Text/Text'
+import { Text } from '../../atoms/Text/Text'
+import { TextInput } from '../../atoms/TextInput/TextInput'
 import { MAX_MESO, parseMesoText } from './meso-pad'
 
 export function MesoAmountField(props: {
@@ -47,7 +48,7 @@ export function MesoAmountField(props: {
    * 단위를 고르는 것 — **금액에 속하는 축**이라 여기 산다([[ADR-170]] 정정 6).
    *
    * 억/만 보조 줄과 **같은 줄**에 왼쪽으로 놓인다(그 줄은 11px 글자 하나라 거의 비어 있었다).
-   * 지출 시트의 「기타」가 넘기는 통화 칩 셋이 유일한 호출부이고, **안 넘기면 그 줄은 전과
+   * 넘기는 곳은 지출 시트의 「기타」 하나이고(통화 칩 셋), **안 넘기면 그 줄은 전과
    * 한 픽셀도 안 다르다** — 드롭 판매가는 통화가 하나뿐이라 안 넘긴다.
    */
   unitPicker?: React.ReactNode

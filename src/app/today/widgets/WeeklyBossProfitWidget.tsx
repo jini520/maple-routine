@@ -8,7 +8,7 @@
  * 비교**다: 이번 주 수익이 결정석에서 왔는지 아이템 판매에서 왔는지는 그 자체로 이번 주의 사실이라
  * 다른 기간을 조회하지 않는다. 색은 [[ADR-142]] 링과 같은 짝이다(`primary` = 결정석 · `third` = 아이템).
  *
- * ## 0 을 그리는 유일한 위젯이다
+ * ## 0 을 그리는 위젯은 이것뿐이다
  *
  * «큰 0 을 그리지 않는다»([[ADR-147]] 결정 5)를 이 타일에서만 뒤집는다(사용자 지시). 그 규칙이
  * 지키려던 것 — «없다» 와 «모른다» 를 가르는 일 — 은 옆의 한 줄(*아직 이번 주 기록이 없습니다*)이
@@ -46,7 +46,7 @@ import type { WidgetHeight } from '../../../lib/widget-layout'
 import type { ProfitSplit, WeeklyProfitCharacterView, WeeklyProfitView } from '../view-model'
 import type { WidgetProps } from './types'
 
-/** 기록이 없을 때 옆에 서는 한 줄 — 큰 `0` 이 «없다» 로 읽히지 않게 하는 유일한 장치다. */
+/** 기록이 없을 때 옆에 서는 한 줄 — 큰 `0` 이 «없다» 로 읽히지 않게 막는 것이 이 줄뿐이다. */
 const NO_RECORD_NOTE = '아직 이번 주 기록이 없습니다'
 
 const PERIOD_LABEL = '이번 주'

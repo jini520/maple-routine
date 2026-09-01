@@ -199,7 +199,7 @@ export function resolveBarColors(theme: ThemeDefinition): BarColors {
       muted: withChroma(theme.textMuted, 0),
       bar: theme.surface2,
       // 다크에는 밝은 틴트가 없다 — `primaryTint` 가 어두운 wash 라 알약으로 쓰면 오히려 가라앉는다.
-      // `border` 를 **면으로** 쓴다: 그 모드에서 «표면보다 한 단 밝은» 유일한 중립값이고, 조금만
+      // `border` 를 **면으로** 쓴다: 그 모드에서 «표면보다 한 단 밝은» 중립값이 그것뿐이고, 조금만
       // 섞으면 레테처럼 표면과 테두리가 가까운 테마에서 분리가 1.16 까지 내려간다(실측).
       pill,
       // 어두운 배경 위에서는 `border` 단독이 약하다. `text` 쪽으로 밀어 가장자리를 세운다.
