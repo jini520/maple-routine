@@ -60,7 +60,16 @@ Primary(테마 공통): rounded-full bg-primary text-on-primary font-semibold ho
 Outline:            rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-text hover:bg-primary-tint
 Text(라이트): text-[#8A7362] hover:text-[#5B4636]   Text(다크): text-neutral-500 hover:text-neutral-300
 ```
-`Outline` 은 **주 CTA 옆/아래에 서는 부 동작**용이다(2026-08-08, 온보딩 API 키 화면의 "API 키 발급 방법 보기"가 첫 사용처: [features/onboarding.md](../features/onboarding.md)). `danger` 와 같은 테두리 pill 형태이되 색이 중립(`border`/`text`)이라 파괴적 동작과 헷갈리지 않고, hover 는 새 색을 만들지 않고 `primary-tint` 를 쓴다(선택 카드 hover 와 같은 값). **변형 클래스는 `Button.tsx` 가 아니라 `Button/variants.ts` 의 `BUTTON_VARIANT_CLASS` 에 있다**. 외부 URL로 나가는 이동은 `<button>` 이 아니라 `<a>` 여야 하므로(링크 시맨틱·`target`/`rel`) 겉모습만 입힐 길이 필요한데, 컴포넌트 파일이 컴포넌트 아닌 값을 함께 export 하면 fast refresh 가 깨진다(`react-refresh/only-export-components`). `Button` 자신도 같은 상수를 쓰므로 두 벌이 되지 않는다.
+`Outline` 은 **주 CTA 옆/아래에 서는 부 동작**용이다(2026-08-08, 온보딩 API 키 화면의 "API 키 발급 방법 보기"가 첫 사용처: [features/onboarding.md](../features/onboarding.md)). `danger` 와 같은 테두리 pill 형태이되 색이 중립(`border`/`text`)이라 파괴적 동작과 헷갈리지 않고, hover 는 새 색을 만들지 않고 `primary-tint` 를 쓴다(선택 카드 hover 와 같은 값). 
+**RN 에서 이 규정은 두 벌로 갈린다**([[ADR-198]] 결정 2). 상자 클래스는 `BUTTON_VARIANT_CLASS`, 글자 클래스는 `BUTTON_VARIANT_TEXT_CLASS` 이고 둘 다 `components/atoms/Button/variants.ts` 에 있다(결정 3). RN 은 글자 스타일이 상자에서 자식 `Text` 로 상속되지 않아서, 한 벌로 두면 라벨이 색도 굵기도 없이 그려진다. 에러는 안 난다.
+
+호출부가 알아야 할 것도 그래서 갈린다.
+
+- **글자 유틸(`text-*`·`font-*`)은 `className` 이 아니라 `textClassName` 으로 준다.** 상자에 주면 무시되고, 그때도 에러가 없다.
+- **폭·정렬·간격은 호출부가 준다.** 변형은 색·테두리·여백·글자만 정한다([[ADR-198]] 결정 1). 라운딩만 예외로 atom 이 못박아 디자인 원칙 2 를 지킨다.
+- **`hover:` 는 없다.** 네이티브에서 NativeWind 가 그 클래스를 조용히 버린다. 눌림 피드백은 `active:` 라는 다른 축이다([[ADR-198]] 결정 4).
+- **외부 URL 로 나가는 버튼은 `role="link"` 를 준다.** 웹의 `<a>` 자리다. 겉모습만 빌리려고 변형 표를 직접 가져다 쓰지 않는다.
+
 **입력 필드**
 ```
 라이트: rounded-[10px] bg-white border border-[#F0DFD1] px-4 py-3 text-[#2B1B10]
