@@ -11,6 +11,11 @@
 import { Pressable, View } from 'react-native'
 
 import { Text } from '../../components/atoms'
+import {
+  acceptMesoText,
+  settleMesoText,
+} from '../../components/molecules/MesoPad/meso-pad'
+import { SheetTextInput } from '../../components/molecules/SheetTextInput/SheetTextInput'
 import { CheckIcon } from '../../lib/icons'
 import { formatDayLabel, shiftDateKey } from '../../lib/calendar-month'
 import { ChevronLeftIcon, ChevronRightIcon, MinusIcon, PlusIcon } from '../../lib/icons'
@@ -90,6 +95,33 @@ export function CheckBox(props: { checked: boolean }): React.JSX.Element {
   )
 }
 
+/**
+ * 금액을 받는 칸 — **글자를 들고** 셈은 부르는 쪽이 한다([[ADR-203]]).
+ *
+ * 커서가 빠질 때 앞자리 0 을 걷는 것이 이 부품의 일이다(결정 2). 칸마다 손으로 달면 한 곳이
+ * 빠졌을 때 그 칸만 조용히 안 정리된다.
+ *
+ * 키보드는 숫자판 그대로다 — 값이 글자가 된 것과 무엇으로 치느냐는 다른 이야기다(결정 3).
+ */
+export function AmountInput(props: {
+  testID: string
+  value: string
+  onChange: (next: string) => void
+}): React.JSX.Element {
+  return (
+    <SheetTextInput
+      testID={props.testID}
+      value={props.value}
+      onChangeText={(text) => props.onChange(acceptMesoText(props.value, text))}
+      onBlur={() => props.onChange(settleMesoText(props.value))}
+      keyboardType="number-pad"
+      placeholder="0"
+      className="flex-1 text-right text-sm font-semibold text-text"
+      style={TABULAR_NUMS}
+    />
+  )
+}
+
 export function FieldRow(props: {
   label: string
   children: React.ReactNode
@@ -108,7 +140,7 @@ export function FieldRow(props: {
         **값 자리가 남은 폭을 갖는다**([[ADR-170]] 정정 14 ③).
 
         종전에는 `ml-auto` 라 폭이 **내용만큼**이었고, 그 안에서 입력의 `flex-1` 은 채울 자리가
-        없어 아무 일도 안 했다 — 칸 폭이 자리표시자 글자에 끌려다녀 「사용처」 의 자리표시자가
+        없어 아무 일도 안 했다 — 칸 폭이 자리표시자 글자에 끌려다녀 「내용」 의 자리표시자가
         줄 가운데 떠 보였다(사용자 보고). 남은 폭을 주고 `justify-end` 로 오른쪽에 붙인다:
         칸이 없는 값(세그먼트)은 그대로 오른쪽에 서고, `flex-1` 인 입력은 줄 끝까지 채운다.
       */}

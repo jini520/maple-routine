@@ -17,13 +17,13 @@ import { Image, Pressable, View } from 'react-native'
 
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
+import { mesoTextOf, mesoValueOf } from '../../../components/molecules/MesoPad/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import {
   SelectField,
   type SelectOption,
 } from '../../../components/organisms/SelectField/SelectField'
 import type { MesoRateLoad } from '../../../features/cashbook/meso-rate'
-import { formatMesoUnits } from '../../../lib/drop-price'
 import { FORCE_LABELS, forceIconOf } from '../../../lib/force-icons'
 import {
   findHuntingGround,
@@ -46,7 +46,6 @@ import { getItemIconUrlByFile } from '../../../lib/item-icons'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import type { ImageAssetRef } from '../../../types/image-asset'
 import type { HuntingGround, HuntingRegion } from '../../../types/hunting-grounds'
-import { nextAmountIdentity } from '../amount-identity'
 import { CheckBox, FieldRow, QuantityStepper } from '../sheet-fields'
 import { CharacterField, FragmentFields, SaveRow, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from './use-sheet-submit'
@@ -203,8 +202,8 @@ export function HuntCalculatorForm(
   const [missedMobs, setMissedMobs] = useState(detail?.missedMobs ?? 0)
   const [boosts, setBoosts] = useState<readonly string[]>(detail?.boosts ?? [])
   const [sojae, setSojae] = useState(detail?.sojae ?? 1)
-  const [fragments, setFragments] = useState(detail?.fragments ?? 0)
-  const [fragmentPrice, setFragmentPrice] = useState(detail?.fragmentPrice ?? 0)
+  const [fragmentsText, setFragmentsText] = useState(mesoTextOf(detail?.fragments ?? 0))
+  const [fragmentPriceText, setFragmentPriceText] = useState(mesoTextOf(detail?.fragmentPrice ?? 0))
   /**
    * 캐릭터의 메소 획득량([[ADR-177]]) — **읽었으면 못 치고, 못 읽었으면 치는 칸**이 된다(결정 7).
    *
@@ -220,15 +219,6 @@ export function HuntCalculatorForm(
    * 남의 메획이 박힐 수 있다. 그 값은 곧 금액이라 조용히 틀리면 안 된다.
    */
   const mesoRateRequest = useRef<string | null>(props.editing?.ocid ?? null)
-  /**
-   * 큰 숫자의 **이름표**([[ADR-087]] 정정 1) — **마운트마다 새로 받는다**.
-   *
-   * 안 넘기면 `testID` 가 곧 정체가 되는데 그것은 고정 문자열이고, 카운트업의 기억은 모듈 수준이라
-   * 시트를 닫아도 남는다(결정 8). 그래서 **다른 기록을 열어도 지난 금액에서 굴러왔다**
-   * (사용자 보고 2026-08-29). 갈래를 옮기면 폼이 새로 심기므로([[ADR-178]] 결정 3) 이름표도
-   * 함께 새로 발급된다 — «다른 숫자를 보게 된 것» 이 곧 다른 이름표다.
-   */
-  const [amountIdentity] = useState(nextAmountIdentity)
   const { saving, submit, remove } = useSheetSubmit(props)
 
   const huntRegions = huntingRegionsForLevel(huntLevel)
@@ -266,6 +256,8 @@ export function HuntCalculatorForm(
   const huntInput = { characterLevel: huntLevel, missedMobs, boostPercent, boostMultiplier, sojae }
   /** 사냥터를 안 골랐으면 0 이다 — 계산기가 반쯤 찬 상태이고, 그때도 조각 값은 선다. */
   const huntMeso = huntGround === null ? 0 : huntingMesoOf({ ...huntInput, ground: huntGround })
+  const fragments = mesoValueOf(fragmentsText)
+  const fragmentPrice = mesoValueOf(fragmentPriceText)
   const huntTotal = huntingTotalOf({ ...huntInput, ground: huntGround, fragments, fragmentPrice })
   /** 사냥은 **합계가 0 보다 크면** 된다 — 사냥터를 안 골라도 조각만 적을 수 있다. */
   const canSave = huntTotal > 0
@@ -538,10 +530,10 @@ export function HuntCalculatorForm(
       </FieldRow>
 
       <FragmentFields
-        fragments={fragments}
-        fragmentPrice={fragmentPrice}
-        onChangeFragments={setFragments}
-        onChangeFragmentPrice={setFragmentPrice}
+        fragments={fragmentsText}
+        fragmentPrice={fragmentPriceText}
+        onChangeFragments={setFragmentsText}
+        onChangeFragmentPrice={setFragmentPriceText}
       />
 
       <AmountFigure
@@ -549,12 +541,8 @@ export function HuntCalculatorForm(
         value={huntTotal}
         unit="메소"
         testID="income-sheet-amount"
-        identity={amountIdentity}
-        hint={huntTotal > 0 ? formatMesoUnits(huntTotal) : ' '}
         // **합계도 어림이다** — 조각 값만 실제로 받은 값이고 메소 쪽은 센 값이다([[ADR-175]] 결정 3).
         approximate
-        readOnly
-        onChangeValue={() => undefined}
       />
 
       <SaveRow
@@ -575,6 +563,8 @@ export function HuntCalculatorForm(
             pointAmount: null,
             pointPer100mMeso: null,
             cashAmount: null,
+            // 수량은 「기타」만 쓴다([[ADR-202]] 결정 4).
+            quantity: null,
             // **계산 입력을 함께 남긴다**([[ADR-175]] 결정 9) — 없으면 수정 시트가 빈 계산기로 열려
             // 만지는 순간 금액이 덮인다.
             hunt: {

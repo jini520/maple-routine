@@ -901,7 +901,7 @@ describe('줄을 누르면 고칠 수 있다', () => {
     await 누르기(view, 'cashbook-row-inc-1')
 
     expect(view.getByTestId('income-sheet-title')).toHaveTextContent('아이템 판매')
-    expect(view.getByTestId('income-sheet-gross').props.value).toBe('1,200,000,000')
+    expect(view.getByTestId('income-sheet-gross').props.value).toBe('1200000000')
   })
 
   it('수정하면 갈아 끼우고 다시 읽는다', async () => {

@@ -6,7 +6,7 @@
  *    **그 이득은 그 화면이 키보드를 한 번도 안 부를 때만 있다** — 지금 그런 화면은 `DropPricePad`
  *    하나다([[ADR-170]] 정정 4).
  * ② `parseMesoText` — **OS 숫자 키보드**가 넣은 글자([[ADR-170]] 정정 4). 가계부의 지출·수입 시트는
- *    사용처·시세 칸 때문에 어차피 키보드를 부르므로, 그 위에 앱 키패드를 또 두지 않는다.
+ *    내용·시세 칸 때문에 어차피 키보드를 부르므로, 그 위에 앱 키패드를 또 두지 않는다.
  *
  * **상한 규칙은 둘이 같다** — 넘기는 입력은 안 먹는다. 갈라지면 «어느 길로 쳤나» 로 저장되는 값이
  * 달라진다.
@@ -64,4 +64,42 @@ export function parseMesoText(meso: number, text: string): number {
   }
   const next = Number(digits)
   return Number.isFinite(next) && next <= MAX_MESO ? next : meso
+}
+
+/** 상한의 자릿수 — 0 만 길게 이어지면 값으로는 안 걸려서 이것으로도 막는다. */
+const MAX_MESO_DIGITS = String(MAX_MESO).length
+
+/**
+ * 칸에 남길 글자 — **숫자만 남긴다**([[ADR-203]] 결정 1).
+ *
+ * `parseMesoText` 와 갈리는 자리는 하나다: **앞자리 0 을 안 걷는다.** `80000000000` 에서 `8` 을
+ * 지운 `0000000000` 은 「편집 중」이지 0 이 아니다. 여기서 접으면 칸이 비어 처음부터 다시 쳐야 한다.
+ *
+ * 상한을 넘기면 안 먹는다(`applyMesoKey`·`parseMesoText` 와 같은 규칙).
+ */
+export function acceptMesoText(prev: string, next: string): string {
+  const digits = next.replace(/[^0-9]/g, '')
+  if (digits === '') return ''
+  if (digits.length > MAX_MESO_DIGITS) return prev
+  const value = Number(digits)
+  return Number.isFinite(value) && value <= MAX_MESO ? digits : prev
+}
+
+/** 셈에 쓰는 값 — 빈 칸도 0 이다. */
+export function mesoValueOf(text: string): number {
+  return text === '' ? 0 : Number(text)
+}
+
+/** 값을 칸의 글자로 — **0 은 빈 칸**이다(자리표시자 `0` 이 그 자리를 대신한다). */
+export function mesoTextOf(value: number): string {
+  return value === 0 ? '' : String(value)
+}
+
+/**
+ * 커서가 빠질 때 정리한다([[ADR-203]] 결정 2) — 앞자리 0 을 걷고 0 이면 빈 칸이다.
+ *
+ * 타건마다 하면 편집 중인 `0000000000` 이 즉시 빈 칸이 되어 결정 1 이 막으려던 그것이 되살아난다.
+ */
+export function settleMesoText(text: string): string {
+  return mesoTextOf(mesoValueOf(text))
 }

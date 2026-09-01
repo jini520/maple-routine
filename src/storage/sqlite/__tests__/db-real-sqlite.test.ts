@@ -130,6 +130,7 @@ describe('income_records.meso_amount 재작성 (이슈 #265 · ADR-176)', () => 
       pointPer100mMeso: null,
       cashAmount: null,
       hunt: null,
+      quantity: null,
       memo: '메모',
       recordedAt: '2026-08-20T12:00:00.000Z',
     })
@@ -160,6 +161,7 @@ describe('income_records.meso_amount 재작성 (이슈 #265 · ADR-176)', () => 
       pointAmount: null,
       // 계산 입력이 없으니 옛 모양(금액을 직접 치는 시트)으로 연다([[ADR-175]] 결정 9).
       hunt: null,
+      quantity: null,
     })
     expect(notNullOfMesoAmount(real)).toBe(0)
   })
@@ -218,6 +220,7 @@ describe('「기타」를 메포·캐시로 적어도 저장된다 (목이 아�
     saleFeePercent: null,
     saleFeeMeso: null,
     hunt: null,
+    quantity: null,
     memo: null,
     recordedAt: '2026-08-28T10:00:00.000Z',
   } as const

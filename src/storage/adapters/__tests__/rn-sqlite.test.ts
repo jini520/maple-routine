@@ -151,6 +151,7 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE income_records ADD COLUMN point_amount INTEGER',
       'ALTER TABLE income_records ADD COLUMN point_per_100m_meso INTEGER',
       'ALTER TABLE income_records ADD COLUMN cash_amount INTEGER',
+      'ALTER TABLE income_records ADD COLUMN quantity INTEGER',
       // 사냥 계산 입력 일곱([[ADR-175]] 결정 9 + [[ADR-177]] 결정 8).
       'ALTER TABLE income_records ADD COLUMN hunt_character_level INTEGER',
       'ALTER TABLE income_records ADD COLUMN hunt_missed_mobs INTEGER',
@@ -180,6 +181,7 @@ describe('db.ts 와 맞물리는가', () => {
             { name: 'point_amount' },
             { name: 'point_per_100m_meso' },
             { name: 'cash_amount' },
+        { name: 'quantity' },
             { name: 'hunt_character_level' },
             { name: 'hunt_missed_mobs' },
             { name: 'hunt_boosts' },

@@ -1,8 +1,8 @@
 /**
  * 「기타」 폼([[ADR-178]] 결정 3) — 갈래 넷에 안 드는 지출.
  *
- * **캐시는 여기서만 산다**([[ADR-166]] 정정 1 ④) — 통화도 여기서만 고른다. 그리고 **지출액
- * × 수량**이다([[ADR-173]] 결정 17) — 세는 것이 «몇 회» 라 수량은 스테퍼 그대로다.
+ * **캐시는 여기서만 산다**([[ADR-166]] 정정 1 ④) — 통화도 여기서만 고른다. 그리고 **금액
+ * × 수량**이다([[ADR-173]] 결정 17 · 라벨은 [[ADR-202]] 결정 7) — 세는 것이 «몇 회» 라 수량은 스테퍼 그대로다.
  *
  * **합계는 언제나 메소**다(결정 11) — 캐시만 예외인데, 환산을 안 하므로([[ADR-166]] 정정 2 ①)
  * 그 축에 얹을 값이 없고 그대로 「원」 으로 적는다.
@@ -11,9 +11,8 @@ import { useState } from 'react'
 
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
-import { parseMesoText } from '../../../components/molecules/MesoPad/meso-pad'
+import { mesoTextOf, mesoValueOf } from '../../../components/molecules/MesoPad/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
-import { formatMesoUnits } from '../../../lib/drop-price'
 import {
   FREE_CURRENCY_LABELS,
   currencyOfLabel,
@@ -21,9 +20,7 @@ import {
   type FreeCurrency,
 } from '../../../lib/free-currency'
 import { pointToMeso } from '../../../lib/spend-catalog'
-import { TABULAR_NUMS } from '../../../lib/text-styles'
-import { nextAmountIdentity } from '../amount-identity'
-import { FieldRow, QuantityStepper } from '../sheet-fields'
+import { AmountInput, FieldRow, QuantityStepper } from '../sheet-fields'
 import {
   CategoryChips,
   CharacterRow,
@@ -41,12 +38,12 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
   const [name, setName] = useState(props.editing?.item ?? '')
   const [quantity, setQuantity] = useState(props.editing?.quantity ?? 1)
   /** 친 값을 **되짚는다** — `단가 = 저장된 총액 ÷ 수량`([[ADR-173]] 정정 1). */
-  const [typed, setTyped] = useState(() => {
-    if (props.editing === undefined) return 0
+  const [typedText, setTypedText] = useState(() => {
+    if (props.editing === undefined) return ''
     const count = props.editing.quantity ?? 1
     const total =
       props.editing.mesoAmount ?? props.editing.pointAmount ?? props.editing.cashAmount ?? 0
-    return Math.round(total / count)
+    return mesoTextOf(Math.round(total / count))
   })
   /** 수정으로 열 때는 **찬 칸이 통화를 되짚는다** — 캐시 칸이 차 있으면 캐시로 열려야 한다. */
   const [currency, setCurrency] = useState<FreeCurrency>(
@@ -62,29 +59,19 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
     const rate = props.editing?.pointPer100mMeso ?? props.lastPointRate
     return rate === null || rate === undefined ? '' : String(rate)
   })
-  /** 큰 숫자의 **이름표**([[ADR-087]] 정정 1) — 마운트마다 새로 받는다. */
-  const [amountIdentity] = useState(nextAmountIdentity)
   const { saving, submit, remove } = useSpendSubmit(props)
 
+  const typed = mesoValueOf(typedText)
   const usesPoint = currency === 'point'
   const typedRate = Number(rateText)
   const rate = usesPoint && rateText !== '' && Number.isFinite(typedRate) ? typedRate : null
-  /** **언제나 곱한다** — 지출액 × 수량([[ADR-173]] 결정 17). */
+  /** **언제나 곱한다** — 금액 × 수량([[ADR-173]] 결정 17). */
   const amount = typed * quantity
   // 캐시는 **환산하지 않는다**([[ADR-166]] 정정 2 ①) — 그래서 메소 축 합계에 안 든다.
   const totalMeso = currency === 'cash' ? 0 : usesPoint ? pointToMeso(amount, rate ?? 0) : amount
   // 메포를 쓰는데 시세가 없으면 **막는다** — 저장하면 영영 메소로 표시할 수 없는 행이 된다.
   const blocked = usesPoint && (rate === null || rate <= 0)
   const canSave = amount > 0 && !blocked
-
-  const hint =
-    currency === 'cash'
-      ? undefined
-      : usesPoint
-        ? blocked
-          ? '시세를 넣어야 메소로 셀 수 있어요'
-          : `${amount.toLocaleString()} 메포`
-        : formatMesoUnits(totalMeso)
 
   return (
     <>
@@ -99,12 +86,12 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
 
       <CharacterRow characters={props.characters} selected={ocid} onSelect={setOcid} />
 
-      <FieldRow label="사용처" labelTestID="spend-sheet-name-label">
+      <FieldRow label="내용" labelTestID="spend-sheet-name-label">
         <SheetTextInput
           testID="spend-sheet-name"
           value={name}
           onChangeText={setName}
-          placeholder="사용처"
+          placeholder="내용"
           className="flex-1 text-right text-sm text-text"
         />
       </FieldRow>
@@ -120,16 +107,8 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
       </FieldRow>
 
       {/* **통화 밑**이다 — 무엇으로 내는지를 정한 다음에 얼마인지를 친다. */}
-      <FieldRow label="지출액">
-        <SheetTextInput
-          testID="spend-sheet-unit-price"
-          value={typed === 0 ? '' : typed.toLocaleString()}
-          onChangeText={(text) => setTyped(parseMesoText(typed, text))}
-          keyboardType="number-pad"
-          placeholder="0"
-          className="flex-1 text-right text-sm font-semibold text-text"
-          style={TABULAR_NUMS}
-        />
+      <FieldRow label="금액">
+        <AmountInput testID="spend-sheet-unit-price" value={typedText} onChange={setTypedText} />
         {/* 통화를 고르는 자리라 숫자만 있으면 무엇으로 낸 것인지 줄에서 사라진다
             ([[ADR-170]] 정정 14 ④) — 큰 숫자가 이미 하는 일을 이 줄도 한다. */}
         <Text
@@ -151,12 +130,6 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
         value={currency === 'cash' ? amount : totalMeso}
         unit={currency === 'cash' ? '원' : '메소'}
         testID="spend-sheet-amount"
-        identity={amountIdentity}
-        hint={hint}
-        hintBlocked={blocked}
-        // **곱할 것이 있으면 못 친다**([[ADR-173]] 결정 17).
-        readOnly
-        onChangeValue={setTyped}
       />
 
       <SaveRow

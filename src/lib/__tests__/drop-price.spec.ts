@@ -55,8 +55,8 @@ describe('sumDropPayout', () => {
 })
 
 describe('formatMesoUnits', () => {
-  it('억·만·나머지를 순서대로 접는다', () => {
-    expect(formatMesoUnits(3_250_000_000)).toBe('32억 5,000만')
+  it('조·억·만·나머지를 순서대로 접는다', () => {
+    expect(formatMesoUnits(1_234_567_890_000)).toBe('1조 2345억 6789만')
   })
 
   it('0은 그대로 0이다', () => {
@@ -65,7 +65,29 @@ describe('formatMesoUnits', () => {
 
   it('비어 있는 자리는 건너뛴다 — "32억 0만" 을 만들지 않는다', () => {
     expect(formatMesoUnits(3_200_000_000)).toBe('32억')
-    expect(formatMesoUnits(5_000)).toBe('5,000')
+    expect(formatMesoUnits(5_000)).toBe('5000')
+  })
+
+  // 단위가 붙는 자리가 **천 단위로 떨어지면** 접는다([[ADR-202]] 결정 9) — `5,000만` 보다
+  // `5천만` 이 한 번에 읽힌다. 큰 숫자가 이 서식으로 서므로 자릿수를 눈으로 세지 않게 된다.
+  it('천 단위로 떨어지면 「천」 으로 접는다', () => {
+    expect(formatMesoUnits(850_000_000)).toBe('8억 5천만')
+    expect(formatMesoUnits(500_000_000_000)).toBe('5천억')
+  })
+
+  // 단위가 안 붙는 **나머지**에는 안 접는다 — `1만 5천` 은 15,000 과 5,000 이 헷갈린다.
+  it('나머지는 접지 않는다', () => {
+    expect(formatMesoUnits(15_000)).toBe('1만 5000')
+  })
+
+  // 조·억·만 세 자리는 각각 9999 를 못 넘어 콤마가 필요 없다. 단위가 이미 자릿수를 끊는다.
+  it('단위가 붙는 자리에는 콤마를 안 넣는다', () => {
+    expect(formatMesoUnits(123_456_789)).toBe('1억 2345만 6789')
+  })
+
+  // 조 자리만 위가 안 막혀 있다 — 거기서는 콤마가 자릿수를 읽게 해 준다.
+  it('조 자리가 다섯 자리를 넘으면 콤마를 넣는다', () => {
+    expect(formatMesoUnits(12_345_000_000_000_000)).toBe('12,345조')
   })
 })
 

@@ -1,10 +1,14 @@
 /**
  * 「아이템 구매」 폼([[ADR-178]] 결정 3) — **종류가 나머지 둘을 정한다**([[ADR-173]] 정정 1).
  *
- * | 종류 | 수량 | 관세 |
- * |---|---|---|
- * | 장비 | 없다(하나를 산다) — 큰 숫자가 **치는 칸** | 있다 |
- * | 소비 · 기타 | 단가 × 수량 — 큰 숫자가 **못 치는 합계** | **줄 자체가 없다** |
+ * | 종류 | 금액 칸 | 수량 | 관세 |
+ * |---|---|---|---|
+ * | 장비 | `구매 비용` | 없다(하나를 산다) | 있다 |
+ * | 소비 · 기타 | `단가` | 단가 × 수량 | **줄 자체가 없다** |
+ *
+ * 금액 칸은 **늘 서고 장비에서만 라벨이 바뀐다**([[ADR-202]] 결정 2). 하나를 사는 자리에 `단가`
+ * 라고 적으면 여러 개 중 한 개 값이라는 뜻이 되어 거짓이다. 줄이 하나라 상태도 `testID` 도 하나다.
+ * 큰 숫자는 **양쪽 다 못 치는 합계**다(결정 1).
  *
  * 소비·기타에 관세가 없는 이유는 **월드 간 거래가 안 되기 때문**이다 — 있을 수 없는 것을 물을 수
  * 있게 두지 않는다. 통화는 언제나 **메소**다(관세를 메소로 재므로 메포 칸이 없다).
@@ -13,14 +17,11 @@ import { useState } from 'react'
 
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
-import { parseMesoText } from '../../../components/molecules/MesoPad/meso-pad'
+import { mesoTextOf, mesoValueOf } from '../../../components/molecules/MesoPad/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
-import { formatMesoUnits } from '../../../lib/drop-price'
 import { SPEND_TARIFF_PERCENT, withTariffMeso } from '../../../lib/spend-catalog'
-import { TABULAR_NUMS } from '../../../lib/text-styles'
 import { SPEND_ITEM_KINDS, countsQuantity, type SpendItemKind } from '../../../storage/spend'
-import { nextAmountIdentity } from '../amount-identity'
-import { FieldRow } from '../sheet-fields'
+import { AmountInput, FieldRow } from '../sheet-fields'
 import {
   CategoryChips,
   CharacterRow,
@@ -43,7 +44,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
   const editing = props.editing !== undefined
   const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
   const [name, setName] = useState(props.editing?.item ?? '')
-  const [quantity, setQuantity] = useState(props.editing?.quantity ?? 1)
+  const [quantityText, setQuantityText] = useState(mesoTextOf(props.editing?.quantity ?? 1))
   /**
    * 친 값을 **되짚는다** — `단가 = (저장된 총액 − 관세분) ÷ 수량`([[ADR-173]] 정정 1).
    *
@@ -51,24 +52,21 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
    * 1,028,500,000 으로 열렸다). 나눗셈은 언제나 나누어떨어진다 — 저장된 총액이
    * `단가 × 수량 (+ 관세분)` 으로 만들어진 값이라서다.
    */
-  const [typed, setTyped] = useState(() => {
-    if (props.editing === undefined) return 0
+  const [typedText, setTypedText] = useState(() => {
+    if (props.editing === undefined) return ''
     const count = props.editing.quantity ?? 1
     const total = props.editing.mesoAmount ?? 0
-    return Math.round((total - (props.editing.tariffMeso ?? 0)) / count)
+    return mesoTextOf(Math.round((total - (props.editing.tariffMeso ?? 0)) / count))
   })
   const [hasTariff, setHasTariff] = useState(props.editing?.tariffMeso != null)
   /** **`null` 은 정정 1 이전 행이고 장비다**([[ADR-173]] 정정 1 결정 4). */
   const [itemKind, setItemKind] = useState<SpendItemKind>(
     props.editing?.itemKind ?? SPEND_ITEM_KINDS[0],
   )
-  /**
-   * 큰 숫자의 **정체**([[ADR-087]] 정정 1) — 갈면 굴리지 않고 **갈아 끼운다**. 종류를 바꾸면
-   * 큰 숫자가 «무엇을 세는지» 가 바뀌므로(치는 금액 ↔ 합계) 굴리면 «내가 뭘 지웠나» 로 읽힌다.
-   */
-  const [amountIdentity, setAmountIdentity] = useState(nextAmountIdentity)
   const { saving, submit, remove } = useSpendSubmit(props)
 
+  const typed = mesoValueOf(typedText)
+  const quantity = mesoValueOf(quantityText)
   /** **곱할 것이 있는가** — 장비는 하나를 사므로 없다([[ADR-173]] 정정 1 결정 1·2). */
   const counts = countsQuantity(itemKind)
   /** 관세를 얹기 **전**의 값 — 곱할 것이 없으면 친 값 그대로다. */
@@ -87,9 +85,8 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
    */
   function selectItemKind(next: SpendItemKind): void {
     setItemKind(next)
-    setQuantity(1)
+    setQuantityText('1')
     setHasTariff(false)
-    setAmountIdentity(nextAmountIdentity())
   }
 
   return (
@@ -121,26 +118,17 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
         <Segment options={SPEND_ITEM_KINDS} selected={itemKind} onSelect={selectItemKind} />
       </FieldRow>
 
-      {counts && (
-        // **한 개 값**(단가)이다 — 곱할 것이 있을 때만 선다.
-        <FieldRow label="단가">
-          <SheetTextInput
-            testID="spend-sheet-unit-price"
-            value={typed === 0 ? '' : typed.toLocaleString()}
-            onChangeText={(text) => setTyped(parseMesoText(typed, text))}
-            keyboardType="number-pad"
-            placeholder="0"
-            className="flex-1 text-right text-sm font-semibold text-text"
-            style={TABULAR_NUMS}
-          />
-          <Text
-            testID="spend-sheet-unit-price-unit"
-            className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted"
-          >
-            메소
-          </Text>
-        </FieldRow>
-      )}
+      {/* **늘 선다**([[ADR-202]] 결정 2) — 자리가 `종류` 바로 밑이라 장비의 줄 차례가
+          `종류 · 구매 비용 · 관세` 가 된다(사용자 지정 2026-09-02). */}
+      <FieldRow label={counts ? '단가' : '구매 비용'}>
+        <AmountInput testID="spend-sheet-unit-price" value={typedText} onChange={setTypedText} />
+        <Text
+          testID="spend-sheet-unit-price-unit"
+          className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted"
+        >
+          메소
+        </Text>
+      </FieldRow>
 
       {!counts && (
         /*
@@ -167,14 +155,10 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
         // 적는다» 고 한 근거는 **「기타」가 자유 입력이라 앱이 무엇을 세는지 모른다**는 것이었는데,
         // 여기서 세는 것은 **아이템**이라 그 근거가 성립하지 않는다. 「기타」는 그대로 비어 있다.
         <FieldRow label="수량">
-          <SheetTextInput
+          <AmountInput
             testID="spend-sheet-quantity"
-            value={quantity === 0 ? '' : quantity.toLocaleString()}
-            onChangeText={(text) => setQuantity(parseMesoText(quantity, text))}
-            keyboardType="number-pad"
-            placeholder="0"
-            className="flex-1 text-right text-sm font-semibold text-text"
-            style={TABULAR_NUMS}
+            value={quantityText}
+            onChange={setQuantityText}
           />
           <Text
             testID="spend-sheet-quantity-unit"
@@ -186,17 +170,12 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
       )}
 
       <AmountFigure
-        value={subtotal}
-        // **칠 때는 구입가, 손을 떼면 합계**([[ADR-173]] 결정 6) — 관세를 켜면 그 사이를 굴러
-        // 넘어간다. 그래서 더해지는 금액을 따로 안 적는다(결정 5).
-        displayValue={hasTariff ? tariffed.mesoAmount : undefined}
+        // **어디서도 못 친다**([[ADR-202]] 결정 1). 관세를 더한 값을 바로 그린다.
+        // **더해지는 금액을 따로 안 적는 것**은 [[ADR-173]] 결정 5 그대로이고, 켤 때 굴러 오르던
+        // 애니메이션은 [[ADR-202]] 결정 12 가 걷었다 — 단위가 붙어 중간 프레임이 못 읽혔다.
+        value={amount}
         unit="메소"
         testID="spend-sheet-amount"
-        identity={amountIdentity}
-        hint={formatMesoUnits(amount)}
-        // **곱할 것이 있으면 못 친다**(결정 17 · 정정 1 결정 2) — 장비는 곱할 것이 없어 여전히 친다.
-        readOnly={counts}
-        onChangeValue={setTyped}
       />
 
       <SaveRow

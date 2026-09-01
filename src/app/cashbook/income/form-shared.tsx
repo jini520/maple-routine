@@ -8,12 +8,9 @@
 import { Pressable } from 'react-native'
 
 import { Text } from '../../../components/atoms'
-import { parseMesoText } from '../../../components/molecules/MesoPad/meso-pad'
-import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 import { SelectField } from '../../../components/organisms/SelectField/SelectField'
 import { characterOptions } from '../character-options'
-import { FieldRow } from '../sheet-fields'
-import { TABULAR_NUMS } from '../../../lib/text-styles'
+import { AmountInput, FieldRow } from '../sheet-fields'
 import type { IncomeRecord } from '../../../storage/income'
 
 export type IncomeDraft = Omit<IncomeRecord, 'id' | 'recordedAt'>
@@ -66,37 +63,27 @@ export function CharacterField(props: {
  * 스테퍼가 아니라 치는 칸인 이유는 30분에 10개 내외라 8소재면 80개가 넘어서다.
  */
 export function FragmentFields(props: {
-  fragments: number
-  fragmentPrice: number
-  onChangeFragments: (next: number) => void
-  onChangeFragmentPrice: (next: number) => void
+  fragments: string
+  fragmentPrice: string
+  onChangeFragments: (next: string) => void
+  onChangeFragmentPrice: (next: string) => void
 }): React.JSX.Element {
   return (
     <>
       <FieldRow label="솔 에르다 조각">
-        <SheetTextInput
+        <AmountInput
           testID="income-sheet-fragments"
-          value={props.fragments === 0 ? '' : props.fragments.toLocaleString()}
-          onChangeText={(text) => props.onChangeFragments(parseMesoText(props.fragments, text))}
-          keyboardType="number-pad"
-          placeholder="0"
-          className="flex-1 text-right text-sm font-semibold text-text"
-          style={TABULAR_NUMS}
+          value={props.fragments}
+          onChange={props.onChangeFragments}
         />
         <Text className="ml-1.5 shrink-0 text-xs text-text-muted">개</Text>
       </FieldRow>
 
       <FieldRow label="조각 가격">
-        <SheetTextInput
+        <AmountInput
           testID="income-sheet-fragment-price"
-          value={props.fragmentPrice === 0 ? '' : props.fragmentPrice.toLocaleString()}
-          onChangeText={(text) =>
-            props.onChangeFragmentPrice(parseMesoText(props.fragmentPrice, text))
-          }
-          keyboardType="number-pad"
-          placeholder="0"
-          className="flex-1 text-right text-sm font-semibold text-text"
-          style={TABULAR_NUMS}
+          value={props.fragmentPrice}
+          onChange={props.onChangeFragmentPrice}
         />
         <Text className="ml-1.5 shrink-0 text-xs text-text-muted">메소</Text>
       </FieldRow>

@@ -35,6 +35,10 @@ const INCOME_RECORDS_BODY = `(
     point_amount INTEGER,
     point_per_100m_meso INTEGER,
     cash_amount INTEGER,
+    -- 몇 회인가([[ADR-202]] 결정 4). 「기타」만 쓰고 위 세 칸에는 **곱한 총액**이 들어간다.
+    -- 수량을 안 남기면 수정 시트가 되짚을 길이 없어 수량 1 · 금액 = 총액 으로 열린다.
+    -- NULL = 이 칸이 없던 시절의 행이고, 그 행도 같은 이유로 수량 1 로 연다.
+    quantity INTEGER,
     -- 「사냥」 갈래의 **계산 입력**([[ADR-175]] 결정 9). 합계만 남기면 수정 시트가 빈 계산기로
     -- 열려 만지는 순간 금액이 덮인다([[ADR-171]] 결정 2). 사냥터는 item 칸에 이름으로 들어간다
     -- (전역 유일이라 지역이 따라온다). **다른 갈래에서는 전부 NULL** 이다.
@@ -384,6 +388,9 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'income_records', 'point_amount', 'INTEGER')
   await ensureColumn(db, 'income_records', 'point_per_100m_meso', 'INTEGER')
   await ensureColumn(db, 'income_records', 'cash_amount', 'INTEGER')
+
+  // [[ADR-202]] 결정 4 — 수입 「기타」의 수량. 위와 같은 사정이라 같은 길로 붙인다.
+  await ensureColumn(db, 'income_records', 'quantity', 'INTEGER')
 
   // [[ADR-175]] 결정 9 — 「사냥」 갈래의 계산 입력. 위 다섯과 **같은 사정**이라 같은 길로 붙인다:
   // INSERT 는 모든 칸을 적으므로 칸이 없으면 수입이 하나도 안 적힌다.
