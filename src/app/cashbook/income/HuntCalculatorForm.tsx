@@ -1,9 +1,12 @@
 /**
- * 「사냥」 폼 — **적는 것이 아니라 계산되는 것**이다([[ADR-175]]).
+ * 「사냥」 계산기 폼([[ADR-175]]). **적는 것이 아니라 계산되는 것**이다.
  *
- * 나머지 둘은 «얼마 벌었나» 를 사람이 알지만 사냥 메소는 **맵이 정해지면 셀 수 있는 값**이라 앱이
- * 낸다. 그래서 이 갈래에서만 줄이 여럿 서고(지역 · 사냥터 · 효율 · 메획 · 소재 · 조각) 큰 숫자가
+ * 나머지 갈래는 얼마 벌었나를 사람이 알지만 사냥 메소는 **맵이 정해지면 셀 수 있는 값**이라 앱이
+ * 낸다. 그래서 이 폼에만 줄이 여럿 서고(지역 · 사냥터 · 효율 · 메획 · 소재 · 조각) 큰 숫자가
  * **못 치는 합계**가 된다.
+ *
+ * 사냥의 다른 한 모양은 `HuntManualForm` 이다([[ADR-201]] 결정 6). 그쪽은 계산기가 못 세는 사냥에
+ * 쓰고, 어느 폼이 서는지는 기록에 박힌 값이 정한다.
  *
  * 계산은 한 자리에 있다(`lib/hunting-meso`) — 이 파일은 고른 것을 넘기고 받은 숫자를 그린다.
  * 캐릭터의 메소 획득량은 `features/cashbook/meso-rate` 가 읽어 준다([[ADR-177]]) — 폼은 `nexon/` 도
@@ -14,7 +17,6 @@ import { Image, Pressable, View } from 'react-native'
 
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
-import { parseMesoText } from '../../../components/molecules/MesoPad/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import {
   SelectField,
@@ -23,7 +25,6 @@ import {
 import type { MesoRateLoad } from '../../../features/cashbook/meso-rate'
 import { formatMesoUnits } from '../../../lib/drop-price'
 import { FORCE_LABELS, forceIconOf } from '../../../lib/force-icons'
-import { CheckIcon } from '../../../lib/icons'
 import {
   findHuntingGround,
   findHuntingRegion,
@@ -46,8 +47,8 @@ import { TABULAR_NUMS } from '../../../lib/text-styles'
 import type { ImageAssetRef } from '../../../types/image-asset'
 import type { HuntingGround, HuntingRegion } from '../../../types/hunting-grounds'
 import { nextAmountIdentity } from '../amount-identity'
-import { FieldRow, QuantityStepper } from '../sheet-fields'
-import { CharacterField, SaveRow, type IncomeFormProps } from './form-shared'
+import { CheckBox, FieldRow, QuantityStepper } from '../sheet-fields'
+import { CharacterField, FragmentFields, SaveRow, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from './use-sheet-submit'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
@@ -140,27 +141,7 @@ function BoostToggle(props: {
       hitSlop={8}
       className="flex-row items-center gap-2"
     >
-      {/*
-        **끈 것도 상자가 보인다**(사용자 지정 2026-08-29 — 「세련되게」).
-
-        종전에는 맨 테두리 하나였다. 어두운 배경에서 그 선은 «있는 듯 없는» 자국이라 켜짐/꺼짐이
-        **색 하나로만** 갈렸다. 끈 쪽에 옅은 바탕을 깔면 상자가 먼저 눈에 들어오고, 그 안이 차는
-        것이 곧 켜짐이 된다.
-
-        모서리는 `rounded-md`(6px)다 — 4px 는 각지고 완전한 원은 «고르는 하나» 로 읽힌다
-        ([[ADR-178]] 정정 5 가 알약 테두리를 걷은 이유와 같다).
-      */}
-      <View
-        className={`h-[18px] w-[18px] items-center justify-center rounded-md border ${
-          props.selected ? 'border-primary bg-primary' : 'border-border bg-surface-2'
-        }`}
-      >
-        {props.selected && (
-          // 획이 얇아야 12px 안에서 안 뭉갠다 — 3 은 체크가 삼각형처럼 보였다.
-          // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
-          <CheckIcon className="h-3 w-3 text-on-primary" strokeWidth={2.5} aria-hidden />
-        )}
-      </View>
+      <CheckBox checked={props.selected} />
       {/* 그림이 없으면 **빈 자리로 둔다** — 비슷한 것을 갖다 붙이면 틀린 것을 그리는 셈이다
           ([[ADR-101]] 결정 1). 파일명이 실제로 풀리는지는 `hunting-meso.test` 가 지킨다.
 
@@ -181,13 +162,20 @@ function BoostToggle(props: {
   )
 }
 
-export function HuntForm(
+export function HuntCalculatorForm(
   props: IncomeFormProps & {
     /** 캐릭터의 메소 획득량을 읽어 온다([[ADR-177]] 결정 7·9) — 폼은 `nexon/` 도 `storage/` 도 모른다. */
     loadMesoRate: (ocid: string) => Promise<MesoRateLoad>
   },
 ): React.JSX.Element {
   const editing = props.editing !== undefined
+  /**
+   * 이 폼이 되살릴 수 있는 입력([[ADR-201]] 결정 3). **계산기로 적힌 행일 때만** 값이 있다.
+   *
+   * 수동으로 적힌 행은 이 폼으로 안 열리지만(`IncomeSheet` 가 갈라 준다) 타입이 그 사실을 모르므로
+   * 여기서 한 번 좁힌다. 아래 상태들은 이 값 하나만 본다.
+   */
+  const detail = props.editing?.hunt?.mode === 'calculator' ? props.editing.hunt : null
   const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
   /**
    * 캐릭터 레벨을 상태로 드는 이유는 **그때의 값**이어야 하기 때문이다([[ADR-175]] 결정 9):
@@ -195,37 +183,35 @@ export function HuntForm(
    * 사용자가 고르개로 캐릭터를 **바꾸면** 그 캐릭터의 지금 레벨로 갈아 끼운다 — 그건 사용자가 한 일이다.
    */
   const [huntLevel, setHuntLevel] = useState<number | null>(
-    props.editing?.hunt?.characterLevel ??
+    detail?.characterLevel ??
       props.characters.find((each) => each.ocid === props.editing?.ocid)?.level ??
       null,
   )
   /** 고른 사냥터 이름 — 지역은 여기서 따라온다(이름이 전역 유일이다, [[ADR-175]] 결정 2). */
   const [groundName, setGroundName] = useState<string | null>(
-    props.editing?.hunt === null ? null : (props.editing?.item ?? null),
+    detail === null ? null : (props.editing?.item ?? null),
   )
   /** 고른 지역. 사냥터를 아직 안 골랐어도 지역만 골라 둔 상태가 있다. */
   const [regionSlug, setRegionSlug] = useState<string | null>(() => {
-    const name = props.editing?.hunt === null ? null : (props.editing?.item ?? null)
+    const name = detail === null ? null : (props.editing?.item ?? null)
     return name === null ? null : (findHuntingGround(name)?.region.slug ?? null)
   })
   /**
    * 고르는 것은 **놓치는 마릿수**(0~4)이지 퍼센트가 아니다([[ADR-175]] 결정 3) — 효율 %는 맵이
    * 정하는 라벨이라 맵을 바꾸면 같은 조각의 글자가 달라진다.
    */
-  const [missedMobs, setMissedMobs] = useState(props.editing?.hunt?.missedMobs ?? 0)
-  const [boosts, setBoosts] = useState<readonly string[]>(props.editing?.hunt?.boosts ?? [])
-  const [sojae, setSojae] = useState(props.editing?.hunt?.sojae ?? 1)
-  const [fragments, setFragments] = useState(props.editing?.hunt?.fragments ?? 0)
-  const [fragmentPrice, setFragmentPrice] = useState(props.editing?.hunt?.fragmentPrice ?? 0)
+  const [missedMobs, setMissedMobs] = useState(detail?.missedMobs ?? 0)
+  const [boosts, setBoosts] = useState<readonly string[]>(detail?.boosts ?? [])
+  const [sojae, setSojae] = useState(detail?.sojae ?? 1)
+  const [fragments, setFragments] = useState(detail?.fragments ?? 0)
+  const [fragmentPrice, setFragmentPrice] = useState(detail?.fragmentPrice ?? 0)
   /**
    * 캐릭터의 메소 획득량([[ADR-177]]) — **읽었으면 못 치고, 못 읽었으면 치는 칸**이 된다(결정 7).
    *
    * 수정으로 열면 **그때의 값**이 자동값으로 선다(결정 8) — 레벨과 같은 이유다.
    */
   const [mesoRate, setMesoRate] = useState<MesoRateLoad | { kind: 'loading' }>(
-    props.editing?.hunt === undefined || props.editing.hunt === null
-      ? { kind: 'fallback', percent: null }
-      : { kind: 'read', percent: props.editing.hunt.mesoRate },
+    detail === null ? { kind: 'fallback', percent: null } : { kind: 'read', percent: detail.mesoRate },
   )
   /** 폴백 칸에 친 글자 — 지우는 중간 상태가 있어 숫자가 아니라 글자로 든다. */
   const [mesoRateText, setMesoRateText] = useState('')
@@ -551,33 +537,12 @@ export function HuntForm(
         <Text className="ml-1.5 shrink-0 text-xs text-text-muted">메소</Text>
       </FieldRow>
 
-      {/* **직접 입력**이다([[ADR-175]] 결정 8) — 앱이 추정하면 틀린 값을 확신 있게 적는 셈이다.
-          스테퍼가 아니라 **치는 칸**인 이유는 30분에 10개 내외라 8소재면 80개가 넘어서다. */}
-      <FieldRow label="솔 에르다 조각">
-        <SheetTextInput
-          testID="income-sheet-fragments"
-          value={fragments === 0 ? '' : fragments.toLocaleString()}
-          onChangeText={(text) => setFragments(parseMesoText(fragments, text))}
-          keyboardType="number-pad"
-          placeholder="0"
-          className="flex-1 text-right text-sm font-semibold text-text"
-          style={TABULAR_NUMS}
-        />
-        <Text className="ml-1.5 shrink-0 text-xs text-text-muted">개</Text>
-      </FieldRow>
-
-      <FieldRow label="조각 가격">
-        <SheetTextInput
-          testID="income-sheet-fragment-price"
-          value={fragmentPrice === 0 ? '' : fragmentPrice.toLocaleString()}
-          onChangeText={(text) => setFragmentPrice(parseMesoText(fragmentPrice, text))}
-          keyboardType="number-pad"
-          placeholder="0"
-          className="flex-1 text-right text-sm font-semibold text-text"
-          style={TABULAR_NUMS}
-        />
-        <Text className="ml-1.5 shrink-0 text-xs text-text-muted">메소</Text>
-      </FieldRow>
+      <FragmentFields
+        fragments={fragments}
+        fragmentPrice={fragmentPrice}
+        onChangeFragments={setFragments}
+        onChangeFragmentPrice={setFragmentPrice}
+      />
 
       <AmountFigure
         // **사냥의 큰 숫자는 합계**다([[ADR-175]] 결정 1) — 획득 메소 + 조각 × 가격. 앱이 세므로 못 친다.
@@ -613,6 +578,7 @@ export function HuntForm(
             // **계산 입력을 함께 남긴다**([[ADR-175]] 결정 9) — 없으면 수정 시트가 빈 계산기로 열려
             // 만지는 순간 금액이 덮인다.
             hunt: {
+              mode: 'calculator',
               characterLevel: huntLevel,
               missedMobs,
               boosts: [...boosts],

@@ -159,6 +159,7 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE income_records ADD COLUMN hunt_fragments INTEGER',
       'ALTER TABLE income_records ADD COLUMN hunt_fragment_price INTEGER',
       'ALTER TABLE income_records ADD COLUMN hunt_meso_rate INTEGER',
+      'ALTER TABLE income_records ADD COLUMN hunt_typed_meso INTEGER',
     ])
   })
 
@@ -186,6 +187,7 @@ describe('db.ts 와 맞물리는가', () => {
             { name: 'hunt_fragments' },
             { name: 'hunt_fragment_price' },
             { name: 'hunt_meso_rate' },
+            { name: 'hunt_typed_meso' },
           ]
         : []
 

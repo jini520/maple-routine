@@ -47,6 +47,10 @@ const INCOME_RECORDS_BODY = `(
     hunt_fragments INTEGER,       -- 솔 에르다 조각 개수(사용자가 직접 넣는다 — 결정 8)
     hunt_fragment_price INTEGER,  -- 조각 개당 메소
     hunt_meso_rate INTEGER,       -- 그때의 캐릭터 메소 획득량(%). NULL = [[ADR-177]] 이전 행 → 0 으로 읽는다
+    -- 수동으로 적힌 사냥에서 사용자가 친 획득 메소([[ADR-201]] 결정 3). NULL 이 아니면 수동으로
+    -- 적힌 행이고, 그때 위 계산기 칸 넷은 전부 NULL 이다. 0 과 NULL 이 갈린다 — 조각만 먹은
+    -- 사냥은 친 메소가 0 이면서 수동이다.
+    hunt_typed_meso INTEGER,
     memo TEXT,
     recorded_at TEXT NOT NULL,
     PRIMARY KEY (id)
@@ -390,6 +394,8 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'income_records', 'hunt_fragments', 'INTEGER')
   await ensureColumn(db, 'income_records', 'hunt_fragment_price', 'INTEGER')
   await ensureColumn(db, 'income_records', 'hunt_meso_rate', 'INTEGER')
+  // [[ADR-201]] 결정 3 — 수동으로 적힌 사냥의 친 메소이자 «수동인가» 의 판정자.
+  await ensureColumn(db, 'income_records', 'hunt_typed_meso', 'INTEGER')
   await db.execute(MIGRATE_SHOP_CATEGORY_RENAME)
   await db.execute(MIGRATE_TONIC_BUFF_CATEGORY)
   await db.execute(MIGRATE_FARM_TICKET_ITEM_RENAME)

@@ -30,12 +30,17 @@ import { Pressable, View } from 'react-native'
 import { Text } from '../../components/atoms'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import type { MesoRateLoad } from '../../features/cashbook/meso-rate'
-import { INCOME_CATEGORIES, type IncomeCategory, type IncomeRecord } from '../../storage/income'
-import { DateStepper } from './sheet-fields'
+import {
+  INCOME_CATEGORIES,
+  type HuntInputMode,
+  type IncomeCategory,
+  type IncomeRecord,
+} from '../../storage/income'
+import { CheckBox, DateStepper } from './sheet-fields'
 import { EtcForm } from './income/EtcForm'
-import { HuntForm } from './income/HuntForm'
+import { HuntCalculatorForm } from './income/HuntCalculatorForm'
 import { ItemSaleForm } from './income/ItemSaleForm'
-import { LegacyHuntForm } from './income/LegacyHuntForm'
+import { HuntManualForm } from './income/HuntManualForm'
 import type { IncomeFormProps, SheetCharacter } from './income/form-shared'
 
 export type { IncomeDraft } from './income/form-shared'
@@ -103,6 +108,11 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
    * 갈래 폼은 `key={category}` 로만 다시 심기므로, 날짜를 바꿔도 **친 것이 안 사라진다**.
    */
   const [dateKey, setDateKey] = useState(props.dateKey)
+  /**
+   * 사냥을 어느 폼으로 적나([[ADR-201]] 결정 5). **수정으로 열면 기록이 정하고 안 바뀐다** —
+   * 모드를 바꾸면 앱이 센 합계가 사람이 친 값으로 둔갑한다([[ADR-173]] 결정 15 와 같은 자리).
+   */
+  const [huntMode, setHuntMode] = useState<HuntInputMode>(huntModeOf(props.editing))
 
   const formProps: IncomeFormProps = {
     dateKey,
@@ -142,30 +152,64 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
           </View>
         )}
 
+        {/* **새로 적을 때만 선다**([[ADR-201]] 결정 5) — 수정 모드에서는 기록이 이미 정했다.
+            사냥 갈래에만 있는 줄이라 다른 갈래에서는 안 그린다. */}
+        {!editing && category === '사냥' && (
+          // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
+          <Pressable
+            role="checkbox"
+            aria-label="직접 입력"
+            aria-checked={huntMode === 'manual'}
+            onPress={() => setHuntMode(huntMode === 'manual' ? 'calculator' : 'manual')}
+            hitSlop={8}
+            className="flex-row items-center gap-2"
+          >
+            <CheckBox checked={huntMode === 'manual'} />
+            <Text className="text-xs font-semibold text-text-muted">직접 입력</Text>
+          </Pressable>
+        )}
+
         {/* **`key` 가 곧 «갈래를 옮기면 값이 사라진다»** 다([[ADR-178]] 결정 3) — 갈래가 바뀌면
-            리액트가 폼을 새로 심는다. 지울 것을 손으로 세지 않는다. */}
-        <IncomeForm key={category} category={category} {...props} formProps={formProps} />
+            리액트가 폼을 새로 심는다. 지울 것을 손으로 세지 않는다. 사냥의 두 모드도 같은 열쇠에
+            들어간다([[ADR-201]] 결정 6) — 모드를 옮기는 것도 «다른 것을 적기 시작하는 일» 이다. */}
+        <IncomeForm
+          key={`${category}:${huntMode}`}
+          category={category}
+          huntMode={huntMode}
+          {...props}
+          formProps={formProps}
+        />
       </View>
     </BottomSheet>
   )
 }
 
-/** 갈래 하나에 폼 하나 — 고르는 자리는 여기 하나뿐이다. */
+/**
+ * 이 기록을 어느 폼으로 여나([[ADR-201]] 결정 5). **기록에 박힌 값이 정한다.**
+ *
+ * `hunt` 가 `null` 인 행은 [[ADR-175]] 이전에 적힌 것이고 수동으로 연다(결정 4) — 조각이 없어
+ * 합계가 곧 획득 메소라 되짚을 수 있다. 새로 적을 때는 계산기로 시작한다.
+ */
+function huntModeOf(editing: IncomeRecord | undefined): HuntInputMode {
+  if (editing === undefined) return 'calculator'
+  return editing.hunt?.mode ?? 'manual'
+}
+
+/** 갈래 하나에 폼 하나 — 고르는 자리는 여기 하나뿐이다. 사냥만 그 아래로 한 번 더 갈린다. */
 function IncomeForm(
-  props: IncomeSheetProps & { category: IncomeCategory; formProps: IncomeFormProps },
+  props: IncomeSheetProps & {
+    category: IncomeCategory
+    huntMode: HuntInputMode
+    formProps: IncomeFormProps
+  },
 ): React.JSX.Element {
   if (props.category === '아이템 판매') return <ItemSaleForm {...props.formProps} />
   if (props.category === '기타') {
     return <EtcForm {...props.formProps} lastPointRate={props.lastPointRate} />
   }
-  /**
-   * **[[ADR-175]] 이전에 적힌 사냥 행**은 계산 입력이 없다(결정 9) — 그때는 계산기가 아니라
-   * 자유 입력이었으므로 그 모양으로 연다. 없는 입력을 지어내지 않는다.
-   */
-  const legacy = props.editing !== undefined && props.editing.hunt === null
-  return legacy ? (
-    <LegacyHuntForm {...props.formProps} />
+  return props.huntMode === 'manual' ? (
+    <HuntManualForm {...props.formProps} />
   ) : (
-    <HuntForm {...props.formProps} loadMesoRate={props.loadMesoRate} />
+    <HuntCalculatorForm {...props.formProps} loadMesoRate={props.loadMesoRate} />
   )
 }

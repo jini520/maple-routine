@@ -1,15 +1,19 @@
 /**
  * 수입 시트의 **갈래별 폼이 함께 쓰는 것**([[ADR-178]] 결정 3).
  *
- * 갈래마다 폼이 따로 서지만 «캐릭터를 고르는 줄» 과 «저장 · 삭제 줄» 은 셋이 똑같다. 세 벌로
- * 갈리면 한쪽만 고쳐지는 자리가 생기므로 한 벌만 둔다([[ADR-173]] 결정 10 이 두 시트를 한 뼈대로
- * 묶은 이유와 같다).
+ * 갈래마다 폼이 따로 서지만 캐릭터를 고르는 줄과 저장·삭제 줄은 전부 똑같다. 여러 벌로 갈리면
+ * 한쪽만 고쳐지는 자리가 생기므로 한 벌만 둔다([[ADR-173]] 결정 10 이 두 시트를 한 뼈대로 묶은
+ * 이유와 같다). 조각 두 줄도 사냥 폼 둘이 나눠 쓴다([[ADR-201]] 결정 6).
  */
 import { Pressable } from 'react-native'
 
 import { Text } from '../../../components/atoms'
+import { parseMesoText } from '../../../components/molecules/MesoPad/meso-pad'
+import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 import { SelectField } from '../../../components/organisms/SelectField/SelectField'
 import { characterOptions } from '../character-options'
+import { FieldRow } from '../sheet-fields'
+import { TABULAR_NUMS } from '../../../lib/text-styles'
 import type { IncomeRecord } from '../../../storage/income'
 
 export type IncomeDraft = Omit<IncomeRecord, 'id' | 'recordedAt'>
@@ -52,6 +56,51 @@ export function CharacterField(props: {
       onSelect={props.onSelect}
       testID="income-sheet-character"
     />
+  )
+}
+
+/**
+ * 솔 에르다 조각 두 줄 — 사냥 폼 **둘이 함께** 쓴다([[ADR-201]] 결정 6).
+ *
+ * 계산기든 수동이든 조각은 **사용자가 직접 넣는 값**이라([[ADR-175]] 결정 8) 갈릴 이유가 없다.
+ * 스테퍼가 아니라 치는 칸인 이유는 30분에 10개 내외라 8소재면 80개가 넘어서다.
+ */
+export function FragmentFields(props: {
+  fragments: number
+  fragmentPrice: number
+  onChangeFragments: (next: number) => void
+  onChangeFragmentPrice: (next: number) => void
+}): React.JSX.Element {
+  return (
+    <>
+      <FieldRow label="솔 에르다 조각">
+        <SheetTextInput
+          testID="income-sheet-fragments"
+          value={props.fragments === 0 ? '' : props.fragments.toLocaleString()}
+          onChangeText={(text) => props.onChangeFragments(parseMesoText(props.fragments, text))}
+          keyboardType="number-pad"
+          placeholder="0"
+          className="flex-1 text-right text-sm font-semibold text-text"
+          style={TABULAR_NUMS}
+        />
+        <Text className="ml-1.5 shrink-0 text-xs text-text-muted">개</Text>
+      </FieldRow>
+
+      <FieldRow label="조각 가격">
+        <SheetTextInput
+          testID="income-sheet-fragment-price"
+          value={props.fragmentPrice === 0 ? '' : props.fragmentPrice.toLocaleString()}
+          onChangeText={(text) =>
+            props.onChangeFragmentPrice(parseMesoText(props.fragmentPrice, text))
+          }
+          keyboardType="number-pad"
+          placeholder="0"
+          className="flex-1 text-right text-sm font-semibold text-text"
+          style={TABULAR_NUMS}
+        />
+        <Text className="ml-1.5 shrink-0 text-xs text-text-muted">메소</Text>
+      </FieldRow>
+    </>
   )
 }
 
