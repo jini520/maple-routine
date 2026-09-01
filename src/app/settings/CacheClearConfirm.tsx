@@ -96,8 +96,8 @@ export function CacheClearConfirm(props: CacheClearConfirmProps): React.JSX.Elem
               return (
                 <Pressable
                   key={group.id}
-                  // 다중 선택이라 역할이 button 이 아니라 checkbox 다 — 이 화면에서 유일하게
-                  // `aria-selected` 로 갈아타지 않은 자리이고, 그것이 옳다.
+                  // 다중 선택이라 역할이 button 이 아니라 checkbox 다 — 이 화면에서 `aria-selected`
+                  // 로 안 갈아탄 자리가 여기뿐이고, 그것이 옳다.
                   role="checkbox"
                   aria-checked={isSelected}
                   aria-label={group.label}

@@ -150,7 +150,7 @@ export async function getCharacterPickerRoster(
   const liveEntries = new Map<string, CharacterPickerEntry>()
 
   /**
-   * 중간 방출의 **유일한 문**([[ADR-149]]).
+   * 중간 방출은 **이 문으로만** 나간다([[ADR-149]]).
    *
    * - **전역 실패가 확정된 뒤에는 흘리지 않는다**(결정 3) — 부분 목록이 «완성된 결과» 로 오해된다.
    *   이미 흘린 것은 되돌리지 않고, 호출부가 reject 를 받아 실패 경로를 그린다([[ADR-062]] 결정 4).
@@ -305,7 +305,7 @@ export async function getCharacterPickerRoster(
     throw globalError
   }
 
-  // ADR-053 결정 2: 조회가 모두 끝난 뒤의 최종 방출. 콜드 스타트에선 이게 유일한 방출이고,
+  // ADR-053 결정 2: 조회가 모두 끝난 뒤의 최종 방출. 콜드 스타트에선 방출이 이것뿐이고,
   // 웜 경로에선 마지막 patch와 같은 값이라 무해하다. 전역 실패(위에서 throw)일 때는 불완전한
   // 목록을 "완성된 결과"처럼 내보내지 않는다.
   onUpdate(sortPickerEntries(Array.from(liveEntries.values())))

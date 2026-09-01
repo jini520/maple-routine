@@ -227,7 +227,7 @@ export function ContentScreen(): React.JSX.Element {
       <ScreenScroll
         // ADR-130 결정 1·3: 당김은 헤더 버튼과 **같은 재조회**를 부르고([[ADR-072]] 결정 2), 색만
         // 테마에서 넘긴다. `refreshing` 이 `status` 라서 헤더 버튼으로 시작한 재조회에도 플랫폼
-        // 인디케이터가 뜬다 — 웹과 갈리는 유일한 자리이고 그 대가는 ADR 이 적는다.
+        // 인디케이터가 뜬다 — 웹과 갈리는 자리가 여기뿐이고 그 대가는 ADR 이 적는다.
         refreshControl={
           <RefreshControl
             refreshing={pull.refreshing}

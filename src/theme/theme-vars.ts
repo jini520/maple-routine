@@ -38,7 +38,7 @@ export function toColorVariableName(token: string): string {
  * `DARK_THEMES` 수동 목록이 되살아난다(테마를 수십 개로 늘릴 계획이라 특히 안 된다).
  *
  * 다크에서 테두리를 그대로 두는 것도 결정이다 — 그쪽은 패널과 배경 대비가 1.07~1.18 이라
- * **테두리가 유일한 경계**다. 라이트에서만 `text` 쪽으로 눌러 합성된 배경색에 가라앉힌다.
+ * **경계를 그리는 것이 테두리뿐이다.** 라이트에서만 `text` 쪽으로 눌러 합성된 배경색에 가라앉힌다.
  */
 export const PANEL_BORDER_TOKEN = 'panel-border'
 

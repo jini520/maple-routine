@@ -99,7 +99,7 @@ export const WIDGETS: readonly WidgetDefinition[] = [
     Component: CrystalLimitWidget,
   },
   {
-    // **목적지가 없는 유일한 위젯**이다 — 초기화 시각은 이 타일이 다 말하고, 더 볼 화면이 없다.
+    // **목적지가 없는 위젯은 이것뿐이다** — 초기화 시각은 이 타일이 다 말하고, 더 볼 화면이 없다.
     id: 'reset-countdown',
     sizes: [
       { w: 2, h: 1 },

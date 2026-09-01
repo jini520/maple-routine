@@ -102,7 +102,7 @@ function maxAbilityMeso(response: NexonAbilityResponse): number {
   return Math.max(0, ...presets.map((lines) => sum((lines ?? []).map((each) => mesoPercentOf(each.ability_value)))))
 }
 
-/** 심볼 — `symbol_meso_rate`(`"13%"`)를 더한다. 문자열 파싱이 필요 없는 유일한 축이다. */
+/** 심볼 — `symbol_meso_rate`(`"13%"`)를 더한다. 문자열 파싱이 필요 없는 축은 이것뿐이다. */
 function symbolMeso(response: NexonSymbolEquipmentResponse): number {
   return sum((response.symbol ?? []).map((each) => Number.parseFloat(each.symbol_meso_rate ?? '0') || 0))
 }

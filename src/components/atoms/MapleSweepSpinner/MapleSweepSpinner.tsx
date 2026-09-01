@@ -49,7 +49,7 @@
 // (`Brush.java` 의 `mUseObjectBoundingBox`). 웹이 이 성질로 공짜로 얻던 것을 램프가 그대로 쓴다.
 //
 // **②** `clipPathUnits="userSpaceOnUse"` 를 뺐다 — `react-native-svg` 의 `ClipPath` 는 그 속성을 받지
-// 않고, 받지 않는 이유는 **그것이 이미 유일한 동작**이기 때문이다(웹에서 기본값
+// 않고, 받지 않는 이유는 **RN 이 이미 그렇게만 동작하기** 때문이다(웹에서 기본값
 // `objectBoundingBox` 를 피하려고 명시하던 값이라 RN 에서는 적을 자리가 없다).
 //
 // **③** `<clipPath>` 의 직접 자식을 도형으로 두는 규칙은 그대로 지킨다 — 웹에서 `<g>` 로 묶으면

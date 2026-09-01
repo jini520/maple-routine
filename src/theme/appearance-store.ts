@@ -52,7 +52,7 @@ export function subscribeThemeAppearance(listener: () => void): () => void {
 }
 
 /**
- * 포트가 부르는 유일한 쓰기 경로.
+ * 포트는 여기로만 쓴다.
  *
  * 같은 값이면 아무에게도 알리지 않는다 — `getThemeDefinition` 은 JSON 모듈을 그대로 돌려주므로 같은
  * 테마를 두 번 적용하면 참조까지 같고, 그때 리렌더를 돌릴 이유가 없다. 구독 해제가 콜백 안에서

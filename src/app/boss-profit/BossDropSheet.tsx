@@ -69,7 +69,7 @@ const DISPLAY_ORDER: SelectableDropCategory[] = ['equipment', 'consumable']
 
 interface BossDropSheetProps {
   boss: string
-  // 수익 리스트 행의 난이도. 미완료면 시트 안 난이도 토글의 기본값, 완료면 유일하게 표시할 난이도.
+  // 수익 리스트 행의 난이도. 미완료면 시트 안 난이도 토글의 기본값, 완료면 그 난이도만 표시한다.
   difficulty: BossDifficulty
   // 완료 여부(수익 리스트 행 기준). true면 난이도 토글 없이 완료 난이도만 표시, false면 토글 노출.
   isComplete: boolean
