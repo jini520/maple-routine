@@ -50,6 +50,7 @@ beforeEach(() => {
 const 수입: IncomeDraft = {
   ocid: null,
   hunt: null,
+  quantity: null,
   earnedOn: '2026-08-23',
   category: '사냥',
   item: '엘리시움',
@@ -193,6 +194,7 @@ describe('loadCalendarAmounts', () => {
 // ── [[ADR-171]] — 적은 것은 되돌릴 수 있어야 한다 ─────────────────────────────
 const 수입행 = {
   hunt: null,
+  quantity: null,
   id: 'inc-1',
   ocid: null,
   earnedOn: '2026-08-25',
@@ -291,7 +293,7 @@ describe('줄에 적는 것', () => {
     ).toBe('아델 · 엘리시움')
   })
 
-  // 직접 입력에서 사용처를 비우면 이름이 없다 — 빈 줄은 «무엇인지 모르는 줄» 이다.
+  // 직접 입력에서 이름 칸을 비우면 이름이 없다 — 빈 줄은 «무엇인지 모르는 줄» 이다.
   it('이름이 없으면 갈래 이름을 대신 적는다', () => {
     const { recordTitleOf } = require('../records') as typeof import('../records')
 

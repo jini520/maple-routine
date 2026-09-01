@@ -1,183 +1,131 @@
 /**
  * 큰 숫자 + 힌트 한 줄([[ADR-173]] 결정 1·2·9) — 시트에서 **저장 바로 위**에 서는 덩어리.
  *
- * `MesoPad/MesoAmountField`(드롭 판매가)와 갈라 둔 부품이다. 그쪽은 앱 키패드가 값을 넣고
- * ([[ADR-124]] 결정 5) 빠른 칩을 자기가 그리는데, 이쪽은 칸이 직접 받고 빠른 칩이 폼 밖에 있다.
+ * **못 치는 글자만 그린다**([[ADR-202]] 결정 5). 금액은 폼마다 라벨–값 줄에서 받으므로 이 부품에는
+ * 칸도 초기화도 없다. 값이 바뀌면 **곧바로** 갈아 끼운다(결정 12 가 카운트업을 걷었다).
+ *
+ * 숫자는 **한국어 단위로 접혀서** 선다(결정 9) — `850,000,000` 이 아니라 `8억 5천만`. 밑에 있던
+ * 힌트 한 줄은 그 일을 하던 자리라 함께 사라졌다.
  */
-import { act, fireEvent } from '@testing-library/react-native'
+import { fireEvent } from '@testing-library/react-native'
 
 import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
-import { clearCountUpMemory } from '../../../../hooks/useCountUp'
 import { AmountFigure } from '../AmountFigure'
 
-// 카운트업의 기억은 **모듈 수준**이라 케이스 사이로 샌다([[ADR-087]] 결정 8) — 안 지우면 앞
-// 케이스가 남긴 값에서 굴러가 다음 케이스가 중간값을 본다.
-beforeEach(clearCountUpMemory)
-
 describe('AmountFigure', () => {
-  it('큰 숫자를 콤마째 그리고 단위를 옆에 둔다', async () => {
-    const view = await renderAtom(
-      <AmountFigure value={1_200_000_000} unit="메소" testID="amount" onChangeValue={jest.fn()} />,
-    )
+  it('큰 숫자를 한국어 단위로 접고 통화를 옆에 둔다', async () => {
+    const view = await renderAtom(<AmountFigure value={1_200_000_000} unit="메소" testID="amount" />)
 
-    expect(view.getByTestId('amount').props.value).toBe('1,200,000,000')
+    expect(view.getByTestId('amount')).toHaveTextContent('12억')
     expect(view.getByText('메소')).toBeTruthy()
   })
 
-  it('0 이면 칸을 비우고 자리표시자로 「0」 을 둔다', async () => {
-    const view = await renderAtom(
-      <AmountFigure value={0} unit="메소" testID="amount" onChangeValue={jest.fn()} />,
-    )
+  // 결정 9 — 접어도 **값을 안 깎는다**. 이 자리가 곧 저장될 총액이라 화면과 저장이 갈리면 안 된다.
+  it('만 미만 나머지까지 그대로 적는다', async () => {
+    const view = await renderAtom(<AmountFigure value={123_456_789} unit="메소" testID="amount" />)
 
-    expect(view.getByTestId('amount').props.value).toBe('')
-    expect(view.getByTestId('amount').props.placeholder).toBe('0')
+    expect(view.getByTestId('amount')).toHaveTextContent('1억 2345만 6789')
   })
 
-  it('치면 숫자만 남겨 돌려준다', async () => {
-    const onChangeValue = jest.fn()
-    const view = await renderAtom(
-      <AmountFigure value={0} unit="메소" testID="amount" onChangeValue={onChangeValue} />,
-    )
+  it('0 이면 흐린 색으로 그린다 — 아직 셀 것이 없다는 뜻이다', async () => {
+    const view = await renderAtom(<AmountFigure value={0} unit="메소" testID="amount" />)
 
-    fireEvent.changeText(view.getByTestId('amount'), '1,200')
-
-    expect(onChangeValue).toHaveBeenCalledWith(1200)
-  })
-
-  // **값이 갈릴 때만 뜬다**(결정 2) — 캐시처럼 환산이 없는 자리는 줄이 통째로 사라진다.
-  it('힌트가 없으면 그 줄을 안 그린다', async () => {
-    const 있음 = await renderAtom(
-      <AmountFigure value={1} unit="메소" testID="a" hint="12억" onChangeValue={jest.fn()} />,
-    )
-    expect(있음.getByTestId('a-hint')).toBeTruthy()
-
-    const 없음 = await renderAtom(
-      <AmountFigure value={1} unit="원" testID="b" onChangeValue={jest.fn()} />,
-    )
-    expect(없음.queryByTestId('b-hint')).toBeNull()
+    expect(view.getByTestId('amount')).toHaveTextContent('0')
+    expect(flattenStyle(view.getByTestId('amount').props.style).color).toBe('#9A9070')
   })
 
   /**
-   * **칠 때는 친 값, 손을 떼면 보여 줄 값**([[ADR-173]] 결정 6) — 관세가 그 자리다.
-   * 넘어가는 동안 굴러가므로 더해지는 금액을 따로 안 적는다(결정 5).
+   * [[ADR-202]] 결정 5 — 부품에서 입력 경로를 걷었다.
+   *
+   * 이 자리가 다시 칸이 되면 «앱이 센 값을 사람이 덮어쓴다» 가 살아나므로 구조로 막아 둔다.
    */
-  it('손을 뗀 상태에서는 보여 줄 값을, 커서가 있으면 친 값을 그린다', async () => {
-    const view = await renderAtom(
-      <AmountFigure
-        value={1_200_000_000}
-        displayValue={1_320_000_000}
-        unit="메소"
-        testID="amount"
-        onChangeValue={jest.fn()}
-      />,
-    )
-    const 칸 = view.getByTestId('amount')
-    expect(칸.props.value).toBe('1,320,000,000')
+  it('치는 칸이 아예 없다', async () => {
+    const view = await renderAtom(<AmountFigure value={700_000} unit="메소" testID="amount" />)
 
-    // 포커스는 상태를 바꾸므로 커밋을 기다려야 한다 — `fireEvent` 만으로는 다음 렌더가 안 온다.
-    await act(async () => {
-      fireEvent(칸, 'focus')
-    })
-    expect(view.getByTestId('amount').props.value).toBe('1,200,000,000')
-    // 손을 떼면 다시 합계로 **굴러간다** — 그 중간값을 여기서 붙들지 않는다(프레임에 매인다).
+    expect(view.queryByLabelText('금액')).toBeNull()
+    expect(view.getByTestId('amount').props.onChangeText).toBeUndefined()
+    // 같은 값을 그리는 글자가 뒤에 없다 — 있으면 안드로이드에서 둘 다 그려져 이중으로 보인다.
+    expect(view.queryAllByText('70만', { includeHiddenElements: true })).toHaveLength(1)
   })
 
-  it('막힌 힌트는 에러색이다 — 왜 저장이 안 되는지를 말하는 줄이다', async () => {
-    const view = await renderAtom(
-      <AmountFigure
-        value={30_000}
-        unit="메포"
-        testID="amount"
-        hint="시세를 넣어야 메소로 셀 수 있어요"
-        hintBlocked
-        onChangeValue={jest.fn()}
-      />,
-    )
+  // 결정 6 — 큰 숫자가 사용자의 값이 아니게 되어 되돌릴 대상이 없다. 지울 값은 각자의 칸에 있다.
+  it('초기화 버튼이 없다', async () => {
+    const view = await renderAtom(<AmountFigure value={12} unit="메소" testID="amount" />)
 
-    expect(flattenStyle(view.getByTestId('amount-hint').props.style).color).toBe('#B3200B')
+    expect(view.queryByLabelText('금액 초기화')).toBeNull()
   })
 
-  // 값이 0 이면 지울 것이 없다 — 자리는 지키되 안 보이고 안 눌린다(`MesoAmountField` 와 같은 처방).
-  it('초기화는 큰 숫자와 같은 줄에 있고, 0 이면 안 눌린다', async () => {
-    const 비었을때 = await renderAtom(
-      <AmountFigure value={0} unit="메소" testID="a" onChangeValue={jest.fn()} />,
-    )
-    expect(비었을때.getByLabelText('금액 초기화').props.pointerEvents).toBe('none')
+  /**
+   * 힌트 한 줄이 **사라졌다**([[ADR-202]] 결정 9).
+   *
+   * 그 줄이 하던 억/만 환산은 큰 숫자가 직접 하고, 막힌 이유를 말하던 몫은 필수 칸의 빨간 `*` 와
+   * 꺼진 저장 버튼이 받는다(사용자 지정 2026-09-02). 부품에 그 자리를 남겨 두면 다시 채워진다.
+   */
+  it('힌트 줄이 아예 없다', async () => {
+    const view = await renderAtom(<AmountFigure value={1_200_000_000} unit="메소" testID="a" />)
 
-    const onChangeValue = jest.fn()
-    const 찼을때 = await renderAtom(
-      <AmountFigure value={12} unit="메소" testID="b" onChangeValue={onChangeValue} />,
-    )
-    fireEvent.press(찼을때.getByLabelText('금액 초기화'))
-    expect(onChangeValue).toHaveBeenCalledWith(0)
+    expect(view.queryByTestId('a-hint')).toBeNull()
   })
 
   // 결정 9 — 위 줄의 밑줄이 경계를 겸한다. 여기서 또 그으면 선이 두 줄이 된다.
   it('자기 윗선을 안 긋는다', async () => {
-    const view = await renderAtom(
-      <AmountFigure value={12} unit="메소" testID="amount" onChangeValue={jest.fn()} />,
-    )
+    const view = await renderAtom(<AmountFigure value={12} unit="메소" testID="amount" />)
 
     expect(flattenStyle(view.getByTestId('amount-figure').props.style).borderTopWidth ?? 0).toBe(0)
   })
 })
 
 /**
- * 단위는 숫자와 **기준선을 맞춘다** ([[ADR-178]] 정정 2).
+ * 단위는 숫자와 **같은 줄 상자**에 선다 ([[ADR-178]] 정정 2·3).
  *
- * `items-baseline` 은 `TextInput` 에는 안 먹는다 — Yoga 는 글자 노드에만 기준선을 주고 그 밖에는
- * 상자 밑변으로 떨어진다. 그래서 치는 칸 옆의 단위가 숫자 기준선 위로 떠 보였다(사용자 보고
- * 2026-08-29). **상자와 기준선은 글자가 만들고** 치는 칸은 그 위에 얹는다.
+ * `items-baseline` 은 못 믿는다 — Yoga 가 노드마다 기준선을 어떻게 잡는지가 갈린다. 그래서
+ * 정렬을 위에서 맞추고 **두 상자에 같은 줄높이 · 같은 글자 크기**를 넣는다. 그러면 기준선은
+ * 정의상 같은 자리다. 두 글꼴 크기의 차이를 **픽셀로 적지 않는 이유**가 그것이다.
  */
-describe('기준선 ([[ADR-178]] 정정 2)', () => {
-  // [[ADR-178]] 정정 5 — 숫자는 하나만 그린다. 겹쳐 세우던 글자를 걷었다.
-  it('치는 칸일 때는 **칸 하나만** 그린다 — 겹쳐 세우지 않는다', async () => {
-    const view = await renderAtom(
-      <AmountFigure value={700_000} unit="메소" testID="amount" onChangeValue={jest.fn()} />,
-    )
-
-    expect(view.getByTestId('amount').props.value).toBe('700,000')
-    // 같은 값을 그리는 글자가 뒤에 없다 — 있으면 안드로이드에서 둘 다 그려져 이중으로 보인다.
-    expect(view.queryByText('700,000', { includeHiddenElements: true })).toBeNull()
-  })
-
-  it('못 치는 자리에서는 그 글자가 곧 보이는 숫자다 — 상자가 하나뿐이다', async () => {
-    const view = await renderAtom(
-      <AmountFigure value={700_000} unit="메소" testID="amount" readOnly onChangeValue={jest.fn()} />,
-    )
-
-    expect(view.getByTestId('amount')).toHaveTextContent('700,000')
-    // 치는 칸이 아예 없다 — 겹쳐 둘 것이 없다.
-    expect(view.queryByLabelText('금액')).toBeNull()
-  })
-
+describe('줄 상자 ([[ADR-178]] 정정 2·3)', () => {
   it('숫자의 줄 상자는 글자보다 크다 — ascent 가 잘리지 않는다', async () => {
-    const view = await renderAtom(
-      <AmountFigure value={700_000} unit="메소" testID="amount" readOnly onChangeValue={jest.fn()} />,
-    )
+    const view = await renderAtom(<AmountFigure value={700_000} unit="메소" testID="amount" />)
 
     const style = flattenStyle(view.getByTestId('amount').props.style) as {
       fontSize: number
       lineHeight: number
     }
-    expect(style.fontSize).toBe(30)
-    // `leading-none`(=30) 이면 상자가 글자와 같아 초점에서 위가 잘렸다.
+    expect(style.fontSize).toBe(24)
+    // 줄 높이가 글자 크기와 같으면 상자에 ascent 가 안 들어가 위가 잘린다.
+    expect(style.lineHeight).toBe(31)
     expect(style.lineHeight).toBeGreaterThan(style.fontSize)
   })
-})
 
-/**
- * 단위는 숫자와 **같은 줄 상자**에 선다 ([[ADR-178]] 정정 3).
- *
- * `items-baseline` 은 `TextInput` 이 섞인 줄에서 못 믿는다(실기에서 단위가 숫자 기준선 위로 떴다).
- * 그래서 정렬을 위에서 맞추고 **두 상자에 같은 줄높이 · 같은 글자 크기**를 넣는다 — 그러면
- * 기준선은 정의상 같은 자리다. 두 글꼴 크기의 차이를 **픽셀로 적지 않는 이유**가 그것이다.
- */
-describe('단위의 줄 상자 ([[ADR-178]] 정정 3)', () => {
+  /**
+   * 단위 글자(`조`·`억`·`만`·`천`)는 숫자보다 **한 단계 작다**([[ADR-202]] 결정 10).
+   *
+   * 크기만 인라인으로 얹는다 — 줄 높이까지 주면 안드로이드에서 안긴 `Text` 가 줄 상자를 흔든다.
+   */
+  it('단위 글자는 숫자보다 한 단계 작다', async () => {
+    const view = await renderAtom(<AmountFigure value={850_000_000} unit="메소" testID="amount" />)
+
+    const 억 = flattenStyle(view.getByText('억').props.style) as {
+      fontSize: number
+      lineHeight?: number
+    }
+    expect(억.fontSize).toBe(20)
+    expect(억.lineHeight).toBeUndefined()
+  })
+
+  /**
+   * 단위 왼쪽의 틈은 **폭만 있는 `View`** 다(사용자 지정 2026-09-02).
+   *
+   * 공백 글자로 넣으면 `8억 5천만` 이 `8 억 5 천만` 이 되어 화면을 집는 모든 자리가 그 공백을
+   * 알아야 한다. 그 회귀를 여기서 막는다.
+   */
+  it('단위 왼쪽 틈이 읽어 주는 글에 안 섞인다', async () => {
+    const view = await renderAtom(<AmountFigure value={850_000_000} unit="메소" testID="amount" />)
+
+    expect(view.getByTestId('amount')).toHaveTextContent('8억 5천만')
+  })
+
   it('숫자와 단위가 **같은 줄높이**를 쓴다', async () => {
-    const view = await renderAtom(
-      <AmountFigure value={7_250_000} unit="메소" testID="amount" readOnly onChangeValue={jest.fn()} />,
-    )
+    const view = await renderAtom(<AmountFigure value={7_250_000} unit="메소" testID="amount" />)
 
     const 숫자 = flattenStyle(view.getByTestId('amount').props.style) as { lineHeight: number }
     const 단위 = flattenStyle(view.getByTestId('amount-unit').props.style) as { lineHeight: number }
@@ -187,9 +135,7 @@ describe('단위의 줄 상자 ([[ADR-178]] 정정 3)', () => {
   })
 
   it('단위 줄에 **숫자와 같은 크기**의 글자가 심겨 있다 — 그 줄의 지표를 그것이 정한다', async () => {
-    const view = await renderAtom(
-      <AmountFigure value={7_250_000} unit="메소" testID="amount" readOnly onChangeValue={jest.fn()} />,
-    )
+    const view = await renderAtom(<AmountFigure value={7_250_000} unit="메소" testID="amount" />)
 
     const 숫자 = flattenStyle(view.getByTestId('amount').props.style) as { fontSize: number }
     // 폭 0 짜리 투명 글자(ZWSP)가 숫자와 같은 크기여야 한다 — 작아지면 기준선이 다시 갈린다.
@@ -212,45 +158,32 @@ describe('단위의 줄 상자 ([[ADR-178]] 정정 3)', () => {
 describe('≈ 표식', () => {
   it('어림이면 앞에 `≈` 가 붙는다', async () => {
     const view = await renderAtom(
-      <AmountFigure
-        value={41_760_000}
-        unit="메소"
-        testID="amount"
-        approximate
-        readOnly
-        onChangeValue={jest.fn()}
-      />,
+      <AmountFigure value={41_760_000} unit="메소" testID="amount" approximate />,
     )
 
-    expect(view.getByTestId('amount')).toHaveTextContent('≈ 41,760,000')
+    expect(view.getByTestId('amount')).toHaveTextContent('≈ 4176만')
   })
 
   it('0 에는 안 붙는다 — 아직 어림할 것이 없다', async () => {
     const view = await renderAtom(
-      <AmountFigure
-        value={0}
-        unit="메소"
-        testID="amount"
-        approximate
-        readOnly
-        onChangeValue={jest.fn()}
-      />,
+      <AmountFigure value={0} unit="메소" testID="amount" approximate />,
     )
 
     expect(view.getByTestId('amount')).toHaveTextContent('0')
   })
 
   it('안 주면 안 붙는다 — 판매·지출은 실제로 오간 값이다', async () => {
-    const view = await renderAtom(
-      <AmountFigure
-        value={41_760_000}
-        unit="메소"
-        testID="amount"
-        readOnly
-        onChangeValue={jest.fn()}
-      />,
-    )
+    const view = await renderAtom(<AmountFigure value={41_760_000} unit="메소" testID="amount" />)
 
-    expect(view.getByTestId('amount')).toHaveTextContent('41,760,000')
+    expect(view.getByTestId('amount')).toHaveTextContent('4176만')
   })
+})
+
+// 눌러도 아무 일이 없어야 한다 — 이 덩어리는 이제 «보여 주기만» 하는 자리다.
+it('덩어리를 눌러도 값이 안 바뀐다', async () => {
+  const view = await renderAtom(<AmountFigure value={12} unit="메소" testID="amount" />)
+
+  fireEvent.press(view.getByTestId('amount-figure'))
+
+  expect(view.getByTestId('amount')).toHaveTextContent('12')
 })

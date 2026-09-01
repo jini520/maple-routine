@@ -26,6 +26,7 @@ const sample: IncomeRecord = {
   id: 'inc-1',
   // 계산기 이전의 행 — 사냥 칸 여섯이 없다([[ADR-175]] 결정 9).
   hunt: null,
+  quantity: null,
   ocid: null,
   earnedOn: '2026-08-23',
   category: '아이템 판매',
@@ -64,6 +65,8 @@ describe('insertIncomeRecord', () => {
       // 통화 칸 셋([[ADR-170]] 정정 15) — 메소로 번 것이라 셋 다 비어 있다.
       null,
       null,
+      null,
+      // 수량([[ADR-202]] 결정 4) — 「기타」가 아니라 비어 있다.
       null,
       // 사냥 칸 여덟([[ADR-175]] 결정 9 · [[ADR-177]] 결정 8 · [[ADR-201]] 결정 3) — 아이템
       // 판매라 전부 비어 있다.
@@ -146,6 +149,7 @@ describe('getIncomeRecordsBetween', () => {
         cashAmount: null,
         // `hunt_missed_mobs` 가 없으면 계산기로 적힌 행이 아니다([[ADR-175]] 결정 9).
         hunt: null,
+        quantity: null,
         memo: null,
         recordedAt: '2026-08-23T05:00:00.000Z',
       },
@@ -420,7 +424,7 @@ describe('hunt_typed_meso — 수동으로 적힌 사냥', () => {
     expect(sql).toContain('hunt_typed_meso')
     // 사냥 칸 여덟 — 레벨 · 놓침 · 아이템 · 소재 · 조각 · 조각가 · 메획 · **친 메소**.
     // 계산기 칸 넷이 null 인 것이 «앱이 센 값이 아니다» 를 말한다.
-    expect(values.slice(11, 19)).toEqual([
+    expect(values.slice(12, 20)).toEqual([
       null,
       null,
       null,
@@ -540,5 +544,80 @@ describe('hunt_typed_meso — 수동으로 적힌 사냥', () => {
     const [record] = await getIncomeRecordsBetween('2026-08-20', '2026-08-26')
 
     expect(record.hunt).toBeNull()
+  })
+})
+
+// 수입 「기타」도 지출과 같이 **금액 × 수량**이다([[ADR-202]] 결정 3·4).
+//
+// 수량을 안 저장하면 그 행을 수정으로 다시 열 때 수량이 늘 1 로 서고 금액 칸에 총액이 들어간다.
+// 사용자가 안 적은 값이 사용자가 적은 값처럼 보이는 자리라 칸을 하나 더 든다.
+describe('quantity — 수입의 수량', () => {
+  const 세번받은보상: IncomeRecord = {
+    ...sample,
+    category: '기타',
+    item: '이벤트 보상',
+    mesoAmount: 300_000_000,
+    quantity: 3,
+  }
+
+  it('넣을 때 함께 싣는다', async () => {
+    const { insertIncomeRecord } = require('../income') as typeof import('../income')
+
+    await insertIncomeRecord(세번받은보상)
+
+    const [sql, values] = runMock.mock.calls[0]
+    expect(sql).toContain('quantity')
+    expect(values[11]).toBe(3)
+  })
+
+  it('고칠 때도 함께 갈아 끼운다', async () => {
+    const { updateIncomeRecord } = require('../income') as typeof import('../income')
+
+    await updateIncomeRecord({ ...세번받은보상, quantity: 5 })
+
+    const [sql, values] = runMock.mock.calls[0]
+    expect(sql).toContain('quantity = ?')
+    expect(values).toEqual(expect.arrayContaining([5]))
+  })
+
+  it('읽어 온다', async () => {
+    queryMock.mockResolvedValue({
+      values: [
+        {
+          id: 'inc-1',
+          earned_on: '2026-08-23',
+          category: '기타',
+          item: '이벤트 보상',
+          meso_amount: 300_000_000,
+          quantity: 3,
+          recorded_at: '2026-08-23T05:00:00.000Z',
+        },
+      ],
+    })
+    const { getIncomeRecordsBetween } = require('../income') as typeof import('../income')
+
+    const [record] = await getIncomeRecordsBetween('2026-08-20', '2026-08-26')
+
+    expect(record.quantity).toBe(3)
+  })
+
+  // 이 칸이 없던 시절의 행 — 수량 1 로 열리고 총액이 곧 금액이다(결정 4).
+  it('칸이 비면 null 이다 — 0 으로 접지 않는다', async () => {
+    queryMock.mockResolvedValue({
+      values: [
+        {
+          id: 'inc-1',
+          earned_on: '2026-08-23',
+          category: '기타',
+          meso_amount: 300_000_000,
+          recorded_at: '2026-08-23T05:00:00.000Z',
+        },
+      ],
+    })
+    const { getIncomeRecordsBetween } = require('../income') as typeof import('../income')
+
+    const [record] = await getIncomeRecordsBetween('2026-08-20', '2026-08-26')
+
+    expect(record.quantity).toBeNull()
   })
 })

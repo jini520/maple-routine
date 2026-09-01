@@ -3,7 +3,7 @@
 // 지출 시트와 **폼이 통째로 다르다** — 통화가 메소 하나뿐이라 시세도 관세도 수량도 없고,
 // 갈래는 첫 칸의 **라벨만** 바꾼다.
 import type { ReactNode } from 'react'
-import { act, fireEvent, waitFor, within } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 
 jest.mock('@gorhom/bottom-sheet', () => {
   const ReactNative = jest.requireActual<typeof import('react-native')>('react-native')
@@ -30,11 +30,9 @@ jest.mock('@gorhom/bottom-sheet', () => {
 })
 
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
-import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import { IncomeSheet } from '../IncomeSheet'
 
 // 큰 숫자의 카운트업 기억은 **모듈 수준**이라 케이스 사이로 샌다([[ADR-087]] 결정 8).
-beforeEach(clearCountUpMemory)
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
@@ -136,6 +134,7 @@ const 옛사냥행 = {
   pointPer100mMeso: null,
   cashAmount: null,
   hunt: null,
+  quantity: null,
   memo: null,
   recordedAt: '2026-08-23T01:00:00.000Z',
 }
@@ -147,17 +146,13 @@ async function 누르기(view: Rendered, label: string): Promise<void> {
 }
 
 /**
- * 금액 칸에 **친다** — OS 숫자 키보드다([[ADR-170]] 정정 4).
+ * 「기타」가 치는 자리는 **금액 칸**이다([[ADR-202]] 결정 3) — 큰 숫자는 못 친다(결정 1).
  *
- * 커서를 먼저 넣는다: 치는 것은 언제나 포커스가 있는 상태이고, 그때는 큰 숫자가 **친 값을 그대로**
- * 그린다([[ADR-173]] 결정 6 — 커서가 빠져야 굴러간다).
+ * 합계는 `금액 × 수량` 이라 이 칸만 치면 수량 1 이 곱해져 친 값이 곧 합계가 된다.
  */
 async function 치기(view: Rendered, text: string): Promise<void> {
   await act(async () => {
-    fireEvent(view.getByTestId('income-sheet-amount'), 'focus')
-  })
-  await act(async () => {
-    fireEvent.changeText(view.getByTestId('income-sheet-amount'), text)
+    fireEvent.changeText(view.getByTestId('income-sheet-unit-price'), text)
   })
 }
 
@@ -204,7 +199,9 @@ describe('갈래', () => {
 /**
  * 금액은 **OS 숫자 키보드**다([[ADR-170]] 정정 4) — 이 시트는 이름 칸 때문에 어차피 키보드를
  * 부르므로 앱 키패드를 안 부르는 이득이 없다. 배치는 [[ADR-173]] 이 다시 짰다: 큰 숫자는 화면에
- * 하나이고 저장 바로 위, 억/만은 그 밑 힌트 한 줄, 빠른 칩은 **키보드 위**.
+ * 하나이고 저장 바로 위, 억/만은 그 밑 힌트 한 줄.
+ *
+ * **치는 자리는 「금액」 칸**이다([[ADR-202]] 결정 1·3) — 큰 숫자는 그 곱을 그리기만 한다.
  */
 describe('금액 — OS 숫자 키보드다 ([[ADR-170]] 정정 4 · [[ADR-173]])', () => {
   it('앱 키패드를 안 그린다', async () => {
@@ -217,7 +214,7 @@ describe('금액 — OS 숫자 키보드다 ([[ADR-170]] 정정 4 · [[ADR-173]]
   it('숫자 키보드를 부른다 — 글자 키보드가 아니다', async () => {
     const view = await 직접치는시트()
 
-    expect(view.getByTestId('income-sheet-amount').props.keyboardType).toBe('number-pad')
+    expect(view.getByTestId('income-sheet-unit-price').props.keyboardType).toBe('number-pad')
   })
 
   it('친 값이 콤마째 선다', async () => {
@@ -225,7 +222,9 @@ describe('금액 — OS 숫자 키보드다 ([[ADR-170]] 정정 4 · [[ADR-173]]
 
     await 치기(view, '1200')
 
-    expect(view.getByTestId('income-sheet-amount').props.value).toBe('1,200')
+    expect(view.getByTestId('income-sheet-unit-price').props.value).toBe('1,200')
+    // 큰 숫자는 `금액 × 수량` 이고 수량 기본값이 1 이라 친 값이 곧 합계다.
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('1200')
   })
 
   // 칸이 콤마를 그리므로 다음 타건은 콤마째 들어온다 — 그것을 걷어야 값이 안 깨진다.
@@ -234,14 +233,14 @@ describe('금액 — OS 숫자 키보드다 ([[ADR-170]] 정정 4 · [[ADR-173]]
 
     await 치기(view, '1,2000')
 
-    expect(view.getByTestId('income-sheet-amount').props.value).toBe('12,000')
+    expect(view.getByTestId('income-sheet-unit-price').props.value).toBe('12,000')
   })
 
   // 「0」 을 값으로 두면 그 뒤에 친 숫자가 붙어 자릿수가 하나 는다.
   it('0 이면 칸을 비우고 자리표시자로 「0」 을 둔다', async () => {
     const view = await 직접치는시트()
 
-    const 칸 = view.getByTestId('income-sheet-amount')
+    const 칸 = view.getByTestId('income-sheet-unit-price')
     expect(칸.props.value).toBe('')
     expect(칸.props.placeholder).toBe('0')
   })
@@ -264,12 +263,14 @@ describe('금액 — OS 숫자 키보드다 ([[ADR-170]] 정정 4 · [[ADR-173]]
     expect(view.queryByLabelText('+1억')).toBeNull()
   })
 
-  // 큰 숫자는 화면에 **하나**다([[ADR-173]] 결정 1) — 합계 카드가 없다.
-  it('합계 카드가 없고 억/만은 힌트 한 줄이다', async () => {
+  // 큰 숫자는 화면에 **하나**다([[ADR-173]] 결정 1) — 합계 카드도 힌트 줄도 없고, 억/만 환산은
+  // 그 숫자가 직접 한다([[ADR-202]] 결정 9).
+  it('합계 카드도 힌트 줄도 없고 큰 숫자가 억/만으로 접힌다', async () => {
     const view = await 직접치는시트()
     await 치기(view, '1200000000')
 
-    expect(view.getByTestId('income-sheet-amount-hint')).toHaveTextContent('12억')
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('12억')
+    expect(view.queryByTestId('income-sheet-amount-hint')).toBeNull()
   })
 
   it('금액이 0 이면 저장할 수 없다', async () => {
@@ -314,16 +315,16 @@ describe('판매 수수료 ([[ADR-170]] 정정 9)', () => {
     expect(view.getByLabelText('5%')).toBeTruthy()
   })
 
-  /** 힌트도 큰 숫자와 같은 것을 적는다 — **받는 돈**이다. */
+  /** 큰 숫자가 적는 것은 **받는 돈**이다 — 판매 대금이 아니라 수수료를 뗀 값. */
   it('요율을 고르면 합계가 받는 돈으로 내려간다', async () => {
     const view = await 판매시트()
     await 대금치기(view, '1200000000')
 
-    expect(view.getByTestId('income-sheet-amount-hint')).toHaveTextContent('12억')
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('12억')
 
     await 누르기(view, '5%')
 
-    expect(view.getByTestId('income-sheet-amount-hint')).toHaveTextContent('11억 4,000만')
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('11억 4천만')
   })
 
   /**
@@ -414,6 +415,8 @@ describe('저장', () => {
       cashAmount: null,
       // 계산기가 아니므로 사냥 칸 여섯은 안 실린다([[ADR-175]] 결정 9).
       hunt: null,
+      // 「기타」는 금액 × 수량이고 수량 기본값이 1 이다([[ADR-202]] 결정 3·4).
+      quantity: 1,
       memo: null,
     })
   })
@@ -482,6 +485,7 @@ describe('수정 모드 ([[ADR-173]] 결정 15)', () => {
     cashAmount: null,
     // 계산기 이전의 행이다([[ADR-175]] 결정 9).
     hunt: null,
+    quantity: null,
     memo: null,
     recordedAt: '2026-08-23T01:00:00.000Z',
   }
@@ -570,7 +574,9 @@ describe('통화 ([[ADR-170]] 정정 15)', () => {
     await 이름으로누르기(view, '캐시')
     await 치기(view, '15000')
 
-    expect(view.getByTestId('income-sheet-amount-hint')).toHaveTextContent('캐시는 메소로 환산하지 않아요')
+    // 「캐시는 메소로 환산하지 않아요」 줄은 [[ADR-202]] 결정 9 가 걷었다. 캐시가 메소 축에 안
+    // 든다는 사실은 저장된 칸(`cashAmount` 만 참)이 말한다.
+    expect(view.queryByTestId('income-sheet-amount-hint')).toBeNull()
 
     await 이름으로누르기(view, '저장')
 
@@ -578,6 +584,84 @@ describe('통화 ([[ADR-170]] 정정 15)', () => {
       mesoAmount: null,
       pointAmount: null,
       cashAmount: 15_000,
+    })
+  })
+
+  /**
+   * 「기타」는 **금액 × 수량**이다([[ADR-202]] 결정 3) — 지출 「기타」와 같은 식이다.
+   *
+   * 수량은 `income_records.quantity` 에 박힌다(결정 4). 안 남기면 그 행을 다시 열 때 되짚을 길이
+   * 없어 수량이 1 로 서고 금액 칸에 총액이 들어간다 — 사용자가 안 적은 값을 적은 값처럼 보여 준다.
+   */
+  describe('금액 × 수량 ([[ADR-202]] 결정 3·4)', () => {
+    it('수량을 올리면 큰 숫자가 곱이 되고 총액이 저장된다', async () => {
+      const onSave = jest.fn()
+      const view = await 그리기({ onSave })
+      await 이름으로누르기(view, '기타')
+      await 치기(view, '30000000')
+
+      await 이름으로누르기(view, '수량 늘리기')
+
+      expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('6천만')
+
+      await 이름으로누르기(view, '저장')
+
+      // 통화 칸에는 **곱한 총액**이 들어가고 수량은 자기 칸에 남는다.
+      expect(onSave.mock.calls[0][0]).toMatchObject({ mesoAmount: 60_000_000, quantity: 2 })
+    })
+
+    it('수정으로 열면 금액을 되짚는다 — `총액 ÷ 수량` 이다', async () => {
+      const view = await 그리기({
+        editing: {
+          id: 'inc-q',
+          ocid: null,
+          earnedOn: '2026-08-23',
+          category: '기타' as const,
+          item: '이벤트 보상',
+          mesoAmount: 60_000_000,
+          saleFeePercent: null,
+          saleFeeMeso: null,
+          pointAmount: null,
+          pointPer100mMeso: null,
+          cashAmount: null,
+          hunt: null,
+          quantity: 2,
+          memo: null,
+          recordedAt: '2026-08-23T05:00:00.000Z',
+        },
+        onDelete: jest.fn(),
+      })
+
+      // 총액(60,000,000)을 그대로 금액 칸에 넣으면 저장 한 번에 1.2억이 된다.
+      expect(view.getByTestId('income-sheet-unit-price').props.value).toBe('30,000,000')
+      expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('6천만')
+    })
+
+    // 이 칸이 없던 시절의 행 — `quantity` 가 `null` 이라 수량 1 로 열리고 총액이 곧 금액이다.
+    it('수량이 없는 옛 행은 수량 1 로 열린다 — 금액이 안 바뀐다', async () => {
+      const view = await 그리기({
+        editing: {
+          id: 'inc-old',
+          ocid: null,
+          earnedOn: '2026-08-23',
+          category: '기타' as const,
+          item: '이벤트 보상',
+          mesoAmount: 15_000,
+          saleFeePercent: null,
+          saleFeeMeso: null,
+          pointAmount: null,
+          pointPer100mMeso: null,
+          cashAmount: null,
+          hunt: null,
+          quantity: null,
+          memo: null,
+          recordedAt: '2026-08-23T05:00:00.000Z',
+        },
+        onDelete: jest.fn(),
+      })
+
+      expect(view.getByTestId('income-sheet-unit-price').props.value).toBe('15,000')
+      expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('1만 5000')
     })
   })
 
@@ -596,6 +680,7 @@ describe('통화 ([[ADR-170]] 정정 15)', () => {
         pointPer100mMeso: 1_180,
         cashAmount: null,
         hunt: null,
+        quantity: null,
         memo: null,
         recordedAt: '2026-08-23T01:00:00.000Z',
       },
@@ -943,7 +1028,6 @@ describe('사냥 계산기 ([[ADR-175]])', () => {
     await 아이디로치기(view, 'income-sheet-fragment-price', '8000000')
 
     // `readOnly` 면 `AmountFigure` 가 입력이 아니라 글자를 그린다 — 「금액」 칸도 초기화도 없다.
-    // (글자 자체는 굴러가는 도중값이라 단언할 것이 못 된다 — `useCountUp`.)
     expect(view.queryByLabelText('금액')).toBeNull()
     expect(view.queryByLabelText('금액 초기화')).toBeNull()
 
@@ -1045,6 +1129,7 @@ describe('사냥 계산기 ([[ADR-175]])', () => {
         pointAmount: null,
         pointPer100mMeso: null,
         cashAmount: null,
+        quantity: null,
         hunt: {
           mode: 'calculator' as const,
           characterLevel: 294,
@@ -1132,10 +1217,7 @@ describe('사냥 수동 입력 ([[ADR-201]])', () => {
     await 아이디로치기(view, 'income-sheet-fragments', '83')
     await 아이디로치기(view, 'income-sheet-fragment-price', '8000000')
 
-    // 큰 숫자는 **굴러 올라간다**([[ADR-087]]) — 다 오를 때까지 기다린다.
-    await waitFor(() =>
-      expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('1,664,000,000'),
-    )
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('16억 6400만')
   })
 
   it('조각을 안 넣으면 친 메소가 곧 합계다 (결정 1)', async () => {
@@ -1145,9 +1227,7 @@ describe('사냥 수동 입력 ([[ADR-201]])', () => {
 
     await 아이디로치기(view, 'income-sheet-hunt-meso', '500000000')
 
-    await waitFor(() =>
-      expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('500,000,000'),
-    )
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('5억')
   })
 
   // `≈` 는 **미리 세어 둔 값**이라는 뜻이다([[ADR-201]] 결정 2). 친 값에 붙이면 아무것도 안 가른다.
@@ -1158,9 +1238,7 @@ describe('사냥 수동 입력 ([[ADR-201]])', () => {
 
     await 아이디로치기(view, 'income-sheet-hunt-meso', '500000000')
 
-    await waitFor(() =>
-      expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('500,000,000'),
-    )
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('5억')
     expect(view.getByTestId('income-sheet-amount')).not.toHaveTextContent('≈')
   })
 
@@ -1194,7 +1272,7 @@ describe('사냥 수동 입력 ([[ADR-201]])', () => {
 
     expect(view.queryByTestId('income-sheet-region-trigger')).toBeNull()
     expect(view.getByTestId('income-sheet-hunt-meso').props.value).toBe('1,200,000,000')
-    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('1,200,000,000')
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('12억')
     // 모드는 기록이 정했다 — 바꾸는 칸이 없다(결정 5).
     expect(view.queryByLabelText('직접 입력')).toBeNull()
   })
@@ -1474,6 +1552,7 @@ describe('메소 획득량 ([[ADR-177]])', () => {
         pointAmount: null,
         pointPer100mMeso: null,
         cashAmount: null,
+        quantity: null,
         hunt: {
           mode: 'calculator' as const,
           characterLevel: 294,
@@ -1497,14 +1576,14 @@ describe('메소 획득량 ([[ADR-177]])', () => {
 })
 
 /**
- * 큰 숫자의 **정체** ([[ADR-087]] 정정 1 · [[ADR-173]] 결정 12).
+ * 수정으로 열면 **그 기록의 값이 곧바로 선다** ([[ADR-202]] 결정 12).
  *
- * 카운트업의 기억은 **모듈 수준**이라 시트를 닫아도 남는다([[ADR-087]] 결정 8). 정체를 안 넘기면
- * `testID` 가 곧 정체가 되는데 그것은 **고정 문자열**이라, 다른 기록을 열어도 같은 칸으로 보여
- * **지난 기록의 금액에서 굴러온다**(사용자 보고 2026-08-29 — 56억을 봤다가 121억을 열면 오르는
- * 애니메이션이 났다). 지출 시트는 이미 이름표를 넘겨 이 자리를 막고 있었다.
+ * 이 자리는 한때 카운트업의 기억(모듈 수준이라 시트를 닫아도 남았다) 때문에 **지난 기록의 금액에서
+ * 굴러왔다**(사용자 보고 2026-08-29 — 56억을 봤다가 121억을 열면 오르는 애니메이션이 났다).
+ * 이름표를 발급해 막았다가, 결정 12 가 카운트업 자체를 걷으면서 그 장치가 통째로 사라졌다.
+ * 회귀를 막으려고 결과는 그대로 붙든다.
  */
-describe('큰 숫자의 정체 ([[ADR-087]] 정정 1)', () => {
+describe('수정으로 열 때의 큰 숫자 ([[ADR-202]] 결정 12)', () => {
   function 판매기록(mesoAmount: number) {
     return {
       id: `inc-${mesoAmount}`,
@@ -1519,20 +1598,21 @@ describe('큰 숫자의 정체 ([[ADR-087]] 정정 1)', () => {
       pointPer100mMeso: null,
       cashAmount: null,
       hunt: null,
+      quantity: null,
       memo: null,
       recordedAt: '2026-08-23T01:00:00.000Z',
     }
   }
 
-  it('다른 기록을 열면 **지난 금액에서 안 굴러온다**', async () => {
+  it('다른 기록을 열면 그 기록의 금액이 곧바로 선다', async () => {
     const 먼저 = await 그리기({ editing: 판매기록(5_600_000_000), onDelete: jest.fn() })
-    expect(먼저.getByTestId('income-sheet-amount')).toHaveTextContent('5,600,000,000')
+    expect(먼저.getByTestId('income-sheet-amount')).toHaveTextContent('56억')
     await act(async () => 먼저.unmount())
 
     const 나중 = await 그리기({ editing: 판매기록(12_100_000_000), onDelete: jest.fn() })
 
     // 열자마자 그 기록의 값이다 — 5,600,000,000 에서 올라오면 «내가 뭘 바꿨나» 로 읽힌다.
-    expect(나중.getByTestId('income-sheet-amount')).toHaveTextContent('12,100,000,000')
+    expect(나중.getByTestId('income-sheet-amount')).toHaveTextContent('121억')
   })
 
   it('사냥 · 기타도 같다 — 갈래마다 자기 이름표를 갖는다', async () => {
@@ -1547,8 +1627,8 @@ describe('큰 숫자의 정체 ([[ADR-087]] 정정 1)', () => {
       onDelete: jest.fn(),
     })
 
-    // 「기타」의 큰 숫자는 **치는 칸**이라 글자가 아니라 값을 본다.
-    expect(나중.getByTestId('income-sheet-amount').props.value).toBe('12,100,000,000')
+    // 「기타」의 큰 숫자도 이제 글자다([[ADR-202]] 결정 1) — 갈래가 달라도 보는 법이 같다.
+    expect(나중.getByTestId('income-sheet-amount')).toHaveTextContent('121억')
   })
 })
 
@@ -1683,6 +1763,7 @@ describe('날짜 바꾸기 ([[ADR-178]] 정정 6)', () => {
         pointPer100mMeso: null,
         cashAmount: null,
         hunt: null,
+        quantity: null,
         memo: null,
         recordedAt: '2026-08-23T01:00:00.000Z',
       },
@@ -1710,11 +1791,10 @@ describe('어림값 표식', () => {
     await 아이디로누르기(view, 'income-sheet-ground-trigger')
     await 아이디로누르기(view, 'income-sheet-ground-option-밤의 길 3')
 
+    // 「획득 메소」 줄은 AmountFigure 가 아니라 콤마 표기 그대로다.
     expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 21,168,000')
-    // 큰 숫자는 **굴러 올라간다**([[ADR-087]]) — 다 오를 때까지 기다린다.
-    await waitFor(() =>
-      expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('≈ 21,168,000'),
-    )
+    // 큰 숫자는 한국어 단위로 접혀 선다([[ADR-202]] 결정 9).
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('≈ 2116만 8000')
   })
 
   it('아직 아무것도 안 골랐으면 표식이 없다', async () => {
@@ -1730,8 +1810,6 @@ describe('어림값 표식', () => {
     const view = await 판매시트()
     await 대금치기(view, '1200000000')
 
-    await waitFor(() =>
-      expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('1,200,000,000'),
-    )
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('12억')
   })
 })

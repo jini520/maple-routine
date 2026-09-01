@@ -64,6 +64,15 @@ export interface IncomeRecord {
   pointPer100mMeso: number | null
   /** **환산하지 않는다**([[ADR-166]] 정정 2 ①) — 지출과 같은 이유·같은 결과다. */
   cashAmount: number | null
+  /**
+   * 몇 회인가([[ADR-202]] 결정 4). 「기타」만 쓰고 나머지 갈래는 `null` 이다.
+   *
+   * 위 세 칸에는 **곱한 총액**이 들어간다. 수량을 안 남기면 수정으로 다시 열 때 되짚을 길이 없어
+   * 수량이 1 로 서고 금액 칸에 총액이 들어간다(`금액 = 총액 ÷ 수량` 으로 되짚는다).
+   *
+   * 이 칸이 없던 시절의 행도 `null` 이고 수량 1 로 열린다 — 그 행은 총액이 곧 금액이다.
+   */
+  quantity: number | null
   /** 경매장 수수료율([[ADR-168]] `FeePercent`). `null` = 없음(직거래이거나 정정 9 이전 행). */
   saleFeePercent: FeePercent | null
   /** 뗀 몫. **판매 대금 = `mesoAmount` + 이것** 이다 — 요율만으로는 내림 때문에 역산이 안 된다. */
@@ -219,11 +228,11 @@ function huntToValues(hunt: HuntingIncomeDetail | null): Array<number | string |
 const INSERT_SQL = `
   INSERT INTO income_records
     (id, ocid, earned_on, category, item, meso_amount, sale_fee_percent, sale_fee_meso,
-     point_amount, point_per_100m_meso, cash_amount,
+     point_amount, point_per_100m_meso, cash_amount, quantity,
      hunt_character_level, hunt_missed_mobs, hunt_boosts, hunt_sojae, hunt_fragments,
      hunt_fragment_price, hunt_meso_rate, hunt_typed_meso,
      memo, recorded_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
@@ -240,6 +249,7 @@ export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
     record.pointAmount,
     record.pointPer100mMeso,
     record.cashAmount,
+    record.quantity,
     ...huntToValues(record.hunt),
     record.memo,
     record.recordedAt,
@@ -251,7 +261,7 @@ const UPDATE_SQL = `
   UPDATE income_records SET
     ocid = ?, earned_on = ?, category = ?, item = ?, meso_amount = ?,
     sale_fee_percent = ?, sale_fee_meso = ?,
-    point_amount = ?, point_per_100m_meso = ?, cash_amount = ?,
+    point_amount = ?, point_per_100m_meso = ?, cash_amount = ?, quantity = ?,
     hunt_character_level = ?, hunt_missed_mobs = ?, hunt_boosts = ?, hunt_sojae = ?,
     hunt_fragments = ?, hunt_fragment_price = ?, hunt_meso_rate = ?, hunt_typed_meso = ?,
     memo = ?
@@ -271,6 +281,7 @@ export async function updateIncomeRecord(record: IncomeRecord): Promise<void> {
     record.pointAmount,
     record.pointPer100mMeso,
     record.cashAmount,
+    record.quantity,
     ...huntToValues(record.hunt),
     record.memo,
     record.id,
@@ -297,6 +308,7 @@ function rowToRecord(row: Record<string, unknown>): IncomeRecord {
     pointAmount: (row.point_amount as number | null | undefined) ?? null,
     pointPer100mMeso: (row.point_per_100m_meso as number | null | undefined) ?? null,
     cashAmount: (row.cash_amount as number | null | undefined) ?? null,
+    quantity: (row.quantity as number | null | undefined) ?? null,
     hunt: rowToHunt(row),
     memo: (row.memo as string | null | undefined) ?? null,
     recordedAt: row.recorded_at as string,

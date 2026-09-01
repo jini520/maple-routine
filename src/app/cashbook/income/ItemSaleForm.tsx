@@ -14,10 +14,8 @@ import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { parseMesoText } from '../../../components/molecules/MesoPad/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
-import { formatMesoUnits } from '../../../lib/drop-price'
 import { netProceedsMeso, type FeePercent } from '../../../lib/item-split'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
-import { nextAmountIdentity } from '../amount-identity'
 import { FieldRow } from '../sheet-fields'
 import { CharacterField, SaveRow, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from './use-sheet-submit'
@@ -55,15 +53,6 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
   const [feePercent, setFeePercent] = useState<FeePercent | null>(
     props.editing?.saleFeePercent ?? null,
   )
-  /**
-   * 큰 숫자의 **이름표**([[ADR-087]] 정정 1) — **마운트마다 새로 받는다**.
-   *
-   * 안 넘기면 `testID` 가 곧 정체가 되는데 그것은 고정 문자열이고, 카운트업의 기억은 모듈 수준이라
-   * 시트를 닫아도 남는다(결정 8). 그래서 **다른 기록을 열어도 지난 금액에서 굴러왔다**
-   * (사용자 보고 2026-08-29). 갈래를 옮기면 폼이 새로 심기므로([[ADR-178]] 결정 3) 이름표도
-   * 함께 새로 발급된다 — «다른 숫자를 보게 된 것» 이 곧 다른 이름표다.
-   */
-  const [amountIdentity] = useState(nextAmountIdentity)
   const { saving, submit, remove } = useSheetSubmit(props)
 
   /** [[ADR-168]] 의 계산을 **그대로 부른다** — 수수료 쪽을 내림한다(= 손에 남는 쪽이 커진다). */
@@ -125,10 +114,6 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
         value={net}
         unit="메소"
         testID="income-sheet-amount"
-        identity={amountIdentity}
-        hint={net > 0 ? formatMesoUnits(net) : ' '}
-        readOnly
-        onChangeValue={setGross}
       />
 
       <SaveRow
@@ -149,6 +134,8 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
             pointAmount: null,
             pointPer100mMeso: null,
             cashAmount: null,
+            // 수량은 「기타」만 쓴다([[ADR-202]] 결정 4).
+            quantity: null,
             hunt: null,
             memo: null,
           })

@@ -1,70 +1,36 @@
 /**
  * 시트의 **큰 숫자 한 덩어리**([[ADR-173]] 결정 1·2·9) — 저장 바로 위에 선다.
  *
- * ## 화면에 큰 숫자는 하나뿐이다
+ * ## 언제나 합계이고 **못 친다** ([[ADR-202]] 결정 1)
  *
- * 그 숫자가 무엇인지는 부르는 자리가 정한다 — **직접 입력이면 「치는 금액」, 목록 갈래면 「합계」**.
- * 어느 쪽이든 하나뿐이라, 친 금액과 합계가 같은 값인데 두 번 적히던 문제가 구조에서 사라진다.
+ * 부르는 자리가 일곱인데 한때는 그중 둘이 치는 칸이었다. 같은 자리가 어떤 때는 사람이 친 값이고
+ * 어떤 때는 앱이 센 값이면, 화면을 보는 사람이 **그 수를 자기가 고칠 수 있는지를 매번 다시
+ * 판단해야 한다.** 그래서 금액은 폼의 라벨–값 줄에서만 받고 여기는 그린 것만 보여 준다.
  *
- * ## 힌트는 **값이 갈릴 때만** 뜬다
+ * ## 숫자가 **한국어 단위로 접혀서** 선다 (결정 9)
  *
- * 억/만 환산(`12억`) · 메소 환산(`메소로 −25.42억`) · 막힌 이유(`시세를 넣어야…`). 캐시처럼
- * 환산을 안 하는 자리는 **줄이 통째로 없다** — 자리를 비워 두지 않고 시트가 그만큼 짧아진다
- * ([[ADR-166]] 정정 2 ③ 의 «0 을 안 적는다» 와 같은 태도).
+ * `850,000,000` 이 아니라 `8억 5천만` 이다. 콤마 세 자리는 억·만으로 세는 금액과 안 맞아 자릿수를
+ * 눈으로 다시 세게 만든다. **값은 하나도 안 깎는다** — 이 자리가 곧 저장될 총액이다.
+ *
+ * 밑에 있던 힌트 한 줄이 그 환산을 하던 자리라 **함께 사라졌다**. 막힌 이유를 말하던 몫은 필수
+ * 칸의 빨간 `*` 와 꺼진 저장 버튼이 받는다(사용자 지정 2026-09-02).
  *
  * ## 자기 윗선을 안 긋는다 (결정 9)
  *
  * 위 라벨–값 줄의 밑줄이 경계를 **겸한다**. 여기서 또 그으면 선이 두 줄로 보인다(사용자 지적).
- *
- * ## `MesoPad/MesoAmountField` 와 갈라 둔 이유
- *
- * 그쪽은 드롭 판매가(`DropPricePad`)의 것이고 **앱 키패드가 값을 넣는다**([[ADR-124]] 결정 5).
- * 그 화면은 글자 칸이 없어 키보드를 한 번도 안 부르므로 그 규칙이 살아 있다([[ADR-170]] 정정 4).
- * 여기서는 칸이 직접 받고 빠른 칩이 폼 밖(키보드 위)에 있어, 한 부품의 분기로 두면 한쪽을 고칠 때
- * 다른 쪽이 딸려 온다.
  */
-import { useState } from 'react'
-import { Pressable, View } from 'react-native'
+import { View, type TextStyle } from 'react-native'
 
-import { useCountUp } from '../../../hooks/useCountUp'
 import { Text } from '../../atoms'
-import { SheetTextInput } from '../SheetTextInput/SheetTextInput'
-import { RotateCcwIcon } from '../../../lib/icons'
+import { formatMesoUnits } from '../../../lib/drop-price'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
-import { parseMesoText } from '../MesoPad/meso-pad'
 
 export interface AmountFigureProps {
   value: number
   /** 숫자 옆에 붙는 단위 — 메소 · 메포 · 원. */
   unit: string
-  /** 칸과 힌트를 집는 이름의 뿌리 — 힌트는 `${testID}-hint`, 덩어리는 `${testID}-figure` 다. */
+  /** 숫자와 덩어리를 집는 이름의 뿌리 — 덩어리는 `${testID}-figure`, 단위는 `${testID}-unit` 이다. */
   testID: string
-  onChangeValue: (next: number) => void
-  /** 없으면 그 줄을 **안 그린다**. */
-  hint?: string
-  /** 힌트가 «왜 저장이 안 되는지» 를 말하는 중인가 — 에러색이 된다. */
-  hintBlocked?: boolean
-  /**
-   * **손을 뗐을 때 보여줄 값** — 없으면 `value` 와 같다([[ADR-173]] 결정 5·6).
-   *
-   * 관세가 그 자리다: 치는 것은 구입가인데 커서가 빠지면 관세를 더한 합계를 보여야 한다.
-   * 그 사이를 **굴러서** 넘어가므로(`useCountUp` — [[ADR-087]] 결정 6) 더해지는 금액을 따로
-   * 안 적는다. 숫자 자체가 그만큼 올라가는 것이 곧 그 말이다.
-   */
-  displayValue?: number
-  /**
-   * **못 치는 숫자** — 목록 갈래의 합계가 그렇다(단가 × 수량이라 앱이 센다).
-   *
-   * 칸 대신 글자를 그리고 초기화도 안 세운다 — 지울 것이 없다. 수량이 바뀌면 **굴러간다**.
-   */
-  readOnly?: boolean
-  /**
-   * 카운트업의 **정체**([[ADR-087]] 정정 1) — 안 넘기면 `testID` 가 곧 정체다.
-   *
-   * 이 값이 바뀌면 굴리지 않고 **갈아 끼운다**. «같은 숫자가 변한 것» 과 «다른 숫자를 보게 된 것» 을
-   * 가르는 자리라, 부르는 쪽만이 그 답을 안다(지출 시트의 갈래·대표·단계가 그렇다).
-   */
-  identity?: string
   /**
    * **센 값이 어림이면 `≈` 를 앞에 붙인다**(사용자 지정 2026-08-29).
    *
@@ -77,152 +43,116 @@ export interface AmountFigureProps {
 }
 
 /**
- * 큰 숫자의 **글자 크기와 줄 상자**([[ADR-178]] 정정 2·3).
+ * 큰 숫자의 **글자 크기와 줄 상자**([[ADR-178]] 정정 2·3 · [[ADR-202]] 결정 10).
  *
- * 줄높이를 글자보다 크게 잡는 이유는 ascent 다 — 30px 글자에 30px 상자면 초점에서 위가 잘린다.
+ * `text-2xl`(24px)과 그 줄 높이(31px)를 손으로 적어 둔 것이다. 클래스 문자열에는 보간을 못 하므로
+ * (NativeWind 가 빌드 때 읽는다) 같은 수를 두 곳에 적고 그 일치를 테스트가 지킨다.
  *
- * 단위 상자가 **같은 두 수**를 쓴다(`unit` 줄) — 그래야 두 줄의 기준선이 같은 자리에 선다.
- * 클래스 문자열에는 보간을 못 하므로(NativeWind 가 빌드 때 읽는다) 같은 수를 두 곳에 적고
- * 그 일치를 테스트가 지킨다.
+ * 줄 높이가 글자보다 커야 한다 — 같으면 아톰이 지워 둔 글꼴 여백 탓에 ascent 가 잘린다
+ * ([[ADR-170]] 정정 13). 계단표([[ADR-196]])의 31px 이 그 자리를 이미 준다.
  */
-const FIGURE_FONT_SIZE = 30
-const FIGURE_LINE_HEIGHT = 38
+const FIGURE_FONT_SIZE = 24
+const FIGURE_LINE_HEIGHT = 31
 
 /**
- * 큰 숫자 한 칸. **굴러가는 상태를 여기 가둔다**([[ADR-087]] 정정 3).
+ * 단위 글자(`조`·`억`·`만`·`천`)는 숫자보다 **한 단계 작다**([[ADR-202]] 결정 10).
  *
- * `useCountUp` 은 350ms 동안 매 프레임 `setState` 를 부른다. 그 상태가 부모에 있으면 부모 트리가
- * 프레임마다 다시 그려진다.
- *
- * **못 치는 자리와 치는 자리를 한 컴포넌트가 그린다.** 갈래마다 잎을 따로 두면 갈래가 바뀔 때
- * 훅이 다시 마운트되고, 그때 기억(`lastDisplayedByIdentity`)에서 옛 값을 꺼내 **굴러 버린다** —
- * 「무엇을 세는지가 바뀌면 안 굴러간다」([[ADR-173]] 결정 12)가 깨진다. 테스트가 그것을 잡는다.
- *
- * 같은 이유로 `atoms/AnimatedNumber` 를 못 쓴다. 그쪽은 글자만 내는 잎이라 칸을 못 그리고,
- * 칸만 갈라내면 위의 재마운트가 난다.
+ * **줄 높이는 안 준다.** 인라인 크기만 얹어야 숫자가 잡은 줄 상자를 흔들지 않는다 — 안드로이드는
+ * 안긴 `Text` 의 줄 높이도 줄 상자 계산에 넣는다.
  */
-function AmountValue(props: {
-  testID: string
-  identity: string
-  value: number
-  settled: number
-  approximateMark: string
-  readOnly: boolean
-  onChangeValue: (next: number) => void
-}): React.JSX.Element {
-  const [focused, setFocused] = useState(false)
-  const rolled = useCountUp(props.identity, focused ? props.value : props.settled)
-  const shown = focused ? props.value : rolled
-  const empty = shown === 0
-  /**
-   * 큰 숫자의 **줄 상자를 못 박는다**([[ADR-178]] 결정 1 · 정정 2).
-   *
-   * `leading-none` 은 줄높이를 글자 크기와 같게 만든다 — 30px 글자에 30px 상자다. 아톰이 두
-   * 플랫폼을 맞추려고 패딩과 글꼴 여백을 지워 둔 터라([[ADR-170]] 정정 13) 그 상자에 ascent 가
-   * 안 들어가 **초점을 받으면 글자 위가 잘렸다**. 줄높이를 **글자보다 크게** 잡아 그 자리를 만든다.
-   */
-  // NativeWind 는 클래스 문자열을 **빌드 때** 읽으므로 여기에 상수를 보간하면 안 된다 —
-  // `AmountFigure.test` 의 두 상수와 **같은 수**를 손으로 적는다.
-  const digits = `text-right text-30 font-bold leading-[38px] tracking-[-.03em] ${
-    empty ? 'text-text-disabled' : 'text-text'
-  }`
+const FIGURE_UNIT_FONT_SIZE = 20
 
-  if (props.readOnly) {
-    return (
-      <Text testID={props.testID} className={digits} style={TABULAR_NUMS}>
-        {props.approximateMark}
-        {shown.toLocaleString()}
-      </Text>
-    )
-  }
+/**
+ * 단위가 숫자 바로 뒤에 올 때만 **살짝** 띄운다(사용자 지정 2026-09-02).
+ *
+ * `5천만` 처럼 단위끼리 붙은 자리는 한 낱말이라 안 띄운다 — 벌리면 `5천 만` 으로 읽힌다.
+ *
+ * 띄우는 것은 **폭만 있는 `View`** 다. 나머지 셋은 실측으로 떨어졌다(2026-09-02 · 안드로이드).
+ *
+ * - `marginLeft`: 안긴 `Text` 에 **안 먹는다**. 14 를 줘도 화면이 그대로였다.
+ * - `letterSpacing`: 먹지만 안드로이드가 글자 **양옆에** 균등하게 넣어 `850 0 만` 이 됐다.
+ * - 공백 글자: 먹지만 **읽어 주는 글에 섞인다**. `8억 5천만` 이 `8 억 5 천만` 이 되어 화면을
+ *   집는 모든 자리가 그 공백을 알아야 한다.
+ *
+ * 인라인 `View` 는 폭만 차지하고 글자에는 안 섞인다.
+ */
+const FIGURE_UNIT_GAP = 2
 
-  return (
-    <SheetTextInput
-      testID={props.testID}
-      aria-label="금액"
-      // 0 일 때 비우는 이유: 「0」 을 값으로 두면 그 뒤에 친 숫자가 붙어 자릿수가 하나 는다.
-      value={empty ? '' : shown.toLocaleString()}
-      onChangeText={(text) => props.onChangeValue(parseMesoText(props.value, text))}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
-      keyboardType="number-pad"
-      placeholder="0"
-      className={digits}
-      style={TABULAR_NUMS}
-    />
-  )
+const UNIT_STYLE = { fontSize: FIGURE_UNIT_FONT_SIZE }
+const GAP_STYLE = { width: FIGURE_UNIT_GAP }
+
+/** 숫자와 단위를 가르는 자리 — 잡는 괄호라 `split` 이 단위 글자도 함께 돌려준다. */
+const AMOUNT_UNIT = /([조억만천])/
+
+/**
+ * 접힌 금액을 그릴 토막으로 가른다(결정 10) — 단위 글자만 한 단계 작게 그린다.
+ *
+ * 단위가 숫자 뒤에 올 때 그 사이에 **빈 토막**(`text === ''`)을 끼운다. 그리는 쪽이 그것을
+ * 폭만 있는 `View` 로 낸다.
+ */
+function amountPieces(text: string): { text: string; style?: TextStyle }[] {
+  const parts = text.split(AMOUNT_UNIT).filter((part) => part !== '')
+  const pieces: { text: string; style?: TextStyle }[] = []
+  parts.forEach((part, index) => {
+    if (AMOUNT_UNIT.test(part)) {
+      pieces.push({ text: part, style: UNIT_STYLE })
+      return
+    }
+    // 뒤가 단위가 아니면 틈을 만들 이유가 없다(만 미만 나머지가 그렇다).
+    if (index + 1 >= parts.length || !AMOUNT_UNIT.test(parts[index + 1])) {
+      pieces.push({ text: part })
+      return
+    }
+    pieces.push({ text: part })
+    pieces.push({ text: '', style: GAP_STYLE })
+  })
+  return pieces
 }
 
 export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
-  /**
-   * **칠 때는 친 값, 손을 떼면 보여 줄 값**([[ADR-173]] 결정 6).
-   *
-   * 치는 동안 굴리면 한 자를 칠 때마다 숫자가 움직여 무엇을 치는지 안 읽힌다. 그래서 커서가
-   * 있는 동안에는 카운트업의 결과를 안 쓰고 친 값을 그대로 그린다.
-   */
-  const settled = props.displayValue ?? props.value
-  /**
-   * 0 판정은 **목표**로 한다. 구르는 중간값으로 하면 색이 프레임마다 흔들리고, 무엇보다 부모가
-   * 그 값을 알아야 해서 굴러가는 상태가 여기로 올라온다([[ADR-087]] 정정 3).
-   */
-  /** 어림 표식 — 0 에는 안 붙는다(어림할 것이 없다). 목표로 판정한다(구르는 중에 안 흔들리게). */
-  const approximateMark = props.approximate === true && settled !== 0 ? '≈ ' : ''
+  /** 어림 표식 — 0 에는 안 붙는다(어림할 것이 없다). */
+  const approximateMark = props.approximate === true && props.value !== 0 ? '≈ ' : ''
   /**
    * 큰 숫자의 **줄 상자를 못 박는다**([[ADR-178]] 결정 1 · 정정 2).
    *
-   * `leading-none` 은 줄높이를 글자 크기와 같게 만든다 — 30px 글자에 30px 상자다. 아톰이 두
-   * 플랫폼을 맞추려고 패딩과 글꼴 여백을 지워 둔 터라([[ADR-170]] 정정 13) 그 상자에 ascent 가
-   * 안 들어가 **초점을 받으면 글자 위가 잘렸다**. 줄높이를 **글자보다 크게** 잡아 그 자리를 만든다.
+   * 줄높이가 글자 크기와 같으면(`leading-none`) 아톰이 두 플랫폼을 맞추려고 패딩과 글꼴 여백을
+   * 지워 둔 터라([[ADR-170]] 정정 13) 그 상자에 ascent 가 안 들어가 **글자 위가 잘린다**.
+   * `text-2xl` 은 계단표에서 31px 을 함께 들고 오므로 그 자리가 이미 있다([[ADR-196]]).
    */
   // NativeWind 는 클래스 문자열을 **빌드 때** 읽으므로 여기에 상수를 보간하면 안 된다 —
-  // 아래 두 상수와 **같은 수**를 손으로 적고, 그 사실을 `AmountFigure.test` 가 붙든다.
+  // 위 상수와 **같은 수**를 손으로 적고 `AmountFigure.test` 가 그 일치를 붙든다.
+  const digits = `text-right text-2xl font-bold tracking-[-.03em] ${
+    props.value === 0 ? 'text-text-disabled' : 'text-text'
+  }`
 
   return (
-    <View testID={`${props.testID}-figure`} className="gap-1">
+    <View testID={`${props.testID}-figure`}>
       {/*
         **기준선에 기대지 않는다**([[ADR-178]] 정정 3).
 
-        `items-baseline` 은 `TextInput` 이 섞인 줄에서 못 믿는다 — Yoga 가 노드마다 기준선을 어떻게
-        잡는지가 갈리고, 실기에서 단위가 숫자 기준선 **위로 떠** 보였다(사용자 화면 2026-08-29,
-        두 번). 그래서 **정렬을 위에서 맞추고**(`items-start`) 두 상자에 **같은 줄높이**를 준다.
-        같은 줄높이에 **같은 크기의 글자**가 들어 있으면 기준선은 정의상 같은 자리다 — 단위 상자에
-        폭 0 짜리 큰 글자를 심어 그 조건을 만든다(아래 `unitLine`).
+        `items-baseline` 은 못 믿는다 — Yoga 가 노드마다 기준선을 어떻게 잡는지가 갈리고,
+        실기에서 단위가 숫자 기준선 **위로 떠** 보였다(사용자 화면 2026-08-29, 두 번). 그래서
+        **정렬을 위에서 맞추고**(`items-start`) 두 상자에 **같은 줄높이**를 준다. 같은 줄높이에
+        **같은 크기의 글자**가 들어 있으면 기준선은 정의상 같은 자리다 — 단위 상자에 폭 0 짜리
+        큰 글자를 심어 그 조건을 만든다(아래 `unit` 줄).
       */}
       <View className="flex-row items-start gap-1.5">
-        {/* 초기화는 **큰 숫자와 같은 줄**이다(결정 1 이 세로를 줄인 자리). 값이 0 이면 지울 것이
-            없으므로 자리만 지킨다 — 없애면 숫자가 좌우로 흔들린다. 못 치는 숫자에는 아예 없다. */}
-        {props.readOnly !== true && (
-        <Pressable
-          role="button"
-          aria-label="금액 초기화"
-          onPress={() => props.onChangeValue(0)}
-          pointerEvents={props.value === 0 ? 'none' : 'auto'}
-          className={`mr-auto h-7 flex-row items-center gap-1 self-center rounded-full border border-border px-2.5 active:bg-surface-2${
-            props.value === 0 ? ' opacity-0' : ''
-          }`}
-        >
-          <RotateCcwIcon className="h-3 w-3 text-text-muted" strokeWidth={2.5} aria-hidden />
-          <Text className="text-11 font-semibold text-text-muted">초기화</Text>
-        </Pressable>
-        )}
-
-        {/*
-          숫자는 **하나만 그린다**([[ADR-178]] 정정 5). 못 치는 자리는 `Text`, 치는 자리는 칸이다.
-
-          정정 4 는 칸 위에 `Text` 를 겹치고 칸의 글자를 투명하게 했었다. 그것을 걷었다 — 안드로이드
-          에서 그 투명이 안 먹어 두 글자가 함께 그려졌다(실기기 확인). 칸의 글자가 `Text` 보다
-          약 1dp 아래 앉는 차이는 그대로 두기로 했다(사용자 결정).
-        */}
         <View className="flex-1">
-          <AmountValue
-            testID={props.testID}
-            identity={props.identity ?? props.testID}
-            value={props.value}
-            settled={settled}
-            approximateMark={approximateMark}
-            readOnly={props.readOnly === true}
-            onChangeValue={props.onChangeValue}
-          />
+          <Text testID={props.testID} className={digits} style={TABULAR_NUMS}>
+            {approximateMark}
+            {/* 단위 글자만 한 단계 작게 얹는다 — `8억 5천만` 에서 숫자가 먼저 읽힌다(결정 10). */}
+            {amountPieces(formatMesoUnits(props.value)).map(({ text, style }, index) =>
+              style === undefined ? (
+                text
+              ) : text === '' ? (
+                <View key={index} style={GAP_STYLE} />
+              ) : (
+                <Text key={index} style={style}>
+                  {text}
+                </Text>
+              ),
+            )}
+          </Text>
         </View>
 
         {/*
@@ -241,19 +171,6 @@ export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
           <Text className="text-xs font-semibold text-text-muted">{props.unit}</Text>
         </Text>
       </View>
-
-      {props.hint !== undefined && (
-        // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
-        <Text
-          testID={`${props.testID}-hint`}
-          className={`text-right text-11 ${
-            props.hintBlocked === true ? 'text-error-ink' : 'text-text-muted'
-          }`}
-          style={TABULAR_NUMS}
-        >
-          {props.hint}
-        </Text>
-      )}
     </View>
   )
 }

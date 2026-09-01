@@ -52,7 +52,7 @@ export interface SpendRecord {
   /** `'YYYY-MM-DD'` KST([[ADR-166]] 결정 4). */
   spentOn: string
   category: SpendCategory
-  /** 목록에서 고른 항목 또는 직접 입력한 사용처. */
+  /** 목록에서 고른 항목 또는 직접 입력한 이름(`구매 아이템` · `내용`). */
   item: string | null
   /**
    * 같은 값을 두 형태로 받는 항목의 **어느 쪽인가** — 에픽던전 리워드의 「경험치」·「솔 에르다」

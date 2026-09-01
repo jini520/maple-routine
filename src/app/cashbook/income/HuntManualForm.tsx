@@ -16,9 +16,7 @@ import { parseMesoText } from '../../../components/molecules/MesoPad/meso-pad'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
-import { formatMesoUnits } from '../../../lib/drop-price'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
-import { nextAmountIdentity } from '../amount-identity'
 import { FieldRow } from '../sheet-fields'
 import { CharacterField, FragmentFields, SaveRow, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from './use-sheet-submit'
@@ -41,11 +39,6 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
   const [typedMeso, setTypedMeso] = useState(detail?.typedMeso ?? props.editing?.mesoAmount ?? 0)
   const [fragments, setFragments] = useState(detail?.fragments ?? 0)
   const [fragmentPrice, setFragmentPrice] = useState(detail?.fragmentPrice ?? 0)
-  /**
-   * 큰 숫자의 **이름표**([[ADR-087]] 정정 1) — 마운트마다 새로 받는다. 안 넘기면 `testID` 가 곧
-   * 정체가 되는데 그것은 고정 문자열이라 **다른 기록을 열어도 지난 금액에서 굴러온다**.
-   */
-  const [amountIdentity] = useState(nextAmountIdentity)
   const { saving, submit, remove } = useSheetSubmit(props)
 
   /** 계산기의 `huntingTotalOf` 와 **같은 식**이고 메소의 출처만 다르다(거기서는 앱이 센다). */
@@ -84,12 +77,8 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
         value={total}
         unit="메소"
         testID="income-sheet-amount"
-        identity={amountIdentity}
-        hint={total > 0 ? formatMesoUnits(total) : ' '}
         // **`≈` 를 안 붙인다**(결정 2). 그 표식은 미리 세어 둔 값이라는 뜻인데 이 메소는 사용자가
         // 실제로 본 값이다. 양쪽에 다 붙이면 표식이 아무것도 안 가른다.
-        readOnly
-        onChangeValue={() => undefined}
       />
 
       <SaveRow
@@ -110,6 +99,8 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
             pointAmount: null,
             pointPer100mMeso: null,
             cashAmount: null,
+            // 수량은 「기타」만 쓴다([[ADR-202]] 결정 4).
+            quantity: null,
             hunt: { mode: 'manual', typedMeso, fragments, fragmentPrice },
             memo: null,
           })

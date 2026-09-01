@@ -19,7 +19,6 @@ import { Image, Pressable, View } from 'react-native'
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { Segment } from '../../../components/molecules/Segment/Segment'
-import { formatMesoUnits } from '../../../lib/drop-price'
 import { formatMesoCompact } from '../../../lib/meso-compact'
 import { spendIconOf } from '../../../lib/spend-icons'
 import {
@@ -30,7 +29,6 @@ import {
   type SpendCatalogItem,
 } from '../../../lib/spend-catalog'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
-import { nextAmountIdentity } from '../amount-identity'
 import { FieldRow, QuantityStepper } from '../sheet-fields'
 import {
   CategoryChips,
@@ -164,8 +162,6 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
     const rate = props.editing?.pointPer100mMeso ?? props.lastPointRate
     return rate === null || rate === undefined ? '' : String(rate)
   })
-  /** 큰 숫자의 **정체**([[ADR-087]] 정정 1) — 대표·단계를 바꾸면 굴리지 않고 갈아 끼운다. */
-  const [amountIdentity, setAmountIdentity] = useState(nextAmountIdentity)
   const { saving, submit, remove } = useSpendSubmit(props)
 
   const groups = spendGroupsOf(props.category)
@@ -187,27 +183,13 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   const rate = usesPoint && rateText !== '' && Number.isFinite(typedRate) ? typedRate : null
   const amount = (item?.unitPrice ?? 0) * quantity
   const totalMeso = usesPoint ? pointToMeso(amount, rate ?? 0) : amount
-  // **메소로 셀 수 없는 상태.** 저장을 막는 것만으로는 부족하고(사용자는 왜 막혔는지 모른다)
-  // 합계 자리가 그 사실을 말해야 한다.
+  // **메소로 셀 수 없는 상태.** 시세 줄의 빨간 `*` 와 꺼진 저장 버튼이 그 사실을 말한다
+  // ([[ADR-202]] 결정 9 가 큰 숫자 밑의 문구를 걷었다).
   const blocked = usesPoint && (rate === null || rate <= 0)
   const canSave = item !== null && !formMissing && !blocked
 
-  /**
-   * 목록 갈래의 힌트 — **큰 숫자가 메소이므로 원래 단위를 여기서 든다**(사용자 지정 2026-08-26).
-   * 아직 안 골랐으면 빈 줄로 **자리만 지킨다**(고른 뒤에 줄이 생기면 아래가 밀린다).
-   */
-  const listHint =
-    item === null
-      ? ' '
-      : usesPoint
-        ? blocked
-          ? '시세를 넣어야 메소로 셀 수 있어요'
-          : `${amount.toLocaleString()} 메포`
-        : formatMesoUnits(totalMeso)
-
   /** ① 대표를 고른다. 갈래가 하나뿐이면 **그 자리에서 항목까지 정해진다.** */
   function selectChoice(next: SpendCatalogChoice): void {
-    setAmountIdentity(nextAmountIdentity())
     setChoice(next)
     setItem(next.items.length === 1 ? next.items[0] : null)
     // 형태는 있어도 **기본값을 안 고른다** — 앱이 «경험치였겠지» 라고 정하면 그것이 추정이 된다.
@@ -218,14 +200,12 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
 
   /** ② 그 안의 단계를 고른다. */
   function selectItem(next: SpendCatalogItem): void {
-    setAmountIdentity(nextAmountIdentity())
     setItem(next)
     setQuantity(1)
   }
 
   /** 목록으로 돌아간다. */
   function clearChoice(): void {
-    setAmountIdentity(nextAmountIdentity())
     setChoice(null)
     setItem(null)
     setForm(null)
@@ -361,11 +341,6 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
               value={totalMeso}
               unit="메소"
               testID="spend-sheet-amount"
-              identity={amountIdentity}
-              hint={listHint}
-              hintBlocked={blocked && item !== null}
-              readOnly
-              onChangeValue={() => undefined}
             />
           )}
         </>

@@ -34,21 +34,43 @@ export function sumDropPayout(drops: DropPriceFields[]): number {
 }
 
 /**
- * 입력 중인 금액을 한국어 단위로 접어 읽는다 — `3,250,000,000` 이 아니라 `32억 5,000만`.
+ * 금액을 한국어 단위로 접어 읽는다 — `850,000,000` 이 아니라 `8억 5천만`.
  *
- * 확정 금액은 앱 관례대로 `toLocaleString()` 원시 표기이고 칩 안에서는 `formatMesoShort` 로
- * 접는데, 이 함수는 **치는 동안**만 쓴다 — 자릿수를 눈으로 세는 것이 키패드가 없애려는 고통
- * 자체라, 소수점으로 뭉개는 `formatMesoShort`(`32.5억`) 로는 입력 중인 값을 확인할 수 없다.
+ * **값을 하나도 안 깎는다**([[ADR-202]] 결정 9). 시트의 큰 숫자가 이 서식으로 서므로(그 자리가
+ * 곧 저장될 총액이다) 뭉개면 화면과 저장이 갈린다. 소수점으로 접는 `formatMesoShort`(`32.5억`)
+ * 를 큰 숫자에 못 쓰는 이유가 그것이고, 자릿수를 눈으로 세는 고통을 없애는 것이 이 함수의 일이다.
+ *
+ * 메소 밖에도 쓴다 — 큰 숫자는 메포·원도 이 서식으로 그린다. 접는 규칙이 통화와 무관해서다.
  */
 export function formatMesoUnits(meso: number): string {
   if (meso === 0) return '0'
   const parts: string[] = []
-  const eok = Math.floor(meso / 100_000_000)
-  const man = Math.floor((meso % 100_000_000) / 10_000)
-  const won = meso % 10_000
-  if (eok > 0) parts.push(`${eok.toLocaleString()}억`)
-  if (man > 0) parts.push(`${man.toLocaleString()}만`)
-  if (won > 0) parts.push(won.toLocaleString())
+  let rest = meso
+  for (const [size, suffix] of AMOUNT_UNITS) {
+    const count = Math.floor(rest / size)
+    rest %= size
+    if (count > 0) parts.push(`${unitCount(count)}${suffix}`)
+  }
+  // 단위가 안 붙는 나머지 — 여기에 「천」 을 쓰면 `1만 5천` 이 15,000 인지 5,000 인지 흐려진다.
+  if (rest > 0) parts.push(String(rest))
   return parts.join(' ')
+}
+
+/** 큰 것부터 본다 — 만 미만은 단위가 없어 나머지로 남는다. */
+const AMOUNT_UNITS = [
+  [1_000_000_000_000, '조'],
+  [100_000_000, '억'],
+  [10_000, '만'],
+] as const
+
+/**
+ * 단위 하나가 이고 있는 수 — `5000만` 이 아니라 **`5천만`** 이다.
+ *
+ * 콤마는 **조 자리에만** 넣는다. 억·만은 다음 단위로 올라가므로 9999 를 못 넘어 콤마가 끊을
+ * 자릿수가 없고, 단위 글자가 이미 그 일을 한다(`2,345만` 은 끊는 기호가 둘이다).
+ */
+function unitCount(count: number): string {
+  if (count < 10_000) return count % 1_000 === 0 ? `${count / 1_000}천` : String(count)
+  return count.toLocaleString()
 }
 
