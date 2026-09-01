@@ -53,7 +53,7 @@ beforeEach(() => {
   clearCountUpMemory()
 })
 
-// `AnimatedMeso` 는 직전에 그린 값을 **모듈 수준 Map** 에 기억한다([[ADR-087]] 결정 8) — 케이스
+// `useCountUp` 은 직전에 그린 값을 **모듈 수준 Map** 에 기억한다([[ADR-087]] 결정 8) — 케이스
 // 사이에 비우지 않으면 다음 렌더가 옛 값에서 굴러간다(`AccordionBody` 테스트와 같은 자리).
 beforeEach(() => {
   clearCountUpMemory()

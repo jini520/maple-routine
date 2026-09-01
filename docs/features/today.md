@@ -573,7 +573,7 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
   `sumDropPayout(collectGroupDrops(...))` 이고, 둘의 합이 `groupTotalMeso` 와 같다(이번 주 계산에는
   주차별 소계가 언제나 비어 있다).
 - **금액은 `formatMesoShort` 로 접는다**. 두 벌로 만들면 이 타일과 보스 수익 화면이 다르게 접는다.
-  그래서 **카운트업(`AnimatedMeso`)을 쓰지 않는다**: 그 컴포넌트는 `toLocaleString()` 의 자릿수 전체를
+  그래서 **카운트업(`useCountUp`)을 쓰지 않는다**: 그 훅은 `toLocaleString()` 의 자릿수 전체를
   굴리는 물건이라 접힌 표기와 애초에 짝이 맞지 않고, [[ADR-087]] 결정 6이 카운트업을 건 범위도
   보스 수익 화면이다.
 - **기록이 없으면 스택 바·분해 금액 자리에 그 한 줄이 뜬다**. 0/0 인 바와 ‘결정석 0 · 아이템 0’은

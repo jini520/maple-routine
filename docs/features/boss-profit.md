@@ -45,11 +45,10 @@
 | 계산 | `lib/drop-price.ts` | 드롭 판매가를 수익으로 환산 |
 | 계산 | `lib/world-emblem.ts` · `lib/item-icons.ts` | 월드 엠블럼과 결정석 아이콘 |
 | 계산 | `lib/boss-matching.ts` | 보스 정렬 순서, `WEEKLY_BOSS_CLEAR_LIMIT`, `WEEKLY_CRYSTAL_SALE_LIMIT`, `isSeasonBossName` |
-| 훅 | `hooks/useCountUp.ts` | 금액이 바뀌면 목표까지 굴러가는 숫자([[ADR-087]]). `AnimatedMeso` 와 `AmountFigure` 가 부른다 |
+| 훅 | `hooks/useCountUp.ts` | 금액이 바뀌면 목표까지 굴러가는 숫자([[ADR-087]]). **호출부가 직접 부른다**(정정 2 — `AnimatedMeso` 컴포넌트는 없앴다) |
 | 참조 | `src/data/boss-crystal-prices.json` | 결정석 정가 |
 | 참조 | `src/data/weekly-bosses.json` | 보스 목록과 정규 순서 |
 | 참조 | `src/data/boss-portrait-icon-crops.json` | 보스 초상화 크롭 |
-| UI | `components/atoms/AnimatedMeso/` | 금액 카운트업([[ADR-087]]) |
 | UI | `components/molecules/ValuableDropBadge/` | 고가 드롭 배지 |
 | UI | `app/boss-profit/valuable-card-glow.ts` · `valuable-row-glow.ts` | 고가 드롭 연출 값 |
 
@@ -1033,7 +1032,7 @@ a11y: 화살표는 `aria-hidden` 이고, 색은 의미를 못 전하므로 칩 �
 ### 금액 변경 카운트업
 
 [[ADR-087]] 이다. 이 화면의 **모든 메소 금액**(총 수익 헤드라인 · 캐릭터 카드 합계 · 보스 행 금액 ·
-월간 탭 주차별 합계)이 값이 바뀌면 목표까지 굴러간다(`AnimatedMeso`). 스테퍼 한 번이 앞의 셋을
+월간 탭 주차별 합계)이 값이 바뀌면 목표까지 굴러간다(`useCountUp`). 스테퍼 한 번이 앞의 셋을
 연쇄로 바꾸므로 한 숫자만 움직이면 오히려 어긋난다.
 
 곡선과 길이는 **`easeOutExpo` · 350ms** 다. 전체 거리의 절반을 35ms 에 지나가고 나머지를 끝에서 끈다.
