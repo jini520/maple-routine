@@ -15,7 +15,7 @@ import { RotateCcwIcon } from '../../../lib/icons'
 import { MESO_QUICK_ADDS } from '../../../lib/meso-quick-adds'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import { Text } from '../../atoms/Text/Text'
-import { TextInput } from '../../atoms/TextInput/TextInput'
+import { SheetTextInput } from '../SheetTextInput/SheetTextInput'
 import { MAX_MESO, parseMesoText } from './meso-pad'
 
 export function MesoAmountField(props: {
@@ -85,7 +85,7 @@ export function MesoAmountField(props: {
            *
            * 값이 콤마째 돌아오므로 다음 타건도 콤마째 들어온다 — 걷는 일은 `parseMesoText` 가 한다.
            */
-          <TextInput
+          <SheetTextInput
             testID={props.amountTestID}
             aria-label="금액"
             value={props.meso === 0 ? '' : props.meso.toLocaleString()}

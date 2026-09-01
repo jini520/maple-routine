@@ -28,7 +28,7 @@ import { Pressable, View } from 'react-native'
 
 import { useCountUp } from '../../../hooks/useCountUp'
 import { Text } from '../../atoms/Text/Text'
-import { TextInput } from '../../atoms/TextInput/TextInput'
+import { SheetTextInput } from '../SheetTextInput/SheetTextInput'
 import { RotateCcwIcon } from '../../../lib/icons'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import { parseMesoText } from '../MesoPad/meso-pad'
@@ -167,7 +167,7 @@ export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
             {shown.toLocaleString()}
           </Text>
           {props.readOnly !== true && (
-            <TextInput
+            <SheetTextInput
               testID={props.testID}
               aria-label="금액"
               // 0 일 때 비우는 이유: 「0」 을 값으로 두면 그 뒤에 친 숫자가 붙어 자릿수가 하나 는다.

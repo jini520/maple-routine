@@ -160,8 +160,10 @@ describe('[[ADR-152]] 결정 4 — 글자는 atom 한 곳에서만 나온다', (
       readFileSync(file, 'utf8').includes('BottomSheetTextInput'),
     ).map((file) => relative(SRC, file))
 
-    // 아톰의 주석은 «왜 안 쓰는가» 를 적으므로 이름이 나온다 — 코드가 아니라 글이다.
-    expect(offenders.filter((file) => !file.endsWith('Text.tsx'))).toEqual([])
+    // 「왜 안 쓰는가」를 적는 주석에는 이름이 나온다 — 코드가 아니라 글이다. 그 설명은 아톰과,
+    // 값을 채우는 훅에 있다([[ADR-170]] 정정 18 이 그 코드를 아톰 밖으로 옮겼다).
+    const 설명하는_파일 = ['components/atoms/TextInput/TextInput.tsx', 'hooks/useSheetKeyboardTarget.ts']
+    expect(offenders.filter((file) => !설명하는_파일.includes(file))).toEqual([])
   })
 })
 
