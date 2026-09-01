@@ -25,7 +25,6 @@ import {
 import type { MesoRateLoad } from '../../../features/cashbook/meso-rate'
 import { formatMesoUnits } from '../../../lib/drop-price'
 import { FORCE_LABELS, forceIconOf } from '../../../lib/force-icons'
-import { CheckIcon } from '../../../lib/icons'
 import {
   findHuntingGround,
   findHuntingRegion,
@@ -48,7 +47,7 @@ import { TABULAR_NUMS } from '../../../lib/text-styles'
 import type { ImageAssetRef } from '../../../types/image-asset'
 import type { HuntingGround, HuntingRegion } from '../../../types/hunting-grounds'
 import { nextAmountIdentity } from '../amount-identity'
-import { FieldRow, QuantityStepper } from '../sheet-fields'
+import { CheckBox, FieldRow, QuantityStepper } from '../sheet-fields'
 import { CharacterField, FragmentFields, SaveRow, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from './use-sheet-submit'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
@@ -142,27 +141,7 @@ function BoostToggle(props: {
       hitSlop={8}
       className="flex-row items-center gap-2"
     >
-      {/*
-        **끈 것도 상자가 보인다**(사용자 지정 2026-08-29 — 「세련되게」).
-
-        종전에는 맨 테두리 하나였다. 어두운 배경에서 그 선은 «있는 듯 없는» 자국이라 켜짐/꺼짐이
-        **색 하나로만** 갈렸다. 끈 쪽에 옅은 바탕을 깔면 상자가 먼저 눈에 들어오고, 그 안이 차는
-        것이 곧 켜짐이 된다.
-
-        모서리는 `rounded-md`(6px)다 — 4px 는 각지고 완전한 원은 «고르는 하나» 로 읽힌다
-        ([[ADR-178]] 정정 5 가 알약 테두리를 걷은 이유와 같다).
-      */}
-      <View
-        className={`h-[18px] w-[18px] items-center justify-center rounded-md border ${
-          props.selected ? 'border-primary bg-primary' : 'border-border bg-surface-2'
-        }`}
-      >
-        {props.selected && (
-          // 획이 얇아야 12px 안에서 안 뭉갠다 — 3 은 체크가 삼각형처럼 보였다.
-          // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
-          <CheckIcon className="h-3 w-3 text-on-primary" strokeWidth={2.5} aria-hidden />
-        )}
-      </View>
+      <CheckBox checked={props.selected} />
       {/* 그림이 없으면 **빈 자리로 둔다** — 비슷한 것을 갖다 붙이면 틀린 것을 그리는 셈이다
           ([[ADR-101]] 결정 1). 파일명이 실제로 풀리는지는 `hunting-meso.test` 가 지킨다.
 

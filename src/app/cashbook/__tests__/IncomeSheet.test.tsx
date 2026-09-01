@@ -119,6 +119,27 @@ async function 아이디로치기(view: Rendered, testID: string, text: string):
   })
 }
 
+/**
+ * [[ADR-175]] 이전에 적힌 사냥 행. 계산 입력이 없고(`hunt: null`) 사냥터 이름이 `item` 에 글자로
+ * 들어 있다. 그 행을 어떻게 여는지가 [[ADR-201]] 결정 4·7 이다.
+ */
+const 옛사냥행 = {
+  id: 'inc-old',
+  ocid: null,
+  earnedOn: '2026-08-23',
+  category: '사냥' as const,
+  item: '엘리시움',
+  mesoAmount: 1_200_000_000,
+  saleFeePercent: null,
+  saleFeeMeso: null,
+  pointAmount: null,
+  pointPer100mMeso: null,
+  cashAmount: null,
+  hunt: null,
+  memo: null,
+  recordedAt: '2026-08-23T01:00:00.000Z',
+}
+
 async function 누르기(view: Rendered, label: string): Promise<void> {
   await act(async () => {
     fireEvent.press(view.getByLabelText(label))
@@ -1052,36 +1073,147 @@ describe('사냥 계산기 ([[ADR-175]])', () => {
     expect(view.getByTestId('income-sheet-fragment-price').props.value).toBe('8,000,000')
   })
 
-  /**
-   * **[[ADR-175]] 이전에 적힌 사냥 행**은 계산 입력이 없다(결정 9). 없는 입력을 지어내면
-   * «내가 그렇게 골랐나» 가 되므로, 그때는 계산기가 아니라 종전 모양으로 연다.
-   */
-  it('옛 사냥 기록은 계산기가 아니라 **옛 모양**으로 열린다', async () => {
+  // 계산기로 적힌 기록은 계산기로 열린다([[ADR-201]] 결정 5). 모드를 고르는 칸은 안 뜬다.
+  it('계산기로 적힌 기록은 계산기로 열리고, 모드를 못 바꾼다', async () => {
     const view = await 그리기({
       editing: {
-        id: 'inc-old',
-        ocid: null,
-        earnedOn: '2026-08-23',
-        category: '사냥' as const,
-        item: '엘리시움',
-        mesoAmount: 1_200_000_000,
-        saleFeePercent: null,
-        saleFeeMeso: null,
-        pointAmount: null,
-        pointPer100mMeso: null,
-        cashAmount: null,
-        hunt: null,
-        memo: null,
-        recordedAt: '2026-08-23T01:00:00.000Z',
+        ...옛사냥행,
+        item: '밤의 길 3',
+        hunt: {
+          mode: 'calculator' as const,
+          characterLevel: 294,
+          missedMobs: 0,
+          boosts: [],
+          sojae: 2,
+          fragments: 0,
+          fragmentPrice: 0,
+          mesoRate: 0,
+        },
       },
       onDelete: jest.fn(),
     })
 
-    expect(view.getByTestId('income-sheet-name-label')).toHaveTextContent('사냥터')
+    expect(view.getByTestId('income-sheet-region-trigger')).toBeTruthy()
+    expect(view.queryByLabelText('직접 입력')).toBeNull()
+  })
+})
+
+/**
+ * 사냥 **수동 입력** ([[ADR-201]]).
+ *
+ * 계산기는 사냥터 하나에 머무는 것을 전제하고 그 사냥터가 참조표 안에 있어야 한다. 그 밖의 사냥은
+ * 획득 메소를 사람이 친다.
+ */
+describe('사냥 수동 입력 ([[ADR-201]])', () => {
+  async function 직접입력켜기(view: Rendered): Promise<void> {
+    await 이름으로누르기(view, '직접 입력')
+  }
+
+  it('켜면 계산기 줄이 걷히고 획득 메소가 치는 칸이 된다 (결정 1)', async () => {
+    const view = await 그리기()
+    await 누르기(view, '사냥')
+    expect(view.getByTestId('income-sheet-region-trigger')).toBeTruthy()
+
+    await 직접입력켜기(view)
+
     expect(view.queryByTestId('income-sheet-region-trigger')).toBeNull()
-    // 금액은 여전히 **친다** — 앱이 셀 근거가 그 행에 없다.
-    expect(view.getByLabelText('금액')).toBeTruthy()
-    expect(view.getByTestId('income-sheet-amount').props.value).toBe('1,200,000,000')
+    expect(view.queryByTestId('income-sheet-ground-trigger')).toBeNull()
+    expect(view.queryByTestId('income-sheet-efficiency')).toBeNull()
+    // 같은 자리·같은 라벨인데 못 치던 줄이 치는 칸이 된다.
+    expect(view.getByTestId('income-sheet-hunt-meso').props.editable).not.toBe(false)
+  })
+
+  it('합계는 친 메소 + 조각 × 가격이다 (결정 1)', async () => {
+    const view = await 그리기()
+    await 누르기(view, '사냥')
+    await 직접입력켜기(view)
+
+    await 아이디로치기(view, 'income-sheet-hunt-meso', '1000000000')
+    await 아이디로치기(view, 'income-sheet-fragments', '83')
+    await 아이디로치기(view, 'income-sheet-fragment-price', '8000000')
+
+    // 큰 숫자는 **굴러 올라간다**([[ADR-087]]) — 다 오를 때까지 기다린다.
+    await waitFor(() =>
+      expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('1,664,000,000'),
+    )
+  })
+
+  it('조각을 안 넣으면 친 메소가 곧 합계다 (결정 1)', async () => {
+    const view = await 그리기()
+    await 누르기(view, '사냥')
+    await 직접입력켜기(view)
+
+    await 아이디로치기(view, 'income-sheet-hunt-meso', '500000000')
+
+    await waitFor(() =>
+      expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('500,000,000'),
+    )
+  })
+
+  // `≈` 는 **미리 세어 둔 값**이라는 뜻이다([[ADR-201]] 결정 2). 친 값에 붙이면 아무것도 안 가른다.
+  it('합계에 `≈` 가 안 붙는다 (결정 2)', async () => {
+    const view = await 그리기()
+    await 누르기(view, '사냥')
+    await 직접입력켜기(view)
+
+    await 아이디로치기(view, 'income-sheet-hunt-meso', '500000000')
+
+    await waitFor(() =>
+      expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('500,000,000'),
+    )
+    expect(view.getByTestId('income-sheet-amount')).not.toHaveTextContent('≈')
+  })
+
+  it('저장하면 수동으로 적힌 행이 되고 사냥터 이름은 비어 있다 (결정 3·7)', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+    await 누르기(view, '사냥')
+    await 직접입력켜기(view)
+
+    await 아이디로치기(view, 'income-sheet-hunt-meso', '1000000000')
+    await 아이디로치기(view, 'income-sheet-fragments', '83')
+    await 아이디로치기(view, 'income-sheet-fragment-price', '8000000')
+    await 이름으로누르기(view, '저장')
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        category: '사냥',
+        item: null,
+        mesoAmount: 1_664_000_000,
+        hunt: { mode: 'manual', typedMeso: 1_000_000_000, fragments: 83, fragmentPrice: 8_000_000 },
+      }),
+    )
+  })
+
+  /**
+   * [[ADR-175]] 이전에 적힌 사냥 행([[ADR-201]] 결정 4). 조각이 없어 **합계가 곧 획득 메소**라
+   * 되짚는 것이지 지어내는 것이 아니다.
+   */
+  it('옛 사냥 기록은 수동 입력으로 열리고 저장된 금액이 선다 (결정 4)', async () => {
+    const view = await 그리기({ editing: 옛사냥행, onDelete: jest.fn() })
+
+    expect(view.queryByTestId('income-sheet-region-trigger')).toBeNull()
+    expect(view.getByTestId('income-sheet-hunt-meso').props.value).toBe('1,200,000,000')
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('1,200,000,000')
+    // 모드는 기록이 정했다 — 바꾸는 칸이 없다(결정 5).
+    expect(view.queryByLabelText('직접 입력')).toBeNull()
+  })
+
+  // 칸이 없다는 것과 값을 지운다는 것은 다르다([[ADR-201]] 결정 7). 목록이 그 이름을 적고 있다.
+  it('옛 행을 고쳐 저장해도 사냥터 이름이 안 지워진다 (결정 7)', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ editing: 옛사냥행, onDelete: jest.fn(), onSave })
+
+    await 아이디로치기(view, 'income-sheet-hunt-meso', '900000000')
+    await 이름으로누르기(view, '수정')
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        item: '엘리시움',
+        mesoAmount: 900_000_000,
+        hunt: { mode: 'manual', typedMeso: 900_000_000, fragments: 0, fragmentPrice: 0 },
+      }),
+    )
   })
 })
 

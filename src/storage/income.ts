@@ -95,6 +95,9 @@ export interface IncomeRecord {
  */
 export type HuntingIncomeDetail = HuntingCalculatorDetail | HuntingManualDetail
 
+/** 사냥을 어느 폼으로 적나([[ADR-201]] 결정 5). 기록에 박히고 수정 중에는 안 바뀐다. */
+export type HuntInputMode = HuntingIncomeDetail['mode']
+
 /** 수동으로 적은 사냥([[ADR-201]] 결정 1) — 앱이 셀 근거가 없어 획득 메소를 사람이 친다. */
 export interface HuntingManualDetail {
   mode: 'manual'
