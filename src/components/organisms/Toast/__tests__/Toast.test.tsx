@@ -9,8 +9,9 @@
 //   임계값 판정은 같은 `shouldDismissFromSwipe` 다.
 // · `role`·`aria-live` 는 그대로 남았다(RN 이 같은 이름의 프롭을 받는다).
 // · 타이머 바는 **있고 없음만** 지킨다 — 줄어드는 것은 Reanimated 가 UI 스레드에서 하는 일이라
-//   렌더 트리에는 선언(`animationName`·`animationDuration`)만 남는다. 그 선언이 웹의
-//   `@keyframes toast-shrink` 와 같은지는 `src/__tests__/keyframes-parity.test.ts` 가 원본을 읽어 본다.
+//   렌더 트리에는 선언(`animationName`·`animationDuration`)만 남는다. 그 선언을 웹
+//   `@keyframes toast-shrink` 와 대조하던 `keyframes-parity.test.ts` 는 웹 소스와 함께 지워졌다
+//   ([[ADR-155]]·[[ADR-156]]).
 jest.mock('react-native-reanimated', () =>
   // `jest.mock` 팩토리는 import 위로 끌어올려져 **밖의 값을 참조할 수 없다** — 그래서 `require` 가
   // 선택이 아니라 유일한 길이다(`reduced-motion.ts` 「쓰는 법」).
@@ -196,8 +197,8 @@ describe('Toast — 모션 줄이기', () => {
     )
 
     const [bar] = getByTestId('toast-timer').children as AtomElement[]
-    // 지속시간만 런타임 값이라 여기서 보고, 나머지(키프레임·이징·채우기)는 웹 원본과의 대조가
-    // `src/__tests__/keyframes-parity.test.ts` 몫이다.
+    // 지속시간만 런타임 값이라 여기서 본다. 나머지(키프레임·이징·채우기)를 웹 원본과 대조하던
+    // 테스트는 없다(파일 머리).
     expect(bar.props.jestInlineStyle).toMatchObject({
       animationDuration: '2500ms',
       transformOrigin: 'left' })

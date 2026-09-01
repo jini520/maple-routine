@@ -1,7 +1,8 @@
 // 웹판의 다섯이 전부 산다(숨김 · `size` · clipPath 자식은 도형뿐 · id 충돌 없음 · motion-reduce).
 // 다섯째는 **보는 방법이 바뀌었다** — 클래스 문자열이 없어 *"반복 애니메이션을 걸었는가"* 를 본다
-// (`reduced-motion.ts` 의 `withRepeatSpy` 주석). 이동 거리·지속시간·이징은 여기가 아니라
-// `src/__tests__/keyframes-parity.test.ts` 가 웹 원본을 읽어 대조한다.
+// (`reduced-motion.ts` 의 `withRepeatSpy` 주석). 이동 거리·지속시간·이징을 웹 원본과 대조하던
+// `keyframes-parity.test.ts` 는 웹 소스와 함께 지워져([[ADR-155]]·[[ADR-156]]) 지금 그 셋을 보는
+// 곳은 없다.
 //
 // 여기에 RN 에서 새로 생긴 계약 하나가 더해진다: **띠의 색이 `currentColor`, 페이드가 마스크**라는 것.
 // 웹처럼 그라디언트 정지점에 `currentColor` 를 쓰면 `react-native-svg` 가 경고만 찍고 그라디언트를

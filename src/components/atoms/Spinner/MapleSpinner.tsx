@@ -34,7 +34,8 @@ export const MAPLE_TRAIL_DURATION_MS = 900
  * 한 주기의 끝. 웹은 정규화된 `-300` 이었고 여기는 실측 둘레라 숫자가 다르다.
  *
  * 같아야 하는 것은 **한 주기가 둘레 한 바퀴**라는 성질이다. 그게 깨지면 반복이 이어붙는 자리에서
- * 트레일이 튄다. `-300` 을 그대로 베끼는 실수는 `src/__tests__/keyframes-parity.test.ts` 가 잡는다.
+ * 트레일이 튄다. `-300` 을 그대로 베끼는 실수를 잡던 `keyframes-parity.test.ts` 는 웹 소스와 함께
+ * 지워졌다([[ADR-155]]·[[ADR-156]]). 지금 이 값을 지키는 것은 바로 위 한 줄뿐이다.
  */
 export const MAPLE_TRAIL_TO_DASH_OFFSET = -MAPLE_LEAF_PATH_LENGTH
 
