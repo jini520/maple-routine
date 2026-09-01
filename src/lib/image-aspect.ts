@@ -32,9 +32,8 @@
  * ([[ADR-094]] 결정 1 의 두 조건). 사본을 두면 한 곳만 고쳐지는 사고가 열린다 — 실제로 [[ADR-135]]
  * 의 보고 넷이 같은 병의 서로 다른 증상이었다.
  *
- * **`media-card-art.ts` 의 `mediaArtNaturalSize` 와 겹치지 않는다.** 그쪽은 크롭 표의 퍼센트 기하를
- * 풀기 위해 **크기**가 필요하고, 여기는 **스타일**을 만든다. 공유하는 것은 `resolveAssetSource`
- * 호출 한 줄뿐이라 합칠 것이 없다(합치면 두 파일이 서로의 사정을 알아야 한다).
+ * `image-crop.ts` 가 이 파일의 `imageNaturalSize` 를 그대로 쓴다. 그쪽은 크롭 표의 퍼센트 기하를
+ * 풀 때 크기가 필요하고, 여기는 축 하나만 주고 나머지를 지운 스타일을 만든다.
  */
 import { Image, type ImageStyle } from 'react-native'
 
@@ -49,9 +48,9 @@ export interface ImageNaturalSize {
 /**
  * 번들 에셋의 고유 픽셀 크기 — 모르면 `null`.
  *
- * 검사가 `<= 0` 이 아니라 **`Number.isFinite`** 인 것은 `resolveMediaArtLayout` 이 step 5 에 밟은
- * 자리와 같다 — `undefined <= 0` 은 **false** 라 크기 없는 소스가 가드를 통과하면
- * `aspectRatio: NaN` 이 나가고, NaN 은 에러가 아니라 **레이아웃이 조용히 무너지는 값**이다.
+ * 검사가 `<= 0` 이 아니라 **`Number.isFinite`** 인 것은 `resolveImageCropLayout` 이 밟은 자리와 같다.
+ * `undefined <= 0` 은 **false** 라 크기 없는 소스가 가드를 통과하면 `aspectRatio: NaN` 이 나가고,
+ * NaN 은 에러가 아니라 **레이아웃이 조용히 무너지는 값**이다.
  */
 export function imageNaturalSize(source: ImageAssetRef): ImageNaturalSize | null {
   const resolved = Image.resolveAssetSource(source)
@@ -61,7 +60,7 @@ export function imageNaturalSize(source: ImageAssetRef): ImageNaturalSize | null
   return { width: resolved.width, height: resolved.height }
 }
 
-/** 퍼센트도 받는다 — 부모를 재지 않고 그대로 넘긴다(`media-card-art.ts` 와 같은 이유). */
+/** 퍼센트도 받는다 — 부모를 재지 않고 그대로 넘긴다(`image-crop.ts` 와 같은 이유). */
 type AxisValue = number | `${number}%`
 
 /** 정하는 축 **하나**. 둘을 주면 나머지 축을 그림이 정한다는 말 자체가 성립하지 않는다. */

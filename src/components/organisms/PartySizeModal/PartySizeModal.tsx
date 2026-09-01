@@ -14,7 +14,7 @@
 //    크롭의 CSS 값(`background-size: "100% auto"` / `position: "50% 45%"`)을 RN 기하로 바꾸고,
 //    `MEDIA_ART_FILTER`·`MEDIA_ART_MASK_HERO` 를 각각 `filter` 스타일과 **뒤집은 그라데이션**으로
 //    푸는 일이다. 그 셋을 step 4 가 컨텐츠 카드에서 이미 한 벌 풀어 두었으므로 여기서는
-//    `MediaCardArt` 를 **부르기만 한다**(`variant="hero"` — 마스크 끝점이 카드와 다르다).
+//    `FadedIllustration` 를 **부르기만 한다**(`variant="hero"` — 마스크 끝점이 카드와 다르다).
 //    보스 카드와 같은 컴포넌트를 쓰는 것이 [[ADR-121]] 결정 7 이 요구하는 *"같은 값"* 이다.
 // ② **`bg-surface/60` 이 안 나온다.** NativeWind(v3 엔진)는 `var()` 색에 투명도 접미사를 만들지
 //    못한다(step 3 이 남긴 함정 둘 중 하나) — 클래스는 조용히 사라지고 닫기 버튼 배경이 없어진다.
@@ -43,7 +43,7 @@ import { useThemeAppearance } from '../../../theme/context'
 import { MediaScope } from '../../../theme/MediaScope'
 import { Badge, Text } from '../../atoms'
 import { DifficultySegment } from '../../molecules/DifficultySegment/DifficultySegment'
-import { MediaCardArt } from '../../molecules/MediaCardArt/MediaCardArt'
+import { FadedIllustration } from '../../molecules/FadedIllustration/FadedIllustration'
 import { PartySizeStepper } from '../../molecules/PartySizeStepper/PartySizeStepper'
 import { Modal } from '../Modal/Modal'
 
@@ -82,14 +82,14 @@ export function PartySizeModal(props: {
               `text-text` 가 media-* 로 해석된다([[ADR-064]] 결정 5). */}
           <MediaScope className="relative h-22 overflow-hidden bg-surface">
             {/* 일러스트 없는 보스(`portraitSlug: null`)는 히어로를 **비운다** — 폴백 디자인을 따로
-                만들지 않는다(`boss-scheduler.md`). 그 판정은 `MediaCardArt` 가 이미 갖고 있어
+                만들지 않는다(`boss-scheduler.md`). 그 판정은 `FadedIllustration` 가 이미 갖고 있어
                 여기서 다시 `null` 을 검사하지 않는다.
 
                 **감싸지 않는다.** 아트와 베일이 둘 다 `absolute inset-0` 이라 흐름 자식인 래퍼로
                 감싸면 그 래퍼가 크기 0 인 상자가 되어 기준이 히어로에서 그리로 옮겨간다(그림이
                 사라진다). 그래서 화면 전용 testID(`party-size-modal-art`)도 함께 없어지고,
-                이 자리의 계약은 공용 `media-card-art` 가 나른다. */}
-            <MediaCardArt source={portraitUrl} crop={crop} variant="hero" />
+                이 자리의 계약은 공용 `faded-illustration` 가 나른다. */}
+            <FadedIllustration source={portraitUrl} crop={crop} variant="hero" />
 
             {/* 글자를 앉히는 베일 — 하드코딩 rgba 가 아니라 스코프의 표면색을 쓴다. */}
             <LinearGradient

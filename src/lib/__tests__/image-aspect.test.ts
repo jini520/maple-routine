@@ -30,7 +30,7 @@ describe('imageNaturalSize', () => {
     expect(imageNaturalSize(7 as never)).toEqual({ width: 46, height: 50 })
   })
 
-  // `resolveMediaArtLayout` 이 step 5 에 밟은 자리와 같다 — `undefined <= 0` 은 false 라
+  // `resolveImageCropLayout` 이 밟은 자리와 같다 — `undefined <= 0` 은 false 라
   // 크기 없는 소스가 가드를 통과하면 `aspectRatio: NaN` 이 나간다. NaN 은 에러가 아니라
   // 레이아웃이 조용히 무너지는 값이다.
   it.each([

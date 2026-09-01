@@ -5,13 +5,12 @@
 // 이름으로 가른다. 전부 자기 카드 안에서 끝나 화면의 고정 헤더와 무관하다.
 //
 // RN 으로 갈린 것은 일간 카드와 **같은 넷**이라 그쪽 파일 머리에 한 번만 적는다
-// (`DailyContentCards.tsx`) — bleed 는 `MediaCardArt`, 껍데기는 `MediaCard`, `flex-row` 명시,
+// (`DailyContentCards.tsx`) — bleed 는 `FadedIllustration`, 껍데기는 `IllustratedCard`, `flex-row` 명시,
 // `<img>`/`<span>`/`text-shadow` 의 짝.
 import { isContentBlocked } from '../../lib/required-level'
 import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
-import type { BossPortraitCrop } from '../../lib/boss-icons'
 import { getDailyQuestBackgroundUrl, getDailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
-import type { DailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
+import type { ImageCrop } from '../../lib/image-crop'
 import { getDailyQuestRegionIconUrl } from '../../lib/daily-quest-icons'
 import { matchWeeklyQuestRegionSlug, stripWeeklyQuestPrefix } from '../../lib/weekly-quest-matching'
 import { matchWeeklyRegionalQuestSlug } from '../../lib/weekly-regional-quest-matching'
@@ -27,7 +26,7 @@ import {
   stripGuildPrefix,
 } from './content-badges'
 import { MONSTER_PARK_BACKGROUND_SLUG } from './DailyContentCards'
-import { MediaCard, MediaCardArt } from '../../components/molecules/MediaCardArt/MediaCardArt'
+import { IllustratedCard, FadedIllustration } from '../../components/molecules/FadedIllustration/FadedIllustration'
 
 // 주간 탭 카테고리 분류 상수 (ADR-021)
 export const EPIC_DUNGEON_PREFIX = '에픽 던전 : '
@@ -53,7 +52,7 @@ export const MONSTER_PARK_EXTREME_PREFIX = '[몬스터파크] '
 
 export function EpicDungeonCard(props: {
   content: WeeklyContent
-  crop?: BossPortraitCrop
+  crop?: ImageCrop
   /** 요구 레벨 미달 — 상태 배지를 «진행 불가» 로 대체한다([[ADR-162]] 결정 3). */
   isBlocked?: boolean
 }): React.JSX.Element {
@@ -67,8 +66,8 @@ export function EpicDungeonCard(props: {
   const questState: 0 | 2 = content.nowCount > 0 ? 2 : 0
 
   return (
-    <MediaCard className="h-20 overflow-hidden">
-      <MediaCardArt source={backgroundUrl} crop={crop} />
+    <IllustratedCard className="h-20 overflow-hidden">
+      <FadedIllustration source={backgroundUrl} crop={crop} />
 
       <View className="h-full flex-row items-center justify-between px-[14px]">
         <View className="flex-row items-center gap-2">
@@ -87,13 +86,13 @@ export function EpicDungeonCard(props: {
           </Badge>
         )}
       </View>
-    </MediaCard>
+    </IllustratedCard>
   )
 }
 
 export function WeeklyRegionalContentCard(props: {
   content: WeeklyContent
-  crop?: DailyQuestRegionCrop
+  crop?: ImageCrop
   /** 요구 레벨 미달 — 상태 배지를 «진행 불가» 로 대체한다([[ADR-162]] 결정 3). */
   isBlocked?: boolean
 }): React.JSX.Element {
@@ -115,8 +114,8 @@ export function WeeklyRegionalContentCard(props: {
         : 0
 
   return (
-    <MediaCard className="h-20 overflow-hidden">
-      <MediaCardArt source={backgroundUrl} crop={crop} />
+    <IllustratedCard className="h-20 overflow-hidden">
+      <FadedIllustration source={backgroundUrl} crop={crop} />
 
       <View className="h-full flex-row items-center justify-between px-[14px]">
         <View className="flex-row items-center gap-2">
@@ -139,13 +138,13 @@ export function WeeklyRegionalContentCard(props: {
           )
         )}
       </View>
-    </MediaCard>
+    </IllustratedCard>
   )
 }
 
 export function WeeklyQuestCard(props: {
   content: WeeklyContent
-  crop?: DailyQuestRegionCrop
+  crop?: ImageCrop
   /** 요구 레벨 미달 — 상태 배지를 «진행 불가» 로 대체한다([[ADR-162]] 결정 3). */
   isBlocked?: boolean
 }): React.JSX.Element {
@@ -157,8 +156,8 @@ export function WeeklyQuestCard(props: {
   const crop = props.crop ?? getDailyQuestRegionCrop(backgroundSlug)
 
   return (
-    <MediaCard className="h-20 overflow-hidden">
-      <MediaCardArt source={backgroundUrl} crop={crop} />
+    <IllustratedCard className="h-20 overflow-hidden">
+      <FadedIllustration source={backgroundUrl} crop={crop} />
 
       <View className="h-full flex-row items-center justify-between px-[14px]">
         <View className="flex-row items-center gap-2">
@@ -177,13 +176,13 @@ export function WeeklyQuestCard(props: {
           renderWeeklyQuestStatus(content, backgroundSlug)
         )}
       </View>
-    </MediaCard>
+    </IllustratedCard>
   )
 }
 
 export function MapleUnionDragonCard(props: {
   content: WeeklyContent
-  crop?: BossPortraitCrop
+  crop?: ImageCrop
 }): React.JSX.Element {
   const { content } = props
   const displayName = content.name.startsWith(MAPLE_UNION_PREFIX)
@@ -193,8 +192,8 @@ export function MapleUnionDragonCard(props: {
   const crop = props.crop ?? getBossPortraitCrop(MAPLE_UNION_DRAGON_BOSS_SLUG)
 
   return (
-    <MediaCard className="h-20 overflow-hidden">
-      <MediaCardArt source={backgroundUrl} crop={crop} />
+    <IllustratedCard className="h-20 overflow-hidden">
+      <FadedIllustration source={backgroundUrl} crop={crop} />
 
       <View className="h-full flex-row items-center justify-between px-[14px]">
         <View className="flex-row items-center gap-2">
@@ -210,13 +209,13 @@ export function MapleUnionDragonCard(props: {
           </Badge>
         )}
       </View>
-    </MediaCard>
+    </IllustratedCard>
   )
 }
 
 export function GuildUndergroundWaterwayCard(props: {
   content: WeeklyContent
-  crop?: BossPortraitCrop
+  crop?: ImageCrop
 }): React.JSX.Element {
   const { content } = props
   const displayName = stripGuildPrefix(content.name)
@@ -224,8 +223,8 @@ export function GuildUndergroundWaterwayCard(props: {
   const crop = props.crop ?? getBossPortraitCrop(GUILD_UNDERGROUND_WATERWAY_BACKGROUND_SLUG)
 
   return (
-    <MediaCard className="h-20 overflow-hidden">
-      <MediaCardArt source={backgroundUrl} crop={crop} />
+    <IllustratedCard className="h-20 overflow-hidden">
+      <FadedIllustration source={backgroundUrl} crop={crop} />
 
       <View className="h-full flex-row items-center justify-between px-[14px]">
         <View className="flex-row items-center gap-2">
@@ -237,13 +236,13 @@ export function GuildUndergroundWaterwayCard(props: {
 
         <Badge variant="third">{content.nowCount}점</Badge>
       </View>
-    </MediaCard>
+    </IllustratedCard>
   )
 }
 
 export function GuildMissionPointsCard(props: {
   content: WeeklyContent
-  crop?: DailyQuestRegionCrop
+  crop?: ImageCrop
 }): React.JSX.Element {
   const { content } = props
   const displayName = stripGuildPrefix(content.name)
@@ -252,8 +251,8 @@ export function GuildMissionPointsCard(props: {
   const progressPercent = content.maxCount > 0 ? Math.min((content.nowCount / content.maxCount) * 100, 100) : 0
 
   return (
-    <MediaCard className="h-28 overflow-hidden">
-      <MediaCardArt source={backgroundUrl} crop={crop} />
+    <IllustratedCard className="h-28 overflow-hidden">
+      <FadedIllustration source={backgroundUrl} crop={crop} />
 
       <View className="h-full flex-col">
         <View className="h-20 shrink-0 flex-row items-center justify-between px-[14px]">
@@ -279,13 +278,13 @@ export function GuildMissionPointsCard(props: {
           </View>
         )}
       </View>
-    </MediaCard>
+    </IllustratedCard>
   )
 }
 
 export function GuildFlagRaceCard(props: {
   content: WeeklyContent
-  crop?: DailyQuestRegionCrop
+  crop?: ImageCrop
 }): React.JSX.Element {
   const { content } = props
   const displayName = stripGuildPrefix(content.name)
@@ -294,8 +293,8 @@ export function GuildFlagRaceCard(props: {
   const questState: 0 | 2 = content.nowCount > 0 ? 2 : 0
 
   return (
-    <MediaCard className="h-20 overflow-hidden">
-      <MediaCardArt source={backgroundUrl} crop={crop} />
+    <IllustratedCard className="h-20 overflow-hidden">
+      <FadedIllustration source={backgroundUrl} crop={crop} />
 
       <View className="h-full flex-row items-center justify-between px-[14px]">
         <View className="flex-row items-center gap-2">
@@ -309,7 +308,7 @@ export function GuildFlagRaceCard(props: {
             {QUEST_STATE_LABELS[questState]}
           </Badge>
       </View>
-    </MediaCard>
+    </IllustratedCard>
   )
 }
 

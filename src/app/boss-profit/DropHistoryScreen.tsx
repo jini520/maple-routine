@@ -29,7 +29,7 @@
 //    원자적 인라인 박스가 아니게 되어 "조사만 다음 줄로 떨어지는" 일이 구조적으로 안 일어난다
 //    (`particle` 을 따로 받는 것은 그대로지만 `whitespace-nowrap` 묶음은 사라진다).
 // ⑤ **잎의 `filter: drop-shadow(...)` 는 남는다** — RN 0.76+ 의 `filter` 스타일이 CSS 문자열을
-//    그대로 받는다(`MediaCardArt` 가 먼저 쓴 자리). `text-balance`·`break-keep` 은 짝이 없어
+//    그대로 받는다(`FadedIllustration` 가 먼저 쓴 자리). `text-balance`·`break-keep` 은 짝이 없어
 //    사라지고(줄바꿈 품질만 달라진다) WORD JOINER 는 **core 가 문자열에 박아 두므로** 그대로 온다.
 import { useEffect, useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
@@ -111,7 +111,7 @@ function ValuableDrought(props: { summary: ValuableDroughtSummary; now: Date }):
 
           **기울기·투명도·글로우는 감싸는 `View` 가 진다** — `<Svg>` 의 `style.filter` 는 SVG 속성
           (`url(#id)`)으로 해석되어 배열을 주면 던진다(실측: `filter.match is not a function`).
-          `MediaCardArt` 가 `<Image>` 에서 만난 것과 **같은 종류의 갈림**이고 처방도 같다. */}
+          `FadedIllustration` 가 `<Image>` 에서 만난 것과 **같은 종류의 갈림**이고 처방도 같다. */}
       <View
         testID="valuable-drought-leaf"
         aria-hidden

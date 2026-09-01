@@ -60,7 +60,8 @@ import { formatSyncedAt } from '../../features/schedule-sync/format'
 import { useScheduleSyncErrorToast } from '../../features/schedule-sync/use-sync-error-toast'
 import { useToastStore } from '../../features/toast/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
-import { getBossPortraitCrop, getBossPortraitUrl, type BossPortraitCrop } from '../../lib/boss-icons'
+import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
+import type { ImageCrop } from '../../lib/image-crop'
 import { getSupportedDifficulties, type MatchedBoss } from '../../lib/boss-matching'
 import { getMaxPartySize } from '../../lib/boss-crystal-prices'
 import { isChallengersWorld } from '../../lib/world-emblem'
@@ -70,7 +71,7 @@ import { BossSectionHeader } from '../../components/molecules/BossSectionHeader/
 import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
-import { MediaCard, MediaCardArt } from '../../components/molecules/MediaCardArt/MediaCardArt'
+import { IllustratedCard, FadedIllustration } from '../../components/molecules/FadedIllustration/FadedIllustration'
 import { PartySizeModal } from '../../components/organisms/PartySizeModal/PartySizeModal'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
@@ -93,7 +94,7 @@ const PARTY_FILTER_LABELS: Record<PartyFilter, string> = {
 
 function BossCard(props: {
   boss: DisplayedBoss
-  crop?: BossPortraitCrop
+  crop?: ImageCrop
   partySize?: number
   /** 요구 레벨 미달 — 「완료」 자리를 «진행 불가» 로 대체한다([[ADR-162]] 결정 3). */
   isBlocked?: boolean
@@ -106,7 +107,7 @@ function BossCard(props: {
 
   // 카드 배경/보더/보스명 텍스트는 페이지 표면이 아니라 일러스트 위 배색을 따른다 — bleed·페이드·
   // text-shadow가 어두운 배경을 전제로 튜닝됐기 때문에 라이트 테마에서 페이지 토큰(bg-surface 등)을
-  // 쓰면 대비가 깨진다. `MediaCard` 가 카드 안쪽의 기준 표면을 media-surface로 바꾸므로
+  // 쓰면 대비가 깨진다. `IllustratedCard` 가 카드 안쪽의 기준 표면을 media-surface로 바꾸므로
   // ([[ADR-064]] 결정 5) 안에서는 앱 전역과 같은 레시피(bg-surface-2·text-text)를 그대로 쓴다.
   // 완료 뱃지는 앱 전체가 공유하는 "완료/성공" 의미 색(secondary)이라 스코프 안에서도 그대로다.
   // [[ADR-121]] 결정 1: 카드 전면(80px)이 버튼이다. **어포던스 표식을 두지 않는다** — 셰브런·연필을
@@ -120,8 +121,8 @@ function BossCard(props: {
       // 밝기 몫은 못 온다(파일 머리 ③) — 축소만 남는다.
       className="rounded-[14px] active:scale-[.985]"
     >
-      <MediaCard className="relative h-20 overflow-hidden">
-        <MediaCardArt source={portraitUrl} crop={crop} />
+      <IllustratedCard className="relative h-20 overflow-hidden">
+        <FadedIllustration source={portraitUrl} crop={crop} />
 
         <View className="h-full flex-row items-center justify-between px-[14px]">
           <View className="flex-row items-center gap-2">
@@ -164,7 +165,7 @@ function BossCard(props: {
             )}
           </View>
         </View>
-      </MediaCard>
+      </IllustratedCard>
     </Pressable>
   )
 }

@@ -41,7 +41,7 @@ function weekly(overrides: Partial<WeeklyContent> = {}): WeeklyContent {
 
 /** 이 카드가 실제로 그린 배경 그림의 파일 경로. 없으면 `null`(웹의 "아트 div 자체가 없음"). */
 function artUri(view: Awaited<ReturnType<typeof renderAtom>>): string | null {
-  const art = view.queryByTestId('media-card-art', HIDDEN)
+  const art = view.queryByTestId('faded-illustration', HIDDEN)
   if (art === null) return null
   const image = art.children.find(
     (child): child is AtomElement => typeof child !== 'string' && child.props.source !== undefined,

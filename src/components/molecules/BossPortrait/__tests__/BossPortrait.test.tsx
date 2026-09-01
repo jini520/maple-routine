@@ -5,7 +5,7 @@
 // **jest 에서 그림의 고유 크기는 없다**(에셋이 `{ testUri }` 대역이다 — [[ADR-129]] 의
 // `image-asset.native.ts`). 그래서 크롭이 있어도 배치는 `cover` 폴백으로 떨어진다. 여기서 지킬 수
 // 있는 계약은 **어느 분기로 가는가**(그림이 있으면 `<Image>`, 없으면 `?`)이고, 퍼센트 배치가 맞게
-// 나오는지는 `MediaCardArt/__tests__/media-card-art.test.tsx` 의 순수 함수 케이스가 든다.
+// 나오는지는 `lib/__tests__/image-crop.test.ts` 의 순수 함수 케이스가 든다.
 import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
 import { BossPortrait } from '../BossPortrait'
 
