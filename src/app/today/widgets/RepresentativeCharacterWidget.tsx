@@ -46,8 +46,7 @@ import { Image, View } from 'react-native'
 
 import { worldEmblemUrl } from '../../../lib/world-emblem'
 
-import { ProgressBar } from '../../../components/atoms/ProgressBar/ProgressBar'
-import { Text } from '../../../components/atoms/Text/Text'
+import { ProgressBar, Text } from '../../../components/atoms'
 import { faceCropStyle } from '../../../lib/face-crop'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { TABULAR_NUMS } from '../../../lib/text-styles'

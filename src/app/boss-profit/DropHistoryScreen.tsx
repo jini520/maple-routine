@@ -54,11 +54,10 @@ import type {
 import { getItemIconUrl } from '../../lib/item-icons'
 import { isValuableDrop } from '../../lib/valuable-drops'
 
-import { Text } from '../../components/atoms/Text/Text'
+import { MapleLeaf, Text } from '../../components/atoms'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
-import { MapleLeaf } from '../../components/atoms/Icon'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { DROUGHT_GLOW_FILTER, DROUGHT_TIER_STYLES } from '../../lib/drought-tier-styles'

@@ -34,7 +34,7 @@
  */
 import { Pressable, View } from 'react-native'
 
-import { Text } from '../../atoms/Text/Text'
+import { Text } from '../../atoms'
 import {
   WEEKDAY_LABELS,
   formatDayLabel,

@@ -30,7 +30,7 @@ import { Image, View } from 'react-native'
 import { formatMesoShort } from '../../../lib/boss-profit-delta'
 import { getItemIconUrl } from '../../../lib/item-icons'
 
-import { Text } from '../../../components/atoms/Text/Text'
+import { Text } from '../../../components/atoms'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import type { WidgetHeight } from '../../../lib/widget-layout'
 import type { PricedDropView } from '../view-model'

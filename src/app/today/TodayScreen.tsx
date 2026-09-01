@@ -56,7 +56,7 @@ import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getRepresentativeCharacter } from '../../storage/character-selection'
 import type { CharacterBasicProfile } from '../../types'
 
-import { Text } from '../../components/atoms/Text/Text'
+import { Text } from '../../components/atoms'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'

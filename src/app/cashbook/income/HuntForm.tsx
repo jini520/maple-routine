@@ -12,7 +12,7 @@
 import { useRef, useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
-import { Text } from '../../../components/atoms/Text/Text'
+import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { parseMesoText } from '../../../components/molecules/MesoPad/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'

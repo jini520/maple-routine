@@ -54,7 +54,7 @@ import {
   XIcon,
 } from '../../../lib/icons'
 import { AnimatedView } from '../../../lib/nativewind-interop'
-import { Text } from '../../atoms/Text/Text'
+import { Text } from '../../atoms'
 import { ENTER_TRANSITION, timerAnimation } from './timer-animation'
 
 export interface ToastProps {

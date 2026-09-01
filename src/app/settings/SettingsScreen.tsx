@@ -48,9 +48,7 @@ import { useContentSchedulerStore } from '../../features/content-scheduler/store
 import { formatBytes } from '../../lib/format-bytes'
 
 import packageJson from '../../../package.json'
-import { Badge } from '../../components/atoms/Badge/Badge'
-import { Card } from '../../components/atoms/Card/Card'
-import { Text } from '../../components/atoms/Text/Text'
+import { Badge, Card, Text } from '../../components/atoms'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import type { TabParamList } from '../../navigation/routes'

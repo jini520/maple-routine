@@ -14,8 +14,7 @@
 // 카드 폭·여백(`max-w-sm p-6`)과 세로 중앙 정렬은 `Modal.Card` + `align="center"` 가 그대로 낸다.
 import { View } from 'react-native'
 
-import { Button } from '../../components/atoms/Button/Button'
-import { Text } from '../../components/atoms/Text/Text'
+import { Button, Text } from '../../components/atoms'
 import { Modal } from '../../components/organisms/Modal/Modal'
 
 export interface DisconnectConfirmProps {

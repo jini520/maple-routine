@@ -27,7 +27,7 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { Text } from '../../components/atoms/Text/Text'
+import { Text } from '../../components/atoms'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import type { MesoRateLoad } from '../../features/cashbook/meso-rate'
 import { INCOME_CATEGORIES, type IncomeCategory, type IncomeRecord } from '../../storage/income'

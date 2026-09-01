@@ -21,7 +21,7 @@ import { Circle } from 'react-native-svg'
 
 import type { BossCycle } from '../../types'
 
-import { Text } from '../../components/atoms/Text/Text'
+import { Text } from '../../components/atoms'
 import { Svg } from '../../lib/nativewind-interop'
 import { useThemeAppearance } from '../../theme/context'
 

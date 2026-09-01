@@ -30,10 +30,7 @@ import { View } from 'react-native'
 
 import type { LiveUpdateStatus, LiveUpdateStore } from '../../features/live-update/store'
 
-import { Button } from '../../components/atoms/Button/Button'
-import { Badge } from '../../components/atoms/Badge/Badge'
-import { Card } from '../../components/atoms/Card/Card'
-import { Text } from '../../components/atoms/Text/Text'
+import { Badge, Button, Card, Text } from '../../components/atoms'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
 
 /** 이 카드가 **읽는** 것 — core 스토어에서 그대로 뽑아 두 벌이 되지 않게 한다. */

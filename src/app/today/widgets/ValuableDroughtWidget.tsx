@@ -36,8 +36,7 @@ import { View } from 'react-native'
 
 import { formatValuableDroughtHeadline } from '../../../lib/drop-history'
 
-import { Text } from '../../../components/atoms/Text/Text'
-import { MapleLeaf } from '../../../components/atoms/Icon'
+import { MapleLeaf, Text } from '../../../components/atoms'
 import { DROUGHT_GLOW_FILTER, DROUGHT_TIER_STYLES } from '../../../lib/drought-tier-styles'
 import type { WidgetHeight } from '../../../lib/widget-layout'
 import type { DroughtView } from '../view-model'

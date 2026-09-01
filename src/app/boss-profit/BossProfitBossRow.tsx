@@ -31,8 +31,7 @@ import { getItemIconUrl } from '../../lib/item-icons'
 import { isValuableDrop } from '../../lib/valuable-drops'
 import type { RecordedDrop } from '../../types/drops'
 
-import { Badge } from '../../components/atoms/Badge/Badge'
-import { Text } from '../../components/atoms/Text/Text'
+import { AnimatedNumber, Badge, Text } from '../../components/atoms'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { MinusIcon, PlusIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../lib/text-styles'
@@ -41,7 +40,6 @@ import { useBossProfitContext } from './boss-profit-context'
 import { clamp, findPortraitSlug } from './character-groups'
 import { ItemRevenuePopover, useAnchoredPopover } from './ItemRevenuePopover'
 import { ValuableRowBackground } from './ValuableRowBackground'
-import { AnimatedNumber } from '../../components/atoms/AnimatedNumber/AnimatedNumber'
 
 // BossPortrait의 size prop 기본값(40px, 기존 h-10 관례)과 동일하게 시작값을 맞춘다.
 export const BOSS_PORTRAIT_SIZE = 40

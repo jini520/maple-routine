@@ -67,8 +67,7 @@ import {
 } from '../../lib/boss-profit-period'
 import { sumDropPayout } from '../../lib/drop-price'
 
-import { ProfitIcon } from '../../components/atoms/Icon'
-import { Text } from '../../components/atoms/Text/Text'
+import { AnimatedNumber, ProfitIcon, Text } from '../../components/atoms'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
@@ -105,7 +104,6 @@ import {
 // — 컴포넌트와 테스트는 그대로 두고 여기서 부르지만 않는다.
 import { CrystalSummaryChip } from './HeadlineChips'
 import { ItemRevenuePopover, useAnchoredPopover } from './ItemRevenuePopover'
-import { AnimatedNumber } from '../../components/atoms/AnimatedNumber/AnimatedNumber'
 
 export function BossProfitScreen(): React.JSX.Element {
   const {

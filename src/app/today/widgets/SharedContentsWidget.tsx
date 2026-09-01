@@ -71,7 +71,7 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { Text } from '../../../components/atoms/Text/Text'
+import { Text } from '../../../components/atoms'
 import { CheckIcon, CircleQuestionMarkIcon } from '../../../lib/icons'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import type { SharedContentGroupView, SharedContentItemView } from '../view-model'

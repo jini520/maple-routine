@@ -32,8 +32,7 @@ import {
 } from '../../data/feature-guides'
 import type { FeatureGuideGroup } from '../../types'
 
-import { Card } from '../../components/atoms/Card/Card'
-import { Text } from '../../components/atoms/Text/Text'
+import { Card, Text } from '../../components/atoms'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'

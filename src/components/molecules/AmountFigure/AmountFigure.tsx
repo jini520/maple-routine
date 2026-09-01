@@ -27,7 +27,7 @@ import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
 import { useCountUp } from '../../../hooks/useCountUp'
-import { Text } from '../../atoms/Text/Text'
+import { Text } from '../../atoms'
 import { SheetTextInput } from '../SheetTextInput/SheetTextInput'
 import { RotateCcwIcon } from '../../../lib/icons'
 import { TABULAR_NUMS } from '../../../lib/text-styles'

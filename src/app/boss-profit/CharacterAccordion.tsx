@@ -69,7 +69,7 @@ import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss-matching'
 import type { PopoverAnchorGeometry } from '../../lib/popover-anchor'
 import weeklyBossesData from '../../data/weekly-bosses.json'
 
-import { Text } from '../../components/atoms/Text/Text'
+import { AnimatedNumber, Text } from '../../components/atoms'
 import { ValuableDropBadge } from '../../components/molecules/ValuableDropBadge/ValuableDropBadge'
 import { ChevronDownIcon, ChevronUpIcon } from '../../lib/icons'
 import { AnimatedView } from '../../lib/nativewind-interop'
@@ -104,7 +104,6 @@ import {
   VALUABLE_CARD_RING_RADIUS,
   VALUABLE_CARD_RING_WIDTH,
 } from './valuable-card-glow'
-import { AnimatedNumber } from '../../components/atoms/AnimatedNumber/AnimatedNumber'
 
 // 월간 탭 진행 링의 분모([[ADR-059]] 결정 4) — 리터럴 1이 아니라 참조 데이터에서 파생한다. 월간
 // 보스가 늘면 링 칸 수가 따라 늘어 "데이터는 2종인데 링은 1칸"이 될 수 없다. `boss-matching` 의

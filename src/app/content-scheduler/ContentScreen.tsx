@@ -49,7 +49,7 @@ import {
   type DisplayedContentsInput,
 } from '../../features/content-scheduler/displayed-contents'
 
-import { Text } from '../../components/atoms/Text/Text'
+import { Text } from '../../components/atoms'
 import { dailyContentProgress, weeklyContentProgress } from './content-completion'
 
 import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'

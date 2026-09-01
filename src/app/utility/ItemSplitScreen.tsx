@@ -20,9 +20,7 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { Card } from '../../components/atoms/Card/Card'
-import { Text } from '../../components/atoms/Text/Text'
-import { TextInput } from '../../components/atoms/TextInput/TextInput'
+import { Card, Text, TextInput } from '../../components/atoms'
 import { PartySizeStepper } from '../../components/molecules/PartySizeStepper/PartySizeStepper'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'

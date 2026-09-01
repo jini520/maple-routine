@@ -24,7 +24,7 @@
 import { Pressable, View } from 'react-native'
 
 import { AlertTriangleIcon } from '../../../lib/icons'
-import { Text } from '../../atoms/Text/Text'
+import { Text } from '../../atoms'
 
 interface StaleBannerAction {
   label: string

@@ -39,7 +39,7 @@ import { Image, View, type DimensionValue } from 'react-native'
 
 import { formatMesoShort } from '../../../lib/boss-profit-delta'
 
-import { Text } from '../../../components/atoms/Text/Text'
+import { Text } from '../../../components/atoms'
 import { faceCropStyle } from '../../../lib/face-crop'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import type { WidgetHeight } from '../../../lib/widget-layout'

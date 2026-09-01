@@ -35,7 +35,7 @@
 import { View } from 'react-native'
 import { Circle } from 'react-native-svg'
 
-import { Text } from '../../../components/atoms/Text/Text'
+import { Text } from '../../../components/atoms'
 import { Svg } from '../../../lib/nativewind-interop'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import type { WidgetHeight } from '../../../lib/widget-layout'

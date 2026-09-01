@@ -34,7 +34,7 @@ import { useCharacterSelectionStore } from '../../features/character-selection/s
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { useToastStore } from '../../features/toast/store'
 
-import { Text } from '../../components/atoms/Text/Text'
+import { Badge, Text } from '../../components/atoms'
 import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
@@ -50,7 +50,6 @@ import {
   SparklesIcon,
   SwordsIcon,
 } from '../../lib/icons'
-import { Badge } from '../../components/atoms/Badge/Badge'
 import { TABULAR_NUMS } from '../../lib/text-styles'
 import { useScreenNavigation } from '../use-screen-navigation'
 

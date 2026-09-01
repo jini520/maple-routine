@@ -28,7 +28,7 @@
 import { useState } from 'react'
 import { Pressable, useWindowDimensions, View } from 'react-native'
 
-import { Card } from '../../components/atoms/Card/Card'
+import { Card } from '../../components/atoms'
 import { resolveWidgetGridMetrics } from '../../lib/widget-grid-metrics'
 import { resolveWidgetPositions } from '../../lib/widget-layout'
 import type { TabRouteName } from '../../navigation/routes'

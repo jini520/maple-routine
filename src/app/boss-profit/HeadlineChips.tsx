@@ -23,7 +23,7 @@ import { formatBossProfitPeriodLabel, getAdjacentPeriodKey } from '../../lib/bos
 import { worldEmblemUrl } from '../../lib/world-emblem'
 import type { BossCycle } from '../../types'
 
-import { Text } from '../../components/atoms/Text/Text'
+import { Text } from '../../components/atoms'
 import { ArrowDownIcon, ArrowUpIcon, ChevronDownIcon, ChevronUpIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../lib/text-styles'
 import { countMonthlyCrystals, summarizeWorldCrystals } from './character-groups'

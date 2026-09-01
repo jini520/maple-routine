@@ -21,7 +21,7 @@ import { Image, View } from 'react-native'
 import { getBossPortraitIconCrop, getBossPortraitUrl } from '../../../lib/boss-icons'
 import type { BossPortraitCrop } from '../../../lib/boss-icons'
 
-import { Text } from '../../atoms/Text/Text'
+import { Text } from '../../atoms'
 import {
   mediaArtImageStyle,
   mediaArtNaturalSize,
