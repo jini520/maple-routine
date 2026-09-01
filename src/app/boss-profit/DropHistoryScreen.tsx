@@ -33,7 +33,6 @@
 //    사라지고(줄바꿈 품질만 달라진다) WORD JOINER 는 **core 가 문자열에 박아 두므로** 그대로 온다.
 import { useEffect, useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
-import { Path } from 'react-native-svg'
 
 import {
   useDropHistoryStore,
@@ -59,12 +58,11 @@ import { Text } from '../../components/atoms/Text/Text'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
-import { MAPLE_LEAF_PATH } from '../../components/mapleLeafPath'
+import { MapleLeaf } from '../../components/atoms/Icon'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { DROUGHT_GLOW_FILTER, DROUGHT_TIER_STYLES } from '../../lib/drought-tier-styles'
 import { ArrowLeftIcon, ScrollTextIcon } from '../../lib/icons'
-import { Svg } from '../../lib/nativewind-interop'
 import { TABULAR_NUMS } from '../../lib/text-styles'
 import { useTopSafeAreaPx } from '../../lib/top-safe-area'
 import { useScreenNavigation } from '../use-screen-navigation'
@@ -124,13 +122,7 @@ function ValuableDrought(props: { summary: ValuableDroughtSummary; now: Date }):
           ...(style.glow ? { filter: DROUGHT_GLOW_FILTER } : {}),
         }}
       >
-        <Svg
-          width={DROUGHT_LEAF_SIZE}
-          height={Math.round(DROUGHT_LEAF_SIZE * (130 / 127))}
-          viewBox="0 0 127 130"
-        >
-          <Path d={MAPLE_LEAF_PATH} fill={style.leaf} />
-        </Svg>
+        <MapleLeaf size={DROUGHT_LEAF_SIZE} fill={style.leaf} />
       </View>
       <View className="shrink">
         {/* 잎을 키운 만큼 글자도 한 단계씩 올린다(사용자 지정 2026-08-01) — 제목 `text-sm`→`text-base`,

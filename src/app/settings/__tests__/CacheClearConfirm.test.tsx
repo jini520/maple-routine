@@ -185,8 +185,8 @@ describe('CacheClearConfirm', () => {
 
     expect(buttonOf(view, '취소').props.accessibilityState?.disabled).toBe(true)
     expect(view.getByLabelText('일반 데이터').props.accessibilityState?.disabled).toBe(true)
-    // [[ADR-061]] 결정 5·9 — 스피너 + 말줄임표 없는 '~중' 라벨.
-    expect(buttonOf(view, '삭제 중').props.accessibilityState).toMatchObject({
+    // [[ADR-061]] 정정 3 — 스피너가 라벨을 덮고 라벨은 그대로 남는다.
+    expect(confirmButton(view).props.accessibilityState).toMatchObject({
       disabled: true,
       busy: true,
     })

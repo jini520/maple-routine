@@ -65,14 +65,13 @@ describe('DisconnectConfirm', () => {
     expect(onCancel).toHaveBeenCalledTimes(1)
   })
 
-  // [[ADR-061]] 결정 5·9 — 스피너 + 말줄임표 없는 '~중' 라벨. 되돌릴 수 없는 동작이라 진행 중인지
-  // 멈춘 건지가 `disabled` 만으로는 구분되지 않는다.
-  it('isDisconnecting이 true면 확인 버튼이 "해제 중"으로 바뀌고 비활성이다', async () => {
+  // [[ADR-061]] 정정 3 — 스피너가 라벨을 덮는다. 되돌릴 수 없는 동작이라 진행 중인지 멈춘 건지가
+  // `disabled` 만으로는 구분되지 않는다.
+  it('isDisconnecting이 true면 확인 버튼이 대기 상태가 되고 비활성이다', async () => {
     const view = await renderOverlay(<DisconnectConfirm {...props({ isDisconnecting: true })} />)
 
     // `aria-busy` 는 RN 이 `accessibilityState.busy` 로 접는다 — `disabled` 와 같은 객체다.
-    const confirm = buttonOf(view, '해제 중')
+    const confirm = buttonOf(view, '연결 해제')
     expect(confirm.props.accessibilityState).toMatchObject({ disabled: true, busy: true })
-    expect(view.queryByText('연결 해제')).toBeNull()
   })
 })

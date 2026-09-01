@@ -33,7 +33,6 @@ import { useState } from 'react'
 import { Linking, Pressable, View } from 'react-native'
 
 import { Button } from '../../components/atoms/Button/Button'
-import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
 import { Text } from '../../components/atoms/Text/Text'
 import { TextInput } from '../../components/atoms/TextInput/TextInput'
 import { ExternalLinkIcon, EyeIcon, EyeOffIcon } from '../../lib/icons'
@@ -117,13 +116,10 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
         variant="primary"
         onPress={handleSubmit}
         disabled={isSubmitDisabled}
-        aria-busy={props.isSubmitting}
-        className={`w-full flex-row items-center justify-center gap-2${isSubmitDisabled ? ' opacity-50' : ''}`}
+        busy={props.isSubmitting}
+        className={`w-full flex-row items-center justify-center${isSubmitDisabled ? ' opacity-50' : ''}`}
       >
-        {/* [[ADR-061]] 결정 5·9: 버튼 안은 스피너 + 말줄임표 없는 '~중' 라벨을 함께 둔다 — 라벨이
-            남아야 무엇이 진행 중인지 글자로 확인된다(파괴적 동작과 형태를 맞춘다). */}
-        {props.isSubmitting && <MapleSpinner size={16} />}
-        {props.isSubmitting ? '확인 중' : '확인'}
+        확인
       </Button>
 
       {/* 구분선이 두 사용자군을 가른다 — 주 CTA 바로 아래 같은 pill 이 하나 더 서는 위험을

@@ -177,14 +177,15 @@ describe('SettingsAccountDataScreen', () => {
     expect(mockedClearAndReload.mock.calls[0][1]).toBe(reload)
   })
 
-  it('삭제 중에는 삭제 버튼이 "삭제 중"으로 바뀐다', async () => {
+  // [[ADR-061]] 정정 3 — 라벨이 가려진 채 자리를 지키고 스피너가 그 위에 겹친다.
+  it('삭제 중에는 삭제 버튼이 대기 상태가 된다', async () => {
     mockedClearAndReload.mockReturnValue(new Promise(() => {}))
     const view = await renderOverlay(<SettingsAccountDataScreen />)
 
     await press(rowOf(view, '캐시 데이터 삭제'))
     await press(view.getByText(/^삭제/))
 
-    expect(view.getByText('삭제 중')).toBeTruthy()
+    expect(view.getByTestId('button-busy', { includeHiddenElements: true })).toBeTruthy()
   })
 
   it('"연결 해제"를 누르면 확인 모달이 열리고, 확인 시 disconnect가 호출된다', async () => {

@@ -16,7 +16,7 @@ jest.mock('react-native-reanimated', () =>
 
 import { mockReducedMotion, withRepeatSpy } from '../../../__tests__/reduced-motion'
 import { findAllOfType, flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
-import { MAPLE_LEAF_PATH_LENGTH } from '../../../mapleLeafPath'
+import { MAPLE_LEAF_PATH_LENGTH } from '../../Icon/maple-leaf'
 import { MapleSpinner } from '../MapleSpinner'
 
 const HIDDEN = { includeHiddenElements: true } as const

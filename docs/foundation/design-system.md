@@ -210,7 +210,7 @@ CTA:    rounded-full bg-primary text-on-primary font-semibold hover:bg-primary-h
 - **"조회 불가"에는 이 컴포넌트를 쓰지 않는다**. 아래 `UnavailableNotice` 참고([error-resilience.md](./error-resilience.md) 원칙 2).
 - 배지(둥근 배경 박스)는 아래 "아이콘" 절의 *배경 없이 단독* 규칙에 대한 **명시적 예외**다. 빈 상태 배지는 아이콘이 아니라 **일러스트 자리**로 취급한다.
 
-### 로딩 표현 (`components/LoadingState`, `components/MapleSweepSpinner`): [[ADR-061]], 구현 완료 2026-07-30
+### 로딩 표현 (`molecules/LoadingState`, `atoms/Spinner`): [[ADR-061]], 구현 완료 2026-07-30
 "기다리는 중"을 표시하는 모든 자리가 지키는 규칙. 세 상태(**조회 중 / 확정된 빈 상태 / 확인 불가·실패**)는 항상 서로 구분 가능해야 한다([error-resilience.md](./error-resilience.md) 원칙 2). 그래서 로딩은 빈 상태의 어법(점선 박스·배지+CTA)을 쓰지 않는다.
 
 **스피너는 2종, 크기로 갈린다.**
@@ -239,11 +239,15 @@ inline: 스피너 24px:             보스 수익 과거 기간 백필
 - **목록·카드가 들어올 자리에만 쓴다.** 모달 안(캐릭터 관리 피커)이나 화면 전체 대기(온보딩 시드·예열)는 이미 자기 껍데기가 있거나 뒤에 카드가 오지 않으므로 카드를 씌우지 않고 **스피너 + 문구만** 둔다.
 - **캐시가 남아 있으면 쓰지 않는다**. 재검증(SWR) 중에는 기존 내용을 그대로 보여준다(ADR-016). 이 카드는 "보여줄 것이 하나도 없을 때"만.
 
-**버튼 내부 대기**. `MapleSpinner size={16}` + 라벨 병기(`gap-2`), `aria-busy` + `disabled`. 라벨을 지우지 않는 이유는 파괴적 동작(캐시 삭제·연결 해제)에서 무엇이 진행 중인지 글자로 확인돼야 하기 때문이고, 형태를 하나로 맞추려고 조회성 버튼에도 같은 규칙을 쓴다.
+**버튼 내부 대기**. `<Button busy={isBusy}>확인</Button>` 하나로 끝난다([[ADR-061]] 정정 3). 라벨이 `opacity-0` 으로 가려지고 그 자리에 `MapleSpinner size={16}` 이 겹쳐 그려진다. **호출부가 스피너를 직접 넣지 않는다.**
+
+- **라벨을 지우지 않고 가리는 이유가 둘이다.** 대기 전 폭이 그대로 남아 버튼이 안 줄어들고, 스크린리더는 라벨을 그대로 읽는다.
+- **스피너 색은 `Button` 이 정한다.** variant 의 라벨 색과 같은 토큰이고 호출부가 못 어긴다. 손으로 주던 시절 여섯 곳 전부 색을 안 줘서 검정으로 떨어져 있었다.
+- `aria-busy` 는 `busy` 가 켠다. `disabled` 는 호출부 몫이다 — 대기 중에 못 누르게 하는 것은 버튼 모양이 아니라 화면의 판단이다.
 
 **문구 규칙**. 말줄임표가 붙는 `~중...`은 **새로고침 옆 `조회 중...` 한 곳**에만 남는다(그 자리는 "마지막 동기화 3분 전" 시각 표시를 잠시 대체하는 라벨이라 짧아야 한다).
 ```
-버튼 안:  ~중 (말줄임표 없음)   확인 중 · 삭제 중 · 해제 중 · 적용 중
+버튼 안:  라벨이 가려져 문구가 없다 ([[ADR-061]] 정정 3)
 그 밖:    ~하고 있어요          불러오고 있어요 · 캐릭터 정보를 준비하고 있어요 (N/M)
 말줄임표: ...(마침표 3개)로 통일. …(1글자) 금지
 ```
@@ -698,7 +702,17 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 ## 아이콘
 - **라이브러리: `lucide-react`**(확정). 새 아이콘은 이 라이브러리에서만. 다른 아이콘 **라이브러리** 혼용은 계속 금지다.
 - **예외: 도메인 아이덴티티 아이콘은 직접 그린다**([[ADR-066]], 2026-07-31). 그 기능을 대표하는 자리에 한해 커스텀 SVG를 허용하되, **lucide 규격을 지키는 것이 조건**이다: 24 그리드 · `fill="none"` · `stroke="currentColor"` · `strokeLinecap`/`strokeLinejoin` `round` · 기본 `strokeWidth` 2 · 크기는 `className`이 정한다(`width`/`height` 속성은 lucide와 같은 24 폴백까지만: CSS가 속성보다 우선하므로 `h-5 w-5`가 항상 이기고, 폴백이 없으면 `className` 없이 쓸 때 인라인 SVG 기본값 300×150으로 부푼다). 규격을 지켜야 같은 줄에 선 lucide 아이콘과 선 굵기·광학 크기가 어긋나지 않는다. 겹침 표현은 `clipPath`·`mask`가 아니라 **뒤 요소의 선을 끊어서**(한 문서에 여러 번 렌더되면 마스크 `id`가 중복된다). 현재 해당: `ProfitIcon`(수익: 동전 더미 + 앞 동전) · `GearIcon`(하단바 톱니).
-- **커스텀 아이콘은 `components/atoms/Icon/` 에 산다**([[ADR-199]]). 가져올 때는 `import { ProfitIcon } from 'components/atoms/Icon'` 로 배럴을 거친다. 파일 하나가 아이콘 하나이고, 위 규격은 같은 디렉터리의 `icon-base.tsx` 가 쥔다. **새 아이콘은 `IconSvg` 를 쓰고 좌표만 갖는다** — 뿌리를 직접 그리면 규격이 파일마다 갈리는데, 어긋나도 그림은 나와서 화면을 자세히 보기 전에는 모른다. 프롭도 `IconProps` 하나를 쓴다(하단바가 lucide 아이콘과 바꿔 끼우므로 이름이 같아야 한다).
+- **앱이 직접 그리는 SVG 는 두 디렉터리에 산다**([[ADR-199]]). 가르는 기준은 **움직이냐**다.
+
+| 디렉터리 | 무엇 | 가져오는 법 |
+|---|---|---|
+| `atoms/Icon/` | `GearIcon` · `ProfitIcon` · `MapleLeaf`(브랜드 마크) | `import { ProfitIcon } from 'components/atoms/Icon'` |
+| `atoms/Spinner/` | `MapleSpinner`(16px) · `MapleSweepSpinner`(24px 이상) | `import { MapleSweepSpinner } from 'components/atoms/Spinner'` |
+
+- **뿌리는 `SvgFrame` 이 그린다**(`Icon/icon-base.tsx`). `size` → `width`·`height`, `className` → 색, 격자(`viewBox` + 비율)까지가 그 일이고 **칠에는 의견이 없다.** 격자는 둘이다 — lucide 24 정사각(`LUCIDE_GRID`)과 단풍잎 127×130(`LEAF_GRID`).
+- **lucide 규격을 받는 것은 `IconSvg` 다** = `SvgFrame` + 선 프리셋. **새 lucide 계열 아이콘은 이것을 쓰고 좌표만 갖는다.** 뿌리를 직접 그리면 규격이 파일마다 갈리는데, 어긋나도 그림은 나와서 화면을 자세히 보기 전에는 모른다.
+- **채운 그림에 `IconSvg` 를 쓰면 안 된다.** `stroke` 는 SVG 상속 속성이라 뿌리에 두면 자식이 전부 받아 2px 윤곽선이 얹힌다(실측). `MapleLeaf` 와 스윕 스피너가 `SvgFrame` 을 직접 쓰는 이유다.
+- 프롭은 `IconProps` 하나다(하단바가 lucide 아이콘과 바꿔 끼우므로 이름이 같아야 한다).
 - `strokeWidth`: 하단 탭바 `1.5`, 소형 액션(새로고침 등) `2`.
 - 아이콘 컨테이너(둥근 배경 박스)로 감싸지 않는다. 강조색 아이콘을 배경 없이 단독으로. **예외 2곳**: 빈 상태 배지(위 `EmptyState`, [[ADR-060]]. 아이콘이 아니라 일러스트 자리)와 드롭 시트 카테고리 헤더.
 - 현재 사용: 하단 탭바 `ListChecks`(컨텐츠)/`Swords`(보스)/`ProfitIcon`(수익, 커스텀)/`Settings`(설정), 새로고침 `RefreshCw`, 보스 카드 파티 배지 `Users`, 파티 스테퍼 `Minus`/`Plus`.

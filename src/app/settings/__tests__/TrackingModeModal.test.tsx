@@ -190,8 +190,8 @@ describe('TrackingModeModal', () => {
     await press(optionCard(view, 'manual'))
     await press(climb(view, '적용'))
 
-    // [[ADR-061]] 결정 5·9 — 버튼 안 스피너 + 말줄임표 없는 '~중' 라벨.
-    const applying = climb(view, '적용 중')
+    // [[ADR-061]] 정정 3 — 스피너가 라벨을 덮고 라벨은 그대로 남는다.
+    const applying = climb(view, '적용')
     expect(applying.props.accessibilityState).toMatchObject({ disabled: true, busy: true })
     expect(climb(view, '취소').props.accessibilityState?.disabled).toBe(true)
     expect(optionCard(view, 'auto').props.accessibilityState?.disabled).toBe(true)

@@ -18,13 +18,11 @@
 // 다르다(page `px-5 py-2.5` / inline `px-4 py-2` vs Button `px-5 py-2.5`). atom 위에 여백 클래스를
 // 덮어쓰면 **어느 쪽이 이기는지가 스타일시트 순서에 달리므로**(class 문자열 순서가 아니다) 조용히
 // 갈릴 수 있다. 웹과 같은 자체 pill 로 둔다.
-import { Path } from 'react-native-svg'
 import { Pressable, View } from 'react-native'
 
-import { Svg } from '../../../lib/nativewind-interop'
 import { Card } from '../../atoms/Card/Card'
 import { Text } from '../../atoms/Text/Text'
-import { MAPLE_LEAF_PATH } from '../../mapleLeafPath'
+import { MapleLeaf } from '../../atoms/Icon'
 
 interface EmptyStateAction {
   label: string
@@ -63,15 +61,7 @@ export function EmptyState(props: EmptyStateProps): React.JSX.Element {
         {/* 마크 색은 primary 계열로 통일 — primary-ink 는 라이트 테마에선 더 또렷하지만 레테(다크)에서
             배지 배경에 묻힌다(그 테마만 primary-ink 가 primary 보다 어둡다). */}
         {Icon === 'leaf' ? (
-          <Svg
-            testID="empty-state-leaf"
-            width={isPage ? 42 : 28}
-            height={isPage ? 43 : 29}
-            viewBox="0 0 127 130"
-            className="text-primary-ink"
-          >
-            <Path d={MAPLE_LEAF_PATH} fill="currentColor" />
-          </Svg>
+          <MapleLeaf size={isPage ? 42 : 28} className="text-primary-ink" />
         ) : (
           <Icon className={`text-primary-ink ${isPage ? 'h-10 w-10' : 'h-7 w-7'}`} strokeWidth={1.75} />
         )}

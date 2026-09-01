@@ -33,5 +33,19 @@ export const BUTTON_VARIANT_TEXT_CLASS = {
   danger: 'text-sm font-semibold text-error-ink',
 } as const
 
+/**
+ * 대기 스피너 색. **라벨 색과 같은 토큰이어야 한다** — 한 버튼 안에서 두 색이 갈리면 안 된다
+ * ([[ADR-061]] 정정 3).
+ *
+ * 글자 표에서 색만 떼어 따로 적는 이유는 스피너가 `Svg` 라서다. 글자 표를 통째로 주면 크기·두께
+ * 클래스가 함께 흘러 들어간다. 두 표가 갈리지 않는지는 `Button.test.tsx` 가 본다.
+ */
+export const BUTTON_VARIANT_SPINNER_CLASS = {
+  primary: 'text-on-primary',
+  outline: 'text-text',
+  text: 'text-text-muted',
+  danger: 'text-error-ink',
+} as const
+
 /** 버튼 변형 넷. 상자 표의 키가 곧 이 타입이다. */
 export type ButtonVariant = keyof typeof BUTTON_VARIANT_CLASS

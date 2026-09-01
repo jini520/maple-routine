@@ -105,7 +105,8 @@ describe('OnboardingScreen', () => {
     const view = await renderOverlay(<OnboardingScreen />)
 
     expect(view.getByLabelText('Nexon Open API 키')).toBeTruthy()
-    expect(view.getByText('확인 중')).toBeTruthy()
+    // 라벨은 가려질 뿐 트리에 남는다([[ADR-061]] 정정 3). 대기는 `aria-busy` 가 말한다.
+    expect(view.getByText('확인')).toBeTruthy()
     expect(view.queryByText(/확인하고 있어요/)).toBeNull()
   })
 

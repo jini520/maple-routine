@@ -93,13 +93,11 @@ describe('컴포넌트 계층 의존 방향 ([[ADR-094]] 결정 2)', () => {
     }
   })
 
-  // 계층 밖에 컴포넌트를 두면 규칙이 적용되지 않는 사각이 생긴다. 컴포넌트가 아닌 공유
-  // 상수(mapleLeafPath)는 예외로 둔다 — 그것은 계층을 갖는 대상이 아니다.
-  it('components 바로 아래에는 계층 디렉터리와 공유 상수만 둔다', () => {
+  // 계층 밖에 컴포넌트를 두면 규칙이 적용되지 않는 사각이 생긴다. 예외가 하나 있었으나
+  // ([[ADR-199]] 정정 3) 단풍잎 경로가 `atoms/Icon/maple-leaf.ts` 로 들어가 없어졌다.
+  it('components 바로 아래에는 계층 디렉터리만 둔다', () => {
     const entries = readdirSync(ROOT).filter((e) => e !== '__tests__')
-    const unexpected = entries.filter(
-      (e) => !(LAYERS as readonly string[]).includes(e) && e !== 'mapleLeafPath.ts',
-    )
+    const unexpected = entries.filter((e) => !(LAYERS as readonly string[]).includes(e))
 
     expect(unexpected).toEqual([])
   })

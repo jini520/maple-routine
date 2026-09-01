@@ -19,7 +19,6 @@ import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import type { TrackingMode } from '../../storage/tracking-mode'
 
 import { Button } from '../../components/atoms/Button/Button'
-import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
 import { Text } from '../../components/atoms/Text/Text'
 import { Modal } from '../../components/organisms/Modal/Modal'
 import { reloadTabStores } from './reload-tab-stores'
@@ -83,18 +82,16 @@ export function TrackingModeModal(props: TrackingModeModalProps): React.JSX.Elem
             variant="primary"
             // 바뀐 것이 없으면 누를 것도 없다(결정 23) — 닫기는 취소·오버레이가 맡는다.
             disabled={isUnchanged || isApplying}
-            aria-busy={isApplying}
+            busy={isApplying}
             onPress={() => {
               void handleApply()
             }}
-            className={`flex-row items-center justify-center gap-2${
+            className={`flex-row items-center justify-center${
               isUnchanged || isApplying ? ' opacity-50' : ''
             }`}
             textClassName="text-sm"
           >
-            {/* ADR-061 결정 5·9 — 버튼 안 16px + 말줄임표 없는 '~중' 라벨 */}
-            {isApplying && <MapleSpinner size={16} />}
-            {isApplying ? '적용 중' : '적용'}
+            적용
           </Button>
         </View>
       </Modal.Card>

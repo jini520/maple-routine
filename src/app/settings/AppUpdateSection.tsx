@@ -33,7 +33,6 @@ import type { LiveUpdateStatus, LiveUpdateStore } from '../../features/live-upda
 import { Button } from '../../components/atoms/Button/Button'
 import { Badge } from '../../components/atoms/Badge/Badge'
 import { Card } from '../../components/atoms/Card/Card'
-import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
 import { Text } from '../../components/atoms/Text/Text'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
 
@@ -122,16 +121,13 @@ export function AppUpdateSection(props: AppUpdateSectionProps): React.JSX.Elemen
               void actions.check()
             }}
             disabled={isBusy}
-            aria-busy={isBusy}
-            className={`w-full flex-row items-center justify-center gap-2${
+            busy={isBusy}
+            className={`w-full flex-row items-center justify-center${
               isBusy ? ' opacity-50' : ''
             }`}
             textClassName="text-sm"
           >
-            {/* ADR-061 결정 5: 네트워크 왕복이라 disabled만으로는 진행 중인지 멈춘 건지
-                구분되지 않는다 — 스피너 + '~중' 라벨로 바꾼다. */}
-            {isBusy && <MapleSpinner size={16} />}
-            {isBusy ? '확인 중' : '업데이트 확인'}
+            업데이트 확인
           </Button>
         </View>
       )}
