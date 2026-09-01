@@ -1,62 +1,67 @@
-// 결정형 진행률 바 — [[ADR-061]] 결정 6이 "예외 없이 h-1.5 프리미티브 하나"로 정한 것을
-// 코드로 승격한 atom([[ADR-094]] 결정 3). 그 전에는 같은 마크업이 9곳에 복붙돼 있었고,
-// 그중 두 곳은 클래스 순서까지 달랐다.
-//
-// atom 규칙: 상태를 갖지 않고 토큰과 자기 상자만 안다. 값 계산(클램프·퍼센트 환산)은
-// 호출부 몫이다 — 여기서 클램프하면 "왜 100을 넘겨도 안 넘치지"가 숨는다.
-//
-// ── RN 으로 옮기며 바뀐 것 셋 ─────────────────────────────────────────────────────
-//
-// ① 채움 색이 **정적 클래스 표**가 됐다. 웹은 `` `bg-${tone}` `` 로 만들었는데, Tailwind 는 소스를
-//    문자열로 훑으므로 그렇게 조립한 이름은 스캔에 안 잡힌다 — 웹에서는 `bg-primary`·`bg-third` 가
-//    다른 파일에 있어 우연히 살아 있었고, RN 은 스캔 범위가 이 패키지뿐이라 **그 우연이 없다**.
-//    없는 클래스는 에러가 아니라 **색 없는 막대**가 되므로 조립을 없앤다.
-// ② `role`·`aria-*` → `accessibilityRole`·`accessibilityValue`(RN 의 같은 뜻 프롭).
-// ③ `transition-[width]` → Reanimated 의 **CSS 트랜지션**(step 7). Tailwind 의 기본값을 값으로 적는다 —
-//    `width-transition.ts` 참고(그 값이 왜 별도 파일에 있는지도 거기 적혀 있다).
+/**
+ * 결정형 진행률 바 atom([[ADR-061]] 결정 6 · [[ADR-094]] 결정 3).
+ *
+ * **값을 클램프하지 않는다.** 여기서 잘라 두면 호출부의 계산이 틀렸을 때 그 사실이 화면에서
+ * 지워진다. 퍼센트 환산도 호출부 몫이다.
+ */
 import { View } from 'react-native'
+import { cubicBezier } from 'react-native-reanimated'
 
 import { AnimatedView } from '../../../lib/nativewind-interop'
-import { WIDTH_TRANSITION } from './width-transition'
 
-const TRACK_CLASS = 'h-1.5 w-full overflow-hidden rounded-full bg-track'
+/**
+ * 트랙 높이. `thin` 은 `today` 의 2x2 초기화 타일만 쓴다([[ADR-061]] 정정 4).
+ *
+ * **높이를 아는 것은 트랙뿐이다.** 채움은 `h-full` 로 따라온다. 둘이 각자 알면 한쪽만 바꿀 때
+ * 어긋난다([[ADR-147]] 정정 18 이 위젯 3 에서 낸 회귀).
+ */
+const HEIGHT_CLASS = { base: 'h-1.5', thin: 'h-1' } as const
 
-/** 조립하지 않는다 — 이유는 파일 머리 ①. */
+const TRACK_CLASS = 'w-full overflow-hidden rounded-full bg-track'
+
+/**
+ * 채움 색. **이름을 `` `bg-${tone}` `` 로 조립하지 않는다.** Tailwind 는 소스를 문자열로 훑어
+ * 조립한 이름을 못 찾고, 없는 클래스는 에러가 아니라 **색 없는 막대**가 된다.
+ */
 const FILL_CLASS = {
-  primary: 'h-1.5 rounded-full bg-primary',
-  third: 'h-1.5 rounded-full bg-third',
+  primary: 'h-full rounded-full bg-primary',
+  third: 'h-full rounded-full bg-third',
+} as const
+
+/**
+ * `animated` 가 채움에 얹는 폭 트랜지션. 값 셋은 Tailwind 의 `transition-[width]` 와 같다.
+ *
+ * **그 클래스로는 못 쓴다.** CSS 로 컴파일은 되는데 NativeWind 가 RN 스타일로 안 옮겨 **스타일에
+ * 아무것도 안 남는다**(실측). 에러 없이 그냥 안 움직인다. `as const` 인 이유는
+ * `float-animation.ts` 와 같다.
+ */
+const WIDTH_TRANSITION = {
+  transitionProperty: 'width',
+  transitionDuration: '150ms',
+  transitionTimingFunction: cubicBezier(0.4, 0, 0.2, 1),
 } as const
 
 export interface ProgressBarProps {
-  /** 채움 비율(0~100). 클램프하지 않는다 — 호출부가 이미 자기 단위로 계산해 넘긴다. */
+  /** 채움 비율(0~100). 클램프는 호출부가 한다(파일 머리). */
   percent: number
-  /**
-   * 채움 색. 기본은 브랜드 강조(`primary`)이고, 컨텐츠 스케줄러의 카드 진행률만
-   * `third` 를 쓴다(카드 배색과 충돌하지 않게).
-   */
+  /** 채움 색. `third` 는 컨텐츠 스케줄러의 `MediaCard` 둘이 위에 선 배지와 맞추려고 쓴다. */
   tone?: keyof typeof FILL_CLASS
+  /** 두께. 기본은 [[ADR-061]] 결정 6 의 `h-1.5` 이고, 세 번째 값은 두지 않는다(정정 4). */
+  height?: keyof typeof HEIGHT_CLASS
   /**
-   * 접근성 값. 주면 `accessibilityRole="progressbar"` 와 값을 함께 낸다.
-   *
-   * 선택인 이유 — 기존 9곳 중 업데이트 모달 하나만 role·aria 없이 그리고 있어서, 지금 붙이면
-   * 화면이 바뀐다([[ADR-094]] 결정 4). 접근성 보강은 별도 변경으로 다룬다.
+   * 접근성 값. 주면 `accessibilityRole="progressbar"` 와 함께 낸다. 값이 이미 글자로 읽히는
+   * 자리는 안 준다(`ResetCountdownWidget` 의 경과 바).
    */
   aria?: { now: number; max: number }
-  /**
-   * 폭 변화에 트랜지션을 건다 — 값이 연속으로 흐르는 다운로드 진행률용.
-   *
-   * 웹의 `transition-[width]` 자리이고, RN 에서는 Reanimated 의 CSS 트랜지션이 그 일을 한다
-   * (`WIDTH_TRANSITION`). NativeWind 의 `transition-*` 클래스를 쓰지 않는 이유는 그쪽이 지속시간·곡선을
-   * 프리셋 변수에서 읽는데 RN 에는 그 프리셋이 없어 **값이 조용히 달라지기** 때문이다 — 여기서는
-   * 웹이 실제로 쓰던 두 값을 직접 적는다.
-   */
+  /** 폭 변화에 트랜지션을 건다. 값이 연속으로 흐르는 `UpdatePromptModal` 의 다운로드만 쓴다. */
   animated?: boolean
-  /** 채움 요소에 붙일 test id. */
+  /** 채움 요소에 붙일 test id. 트랙은 그 부모다. */
   fillTestId?: string
 }
 
 export function ProgressBar(props: ProgressBarProps): React.JSX.Element {
   const tone = props.tone ?? 'primary'
+  const height = props.height ?? 'base'
 
   return (
     <View
@@ -64,7 +69,7 @@ export function ProgressBar(props: ProgressBarProps): React.JSX.Element {
       accessibilityValue={
         props.aria === undefined ? undefined : { now: props.aria.now, min: 0, max: props.aria.max }
       }
-      className={TRACK_CLASS}
+      className={`${HEIGHT_CLASS[height]} ${TRACK_CLASS}`}
     >
       <AnimatedView
         testID={props.fillTestId}
