@@ -27,7 +27,7 @@ import { worldEmblemUrl } from '../../../lib/world-emblem'
 
 import { faceCropStyle } from '../../../lib/face-crop'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
-import { Text } from '../../atoms/Text/Text'
+import { Text } from '../../atoms'
 
 // 얼굴 크롭 표는 `lib/face-crop` 하나뿐이다(사용자 지정 2026-08-17) — 이 파일이 들고 있던 표는
 // 56px 그리드 시절의 것(`{x:115, y:120, size:64}` · 40px)이라 **같은 얼굴이 드롭다운 행과 다르게

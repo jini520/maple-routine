@@ -32,9 +32,7 @@
 import { useState } from 'react'
 import { Linking, Pressable, View } from 'react-native'
 
-import { Button } from '../../components/atoms/Button/Button'
-import { Text } from '../../components/atoms/Text/Text'
-import { TextInput } from '../../components/atoms/TextInput/TextInput'
+import { Button, Text, TextInput } from '../../components/atoms'
 import { ExternalLinkIcon, EyeIcon, EyeOffIcon } from '../../lib/icons'
 
 /** 1차 경로 — 처음 쓰는 사용자를 넥슨 첫 화면에 떨궈 놓지 않는다([[ADR-110]]). */

@@ -8,7 +8,7 @@
 import { useState } from 'react'
 import { View } from 'react-native'
 
-import { Text } from '../../../components/atoms/Text/Text'
+import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { formatMesoUnits } from '../../../lib/drop-price'

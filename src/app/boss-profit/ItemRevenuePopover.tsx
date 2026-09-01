@@ -50,7 +50,7 @@ import type { RecordedDrop } from '../../types/drops'
 import { getItemIconUrl } from '../../lib/item-icons'
 import { anchorPopover } from '../../lib/popover-anchor'
 
-import { Text } from '../../components/atoms/Text/Text'
+import { Text } from '../../components/atoms'
 import { TABULAR_NUMS } from '../../lib/text-styles'
 
 export const ITEM_POPOVER_WIDTH = 248

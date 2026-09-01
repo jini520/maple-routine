@@ -56,8 +56,7 @@
 import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
-import { Badge } from '../../../components/atoms/Badge/Badge'
-import { Text } from '../../../components/atoms/Text/Text'
+import { Badge, Text } from '../../../components/atoms'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { faceCropStyle } from '../../../lib/face-crop'
 import { ChevronDownIcon, ChevronUpIcon } from '../../../lib/icons'

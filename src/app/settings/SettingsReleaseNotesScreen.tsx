@@ -30,9 +30,7 @@ import {
   RELEASE_NOTE_CATEGORY_ORDER,
 } from '../../data/release-notes'
 
-import { Badge } from '../../components/atoms/Badge/Badge'
-import { Card } from '../../components/atoms/Card/Card'
-import { Text } from '../../components/atoms/Text/Text'
+import { Badge, Card, Text } from '../../components/atoms'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'

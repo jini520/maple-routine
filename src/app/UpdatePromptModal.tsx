@@ -40,11 +40,7 @@ import { View } from 'react-native'
 
 import type { LiveUpdateStatus, LiveUpdateStore } from '../features/live-update/store'
 
-import { Badge } from '../components/atoms/Badge/Badge'
-import { Button } from '../components/atoms/Button/Button'
-import { MapleSweepSpinner } from '../components/atoms/Spinner'
-import { ProgressBar } from '../components/atoms/ProgressBar/ProgressBar'
-import { Text } from '../components/atoms/Text/Text'
+import { Badge, Button, MapleSweepSpinner, ProgressBar, Text } from '../components/atoms'
 import { Modal } from '../components/organisms/Modal/Modal'
 import {
   AlertTriangleIcon,

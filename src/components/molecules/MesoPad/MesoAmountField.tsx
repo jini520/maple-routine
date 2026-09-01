@@ -14,7 +14,7 @@ import { formatMesoUnits } from '../../../lib/drop-price'
 import { RotateCcwIcon } from '../../../lib/icons'
 import { MESO_QUICK_ADDS } from '../../../lib/meso-quick-adds'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
-import { Text } from '../../atoms/Text/Text'
+import { Text } from '../../atoms'
 import { SheetTextInput } from '../SheetTextInput/SheetTextInput'
 import { MAX_MESO, parseMesoText } from './meso-pad'
 

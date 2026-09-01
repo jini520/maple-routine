@@ -19,7 +19,7 @@
  */
 import { Pressable, View } from 'react-native'
 
-import { Text } from '../../atoms/Text/Text'
+import { Text } from '../../atoms'
 
 export function Segment<T extends string>(props: {
   options: readonly T[]

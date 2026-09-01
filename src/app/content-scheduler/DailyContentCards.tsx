@@ -22,10 +22,7 @@ import { matchDailyQuestRegionSlug, stripDailyQuestPrefix } from '../../lib/dail
 import type { DailyContent } from '../../types'
 import { Image, View } from 'react-native'
 
-import { Badge } from '../../components/atoms/Badge/Badge'
-import { Card } from '../../components/atoms/Card/Card'
-import { ProgressBar } from '../../components/atoms/ProgressBar/ProgressBar'
-import { Text } from '../../components/atoms/Text/Text'
+import { Badge, Card, ProgressBar, Text } from '../../components/atoms'
 import { MEDIA_TEXT_SHADOW_STYLE } from '../../lib/text-styles'
 import { QUEST_STATE_LABELS, QUEST_STATE_VARIANT } from './content-badges'
 import { MediaCard, MediaCardArt } from '../../components/molecules/MediaCardArt/MediaCardArt'

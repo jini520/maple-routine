@@ -9,7 +9,7 @@ import { withAlpha } from '../../../lib/color-alpha'
 import { LinearGradient } from '../../../lib/nativewind-interop'
 import { useThemeAppearance } from '../../../theme/context'
 import { buildMediaScopeVariables } from '../../../theme/theme-vars'
-import { Card } from '../../atoms/Card/Card'
+import { Card } from '../../atoms'
 import {
   MEDIA_ART_FILTER_STYLE,
   MEDIA_ART_VEIL_ALPHAS,

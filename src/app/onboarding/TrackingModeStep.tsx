@@ -24,8 +24,7 @@ import { Pressable, View } from 'react-native'
 import { TRACKING_MODE_OPTIONS } from '../../features/tracking-mode/copy'
 import type { TrackingMode } from '../../storage/tracking-mode'
 
-import { Button } from '../../components/atoms/Button/Button'
-import { Text } from '../../components/atoms/Text/Text'
+import { Button, Text } from '../../components/atoms'
 import { Gamepad2Icon, InfoIcon, ListChecksIcon } from '../../lib/icons'
 
 // 자동은 "게임에서 정한 것을 따른다"는 주어를 가리키고, 수동은 "앱에서 고른다"를 가리킨다

@@ -20,7 +20,7 @@
 // 지우면 다음에 외부 링크 행이 필요할 때 규격이 아니라 그때의 즉흥이 다시 자리를 잡는다.
 import { Linking, Pressable, View } from 'react-native'
 
-import { Text } from '../../components/atoms/Text/Text'
+import { Text } from '../../components/atoms'
 import { ExternalLinkIcon } from '../../lib/icons'
 import { SETTINGS_ROW_CLASS } from './row-class'
 

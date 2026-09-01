@@ -82,7 +82,7 @@ import { screenEffectScale } from '../../../lib/drop-effect-layout'
 import { getItemIconUrl } from '../../../lib/item-icons'
 
 import { AnimatedView, Svg } from '../../../lib/nativewind-interop'
-import { Text } from '../../atoms/Text/Text'
+import { Text } from '../../atoms'
 import {
   advanceDropEffect,
   createDropEffectState,

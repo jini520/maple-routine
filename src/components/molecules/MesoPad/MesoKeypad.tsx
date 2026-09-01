@@ -11,7 +11,7 @@ import { Pressable, View } from 'react-native'
 
 import { MESO_KEYS, type MesoKey } from './meso-pad'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
-import { Text } from '../../atoms/Text/Text'
+import { Text } from '../../atoms'
 
 export function MesoKeypad(props: { onKey: (key: MesoKey) => void }): React.JSX.Element {
   return (

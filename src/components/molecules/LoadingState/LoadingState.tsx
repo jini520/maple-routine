@@ -20,9 +20,7 @@
 // 것은 [[ADR-061]] 정정 1 이다(그때까지는 마스크가 띠를 통째로 지우고 있어 «0프레임» 만 보였다 —
 // 그 atom 주석 ①-b). 크기 규칙(page 32 / inline 24, [[ADR-061]] 결정 1·2)은 그대로다.
 
-import { Card } from '../../atoms/Card/Card'
-import { MapleSweepSpinner } from '../../atoms/Spinner'
-import { Text } from '../../atoms/Text/Text'
+import { Card, MapleSweepSpinner, Text } from '../../atoms'
 
 export interface LoadingStateProps {
   message: string

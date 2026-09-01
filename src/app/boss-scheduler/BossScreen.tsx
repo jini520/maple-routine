@@ -65,8 +65,7 @@ import { getSupportedDifficulties, type MatchedBoss } from '../../lib/boss-match
 import { getMaxPartySize } from '../../lib/boss-crystal-prices'
 import { isChallengersWorld } from '../../lib/world-emblem'
 
-import { Badge } from '../../components/atoms/Badge/Badge'
-import { Text } from '../../components/atoms/Text/Text'
+import { Badge, Text } from '../../components/atoms'
 import { BossSectionHeader } from '../../components/molecules/BossSectionHeader/BossSectionHeader'
 import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'

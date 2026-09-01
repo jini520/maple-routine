@@ -35,8 +35,7 @@ import {
   setRepresentativeCharacter,
 } from '../../storage/character-selection'
 
-import { MapleSweepSpinner } from '../../components/atoms/Spinner'
-import { Text } from '../../components/atoms/Text/Text'
+import { MapleSweepSpinner, Text } from '../../components/atoms'
 import { ApiKeyForm } from './ApiKeyForm'
 import { ContentCharacterStep } from './ContentCharacterStep'
 import { OnboardingStep } from './OnboardingStep'

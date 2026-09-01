@@ -10,7 +10,7 @@
  */
 import { Pressable, View } from 'react-native'
 
-import { Text } from '../../components/atoms/Text/Text'
+import { Text } from '../../components/atoms'
 import { formatDayLabel, shiftDateKey } from '../../lib/calendar-month'
 import { ChevronLeftIcon, ChevronRightIcon, MinusIcon, PlusIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../lib/text-styles'

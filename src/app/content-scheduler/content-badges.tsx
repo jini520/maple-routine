@@ -5,7 +5,7 @@
 
 import type { WeeklyContent } from '../../types'
 
-import { Badge, type BadgeVariant } from '../../components/atoms/Badge/Badge'
+import { Badge, type BadgeVariant } from '../../components/atoms'
 
 // 무릉도장은 quest_state가 아니라 참여 시 도달한 층수(1~100+)가 now_count에 그대로 기록된다.
 // 성실한 조사에 대한 보답은 quest_state=1일 때 now_count/max_count(0~2)로 완료 횟수를 따로

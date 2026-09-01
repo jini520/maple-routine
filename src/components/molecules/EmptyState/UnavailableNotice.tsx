@@ -21,7 +21,7 @@
 import { View } from 'react-native'
 
 import { ClockIcon, InfoIcon } from '../../../lib/icons'
-import { Text } from '../../atoms/Text/Text'
+import { Text } from '../../atoms'
 
 /** 기간 조회 하한은 실측 13일이지만 넥슨 한도 자체는 14일이라 **문구는 14일**이다([[ADR-068]] 결정 1). */
 const COPY = {

@@ -20,9 +20,7 @@
 // 갈릴 수 있다. 웹과 같은 자체 pill 로 둔다.
 import { Pressable, View } from 'react-native'
 
-import { Card } from '../../atoms/Card/Card'
-import { Text } from '../../atoms/Text/Text'
-import { MapleLeaf } from '../../atoms/Icon'
+import { Card, MapleLeaf, Text } from '../../atoms'
 
 interface EmptyStateAction {
   label: string

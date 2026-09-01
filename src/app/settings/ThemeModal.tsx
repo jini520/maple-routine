@@ -20,8 +20,7 @@ import { View } from 'react-native'
 
 import { useThemeStore } from '../../features/theme/store'
 
-import { Button } from '../../components/atoms/Button/Button'
-import { Text } from '../../components/atoms/Text/Text'
+import { Button, Text } from '../../components/atoms'
 import { Modal } from '../../components/organisms/Modal/Modal'
 import { ThemeSelector } from './ThemeSelector'
 

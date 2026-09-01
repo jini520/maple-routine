@@ -41,8 +41,7 @@ import {
 } from '../../../features/schedule-sync/format'
 import { useOnboardingStore } from '../../../features/onboarding/store'
 
-import { MapleSweepSpinner } from '../../atoms/Spinner'
-import { Text } from '../../atoms/Text/Text'
+import { MapleSweepSpinner, Text } from '../../atoms'
 import { AddMark } from '../../molecules/CharacterRow/AddMark'
 import { CharacterRow } from '../../molecules/CharacterRow/CharacterRow'
 import { EmptyState } from '../../molecules/EmptyState/EmptyState'

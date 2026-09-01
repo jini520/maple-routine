@@ -12,7 +12,7 @@
  * (사용자 지정).
  */
 import { useSheetKeyboardTarget } from '../../../hooks/useSheetKeyboardTarget'
-import { TextInput, type TextInputProps } from '../../atoms/TextInput/TextInput'
+import { TextInput, type TextInputProps } from '../../atoms'
 
 /**
  * 시트 안 입력 칸 하나. 프롭은 `atoms/TextInput` 과 똑같다.

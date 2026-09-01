@@ -7,7 +7,7 @@
  */
 import { Pressable } from 'react-native'
 
-import { Text } from '../../../components/atoms/Text/Text'
+import { Text } from '../../../components/atoms'
 import { SelectField } from '../../../components/organisms/SelectField/SelectField'
 import { characterOptions } from '../character-options'
 import type { IncomeRecord } from '../../../storage/income'

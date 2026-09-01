@@ -13,8 +13,7 @@
 // `Badge tone="primary"` 다.
 import { View } from 'react-native'
 
-import { Badge } from '../../atoms/Badge/Badge'
-import { Text } from '../../atoms/Text/Text'
+import { Badge, Text } from '../../atoms'
 import type { BossCycle } from '../../../types'
 
 const CYCLE_LABEL: Record<BossCycle, string> = {
