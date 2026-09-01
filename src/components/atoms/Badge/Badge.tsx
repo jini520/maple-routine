@@ -1,18 +1,21 @@
-// 앱의 배지는 이것 하나다([[ADR-195]]). 상태·카테고리·난이도가 같은 상자를 쓰고 색만 갈린다.
-//
-// 쓰는 법: `<Badge variant="primary">완료</Badge>`. `size` 는 `default`·`mini` 둘이고, 레이아웃
-// (`ml-auto`·`shrink-0` 등)은 호출부가 `className` 으로 소유한다.
+/**
+ * 앱의 배지는 이것 하나다([[ADR-195]]). 상태·카테고리·난이도가 같은 상자를 쓰고 색만 갈린다.
+ *
+ * 스타일을 아는 파일이 하나라 같은 자리에 서는 배지의 크기가 어긋날 수 없다.
+ */
 import type { BossDifficulty } from '../../../types'
 import { type TextStyle, type ViewStyle } from 'react-native'
 
 import { LinearGradient } from '../../../lib/nativewind-interop'
 import { Text, type TextProps } from '../Text/Text'
 
+/** variant 하나가 쥐는 것. 평면 배지는 `className` 만 쓰고, 그라디언트 배지가 나머지를 쓴다. */
 interface BadgeVariantStyle {
   /** 평면 배경과 글자색. 테마 토큰이거나 리터럴 hex 다. */
   className?: string
   /** 위에서 아래로 흐르는 두 색. 있으면 상자가 `LinearGradient` 가 된다. */
   gradient?: readonly [string, string]
+  /** 그라디언트 배지의 테두리. 색이 게임 값이라 클래스가 아니라 값으로 준다. */
   border?: Pick<ViewStyle, 'borderWidth' | 'borderColor'>
   /** 클래스로 못 주는 글자색·그림자. 그라디언트 배지만 쓴다. */
   textStyle?: TextStyle
@@ -24,12 +27,28 @@ interface BadgeVariantStyle {
   weight?: BadgeWeight
 }
 
-/** `0 1px 1px rgba(0,0,0,α)`. 난이도 셋의 그림자가 색만 다르고 오프셋·번짐이 같다. */
+/**
+ * `0 1px 1px rgba(0,0,0,α)`. 난이도 셋의 그림자가 색만 다르고 오프셋·번짐이 같다.
+ *
+ * @param color 알파를 포함한 그림자 색. 진하기를 여기서 정한다(`rgba(0,0,0,0.3)`).
+ */
 function dropShadow(color: string): TextStyle {
   return { textShadowColor: color, textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 1 }
 }
 
-/** 난이도 다섯은 그라디언트·테두리·그림자를 함께 갖고 글자가 한 단 작다([[ADR-195]] 정정 4). */
+/**
+ * 난이도 다섯은 그라디언트·테두리·그림자를 함께 갖고 글자가 한 단 작다([[ADR-195]] 정정 4).
+ *
+ * 넷 다 위치 인자라 호출부만 보면 무엇이 무엇인지 안 보인다. 그래서 여기 적는다.
+ *
+ * @param gradient 위에서 아래로 흐르는 두 색. 상자가 `LinearGradient` 가 된다
+ * @param borderColor 테두리 색. 그라디언트보다 밝게 둬 상자 경계를 세운다
+ * @param textStyle 글자색과 그림자. `dropShadow` 를 펼쳐 넣는다
+ * @param borderWidth 테두리 폭(기본 1). 익스트림만 1.5 다. 이 값만큼 여백에서 뺀다(정정 2)
+ *
+ * @example
+ * 노멀: difficulty(['#5cc2dd', '#2b93b0'], '#1f7690', { color: '#ffffff' })
+ */
 function difficulty(
   gradient: readonly [string, string],
   borderColor: string,
@@ -78,19 +97,46 @@ const WEIGHT = {
   extrabold: 'font-extrabold',
 } as const
 
+/** 색 이름. 난이도는 `이지`·`노멀`·`하드`·`카오스`·`익스트림` 이 그대로 키다. */
 export type BadgeVariant = keyof typeof BADGE_VARIANT
+/** `default` 아니면 `mini`. 높이가 아니라 여백과 글자 크기가 갈린다. */
 export type BadgeSize = keyof typeof SIZE
+/** variant 의 기본 두께를 덮을 때 쓴다. */
 export type BadgeWeight = keyof typeof WEIGHT
 /** `variant` 로 바로 쓸 수 있게 난이도 이름이 그대로 키다. */
 export type BadgeDifficulty = BossDifficulty & BadgeVariant
 
+/** `TextProps` 를 그대로 물려받는다. 배지가 평면일 때는 실제로 `Text` 하나이기 때문이다. */
 export interface BadgeProps extends TextProps {
+  /** 색. 난이도 배지는 난이도 이름을 그대로 넣는다. */
   variant: BadgeVariant
+  /** 안 적으면 `default`. 고정칸에 놓는 작은 배지만 `mini` 다([[ADR-195]] 정정 3). */
   size?: BadgeSize
   /** variant 의 기본 두께를 덮는다. */
   weight?: BadgeWeight
 }
 
+/**
+ * 배지 하나.
+ *
+ * 레이아웃(`ml-auto`·`shrink-0` 등)은 호출부가 `className` 으로 소유한다. 여백과 색과 두께는 이
+ * 컴포넌트가 쥐므로 `className` 으로 덮으려 하지 말 것. 두께는 `weight` 프롭으로 덮는다
+ * ([[ADR-195]] 결정 3).
+ *
+ * @example
+ * // 상태·카테고리
+ * <Badge variant="primary">beta</Badge>
+ * <Badge variant="outline" className="tabular-nums">v{version}</Badge>
+ *
+ * // 보스 난이도. variant 키가 난이도 이름 그대로다
+ * <Badge variant={boss.difficulty}>{boss.difficulty}</Badge>
+ *
+ * // 고정칸(today 76px 타일 등)에 놓는 작은 배지. `fixed` 가 자동으로 켜진다
+ * <Badge variant={boss.difficulty} size="mini">{DIFFICULTY_SHORT[boss.difficulty]}</Badge>
+ *
+ * // variant 기본 두께를 덮는다. 같은 색을 다른 두께로 쓰는 자리가 있다
+ * <Badge variant="muted" weight="bold">마감</Badge>
+ */
 export function Badge({
   variant,
   size = 'default',
@@ -106,8 +152,10 @@ export function Badge({
   const text = `${textSize} ${WEIGHT[weight ?? variantStyle.weight ?? 'semibold']}`
   const scaling = fixed === true || box.alwaysFixed
 
-  // 테두리를 여백 안쪽으로 넣는다. Yoga 가 테두리를 패딩처럼 바깥 크기에 더해서, 빼 주지 않으면
-  // 테두리가 있는 배지만 커진다([[ADR-195]] 정정 2).
+  /**
+   * 테두리를 여백 안쪽으로 넣는다. Yoga 가 테두리를 패딩처럼 바깥 크기에 더해서, 빼 주지 않으면
+   * 테두리가 있는 배지만 커진다([[ADR-195]] 정정 2).
+   */
   const inset = variantStyle.border?.borderWidth ?? variantStyle.borderWidth ?? 0
   const boxStyle = {
     paddingHorizontal: box.padX - inset,
@@ -129,7 +177,7 @@ export function Badge({
   return (
     <LinearGradient
       colors={variantStyle.gradient}
-      // 방향을 기본값에 기대지 않는다. 뒤집히면 그림이 조용히 달라진다.
+      /** 방향을 기본값에 기대지 않는다. 뒤집히면 그림이 조용히 달라진다. */
       start={{ x: 0.5, y: 0 }}
       end={{ x: 0.5, y: 1 }}
       className={`flex-row items-center rounded-full${className === undefined ? '' : ` ${className}`}`}
