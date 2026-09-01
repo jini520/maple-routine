@@ -68,7 +68,7 @@ import {
 import { sumDropPayout } from '../../lib/drop-price'
 
 import { AnimatedMeso } from '../../components/atoms/AnimatedMeso/AnimatedMeso'
-import { ProfitIcon } from '../../components/atoms/ProfitIcon/ProfitIcon'
+import { ProfitIcon } from '../../components/atoms/Icon'
 import { Text } from '../../components/atoms/Text/Text'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'

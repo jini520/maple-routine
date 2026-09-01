@@ -55,7 +55,7 @@ import { isValuableDrop } from '../../lib/valuable-drops'
 import type { RecordedDrop } from '../../types/drops'
 
 import { Badge } from '../../components/atoms/Badge/Badge'
-import { ProfitIcon } from '../../components/atoms/ProfitIcon/ProfitIcon'
+import { ProfitIcon } from '../../components/atoms/Icon'
 import { Text } from '../../components/atoms/Text/Text'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
