@@ -4,10 +4,10 @@
  * 금액은 `props.value` 로 받은 것만 그린다. 한국어 단위로 접어(`8억 5천만`) 단위 글자만 한 단계
  * 작게 얹고, 오른쪽에 통화를 세운다.
  *
- * @see [[ADR-202]] 결정 1·9·10·11·12 — 못 치는 이유 · 단위 서식 · 크기 · 단위 앞 틈 · 카운트업 제거
+ * @see [[ADR-202]] 결정 1·9·10·11·12 · 정정 1 — 못 치는 이유 · 단위 서식 · 크기 · 앞 틈 · 카운트업 제거
  * @see [[ADR-173]] 결정 1·9 — 화면에 하나뿐이고 자기 윗선을 안 긋는다
  */
-import { View, type TextStyle } from 'react-native'
+import { View } from 'react-native'
 
 import { Text } from '../../atoms'
 import { formatMesoUnits } from '../../../lib/drop-price'
@@ -23,22 +23,11 @@ export interface AmountFigureProps {
   approximate?: boolean
 }
 
-/**
- * 아래 `text-2xl` 이 주는 24px·31px 을 손으로 옮겨 적은 것.
- *
- * NativeWind 가 클래스 문자열을 **빌드 때** 읽어 보간을 못 한다. 두 수가 갈리면 통화가 숫자와
- * 다른 줄 상자에 서므로 `AmountFigure.test` 가 일치를 붙든다.
- */
-const FIGURE_FONT_SIZE = 24
-const FIGURE_LINE_HEIGHT = 31
-
-/** 단위 글자 크기. **줄 높이는 안 준다** — 안긴 `Text` 의 줄 높이가 숫자의 줄 상자를 흔든다. */
-const FIGURE_UNIT_FONT_SIZE = 20
+const OPAQUE_ZERO = { opacity: 0 }
 
 /** 단위 왼쪽 틈(dp). 폭만 있는 `View` 로 낸다 — 방법 넷의 실측은 [[ADR-202]] 결정 11 에 있다. */
 const FIGURE_UNIT_GAP = 2
 
-const UNIT_STYLE = { fontSize: FIGURE_UNIT_FONT_SIZE }
 const GAP_STYLE = { width: FIGURE_UNIT_GAP }
 
 /** 잡는 괄호라 `split` 이 단위 글자도 함께 돌려준다. */
@@ -52,18 +41,20 @@ const AMOUNT_UNIT = /([조억만천])/
  *
  * 단위끼리 붙은 자리(`5천만`)에는 안 끼운다 — 한 낱말이라 벌리면 `5천 만` 으로 읽힌다.
  */
-function amountPieces(text: string): { text: string; style?: TextStyle }[] {
+type Piece = { text: string; kind: 'digits' | 'unit' | 'gap' }
+
+function amountPieces(text: string): Piece[] {
   const parts = text.split(AMOUNT_UNIT).filter((part) => part !== '')
-  const pieces: { text: string; style?: TextStyle }[] = []
+  const pieces: Piece[] = []
   parts.forEach((part, index) => {
     if (AMOUNT_UNIT.test(part)) {
-      pieces.push({ text: part, style: UNIT_STYLE })
+      pieces.push({ text: part, kind: 'unit' })
       return
     }
-    pieces.push({ text: part })
+    pieces.push({ text: part, kind: 'digits' })
     // 만 미만 나머지는 뒤에 단위가 없다 — 틈을 만들 자리가 아니다.
     if (index + 1 < parts.length && AMOUNT_UNIT.test(parts[index + 1])) {
-      pieces.push({ text: '', style: GAP_STYLE })
+      pieces.push({ text: '', kind: 'gap' })
     }
   })
   return pieces
@@ -83,13 +74,13 @@ export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
         <View className="flex-1">
           <Text testID={props.testID} className={digits} style={TABULAR_NUMS}>
             {approximateMark}
-            {amountPieces(formatMesoUnits(props.value)).map(({ text, style }, index) =>
-              style === undefined ? (
+            {amountPieces(formatMesoUnits(props.value)).map(({ text, kind }, index) =>
+              kind === 'digits' ? (
                 text
-              ) : text === '' ? (
+              ) : kind === 'gap' ? (
                 <View key={index} style={GAP_STYLE} />
               ) : (
-                <Text key={index} style={style}>
+                <Text key={index} className="text-xl">
                   {text}
                 </Text>
               ),
@@ -98,12 +89,8 @@ export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
         </View>
 
         {/* 앞의 폭 0 짜리 큰 글자가 이 줄의 ascent·descent 를 정해 숫자와 기준선이 맞는다. */}
-        <Text
-          testID={`${props.testID}-unit`}
-          className="shrink-0"
-          style={{ lineHeight: FIGURE_LINE_HEIGHT }}
-        >
-          <Text style={{ fontSize: FIGURE_FONT_SIZE, opacity: 0 }}>{'\u200B'}</Text>
+        <Text testID={`${props.testID}-unit`} className="shrink-0 text-2xl">
+          <Text className="text-2xl" style={OPAQUE_ZERO}>{'\u200B'}</Text>
           <Text className="text-xs font-semibold text-text-muted">{props.unit}</Text>
         </Text>
       </View>
