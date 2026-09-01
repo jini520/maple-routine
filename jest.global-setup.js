@@ -18,11 +18,16 @@ const path = require('node:path')
 const postcss = require('postcss')
 const tailwindcss = require('tailwindcss')
 
-const { COMPILED_CSS_PATH, CSS_ENTRY } = require('./nativewind.config')
+const { COMPILED_CSS_PATH, CSS_ENTRY, JEST_NATIVEWIND_OS } = require('./nativewind.config')
 
 const INPUT = path.join(__dirname, CSS_ENTRY)
 
 module.exports = async function compileGlobalCssForJest() {
+  // **native 프리셋으로 컴파일한다**([[ADR-179]] 정정 1). 안 세우면 NativeWind 가 web 프리셋으로
+  // 도는데(`nativewind/dist/tailwind/index.js` — 값이 없거나 `web` 이면 web), 그러면 jest 가 앱과
+  // 다른 값을 본다. `invisible` 이 `visibility` 로 나오고 `shadow` 가 `box-shadow` 로 나오는 식이다.
+  process.env.NATIVEWIND_OS = JEST_NATIVEWIND_OS
+
   const { css } = await postcss([
     tailwindcss({ config: path.join(__dirname, 'tailwind.config.js') }),
   ]).process(readFileSync(INPUT, 'utf8'), { from: INPUT })

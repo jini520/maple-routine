@@ -668,7 +668,7 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
   **OS 외관**을 따른다: OS 가 라이트인 채 앱 테마만 다크면 iOS 가 `#1A1A1C`(대비 **1.13**)를 그려
   **안 보인다**. 호출부가 직접 주면 그쪽이 이기고, `text-muted` 가 아닌 이유는 **자리표시자가 값이
   아니라 힌트**라서다. **`className`(`placeholder:…`)으로 쓰지 말 것**. 그 변형은 native 프리셋에서만
-  `placeholderTextColor` 로 컴파일되는데 jest 는 `NATIVEWIND_OS` 를 안 세워 web 프리셋으로 돈다
+  `placeholderTextColor` 로 컴파일된다(jest 도 이제 native 프리셋으로 돈다 — [[ADR-179]] 정정 1)
   (앱에서는 되고 테스트로는 못 보는 자리가 된다).
 - **글자를 치는 줄에는 최소 높이를 준다**(`min-h-7`). iOS 는 칸이 **내용의 글자 종류대로** 자기 키를
   잰다(한글 20 · 영문 14). 줄을 안 못 박으면 타건마다 줄이, 시트가 크는 구조에서는 **시트 전체가**

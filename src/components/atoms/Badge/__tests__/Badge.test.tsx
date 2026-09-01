@@ -67,16 +67,16 @@ describe('평면 variant — 색만 갈리고 상자는 같다', () => {
   // 컨텐츠 카테고리 색은 테마 토큰이 아니라 리터럴 hex 에 `/20` 알파다. 알파가 조용히 사라지는
   // 종류의 실패라 배경이 실제로 붙는지 본다.
   it.each([
-    ['epicDungeon', '4dd2ff', [77, 210, 255]],
-    ['mapleUnion', 'ffc93c', [255, 201, 60]],
-    ['guild', 'ff5c5c', [255, 92, 92]],
-  ] as const)('%s 는 글자가 불투명하고 배경만 알파를 갖는다', async (variant, hex, [r, g, b]) => {
+    ['epicDungeon', '4dd2ff'],
+    ['mapleUnion', 'ffc93c'],
+    ['guild', 'ff5c5c'],
+  ] as const)('%s 는 글자가 불투명하고 배경만 알파를 갖는다', async (variant, hex) => {
     const { getByText } = await renderAtom(<Badge variant={variant}>라벨</Badge>)
 
     const style = flattenStyle(getByText('라벨').props.style)
     // 같은 색이 글자는 진하게, 배경은 옅게 깔린다. `33` 이 20% 알파다 — 이것이 조용히 사라지면
     // 배경이 글자와 같은 진하기가 되어 라벨을 못 읽는다.
-    expect(style.color).toBe(`rgba(${r}, ${g}, ${b}, 1)`)
+    expect(style.color).toBe(`#${hex}`)
     expect(style.backgroundColor).toBe(`#${hex}33`)
   })
 
