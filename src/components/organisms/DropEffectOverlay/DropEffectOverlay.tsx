@@ -77,9 +77,8 @@ import { Image, Modal, Pressable, View, useWindowDimensions } from 'react-native
 import { useReducedMotion } from 'react-native-reanimated'
 import { Defs, RadialGradient, Rect, Stop } from 'react-native-svg'
 
-import { DROP_EFFECT_FRAMES } from '../../../lib/drop-effect-frames'
+import { DROP_EFFECT_FRAMES, getItemIconUrl } from '../../../lib/artwork'
 import { screenEffectScale } from '../../../lib/drop-effect-layout'
-import { getItemIconUrl } from '../../../lib/item-icons'
 
 import { AnimatedView, Svg } from '../../../lib/nativewind-interop'
 import { Text } from '../../atoms'

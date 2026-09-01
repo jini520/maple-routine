@@ -31,7 +31,7 @@
 import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
-import { getItemIconUrl } from '../../lib/item-icons'
+import { getItemIconUrl } from '../../lib/artwork'
 import type { BossDifficulty } from '../../types'
 import type { RecordedDrop } from '../../types/drops'
 

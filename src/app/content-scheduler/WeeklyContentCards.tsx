@@ -8,10 +8,14 @@
 // (`DailyContentCards.tsx`) — bleed 는 `FadedIllustration`, 껍데기는 `IllustratedCard`, `flex-row` 명시,
 // `<img>`/`<span>`/`text-shadow` 의 짝.
 import { isContentBlocked } from '../../lib/required-level'
-import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/boss-icons'
-import { getDailyQuestBackgroundUrl, getDailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
+import {
+  getBossPortraitCrop,
+  getBossPortraitUrl,
+  getDailyQuestBackgroundUrl,
+  getDailyQuestRegionCrop,
+  getDailyQuestRegionIconUrl,
+} from '../../lib/artwork'
 import type { ImageCrop } from '../../lib/image-crop'
-import { getDailyQuestRegionIconUrl } from '../../lib/daily-quest-icons'
 import { matchWeeklyQuestRegionSlug, stripWeeklyQuestPrefix } from '../../lib/weekly-quest-matching'
 import { matchWeeklyRegionalQuestSlug } from '../../lib/weekly-regional-quest-matching'
 import type { WeeklyContent } from '../../types'

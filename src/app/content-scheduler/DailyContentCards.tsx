@@ -15,9 +15,12 @@
 // ④ `<img>` → `<Image>`, `<span>` → `<Text>`, `text-shadow` → `MEDIA_TEXT_SHADOW_STYLE`
 //    (`lib/text-styles.ts` — RN 은 그림자를 하나만 표현할 수 있어 강한 쪽을 남긴다).
 import { isContentBlocked } from '../../lib/required-level'
-import { getDailyQuestBackgroundUrl, getDailyQuestRegionCrop } from '../../lib/daily-quest-backgrounds'
+import {
+  getDailyQuestBackgroundUrl,
+  getDailyQuestRegionCrop,
+  getDailyQuestRegionIconUrl,
+} from '../../lib/artwork'
 import type { ImageCrop } from '../../lib/image-crop'
-import { getDailyQuestRegionIconUrl } from '../../lib/daily-quest-icons'
 import { matchDailyQuestRegionSlug, stripDailyQuestPrefix } from '../../lib/daily-quest-matching'
 import type { DailyContent } from '../../types'
 import { Image, View } from 'react-native'

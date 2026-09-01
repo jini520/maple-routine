@@ -50,7 +50,7 @@ import {
   isLatestPeriod,
 } from '../../lib/boss-profit-period'
 import { dropPayoutMeso } from '../../lib/drop-price'
-import { getItemIconUrl } from '../../lib/item-icons'
+import { getItemIconUrl } from '../../lib/artwork'
 import { isValuableDrop } from '../../lib/valuable-drops'
 import type { RecordedDrop } from '../../types/drops'
 

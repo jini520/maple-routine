@@ -24,7 +24,7 @@ import {
   type SelectOption,
 } from '../../../components/organisms/SelectField/SelectField'
 import type { MesoRateLoad } from '../../../features/cashbook/meso-rate'
-import { FORCE_LABELS, forceIconOf } from '../../../lib/force-icons'
+import { FORCE_LABELS, forceIconOf, getItemIconUrlByFile } from '../../../lib/artwork'
 import {
   findHuntingGround,
   findHuntingRegion,
@@ -42,7 +42,6 @@ import {
   huntingTotalOf,
   killedMobsOf,
 } from '../../../lib/hunting-meso'
-import { getItemIconUrlByFile } from '../../../lib/item-icons'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import type { ImageAssetRef } from '../../../types/image-asset'
 import type { HuntingGround, HuntingRegion } from '../../../types/hunting-grounds'
