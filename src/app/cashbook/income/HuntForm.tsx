@@ -349,64 +349,54 @@ export function HuntForm(
     <>
       <CharacterField characters={props.characters} selected={ocid} onSelect={selectCharacter} />
 
-      {/* **지역과 사냥터는 한 줄**이다(사용자 지정 2026-08-29) — 둘은 «어디서» 하나를 정하는
-          짝이고, 줄을 따로 쓰면 시트가 그만큼 길어진다([[ADR-178]] 정정 5). */}
-      <View testID="income-sheet-where" className="flex-row items-start gap-3">
-        {/*
-          **폭이 다르다**(사용자 지정 2026-08-29) — 지역 이름은 길어야 「츄츄 아일랜드」 인데
-          사냥터 이름은 「풍화된 기쁨과 분노의 땅」 까지 간다. 반씩 나누면 긴 쪽만 잘린다.
+      {/*
+        **지역과 사냥터는 각각 자기 줄**이다(사용자 지정 2026-09-01).
 
-          `flex` 를 `style` 로 주는 이유는 **비율이 값이기 때문**이다 — 클래스에 임의 값을 적으면
-          그 수가 두 곳(둘의 합)으로 흩어져 «왜 이 비율인가» 가 안 읽힌다.
-        */}
-        <View testID="income-sheet-region-slot" style={{ flex: 2 }}>
-          <SelectField
-            label="지역"
-            options={[
-              { value: null, label: '선택 안함' },
-              ...huntRegions.map((region) => ({ value: region.slug, label: region.name })),
-            ]}
-            selected={regionSlug}
-            onSelect={selectRegion}
-            testID="income-sheet-region"
-          />
-        </View>
-        <View testID="income-sheet-ground-slot" style={{ flex: 3 }}>
-          <SelectField
-            label="사냥터"
-            options={
-              huntRegion === null
-                ? [{ value: null, label: '지역을 먼저 고르세요' }]
-                : [
-                    { value: null, label: '선택 안함' },
-                    ...huntGrounds.map((ground) => ({ value: ground.name, label: ground.name })),
-                  ]
-            }
-            selected={groundName}
-            onSelect={setGroundName}
-            testID="income-sheet-ground"
-            // 목록 한 줄에 포스 배지·레벨·마릿수가 함께 선다([[ADR-175]] 결정 10·11).
-            renderOption={(option: SelectOption, isSelected: boolean) => {
-              const ground =
-                huntRegion === null || option.value === null
-                  ? null
-                  : (huntRegion.grounds.find((each) => each.name === option.value) ?? null)
-              return ground === null || huntRegion === null ? (
-                <Text
-                  numberOfLines={1}
-                  className={`text-sm ${
-                    isSelected ? 'font-semibold text-primary-ink' : 'text-text'
-                  }`}
-                >
-                  {option.label}
-                </Text>
-              ) : (
-                <GroundOptionRow region={huntRegion} ground={ground} isSelected={isSelected} />
-              )
-            }}
-          />
-        </View>
-      </View>
+        한 줄에 나란히 세워 봤더니(2026-08-29) 이름이 길어 둘 다 잘렸다 — 지역은 「츄츄 아일랜드」,
+        사냥터는 「풍화된 기쁨과 분노의 땅」 까지 간다. 시트가 한 줄 길어지는 대신 고른 것이 온전히
+        읽힌다. 줄어든 높이는 아래에서 소비 아이템과 메소 획득량을 합쳐 되찾는다.
+      */}
+      <SelectField
+        label="지역"
+        options={[
+          { value: null, label: '선택 안함' },
+          ...huntRegions.map((region) => ({ value: region.slug, label: region.name })),
+        ]}
+        selected={regionSlug}
+        onSelect={selectRegion}
+        testID="income-sheet-region"
+      />
+      <SelectField
+        label="사냥터"
+        options={
+          huntRegion === null
+            ? [{ value: null, label: '지역을 먼저 고르세요' }]
+            : [
+                { value: null, label: '선택 안함' },
+                ...huntGrounds.map((ground) => ({ value: ground.name, label: ground.name })),
+              ]
+        }
+        selected={groundName}
+        onSelect={setGroundName}
+        testID="income-sheet-ground"
+        // 목록 한 줄에 포스 배지·레벨·마릿수가 함께 선다([[ADR-175]] 결정 10·11).
+        renderOption={(option: SelectOption, isSelected: boolean) => {
+          const ground =
+            huntRegion === null || option.value === null
+              ? null
+              : (huntRegion.grounds.find((each) => each.name === option.value) ?? null)
+          return ground === null || huntRegion === null ? (
+            <Text
+              numberOfLines={1}
+              className={`text-sm ${isSelected ? 'font-semibold text-primary-ink' : 'text-text'}`}
+            >
+              {option.label}
+            </Text>
+          ) : (
+            <GroundOptionRow region={huntRegion} ground={ground} isSelected={isSelected} />
+          )
+        }}
+      />
 
       {huntGround !== null && huntRegion !== null && (
         // 고른 사냥터의 값이 **자기 줄**로 선다 — 닫힌 고르개는 이름만 그리므로(결정 11)
@@ -450,70 +440,87 @@ export function HuntForm(
         </FieldRow>
       )}
 
-      {/* **켜고 끄는 것 둘은 윗 줄**이다(사용자 지정 2026-08-29) — 아래 「메소 획득량」이 그 결과를
-          말하므로, 켜는 자리와 세어진 값이 위아래로 갈린다([[ADR-178]] 정정 5). */}
-      <View
-        testID="income-sheet-boosts"
-        className="min-h-7 flex-row items-center gap-3 border-b border-border pb-2"
-      >
-        <Text className="shrink-0 text-xs text-text-muted">소비 아이템</Text>
-        <View className="flex-1 flex-row items-center justify-end gap-4">
-          {MESO_BOOSTS.map((boost) => (
-            <BoostToggle
-              key={boost.id}
-              label={boost.label}
-              icon={getItemIconUrlByFile(boost.icon)}
-              testID={`income-sheet-boost-icon-${boost.id}`}
-              selected={boosts.includes(boost.id)}
-              onPress={() => toggleBoost(boost.id)}
-            />
-          ))}
+      {/*
+        **켜는 것과 세어진 값이 한 줄**이다(사용자 지정 2026-09-01).
+
+        종전에는 위아래 두 줄이었다([[ADR-178]] 정정 5) — 켜는 자리와 그 결과를 갈라 놓은 것인데,
+        둘은 원인과 결과라 **옆에 붙어 있어도 그 관계가 읽힌다**. 지역·사냥터를 각각 자기 줄로
+        되돌리면서 늘어난 높이를 여기서 되찾는다.
+
+        `flex` 를 `style` 로 주는 이유는 **비율이 값이기 때문**이다 — 클래스에 임의 값을 적으면
+        그 수가 두 곳(둘의 합)으로 흩어져 «왜 이 비율인가» 가 안 읽힌다.
+      */}
+      <View testID="income-sheet-meso-line" className="flex-row items-start gap-3">
+        {/*
+          **넓은 쪽이 켜는 칸**이다(사용자 지정 2026-09-01) — 라벨 다섯 글자와 체크박스 둘이 함께
+          서야 해서 값 칸보다 자리가 더 든다. 값 쪽은 라벨과 숫자 하나뿐이라 좁아도 선다.
+        */}
+        <View
+          testID="income-sheet-boosts"
+          style={{ flex: 2 }}
+          className="min-h-7 flex-row items-center gap-3 border-b border-border pb-2"
+        >
+          <Text className="shrink-0 text-xs text-text-muted">소비 아이템</Text>
+          <View className="flex-1 flex-row items-center justify-end gap-4">
+            {MESO_BOOSTS.map((boost) => (
+              <BoostToggle
+                key={boost.id}
+                label={boost.label}
+                icon={getItemIconUrlByFile(boost.icon)}
+                testID={`income-sheet-boost-icon-${boost.id}`}
+                selected={boosts.includes(boost.id)}
+                onPress={() => toggleBoost(boost.id)}
+              />
+            ))}
+          </View>
+        </View>
+
+        {/*
+          **언제나 선다**(사용자 지정 2026-08-29) — 캐릭터를 안 골랐어도 그 자리는 있다. 안 세우면
+          캐릭터를 고르는 순간 줄이 생겨 아래가 통째로 밀리고, 무엇보다 «메획이 안 든다» 는 사실을
+          화면이 말하지 않는다. 캐릭터가 없으면 캐릭터 메획이 0 이고, 켠 것이 없으면 **0%** 다.
+
+          읽혔으면 **못 친다**(큰 숫자와 같은 논리). **치는 칸이 되는 것은** 캐릭터를 골랐는데
+          못 읽었을 때뿐이다([[ADR-177]] 결정 7) — 고르지도 않은 캐릭터의 메획을 물을 수는 없다.
+        */}
+        <View testID="income-sheet-meso-rate-slot" style={{ flex: 1 }}>
+          <FieldRow label="메소 획득량">
+            {ocid !== null && mesoRate.kind === 'fallback' ? (
+              <>
+                <FieldTextInput
+                  testID="income-sheet-meso-rate-input"
+                  value={mesoRateText}
+                  onChangeText={(text) => setMesoRateText(text.replace(/[^\d]/g, ''))}
+                  keyboardType="number-pad"
+                  placeholder="0"
+                  className="flex-1 text-right text-sm font-semibold text-text"
+                  style={TABULAR_NUMS}
+                />
+                <Text className="ml-1.5 shrink-0 text-xs text-text-muted">%</Text>
+                {appliedRate !== typedMesoRate && (
+                  // 치는 칸에는 **캐릭터 메획**이 남고(사용자가 아는 값이 그것이다) 켠 것까지 더한
+                  // 총합은 그 옆에 선다 — 한 칸에 겹치면 무엇을 친 것인지 사라진다.
+                  <Text
+                    testID="income-sheet-meso-rate-applied"
+                    className="ml-1.5 shrink-0 text-xs font-semibold text-text"
+                    style={TABULAR_NUMS}
+                  >
+                    → {appliedRate}%
+                  </Text>
+                )}
+              </>
+            ) : (
+              <Text
+                testID="income-sheet-meso-rate"
+                className="text-sm font-semibold text-text"
+                style={TABULAR_NUMS}
+              >
+                {mesoRate.kind === 'loading' ? '…' : `${appliedRate}%`}
+              </Text>
+            )}
+          </FieldRow>
         </View>
       </View>
-
-      {/*
-        **언제나 선다**(사용자 지정 2026-08-29) — 캐릭터를 안 골랐어도 그 자리는 있다. 안 세우면
-        캐릭터를 고르는 순간 줄이 생겨 아래가 통째로 밀리고, 무엇보다 «메획이 안 든다» 는 사실을
-        화면이 말하지 않는다. 캐릭터가 없으면 캐릭터 메획이 0 이고, 켠 것이 없으면 **0%** 다.
-
-        읽혔으면 **못 친다**(큰 숫자와 같은 논리). **치는 칸이 되는 것은** 캐릭터를 골랐는데
-        못 읽었을 때뿐이다([[ADR-177]] 결정 7) — 고르지도 않은 캐릭터의 메획을 물을 수는 없다.
-      */}
-      <FieldRow label="메소 획득량">
-        {ocid !== null && mesoRate.kind === 'fallback' ? (
-            <>
-              <FieldTextInput
-                testID="income-sheet-meso-rate-input"
-                value={mesoRateText}
-                onChangeText={(text) => setMesoRateText(text.replace(/[^\d]/g, ''))}
-                keyboardType="number-pad"
-                placeholder="0"
-                className="flex-1 text-right text-sm font-semibold text-text"
-                style={TABULAR_NUMS}
-              />
-              <Text className="ml-1.5 shrink-0 text-xs text-text-muted">%</Text>
-              {appliedRate !== typedMesoRate && (
-                // 치는 칸에는 **캐릭터 메획**이 남고(사용자가 아는 값이 그것이다) 켠 것까지 더한
-                // 총합은 그 옆에 선다 — 한 칸에 겹치면 무엇을 친 것인지 사라진다.
-                <Text
-                  testID="income-sheet-meso-rate-applied"
-                  className="ml-1.5 shrink-0 text-xs font-semibold text-text"
-                  style={TABULAR_NUMS}
-                >
-                  → {appliedRate}%
-                </Text>
-              )}
-            </>
-          ) : (
-            <Text
-              testID="income-sheet-meso-rate"
-              className="text-sm font-semibold text-text"
-              style={TABULAR_NUMS}
-            >
-              {mesoRate.kind === 'loading' ? '…' : `${appliedRate}%`}
-            </Text>
-          )}
-      </FieldRow>
 
       {/* 「소재」는 사용자가 실제로 세는 단위다([[ADR-175]] 결정 7) — 하나가 30분. */}
       <FieldRow label="시간">
