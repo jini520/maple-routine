@@ -11,7 +11,8 @@
 import { Pressable, View } from 'react-native'
 
 import { Text } from '../../components/atoms/Text/Text'
-import { TextInput, type TextInputProps } from '../../components/atoms/TextInput/TextInput'
+import { type TextInputProps } from '../../components/atoms/TextInput/TextInput'
+import { SheetTextInput } from '../../components/molecules/SheetTextInput/SheetTextInput'
 import { formatDayLabel, shiftDateKey } from '../../lib/calendar-month'
 import { ChevronLeftIcon, ChevronRightIcon, MinusIcon, PlusIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../lib/text-styles'
@@ -55,7 +56,7 @@ function isNumeric(keyboardType: TextInputProps['keyboardType']): boolean {
 const OVERLAY = { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 } as const
 
 export function FieldTextInput({ style, ...rest }: TextInputProps): React.JSX.Element {
-  if (!isNumeric(rest.keyboardType)) return <TextInput {...rest} style={style} />
+  if (!isNumeric(rest.keyboardType)) return <SheetTextInput {...rest} style={style} />
 
   const value = typeof rest.value === 'string' ? rest.value : ''
   return (
@@ -67,7 +68,7 @@ export function FieldTextInput({ style, ...rest }: TextInputProps): React.JSX.El
       <Text aria-hidden className={rest.className} style={style}>
         {value === '' ? ' ' : value}
       </Text>
-      <TextInput {...rest} style={[style, OVERLAY, { color: 'transparent' }]} />
+      <SheetTextInput {...rest} style={[style, OVERLAY, { color: 'transparent' }]} />
     </View>
   )
 }
