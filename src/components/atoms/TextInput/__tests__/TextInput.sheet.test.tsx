@@ -8,7 +8,7 @@
  * **안드로이드 한글 조합이 깨졌다**(자모가 따로 확정된다). 그래서 부품을 되돌리고 값만 채운다.
  *
  * 그 판정을 **아톰이** 한다. 호출부가 고르게 두면 다음에 시트를 만드는 사람이 같은 것을 다시
- * 겪는다(이 아톰이 존재하는 이유 그대로 — `Text.tsx` 파일 머리).
+ * 겪는다(이 아톰이 존재하는 이유 그대로 — `TextInput.tsx` 파일 머리).
  */
 const mockInsideSheet = jest.fn<unknown, [boolean?]>(() => null)
 
@@ -19,8 +19,8 @@ jest.mock('@gorhom/bottom-sheet', () => ({
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { renderAtom } from '../../../__tests__/render-atom'
-import { FONT_SCALE_MAX } from '../font-scaling'
-import { TextInput } from '../Text'
+import { FONT_SCALE_MAX } from '../../Text/font-scaling'
+import { TextInput } from '../TextInput'
 
 /** 라이브러리의 공유값을 흉내 낸다 — 아톰이 부르는 것은 `get`/`set` 둘뿐이다. */
 function 키보드상태(target?: number) {
