@@ -24,7 +24,7 @@ afterEach(__resetThemeAppearanceForTest)
 /** RN 은 벌거벗은 문자열을 View 자식으로 못 그린다 — 웹판 테스트의 `내용` 자리. */
 const 내용 = <Text>내용</Text>
 
-/** 페이드는 `aria-hidden` 이라 RNTL 기본 쿼리에서 빠진다(`PullToRefreshIndicator` 테스트와 같은 사정). */
+/** 페이드는 `aria-hidden` 이라 RNTL 기본 쿼리에서 빠진다. */
 const HIDDEN = { includeHiddenElements: true } as const
 
 describe('PageHeader', () => {

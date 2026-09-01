@@ -68,12 +68,12 @@ API 키를 기기에 저장해 직접 호출하는 방식이라 이 원칙을 �
 번호만으로는 같은 실패를 다시 밟는 것을 못 막는다.
 
 - 🗑 **삭제(6)**: ADR-001 · ADR-002 · ADR-028 · ADR-029 · ADR-084 · ADR-095
-- ⛔ **폐기(30)**: ADR-005 · ADR-016 · ADR-022 · ADR-024 · ADR-025 · ADR-027 · ADR-039 · ADR-047 · ADR-049 · ADR-050 · ADR-051 · ADR-072 · ADR-073 · ADR-077 · ADR-078 · ADR-079 · ADR-080 · ADR-081 · ADR-082 · ADR-085 · ADR-090 · ADR-092 · ADR-098 · ADR-102 · ADR-106 · ADR-107 · ADR-112 · ADR-122 · ADR-123 · ADR-192
-- 🟡 **부분 폐기(44)**: ADR-004 · ADR-008 · ADR-012 · ADR-013 · ADR-014 · ADR-015 · ADR-018 · ADR-019 · ADR-026 · ADR-035 · ADR-038 · ADR-040 · ADR-045 · ADR-046 · ADR-053 · ADR-054 · ADR-055 · ADR-061 · ADR-062 · ADR-064 · ADR-065 · ADR-074 · ADR-086 · ADR-088 · ADR-089 · ADR-093 · ADR-096 · ADR-097 · ADR-099 · ADR-100 · ADR-105 · ADR-113 · ADR-117 · ADR-119 · ADR-120 · ADR-124 · ADR-127 · ADR-130 · ADR-132 · ADR-142 · ADR-145 · ADR-161 · ADR-170 · ADR-172
+- ⛔ **폐기(31)**: ADR-005 · ADR-016 · ADR-022 · ADR-024 · ADR-025 · ADR-027 · ADR-039 · ADR-047 · ADR-049 · ADR-050 · ADR-051 · ADR-072 · ADR-073 · ADR-074 · ADR-077 · ADR-078 · ADR-079 · ADR-080 · ADR-081 · ADR-082 · ADR-085 · ADR-090 · ADR-092 · ADR-098 · ADR-102 · ADR-106 · ADR-107 · ADR-112 · ADR-122 · ADR-123 · ADR-192
+- 🟡 **부분 폐기(43)**: ADR-004 · ADR-008 · ADR-012 · ADR-013 · ADR-014 · ADR-015 · ADR-018 · ADR-019 · ADR-026 · ADR-035 · ADR-038 · ADR-040 · ADR-045 · ADR-046 · ADR-053 · ADR-054 · ADR-055 · ADR-061 · ADR-062 · ADR-064 · ADR-065 · ADR-086 · ADR-088 · ADR-089 · ADR-093 · ADR-096 · ADR-097 · ADR-099 · ADR-100 · ADR-105 · ADR-113 · ADR-117 · ADR-119 · ADR-120 · ADR-124 · ADR-127 · ADR-130 · ADR-132 · ADR-142 · ADR-145 · ADR-161 · ADR-170 · ADR-172
 
 ## 결정 목록
 
-총 199건 — 🟢 118 · 🟡 44 · ⛔ 30 · ⚪ 1 · 🗑 6
+총 199건 — 🟢 118 · 🟡 43 · ⛔ 31 · ⚪ 1 · 🗑 6
 
 | ADR | 상태 | 제목 | 대체 · 비고 |
 |---|---|---|---|
@@ -150,7 +150,7 @@ API 키를 기기에 저장해 직접 호출하는 방식이라 이 원칙을 �
 | [071](./adr/ADR-071.md) | 🟢 유효 | 드롭 획득 히스토리 — period_key 가 '언제' |  |
 | [072](./adr/ADR-072.md) | ⛔ 폐기 🔗 | 당겨서 새로고침 — 커스텀 훅 자체구현 | [[ADR-130]] 이 RN `RefreshControl` 로 대체했다 — 제스처 훅 구현은 저장소에 없다. |
 | [073](./adr/ADR-073.md) | ⛔ 폐기 🔗 | PTR 인디케이터 — 배너에서 목록 이동으로 | [[ADR-130]] 이 대체했다 — 배너/목록 이동 구현은 없다. |
-| [074](./adr/ADR-074.md) | 🟡 부분 폐기 | 당김 마크 — 단풍잎 외곽선 링 | 마크는 지금도 산다(`PullToRefreshIndicator`). [[ADR-130]] 이 «그 자리에서만» 폐기했다. |
+| [074](./adr/ADR-074.md) | ⛔ 폐기 | 당김 마크 — 단풍잎 외곽선 링 | [[ADR-130]] 이 당김을 `RefreshControl` 로 옮겼고, 마크를 그리던 `PullToRefreshIndicator` 를 2026-09-01 에 지웠다. 코드에 남은 것이 없다. [[ADR-061]] 의 스피너 2종 규칙에 있던 PTR 예외도 함께 사라졌다. |
 | [075](./adr/ADR-075.md) | 🟢 유효 | 월간 탭 — 달 경계를 걸친 진행 중 주차 |  |
 | [076](./adr/ADR-076.md) | 🟢 유효 | 진행 중 주를 품은 지난 달의 새로고침 게이트 |  |
 | [077](./adr/ADR-077.md) | ⛔ 폐기 🔗 | 드롭 히스토리를 중첩 라우트 + 오버레이로 | RN 스택(`@react-navigation/native-stack`)이 중첩 라우트 + `fixed` 오버레이를 대체했다. |
