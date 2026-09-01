@@ -23,7 +23,7 @@ import {
 import { pointToMeso } from '../../../lib/spend-catalog'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import { nextAmountIdentity } from '../amount-identity'
-import { FieldRow, FieldTextInput, QuantityStepper } from '../sheet-fields'
+import { FieldRow, QuantityStepper } from '../sheet-fields'
 import {
   CategoryChips,
   CharacterRow,
@@ -33,6 +33,7 @@ import {
   type SpendFormProps,
 } from './form-shared'
 import { useSpendSubmit } from './use-spend-submit'
+import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
 export function EtcForm(props: SpendFormProps): React.JSX.Element {
   const editing = props.editing !== undefined
@@ -99,7 +100,7 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
       <CharacterRow characters={props.characters} selected={ocid} onSelect={setOcid} />
 
       <FieldRow label="사용처" labelTestID="spend-sheet-name-label">
-        <FieldTextInput
+        <SheetTextInput
           testID="spend-sheet-name"
           value={name}
           onChangeText={setName}
@@ -120,7 +121,7 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
 
       {/* **통화 밑**이다 — 무엇으로 내는지를 정한 다음에 얼마인지를 친다. */}
       <FieldRow label="지출액">
-        <FieldTextInput
+        <SheetTextInput
           testID="spend-sheet-unit-price"
           value={typed === 0 ? '' : typed.toLocaleString()}
           onChangeText={(text) => setTyped(parseMesoText(typed, text))}

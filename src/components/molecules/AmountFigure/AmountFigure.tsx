@@ -146,27 +146,19 @@ export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
         )}
 
         {/*
-          **보이는 글자는 언제나 `Text` 다**([[ADR-178]] 정정 2·4).
+          숫자는 **하나만 그린다**([[ADR-178]] 정정 5). 못 치는 자리는 `Text`, 치는 자리는 칸이다.
 
-          단위(「메소」)는 숫자와 **기준선을 맞춰야** 하는데, `items-baseline` 은 `TextInput` 에는
-          안 먹는다 — Yoga 는 글자 노드에만 기준선을 주고 그 밖에는 **상자 밑변**으로 떨어진다.
-          그래서 치는 칸 옆의 단위가 숫자 기준선 위로 떠 보였다(사용자 보고 2026-08-29).
-
-          그래서 **상자와 기준선은 `Text` 가 만들고**, 치는 칸은 그 위에 얹는다. 글꼴·크기·줄높이가
-          같으므로 둘의 기준선은 글꼴 지표와 무관하게 **정의상 같다** — 이 자리에서 픽셀을 손으로
-          맞추지 않는 이유가 그것이다. 못 치는 자리에서는 그 글자가 곧 보이는 숫자다.
+          정정 4 는 칸 위에 `Text` 를 겹치고 칸의 글자를 투명하게 했었다. 그것을 걷었다 — 안드로이드
+          에서 그 투명이 안 먹어 두 글자가 함께 그려졌다(실기기 확인). 칸의 글자가 `Text` 보다
+          약 1dp 아래 앉는 차이는 그대로 두기로 했다(사용자 결정).
         */}
         <View className="flex-1">
-          <Text
-            testID={props.readOnly === true ? props.testID : undefined}
-            aria-hidden={props.readOnly !== true}
-            className={`text-right ${digits}`}
-            style={TABULAR_NUMS}
-          >
-            {approximateMark}
-            {shown.toLocaleString()}
-          </Text>
-          {props.readOnly !== true && (
+          {props.readOnly === true ? (
+            <Text testID={props.testID} className={`text-right ${digits}`} style={TABULAR_NUMS}>
+              {approximateMark}
+              {shown.toLocaleString()}
+            </Text>
+          ) : (
             <SheetTextInput
               testID={props.testID}
               aria-label="금액"
@@ -178,12 +170,7 @@ export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
               keyboardType="number-pad"
               placeholder="0"
               className={`text-right ${digits}`}
-              style={[
-                TABULAR_NUMS,
-                { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
-                // **그리지 않는다** — 입력과 커서만 맡는다([[ADR-178]] 정정 4).
-                { color: 'transparent' },
-              ]}
+              style={TABULAR_NUMS}
             />
           )}
         </View>

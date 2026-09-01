@@ -46,9 +46,10 @@ import { TABULAR_NUMS } from '../../../lib/text-styles'
 import type { ImageAssetRef } from '../../../types/image-asset'
 import type { HuntingGround, HuntingRegion } from '../../../types/hunting-grounds'
 import { nextAmountIdentity } from '../amount-identity'
-import { FieldRow, FieldTextInput, QuantityStepper } from '../sheet-fields'
+import { FieldRow, QuantityStepper } from '../sheet-fields'
 import { CharacterField, SaveRow, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from './use-sheet-submit'
+import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
 /** 「lv.294」·「lv.200-201」 — 원 자료의 표기를 그대로 되돌린다. */
 function levelLabelOf(ground: HuntingGround): string {
@@ -487,7 +488,7 @@ export function HuntForm(
           <FieldRow label="메소 획득량">
             {ocid !== null && mesoRate.kind === 'fallback' ? (
               <>
-                <FieldTextInput
+                <SheetTextInput
                   testID="income-sheet-meso-rate-input"
                   value={mesoRateText}
                   onChangeText={(text) => setMesoRateText(text.replace(/[^\d]/g, ''))}
@@ -553,7 +554,7 @@ export function HuntForm(
       {/* **직접 입력**이다([[ADR-175]] 결정 8) — 앱이 추정하면 틀린 값을 확신 있게 적는 셈이다.
           스테퍼가 아니라 **치는 칸**인 이유는 30분에 10개 내외라 8소재면 80개가 넘어서다. */}
       <FieldRow label="솔 에르다 조각">
-        <FieldTextInput
+        <SheetTextInput
           testID="income-sheet-fragments"
           value={fragments === 0 ? '' : fragments.toLocaleString()}
           onChangeText={(text) => setFragments(parseMesoText(fragments, text))}
@@ -566,7 +567,7 @@ export function HuntForm(
       </FieldRow>
 
       <FieldRow label="조각 가격">
-        <FieldTextInput
+        <SheetTextInput
           testID="income-sheet-fragment-price"
           value={fragmentPrice === 0 ? '' : fragmentPrice.toLocaleString()}
           onChangeText={(text) => setFragmentPrice(parseMesoText(fragmentPrice, text))}
