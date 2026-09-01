@@ -68,8 +68,7 @@ import {
 } from 'react-native'
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 
-import { GearIcon } from '../components/atoms/GearIcon/GearIcon'
-import { ProfitIcon } from '../components/atoms/ProfitIcon/ProfitIcon'
+import { GearIcon, ProfitIcon } from '../components/atoms/Icon'
 import { Text } from '../components/atoms/Text/Text'
 import { BAR_LIFT, resolveBottomBarMetrics } from '../lib/bottom-bar-metrics'
 import { useBottomSafeAreaPx } from '../lib/bottom-safe-area'

@@ -46,7 +46,7 @@ import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types'
 import type { DropCandidate, DropCategory, RecordedDrop, SelectableDropCategory } from '../../types/drops'
 
 import { Badge } from '../../components/atoms/Badge/Badge'
-import { ProfitIcon } from '../../components/atoms/ProfitIcon/ProfitIcon'
+import { ProfitIcon } from '../../components/atoms/Icon'
 import { Text } from '../../components/atoms/Text/Text'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'

@@ -697,7 +697,8 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 
 ## 아이콘
 - **라이브러리: `lucide-react`**(확정). 새 아이콘은 이 라이브러리에서만. 다른 아이콘 **라이브러리** 혼용은 계속 금지다.
-- **예외: 도메인 아이덴티티 아이콘은 직접 그린다**([[ADR-066]], 2026-07-31). 그 기능을 대표하는 자리에 한해 커스텀 SVG를 허용하되, **lucide 규격을 지키는 것이 조건**이다: 24 그리드 · `fill="none"` · `stroke="currentColor"` · `strokeLinecap`/`strokeLinejoin` `round` · 기본 `strokeWidth` 2 · 크기는 `className`이 정한다(`width`/`height` 속성은 lucide와 같은 24 폴백까지만: CSS가 속성보다 우선하므로 `h-5 w-5`가 항상 이기고, 폴백이 없으면 `className` 없이 쓸 때 인라인 SVG 기본값 300×150으로 부푼다). 규격을 지켜야 같은 줄에 선 lucide 아이콘과 선 굵기·광학 크기가 어긋나지 않는다. 겹침 표현은 `clipPath`·`mask`가 아니라 **뒤 요소의 선을 끊어서**(한 문서에 여러 번 렌더되면 마스크 `id`가 중복된다). 현재 해당: `ProfitIcon`(수익: 동전 더미 + 앞 동전).
+- **예외: 도메인 아이덴티티 아이콘은 직접 그린다**([[ADR-066]], 2026-07-31). 그 기능을 대표하는 자리에 한해 커스텀 SVG를 허용하되, **lucide 규격을 지키는 것이 조건**이다: 24 그리드 · `fill="none"` · `stroke="currentColor"` · `strokeLinecap`/`strokeLinejoin` `round` · 기본 `strokeWidth` 2 · 크기는 `className`이 정한다(`width`/`height` 속성은 lucide와 같은 24 폴백까지만: CSS가 속성보다 우선하므로 `h-5 w-5`가 항상 이기고, 폴백이 없으면 `className` 없이 쓸 때 인라인 SVG 기본값 300×150으로 부푼다). 규격을 지켜야 같은 줄에 선 lucide 아이콘과 선 굵기·광학 크기가 어긋나지 않는다. 겹침 표현은 `clipPath`·`mask`가 아니라 **뒤 요소의 선을 끊어서**(한 문서에 여러 번 렌더되면 마스크 `id`가 중복된다). 현재 해당: `ProfitIcon`(수익: 동전 더미 + 앞 동전) · `GearIcon`(하단바 톱니).
+- **커스텀 아이콘은 `components/atoms/Icon/` 에 산다**([[ADR-199]]). 가져올 때는 `import { ProfitIcon } from 'components/atoms/Icon'` 로 배럴을 거친다. 파일 하나가 아이콘 하나이고, 위 규격은 같은 디렉터리의 `icon-base.tsx` 가 쥔다. **새 아이콘은 `IconSvg` 를 쓰고 좌표만 갖는다** — 뿌리를 직접 그리면 규격이 파일마다 갈리는데, 어긋나도 그림은 나와서 화면을 자세히 보기 전에는 모른다. 프롭도 `IconProps` 하나를 쓴다(하단바가 lucide 아이콘과 바꿔 끼우므로 이름이 같아야 한다).
 - `strokeWidth`: 하단 탭바 `1.5`, 소형 액션(새로고침 등) `2`.
 - 아이콘 컨테이너(둥근 배경 박스)로 감싸지 않는다. 강조색 아이콘을 배경 없이 단독으로. **예외 2곳**: 빈 상태 배지(위 `EmptyState`, [[ADR-060]]. 아이콘이 아니라 일러스트 자리)와 드롭 시트 카테고리 헤더.
 - 현재 사용: 하단 탭바 `ListChecks`(컨텐츠)/`Swords`(보스)/`ProfitIcon`(수익, 커스텀)/`Settings`(설정), 새로고침 `RefreshCw`, 보스 카드 파티 배지 `Users`, 파티 스테퍼 `Minus`/`Plus`.
@@ -715,6 +716,7 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 | 그라디언트 배경 | `import { LinearGradient } from 'lib/nativewind-interop'` |
 | 애니메이션이 붙는 상자 | `import { AnimatedView } from 'lib/nativewind-interop'` |
 | lucide 아이콘 | `import { Users } from 'lib/icons'` |
+| 커스텀 아이콘 | `import { ProfitIcon } from 'components/atoms/Icon'` |
 
 - **`react-native-svg` 에서 직접 가져와도 되는 것은 자식 도형뿐이다**(`Path`·`Circle`·`Defs` 등).
   그것들은 `className` 을 안 받는다. 뿌리인 `Svg` 는 반드시 `lib/nativewind-interop` 에서.

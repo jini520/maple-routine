@@ -54,7 +54,7 @@ import { CalendarMonth } from '../../components/molecules/CalendarMonth/Calendar
 import { Badge } from '../../components/atoms/Badge/Badge'
 import { DIFFICULTY_SHORT } from '../../lib/boss-difficulty'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
-import { ProfitIcon } from '../../components/atoms/ProfitIcon/ProfitIcon'
+import { ProfitIcon } from '../../components/atoms/Icon'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { SpeedDial } from '../../components/organisms/SpeedDial/SpeedDial'
 import { SPEED_DIAL_SPACE_PX } from '../../components/organisms/SpeedDial/speed-dial-metrics'

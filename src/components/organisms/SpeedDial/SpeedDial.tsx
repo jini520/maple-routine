@@ -57,7 +57,7 @@ import { resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
 import { useBottomSafeAreaPx } from '../../../lib/bottom-safe-area'
 import { useThemeAppearance } from '../../../theme/context'
 import type { ThemeDefinition } from '../../../types/theme'
-import { ProfitIcon } from '../../atoms/ProfitIcon/ProfitIcon'
+import { ProfitIcon } from '../../atoms/Icon'
 import { Text } from '../../atoms/Text/Text'
 import { PlusIcon, ShoppingCartIcon } from '../../../lib/icons'
 import {
