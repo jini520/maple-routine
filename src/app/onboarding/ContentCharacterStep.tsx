@@ -44,7 +44,6 @@ import { View } from 'react-native'
 import { useApiKeyNotice } from '../../features/onboarding/use-api-key-notice'
 
 import { Button } from '../../components/atoms/Button/Button'
-import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
 import { Text } from '../../components/atoms/Text/Text'
 import { CharacterManageBody } from '../../components/organisms/CharacterManage/CharacterManageBody'
 import { useCharacterManage } from '../../components/organisms/CharacterManage/use-character-manage'
@@ -78,15 +77,13 @@ export function ContentCharacterStep(props: ContentCharacterStepProps): React.JS
         <Button
           variant="primary"
           disabled={isSubmitDisabled}
-          aria-busy={props.isSubmitting}
+          busy={props.isSubmitting}
           onPress={() => props.onSubmit(manage.selectedOcids, manage.representativeOcid)}
           // 웹의 `disabled:opacity-50` 은 CSS 의사 클래스라 RN 의 `disabled` 프롭과 이어지지
           // 않는다 — 그대로 두면 비활성 버튼이 멀쩡한 색으로 보인다(설정 화면과 같은 처방).
-          className={`w-full flex-row items-center justify-center gap-2${isSubmitDisabled ? ' opacity-50' : ''}`}
+          className={`w-full flex-row items-center justify-center${isSubmitDisabled ? ' opacity-50' : ''}`}
         >
-          {/* [[ADR-061]] 결정 5·9 — 스피너 + 말줄임표 없는 '~중' 라벨 */}
-          {props.isSubmitting && <MapleSpinner size={16} />}
-          {props.isSubmitting ? '저장 중' : '계속하기'}
+          계속하기
         </Button>
       }
     >

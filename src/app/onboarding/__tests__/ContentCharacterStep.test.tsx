@@ -214,10 +214,10 @@ describe('ContentCharacterStep — 머리와 CTA ([[ADR-144]] 결정 1)', () => 
     expect(stateOf(button(view, '계속하기')).disabled).toBe(false)
   })
 
-  it('저장 중에는 「계속하기」가 "저장 중" + 스피너로 바뀌고 비활성이 된다', async () => {
+  it('저장 중에는 「계속하기」에 스피너가 겹치고 비활성이 된다 ([[ADR-061]] 정정 3)', async () => {
     const { view } = await renderStep({ isSubmitting: true })
 
-    const cta = button(view, '저장 중')
+    const cta = button(view, '계속하기')
     expect(stateOf(cta).disabled).toBe(true)
     expect(stateOf(cta).busy).toBe(true)
   })

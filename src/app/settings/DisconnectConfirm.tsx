@@ -15,7 +15,6 @@
 import { View } from 'react-native'
 
 import { Button } from '../../components/atoms/Button/Button'
-import { MapleSpinner } from '../../components/atoms/MapleSpinner/MapleSpinner'
 import { Text } from '../../components/atoms/Text/Text'
 import { Modal } from '../../components/organisms/Modal/Modal'
 
@@ -53,15 +52,13 @@ export function DisconnectConfirm(props: DisconnectConfirmProps): React.JSX.Elem
             <Button
               variant="danger"
               disabled={props.isDisconnecting}
-              aria-busy={props.isDisconnecting}
+              busy={props.isDisconnecting}
               onPress={props.onConfirm}
-              className={`flex-row items-center justify-center gap-2${
+              className={`flex-row items-center justify-center${
                 props.isDisconnecting ? ' opacity-50' : ''
               }`}
             >
-              {/* ADR-061 결정 5·9 — 스피너 + 말줄임표 없는 '~중' 라벨 */}
-              {props.isDisconnecting && <MapleSpinner size={16} />}
-              {props.isDisconnecting ? '해제 중' : '연결 해제'}
+              연결 해제
             </Button>
           </View>
         </View>
