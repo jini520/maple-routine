@@ -102,7 +102,7 @@ import {
   VALUABLE_CARD_RING_RADIUS,
   VALUABLE_CARD_RING_WIDTH,
 } from './valuable-card-glow'
-import { useCountUp } from '../../hooks/useCountUp'
+import { AnimatedNumber } from '../../components/atoms/AnimatedNumber/AnimatedNumber'
 
 // 월간 탭 진행 링의 분모([[ADR-059]] 결정 4) — 리터럴 1이 아니라 참조 데이터에서 파생한다. 월간
 // 보스가 늘면 링 칸 수가 따라 늘어 "데이터는 2종인데 링은 1칸"이 될 수 없다. `boss-matching` 의
@@ -208,7 +208,6 @@ export function CharacterAccordion(props: {
 
   const { group } = props
   const totalMeso = groupTotalMeso(group, dropsByRowKey)
-  const rolledMeso = useCountUp(`character|${group.ocid}|${loadedTab}|${loadedPeriodKey}`, totalMeso)
   // 이 기간에 고가 아이템을 먹었을 때: 카드에 골드 링 + 글로우 + 우상단 획득 아이템 배지.
   const valuableDrops = collectGroupValuableDrops(group, dropsByRowKey)
   const hasValuable = valuableDrops.length > 0
@@ -353,7 +352,10 @@ export function CharacterAccordion(props: {
                 className={`text-sm font-bold ${hasItemRevenue ? 'text-primary-ink' : 'text-text'}`}
                 style={TABULAR_NUMS}
               >
-                {rolledMeso.toLocaleString()}
+                <AnimatedNumber
+                  identity={`character|${group.ocid}|${loadedTab}|${loadedPeriodKey}`}
+                  value={totalMeso}
+                />
                 {' 메소'}
               </Text>
             </View>
