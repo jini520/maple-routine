@@ -1,9 +1,12 @@
 /**
- * 「사냥」 폼 — **적는 것이 아니라 계산되는 것**이다([[ADR-175]]).
+ * 「사냥」 계산기 폼([[ADR-175]]). **적는 것이 아니라 계산되는 것**이다.
  *
- * 나머지 둘은 «얼마 벌었나» 를 사람이 알지만 사냥 메소는 **맵이 정해지면 셀 수 있는 값**이라 앱이
- * 낸다. 그래서 이 갈래에서만 줄이 여럿 서고(지역 · 사냥터 · 효율 · 메획 · 소재 · 조각) 큰 숫자가
+ * 나머지 갈래는 얼마 벌었나를 사람이 알지만 사냥 메소는 **맵이 정해지면 셀 수 있는 값**이라 앱이
+ * 낸다. 그래서 이 폼에만 줄이 여럿 서고(지역 · 사냥터 · 효율 · 메획 · 소재 · 조각) 큰 숫자가
  * **못 치는 합계**가 된다.
+ *
+ * 사냥의 다른 한 모양은 `HuntManualForm` 이다([[ADR-201]] 결정 6). 그쪽은 계산기가 못 세는 사냥에
+ * 쓰고, 어느 폼이 서는지는 기록에 박힌 값이 정한다.
  *
  * 계산은 한 자리에 있다(`lib/hunting-meso`) — 이 파일은 고른 것을 넘기고 받은 숫자를 그린다.
  * 캐릭터의 메소 획득량은 `features/cashbook/meso-rate` 가 읽어 준다([[ADR-177]]) — 폼은 `nexon/` 도
@@ -181,7 +184,7 @@ function BoostToggle(props: {
   )
 }
 
-export function HuntForm(
+export function HuntCalculatorForm(
   props: IncomeFormProps & {
     /** 캐릭터의 메소 획득량을 읽어 온다([[ADR-177]] 결정 7·9) — 폼은 `nexon/` 도 `storage/` 도 모른다. */
     loadMesoRate: (ocid: string) => Promise<MesoRateLoad>

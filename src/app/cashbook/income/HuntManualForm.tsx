@@ -17,7 +17,7 @@ import { CharacterField, SaveRow, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from './use-sheet-submit'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
-export function LegacyHuntForm(props: IncomeFormProps): React.JSX.Element {
+export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
   const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
   const [name, setName] = useState(props.editing?.item ?? '')
   const [gross, setGross] = useState(props.editing?.mesoAmount ?? 0)

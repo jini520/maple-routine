@@ -33,9 +33,9 @@ import type { MesoRateLoad } from '../../features/cashbook/meso-rate'
 import { INCOME_CATEGORIES, type IncomeCategory, type IncomeRecord } from '../../storage/income'
 import { DateStepper } from './sheet-fields'
 import { EtcForm } from './income/EtcForm'
-import { HuntForm } from './income/HuntForm'
+import { HuntCalculatorForm } from './income/HuntCalculatorForm'
 import { ItemSaleForm } from './income/ItemSaleForm'
-import { LegacyHuntForm } from './income/LegacyHuntForm'
+import { HuntManualForm } from './income/HuntManualForm'
 import type { IncomeFormProps, SheetCharacter } from './income/form-shared'
 
 export type { IncomeDraft } from './income/form-shared'
@@ -164,8 +164,8 @@ function IncomeForm(
    */
   const legacy = props.editing !== undefined && props.editing.hunt === null
   return legacy ? (
-    <LegacyHuntForm {...props.formProps} />
+    <HuntManualForm {...props.formProps} />
   ) : (
-    <HuntForm {...props.formProps} loadMesoRate={props.loadMesoRate} />
+    <HuntCalculatorForm {...props.formProps} loadMesoRate={props.loadMesoRate} />
   )
 }
