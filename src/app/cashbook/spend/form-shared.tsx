@@ -11,8 +11,9 @@ import { ChevronLeftIcon } from '../../../lib/icons'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import { SelectField } from '../../../components/organisms/SelectField/SelectField'
 import { characterOptions } from '../character-options'
-import { DateStepper, FieldTextInput } from '../sheet-fields'
+import { DateStepper } from '../sheet-fields'
 import { SPEND_CATEGORIES, type SpendCategory, type SpendRecord } from '../../../storage/spend'
+import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
 /** 저장할 값에서 **어댑터가 아니라 화면이 정하는 것 둘**(`id`·`recordedAt`)을 뺀 나머지. */
 export type SpendDraft = Omit<SpendRecord, 'id' | 'recordedAt'>
@@ -180,7 +181,7 @@ export function RateRow(props: {
           {' *'}
         </Text>
       </Text>
-      <FieldTextInput
+      <SheetTextInput
         testID="spend-sheet-rate"
         value={props.value}
         onChangeText={props.onChange}

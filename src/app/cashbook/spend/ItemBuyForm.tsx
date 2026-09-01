@@ -20,7 +20,7 @@ import { SPEND_TARIFF_PERCENT, withTariffMeso } from '../../../lib/spend-catalog
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import { SPEND_ITEM_KINDS, countsQuantity, type SpendItemKind } from '../../../storage/spend'
 import { nextAmountIdentity } from '../amount-identity'
-import { FieldRow, FieldTextInput } from '../sheet-fields'
+import { FieldRow } from '../sheet-fields'
 import {
   CategoryChips,
   CharacterRow,
@@ -29,6 +29,7 @@ import {
   type SpendFormProps,
 } from './form-shared'
 import { useSpendSubmit } from './use-spend-submit'
+import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
 /**
  * 관세 조각 둘 — **「없음」 이 첫 조각이고 기본값**이다([[ADR-173]] 정정 1 결정 6).
@@ -105,7 +106,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
       <CharacterRow characters={props.characters} selected={ocid} onSelect={setOcid} />
 
       <FieldRow label="구매 아이템" labelTestID="spend-sheet-name-label">
-        <FieldTextInput
+        <SheetTextInput
           testID="spend-sheet-name"
           value={name}
           onChangeText={setName}
@@ -123,7 +124,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
       {counts && (
         // **한 개 값**(단가)이다 — 곱할 것이 있을 때만 선다.
         <FieldRow label="단가">
-          <FieldTextInput
+          <SheetTextInput
             testID="spend-sheet-unit-price"
             value={typed === 0 ? '' : typed.toLocaleString()}
             onChangeText={(text) => setTyped(parseMesoText(typed, text))}
@@ -166,7 +167,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
         // 적는다» 고 한 근거는 **「기타」가 자유 입력이라 앱이 무엇을 세는지 모른다**는 것이었는데,
         // 여기서 세는 것은 **아이템**이라 그 근거가 성립하지 않는다. 「기타」는 그대로 비어 있다.
         <FieldRow label="수량">
-          <FieldTextInput
+          <SheetTextInput
             testID="spend-sheet-quantity"
             value={quantity === 0 ? '' : quantity.toLocaleString()}
             onChangeText={(text) => setQuantity(parseMesoText(quantity, text))}
