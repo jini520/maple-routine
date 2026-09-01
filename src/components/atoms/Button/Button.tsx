@@ -8,7 +8,7 @@
 import { Children, type ReactNode } from 'react'
 import { Pressable, View, type PressableProps } from 'react-native'
 
-import { MapleSpinner } from '../MapleSpinner/MapleSpinner'
+import { MapleSpinner } from '../Spinner'
 import { Text } from '../Text/Text'
 import {
   BUTTON_VARIANT_CLASS,

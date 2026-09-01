@@ -42,7 +42,7 @@ import type { LiveUpdateStatus, LiveUpdateStore } from '../features/live-update/
 
 import { Badge } from '../components/atoms/Badge/Badge'
 import { Button } from '../components/atoms/Button/Button'
-import { MapleSweepSpinner } from '../components/atoms/MapleSweepSpinner/MapleSweepSpinner'
+import { MapleSweepSpinner } from '../components/atoms/Spinner'
 import { ProgressBar } from '../components/atoms/ProgressBar/ProgressBar'
 import { Text } from '../components/atoms/Text/Text'
 import { Modal } from '../components/organisms/Modal/Modal'

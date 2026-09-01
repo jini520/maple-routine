@@ -21,7 +21,7 @@
 // 그 atom 주석 ①-b). 크기 규칙(page 32 / inline 24, [[ADR-061]] 결정 1·2)은 그대로다.
 
 import { Card } from '../../atoms/Card/Card'
-import { MapleSweepSpinner } from '../../atoms/MapleSweepSpinner/MapleSweepSpinner'
+import { MapleSweepSpinner } from '../../atoms/Spinner'
 import { Text } from '../../atoms/Text/Text'
 
 export interface LoadingStateProps {

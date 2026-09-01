@@ -34,7 +34,7 @@ import type { CharacterPickerEntry } from '../../../types'
 
 import { Button } from '../../atoms/Button/Button'
 import { Card } from '../../atoms/Card/Card'
-import { MapleSweepSpinner } from '../../atoms/MapleSweepSpinner/MapleSweepSpinner'
+import { MapleSweepSpinner } from '../../atoms/Spinner'
 import { Text } from '../../atoms/Text/Text'
 import { ErrorState } from '../../molecules/ErrorState/ErrorState'
 import { StaleBanner } from '../../molecules/ErrorState/StaleBanner'

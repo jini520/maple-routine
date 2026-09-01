@@ -33,14 +33,12 @@
 
 import { useState } from 'react'
 import { View } from 'react-native'
-import { Path } from 'react-native-svg'
 
 import { formatValuableDroughtHeadline } from '../../../lib/drop-history'
 
 import { Text } from '../../../components/atoms/Text/Text'
-import { MAPLE_LEAF_PATH } from '../../../components/mapleLeafPath'
+import { MapleLeaf } from '../../../components/atoms/Icon'
 import { DROUGHT_GLOW_FILTER, DROUGHT_TIER_STYLES } from '../../../lib/drought-tier-styles'
-import { Svg } from '../../../lib/nativewind-interop'
 import type { WidgetHeight } from '../../../lib/widget-layout'
 import type { DroughtView } from '../view-model'
 import type { WidgetProps } from './types'
@@ -112,13 +110,7 @@ function Leaf(props: { tier: number; sizePx: number }): React.JSX.Element {
         ...(style.glow ? { filter: DROUGHT_GLOW_FILTER } : {}),
       }}
     >
-      <Svg
-        width={props.sizePx}
-        height={Math.round(props.sizePx * (130 / 127))}
-        viewBox="0 0 127 130"
-      >
-        <Path d={MAPLE_LEAF_PATH} fill={style.leaf} />
-      </Svg>
+      <MapleLeaf size={props.sizePx} fill={style.leaf} />
     </View>
   )
 }
@@ -147,17 +139,9 @@ function WeeksChip(props: { weeksSince: number }): React.JSX.Element {
 function BlankLeaf(props: { sizePx: number }): React.JSX.Element {
   return (
     <View testID="drought-blank-leaf" aria-hidden style={{ opacity: 0.28 }}>
-      {/* 색은 테마 토큰에서 온다 — `fill="currentColor"` 의 값은 `Svg` 의 `color` 이고, NativeWind 의
-          `text-*` 가 그 자리를 채운다(`MapleSpinner` 가 쓰는 것과 같은 경로). 잎 램프의 하드코딩
-          hex 를 여기서 흉내 내면 라이트·다크 한쪽에서 반드시 죽는다. */}
-      <Svg
-        width={props.sizePx}
-        height={Math.round(props.sizePx * (130 / 127))}
-        viewBox="0 0 127 130"
-        className="text-text-disabled"
-      >
-        <Path d={MAPLE_LEAF_PATH} fill="currentColor" />
-      </Svg>
+      {/* 색이 테마 토큰이라 `fill` 이 아니라 클래스로 준다. 잎 램프의 하드코딩 hex 를 여기서
+          흉내 내면 라이트·다크 한쪽에서 반드시 죽는다. */}
+      <MapleLeaf size={props.sizePx} className="text-text-disabled" />
     </View>
   )
 }
