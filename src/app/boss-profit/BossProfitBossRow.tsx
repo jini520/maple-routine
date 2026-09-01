@@ -41,7 +41,7 @@ import { useBossProfitContext } from './boss-profit-context'
 import { clamp, findPortraitSlug } from './character-groups'
 import { ItemRevenuePopover, useAnchoredPopover } from './ItemRevenuePopover'
 import { ValuableRowBackground } from './ValuableRowBackground'
-import { useCountUp } from '../../hooks/useCountUp'
+import { AnimatedNumber } from '../../components/atoms/AnimatedNumber/AnimatedNumber'
 
 // BossPortrait의 size prop 기본값(40px, 기존 h-10 관례)과 동일하게 시작값을 맞춘다.
 export const BOSS_PORTRAIT_SIZE = 40
@@ -121,10 +121,6 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
   const { ref: itemChipRef, isOpen: isItemPopoverOpen, anchor: itemAnchor, toggle: toggleItemPopover, close: closeItemPopover } =
     useAnchoredPopover()
   const dropTotal = sumDropPayout(props.drops)
-  const rolledMeso = useCountUp(
-    `boss|${props.row.ocid}|${props.row.boss}|${props.row.difficulty}|${props.row.periodKey}`,
-    (props.row.payoutMeso ?? 0) + dropTotal,
-  )
 
   // 이 보스에서 고가 아이템을 획득했으면 행 배경에 골드 강조를 준다 — 캐릭터 카드를 펼쳤을 때
   // 카드 테두리 효과 대신 실제 획득한 보스 행으로 강조가 이동하는 지점(사용자 요청).
@@ -154,7 +150,10 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
       }
       style={TABULAR_NUMS}
     >
-      {rolledMeso.toLocaleString()}
+      <AnimatedNumber
+        identity={`boss|${row.ocid}|${row.boss}|${row.difficulty}|${row.periodKey}`}
+        value={(row.payoutMeso ?? 0) + dropTotal}
+      />
       {' 메소'}
     </Text>
   )

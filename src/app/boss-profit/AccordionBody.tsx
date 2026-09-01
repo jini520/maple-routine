@@ -29,7 +29,7 @@ import { BossProfitBossRow } from './BossProfitBossRow'
 import { useBossProfitContext } from './boss-profit-context'
 import { rowKey } from './character-groups'
 import { ItemRevenuePopover, useAnchoredPopover } from './ItemRevenuePopover'
-import { useCountUp } from '../../hooks/useCountUp'
+import { AnimatedNumber } from '../../components/atoms/AnimatedNumber/AnimatedNumber'
 
 // [[ADR-068]] 결정 2: **행동이 있는 상태에만 버튼을 준다.** 여섯 상태 중 사용자가 할 수 있는 것은
 // notChecked(조회)와 failed(다시 시도) 둘뿐이고, 나머지는 금액 또는 비활성 배지로 정적이다.
@@ -66,7 +66,6 @@ export function WeeklyAccordionBody(props: { rows: BossProfitRow[] }): React.JSX
 export function WeeklySubtotalRow(props: { subtotal: BossProfitWeeklySubtotal }): React.JSX.Element {
   const { subtotal } = props
   const { now, onRetryPeriod } = useBossProfitContext()
-  const rolledMeso = useCountUp(`subtotal|${subtotal.ocid}|${subtotal.periodKey}`, subtotal.totalMeso)
   const label = formatBossProfitPeriodLabel('weekly', subtotal.periodKey, now)
   const actionLabel = SUBTOTAL_ACTION_LABEL[subtotal.state]
   const staticLabel = SUBTOTAL_STATIC_LABEL[subtotal.state]
@@ -88,7 +87,7 @@ export function WeeklySubtotalRow(props: { subtotal: BossProfitWeeklySubtotal })
       }
       style={TABULAR_NUMS}
     >
-      {rolledMeso.toLocaleString()}
+      <AnimatedNumber identity={`subtotal|${subtotal.ocid}|${subtotal.periodKey}`} value={subtotal.totalMeso} />
       {' 메소'}
     </Text>
   )

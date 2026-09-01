@@ -105,7 +105,7 @@ import {
 // — 컴포넌트와 테스트는 그대로 두고 여기서 부르지만 않는다.
 import { CrystalSummaryChip } from './HeadlineChips'
 import { ItemRevenuePopover, useAnchoredPopover } from './ItemRevenuePopover'
-import { useCountUp } from '../../hooks/useCountUp'
+import { AnimatedNumber } from '../../components/atoms/AnimatedNumber/AnimatedNumber'
 
 export function BossProfitScreen(): React.JSX.Element {
   const {
@@ -210,9 +210,6 @@ export function BossProfitScreen(): React.JSX.Element {
     (sum, group) => sum + groupTotalMeso(group, dropsByRowKey),
     0,
   )
-  // [[ADR-087]] 정정 1: **이 키에만 기간이 없다** — 기간이 바뀌어도 같은 자리의 같은 뜻을 가진
-  // 하나의 숫자로 보고 굴린다("기간 이동은 총 수익만", 사용자 결정).
-  const rolledTotalMeso = useCountUp(`total|${loadedTab}`, totalMeso)
 
   if (isEmpty) {
     // 헤더 셸을 쓰지 않는 가지라(제목 줄이 목록 없이 혼자 선다) 상단 안전영역을 여기서 먹는다 —
@@ -444,7 +441,9 @@ export function BossProfitScreen(): React.JSX.Element {
                 className="text-xl font-extrabold leading-none text-primary-ink"
                 style={TABULAR_NUMS}
               >
-                {rolledTotalMeso.toLocaleString()}{' '}
+                {/* [[ADR-087]] 정정 1: **이 키에만 기간이 없다** — 기간이 바뀌어도 같은 자리의 같은
+                    뜻을 가진 하나의 숫자로 보고 굴린다("기간 이동은 총 수익만", 사용자 결정). */}
+                <AnimatedNumber identity={`total|${loadedTab}`} value={totalMeso} />{' '}
                 <Text className="text-xs font-bold text-text-muted">메소</Text>
               </Text>
               {/* **증감 칩은 뺀 채로 둔다**([[ADR-124]] 결정 7, 2026-08-10) — 총 수익에서는 뜻이
