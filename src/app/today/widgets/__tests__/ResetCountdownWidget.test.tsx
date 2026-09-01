@@ -9,7 +9,7 @@
 
 import { act } from '@testing-library/react-native'
 
-import { renderAtom } from '../../../../components/__tests__/render-atom'
+import { flattenStyle, renderAtom } from '../../../../components/__tests__/render-atom'
 import { ResetCountdownWidget } from '../ResetCountdownWidget'
 import { WIDGET_BY_ID } from '../registry'
 import { 뷰모델, 초기화 } from './widget-fixture'
@@ -126,20 +126,20 @@ describe('크기가 버리는 것 ([[ADR-147]] 정정 13)', () => {
     const { getAllByTestId, getByTestId } = await 위젯(크기['2x2'])
 
     expect(getByTestId('reset-row-monthly')).toBeTruthy()
-    expect(getAllByTestId('reset-bar')).toHaveLength(3)
+    expect(getAllByTestId('reset-bar-fill')).toHaveLength(3)
   })
 
   it('2x1 에는 진행 바가 없다', async () => {
     const { queryByTestId } = await 위젯(크기['2x1'])
 
-    expect(queryByTestId('reset-bar')).toBeNull()
+    expect(queryByTestId('reset-bar-fill')).toBeNull()
   })
 
   it('4x1 은 셋을 가로로 세운다', async () => {
     const { getAllByTestId, queryByTestId } = await 위젯(크기['4x1'])
 
     expect(getAllByTestId(/^reset-cell-/)).toHaveLength(3)
-    expect(queryByTestId('reset-bar')).toBeNull()
+    expect(queryByTestId('reset-bar-fill')).toBeNull()
   })
 
   it('1x1 은 일일만 남고 값이 가장 큰 단위 하나로 접힌다', async () => {
@@ -159,7 +159,7 @@ describe('진행 바 — 주기의 어디쯤인가', () => {
       뷰모델({ resets: 초기화(6 * HOUR_MS, 7 * DAY_MS, 31 * DAY_MS) }),
     )
 
-    expect(getAllByTestId('reset-bar-fill')[0].props.style).toMatchObject({ width: '75%' })
+    expect(flattenStyle(getAllByTestId('reset-bar-fill')[0].props.style).width).toBe('75%')
   })
 
   // 달마다 길이가 다르므로(28~31일) 분모를 위젯이 상수로 들 수 없다 — 뷰모델이 함께 준다.
@@ -176,7 +176,7 @@ describe('진행 바 — 주기의 어디쯤인가', () => {
       }),
     )
 
-    expect(getAllByTestId('reset-bar-fill')[2].props.style).toMatchObject({ width: '50%' })
+    expect(flattenStyle(getAllByTestId('reset-bar-fill')[2].props.style).width).toBe('50%')
   })
 })
 

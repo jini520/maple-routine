@@ -42,8 +42,9 @@
  */
 
 import { useEffect, useState } from 'react'
-import { View, type DimensionValue } from 'react-native'
+import { View } from 'react-native'
 
+import { ProgressBar } from '../../../components/atoms/ProgressBar/ProgressBar'
 import { Text } from '../../../components/atoms/Text/Text'
 import { TABULAR_NUMS } from '../../../lib/text-styles'
 import type { WidgetHeight } from '../../../lib/widget-layout'
@@ -144,12 +145,15 @@ function remainingOf(countdown: ResetCountdown, nowMs: number): number {
   return Math.max(0, countdown.atMs - nowMs)
 }
 
-/** 주기의 어디쯤인가 — 지난 몫이다. `periodMs` 를 뷰모델이 함께 주는 이유는 그쪽 주석이 갖는다. */
-function elapsedWidth(countdown: ResetCountdown, remainingMs: number): DimensionValue {
-  if (countdown.periodMs <= 0) return '0%'
+/**
+ * 주기의 어디쯤인가 — 지난 몫이다. `periodMs` 를 뷰모델이 함께 주는 이유는 그쪽 주석이 갖는다.
+ * 0~100 으로 자르는 것은 `ProgressBar` 가 클램프하지 않기 때문이다.
+ */
+function elapsedPercent(countdown: ResetCountdown, remainingMs: number): number {
+  if (countdown.periodMs <= 0) return 0
   const elapsed = Math.min(Math.max(countdown.periodMs - remainingMs, 0), countdown.periodMs)
   // 소수 둘로 끊는 것은 정밀도가 아니라 안정성 때문이다(위젯 3 의 스택 바와 같은 이유).
-  return `${Number(((elapsed / countdown.periodMs) * 100).toFixed(2))}%`
+  return Number(((elapsed / countdown.periodMs) * 100).toFixed(2))
 }
 
 function Label(props: { cycle: CycleKey; sizeClass: string }): React.JSX.Element {
@@ -185,16 +189,14 @@ function Value(props: {
   )
 }
 
-/** 2x2 만 그리는 진행 바 — 위젯 3 의 스택 바와 같은 트랙·같은 색이다. */
+/** 2x2 만 그리는 진행 바. `aria` 를 안 주는 것은 바로 위 `Value` 가 같은 값을 글자로 말해서다. */
 function ElapsedBar(props: { countdown: ResetCountdown; remainingMs: number }): React.JSX.Element {
   return (
-    <View testID="reset-bar" className="h-1 w-full overflow-hidden rounded-full bg-track">
-      <View
-        testID="reset-bar-fill"
-        className="h-1 bg-primary"
-        style={{ width: elapsedWidth(props.countdown, props.remainingMs) }}
-      />
-    </View>
+    <ProgressBar
+      percent={elapsedPercent(props.countdown, props.remainingMs)}
+      height="thin"
+      fillTestId="reset-bar-fill"
+    />
   )
 }
 
