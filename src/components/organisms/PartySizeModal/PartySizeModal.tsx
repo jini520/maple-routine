@@ -12,7 +12,7 @@
 //
 // ① **그림이 앉았다(step 5).** 3단계가 *"셋이 한 덩어리라 따로 못 옮긴다"* 며 미뤄 둔 자리 —
 //    크롭의 CSS 값(`background-size: "100% auto"` / `position: "50% 45%"`)을 RN 기하로 바꾸고,
-//    `ILLUSTRATION_FILTER`·`ILLUSTRATION_MASK_HERO` 를 각각 `filter` 스타일과 **뒤집은 그라데이션**으로
+//    웹의 `filter` 와 `mask-image` 를 각각 RN `filter` 스타일과 **뒤집은 그라데이션**으로
 //    푸는 일이다. 그 셋을 step 4 가 컨텐츠 카드에서 이미 한 벌 풀어 두었으므로 여기서는
 //    `FadedIllustration` 를 **부르기만 한다**(`variant="hero"` — 마스크 끝점이 카드와 다르다).
 //    보스 카드와 같은 컴포넌트를 쓰는 것이 [[ADR-121]] 결정 7 이 요구하는 *"같은 값"* 이다.

@@ -133,7 +133,7 @@ L 0.13~0.15 라 **스크림을 완전 불투명 검정으로 만들어도 1.07 �
        마스크 linear-gradient(90deg,#000 0%,#000 42%,transparent 82%)  ← 카드는 38/76, 모달이 넓어 끝점만 뒤로
        베일   media-surface → transparent 세로 그라디언트(0% → 62%)
        닫기   우상단 32px 원, bg-surface/60 + text-text (스코프 안이라 media 토큰), aria-label="닫기"
-       텍스트 키커 10px text-text-muted / 이름 text-xl font-extrabold text-text, 둘 다 ILLUSTRATION_TEXT_SHADOW
+       텍스트 키커 10px text-text-muted / 이름 text-xl font-extrabold text-text, 둘 다 ILLUSTRATION_TEXT_SHADOW_STYLE
 경계   본문에 border-t border-border   ← media-scope **바깥**
 본문   p-[18px] · 필드 간격 18
 난이도 라벨 + 난이도 배지 세그먼트(미선택 = 같은 뱃지 + opacity-40)
@@ -150,6 +150,22 @@ L 0.13~0.15 라 **스크림을 완전 불투명 검정으로 만들어도 1.07 �
 - **라벨은 `text-text-muted`.** `text-disabled` 는 6테마에서 3.10~4.22 로 4.5:1 미달이다.
 - **상한 표시는 `Badge tone="primary"`**. 주간 `n/12` 배지와 같은 컴포넌트다(신규 스타일 금지).
 - **일러스트 없는 보스**(`portraitSlug: null`)는 히어로를 비운다. 단색 + 이름. 폴백 디자인 없음.
+
+- **CSS 를 RN 으로 옮긴 값** (`components/molecules/FadedIllustration`). 웹이 쓰던 CSS 와 RN 값이
+  같은지는 **옮길 때 한 번 확인했고, 그 결과가 이 표다.** 웹 소스는 [[ADR-155]] 로 없어져 더 갈릴
+  원본이 없으므로 대조용 CSS 사본을 코드에 두지 않는다. 값을 바꾸려면 이 표와 부품을 함께 고친다.
+
+  | 웹 CSS | RN |
+  |---|---|
+  | `filter: saturate(.85) brightness(.8)` | `filter: [{ saturate: 0.85 }, { brightness: 0.8 }]` |
+  | `opacity: .65` | `opacity: 0.65` |
+  | `mask-image: linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)` (카드) | 표면색 그라디언트를 **뒤집어** 얹는다. `locations [0, .38, .76, 1]` · `alphas [0, 0, 1, 1]` |
+  | 같은 마스크의 히어로판 (`42% / 82%`) | `locations [0, .42, .82, 1]` |
+  | `text-shadow: 0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.6)` | 그림자를 **하나만** 쓴다(RN `Text` 는 `textShadow*` 세 프롭이라 겹칠 수 없다). `constants/style/text-styles.ts` |
+
+  RN 에는 `mask-image` 가 없다. 대신 **카드 표면색을 마스크의 반대 알파로 덧칠**하면 같은 색이
+  나온다(근사가 아니라 식이 일치한다 — 근거는 부품 주석). 마지막 정지점 `1` 은 웹에 없는데,
+  `expo-linear-gradient` 가 정지점 **사이만** 보간해서 안 적으면 끝점 뒤가 안 덮이기 때문이다.
 
 **스테퍼 `size` 변형** ([[ADR-121]]). 같은 레시피(보더 pill + `Users` + −/값/+)에 크기만 둘이다.
 ```
