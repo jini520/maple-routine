@@ -1,6 +1,6 @@
 // 유틸리티 = **도구 목록**.
 //
-// 이 파일이 지키는 것은 카드 하나가 아니라 **구조**다 — 도구가 유틸리티 화면 안의 카드가 아니라
+// 이 파일이 지키는 것은 카드 하나가 아니라 **구조**다. 도구가 유틸리티 화면 안의 카드가 아니라
 // 루트 스택에 쌓이는 하위 페이지라는 것. 첫 도구가 정한 이 구조를 뒤에 오는 도구들이 물려받는다.
 
 import { act, fireEvent } from '@testing-library/react-native'
@@ -63,7 +63,7 @@ describe('UtilityScreen', () => {
     for (const word of ITEM_SPLIT_TOOL_NAME.split(' ')) {
       expect(view.getByText(word)).toBeTruthy()
     }
-    // 통째로 그리면 글자 단위로 끊긴다 — 한 덩어리 노드가 있으면 안 된다.
+    // 통째로 그리면 글자 단위로 끊긴다. 한 덩어리 노드가 있으면 안 된다.
     expect(view.queryByText(ITEM_SPLIT_TOOL_NAME)).toBeNull()
   })
 })

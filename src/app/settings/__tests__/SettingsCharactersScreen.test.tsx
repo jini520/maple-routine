@@ -4,14 +4,14 @@
 // ── 무엇을 목으로 세우는가 ──────────────────────────────────────────────────────────
 //
 // 값 규칙(`summarizeAccount`·`buildSelectedCharacterViews`·`resolveRepresentative`)과 문구
-// (`formatRosterError`)는 **실물을 쓴다** — 여기서 베끼면 규칙이 두 벌이 된다(머리
+// (`formatRosterError`)는 **실물을 쓴다**. 여기서 베끼면 규칙이 두 벌이 된다(머리
 // **값 규칙의 자리**). 세우는 것은 경계 넷뿐이다: 계정 목록 조회 · 후보 목록 조회 · 로컬 캐시 ·
 // 저장 액션.
 //
 // ── 끌기는 여기서 **흉내** 내지 않는다 ────────────────────────────────────────────────
 //
 // 제스처는 네이티브가 인식하고 jest 는 레이아웃을 계산하지 않아, 끄는 동작 자체를 재현하면 우리가
-// 만든 가짜만 검사하게 된다. 그래서 순서의 계약은 두 자리로 나뉜다 — 값 규칙은
+// 만든 가짜만 검사하게 된다. 그래서 순서의 계약은 두 자리로 나뉜다. 값 규칙은
 // `../../../components/organisms/CharacterManage/__tests__/reorder.test.ts`(순수 함수)가 보고,
 // 여기서는 **화면이 그 규칙에 닿는 두 번째 경로**인 접근성 액션으로 본다(끌기와 같은 문을 쓰므로,
 // 결과가 `moveOcid` 와 같은지는 그쪽으로 확인된다).
@@ -61,7 +61,7 @@ jest.mock('../../../storage/character-selection', () => ({
 jest.mock('../../../storage/schedule-probe-ledger', () => ({ getScheduleProbeLedger: jest.fn() }))
 
 // : `toScheduleSyncError` 는 실물을 쓴다(문구가 원인에서 나온다). `...requireActual` 을
-// 통째로 쓰면 순환 참조가 아직 구성 중인 모듈을 `undefined` 로 만난다 — 부분 모킹이 그 처방이다.
+// 통째로 쓰면 순환 참조가 아직 구성 중인 모듈을 `undefined` 로 만난다. 부분 모킹이 그 처방이다.
 jest.mock('../../../features/schedule-sync/schedule-sync', () => ({
   toScheduleSyncError: jest.requireActual<typeof import('../../../features/schedule-sync/errors')>(
     '../../../features/schedule-sync/errors',
@@ -285,7 +285,7 @@ describe('두 층 — 위는 계정을 넘고 아래는 계정 하나다', () =>
 
     await switchAccount(view, 'account-b')
 
-    // 마크와 문구가 **함께** 선다 — 둘 중 하나만 남기면 예전 얼굴로 돌아간다.
+    // 마크와 문구가 **함께** 선다. 둘 중 하나만 남기면 예전 얼굴로 돌아간다.
     expect(view.getByText('캐릭터 목록을 불러오고 있어요')).toBeTruthy()
     expect(view.getByTestId('maple-sweep-spinner', { includeHiddenElements: true })).toBeTruthy()
   })
@@ -382,7 +382,7 @@ describe('이동 — 선택은 **표시** 가 아니라 **이동** 이다', () =
 
     await press(view.getByText('별헤는밤'))
 
-    // 레벨(250)로 끼워 넣지 않는다 — 새로 고른 캐릭터는 배열 끝이다.
+    // 레벨(250)로 끼워 넣지 않는다. 새로 고른 캐릭터는 배열 끝이다.
     expect(namesIn(view, 'character-manage-selected')).toEqual(['낟낟', '별헤는밤'])
     expect(namesIn(view, 'character-manage-candidates')).toEqual(['달의아이'])
   })
@@ -514,7 +514,7 @@ describe('순서 — 놓은 자리가 배열 순서다', () => {
     expect(view.queryByLabelText('달의아이 순서 변경')).toBeNull()
   })
 
-  // 끌기와 접근성 액션은 **같은 문**을 쓴다(`moveOcid`) — 그래서 기대값을 손으로 적지 않고
+  // 끌기와 접근성 액션은 **같은 문**을 쓴다(`moveOcid`). 그래서 기대값을 손으로 적지 않고
   // 그 함수에서 받는다. 두 경로가 갈라지면 이 단언이 먼저 깨진다.
   it.each([
     ['아래로 옮기기', '낟낟', 'moveDown' as const, 0, 1],
@@ -529,7 +529,7 @@ describe('순서 — 놓은 자리가 배열 순서다', () => {
     expect(namesIn(view, 'character-manage-selected')).toEqual(moveOcid(before, from, to))
   })
 
-  // 눌러도 아무 일이 없는 액션을 로터에 남기지 않는다 — 할 수 있는 것만 준다.
+  // 눌러도 아무 일이 없는 액션을 로터에 남기지 않는다. 할 수 있는 것만 준다.
   it('경계 행에는 갈 수 없는 쪽 액션이 없다', async () => {
     mockContentStore({ trackedOcids: ['a1', 'a2', 'a3'] })
 
@@ -638,7 +638,7 @@ describe('계정 전환 TTL', () => {
     }
   })
 
-  // 결정 6: **방금 확인함** 류의 표시를 두지 않는다 — 사용자가 아니라 구현의 사정이다.
+  // 결정 6: **방금 확인함** 류의 표시를 두지 않는다. 사용자가 아니라 구현의 사정이다.
   it('TTL 을 알리는 표시가 화면에 없다', async () => {
     const view = await renderScreen()
 
@@ -750,7 +750,7 @@ describe('저장', () => {
     expect(isSaveDisabled(view)).toBe(false)
   })
 
-  //  의 **멤버십으로만 판정하라** 가 뒤집히는 자리다 — 순서가 사용자 것이 되면서
+  //  의 **멤버십으로만 판정하라** 가 뒤집히는 자리다. 순서가 사용자 것이 되면서
   // 그 근거(그리드 토글이 배열 끝에 append 해 순서가 의미 없이 흔들린다)가 사라졌다.
   it('집합이 같아도 순서가 달라지면 활성이다', async () => {
     mockContentStore({ trackedOcids: ['a1', 'a2'] })
@@ -800,7 +800,7 @@ describe('저장', () => {
 
     expect(saveTrackedOcids).toHaveBeenCalledWith(['a1', 'a2'], expect.any(Function))
     expect(mockedSetRepresentative).toHaveBeenCalledWith('a2')
-    // 목록 저장이 먼저 돌아야 한다 — `setTrackedCharacterOcids` 가 목록에 없는 대표를 지운다.
+    // 목록 저장이 먼저 돌아야 한다. `setTrackedCharacterOcids` 가 목록에 없는 대표를 지운다.
     expect(order).toEqual(['save', 'representative', 'boss', 'profit'])
     expect(goBack).toHaveBeenCalled()
   })
@@ -852,7 +852,7 @@ describe('화면 골격', () => {
   it('자기 스크롤 컨테이너를 갖고, 고정되는 것은 저장 바 하나다 ( 의 하단 액션 바 예외)', async () => {
     const view = await renderScreen()
 
-    // 헤더가 스크롤 뷰의 **자식**이다 — 형제로 두면 화면에 붙어 영원히 고정된다.
+    // 헤더가 스크롤 뷰의 **자식**이다. 형제로 두면 화면에 붙어 영원히 고정된다.
     expect(view.getByTestId('screen-scroll')).toBeTruthy()
     expect(view.getByTestId('screen-SettingsCharacters')).toBeTruthy()
     expect(view.getByText('캐릭터 관리')).toBeTruthy()
@@ -868,7 +868,7 @@ describe('화면 골격', () => {
 
     const view = await renderScreen()
 
-    // 첫 조회가 account-a 다 — 정렬이 첫 계정 선택에도 그대로 걸린다.
+    // 첫 조회가 account-a 다. 정렬이 첫 계정 선택에도 그대로 걸린다.
     expect(mockedRoster.mock.calls[0]?.[1]?.accountId).toBe('account-a')
 
     await press(view.getByTestId('account-select-trigger'))

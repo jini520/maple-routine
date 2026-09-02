@@ -1,4 +1,4 @@
-// 격자는 **그리기만** 한다 — 어떤 칸이 서는가는 `lib/calendar` 이 정하고
+// 격자는 **그리기만** 한다. 어떤 칸이 서는가는 `lib/calendar` 이 정하고
 // 그쪽 테스트가 못 박는다. 여기서 보는 것은 **받은 것을 어떻게 보이느냐** 다.
 //
 // **칸이 표식 둘에서 금액 두 줄로 바뀌었다**(사용자 레퍼런스 2026-08-23).
@@ -25,14 +25,14 @@ function 그리기(overrides: Partial<React.ComponentProps<typeof CalendarGrid>>
       todayDateKey="2026-08-23"
       amounts={amounts}
       onSelectDate={jest.fn()}
-      // 화면이 하는 일과 같다 — 기준선은 **밖에서** 온다.
+      // 화면이 하는 일과 같다. 기준선은 **밖에서** 온다.
       incomeMax={monthIncomeMax(팔월, amounts)}
       {...overrides}
     />,
   )
 }
 
-/** 칸 안에서 찾는다 — 같은 숫자가 앞뒤 달에도 있어 화면 전체로는 못 집는다(7/26 과 8/26). */
+/** 칸 안에서 찾는다. 같은 숫자가 앞뒤 달에도 있어 화면 전체로는 못 집는다(7/26 과 8/26). */
 function 칸(view: ReturnType<typeof renderAtom> extends Promise<infer T> ? T : never, dateKey: string) {
   return within(view.getByTestId(`calendar-day-${dateKey}`))
 }
@@ -77,7 +77,7 @@ describe('CalendarGrid — 격자', () => {
 })
 
 describe('CalendarGrid — 고른 날 동그라미는 접히면 안 된다 (안드로이드, 2026-09-02)', () => {
-  // 진짜 증상은 여기서 안 잡힌다 — 배경 없는 View 를 네이티브 뷰 없이 접는 것은 안드로이드
+  // 진짜 증상은 여기서 안 잡힌다. 배경 없는 View 를 네이티브 뷰 없이 접는 것은 안드로이드
   // 런타임이 하는 일이라 jest 에는 그 단계가 없다. 이 테스트가 막는 것은 **쓸모없어 보이는 프롭**
   // 으로 지워지는 것이다. 지우면 누른 날의 동그라미가 안드로이드에서 네모가 된다.
   // 근거는 `docs/foundation/design-system.md` 의 **안드로이드는 그릴 것이 없는 View 를 접는다**.
@@ -98,7 +98,7 @@ describe('CalendarGrid — 오늘과 고른 날', () => {
     expect(view.getByTestId('calendar-day-2026-08-12').props.accessibilityState.selected).toBe(false)
   })
 
-  // 오늘과 고른 날이 **같은 칸일 수 있다** — 두 표현이 겹치면 안 되므로 이름으로도 갈라 둔다.
+  // 오늘과 고른 날이 **같은 칸일 수 있다**. 두 표현이 겹치면 안 되므로 이름으로도 갈라 둔다.
   it('오늘 칸은 이름에 **오늘** 이 붙는다', async () => {
     const view = await 그리기({ selectedDateKey: '2026-08-11', todayDateKey: '2026-08-23' })
 
@@ -134,7 +134,7 @@ describe('CalendarGrid — 금액 두 줄', () => {
     )
   })
 
-  // (사용자 지정 2026-08-25) — **수익 줄도 0 이면 비운다.** 전에는 **0** 을
+  // (사용자 지정 2026-08-25). **수익 줄도 0 이면 비운다.** 전에는 **0** 을
   // 적었는데, 아무것도 안 한 날이 대부분이라 격자가 **0** 으로 뒤덮여 실제 숫자가 묻혔다.
   // 자리는 그대로 지킨다(아래 **두 줄은 값이 없어도** 테스트).
   it('값이 0 이면 두 줄 다 빈다', async () => {
@@ -177,7 +177,7 @@ describe('CalendarGrid — 금액 두 줄', () => {
     expect(수익줄.props.children).toBe(' ')
   })
 
-  // 두 줄이 늘 서 있어야 격자가 안 흔들린다 — 칸이 마흔둘이라 한 줄만 생겨도 화면이 통째로 튄다.
+  // 두 줄이 늘 서 있어야 격자가 안 흔들린다. 칸이 마흔둘이라 한 줄만 생겨도 화면이 통째로 튄다.
   it('두 줄은 값이 없어도 칸마다 자리를 차지한다', async () => {
     const view = await 그리기({ amounts: {} })
 
@@ -212,7 +212,7 @@ describe('CalendarGrid — 열지도', () => {
     expect(진하기('2026-08-12')).toBeGreaterThan(0)
   })
 
-  // (사용자 지정 2026-08-25) — 타일의 안쪽 여백이 **좌우에만** 있어서,
+  // (사용자 지정 2026-08-25). 타일의 안쪽 여백이 **좌우에만** 있어서,
   // 칠해진 날이 세로로 이어지면 한 덩어리로 붙고 둥근 모서리가 사라졌다. 네 방향을 맞춘다.
   it('열지도 타일은 네 방향으로 같은 만큼 물러난다', async () => {
     const view = await 그리기({
@@ -265,7 +265,7 @@ describe('CalendarGrid — 열지도', () => {
       },
     })
 
-    // 8월 최댓값이 8/11 이므로 그 칸이 최고 단계여야 한다 — 7/26 은 기준에 안 든다.
+    // 8월 최댓값이 8/11 이므로 그 칸이 최고 단계여야 한다. 7/26 은 기준에 안 든다.
     const 팔월십일 = Number(flattenStyle(view.getByTestId('calendar-heat-2026-08-11').props.style).opacity)
     const 빈날 = Number(flattenStyle(view.getByTestId('calendar-heat-2026-08-12').props.style).opacity)
 
@@ -313,7 +313,7 @@ describe('주간 격자', () => {
     expect(labels).toEqual(['일', '월', '화', '수', '목', '금', '토'])
   })
 
-  // 이 테스트가 의 전부다 — 이레만 받아도 진하기는 **그 달** 기준이다.
+  // 이 테스트가 의 전부다. 이레만 받아도 진하기는 **그 달** 기준이다.
   // 기준이 주 안으로 좁아지면 8/20 이 최대가 되어 새까맣게 칠해진다.
   it('열지도 기준을 받은 주에서 다시 내지 않는다', async () => {
     const amounts = {

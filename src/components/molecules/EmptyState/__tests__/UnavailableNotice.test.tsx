@@ -1,9 +1,9 @@
-// 웹판은 `EmptyState.test.tsx` 안에 함께 있었다. RN 에서는 파일을 나눈다 — 두 컴포넌트가 같은
+// 웹판은 `EmptyState.test.tsx` 안에 함께 있었다. RN 에서는 파일을 나눈다. 두 컴포넌트가 같은
 // 디렉터리에 있을 뿐 **일부러 디자인을 공유하지 않는 사이**라, 한 파일에 두면
 // 스냅샷 이름도 섞인다.
 //
 // **문구는 한 글자도 손대지 않았다.** 이 저장소는 에러·불가 문구를 전수 조사해 어미까지 통일한
-// 이력이 있다 — 여기서 다듬으면 그 작업이 조용히 되돌아간다.
+// 이력이 있다. 여기서 다듬으면 그 작업이 조용히 되돌아간다.
 import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
 import { UnavailableNotice } from '../UnavailableNotice'
 

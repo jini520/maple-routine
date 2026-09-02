@@ -1,6 +1,6 @@
 // 온보딩 캐릭터 선택 단계.
 //
-// **옛 파일을 갱신하지 않고 다시 썼다** — 계약이 뒤집혔다. 이 단계는 더 이상 **고른 계정 하나의
+// **옛 파일을 갱신하지 않고 다시 썼다**. 계약이 뒤집혔다. 이 단계는 더 이상 **고른 계정 하나의
 // 3열 그리드** 가 아니라 설정 하위 페이지와 **같은 두 층 본문**이고, 그래서 옛 케이스가 보던 것
 // (`emptyAction` 탈출구 · 그리드 토글 · 로스터 로딩 분기)은 여기서 검사할 대상이 아니게 됐다.
 // 같은 이름을 남겨 두면 **검사했다** 로 오독된다.
@@ -44,7 +44,7 @@ jest.mock('../../../storage/character-selection', () => ({
 jest.mock('../../../storage/schedule-probe-ledger', () => ({ getScheduleProbeLedger: jest.fn() }))
 
 // : `toScheduleSyncError` 는 실물을 쓴다(문구가 원인에서 나온다). `...requireActual` 을
-// 통째로 쓰면 순환 참조가 아직 구성 중인 모듈을 `undefined` 로 만난다 — 부분 모킹이 그 처방이다.
+// 통째로 쓰면 순환 참조가 아직 구성 중인 모듈을 `undefined` 로 만난다. 부분 모킹이 그 처방이다.
 jest.mock('../../../features/schedule-sync/schedule-sync', () => ({
   toScheduleSyncError: jest.requireActual<typeof import('../../../features/schedule-sync/errors')>(
     '../../../features/schedule-sync/errors',
@@ -54,8 +54,8 @@ jest.mock('../../../features/schedule-sync/schedule-sync', () => ({
 
 jest.mock('../../../features/content-scheduler/store', () => ({ useContentSchedulerStore: jest.fn() }))
 
-// : 429 는 키 재입력 진입점으로 간다(#176 하드 잠금의 유일한 출구).
-// **`useApiKeyNotice` 는 실물을 쓴다** — 이 파일이 보려는 것이 "무엇을 그 훅에 넘기는가"라,
+// : 429 는 키 재입력 진입점으로 간다(#176 하드 잠금의 출구는 이것뿐이다).
+// **`useApiKeyNotice` 는 실물을 쓴다**. 이 파일이 보려는 것이 "무엇을 그 훅에 넘기는가"라,
 // 훅을 목으로 세우면 검사 대상이 사라진다. 그래서 그 끝인 스토어만 세운다.
 jest.mock('../../../features/onboarding/store', () => ({
   useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
@@ -180,7 +180,7 @@ describe('ContentCharacterStep — 머리와 CTA', () => {
     expect(view.getByText('계속하기')).toBeTruthy()
   })
 
-  // 설정 하위 페이지가 그리는 것과 **같은 본문**이다 — 갈리는 것은 위 케이스의 둘뿐이라,
+  // 설정 하위 페이지가 그리는 것과 **같은 본문**이다. 갈리는 것은 위 케이스의 둘뿐이라,
   // 여기서는 그것이 정말 그 본문인지(사본이 아닌지)만 확인한다.
   it('설정 화면과 같은 두 층 본문을 그린다 — 드롭다운이 아래 층의 머리다', async () => {
     const { view } = await renderStep()
@@ -223,19 +223,19 @@ describe('ContentCharacterStep — 머리와 CTA', () => {
   })
 })
 
-//  (사용자 지정 2026-08-18) — 설정 하위 페이지의 `저장`과 **같은 액션 바**다.
+//  (사용자 지정 2026-08-18). 설정 하위 페이지의 `저장`과 **같은 액션 바**다.
 // 본문이 그 화면과 같은 두 층이라(결정 1) 캐릭터가 많으면 본문 끝의 CTA 는 화면 밖에 있게 된다.
 describe('ContentCharacterStep — `계속하기`는 하단에 고정된다', () => {
   it('CTA 는 스크롤 뷰 **밖**의 고정 바 안에 선다', async () => {
     const { view } = await renderStep()
 
     expect(within(view.getByTestId('onboarding-action-bar')).getByText('계속하기')).toBeTruthy()
-    // 스크롤 뷰 안에 남아 있으면 **어디까지 굴렸든 지금 누른다** 가 깨진다 — 그것이 이 정정이
+    // 스크롤 뷰 안에 남아 있으면 **어디까지 굴렸든 지금 누른다** 가 깨진다. 그것이 이 정정이
     // 옮긴 자리다.
     expect(within(view.getByTestId('onboarding-scroll')).queryByText('계속하기')).toBeNull()
   })
 
-  // 바 높이를 상수로 적지 않는다(결정 1) — 잰 값만큼 비워야 글자 크기·안전영역이 다른 기기에서도
+  // 바 높이를 상수로 적지 않는다(결정 1). 잰 값만큼 비워야 글자 크기·안전영역이 다른 기기에서도
   // 마지막 행이 바 뒤로 숨지 않는다.
   it('잰 바 높이만큼 콘텐츠 아래를 비운다', async () => {
     const { view } = await renderStep()
@@ -261,7 +261,7 @@ describe('ContentCharacterStep — `계속하기`는 하단에 고정된다', ()
 })
 
 describe('ContentCharacterStep — 제출 payload', () => {
-  // 고른 순서가 곧 저장 순서다 — 새로 고른 것은 배열 끝에 붙는다.
+  // 고른 순서가 곧 저장 순서다. 새로 고른 것은 배열 끝에 붙는다.
   it('고른 순서 그대로 ocid 를 넘긴다', async () => {
     const { view, onSubmit } = await renderStep()
 
@@ -272,7 +272,7 @@ describe('ContentCharacterStep — 제출 payload', () => {
     expect(onSubmit).toHaveBeenCalledWith(['a2', 'a1'], null)
   })
 
-  // 본문이 별을 그리므로 이 단계에서도 대표를 고를 수 있다 — 안 실어 보내면 그 선택이
+  // 본문이 별을 그리므로 이 단계에서도 대표를 고를 수 있다. 안 실어 보내면 그 선택이
   // 조용히 사라진다.
   it('고른 대표 캐릭터를 목록과 함께 넘긴다', async () => {
     const { view, onSubmit } = await renderStep()
@@ -305,8 +305,8 @@ describe('ContentCharacterStep — 키 재입력 진입점은 429 만 탄다', (
 
   //  "구현하며 정정한 것" 5 결정 2: **미배선이라는 선택**이다. 이 자리의
   // 401 은 "방금 넣은 키가 나쁘다"는 뜻이라 폼 자체의 실패로 남고, 화면의 `다시 시도`가 처방이다.
-  // 설정 하위 페이지는 같은 401 을 진입점으로 넘긴다 — 두 화면이 갈리는 유일한 자리다.
-  // 그래서 문구도 갈린다 — 화면이 안 옮겨가는데 **키 입력 화면으로 이동합니다**(피커 어휘)를 쓰면
+  // 설정 하위 페이지는 같은 401 을 진입점으로 넘긴다. 두 화면은 여기서만 갈린다.
+  // 그래서 문구도 갈린다. 화면이 안 옮겨가는데 **키 입력 화면으로 이동합니다**(피커 어휘)를 쓰면
   // 거짓인 데다 액션까지 없어 401 이 하드 잠금이 된다.
   it('401 은 넘기지 않는다 — 폼 자체의 실패로 남고 `다시 시도`가 그 처방이다', async () => {
     rosterFailure = new NexonAuthError('401')

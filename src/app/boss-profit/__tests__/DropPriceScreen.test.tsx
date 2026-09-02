@@ -1,10 +1,10 @@
 // 가격 기록 화면 — 웹판(251줄)의 명세를 읽어 다시 쓴 것.
 //
 // 갈린 것 셋
-// ① **라우터가 없다** — 뒤로는 `goBack` 이 불렸는가로 본다.
+// ① **라우터가 없다**. 뒤로는 `goBack` 이 불렸는가로 본다.
 // ② 키패드 **내부** 계약은 `DropPricePad.test.tsx` 가 갖는다(웹은 화면 테스트에 섞여 있었다).
 //    여기서는 *"행을 누르면 그 기록을 들고 열리는가 · 저장이 스토어까지 가는가"* 만 본다.
-// ③ ** 표시 계약을 케이스로 못박았다** — 웹에 없던 것이다. 미입력 자리에 `0` 이
+// ③ ** 표시 계약을 케이스로 못박았다**. 웹에 없던 것이다. 미입력 자리에 `0` 이
 //    없는지, `priceMeso` 는 있고 `priceState` 가 없는 기록(가장 강한 반례)이 여전히 미입력으로
 //    읽히는지, 그 기록이 합계를 한 푼도 안 움직이는지.
 import type { ReactNode } from 'react'
@@ -23,9 +23,9 @@ jest.mock('@gorhom/bottom-sheet', () => {
       return React.createElement(ReactNative.View, props)
     }),
     BottomSheetScrollView: (props: Record<string, unknown>) => React.createElement(ReactNative.View, props),
-    // 시트 밖과 같게 둔다 — 아톰이 이 값으로 **시트 안인가** 를 묻는다.
+    // 시트 밖과 같게 둔다. 아톰이 이 값으로 **시트 안인가** 를 묻는다.
     // 목이 시트를 평범한 `View` 로 바꾸므로 여기서도 문맥이 없는 것이 사실이고, 그래서
-    // 아래 입력은 안 그려진다 — 그래도 **있어야 한다**: `lib/nativewind-interop` 이 모듈을
+    // 아래 입력은 안 그려진다. 그래도 **있어야 한다**: `lib/nativewind-interop` 이 모듈을
     // 읽는 순간 이것을 등록하므로, 없으면 스위트가 뜨기도 전에 죽는다.
     useBottomSheetInternal: () => null,
     BottomSheetTextInput: (props: Record<string, unknown>) =>
@@ -138,7 +138,7 @@ describe('DropPriceScreen — 기간을 이어받는다', () => {
   })
 
   // 처음엔 주 단위로만 열었는데, 그러면 **월간 보스 드롭에 닿을 길이 없었다**(사용자 보고
-  // 2026-08-10) — 그 기록의 `period_key` 는 `YYYY-MM` 이라 어느 주차 조회에도 안 걸린다.
+  // 2026-08-10). 그 기록의 `period_key` 는 `YYYY-MM` 이라 어느 주차 조회에도 안 걸린다.
   it('월간 탭에서 들어오면 그 달을 연다', async () => {
     mockStores({ tab: 'monthly', periodKey: '2026-08' })
     await renderOverlay(<DropPriceScreen />)
@@ -189,7 +189,7 @@ describe('DropPriceScreen — 값 매기기', () => {
     await act(async () => {
       fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크 가격 입력'))
     })
-    // 단위 칩으로 값을 만든다 — 자릿수를 세지 않게 하는 것이 이 칩의 존재 이유다.
+    // 단위 칩으로 값을 만든다. 자릿수를 세지 않게 하는 것이 이 칩의 존재 이유다.
     await act(async () => {
       fireEvent.press(getByText('+1억'))
     })
@@ -253,12 +253,12 @@ describe('DropPriceScreen — 값 매기기', () => {
   })
 })
 
-// **미입력은 0원이 아니다** — 이 화면이 그 구분을 가장 직접적으로 보여주는 자리다.
+// **미입력은 0원이 아니다**. 이 화면이 그 구분을 가장 직접적으로 보여주는 자리다.
 describe('DropPriceScreen — 미입력 ≠ 0원', () => {
   it('미입력 행의 금액 자리에는 0 이 아니라 "입력" 이 선다', async () => {
     const { getByLabelText } = await renderOverlay(<DropPriceScreen />)
 
-    // **행 안으로 좁혀 묻는다** — 합계 두 자리(캐릭터 머리·요약 헤드라인)는 `0 메소` 가 맞다.
+    // **행 안으로 좁혀 묻는다**. 합계 두 자리(캐릭터 머리·요약 헤드라인)는 `0 메소` 가 맞다.
     // 아무것도 안 매겼으니 더한 값이 0인 것이고, 그것과 *"이 기록의 값을 모른다"* 는 다른 사실이다.
     const row = within(getByLabelText('루즈 컨트롤 머신 마크 가격 입력'))
     expect(row.getByText('입력')).toBeTruthy()
@@ -276,7 +276,7 @@ describe('DropPriceScreen — 미입력 ≠ 0원', () => {
     expect(within(getByLabelText('루즈 컨트롤 머신 마크 가격 입력')).getByText('입력')).toBeTruthy()
     expect(queryByText('90억')).toBeNull()
     expect(queryByText(/9,000,000,000/)).toBeNull()
-    // 캐릭터 합계와 요약 헤드라인 둘 다 0 이다 — 값을 매기지 않았으므로 더할 것이 없다.
+    // 캐릭터 합계와 요약 헤드라인 둘 다 0 이다. 값을 매기지 않았으므로 더할 것이 없다.
     expect(getAllByText('0 메소')).toHaveLength(2)
   })
 
@@ -416,7 +416,7 @@ describe('DropPriceScreen — 순차 입력', () => {
 
     expect(excludePrice).not.toHaveBeenCalled()
     expect(savePrice).not.toHaveBeenCalled()
-    // 다음 건으로 넘어갔다 — 목록에도 같은 이름이 있으므로 키패드 안으로 좁힌다.
+    // 다음 건으로 넘어갔다. 목록에도 같은 이름이 있으므로 키패드 안으로 좁힌다.
     expect(within(getByTestId('drop-price-pad')).getByText('가디언 엔젤 링')).toBeTruthy()
     // 마지막 건이라 진행 표기가 사라지고 버튼도 `다음` 이 아니라 `저장` 이다(웹과 같은 계산).
     expect(within(getByTestId('drop-price-pad')).getByText('저장')).toBeTruthy()

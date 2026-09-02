@@ -15,7 +15,7 @@
  *
  * ## 잃는 것이 없다
  *
- * 헤더 버튼은 **자기 표시를 이미 갖고 있다** — 아이콘이 돌고(`SPIN_ANIMATION`) 옆에 조회 중...
+ * 헤더 버튼은 **자기 표시를 이미 갖고 있다**. 아이콘이 돌고(`SPIN_ANIMATION`) 옆에 조회 중...
  * 이 뜬다. 그러니 플랫폼 인디케이터를 당김 전용으로 좁혀도 그 버튼의 되먹임은
  * 한 픽셀도 안 줄어든다. 자동 조회는 원래 조용해야 하는 것이라 표시가 없는 것이 맞다.
  *
@@ -30,7 +30,7 @@
 import { useState } from 'react'
 
 export interface PullRefresh {
-  /** `RefreshControl` 의 `refreshing` — **당긴 회차 동안만** 참이다. */
+  /** `RefreshControl` 의 `refreshing`. **당긴 회차 동안만** 참이다. */
   refreshing: boolean
   /** `RefreshControl` 의 `onRefresh`. */
   onRefresh: () => void
@@ -50,13 +50,13 @@ export function usePullRefresh(
     onRefresh() {
       setRefreshing(true)
       void run()
-        // **`finally` 다.** 실패해도 닫아야 한다 — 안 닫으면 실패 경로에서 **상단이 빈 채로
+        // **`finally` 다.** 실패해도 닫아야 한다. 안 닫으면 실패 경로에서 **상단이 빈 채로
         // 멈춘다** 가 그대로 재현된다.
         .finally(() => {
           setRefreshing(false)
         })
         // 그리고 **여기서 삼킨다.** `finally` 는 원래 사유로 다시 거부하므로 받지 않으면 처리되지
-        // 않은 거부가 된다. 실패를 **말하는** 것은 이 훅이 아니라 화면이다 — 스토어가 `error` 를
+        // 않은 거부가 된다. 실패를 **말하는** 것은 이 훅이 아니라 화면이다. 스토어가 `error` 를
         // 세우고 토스트가 문구를 낸다. 여기서 다시 말하면 같은 실패가 두 번 뜬다.
         .catch(() => undefined)
     },

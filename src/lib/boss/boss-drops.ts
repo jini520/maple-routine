@@ -95,7 +95,7 @@ export function getBossFixedDrops(boss: string): FixedDropGroup[] {
 }
 
 // 이 보스의 드롭 테이블에 표시 가능한 드롭(고정·장비·소비)이 있는 난이도를 정규 순서로 반환한다.
-// 드롭 시트의 난이도 토글 후보 목록에 쓴다 — 데이터 없는 난이도는 제외한다(추정 금지).
+// 드롭 시트의 난이도 토글 후보 목록에 쓴다. 데이터 없는 난이도는 제외한다(추정 금지).
 export function getBossDifficulties(boss: string): BossDifficulty[] {
   const present = new Set<BossDifficulty>()
   for (const entry of entriesForBoss(boss)) {
@@ -119,7 +119,7 @@ export function getObtainableTileNames(boss: string, difficulty: BossDifficulty)
 }
 
 // 드롭 히스토리는 이 판정을 기록 한 건마다 한다. getObtainableTileNames는 매
-// 호출마다 그 보스의 전 난이도 후보를 다시 순회하므로 난이도별 결과를 캐시한다 — 입력이 정적
+// 호출마다 그 보스의 전 난이도 후보를 다시 순회하므로 난이도별 결과를 캐시한다. 입력이 정적
 // JSON뿐이라 결과가 바뀔 일이 없다.
 const obtainableTileNamesCache = new Map<string, Set<string>>()
 
@@ -198,11 +198,11 @@ function compareStoredDrops(a: StoredDropRecord, b: StoredDropRecord): number {
  * 남아 영구 고아가 된다(화면·배지·환산 가치에서 사라지고 DB에만 쌓인다).
  *
  * - `records` 는 **같은 `(ocid, boss, period_key)`** 의 전 난이도 드롭이어야 한다(호출 측이 걸러 넘긴다).
- * - 확정 난이도에서 획득 불가한 항목은 **되살리지 않는다** — 근거는 사용자 판단이다: 그 난이도에서
+ * - 확정 난이도에서 획득 불가한 항목은 **되살리지 않는다**. 근거는 사용자 판단이다: 그 난이도에서
  *   나올 수 없는 아이템은 거짓 기록이고, 표시하는 것보다 삭제가 안전하다. 잘못된 환산 가치가
  *   계산에 섞이는 것이 기록 한 줄을 잃는 것보다 나쁘다.
  * - 확정 난이도에 **이미 드롭이 있으면 그 뒤에 이어 붙인다**. 같은 아이템이 두 번 들어갈 수 있지만
- *   실제로 두 개를 먹은 경우와 구분할 수 없어 임의로 합치지 않는다 — 고아를 안 남기려면 이 길뿐이다.
+ *   실제로 두 개를 먹은 경우와 구분할 수 없어 임의로 합치지 않는다. 고아를 안 남기려면 이 길뿐이다.
  * - 옛 키가 없으면 `null`(할 일 없음)이라 매번 호출해도 안전하다(멱등).
  */
 export function planConfirmedDifficultyDropMigration(
@@ -215,7 +215,7 @@ export function planConfirmedDifficultyDropMigration(
     return null
   }
 
-  // SQLite는 `ORDER BY drop_index` 만 보장하므로 난이도가 섞이면 순서가 미정이다 — 정규 난이도
+  // SQLite는 `ORDER BY drop_index` 만 보장하므로 난이도가 섞이면 순서가 미정이다. 정규 난이도
   // 순서로 정렬해 이관 결과가 실행마다 같게 한다.
   const migrated = pruneUnobtainableDrops(
     boss,

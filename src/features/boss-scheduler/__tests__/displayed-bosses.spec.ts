@@ -1,4 +1,4 @@
-// 지금까지 이 판정은 `BossScreen` 을 렌더해야만 검증됐다(지역 함수였다) — 화면으로 보면 **카드가
+// 지금까지 이 판정은 `BossScreen` 을 렌더해야만 검증됐다(지역 함수였다). 화면으로 보면 **카드가
 // 몇 장인가** 까지만 알 수 있고 **어느 규칙이 그 장 수를 만들었는가** 는 못 본다. 꺼낸 김에 입출력으로
 // 직접 못 박는다.
 
@@ -40,7 +40,7 @@ function character(overrides: Partial<BossCharacterView> = {}): BossCharacterVie
 }
 
 /**
- * 목록 원소는 `MatchedBoss` 가 아니라 `DisplayedBoss` 다 — 아래 동등 비교는
+ * 목록 원소는 `MatchedBoss` 가 아니라 `DisplayedBoss` 다. 아래 동등 비교는
  * 그 필드까지 함께 본다. 기본값이 `false` 인 것은 이 파일 대부분의 상황이 한도 전 이라서다.
  */
 function shown(matched: MatchedBoss, isWeeklyLimitClosed = false): DisplayedBoss {
@@ -74,7 +74,7 @@ describe('displayedBosses — 자동 모드', () => {
     expect(result.map((entry) => entry.apiName)).toEqual(['스우', '루시드'])
   })
 
-  // 같은 보스를 여러 난이도로 받아도 등록된 난이도가 있으면 그 행만 남는다 — 카드가 겹치지 않게.
+  // 같은 보스를 여러 난이도로 받아도 등록된 난이도가 있으면 그 행만 남는다. 카드가 겹치지 않게.
   it('같은 보스의 등록 난이도가 있으면 완료된 다른 난이도는 카드로 서지 않는다', () => {
     const registeredHard = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true })
     const completeNormal = boss({
@@ -104,7 +104,7 @@ describe('displayedBosses — 자동 모드', () => {
     expect(displayedBosses(view, 'monthly', 'auto', null)).toEqual([shown(monthly)])
   })
 
-  // 자동 모드는 게임 등록이 진실이라 멤버십을 아예 안 본다 — 모드 전환 직후 남아 있는 수동 목록이
+  // 자동 모드는 게임 등록이 진실이라 멤버십을 아예 안 본다. 모드 전환 직후 남아 있는 수동 목록이
   // 자동 화면에 새지 않는다.
   it('멤버십이 있어도 자동 모드에서는 그것을 읽지 않는다', () => {
     const registered = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true })
@@ -154,7 +154,7 @@ describe('displayedBosses — 순서는 weekly-bosses.json 정규 순서다', ()
   })
 
   // 같은 보스를 여러 난이도로 완료할 수는 없지만(게임 룰), 미등록 완료가 여러 난이도로 오는
-  // 응답이 실재한다 — 그때도 자리가 결정적이어야 한다(의 2차 키).
+  // 응답이 실재한다. 그때도 자리가 결정적이어야 한다(의 2차 키).
   it('같은 보스의 여러 난이도는 난이도 순서로 선다', () => {
     const 하드 = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isComplete: true, ownComplete: true })
     const 노멀 = boss({ name: '스우', difficulty: '노멀', cycle: 'weekly', isComplete: true, ownComplete: true })
@@ -164,7 +164,7 @@ describe('displayedBosses — 순서는 weekly-bosses.json 정규 순서다', ()
     expect(result.map((entry) => entry.difficulty)).toEqual(['노멀', '하드'])
   })
 
-  // 참조표에 없는 보스는 이름을 못 바꾼 채 맨 뒤에 선다 — 버리지 않는다.
+  // 참조표에 없는 보스는 이름을 못 바꾼 채 맨 뒤에 선다. 버리지 않는다.
   it('참조표에 없는 보스는 버리지 않고 맨 뒤에 둔다', () => {
     const 미지 = boss({ name: '알 수 없는 보스', difficulty: '하드', cycle: 'weekly', isRegistered: true })
     const 자쿰 = boss({ name: '자쿰', difficulty: '카오스', cycle: 'weekly', isRegistered: true })
@@ -174,7 +174,7 @@ describe('displayedBosses — 순서는 weekly-bosses.json 정규 순서다', ()
     expect(result.map((entry) => entry.apiName)).toEqual(['자쿰', '알 수 없는 보스'])
   })
 
-  // 수동 경로는 `mergeManualBossList` 가 이미 같은 순서로 내므로 멱등이다 — 그래도 계약을
+  // 수동 경로는 `mergeManualBossList` 가 이미 같은 순서로 내므로 멱등이다. 그래도 계약을
   // 여기서 못 박는다(정렬 자리가 모드 분기 안이 아니라 함수 끝인 것이 이다).
   it('수동 모드도 같은 순서다', () => {
     const result = displayedBosses(character(), 'weekly', 'manual', {
@@ -285,7 +285,7 @@ describe('displayedBosses — 수동 모드', () => {
 })
 
 // 탭이 걷히면서 **어느 순서로 서는가** 가 화면의 판단이 아니라 이 모듈의 판단이 된다(
-// 결정 1) — 화면이 다시 해석하면 today 가 같은 목록을 다른 순서로 읽을 길이 열린다.
+// 결정 1). 화면이 다시 해석하면 today 가 같은 목록을 다른 순서로 읽을 길이 열린다.
 describe('displayedBossSections — 통합 목록의 순서', () => {
   it('월간이 먼저, 그다음 주간이다', () => {
     const weekly = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true })
@@ -303,7 +303,7 @@ describe('displayedBossSections — 통합 목록의 순서', () => {
     ])
   })
 
-  // 빈 무리를 여기서 걷지 않는 것이 결정이다 — 솔로/파티 필터는 화면이 걸고, **비었다** 는 판정은
+  // 빈 무리를 여기서 걷지 않는 것이 결정이다. 솔로/파티 필터는 화면이 걸고, **비었다** 는 판정은
   // 그 뒤에야 성립한다. 여기서 미리 걷으면 화면이 필터 후 다시 걷어야 한다.
   it('무리가 비어도 자리는 남긴다 — 걷는 것은 화면의 일이다', () => {
     const weekly = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true })
@@ -314,7 +314,7 @@ describe('displayedBossSections — 통합 목록의 순서', () => {
     ])
   })
 
-  // 무리 안의 규칙은 한 글자도 안 바뀐다 — 같은 함수를 부른다.
+  // 무리 안의 규칙은 한 글자도 안 바뀐다. 같은 함수를 부른다.
   it('무리 안은 `displayedBosses` 와 같은 목록이다 — 수동 모드도', () => {
     const tracked = { 'ocid-1': [bossItem('스우', '하드'), bossItem('검은마법사', '하드')] }
     const view = character()
@@ -326,7 +326,7 @@ describe('displayedBossSections — 통합 목록의 순서', () => {
     expect(sections[1]?.bosses).toEqual(displayedBosses(view, 'weekly', 'manual', tracked))
   })
 
-  // 완료는 자리를 안 바꾼다 — 정렬 규칙을 새로 만들지 않는 것이 그 결정의 값이다.
+  // 완료는 자리를 안 바꾼다. 정렬 규칙을 새로 만들지 않는 것이 그 결정의 값이다.
   it('완료된 검마도 여전히 위에 선다', () => {
     const weekly = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true })
     const doneMonthly = boss({
@@ -349,10 +349,10 @@ describe('displayedBossSections — 통합 목록의 순서', () => {
 })
 
 // 주간 12마리를 채우면 남은 미처치 주간 보스는 **마감** 이다. 판정이 여기 있는
-// 이유는 today `남은 스케줄`이 같은 함수를 부르기 때문이다 — 화면이 다시
+// 이유는 today `남은 스케줄`이 같은 함수를 부르기 때문이다. 화면이 다시
 // 판정하면 그 등식이 깨진다.
 describe('displayedBosses — 주간 한도 마감', () => {
-  // 참조표에서 앞에서부터 뽑는다 — 이름을 손으로 적지 않는다.
+  // 참조표에서 앞에서부터 뽑는다. 이름을 손으로 적지 않는다.
   const WEEKLY_NAMES = (weeklyBossesData.weekly as { boss: string }[]).map((entry) => entry.boss)
 
   /** 끝에서부터 한도만큼 잡아 둔 주간 보스들 — 아래 미처치 보스와 겹치지 않게 뒤에서 뽑는다. */
@@ -395,7 +395,7 @@ describe('displayedBosses — 주간 한도 마감', () => {
     expect(entry?.isWeeklyLimitClosed).toBe(false)
   })
 
-  // 마감은 완료를 대체하지 않는다 — 잡은 것은 잡은 것이다.
+  // 마감은 완료를 대체하지 않는다. 잡은 것은 잡은 것이다.
   it('이미 처치한 보스는 마감이 아니다', () => {
     const cleared = clearedBosses(WEEKLY_BOSS_CLEAR_LIMIT)
     const view = character({ weeklyBosses: cleared })

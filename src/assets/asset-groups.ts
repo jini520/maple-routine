@@ -6,7 +6,7 @@
  * (`generated/__tests__/asset-manifest.test.ts`). 표가 두 벌이면 생성기와 검사기가 서로 다른
  * 것을 보게 되어 **검사가 통과하는데 목록이 틀린** 상태가 생긴다.
  *
- * 스크립트는 `.mjs` 인데 이 파일은 `.ts` 다 — Node 24 의 내장 타입 스트리핑으로 그대로 import
+ * 스크립트는 `.mjs` 인데 이 파일은 `.ts` 다. Node 24 의 내장 타입 스트리핑으로 그대로 import
  * 한다(`scripts/publish-live-update.mjs` 가 `data/release-notes.ts` 를 읽는 것과 같은 방식,
  * ). 그래서 **여기에는 값과 타입만 둔다**(런타임 의존 0개).
  *
@@ -28,8 +28,8 @@ export interface AssetGroup {
   /** 생성물이 export 하는 이름 */
   exportName: string
   /**
-   * `record` — 키 하나에 에셋 하나.
-   * `frames` — 디렉터리 하나가 키이고 값은 그 안의 프레임 배열(숫자 순 정렬).
+   * `record`. 키 하나에 에셋 하나.
+   * `frames`. 디렉터리 하나가 키이고 값은 그 안의 프레임 배열(숫자 순 정렬).
    */
   kind: 'record' | 'frames'
   key: AssetKeyRule
@@ -37,7 +37,7 @@ export interface AssetGroup {
   dirs: string[]
   /** 받아들일 확장자(점 없이). 목록에 없는 파일은 무시한다. */
   extensions: string[]
-  /** 생성물 머리에 적히는 한 줄 — 이 목록이 무엇에 쓰이는지 */
+  /** 생성물 머리에 적히는 한 줄. 이 목록이 무엇에 쓰이는지 */
   purpose: string
 }
 

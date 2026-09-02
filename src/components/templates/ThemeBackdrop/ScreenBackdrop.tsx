@@ -6,7 +6,7 @@
 // 되돌리면 겹침은 사라지지만 벽지도 함께 가려지므로, 가리는 그 화면이 벽지를 **자기 안에** 들고
 // 있어야 한다.
 //
-// 벽지는 `ScreenScroll` 의 **마스크 밖**이다 — 안이면 안전영역 페이드가 벽지까지 깎아 화면 끝에서
+// 벽지는 `ScreenScroll` 의 **마스크 밖**이다. 안이면 안전영역 페이드가 벽지까지 깎아 화면 끝에서
 // 벽지가 사라진다(이 깎으려던 것은 콘텐츠뿐이다).
 import type { ReactNode } from 'react'
 import { View } from 'react-native'
@@ -15,7 +15,7 @@ import { SCREENS_CARRY_BACKDROP } from '../../../theme/screen-backdrop-policy'
 import { ThemeBackdrop } from './ThemeBackdrop'
 
 export function ScreenBackdrop({ children }: { children: ReactNode }): React.JSX.Element {
-  // iOS 는 셸의 벽지 한 장을 투명한 화면 너머로 그대로 본다 — 뷰를 늘리지 않는다.
+  // iOS 는 셸의 벽지 한 장을 투명한 화면 너머로 그대로 본다. 뷰를 늘리지 않는다.
   if (!SCREENS_CARRY_BACKDROP) return <>{children}</>
 
   return (

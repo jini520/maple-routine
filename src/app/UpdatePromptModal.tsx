@@ -12,7 +12,7 @@
 //  가 **모듈 최상위**에서 `import.meta.env.VITE_LIVE_UPDATE_CHANNEL` 을 읽는데(빌드
 //    시점 채널 분리), Metro·jest 에서 `import.meta.env` 는 `undefined` 라 그 자리에서
 //    `TypeError: Cannot read properties of undefined` 로 끝난다. `import.meta.glob` 과 **같은 종류의
-//    벽**이고(`core-shims.js`), 이쪽은 아직 치환 대상이 아니다 — 대체 구현이 곧 "가짜 OTA 스토어"라
+//    벽**이고(`core-shims.js`), 이쪽은 아직 치환 대상이 아니다. 대체 구현이 곧 "가짜 OTA 스토어"라
 //    프로토콜을 정하기 전에 만들면 그 결정을 코드가 몰래 대신 내린다.
 //
 // 그래서 **스토어를 부르지 않고 값을 프롭으로 받는다.** 타입만은 core 에서 가져오므로
@@ -30,7 +30,7 @@
 //  (— "줄이면 모달 전체에 함께 적용된다")은 상수로 유지된다.
 // ④ `PRIMARY_BTN` 의 `disabled:opacity-50` 은 **뺐다.** 어느 분기도 `disabled` 를 주지 않는 데다,
 //    NativeWind 의 `disabled:` 는 CSS 의사 클래스라 `Pressable` 의 `disabled` 프롭과 이어져 있지
-//    않다(step 4 가 `PartySizeStepper` 에서 겪은 자리) — 남기면 "있는데 안 도는 코드"다.
+//    않다(step 4 가 `PartySizeStepper` 에서 겪은 자리). 남기면 "있는데 안 도는 코드"다.
 // ⑤ `transition-transform rotate-180` (`자세히 보기` 화살표) → `rotate-180` 만. NativeWind 의
 //    `transition-*` 은 Reanimated 배선을 타는데, 여기서 굴릴 것은 회전 하나뿐이라 step 7 이 정한
 //    두 갈래(`View` 스타일 = CSS API / SVG 속성 = `useAnimatedProps`) 중 어느 쪽도 아직 필요 없다.
@@ -64,7 +64,7 @@ const MODAL_STATUSES: ReadonlySet<LiveUpdateStatus> = new Set([
   'ready-to-apply',
   'store-required',
   // ADR-065 결정 2: 사용자가 시작한 다운로드의 실패만 모달로 알린다. 매니페스트 조회 실패
-  // ('check-error')는 자동 확인일 수 있어 여기 넣지 않는다 — 설정 상태 행에만 남는다.
+  // ('check-error')는 자동 확인일 수 있어 여기 넣지 않는다. 설정 상태 행에만 남는다.
   'download-error',
   // ADR-117 결정 7: 둘 다 사용자가 [지금 적용]을 눌러 시작한 흐름이라 위 분류를 그대로 따른다.
   'applying',
@@ -73,7 +73,7 @@ const MODAL_STATUSES: ReadonlySet<LiveUpdateStatus> = new Set([
   'updated',
 ])
 
-/** 이 모달이 **읽는** 것 — core 스토어에서 그대로 뽑아 두 벌이 되지 않게 한다. */
+/** 이 모달이 **읽는** 것. core 스토어에서 그대로 뽑아 두 벌이 되지 않게 한다. */
 export type UpdatePromptState = Pick<
   LiveUpdateStore,
   | 'status'
@@ -109,7 +109,7 @@ function formatSize(bytes: number): string {
 const PRIMARY_BOX = 'w-full items-center'
 const PRIMARY_TEXT = 'text-sm'
 // ADR-065 결정 2: 부 동작이 주 동작과 같은 크기(px-5 py-2.5 text-sm)라 비중이 너무 컸다.
-// 이 상수를 네 분기가 공유하므로 줄이면 모달 전체에 함께 적용된다 — 한 모달 안에서 부 동작
+// 이 상수를 네 분기가 공유하므로 줄이면 모달 전체에 함께 적용된다. 한 모달 안에서 부 동작
 // 크기가 갈리지 않게 하려는 의도다.
 const GHOST_BOX = 'w-full items-center px-4 py-1.5'
 const GHOST_TEXT = 'text-xs'
@@ -122,7 +122,7 @@ const TONE_CLASS: Record<IconTone, string> = {
   error: 'bg-error-tint',
 }
 // 웹은 배경과 글자색을 한 문자열에 담았지만 RN 은 아이콘 색이 상속되지 않아 갈라야 한다
-// (`Svg` 의 `color` 프롭으로 내려간다 — step 3 의 `cssInterop` 배선).
+// (`Svg` 의 `color` 프롭으로 내려간다. step 3 의 `cssInterop` 배선).
 const TONE_INK_CLASS: Record<IconTone, string> = {
   primary: 'text-primary-ink',
   secondary: 'text-secondary-ink',
@@ -152,7 +152,7 @@ function VersionBadge({ version }: { version: string | null }): React.JSX.Elemen
   )
 }
 
-/** 배지 한둘을 가로 가운데에 놓는 줄 — 웹의 `flex ... justify-center gap-1.5` 자리. */
+/** 배지 한둘을 가로 가운데에 놓는 줄. 웹의 `flex ... justify-center gap-1.5` 자리. */
 function BadgeRow({ children }: { children: React.ReactNode }): React.JSX.Element {
   return <View className="flex-row flex-wrap items-center justify-center gap-1.5">{children}</View>
 }
@@ -167,7 +167,7 @@ function InfoNote({ children }: { children: React.ReactNode }): React.JSX.Elemen
   )
 }
 
-// 받기 전 모달의 `자세히 보기` — 원격에서 온 핵심 목록을 **모달 안에서** 펼친다(ADR-126 결정 1).
+// 받기 전 모달의 `자세히 보기`. 원격에서 온 핵심 목록을 **모달 안에서** 펼친다(ADR-126 결정 1).
 // 화면을 옮기지 않는 이유는 모달을 닫아야 하고 돌아왔을 때 다시 띄우는 처리가 필요한데, 정작 그
 // 화면(개발 노트)에는 아직 받지 않은 이 버전이 **없기** 때문이다.
 function HighlightsDisclosure({ highlights }: { highlights: string[] }): React.JSX.Element {
@@ -238,7 +238,7 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
   const isInProgress = status === 'downloading' || status === 'applying'
   const sizeText = state.availableSize !== null ? formatSize(state.availableSize) : ''
 
-  // 받은 뒤의 `자세히 보기` — 여기서는 펼치지 않고 **전부 갖고 있는 화면으로 보낸다**(결정 1).
+  // 받은 뒤의 `자세히 보기`. 여기서는 펼치지 않고 **전부 갖고 있는 화면으로 보낸다**(결정 1).
   // 닫지 않으면 돌아왔을 때 같은 안내가 그대로 덮여 있다.
   const openReleaseNotes = (): void => {
     actions.dismiss()
@@ -247,7 +247,7 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
 
   return (
     // 진행 중에는 배경 탭으로 닫히지 않게 한다(진행 중 취소 방지). 폭은 살짝 좁게(max-w-xs).
-    // 입력이 없어 키보드를 띄우지 않으므로 중앙에 그대로 둔다 — 다른 모달은 상단 정렬이 기본이다.
+    // 입력이 없어 키보드를 띄우지 않으므로 중앙에 그대로 둔다. 다른 모달은 상단 정렬이 기본이다.
     <Modal
       onClose={isInProgress ? () => {} : actions.dismiss}
       testId="update-prompt-overlay"
@@ -325,7 +325,7 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
             <View className="gap-3">
               <Title>다운로드 중</Title>
               {/* ADR-061 결정 6: 결정형 진행률은 예외 없이 h-1.5 프리미티브 하나.
-                  `animated` 를 쓰는 유일한 호출부이기도 하다. 여기만 값이 연속으로 흐른다. */}
+                  `animated` 를 쓰는 곳도 여기뿐이다. 여기만 값이 연속으로 흐른다. */}
               <ProgressBar
                 percent={state.downloadProgress}
                 animated

@@ -11,7 +11,7 @@ import { WORLD_EMBLEM_ASSETS } from '../../assets/generated/worlds'
 import bossCropsData from '../../data/boss-portrait-crops.json'
 import bossIconCropsData from '../../data/boss-portrait-icon-crops.json'
 /**
- * 이름표를 번들 에셋으로 바꾼다. 앱의 그림이 화면에 붙는 유일한 길이다.
+ * 이름표를 번들 에셋으로 바꾼다. 앱의 그림은 이 길로만 화면에 붙는다.
  *
  * 전부 같은 모양이다. `키 → (표를 한 번 거쳐) ASSETS[…] ?? null`.
  *
@@ -99,7 +99,7 @@ export function worldEmblemUrl(world: string): ImageAssetRef | null {
   return WORLD_EMBLEM_ASSETS[basename] ?? null
 }
 
-/** 이 표가 월드를 아는 유일한 자리라 판정도 여기서 한다. @see */
+/** 월드를 아는 것은 이 표뿐이라 판정도 여기서 한다. @see */
 export function isChallengersWorld(world: string): boolean {
   return basenameByWorld[world] === 'challengers'
 }

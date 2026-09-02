@@ -9,7 +9,7 @@ import type { DailyContent, WeeklyContent } from '../../../types'
 
 // `표시 대상 컨텐츠`는 `ContentScreen.tsx` 지역 함수였다가 today 의 `남은 스케줄`이 같은 수를
 // 세면서 나온 판정이다. 그때 이 필터가 빠져 **모든 캐릭터가 일퀘 18**(= 일간 카탈로그 길이)로
-// 나왔다 — 아래 첫 테스트가 그 회귀를 잡는다.
+// 나왔다. 아래 첫 테스트가 그 회귀를 잡는다.
 
 function daily(name: string, isRegistered: boolean): DailyContent {
   return { name, kind: 'contents', isRegistered, nowCount: 0, maxCount: 1, questState: null }
@@ -19,7 +19,7 @@ function weekly(name: string, isRegistered: boolean): WeeklyContent {
   return { name, kind: 'contents', isRegistered, nowCount: 0, maxCount: 1, questState: null }
 }
 
-/** 실제 템플릿에서 이름을 빌린다 — 지어낸 이름은 템플릿 정렬을 타지 못해 판정이 흐려진다. */
+/** 실제 템플릿에서 이름을 빌린다. 지어낸 이름은 템플릿 정렬을 타지 못해 판정이 흐려진다. */
 const DAILY_NAMES = CONTENT_TEMPLATE.daily.map((entry) => entry.content_name)
 const WEEKLY_NAMES = CONTENT_TEMPLATE.weekly.map((entry) => entry.content_name)
 

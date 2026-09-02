@@ -1,8 +1,8 @@
-// 설정 하위 페이지 `캐릭터 관리` — **모달이 아니라 페이지다.**
+// 설정 하위 페이지 `캐릭터 관리`. **모달이 아니라 페이지다.**
 //
 // 두 층 + 드롭다운 + 순서 + 대표가 한 화면에 서면 385px 모달 본문에 들어가지
 // 않는다. 그래서 `설정 → 캐릭터 관리` 가 여는 것이 모달에서 화면 push 로 바뀌었고, 카드 1 의
-// 성질(**고르면 그 자리에서 끝난다**)은 유지된다 — 화면이 pop 되면 설정으로 돌아온다.
+// 성질(**고르면 그 자리에서 끝난다**)은 유지된다. 화면이 pop 되면 설정으로 돌아온다.
 //
 // **본문은 이 파일에 없다.** `CharacterManageBody` + `useCharacterManage` 가 갖고, 온보딩 캐릭터
 // 선택 단계가 같은 것을 페이지로 쓴다(결정 1 — 갈리는 것은 머리와 CTA 뿐이다). 여기 있는 것은
@@ -10,20 +10,20 @@
 //
 // ── 고정되는 것은 **저장 버튼 하나**다 (의 **하단 액션 바** 예외, 사용자 판정 2026-08-17)
 //
-// 두 층은 그대로 페이지와 함께 굴러간다 — 위 리스트가 길면 아래 목록이 화면 밖으로 나가는 것도
+// 두 층은 그대로 페이지와 함께 굴러간다. 위 리스트가 길면 아래 목록이 화면 밖으로 나가는 것도
 // 그대로다(대가). 바뀐 것은 **CTA 뿐**이고 이 **고정 영역 없음** 을 정하면서
 // 스스로 남긴 예외(*"하단 액션 바는 대상 아님"*)가 이 자리에 걸린 것이다: 이 화면은 스크롤이 길고,
 // 저장은 **어디까지 굴렸든 지금 할 수 있어야 하는 일**이다.
 //
-// `닫기`는 없앴다(사용자 지정) — 뒤로가기가 둘(헤더 `←` · OS 뒤로가기) 있는 화면에서 셋째 출구는
+// `닫기`는 없앴다(사용자 지정). 뒤로가기가 둘(헤더 `←` · OS 뒤로가기) 있는 화면에서 셋째 출구는
 // 같은 말을 한 번 더 하는 것이고, 그 자리를 비워야 저장이 폭을 다 쓴다.
 //
-// **바 높이를 상수로 적지 않는다** — `onLayout` 으로 재서 그만큼 콘텐츠 아래 여백을 준다. 손으로
+// **바 높이를 상수로 적지 않는다**. `onLayout` 으로 재서 그만큼 콘텐츠 아래 여백을 준다. 손으로
 // 적으면 글자 크기·안전영역이 바뀌는 기기에서 마지막 행이 바 뒤로 숨는다.
 //
 // ── 저장 ────────────────────────────────
 //
-// 저장 로직을 새로 갖지 않는다 — 통합 키 쓰기·수동 모드 시드·추가분만 동기화·진행률 보고가
+// 저장 로직을 새로 갖지 않는다. 통합 키 쓰기·수동 모드 시드·추가분만 동기화·진행률 보고가
 // `saveTrackedOcids` 에 한 벌로 들어 있다. **대표는 그 뒤에 쓴다**: 목록 저장이 먼저 돌면서
 // 목록에 없는 대표를 지우므로(`setTrackedCharacterOcids` 의 참조 무결성), 순서를 뒤집으면 방금
 // 고른 대표가 지워질 수 있다.
@@ -55,11 +55,11 @@ export function SettingsCharactersScreen(): React.JSX.Element {
   const manage = useCharacterManage()
   // 끌어서 순서를 바꾸는 동안 화면 가장자리에서 자동으로 굴러간다. 이 화면에는
   // 고정 영역이 없어 굴릴 것이 페이지 자신뿐이고, 그래서 그 배선은 스크롤 뷰를 가진
-  // **화면**의 것이다 — 컨트롤러에 실으면 그 객체가 ref 를 품어 읽는 자리마다 `react-hooks/refs`
+  // **화면**의 것이다. 컨트롤러에 실으면 그 객체가 ref 를 품어 읽는 자리마다 `react-hooks/refs`
   // 에 걸린다. 온보딩 단계도 같은 두 줄을 갖는다(결정 1 — 갈리는 것은 머리와 CTA 다).
   const { scrollRef, onScroll, scroll } = useReorderScroll()
   const [saveProgress, setSaveProgress] = useState<{ completed: number; total: number } | null>(null)
-  // 하단 액션 바가 안전영역을 먹는다(아래) — 그 **안전영역** 은 인셋이 아니라 하한이 깔린 값이다
+  // 하단 액션 바가 안전영역을 먹는다(아래). 그 **안전영역** 은 인셋이 아니라 하한이 깔린 값이다
   // . 이 화면만 인셋으로 두면 하위 페이지들과 바닥 여백이 갈린다.
   const bottomSafeAreaPx = useBottomSafeAreaPx()
   // 고정 바가 덮는 높이 — 잰 값이 오기 전에는 0이라 마지막 행이 한 프레임 가려질 수 있지만, 그
@@ -67,7 +67,7 @@ export function SettingsCharactersScreen(): React.JSX.Element {
   const [actionBarHeightPx, setActionBarHeightPx] = useState(0)
 
   // : 두 조회가 맞는 401·429 도 키 재입력 진입점으로 간다.
-  // 두 번 부르는 것은 두 겹이 아니다 — 훅은 값 하나를 지켜보고, 멱등은 스토어 가드가 진다.
+  // 두 번 부르는 것은 두 겹이 아니다. 훅은 값 하나를 지켜보고, 멱등은 스토어 가드가 진다.
   useApiKeyNotice(manage.rosterError)
   useApiKeyNotice(manage.accountsError)
 
@@ -77,7 +77,7 @@ export function SettingsCharactersScreen(): React.JSX.Element {
     const ocids = manage.selectedOcids
     const representative = manage.representativeOcid
     setSaveProgress({ completed: 0, total: ocids.length })
-    // 저장이 실패해도 진행률 모달은 항상 닫는다 — 안 그러면 모달이 멈춘다(피커가 하던 그대로).
+    // 저장이 실패해도 진행률 모달은 항상 닫는다. 안 그러면 모달이 멈춘다(피커가 하던 그대로).
     try {
       await saveTrackedOcids(ocids, (completed, total) => setSaveProgress({ completed, total }))
       if (representative === null) {
@@ -89,7 +89,7 @@ export function SettingsCharactersScreen(): React.JSX.Element {
       setSaveProgress(null)
       navigation.goBack()
     }
-    // 컨텐츠는 빠진다 — 저장의 주체가 그 스토어라 이미 최신이다.
+    // 컨텐츠는 빠진다. 저장의 주체가 그 스토어라 이미 최신이다.
     reloadTabStores(['boss', 'profit'])
   }
 
@@ -119,10 +119,10 @@ export function SettingsCharactersScreen(): React.JSX.Element {
         <View
           className="gap-4 px-4 pb-4"
           testID="screen-SettingsCharacters"
-          // 잰 바 높이만큼 콘텐츠 아래를 비운다 — 안 그러면 마지막 행이 바 뒤에 영영 숨는다.
+          // 잰 바 높이만큼 콘텐츠 아래를 비운다. 안 그러면 마지막 행이 바 뒤에 영영 숨는다.
           style={{ paddingBottom: actionBarHeightPx }}
         >
-          {/* 이 자리의 401·429 는 곧 키 입력 화면으로 옮겨간다(위 `useApiKeyNotice`) — 그래서
+          {/* 이 자리의 401·429 는 곧 키 입력 화면으로 옮겨간다(위 `useApiKeyNotice`). 그래서
               실패 문구도 그렇게 말하는 피커 어휘다. */}
           <CharacterManageBody manage={manage} scroll={scroll} place="picker" />
         </View>
@@ -145,7 +145,7 @@ export function SettingsCharactersScreen(): React.JSX.Element {
           }}
           disabled={isSaveDisabled}
           // 웹의 `disabled:opacity-50` 은 CSS 의사 클래스라 RN 의 `disabled` 프롭과 이어지지
-          // 않는다 — 그대로 두면 비활성 버튼이 멀쩡한 색으로 보인다(피커와 같은 처방).
+          // 않는다. 그대로 두면 비활성 버튼이 멀쩡한 색으로 보인다(피커와 같은 처방).
           className={`w-full items-center${isSaveDisabled ? ' opacity-50' : ''}`}
         >
           저장

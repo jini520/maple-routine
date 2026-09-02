@@ -14,7 +14,7 @@ import {
 /**
  * 네이티브 포트의 테스트 기본값.
  *
- * 포트 역전 전에는 `@capacitor/*` 모듈이 어느 테스트에서나 그냥 import 돼 동작했다 — 테스트 환경의
+ * 포트 역전 전에는 `@capacitor/*` 모듈이 어느 테스트에서나 그냥 import 돼 동작했다. 테스트 환경의
  * 플랫폼이 `web` 이라 모든 어댑터가 no-op 이었기 때문이다. 여기 있는 것이 정확히 그 자리를 메운다:
  * **웹에서의 동작과 같은 값**을 돌려주는 no-op 포트다(광고 없음 · 라이브 업데이트 미지원 ·
  * 네트워크 종류 모름 · 리스너 해제는 안전한 빈 함수).
@@ -24,7 +24,7 @@ import {
  * 구현을 다시 주입해 이 기본값을 덮는다.
  */
 export function installNoopNativePorts(): void {
-  // `matchMedia` 없는 환경의 폴백과 같다 — 테스트 기본 환경은 `node` 라 문서도 미디어 쿼리도 없다.
+  // `matchMedia` 없는 환경의 폴백과 같다. 테스트 기본 환경은 `node` 라 문서도 미디어 쿼리도 없다.
   setColorSchemePort({ get: () => 'light' })
 
   // 기본 환경에 `document` 가 없으므로 아무것도 칠하지 않는다. 문서에 실제로 반영되는지는
@@ -66,7 +66,7 @@ export function installNoopNativePorts(): void {
   })
 
   setLiveUpdatePort({
-    // 웹과 같다 — 런타임이 없으므로 아래 조회들은 호출부의 가드에 막혀 도달하지 않는다.
+    // 웹과 같다. 런타임이 없으므로 아래 조회들은 호출부의 가드에 막혀 도달하지 않는다.
     isSupported: () => false,
     notifyAppReady: async () => {},
     getCurrentVersion: async () => '0.0.0',

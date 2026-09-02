@@ -6,19 +6,19 @@
 // ══ RN 으로 옮기며 갈린 것 여섯 ═══════════════════════════════════════════════════
 //
 // ① **`.valuable-drop-row` 가 클래스에서 값이 된다**. 웹은 `index.css` 의 한
-//    클래스가 셋을 했고 RN 에는 그 셋의 짝이 전부 따로 있다 — 그 사정은 `ValuableRowBackground`
+//    클래스가 셋을 했고 RN 에는 그 셋의 짝이 전부 따로 있다. 그 사정은 `ValuableRowBackground`
 //    가 갖는다. **step 8 에서 그 컴포넌트가 이 파일 밖으로 나갔다**(가격 기록 화면의 행이 두 번째
 //  호출부다 —).
 // ② **파티 스테퍼를 `PartySizeStepper` 로 접지 않는다.** 그 molecule 은 이
-//    정한 **두 크기**(관리 페이지 행 · 모달)이고 이 행은 셋째 모양이다 — 버튼 18px(그쪽 24·32),
+//    정한 **두 크기**(관리 페이지 행 · 모달)이고 이 행은 셋째 모양이다. 버튼 18px(그쪽 24·32),
 //    `Users` 표식 없음, −/+ 에 `bg-surface-2` 채움(그쪽은 "채움을 두지 않는다"가 명시된 결정).
 //    합치면 두 화면 중 하나의 모습이 반드시 바뀐다. 웹도 이 자리는 자체 마크업이었다.
 // ③ `disabled:opacity-40` → **JS 조건**. NativeWind 의 `disabled:` 는 웹 CSS 의 의사 클래스라
-//    `Pressable disabled` 와 이어져 있지 않다 — 남겨 두면 비활성 버튼이 멀쩡한 색으로 보인다.
-// ④ **팝오버 앵커가 비동기로 온다** — `ItemRevenuePopover` 의 `useAnchoredPopover` 가 그 사정을
+//    `Pressable disabled` 와 이어져 있지 않다. 남겨 두면 비활성 버튼이 멀쩡한 색으로 보인다.
+// ④ **팝오버 앵커가 비동기로 온다**. `ItemRevenuePopover` 의 `useAnchoredPopover` 가 그 사정을
 //    전부 가진다(그 파일 머리 ①·②). 스크롤로 닫던 효과는 구조가 대신 지켜 사라진다.
 // ⑤ `<li>` → `View`, `<button>` → `Pressable` + `Text`. 목록 시맨틱(`ul`/`li`)은 RN 에 없다.
-// ⑥ **드롭 아이콘 스택의 겹침(`marginLeft: -2`)과 층 순서(`zIndex`)는 그대로다** — 둘 다 RN 스타일에
+// ⑥ **드롭 아이콘 스택의 겹침(`marginLeft: -2`)과 층 순서(`zIndex`)는 그대로다**. 둘 다 RN 스타일에
 //    같은 이름으로 있다.
 import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
@@ -59,7 +59,7 @@ export interface BossProfitBossRowProps {
 // "＋ 드롭 추가" 칩. 상자 결과는 실제 나온 아이템(반지 등) 아이콘으로 뜬다.
 export function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Element {
   if (props.drops.length === 0) {
-    // 아이콘 스택(h-6)과 같은 슬롯이라 높이도 h-6으로 맞춘다 — 패딩으로 높이를 만들면
+    // 아이콘 스택(h-6)과 같은 슬롯이라 높이도 h-6으로 맞춘다. 패딩으로 높이를 만들면
     // 글꼴 line-height가 그대로 행 높이에 실려 드롭 유무로 행이 튄다.
     return (
       <View className="ml-auto h-6 shrink-0 flex-row items-center rounded-full border border-dashed border-primary bg-primary-tint px-2.5">
@@ -86,7 +86,7 @@ export function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Eleme
             ) : (
               <View className="h-6 w-6 rounded-md border-[1.5px] border-surface bg-surface-2" />
             )}
-            {/* 특수 스킬 반지(반지 상자 드릴다운 결과)만 등급이 기록된다 — 드롭 시트
+            {/* 특수 스킬 반지(반지 상자 드릴다운 결과)만 등급이 기록된다. 드롭 시트
                 ItemThumb의 lv 뱃지와 같은 규칙. 절대배치라 이름 줄의 h-6 고정에는
                 영향을 주지 않는다. */}
             {drop.ringLevel !== undefined && (
@@ -113,24 +113,24 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
   const { row } = props
   const { setPartySize, setBossDrops } = useBossProfitContext()
   const [isDropSheetOpen, setIsDropSheetOpen] = useState(false)
-  // **구조 분해가 필수다** — `popover.toggle` 처럼 프로퍼티로 읽으면 `react-hooks/refs` 가 그
+  // **구조 분해가 필수다**. `popover.toggle` 처럼 프로퍼티로 읽으면 `react-hooks/refs` 가 그
   // 접근을 "렌더 중 ref 접근"으로 본다(훅이 안에서 `useRef` 를 쓰기 때문. 실측: 에러 14건).
   const { ref: itemChipRef, isOpen: isItemPopoverOpen, anchor: itemAnchor, toggle: toggleItemPopover, close: closeItemPopover } =
     useAnchoredPopover()
   const dropTotal = sumDropPayout(props.drops)
 
-  // 이 보스에서 고가 아이템을 획득했으면 행 배경에 골드 강조를 준다 — 캐릭터 카드를 펼쳤을 때
+  // 이 보스에서 고가 아이템을 획득했으면 행 배경에 골드 강조를 준다. 캐릭터 카드를 펼쳤을 때
   // 카드 테두리 효과 대신 실제 획득한 보스 행으로 강조가 이동하는 지점(사용자 요청).
   const hasValuableDrop = props.drops.some((drop) => isValuableDrop(drop.itemName))
   const isPriceUnknown = row.priceMeso === null
   // 미완료(보스 스케줄러에 등록만 되고 아직 처치 전) placeholder는 파티원 수를 조정해도 의미가
-  // 없다 — 계산은 항상 0메소로 고정된다. "가격 미확정"과 동일한 비활성 처리를 재사용한다.
+  // 없다. 계산은 항상 0메소로 고정된다. "가격 미확정"과 동일한 비활성 처리를 재사용한다.
   const isEditable = row.isComplete && !isPriceUnknown
   const partySize = row.partySize ?? 1
   const canDecrease = isEditable && partySize > 1
   const canIncrease = isEditable && partySize < row.maxPartySize
 
-  // 금액 마크업은 한 벌이다 — 칩이 붙든 안 붙든 같은 `Text` 라 두 갈래가 서로 어긋날 수 없다.
+  // 금액 마크업은 한 벌이다. 칩이 붙든 안 붙든 같은 `Text` 라 두 갈래가 서로 어긋날 수 없다.
   //
   //  의 identity 는 **행 자신의 (ocid, 보스, 난이도, 기간)** 이다. 기간이 키에 들어
   // 있으므로 기간을 옮기면 "값이 변한 것"이 아니라 "다른 값을 보게 된 것"이라 굴러가지 않는다
@@ -155,7 +155,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
     </Text>
   )
 
-  // : 예외 메시지를 그대로 렌더하던 인라인 문단을 걷어내고 토스트로 알린다 — 개발자용
+  // : 예외 메시지를 그대로 렌더하던 인라인 문단을 걷어내고 토스트로 알린다. 개발자용
   // 문구와 SQLite 네이티브 원문이 사용자에게 새는 자리가 여기뿐이었다. 문구는 보스 관리 화면과 같아
   // 두 경로가 통일된다.
   async function handleChange(delta: number): Promise<void> {
@@ -244,7 +244,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
             </Badge>
           ) : // 아이템이 섞이면 **금액 아래에 칩이 선다** — 그 존재가 곧 "이 숫자는 결정석만이
           // 아니다"라는 표시이고, 동시에 내역을 여는 버튼이다(사용자 지정 2026-08-10). 값을 매긴
-          // 아이템이 없으면 **래퍼조차 만들지 않는다** — 그 행의 트리가 종전과 달라지지 않아야
+          // 아이템이 없으면 **래퍼조차 만들지 않는다**. 그 행의 트리가 종전과 달라지지 않아야
           // "보스 행은 건드리지 않았다"가 말뿐이 아니게 된다.
           dropTotal === 0 ? (
             amount
@@ -288,7 +288,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           onSave={(drops) => setBossDrops(row, drops)}
           onClose={() => setIsDropSheetOpen(false)}
           // 기록한 자리에서 바로 값을 매긴다. 분배 기본값은 **이 행의
-          // 파티원 수**이고, 저장하면 그 값과 독립한다(결정 2) — 나중에 파티원 수를 고쳐도
+          // 파티원 수**이고, 저장하면 그 값과 독립한다(결정 2). 나중에 파티원 수를 고쳐도
           // 이미 매긴 금액이 흔들리지 않는다.
           pricing={{
             defaultShare: partySize,

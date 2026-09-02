@@ -3,7 +3,7 @@ import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
 // today 뷰모델의 **조립 규칙**. 위젯이 스토어를 모르므로 화면이 값을 한
 // 번 모으는데, 그 조립을 순수 함수로 두면 **위젯이 한 줄도 없는 지금 로직 전부를 검증할 수 있다.**
 //
-// 여기서 지키는 것의 대부분은 **다시 구현하지 않았는가** 다 — 남은 개수는 `content-completion` ·
+// 여기서 지키는 것의 대부분은 **다시 구현하지 않았는가** 다. 남은 개수는 `content-completion` ·
 // `displayedBosses` 가, 수익은 `groupTotalMeso` 가, 한도 분모는 `WEEKLY_CRYSTAL_SALE_LIMIT` 가
 // 판정한다. 판정이 두 벌이 되면 today 와 원래 화면이 **다른 수를 말한다.**
 
@@ -174,7 +174,7 @@ describe('남은 스케줄 — 분류 넷', () => {
     expect(model.schedule[0].weeklyNames).toHaveLength(1)
   })
 
-  // 무릉도장은 **다 했다** 가 정의되지 않는다 — 세면 링도 위젯도 영원히 안 찬다.
+  // 무릉도장은 **다 했다** 가 정의되지 않는다. 세면 링도 위젯도 영원히 안 찬다.
   it('끝이 없는 항목(무릉도장)은 남은 개수에 들지 않는다', () => {
     const model = buildTodayViewModel(
       input({
@@ -368,7 +368,7 @@ describe('대표 캐릭터', () => {
     expect(buildTodayViewModel(input()).representative).toBeNull()
   })
 
-  // 이름 없이 카드를 그릴 수 없다 — ocid 는 사용자에게 뜻이 없는 값이라 대신 넣지 않는다.
+  // 이름 없이 카드를 그릴 수 없다. ocid 는 사용자에게 뜻이 없는 값이라 대신 넣지 않는다.
   it('캐시에 프로필이 없으면 null 이다', () => {
     const model = buildTodayViewModel(input({ orderedOcids: ['a'], profilesByOcid: {} }))
     expect(model.representative).toBeNull()
@@ -434,7 +434,7 @@ describe('주간 보스 수익', () => {
     expect(model.profit.totalMeso).toBe(100)
   })
 
-  // 위젯 3의 스택 바가 읽는 값이다 — 위젯은 스토어를 모르므로 총액만 주면 갈라 그릴 수 없다.
+  // 위젯 3의 스택 바가 읽는 값이다. 위젯은 스토어를 모르므로 총액만 주면 갈라 그릴 수 없다.
   it('총액을 결정석과 아이템으로 가르고, 둘의 합이 총액이다', () => {
     const drops = {
       [`a|스우|노멀|${WEEK_KEY}`]: [
@@ -480,7 +480,7 @@ describe('최고가 아이템', () => {
     expect(model.topItem?.rest.map((entry) => entry.itemName)).toEqual(['2위', '3위', '4위', '5위'])
   })
 
-  // today 가 답하는 질문은 **내가 얼마를 벌었나** 다 — 총액으로 그리면 같은 화면의 `주간 보스 수익`
+  // today 가 답하는 질문은 **내가 얼마를 벌었나** 다. 총액으로 그리면 같은 화면의 `주간 보스 수익`
   // (`sumDropPayout` = 분배 후 합)보다 최고가가 큰 화면이 나온다.
   it('분배된 금액을 그린다 — 입력한 총액이 아니다', () => {
     const model = buildTodayViewModel(
@@ -590,7 +590,7 @@ describe('최고가 아이템', () => {
     expect(없음.topItem?.top.characterName).toBeUndefined()
   })
 
-  // 아이콘 조회(`getItemIconUrl(name, slot)`)가 쓴다 — 빠지면 에러가 아니라 조용한 폴백 원이 된다.
+  // 아이콘 조회(`getItemIconUrl(name, slot)`)가 쓴다. 빠지면 에러가 아니라 조용한 폴백 원이 된다.
   it('아이콘 조회에 필요한 `slot` 을 그대로 나른다', () => {
     const model = buildTodayViewModel(
       input({
@@ -645,7 +645,7 @@ describe('아이템 드롭 가뭄', () => {
 })
 
 describe('초기화 카운트다운', () => {
-  // now 를 고정하면 전부 결정적이다 — 이 파일이 `new Date()` 를 부르지 않는 이유.
+  // now 를 고정하면 전부 결정적이다. 이 파일이 `new Date()` 를 부르지 않는 이유.
   it('일간·주간·월간 초기화까지 남은 시간을 KST 기준으로 센다', () => {
     const model = buildTodayViewModel(input())
 
@@ -752,7 +752,7 @@ describe('공유 컨텐츠 — 계열로 묶는다', () => {
       }),
     )
 
-    // 캐릭터 줄에는 개인 일퀘 하나만 남는다 — 몬스터파크는 공유 위젯의 몫이다.
+    // 캐릭터 줄에는 개인 일퀘 하나만 남는다. 몬스터파크는 공유 위젯의 몫이다.
     expect(model.schedule[0]?.dailyNames).toEqual(['소멸의 여로'])
     expect(model.schedule[0]?.weeklyNames).toEqual([])
   })
@@ -899,7 +899,7 @@ describe('공유 컨텐츠 — 오른쪽 열은 `maxCount > 0` 하나로 갈린�
       }),
     )
 
-    // 남은 것 — 악몽선경 · 몬스터파크(0/14) · 익스트림 · PC방
+    // 남은 것. 악몽선경 · 몬스터파크(0/14) · 익스트림 · PC방
     expect(model.sharedRemaining).toBe(4)
   })
 })
@@ -983,7 +983,7 @@ describe('공유 컨텐츠 — 유니온만 조건부다', () => {
 // 이 캐릭터로는 못 하므로, 세면 그 숫자가 **영원히 안 줄어든다.** 스케줄러 카드·진행률·링과 같은
 // 판정 함수를 봐야(**한 글자도 다르면 안 된다**)이 성립한다.
 //
-// 항목을 **캐릭터 단위**로 고른 것이 요점이다 — 몬스터파크(요구 레벨 105)는 월드 공유라 이 목록에
+// 항목을 **캐릭터 단위**로 고른 것이 요점이다. 몬스터파크(요구 레벨 105)는 월드 공유라 이 목록에
 // 애초에 안 든다. 공유 항목으로 재면 레벨과 무관하게 빠져 테스트가 거짓으로
 // 통과한다.
 describe('요구 레벨 미달은 남은 개수에서 빠진다', () => {
@@ -1012,7 +1012,7 @@ describe('요구 레벨 미달은 남은 개수에서 빠진다', () => {
     expect(남은것(199)).toHaveLength(0)
   })
 
-  // 레벨을 모르면 단정하지 않는다 — 전부 센다(태도).
+  // 레벨을 모르면 단정하지 않는다. 전부 센다(태도).
   it('레벨을 모르면 아무것도 안 뺀다', () => {
     expect(남은것()).toHaveLength(2)
   })

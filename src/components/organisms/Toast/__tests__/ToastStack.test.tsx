@@ -88,7 +88,7 @@ describe('ToastStack', () => {
     expect(dismiss).toHaveBeenCalledWith('t2')
   })
 
-  // 스택 자신은 터치를 통과시키고 토스트 카드만 받는다 — 웹은 컨테이너가 `fixed` 라 자기 상자 밖을
+  // 스택 자신은 터치를 통과시키고 토스트 카드만 받는다. 웹은 컨테이너가 `fixed` 라 자기 상자 밖을
   // 애초에 안 받았고, RN 에서는 명시해야 한다.
   it('스택 자신은 터치를 통과시킨다', async () => {
     mockStore([toast('t1', '첫째')])

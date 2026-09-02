@@ -7,7 +7,7 @@
 import type { SvgGrid } from './icon-base'
 
 /**
- * 잎이 사는 격자. **정사각이 아니다** — 여섯 자리가 `viewBox` 와 130/127 을 각자 적고 있었고,
+ * 잎이 사는 격자. **정사각이 아니다**. 여섯 자리가 `viewBox` 와 130/127 을 각자 적고 있었고,
  * 그중 하나(`EmptyState`)는 비율을 미리 계산한 값(`42×43`)을 박아 두고 있었다.
  */
 export const LEAF_GRID: SvgGrid = { viewBox: '0 0 127 130', ratio: 130 / 127 }
@@ -24,7 +24,7 @@ export const MAPLE_LEAF_PATH =
  * 웹은 `pathLength={300}` 으로 둘레를 300 으로 **정규화**하고 `strokeDasharray="210 90"` 처럼
  * 읽기 쉬운 값을 썼다. `react-native-svg` 는 그 속성을 네이티브에서 지원하지 않는다(라이브러리
  * 안에서 `pathLength` 는 웹 빌드 전용 통과 목록에만 있다). 그래서 정규화 대신 **실제 길이에 비율을
- * 곱한다** — 같은 그림을 얻는 다른 계산이다.
+ * 곱한다**. 같은 그림을 얻는 다른 계산이다.
  *
  * step 7(애니메이션)의 `maple-trail` 도 이 값을 쓴다(웹은 dashoffset 을 −300 까지 굴렸고, RN 은
  * −601.3157 까지 굴려야 한 바퀴다).

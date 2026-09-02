@@ -5,11 +5,11 @@ import type { CharacterBasicProfile } from '../../types'
 /**
  * `character/basic` 의 **공유 통과 지점**.
  *
- * 같은 요청이 두 곳에서 나간다 — 캐릭터 피커(`character-roster`) · 동기화 편승 갱신
+ * 같은 요청이 두 곳에서 나간다. 캐릭터 피커(`character-roster`) · 동기화 편승 갱신
  * (`schedule-sync` 의 `refreshCharacterBasics`). 엔드포인트·파라미터·응답이
  * 완전히 같고 소비하는 필드만 달라서, 한 바퀴에 같은 캐릭터로 여러 번이 나가고 있었다.
  *
- * **호출부마다 "이미 받았는지"를 판단하게 하지 않고 경로 하나로 접는다** — 그래야 호출자끼리
+ * **호출부마다 "이미 받았는지"를 판단하게 하지 않고 경로 하나로 접는다**. 그래야 호출자끼리
  * 서로를 몰라도 접힌다. 프로브는 예열이 뒤따라온다는 것을 모르고 예열은 피커가 곧 열린다는 것을
  * 모르는데, 호출부가 판단하려면 그 지식을 서로에게 심어야 하고 새 호출부가 생기는 순간 조용히
  * 중복이 되살아난다(실제로 이 넷째 호출부를 그렇게 추가했다).
@@ -30,7 +30,7 @@ import type { CharacterBasicProfile } from '../../types'
 export const CHARACTER_BASIC_TTL_MS = 5 * 60 * 1000
 
 /**
- * 파싱 불가·미래 시각은 **만료로 취급한다** — 손상된 값이나 기기 시계 되감기가 캐시를 영구히
+ * 파싱 불가·미래 시각은 **만료로 취급한다**. 손상된 값이나 기기 시계 되감기가 캐시를 영구히
  * 신선한 것으로 만들면 안 된다. 경계는 배타적이라 정확히 5분이면 만료다.
  */
 function isFresh(cachedAt: string, now: Date): boolean {
@@ -46,10 +46,10 @@ function isFresh(cachedAt: string, now: Date): boolean {
 /**
  * `jobClass` 는 **`character/basic` 이 주는 값이 아니라 `character/list` 가 주는 값**이다
  * . 저장 경로가 이 함수 하나뿐이라, 그 값을 손에 든 호출부가 여기로 함께
- * 넘겨 엔트리에 실린다 — `normalizeCharacterBasic` 은 채우지 않는다(의 태도: basic
+ * 넘겨 엔트리에 실린다. `normalizeCharacterBasic` 은 채우지 않는다(의 태도: basic
  * 응답이 직업을 준다는 것을 실측한 적이 없다).
  *
- * **모르면 넘기지 않는다.** 그때는 캐시에 이미 있던 값을 그대로 유지한다 — 아는 값을
+ * **모르면 넘기지 않는다.** 그때는 캐시에 이미 있던 값을 그대로 유지한다. 아는 값을
  * `undefined` 로 덮으면 화면에서 직업이 사라진다.
  */
 export async function fetchCharacterBasicCached(
@@ -73,7 +73,7 @@ export async function fetchCharacterBasicCached(
   const profile: CharacterBasicProfile =
     resolvedJobClass === undefined ? fetched : { ...fetched, jobClass: resolvedJobClass }
 
-  // cachedAt 은 호출부가 이미 잡아둔 `now` 다(여기서 시계를 다시 읽지 않는다) — 판정이 결정적이고,
+  // cachedAt 은 호출부가 이미 잡아둔 `now` 다(여기서 시계를 다시 읽지 않는다). 판정이 결정적이고,
   // 오차는 항상 TTL 이 짧아지는 보수적인 방향으로만 난다.
   await setCachedCharacterBasic(accountId, ocid, { profile, cachedAt: now.toISOString() })
   return profile

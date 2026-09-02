@@ -19,7 +19,7 @@ import { clearCacheDataAndReload } from '../../features/settings/cache-data'
 var mockCallOrder: string[] | undefined
 var mockShared: Record<string, jest.Mock> | undefined
 
-/** 가짜 DB 가 돌려주는 함수들도 **같은 인스턴스**여야 한다 — 테스트가 그 위에 단언한다. */
+/** 가짜 DB 가 돌려주는 함수들도 **같은 인스턴스**여야 한다. 테스트가 그 위에 단언한다. */
 function mockDb(name: string): jest.Mock {
   const shared = (mockShared = mockShared ?? {})
   shared[name] = shared[name] ?? jest.fn()
@@ -38,10 +38,10 @@ function mockOnce(name: string, label: string): jest.Mock {
 }
 
 // clearCacheDataAndReload의 "닫기 → 커버 → 리로드" 순서를 잡기 위한 공유 호출 기록(ADR-117 결정 8).
-// 각 mock이 호출되는 시점에 이름을 push하므로 배열 자체가 곧 실행 순서다 — toHaveBeenCalled로는
+// 각 mock이 호출되는 시점에 이름을 push하므로 배열 자체가 곧 실행 순서다. toHaveBeenCalled로는
 // 순서가 안 잡히고, 이 step이 고치는 것이 정확히 순서다.
 // ADR-052 결정 2: 삭제 대상 테이블 목록은 db.ts가 단일 진실 공급원이므로, 커넥션(getBossProfitDb)만
-// 가짜로 바꾸고 BOSS_PROFIT_TABLE_NAMES는 실제 값을 그대로 쓴다 — 목록까지 모킹하면 "실제 테이블
+// 가짜로 바꾸고 BOSS_PROFIT_TABLE_NAMES는 실제 값을 그대로 쓴다. 목록까지 모킹하면 "실제 테이블
 // 전부를 지우는가"를 검증하지 못한다.
 jest.mock('../sqlite/db', () => ({
   ...jest.requireActual<typeof import('../sqlite/db')>('../sqlite/db'),
@@ -49,7 +49,7 @@ jest.mock('../sqlite/db', () => ({
   closeBossProfitDb: mockOnce('close', 'close'),
 }))
 
-// 위 import와 같은 한시적 참조다 — `features/settings/cache-data` 가 부르는 그 모듈을 가리켜야
+// 위 import와 같은 한시적 참조다. `features/settings/cache-data` 가 부르는 그 모듈을 가리켜야
 // 목이 걸린다(경로가 어긋나면 실물이 로드돼 커버가 진짜로 올라간다).
 jest.mock('../../native/splash-screen', () => ({ showSplashScreen: mockOnce('splash', 'cover') }))
 
@@ -82,7 +82,7 @@ beforeEach(async () => {
   jest.clearAllMocks()
 })
 
-// ADR-058 결정 2: 그룹 정의는 열거가 아니라 차집합이다 — records만 명시 목록이고 general은
+// ADR-058 결정 2: 그룹 정의는 열거가 아니라 차집합이다. records만 명시 목록이고 general은
 // 나머지 전부로 파생된다. 이 성질이 깨지면 새 테이블이 어느 그룹에도 안 잡혀 영영 안 지워진다
 // (ADR-052가 없앤 누락 결함의 부호만 뒤집힌 형태).
 describe('그룹 ↔ 테이블 분할', () => {
@@ -265,7 +265,7 @@ describe('getCacheDataSizes', () => {
 // ADR-117 결정 8 — 캐시 삭제 경로는 OTA 적용 경로와 **같은 결함**을 갖고 있었다: 커버를 먼저
 // 올린 뒤 매달릴 수 있는 닫기를 돌고, 화면을 되살리는 일(reload)이 그 뒤에 있었다. 닫기가 응답하지
 // 않으면 리로드에 도달하지 못하고 브랜드 주황 커버만 남는다(이슈 #175와 같은 증상, 다른 트리거).
-// 여기서 고치는 것은 순서 하나뿐이다 — 실패 UX는 만들지 않는다(ADR-065 결정 3: 항상 리로드하고
+// 여기서 고치는 것은 순서 하나뿐이다. 실패 UX는 만들지 않는다(ADR-065 결정 3: 항상 리로드하고
 // 실패는 pendingNotice로 부팅 후에 알린다).
 describe('clearCacheDataAndReload', () => {
   const ALL: CacheDataSelection = { general: true, records: true }
@@ -284,7 +284,7 @@ describe('clearCacheDataAndReload', () => {
     expect(callOrder).toEqual(['close', 'cover', 'reload'])
   })
 
-  // 이 순서의 값은 여기서 드러난다 — 닫기가 매달리는 동안 화면이 가려져 있지 않다(그 구간이
+  // 이 순서의 값은 여기서 드러난다. 닫기가 매달리는 동안 화면이 가려져 있지 않다(그 구간이
   // 정확히 사용자가 주황 화면에 갇히던 자리다). 커버는 리로드 직전에만 올라간다.
   it('닫기가 끝나기 전에는 커버를 올리지 않는다', async () => {
     let finishClose: () => void = () => {}

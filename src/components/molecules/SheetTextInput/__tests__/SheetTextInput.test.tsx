@@ -21,7 +21,7 @@ import { renderAtom } from '../../../__tests__/render-atom'
 import { FONT_SCALE_MAX } from '../../../atoms/Text/font-scaling'
 import { SheetTextInput } from '../SheetTextInput'
 
-/** 라이브러리의 공유값을 흉내 낸다 — 훅이 부르는 것은 `get`/`set` 둘뿐이다. */
+/** 라이브러리의 공유값을 흉내 낸다. 훅이 부르는 것은 `get`/`set` 둘뿐이다. */
 function 키보드상태(target?: number) {
   let state = { target, status: 0, height: 0 }
   return {
@@ -47,14 +47,14 @@ describe('SheetTextInput — 부품은 RN 것 하나다', () => {
     expect(시트안.getByTestId('칸')).toBeTruthy()
   })
 
-  // 시트 밖에서 던지면 화면이 죽는다 — `unsafe` 를 줘야 `null` 로 돌아온다.
+  // 시트 밖에서 던지면 화면이 죽는다. `unsafe` 를 줘야 `null` 로 돌아온다.
   it('시트 밖에서 안 던지도록 unsafe 로 묻는다', async () => {
     await renderAtom(<SheetTextInput testID="칸" />)
 
     expect(mockInsideSheet).toHaveBeenCalledWith(true)
   })
 
-  // 이 아톰이 존재하는 첫째 이유다 — 시트 배선이 그것을 밀어내면 안 된다.
+  // 이 아톰이 존재하는 첫째 이유다. 시트 배선이 그것을 밀어내면 안 된다.
   it('글자 배수 클램프가 그대로 붙는다', async () => {
     mockInsideSheet.mockReturnValue({ animatedKeyboardState: 키보드상태() })
     const view = await renderAtom(<SheetTextInput testID="칸" />)
@@ -93,7 +93,7 @@ describe('시트가 보는 초점', () => {
 
   /**
    * **남의 초점은 안 끈다.** 시트 안 두 칸 사이를 오갈 때 켬과 흐림이 어느 순서로 오든 성립해야
-   * 한다 — 흐림이 먼저면 껐다가 새 칸이 곧 켜고, 켬이 먼저면 흐림은 남의 것이라 안 끈다.
+   * 한다. 흐림이 먼저면 껐다가 새 칸이 곧 켜고, 켬이 먼저면 흐림은 남의 것이라 안 끈다.
    */
   it('이미 다른 칸이 켜져 있으면 흐림이 안 끈다', async () => {
     const 상태 = 키보드상태()
@@ -145,7 +145,7 @@ describe('시트가 보는 초점', () => {
     expect(onBlur).toHaveBeenCalledTimes(1)
   })
 
-  // 시트 밖에서는 채울 곳이 없다 — 그래도 커서가 들어오고 나가는 것이 안 깨져야 한다.
+  // 시트 밖에서는 채울 곳이 없다. 그래도 커서가 들어오고 나가는 것이 안 깨져야 한다.
   it('시트 밖에서는 아무것도 안 채우고 그냥 동작한다', async () => {
     const onFocus = jest.fn()
     const view = await renderAtom(<SheetTextInput testID="칸" onFocus={onFocus} />)

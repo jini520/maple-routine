@@ -12,13 +12,13 @@ describe('background-position 읽기', () => {
     expect(parseBackgroundPosition('center center')).toEqual({ x: 0.5, y: 0.5 })
   })
 
-  // 실제 데이터가 이 형태다 — 혼테일 `45% bottom`, 검은마법사 `25% bottom`.
+  // 실제 데이터가 이 형태다. 혼테일 `45% bottom`, 검은마법사 `25% bottom`.
   it('퍼센트와 키워드를 섞어 쓴다', () => {
     expect(parseBackgroundPosition('45% bottom')).toEqual({ x: 0.45, y: 1 })
     expect(parseBackgroundPosition('25% bottom')).toEqual({ x: 0.25, y: 1 })
   })
 
-  // CSS 와 같다 — 한 값만 오면 가로에 쓰고 세로는 center.
+  // CSS 와 같다. 한 값만 오면 가로에 쓰고 세로는 center.
   it('한 값만 오면 세로는 center 다', () => {
     expect(parseBackgroundPosition('left')).toEqual({ x: 0, y: 0.5 })
   })
@@ -55,7 +55,7 @@ describe('cover 배치', () => {
     expect(layout).toMatchObject({ width: 400, height: 800, top: 0 })
   })
 
-  // 크기를 모르면 그리지 않는다 — 늘어붙은 그림은 벽지가 아니다.
+  // 크기를 모르면 그리지 않는다. 늘어붙은 그림은 벽지가 아니다.
   it('비트맵 크기를 모르면 배치하지 않는다', () => {
     expect(resolveThemeBackdropLayout(VIEWPORT, null, 'center')).toBeNull()
     expect(resolveThemeBackdropLayout(VIEWPORT, { width: 0, height: 100 }, 'center')).toBeNull()

@@ -4,7 +4,7 @@
  * ## 갈래가 시트 **밖**에서 갈린다
  *
  * ＋ 를 누르면 시트가 아니라 두 갈래가 먼저 펼쳐지고, 고른 뒤에 시트가 열린다. 검토한 대안
- * (시트 맨 위 세그먼트)은 탭이 하나 적었는데도 이쪽을 고른 이유가 이것이다 — **시트가 자기가
+ * (시트 맨 위 세그먼트)은 탭이 하나 적었는데도 이쪽을 고른 이유가 이것이다. **시트가 자기가
  * 어느 갈래인지 모른 채** 프롭으로 받은 것을 그리게 된다(이
  * 격자와 계산을 가른 것과 같은 모양). 나중에 진입점을 바꿔도 시트를 안 건드린다.
  *
@@ -12,32 +12,32 @@
  *
  * - **원 + 라벨 칩.** 통짜 알약보다 원이 FAB 와 같은 축에 정렬돼 세로선이 반듯하고, 누르는 과녁은
  *   **칩까지 포함한 한 줄**이라 원보다 넓다.
- * - **원은 solid, 칩은 무채색.** 색을 양쪽에 다 주면 서로 싸운다 — 의미는 원이, 이름은 칩이 든다.
+ * - **원은 solid, 칩은 무채색.** 색을 양쪽에 다 주면 서로 싸운다. 의미는 원이, 이름은 칩이 든다.
  * - **수입이 위, 지출이 아래.** 칸의 두 줄과 같은 순서이고(위가 수익) 덕분에 **잦은 지출이 FAB 에
- *   더 가깝다** — 엄지가 올라오며 먼저 닿는다. 펼침판이 진 탭 하나 를 배치로 깎는다.
- * - **열리면 FAB 가 물러난다** — 주황 채움이 `surface-2` 로 빠져 강한 색 셋이 안 겹친다.
+ *   더 가깝다**. 엄지가 올라오며 먼저 닿는다. 펼침판이 진 탭 하나 를 배치로 깎는다.
+ * - **열리면 FAB 가 물러난다**. 주황 채움이 `surface-2` 로 빠져 강한 색 셋이 안 겹친다.
  * - **＋ 를 45° 돌리면 그대로 ✕ 다.** 아이콘이 하나뿐이라 두 그림이 어긋날 자리가 없다.
  *
  * ## 아이콘은 이 앱이 이미 고른 둘이다
  *
  * 수입은 `ProfitIcon`(원통형 동전 더미 — 이 수익 을 가리키는 자리 셋에 쓰라고 정한
  * 커스텀), 지출은 `ShoppingCartIcon`(가 지운 지출 탭이 쓰던 그림). **새로
- * 만든 그림이 0개**이고, lucide `coins` 를 쓰면 안 된다 — 그것도 동전 더미라 `ProfitIcon` 과
+ * 만든 그림이 0개**이고, lucide `coins` 를 쓰면 안 된다. 그것도 동전 더미라 `ProfitIcon` 과
  * 거의 같은데 미묘하게 다른 동전 두 개 가 된다.
  *
  * ## 접혀도 갈래 둘은 **마운트된 채** 남는다
  *
- * 접히는 움직임을 보여주려면 사라지면 안 된다. 대신 `disabled` 로 막는다 — **`aria-hidden` 은
+ * 접히는 움직임을 보여주려면 사라지면 안 된다. 대신 `disabled` 로 막는다. **`aria-hidden` 은
  * 안 쓴다**: RNTL 이 그 노드를 숨김으로 보고 쿼리에서 걷어내 테스트가 못 잡는다(열지도 바탕과
  * 목요일 경계선에서 이미 두 번 겪은 자리).
  *
  * ## 이 그림은 화면이 아니라 **바 위 슬롯**에 그려진다
  *
  * 반환 전체가 `<BottomBarOverlay>` 안이다. 화면 안에서 그리면 하단바가 그 위라 **백드롭이 바를 못 덮고**,
- * 펼친 채로 바를 눌러 다른 탭으로 갈 수 있었다. 스크림만 올릴 수는 없다 — ＋ 와 줄은 스크림 위여야
+ * 펼친 채로 바를 눌러 다른 탭으로 갈 수 있었다. 스크림만 올릴 수는 없다. ＋ 와 줄은 스크림 위여야
  * 하므로 셋이 한 덩어리로 올라간다. 자리 계산(`dialBottomPx`)은 창 기준이라 부모가 바뀌어도 그대로다.
  *
- * 움직임 값은 여기 없다 — `speed-dial-motion.ts` 가 든다.
+ * 움직임 값은 여기 없다. `speed-dial-motion.ts` 가 든다.
  */
 import { useEffect, useState } from 'react'
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
@@ -155,10 +155,10 @@ function DialRow(props: DialRowProps): React.JSX.Element {
        * **접혀 있으면 터치를 안 받는다**(사용자 보고 2026-08-27).
        *
        * 접힌 줄은 **마운트된 채** `opacity: 0` 일 뿐이라 RN 에서는 그 자리가 그대로 히트테스트에
-       * 걸린다 — `disabled` 는 `onPress` 만 막고 터치를 통과시키지는 않는다. 그래서 떠 있는 ＋
+       * 걸린다. `disabled` 는 `onPress` 만 막고 터치를 통과시키지는 않는다. 그래서 떠 있는 ＋
        * 위쪽이 통째로 **눌리지 않는 구역** 이 되어 **뒤의 목록 줄이 안 눌렸다.**
        *
-       * 스크림은 이미 같은 처방을 쓰고 있었다 — 줄에만 빠져 있었다.
+       * 스크림은 이미 같은 처방을 쓰고 있었다. 줄에만 빠져 있었다.
        */
       pointerEvents={props.isOpen ? 'auto' : 'none'}
       onPress={props.onPress}
@@ -217,7 +217,7 @@ export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
    * **떠 있는 하단바 위에 앉는다.**
    *
    * 바는 화면 상자 **밖**이 아니라 그 위에 떠 있어서, 화면 기준 `bottom: 0` 은 바
-   * 뒤다 — 처음에 그렇게 뒀더니 FAB 가 캡슐에 반쯤 가려 안 보였다(실기기 확인 2026-08-25).
+   * 뒤다. 처음에 그렇게 뒀더니 FAB 가 캡슐에 반쯤 가려 안 보였다(실기기 확인 2026-08-25).
    *
    * 값은 `ScreenScroll` 이 콘텐츠 끝에 남기는 몫과 **같은 함수에서 나온다**
    * (`bottomSafeAreaPx + barSpacePx`, `bottom-inset.ts`). 손으로 옮겨 적으면 기기마다 갈린다 —
@@ -256,7 +256,7 @@ export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
         style={[StyleSheet.absoluteFill, { backgroundColor: definition.scrim }, scrimStyle]}
       >
         {/*
-          **접근성 트리에서 뺀다**(`accessible={false}`) — 닫는 방법을 이름으로 알리는 것은 FAB 이
+          **접근성 트리에서 뺀다**(`accessible={false}`). 닫는 방법을 이름으로 알리는 것은 FAB 이
           맡고(`aria-label` 이 `닫기`로 바뀐다), 배경까지 `닫기`라고 하면 **같은 이름이 둘**이 되어
           스크린리더에도, 테스트의 이름 조회에도 모호해진다. 터치는 그대로 받는다.
         */}
@@ -297,7 +297,7 @@ export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
         />
         <Pressable
           role="button"
-          // 이름이 상태를 든다 — 그림은 하나이고 **각도만** 다르므로 스크린리더에는 안 들린다.
+          // 이름이 상태를 든다. 그림은 하나이고 **각도만** 다르므로 스크린리더에는 안 들린다.
           aria-label={isOpen ? '닫기' : '기록 추가'}
           onPress={() => setIsOpen((open) => !open)}
           className={`h-14 w-14 items-center justify-center rounded-full ${

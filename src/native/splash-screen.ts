@@ -7,7 +7,7 @@ export async function hideSplashScreen(): Promise<void> {
   await getSplashScreenPort().hide()
 }
 
-// 웹뷰를 JS에서 다시 로드하기 직전에 호출한다 — 리로드 동안 새 문서가 페인트되기 전까지 웹뷰의
+// 웹뷰를 JS에서 다시 로드하기 직전에 호출한다. 리로드 동안 새 문서가 페인트되기 전까지 웹뷰의
 // 네이티브 배경색(브랜드 주황)이 그대로 드러나는 것을 덮는다. 내리는 것은 리로드된 앱의 부팅
 // 흐름(App.tsx → hideSplashScreen)이 맡는다.
 export async function showSplashScreen(): Promise<void> {

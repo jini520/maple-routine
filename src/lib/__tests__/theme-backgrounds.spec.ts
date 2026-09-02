@@ -6,7 +6,7 @@ import { getThemeBackgroundUrl } from '../assets/asset-lookup'
 /**
  * 테마 배경 이미지 에셋 해석.
  *
- * JSON 은 번들 경로가 아니라 **슬러그**만 적는다 — 파일을 넣고 슬러그를 적으면 붙어야 한다.
+ * JSON 은 번들 경로가 아니라 **슬러그**만 적는다. 파일을 넣고 슬러그를 적으면 붙어야 한다.
  * 해석 방식은 일일 퀘스트 지역 배경(`lib/daily-quest-backgrounds.ts`)과 같다.
  */
 describe('getThemeBackgroundUrl', () => {
@@ -25,7 +25,7 @@ describe('getThemeBackgroundUrl', () => {
   //
   // 선언이 0건이면 루프가 안 돌아 **저절로 초록**이 된다. 그래서 원래 `length > 0` 가르개가 있었는데,
   // 지금은 그림을 바꾸는 중이라 실제로 0건이다. 가르개를 떼서 공허한 통과로
-  // 만들지 않고 **skip 으로 남긴다** — "검사했고 괜찮다"와 "검사할 것이 없다"는 리포트에서 달라야
+  // 만들지 않고 **skip 으로 남긴다**. "검사했고 괜찮다"와 "검사할 것이 없다"는 리포트에서 달라야
   // 하고, 새 그림이 붙는 순간 손대지 않아도 되살아난다.
   const declaredSlugs = Object.values(jobThemes)
     .map((theme) => (theme as { background?: { image: string } }).background?.image)

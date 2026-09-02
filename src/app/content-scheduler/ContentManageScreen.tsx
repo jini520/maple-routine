@@ -5,12 +5,12 @@
 // ① **`StackScreen` 이 통째로 사라진다**. 포털 오버레이·푸시/팝 전환·가장자리 스와이프·
 //    탭바 밀어내기 넷이 전부 루트 스택의 성질이라, 셸은 `ScreenScroll(hasTabBar={false})` +
 //    `PageHeader` 다(설정 하위 화면과 같은 골격).
-// ② **`useStackBack(PARENT_PATH)` → `goBack()`**, 그래서 `PARENT_PATH` 상수도 사라진다 — 딥링크가
+// ② **`useStackBack(PARENT_PATH)` → `goBack()`**, 그래서 `PARENT_PATH` 상수도 사라진다. 딥링크가
 //    없어 *"돌아갈 곳이 없는 경우"* 가 존재하지 않는다(`app/use-screen-navigation.ts`).
 // ③ **자동 모드 리다이렉트가 도달 불가능해졌다.** 웹의 `<Navigate to="/content" replace />` 는
 //    **주소로 직접 들어오는 경로**를 막던 것인데(URL 이 있는 세계의 문제), RN 에서 이 화면에 오는
 //    길은 수동 모드에서만 보이는 버튼 하나뿐이고 그 위에 덮여 있는 동안 설정 탭에 닿을 수도 없다.
-//    그래도 **계약은 남긴다** — 모드가 바뀌면 물러난다. 비용이 effect 한 줄이고, 지우면 "왜 없어도
+//    그래도 **계약은 남긴다**. 모드가 바뀌면 물러난다. 비용이 effect 한 줄이고, 지우면 "왜 없어도
 //    되는지"를 다음 사람이 다시 증명해야 한다.
 // ④ `<button aria-pressed>` → `Pressable` + **`aria-selected`**(RN 접근성 상태에 *pressed* 가 없다 —
 //    설정·온보딩의 선택 카드가 이미 밟은 자리).
@@ -73,7 +73,7 @@ function categoryIcon(label: string | null): LucideIcon {
 }
 
 // ADR-035 결정 18: 컨텐츠 관리 페이지(수동 추적 항목 편집). 템플릿 전체를 일간/주간 탭 체크리스트로 항상
-// 보여주고 추적 중인 항목만 선택 상태로 그린다 — 추가·삭제가 행 탭(토글) 하나로 통일되고,
+// 보여주고 추적 중인 항목만 선택 상태로 그린다. 추가·삭제가 행 탭(토글) 하나로 통일되고,
 // 토글은 즉시 저장한다(로컬 Preferences 쓰기뿐이고 비파괴적이라 확인 버튼 없음). 대상 캐릭터는
 // 컨텐츠 스케줄러에서 선택된 캐릭터를 승계한다. 수동 모드 전용.
 // 리디자인(2026-07-24, 와이어프레임 리뷰): content_name에 이미 있는 접두사(lib/scheduler/content-category)로
@@ -88,7 +88,7 @@ export function ContentManageScreen(): React.JSX.Element {
     removeManualContent,
     // ADR-096 결정 2: 진입 시점의 스케줄러 탭을 이어받는다(일간에서 들어오면 일간).
     activeTab: schedulerTab,
-    // ADR-096 결정 4: 선택 캐릭터는 스케줄러와 공유한다 — 탭과 달리 "지금 누구를 보고 있는가"는
+    // ADR-096 결정 4: 선택 캐릭터는 스케줄러와 공유한다. 탭과 달리 "지금 누구를 보고 있는가"는
     // 두 화면이 갈라지면 안 되는 값이다.
   } = useContentSchedulerStore()
   // 선택은 화면·스토어가 아니라 **여기 한 벌**이다.
@@ -111,7 +111,7 @@ export function ContentManageScreen(): React.JSX.Element {
     if (mode !== 'manual') navigation.goBack()
   }, [mode, navigation])
 
-  // 화면 넷이 **같은 규칙**으로 고른다 — 선택만 합치고 폴백을 화면마다 두면
+  // 화면 넷이 **같은 규칙**으로 고른다. 선택만 합치고 폴백을 화면마다 두면
   // **공유했는데 화면마다 다른 캐릭터** 가 다시 생긴다.
   const selected = resolveSelectedCharacter(selectedOcid, characters)
 
@@ -130,7 +130,7 @@ export function ContentManageScreen(): React.JSX.Element {
       .map((item) => item.contentName),
   )
 
-  // ADR-065 결정 4: 전에는 void로 프로미스를 버려 저장 실패가 무음이었다 — 체크가 조용히
+  // ADR-065 결정 4: 전에는 void로 프로미스를 버려 저장 실패가 무음이었다. 체크가 조용히
   // 되돌아가는 것 외에 설명이 없었다. 체크박스가 그 자리에 남으므로 토스트로 알린다.
   async function handleToggle(contentName: string): Promise<void> {
     if (selected === null) return
@@ -146,10 +146,10 @@ export function ContentManageScreen(): React.JSX.Element {
   }
 
   // ADR-057: null일 때만 "가입한 길드 없음"이다. undefined(구버전 캐시·응답에 필드 없음)는
-  // "모름"이라 잠그지 않는다 — 모름을 미가입으로 취급하면 멀쩡한 사용자의 길드 콘텐츠가 막힌다.
+  // "모름"이라 잠그지 않는다. 모름을 미가입으로 취급하면 멀쩡한 사용자의 길드 콘텐츠가 막힌다.
   const hasNoGuild = selected?.guildName === null
 
-  // 이미 추적 중인 항목은 잠그지 않는다 — 길드를 나가도 해제할 수 있어야 한다.
+  // 이미 추적 중인 항목은 잠그지 않는다. 길드를 나가도 해제할 수 있어야 한다.
   function isGuildBlocked(contentName: string): boolean {
     return !trackedNames.has(contentName) && hasNoGuild && isGuildContent(contentName)
   }

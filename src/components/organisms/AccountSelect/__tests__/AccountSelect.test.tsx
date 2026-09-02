@@ -1,9 +1,9 @@
 // 이 앱이 **처음으로 직접 만드는 여는 목록**이라 테스트가 지키는 것도 **값이
-// 잘 나오는가** 보다 **무엇을 두지 않기로 했는가** 쪽이 많다 — 스크림 없음 · **명** 없음 ·
+// 잘 나오는가** 보다 **무엇을 두지 않기로 했는가** 쪽이 많다. 스크림 없음 · **명** 없음 ·
 // 지시받지 않은 문구 없음.
 //
 // 값 규칙(대표 · 월드 최대 둘)은 step 3 의 `summarizeAccount` 가 갖는다. 그래서 픽스처를 손으로
-// 적지 않고 **그 함수를 통과시켜** 만든다 — 여기서 기대값을 베끼면 규칙이 두 벌이 된다.
+// 적지 않고 **그 함수를 통과시켜** 만든다. 여기서 기대값을 베끼면 규칙이 두 벌이 된다.
 import { act, fireEvent } from '@testing-library/react-native'
 
 import {
@@ -58,7 +58,7 @@ async function 열어서(overrides: Partial<Props> = {}): Promise<ReturnType<typ
   return rendered
 }
 
-/** 트리에서 배경색을 전부 모은다 — 어딘가에 스크림이 칠해져 있지 않은가 를 묻는 용도. */
+/** 트리에서 배경색을 전부 모은다. 어딘가에 스크림이 칠해져 있지 않은가 를 묻는 용도. */
 function backgroundColors(node: unknown): unknown[] {
   if (Array.isArray(node)) return node.flatMap(backgroundColors)
   if (node === null || typeof node !== 'object') return []
@@ -86,7 +86,7 @@ describe('AccountSelect — 트리거', () => {
     expect(getByText('루나 Lv.275 밤샘메린')).toBeTruthy()
   })
 
-  // 폴백 규칙은 `CharacterRow` 와 같다(사용자 지정 2026-08-17) — 이니셜이 아니라 주황 원 + `?`.
+  // 폴백 규칙은 `CharacterRow` 와 같다(사용자 지정 2026-08-17). 이니셜이 아니라 주황 원 + `?`.
   it('얼굴이 없으면 주황 원 + ? 다 — 얼굴 때문에 조회하지 않는다', async () => {
     const { queryByTestId, getByTestId, queryByText, getAllByText } = await renderOverlay(
       <AccountSelect {...props()} />,
@@ -163,7 +163,7 @@ describe('AccountSelect — 열린 목록', () => {
 })
 
 describe('AccountSelect — 층은 그림자와 테두리가 말한다', () => {
-  // 이 케이스가 이 step 의 계약이다(사용자 지정) — 뒤를 어둡게 덮으면 값 하나를 고르는 일이
+  // 이 케이스가 이 step 의 계약이다(사용자 지정). 뒤를 어둡게 덮으면 값 하나를 고르는 일이
   // 화면을 뺏는 일로 읽히고, 바로 아래 후보 목록까지 함께 어두워진다.
   it('스크림·딤 역할을 하는 배경색 요소가 없다', async () => {
     const { toJSON } = await 열어서()
@@ -190,7 +190,7 @@ describe('AccountSelect — 층은 그림자와 테두리가 말한다', () => {
 
   it('안드로이드 뒤로가기(onRequestClose)로 닫힌다', async () => {
     const rendered = await 열어서()
-    // `Modal` 자신을 testID 로 잡는다 — 이 프롭은 호스트 뷰가 아니라 `Modal` 요소가 갖는다
+    // `Modal` 자신을 testID 로 잡는다. 이 프롭은 호스트 뷰가 아니라 `Modal` 요소가 갖는다
     // 상태를 바꾸므로 `act` 로 감싼다.
     const modal = rendered.getByTestId('account-select-modal', { includeHiddenElements: true })
 

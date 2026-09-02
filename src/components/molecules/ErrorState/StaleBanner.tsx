@@ -8,7 +8,7 @@ interface StaleBannerAction {
 
 export interface StaleBannerProps {
   message: string
-  /** 재시도가 실제로 통하는 실패에만 준다 — 429·401 에는 액션이 없다. */
+  /** 재시도가 실제로 통하는 실패에만 준다. 429·401 에는 액션이 없다. */
   action?: StaleBannerAction
 }
 

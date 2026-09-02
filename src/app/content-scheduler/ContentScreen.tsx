@@ -7,19 +7,19 @@
 // ══ RN 으로 옮기며 **사라진** 것 넷 — 전부 구조가 대신한다 ═══════════════════════════
 //
 // ① **당김을 손으로 만들던 제스처 훅과 커스텀 인디케이터**. 지금은
-//    `RefreshControl` 이 맡는다 — 안드로이드에는 당김 거리 신호 자체가 없어 커스텀 마크를 고르면
+//    `RefreshControl` 이 맡는다. 안드로이드에는 당김 거리 신호 자체가 없어 커스텀 마크를 고르면
 //  제스처 계층을 새로 만들어야 했다.(당김 = 헤더 버튼과 **같은 재조회**)와
 //    결정 10(버튼은 그대로 남는다)은 글자 그대로 지켜진다.
 // ② **목록을 손가락 따라 내리던 `transform`**. 그 일을 OS 가 한다.
 // ③ **`useScreenStackStore` 의 깊이로 당김을 끄던 배선**. 하위 페이지는 루트
 //    스택에 **덮여** 올라오므로 아래 화면의 스크롤 뷰에 손가락이 닿지 않는다.
 // ④ **`<Outlet />`**(언마운트 금지). 관리 페이지는 형제 라우트가 아니라 루트 스택
-//    push 라 이 화면이 트리에 그대로 남는다 — 계약을 코드가 아니라 내비게이터가 지킨다.
+//    push 라 이 화면이 트리에 그대로 남는다. 계약을 코드가 아니라 내비게이터가 지킨다.
 //
 // ══ 갈린 것 넷 ═════════════════════════════════════════════════════════════════════
 //
 // ① `useNavigate('/content/manage')` → `navigation.navigate('ContentManage')`.
-//  **(이동 전에 스크롤을 0으로)은 함께 사라진다** — 그 처방이 풀던 것은 네 탭이
+//  **(이동 전에 스크롤을 0으로)은 함께 사라진다**. 그 처방이 풀던 것은 네 탭이
 //  문서 스크롤 하나를 공유하던 문제이고, RN 에서는 스크롤이 화면과 함께 죽어
 //    계승할 오프셋이 없다(`ScreenScroll` 파일 머리).
 // ② `<button>` → `Pressable` + `Text`, `hover:` 는 사라진다(RN 에 호버가 없다).
@@ -28,7 +28,7 @@
 //    step 5 에서 보스 스케줄러가 두 번째 호출부가 되며 화면 안 상수에서 `lib/` 로 올라갔다.
 // ④ **캐릭터 관리 피커가 이 화면에 없다**. 헤더 버튼도, 그것이 열던 모달도, 그
 //  모달을 먹여 살리던 로스터 조회도 **설정
-//  화면으로 통째로 옮겨갔다** — 추적 목록은 이후 앱 전역 하나인데 그것을 고르는 자리만
+//  화면으로 통째로 옮겨갔다**. 추적 목록은 이후 앱 전역 하나인데 그것을 고르는 자리만
 //    다섯이었다. 남은 흔적은 빈 상태 CTA 하나이고, 그것도 모달이 아니라 **설정 탭을 연다**.
 //    그래서 웹이 **모달을 셸 바깥 형제로 둔다**(`z-50` 이 셸의 스태킹 컨텍스트에 갇히는 것을 피한다)
 //    고 정한 자리가 이 파일에서 사라졌다.
@@ -78,7 +78,7 @@ export function ContentScreen(): React.JSX.Element {
     manualTrackedByOcid,
     loadTrackedOcids,
     refresh,
-    // ADR-096 결정 1: 탭은 스토어 소유다 — 이 화면이 언마운트돼도 살아남고, 관리 페이지가
+    // ADR-096 결정 1: 탭은 스토어 소유다. 이 화면이 언마운트돼도 살아남고, 관리 페이지가
     // 같은 값을 읽어 보던 탭 그대로 열린다.
     activeTab,
     setActiveTab,
@@ -86,7 +86,7 @@ export function ContentScreen(): React.JSX.Element {
   // 선택은 화면·스토어가 아니라 **여기 한 벌**이다.
   const { selectedOcid, select } = useCharacterSelectionStore()
   // **당김이 시작한 회차에만** 인디케이터가 돈다. 헤더 버튼·자동 조회는 같은
-  // 재조회를 부르지만 인디케이터는 안 연다 — 버튼은 자기 스피너와 **조회 중...** 을 이미 갖고 있고
+  // 재조회를 부르지만 인디케이터는 안 연다. 버튼은 자기 스피너와 **조회 중...** 을 이미 갖고 있고
   // 자동 조회는 원래 조용해야 하는 것이다.
   const pull = usePullRefresh(() => refresh(trackedOcids ?? []))
   const { mode } = useTrackingModeStore()
@@ -95,7 +95,7 @@ export function ContentScreen(): React.JSX.Element {
   const topSafeAreaPx = useTopSafeAreaPx()
   const { definition } = useThemeAppearance()
   const reduceMotion = useReducedMotion()
-  // ADR-063: 동기화 전체 실패는 인라인 문단이 아니라 토스트로 알린다 — 지속 상태("n분 전")는
+  // ADR-063: 동기화 전체 실패는 인라인 문단이 아니라 토스트로 알린다. 지속 상태("n분 전")는
   // 새로고침 옆 표기가 이미 담당하고, 토스트에는 원인을 푸는 액션을 붙일 수 있다.
   useScheduleSyncErrorToast(error, { onRetry: () => refresh(trackedOcids ?? []) })
 
@@ -105,14 +105,14 @@ export function ContentScreen(): React.JSX.Element {
   }, [])
 
   // ADR-101 결정 1: `null` 은 "0명"이 아니라 **"저장소를 아직 안 읽었다"** 다. 둘을 `||` 로 묶으면
-  // 콜드 스타트 첫 페인트가 아직 모르는 사실을 단정한다 — 빈 상태는 읽고 확인한 뒤에만 그린다.
+  // 콜드 스타트 첫 페인트가 아직 모르는 사실을 단정한다. 빈 상태는 읽고 확인한 뒤에만 그린다.
   const isEmpty = trackedOcids !== null && trackedOcids.length === 0
 
   // : 스토어가 내는 것은 **기준 순서**(레벨 내림차순)이고, 화면 순서는 사용자가
   // 캐릭터 관리에서 정한 저장 배열 순서다. core 를 안 고치는 이유는 `orderByTracked` 머리에 있다.
   const characters = orderByTracked(storeCharacters, trackedOcids ?? [])
 
-  // 화면 넷이 **같은 규칙**으로 고른다 — 선택만 합치고 폴백을 화면마다 두면
+  // 화면 넷이 **같은 규칙**으로 고른다. 선택만 합치고 폴백을 화면마다 두면
   // **공유했는데 화면마다 다른 캐릭터** 가 다시 생긴다.
   const selected = resolveSelectedCharacter(selectedOcid, characters)
 
@@ -121,7 +121,7 @@ export function ContentScreen(): React.JSX.Element {
   // 전역 error가 아니라 이 값으로 온다.
   useScheduleSyncErrorToast(selected?.error ?? null, { onRetry: () => refresh(trackedOcids ?? []) })
 
-  // 판정은 `features/content-scheduler/displayed-contents` 가 갖는다 — today 의 `남은 스케줄`이
+  // 판정은 `features/content-scheduler/displayed-contents` 가 갖는다. today 의 `남은 스케줄`이
   // 같은 수를 세므로 화면 안에 두면 두 벌이 되고, 실제로 갈라졌던 자리다(모든 캐릭터 **일퀘 18**).
   // 여기 남는 것은 **스토어에서 꺼내 넘기는 일** 뿐이다.
   function contentsInputOf(character: ContentCharacterView): DisplayedContentsInput {
@@ -143,7 +143,7 @@ export function ContentScreen(): React.JSX.Element {
   const displayDailyContents: DailyContent[] = selected === null ? [] : dailyContentsOf(selected)
   const displayWeeklyContents: WeeklyContent[] = selected === null ? [] : weeklyContentsOf(selected)
 
-  // : 링 **하나를 좌·우 반원으로 가른다** — 왼쪽 일간, 오른쪽 주간. 둘 다 12시에서
+  // : 링 **하나를 좌·우 반원으로 가른다**. 왼쪽 일간, 오른쪽 주간. 둘 다 12시에서
   // 시작해 아래로 차므로 두 반원을 나란히 읽을 수 있다.
   const railEntries: CharacterRailEntry[] = characters.map((character) => ({
     ocid: character.ocid,
@@ -158,14 +158,14 @@ export function ContentScreen(): React.JSX.Element {
     ],
   }))
 
-  // : 이 화면은 더 이상 피커를 열지 않는다 — 추적 목록을 고르는 자리는 설정
+  // : 이 화면은 더 이상 피커를 열지 않는다. 추적 목록을 고르는 자리는 설정
   // 하나뿐이라, 빈 상태 CTA 는 모달 대신 **설정 탭을 피커가 열린 채로** 연다.
   function goToCharacterManage(): void {
     openTab('Settings', { openPicker: true })
   }
 
   // ADR-035 결정 18: 수동 모드의 추적 항목 편집은 이 화면이 아니라 전용 관리 페이지에서 한다.
-  // 잘린 버튼은 목적지를 잃는다 — 줄어드는 것은 시각 텍스트뿐이다.
+  // 잘린 버튼은 목적지를 잃는다. 줄어드는 것은 시각 텍스트뿐이다.
   const manualManageButton = mode === 'manual' && (
     <Pressable role="button" className="shrink-0" onPress={() => navigation.navigate('ContentManage')}>
       <Text className="text-sm font-medium text-text-muted">컨텐츠 관리</Text>
@@ -196,7 +196,7 @@ export function ContentScreen(): React.JSX.Element {
     // 웹의 `min-h-[calc(100dvh …)]` 자리는 `flex-1` 이다(탭 상자가 이미 탭바를 뺀 크기다).
     return (
       <View testID="screen-Content" className="flex-1 p-4" style={{ paddingTop: topSafeAreaPx }}>
-        {/* 헤더 셸을 안 쓰는 가지에서도 제목 줄은 같은 프리미티브다 — 빈 상태와
+        {/* 헤더 셸을 안 쓰는 가지에서도 제목 줄은 같은 프리미티브다. 빈 상태와
             목록 상태를 오갈 때 제목이 튀면 그것이 가장 눈에 띄는 자리다. */}
         <PageHeaderTitleRow>
           <Text className="text-lg font-semibold text-text">컨텐츠 스케줄러</Text>
@@ -220,7 +220,7 @@ export function ContentScreen(): React.JSX.Element {
       <ScreenScroll
         // ADR-130 결정 1·3: 당김은 헤더 버튼과 **같은 재조회**를 부르고, 색만
         // 테마에서 넘긴다. `refreshing` 이 `status` 라서 헤더 버튼으로 시작한 재조회에도 플랫폼
-        // 인디케이터가 뜬다 — 웹과 갈리는 자리가 여기뿐이고 그 대가는 ADR 이 적는다.
+        // 인디케이터가 뜬다. 웹과 갈리는 자리가 여기뿐이고 그 대가는 ADR 이 적는다.
         refreshControl={
           <RefreshControl
             refreshing={pull.refreshing}
@@ -231,7 +231,7 @@ export function ContentScreen(): React.JSX.Element {
           />
         }
         header={
-          // 제목~탭도 목록과 **함께 스크롤된다** — 헤더는 `ScreenScroll` 의 첫
+          // 제목~탭도 목록과 **함께 스크롤된다**. 헤더는 `ScreenScroll` 의 첫
           // 자식이다. `fixed` 도 spacer 도 없다: 가 웹에서 풀던 문제가
           // 구조적으로 없다(`PageHeader` 파일 머리).
           <PageHeader>
@@ -239,7 +239,7 @@ export function ContentScreen(): React.JSX.Element {
                 끝은 관리 버튼 자리 그대로다 — 그쪽은 **가는 곳**, 이쪽은 **상태** 라 성질이 다르다. */}
             <PageHeaderTitleRow className="justify-between">
               <View className="shrink flex-row items-center gap-2">
-                {/* 결정 3: 폭을 다투면 시각 텍스트만 줄어든다 — 제목은 화면의 이름이다. */}
+                {/* 결정 3: 폭을 다투면 시각 텍스트만 줄어든다. 제목은 화면의 이름이다. */}
                 <Text className="shrink-0 text-lg font-semibold text-text">컨텐츠 스케줄러</Text>
                 <Text className="shrink text-sm text-text-muted" numberOfLines={1}>
                   {status === 'loading' ? '조회 중...' : selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
@@ -261,7 +261,7 @@ export function ContentScreen(): React.JSX.Element {
               {manualManageButton}
             </PageHeaderTitleRow>
 
-            {/* 조건이 **줄 밖**에 있다 — 안에 두면 캐릭터가 없는 동안(첫 조회) 빈 줄이 남아
+            {/* 조건이 **줄 밖**에 있다. 안에 두면 캐릭터가 없는 동안(첫 조회) 빈 줄이 남아
                 `PageHeader` 의 `gap-4` 를 두 번 먹는다(딸림 변경). */}
             {characters.length > 0 && selected !== null && (
               <CharacterRail

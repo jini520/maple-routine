@@ -3,8 +3,8 @@
 // 쓰므로 본문 계약을 여기 모아 두고, 두 호출부 테스트는 **그 자리로 들어갔다 나오는 흐름**만 본다.
 //
 // 여기서 지키는 것 넷
-// ① 자릿수 전체가 주 표기다 — 억/만은 보조 줄이고 값이 0이면 그 줄이 **비되 자리는 남는다**
-// ② **`0` 은 저장할 수 없다** — 미입력과 0원은 다른 사실이라 저장 버튼이 잠긴다
+// ① 자릿수 전체가 주 표기다. 억/만은 보조 줄이고 값이 0이면 그 줄이 **비되 자리는 남는다**
+// ② **`0` 은 저장할 수 없다**. 미입력과 0원은 다른 사실이라 저장 버튼이 잠긴다
 // ③ 대상이 갈리면 값이 그 아이템의 것으로 되돌아간다(순차 모드·드릴다운은 언마운트가 없다)
 // ④ 스킵은 순차 모드에서만 뜨고 **아무것도 저장하지 않는다**(결정 6 정정)
 import { useState, type ReactNode } from 'react'
@@ -25,9 +25,9 @@ jest.mock('@gorhom/bottom-sheet', () => {
       return React.createElement(ReactNative.View, props)
     }),
     BottomSheetScrollView: (props: Record<string, unknown>) => React.createElement(ReactNative.View, props),
-    // 시트 밖과 같게 둔다 — 아톰이 이 값으로 **시트 안인가** 를 묻는다.
+    // 시트 밖과 같게 둔다. 아톰이 이 값으로 **시트 안인가** 를 묻는다.
     // 목이 시트를 평범한 `View` 로 바꾸므로 여기서도 문맥이 없는 것이 사실이고, 그래서
-    // 아래 입력은 안 그려진다 — 그래도 **있어야 한다**: `lib/nativewind-interop` 이 모듈을
+    // 아래 입력은 안 그려진다. 그래도 **있어야 한다**: `lib/nativewind-interop` 이 모듈을
     // 읽는 순간 이것을 등록하므로, 없으면 스위트가 뜨기도 전에 죽는다.
     useBottomSheetInternal: () => null,
     BottomSheetTextInput: (props: Record<string, unknown>) =>
@@ -86,7 +86,7 @@ describe('DropPricePad — 금액 입력', () => {
     const { result } = renderPad()
     const { getByText, queryByText } = await result
 
-    // 값이 0인 동안에는 환산 문구가 없다 — 자리(높이)만 지킨다. 정확 일치로 묻는 이유는 단위 칩이
+    // 값이 0인 동안에는 환산 문구가 없다. 자리(높이)만 지킨다. 정확 일치로 묻는 이유는 단위 칩이
     // `+1억` 이라 부분 일치로는 칩이 걸리기 때문이다.
     expect(queryByText('1억')).toBeNull()
 
@@ -114,7 +114,7 @@ describe('DropPricePad — 금액 입력', () => {
     expect(getByTestId('drop-price-amount').props.children).toBe('0')
   })
 
-  // **미입력은 0원이 아니다** — 0을 저장할 수 있으면 "값을 매겼는데 0원"이라는
+  // **미입력은 0원이 아니다**. 0을 저장할 수 있으면 "값을 매겼는데 0원"이라는
   // 없는 사실이 기록된다. 그래서 저장은 값이 있어야만 눌린다.
   it('0 은 저장할 수 없다', async () => {
     const { result, onSave } = renderPad()
@@ -190,10 +190,10 @@ describe('DropPricePad — 분배 인원', () => {
   })
 })
 
-// 순차 모드와 드릴다운은 컴포넌트를 언마운트하지 않고 `drop` 만 갈아 끼운다 — 두지 않으면 앞
+// 순차 모드와 드릴다운은 컴포넌트를 언마운트하지 않고 `drop` 만 갈아 끼운다. 두지 않으면 앞
 // 아이템에 치던 금액과 인원이 그대로 남아 다음 아이템에 얹힌다.
 //
-// **대상 교체를 `rerender` 로 하지 않는다** — 그것은 루트를 통째로 갈아치워 프로바이더까지 날린다
+// **대상 교체를 `rerender` 로 하지 않는다**. 그것은 루트를 통째로 갈아치워 프로바이더까지 날린다
 // (step 3 이 실측해 적어 둔 함정). 부모가 상태를 들고 버튼으로 바꾼다.
 function PadHost(): React.JSX.Element {
   const [name, setName] = useState('루즈 컨트롤 머신 마크')

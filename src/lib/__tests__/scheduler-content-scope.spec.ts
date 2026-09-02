@@ -39,7 +39,7 @@ describe('getShareScope', () => {
       expect(getShareScope('[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?')).toBe('world')
     })
 
-    // 같은 계열이라도 공유 단위가 다르다(사용자 확인 2026-08-03) — 이름으로 유추하면 틀린다.
+    // 같은 계열이라도 공유 단위가 다르다(사용자 확인 2026-08-03). 이름으로 유추하면 틀린다.
     it('PC방 주간 드래곤 퇴치는 account다 — 접두 없는 쪽(world)과 공유 단위가 다르다', () => {
       expect(getShareScope('[메이플 유니온] 주간 드래곤 퇴치')).toBe('world')
       expect(getShareScope('[메이플 유니온] PC방 주간 드래곤 퇴치')).toBe('account')
@@ -175,7 +175,7 @@ describe('getSharedContentGroups', () => {
 
     expect(names).toHaveLength(7)
     expect(new Set(names).size).toBe(7)
-    // 카탈로그가 **공유** 라고 적은 것과 정확히 같은 집합이어야 한다 — 여기서 갈리면 `남은 스케줄`이
+    // 카탈로그가 **공유** 라고 적은 것과 정확히 같은 집합이어야 한다. 여기서 갈리면 `남은 스케줄`이
     // 빼는 것과 이 위젯이 그리는 것이 어긋나 항목이 통째로 사라지거나 두 곳에 겹쳐 나온다.
     for (const name of names) {
       expect(getShareScope(name)).not.toBe('character')

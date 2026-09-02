@@ -1,7 +1,7 @@
 // 펼침판의 **움직임 값**.
 //
 // 값을 컴포넌트 밖에 두는 이유는 `ValuableRowBackground` 가 `valuable-row-glow.ts` 를 둔 이유와
-// 같다 — **애니메이션을 띄우지 않고도 규칙을 검증**할 수 있어야 한다. 여기서 보는 것은 **계단이
+// 같다. **애니메이션을 띄우지 않고도 규칙을 검증**할 수 있어야 한다. 여기서 보는 것은 **계단이
 // 어느 방향으로 서는가** 이고, 그것이 이 판이 말하려는 것의 전부다.
 import {
   DIAL_MOTION,
@@ -22,7 +22,7 @@ describe('열림 — 계단이 FAB 에서 멀어지는 방향이다', () => {
     expect(DIAL_MOTION.expenseCircle.openDelayMs).toBe(0)
   })
 
-  // 원이 자리를 잡은 **뒤에** 라벨이 밀려 나온다 — **메뉴가 떴다** 를 **버튼이 자기 이름을 폈다** 로
+  // 원이 자리를 잡은 **뒤에** 라벨이 밀려 나온다. **메뉴가 떴다** 를 **버튼이 자기 이름을 폈다** 로
   // 바꾸는 한 겹이다.
   it('칩이 제 원보다 늦다', () => {
     expect(DIAL_MOTION.expenseChip.openDelayMs).toBeGreaterThan(
@@ -89,7 +89,7 @@ describe('dialTiming', () => {
     expect(dialTiming(DIAL_MOTION.incomeChip, false, false)).toEqual({ delay: 0, duration: 130 })
   })
 
-  // 계단은 **움직임이 있을 때만** 뜻이 있다 — 이동·스케일이 꺼지면 순서가 보일 자리가 없고,
+  // 계단은 **움직임이 있을 때만** 뜻이 있다. 이동·스케일이 꺼지면 순서가 보일 자리가 없고,
   // 지연만 남으면 **아무 일도 없다가 툭 나타난다** 가 된다.
   it('움직임을 줄이면 지연이 0 이다', () => {
     expect(dialTiming(DIAL_MOTION.incomeChip, true, true).delay).toBe(0)
@@ -102,7 +102,7 @@ describe('dialTiming', () => {
 })
 
 describe('이동 거리', () => {
-  // `BottomBar` 의 `ROW_SHIFT = 10` 과 같은 값이다 — 그 파일 주석이 이유를 적어 뒀다:
+  // `BottomBar` 의 `ROW_SHIFT = 10` 과 같은 값이다. 그 파일 주석이 이유를 적어 뒀다:
   // **크면 **날아온다** 가 되어 층 관계가 흐려진다**.
   it('원과 칩이 열 픽셀만 움직인다', () => {
     expect(DIAL_RISE_PX).toBe(10)
@@ -114,7 +114,7 @@ describe('이동 거리', () => {
     expect(DIAL_START_SCALE).toBeLessThan(1)
   })
 
-  // ＋ 를 45° 돌리면 그대로 ✕ 다 — 아이콘이 하나뿐이라 두 그림이 어긋날 자리가 없다.
+  // ＋ 를 45° 돌리면 그대로 ✕ 다. 아이콘이 하나뿐이라 두 그림이 어긋날 자리가 없다.
   it('FAB 가 사십오도 돈다', () => {
     expect(FAB_OPEN_ROTATION_DEG).toBe(45)
   })

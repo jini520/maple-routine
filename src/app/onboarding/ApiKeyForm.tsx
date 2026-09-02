@@ -5,30 +5,30 @@
 // 처음으로 누를 수 있는 크기가 된다. 이 두 링크를 *"중복이 아니라 서로 다른 두 진입점"*
 // 이라 적은 것을 화면 구조로 옮긴 것이라, 둘 중 하나를 빼면 그 결정이 깨진다.
 //
-// 키는 이 컴포넌트가 저장하지 않는다 — `onSubmit` 으로 넘기면 스토어가 `storage/api-key` 를 거친다
+// 키는 이 컴포넌트가 저장하지 않는다. `onSubmit` 으로 넘기면 스토어가 `storage/api-key` 를 거친다
 // (CLAUDE.md CRITICAL 백엔드 없음).
 //
 // ── RN 으로 옮기며 갈린 것 일곱 ─────────────────────────────────────────────────────
 //
-// ① **`<form>` 이 없다.** 제출 경로가 둘로 갈린다 — 버튼의 `onPress` 와 키보드 완료 키의
+// ① **`<form>` 이 없다.** 제출 경로가 둘로 갈린다. 버튼의 `onPress` 와 키보드 완료 키의
 //    `onSubmitEditing`. 웹의 `event.preventDefault()` 는 사라지지만 **가드는 그대로 남는다**
-//    (제출 중이거나 값이 비면 안 부른다) — 웹 테스트가 그 가드를 따로 검사하던 이유가 여기서도 같다.
+//    (제출 중이거나 값이 비면 안 부른다). 웹 테스트가 그 가드를 따로 검사하던 이유가 여기서도 같다.
 // ② `type={isRevealed ? 'text' : 'password'}` → **`secureTextEntry={!isRevealed}`**. 토글의 뜻은
 //    같다: 붙여넣은 긴 문자열을 눈으로 확인할 수 있어야 한다(가려 두면 실패해도 401 토스트뿐이다).
 // ③ `autoCorrect="off"` → `autoCorrect={false}`(RN 은 boolean). `autoCapitalize="none"` ·
-//    `spellCheck={false}` 는 이름이 같다. **셋 다 남기는 이유가 갈리지 않는다** — 모바일 키보드가
+//    `spellCheck={false}` 는 이름이 같다. **셋 다 남기는 이유가 갈리지 않는다**. 모바일 키보드가
 //    첫 글자를 대문자로 바꾸면 조용히 틀린 키가 된다.
 // ④ **`<label htmlFor>` 이 없다.** 라벨 글자는 `Text` 로 남기고, 접근성 이름은 `TextInput` 의
 //    `aria-label` 이 직접 갖는다(RN 에 라벨-컨트롤 연결이 없다).
 // ⑤ **`<a target="_blank">` → `Pressable role="link"` + `Linking.openURL`.** 하이브리드 앱에서
 //    시스템 브라우저로 나가던 동작이 RN 에서는 이 호출이다. `rel="noopener noreferrer"` 는 브라우저
-//    탭 사이의 문제라 짝이 없다 — OS 브라우저가 열리는 순간 관계 자체가 없다.
+//    탭 사이의 문제라 짝이 없다. OS 브라우저가 열리는 순간 관계 자체가 없다.
 //    가이드 버튼은 `Button` atom 에 `role="link"` 를 덮어 쓴다(atom 이 `{...rest}` 를 뒤에 펼친다) —
 //  **겉모습만 outline 을 입고 시맨틱은 링크**라는 후속 결정이 그대로 산다.
-// ⑥ `hover:` 제거(터치 기기에 hover 가 없다 — atoms 와 같은 규칙), `disabled:opacity-50` 는 CSS
+// ⑥ `hover:` 제거(터치 기기에 hover 가 없다. atoms 와 같은 규칙), `disabled:opacity-50` 는 CSS
 //    의사 클래스라 RN 프롭과 안 이어져 조건부 클래스가 된다.
 // ⑦ **`placeholder` 색을 지정하지 않는다.** 웹도 지정하지 않아 브라우저 기본값이었고, 여기서도
-//    플랫폼 기본값에 맡긴다 — 색을 새로 정하면 웹에 없던 결정을 여기서 만드는 것이 된다.
+//    플랫폼 기본값에 맡긴다. 색을 새로 정하면 웹에 없던 결정을 여기서 만드는 것이 된다.
 import { useState } from 'react'
 import { Linking, Pressable, View } from 'react-native'
 
@@ -70,7 +70,7 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
       <View className="gap-1">
         <Text className="text-lg font-semibold text-text">넥슨 API 키를 입력해주세요</Text>
         <Text className="text-sm text-text-muted">스케줄러 API를 사용하려면 개인 API 키가 필요해요</Text>
-        {/* 키는 기기에 저장된다(storage/api-key) — "저장하지 않는다"는 약속은 지킬 수
+        {/* 키는 기기에 저장된다(storage/api-key). "저장하지 않는다"는 약속은 지킬 수
             없다. 사실인 것은 백엔드가 없어 우리가 수집하지 않는다는 것뿐이다. */}
         <Text className="text-xs text-text-muted">
           입력한 키는 이 기기에만 저장되고 넥슨 외 어디로도 전송되지 않아요
@@ -126,7 +126,7 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
         확인
       </Button>
 
-      {/* 구분선이 두 사용자군을 가른다 — 주 CTA 바로 아래 같은 pill 이 하나 더 서는 위험을
+      {/* 구분선이 두 사용자군을 가른다. 주 CTA 바로 아래 같은 pill 이 하나 더 서는 위험을
           막는 것도 이 줄이다(색·크기 차이와 함께). */}
       <View className="flex-row items-center gap-2.5">
         <View className="h-px flex-1 bg-border" aria-hidden />

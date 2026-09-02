@@ -1,4 +1,4 @@
-// 웹판에는 `BottomSheet` 전용 테스트가 없었다 — 가 성공 기준을 *"유일 사용처인
+// 웹판에는 `BottomSheet` 전용 테스트가 없었다. 가 성공 기준을 *"유일 사용처인
 // `BossDropSheet` 의 테스트 4개가 **수정 없이** 통과할 것"* 으로 삼았기 때문이다(스킨·공개 API 를
 // 안 바꾼다는 결정 2 를 그 자리에서 검사하는 방식). RN 에서는 그 화면이 아직 없으므로 **그때 그
 // 테스트가 지켰을 계약**을 직접 적는다.
@@ -12,7 +12,7 @@ import type { ReactNode } from 'react'
 import { Keyboard, Text, View } from 'react-native'
 import { act } from '@testing-library/react-native'
 
-// `jest.mock` 팩토리는 호이스팅돼 스코프 밖 변수를 못 읽는다 — **`mock` 접두 이름만** 예외다.
+// `jest.mock` 팩토리는 호이스팅돼 스코프 밖 변수를 못 읽는다. **`mock` 접두 이름만** 예외다.
 const mockPresent = jest.fn()
 
 jest.mock('@gorhom/bottom-sheet', () => {
@@ -28,9 +28,9 @@ jest.mock('@gorhom/bottom-sheet', () => {
     }),
     BottomSheetScrollView: (props: Record<string, unknown>) =>
       React.createElement(ReactNative.View, props),
-    // 시트 밖과 같게 둔다 — 아톰이 이 값으로 **시트 안인가** 를 묻는다.
+    // 시트 밖과 같게 둔다. 아톰이 이 값으로 **시트 안인가** 를 묻는다.
     // 목이 시트를 평범한 `View` 로 바꾸므로 여기서도 문맥이 없는 것이 사실이고, 그래서
-    // 아래 입력은 안 그려진다 — 그래도 **있어야 한다**: `lib/nativewind-interop` 이 모듈을
+    // 아래 입력은 안 그려진다. 그래도 **있어야 한다**: `lib/nativewind-interop` 이 모듈을
     // 읽는 순간 이것을 등록하므로, 없으면 스위트가 뜨기도 전에 죽는다.
     useBottomSheetInternal: () => null,
     BottomSheetTextInput: (props: Record<string, unknown>) =>
@@ -56,7 +56,7 @@ beforeEach(() => {
 
 describe('BottomSheet — 가 정한 값을 넘긴다', () => {
   /**
-   * 키보드 이벤트는 네이티브에서 오므로 **등록된 손잡이를 직접 잡아 흔든다** — 등록 순서가
+   * 키보드 이벤트는 네이티브에서 오므로 **등록된 손잡이를 직접 잡아 흔든다**. 등록 순서가
    * 계약이다(뜨는 것 · 내리는 것).
    */
   const 키보드손잡이: Array<() => void> = []
@@ -126,7 +126,7 @@ describe('BottomSheet — 가 정한 값을 넘긴다', () => {
     expect(style.borderTopColor).toBeUndefined()
   })
 
-  // `max-h-[82vh]` 는 **상한**이지 높이가 아니다 — 고정 스냅 포인트(라이브러리의 흔한 사용법)로
+  // `max-h-[82vh]` 는 **상한**이지 높이가 아니다. 고정 스냅 포인트(라이브러리의 흔한 사용법)로
   // 옮기면 내용이 짧아도 시트가 항상 82%까지 올라온다.
   it('높이는 내용이 정하고 82%가 상한이다 — 고정 스냅 포인트가 아니다', async () => {
     const { getByTestId } = await open()
@@ -139,17 +139,17 @@ describe('BottomSheet — 가 정한 값을 넘긴다', () => {
   })
 
   /**
-   * 라이브러리는 창 모드를 **자기가 안 바꾼다** — 이 프롭은 키보드가 뜰 때 창이 실제로 어떻게
+   * 라이브러리는 창 모드를 **자기가 안 바꾼다**. 이 프롭은 키보드가 뜰 때 창이 실제로 어떻게
    * 되는가 를 알려 주는 것이고, 그 값으로 자기 보정량을 정한다.
    *
-   * **매니페스트의 `adjustResize` 를 믿으면 안 된다** — 이 앱은 edge-to-edge 라
+   * **매니페스트의 `adjustResize` 를 믿으면 안 된다**. 이 앱은 edge-to-edge 라
    * (`android/gradle.properties` 의 `edgeToEdgeEnabled=true`) 그 값이 죽어 있다. 계측(API 36,
    * 2026-08-27): 키보드가 312dp 떠도 `Dimensions.get('window').height` 는 914.29 그대로였고
-   * 내용도 안 밀렸다 — **OS 는 아무것도 안 한다.**
+   * 내용도 안 밀렸다. **OS 는 아무것도 안 한다.**
    *
    * 그런데 `adjustResize` 를 넘기면 라이브러리는 OS 가 이미 했겠지 라며 자기 보정을 0 으로
    * 둔다(소스: `heightWithinContainer = 0` 후 early return). 그래서 시트가 키보드에 그대로
-   * 가렸다. `adjustPan` 이 사실이다 — 창은 안 움직인다, 네가 올려라.
+   * 가렸다. `adjustPan` 이 사실이다. 창은 안 움직인다, 네가 올려라.
    */
   it('창이 안 움직인다고 알려 준다 — adjustPan (edge-to-edge 라 adjustResize 는 죽은 값)', async () => {
     const { getByTestId } = await open()
@@ -175,7 +175,7 @@ describe('BottomSheet — 가 정한 값을 넘긴다', () => {
    * **키보드가 뜨면 아래 인셋을 안 남긴다**.
    *
    * 홈 인디케이터 몫(`insets.bottom`)은 화면 맨 아래가 손가락에 닿는 자리라 비워 둔다 는 값인데,
-   * 키보드가 그 자리를 이미 덮고 있으면 **아무것도 아닌 빈 띠**가 된다 — 실기에서 빠른 칩과
+   * 키보드가 그 자리를 이미 덮고 있으면 **아무것도 아닌 빈 띠**가 된다. 실기에서 빠른 칩과
    * 키보드 사이가 50pt 벌어졌다(사용자 스크린샷 2026-08-26).
    */
   it('키보드가 뜨면 아래 인셋을 걷는다', async () => {
@@ -184,10 +184,10 @@ describe('BottomSheet — 가 정한 값을 넘긴다', () => {
       (getByTestId('boss-drop-sheet').props.contentContainerStyle as { paddingBottom: number })
         .paddingBottom
 
-    // 테스트 인셋의 아래는 34(iPhone 계열) — 거기에 숨돌림 16.
+    // 테스트 인셋의 아래는 34(iPhone 계열). 거기에 숨돌림 16.
     expect(여백()).toBe(34 + 16)
 
-    // 걷는 것은 **인셋뿐**이다 — 숨돌림 16 은 남는다(마지막 줄이 키보드에 닿으면 누를 자리가 없다).
+    // 걷는 것은 **인셋뿐**이다. 숨돌림 16 은 남는다(마지막 줄이 키보드에 닿으면 누를 자리가 없다).
     await 키보드(true)
     expect(여백()).toBe(16)
 
@@ -206,7 +206,7 @@ describe('BottomSheet — 가 정한 값을 넘긴다', () => {
 
   // 스크림은 테마 토큰이고, **라이브러리 백드롭이 아니라 우리가 직접 그린다.**
   //
-  // ⚠️ 이 테스트는 **스크림이 실제로 보이는가**·**제때 사라지는가** 를 답하지 못한다 — 이 파일이
+  // ⚠️ 이 테스트는 **스크림이 실제로 보이는가**·**제때 사라지는가** 를 답하지 못한다. 이 파일이
   // 라이브러리를 목으로 갈아 끼우기 때문이다(파일 머리). 그 자리에서 두 번 틀렸다(2026-08-13):
   // 라이브러리 백드롭은 **아예 안 보였고**(스냅 포인트가 하나라 불투명도 보간이 퇴화 구간),
   // 그걸 애니메이션 없는 단색으로 바꾸자 이번엔 **닫히는 동안 늦게까지 남았다.**
@@ -252,10 +252,10 @@ describe('BottomSheet — 가 정한 값을 넘긴다', () => {
  *
  * 시트가 자기가 덮고 있는 페이지와 같은 토큰(`bg`)으로 서 있어 다크에서 스크림 깔린 배경과
  * 대비가 1.03~1.05 였다. 여기서 지키는 것은 두 고리다:
- *   ① 라이브러리가 칠하는 **껍데기**(`backgroundStyle` — 우리 서브트리 밖이라 변수가 안 닿는다)
+ *   ① 라이브러리가 칠하는 **껍데기**(`backgroundStyle`. 우리 서브트리 밖이라 변수가 안 닿는다)
  *   ② 시트 **안**의 `className` 이 올린 값으로 풀리는가 (이게 시트 안 코드를 안 고친다 의 실체다)
  *
- * 색은 손으로 적지 않는다 — `buildSheetScopeVariables` 가 내는 값과 대조한다.
+ * 색은 손으로 적지 않는다. `buildSheetScopeVariables` 가 내는 값과 대조한다.
  */
 describe('BottomSheet — 다크에서 표면 계열을 한 칸 올린다', () => {
   const 검은마법사 = getThemeDefinition('검은마법사')
@@ -298,7 +298,7 @@ describe('BottomSheet — 다크에서 표면 계열을 한 칸 올린다', () =
     )
   })
 
-  // 라이트는 대비가 4.18~4.29 로 멀쩡하다 — 여기서 한 칸 더 올리면 `#FFFFFF` 에 부딪혀 눌린다.
+  // 라이트는 대비가 4.18~4.29 로 멀쩡하다. 여기서 한 칸 더 올리면 `#FFFFFF` 에 부딪혀 눌린다.
   it('라이트에서는 아무것도 안 올린다', async () => {
     const { getByTestId } = await renderOverlay(
       <BottomSheet onClose={noop}>

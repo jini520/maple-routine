@@ -1,13 +1,13 @@
 // 드롭 획득 히스토리 — 웹판(500줄)의 명세를 읽어 다시 쓴 것.
 //
 // 갈린 것 넷
-// ① **라우터가 없다** — 빈 상태 CTA 는 `goBack` 이 불렸는가로 본다(웹은 location 프로브였다).
-// ② **셸 계약이 뒤집힌다** — 웹은 *"`screen-scroll` 이 없어야 한다"* 를 단언했다(공용 셸의 상단
+// ① **라우터가 없다**. 빈 상태 CTA 는 `goBack` 이 불렸는가로 본다(웹은 location 프로브였다).
+// ② **셸 계약이 뒤집힌다**. 웹은 *"`screen-scroll` 이 없어야 한다"* 를 단언했다(공용 셸의 상단
 //    보정이 sticky 헤더와 겹쳤다). RN 에는 그 보정이 없고 헤더가 스크롤 뷰의 형제라 **공용 셸을
 //    쓰는 것이 맞는 그림**이라, 같은 자리에서 반대를 단언한다.
-// ③ **클래스 문자열로 묻지 않는다** — `bg-`·`border-b` 유무를 보던 자리는 렌더된 스타일 값으로,
+// ③ **클래스 문자열로 묻지 않는다**. `bg-`·`border-b` 유무를 보던 자리는 렌더된 스타일 값으로,
 //    `data-valuable`·`data-drought-tier` 는 접근성 이름으로 옮겼다.
-// ④ **골드 pill 이 중첩 `Text` 다** — RN 문장 안에는 상자를 넣을 수 없어 배경색만 남는다
+// ④ **골드 pill 이 중첩 `Text` 다**. RN 문장 안에는 상자를 넣을 수 없어 배경색만 남는다
 //    (`DropHistoryScreen` 파일 머리 ④). 그래서 *"pill 클래스가 붙었나"* 는 *"골드 배경이 그 조각에
 //    깔렸나"* 가 된다.
 import { act, fireEvent, render } from '@testing-library/react-native'
@@ -46,7 +46,7 @@ const 주간보스 = weeklyBossesData.weekly[0].boss
 const PERIOD = '2026-07-09'
 
 /**
- * 문장에는 줄바꿈 금지용 zero-width 문자가 섞여 있다 — 사람이 읽는 문장으로
+ * 문장에는 줄바꿈 금지용 zero-width 문자가 섞여 있다. 사람이 읽는 문장으로
  * 비교한다. 웹은 `textContent` 한 줄이면 됐지만 RN 트리에는 그런 프로퍼티가 없어 직접 모은다.
  */
 function 문장(node: AtomElement): string {
@@ -66,8 +66,8 @@ function 문장(node: AtomElement): string {
  * 잎의 색 — `<Path fill>` 이라 글자가 아니라 트리에서 집는다. 두 가지가 갈린다.
  *
  * ① RNTL 14 의 요소에는 `findAll` 이 없어(실측) `children` 을 직접 훑는다. 잎 경로는 `d` 를 가진
- *    유일한 노드라 그것으로 찾는다 — `fill` 로 찾으면 그 위의 그룹이 먼저 걸린다(기본 검정).
- * ② `react-native-svg` 가 색을 **정규화한다** — `#f7d00d` 가 `{ payload, type }` 으로 온다.
+ *    유일한 노드라 그것으로 찾는다. `fill` 로 찾으면 그 위의 그룹이 먼저 걸린다(기본 검정).
+ * ② `react-native-svg` 가 색을 **정규화한다**. `#f7d00d` 가 `{ payload, type }` 으로 온다.
  *    그래서 기대값도 `processColor` 를 통과시켜 같은 형태로 만든다.
  */
 function 잎색(node: AtomElement): unknown {
@@ -122,7 +122,7 @@ async function renderHistory() {
       </ThemeProvider>
     </SafeAreaProvider>
   )
-  // **`render` 의 결과를 먼저 await 한다** — RNTL 14 의 반환값은 thenable 이라, 펼쳐서
+  // **`render` 의 결과를 먼저 await 한다**. RNTL 14 의 반환값은 thenable 이라, 펼쳐서
   // (`{...view}`) 돌려주면 `then` 이 사라져 호출부의 `await` 가 아무것도 기다리지 않는다(실측:
   // 마운트 이펙트가 안 돌아 케이스 전체가 빈 화면을 봤다).
   const view = await render(tree)
@@ -137,7 +137,7 @@ beforeEach(() => {
 })
 
 describe('DropHistoryScreen — 셸과 조회', () => {
-  // 웹은 *"`screen-scroll` 이 없어야 한다"* 였다 — 공용 셸의 `-mt-[var(--sa-top)]` 이 흐름 밖 `fixed`
+  // 웹은 *"`screen-scroll` 이 없어야 한다"* 였다. 공용 셸의 `-mt-[var(--sa-top)]` 이 흐름 밖 `fixed`
   // 헤더를 전제한 보정이라 이 화면의 sticky 헤더와 겹쳤기 때문이다(실기기 계측 31px). RN 에는 그
   // 보정 자체가 없고 헤더가 스크롤 뷰의 **형제**라 공용 셸이 곧 맞는 그림이다.
   it('공용 셸을 쓰고 헤더가 상단 안전영역을 먹는다', async () => {
@@ -217,7 +217,7 @@ describe('DropHistoryScreen — 기록 한 줄', () => {
     expect(문장(getByTestId('drop-history-entry'))).toBe(
       `메이플영웅님이 ${주간보스}(하드)에서 가디언 엔젤링을 획득하였습니다.`,
     )
-    // 꾸밈 없음 — 골드 강조도, 아이템 아이콘도 붙지 않는다.
+    // 꾸밈 없음. 골드 강조도, 아이템 아이콘도 붙지 않는다.
     expect(queryByLabelText('고가 드롭 기록')).toBeNull()
     expect(queryByTestId('valuable-drop-inline')).toBeNull()
   })
@@ -236,7 +236,7 @@ describe('DropHistoryScreen — 기록 한 줄', () => {
     expect(inline.color).toBe('#6b4e00')
   })
 
-  //  이 **명시적으로 뺀 것** — 줄간격을 좁히면 배경 블록끼리 붙어 서로를 잡아먹는다.
+  //  이 **명시적으로 뺀 것**. 줄간격을 좁히면 배경 블록끼리 붙어 서로를 잡아먹는다.
   it('고가 줄에도 `.valuable-drop-row` 배경은 쓰지 않는다', async () => {
     mockStore({ groups: [{ periodKey: PERIOD, cycle: 'weekly', records: [기록()] }] })
     const { queryByTestId } = await renderHistory()
@@ -289,8 +289,8 @@ describe('DropHistoryScreen — 기록 한 줄', () => {
     expect(문장(getByTestId('drop-history-entry'))).toBe(
       `메이플영웅님이 ${주간보스}(하드)에서 홍옥의 보스 반지 상자를 열어 리스트레인트 링 3레벨을 획득하였습니다.`,
     )
-    // 상자명도 아이템과 같은 굵기로 강조한다 — "무엇을 열었는지"가 정보의 절반이다.
-    // 단 골드(고가)는 결과에만 붙는다 — 둘 다 골드면 어느 쪽이 값인지 흐려진다.
+    // 상자명도 아이템과 같은 굵기로 강조한다. "무엇을 열었는지"가 정보의 절반이다.
+    // 단 골드(고가)는 결과에만 붙는다. 둘 다 골드면 어느 쪽이 값인지 흐려진다.
     expect(flattenStyle(getByText('홍옥의 보스 반지 상자').props.style).fontWeight).toBe('600')
     expect(queryByTestId('valuable-drop-inline')).toBeNull()
   })
@@ -322,7 +322,7 @@ describe('DropHistoryScreen — 기간 구분', () => {
     const expected = formatBossProfitPeriodLabel('weekly', PERIOD, new Date())
     expect(문장(getByTestId('drop-history-period'))).toContain(expected.primary)
     expect(getByTestId('drop-history-period-range').props.children).toBe(expected.secondary)
-    // 헤어라인은 `aria-hidden` 이라 **기본 질의에서 빠진다**(step 4 가 실측한 성질) — 장식이므로
+    // 헤어라인은 `aria-hidden` 이라 **기본 질의에서 빠진다**(step 4 가 실측한 성질). 장식이므로
     // 그것이 맞고, 여기서는 존재만 확인하려고 숨은 것까지 훑는다.
     expect(getAllByTestId('drop-history-period-rule', { includeHiddenElements: true })).toHaveLength(2)
   })
@@ -388,8 +388,8 @@ describe('DropHistoryScreen — 미획득 요약', () => {
     expect(summary).toContain('루즈 컨트롤 머신 마크')
   })
 
-  // 문구는 사용자 지정(2026-08-01·2026-08-17) — **전 단계가 풀**이라 표는 문구를 담지 않고 풀 소속만
-  // 본다. **한 케이스에서 네 번 렌더하지 않는다** — RNTL 14 는 한 케이스에 렌더가
+  // 문구는 사용자 지정(2026-08-01·2026-08-17). **전 단계가 풀**이라 표는 문구를 담지 않고 풀 소속만
+  // 본다. **한 케이스에서 네 번 렌더하지 않는다**. RNTL 14 는 한 케이스에 렌더가
   // 셋을 넘기면 그 뒤가 빈 화면으로 떨어진다(step 2 가 실측해 적어 둔 함정, 여기서 다시 밟았다).
   it.each([
     [0, '#f7d00d', 0],
@@ -410,7 +410,7 @@ describe('DropHistoryScreen — 미획득 요약', () => {
 
     const leaf = getByTestId('valuable-drought-leaf', { includeHiddenElements: true })
     expect(flattenStyle(leaf.props.style).transform).toEqual([{ rotate: `${rotate}deg` }])
-    // 잎 색은 테마 토큰이 아니라 고정 hex 다 — "골드 → 무채색 → 회청색" 한 줄기라 테마마다
+    // 잎 색은 테마 토큰이 아니라 고정 hex 다. "골드 → 무채색 → 회청색" 한 줄기라 테마마다
     // 갈리면 의미를 잃는다(와 같은 사정).
     expect(잎색(leaf)).toMatchObject({ payload: processColor(color) })
   })
@@ -445,7 +445,7 @@ describe('DropHistoryScreen — 미획득 요약', () => {
     expect(summary).not.toContain('마지막')
   })
 
-  // 4주 이상은 문구가 풀에서 무작위로 나온다 — 단, 화면에 머무는 동안에는 고정이어야 한다
+  // 4주 이상은 문구가 풀에서 무작위로 나온다. 단, 화면에 머무는 동안에는 고정이어야 한다
   // (리렌더마다 새로 뽑으면 문구가 깜빡인다).
   it('4주 이상은 풀 문구 중 하나가 나오고 리렌더에도 바뀌지 않는다', async () => {
     mockStore({ drought: 가뭄(9) })

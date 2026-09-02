@@ -53,7 +53,7 @@ jest.mock('../../../lib/scheduler/scheduler-merge', () => ({
 const { mergeSchedulerState: mergeSchedulerStateMock } = jest.requireMock('../../../lib/scheduler/scheduler-merge') as Record<string, jest.Mock>
 
 // ADR-086: 조회 원장(storage/schedule-probe-ledger)과 추적 목록(storage/character-selection)은
-// 실물을 쓰고 그 아래 PreferencesPort만 인메모리로 바꾼다 — 원장이 "같은 날짜를 두 번 부르지 않는다"를
+// 실물을 쓰고 그 아래 PreferencesPort만 인메모리로 바꾼다. 원장이 "같은 날짜를 두 번 부르지 않는다"를
 // 실제로 지키는지가 이 파일이 검증해야 할 동작이라, 그 모듈까지 목으로 대체하면 검증이 사라진다.
 
 import {
@@ -95,7 +95,7 @@ function schedulerState(characterName: string): SchedulerCharacterState {
 }
 
 // jobClass 는 mockCharacter/basic 이 아니라 mockCharacter/list 가 준 값이라(ADR-144 결정 2) 이 픽스처의
-// 기본값에는 없다 — 캐시에 실리는 경로를 검증하는 자리에서만 명시적으로 넣는다.
+// 기본값에는 없다. 캐시에 실리는 경로를 검증하는 자리에서만 명시적으로 넣는다.
 function basicProfile(overrides: {
   name: string
   level: number
@@ -116,7 +116,7 @@ const NOW = '2026-07-11T00:00:00.000Z'
 // ADR-113 결정 1: mockCharacter/basic 이 5분 TTL 가드를 통과한다. 이 파일의 캐시 픽스처는 원래
 // "캐시가 있다"만 뜻했고 cachedAt 값은 아무도 읽지 않았는데(ADR-097 이 "쓰이기만 하고 읽는 곳이
 // 없다"고 적은 그 필드다), 이제 읽히므로 값이 곧 정책이 된다. 아래 케이스들은 **네트워크가 나가는**
-// 경로(SWR patch·콜드 스타트 억제·개별 실패)를 검증하므로 만료된 시각으로 심는다 — TTL 안에서
+// 경로(SWR patch·콜드 스타트 억제·개별 실패)를 검증하므로 만료된 시각으로 심는다. TTL 안에서
 // 건너뛰는 경로는 별도 케이스가 본다.
 const STALE_CACHED_AT = '2026-07-10T00:00:00.000Z'
 
@@ -127,7 +127,7 @@ beforeEach(async () => {
   jest.setSystemTime(new Date(NOW))
   // 모듈 수준 플래그라 테스트끼리 샌다(ADR-097 결정 3).
   resetSyncRunStateForTests()
-  // 같은 이유로 진행 중인 회차도 비운다 — 끝내지 않은 회차를 남기면 다음 테스트가 거기에
+  // 같은 이유로 진행 중인 회차도 비운다. 끝내지 않은 회차를 남기면 다음 테스트가 거기에
   // 합류해 영영 안 끝난다(ADR-147 결정 4).
   resetSyncSingleFlightForTests()
   prefs = installFakePreferences()
@@ -141,7 +141,7 @@ beforeEach(async () => {
   getAccountSharedProgressMock.mockResolvedValue({})
   setWorldSharedProgressEntryMock.mockResolvedValue(undefined)
   setAccountSharedProgressEntryMock.mockResolvedValue(undefined)
-  // 기본값: 병합 없이 fresh 그대로 통과(ledger 갱신 없음) — ADR-030 병합 알고리즘 자체는
+  // 기본값: 병합 없이 fresh 그대로 통과(ledger 갱신 없음). ADR-030 병합 알고리즘 자체는
   // lib/scheduler/scheduler-merge 의 자체 단위 테스트가 검증하고, 여기서는 syncOneCharacter가 그 결과를
   // 올바른 곳(캐시·원장)에 정확히 반영하는지만 확인한다.
   mergeSchedulerStateMock.mockImplementation((input: { fresh: SchedulerCharacterState }) => ({
@@ -411,7 +411,7 @@ describe('syncSchedules', () => {
 
     const results = await syncSchedules(['ocid-1', 'ocid-2', 'ocid-3'])
 
-    // 병렬 구간의 두 캐릭터 모두 API가 호출된다 — 하나의 401이 형제 호출을 막지 않는다
+    // 병렬 구간의 두 캐릭터 모두 API가 호출된다. 하나의 401이 형제 호출을 막지 않는다
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(3)
     expect(results[0].isStale).toBe(false)
     expect(results[0].error).toBeNull()
@@ -461,7 +461,7 @@ describe('syncSchedules', () => {
       const [firstResults, secondResults] = await Promise.all([first, second])
 
       // ADR-147 정정 42: 회차 결과를 **요청한 ocid** 로 거르면서 계약이 **같은 객체**에서
-      // **같은 내용**으로 내려왔다 — 거르기가 호출마다 새 배열을 만든다.
+      // **같은 내용**으로 내려왔다. 거르기가 호출마다 새 배열을 만든다.
       expect(secondResults).toEqual(firstResults)
     })
 
@@ -488,7 +488,7 @@ describe('syncSchedules', () => {
 
       expect(ownerResults.map((result) => result.ocid)).toEqual(['ocid-1', 'ocid-2'])
       expect(joinerResults.map((result) => result.ocid)).toEqual(['ocid-2'])
-      // 합류했으므로 회차는 하나다 — 거르기는 결과만 좁히지 네트워크를 더 내지 않는다.
+      // 합류했으므로 회차는 하나다. 거르기는 결과만 좁히지 네트워크를 더 내지 않는다.
       expect(fetchCharacterListMock).toHaveBeenCalledTimes(1)
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
     })
@@ -508,7 +508,7 @@ describe('syncSchedules', () => {
       const owner = syncSchedules(['ocid-1'])
       await waitFor(() => expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1))
 
-      // ocid-2는 진행 중인 회차 밖이다 — 남의 회차에 붙지 않고 그 회차가 끝나기를 기다린다.
+      // ocid-2는 진행 중인 회차 밖이다. 남의 회차에 붙지 않고 그 회차가 끝나기를 기다린다.
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터2'))
       const outsider = syncSchedules(['ocid-2'])
 
@@ -701,7 +701,7 @@ describe('syncSchedules', () => {
     // ADR-148 결정 1: 원장 필터를 통과한 날짜는 **전부** 나간다. 그래서 **-1일에서 멈춘다** 같은
     // 테스트도 조회는 14회(오늘 1 + 과거 13)이고, 멈추는 것은 **병합**이다. 앞 날짜에서 병합이
     // 끝나도 뒤 날짜 응답은 이미 와 있으므로, 그 응답을 받을 tail 기본값이 없으면 undefined 가
-    // 흘러든다 — 그래서 아래 테스트들이 마지막에 `mockResolvedValue` 로 기본값을 깐다.
+    // 흘러든다. 그래서 아래 테스트들이 마지막에 `mockResolvedValue` 로 기본값을 깐다.
     const STALE_DAY = { ...schedulerState('그 밖의 과거'), isWeeklyBossStale: true, bossContents: [] }
 
     it('13일을 한꺼번에 태운다 — 앞 날짜 응답을 기다리지 않는다 (ADR-148 결정 1)', async () => {
@@ -719,7 +719,7 @@ describe('syncSchedules', () => {
       const promise = syncSchedules(['ocid-1'])
       for (let i = 0; i < 40; i += 1) await Promise.resolve()
 
-      // 직렬이던 시절에는 여기서 1이었다 — 오늘 조회 뒤 -1일 하나만 나가 있었다.
+      // 직렬이던 시절에는 여기서 1이었다. 오늘 조회 뒤 -1일 하나만 나가 있었다.
       expect(pending).toHaveLength(13)
 
       pending.forEach((resolve) => {
@@ -753,7 +753,7 @@ describe('syncSchedules', () => {
       fetchSchedulerCharacterStateMock.mockClear()
       await syncSchedules(['ocid-1'])
       // 오늘 1회 + -1일 1회. -1일만 다시 부르는 것은 그 날짜에 주간 보스 섹션이 **있었기** 때문이고
-      // (원장은 값이 아니라 유무만 기억한다), 나머지 12일은 원장이 걸러 낸다 — 기록하지 않았다면
+      // (원장은 값이 아니라 유무만 기억한다), 나머지 12일은 원장이 걸러 낸다. 기록하지 않았다면
       // 여기서 13일이 통째로 다시 나갔을 자리다.
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
     })
@@ -828,7 +828,7 @@ describe('syncSchedules', () => {
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(14)
       expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', '2026-07-10')
       expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 'key-1', 'ocid-1', '2026-07-09')
-      // -1일이 아직 stale이라 -2일까지 접고 거기서 멈춘다 — 병합 순서는 그대로다(ADR-148 결정 2).
+      // -1일이 아직 stale이라 -2일까지 접고 거기서 멈춘다. 병합 순서는 그대로다(ADR-148 결정 2).
       expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(3)
     })
 
@@ -1138,7 +1138,7 @@ describe('syncSchedules', () => {
       expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2)
       expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-1')
       expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-2')
-      // mockCharacter/list 가 준 jobClass 가 엔트리에 함께 실린다(ADR-144 결정 2) — basic 응답에는 없다.
+      // mockCharacter/list 가 준 jobClass 가 엔트리에 함께 실린다(ADR-144 결정 2). basic 응답에는 없다.
       expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-1', {
         profile: basicProfile({ name: '갱신-ocid-1', level: 293, jobClass: '렌' }),
         cachedAt: NOW,
@@ -1218,7 +1218,7 @@ describe('syncSchedules', () => {
 
       expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
       expect(setCachedCharacterBasicMock).not.toHaveBeenCalled()
-      // 스케줄 동기화 자체는 그대로 돈다 — 건너뛴 것은 basic 하나뿐이다.
+      // 스케줄 동기화 자체는 그대로 돈다. 건너뛴 것은 basic 하나뿐이다.
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-1')
       expect(results[0].isStale).toBe(false)
     })
@@ -1311,7 +1311,7 @@ describe('syncSchedules', () => {
     })
 
     // 이 파일의 나머지 케이스가 전부 단일 계정이지만, 그것들은 "결과"만 본다. 이 케이스는
-    // **호출 수와 순서까지** 고정한다 — 웹뷰 앱은 이 경로로 계속 배포되므로 여기가 회귀 가드다.
+    // **호출 수와 순서까지** 고정한다. 웹뷰 앱은 이 경로로 계속 배포되므로 여기가 회귀 가드다.
     it('단일 계정 입력에서는 호출 수·순서·원장 키가 지금과 같다 (웹뷰 앱 회귀 가드)', async () => {
       const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2'), mockCharacter('ocid-3')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
@@ -1430,7 +1430,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     })
   })
 
-  // ADR-068 결정 4: 조회 불가 캐릭터(400 OPENAPI00003)를 목록에서 빼지 않는다 — 빼면 trackedOcids에
+  // ADR-068 결정 4: 조회 불가 캐릭터(400 OPENAPI00003)를 목록에서 빼지 않는다. 빼면 trackedOcids에
   // 남은 그 ocid를 사용자가 해제할 방법이 없다(이슈 #78 A-1: "사용자가 스스로 벗어날 방법이 없다").
   describe('조회 불가 캐릭터(OPENAPI00003)', () => {
     // ADR-086 결정 3: 남기는 목적이 **해제 경로 확보**였으므로 추적 중일 때만 남긴다.
@@ -1635,7 +1635,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
         ...basicProfile({ name: '휴면캐릭', level: 250 }),
         accessFlag: false,
       })
-      // 원장이 비어 스윕이 돈다. 완료가 첫 날짜에 있어도 13일이 다 나간다 — 조기 종료를 포기한
+      // 원장이 비어 스윕이 돈다. 완료가 첫 날짜에 있어도 13일이 다 나간다. 조기 종료를 포기한
       // 자리다(ADR-148 결정 2). 옛 직렬 루프에서는 이 값이 1이었다.
       fetchSchedulerCharacterStateMock.mockResolvedValue(completedState())
 
@@ -1752,7 +1752,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
   })
 
   // ADR-113 결정 1: 온보딩 한 바퀴(프로브 → 예열 → 피커)가 5분 안에 끝나면 피커는 방금 채워진
-  // 캐시를 그대로 쓴다 — 같은 캐릭터로 세 번 나가던 요청이 한 번이 된다.
+  // 캐시를 그대로 쓴다. 같은 캐릭터로 세 번 나가던 요청이 한 번이 된다.
   it('5분 TTL 안에 캐시된 캐릭터는 live 루프에서 mockCharacter/basic 을 부르지 않는다 (ADR-113 결정 1)', async () => {
     const characters = [mockCharacter('ocid-1')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
@@ -1931,11 +1931,11 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       const onUpdate = jest.fn()
       const promise = getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
-      // 아직 한 건도 확인하지 못했다 — 빈 목록은 흘리지 않는다(결정 2).
+      // 아직 한 건도 확인하지 못했다. 빈 목록은 흘리지 않는다(결정 2).
       await waitFor(() => expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2))
       expect(onUpdate).not.toHaveBeenCalled()
 
-      // 첫 캐릭터가 확인되는 즉시 그 한 건만으로 방출한다 — 둘째는 아직 응답 전이다.
+      // 첫 캐릭터가 확인되는 즉시 그 한 건만으로 방출한다. 둘째는 아직 응답 전이다.
       resolvers[0](basicProfile({ name: '캐릭1', level: 250 }))
       await waitFor(() => expect(onUpdate).toHaveBeenCalled())
       expect((onUpdate.mock.calls[0][0] as CharacterPickerEntry[]).map((entry) => entry.name)).toEqual(['캐릭1'])
@@ -1964,7 +1964,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       const onUpdate = jest.fn()
       await getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
-      // 자격 미확인 캐시는 어떤 방출에도 안 들어간다 — `비공개`가 한 번도 안 보인다(ADR-053 결정 1).
+      // 자격 미확인 캐시는 어떤 방출에도 안 들어간다. `비공개`가 한 번도 안 보인다(ADR-053 결정 1).
       const emittedNames = new Set(
         onUpdate.mock.calls.flatMap(([entries]) => (entries as CharacterPickerEntry[]).map((entry) => entry.name)),
       )
@@ -2012,7 +2012,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       expect(emittedOcids).toEqual(new Set(['ocid-1']))
     })
 
-    // ADR-149 결정 3: 스트리밍이 되면서 `globalError` 가드가 비로소 실효를 갖는다 — 실패가 먼저
+    // ADR-149 결정 3: 스트리밍이 되면서 `globalError` 가드가 비로소 실효를 갖는다. 실패가 먼저
     // 확정되면 뒤이어 성공한 형제도 흘리지 않는다(불완전한 목록이 **완성** 으로 오해되면 안 된다).
     it('콜드 캐시 — 전역 실패(401)가 먼저 확정되면 뒤이은 성공도 흘리지 않고 그대로 던진다', async () => {
       const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]

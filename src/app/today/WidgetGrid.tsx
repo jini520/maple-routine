@@ -2,10 +2,10 @@
  * 위젯 격자 — 배치(`widgets/layout.ts`)와 표(`widgets/registry.ts`)를 잇는 **껍데기**
  *
  *
- * ## 재지 않고 계산한다 — 단 하나만 뺀다
+ * ## 재지 않고 계산한다. 단 하나만 뺀다
  *
  * 치수는 창 폭 하나에서 나오고(`resolveWidgetGridMetrics`) 좌표는 순수 함수가 푼다
- * (`resolveWidgetPositions`). **`onLayout` 이 붙는 것은 `h: 'auto'` 타일뿐이다** — 나머지는 계산으로
+ * (`resolveWidgetPositions`). **`onLayout` 이 붙는 것은 `h: 'auto'` 타일뿐이다**. 나머지는 계산으로
  * 나오는 값이라 재면 첫 프레임에 0 이고, 그 0 이 그대로 좌표가 된다(이 하단바에서
  * 같은 결론에 먼저 도달했다).
  *
@@ -22,7 +22,7 @@
  *
  * today 자신이 그룹이라 여기서 나가는 것은 전부 **그룹 이동**이고(
  * 결정 9), 바를 거치지 않으므로 같은 비교를 여기서 한 번 더 했다. 이 전면광고를 걷으며
- * 지웠다 — 노출 지점이 바 하나에서 여기까지 저절로 둘로 늘었던 것이 그 결정의 근거 중 하나다.
+ * 지웠다. 노출 지점이 바 하나에서 여기까지 저절로 둘로 늘었던 것이 그 결정의 근거 중 하나다.
  */
 
 import { useState } from 'react'
@@ -50,7 +50,7 @@ export function WidgetGrid({ data }: WidgetGridProps): React.JSX.Element {
   const { tiles, containerHeightPx } = resolveWidgetPositions(TILE_LAYOUT, metrics, autoHeights)
   const tileById = new Map(tiles.map((tile) => [tile.id, tile]))
 
-  /** 같은 값이면 **같은 객체를 돌려준다** — 안 그러면 측정 → 렌더 → 측정으로 도는 고리가 된다. */
+  /** 같은 값이면 **같은 객체를 돌려준다**. 안 그러면 측정 → 렌더 → 측정으로 도는 고리가 된다. */
   function measureAuto(id: string, heightPx: number): void {
     setAutoHeights((current) =>
       current[id] === heightPx ? current : { ...current, [id]: heightPx },
@@ -75,16 +75,16 @@ export function WidgetGrid({ data }: WidgetGridProps): React.JSX.Element {
         if (tile === undefined) return null
 
         const isAuto = placement.h === 'auto'
-        // auto 타일은 **최소** 높이만 정하고 내용이 그 위로 자란다 — 고정 높이를 주면 잰 값이 늘
+        // auto 타일은 **최소** 높이만 정하고 내용이 그 위로 자란다. 고정 높이를 주면 잰 값이 늘
         // 그 값이라 아무것도 못 재고, 늘어나는 것과 스크롤하는 것은 다르다.
         const box = isAuto ? { minHeight: tile.heightPx } : { height: tile.heightPx }
 
-        // ⚠️ **`onLayout` 은 내용 에 붙는다 — 최소 높이를 진 상자에 붙이면 안 된다.**
+        // ⚠️ **`onLayout` 은 내용 에 붙는다. 최소 높이를 진 상자에 붙이면 안 된다.**
         //
         // 한때 바깥 래퍼(= `minHeight` 를 진 `Card` 를 감싼 상자)를 쟀다. 그러면 재는 값이
         // `max(minHeight, 내용)` 이고 그 값이 다시 다음 `minHeight` 가 되어 **높이가 늘기만 하고
         // 줄지 않는다**(래칫). 아코디언을 한 번 펼쳤다 접으면 접힌 내용 위로 펼쳤을 때의 높이가
-        // 그대로 남아 빈 자리가 생긴다 — 자기가 크기를 정하는 것을 재고 있었던 것이다.
+        // 그대로 남아 빈 자리가 생긴다. 자기가 크기를 정하는 것을 재고 있었던 것이다.
         //
         // 안쪽에서 재면 그 고리가 끊긴다: 이 상자에는 최소 높이가 없어 **언제나 내용의 높이**다.
         const widget = <Component w={placement.w} h={placement.h} data={data} />

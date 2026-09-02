@@ -2,13 +2,13 @@
 //
 // ── 갈린 것 넷 ───────────────────────────────────────────────────────────────────────
 //
-// ① **라우터 프로브가 없다** — 뒤로는 `navigation.goBack()` 이 불렸는가로 봤다(`StackScreen` 이
+// ① **라우터 프로브가 없다**. 뒤로는 `navigation.goBack()` 이 불렸는가로 봤다(`StackScreen` 이
 //  통째로 사라지고 루트 스택이 그 자리를 맡는다). ** 로 그 계약이
-//    없어졌다** — 이 화면은 탭이라 pop 할 스택이 없고, 남은 것은 **화면 안에 ← 가 없다** 하나다.
-// ② `closest('li')` 로 행을 잡던 자리가 **`aria-label` 로 잡는 토글 버튼**이다 — RN 에 DOM 조회가
+//    없어졌다**. 이 화면은 탭이라 pop 할 스택이 없고, 남은 것은 **화면 안에 ← 가 없다** 하나다.
+// ② `closest('li')` 로 행을 잡던 자리가 **`aria-label` 로 잡는 토글 버튼**이다. RN 에 DOM 조회가
 //    없고, 웹도 이미 그 버튼에 보스명을 `aria-label` 로 박아 두었다.
 // ③ `aria-pressed` → **`accessibilityState.selected`**(RN 접근성 상태에 *pressed* 가 없다).
-// ④ **보스 목록·난이도·상한은 전부 참조 데이터에서 온다** — 이 파일에도 게임 수치를 손으로 적지
+// ④ **보스 목록·난이도·상한은 전부 참조 데이터에서 온다**. 이 파일에도 게임 수치를 손으로 적지
 //  않는다. 12개 한도 케이스의 보스 이름도 `weekly-bosses.json` 에서 뽑아 쓴다.
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import { act, fireEvent, screen, within } from '@testing-library/react-native'
@@ -56,7 +56,7 @@ const WEEKLY_NAMES = weeklyBossesData.weekly
   .map((entry) => entry.boss)
 const SEASON_NAME = weeklyBossesData.eventWeekly[0].boss
 const MONTHLY_NAME = weeklyBossesData.monthly[0].boss
-// 미출시 보스는 있을 때도 없을 때도 있다 — 벨로나 출시로 현재는 0개다.
+// 미출시 보스는 있을 때도 없을 때도 있다. 벨로나 출시로 현재는 0개다.
 // `!` 로 단정하면 표본이 사라진 순간 `undefined` 를 찾는 검증이 되어 조용히 통과한다.
 const UNRELEASED_NAME = (weeklyBossesData.weekly as { boss: string; status?: string }[]).find(
   (entry) => entry.status === 'unreleased',
@@ -72,7 +72,7 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     manualTrackedByOcid: {},
     loadTrackedOcids: jest.fn(),
     saveTrackedOcids: jest.fn(),
-    // 실물은 `Promise<void>` 다 — 당김 훅이 회차의 **끝** 을 기다린다.
+    // 실물은 `Promise<void>` 다. 당김 훅이 회차의 **끝** 을 기다린다.
     refresh: jest.fn().mockResolvedValue(undefined),
     loadPartySizes: jest.fn(),
     setPartySize: jest.fn(),
@@ -84,7 +84,7 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     ...overrides,
   } as Store
 
-  // : 탭이 걷혔다 — 목이 흉내 낼 탭 상태가 없다.
+  // : 탭이 걷혔다. 목이 흉내 낼 탭 상태가 없다.
   mockedStore.mockImplementation(() => base)
   return base
 }
@@ -177,9 +177,9 @@ beforeEach(() => {
 
 describe('BossManageScreen — 공통', () => {
   // : 제목 줄 우측의 compact 드롭다운이 **초상화 레일**이 됐다. 캐릭터 이름은
-  // 이제 SVG 곡선 글자라 `getByText` 로 안 잡힌다 — 레일이 섰는지로 본다.
+  // 이제 SVG 곡선 글자라 `getByText` 로 안 잡힌다. 레일이 섰는지로 본다.
   //
-  // **뒤로 버튼을 묻던 짝은 사라졌다** — 이 화면은 하위 페이지가 아니라 탭이라
+  // **뒤로 버튼을 묻던 짝은 사라졌다**. 이 화면은 하위 페이지가 아니라 탭이라
   // pop 할 스택이 없고, ← 는 하단바가 진다.
   it('제목·캐릭터 레일이 보이고, 화면 안에 뒤로 버튼이 없다', async () => {
     mockStore({ characters: [character()] })
@@ -229,7 +229,7 @@ describe('BossManageScreen — 공통', () => {
   })
 
   // 스케줄러가 한 목록이 되면서 이 화면의 탭도 함께 걷혔다.
-  // 결정 2 와(**승계가 아니라 공유**)가 이 축에서 폐기된 자리다 — 공유할 상대가
+  // 결정 2 와(**승계가 아니라 공유**)가 이 축에서 폐기된 자리다. 공유할 상대가
   // 사라졌으므로 되살리지 말 것.
   it('탭 없이 월간·주간이 한 목록에 서고, 월간이 위다', async () => {
     mockStore({ characters: [character()] })
@@ -243,7 +243,7 @@ describe('BossManageScreen — 공통', () => {
   })
 
   // 선택 캐릭터는 스케줄러와 **공유**한다(탭과 달리 양방향).
-  // 정정 8: 드롭다운은 눌러도 안 열렸다 — 레일은 **실제로 바뀐다**. 로 그 **같은 선택**
+  // 정정 8: 드롭다운은 눌러도 안 열렸다. 레일은 **실제로 바뀐다**. 로 그 **같은 선택**
   // 이 두 스토어의 우연이 아니라 **스토어 하나**가 됐고, 그래서 여기서 보는 값이 컨텐츠 스케줄러가
   // 보는 값과 같은 것이다.
   it('레일에서 다른 초상화를 누르면 고른 캐릭터가 그 ocid 가 된다', async () => {
@@ -348,7 +348,7 @@ describe('BossManageScreen — 수동 모드', () => {
   })
 
   it('파티 스테퍼는 즉시 저장하고, 상한은 (보스, 난이도)마다 다르다', async () => {
-    // 스우 익스트림의 상한은 2인이다(`boss-crystal-prices.json`) — 화면이 숫자를 정하지 않는다.
+    // 스우 익스트림의 상한은 2인이다(`boss-crystal-prices.json`). 화면이 숫자를 정하지 않는다.
     const store = mockStore({
       characters: [character()],
       manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', '익스트림')] },
@@ -391,7 +391,7 @@ describe('BossManageScreen — 수동 모드', () => {
 })
 
 describe('BossManageScreen — 자동 모드', () => {
-  // : 상단 안내 한 줄을 없앤다 — 체크가 없고 스테퍼만 있다는 것을 화면이 이미
+  // : 상단 안내 한 줄을 없앤다. 체크가 없고 스테퍼만 있다는 것을 화면이 이미
   // 보여 준다. 설명은 기능 안내(`boss-manage` 가이드)가 계속 진다.
   it('안내 문구 없이 등록 보스만 나오고 체크 토글이 없다', async () => {
     mockStore({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
@@ -405,7 +405,7 @@ describe('BossManageScreen — 자동 모드', () => {
     expect(screen.queryByLabelText('자쿰')).toBeNull()
   })
 
-  // : 스위치가 뒤집혔다 — 이름은 `모든 보스 보기`이고 **기본이 꺼짐**이다.
+  // : 스위치가 뒤집혔다. 이름은 `모든 보스 보기`이고 **기본이 꺼짐**이다.
   // 표시 결과는 그대로라(기본 = 등록된 보스만) 위 케이스가 그 절반을 이미 지킨다.
   it('토글은 `모든 보스 보기`이고 기본으로 꺼져 있다', async () => {
     mockStore({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
@@ -428,7 +428,7 @@ describe('BossManageScreen — 자동 모드', () => {
   })
 
   // 등록 보스가 하나도 없으면 토글이 꺼져 있어도 전체로 대체한다(
-  // 결정 4 가 승계했다 — 뒤집힌 것은 스위치의 방향과 이름뿐이다).
+  // 결정 4 가 승계했다. 뒤집힌 것은 스위치의 방향과 이름뿐이다).
   it('등록된 보스가 하나도 없으면 토글이 꺼져 있어도 전체 목록이다', async () => {
     mockStore({ characters: [character()] })
 
@@ -476,7 +476,7 @@ describe('BossManageScreen — 자동 모드', () => {
 })
 
 describe('BossManageScreen — 주간 12개 한도', () => {
-  // 참조표에서 앞에서부터 12마리를 뽑는다 — 이름을 손으로 적지 않는다.
+  // 참조표에서 앞에서부터 12마리를 뽑는다. 이름을 손으로 적지 않는다.
   const TWELVE = WEEKLY_NAMES.slice(0, WEEKLY_BOSS_CLEAR_LIMIT)
 
   const atLimit = (extra: Partial<Store> = {}): Store =>
@@ -501,7 +501,7 @@ describe('BossManageScreen — 주간 12개 한도', () => {
     expect(screen.getByText(`2/${WEEKLY_BOSS_CLEAR_LIMIT}`)).toBeTruthy()
   })
 
-  // 카운트 규칙은 `countManualWeeklyBosses` 한 곳에만 있다 — 화면이 다시 세면 선택 12/12 인데
+  // 카운트 규칙은 `countManualWeeklyBosses` 한 곳에만 있다. 화면이 다시 세면 선택 12/12 인데
   // 처치 11/12 인 모순이 생긴다.
   it('시즌 보스·월간 보스는 카운터에 포함하지 않는다', async () => {
     mockStore({

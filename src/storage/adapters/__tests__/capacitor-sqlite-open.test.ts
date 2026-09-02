@@ -1,4 +1,4 @@
-// 여기서 지키는 것은 "어느 파일을 여는가" 하나다. 틀려도 예외가 없다 — op-sqlite 는 없는 파일을
+// 여기서 지키는 것은 "어느 파일을 여는가" 하나다. 틀려도 예외가 없다. op-sqlite 는 없는 파일을
 // 만들어 주므로(`cpp/bridge.cpp:73` 이 디렉터리까지 만든다) 경로나 파일명이 어긋나면 **빈 DB 가
 // 조용히 새로 생기고** 사용자에게는 보스 수익·드랍 기록이 사라진 것으로 보인다. 그래서 이 파일은
 // 규칙을 눈으로 읽히는 리터럴로 못 박는다.
@@ -9,7 +9,7 @@ import {
   type CapacitorDatabaseDirectories,
 } from '../capacitor-sqlite-open'
 
-// 실제 상수가 네이티브에서 어떤 모양으로 오는지 그대로 흉내 낸다 — Android 는 끝에 `/` 가 붙어
+// 실제 상수가 네이티브에서 어떤 모양으로 오는지 그대로 흉내 낸다. Android 는 끝에 `/` 가 붙어
 // 오고(`OPSQLiteModule.kt:22-27`) iOS 는 안 붙는다(`OPSQLite.mm:20-22`).
 const DIRECTORIES: CapacitorDatabaseDirectories = {
   android: '/data/user/0/com.mapleroutine.app/databases/',
@@ -53,7 +53,7 @@ describe('toOpenOptions', () => {
     expect(Object.keys(options).sort()).toEqual(['location', 'name'])
   })
 
-  // 조용히 평문으로 여는 것이 더 나쁘다 — 아무 화면에도 안 나타난다.
+  // 조용히 평문으로 여는 것이 더 나쁘다. 아무 화면에도 안 나타난다.
   it("'no-encryption' 이 아니면 던진다", () => {
     expect(() => toOpenOptions('boss_profit', 'encryption', 'ios', DIRECTORIES)).toThrow(
       /암호화/,

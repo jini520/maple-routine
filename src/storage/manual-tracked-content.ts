@@ -3,7 +3,7 @@ import { manualTrackedContentKey } from './keys'
 import { TEMPLATE_DAILY_NAMES, TEMPLATE_WEEKLY_NAMES } from '../lib/scheduler/scheduler-content-template'
 import type { ManualTrackedItem } from '../types/scheduler'
 
-// 타입 선언은 `src/types/scheduler` 에 있다(병합 순수 함수들이 core 에 있어서다 — 그쪽 주석 참고).
+// 타입 선언은 `src/types/scheduler` 에 있다(병합 순수 함수들이 core 에 있어서다. 그쪽 주석 참고).
 // 이 모듈에서 계속 export 하므로 `storage/manual-tracked-content` 를 쓰던 import 는 그대로다.
 export type { ManualTrackedItem }
 
@@ -45,7 +45,7 @@ export async function getManualTrackedContent(ocid: string): Promise<ManualTrack
   }
 }
 
-// 배열 전체를 덮어쓴다 — 부분 추가/삭제는 호출부가 배열을 계산해서 넘긴다(setTrackedCharacterOcids와 동일한 패턴).
+// 배열 전체를 덮어쓴다. 부분 추가/삭제는 호출부가 배열을 계산해서 넘긴다(setTrackedCharacterOcids와 동일한 패턴).
 export async function setManualTrackedContent(
   ocid: string,
   items: ManualTrackedItem[],

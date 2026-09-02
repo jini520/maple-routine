@@ -7,10 +7,10 @@
 //
 // ① **바깥 탭으로 닫는 판이 `fixed inset-0` 에서 투명 `Modal` 이 된다.** RN 에는 `fixed` 가 없어
 //    화면 전체를 덮는 상자를 앱 트리 안에서 만들 수 없다(`absolute inset-0` 은 헤더 상자에 갇힌다).
-//    투명한 별도 윈도우를 한 장 깔면 **어디를 눌러도 닫힌다** — 웹의 백드롭과 같은 일이고, 그 판이
+//    투명한 별도 윈도우를 한 장 깔면 **어디를 눌러도 닫힌다**. 웹의 백드롭과 같은 일이고, 그 판이
 //    투명하므로 그 아래(앱 윈도우)에 그려진 팝오버는 그대로 보인다. 웹은 백드롭 z-10 < 칩 z-20 이라
-//    칩 탭이 칩으로 갔지만 여기서는 판이 먼저 받는다 — 칩이 토글이라 **결과가 같다**(닫힌다).
-// ② `top-full` 이 없다 — 팝오버는 라벨행 아래 `top: '100%'` 에 절대배치한다(같은 뜻의 값).
+//    칩 탭이 칩으로 갔지만 여기서는 판이 먼저 받는다. 칩이 토글이라 **결과가 같다**(닫힌다).
+// ② `top-full` 이 없다. 팝오버는 라벨행 아래 `top: '100%'` 에 절대배치한다(같은 뜻의 값).
 // ③ 글자가 상자에서 `Text` 로 내려오고, `tabular-nums` 는 클래스로 안 나와 값으로 준다
 //    (`lib/text-styles.ts`).
 import { useState } from 'react'
@@ -38,13 +38,13 @@ import type { CharacterGroup } from './character-groups'
 export const WEEKLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_weekly.webp')
 export const MONTHLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_monthly.webp')
 
-// 총 수익 헤드라인의 결정석 판매 현황(3으로 배치 변경) — **라벨행의
+// 총 수익 헤드라인의 결정석 판매 현황(3으로 배치 변경). **라벨행의
 // "{기간} 총 수익" 텍스트 바로 옆** 칩이다(사용자 요청). 원래는 금액행 아래 새 줄이었는데 그 한 줄이
 // 헤더를 그대로 높여 목록을 잠식했다(헤더를 줄여둔 작업을 되돌리는 셈).
-// **칩 높이는 라벨(text-xs = 16px)을 넘지 않아야 한다** — 이 줄에 흐름으로 들어가는 요소가 라벨행
+// **칩 높이는 라벨(text-xs = 16px)을 넘지 않아야 한다**. 이 줄에 흐름으로 들어가는 요소가 라벨행
 // (h-6 = 24px)을 넘으면 라벨행이 튀고, 그것이 바로 고가 드롭 뱃지(24px)를 절대배치로 빼낸 이유다
 // . 그 뱃지가 여전히 우측 끝을 절대배치로 쓰므로 칩은 좌측(라벨 옆)에 붙는다.
-// 월드별 분해는 흐름이 아니라 **절대배치 팝오버**로 띄운다 — 펼쳐도 헤더 높이가 변하지 않는다.
+// 월드별 분해는 흐름이 아니라 **절대배치 팝오버**로 띄운다. 펼쳐도 헤더 높이가 변하지 않는다.
 export function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGroup[] }): React.JSX.Element | null {
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false)
 
@@ -67,7 +67,7 @@ export function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGro
   const chipContent = (
     <>
       {iconUrl !== null && <Image source={iconUrl} resizeMode="contain" className="h-4 w-4 shrink-0" />}
-      {/* 숫자와 단위 사이는 마진이 아니라 실제 공백 문자로 띄운다 — 마진만으론 읽는 문자열이
+      {/* 숫자와 단위 사이는 마진이 아니라 실제 공백 문자로 띄운다. 마진만으론 읽는 문자열이
           "34/90"으로 붙어 스크린리더가 이어 읽는다(에서 "메소" 단위로 정한 규약).
           "개"는 한국어 표기상 숫자에 붙으므로 공백을 넣지 않는다. */}
       {isWeekly ? (
@@ -83,7 +83,7 @@ export function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGro
     </>
   )
 
-  // h-5(20px) — 라벨행이 h-6(24px)으로 고정돼 있으므로 그 안에 들어가기만 하면 된다. leading-none과
+  // h-5(20px). 라벨행이 h-6(24px)으로 고정돼 있으므로 그 안에 들어가기만 하면 된다. leading-none과
   // 함께 두어야 글꼴 line-height가 칩 높이를 밀어 올리지 않는다.
   const chipClassName = 'ml-2 h-5 shrink-0 flex-row items-center gap-1 rounded-full bg-primary-tint px-1.5'
 
@@ -124,7 +124,7 @@ export function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGro
         )}
       </Pressable>
       {isBreakdownOpen && (
-        // 흐름 밖(절대배치)이라 헤더 높이에 영향이 없다 — 월드가 늘어도 헤더 영역은 그대로다.
+        // 흐름 밖(절대배치)이라 헤더 높이에 영향이 없다. 월드가 늘어도 헤더 영역은 그대로다.
         // 기준 박스는 라벨행이고 칩이 좌측에 있으므로 left-0에 맞춘다(우측은 고가 드롭 뱃지 자리).
         <View
           testID="world-crystal-breakdown"
@@ -155,7 +155,7 @@ export function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGro
 // 직전 기간 대비 증감 칩 — **금액행** 오른쪽에 붙는다. 라벨행이 아니라
 // 금액행(아이콘 32px)이라의 h-6 제약과 무관하고 헤더 높이가 늘지 않는다.
 //
-// 비교 기준(`previousMeso`)은 store 가 기록 합만 넘긴 값이다 — 조회한 적 없는 기간도 0이라
+// 비교 기준(`previousMeso`)은 store 가 기록 합만 넘긴 값이다. 조회한 적 없는 기간도 0이라
 // (결정 3, 사용자 결정) 이 컴포넌트는 기간 상태를 전혀 보지 않는다.
 export function DeltaChip(props: {
   totalMeso: number
@@ -171,7 +171,7 @@ export function DeltaChip(props: {
     props.now,
   ).primary
 
-  // 방향이 없는 상태(같음)에는 신호색을 쓰지 않는다 — 빨강도 파랑도 거짓이다.
+  // 방향이 없는 상태(같음)에는 신호색을 쓰지 않는다. 빨강도 파랑도 거짓이다.
   const tone =
     delta.direction === 'same'
       ? 'bg-primary-tint'
@@ -193,7 +193,7 @@ export function DeltaChip(props: {
       aria-label={formatProfitDeltaLabel(delta, previousLabel)}
       className={`ml-2 h-5 shrink-0 flex-row items-center gap-0.5 rounded-full px-1.5 ${tone}`}
     >
-      {/* 'same' 에는 방향 표식을 그리지 않는다 — 표기 "-" 자체가 표식이라 겹친다. */}
+      {/* 'same' 에는 방향 표식을 그리지 않는다. 표기 "-" 자체가 표식이라 겹친다. */}
       {delta.direction === 'up' && <ArrowUpIcon className={`h-2.5 w-2.5 shrink-0 ${ink}`} strokeWidth={3} aria-hidden />}
       {delta.direction === 'down' && (
         <ArrowDownIcon className={`h-2.5 w-2.5 shrink-0 ${ink}`} strokeWidth={3} aria-hidden />

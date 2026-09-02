@@ -2,12 +2,12 @@
 // `useEffect` 클로저 + DOM 변이와 한 덩어리라 단위로 검사할 수 없었는데, RN 으로 옮기며 상태 전이를
 // 순수 함수로 떼어내면서 **시간을 인자로 받는 검사**가 가능해졌다(8프레임 등장·pre→loop·end 종료…).
 //
-// 여기 남는 것은 **렌더가 아니면 못 보는 것들**이다 — 레이어 순서, 가산 합성이 걸린 자리, 닫기 배선.
+// 여기 남는 것은 **렌더가 아니면 못 보는 것들**이다. 레이어 순서, 가산 합성이 걸린 자리, 닫기 배선.
 // 프레임 **그림** 은 여기서 못 본다: jest 의 에셋 대역이 크기를 안 줘서 좌표가 안 잡히고, 그러면
 // `frame-layout.ts` 계약대로 아예 안 그린다.
 //
 // 남는 것은 웹의 정정 둘이 다루던 자리와 구조·레이어·닫기 계약이다. 그 정정 둘은 **RN 에 없는
-// 문제**라(Radix `dismissable-layer` 가 만든 웹 전용 결함) 케이스도 뒤집힌다 — `pointer-events-auto`
+// 문제**라(Radix `dismissable-layer` 가 만든 웹 전용 결함) 케이스도 뒤집힌다. `pointer-events-auto`
 // 와 `data-sheet-keep-open` 대신 **네이티브 윈도우로 뜬다**를 지킨다.
 import { fireEvent } from '@testing-library/react-native'
 import { Dimensions } from 'react-native'
@@ -73,11 +73,11 @@ describe('DropEffectOverlay — 구조', () => {
     expect(queryByTestId('drop-effect-item')).toBeNull()
   })
 
-  // 탭하면 닫힌다 — **다만 언제는 여기서 안 본다.**
+  // 탭하면 닫힌다. **다만 언제는 여기서 안 본다.**
   //
   // 엔진이 붙은 뒤로 첫 탭은 `end` 재생을 시작하고 그것이 끝나야 `onClose` 가 온다(웹과 같다).
   // 그 두 단계를 이 렌더 테스트로 재려 했더니 jest 의 `requestAnimationFrame` 이 한 flush 안에서
-  // 재생을 통째로 흘려보내 첫 탭에 이미 닫혀 있었다 — **시간을 통제하지 않는 곳에서 시간에 기댄
+  // 재생을 통째로 흘려보내 첫 탭에 이미 닫혀 있었다. **시간을 통제하지 않는 곳에서 시간에 기댄
   // 단언**이라 신뢰할 수 없다. 순서(탭 → end → 끝, 두 번째 탭은 건너뛰기)는 시간을 인자로 받는
   // `drop-effect-player.test.ts` 가 정확히 본다. 여기서는 **닫히기는 하는가**만 남긴다.
   it('화면을 탭하면 닫힌다', async () => {
@@ -95,7 +95,7 @@ describe('DropEffectOverlay — 구조', () => {
   // ★ 회귀 가드 — **배경은 퍼센트로 크기를 잡으면 안 된다.**
   //
   // 모달이 열리며 `880 → 833.67 → 880dp` 로 두 번 재배치되는데 `<Svg>` 는 가운데 값에서 한 번만
-  // 배치되고 끝났다 — `width="100%"` 가 그 크기로 굳어 화면 아래 46dp 가 안 칠해졌고, 그 자리로
+  // 배치되고 끝났다. `width="100%"` 가 그 크기로 굳어 화면 아래 46dp 가 안 칠해졌고, 그 자리로
   // 뒤의 시트가 그대로 비쳤다(2026-08-26 갤럭시 Z Flip3 실측). 창 크기를 숫자로 박아 그 의존을 끊는다.
   it('배경 그라디언트는 창 크기를 숫자로 받는다 — 퍼센트는 늦은 재배치를 놓친다', async () => {
     const { getByTestId } = await renderOverlay(
@@ -120,7 +120,7 @@ describe('DropEffectOverlay — 구조', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
-  // **엔진이 붙었다.** 다만 이 렌더 테스트가 프레임 그림을 볼 수는 없다 — jest 의 에셋 대역은
+  // **엔진이 붙었다.** 다만 이 렌더 테스트가 프레임 그림을 볼 수는 없다. jest 의 에셋 대역은
   // `{ testUri }` 뿐이라 `Image.resolveAssetSource` 가 크기를 안 준다. 크기를 모르면 아예 안 그리는
   // 것이 `frame-layout.ts` 의 계약이므로(크기 없이 그리면 프레임마다 최대 26px 튄다)
   // 여기서는 **자리와 계약**만 보고, 재생 순서는 `drop-effect-player.test.ts` 가 본다.
@@ -138,7 +138,7 @@ describe('DropEffectOverlay — 구조', () => {
   })
 })
 
-// 배율 계산 자체는 core 에 있고 프레임과 무관하게 산다 — 웹판 두 케이스 그대로.
+// 배율 계산 자체는 core 에 있고 프레임과 무관하게 산다. 웹판 두 케이스 그대로.
 describe('screenEffectScale', () => {
   const REF = { w: 1146, h: 685 }
 

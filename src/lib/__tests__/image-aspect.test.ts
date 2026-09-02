@@ -6,7 +6,7 @@
 // 초록으로 통과한 이유가 그것이다.
 //
 // 그래서 묻는 것은 **두 축을 다 이름 불렀는가** 다. 값이 아니라 **키의 존재**를 묻는 이유는
-// `toEqual` 이 `{width: undefined}` 와 `{}` 를 **같게 보기 때문**이다 — 하필 그 둘의 차이가 이
+// `toEqual` 이 `{width: undefined}` 와 `{}` 를 **같게 보기 때문**이다. 하필 그 둘의 차이가 이
 // 결정의 전부다(전자만 앞 층의 고유 픽셀값을 덮는다).
 import { Image } from 'react-native'
 
@@ -30,7 +30,7 @@ describe('imageNaturalSize', () => {
     expect(imageNaturalSize(7 as never)).toEqual({ width: 46, height: 50 })
   })
 
-  // `resolveImageCropLayout` 이 밟은 자리와 같다 — `undefined <= 0` 은 false 라
+  // `resolveImageCropLayout` 이 밟은 자리와 같다. `undefined <= 0` 은 false 라
   // 크기 없는 소스가 가드를 통과하면 `aspectRatio: NaN` 이 나간다. NaN 은 에러가 아니라
   // 레이아웃이 조용히 무너지는 값이다.
   it.each([
@@ -68,7 +68,7 @@ describe('naturalAspectStyle — 나머지 축은 그림이 정한다', () => {
   })
 
   // **이 저장소에서 가장 조용한 실패다.** 안 적은 축에는 에셋의 고유 픽셀 크기가 남고, 두 축이
-  // 다 정해지면 Yoga 가 `aspectRatio` 를 버린다 — 에러 없이 그림만 늘어난다.
+  // 다 정해지면 Yoga 가 `aspectRatio` 를 버린다. 에러 없이 그림만 늘어난다.
   it.each([
     ['높이를 준 쪽', { height: 17 } as const, 'width'],
     ['폭을 준 쪽', { width: '100%' } as const, 'height'],
@@ -87,7 +87,7 @@ describe('naturalAspectStyle — 나머지 축은 그림이 정한다', () => {
     expect(naturalAspectStyle(7 as never, { width: '220%' })).toMatchObject({ width: '220%' })
   })
 
-  // 고유 크기를 모르면 **소스에도 크기가 없다**(그것이 `null` 인 이유다) — 샐 것이 없으므로
+  // 고유 크기를 모르면 **소스에도 크기가 없다**(그것이 `null` 인 이유다). 샐 것이 없으므로
   // 없는 값을 지우겠다고 `undefined` 를 적지 않는다. 그러면 무엇을 막고 있는지가 안 읽힌다.
   it('고유 크기를 모르면 준 축만 돌려준다 — 지울 것이 없다', () => {
     고유크기(undefined, undefined)

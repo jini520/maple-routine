@@ -42,10 +42,10 @@ export interface BarGroup {
   readonly label: string
   /** 하위 페이지. 비어 있으면 그룹 자신이 페이지다. */
   readonly subs: readonly BarSub[]
-  /** 하위가 **없는** 그룹의 페이지. 하위가 있으면 `null` — 둘 중 하나만 산다(테스트가 고정한다). */
+  /** 하위가 **없는** 그룹의 페이지. 하위가 있으면 `null`. 둘 중 하나만 산다(테스트가 고정한다). */
   readonly page: TabRouteName | null
   /**
-   * 하위가 **있는** 그룹이 push 할 층 화면. 하위가 없으면 `null` — 그런 그룹의
+   * 하위가 **있는** 그룹이 push 할 층 화면. 하위가 없으면 `null`. 그런 그룹의
    * 페이지는 그룹 층(`Groups`) 안에 산다.
    *
    * `subs`/`page` 와 같은 배타 규칙을 따르고, 그것도 테스트가 고정한다. 짝이 어긋나면 그룹을
@@ -57,7 +57,7 @@ export interface BarGroup {
 /**
  * 그룹 다섯. **순서가 곧 바의 순서다**.
  *
- * 라벨이 여기 있는 이유는 바가 라벨을 **두 층**에서 쓰기 때문이다 — 그룹 행에서는 그룹 이름,
+ * 라벨이 여기 있는 이유는 바가 라벨을 **두 층**에서 쓰기 때문이다. 그룹 행에서는 그룹 이름,
  * 하위 행에서는 하위 이름. `routes.ts` 에도 두면 같은 문구가 두 벌이 된다.
  *
  * `today` 만 라틴 문자인 것은 사용자 판정이다(2026-08-13).
@@ -83,7 +83,7 @@ export const BAR_GROUPS: readonly BarGroup[] = [
     page: null,
     layer: 'LedgerSubs',
     // 셋에서 둘이 됐다(사용자 지정 2026-08-23). 사냥 수익·지출은 사라진 것이
-    // 아니라 **가계부 안으로** 들어간다 — 같은 날의 같은 돈이 세 화면에 흩어지지 않게.
+    // 아니라 **가계부 안으로** 들어간다. 같은 날의 같은 돈이 세 화면에 흩어지지 않게.
     subs: [
       { page: 'Profit', label: '보스 수익' },
       { page: 'Cashbook', label: '가계부' },
@@ -105,10 +105,10 @@ export interface BarState {
 /**
  * 바를 눌렀을 때 **무엇을 할지**. 상태가 아니라 지시다.
  *
- * - `openSubs` — 한 층 내려간다. 적용부가 그 층 화면으로 이동하면 스택이 그것을 한 단으로 만든다.
- * - `switchSub` — 같은 단 안의 옆걸음. 스택이 자라지 않는다.
- * - `switchGroupPage` — 그룹 층의 옆걸음. 하위 행에서 눌렀다면 **올라가면서** 옆걸음한다(한 번의 이동).
- * - `back` — 한 단 올라간다(= pop). 가장자리 스와이프가 만드는 것과 같은 결과다.
+ * - `openSubs`. 한 층 내려간다. 적용부가 그 층 화면으로 이동하면 스택이 그것을 한 단으로 만든다.
+ * - `switchSub`. 같은 단 안의 옆걸음. 스택이 자라지 않는다.
+ * - `switchGroupPage`. 그룹 층의 옆걸음. 하위 행에서 눌렀다면 **올라가면서** 옆걸음한다(한 번의 이동).
+ * - `back`. 한 단 올라간다(= pop). 가장자리 스와이프가 만드는 것과 같은 결과다.
  */
 export type BarIntent =
   | { readonly kind: 'openSubs'; readonly layer: LayerRouteName; readonly page: TabRouteName }
@@ -142,19 +142,19 @@ export function groupOfPage(page: TabRouteName): BarGroup {
  * 그 페이지가 **어느 층 화면 안에 사는가**.
  *
  * 화면이 저 탭으로 가고 싶다 고 말할 때 그것을 중첩 이동으로 옮기는 표는 이것뿐이다
- * (`use-open-tab.ts`) — 화면이 층 구조를 직접 알면 구조를 바꿀 때마다 화면들이 함께 움직인다.
+ * (`use-open-tab.ts`). 화면이 층 구조를 직접 알면 구조를 바꿀 때마다 화면들이 함께 움직인다.
  */
 export function layerOfPage(page: TabRouteName): LayerRouteName {
   return groupOfPage(page).layer ?? 'Groups'
 }
 
-/** 지금 그려야 하는 층(결정 2) — **토글이 아니라 페이지가 정한다.** 이제 예외가 하나도 없다. */
+/** 지금 그려야 하는 층(결정 2). **토글이 아니라 페이지가 정한다.** 이제 예외가 하나도 없다. */
 export function barLayer(state: BarState): 'group' | 'sub' {
   return groupOfPage(state.page).subs.length > 0 ? 'sub' : 'group'
 }
 
 /**
- * ← 는 하위 행에만 선다(결정 3). 그룹 행에는 나갈 문이 필요 없다 — 다섯이 이미 다 보인다.
+ * ← 는 하위 행에만 선다(결정 3). 그룹 행에는 나갈 문이 필요 없다. 다섯이 이미 다 보인다.
  *
  * 하위 행이면 **언제나** 참인 것이 다. 하위 행에 있다는 것이 곧 스택 깊이 ≥ 1
  * 이라, 예전의 기록이 없어 되돌아갈 자리가 없는 경우가 존재하지 않는다.
@@ -168,7 +168,7 @@ export function visibleSubs(state: BarState): readonly BarSub[] {
   return barLayer(state) === 'sub' ? groupOfPage(state.page).subs : []
 }
 
-/** 그룹의 목적지 — 기억된 하위가 있으면 그것, 없으면 첫 하위. */
+/** 그룹의 목적지. 기억된 하위가 있으면 그것, 없으면 첫 하위. */
 function entryPageOf(group: BarGroup, lastSub: LastSub): TabRouteName {
   return lastSub[group.id] ?? group.subs[0].page
 }
@@ -176,9 +176,9 @@ function entryPageOf(group: BarGroup, lastSub: LastSub): TabRouteName {
 /**
  * 그룹을 눌렀을 때(결정 4).
  *
- * - **같은 그룹** — 이미 거기 있다. 예전에는 `showGroups` 를 내리는 자리였는데 그 상태가 없어졌다.
- * - **하위가 있는 그룹** — 한 층 내려간다.
- * - **하위가 없는 그룹** — 그룹 층의 옆걸음이다. 하위 행에서 눌렀다면 올라가면서 옆걸음한다.
+ * - **같은 그룹**. 이미 거기 있다. 예전에는 `showGroups` 를 내리는 자리였는데 그 상태가 없어졌다.
+ * - **하위가 있는 그룹**. 한 층 내려간다.
+ * - **하위가 없는 그룹**. 그룹 층의 옆걸음이다. 하위 행에서 눌렀다면 올라가면서 옆걸음한다.
  *   사용자 예시 셋 중 *"유틸리티 → 설정"* 이 이 갈래다.
  */
 export function pressGroup(state: BarState, id: GroupId): BarIntent {
@@ -187,7 +187,7 @@ export function pressGroup(state: BarState, id: GroupId): BarIntent {
 
   if (group.page !== null) return { kind: 'switchGroupPage', page: group.page }
 
-  // 하위가 있으면 `layer` 가 반드시 있다 — 표 테스트가 그 짝을 고정한다.
+  // 하위가 있으면 `layer` 가 반드시 있다. 표 테스트가 그 짝을 고정한다.
   return {
     kind: 'openSubs',
     layer: group.layer as LayerRouteName,
@@ -202,7 +202,7 @@ export function pressSub(state: BarState, page: TabRouteName): BarIntent {
 }
 
 /**
- * **바를 거치지 않은 이동** — today 위젯 타일처럼 화면이 직접 목적지를 정해 가는 경우.
+ * **바를 거치지 않은 이동**. today 위젯 타일처럼 화면이 직접 목적지를 정해 가는 경우.
  *
  * ## 이 함수의 결함이 구조에서 사라졌다
  *
@@ -224,7 +224,7 @@ export function openPage(state: BarState, target: TabRouteName): BarIntent {
   return { kind: 'openSubs', layer: group.layer as LayerRouteName, page: target }
 }
 
-/** ← 를 눌렀을 때(결정 3) — 하위 행이 아니면 ← 가 그려지지도 않는다. */
+/** ← 를 눌렀을 때(결정 3). 하위 행이 아니면 ← 가 그려지지도 않는다. */
 export function pressBack(state: BarState): BarIntent {
   return canGoBack(state) ? { kind: 'back' } : NONE
 }
@@ -232,7 +232,7 @@ export function pressBack(state: BarState): BarIntent {
 /**
  * 다시 들어갈 자리를 적는다.
  *
- * 그룹 층 페이지는 기억할 것이 없으므로 **같은 객체를 그대로 돌려준다** — 새 객체를 만들면
+ * 그룹 층 페이지는 기억할 것이 없으므로 **같은 객체를 그대로 돌려준다**. 새 객체를 만들면
  * `useSyncExternalStore` 가 매번 바뀐 것으로 보고 바를 다시 그린다.
  */
 export function rememberSub(lastSub: LastSub, page: TabRouteName): LastSub {

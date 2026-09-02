@@ -25,7 +25,7 @@ export interface AmountFigureProps {
 
 const OPAQUE_ZERO = { opacity: 0 }
 
-/** 단위 왼쪽 틈(dp). 폭만 있는 `View` 로 낸다 — 방법 넷의 실측은 에 있다. */
+/** 단위 왼쪽 틈(dp). 폭만 있는 `View` 로 낸다. 방법 넷의 실측은 에 있다. */
 const FIGURE_UNIT_GAP = 2
 
 const GAP_STYLE = { width: FIGURE_UNIT_GAP }
@@ -39,7 +39,7 @@ const AMOUNT_UNIT = /([조억만천])/
  * 단위 글자에는 `UNIT_STYLE` 이 붙고, 숫자 뒤에 오는 단위 앞에는 **빈 토막**(`text === ''`)이
  * 하나 끼워진다. 그리는 쪽이 그것을 폭만 있는 `View` 로 낸다.
  *
- * 단위끼리 붙은 자리(`5천만`)에는 안 끼운다 — 한 낱말이라 벌리면 `5천 만` 으로 읽힌다.
+ * 단위끼리 붙은 자리(`5천만`)에는 안 끼운다. 한 낱말이라 벌리면 `5천 만` 으로 읽힌다.
  */
 type Piece = { text: string; kind: 'digits' | 'unit' | 'gap' }
 
@@ -52,7 +52,7 @@ function amountPieces(text: string): Piece[] {
       return
     }
     pieces.push({ text: part, kind: 'digits' })
-    // 만 미만 나머지는 뒤에 단위가 없다 — 틈을 만들 자리가 아니다.
+    // 만 미만 나머지는 뒤에 단위가 없다. 틈을 만들 자리가 아니다.
     if (index + 1 < parts.length && AMOUNT_UNIT.test(parts[index + 1])) {
       pieces.push({ text: '', kind: 'gap' })
     }

@@ -3,7 +3,7 @@
 // 눌렀을 때 화면이 바뀌는가 · ← 가 서는 자리.
 //
 // 여기에 의 광고 게이트 배선도 함께 물었다(그룹 이동에만 걸리는가).
-// 이 전면광고를 걷으며 그 묶음을 통째로 지웠다 — **목을 두고 안 불린다 를 물어 봐야 헛것이다**:
+// 이 전면광고를 걷으며 그 묶음을 통째로 지웠다. **목을 두고 안 불린다 를 물어 봐야 헛것이다**:
 // 모듈을 아무도 import 하지 않으므로 그 단언은 배선이 되살아나도 초록이다. 지금 그 자리를 지키는
 // 것은 소스를 훑는 `src/__tests__/interstitial-policy.test.ts` 다.
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native'
@@ -21,7 +21,7 @@ import { NavigationHarness } from './harness'
 import { installMemoryPreferences } from './memory-preferences'
 
 // Liquid Glass 가 **없는** 쪽을 그릴 수 있어야 한다. jest 에서 이 함수는 참을
-// 내주므로(유리 경로), 폴백을 물으려면 여기서만 거짓으로 돌려세운다 — 기본값은 참 그대로다.
+// 내주므로(유리 경로), 폴백을 물으려면 여기서만 거짓으로 돌려세운다. 기본값은 참 그대로다.
 jest.mock('expo-glass-effect', () => ({
   ...jest.requireActual('expo-glass-effect'),
   isLiquidGlassAvailable: jest.fn(() => true),
@@ -55,10 +55,10 @@ async function press(testID: string): Promise<void> {
 //
 // `GlassView` 의 `colorScheme` 기본값은 `'auto'`(= 시스템 외형)인데 이 앱은 자체 테마를 쓴다. 그
 // 배선이 빠져 있던 동안 라이트 OS 에서 레테를 켜면 **새까만 페이지 위에 밝은 유리판**이 떴고,
-// 그때까지 있던 테스트는 스냅샷을 포함해 하나도 이것을 잡지 못했다 — 그래서 명시로 건다.
+// 그때까지 있던 테스트는 스냅샷을 포함해 하나도 이것을 잡지 못했다. 그래서 명시로 건다.
 // ← 의 유리판은 **누름 과녁 밖** 에 있어야 한다.
 //
-// 판을 `Pressable` 안에 두었더니 iOS 가 그 `GlassView` 를 **아예 그리지 않았다** — 알약과 코드가
+// 판을 `Pressable` 안에 두었더니 iOS 가 그 `GlassView` 를 **아예 그리지 않았다**. 알약과 코드가
 // 한 글자도 다르지 않고 런타임 props 까지 같았는데도. 빨간 tint 를 강제로 넣어도 반응이 없어
 // **렌더 없음** 이 확정됐고, 판을 바 루트로 꺼내니 바로 살아났다(바 대비 −15.7 → +23.1).
 // 네이티브 렌더는 jest 로 못 보므로, **깨졌던 구조 자체**를 건다.
@@ -69,13 +69,13 @@ async function press(testID: string): Promise<void> {
 // *"싹다 채워버리면 어떡해"*). 목록을 늘릴 때 이 검사가 **전부 채우기** 로 돌아가는 것을 막는다.
 //
 // 톱니와 수익은 **우리가 그린 아이콘이라 채울 자리를 고를 수 있어** 채우는 쪽인데, 여기서는 안
-// 다룬다 — 그 둘은 뿌리에 자기 `fill="none"` 을 갖고 채우기는 안쪽 도형에만 걸려서 이 검사의
+// 다룬다. 그 둘은 뿌리에 자기 `fill="none"` 을 갖고 채우기는 안쪽 도형에만 걸려서 이 검사의
 // 눈에 안 보인다. 각자의 테스트가 더 정확하게 잡는다(`GearIcon` 은 evenodd 로 가운데를 비우는지,
 // `ProfitIcon` 은 동전 둘에만 걸리고 호에는 안 새는지).
 // 채우지 못하는 그림은 **굵기로** 활성을 말한다.
 //
 // 채우기가 통하는 셋(대시보드·렌치·장바구니)과 커스텀 둘(톱니·수익)은 면으로 활성을 표시하는데,
-// 나머지(달력·지갑·목록·검·조준경)는 안쪽 선이 의미를 져서 채울 수 없다 — 그쪽만 획을 키운다.
+// 나머지(달력·지갑·목록·검·조준경)는 안쪽 선이 의미를 져서 채울 수 없다. 그쪽만 획을 키운다.
 // 둘 다 하면 채운 그림이 과해지므로 **배타**여야 하고, 그 배타성을 여기서 건다.
 describe('채우지 못하는 아이콘은 활성일 때 굵어진다', () => {
   const strokes = (id: string): number[] =>
@@ -83,7 +83,7 @@ describe('채우지 못하는 아이콘은 활성일 때 굵어진다', () => {
       ([, value]) => Number(value),
     )
 
-  // 활성이 되는 자리로 고른다 — 그룹 행에서 ← 를 누르면 기록이 있어 **today 로 돌아가므로**
+  // 활성이 되는 자리로 고른다. 그룹 행에서 ← 를 누르면 기록이 있어 **today 로 돌아가므로**
   // 그 경로로는 스케줄이 활성이 되지 않는다.
   it.each([
     ['bar-sub-Content', 'bar-group-schedule', true],   // 목록 — 선뿐이라 못 채운다
@@ -104,7 +104,7 @@ describe('채우지 못하는 아이콘은 활성일 때 굵어진다', () => {
   it('비활성은 어느 그림이든 기본 굵기다', async () => {
     await render(<NavigationHarness />)
 
-    // 같은 값이 컴포넌트·호스트 양쪽에 실려 여러 번 잡힌다 — 개수가 아니라 **전부 기본인가** 다.
+    // 같은 값이 컴포넌트·호스트 양쪽에 실려 여러 번 잡힌다. 개수가 아니라 **전부 기본인가** 다.
     const widths = strokes('bar-group-schedule')
     expect(widths.length).toBeGreaterThan(0)
     expect(widths.every((width) => width === 1.5)).toBe(true)
@@ -123,7 +123,7 @@ describe('활성 아이콘 채우기는 가려서 한다', () => {
     if (group === 'schedule' || group === 'ledger') await press('bar-back')
 
     const item = JSON.stringify(screen.getByTestId(`bar-group-${group}`))
-    // 커스텀 아이콘은 뿌리에 자기 `fill="none"` 을 갖는다 — **none 이 있나** 가 아니라
+    // 커스텀 아이콘은 뿌리에 자기 `fill="none"` 을 갖는다. **none 이 있나** 가 아니라
     // **none 아닌 fill 이 하나라도 있나** 를 물어야 한다.
     const fills = [...item.matchAll(/"fill":"([^"]*)"/g)].map(([, value]) => value)
 
@@ -174,13 +174,13 @@ describe('바는 **지금 페이지** 가 정하는 층을 그린다', () => {
  expect(screen.getByTestId('screen-Content')).toBeTruthy()
  expect(screen.getByTestId('bar-sub-Boss')).toBeTruthy()
  expect(screen.getByTestId('bar-back')).toBeTruthy()
- // 하위 행이 떴으면 그룹 행은 자리를 비운다 — 한 줄에 두 층이 겹칠 수 없다.
+ // 하위 행이 떴으면 그룹 행은 자리를 비운다. 한 줄에 두 층이 겹칠 수 없다.
  expect(screen.queryByTestId('bar-group-schedule')).toBeNull()
  })
 
  // 헤더 버튼으로 열던 하위 페이지가 하위 행의 셋째 항목이 됐다. 여기서 물을
  // 것은 **바에 섰는가** 가 아니라 **눌러서 그 화면이 열리는가** 다(라우트 표만 고치고 내비게이터에
- // 안 꽂으면 바에는 서고 화면은 안 바뀐다 — 2026-08-13 설정 탭 사고와 같은 부류).
+ // 안 꽂으면 바에는 서고 화면은 안 바뀐다. 2026-08-13 설정 탭 사고와 같은 부류).
  it('스케줄 하위의 보스 관리를 누르면 그 화면이 열린다', async () => {
  await render(<NavigationHarness />)
 
@@ -188,7 +188,7 @@ describe('바는 **지금 페이지** 가 정하는 층을 그린다', () => {
  await press('bar-sub-BossManage')
 
  expect(screen.getByTestId('screen-BossManage')).toBeTruthy()
- // 하위 행에 남아 있다 — 탭이지 push 가 아니므로 층이 안 바뀐다.
+ // 하위 행에 남아 있다. 탭이지 push 가 아니므로 층이 안 바뀐다.
  expect(screen.getByTestId('bar-sub-Boss')).toBeTruthy()
  expect(screen.getByTestId('bar-back')).toBeTruthy()
  })
@@ -206,11 +206,11 @@ describe('바는 **지금 페이지** 가 정하는 층을 그린다', () => {
 
 // 떠 있는 것의 층은 **형제 순서**가 정한다.
 //
-// 펼침판이 화면 **안**에서 그려지던 동안 바는 그 위였다 — 펴도 바만 안 흐려졌고, 편 채로 바를 눌러
+// 펼침판이 화면 **안**에서 그려지던 동안 바는 그 위였다. 펴도 바만 안 흐려졌고, 편 채로 바를 눌러
 // 다른 탭으로 갈 수 있었다. `zIndex` 로는 못 고친다(부모가 다르다). 지금은 펼침판이 `Main` 의
 // `layout` 안 **바 뒤** 슬롯에 그려지므로, 여기서 물을 것은 **그리는 순서 하나**다.
 describe('펼침판은 바보다 뒤에 그려진다', () => {
- /** `toJSON()` 을 훑어 testID 를 그리는 순서대로 낸다 — 뒤에 있는 것이 위에 그려진다. */
+ /** `toJSON()` 을 훑어 testID 를 그리는 순서대로 낸다. 뒤에 있는 것이 위에 그려진다. */
  function 그리는순서(): string[] {
  const order: string[] = []
 
@@ -295,7 +295,7 @@ describe('← 는 **한 층 내려온 자리**로 되돌린다 (결정 4)', () =
 // `shadowOpacity`·`shadowRadius`·`shadowOffset` 은 **iOS 전용 프롭**이다. 그것으로 쓰면 안드로이드에는
 // 정정 22 가 맞춰 둔 층이 **하나도 도달하지 않고** `elevation` 의 기본 그림자만 남는다. 두 주 동안
 // 그 부재가 안 보였던 것은 폴백 알약이 분홍이라 **색으로 이미 갈려 있었기** 때문이고, 그 색을 빼는
-// 순간(정정 28-1) 그림자가 유일한 층 장치가 된다 — 그래서 이 검사가 그 색 변경과 한 쌍이다.
+// 순간(정정 28-1) 그림자가 유일한 층 장치가 된다. 그래서 이 검사가 그 색 변경과 한 쌍이다.
 //
 // 눈으로는 못 잡는 부류다: 시뮬레이터만 보면 언제나 초록이고, 안드로이드에서만 다르게 그려진다.
 describe('바의 스타일이 플랫폼을 안 가린다', () => {
@@ -323,7 +323,7 @@ describe('바의 스타일이 플랫폼을 안 가린다', () => {
  },
 )
 
- // 안드로이드 `Text` 는 글자 상자에 폰트 메트릭 여백을 넣어 iOS 보다 상자가 크다 — 실측으로
+ // 안드로이드 `Text` 는 글자 상자에 폰트 메트릭 여백을 넣어 iOS 보다 상자가 크다. 실측으로
  // 아이콘→라벨 간격이 27 → 30px 이 되고 블록이 5px 자라 아이콘이 3px 위로 밀렸다.
  it('라벨이 폰트 메트릭 여백을 끈다', async () => {
  await render(<NavigationHarness />)
@@ -336,7 +336,7 @@ describe('바의 스타일이 플랫폼을 안 가린다', () => {
  })
 
  // 바의 치수는 **창 폭에서 계산**된다. 값 자체는 `bottom-bar-metrics.test.ts`
- // 가 지키므로 여기서 물을 것은 **바가 그 함수를 실제로 보는가** 다 — 숫자를 손으로 적어 두면 바와
+ // 가 지키므로 여기서 물을 것은 **바가 그 함수를 실제로 보는가** 다. 숫자를 손으로 적어 두면 바와
  // 콘텐츠 인셋(`ScreenScroll`)이 서로 다른 값을 믿는 상태가 조용히 만들어진다.
  it('바의 폭·높이가 창 폭에서 나온다', async () => {
  await render(<NavigationHarness />)
@@ -349,7 +349,7 @@ describe('바의 스타일이 플랫폼을 안 가린다', () => {
  expect(style.right).toBe(metrics.sideMarginPx)
  })
 
- // 큰 화면에서 캡슐이 계속 늘어나지 않는다(사용자 지시) — 테스트 창(750pt)이 이미 상한 밖이라
+ // 큰 화면에서 캡슐이 계속 늘어나지 않는다(사용자 지시). 테스트 창(750pt)이 이미 상한 밖이라
  // 이 단언이 **상한이 실제로 걸린 자리** 를 본다.
  it('창이 상한보다 넓으면 바가 상한에서 멈추고 가운데 선다', async () => {
  await render(<NavigationHarness />)
@@ -382,7 +382,7 @@ describe('재질이 없는 쪽은 흉내 내지 않는다', () => {
 
  expect(screen.queryByTestId('bar-glass')).toBeNull()
  expect(screen.queryByTestId('bar-blur')).toBeNull()
- // 유리가 없으면 바탕은 **바 자신이** 칠한다(유리일 때는 투명이어야 한다 — 아래 케이스).
+ // 유리가 없으면 바탕은 **바 자신이** 칠한다(유리일 때는 투명이어야 한다. 아래 케이스).
  expect(bar.backgroundColor).toBe('#FEF8FB')
  })
 

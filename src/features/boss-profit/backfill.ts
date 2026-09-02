@@ -1,4 +1,4 @@
-// 과거 기간 **백필**(ADR-094 결정 7로 store.ts 에서 분리) — 어떤 (캐릭터, 기간)을 조회할지
+// 과거 기간 **백필**(ADR-094 결정 7로 store.ts 에서 분리). 어떤 (캐릭터, 기간)을 조회할지
 // 정하고, 조회해서 기록으로 남기고, 직전 기간 총액과 더 뒤로 갈 수 있는지를 판단한다.
 //
 // 의 조회 원장(같은 날짜 재조회 금지)이 여기서 읽고 쓰인다.
@@ -50,13 +50,13 @@ export function buildBackfillTargets(tab: BossCycle, periodKey: string, ocids: s
 
 // 과거 기간 백필: 성공하면 markPeriodChecked를 호출해 다음 방문부터 재조회하지 않게 하고,
 // 실패하면 호출하지 않아 다음 방문 때 재시도된다. 이미 기록된 보스(setPartySize로 override된 값
-// 포함)는 건드리지 않는다 — 기존 refresh() 자동 기록 로직과 동일하게 "기록이 없는 조합만"
+// 포함)는 건드리지 않는다. 기존 refresh() 자동 기록 로직과 동일하게 "기록이 없는 조합만"
 // 기본값(파티 관리 설정, 없으면 1)으로 채운다. 즉 **실시간으로 쌓인 기록이 base이고 백필은 빠진
 // 것만 채우는 delta**다.
 //
-// 반환값은 이번 시도의 결과다 — null이면 확인 완료(0건이든 기록을 채웠든),
+// 반환값은 이번 시도의 결과다. null이면 확인 완료(0건이든 기록을 채웠든),
 // 'notCollected'면 아직 집계 전(시간이 지나면 풀린다), 'failed'면 그 외 실패(지금 재시도 가능).
-// **조회 불가(구간 밖) 대상은 여기 들어오지 않는다** — 호출부가 걸러낸다. 전에는 이 함수가 그
+// **조회 불가(구간 밖) 대상은 여기 들어오지 않는다**. 호출부가 걸러낸다. 전에는 이 함수가 그
 // 대상을 markPeriodChecked로 굳혔는데, 그러면 "조회해서 0건을 봤다"와 "조회 불가라 굳혔다"가
 // 같은 기록이 되어 confirmedEmpty가 outOfRange로 격하되는 원인이었다.
 export async function backfillTarget(target: BackfillTarget, now: Date): Promise<PeriodQueryOutcome | null> {
@@ -69,7 +69,7 @@ export async function backfillTarget(target: BackfillTarget, now: Date): Promise
 
   try {
     const state = await fetchSchedulerCharacterState(authConfig.apiKey, target.ocid, date)
-    // selectBossProfitBosses로 그룹(content_name)당 실제 처치 난이도만 골라야 한다 — 그렇지
+    // selectBossProfitBosses로 그룹(content_name)당 실제 처치 난이도만 골라야 한다. 그렇지
     // 않으면 등록 난이도와 실제 처치 난이도가 다를 때 둘 다 완료로 잡혀 같은 보스 하나를 두 번
     // 기록(이중 계산)하게 된다(ADR-032). 과거 기간 백필이므로 미완료 placeholder(ownComplete:
     // false)는 기록 대상에서 제외한다.
@@ -87,7 +87,7 @@ export async function backfillTarget(target: BackfillTarget, now: Date): Promise
     const backfillWorld = (await getCachedCharacterBasic(target.ocid))?.profile.world ?? null
 
     // ADR-069 결정 4: 백필 응답이 **처치 난이도를 확정하는 지점**이다. 대상(캐릭터×기간)당 한 번만
-    // 읽어 아래 루프에서 재사용한다 — 보스마다 조회하면 같은 쿼리를 보스 수만큼 반복한다.
+    // 읽어 아래 루프에서 재사용한다. 보스마다 조회하면 같은 쿼리를 보스 수만큼 반복한다.
     const dropRecords =
       completedBosses.length === 0
         ? []
@@ -95,7 +95,7 @@ export async function backfillTarget(target: BackfillTarget, now: Date): Promise
 
     for (const boss of completedBosses) {
       const bossName = boss.matchedBossName ?? boss.apiName
-      // 이관은 `alreadyRecorded` 판정보다 앞에 둔다 — 이미 수익 기록이 있든 없든 이 응답이 말하는
+      // 이관은 `alreadyRecorded` 판정보다 앞에 둔다. 이미 수익 기록이 있든 없든 이 응답이 말하는
       // 처치 난이도는 같고, 아래 continue 들(이미 기록됨·가격 미확정)에 막히면 안 되기 때문이다.
       await migrateDropsToConfirmedDifficulty(
         { ocid: target.ocid, boss: bossName, difficulty: boss.difficulty, periodKey: target.periodKey },
@@ -147,7 +147,7 @@ export async function backfillTarget(target: BackfillTarget, now: Date): Promise
   } catch (error) {
     // 코드가 알려주는 사실을 상태로 옮긴다.
     //  - notCollected(00009): 실패가 아니라 "아직" — 재시도 유도 문구를 띄우지 않는다.
-    //  - periodOutOfRange(00004): 우리 계산상 조회 구간 안인데 API가 거부한 것 — 월드 리프 이전·
+    //  - periodOutOfRange(00004): 우리 계산상 조회 구간 안인데 API가 거부한 것. 월드 리프 이전·
     //    휴면 등 그 캐릭터·날짜에 고유한 사정이라 "다시 시도"가 아니라 "조회할 수 없다"가 맞다.
     const kind = toScheduleSyncError(error).kind
     if (kind === 'notCollected') return 'notCollected'
@@ -157,7 +157,7 @@ export async function backfillTarget(target: BackfillTarget, now: Date): Promise
 }
 
 // 현재 기간(periodKey)에서 한 칸 더 과거로 이동해도 되는지 판단한다(#29). 이전 버튼 게이트와
-// "조회 불가" 경계가 서로 다른 하한을 쓰던 버그를 없앤다 — 착지할 이전 기간이 실제로 데이터를
+// "조회 불가" 경계가 서로 다른 하한을 쓰던 버그를 없앤다. 착지할 이전 기간이 실제로 데이터를
 // 보여줄 수 있을 때만 이동을 허용한다.
 //  1) MIN_SCHEDULER_DATE 이전(스케줄러 API 존재 이전)은 어떤 경우에도 데이터가 없다 → 불가.
 //  2) 지금 API로 조회 가능하면(롤링 윈도우 안) 도달 시 백필로 데이터를 채울 수 있다 → 가능.
@@ -166,11 +166,11 @@ export async function backfillTarget(target: BackfillTarget, now: Date): Promise
 /**
  * 직전 기간 총 수익. SQLite 한 번이면 끝난다.
  *
- * `getComparisonPeriodKeys` 가 **그 화면 총액 산식과 짝을 맞춘 키 목록**을 준다 — 월간 탭이면
+ * `getComparisonPeriodKeys` 가 **그 화면 총액 산식과 짝을 맞춘 키 목록**을 준다. 월간 탭이면
  * 직전 달(monthly)과 그 달에 속한 주차들(weekly)이 함께 들어 있고, 화면 총액도 그 둘을 더하므로
  * (`groupTotalMeso`) cycle 로 거르지 않고 전부 합치는 것이 맞다.
  *
- * 기간 상태를 묻지 않는다 — 기록이 없는 기간은 그냥 0이다(결정 3).
+ * 기간 상태를 묻지 않는다. 기록이 없는 기간은 그냥 0이다(결정 3).
  */
 export async function loadPreviousPeriodTotal(
   ocids: string[],

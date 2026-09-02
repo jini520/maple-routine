@@ -1,4 +1,4 @@
-// 웹판의 일곱을 옮겼다. 갈린 것은 두 가지다 — `toBeDisabled()` 대신 **RN 의 접근성 상태**를 보고,
+// 웹판의 일곱을 옮겼다. 갈린 것은 두 가지다. `toBeDisabled()` 대신 **RN 의 접근성 상태**를 보고,
 // `tabular-nums` 클래스 대신 **풀린 `fontVariant`** 를 본다.
 //
 // 여기서 특히 중요한 케이스는 비활성 흐림이다. 웹은 `disabled:opacity-40` 한 클래스였는데 RN 에서
@@ -59,7 +59,7 @@ describe('PartySizeStepper', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
-  // 상한은 (보스, 난이도)마다 다르다 — 스우는 하드 6인, 익스트림 2인(boss-crystal-prices.json).
+  // 상한은 (보스, 난이도)마다 다르다. 스우는 하드 6인, 익스트림 2인(boss-crystal-prices.json).
   it('상한이 낮아지면 그 값에서 +가 막힌다', async () => {
     const { getByLabelText } = await renderAtom(
       <PartySizeStepper label="스우" value={2} max={2} onChange={jest.fn()} />,
@@ -69,7 +69,7 @@ describe('PartySizeStepper', () => {
   })
 
   /**
-   * **단위를 안 적는다**(사용자 지정 2026-08-27) — 이 앱의 스테퍼는 크기와
+   * **단위를 안 적는다**(사용자 지정 2026-08-27). 이 앱의 스테퍼는 크기와
    * 무관하게 **숫자만** 오르내린다. 무엇을 세는지는 곁의 라벨과 `Users` 표식이 말한다.
    *
    * 전에는 기본 크기만 인 을 그려서 **한 앱에 스테퍼가 두 모양**이었다.

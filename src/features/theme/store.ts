@@ -22,7 +22,7 @@ function resolveSystemTheme(): ThemeName {
 /**
  * 고른 테마를 화면에 반영한다.
  *
- * **토큰을 어떻게 칠하는가는 플랫폼마다 다르다** — 웹뷰는 34토큰을 `<style>` 하나로 주입하고
+ * **토큰을 어떻게 칠하는가는 플랫폼마다 다르다**. 웹뷰는 34토큰을 `<style>` 하나로 주입하고
  * `data-theme`/`data-mode`·`color-scheme`·`scrollbar-color` 를 문서에 건다(
  * ). 그 DOM 작업은 `ThemeAppearancePort` 구현이 갖는다.
  *

@@ -2,7 +2,7 @@
 /**
  * **진짜 SQLite 위에서 `db.ts` 를 돌리는 포트**.
  *
- * 이 저장소의 SQLite 테스트는 전부 목이었다 — `db.spec.ts` 는 가짜 포트를, `rn-sqlite.test.ts` 는
+ * 이 저장소의 SQLite 테스트는 전부 목이었다. `db.spec.ts` 는 가짜 포트를, `rn-sqlite.test.ts` 는
  * op-sqlite 의 모양 을 흉내 낸다. 그 둘이 지키는 것은 어떤 문장이 어떤 차례로 나가는가 이고,
  * **제약은 그 목록에 없다**: 목은 자기가 흉내 내라고 배운 것만 흉내 낸다. 그래서
  * `income_records.meso_amount` 가 `NOT NULL` 인 채 메포·캐시 기타 에 `null` 을 받아 INSERT 가
@@ -25,9 +25,9 @@ import type { SqliteDbConnection, SqlitePort } from '../../ports'
 export interface RealSqlite {
   /** `setSqlitePort()` 에 넣는다. */
   port: SqlitePort
-  /** `db.ts` 가 낸 문장 전부(차례대로) — 무엇이 안 나갔는가 를 볼 때 쓴다. */
+  /** `db.ts` 가 낸 문장 전부(차례대로). 무엇이 안 나갔는가 를 볼 때 쓴다. */
   statements: string[]
-  /** 파일을 따로 열어 만진다 — 옛 스키마를 심고, 결과를 되짚는다. */
+  /** 파일을 따로 열어 만진다. 옛 스키마를 심고, 결과를 되짚는다. */
   inspect<T>(read: (db: DatabaseSync) => T): T
   /** 임시 디렉터리째 지운다. */
   dispose(): void
@@ -62,7 +62,7 @@ export function createRealSqlite(): RealSqlite {
         opened().exec(statement)
         return {}
       },
-      // op-sqlite 어댑터가 `rows` 를 `values` 로 감싸는 그 자리다(`rn-sqlite.ts`) — 호출부
+      // op-sqlite 어댑터가 `rows` 를 `values` 로 감싸는 그 자리다(`rn-sqlite.ts`). 호출부
       // (`ensureColumn`·`storage/income.ts`)가 읽는 이름으로 맞춘다.
       async query(statement, values) {
         statements.push(statement)

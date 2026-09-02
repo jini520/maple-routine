@@ -1,5 +1,5 @@
 import type { FeatureGuide } from '../../../types'
-// **`shared/` 에 있는 이유** — 이 안내는 `groups: ['content', 'boss', 'settings']` 로 **세 탭에 선다**
+// **`shared/` 에 있는 이유**. 이 안내는 `groups: ['content', 'boss', 'settings']` 로 **세 탭에 선다**
 // (컨텐츠와 보스가 같은 피커를 쓰므로 같은 글 한 벌이어야 한다 정정 · 설정은
 // RN 앱에서 그것을 **여는 자리**다).
 // 그래서 어느 한쪽 폴더에 두면 나머지에서 찾을 수 없다.

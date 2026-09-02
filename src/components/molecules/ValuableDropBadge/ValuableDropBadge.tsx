@@ -40,7 +40,7 @@ export function ValuableDropBadge(props: {
       <View className="flex-row items-center">
         {shown.map((drop, index) => {
           const url = getItemIconUrl(drop.itemName, drop.slot)
-          // 스택·링은 **두 갈래가 같다**(파일 머리 ⑥) — 웹도 두 분기에 같은 클래스를 적어 두었다.
+          // 스택·링은 **두 갈래가 같다**(파일 머리 ⑥). 웹도 두 분기에 같은 클래스를 적어 두었다.
           const stackStyle = {
             marginLeft: index === 0 ? 0 : -6,
             zIndex: shown.length - index,

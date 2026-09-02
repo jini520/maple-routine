@@ -8,7 +8,7 @@ import {
   useCountUp,
 } from '../useCountUp'
 
-// vitest 의 `vi.stubGlobal` 짝. jest 에는 없어서 여기서 최소한으로 만든다 — 원래 값을 기억해 두고
+// vitest 의 `vi.stubGlobal` 짝. jest 에는 없어서 여기서 최소한으로 만든다. 원래 값을 기억해 두고
 // `unstubAllGlobals()` 가 되돌린다.
 const 원래전역: Record<string, unknown> = {}
 
@@ -33,7 +33,7 @@ function displayed(): number {
 }
 
 /**
- * rAF 을 수동으로 굴린다 — 실제 시간 대신 프레임을 우리가 준다. **취소도 실제로 동작해야 한다**:
+ * rAF 을 수동으로 굴린다. 실제 시간 대신 프레임을 우리가 준다. **취소도 실제로 동작해야 한다**:
  * no-op 이면 재조준·identity 교체로 버려진 tween 이 계속 돌아 다음 단언의 값을 오염시킨다.
  */
 let now = 0
@@ -131,7 +131,7 @@ describe('useCountUp', () => {
 
     rerender(<Probe identity="a" value={2000} />)
     advance(0)
-    // 재조준 직후 값은 그 자리 그대로여야 한다 — 0이나 1000으로 튀지 않는다.
+    // 재조준 직후 값은 그 자리 그대로여야 한다. 0이나 1000으로 튀지 않는다.
     expect(displayed()).toBe(midway)
 
     advance(COUNT_UP_DURATION_MS)
@@ -200,7 +200,7 @@ describe('useCountUp', () => {
 
   // 언마운트 없이 identity 만 바뀌는 자리가 있다(총 수익 헤드라인은 기간이
   // 바뀌어도 재마운트되지 않는다). 마운트 때만 기억을 읽으면 그 자리는 옛 identity 의 값에서
-  // 굴러가 버린다 — identity 변경은 값 변경이 아니라 "다른 값을 보게 된 것"이므로 리셋이다.
+  // 굴러가 버린다. identity 변경은 값 변경이 아니라 "다른 값을 보게 된 것"이므로 리셋이다.
   it('살아 있는 인스턴스에서 identity 가 바뀌면 굴리지 않고 목표로 리셋한다', async () => {
     const view = render(<Probe identity="character|weekly|2026-07-30" value={1000} />)
     advance(COUNT_UP_DURATION_MS)
@@ -269,7 +269,7 @@ describe('useCountUp', () => {
     expect(displayed()).toBe(100)
   })
 
-  // 리셋한 값이 그 identity 의 기억이 된다 — 되돌아왔을 때 여기서 이어져야 한다.
+  // 리셋한 값이 그 identity 의 기억이 된다. 되돌아왔을 때 여기서 이어져야 한다.
   it('identity 를 되돌리면 리셋 당시 값이 아니라 그 identity 의 기억에서 굴러간다', async () => {
     const view = render(<Probe identity="a" value={1000} />)
     advance(COUNT_UP_DURATION_MS)

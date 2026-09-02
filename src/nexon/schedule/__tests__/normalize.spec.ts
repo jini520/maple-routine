@@ -211,7 +211,7 @@ describe('normalizeSchedulerCharacterState — 등록 난이도 ≠ 처치 난�
     const easy = result.bossContents.find((boss) => boss.difficulty === '이지')
     const normal = result.bossContents.find((boss) => boss.difficulty === '노멀')
     // isComplete(카드 뱃지용)는 둘 다 true(이지는 승격, 노멀은 원본)지만, ownComplete는 실제로
-    // 처치한 노멀만 true다 — 보스 수익 계산기가 이 필드로 등록 난이도(이지)가 아니라 실제
+    // 처치한 노멀만 true다. 보스 수익 계산기가 이 필드로 등록 난이도(이지)가 아니라 실제
     // 처치 난이도(노멀)를 골라낼 수 있다.
     expect(easy?.isComplete).toBe(true)
     expect(easy?.ownComplete).toBe(false)
@@ -256,7 +256,7 @@ describe('normalizeSchedulerCharacterState — 등록 난이도 ≠ 처치 난�
     )
 
     // bossDaily 항목은 결과에서 제외되고(기존 정책), 무관한 그 완료가 bossWeekly 항목을
-    // 잘못 승격시키지도 않아야 한다 — 실제로는 노멀 힐라를 처치하지 않았다.
+    // 잘못 승격시키지도 않아야 한다. 실제로는 노멀 힐라를 처치하지 않았다.
     const weeklyHilla = result.bossContents.find((boss) => boss.name === '힐라')
     expect(weeklyHilla).toEqual({
       name: '힐라',

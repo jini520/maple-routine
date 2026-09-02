@@ -114,7 +114,7 @@ describe('mixOklab', () => {
     expect(mid).toBeLessThan(Math.max(a, b))
   })
 
-  // CSS color-mix(in oklab, X 15%, surface)와 같은 결과여야 한다 — 이 함수가 만드는 값이
+  // CSS color-mix(in oklab, X 15%, surface)와 같은 결과여야 한다. 이 함수가 만드는 값이
   // 브라우저가 계산하는 값과 어긋나면 대비 검증이 실제 화면과 달라진다(ADR-064 결정 2).
   it('15% 틴트는 바탕색 쪽에 훨씬 가깝다', () => {
     const surface = hexToOklch('#FDFCF6').l

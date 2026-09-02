@@ -33,7 +33,7 @@ jest.mock('../../../storage/shared-progress-cache', () => ({
   setWorldSharedProgressEntry: jest.fn().mockResolvedValue(undefined),
   setAccountSharedProgressEntry: jest.fn().mockResolvedValue(undefined),
 }))
-// 병합은 이 파일이 검증할 대상이 아니다 — fresh 를 그대로 통과시킨다.
+// 병합은 이 파일이 검증할 대상이 아니다. fresh 를 그대로 통과시킨다.
 jest.mock('../../../lib/scheduler/scheduler-merge', () => ({ mergeSchedulerState: jest.fn() }))
 const { mergeSchedulerState: mergeSchedulerStateMock } = jest.requireMock('../../../lib/scheduler/scheduler-merge') as Record<string, jest.Mock>
 jest.mock('../../../storage/manual-tracked-content', () => ({
@@ -54,7 +54,7 @@ import { resetSyncSingleFlightForTests } from '../../schedule-sync/schedule-sync
 import { resetSyncRunStateForTests } from '../../schedule-sync/sync-run-state'
 import { useTrackingModeStore } from '../store'
 
-// ocid 마다 **다른** 일일 컨텐츠가 등록돼 있다 — 오염되면 서로 구분된다. 셋 다 mockCharacter 범위
+// ocid 마다 **다른** 일일 컨텐츠가 등록돼 있다. 오염되면 서로 구분된다. 셋 다 mockCharacter 범위
 // 항목이라(`getShareScope`) 선채움(`fillMissingSections`)이 안 돌고, 캐릭터당 호출이 정확히 1회다.
 const REGISTERED_DAILY: Record<string, string> = {
   'ocid-a': '[일일 퀘스트] 레헬른의 평온한 밤',

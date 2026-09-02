@@ -9,7 +9,7 @@ import { moveAppToBackground } from '../native/back-gesture'
  *
  * 하위 페이지가 열려 있으면 react-navigation 이 뒤로가기를 받아 pop 한다(결정 9 진짜 pop 이
  * 손으로 만들던 것). 남는 자리는 **더 pop 할 것이 없을 때**뿐이고, 그때의 기본값이 정확히 결정 18 이
- * 거부한 종료다 — RN 자신의 주석이 그렇게 적어 두었다(`ReactActivity.invokeDefaultOnBackPressed`:
+ * 거부한 종료다. RN 자신의 주석이 그렇게 적어 두었다(`ReactActivity.invokeDefaultOnBackPressed`:
  * *"the fallback logic (**finish activity**)"*). 끝내면 다음 실행이 콜드 스타트라 스플래시부터
  * 다시 본다.
  *
@@ -31,7 +31,7 @@ import { moveAppToBackground } from '../native/back-gesture'
  * ## 모달은 아직 여기 없다
  *
  * 결정 18 은 *"모달이 떠 있는데 뒤로가 또 오면 닫는다"* 도 함께 정했다. 모달은 `components/organisms`
- * 이라 그 컴포넌트를 옮길 때 붙는다 — 지금 여기에 두면 존재하지 않는 상태를 물어야 한다.
+ * 이라 그 컴포넌트를 옮길 때 붙는다. 지금 여기에 두면 존재하지 않는 상태를 물어야 한다.
  *
  * iOS 에서는 `hardwareBackPress` 가 오지 않으므로 이 훅은 아무 일도 하지 않는다.
  */
@@ -43,7 +43,7 @@ export interface RootBackNavigation {
 export function useRootBackToBackground(navigation: RootBackNavigation): void {
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      // 아직 컨테이너가 준비되지 않았으면 우리가 판정할 근거가 없다 — 가로채지 않는다. 이 구간은
+      // 아직 컨테이너가 준비되지 않았으면 우리가 판정할 근거가 없다. 가로채지 않는다. 이 구간은
       // 첫 프레임 전이라 사용자가 뒤로를 누를 수 있는 시간이 사실상 없다.
       if (!navigation.isReady()) return false
       if (navigation.canGoBack()) return false

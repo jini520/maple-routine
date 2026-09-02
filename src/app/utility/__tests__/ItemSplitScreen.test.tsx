@@ -55,7 +55,7 @@ describe('ItemSplitScreen — 골격', () => {
   it('제목과 뒤로 버튼을 그리고, 뒤로를 누르면 pop 한다', async () => {
     const view = await renderOverlay(<ItemSplitScreen />)
 
-    // 타일과 같은 글자여야 한다 — `tool-names` 한 벌에서 온다.
+    // 타일과 같은 글자여야 한다. `tool-names` 한 벌에서 온다.
     expect(view.getByText(ITEM_SPLIT_TOOL_NAME)).toBeTruthy()
     expect(view.getByTestId('screen-UtilityItemSplit')).toBeTruthy()
     expect(view.getByText('정산 금액')).toBeTruthy()
@@ -67,7 +67,7 @@ describe('ItemSplitScreen — 골격', () => {
 })
 
 describe('ItemSplitScreen — 결과', () => {
-  // 기본값은 **2인** · 판매 3% · 분배 3% 다(사용자 지정) — ⌊97,000,000,000 / 197⌋.
+  // 기본값은 **2인** · 판매 3% · 분배 3% 다(사용자 지정). ⌊97,000,000,000 / 197⌋.
   //  표의 6인 예시는 `lib/__tests__/item-split.test.ts` 가 고정한다.
   it('판매가 10억을 넣으면 492,385,786 을 보내라고 한다', async () => {
     const view = await renderOverlay(<ItemSplitScreen />)
@@ -77,7 +77,7 @@ describe('ItemSplitScreen — 결과', () => {
     expect(transferText(view)).toBe('492,385,786')
   })
 
-  // 분배 수수료가 오르면 **더 많이** 보내야 받는 사람 손에 같은 금액이 남는다 — 이 방향이
+  // 분배 수수료가 오르면 **더 많이** 보내야 받는 사람 손에 같은 금액이 남는다. 이 방향이
   // 뒤집히면 계산기가 정반대 조언을 하는 것이다.
   it('분배 수수료를 5% 로 올리면 보낼 금액이 는다', async () => {
     const view = await renderOverlay(<ItemSplitScreen />)
@@ -117,7 +117,7 @@ describe('ItemSplitScreen — 결과가 없는 두 자리', () => {
     expect(view.getByText('판매가를 입력하세요')).toBeTruthy()
   })
 
-  // 1인이면 보낼 곳이 없다 — `transferPerMember` 가 `null` 을 주는 유일한 경우다.
+  // 1인이면 보낼 곳이 없다. `transferPerMember` 가 `null` 을 주는 경우는 이것뿐이다.
   it('파티원이 1인이면 나눌 것이 없다고 말한다', async () => {
     const view = await renderOverlay(<ItemSplitScreen />)
     await typeSalePrice(view, '1000000000')
@@ -130,7 +130,7 @@ describe('ItemSplitScreen — 결과가 없는 두 자리', () => {
 })
 
 describe('ItemSplitScreen — 금액 입력', () => {
-  // 칩이 자릿수 눈금이다 — 키패드를 두 벌 만들지 않는 대신 이것을 가져왔다.
+  // 칩이 자릿수 눈금이다. 키패드를 두 벌 만들지 않는 대신 이것을 가져왔다.
   it('단위 칩이 금액을 더한다', async () => {
     const view = await renderOverlay(<ItemSplitScreen />)
 

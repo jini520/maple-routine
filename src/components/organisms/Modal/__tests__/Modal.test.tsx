@@ -43,7 +43,7 @@ describe('Modal', () => {
   })
 
   // 웹은 `stopPropagation` 이었다. RN 에는 버블링이 없어 **터치를 누가 가져가는지**로 같은 일을
-  // 한다 — 패널이 responder 를 선언하지 않으면 바깥 `Pressable` 이 받아 모달이 닫힌다.
+  // 한다. 패널이 responder 를 선언하지 않으면 바깥 `Pressable` 이 받아 모달이 닫힌다.
   it.each([
     ['Modal.Card', <Modal.Card key="card"><Text>내용</Text></Modal.Card>],
     ['Modal.Panel', <Modal.Panel key="panel"><View><Text>내용</Text></View></Modal.Panel>],
@@ -114,7 +114,7 @@ describe('Modal', () => {
 
   // : 라이트에서만 테두리를 배경색 쪽으로 눌러 가라앉힌다. RN 에는 선택자가 없어
   // 그 결과를 `--color-panel-border` 토큰이 값으로 갖고 있고(`theme/theme-vars.ts`), 이 케이스는
-  // **`Card` atom 의 `border-border` 를 그것이 실제로 덮는지**를 지킨다 — 클래스 순서가 아니라
+  // **`Card` atom 의 `border-border` 를 그것이 실제로 덮는지**를 지킨다. 클래스 순서가 아니라
   // 생성된 스타일시트 순서에 달린 자리라, 조용히 뒤집히면 라이트 모달 테두리가 도드라진다.
   it('Modal.Card 의 테두리는 스크림 위 값으로 덮인다', async () => {
     const { getByText } = await renderOverlay(

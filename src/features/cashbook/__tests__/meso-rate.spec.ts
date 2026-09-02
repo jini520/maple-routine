@@ -1,6 +1,6 @@
 // 사냥 계산기가 쓰는 메소 획득량의 **오케스트레이션**.
 //
-// 화면은 `nexon/` 도 `storage/` 도 직접 안 부른다(CLAUDE.md CRITICAL) — 그 셋을 잇는 이 자리만
+// 화면은 `nexon/` 도 `storage/` 도 직접 안 부른다(CLAUDE.md CRITICAL). 그 셋을 잇는 이 자리만
 // 검증하면 된다.
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
 jest.mock('../../../storage/meso-rate-cache', () => ({
@@ -41,7 +41,7 @@ it('호출이 실패하면 손입력으로 내려가고 기본값은 마지막 �
   getCachedMesoRate.mockResolvedValue(161)
 
   await expect(loadMesoRate('ocid-1')).resolves.toEqual({ kind: 'fallback', percent: 161 })
-  // 실패한 값으로 캐시를 덮지 않는다 — 마지막 성공값이 사라지면 폴백 칸이 빈다.
+  // 실패한 값으로 캐시를 덮지 않는다. 마지막 성공값이 사라지면 폴백 칸이 빈다.
   expect(setCachedMesoRate).not.toHaveBeenCalled()
 })
 
@@ -73,7 +73,7 @@ it('캐시 쓰기가 실패해도 읽은 값은 그대로 낸다', async () => {
   await expect(loadMesoRate('ocid-1')).resolves.toEqual({ kind: 'read', percent: 149 })
 })
 
-// `그리드`는 직업이 정하는 값이라 스킬 조회를 안 거친다(사용자 지정 2026-09-01) — 직업 이름은
+// `그리드`는 직업이 정하는 값이라 스킬 조회를 안 거친다(사용자 지정 2026-09-01). 직업 이름은
 // `character/list` 가 캐시에 남겨 둔 것을 그대로 쓴다.
 it('캐시에 든 직업 이름을 함께 넘긴다', async () => {
   getCachedCharacterBasic.mockResolvedValue({ profile: { name: '루디', level: 294, jobClass: '섀도어' } })

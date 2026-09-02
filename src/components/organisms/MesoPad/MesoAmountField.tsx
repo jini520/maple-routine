@@ -6,7 +6,7 @@
  * 없고, 앱의 다른 금액 표기와도 같다. 억/만 환산은 자릿수를 눈으로 세지 않게 해 주는
  * 값이라 **작게 아래에** 남긴다.
  *
- * `DropPricePad` 에서 꺼냈다 — 사유는 `MesoKeypad` 파일 머리와 같다.
+ * `DropPricePad` 에서 꺼냈다. 사유는 `MesoKeypad` 파일 머리와 같다.
  */
 import { Pressable, View } from 'react-native'
 
@@ -26,7 +26,7 @@ export function MesoAmountField(props: {
   /** 숫자 옆에 붙는 단위. 기본은 메소다. */
   unit?: string
   /**
-   * 억/만 보조 줄과 빠른 칩을 그릴지 — **메소일 때만 뜻이 있다.**
+   * 억/만 보조 줄과 빠른 칩을 그릴지. **메소일 때만 뜻이 있다.**
    *
    * 메포·캐시는 자릿수가 작아 `+100만 ~ +100억` 칩이 쓸모없고(1만원짜리 캐시 지출에 +100억 이
    * 떠 있으면 안 된다), 억/만 환산도 그 단위에서는 틀린 말이다. **그쪽 칩 값은 아직 안 정했으므로**
@@ -34,21 +34,21 @@ export function MesoAmountField(props: {
    */
   mesoHelpers?: boolean
   /**
-   * 칸에 **직접 칠 수 있는가** — OS 숫자 키보드가 뜬다.
+   * 칸에 **직접 칠 수 있는가**. OS 숫자 키보드가 뜬다.
    *
    * 기본은 **아니다**(읽기만 하는 글자). 앱 키패드가 값을 넣는 화면(`DropPricePad`)이 그쪽이고,
    * 그 화면은 키보드를 한 번도 안 부르는 것이 의 이득이다.
    *
-   * 켜는 자리는 **가계부의 지출·수입 시트** 둘이다 — 내용 칸 때문에 어차피 키보드가 뜨므로
+   * 켜는 자리는 **가계부의 지출·수입 시트** 둘이다. 내용 칸 때문에 어차피 키보드가 뜨므로
    * 안 불러서 아끼는 것이 없다.
    */
   editable?: boolean
   /**
-   * 단위를 고르는 것 — **금액에 속하는 축**이라 여기 산다.
+   * 단위를 고르는 것. **금액에 속하는 축**이라 여기 산다.
    *
    * 억/만 보조 줄과 **같은 줄**에 왼쪽으로 놓인다(그 줄은 11px 글자 하나라 거의 비어 있었다).
    * 넘기는 곳은 지출 시트의 기타 하나이고(통화 칩 셋), **안 넘기면 그 줄은 전과
-   * 한 픽셀도 안 다르다** — 드롭 판매가는 통화가 하나뿐이라 안 넘긴다.
+   * 한 픽셀도 안 다르다**. 드롭 판매가는 통화가 하나뿐이라 안 넘긴다.
    */
   unitPicker?: React.ReactNode
 }): React.JSX.Element {
@@ -78,11 +78,11 @@ export function MesoAmountField(props: {
         </Pressable>
         {props.editable === true ? (
           /*
-           * **0 일 때는 비운다** — `0` 을 값으로 두면 그 뒤에 친 숫자가 그 0 에 붙어 자릿수가
+           * **0 일 때는 비운다**. `0` 을 값으로 두면 그 뒤에 친 숫자가 그 0 에 붙어 자릿수가
            * 하나 는다(`0` + `1200` → `01200`). 자리표시자가 같은 자리에 같은 `0` 을 그리므로
            * 보이는 것은 전과 같다.
            *
-           * 값이 콤마째 돌아오므로 다음 타건도 콤마째 들어온다 — 걷는 일은 `parseMesoText` 가 한다.
+           * 값이 콤마째 돌아오므로 다음 타건도 콤마째 들어온다. 걷는 일은 `parseMesoText` 가 한다.
            */
           <SheetTextInput
             testID={props.amountTestID}
@@ -91,7 +91,7 @@ export function MesoAmountField(props: {
             onChangeText={(text) => props.onChange(parseMesoText(props.meso, text))}
             keyboardType="number-pad"
             placeholder="0"
-            // `flex-1 text-right` 로 **오른쪽 끝을 글자판과 같은 자리에** 둔다 — RN 의 `TextInput`
+            // `flex-1 text-right` 로 **오른쪽 끝을 글자판과 같은 자리에** 둔다. RN 의 `TextInput`
             // 은 내용에 맞춰 줄지 않아, 안 주면 폭이 제멋대로가 되고 단위(`메소`)가 밀린다.
             className={`flex-1 text-right ${amountClass}`}
             style={TABULAR_NUMS}
@@ -104,7 +104,7 @@ export function MesoAmountField(props: {
         <Text className="text-sm font-semibold text-text-muted">{props.unit ?? '메소'}</Text>
       </View>
 
-      {/* 항상 자리를 지킨다 — 0 에서 사라지면 첫 타건에 아래가 통째로 밀린다. 단위 고르개가
+      {/* 항상 자리를 지킨다. 0 에서 사라지면 첫 타건에 아래가 통째로 밀린다. 단위 고르개가
           있으면 그 줄을 **나눠 쓴다**(왼쪽 고르개 · 오른쪽 억/만) — 높이는 칩에 맞춰 커진다. */}
       {(mesoHelpers || props.unitPicker !== undefined) && (
         <View

@@ -1,10 +1,10 @@
 // 순수 규칙 — 채널 정의·ID 변환·예약 시각 판정. 셋 다 틀려도 타입 에러가 안 나고 예외도 안 나는
-// 종류라(무음 채널 / 취소 안 되는 알림 / 지난 시각 예약) 이 파일이 유일한 방어선이다.
+// 종류라(무음 채널 / 취소 안 되는 알림 / 지난 시각 예약) 막는 것은 이 파일뿐이다.
 //
 // notifee 를 목으로 바꾸는 것은 이 모듈이 열거형 **값**(`AndroidImportance`·`TriggerType`)을 쓰기
-// 때문이다 — 패키지 진입점은 import 시점에 네이티브 모듈을 잡아 jest 에서는 그냥 던진다
+// 때문이다. 패키지 진입점은 import 시점에 네이티브 모듈을 잡아 jest 에서는 그냥 던진다
 // (`NotifeeNativeModule.js:32-38`). 열거형이 든 하위 모듈은 그 부작용이 없으므로 **진짜 정의를
-// 그대로 끌어온다** — 값을 손으로 베끼면 상상한 값을 검사하게 된다.
+// 그대로 끌어온다**. 값을 손으로 베끼면 상상한 값을 검사하게 된다.
 jest.mock('@notifee/react-native', () => ({
   __esModule: true,
   ...jest.requireActual('@notifee/react-native/dist/types/NotificationAndroid'),
@@ -60,7 +60,7 @@ describe('toNotificationId', () => {
     expect(Number(toNotificationId(id))).toBe(id)
   })
 
-  // `String(NaN)` 은 `'NaN'` 이라 변환은 되지만 되돌아오지 않는다 — 취소할 수 없는 알림이 된다.
+  // `String(NaN)` 은 `'NaN'` 이라 변환은 되지만 되돌아오지 않는다. 취소할 수 없는 알림이 된다.
   it.each([Number.NaN, 1.5, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 2])(
     '%p 는 정수가 아니라 던진다',
     (id) => {
@@ -100,7 +100,7 @@ describe('toTriggerNotification', () => {
     )
   })
 
-  // `NaN <= now` 는 false 라 지난 시각 검사를 그냥 통과한다 — 따로 걸러야 네이티브까지 안 간다.
+  // `NaN <= now` 는 false 라 지난 시각 검사를 그냥 통과한다. 따로 걸러야 네이티브까지 안 간다.
   it('Invalid Date 는 던진다', () => {
     expect(() =>
       toTriggerNotification(request({ scheduleAt: new Date('언제인지 모름') }), NOW),

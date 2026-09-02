@@ -4,13 +4,13 @@
 // 전환 중에 그리는 방식**이기 때문이다: `RNCMaskedView` 는 마스크를 `getChildAt(0)` 으로 찾는데,
 // React 가 화면을 pop 하며 서브트리를 언마운트하면 자식들이 `mChildren` 에서 빠져
 // `getChildAt(0)` 이 **null** 이 된다. 그런데 화면은 아직 밀려 나가는 중이라 Android 는 그것들을
-// **disappearing child** 로 계속 그린다 — `INVISIBLE` 플래그도 무시하고. 마스크를 못 알아보니
+// **disappearing child** 로 계속 그린다. `INVISIBLE` 플래그도 무시하고. 마스크를 못 알아보니
 // 화면을 채운 불투명 `#000` 판이 평범한 그림으로 깔려, 뒤로가기 전환 내내 화면이 검다
-// (실기기 2026-08-15). 스냅샷은 초록인 채로 화면이 검다 — 가 **두 축을 이름
+// (실기기 2026-08-15). 스냅샷은 초록인 채로 화면이 검다. 가 **두 축을 이름
 // 불렀는가** 로 계약을 옮긴 것과 같은 부류의 실패다.
 //
 // 그래서 계약을 **화면이 어떻게 보이는가** 가 아니라 **패치가 걸려 있는가** 로 적는다. 회귀는
-// 깨지는 모양이 아니라 **조용히 빠지는** 모양으로 온다 — `patches/` 를 지우거나 루트 `postinstall`
+// 깨지는 모양이 아니라 **조용히 빠지는** 모양으로 온다. `patches/` 를 지우거나 루트 `postinstall`
 // 을 건드리면 설치는 그대로 성공하고 화면만 다시 검어진다.
 //
 // **`@expo/ui` 의 `MaskedView` 로 갈아타는 길도 막는다.** 그쪽은 검정을 없애지만 안드로이드에서
@@ -42,7 +42,7 @@ function sourceFiles(dir: string): string[] {
   return out
 }
 
-/** 주석은 대상이 아니다 — 이 정책의 기록이 거기 산다(`backdrop-policy.test.ts` 와 같은 판단). */
+/** 주석은 대상이 아니다. 이 정책의 기록이 거기 산다(`backdrop-policy.test.ts` 와 같은 판단). */
 function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
 }
@@ -62,7 +62,7 @@ describe(' — 마스크는 인덱스가 아니라 참조로 잡힌다', () => {
   it('패치가 마스크를 **참조로** 들고, `drawChild` 에서 막는다', () => {
     const body = patchBody()
 
-    // 파일 존재만 보면 빈 패치도 통과한다 — 고리 둘을 이름으로 확인한다.
+    // 파일 존재만 보면 빈 패치도 통과한다. 고리 둘을 이름으로 확인한다.
     expect(body).toContain('+  private View mMaskView = null;')
     expect(body).toContain('+  private View resolveMaskView() {')
     expect(body).toContain('+  protected boolean drawChild(Canvas canvas, View child, long drawingTime) {')

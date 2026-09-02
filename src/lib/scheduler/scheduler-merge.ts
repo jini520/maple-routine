@@ -82,7 +82,7 @@ function mergeSection(
   }
 
   // world/account 범위: "마지막 활성 캐릭터" API 오염 때문에 previous가 아니라
-  // 원장을 신뢰해야 해서 위 정정의 범위 밖이다 — 기존처럼 fresh가 stale이 아닐 때만 처리한다.
+  // 원장을 신뢰해야 해서 위 정정의 범위 밖이다. 기존처럼 fresh가 stale이 아닐 때만 처리한다.
   if (!freshIsStale) {
     for (const item of freshItems) {
       const scope = getShareScope(item.name)
@@ -146,10 +146,10 @@ function mergeSection(
   return { items, worldUpdates, accountUpdates }
 }
 
-// 보스는 전부 character 범위(2026-07-21 확인)라 world/account 원장 단계가 필요 없다 — cycle 내에서
+// 보스는 전부 character 범위(2026-07-21 확인)라 world/account 원장 단계가 필요 없다. cycle 내에서
 // 항목(이름+난이도) 단위로 병합한다(정정): fresh에 있으면 그대로 쓰고, fresh에 없는데
 // previous에 있으면 isComplete·ownComplete를 false로 리셋해 복원한다. ownComplete도 함께 리셋해야
-// 한다 — 안 그러면 지난 리셋에서의 완료 여부가 그대로 남아있어 보스 수익 계산기
+// 한다. 안 그러면 지난 리셋에서의 완료 여부가 그대로 남아있어 보스 수익 계산기
 // (selectBossProfitBosses, ADR-032)가 이번 리셋에서 아직 처치하지 않은 보스를 "실제로 완료함"으로
 // 오판한다.
 function mergeBossCycle(cycle: BossCycle, freshBossContents: BossContent[], previousBossContents: BossContent[]): BossContent[] {

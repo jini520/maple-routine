@@ -19,7 +19,7 @@ import { useBottomSheetInternal } from '@gorhom/bottom-sheet'
  * 초점 이벤트의 형태는 RN 의 프롭에서 뽑아 쓴다. 그 타입의 이름과 자리가 RN 판마다 달라서
  * (`TextInputFocusEvent`·`FocusEvent`) 직접 가져오면 판을 올릴 때 조용히 어긋난다.
  *
- * **켤 때와 끌 때의 형이 서로 다르다** — `onBlur` 는 글자를 안 싣는다. 그래서 따로 뽑는다.
+ * **켤 때와 끌 때의 형이 서로 다르다**. `onBlur` 는 글자를 안 싣는다. 그래서 따로 뽑는다.
  */
 type FocusEvent = Parameters<NonNullable<TextInputProps['onFocus']>>[0]
 type BlurEvent = Parameters<NonNullable<TextInputProps['onBlur']>>[0]

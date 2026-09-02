@@ -32,7 +32,7 @@ const BAND_WIDTH = 147
  */
 export const MAPLE_SWEEP_TRAVEL = 230
 
-/** `index.css` 의 `animate-maple-sweep` — `maple-sweep 1.4s ease-in-out infinite`. */
+/** `index.css` 의 `animate-maple-sweep`. `maple-sweep 1.4s ease-in-out infinite`. */
 export const MAPLE_SWEEP_DURATION_MS = 1400
 
 /** CSS `ease-in-out` = `cubic-bezier(0.42, 0, 0.58, 1)`. `Easing.inOut(Easing.ease)` 는 다른 곡선이다. */
@@ -43,7 +43,7 @@ const AnimatedRect = Animated.createAnimatedComponent(Rect)
 /**
  * 훑고 지나가는 단풍잎 하나.
  *
- * 색은 `className` 이 정한다. **띠의 페이드는 색이 아니라 마스크로 만든다** — `react-native-svg` 의
+ * 색은 `className` 이 정한다. **띠의 페이드는 색이 아니라 마스크로 만든다**. `react-native-svg` 의
  * 그라디언트 정지점은 `currentColor` 를 못 받아서 색을 넣으면 그라디언트가 통째로 빈다(실측).
  * 그래서 색은 `fill="currentColor"` 가, 모양은 흰색 알파 램프 마스크가 맡는다.
  *
@@ -82,7 +82,7 @@ export function MapleSweepSpinner(props: SpinnerProps): React.JSX.Element {
         <ClipPath id={clipId}>
           <Path d={MAPLE_LEAF_PATH} />
         </ClipPath>
-        {/* 알파 램프. 색이 아니라 **모양**이라 흰색으로 고정한다 — 루미넌스 마스크에서 흰색의
+        {/* 알파 램프. 색이 아니라 **모양**이라 흰색으로 고정한다. 루미넌스 마스크에서 흰색의
             루미넌스는 1이라 `stopOpacity` 가 그대로 알파가 된다. */}
         <LinearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0%" stopColor="#ffffff" stopOpacity="0" />

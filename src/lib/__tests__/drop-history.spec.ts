@@ -85,7 +85,7 @@ describe('groupDropRecordsByPeriod', () => {
       record({ periodKey: '2026-06-25' }),
     ])
 
-    // 월간 7월(7/1)은 7/9 주보다 이르고 6/25 주보다 늦다 — 문자열 정렬로는 나오지 않는 순서다.
+    // 월간 7월(7/1)은 7/9 주보다 이르고 6/25 주보다 늦다. 문자열 정렬로는 나오지 않는 순서다.
     expect(groups.map((group) => group.periodKey)).toEqual(['2026-07-09', '2026-07', '2026-06-25'])
   })
 
@@ -249,7 +249,7 @@ describe('objectParticle', () => {
   })
 
   it('한글이 아닌 문자로 끝나면 마지막 한글 음절로 판단한다', () => {
-    // 슬롯별로 분리된 익셉셔널 해머는 ')'로 끝난다(ADR-070) — 괄호를 보고 판단하면 틀린다.
+    // 슬롯별로 분리된 익셉셔널 해머는 ')'로 끝난다(ADR-070). 괄호를 보고 판단하면 틀린다.
     expect(objectParticle('익셉셔널 해머(벨트)')).toBe('를') // 트 — 받침 없음
     expect(objectParticle('익셉셔널 해머(눈장식)')).toBe('을') // 식 — 받침 ㄱ
   })
@@ -346,7 +346,7 @@ describe('formatDropHistoryLine', () => {
       '지내우시',
     )
 
-    // 상자명도 강조 대상이라 따로 뗀다(사용자 지정 2026-08-01) — 조사는 connector가 들고 있어
+    // 상자명도 강조 대상이라 따로 뗀다(사용자 지정 2026-08-01). 조사는 connector가 들고 있어
     // 화면이 한국어 문법을 계산하지 않는다.
     expect(plain(line.prefix)).toBe('지내우시님이 스우(하드)에서 ')
     expect(line.box).toEqual({ name: '홍옥의 보스 반지 상자', connector: '를 열어 ' })
@@ -378,7 +378,7 @@ function pool(weeksSince: number): string[] {
 }
 
 describe('formatValuableDroughtHeadline', () => {
-  // 문구는 사용자 지정(2026-08-01·2026-08-17) — 구현자가 톤을 다듬지 않는다.
+  // 문구는 사용자 지정(2026-08-01·2026-08-17). 구현자가 톤을 다듬지 않는다.
   // ADR-147 정정 6: 마지막 단계만 풀이던 것이 전 단계 풀이 됐다. 기존 문구는 각 풀의 **첫 항목**이라
   // 인덱스를 주지 않은 호출은 예전과 글자 하나 다르지 않다(회귀 가드).
   it('index 0은 단계마다 기존 문구를 그대로 준다', () => {
@@ -436,7 +436,7 @@ describe('formatValuableDroughtHeadline', () => {
   })
 })
 
-// 화면이 무작위 인덱스를 고르려면 **그 단계의** 풀 크기를 알아야 한다 — 마지막 단계만 알려주던 상수
+// 화면이 무작위 인덱스를 고르려면 **그 단계의** 풀 크기를 알아야 한다. 마지막 단계만 알려주던 상수
 // (`VALUABLE_DROUGHT_LATE_HEADLINE_COUNT`)로는 모자라 함수가 됐다(ADR-147 정정 6).
 describe('valuableDroughtHeadlineCount', () => {
   it('단계마다 자기 풀 크기를 준다', () => {

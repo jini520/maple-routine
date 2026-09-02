@@ -5,9 +5,9 @@
 //
 // ── 핸들에서만 끌기가 시작된다 ──────────────────────────────────────────────────────
 //
-// 행 전체를 끌기 시작점으로 두면 **페이지 세로 스크롤과 다툰다** — 목록을 굴리려던 손가락이 행을
+// 행 전체를 끌기 시작점으로 두면 **페이지 세로 스크롤과 다툰다**. 목록을 굴리려던 손가락이 행을
 // 집어 올린다. 그래서 제스처는 핸들을 감싼 상자에만 붙고, 카드의 나머지는 아무 제스처도 갖지
-// 않는다(아래 층 후보 카드는 **누르면 이동** 이라 애초에 끌 일이 없다 — 그쪽에는 핸들도 없다).
+// 않는다(아래 층 후보 카드는 **누르면 이동** 이라 애초에 끌 일이 없다. 그쪽에는 핸들도 없다).
 //
 // ── 배열은 놓을 때 한 번만 바뀐다 ───────────────────────────────────────────────────
 //
@@ -17,14 +17,14 @@
 //
 // ── 제스처 콜백은 JS 스레드에서 돈다 ────────────────────────────────────────────────
 //
-// `runOnJS(true)` — 자동 스크롤이 `ScrollView` 의 명령형 API 를 부르고 드롭 위치가 React 상태라,
+// `runOnJS(true)`. 자동 스크롤이 `ScrollView` 의 명령형 API 를 부르고 드롭 위치가 React 상태라,
 // UI 스레드에서 시작해도 매 프레임 건너와야 한다. 대신 **손가락을 따라가는 그림만 shared value**
-// 라(`dragY`) 프레임마다 리스트를 다시 그리지는 않는다 — 다시 그리는 것은 드롭 위치가 한 칸
+// 라(`dragY`) 프레임마다 리스트를 다시 그리지는 않는다. 다시 그리는 것은 드롭 위치가 한 칸
 // 넘어갈 때뿐이다.
 //
 // 그래서 제스처에 물리는 함수는 **한 번 만들고 안 바꾼다**(`useMemo`). 끄는 도중에도 이 컴포넌트는
 // 다시 그려지는데(드롭 위치가 넘어갈 때) 그때마다 새 제스처를 붙이면 끌던 손가락을 놓칠 수 있다.
-// 대신 그 함수들이 읽는 **지금 값** 은 `latestRef` 가 갖는다 — 오래된 `onMove` 를 붙들고 있으면
+// 대신 그 함수들이 읽는 **지금 값** 은 `latestRef` 가 갖는다. 오래된 `onMove` 를 붙들고 있으면
 // 놓는 순간 옛 목록으로 되돌린다.
 //
 // ── 칸 높이는 한 번만 잰다 ──────────────────────────────────────────────────────────
@@ -53,7 +53,7 @@ const GAP_PX = 8
 const AUTO_SCROLL_ZONE_PX = 72
 /** 그 구간 끝에서의 한 프레임 이동량. */
 const AUTO_SCROLL_MAX_STEP_PX = 12
-/** 이만큼 세로로 움직이면 끌기로 본다 — 핸들을 그냥 누른 것과 가른다. */
+/** 이만큼 세로로 움직이면 끌기로 본다. 핸들을 그냥 누른 것과 가른다. */
 const ACTIVATE_OFFSET_PX = 4
 
 /** 접근성 액션 식별자 — 사람이 듣는 것은 `label` 이고 이 이름은 우리끼리 쓴다. */
@@ -94,7 +94,7 @@ export function SelectedCharacterList(props: SelectedCharacterListProps): React.
   const { height: windowHeightPx } = useWindowDimensions()
   const count = props.views.length
 
-  // 그림이 바뀌는 두 순간만 상태다 — 칸 높이를 처음 쟀을 때와 드롭 위치가 한 칸 넘어갈 때.
+  // 그림이 바뀌는 두 순간만 상태다. 칸 높이를 처음 쟀을 때와 드롭 위치가 한 칸 넘어갈 때.
   const [pitchPx, setPitchPx] = useState(0)
   const [drop, setDrop] = useState<{ fromIndex: number; toIndex: number } | null>(null)
 
@@ -110,7 +110,7 @@ export function SelectedCharacterList(props: SelectedCharacterListProps): React.
     topPx: insets.top,
     bottomPx: windowHeightPx - insets.bottom,
   })
-  // deps 를 두지 않는다 — **매 렌더 뒤 최신으로** 가 이 effect 의 전부이고, 목록에 얹히는 값이
+  // deps 를 두지 않는다. **매 렌더 뒤 최신으로** 가 이 effect 의 전부이고, 목록에 얹히는 값이
   // 하나 늘 때마다 deps 를 고쳐야 하는 자리를 만들면 빠뜨린 값이 조용히 낡는다.
   useEffect(() => {
     latestRef.current = {
@@ -130,13 +130,13 @@ export function SelectedCharacterList(props: SelectedCharacterListProps): React.
   }, [])
 
   const drag = useMemo(() => {
-    /** 지금 좌표로 그림과 드롭 위치를 맞춘다 — 손가락이 움직일 때와 스크롤이 흐를 때 둘 다 부른다. */
+    /** 지금 좌표로 그림과 드롭 위치를 맞춘다. 손가락이 움직일 때와 스크롤이 흐를 때 둘 다 부른다. */
     function apply(): void {
       const state = dragRef.current
       if (state === null) return
       const { count: rowCount, scroll } = latestRef.current
 
-      // 스크롤이 흐르면 손가락은 그대로인데 행이 콘텐츠를 따라 올라간다 — 흐른 만큼을 더해야
+      // 스크롤이 흐르면 손가락은 그대로인데 행이 콘텐츠를 따라 올라간다. 흐른 만큼을 더해야
       // 행이 손가락 밑에 남는다.
       const offsetPx = state.translationPx + (scroll.offsetPx() - state.startOffsetPx)
       dragY.value = offsetPx
@@ -190,7 +190,7 @@ export function SelectedCharacterList(props: SelectedCharacterListProps): React.
         apply()
       },
 
-      /** 놓았을 때·취소됐을 때 모두 여기로 온다 — 시작하지 않은 제스처면 아무 일도 없다. */
+      /** 놓았을 때·취소됐을 때 모두 여기로 온다. 시작하지 않은 제스처면 아무 일도 없다. */
       end(): void {
         const state = dragRef.current
         dragRef.current = null
@@ -226,7 +226,7 @@ export function SelectedCharacterList(props: SelectedCharacterListProps): React.
           index={index}
           count={count}
           isRepresentative={props.representativeOcid === view.ocid}
-          // 하나가 채워지면 나머지는 흐려진다 — 비활성이 아니라 톤만 낮춘다(결정 4).
+          // 하나가 채워지면 나머지는 흐려진다. 비활성이 아니라 톤만 낮춘다(결정 4).
           dimmed={props.representativeOcid !== null && props.representativeOcid !== view.ocid}
           dragY={dragY}
           drop={drop}
@@ -278,17 +278,17 @@ function SelectedRow(props: SelectedRowProps): React.JSX.Element {
       Gesture.Pan()
         // 위 파일 머리 `제스처 콜백은 JS 스레드에서 돈다`.
         .runOnJS(true)
-        // 세로로 움직여야 끌기다 — 그 전에는 아래의 `ScrollView` 가 손가락을 갖는다.
+        // 세로로 움직여야 끌기다. 그 전에는 아래의 `ScrollView` 가 손가락을 갖는다.
         .activeOffsetY([-ACTIVATE_OFFSET_PX, ACTIVATE_OFFSET_PX])
         .onStart((event) => drag.begin(index, event.absoluteY))
         .onUpdate((event) => drag.update(event.translationY, event.absoluteY))
-        // `onEnd` 가 아니라 `onFinalize` — 취소(다른 제스처가 가져감·손가락 이탈)도 같은 문으로
+        // `onEnd` 가 아니라 `onFinalize`. 취소(다른 제스처가 가져감·손가락 이탈)도 같은 문으로
         // 들어와야 끌리던 행이 그 자리에 얼어붙지 않는다.
         .onFinalize(() => drag.end()),
     [drag, index],
   )
 
-  // **할 수 있는 것만 준다** — 첫 행에 `위로 옮기기`를 주면 눌러도 아무 일이 없다.
+  // **할 수 있는 것만 준다**. 첫 행에 `위로 옮기기`를 주면 눌러도 아무 일이 없다.
   const reorderActions = [
     ...(index > 0 ? [{ name: MOVE_UP, label: '위로 옮기기' }] : []),
     ...(index < count - 1 ? [{ name: MOVE_DOWN, label: '아래로 옮기기' }] : []),
@@ -305,7 +305,7 @@ function SelectedRow(props: SelectedRowProps): React.JSX.Element {
         unavailable={view.unavailable}
         leading={
           <GestureDetector gesture={pan}>
-            {/* 끌기와 같은 결과를 내는 **화면 밖 경로** — 스크린리더가 이
+            {/* 끌기와 같은 결과를 내는 **화면 밖 경로**. 스크린리더가 이
                 핸들에 서면 로터에 `위로/아래로 옮기기`가 뜬다. 두 경로가 `onMove` 하나를 부른다. */}
             <View
               accessible

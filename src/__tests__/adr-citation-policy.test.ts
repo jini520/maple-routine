@@ -43,7 +43,7 @@ type Citation = { file: string; adr: string; kind?: string; numbers: string[] }
  */
 const CITATION = /\[\[ADR-(\d{3})\]\](?: *(결정|정정) *(\d+(?:-\d+)?(?: *· *\d+(?:-\d+)?)*))?/g
 
-/** 형식을 기계가 읽을 수 있어 검사 대상인 ADR. 여기서 빠지면 실패한다 — 되돌아가지 말라는 뜻. */
+/** 형식을 기계가 읽을 수 있어 검사 대상인 ADR. 여기서 빠지면 실패한다. 되돌아가지 말라는 뜻. */
 const CANONICAL_BASELINE = [
   '139', '140', '141', '142', '143', '144', '145', '146',
   '147', '166', '167', '169', '170', '171', '172', '173',
@@ -95,7 +95,7 @@ function badgeOf(body: string): string | null {
 }
 
 /**
- * 이 문서가 정의하는 결정·정정 번호. `### 결정 1.` 이 있는 문서만 다룬다 — 첫 결정이 제목으로
+ * 이 문서가 정의하는 결정·정정 번호. `### 결정 1.` 이 있는 문서만 다룬다. 첫 결정이 제목으로
  * 서 있으면 나머지도 그렇다는 뜻이고, 그 가정이 깨지면 검사 3이 잡는다.
  */
 function declaredNumbers(body: string): { decisions: Set<string>; corrections: Set<string> } | null {
@@ -131,7 +131,7 @@ describe('ADR 인용 링크', () => {
 
   it('소스는 ADR 을 인용하지 않는다', () => {
     // 참조는 한 방향이다. 문서가 파일을 가리키는 것은 결정이 코드를 관리하는 일이고, 그 반대에는
-    // 권한이 없다. 주석뿐 아니라 문자열(테스트 이름·에러 문구)도 같다 — 어느 쪽이든 ADR 을 손볼
+    // 권한이 없다. 주석뿐 아니라 문자열(테스트 이름·에러 문구)도 같다. 어느 쪽이든 ADR 을 손볼
     // 때 소스가 검토 대상이 되는 것은 마찬가지다.
     //
     // 이 파일만 예외다. 인용을 **패턴으로** 적어야 검사를 할 수 있다.
@@ -152,7 +152,7 @@ describe('ADR 인용 링크', () => {
       if (!declared) continue
 
       const pool = c.kind === '결정' ? declared.decisions : declared.corrections
-      // 정정을 하나도 안 쓰는 문서면 판단할 근거가 없다 — 건너뛴다.
+      // 정정을 하나도 안 쓰는 문서면 판단할 근거가 없다. 건너뛴다.
       if (pool.size === 0) continue
 
       for (const n of c.numbers) {

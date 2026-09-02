@@ -1,6 +1,6 @@
 // 손입력 수입 어댑터.
 //
-// `boss-profit.spec.ts` 와 같은 방식으로 **DB 커넥션만** 가짜로 바꾼다 — SQL 문자열과 파라미터
+// `boss-profit.spec.ts` 와 같은 방식으로 **DB 커넥션만** 가짜로 바꾼다. SQL 문자열과 파라미터
 // 순서가 검증 대상이라 그 위를 목으로 덮으면 안 된다.
 import type { HuntingCalculatorDetail, HuntingManualDetail, IncomeRecord } from '../income'
 
@@ -51,7 +51,7 @@ describe('insertIncomeRecord', () => {
     expect(runMock).toHaveBeenCalledTimes(2)
     const [sql, values] = runMock.mock.calls[0]
     expect(sql).toContain('INSERT INTO income_records')
-    // **ON CONFLICT 가 없다** — 자연키가 없으므로 덮어쓸 대상이 애초에 없다.
+    // **ON CONFLICT 가 없다**. 자연키가 없으므로 덮어쓸 대상이 애초에 없다.
     expect(sql).not.toContain('ON CONFLICT')
     expect(values).toEqual([
       'inc-1',
@@ -105,7 +105,7 @@ describe('getIncomeRecordsBetween', () => {
     expect(parameters).toEqual(['2026-08-20', '2026-08-26'])
   })
 
-  // 가계부는 **내가 번 돈** 이지 **이 캐릭터가 번 돈** 이 아니다 — 계정 단위 행과
+  // 가계부는 **내가 번 돈** 이지 **이 캐릭터가 번 돈** 이 아니다. 계정 단위 행과
   // 캐릭터 행이 한 날에 함께 서야 하므로 ocid 로 거르지 않는다.
   it('ocid 로 거르지 않는다', async () => {
     const { getIncomeRecordsBetween } = require('../income') as typeof import('../income')
@@ -168,7 +168,7 @@ describe('INCOME_CATEGORIES', () => {
   // 사용자가 준 둘 + 안전망 하나. `기타`가 없으면 갈래가 안 잡히는 수입이
   // 기록 자체를 못 남긴다.
   //
-  // **차례가 곧 화면**이다 — 칩이 서는 차례이고 `[0]` 이 열었을 때 골라져
+  // **차례가 곧 화면**이다. 칩이 서는 차례이고 `[0]` 이 열었을 때 골라져
   // 있는 갈래다. 그래서 이 배열을 뒤집는 것이 **기본 갈래를 바꾼다** 와 같은 말이다.
   it('사냥 · 아이템 판매 · 기타 차례다 — 첫째가 기본 갈래다', () => {
     const { INCOME_CATEGORIES } = require('../income') as typeof import('../income')
@@ -218,7 +218,7 @@ describe('deleteIncomeRecord', () => {
 /**
  * **받는 돈과 뗀 몫이 둘 다 행에 남는다**.
  *
- * `meso_amount` 는 수수료를 **뗀** 값이다 — 캘린더도 합계도 이 칸 하나를 더하므로 판매 대금을
+ * `meso_amount` 는 수수료를 **뗀** 값이다. 캘린더도 합계도 이 칸 하나를 더하므로 판매 대금을
  * 넣으면 번 적 없는 돈이 수입으로 선다.
  */
 describe('판매 수수료 칸 둘', () => {
@@ -242,7 +242,7 @@ describe('판매 수수료 칸 둘', () => {
     expect(sql).toContain('sale_fee_meso')
     expect(values).toContain(5)
     expect(values).toContain(60_000_000)
-    // 집계가 보는 칸은 **받는 돈**이다 — 판매 대금(12억)이 아니다.
+    // 집계가 보는 칸은 **받는 돈**이다. 판매 대금(12억)이 아니다.
     expect(values).toContain(1_140_000_000)
   })
 
@@ -273,7 +273,7 @@ describe('판매 수수료 칸 둘', () => {
           memo: null,
           recorded_at: '2026-08-23T05:00:00.000Z',
         },
-        // 정정 9 **이전에 적힌 행** — 칸이 아예 없다. `undefined` 를 `null` 로 접어 화면이 한
+        // 정정 9 **이전에 적힌 행**. 칸이 아예 없다. `undefined` 를 `null` 로 접어 화면이 한
         // 형태만 다루게 한다(이 파일의 다른 칸들과 같은 처리).
         {
           id: 'inc-0',
@@ -323,7 +323,7 @@ describe('hunt_meso_rate — 그때의 메소 획득량', () => {
 
     const [sql, values] = runMock.mock.calls[0]
     expect(sql).toContain('hunt_meso_rate')
-    // 사냥 칸 일곱이 나란히 간다 — 레벨 · 놓침 · 아이템 · 소재 · 조각 · 조각가 · **메획**.
+    // 사냥 칸 일곱이 나란히 간다. 레벨 · 놓침 · 아이템 · 소재 · 조각 · 조각가 · **메획**.
     expect(values).toEqual(expect.arrayContaining([294, 1, 'union,potion', 2, 83, 8_000_000, 149]))
   })
 
@@ -501,7 +501,7 @@ describe('hunt_typed_meso — 수동으로 적힌 사냥', () => {
     })
   })
 
-  // 친 메소가 0 이어도 **수동으로 적힌 행**이다 — 조각만 먹은 사냥이 그렇다.
+  // 친 메소가 0 이어도 **수동으로 적힌 행**이다. 조각만 먹은 사냥이 그렇다.
   // `0` 과 `NULL` 이 갈리는 자리라, 여기서 접히면 그 행이 계산기 행으로 둔갑한다.
   it('친 메소가 0 이어도 수동으로 읽는다', async () => {
     queryMock.mockResolvedValue({

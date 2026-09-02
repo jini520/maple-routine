@@ -1,4 +1,4 @@
-// **웹에는 이 컴포넌트의 단위 테스트가 없었다** — 세 화면 테스트가 배지를 `aria-label` 로만 찾았다.
+// **웹에는 이 컴포넌트의 단위 테스트가 없었다**. 세 화면 테스트가 배지를 `aria-label` 로만 찾았다.
 // RN 에서는 외형 규칙이 CSS(`.valuable-drop-badge`)가 아니라 **컴포넌트 안의 값**이 됐으므로
 // (그라디언트·글로우·흰 링) 그 값을 지킬 자리가 필요하다.
 import type { RecordedDrop } from '../../../../types/drops'
@@ -63,17 +63,17 @@ describe('ValuableDropBadge', () => {
   it('배지 골드는 테마와 무관한 고정 그라디언트다', async () => {
     const 머쉬맘 = await renderAtom(<ValuableDropBadge drops={drops('a')} label="고가 드롭" />)
 
-    // `LinearGradient` 는 색을 네이티브 정수로 바꿔 넘긴다 — 같은 변환을 태워 비교한다.
+    // `LinearGradient` 는 색을 네이티브 정수로 바꿔 넘긴다. 같은 변환을 태워 비교한다.
     expect(머쉬맘.getByTestId('valuable-drop-badge').props.colors).toEqual(
       ['#ffe98a', '#f7c400'].map(processColor),
     )
-    // 대비로 쓰는 표면색은 테마를 따른다 — 아이콘 폴백 원이 그 자리다.
+    // 대비로 쓰는 표면색은 테마를 따른다. 아이콘 폴백 원이 그 자리다.
     expect(flattenStyle(머쉬맘.getAllByTestId('valuable-drop-icon')[0].props.style).backgroundColor).toBe(
       기본테마.surface2,
     )
   })
 
-  // 웹의 `box-shadow`(글로우)와 `ring`(흰 테두리)이 둘 다 `boxShadow` 로 왔다 — 색 있는 글로우는
+  // 웹의 `box-shadow`(글로우)와 `ring`(흰 테두리)이 둘 다 `boxShadow` 로 왔다. 색 있는 글로우는
   // 안드로이드의 `elevation` 으로 표현할 수 없고, ring 을 `borderWidth` 로 옮기면 아이콘이 작아진다.
   it('글로우와 흰 링을 boxShadow 로 그린다', async () => {
     const { getByTestId, getAllByTestId } = await renderAtom(
@@ -102,11 +102,11 @@ describe('ValuableDropBadge', () => {
     expect(icon.props.source).toBeDefined()
     // 웹의 `object-contain` 짝 — 정사각 원 안에서 비율을 지킨다.
     expect(icon.props.resizeMode).toBe('contain')
-    // 그림이 있는 자리의 바탕은 `surface`(폴백 원만 `surface-2`)다 — 웹과 같은 갈림이다.
+    // 그림이 있는 자리의 바탕은 `surface`(폴백 원만 `surface-2`)다. 웹과 같은 갈림이다.
     expect(flattenStyle(icon.props.style).backgroundColor).toBe(기본테마.surface)
   })
 
-  // 매핑에 없는 이름은 여전히 폴백이다 — **에셋이 왔으니 무조건 그린다** 로 굳지 않게 남긴다.
+  // 매핑에 없는 이름은 여전히 폴백이다. **에셋이 왔으니 무조건 그린다** 로 굳지 않게 남긴다.
   it('매핑이 없는 아이템은 폴백 원으로 남는다', async () => {
     const { getAllByTestId } = await renderAtom(
       <ValuableDropBadge drops={drops('존재하지않는아이템')} label="고가 드롭" />,
@@ -117,7 +117,7 @@ describe('ValuableDropBadge', () => {
     expect(flattenStyle(icon.props.style).backgroundColor).toBe(기본테마.surface2)
   })
 
-  // 스택·링은 **두 갈래가 같아야 한다** — 한쪽에만 걸면 그림이 있는 배지와 없는 배지의 겹침이
+  // 스택·링은 **두 갈래가 같아야 한다**. 한쪽에만 걸면 그림이 있는 배지와 없는 배지의 겹침이
   // 다르게 보인다(웹도 두 분기에 같은 클래스를 적어 두었다).
   it('그림이 있어도 겹침·zIndex·흰 링이 그대로다', async () => {
     const { getAllByTestId } = await renderAtom(
@@ -143,7 +143,7 @@ describe('ValuableDropBadge', () => {
     ])
   })
 
-  // 배치는 호출부가 정한다 — 카드 우상단 절대배치 · 헤드라인 인라인 · 히스토리 줄.
+  // 배치는 호출부가 정한다. 카드 우상단 절대배치 · 헤드라인 인라인 · 히스토리 줄.
   it('className 은 코어 뒤에 이어 붙는다', async () => {
     const { getByTestId } = await renderAtom(
       <ValuableDropBadge drops={drops('a')} label="고가 드롭" className="absolute -right-1.5 -top-2" />,

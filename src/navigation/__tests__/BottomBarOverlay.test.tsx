@@ -9,7 +9,7 @@ import { NavigationContext } from '@react-navigation/native'
 
 import { BottomBarOverlay, BottomBarOverlayHost } from '../BottomBarOverlay'
 
-/** `toJSON()` 트리를 훑어 testID 를 **그리는 순서대로** 낸다 — 뒤에 있는 것이 위에 그려진다. */
+/** `toJSON()` 트리를 훑어 testID 를 **그리는 순서대로** 낸다. 뒤에 있는 것이 위에 그려진다. */
 function 그리는순서(): string[] {
   const order: string[] = []
 
@@ -56,7 +56,7 @@ it('선 자리가 아니라 호스트에 그린다 — 그래서 바보다 뒤�
   expect(order.indexOf('떠있는것')).toBeGreaterThan(order.indexOf('바'))
 })
 
-// 호스트가 없으면 **조용히 선 자리에 그리지 않는다** — 그러면 **올라간 줄 알았는데 안 올라간**
+// 호스트가 없으면 **조용히 선 자리에 그리지 않는다**. 그러면 **올라간 줄 알았는데 안 올라간**
 // 상태가 되고, 그것이 바로 이 슬롯이 없애려던 결함이다.
 it('호스트가 없으면 아무 데도 안 그린다', async () => {
   await 그리기({ 호스트: false })

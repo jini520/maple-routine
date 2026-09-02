@@ -16,9 +16,9 @@ import { toOpenOptions, type SqlitePlatform } from './capacitor-sqlite-open'
  *
  * **op-sqlite 를 고른 이유는 성능이 아니라 `location` 이다.** 기존 DB 는 Capacitor 플러그인이
  * 정한 자리에 있고(`docs/migration/data.md` 결정 2), 자기 전용 디렉터리에만 파일을 만드는
- * 라이브러리로는 **거기 닿을 수 없다** — 그러면 빈 DB 가 새로 생기고 사용자에게는 보스 수익·드랍
+ * 라이브러리로는 **거기 닿을 수 없다**. 그러면 빈 DB 가 새로 생기고 사용자에게는 보스 수익·드랍
  * 기록이 전부 사라진 것으로 보인다. op-sqlite 는 `open({ location })` 이 절대 경로를 받고
- * (`cpp/OPSqlite.cpp:81` — `/` 로 시작하면 그 경로를 그대로 쓴다) 네이티브 기준 디렉터리를
+ * (`cpp/OPSqlite.cpp:81`. `/` 로 시작하면 그 경로를 그대로 쓴다) 네이티브 기준 디렉터리를
  * 상수로 내준다(`ANDROID_DATABASE_PATH`·`IOS_DOCUMENT_PATH`).
  *
  * 스키마 생성·컬럼 보강·메이린 키 이관·stale 커넥션 복구·
@@ -33,7 +33,7 @@ const directories = {
 }
 
 /**
- * 지금 열려 있는 DB. `isConnection` 이 여기 있는지로 답한다 — Capacitor 쪽 의미는 "커넥션 매니저에
+ * 지금 열려 있는 DB. `isConnection` 이 여기 있는지로 답한다. Capacitor 쪽 의미는 "커넥션 매니저에
  * 등록돼 있는가"였고 웹뷰 리로드가 남긴 stale 커넥션을 잡는 장치였는데,
  * RN 에는 리로드가 없어 그 상황 자체가 없다. 그래서 흉내 내지 않고 **실제로 열려 있는지**를
  * 그대로 답한다(`db.ts` 는 참이면 닫고 새로 만들 뿐이라 어느 쪽이든 맞물린다).
@@ -77,13 +77,13 @@ function createDbConnection(database: string, encryption: string): SqliteDbConne
 }
 
 export const rnSqlitePort: SqlitePort = {
-  // RN 에는 웹 타깃이 없다 — `jeep-sqlite`·`sql.js` 폴백은 이 전환에서 버린다
+  // RN 에는 웹 타깃이 없다. `jeep-sqlite`·`sql.js` 폴백은 이 전환에서 버린다
   // (`docs/migration/README.md` 의존성 대응표).
   isWebPlatform() {
     return false
   },
   // `isWebPlatform()` 이 참일 때만 불리므로 여기까지 오지 않는다. 던지지 않는 이유는 그것이
-  // 이 포트의 계약이기 때문이다 — 도달 불가라는 사실을 예외로 표현할 자리가 아니다.
+  // 이 포트의 계약이기 때문이다. 도달 불가라는 사실을 예외로 표현할 자리가 아니다.
   async initWebStore() {},
   async isConnection(database) {
     return openDatabases.has(database)
@@ -96,7 +96,7 @@ export const rnSqlitePort: SqlitePort = {
     openDatabases.delete(database)
     await db.closeAsync()
   },
-  // `version` 은 받지 않는다 — op-sqlite 에 스키마 버전 개념이 없고, 이 앱의 스키마 진화는
+  // `version` 은 받지 않는다. op-sqlite 에 스키마 버전 개념이 없고, 이 앱의 스키마 진화는
   // `db.ts` 의 `CREATE TABLE IF NOT EXISTS` + `ensureColumn` 이 전부 맡는다.
   async createConnection(database, encryption): Promise<SqliteDbConnection> {
     return createDbConnection(database, encryption)

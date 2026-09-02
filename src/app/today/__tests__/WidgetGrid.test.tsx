@@ -1,9 +1,9 @@
 // 격자 **껍데기**. 위젯 내용은 각자의 테스트가 보므로 이 파일이
-// 묻는 것은 하나다 — **타일 여덟이 적어 둔 좌표에 서는가**.
+// 묻는 것은 하나다. **타일 여덟이 적어 둔 좌표에 서는가**.
 //
 // ── 값을 손으로 적지 않는 자리 ──────────────────────────────────────────────────────
 // 치수는 `resolveWidgetGridMetrics` 에서 읽는다(`TabNavigator`·`ScreenScroll` 테스트가 바 치수를
-// 다루는 방식과 같다). 대신 **좌표 산식은 테스트가 직접 편다**(`col × (열폭 + 간격)`) — 그 산식이
+// 다루는 방식과 같다). 대신 **좌표 산식은 테스트가 직접 편다**(`col × (열폭 + 간격)`). 그 산식이
 // 곧 이 컴포넌트가 지켜야 할 계약이라, 컴포넌트가 부르는 함수를 테스트도 부르면 아무것도 안 묻게 된다.
 
 import { act, fireEvent, within } from '@testing-library/react-native'
@@ -22,14 +22,14 @@ import { WidgetGrid } from '../WidgetGrid'
 jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
 
 const navigate = jest.fn()
-// 층이 스택이 된 뒤로 **그룹 층으로 되돌리기** 는 액션이다 — 화면이 이것도 부른다.
+// 층이 스택이 된 뒤로 **그룹 층으로 되돌리기** 는 액션이다. 화면이 이것도 부른다.
 const dispatch = jest.fn()
 const mockedUseScreenNavigation = jest.mocked(useScreenNavigation)
 
 type Rendered = Awaited<ReturnType<typeof renderAtom>>
 
 /**
- * 이 파일이 검사하는 것은 **격자**다 — 내용은 빈 상태로 두는 것이 가장 정직하다(타일이 무엇을
+ * 이 파일이 검사하는 것은 **격자**다. 내용은 빈 상태로 두는 것이 가장 정직하다(타일이 무엇을
  * 그리는지는 위젯 테스트가 따로 본다). 값은 위젯 테스트와 **같은 픽스처**를 쓴다: 두 벌로 두면
  * `TodayViewModel` 이 늘 때마다 한쪽만 고쳐진다(실제로 그렇게 갈렸다).
  */
@@ -77,7 +77,7 @@ describe('WidgetGrid — 좌표 배치', () => {
       top: 행,
       width: 2 * metrics.colWidthPx + metrics.gapPx,
     })
-    // (0,2)~(0,4) 4×auto **셋** — 그 아래는 2x1 둘 · 4x1 이 이어 붙는다.
+    // (0,2)~(0,4) 4×auto **셋**. 그 아래는 2x1 둘 · 4x1 이 이어 붙는다.
     expect(스타일(타일(view, 'shared-contents'))).toMatchObject({ left: 0, top: 2 * 행 })
     expect(스타일(타일(view, 'remaining-schedule'))).toMatchObject({ left: 0, top: 3 * 행 })
     expect(스타일(타일(view, 'weekly-boss-profit'))).toMatchObject({ left: 0, top: 4 * 행 })
@@ -97,8 +97,8 @@ describe('WidgetGrid — 좌표 배치', () => {
 })
 
 describe('`h: auto` 타일', () => {
-  // 선언한 `h` 는 **최소 높이**다 — 실측이 오기 전에도 그 값으로 자리를 잡아야 격자가 첫 프레임부터
-  // 맞는다(측정을 기다리면 한 프레임 접혀 있다 — 과 같은 이유).
+  // 선언한 `h` 는 **최소 높이**다. 실측이 오기 전에도 그 값으로 자리를 잡아야 격자가 첫 프레임부터
+  // 맞는다(측정을 기다리면 한 프레임 접혀 있다. 과 같은 이유).
   it('측정 전에는 nominal 최소 높이로 그린다', async () => {
     const view = await 격자()
     const 카드 = within(타일(view, 'remaining-schedule')).getByTestId('widget-remaining-schedule')
@@ -128,7 +128,7 @@ describe('`h: auto` 타일', () => {
     })
     expect(스타일(카드() as AtomElement).minHeight).toBe(236)
 
-    // 아래 타일도 함께 되돌아온다 — 초과분이 줄었으므로.
+    // 아래 타일도 함께 되돌아온다. 초과분이 줄었으므로.
     expect(스타일(타일(view, 'weekly-boss-profit'))).toMatchObject({
       top: 4 * 행 + (236 - metrics.rowHeightPx),
     })
@@ -145,7 +145,7 @@ describe('`h: auto` 타일', () => {
       })
     })
 
-    // 자기 자신과 위쪽 타일은 그대로다 — 밀리는 것은 **아래** 뿐이다.
+    // 자기 자신과 위쪽 타일은 그대로다. 밀리는 것은 **아래** 뿐이다.
     expect(스타일(타일(view, 'reset-countdown'))).toMatchObject({ top: 행 })
     expect(스타일(타일(view, 'shared-contents'))).toMatchObject({ top: 2 * 행 })
     expect(스타일(타일(view, 'remaining-schedule'))).toMatchObject({ top: 3 * 행 })
@@ -156,7 +156,7 @@ describe('`h: auto` 타일', () => {
     })
   })
 
-  // auto 타일이 **셋**이 됐다 — `w === 4` 라 옆 칸이 없어 초과분이
+  // auto 타일이 **셋**이 됐다. `w === 4` 라 옆 칸이 없어 초과분이
   // **누적**된다.
   // 이 규칙이 깨지면 두 타일이 서로를 덮는다.
   it('auto 타일 둘의 초과분이 누적된다 — 위의 것이 아래 것을 민다', async () => {
@@ -183,7 +183,7 @@ describe('`h: auto` 타일', () => {
   })
 
   // 계산으로 나오는 값을 재면 첫 프레임에 0 이고, 그 0 이 그대로 좌표가 된다.
-  // 재는 것은 **auto 타일의 내용 상자 하나뿐**이다 — 나머지는 계산으로 나오고, 재면 첫 프레임에
+  // 재는 것은 **auto 타일의 내용 상자 하나뿐**이다. 나머지는 계산으로 나오고, 재면 첫 프레임에
   // 0 이라 타일이 한 프레임 접혀 있다(과 같은 이유).
   it('auto 타일의 **내용** 만 잰다 — 타일 래퍼도 다른 타일도 안 잰다', async () => {
     const view = await 격자()
@@ -210,7 +210,7 @@ describe('타일 탭', () => {
       fireEvent.press(within(타일(view, 'weekly-boss-profit')).getByRole('button'))
     })
 
-    // **한 층 내려가는 이동이다** — 보스 수익은 수익·지출 그룹의 하위라 그 층 화면을 연다.
+    // **한 층 내려가는 이동이다**. 보스 수익은 수익·지출 그룹의 하위라 그 층 화면을 연다.
     // 그것이 곧 스택 한 단이므로 ← 도, 가장자리 스와이프도 today 로 돌아온다.
     expect(navigate).toHaveBeenCalledWith('Main', {
       screen: 'LedgerSubs',

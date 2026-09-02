@@ -1,9 +1,9 @@
 // 처치 날짜 캐기. 이 파일이 지키는 것 넷 —
 //
 // ① **뒤집힌 날**이 처치일이다(결정 2). 완료로 보이는 첫 날이고, 리셋 당일이면 그날이다.
-// ② **구멍이 있으면 확정하지 않는다** — 시작일부터 끊김 없이 봐야 **그 앞엔 없었다** 를 말한다.
+// ② **구멍이 있으면 확정하지 않는다**. 시작일부터 끊김 없이 봐야 **그 앞엔 없었다** 를 말한다.
 // ③ **오늘은 소거법**이다(결정 3). `date=오늘` 은 400 이라 조회로는 영영 못 본다.
-// ④ **캘 수 없으면 부르지 않는다**(결정 4) — 기간 시작일이 조회 창 밖이면 호출이 0회다.
+// ④ **캘 수 없으면 부르지 않는다**(결정 4). 기간 시작일이 조회 창 밖이면 호출이 0회다.
 
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
 jest.mock('../../../storage/boss-profit', () => ({
@@ -194,7 +194,7 @@ describe('resolveDefeatedOn — 오늘은 소거법 (결정 3)', () => {
 })
 
 // ── 캐내기 전체 (결정 4·5·9) ────────────────────────────────────────────────────
-// 시각은 KST 2026-08-24(월) 낮으로 고정한다 — 그 주의 리셋은 8/20(목)이고 조회 창은
+// 시각은 KST 2026-08-24(월) 낮으로 고정한다. 그 주의 리셋은 8/20(목)이고 조회 창은
 // 8/11(오늘−13) ~ 8/23(오늘−1)이다.
 const NOW = new Date('2026-08-24T05:00:00.000Z')
 
@@ -324,7 +324,7 @@ describe('resolveDefeatDates — 캐낸 값을 박는다', () => {
     await expect(resolveDefeatDates(['ocid-1'], NOW)).resolves.toBe(1)
 
     const asked = fetchStateMock.mock.calls.map(([, , dateKey]) => dateKey).sort()
-    // 이번 주(8/20~8/26) 중 창 안은 8/20~8/23 뿐이다 — 8/24 는 오늘이라 400 이다.
+    // 이번 주(8/20~8/26) 중 창 안은 8/20~8/23 뿐이다. 8/24 는 오늘이라 400 이다.
     expect(asked).toEqual(['2026-08-20', '2026-08-21', '2026-08-22', '2026-08-23'])
     expect(setDefeatedOnMock).toHaveBeenCalledWith(미확정_스우, '2026-08-22')
     expect(recordProbeMock).toHaveBeenCalledTimes(4)
@@ -345,7 +345,7 @@ describe('resolveDefeatDates — 캐낸 값을 박는다', () => {
 
     await expect(resolveDefeatDates(['ocid-1'], NOW)).resolves.toBe(0)
     expect(setDefeatedOnMock).not.toHaveBeenCalled()
-    // 모르는 실패는 원장에 안 남는다 — 다음에 다시 시도한다.
+    // 모르는 실패는 원장에 안 남는다. 다음에 다시 시도한다.
     expect(recordProbeMock).not.toHaveBeenCalled()
   })
 })
@@ -368,7 +368,7 @@ describe('resolveDefeatDates — 두 화면이 같이 불러도 한 번만 돈�
 /**
  * **키가 없어도 오늘 건은 채운다**(2026-08-27 실사용 조사).
  *
- * 소거법과 리셋 당일은 **조회가 필요 없다** — 관측이 하나도 없어도 답이 나온다. 그런데 키 검사가
+ * 소거법과 리셋 당일은 **조회가 필요 없다**. 관측이 하나도 없어도 답이 나온다. 그런데 키 검사가
  * 함수 맨 앞에 있어 조회할 것이 없는 경우까지 0 으로 나가고 있었다: 키를 지운 기기에서는 오늘 잡은
  * 보스가 영영 캘린더에 안 찍힌다.
  */
@@ -386,7 +386,7 @@ describe('키가 없을 때', () => {
     expect(fetchStateMock).not.toHaveBeenCalled()
   })
 
-  // 조회가 있어야 풀리는 건은 **그대로 NULL** 이다 — 키가 없으면 부를 수가 없다.
+  // 조회가 있어야 풀리는 건은 **그대로 NULL** 이다. 키가 없으면 부를 수가 없다.
   it('조회가 있어야 풀리는 건은 안 건드린다', async () => {
     getAuthConfigMock.mockResolvedValue(null)
     getUndatedMock.mockResolvedValue([

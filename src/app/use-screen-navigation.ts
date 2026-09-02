@@ -1,9 +1,9 @@
-// 화면은 루트 스택을 여기로만 다룬다 — **웹의 `useNavigate` + `useStackBack` 자리**다.
+// 화면은 루트 스택을 여기로만 다룬다. **웹의 `useNavigate` + `useStackBack` 자리**다.
 //
 // ══ 웹의 두 조각이 여기서 하나가 된다 ═══════════════════════════════════════════════
 //
 // 웹은 이동에 `useNavigate()`(경로 문자열), 뒤로가기에 `useStackBack(parentPath)` 를 썼다. 후자가
-// **별도 훅이어야 했던 이유는 하나**다 — `navigate(-1)` 은 히스토리에 앞 항목이 있을 때만 pop 이고,
+// **별도 훅이어야 했던 이유는 하나**다. `navigate(-1)` 은 히스토리에 앞 항목이 있을 때만 pop 이고,
 // 딥링크로 곧장 들어온 경우에는 갈 곳이 없어 부모 경로로 `replace` 해야 했다.
 //
 // RN 에는 그 갈래가 **존재하지 않는다.** 딥링크를 두지 않았으므로(`navigation/routes.ts` 파일 머리)
@@ -20,7 +20,7 @@
 //
 // **step 3 은 이것을 `settings/use-settings-navigation.ts` 라는 이름으로 만들었다.** 설정 밖에서
 // 두 번째 호출부(컨텐츠 스케줄러)가 생기며 이름이 사실과 어긋나 여기로 올렸고, 옛 자리는 별칭만
-// 남는다 — 그 화면들과 그 테스트가 부르는 이름을 바꾸지 않기 위해서다.
+// 남는다. 그 화면들과 그 테스트가 부르는 이름을 바꾸지 않기 위해서다.
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 

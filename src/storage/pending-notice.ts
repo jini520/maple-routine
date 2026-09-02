@@ -1,7 +1,7 @@
 // 리로드를 건너 전달해야 하는 일회성 알림.
 //
 // 캐시 데이터 삭제는 실패해도 리로드가 실행되므로(clearCacheData → 스플래시 → closeBossProfitDb →
-// reload) 토스트를 그 자리에서 띄울 수 없다 — 리로드가 파괴한다. 그래서 플래그를 남기고 부팅 후
+// reload) 토스트를 그 자리에서 띄울 수 없다. 리로드가 파괴한다. 그래서 플래그를 남기고 부팅 후
 // 읽어서 띄운다.
 //
 // **왜 Preferences가 아니라 sessionStorage인가**: 이 알림의 수명은 "리로드는 넘기되 앱 종료와
@@ -20,11 +20,11 @@ export function setPendingNotice(notice: PendingNotice): void {
   try {
     sessionStorage.setItem(KEY, notice)
   } catch {
-    // 알림 하나를 못 넘기는 것뿐이라 조용히 넘어간다 — 여기서 던지면 삭제 흐름 자체가 멈춘다.
+    // 알림 하나를 못 넘기는 것뿐이라 조용히 넘어간다. 여기서 던지면 삭제 흐름 자체가 멈춘다.
   }
 }
 
-// 읽으면서 지운다 — 한 번만 띄우고 리로드가 또 일어나도 반복하지 않는다.
+// 읽으면서 지운다. 한 번만 띄우고 리로드가 또 일어나도 반복하지 않는다.
 export function consumePendingNotice(): PendingNotice | null {
   try {
     const value = sessionStorage.getItem(KEY)

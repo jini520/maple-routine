@@ -1,10 +1,10 @@
 // 웹판(290줄)의 명세를 읽어 다시 쓴 것.
 //
 // 갈린 것 셋
-// ① **라우터가 없다** — 뒤로는 `goBack` 이 불렸는가로, 자동 모드 리다이렉트도 같은 것으로 본다
+// ① **라우터가 없다**. 뒤로는 `goBack` 이 불렸는가로, 자동 모드 리다이렉트도 같은 것으로 본다
 //    (웹은 `<Navigate to="/content" replace />` 였고 그 프로브를 라우트에 심었다).
 // ② `aria-pressed` → **`aria-selected` → `accessibilityState.selected`**(RN 접근성 상태에
-//    *pressed* 가 없다 — 설정·온보딩의 선택 카드가 이미 밟은 자리).
+//    *pressed* 가 없다. 설정·온보딩의 선택 카드가 이미 밟은 자리).
 // ③ 잠금 행의 **스크림에서 블러가 빠진다**(`backdrop-filter` 가 RN 에 없다). 검사 대상은 흐림이
 //    아니라 *"눌리지 않고, 사유가 행 위에 뜬다"* 라 그대로 남는다.
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
@@ -38,7 +38,7 @@ jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn()
 const mockedStore = jest.mocked(useContentSchedulerStore)
 const mockedNavigation = jest.mocked(useScreenNavigation)
 
-// `ReturnType<typeof useContentSchedulerStore>` 은 **`unknown` 이 된다** — zustand 의 훅이 오버로드라
+// `ReturnType<typeof useContentSchedulerStore>` 은 **`unknown` 이 된다**. zustand 의 훅이 오버로드라
 // tsc 가 셀렉터 시그니처를 집는다. 스토어가 그 타입을 이미 내보내므로 그것을 그대로 쓴다.
 type Store = ContentSchedulerStore
 
@@ -51,7 +51,7 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     manualTrackedByOcid: {},
     loadTrackedOcids: jest.fn(),
     saveTrackedOcids: jest.fn(),
-    // 실물은 `Promise<void>` 다 — 당김 훅이 회차의 **끝** 을 기다린다.
+    // 실물은 `Promise<void>` 다. 당김 훅이 회차의 **끝** 을 기다린다.
     refresh: jest.fn().mockResolvedValue(undefined),
     addManualContent: jest.fn(async () => {}),
     removeManualContent: jest.fn(async () => {}),
@@ -90,7 +90,7 @@ async function renderScreen(): Promise<void> {
  * 그 이름의 **행**(누를 수 있는 조상). 같은 글자가 그룹 헤더에도 있어(단독 항목 그룹) 매칭이
  * 여럿이므로, 버튼 조상이 있는 쪽을 고른다.
  *
- * 상태는 프롭이 아니라 `accessibilityState` 에서 읽는다 — `Pressable` 이 `aria-selected`·`disabled`
+ * 상태는 프롭이 아니라 `accessibilityState` 에서 읽는다. `Pressable` 이 `aria-selected`·`disabled`
  * 를 호스트 `View` 로 그대로 넘기지 않고 거기에 접어 넣는다(실측).
  */
 function row(label: string): AtomElement {
@@ -181,7 +181,7 @@ describe('ContentManageScreen', () => {
 
     await press(row('주간'))
 
-    // `무릉도장`은 그룹 헤더와 행 양쪽에 있다(단독 항목 그룹) — 행이 있다는 것으로 본다.
+    // `무릉도장`은 그룹 헤더와 행 양쪽에 있다(단독 항목 그룹). 행이 있다는 것으로 본다.
     expect(row('무릉도장')).toBeTruthy()
   })
 

@@ -1,10 +1,10 @@
 /**
- * 큰 숫자 + 힌트 한 줄 — 시트에서 **저장 바로 위**에 서는 덩어리.
+ * 큰 숫자 + 힌트 한 줄. 시트에서 **저장 바로 위**에 서는 덩어리.
  *
  * **못 치는 글자만 그린다**. 금액은 폼마다 라벨–값 줄에서 받으므로 이 부품에는
  * 칸도 초기화도 없다. 값이 바뀌면 **곧바로** 갈아 끼운다(결정 12 가 카운트업을 걷었다).
  *
- * 숫자는 **한국어 단위로 접혀서** 선다(결정 9) — `850,000,000` 이 아니라 `8억 5천만`. 밑에 있던
+ * 숫자는 **한국어 단위로 접혀서** 선다(결정 9). `850,000,000` 이 아니라 `8억 5천만`. 밑에 있던
  * 힌트 한 줄은 그 일을 하던 자리라 함께 사라졌다.
  */
 import { fireEvent } from '@testing-library/react-native'
@@ -44,7 +44,7 @@ describe('AmountFigure', () => {
 
     expect(view.queryByLabelText('금액')).toBeNull()
     expect(view.getByTestId('amount').props.onChangeText).toBeUndefined()
-    // 같은 값을 그리는 글자가 뒤에 없다 — 있으면 안드로이드에서 둘 다 그려져 이중으로 보인다.
+    // 같은 값을 그리는 글자가 뒤에 없다. 있으면 안드로이드에서 둘 다 그려져 이중으로 보인다.
     expect(view.queryAllByText('70만', { includeHiddenElements: true })).toHaveLength(1)
   })
 
@@ -78,7 +78,7 @@ describe('AmountFigure', () => {
 /**
  * 단위는 숫자와 **같은 줄 상자**에 선다.
  *
- * `items-baseline` 은 못 믿는다 — Yoga 가 노드마다 기준선을 어떻게 잡는지가 갈린다. 그래서
+ * `items-baseline` 은 못 믿는다. Yoga 가 노드마다 기준선을 어떻게 잡는지가 갈린다. 그래서
  * 정렬을 위에서 맞추고 **두 상자에 같은 줄높이 · 같은 글자 크기**를 넣는다. 그러면 기준선은
  * 정의상 같은 자리다. 두 글꼴 크기의 차이를 **픽셀로 적지 않는 이유**가 그것이다.
  */
@@ -130,7 +130,7 @@ describe('줄 상자', () => {
     const 숫자 = flattenStyle(view.getByTestId('amount').props.style) as { lineHeight: number }
     const 단위 = flattenStyle(view.getByTestId('amount-unit').props.style) as { lineHeight: number }
 
-    // 클래스 문자열(`leading-[38px]`)과 상수가 갈리면 여기서 잡힌다 — 보간을 못 하는 자리다.
+    // 클래스 문자열(`leading-[38px]`)과 상수가 갈리면 여기서 잡힌다. 보간을 못 하는 자리다.
     expect(단위.lineHeight).toBe(숫자.lineHeight)
   })
 
@@ -138,7 +138,7 @@ describe('줄 상자', () => {
     const view = await renderAtom(<AmountFigure value={7_250_000} unit="메소" testID="amount" />)
 
     const 숫자 = flattenStyle(view.getByTestId('amount').props.style) as { fontSize: number }
-    // 폭 0 짜리 투명 글자(ZWSP)가 숫자와 같은 크기여야 한다 — 작아지면 기준선이 다시 갈린다.
+    // 폭 0 짜리 투명 글자(ZWSP)가 숫자와 같은 크기여야 한다. 작아지면 기준선이 다시 갈린다.
     // 둘 다 `text-2xl` 이라 계단이 움직여도 함께 움직인다.
     const 심긴글자 = flattenStyle(view.getByText('\u200B').props.style) as {
       fontSize: number
@@ -180,7 +180,7 @@ describe('≈ 표식', () => {
   })
 })
 
-// 눌러도 아무 일이 없어야 한다 — 이 덩어리는 이제 **보여 주기만** 하는 자리다.
+// 눌러도 아무 일이 없어야 한다. 이 덩어리는 이제 **보여 주기만** 하는 자리다.
 it('덩어리를 눌러도 값이 안 바뀐다', async () => {
   const view = await renderAtom(<AmountFigure value={12} unit="메소" testID="amount" />)
 

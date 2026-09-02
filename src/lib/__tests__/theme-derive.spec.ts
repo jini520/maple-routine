@@ -45,7 +45,7 @@ describe('deriveTheme — 스키마', () => {
 })
 
 // 대비는 관문이 아니지만, **명도를 맞춰서 만드는 토큰**은 그 목표를 실제로 달성해야 한다.
-// 본문 텍스트와 accent 잉크가 그렇다(on-* 는 색감 우선이라 여기 없다 — 아래 별도 describe).
+// 본문 텍스트와 accent 잉크가 그렇다(on-* 는 색감 우선이라 여기 없다. 아래 별도 describe).
 describe('deriveTheme — 명도를 맞춰 만드는 토큰', () => {
   it.each(ALL_SEEDS)('%s: 본문·보조 텍스트가 배경 대비 AA 를 지킨다', (_label, seed) => {
     const tokens = deriveTheme(seed)
@@ -96,7 +96,7 @@ describe('on-* — 순수 흑/백이 아니라 채움색의 색조를 물려받�
     }
   })
 
-  // 연한 색은 **테마의 것**이다 — 채움마다 다른 색조를 만들면 테마가 여러 톤으로 흩어진다.
+  // 연한 색은 **테마의 것**이다. 채움마다 다른 색조를 만들면 테마가 여러 톤으로 흩어진다.
   it.each(ALL_SEEDS)('%s: 연한 전경은 브랜드 색상(H)을 따르고 채움마다 같다', (_label, seed) => {
     const tokens = deriveTheme(seed)
     const brand = hexToOklch(tokens.primary).h
@@ -149,7 +149,7 @@ describe('on-* — 순수 흑/백이 아니라 채움색의 색조를 물려받�
     const pastel = deriveTheme(PASTEL_SEED)
     expect(hexToOklch(pastel.onPrimary).l).toBeLessThan(0.5)
 
-    // 검정으로 눌러버리지 않는다 — 채도가 남아 "그 색의 진한 톤"으로 읽혀야 한다.
+    // 검정으로 눌러버리지 않는다. 채도가 남아 "그 색의 진한 톤"으로 읽혀야 한다.
     expect(hexToOklch(tokens.onSecondary).l).toBeGreaterThan(0.25)
     expect(hexToOklch(tokens.onSecondary).c).toBeGreaterThan(0.02)
   })
@@ -194,7 +194,7 @@ describe('*-ink — accent 원색을 지킨다', () => {
 describe('rise/fall — 증감 신호색은 시드와 무관하게 휴가 고정된다', () => {
   it.each(ALL_SEEDS)('%s: rise 는 빨강, fall 은 파랑 계열이다', (_label, seed) => {
     const tokens = deriveTheme(seed)
-    // 휴는 원형이라 빨강(≈26)은 0 부근에서 감싸 돈다 — 좁은 구간으로 못 박아 시드가 새는 것을 막는다.
+    // 휴는 원형이라 빨강(≈26)은 0 부근에서 감싸 돈다. 좁은 구간으로 못 박아 시드가 새는 것을 막는다.
     expect(hexToOklch(tokens.riseInk).h).toBeGreaterThan(15)
     expect(hexToOklch(tokens.riseInk).h).toBeLessThan(40)
     expect(hexToOklch(tokens.fallInk).h).toBeGreaterThan(250)
@@ -351,7 +351,7 @@ describe('기존 4테마 승계', () => {
       expect(tokens.text).toBe(existing.text)
       expect(tokens.primary).toBe(existing.primary)
 
-      // 신규 토큰이 기존 값들과 어울려 실제로 만들어지는지만 본다 — 대비는 관문이 아니다.
+      // 신규 토큰이 기존 값들과 어울려 실제로 만들어지는지만 본다. 대비는 관문이 아니다.
       expect(Object.keys(tokens).sort()).toEqual([...THEME_TOKEN_KEYS].sort())
       expect(measureThemeContrast(tokens).measurements.every((entry) => entry.ratio > 1)).toBe(true)
     },

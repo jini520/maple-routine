@@ -170,7 +170,7 @@ describe('isPeriodQueryable', () => {
   })
 
   // ADR-067 결정 2 정정 2: 상한이 생겼다. 이 테스트는 전에 "조회일이 아직 안 지났어도 날짜
-  // 비교상 통과"를 그대로 기록하고 있었는데, 그게 바로 버그였다 — 현재 달의 조회일(그 달
+  // 비교상 통과"를 그대로 기록하고 있었는데, 그게 바로 버그였다. 현재 달의 조회일(그 달
   // 마지막 날)은 미래이고 실제로 호출하면 400 OPENAPI00004다(실측).
   it('monthly: 그 달의 마지막 날이 아직 오지 않았으면 false다 (상한)', () => {
     expect(isPeriodQueryable('monthly', '2026-07', now)).toBe(false) // 조회일 2026-07-31 > 오늘-1일(2026-07-21)
@@ -294,7 +294,7 @@ describe('getBackfillQueryDate', () => {
 
 // ADR-067 결정 2(+정정 1·2): 기간 상태를 여섯 가지로 나눈다. 판정에 필요한 입력을 전부 인자로
 // 받는 순수 함수라 store·화면이 같은 값을 공유할 수 있다(전에는 화면은 isPeriodQueryable,
-// 백필은 target별로 따로 판정해 월간 탭에서 두 문구가 동시에 뜨는 경로가 있었다 — 이슈 #78 E).
+// 백필은 target별로 따로 판정해 월간 탭에서 두 문구가 동시에 뜨는 경로가 있었다. 이슈 #78 E).
 describe('resolvePeriodDataState', () => {
   const base = {
     isCurrentPeriod: false,
@@ -311,7 +311,7 @@ describe('resolvePeriodDataState', () => {
 
   it('확인 기록이 있고 기록이 없으면 confirmedEmpty — 시간이 지나도 격하되지 않는다(결정 3)', () => {
     expect(resolvePeriodDataState({ ...base, isChecked: true })).toBe('confirmedEmpty')
-    // 롤링 윈도우를 벗어난 뒤에도 "0건 확정"이 유지된다 — 전에는 여기서 조회 불가로 바뀌었다
+    // 롤링 윈도우를 벗어난 뒤에도 "0건 확정"이 유지된다. 전에는 여기서 조회 불가로 바뀌었다
     expect(resolvePeriodDataState({ ...base, isChecked: true, isQueryable: false })).toBe('confirmedEmpty')
   })
 
@@ -333,7 +333,7 @@ describe('resolvePeriodDataState', () => {
 
   it('현재 기간은 실시간 동기화가 원천이라 recorded/confirmedEmpty뿐이다', () => {
     // 현재 기간의 조회일은 미래라 isQueryable이 false지만, 백필이 아니라 실시간 동기화로 보므로
-    // "조회 불가"가 아니다 — 처치가 0건이면 그것이 확정된 사실이다.
+    // "조회 불가"가 아니다. 처치가 0건이면 그것이 확정된 사실이다.
     expect(resolvePeriodDataState({ ...base, isCurrentPeriod: true, isQueryable: false })).toBe(
       'confirmedEmpty',
     )

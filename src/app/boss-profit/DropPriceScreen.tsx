@@ -1,20 +1,20 @@
 // 가격 기록 화면 — 보스 수익의 하위 스택 화면(이슈 #185).
 //
-// 히스토리와 형제이고 같은 셸을 쓴다. 축이 다르다 — 히스토리는 **전 기간**을 한 목록에 펼치는
+// 히스토리와 형제이고 같은 셸을 쓴다. 축이 다르다. 히스토리는 **전 기간**을 한 목록에 펼치는
 // 읽기 전용이고, 여기는 **한 기간**을 놓고 값을 매기는 쓰기 화면이다.
 //
 // 뼈대는 기간 → 캐릭터 → 기록이다. 캐릭터로 한 번 묶는 이유는 가격이 기록 단위이기 때문이다 —
 // 같은 아이템도 캐릭터마다 판 값이 다를 수 있고, 그 차이가 곧 캐릭터별 수익의 차이가 된다.
 //
-// **보스 수익에서 보던 기간을 통째로 이어받는다** — 주기까지 함께다. 처음엔 주
+// **보스 수익에서 보던 기간을 통째로 이어받는다**. 주기까지 함께다. 처음엔 주
 // 단위로만 열었는데, 그러면 **월간 보스(검은마법사) 드롭에 닿을 길이 없다**(사용자 보고 2026-08-10):
 // 그 기록의 `period_key` 는 `YYYY-MM` 이라 어느 주차 조회에도 안 걸린다.
 //
-// ══ 가 이 화면에서 가장 직접적으로 드러난다 — **미입력은 0원이 아니다** ═══════
+// ══ 가 이 화면에서 가장 직접적으로 드러난다. **미입력은 0원이 아니다** ═══════
 //
 // 사용자가 값을 넣는 자리라 세 상태가 눈에 보여야 한다. 상태 pill 은 색이 아니라 **형태**로 가르고
 // (채움 / 회색 / 점선), 미입력 행의 금액 자리에는 **`0` 이 아니라 `입력`** 이 선다. 합산 층은
-// core 가 이미 지킨다(`dropPayoutMeso` 가 `priceState !== 'entered'` 를 0으로 접는다) — 여기서
+// core 가 이미 지킨다(`dropPayoutMeso` 가 `priceState !== 'entered'` 를 0으로 접는다). 여기서
 // 지키는 것은 **표시**이고, `priceMeso` 는 있는데 `priceState` 가 없는 기록이 가장 강한 반례다
 // (`priceMeso ?? 0` 계열로 그리면 거기서 금액이 샌다).
 //
@@ -24,7 +24,7 @@
 //    제스처에 다르게 반응하면 그 자체가 회귀다.
 // ② **키패드가 `overlays` 프롭이 아니라 형제로 선다.** 웹은 `StackScreen` 의 `overlays` 로 넘겨
 //    오버레이가 탭 레이어의 `transform` 에 딸려 밀리지 않게 했는데, RN 의 시트는 별도 네이티브
-//    호스트에 뜨므로(`BottomSheetModalProvider`) 갇힐 상자가 없다 — 프롭이 통째로 사라진다.
+//    호스트에 뜨므로(`BottomSheetModalProvider`) 갇힐 상자가 없다. 프롭이 통째로 사라진다.
 // ③ `<li className="valuable-drop-row">` → **`ValuableRowBackground`**. 웹 `index.css` 의 그 클래스가
 //    RN 에서 값 셋으로 갈린 자리이고, 보스 행에 이어 **두 번째 호출부**라 step 8 이 그 컴포넌트를
 //  `BossProfitBossRow` 밖으로 꺼냈다.
@@ -83,11 +83,11 @@ function characterTotal(group: DropPriceGroup): number {
  * 상태 pill — 세 상태를 색이 아니라 **형태**로 가른다(채움 / 회색 / 점선).
  *
  * **미입력 자리에 `0` 을 쓰지 않는다**. `entered` 가 아니면 금액을 아예 그리지 않고
- * `입력`·`기록 안함` 이라는 말이 선다 — 값을 모르는 것과 0원인 것은 다른 사실이다.
+ * `입력`·`기록 안함` 이라는 말이 선다. 값을 모르는 것과 0원인 것은 다른 사실이다.
  */
 function PriceStatePill(props: { drop: RecordedDrop }): React.JSX.Element {
   const { drop } = props
-  // 칩 안에서는 접는다 — 10자리 원시 표기가 들어가면 금액이 행을 밀어낸다(`formatMesoShort` 의 존재 이유).
+  // 칩 안에서는 접는다. 10자리 원시 표기가 들어가면 금액이 행을 밀어낸다(`formatMesoShort` 의 존재 이유).
   if (drop.priceState === 'entered') {
     return (
       <View className="h-[26px] shrink-0 justify-center rounded-full bg-primary-tint px-2.5">
@@ -118,10 +118,10 @@ function EntryRow(props: {
 }): React.JSX.Element {
   const { drop } = props.entry
   const iconUrl = getItemIconUrl(drop.itemName, drop.slot)
-  // 상자명(`boxOrigin`)은 쓰지 않는다(2026-08-10 사용자 지정) — 반지 상자·칠흑 장신구 상자는
+  // 상자명(`boxOrigin`)은 쓰지 않는다(2026-08-10 사용자 지정). 반지 상자·칠흑 장신구 상자는
   // 이름이 길어 실제 정보인 아이템명과 보스를 밀어낸다. 무엇을 열었는지는 히스토리가 말한다.
   //
-  // **인원은 값을 매긴 기록에만 붙는다** — 미입력에 `1인` 이 서면 이미 정해진 값처럼 읽힌다.
+  // **인원은 값을 매긴 기록에만 붙는다**. 미입력에 `1인` 이 서면 이미 정해진 값처럼 읽힌다.
   const shareLabel = drop.priceState === 'entered' ? ` · ${drop.priceShare ?? 1}인` : ''
 
   return (
@@ -129,7 +129,7 @@ function EntryRow(props: {
     // 알려 준다. 테두리를 아예 빼지 않고 **색만 지우는** 것이 요점이다(와 같은 규칙).
     <View>
       {isValuableDrop(drop.itemName) && <ValuableRowBackground />}
-      {/* 행 전체가 버튼이다 — 입력이든 수정이든 같은 자리를 누른다. */}
+      {/* 행 전체가 버튼이다. 입력이든 수정이든 같은 자리를 누른다. */}
       <Pressable
         role="button"
         onPress={props.onSelect}
@@ -245,7 +245,7 @@ export function DropPriceScreen(): React.JSX.Element {
           </View>
         }
       >
-        {/* `screen-<라우트 이름>` 은 자리표시자에게서 그대로 물려받은 계약이다 — 내비게이션
+        {/* `screen-<라우트 이름>` 은 자리표시자에게서 그대로 물려받은 계약이다. 내비게이션
             테스트가 "그 라우트로 밀면 그 화면이 열리는가"를 이 이름으로 묻는다. */}
         <View testID="screen-DropPrice" className="gap-4 px-4 pb-6">
           {/* 기간 네비게이터 — **보스 수익 화면의 것을 그대로 옮겼다**(같은 h-7 원형 버튼 + 가운데
@@ -300,7 +300,7 @@ export function DropPriceScreen(): React.JSX.Element {
             />
           ) : (
             <>
-              {/* 요약은 **카드가 아니라 헤드라인**이다(B안 채택 2026-08-10) — 이 보스
+              {/* 요약은 **카드가 아니라 헤드라인**이다(B안 채택 2026-08-10). 이 보스
                   수익 총 수익에 내린 판단이 이 화면에도 그대로 성립한다: 아래가 전부 같은 카드
                   셸이라 요약도 카드면 "흰 카드의 반복"으로 묻힌다.
 
@@ -319,7 +319,7 @@ export function DropPriceScreen(): React.JSX.Element {
                   <View className="h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-tint">
                     <ProfitIcon className="h-[18px] w-[18px] text-primary-ink" strokeWidth={2} aria-hidden />
                   </View>
-                  {/* 단위 앞의 실제 공백은 남긴다 — 마진만으로 띄우면 읽는 값이 "N메소"로 붙어
+                  {/* 단위 앞의 실제 공백은 남긴다. 마진만으로 띄우면 읽는 값이 "N메소"로 붙어
                       스크린리더가 이어 읽는다(규약). */}
                   <Text
                     className="text-xl font-extrabold leading-none text-primary-ink"
@@ -354,7 +354,7 @@ export function DropPriceScreen(): React.JSX.Element {
                 <View className="mt-3 h-px bg-border" aria-hidden />
               </View>
 
-              {/* CTA 는 요약 **바로 아래**다 — 목록 끝에 두면 기록이 열 건만 넘어도 손이 닿지 않는다. */}
+              {/* CTA 는 요약 **바로 아래**다. 목록 끝에 두면 기록이 열 건만 넘어도 손이 닿지 않는다. */}
               {unpriced > 0 && (
                 <Pressable
                   role="button"
@@ -411,7 +411,7 @@ export function DropPriceScreen(): React.JSX.Element {
         </View>
       </ScreenScroll>
 
-      {/* 웹의 `StackScreen overlays` 자리(파일 머리 ②) — RN 시트는 별도 네이티브 호스트에 떠서
+      {/* 웹의 `StackScreen overlays` 자리(파일 머리 ②). RN 시트는 별도 네이티브 호스트에 떠서
           갇힐 상자가 없으므로 형제로 둔다. */}
       {pricing !== null && (
         <DropPricePad
@@ -426,7 +426,7 @@ export function DropPriceScreen(): React.JSX.Element {
           progress={queue.length > 0 ? { current: unpriced - queue.length, total: unpriced } : undefined}
           onSave={(priceMeso, share) => void runWrite(() => savePrice(pricing, priceMeso, share))}
           onExclude={() => void runWrite(() => excludePrice(pricing))}
-          // 스킵은 저장하지 않는다 — 미입력에 그대로 두고 다음 건으로만 간다(정정).
+          // 스킵은 저장하지 않는다. 미입력에 그대로 두고 다음 건으로만 간다(정정).
           onLater={queue.length > 0 ? advance : undefined}
           onClose={() => {
             setQueue([])

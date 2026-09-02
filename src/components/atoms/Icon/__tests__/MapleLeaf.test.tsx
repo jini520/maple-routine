@@ -1,5 +1,5 @@
 // 잎은 **아이콘처럼 쓰이지만 lucide 규격은 아닌** 자리다. 그 둘을 다 지키는지
-// 본다 — 호출부 프롭은 아이콘과 같고, 칠은 lucide 프리셋을 안 받는다.
+// 본다. 호출부 프롭은 아이콘과 같고, 칠은 lucide 프리셋을 안 받는다.
 import Settings from 'lucide-react-native/icons/settings'
 
 import { findAllOfType, flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'

@@ -8,16 +8,16 @@
 // > 설 자리도 처치 기록도 없는 드롭 그룹은 지운다.
 //
 // 고아가 생기는 경로가 셋인데(① 주간 한도를 채워 행이 사라짐 ② 수동 추적에서 뺌 ③ 주가 바뀌어
-// 영영 미처치로 굳음) **셋이 같은 모양**이라 술어 하나로 덮는다 — 경로마다 정리 코드를 쓰면 넷째
+// 영영 미처치로 굳음) **셋이 같은 모양**이라 술어 하나로 덮는다. 경로마다 정리 코드를 쓰면 넷째
 // 경로가 생길 때 또 빠진다(이 **선택 불가** 를 사유 하나로 모델링한 것과 같다).
 //
 // ## 왜 지워야 하나 — 안 지우면 화면마다 다르게 보인다
 //
 // | 소비처 | 고아 드롭이 |
 // |---|---|
-// | 보스 수익(행·총 수익) | **사라진다** — `groupTotalMeso` 가 `group.bossRows` 로만 훑는다 |
-// | 가계부 | 안 잡힌다 — 짝인 `boss_profit_records` 가 없어 날짜를 못 물려받는다 |
-// | 드롭 히스토리 · today 위젯 | **남는다** — `getAllBossDropRecords` 가 테이블 전체를 읽는다 |
+// | 보스 수익(행·총 수익) | **사라진다**. `groupTotalMeso` 가 `group.bossRows` 로만 훑는다 |
+// | 가계부 | 안 잡힌다. 짝인 `boss_profit_records` 가 없어 날짜를 못 물려받는다 |
+// | 드롭 히스토리 · today 위젯 | **남는다**. `getAllBossDropRecords` 가 테이블 전체를 읽는다 |
 //
 //  로 판매가가 같은 행에 붙어 있어 **금액까지** 그 상태가 된다.
 //
@@ -59,7 +59,7 @@ const bossKey = (ocid: string, boss: string, periodKey: string): string => `${oc
 const periodKeyOf = (ocid: string, periodKey: string): string => `${ocid}|${periodKey}`
 
 /**
- * 지울 무리를 고른다 — **쓰지 않는다**(계획과 실행을 갈라야 이 규칙을 입출력으로 검증할 수 있다).
+ * 지울 무리를 고른다. **쓰지 않는다**(계획과 실행을 갈라야 이 규칙을 입출력으로 검증할 수 있다).
  *
  * 안전 장치 넷이 행이 없다가 안 잡았다를 뜻하지 않는 경우를 전부 막는다:
  *
@@ -81,7 +81,7 @@ export function planOrphanDropCleanup(input: OrphanDropPlanInput): OrphanDropGro
     periodsWithRow.add(periodKeyOf(row.ocid, row.periodKey))
   }
 
-  // 삽입 순서를 유지한다 — 지우는 차례가 조회 순서와 같아야 실패 지점을 읽을 수 있다.
+  // 삽입 순서를 유지한다. 지우는 차례가 조회 순서와 같아야 실패 지점을 읽을 수 있다.
   const groups = new Map<string, OrphanDropGroup>()
   for (const record of input.records) {
     if (!input.trustedOcids.has(record.ocid)) continue
@@ -117,10 +117,10 @@ export interface OrphanDropSweepInput {
 }
 
 /**
- * 계획대로 지우고 **지운 기록 수**를 돌려준다(0이면 아무것도 안 했다 — 멱등).
+ * 계획대로 지우고 **지운 기록 수**를 돌려준다(0이면 아무것도 안 했다. 멱등).
  *
  * 빈 배열로 `replaceBossDropRecords` 를 부르는 것이 곧 삭제다(그 함수의 계약 — DELETE 뒤 0건 삽입).
- * 실패는 삼킨다 — 정리는 화면의 목적이 아니라 뒷정리라, 못 지웠다고 보스 수익이 서지 못하면 안 된다.
+ * 실패는 삼킨다. 정리는 화면의 목적이 아니라 뒷정리라, 못 지웠다고 보스 수익이 서지 못하면 안 된다.
  */
 export async function sweepOrphanDrops(input: OrphanDropSweepInput): Promise<number> {
   const periodKeys = [...input.knownPeriodKeys]
@@ -138,7 +138,7 @@ export async function sweepOrphanDrops(input: OrphanDropSweepInput): Promise<num
   const recordedAt = input.now.toISOString()
   let removed = 0
   for (const group of groups) {
-    // 순차 실행이다 — `replaceBossDropRecords` 가 공유 커넥션에 자체 트랜잭션을 열어
+    // 순차 실행이다. `replaceBossDropRecords` 가 공유 커넥션에 자체 트랜잭션을 열어
     // 동시에 던지면 겹친다(`auto-record.ts` 의 upsert 루프와 같은 이유).
     await withSqliteFallback(
       replaceBossDropRecords(group.ocid, group.boss, group.difficulty, group.periodKey, [], recordedAt),

@@ -7,7 +7,7 @@ import { syncSchedules } from '../schedule-sync/schedule-sync'
 // ADR-035 결정 19: 컨텐츠는 일간/주간 소스 배열로 kind를 확정해 저장하고, 템플릿에 없는 이름은
 // 제외한다(멤버십 ⊆ 템플릿 — 관리 페이지 체크리스트에서 편집 불가능한 고아 방지). 보스는
 // mergeManualBossList의 매칭 기준과 동일하게 matchBossContent 정규화 명으로 저장한다.
-// 저장하는 것은 멤버십(+보스 난이도)뿐이다 — nowCount/isComplete 같은 값은 표시 시점에
+// 저장하는 것은 멤버십(+보스 난이도)뿐이다. nowCount/isComplete 같은 값은 표시 시점에
 // schedulerCache에서 조회한다(결정 6, 단일 진실 공급원).
 function toTrackedItems(state: SchedulerCharacterState): ManualTrackedItem[] {
   const { dailyContents, weeklyContents, bossContents } = state
@@ -33,13 +33,13 @@ function toTrackedItems(state: SchedulerCharacterState): ManualTrackedItem[] {
 }
 
 // ADR-035 결정 3·15: 주어진 ocid들에 대해 최신 동기화 결과를 기준으로 manualTrackedContent를
-// 1회 채운다(기존 값이 있어도 덮어쓴다 — "최초 편입 시 1회 시드"이므로 매번 새로 계산).
+// 1회 채운다(기존 값이 있어도 덮어쓴다. "최초 편입 시 1회 시드"이므로 매번 새로 계산).
 // syncSchedules 호출이 실패하거나 state가 null이면(전역 인증 실패 등) 에러를 던진다 —
 // 빈 배열로 조용히 시드하면 "정말 아무것도 등록 안 한 사용자"와 구분이 안 된다(결정 15 취지).
 //
 // ADR-147 정정 42: **ocid 전원을 한 회차로 훑는다.** 캐릭터마다 syncSchedules 를 동시에 내던
 // 옛 모양은 단일 비행에 서로 합류해 전원이 첫 캐릭터의 스케줄로 시드됐다. 결과를 위치가 아니라
-// **ocid 로** 찾는 것도 그래서다 — 못 찾으면 남의 것을 쓰지 않고 실패한다.
+// **ocid 로** 찾는 것도 그래서다. 못 찾으면 남의 것을 쓰지 않고 실패한다.
 export async function seedManualTrackedContent(ocids: string[]): Promise<void> {
   if (ocids.length === 0) {
     return

@@ -44,7 +44,7 @@ describe('계열이 축이다', () => {
     expect(getByText('익스트림 몬스터파커')).toBeTruthy()
   })
 
-  // 월드로는 가를 수 없고 계열로 묶은 이유가 그것이다 — 라벨이 한 번이라도
+  // 월드로는 가를 수 없고 계열로 묶은 이유가 그것이다. 라벨이 한 번이라도
   // 나오면 화면이 다시 그 축을 주장하게 된다.
   it('월드·계정이라는 말이 화면에 한 번도 안 나온다', async () => {
     const { queryByText } = await 위젯(공유컨텐츠())
@@ -62,7 +62,7 @@ describe('계열이 축이다', () => {
 })
 
 describe('오른쪽 열은 `count` 유무 하나로 갈린다', () => {
-  // 체크박스와 취소선이 이미 완료를 말한다 — 배지는 같은 말의 세 번째였고, 그 46px 이 반폭 열에서
+  // 체크박스와 취소선이 이미 완료를 말한다. 배지는 같은 말의 세 번째였고, 그 46px 이 반폭 열에서
   // 긴 이름을 말줄임으로 밀어냈다(사용자 지시).
   it('완료해도 오른쪽에 배지가 안 선다 — CLEAR 를 걷었다', async () => {
     const { queryAllByTestId, queryByText } = await 위젯([
@@ -90,13 +90,13 @@ describe('오른쪽 열은 `count` 유무 하나로 갈린다', () => {
       공유계열('몬스터파크', [공유항목('일간', { count: { now: 7, max: 14 } })]),
     ])
 
-    // 벌어지면 두 값, 붙으면 분수로 읽힌다 — 한 `Text` 안에서 이어져야 **7/14** 로 읽힌다.
+    // 벌어지면 두 값, 붙으면 분수로 읽힌다. 한 `Text` 안에서 이어져야 **7/14** 로 읽힌다.
     expect(getByText('7/14')).toBeTruthy()
-    // 분자만 굵다(강조는 굵기 하나뿐 — 위젯 2 와 같은 규칙).
+    // 분자만 굵다(강조는 굵기 하나뿐. 위젯 2 와 같은 규칙).
     expect(String(getByText('7').props.style.fontWeight)).toBe('800')
   })
 
-  // 뷰모델이 완료한 항목에 카운트를 안 준다(의 살아 있는 절반) — 완료한 항목의
+  // 뷰모델이 완료한 항목에 카운트를 안 준다(의 살아 있는 절반). 완료한 항목의
   // **몇 번 했나** 는 언제나 max 라 `14/14` 가 더 말하는 것이 없다.
   it('완료한 항목은 오른쪽이 통째로 빈다 — 체크박스가 그 말을 한다', async () => {
     const { queryByTestId, getAllByTestId } = await 위젯([
@@ -154,7 +154,7 @@ describe('두 열로 선다', () => {
 })
 
 describe('완료는 체크와 취소선이 말한다', () => {
-  // 체크박스는 **접근성 트리에서 숨겨져 있다**(`aria-hidden`) — 뜻은 이름과 `CLEAR` 가 이미
+  // 체크박스는 **접근성 트리에서 숨겨져 있다**(`aria-hidden`). 뜻은 이름과 `CLEAR` 가 이미
   // 말하고 이것은 그 말의 그림이라, 스크린 리더가 한 번 더 읽을 이유가 없다. 그래서 테스트도
   // 숨은 것을 포함해 찾는다.
   const 숨은것포함 = { includeHiddenElements: true } as const
@@ -171,7 +171,7 @@ describe('완료는 체크와 취소선이 말한다', () => {
     expect(상자들).toHaveLength(2)
     expect(flattenStyle(상자들[0]?.props.style).backgroundColor).toBe(기본테마.primary)
     expect(flattenStyle(상자들[1]?.props.style).backgroundColor).toBeUndefined()
-    // 체크 표시는 완료한 것 하나뿐이다 — 빈 상자는 테두리만 지고 안이 비어 있다.
+    // 체크 표시는 완료한 것 하나뿐이다. 빈 상자는 테두리만 지고 안이 비어 있다.
     expect(상자들[0]?.props.children).toBeTruthy()
     expect(상자들[1]?.props.children).toBeFalsy()
   })
@@ -180,7 +180,7 @@ describe('완료는 체크와 취소선이 말한다', () => {
   // 색이 들어가 있어"*). `완료 = `secondary`` 계보를 따랐더니 `secondary` 가 테마의 두 번째
   // 시드라 메인 컬러와 색상이 무관했다(렌은 빨강 테마에 틸 `#437B71`, 엔젤릭버스터는 분홍 테마에
   // 하늘 `#82B5C3`). 앱의 다른 체크박스 셋(설정·가계부·테마 선택)이 쓰는 색으로 되돌린다.
-  // 체크 표시(`shared-checkbox-mark`)의 색은 여기서 못 잰다 — SVG 는 `testID` 를 호스트 노드로
+  // 체크 표시(`shared-checkbox-mark`)의 색은 여기서 못 잰다. SVG 는 `testID` 를 호스트 노드로
   // 안 넘긴다(렌더 트리에 `RNSVGSvgView` 만 남는다). 상자의 두 값이 같은 토큰을 가리키는 것으로
   // `secondary 로 되돌아가지 않았다`를 잡는다.
   it('채운 상자는 채움도 테두리도 primary 다 — secondary 가 아니다', async () => {
@@ -210,7 +210,7 @@ describe('완료는 체크와 취소선이 말한다', () => {
     expect(flattenStyle(미완료?.props.style).color).toBe(기본테마.text)
   })
 
-  // 게임에서 오는 값이라 앱이 못 뒤집는다 — 못 뒤집는 것을 누를 수 있게 두면 무반응이 **고장** 이다.
+  // 게임에서 오는 값이라 앱이 못 뒤집는다. 못 뒤집는 것을 누를 수 있게 두면 무반응이 **고장** 이다.
   it('체크박스는 누를 수 없다 — 읽기 전용이다', async () => {
     const { getAllByTestId, queryAllByRole } = await 위젯(공유컨텐츠())
 
@@ -231,7 +231,7 @@ describe('빈 상태와 이동', () => {
     expect(queryAllByTestId('shared-group-name')).toHaveLength(0)
   })
 
-  // 타일 자체에는 `target` 이 없다(레지스트리) — 여기서 누를 수 있는 것은 **설명 토글 하나뿐**이고
+  // 타일 자체에는 `target` 이 없다(레지스트리). 여기서 누를 수 있는 것은 **설명 토글 하나뿐**이고
   // 그것은 화면을 옮기지 않는다. 계열 머리도 항목 줄도 누를 수 없다(위젯 2 의 아코디언과 다르다).
   it('누를 수 있는 것은 설명 토글 하나뿐이다 — 가는 곳은 없다', async () => {
     const { queryAllByRole, getByTestId } = await 위젯(공유컨텐츠())
@@ -240,7 +240,7 @@ describe('빈 상태와 이동', () => {
     expect(누름자리).toHaveLength(1)
     expect(누름자리[0]?.props.testID).toBe('shared-note-toggle')
 
-    // 말풍선을 열면 그것도 누를 수 있다 — 닫는 자리라서다.
+    // 말풍선을 열면 그것도 누를 수 있다. 닫는 자리라서다.
     await 누름(getByTestId('shared-note-toggle'))
     expect(queryAllByRole('button').map((node) => node.props.testID)).toEqual([
       'shared-note-toggle',

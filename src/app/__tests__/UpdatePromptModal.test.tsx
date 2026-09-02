@@ -1,6 +1,6 @@
 // 웹판 열여덟을 옮겼다(`app-capacitor/src/app/__tests__/UpdatePromptModal.test.tsx`). 갈린 것 셋.
 //
-// · **스토어를 모킹하지 않는다 — 애초에 쓰지 않는다.** RN 판은 값을 프롭으로 받는다(그 이유는
+// · **스토어를 모킹하지 않는다. 애초에 쓰지 않는다.** RN 판은 값을 프롭으로 받는다(그 이유는
 //   `UpdatePromptModal.tsx` 파일 머리: core 의 live-update 스토어는 `import.meta.env` 때문에
 //   import 하는 것만으로 죽는다). 그래서 여기 테스트가 웹판보다 오히려 단순하다.
 // · `useNavigate` 대신 `onOpenReleaseNotes` 프롭이 불렸는가를 본다.
@@ -61,7 +61,7 @@ describe('UpdatePromptModal', () => {
   it.each(['idle', 'checking', 'up-to-date', 'unsupported', 'check-error'] as const)(
     '%s 상태에서는 모달을 띄우지 않는다',
     async (status) => {
-      // check-error 가 여기 있는 것이 요점이다 — 자동 확인일 수 있어
+      // check-error 가 여기 있는 것이 요점이다. 자동 확인일 수 있어
       // 모달로 알리지 않고 설정 상태 행에만 남긴다.
       const { view } = await renderModal({ status })
 
@@ -132,7 +132,7 @@ describe('UpdatePromptModal', () => {
     expect(actions.dismiss).toHaveBeenCalledTimes(1)
   })
 
-  // : 되돌릴 수 없는 구간이라 버튼을 두지 않는다 — dismiss 가
+  // : 되돌릴 수 없는 구간이라 버튼을 두지 않는다. dismiss 가
   // downloadedBundleId 를 비우면 재시도할 번들 참조를 잃는다.
   it('applying: 진행 표시만 두고 버튼을 전부 치운다', async () => {
     const { view } = await renderModal({ status: 'applying' })
@@ -274,7 +274,7 @@ describe('UpdatePromptModal', () => {
       expect(actions.dismiss).toHaveBeenCalledTimes(1)
     })
 
-    // 받은 뒤에만 화면을 옮긴다 — 이 시점에야 새 버전 노트가 앱 안에 있고, 흐름이 이미 끝나
+    // 받은 뒤에만 화면을 옮긴다. 이 시점에야 새 버전 노트가 앱 안에 있고, 흐름이 이미 끝나
     // 옮겨도 끊을 것이 없다.
     it('[자세히 보기]는 개발 노트로 이동하고 모달을 닫는다', async () => {
       const { view, actions, onOpenReleaseNotes } = await renderModal({ status: 'updated' })

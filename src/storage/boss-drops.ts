@@ -4,7 +4,7 @@ import type { DropCategory, RecordedDrop } from '../types/drops'
 // ADR-038 결정 5: 한 보스/기간의 드롭 집합은 시트에서 통째로 편집되므로 replace-all(DELETE→INSERT)이
 // 수정에 가장 단순하다. drop_index 다중 행으로 저장한다. `storage/boss-profit.ts` 어댑터 패턴을 미러한다.
 //
-// **금액을 함께 저장한다**(반전) — 기록 한 건에 붙는 실판매가다. 시세표가
+// **금액을 함께 저장한다**(반전). 기록 한 건에 붙는 실판매가다. 시세표가
 // 아니라 스냅샷이라 재평가 대상이 아니고, 같은 행에 두므로 난이도 확정 이관·prune 삭제가 가격까지
 // 함께 옮기고 지운다.
 export interface BossDropRecord {
@@ -47,17 +47,17 @@ const INSERT_SQL = `
  *
  * ## 왜 저장 계층에 있나
  *
- * 이 테이블에는 캐시가 **셋**이다 — `boss-profit/store`(`dropsByRowKey`) · `drop-price-store` ·
+ * 이 테이블에는 캐시가 **셋**이다. `boss-profit/store`(`dropsByRowKey`) · `drop-price-store` ·
  * `drop-history-store`(전 기간 집계). 앞의 둘은 서로를 직접 부르는 것으로 맞춘다
  * (`applyExternalDropEdit`, 2026-08-10 새로고침해야 반영된다 보고의 처방). 그 방식은 **쓰는 쪽이
- * 읽는 쪽을 전부 알아야** 해서, 캐시가 하나 늘 때마다 세 호출부를 다시 훑어야 한다 — 실제로
+ * 읽는 쪽을 전부 알아야** 해서, 캐시가 하나 늘 때마다 세 호출부를 다시 훑어야 한다. 실제로
  * `drop-history-store` 가 그렇게 빠졌다.
  *
  * 이 수는 그 방향을 뒤집는다. **쓰기 경로가 이 함수 하나뿐**이므로(세 호출부가 전부 여기로 온다)
  * 여기서 한 번 올리면 캐시가 몇 개든 물어볼 수 있는 상태가 되고, 새 캐시가 생겨도 쓰는 쪽은
  * 손댈 것이 없다.
  *
- * **영속화하지 않는다.** 프로세스와 함께 사라지는 것이 맞다 — 앱을 다시 켜면 어느 캐시든 비어 있다.
+ * **영속화하지 않는다.** 프로세스와 함께 사라지는 것이 맞다. 앱을 다시 켜면 어느 캐시든 비어 있다.
  */
 let recordsRevision = 0
 
@@ -65,7 +65,7 @@ export function getBossDropRecordsRevision(): number {
   return recordsRevision
 }
 
-/** 테스트 전용. 모듈 수준 상태라 테스트끼리 오염된다 — 프로덕션에서 부르지 말 것. */
+/** 테스트 전용. 모듈 수준 상태라 테스트끼리 오염된다. 프로덕션에서 부르지 말 것. */
 export function resetBossDropRecordsRevisionForTests(): void {
   recordsRevision = 0
 }
@@ -95,7 +95,7 @@ export async function replaceBossDropRecords(
       drop.ringLevel ?? null,
       drop.quantity,
       recordedAt,
-      // **미입력은 NULL 이다 — 0 이 아니다.** 0 으로 넣으면 "0메소에 팔았다"가 되어
+      // **미입력은 NULL 이다. 0 이 아니다.** 0 으로 넣으면 "0메소에 팔았다"가 되어
       // 스킵·미입력과 구분이 사라진다.
       drop.priceState ?? null,
       drop.priceMeso ?? null,
@@ -103,7 +103,7 @@ export async function replaceBossDropRecords(
     ])
   }
 
-  // **삭제/삽입이 다 끝난 뒤**에 올린다 — 중간에 던지면 테이블이 바뀌지 않은 채로 끝나므로
+  // **삭제/삽입이 다 끝난 뒤**에 올린다. 중간에 던지면 테이블이 바뀌지 않은 채로 끝나므로
   // 그때 올리면 읽는 쪽이 헛되이 전 기간을 다시 읽는다.
   recordsRevision += 1
 }
@@ -129,7 +129,7 @@ function rowToRecord(row: Record<string, unknown>): BossDropRecord {
     ringLevel: (row.ring_level as number | null) ?? null,
     quantity: row.quantity as number,
     recordedAt: row.recorded_at as string,
-    // 옛 값 `'skipped'` 는 지금의 `'excluded'`(기록 안함)와 같은 뜻이다 — 이름만 갈렸다
+    // 옛 값 `'skipped'` 는 지금의 `'excluded'`(기록 안함)와 같은 뜻이다. 이름만 갈렸다
     // (정정, 2026-08-10). 읽을 때 흡수하므로 마이그레이션이 필요 없다.
     priceState: normalizePriceState(row.price_state),
     priceMeso: (row.price_meso as number | null | undefined) ?? null,
@@ -157,16 +157,16 @@ export async function getBossDropRecords(
 }
 
 /**
- * 기간을 걸지 않고 이 캐릭터들의 **전 기간** 드롭 기록을 읽는다 — 드롭 히스토리가
+ * 기간을 걸지 않고 이 캐릭터들의 **전 기간** 드롭 기록을 읽는다. 드롭 히스토리가
  * 히스토리 전용 테이블 없이 이 테이블 하나만 보고 동작하는 근거다. `getBossDropRecords` 는
  * `periodKeys` 가 필수라 "지금 보고 있는 기간" 밖을 조회할 수단이 없었다(이슈 #54).
  *
- * 정렬은 `period_key DESC, drop_index` 다 — `recorded_at` 은 replace-all·prune·난이도 이관이 그룹
+ * 정렬은 `period_key DESC, drop_index` 다. `recorded_at` 은 replace-all·prune·난이도 이관이 그룹
  * 전체를 호출 시점으로 덮어쓰므로 시간순 기준이 될 수 없다. 같은 기간 안에서
  * 보스가 섞이지 않게 `ocid`·`boss`·`difficulty` 까지 정렬 키에 넣어 순서를 완전히 결정한다.
  *
  * 주간(`YYYY-MM-DD`)·월간(`YYYY-MM`) 키가 섞이면 문자열 DESC 는 시간순이 아니다(월간 `2026-07` 이
- * 그 달 주차들보다 뒤로 밀린다) — 시간축 정렬은 `lib/drop/drop-history` 가 기간 시작 시점으로 환산해
+ * 그 달 주차들보다 뒤로 밀린다). 시간축 정렬은 `lib/drop/drop-history` 가 기간 시작 시점으로 환산해
  * 다시 한다. 여기서는 **같은 기간 안의 순서**만 보장하면 되고, 그 순서를 안정 정렬이 보존한다.
  */
 export async function getAllBossDropRecords(ocids: string[]): Promise<BossDropRecord[]> {

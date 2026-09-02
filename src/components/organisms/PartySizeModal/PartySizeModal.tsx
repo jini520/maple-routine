@@ -1,6 +1,6 @@
 // 보스 카드를 탭하면 열리는 파티 인원·난이도 모달.
 //
-// **표시 전용이다** — 모드(자동/수동)를 모르고, 난이도 선택이 무엇을 뜻하는지도 모른다. 수동
+// **표시 전용이다**. 모드(자동/수동)를 모르고, 난이도 선택이 무엇을 뜻하는지도 모른다. 수동
 // 모드에서는 멤버십 교체이고 자동 모드에서는 "어느 난이도의 파티 인원을 편집할지" 전환인데, 그
 // 차이는 호출부가 핸들러로 정한다(결정 3). 여기에 모드 분기를 두면 나중에 두 모드를 통합할 때
 // 지워야 할 코드가 된다.
@@ -14,18 +14,18 @@
 //    크롭의 CSS 값(`background-size: "100% auto"` / `position: "50% 45%"`)을 RN 기하로 바꾸고,
 //    웹의 `filter` 와 `mask-image` 를 각각 RN `filter` 스타일과 **뒤집은 그라데이션**으로
 //    푸는 일이다. 그 셋을 step 4 가 컨텐츠 카드에서 이미 한 벌 풀어 두었으므로 여기서는
-//    `FadedIllustration` 를 **부르기만 한다**(`variant="hero"` — 마스크 끝점이 카드와 다르다).
+//    `FadedIllustration` 를 **부르기만 한다**(`variant="hero"`. 마스크 끝점이 카드와 다르다).
 //  보스 카드와 같은 컴포넌트를 쓰는 것이 이 요구하는 *"같은 값"* 이다.
 // ② **`bg-surface/60` 이 안 나온다.** NativeWind(v3 엔진)는 `var()` 색에 투명도 접미사를 만들지
-//    못한다(step 3 이 남긴 함정 둘 중 하나) — 클래스는 조용히 사라지고 닫기 버튼 배경이 없어진다.
-//    그래서 값에서 직접 rgba 를 만든다(`lib/color-alpha.ts` — step 6 의 경계 페이드가 같은 함정을
+//    못한다(step 3 이 남긴 함정 둘 중 하나). 클래스는 조용히 사라지고 닫기 버튼 배경이 없어진다.
+//    그래서 값에서 직접 rgba 를 만든다(`lib/color-alpha.ts`. step 6 의 경계 페이드가 같은 함정을
 //    밟아 두 번째 호출부가 됐다). 그 값이 `surface` 가 아니라 **`mediaSurface`** 인 것도 같은
-//    이유다 — 버튼이 `media-scope` 안이라 웹에서는 `var(--color-surface)` 가 이미 그것으로
+//    이유다. 버튼이 `media-scope` 안이라 웹에서는 `var(--color-surface)` 가 이미 그것으로
 //  재선언돼 있었다.
 // ③ **글자 그림자·베일이 스타일이 아니라 컴포넌트가 된다.** `textShadow` 는 RN 에서
-//    `textShadowColor/Offset/Radius` 세 프롭이라 두 겹(웹은 그림자 둘)을 못 겹친다 — 강한 쪽
+//    `textShadowColor/Offset/Radius` 세 프롭이라 두 겹(웹은 그림자 둘)을 못 겹친다. 강한 쪽
 //    하나만 남긴다. `linear-gradient` 베일은 `expo-linear-gradient` 로 그린다.
-// ④ `border-t` 경계선은 `media-scope` **바깥**이다 — 다크 테마는 media-surface ≈ surface 이고
+// ④ `border-t` 경계선은 `media-scope` **바깥**이다. 다크 테마는 media-surface ≈ surface 이고
 //    검은마법사는 값이 완전히 같아(#1C1319) 경계가 이 선뿐이다. 웹과 같은 자리에 그대로 둔다.
 // ⑤ `space-y`/`gap-[18px]` 은 `gap-*` 로, `tabular-nums` 는 스타일로(`lib/text-styles.ts`).
 import { Pressable, View } from 'react-native'
@@ -36,7 +36,7 @@ import type { BossDifficulty } from '../../../types'
 import { withAlpha } from '../../../lib/color'
 import { LinearGradient } from '../../../lib/nativewind-interop'
 import { Badge, Text, UsersIcon, XIcon } from '../../atoms'
-// 히어로 글자의 그림자는 카드 둘과 같은 값을 쓴다 — 세 번째 호출부가 생기며 `lib/text-styles.ts`
+// 히어로 글자의 그림자는 카드 둘과 같은 값을 쓴다. 세 번째 호출부가 생기며 `lib/text-styles.ts`
 // 로 올라갔다. 값·근거는 그 파일이 갖는다.
 import { ILLUSTRATION_TEXT_SHADOW_STYLE, TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { useThemeAppearance } from '../../../theme/context'
@@ -59,13 +59,13 @@ export function PartySizeModal(props: {
   onChangePartySize: (next: number) => void
   onClose: () => void
 }): React.JSX.Element {
-  // `MediaScope` 안에서 `--color-surface` 로 재선언되는 그 값이다 — 파생
+  // `MediaScope` 안에서 `--color-surface` 로 재선언되는 그 값이다. 파생
   // 함수를 다시 부르지 않는다(`deriveMediaScope` 의 입력이 곧 이 토큰이다).
   const { definition } = useThemeAppearance()
   const mediaSurface = definition.mediaSurface
 
   const portraitUrl = getBossPortraitUrl(props.portraitSlug)
-  // 카드 bleed 와 **같은 표**다(`boss-portrait-crops.json`) — 원형 초상의 `…-icon-crops` 가 아니다.
+  // 카드 bleed 와 **같은 표**다(`boss-portrait-crops.json`). 원형 초상의 `…-icon-crops` 가 아니다.
   const crop = getBossPortraitCrop(props.portraitSlug)
 
   return (
@@ -73,14 +73,14 @@ export function PartySizeModal(props: {
     // Modal.Panel: 일러스트가 모서리까지 가야 해서 카드 껍데기(p-6)를 쓰지 않고 직접 두른다.
     <Modal onClose={props.onClose} align="center" testId="party-size-modal">
       <Modal.Panel maxWidth="max-w-2xs">
-        {/* 스크림 위 테두리 톤다운을 **이 View 가 직접** 쓴다 — RN 에는
+        {/* 스크림 위 테두리 톤다운을 **이 View 가 직접** 쓴다. RN 에는
             `.panel-on-scrim-parent > *` 짝이 없다(`Modal.tsx` 의 `ModalPanel` 주석). 안쪽
             `border-t` 는 표면 위 구분선이라 대상이 아니다. */}
         <View className="overflow-hidden rounded-[14px] border border-panel-border bg-surface">
           {/* 히어로 — 카드와 같은 bleed 레시피. `MediaScope` 안이라 `bg-surface`·
               `text-text` 가 media-* 로 해석된다. */}
           <MediaScope className="relative h-22 overflow-hidden bg-surface">
-            {/* 일러스트 없는 보스(`portraitSlug: null`)는 히어로를 **비운다** — 폴백 디자인을 따로
+            {/* 일러스트 없는 보스(`portraitSlug: null`)는 히어로를 **비운다**. 폴백 디자인을 따로
                 만들지 않는다(`boss-scheduler.md`). 그 판정은 `FadedIllustration` 가 이미 갖고 있어
                 여기서 다시 `null` 을 검사하지 않는다.
 
@@ -141,7 +141,7 @@ export function PartySizeModal(props: {
                   <UsersIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2} aria-hidden />
                   <Text className="text-xs font-bold tracking-[.06em] text-text-muted">파티 인원</Text>
                 </View>
-                {/* 주간 n/12 배지와 같은 컴포넌트다 — 신규 스타일을 만들지 않는다. */}
+                {/* 주간 n/12 배지와 같은 컴포넌트다. 신규 스타일을 만들지 않는다. */}
                 <Badge variant="primary" style={TABULAR_NUMS}>
                   {props.partySize} / {props.maxPartySize}
                 </Badge>

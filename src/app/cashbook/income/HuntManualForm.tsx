@@ -29,7 +29,7 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
   const detail = props.editing?.hunt?.mode === 'manual' ? props.editing.hunt : null
   const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
   /**
-   * 친 획득 메소. **옛 행에서는 합계가 곧 이 값**이다 — 그 행은 조각이 없어
+   * 친 획득 메소. **옛 행에서는 합계가 곧 이 값**이다. 그 행은 조각이 없어
    * 더한 것이 없고, 그러므로 되짚는 것이지 지어내는 것이 아니다.
    *
    * `??` 라 `0` 은 안 흘러간다. 조각만 먹은 사냥은 친 메소가 0 이면서 수동으로 적힌 행이다.
@@ -71,7 +71,7 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
       />
 
       <AmountFigure
-        // 큰 숫자는 여기서도 **합계**다 — 사람이 치는 것은 획득 메소이지
+        // 큰 숫자는 여기서도 **합계**다. 사람이 치는 것은 획득 메소이지
         // 합계가 아니라, 앱이 센 값을 사람이 덮어쓰지 않는다는 규칙이 그대로 산다.
         value={total}
         unit="메소"
@@ -90,7 +90,7 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
             earnedOn: props.dateKey,
             category: '사냥',
             // **사냥터 이름 칸이 없다**. 새 기록은 비고, 옛 행의 이름은 그대로
-            // 들고 간다 — 칸이 없다는 것과 값을 지운다는 것은 다르다.
+            // 들고 간다. 칸이 없다는 것과 값을 지운다는 것은 다르다.
             item: props.editing?.item ?? null,
             mesoAmount: total,
             saleFeePercent: null,

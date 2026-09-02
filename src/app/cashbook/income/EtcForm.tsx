@@ -1,7 +1,7 @@
 /**
  * 기타 폼 — 갈래 둘에 안 드는 수입.
  *
- * **통화가 서는 자리는 여기 하나**다 — 아이템 판매는 경매장이라
+ * **통화가 서는 자리는 여기 하나**다. 아이템 판매는 경매장이라
  * 메소이고 사냥도 메소다. 갈래가 이미 아는 것을 다시 묻지 않는다. 이벤트 보상이 메포·캐시로도
  * 들어오므로 이 갈래만 축이 갈린다.
  *
@@ -39,7 +39,7 @@ export function EtcForm(
   const [name, setName] = useState(props.editing?.item ?? '')
   const [quantity, setQuantity] = useState(props.editing?.quantity ?? 1)
   /**
-   * 친 값을 **되짚는다** — `금액 = 저장된 총액 ÷ 수량`.
+   * 친 값을 **되짚는다**. `금액 = 저장된 총액 ÷ 수량`.
    *
    * `quantity` 가 없던 시절의 행은 `null` 이라 수량 1 로 열리고, 그 행은 총액이 곧 금액이다.
    */
@@ -51,7 +51,7 @@ export function EtcForm(
     return mesoTextOf(Math.round(total / count))
   })
   /**
-   * 수정으로 열 때는 **찬 칸이 통화를 되짚는다**(지출 시트와 같은 방식) — 캐시 칸이 차 있으면
+   * 수정으로 열 때는 **찬 칸이 통화를 되짚는다**(지출 시트와 같은 방식). 캐시 칸이 차 있으면
    * 캐시로 열려야 그 값이 안 사라진다.
    */
   const [currency, setCurrency] = useState<FreeCurrency>(
@@ -70,7 +70,7 @@ export function EtcForm(
   const typed = mesoValueOf(typedText)
   const usesPoint = currency === 'point'
   const rate = /^\d+$/.test(rateText) && Number(rateText) > 0 ? Number(rateText) : null
-  /** **언제나 곱한다** — 금액 × 수량. 지출 기타와 같은 식이다. */
+  /** **언제나 곱한다**. 금액 × 수량. 지출 기타와 같은 식이다. */
   const amount = typed * quantity
   /** 메포로 적으면 **시세가 있어야** 잰다. */
   const canSave = amount > 0 && (!usesPoint || rate !== null)
@@ -88,7 +88,7 @@ export function EtcForm(
         />
       </FieldRow>
 
-      {/* 통화는 **갈래가 아니라 금액의 축**이라 세그먼트다 — 지출 시트의
+      {/* 통화는 **갈래가 아니라 금액의 축**이라 세그먼트다. 지출 시트의
           그 줄과 같은 모양·같은 자리다. */}
       <View
         testID="income-sheet-currency"
@@ -104,7 +104,7 @@ export function EtcForm(
         </View>
       </View>
 
-      {/* **통화 밑**이다 — 무엇으로 받았는지를 정한 다음에 얼마인지를 친다(지출 시트와 같은 차례). */}
+      {/* **통화 밑**이다. 무엇으로 받았는지를 정한 다음에 얼마인지를 친다(지출 시트와 같은 차례). */}
       <FieldRow label="금액">
         <AmountInput testID="income-sheet-unit-price" value={typedText} onChange={setTypedText} />
         {/* 숫자만 있으면 무엇으로 받은 것인지 줄에서 사라진다. 이 줄이 묻는
@@ -149,10 +149,10 @@ export function EtcForm(
       )}
 
       <AmountFigure
-        // **합계이고 못 친다** — 사람이 치는 것은 금액 한 개 값이지 합계가 아니다.
+        // **합계이고 못 친다**. 사람이 치는 것은 금액 한 개 값이지 합계가 아니다.
         value={amount}
         /*
-         * **단위는 고른 통화**다 — 캐시는 `원`이다(실제로 받는 돈이 원이라
+         * **단위는 고른 통화**다. 캐시는 `원`이다(실제로 받는 돈이 원이라
          * 지출 시트가 그렇게 적고, 같은 값을 두 시트가 다르게 적을 이유가 없다).
          */
         unit={unitOfCurrency(currency)}

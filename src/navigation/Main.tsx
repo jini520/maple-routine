@@ -33,11 +33,11 @@ const ScheduleTabs = createBottomTabNavigator<ScheduleSubsParamList>()
 const LedgerTabs = createBottomTabNavigator<LedgerSubsParamList>()
 
 /**
- * 층 안의 화면들은 **탭이다** — 그래서 옆걸음에 전환이 없고 서로 언마운트하지 않는다
+ * 층 안의 화면들은 **탭이다**. 그래서 옆걸음에 전환이 없고 서로 언마운트하지 않는다
  * . 바는 이 내비게이터들이 그리지 않는다(`tabBar` 가 아무것도 안 낸다);
  * 층 스택의 `layout` 이 한 벌만 그린다.
  *
- * `backBehavior="none"` 은 가 정한 그대로다 — `"history"` 는 **모든 탭 전환**을 쌓아서
+ * `backBehavior="none"` 은 가 정한 그대로다. `"history"` 는 **모든 탭 전환**을 쌓아서
  * 결정 4 가 배제한 동작을 만든다. 층을 오르내리는 일은 이제 바깥 스택이 진다.
  */
 
@@ -90,7 +90,7 @@ const LAYER_SCREENS = {
  *
  * ## 바는 왜 `layout` 안에 있나
  *
- * `layout` 은 내비게이터의 **내용 전체**를 감싼다 — 화면 하나가 아니다. 그래서 여기 둔 바는
+ * `layout` 은 내비게이터의 **내용 전체**를 감싼다. 화면 하나가 아니다. 그래서 여기 둔 바는
  * 층이 밀려도 **안 움직이고**, 층 스택의 `state`·`navigation` 을 그대로 받는다(키를 겨냥하거나
  * 바깥에서 상태를 훑을 일이 없다).
  *
@@ -108,12 +108,12 @@ export function Main(): React.JSX.Element {
         <View className="flex-1">
           {children}
           <ConnectedBottomBar state={state} navigation={navigation} />
-          {/* 바 **뒤**가 곧 바 **위**다 — 화면이 소유한 오버레이가 여기 뜬다.
+          {/* 바 **뒤**가 곧 바 **위**다. 화면이 소유한 오버레이가 여기 뜬다.
               같은 상자라 하위 페이지가 `Main` 을 밀어낼 때 바와 함께 나간다. */}
           <BottomBarOverlayHost />
         </View>
       )}
-      // 루트 스택과 **같은 상수**다 — 그래서 **다른 하위 페이지처럼 열린다** 가 우연이 아니다.
+      // 루트 스택과 **같은 상수**다. 그래서 **다른 하위 페이지처럼 열린다** 가 우연이 아니다.
       screenOptions={PUSH_SCREEN_OPTIONS}
     >
       {(Object.keys(LAYER_SCREENS) as LayerRouteName[]).map((name) => (
@@ -143,14 +143,14 @@ function ConnectedBottomBar({ state, navigation }: ConnectedBottomBarProps): Rea
 
   const layerNames = state.routes.map((route) => route.name)
   const topLayer = layerNames[state.index ?? layerNames.length - 1]
-  /** 의존성으로 쓸 수 있게 배열을 한 문자열로 접는다 — 층 이름은 짧고 개수도 셋뿐이다. */
+  /** 의존성으로 쓸 수 있게 배열을 한 문자열로 접는다. 층 이름은 짧고 개수도 셋뿐이다. */
   const layerKey = layerNames.join('|')
 
   const barNavigation: BarNavigation = useMemo(
     () => ({
       openLayer: (layer: LayerRouteName, target: TabRouteName) => {
         // **같은 층이 스택에 두 번 서지 않는다**. 이미 아래에 있으면 그리로
-        // 되돌아간다 — react-navigation 7 부터 `navigate` 는 되돌아가지 않고 한 단 더 쌓으므로
+        // 되돌아간다. react-navigation 7 부터 `navigate` 는 되돌아가지 않고 한 단 더 쌓으므로
         // (그 몫이 `popTo` 로 갈라졌다) 우리가 갈래를 정해 줘야 한다.
         //
         // 되돌아간 **뒤에** 안쪽 탭을 지정한다. `popTo` 의 파라미터는 그 라우트에 얹힐 뿐이고,
@@ -159,7 +159,7 @@ function ConnectedBottomBar({ state, navigation }: ConnectedBottomBarProps): Rea
           navigation.dispatch(StackActions.popTo(layer))
         }
         // 층 이름이 유니온이라 `navigate` 의 파라미터가 하나로 안 좁혀진다. 좁히려면 갈래마다 손으로
-        // 적어야 하고 그러면 층 표가 두 벌이 된다 — `RootNavigator.screenFor` 와 같은 대가다.
+        // 적어야 하고 그러면 층 표가 두 벌이 된다. `RootNavigator.screenFor` 와 같은 대가다.
         ;(navigation.navigate as (name: string, params: { screen: string }) => void)(layer, {
           screen: target,
         })

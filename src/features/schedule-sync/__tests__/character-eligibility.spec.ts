@@ -83,7 +83,7 @@ describe('과거 날짜 스윕 — 13일을 한꺼번에 태운다 (ADR-148 결�
     const promise = resolveCharacterEligibility('key', 'ocid-1', false, NOW)
     await flushMicrotasks()
 
-    // 직렬이던 시절에는 여기서 1이었다 — 첫 응답이 와야 둘째가 나갔다.
+    // 직렬이던 시절에는 여기서 1이었다. 첫 응답이 와야 둘째가 나갔다.
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(13)
 
     pending.forEach((resolve) => {
@@ -182,7 +182,7 @@ describe('실패 종류별 기록 정책 (ADR-086 결정 4)', () => {
 
     await expect(resolveCharacterEligibility('key', 'ocid-1', false, NOW)).resolves.toBe('unavailable')
 
-    // 다음 회차가 같은 답을 낸다 — 원장이 그렇게 적혔기 때문이다.
+    // 다음 회차가 같은 답을 낸다. 원장이 그렇게 적혔기 때문이다.
     fetchSchedulerCharacterStateMock.mockClear()
     await expect(resolveCharacterEligibility('key', 'ocid-1', false, NOW)).resolves.toBe('unavailable')
     expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()

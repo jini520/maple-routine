@@ -3,9 +3,9 @@
  *
  * ## 가장 비싼은 시세가 아니라 **기록된 판매가** 순위다
  *
- * 앱은 아이템 시세표를 갖고 있지 않다 — 금액은 사용자가 입력한 실제 판매가에서만 온다
+ * 앱은 아이템 시세표를 갖고 있지 않다. 금액은 사용자가 입력한 실제 판매가에서만 온다
  * . 그래서 이 타일의 뜻은 정확히 이번 주에 기록된 판매가 중 가장 큰 것 이고,
- * **가격을 아직 안 적은 드롭은 순위에 없다**(뷰모델이 이미 거른다 — 값을 모르는 것을 가장 싼 것으로
+ * **가격을 아직 안 적은 드롭은 순위에 없다**(뷰모델이 이미 거른다. 값을 모르는 것을 가장 싼 것으로
  * 단정하는 일이다).
  *
  * ## 미입력 건수를 여기서 말하지 않는다
@@ -15,7 +15,7 @@
  *
  * ## 크기가 버리는 것
  *
- * 2x1(기본)은 **아이템 이름**을 버린다 — 이름은 잘려야 들어가고, 잘린 한 조각보다 얼마였나 가 이
+ * 2x1(기본)은 **아이템 이름**을 버린다. 이름은 잘려야 들어가고, 잘린 한 조각보다 얼마였나 가 이
  * 타일이 답하는 질문이다. 1x1 은 **단위 `메소`까지** 버린다(정정 11 — 물리적으로 안 들어간다).
  * 4x2 만 2~5위를 함께 그린다.
  *
@@ -36,7 +36,7 @@ import type { WidgetHeight } from '../../../lib/today/widget-layout'
 import type { PricedDropView } from '../view-model'
 import type { WidgetProps } from './types'
 
-/** N건이 값을 기다립니다를 여기 두지 않는다 — 건수는 위젯 7의 몫이다. */
+/** N건이 값을 기다립니다를 여기 두지 않는다. 건수는 위젯 7의 몫이다. */
 const EMPTY_NOTE = '가격이 입력된 아이템이 없습니다'
 
 const TITLE = '이번 주 최고가'
@@ -77,7 +77,7 @@ function Icon(props: { drop: PricedDropView; sizePx: number }): React.JSX.Elemen
   )
 }
 
-/** `12.0억 메소` — 1x1 만 단위를 버린다. */
+/** `12.0억 메소`. 1x1 만 단위를 버린다. */
 function Amount(props: { meso: number; sizeClass: string; unit: boolean }): React.JSX.Element {
   return (
     <Text fixed testID="top-item-amount" numberOfLines={1} className="text-text">
@@ -107,19 +107,19 @@ function ItemName(props: { drop: PricedDropView; sizeClass: string }): React.JSX
 /**
  * 캐릭터 · 보스.
  *
- * 캐릭터 이름은 프로필 캐시에 있을 때만 온다 — 없으면 보스만 선다(ocid 를 대신 넣지 않는다).
+ * 캐릭터 이름은 프로필 캐시에 있을 때만 온다. 없으면 보스만 선다(ocid 를 대신 넣지 않는다).
  */
 /**
- * **2인 분배** — **4x2 에만 선다.**
+ * **2인 분배**. **4x2 에만 선다.**
  *
  * 금액이 분배 후 실수령액이라 사용자가 입력한 총액보다 작다. 그 차이를
- * 설명하지 않으면 **숫자가 틀렸다** 로 읽힌다 — 실제로 이 위젯이 두 번 그렇게 신고됐다.
+ * 설명하지 않으면 **숫자가 틀렸다** 로 읽힌다. 실제로 이 위젯이 두 번 그렇게 신고됐다.
  *
  * 그런데 **2x2 아래로는 이 한 줄을 넣을 폭이 없다**(158px 안에 아이콘 40 + 금액 78 이 이미 들어가
  * 있다). 억지로 넣으면 말줄임에 먹혀 **2인 분...** 이 되어 설명이 아니라 잡음이 된다. 그래서 자리가
  * 실제로 있는 크기에만 두고, 나머지는 금액만 말한다.
  *
- * 단독(1인)이면 그리지 않는다 — 나눈 적이 없는데 **1인 분배** 라고 적으면 없는 사건을 말하는 것이다.
+ * 단독(1인)이면 그리지 않는다. 나눈 적이 없는데 **1인 분배** 라고 적으면 없는 사건을 말하는 것이다.
  */
 function ShareNote(props: { drop: PricedDropView }): React.JSX.Element | null {
   if (props.drop.shareCount <= 1) return null
@@ -159,7 +159,7 @@ function RestList(props: { rest: PricedDropView[] }): React.JSX.Element | null {
           <Text fixed numberOfLines={1} className="min-w-0 flex-1 text-[11.5px] text-text">
             {drop.itemName}
           </Text>
-          {/* 목록 행에는 단위를 안 붙인다 — 왼쪽 1위가 이미 말했다. */}
+          {/* 목록 행에는 단위를 안 붙인다. 왼쪽 1위가 이미 말했다. */}
           <Text fixed style={TABULAR_NUMS} className="shrink-0 text-[11.5px] font-bold text-text">
             {formatMesoShort(drop.payoutMeso)}
           </Text>
@@ -176,7 +176,7 @@ function RestList(props: { rest: PricedDropView[] }): React.JSX.Element | null {
  * 서던 자리에 **같은 크기의 빈 슬롯**을 세우면 값이 들어왔을 때 자리가 안 움직이고, 지금이
  * 들어올 곳이 있는데 아직 없다 로 읽힌다(의 빈 상태 태도).
  *
- * 슬롯은 점선이다 — 실선 상자는 내용이 있는 무엇 으로 보이고, 점선은 그 자리가 비어 있다는 관례다.
+ * 슬롯은 점선이다. 실선 상자는 내용이 있는 무엇 으로 보이고, 점선은 그 자리가 비어 있다는 관례다.
  */
 function EmptySlot(props: { sizePx: number }): React.JSX.Element {
   return (
@@ -194,7 +194,7 @@ function EmptySlot(props: { sizePx: number }): React.JSX.Element {
 
 function Empty(props: { variant: Variant }): React.JSX.Element {
   // 1x1 도 **문구를 남긴다.** 슬롯만 세우면 **무엇이 없는지** 를 말하지 못해 타일이 그냥 고장난
-  // 것처럼 보인다 — 이 크기의 채워진 상태에는 라벨이 없어서 더 그렇다.
+  // 것처럼 보인다. 이 크기의 채워진 상태에는 라벨이 없어서 더 그렇다.
   if (props.variant === 'tiny') {
     return (
       <View testID="widget-top-valuable-item" className="flex-1 items-center justify-center gap-1.5 p-2">

@@ -1,8 +1,8 @@
-// 웹판은 네 케이스였고 3단계에서는 그중 **둘(이미지 분기)이 없었다** — 그림이 번들에 없었고,
+// 웹판은 네 케이스였고 3단계에서는 그중 **둘(이미지 분기)이 없었다**. 그림이 번들에 없었고,
 //  로 들어온 뒤에도 크롭을 RN 기하로 옮기는 일이 남아 있었다. step 5 가 그 변환을
 // 붙이며 **네 케이스가 다 선다**.
 //
-// **jest 에서 그림의 고유 크기는 없다**(에셋이 `{ testUri }` 대역이다 — 의
+// **jest 에서 그림의 고유 크기는 없다**(에셋이 `{ testUri }` 대역이다. 의
 // `image-asset.native.ts`). 그래서 크롭이 있어도 배치는 `cover` 폴백으로 떨어진다. 여기서 지킬 수
 // 있는 계약은 **어느 분기로 가는가**(그림이 있으면 `<Image>`, 없으면 `?`)이고, 퍼센트 배치가 맞게
 // 나오는지는 `lib/__tests__/image-crop.test.ts` 의 순수 함수 케이스가 든다.
@@ -21,14 +21,14 @@ describe('BossPortrait', () => {
     expect(portrait.props.role).toBe('img')
     expect(queryByText('?')).toBeNull()
 
-    // 원형 클리핑은 **우리가 명시해야 한다** — 웹은 `background-image` 라 둥근 모서리가 배경을
+    // 원형 클리핑은 **우리가 명시해야 한다**. 웹은 `background-image` 라 둥근 모서리가 배경을
     // 저절로 잘랐지만 RN 의 `<Image>` 는 자식이라 부모가 자르지 않으면 네모로 삐져나온다.
     expect(flattenStyle(portrait.props.style)).toMatchObject({
       borderRadius: 9999,
       overflow: 'hidden',
     })
 
-    // 그림이 **진짜 번들 에셋**이라는 것이 계약이다 — 슬러그가 안 풀리면 조용히 플레이스홀더로
+    // 그림이 **진짜 번들 에셋**이라는 것이 계약이다. 슬러그가 안 풀리면 조용히 플레이스홀더로
     // 떨어지므로(이 웹에서 잡던 그 실패), 소스가 실재하는지까지 본다.
     expect(getByTestId('boss-portrait-image').props.source).toBeDefined()
   })

@@ -1,7 +1,7 @@
 // 웹판(154줄)의 명세를 읽어 다시 쓴 것. 검사하는 것은 의 **선택 → 확인** 2단계다.
 //
 // 갈린 것 셋
-// ① 옵션을 **제목 글자에서 위로 올라가** 잡는다 — RN 은 자식 글자를 합쳐 접근성 이름을 만들지
+// ① 옵션을 **제목 글자에서 위로 올라가** 잡는다. RN 은 자식 글자를 합쳐 접근성 이름을 만들지
 //    않는다(온보딩 `TrackingModeStep` 테스트와 같은 헬퍼).
 // ② `aria-pressed` → `aria-selected` → `accessibilityState.selected`.
 // ③ 누른 뒤 화면을 보려면 `act` 로 흘려보낸다(`CacheClearConfirm` 테스트 파일 머리 ③).
@@ -18,7 +18,7 @@ jest.mock('../../../features/tracking-mode/store', () => ({
   useTrackingModeStore: jest.fn(),
 }))
 
-// 이름이 `mock` 으로 시작해야 한다 — babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데
+// 이름이 `mock` 으로 시작해야 한다. babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데
 // 그 접두사만 예외로 통과시킨다(다른 화면 테스트와 같은 규칙).
 const mockReloadTabStores = jest.fn()
 jest.mock('../reload-tab-stores', () => ({
@@ -122,7 +122,7 @@ describe('TrackingModeModal', () => {
   })
 
   //  정정: 시드는 저장소를 채우지만 수동 모드의 표시 목록을 정하는 것은 스토어
-  // 메모리의 사본이고, RN 탭 화면은 마운트된 채 남아 스스로 다시 읽지 않는다 — 그래서 적용이
+  // 메모리의 사본이고, RN 탭 화면은 마운트된 채 남아 스스로 다시 읽지 않는다. 그래서 적용이
   // 끝나면 세 탭 스토어를 여기서 다시 읽힌다(안 그러면 자동 → 수동 직후 보스 탭이 빈 상태로 뜬다).
   it('적용이 끝나면 컨텐츠·보스·수익 세 탭 스토어를 다시 읽힌다', async () => {
     const view = await renderOverlay(<TrackingModeModal onClose={jest.fn()} />)
@@ -133,7 +133,7 @@ describe('TrackingModeModal', () => {
     expect(mockReloadTabStores).toHaveBeenCalledWith(['content', 'boss', 'profit'])
   })
 
-  // 시드가 끝나기 전에 읽히면 그 회차가 옛 멤버십을 담는다 — 순서가 계약이다.
+  // 시드가 끝나기 전에 읽히면 그 회차가 옛 멤버십을 담는다. 순서가 계약이다.
   it('setMode가 resolve되기 전에는 다시 읽히지 않는다', async () => {
     let finish: () => void = () => {}
     mockTrackingModeStore({
@@ -173,7 +173,7 @@ describe('TrackingModeModal', () => {
     expect(mockReloadTabStores).not.toHaveBeenCalled()
   })
 
-  // : 수동 전환의 `setMode` 는 시드가 전부 끝난 뒤에만 resolve 된다 — 그동안
+  // : 수동 전환의 `setMode` 는 시드가 전부 끝난 뒤에만 resolve 된다. 그동안
   // 닫히면 사용자가 방금 고른 모드가 아직 준비 안 된 상태를 본다.
   it('setMode가 resolve되기 전까지 옵션·취소·적용이 모두 비활성이고 모달이 닫히지 않는다', async () => {
     let finish: () => void = () => {}

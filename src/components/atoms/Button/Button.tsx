@@ -74,7 +74,7 @@ function join(base: string, extra: string | undefined): string {
  * </Button>
  *
  * @example
- * // 대기. 라벨은 그대로 두고 `busy` 만 켠다 — 스피너는 버튼이 그린다
+ * // 대기. 라벨은 그대로 두고 `busy` 만 켠다. 스피너는 버튼이 그린다
  * <Button variant="primary" busy={isSubmitting} disabled={isSubmitting} onPress={handleSubmit}>
  *   확인
  * </Button>

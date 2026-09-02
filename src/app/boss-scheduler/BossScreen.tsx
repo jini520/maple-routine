@@ -1,38 +1,38 @@
 // 보스 스케줄러 — 주간/월간 보스 진행 상태(`docs/features/boss-scheduler.md`).
 //
-// **이 화면에 걸린 ADR 이 스물여섯이다** — 저장소에서 `BossProfitScreen` 다음으로 무겁다. 대부분은
+// **이 화면에 걸린 ADR 이 스물여섯이다**. 저장소에서 `BossProfitScreen` 다음으로 무겁다. 대부분은
 // 화면에 안 보이는 판단이라(완료 승격 · 시즌 보스 판정 · 실패의 목적지 · 빈 상태의 판정 시점) 아래
 // 주석이 그 자리를 지목한다. 목록은 `docs/migration/parity-inventory.md` §2.4.
 //
 // ══ RN 으로 옮기며 **사라진** 것 넷 — 컨텐츠 스케줄러와 같다 ═══════════════════════════
 //
 // ① **당김을 손으로 만들던 제스처 훅과 커스텀 인디케이터**. 지금은
-//    `RefreshControl` 이 맡는다. **컨텐츠 스케줄러와 같은 배선이어야 한다** — 두 탭이 같은 제스처에
+//    `RefreshControl` 이 맡는다. **컨텐츠 스케줄러와 같은 배선이어야 한다**. 두 탭이 같은 제스처에
 //  다르게 반응하면 그 자체가 회귀다. 은 글자 그대로 지켜진다.
-// ② **목록을 손가락 따라 내리던 `transform`** — 그 일을 OS 가 한다.
+// ② **목록을 손가락 따라 내리던 `transform`**. 그 일을 OS 가 한다.
 // ③ **`useScreenStackStore` 의 깊이로 당김을 끄던 배선**. 하위 페이지는 루트
 //    스택에 **덮여** 올라오므로 아래 화면의 스크롤 뷰에 손가락이 닿지 않는다.
 // ④ **`<Outlet />`**(언마운트 금지). 관리 페이지는 형제 라우트가 아니라 **형제 탭**이라
-//  (— 그전에는 루트 스택 push 였다) 이 화면이 트리에 그대로 남는다 — 계약을
+//  (— 그전에는 루트 스택 push 였다) 이 화면이 트리에 그대로 남는다. 계약을
 //    코드가 아니라 내비게이터가 지킨다.
 //
 // ══ 갈린 것 다섯 ═══════════════════════════════════════════════════════════════════
 //
 // ① `useNavigate('/boss/manage')` → `openTab('BossManage')`(같은 층의 형제).
-//  **(이동 전에 스크롤을 0으로)은 함께 사라진다** — 그 처방이 풀던 것은 네 탭이
+//  **(이동 전에 스크롤을 0으로)은 함께 사라진다**. 그 처방이 풀던 것은 네 탭이
 //  문서 스크롤 하나를 공유하던 문제이고, RN 에서는 스크롤이 화면과 함께 죽어 계승할
-//  오프셋이 없다. **목적지가 push 가 아니라 형제 탭인 것은 이다** — 그래서
+//  오프셋이 없다. **목적지가 push 가 아니라 형제 탭인 것은 이다**. 그래서
 //    이 화면의 헤더에는 그리로 가는 버튼이 아예 없고, 남은 호출부는 빈 상태 CTA 하나다.
 // ② **캐릭터 관리 피커가 이 화면에 없다**. 헤더 버튼도, 그것이 열던 모달도, 그 모달을
 //  먹여 살리던 로스터 조회도, 웹의 `?openPicker=1`
-//  을 받던 라우트 파라미터도 **설정 화면으로 통째로 옮겨갔다** — 추적 목록은 이후 앱
+//  을 받던 라우트 파라미터도 **설정 화면으로 통째로 옮겨갔다**. 추적 목록은 이후 앱
 //    전역 하나인데 그것을 고르는 자리만 다섯이었다. 남은 흔적은 빈 상태 CTA 하나이고, 그것도 모달이
 //    아니라 **설정 탭을 피커가 열린 채로** 연다.
 // ③ **카드 눌림 피드백이 절반만 온다**(— 이 카드의 어포던스가 그것뿐이다).
 //    `active:scale-[.985]` 는 NativeWind 가 그대로 낸다(실측). `active:brightness-110` 은 **조용히
-//    사라진다** — NativeWind 가 `brightness-*` 를 네이티브 `filter` 로 내보내지 않는다. 탈출구인
+//    사라진다**. NativeWind 가 `brightness-*` 를 네이티브 `filter` 로 내보내지 않는다. 탈출구인
 //    `style={({pressed}) => …}` 함수도 못 쓴다: NativeWind 가 `Pressable` 의 style **함수를 통째로
-//    삼킨다**(className 이 없어도 그렇다 — 실측). 남는 길은 `onPressIn/Out` 상태를 카드마다 두는
+//    삼킨다**(className 이 없어도 그렇다. 실측). 남는 길은 `onPressIn/Out` 상태를 카드마다 두는
 //    것뿐인데, 눌림을 알리는 일은 축소가 이미 하므로 그 값을 치르지 않는다(육안 대조 목록).
 // ④ `<button>` → `Pressable` + `Text`, `hover:` 는 사라진다(RN 에 호버가 없다).
 // ⑤ `animate-spin` → Reanimated CSS 애니메이션(`lib/animation.ts`). step 4 가 화면 안 상수로 두며
@@ -109,12 +109,12 @@ function BossCard(props: {
   const crop = props.crop ?? getBossPortraitCrop(boss.portraitSlug)
   const bossName = boss.matchedBossName ?? boss.apiName
 
-  // 카드 배경/보더/보스명 텍스트는 페이지 표면이 아니라 일러스트 위 배색을 따른다 — bleed·페이드·
+  // 카드 배경/보더/보스명 텍스트는 페이지 표면이 아니라 일러스트 위 배색을 따른다. bleed·페이드·
   // text-shadow가 어두운 배경을 전제로 튜닝됐기 때문에 라이트 테마에서 페이지 토큰(bg-surface 등)을
   // 쓰면 대비가 깨진다. `IllustratedCard` 가 카드 안쪽의 기준 표면을 media-surface로 바꾸므로
   //  안에서는 앱 전역과 같은 레시피(bg-surface-2·text-text)를 그대로 쓴다.
   // 완료 뱃지는 앱 전체가 공유하는 "완료/성공" 의미 색(secondary)이라 스코프 안에서도 그대로다.
-  // : 카드 전면(80px)이 버튼이다. **어포던스 표식을 두지 않는다** — 셰브런·연필을
+  // : 카드 전면(80px)이 버튼이다. **어포던스 표식을 두지 않는다**. 셰브런·연필을
   // 얹지 않고 눌림 피드백만 준다(카드 규격 무변경과 맞바꾼 값). 완료된 보스도 눌린다:
   // 파티 인원은 완료 여부와 무관한 상시 데이터다.
   return (
@@ -122,7 +122,7 @@ function BossCard(props: {
       role="button"
       aria-label={`${bossName} 파티 설정`}
       onPress={props.onEdit}
-      // 밝기 몫은 못 온다(파일 머리 ③) — 축소만 남는다.
+      // 밝기 몫은 못 온다(파일 머리 ③). 축소만 남는다.
       className="rounded-[14px] active:scale-[.985]"
     >
       <IllustratedCard className="relative h-20 overflow-hidden">
@@ -145,9 +145,9 @@ function BossCard(props: {
           </View>
 
           <View className="flex-row items-center gap-1.5">
-            {/* — 진행 불가면 `완료` 자리를 대체한다. 진행할 수 없는 보스의
+            {/*. 진행 불가면 `완료` 자리를 대체한다. 진행할 수 없는 보스의
                 완료 여부는 게임이 준 스냅샷이지 이 캐릭터가 잡을 수 있다는 뜻이 아니다. */}
-            {/* — 주간 12마리를 채우면 남은 미처치 보스는 `마감`이다. **완료로
+            {/*. 주간 12마리를 채우면 남은 미처치 보스는 `마감`이다. **완료로
                 칠하지 않는다**: 안 잡은 보스를 완료로 두면 그 거짓이 보스 수익의 결정석 금액이
                 된다. 배색은 `Badge` 의 `muted` 톤을 그대로 쓴다(실패도 경고도 아니고 **이번 주엔
                 차례가 없다** 는 사실이라 눌린 회색이다 — 새 색을 만들지 않는다).
@@ -156,9 +156,9 @@ function BossCard(props: {
             {props.isBlocked === true ? (
               <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
             ) : boss.isWeeklyLimitClosed ? (
-              // **완료와 같은 상자다**(사용자 지정) — 자리를 대신하는 배지라 크기가 다르면 같은
+              // **완료와 같은 상자다**(사용자 지정). 자리를 대신하는 배지라 크기가 다르면 같은
               // 자리에서 배지가 커졌다 작아졌다 하며 카드 오른쪽 끝이 흔들린다. 갈리는 것은 색뿐이고,
-              // 그 색은 `Badge` 의 `muted` 톤이다(실패도 경고도 아닌 **차례가 아니다** — 눌린 회색).
+              // 그 색은 `Badge` 의 `muted` 톤이다(실패도 경고도 아닌 **차례가 아니다**. 눌린 회색).
               <Badge variant="muted" weight="bold">
                 마감
               </Badge>
@@ -188,7 +188,7 @@ export function BossScreen(): React.JSX.Element {
     // 모드에서만 멤버십을 바꾼다.
     setPartySize,
     setManualBossDifficulty,
-    // : 탭과 두 필터는 스토어 소유다 — 이 화면이 언마운트돼도 살아남고, 관리
+    // : 탭과 두 필터는 스토어 소유다. 이 화면이 언마운트돼도 살아남고, 관리
     // 페이지가 같은 탭 값을 읽어 보던 탭 그대로 열린다.
     // **필터는 하나다**(— 정정). 목록이 하나가 되면서
     // **두 축이 서로 독립** 이라는 문장이 뜻을 잃었다(독립할 상대가 없다).
@@ -198,7 +198,7 @@ export function BossScreen(): React.JSX.Element {
   // 선택은 화면·스토어가 아니라 **여기 한 벌**이다.
   const { selectedOcid, select } = useCharacterSelectionStore()
   // **당김이 시작한 회차에만** 인디케이터가 돈다. 헤더 버튼·자동 조회는 같은
-  // 재조회를 부르지만 인디케이터는 안 연다 — 버튼은 자기 스피너와 **조회 중...** 을 이미 갖고 있고
+  // 재조회를 부르지만 인디케이터는 안 연다. 버튼은 자기 스피너와 **조회 중...** 을 이미 갖고 있고
   // 자동 조회는 원래 조용해야 하는 것이다.
   const pull = usePullRefresh(() => refresh(trackedOcids ?? []))
   const { mode } = useTrackingModeStore()
@@ -209,7 +209,7 @@ export function BossScreen(): React.JSX.Element {
   // : 카드 탭으로 여는 파티 인원 모달. 편집 중인 난이도를 함께 들고 있는 이유는
   // openPartyModal 주석 참고.
   const [partyModal, setPartyModal] = useState<{ boss: MatchedBoss; difficulty: BossDifficulty } | null>(null)
-  // : 동기화 전체 실패는 인라인 문단이 아니라 토스트로 알린다 — 지속 상태("n분 전")는
+  // : 동기화 전체 실패는 인라인 문단이 아니라 토스트로 알린다. 지속 상태("n분 전")는
   // 새로고침 옆 표기가 이미 담당하고, 토스트에는 원인을 푸는 액션을 붙일 수 있다.
   useScheduleSyncErrorToast(error, { onRetry: () => refresh(trackedOcids ?? []) })
 
@@ -227,13 +227,13 @@ export function BossScreen(): React.JSX.Element {
   // 캐릭터 관리에서 정한 저장 배열 순서다. core 를 안 고치는 이유는 `orderByTracked` 머리에 있다.
   const characters = orderByTracked(storeCharacters, trackedOcids ?? [])
 
-  // 화면 넷이 **같은 규칙**으로 고른다 — 선택만 합치고 폴백을 화면마다 두면
+  // 화면 넷이 **같은 규칙**으로 고른다. 선택만 합치고 폴백을 화면마다 두면
   // **공유했는데 화면마다 다른 캐릭터** 가 다시 생긴다.
   const selected = resolveSelectedCharacter(selectedOcid, characters)
 
   // : 캐릭터별 실패도 인라인 문단이 아니라 토스트다. syncSchedules는 캐릭터 단위
   // 실패를 던지지 않고 결과에 실어 반환하므로(401/429는 나머지 캐릭터까지 같은 에러로 채운다)
-  // 실패의 대부분이 위의 전역 error가 아니라 이 값으로 온다 — 두 훅이 동시에 울릴 조합은 없다
+  // 실패의 대부분이 위의 전역 error가 아니라 이 값으로 온다. 두 훅이 동시에 울릴 조합은 없다
   // (전역 error가 채워지는 경로에서는 characters가 캐시 뷰로 교체되고 그 뷰의 error는 null이다).
   useScheduleSyncErrorToast(selected?.error ?? null, { onRetry: () => refresh(trackedOcids ?? []) })
 
@@ -242,19 +242,19 @@ export function BossScreen(): React.JSX.Element {
   // today 의 `캐릭터별 남은 스케줄`이 세는 **남은 보스** 가 이 화면이 보여 주는 것과 한 글자도
   // 달라선 안 되기 때문이다. 이유·규칙·**캐릭터를 인자로 받는** 근거는 `displayed-bosses.ts` 파일 머리.
   //
-  // **순서는 여기서 정하지 않는다** — `displayedBossSections` 가 월간을 위에
+  // **순서는 여기서 정하지 않는다**. `displayedBossSections` 가 월간을 위에
   // 두고, 이 화면은 받은 순서대로 그린다. 화면이 다시 정렬하면 그 결정이 두 곳이 된다.
   const sections =
     selected === null ? [] : displayedBossSections(selected, mode, manualTrackedByOcid)
 
   // : 링은 **주간 하나**다(온전한 원). 월간은 종류가 하나뿐이라 **몇 개 중 몇 개**
-  // 가 뜻을 갖지 못한다 — 표현 방법은 따로 정한다(사용자 지시, 2026-08-16).
-  // **솔로/파티 필터는 안 탄다**(결정 4) — 필터는 **지금 보고 싶은 것** 이지 진행이 아니다.
+  // 가 뜻을 갖지 못한다. 표현 방법은 따로 정한다(사용자 지시, 2026-08-16).
+  // **솔로/파티 필터는 안 탄다**(결정 4). 필터는 **지금 보고 싶은 것** 이지 진행이 아니다.
   //
-  // **요구 레벨 미달은 분모에서 빠진다** — 남겨 두면 그 캐릭터의 링이
+  // **요구 레벨 미달은 분모에서 빠진다**. 남겨 두면 그 캐릭터의 링이
   // 100%에 절대 도달하지 못한다. 컨텐츠 진행률과 **같은 판정 함수**를 본다.
   //
-  // **마감도 다 한 것 으로 센다**(후속, 사용자 지정) — 주간 한도를 채웠으면
+  // **마감도 다 한 것 으로 센다**(후속, 사용자 지정). 주간 한도를 채웠으면
   // 그 보스는 이번 주에 더 할 수 없으므로, 분자에서 빼면 링이 영영 100%에 못 닿고 **아직 남았다** 는
   // 거짓을 말한다(레벨 미달을 분모에서 뺀 것과 같은 이유, 다른 자리). **분모에서 빼지 않는 것**이
   // 레벨 미달과 갈리는 지점이다: 저쪽은 **이 캐릭터의 일이 아니다** 이고 이쪽은 **이번 주 일은 끝났다**
@@ -289,7 +289,7 @@ export function BossScreen(): React.JSX.Element {
   }))
 
   // 챌린저스 월드면 registration_flag와 무관하게 시즌 보스 완료 여부를 배지로 보여준다.
-  // **판정은 `isChallengersWorld` 가 한다** — 화면이 월드 이름을 다시 뜯지 않는다(관리 페이지가
+  // **판정은 `isChallengersWorld` 가 한다**. 화면이 월드 이름을 다시 뜯지 않는다(관리 페이지가
   // 시즌 보스를 목록에 넣는 판정과 같은 함수여야 두 화면이 갈라지지 않는다).
   const seasonBosses =
     selected !== null && selected.world !== undefined && isChallengersWorld(selected.world)
@@ -304,7 +304,7 @@ export function BossScreen(): React.JSX.Element {
 
   // : boss_party_settings에 없는 조합은 솔로(1인) 취급 — 별도 API 재호출
   // 없이 이미 로드된 partySizes 맵으로만 클라이언트 사이드 필터링한다.
-  // 원소 타입을 안 좁힌다 — 거르기만 하는 함수라 `DisplayedBoss` 가 들어오면 그대로 나가야 한다.
+  // 원소 타입을 안 좁힌다. 거르기만 하는 함수라 `DisplayedBoss` 가 들어오면 그대로 나가야 한다.
   function filterByPartySize<T extends MatchedBoss>(bosses: T[], ocid: string, filter: PartyFilter): T[] {
     if (filter === 'all') return bosses
     return bosses.filter((boss) => {
@@ -313,7 +313,7 @@ export function BossScreen(): React.JSX.Element {
     })
   }
 
-  // 필터를 건 뒤에야 **비었다** 가 성립한다 — 그래서 빈 무리를 걷는 것이 여기다.
+  // 필터를 건 뒤에야 **비었다** 가 성립한다. 그래서 빈 무리를 걷는 것이 여기다.
   // `displayedBossSections` 가 빈 무리도 자리를 남겨 주는 이유가 이 순서 때문이다.
   const filteredSections =
     selected === null
@@ -322,8 +322,8 @@ export function BossScreen(): React.JSX.Element {
           ...section,
           bosses: filterByPartySize(section.bosses, selected.ocid, partyFilter),
         }))
-  // `주간` 헤더가 싣는 배지 — 이 값들은 **표시 목록과 무관하다**. `weeklyBossClearCount` 는
-  // **앱이 센** 이번 주 처치 수이고(`countClearedWeeklyBosses` — 넥슨의
+  // `주간` 헤더가 싣는 배지. 이 값들은 **표시 목록과 무관하다**. `weeklyBossClearCount` 는
+  // **앱이 센** 이번 주 처치 수이고(`countClearedWeeklyBosses`. 넥슨의
   // `weekly_boss_clear_count` 는 타입에만 있고 제품 코드는 안 쓴다. 2026-08-30 정정:
   // 이 자리에 **게임이 세는 수** 라고 적혀 있었다), 시즌 완료 여부도 등록과 무관하다
   // (— 그래서 미등록·미완료 시즌 보스는 카드로 안 서면서 배지만 뜬다).
@@ -333,7 +333,7 @@ export function BossScreen(): React.JSX.Element {
     weeklySeasonState !== null ||
     (selected?.weeklyBossClearCount != null && selected.weeklyBossClearLimitCount != null)
 
-  // 빈 무리의 헤더는 걷는다 — 이름만 남으면 **여기 뭔가 있었다** 로 읽힌다.
+  // 빈 무리의 헤더는 걷는다. 이름만 남으면 **여기 뭔가 있었다** 로 읽힌다.
   // **단 배지를 싣고 있으면 남긴다.** 탭 시절 그 배지들은 목록이 비어도 떠 있었고(탭 줄에 있었다),
   // 무리가 비었다는 이유로 지우면 **이번 주 3마리 잡았다** 를 화면이 말할 자리가 아예 없어진다.
   const visibleSections = filteredSections.filter(
@@ -366,7 +366,7 @@ export function BossScreen(): React.JSX.Element {
 
   // : 카드를 탭하면 열리는 파티 인원·난이도 모달.
   //
-  // 편집 중인 난이도를 **모달이 따로 들고 있다** — 수동 모드에서 난이도를 바꾸면 멤버십이 바뀌어
+  // 편집 중인 난이도를 **모달이 따로 들고 있다**. 수동 모드에서 난이도를 바꾸면 멤버십이 바뀌어
   // 카드가 다시 그려지지만, 자동 모드에서는 카드가 그대로라 스토어만으로는 "지금 무엇을 편집
   // 중인지"를 알 수 없다(결정 3: 자동 모드의 전환은 멤버십이 아니라 편집 대상 전환이다).
   function openPartyModal(boss: MatchedBoss): void {
@@ -385,7 +385,7 @@ export function BossScreen(): React.JSX.Element {
     }
   }
 
-  // 수동 모드에서만 멤버십이 바뀐다. 자동 모드는 편집 대상만 옮긴다 — 카드의 난이도는 게임 등록
+  // 수동 모드에서만 멤버십이 바뀐다. 자동 모드는 편집 대상만 옮긴다. 카드의 난이도는 게임 등록
   // 기준이라 앱이 못 바꾼다.
   async function handleModalDifficulty(difficulty: BossDifficulty): Promise<void> {
     if (partyModal === null || selected === null || modalBossName === null) return
@@ -398,7 +398,7 @@ export function BossScreen(): React.JSX.Element {
     }
   }
 
-  // : 이 화면은 더 이상 피커를 열지 않는다 — 추적 목록을 고르는 자리는 설정
+  // : 이 화면은 더 이상 피커를 열지 않는다. 추적 목록을 고르는 자리는 설정
   // 하나뿐이라, 빈 상태 CTA 는 모달 대신 **설정 탭을 피커가 열린 채로** 연다.
   function goToCharacterManage(): void {
     openTab('Settings', { openPicker: true })
@@ -415,12 +415,12 @@ export function BossScreen(): React.JSX.Element {
     openTab('BossManage')
   }
 
-  // : 빈 상태 문구는 모드(수동/자동)별로 나눈다. 수동 모드만 CTA를 준다 — 자동 모드가
+  // : 빈 상태 문구는 모드(수동/자동)별로 나눈다. 수동 모드만 CTA를 준다. 자동 모드가
   // 지시하는 곳("게임에서 등록")은 앱 밖이라 데려다줄 수 없다.
   //
   // **주기별로 나누던 축은 사라졌다**(— 정정). 목록이 하나라
   // 판정도 하나이고, 무리별로 물으면 검마를 안 잡는 캐릭터마다 **추적할 월간 보스가 없습니다** 가
-  // 뜬다 — 그것은 빈 상태가 아니라 **그냥 그 캐릭터의 목록**이다.
+  // 뜬다. 그것은 빈 상태가 아니라 **그냥 그 캐릭터의 목록**이다.
   function bossEmptyProps(): React.ComponentProps<typeof EmptyState> {
     if (mode === 'manual') {
       return {
@@ -452,7 +452,7 @@ export function BossScreen(): React.JSX.Element {
     // 웹의 `min-h-[calc(100dvh …)]` 자리는 `flex-1` 이다(탭 상자가 이미 탭바를 뺀 크기다).
     return (
       <View testID="screen-Boss" className="flex-1 p-4" style={{ paddingTop: topSafeAreaPx }}>
-        {/* 헤더 셸을 안 쓰는 가지에서도 제목 줄은 같은 프리미티브다 — 빈 상태와
+        {/* 헤더 셸을 안 쓰는 가지에서도 제목 줄은 같은 프리미티브다. 빈 상태와
             목록 상태를 오갈 때 제목이 튀면 그것이 가장 눈에 띄는 자리다. */}
         <PageHeaderTitleRow>
           <Text className="text-lg font-semibold text-text">보스 스케줄러</Text>
@@ -475,7 +475,7 @@ export function BossScreen(): React.JSX.Element {
     <View testID="screen-Boss" className="flex-1">
       <ScreenScroll
         // : 당김은 헤더 버튼과 **같은 재조회**를 부르고, 색만
-        // 테마에서 넘긴다. 컨텐츠 스케줄러와 **같은 배선이어야 한다** — 두 탭이 같은 제스처에
+        // 테마에서 넘긴다. 컨텐츠 스케줄러와 **같은 배선이어야 한다**. 두 탭이 같은 제스처에
         // 다르게 반응하면 그 자체가 회귀다.
         refreshControl={
           <RefreshControl
@@ -487,7 +487,7 @@ export function BossScreen(): React.JSX.Element {
           />
         }
         header={
-          // 제목~솔로/파티 필터도 목록과 **함께 스크롤된다** — 헤더는 `ScreenScroll`
+          // 제목~솔로/파티 필터도 목록과 **함께 스크롤된다**. 헤더는 `ScreenScroll`
           // 의 첫 자식이다. `fixed` 도 spacer 도 없다: 가 웹에서 풀던 문제가
           // 구조적으로 없다(`PageHeader` 파일 머리).
           <PageHeader>
@@ -515,7 +515,7 @@ export function BossScreen(): React.JSX.Element {
               </Pressable>
             </PageHeaderTitleRow>
 
-            {/* 조건이 **줄 밖**에 있다 — 컨텐츠 스케줄러와 같은 이유다(그 파일의 같은 자리):
+            {/* 조건이 **줄 밖**에 있다. 컨텐츠 스케줄러와 같은 이유다(그 파일의 같은 자리):
                 안에 두면 캐릭터가 없는 동안 빈 줄이 `gap-4` 를 두 번 먹는다. */}
             {characters.length > 0 && selected !== null && (
               <CharacterRail
@@ -563,7 +563,7 @@ export function BossScreen(): React.JSX.Element {
       >
         {characters.length > 0 && selected !== null && (
           <View testID="pull-content" className="gap-4 px-4 pb-4">
-            {/* 빈 상태 둘은 **목록 하나**를 보고 판정한다 — 무리별로 물으면
+            {/* 빈 상태 둘은 **목록 하나**를 보고 판정한다. 무리별로 물으면
                 검마를 안 잡는 캐릭터마다 **추적할 월간 보스가 없습니다** 가 뜬다. */}
             {displayedCount === 0 && (mode === 'manual' || !selected.isStale) && (
               <EmptyState {...bossEmptyProps()} />
@@ -610,7 +610,7 @@ export function BossScreen(): React.JSX.Element {
           bossName={modalBossName}
           cycleLabel={partyModal.boss.cycle === 'monthly' ? '월간 보스' : '주간 보스'}
           portraitSlug={partyModal.boss.portraitSlug}
-          // 참조표에 없는 보스(매칭 실패 원문명)는 후보를 알 수 없다 — 지금 난이도 하나만 그려
+          // 참조표에 없는 보스(매칭 실패 원문명)는 후보를 알 수 없다. 지금 난이도 하나만 그려
           // 세그먼트가 통째로 사라지지 않게 한다.
           difficulties={
             getSupportedDifficulties(modalBossName).length > 0

@@ -1,21 +1,21 @@
-// 설정 하위 페이지 `기능 설명`(정정, 2026-08-10) — 앱 기능을 **기능 축**으로
+// 설정 하위 페이지 `기능 설명`(정정, 2026-08-10). 앱 기능을 **기능 축**으로
 // 나열한 카탈로그이고, 사용법 설명의 **원천**이다.
 //
 // 처음엔 이 화면이 없었다. 안내가 개발 노트 항목에 붙어 버전 축으로만 존재했는데, 그러면
-// *"지금 이 앱을 어떻게 쓰나"* 에 답할 자리가 없다 — 오래된 기능이 옛 버전 카드 안에 묻힌다.
+// *"지금 이 앱을 어떻게 쓰나"* 에 답할 자리가 없다. 오래된 기능이 옛 버전 카드 안에 묻힌다.
 // 지금은 **여기가 원천이고 개발 노트는 링크만 건다**(같은 설명을 두 벌 두면 반드시 갈라진다).
 //
-// **탭은 하단 탭바와 같은 축**이다(사용자 지정) — 이미 아는 구획이라 안내를 찾을 때 새로 배울
+// **탭은 하단 탭바와 같은 축**이다(사용자 지정). 이미 아는 구획이라 안내를 찾을 때 새로 배울
 // 것이 없다. `유틸리티` 만 그 축 밖이고 **지금은 비어 있어 탭이 뜨지 않는다.**
 //
-// 한 안내가 **여러 그룹에 설 수 있다** — `캐릭터 관리`는 컨텐츠·보스가 같은 피커를 쓰므로 양쪽
+// 한 안내가 **여러 그룹에 설 수 있다**. `캐릭터 관리`는 컨텐츠·보스가 같은 피커를 쓰므로 양쪽
 // 탭에 같은 글로 선다. 사본을 두면 갈라진다.
 //
 // ── RN 으로 옮기며 갈린 것 셋 ────────────────────────────────────────────────────────
 //
 // ① **`StackScreen` → 루트 스택 + `ScreenScroll`**(`SettingsAboutScreen` 파일 머리와 같다).
 // ② **탭 줄의 `role="tablist"` 가 사라지고 `aria-selected` 만 남는다.** RN 접근성에 `tablist`
-//    컨테이너 역할이 없어(`role` 이 받는 값 목록에 없다) 남겨도 조용히 버려진다 — 실제로 선택
+//    컨테이너 역할이 없어(`role` 이 받는 값 목록에 없다) 남겨도 조용히 버려진다. 실제로 선택
 //    상태를 나르는 것은 각 탭의 `aria-selected` 이고 그것은 그대로 산다.
 // ③ **경로가 아니라 파라미터로 민다.** 웹은 경로를 조립하는 작은 모듈을 따로 뒀는데, 목록이 안내
 //    카탈로그를 import 하지 않게 하려는 것이 그 요점이었다. RN 은 라우트 이름 + `{ guideId }` 라
@@ -40,7 +40,7 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
 import { useSettingsNavigation } from './use-settings-navigation'
 
-// 탭 토글은 `design-system.md` `탭 토글`절 그대로다 — **새 스타일을 만들지 않는다.**
+// 탭 토글은 `design-system.md` `탭 토글`절 그대로다. **새 스타일을 만들지 않는다.**
 const ACTIVE_TAB_CLASS = 'rounded-full bg-primary-tint px-3 py-[5px]'
 const ACTIVE_TAB_TEXT_CLASS = 'text-sm font-semibold text-primary-ink'
 const INACTIVE_TAB_CLASS = 'px-3 py-[5px]'
@@ -60,7 +60,7 @@ export function SettingsFeatureGuideListScreen(): React.JSX.Element {
   // 그대로 그 하나로 남는다.
   const [selected, setSelected] = useState<FeatureGuideGroup | undefined>(() => groups[0])
   const active = selected !== undefined && groups.includes(selected) ? selected : groups[0]
-  // 한 안내가 여러 그룹에 설 수 있다 — `캐릭터 관리`는 컨텐츠·보스 양쪽 탭에 같은 글로 선다.
+  // 한 안내가 여러 그룹에 설 수 있다. `캐릭터 관리`는 컨텐츠·보스 양쪽 탭에 같은 글로 선다.
   const guides = FEATURE_GUIDES.filter(
     (guide) => active !== undefined && guide.groups.includes(active),
   )
@@ -87,12 +87,12 @@ export function SettingsFeatureGuideListScreen(): React.JSX.Element {
       {/* `screen-<라우트 이름>` 은 자리표시자에게서 물려받은 계약이다(`SettingsAboutScreen` 주석). */}
       <View className="gap-3 px-4 pb-4" testID="screen-SettingsFeatureGuideList">
         {groups.length === 0 ? (
-          // 지금은 도달할 수 없는 자리다(안내가 열한 벌 있다) — 그래도 데이터가 비어도 화면이
+          // 지금은 도달할 수 없는 자리다(안내가 열한 벌 있다). 그래도 데이터가 비어도 화면이
           // 깨지지 않아야 한다. 목록 빈 상태라 컨텍스트 아이콘 + inline 크기.
           <EmptyState icon={BookOpenIcon} title="아직 준비된 기능 설명이 없습니다" />
         ) : (
           <>
-            {/* **선택지가 둘 이상일 때만** 탭 줄이 뜻을 갖는다 — 하나뿐이면 고를 것이 없다. */}
+            {/* **선택지가 둘 이상일 때만** 탭 줄이 뜻을 갖는다. 하나뿐이면 고를 것이 없다. */}
             {groups.length > 1 && (
               <View className="flex-row items-center gap-4">
                 {groups.map((group) => {

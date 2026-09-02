@@ -10,12 +10,12 @@ const closeConnectionMock = jest.fn()
 const dbOpenMock = jest.fn()
 const dbExecuteMock = jest.fn()
 
-// 포트 역전 후 db.ts는 플러그인이 아니라 SqlitePort에만 의존한다 — 가로채는 지점이
+// 포트 역전 후 db.ts는 플러그인이 아니라 SqlitePort에만 의존한다. 가로채는 지점이
 // SQLite 플러그인 모듈 목에서 주입된 가짜 포트로 바뀌었을 뿐, 검증 대상(어떤
 // 인자로 커넥션을 여는가·stale 커넥션을 닫는가·스키마와 마이그레이션을 도는가)은 그대로다.
 // `retrieveConnection` 을 쓰지 않는다는 것은 이제 포트 표면에 그 연산이 없어 구조적으로 보장된다.
 // ADR-069 결정 1: openBossProfitDb가 PRAGMA table_info로 world 컬럼 존재를 확인한다(SQLite에
-// ADD COLUMN IF NOT EXISTS가 없다) — 기본값은 "이미 있음"으로 둬 기존 케이스가 ALTER를 타지 않게 한다.
+// ADD COLUMN IF NOT EXISTS가 없다). 기본값은 "이미 있음"으로 둬 기존 케이스가 ALTER를 타지 않게 한다.
 const fakeDb = { open: dbOpenMock, execute: dbExecuteMock, query: dbQueryMock, run: jest.fn() }
 
 beforeEach(async () => {
@@ -29,7 +29,7 @@ beforeEach(async () => {
   dbOpenMock.mockReset().mockResolvedValue(undefined)
   dbExecuteMock.mockReset().mockResolvedValue({ changes: { changes: 0 } })
 
-  // resetModules 뒤에 주입한다 — db.ts가 그때 새로 만들어지는 ports 인스턴스를 읽기 때문이다.
+  // resetModules 뒤에 주입한다. db.ts가 그때 새로 만들어지는 ports 인스턴스를 읽기 때문이다.
   const { setSqlitePort } = require('../../ports') as typeof import('../../ports')
   setSqlitePort({
     isWebPlatform: isWebPlatformMock,
@@ -72,7 +72,7 @@ describe('getBossProfitDb', () => {
   })
 
   // 메이린 카드 표시명을 API content_name('시즌 보스 메이린')과 통일하며 boss 식별 키를 바꿨다
-  // (2026-07-22) — 기존에 저장된 파티 설정·수익 기록이 새 키를 못 찾는 고아 데이터가 되지
+  // (2026-07-22). 기존에 저장된 파티 설정·수익 기록이 새 키를 못 찾는 고아 데이터가 되지
   // 않도록, 열 때마다 옛 키를 새 키로 옮겨준다(이미 옮겨졌으면 WHERE절에 걸리는 행이 없어
   // no-op).
   it('boss_party_settings/boss_profit_records의 옛 boss 키(메이린)를 새 키(시즌 보스 메이린)로 마이그레이션한다', async () => {
@@ -120,7 +120,7 @@ describe('getBossProfitDb', () => {
   })
 
   // 커넥션 매니저 인스턴스 자체를 한 번만 만드는 것은 이제 어댑터(capacitor-sqlite)의
-  // 몫이다 — db.ts가 지는 계약은 "같은 이름 커넥션을 두 번 열지 않는다" 하나로 남는다.
+  // 몫이다. db.ts가 지는 계약은 "같은 이름 커넥션을 두 번 열지 않는다" 하나로 남는다.
   it('여러 번 호출해도 커넥션을 한 번만 만든다(싱글턴)', async () => {
     const { getBossProfitDb } = require('../db') as typeof import('../db')
 
@@ -172,7 +172,7 @@ describe('getBossProfitDb', () => {
 
 // ADR-052 결정 2: 삭제 대상 테이블 목록의 단일 진실 공급원은 db.ts의 테이블 정의 배열 하나다.
 // 정의 배열을 순회해 CREATE하므로 구조적으로 drift가 어렵지만, 배열을 거치지 않고 db.execute에
-// CREATE 문을 직접 끼워 넣는 경우까지 잡기 위해 소스 자체를 읽어 대조한다 — 여기서 누락되면
+// CREATE 문을 직접 끼워 넣는 경우까지 잡기 위해 소스 자체를 읽어 대조한다. 여기서 누락되면
 // 캐시 데이터 삭제·용량 계산이 그 테이블을 조용히 빠뜨린다(boss_drop_records가 그랬다).
 describe('BOSS_PROFIT_TABLE_NAMES', () => {
   it('db.ts가 만드는 모든 테이블이 export된 이름 목록에 들어 있다', async () => {
@@ -219,7 +219,7 @@ describe('closeBossProfitDb', () => {
 
   // closeConnection이 아직 끝나지 않은 도중 다른 곳에서 getBossProfitDb()를 동시에 호출해도,
   // 새 openBossProfitDb(→createConnection)를 시작하지 말고 기존(닫히는 중인) 커넥션을 그대로
-  // 반환해야 한다 — 안 그러면 이 함수의 closeConnection과 그 동시 호출의 createConnection이
+  // 반환해야 한다. 안 그러면 이 함수의 closeConnection과 그 동시 호출의 createConnection이
   // 뒤엉켜 네이티브에서 "Connection boss_profit already exists"가 날 수 있다.
   it('종료 중에 getBossProfitDb가 동시에 호출돼도 새 커넥션을 만들지 않는다(레이스 방지)', async () => {
     let resolveClose!: () => void
@@ -236,7 +236,7 @@ describe('closeBossProfitDb', () => {
 
     const closePromise = closeBossProfitDb()
     // closeBossProfitDb는 dbPromise를 await한 뒤에야 closeConnection을 호출하므로, resolveClose가
-    // 할당될 때까지 마이크로태스크를 한 번 흘려보낸다 — 그 사이(닫는 도중)에 getBossProfitDb를 호출한다.
+    // 할당될 때까지 마이크로태스크를 한 번 흘려보낸다. 그 사이(닫는 도중)에 getBossProfitDb를 호출한다.
     await Promise.resolve()
     const concurrentGet = getBossProfitDb()
 
@@ -249,11 +249,11 @@ describe('closeBossProfitDb', () => {
 
   // ADR-117 결정 5: 여는 쪽에는 타임아웃이 있는데(withOpenTimeout, 10초) 닫는 쪽은 맨몸이었다.
   // 네이티브 closeConnection이 응답하지 않으면 이 함수가 영원히 resolve하지 않고, 이 뒤에 오는
-  // 리로드(라이브 업데이트 set · 페이지 리로드)가 실행되지 못한다 — 그것이 곧 "주황
+  // 리로드(라이브 업데이트 set · 페이지 리로드)가 실행되지 못한다. 그것이 곧 "주황
   // 스플래시 무한" 증상이다. 실기기에서 SQLite 네이티브 호출이 응답 없이 멈춘 사례가 둘 있다
   // (2026-07-17 정정).
   //
-  // 가짜 타이머는 케이스 안에서만 켠다 — 파일 전역으로 켜면 위 레이스 케이스가 의존하는
+  // 가짜 타이머는 케이스 안에서만 켠다. 파일 전역으로 켜면 위 레이스 케이스가 의존하는
   // 마이크로태스크 순서가 흔들린다.
   it('닫기가 응답하지 않아도 5초 타임아웃으로 끝난다 — 던지지 않는다(best-effort)', async () => {
     jest.useFakeTimers()
@@ -296,7 +296,7 @@ describe('closeBossProfitDb', () => {
     }
   })
 
-  // 상한이 조용히 줄어드는 것을 막는다 — 이 값은 적용 경로에서 사용자가 무반응을 견디는 시간이다.
+  // 상한이 조용히 줄어드는 것을 막는다. 이 값은 적용 경로에서 사용자가 무반응을 견디는 시간이다.
   it('4.9초에는 아직 끝나지 않고, 5초를 넘겨야 끝난다', async () => {
     jest.useFakeTimers()
     try {

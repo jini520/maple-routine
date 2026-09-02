@@ -156,7 +156,7 @@ describe('autoRecordRows', () => {
     expect(result).toEqual([pending])
   })
 
-  // ADR-069 결정 4: 이관 가드는 자동 기록 가드보다 **넓다** — 이미 기록된 조합도 난이도는 확정이다.
+  // ADR-069 결정 4: 이관 가드는 자동 기록 가드보다 **넓다**. 이미 기록된 조합도 난이도는 확정이다.
   it('이미 기록된 행은 기록하지 않지만 드롭 이관은 한다', async () => {
     const recorded = row({ partySize: 2, payoutMeso: 5_000_000 })
 
@@ -209,7 +209,7 @@ describe('autoRecordRows', () => {
   })
 
   // upsertBossProfitRecord는 단일 공유 SQLite 커넥션에 자체 트랜잭션을 열므로 동시 실행하면
-  // 트랜잭션이 겹쳐 에러가 난다 — Promise.all 로 병렬화하지 못하도록 순차 실행을 고정한다.
+  // 트랜잭션이 겹쳐 에러가 난다. Promise.all 로 병렬화하지 못하도록 순차 실행을 고정한다.
   it('여러 행을 순차로 기록한다(트랜잭션이 겹치지 않는다)', async () => {
     let inFlight = 0
     let maxInFlight = 0

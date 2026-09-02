@@ -1,4 +1,4 @@
-// 보스 한 줄 — 웹 `BossProfitScreen.test.tsx` 가 화면 통합으로 지키던 행 계약을 이 단위로 옮겼다.
+// 보스 한 줄. 웹 `BossProfitScreen.test.tsx` 가 화면 통합으로 지키던 행 계약을 이 단위로 옮겼다.
 //
 // ** 의 "모르는 금액에 0을 쓰지 않는다"가 이 파일의 중심이다.** 미완료와
 // 가격 미확정은 둘 다 `payoutMeso === null` 인데, 그 자리에 `0 메소` 를 그리면 "안 잡았다"와
@@ -13,7 +13,7 @@ import type { RecordedDrop } from '../../../types/drops'
 import { BossProfitBossRow } from '../BossProfitBossRow'
 import { 보스행, 컨텍스트값, renderProfit, 주간보스 } from './harness'
 
-// 카운트업은 모듈 수준 기억을 갖는다 — 케이스 사이로 새지 않게 비운다.
+// 카운트업은 모듈 수준 기억을 갖는다. 케이스 사이로 새지 않게 비운다.
 beforeEach(() => {
   clearCountUpMemory()
 })
@@ -77,7 +77,7 @@ describe('BossProfitBossRow — 금액과 아이템 칩', () => {
     expect(getByText('아이템 +10.0억')).toBeTruthy()
   })
 
-  // 값이 안 매겨진 드롭은 금액을 바꾸지 않는다 — 칩도 서지 않는다.
+  // 값이 안 매겨진 드롭은 금액을 바꾸지 않는다. 칩도 서지 않는다.
   it('미입력 드롭만 있으면 금액도 칩도 종전 그대로다', async () => {
     const { getByText, queryByLabelText } = await renderProfit(
       <BossProfitBossRow

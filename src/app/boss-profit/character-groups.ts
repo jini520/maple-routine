@@ -4,7 +4,7 @@
 //
 // ══ 이 파일은 `packages/core` 로 갈 후보다 (지금은 아니다) ═══════════════════════════
 //
-// 여기엔 뷰가 한 줄도 없다 — 웹판은 DOM 을 안 만들었고 이 판은 `react-native` 를 import 하지
+// 여기엔 뷰가 한 줄도 없다. 웹판은 DOM 을 안 만들었고 이 판은 `react-native` 를 import 하지
 // 않는다. 그래서 **웹과 RN 이 같은 한 벌을 쓸 수 있는 형태**이고, ADR 여덟(036·038·046·054·059·
 // 069·094·124)이 걸린 계산이 두 앱에 두 벌로 남는 것은 전환이 끝날 때까지 그 여덟이 갈릴 자리를
 // 열어 두는 일이다.
@@ -66,7 +66,7 @@ export function clamp(value: number, min: number, max: number): number {
  * 보스 행의 **결정석** 합.
  *
  * `payoutMeso` 가 `null` 인 두 경우(미완료 placeholder — / 가격 미확정 보스)를 0으로
- * 접는다. ** 의 "미입력 ≠ 0원" 과 다른 `null` 이다** — 저쪽은 사용자가 아직 안 적은
+ * 접는다. ** 의 "미입력 ≠ 0원" 과 다른 `null` 이다**. 저쪽은 사용자가 아직 안 적은
  * 드롭 판매가라 화면이 금액 대신 상태를 말해야 하고, 이쪽은 그 자리에 이미 미완료·가격
  * 미확정 배지가 서 있어(`BossProfitBossRow`) 0 이 금액으로 읽히지 않는다.
  */
@@ -113,10 +113,10 @@ export function buildCharacterGroups(
  * 가격을 고칠 때마다 재기록할 수 없다) 아이템은 **읽는 시점에** 더한다. 그래서 이 함수가 그
  * 덧셈이 일어나는 **한 곳**이고, 화면(총 수익)과 카드 헤더가 같은 함수를 쓴다.
  *
- * `weeklySubtotals`(월간 탭)에는 아이템이 이미 들어 있다 — 스토어가 소계를 만들 때 더한다.
+ * `weeklySubtotals`(월간 탭)에는 아이템이 이미 들어 있다. 스토어가 소계를 만들 때 더한다.
  * `dropsByRowKey` 는 지금 화면의 행만 담으므로(월간 탭이면 월간 보스 행) 이중 계산이 없다.
  *
- * **값을 안 매긴 드롭은 여기서도 0 이다** — `sumDropPayout` 이 `priceState !== 'entered'` 를
+ * **값을 안 매긴 드롭은 여기서도 0 이다**. `sumDropPayout` 이 `priceState !== 'entered'` 를
  * 통째로 거른다. 합산에서 스킵과 미입력이 같은 것은 의도이고, 둘을 가르는
  * 일은 표시 층이 한다(`ItemRevenuePopover`).
  */
@@ -171,7 +171,7 @@ export function collectAllValuableDrops(
 
 // 이 캐릭터가 이번 주에 처치한 주간 보스 수 — 처치 수는 store 필드가 아니라
 // rows에서 파생한다. 보스명 기준 distinct라 같은 보스를 여러 난이도로 완료해도 1로 센다(게임 룰이
-// 그렇고, 보스 스케줄러가 쓰는 countClearedWeeklyBosses도 content_name 그룹당 1이다 — 두 지표가
+// 그렇고, 보스 스케줄러가 쓰는 countClearedWeeklyBosses도 content_name 그룹당 1이다. 두 지표가
 // 어긋나면 같은 숫자가 화면마다 다르게 보인다). 시즌 보스(메이린)는 12마리 제한 예외라 제외한다.
 // cycle 필터는 호출부(주간 탭)에서 사실상 no-op이지만, 월드별 결정석 합계(#53)도 이 함수 하나를
 // 공유하므로 함수 안에 둔다.
@@ -199,7 +199,7 @@ export function countGroupClearedWeeklyBosses(group: CharacterGroup): number {
 // 그래서 행 단위로 갈라도 "보스명 distinct"의 의미가 유지된다(캐릭터별로 세던 것과 결과가 같고,
 // 걸치는 주에서만 갈린다). 월드를 모르는 행(컬럼 도입 전 기록)은 조용히 빠진다.
 //
-// 캐릭터 카드의 진행 링은 이 함수를 쓰지 않는다 — 클리어 수는 캐릭터 단위로 이어지므로 월드와
+// 캐릭터 카드의 진행 링은 이 함수를 쓰지 않는다. 클리어 수는 캐릭터 단위로 이어지므로 월드와
 // 무관하게 그 주 전체를 센다. 두 숫자의 집계 단위가 다른 것은 게임 규칙이 그렇게 갈려 있어서다.
 export function summarizeWorldCrystals(groups: CharacterGroup[]): WorldCrystalSummary[] {
   // 월드 → (캐릭터 → 그 월드에서 처치한 보스명 집합). 캐릭터를 한 번 더 갈라야 서로 다른
@@ -243,7 +243,7 @@ export function countGroupClearedMonthlyBosses(group: CharacterGroup): number {
 }
 
 // 이 기간 월간 보스(검은마법사) 결정석 개수. 주간 90 한도에 포함되지 않는 별개 수치라(
-// 결정 1·8) 위 주간 집계와 섞지 않는다 — 시즌 보스는 weekly 소속이라 여기선 판정할 것이 없다.
+// 결정 1·8) 위 주간 집계와 섞지 않는다. 시즌 보스는 weekly 소속이라 여기선 판정할 것이 없다.
 // 결정석은 캐릭터마다 각자 나오므로 그룹별 처치 수를 더한다.
 export function countMonthlyCrystals(groups: CharacterGroup[]): number {
   return groups.reduce((total, group) => total + countGroupClearedMonthlyBosses(group), 0)

@@ -4,7 +4,7 @@ import spendCatalog from '../spend-catalog.json'
 //
 // 이 스위트가 지키는 것은 **형태**이지 값이 아니다. 값은 도메인 전문가의 것이라 테스트가 베끼면
 // 두 벌이 되고, 그러면 게임이 바뀌었을 때 어느 쪽이 진실인지 알 수 없게 된다
-// (`boss-crystal-prices` 와 같은 태도). 다만 **몇 개는 값을 못 박는다** — 아래 `닻` 절 참고.
+// (`boss-crystal-prices` 와 같은 태도). 다만 **몇 개는 값을 못 박는다**. 아래 `닻` 절 참고.
 
 const items = spendCatalog.items as {
   category: string
@@ -115,7 +115,7 @@ describe('spend-catalog.json — 닻 (사용자 확인값, 2026-08-23)', () => {
     expect(priceOf('콜렉터의 영약')).toBe(20000000)
   })
 
-  // 에픽던전 추가 리워드는 **경험치 / 솔 에르다** 두 형태가 **같은 값**이다(사용자 확인) — 형태가
+  // 에픽던전 추가 리워드는 **경험치 / 솔 에르다** 두 형태가 **같은 값**이다(사용자 확인). 형태가
   // 가격을 가르지 않는다는 것이 이 데이터의 성질이라 구조로 못 박는다.
   it('에픽던전 추가 리워드는 여섯이고 전부 두 형태를 갖는다', () => {
     const rewards = items.filter((item) => item.group === '에픽던전 추가 리워드')
@@ -126,14 +126,14 @@ describe('spend-catalog.json — 닻 (사용자 확인값, 2026-08-23)', () => {
     }
   })
 
-  // 메포샵은 **기간 운영** 이다 — 상시 목록과 섞이면 없어진 상품이 계속 뜬다.
+  // 메포샵은 **기간 운영** 이다. 상시 목록과 섞이면 없어진 상품이 계속 뜬다.
   it('메이플 포인트 샵만 seasonal 이다', () => {
     for (const item of items) {
       expect(item.seasonal === true).toBe(item.group === '메이플 포인트 샵')
     }
   })
 
-  // 버프 물약만 메소다 — 나머지는 전부 메포라는 것이 이 데이터의 축이다.
+  // 버프 물약만 메소다. 나머지는 전부 메포라는 것이 이 데이터의 축이다.
   it('메소로 사는 것은 버프 물약뿐이다', () => {
     for (const item of items) {
       expect(item.currency).toBe(item.group === '버프 물약' ? 'meso' : 'point')

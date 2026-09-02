@@ -75,7 +75,7 @@ export async function clearCacheData(selection: CacheDataSelection = ALL_GROUPS)
   }
 }
 
-// 설정 화면의 "캐시 데이터 삭제" 행·확인 모달에 보여줄 근사치(바이트)를 그룹별로 낸다 — 각 값은
+// 설정 화면의 "캐시 데이터 삭제" 행·확인 모달에 보여줄 근사치(바이트)를 그룹별로 낸다. 각 값은
 // 그 그룹이 실제로 지우는 것과 동일한 범위만 합산하므로, 사용자는 "무엇을 포기하면 얼마가
 // 비는지"를 보고 고를 수 있다. 행에 쓰는 총합은 두 값의 합으로 파생한다(ADR-058 결정 8).
 export async function getCacheDataSizes(): Promise<Record<CacheDataGroupId, number>> {

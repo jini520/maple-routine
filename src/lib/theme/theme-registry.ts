@@ -3,7 +3,7 @@
  *
  * `storage/` 와 `features/` 가 함께 쓰므로 `lib/` 에 둔다(다른 JSON 접근자와 같은 자리).
  *
- * `src/data/job-themes.json` 이 단일 진실 공급원이다 — 테마 이름 목록·라이트/다크 판정·CSS 변수가
+ * `src/data/job-themes.json` 이 단일 진실 공급원이다. 테마 이름 목록·라이트/다크 판정·CSS 변수가
  * 모두 이 파일에서 나온다. 전에는 `index.css` 에 테마별 `:root[data-theme]` 블록을 손으로 적고
  * `ThemeName` 유니온·타입 가드·`THEME_OPTIONS` 2곳·`DARK_THEMES` Set 을 따로 동기화해야 했는데,
  * 하나라도 빠뜨리면 조용히 어긋났다. 이제 테마 추가는 **JSON 한 블록**이다.
@@ -33,7 +33,7 @@ export const THEME_CATEGORIES: readonly ThemeCategory[] = ['기본', '직업', '
 /**
  * 등록된 테마 이름. **표시 순서는 카테고리 순서 → 그 안에서 JSON 키 순서**다(
  * 예전 규약은 "JSON 키 순서 = 표시 순서"였다). 정렬이 안정적이라 같은 카테고리 안에서는 JSON 에
- * 적은 순서가 그대로 남는다 — 새 테마는 자기 카테고리 블록 끝에 붙는다.
+ * 적은 순서가 그대로 남는다. 새 테마는 자기 카테고리 블록 끝에 붙는다.
  */
 export const THEME_NAMES = (Object.keys(JOB_THEMES) as ThemeName[])
   .slice()
@@ -52,7 +52,7 @@ export interface ThemeCategoryGroup {
 /**
  * 테마 목록을 카테고리 섹션으로 묶는다.
  *
- * **항목이 없는 카테고리는 그룹째 내지 않는다** — 라이트/다크 필터가 걸러낸 뒤 헤더만 남는 것을
+ * **항목이 없는 카테고리는 그룹째 내지 않는다**. 라이트/다크 필터가 걸러낸 뒤 헤더만 남는 것을
  * 막는 책임이 여기 있다. 호출부는 거르고 이 함수에 넘기기만 하면 된다.
  */
 export function groupThemesByCategory(names: readonly ThemeName[]): readonly ThemeCategoryGroup[] {
@@ -94,7 +94,7 @@ function declarations(entries: Readonly<Record<string, string>>, indent: string)
 /**
  * 배경 이미지 프로퍼티.
  *
- * 배경이 없는 테마는 **한 줄도 내지 않는다** — CSS 쪽 기본값(`--theme-bg-image` 미선언 →
+ * 배경이 없는 테마는 **한 줄도 내지 않는다**. CSS 쪽 기본값(`--theme-bg-image` 미선언 →
  * `none`)이 그대로 살아 다른 테마의 그림이 안 바뀐다. 슬러그에 해당하는 파일이 없을 때도
  * 마찬가지다(에셋만 사라지고 테마는 산다).
  */
@@ -118,7 +118,7 @@ function backgroundDeclarations(background: ThemeBackground | undefined): string
  *
  * `.media-scope` 안에서 표면·텍스트를 `media-*` 로 다시 묶고 accent 틴트·잉크도 **다시 선언**한다.
  * 커스텀 프로퍼티는 선언된 요소에서 `var()` 가 해석되므로, 다시 선언하지 않으면 `:root` 의
- * `surface` 기준 값이 그대로 내려온다 — 에 미해결로 남아 있던 카드 안 배지
+ * `surface` 기준 값이 그대로 내려온다. 에 미해결로 남아 있던 카드 안 배지
  * AA 미달(레테 3.88:1)이 정확히 그 문제였다.
  */
 export function buildThemeCss(theme: ThemeDefinition): string {

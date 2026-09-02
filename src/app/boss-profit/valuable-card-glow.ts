@@ -1,13 +1,13 @@
-// 고가 드롭 카드의 **글로우 값** — 웹 `index.css` 의 `.valuable-drop-card`
+// 고가 드롭 카드의 **글로우 값**. 웹 `index.css` 의 `.valuable-drop-card`
 // `box-shadow` 와 `@keyframes valuable-drop-glow` 가 여기로 내려왔다.
 //
-// **왜 컴포넌트 파일이 아니라 여기인가** — `CharacterAccordion.tsx` 가 이 값들을 export 하면 fast
+// **왜 컴포넌트 파일이 아니라 여기인가**. `CharacterAccordion.tsx` 가 이 값들을 export 하면 fast
 // refresh 가 깨진다(`Button/variants.ts`·`row-class.ts`·`Toast/timer-animation.ts` 와 같은 판단).
 // 값을 밖으로 내보낸 이유는 원래 `keyframes-parity.test.ts` 가 **웹 CSS 를 실제로 읽어** 이 값들과
-// 대조했기 때문이다. **그 테스트는 없다** — 웹 소스가 사라지며 함께 지워졌다.
+// 대조했기 때문이다. **그 테스트는 없다**. 웹 소스가 사라지며 함께 지워졌다.
 // 지금 이 값들을 지키는 것은 대조가 아니라 이 주석과 아래 출처 표기뿐이다.
 //
-// ══ RN 에서 갈린 것 — 맥동을 **파라미터로 못 굴린다** ═══════════════════════════════
+// ══ RN 에서 갈린 것. 맥동을 **파라미터로 못 굴린다** ═══════════════════════════════
 //
 // 웹은 `box-shadow` 자체를 키프레임으로 보간해 블러·확산·알파가 함께 움직였다. RN 은 그 속성을
 // 보간하지 않으므로 두 끝점을 각각 가진 겹을 **반대 방향 `opacity` 로 교차**시킨다 —
@@ -16,7 +16,7 @@
 /**
  * `.valuable-drop-card` 의 **정적** `box-shadow`.
  *
- * 웹에서 이 값이 그대로 보이는 자리가 셋이다 — `@property` 미지원 WebView · `prefers-reduced-motion`
+ * 웹에서 이 값이 그대로 보이는 자리가 셋이다. `@property` 미지원 WebView · `prefers-reduced-motion`
  * **펼침 상태**(`.valuable-drop-card--expanded { animation: none }`).
  */
 export const VALUABLE_CARD_GLOW_STATIC = [

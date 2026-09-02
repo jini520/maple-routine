@@ -11,10 +11,10 @@ export interface ToastAction {
   // 아이콘을 쓰면 무엇을 하는 버튼인지 어긋난다).
   //
   // 타입이 **플랫폼 중립**인 이유: 이 필드는 원래 `lucide-react`(웹)의 `LucideIcon` 이었고, 그래서
-  // `lucide-react-native` 의 같은 아이콘이 **타입상 들어가지 않았다**(SVG 프롭이 갈린다 — 넘기는
+  // `lucide-react-native` 의 같은 아이콘이 **타입상 들어가지 않았다**(SVG 프롭이 갈린다. 넘기는
   // 쪽이 `as unknown as` 로 우회하고 있었다). 웹 앱이 사라지면서 그 타입을 붙들 이유도
   // 함께 없어졌으므로, `Toast.tsx` 가 적어 둔 해법대로 **두 라이브러리가 다 들어가는 폭**으로
-  // 넓힌다 — core 가 특정 아이콘 라이브러리를 아는 것 자체가 이 층에 안 맞기도 하다.
+  // 넓힌다. core 가 특정 아이콘 라이브러리를 아는 것 자체가 이 층에 안 맞기도 하다.
   icon?: ComponentType<{ size?: number; color?: string }>
 }
 

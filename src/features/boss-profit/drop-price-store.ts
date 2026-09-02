@@ -3,7 +3,7 @@
 // 히스토리 스토어(`drop-history-store`)와 형제이되 축과 성격이 다르다: 저쪽은 **전 기간 읽기
 // 전용**이고 여기는 **한 주 쓰기**다. 그래서 저장 경로(`savePrice`·`skipPrice`)가 함께 산다.
 //
-// **왜 원본 레코드를 들고 있나** — 저장이 `replaceBossDropRecords`(그룹 통째 교체)라, 한 건의
+// **왜 원본 레코드를 들고 있나**. 저장이 `replaceBossDropRecords`(그룹 통째 교체)라, 한 건의
 // 가격만 고치려 해도 **같은 (ocid, boss, difficulty, periodKey) 의 나머지 드롭을 함께 넘겨야**
 // 한다. 넘기지 않으면 그 그룹의 다른 기록이 사라진다.
 
@@ -21,7 +21,7 @@ import type { RecordedDrop } from '../../types/drops'
 
 /** 목록의 한 줄 = 기록 한 건. 어느 보스·누구의 것인지가 함께 붙어야 값을 매길 수 있다. */
 export interface DropPriceEntry {
-  /** `(ocid, boss, difficulty, periodKey, dropIndex)` — 저장할 때 대상을 되찾는 키다. */
+  /** `(ocid, boss, difficulty, periodKey, dropIndex)`. 저장할 때 대상을 되찾는 키다. */
   id: string
   ocid: string
   boss: string
@@ -29,7 +29,7 @@ export interface DropPriceEntry {
   periodKey: string
   dropIndex: number
   drop: RecordedDrop
-  /** 분배 인원 스테퍼의 **기본값** — 그 행의 파티원 수다. */
+  /** 분배 인원 스테퍼의 **기본값**. 그 행의 파티원 수다. */
   partySize: number
 }
 
@@ -46,7 +46,7 @@ interface DropPriceState {
   groups: DropPriceGroup[]
   load: (periodKey: string) => Promise<void>
   savePrice: (entry: DropPriceEntry, priceMeso: number, share: number) => Promise<void>
-  /** 기록 안함 — 값을 매기지 않기로 한 결정을 저장한다(스킵과 다르다 정정). */
+  /** 기록 안함. 값을 매기지 않기로 한 결정을 저장한다(스킵과 다르다 정정). */
   excludePrice: (entry: DropPriceEntry) => Promise<void>
 }
 
@@ -78,7 +78,7 @@ function buildGroups(
 
   for (const record of records) {
     const character = characters.get(record.ocid)
-    // 이름을 모르는 캐릭터는 그룹을 만들지 않는다 — ocid 를 이름 대신 쓰면 화면에 해시가 뜬다
+    // 이름을 모르는 캐릭터는 그룹을 만들지 않는다. ocid 를 이름 대신 쓰면 화면에 해시가 뜬다
     // (히스토리 스토어와 같은 규약).
     if (character === undefined) continue
 
@@ -118,7 +118,7 @@ export const useDropPriceStore = create<DropPriceState>((set, get) => ({
     }
 
     try {
-      // 드롭과 수익 기록을 함께 읽는다 — 후자는 **분배 인원 기본값(파티원 수)** 에만 쓴다.
+      // 드롭과 수익 기록을 함께 읽는다. 후자는 **분배 인원 기본값(파티원 수)** 에만 쓴다.
       const [dropRecords, profitRecords] = await Promise.all([
         withSqliteTimeout(getBossDropRecords(ocids, [periodKey])),
         withSqliteTimeout(getBossProfitRecords(ocids, [periodKey])),
@@ -157,7 +157,7 @@ export const useDropPriceStore = create<DropPriceState>((set, get) => ({
 /**
  * 한 건의 가격을 고치고 그 **그룹 전체**를 다시 쓴다.
  *
- * 낙관적 갱신을 하지 않는다 — 쓰기가 성공한 뒤에 상태를 바꾼다. 실패하면 **던져서** 화면이
+ * 낙관적 갱신을 하지 않는다. 쓰기가 성공한 뒤에 상태를 바꾼다. 실패하면 **던져서** 화면이
  * 토스트로 알리게 한다(조용히 삼키면 값이 저장된 줄 알고 화면을 떠난다).
  */
 async function writePrice(
@@ -186,7 +186,7 @@ async function writePrice(
   )
 
   // 보스 수익 화면은 스택 왕복에도 마운트를 유지하므로 자기 스냅샷을 다시 읽지
-  // 않는다 — 여기서 알려주지 않으면 값이 "새로고침해야 반영"된다(사용자 보고 2026-08-10).
+  // 않는다. 여기서 알려주지 않으면 값이 "새로고침해야 반영"된다(사용자 보고 2026-08-10).
   // **쓰기가 성공한 뒤에만** 부른다: 실패한 값이 저쪽 화면에 남으면 저장된 것처럼 보인다.
   useBossProfitStore
     .getState()

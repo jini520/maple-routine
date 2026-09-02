@@ -3,22 +3,22 @@
 //
 // ── 갈린 것 여섯 ─────────────────────────────────────────────────────────────────────
 //
-// ① **라우터 프로브가 없다** — 이동은 `navigation.navigate(…)` 가 불렸는가로 본다. 웹은
+// ① **라우터 프로브가 없다**. 이동은 `navigation.navigate(…)` 가 불렸는가로 본다. 웹은
 //  `/boss/manage` 에 프로브 요소를 두고 그것이 나타나는지 봤다. **목적지는 로
 //    `'BossManage'`(push) → `('Tabs', { screen: 'BossManage' })`(형제 탭) 이 됐다.**
 // ② **당겨서 새로고침이 `RefreshControl` 이다**. 웹의 제스처 시뮬레이션 넷(임계
-//    넘김/미달 · 배너 위치 · 목록 transform)은 **옮길 계약이 아니다** — 그 값들을 이제 OS 가 갖는다.
+//    넘김/미달 · 배너 위치 · 목록 transform)은 **옮길 계약이 아니다**. 그 값들을 이제 OS 가 갖는다.
 //  남는 계약은 *"당김이 헤더 버튼과 같은 재조회를 부르는가"*와 *"버튼이 그대로
 //    남는가"*(결정 10) 둘이고, 컨텐츠 스케줄러와 **같은 방식으로** 본다(두 탭이 갈리면 회귀다).
-// ③ **고정 헤더 실측·spacer 계약이 사라진다** — `fixed` 도 spacer 도 옮길 자리가 없고
+// ③ **고정 헤더 실측·spacer 계약이 사라진다**. `fixed` 도 spacer 도 옮길 자리가 없고
 //  (`PageHeader` 파일 머리) 뒤로는 헤더가 고정되지도
 //    않는다. 대신 *"헤더가 셸의 `header` 로 들어가고 모달은 셸 바깥"* 을 본다.
 // ④ `getByRole('combobox')`(웹 `<select>`) → **드롭다운 트리거의 캐릭터 이름**으로 기다린다.
-// ⑤ **콜드 스타트 파일이 따로 없다** — 웹은 선하이드레이션 하네스를 세워 프레임 순서를 봤는데,
+// ⑤ **콜드 스타트 파일이 따로 없다**. 웹은 선하이드레이션 하네스를 세워 프레임 순서를 봤는데,
 //    RN 에서 그 순서를 만드는 것은 `AppShell` 의 `prehydrateTabStores` 이고 그쪽 테스트가 이미
-//  갖고 있다. 여기 남는 것은 **** — `null` 을 0명으로 읽지
+//  갖고 있다. 여기 남는 것은 ****. `null` 을 0명으로 읽지
 //    않는가 — 이고 그것은 한 케이스다.
-// ⑥ DOM 스냅샷 둘은 옮기지 않는다(전환 계획서 **잃는 안전망**) — 대신 각 가지를 케이스로 적는다.
+// ⑥ DOM 스냅샷 둘은 옮기지 않는다(전환 계획서 **잃는 안전망**). 대신 각 가지를 케이스로 적는다.
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import { act, fireEvent, screen, within } from '@testing-library/react-native'
 import { useState } from 'react'
@@ -36,13 +36,13 @@ import { renderOverlay, type AtomElement } from '../../../components/__tests__/r
 import { useScreenNavigation } from '../../use-screen-navigation'
 import { BossScreen } from '../BossScreen'
 
-// 이름이 `mock` 으로 시작해야 한다 — babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데
+// 이름이 `mock` 으로 시작해야 한다. babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데
 // 그 접두사만 예외로 통과시킨다.
 const mockShowError = jest.fn()
 const mockShowInfo = jest.fn()
 const mockNoticeApiKeyIssue = jest.fn()
 const navigate = jest.fn()
-// 층이 스택이 된 뒤로 **그룹 층으로 되돌리기** 는 액션이다 — 화면이 이것도 부른다.
+// 층이 스택이 된 뒤로 **그룹 층으로 되돌리기** 는 액션이다. 화면이 이것도 부른다.
 const dispatch = jest.fn()
 
 // : 동기화 실패·파티원 수 저장 실패는 인라인 문단이 아니라 토스트다.
@@ -64,7 +64,7 @@ jest.mock('../../../features/boss-scheduler/store', () => ({
 
 jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
 
-// **로스터 조회 목도 라우트 목도 여기 없다** — 이 화면은 더 이상 피커를 열지 않고 `openPicker`
+// **로스터 조회 목도 라우트 목도 여기 없다**. 이 화면은 더 이상 피커를 열지 않고 `openPicker`
 // 파라미터도 받지 않으므로 `schedule-sync` 와 `useRoute` 를 아예 부르지 않는다.
 // 둘 다 설정 화면 테스트로 옮겨갔다.
 
@@ -89,7 +89,7 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     manualTrackedByOcid: {},
     loadTrackedOcids: jest.fn(),
     saveTrackedOcids: jest.fn(),
-    // 실물은 `Promise<void>` 다 — 당김 훅이 회차의 **끝** 을 기다린다.
+    // 실물은 `Promise<void>` 다. 당김 훅이 회차의 **끝** 을 기다린다.
     refresh: jest.fn().mockResolvedValue(undefined),
     loadPartySizes: jest.fn(),
     setPartySize: jest.fn(),
@@ -225,7 +225,7 @@ describe('BossScreen — 빈 상태와 마운트', () => {
   })
 
   // `null` 은 "0명"이 아니라 "아직 안 읽었다"다. 콜드 스타트 첫 페인트가
-  // 모르는 사실을 단정하면 안 된다(웹은 이 계약에 파일 하나를 썼다 — 파일 머리 ⑤).
+  // 모르는 사실을 단정하면 안 된다(웹은 이 계약에 파일 하나를 썼다. 파일 머리 ⑤).
   it('추적 목록이 null(미로드)이면 빈 상태가 아니라 로딩을 보여준다', async () => {
     mockStore({ trackedOcids: null, status: 'idle' })
 
@@ -235,7 +235,7 @@ describe('BossScreen — 빈 상태와 마운트', () => {
     expect(screen.getByText('불러오고 있어요')).toBeTruthy()
   })
 
-  // : 이 화면은 피커를 열지 않는다 — 설정 탭을 **열린 채로** 연다.
+  // : 이 화면은 피커를 열지 않는다. 설정 탭을 **열린 채로** 연다.
   // 웹의 `?openPicker=1` 을 받던 자리도 그리로 옮겨갔다(`SettingsScreen.test.tsx`).
   it('빈 상태 CTA 를 누르면 설정 탭을 피커가 열린 채로 연다', async () => {
     mockStore({ trackedOcids: [] })
@@ -243,7 +243,7 @@ describe('BossScreen — 빈 상태와 마운트', () => {
 
     await press(button('캐릭터 선택하기'))
 
-    // 층이 스택이 되면서 이동이 두 단 중첩이 됐다 — 설정은 **그룹 층**에
+    // 층이 스택이 되면서 이동이 두 단 중첩이 됐다. 설정은 **그룹 층**에
     // 살고, 파라미터는 가장 안쪽 화면에 붙는다.
     expect(navigate).toHaveBeenCalledWith('Main', {
       screen: 'Groups',
@@ -292,11 +292,11 @@ describe('BossScreen — 목록', () => {
     expect(screen.getByText('자쿰')).toBeTruthy()
     expect(screen.getByText('카오스')).toBeTruthy()
     expect(screen.queryByText('매그너스')).toBeNull()
-    // 탭 버튼이 있던 자리는 이제 섹션 헤더다 — 누르는 것이 아니라 읽는 것이다.
+    // 탭 버튼이 있던 자리는 이제 섹션 헤더다. 누르는 것이 아니라 읽는 것이다.
     expect(screen.queryByRole('button', { name: '월간' })).toBeNull()
   })
 
-  // 화면에 그려진 순서를 직접 못 박는다 — **둘 다 보인다** 만으로는 위아래가 안 잡힌다.
+  // 화면에 그려진 순서를 직접 못 박는다. **둘 다 보인다** 만으로는 위아래가 안 잡힌다.
   it('월간 무리가 주간 무리보다 위에 있다', async () => {
     withBosses()
 
@@ -305,7 +305,7 @@ describe('BossScreen — 목록', () => {
     expect(sectionOrder()).toEqual(['monthly', 'weekly'])
   })
 
-  // : 탭이 사라지며 갈 곳을 잃는 표시가 `주간` 헤더에 붙는다 — 12 는 주간
+  // : 탭이 사라지며 갈 곳을 잃는 표시가 `주간` 헤더에 붙는다. 12 는 주간
   // 한도이므로 그 수치가 어느 무리의 것인지 헤더가 대신 말한다.
   it('n/12 배지는 `주간` 섹션 헤더에 붙는다', async () => {
     withBosses()
@@ -322,7 +322,7 @@ describe('BossScreen — 목록', () => {
 
     await renderScreen()
 
-    // 검마만 완료다(위 fixture) — 자쿰은 미완료라 배지가 하나뿐이다.
+    // 검마만 완료다(위 fixture). 자쿰은 미완료라 배지가 하나뿐이다.
     expect(screen.getAllByText('완료')).toHaveLength(1)
   })
 
@@ -361,7 +361,7 @@ describe('BossScreen — 목록', () => {
     withBosses()
     await renderScreen()
 
-    // **모달이 셸 바깥인지를 묻던 짝은 함께 사라졌다** — 이 화면에 캐릭터 관리 모달이 없다
+    // **모달이 셸 바깥인지를 묻던 짝은 함께 사라졌다**. 이 화면에 캐릭터 관리 모달이 없다
     // . 파티 인원 모달은 아래 절이 따로 본다.
     expect(screen.getByTestId('page-header')).toBeTruthy()
     expect(screen.getByTestId('screen-scroll')).toBeTruthy()
@@ -378,7 +378,7 @@ describe('BossScreen — 목록', () => {
     expect(screen.queryByText('보스 관리')).toBeNull()
   })
 
-  // : 스토어는 레벨 내림차순으로 준다 — 그 위에 사용자가
+  // : 스토어는 레벨 내림차순으로 준다. 그 위에 사용자가
   // 정한 저장 배열 순서를 얹는다. 그래서 **입력 순서와 다른 순서**로 주는 것이 이 케이스의 요점이다.
   it('레일 순서는 스토어 순서가 아니라 trackedOcids 저장 순서다', async () => {
     mockStore({
@@ -395,7 +395,7 @@ describe('BossScreen — 목록', () => {
     ])
   })
 
-  // 순서를 정하는 함수가 목록의 크기를 바꾸면 안 된다 — 저장 직후·동기화 중간 커밋에서 두 목록이
+  // 순서를 정하는 함수가 목록의 크기를 바꾸면 안 된다. 저장 직후·동기화 중간 커밋에서 두 목록이
   // 한순간 어긋나는데, 그때 카드가 통째로 사라지는 것이 가장 나쁜 실패다.
   it('저장 목록에 없는 캐릭터도 레일에서 사라지지 않는다', async () => {
     mockStore({
@@ -442,7 +442,7 @@ describe('BossScreen — 챌린저스 시즌 보스 배지', () => {
     expect(screen.getByText('season 미완료')).toBeTruthy()
   })
 
-  //  의 **빈 무리는 헤더도 걷는다** 에 예외가 하나 있다 — **배지를 싣고 있으면
+  //  의 **빈 무리는 헤더도 걷는다** 에 예외가 하나 있다. **배지를 싣고 있으면
   // 남긴다.** 탭 시절 이 배지들은 목록이 비어도 탭 줄에 떠 있었고, 무리가 비었다는 이유로 지우면
   // **이번 주 몇 마리 잡았나** 를 말할 자리가 아예 없어진다.
   it('주간 카드가 하나도 안 서도 배지를 실은 `주간` 헤더는 남는다', async () => {
@@ -495,7 +495,7 @@ describe('BossScreen — 챌린저스 시즌 보스 배지', () => {
     expect(screen.queryByText(/season/)).toBeNull()
   })
 
-  // 월드를 모르는 구버전 캐시는 비-챌린저스로 취급한다 — 관리 페이지의 목록 판정과 같아야 한다.
+  // 월드를 모르는 구버전 캐시는 비-챌린저스로 취급한다. 관리 페이지의 목록 판정과 같아야 한다.
   it('월드를 모르면 배지가 없다', async () => {
     withWorld(undefined, [seasonBoss()])
 
@@ -552,7 +552,7 @@ describe('BossScreen — 재조회', () => {
   //
   // 종전에는 `refreshing = status === 'loading'` 이라, 화면 마운트 하이드레이션만으로 인디케이터가
   // 프로그램적으로 열렸다. 사용자 보고(2026-08-22) *"페이지 이동 시 새로고침 인디케이터가 저절로
-  // 돌고 상단이 빈 채로 멈춘다"* 가 그 증상이다. **조회 중...** 은 그대로 뜬다 — 그쪽이 조회를
+  // 돌고 상단이 빈 채로 멈춘다"* 가 그 증상이다. **조회 중...** 은 그대로 뜬다. 그쪽이 조회를
   // 말하는 자리다.
   it('조회 중이어도 인디케이터는 안 돈다 — "조회 중..." 만 보여준다', async () => {
     loaded('loading')
@@ -576,7 +576,7 @@ describe('BossScreen — 재조회', () => {
     expect(contains(titleRow, screen.getByText('동기화 기록 없음'))).toBe(true)
     // 아래 줄에 있어야 하는 것은 이제 초상화 레일이다.
     expect(contains(titleRow, screen.getByTestId('character-rail'))).toBe(false)
-    // **관리 버튼과 겨루던 짝은 사라졌다** — 그 줄에 남은 것이 제목·상태·
+    // **관리 버튼과 겨루던 짝은 사라졌다**. 그 줄에 남은 것이 제목·상태·
     // 새로고침 셋뿐이라, 폭을 다투는 상대가 없다.
   })
 })
@@ -696,7 +696,7 @@ describe('BossScreen — 솔로/파티 필터', () => {
     expect(screen.queryByText('자쿰')).toBeNull()
   })
 
-  // (정정) — 목록이 하나라 필터도 하나다. `파티`를 고르면
+  // (정정). 목록이 하나라 필터도 하나다. `파티`를 고르면
   // 두 무리 모두에 걸린다(전에는 주간 필터가 월간 목록을 건드리지 않았다).
   it('필터 하나가 두 무리에 함께 걸린다', async () => {
     mockStore({
@@ -722,7 +722,7 @@ describe('BossScreen — 솔로/파티 필터', () => {
 
     await press(button('파티'))
 
-    // 자쿰만 파티 설정(4인)이 있다 — 검마와 스우는 미설정이라 솔로로 취급돼 함께 사라진다.
+    // 자쿰만 파티 설정(4인)이 있다. 검마와 스우는 미설정이라 솔로로 취급돼 함께 사라진다.
     expect(screen.getByText('자쿰')).toBeTruthy()
     expect(screen.queryByText('검은마법사')).toBeNull()
     expect(screen.queryByText('스우')).toBeNull()
@@ -732,7 +732,7 @@ describe('BossScreen — 솔로/파티 필터', () => {
 
   // 보스가 0건인 빈 상태와 **다른 문구·다른 CTA** 다.
   it('필터 결과가 0개면 필터 빈 상태를 보여주고 CTA 가 필터를 되돌린다', async () => {
-    // 파티 설정이 하나도 없으므로 "파티" 필터의 결과가 0이다 — 보스 자체는 있다.
+    // 파티 설정이 하나도 없으므로 "파티" 필터의 결과가 0이다. 보스 자체는 있다.
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
@@ -775,7 +775,7 @@ describe('BossScreen — 빈 상태 문구', () => {
     expect(screen.getByText('추적할 보스가 없습니다')).toBeTruthy()
     await press(button('보스 관리'))
 
-    // 보스 관리는 이 화면과 **같은 스케줄러 단**에 산다 — 층은 안 바뀌고 그 안에서 옆걸음한다
+    // 보스 관리는 이 화면과 **같은 스케줄러 단**에 산다. 층은 안 바뀌고 그 안에서 옆걸음한다
     //
     expect(navigate).toHaveBeenCalledWith('Main', {
       screen: 'ScheduleSubs',
@@ -792,7 +792,7 @@ describe('BossScreen — 빈 상태 문구', () => {
     expect(screen.queryByText('등록된 보스가 없습니다')).toBeNull()
   })
 
-  //  의 헤더 진입점이 로 폐기됐다 — 목록이 있는 화면에는
+  //  의 헤더 진입점이 로 폐기됐다. 목록이 있는 화면에는
   // 관리로 가는 자리가 **하나도 없다**(하단바가 진다). 그 부재를 여기서 못 박는다.
   it('목록이 있으면 "보스 관리"로 가는 자리가 화면에 없다', async () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character({ weeklyBosses: [boss()] })] })
@@ -862,7 +862,7 @@ describe('BossScreen — 카드 탭 → 파티 인원 모달', () => {
   })
 
   // 자동 모드의 난이도 전환은 멤버십이 아니라 "편집 대상" 전환이다.
-  // 자쿰은 참조표에 카오스 하나뿐이라 세그먼트에 고를 것이 없다 — 셋을 가진 스우로 연다.
+  // 자쿰은 참조표에 카오스 하나뿐이라 세그먼트에 고를 것이 없다. 셋을 가진 스우로 연다.
   it('자동 모드에서 난이도를 바꿔도 멤버십 API 를 부르지 않고 그 난이도의 인원을 편집한다', async () => {
     const store = mockStore({
       status: 'loaded',
@@ -935,7 +935,7 @@ describe('BossScreen — 수동 모드', () => {
     })
     await renderScreen()
 
-    // 월간 참조표의 보스라 `월간` 무리에 선다 — 탭을 누를 필요가 없다.
+    // 월간 참조표의 보스라 `월간` 무리에 선다. 탭을 누를 필요가 없다.
     expect(screen.getByText('검은마법사')).toBeTruthy()
     expect(sectionOrder()).toEqual(['monthly'])
   })
@@ -984,7 +984,7 @@ describe('BossScreen — 주간 한도 마감 배지', () => {
     await renderScreen()
 
     expect(screen.getByText('마감')).toBeTruthy()
-    // 처치한 열두 장은 그대로 `완료`다 — 마감이 완료를 대체하지 않는다.
+    // 처치한 열두 장은 그대로 `완료`다. 마감이 완료를 대체하지 않는다.
     expect(screen.getAllByText('완료')).toHaveLength(WEEKLY_BOSS_CLEAR_LIMIT)
   })
 
@@ -996,14 +996,14 @@ describe('BossScreen — 주간 한도 마감 배지', () => {
     expect(screen.queryByText('마감')).toBeNull()
   })
 
-  // `완료` 자리를 대신하는 배지라 **상자가 같아야** 한다(사용자 지정) — 크기가 다르면 같은 자리에서
+  // `완료` 자리를 대신하는 배지라 **상자가 같아야** 한다(사용자 지정). 크기가 다르면 같은 자리에서
   // 배지가 커졌다 작아졌다 하며 카드 오른쪽 끝이 흔들린다. 색만 갈린다.
   it('마감 배지는 완료 배지와 같은 크기다', async () => {
     withClearCount(WEEKLY_BOSS_CLEAR_LIMIT)
 
     await renderScreen()
 
-    // NativeWind 가 `className` 을 스타일로 컴파일하므로 **결과 스타일**을 본다 — 클래스 문자열을
+    // NativeWind 가 `className` 을 스타일로 컴파일하므로 **결과 스타일**을 본다. 클래스 문자열을
     // 비교하면 같은 값을 다른 표기로 쓴 것도 **다르다** 가 된다.
     const boxOf = (label: string): Record<string, unknown> => {
       const { color, backgroundColor, ...box } = screen.getAllByText(label)[0].props.style as Record<
@@ -1019,12 +1019,12 @@ describe('BossScreen — 주간 한도 마감 배지', () => {
   })
 })
 
-//  후속(사용자 지정) — 한도를 채웠으면 진행 링도 꽉 찬다. 마감은 **이번 주에 더 할
+//  후속(사용자 지정). 한도를 채웠으면 진행 링도 꽉 찬다. 마감은 **이번 주에 더 할
 // 것이 없다** 이므로 링이 100%에 못 닿으면 링이 거짓을 말한다.
 describe('BossScreen — 한도 마감과 진행 링', () => {
   const WEEKLY_NAMES = (weeklyBossesData.weekly as { boss: string }[]).map((entry) => entry.boss)
 
-  /** 링의 접근성 이름에 실린 주간 n/m — 링의 유일한 표현이라 계약이 여기 있다. */
+  /** 링의 접근성 이름에 실린 주간 n/m — 링을 나타내는 것이 이것뿐이라 계약이 여기 있다. */
   function ringLabel(): string {
     const label = String(screen.getAllByTestId('character-portrait')[0].props.accessibilityLabel)
     return label.slice(label.indexOf('주간'))
@@ -1061,7 +1061,7 @@ describe('BossScreen — 한도 마감과 진행 링', () => {
             ...tracked.slice(10).map((name) =>
               boss({ apiName: name, matchedBossName: name, difficulty: '하드', isComplete: false }),
             ),
-            // 목록 밖 둘로 한도를 채웠다 — 합이 12 처치다.
+            // 목록 밖 둘로 한도를 채웠다. 합이 12 처치다.
             ...outside.map((name) =>
               boss({
                 apiName: name,

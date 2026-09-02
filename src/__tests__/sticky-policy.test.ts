@@ -1,7 +1,7 @@
 // sticky 정책 가드 —.
 //
 // **화면에 고정되는 영역을 두지 않는다.** 판정이 두 번에 걸쳐 좁혀졌지만(**최상단 헤더만 남긴다**
-// → **그 헤더도 푼다**) 이 가드가 지키는 것은 **최종 상태 하나**다 — 이 패키지에는 sticky 를 쓰는
+// → **그 헤더도 푼다**) 이 가드가 지키는 것은 **최종 상태 하나**다. 이 패키지에는 sticky 를 쓰는
 // 코드가 **하나도 없어야 한다.** `PageHeader` 조차 이제 스크롤 뷰의 **첫 자식**이라 목록과 함께
 // 흘러 올라간다(`ScreenScroll`).
 //
@@ -17,10 +17,10 @@
 //
 // ## 무엇을 잡나
 //
-// - `stickyHeaderIndices` — RN `ScrollView`/`FlatList` 의 sticky 수단
-// - `position: 'sticky'` — RN 에는 없는 값이지만 웹 코드를 그대로 옮기면 들어온다(그리고 조용히
-//   무시된다 — 이 전환에서 반복해 겪은 **값은 맞는데 안 먹는** 부류다)
-// - `stickyTop` — 이 쓰던 오프셋 프롭 이름. 되살아나면 그 구조가 함께 온다는 신호다
+// - `stickyHeaderIndices`. RN `ScrollView`/`FlatList` 의 sticky 수단
+// - `position: 'sticky'`. RN 에는 없는 값이지만 웹 코드를 그대로 옮기면 들어온다(그리고 조용히
+//   무시된다. 이 전환에서 반복해 겪은 **값은 맞는데 안 먹는** 부류다)
+// - `stickyTop`. 이 쓰던 오프셋 프롭 이름. 되살아나면 그 구조가 함께 온다는 신호다
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -41,7 +41,7 @@ function sourceFiles(dir: string): string[] {
 }
 
 /**
- * 주석을 지운다 — **이 정책의 기록 자체가 주석에 산다.**
+ * 주석을 지운다. **이 정책의 기록 자체가 주석에 산다.**
  *
  * `BossProfitScreen.contract.md` 와 여러 파일 머리가 *"중첩 sticky 는 안 옮긴다"* 를 설명하며
  * 그 단어를 쓴다. 설명을 금지어로 잡으면 가드가 **기록을 지우라고 요구하는** 꼴이 되고, 그러면

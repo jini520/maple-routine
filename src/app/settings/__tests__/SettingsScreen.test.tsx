@@ -3,17 +3,17 @@
 // 갈린 것 넷
 // ① **라우터 프로브가 없다.** 웹은 `MemoryRouter` 에 목적지를 세워 이동을 봤는데, RN 은 라우트
 //    이름으로 미므로 **`navigate` 가 무엇으로 불렸는가**를 본다(실제로 그 화면이 열리는 것은
-//    `RootNavigator` 테스트가 이미 본다 — 그쪽이 라우트 표 전체를 훑는다).
+//    `RootNavigator` 테스트가 이미 본다. 그쪽이 라우트 표 전체를 훑는다).
 // ② `getAllByRole('button')` 으로 행을 세던 것이 **`SettingsRow` 가 심는 라벨 목록**이 된다 —
 //    RN 은 자식 글자를 합쳐 접근성 이름을 만들지 않아 `row.textContent` 같은 축이 없다.
 // ③ **콘텐츠 블록이 상단 안전영역을 직접 갖는다는 옮길 계약이 아니다.** 웹에서 그 트릭이
 //    필요했던 이유(안쪽 래퍼의 `-mt` 가 콘텐츠를 y=0 으로 끌어올린다)가 RN 에 없다 —
 //    `ScreenScroll` 이 헤더 없는 화면에서는 **스크롤포트 상자 자체를** 내린다(그 파일 `상단`절).
-// ④ **하단 버전은 실행 중인 OTA 번들이 아니라 빌드 시점 값이다** — 웹의
+// ④ **하단 버전은 실행 중인 OTA 번들이 아니라 빌드 시점 값이다**. 웹의
 //    폴백 경로만 남았다. 그래서 웹의 `OTA 번들 버전을 표시한다` 케이스가 그 폴백 케이스로 접힌다.
-// ⑤ **캐릭터 관리 행이 이 화면에 생겼다** — 웹판에 없던 계약이다. 단
+// ⑤ **캐릭터 관리 행이 이 화면에 생겼다**. 웹판에 없던 계약이다. 단
 //    결정 1 이 그것을 모달에서 **하위 페이지**로 바꾸면서, 조회·저장·401/429 배선이 통째로
-//    `SettingsCharactersScreen` 으로 옮겨갔다. 여기 남는 계약은 셋뿐이다 — 배지(단위 **개**),
+//    `SettingsCharactersScreen` 으로 옮겨갔다. 여기 남는 계약은 셋뿐이다. 배지(단위 **개**),
 //    누르면 그 화면을 민다, `openPicker` 로 들어와도 같은 곳으로 민다.
 import { act, fireEvent } from '@testing-library/react-native'
 
@@ -29,7 +29,7 @@ import { renderOverlay, type AtomElement } from '../../../components/__tests__/r
 import { SettingsScreen } from '../SettingsScreen'
 import { useSettingsNavigation } from '../use-settings-navigation'
 
-// 이름이 `mock` 으로 시작해야 한다 — babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데
+// 이름이 `mock` 으로 시작해야 한다. babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데
 // 그 접두사만 예외로 통과시킨다(스케줄러 화면 테스트와 같은 규칙).
 const mockGetRoster = jest.fn()
 const mockLoadContentTracked = jest.fn()
@@ -38,7 +38,7 @@ const mockLoadProfitTracked = jest.fn()
 
 jest.mock('../../../features/theme/store', () => ({ useThemeStore: jest.fn() }))
 jest.mock('../../../features/tracking-mode/store', () => ({ useTrackingModeStore: jest.fn() }))
-// 본화면이 대표값으로 캐시 총 용량을 읽는다 — 화면은 `features/` 를 거치고
+// 본화면이 대표값으로 캐시 총 용량을 읽는다. 화면은 `features/` 를 거치고
 // 저장소·SQLite 는 그 아래가 맡는다(CLAUDE.md CRITICAL).
 jest.mock('../../../features/settings/cache-data', () => ({ loadCacheDataSizes: jest.fn() }))
 jest.mock('../use-settings-navigation', () => ({ useSettingsNavigation: jest.fn() }))
@@ -63,7 +63,7 @@ jest.mock('../../../features/boss-profit/store', () => ({
 
 // 이 화면은 로스터를 **부르지 않는 것**이 계약이라 그것을 단언하려면 감시할
 // 대상이 필요하다. `...requireActual` 을 통째로 쓰면 순환 참조가 아직 구성 중인 모듈을 `undefined`
-// 로 만난다 — 스케줄러 화면 테스트와 같은 처방으로 부분 모킹한다.
+// 로 만난다. 스케줄러 화면 테스트와 같은 처방으로 부분 모킹한다.
 jest.mock('../../../features/schedule-sync/schedule-sync', () => ({
   toScheduleSyncError: jest.requireActual<typeof import('../../../features/schedule-sync/errors')>(
     '../../../features/schedule-sync/errors',
@@ -126,7 +126,7 @@ function hasChevron(node: AtomElement): boolean {
 const ROW_LABELS = [
   '스케줄 관리 방법',
   '테마',
-  // : `테마` **아래**(사용자 지정) — 이 자리가 계약이다.
+  // : `테마` **아래**(사용자 지정). 이 자리가 계약이다.
   '캐릭터 관리',
   '기능 설명',
   '개발 노트',
@@ -155,7 +155,7 @@ function mockTrackingModeStore(
 }
 
 /**
- * 화면이 컨텐츠 스케줄러 스토어에서 읽는 것은 둘뿐이다 — 배지에 쓰는 `trackedOcids` 와 저장
+ * 화면이 컨텐츠 스케줄러 스토어에서 읽는 것은 둘뿐이다. 배지에 쓰는 `trackedOcids` 와 저장
  * 액션. 나머지 필드는 이 화면이 만지지 않으므로 세우지 않는다.
  */
 function mockContentStore(overrides: Partial<ContentSchedulerStore> = {}): ContentSchedulerStore {
@@ -206,7 +206,7 @@ describe('SettingsScreen', () => {
     expect(view.getAllByTestId('settings-row-chevron')).toHaveLength(ROW_LABELS.length)
   })
 
-  // **이 개편의 핵심.** 두 무리를 가르는 것은 카드 경계뿐이다(결정 1) — 한 카드에 다 넣는 시안은
+  // **이 개편의 핵심.** 두 무리를 가르는 것은 카드 경계뿐이다(결정 1). 한 카드에 다 넣는 시안은
   // "성격이 다른 것이 한 덩어리로 읽힌다"는 문제를 그대로 둔다.
   it('값을 고르는 세 행과 화면이 넘어가는 네 행이 서로 다른 카드에 있다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
@@ -268,7 +268,7 @@ describe('SettingsScreen', () => {
     expect(view.getByText('- KB')).toBeTruthy()
   })
 
-  // 조회 실패도 같은 자리표시로 남는다 — 설정을 못 여는 실패가 아니다.
+  // 조회 실패도 같은 자리표시로 남는다. 설정을 못 여는 실패가 아니다.
   it('캐시 용량 조회가 실패해도 "- KB" 로 남고 화면은 그대로다', async () => {
     mockedLoadCacheDataSizes.mockRejectedValue(new Error('storage down'))
     const view = await renderOverlay(<SettingsScreen />)
@@ -285,7 +285,7 @@ describe('SettingsScreen', () => {
     expect(view.getAllByText(packageJson.version).length).toBeGreaterThan(0)
   })
 
-  // 결정 5: 후보가 전부 틀린 말을 한다 — "최신 버전"은 아래 `앱 정보` 행과 중복이고 "n개"는
+  // 결정 5: 후보가 전부 틀린 말을 한다. "최신 버전"은 아래 `앱 정보` 행과 중복이고 "n개"는
   // 뜻이 없다. 없는 대표값을 지어내지 않는다.
   it('"기능 설명"·"개발 노트" 행에는 대표값을 두지 않는다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
@@ -350,7 +350,7 @@ describe('SettingsScreen', () => {
     expect(view.getByTestId('theme-modal-overlay')).toBeTruthy()
   })
 
-  // : 셋 다 `/settings/account-data` 로 내려갔다 — 되돌아오면 결정 1 의
+  // : 셋 다 `/settings/account-data` 로 내려갔다. 되돌아오면 결정 1 의
   // "값을 고르는 카드"가 다시 혼종이 된다.
   it.each(['계정 변경', '연결 해제', '캐시 데이터 삭제', 'API 키 재입력'])(
     '"%s" 행을 본화면에 두지 않는다',
@@ -371,7 +371,7 @@ describe('SettingsScreen', () => {
   })
 
   // : 개인정보 처리방침은 `/settings/about` 의 행으로 옮겼고, 고지 블록은
-  // 전부 읽고 끝나는 정적 문구만 남는다 — 링크가 여기로 되돌아오면 그 균일함이 다시 깨진다.
+  // 전부 읽고 끝나는 정적 문구만 남는다. 링크가 여기로 되돌아오면 그 균일함이 다시 깨진다.
   it('고지 블록은 4줄이고 링크를 두지 않는다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
 
@@ -382,7 +382,7 @@ describe('SettingsScreen', () => {
 
 describe('SettingsScreen — 캐릭터 관리', () => {
   // 결정 3: 파생·추정값이 아니라 저장된 목록의 길이다. **단위가 명 이 아니라 개** 인 것은
-  //  이 그 표기를 정정했기 때문이다 — 캐릭터는 사람이 아니다.
+  //  이 그 표기를 정정했기 때문이다. 캐릭터는 사람이 아니다.
   it('행 오른쪽에 추적 캐릭터 수 배지와 chevron 이 함께 있다', async () => {
     mockContentStore({ trackedOcids: ['a', 'b', 'c'] })
     const view = await renderOverlay(<SettingsScreen />)
@@ -392,7 +392,7 @@ describe('SettingsScreen — 캐릭터 관리', () => {
     expect(hasChevron(row)).toBe(true)
   })
 
-  // : `null` 은 "0개"가 아니라 **"아직 안 읽었다"** 다 — 모르는 사실을 단정하지 않는다.
+  // : `null` 은 "0개"가 아니라 **"아직 안 읽었다"** 다. 모르는 사실을 단정하지 않는다.
   it('추적 목록이 null(미로드)이면 배지를 그리지 않는다', async () => {
     mockContentStore({ trackedOcids: null })
     const view = await renderOverlay(<SettingsScreen />)
@@ -417,7 +417,7 @@ describe('SettingsScreen — 캐릭터 관리', () => {
     expect(navigate).toHaveBeenCalledWith('SettingsCharacters')
   })
 
-  // 조회가 통째로 옮겨간 것이 이 개편의 요점이다 — 설정 본화면은 이제 캐릭터 목록을 모른다.
+  // 조회가 통째로 옮겨간 것이 이 개편의 요점이다. 설정 본화면은 이제 캐릭터 목록을 모른다.
   it('이 화면은 로스터를 조회하지 않는다', async () => {
     mockRouteParams = { openPicker: true }
 

@@ -1,4 +1,4 @@
-// 고가 아이템 드롭 시 전체화면 연출. 웹의 구성은 이렇다 — ScreenEff 가 전 프레임
+// 고가 아이템 드롭 시 전체화면 연출. 웹의 구성은 이렇다. ScreenEff 가 전 프레임
 // 동일 배율로 화면을 채우고, 8프레임 시점에 중앙 아이템이 팝인하며 DropEff(pre → loop ∞)가 아이템
 // 하단에서 올라온다. 화면을 탭하면 end 를 재생하고 닫힌다.
 //
@@ -15,13 +15,13 @@
 //      다시 써야 한다.
 //
 //      **step 7(animations)이 이것을 못 되살린 이유는 ⓐ였고, 그 벽은 사라졌다.** RN 의 `Image` 는
-//      원격 URI 를 주면 고유 크기를 모르지만 **번들 에셋은 스스로 안다** — 프레임이 번들에 들어온
+//      원격 URI 를 주면 고유 크기를 모르지만 **번들 에셋은 스스로 안다**. 프레임이 번들에 들어온
 //  지금은 `Image.resolveAssetSource` 로 그 크기를 읽을 수 있다. 프레임 배치는 의
 //      origin 을 **그 프레임 비트맵 크기** 위에서 해석하는 일이므로(origin 을 되미는 것이고, 되밀
 //      대상의 크기가 필요하다) 이제 쓸 수 있는 조건이 갖춰졌다. 크기 표는
 //      `DROP_EFFECT_ORIGINS` 의 **주석에만** 있고 데이터가 아니라는 것은 그대로다.
 //
-//   중앙 아이템의 **부유(`fx-drop-float`)는 step 7 에서 붙였다** — `@keyframes` 이고 붙일 자리(래퍼)가
+//   중앙 아이템의 **부유(`fx-drop-float`)는 step 7 에서 붙였다**. `@keyframes` 이고 붙일 자리(래퍼)가
 //   이미 있다. **팝인(scale/opacity 트랜지션)은 안 붙였다**: 그 대상이 아직 없는 `<Image>` 이고,
 //   그것을 켜는 트리거가 위의 엔진(8프레임 시점)이라 지금은 걸 곳도 켤 것도 없다.
 //
@@ -29,7 +29,7 @@
 // 사용자 반려로 1.5배로 되돌아왔고("배율은 계측이 아니라 눈으로 정하는 값임이 확인됐다"), 네 단계에
 // **같은 배율**을 걸어 둔 덕에 정정이 값 다섯 개 재계산으로 끝났다. RN 에서 엔진을 되살릴 때도 그
 // 구조(단계별 fps 표 + 한 배율)를 먼저 세우고 값은 실기기에서 눈으로 확정해야 한다. 팝인은 fps 가
-// 아니라 별도 트랜지션이라 **같은 배율로 함께** 바꿔야 한다 — 안 그러면 버스트가
+// 아니라 별도 트랜지션이라 **같은 배율로 함께** 바꿔야 한다. 안 그러면 버스트가
 // 사라진 뒤에도 아이템만 계속 커진다. `DROP_START_FRAME=8` 은 시간이 아니라 그림에 묶인 값이라
 // 배율과 무관하다(결정 3).
 //
@@ -37,7 +37,7 @@
 //
 // ① **`createPortal(document.body)` → `react-native` 의 `Modal`.** 웹에서 이 오버레이는 시트의
 //    **형제**로 포털 렌더돼 `z-[70]` 으로 시트(z-60) 위에 섰다. RN 에서는 별도 네이티브 윈도우가
-//  같은 일을 하고, 덤으로 가 다루던 문제가 **사라진다** — 탭이 시트에
+//  같은 일을 하고, 덤으로 가 다루던 문제가 **사라진다**. 탭이 시트에
 //    닿지 않으므로 `pointer-events-auto` 도 `data-sheet-keep-open` 마커도 필요 없다(그 둘은 Radix
 //    `dismissable-layer` 가 만든 웹 전용 결함이었다).
 // ② **`radial-gradient` 는 `react-native-svg` 로 그린다.** RN 의 스타일에는 그라디언트가 없고
@@ -46,20 +46,20 @@
 //
 //    **크기는 퍼센트로 주면 안 된다**(2026-08-26, 갤럭시 Z Flip3 실측). 이 모달은 열리면서
 //    `880 → 833.67 → 880dp` 로 두 번 재배치되는데(내비게이션 바 인셋이 늦게 풀린다), `<Svg>` 는
-//    가운데 값에서 한 번 배치된 뒤 **다시 배치되지 않았다** — `width="100%"` 가 그 시점 크기로
+//    가운데 값에서 한 번 배치된 뒤 **다시 배치되지 않았다**. `width="100%"` 가 그 시점 크기로
 //    굳어, 화면 아래 **46dp 가 안 칠해진 채** 뒤의 시트가 그대로 비쳤다. 그래서 창 크기를 숫자로
 //    박아 준다. 덤으로 `Pressable` 에 바깥색을 깔아 두어, 어떤 이유로든 못 칠한 자리가 생겨도
 //    투명 구멍이 되지는 않게 한다.
 // ③ ~~**`mix-blend-screen` 짝이 없다.**~~ → **RN 0.86 의 `mixBlendMode: 'screen'` 이 그 짝이다.**
-//    다만 **어느 요소에 거는지가 값보다 중요하다** — 처음엔 프레임을 감싸는 안쪽 View 에 걸었는데
+//    다만 **어느 요소에 거는지가 값보다 중요하다**. 처음엔 프레임을 감싸는 안쪽 View 에 걸었는데
 //    검은 사각형이 그대로 보였다(2026-08-13 실측: 프레임 상자 안이 순검정 `rgb(0,0,0)`, 바깥은
 //    그라디언트). 앵커 View 의 `zIndex` 가 **스태킹 컨텍스트**를 만들어 블렌드가 그 안에 갇히고,
 //    빈 배경과 합성되니 검정이 검정으로 남은 것이다. 그래서 블렌드를 **앵커 자신**에 건다 —
 //    그러면 합성 상대가 오버레이의 방사 그라디언트가 된다.
-// ④ 오버레이의 색은 **테마를 따르지 않는다**(적용 범위 밖) — 스프라이트가 어두운
+// ④ 오버레이의 색은 **테마를 따르지 않는다**(적용 범위 밖). 스프라이트가 어두운
 //    바탕을 전제로 그려져서, 밝은 테마에서 표면색으로 바꾸면 연출 자체가 사라진다. 웹과 같은
 //    고정 hex 를 그대로 쓴다.
-// ⑤ **`<img src>` 갈아끼우기에는 웹에 없던 값이 붙는다 — 첫 디코드.** 웹은 `new Image()` 로
+// ⑤ **`<img src>` 갈아끼우기에는 웹에 없던 값이 붙는다. 첫 디코드.** 웹은 `new Image()` 로
 //    프리로드해 두고 `el.complete` 를 봤다. RN 에는 그 짝이 없고, `<Image source>` 를 아직 안 그려
 //    본 프레임으로 바꾸면 **그 한 장이 통째로 빈다**(디코드가 비동기라 이번 합성에 못 댄다).
 //    프레임마다 한 번씩이므로 **첫 재생만** 깜빡이는데, 사용자가 연출을 보는 것이 바로 그 한 번이다.
@@ -117,7 +117,7 @@ interface DropEffectOverlayProps {
 
 /**
  * 프레임 비트맵 크기 — 번들 에셋은 스스로 안다(이후). 모르면 `null` 이고, 그때는
- * 아예 안 그린다(`frame-layout.ts` — 크기 없이 그리면 프레임마다 최대 26px 튄다).
+ * 아예 안 그린다(`frame-layout.ts`. 크기 없이 그리면 프레임마다 최대 26px 튄다).
  */
 function bitmapSizeOf(source: number | { uri?: string }): FrameBitmapSize | null {
   const resolved = Image.resolveAssetSource(source as never)
@@ -130,11 +130,11 @@ function bitmapSizeOf(source: number | { uri?: string }): FrameBitmapSize | null
  * 스프라이트 한 층 — **전 프레임을 마운트해 두고 `opacity` 로 한 장만 켠다**(파일 머리 ⑤).
  *
  * `source` 를 갈아끼우지 않는 것이 요점이다. 붙어 있는 `<Image>` 는 자기 비트맵을 쥐고 있어
- * 캐시에서 밀려나도 그릴 수 있다 — 갈아끼우는 구조에서는 그 순간 캐시를 다시 뒤지고, 없으면
+ * 캐시에서 밀려나도 그릴 수 있다. 갈아끼우는 구조에서는 그 순간 캐시를 다시 뒤지고, 없으면
  * 그 프레임이 통째로 빈다.
  */
 /**
- * 프레임 한 장. **`memo` 인 이유는 tick 마다 55장을 전부 재조정하지 않기 위해서다** — 실제로 바뀌는
+ * 프레임 한 장. **`memo` 인 이유는 tick 마다 55장을 전부 재조정하지 않기 위해서다**. 실제로 바뀌는
  * 것은 **켜지는 하나와 꺼지는 하나** 뿐이다.
  */
 const SpriteFrameView = memo(function SpriteFrameView(props: {
@@ -216,7 +216,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
   // 상태를 ref 로도 들고 있는 이유: tick 은 `requestAnimationFrame` 콜백이라 **자기 클로저의 옛
   // state 를 본다.** 웹판이 `st` 객체 하나를 변이하며 돌던 자리와 같은 역할이다.
   //
-  // **ref 가 원본이고 state 는 그림자다** — 렌더 때 `stateRef.current = state` 로 되맞추지 않는다.
+  // **ref 가 원본이고 state 는 그림자다**. 렌더 때 `stateRef.current = state` 로 되맞추지 않는다.
   // 그 방향이면 렌더 중 ref 를 건드리게 되고(React 규칙 위반), 무엇보다 필요가 없다: 값을 바꾸는
   // 곳이 tick 과 탭 둘뿐이고 둘 다 ref 를 먼저 고친 뒤 `setState` 로 화면에 흘린다.
   const stateRef = useRef(state)
@@ -229,7 +229,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
   // 재생 루프. **`requestAnimationFrame` 인 이유는 `drop-effect-player.ts` 머리에 적었다** —
   // 스프라이트 재생은 **몇 번째 그림인가** 를 정하는 일이라 JS 스레드를 벗어날 수 없다.
   //
-  // **예열이 끝나기 전에는 돌지 않는다**(파일 머리 ⑤) — 디코드가 안 끝난 프레임을 넘기면 그 한 장이
+  // **예열이 끝나기 전에는 돌지 않는다**(파일 머리 ⑤). 디코드가 안 끝난 프레임을 넘기면 그 한 장이
   // 통째로 빈다.
   useEffect(() => {
     if (!warm) return undefined
@@ -244,7 +244,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
       const prev = stateRef.current
       const next = advanceDropEffect(prev, dt, counts)
       stateRef.current = next
-      // **그림이 그대로면 다시 그리지 않는다**(`rendersDifferently`) — 안 그러면 120Hz 기기에서
+      // **그림이 그대로면 다시 그리지 않는다**(`rendersDifferently`). 안 그러면 120Hz 기기에서
       // 초당 120번 트리를 재조정하면서 정작 스프라이트는 22번만 바뀐다.
       if (rendersDifferently(prev, next)) setState(next)
 
@@ -268,7 +268,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
   }, [counts])
 
   // ── 이번 프레임에 **켤 키**. 그림을 바꾸는 것이 아니라 켜는 것을 바꾼다(파일 머리 ⑤).
-  // 예열이 끝나기 전에는 아무것도 안 켠다 — 켜 두면 그 한 장이 예열 내내 **멈춰 서 있다.**
+  // 예열이 끝나기 전에는 아무것도 안 켠다. 켜 두면 그 한 장이 예열 내내 **멈춰 서 있다.**
   const activeScreenKey = !warm || state.screenDone ? null : `screen-${state.screenIndex}`
   const activePillarKey =
     !warm || state.pillarPhase === null ? null : `${state.pillarPhase}-${state.pillarIndex}`
@@ -344,7 +344,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
               marginTop: -ITEM_SIZE_PX / 2,
             }}
           >
-            {/* 웹이 레이어를 셋으로 가른 이유가 RN 에서도 그대로다 — 중앙정렬(바깥)·부유(가운데)·
+            {/* 웹이 레이어를 셋으로 가른 이유가 RN 에서도 그대로다. 중앙정렬(바깥)·부유(가운데)·
                 팝인(안쪽)이 한 요소에 겹치면 서로의 transform 을 덮어쓴다.
                 모션 줄이기면 둘 다 안 건다(웹의 `prefers-reduced-motion` 짝). */}
             <AnimatedView

@@ -1,7 +1,7 @@
 // 테마가 **실제 RN 스타일까지 흐르는지** 지킨다(3단계).
 //
 // 위 단계(`theme-vars.test.ts`)는 변수 맵이 맞는지만 본다. 여기서 보는 것은 그 맵이 `vars()` 를 타고
-// 내려가 `className` 이 **색으로 풀리는가** 다 — 배선(babel 프리셋·컴파일된 CSS·색 스케일) 중 하나가
+// 내려가 `className` 이 **색으로 풀리는가** 다. 배선(babel 프리셋·컴파일된 CSS·색 스케일) 중 하나가
 // 끊기면 값 테스트는 초록인데 화면만 무색이 된다.
 //
 // 값은 손으로 적지 않고 `job-themes.json` 에서 읽는다(— 색은 사람이 확인해 커밋한 값이고
@@ -114,7 +114,7 @@ describe('ThemeProvider', () => {
       </ThemeProvider>,
     )
 
-    // 루트는 `Swatch` 의 조상이다 — 트리를 타고 올라가 `flex: 1` 인 그 View 를 찾는다.
+    // 루트는 `Swatch` 의 조상이다. 트리를 타고 올라가 `flex: 1` 인 그 View 를 찾는다.
     let node = getByTestId('card').parent
     while (node !== null && flattenStyle(node.props.style).backgroundColor === undefined) {
       node = node.parent
@@ -146,7 +146,7 @@ describe('ThemeProvider', () => {
 })
 
 describe('모드 분기', () => {
-  // 웹은 `data-mode` 선택자로, RN 은 **값**으로 푼다 — 그래서 같은 클래스가 모드마다 다른 색이 된다.
+  // 웹은 `data-mode` 선택자로, RN 은 **값**으로 푼다. 그래서 같은 클래스가 모드마다 다른 색이 된다.
   it('라이트에서는 패널 테두리가 `border` 와 다른 색이다', async () => {
     const { getByTestId } = await render(
       <ThemeProvider>

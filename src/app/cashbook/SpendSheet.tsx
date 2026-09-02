@@ -4,7 +4,7 @@
  * ## 여기 남는 것은 **갈래가 안 바꾸는 것**뿐이다
  *
  * 시트 상자와 지금 어느 갈래인가 하나. 머리줄 · 갈래 칩 · 캐릭터 줄부터 저장까지는 전부
- * **갈래별 폼**이 든다(`spend/`) — 머리줄과 칩이 서는 자리가 갈래마다 다르기 때문이다(목록 갈래는
+ * **갈래별 폼**이 든다(`spend/`). 머리줄과 칩이 서는 자리가 갈래마다 다르기 때문이다(목록 갈래는
  * 둘째 화면에서 칩이 걷히고 제목이 되돌아가는 누르개가 된다).
  *
  * 종전에는 한 함수가 갈래 다섯의 상태를 **전부 들고** 조건문으로 그렸다. 그래서 갈래를 옮겨도
@@ -13,11 +13,11 @@
  * ## 자기가 어느 갈래인지 모른다
  *
  * 수입/지출 세그먼트가 없다. 갈래는 **펼침판이 시트 밖에서** 갈랐고 이 시트는
- * 지출이라는 사실조차 프롭으로 받지 않는다 — 애초에 지출만 그리는 컴포넌트다.
+ * 지출이라는 사실조차 프롭으로 받지 않는다. 애초에 지출만 그리는 컴포넌트다.
  *
  * ## 날짜는 고르지 않는다
  *
- * 머리에 **어느 날에 적히는지**를 적되 여기서 바꾸지는 않는다 — 날짜는 캘린더에서 칸을 눌러
+ * 머리에 **어느 날에 적히는지**를 적되 여기서 바꾸지는 않는다. 날짜는 캘린더에서 칸을 눌러
  * 고르는 것이고, 그것이 이 시트를 여는 경로다.
  */
 import { useState } from 'react'
@@ -41,7 +41,7 @@ export interface SpendSheetProps {
    */
   characters: ReadonlyArray<{ ocid: string; name: string }>
   /**
-   * 고칠 기록. 있으면 **수정 모드**다 — 머리와 버튼 글자가 갈리고 삭제가 선다.
+   * 고칠 기록. 있으면 **수정 모드**다. 머리와 버튼 글자가 갈리고 삭제가 선다.
    * 화면을 따로 만들지 않는 이유는 **입력 규칙이 한 벌이어야** 하기 때문이다.
    */
   editing?: SpendRecord
@@ -51,7 +51,7 @@ export interface SpendSheetProps {
    * 기억한다 가 여기서 결정적이다. `null` 이면 아직 한 번도 안 넣었다는 뜻이다.
    */
   lastPointRate: number | null
-  /** 던지면 **안 닫는다** — 친 것을 잃지 않는다. 실패를 말하는 것은 화면 몫이다(토스트). */
+  /** 던지면 **안 닫는다**. 친 것을 잃지 않는다. 실패를 말하는 것은 화면 몫이다(토스트). */
   onSave: SpendFormProps['onSave']
   onClose: () => void
 }
@@ -66,7 +66,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
    */
   const [scrollKey, setScrollKey] = useState('')
   /**
-   * **어느 날에 적히나** — 시트를 연 날로 시작하고 머리에서 바꾼다.
+   * **어느 날에 적히나**. 시트를 연 날로 시작하고 머리에서 바꾼다.
    *
    * 갈래 폼은 `key={category}` 로만 다시 심기므로, 날짜를 바꿔도 **친 것이 안 사라진다**.
    */
@@ -98,7 +98,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
       resetScrollKey={`${category}|${scrollKey}`}
     >
       <View className="gap-3 px-4 pb-2">
-        {/* **`key` 가 곧 갈래를 옮기면 값이 사라진다** 다 — 갈래가 바뀌면
+        {/* **`key` 가 곧 갈래를 옮기면 값이 사라진다** 다. 갈래가 바뀌면
             리액트가 폼을 새로 심는다. 지울 것을 손으로 세지 않는다. */}
         <SpendForm key={category} category={category} formProps={formProps} />
       </View>

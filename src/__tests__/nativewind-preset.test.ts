@@ -3,7 +3,7 @@
  *
  * NativeWind 는 `NATIVEWIND_OS` 가 없거나 `web` 이면 web 프리셋으로 컴파일한다
  * (`nativewind/dist/tailwind/index.js`). Metro 는 `options.platform` 을 넣지만 jest 는 아무도 안
- * 넣고 있었고, 그래서 테스트가 앱과 **다른 값**을 봤다 — `invisible` 이 `opacity` 가 아니라
+ * 넣고 있었고, 그래서 테스트가 앱과 **다른 값**을 봤다. `invisible` 이 `opacity` 가 아니라
  * `visibility` 로, `shadow` 가 `elevation` 이 아니라 `box-shadow` 로 나왔다.
  *
  * **이 어긋남은 조용하다.** 클래스 이름이 같아 테스트는 초록인데 앱은 다른 그림을 그린다.
@@ -41,7 +41,7 @@ function ruleOf(css: string, selector: string): string | null {
   return css.slice(at, css.indexOf('}', at)).replace(/\s+/g, ' ')
 }
 
-// 컴파일이 두 번 도는 무거운 스위트다 — 다른 스위트와 달리 타임아웃을 늘린다.
+// 컴파일이 두 번 도는 무거운 스위트다. 다른 스위트와 달리 타임아웃을 늘린다.
 jest.setTimeout(120_000)
 
 describe('NativeWind 프리셋', () => {

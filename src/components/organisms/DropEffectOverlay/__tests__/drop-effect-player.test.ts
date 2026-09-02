@@ -4,7 +4,7 @@
 // `DropEffectOverlay.test.tsx` 머리에 *"재생을 보는 아홉은 여기 없다"* 고 적혀 있었다. 상태 전이를
 // 순수 함수로 떼어내면서 그 아홉 중 **화면 없이 검사할 수 있는 것들**이 여기로 왔다.
 //
-// 여기서 못 보는 것은 그대로 남는다 — 프레임이 **같아 보이는가**, origin 정합이 눈에 맞는가,
+// 여기서 못 보는 것은 그대로 남는다. 프레임이 **같아 보이는가**, origin 정합이 눈에 맞는가,
 //  의 1.5배가 적당한가. 그것들은 실기기에서 사람이 본다.
 import {
   DROP_EFFECT_FPS,
@@ -22,7 +22,7 @@ const COUNTS: DropEffectFrameCounts = { screen: 16, pre: 8, loop: 24, end: 7 }
 
 const MS = (fps: number, frames: number): number => (1000 / fps) * frames
 
-/** `dt` 를 잘게 나눠 흘려보낸다 — 한 번에 큰 값을 주면 `MAX_TICK_MS` 가 잘라낸다(실제 루프와 같다). */
+/** `dt` 를 잘게 나눠 흘려보낸다. 한 번에 큰 값을 주면 `MAX_TICK_MS` 가 잘라낸다(실제 루프와 같다). */
 function run(
   state: ReturnType<typeof createDropEffectState>,
   totalMs: number,
@@ -69,7 +69,7 @@ describe('DropEff — pre 1회 뒤 loop 무한', () => {
     expect(s.pillarPhase).toBe('loop')
   })
 
-  // 무한 반복이 요점이다 — 한 바퀴 뒤에도 계속 loop 이고 인덱스가 범위 안에 있다.
+  // 무한 반복이 요점이다. 한 바퀴 뒤에도 계속 loop 이고 인덱스가 범위 안에 있다.
   it('loop 는 끝나지 않고 인덱스가 되돌아온다', () => {
     const start = MS(DROP_EFFECT_FPS.screen, DROP_START_FRAME) + 20
     const s = run(

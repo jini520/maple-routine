@@ -1,4 +1,4 @@
-// 웹판(149줄)의 **명세를 읽어 다시 쓴 것**이다 — 그쪽은 jsdom·DOM 기준이라 그대로는 뜻이 없다.
+// 웹판(149줄)의 **명세를 읽어 다시 쓴 것**이다. 그쪽은 jsdom·DOM 기준이라 그대로는 뜻이 없다.
 // 각 케이스가 지키는 결정은 웹 주석 그대로이고, RN 에서 검사 수단이 갈린 자리만 여기 적는다.
 //
 // 갈린 것 다섯
@@ -7,7 +7,7 @@
 // ② `type="password"` → **`secureTextEntry`** 프롭을 본다.
 // ③ `getByRole('link', …)` + `href` → **`Linking.openURL` 이 무엇으로 불렸는가**. RN 에 `href` 가
 //  없으므로 링크의 계약은 "그 주소로 나간다" 하나뿐이고 이 지키려는 것도 그것이다.
-// ④ `toBeDisabled()`·`aria-busy` 속성 대신 **`accessibilityState`** 를 본다 — `Pressable` 이
+// ④ `toBeDisabled()`·`aria-busy` 속성 대신 **`accessibilityState`** 를 본다. `Pressable` 이
 //    `disabled`·`aria-busy` 를 호스트 뷰에 그대로 넘기지 않고 그 객체로 접는다(실측).
 // ⑤ Enter 제출 → `await fireEvent(input, 'submitEditing')`.
 import { fireEvent } from '@testing-library/react-native'
@@ -118,7 +118,7 @@ describe('ApiKeyForm', () => {
     expect(openURL).toHaveBeenCalledWith('https://mapleroutine.store/api-key')
   })
 
-  // 이미 키를 발급받은 사용자에게 7단계 안내를 경유시키지 않는다 — 가이드와 별개의 진입점.
+  // 이미 키를 발급받은 사용자에게 7단계 안내를 경유시키지 않는다. 가이드와 별개의 진입점.
   it('openapi.nexon.com 바로 가기도 함께 제공한다', async () => {
     const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
 
@@ -128,7 +128,7 @@ describe('ApiKeyForm', () => {
   })
 
   // 갈림길 레이아웃: 가이드는 구분선 뒤에서 '누를 수 있는 크기'가 되지만 외부 URL로 나가는
-  // 이동이라 시맨틱은 링크다 — 웹에서 `<a>` 로 둔 결정이 RN 에서는 `role` 로 남는다.
+  // 이동이라 시맨틱은 링크다. 웹에서 `<a>` 로 둔 결정이 RN 에서는 `role` 로 남는다.
   it('두 진입점 모두 버튼이 아니라 링크 시맨틱이다', async () => {
     const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
 
@@ -136,7 +136,7 @@ describe('ApiKeyForm', () => {
     expect(pressableOf(view.getByText('openapi.nexon.com에서 확인'), 'link').props.role).toBe('link')
   })
 
-  // 온보딩 다섯 단계 중 이 화면에만 제목이 없었다 — TrackingModeStep 과 같은 블록을 쓴다.
+  // 온보딩 다섯 단계 중 이 화면에만 제목이 없었다. TrackingModeStep 과 같은 블록을 쓴다.
   it('제목과 보조문을 보여준다', async () => {
     const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
 
@@ -185,7 +185,7 @@ describe('ApiKeyForm', () => {
     expect(input.props.spellCheck).toBe(false)
   })
 
-  // 웹에서는 "표시 토글이 폼을 제출하지 않는다"였다 — RN 에는 폼도 submit 도 없지만, 토글이
+  // 웹에서는 "표시 토글이 폼을 제출하지 않는다"였다. RN 에는 폼도 submit 도 없지만, 토글이
   // 제출 경로를 건드리지 않는다는 사실은 그대로 지켜야 한다.
   it('표시 토글은 제출을 일으키지 않는다', async () => {
     const onSubmit = jest.fn()

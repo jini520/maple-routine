@@ -1,5 +1,5 @@
 /**
- * 위젯 아홉의 **표** — 존재·크기·목적지.
+ * 위젯 아홉의 **표**. 존재·크기·목적지.
  *
  * ## 왜 표 인가
  *
@@ -10,7 +10,7 @@
  * ## 굵은 것이 기본 크기이고, 나머지는 **아직 아무도 안 쓴다**
  *
  * 배치가 코드 상수인 v1 에서 실제로 그려지는 크기는 `layout.ts` 가 적은 여덟뿐이다. 그래도 나머지를
- * 선언해 두는 것이 의 결정이다 — 나중에 편집이 오면 **그때 고를 크기가 이미
+ * 선언해 두는 것이 의 결정이다. 나중에 편집이 오면 **그때 고를 크기가 이미
  * 있어야** 하고, 대가는 아무도 안 부르는 렌더 분기가 스냅샷으로만 검증된다 는 것이다.
  *
  * ## `target` 은 **제안값**이다
@@ -44,16 +44,16 @@ export const WIDGETS: readonly WidgetDefinition[] = [
     Component: RepresentativeCharacterWidget,
   },
   {
-    // `남은 스케줄`과 같은 이유로 크기가 하나뿐이다 — 계열 수와 줄 수가 데이터에서 나온다
+    // `남은 스케줄`과 같은 이유로 크기가 하나뿐이다. 계열 수와 줄 수가 데이터에서 나온다
     // (유니온은 스케줄러에 있을 때만 그린다).
     id: 'shared-contents',
     sizes: [{ w: 4, h: 'auto' }],
-    // **`target` 이 없다** — 목적지가 열린 질문이라, 갈 데가 정해지기 전에 누를 수 있게 두면
+    // **`target` 이 없다**. 목적지가 열린 질문이라, 갈 데가 정해지기 전에 누를 수 있게 두면
     // 무반응이 **고장** 으로 읽힌다.
     Component: SharedContentsWidget,
   },
   {
-    // 크기가 하나뿐인 위젯 둘 중 하나다 — 캐릭터를 **전부** 출력하므로 높이를 미리 알 수 없고,
+    // 크기가 하나뿐인 위젯 둘 중 하나다. 캐릭터를 **전부** 출력하므로 높이를 미리 알 수 없고,
     // `h: 'auto'` 는 가로를 다 쓰는 타일에만 허용된다.
     id: 'remaining-schedule',
     sizes: [{ w: 4, h: 'auto' }],
@@ -63,7 +63,7 @@ export const WIDGETS: readonly WidgetDefinition[] = [
     Component: RemainingScheduleWidget,
   },
   {
-    // **높이를 내용이 정한다** — 캐릭터가 셋뿐이라(상한 `TOP_CHARACTER_COUNT`) 자랄 수
+    // **높이를 내용이 정한다**. 캐릭터가 셋뿐이라(상한 `TOP_CHARACTER_COUNT`) 자랄 수
     // 있는 폭이 좁고, 고정 3행이면 캐릭터가 하나일 때 아래가 87px 비었다.
     id: 'weekly-boss-profit',
     sizes: [
@@ -99,7 +99,7 @@ export const WIDGETS: readonly WidgetDefinition[] = [
     Component: CrystalLimitWidget,
   },
   {
-    // **목적지가 없는 위젯은 이것뿐이다** — 초기화 시각은 이 타일이 다 말하고, 더 볼 화면이 없다.
+    // **목적지가 없는 위젯은 이것뿐이다**. 초기화 시각은 이 타일이 다 말하고, 더 볼 화면이 없다.
     id: 'reset-countdown',
     sizes: [
       { w: 2, h: 1 },

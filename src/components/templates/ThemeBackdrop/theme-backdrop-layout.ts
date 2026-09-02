@@ -7,7 +7,7 @@
 // 둘 다 `100vw × 100dvh` 상자에 같은 `background-*` 를 걸어 그 정합을 CSS 가 보장했다. RN 에는
 // 배경 속성이 없어 우리가 좌표를 계산하므로, **계산이 한 곳이어야** 두 자리가 갈라지지 않는다.
 //
-// 값을 두 벌로 두면 한쪽만 고쳐도 아무 데서도 안 드러난다 — 이 저장소가 테마 토큰·라우트 표에서
+// 값을 두 벌로 두면 한쪽만 고쳐도 아무 데서도 안 드러난다. 이 저장소가 테마 토큰·라우트 표에서
 // 반복해 거부해 온 형태다.
 //
 // ## `cover` 의 뜻
@@ -57,7 +57,7 @@ export function parseBackgroundPosition(position: string): { x: number; y: numbe
 /**
  * 뷰포트를 덮도록 그림을 배치한다.
  *
- * 크기를 모르면 `null` — 그때는 그리지 않는다. 크기 없이 그리면 배율이 정해지지 않아 그림이
+ * 크기를 모르면 `null`. 그때는 그리지 않는다. 크기 없이 그리면 배율이 정해지지 않아 그림이
  * 상자에 늘어붙고, 그건 벽지가 아니라 왜곡이다(같은 판단이 `frame-layout.ts` 에도 있다).
  */
 export function resolveThemeBackdropLayout(
@@ -76,7 +76,7 @@ export function resolveThemeBackdropLayout(
   const { x, y } = parseBackgroundPosition(position)
 
   return {
-    // 넘치는 만큼(음수)을 position 비율로 나눈다 — CSS 와 같은 식이다.
+    // 넘치는 만큼(음수)을 position 비율로 나눈다. CSS 와 같은 식이다.
     left: (viewport.width - width) * x,
     top: (viewport.height - height) * y,
     width,

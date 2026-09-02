@@ -4,12 +4,12 @@
 // ① **부모를 계산하지 않는다.** 웹은 라우트가 둘이라 돌아갈 곳을 경로에서 깎아 썼고, 그래서
 //    `기능 설명에서 들어오면 기능 설명으로`·`개발 노트에서 들어오면 개발 노트로` 두 케이스가
 //    있었다. RN 의 pop 은 스택이 이미 알고 있어 **한 케이스로 접힌다**(`use-settings-navigation.ts`).
-// ② **마디는 쿼리가 아니라 파라미터**다 — 목차를 누르면 `setParams` 이고, 그것이 웹의
+// ② **마디는 쿼리가 아니라 파라미터**다. 목차를 누르면 `setParams` 이고, 그것이 웹의
 //  `replace` 와 같은 뜻(스택을 안 건드린다)이다.
 // ③ **스크롤 검사가 `scrollIntoView` 스파이에서 `scrollTo` 스파이 + `onLayout` 주입으로** 바뀐다.
 //    RN 에는 문서도 id 도 없어 마디가 자기 y 를 알려 줘야 하고(그 배선이 곧 이 화면의 계약이다),
 //    jest 는 레이아웃을 계산하지 않으므로 **테스트가 그 y 를 넣어 준다.**
-// ④ 없는 안내의 되돌리기는 `<Navigate replace>` → `goBack()` — 뜻(히스토리를 남기지 않는다)은 같다.
+// ④ 없는 안내의 되돌리기는 `<Navigate replace>` → `goBack()`. 뜻(히스토리를 남기지 않는다)은 같다.
 //    웹의 `push 가 아니라 replace 다` 케이스는 **스택을 우리가 미는 RN 에서 성립하지 않는다.**
 // ⑤ `getByAltText` → `getByLabelText`(`alt` 의 짝은 `accessibilityLabel`), `src` → `source` —
 //  그리고 그 값은 URL 문자열이 아니라 **번들 에셋 참조**다.
@@ -22,7 +22,7 @@ import { flattenStyle, renderOverlay, type AtomElement } from '../../../componen
 import { SettingsFeatureGuideScreen } from '../SettingsFeatureGuideScreen'
 import { useSettingsNavigation } from '../use-settings-navigation'
 
-// 안내 데이터는 화면이 아니라 데이터 파일이 소유한다 — 블록 조합을 훑는 케이스를 위해
+// 안내 데이터는 화면이 아니라 데이터 파일이 소유한다. 블록 조합을 훑는 케이스를 위해
 // `src/data/feature-guides/` 를 늘리지 않고 여기서 픽스처를 주입한다.
 jest.mock('../../../data/feature-guides', () => {
   const guides: unknown[] = []
@@ -44,7 +44,7 @@ function setGuides(guides: FeatureGuide[]): void {
   mockGuides.push(...guides)
 }
 
-// 라우트 파라미터는 `useRoute` 가 준다 — 두 라우트가 같은 모양이라 이름만 갈아 끼운다.
+// 라우트 파라미터는 `useRoute` 가 준다. 두 라우트가 같은 모양이라 이름만 갈아 끼운다.
 let mockRoute: { name: string; params: { guideId: string; section?: string } } = {
   name: 'SettingsFeatureGuide',
   params: { guideId: '파티-모달' },
@@ -53,7 +53,7 @@ jest.mock('@react-navigation/native', () => ({
   useRoute: () => mockRoute,
 }))
 
-// `scrollTo` 는 **프로토타입에서** 잡는다 — RNTL 이 주는 host 요소에는 그 메서드가 없고
+// `scrollTo` 는 **프로토타입에서** 잡는다. RNTL 이 주는 host 요소에는 그 메서드가 없고
 // (`instance.scrollTo === undefined`, 실측) 화면은 셸이 넘긴 ref 를 통해 그것을 부른다.
 const scrollTo = jest.spyOn(
   ScrollView.prototype as unknown as { scrollTo: (options?: unknown) => void },
@@ -74,7 +74,7 @@ async function press(element: AtomElement): Promise<void> {
 }
 
 /**
- * 그 글자를 담은 `role` 요소. **`getAllByText` 로 시작한다** — 마디 제목은 목차와 본문 소제목에
+ * 그 글자를 담은 `role` 요소. **`getAllByText` 로 시작한다**. 마디 제목은 목차와 본문 소제목에
  * 두 번 나오므로(그것이 목차의 존재 이유다) 단수 질의로는 잡히지 않는다.
  */
 function climbTo(view: Rendered, text: string, role: string): AtomElement {
@@ -100,7 +100,7 @@ function textsIn(node: AtomElement): string[] {
 }
 
 /**
- * 마디 위치를 알려 준다 — jest 는 레이아웃을 계산하지 않으므로 **`onLayout` 을 우리가 쏜다.**
+ * 마디 위치를 알려 준다. jest 는 레이아웃을 계산하지 않으므로 **`onLayout` 을 우리가 쏜다.**
  * 순서는 화면이 그린 순서 그대로이고, 래퍼(0) 다음에 마디들이 온다.
  */
 async function layout(view: Rendered, ys: number[]): Promise<void> {
@@ -163,7 +163,7 @@ describe('SettingsFeatureGuideScreen', () => {
     expect(view.getByText('파티 인원 관리')).toBeTruthy()
   })
 
-  // : 같은 화면이 두 라우트에 걸린다. **어디서 왔든 그리로 돌아간다** — RN 은
+  // : 같은 화면이 두 라우트에 걸린다. **어디서 왔든 그리로 돌아간다**. RN 은
   // 스택이 그것을 알고 있어 계산이 사라지고 `goBack()` 하나만 남는다.
   it.each(['SettingsFeatureGuide', 'SettingsReleaseNoteGuide'])(
     '%s 로 들어와도 뒤로는 그냥 pop 이다',
@@ -197,7 +197,7 @@ describe('SettingsFeatureGuideScreen', () => {
     expect(view.getAllByTestId('guide-toc-item')).toHaveLength(2)
   })
 
-  // 번호는 **버튼 밖**이라 누를 수 있는 이름이 제목 그대로 남는다 — 개발 노트가 가리키는 이름과
+  // 번호는 **버튼 밖**이라 누를 수 있는 이름이 제목 그대로 남는다. 개발 노트가 가리키는 이름과
   // 어긋나면 안 된다(2026-08-11 사용자 지정).
   it('목차는 `목차` 제목 + 번호 목록이고 번호는 버튼 밖이다', async () => {
     const view = await renderOverlay(<SettingsFeatureGuideScreen />)
@@ -235,7 +235,7 @@ describe('SettingsFeatureGuideScreen', () => {
     expect(view.getAllByTestId('guide-section')).toHaveLength(1)
   })
 
-  // 릴리스에서 바뀐 것은 보통 기능 전체가 아니라 그중 한 마디다 — 첫머리에 떨어뜨리면 읽는
+  // 릴리스에서 바뀐 것은 보통 기능 전체가 아니라 그중 한 마디다. 첫머리에 떨어뜨리면 읽는
   // 사람이 그 마디를 다시 찾아야 한다. **`scroll-mt-4` 몫 16px 을 뺀 자리**다.
   it('section 파라미터로 들어오면 그 마디로 스크롤한다', async () => {
     mockRoute = {
@@ -270,7 +270,7 @@ describe('SettingsFeatureGuideScreen', () => {
     expect(scrollTo).not.toHaveBeenCalled()
   })
 
-  // 목차는 **같은 화면 안의 이동**이다 — 스택이 움직이면 안 되므로 `setParams` 다.
+  // 목차는 **같은 화면 안의 이동**이다. 스택이 움직이면 안 되므로 `setParams` 다.
   it('목차를 누르면 파라미터만 갈아 끼우고 화면은 그대로다', async () => {
     const view = await renderOverlay(<SettingsFeatureGuideScreen />)
 
@@ -281,7 +281,7 @@ describe('SettingsFeatureGuideScreen', () => {
     expect(view.getByText('파티 인원 관리')).toBeTruthy()
   })
 
-  // 안내 화면에서 이미지는 정보를 나른다 — 대체 텍스트가 곧 그 정보다.
+  // 안내 화면에서 이미지는 정보를 나른다. 대체 텍스트가 곧 그 정보다.
   it('이미지를 대체 텍스트와 함께 그린다', async () => {
     const view = await renderOverlay(<SettingsFeatureGuideScreen />)
 
@@ -289,7 +289,7 @@ describe('SettingsFeatureGuideScreen', () => {
     expect(view.getByLabelText('난이도 세그먼트')).toBeTruthy()
   })
 
-  // 웹은 `w-full` 한 줄이었다 — 높이는 preflight 의 `img { height: auto }` 가 정했다. RN 에 그
+  // 웹은 `w-full` 한 줄이었다. 높이는 preflight 의 `img { height: auto }` 가 정했다. RN 에 그
   // 짝이 없어 **높이를 이름 부르지 않으면** 스크린샷의 고유 픽셀 높이가 상자 높이로 남고,
   // `contain` 이 그 안에 그림을 넣어 **위아래로 큰 여백**이 생긴다(746×274 안내는 각 71px, 세로로
   // 긴 780×1438 안내는 각 389px — 보고 ②).
@@ -319,7 +319,7 @@ describe('SettingsFeatureGuideScreen', () => {
     expect(view.queryAllByRole('image')).toHaveLength(0)
   })
 
-  // 옛 링크·오타의 착지점이 빈 화면이면 안 된다 — 히스토리를 남기지 않고 들어온 목록으로 돌린다.
+  // 옛 링크·오타의 착지점이 빈 화면이면 안 된다. 히스토리를 남기지 않고 들어온 목록으로 돌린다.
   it('없는 guideId 로 들어오면 아무것도 그리지 않고 되돌린다', async () => {
     mockRoute = { name: 'SettingsFeatureGuide', params: { guideId: '없는-안내' } }
     const view = await renderOverlay(<SettingsFeatureGuideScreen />)

@@ -18,7 +18,7 @@ function jsonResponse(status: number, body: unknown): Response {
   return { ok: status >= 200 && status < 300, status, json: async () => body } as unknown as Response
 }
 
-/** 실측 캐릭터(렌)를 축약한 것 — 합이 149 다. */
+/** 실측 캐릭터(렌)를 축약한 것. 합이 149 다. */
 const 응답 = {
   '/maplestory/v1/character/item-equipment': {
     item_equipment: [
@@ -73,7 +73,7 @@ describe('fetchMesoRate', () => {
 
     const 부른경로 = fetchMock.mock.calls.map(([url]) => String(url))
     for (const path of Object.keys(응답)) {
-      // ocid 는 인코딩된다 — 슬래시가 든 ocid 가 경로를 갈라 놓으면 안 된다.
+      // ocid 는 인코딩된다. 슬래시가 든 ocid 가 경로를 갈라 놓으면 안 된다.
       // 스킬만 차수를 함께 싣는다.
       const 기대 = `https://open.api.nexon.com${path}?ocid=oc%20id%2F1`
       expect(부른경로).toContain(

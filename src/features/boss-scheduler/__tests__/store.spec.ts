@@ -132,7 +132,7 @@ beforeEach(() => {
   seedManualTrackedContentMock.mockResolvedValue(undefined)
   getManualTrackedContentMock.mockResolvedValue([])
   setManualTrackedContentMock.mockResolvedValue(undefined)
-  // 모듈 수준 플래그라 테스트끼리 오염된다 — 매번 "앱 재시작 직후" 상태에서 시작한다.
+  // 모듈 수준 플래그라 테스트끼리 오염된다. 매번 "앱 재시작 직후" 상태에서 시작한다.
   resetSyncRunStateForTests()
 })
 
@@ -460,7 +460,7 @@ describe('useBossSchedulerStore', () => {
     })
 
     // : 부팅 선하이드레이션과 화면 마운트가 반드시 겹치므로, 동시 호출은
-    // 한 회차로 합친다 — 안 그러면 같은 응답을 두 번 받는다(이 없애려던 낭비).
+    // 한 회차로 합친다. 안 그러면 같은 응답을 두 번 받는다(이 없애려던 낭비).
     it('loadTrackedOcids를 동시에 두 번 불러도 한 회차만 돈다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
       syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -473,7 +473,7 @@ describe('useBossSchedulerStore', () => {
       expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
     })
 
-    // "평생 한 번"이 아니라 "동시에 하나만"이다 — 영구 메모면 진입 재조회의 10분 TTL 이 죽는다.
+    // "평생 한 번"이 아니라 "동시에 하나만"이다. 영구 메모면 진입 재조회의 10분 TTL 이 죽는다.
     it('앞 회차가 끝난 뒤에 부르면 다시 돈다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
       syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -577,7 +577,7 @@ describe('useBossSchedulerStore', () => {
 
       expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
       expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-2'], undefined)
-      // 유지 캐릭터는 메모리 뷰를 그대로 재사용한다 — 네트워크는 물론 캐시도 다시 읽지 않는다
+      // 유지 캐릭터는 메모리 뷰를 그대로 재사용한다. 네트워크는 물론 캐시도 다시 읽지 않는다
       expect(getCachedSchedulerStateMock).not.toHaveBeenCalled()
 
       const state = useBossSchedulerStore.getState()
@@ -599,7 +599,7 @@ describe('useBossSchedulerStore', () => {
         .getState()
         .characters.find((character) => character.ocid === 'ocid-1')
       // 보스 목록·클리어 카운트는 손대지 않는다. `level`·`imageUrl` 만 정렬 단계가 캐시에서 다시
-      // 찍는다 — 여기 목에는 캐시가 없어 둘 다 `null` 이다.
+      // 찍는다. 여기 목에는 캐시가 없어 둘 다 `null` 이다.
       expect(restored).toEqual({ ...kept, level: null, imageUrl: null })
     })
 
@@ -684,7 +684,7 @@ describe('useBossSchedulerStore', () => {
 
       expect(seedManualTrackedContentMock).toHaveBeenCalledTimes(1)
       expect(seedManualTrackedContentMock).toHaveBeenCalledWith(['ocid-2'])
-      // 시드가 refresh(syncSchedules)보다 먼저 실행된다 — 저장 진행률 모달이 시드까지 커버(결정 15)
+      // 시드가 refresh(syncSchedules)보다 먼저 실행된다. 저장 진행률 모달이 시드까지 커버(결정 15)
       expect(seedManualTrackedContentMock.mock.invocationCallOrder[0]).toBeLessThan(
         syncSchedulesMock.mock.invocationCallOrder[0],
       )
@@ -769,7 +769,7 @@ describe('useBossSchedulerStore', () => {
       ])
     })
 
-    // weekly-bosses.json의 주간 보스 12종(시즌 보스 제외) — 12개 한도를 채우는 데 쓴다.
+    // weekly-bosses.json의 주간 보스 12종(시즌 보스 제외). 12개 한도를 채우는 데 쓴다.
     const WEEKLY_BOSS_NAMES = [
       '자쿰',
       '매그너스',
@@ -907,7 +907,7 @@ describe('useBossSchedulerStore', () => {
     })
   })
 
-  // ADR-055 결정 2·3(이슈 #62): 한도 가드의 본체는 스토어다 — UI에서만 막으면 난이도 교체·시드
+  // ADR-055 결정 2·3(이슈 #62): 한도 가드의 본체는 스토어다. UI에서만 막으면 난이도 교체·시드
   // 같은 다른 호출 경로가 그대로 새어나간다.
   describe('ADR-055: 수동 주간 보스 12개 한도', () => {
     // weekly-bosses.json 주간 섹션 앞부분 12종 — 실재하는 이름이어야 주기·시즌 판정이 통한다.
@@ -1064,7 +1064,7 @@ describe('useBossSchedulerStore', () => {
       expect(useCharacterSelectionStore.getState().selectedOcid).toBe('ocid-1')
     })
 
-    // `selectCharacter` 테스트는 여기 있었다 — 선택이 이 스토어를 떠나면서
+    // `selectCharacter` 테스트는 여기 있었다. 선택이 이 스토어를 떠나면서
     // `features/character-selection/__tests__/store.spec.ts` 로 옮겨갔다.
   })
 
@@ -1169,7 +1169,7 @@ describe('useBossSchedulerStore', () => {
       expect(useBossSchedulerStore.getState().partyFilter).toBe('solo')
     })
 
-    // 탭이 남아 있으면 다음 세션이 **관리 화면만 쓰는 상태** 로 되살린다 — 없는 것을 못 박는다.
+    // 탭이 남아 있으면 다음 세션이 **관리 화면만 쓰는 상태** 로 되살린다. 없는 것을 못 박는다.
     it('탭 상태와 세터가 스토어에 없다', () => {
       const state = useBossSchedulerStore.getState() as unknown as Record<string, unknown>
 
@@ -1276,7 +1276,7 @@ describe('useBossSchedulerStore', () => {
       expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
     })
 
-    // 결정 4: 강제가 기본값이다 — 옵션을 넘기지 않는 헤더 버튼·당겨서 새로고침·재시도는 항상 조회한다.
+    // 결정 4: 강제가 기본값이다. 옵션을 넘기지 않는 헤더 버튼·당겨서 새로고침·재시도는 항상 조회한다.
     it('옵션 없는 refresh(명시적 재조회)는 TTL 안이어도 항상 조회한다', async () => {
       markSyncAttemptedThisRun()
       getCachedSchedulerStateMock.mockResolvedValue(cachedSchedulerState(minutesAgo(5)))
@@ -1298,7 +1298,7 @@ describe('useBossSchedulerStore', () => {
       expect(useBossSchedulerStore.getState().status).toBe('loaded')
     })
 
-    // 파티 설정은 로컬 SQLite 조회라 네트워크 TTL 의 대상이 아니다 — 함께 건너뛰면 추적 목록이
+    // 파티 설정은 로컬 SQLite 조회라 네트워크 TTL 의 대상이 아니다. 함께 건너뛰면 추적 목록이
     // 바뀐 진입에서 파티원 수 배지·솔로/파티 필터가 옛 값으로 남는다.
     it('동기화를 건너뛰어도 파티 설정은 다시 조회한다', async () => {
       markSyncAttemptedThisRun()

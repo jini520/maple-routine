@@ -1,15 +1,15 @@
 // 웹판(108줄)의 명세를 읽어 다시 쓴 것.
 //
 // 갈린 것 셋
-// ① **라우터 프로브가 없다** — 뒤로·이동은 `goBack`/`navigate` 가 무엇으로 불렸는가로 본다
+// ① **라우터 프로브가 없다**. 뒤로·이동은 `goBack`/`navigate` 가 무엇으로 불렸는가로 본다
 //    (`SettingsScreen` 테스트 파일 머리 ①).
-// ② `getByRole('heading')` 이 없다 — RN 에 heading 역할이 없어 **제목 글자**로 본다. 웹의
+// ② `getByRole('heading')` 이 없다. RN 에 heading 역할이 없어 **제목 글자**로 본다. 웹의
 //    `제목이 하나뿐` 케이스도 그래서 `업데이트 카드가 자기 제목을 그리지 않는다`로만 남는다.
 // ③ **OTA 상태를 이제 목으로 만들 수 있다**. 예전에는 스토어를 값으로 import 하는
 //  것만으로 죽어 이 화면이 상태를 **상수로 심었고**, 그래서 웹의 `최신이면
 //    최신 버전입니다`를 검사할 수 없었다. 그 벽 둘이 다 사라져(포트가 채워졌고 `import.meta.env`
 //    가 없어졌다) **포트를 갈아끼우는 것으로** 상태를 만든다. 문구 열넷의 계약은 여전히
-//    `AppUpdateSection` 테스트가 프롭을 직접 넣어 지킨다 — 여기서 보는 것은 **배선** 이다.
+//    `AppUpdateSection` 테스트가 프롭을 직접 넣어 지킨다. 여기서 보는 것은 **배선** 이다.
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { useLiveUpdateStore } from '../../../features/live-update/store'
@@ -24,7 +24,7 @@ import { useSettingsNavigation } from '../use-settings-navigation'
  * 이 화면이 마운트에서 `loadCurrentVersion()` 을 부르므로 포트가 있어야 한다(배선).
  *
  * `isSupported` 를 케이스별로 갈라 지원되지 않는 환경 과 도는 번들이 있는 환경 을 둘 다
- * 만든다 — 그 갈림이 곧 카드가 확인 버튼을 그리는지의 근거다.
+ * 만든다. 그 갈림이 곧 카드가 확인 버튼을 그리는지의 근거다.
  */
 function installLiveUpdatePort(overrides: Partial<LiveUpdatePort> = {}): void {
   setLiveUpdatePort({
@@ -76,7 +76,7 @@ afterEach(() => {
 })
 
 describe('SettingsAboutScreen', () => {
-  // 골격은 관리 페이지와 같다 — `ScreenScroll` + `PageHeader` + `ArrowLeft`.
+  // 골격은 관리 페이지와 같다. `ScreenScroll` + `PageHeader` + `ArrowLeft`.
   it('"앱 정보" 제목과 뒤로 버튼을 그리고, 뒤로를 누르면 pop 한다', async () => {
     const view = await renderOverlay(<SettingsAboutScreen />)
 
@@ -88,7 +88,7 @@ describe('SettingsAboutScreen', () => {
     expect(goBack).toHaveBeenCalledTimes(1)
   })
 
-  // 스택 위로 올라간 화면에는 탭바가 없다 — 셸이 하단 인셋을 그렇게 잡는다.
+  // 스택 위로 올라간 화면에는 탭바가 없다. 셸이 하단 인셋을 그렇게 잡는다.
   it('자기 스크롤 컨테이너를 갖는다', async () => {
     const view = await renderOverlay(<SettingsAboutScreen />)
 
@@ -111,7 +111,7 @@ describe('SettingsAboutScreen', () => {
 
   // : `LiveUpdatePort` 가 던져 확인 경로가 없다. **없는 것을 있는 척하지 않는
   // 것이 이 화면의 계약**이라 확인 버튼도 함께 사라진다.
-  // 런타임이 없는 환경(개발 서버)에서는 확인 버튼 자체가 없어야 한다 — 누를 수 없는 것을 그리면
+  // 런타임이 없는 환경(개발 서버)에서는 확인 버튼 자체가 없어야 한다. 누를 수 없는 것을 그리면
   // 눌러 보고 아무 일도 안 일어나는 자리가 된다.
   it('런타임이 없으면 미지원 상태이고 확인 버튼이 없다', async () => {
     installLiveUpdatePort({ isSupported: () => false })
@@ -132,7 +132,7 @@ describe('SettingsAboutScreen', () => {
     expect(view.getByText('9.9.9')).toBeTruthy()
   })
 
-  // 아직 싣기 전 첫 렌더에는 값이 없다 — 그때는 빌드 시점 값이 폴백이다(`SettingsScreen` 과 같은 자리).
+  // 아직 싣기 전 첫 렌더에는 값이 없다. 그때는 빌드 시점 값이 폴백이다(`SettingsScreen` 과 같은 자리).
   it('버전을 싣기 전에는 빌드 시점 package.json 버전을 쓴다', async () => {
     installLiveUpdatePort({ isSupported: () => false })
 
@@ -146,7 +146,7 @@ describe('SettingsAboutScreen', () => {
   it('개인정보 처리방침 행이 앱 밖으로 나가지 않고 하위 페이지를 민다', async () => {
     const view = await renderOverlay(<SettingsAboutScreen />)
 
-    // 외부 링크 행이면 chevron 이 아니라 외부 링크 아이콘이 선다 — 그 표식이 없어야 한다.
+    // 외부 링크 행이면 chevron 이 아니라 외부 링크 아이콘이 선다. 그 표식이 없어야 한다.
     expect(view.queryByTestId('settings-row-external')).toBeNull()
 
     await press(buttonOf(view, '개인정보 처리방침'))

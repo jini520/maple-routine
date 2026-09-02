@@ -1,5 +1,5 @@
 /**
- * 한 축만 정하고 나머지는 **그림이** 정한다 — 웹 preflight `img { height: auto }` 의 짝
+ * 한 축만 정하고 나머지는 **그림이** 정한다. 웹 preflight `img { height: auto }` 의 짝
  *
  *
  * ## RN 의 `<Image>` 는 우리가 이름을 부르지 않은 축을 **비워 두지 않는다**
@@ -10,7 +10,7 @@
  *
  * 맨 아래가 **그림의 고유 픽셀 크기**다(로 번들에 들어온 에셋은 늘 자기 크기를 싣고
  * 온다). 우리 스타일이 맨 위라 **적은 축만** 이기고, 안 적은 축에는 그 고유 픽셀값이 그대로
- * 남는다 — 웹에서 `w-full` 한 줄로 끝난 이유가 preflight 의 `height: auto` 였고 RN 에는 그 말을
+ * 남는다. 웹에서 `w-full` 한 줄로 끝난 이유가 preflight 의 `height: auto` 였고 RN 에는 그 말을
  * 대신 해 주는 것이 없다.
  *
  * **그래서 `aspectRatio` 도 함께 죽는다.** Yoga 는 두 축이 다 정해지면 종횡비를 쓰지 않는다 —
@@ -20,7 +20,7 @@
  * ## 왜 명시적 `undefined` 가 답인가
  *
  * `undefined` 를 적는 것은 **안 적는 것과 다르다.** RN 의 스타일 병합이 그것을 앞의 값을 지우는
- * 값으로 읽는다 — `ReactNativeAttributePayload.js` 의 주석 그대로다(*"An explicit value of
+ * 값으로 읽는다. `ReactNativeAttributePayload.js` 의 주석 그대로다(*"An explicit value of
  * undefined is treated as a null because it overrides any other preceding value"*), iOS 는
  * `flattenStyle` 의 `for…in` 이 같은 일을 한다. 지워진 축은 Yoga 에서 auto 가 되고 그제야
  * `aspectRatio` 가 그 자리를 채운다. **NativeWind 도 그 키를 보존한다**(실측 — `className="w-full"`
@@ -29,7 +29,7 @@
  * ## 왜 함수 하나로 모으나
  *
  * 호출부가 넷이고(월드 엠블럼 셋 + 안내 이미지) 전부 같은 세 줄이며, **틀려도 조용한** 종류다
- * (의 두 조건). 사본을 두면 한 곳만 고쳐지는 사고가 열린다 — 실제로
+ * (의 두 조건). 사본을 두면 한 곳만 고쳐지는 사고가 열린다. 실제로
  * 의 보고 넷이 같은 병의 서로 다른 증상이었다.
  *
  * `image-crop.ts` 가 이 파일의 `imageNaturalSize` 를 그대로 쓴다. 그쪽은 크롭 표의 퍼센트 기하를
@@ -60,7 +60,7 @@ export function imageNaturalSize(source: ImageAssetRef): ImageNaturalSize | null
   return { width: resolved.width, height: resolved.height }
 }
 
-/** 퍼센트도 받는다 — 부모를 재지 않고 그대로 넘긴다(`image-crop.ts` 와 같은 이유). */
+/** 퍼센트도 받는다. 부모를 재지 않고 그대로 넘긴다(`image-crop.ts` 와 같은 이유). */
 type AxisValue = number | `${number}%`
 
 /** 정하는 축 **하나**. 둘을 주면 나머지 축을 그림이 정한다는 말 자체가 성립하지 않는다. */

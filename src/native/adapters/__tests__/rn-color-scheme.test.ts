@@ -26,7 +26,7 @@ describe('rnColorSchemePort', () => {
     expect(rnColorSchemePort.get()).toBe('light')
   })
 
-  // 포트가 동기인 것은 우연이 아니라 계약이다(`ports.ts:29`) — 테마 복원이 첫 페인트 전에 끝나야
+  // 포트가 동기인 것은 우연이 아니라 계약이다(`ports.ts:29`). 테마 복원이 첫 페인트 전에 끝나야
   // 라이트 기본값이 한 프레임 새지 않는다.
   it('동기다 — Promise 를 돌려주지 않는다', () => {
     jest.spyOn(Appearance, 'getColorScheme').mockReturnValue('dark')
@@ -34,7 +34,7 @@ describe('rnColorSchemePort', () => {
     expect(rnColorSchemePort.get()).not.toBeInstanceOf(Promise)
   })
 
-  // 포트 주석의 판단을 구조로 고정한다 — 부를 곳이 없는 구독 API는 구현마다 죽은 코드가 된다
+  // 포트 주석의 판단을 구조로 고정한다. 부를 곳이 없는 구독 API는 구현마다 죽은 코드가 된다
   // (: 실행 중 OS 설정 변경은 따라가지 않는다).
   it('구독 API 를 두지 않는다 — 키는 get 하나뿐', () => {
     expect(Object.keys(rnColorSchemePort)).toEqual(['get'])

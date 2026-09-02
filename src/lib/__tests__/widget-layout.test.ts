@@ -68,7 +68,7 @@ describe('validateWidgetLayout — 손으로 적은 좌표를 지킨다', () => 
     expect(violations[0].reason).toContain('4')
   })
 
-  // 중간에 빈 행이 나오면 `row` 를 잘못 적은 것이다 — 위젯을 하나 끼우고 아래를 미는 과정에서
+  // 중간에 빈 행이 나오면 `row` 를 잘못 적은 것이다. 위젯을 하나 끼우고 아래를 미는 과정에서
   // 가장 흔한 실수이고, 화면에는 **빈 사각형** 으로만 나타나 눈으로는 원인을 모른다.
   it('통째로 빈 행을 잡는다', () => {
     const violations = validateWidgetLayout(
@@ -91,7 +91,7 @@ describe('validateWidgetLayout — 손으로 적은 좌표를 지킨다', () => 
     expect(violations.map((violation) => violation.id)).toEqual(['대표'])
   })
 
-  // 이것이 **크기별로 다르게 그린다** 를 **약속으로 만드는** 자리다 — 선언 안 한 크기를 받으면
+  // 이것이 **크기별로 다르게 그린다** 를 **약속으로 만드는** 자리다. 선언 안 한 크기를 받으면
   // 위젯은 그리는 방법을 모른다.
   it('위젯이 선언하지 않은 크기를 잡는다', () => {
     const violations = validateWidgetLayout([{ id: '대표', col: 0, row: 0, w: 4, h: 2 }], sizes)
@@ -144,7 +144,7 @@ describe('resolveWidgetPositions — 좌표를 절대 위치로', () => {
 
     // 위 = row × (행 높이 + 간격)
     expect(byId['대표'].topPx).toBe(0)
-    // 세로는 **행 높이의 함수**다 — 숫자를 손으로 적으면 행 높이를 조정할 때마다 여기가 깨진다
+    // 세로는 **행 높이의 함수**다. 숫자를 손으로 적으면 행 높이를 조정할 때마다 여기가 깨진다
     // (으로 76 → 82 가 됐다).
     expect(byId['초기화'].topPx).toBe(GRID_ROW_HEIGHT + GRID_GAP)
     expect(byId['수익'].topPx).toBe(3 * (GRID_ROW_HEIGHT + GRID_GAP))

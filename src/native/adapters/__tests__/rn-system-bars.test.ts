@@ -6,7 +6,7 @@
 // 특히 `refreshSafeAreaInsets` 의 빈 본문은 **읽는 사람이 "구현이 빠졌다"로 오해하기 쉬운 모양**이라,
 // 지우거나 던지게 바꾸면 부팅마다 처리되지 않은 거부가 남는다(안전영역은 멀쩡히 도는데도).
 
-// 변수 이름이 `mock` 으로 시작하는 것은 취향이 아니다 — jest 가 `jest.mock()` 팩토리에서 바깥 변수를
+// 변수 이름이 `mock` 으로 시작하는 것은 취향이 아니다. jest 가 `jest.mock()` 팩토리에서 바깥 변수를
 // 참조하는 것을 막는데 그 접두사만 예외로 둔다(`rn-back-gesture.test.ts` 와 같은 사정).
 let mockNativeModule: { setNavigationBarStyle: jest.Mock } | null = null
 
@@ -25,7 +25,7 @@ beforeEach(() => {
 
 describe('setNavigationBarStyle — 네이티브 한 줄을 그대로 옮겼다', () => {
   // 명암의 방향이 이 어댑터의 전부다. `dark` 를 그대로 넘기고 뒤집는 일은 네이티브가 한다
-  // (`setAppearanceLightNavigationBars(!dark)`) — 웹뷰 플러그인과 같은 자리, 같은 방향이다.
+  // (`setAppearanceLightNavigationBars(!dark)`). 웹뷰 플러그인과 같은 자리, 같은 방향이다.
   // 여기서 한 번 더 뒤집으면 어두운 배경에 어두운 글리프가 되어 바가 통째로 안 보이는데,
   // 그것은 실기기에서만 드러난다.
   it.each([true, false])('isDarkTheme=%s 를 그대로 네이티브에 넘긴다', async (isDark) => {
@@ -35,7 +35,7 @@ describe('setNavigationBarStyle — 네이티브 한 줄을 그대로 옮겼다'
   })
 
   // iOS 에는 하단 시스템 내비게이션 바가 없어 모듈이 `null` 이다(`platforms: ["android"]`).
-  // 웹뷰 구현도 같은 자리에 `if (platform !== 'android') return` 을 두고 있었다 — 던지면
+  // 웹뷰 구현도 같은 자리에 `if (platform !== 'android') return` 을 두고 있었다. 던지면
   // **테마를 적용할 때마다** 처리되지 않은 거부가 남는다(`applyTheme` 이 매번 부른다).
   it('네이티브 모듈이 없는 플랫폼(iOS)에서는 조용히 아무것도 하지 않는다', async () => {
     mockNativeModule = null

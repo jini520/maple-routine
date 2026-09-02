@@ -1,7 +1,7 @@
 // 컨텐츠 카드 — **어떤 항목이 어떤 카드로 그려지는가**.
 //
 // 웹은 이 계약을 `ContentScreen.test.tsx` 안에서 화면째 렌더해 검사했다. 여기서는 `render*Card`
-// 를 직접 부른다 — 묻는 것이 **분기와 배지**이지 화면 배선이 아니고, 스토어 목 없이 같은 계약을
+// 를 직접 부른다. 묻는 것이 **분기와 배지**이지 화면 배선이 아니고, 스토어 목 없이 같은 계약을
 // 그대로 볼 수 있기 때문이다(화면 쪽 계약은 `ContentScreen.test.tsx` 가 따로 본다).
 //
 // **그림은 `testUri` 로 본다.** jest 에서 번들 에셋은 숫자가 아니라 `{ testUri }` 대역이라
@@ -137,7 +137,7 @@ describe('주간 카드', () => {
     expect(artUri(view)).toContain('monsterPark')
   })
 
-  // quest_state 가 아니라 **도달 층수**다 — 배지 종류가 갈리는 자리라 두 방향을 다 본다.
+  // quest_state 가 아니라 **도달 층수**다. 배지 종류가 갈리는 자리라 두 방향을 다 본다.
   it('무릉도장은 now_count 를 "N층"으로 보여주고, 참여 전이면 "시작 안함"이다', async () => {
     const played = await renderAtom(
       renderWeeklyContentCard(weekly({ name: '무릉도장', nowCount: 37, maxCount: 100 }), 300),
@@ -178,7 +178,7 @@ describe('주간 카드', () => {
     expect(artUri(view)).toContain('armorDragon')
   })
 
-  // 셋이 **서로 독립**이라는 것이 정정의 요점이다 — 하나만 등록돼도 나머지에 영향이 없다.
+  // 셋이 **서로 독립**이라는 것이 정정의 요점이다. 하나만 등록돼도 나머지에 영향이 없다.
   it('길드 3종은 저마다 다른 카드다', async () => {
     const waterway = await renderAtom(
       renderWeeklyContentCard(weekly({ name: '[길드] 지하 수로', nowCount: 1200 }), 300),
@@ -207,7 +207,7 @@ describe('주간 카드', () => {
 })
 
 // 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). 진행할 수 없는 항목의
-// **완료/n회/n층** 은 뜻이 없다 — 그 값은 게임이 준 스냅샷이지 이 캐릭터가 할 수 있다는 뜻이 아니다.
+// **완료/n회/n층** 은 뜻이 없다. 그 값은 게임이 준 스냅샷이지 이 캐릭터가 할 수 있다는 뜻이 아니다.
 describe('진행 불가 배지', () => {
   it('요구 레벨에 못 미치면 상태 배지 자리에 **진행 불가** 가 선다', async () => {
     const 미달 = await renderAtom(renderDailyContentCard(daily({ name: '몬스터파크', nowCount: 3, maxCount: 14 }), 104))
@@ -223,7 +223,7 @@ describe('진행 불가 배지', () => {
     expect(충족.queryByText('3/14')).not.toBeNull()
   })
 
-  // 주간 컨텐츠 5개(유니온 둘 · 길드 셋)는 참조표에 요구 레벨이 없다 — 어떤 레벨에서도 진행 가능이다.
+  // 주간 컨텐츠 5개(유니온 둘 · 길드 셋)는 참조표에 요구 레벨이 없다. 어떤 레벨에서도 진행 가능이다.
   it('요구 레벨이 없는 항목은 낮은 레벨에서도 배지가 안 뜬다', async () => {
     const view = await renderAtom(renderWeeklyContentCard(weekly({ name: '[길드] 지하 수로', nowCount: 1200 }), 1))
 

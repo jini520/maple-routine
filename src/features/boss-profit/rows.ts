@@ -57,7 +57,7 @@ export interface SortedCharacterInfo {
   imageUrl: string | null // character-basic-cache의 character_image. 아바타 렌더링용(ADR-023 "미확정" 해소)
   world: string | null // 같은 캐시 프로필의 world_name. 월드별 결정석 한도 집계용
   // ADR-078 결정 2: 이 조회가 이미 읽은 이름을 버리지 않고 흘려보내, 뒤따르는 함수들이 같은 캐시를
-  // 다시 읽지 않게 한다. **캐시가 없으면 null**이다 — 정렬용으로 쓰는 ''(빈 이름)를 그대로 넘기면
+  // 다시 읽지 않게 한다. **캐시가 없으면 null**이다. 정렬용으로 쓰는 ''(빈 이름)를 그대로 넘기면
   // "캐시 없음"이 "이름이 빈 캐릭터"로 둔갑해 buildRowsFromRecords의 제외 규칙이 깨진다.
   characterName: string | null
 }
@@ -84,7 +84,7 @@ export function toProfileSnapshot(infos: SortedCharacterInfo[]): Map<string, Cha
 // (특히 ORDER BY 없는 getBossProfitRecords, 캐시/라이브 Map 삽입 순서) 로드/렌더마다 보스 순서가
 // 달라졌다. 모든 행 경로가 이 함수를 거치므로 여기서 2차 정렬 키를 부여하면 세 경로가 전부 같은
 // 순서로 고정된다. 참조에 없는 보스(매칭 실패 원문명)는 맨 뒤로, 같은 보스의 여러
-// 난이도는 난이도 순서로, 그래도 동률이면 보스명으로 완전 결정한다 — 그 세 키는 이제
+// 난이도는 난이도 순서로, 그래도 동률이면 보스명으로 완전 결정한다. 그 세 키는 이제
 // `boss-matching` 의 공용 `compareBossOrder` 가 든다.
 export function sortRowsByOcidOrder(rows: BossProfitRow[], sortedOcids: string[]): BossProfitRow[] {
   const rank = new Map(sortedOcids.map((ocid, index) => [ocid, index]))
@@ -95,7 +95,7 @@ export function sortRowsByOcidOrder(rows: BossProfitRow[], sortedOcids: string[]
     // 순위가 같은데 ocid가 다르면(둘 다 sortedOcids 밖인 예외) 캐릭터끼리 섞이지 않게 ocid로 묶는다.
     if (a.ocid !== b.ocid) return a.ocid < b.ocid ? -1 : 1
     // 2차 키 셋(참조 인덱스 → 난이도 → 보스명)은 여기 인라인이던 것을 **참조표의 소유자**로
-    // 옮긴 것뿐이다 — 계약은 그대로이고, 스케줄러·today·
+    // 옮긴 것뿐이다. 계약은 그대로이고, 스케줄러·today·
     // 가계부가 이제 같은 함수를 부른다.
     return compareBossOrder(a, b)
   })
@@ -127,10 +127,10 @@ export function buildBossProfitRow(
     priceMeso,
     maxPartySize,
     partySize: null,
-    // 미완료(등록만 되고 아직 처치 전) 보스는 항상 0메소로 계산한다(ADR-032) — 완료 보스는
+    // 미완료(등록만 되고 아직 처치 전) 보스는 항상 0메소로 계산한다(ADR-032). 완료 보스는
     // 기존과 동일하게 null로 두고 자동 기록(위 for 루프)이나 병합(mergeRecordsIntoRows)에서 채운다.
     // isComplete(카드 표시용 승격된 값)가 아니라 ownComplete(승격 없는 원본 완료 여부)를 써야
-    // 한다 — 여기 도달하는 boss는 이미 selectBossProfitBosses가 골라준 것이라 실제 처치 난이도
+    // 한다. 여기 도달하는 boss는 이미 selectBossProfitBosses가 골라준 것이라 실제 처치 난이도
     // (ownComplete: true) 아니면 미완료 placeholder(ownComplete: false)뿐이다.
     payoutMeso: boss.ownComplete ? null : 0,
     isComplete: boss.ownComplete,
@@ -149,7 +149,7 @@ export function selectProfitDisplayBosses(
   const matched = bossContents.map(matchBossContent)
   // **주간 한도를 채웠으면 미처치 placeholder 는 아예 안 세운다**(— 두 모드
   // 공통이라 아래 ①②보다 앞에 선다). 판정은
-  // 동기화 결과 전체로 한다 — 이 결정이 겨누는 상황이 **표시 목록 밖 보스로 12를 채웠다** 라,
+  // 동기화 결과 전체로 한다. 이 결정이 겨누는 상황이 **표시 목록 밖 보스로 12를 채웠다** 라,
   // 목록만 보면 영영 12가 안 된다(이 **등록 여부와 무관하게** 세는 것과 같다).
   //
   // `마감` 배지를 여기까지 들고 오지 않는 이유: 이 페이지는 정산이라 **벌지 않은 것** 은 줄을
@@ -186,7 +186,7 @@ export function selectProfitDisplayBosses(
 }
 
 // ADR-069 결정 1(원천 규칙): **기록이 있으면 record.world, 없으면 캐시**다. 과거 기간 행은 전부
-// 기록에서 오므로 여기서 스냅샷이 이긴다 — 캐시(라이브 값)를 쓰면 월드 리프가 과거 집계를 소급
+// 기록에서 오므로 여기서 스냅샷이 이긴다. 캐시(라이브 값)를 쓰면 월드 리프가 과거 집계를 소급
 // 이동시킨다. 컬럼 도입 전 기록(world: null)만 캐시 값으로 폴백한다.
 export function buildRowFromRecord(
   record: BossProfitRecord,
@@ -230,7 +230,7 @@ export function mergeRecordsIntoRows(
     if (record === undefined) {
       return row
     }
-    // ADR-023: priceMeso도 기록값으로 덮어쓴다 — 그렇지 않으면 과거 기록을 다시 보여줄 때
+    // ADR-023: priceMeso도 기록값으로 덮어쓴다. 그렇지 않으면 과거 기록을 다시 보여줄 때
     // 라이브 시세로 조용히 재계산되는 데이터 무결성 버그가 생긴다.
     return { ...row, priceMeso: record.priceMeso, partySize: record.partySize, payoutMeso: record.payoutMeso }
   })
@@ -238,7 +238,7 @@ export function mergeRecordsIntoRows(
 
 // ADR-067 결정 4(표시): **현재 기간의 행은 API/캐시가 원천이고 과거 기간의 행은 기록이 원천**이라는
 // 비대칭 때문에, API가 보스를 빼면 이미 저장된 수익이 현재 기간 화면에서 사라진다. 실측된 경로는
-// 미접속 캐릭터의 축약 응답이다 — 월간 보스를 처치한 뒤 1주 이상 접속하지 않으면 bossMonthly가
+// 미접속 캐릭터의 축약 응답이다. 월간 보스를 처치한 뒤 1주 이상 접속하지 않으면 bossMonthly가
 // reg=false·comp=false로만 남아 `selectBossProfitBosses` 가 행을 만들지 않는다(재현: 6.65억 기록
 // 보유 상태에서 "이번 달 총 수익 0메소").
 //
@@ -261,7 +261,7 @@ export function appendRecordOnlyRows(
     }
     const profile = profiles.get(record.ocid)
     if (profile === undefined) {
-      // 이 캐릭터의 프로필을 모르면 행을 만들 수 없다(캐릭터명·아바타가 없다) — buildRowsFromRecords가
+      // 이 캐릭터의 프로필을 모르면 행을 만들 수 없다(캐릭터명·아바타가 없다). buildRowsFromRecords가
       // 캐시 없는 ocid를 건너뛰는 것과 같은 규약이다.
       continue
     }
@@ -295,10 +295,10 @@ export function sumRowsPayout(rows: BossProfitRow[]): number {
 // API 호출 없이 로컬 기록만 읽고, 체크 안 된 조합만 순차적으로 백필한다).
 //
 // generation은 호출한 쪽(setTab/goToPreviousPeriod/goToNextPeriod)이 periodKey를 동기적으로
-// 바꾸는 바로 그 순간 캡처한 requestGeneration 값이다 — 이 비동기 함수가 끝나기 전에 더 최신
+// 바꾸는 바로 그 순간 캡처한 requestGeneration 값이다. 이 비동기 함수가 끝나기 전에 더 최신
 // 액션(연타 등)이 시작됐다면(requestGeneration이 그 사이 또 증가했다면) set()을 건너뛰어
 // stale한 응답이 최신 화면을 덮어쓰지 않게 한다.
-// 드롭 상태 키(ADR-038). BossProfitRow 키와 달리 cycle을 뺀다 — 드롭은 (ocid,boss,difficulty,
+// 드롭 상태 키(ADR-038). BossProfitRow 키와 달리 cycle을 뺀다. 드롭은 (ocid,boss,difficulty,
 // periodKey)로 저장되고 periodKey가 이미 주간/월간을 구분하므로 cycle이 불필요하다.
 export function dropRowKey(ocid: string, boss: string, difficulty: string, periodKey: string): string {
   return `${ocid}|${boss}|${difficulty}|${periodKey}`
@@ -312,7 +312,7 @@ export function toRecordedDrop(record: BossDropRecord): RecordedDrop {
     boxOrigin: record.boxOrigin ?? undefined,
     ringLevel: record.ringLevel ?? undefined,
     quantity: record.quantity,
-    // ⚠️ 이쪽이 `lib/boss/boss-drops` 의 동명 함수보다 자주 지나간다 — **DB에서 읽을 때마다**다.
+    // ⚠️ 이쪽이 `lib/boss/boss-drops` 의 동명 함수보다 자주 지나간다. **DB에서 읽을 때마다**다.
     // 빠뜨리면 저장은 됐는데 화면이 영영 "미입력"으로 보인다.
     priceState: record.priceState ?? undefined,
     priceMeso: record.priceMeso ?? undefined,

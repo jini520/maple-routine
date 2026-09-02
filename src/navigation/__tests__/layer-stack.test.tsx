@@ -1,9 +1,9 @@
-// 층은 **진짜 스택 한 단**이다 — · 이슈 #240.
+// 층은 **진짜 스택 한 단**이다. · 이슈 #240.
 //
 // ## 무엇을 검사하나
 //
 // 이 파일이 거는 것은 **바가 어떻게 보이는가** 가 아니라 **이동이 내비게이션 상태에 무엇을
-// 남기는가** 다. 그것이 곧 이슈의 답이기 때문이다 — iOS 가장자리 스와이프는 우리가 만드는 것이
+// 남기는가** 다. 그것이 곧 이슈의 답이기 때문이다. iOS 가장자리 스와이프는 우리가 만드는 것이
 // 아니라 **되돌아갈 단이 있으면 OS 가 주는 것**이고, 예전에는 그룹→하위 이동이 형제 탭 전환이라
 // 그 단이 아예 없었다.
 //
@@ -102,7 +102,7 @@ describe('그룹 진입이 스택 한 단을 만든다', () => {
 })
 
 describe('같은 층의 옆걸음은 쌓이지 않는다', () => {
-  // 사용자 결정(2026-08-23): *"지금처럼 옆걸음 — 안 쌓는다."* 컨텐츠 → 보스 뒤에 ← 를 누르면
+  // 사용자 결정(2026-08-23): *"지금처럼 옆걸음. 안 쌓는다."* 컨텐츠 → 보스 뒤에 ← 를 누르면
   // 컨텐츠가 아니라 **그룹에 들어오기 전 자리**로 나간다.
   it('컨텐츠 → 보스 는 같은 단 안에서 바뀐다', async () => {
     await 앱을_켠다()
@@ -128,7 +128,7 @@ describe('같은 층의 옆걸음은 쌓이지 않는다', () => {
     expect(지금_화면()).toBe('Settings')
   })
 
-  // 바에서는 이 길이 안 보인다 — 하위 행에는 **하위만** 서고 그룹 행으로 가려면 ← 를 거친다.
+  // 바에서는 이 길이 안 보인다. 하위 행에는 **하위만** 서고 그룹 행으로 가려면 ← 를 거친다.
   // 화면 CTA(**캐릭터 선택하러 가기** 등)는 `openTab` 으로 그룹 층 페이지를 곧장 지목하는데,
   // 그때 층이 쌓이지 않고 **올라가면서 옆걸음해야** 한다(의 `switchGroupPage`).
   it('하위 층에서 그룹 층 페이지를 열면 층이 한 단으로 돌아온다', async () => {
@@ -136,7 +136,7 @@ describe('같은 층의 옆걸음은 쌓이지 않는다', () => {
     await press('bar-group-ledger')
     expect(층_단들()).toHaveLength(2)
 
-    // `openTab('Settings')` 가 하는 그대로다 — 그룹 층은 스택 **바닥**이라 되돌리기가 곧
+    // `openTab('Settings')` 가 하는 그대로다. 그룹 층은 스택 **바닥**이라 되돌리기가 곧
     // `popToTop` 이고, 그 뒤에 안쪽 탭을 지정한다(`use-open-tab.ts`).
     expect(needsPopToGroupLayer('Settings')).toBe(true)
     const [name, nested] = tabNavigateArgs('Settings')
@@ -171,7 +171,7 @@ describe('층은 하위 페이지와 같은 방식으로 열린다', () => {
   it('전환과 제스처가 켜져 있다', () => {
     expect(PUSH_SCREEN_OPTIONS.animation).toBe('ios_from_right')
     expect(PUSH_SCREEN_OPTIONS.gestureEnabled).toBe(true)
-    // 가장자리 인식기는 **OS 기본값**이어야 한다 — 숫자를 얹으면 흉내가 원본을 덮는다.
+    // 가장자리 인식기는 **OS 기본값**이어야 한다. 숫자를 얹으면 흉내가 원본을 덮는다.
     expect(PUSH_SCREEN_OPTIONS.gestureResponseDistance).toBeUndefined()
     expect(PUSH_SCREEN_OPTIONS.fullScreenGestureEnabled).toBeUndefined()
   })

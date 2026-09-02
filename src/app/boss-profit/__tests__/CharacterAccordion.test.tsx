@@ -6,12 +6,12 @@
 // 웹 테스트가 지키던 것 중 **RN 에 자리가 없는** 것들이다. 빠뜨린 것이 아니라 없어진 것이라 여기
 // 적어 둔다(`BossProfitScreen.contract.md` 의 **못 옮긴 것** 과 짝이다).
 //
-// ① `sticky`·`overflow-clip`·`z-[5]` 같은 **클래스 문자열 회귀 가드** — 중첩 sticky 를 못 옮겨
+// ① `sticky`·`overflow-clip`·`z-[5]` 같은 **클래스 문자열 회귀 가드**. 중첩 sticky 를 못 옮겨
 //    그 클래스들이 존재하지 않는다. 대신 **접힘/펼침 셸이 갈린다** 를 구조로 본다.
-// ② **배지 sticky 레일**(`h-0` + `top`) — 레일이 sticky 와 함께 사라졌다. 남은 계약은
+// ② **배지 sticky 레일**(`h-0` + `top`). 레일이 sticky 와 함께 사라졌다. 남은 계약은
 //    "배지가 셸 바깥·카드 우상단" 이고 그것은 본다.
-// ③ **stuck 헤더 하단 페이드** — 지나가는 콘텐츠가 없어 덮을 대상이 없다.
-// ④ **스크롤로 팝오버 닫기** — 이 팝오버는 `fixed` 가 아니라 카드 안 절대배치라 카드와 함께
+// ③ **stuck 헤더 하단 페이드**. 지나가는 콘텐츠가 없어 덮을 대상이 없다.
+// ④ **스크롤로 팝오버 닫기**. 이 팝오버는 `fixed` 가 아니라 카드 안 절대배치라 카드와 함께
 //    움직인다(닫을 이유가 사라졌다). 웹의 *"window 스크롤로는 안 닫힌다"* 회귀 가드도 함께 간다.
 import { act, fireEvent } from '@testing-library/react-native'
 
@@ -34,7 +34,7 @@ import { 다른주간보스, 월간보스, PERIOD, renderProfit, 보스행, 주�
 
 // 모션 줄이기는 분기로만 관측된다(`components/__tests__/reduced-motion.ts` 파일 머리).
 jest.mock('react-native-reanimated', () =>
-  // 팩토리는 import 위로 끌어올려져 **밖의 값을 참조할 수 없다** — `require` 가 유일한 길이다.
+  // 팩토리는 import 위로 끌어올려져 **밖의 값을 참조할 수 없다**. `require` 로만 된다.
   require('../../../components/__tests__/reduced-motion').reanimatedWithReducedMotion(),
 )
 import { mockReducedMotion } from '../../../components/__tests__/reduced-motion'
@@ -53,7 +53,7 @@ beforeEach(() => {
   clearCountUpMemory()
 })
 
-// `useCountUp` 은 직전에 그린 값을 **모듈 수준 Map** 에 기억한다 — 케이스
+// `useCountUp` 은 직전에 그린 값을 **모듈 수준 Map** 에 기억한다. 케이스
 // 사이에 비우지 않으면 다음 렌더가 옛 값에서 굴러간다(`AccordionBody` 테스트와 같은 자리).
 beforeEach(() => {
   clearCountUpMemory()

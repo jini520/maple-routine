@@ -2,7 +2,7 @@
  * 트레일 링 스피너. 잎 외곽선 둘레의 70% 구간만 남긴 comet 이 한 바퀴를 돈다
  *
  *
- * **16px 버튼 안 전용이다.** 24px 이상은 `MapleSweepSpinner` 를 쓴다 — 트레일 링은 큰 자리를 못
+ * **16px 버튼 안 전용이다.** 24px 이상은 `MapleSweepSpinner` 를 쓴다. 트레일 링은 큰 자리를 못
  * 채우고 스윕은 작은 자리에서 안 읽힌다. 지금 호출부는 `atoms/Button` 하나이고, 그 버튼이
  * 대기 중에 라벨 위로 겹쳐 그린다.
  */
@@ -28,7 +28,7 @@ const TRAIL_DASH: readonly number[] = [
   MAPLE_LEAF_PATH_LENGTH * (1 - TRAIL_RATIO),
 ]
 
-/** `index.css` 의 `animate-maple-trail` — `maple-trail 0.9s linear infinite`. */
+/** `index.css` 의 `animate-maple-trail`. `maple-trail 0.9s linear infinite`. */
 export const MAPLE_TRAIL_DURATION_MS = 900
 
 /**

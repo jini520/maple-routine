@@ -3,11 +3,11 @@ import { Keyboard, type KeyboardEvent } from 'react-native'
 import { rnKeyboardPort } from '../rn-keyboard'
 
 /**
- * 진짜 `Keyboard` 에 붙여서 진짜로 emit 한다 — `addListener` 를 목으로 가로채면 "**해제 함수가
+ * 진짜 `Keyboard` 에 붙여서 진짜로 emit 한다. `addListener` 를 목으로 가로채면 "**해제 함수가
  * 리스너를 실제로 떼는가**"를 못 본다(목은 `remove()` 가 불렸다는 것까지만 말한다). 이 파일이
  * 지키려는 것이 바로 그 자리다: 안 떼면 화면 전환마다 리스너가 쌓인다.
  *
- * 그러려면 내부 `_emitter` 를 거쳐야 한다 — RN 0.86 의 `KeyboardImpl` 은 `emit` 을 밖에 내주지
+ * 그러려면 내부 `_emitter` 를 거쳐야 한다. RN 0.86 의 `KeyboardImpl` 은 `emit` 을 밖에 내주지
  * 않는다(타입 선언은 `NativeEventEmitter` 를 상속한다고 적지만 실제 프로토타입에는
  * `addListener`·`removeAllListeners`·`dismiss`·`isVisible`·`metrics`·`scheduleLayoutAnimation`
  * 뿐이다). RN 업그레이드로 이 필드가 사라지면 아래 가드가 **읽을 수 있는 메시지로** 깨진다 —
@@ -68,7 +68,7 @@ describe('rnKeyboardPort', () => {
   })
 
   // Capacitor 는 `keyboardWillShow`/`keyboardWillHide` 를 썼지만 RN 에서 그 둘은 **iOS 에서만** 온다.
-  // 안드로이드에서 안 오는 이벤트에 매달리면 그 플랫폼에서 탭바가 키보드 위에 남는다 — 그래서
+  // 안드로이드에서 안 오는 이벤트에 매달리면 그 플랫폼에서 탭바가 키보드 위에 남는다. 그래서
   // 양쪽에 다 오는 `did` 쪽을 쓴다. 둘 다 듣는 것도 답이 아니다(iOS 에서 will → did 로 두 번 불린다).
   it('will 계열 이벤트에는 반응하지 않는다', async () => {
     const onChange = jest.fn()

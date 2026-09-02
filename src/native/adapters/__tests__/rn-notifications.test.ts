@@ -79,7 +79,7 @@ describe('schedule', () => {
       { id: '7', title: '제목', body: '본문', android: { channelId: 'default' } },
       { type: TriggerType.TIMESTAMP, timestamp: scheduleAt.getTime() },
     )
-    // 채널이 없으면 Android 는 알림을 아예 안 띄운다 — 순서가 뒤집히면 첫 예약을 잃는다.
+    // 채널이 없으면 Android 는 알림을 아예 안 띄운다. 순서가 뒤집히면 첫 예약을 잃는다.
     expect(mocked.createChannel.mock.invocationCallOrder[0]).toBeLessThan(
       mocked.createTriggerNotification.mock.invocationCallOrder[0],
     )
@@ -101,7 +101,7 @@ describe('schedule', () => {
 })
 
 describe('cancel', () => {
-  // 이 포트에서 가장 조용하게 깨지는 자리다 — 어긋나도 예외가 없고, 사용자가 끈 알림만 계속 뜬다.
+  // 이 포트에서 가장 조용하게 깨지는 자리다. 어긋나도 예외가 없고, 사용자가 끈 알림만 계속 뜬다.
   it('예약할 때 쓴 ID 를 그대로 지목한다', async () => {
     await rnNotificationsPort.schedule({
       id: 1234,

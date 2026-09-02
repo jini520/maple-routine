@@ -4,10 +4,10 @@
 //   3단계는 자리만 만들고 그림을 못 앉혔는데(크롭의 CSS 값을 RN 기하로 옮기는 일이 남아 있었다),
 //   step 4 가 컨텐츠 카드에서 그 변환을 풀어 두어 이제 **보스 카드와 같은 `FadedIllustration`** 를
 //  부른다(이 요구하는 "같은 값"이 컴포넌트 공유로 성립한다).
-//   화면 전용 testID(`party-size-modal-art`)는 사라졌다 — 아트와 베일이 둘 다 `absolute inset-0`
+//   화면 전용 testID(`party-size-modal-art`)는 사라졌다. 아트와 베일이 둘 다 `absolute inset-0`
 //   이라 감싸는 순간 기준 상자가 바뀌어 그림이 사라진다(컴포넌트 주석).
 // · `aria-pressed` → **`accessibilityState.selected`**(`DifficultySegment` 가 `aria-selected` 를
-//   쓴다 — RN 접근성 상태에 *pressed* 가 없다).
+//   쓴다. RN 접근성 상태에 *pressed* 가 없다).
 import { fireEvent } from '@testing-library/react-native'
 
 import { renderOverlay, type AtomElement } from '../../../__tests__/render-atom'
@@ -76,7 +76,7 @@ describe('PartySizeModal', () => {
     expect(p.onSelectDifficulty).toHaveBeenCalledWith('익스트림')
   })
 
-  // 파티 인원은 (보스 + 난이도)에 붙어 있다 — 스우는 하드 6인, 익스트림 2인. 웹은 한 케이스에서
+  // 파티 인원은 (보스 + 난이도)에 붙어 있다. 스우는 하드 6인, 익스트림 2인. 웹은 한 케이스에서
   // `cleanup()` 뒤 다시 렌더했는데, RNTL 은 케이스마다 자동 정리하므로 둘로 나눈다.
   it.each([
     [{}, '4 / 6'],

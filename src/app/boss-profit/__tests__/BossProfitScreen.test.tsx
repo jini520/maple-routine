@@ -3,17 +3,17 @@
 //
 // ── 옮기지 않은 계약 여섯 ────────────────────────────────────────────────────────────
 //
-// ① **당김 제스처 시뮬레이션 다섯** — 임계 넘김/미달·목록 `transform`·
+// ① **당김 제스처 시뮬레이션 다섯**. 임계 넘김/미달·목록 `transform`·
 //  전환 켜고 끄기는 이제 OS 가 갖는다. 남는 계약은 *"당김이 헤더 버튼과 같은
 //    재조회를 부르는가"* 와 *"의미 없는 기간에서는 꺼지는가"* 둘이고 그것은 본다.
-// ② **`fixed` 헤더 + 실측 spacer + `ADR-112` 한 커밋 반영** — 헤더가 스크롤 뷰의 형제라 spacer 도
+// ② **`fixed` 헤더 + 실측 spacer + `ADR-112` 한 커밋 반영**. 헤더가 스크롤 뷰의 형제라 spacer 도
 //    실측도 없다. 대신 *"헤더가 셸의 `header` 로 들어간다"* 를 본다.
-// ③ **중첩 sticky 오프셋** — sticky 를 못 옮겼다(`contract.md`).
-// ④ **DOM 스냅샷 두 파일** — 트리가 다르다. RN 트리 스냅샷을 **새 기준선**으로 남기고, 그것이
+// ③ **중첩 sticky 오프셋**. sticky 를 못 옮겼다(`contract.md`).
+// ④ **DOM 스냅샷 두 파일**. 트리가 다르다. RN 트리 스냅샷을 **새 기준선**으로 남기고, 그것이
 //    답하는 것은 *"앞으로 안 바뀌는가"* 뿐이다(**예전과 같은가** 는 사람이 두 앱을 나란히 놓고 답한다).
-// ⑤ **히스토리 왕복에도 언마운트되지 않는가** — 루트 스택 push 라 구조가 지킨다.
+// ⑤ **히스토리 왕복에도 언마운트되지 않는가**. 루트 스택 push 라 구조가 지킨다.
 //    화면 안에서 볼 자리가 없다.
-// ⑥ **접기 전후 스크롤** — 접기에 스크롤 코드가 아예 없다(`CharacterAccordion`).
+// ⑥ **접기 전후 스크롤**. 접기에 스크롤 코드가 아예 없다(`CharacterAccordion`).
 import { act, fireEvent, within } from '@testing-library/react-native'
 import { render } from '@testing-library/react-native'
 import { ScrollView } from 'react-native'
@@ -36,12 +36,12 @@ import { ThemeProvider } from '../../../theme/ThemeProvider'
 import { useScreenNavigation } from '../../use-screen-navigation'
 import { BossProfitScreen } from '../BossProfitScreen'
 
-// 이름이 `mock` 으로 시작해야 한다 — babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데 그
+// 이름이 `mock` 으로 시작해야 한다. babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데 그
 // 접두사만 예외로 통과시킨다(step 5 와 같은 규칙).
 const mockShowError = jest.fn()
 const mockNoticeApiKeyIssue = jest.fn()
 const navigate = jest.fn()
-// 층이 스택이 된 뒤로 **그룹 층으로 되돌리기** 는 액션이다 — 화면이 이것도 부른다.
+// 층이 스택이 된 뒤로 **그룹 층으로 되돌리기** 는 액션이다. 화면이 이것도 부른다.
 const dispatch = jest.fn()
 
 // : 동기화 실패·기간 로드 실패는 인라인 문단이 아니라 토스트다.
@@ -54,7 +54,7 @@ jest.mock('../../../features/toast/store', () => ({
 jest.mock('../../../features/onboarding/store', () => ({
   useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) } }))
 
-// 웹과 같은 범위로 좁혀 목한다 — `dropRowKey` 는 본문(`AccordionBody`)이 쓰는 순수 함수라 실물과
+// 웹과 같은 범위로 좁혀 목한다. `dropRowKey` 는 본문(`AccordionBody`)이 쓰는 순수 함수라 실물과
 // 같은 문자열을 낸다.
 jest.mock('../../../features/boss-profit/store', () => ({
   useBossProfitStore: jest.fn(),
@@ -93,7 +93,7 @@ function mockStore(overrides: Partial<BossProfitStore> = {}): void {
     trackedOcids: ['ocid-1'],
     lastSyncedAt: null,
     loadTrackedOcids: jest.fn(),
-    // 실물은 `Promise<void>` 다 — 당김 훅이 회차의 **끝** 을 기다린다.
+    // 실물은 `Promise<void>` 다. 당김 훅이 회차의 **끝** 을 기다린다.
     refresh: jest.fn().mockResolvedValue(undefined),
     setTab: jest.fn(),
     goToPreviousPeriod: jest.fn(),
@@ -187,7 +187,7 @@ describe('빈 상태', () => {
     expect(queryByText('아이템 가격')).toBeNull()
   })
 
-  // 의 **열어 둔 채로 보낸다** 는 그대로이고 **목적지만 바뀌었다** — 피커를 여는
+  // 의 **열어 둔 채로 보낸다** 는 그대로이고 **목적지만 바뀌었다**. 피커를 여는
   // 자리가 설정 하나가 됐다.
   it('빈 상태 CTA 는 피커를 열어 둔 채로 설정 탭에 보낸다', async () => {
     mockStore({ trackedOcids: [] })
@@ -197,7 +197,7 @@ describe('빈 상태', () => {
       fireEvent.press(getByText('캐릭터 선택하러 가기'))
     })
 
-    // 층이 스택이 되면서 이동이 두 단 중첩이 됐다 — 설정은 **그룹 층**에
+    // 층이 스택이 되면서 이동이 두 단 중첩이 됐다. 설정은 **그룹 층**에
     // 살고, 파라미터는 가장 안쪽 화면에 붙는다.
     expect(navigate).toHaveBeenCalledWith('Main', {
       screen: 'Groups',
@@ -349,7 +349,7 @@ describe('당겨서 새로고침', () => {
   //
   // 종전에는 `refreshing = status === 'loading'` 이라, 화면 마운트 하이드레이션만으로 인디케이터가
   // 프로그램적으로 열렸다. 사용자 보고(2026-08-22) *"페이지 이동 시 새로고침 인디케이터가 저절로
-  // 돌고 상단이 빈 채로 멈춘다"* 가 그 증상이다. **조회 중...** 은 그대로 뜬다 — 그쪽이 조회를
+  // 돌고 상단이 빈 채로 멈춘다"* 가 그 증상이다. **조회 중...** 은 그대로 뜬다. 그쪽이 조회를
   // 말하는 자리다.
   it('재조회 중이어도 컨트롤은 안 돈다 — 당김이 연 회차가 아니다', async () => {
     mockStore({ status: 'loading' })
@@ -457,7 +457,7 @@ describe('캐릭터 카드 순서', () => {
     ).toEqual(['두번째', '지내우시'])
   })
 
-  // 순서를 정하는 함수가 목록의 크기를 바꾸면 안 된다 — 저장 목록과 행이 한순간 어긋날 때
+  // 순서를 정하는 함수가 목록의 크기를 바꾸면 안 된다. 저장 목록과 행이 한순간 어긋날 때
   // 캐릭터 카드가 통째로 사라지는 것이 가장 나쁜 실패다.
   it('저장 목록에 없는 캐릭터의 카드도 사라지지 않는다', async () => {
     expect(
@@ -476,7 +476,7 @@ describe('총 수익 헤드라인', () => {
       rows: [보스행(), 보스행({ ocid: 'ocid-2', characterName: '두번째', payoutMeso: 3_000_000 })] })
     const { getByText } = await renderScreen()
 
-    // 헤드라인과 카드가 같은 어휘(`N 메소`)를 쓰므로 합계 숫자로 가른다 — 카드는 5·3백만이다.
+    // 헤드라인과 카드가 같은 어휘(`N 메소`)를 쓰므로 합계 숫자로 가른다. 카드는 5·3백만이다.
     expect(getByText(/^8,000,000 /)).toBeTruthy()
   })
 
@@ -500,7 +500,7 @@ describe('총 수익 헤드라인', () => {
         ] } })
     const { getAllByText } = await renderScreen()
 
-    // 헤드라인과 그 캐릭터 카드가 같은 값을 말한다 — 둘 다 움직여야 합산이 한 곳에서만 일어난다.
+    // 헤드라인과 그 캐릭터 카드가 같은 값을 말한다. 둘 다 움직여야 합산이 한 곳에서만 일어난다.
     expect(getAllByText(/^7,000,000 /)).toHaveLength(2)
   })
 

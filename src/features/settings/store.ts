@@ -11,7 +11,7 @@ import { useOnboardingStore } from '../onboarding/store'
  * (`changeApiKey`·`refreshAccounts`·`selectAccount`·`commitAccountChange`)과 그 상태 기계
  * (`settings/state.ts`)는 **부르는 곳이 하나도 없었다.** 함께 지웠다.
  *
- * 연결 해제가 온보딩 스토어의 `reset()` 을 그대로 부르는 것은 예전과 같다 — 지우는 대상이
+ * 연결 해제가 온보딩 스토어의 `reset()` 을 그대로 부르는 것은 예전과 같다. 지우는 대상이
  * 온보딩이 저장한 것들이라 진실이 한 곳에 있어야 한다.
  */
 export interface SettingsStore {

@@ -19,7 +19,7 @@ export type OnboardingError =
 /**
  * 저장된 키로는 앞으로 갈 수 없게 된 원인.
  *
- * 원인은 둘이지만 **처방이 같다** — 사용자가 새 키를 넣어야 한다. 그래서 알림 사슬(모달 → 확인 →
+ * 원인은 둘이지만 **처방이 같다**. 사용자가 새 키를 넣어야 한다. 그래서 알림 사슬(모달 → 확인 →
  * 키 입력 화면 + `apiKey` 삭제)은 하나이고 갈리는 것은 문구뿐이다. 종류마다 다른 알림을 만들면
  * 문구·액션 표가 두 벌이 된다.
  */
@@ -35,10 +35,10 @@ export interface OnboardingState {
    * 키를 다시 받아야 한다는 것을 **알렸고 사용자의 확인을 기다리는 중**이며, 그 **원인**이 무엇인지
    * . 알림이 없으면 `null`.
    *
-   * `status` 와 **직교한다** — 이 값이 채워져 있는 동안에도 `status` 는 그대로여서 뒤에 원래 화면이
+   * `status` 와 **직교한다**. 이 값이 채워져 있는 동안에도 `status` 는 그대로여서 뒤에 원래 화면이
    * 남아 있고, 그 위에 닫을 수 없는 모달이 덮인다. 사용자가 "확인"을 누르는 순간에야 `RESET` 이
    * 나가 키 입력 화면으로 이동한다(그때 이 값도 함께 `null` 로 돌아간다).
-   * 상태를 먼저 뒤집으면 화면이 이미 바뀐 뒤에 이유를 설명하게 된다 — 그것이 결정 1 이 뒤집힌 이유다.
+   * 상태를 먼저 뒤집으면 화면이 이미 바뀐 뒤에 이유를 설명하게 된다. 그것이 결정 1 이 뒤집힌 이유다.
    */
   apiKeyNotice: ApiKeyNoticeKind | null
 }
@@ -69,9 +69,9 @@ export type OnboardingEvent =
   | { type: 'SUBMIT_CONTENT_CHARACTERS' }
   // ADR-035 결정 15: 수동 모드일 때 시드가 끝나면(또는 자동 모드는 곧바로) 온보딩이 완료된다.
   | { type: 'ONBOARDING_FINISHED' }
-  // ADR-115 결정 10: 키를 다시 받아야 한다는 것을 **알리기만** 한다 — status는 그대로 두고 모달만
+  // ADR-115 결정 10: 키를 다시 받아야 한다는 것을 **알리기만** 한다. status는 그대로 두고 모달만
   // 띄운다. 이동은 사용자가 "확인"을 눌러 RESET이 나갈 때 일어난다.
-  // ADR-116 결정 1: 원인(무효 키 · 429)을 싣는다 — 사슬은 하나이고 문구만 갈린다.
+  // ADR-116 결정 1: 원인(무효 키 · 429)을 싣는다. 사슬은 하나이고 문구만 갈린다.
   | { type: 'API_KEY_NOTICED'; kind: ApiKeyNoticeKind }
   | { type: 'RESET' }
 
@@ -85,7 +85,7 @@ export function onboardingReducer(state: OnboardingState, event: OnboardingEvent
         apiKeyNotice: null,
       }
 
-    // ADR-086 결정 1: 뒤 두 단계는 네트워크 없이 재개된다 — 모드 선택은 순수 UI이고 캐릭터
+    // ADR-086 결정 1: 뒤 두 단계는 네트워크 없이 재개된다. 모드 선택은 순수 UI이고 캐릭터
     // 선택은 getCharacterPickerRoster가 자체 조회한다. 그래서 accounts는 비운 채 넘어간다.
     case 'RESTORE_STEP':
       return {

@@ -114,7 +114,7 @@ describe('huntingMesoOf', () => {
 
   /**
    * **반올림은 라벨에만** 한다. 34마리에서 하나를 놓치면 세그먼트는 97%로
-   * 적히지만 곱하는 것은 33/34(=97.06%)다 — 33마리를 잡았다 가 실제로 일어난 일이라, 표시하려고
+   * 적히지만 곱하는 것은 33/34(=97.06%)다. 33마리를 잡았다 가 실제로 일어난 일이라, 표시하려고
    * 자른 값으로 돈을 세면 세그먼트 글자가 계산을 끌고 다니게 된다.
    */
   it('반올림한 퍼센트가 아니라 **실제 분수**로 곱한다', () => {
@@ -143,7 +143,7 @@ describe('huntingMesoOf', () => {
       boostMultiplier: 1.2,
     })
     expect(both).toBe(Math.floor(base * 1.5 * 1.2))
-    //  가 내던 값이다 — 정정으로 갈렸다.
+    //  가 내던 값이다. 정정으로 갈렸다.
     expect(both).not.toBe(Math.floor(base * 1.7))
   })
 
@@ -210,7 +210,7 @@ describe('huntingMesoOf', () => {
     // 레벨 계수 7.5 와 평균 갈래가 소수를 만들 수 있는 자리다. 실제 값으로는 8젠·30분이 늘
     // 걷어 가지만(그래서 이 단언이 통과한다) 내림은 그 사실에 기대지 않는다.
     for (const missedMobs of MISSED_MOB_OPTIONS) {
-      // 메획이 든 통도 훑는다 — 149 처럼 큰 값이 실제로 들어온다.
+      // 메획이 든 통도 훑는다. 149 처럼 큰 값이 실제로 들어온다.
       for (const boostPercent of [0, 20, 50, 70, 149, 199]) {
         // 통 밖의 배율 축 — 1.2 가 소수를 새로 만든다.
         for (const boostMultiplier of [1, 1.2]) {
@@ -329,7 +329,7 @@ describe('efficiencyPercentOf', () => {
   })
 
   /**
-   * 효율은 **맵마다 다르다**(사용자 지정 2026-08-28) — 40마리에서 하나를
+   * 효율은 **맵마다 다르다**(사용자 지정 2026-08-28). 40마리에서 하나를
    * 놓치는 것과 22마리에서 하나를 놓치는 것은 같은 손해가 아니다.
    */
   it.each([
@@ -351,7 +351,7 @@ describe('efficiencyPercentOf', () => {
 describe('표', () => {
 
   it('아이템은 둘이고 값·거는 자리는 사용자 확정분이다', () => {
-    // **`kind` 가 곧 계산식의 자리**다 — 유니온의 부는 합산 통 안, 재획비는 그 결과에 곱한다.
+    // **`kind` 가 곧 계산식의 자리**다. 유니온의 부는 합산 통 안, 재획비는 그 결과에 곱한다.
     expect(MESO_BOOSTS.map((each) => [each.id, each.percent, each.kind])).toEqual([
       ['union', 50, 'additive'],
       ['potion', 20, 'multiplier'],

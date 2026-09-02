@@ -36,7 +36,7 @@ describe('deriveResumeTarget', () => {
     getAuthConfigMock.mockResolvedValue(null)
 
     await expect(deriveResumeTarget()).resolves.toEqual({ status: 'awaitingApiKey' })
-    // 뒤 단계 판정은 읽지도 않는다 — 키가 없으면 재개할 것이 없다.
+    // 뒤 단계 판정은 읽지도 않는다. 키가 없으면 재개할 것이 없다.
     expect(getTrackingModeMock).not.toHaveBeenCalled()
     expect(getTrackedCharacterOcidsMock).not.toHaveBeenCalled()
   })
@@ -75,7 +75,7 @@ describe('deriveResumeTarget', () => {
   })
 
   // ADR-086 결정 2 마이그레이션(1회): ADR-035 이전 설치본에서 완주한 사용자는 trackingMode 키가
-  // 없다 — 그대로 두면 정상 사용자가 온보딩으로 되돌려진다.
+  // 없다. 그대로 두면 정상 사용자가 온보딩으로 되돌려진다.
   it('trackingMode 키가 없는데 추적 목록이 있으면 auto를 1회 기록하고 completed다', async () => {
     getTrackingModeMock.mockResolvedValue(null)
     getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
@@ -88,7 +88,7 @@ describe('deriveResumeTarget', () => {
   })
 })
 
-// ADR-143 결정 8: RN 은 메이플 ID 를 고르지 않는다 — 표에서 **한 행만** 빠지고 나머지는 그대로다.
+// ADR-143 결정 8: RN 은 메이플 ID 를 고르지 않는다. 표에서 **한 행만** 빠지고 나머지는 그대로다.
 // 위 describe 가 그대로 'single' 표(웹뷰 앱 회귀 가드)이므로, 여기서는 "무엇이 빠졌고 무엇이
 // 안 빠졌는가"를 본다.
 describe('deriveResumeTarget — 계정 범위 all', () => {
@@ -131,7 +131,7 @@ describe('deriveResumeTarget — 계정 범위 all', () => {
     })
   })
 
-  // ADR-086 결정 2 마이그레이션은 계정 축과 무관하다 — 범위가 바뀌어도 그대로 돈다.
+  // ADR-086 결정 2 마이그레이션은 계정 축과 무관하다. 범위가 바뀌어도 그대로 돈다.
   it('trackingMode 키가 없는데 추적 목록이 있으면 auto를 1회 기록하고 completed다', async () => {
     getTrackingModeMock.mockResolvedValue(null)
     getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])

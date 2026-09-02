@@ -6,9 +6,9 @@
 // ── RN 으로 옮기며 갈린 것 넷 ─────────────────────────────────────────────────────
 //
 // ① `<ul>`/`<li>` 가 사라진다(RN 에 목록 시맨틱이 없다). 대신 **마지막 보스 행을 부모가 알려
-//    준다** — 웹의 `last:border-b-transparent` 짝이다(`BossProfitBossRow` 의 `isLast`).
+//    준다**. 웹의 `last:border-b-transparent` 짝이다(`BossProfitBossRow` 의 `isLast`).
 // ② `space-y-*` → `gap-*`(NativeWind 에 형제 선택자가 없다).
-// ③ 팝오버 앵커가 비동기로 온다 — 보스 행과 **같은 훅**(`useAnchoredPopover`)을 쓴다. 스크롤로
+// ③ 팝오버 앵커가 비동기로 온다. 보스 행과 **같은 훅**(`useAnchoredPopover`)을 쓴다. 스크롤로
 //    닫던 효과는 별도 네이티브 윈도우라 구조가 대신 지킨다(`ItemRevenuePopover` 파일 머리 ②).
 // ④ 글자가 상자에서 `Text` 로 내려오고 `tabular-nums` 는 값으로 준다(`lib/text-styles.ts`).
 import { Pressable, View } from 'react-native'
@@ -30,7 +30,7 @@ import { ItemRevenuePopover, useAnchoredPopover } from './ItemRevenuePopover'
 
 // : **행동이 있는 상태에만 버튼을 준다.** 여섯 상태 중 사용자가 할 수 있는 것은
 // notChecked(조회)와 failed(다시 시도) 둘뿐이고, 나머지는 금액 또는 비활성 배지로 정적이다.
-// **금액을 모르는 상태에 0을 쓰지 않는 것이 핵심이다** — 0은 "0원 벌었다"로 읽힌다(가
+// **금액을 모르는 상태에 0을 쓰지 않는 것이 핵심이다**. 0은 "0원 벌었다"로 읽힌다(가
 // 드롭 가격에서 지키는 것과 같은 원칙이 기간 상태에도 선다).
 export const SUBTOTAL_ACTION_LABEL: Partial<Record<WeeklySubtotalState, string>> = {
   notChecked: '조회',
@@ -71,7 +71,7 @@ export function WeeklySubtotalRow(props: { subtotal: BossProfitWeeklySubtotal })
     subtotal.state === 'recorded' || subtotal.state === 'confirmedEmpty' || subtotal.state === 'inProgress'
 
   const itemMeso = sumDropPayout(subtotal.drops)
-  // 구조 분해가 필수다 — 이유는 `BossProfitBossRow` 의 같은 자리 주석 참고.
+  // 구조 분해가 필수다. 이유는 `BossProfitBossRow` 의 같은 자리 주석 참고.
   const { ref: itemChipRef, isOpen: isItemPopoverOpen, anchor: itemAnchor, toggle: toggleItemPopover, close: closeItemPopover } =
     useAnchoredPopover()
 
@@ -144,7 +144,7 @@ export function WeeklySubtotalRow(props: { subtotal: BossProfitWeeklySubtotal })
         (itemMeso === 0 ? (
           amount
         ) : (
-          // 아이템이 섞이면 금액 아래에 칩을 쌓는다 — 보스 행·캐릭터 카드와 **같은 규칙·같은 잉크**다
+          // 아이템이 섞이면 금액 아래에 칩을 쌓는다. 보스 행·캐릭터 카드와 **같은 규칙·같은 잉크**다
           // (2026-08-10 사용자 요청). 이 주의 아이템을 낱개로 보려면 여기서 연다.
           <View className="items-end gap-1">
             {amount}

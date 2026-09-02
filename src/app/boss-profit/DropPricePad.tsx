@@ -1,7 +1,7 @@
 // 드롭 판매가 입력 키패드(이슈 #185).
 //
 // **OS 키보드를 부르지 않는다.** 웹에서 그 이유는 *"키보드가 뜨는 순간 WebView 가 줄어 시트가
-// 밀리거나 잘린다"* 였다. RN 에는 웹뷰가 없지만 **결론은 그대로 선다** — 메소는 자릿수가 커서
+// 밀리거나 잘린다"* 였다. RN 에는 웹뷰가 없지만 **결론은 그대로 선다**. 메소는 자릿수가 커서
 // 시스템 숫자 키패드로는 0을 세게 되고(`keyboardType="numeric"` 이 못 고치는 것이 그것이다),
 // `KeyboardAvoidingView` 는 플랫폼마다 동작이 갈리는 데다 `@gorhom/bottom-sheet` 의 동적 높이와
 // 겹친다. 앱이 자기 키패드를 그리면 **보정할 것이 애초에 없다.**
@@ -11,9 +11,9 @@
 //
 // ══ 금액 칸·빠른 칩·키 그리드는 **여기 없다** ══════════════════════════════════════
 //
-// `components/molecules/MesoPad` 로 꺼냈다 — 쓰는 자리가 셋이 됐기 때문이다
+// `components/molecules/MesoPad` 로 꺼냈다. 쓰는 자리가 셋이 됐기 때문이다
 // (드롭 판매가 · 지출의 직접 입력 · 수입). 복사하면 같은 키패드가 여러 벌이 되어 **어느 것이
-// 진짜인가** 가 사라진다. 그래서 아래 목록에서 ①④가 그쪽 파일로 옮겨 갔다 — **왜 그렇게 그리는지는
+// 진짜인가** 가 사라진다. 그래서 아래 목록에서 ①④가 그쪽 파일로 옮겨 갔다. **왜 그렇게 그리는지는
 // 그 파일들이 든다.** 여기 남는 것은 **무엇을 그 위아래에 세우는가** 다(드롭 머리 · 분배 인원 ·
 // 기록 안함/스킵/저장).
 //
@@ -21,13 +21,13 @@
 //
 // ② **하단 안전영역을 여기서 넣지 않는다.** 웹은 `pb-[calc(1.25rem+var(--sa-bottom))]` 이었는데
 //    RN 에서는 시트 껍데기(`BottomSheet` 의 `contentContainerStyle`)가 이미 `insets.bottom` 을
-//    준다 — 두 번 주면 두 겹이 된다. 남는 것은 상수 몫 `pb-5` 뿐이고, 이는 드릴다운 모드에도
+//    준다. 두 번 주면 두 겹이 된다. 남는 것은 상수 몫 `pb-5` 뿐이고, 이는 드릴다운 모드에도
 //    같다(웹 주석이 *"드릴다운은 안전영역을 넣지 않는다"* 고 적어 둔 갈래가 **양쪽 다 그렇게** 되어
 //    사라진다).
 // ③ `active:bg-surface-2` 는 NativeWind 가 낸다(`active:` 는 `Pressable` 의 눌림에 이어져 있다).
-//    **`disabled:opacity-40` 은 안 낸다** — 웹 CSS 의사 클래스라 `Pressable disabled` 와 이어져
+//    **`disabled:opacity-40` 은 안 낸다**. 웹 CSS 의사 클래스라 `Pressable disabled` 와 이어져
 //    있지 않다(`BossProfitBossRow` ③이 먼저 밟았다). JS 조건으로 쓴다.
-// ⑤ `⌫` 는 글자 그대로 남는다 — 지금은 `MesoKeypad` 가 그리고 `aria-label` 도 그대로다.
+// ⑤ `⌫` 는 글자 그대로 남는다. 지금은 `MesoKeypad` 가 그리고 `aria-label` 도 그대로다.
 import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
@@ -53,24 +53,24 @@ export interface DropPricePadProps {
   /** 순차 모드의 진행 표기(`3 / 6`). 단건 편집이면 넘기지 않는다. */
   progress?: { current: number; total: number }
   onSave: (priceMeso: number, share: number) => void
-  /** **기록 안함** — "이 아이템은 값을 매길 만하지 않다"는 결정을 저장한다. */
+  /** **기록 안함**. "이 아이템은 값을 매길 만하지 않다"는 결정을 저장한다. */
   onExclude: () => void
   /**
-   * **스킵** — 아직 안 팔렸으니 미입력으로 두고 다음으로. **아무것도 저장하지 않는다**
-   * (사용자 지정 2026-08-10). 순차 모드에서만 준다 — 단건 편집은 닫으면 같은 일이 된다.
+   * **스킵**. 아직 안 팔렸으니 미입력으로 두고 다음으로. **아무것도 저장하지 않는다**
+   * (사용자 지정 2026-08-10). 순차 모드에서만 준다. 단건 편집은 닫으면 같은 일이 된다.
    */
   onLater?: () => void
 }
 
 /**
- * 키패드 **본문**. 시트 껍데기를 두르지 않는다 — 두 자리에서 쓰이기 때문이다.
+ * 키패드 **본문**. 시트 껍데기를 두르지 않는다. 두 자리에서 쓰이기 때문이다.
  *
  * ① 가격 기록 화면에서는 아래 `DropPricePad` 가 `BottomSheet` 로 감싸 띄우고,
  * ② 드롭 입력 시트 안에서는 **상자 드릴다운(`BoxDrillDown`)과 같은 방식**으로 시트 내용을 갈아
  *    끼운다. 시트를 닫고 새 시트를 여는 대신 드릴다운으로 들어가는 이유는, 가격을 매긴 뒤
  *  **하던 작업(다른 아이템 고르기)을 이어서** 해야 하기 때문이다.
  *
- * `onBack` 이 있으면 드릴다운 모드다 — 상단에 뒤로 버튼이 생긴다.
+ * `onBack` 이 있으면 드릴다운 모드다. 상단에 뒤로 버튼이 생긴다.
  */
 export function DropPricePadContent(
   props: DropPricePadProps & { onBack?: () => void },
@@ -82,7 +82,7 @@ export function DropPricePadContent(
   // 언마운트하지 않고 `drop` 만 갈아 끼우므로, 두지 않으면 앞 아이템에 치던 금액과 인원이 그대로
   // 남아 다음 아이템에 얹힌다. 인원은 **그 행의 파티원 수**(`defaultShare`)로 돌아간다.
   //
-  // 렌더 중 setState 는 React 가 권하는 "프롭 변화에 상태 맞추기" 패턴이다 — effect 로 하면 옛
+  // 렌더 중 setState 는 React 가 권하는 "프롭 변화에 상태 맞추기" 패턴이다. effect 로 하면 옛
   // 값으로 한 프레임 그려진 뒤 덮인다.
   const identity = `${props.drop.boxOrigin ?? ''}|${props.drop.itemName}|${props.drop.ringLevel ?? ''}`
   const [lastIdentity, setLastIdentity] = useState(identity)
@@ -134,7 +134,7 @@ export function DropPricePadContent(
           )}
         </View>
 
-        {/* 금액 칸과 빠른 칩은 `molecules/MesoPad` 가 든다 — 지출·수입 시트도 같은 것을 쓰므로
+        {/* 금액 칸과 빠른 칩은 `molecules/MesoPad` 가 든다. 지출·수입 시트도 같은 것을 쓰므로
             여기 두면 세 벌이 된다. 무엇을 왜 그렇게 그리는지는 그 파일에 있다. */}
         <MesoAmountField
           meso={meso}
@@ -177,7 +177,7 @@ export function DropPricePadContent(
             </Pressable>
           </View>
         </View>
-        {/* 높이를 항상 차지한다 — 1인일 때 사라지면 그 줄만큼 키패드가 위아래로 튄다. */}
+        {/* 높이를 항상 차지한다. 1인일 때 사라지면 그 줄만큼 키패드가 위아래로 튄다. */}
         <Text className="mt-1.5 min-h-4 text-right text-11 text-text-muted" style={TABULAR_NUMS}>
           {meso > 0 && share > 1 ? `1인당 ${perPerson.toLocaleString()} 메소` : ''}
         </Text>

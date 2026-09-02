@@ -55,7 +55,7 @@ const 수입: IncomeDraft = {
   category: '사냥',
   item: '엘리시움',
   mesoAmount: 1_200_000_000,
-  // 사냥에는 경매장이 없다 — 수수료 칸 둘은 언제나 `null` 이다.
+  // 사냥에는 경매장이 없다. 수수료 칸 둘은 언제나 `null` 이다.
   saleFeePercent: null,
   saleFeeMeso: null,
   pointAmount: null,
@@ -149,7 +149,7 @@ describe('spendMesoOf — 메소 축으로 접는다', () => {
     expect(spendMesoOf({ ...행, mesoAmount: 935_000_000 })).toBe(935_000_000 + 2_542_372_881)
   })
 
-  // **캐시는 안 든다** — 환산 자체를 안 하므로 칸의 숫자가 그날 지출의
+  // **캐시는 안 든다**. 환산 자체를 안 하므로 칸의 숫자가 그날 지출의
   // 전부가 아니다. 그 사실은 고른 날의 상세가 따로 말한다.
   it('캐시는 메소 축에 안 들어온다', () => {
     expect(spendMesoOf({ ...행, pointAmount: null, pointPer100mMeso: null, cashAmount: 6_900 }))
@@ -238,7 +238,7 @@ describe('loadDayRecords — 그날 적은 것을 한 줄씩', () => {
 
     expect(rows).toHaveLength(2)
     expect(rows.map((row) => row.kind)).toEqual(['income', 'spend'])
-    // **하루만** 읽는다 — 두 끝이 같다.
+    // **하루만** 읽는다. 두 끝이 같다.
     expect(income.getIncomeRecordsBetween).toHaveBeenCalledWith('2026-08-25', '2026-08-25')
   })
 
@@ -256,7 +256,7 @@ describe('loadDayRecords — 그날 적은 것을 한 줄씩', () => {
     expect(rows.map(rowKeyOf)).toEqual(['spd-1', 'inc-late'])
   })
 
-  // 읽기 실패는 화면을 죽이지 않는다 — 캘린더 칸과 같은 처방이다.
+  // 읽기 실패는 화면을 죽이지 않는다. 캘린더 칸과 같은 처방이다.
   it('읽기가 실패해도 빈 목록으로 진행한다', async () => {
     spend.getSpendRecordsBetween.mockRejectedValue(new Error('stale connection'))
     income.getIncomeRecordsBetween.mockResolvedValue([수입행])
@@ -293,7 +293,7 @@ describe('줄에 적는 것', () => {
     ).toBe('아델 · 엘리시움')
   })
 
-  // 직접 입력에서 이름 칸을 비우면 이름이 없다 — 빈 줄은 **무엇인지 모르는 줄** 이다.
+  // 직접 입력에서 이름 칸을 비우면 이름이 없다. 빈 줄은 **무엇인지 모르는 줄** 이다.
   it('이름이 없으면 갈래 이름을 대신 적는다', () => {
     const { recordTitleOf } = require('../records') as typeof import('../records')
 
@@ -315,7 +315,7 @@ describe('줄의 금액', () => {
     expect(recordMesoOf({ kind: 'spend', record: 지출행, characterName: '' })).toBe(101_694_915)
   })
 
-  // 캐시는 환산 자체를 안 한다 — 메소 축에 0 으로 들되 줄은 원으로 적는다.
+  // 캐시는 환산 자체를 안 한다. 메소 축에 0 으로 들되 줄은 원으로 적는다.
   it('캐시 지출은 메소 축이 0 이고 캐시 금액을 따로 든다', () => {
     const { recordMesoOf, recordCashOf } = require('../records') as typeof import('../records')
     const 캐시행 = { ...지출행, pointAmount: null, pointPer100mMeso: null, cashAmount: 15_000 }
@@ -336,7 +336,7 @@ describe('고치기와 지우기', () => {
     expect(rate.setLastPointRate).toHaveBeenCalledWith(1_180)
   })
 
-  // 던진 수정의 시세를 다음 기본값으로 남기면 안 된다 — 넣을 때와 같은 순서다.
+  // 던진 수정의 시세를 다음 기본값으로 남기면 안 된다. 넣을 때와 같은 순서다.
   it('수정이 실패하면 시세를 안 기억한다', async () => {
     spend.updateSpendRecord.mockRejectedValue(new Error('no such column'))
     const { editSpend } = require('../records') as typeof import('../records')
@@ -483,7 +483,7 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
     expect(rows.map(recordTitleOf)).toEqual(['루디 · 보스 결정석'])
   })
 
-  // 판 것이 하나라도 있으면 그 줄은 선다 — `미입력 n` 이 **저쪽에 할 일이 있다**고 말한다.
+  // 판 것이 하나라도 있으면 그 줄은 선다. `미입력 n` 이 **저쪽에 할 일이 있다**고 말한다.
   it('판 것이 섞여 있으면 줄이 서고 미입력 건수를 함께 적는다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     bossDrops.getBossDropRecords.mockResolvedValue([
@@ -501,7 +501,7 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
   /**
    * 손입력 줄도 **캐릭터 이름을 든다**(사용자 지정 2026-08-27).
    *
-   * 이름 표를 **한 번에** 찾는 것이 계약이다 — 손입력과 보스가 같은 캐릭터를 가리킬 수 있어,
+   * 이름 표를 **한 번에** 찾는 것이 계약이다. 손입력과 보스가 같은 캐릭터를 가리킬 수 있어,
    * 갈라 부르면 같은 `ocid` 를 두 번 읽는다.
    */
   it('손입력 줄이 캐릭터 이름을 든다 — 없으면 빈 문자열이다', async () => {
@@ -515,7 +515,7 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
     const rows = await loadDayRecords('2026-08-21')
 
     expect(rows.map(recordTitleOf)).toEqual(['루디 · 엘리시움', '리우'])
-    // 같은 `ocid` 를 두 번 읽지 않는다 — 표를 한 번에 찾는다.
+    // 같은 `ocid` 를 두 번 읽지 않는다. 표를 한 번에 찾는다.
     expect(basicCache.getCachedCharacterBasic).toHaveBeenCalledTimes(1)
   })
 
@@ -539,7 +539,7 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
     expect((await loadDayRecords('2026-08-21')).map(recordTitleOf)).toEqual(['보스 결정석'])
   })
 
-  // 줄을 펼치면 뜰 것 — 그날 잡은 보스다. **새로 읽는 것이 없다**:
+  // 줄을 펼치면 뜰 것. 그날 잡은 보스다. **새로 읽는 것이 없다**:
   // 접어서 버리던 보스·난이도를 들고 있게 한 것뿐이다.
   it('결정석 줄이 그날 잡은 보스를 들고 있다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록, 데미안기록])
@@ -567,7 +567,7 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
 
     const [줄] = await loadDayRecords('2026-08-21')
 
-    // 참조표: 스우(7) < 루시드(10) < 검은마법사(monthly, 맨 뒤) — 금액 순이면 검은마법사가 앞이다.
+    // 참조표: 스우(7) < 루시드(10) < 검은마법사(monthly, 맨 뒤). 금액 순이면 검은마법사가 앞이다.
     expect(줄.kind === 'bossCrystal' ? 줄.bosses.map((boss) => boss.boss) : null).toEqual([
       '스우',
       '루시드',
@@ -596,7 +596,7 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
    * 상세의 합계와 칸 금액은 **같은 수여야 한다**.
    *
    * 둘이 다른 길로 나오므로(하나는 그날 읽기, 하나는 범위 읽기) 이 등식이 깨지면 **화면이
-   * 서로를 반박한다** — 칸에는 61억인데 그 칸을 누르면 다른 수가 뜬다. 네 원천을 다 세운다.
+   * 서로를 반박한다**. 칸에는 61억인데 그 칸을 누르면 다른 수가 뜬다. 네 원천을 다 세운다.
    */
   it('그날 합계는 칸 금액과 같은 수다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
@@ -636,7 +636,7 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
 /**
  * 시트가 고를 수 있는 캐릭터(— 캐릭터를 선택해서 입력하는 방법).
  *
- * **이름을 모르는 캐릭터는 안 든다** — `ocid` 는 사용자에게 아무 뜻도 없는 문자열이라, 그것을
+ * **이름을 모르는 캐릭터는 안 든다**. `ocid` 는 사용자에게 아무 뜻도 없는 문자열이라, 그것을
  * 목록에 세우면 있지도 않은 캐릭터 가 하나 생긴다(과 같은 이유).
  */
 describe('loadTrackedCharacters', () => {
@@ -648,14 +648,14 @@ describe('loadTrackedCharacters', () => {
     }))
     const { loadTrackedCharacters } = require('../records') as typeof import('../records')
 
-    // 레벨은 사냥 계산기가 쓴다 — 지역을 ±20 으로 거르고 페널티를 낸다.
+    // 레벨은 사냥 계산기가 쓴다. 지역을 ±20 으로 거르고 페널티를 낸다.
     expect(await loadTrackedCharacters()).toEqual([
       { ocid: 'ocid-1', name: '루디', level: 294 },
       { ocid: 'ocid-2', name: '아델', level: 275 },
     ])
   })
 
-  // 캐시가 따뜻해지기 전이면 레벨만 없다 — 이름이 있으면 목록에는 선다. 그때 계산기는 페널티
+  // 캐시가 따뜻해지기 전이면 레벨만 없다. 이름이 있으면 목록에는 선다. 그때 계산기는 페널티
   // 없이 세고, 그 사실을 시트가 한 줄로 말한다.
   it('레벨을 모르면 null 로 든다 — 그 캐릭터를 빼지는 않는다', async () => {
     selection.getTrackedCharacterOcids.mockResolvedValue(['ocid-1'])
@@ -677,7 +677,7 @@ describe('loadTrackedCharacters', () => {
     ])
   })
 
-  // 못 읽으면 목록이 빈다 — 그때 고르개에는 `선택 안함` 하나만 선다. 던지지 않는다.
+  // 못 읽으면 목록이 빈다. 그때 고르개에는 `선택 안함` 하나만 선다. 던지지 않는다.
   it('추적 목록을 못 읽으면 빈 목록이다', async () => {
     selection.getTrackedCharacterOcids.mockRejectedValue(new Error('no such table'))
     const { loadTrackedCharacters } = require('../records') as typeof import('../records')
@@ -690,7 +690,7 @@ describe('loadTrackedCharacters', () => {
  * 사냥 줄은 **`캐릭터 · 사냥` + `n재획`** 이다 (사용자 지정 2026-08-29).
  *
  * 종전에는 첫 칸이 사냥터 이름(`item`)이었다. 그런데 그 줄이 답하는 것은 오늘 무엇으로 벌었나
- * 이고 어느 맵이었나 는 열어 봐야 뜻이 생기는 값이다 — 갈래 이름이 그 자리를 든다. 대신 **몇
+ * 이고 어느 맵이었나 는 열어 봐야 뜻이 생기는 값이다. 갈래 이름이 그 자리를 든다. 대신 **몇
  * 재획을 돌았나**를 세는 칸이 서는데, 그것은 보스 줄의 n마리와 **같은 자리·같은 모양**이다.
  */
 describe('사냥 줄의 이름과 셈', () => {
@@ -739,7 +739,7 @@ describe('사냥 줄의 이름과 셈', () => {
     expect(recordCountLabelOf(rows[0])).toBe('2재획')
   })
 
-  // 수동으로 적은 행에는 소재 줄이 없다 — 셀 것이 없으니 칸도 안 선다.
+  // 수동으로 적은 행에는 소재 줄이 없다. 셀 것이 없으니 칸도 안 선다.
   it('수동으로 적은 행은 세는 칸이 없다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([
       {
@@ -757,7 +757,7 @@ describe('사냥 줄의 이름과 셈', () => {
     expect(recordCountLabelOf(rows[0])).toBeNull()
   })
 
-  //  이전에 적힌 사냥 행은 계산 입력이 없다 — 셀 것이 없으니 칸도 안 선다.
+  //  이전에 적힌 사냥 행은 계산 입력이 없다. 셀 것이 없으니 칸도 안 선다.
   it('계산기 이전 행은 세는 칸이 없다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([{ ...사냥기록, hunt: null }])
     const { loadDayRecords, recordCountLabelOf, recordTitleOf } =

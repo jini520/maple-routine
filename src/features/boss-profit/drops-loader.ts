@@ -1,7 +1,7 @@
 // 보스 행별 **드롭 기록 로드와 난이도 보정**(ADR-094 결정 7로 store.ts 에서 분리).
 //
 // 기록은 처치 난이도가 확정되기 전에도 남을 수 있어, 확정된 뒤 옛 키의 드롭을 옮겨 붙이는
-// 마이그레이션이 함께 산다 — 그 둘은 같은 문제의 앞뒤라 한 모듈이다.
+// 마이그레이션이 함께 산다. 그 둘은 같은 문제의 앞뒤라 한 모듈이다.
 
 import { planConfirmedDifficultyDropMigration, pruneUnobtainableDrops } from '../../lib/boss/boss-drops'
 import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
@@ -14,7 +14,7 @@ import type { BossProfitRow } from './rows'
  * 처치 난이도가 확정된 순간, 옛 난이도 키에 남은 드롭을 확정 난이도로 이관한다.
  * 계산은 `planConfirmedDifficultyDropMigration` 이 하고 여기서는 쓰기만 한다.
  *
- * `dropRecords` 는 호출 측이 이미 읽어둔 것을 그대로 받는다 — 행마다 새로 조회하지 않기 위함이다.
+ * `dropRecords` 는 호출 측이 이미 읽어둔 것을 그대로 받는다. 행마다 새로 조회하지 않기 위함이다.
  * 옮길 것이 없으면 계획이 `null` 이라 쓰기도 없다(멱등).
  *
  * **확정 키를 먼저 쓰고 옛 키를 비운다.** 순서를 뒤집으면 중간에 앱이 죽었을 때 기록이 사라지는데,

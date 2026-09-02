@@ -6,7 +6,7 @@ const KST_OFFSET_MS = 9 * 60 * 60 * 1000
 /**
  * 스케줄러 API(`date` 파라미터)로 조회 가능한 최소 날짜(사용자 재실측, 2026-07-14, ADR-023 —
  * 처음 확인했던 '2026-06-25'는 잘못된 확인이었다).
- * 이 API 자체가 신규 도입돼 그 이전 데이터가 존재하지 않는 고정 하한선이다 — 오늘 날짜 기준으로
+ * 이 API 자체가 신규 도입돼 그 이전 데이터가 존재하지 않는 고정 하한선이다. 오늘 날짜 기준으로
  * 매일 밀려나는 롤링 윈도우가 아니므로, 시간이 지나도 이 값을 다시 계산할 필요가 없다.
  */
 export const MIN_SCHEDULER_DATE = '2026-07-01'
@@ -103,7 +103,7 @@ export function isLatestPeriod(cycle: BossCycle, periodKey: string, now: Date): 
 /**
  * 이 기간이 이미 지난 기간인데도 **그 안에 아직 진행 중인 주가 들어 있는지** 확인한다.
  *
- * 월간 탭에서 한 주가 달 경계를 걸칠 때만 참이다 — 2026년 7월의 마지막 리셋은 7월 30일(목)이라
+ * 월간 탭에서 한 주가 달 경계를 걸칠 때만 참이다. 2026년 7월의 마지막 리셋은 7월 30일(목)이라
  * 그 주(7/30~8/5)는 "7월 5주차"이면서 8월 5일까지 이어진다. 8월 1일 00:00에 7월은 지난 달이
  * 되지만 그 주는 여전히 진행 중이므로, 7월 화면은 아직 "다 끝난 과거"가 아니다.
  *
@@ -122,7 +122,7 @@ export function containsInProgressWeek(cycle: BossCycle, periodKey: string, now:
  * 헤더 동기화 상태 영역 노출과 당겨서 새로고침 활성 조건이 **이 한 플래그를 공유한다**(
  * 결정 9). 갈라 두면 "버튼은 없는데 당기면 도는" 상태가 생긴다.
  *
- * 기간 네비게이션 게이트(다음 기간 비활성)는 여전히 isLatestPeriod다 — "이 기간이 최신인가"와
+ * 기간 네비게이션 게이트(다음 기간 비활성)는 여전히 isLatestPeriod다. "이 기간이 최신인가"와
  * "지금 재조회하면 숫자가 달라질 수 있는가"는 다른 질문이다.
  */
 export function isPeriodRefreshable(cycle: BossCycle, periodKey: string, now: Date): boolean {
@@ -199,7 +199,7 @@ export function formatBossProfitPeriodLabel(
  * 그 기간에 **든 날짜 전부**(KST `YYYY-MM-DD`, 오름차순) —.
  *
  * `getBackfillQueryDate` 는 기간당 **한 날짜**만 낸다(그 기간이 가장 온전히 반영되는 시점). 그것으로는
- * 그 기간에 잡았다 까지만 알 수 있고 **며칟날인지는 안 나온다** — 일간 해상도는 날짜들을 훑어
+ * 그 기간에 잡았다 까지만 알 수 있고 **며칟날인지는 안 나온다**. 일간 해상도는 날짜들을 훑어
  * 미완료 → 완료 로 뒤집힌 지점을 찾아야 나오므로, 이 함수가 그 훑을 목록을 만든다.
  *
  * 주간은 리셋 목요일부터 이레, 월간은 1일부터 그 달 마지막 날까지다. **달을 넘는 주도 그냥 이어진다** —
@@ -223,7 +223,7 @@ export function getPeriodDateKeys(cycle: BossCycle, periodKey: string): string[]
 
 /**
  * 과거 기간 백필(스케줄러 API의 date 파라미터 조회) 시 사용할 조회 날짜(YYYY-MM-DD)를 계산한다.
- * 그 기간의 완료 현황이 가장 온전히 반영되는 시점 — 다음 리셋 직전(그 기간의 마지막 날) — 을 쓴다.
+ * 그 기간의 완료 현황이 가장 온전히 반영되는 시점 — 다음 리셋 직전(그 기간의 마지막 날). 을 쓴다.
  * weekly: periodKey(리셋 목요일) + 6일. monthly: periodKey가 속한 달의 마지막 날.
  */
 export function getBackfillQueryDate(cycle: BossCycle, periodKey: string): string {
@@ -253,11 +253,11 @@ export function getMinQueryableDate(now: Date): string {
 }
 
 /**
- * now(KST) 기준으로 스케줄러 API가 받아들이는 **최대** 날짜(YYYY-MM-DD) — 오늘−1일이다
+ * now(KST) 기준으로 스케줄러 API가 받아들이는 **최대** 날짜(YYYY-MM-DD). 오늘−1일이다
  * (실측 2026-07-31).
  *
  * `date=오늘` 과 미래 날짜는 400 `OPENAPI00004` 다. `오늘−1일` 은 **집계가 끝나기 전(KST 새벽)엔
- * 400 `OPENAPI00009`** 지만 그 뒤에는 정상 조회된다 — 그래서 상한을 오늘−2일로 낮추지 않는다.
+ * 400 `OPENAPI00009`** 지만 그 뒤에는 정상 조회된다. 그래서 상한을 오늘−2일로 낮추지 않는다.
  * 낮추면 집계가 끝난 목요일 아침에 볼 수 있는 지난 주를 우리가 스스로 가리게 된다. 새벽의
  * 00009는 실패가 아니라 `notCollected` 상태로 흡수한다(resolvePeriodDataState).
  */
@@ -277,10 +277,10 @@ export function getMaxQueryableDate(now: Date): string {
  *
  * 하한 둘(API가 존재하기 시작한 고정 하한선 MIN_SCHEDULER_DATE, 매일 밀리는 롤링 하한선
  * getMinQueryableDate) 중 더 늦은 쪽과, 상한 하나(getMaxQueryableDate = 오늘−1일) 사이여야 한다.
- * **상한은에서 추가됐다** — 전에는 하한만 봐서 현재 기간(조회일이 미래)에도
+ * **상한은에서 추가됐다**. 전에는 하한만 봐서 현재 기간(조회일이 미래)에도
  * "조회 가능"이라 답했고, 그 답을 믿고 호출하면 400이었다.
  *
- * 주의: 이 함수는 "백필 가능성"만 답한다. **현재 기간을 볼 수 있는가는 다른 질문이다** — 그건
+ * 주의: 이 함수는 "백필 가능성"만 답한다. **현재 기간을 볼 수 있는가는 다른 질문이다**. 그건
  * 실시간 동기화가 담당하므로 resolvePeriodDataState의 isCurrentPeriod로 갈라 다룬다.
  */
 export function isPeriodQueryable(cycle: BossCycle, periodKey: string, now: Date): boolean {
@@ -294,7 +294,7 @@ export function isPeriodQueryable(cycle: BossCycle, periodKey: string, now: Date
  * 한 기간을 조회하려 한 결과 중 **영속되지 않는** 것(이번 세션의 시도 결과).
  *
  * `outOfRange` 가 여기 있는 이유: 우리가 계산한 조회 구간 안인데도 API가 400 `OPENAPI00004` 로
- * 거부하는 경우가 있다 — 그 날짜에 이 캐릭터가 지금 월드에 없었거나(월드 리프) 휴면이었던 경우다
+ * 거부하는 경우가 있다. 그 날짜에 이 캐릭터가 지금 월드에 없었거나(월드 리프) 휴면이었던 경우다
  * (실측, 구분 불가 —). 날짜만 보면 알 수 없으므로 **응답이 알려준 사실**로
  * 상태를 정한다. 다만 아직 영속하지 않으므로 다음 방문에 한 번 더 호출한다(후속 과제).
  */
@@ -331,20 +331,20 @@ export interface PeriodDataStateInput {
 }
 
 /**
- * 판정을 한 곳에 모아 화면과 백필이 **같은 값을 공유**하게 한다 — 전에는 화면이
+ * 판정을 한 곳에 모아 화면과 백필이 **같은 값을 공유**하게 한다. 전에는 화면이
  * `isPeriodQueryable` 하나로, 백필은 target별로 따로 판정해 월간 탭에서 "조회 불가"와
  * "불러오지 못했습니다"가 동시에 뜨는 경로가 있었다(이슈 #78 E).
  */
 export function resolvePeriodDataState(input: PeriodDataStateInput): PeriodDataState {
   // 현재 기간은 백필 대상이 아니다. 조회일이 미래라 isQueryable이 false지만 "조회 불가"가 아니라
-  // 실시간 동기화가 방금 알려준 사실이다 — 처치가 0건이면 그것이 확정된 빈 상태다.
+  // 실시간 동기화가 방금 알려준 사실이다. 처치가 0건이면 그것이 확정된 빈 상태다.
   if (input.isCurrentPeriod) {
     return input.hasRecords ? 'recorded' : 'confirmedEmpty'
   }
   if (input.hasRecords) {
     return 'recorded'
   }
-  // 확인 기록은 "조회해서 0건을 봤다"만 의미한다 — 조회 불가 기간을 checked로
+  // 확인 기록은 "조회해서 0건을 봤다"만 의미한다. 조회 불가 기간을 checked로
   // 굳히지 않도록 store를 함께 바꿨다. 그래서 이 분기가 시간이 지나도 outOfRange로 격하되지 않는다.
   if (input.isChecked) {
     return 'confirmedEmpty'
@@ -365,7 +365,7 @@ export function resolvePeriodDataState(input: PeriodDataStateInput): PeriodDataS
  * (weekly에 적용하면 MIN_SCHEDULER_DATE 이전 주로 이동을 막고, monthly에 적용하면 그 달이
  * 통째로 MIN_SCHEDULER_DATE 이전인 달로 이동을 막는다. 이미 진입한 기간 자체가 부분적으로만
  * 조회 불가능한 경우(예: 2026-07월 첫 며칠만 데이터 없음, 혹은 롤링 윈도우를 벗어난 경우)는
- * 막지 않는다 — 이미 캐시된 기록이 있을 수 있으므로 isPeriodQueryable과 달리 여기서는 항상
+ * 막지 않는다. 이미 캐시된 기록이 있을 수 있으므로 isPeriodQueryable과 달리 여기서는 항상
  * MIN_SCHEDULER_DATE라는 고정 하한선만 본다. 롤링 윈도우로 인해 조회 자체가 안 되는 기간은
  * loadPeriod/backfillTarget이 API 호출만 건너뛰고("조회 불가" 표시), 네비게이션 자체는 막지
  * 않는다.)
@@ -377,7 +377,7 @@ export function isEarliestNavigablePeriod(cycle: BossCycle, periodKey: string): 
 
 /**
  * 캐릭터별 상태를 화면(기간) 하나의 상태로 접는다. 캐릭터가 여러 명이면 상태가 섞이는데, 그때
- * **불확실을 확정으로 위장하지 않는다** — `confirmedEmpty`("0건 확정")는 **전원이** 확정했을 때만
+ * **불확실을 확정으로 위장하지 않는다**. `confirmedEmpty`("0건 확정")는 **전원이** 확정했을 때만
  * 말한다. 하나라도 모르는 캐릭터가 있으면 그 사실을 우선한다(error-resilience 원칙 2).
  *
  * 우선순위: recorded > failed > notCollected > notChecked > outOfRange > confirmedEmpty

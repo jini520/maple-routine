@@ -23,9 +23,9 @@ describe('THEME_NAMES / isThemeName — JSON 키가 단일 진실 공급원', ()
   })
 
   /**
-   * 표시 순서 규약이 바뀌었다 — 예전에는 "JSON 키 순서 = 표시 순서"였다.
+   * 표시 순서 규약이 바뀌었다. 예전에는 "JSON 키 순서 = 표시 순서"였다.
    * 지금 JSON 이 우연히 카테고리 순으로 적혀 있어 결과가 같아도, 규약은 **카테고리가 먼저**다.
-   * 그래서 나열 비교 대신 "카테고리 인덱스가 뒤로 갈수록 줄지 않는다"를 본다 — 새 테마를 JSON
+   * 그래서 나열 비교 대신 "카테고리 인덱스가 뒤로 갈수록 줄지 않는다"를 본다. 새 테마를 JSON
    * 아무 데나 끼워 넣어도 이 성질이 깨지면 실패한다.
    */
   it('카테고리 순서대로 늘어서고, 같은 카테고리 안에서는 JSON 키 순서다', () => {
@@ -65,7 +65,7 @@ describe('groupThemesByCategory — 선택 목록의 섹션', () => {
     }
   })
 
-  // 필터가 걸러낸 뒤 빈 카테고리가 헤더만 남는 것을 막는다 — 감추는 책임은 이 함수에 있다.
+  // 필터가 걸러낸 뒤 빈 카테고리가 헤더만 남는 것을 막는다. 감추는 책임은 이 함수에 있다.
   it('항목이 없는 카테고리는 그룹째 나오지 않는다', () => {
     const darkOnly = THEME_NAMES.filter((name) => getThemeDefinition(name).mode === 'dark')
     const groups = groupThemesByCategory(darkOnly)
@@ -120,12 +120,12 @@ describe('buildThemeCss', () => {
 
   /**
    * 배경 이미지는 **선택 필드**다. 값을 가진 테마에서만 `--theme-bg-*` 가
-   * 나가고, 없는 테마에서는 선언 자체가 없어야 한다 — 그래야 CSS 쪽 기본값(`none`)이 살아
+   * 나가고, 없는 테마에서는 선언 자체가 없어야 한다. 그래야 CSS 쪽 기본값(`none`)이 살아
    * 배경 없는 테마의 그림이 한 픽셀도 안 바뀐다.
    *
    * **"있음" 쪽 사례는 데이터가 아니라 여기서 만든다**. 지금은 배경을 선언한
    * 테마가 0개라(그림을 바꾸는 중) 데이터에서 고르면 이 검사가 통째로 사라지는데, 검사 대상은
-   * 데이터가 아니라 **기계장치**다 — 새 그림이 들어올 때까지 이 경로가 아무도 안 보는 채로 썩으면
+   * 데이터가 아니라 **기계장치**다. 새 그림이 들어올 때까지 이 경로가 아무도 안 보는 채로 썩으면
    * 그림을 붙이는 순간에야 알게 된다. `WITH_BACKGROUND` 는 실재하는 에셋 슬러그를 쓴다(슬러그가
    * 해석돼야 `--theme-bg-image` 가 나가므로 가짜 이름으로는 이 검사가 성립하지 않는다).
    */
@@ -151,7 +151,7 @@ describe('buildThemeCss', () => {
       expect(css).toContain(`--theme-bg-fade-top: ${WITH_BACKGROUND.background?.fadeTop};`)
     })
 
-    // "없음" 쪽은 실물로 검사한다 — 지금은 등록된 테마 전부가 이쪽이다.
+    // "없음" 쪽은 실물로 검사한다. 지금은 등록된 테마 전부가 이쪽이다.
     it.each(NAMES.filter((name) => getThemeDefinition(name).background === undefined))(
       '%s: 배경 프로퍼티를 아예 내지 않는다',
       (name) => {
@@ -195,7 +195,7 @@ describe('buildThemeCss', () => {
      * 카드 안에서 쓰는 토큰을 스코프가 하나라도 빠뜨리면 **페이지 값이 그대로 내려온다**.
      * 실제로 `surface-2`·`track` 을 빠뜨려 어두운 카드 위에 페이지의 밝은 크림색 pill 이
      * 얹혔다("시작 안함" 배지, 사용자 보고 2026-07-30). 카드 안 표면은 전부 카드보다 어둡거나
-     * 그에 준해야 한다 — 페이지 표면 쪽으로 튀면 안 된다.
+     * 그에 준해야 한다. 페이지 표면 쪽으로 튀면 안 된다.
      */
     it.each([...THEME_NAMES])('%s: 카드 안 표면이 페이지 표면으로 새지 않는다', (name) => {
       const theme = getThemeDefinition(name)
@@ -232,7 +232,7 @@ describe('buildThemeCss', () => {
       const read = (token: string) =>
         new RegExp(`--color-${token}: (#[0-9A-F]{6})`, 'i').exec(scope)?.[1] ?? ''
 
-      // 알파는 떼고 바탕색만 견준다 — 카드 위에 얹히므로 실제 인상은 이보다 카드 쪽에 가깝다.
+      // 알파는 떼고 바탕색만 견준다. 카드 위에 얹히므로 실제 인상은 이보다 카드 쪽에 가깝다.
       expect(contrastHex(read('secondary-tint'), read('surface-2'))).toBeGreaterThan(1.5)
     })
   })

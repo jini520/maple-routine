@@ -3,13 +3,13 @@
  *
  * ## 목적지가 없는 타일은 이것뿐이다
  *
- * 초기화 시각은 이 타일이 다 말하고 더 볼 화면이 없다 — 그래서 레지스트리에 `target` 이 없고
+ * 초기화 시각은 이 타일이 다 말하고 더 볼 화면이 없다. 그래서 레지스트리에 `target` 이 없고
  * `WidgetGrid` 가 `Pressable` 로 감싸지 않는다(갈 데 없는 것을 누르게 두면 무반응이 고장 으로
  * 읽힌다).
  *
  * ## 시계를 읽는 위젯은 이것뿐이다 (사용자 지시)
  *
- * 원래는 안 읽었다 — 뷰모델이 `now` 하나로 계산해 내려 주는 것이 결정 4 였다. **일일이 초까지 세고
+ * 원래는 안 읽었다. 뷰모델이 `now` 하나로 계산해 내려 주는 것이 결정 4 였다. **일일이 초까지 세고
  * 1초마다 다시 그리게 되면서** 그 규칙을 이 위젯에서만 뒤집는다. 뷰모델 전체를 1초마다 다시 만들면
  * 스케줄·수익·드롭이 같이 재계산되는데, 1초마다 갈리는 값은 아홉 위젯 중 이것 하나뿐이다.
  *
@@ -23,21 +23,21 @@
  * 뷰모델이 `getPeriodStartUtcMs(getCurrentKstDateKey(now)) + 1일`(일일) ·
  * `getMostRecentWeeklyResetKst`(주간, KST 목 00:00) · KST 월초(월간)로 계산하고, 세 함수 모두
  * `Date.UTC(...) − 9시간` 이라 **기기 타임존과 무관**하다. 이 위젯은 그 절대 시각에서 빼기만 하므로
- * 타임존이 끼어들 자리가 없다 — 그 사실을 테스트가 타임존을 바꿔 가며 지킨다.
+ * 타임존이 끼어들 자리가 없다. 그 사실을 테스트가 타임존을 바꿔 가며 지킨다.
  *
  * ## 임박을 색으로 말하지 않는다
  *
- * 1시간 미만에 `error` 를 빌리는 안이 시안에 있었으나 **색이 확정되지 않았다** — 실패가 아니라
+ * 1시간 미만에 `error` 를 빌리는 안이 시안에 있었으나 **색이 확정되지 않았다**. 실패가 아니라
  * 임박인데 이 앱에는 경고 축이 없다(`error` 는 실패의 색이고 그 뜻이 흐려진다). 값이 무엇이든
  * 이 타일의 글자 스타일은 같다.
  *
  * ## 크기가 버리는 것
  *
- * 2x1(기본)은 **월간**을 버린다 — 대개 멀어 지금 급한 것이 아니다. 1x1 은 일일만 남고 값도 **가장 큰
+ * 2x1(기본)은 **월간**을 버린다. 대개 멀어 지금 급한 것이 아니다. 1x1 은 일일만 남고 값도 **가장 큰
  * 단위 하나**로 접힌다(두 단위가 물리적으로 안 들어간다). 2x2 만 진행 바를 함께 그리고, 4x1 은 셋을
  * 가로로 세우며 숫자를 키운다.
  *
- * **초를 담을 수 있는 크기도 갈린다** — 2x1·2x2 만 일일을 초까지 그린다. 4x1 은 셋을 가로로 나눠 쓰느라
+ * **초를 담을 수 있는 크기도 갈린다**. 2x1·2x2 만 일일을 초까지 그린다. 4x1 은 셋을 가로로 나눠 쓰느라
  * 한 칸이 좁고, 1x1 은 단위 하나뿐이다.
  */
 
@@ -59,18 +59,18 @@ const DAY_MS = 24 * HOUR_MS
 const SECOND_MS = 1000
 
 /**
- * 분 미만은 0분 이 아니다 — 아직 안 왔다는 사실이 0으로 읽히면 안 된다.
+ * 분 미만은 0분 이 아니다. 아직 안 왔다는 사실이 0으로 읽히면 안 된다.
  *
- * **초를 그리는 곳에서는 안 쓴다** — `43초` 가 그 말을 직접 한다.
+ * **초를 그리는 곳에서는 안 쓴다**. `43초` 가 그 말을 직접 한다.
  */
 const IMMINENT = '1분 미만'
 
 /**
  * 얼마나 잘게 그리나.
  *
- * - `'second'` — `12시간 34분 56초`. 일일만, 그리고 자리가 있는 크기에서만.
- * - `'minute'` — 위 두 단위(`2일 5시간` · `12시간 34분` · `43분`).
- * - `'largest'` — 가장 큰 단위 하나(1x1 에는 두 단위가 물리적으로 안 들어간다).
+ * - `'second'`. `12시간 34분 56초`. 일일만, 그리고 자리가 있는 크기에서만.
+ * - `'minute'`. 위 두 단위(`2일 5시간` · `12시간 34분` · `43분`).
+ * - `'largest'`. 가장 큰 단위 하나(1x1 에는 두 단위가 물리적으로 안 들어간다).
  */
 type Granularity = 'second' | 'minute' | 'largest'
 
@@ -123,9 +123,9 @@ function formatResetRemaining(remainingMs: number, granularity: Granularity): st
  * **1초마다 지금**.
  *
  * 뷰모델의 `remainingMs` 는 화면이 만들어진 시점의 값이라 그대로 두면 멈춘 시계다. 여기서 지금 을
- * 새로 읽고 `atMs` 에서 빼는 것이 살아 있는 값이다 — **틱을 세지 않는 이유**는 파일 머리에 있다.
+ * 새로 읽고 `atMs` 에서 빼는 것이 살아 있는 값이다. **틱을 세지 않는 이유**는 파일 머리에 있다.
  *
- * 간격을 1초로 두면 표시 초가 최대 1초 늦게 넘어갈 수 있다(경계에 맞춰 정렬하지 않는다) — 카운트다운
+ * 간격을 1초로 두면 표시 초가 최대 1초 늦게 넘어갈 수 있다(경계에 맞춰 정렬하지 않는다). 카운트다운
  * 이 매끄럽게 흐르는 것이 목적이지 초의 경계가 정확한 것이 목적은 아니다.
  */
 function useNowMs(): number {
@@ -166,7 +166,7 @@ function Label(props: { cycle: CycleKey; sizeClass: string }): React.JSX.Element
 /**
  * 남은 시간 글자.
  *
- * **`className` 이 값에 따라 갈리지 않는다** — 임박을 색으로 말하지 않는다는 것이 파일 머리의
+ * **`className` 이 값에 따라 갈리지 않는다**. 임박을 색으로 말하지 않는다는 것이 파일 머리의
  * 결정이고, 그 계약은 두 값에서 같은 클래스가 나오는가 로 검사된다.
  */
 function Value(props: {
@@ -216,7 +216,7 @@ function Row(props: {
           <Value
             cycle={props.cycle}
             remainingMs={remainingMs}
-            // **일일만 초까지** — 수십 시간 남은 값에 초를 붙이면 글자만 길어지고
+            // **일일만 초까지**. 수십 시간 남은 값에 초를 붙이면 글자만 길어지고
             // 아무도 안 본다.
             granularity={props.cycle === 'daily' ? 'second' : 'minute'}
             sizeClass="text-[12.5px]"
@@ -242,7 +242,7 @@ export function ResetCountdownWidget({ w, h, data }: WidgetProps): React.JSX.Ele
       <View testID="widget-reset-countdown" className="flex-1 items-center justify-center gap-0.5 p-2">
         <Title sizeClass="text-9" />
         <Label cycle="daily" sizeClass="text-[10.5px]" />
-        {/* 1x1 은 초를 넣을 자리가 물리적으로 없다 — 가장 큰 단위 하나뿐이다. */}
+        {/* 1x1 은 초를 넣을 자리가 물리적으로 없다. 가장 큰 단위 하나뿐이다. */}
         <Value
           cycle="daily"
           remainingMs={remainingOf(resets.daily, nowMs)}
@@ -261,7 +261,7 @@ export function ResetCountdownWidget({ w, h, data }: WidgetProps): React.JSX.Ele
           {(['daily', 'weekly', 'monthly'] as const).map((cycle) => (
             <View key={cycle} testID={`reset-cell-${cycle}`} className="min-w-0 flex-1">
               <Label cycle={cycle} sizeClass="text-11" />
-              {/* 셋을 가로로 나눠 쓰느라 한 칸이 좁다 — 여기서는 일일도 분까지다. */}
+              {/* 셋을 가로로 나눠 쓰느라 한 칸이 좁다. 여기서는 일일도 분까지다. */}
               <Value
                 cycle={cycle}
                 remainingMs={remainingOf(resets[cycle], nowMs)}

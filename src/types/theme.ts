@@ -12,7 +12,7 @@ export type ThemeMode = 'light' | 'dark'
 /**
  * 테마가 속한 분류.
  *
- * **한 테마는 하나만 갖는다** — 머쉬맘·혼테일은 보스이기도 하지만 "앱의 기본 라이트/다크"라는
+ * **한 테마는 하나만 갖는다**. 머쉬맘·혼테일은 보스이기도 하지만 "앱의 기본 라이트/다크"라는
  * 역할이 우선이라 `기본` 에만 둔다. 겹침을 허용하면 배열이 되고 같은 테마가 목록에 두 번 나온다.
  * 소속은 색에서 유도할 수 없는 **게임 도메인**이라 사람이 확인해 넣는다.
  *
@@ -106,7 +106,7 @@ export interface ThemeTokens {
  * 테마 배경 이미지.
  *
  * 크기·위치·어둡기·페이드를 **값으로** 갖는 이유는 그림을 고치는 대신 JSON 한 줄로 조절하기
- * 위해서다 — "더 어둡게"는 `dim`, "아래쪽이 보이게"는 `position` 이다. 코드를 건드릴 일이
+ * 위해서다. "더 어둡게"는 `dim`, "아래쪽이 보이게"는 `position` 이다. 코드를 건드릴 일이
  * 없어야 다른 테마에도 값 한 블록으로 붙는다.
  */
 export interface ThemeBackground {
@@ -130,7 +130,7 @@ export interface ThemeBackground {
 /**
  * `job-themes.json` 한 항목. 38토큰 + `mode` + 선택 `background`.
  *
- * `mode` 는 색이 아니라 **의도**다 — 상태바(`native/status-bar.ts`)·하단 내비 글리프
+ * `mode` 는 색이 아니라 **의도**다. 상태바(`native/status-bar.ts`)·하단 내비 글리프
  * (`native/system-bars.ts`) 명암을 정한다. 자동 계산하지 않고 테마마다 사람이 명시한다
  * 파스텔처럼 경계가 애매한 테마에서 오분류를 막기 위해서다.
  */
@@ -138,7 +138,7 @@ export interface ThemeDefinition extends ThemeTokens {
   mode: ThemeMode
   /** 선택 목록의 섹션을 정한다 */
   category: ThemeCategory
-  /** 없으면 배경은 `bg` 단색이다 — 지금은 **어느 테마도 갖지 않는다**(로 둘 다 뗌) */
+  /** 없으면 배경은 `bg` 단색이다. 지금은 **어느 테마도 갖지 않는다**(로 둘 다 뗌) */
   background?: ThemeBackground
 }
 

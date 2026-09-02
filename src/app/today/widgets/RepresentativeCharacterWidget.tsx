@@ -4,7 +4,7 @@
  * ## 세 크기가 같은 구조다
  *
  * 4x1 · 4x2 · 2x2 셋 모두 월드 엠블럼 + 두 줄 + EXP 이고, 갈리는 것은
- * **밀도와 EXP 의 자리**뿐이다 — 4x1 은 오른쪽 100px 열, 나머지는 아래 전폭. 큰 타일이 작은 타일을
+ * **밀도와 EXP 의 자리**뿐이다. 4x1 은 오른쪽 100px 열, 나머지는 아래 전폭. 큰 타일이 작은 타일을
  * 확대한 것이 아니라 같은 사실을 다른 밀도로 말한다(`widgets/types.ts` 규약).
  *
  * ## 길드는 닉네임 옆이다 (사용자 지시)
@@ -17,23 +17,23 @@
  * 셋째 줄에 혼자 서던 값인데 **길드는 **누구인가** 의 일부**지 별도 항목이 아니다. 4x1 은 내부 높이가
  * 52 뿐이라 그 한 줄이 크다.
  *
- * **자리가 모자라면 닉네임이 줄어든다** — 길드는 잘리면 다른 길드로 읽히지만, 닉네임은 초상화가
+ * **자리가 모자라면 닉네임이 줄어든다**. 길드는 잘리면 다른 길드로 읽히지만, 닉네임은 초상화가
  * 이미 누구인가 를 말한다.
  *
  * ## 없는 것을 그리지 않는다
  *
- * - ****대표 없음** 상태는 없다** — `resolveDisplayRepresentative` 가 미지정이면
+ * - ****대표 없음** 상태는 없다**. `resolveDisplayRepresentative` 가 미지정이면
  *   목록의 첫 번째를 세운다. `representative === null` 은 **추적 캐릭터가 하나도 없을 때뿐**이라
  *  그때만 한 줄로 그 사실을 말한다. 임시 대표 라는 표시도 하지 않는다.
- * - **`expRate` 가 없으면 EXP 줄 자체를 안 그린다** — 0% 바를 그리면 경험치가
+ * - **`expRate` 가 없으면 EXP 줄 자체를 안 그린다**. 0% 바를 그리면 경험치가
  *   0 으로 읽힌다. 그 상태를 설계된 갈래 로 두지는 않는다: 옛 캐시 엔트리에 그 필드가 없는 것에
  *   대한 **방어적 기본값**이다.
- * - 엠블럼·직업·길드도 같다 — 모르면 그 자리를 비운다(`CharacterRow` 와 같은 규칙).
+ * - 엠블럼·직업·길드도 같다. 모르면 그 자리를 비운다(`CharacterRow` 와 같은 규칙).
  *
  * ## `character_exp`(누적 절대값)는 그리지 않는다
  *
  * 레벨이 오를수록 커지는 값이라 얼마나 남았나 를 말하지 못한다. 카드가 답하는 것은 진행률 하나고,
- * 소수 3자리는 **API 가 준 그대로**다 — 반올림하면 `99.999%` 가 `100%` 가 되어 다 찼다 고 거짓을
+ * 소수 3자리는 **API 가 준 그대로**다. 반올림하면 `99.999%` 가 `100%` 가 되어 다 찼다 고 거짓을
  * 말한다.
  *
  * ## 엠블럼은 번들 에셋이라 두 축을 다 이름 부른다
@@ -54,9 +54,9 @@ import type { WidgetHeight } from '../../../lib/today/widget-layout'
 import type { RepresentativeView } from '../view-model'
 import type { WidgetProps } from './types'
 
-/** 크기마다 갈리는 것은 **치수와 글자 크기**뿐이다 — 그리는 순서·줄 구성은 셋이 같다. */
+/** 크기마다 갈리는 것은 **치수와 글자 크기**뿐이다. 그리는 순서·줄 구성은 셋이 같다. */
 const VARIANT = {
-  /** 4x1(기본) — 내부 높이 52 에 초상화 44 가 들어간다. */
+  /** 4x1(기본). 내부 높이 52 에 초상화 44 가 들어간다. */
   row: {
     portraitPx: 44,
     emblemPx: 15,
@@ -89,7 +89,7 @@ function variantOf(w: number, h: WidgetHeight): Variant {
   return h === 2 ? 'large' : 'row'
 }
 
-/** `"80.300%"` — API 가 준 소수 3자리를 그대로 둔다(파일 머리). */
+/** `"80.300%"`. API 가 준 소수 3자리를 그대로 둔다(파일 머리). */
 function formatExpRate(rate: number): string {
   return `${rate.toFixed(3)}%`
 }
@@ -153,7 +153,7 @@ function NameLine(props: {
   )
 }
 
-/** 2줄 — `Lv. N` + 직업. 직업만 잘린다(레벨은 짧고 언제나 있다). */
+/** 2줄. `Lv. N` + 직업. 직업만 잘린다(레벨은 짧고 언제나 있다). */
 function CaptionLine(props: {
   view: RepresentativeView
   variant: Variant
@@ -183,7 +183,7 @@ function CaptionLine(props: {
 /**
  * EXP — 4x1 은 오른쪽 **100px 열**, 나머지는 아래 전폭.
  *
- * 100 은 70 에서 늘린 값이다(사용자 지시) — 바가 짧아 진행률이 눈에 안
+ * 100 은 70 에서 늘린 값이다(사용자 지시). 바가 짧아 진행률이 눈에 안
  * 들어왔다. 늘어난 30px 은 이름 줄에서 가져오고, 그래서 닉네임이 먼저 줄어든다(`NameLine`).
  *
  * `null` 을 돌려주는 갈래가 곧 EXP 줄 자체가 없다 는 계약이다.
@@ -235,7 +235,7 @@ export function RepresentativeCharacterWidget({ w, h, data }: WidgetProps): Reac
   const variant = variantOf(w, h)
   const view = data.representative
 
-  // 이 자리는 **대표를 안 골랐다** 가 아니라 **추적 캐릭터가 없다** 다 — CTA 를 두지 않는 이유는
+  // 이 자리는 **대표를 안 골랐다** 가 아니라 **추적 캐릭터가 없다** 다. CTA 를 두지 않는 이유는
   // 위젯이 사라지지도 커지지도 않기 때문이고, 그 안내는 스케줄러·설정이 이미 한다.
   if (view === null) {
     return (
@@ -247,7 +247,7 @@ export function RepresentativeCharacterWidget({ w, h, data }: WidgetProps): Reac
 
   if (variant === 'compact') {
     return (
-      // 간격이 8이면 세 줄 + EXP 가 164(2x2 높이)를 3px 넘긴다 — 내용을 빼는 대신 간격을 줄인다.
+      // 간격이 8이면 세 줄 + EXP 가 164(2x2 높이)를 3px 넘긴다. 내용을 빼는 대신 간격을 줄인다.
       <View testID="widget-representative-character" className="flex-1 items-center gap-1.5 p-3">
         <Portrait view={view} sizePx={VARIANT.compact.portraitPx} />
         <Lines view={view} variant="compact" center />

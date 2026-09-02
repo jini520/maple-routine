@@ -1,6 +1,6 @@
 /// <reference types="node" />
 // 순수 규칙(`ads-env.test.ts`)이 지키는 것은 "어느 빌드가 실 광고를 쓰는가" 이고, 이 파일이
-// 지키는 것은 둘이다 — **어댑터가 그 판정을 스스로 다시 쓰지 않는가**(광고 단위 ID 를 core 에서만
+// 지키는 것은 둘이다. **어댑터가 그 판정을 스스로 다시 쓰지 않는가**(광고 단위 ID 를 core 에서만
 // 가져오는가)와 **포트 계약을 지키는가**(`showInterstitial()` 이 안 떴는데 `true` 를 주면 호출부가
 // 노출 시각을 기록해 30분간 광고가 통째로 죽는다 —).
 //
@@ -18,7 +18,7 @@ import { Platform } from 'react-native'
 
 import { resolveInterstitialAdId } from '../../ads'
 
-// `mock` 접두사는 필수다 — `jest.mock` 팩토리가 위로 끌어올려지므로 babel 이 그 접두사가 붙은
+// `mock` 접두사는 필수다. `jest.mock` 팩토리가 위로 끌어올려지므로 babel 이 그 접두사가 붙은
 // 것만 바깥 변수 참조로 허용한다.
 interface MockAd {
   adUnitId: string
@@ -51,7 +51,7 @@ jest.mock('react-native-google-mobile-ads', () => ({
             ad.listeners = ad.listeners.filter((it) => it !== entry)
           }
         },
-        // 실제 SDK 는 비동기로 이벤트를 주지만 여기서는 동기로 쏜다 — 리스너를 `load()` **뒤에**
+        // 실제 SDK 는 비동기로 이벤트를 주지만 여기서는 동기로 쏜다. 리스너를 `load()` **뒤에**
         // 붙이는 구현이면 결과를 놓쳐 곧바로 타임아웃으로 드러난다.
         load: () => {
           ad.loadCount += 1
@@ -72,7 +72,7 @@ import type { AdsPort } from '../../ports'
 
 /**
  * 어댑터는 사전 로드한 광고를 **모듈 수준 상태**로 들고 있다(플러그인이 로드 여부를 묻는 API 를
- * 안 준다 — `features/ads.md`). 그래서 테스트마다 모듈을 새로 평가한다. 상태를 비우는 전용
+ * 안 준다. `features/ads.md`). 그래서 테스트마다 모듈을 새로 평가한다. 상태를 비우는 전용
  * export 를 두지 않은 것은, 제품 코드에 테스트용 문을 내는 대신 여기서 격리할 수 있어서다.
  */
 let rnAdsPort: AdsPort
@@ -89,7 +89,7 @@ const originalPlatform = Platform.OS
 const originalDev = __DEV__
 
 beforeEach(() => {
-  // `jest.requireActual` 인 것은 취향이 아니다 — 이 러너에서 동적 `import()` 는 `require` 로 안
+  // `jest.requireActual` 인 것은 취향이 아니다. 이 러너에서 동적 `import()` 는 `require` 로 안
   // 내려가고(`--experimental-vm-modules` 필요), 그렇다고 `require` 를 직접 쓰면 lint 가 막는다.
   // 여기서 되살리려는 것은 `../rn-ads` 뿐이고 그 의존(SDK)은 위 `jest.mock` 이 계속 덮는다.
   jest.resetModules()
@@ -102,7 +102,7 @@ beforeEach(() => {
   mockShowThrows = false
   setPlatform(originalPlatform)
   setDevBundle(originalDev)
-  // 셸에 남아 있는 값이 판정을 흔들지 않게 한다 — 이 파일이 보는 것은 `__DEV__` 축이다.
+  // 셸에 남아 있는 값이 판정을 흔들지 않게 한다. 이 파일이 보는 것은 `__DEV__` 축이다.
   delete process.env.EXPO_PUBLIC_ADS_TEST
   delete process.env.EXPO_PUBLIC_LIVE_UPDATE_CHANNEL
   delete process.env.EXPO_PUBLIC_ADS_INTERSTITIAL_ANDROID
@@ -184,7 +184,7 @@ describe('광고 단위 ID', () => {
 
 describe('광고를 쓸 수 없는 플랫폼', () => {
   // `resolveInterstitialAdId` 가 `null` 을 주는 플랫폼이면 SDK 를 아예 건드리지 않는다.
-  // 세 메서드가 각자 확인한다 — 하나라도 새면 그 자리에서 SDK 가 없다고 터진다.
+  // 세 메서드가 각자 확인한다. 하나라도 새면 그 자리에서 SDK 가 없다고 터진다.
   it('SDK 를 건드리지 않고 조용히 넘어간다', async () => {
     setPlatform('web')
 
@@ -216,7 +216,7 @@ describe('prepareInterstitial', () => {
     await expect(rnAdsPort.prepareInterstitial()).resolves.toBe(false)
   })
 
-  // 던지면 이 포트를 부르는 쪽이 함께 흔들린다 — 광고는 실패해도 앱을 멈추지 않는다.
+  // 던지면 이 포트를 부르는 쪽이 함께 흔들린다. 광고는 실패해도 앱을 멈추지 않는다.
   it('광고 생성 자체가 던져도 false 다', async () => {
     mockCreateThrows = true
     await expect(rnAdsPort.prepareInterstitial()).resolves.toBe(false)
@@ -261,7 +261,7 @@ describe('showInterstitial', () => {
     expect(mockAds[0].showCount).toBe(1)
   })
 
-  // 표시 실패는 "안 떴다"이지 예외가 아니다 — `features/ads/tab-switch-ad.ts` 는 광고 실패가
+  // 표시 실패는 "안 떴다"이지 예외가 아니다. `features/ads/tab-switch-ad.ts` 는 광고 실패가
   // 탭 이동을 깨뜨리지 않는다는 전제 위에 서 있다.
   it('표시가 실패해도 거부하지 않고 false 다', async () => {
     mockShowThrows = true

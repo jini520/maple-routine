@@ -1,5 +1,5 @@
 
-// isNewerVersion 은 실물을 그대로 쓴다 — 완료 안내가 자동 롤백을 거르는 근거가 바로 이 비교라
+// isNewerVersion 은 실물을 그대로 쓴다. 완료 안내가 자동 롤백을 거르는 근거가 바로 이 비교라
 // (ADR-126 결정 4), 가짜로 바꾸면 그 규칙을 검사하지 못한다.
 jest.mock('../../../native/live-update', () => ({
   ...jest.requireActual<typeof import('../../../native/live-update')>('../../../native/live-update'),
@@ -89,7 +89,7 @@ describe('useLiveUpdateStore', () => {
       expect(downloadLiveUpdateMock).not.toHaveBeenCalled()
     })
 
-    // ADR-126 결정 1: 받기 전 모달의 `자세히 보기`가 그리는 유일한 재료다.
+    // ADR-126 결정 1: 받기 전 모달의 `자세히 보기`가 그리는 재료는 이것뿐이다.
     it('highlights가 오면 담고, 없으면 null이다 — 없으면 모달이 버튼째 안 그린다', async () => {
       const highlights = ['보스 카드에서 인원 변경', '아이템 가격 입력']
       checkForLiveUpdateMock.mockResolvedValue({ ...AVAILABLE, highlights })
@@ -238,7 +238,7 @@ describe('useLiveUpdateStore', () => {
       expect(s().status).toBe('apply-error')
     })
 
-    // 다시 받지 않고 재시도할 수 있어야 한다 — download-error 와 다른 점이다.
+    // 다시 받지 않고 재시도할 수 있어야 한다. download-error 와 다른 점이다.
     it('apply-error 여도 받아둔 번들 id는 남는다', async () => {
       useLiveUpdateStore.setState({ hasDownloadedBundle: true })
       applyLiveUpdateMock.mockRejectedValue(new Error('set failed'))
@@ -357,7 +357,7 @@ describe('useLiveUpdateStore', () => {
       expect(s().status).toBe('up-to-date')
     })
 
-    // 되돌아간 것을 "완료"라고 부를 수 없다 — 판정이 "달라졌다"가 아니라 "올라갔다"인 이유다.
+    // 되돌아간 것을 "완료"라고 부를 수 없다. 판정이 "달라졌다"가 아니라 "올라갔다"인 이유다.
     it('자동 롤백으로 버전이 내려갔으면 안내하지 않는다', async () => {
       getLastRunBundleVersionMock.mockResolvedValue('1.0.5')
       await s().checkOnBoot()
@@ -381,7 +381,7 @@ describe('useLiveUpdateStore', () => {
       expect(s().status).toBe('updated')
     })
 
-    // 기록은 판정과 같은 자리에서 끝난다 — 확인 결과에 밀려 안내를 못 띄웠어도 다음 부팅에
+    // 기록은 판정과 같은 자리에서 끝난다. 확인 결과에 밀려 안내를 못 띄웠어도 다음 부팅에
     // 되풀이되지 않는다(큐를 만들면 "언젠가 뜨는 안내"라는 지속 상태가 생긴다).
     it('안내를 띄우지 못한 경우에도 기록은 갱신한다', async () => {
       getLastRunBundleVersionMock.mockResolvedValue('1.0.3')
@@ -390,7 +390,7 @@ describe('useLiveUpdateStore', () => {
       expect(setLastRunBundleVersionMock).toHaveBeenCalledWith('1.0.4')
     })
 
-    // 완료 안내는 곁가지다 — 저장소가 실패했다고 업데이트 확인 자체가 죽으면 본말전도다.
+    // 완료 안내는 곁가지다. 저장소가 실패했다고 업데이트 확인 자체가 죽으면 본말전도다.
     it('저장소 조회가 실패해도 확인은 그대로 진행된다', async () => {
       getLastRunBundleVersionMock.mockRejectedValue(new Error('preferences unavailable'))
       await s().checkOnBoot()

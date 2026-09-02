@@ -1,8 +1,8 @@
 /**
- * 처치 **날짜**를 캐낸다 — · 이슈 #239.
+ * 처치 **날짜**를 캐낸다. · 이슈 #239.
  *
  * `boss_profit_records` 의 `period_key` 는 주(목요일)·달이라 며칟날 잡았나 를 못 든다. 그런데
- * 스케줄러 API 도 그것을 **직접 알려 주지 않는다** — `date=D` 응답은 D 시점의 완료 현황 이라
+ * 스케줄러 API 도 그것을 **직접 알려 주지 않는다**. `date=D` 응답은 D 시점의 완료 현황 이라
  * 주간 보스가 완료로 보이면 D 또는 그 이전(같은 주) 이다.
  *
  * **답은 두 날의 차이에 있다.** D−1 이 미완료이고 D 가 완료이면 그 보스는 D 에 잡혔다. 그래서 이
@@ -11,12 +11,12 @@
  * ## 비용이 보스 수가 아니라 날짜 수다
  *
  * 응답 하나가 그 캐릭터의 **그날 보스 전부**를 담으므로, 한 주를 훑으면 그 주의 모든 보스가
- * 한꺼번에 풀린다 — 캐릭터당 주 7회가 상한이다. 날짜끼리 서로를 모르므로 **한꺼번에 나간다**
+ * 한꺼번에 풀린다. 캐릭터당 주 7회가 상한이다. 날짜끼리 서로를 모르므로 **한꺼번에 나간다**
  *
  *
  * ## 두 번 불려도 안 겹친다
  *
- * 부르는 자리가 둘이다(결정 9) — 보스 수익 동기화 뒤와 가계부 진입. 겹침을 막는 것이 둘이다:
+ * 부르는 자리가 둘이다(결정 9). 보스 수익 동기화 뒤와 가계부 진입. 겹침을 막는 것이 둘이다:
  * **조회 원장**이 이미 본 날짜 를 들고(+ `bosses`), 아래 `inFlight` 가 같은
  * 순간에 두 번 도는 것을 막는다. 그래서 이 함수는 **어디서 몇 번 불려도 결과가 같다.**
  */
@@ -52,20 +52,20 @@ export interface DefeatDateInput {
   /** 관측한 날짜 → 그날 완료로 본 보스 키 집합. **없는 날짜는 **못 봤다**** 이지 완료 0건 이 아니다. */
   readonly observed: ReadonlyMap<string, ReadonlySet<string>>
   readonly todayDateKey: string
-  /** `bossCompletionKey(boss, difficulty)` — 기록의 키와 같은 이름·같은 난이도여야 한다. */
+  /** `bossCompletionKey(boss, difficulty)`. 기록의 키와 같은 이름·같은 난이도여야 한다. */
   readonly bossKey: string
 }
 
 /**
- * 이 보스를 **며칟날 잡았나** — 모르면 `null` 이다.
+ * 이 보스를 **며칟날 잡았나**. 모르면 `null` 이다.
  *
  * 시작일부터 훑는다. 셋 중 하나로 끝난다:
  *
  * | 만나는 것 | 답 |
  * |---|---|
- * | 그날 완료로 관측됐다 | **그날이다** — 그 앞은 전부 미완료로 봤다 |
+ * | 그날 완료로 관측됐다 | **그날이다**. 그 앞은 전부 미완료로 봤다 |
  * | 못 본 날인데 그날이 **오늘**이다 | **오늘이다**(소거법 — 어제까지 미완료인데 기록이 있다) |
- * | 못 본 날인데 오늘이 아니다 | **`null`** — 구멍이라 그 뒤의 완료를 못 믿는다 |
+ * | 못 본 날인데 오늘이 아니다 | **`null`**. 구멍이라 그 뒤의 완료를 못 믿는다 |
  *
  * 소거법이 (a)앱이 기록한 날 과 다른 점: **어제가 미완료였다는 관측**이 있어야만 오늘이라고
  * 말한다. 하루 뒤에 열었다면 어제가 완료로 관측되어 어제로 적힌다. 이 함수는 **틀린 날짜를 만들
@@ -106,7 +106,7 @@ function resolvablePeriods(now: Date, floorDateKey: string): ResolvablePeriod[] 
   const periods: ResolvablePeriod[] = []
   for (const cycle of BOSS_CYCLES) {
     let periodKey = getCurrentBossProfitPeriod(cycle, now).periodKey
-    // 한 칸씩 과거로 가며 첫 날이 창 안인 동안만 담는다 — 첫 날은 단조 감소라 반드시 끝난다.
+    // 한 칸씩 과거로 가며 첫 날이 창 안인 동안만 담는다. 첫 날은 단조 감소라 반드시 끝난다.
     while (getPeriodDateKeys(cycle, periodKey)[0] >= floorDateKey) {
       periods.push({ cycle, periodKey })
       periodKey = getAdjacentPeriodKey(cycle, periodKey, 'prev')
@@ -127,7 +127,7 @@ function missingDays(
     for (const day of getPeriodDateKeys(period.cycle, period.periodKey)) {
       if (day < floorDateKey || day > ceilingDateKey) continue
       const record = ledgerDates[day]
-      // `outOfRange` 는 그 날짜에 대해 영구다 — 다시 부르지 않는다.
+      // `outOfRange` 는 그 날짜에 대해 영구다. 다시 부르지 않는다.
       if (record?.kind === 'outOfRange') continue
       // **`bosses` 가 없는 관측은 미조회로 친다.** 이 칸이 생기기 전에 남은 기록이라 보스를 안 봤고,
       // 빈 배열(**그날 완료 0건**)로 읽으면 처치일이 그 뒤 어느 날로 밀린다.
@@ -161,7 +161,7 @@ async function probeDays(
           await recordScheduleProbe(ocid, dateKey, { kind: 'outOfRange' })
           return
         }
-        // 집계 전(00009)·네트워크·파싱은 **기록하지 않는다** — 나중에 풀린다.
+        // 집계 전(00009)·네트워크·파싱은 **기록하지 않는다**. 나중에 풀린다.
         return
       }
 
@@ -212,11 +212,11 @@ let inFlight: Promise<number> | null = null
  * **가진 관측만으로 다 풀렸다**(리셋 당일·소거법) · 키가 없다. 정상 상태(전부 캐 놓은 뒤)가 그
  * 둘째라, 화면을 오갈 때마다 호출이 나가지 않는다.
  *
- * **키가 없어도 채울 수 있는 것은 채운다** — 소거법과 리셋 당일은 조회가 필요 없다(결정 3).
+ * **키가 없어도 채울 수 있는 것은 채운다**. 소거법과 리셋 당일은 조회가 필요 없다(결정 3).
  */
 export async function resolveDefeatDates(ocids: readonly string[], now: Date): Promise<number> {
   // 두 화면이 같은 순간에 부를 수 있다(결정 9). 원장은 **차례로** 부를 때만 겹침을 막으므로,
-  // 동시에 도는 것은 여기서 하나로 접는다 — 아니면 같은 날짜가 두 번 나간다.
+  // 동시에 도는 것은 여기서 하나로 접는다. 아니면 같은 날짜가 두 번 나간다.
   if (inFlight !== null) {
     return inFlight
   }
@@ -249,7 +249,7 @@ async function runResolveDefeatDates(ocids: readonly string[], now: Date): Promi
   }
 
   /**
-   * **키는 조회할 때만 필요하다** — 여기서 막지 않는다(2026-08-27 실사용 조사).
+   * **키는 조회할 때만 필요하다**. 여기서 막지 않는다(2026-08-27 실사용 조사).
    *
    * 소거법과 리셋 당일은 **관측이 하나도 없어도 답이 나온다**. 키 검사를 함수
    * 맨 앞에 두었더니 조회할 것이 없는 건까지 0 으로 나갔고, 키를 지운 기기에서는 오늘 잡은 보스가
@@ -281,11 +281,11 @@ async function runResolveDefeatDates(ocids: readonly string[], now: Date): Promi
       }
 
       // **가진 것으로 먼저 풀어 본다.** 원장이 이미 답을 들고 있으면(다른 경로가 훑어 둔 날짜들)
-      // 호출이 0회다 — 그러지 않으면 **이미 아는 것** 을 확인하려고 그 주를 다시 훑게 된다.
+      // 호출이 0회다. 그러지 않으면 **이미 아는 것** 을 확인하려고 그 주를 다시 훑게 된다.
       const unresolved = records.filter(
         (record) => resolveFor(record, observed, todayDateKey) === null,
       )
-      // 키가 없으면 **부를 수가 없다** — 가진 것으로 푼 만큼만 채우고 나머지는 NULL 로 둔다.
+      // 키가 없으면 **부를 수가 없다**. 가진 것으로 푼 만큼만 채우고 나머지는 NULL 로 둔다.
       if (unresolved.length > 0 && authConfig !== null) {
         const days = missingDays(ledger.dates, periodsOf(unresolved), floorDateKey, ceilingDateKey)
         for (const [dateKey, keys] of await probeDays(authConfig.apiKey, ocid, days)) {

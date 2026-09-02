@@ -1,17 +1,17 @@
 // 웹판(316줄)의 명세를 읽어 다시 쓴 것.
 //
 // 갈린 것 넷
-// ① **라우터 프로브가 없다** — 뒤로는 `goBack` 이 불렸는가로 본다.
+// ① **라우터 프로브가 없다**. 뒤로는 `goBack` 이 불렸는가로 본다.
 // ② **확인 모달 오버레이가 body 직속으로 포털 렌더링된다는 옮길 계약이 아니다.** 웹에서
 //    그것이 필요했던 이유(`fixed inset-0` 높이가 호출부 마진에 깎여 하단 딤이 빠진다)가 RN 에
-//    없다 — `Modal` 이 **별도 네이티브 윈도우**라 갇힐 상자가 없다(`Modal.tsx` 파일 머리 ①).
+//    없다. `Modal` 이 **별도 네이티브 윈도우**라 갇힐 상자가 없다(`Modal.tsx` 파일 머리 ①).
 // ③ 카드 경계는 `Card` atom 의 라운딩 대신 **트리 상의 조상 관계**로 본다(웹은 클래스 선택자였다).
 // ④ 삭제 뒤 흐름(타임아웃 경쟁 → `closeBossProfitDb` → 스플래시 → 리로드)은 **core 의
-//  `clearCacheDataAndReload` 가 소유한다** — 전환하며 그 파일을 한 글자도
+//  `clearCacheDataAndReload` 가 소유한다**. 전환하며 그 파일을 한 글자도
 //    건드리지 않았으므로 여기서는 **화면이 무엇을 넘기고 무엇을 받는가**만 본다. 순서 자체는
 //    core 테스트(vitest)가 이미 지킨다.
 //
-// ⑤ **계정 변경 케이스 셋은 갱신이 아니라 삭제됐다** — 그 행이 없어졌으므로
+// ⑤ **계정 변경 케이스 셋은 갱신이 아니라 삭제됐다**. 그 행이 없어졌으므로
 //    **어떻게 생겼는가**·**누르면 무엇이 열리는가** 는 물을 대상이 없다. 남는 계약(**그 행이 없다**)은
 //    아래 카드 케이스가 진다.
 import { act, fireEvent } from '@testing-library/react-native'
@@ -108,7 +108,7 @@ describe('SettingsAccountDataScreen', () => {
     expect(goBack).toHaveBeenCalledTimes(1)
   })
 
-  // : 이 앱에는 `계정 변경`이 없다 — 계정을 바꾸는 일이 `캐릭터 관리`의
+  // : 이 앱에는 `계정 변경`이 없다. 계정을 바꾸는 일이 `캐릭터 관리`의
   // 드롭다운 안으로 들어갔다. 이 요구한 **파괴적 행을 계정 변경과
   // 다른 카드로** 는 그 짝이 없어져 저절로 성립하므로, 여기서는 **그 행이 정말 없는지**와 남은
   // 위험 색 행 둘이 한 카드에 함께 있는지를 본다.
@@ -143,7 +143,7 @@ describe('SettingsAccountDataScreen', () => {
     expect(view.getByText('- KB')).toBeTruthy()
   })
 
-  // **범위는 이 화면이 정하지 않는다** — 고른 두 불리언을 그대로 넘기고,
+  // **범위는 이 화면이 정하지 않는다**. 고른 두 불리언을 그대로 넘기고,
   // 어떤 키·테이블이 지워지는지는 core 의 `storage/cache-data` 가 혼자 정한다.
   it('모달에서 고른 그룹을 그대로 core 로 넘긴다', async () => {
     const view = await renderOverlay(<SettingsAccountDataScreen />)
@@ -166,7 +166,7 @@ describe('SettingsAccountDataScreen', () => {
     expect(mockedClearAndReload.mock.calls[0][0]).toEqual({ general: true, records: true })
   })
 
-  // 리로드 실행부는 **주입 가능**하다(웹 그대로) — 기본값은 지금 도는 번들의 재실행이다.
+  // 리로드 실행부는 **주입 가능**하다(웹 그대로). 기본값은 지금 도는 번들의 재실행이다.
   it('리로드 실행부를 프롭으로 받아 core 에 넘긴다', async () => {
     const reload = jest.fn()
     const view = await renderOverlay(<SettingsAccountDataScreen reload={reload} />)
@@ -198,7 +198,7 @@ describe('SettingsAccountDataScreen', () => {
     await press(rowOf(view, '연결 해제'))
     expect(view.getByText('연결을 해제할까요?')).toBeTruthy()
 
-    // 확인 모달 안의 `연결 해제` — 행과 이름이 같아 오버레이 안쪽에서 고른다.
+    // 확인 모달 안의 `연결 해제`. 행과 이름이 같아 오버레이 안쪽에서 고른다.
     const overlay = view.getByTestId('disconnect-confirm-overlay')
     const buttons = view
       .getAllByText('연결 해제')

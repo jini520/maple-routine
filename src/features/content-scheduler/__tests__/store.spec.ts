@@ -343,7 +343,7 @@ describe('useContentSchedulerStore', () => {
     })
 
     // : 부팅 선하이드레이션과 화면 마운트가 반드시 겹치므로, 동시 호출은
-    // 한 회차로 합친다 — 안 그러면 같은 응답을 두 번 받는다(이 없애려던 낭비).
+    // 한 회차로 합친다. 안 그러면 같은 응답을 두 번 받는다(이 없애려던 낭비).
     it('loadTrackedOcids를 동시에 두 번 불러도 한 회차만 돈다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
       syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -356,7 +356,7 @@ describe('useContentSchedulerStore', () => {
       expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
     })
 
-    // "평생 한 번"이 아니라 "동시에 하나만"이다 — 영구 메모면 진입 재조회의 10분 TTL 이 죽는다.
+    // "평생 한 번"이 아니라 "동시에 하나만"이다. 영구 메모면 진입 재조회의 10분 TTL 이 죽는다.
     it('앞 회차가 끝난 뒤에 부르면 다시 돈다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
       syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -460,7 +460,7 @@ describe('useContentSchedulerStore', () => {
 
       expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
       expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-2'], undefined)
-      // 유지 캐릭터는 메모리 뷰를 그대로 재사용한다 — 네트워크는 물론 캐시도 다시 읽지 않는다
+      // 유지 캐릭터는 메모리 뷰를 그대로 재사용한다. 네트워크는 물론 캐시도 다시 읽지 않는다
       expect(getCachedSchedulerStateMock).not.toHaveBeenCalled()
 
       const state = useContentSchedulerStore.getState()
@@ -539,7 +539,7 @@ describe('useContentSchedulerStore', () => {
 
       expect(seedManualTrackedContentMock).toHaveBeenCalledTimes(1)
       expect(seedManualTrackedContentMock).toHaveBeenCalledWith(['ocid-2'])
-      // 시드가 refresh(syncSchedules)보다 먼저 실행된다 — 저장 진행률 모달이 시드까지 커버(결정 15)
+      // 시드가 refresh(syncSchedules)보다 먼저 실행된다. 저장 진행률 모달이 시드까지 커버(결정 15)
       expect(seedManualTrackedContentMock.mock.invocationCallOrder[0]).toBeLessThan(
         syncSchedulesMock.mock.invocationCallOrder[0],
       )
@@ -628,7 +628,7 @@ describe('useContentSchedulerStore', () => {
       }
     }
 
-    // ADR-057: 가드의 본체는 스토어다 — UI 사전 차단만으로는 다른 호출 경로가 샌다.
+    // ADR-057: 가드의 본체는 스토어다. UI 사전 차단만으로는 다른 호출 경로가 샌다.
     it('addManualContent는 길드 미가입(guildName: null)이면 길드 콘텐츠를 거부한다', async () => {
       useContentSchedulerStore.setState({
         characters: [guardView({ guildName: null })],
@@ -759,7 +759,7 @@ describe('useContentSchedulerStore', () => {
       expect(useCharacterSelectionStore.getState().selectedOcid).toBe('ocid-1')
     })
 
-    // `selectCharacter` 테스트는 여기 있었다 — 선택이 이 스토어를 떠나면서
+    // `selectCharacter` 테스트는 여기 있었다. 선택이 이 스토어를 떠나면서
     // `features/character-selection/__tests__/store.spec.ts` 로 옮겨갔다.
   })
 
@@ -875,7 +875,7 @@ describe('useContentSchedulerStore', () => {
       expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
     })
 
-    // 결정 4: 강제가 기본값이다 — 옵션을 넘기지 않는 헤더 버튼·당겨서 새로고침·재시도는 항상 조회한다.
+    // 결정 4: 강제가 기본값이다. 옵션을 넘기지 않는 헤더 버튼·당겨서 새로고침·재시도는 항상 조회한다.
     it('옵션 없는 refresh(명시적 재조회)는 TTL 안이어도 항상 조회한다', async () => {
       markSyncAttemptedThisRun()
       getCachedSchedulerStateMock.mockResolvedValue(cachedSchedulerState(minutesAgo(5)))

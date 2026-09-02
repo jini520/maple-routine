@@ -6,19 +6,19 @@
 // `maxWidth`·`tight` 는 그것이 실제로 의미를 갖는 패널에만 붙는다.
 //
 // 오버레이가 소유하는 취약 구조(전체 화면 덮기·스크림·안전영역 오프셋·바깥 탭)는 그대로 한곳에
-// 남는다 — 호출부가 그 관계를 깰 수 없다.
+// 남는다. 호출부가 그 관계를 깰 수 없다.
 //
 // ── RN 으로 옮기며 갈린 것 다섯 ─────────────────────────────────────────────────────
 //
 // ① **`createPortal(document.body)` → `react-native` 의 `Modal`.** 포털을 쓴 이유(*"호출부 어디에
 //    놓이든 부모의 레이아웃 유틸리티에 영향받지 않게"*, `space-y-*` 가 `fixed` 오버레이 높이를
-//    깎아 상태바 자리에 밝은 띠가 남던 실기기 결함)가 RN 에서는 더 강하게 성립한다 — `absolute
+//    깎아 상태바 자리에 밝은 띠가 남던 실기기 결함)가 RN 에서는 더 강하게 성립한다. `absolute
 //    inset-0` 은 **부모 상자**에 갇혀 탭바조차 못 덮는다. `Modal` 은 별도 네이티브 윈도우다.
-// ② **`useBodyScrollLock` 이 사라진다** — 뒤 문서 스크롤 잠금을 네이티브 윈도우가 구조적으로 한다.
+// ② **`useBodyScrollLock` 이 사라진다**. 뒤 문서 스크롤 잠금을 네이티브 윈도우가 구조적으로 한다.
 //    대체가 아니라 필요 자체가 없어진 것이라 짝을 만들지 않는다.
 // ③ **`stopPropagation` → `onStartShouldSetResponder`.** RN 에는 이벤트 버블링이 없고 대신 터치를
 //    누가 가져가는지(responder)를 정한다. 자식 `View` 가 터치를 안 가져가면 **바깥 `Pressable` 이
-//    받아 모달이 닫힌다** — 그래서 두 패널이 웹에서 `onClick={stopClickPropagation}` 을 갖던 바로
+//    받아 모달이 닫힌다**. 그래서 두 패널이 웹에서 `onClick={stopClickPropagation}` 을 갖던 바로
 //    그 자리에서 responder 를 선언한다(같은 자리, 같은 목적).
 // ④ **안드로이드 뒤로가기 → 닫기**(후반, 2단계가 organisms 몫으로 남긴 자리).
 // ⑤ **`overflow-y-auto` 는 안 옮긴다.** 웹은 오버레이가 스크롤을 가져 내용이 길면 굴렸는데, RN 에서
@@ -37,7 +37,7 @@ export interface ModalProps {
    * `Modal.Card` 또는 `Modal.Panel` 하나.
    *
    * 패널을 빼고 내용을 직접 넣으면 터치가 오버레이로 떨어져 안쪽을 눌러도 모달이 닫힌다
-   * (responder 선언은 패널이 소유한다 — 파일 머리 ③).
+   * (responder 선언은 패널이 소유한다. 파일 머리 ③).
    */
   children: ReactNode
   testId?: string
@@ -63,13 +63,13 @@ interface ModalCardProps extends ModalPanelProps {
   tight?: boolean
 }
 
-/** 터치를 이 요소가 가져간다 — 바깥 `Pressable` 로 흘러가 모달이 닫히는 것을 막는다(파일 머리 ③). */
+/** 터치를 이 요소가 가져간다. 바깥 `Pressable` 로 흘러가 모달이 닫히는 것을 막는다(파일 머리 ③). */
 const claimTouch = (): boolean => true
 
 /**
  * 카드 껍데기(테두리·배경·패딩)를 갖는 패널. 모달 대부분이 이것을 쓴다.
  *
- * 스크림 위 테두리 톤다운은 `border-panel-border` 한 클래스다 — 웹의
+ * 스크림 위 테두리 톤다운은 `border-panel-border` 한 클래스다. 웹의
  * `:root[data-mode='light'] .panel-on-scrim` 규칙이 계산하던 결과를 토큰으로 미리 만들어 뒀고
  * (`src/theme/theme-vars.ts`), 모드 분기는 거기서 `definition.mode` 로 딱 한 번 일어난다.
  * `Card` atom 이 갖고 있는 `border-border` 를 이 클래스가 덮는다.
@@ -96,7 +96,7 @@ function ModalCard(props: ModalCardProps): React.JSX.Element {
  * 없어 부모가 자식의 스타일을 정할 방법이 없다. 그래서 그 결정이 지키려던 것("스크림 위라는
  * 사실은 오버레이가 소유한다")을 **자식이 `border-panel-border` 를 직접 쓰는 것**으로 대신한다.
  * 스크림 없는 화면과 공유되는 자식(`AccountFlowStatus`)이 올 때는 그 사실을 프롭으로 받아야
- * 한다 — 그 배선은 화면 단계 몫이다.
+ * 한다. 그 배선은 화면 단계 몫이다.
  */
 function ModalPanel(props: ModalPanelProps): React.JSX.Element {
   return (

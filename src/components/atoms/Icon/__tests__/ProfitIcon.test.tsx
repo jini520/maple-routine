@@ -67,8 +67,8 @@ describe('ProfitIcon', () => {
   })
 
   // **단을 그리는 호는 건드리지 않는다.** 호까지 채우면 동전 사이의 층이 면에 묻혀 그림이
-  // 뭉개진다 — 호의 렌더값을 채운 판과 안 채운 판에서 비교해 **fill 이 새지 않았는지** 를 본다
-  // (호스트 단 `fill` 절대값은 기준이 못 된다 — 프롭 없는 호는 기본값을 보고한다).
+  // 뭉개진다. 호의 렌더값을 채운 판과 안 채운 판에서 비교해 **fill 이 새지 않았는지** 를 본다
+  // (호스트 단 `fill` 절대값은 기준이 못 된다. 프롭 없는 호는 기본값을 보고한다).
   it('fill 을 주면 닫힌 모양(동전 둘)만 채워진다 — 단을 그리는 호는 그대로다', async () => {
     const tree = (await renderAtom(<ProfitIcon fill="#FF0000" />)).toJSON()
     const coins = [...findAllOfType(tree, 'RNSVGEllipse'), ...findAllOfType(tree, 'RNSVGCircle')]

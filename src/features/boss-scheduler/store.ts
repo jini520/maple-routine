@@ -54,7 +54,7 @@ export type BossSchedulerStatus = 'idle' | 'loading' | 'loaded' | 'error'
 // ADR-097 결정 4: "강제"가 기본값이고 게이트가 예외다. force 인자를 두면 강제해야 할 호출부를
 // 하나라도 빠뜨리는 순간 그 자리가 조용히 게이트에 걸리므로, 자동 진입 경로인 loadTrackedOcids()만
 // auto: true 를 넘긴다. 화면(헤더 버튼·당겨서 새로고침·재시도)은 인자를 안 넘겨 자동으로 강제 경로다.
-// 컨텐츠 스케줄러 스토어와 같은 이름·같은 모양이다 — 같은 정책이 두 모양으로 존재하면 값을 바꿀 때
+// 컨텐츠 스케줄러 스토어와 같은 이름·같은 모양이다. 같은 정책이 두 모양으로 존재하면 값을 바꿀 때
 // 한쪽만 고치게 된다.
 export interface RefreshOptions {
   auto?: boolean
@@ -68,16 +68,16 @@ export interface BossSchedulerState {
   characters: BossCharacterView[]
   error: ScheduleSyncError | null
   trackedOcids: string[] | null
-  // key: `${ocid}:${boss}:${difficulty}` (ADR-019 결정 3) — 맵에 키가 없으면 "미설정"(솔로)을
-  // 뜻한다. 이 store는 없는 키를 1로 채워 넣지 않는다 — 그 해석은 UI의 책임이다.
+  // key: `${ocid}:${boss}:${difficulty}` (ADR-019 결정 3). 맵에 키가 없으면 "미설정"(솔로)을
+  // 뜻한다. 이 store는 없는 키를 1로 채워 넣지 않는다. 그 해석은 UI의 책임이다.
   partySizes: Record<string, number>
   // ADR-035: 수동 모드에서 캐릭터별 추적 항목(멤버십). 값 필드는 여기 두지 않고 표시 시점에
   // characters의 동기화 값 또는 참조 테이블에서 조회한다(단일 진실 공급원, 결정 6).
   manualTrackedByOcid: Record<string, ManualTrackedItem[]>
-  // 화면 로컬 state가 아니라 스토어가 소유한다 — 화면이 언마운트돼도 살아남는다(탭 이동 후 복귀).
+  // 화면 로컬 state가 아니라 스토어가 소유한다. 화면이 언마운트돼도 살아남는다(탭 이동 후 복귀).
   // 영속화하지 않는다.
   //
-  // **`activeTab` 은 여기 없다** — 주간/월간 탭이 두 화면에서 함께 걷혔다.
+  // **`activeTab` 은 여기 없다**. 주간/월간 탭이 두 화면에서 함께 걷혔다.
   //  와(**승계가 아니라 공유**)가 이 축에서 폐기된 자리다.
   // 되살리지 말 것: 공유할 상대가 없는 공유 상태가 된다. 선택 캐릭터 쪽 공유는 가
   // 따로 갖고 있어 그대로다.
@@ -102,11 +102,11 @@ export interface BossSchedulerStore extends BossSchedulerState {
   /**
    * 추적 중인 보스의 난이도를 `to` 로 바꾼다.
    *
-   * `from` 을 받지 않는 것이 의도다 — 호출부는 렌더 시점의 난이도를 넘기게 되는데, 칩을 연달아
+   * `from` 을 받지 않는 것이 의도다. 호출부는 렌더 시점의 난이도를 넘기게 되는데, 칩을 연달아
    * 누르면 낡은 값이 넘어와 매칭 실패로 변경이 **무음 유실**된다. "이 보스의 난이도를 to 로
    * 만든다"는 명령형이면 그 실패 모드가 없다.
    *
-   * 개수가 변하지 않으므로 주간 12개 한도(ADR-055)에 걸리지 않는다 — 반환값이 없는 이유다.
+   * 개수가 변하지 않으므로 주간 12개 한도(ADR-055)에 걸리지 않는다. 반환값이 없는 이유다.
    */
   setManualBossDifficulty(ocid: string, contentName: string, to: string): Promise<void>
   // 필터 전환에 네트워크가 없어 동기 세터다(보스 수익 setTab과 다른 점).
@@ -129,7 +129,7 @@ export function partySizeKey(ocid: string, boss: string, difficulty: string): st
 
 // ADR-101 결정 4: 부팅 선하이드레이션(`features/prehydrate`)과 화면 마운트가 같은 회차를 부르므로,
 // 진행 중인 회차가 있으면 그 Promise 를 그대로 돌려준다. **"평생 한 번"이 아니라 "동시에 하나만"**
-// 이다 — 끝나면 잊는다. 영구 메모로 만들면 진입 재조회의 10분 TTL이 죽는다.
+// 이다. 끝나면 잊는다. 영구 메모로 만들면 진입 재조회의 10분 TTL이 죽는다.
 // `storage/character-selection` 의 `migrationLock` 과 같은 모양·같은 이유(락 없이 겹쳐 돌면 같은
 // 응답을 두 번 받는다).
 let hydration: Promise<void> | null = null
@@ -138,7 +138,7 @@ let hydration: Promise<void> | null = null
 // 목록에서 필터링한 순서)가 서로 달라 생기던 불일치를 없애기 위해, character-basic-cache의
 // level을 병합해 레벨 내림차순(동레벨이면 compareByName)으로 통일한다. 레벨 캐시가 없는
 // 캐릭터는 맨 뒤로 보낸다.
-// : 정렬에 쓰는 level 을 버리지 않고 `imageUrl` 과 함께 뷰에 남긴다 — 초상화
+// : 정렬에 쓰는 level 을 버리지 않고 `imageUrl` 과 함께 뷰에 남긴다. 초상화
 // 레일이 쓴다. 컨텐츠 스케줄러 스토어의 같은 이름 함수와 **같은 모양이어야 한다**(같은 정책이 두
 // 모양으로 있으면 값을 바꿀 때 한쪽만 바뀐다).
 async function sortByCachedLevel(views: BossCharacterView[]): Promise<BossCharacterView[]> {
@@ -190,7 +190,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
   loadTrackedOcids() {
     // ADR-101 결정 4: 동시 호출은 한 회차로 합친다(위 `hydration` 주석).
     hydration ??= (async () => {
-      // 저장된 선택은 **선택 스토어가 읽는다** — 이 스토어가 읽어 자기
+      // 저장된 선택은 **선택 스토어가 읽는다**. 이 스토어가 읽어 자기
       // 상태에 넣던 것이 **두 벌** 의 출처였다. 둘을 나란히 태우는 것은 그대로다(왕복 한 번).
       const [ocids] = await Promise.all([
         getTrackedCharacterOcids(),
@@ -217,7 +217,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     }
     set({ trackedOcids: ocids })
 
-    // ADR-043 결정 2·3: 저장 시점에는 새로 추가된 캐릭터만 조회한다 — 유지되는 캐릭터는
+    // ADR-043 결정 2·3: 저장 시점에는 새로 추가된 캐릭터만 조회한다. 유지되는 캐릭터는
     // 이미 가진 뷰를 그대로 재사용하고, 제거만 했거나 아무것도 안 바뀌었으면 조회 자체를 하지 않는다.
     const added = ocids.filter((ocid) => !previousOcids.includes(ocid))
 
@@ -234,7 +234,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     }
 
     // ADR-019: 파티 설정은 스케줄 동기화와 독립적인 로컬 조회라 위 diff와 무관하게 항상 새 집합
-    // 기준으로 다시 채운다 — 그래야 추가된 캐릭터의 설정이 들어오고 제거된 캐릭터의 항목이 빠진다.
+    // 기준으로 다시 채운다. 그래야 추가된 캐릭터의 설정이 들어오고 제거된 캐릭터의 항목이 빠진다.
     // refresh와 동일하게 실패는 조용히 넘긴다(저장 진행률 모달이 안 닫히는 걸 막는다).
     try {
       await get().loadPartySizes(ocids)
@@ -261,7 +261,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
         )
       ).filter((view): view is BossCharacterView => view != null)
 
-      // .catch(() => null)로 원인을 버리지 않는다 — 아래에서 종류를 살려야 한다.
+      // .catch(() => null)로 원인을 버리지 않는다. 아래에서 종류를 살려야 한다.
       const outcome = await syncSchedules(added, onProgress).then(
         (results) => ({ results, error: null as unknown }),
         (error: unknown) => ({ results: null, error }),
@@ -270,7 +270,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       if (results === null) {
         // syncSchedules 자체가 던지는 에러(온보딩 미완료 등)는 캐릭터별 에러가 아니라
         // 전체 조회 자체의 실패다. 원인은 버리지 않고
-        // toScheduleSyncError로 살린다 — 전에는 network로 하드코딩해 401/429가 화면에 도달하지 못했다.
+        // toScheduleSyncError로 살린다. 전에는 network로 하드코딩해 401/429가 화면에 도달하지 못했다.
         set({ status: 'error', error: toScheduleSyncError(outcome.error), characters: await sortByCachedLevel(keptViews) })
       } else {
         const addedViews: BossCharacterView[] = results.map((result) => {
@@ -305,7 +305,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       return
     }
 
-    // ADR-035: 수동 모드에서만 캐릭터별 추적 항목(멤버십)을 읽어둔다 — 표시 목록이 이 멤버십으로
+    // ADR-035: 수동 모드에서만 캐릭터별 추적 항목(멤버십)을 읽어둔다. 표시 목록이 이 멤버십으로
     // 결정되기 때문. auto 모드는 등록 여부로 목록을 결정하므로 불필요한 읽기를 건너뛴다.
     const manualMode = useTrackingModeStore.getState().mode === 'manual'
     const manualTrackedByOcid: Record<string, ManualTrackedItem[]> = manualMode
@@ -343,9 +343,9 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     ).filter((view): view is BossCharacterView => view !== null)
 
     // ADR-019: 파티 설정은 완료 여부·주차와 무관한 상시 데이터라 스케줄 동기화(캐시 우선 표시 →
-    // 재검증)와 독립적이다 — 벌크 조회 한 번으로 충분하다. 독립적이므로 조회가 실패해도(예: SQLite
-    // 일시 오류) 스케줄 refresh 전체를 중단시키지 않는다 — 그러지 않으면 저장 진행률 모달이 안 닫힌다.
-    // ADR-097: 아래 TTL 게이트보다 **앞이다** — 로컬 SQLite 조회라 네트워크 TTL 의 대상이 아니고,
+    // 재검증)와 독립적이다. 벌크 조회 한 번으로 충분하다. 독립적이므로 조회가 실패해도(예: SQLite
+    // 일시 오류) 스케줄 refresh 전체를 중단시키지 않는다. 그러지 않으면 저장 진행률 모달이 안 닫힌다.
+    // ADR-097: 아래 TTL 게이트보다 **앞이다**. 로컬 SQLite 조회라 네트워크 TTL 의 대상이 아니고,
     // 함께 건너뛰면 추적 목록이 바뀐 진입에서 파티원 수 배지·솔로/파티 필터가 옛 값으로 남는다.
     try {
       await get().loadPartySizes(ocids)
@@ -364,7 +364,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
         new Date(),
       )
     ) {
-      // set 을 두 번 하지 않는다 — loading 을 거치면 건너뛰는 진입에서 로딩이 한 프레임 번쩍인다.
+      // set 을 두 번 하지 않는다. loading 을 거치면 건너뛰는 진입에서 로딩이 한 프레임 번쩍인다.
       // isStale 은 false 다(결정 5): 재검증이 오지 않기로 결정된 값이라 "오래된 데이터"가 아니고,
       // 그 표식을 남기면 탭을 옮길 때마다 스탈 토스트가 뜬다. syncedAt 은 캐시 값 그대로 둔다.
       set({
@@ -445,7 +445,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
   // ADR-035 결정 3·6: 저장소(단일 진실 공급원)에서 현재 배열을 읽어 (보스, 난이도) 멤버십만
   // 추가/삭제하고 다시 저장한 뒤 화면 상태를 갱신한다. 보스는 maxCount 개념이 없어 값 필드를
   // 채우지 않는다(완료 여부는 표시 시점에 동기화 결과에서 조회).
-  // ADR-055 결정 2: 한도 초과는 여기서 막고 결과 코드로 알린다 — UI 사전 차단만으로는
+  // ADR-055 결정 2: 한도 초과는 여기서 막고 결과 코드로 알린다. UI 사전 차단만으로는
   // 난이도 교체(remove → add)·시드 같은 다른 호출 경로가 새어나간다.
   async addManualBoss(ocid, contentName, difficulty) {
     const current = await getManualTrackedContent(ocid)
@@ -457,7 +457,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       return 'duplicate'
     }
 
-    // 결정 3: 한도는 주간 보스에만 걸린다 — 시즌 보스·월간 보스는 카운트에도, 이 검사에도 들어가지 않는다.
+    // 결정 3: 한도는 주간 보스에만 걸린다. 시즌 보스·월간 보스는 카운트에도, 이 검사에도 들어가지 않는다.
     const countsTowardWeeklyLimit =
       getBossCycleByName(contentName) === 'weekly' && !isSeasonBossName(contentName)
     if (countsTowardWeeklyLimit && countManualWeeklyBosses(current) >= WEEKLY_BOSS_CLEAR_LIMIT) {
@@ -473,7 +473,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
   // ADR-121 결정 6: 읽기 → 배열 계산 → **쓰기 1회**. 전에는 화면이 removeManualBoss →
   // addManualBoss 를 이어 불렀는데, 두 액션이 각자 커밋해 **첫 커밋 직후 "그 보스가 목록에 없는"
   // 상태가 저장소에 실재**했다. 거기서 두 번째가 실패하거나 앱이 죽으면 보스가 통째로 사라진다.
-  // Preferences 는 키 하나에 배열 전체를 덮어쓰므로 set 한 번이 이미 원자적이다 — 필요한 것은
+  // Preferences 는 키 하나에 배열 전체를 덮어쓰므로 set 한 번이 이미 원자적이다. 필요한 것은
   // 트랜잭션이 아니라 커밋을 1회로 줄이는 것이다.
   //
   // 쓰기 앞은 순수 계산뿐이고 메모리 갱신은 쓰기 뒤라, 던지면 저장소도 스토어도 원래대로다
@@ -490,7 +490,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       return [{ ...item, difficulty: to }]
     })
 
-    // 추적 중이 아니면 쓸 것이 없다 — 빈 쓰기로 저장소를 건드리지 않는다.
+    // 추적 중이 아니면 쓸 것이 없다. 빈 쓰기로 저장소를 건드리지 않는다.
     if (!replaced) return
 
     await setManualTrackedContent(ocid, next)

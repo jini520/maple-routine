@@ -20,7 +20,7 @@ beforeEach(() => {
   getBossProfitDbMock.mockReset().mockResolvedValue(fakeDb)
 })
 
-/** 메소로 낸 것 — 통화 칸 셋 중 하나만 찬다. */
+/** 메소로 낸 것. 통화 칸 셋 중 하나만 찬다. */
 const mesoSpend: SpendRecord = {
   id: 'spd-1',
   ocid: null,
@@ -39,7 +39,7 @@ const mesoSpend: SpendRecord = {
   recordedAt: '2026-08-23T05:00:00.000Z',
 }
 
-/** 메포로 낸 것 — 시세가 **반드시** 함께 온다. */
+/** 메포로 낸 것. 시세가 **반드시** 함께 온다. */
 const pointSpend: SpendRecord = {
   ...mesoSpend,
   id: 'spd-2',
@@ -66,7 +66,7 @@ describe('insertSpendRecord', () => {
       '버프',
       '세이람의 영약',
       null,
-      // 종류는 `아이템 구매`의 것이다 — 다른 갈래에서는 NULL 이다.
+      // 종류는 `아이템 구매`의 것이다. 다른 갈래에서는 NULL 이다.
       null,
       1,
       2_000_000,
@@ -173,7 +173,7 @@ describe('getSpendRecordsBetween', () => {
   })
 
   /**
-   * **종류는 칸 하나로 왕복한다** — 이름이 어긋나면 타입 에러 없이
+   * **종류는 칸 하나로 왕복한다**. 이름이 어긋나면 타입 에러 없이
    * 소비로 적은 행이 **장비로 열리고**(NULL → 장비) 수량 줄이 사라진다.
    */
   it('종류를 그대로 되읽는다', async () => {
@@ -219,7 +219,7 @@ describe('SPEND_CATEGORIES', () => {
     expect(SPEND_CATEGORIES).toEqual(['컨텐츠', '이벤트·BM', '버프', '아이템 구매', '기타'])
   })
 
-  // 갈래 이름이 **두 곳**에 산다 — 목록을 갖는 셋은 카탈로그에도 있다. 어긋나면 고른 항목의
+  // 갈래 이름이 **두 곳**에 산다. 목록을 갖는 셋은 카탈로그에도 있다. 어긋나면 고른 항목의
   // 카테고리가 레코드의 카테고리와 달라져 집계에서 조용히 빠진다.
   it('카탈로그가 아는 셋을 그대로 품는다', () => {
     const { SPEND_CATEGORIES } = require('../spend') as typeof import('../spend')
@@ -248,7 +248,7 @@ describe('updateSpendRecord', () => {
     expect(sql).toContain('UPDATE spend_records')
     expect(sql).toContain('WHERE id = ?')
     expect(sql).not.toContain('DELETE')
-    // **마지막 인자가 id 다** — WHERE 가 SET 뒤에 오므로.
+    // **마지막 인자가 id 다**. WHERE 가 SET 뒤에 오므로.
     expect(values[values.length - 1]).toBe('spd-1')
   })
 

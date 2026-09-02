@@ -36,7 +36,7 @@ const EMPTY_UNION: NexonUnionRaiderResponse = {}
 const EMPTY_ARTIFACT: NexonUnionArtifactResponse = {}
 const EMPTY_SKILL: NexonCharacterSkillResponse = {}
 
-/** 축 하나만 채워 넣고 나머지는 비운다 — 합이 곧 그 축의 값이다. */
+/** 축 하나만 채워 넣고 나머지는 비운다. 합이 곧 그 축의 값이다. */
 function only(sources: {
   itemEquipment?: NexonItemEquipmentResponse
   ability?: NexonAbilityResponse
@@ -127,7 +127,7 @@ describe('장비 — 잠재 + 에디셔널 합에 100% 캡, 프리셋 단위', (
   })
 
   it('잠재 슬롯은 셋까지다 — 넷째 칸은 존재하지 않으므로 안 읽는다', () => {
-    // 타입에도 없는 칸이라 캐스팅해서 넣는다 — **넷째가 오면 어쩌나** 가 아니라 **와도 안 읽는다** 를
+    // 타입에도 없는 칸이라 캐스팅해서 넣는다. **넷째가 오면 어쩌나** 가 아니라 **와도 안 읽는다** 를
     // 잰다. 슬롯이 늘면 타입이 먼저 갈리고 이 케이스가 그때 이야기를 한다.
     const 넷째칸 = { potential_option_4: POT(20) } as unknown as NexonItemEquipmentItem
     expect(only({ itemEquipment: { item_equipment: [넷째칸] } })).toBe(0)

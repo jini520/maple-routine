@@ -1,6 +1,6 @@
 // 보스 수익 — 처치 보스 수익·기간 네비게이터·캐릭터별 아코디언(`docs/features/boss-profit.md`).
 //
-// **이 화면에 걸린 ADR 이 서른둘이다** — 저장소에서 가장 밀도 높은 파일이고, 그래서 옮기기 전에
+// **이 화면에 걸린 ADR 이 서른둘이다**. 저장소에서 가장 밀도 높은 파일이고, 그래서 옮기기 전에
 // 동작 명세를 따로 뽑았다: **`BossProfitScreen.contract.md`**. 그 표가 이 파일의 계약이고, 아래
 // 주석은 그중 코드가 실제로 갈린 자리만 짚는다.
 //
@@ -11,7 +11,7 @@
 //    요약하면 RN 의 sticky 는 스크롤 뷰의 직계 자식만 붙일 수 있어 카드를 두 조각으로 펴야 하는데
 //  그러면 의 카드 링과 의 셸 클리핑이 함께 깨지고, 손수 만드는 길은
 //    공용 셸을 바꿔야 하는 데다 jest 가 한 줄도 검증하지 못한다.
-//  **육안 대조 1순위다** — 후속 3 이 소계 footer 를 지운 근거가 sticky 였으므로,
+//  **육안 대조 1순위다**. 후속 3 이 소계 footer 를 지운 근거가 sticky 였으므로,
 //    없으면 보스 행을 스크롤하는 동안 그 캐릭터의 합계가 화면에서 사라진다.
 // ② **테마 배경 조각은 없앴다**. 한때 을 따라 헤더 첫 자식으로
 //  조각을 그렸는데, 그 구조가 서 있던 전제(**헤더가 불투명하고 화면에 고정**) 를 이
@@ -30,21 +30,21 @@
 //
 // ══ 코드로 갈린 것 다섯 ═══════════════════════════════════════════════════════════
 //
-// ① **공용 `PageHeader` 를 쓰지 않는다** — 그 셸은 하단 경계 페이드를 항상 그리는데 이 화면은
+// ① **공용 `PageHeader` 를 쓰지 않는다**. 그 셸은 하단 경계 페이드를 항상 그리는데 이 화면은
 //  이 **그 페이드를 금지한다**(웹 시절 근거는 stuck 카드 헤더를 가린다는
-//    것이었고, 지금은 sticky 가 없어 그 증상이 없지만 **경계 표현의 계약**은 그대로다 — 이 화면의
+//    것이었고, 지금은 sticky 가 없어 그 증상이 없지만 **경계 표현의 계약**은 그대로다. 이 화면의
 //    경계는 총 수익 헤드라인 하단 헤어라인이 담당한다). 나머지 셸 값(`z-10 px-4 pb-2` +
-//    상단 안전영역 + `gap-4`)은 그 컴포넌트와 글자 그대로 같다 — 배경을 안 칠하는 것도 함께다
+//    상단 안전영역 + `gap-4`)은 그 컴포넌트와 글자 그대로 같다. 배경을 안 칠하는 것도 함께다
 //
 // ② ** 의 최상단 이동은 남기되 이유가 바뀐다.** 웹에서 그것은 *"문서 높이가 붕괴하며
 //    sticky 헤더가 화면 밖에 그려지는 프레임"* 을 없애는 처방이었고 RN 에는 그 사슬이 없다. 남는
-//    것은 **관찰 가능한 동작**이다 — 기간을 옮기면 최상단에서 시작한다. 그것까지 없애면 웹과
+//    것은 **관찰 가능한 동작**이다. 기간을 옮기면 최상단에서 시작한다. 그것까지 없애면 웹과
 //    다르게 동작하므로 `ScreenScroll` 의 `ref` 로 계속 부른다(`parity-inventory` §2.5 가 step 7
 //    의 자리로 지목한 넷 중 하나).
 // ③ `navigate('/boss?openPicker=1')` → **`navigate('Tabs', { screen: 'Settings', params: … })`**.
 //  의 **피커를 열어 둔 채로 보낸다** 는 그대로이고 **받는 화면만 바뀌었다** —
 //  피커를 여는 자리가 설정 하나가 됐다.
-// ④ **`useScreenStackStore` 깊이 게이트와 `<Outlet />` 이 사라진다**(위 표) — 웹이 이 화면에서
+// ④ **`useScreenStackStore` 깊이 게이트와 `<Outlet />` 이 사라진다**(위 표). 웹이 이 화면에서
 //    당김을 끄던 세 조건 중 둘은 그대로 남는다(빈 상태 · 새로고침이 의미 없는 기간).
 // ⑤ `animate-spin` → Reanimated CSS 애니메이션(`lib/animation.ts`, step 4·5 와 같은 값).
 import { useEffect, useLayoutEffect, useRef } from 'react'
@@ -135,7 +135,7 @@ export function BossProfitScreen(): React.JSX.Element {
     dropsByRowKey,
   } = useBossProfitStore()
   // **당김이 시작한 회차에만** 인디케이터가 돈다. 헤더 버튼·자동 조회는 같은
-  // 재조회를 부르지만 인디케이터는 안 연다 — 버튼은 자기 스피너와 **조회 중...** 을 이미 갖고 있고
+  // 재조회를 부르지만 인디케이터는 안 연다. 버튼은 자기 스피너와 **조회 중...** 을 이미 갖고 있고
   // 자동 조회는 원래 조용해야 하는 것이다.
   const pull = usePullRefresh(() => refresh(trackedOcids ?? []))
 
@@ -160,7 +160,7 @@ export function BossProfitScreen(): React.JSX.Element {
   // 콜드 스타트 첫 페인트가 아직 모르는 사실을 단정한다(실기기 2026-08-06).
   const isEmpty = trackedOcids !== null && trackedOcids.length === 0
 
-  // `now` 는 렌더당 한 번만 만든다 — 두 번 호출하면 두 시각이 기간 경계를 사이에 두고 갈려
+  // `now` 는 렌더당 한 번만 만든다. 두 번 호출하면 두 시각이 기간 경계를 사이에 두고 갈려
   // "현재 기간 판정"과 "기간 라벨"이 서로 다른 기간을 가리킬 수 있다.
   const now = new Date()
   const isCurrentPeriod = isLatestPeriod(tab, periodKey, now)
@@ -182,18 +182,18 @@ export function BossProfitScreen(): React.JSX.Element {
   } = useAnchoredPopover()
 
   // : 기간·탭이 바뀌면 최상단으로. RN 에는 그 처방이 웹에서 없애던 깨진 프레임이 없지만
-  // (헤더가 `sticky` 가 아니라 그냥 콘텐츠라 오프셋과 어긋날 두 값이 없다 — `PageHeader` 파일
+  // (헤더가 `sticky` 가 아니라 그냥 콘텐츠라 오프셋과 어긋날 두 값이 없다. `PageHeader` 파일
   // 머리) **관찰 가능한 동작**은 그대로 지킨다 —
   // 기간을 옮기면 목록 처음부터 본다. 목적지가 0 인 것은 웹과 같다(실패로 확인).
   useLayoutEffect(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: false })
   }, [tab, periodKey])
 
-  // 훅(아래 `usePeriodLoadErrorToast`)이 이 값을 읽으므로 조기 반환보다 위에서 계산한다 — 순수
+  // 훅(아래 `usePeriodLoadErrorToast`)이 이 값을 읽으므로 조기 반환보다 위에서 계산한다. 순수
   // 함수라 위치를 올려도 결과가 같고, 토스트 조건과 화면 조건이 같은 값을 보게 된다.
   // : 그룹의 순서는 행의 순서(= 스토어의 레벨 내림차순 —
   // 결정 2)가 아니라 사용자가 캐릭터 관리에서 정한 저장 배열 순서다. **캐릭터 안쪽 보스 순서는
-  // 안 건드린다**(의 `weekly-bosses.json` 정규 순서는 그대로다) — 바뀌는 것은 카드가
+  // 안 건드린다**(의 `weekly-bosses.json` 정규 순서는 그대로다). 바뀌는 것은 카드가
   // 서는 차례뿐이다. core 를 안 고치는 이유는 `orderByTracked` 머리에 있다.
   const characterGroups = orderByTracked(buildCharacterGroups(rows, weeklySubtotals), trackedOcids ?? [])
 
@@ -231,7 +231,7 @@ export function BossProfitScreen(): React.JSX.Element {
             action={{
               label: '캐릭터 선택하러 가기',
               // : 피커를 **열어 둔 채로** 보낸다. 웹의 `?openPicker=1` 자리다.
-              // 목적지는 보스 탭에서 **설정 탭**으로 옮겼다 — 열어 두고 보낸다는
+              // 목적지는 보스 탭에서 **설정 탭**으로 옮겼다. 열어 두고 보낸다는
               // 계약은 그대로이고 받는 화면만 바뀌었다.
               onClick: () => openTab('Settings', { openPicker: true }),
             }}
@@ -245,7 +245,7 @@ export function BossProfitScreen(): React.JSX.Element {
   // 이전 이동 가능 여부는 store 가 매 기간 로드 시 계산해 둔 값으로 판단한다 —
   // 조회 불가능하고 캐시 기록도 없는 기간에 착지하지 않도록 막는다.
   const isPrevDisabled = !canGoPreviousPeriod
-  // **현재 기간은 백필 가능성을 묻지 않는다** — 조회일이 미래라
+  // **현재 기간은 백필 가능성을 묻지 않는다**. 조회일이 미래라
   // `isPeriodQueryable` 이 false 지만 그건 "조회 불가"가 아니라 실시간 동기화가 원천이라는 뜻이다.
   const periodQueryable = isCurrentPeriod || isPeriodQueryable(tab, periodKey, now)
   // 이 기간의 아이템 몫. 월간 탭은 주간 수익이 소계로만 들어오므로 그쪽 몫도 더해야 결정석과
@@ -261,7 +261,7 @@ export function BossProfitScreen(): React.JSX.Element {
   // 총 수익 헤드라인 우측 뱃지용 — 이 기간 전체 고가 드롭.
   const periodValuableDrops = collectAllValuableDrops(characterGroups, dropsByRowKey)
 
-  // 기간·탭 맥락과 스토어 바인딩을 자손에게 내린다(3단계) — 이 열 개는 4단계를 타고
+  // 기간·탭 맥락과 스토어 바인딩을 자손에게 내린다(3단계). 이 열 개는 4단계를 타고
   // 내려가며 51지점을 만들고 있었다. 참조 동일성을 위한 메모이제이션은 하지 않는다(결정 5).
   const bossProfitContext: BossProfitContextValue = {
     tab,
@@ -280,7 +280,7 @@ export function BossProfitScreen(): React.JSX.Element {
     // 공용 `PageHeader` 를 쓰지 않는 이유는 파일 머리 ① — 그 셸의 하단 페이드를 이 화면은 금지한다
     // . 나머지 값은 그 컴포넌트와 같고, **상단 여백을 더하지 않는 것도 함께다**
     // (— 웹 `pt-[calc(1rem+var(--sa-top))]` 의 상수 몫을 옮기지 않는다). 그 **안전영역**
-    // 은 `useTopSafeAreaPx()` 다 — 셸을 복제한 화면이 인셋을 직접 읽으면 이
+    // 은 `useTopSafeAreaPx()` 다. 셸을 복제한 화면이 인셋을 직접 읽으면 이
     // 화면만 안드로이드에서 16.7px 위에 선다.
     <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: topSafeAreaPx }}>
 
@@ -324,7 +324,7 @@ export function BossProfitScreen(): React.JSX.Element {
             </Text>
           </Pressable>
 
-          {/* 동기화 상태 영역은 **새로고침이 의미 있는 기간에서만** 노출한다 — 완전히
+          {/* 동기화 상태 영역은 **새로고침이 의미 있는 기간에서만** 노출한다. 완전히
               닫힌 과거 기간은 cache-first·checked-once 모델이라 "조회 중..."도 재조회 버튼도 뜻이
               없다. 제목 줄이 아니라 탭과 같은 줄이다. */}
           {canRefreshPeriod && (
@@ -332,7 +332,7 @@ export function BossProfitScreen(): React.JSX.Element {
               <Text className="text-sm text-text-muted">
                 {status === 'loading' ? '조회 중...' : formatSyncedAt(lastSyncedAt)}
               </Text>
-              {/* 이 줄의 높이는 활성 탭 pill(30px)이 정한다 — 기본 `p-2`(32px)면 새로고침이 없는
+              {/* 이 줄의 높이는 활성 탭 pill(30px)이 정한다. 기본 `p-2`(32px)면 새로고침이 없는
                   과거 기간과 2px 어긋난다. */}
               <Pressable
                 role="button"
@@ -408,18 +408,18 @@ export function BossProfitScreen(): React.JSX.Element {
           </View>
         )}
 
-        {/* 총 수익 요약은 **카드가 아니라 헤드라인**이다 — 아래 캐릭터 카드가 전부 같은
+        {/* 총 수익 요약은 **카드가 아니라 헤드라인**이다. 아래 캐릭터 카드가 전부 같은
             카드 셸이라 요약도 카드면 "동일한 흰 카드의 반복"으로 묻힌다. */}
         {!isPeriodLoading && characterGroups.length > 0 && (
           <View>
-            {/* 라벨행 높이를 `h-6`(24px)으로 **명시** 고정한다 — 전에는
+            {/* 라벨행 높이를 `h-6`(24px)으로 **명시** 고정한다. 전에는
                 라벨(16px)이 우연히 정하는 값이라 그보다 큰 요소를 흐름에 넣는 순간 줄이 커졌다.
                 그것이 24px 고가 드롭 뱃지를 흐름 밖으로 빼낸 이유다. */}
             <View className="relative h-6 flex-row items-center">
               <Text className="text-xs font-semibold tracking-wide text-text-muted">
                 {periodLabel.primary} 총 수익
               </Text>
-              {/* 결정석 판매 현황은 라벨 텍스트 바로 옆이다 — 우측 끝은
+              {/* 결정석 판매 현황은 라벨 텍스트 바로 옆이다. 우측 끝은
                   고가 드롭 뱃지의 절대배치 자리라 침범하지 않는다. */}
               <CrystalSummaryChip tab={tab} groups={characterGroups} />
               {periodValuableDrops.length > 0 && (
@@ -435,18 +435,18 @@ export function BossProfitScreen(): React.JSX.Element {
               <View className="h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-tint">
                 <ProfitIcon className="h-[18px] w-[18px] text-primary-ink" strokeWidth={2} aria-hidden />
               </View>
-              {/* 단위는 별도 `Text` 로 격하하되 숫자와 사이에 **실제 공백 문자**를 남긴다 — 마진만
+              {/* 단위는 별도 `Text` 로 격하하되 숫자와 사이에 **실제 공백 문자**를 남긴다. 마진만
                   으로 띄우면 읽는 문자열이 "N메소"로 붙어 스크린리더가 이어 읽는다. */}
               <Text
                 className="text-xl font-extrabold leading-none text-primary-ink"
                 style={TABULAR_NUMS}
               >
-                {/*: **이 키에만 기간이 없다** — 기간이 바뀌어도 같은 자리의 같은
+                {/*: **이 키에만 기간이 없다**. 기간이 바뀌어도 같은 자리의 같은
                     뜻을 가진 하나의 숫자로 보고 굴린다("기간 이동은 총 수익만", 사용자 결정). */}
                 <AnimatedNumber identity={`total|${loadedTab}`} value={totalMeso} />{' '}
                 <Text className="text-xs font-bold text-text-muted">메소</Text>
               </Text>
-              {/* **증감 칩은 뺀 채로 둔다**(2026-08-10) — 총 수익에서는 뜻이
+              {/* **증감 칩은 뺀 채로 둔다**(2026-08-10). 총 수익에서는 뜻이
                   퇴색한다고 봤고 통계 기능이 생기면 그쪽으로 옮긴다. `DeltaChip` 과 스토어의
                   `previousPeriodTotalMeso` 는 지우지 않는다. 그 자리를 자세히 보기가 받는다. */}
               <Pressable
@@ -530,7 +530,7 @@ export function BossProfitScreen(): React.JSX.Element {
 
             {!isPeriodLoading &&
               characterGroups.map((group) => (
-                // key 에 탭·기간을 포함해 이동 시 아코디언을 remount 시킨다(#27) — 펼침 상태는
+                // key 에 탭·기간을 포함해 이동 시 아코디언을 remount 시킨다(#27). 펼침 상태는
                 // `CharacterAccordion` 로컬 state 라, key 가 그대로면 인스턴스가 재사용돼 한
                 // 탭/기간에서 펼친 상태가 다른 탭/기간으로 그대로 이어졌다.
                 <CharacterAccordion

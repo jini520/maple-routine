@@ -134,7 +134,7 @@ describe('world 스냅샷', () => {
 
     const [sql, values] = runMock.mock.calls[0]
     expect(values.at(-1)).toBe('엘리시움')
-    // 파티원 수만 고치는 경로처럼 world를 모르고 upsert하는 경우가 있다 — 그때 null로 덮어쓰면
+    // 파티원 수만 고치는 경로처럼 world를 모르고 upsert하는 경우가 있다. 그때 null로 덮어쓰면
     // 이미 박아둔 스냅샷이 지워진다.
     expect(sql).toContain('world = COALESCE(excluded.world, boss_profit_records.world)')
   })
@@ -312,7 +312,7 @@ describe('처치 날짜', () => {
 })
 
 /**
- * 표가 바뀐 것을 **읽는 쪽이 물을 수 있어야 한다** — `boss_drop_records` 가
+ * 표가 바뀐 것을 **읽는 쪽이 물을 수 있어야 한다**. `boss_drop_records` 가
  * 먼저 갖고 있던 그 수를 이 표에도 단다.
  */
 describe('getBossProfitRecordsRevision', () => {

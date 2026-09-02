@@ -27,7 +27,7 @@ jest.mock('../../../storage/boss-profit', () => ({
 }))
 const { getBossProfitRecords: getBossProfitRecordsMock, hasBossProfitRecordsAtOrBefore: hasBossProfitRecordsAtOrBeforeMock, fillMissingRecordWorlds: fillMissingRecordWorldsMock, upsertBossProfitRecord: upsertBossProfitRecordMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 
-// 처치 날짜 캐기는 **동기화가 끝난 뒤 기다리지 않고** 튼다 — 이 화면은
+// 처치 날짜 캐기는 **동기화가 끝난 뒤 기다리지 않고** 튼다. 이 화면은
 // `defeated_on` 을 안 쓰므로 결과를 기다릴 이유가 없다. 목으로 **떴는가** 만 본다.
 jest.mock('../defeat-dates', () => ({ resolveDefeatDates: jest.fn() }))
 const { resolveDefeatDates: resolveDefeatDatesMock } = jest.requireMock('../defeat-dates') as Record<string, jest.Mock>
@@ -79,7 +79,7 @@ jest.mock('../../../storage/boss-drops', () => ({
 }))
 const { getBossDropRecords: getBossDropRecordsMock, replaceBossDropRecords: replaceBossDropRecordsMock } = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
 
-// : 잡지 않은 보스의 드롭을 지운 뒤 **건수를 토스트로 알린다** — 값까지 사라지므로.
+// : 잡지 않은 보스의 드롭을 지운 뒤 **건수를 토스트로 알린다**. 값까지 사라지므로.
 const mockShowInfo = jest.fn()
 jest.mock('../../toast/store', () => ({
   useToastStore: { getState: () => ({ showInfo: mockShowInfo, showError: jest.fn(), showSuccess: jest.fn() }) },
@@ -99,13 +99,13 @@ import {
 } from '../../schedule-sync/sync-run-state'
 import { useBossProfitStore } from '../store'
 // **Date 만 가짜로 만든다.** vitest 는 `toFake` 로 **가짜로 만들 것** 을 받았는데 jest 는 반대로
-// `doNotFake` 로 **건드리지 말 것** 을 받는다 — 그대로 두면 타이머까지 전부 가짜가 되어 실제
+// `doNotFake` 로 **건드리지 말 것** 을 받는다. 그대로 두면 타이머까지 전부 가짜가 되어 실제
 // `setTimeout` 에 기대는 플러시가 영영 안 끝난다.
 const NOT_FAKED = ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'setImmediate', 'clearImmediate', 'nextTick', 'queueMicrotask', 'performance', 'requestAnimationFrame', 'cancelAnimationFrame', 'requestIdleCallback', 'cancelIdleCallback', 'hrtime',
 ] as never
 
 // "시세표(boss-crystal-prices.json)에 없는 보스" 표본. 실재 보스명을 쓰면 그 보스의 가격이
-// 확정되는 날 검증하려던 것과 반대 상태를 검증하게 된다 — 벨로나가 실제로 그랬다
+// 확정되는 날 검증하려던 것과 반대 상태를 검증하게 된다. 벨로나가 실제로 그랬다
 // . 어떤 보스도 이 이름을 갖지 않는다는 사실이 이 픽스처의 불변조건이다.
 const UNPRICED_BOSS = '미확정 보스'
 
@@ -119,7 +119,7 @@ function bossContent(overrides: Partial<BossContent> = {}): BossContent {
     ...overrides,
   }
   // ownComplete는 별도로 지정하지 않으면 isComplete를 그대로 따른다(승격 시나리오를 테스트할
-  // 때만 둘을 다르게 지정) — 대부분의 기존 테스트는 승격 여부를 신경 쓰지 않는다.
+  // 때만 둘을 다르게 지정). 대부분의 기존 테스트는 승격 여부를 신경 쓰지 않는다.
   return { ...merged, ownComplete: overrides.ownComplete ?? merged.isComplete }
 }
 
@@ -593,7 +593,7 @@ describe('useBossProfitStore', () => {
   })
 
   // : `rows` 는 **보고 있는 (탭, 기간)** 이고 today 위젯이 읽는 것은 **지금 기간** 이다.
-  // 사용자 보고(2026-08-19) — 이 화면을 월간 탭으로 옮기기만 해도 today 의 주간 보스 수익·주간
+  // 사용자 보고(2026-08-19). 이 화면을 월간 탭으로 옮기기만 해도 today 의 주간 보스 수익·주간
   // 결정석 한도가 함께 비었다. 그 화면은 이 화면의 네비게이션을 모르는 채로 이번 주를 그린다.
   it('월간 탭으로 옮겨도 currentPeriodRows 는 이번 주 행을 그대로 들고 있다', async () => {
     const weekKey = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
@@ -623,9 +623,9 @@ describe('useBossProfitStore', () => {
 
   it('월간 탭으로 옮겨도 dropsByRowKey 가 이번 주 드롭을 잃지 않는다', async () => {
     const weekKey = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
-    // `fixed` 는 난이도 획득 가능 판정을 타지 않는다 — 이 테스트가 보려는 것은
+    // `fixed` 는 난이도 획득 가능 판정을 타지 않는다. 이 테스트가 보려는 것은
     // 드롭 맵의 **범위**이지 정리 규칙이 아니다.
-    // **조회 인자를 지키는 목이어야 한다** — 통째로 같은 배열을 돌려주면 "그 기간을 조회했는가" 를
+    // **조회 인자를 지키는 목이어야 한다**. 통째로 같은 배열을 돌려주면 "그 기간을 조회했는가" 를
     // 못 본다(이 결함이 정확히 **어느 기간 키로 읽는가** 의 문제다).
     getBossDropRecordsMock.mockImplementation(async (_ocids: string[], periodKeys: string[]) =>
       periodKeys.includes(weekKey)
@@ -737,7 +737,7 @@ describe('useBossProfitStore', () => {
       cachedAt: '2026-07-01T00:00:00.000Z',
     }))
     // syncSchedules는 낮은 레벨(ocid-1)을 먼저 반환하지만, 최종 rows는 레벨이 더 높은
-    // ocid-2가 먼저 와야 한다 — API 응답 순서를 그대로 따르지 않는다.
+    // ocid-2가 먼저 와야 한다. API 응답 순서를 그대로 따르지 않는다.
     syncSchedulesMock.mockResolvedValue([
       syncResult({ ocid: 'ocid-1', characterName: '캐릭터-ocid-1' }),
       syncResult({
@@ -785,7 +785,7 @@ describe('useBossProfitStore', () => {
   })
 
   it('한 캐릭터 안의 보스 순서는 소스 순서와 무관하게 weekly-bosses.json 정규 순서로 고정된다(ADR-036, #28)', async () => {
-    // 소스(bossContents)는 참조 순서와 어긋나게 뒤섞어 공급한다 — 루시드(10) → 자쿰(0) → 스우(7).
+    // 소스(bossContents)는 참조 순서와 어긋나게 뒤섞어 공급한다. 루시드(10) → 자쿰(0) → 스우(7).
     // 최종 rows는 항상 weekly-bosses.json 순서(자쿰 → 스우 → 루시드)여야 한다.
     syncSchedulesMock.mockResolvedValue([
       syncResult({
@@ -962,7 +962,7 @@ describe('useBossProfitStore', () => {
     })
 
     // ADR-050 결정 3: withSqliteFallback은 조회 실패·타임아웃을 빈 결과로 바꾼다. 그 빈 결과를
-    // "기록이 없다"로 읽으면 자동 기록이 party_size=1로 사용자가 저장한 값을 덮어쓴다 — 리로드 후
+    // "기록이 없다"로 읽으면 자동 기록이 party_size=1로 사용자가 저장한 값을 덮어쓴다. 리로드 후
     // stale 커넥션으로 조회가 멈추는 상황(ADR-050)에서 실제로 일어날 수 있는 데이터 손상이다.
     it('기록 조회 자체가 실패하면 자동 기록으로 기본 파티원 수를 덮어쓰지 않는다', async () => {
       getBossProfitRecordsMock.mockRejectedValue(new Error('SQLite 응답 없음'))
@@ -1070,7 +1070,7 @@ describe('useBossProfitStore', () => {
 
         const refreshPromise = useBossProfitStore.getState().refresh(['ocid-1'])
         // withSqliteFallback 창은 **조회마다 하나**이고 캐시 단계와 동기화 완료 단계가 차례로 조회한다
-        // (ADR-111 결정 6 이후 캐시 단계는 캐시 행이 0이어도 조회한다 — 그 진입이 복원이 겨누는
+        // (ADR-111 결정 6 이후 캐시 단계는 캐시 행이 0이어도 조회한다. 그 진입이 복원이 겨누는
         // 시나리오다). 뒤 창은 앞 창이 끝난 뒤에야 시작하므로 두 번 나눠 흘려보내야 한다.
         await jest.advanceTimersByTimeAsync(5000) // 캐시 우선 표시 단계
         await jest.advanceTimersByTimeAsync(5000) // 동기화 완료 단계
@@ -1166,7 +1166,7 @@ describe('useBossProfitStore', () => {
 
     // 회귀 재현(2026-07-22): setPartySize가 get().rows만 갱신하고 모듈 스코프
     // latestSyncSnapshot은 건드리지 않으면, loadPeriod의 "현재 기간" 분기가 이 스냅샷에서
-    // 슬라이스할 때 방금 수정한 값이 낡은 값으로 되돌아간다 — "파티원 수를 고쳐도 파티관리
+    // 슬라이스할 때 방금 수정한 값이 낡은 값으로 되돌아간다. "파티원 수를 고쳐도 파티관리
     // 기본값으로 계속 돌아간다"로 보고된 증상의 실제 원인이었다. setPartySize가 스냅샷도
     // 함께 갱신하도록 고쳐 이 테스트가 통과한다.
     it('setPartySize 이후 다른 탭으로 이동했다가 돌아와도 수정한 값이 유지된다', async () => {
@@ -1205,7 +1205,7 @@ describe('useBossProfitStore', () => {
     })
 
     // : 부팅 선하이드레이션과 화면 마운트가 반드시 겹치므로, 동시 호출은
-    // 한 회차로 합친다 — 안 그러면 같은 응답을 두 번 받는다(이 없애려던 낭비).
+    // 한 회차로 합친다. 안 그러면 같은 응답을 두 번 받는다(이 없애려던 낭비).
     it('loadTrackedOcids를 동시에 두 번 불러도 한 회차만 돈다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
       syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -1218,7 +1218,7 @@ describe('useBossProfitStore', () => {
       expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
     })
 
-    // "평생 한 번"이 아니라 "동시에 하나만"이다 — 영구 메모면 진입 재조회의 10분 TTL 이 죽는다.
+    // "평생 한 번"이 아니라 "동시에 하나만"이다. 영구 메모면 진입 재조회의 10분 TTL 이 죽는다.
     it('앞 회차가 끝난 뒤에 부르면 다시 돈다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
       syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -1320,7 +1320,7 @@ describe('useBossProfitStore', () => {
       getCachedSchedulerStateMock.mockResolvedValue(cachedEntry())
 
       const pending = new Promise<CharacterScheduleSync[]>(() => {
-        // 의도적으로 resolve하지 않음 — 캐시 단계 직후 상태만 확인
+        // 의도적으로 resolve하지 않음. 캐시 단계 직후 상태만 확인
       })
       syncSchedulesMock.mockReturnValue(pending)
 
@@ -1339,7 +1339,7 @@ describe('useBossProfitStore', () => {
       getCachedSchedulerStateMock.mockResolvedValue(null)
 
       const pending = new Promise<CharacterScheduleSync[]>(() => {
-        // 의도적으로 resolve하지 않음 — 캐시 단계 직후 상태만 확인
+        // 의도적으로 resolve하지 않음. 캐시 단계 직후 상태만 확인
       })
       syncSchedulesMock.mockReturnValue(pending)
 
@@ -1384,7 +1384,7 @@ describe('useBossProfitStore', () => {
 
     it('월간 탭 캐시 단계에서도 이미 확정된 지난 주차 합계가 즉시 반영된다(syncSchedules 응답 전 weeklySubtotals 누락 방지)', async () => {
       // 이번 달에 반드시 "지난 주차"가 존재하도록 날짜를 고정한다(월초에 테스트를 실행하면
-      // 지난 주차가 아예 없어 전제가 깨지는 걸 방지) — Date만 고정하고 타이머는 실제로 둬서
+      // 지난 주차가 아예 없어 전제가 깨지는 걸 방지). Date만 고정하고 타이머는 실제로 둬서
       // 아래 flushMicrotasks(실제 setTimeout 기반)가 그대로 동작하게 한다.
       jest.useFakeTimers({ doNotFake: NOT_FAKED })
       jest.setSystemTime(new Date('2026-07-30T06:00:00.000Z'))
@@ -1444,7 +1444,7 @@ describe('useBossProfitStore', () => {
 
   // ADR-111 결정 6: "기록은 있는데 응답에 행이 없는" 조합의 복원이 동기화 완료
   // 분기에만 있었다. 이후 건너뛴 진입은 캐시 단계가 곧 최종 화면이라 그 조합이 총 수익에서
-  // 통째로 빠진다 — 이슈 #160 과 같은 증상(총 수익 미달)의 별개 경로다. 실측 경로는 미접속 캐릭터의
+  // 통째로 빠진다. 이슈 #160 과 같은 증상(총 수익 미달)의 별개 경로다. 실측 경로는 미접속 캐릭터의
   // 축약 응답이다(월간 보스를 처치한 뒤 1주 이상 미접속 → bossMonthly 가 reg=false·comp=false 로만 남음).
   describe('캐시 단계의 기록만 있는 조합 복원 (ADR-111 결정 6)', () => {
     function minutesAgo(minutes: number): string {
@@ -1491,7 +1491,7 @@ describe('useBossProfitStore', () => {
       }
     }
 
-    // 월간 탭을 보고 있는 상태에서 시작한다 — 실측 경로가 월간 보스라 그 화면이 증상이 나는 자리다.
+    // 월간 탭을 보고 있는 상태에서 시작한다. 실측 경로가 월간 보스라 그 화면이 증상이 나는 자리다.
     // 현재 달은 최신 기간이라 containsInProgressWeek 가 false 이므로 제자리 새로고침 분기로 새지 않는다.
     function seedMonthlyTab(): string {
       const monthKey = getCurrentBossProfitPeriod('monthly', new Date()).periodKey
@@ -1533,7 +1533,7 @@ describe('useBossProfitStore', () => {
     })
 
     // 프로필 맵을 캐시 **행**에서 만들면 축약 응답으로 행이 0인 캐릭터는 프로필이 없고,
-    // appendRecordOnlyRows 가 그 캐릭터를 통째로 건너뛴다 — 이 결정이 고치려는 시나리오가 프로필
+    // appendRecordOnlyRows 가 그 캐릭터를 통째로 건너뛴다. 이 결정이 고치려는 시나리오가 프로필
     // 부재로 다시 막힌다. 그래서 프로필은 캐시 **엔트리**에서 만든다.
     it('행이 0인 캐릭터도 복원 대상이고 그 캐시 엔트리의 캐릭터명이 실린다', async () => {
       const monthKey = seedMonthlyTab()
@@ -1555,10 +1555,10 @@ describe('useBossProfitStore', () => {
       expect(rows[0].characterName).toBe('행없는캐릭터')
     })
 
-    // 복원 행은 기록에서 나와 partySize 가 이미 채워져 있다 — 다시 기록하면 사용자가 저장한 값을
+    // 복원 행은 기록에서 나와 partySize 가 이미 채워져 있다. 다시 기록하면 사용자가 저장한 값을
     // 덮어쓸 위험만 생긴다. 그래서 복원은 자동 기록 루프보다 **뒤**다(동기화 분기도 같은 순서다).
     // 앞에 두면 루프가 그 행들을 헛도는데, 그 헛돎은 upsert 가 아니라 **드롭 이관**으로 드러난다
-    // (복원 행도 isComplete: true 라 이관 조건은 통과한다) — 그래서 둘을 함께 본다.
+    // (복원 행도 isComplete: true 라 이관 조건은 통과한다). 그래서 둘을 함께 본다.
     it('복원된 행은 자동 기록 루프를 타지 않는다(기록도 드롭 이관도 캐시 행에만 일어난다)', async () => {
       const weekKey = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
       markSyncAttemptedThisRun()
@@ -1595,7 +1595,7 @@ describe('useBossProfitStore', () => {
       expect(migratedBosses).not.toContain('스우')
     })
 
-    // 결정 6: 복원은 skipSync 여부와 무관하게 캐시 단계 일반에 적용한다 — 두 경로가 서로 다른 화면을
+    // 결정 6: 복원은 skipSync 여부와 무관하게 캐시 단계 일반에 적용한다. 두 경로가 서로 다른 화면을
     // 그리면 그것이 다음 결함이 된다. 동기화를 실패시켜 캐시 단계가 그린 화면만 남긴다.
     it('건너뛰지 않는 진입의 캐시 단계에서도 복원이 일어난다', async () => {
       const monthKey = seedMonthlyTab()
@@ -1618,7 +1618,7 @@ describe('useBossProfitStore', () => {
     it('복원된 행도 캐릭터 정렬 순서(레벨 내림차순)를 따른다', async () => {
       const monthKey = seedMonthlyTab()
       markSyncAttemptedThisRun()
-      // ocid-2 가 레벨이 높아 앞에 와야 한다 — 그 캐릭터의 행이 복원으로 만들어진 것이다.
+      // ocid-2 가 레벨이 높아 앞에 와야 한다. 그 캐릭터의 행이 복원으로 만들어진 것이다.
       getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
         profile: {
           name: `캐릭터-${ocid}`,
@@ -1758,7 +1758,7 @@ describe('useBossProfitStore', () => {
         'ocid-2': { name: '나다라', level: 200, world: '가베라' },
         'ocid-3': { name: '다라마', level: 250, world: '나스카니아' },
       }
-      // 월드명 가나다순(가베라 → 나스카니아 → 핼퍼)은 기대 순서와 어긋나게 배치했다 — 월드가
+      // 월드명 가나다순(가베라 → 나스카니아 → 핼퍼)은 기대 순서와 어긋나게 배치했다. 월드가
       // 정렬 키에 끼어들면 이 테스트가 깨진다.
       getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
         profile: { ...profiles[ocid], imageUrl: 'x', accessFlag: true },
@@ -1927,7 +1927,7 @@ describe('useBossProfitStore', () => {
         expect(useBossProfitStore.getState().status).toBe('loaded')
 
         // 뒤늦게 끝난 refresh는 세대 불일치로 화면(rows/status)을 덮어쓰지 않지만, 동기화가 실제로
-        // 성공했으므로 lastSyncedAt만은 기록돼야 한다 — 그렇지 않으면 현재 기간 복귀 시 신선한
+        // 성공했으므로 lastSyncedAt만은 기록돼야 한다. 그렇지 않으면 현재 기간 복귀 시 신선한
         // 데이터를 보여주면서도 "동기화 기록 없음"으로 표시된다.
         expect(useBossProfitStore.getState().lastSyncedAt).toBeNull()
         resolveSync([syncResult()])
@@ -1981,7 +1981,7 @@ describe('useBossProfitStore', () => {
       expect(state.rows[0].partySize).toBe(3)
       expect(state.rows[0].payoutMeso).toBe(2_693_333)
       expect(state.isPeriodLoading).toBe(false)
-      // ADR-068 결정 1: boolean 플래그가 6상태로 대체됐다 — 기록이 있으면 recorded다.
+      // ADR-068 결정 1: boolean 플래그가 6상태로 대체됐다. 기록이 있으면 recorded다.
       expect(state.periodState).toBe('recorded')
     })
 
@@ -2021,7 +2021,7 @@ describe('useBossProfitStore', () => {
       await useBossProfitStore.getState().goToPreviousPeriod()
 
       expect(getCachedCharacterBasicMock).toHaveBeenCalledTimes(1)
-      // 조회를 줄여도 화면 값은 그대로다 — 캐시에서 오던 이름·이미지가 계속 채워진다.
+      // 조회를 줄여도 화면 값은 그대로다. 캐시에서 오던 이름·이미지가 계속 채워진다.
       expect(useBossProfitStore.getState().rows[0].characterName).toBe('낟낟')
       expect(useBossProfitStore.getState().rows[0].imageUrl).toBe('x')
     })
@@ -2162,7 +2162,7 @@ describe('useBossProfitStore', () => {
       isPeriodCheckedMock.mockResolvedValue(false)
       getBossProfitRecordsMock.mockResolvedValue([])
       // 루시드를 이지로 등록해뒀지만 실제로는 노멀을 처치한 상황(같은 content_name, 같은
-      // cycle) — normalize.ts의 승격 로직으로 이지도 isComplete: true가 되지만 ownComplete는
+      // cycle). normalize.ts의 승격 로직으로 이지도 isComplete: true가 되지만 ownComplete는
       // 노멀만 true다.
       fetchSchedulerCharacterStateMock.mockResolvedValue(
         schedulerState({
@@ -2258,7 +2258,7 @@ describe('useBossProfitStore', () => {
       fetchSchedulerCharacterStateMock.mockClear()
 
       // 여기서 한 번 더 이전으로 가려고 하면 아무 것도 하지 않아야 한다(API 호출도, periodKey
-      // 변경도 없음) — MIN_SCHEDULER_DATE 이전 기간은 애초에 도달 불가능하다.
+      // 변경도 없음). MIN_SCHEDULER_DATE 이전 기간은 애초에 도달 불가능하다.
       await useBossProfitStore.getState().goToPreviousPeriod()
 
       expect(useBossProfitStore.getState().periodKey).toBe(boundaryPeriodKey)
@@ -2472,7 +2472,7 @@ describe('useBossProfitStore', () => {
     it('월간 탭 주차별 합계: 달 경계를 걸친 진행 중 주차(7/30~8/5)는 그 달이 지난 달이 된 뒤에도 기록 합계가 반영된다', async () => {
       // 2026-08-02(KST): 이번 주는 2026-07-30(목) 시작이라 "7월 5주차"이면서 8/5까지 이어진다.
       // 달이 바뀌어 7월이 지난 달이 되면 liveRows(라이브 스냅샷)는 8월 화면의 것이라 이 주를
-      // 담지 않는다 — 그때 진행 중 주차 합계를 라이브에서만 읽으면 0메소로 굳는다.
+      // 담지 않는다. 그때 진행 중 주차 합계를 라이브에서만 읽으면 0메소로 굳는다.
       jest.useFakeTimers({ doNotFake: NOT_FAKED })
       jest.setSystemTime(new Date('2026-08-02T12:00:00+09:00'))
 
@@ -2522,7 +2522,7 @@ describe('useBossProfitStore', () => {
         await useBossProfitStore.getState().goToPreviousPeriod()
         expect(useBossProfitStore.getState().periodKey).toBe('2026-07')
 
-        // 7월 화면을 보는 동안 5주차(7/30~8/5)에 자쿰을 잡았다 — 새 처치는 동기화가 알려주고
+        // 7월 화면을 보는 동안 5주차(7/30~8/5)에 자쿰을 잡았다. 새 처치는 동기화가 알려주고
         // 자동 기록이 DB에 남기며, 화면은 그 기록을 읽어야 한다.
         getBossProfitRecordsMock.mockResolvedValue([
           {
@@ -2583,7 +2583,7 @@ describe('useBossProfitStore', () => {
       isPeriodCheckedMock.mockResolvedValue(false)
       getBossProfitRecordsMock.mockResolvedValue([])
 
-      // 이전 주 이동(백필)을 pending 상태로 묶어둔다 — 아직 응답이 오지 않은 "느린" 요청.
+      // 이전 주 이동(백필)을 pending 상태로 묶어둔다. 아직 응답이 오지 않은 "느린" 요청.
       let resolveSlowFetch!: (value: SchedulerCharacterState) => void
       const slowFetch = new Promise<SchedulerCharacterState>((resolve) => {
         resolveSlowFetch = resolve
@@ -2593,7 +2593,7 @@ describe('useBossProfitStore', () => {
       const firstNavigation = useBossProfitStore.getState().goToPreviousPeriod()
       await waitFor(() => expect(useBossProfitStore.getState().isPeriodLoading).toBe(true))
 
-      // 응답을 기다리는 동안 사용자가 곧바로 이번 주로 돌아온다 — 로컬 스냅샷에서 즉시 끝난다.
+      // 응답을 기다리는 동안 사용자가 곧바로 이번 주로 돌아온다. 로컬 스냅샷에서 즉시 끝난다.
       await useBossProfitStore.getState().goToNextPeriod()
 
       expect(useBossProfitStore.getState().periodKey).toBe(currentPeriodKey)
@@ -2608,7 +2608,7 @@ describe('useBossProfitStore', () => {
       )
       await firstNavigation
 
-      // 화면은 여전히 "이번 주"를 보여줘야 한다 — 뒤늦게 도착한 이전 주 응답에 덮어써지면 안 된다.
+      // 화면은 여전히 "이번 주"를 보여줘야 한다. 뒤늦게 도착한 이전 주 응답에 덮어써지면 안 된다.
       expect(useBossProfitStore.getState().periodKey).toBe(currentPeriodKey)
       expect(useBossProfitStore.getState().rows.map((row) => row.boss)).toEqual(['자쿰'])
       expect(useBossProfitStore.getState().isPeriodLoading).toBe(false)
@@ -2836,7 +2836,7 @@ describe('useBossProfitStore', () => {
       const state = useBossProfitStore.getState()
       expect(state.status).toBe('loaded')
       expect(state.error).toBeNull()
-      // 결정 5: 화면에 흔적을 남기지 않는다 — 행은 캐시 우선 표시가 그대로 그린다.
+      // 결정 5: 화면에 흔적을 남기지 않는다. 행은 캐시 우선 표시가 그대로 그린다.
       expect(state.rows).toHaveLength(1)
       expect(state.rows[0].boss).toBe('자쿰')
       expect(state.rows[0].characterName).toBe('캐시캐릭터')
@@ -2868,7 +2868,7 @@ describe('useBossProfitStore', () => {
 
         await useBossProfitStore.getState().refresh(['ocid-1'], { auto: true })
 
-        // 기본 파티원 수는 boss_party_settings 조회값(없으면 1) — 캐시가 아니라 그 자리에서 읽는다.
+        // 기본 파티원 수는 boss_party_settings 조회값(없으면 1). 캐시가 아니라 그 자리에서 읽는다.
         expect(getBossPartySizeMock).toHaveBeenCalledWith('ocid-1', '자쿰', '카오스')
         expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -2881,7 +2881,7 @@ describe('useBossProfitStore', () => {
             payoutMeso: 8080000,
           }),
         )
-        // 기록만 남기고 화면에 안 흘리면 총 수익이 0으로 그려졌다가 점프한다(결정 4) — 둘 다 본다.
+        // 기록만 남기고 화면에 안 흘리면 총 수익이 0으로 그려졌다가 점프한다(결정 4). 둘 다 본다.
         const state = useBossProfitStore.getState()
         expect(state.status).toBe('loaded')
         expect(state.rows).toHaveLength(1)
@@ -2901,7 +2901,7 @@ describe('useBossProfitStore', () => {
       })
 
       // 결정 4: 기록을 set 뒤로 미루면 총 수익이 0으로 그려졌다가 점프하고, loading 을 경유해 두 번
-      // set 하면 로딩이 한 프레임 번쩍인다 — 그래서 set 은 계속 1회다.
+      // set 하면 로딩이 한 프레임 번쩍인다. 그래서 set 은 계속 1회다.
       it('건너뛴 진입의 set 은 여전히 1회이고 그 시점에 이미 금액이 채워져 있다', async () => {
         markSyncAttemptedThisRun()
         getCachedSchedulerStateMock.mockResolvedValue(cachedEntry(minutesAgo(5)))
@@ -2938,14 +2938,14 @@ describe('useBossProfitStore', () => {
           expect(syncSchedulesMock).not.toHaveBeenCalled()
           expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
           expect(getBossPartySizeMock).not.toHaveBeenCalled()
-          // 표시는 그대로다 — 미룬 것은 기록이고 다음 실제 동기화가 맡는다.
+          // 표시는 그대로다. 미룬 것은 기록이고 다음 실제 동기화가 맡는다.
           expect(useBossProfitStore.getState().rows[0].payoutMeso).toBeNull()
         } finally {
           jest.useRealTimers()
         }
       })
 
-      // 결정 2: 판정은 row.cycle 로 갈린다 — 주간 리셋(목요일 00:00)과 월간 리셋(1일 00:00)은
+      // 결정 2: 판정은 row.cycle 로 갈린다. 주간 리셋(목요일 00:00)과 월간 리셋(1일 00:00)은
       // 시점이 달라, 한쪽으로 뭉뚱그리면 반대쪽이 조용히 틀린다.
       it('월 경계를 넘은 캐시에서 월간 행만 빠지고 주간 행은 그대로 기록된다', async () => {
         jest.useFakeTimers({ doNotFake: NOT_FAKED })
@@ -3090,7 +3090,7 @@ describe('useBossProfitStore', () => {
       expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
     })
 
-    // 결정 4: 강제가 기본값이다 — 옵션을 넘기지 않는 헤더 버튼·당겨서 새로고침·재시도는 항상 조회한다.
+    // 결정 4: 강제가 기본값이다. 옵션을 넘기지 않는 헤더 버튼·당겨서 새로고침·재시도는 항상 조회한다.
     it('옵션 없는 refresh(명시적 재조회)는 TTL 안이어도 항상 조회한다', async () => {
       markSyncAttemptedThisRun()
       getCachedSchedulerStateMock.mockResolvedValue(cachedEntry(minutesAgo(5)))
@@ -3101,7 +3101,7 @@ describe('useBossProfitStore', () => {
       expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
     })
 
-    // ADR-076 제자리 새로고침(진행 중인 주를 품은 지난 달)에서도 게이트는 같다 — 화면 반영을
+    // ADR-076 제자리 새로고침(진행 중인 주를 품은 지난 달)에서도 게이트는 같다. 화면 반영을
     // loadPeriod에 넘기는 규약만 그대로 지킨다.
     it('제자리 새로고침 화면에서 건너뛰면 보던 기간을 유지한 채 loadPeriod로 정착한다', async () => {
       jest.useFakeTimers({ doNotFake: NOT_FAKED })
@@ -3149,7 +3149,7 @@ describe('useBossProfitStore', () => {
   // 캐시를 갱신한다(편승 갱신). 이 화면만 프로필을 동기화 **이전에** 읽으므로, 완료 분기에서 다시
   // 읽지 않으면 새 레벨·이미지가 그 회차에 반영되지 않고 다음 진입으로 밀린다.
   describe('동기화 완료 후 프로필 재조회 (ADR-097 결정 7)', () => {
-    // 편승 갱신이 캐시를 새로 쓴 시점을 syncSchedules 호출로 모사한다 — 그 전에 읽으면 옛 값,
+    // 편승 갱신이 캐시를 새로 쓴 시점을 syncSchedules 호출로 모사한다. 그 전에 읽으면 옛 값,
     // 그 뒤에 읽으면 새 값이다.
     function basicCacheFlippedBySync(
       profileFor: (ocid: string, piggybacked: boolean) => { name: string; level: number; imageUrl: string },
@@ -3200,7 +3200,7 @@ describe('useBossProfitStore', () => {
       expect(useBossProfitStore.getState().rows.map((row) => row.ocid)).toEqual(['ocid-2', 'ocid-1'])
     })
 
-    // 재조회는 character-basic-cache 를 읽는 로컬 조회다 — 네트워크가 0회여야 한다.
+    // 재조회는 character-basic-cache 를 읽는 로컬 조회다. 네트워크가 0회여야 한다.
     it('재조회 때문에 네트워크 호출이 늘지 않는다', async () => {
       syncSchedulesMock.mockResolvedValue([syncResult()])
 
@@ -3309,7 +3309,7 @@ describe('잡지 않은 보스의 드롭 정리', () => {
     replaceBossDropRecordsMock.mockClear()
     mockShowInfo.mockClear()
 
-    // 그 주에 `스우`는 잡았고(기록 있음 — 안전 장치 ②의 근거) `자쿰`은 안 잡았다.
+    // 그 주에 `스우`는 잡았고(기록 있음. 안전 장치 ②의 근거) `자쿰`은 안 잡았다.
     isPeriodCheckedMock.mockResolvedValue(true)
     getBossProfitRecordsMock.mockResolvedValue([
       {

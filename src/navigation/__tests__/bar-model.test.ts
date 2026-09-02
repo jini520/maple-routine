@@ -2,12 +2,12 @@
 //
 // **무엇이 달라졌나.** 예전에는 이 함수들이 새 `BarState` 를 만들었고 바가 그것을 적용했다. 층을
 // 스택이 들면(결정 1) 상태는 react-navigation 것이므로, 같은 함수들이 **무엇을 할지(BarIntent)**
-// 를 돌려준다. 규칙이 여전히 순수 함수라는 것 — 판정을 물으려고 렌더가 필요하지 않다는 것 —
+// 를 돌려준다. 규칙이 여전히 순수 함수라는 것. 판정을 물으려고 렌더가 필요하지 않다는 것 —
 // 은 그대로다(`bar-model.ts` 머리말).
 //
 // 사용자가 준 예시 셋이 그대로 남아 있다(`설정 → 스케줄러 → ← → 설정` ·
 // `유틸리티 → 수익·지출 → ← → 유틸리티` · **`유틸리티 → 설정 → ← 은 안 된다`**). 셋째가 이
-// 설계의 축이다 — 같은 층의 옆걸음은 쌓이지 않는다.
+// 설계의 축이다. 같은 층의 옆걸음은 쌓이지 않는다.
 import { INITIAL_TAB_ROUTE, TAB_ROUTE_NAMES, LAYER_ROUTE_NAMES } from '../routes'
 import {
   BAR_GROUPS,
@@ -42,7 +42,7 @@ describe('그룹 표', () => {
     ])
   })
 
-  // 라벨을 여기서 고정하는 이유는 바가 그것을 **두 층에서** 쓰기 때문이다 — 그룹 행의 글자와
+  // 라벨을 여기서 고정하는 이유는 바가 그것을 **두 층에서** 쓰기 때문이다. 그룹 행의 글자와
   // `accessibilityLabel`(`BottomBar` 의 `BarItem`).
   it('그룹 라벨 다섯을 고정한다', () => {
     expect(BAR_GROUPS.map((group) => group.label)).toEqual([
@@ -103,7 +103,7 @@ describe('그룹 표', () => {
 })
 
 // 어느 페이지가 어느 층 화면 안에 사는가 — 화면이 **탭으로 가고 싶다** 고 말할 때 그것을 중첩
-// 이동으로 옮기는 유일한 표다(`use-open-tab.ts`).
+// 이동으로 옮기는 표는 이것뿐이다(`use-open-tab.ts`).
 describe('layerOfPage — 페이지가 사는 층 화면', () => {
   it('하위가 없는 그룹의 페이지는 그룹 층에 산다', () => {
     expect(layerOfPage('Today')).toBe('Groups')
@@ -183,7 +183,7 @@ describe('그룹을 누르면 (결정 4 ·3)', () => {
     expect(canGoBack(at('Settings'))).toBe(false)
   })
 
-  // 하위 행에서 그룹 층 그룹을 누르면 **한 층 올라가면서** 옆걸음한다 — 적용부가 그룹 층으로
+  // 하위 행에서 그룹 층 그룹을 누르면 **한 층 올라가면서** 옆걸음한다. 적용부가 그룹 층으로
   // 되돌아가며 그 페이지를 연다(한 번의 이동이다).
   it('하위 행에서 하위 없는 그룹을 누르면 그룹 층으로 올라간다', () => {
     expect(pressGroup(at('Boss'), 'today')).toEqual({ kind: 'switchGroupPage', page: 'Today' })
@@ -210,7 +210,7 @@ describe('하위끼리는 같은 단 안의 옆걸음이다', () => {
     expect(pressSub(at('Boss'), 'Boss')).toEqual({ kind: 'none' })
   })
 
-  // 옆걸음을 몇 번 하든 ← 는 여전히 **그룹에 들어오기 전 자리** 로 나간다 — 스택이 안 자라기
+  // 옆걸음을 몇 번 하든 ← 는 여전히 **그룹에 들어오기 전 자리** 로 나간다. 스택이 안 자라기
   // 때문이다. 그 성질을 여기서는 **← 가 여전히 한 번이면 된다** 로 못 박는다.
   it('옆걸음 뒤에도 ← 는 한 단이다', () => {
     expect(canGoBack(at('Cashbook'))).toBe(true)
@@ -236,7 +236,7 @@ describe('rememberSub — 다시 들어갈 자리', () => {
 describe('openPage — 바를 거치지 않은 이동', () => {
   // 증상이었던 것: today 위젯으로 보스 수익에 간 뒤 ← 를 누르면 today 가 아니라 **가계부가 활성인
   // 채로** 그룹 행만 열렸다. 기록을 **바를 눌러 내려갈 때만** 적었기 때문이다. 층이 스택이면 위젯
-  // 타일도 그냥 한 단 내려가는 이동이라 그 갈래 자체가 없어진다 — 규칙이 `pressGroup` 과 같다.
+  // 타일도 그냥 한 단 내려가는 이동이라 그 갈래 자체가 없어진다. 규칙이 `pressGroup` 과 같다.
   it('하위를 가진 그룹으로 가면 한 층 내려간다', () => {
     expect(openPage(initialBarState(), 'Profit')).toEqual({
       kind: 'openSubs',
@@ -260,7 +260,7 @@ describe('openPage — 바를 거치지 않은 이동', () => {
     expect(openPage(at('Profit'), 'Profit')).toEqual({ kind: 'none' })
   })
 
-  // `pressGroup` 과 달리 **목적지를 지목한다** — `lastSub` 를 보지 않는다. 위젯은 **보스 수익** 처럼
+  // `pressGroup` 과 달리 **목적지를 지목한다**. `lastSub` 를 보지 않는다. 위젯은 **보스 수익** 처럼
   // 특정 페이지를 가리키기 때문이다(대가 의 CTA 와 같은 성질).
   it('기억된 하위가 있어도 지목한 페이지로 간다', () => {
     const remembered = at('Today', { lastSub: { ledger: 'Cashbook' } })

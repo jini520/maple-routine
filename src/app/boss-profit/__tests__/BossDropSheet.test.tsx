@@ -6,24 +6,24 @@
 // **시트 안에서 무엇을 고르게 하는가**만 본다.
 //
 // 옮기지 않은 것 셋 — ① 하단 바의 안전영역 패딩(웹은 시트 내용이 직접 줬고 RN 은 **껍데기가
-// 준다**) ② 가격 키패드 **내부**(`DropPricePad.test.tsx` 가 갖는다 — 여기서는 그 자리로 들어갔다
+// 준다**) ② 가격 키패드 **내부**(`DropPricePad.test.tsx` 가 갖는다. 여기서는 그 자리로 들어갔다
 // 나오는 흐름과 값이 그 기록 하나에 붙는지만 본다) ③ 난이도 뱃지의 흐림 정도(값이 아니라 그림이라
 // 육안 대조 목록).
 import type { ReactNode } from 'react'
 import { act, fireEvent } from '@testing-library/react-native'
 
 // **드랍 연출도 세워 둔다.** 그 오버레이는 `requestAnimationFrame` 루프로 스프라이트를 돌리고
-// loop 단계가 **설계상 무한**이라(웹도 그렇다 — 탭해야 끝난다), jest 의 `requestAnimationFrame`
+// loop 단계가 **설계상 무한**이라(웹도 그렇다. 탭해야 끝난다), jest 의 `requestAnimationFrame`
 // 대역이 `setTimeout` 이라 테스트가 영원히 안 끝난다. 이 파일이 보는 것은 타일 선택과 `onSave` 라
-// 연출은 대상이 아니다 — 재생 순서는 `drop-effect-player.test.ts` 가 따로 본다.
-// 목이 **같은 testID 를 낸다** — 이 파일에는 "연출이 뜨는가" 를 보는 케이스가 있고, 그 계약은
+// 연출은 대상이 아니다. 재생 순서는 `drop-effect-player.test.ts` 가 따로 본다.
+// 목이 **같은 testID 를 낸다**. 이 파일에는 "연출이 뜨는가" 를 보는 케이스가 있고, 그 계약은
 // 여전히 지켜야 한다. 세우는 것은 재생일 뿐 존재가 아니다.
 jest.mock('../../../components/organisms/DropEffectOverlay/DropEffectOverlay', () => {
   const { View } = jest.requireActual<typeof import('react-native')>('react-native')
   const React = jest.requireActual<typeof import('react')>('react')
   return {
     __esModule: true,
-    // `accessibilityLabel` 은 안 붙인다 — 아이템 이름을 그대로 쓰면 같은 이름의 타일과 충돌해
+    // `accessibilityLabel` 은 안 붙인다. 아이템 이름을 그대로 쓰면 같은 이름의 타일과 충돌해
     // `getByLabelText` 가 둘을 찾는다(실측).
     DropEffectOverlay: () => React.createElement(View, { testID: 'drop-effect-overlay-modal' }),
   }
@@ -41,9 +41,9 @@ jest.mock('@gorhom/bottom-sheet', () => {
       return React.createElement(ReactNative.View, props)
     }),
     BottomSheetScrollView: (props: Record<string, unknown>) => React.createElement(ReactNative.View, props),
-    // 시트 밖과 같게 둔다 — 아톰이 이 값으로 **시트 안인가** 를 묻는다.
+    // 시트 밖과 같게 둔다. 아톰이 이 값으로 **시트 안인가** 를 묻는다.
     // 목이 시트를 평범한 `View` 로 바꾸므로 여기서도 문맥이 없는 것이 사실이고, 그래서
-    // 아래 입력은 안 그려진다 — 그래도 **있어야 한다**: `lib/nativewind-interop` 이 모듈을
+    // 아래 입력은 안 그려진다. 그래도 **있어야 한다**: `lib/nativewind-interop` 이 모듈을
     // 읽는 순간 이것을 등록하므로, 없으면 스위트가 뜨기도 전에 죽는다.
     useBottomSheetInternal: () => null,
     BottomSheetTextInput: (props: Record<string, unknown>) =>
@@ -138,7 +138,7 @@ describe('BossDropSheet — 난이도 표시', () => {
     const { result } = renderSheet()
     const { getAllByText, queryByLabelText } = await result
 
-    // 고정 드롭 카드에도 난이도 뱃지가 있어 글자는 여럿이다 — 여기서 보는 것은 **누를 수 있는가**다.
+    // 고정 드롭 카드에도 난이도 뱃지가 있어 글자는 여럿이다. 여기서 보는 것은 **누를 수 있는가**다.
     expect(getAllByText('하드').length).toBeGreaterThan(0)
     expect(queryByLabelText('하드')).toBeNull()
     expect(queryByLabelText('노멀')).toBeNull()
@@ -263,7 +263,7 @@ describe('BossDropSheet — 상자 드릴다운', () => {
       fireEvent.press(getByText('이 결과로 기록'))
     })
 
-    // 타일이 결과 아이템 이름으로 바뀌어 있다 — 그걸 다시 누르면 제거다.
+    // 타일이 결과 아이템 이름으로 바뀌어 있다. 그걸 다시 누르면 제거다.
     await act(async () => {
       fireEvent.press(getByLabelText('리스트레인트 링'))
     })
@@ -286,7 +286,7 @@ describe('BossDropSheet — 시트 안 가격 입력', () => {
     })
 
     expect(getByTestId('drop-price-prompt')).toBeTruthy()
-    // 기록은 이미 끝났다 — 물음이 그것을 막지 않는다(탭 즉시 기록).
+    // 기록은 이미 끝났다. 물음이 그것을 막지 않는다(탭 즉시 기록).
     expect(getByText('추가 완료 · 1개')).toBeTruthy()
   })
 
@@ -345,7 +345,7 @@ describe('BossDropSheet — 시트 안 가격 입력', () => {
     expect(getByText('추가 완료 · 1개')).toBeTruthy()
   })
 
-  // 드릴다운은 **순차 모드가 아니다** — 방금 기록한 한 건이라 뒤로가 곧 스킵이고, 그래서 그 버튼을
+  // 드릴다운은 **순차 모드가 아니다**. 방금 기록한 한 건이라 뒤로가 곧 스킵이고, 그래서 그 버튼을
   // 늘리지 않는다(정정). 저장 버튼 문구도 `다음` 이 아니라 `저장` 이다.
   it('드릴다운에는 스킵이 없고 저장 버튼은 "저장" 이다', async () => {
     const { result } = renderSheet({ pricing: PRICING })

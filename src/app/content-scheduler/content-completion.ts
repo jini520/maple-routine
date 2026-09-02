@@ -1,4 +1,4 @@
-// 컨텐츠 항목의 **완료 판정** — 초상화 레일의 진행 링이 세는 규칙.
+// 컨텐츠 항목의 **완료 판정**. 초상화 레일의 진행 링이 세는 규칙.
 //
 // ## 왜 이 파일이 생겼나
 //
@@ -13,11 +13,11 @@
 //
 // ## `끝이 없는 항목`
 //
-// 무릉도장(층수)은 **다 했다 가 정의되지 않는다** — 카드도 완료 배지 대신 층수를 보여준다. 이런
+// 무릉도장(층수)은 **다 했다 가 정의되지 않는다**. 카드도 완료 배지 대신 층수를 보여준다. 이런
 // 항목은 `'unmeasurable'` 이고 링의 분모에서도 빠진다: 영원히 안 차는 칸을 넣으면 링이 **항상
 // 미완료** 를 말한다. 목록에서 빼는 것이 아니라 **세지 않는** 것뿐이다.
 //
-// **길드 지하 수로는 여기 있다가 나갔다** — 점수에 상한이 없는 것은 같지만,
+// **길드 지하 수로는 여기 있다가 나갔다**. 점수에 상한이 없는 것은 같지만,
 // **0점이 아니면 완료** 라는 답이 있었다(사용자 지시). 상한이 없다고 판정이 불가능한 것은 아니다.
 import { isContentBlocked } from '../../lib/scheduler/required-level'
 import {
@@ -40,7 +40,7 @@ import {
   MAPLE_UNION_PREFIX,
 } from './WeeklyContentCards'
 
-/** `'unmeasurable'` = 끝이 없는 항목(파일 머리) — 완료도 미완료도 아니라 세지 않는다. */
+/** `'unmeasurable'` = 끝이 없는 항목(파일 머리). 완료도 미완료도 아니라 세지 않는다. */
 export type ContentCompletion = 'complete' | 'incomplete' | 'unmeasurable'
 
 /** 카운트형 — `maxCount` 가 0이면 채울 것이 없다 라 완료로 치지 않는다(0/0을 100%로 읽지 않는다). */
@@ -53,7 +53,7 @@ function byQuestState(content: { questState: 0 | 1 | 2 | null }): ContentComplet
   return content.questState === 2 ? 'complete' : 'incomplete'
 }
 
-/** 참여 여부만 아는 항목(에픽 던전·플래그 레이스) — 카드가 `nowCount > 0` 을 완료 배지로 그린다. */
+/** 참여 여부만 아는 항목(에픽 던전·플래그 레이스). 카드가 `nowCount > 0` 을 완료 배지로 그린다. */
 function byParticipation(content: { nowCount: number }): ContentCompletion {
   return content.nowCount > 0 ? 'complete' : 'incomplete'
 }
@@ -75,7 +75,7 @@ export function dailyContentCompletion(content: DailyContent): ContentCompletion
 export function weeklyContentCompletion(content: WeeklyContent): ContentCompletion {
   // **점수가 0이 아니면 완료다**(사용자 지시). 점수에 상한이 없어 **다 했다** 를
   // 카운트로는 못 재지만, 그 주에 **참여했는가** 는 잴 수 있고 그것이 링이 물어야 할 것이다.
-  // 카드는 그대로 `n점` 배지다 — 얼마나 했는지는 값이 말하고, 링은 했는지만 센다.
+  // 카드는 그대로 `n점` 배지다. 얼마나 했는지는 값이 말하고, 링은 했는지만 센다.
   if (content.name === GUILD_UNDERGROUND_WATERWAY_NAME) return byParticipation(content)
   if (content.name === GUILD_MISSION_POINTS_NAME) return byCount(content)
   if (content.name === GUILD_FLAG_RACE_NAME) return byParticipation(content)
@@ -120,7 +120,7 @@ function tally(completions: ContentCompletion[]): ContentProgress {
  * **요구 레벨에 못 미치는 항목은 분모에서도 뺀다**.
  *
  * 남겨 두면 그 캐릭터의 링이 100%에 **절대 도달하지 못하고**, today 남은 스케줄의 숫자도 영원히
- * 안 줄어든다. 판정은 `lib/scheduler/required-level` 한 곳이 갖는다 — 이 화면과 today 가 **같은 함수**를
+ * 안 줄어든다. 판정은 `lib/scheduler/required-level` 한 곳이 갖는다. 이 화면과 today 가 **같은 함수**를
  * 봐야(*"한 글자도 다르면 안 된다"*)이 성립한다.
  */
 function progressible<T extends { name: string }>(contents: T[], characterLevel: number | null): T[] {

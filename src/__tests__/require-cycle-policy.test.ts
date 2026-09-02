@@ -3,7 +3,7 @@
 // ## 왜 테스트가 필요한가
 //
 // 사이클은 **깨지지 않는다.** 값이 함수 본문에서만 쓰이면 호출 시점에 바인딩이 풀려 아무 일도
-// 일어나지 않고, 그래서 리뷰에서 잡히지 않는다. 대가는 두 가지로 온다 — 콜드 스타트마다 뜨는
+// 일어나지 않고, 그래서 리뷰에서 잡히지 않는다. 대가는 두 가지로 온다. 콜드 스타트마다 뜨는
 // LogBox 배너(사용자가 **하단 warning toast** 로 신고한 그것)와, 언젠가 누가 그 심볼을 모듈
 // 최상위로 끌어올렸을 때의 `undefined`.
 //
@@ -13,7 +13,7 @@
 //
 // ## `import type` 을 세지 않는 이유
 //
-// 컴파일에 지워져 `require` 가 안 나간다 — Metro 도 세지 않는다. 실제로 `format.ts` 와
+// 컴파일에 지워져 `require` 가 안 나간다. Metro 도 세지 않는다. 실제로 `format.ts` 와
 // `use-sync-error-toast.ts` 는 `./schedule-sync` 에서 `ScheduleSyncError` 를 타입으로만 가져오는데,
 // 그 둘은 사이클이 아니다. 이것을 세면 고칠 것이 없는 자리를 고치라고 말하게 된다.
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
@@ -36,7 +36,7 @@ function sourceFiles(dir: string): string[] {
   return out
 }
 
-/** 상대 경로만 푼다 — 패키지 의존은 사이클을 만들 수 없다(이후 alias 가 없다). */
+/** 상대 경로만 푼다. 패키지 의존은 사이클을 만들 수 없다(이후 alias 가 없다). */
 function resolveSpecifier(fromFile: string, specifier: string): string | null {
   if (!specifier.startsWith('.')) return null
   const base = resolve(dirname(fromFile), specifier)
@@ -77,7 +77,7 @@ function runtimeDependencies(file: string): string[] {
   return [...out]
 }
 
-/** 사이클을 **경로 그대로** 돌려준다 — 어느 고리를 끊어야 하는지 실패 메시지가 말해야 한다. */
+/** 사이클을 **경로 그대로** 돌려준다. 어느 고리를 끊어야 하는지 실패 메시지가 말해야 한다. */
 function findCycles(graph: Map<string, string[]>): string[][] {
   const cycles: string[][] = []
   const seen = new Set<string>()
@@ -122,7 +122,7 @@ describe('런타임 import 사이클', () => {
     expect(readable).toEqual([])
   })
 
-  // 그래프를 못 읽고 있으면 위 테스트는 **사이클 0건** 으로 조용히 통과한다 — 해석이 실제로
+  // 그래프를 못 읽고 있으면 위 테스트는 **사이클 0건** 으로 조용히 통과한다. 해석이 실제로
   // 도는지 하나로 붙든다. 화면(`app/`)에서 로직 층(`features/`)까지 건너가는 것을 고르는 이유는
   //  로 둘이 한 트리가 됐어도 **그 방향의 의존이 여전히 이 그래프의 본론**이라서다.
   it('그래프를 실제로 읽는다', () => {

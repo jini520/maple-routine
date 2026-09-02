@@ -20,7 +20,7 @@
 // )
 // ```
 //
-// `jest.mock` 의 팩토리는 import 보다 위로 끌어올려지므로 **밖의 값을 참조할 수 없다** — 그래서
+// `jest.mock` 의 팩토리는 import 보다 위로 끌어올려지므로 **밖의 값을 참조할 수 없다**. 그래서
 // 팩토리 안에서 `require` 로 이 파일을 가져온다. 테스트 파일이 위쪽에서 `import` 한 것과 같은 모듈
 // 인스턴스라 아래 상태가 공유된다.
 //
@@ -35,7 +35,7 @@ export function mockReducedMotion(next: boolean): void {
 }
 
 /**
- * `withRepeat` 이 불렸는지 — 두 스피너에서 모션 줄이기를 **볼 수 있는 유일한 창**이다.
+ * `withRepeat` 이 불렸는지. 두 스피너에서 모션 줄이기를 **볼 수 있는 창은 이것뿐**이다.
  *
  * SVG 속성 애니메이션은 `useAnimatedProps` 를 거쳐 UI 스레드가 갱신하므로, jest 의 렌더 트리에는
  * 켜 놨을 때나 꺼 놨을 때나 **똑같이** `strokeDashoffset: null` 만 남는다(실측 — 두 모드의 트리가
@@ -64,7 +64,7 @@ export function reanimatedWithReducedMotion(): unknown {
     __esModule: true,
     default: actual.default,
     useReducedMotion: () => reduceMotion,
-    // 기록만 하고 진짜에 그대로 넘긴다 — 동작을 바꾸면 이 목이 검사 대상을 대체해 버린다.
+    // 기록만 하고 진짜에 그대로 넘긴다. 동작을 바꾸면 이 목이 검사 대상을 대체해 버린다.
     withRepeat: (...args: unknown[]) => {
       withRepeatSpy(...args)
       return actual.withRepeat(...args)

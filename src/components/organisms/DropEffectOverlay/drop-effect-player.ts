@@ -4,7 +4,7 @@
 //
 // 웹판은 이 로직이 `useEffect` 안의 클로저 + DOM 변이(`el.src`·`el.style`)와 한 덩어리라 **단위로
 // 검사할 방법이 없었다.** 여기서 지켜야 할 것들 — 8프레임 시점에 아이템이 뜬다 ·
-// pre 가 끝나면 loop 로 넘어가 무한 반복한다 · 닫기는 end 를 한 번 재생하고 끝난다 — 은 전부
+// pre 가 끝나면 loop 로 넘어가 무한 반복한다 · 닫기는 end 를 한 번 재생하고 끝난다. 은 전부
 // **눈에 안 보이는 순서**라, 화면 없이 검사할 수 있는 형태가 아니면 회귀를 못 잡는다.
 //
 // 그래서 상태 전이만 여기 두고, 프레임을 실제로 그리는 일(`<Image source>`)과 시간을 흘려보내는 일
@@ -14,7 +14,7 @@
 //
 // 3단계 step 7 이 금지한 것은 *"`setInterval` 로 상태를 갱신해 **애니메이션**을 만드는 것"* 이고,
 // 이유는 그런 모션이 UI 스레드에서 도는 Reanimated 로 표현 가능하기 때문이다. **스프라이트 재생은
-// 그 부류가 아니다** — 매 프레임 `<Image>` 의 소스를 갈아끼우는 일이라 JS 스레드에서 결정할 수밖에
+// 그 부류가 아니다**. 매 프레임 `<Image>` 의 소스를 갈아끼우는 일이라 JS 스레드에서 결정할 수밖에
 // 없고(워크릿은 React 트리를 못 바꾼다), 웹판도 같은 이유로 `requestAnimationFrame` 이었다.
 // 이 파일이 만드는 것은 좌표가 아니라 **몇 번째 그림인가**다.
 
@@ -73,7 +73,7 @@ export function createDropEffectState(): DropEffectState {
 /**
  * `dt` 밀리초만큼 흘려보낸 다음 상태를 돌려준다. **입력을 바꾸지 않는다.**
  *
- * 프레임이 하나도 없는 단계는 건너뛴다 — 에셋이 빠져도 재생이 멈추지 않고 닫기까지 간다(웹과 같은
+ * 프레임이 하나도 없는 단계는 건너뛴다. 에셋이 빠져도 재생이 멈추지 않고 닫기까지 간다(웹과 같은
  * 방어: `frames.loop.length === 0` 이면 연출 없이 닫기만).
  */
 export function advanceDropEffect(
@@ -125,7 +125,7 @@ export function advanceDropEffect(
       }
     }
   } else if (!next.screenDone) {
-    // ScreenEff 프레임이 없으면 트리거가 영영 안 온다 — 기둥을 곧바로 켠다.
+    // ScreenEff 프레임이 없으면 트리거가 영영 안 온다. 기둥을 곧바로 켠다.
     next.screenDone = true
     next.pillarPhase = 'pre'
     next.itemVisible = true
@@ -149,7 +149,7 @@ export function advanceDropEffect(
         next.pillarIndex = 0
       }
 
-      // 두 단계 모두 프레임이 없으면 무한 루프가 된다 — 그리지 않는 상태로 빠져나온다.
+      // 두 단계 모두 프레임이 없으면 무한 루프가 된다. 그리지 않는 상태로 빠져나온다.
       if (counts.pre === 0 && counts.loop === 0) {
         next.pillarPhase = null
         break
@@ -183,12 +183,12 @@ export function requestDropEffectClose(
 
 /**
  * **그려지는 것이 달라지는가.** 재생 상태는 매 tick 바뀌지만(누적 시간 `*Acc`) 화면에 나오는 것은
- * 단계별 fps 로만 바뀐다 — screen 22.5 · loop 17.25. 그 차이를 안 걸러내면 120Hz 기기에서 초당
+ * 단계별 fps 로만 바뀐다. screen 22.5 · loop 17.25. 그 차이를 안 걸러내면 120Hz 기기에서 초당
  * 120번 트리를 다시 그리면서 정작 그림은 22번만 바뀐다.
  *
  * 2026-08-26 갤럭시 Z Flip3 실측 — 그 낭비가 **재생 첫머리의 불균등**으로 나왔다. 상태는 제때
  * 진행하는데 렌더가 밀려, frame 0 이 82ms 서 있고 frame 2 가 25ms 만에 지나갔다(기대는 둘 다 44ms).
- * 누적 시간은 여기서 일부러 뺀다 — 그것 때문에 매번 달라졌다 가 되면 거르는 의미가 없다.
+ * 누적 시간은 여기서 일부러 뺀다. 그것 때문에 매번 달라졌다 가 되면 거르는 의미가 없다.
  */
 export function rendersDifferently(a: DropEffectState, b: DropEffectState): boolean {
   return (

@@ -4,14 +4,14 @@ import { Text } from '../../atoms'
 
 export function Segment<T extends string>(props: {
   options: readonly T[]
-  /** `null` 이면 **아무것도 안 골랐다** — 형태처럼 기본값을 안 정하는 자리가 있다. */
+  /** `null` 이면 **아무것도 안 골랐다**. 형태처럼 기본값을 안 정하는 자리가 있다. */
   selected: T | null
   onSelect: (value: T) => void
 }): React.JSX.Element {
   return (
     <View
       testID="segment"
-      // **테두리는 상자 하나뿐**이다 — 조각마다 두르면 칩 여럿과 같은 그림이 된다.
+      // **테두리는 상자 하나뿐**이다. 조각마다 두르면 칩 여럿과 같은 그림이 된다.
       className="flex-row items-center rounded-full border border-border bg-surface p-0.5"
     >
       {props.options.map((option) => {
@@ -22,7 +22,7 @@ export function Segment<T extends string>(props: {
             role="button"
             aria-label={option}
             aria-selected={isSelected}
-            // 이미 고른 것을 다시 눌러도 아무 일이 없어야 한다 — `DifficultySegment` 와 같은 계약이다.
+            // 이미 고른 것을 다시 눌러도 아무 일이 없어야 한다. `DifficultySegment` 와 같은 계약이다.
             onPress={() => {
               if (!isSelected) props.onSelect(option)
             }}

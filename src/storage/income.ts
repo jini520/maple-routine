@@ -13,7 +13,7 @@
 //
 // ## 원천을 적는 칸이 없다
 //
-// 설계 도중 `source`(`'manual' | 'timer' | 'boss'`)를 두려다 접었다 — **이 테이블에 드는 것은
+// 설계 도중 `source`(`'manual' | 'timer' | 'boss'`)를 두려다 접었다. **이 테이블에 드는 것은
 // 손입력 하나뿐이고, 테이블이 곧 원천**이다. 화면의 배지(`보스`·`손입력`)는
 // 여러 원천을 읽어 합칠 때 붙는 **뷰 모델의 값**이지 컬럼이 아니다.
 import type { FeePercent } from '../lib/cashbook/item-split'
@@ -23,10 +23,10 @@ import { getBossProfitDb } from './sqlite/db'
  * 수입의 갈래 — 사용자가 준 둘 + 안전망 하나.
  *
  * 기타가 없으면 셋으로 안 잡히는 수입이 **기록 자체를 못 남긴다**(가계부에 구멍이 뚫린다).
- * 넷째가 생기면 여기 한 줄을 더하면 된다 — 늘리는 것은 싸고 **지우는 쪽이 비싸다**(이미 그 갈래로
+ * 넷째가 생기면 여기 한 줄을 더하면 된다. 늘리는 것은 싸고 **지우는 쪽이 비싸다**(이미 그 갈래로
  * 적힌 행이 갈 곳을 잃는다).
  *
- * **차례가 곧 화면**이다 — 시트의 칩이 이 차례로 서고 `[0]` 이 **＋ 수입** 을
+ * **차례가 곧 화면**이다. 시트의 칩이 이 차례로 서고 `[0]` 이 **＋ 수입** 을
  * 열었을 때 골라져 있는 갈래다. 사냥이 앞인 것은 그 갈래가 계산기라 손이 가장
  * 많이 가서이고, 기타는 안전망이라 끝이다. **줄을 옮기면 기본 갈래가 함께 바뀐다.**
  */
@@ -46,7 +46,7 @@ export interface IncomeRecord {
   /**
    * 메소로 들어온 수입. **통화가 갈리는 갈래(`기타`)에서는 `null` 일 수 있다**.
    *
-   * 아이템 판매면 **수수료를 뗀 값**이다 — 집계가 보는 칸이 이것 하나라,
+   * 아이템 판매면 **수수료를 뗀 값**이다. 집계가 보는 칸이 이것 하나라,
    * 판매 대금을 넣으면 번 적 없는 돈이 수입으로 선다.
    *
    * > 정정 15 이전 행은 **언제나 숫자**다(그때는 수입이 메소뿐이었다). 타입이 `| null` 인 것은
@@ -56,13 +56,13 @@ export interface IncomeRecord {
   /**
    * 메포로 들어온 수입 — 이벤트 보상이 그렇다.
    *
-   * **칸 이름을 지출과 같게 쓴다**(`point_amount`·`point_per_100m_meso`·`cash_amount`) — 그래야
+   * **칸 이름을 지출과 같게 쓴다**(`point_amount`·`point_per_100m_meso`·`cash_amount`). 그래야
    * 집계가 한 모양으로 접힌다(`incomeMesoOf` 는 `spendMesoOf` 와 같은 식이다).
    */
   pointAmount: number | null
   /** 메소마켓 시세 — 단위는 **1억 메소당 메포**다. */
   pointPer100mMeso: number | null
-  /** **환산하지 않는다** — 지출과 같은 이유·같은 결과다. */
+  /** **환산하지 않는다**. 지출과 같은 이유·같은 결과다. */
   cashAmount: number | null
   /**
    * 몇 회인가. 기타만 쓰고 나머지 갈래는 `null` 이다.
@@ -70,12 +70,12 @@ export interface IncomeRecord {
    * 위 세 칸에는 **곱한 총액**이 들어간다. 수량을 안 남기면 수정으로 다시 열 때 되짚을 길이 없어
    * 수량이 1 로 서고 금액 칸에 총액이 들어간다(`금액 = 총액 ÷ 수량` 으로 되짚는다).
    *
-   * 이 칸이 없던 시절의 행도 `null` 이고 수량 1 로 열린다 — 그 행은 총액이 곧 금액이다.
+   * 이 칸이 없던 시절의 행도 `null` 이고 수량 1 로 열린다. 그 행은 총액이 곧 금액이다.
    */
   quantity: number | null
   /** 경매장 수수료율(`FeePercent`). `null` = 없음(직거래이거나 정정 9 이전 행). */
   saleFeePercent: FeePercent | null
-  /** 뗀 몫. **판매 대금 = `mesoAmount` + 이것** 이다 — 요율만으로는 내림 때문에 역산이 안 된다. */
+  /** 뗀 몫. **판매 대금 = `mesoAmount` + 이것** 이다. 요율만으로는 내림 때문에 역산이 안 된다. */
   saleFeeMeso: number | null
   /**
    * 사냥 갈래를 **어떻게 적었나**.
@@ -84,7 +84,7 @@ export interface IncomeRecord {
    * 금액이 덮인다(가 걸어 둔 계약이 깨진다). 그래서 적을 때 쓴 값을 함께 남긴다.
    *
    * **다른 갈래에서는 전부 `null`** 이다. 이전에 적힌 사냥 행도 `null` 인데, 그 행은
-   * 수동 입력으로 연다 — 조각이 없어 합계가 곧 획득 메소이고 그것은 지어낸 값이 아니다
+   * 수동 입력으로 연다. 조각이 없어 합계가 곧 획득 메소이고 그것은 지어낸 값이 아니다
    *
    *
    * 사냥터는 여기가 아니라 `item` 에 **이름 그대로** 들어간다(전역 유일이라 지역이 따라온다).
@@ -130,12 +130,12 @@ export interface HuntingCalculatorDetail {
   /**
    * **그때의** 캐릭터 레벨. `null` = 캐릭터를 안 골랐다(페널티 0 —).
    *
-   * 지금 레벨을 다시 읽지 않는 이유는 캐릭터가 레벨업하기 때문이다 — 그러면 한 달 전 기록의
+   * 지금 레벨을 다시 읽지 않는 이유는 캐릭터가 레벨업하기 때문이다. 그러면 한 달 전 기록의
    * 금액이 열 때마다 달라진다.
    */
   characterLevel: number | null
   /**
-   * 젠 한 번에 **놓치는 마릿수**(0~4) — 퍼센트가 아니다.
+   * 젠 한 번에 **놓치는 마릿수**(0~4). 퍼센트가 아니다.
    *
    * 효율 %는 맵마다 다르므로(40마리의 −1 은 98%, 22마리의 −1 은 95%) 퍼센트를 남기면 수정으로
    * 열 때 **어느 조각이었는지 되짚으려고 맵을 거꾸로 풀어야 한다**. 마릿수는 맵과 무관하다.
@@ -154,7 +154,7 @@ export interface HuntingCalculatorDetail {
    *
    * 캐릭터 레벨을 박아 두는 것과 **같은 이유**다: 장비를 갈아입으므로 지금 값으로 다시 재면
    * 한 달 전 기록의 금액이 열 때마다 달라진다. `0` 은 ** 이전에 적힌 행**이기도 하고
-   * (그때는 메획이 계산에 없었다) 메획을 안 두른 캐릭터이기도 하다 — 둘 다 곱이 ×1 이라 같다.
+   * (그때는 메획이 계산에 없었다) 메획을 안 두른 캐릭터이기도 하다. 둘 다 곱이 ×1 이라 같다.
    */
   mesoRate: number
 }
@@ -196,7 +196,7 @@ function rowToHunt(row: Record<string, unknown>): HuntingIncomeDetail | null {
     sojae: (row.hunt_sojae as number | null | undefined) ?? 0,
     fragments: (row.hunt_fragments as number | null | undefined) ?? 0,
     fragmentPrice: (row.hunt_fragment_price as number | null | undefined) ?? 0,
-    // **`NULL` 은 이전 행**이고 0 으로 읽는다 — 없는 값을 지어내면 옛 기록의 금액이
+    // **`NULL` 은 이전 행**이고 0 으로 읽는다. 없는 값을 지어내면 옛 기록의 금액이
     // 지금 세는 값과 안 맞는다.
     mesoRate: (row.hunt_meso_rate as number | null | undefined) ?? 0,
   }
@@ -288,7 +288,7 @@ export async function updateIncomeRecord(record: IncomeRecord): Promise<void> {
   ])
 }
 
-/** 한 건만 지운다 — 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */
+/** 한 건만 지운다. 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */
 export async function deleteIncomeRecord(id: string): Promise<void> {
   const db = await getBossProfitDb()
   await db.run(`DELETE FROM income_records WHERE id = ?`, [id])

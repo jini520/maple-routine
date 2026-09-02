@@ -1,7 +1,7 @@
 // 웹판(169줄)의 명세를 읽어 다시 쓴 것.
 //
 // 갈린 것 셋
-// ① **라우터 프로브가 없다** — 안내를 누르면 `navigate('SettingsFeatureGuide', { guideId })` 가
+// ① **라우터 프로브가 없다**. 안내를 누르면 `navigate('SettingsFeatureGuide', { guideId })` 가
 //    불리는지를 본다(웹이 경로를 조립하던 자리 · `routes.ts`).
 // ② `getByRole('tab', { name })` → **탭 글자에서 위로 올라가** 잡고, `aria-selected` 는
 //    `accessibilityState.selected` 로 읽는다(RN 에 `tablist` 컨테이너 역할이 없다 —
@@ -16,7 +16,7 @@ import { renderOverlay, type AtomElement } from '../../../components/__tests__/r
 import { SettingsFeatureGuideListScreen } from '../SettingsFeatureGuideListScreen'
 import { useSettingsNavigation } from '../use-settings-navigation'
 
-// 안내 데이터는 화면이 아니라 데이터 파일이 소유한다 — 그룹 조합을 훑는 케이스를 위해
+// 안내 데이터는 화면이 아니라 데이터 파일이 소유한다. 그룹 조합을 훑는 케이스를 위해
 // `src/data/feature-guides/` 를 늘리지 않고 여기서 픽스처를 주입한다.
 jest.mock('../../../data/feature-guides', () => ({
   ...jest.requireActual('../../../data/feature-guides'),
@@ -52,7 +52,7 @@ function climbTo(view: Rendered, text: string, role: string): AtomElement {
   return node
 }
 
-/** 서브트리의 글자를 이어 붙인 것 — 웹 테스트의 `node.textContent` 자리다. */
+/** 서브트리의 글자를 이어 붙인 것. 웹 테스트의 `node.textContent` 자리다. */
 function labelOf(node: AtomElement): string {
   let label = ''
   const walk = (current: AtomElement): void => {
@@ -107,7 +107,7 @@ describe('SettingsFeatureGuideListScreen', () => {
     expect(goBack).toHaveBeenCalledTimes(1)
   })
 
-  // 탭 순서는 데이터가 아니라 FEATURE_GUIDE_GROUP_ORDER 가 정한다 — 안내를 쓰는 사람이 어떤
+  // 탭 순서는 데이터가 아니라 FEATURE_GUIDE_GROUP_ORDER 가 정한다. 안내를 쓰는 사람이 어떤
   // 순서로 적든 화면은 늘 같아야 한다(RELEASE_NOTE_CATEGORY_ORDER 와 같은 규칙).
   it('탭 순서는 데이터 순서가 아니라 정해진 순서다', async () => {
     const view = await renderOverlay(<SettingsFeatureGuideListScreen />)
@@ -125,7 +125,7 @@ describe('SettingsFeatureGuideListScreen', () => {
     expect(view.queryByText('설정')).toBeNull()
   })
 
-  // 한 안내가 여러 그룹에 선다(정정) — `캐릭터 관리`가 컨텐츠·보스 양쪽에
+  // 한 안내가 여러 그룹에 선다(정정). `캐릭터 관리`가 컨텐츠·보스 양쪽에
   // 같은 글로 서야 한다. 사본을 두면 갈라진다.
   it('여러 그룹에 속한 안내는 그 그룹 탭마다 나온다', async () => {
     const view = await renderOverlay(<SettingsFeatureGuideListScreen />)
@@ -175,7 +175,7 @@ describe('SettingsFeatureGuideListScreen', () => {
     expect(view.queryAllByTestId('guide-group-tab')).toHaveLength(0)
   })
 
-  // 그룹이 하나뿐이면 고를 것이 없다 — 탭 줄은 선택지가 둘 이상일 때만 뜻이 있다.
+  // 그룹이 하나뿐이면 고를 것이 없다. 탭 줄은 선택지가 둘 이상일 때만 뜻이 있다.
   it('그룹이 하나뿐이면 탭 줄을 그리지 않는다', async () => {
     setGuides([보스안내])
     const view = await renderOverlay(<SettingsFeatureGuideListScreen />)

@@ -15,12 +15,12 @@ import { getBossProfitDb } from './sqlite/db'
  *
  * 앞의 셋은 `src/data/spend-catalog.json` 의 `categories` 와 **같은 이름이어야 한다**(그 파일이
  * 항목을 그 이름으로 묶는다). 어긋나면 고른 항목의 카테고리와 레코드의 카테고리가 달라져
- * **집계에서 조용히 빠진다** — `__tests__/spend.spec.ts` 가 그 일치를 붙든다.
+ * **집계에서 조용히 빠진다**. `__tests__/spend.spec.ts` 가 그 일치를 붙든다.
  */
 export const SPEND_CATEGORIES = [
   '컨텐츠',
   // `상점·편의` 에서 이름이 바뀌었다(사용자 지정 2026-08-27).
-  // 기존 기록은 `db.ts` 의 마이그레이션이 옮긴다 — 값 자체가 이름이라 안 옮기면 고아가 된다.
+  // 기존 기록은 `db.ts` 의 마이그레이션이 옮긴다. 값 자체가 이름이라 안 옮기면 고아가 된다.
   '이벤트·BM',
   '버프',
   '아이템 구매',
@@ -33,14 +33,14 @@ export type SpendCategory = (typeof SPEND_CATEGORIES)[number]
  * 아이템 구매의 종류 — **게임의 인벤토리 탭 이름**이다.
  *
  * 기타가 `SPEND_CATEGORIES` 의 갈래 이름과 겹치지만 **고치지 않는다**: 사용자가 아는 말이
- * 그것이라 우리가 바꿔 부르면 게임과 갈라진다. 대신 **부르는 말을 나눈다** — 이쪽은 언제나
+ * 그것이라 우리가 바꿔 부르면 게임과 갈라진다. 대신 **부르는 말을 나눈다**. 이쪽은 언제나
  * 종류이고 타입 이름도 `SpendItemKind` 다.
  */
 export const SPEND_ITEM_KINDS = ['장비', '소비', '기타'] as const
 
 export type SpendItemKind = (typeof SPEND_ITEM_KINDS)[number]
 
-/** 수량과 관세가 서는 것은 **장비가 아닐 때**다 — 판정이 한 자리에 산다. */
+/** 수량과 관세가 서는 것은 **장비가 아닐 때**다. 판정이 한 자리에 산다. */
 export function countsQuantity(kind: SpendItemKind): boolean {
   return kind !== '장비'
 }
@@ -55,24 +55,24 @@ export interface SpendRecord {
   /** 목록에서 고른 항목 또는 직접 입력한 이름(`구매 아이템` · `내용`). */
   item: string | null
   /**
-   * 같은 값을 두 형태로 받는 항목의 **어느 쪽인가** — 에픽던전 리워드의 경험치·솔 에르다
+   * 같은 값을 두 형태로 받는 항목의 **어느 쪽인가**. 에픽던전 리워드의 경험치·솔 에르다
    * (카탈로그의 `forms`). **가격이 같아서 금액으로는 구분이 안 된다.**
    *
    * 형태가 없는 항목은 `null` 이다. 목록을 카탈로그가 들므로 여기에 **후보를 베끼지 않는다**
-   * (베끼면 목록이 바뀔 때 두 벌이 어긋난다 — `quantity` 의 단위 이름과 같은 이유).
+   * (베끼면 목록이 바뀔 때 두 벌이 어긋난다. `quantity` 의 단위 이름과 같은 이유).
    */
   form: string | null
   /**
-   * 아이템 구매의 **종류** — 게임 인벤토리 탭 이름 그대로다. 이 값 하나가
+   * 아이템 구매의 **종류**. 게임 인벤토리 탭 이름 그대로다. 이 값 하나가
    * 수량과 관세를 함께 가른다: **장비**는 하나를 사고 관세가 붙으며, **소비·기타**는 여럿을 사고
    * **월드 간 거래가 안 되어 관세가 없다.**
    *
-   * `form` 과 갈라 둔 이유는 그 칸이 **카탈로그의 `forms`** 를 뜻하기 때문이다 — 한 칸이 두 뜻을
+   * `form` 과 갈라 둔 이유는 그 칸이 **카탈로그의 `forms`** 를 뜻하기 때문이다. 한 칸이 두 뜻을
    * 들면 지금 이건 어느 쪽이냐 를 묻는 코드가 생긴다(가 `meso_per_point`
    * 라는 거짓 이름 하나로 겪은 그것이다).
    *
    * **다른 갈래에서는 `null`** 이고, 아이템 구매의 `null` 은 **정정 1 이전 행**이라 **장비로
-   * 연다** — 그때는 치는 금액 + 관세 하나뿐이었고 그것이 정확히 장비의 모양이다.
+   * 연다**. 그때는 치는 금액 + 관세 하나뿐이었고 그것이 정확히 장비의 모양이다.
    */
   itemKind: SpendItemKind | null
   /**
@@ -81,12 +81,12 @@ export interface SpendRecord {
    */
   quantity: number | null
   /**
-   * **관세를 포함한 총액**이다 — 집계는 이 한 칸만 보면 되므로
+   * **관세를 포함한 총액**이다. 집계는 이 한 칸만 보면 되므로
    * 관세를 빠뜨려 덜 세는 사고가 구조적으로 없다.
    */
   mesoAmount: number | null
   /**
-   * 위 총액 중 관세분. **집계에 더하지 말 것** — 이미 `mesoAmount` 안에 있다.
+   * 위 총액 중 관세분. **집계에 더하지 말 것**. 이미 `mesoAmount` 안에 있다.
    *
    * 요율을 안 박고 읽을 때 나누면 요율이 바뀌는 날 **지난달 관세가 전부 소급해 달라진다**
    * (과 같은 이유). 10% 고정은 **지금의** 사실이다.
@@ -100,7 +100,7 @@ export interface SpendRecord {
    */
   pointPer100mMeso: number | null
   /**
-   * **환산하지 않는다** — 그래서 짝이 되는 환율 칸이 없다. 현금과 게임
+   * **환산하지 않는다**. 그래서 짝이 되는 환율 칸이 없다. 현금과 게임
    * 재화의 교환비가 실제로 성립하는 경로가 운영정책 위반 거래라, 앱이 그 숫자를 적으면 **그 경로에
    * 값을 매기는 것처럼 읽힌다.** 정확도의 문제가 아니라 무엇을 정상으로 보이게 하는가의 문제다.
    */
@@ -120,7 +120,7 @@ const INSERT_SQL = `
 /**
  * **메포를 썼으면 시세가 있어야 한다**.
  *
- * 화면이 막지만 저장소가 한 번 더 막는 이유는 실패의 모양이 나쁘기 때문이다 — 시세 없이 저장하면
+ * 화면이 막지만 저장소가 한 번 더 막는 이유는 실패의 모양이 나쁘기 때문이다. 시세 없이 저장하면
  * 그 행은 **영영 메소로 표시할 수 없는 행**이 된다. 결정 5 가 환율을 행에 박으므로 나중에 채울
  * 수도 없고, 메포는 모두 메소로 표기한다 는 정책이 **그 행에서만** 깨진다.
  *
@@ -164,7 +164,7 @@ export async function insertSpendRecord(record: SpendRecord): Promise<void> {
  * 갈아 끼우기 — **지우고 다시 넣지 않는다**.
  *
  * 지우고 넣으면 `id` 와 `recorded_at` 이 새것이 되는데, 그 둘은 언제 적었나 를 든 칸이라
- * **고친 시각이 적은 시각을 덮어쓴다.** 그래서 `SET` 에 `recorded_at` 이 없다 — 적은 시각이지
+ * **고친 시각이 적은 시각을 덮어쓴다.** 그래서 `SET` 에 `recorded_at` 이 없다. 적은 시각이지
  * 마지막으로 만진 시각이 아니다. 후자가 필요해지면 **칸을 새로 세운다**(있는 칸의 뜻을 바꾸면
  * 옛 행의 값이 조용히 거짓이 된다).
  */
@@ -176,7 +176,7 @@ const UPDATE_SQL = `
   WHERE id = ?
 `
 
-/** 넣을 때와 **같은 검증**을 탄다 — 아니면 정정 2 ③ 의 방어가 수정 쪽에서 반쪽이 된다. */
+/** 넣을 때와 **같은 검증**을 탄다. 아니면 정정 2 ③ 의 방어가 수정 쪽에서 반쪽이 된다. */
 export async function updateSpendRecord(record: SpendRecord): Promise<void> {
   assertPointRate(record)
 
@@ -199,7 +199,7 @@ export async function updateSpendRecord(record: SpendRecord): Promise<void> {
   ])
 }
 
-/** 한 건만 지운다 — 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */
+/** 한 건만 지운다. 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */
 export async function deleteSpendRecord(id: string): Promise<void> {
   const db = await getBossProfitDb()
   await db.run(`DELETE FROM spend_records WHERE id = ?`, [id])

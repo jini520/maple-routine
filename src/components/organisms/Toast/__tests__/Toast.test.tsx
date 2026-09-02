@@ -2,19 +2,19 @@
 //
 // · **액션 아이콘 케이스**: 웹은 `svg.classList` 로 lucide 아이콘을 구분했다. RN 의 lucide 는
 //   `testID` 를 삼키므로(`nativewind-interop.ts`) 그 아이콘이 실제로 그린 **`Path` 의 `d`** 를
-//   비교한다 — 기대값을 손으로 적지 않고 두 아이콘을 나란히 렌더해 서로 다름을 본다.
-//   **한 케이스 안에서 `unmount()` 후 다시 렌더하지 않는다** — RNTL 14 에서 그러면 이후 렌더가
+//   비교한다. 기대값을 손으로 적지 않고 두 아이콘을 나란히 렌더해 서로 다름을 본다.
+//   **한 케이스 안에서 `unmount()` 후 다시 렌더하지 않는다**. RNTL 14 에서 그러면 이후 렌더가
 //   빈 트리가 되고(실측), 그 트리를 스냅샷으로 굳히면 아무것도 안 지키는 기준선이 남는다.
 // · **스와이프**: `fireEvent.pointer` → responder 이벤트. 좌표가 `clientX` → `pageX` 로 바뀔 뿐
 //   임계값 판정은 같은 `shouldDismissFromSwipe` 다.
 // · `role`·`aria-live` 는 그대로 남았다(RN 이 같은 이름의 프롭을 받는다).
-// · 타이머 바는 **있고 없음만** 지킨다 — 줄어드는 것은 Reanimated 가 UI 스레드에서 하는 일이라
+// · 타이머 바는 **있고 없음만** 지킨다. 줄어드는 것은 Reanimated 가 UI 스레드에서 하는 일이라
 //   렌더 트리에는 선언(`animationName`·`animationDuration`)만 남는다. 그 선언을 웹
 //   `@keyframes toast-shrink` 와 대조하던 `keyframes-parity.test.ts` 는 웹 소스와 함께 지워졌다
 //
 jest.mock('react-native-reanimated', () =>
-  // `jest.mock` 팩토리는 import 위로 끌어올려져 **밖의 값을 참조할 수 없다** — 그래서 `require` 가
-  // 선택이 아니라 유일한 길이다(`reduced-motion.ts` `쓰는 법`).
+  // `jest.mock` 팩토리는 import 위로 끌어올려져 **밖의 값을 참조할 수 없다**. 그래서 `require` 가
+  // 선택이 아니라 이 길뿐이다(`reduced-motion.ts` `쓰는 법`).
   require('../../../__tests__/reduced-motion').reanimatedWithReducedMotion(),
 )
 
@@ -83,7 +83,7 @@ describe('Toast', () => {
     expect(onDismiss).toHaveBeenCalledTimes(1)
   })
 
-  // : 기본 아이콘은 '다시 시도'를 전제한 RefreshCw 다 — 뜻이 다른 액션은 자기 아이콘을
+  // : 기본 아이콘은 '다시 시도'를 전제한 RefreshCw 다. 뜻이 다른 액션은 자기 아이콘을
   // 넘겨야 하고, 그러지 않으면 무엇을 하는 버튼인지 어긋난다.
   it('action.icon 을 주면 기본 새로고침 아이콘 대신 그 아이콘을 그린다', async () => {
     const { getByLabelText } = await renderAtom(
@@ -92,7 +92,7 @@ describe('Toast', () => {
         <Toast
           toast={makeToast({
             id: 'toast-2',
-            // **core 의 타입이 웹을 향해 있다** — `ToastAction.icon` 이 `lucide-react` 의
+            // **core 의 타입이 웹을 향해 있다**. `ToastAction.icon` 이 `lucide-react` 의
             // `LucideIcon` 이라 `lucide-react-native` 아이콘이 그대로 안 들어간다(SVG DOM 프롭이
             // 달라 `fillRule` 에서 갈린다). core 는 이 단계에서 손대지 않는 것이 원칙이라
             // (원칙 3) 여기서는 캐스팅으로 넘기고, **호출부가 아이콘을 넘기는 화면
@@ -151,7 +151,7 @@ describe('Toast', () => {
   })
 })
 
-// 임계값(70px)은 `../swipe-dismiss` 가 갖는다 — 여기서는 그 판정이 제스처에 이어지는지만 본다.
+// 임계값(70px)은 `../swipe-dismiss` 가 갖는다. 여기서는 그 판정이 제스처에 이어지는지만 본다.
 describe('Toast — 스와이프로 닫기', () => {
   /** 시작 → 이동 → 뗌. 웹판이 `pointerdown/move/up` 을 순서대로 쏘던 것과 같다. */
   async function swipe(root: AtomElement, dx: number): Promise<void> {
@@ -180,7 +180,7 @@ describe('Toast — 스와이프로 닫기', () => {
 })
 
 // 모션 줄이기 — 웹의 `motion-reduce:hidden`(파일 머리 ②). 줄지 않는 막대를 남기면 "시간이 안 간다"로
-// 읽히므로 통째로 없앤다. **바깥 껍데기(`toast-timer`)는 남는다** — 자리를 차지하지 않는 절대 배치라
+// 읽히므로 통째로 없앤다. **바깥 껍데기(`toast-timer`)는 남는다**. 자리를 차지하지 않는 절대 배치라
 // 있고 없고가 레이아웃을 바꾸지 않고, 웹도 `motion-reduce:hidden` 을 안쪽 바에만 걸었다.
 describe('Toast — 모션 줄이기', () => {
   it('켜져 있으면 남은 시간 바가 그려지지 않는다', async () => {

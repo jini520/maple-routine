@@ -1,11 +1,11 @@
-// **주간** 컨텐츠 카드(로 화면에서 분리) — 에픽 던전·지역 주간 퀘스트·
+// **주간** 컨텐츠 카드(로 화면에서 분리). 에픽 던전·지역 주간 퀘스트·
 // 메이플 유니온·길드 3종.
 //
 // 카드마다 배경 일러스트와 배지 구성이 다르고, 어느 것을 그릴지는 `renderWeeklyContentCard` 가
 // 이름으로 가른다. 전부 자기 카드 안에서 끝나 화면의 고정 헤더와 무관하다.
 //
 // RN 으로 갈린 것은 일간 카드와 **같은 넷**이라 그쪽 파일 머리에 한 번만 적는다
-// (`DailyContentCards.tsx`) — bleed 는 `FadedIllustration`, 껍데기는 `IllustratedCard`, `flex-row` 명시,
+// (`DailyContentCards.tsx`). bleed 는 `FadedIllustration`, 껍데기는 `IllustratedCard`, `flex-row` 명시,
 // `<img>`/`<span>`/`text-shadow` 의 짝.
 import { isContentBlocked } from '../../lib/scheduler/required-level'
 import {
@@ -84,7 +84,7 @@ export function EpicDungeonCard(props: {
           </Text>
         </View>
 
-        {/* — 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
+        {/*. 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
         {props.isBlocked === true ? (
           <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
         ) : (
@@ -134,7 +134,7 @@ export function WeeklyRegionalContentCard(props: {
           </Text>
         </View>
 
-        {/* — 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
+        {/*. 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
         {props.isBlocked === true ? (
           <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
         ) : (
@@ -176,7 +176,7 @@ export function WeeklyQuestCard(props: {
           </Text>
         </View>
 
-        {/* — 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
+        {/*. 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
         {props.isBlocked === true ? (
           <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
         ) : (
@@ -324,7 +324,7 @@ export function renderWeeklyContentCard(
   /** 이 카드를 보는 캐릭터의 레벨 — 판정은 `lib/scheduler/required-level` 한 곳이 한다. */
   characterLevel: number | null,
 ): React.JSX.Element {
-  // 길드 셋과 유니온 둘은 참조표에 요구 레벨이 **없다** — 어떤 레벨에서도 진행 가능이라
+  // 길드 셋과 유니온 둘은 참조표에 요구 레벨이 **없다**. 어떤 레벨에서도 진행 가능이라
   // 그 카드들에는 이 프롭을 넘기지 않는다(`대가`).
   const isBlocked = isContentBlocked(characterLevel, content.name)
 

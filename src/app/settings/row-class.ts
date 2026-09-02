@@ -19,10 +19,10 @@ export const SETTINGS_ROW_CLASS = 'w-full flex-row items-center justify-between 
  *
  * 웹은 부모 카드가 `divide-y divide-border` 로 **형제 사이에만** 선을 그렸다(첫 자식 제외).
  * NativeWind 에는 형제 선택자가 없어 그 유틸리티가 없으므로, 부모가 첫 행을 제외한 나머지에
- * 이 클래스를 직접 얹는다 — `divide-y` 가 생성하던 규칙(`border-top`, 첫 자식 제외)과 **같은
+ * 이 클래스를 직접 얹는다. `divide-y` 가 생성하던 규칙(`border-top`, 첫 자식 제외)과 **같은
  * 결과**이고, 다른 것은 그것을 CSS 가 아니라 호출부가 고른다는 점뿐이다.
  *
- * 카드가 아니라 행 쪽 파일에 있는 이유는 이 값이 `SETTINGS_ROW_CLASS` 와 짝이라서다 — 행의
+ * 카드가 아니라 행 쪽 파일에 있는 이유는 이 값이 `SETTINGS_ROW_CLASS` 와 짝이라서다. 행의
  * 세로 여백(`py-4`)과 선이 함께 설정 리스트 행 규격을 이룬다.
  */
 export const SETTINGS_ROW_DIVIDER_CLASS = 'border-t border-border'

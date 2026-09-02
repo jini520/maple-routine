@@ -1,15 +1,15 @@
 // 웹판의 다섯이 전부 산다(숨김 · `size` · clipPath 자식은 도형뿐 · id 충돌 없음 · motion-reduce).
-// 다섯째는 **보는 방법이 바뀌었다** — 클래스 문자열이 없어 *"반복 애니메이션을 걸었는가"* 를 본다
+// 다섯째는 **보는 방법이 바뀌었다**. 클래스 문자열이 없어 *"반복 애니메이션을 걸었는가"* 를 본다
 // (`reduced-motion.ts` 의 `withRepeatSpy` 주석). 이동 거리·지속시간·이징을 웹 원본과 대조하던
 // `keyframes-parity.test.ts` 는 웹 소스와 함께 지워져 지금 그 셋을 보는
 // 곳은 없다.
 //
 // 여기에 RN 에서 새로 생긴 계약 하나가 더해진다: **띠의 색이 `currentColor`, 페이드가 마스크**라는 것.
 // 웹처럼 그라디언트 정지점에 `currentColor` 를 쓰면 `react-native-svg` 가 경고만 찍고 그라디언트를
-// **비운다** — 색 없는 띠는 조용한 실패라, 되돌아가는 것을 여기서 막는다(컴포넌트 주석 ①).
+// **비운다**. 색 없는 띠는 조용한 실패라, 되돌아가는 것을 여기서 막는다(컴포넌트 주석 ①).
 jest.mock('react-native-reanimated', () =>
-  // `jest.mock` 팩토리는 import 위로 끌어올려져 **밖의 값을 참조할 수 없다** — 그래서 `require` 가
-  // 선택이 아니라 유일한 길이다(`reduced-motion.ts` `쓰는 법`).
+  // `jest.mock` 팩토리는 import 위로 끌어올려져 **밖의 값을 참조할 수 없다**. 그래서 `require` 가
+  // 선택이 아니라 이 길뿐이다(`reduced-motion.ts` `쓰는 법`).
   require('../../../__tests__/reduced-motion').reanimatedWithReducedMotion(),
 )
 
@@ -102,9 +102,9 @@ describe('MapleSweepSpinner', () => {
   //
   // 이식 당시 마스크는 `maskUnits`·`maskContentUnits` 를 **둘 다 `objectBoundingBox`** 로 두고
   // 램프를 `<Rect x=0 y=0 width=1 height=1>` 로 적었다. 그런데 `react-native-svg`(15.15.4)는
-  // **`maskContentUnits` 를 렌더 시 읽지 않는다** — 안드로이드 `RenderableView.java` 도 iOS
+  // **`maskContentUnits` 를 렌더 시 읽지 않는다**. 안드로이드 `RenderableView.java` 도 iOS
   // `RNSVGRenderable.mm` 도 `maskUnits` 만 본다. 그래서 그 램프가 **1×1 픽셀**로 그려지고,
-  // 마스크가 사실상 투명해져 `DST_IN` 이 띠를 통째로 지웠다 — 실기기에서 **띠가 한 번도 보인 적이
+  // 마스크가 사실상 투명해져 `DST_IN` 이 띠를 통째로 지웠다. 실기기에서 **띠가 한 번도 보인 적이
   // 없었다**(두 플랫폼 다, 2026-08-18).
   //
   // 그 실패는 **렌더 트리에서 보이지 않는다**(마스크도 램프도 **있다**). 보이는 것은 **좌표의 단위**뿐이라
@@ -136,7 +136,7 @@ describe('MapleSweepSpinner — 모션 줄이기', () => {
     const tree = (await renderAtom(<MapleSweepSpinner />)).toJSON()
 
     expect(withRepeatSpy).not.toHaveBeenCalled()
-    // 띠가 시작 위치(잎 아래·viewBox 밖)에 머물러 **바탕 잎만** 남는다 — 웹에서 `animation: none` 이
+    // 띠가 시작 위치(잎 아래·viewBox 밖)에 머물러 **바탕 잎만** 남는다. 웹에서 `animation: none` 이
     // 보여주던 그림 그대로다. 이 좌표는 렌더 트리에 남으므로 여기서 볼 수 있다.
     const band = findAllOfType(tree, 'RNSVGRect').find((rect) => rect.props.mask !== undefined)
     expect(band?.props.y).toBe(140)

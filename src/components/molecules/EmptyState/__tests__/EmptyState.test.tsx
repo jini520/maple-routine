@@ -2,7 +2,7 @@
 // (RN 에 클래스가 안 남는다), 그 밖의 계약은 한 줄도 줄이지 않았다.
 //
 // `EmptyState` 의 `icon` 은 lucide 아이콘도 커스텀 아이콘도 받는다. 여기서
-// `atoms/Icon/lucide` 를 거쳐 가져오는 것이 요점이다 — 직접 `lucide-react-native` 에서 가져오면 `className`
+// `atoms/Icon/lucide` 를 거쳐 가져오는 것이 요점이다. 직접 `lucide-react-native` 에서 가져오면 `className`
 // 이 조용히 무시된다(그 파일 주석).
 import { fireEvent } from '@testing-library/react-native'
 import Swords from 'lucide-react-native/icons/swords'

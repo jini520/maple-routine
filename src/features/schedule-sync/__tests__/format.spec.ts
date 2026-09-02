@@ -52,7 +52,7 @@ describe('formatRosterError', () => {
   })
 
   // '합니다'를 함께 허용하는 것은 규칙(ADR-062 결정 5)을 푸는 게 아니라 같은 하십시오체(~ㅂ니다)의
-  // 다른 활용이기 때문이다 — 아래 formatStaleRosterError가 '아닙니다'를 허용하는 것과 같은 이유고,
+  // 다른 활용이기 때문이다. 아래 formatStaleRosterError가 '아닙니다'를 허용하는 것과 같은 이유고,
   // 피커 401의 '키 입력 화면으로 이동합니다'(ADR-115 결정 1·7)가 그 경우다.
   it('모든 문구가 에러 어미 규칙(~습니다 / ~주세요)을 따른다', () => {
     const kinds: ScheduleSyncError[] = [{ kind: 'invalidApiKey' }, { kind: 'rateLimited' }, { kind: 'network' }]
@@ -78,7 +78,7 @@ describe('formatRosterError', () => {
   })
 
   // 회귀 가드: 온보딩 중에는 무효화 경로가 성립하지 않으므로(status가 completed가 아니다,
-  // ADR-115 결정 6) 그 실패는 폼 자체의 에러이고 재시도가 실제 처방이다 — 이 phase가 이 자리를
+  // ADR-115 결정 6) 그 실패는 폼 자체의 에러이고 재시도가 실제 처방이다. 이 phase가 이 자리를
   // 건드리지 않았음이 이 단언으로 증명된다.
   it('온보딩의 invalidApiKey는 문구·액션이 그대로다 — 재시도가 실제 처방인 자리', () => {
     const copy = formatRosterError({ kind: 'invalidApiKey' }, 'onboarding')
@@ -111,10 +111,10 @@ describe('formatRosterError', () => {
 })
 
 // ADR-114 결정 3: 스탈 배너가 원인을 무시하던 것(호출부 2곳이 "목록이 최신이 아닙니다"를
-// 하드코딩)을 원인별로 가른다. ErrorState와 갈리는 근거는 자리다 — 배너는 목록이 남아 있어
+// 하드코딩)을 원인별로 가른다. ErrorState와 갈리는 근거는 자리다. 배너는 목록이 남아 있어
 // 액션이 없어도 막다른 길이 아니다.
 //
-// ADR-115 결정 7: 401의 `설정 열기`가 사라지면서 6종이 두 자리에서 전부 같아졌다 — place를
+// ADR-115 결정 7: 401의 `설정 열기`가 사라지면서 6종이 두 자리에서 전부 같아졌다. place를
 // 아무 데서도 쓰지 않게 돼 파라미터 자체가 없어졌다(시그니처가 인자 1개다).
 describe('formatStaleRosterError', () => {
   const KINDS: ScheduleSyncError['kind'][] = [
@@ -156,7 +156,7 @@ describe('formatStaleRosterError', () => {
   })
 
   // ADR-115 결정 7: 배너가 뜨는 순간 키 무효화가 화면을 키 입력으로 보내므로 누를 것이 없다.
-  // 문구는 그대로다 — 바뀐 것은 액션뿐이다.
+  // 문구는 그대로다. 바뀐 것은 액션뿐이다.
   it('invalidApiKey는 문구를 유지하고 액션만 잃는다 — 어디서도 설정으로 보내지 않는다', () => {
     const copy = formatStaleRosterError({ kind: 'invalidApiKey' })
 

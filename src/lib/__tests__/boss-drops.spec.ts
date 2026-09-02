@@ -41,7 +41,7 @@ describe('getBossDropCandidates', () => {
     expect(names).toContain('백옥의 보스 반지 상자') // 익스트림
   })
 
-  // ADR-070: 옛 scroll 카테고리는 코드가 순회하지 않아 화면에 나온 적이 없다 — consumable로
+  // ADR-070: 옛 scroll 카테고리는 코드가 순회하지 않아 화면에 나온 적이 없다. consumable로
   // 흡수했으니 이제 선택 후보로 잡혀야 한다.
   it('주문서 교환권 3종은 소비 후보로 노출된다 (가디언 엔젤 슬라임 카오스)', () => {
     const coupons = getBossDropCandidates('가디언 엔젤 슬라임').filter((candidate) =>
@@ -296,7 +296,7 @@ describe('planConfirmedDifficultyDropMigration', () => {
 // ⚠️ 가격이 조용히 사라지는 자리 그 ①
 //
 // `toRecordedDrop` 이 필드를 손으로 옮겨 적으므로, 새 컬럼을 빠뜨려도 **타입 에러 없이 통과하고**
-// 값만 `undefined` 가 된다. 화면에는 "미입력"으로 보여 버그로 인지되기까지 오래 걸린다 — 그래서
+// 값만 `undefined` 가 된다. 화면에는 "미입력"으로 보여 버그로 인지되기까지 오래 걸린다. 그래서
 // 이관 계산에 가격 생존을 직접 못 박는다.
 describe('planConfirmedDifficultyDropMigration — 가격 생존 (ADR-124)', () => {
   it('이관된 드롭이 가격 세 필드를 그대로 들고 간다', () => {

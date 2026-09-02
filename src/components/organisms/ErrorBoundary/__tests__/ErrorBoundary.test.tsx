@@ -1,11 +1,11 @@
 // 웹판 일곱을 옮겼다. 갈린 것 둘.
 //
 // · *"다시 시작을 누르면 리로드한다"* → **주입한 `onRestart` 를 부른다**. RN 에는
-//   `window.location.reload()` 짝이 없어 기본값이 없어졌다(`ErrorBoundary.tsx` 파일 머리) — 웹에서
+//   `window.location.reload()` 짝이 없어 기본값이 없어졌다(`ErrorBoundary.tsx` 파일 머리). 웹에서
 //   테스트 전용이던 프롭이 여기서는 계약이라, 이 케이스가 그 계약을 지킨다.
 // *"폴백이 뜨면 스플래시를 내린다"* 는 그대로 남지만 **이유가 하나로 줄어든다**(
-//   결정 6 의 셋 중 ⑵만 RN 에 성립한다 — 나머지 둘은 웹뷰/Capacitor 플러그인 사정이었다).
-// `jest.mock` 팩토리는 호이스팅돼 스코프 밖 변수를 못 읽는다 — **`mock` 접두 이름만** 예외다.
+//   결정 6 의 셋 중 ⑵만 RN 에 성립한다. 나머지 둘은 웹뷰/Capacitor 플러그인 사정이었다).
+// `jest.mock` 팩토리는 호이스팅돼 스코프 밖 변수를 못 읽는다. **`mock` 접두 이름만** 예외다.
 const mockHideSplashScreen = jest.fn()
 
 jest.mock('../../../../native/splash-screen', () => ({

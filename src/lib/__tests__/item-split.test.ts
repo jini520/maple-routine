@@ -1,6 +1,6 @@
 // 아이템 분배 계산기의 계산.
 //
-// 이 파일이 지키는 것은 **숫자 하나** 가 아니라 **불변식**이다 — 화면이 검산표를 안 그리기로 했으므로
+// 이 파일이 지키는 것은 **숫자 하나** 가 아니라 **불변식**이다. 화면이 검산표를 안 그리기로 했으므로
 //  **이 값이 맞나** 를 물을 수 있는 자리가 여기뿐이다.
 
 import { MAX_SALE_PRICE_MESO, netProceedsMeso, transferPerMember } from '../cashbook/item-split'
@@ -34,7 +34,7 @@ describe('transferPerMember — 수수료를 거쳐도 같아지는 **보낼 금
     ).toBe(162_479_061)
   })
 
-  // 이것이 이 도구의 존재 이유다 — 명목 ÷n(161,666,666)을 보내면 먹은 사람만 480만을 더 갖는다.
+  // 이것이 이 도구의 존재 이유다. 명목 ÷n(161,666,666)을 보내면 먹은 사람만 480만을 더 갖는다.
   it('명목 ÷n 보다 많이 보낸다 — 먹은 사람도 분배 수수료를 나눠 지기 때문이다', () => {
     const netProceeds = netProceedsMeso(1_000_000_000, 3)
     const naive = Math.floor(netProceeds / 6)
@@ -87,7 +87,7 @@ describe('불변식 — 여섯이 같아진다', () => {
     },
   )
 
-  // 버림이라 남는 메소는 먹은 사람에게 간다 — 파티원이 더 받는 일은 없다…
+  // 버림이라 남는 메소는 먹은 사람에게 간다. 파티원이 더 받는 일은 없다…
   // …단 **내림한 수수료** 가 최대 1 메소를 되돌려 주므로 그만큼은 허용한다.
   it.each(CASES)(
     '판매가 $salePriceMeso · $partySize 인 — 먹은 사람이 손해 보지 않는다',
@@ -108,7 +108,7 @@ describe('불변식 — 여섯이 같아진다', () => {
     expect(netProceedsMeso(MAX_SALE_PRICE_MESO, 3) * 100).toBeLessThanOrEqual(Number.MAX_SAFE_INTEGER)
   })
 
-  // 보내는 쪽이 가진 것보다 많이 보내는 일은 없다 — 2인에서 가장 아슬아슬하다.
+  // 보내는 쪽이 가진 것보다 많이 보내는 일은 없다. 2인에서 가장 아슬아슬하다.
   it.each(CASES)('판매가 $salePriceMeso · $partySize 인 — 가진 것보다 많이 보내지 않는다', (input) => {
     const transfer = transferPerMember(input)
     if (transfer === null) throw new Error('보낼 금액이 없다')

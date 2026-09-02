@@ -135,7 +135,7 @@ describe('useOnboardingStore.restoreFromStorage', () => {
       const state = useOnboardingStore.getState()
       expect(state.status).toBe('selectingTrackingMode')
       expect(setTrackingModeMock).not.toHaveBeenCalled()
-      // 뒤 단계는 네트워크 없이 재개된다 — 예열을 다시 돌리지 않는다.
+      // 뒤 단계는 네트워크 없이 재개된다. 예열을 다시 돌리지 않는다.
       expect(fetchCharacterListMock).not.toHaveBeenCalled()
     })
 
@@ -186,7 +186,7 @@ describe('useOnboardingStore.restoreFromStorage', () => {
 describe('useOnboardingStore.submitApiKey — 무효 키(400 OPENAPI00005)', () => {
   // ADR-115 결정 9: 넥슨은 무효 키에 401 이 아니라 400 OPENAPI00005 를 준다(실측 2026-08-08).
   // 전에는 이 경로가 "모르는 400"이라 network 로 degrade 돼, 키를 잘못 입력한 사용자에게
-  // 화면이 "네트워크 오류가 발생했습니다"라고 말했다 — 원인이 키인데 네트워크를 가리켰다.
+  // 화면이 "네트워크 오류가 발생했습니다"라고 말했다. 원인이 키인데 네트워크를 가리켰다.
   it('400 OPENAPI00005 면 invalidApiKey 로 알린다(network 가 아니다)', async () => {
     fetchCharacterListMock.mockRejectedValue(new NexonBadRequestError('x', 'OPENAPI00005'))
 
@@ -233,7 +233,7 @@ describe('useOnboardingStore.submitApiKey', () => {
     expect(setApiKeyMock).not.toHaveBeenCalled()
   })
 
-  // ADR-065 결정 1: 전에는 원인과 무관하게 한 문구였다 — 바로 아래에서 원인을 계산해 state에
+  // ADR-065 결정 1: 전에는 원인과 무관하게 한 문구였다. 바로 아래에서 원인을 계산해 state에
   // 넣으면서도 토스트는 그 값을 쓰지 않았다.
   it.each([
     [new NexonAuthError('invalid'), 'API 키가 유효하지 않습니다'],
@@ -249,7 +249,7 @@ describe('useOnboardingStore.submitApiKey', () => {
     expect(showSuccessMock).not.toHaveBeenCalled()
   })
 
-  // ADR-065 결정 1: 전에는 setApiKey가 try 밖이라 미처리 rejection이었다 — 아무 일도 안 일어난
+  // ADR-065 결정 1: 전에는 setApiKey가 try 밖이라 미처리 rejection이었다. 아무 일도 안 일어난
   // 것처럼 보였다. storageWriteFailed 문구가 이 경로로 처음 도달 가능해진다.
   it('키 저장에 실패하면 storageWriteFailed 상태 + 토스트로 알린다', async () => {
     fetchCharacterListMock.mockResolvedValue([{ accountId: 'acc-1', characters: [] }])
@@ -283,7 +283,7 @@ describe('useOnboardingStore.submitApiKey', () => {
     expect(state.error).toEqual({ kind: 'network' })
   })
 
-  // ADR-115 결정 4·5: 키를 다시 넣으면 뒤 단계는 저장된 값으로 재개한다 — 계정 선택·트래킹 모드·
+  // ADR-115 결정 4·5: 키를 다시 넣으면 뒤 단계는 저장된 값으로 재개한다. 계정 선택·트래킹 모드·
   // 추적 캐릭터를 다시 묻지 않는다. 전에는 성공이 무조건 selectingAccount로 가고 selectedAccountId를
   // 리셋해, 키 하나 때문에 계정 선택부터 캐릭터 선택까지 전부를 다시 시켰다.
   describe('키 재입력 후 재개 (ADR-115 결정 4·5)', () => {
@@ -301,7 +301,7 @@ describe('useOnboardingStore.submitApiKey', () => {
       const state = useOnboardingStore.getState()
       expect(state.status).toBe('completed')
       expect(seen).not.toContain('selectingAccount')
-      // 예열(ADR-016)을 다시 돌리지 않는다 — 캐시가 이미 따뜻하다.
+      // 예열(ADR-016)을 다시 돌리지 않는다. 캐시가 이미 따뜻하다.
       // 성공 토스트는 두 갈래 모두에서 그대로 뜬다.
       expect(showSuccessMock).toHaveBeenCalledWith('API 키를 확인했어요')
     })
@@ -389,7 +389,7 @@ describe('useOnboardingStore.submitApiKey', () => {
 
       expect(useOnboardingStore.getState().status).toBe('completed')
       expect(seen).not.toContain('selectingAccount')
-      // 판정은 이미 손에 있는 응답으로 한다 — character/list 는 검증 때 부른 한 번뿐이다.
+      // 판정은 이미 손에 있는 응답으로 한다. character/list 는 검증 때 부른 한 번뿐이다.
       expect(fetchCharacterListMock).toHaveBeenCalledTimes(1)
     })
 
@@ -411,7 +411,7 @@ describe('useOnboardingStore.submitApiKey', () => {
 
       const state = useOnboardingStore.getState()
       expect(state.status).toBe('selectingContentCharacters')
-      // 계정 선택은 RN 에 없는 단계다 — 여기로 떨어뜨리면 갈 수 없는 화면으로 보내는 것이다.
+      // 계정 선택은 RN 에 없는 단계다. 여기로 떨어뜨리면 갈 수 없는 화면으로 보내는 것이다.
       expect(state.accounts).toEqual([])
     })
 
@@ -438,7 +438,7 @@ describe('useOnboardingStore.submitApiKey', () => {
     })
 
     // 웹뷰 앱에서 넘어온 설치본에는 selectedAccountId 가 남아 있다. 그 값이 새 응답에 없어도
-    // 'single' 가드처럼 계정 선택으로 되돌리지 않는다 — RN 에서 그 값은 읽지 않는다(결정 7).
+    // 'single' 가드처럼 계정 선택으로 되돌리지 않는다. RN 에서 그 값은 읽지 않는다(결정 7).
     it('저장된 selectedAccountId가 응답에 없어도 ocid가 겹치면 재개한다', async () => {
       getAuthConfigMock.mockResolvedValue({ apiKey: 'key-2' })
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-acc-9'])
@@ -451,7 +451,7 @@ describe('useOnboardingStore.submitApiKey', () => {
   })
 })
 
-// ADR-086 결정 8: 고른 계정에 고를 수 있는 캐릭터가 하나도 없을 때의 유일한 탈출구.
+// ADR-086 결정 8: 고른 계정에 고를 수 있는 캐릭터가 하나도 없을 때의 탈출구는 이것뿐이다.
 describe('useOnboardingStore.restartAccountSelection', () => {
 })
 
@@ -571,8 +571,8 @@ describe('useOnboardingStore.submitContentCharacters', () => {
   })
 })
 
-// ADR-115 결정 10 · ADR-116 결정 1: 저장된 키로 앞으로 갈 수 없게 됐을 때 부르는 유일한 진입점.
-// 원인은 둘(무효 키 400 OPENAPI00005·401/403 · 429)이고 사슬은 하나다 — 처방이 같아 화면도 같다.
+// ADR-115 결정 10 · ADR-116 결정 1: 저장된 키로 앞으로 갈 수 없게 됐을 때 부르는 진입점은 이것뿐이다.
+// 원인은 둘(무효 키 400 OPENAPI00005·401/403 · 429)이고 사슬은 하나다. 처방이 같아 화면도 같다.
 // **알리기만 하고** 이동·삭제는 사용자가 "확인"을 눌러야(confirmApiKeyNotice) 일어난다 —
 // 결정 1의 "토스트 + 즉시 이동"은 폐기됐다(이유를 읽기 전에 화면이 바뀌면 원인과 결과가 안 이어진다).
 describe('useOnboardingStore.noticeApiKeyIssue', () => {
@@ -599,7 +599,7 @@ describe('useOnboardingStore.noticeApiKeyIssue', () => {
     },
   )
 
-  // 알리는 시점에는 아무것도 지우지 않는다 — 확인 전에 지우면 사용자가 취소할 수 없는 일이 이미 끝난다.
+  // 알리는 시점에는 아무것도 지우지 않는다. 확인 전에 지우면 사용자가 취소할 수 없는 일이 이미 끝난다.
   it.each(['invalid', 'rateLimited'] as const)(
     '%s — 저장소를 건드리지 않고 토스트도 띄우지 않는다(문구는 모달이 말한다)',
     (kind) => {
@@ -613,8 +613,8 @@ describe('useOnboardingStore.noticeApiKeyIssue', () => {
     },
   )
 
-  // ADR-115 결정 6: 동기 함수라 이 구간이 원자적이다 — 동시 실패가 모달 하나로 접힌다.
-  // ADR-116 결정 2: 원인이 겹치면 **먼저 뜬 것**을 유지한다 — 읽던 문구가 눈앞에서 바뀌면 안 된다.
+  // ADR-115 결정 6: 동기 함수라 이 구간이 원자적이다. 동시 실패가 모달 하나로 접힌다.
+  // ADR-116 결정 2: 원인이 겹치면 **먼저 뜬 것**을 유지한다. 읽던 문구가 눈앞에서 바뀌면 안 된다.
   it('연달아 불러도 알림은 한 번뿐이고 먼저 뜬 원인이 유지된다', () => {
     primeCompleted()
 
@@ -627,7 +627,7 @@ describe('useOnboardingStore.noticeApiKeyIssue', () => {
   })
 
   // ADR-116 결정 2: 가드는 "키 입력 화면인가"만 본다. 그 두 상태가 곧 "이미 키 입력 화면"이라
-  // 보낼 곳이 없고, 그래서 재이동 루프도 여전히 불가능하다 — 폼 실패는 폼 토스트가 맡는다.
+  // 보낼 곳이 없고, 그래서 재이동 루프도 여전히 불가능하다. 폼 실패는 폼 토스트가 맡는다.
   it.each(['awaitingApiKey', 'verifyingApiKey'] as const)(
     '키 입력 화면(%s)에서는 알리지 않는다',
     (status) => {
@@ -662,7 +662,7 @@ describe('useOnboardingStore.noticeApiKeyIssue', () => {
 
     const state = useOnboardingStore.getState()
     expect(state.apiKeyNotice).toBe('rateLimited')
-    // 알리기만 한다 — status를 뒤집는 것은 확인(confirmApiKeyNotice)의 몫이다.
+    // 알리기만 한다. status를 뒤집는 것은 확인(confirmApiKeyNotice)의 몫이다.
     expect(state.status).toBe(status)
     expect(removeApiKeyMock).not.toHaveBeenCalled()
   })
@@ -678,7 +678,7 @@ describe('useOnboardingStore.confirmApiKeyNotice', () => {
     })
   }
 
-  // 결정 2: 상태를 뒤집는 것이 곧 이동이다 — App.tsx의 isCompleted 가드가 라우터로 보낸다.
+  // 결정 2: 상태를 뒤집는 것이 곧 이동이다. App.tsx의 isCompleted 가드가 라우터로 보낸다.
   it.each(['invalid', 'rateLimited'] as const)(
     '%s — completed를 awaitingApiKey로 되돌린다(알림도 함께 꺼진다)',
     async (kind) => {
@@ -691,7 +691,7 @@ describe('useOnboardingStore.confirmApiKeyNotice', () => {
   )
 
   // ADR-115 결정 3: clearAuthConfig는 selectedAccountId까지 지워 결정 4의 재개를 불가능하게 만든다.
-  // ADR-116 결정 1: 429도 키를 지운다 — 원인별로 갈라 처리하지 않는다.
+  // ADR-116 결정 1: 429도 키를 지운다. 원인별로 갈라 처리하지 않는다.
   it.each(['invalid', 'rateLimited'] as const)(
     '%s — 저장소에서 apiKey만 지운다(연결 해제 경로 clearAuthConfig를 타지 않는다)',
     async (kind) => {
@@ -725,7 +725,7 @@ describe('useOnboardingStore.confirmApiKeyNotice', () => {
     expect(useOnboardingStore.getState().status).toBe('awaitingApiKey')
   })
 
-  // 회귀 가드: 연결 해제와 무효화는 저장소에 하는 일이 다르다 — 섞이면 재개가 조용히 깨진다.
+  // 회귀 가드: 연결 해제와 무효화는 저장소에 하는 일이 다르다. 섞이면 재개가 조용히 깨진다.
   it('reset()은 여전히 clearAuthConfig로 selectedAccountId까지 지운다', async () => {
     primeNoticed()
 

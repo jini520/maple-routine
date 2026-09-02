@@ -193,7 +193,7 @@ describe('실패는 캐시로 폴백하지 않고 그대로 전파한다', () =>
     fetchCharacterBasicMock.mockRejectedValue(error)
 
     await expect(fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)).rejects.toBe(error)
-    // 캐시는 실패 전 값 그대로다 — 새로 쓰지 않았다.
+    // 캐시는 실패 전 값 그대로다. 새로 쓰지 않았다.
     const entry = await getCachedCharacterBasic(OCID)
     expect(entry?.profile).toEqual(stale)
     expect(entry?.cachedAt).not.toBe(NOW.toISOString())

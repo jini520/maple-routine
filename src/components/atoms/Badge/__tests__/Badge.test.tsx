@@ -50,7 +50,7 @@ describe('평면 variant — 색만 갈리고 상자는 같다', () => {
     })
   })
 
-  // 눌린 회색 둘. 배경은 같고 글자만 갈린다 — 진행 불가·시작 안함이 muted, 진행 중이 neutral 이다.
+  // 눌린 회색 둘. 배경은 같고 글자만 갈린다. 진행 불가·시작 안함이 muted, 진행 중이 neutral 이다.
   it('muted 와 neutral 은 배경이 같고 글자가 다르다', async () => {
     const muted = await renderAtom(<Badge variant="muted">진행 불가</Badge>)
     const neutral = await renderAtom(<Badge variant="neutral">진행 중</Badge>)
@@ -74,7 +74,7 @@ describe('평면 variant — 색만 갈리고 상자는 같다', () => {
     const { getByText } = await renderAtom(<Badge variant={variant}>라벨</Badge>)
 
     const style = flattenStyle(getByText('라벨').props.style)
-    // 같은 색이 글자는 진하게, 배경은 옅게 깔린다. `33` 이 20% 알파다 — 이것이 조용히 사라지면
+    // 같은 색이 글자는 진하게, 배경은 옅게 깔린다. `33` 이 20% 알파다. 이것이 조용히 사라지면
     // 배경이 글자와 같은 진하기가 되어 라벨을 못 읽는다.
     expect(style.color).toBe(`#${hex}`)
     expect(style.backgroundColor).toBe(`#${hex}33`)
@@ -103,7 +103,7 @@ describe('난이도 variant — 그라디언트·테두리·그림자', () => {
 
     const box = boxOf(getByText('익스트림'))
     expect(box.props.colors).toEqual(['#3c3c3c', '#1c1414'].map(processColor))
-    // 방향을 기본값에 기대지 않는다 — 뒤집히면 그림이 조용히 달라진다.
+    // 방향을 기본값에 기대지 않는다. 뒤집히면 그림이 조용히 달라진다.
     expect(box.props.startPoint).toEqual([0.5, 0])
     expect(box.props.endPoint).toEqual([0.5, 1])
   })
@@ -283,7 +283,7 @@ describe('글자 배수', () => {
 })
 
 describe('프롭', () => {
-  // 같은 색을 다른 두께로 쓰는 자리가 있다 — 보스 스케줄러의 마감 배지가 muted 인데 bold 다.
+  // 같은 색을 다른 두께로 쓰는 자리가 있다. 보스 스케줄러의 마감 배지가 muted 인데 bold 다.
   // 클래스로는 못 덮는다(NativeWind 가 두께 충돌을 문자열 순서로 안 푼다).
   it('weight 가 variant 의 기본 두께를 덮는다', async () => {
     const 기본 = await renderAtom(<Badge variant="muted">마감</Badge>)

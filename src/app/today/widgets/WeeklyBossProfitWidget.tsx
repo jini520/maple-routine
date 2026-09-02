@@ -3,7 +3,7 @@
  *
  * ## 이 타일에는 증감이 없다
  *
- * `rise`/`fall` 토큰도 `previousPeriodTotalMeso` 도 쓰지 않는다 — 그것들은 보스 수익 화면에 그대로
+ * `rise`/`fall` 토큰도 `previousPeriodTotalMeso` 도 쓰지 않는다. 그것들은 보스 수익 화면에 그대로
  * 살아 있고 **여기서만** 안 쓴다. 그 자리를 채우는 것은 시간축 비교가 아니라 **구성
  * 비교**다: 이번 주 수익이 결정석에서 왔는지 아이템 판매에서 왔는지는 그 자체로 이번 주의 사실이라
  * 다른 기간을 조회하지 않는다. 색은 링과 같은 짝이다(`primary` = 결정석 · `third` = 아이템).
@@ -11,27 +11,27 @@
  * ## 0 을 그리는 위젯은 이것뿐이다
  *
  * 큰 0 을 그리지 않는다를 이 타일에서만 뒤집는다(사용자 지시). 그 규칙이
- * 지키려던 것 — 없다 와 모른다 를 가르는 일 — 은 옆의 한 줄(*아직 이번 주 기록이 없습니다*)이
+ * 지키려던 것. 없다 와 모른다 를 가르는 일 — 은 옆의 한 줄(*아직 이번 주 기록이 없습니다*)이
  * 진다. 그때는 **스택 바와 분해 금액도 함께 사라진다**: 0/0 인 바와 결정석 0 · 아이템 0은 분해할
  * 것이 없는데 분해한 척이다.
  *
  * ## 금액은 접고, 굴리지 않는다
  *
- * `formatMesoShort` 를 쓴다 — 접는 규칙을 두 벌로 만들면 이 타일과 보스 수익 화면이 다르게 접는다.
+ * `formatMesoShort` 를 쓴다. 접는 규칙을 두 벌로 만들면 이 타일과 보스 수익 화면이 다르게 접는다.
  * 그래서 **카운트업(`useCountUp`)도 안 쓴다**: 그쪽은 `toLocaleString()` 의 자릿수 전체를 굴리는
  * 물건이라 접힌 표기(`12.0억`)와 애초에 짝이 맞지 않고 결정 6이 카운트업을 건 범위도
  * 보스 수익 화면이다.
  *
  * ## 높이는 내용이 정한다
  *
- * 기본 배치에서 이 타일은 `4×auto` 다 — 캐릭터 상한이 셋이라(`TOP_CHARACTER_COUNT`) 자랄 폭이 좁고,
+ * 기본 배치에서 이 타일은 `4×auto` 다. 캐릭터 상한이 셋이라(`TOP_CHARACTER_COUNT`) 자랄 폭이 좁고,
  * 고정 3행(270px)이면 캐릭터가 하나일 때 아래가 87px 비었다. 그리는 것은 4x3 과 같고(`variantOf`),
  * 바뀐 것은 **남는 자리가 없다**는 것뿐이다.
  *
  * ## 크기가 버리는 것
  *
  * 4×auto·4x3 은 전부 · 4x2 는 캐릭터 행의 **내역** · 2x2 는 **캐릭터 목록**(158 폭에 이름 + 금액 행이 안
- * 들어간다) · 2x1 은 **금액만**. 단위 메소는 큰 금액 뒤에만 붙고 목록 행에는 안 붙는다 — 머리가
+ * 들어간다) · 2x1 은 **금액만**. 단위 메소는 큰 금액 뒤에만 붙고 목록 행에는 안 붙는다. 머리가
  * 이미 말했다.
  */
 
@@ -46,14 +46,14 @@ import type { WidgetHeight } from '../../../lib/today/widget-layout'
 import type { ProfitSplit, WeeklyProfitCharacterView, WeeklyProfitView } from '../view-model'
 import type { WidgetProps } from './types'
 
-/** 기록이 없을 때 옆에 서는 한 줄 — 큰 `0` 이 없다 로 읽히지 않게 막는 것이 이 줄뿐이다. */
+/** 기록이 없을 때 옆에 서는 한 줄. 큰 `0` 이 없다 로 읽히지 않게 막는 것이 이 줄뿐이다. */
 const NO_RECORD_NOTE = '아직 이번 주 기록이 없습니다'
 
 const PERIOD_LABEL = '이번 주'
 
-/** 스택 바의 두 조각. 조립하지 않는다 — `ProgressBar` 파일 머리 ①과 같은 이유(스캔에 안 잡힌다). */
+/** 스택 바의 두 조각. 조립하지 않는다. `ProgressBar` 파일 머리 ①과 같은 이유(스캔에 안 잡힌다). */
 /**
- * 조각에는 **높이를 박지 않는다** — 트랙의 높이를 그대로 채운다(`h-full`).
+ * 조각에는 **높이를 박지 않는다**. 트랙의 높이를 그대로 채운다(`h-full`).
  *
  * 한때 여기에 `h-1.5` 가 박혀 있었고, 4x3 의 트랙만 키우자 **아래쪽이 빈 채로**
  * 남았다(이 만든 회귀). 트랙 높이가 한 곳(`StackBar`)에서 갈리는데 조각이
@@ -89,11 +89,11 @@ const FACE_PX = 32
 const RANK_SUFFIX = ['st', 'nd', 'rd'] as const
 
 /**
- * 순위 칸의 **바닥**(천장이 아니다 — 와 같은 이유).
+ * 순위 칸의 **바닥**(천장이 아니다. 와 같은 이유).
  *
  * 1st는 폭이 고정된 글자가 아니다(숫자는 `tabular-nums` 라 고정이지만 `st`·`nd`·`rd` 는 아니다).
  * 천장으로 두면 글자가 **줄바꿈되거나 잘리고**, 바닥으로 두면 세 순위가 같은 x 에서 시작하면서도
- * 넘칠 때 칸이 늘어난다. `numberOfLines={1}` 이 그 짝이다 — 폭이 모자라도 두 줄로 안 접힌다.
+ * 넘칠 때 칸이 늘어난다. `numberOfLines={1}` 이 그 짝이다. 폭이 모자라도 두 줄로 안 접힌다.
  */
 const RANK_MIN_WIDTH_PX = 22
 
@@ -122,7 +122,7 @@ function splitOf(split: ProfitSplit): { key: SegmentKey; meso: number }[] {
 /**
  * 스택 조각의 폭.
  *
- * 소수 둘로 끊는 것은 정밀도가 아니라 **안정성** 때문이다 — `0.8 * 100` 이 부동소수점에서
+ * 소수 둘로 끊는 것은 정밀도가 아니라 **안정성** 때문이다. `0.8 * 100` 이 부동소수점에서
  * `80.00000000000001` 이라, 안 끊으면 그 꼴이 폭 문자열과 스냅샷에 그대로 굳는다.
  */
 function percentWidth(meso: number, sum: number): DimensionValue {
@@ -146,7 +146,7 @@ function Amount(props: { meso: number; sizeClass: string }): React.JSX.Element {
  *
  * 두 조각의 폭은 **둘의 합 기준 비율**이라 더하면 언제나 트랙을 꽉 채운다(뷰모델이 그 합을 총액과
  * 같게 보장한다). 합이 0 인 경우(기록은 있는데 가격 미확정 보스뿐)는 나누지 않고 **빈 트랙**을
- * 남긴다 — 0 을 임의의 비율로 그리는 것보다 아무것도 안 그리는 편이 사실이다.
+ * 남긴다. 0 을 임의의 비율로 그리는 것보다 아무것도 안 그리는 편이 사실이다.
  */
 function StackBar(props: { split: ProfitSplit; thick?: boolean }): React.JSX.Element {
   const segments = splitOf(props.split)
@@ -174,7 +174,7 @@ function StackBar(props: { split: ProfitSplit; thick?: boolean }): React.JSX.Ele
 function Breakdown(props: {
   split: ProfitSplit
   column: boolean
-  /** 4x3 은 바가 폭을 다 쓰므로 두 항을 **바의 양 끝에** 세운다 — 어느 조각이 어느 값인지 눈이 잇는다. */
+  /** 4x3 은 바가 폭을 다 쓰므로 두 항을 **바의 양 끝에** 세운다. 어느 조각이 어느 값인지 눈이 잇는다. */
   spread?: boolean
 }): React.JSX.Element {
   return (
@@ -226,7 +226,7 @@ function SplitBlock(props: {
 }
 
 /**
- * 캐릭터 한 줄. **내역은 4x3 에만 선다** — 4x2 의 오른쪽 열은 폭이 타일의 절반도 안 돼 이름과 금액이
+ * 캐릭터 한 줄. **내역은 4x3 에만 선다**. 4x2 의 오른쪽 열은 폭이 타일의 절반도 안 돼 이름과 금액이
  * 먼저다.
  */
 /** 얼굴 — `남은 스케줄`과 **같은 크롭·같은 폴백**이다(두 타일이 같은 캐릭터를 다르게 그리면 안 된다). */
@@ -253,7 +253,7 @@ function Face(props: { character: WeeklyProfitCharacterView }): React.JSX.Elemen
 function CharacterRow(props: {
   character: WeeklyProfitCharacterView
   withSplit: boolean
-  /** 4x3 만 순위와 얼굴을 단다 — 좁은 열에서는 이름과 금액이 먼저다(시안). */
+  /** 4x3 만 순위와 얼굴을 단다. 좁은 열에서는 이름과 금액이 먼저다(시안). */
   rank?: number
 }): React.JSX.Element {
   return (
@@ -287,7 +287,7 @@ function CharacterRow(props: {
             .join(' · ')}
         </Text>
       )}
-      {/* 목록 행에는 `메소`를 안 붙인다 — 머리가 이미 단위를 말했다. */}
+      {/* 목록 행에는 `메소`를 안 붙인다. 머리가 이미 단위를 말했다. */}
       <Text fixed style={TABULAR_NUMS} className="shrink-0 text-[12.5px] font-bold text-text">
         {formatMesoShort(props.character.totalMeso)}
       </Text>
@@ -380,7 +380,7 @@ export function WeeklyBossProfitWidget({ w, h, data }: WidgetProps): React.JSX.E
     )
   }
 
-  // **`flex-1` 이 없다** — 이 크기는 `h: 'auto'` 라 상자가 내용만큼만 서고, 늘릴 높이가
+  // **`flex-1` 이 없다**. 이 크기는 `h: 'auto'` 라 상자가 내용만큼만 서고, 늘릴 높이가
   // 없는데 `flex-1` 을 걸면 그것이 **남은 자리를 채운다** 는 거짓 신호로 남는다.
   return (
     <View testID="widget-weekly-boss-profit" className="gap-2 p-3.5">

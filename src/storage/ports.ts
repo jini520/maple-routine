@@ -3,17 +3,17 @@
  *
  *  가 그은 어댑터 경계는 원래 "`features/*` 가 저장소를 직접 만지지 않는다"
  * 였고, 그 규칙은 지켜져 왔다(`features/` 의 Capacitor 직접 import 는 0개다). 다만 어댑터 자신은
- * 플러그인을 직접 import 하고 있어서 **어댑터를 프레임워크 없는 패키지로 옮길 수 없었다** — 여기서
+ * 플러그인을 직접 import 하고 있어서 **어댑터를 프레임워크 없는 패키지로 옮길 수 없었다**. 여기서
  * 뒤집는 것이 그 방향 하나뿐이다. 밖으로 나가는 `storage/*` 함수 시그니처는 한 글자도 안 바뀐다
  * (— `features/` 39개가 무수정으로 사는 조건이 그것뿐이다).
  *
  * 포트 구현은 앱이 부팅 시 주입한다(`src/main.tsx`). 주입 전에 저장소를 건드리면 **조용히 넘어가지
- * 않고 던진다** — no-op 으로 두면 "데이터가 없다"와 "포트가 없다"가 구분되지 않고, 사용자에게는
+ * 않고 던진다**. no-op 으로 두면 "데이터가 없다"와 "포트가 없다"가 구분되지 않고, 사용자에게는
  * 데이터 손실로 보인다.
  */
 
 /**
- * Key-Value 저장소. 값은 전부 문자열이다 — 구조화된 데이터는 호출부가 이미 `JSON.stringify` 해서
+ * Key-Value 저장소. 값은 전부 문자열이다. 구조화된 데이터는 호출부가 이미 `JSON.stringify` 해서
  * 넣으므로 이 경계에 타입 변환이 없다(`docs/migration/data.md` 결정 1).
  */
 export interface PreferencesPort {
@@ -21,7 +21,7 @@ export interface PreferencesPort {
   set(key: string, value: string): Promise<void>
   remove(key: string): Promise<void>
   /**
-   * 저장된 전체 키. **선택 사항이 아니다** — `storage/cache-data.ts` 가 이 목록을 훑어 캐시 삭제
+   * 저장된 전체 키. **선택 사항이 아니다**. `storage/cache-data.ts` 가 이 목록을 훑어 캐시 삭제
    * 범위와 용량을 계산한다. 빠지면 설정의 캐시 삭제·계정 데이터
    * 삭제가 죽는다.
    */
@@ -37,7 +37,7 @@ export interface SqliteDbConnection {
 }
 
 /**
- * SQLite 커넥션 관리. `sqlite/db.ts` 가 부르는 연산만 노출한다 — 넓게 잡으면 새 플랫폼에서 구현해야
+ * SQLite 커넥션 관리. `sqlite/db.ts` 가 부르는 연산만 노출한다. 넓게 잡으면 새 플랫폼에서 구현해야
  * 할 표면이 그대로 늘어난다.
  *
  * 스키마 생성·컬럼 보강·메이린 키 이관·stale 커넥션 복구·

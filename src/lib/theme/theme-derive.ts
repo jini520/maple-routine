@@ -5,7 +5,7 @@
  * 38개를 손으로 채우면 테마를 수십 개로 늘릴 수 없기 때문이다. 이미 확정된 값이 있는 테마는
  * `overrides` 로 그대로 승계시켜 회귀를 만들지 않는다.
  *
- * 런타임이 아니라 **생성 도구**에서 부르는 것이 전제다 — 색 값은 도메인 데이터라 상
+ * 런타임이 아니라 **생성 도구**에서 부르는 것이 전제다. 색 값은 도메인 데이터라 상
  * 사용자 확인을 거쳐 `job-themes.json` 에 커밋해야 하고, 런타임 계산은 그 절차를 없앤다.
  */
 
@@ -45,7 +45,7 @@ export interface ThemeSeed {
  *
  * 이 모듈은 대비를 관문으로 쓰지 않는다. 판단의 최우선은 **전체 색감과 캐릭터의 컬러 컨셉**이고,
  * 대비는 그다음에 참고한다. 앞서 대비를 필수 기준으로 세웠더니 아름다운 선택이 번번이 "면제"로
- * 밀려났는데, 그건 틀이 뒤집힌 것이었다 — 예외로 다뤄야 할 쪽은 아름다움이 아니다.
+ * 밀려났는데, 그건 틀이 뒤집힌 것이었다. 예외로 다뤄야 할 쪽은 아름다움이 아니다.
  *
  * 그래서 면제(waiver) 장치를 걷어냈다. 통과/실패가 없으니 면제할 것도 없다.
  * `measureThemeContrast` 가 수치를 재서 보여주고, 판단은 사람이 한다.
@@ -91,7 +91,7 @@ const NEUTRAL_RAMP = {
 } as const
 
 /**
- * 일러스트 카드(`.media-scope`) 배색. 라이트/다크 무관하게 어두운 쪽이다 — bleed·페이드가
+ * 일러스트 카드(`.media-scope`) 배색. 라이트/다크 무관하게 어두운 쪽이다. bleed·페이드가
  * 어두운 배경을 전제로 튜닝됐다. 테마 색조를 살짝 띠게 해 카드가 그 테마의 일부로 보이게 한다
  * (사용자 확인 2026-07-30).
  *
@@ -116,7 +116,7 @@ const INFO_HUE = 235
 
 /**
  * 값의 **증감**을 말하는 신호색. `error` 와 같은 이유로 브랜드 시드와 무관하게
- * 휴를 고정한다 — 시드에서 파생하면 "빨강 = 늘었다"가 테마마다 다른 색이 되어 뜻을 잃는다.
+ * 휴를 고정한다. 시드에서 파생하면 "빨강 = 늘었다"가 테마마다 다른 색이 되어 뜻을 잃는다.
  * 주식 신호 관례를 따라 상승 빨강 · 하락 파랑이고, 각각 한국 증시 관례색(#E31B23 · #2563EB)의 휴다.
  *
  * `error` 와 색상이 가깝지만 한 화면에서 인접하지 않는다(실패는 토스트·ErrorState, 증감은 값 옆 칩).
@@ -147,7 +147,7 @@ function tone(hue: number, ramp: { l: number; c: number }): string {
  * accent 를 글자·아이콘으로 쓸 때의 **가시성 하한** (판단 순서, 사용자 결정 2026-07-30).
  *
  * AA(4.5:1)를 겨냥하지 않는다. 그렇게 했더니 머쉬맘 브랜드 주황(`#F58B0F`, 표면 대비 2.38:1)이
- * 짙은 갈색(`#A15800`)으로 눌려 탭·배지·링크 53곳의 색이 통째로 바뀌었다 — 색감이 최우선인데
+ * 짙은 갈색(`#A15800`)으로 눌려 탭·배지·링크 53곳의 색이 통째로 바뀌었다. 색감이 최우선인데
  * 대비를 목표로 잡는 순간 브랜드 색이 먹힌다.
  *
  * 이 값은 목표가 아니라 **안전망**이다. `*-ink` 를 만든 이유는 렌의 창백한 하늘색
@@ -166,7 +166,7 @@ function adjustForContrast(
   hex: string,
   backgrounds: string[],
   required: number,
-  // 목표선에는 여유분을 붙이지만 **하한(안전망)에는 붙이지 않는다** — 하한은 "여기 아래면 안 보인다"는
+  // 목표선에는 여유분을 붙이지만 **하한(안전망)에는 붙이지 않는다**. 하한은 "여기 아래면 안 보인다"는
   // 선이라, 여유분을 더하면 멀쩡히 보이는 원색까지 조금씩 밀어 색이 바뀐다.
   margin: number = DERIVE_MARGIN,
 ): string {
@@ -199,7 +199,7 @@ function adjustForContrast(
  *
  * 순수 흑/백이 아니라 **채움색의 색상(H)을 물려받은** 짙은 색·옅은 색을 쓴다. 주황 채움 위에는
  * 짙은 갈색이, 보라 채움 위에는 짙은 보라가 온다. 이 프로젝트의 옛 기본 팔레트가 쓰던
- * `#2B1206`(주황 채움 위 짙은 갈색)이 같은 발상이었다 — 값을 하나로 고정한 것이 문제였지
+ * `#2B1206`(주황 채움 위 짙은 갈색)이 같은 발상이었다. 값을 하나로 고정한 것이 문제였지
  * 색조를 주는 것 자체는 맞았다.
  *
  * 채도는 원 색상보다 크게 낮춘다. 명도를 극단으로 밀면 높은 채도를 표현 범위가 감당하지 못하고,
@@ -217,7 +217,7 @@ const FOREGROUND_LIGHT = { lightness: 0.96, chromaScale: 0.25, chromaMax: 0.04 }
  * 채움 위 전경색.
  *
  * **테마의 연한 색 하나**를 만들어 모든 채움에 쓴다. 흰색도 검정도 아니고, 채움색마다 다른
- * 색조도 아니다 — 브랜드 색상(H)에서 뽑은 연한 톤이라 테마 전체가 한 톤으로 묶인다.
+ * 색조도 아니다. 브랜드 색상(H)에서 뽑은 연한 톤이라 테마 전체가 한 톤으로 묶인다.
  * 엔젤릭버스터라면 아주 연한 핑크(`#FFECF6`), 머쉬맘이라면 연한 살구(`#FFEEE2`)다.
  *
  * 한때 채움색마다 그 색조의 연한 톤을 만들었는데(시안 채움엔 연한 시안), 테마가 여러 톤으로
@@ -252,7 +252,7 @@ function deriveForeground(fill: string, brandHue: number): string {
  * 머쉬맘에서 크림색 트랙이 어두운 올리브로 밀려 카드 인상이 망가졌고, 그걸 되돌리려면 "면제"가
  * 필요했다. 색감이 우선이므로 트랙은 표면 톤을 따르고, 채움과의 대비는 리포트가 수치로 알려준다.
  *
- * 토큰을 따로 두는 이유는 값이 달라서가 아니라 **역할이 달라서**다 — 특정 테마에서 진행률이
+ * 토큰을 따로 두는 이유는 값이 달라서가 아니라 **역할이 달라서**다. 특정 테마에서 진행률이
  * 안 읽히면 그 테마만 `track` 을 덮으면 되고, `surface-2` 를 쓰는 다른 자리는 안 건드린다.
  */
 function deriveTrack(surface2: string): string {
@@ -291,7 +291,7 @@ export function deriveTheme(seed: ThemeSeed): DerivedTheme {
 
   const error = pick('error', tone(ERROR_HUE, ERROR_RAMP[mode]))
 
-  // accent 4종은 규칙이 완전히 같다 — 채움 / 채움 위 전경 / 틴트 / 잉크.
+  // accent 4종은 규칙이 완전히 같다. 채움 / 채움 위 전경 / 틴트 / 잉크.
   const accent = (key: 'primary' | 'secondary' | 'third' | 'error', fill: string) => {
     const tint = pick(`${key}Tint`, mixOklab(fill, surface, TINT_RATIO))
     return {
@@ -308,7 +308,7 @@ export function deriveTheme(seed: ThemeSeed): DerivedTheme {
 
   const infoTint = pick('infoTint', mixOklab(tone(INFO_HUE, { l: 0.6, c: 0.12 }), surface, TINT_RATIO))
 
-  // 증감 신호는 accent 가 아니라 info 와 같은 **틴트+잉크 2토큰 쌍**이다 — 채움으로 깔 일이 없어
+  // 증감 신호는 accent 가 아니라 info 와 같은 **틴트+잉크 2토큰 쌍**이다. 채움으로 깔 일이 없어
   // `on-X` 가 없다. 잉크는 표면과 자기 틴트 **둘 다** 위에서 읽혀야 한다(칩 배경 위 글자이자,
   // 틴트 없이 글자만 쓰는 자리도 열어 둔다).
   const signal = (key: 'rise' | 'fall', hue: number) => {
@@ -376,7 +376,7 @@ export type MediaScopeTokens = {
   /**
    * 완료 배지 전용 — 이 두 값은 `.media-scope` 안에서만 다르게 잡는다.
    *
-   * 라이트 테마는 페이지 틴트를 그대로 쓴다 — 어두운 카드 위의 옅은 칩이 잘 보인다.
+   * 라이트 테마는 페이지 틴트를 그대로 쓴다. 어두운 카드 위의 옅은 칩이 잘 보인다.
    * 다크 테마에서는 그 틴트가 카드 안 "시작 안함" 배지(`surface-2`)와 너무 비슷해져 구분이
    * 안 되므로, 원래대로 진한 채움(`secondary` + `on-secondary`)을 쓴다(사용자 지시 2026-07-30).
    *
@@ -405,10 +405,10 @@ export type MediaScopeTokens = {
 export function deriveMediaScope(tokens: DerivedTheme, mode: ThemeMode): MediaScopeTokens {
   const surface = tokens.mediaSurface
   // 카드 안의 한 단계 위 표면. 페이지의 surface→surface-2 와 같은 폭(OKLCH L +0.09)으로 벌려
-  // 카드 톤 안에 머물게 한다 — 이걸 빼면 `bg-surface-2` 가 페이지의 밝은 표면으로 해석된다.
+  // 카드 톤 안에 머물게 한다. 이걸 빼면 `bg-surface-2` 가 페이지의 밝은 표면으로 해석된다.
   const surface2 = withLightness(surface, hexToOklch(surface).l + 0.09)
 
-  // 라이트는 페이지 틴트를 그대로 쓴다 — 어두운 카드 위의 옅은 칩이 잘 보인다.
+  // 라이트는 페이지 틴트를 그대로 쓴다. 어두운 카드 위의 옅은 칩이 잘 보인다.
   // 다크는 그 틴트가 카드 안 "시작 안함" 배지(surface-2)와 너무 비슷해져 구분이 안 되므로
   // 원래대로 진한 채움을 쓴다(사용자 지시 2026-07-30).
   const complete =
@@ -431,7 +431,7 @@ export interface ContrastMeasurement {
   token: string
   against: string
   ratio: number
-  /** 참고선(WCAG AA) — 넘어야 하는 선이 아니라 견줘보는 눈금이다. */
+  /** 참고선(WCAG AA). 넘어야 하는 선이 아니라 견줘보는 눈금이다. */
   reference: number
   meets: boolean
 }

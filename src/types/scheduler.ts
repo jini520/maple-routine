@@ -62,7 +62,7 @@ export interface SharedProgressEntry {
   lastUpdatedBucket: string // 리셋 경계 판단용(주간은 lib/boss/boss-profit-period 의 periodKey, 일간은 lib/scheduler/reset-clock 의 getCurrentKstDateKey)
 }
 
-// ADR-035 결정 6: 멤버십(+사용자 입력 max_count)만 저장한다 — nowCount/questState/isComplete 같은
+// ADR-035 결정 6: 멤버십(+사용자 입력 max_count)만 저장한다. nowCount/questState/isComplete 같은
 // 동기화 유래 값은 절대 여기 두지 않고, 표시 시점에 schedulerCache에서 조회한다(단일 진실 공급원).
 // ADR-035 결정 19: 컨텐츠는 일간/주간 탭 표시 구분을 저장 시점에 확정하기 위해 kind를
 // 'daily' | 'weekly'로 세분한다(표시 시점 추론 없음).

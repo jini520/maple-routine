@@ -1,4 +1,4 @@
-// 이 톱니의 계약은 둘이다 — ① 채우면 **가운데가 구멍으로 남는다**(그러려고 새로 그렸다)
+// 이 톱니의 계약은 둘이다. ① 채우면 **가운데가 구멍으로 남는다**(그러려고 새로 그렸다)
 // ② 그림이 lucide `settings` 와 **같다**(설정 화면들은 여전히 lucide 를 쓰므로, 좌표가 갈리면
 // 같은 앱 안에서 톱니가 두 가지가 된다 —).
 import Settings from 'lucide-react-native/icons/settings'
@@ -21,7 +21,7 @@ describe('GearIcon', () => {
   // **여기가 이 컴포넌트의 존재 이유다.** lucide 의 `Settings` 는 **톱니 패스 + 안쪽 원** 두
   // 요소라 `fill` 이 둘 다에 상속돼 가운데가 메워진다. 한 패스 두 서브패스 + `evenodd` 라야
   // 몸통만 차고 가운데가 빈다.
-  // `react-native-svg` 는 호스트 단에서 `fillRule` 을 숫자로 바꾼다 — **0 이 evenodd** 다.
+  // `react-native-svg` 는 호스트 단에서 `fillRule` 을 숫자로 바꾼다. **0 이 evenodd** 다.
   it('한 패스에 evenodd 로 그린다 — 채우면 가운데가 구멍이다', async () => {
     const paths = findAllOfType(
       (await renderAtom(<GearIcon fill="#FF0000" />)).toJSON(),
@@ -48,7 +48,7 @@ describe('GearIcon', () => {
     expect(ours?.props.fill).toEqual(lucide?.props.fill)
   })
 
-  // 채운 상태에서 lucide 의 r3 을 그대로 쓰면 구멍이 **덩어리 속 점**으로 보인다 — 둘레의 획이
+  // 채운 상태에서 lucide 의 r3 을 그대로 쓰면 구멍이 **덩어리 속 점**으로 보인다. 둘레의 획이
   // 구멍 안쪽을 더 먹기 때문이다(사용자 판정). 선일 때는 반대로 lucide 와 같아야 한다.
   it('구멍은 채웠을 때만 커진다 — 선일 때는 lucide 의 r3 그대로다', async () => {
     const pathOf = async (fill?: string): Promise<string> =>

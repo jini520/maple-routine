@@ -1,9 +1,9 @@
 import type { FeatureGuide } from '../../../types'
 // 이미지는 `packages/core/src/assets/guide/boss-manage/` 에 두고 여기서 import 한다. 명시적 import 라
-// 파일명이 틀리면 **빌드가 실패한다** — glob 조회처럼 `undefined` 가 되어
+// 파일명이 틀리면 **빌드가 실패한다**. glob 조회처럼 `undefined` 가 되어
 // 이미지만 빠진 채 통과하지 않는다.
 //
-// 모드 관련 셋은 `content-manage/` 것을 그대로 쓴다 — 컨텐츠와 보스가 **같은 설정 모달**을 보므로
+// 모드 관련 셋은 `content-manage/` 것을 그대로 쓴다. 컨텐츠와 보스가 **같은 설정 모달**을 보므로
 // 같은 그림 한 벌이 맞다(사본을 만들면 모달이 바뀔 때 한쪽만 낡는다).
 import autoImage from '../../../assets/guide/content-manage/02-auto.webp'
 import manualImage from '../../../assets/guide/content-manage/03-manual.webp'

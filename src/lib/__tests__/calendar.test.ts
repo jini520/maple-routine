@@ -19,7 +19,7 @@ describe('getCurrentMonthKey — KST 기준', () => {
     expect(getCurrentMonthKey(new Date('2026-08-23T05:00:00Z'))).toBe('2026-08')
   })
 
-  // 기기 로컬 타임존이 아니라 KST 다 — UTC 로 8/31 15:00 은 KST 로 이미 9/1 이다.
+  // 기기 로컬 타임존이 아니라 KST 다. UTC 로 8/31 15:00 은 KST 로 이미 9/1 이다.
   it('UTC 로는 아직 8월이어도 KST 로 9월이면 9월이다', () => {
     expect(getCurrentMonthKey(new Date('2026-08-31T15:00:00Z'))).toBe('2026-09')
   })
@@ -123,7 +123,7 @@ describe('buildCalendarMonth — 격자', () => {
     expect(common).toHaveLength(28)
   })
 
-  // 날짜 키가 하루씩 이어져야 한다 — 달 경계에서 건너뛰거나 겹치면 표식이 엉뚱한 칸에 붙는다.
+  // 날짜 키가 하루씩 이어져야 한다. 달 경계에서 건너뛰거나 겹치면 표식이 엉뚱한 칸에 붙는다.
   it('칸이 하루씩 끊김 없이 이어진다', () => {
     const days = buildCalendarMonth('2026-12').flat()
 
@@ -177,7 +177,7 @@ describe('heatLevel — 그 달 안에서 상대적이다', () => {
 // ══ 주간 격자 — 목요일 리셋 주 ══════════════════════════
 //
 // **이 앱에는 주가 둘이다.** 월간 격자의 주는 일요일에 시작하고 주간 보기의
-// 주는 목요일에 시작한다 — 후자는 게임의 주이고 보스 수익 탭이 이미 그 축을 쓴다.
+// 주는 목요일에 시작한다. 후자는 게임의 주이고 보스 수익 탭이 이미 그 축을 쓴다.
 
 describe('WEEKDAY_LABELS_RESET', () => {
   it('목요일에서 시작한다', () => {
@@ -186,7 +186,7 @@ describe('WEEKDAY_LABELS_RESET', () => {
     expect(WEEKDAY_LABELS_RESET).toEqual(['목', '금', '토', '일', '월', '화', '수'])
   })
 
-  // 회전이라 두 목록의 원소가 같다 — 한쪽만 고치면 요일 이름이 갈린다.
+  // 회전이라 두 목록의 원소가 같다. 한쪽만 고치면 요일 이름이 갈린다.
   it('월간 라벨을 회전한 것이다 — 새로 적지 않는다', () => {
     const { WEEKDAY_LABELS, WEEKDAY_LABELS_RESET } =
       require('../calendar') as typeof import('../calendar')
@@ -219,13 +219,13 @@ describe('resetWeekStartOf', () => {
   })
 
   // **두 번째 구현이 생기는 자리다.** 보스 수익이 이미 **게임의 주** 를 계산하므로, 두 값이 갈리면
-  // 같은 주가 두 화면에서 다른 날짜로 시작한다 — 그것이 목요일 주를 고른 이유를 통째로 무효화한다.
+  // 같은 주가 두 화면에서 다른 날짜로 시작한다. 그것이 목요일 주를 고른 이유를 통째로 무효화한다.
   it('보스 수익의 주간 periodKey 와 같은 답을 낸다', () => {
     const { getCurrentBossProfitPeriod } =
       require('../boss/boss-profit-period') as typeof import('../boss/boss-profit-period')
     const { getCurrentKstDateKey } = require('../scheduler/reset-clock') as typeof import('../scheduler/reset-clock')
 
-    // KST 정오로 스무 날을 훑는다 — 리셋 경계(KST 00:00)를 넘나드는 시각은 reset-clock 의 몫이라
+    // KST 정오로 스무 날을 훑는다. 리셋 경계(KST 00:00)를 넘나드는 시각은 reset-clock 의 몫이라
     // 여기서 다시 재지 않는다.
     for (let offset = 0; offset < 20; offset += 1) {
       const noonKst = new Date(Date.UTC(2026, 7, 10 + offset, 3, 0, 0))
@@ -287,7 +287,7 @@ describe('buildResetWeek', () => {
 /**
  * 하루 단위로 옮긴 날짜 열쇠 — 수입 시트가 머리에서 날짜를 바꿀 때 쓴다.
  *
- * UTC 로 세는 것은 `formatDayLabel` 과 같은 이유다 — 기기 표준시로 세면 자정 언저리에서 하루가
+ * UTC 로 세는 것은 `formatDayLabel` 과 같은 이유다. 기기 표준시로 세면 자정 언저리에서 하루가
  * 밀린다.
  */
 describe('shiftDateKey', () => {
@@ -307,7 +307,7 @@ describe('shiftDateKey', () => {
     expect(shiftDateKey('2027-01-01', -1)).toBe('2026-12-31')
   })
 
-  // 2028 은 윤년이다 — 2월이 29일까지다.
+  // 2028 은 윤년이다. 2월이 29일까지다.
   it('윤년의 2월을 안다', () => {
     expect(shiftDateKey('2028-02-28', 1)).toBe('2028-02-29')
     expect(shiftDateKey('2027-02-28', 1)).toBe('2027-03-01')

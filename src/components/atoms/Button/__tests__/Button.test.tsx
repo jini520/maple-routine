@@ -1,7 +1,7 @@
 // 웹판이 지키던 것("호출부 16곳의 모습을 바꾸지 않는다" —)을 RN 에서 다시 세운다.
 // 클래스 문자열은 트리에 남지 않으므로 **풀린 값**을 본다.
 //
-// 여기서 특히 지키는 것은 RN 으로 오며 갈라진 자리다 — **상자와 글자가 두 벌**이라는 것
+// 여기서 특히 지키는 것은 RN 으로 오며 갈라진 자리다. **상자와 글자가 두 벌**이라는 것
 // (`variants.ts` 참고). 한 벌로 되돌리면 라벨이 색도 굵기도 없이 그려지는데, 그 실패는 조용하다.
 import { Text } from 'react-native'
 
@@ -71,7 +71,7 @@ describe('Button', () => {
   // 파일이 컴포넌트 아닌 값을 export 하면 fast refresh 가 깨진다).
   it('변형 클래스가 상자·글자 두 벌로 모듈에 있다', () => {
     expect(Object.keys(BUTTON_VARIANT_CLASS)).toEqual(Object.keys(BUTTON_VARIANT_TEXT_CLASS))
-    // 상자에 글자 유틸을 도로 넣으면 RN 에서 조용히 죽는다 — 그 회귀를 여기서 막는다.
+    // 상자에 글자 유틸을 도로 넣으면 RN 에서 조용히 죽는다. 그 회귀를 여기서 막는다.
     for (const box of Object.values(BUTTON_VARIANT_CLASS)) {
       expect(box).not.toMatch(/(^|\s)(text-|font-)/)
     }
@@ -101,7 +101,7 @@ describe('Button', () => {
       </Button>,
     )
 
-    // 통과한 요소는 라벨 스타일을 안 받는다 — 웹에서 아이콘이 자기 스타일로 서던 것과 같다.
+    // 통과한 요소는 라벨 스타일을 안 받는다. 웹에서 아이콘이 자기 스타일로 서던 것과 같다.
     expect(flattenStyle(getByTestId('icon-slot').props.style).color).toBeUndefined()
     expect(flattenStyle(getByText('저장').props.style).color).toBe(기본테마.onPrimary)
   })
@@ -119,7 +119,7 @@ describe('Button', () => {
   })
 })
 
-// 라벨을 지우지 않고 **가린다** — 폭이 그대로 남고 스크린리더도 라벨을 그대로 읽는다.
+// 라벨을 지우지 않고 **가린다**. 폭이 그대로 남고 스크린리더도 라벨을 그대로 읽는다.
 describe('Button — busy', () => {
   it('라벨이 트리에 남는다 — 지우면 폭이 줄고 스크린리더가 읽을 것이 없다', async () => {
     const { getByText, getByRole } = await renderAtom(

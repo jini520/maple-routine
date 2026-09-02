@@ -38,7 +38,7 @@ describe('usePullRefresh', () => {
     expect(result.current.refreshing).toBe(false)
   })
 
-  // 회차가 실패해도 인디케이터는 닫혀야 한다 — 안 닫으면 **상단이 빈 채로 멈춘다** 가 실패 경로에서
+  // 회차가 실패해도 인디케이터는 닫혀야 한다. 안 닫으면 **상단이 빈 채로 멈춘다** 가 실패 경로에서
   // 그대로 재현된다(실패 자체는 토스트가 말한다).
   it('회차가 실패해도 멈춘다', async () => {
     const { result } = await renderHook(() =>

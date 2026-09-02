@@ -1,7 +1,7 @@
 // 하단 안전영역의 **하한** —.
 //
 // `top-safe-area.test.ts` 와 **같은 자리에 같은 이유로** 있다: 값이 순수 함수라 여기서 전부 볼 수
-// 있고, **컴포넌트 테스트로는 이 결정을 못 지킨다** — jest-expo 는 iOS 로 돌고 iOS 인셋(34)이 곧
+// 있고, **컴포넌트 테스트로는 이 결정을 못 지킨다**. jest-expo 는 iOS 로 돌고 iOS 인셋(34)이 곧
 // 하한이라 렌더 트리에서는 이 정정이 한 픽셀도 안 보인다.
 
 import { ANDROID_BOTTOM_SAFE_AREA_MIN_PX, resolveBottomSafeAreaPx } from '../safe-area'
@@ -16,7 +16,7 @@ const 안드로이드_3버튼 = 48
 const iOS_인셋 = 34
 
 describe(' — 안드로이드 하단 안전영역에는 하한이 있다', () => {
-  // 값 자체가 결정이라 못 박는다. **iOS 인셋과 같은 수라는 것이 이 값의 전부다** — `안드로이드를
+  // 값 자체가 결정이라 못 박는다. **iOS 인셋과 같은 수라는 것이 이 값의 전부다**. `안드로이드를
   // 더 띄우는 값`이 아니라 `iOS 와 같아지는 값`이라, iOS 가 정확히 하한에 앉는다.
   it('하한은 34 이고, 그것은 iOS 홈 인디케이터와 같은 값이다', () => {
     expect(ANDROID_BOTTOM_SAFE_AREA_MIN_PX).toBe(34)
@@ -57,7 +57,7 @@ describe(' — 안드로이드 하단 안전영역에는 하한이 있다', () =
     expect(resolveBottomSafeAreaPx({ insetBottomPx: 0, platform: 'ios' })).toBe(0)
   })
 
-  // 하위 페이지의 두 조각이 이 차이를 나눠 갖는다(`bottom-inset.ts`) — 그 뺄셈이 음수가 되지
+  // 하위 페이지의 두 조각이 이 차이를 나눠 갖는다(`bottom-inset.ts`). 그 뺄셈이 음수가 되지
   // 않는다는 것이 그쪽 계약의 전제다. 하한은 **인셋 아래로 내려가지 않는다.**
   it('결과는 인셋보다 작아지지 않는다 — 하위 페이지의 뺄셈이 이 성질에 기댄다', () => {
     for (const platform of ['ios', 'android']) {

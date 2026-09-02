@@ -123,7 +123,7 @@ describe('matchesRowKey', () => {
 
 // ⚠️ 가격이 조용히 사라지는 자리 그 ②
 //
-// `lib/boss/boss-drops` 쪽 동명 함수보다 **이쪽이 더 자주 터진다** — 저장소 행 → 도메인 변환이라
+// `lib/boss/boss-drops` 쪽 동명 함수보다 **이쪽이 더 자주 터진다**. 저장소 행 → 도메인 변환이라
 // 난이도 확정 같은 특수 상황이 아니라 **DB에서 읽을 때마다** 지나간다. 여기서 필드를 빠뜨리면
 // 저장은 됐는데 화면은 영영 "미입력"으로 보인다.
 describe('toRecordedDrop — 가격 필드 (ADR-124)', () => {
@@ -220,7 +220,7 @@ describe('selectProfitDisplayBosses — 주간 한도 마감', () => {
     expect(names(selectProfitDisplayBosses(contents, 'manual', manual))).not.toContain(PENDING)
   })
 
-  // 마감은 **안 잡은 것** 에만 붙는다 — 실제로 번 것은 정산에서 사라지면 안 된다.
+  // 마감은 **안 잡은 것** 에만 붙는다. 실제로 번 것은 정산에서 사라지면 안 된다.
   it('실제로 처치한 보스는 한도를 채워도 전부 남는다', () => {
     const contents = cleared(WEEKLY_BOSS_CLEAR_LIMIT)
 

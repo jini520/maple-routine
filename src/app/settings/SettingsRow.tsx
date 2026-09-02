@@ -2,7 +2,7 @@
 // (이 컴포넌트 자체는 테두리를 갖지 않는다, `row-class.ts`).
 //
 // 우측은 값과 chevron 의 **병기**다. 옛 배타(`rightContent ?? chevron`)에서는
-// 값이 있으면 화살표가 사라져 화살표가 "이 행에 값이 있는가"를 말했다 — 사용자가 알고 싶은
+// 값이 있으면 화살표가 사라져 화살표가 "이 행에 값이 있는가"를 말했다. 사용자가 알고 싶은
 // 것은 그것이 아니다. 병기 후 규칙은 "chevron 이 있으면 누르면 무언가 열린다, 없는 위험 색
 // 행은 누르면 지운다"다.
 //
@@ -10,9 +10,9 @@
 //
 // ① `<button>` → `Pressable role="button"`. 웹에서 태그가 공짜로 주던 시맨틱을 명시로 되살린다
 //    (`Button` atom 과 같은 판단).
-// ② **라벨 클래스가 상자가 아니라 `Text` 에 있다** — RN 은 글자 스타일이 상속되지 않는다. 웹에서도
+// ② **라벨 클래스가 상자가 아니라 `Text` 에 있다**. RN 은 글자 스타일이 상속되지 않는다. 웹에서도
 //    이미 `<span>` 이 들고 있었으므로 옮겨 붙일 자리가 그대로 있다.
-// ③ `onClick` → `onPress`. **이름만 바꾸고 뜻은 그대로** 둔다 — 이 행의 계약은 "누르면 한 번
+// ③ `onClick` → `onPress`. **이름만 바꾸고 뜻은 그대로** 둔다. 이 행의 계약은 "누르면 한 번
 //    불린다"이고 그것이 바뀌지 않는다.
 //
 // chevron 의 `testID` 가 아이콘이 아니라 **감싸는 `View`** 에 있는 것은 lucide 가 그 프롭을
@@ -29,7 +29,7 @@ export interface SettingsRowProps {
   onPress: () => void
   rightContent?: React.ReactNode
   danger?: boolean
-  /** rightContent 유무와 무관하게 chevron 을 그릴지 — 기본 true. */
+  /** rightContent 유무와 무관하게 chevron 을 그릴지. 기본 true. */
   showChevron?: boolean
 }
 

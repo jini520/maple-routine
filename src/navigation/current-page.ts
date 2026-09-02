@@ -3,10 +3,10 @@
  *
  * ## 왜 훑어야 하는가
  *
- * 바는 층 스택의 `layout` 이 그린다(결정 2) — 그래서 그 내비게이터의 **상태를 인자로 받는다**.
+ * 바는 층 스택의 `layout` 이 그린다(결정 2). 그래서 그 내비게이터의 **상태를 인자로 받는다**.
  * 그 상태의 각 단은 다시 탭 내비게이터라, 지금 페이지 는 두 단 아래에 있다.
  *
- * 사본을 들지 않고 **읽기만** 하는 것이 요점이다 — 페이지의 진실 공급원은 react-navigation
+ * 사본을 들지 않고 **읽기만** 하는 것이 요점이다. 페이지의 진실 공급원은 react-navigation
  * 하나 라는 의 규칙이 그대로 산다.
  */
 
@@ -29,7 +29,7 @@ function isTabRoute(name: unknown): name is TabRouteName {
   return typeof name === 'string' && (TAB_ROUTE_NAMES as readonly string[]).includes(name)
 }
 
-/** 그 층 화면의 첫 페이지 — 상태도 파라미터도 없을 때의 마지막 안전망. 표에서 나온다. */
+/** 그 층 화면의 첫 페이지. 상태도 파라미터도 없을 때의 마지막 안전망. 표에서 나온다. */
 function firstPageOfLayer(layer: string): TabRouteName | undefined {
   const group = BAR_GROUPS.find((candidate) => candidate.layer === layer)
   if (group !== undefined) return group.subs[0].page
@@ -52,7 +52,7 @@ function topRoute(state: NavStateLike | undefined): NavRouteLike | undefined {
  * 있는 이유는 중첩 내비게이터가 **첫 프레임에 아직 상태를 안 갖기** 때문이고, 우리가 언제나
  * `params: { screen }` 을 명시해 이동하므로 그 자리에 답이 있다.
  *
- * 알 수 없는 이름이면 첫 화면으로 떨어진다 — 바가 던지면 앱이 통째로 죽는다. 화면 목록이 표와
+ * 알 수 없는 이름이면 첫 화면으로 떨어진다. 바가 던지면 앱이 통째로 죽는다. 화면 목록이 표와
  * 어긋나는 일은 `bar-model` 표 테스트가 따로 막는다.
  */
 export function pageFromLayerState(state: NavStateLike | undefined): TabRouteName {

@@ -29,15 +29,15 @@ export interface IncomeFormProps {
   /** 있으면 **수정 모드**다. */
   editing?: IncomeRecord
   onDelete?: () => void | Promise<void>
-  /** 던지면 **안 닫는다** — 친 것을 잃지 않는다. */
+  /** 던지면 **안 닫는다**. 친 것을 잃지 않는다. */
   onSave: (draft: IncomeDraft) => void | Promise<void>
   onClose: () => void
 }
 
 /**
- * 캐릭터 줄 — **기본은 `선택 안함`**(사용자 지정 2026-08-26).
+ * 캐릭터 줄. **기본은 `선택 안함`**(사용자 지정 2026-08-26).
  *
- * 폼 안에 사는 이유는 이다 — 갈래를 옮기면 폼이 언마운트되어 고른 것이 함께
+ * 폼 안에 사는 이유는 이다. 갈래를 옮기면 폼이 언마운트되어 고른 것이 함께
  * 사라진다. 껍데기에 두면 그것만 남아 갈래를 옮겼는데 캐릭터는 그대로 가 된다.
  */
 export function CharacterField(props: {
@@ -57,7 +57,7 @@ export function CharacterField(props: {
 }
 
 /**
- * 솔 에르다 조각 두 줄 — 사냥 폼 **둘이 함께** 쓴다.
+ * 솔 에르다 조각 두 줄. 사냥 폼 **둘이 함께** 쓴다.
  *
  * 계산기든 수동이든 조각은 **사용자가 직접 넣는 값**이라 갈릴 이유가 없다.
  * 스테퍼가 아니라 치는 칸인 이유는 30분에 10개 내외라 8소재면 80개가 넘어서다.
@@ -92,9 +92,9 @@ export function FragmentFields(props: {
 }
 
 /**
- * 저장 · 삭제 줄 — 큰 숫자 **바로 아래**다.
+ * 저장 · 삭제 줄. 큰 숫자 **바로 아래**다.
  *
- * 삭제는 **버튼처럼 안 생겼다** — 이미 두 번 눌러야 여기까지 온다.
+ * 삭제는 **버튼처럼 안 생겼다**. 이미 두 번 눌러야 여기까지 온다.
  */
 export function SaveRow(props: {
   editing: boolean

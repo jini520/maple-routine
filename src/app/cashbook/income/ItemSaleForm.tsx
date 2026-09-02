@@ -1,7 +1,7 @@
 /**
  * 아이템 판매 폼 — 경매장에서 판 것.
  *
- * 이 갈래만 **수수료를 뗀다** — 경매장이 3% 또는 5% 를 가져가므로 판 값 과
+ * 이 갈래만 **수수료를 뗀다**. 경매장이 3% 또는 5% 를 가져가므로 판 값 과
  * 번 돈 이 다르다. 그래서 치는 자리가 큰 숫자가 아니라 **판매 대금** 줄이고, 큰 숫자는 **못 치는
  * 합계**가 된다(과 같은 모양).
  *
@@ -43,7 +43,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
   const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
   const [name, setName] = useState(props.editing?.item ?? '')
   /**
-   * 치는 값은 **판매 대금**이다 — 행에 남는 것은 수수료를 뗀 값이라, 되짚을 때 뗀 몫을 되돌린다
+   * 치는 값은 **판매 대금**이다. 행에 남는 것은 수수료를 뗀 값이라, 되짚을 때 뗀 몫을 되돌린다
    * . 요율만 들고 역산하면 내림 때문에 1 메소가 어긋난다.
    */
   const [grossText, setGrossText] = useState(
@@ -55,7 +55,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
   const { saving, submit, remove } = useSheetSubmit(props)
 
   const gross = mesoValueOf(grossText)
-  /** 의 계산을 **그대로 부른다** — 수수료 쪽을 내림한다(= 손에 남는 쪽이 커진다). */
+  /** 의 계산을 **그대로 부른다**. 수수료 쪽을 내림한다(= 손에 남는 쪽이 커진다). */
   const net = feePercent === null ? gross : netProceedsMeso(gross, feePercent)
   const canSave = gross > 0
 
@@ -72,7 +72,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
         />
       </FieldRow>
 
-      {/* **치는 자리는 여기**다 — 큰 숫자는 합계라 못 친다. 이름 아래에
+      {/* **치는 자리는 여기**다. 큰 숫자는 합계라 못 친다. 이름 아래에
           서는 이유는 계산 차례 그대로이기 때문이다: 무엇을 · 얼마에 · 몇 % 떼고 → 합계. */}
       <FieldRow label="판매 대금">
         <AmountInput testID="income-sheet-gross" value={grossText} onChange={setGrossText} />
@@ -101,7 +101,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
       </View>
 
       <AmountFigure
-        // **아이템 판매의 큰 숫자는 합계**다 — 수수료를 뗀 값이고, 앱이
+        // **아이템 판매의 큰 숫자는 합계**다. 수수료를 뗀 값이고, 앱이
         // 세므로 못 친다.
         value={net}
         unit="메소"
@@ -117,9 +117,9 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
             ocid,
             earnedOn: props.dateKey,
             category: '아이템 판매',
-            // 빈 칸은 `null` 이다 — 빈 문자열을 넣으면 **적었는데 비어 있다** 와 **안 적었다** 가 같아진다.
+            // 빈 칸은 `null` 이다. 빈 문자열을 넣으면 **적었는데 비어 있다** 와 **안 적었다** 가 같아진다.
             item: name.trim() === '' ? null : name.trim(),
-            // **수수료를 뗀 값**이다(정정 9 ⑤) — 집계가 보는 칸이 이것 하나다.
+            // **수수료를 뗀 값**이다(정정 9 ⑤). 집계가 보는 칸이 이것 하나다.
             mesoAmount: net,
             saleFeePercent: feePercent,
             saleFeeMeso: feePercent === null ? null : gross - net,

@@ -1,5 +1,5 @@
 // 웹판이 지키던 셋(장식용 숨김 · `size` 반영 · motion-reduce)이 전부 산다. 셋째는 **보는 방법이
-// 바뀌었다** — 웹은 `motion-reduce:animate-none` 클래스를 렌더 결과에서 읽었지만 RN 에는 그 문자열이
+// 바뀌었다**. 웹은 `motion-reduce:animate-none` 클래스를 렌더 결과에서 읽었지만 RN 에는 그 문자열이
 // 없어, *"반복 애니메이션을 걸었는가"* 를 본다(`reduced-motion.ts` 의 `withRepeatSpy` 주석).
 //
 // 여기에 웹에 없던 계약 하나가 더해진다: `pathLength` 정규화가 사라진 만큼 **대시가 실측 둘레의
@@ -7,11 +7,11 @@
 // `keyframes-parity.test.ts` 는 웹 소스와 함께 지워져 지금 그 둘을 보는
 // 곳은 없다.
 //
-// 쿼리에 `includeHiddenElements` 를 주는 것 자체가 `aria-hidden` 이 먹었다는 증거다 — RNTL 은 숨긴
+// 쿼리에 `includeHiddenElements` 를 주는 것 자체가 `aria-hidden` 이 먹었다는 증거다. RNTL 은 숨긴
 // 요소를 기본적으로 못 찾는다(플래그를 빼면 첫 케이스가 "찾을 수 없다"로 떨어진다, 실측).
 jest.mock('react-native-reanimated', () =>
-  // `jest.mock` 팩토리는 import 위로 끌어올려져 **밖의 값을 참조할 수 없다** — 그래서 `require` 가
-  // 선택이 아니라 유일한 길이다(`reduced-motion.ts` `쓰는 법`).
+  // `jest.mock` 팩토리는 import 위로 끌어올려져 **밖의 값을 참조할 수 없다**. 그래서 `require` 가
+  // 선택이 아니라 이 길뿐이다(`reduced-motion.ts` `쓰는 법`).
   require('../../../__tests__/reduced-motion').reanimatedWithReducedMotion(),
 )
 
@@ -81,7 +81,7 @@ describe('MapleSpinner — 모션 줄이기', () => {
   it('꺼져 있으면 되감기 없이 무한 반복한다 — 웹의 `infinite`(alternate 가 아니다)', async () => {
     await renderAtom(<MapleSpinner />)
 
-    // 한 주기가 둘레 한 바퀴라 되감으면 트레일이 왕복한다 — 웹은 같은 방향으로 계속 돈다.
+    // 한 주기가 둘레 한 바퀴라 되감으면 트레일이 왕복한다. 웹은 같은 방향으로 계속 돈다.
     expect(withRepeatSpy).toHaveBeenCalledTimes(1)
     expect(withRepeatSpy.mock.calls[0].slice(1)).toEqual([-1, false])
   })

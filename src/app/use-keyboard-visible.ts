@@ -17,7 +17,7 @@ import { addKeyboardVisibilityListener } from '../native/keyboard'
  * `keyboardWillShow`, 우리 어댑터는 `keyboardDidShow`). 하나로 합치려면 이 값을 내비게이터까지
  * 프롭으로 꿰거나 라이브러리 옵션을 포기해야 하는데, 그 대가가 어긋남보다 크다.
  *
- * 그래서 이 훅이 남는 이유는 하나다 — **토스트가 탭바 위에 서야 하는지**(`ToastStack.hasTabBar`).
+ * 그래서 이 훅이 남는 이유는 하나다. **토스트가 탭바 위에 서야 하는지**(`ToastStack.hasTabBar`).
  */
 export function useKeyboardVisible(): boolean {
   const [isVisible, setIsVisible] = useState(false)
@@ -27,7 +27,7 @@ export function useKeyboardVisible(): boolean {
     let cancelled = false
 
     void addKeyboardVisibilityListener(setIsVisible).then((remove) => {
-      // 구독이 붙기 전에 언마운트됐으면 곧바로 뗀다 — 아니면 죽은 컴포넌트의 setState 가 남는다.
+      // 구독이 붙기 전에 언마운트됐으면 곧바로 뗀다. 아니면 죽은 컴포넌트의 setState 가 남는다.
       if (cancelled) {
         remove()
         return

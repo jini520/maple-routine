@@ -29,7 +29,7 @@ describe('일러스트를 누르는 값', () => {
     expect(art.filter).toEqual([{ saturate: 0.85 }, { brightness: 0.8 }])
   })
 
-  // 베일은 웹 마스크를 **뒤집은** 것이다 — 마스크가 1(불투명 검정)인 구간에서 덧칠이 0이어야 한다.
+  // 베일은 웹 마스크를 **뒤집은** 것이다. 마스크가 1(불투명 검정)인 구간에서 덧칠이 0이어야 한다.
   // 끝점이 자리마다 다르다: 카드 38/76, 히어로 42/82(모달이 넓고 낮아 더 뒤에서 끊는다).
   it.each([
     ['카드', undefined, [0, 0.38, 0.76, 1]],
@@ -44,7 +44,7 @@ describe('일러스트를 누르는 값', () => {
 
   /**
    * **하드코딩 검정이 아니라는 것이 요점이다.** 덮는 색은 카드 표면색이고 시작은 **같은 색의 알파 0**
-   * 이다 — `transparent`(투명 검정)로 두면 네이티브 보간에서 중간이 어두워진다(`PageHeader` 의 경계
+   * 이다. `transparent`(투명 검정)로 두면 네이티브 보간에서 중간이 어두워진다(`PageHeader` 의 경계
    * 페이드와 같은 함정). 렌더 트리의 색은 이미 네이티브 정수라 같은 방식으로 만들어 견준다.
    */
   it('앞 둘이 투명하고 셋째부터 표면색으로 덮인다', async () => {
@@ -90,7 +90,7 @@ describe('IllustratedCard', () => {
 
     expect(flattenStyle(getByTestId('page').props.style).backgroundColor).toBe(기본테마.surface)
     expect(flattenStyle(getByTestId('inside').props.style).backgroundColor).toBe(기본테마.mediaSurface)
-    // 껍데기 자신도 카드 기준을 쓴다 — 웹에서 `.media-scope` 가 카드 루트에 함께 붙던 자리다.
+    // 껍데기 자신도 카드 기준을 쓴다. 웹에서 `.media-scope` 가 카드 루트에 함께 붙던 자리다.
     expect(flattenStyle(getByTestId('card').props.style).backgroundColor).toBe(기본테마.mediaSurface)
   })
 

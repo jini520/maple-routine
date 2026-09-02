@@ -12,7 +12,7 @@
  * ## 2x2 만 아이템 이름 을 보여 준다
  *
  * 값을 적어야지보다 **`그 연마석 얼마에 팔았지`** 가 손을 움직이는 문장이다. 건수만으로는 그
- * 문장이 안 나오므로 이름 셋까지 세우고 나머지는 외 N건 으로 접는다 — 타일은 목록이 아니라
+ * 문장이 안 나오므로 이름 셋까지 세우고 나머지는 외 N건 으로 접는다. 타일은 목록이 아니라
  * 요약이고, 타일 안에서 스크롤하지 않는다.
  *
  * ## 0건이어도 타일은 남는다
@@ -46,7 +46,7 @@ function variantOf(w: number, h: WidgetHeight): Variant {
 }
 
 /**
- * 건수 배지 — 원 안의 숫자.
+ * 건수 배지. 원 안의 숫자.
  *
  * 색은 `primary` 계열이 아니라 `surface-2` 다. 이 타일이 말하는 것은 성과 가 아니라 밀린 일 이고,
  * 격자에서 강조색은 결과를 말하는 타일들이 이미 쓴다.
@@ -62,7 +62,7 @@ function CountBadge(props: { count: number; sizePx: number; textPx: number }): R
         fixed
         style={[TABULAR_NUMS, { fontSize: props.textPx }]}
         className="font-extrabold text-text"
-        // 세 자리가 넘어도 배지 크기는 안 바뀐다 — 원이 커지면 옆 글자가 밀린다.
+        // 세 자리가 넘어도 배지 크기는 안 바뀐다. 원이 커지면 옆 글자가 밀린다.
         numberOfLines={1}
         adjustsFontSizeToFit
       >
@@ -72,7 +72,7 @@ function CountBadge(props: { count: number; sizePx: number; textPx: number }): R
   )
 }
 
-/** `기록하기 ›` — 화살표는 아이콘이라 글자 검사에 안 걸린다(텍스트는 CTA 한 마디뿐이다). */
+/** `기록하기 ›`. 화살표는 아이콘이라 글자 검사에 안 걸린다(텍스트는 CTA 한 마디뿐이다). */
 function Cta(props: { prefix?: string }): React.JSX.Element {
   return (
     <View testID="unpriced-cta" className="flex-row items-center gap-0.5">
@@ -85,7 +85,7 @@ function Cta(props: { prefix?: string }): React.JSX.Element {
 }
 
 /**
- * 아이템 한 줄 — **이름만**이다.
+ * 아이템 한 줄. **이름만**이다.
  *
  * 캐릭터·보스를 붙이면 2x2 에서 이름이 잘리는데, 이 타일이 답하는 질문은 무엇의 값을 적어야 하나
  * 라 이름이 먼저다. 반지 레벨은 이름의 일부라 함께 세운다(같은 반지의 다른 레벨은 다른 물건이다).
@@ -108,7 +108,7 @@ function ItemRow(props: { drop: UnpricedDropView }): React.JSX.Element {
  * 0건 표식 — **건수 배지가 서던 자리에 같은 크기의 원**을 세운다.
  *
  * 그래야 **7 → ✓** 가 자리를 안 옮기고 바뀌어, 값이 사라진 것이 아니라 **끝난 것**으로 읽힌다.
- * 색은 배지의 경고 톤이 아니라 `primary-ink` 다 — 남은 일이 아니라 마친 일이다.
+ * 색은 배지의 경고 톤이 아니라 `primary-ink` 다. 남은 일이 아니라 마친 일이다.
  */
 function DoneMark(props: { sizePx: number }): React.JSX.Element {
   return (
@@ -129,7 +129,7 @@ function Done(props: { variant: Variant }): React.JSX.Element {
     return (
       <View testID="widget-unpriced-drops" className="flex-1 items-center justify-center gap-1 p-2">
         <DoneMark sizePx={22} />
-        {/* 타일 이름이 아니라 **끝났다는 사실**을 남긴다 — 1x1 에는 라벨이 없어서 이 한 줄이
+        {/* 타일 이름이 아니라 **끝났다는 사실**을 남긴다. 1x1 에는 라벨이 없어서 이 한 줄이
             **무엇이 0건인가** 를 말하는 자리가 여기뿐이다. */}
         <Text
           fixed
@@ -194,7 +194,7 @@ export function UnpricedDropsWidget({ w, h, data }: WidgetProps): React.JSX.Elem
 
   if (variant === 'compact') {
     const preview = data.unpricedPreview
-    // 미리보기에 안 든 나머지 — 0이면 **외 0건** 대신 CTA 만 선다.
+    // 미리보기에 안 든 나머지. 0이면 **외 0건** 대신 CTA 만 선다.
     const rest = count - preview.length
 
     return (

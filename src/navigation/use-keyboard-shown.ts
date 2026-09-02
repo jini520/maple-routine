@@ -12,7 +12,7 @@
  *
  * 옛 탭바는 `tabBarHideOnKeyboard` 로 같은 일을 했고, 라이브러리는 **iOS 는 `will`, 안드로이드는
  * `did`** 이벤트를 구독한다(`useIsKeyboardShown.tsx`). core 어댑터는 양쪽 다 `did` 라 iOS 에서 한
- * 프레임 늦는데, 여기서 직접 구독하면 그 어긋남까지 없어진다 — 옛 `TabNavigator` 주석이 *"하나로
+ * 프레임 늦는데, 여기서 직접 구독하면 그 어긋남까지 없어진다. 옛 `TabNavigator` 주석이 *"하나로
  * 합치려면 셸의 값을 프롭으로 꿰어야 해서 대가가 더 크다"* 로 남겨 둔 자리다.
  */
 
