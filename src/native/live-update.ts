@@ -6,7 +6,7 @@ import { showSplashScreen } from './splash-screen'
  * OTA 의 **정책** 층.
  *
  * 여기 있던 것 중 프로토콜에 속한 것. 매니페스트 URL·`parseLiveUpdateManifest`·조회·비교.
- * 은 전부 **어댑터로 갔다**(@capgo 것은 `app-capacitor/native/adapters/capacitor-live-update.ts`,
+ * 은 전부 **어댑터로 갔다**.
  * `expo-updates` 것은 `app-rn/native/adapters/rn-live-update.ts`). 지우는 것이 아니라 **옮긴 것**이라
  * capacitor 앱은 계속 돈다. 전환이 끝날 때까지 스토어에 있는 것은 아직 그 앱이다.
  *

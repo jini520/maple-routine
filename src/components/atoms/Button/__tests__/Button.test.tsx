@@ -1,4 +1,4 @@
-// 웹판이 지키던 것("호출부 16곳의 모습을 바꾸지 않는다")을 RN 에서 다시 세운다.
+// 지키는 것은 `호출부 16곳의 모습을 바꾸지 않는다` 다.
 // 클래스 문자열은 트리에 남지 않으므로 **풀린 값**을 본다.
 //
 // 여기서 특히 지키는 것은 RN 으로 오며 갈라진 자리다. **상자와 글자가 두 벌**이라는 것
@@ -67,7 +67,7 @@ describe('Button', () => {
     expect(flattenStyle(getByText('발급 방법 보기').props.style).color).toBe(기본테마.text)
   })
 
-  // 겉모습만 입혀야 하는 자리를 위해 변형 클래스를 별도 모듈에 둔다(웹과 같은 이유. 컴포넌트
+// 겉모습만 입혀야 하는 자리를 위해 변형 클래스를 별도 모듈에 둔다(컴포넌트
   // 파일이 컴포넌트 아닌 값을 export 하면 fast refresh 가 깨진다).
   it('변형 클래스가 상자·글자 두 벌로 모듈에 있다', () => {
     expect(Object.keys(BUTTON_VARIANT_CLASS)).toEqual(Object.keys(BUTTON_VARIANT_TEXT_CLASS))
@@ -101,7 +101,7 @@ describe('Button', () => {
       </Button>,
     )
 
-    // 통과한 요소는 라벨 스타일을 안 받는다. 웹에서 아이콘이 자기 스타일로 서던 것과 같다.
+// 통과한 요소는 라벨 스타일을 안 받는다.
     expect(flattenStyle(getByTestId('icon-slot').props.style).color).toBeUndefined()
     expect(flattenStyle(getByText('저장').props.style).color).toBe(기본테마.onPrimary)
   })

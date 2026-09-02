@@ -1,6 +1,6 @@
 // 테마와 무관한 축(간격·radius·container)의 값을 지킨다(3단계 →).
 //
-// 이 축들은 원래 **웹의 Tailwind v4** 에서 판 값이었다. 그 웹이 사라지면서 값은 `tailwind-v4-axes.cjs`
+// 이 축들은 `tailwind-v4-axes.cjs` 에 동결돼 있고, 저장소가 무는 Tailwind 는
 // 에 동결됐고, 저장소가 무는 Tailwind 는 이제 NativeWind 용 v3 하나뿐이다. 그래서 이 테스트가 답하는
 // 질문도 **두 메이저가 갈리지 않았나** 에서 **동결한 값이 그대로인가** 로 바뀌었다. 여기가 흔들리면
 // `h-13`·`max-w-2xs` 같은 클래스가 **빌드가 성공한 채로** 화면에서만 사라진다.
@@ -57,7 +57,7 @@ describe('v4 축 파생', () => {
     expect(axes.theme.maxWidth['2xs']).toBe('18rem')
   })
 
-  // v3 는 `rounded-sm` 이 2px, v4 는 4px 다. 지금 코드가 안 쓰는 계단이지만 step 3~6 에서 누가 쓰면
+// v3 는 `rounded-sm` 이 2px, v4 는 4px 다. 지금 코드가 안 쓰는 계단이지만 누가 쓰면
   // 조용히 두 배가 되는 자리라 v4 쪽으로 못박는다.
   it('rounded 계단이 v4 기준이다', () => {
     expect(axes.theme.borderRadius).toMatchObject({

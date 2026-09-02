@@ -1,6 +1,6 @@
-// 웹판 열둘을 옮겼다. 갈린 것 넷.
+// 토스트. 갈린 것 넷.
 //
-// · **액션 아이콘 케이스**: 웹은 `svg.classList` 로 lucide 아이콘을 구분했다. RN 의 lucide 는
+// · **액션 아이콘 케이스**: 클래스로 lucide 아이콘을 구분할 수 없다. RN 의 lucide 는
 //   `testID` 를 삼키므로(`nativewind-interop.ts`) 그 아이콘이 실제로 그린 **`Path` 의 `d`** 를
 //   비교한다. 기대값을 손으로 적지 않고 두 아이콘을 나란히 렌더해 서로 다름을 본다.
 //   **한 케이스 안에서 `unmount()` 후 다시 렌더하지 않는다**. RNTL 14 에서 그러면 이후 렌더가
@@ -153,7 +153,7 @@ describe('Toast', () => {
 
 // 임계값(70px)은 `../swipe-dismiss` 가 갖는다. 여기서는 그 판정이 제스처에 이어지는지만 본다.
 describe('Toast: 스와이프로 닫기', () => {
-  /** 시작 → 이동 → 뗌. 웹판이 `pointerdown/move/up` 을 순서대로 쏘던 것과 같다. */
+/** 시작 → 이동 → 뗌. 순서대로 쏜다. */
   async function swipe(root: AtomElement, dx: number): Promise<void> {
     await fireEvent(root, 'responderGrant', { nativeEvent: { pageX: 0 } })
     await fireEvent(root, 'responderMove', { nativeEvent: { pageX: dx } })
@@ -179,9 +179,9 @@ describe('Toast: 스와이프로 닫기', () => {
   })
 })
 
-// 모션 줄이기. 웹의 `motion-reduce:hidden`(파일 머리 ②). 줄지 않는 막대를 남기면 "시간이 안 간다"로
+// 모션 줄이기(파일 머리 ②). 줄지 않는 막대를 남기면 "시간이 안 간다"로
 // 읽히므로 통째로 없앤다. **바깥 껍데기(`toast-timer`)는 남는다**. 자리를 차지하지 않는 절대 배치라
-// 있고 없고가 레이아웃을 바꾸지 않고, 웹도 `motion-reduce:hidden` 을 안쪽 바에만 걸었다.
+// 있고 없고가 레이아웃을 바꾸지 않고, 그 감춤은 안쪽 바에만 건다.
 describe('Toast: 모션 줄이기', () => {
   it('켜져 있으면 남은 시간 바가 그려지지 않는다', async () => {
     mockReducedMotion(true)

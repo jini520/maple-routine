@@ -1,9 +1,9 @@
-// 웹판(183줄)의 명세를 읽어 다시 쓴 것. 이 파일이 보는 것은 **어느 `status` 에서 어떤 화면이
+// 이 화면이 지키는 것을 적는다. 이 파일이 보는 것은 **어느 `status` 에서 어떤 화면이
 // 오는가** 하나다(각 단계의 내부는 그 단계의 테스트가 본다).
 //
 // 갈린 것 넷
 // ① `container.firstElementChild` 의 `min-h-[calc(100dvh-…)]` 을 보던 자리가 **콘텐츠 컨테이너의
-//    `flexGrow`** 로 바뀐다. 웹이 그 min-height 로 만든 "남는 세로 공간"을 RN 스크롤에서는 그것이
+//    `flexGrow`** 로 바뀐다. 남는 세로 공간을 RN 스크롤에서는 그것이
 //    만든다(그 공간이 있어야 프로브 대기의 `m-auto`·전체 대기의 `justify-center` 가 작동한다).
 // ② `getByLabelText(/API 키/)` → `getByLabelText('Nexon Open API 키')`.
 // ③ 스토어 목이 **셀렉터를 받는다**. `useOnboardingStore()` 는 전체 상태를 돌려주지만 같은 훅을
@@ -114,7 +114,7 @@ describe('OnboardingScreen', () => {
   // 타입상 남아 있고, 그 자리에 **빈 화면 대신 키 입력 폼**이 선다. 출구 없는 흰 화면을 만들지
   // 않는다(없앤 잠금과 같은 얼굴이다).
   // 자동 여백·중앙 정렬(`seedingTracking` 의 `justify-center`)은 **부모가 남는 세로 공간을 줄 때만**
-  // 작동한다(웹에서는 컨테이너의 `min-h-[calc(100dvh-…)]` 이 그 공간을 만들었다. 사용자 보고
+// 작동한다(사용자 보고
   // 2026-08-09). RN 에서 그 짝이 콘텐츠 컨테이너의 `flexGrow` 다.
   it('모든 단계의 스크롤 콘텐츠가 화면을 채워 자동 여백·중앙 정렬이 설 자리를 만든다', async () => {
     mockStore({ status: 'seedingTracking' })

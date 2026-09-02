@@ -1,6 +1,6 @@
 // 크롭 표 → RN 배치 변환의 계약.
 //
-// 웹에는 이 테스트의 짝이 없다. 거기서는 크롭 값이 CSS 로 그대로 흘러가 브라우저가 해석했고,
+// 크롭 값이 CSS 로 흘러가면 브라우저가 해석하지만 여기서는 우리가 푼다.
 // 검사할 변환이 존재하지 않았다. RN 에서는 우리가 그 해석을 대신하므로 **틀려도 에러가 안 나고
 // 그림만 이상하게 잘린다.** 정확히 그 종류의 실패라 계약을 코드로 못 박는다.
 import { imageCropStyle, resolveImageCropLayout } from '../image-crop'
@@ -45,7 +45,7 @@ describe('resolveImageCropLayout: CSS 배경 크롭 → RN 배치', () => {
     expect(resolveImageCropLayout(CROP, { width: 0, height: 0 })).toEqual({ kind: 'cover' })
   })
 
-  // step 5 실측. jest 의 에셋 대역(`{ testUri }`)이 크기 없이 오는데 `undefined <= 0` 은 false 라
+// 실측. jest 의 에셋 대역(`{ testUri }`)이 크기 없이 오는데 `undefined <= 0` 은 false 라
   // 가드를 통과했고 `aspectRatio: NaN` 이 나갔다. NaN 은 에러가 아니라 레이아웃이 조용히 무너지는 값이다.
   it.each([
     ['둘 다 없음', { width: undefined, height: undefined }],

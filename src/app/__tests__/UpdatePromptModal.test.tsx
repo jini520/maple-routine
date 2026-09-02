@@ -1,8 +1,8 @@
-// 웹판 열여덟을 옮겼다(`app-capacitor/src/app/__tests__/UpdatePromptModal.test.tsx`). 갈린 것 셋.
+// 업데이트 모달. 갈린 것 셋.
 //
 // · **스토어를 모킹하지 않는다. 애초에 쓰지 않는다.** RN 판은 값을 프롭으로 받는다(그 이유는
 //   `UpdatePromptModal.tsx` 파일 머리: core 의 live-update 스토어는 `import.meta.env` 때문에
-//   import 하는 것만으로 죽는다). 그래서 여기 테스트가 웹판보다 오히려 단순하다.
+//   import 하는 것만으로 죽는다).
 // · `useNavigate` 대신 `onOpenReleaseNotes` 프롭이 불렸는가를 본다.
 // · 진행률 바는 클래스가 아니라 **실제 `width` 스타일**을 잰다(RN 에는 클래스 문자열이 안 남는다).
 //

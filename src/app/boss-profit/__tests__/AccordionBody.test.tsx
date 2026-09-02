@@ -17,7 +17,7 @@ beforeEach(() => {
 })
 
 describe('WeeklyAccordionBody', () => {
-  // 웹의 `last:border-b-transparent` 짝. RN 에는 `:last-child` 가 없어 부모가 알려 준다.
+// 마지막 행의 아래 테두리를 지우는 짝. RN 에 `:last-child` 가 없어 부모가 알려 준다.
   // 테두리를 **빼지 않고 색만** 지우는 것이 요점이라 두께는 두 행이 같아야 한다.
   it('보스 행을 순서대로 그리고 마지막 행만 테두리 색을 지운다', async () => {
     const rows = [보스행(), 보스행({ boss: 다른주간보스 })]

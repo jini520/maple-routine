@@ -1,4 +1,4 @@
-// **재생을 보는 케이스는 이 파일이 아니라 `drop-effect-player.test.ts` 에 있다.** 웹판은 그 로직이
+// **재생을 보는 케이스는 이 파일이 아니라 `drop-effect-player.test.ts` 에 있다.**
 // `useEffect` 클로저 + DOM 변이와 한 덩어리라 단위로 검사할 수 없었는데, RN 으로 옮기며 상태 전이를
 // 순수 함수로 떼어내면서 **시간을 인자로 받는 검사**가 가능해졌다(8프레임 등장·pre→loop·end 종료…).
 //
@@ -6,7 +6,7 @@
 // 프레임 **그림** 은 여기서 못 본다: jest 의 에셋 대역이 크기를 안 줘서 좌표가 안 잡히고, 그러면
 // `frame-layout.ts` 계약대로 아예 안 그린다.
 //
-// 남는 것은 웹의 정정 둘이 다루던 자리와 구조·레이어·닫기 계약이다. 그 정정 둘은 **RN 에 없는
+// 남는 것은 구조·레이어·닫기 계약이다. 그 둘은 **RN 에 없는
 // 문제**라(Radix `dismissable-layer` 가 만든 웹 전용 결함) 케이스도 뒤집힌다. `pointer-events-auto`
 // 와 `data-sheet-keep-open` 대신 **네이티브 윈도우로 뜬다**를 지킨다.
 import { fireEvent } from '@testing-library/react-native'
@@ -64,7 +64,7 @@ describe('DropEffectOverlay: 구조', () => {
   })
 
   // 중앙 아이템은 **엔진이 8프레임 시점에 켠다**. 마운트 직후에는 아직 꺼져
-  // 있고, 매핑 없는 아이템은 웹과 같은 분기로 영영 안 그려진다.
+// 있고, 매핑 없는 아이템은 영영 안 그려진다.
   it('중앙 아이템은 마운트 직후엔 그리지 않는다. 엔진이 8프레임에 켠다', async () => {
     const { queryByTestId } = await renderOverlay(
       <DropEffectOverlay itemName="칠흑의 보스 반지 상자" onClose={noop} />,
@@ -138,7 +138,7 @@ describe('DropEffectOverlay: 구조', () => {
   })
 })
 
-// 배율 계산 자체는 core 에 있고 프레임과 무관하게 산다. 웹판 두 케이스 그대로.
+// 배율 계산 자체는 프레임과 무관하게 산다.
 describe('screenEffectScale', () => {
   const REF = { w: 1146, h: 685 }
 

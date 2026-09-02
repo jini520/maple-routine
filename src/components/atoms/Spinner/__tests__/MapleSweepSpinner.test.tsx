@@ -1,4 +1,4 @@
-// 웹판의 다섯이 전부 산다(숨김 · `size` · clipPath 자식은 도형뿐 · id 충돌 없음 · motion-reduce).
+// 지키는 것 다섯(숨김 · `size` · clipPath 자식은 도형뿐 · id 충돌 없음 · motion-reduce).
 // 다섯째는 **보는 방법이 바뀌었다**. 클래스 문자열이 없어 *"반복 애니메이션을 걸었는가"* 를 본다
 // (`reduced-motion.ts` 의 `withRepeatSpy` 주석). 이동 거리·지속시간·이징을 웹 원본과 대조하던
 // `keyframes-parity.test.ts` 는 웹 소스와 함께 지워져 지금 그 셋을 보는
@@ -58,7 +58,7 @@ describe('MapleSweepSpinner', () => {
     expect(getByTestId('maple-sweep-spinner', HIDDEN).props.color).toBe(기본테마.textMuted)
   })
 
-  // 웹에서는 `<clipPath>` 안에 `<g>` 를 넣으면 Chrome 이 조용히 빈 클립을 만들어 잎이 사라졌다
+// `<clipPath>` 안에 `<g>` 를 넣으면 조용히 빈 클립이 되어 잎이 사라진다
   // (`MapleWaveProgress` 트랩). 같은 모양을 유지한다.
   it('clipPath의 직접 자식은 도형 요소(Path)뿐이다', async () => {
     const tree = (await renderAtom(<MapleSweepSpinner />)).toJSON()
@@ -136,7 +136,7 @@ describe('MapleSweepSpinner: 모션 줄이기', () => {
     const tree = (await renderAtom(<MapleSweepSpinner />)).toJSON()
 
     expect(withRepeatSpy).not.toHaveBeenCalled()
-    // 띠가 시작 위치(잎 아래·viewBox 밖)에 머물러 **바탕 잎만** 남는다. 웹에서 `animation: none` 이
+// 띠가 시작 위치(잎 아래·viewBox 밖)에 머물러 **바탕 잎만** 남는다. `animation: none` 이
     // 보여주던 그림 그대로다. 이 좌표는 렌더 트리에 남으므로 여기서 볼 수 있다.
     const band = findAllOfType(tree, 'RNSVGRect').find((rect) => rect.props.mask !== undefined)
     expect(band?.props.y).toBe(140)

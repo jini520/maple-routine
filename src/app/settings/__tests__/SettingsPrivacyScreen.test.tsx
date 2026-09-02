@@ -1,4 +1,4 @@
-// **웹에는 이 화면의 테스트가 없다**. 명세로 삼을 것이 파일 주석과 뿐이다.
+// 개인정보 처리방침 화면. 명세로 삼을 것이 파일 주석뿐이다.
 // 그래도 쓰는 이유는 이 화면이 RN 으로 오며 **가장 많이 갈렸기 때문**이다(`iframe` → `WebView`,
 // 실패 신호가 하나 늘고, `navigator.onLine` 사전 검사가 사라졌다). 갈린 자리는 지켜 둘 값이 있다.
 import { act, fireEvent } from '@testing-library/react-native'
@@ -90,7 +90,7 @@ describe('SettingsPrivacyScreen', () => {
     expect(view.getByTestId('privacy-frame')).toBeTruthy()
   })
 
-  // **웹과 갈리는 자리**: 교차 출처 `iframe` 은 실패에 `error` 를 신뢰성 있게 발화하지 않아
+// 교차 출처 `iframe` 은 실패에 `error` 를 신뢰성 있게 발화하지 않아
   // 타임아웃이 유일한 신호였는데, `WebView` 는 발화한다(`SettingsPrivacyScreen.tsx` 파일 머리).
   it('로드에 실패하면 곧바로 실패 화면으로 간다. 8초를 기다리지 않는다', async () => {
     const view = await renderOverlay(<SettingsPrivacyScreen />)

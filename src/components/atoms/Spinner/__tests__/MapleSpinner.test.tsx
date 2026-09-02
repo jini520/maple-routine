@@ -1,8 +1,8 @@
-// 웹판이 지키던 셋(장식용 숨김 · `size` 반영 · motion-reduce)이 전부 산다. 셋째는 **보는 방법이
-// 바뀌었다**. 웹은 `motion-reduce:animate-none` 클래스를 렌더 결과에서 읽었지만 RN 에는 그 문자열이
+// 지키던 셋(장식용 숨김 · `size` 반영 · motion-reduce)이 전부 산다. 셋째는 **보는 방법이
+// 바뀌었다**. `motion-reduce:animate-none` 클래스가 RN 에는
 // 없어, *"반복 애니메이션을 걸었는가"* 를 본다(`reduced-motion.ts` 의 `withRepeatSpy` 주석).
 //
-// 여기에 웹에 없던 계약 하나가 더해진다: `pathLength` 정규화가 사라진 만큼 **대시가 실측 둘레의
+// 계약이 하나 더 있다: `pathLength` 정규화가 없는 만큼 **대시가 실측 둘레의
 // 70/30 이어야 한다**(컴포넌트 주석 참고). 지속시간·이징을 웹 원본과 대조하던
 // `keyframes-parity.test.ts` 는 웹 소스와 함께 지워져 지금 그 둘을 보는
 // 곳은 없다.
@@ -55,7 +55,7 @@ describe('MapleSpinner', () => {
     })
   })
 
-  // 웹의 `pathLength={300}` + `strokeDasharray="210 90"` 과 **같은 그림**이어야 한다.
+// `pathLength={300}` + `strokeDasharray="210 90"` 과 **같은 그림**이어야 한다.
   // `react-native-svg` 에 `pathLength` 가 없어 실측 둘레에 비율을 곱하는데, 그 비율이 틀어지면
   // 트레일 길이가 조용히 달라진다(에러가 나지 않는다).
   it('트레일이 둘레의 70% 다. `pathLength` 정규화가 없는 자리를 비율이 대신한다', async () => {
@@ -74,14 +74,14 @@ describe('MapleSpinner: 모션 줄이기', () => {
 
     await renderAtom(<MapleSpinner />)
 
-    // 오프셋이 0 에 머물러 웹에서 `animation: none` 이 남기던 정지 그림이 된다.
+// 오프셋이 0 에 머물러 `animation: none` 이 남기던 정지 그림이 된다.
     expect(withRepeatSpy).not.toHaveBeenCalled()
   })
 
   it('꺼져 있으면 되감기 없이 무한 반복한다. 웹의 `infinite`(alternate 가 아니다)', async () => {
     await renderAtom(<MapleSpinner />)
 
-    // 한 주기가 둘레 한 바퀴라 되감으면 트레일이 왕복한다. 웹은 같은 방향으로 계속 돈다.
+// 한 주기가 둘레 한 바퀴라 되감으면 트레일이 왕복한다. 같은 방향으로 계속 돌아야 한다.
     expect(withRepeatSpy).toHaveBeenCalledTimes(1)
     expect(withRepeatSpy.mock.calls[0].slice(1)).toEqual([-1, false])
   })

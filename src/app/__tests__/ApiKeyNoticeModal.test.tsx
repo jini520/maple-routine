@@ -1,4 +1,4 @@
-// 웹판 넷을 옮겼다(`app-capacitor/src/app/__tests__/ApiKeyNoticeModal.test.tsx`). 갈린 것 둘.
+// API 키 안내 모달. 갈린 것 둘.
 //
 // · 스토어를 **모킹하지 않고 `setState` 로 몬다**. 이 패키지의 관례다(`RootNavigator.test.tsx`).
 //   실물 리듀서를 쓰므로 `apiKeyNotice` 가 실제로 그 값을 가질 수 있는지까지 함께 검사된다.
@@ -14,7 +14,7 @@ import type { ApiKeyNoticeKind } from '../../features/onboarding/state'
 import { renderOverlay } from '../../components/__tests__/render-atom'
 import { ApiKeyNoticeModal } from '../ApiKeyNoticeModal'
 
-// 의 문구 표를 그대로 옮긴 것이다. 이 배열이 계약이고, 웹판 테스트가 같은 문자열을
+// 의 문구 표를 그대로 옮긴 것이다. 이 배열이 계약이다.
 // 단언한다. 두 원인이 같은 문구로 합쳐지면 여기서 먼저 깨진다.
 const CASES: ReadonlyArray<{ kind: ApiKeyNoticeKind; title: string; body: string }> = [
   {

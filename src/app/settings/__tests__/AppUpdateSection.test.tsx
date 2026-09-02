@@ -1,4 +1,4 @@
-// 웹판(128줄)의 명세를 읽어 다시 쓴 것.
+// 이 화면이 지키는 것을 적는다.
 //
 // 갈린 것 셋
 // ① **스토어를 목하지 않는다. 값을 프롭으로 받는다.** core 의 `live-update/store` 는 값으로
@@ -70,7 +70,7 @@ describe('AppUpdateSection', () => {
     expect(view.getByText('1.0.3')).toBeTruthy()
   })
 
-  // 웹은 `currentVersion === null` 일 때 `package.json` 을 직접 읽었다. RN 에서는 그 폴백 경로만
+// `currentVersion === null` 이면 폴백 값을 쓴다. 그 경로만
   // 남아 호출부가 값을 넘긴다(`SettingsAboutScreen`). 값을 지어내지 않고 분기 하나로 좁힌 것이다.
   it('currentVersion 이 없으면 fallbackVersion 을 쓴다', async () => {
     const view = await render({ currentVersion: null, status: 'unsupported' })

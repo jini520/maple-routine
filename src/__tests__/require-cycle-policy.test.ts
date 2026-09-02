@@ -9,7 +9,7 @@
 //
 // 웹만 보면 안 보인다: 이 경고를 내는 것은 Metro 뿐이고 Vite/Rollup 은 같은 사이클을 말없이
 // 번들한다. 그래서 가드가 **app-rn 에** 있고, 훑는 범위는 Metro 가 실제로 번들하는 그래프다
-// (`app-rn/src` + `core/src`). app-capacitor 는 Metro 가 안 읽으므로 대상이 아니다.
+// (`src/`). Metro 가 실제로 번들하는 그래프만 대상이다.
 //
 // ## `import type` 을 세지 않는 이유
 //

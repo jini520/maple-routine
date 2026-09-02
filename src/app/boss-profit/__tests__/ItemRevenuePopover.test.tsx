@@ -131,7 +131,7 @@ describe('ItemRevenuePopover: 미입력은 0원이 아니다', () => {
 })
 
 describe('ItemRevenuePopover: 좌표를 모르면 그리되 보이지 않는다', () => {
-  // 웹은 탭 핸들러 안에서 동기로 쟀지만 RN 의 측정은 콜백으로 온다. 그 사이 아무 데나 그리지
+// 측정이 콜백으로 온다. 그 사이 아무 데나 그리지
   // 않는다. 내용은 트리에 있고 `opacity: 0` 으로 기다린다(컴포넌트 파일 머리 ①).
   it('anchor 가 null 이면 투명하다', async () => {
     const { getByTestId } = await renderPopover({ drops: [], anchor: null })

@@ -1,8 +1,8 @@
-// 드롭 획득 히스토리. 웹판(500줄)의 명세를 읽어 다시 쓴 것.
+// 드롭 획득 히스토리. 이 화면이 지키는 것을 적는다.
 //
 // 갈린 것 넷
 // ① **라우터가 없다**. 빈 상태 CTA 는 `goBack` 이 불렸는가로 본다.
-// ② **셸 계약이 뒤집힌다**. 웹은 *"`screen-scroll` 이 없어야 한다"* 를 단언했다(공용 셸의 상단
+// ② **셸 계약이 뒤집힌다**. 공용 셸의 상단
 //    보정이 sticky 헤더와 겹쳤다). RN 에는 그 보정이 없고 헤더가 스크롤 뷰의 형제라 **공용 셸을
 //    쓰는 것이 맞는 그림**이라, 같은 자리에서 반대를 단언한다.
 // ③ **클래스 문자열로 묻지 않는다**. `bg-`·`border-b` 유무를 보던 자리는 렌더된 스타일 값으로,
@@ -47,7 +47,7 @@ const PERIOD = '2026-07-09'
 
 /**
  * 문장에는 줄바꿈 금지용 zero-width 문자가 섞여 있다. 사람이 읽는 문장으로
- * 비교한다. 웹은 `textContent` 한 줄이면 됐지만 RN 트리에는 그런 프로퍼티가 없어 직접 모은다.
+ * 비교한다. RN 트리에는 `textContent` 가 없어 직접 모은다.
  */
 function 문장(node: AtomElement): string {
   const parts: string[] = []
@@ -110,7 +110,7 @@ function mockStore(overrides: Partial<Store> = {}): void {
 }
 
 /**
- * **`rerender` 로 프로바이더를 날리지 않으려면 같은 트리를 다시 넘겨야 한다**(step 3 이 실측해 적어
+ * **`rerender` 로 프로바이더를 날리지 않으려면 같은 트리를 다시 넘겨야 한다**(실측해 적어
  * 둔 함정). 그래서 `renderOverlay` 대신 트리를 여기서 짜고 `rerenderSame` 을 함께 돌려준다.
  * 마운트당 한 번만 하는 일(무작위 문구 고정)을 확인하는 케이스가 그것을 쓴다.
  */
@@ -137,7 +137,7 @@ beforeEach(() => {
 })
 
 describe('DropHistoryScreen: 셸과 조회', () => {
-  // 웹은 *"`screen-scroll` 이 없어야 한다"* 였다. 공용 셸의 `-mt-[var(--sa-top)]` 이 흐름 밖 `fixed`
+// 공용 셸의 `-mt-[var(--sa-top)]` 이 흐름 밖 `fixed`
   // 헤더를 전제한 보정이라 이 화면의 sticky 헤더와 겹쳤기 때문이다(실기기 계측 31px). RN 에는 그
   // 보정 자체가 없고 헤더가 스크롤 뷰의 **형제**라 공용 셸이 곧 맞는 그림이다.
   it('공용 셸을 쓰고 헤더가 상단 안전영역을 먹는다', async () => {
@@ -229,7 +229,7 @@ describe('DropHistoryScreen: 기록 한 줄', () => {
 
     // RN 에 데이터 속성이 없어 접근성 이름으로 옮겼다.
     expect(getByLabelText('고가 드롭 기록')).toBeTruthy()
-    // 웹의 `.valuable-drop-badge` 는 그라디언트 pill 이었고 RN 에서는 단색 배경만 남는다.
+// 배지는 단색 배경만 남는다.
     // 지켜야 하는 것은 *"골드 위에 골드 잉크"* 라는 사실이다(파일 머리 ④).
     const inline = flattenStyle(getByTestId('valuable-drop-inline').props.style)
     expect(inline.backgroundColor).toBe('#f7c400')
@@ -403,7 +403,7 @@ describe('DropHistoryScreen: 미획득 요약', () => {
     })
     const { getByLabelText, getByTestId } = await renderHistory()
 
-    // 웹의 `data-drought-tier` 자리. 데이터 속성이 없어 접근성 이름으로 옮겼다.
+// 데이터 속성이 없어 단계를 접근성 이름으로 옮겼다.
     expect(getByLabelText(`고가 드롭 미획득 ${weeks}단계`)).toBeTruthy()
     const summary = 문장(getByTestId('valuable-drought'))
     expect(문구풀(weeks).some((headline) => summary.includes(headline))).toBe(true)

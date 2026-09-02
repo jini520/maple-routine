@@ -1,16 +1,16 @@
-// 웹판(275줄)의 명세를 읽어 다시 쓴 것.
+// 이 화면이 지키는 것을 적는다.
 //
 // 갈린 것 다섯
-// ① **부모를 계산하지 않는다.** 웹은 라우트가 둘이라 돌아갈 곳을 경로에서 깎아 썼고, 그래서
+// ① **부모를 계산하지 않는다.** 돌아갈 곳을 경로에서 깎지 않는다. 그래서
 //    `기능 설명에서 들어오면 기능 설명으로`·`개발 노트에서 들어오면 개발 노트로` 두 케이스가
 //    있었다. RN 의 pop 은 스택이 이미 알고 있어 **한 케이스로 접힌다**(`use-settings-navigation.ts`).
-// ② **마디는 쿼리가 아니라 파라미터**다. 목차를 누르면 `setParams` 이고, 그것이 웹의
+// ② **마디는 쿼리가 아니라 파라미터**다. 목차를 누르면 `setParams` 다.
 //  `replace` 와 같은 뜻(스택을 안 건드린다)이다.
 // ③ **스크롤 검사가 `scrollIntoView` 스파이에서 `scrollTo` 스파이 + `onLayout` 주입으로** 바뀐다.
 //    RN 에는 문서도 id 도 없어 마디가 자기 y 를 알려 줘야 하고(그 배선이 곧 이 화면의 계약이다),
 //    jest 는 레이아웃을 계산하지 않으므로 **테스트가 그 y 를 넣어 준다.**
 // ④ 없는 안내의 되돌리기는 `<Navigate replace>` → `goBack()`. 뜻(히스토리를 남기지 않는다)은 같다.
-//    웹의 `push 가 아니라 replace 다` 케이스는 **스택을 우리가 미는 RN 에서 성립하지 않는다.**
+//    `push 가 아니라 replace 다` 케이스는 **스택을 우리가 미는 여기서 성립하지 않는다.**
 // ⑤ `getByAltText` → `getByLabelText`(`alt` 의 짝은 `accessibilityLabel`), `src` → `source`.
 //  그리고 그 값은 URL 문자열이 아니라 **번들 에셋 참조**다.
 import { act, fireEvent } from '@testing-library/react-native'
@@ -289,7 +289,7 @@ describe('SettingsFeatureGuideScreen', () => {
     expect(view.getByLabelText('난이도 세그먼트')).toBeTruthy()
   })
 
-  // 웹은 `w-full` 한 줄이었다. 높이는 preflight 의 `img { height: auto }` 가 정했다. RN 에 그
+// 한 축만 이름 부르면 다른 축에 고유 픽셀값이 남는다. RN 에 그
   // 짝이 없어 **높이를 이름 부르지 않으면** 스크린샷의 고유 픽셀 높이가 상자 높이로 남고,
   // `contain` 이 그 안에 그림을 넣어 **위아래로 큰 여백**이 생긴다(746×274 안내는 각 71px, 세로로
   // 긴 780×1438 안내는 각 389px. 보고 ②).

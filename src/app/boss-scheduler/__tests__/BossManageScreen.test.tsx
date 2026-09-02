@@ -1,4 +1,4 @@
-// 웹판(`BossManageScreen.test.tsx` 574줄)의 **명세를 읽어 다시 쓴 것**이다.
+// `BossManageScreen.test.tsx` 574줄의 **명세를 읽어 다시 쓴 것**이다.
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import { act, fireEvent, screen, within } from '@testing-library/react-native'
 
@@ -129,7 +129,7 @@ async function press(element: AtomElement): Promise<void> {
   })
 }
 
-/** 수동 모드 행의 추적 토글. 웹도 이 버튼에 보스명을 `aria-label` 로 박아 두었다. */
+/** 수동 모드 행의 추적 토글. 이 버튼에 보스명이 `aria-label` 로 박혀 있다. */
 function rowToggle(bossName: string): AtomElement {
   return screen.getByLabelText(bossName)
 }

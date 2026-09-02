@@ -1,4 +1,4 @@
-// 웹판(44줄)의 명세를 읽어 다시 쓴 것.
+// 이 화면이 지키는 것을 적는다.
 //
 // 갈린 것 셋
 // ① `getByRole('link')` + `href` → **`Linking.openURL` 이 무엇으로 불렸는가**(`ApiKeyForm` 테스트와

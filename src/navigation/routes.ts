@@ -178,7 +178,7 @@ export interface RouteRow {
  * `/settings/about/privacy` 가 계획서 표(`/settings/privacy`)와 다른 것은 **계획서 쪽이 낡았기
  * 때문**이다. 이 구현 중에 경로를 `about` 의 **자식**으로 정정했고
  * (`/settings/privacy` 로 두면 about 이 즉시 사라진 자리에 처방침이 밀려 들어와 밀려 나가는 화면
- * 없이 배경만 바뀌는 프레임이 보인다), `app-capacitor` 의 라우트도 그렇게 되어 있다. 이 앱에서
+ * 없이 배경만 바뀌는 프레임이 보인다). 이 앱에서
  * 스택이 2단이 되는 자리는 여기뿐이다. 계획서 표도 함께 고쳤다.
  */
 export const ROUTE_TABLE: readonly RouteRow[] = [

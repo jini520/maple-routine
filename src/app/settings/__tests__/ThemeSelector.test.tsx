@@ -1,9 +1,9 @@
-// 웹판(189줄)의 명세를 읽어 다시 쓴 것.
+// 이 화면이 지키는 것을 적는다.
 //
 // 갈린 것 셋
 // ① `aria-pressed` → **`aria-selected` → `accessibilityState.selected`.** RN 접근성 상태에
 //    *pressed* 가 없어 컴포넌트가 이미 `aria-selected` 로 갈아탔다(온보딩 선택 카드와 같은 자리).
-// ② 타일·칩을 **`aria-label` 로 잡는다**. 웹은 자식 글자에서 접근성 이름이 계산됐지만 RN 은
+// ② 타일·칩을 **`aria-label` 로 잡는다**. 자식 글자에서 접근성 이름이 안 계산되므로
 //    합쳐 주지 않아 컴포넌트가 라벨을 명시로 준다.
 // ③ `toHaveStyle({ background })` → 컴파일된 스타일에서 `backgroundColor` 를 본다. **기대값은
 //  손으로 적지 않고 `job-themes.json`(= `getThemeDefinition`)에서 읽는다**.

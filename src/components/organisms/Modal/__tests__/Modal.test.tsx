@@ -1,4 +1,4 @@
-// 웹판을 옮긴 것. 사라지거나 형태가 바뀐 케이스만 여기 적는다.
+// 사라지거나 형태가 바뀐 케이스만 여기 적는다.
 //
 // · *"body 직속으로 렌더링한다"* → **`react-native` 의 `Modal` 을 쓴다**로 바뀐다(같은 계약의 RN 판:
 //   부모 레이아웃과 무관하게 화면 전체를 덮는다).
@@ -42,7 +42,7 @@ describe('Modal', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
-  // 웹은 `stopPropagation` 이었다. RN 에는 버블링이 없어 **터치를 누가 가져가는지**로 같은 일을
+// RN 에는 버블링이 없어 **터치를 누가 가져가는지**로 같은 일을
   // 한다. 패널이 responder 를 선언하지 않으면 바깥 `Pressable` 이 받아 모달이 닫힌다.
   it.each([
     ['Modal.Card', <Modal.Card key="card"><Text>내용</Text></Modal.Card>],

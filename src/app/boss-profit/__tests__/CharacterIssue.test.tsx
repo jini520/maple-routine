@@ -1,6 +1,6 @@
 // 동기화 실패 표식과 그 설명.
 //
-// 웹은 카드 헤더가 `<button>` 이라 배지를 `<span>` 으로 두고 `stopPropagation` 했지만, RN 은 터치를
+// 카드 헤더 안의 배지도 터치를
 // **가장 깊은 곳이 가져가므로**(responder) 중첩 `Pressable` 이 정상이다. 아래 케이스가 그 사실을
 // 계약으로 박는다(부모가 함께 열리면 아코디언이 토글돼 카드가 접힌다).
 import { act, fireEvent } from '@testing-library/react-native'

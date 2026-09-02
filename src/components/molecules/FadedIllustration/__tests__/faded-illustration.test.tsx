@@ -90,7 +90,7 @@ describe('IllustratedCard', () => {
 
     expect(flattenStyle(getByTestId('page').props.style).backgroundColor).toBe(기본테마.surface)
     expect(flattenStyle(getByTestId('inside').props.style).backgroundColor).toBe(기본테마.mediaSurface)
-    // 껍데기 자신도 카드 기준을 쓴다. 웹에서 `.media-scope` 가 카드 루트에 함께 붙던 자리다.
+// 껍데기 자신도 카드 기준을 쓴다. 스코프가 카드 루트에 함께 붙는 자리다.
     expect(flattenStyle(getByTestId('card').props.style).backgroundColor).toBe(기본테마.mediaSurface)
   })
 

@@ -1,8 +1,8 @@
-// 화면 상단 헤더 셸(4단계). 웹판 테스트가 지키던 것은 *"4화면이 복붙하던 마크업을 글자
+// 화면 상단 헤더 셸. 지키는 것은 *"4화면이 복붙하던 마크업을 글자
 // 하나까지 그대로 낸다"* 였는데, RN 에서는 그 마크업이 통째로 바뀌므로(`PageHeader.tsx` 파일 머리)
 // 이 파일이 지키는 것도 갈린다.
 //
-// | 웹판이 지키던 것 | 여기서는 |
+// | 지키던 것 | 여기서는 |
 // |---|---|
 // | 셸 클래스 문자열 동일 | **스냅샷 기준선**으로 대체(값 대조가 불가능하다) |
 // | `fixed` 이지 `sticky` 가 아니다 | **스크롤 뷰 밖에 있다**. 위치가 스크롤의 함수가 아닌 것이 요점이고, RN 은 그것을 레이아웃으로 얻는다 |
@@ -21,14 +21,14 @@ import { PageHeader } from '../PageHeader'
 beforeEach(__resetThemeAppearanceForTest)
 afterEach(__resetThemeAppearanceForTest)
 
-/** RN 은 벌거벗은 문자열을 View 자식으로 못 그린다. 웹판 테스트의 `내용` 자리. */
+/** RN 은 벌거벗은 문자열을 View 자식으로 못 그린다. 그 자리를 채우는 도우미. */
 const 내용 = <Text>내용</Text>
 
 /** 페이드는 `aria-hidden` 이라 RNTL 기본 쿼리에서 빠진다. */
 const HIDDEN = { includeHiddenElements: true } as const
 
 describe('PageHeader', () => {
-  // ★ **딱 안전영역만큼이다.** 웹의 `pt-[calc(1rem+var(--sa-top))]` 에서 상수 몫
+// ★ **딱 안전영역만큼이다.** 상수 몫
   // 1rem 을 뺐다: 그 16 은 불투명 헤더 판의 안쪽 여백이자 고정 헤더와 상태바의 분리였는데,
   // RN 헤더는 배경을 안 칠하고 고정도 아니라 둘 다 해당이 없다.
   // **`toBe` 로 못 박는 이유**는 이 값이 상단 페이드의 끝선과 **같은 선**이 됐기
@@ -55,9 +55,9 @@ describe('PageHeader', () => {
     expect(flattenStyle(getByTestId('page-header').props.style).backgroundColor).toBeUndefined()
   })
 
-  // ★ 회귀 가드. **웹의 형태를 되살리지 말 것.**
+// ★ 회귀 가드. **옛 형태를 되살리지 말 것.**
   //
-  // 웹에서 이 셸은 `fixed` + 실측 spacer 였고 는 그 spacer 가 헤더보다 한 프레임 늦게
+// `fixed` + 실측 spacer 로 두면 그 spacer 가 헤더보다 한 프레임 늦게
   // 갱신되는 결함(이슈 #168, 약 90px)을 고치느라 measure/observe 두 effect 를 두었다. RN 에서
   // 그 형태를 흉내 내면 **결함까지 함께 되살아난다**. `onLayout` 은 레이아웃 *뒤*에 오는 비동기
   // 통보라 "같은 커밋에 갱신"이 원리적으로 불가능하고, 그것이 이 금지한

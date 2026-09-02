@@ -1,6 +1,6 @@
-// 드랍 연출 재생 순서. **웹판에는 없던 안전망**이다.
+// 드롭 연출 재생 순서.
 //
-// 웹은 이 로직이 `useEffect` 안의 클로저 + DOM 변이와 한 덩어리라 단위로 검사할 수 없었고, 그래서
+// 이 로직이 `useEffect` 안의 클로저 + DOM 변이와 한 덩어리면 단위로 못 검사하고, 그래서
 // `DropEffectOverlay.test.tsx` 머리에 *"재생을 보는 아홉은 여기 없다"* 고 적혀 있었다. 상태 전이를
 // 순수 함수로 떼어내면서 그 아홉 중 **화면 없이 검사할 수 있는 것들**이 여기로 왔다.
 //
@@ -116,7 +116,7 @@ describe('닫기. end 를 한 번 재생하고 끝난다', () => {
     expect(s.finished).toBe(true)
   })
 
-  // 웹의 **두 번 탭하면 건너뛴다**(`if (st.closing) finish()`).
+// **두 번 탭하면 건너뛴다**(`if (st.closing) finish()`).
   it('닫는 중에 또 요청하면 곧바로 끝낸다', () => {
     const once = requestDropEffectClose(createDropEffectState(), COUNTS)
     const twice = requestDropEffectClose(once, COUNTS)
@@ -132,7 +132,7 @@ describe('닫기. end 를 한 번 재생하고 끝난다', () => {
 })
 
 describe('에셋이 비어도 멈추지 않는다', () => {
-  // 웹도 `frames.loop.length === 0` 이면 연출 없이 닫기만 가능하게 뒀다. 무한 루프로 앱을 세우는
+// `frames.loop.length === 0` 이면 연출 없이 닫기만 가능하다. 무한 루프로 앱을 세우는
   // 것이 최악이라, 프레임 0 인 단계를 만나도 빠져나오는지 본다.
   it('기둥 프레임이 하나도 없으면 기둥을 켜지 않는다', () => {
     const s = run(createDropEffectState(), 2000, { screen: 16, pre: 0, loop: 0, end: 7 })

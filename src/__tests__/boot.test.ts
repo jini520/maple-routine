@@ -134,8 +134,8 @@ describe('installPorts()', () => {
   })
 })
 
-// 이 목록을 떠난 것이 셋이다. `ThemeAppearancePort` 는 step 1(theme-system)에서, `BackGesturePort`
-// 는 step 2(navigation)에서, `SystemBarsPort` 는 step 6(templates)에서. 셋 다 이제 실구현이
+// 이 목록을 떠난 것이 셋이다. `ThemeAppearancePort` 는 그 회차에서, `BackGesturePort`
+// 는 그 회차에서, `SystemBarsPort` 는 그 회차에서. 셋 다 이제 실구현이
 // 배선되므로 위 `WIRED` 가 그 자리를 본다. 셋 다 **절반씩 갈렸고**(한쪽은 실구현, 다른 쪽은 던지거나
 // 의도적 no-op) 그 갈림은 이 파일이 아니라 각 어댑터의 테스트가 본다. 사유가 *"아직 안 했다"* 가
 // 아니라서(`rn-back-gesture.test.ts` · `rn-system-bars.test.ts`) 메시지 규약도 다르다.

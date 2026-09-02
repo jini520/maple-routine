@@ -1,12 +1,12 @@
 // 컨텐츠 카드. **어떤 항목이 어떤 카드로 그려지는가**.
 //
-// 웹은 이 계약을 `ContentScreen.test.tsx` 안에서 화면째 렌더해 검사했다. 여기서는 `render*Card`
+// 화면째 렌더하지 않고 `render*Card`
 // 를 직접 부른다. 묻는 것이 **분기와 배지**이지 화면 배선이 아니고, 스토어 목 없이 같은 계약을
 // 그대로 볼 수 있기 때문이다(화면 쪽 계약은 `ContentScreen.test.tsx` 가 따로 본다).
 //
 // **그림은 `testUri` 로 본다.** jest 에서 번들 에셋은 숫자가 아니라 `{ testUri }` 대역이라
 // *"어느 파일로 해석됐는가"* 를 그 문자열로 묻는다.
-// 웹이 `src` 속성으로 묻던 것과 같은 질문이다.
+// 그림이 실재하는지를 묻는 질문이다.
 import type { DailyContent, WeeklyContent } from '../../../types'
 
 import { findAllOfType, renderAtom, type AtomElement } from '../../../components/__tests__/render-atom'

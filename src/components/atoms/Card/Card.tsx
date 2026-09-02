@@ -12,7 +12,7 @@
  *
  * 상자만 그린다. 붙던
  * `space-y-*`·`divide-y` 같은 자식 간격 유틸은 NativeWind 에 없으므로(형제 선택자가 필요하다)
- * 그 자리를 쓰던 호출부는 step 4~6 에서 `gap-*` 로 바꾼다. 카드가 아니라 호출부의 일이다.
+ * 그 자리를 쓰던 호출부는 `gap-*` 로 바꾼다. 카드가 아니라 호출부의 일이다.
  */
 import { View, type ViewProps } from 'react-native'
 

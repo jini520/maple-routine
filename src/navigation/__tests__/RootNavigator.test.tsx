@@ -34,7 +34,7 @@ type Status = 'awaitingApiKey' | 'completed'
  */
 const GUIDE = FEATURE_GUIDES[0]
 const GUIDE_ID = GUIDE.id
-// 웹의 `?s=` 자리. 경로가 아니라 파라미터라 스택 한 단으로 읽히지 않는다.
+// 마디는 경로가 아니라 파라미터라 스택 한 단으로 읽히지 않는다.
 const GUIDE_SECTION_ID = GUIDE.sections[0].id
 
 beforeEach(() => {
@@ -77,7 +77,7 @@ describe('온보딩 분기', () => {
     expect(screen.queryByTestId('screen-Onboarding', { includeHiddenElements: true })).toBeNull()
   })
 
-  // **양방향이 요점이다.** 한 방향만 보면 "처음부터 완료였다"와 구분되지 않는다. 웹은 라우트마다
+// **양방향이 요점이다.** 한 방향만 보면 "처음부터 완료였다"와 구분되지 않는다.
   // `<Navigate replace>` 를 걸어 이 전환을 만들었고, RN 은 화면 목록 자체를 갈아 끼운다
   // (`RootNavigator` 주석). 계약은 같으므로 여기서 같은 것을 묻는다.
   it('미완료 → 완료 → 미완료 로 오갈 때 화면이 따라 바뀐다', async () => {

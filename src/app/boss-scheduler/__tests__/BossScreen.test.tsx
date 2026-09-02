@@ -1,4 +1,4 @@
-// 웹판 넷(`BossScreen.test.tsx` 1,695줄 · `.view-state` · `.cold-start` · `.dom-snapshot`)의
+// 보스 스케줄러 화면이 지키는 것을 적는다.
 // **명세를 읽어 다시 쓴 것**이다.
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import { act, fireEvent, screen, within } from '@testing-library/react-native'
@@ -141,7 +141,7 @@ async function press(element: AtomElement): Promise<void> {
   })
 }
 
-/** 글자에서 위로 올라가 실제로 눌리는 조상을 찾는다(웹의 `getByRole('button', { name })`). */
+/** 글자에서 위로 올라가 실제로 눌리는 조상을 찾는다. */
 function button(label: string, index = 0): AtomElement {
   let node: AtomElement | null = screen.getAllByText(label)[index]
   while (node !== null && node.props.role !== 'button') node = node.parent
@@ -217,7 +217,7 @@ describe('BossScreen: 빈 상태와 마운트', () => {
   })
 
   // : 이 화면은 피커를 열지 않는다. 설정 탭을 **열린 채로** 연다.
-  // 웹의 `?openPicker=1` 을 받던 자리도 그리로 옮겨갔다(`SettingsScreen.test.tsx`).
+// 피커를 여는 파라미터를 받던 자리도 그리로 옮겨갔다(`SettingsScreen.test.tsx`).
   it('빈 상태 CTA 를 누르면 설정 탭을 피커가 열린 채로 연다', async () => {
     mockStore({ trackedOcids: [] })
     await renderScreen()

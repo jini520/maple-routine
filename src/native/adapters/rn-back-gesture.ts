@@ -30,7 +30,7 @@ import AppBackground from '../../../modules/app-background'
  * 실제로는 네이티브 스택이 이미 처리하고 있어 **그 호출은 아무 일도 하지 않는다**. 조용한 no-op 은
  * 그 오해를 끝까지 숨긴다. 던지면 첫 호출에서 드러난다.
  *
- * (부르는 쪽이 지금은 없다. `use-system-back.ts` 는 `app-capacitor` 에 남고 RN 으로 옮기지 않는다.)
+ * (부르는 쪽이 지금은 없다.)
  */
 
 const OWNED_BY_NATIVE_STACK =

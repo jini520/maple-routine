@@ -1,4 +1,4 @@
-// 웹판의 일곱을 옮겼다. 하나만 형태가 갈린다. `aria-pressed` 단언이 **`aria-selected`** 가 됐다
+// 난이도 세그먼트. 형태가 갈리는 것 하나. `aria-pressed` 단언이 **`aria-selected`** 가 됐다
 // (RN 의 접근성 상태에는 *pressed* 가 없다, 컴포넌트 주석 ①).
 import { fireEvent } from '@testing-library/react-native'
 
@@ -24,7 +24,7 @@ describe('DifficultySegment', () => {
       <DifficultySegment difficulties={['노멀', '하드']} selected="하드" onSelect={jest.fn()} />,
     )
 
-    // RN 이 `aria-selected` 를 `accessibilityState.selected` 로 정규화한다(실측). 웹의
+// RN 이 `aria-selected` 를 `accessibilityState.selected` 로 정규화한다(실측).
     // `aria-pressed` 가 담던 사실이 그대로 여기 들어온다.
     const [normal, hard] = getAllByRole('button')
     expect(normal.props.accessibilityState.selected).toBe(false)

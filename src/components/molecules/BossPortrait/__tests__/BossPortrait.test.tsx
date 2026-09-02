@@ -1,5 +1,5 @@
-// 웹판은 네 케이스였고 3단계에서는 그중 **둘(이미지 분기)이 없었다**. 그림이 번들에 없었고,
-//  로 들어온 뒤에도 크롭을 RN 기하로 옮기는 일이 남아 있었다. step 5 가 그 변환을
+// 보스 초상. 그림이 번들에 없던 동안은 이미지 분기 둘이 없었다.
+// 로 들어온 뒤에도 크롭을 RN 기하로 옮기는 일이 남아 있었다. 그 변환을
 // 붙이며 **네 케이스가 다 선다**.
 //
 // **jest 에서 그림의 고유 크기는 없다**(에셋이 `{ testUri }` 대역이다. 의
@@ -21,7 +21,7 @@ describe('BossPortrait', () => {
     expect(portrait.props.role).toBe('img')
     expect(queryByText('?')).toBeNull()
 
-    // 원형 클리핑은 **우리가 명시해야 한다**. 웹은 `background-image` 라 둥근 모서리가 배경을
+// 원형 클리핑은 **우리가 명시해야 한다**. 배경이 아니라 `Image` 라 둥근 모서리가
     // 저절로 잘랐지만 RN 의 `<Image>` 는 자식이라 부모가 자르지 않으면 네모로 삐져나온다.
     expect(flattenStyle(portrait.props.style)).toMatchObject({
       borderRadius: 9999,

@@ -9,7 +9,7 @@ import type { SplashScreenPort } from '../ports'
  * **`expo-splash-screen` 을 고른 근거**는 버전이 SDK 에 묶인다는 것이다(`~57.0.6`. `expo` 의
  * `bundledNativeModules.json` 이 SDK 57 짝으로 지정한 값이고, 이미 있는 `expo-status-bar` 와 같은
  * 라인이다). 후보였던 `react-native-bootsplash`(같은 파일이 `^6.3.10` 을 지정) 는 SDK 와 독립적으로
- * 버전이 움직이고 에셋 생성 CLI 를 따로 돌려야 하는데, step 5 에서 광고 SDK 가 정확히 그 독립
+ * 버전이 움직이고 에셋 생성 CLI 를 따로 돌려야 하는데, 광고 SDK 가 정확히 그 독립
  * 버저닝 때문에 Kotlin 메타데이터 충돌로 빌드를 깨뜨렸다. 두 라이브러리 모두 **다시 띄우는 API 가
  * 없어서**(아래 `show()`) 그 축은 선택에 영향을 주지 않았다.
  *

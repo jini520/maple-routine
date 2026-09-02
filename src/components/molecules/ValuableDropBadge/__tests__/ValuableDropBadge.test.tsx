@@ -1,4 +1,4 @@
-// **웹에는 이 컴포넌트의 단위 테스트가 없었다**. 세 화면 테스트가 배지를 `aria-label` 로만 찾았다.
+// 고가 드롭 배지. 화면 테스트 셋이 배지를 `aria-label` 로만 찾는다.
 // RN 에서는 외형 규칙이 CSS(`.valuable-drop-badge`)가 아니라 **컴포넌트 안의 값**이 됐으므로
 // (그라디언트·글로우·흰 링) 그 값을 지킬 자리가 필요하다.
 import type { RecordedDrop } from '../../../../types/drops'
@@ -73,7 +73,7 @@ describe('ValuableDropBadge', () => {
     )
   })
 
-  // 웹의 `box-shadow`(글로우)와 `ring`(흰 테두리)이 둘 다 `boxShadow` 로 왔다. 색 있는 글로우는
+// 글로우와 흰 테두리가 둘 다 `boxShadow` 로 온다. 색 있는 글로우는
   // 안드로이드의 `elevation` 으로 표현할 수 없고, ring 을 `borderWidth` 로 옮기면 아이콘이 작아진다.
   it('글로우와 흰 링을 boxShadow 로 그린다', async () => {
     const { getByTestId, getAllByTestId } = await renderAtom(
@@ -100,9 +100,9 @@ describe('ValuableDropBadge', () => {
 
     const [icon] = getAllByTestId('valuable-drop-icon')
     expect(icon.props.source).toBeDefined()
-    // 웹의 `object-contain` 짝. 정사각 원 안에서 비율을 지킨다.
+// 정사각 원 안에서 비율을 지킨다.
     expect(icon.props.resizeMode).toBe('contain')
-    // 그림이 있는 자리의 바탕은 `surface`(폴백 원만 `surface-2`)다. 웹과 같은 갈림이다.
+// 그림이 있는 자리의 바탕은 `surface`(폴백 원만 `surface-2`)다.
     expect(flattenStyle(icon.props.style).backgroundColor).toBe(기본테마.surface)
   })
 

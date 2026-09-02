@@ -1,4 +1,4 @@
-// 웹판 셋(`ContentScreen.test.tsx` 1,653줄 · `.view-state` · `.dom-snapshot`)의 명세를 읽어 다시 쓴 것.
+// 컨텐츠 스케줄러 화면이 지키는 것을 적는다.
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import { act, fireEvent, screen } from '@testing-library/react-native'
 import { useState } from 'react'
@@ -101,7 +101,7 @@ async function press(element: AtomElement): Promise<void> {
   })
 }
 
-/** 글자에서 위로 올라가 실제로 눌리는 조상을 찾는다(웹의 `getByRole('button', { name })`). */
+/** 글자에서 위로 올라가 실제로 눌리는 조상을 찾는다. */
 function buttonAt(label: string, index = 0): AtomElement {
   let node: AtomElement | null = screen.getAllByText(label)[index]
   while (node !== null && node.props.role !== 'button') node = node.parent

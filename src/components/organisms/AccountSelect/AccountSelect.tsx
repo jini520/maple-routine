@@ -108,7 +108,7 @@ function AccountRow(props: AccountRowProps): React.JSX.Element {
 }
 
 export interface AccountSelectProps {
-  /** step 3 의 파생값. 값 규칙(대표 · 월드 둘까지)은 이미 여기 담겨 온다. */
+/** 파생값. 값 규칙(대표 · 월드 둘까지)은 이미 여기 담겨 온다. */
   accounts: AccountSummaryView[]
   selectedAccountId: string
   /** 그 계정의 대표 캐릭터 얼굴. **캐시에 있을 때만**. 없으면 이니셜. */

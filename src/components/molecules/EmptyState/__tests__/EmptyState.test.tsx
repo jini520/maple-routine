@@ -1,4 +1,4 @@
-// 웹판이 지키던 것과 같다. 클래스 문자열 단언(`toHaveClass('h-14','w-14')`)은 **풀린 값**으로 바꿨고
+// 지키던 것과 같다. 클래스 문자열 단언(`toHaveClass('h-14','w-14')`)은 **풀린 값**으로 바꿨고
 // (RN 에 클래스가 안 남는다), 그 밖의 계약은 한 줄도 줄이지 않았다.
 //
 // `EmptyState` 의 `icon` 은 lucide 아이콘도 커스텀 아이콘도 받는다. 여기서
@@ -113,7 +113,7 @@ describe('EmptyState', () => {
     expect(queryByTestId('maple-leaf', HIDDEN)).toBeNull()
   })
 
-  // 웹은 `fill-primary-ink` 로 색을 줬다. RN 에는 `fill` 스타일이 없어 `text-*` → `color` 프롭 →
+// `fill` 스타일이 RN 에 없어 `text-*` → `color` 프롭 →
   // 자식의 `currentColor` 로 흐른다(`lib/nativewind-interop.ts`). **통로가 끊기면 잎이 검게 된다.**
   it('단풍잎 색은 className 이 정한다. `currentColor` 가 읽는 `color` 프롭으로 들어간다', async () => {
     const { getByTestId } = await renderAtom(

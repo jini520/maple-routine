@@ -3,7 +3,7 @@
  * (`docs/migration/data.md` 결정 2).
  *
  * 파일을 실제로 여는 것은 네이티브지만 "어느 파일을 여는가"는 전부 문자열 규칙이라 여기 둔다.
- * step 1 의 `capacitor-storage-keys.ts` 와 같은 이유이고 같은 이득이다. **실기기 없이 검증되는
+ * `capacitor-storage-keys.ts` 와 같은 이유이고 같은 이득이다. **실기기 없이 검증되는
  * 자리로 옮기는 것**. 이 단계에서 오타 하나가 가장 비싼 자리가 정확히 여기다: 경로나 파일명이
  * 틀리면 예외도 없이 **빈 DB 가 새로 생기고**, 사용자에게는 보스 수익·드랍 기록이 전부 사라진
  * 것으로 보인다(API 로 복구할 수 없는 데이터다).
@@ -31,7 +31,7 @@ export type SqlitePlatform = 'ios' | 'android'
  *
  * ⚠️ **iOS 는 `docs/migration/data.md` 가 적어 둔 `Library/CapacitorDatabase` 가 아니다.**
  * 그 값은 플러그인 README 가 `iosDatabaseLocation` 을 *설정하는 예시*로 든 경로이고,
- * `packages/app-capacitor/capacitor.config.ts` 에는 그 설정이 없다. 설정이 없으면 플러그인은
+ * 그 설정이 없다. 설정이 없으면 플러그인은
  * `"Documents"` 를 쓰고(`CapacitorSQLite.swift:98`) `UtilsFile.getFolderURL` 이 그것을
  * `NSDocumentDirectory` 로 푼다(`UtilsFile.swift:161-162`). 즉 `<앱 컨테이너>/Documents` 다.
  *

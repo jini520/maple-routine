@@ -27,7 +27,7 @@ import { rnSqlitePort } from './storage/adapters/rn-sqlite'
 
 /**
  * 포트 13종을 한 번에 주입한다(인터페이스와 구현이
- * 앱이 넣는다). `app-capacitor` 의 짝은 `main.tsx` + `native/adapters/index.ts` 다.
+ * 앱이 넣는다).
  *
  * (아래 `setThemeAppearancePort` 가 값을 놓는 자리는 `src/theme/appearance-store.ts` 이고 그것을
  * 읽는 것은 `ThemeProvider` 다. 이 포트만 부팅 배선과 렌더 트리가 함께 있어야 성립한다.)

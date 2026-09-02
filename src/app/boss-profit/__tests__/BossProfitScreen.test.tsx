@@ -54,7 +54,7 @@ jest.mock('../../../features/toast/store', () => ({
 jest.mock('../../../features/onboarding/store', () => ({
   useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) } }))
 
-// 웹과 같은 범위로 좁혀 목한다. `dropRowKey` 는 본문(`AccordionBody`)이 쓰는 순수 함수라 실물과
+// 좁은 범위로만 목한다. `dropRowKey` 는 본문(`AccordionBody`)이 쓰는 순수 함수라 실물과
 // 같은 문자열을 낸다.
 jest.mock('../../../features/boss-profit/store', () => ({
   useBossProfitStore: jest.fn(),

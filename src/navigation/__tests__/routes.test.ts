@@ -39,7 +39,7 @@ const PARITY_PATHS = [
 ]
 
 describe('ROUTE_TABLE: 계획서 §1 대조', () => {
-  // **`origin` 으로 갈라 본다**. RN 에서 새로 생긴 화면 넷은 웹에 없으므로 이
+// **`origin` 으로 갈라 본다**. 새로 생긴 화면 넷은 대조할 짝이 없으므로 이
   // 대조에 섞이면 안 된다. 섞으면 **계획서와 같은가** 라는 이 테스트의 질문이 답할 수 없는 것이 된다.
   it('웹에서 온 17개 경로를 하나도 빠뜨리지 않고 순서까지 같다', () => {
     expect(ROUTE_TABLE.filter((row) => row.origin === 'web').map((row) => row.path)).toEqual(
@@ -55,7 +55,7 @@ describe('ROUTE_TABLE: 계획서 §1 대조', () => {
 
   // 셋은 의 탭이고, 나머지 둘은 하위 페이지다. 캐릭터 관리는
   // 결정 1, 아이템 분배 계산기는
-  // (유틸리티의 첫 도구 · 웹에 그런 화면 자체가 없다).
+// (유틸리티의 첫 도구).
   //
   // **탭이 넷에서 셋이 됐다**. 사냥 수익·지출 껍데기 둘이 빠지고 가계부
   // 하나가 들어왔다. 둘은 사라진 것이 아니라 그 화면 안으로 들어간다.
@@ -71,7 +71,7 @@ describe('ROUTE_TABLE: 계획서 §1 대조', () => {
     ])
   })
 
-  // **`/` 행과 첫 화면이 갈렸다**. `/` 행은 *"웹이 그 경로에서 무엇을 보여
+// **`/` 행과 첫 화면이 갈렸다**. `/` 행은 *"그 경로에서 무엇을 보여
   // 줬는가"* 라는 기록이라 그대로 컨텐츠이고, *"이 앱이 어디서 시작하는가"* 는 새 `today` 다.
   // 한쪽만 고치면 이 테스트가 운다. 갈린 것 자체가 결정이므로 둘을 함께 고정한다.
   it('`/` 행은 웹 기록이라 컨텐츠 그대로다', () => {
@@ -99,7 +99,7 @@ describe('ROUTE_TABLE: 계획서 §1 대조', () => {
     expect(TAB_ROUTE_NAMES).toEqual([
       'Content',
       'Boss',
-      // 웹에서는 `/boss` 위로 밀려 올라오던 하위 페이지다. RN 에서만 형제 탭이라
+// 하위 페이지가 아니라 형제 탭이라
       // 이 목록에 웹 경로가 하나 더 든다.
       'BossManage',
       'Profit',
@@ -135,9 +135,9 @@ describe('ROUTE_TABLE: 계획서 §1 대조', () => {
       'SettingsAccountData',
       'SettingsAbout',
       'SettingsPrivacy',
-      // 유틸리티의 첫 도구. 웹에 그런 화면 자체가 없다.
+// 유틸리티의 첫 도구.
       'UtilityItemSplit',
-      // 웹에 짝이 없다. 그쪽에서는 설정의 모달이다.
+// 설정의 모달이 아니라 화면이다.
       'SettingsCharacters',
     ])
     expect(new Set(STACK_ROUTE_NAMES).size).toBe(STACK_ROUTE_NAMES.length)
@@ -152,7 +152,7 @@ describe('ROUTE_TABLE: 계획서 §1 대조', () => {
 })
 
 // 기능 설명 목록에서도, 개발 노트 항목에서도 **같은 상세**가 열린다.
-// 웹에서 경로를 둘로 둔 이유(`resolveStackDirection` 이 형제 이동을 `replace` 로 떨어뜨려 전환이
+// 경로를 둘로 두면(`resolveStackDirection` 이 형제 이동을 `replace` 로 떨어뜨려 전환이
 // 사라진다)는 RN 에 없지만, **화면과 데이터가 한 벌이라는 계약은 그대로**다.
 describe('안내 상세는 두 경로가 같은 화면을 가리킨다', () => {
   const guideRows = ROUTE_TABLE.filter((row) =>

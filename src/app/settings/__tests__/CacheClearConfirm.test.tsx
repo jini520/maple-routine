@@ -1,8 +1,8 @@
-// 웹판(198줄)의 명세를 읽어 다시 쓴 것.
+// 이 화면이 지키는 것을 적는다.
 //
 // 갈린 것 셋
 // ① `getByRole('checkbox', { name })` → **`aria-label` 로 잡는다.** 그 프롭이 RN 에서
-//    `accessibilityLabel` 이 되므로 `getByLabelText` 가 그대로 그 행을 준다. 웹에서 라벨이 자식
+//    `accessibilityLabel` 이 되므로 `getByLabelText` 가 그대로 그 행을 준다.
 //    글자에서 계산되던 것을 여기서는 컴포넌트가 명시로 준다(`CacheClearConfirm.tsx` ②).
 // ② `toBeDisabled()` → `accessibilityState.disabled`.
 // ③ **누른 뒤 화면을 보려면 `act` 로 한 번 흘려보내야 한다**(실측. 이 파일에서 처음 걸렸다).

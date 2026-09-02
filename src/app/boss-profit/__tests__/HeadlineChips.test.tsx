@@ -2,7 +2,7 @@
 //
 // `DeltaChip` 은 2026-08-10 에 화면에서 **떼어냈지만**(총 수익에서는 뜻이 퇴색한다는 사용자 판단.
 // 통계 기능으로 옮긴다) 컴포넌트와 계약은 그대로 둔다. 되살릴 때 의 계약이 서 있어야
-// 하므로 웹판 다섯을 그대로 옮겼다.
+// 하므로 다섯을 그대로 적는다.
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss/boss-matching'

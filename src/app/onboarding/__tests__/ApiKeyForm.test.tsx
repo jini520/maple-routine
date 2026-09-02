@@ -1,4 +1,4 @@
-// 웹판(149줄)의 **명세를 읽어 다시 쓴 것**이다. 그쪽은 jsdom·DOM 기준이라 그대로는 뜻이 없다.
+// 149줄의 **명세를 읽어 다시 쓴 것**이다. 그쪽은 jsdom·DOM 기준이라 그대로는 뜻이 없다.
 // 각 케이스가 지키는 결정은 웹 주석 그대로이고, RN 에서 검사 수단이 갈린 자리만 여기 적는다.
 //
 // 갈린 것 다섯
@@ -24,7 +24,7 @@ afterEach(() => {
 
 type Rendered = Awaited<ReturnType<typeof renderAtom>>
 
-/** 글자를 담은 `Text` 에서 위로 올라가 그것을 감싼 누름 요소를 찾는다(웹의 `closest('button')`). */
+/** 글자를 담은 `Text` 에서 위로 올라가 그것을 감싼 누름 요소를 찾는다. */
 function pressableOf(node: AtomElement, role: 'button' | 'link'): AtomElement {
   let current: AtomElement | null = node
   while (current !== null && current.props.role !== role) current = current.parent
@@ -128,7 +128,7 @@ describe('ApiKeyForm', () => {
   })
 
   // 갈림길 레이아웃: 가이드는 구분선 뒤에서 '누를 수 있는 크기'가 되지만 외부 URL로 나가는
-  // 이동이라 시맨틱은 링크다. 웹에서 `<a>` 로 둔 결정이 RN 에서는 `role` 로 남는다.
+  // 이동이라 시맨틱은 링크다. 시맨틱을 `role` 로 남긴다.
   it('두 진입점 모두 버튼이 아니라 링크 시맨틱이다', async () => {
     const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
 
@@ -185,7 +185,7 @@ describe('ApiKeyForm', () => {
     expect(input.props.spellCheck).toBe(false)
   })
 
-  // 웹에서는 "표시 토글이 폼을 제출하지 않는다"였다. RN 에는 폼도 submit 도 없지만, 토글이
+// 표시 토글이 제출을 일으키지 않아야 한다. RN 에는 폼도 submit 도 없지만, 토글이
   // 제출 경로를 건드리지 않는다는 사실은 그대로 지켜야 한다.
   it('표시 토글은 제출을 일으키지 않는다', async () => {
     const onSubmit = jest.fn()

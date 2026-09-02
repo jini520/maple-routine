@@ -129,7 +129,7 @@ export const WIDGET_BY_ID: Readonly<Record<WidgetId, WidgetDefinition>> = Object
 /**
  * 검증이 읽는 선언된 크기 표. **표에서 파생시킨다.**
  *
- * `validateWidgetLayout` 이 레지스트리를 import 하지 않고 이 값을 인자로 받는 것이 step 5 의 결정이라
+ * `validateWidgetLayout` 이 레지스트리를 import 하지 않고 이 값을 인자로 받으므로
  * (검증이 순수 함수로 남는다), 그 인자를 손으로 적으면 같은 목록이 두 벌이 된다.
  */
 export const WIDGET_SIZES_BY_ID: Readonly<Record<WidgetId, readonly WidgetSize[]>> =

@@ -1,7 +1,7 @@
 // 레지스트리와 **손으로 적은 배치**의 대조.
 //
 // 좌표를 손으로 적기로 한 이상 그 실수는 반드시 나고, **그것을 잡는 것은 이 파일뿐이다**.
-// `validateWidgetLayout` 은 step 5 에서 이미 검증됐지만 **지금 쓰는 배치가 그 검증을 통과하는가** 는
+// `validateWidgetLayout` 이 있지만 **지금 쓰는 배치가 그 검증을 통과하는가** 는
 // 아무도 안 묻고 있었다. 자동 패킹을 기각하며 산 값이 정확히 여기서 회수된다.
 
 import { validateWidgetLayout } from '../../../lib/today/widget-layout'

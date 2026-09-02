@@ -1,4 +1,4 @@
-// 웹판(290줄)의 명세를 읽어 다시 쓴 것.
+// 이 화면이 지키는 것을 적는다.
 //
 // 갈린 것 셋
 // ① **라우터가 없다**. 뒤로는 `goBack` 이 불렸는가로, 자동 모드 리다이렉트도 같은 것으로 본다
@@ -134,7 +134,7 @@ describe('ContentManageScreen', () => {
     expect(store.loadTrackedOcids).toHaveBeenCalled()
   })
 
-  // 웹의 `<Navigate to="/content" replace />` 자리. RN 에서는 도달할 길이 없지만 계약은 남긴다.
+// 도달할 길이 없지만 계약은 남긴다.
   it('자동 모드면 물러난다', async () => {
     useTrackingModeStore.setState({ mode: 'auto' })
     mockStore({ characters: [character()] })

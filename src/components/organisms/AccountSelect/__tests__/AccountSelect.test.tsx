@@ -2,7 +2,7 @@
 // 잘 나오는가** 보다 **무엇을 두지 않기로 했는가** 쪽이 많다. 스크림 없음 · **명** 없음 ·
 // 지시받지 않은 문구 없음.
 //
-// 값 규칙(대표 · 월드 최대 둘)은 step 3 의 `summarizeAccount` 가 갖는다. 그래서 픽스처를 손으로
+// 값 규칙(대표 · 월드 최대 둘)은 `summarizeAccount` 가 갖는다. 그래서 픽스처를 손으로
 // 적지 않고 **그 함수를 통과시켜** 만든다. 여기서 기대값을 베끼면 규칙이 두 벌이 된다.
 import { act, fireEvent } from '@testing-library/react-native'
 

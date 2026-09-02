@@ -2,7 +2,7 @@
 //
 // ## 왜 모듈을 통째로 목으로 덮나
 //
-// 웹은 `motion-reduce:` 변형이 **클래스 문자열**이라 렌더 결과에서 그대로 읽혔고, 그래서 두 스피너의
+// `motion-reduce:` 변형이 RN 에는 클래스 문자열로 안 남아서, 두 스피너의
 // 웹 테스트가 *"motion-reduce 클래스를 포함한다"* 로 계약을 지켰다. RN 에는 그 자리가 없다.
 // `useReducedMotion()` 이 낸 boolean 이 **분기**로 소비되므로, 설정이 켜졌을 때의 그림을 보려면 그 훅이
 // 다른 값을 내게 해야 한다. Reanimated 는 그 값을 네이티브 접근성 관리자에서 읽어 테스트에서 바꿀
@@ -40,7 +40,7 @@ export function mockReducedMotion(next: boolean): void {
  * SVG 속성 애니메이션은 `useAnimatedProps` 를 거쳐 UI 스레드가 갱신하므로, jest 의 렌더 트리에는
  * 켜 놨을 때나 꺼 놨을 때나 **똑같이** `strokeDashoffset: null` 만 남는다(실측. 두 모드의 트리가
  * 문자 단위로 같다). 그래서 "무엇이 그려졌나"로는 이 계약을 지킬 수 없고, 대신 *"반복 애니메이션을
- * 걸었는가"* 를 본다. 웹이 `motion-reduce:animate-none` **클래스**를 렌더 결과에서 읽던 자리를
+ * 걸었는가"* 를 본다. 클래스를 렌더 결과에서 읽던 자리를
  * 대신하는 것이라, 구현 세부가 아니라 그 자리의 계약 자체다.
  */
 export const withRepeatSpy = jest.fn()
