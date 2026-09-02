@@ -146,6 +146,29 @@ describe('CalendarGrid — 금액 두 줄 ([[ADR-169]] 정정 1)', () => {
     expect(칸(view, '2026-08-12').getByTestId('calendar-expense-2026-08-12').props.children).toBe(' ')
   })
 
+  // 앞뒤 달 칸의 돈은 기간 합계에도 열지도 기준에도 안 들어간다(`periodTotals`·`monthIncomeMax`).
+  // 칸에만 남으면 ‘9월 수익’ 머리글 아래 8월 숫자가 서서 화면이 서로 다른 말을 한다.
+  it('앞뒤 달로 채운 칸은 금액을 안 적는다 (2026-09-02)', async () => {
+    const view = await 그리기({
+      amounts: { '2026-07-31': { incomeMeso: 5_800_000_000, expenseMeso: 1_200_000_000 } },
+    })
+
+    expect(칸(view, '2026-07-31').getByTestId('calendar-income-2026-07-31').props.children).toBe(' ')
+    expect(칸(view, '2026-07-31').getByTestId('calendar-expense-2026-07-31').props.children).toBe(' ')
+  })
+
+  // 주간 격자는 이레가 전부 `inPeriod` 라, 달을 걸치는 주에도 걸리는 칸이 없다.
+  it('주간 격자는 달을 걸쳐도 그대로 적는다', async () => {
+    const view = await 그리기({
+      weeks: [buildResetWeek('2026-08-27')],
+      selectedDateKey: '2026-08-27',
+      amounts: { '2026-09-01': { incomeMeso: 5_800_000_000, expenseMeso: 0 } },
+      incomeMax: 5_800_000_000,
+    })
+
+    expect(칸(view, '2026-09-01').getByTestId('calendar-income-2026-09-01')).toHaveTextContent('+58억')
+  })
+
   it('기록이 아예 없는 날은 수익 줄도 빈다', async () => {
     const view = await 그리기({ amounts: {} })
 
@@ -203,6 +226,26 @@ describe('CalendarGrid — 열지도 ([[ADR-169]] 정정 1)', () => {
     expect(타일.right).toBe(타일.left)
     // 판별력: 넷 다 0 이면 위 셋이 통과한다.
     expect(Number(타일.left)).toBeGreaterThan(0)
+  })
+
+  // 앞뒤 달 칸의 수익은 기준선(`monthIncomeMax`)에 안 들어간다. 바탕만 칠하면 **이 달에 없는
+  // 날**이 ‘많이 번 날’로 서고, 기준을 안 만든 값이 그 기준으로 칠해지는 셈이 된다.
+  //
+  // 이 달에도 수익이 있어야 증상이 난다. 기준선이 0 이면 `heatLevel` 이 어차피 0 을 돌려준다.
+  it('앞뒤 달로 채운 칸은 안 칠한다 (2026-09-02)', async () => {
+    const view = await 그리기({
+      amounts: {
+        '2026-07-31': { incomeMeso: 100_000_000_000, expenseMeso: 0 },
+        '2026-08-11': { incomeMeso: 10_000_000_000, expenseMeso: 0 },
+      },
+    })
+
+    const 진하기 = (dateKey: string): number =>
+      Number(flattenStyle(view.getByTestId(`calendar-heat-${dateKey}`).props.style).opacity ?? 0)
+
+    expect(진하기('2026-07-31')).toBe(0)
+    // 판별력: 같은 격자의 이 달 칸은 칠해진다.
+    expect(진하기('2026-08-11')).toBeGreaterThan(0)
   })
 
   it('수익이 없는 날은 안 칠한다', async () => {
