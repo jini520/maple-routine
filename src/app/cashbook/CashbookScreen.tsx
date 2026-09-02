@@ -60,7 +60,7 @@ import {
   ShoppingCartIcon,
   Text,
 } from '../../components/atoms'
-import { CalendarMonth } from '../../components/molecules/CalendarMonth/CalendarMonth'
+import { CalendarGrid } from '../../components/molecules/CalendarGrid/CalendarGrid'
 import { DIFFICULTY_SHORT } from '../../constants/domain/boss-difficulty'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
@@ -87,7 +87,7 @@ import {
   periodTotals,
   resetWeekStartOf,
   type CalendarAmounts,
-} from '../../lib/calendar-month'
+} from '../../lib/calendar'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
@@ -965,7 +965,7 @@ export function CashbookScreen(): React.JSX.Element {
             expenseMeso={periodSums.expenseMeso}
           />
 
-          <CalendarMonth
+          <CalendarGrid
             weeks={weeks}
             selectedDateKey={selectedDateKey}
             todayDateKey={todayDateKey}
@@ -973,8 +973,6 @@ export function CashbookScreen(): React.JSX.Element {
             weekdayLabels={isWeekly ? WEEKDAY_LABELS_RESET : undefined}
             // 열지도 기준은 **화면이 낸다**([[ADR-170]] 결정 12) — 위 `heatWeeks` 참조.
             incomeMax={monthIncomeMax(heatWeeks, amounts)}
-            // 주간 격자는 자체가 한 주라 **자를 것이 없다.**
-            showResetDivider={!isWeekly}
             onSelectDate={selectDate}
           />
 

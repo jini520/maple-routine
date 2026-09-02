@@ -520,20 +520,14 @@ describe('주간/월간 전환', () => {
   })
 })
 
-// 두 축이 공존하는 대가 — **월간 격자의 한 줄 ≠ 주간의 한 주**다. 아무 표시가 없으면 사용자에게는
-// 그냥 어긋남이라, 주 경계를 격자 위에 드러낸다([[ADR-170]] 결정 10 의 대가).
+// 두 축이 공존하는 것은 그대로다(월간 격자의 한 줄 != 주간의 한 주). 그것을 격자에 **그리지
+// 않기로** 했다([[ADR-170]] 정정 19, 사용자 지정 2026-09-02). 어긋남을 만나는 자리는 주간 보기이고,
+// 그 화면이 자기 기간을 날짜로 직접 말한다. ADR-170 `대가` 절에 옛 문장이 취소선으로 남아 있어,
+// 그것만 읽고 되살리는 것을 이 테스트가 막는다.
 describe('목요일 경계선', () => {
-  it('월간 격자에는 있다', async () => {
+  it('월간 격자에도 안 그린다', async () => {
     const view = await 그리기()
     await 월간으로(view)
-
-    expect(view.getByTestId('calendar-reset-divider')).toBeTruthy()
-  })
-
-  it('주간에는 없다 — 격자 자체가 한 주라 자를 것이 없다', async () => {
-    const view = await 그리기()
-
-    await 이름으로누르기(view, '주간')
 
     expect(view.queryByTestId('calendar-reset-divider')).toBeNull()
   })

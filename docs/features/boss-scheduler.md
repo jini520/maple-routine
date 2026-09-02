@@ -35,7 +35,6 @@
 | 계산 | `lib/boss/boss-matching.ts` | 정렬(`compareBossOrder`), 한도 판정(`isWeeklyClearLimitReached`·`countManualWeeklyBosses`) |
 | 계산 | `lib/boss/manual-boss-merge.ts` | 수동 모드 목록 합치기(`mergeManualBossList`) |
 | 계산 | `lib/assets/asset-lookup.ts` | 보스 초상화 |
-| UI | `components/molecules/BossSectionHeader` | ‘월간’·‘주간’ 섹션 헤더. 두 화면이 같은 것을 쓴다 |
 | 참조 | `src/data/weekly-bosses.json` | 보스명·난이도 매핑, 정규 순서, `requiredLevels` |
 | 참조 | `src/data/boss-crystal-prices.json` | 관리 화면이 보여줄 난이도 목록의 출처 |
 | 참조 | `src/data/boss-portrait-crops.json` | 카드 일러스트 크롭 |
@@ -58,7 +57,7 @@ ADR-073(인디케이터) · ADR-098(헤더 고정). **각 파일 배너의 🔗 
 |---|---|
 | 섹션 순서 | **월간 → 주간**. `displayed-bosses` 의 `BOSS_SECTION_ORDER` 와 `displayedBossSections` 가 정한다. 화면은 다시 정렬하지 않는다 |
 | 섹션 **안**의 순서 | **`weekly-bosses.json` 정규 순서 → 난이도 → 보스명**([[ADR-186]], 2026-08-30). 자동·수동 모드를 가르지 않고 `displayedBosses` 끝에서 공용 `compareBossOrder`(`lib/boss/boss-matching`)로 한 번 정렬한다 |
-| 주기 구분 | **섹션 헤더 두 줄**(‘월간’·‘주간’). 공용 `components/molecules/BossSectionHeader` 를 두 화면이 같이 쓴다 |
+| 주기 구분 | **섹션 헤더 두 줄**(‘월간’·‘주간’). 두 화면이 각자 인라인으로 그린다. 배지가 세는 것이 화면마다 달라(스케줄러는 `countClearedWeeklyBosses` 처치 수, 관리 화면은 `countManualWeeklyBosses` 등록 수) 공용 컴포넌트로 두면 같은 조건을 호출부와 컴포넌트가 두 번 쓰게 된다 |
 | `n/12` · 시즌 배지(`isSeasonBoss`) | ‘주간’ 헤더에 붙는다. 탭이 있던 시절 `activeTab === 'weekly'` 조건에 매달려 있던 것을 헤더로 옮겼다 |
 | 완료 정렬 | **없다.** 주기가 순서를 정하고 완료는 순서를 바꾸지 않는다. 완료한 검은마법사도 맨 위에 남는다 |
 | 필터 | `partyFilter` **하나**. 두 섹션에 함께 걸린다 |

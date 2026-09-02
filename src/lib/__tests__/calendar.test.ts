@@ -12,7 +12,7 @@ import {
   heatLevel,
   monthKeyOf,
   periodTotals,
-} from '../calendar-month'
+} from '../calendar'
 
 describe('getCurrentMonthKey — KST 기준', () => {
   it('지금이 속한 달을 YYYY-MM 으로 준다', () => {
@@ -181,7 +181,7 @@ describe('heatLevel — 그 달 안에서 상대적이다', () => {
 
 describe('WEEKDAY_LABELS_RESET', () => {
   it('목요일에서 시작한다', () => {
-    const { WEEKDAY_LABELS_RESET } = require('../calendar-month') as typeof import('../calendar-month')
+    const { WEEKDAY_LABELS_RESET } = require('../calendar') as typeof import('../calendar')
 
     expect(WEEKDAY_LABELS_RESET).toEqual(['목', '금', '토', '일', '월', '화', '수'])
   })
@@ -189,14 +189,14 @@ describe('WEEKDAY_LABELS_RESET', () => {
   // 회전이라 두 목록의 원소가 같다 — 한쪽만 고치면 요일 이름이 갈린다.
   it('월간 라벨을 회전한 것이다 — 새로 적지 않는다', () => {
     const { WEEKDAY_LABELS, WEEKDAY_LABELS_RESET } =
-      require('../calendar-month') as typeof import('../calendar-month')
+      require('../calendar') as typeof import('../calendar')
 
     expect([...WEEKDAY_LABELS_RESET].sort()).toEqual([...WEEKDAY_LABELS].sort())
   })
 })
 
 describe('resetWeekStartOf', () => {
-  const { resetWeekStartOf } = require('../calendar-month') as typeof import('../calendar-month')
+  const { resetWeekStartOf } = require('../calendar') as typeof import('../calendar')
 
   it('목요일은 그 자신이 주의 시작이다', () => {
     expect(resetWeekStartOf('2026-08-20')).toBe('2026-08-20')
@@ -237,7 +237,7 @@ describe('resetWeekStartOf', () => {
 })
 
 describe('buildResetWeek', () => {
-  const { buildResetWeek } = require('../calendar-month') as typeof import('../calendar-month')
+  const { buildResetWeek } = require('../calendar') as typeof import('../calendar')
 
   it('딱 이레다 — 목요일부터 수요일까지', () => {
     const week = buildResetWeek('2026-08-20')
@@ -321,7 +321,7 @@ describe('shiftDateKey', () => {
  * (`buildCalendarMonth`) 그 칸을 세면 「8월」 합계에 7월 말·9월 초가 섞인다.
  */
 describe('periodTotals — 격자가 그린 칸을 그대로 접는다', () => {
-  const { buildResetWeek } = require('../calendar-month') as typeof import('../calendar-month')
+  const { buildResetWeek } = require('../calendar') as typeof import('../calendar')
 
   it('그 기간 칸만 더한다 — 앞뒤 달로 채운 칸은 안 든다', () => {
     const weeks = buildCalendarMonth('2026-08')

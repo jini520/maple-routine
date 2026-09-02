@@ -1,4 +1,4 @@
-// 격자는 **그리기만** 한다([[ADR-169]] 결정 7) — 어떤 칸이 서는가는 `lib/calendar-month` 이 정하고
+// 격자는 **그리기만** 한다([[ADR-169]] 결정 7) — 어떤 칸이 서는가는 `lib/calendar` 이 정하고
 // 그쪽 테스트가 못 박는다. 여기서 보는 것은 «받은 것을 어떻게 보이느냐» 다.
 //
 // **칸이 표식 둘에서 금액 두 줄로 바뀌었다**([[ADR-169]] 정정 1, 사용자 레퍼런스 2026-08-23).
@@ -10,16 +10,16 @@ import {
   buildCalendarMonth,
   buildResetWeek,
   monthIncomeMax,
-} from '../../../../lib/calendar-month'
-import { CalendarMonth } from '../CalendarMonth'
+} from '../../../../lib/calendar'
+import { CalendarGrid } from '../CalendarGrid'
 
 const 팔월 = buildCalendarMonth('2026-08')
 
-function 그리기(overrides: Partial<React.ComponentProps<typeof CalendarMonth>> = {}) {
+function 그리기(overrides: Partial<React.ComponentProps<typeof CalendarGrid>> = {}) {
   const weeks = overrides.weeks ?? 팔월
   const amounts = overrides.amounts ?? {}
   return renderAtom(
-    <CalendarMonth
+    <CalendarGrid
       weeks={weeks}
       selectedDateKey="2026-08-23"
       todayDateKey="2026-08-23"
@@ -37,7 +37,7 @@ function 칸(view: ReturnType<typeof renderAtom> extends Promise<infer T> ? T : 
   return within(view.getByTestId(`calendar-day-${dateKey}`))
 }
 
-describe('CalendarMonth — 격자', () => {
+describe('CalendarGrid — 격자', () => {
   it('요일 머리를 일요일부터 일곱 개 그린다', async () => {
     const view = await 그리기()
 
@@ -76,7 +76,20 @@ describe('CalendarMonth — 격자', () => {
   })
 })
 
-describe('CalendarMonth — 오늘과 고른 날', () => {
+describe('CalendarGrid — 고른 날 동그라미는 접히면 안 된다 (안드로이드, 2026-09-02)', () => {
+  // 진짜 증상은 여기서 안 잡힌다 — 배경 없는 View 를 네이티브 뷰 없이 접는 것은 안드로이드
+  // 런타임이 하는 일이라 jest 에는 그 단계가 없다. 이 테스트가 막는 것은 «쓸모없어 보이는 프롭»
+  // 으로 지워지는 것이다. 지우면 누른 날의 동그라미가 안드로이드에서 네모가 된다.
+  // 근거는 `docs/foundation/design-system.md` 의 «안드로이드는 그릴 것이 없는 View 를 접는다».
+  it('collapsable={false} 를 달고 있다', async () => {
+    const screen = await 그리기()
+
+    const circle = 칸(screen, '2026-08-23').getByText('23').parent
+    expect(circle?.props.collapsable).toBe(false)
+  })
+})
+
+describe('CalendarGrid — 오늘과 고른 날', () => {
   it('고른 칸만 aria-selected 다', async () => {
     const view = await 그리기({ selectedDateKey: '2026-08-11' })
 
@@ -103,7 +116,7 @@ describe('CalendarMonth — 오늘과 고른 날', () => {
   })
 })
 
-describe('CalendarMonth — 금액 두 줄 ([[ADR-169]] 정정 1)', () => {
+describe('CalendarGrid — 금액 두 줄 ([[ADR-169]] 정정 1)', () => {
   const 금액 = {
     '2026-08-11': { incomeMeso: 12_940_000_000, expenseMeso: 500_000_000 },
     '2026-08-12': { incomeMeso: 2_840_000_000, expenseMeso: 0 },
@@ -133,6 +146,29 @@ describe('CalendarMonth — 금액 두 줄 ([[ADR-169]] 정정 1)', () => {
     expect(칸(view, '2026-08-12').getByTestId('calendar-expense-2026-08-12').props.children).toBe(' ')
   })
 
+  // 앞뒤 달 칸의 돈은 기간 합계에도 열지도 기준에도 안 들어간다(`periodTotals`·`monthIncomeMax`).
+  // 칸에만 남으면 ‘9월 수익’ 머리글 아래 8월 숫자가 서서 화면이 서로 다른 말을 한다.
+  it('앞뒤 달로 채운 칸은 금액을 안 적는다 (2026-09-02)', async () => {
+    const view = await 그리기({
+      amounts: { '2026-07-31': { incomeMeso: 5_800_000_000, expenseMeso: 1_200_000_000 } },
+    })
+
+    expect(칸(view, '2026-07-31').getByTestId('calendar-income-2026-07-31').props.children).toBe(' ')
+    expect(칸(view, '2026-07-31').getByTestId('calendar-expense-2026-07-31').props.children).toBe(' ')
+  })
+
+  // 주간 격자는 이레가 전부 `inPeriod` 라, 달을 걸치는 주에도 걸리는 칸이 없다.
+  it('주간 격자는 달을 걸쳐도 그대로 적는다', async () => {
+    const view = await 그리기({
+      weeks: [buildResetWeek('2026-08-27')],
+      selectedDateKey: '2026-08-27',
+      amounts: { '2026-09-01': { incomeMeso: 5_800_000_000, expenseMeso: 0 } },
+      incomeMax: 5_800_000_000,
+    })
+
+    expect(칸(view, '2026-09-01').getByTestId('calendar-income-2026-09-01')).toHaveTextContent('+58억')
+  })
+
   it('기록이 아예 없는 날은 수익 줄도 빈다', async () => {
     const view = await 그리기({ amounts: {} })
 
@@ -160,7 +196,7 @@ describe('CalendarMonth — 금액 두 줄 ([[ADR-169]] 정정 1)', () => {
   })
 })
 
-describe('CalendarMonth — 열지도 ([[ADR-169]] 정정 1)', () => {
+describe('CalendarGrid — 열지도 ([[ADR-169]] 정정 1)', () => {
   it('많이 번 날이 더 진하다 — 그 달 안에서 상대적이다', async () => {
     const view = await 그리기({
       amounts: {
@@ -190,6 +226,26 @@ describe('CalendarMonth — 열지도 ([[ADR-169]] 정정 1)', () => {
     expect(타일.right).toBe(타일.left)
     // 판별력: 넷 다 0 이면 위 셋이 통과한다.
     expect(Number(타일.left)).toBeGreaterThan(0)
+  })
+
+  // 앞뒤 달 칸의 수익은 기준선(`monthIncomeMax`)에 안 들어간다. 바탕만 칠하면 **이 달에 없는
+  // 날**이 ‘많이 번 날’로 서고, 기준을 안 만든 값이 그 기준으로 칠해지는 셈이 된다.
+  //
+  // 이 달에도 수익이 있어야 증상이 난다. 기준선이 0 이면 `heatLevel` 이 어차피 0 을 돌려준다.
+  it('앞뒤 달로 채운 칸은 안 칠한다 (2026-09-02)', async () => {
+    const view = await 그리기({
+      amounts: {
+        '2026-07-31': { incomeMeso: 100_000_000_000, expenseMeso: 0 },
+        '2026-08-11': { incomeMeso: 10_000_000_000, expenseMeso: 0 },
+      },
+    })
+
+    const 진하기 = (dateKey: string): number =>
+      Number(flattenStyle(view.getByTestId(`calendar-heat-${dateKey}`).props.style).opacity ?? 0)
+
+    expect(진하기('2026-07-31')).toBe(0)
+    // 판별력: 같은 격자의 이 달 칸은 칠해진다.
+    expect(진하기('2026-08-11')).toBeGreaterThan(0)
   })
 
   it('수익이 없는 날은 안 칠한다', async () => {

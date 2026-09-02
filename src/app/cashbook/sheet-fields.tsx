@@ -23,7 +23,7 @@ import {
   settleMesoText,
 } from '../../components/molecules/MesoPad/meso-pad'
 import { SheetTextInput } from '../../components/molecules/SheetTextInput/SheetTextInput'
-import { formatDayLabel, shiftDateKey } from '../../lib/calendar-month'
+import { formatDayLabel, shiftDateKey } from '../../lib/calendar'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 
 /**
