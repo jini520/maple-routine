@@ -122,7 +122,11 @@ export function CalendarGrid(props: CalendarGridProps): React.JSX.Element {
                   className="absolute bottom-0.5 left-0.5 right-0.5 top-0.5 rounded-lg bg-primary"
                 />
 
-                <View className={dayCircleClass(isSelected, isToday)}>
+                {/* 안 고른 날의 이 View 는 배경도 테두리도 없어, RN 안드로이드가 그릴 것이 없다고
+                    보고 네이티브 뷰 없이 접는다. 눌러서 `bg-primary` 가 붙는 순간 뷰를 새로 만드는데
+                    거기에 `rounded-full` 이 안 실려 **네모로 그려진다**. 처음부터 고른 날로 마운트된
+                    칸은 멀쩡해서 누른 칸에서만 났다(안드로이드 확인 2026-09-02). */}
+                <View collapsable={false} className={dayCircleClass(isSelected, isToday)}>
                   <Text className={dayTextClass(isSelected, day.inPeriod)} style={TABULAR_NUMS}>
                     {day.day}
                   </Text>

@@ -76,6 +76,19 @@ describe('CalendarGrid — 격자', () => {
   })
 })
 
+describe('CalendarGrid — 고른 날 동그라미는 접히면 안 된다 (안드로이드, 2026-09-02)', () => {
+  // 진짜 증상은 여기서 안 잡힌다 — 배경 없는 View 를 네이티브 뷰 없이 접는 것은 안드로이드
+  // 런타임이 하는 일이라 jest 에는 그 단계가 없다. 이 테스트가 막는 것은 «쓸모없어 보이는 프롭»
+  // 으로 지워지는 것이다. 지우면 누른 날의 동그라미가 안드로이드에서 네모가 된다.
+  // 근거는 `docs/foundation/design-system.md` 의 «안드로이드는 그릴 것이 없는 View 를 접는다».
+  it('collapsable={false} 를 달고 있다', async () => {
+    const screen = await 그리기()
+
+    const circle = 칸(screen, '2026-08-23').getByText('23').parent
+    expect(circle?.props.collapsable).toBe(false)
+  })
+})
+
 describe('CalendarGrid — 오늘과 고른 날', () => {
   it('고른 칸만 aria-selected 다', async () => {
     const view = await 그리기({ selectedDateKey: '2026-08-11' })
