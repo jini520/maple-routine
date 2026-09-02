@@ -6,7 +6,7 @@
  * 주석은 그중 코드가 실제로 갈린 자리만 짚는다.
  * ══ 구조가 대신 지키는 것 여섯 ═════════════════════════════════════════════════════
  *
- * | ADR | 웹이 손으로 한 일 | RN |
+ * | 무엇 | 손으로 하던 일 | 지금 |
  * |---|---|---|
  * | 077 | 히스토리를 중첩 라우트 + `<Outlet />` 으로 얹어 언마운트를 막았다 | 하위 페이지가 **루트 스택 push** 라 이 화면이 트리에 남는다 |
  * | 085·112 | `fixed` 헤더 + 실측 spacer + 매 커밋 layout effect | 헤더가 **흐름 안**이라 뺄 자리가 없어 spacer 도 실측도 없다(`PageHeader` 파일 머리) |
@@ -137,7 +137,7 @@ export function BossProfitScreen(): React.JSX.Element {
   // 상태가 생긴다.
   const canRefreshPeriod = isPeriodRefreshable(tab, periodKey, now)
 
-  //  최상단 이동이 쓰는 스크롤 주체. `parity-inventory` §2.5 가 step 7 의 자리로 지목한 넷 중 하나.
+  // 최상단 이동이 쓰는 스크롤 주체.
   const scrollRef = useRef<ScrollView | null>(null)
   // 총 수익 내역 상자. 카드·보스 행과 **같은 상자**를 쓴다. 훅은 아래 빈 상태
   // 조기 반환보다 위에 있어야 한다(렌더마다 호출 순서가 같아야 한다).
@@ -149,10 +149,10 @@ export function BossProfitScreen(): React.JSX.Element {
     close: closePeriodPopover,
   } = useAnchoredPopover()
 
-  // : 기간·탭이 바뀌면 최상단으로. RN 에는 그 처방이 웹에서 없애던 깨진 프레임이 없지만
+  // 기간·탭이 바뀌면 최상단으로.
   // (헤더가 `sticky` 가 아니라 그냥 콘텐츠라 오프셋과 어긋날 두 값이 없다. `PageHeader` 파일
   // 머리) **관찰 가능한 동작**은 그대로 지킨다.
-  // 기간을 옮기면 목록 처음부터 본다. 목적지가 0 인 것은 웹과 같다(실패로 확인).
+  // 기간을 옮기면 목록 처음부터 본다. 목적지는 0 이다.
   useLayoutEffect(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: false })
   }, [tab, periodKey])
@@ -181,7 +181,7 @@ export function BossProfitScreen(): React.JSX.Element {
 
   if (isEmpty) {
     // 헤더 셸을 쓰지 않는 가지라(제목 줄이 목록 없이 혼자 선다) 상단 안전영역을 여기서 먹는다.
-    // 웹의 `min-h-[calc(100dvh …)]` 자리는 `flex-1` 이다(탭 상자가 이미 탭바를 뺀 크기다).
+    // 높이는 `flex-1` 이다. 탭 상자가 이미 탭바를 뺀 크기다.
     // 히스토리·가격 진입점은 두지 않는다.
     return (
       <View testID="screen-Profit" className="flex-1 p-4" style={{ paddingTop: topSafeAreaPx }}>
@@ -198,7 +198,7 @@ export function BossProfitScreen(): React.JSX.Element {
             description="설정에서 캐릭터를 선택하면 수익 현황을 확인할 수 있습니다"
             action={{
               label: '캐릭터 선택하러 가기',
-              // : 피커를 **열어 둔 채로** 보낸다. 웹의 `?openPicker=1` 자리다.
+              // 피커를 **열어 둔 채로** 보낸다.
               // 목적지는 보스 탭에서 **설정 탭**으로 옮겼다. 열어 두고 보낸다는
               // 계약은 그대로이고 받는 화면만 바뀌었다.
               onClick: () => openTab('Settings', { openPicker: true }),

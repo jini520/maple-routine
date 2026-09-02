@@ -206,7 +206,7 @@ describe('BossScreen: 빈 상태와 마운트', () => {
   })
 
   // `null` 은 "0명"이 아니라 "아직 안 읽었다"다. 콜드 스타트 첫 페인트가
-  // 모르는 사실을 단정하면 안 된다(웹은 이 계약에 파일 하나를 썼다. 파일 머리 ⑤).
+  // 모르는 사실을 단정하면 안 된다.
   it('추적 목록이 null(미로드)이면 빈 상태가 아니라 로딩을 보여준다', async () => {
     mockStore({ trackedOcids: null, status: 'idle' })
 
@@ -343,7 +343,7 @@ describe('BossScreen: 목록', () => {
     await renderScreen()
 
     // **모달이 셸 바깥인지를 묻던 짝은 함께 사라졌다**. 이 화면에 캐릭터 관리 모달이 없다
-    // . 파티 인원 모달은 아래 절이 따로 본다.
+    //. 파티 인원 모달은 아래 절이 따로 본다.
     expect(screen.getByTestId('page-header')).toBeTruthy()
     expect(screen.getByTestId('screen-scroll')).toBeTruthy()
   })

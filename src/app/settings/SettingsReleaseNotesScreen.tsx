@@ -131,7 +131,7 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
                                 onPress={() => {
                                   // 마디까지 가리키면 그 자리로 떨어진다.
                                   // 릴리스에서 바뀐 것은 보통 기능 전체가 아니라 그중 한 마디다.
-                                  // 웹의 `?s=` 쿼리가 여기서는 라우트 파라미터다(`routes.ts`).
+                                  // `section` 은 라우트 파라미터다(`routes.ts`).
                                   navigation.navigate('SettingsReleaseNoteGuide', {
                                     guideId,
                                     section: item.guideSectionId,

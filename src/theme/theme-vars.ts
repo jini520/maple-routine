@@ -21,7 +21,7 @@ export function toColorVariableName(token: string): string {
 /**
  * 스크림 위 패널의 테두리. **RN 에는 선택자가 없어서 값으로 만든다.**
  *
- * 웹은 `:root[data-mode='light'] .panel-on-scrim { border-color: color-mix(...) }` 로 푼다. RN 에는
+ * 웹은 `:root[data-mode='light'].panel-on-scrim { border-color: color-mix(...) }` 로 푼다. RN 에는
  * `data-mode` 도 `color-mix` 도 없으므로, 그 규칙이 계산하는 **결과를 토큰 하나로 미리 만들어** 둔다.
  * 그러면 호출부는 `border-panel-border` 라고만 쓰면 되고(3단계가 `className` 을 그대로
  * 옮기려는 이유), 모드 분기는 이 함수 안에서 **딱 한 번** 일어난다.

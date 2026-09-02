@@ -49,7 +49,7 @@ export function ApiKeyNoticeModal(): React.JSX.Element | null {
   const confirmApiKeyNotice = useOnboardingStore((state) => state.confirmApiKeyNotice)
 
   // falsy 검사인 것이 의도다. `=== null` 이면 스토어를 부분 모킹한 테스트에서 `undefined` 가 와
-  // **모든 화면 위에 닫을 수 없는 모달이 떠버린다**(웹에서 실제로 그렇게 깨졌다). 차단 UI 는
+  // **모든 화면 위에 닫을 수 없는 모달이 떠버린다**. 차단 UI 는
   // "켜라고 명시했을 때만" 켜지는 쪽이 안전하다.
   if (!apiKeyNotice) {
     return null

@@ -54,7 +54,7 @@ const claimTouch = (): boolean => true
  * 카드 껍데기(테두리·배경·패딩)를 갖는 패널. 모달 대부분이 이것을 쓴다.
  *
  * 스크림 위 테두리 톤다운은 `border-panel-border` 한 클래스다. 웹의
- * `:root[data-mode='light'] .panel-on-scrim` 규칙이 계산하던 결과를 토큰으로 미리 만들어 뒀고
+ * `:root[data-mode='light'].panel-on-scrim` 규칙이 계산하던 결과를 토큰으로 미리 만들어 뒀고
  * (`src/theme/theme-vars.ts`), 모드 분기는 거기서 `definition.mode` 로 딱 한 번 일어난다.
  * `Card` atom 이 갖고 있는 `border-border` 를 이 클래스가 덮는다.
  */

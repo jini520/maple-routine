@@ -116,7 +116,7 @@ describe('CrystalSummaryChip', () => {
     })
 
     expect(getByTestId('world-crystal-breakdown')).toBeTruthy()
-    // 바깥 탭으로 닫는 판이 함께 뜬다(웹의 `fixed inset-0` 자리. 파일 머리 ①).
+    // 바깥 탭으로 닫는 판이 함께 뜬다.
     expect(getByLabelText('월드별 결정석 판매 현황 닫기')).toBeTruthy()
   })
 

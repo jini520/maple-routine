@@ -71,7 +71,7 @@ describe('ToastStack', () => {
     expect(getByText('둘째')).toBeTruthy()
   })
 
-  // 목록 순서가 곧 위→아래 순서다(웹은 `flex-col`, RN 은 기본 방향이 column).
+  // 목록 순서가 곧 위→아래 순서다.
   it('오래된 토스트가 위, 최신 토스트가 탭바에 가까운 아래쪽에 온다', async () => {
     mockStore([toast('t1', '첫째'), toast('t2', '둘째')])
     const { getAllByTestId } = await renderOverlay(<ToastStack />)

@@ -2,7 +2,7 @@
 //
 // 갈린 것 셋
 // ① **라우터가 없다**. 뒤로는 `goBack` 이 불렸는가로 본다.
-// ② 키패드 **내부** 계약은 `DropPricePad.test.tsx` 가 갖는다(웹은 화면 테스트에 섞여 있었다).
+// ② 키패드 **내부** 계약은 `DropPricePad.test.tsx` 가 갖는다.
 //    여기서는 *"행을 누르면 그 기록을 들고 열리는가 · 저장이 스토어까지 가는가"* 만 본다.
 // ③ ** 표시 계약을 케이스로 못박았다**. 웹에 없던 것이다. 미입력 자리에 `0` 이
 //    없는지, `priceMeso` 는 있고 `priceState` 가 없는 기록(가장 강한 반례)이 여전히 미입력으로
@@ -418,7 +418,7 @@ describe('DropPriceScreen: 순차 입력', () => {
     expect(savePrice).not.toHaveBeenCalled()
     // 다음 건으로 넘어갔다. 목록에도 같은 이름이 있으므로 키패드 안으로 좁힌다.
     expect(within(getByTestId('drop-price-pad')).getByText('가디언 엔젤 링')).toBeTruthy()
-    // 마지막 건이라 진행 표기가 사라지고 버튼도 `다음` 이 아니라 `저장` 이다(웹과 같은 계산).
+    // 마지막 건이라 진행 표기가 사라지고 버튼도 `다음` 이 아니라 `저장` 이다.
     expect(within(getByTestId('drop-price-pad')).getByText('저장')).toBeTruthy()
     expect(queryByText('스킵')).toBeNull()
   })

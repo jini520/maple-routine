@@ -133,7 +133,7 @@ export function SettingsCharactersScreen(): React.JSX.Element {
             void handleSave()
           }}
           disabled={isSaveDisabled}
-          // 웹의 `disabled:opacity-50` 은 CSS 의사 클래스라 RN 의 `disabled` 프롭과 이어지지
+          // CSS 의사 클래스가 없어 `disabled` 프롭과 이어지지
           // 않는다. 그대로 두면 비활성 버튼이 멀쩡한 색으로 보인다(피커와 같은 처방).
           className={`w-full items-center${isSaveDisabled ? ' opacity-50' : ''}`}
         >

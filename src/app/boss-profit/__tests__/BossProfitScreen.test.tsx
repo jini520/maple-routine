@@ -37,7 +37,7 @@ import { useScreenNavigation } from '../../use-screen-navigation'
 import { BossProfitScreen } from '../BossProfitScreen'
 
 // 이름이 `mock` 으로 시작해야 한다. babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데 그
-// 접두사만 예외로 통과시킨다(step 5 와 같은 규칙).
+// 접두사만 예외로 통과시킨다.
 const mockShowError = jest.fn()
 const mockNoticeApiKeyIssue = jest.fn()
 const navigate = jest.fn()
@@ -67,7 +67,7 @@ const mockedStore = jest.mocked(useBossProfitStore)
 const mockedNavigation = jest.mocked(useScreenNavigation)
 
 // 새로고침 버튼·다음 기간 버튼은 "현재 기간"에서만 노출/비활성되므로 실행 시점과 무관하게 항상
-// 현재를 가리키도록 실제 계산값을 쓴다(웹 테스트와 같은 방식).
+// 현재를 가리키도록 실제 계산값을 쓴다.
 const CURRENT_WEEKLY = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
 const CURRENT_MONTHLY = getCurrentBossProfitPeriod('monthly', new Date()).periodKey
 const 주간보스 = weeklyBossesData.weekly[0].boss

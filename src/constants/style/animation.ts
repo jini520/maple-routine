@@ -13,7 +13,7 @@
  * `row-class.ts` 와 같은 판단) 여기로 온다.
  *
  * 모션 줄이기(`useReducedMotion`)는 **호출부가 판단한다**. 이 값은 "돌린다"만 말하고, 돌릴지
- * 말지는 그 자리의 사정이다(웹의 `motion-reduce:animate-none` 이 클래스였던 자리).
+ * 말지는 그 자리의 사정이다.
  */
 export const SPIN_ANIMATION = {
   animationName: {

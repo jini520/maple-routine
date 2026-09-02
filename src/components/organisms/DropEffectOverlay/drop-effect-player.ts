@@ -17,7 +17,7 @@ export const DROP_EFFECT_FPS = { screen: 22.5, pre: 21, loop: 17.25, end: 18 } a
  */
 export const DROP_START_FRAME = 8
 
-/** 한 tick 이 삼킬 수 있는 최대 시간. 백그라운드에서 돌아왔을 때 폭주 방지(웹과 같은 값). */
+/** 한 tick 이 삼킬 수 있는 최대 시간. 백그라운드에서 돌아왔을 때 폭주 방지. */
 export const MAX_TICK_MS = 100
 
 type DropPillarPhase = 'pre' | 'loop' | 'end'
@@ -38,7 +38,7 @@ interface DropEffectState {
   pillarPhase: DropPillarPhase | null
   pillarIndex: number
   pillarAcc: number
-  /** 아이템은 기둥과 같은 순간에 뜬다(웹 `startDrop`). */
+  /** 아이템은 기둥과 같은 순간에 뜬다. */
   itemVisible: boolean
   /** 닫는 중. end 를 재생하고 있다. */
   closing: boolean
@@ -151,7 +151,7 @@ export function advanceDropEffect(
 }
 
 /**
- * 닫기 요청. end 재생으로 넘어간다. **이미 닫는 중이면 즉시 끝낸다**(웹과 같은 두 번 탭하면 건너뛴다).
+ * 닫기 요청. end 재생으로 넘어간다. **이미 닫는 중이면 즉시 끝낸다**.
  */
 export function requestDropEffectClose(
   state: DropEffectState,

@@ -3,8 +3,8 @@
  *
  * **이 화면은 두 라우트 아래 각각 걸린다**(정정):
  *
- *     SettingsFeatureGuide       기능 설명 목록에서   (웹 `/settings/guide/:guideId`)
- *     SettingsReleaseNoteGuide   개발 노트 항목에서   (웹 `/settings/release-notes/:guideId`)
+ *     SettingsFeatureGuide       기능 설명 목록에서
+ *     SettingsReleaseNoteGuide   개발 노트 항목에서
  *
  * **컴포넌트는 하나다**. `RootNavigator` 가 두 이름에 같은 것을 꽂는다(`routes.ts` 의
  * `FEATURE_GUIDE_ROUTE_NAMES`). 사본을 두면 같은 글이 두 벌이 되어 반드시 갈라진다.
@@ -35,7 +35,7 @@ type FeatureGuideRoute = RouteProp<
   'SettingsFeatureGuide' | 'SettingsReleaseNoteGuide'
 >
 
-/** 웹의 `scroll-mt-4` 짝. 마디가 스크롤포트 맨 위에 딱 붙지 않게 남기는 여백. */
+/** 마디가 스크롤포트 맨 위에 딱 붙지 않게 남기는 여백. */
 const SECTION_SCROLL_MARGIN_PX = 16
 
 export function SettingsFeatureGuideScreen(): React.JSX.Element | null {
@@ -94,7 +94,7 @@ export function SettingsFeatureGuideScreen(): React.JSX.Element | null {
             >
               <ArrowLeftIcon className="h-5 w-5 text-text-muted" strokeWidth={2} aria-hidden />
             </Pressable>
-            {/* `min-w-0` + 한 줄 말줄임. 웹의 `truncate` 짝이다(RN 은 글자 쪽 프롭). */}
+            {/* `min-w-0` + 한 줄 말줄임. 말줄임은 글자 쪽 프롭이다. */}
             <Text numberOfLines={1} className="min-w-0 flex-1 text-lg font-semibold text-text">
               {guide.title}
             </Text>

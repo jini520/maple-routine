@@ -118,7 +118,7 @@ describe('ValuableDropBadge', () => {
   })
 
   // 스택·링은 **두 갈래가 같아야 한다**. 한쪽에만 걸면 그림이 있는 배지와 없는 배지의 겹침이
-  // 다르게 보인다(웹도 두 분기에 같은 클래스를 적어 두었다).
+  // 다르게 보인다.
   it('그림이 있어도 겹침·zIndex·흰 링이 그대로다', async () => {
     const { getAllByTestId } = await renderAtom(
       <ValuableDropBadge

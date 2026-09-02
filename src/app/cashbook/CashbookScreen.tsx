@@ -520,7 +520,7 @@ function DayRecordRow(props: {
         {countLabel !== null && (
           // 갈래마다 세는 것이 다르다(`×2` · `12마리` · `3건 · 미입력 2`). 그 분기는 화면이 아니라
           // `recordCountLabelOf` 가 든다.
-          // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
+          // (`&& ( …)` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
           <Text numberOfLines={1} className="shrink-0 text-11 text-text-muted" style={TABULAR_NUMS}>
             {countLabel}
           </Text>
@@ -984,7 +984,7 @@ export function CashbookScreen(): React.JSX.Element {
                 {dayRecords.length > 0 && (
                   // 합계 아래에 **적은 것이 한 줄씩** 선다. 접지 않는다.
                   // 같은 날 같은 것을 두 번 적은 것은 정상이고, 접으면 어느 쪽을 고치는지 못 고른다.
-                  // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
+                  // (`&& ( …)` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
                   <View className="mt-1.5 gap-1.5 border-t border-border pt-2">
                     {dayRecords.map((entry) => (
                       <DayRecordRow
@@ -1012,7 +1012,7 @@ export function CashbookScreen(): React.JSX.Element {
       {(sheet === 'income' || (typeof sheet === 'object' && sheet?.kind === 'income')) && (
         // 고치는 것이면 **그 기록의 날짜**로 연다. 고른 날이 아니다(둘은 지금 같지만, 목록이
         // 여러 날을 걸치게 되는 날 갈린다).
-        // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
+        // (`&& ( …)` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
         <IncomeSheet
           characters={characters}
           lastPointRate={lastPointRate}

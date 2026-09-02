@@ -91,7 +91,7 @@ export function SettingsPrivacyScreen(): React.JSX.Element {
               onError={() => {
                 setStatus('failed')
               }}
-              // 웹판의 `opacity` 토글 짝. 다 그려지기 전의 빈 흰 면을 로딩 표시가 덮게 한다.
+              // 다 그려지기 전의 빈 흰 면을 로딩 표시가 덮게 한다.
               style={{ opacity: status === 'loaded' ? 1 : 0, backgroundColor: 'transparent' }}
               className="flex-1"
             />

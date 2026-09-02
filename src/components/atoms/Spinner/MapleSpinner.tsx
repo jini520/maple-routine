@@ -20,7 +20,7 @@ const TRAIL_RATIO = 0.7
 /**
  * 대시 길이 둘. **웹의 `pathLength={300}` 정규화가 RN 에 없다.**
  *
- * `react-native-svg` 는 그 속성을 네이티브에서 안 받는다(웹 빌드 전용 통과 목록에만 있다). 그래서
+ * `react-native-svg` 는 그 속성을 네이티브에서 안 받는다. 그래서
  * 정규화된 300 대신 **실측 둘레**에 같은 비율을 곱한다. 그림은 같고 숫자만 정규화 전 값이다.
  */
 const TRAIL_DASH: readonly number[] = [

@@ -5,7 +5,7 @@
 // ② **확인 모달 오버레이가 body 직속으로 포털 렌더링된다는 옮길 계약이 아니다.** 웹에서
 //    그것이 필요했던 이유(`fixed inset-0` 높이가 호출부 마진에 깎여 하단 딤이 빠진다)가 RN 에
 //    없다. `Modal` 이 **별도 네이티브 윈도우**라 갇힐 상자가 없다(`Modal.tsx` 파일 머리 ①).
-// ③ 카드 경계는 `Card` atom 의 라운딩 대신 **트리 상의 조상 관계**로 본다(웹은 클래스 선택자였다).
+// ③ 카드 경계는 `Card` atom 의 라운딩 대신 **트리 상의 조상 관계**로 본다.
 // ④ 삭제 뒤 흐름(타임아웃 경쟁 → `closeBossProfitDb` → 스플래시 → 리로드)은 **core 의
 //  `clearCacheDataAndReload` 가 소유한다**. 전환하며 그 파일을 한 글자도
 //    건드리지 않았으므로 여기서는 **화면이 무엇을 넘기고 무엇을 받는가**만 본다. 순서 자체는
@@ -166,7 +166,7 @@ describe('SettingsAccountDataScreen', () => {
     expect(mockedClearAndReload.mock.calls[0][0]).toEqual({ general: true, records: true })
   })
 
-  // 리로드 실행부는 **주입 가능**하다(웹 그대로). 기본값은 지금 도는 번들의 재실행이다.
+  // 리로드 실행부는 **주입 가능**하다. 기본값은 지금 도는 번들의 재실행이다.
   it('리로드 실행부를 프롭으로 받아 core 에 넘긴다', async () => {
     const reload = jest.fn()
     const view = await renderOverlay(<SettingsAccountDataScreen reload={reload} />)

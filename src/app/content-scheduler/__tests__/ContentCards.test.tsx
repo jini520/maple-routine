@@ -39,7 +39,7 @@ function weekly(overrides: Partial<WeeklyContent> = {}): WeeklyContent {
   }
 }
 
-/** 이 카드가 실제로 그린 배경 그림의 파일 경로. 없으면 `null`(웹의 "아트 div 자체가 없음"). */
+/** 이 카드가 실제로 그린 배경 그림의 파일 경로. 없으면 `null`. */
 function artUri(view: Awaited<ReturnType<typeof renderAtom>>): string | null {
   const art = view.queryByTestId('faded-illustration', HIDDEN)
   if (art === null) return null
@@ -52,7 +52,7 @@ function artUri(view: Awaited<ReturnType<typeof renderAtom>>): string | null {
 /**
  * 진행률 바가 낸 접근성 값. **`getByRole('progressbar')` 로는 못 찾는다.** RNTL 14 의 역할 질의는
  * 접근성 요소로 표시된 노드만 보는데 이 트랙은 `accessible` 없이 `accessibilityRole` 만 달고 있고
- * (`ProgressBar` atom 이 웹의 `role`/`aria-*` 를 그대로 옮긴 모양), 그쪽 테스트도 같은 이유로
+ *, 그쪽 테스트도 같은 이유로
  * 트리를 직접 훑는다.
  */
 function progressNow(view: Awaited<ReturnType<typeof renderAtom>>): number | undefined {

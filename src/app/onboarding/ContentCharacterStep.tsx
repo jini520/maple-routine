@@ -55,7 +55,7 @@ export function ContentCharacterStep(props: ContentCharacterStepProps): React.JS
           disabled={isSubmitDisabled}
           busy={props.isSubmitting}
           onPress={() => props.onSubmit(manage.selectedOcids, manage.representativeOcid)}
-          // 웹의 `disabled:opacity-50` 은 CSS 의사 클래스라 RN 의 `disabled` 프롭과 이어지지
+          // CSS 의사 클래스가 없어 `disabled` 프롭과 이어지지
           // 않는다. 그대로 두면 비활성 버튼이 멀쩡한 색으로 보인다(설정 화면과 같은 처방).
           className={`w-full flex-row items-center justify-center${isSubmitDisabled ? ' opacity-50' : ''}`}
         >

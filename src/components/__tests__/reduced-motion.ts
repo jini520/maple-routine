@@ -17,7 +17,7 @@
 // ```ts
 // jest.mock('react-native-reanimated', () =>
 //   require('../../../__tests__/reduced-motion').reanimatedWithReducedMotion(),
-// )
+//)
 // ```
 //
 // `jest.mock` 의 팩토리는 import 보다 위로 끌어올려지므로 **밖의 값을 참조할 수 없다**. 그래서

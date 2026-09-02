@@ -35,7 +35,7 @@ const FILTERED_MODE: Record<ModeFilter, 'light' | 'dark' | null> = {
 }
 
 // 탭 토글 모양은 design-system `탭 토글`을 그대로 쓴다. 새 스타일을 만들지 않는다.
-// 웹은 상자 하나에 배경·글자를 함께 걸었지만 RN 은 글자가 상속되지 않아 두 벌로 갈린다.
+// 글자가 상속되지 않아 배경과 글자를 두 벌로 갈라 둔다.
 const CHIP_CLASS = 'rounded-full px-3 py-[5px]'
 const CHIP_ACTIVE_CLASS = `${CHIP_CLASS} bg-primary-tint`
 const CHIP_TEXT_ACTIVE = 'text-sm font-semibold text-primary-ink'

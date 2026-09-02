@@ -8,7 +8,7 @@ import { ThemeContext } from './context'
 import { buildThemeVariables } from './theme-vars'
 
 /**
- * 고른 테마의 38토큰을 화면 전체에 내려보낸다. **웹의 `:root` 에 해당하는 자리**(3단계).
+ * 고른 테마의 38토큰을 화면 전체에 내려보내는 프로바이더.
  *
  * 하는 일 둘:
  *   ① `vars()` 를 얹은 View 로 감싼다 → 그 아래 모든 `className`(`bg-primary` 등)이 색을 얻는다.
@@ -40,7 +40,7 @@ import { buildThemeVariables } from './theme-vars'
  * `features/theme/store.ts`(core)를 직접 구독하지 않는다. 그 스토어가 테마를 **적용**하는 경로는
  * `ThemeAppearancePort.apply()` 하나이고, 그것이 놓는 자리를 읽으면 *"방금 적용된 것"* 과 화면이
  * 언제나 같다. 진실을 두 곳에서 읽어 어긋날 자리가 없다. 초기값이 기본 테마인 이유는
- * `appearance-store.ts` 에 있다(웹의 `@theme` 기본 블록과 같은 역할).
+ * `appearance-store.ts` 에 있다.
  */
 export function ThemeProvider(props: { children: ReactNode }): React.JSX.Element {
   const appearance = useSyncExternalStore(subscribeThemeAppearance, getThemeAppearance)

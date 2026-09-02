@@ -89,7 +89,7 @@ describe('deriveResumeTarget', () => {
 })
 
 // RN 은 메이플 ID 를 고르지 않는다. 표에서 **한 행만** 빠지고 나머지는 그대로다.
-// 위 describe 가 그대로 'single' 표(웹뷰 앱 회귀 가드)이므로, 여기서는 "무엇이 빠졌고 무엇이
+// 위 describe 가 그대로 'single' 표이므로, 여기서는 "무엇이 빠졌고 무엇이
 // 안 빠졌는가"를 본다.
 describe('deriveResumeTarget: 계정 범위 all', () => {
   beforeEach(() => {

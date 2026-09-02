@@ -110,7 +110,7 @@ function EntryRow(props: {
   const shareLabel = drop.priceState === 'entered' ? ` · ${drop.priceShare ?? 1}인` : ''
 
   return (
-    // 웹의 `last:border-b-transparent` 자리. RN 에는 `:last-child` 가 없어 목록을 아는 부모가
+    // RN 에 `:last-child` 가 없어 목록을 아는 부모가
     // 알려 준다. 테두리를 아예 빼지 않고 **색만 지우는** 것이 요점이다.
     <View>
       {isValuableDrop(drop.itemName) && <ValuableRowBackground />}

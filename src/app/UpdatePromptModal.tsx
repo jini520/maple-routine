@@ -68,7 +68,7 @@ export interface UpdatePromptModalProps {
   actions: UpdatePromptActions
   /**
    * 자세히 보기가 개발 노트 화면(`SettingsReleaseNotes`)으로 옮기는 자리.
-   * 웹의 `navigate('/settings/release-notes')` 이고, 닫는 것은 호출부가 함께 한다.
+   * 닫는 것은 호출부가 함께 한다.
    */
   onOpenReleaseNotes: () => void
 }
@@ -92,8 +92,7 @@ const TONE_CLASS: Record<IconTone, string> = {
   third: 'bg-third-tint',
   error: 'bg-error-tint',
 }
-// 웹은 배경과 글자색을 한 문자열에 담았지만 RN 은 아이콘 색이 상속되지 않아 갈라야 한다
-// (`Svg` 의 `color` 프롭으로 내려간다. step 3 의 `cssInterop` 배선).
+// 아이콘 색이 상속되지 않아 배경과 글자색을 갈라 둔다(`Svg` 의 `color` 프롭으로 내려간다).
 const TONE_INK_CLASS: Record<IconTone, string> = {
   primary: 'text-primary-ink',
   secondary: 'text-secondary-ink',
@@ -123,7 +122,7 @@ function VersionBadge({ version }: { version: string | null }): React.JSX.Elemen
   )
 }
 
-/** 배지 한둘을 가로 가운데에 놓는 줄. 웹의 `flex ... justify-center gap-1.5` 자리. */
+/** 배지 한둘을 가로 가운데에 놓는 줄. */
 function BadgeRow({ children }: { children: React.ReactNode }): React.JSX.Element {
   return <View className="flex-row flex-wrap items-center justify-center gap-1.5">{children}</View>
 }
@@ -158,7 +157,7 @@ function HighlightsDisclosure({ highlights }: { highlights: string[] }): React.J
             `rotate-180` 은 transform 일곱 항목을 **한 벌로** 내는데(`translateX: 0` ·
             `skewX: 0` …) 그중 `skewX`·`skewY` 가 **숫자 0** 이라, 그 style 이 SVG 로 가면
             `react-native-svg` 가 각도를 문자열로 읽다 `angle.endsWith is not a function` 으로
-            **죽는다**. step 3 이 찾은 SVG 함정들과 같은 가족이되 이쪽은 조용하지 않다.
+            **죽는다**. 다른 SVG 함정들과 같은 가족이되 이쪽은 조용하지 않다.
 
             **접힌 쪽이 빈 문자열이 아니라 `rotate-0` 인 것도 값이 아니라 계약이다**(실측
             2026-08-12. 이 자리가 실제로 앱을 멈춰 세웠다). transform 이 **첫 렌더에 없다가

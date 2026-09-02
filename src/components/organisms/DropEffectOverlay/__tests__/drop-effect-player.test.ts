@@ -149,7 +149,7 @@ describe('에셋이 비어도 멈추지 않는다', () => {
   })
 })
 
-// 백그라운드에서 돌아왔을 때 한 tick 이 수백 프레임을 삼키면 연출이 순간이동한다(웹과 같은 방어).
+// 백그라운드에서 돌아왔을 때 한 tick 이 수백 프레임을 삼키면 연출이 순간이동한다.
 describe('큰 dt 는 잘라낸다', () => {
   it(`한 번에 ${MAX_TICK_MS}ms 를 넘겨 진행하지 않는다`, () => {
     const huge = advanceDropEffect(createDropEffectState(), 100_000, COUNTS)

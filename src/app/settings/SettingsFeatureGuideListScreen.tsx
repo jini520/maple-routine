@@ -111,7 +111,7 @@ export function SettingsFeatureGuideListScreen(): React.JSX.Element {
               {guides.map((guide, index) => (
                 <View
                   key={guide.id}
-                  // 웹의 `divide-y` 자리. NativeWind 에 형제 선택자가 없어 첫 행을 제외한
+                  // NativeWind 에 형제 선택자가 없어 첫 행을 제외한
                   // 나머지가 직접 얹는다(`row-class.ts`).
                   className={index === 0 ? undefined : SETTINGS_ROW_DIVIDER_CLASS}
                 >

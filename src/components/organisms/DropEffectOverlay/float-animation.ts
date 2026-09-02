@@ -24,7 +24,7 @@ export const FLOAT_ANIMATION = {
 
 /**
  * 중앙 아이템 팝인. 웹의 인라인 트랜지션
- * (`opacity .233s ease, transform .333s cubic-bezier(.2,1.3,.35,1)`)의 짝이다.
+ * (`opacity.233s ease, transform.333s cubic-bezier(.2,1.3,.35,1)`)의 짝이다.
  *
  * **`@keyframes` 가 아니라 트랜지션이었다**는 점이 중요하다. 가 못박은 것이
  * 이 자리다. 팝인은 프레임 fps 를 안 따르므로, fps 배율을 바꿀 땐 **이 두 시간도 같은 배율로**
@@ -39,8 +39,8 @@ export const POP_IN_ANIMATION = {
     from: { opacity: 0, transform: [{ scale: 0.5 }] },
     to: { opacity: 1, transform: [{ scale: 1 }] },
   },
-  // 웹의 둘 중 **긴 쪽**(transform .333s)을 쓴다. RN 의 한 애니메이션은 속성별로 시간을 못 가른다.
-  // 짧은 쪽(opacity .233s)이 늘어나는 차이는 남지만, 어긋나면 안 되는 것은 **끝나는 시점**이다.
+  // 웹의 둘 중 **긴 쪽**(transform.333s)을 쓴다. RN 의 한 애니메이션은 속성별로 시간을 못 가른다.
+  // 짧은 쪽(opacity.233s)이 늘어나는 차이는 남지만, 어긋나면 안 되는 것은 **끝나는 시점**이다.
   animationDuration: '333ms',
   // **문자열 `cubic-bezier(...)` 는 안 받는다**. Reanimated 의 CSS API 는 미리 정의된 이름
   // (linear·ease·ease-in…)만 문자열로 받고, 임의 곡선은 `cubicBezier()` 헬퍼를 쓴다. 문자열로

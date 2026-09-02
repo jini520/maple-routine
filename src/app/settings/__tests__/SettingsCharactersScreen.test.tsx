@@ -302,7 +302,7 @@ describe('두 층. 위는 계정을 넘고 아래는 계정 하나다', () => {
   })
 
   // `후보 목록 로딩` 정책 그대로. 보여줄 것이 남아 있으면 지우지 않고 위에 배너를 얹는다
-  // . 캐시 stub 이 네트워크보다 먼저 오므로 이쪽이 기본 분기다.
+  //. 캐시 stub 이 네트워크보다 먼저 오므로 이쪽이 기본 분기다.
   it('후보가 도착한 뒤 실패하면 목록을 지우지 않고 스탈 배너를 얹는다', async () => {
     mockContentStore({ trackedOcids: [] })
     mockedRoster.mockImplementation(async (onUpdate) => {

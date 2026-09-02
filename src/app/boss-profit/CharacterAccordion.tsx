@@ -233,7 +233,7 @@ export function CharacterAccordion(props: {
         />
       )}
 
-      {/* 아이템 내역은 별도 네이티브 윈도우로 화면 위에 뜬다(step 6). 보스 행이 쓰는 것과 같은
+      {/* 아이템 내역은 별도 네이티브 윈도우로 화면 위에 뜬다. 보스 행이 쓰는 것과 같은
           컴포넌트다. 카드 셸의 클리핑을 피하는 것이 그 선택의 이유이고, 웹의 포털+`fixed` 와
           성질이 같다. */}
       {isItemPopoverOpen && (
@@ -273,7 +273,7 @@ export function CharacterAccordion(props: {
           // : 접기는 **상태만 바꾼다.** 여기에 스크롤 조작을 다시 넣지 말 것.
           onPress={() => {
             // 카드를 여닫으면 설명 팝오버를 닫는다. 펼침이 레이아웃을 바꿔 열기 직전에 잰 위치가
-            // 낡은 값이 되고, 헤더 탭은 팝오버 바깥 탭으로 잡히지도 않는다(웹과 같은 이유).
+            // 낡은 값이 되고, 헤더 탭은 팝오버 바깥 탭으로 잡히지도 않는다.
             setIsIssueOpen(false)
             setIsExpanded((expanded) => !expanded)
           }}

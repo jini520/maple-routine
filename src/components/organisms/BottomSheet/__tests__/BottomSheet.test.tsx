@@ -230,7 +230,7 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
     expect(typeof backdrop.props.onPress).toBe('function')
   })
 
-  // 결정 3: 마운트가 곧 열림(웹의 `open` 초기값 `true`)이고, 닫힘은 이탈 애니메이션이 끝난 뒤
+  // 결정 3: 마운트가 곧 열림이고, 닫힘은 이탈 애니메이션이 끝난 뒤
   // (`onDismiss`) 부모에 알려 언마운트를 맡긴다.
   it('마운트하면 열고, 닫힘은 이탈 애니메이션이 끝난 뒤 부모에 통보한다', async () => {
     const onClose = jest.fn()

@@ -56,12 +56,12 @@ import { rnSqlitePort } from './storage/adapters/rn-sqlite'
  * 그래서 `not-implemented.ts` 는 이제 비었다.
  *
  * 그 목록을 먼저 떠난 것이 셋이다:
- * - `ThemeAppearancePort`(step 1, theme-system). `rn-theme-appearance.ts` 가 자리를 채웠다.
- * - `BackGesturePort`(step 2, navigation). **절반만 구현이다.** `moveToBackground` 는 실구현이고
+ * - `ThemeAppearancePort`. `rn-theme-appearance.ts` 가 자리를 채웠다.
+ * - `BackGesturePort`. **절반만 구현이다.** `moveToBackground` 는 실구현이고
  *  (그 하나는 내비게이션 라이브러리가 대신해 주지 않는다) 나머지 둘은 계속
  *   던지되 사유가 갈린다: *"아직 안 했다"* 가 아니라 *"이제 네이티브 스택이 소유한다."*
  *   그래서 메시지도 `not-implemented.ts` 가 아니라 `rn-back-gesture.ts` 가 갖는다.
- * - `SystemBarsPort`(step 6, templates). 이쪽도 절반씩이다. `setNavigationBarStyle` 은 로컬 Expo
+ * - `SystemBarsPort`. 이쪽도 절반씩이다. `setNavigationBarStyle` 은 로컬 Expo
  *   모듈로 그대로 옮겼고, `refreshSafeAreaInsets` 는 **의도적인 no-op** 이다(던지지 않는다.
  *   `SafeAreaProvider` 가 그 갱신을 이미 자동으로 하므로 거부가 진짜 고장과 구분을 없앤다).
  */

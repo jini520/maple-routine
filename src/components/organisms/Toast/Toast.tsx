@@ -80,7 +80,7 @@ export function Toast(props: ToastProps): React.JSX.Element {
   const Icon = ICONS[toast.variant]
   const isDragging = dragX !== null
   const dragOpacity = isDragging ? Math.max(0.15, 1 - Math.abs(dragX) / 140) : undefined
-  // 모션 줄이기면 시작 위치의 `translate-y-3` 이 빠진다(웹 `motion-reduce:translate-y-0`).
+  // 모션 줄이기면 시작 위치의 `translate-y-3` 이 빠진다.
   const restingClasses = reduceMotion ? 'translate-y-0 opacity-0' : 'translate-y-3 opacity-0'
   const enterClasses = isEntered ? 'translate-y-0 opacity-100' : restingClasses
   const ActionIcon = toast.action?.icon ?? RefreshCwIcon

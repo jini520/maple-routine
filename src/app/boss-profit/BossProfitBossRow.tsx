@@ -31,7 +31,7 @@ export interface BossProfitBossRowProps {
   row: BossProfitRow
   drops: RecordedDrop[]
   /**
-   * 웹의 `last:border-b-transparent` 자리. RN 에는 `:last-child` 가 없어 **목록을
+   * RN 에 `:last-child` 가 없어 **목록을
    * 아는 부모가 알려 준다**(`disabled:` 를 JS 조건으로 옮긴 것과 같은 종류의 갈림).
    *
    * 테두리를 아예 빼지 않고 **색만 지우는** 것이 요점이다: 빼면 그 행만 1px 짧아진다.

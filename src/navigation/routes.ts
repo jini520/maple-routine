@@ -16,9 +16,7 @@ import type { NavigatorScreenParams } from '@react-navigation/native'
 /**
  * 탭 내비게이터의 화면 아홉. **그룹이 아니라 페이지다**.
  *
- * 아홉째가 `BossManage` 다. **웹의 하위 경로가 탭이 되는 자리는 여기뿐이다**.
- * 그 화면을 여는 버튼이 뒤로 보스 스케줄러 헤더에 하나 남아 있었고, 하단바가 이미
- * 스케줄 안의 자리들 을 그리고 있는데 그 목록에만 없었다.
+ * 아홉째가 `BossManage` 다. 하단바가 이미 스케줄 안의 자리들을 그리는데 그 목록에만 없었다.
  *
  * 바에 보이는 그룹(스케줄·가계부…)은 내비게이션 구조가 아니라 **바의 표현**이라 여기 없다.
  * 그 묶음은 `bar-model.ts` 의 표가 갖는다. 중첩 내비게이터를 두지 않은 이유도 같다. 하위 페이지들은
@@ -46,15 +44,13 @@ export type TabParamList = {
   Cashbook: undefined
   Utility: undefined
   /**
-   * `openPicker` 는 웹의 **`/boss?openPicker=1`** 이다. 캐릭터 관리 피커를 **열어 둔 채로** 이 탭에
-   * 보낸다. 보내는 쪽 셋: 보스 수익의 "캐릭터 선택하러 가기"와 컨텐츠·보스
+   * `openPicker` 는 캐릭터 관리 피커를 **열어 둔 채로** 이 탭에 보내는 파라미터다. 보내는 쪽 셋: 보스 수익의 "캐릭터 선택하러 가기"와 컨텐츠·보스
    * 스케줄러의 빈 상태 CTA.
    *
    * **받는 쪽이 `Boss` 에서 여기로 옮겨왔다**. 피커를 여는 자리가 설정
    * 하나가 되면서 목적지도 함께 옮겼다. 열어 두고 보낸다는 계약 자체는 그대로다.
    *
-   * URL 이 없어 "새로고침·뒤로가기마다 피커가 다시 열린다"는 웹의 걱정은 사라지지만 **파라미터는
-   * 스택에 남는다**. 탭을 떠났다 돌아오면 그대로 살아 있으므로 화면이 `setParams` 로 지우는 일은
+   * **파라미터가 스택에 남는다.** 탭을 떠났다 돌아오면 그대로 살아 있으므로 화면이 `setParams` 로 지우는 일은
    * 그대로 필요하다(`SettingsScreen`).
    */
   Settings: { openPicker?: boolean } | undefined
@@ -102,9 +98,7 @@ export const LAYER_ROUTE_NAMES: readonly LayerRouteName[] = ['Groups', 'Schedule
 /**
  * 기능 안내 상세가 받는 파라미터.
  *
- * `section` 은 웹의 `?s=` 다. 그쪽이 세그먼트가 아니라 쿼리인 이유는
- * `resolveStackDirection` 이 세그먼트를 스택 한 단으로 읽기 때문이었고, RN 에는 그 판정 자체가 없어
- * (push 는 우리가 명시한다) 그냥 파라미터 하나다.
+ * `section` 은 파라미터 하나다. push 는 우리가 명시하므로 세그먼트로 둘 이유가 없다.
  */
 export interface FeatureGuideParams {
   guideId: string
@@ -151,7 +145,7 @@ export type StackRouteName = Exclude<keyof RootStackParamList, 'Onboarding' | 'M
 /**
  * 한 경로가 RN 의 어느 자리로 갔는가.
  *
- * - `initial`. 웹의 `/` 리디렉트. RN 에는 URL 이 없으므로 *"처음 서 있는 탭"* 이 그 자리다.
+ * - `initial`. 처음 서 있는 탭.
  * - `root`. 루트 스택의 화면이되 탭이 아닌 것(온보딩). 탭과 **배타**로 그려진다(아래).
  * - `tab`. 탭 여덟(사냥 수익·지출을 걷고 가계부를 넣어 아홉에서 줄었다).
  * - `push`. 탭 위로 밀려 들어오는 하위 페이지. 루트 스택에 쌓인다.
@@ -200,9 +194,7 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
   },
 
   { path: '/boss', screen: 'BossScreen', target: { kind: 'tab', route: 'Boss' }, origin: 'web' },
-  // **웹 경로인데 `push` 가 아닌 행은 이것뿐이다**. 웹에서는 `/boss` 위로 밀려
-  // 올라오는 하위 페이지이고, RN 에서는 스케줄 그룹의 셋째 하위 탭이다. `origin` 은 그대로 `web`
-  // 이다(대조할 경로가 실재한다. 갈린 것은 **어디로 갔는가** 뿐이다).
+  // **`origin: 'web'` 인데 `push` 가 아닌 행은 이것뿐이다.** 스케줄 그룹의 셋째 하위 탭이다.
   { path: '/boss/manage', screen: 'BossManageScreen', target: { kind: 'tab', route: 'BossManage' }, origin: 'web' },
 
   { path: '/profit', screen: 'BossProfitScreen', target: { kind: 'tab', route: 'Profit' }, origin: 'web' },
@@ -257,7 +249,7 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
   { path: '/today', screen: 'TodayScreen', target: { kind: 'tab', route: 'Today' }, origin: 'rn' },
   // 사냥 수익(`/profit/hunting`)·지출(`/spend`) 두 행이 **여기 있었다.** 둘은 자리를 예약하던
   // **개발 진행중** 자리표시자였고, 그 자리가 가계부로 정해지면서 삭제됐다
-  // . 되살릴 근거는 그 ADR 과 git 이 들고 있다.
+  //. 되살릴 근거는 그 ADR 과 git 이 들고 있다.
   { path: '/cashbook', screen: 'CashbookScreen', target: { kind: 'tab', route: 'Cashbook' }, origin: 'rn' },
   { path: '/utility', screen: 'UtilityScreen', target: { kind: 'tab', route: 'Utility' }, origin: 'rn' },
   {
@@ -302,8 +294,7 @@ export const TAB_ROUTE_NAMES: readonly TabRouteName[] = ROUTE_TABLE.flatMap((row
  * 앱은 탭 여덟 중 하나 가 아니라 **그룹 층의 첫 화면**에서 시작한다. 하위 층은 push 로만 열리므로
  * 여기에 하위 페이지를 적을 수 있으면 앱을 켰는데 스택이 한 단 깊은 상태가 표현돼 버린다.
  *
- * 표의 `/` 행은 여전히 `Content` 를 가리킨다. 그 행은 *"웹이 `/` 에서 무엇을 보여 줬는가"* 라는
- * 기록이고, *"이 앱이 어디서 시작하는가"* 와는 다른 축이기 때문이다. 둘이 갈린 것 자체가
- *  의 산물이라 `routes.test.ts` 가 **양쪽을 함께** 고정한다. 한쪽만 고치면 테스트가 운다.
+ * 표의 `/` 행은 여전히 `Content` 를 가리킨다. 그것과 **이 앱이 어디서 시작하는가** 는 다른 축이라
+ * `routes.test.ts` 가 양쪽을 함께 고정한다. 한쪽만 고치면 테스트가 운다.
  */
 export const INITIAL_TAB_ROUTE: keyof GroupLayerParamList = 'Today'

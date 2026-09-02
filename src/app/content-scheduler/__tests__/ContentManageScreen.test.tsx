@@ -2,7 +2,7 @@
 //
 // 갈린 것 셋
 // ① **라우터가 없다**. 뒤로는 `goBack` 이 불렸는가로, 자동 모드 리다이렉트도 같은 것으로 본다
-//    (웹은 `<Navigate to="/content" replace />` 였고 그 프로브를 라우트에 심었다).
+//.
 // ② `aria-pressed` → **`aria-selected` → `accessibilityState.selected`**(RN 접근성 상태에
 //    *pressed* 가 없다. 설정·온보딩의 선택 카드가 이미 밟은 자리).
 // ③ 잠금 행의 **스크림에서 블러가 빠진다**(`backdrop-filter` 가 RN 에 없다). 검사 대상은 흐림이

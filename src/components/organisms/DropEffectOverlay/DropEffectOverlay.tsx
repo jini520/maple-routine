@@ -199,7 +199,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
     return () => cancelAnimationFrame(raf)
   }, [counts, warm])
 
-  // 탭 → end 재생 → 닫힘. 이미 닫는 중이면 즉시 끝난다(웹과 같은 **두 번 탭하면 건너뛴다**).
+  // 탭 → end 재생 → 닫힘. 이미 닫는 중이면 즉시 끝난다.
   const handlePress = useCallback(() => {
     const next = requestDropEffectClose(stateRef.current, counts)
     stateRef.current = next

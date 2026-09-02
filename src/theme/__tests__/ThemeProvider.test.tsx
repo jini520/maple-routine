@@ -7,7 +7,7 @@
 // 값은 손으로 적지 않고 `job-themes.json` 에서 읽는다(색은 사람이 확인해 커밋한 값이고
 // 테스트가 베끼면 두 벌이 된다).
 //
-// ⚠️ 화면이 **예전(웹뷰 앱)과 같은지**는 여기서 답하지 않는다. 답하는 것은 "값이 흐르는가" 까지다.
+// ⚠️ 화면이 **예전과 같은지**는 여기서 답하지 않는다. 답하는 것은 "값이 흐르는가" 까지다.
 
 import { act, render } from '@testing-library/react-native'
 import { getThemeDefinition } from '../../lib/theme/theme-registry'

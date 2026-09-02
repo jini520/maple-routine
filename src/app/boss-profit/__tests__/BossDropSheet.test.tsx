@@ -13,7 +13,7 @@ import type { ReactNode } from 'react'
 import { act, fireEvent } from '@testing-library/react-native'
 
 // **드랍 연출도 세워 둔다.** 그 오버레이는 `requestAnimationFrame` 루프로 스프라이트를 돌리고
-// loop 단계가 **설계상 무한**이라(웹도 그렇다. 탭해야 끝난다), jest 의 `requestAnimationFrame`
+// loop 단계가 **설계상 무한**이라, jest 의 `requestAnimationFrame`
 // 대역이 `setTimeout` 이라 테스트가 영원히 안 끝난다. 이 파일이 보는 것은 타일 선택과 `onSave` 라
 // 연출은 대상이 아니다. 재생 순서는 `drop-effect-player.test.ts` 가 따로 본다.
 // 목이 **같은 testID 를 낸다**. 이 파일에는 "연출이 뜨는가" 를 보는 케이스가 있고, 그 계약은

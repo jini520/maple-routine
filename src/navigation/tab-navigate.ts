@@ -22,7 +22,7 @@ export interface TabNavigateParams {
  * 탭 이름(+ 그 화면이 받을 파라미터)을 `navigate` 인자 한 벌로 옮긴다.
  *
  * 파라미터는 **가장 안쪽 화면**에 붙는다. 한 단 위에 붙이면 층 화면이 그것을 받고 정작 목적지
- * 화면은 못 본다(웹의 `?openPicker=1` 자리,2).
+ * 화면은 못 본다.
  */
 export function tabNavigateArgs(
   page: TabRouteName,

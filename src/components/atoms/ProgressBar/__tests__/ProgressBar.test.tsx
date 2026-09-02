@@ -55,7 +55,7 @@ describe('ProgressBar', () => {
     expect(flattenStyle(fill.parent?.props.style).backgroundColor).toBe(기본테마.track)
   })
 
-  // `animated` 는 **폭 트랜지션의 on/off** 다(step 7). Reanimated 는 CSS 트랜지션 키를 `style` 에서
+  // `animated` 는 **폭 트랜지션의 on/off** 다. Reanimated 는 CSS 트랜지션 키를 `style` 에서
   // 걷어 자기가 들고 가므로 `props.style` 로는 있으나 없으나 같아 보인다. 그래서 그 키가 실제로
   // 전달됐는지는 `jestInlineStyle`(Reanimated 가 테스트용으로 남기는 원본)로 본다. 값이 Tailwind 의
   // `transition-[width]` 와 같은지를 대조하던 테스트는 없다(`WIDTH_TRANSITION` 주석 참고).

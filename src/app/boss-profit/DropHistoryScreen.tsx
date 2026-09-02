@@ -77,7 +77,7 @@ function ValuableDrought(props: { summary: ValuableDroughtSummary; now: Date }):
   return (
     <View
       testID="valuable-drought"
-      // 웹의 `data-drought-tier` 자리. RN 에는 데이터 속성이 없어 접근성 이름으로 옮긴다. 테스트는
+      // RN 에 데이터 속성이 없어 접근성 이름으로 옮긴다. 테스트는
       // 이 이름으로만 단계를 지목할 수 있고, 스크린리더에도 단계가 문구로만 남는 것보다 낫다.
       aria-label={`고가 드롭 미획득 ${tier}단계`}
       className="flex-row items-center justify-center gap-2.5"

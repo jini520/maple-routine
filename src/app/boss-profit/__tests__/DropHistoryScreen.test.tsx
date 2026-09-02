@@ -1,7 +1,7 @@
 // 드롭 획득 히스토리. 웹판(500줄)의 명세를 읽어 다시 쓴 것.
 //
 // 갈린 것 넷
-// ① **라우터가 없다**. 빈 상태 CTA 는 `goBack` 이 불렸는가로 본다(웹은 location 프로브였다).
+// ① **라우터가 없다**. 빈 상태 CTA 는 `goBack` 이 불렸는가로 본다.
 // ② **셸 계약이 뒤집힌다**. 웹은 *"`screen-scroll` 이 없어야 한다"* 를 단언했다(공용 셸의 상단
 //    보정이 sticky 헤더와 겹쳤다). RN 에는 그 보정이 없고 헤더가 스크롤 뷰의 형제라 **공용 셸을
 //    쓰는 것이 맞는 그림**이라, 같은 자리에서 반대를 단언한다.
@@ -227,7 +227,7 @@ describe('DropHistoryScreen: 기록 한 줄', () => {
     mockStore({ groups: [{ periodKey: PERIOD, cycle: 'weekly', records: [기록()] }] })
     const { getByLabelText, getByTestId } = await renderHistory()
 
-    // 웹의 `data-valuable` 자리. RN 에는 데이터 속성이 없어 접근성 이름으로 옮겼다.
+    // RN 에 데이터 속성이 없어 접근성 이름으로 옮겼다.
     expect(getByLabelText('고가 드롭 기록')).toBeTruthy()
     // 웹의 `.valuable-drop-badge` 는 그라디언트 pill 이었고 RN 에서는 단색 배경만 남는다.
     // 지켜야 하는 것은 *"골드 위에 골드 잉크"* 라는 사실이다(파일 머리 ④).
@@ -322,7 +322,7 @@ describe('DropHistoryScreen: 기간 구분', () => {
     const expected = formatBossProfitPeriodLabel('weekly', PERIOD, new Date())
     expect(문장(getByTestId('drop-history-period'))).toContain(expected.primary)
     expect(getByTestId('drop-history-period-range').props.children).toBe(expected.secondary)
-    // 헤어라인은 `aria-hidden` 이라 **기본 질의에서 빠진다**(step 4 가 실측한 성질). 장식이므로
+    // 헤어라인은 `aria-hidden` 이라 **기본 질의에서 빠진다**. 장식이므로
     // 그것이 맞고, 여기서는 존재만 확인하려고 숨은 것까지 훑는다.
     expect(getAllByTestId('drop-history-period-rule', { includeHiddenElements: true })).toHaveLength(2)
   })
@@ -390,7 +390,7 @@ describe('DropHistoryScreen: 미획득 요약', () => {
 
   // 문구는 사용자 지정(2026-08-01·2026-08-17). **전 단계가 풀**이라 표는 문구를 담지 않고 풀 소속만
   // 본다. **한 케이스에서 네 번 렌더하지 않는다**. RNTL 14 는 한 케이스에 렌더가
-  // 셋을 넘기면 그 뒤가 빈 화면으로 떨어진다(step 2 가 실측해 적어 둔 함정, 여기서 다시 밟았다).
+  // 셋을 넘기면 그 뒤가 빈 화면으로 떨어진다.
   it.each([
     [0, '#f7d00d', 0],
     [1, '#e0b400', 6],

@@ -68,7 +68,7 @@ describe('SettingsPrivacyScreen', () => {
     expect(view.getByTestId('privacy-frame').props.source).toEqual({ uri: PRIVACY_URL })
   })
 
-  // `ScreenScroll` 을 쓰지 않는다. 문서가 자기 스크롤을 갖는다(웹도 같은 이유로 `scroll={false}`).
+  // `ScreenScroll` 을 쓰지 않는다. 문서가 자기 스크롤을 갖는다.
   it('셸의 스크롤 상자를 쓰지 않는다', async () => {
     const view = await renderOverlay(<SettingsPrivacyScreen />)
 
