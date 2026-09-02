@@ -1,5 +1,5 @@
 /**
- * 라우트 표 — `docs/migration/parity-inventory.md` §1 을 **데이터로** 옮긴 것([[ADR-128]] 3단계).
+ * 라우트 표 — `docs/migration/parity-inventory.md` §1 을 **데이터로** 옮긴 것(3단계).
  *
  * ## 왜 표를 코드에 두는가
  *
@@ -12,7 +12,7 @@
  * 내내 필요하다(`docs/migration/README.md` «잃는 안전망» — 예전과의 비교는 사람이 한다).
  *
  * **딥링크(`linking`)는 두지 않는다.** 지금 앱에는 딥링크가 없고(웹뷰는 `https://localhost` 로만
- * 돈다), 설정을 두면 이 표가 문서에서 **동작**으로 바뀌어 없던 진입 경로가 생긴다. [[ADR-120]] 결정 9
+ * 돈다), 설정을 두면 이 표가 문서에서 **동작**으로 바뀌어 없던 진입 경로가 생긴다.
  * 가 다루는 *"딥링크로 하위 페이지에 직접 들어와 되돌아갈 곳이 없는 경우"* 도 그래서 RN 에는 아직
  * 존재하지 않는다 — 스택은 언제나 우리가 push 한 만큼만 깊다.
  */
@@ -20,10 +20,10 @@
 import type { NavigatorScreenParams } from '@react-navigation/native'
 
 /**
- * 탭 내비게이터의 화면 아홉 — **그룹이 아니라 페이지다**([[ADR-132]] 결정 1).
+ * 탭 내비게이터의 화면 아홉 — **그룹이 아니라 페이지다**.
  *
- * 아홉째가 `BossManage` 다([[ADR-145]] 결정 1) — **웹의 하위 경로가 탭이 되는 자리는 여기뿐이다**.
- * 그 화면을 여는 버튼이 [[ADR-140]] 뒤로 보스 스케줄러 헤더에 하나 남아 있었고, 하단바가 이미
+ * 아홉째가 `BossManage` 다 — **웹의 하위 경로가 탭이 되는 자리는 여기뿐이다**.
+ * 그 화면을 여는 버튼이 뒤로 보스 스케줄러 헤더에 하나 남아 있었고, 하단바가 이미
  * «스케줄 안의 자리들» 을 그리고 있는데 그 목록에만 없었다.
  *
  * 바에 보이는 «그룹»(스케줄·가계부…)은 내비게이션 구조가 아니라 **바의 표현**이라 여기 없다.
@@ -53,10 +53,10 @@ export type TabParamList = {
   Utility: undefined
   /**
    * `openPicker` 는 웹의 **`/boss?openPicker=1`** 이다 — 캐릭터 관리 피커를 **열어 둔 채로** 이 탭에
-   * 보낸다. 보내는 쪽 셋: 보스 수익의 "캐릭터 선택하러 가기"([[ADR-068]] 결정 4)와 컨텐츠·보스
+   * 보낸다. 보내는 쪽 셋: 보스 수익의 "캐릭터 선택하러 가기"와 컨텐츠·보스
    * 스케줄러의 빈 상태 CTA.
    *
-   * **받는 쪽이 `Boss` 에서 여기로 옮겨왔다**([[ADR-140]] 결정 1·2) — 피커를 여는 자리가 설정
+   * **받는 쪽이 `Boss` 에서 여기로 옮겨왔다** — 피커를 여는 자리가 설정
    * 하나가 되면서 목적지도 함께 옮겼다. 열어 두고 보낸다는 계약 자체는 그대로다.
    *
    * URL 이 없어 "새로고침·뒤로가기마다 피커가 다시 열린다"는 웹의 걱정은 사라지지만 **파라미터는
@@ -67,11 +67,11 @@ export type TabParamList = {
 }
 
 /**
- * 층 스택의 화면 — **그룹 층 하나 + 하위를 가진 그룹마다 하나**([[ADR-167]] 결정 1·2).
+ * 층 스택의 화면 — **그룹 층 하나 + 하위를 가진 그룹마다 하나**.
  *
  * 이 이름들이 곧 «층» 이다. 그룹 행에 서 있으면 `Groups` 한 단이고, 하위로 내려가면 그 그룹의
  * 화면이 그 위에 **push** 된다 — 그래서 전환 애니메이션과 가장자리 스와이프가 공짜로 붙는다
- * ([[ADR-120]] 결정 5·6 이 하위 페이지 열하나에 준 것과 같은 값이 같은 경로로 온다).
+ * (6 이 하위 페이지 열하나에 준 것과 같은 값이 같은 경로로 온다).
  *
  * 어느 그룹이 어느 층 화면을 갖는지는 `bar-model.ts` 의 `BAR_GROUPS` 가 든다 — 여기 두면 두 벌이
  * 된다. 이름만 여기 있는 것은 `bar-model` 이 `routes` 를 읽지 그 반대가 아니기 때문이다.
@@ -108,7 +108,7 @@ export const LAYER_ROUTE_NAMES: readonly LayerRouteName[] = ['Groups', 'Schedule
 /**
  * 기능 안내 상세가 받는 파라미터.
  *
- * `section` 은 웹의 `?s=` 다([[ADR-125]] 결정 7) — 그쪽이 세그먼트가 아니라 쿼리인 이유는
+ * `section` 은 웹의 `?s=` 다 — 그쪽이 세그먼트가 아니라 쿼리인 이유는
  * `resolveStackDirection` 이 세그먼트를 스택 한 단으로 읽기 때문이었고, RN 에는 그 판정 자체가 없어
  * (push 는 우리가 명시한다) 그냥 파라미터 하나다.
  */
@@ -120,11 +120,11 @@ export interface FeatureGuideParams {
 export type RootStackParamList = {
   Onboarding: undefined
   /**
-   * 「탭 레이어」를 대신하는 화면 하나 — **안에 층 스택과 바가 형제로 산다**([[ADR-167]] 결정 2).
+   * 「탭 레이어」를 대신하는 화면 하나 — **안에 층 스택과 바가 형제로 산다**.
    *
    * 이름이 `Tabs` 가 아닌 이유: 이제 이 자리는 탭 내비게이터가 아니라 **스택**이고, 탭은 그 스택의
    * 각 단 안에 있다. 하위 페이지 열하나는 여전히 이것 **위**로 밀려 들어와 `Main` 통째를 밀어낸다 —
-   * 바가 그 안에 있으므로 [[ADR-120]] 결정 4(*"탭바가 아래 화면과 한 덩어리로 밀려 나간다"*)가
+   * 바가 그 안에 있으므로(*"탭바가 아래 화면과 한 덩어리로 밀려 나간다"*)가
    * 구조로 그대로 성립한다.
    */
   Main: NavigatorScreenParams<LayerParamList> | undefined
@@ -139,14 +139,14 @@ export type RootStackParamList = {
   SettingsAbout: undefined
   SettingsPrivacy: undefined
   /**
-   * 아이템 분배 계산기 — **유틸리티의 첫 도구다**([[ADR-168]] 결정 6). 웹에 없다.
+   * 아이템 분배 계산기 — **유틸리티의 첫 도구다**. 웹에 없다.
    *
    * 이 자리가 유틸리티의 구조를 정한다: 도구는 유틸리티 화면 **안의 카드**가 아니라 루트 스택에
    * 쌓이는 하위 페이지이고, 뒤에 오는 도구들이 그대로 물려받는다.
    */
   UtilityItemSplit: undefined
   /**
-   * 캐릭터 관리 — **웹에 없는 화면이다**([[ADR-144]] 결정 1). 웹뷰 앱에서는 모달이고, RN 에서는
+   * 캐릭터 관리 — **웹에 없는 화면이다**. 웹뷰 앱에서는 모달이고, RN 에서는
    * 두 층 + 드롭다운 + 순서 + 대표가 385px 모달 본문에 안 들어가 하위 페이지가 됐다.
    */
   SettingsCharacters: undefined
@@ -159,8 +159,8 @@ export type StackRouteName = Exclude<keyof RootStackParamList, 'Onboarding' | 'M
  *
  * - `initial` — 웹의 `/` 리디렉트. RN 에는 URL 이 없으므로 *"처음 서 있는 탭"* 이 그 자리다.
  * - `root` — 루트 스택의 화면이되 탭이 아닌 것(온보딩). 탭과 **배타**로 그려진다(아래).
- * - `tab` — 탭 여덟([[ADR-169]] 결정 1 이 사냥 수익·지출을 걷고 가계부를 넣어 아홉에서 줄었다).
- * - `push` — 탭 위로 밀려 들어오는 하위 페이지. 루트 스택에 쌓인다([[ADR-120]] 결정 4).
+ * - `tab` — 탭 여덟(이 사냥 수익·지출을 걷고 가계부를 넣어 아홉에서 줄었다).
+ * - `push` — 탭 위로 밀려 들어오는 하위 페이지. 루트 스택에 쌓인다.
  */
 export type RouteTarget =
   | { readonly kind: 'initial'; readonly route: TabRouteName }
@@ -175,7 +175,7 @@ export interface RouteRow {
   readonly screen: string
   readonly target: RouteTarget
   /**
-   * 이 행이 **어디서 왔는가**([[ADR-132]] 결정 1).
+   * 이 행이 **어디서 왔는가**.
    *
    * - `web` — 웹 앱에 실제로 있는 경로. 계획서 §1 과 대조되는 행이고 **17개로 고정**이다.
    * - `rn` — RN 에서 새로 생긴 화면. 웹에는 없다. `path` 는 그 화면이 웹 규칙대로였다면 가졌을
@@ -188,7 +188,7 @@ export interface RouteRow {
  * 웹 17행 + RN 5행. **행 수와 내용을 테스트가 고정한다** — 화면이 늘면 계획서와 여기가 함께 움직여야 한다.
  *
  * `/settings/about/privacy` 가 계획서 표(`/settings/privacy`)와 다른 것은 **계획서 쪽이 낡았기
- * 때문**이다. [[ADR-120]] 결정 11 이 구현 중에 경로를 `about` 의 **자식**으로 정정했고
+ * 때문**이다. 이 구현 중에 경로를 `about` 의 **자식**으로 정정했고
  * (`/settings/privacy` 로 두면 about 이 즉시 사라진 자리에 처방침이 밀려 들어와 밀려 나가는 화면
  * 없이 배경만 바뀌는 프레임이 보인다), `app-capacitor` 의 라우트도 그렇게 되어 있다. 이 앱에서
  * 스택이 2단이 되는 자리는 여기뿐이다. 계획서 표도 함께 고쳤다.
@@ -206,7 +206,7 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
   },
 
   { path: '/boss', screen: 'BossScreen', target: { kind: 'tab', route: 'Boss' }, origin: 'web' },
-  // **웹 경로인데 `push` 가 아닌 행은 이것뿐이다**([[ADR-145]] 결정 1) — 웹에서는 `/boss` 위로 밀려
+  // **웹 경로인데 `push` 가 아닌 행은 이것뿐이다** — 웹에서는 `/boss` 위로 밀려
   // 올라오는 하위 페이지이고, RN 에서는 스케줄 그룹의 셋째 하위 탭이다. `origin` 은 그대로 `web`
   // 이다(대조할 경로가 실재한다 — 갈린 것은 «어디로 갔는가» 뿐이다).
   { path: '/boss/manage', screen: 'BossManageScreen', target: { kind: 'tab', route: 'BossManage' }, origin: 'web' },
@@ -222,7 +222,7 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
     target: { kind: 'push', route: 'SettingsFeatureGuideList' },
     origin: 'web',
   },
-  // 아래 둘이 **같은 `screen` 값을 갖는 것이 계약이다**([[ADR-125]] 결정 3) — 기능 설명 목록에서도,
+  // 아래 둘이 **같은 `screen` 값을 갖는 것이 계약이다** — 기능 설명 목록에서도,
   // 개발 노트 항목에서도 같은 상세가 열린다. 화면과 데이터는 한 벌이고 경로만 둘이다.
   {
     path: '/settings/guide/:guideId',
@@ -255,15 +255,15 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
     target: { kind: 'push', route: 'SettingsPrivacy' },
     origin: 'web',
   },
-  // ── 여기부터 RN 에서 새로 생긴 화면 ([[ADR-132]] 결정 1·12 · [[ADR-144]] 결정 1) ──
+  // ── 여기부터 RN 에서 새로 생긴 화면 ──
   // 웹에는 없다. `path` 는 대조용이 아니라 이름표다. 탭 셋은 전부 진짜 화면이 됐다 — today 는
-  // 위젯 격자([[ADR-147]])·유틸리티는 도구 목록([[ADR-168]])·가계부는 캘린더([[ADR-169]])다.
+  // 위젯 격자·유틸리티는 도구 목록·가계부는 캘린더다.
   // 하위 페이지 둘도 진짜 화면이다. 캐릭터 관리는 웹뷰 앱에서 설정의 모달이 하던 일이고,
   // 아이템 분배 계산기는 웹에 없던 도구다.
   { path: '/today', screen: 'TodayScreen', target: { kind: 'tab', route: 'Today' }, origin: 'rn' },
   // 사냥 수익(`/profit/hunting`)·지출(`/spend`) 두 행이 **여기 있었다.** 둘은 자리를 예약하던
-  // **개발 진행중** 자리표시자였고([[ADR-132]] 결정 12), 그 자리가 가계부로 정해지면서 삭제됐다
-  // ([[ADR-169]] 결정 1·2). 되살릴 근거는 그 ADR 과 git 이 들고 있다.
+  // **개발 진행중** 자리표시자였고, 그 자리가 가계부로 정해지면서 삭제됐다
+  // . 되살릴 근거는 그 ADR 과 git 이 들고 있다.
   { path: '/cashbook', screen: 'CashbookScreen', target: { kind: 'tab', route: 'Cashbook' }, origin: 'rn' },
   { path: '/utility', screen: 'UtilityScreen', target: { kind: 'tab', route: 'Utility' }, origin: 'rn' },
   {
@@ -285,7 +285,7 @@ export const STACK_ROUTE_NAMES: readonly StackRouteName[] = ROUTE_TABLE.flatMap(
   row.target.kind === 'push' ? [row.target.route] : [],
 )
 
-/** 기능 안내 상세를 가리키는 두 라우트 — 같은 컴포넌트가 그린다([[ADR-125]] 결정 3). */
+/** 기능 안내 상세를 가리키는 두 라우트 — 같은 컴포넌트가 그린다. */
 export const FEATURE_GUIDE_ROUTE_NAMES = [
   'SettingsFeatureGuide',
   'SettingsReleaseNoteGuide',
@@ -302,14 +302,14 @@ export const TAB_ROUTE_NAMES: readonly TabRouteName[] = ROUTE_TABLE.flatMap((row
 )
 
 /**
- * 처음 서 있는 탭 — **`/` 행과 갈렸다**([[ADR-132]] 결정 7).
+ * 처음 서 있는 탭 — **`/` 행과 갈렸다**.
  *
- * 타입이 `TabRouteName` 이 아니라 **`keyof GroupLayerParamList`** 인 것이 [[ADR-167]] 의 산물이다.
+ * 타입이 `TabRouteName` 이 아니라 **`keyof GroupLayerParamList`** 인 것이 의 산물이다.
  * 앱은 «탭 여덟 중 하나» 가 아니라 **그룹 층의 첫 화면**에서 시작한다 — 하위 층은 push 로만 열리므로
  * 여기에 하위 페이지를 적을 수 있으면 «앱을 켰는데 스택이 한 단 깊은» 상태가 표현돼 버린다.
  *
  * 표의 `/` 행은 여전히 `Content` 를 가리킨다. 그 행은 *"웹이 `/` 에서 무엇을 보여 줬는가"* 라는
  * 기록이고, *"이 앱이 어디서 시작하는가"* 와는 다른 축이기 때문이다. 둘이 갈린 것 자체가
- * [[ADR-132]] 의 산물이라 `routes.test.ts` 가 **양쪽을 함께** 고정한다 — 한쪽만 고치면 테스트가 운다.
+ *  의 산물이라 `routes.test.ts` 가 **양쪽을 함께** 고정한다 — 한쪽만 고치면 테스트가 운다.
  */
 export const INITIAL_TAB_ROUTE: keyof GroupLayerParamList = 'Today'

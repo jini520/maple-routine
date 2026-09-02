@@ -8,7 +8,7 @@
  * 앞의 둘은 호출부의 `<Svg>` 안에 들어가고 `SegmentedRing` 만 자기 `<Svg>` 를 갖는다. 색이
  * `className` 이 아니라 `stroke` 프롭인 것은 `react-native-svg` 도형이 `cssInterop` 에 없어서다.
  *
- * @see [[ADR-204]] 정정 1·2. 셋이 한 파일에 모인 경위와 채우는 셈을 atom 으로 내린 이유.
+ * @see. 셋이 한 파일에 모인 경위와 채우는 셈을 atom 으로 내린 이유.
  */
 import { View } from 'react-native'
 import { Circle, Path } from 'react-native-svg'
@@ -47,7 +47,7 @@ function FullRing(props: { testID: string; color: string }): React.JSX.Element {
 }
 
 /**
- * 링을 안 그리는 관리 화면이 링 자리에 세우는 선([[ADR-188]] 결정 3).
+ * 링을 안 그리는 관리 화면이 링 자리에 세우는 선.
  *
  * 얼굴 `View` 의 `borderWidth` 로 안 그리는 것은 그만큼 이미지가 안으로 밀려 그 칸의 얼굴만
  * 작아 보이기 때문이다.
@@ -106,8 +106,8 @@ export function ProgressArc(props: {
 /**
  * 처치 한도만큼 쪼갠 칸 링. 채우는 셈은 `atoms/ProgressRing` 이 들고 여기 남는 것은 치수와 이름이다.
  *
- * 이름의 주기(`label`)는 탭을 따라간다([[ADR-059]] 결정 7). 고정하면 한쪽 탭에서 거짓이 된다.
- * 진행률을 링만 표현하므로 이 이름이 곧 그 정보다([[ADR-054]] 정정 7).
+ * 이름의 주기(`label`)는 탭을 따라간다. 고정하면 한쪽 탭에서 거짓이 된다.
+ * 진행률을 링만 표현하므로 이 이름이 곧 그 정보다.
  */
 export function SegmentedRing(props: {
   cleared: number

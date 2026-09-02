@@ -1,7 +1,7 @@
-// 배지 하나가 열세 가지 모양을 낸다([[ADR-195]] 결정 1·2). 여기서 지키는 것은 **풀린 값**이다 —
+// 배지 하나가 열세 가지 모양을 낸다. 여기서 지키는 것은 **풀린 값**이다 —
 // NativeWind 가 렌더 시점에 `className` 을 style 로 바꿔 먹어 트리에 문자열이 안 남는다.
 //
-// 토큰 색 기대값은 손으로 적지 않고 `job-themes.json` 에서 읽는다([[ADR-006]]). 난이도 색은 테마
+// 토큰 색 기대값은 손으로 적지 않고 `job-themes.json` 에서 읽는다. 난이도 색은 테마
 // 토큰이 아니라 게임 안의 색이라 파일에 박힌 값을 그대로 단언한다.
 import { processColor } from 'react-native'
 
@@ -39,7 +39,7 @@ describe('평면 variant — 색만 갈리고 상자는 같다', () => {
     })
   })
 
-  // 완료 배지다. 두께가 기본값과 달라서 variant 가 두께까지 쥔다([[ADR-195]] 결정 3).
+  // 완료 배지다. 두께가 기본값과 달라서 variant 가 두께까지 쥔다.
   it('secondary 는 두께가 bold 다', async () => {
     const { getByText } = await renderAtom(<Badge variant="secondary">완료</Badge>)
 
@@ -146,7 +146,7 @@ describe('size 둘', () => {
   // 난이도 배지도 상태 배지와 같은 상자를 쓴다(사용자 지정 2026-08-31). 그라디언트 배지만
   // 혼자 작으면 같은 줄에 선 배지들과 높이가 어긋난다.
   // 테두리를 여백 안쪽으로 넣는다. Yoga 는 테두리를 패딩처럼 바깥 크기에 더하므로 빼 주지 않으면
-  // 난이도 배지만 평면 배지보다 커진다([[ADR-195]] 정정 2).
+  // 난이도 배지만 평면 배지보다 커진다.
   it('난이도는 테두리 폭만큼 여백을 줄여 바깥 크기를 맞춘다', async () => {
     const 보통 = flattenStyle(
       boxOf((await renderAtom(<Badge variant="노멀">노멀</Badge>)).getByText('노멀')).props.style,
@@ -211,7 +211,7 @@ describe('size 둘', () => {
   })
 })
 
-// 높이가 `h-5`·`h-4` 로 고정인 상자는 글자만 커지면 잘린다([[ADR-152]] 결정 5 · [[ADR-195]] 결정 4).
+// 높이가 `h-5`·`h-4` 로 고정인 상자는 글자만 커지면 잘린다.
 // 배지 높이 = 줄 높이 + 여백 + 테두리. 셋을 합치면 variant 와 무관하게 같아야 한다. 난이도는
 // 글자가 10px 이고 나머지는 12px 인데도 같은 자리에서 어긋나면 안 된다.
 describe('높이는 variant 를 안 탄다', () => {
@@ -284,7 +284,7 @@ describe('글자 배수', () => {
 
 describe('프롭', () => {
   // 같은 색을 다른 두께로 쓰는 자리가 있다 — 보스 스케줄러의 마감 배지가 muted 인데 bold 다.
-  // 클래스로는 못 덮는다(NativeWind 가 두께 충돌을 문자열 순서로 안 푼다, [[ADR-195]] 결정 3).
+  // 클래스로는 못 덮는다(NativeWind 가 두께 충돌을 문자열 순서로 안 푼다).
   it('weight 가 variant 의 기본 두께를 덮는다', async () => {
     const 기본 = await renderAtom(<Badge variant="muted">마감</Badge>)
     expect(flattenStyle(기본.getByText('마감').props.style).fontWeight).toBe('600')

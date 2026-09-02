@@ -1,4 +1,4 @@
-// [[ADR-204]] 정정 2. 링을 채우는 셈이 네 자리에서 두 벌로 베껴져 있던 것을 여기로 모았다.
+// . 링을 채우는 셈이 네 자리에서 두 벌로 베껴져 있던 것을 여기로 모았다.
 import { processColor } from 'react-native'
 
 import { flattenStyle, renderAtom, type AtomElement } from '../../../__tests__/render-atom'
@@ -83,7 +83,7 @@ describe('ProgressRing · 쪼갠 것', () => {
     ])
   })
 
-  // [[ADR-054]] 정정 5 — `round` 캡이 칸 양끝을 stroke 의 절반씩 더 그린다. 그만큼 dash 를 미리
+  // `round` 캡이 칸 양끝을 stroke 의 절반씩 더 그린다. 그만큼 dash 를 미리
   // 줄여야 보이는 칸 길이와 간격이 butt 일 때와 같다. 안 빼면 간격이 2.4 에서 0.4 로 뭉개진다.
   it('round 캡이 더 그리는 만큼 dash 를 미리 줄인다', async () => {
     const { getAllByTestId } = await renderAtom(
@@ -120,7 +120,7 @@ describe('ProgressRing · 쪼갠 것', () => {
     expect(offsets).toEqual([0, 1, 2, 3].map((i) => -(i * 칸 + 2.5 / 2)))
   })
 
-  // [[ADR-059]] 정정 1 — 나눌 상대가 없는 링에서 간격은 나눔이 아니라 결손으로 읽힌다. 값을 0 으로
+  // 나눌 상대가 없는 링에서 간격은 나눔이 아니라 결손으로 읽힌다. 값을 0 으로
   // 두는 대신 속성을 통째로 빼는 것은 dash 양끝의 둥근 캡이 정확히 겹쳐 이음매가 비치기 때문이다.
   it('칸도 속을 안 채운다', async () => {
     const { getAllByTestId } = await renderAtom(

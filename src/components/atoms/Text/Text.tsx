@@ -1,5 +1,5 @@
 /**
- * 글자 atom. 이 앱은 글자를 여기서만 그린다([[ADR-152]] 결정 4).
+ * 글자 atom. 이 앱은 글자를 여기서만 그린다.
  *
  * `react-native` 의 `Text` 직접 import 는 ESLint 와 `src/__tests__/font-scaling-policy.test.ts` 가
  * 막는다. **이 파일이 그 규칙의 예외 둘 중 하나다**(다른 하나는 `atoms/TextInput/TextInput.tsx`).
@@ -21,7 +21,7 @@ export type TextProps = Clamped<RNTextProps>
  * @example
  * <Text className="text-sm text-text">문구</Text>
  *
- * // 상자가 글자를 못 따라가는 자리는 `fixed`([[ADR-152]] 결정 5). 기준은 «작아 보인다» 가 아니라
+ * // 상자가 글자를 못 따라가는 자리는 `fixed`. 기준은 «작아 보인다» 가 아니라
  * // «상자가 글자를 따라 커지는가» 다. 아래는 높이 76 으로 못박힌 today 타일 안이다
  * <Text fixed className="text-11 text-text-muted">{label}</Text>
  */

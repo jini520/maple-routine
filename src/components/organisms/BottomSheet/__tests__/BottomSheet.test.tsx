@@ -1,4 +1,4 @@
-// 웹판에는 `BottomSheet` 전용 테스트가 없었다 — [[ADR-039]] 가 성공 기준을 *"유일 사용처인
+// 웹판에는 `BottomSheet` 전용 테스트가 없었다 — 가 성공 기준을 *"유일 사용처인
 // `BossDropSheet` 의 테스트 4개가 **수정 없이** 통과할 것"* 으로 삼았기 때문이다(스킨·공개 API 를
 // 안 바꾼다는 결정 2 를 그 자리에서 검사하는 방식). RN 에서는 그 화면이 아직 없으므로 **그때 그
 // 테스트가 지켰을 계약**을 직접 적는다.
@@ -28,7 +28,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
     }),
     BottomSheetScrollView: (props: Record<string, unknown>) =>
       React.createElement(ReactNative.View, props),
-    // 시트 밖과 같게 둔다 — 아톰이 이 값으로 «시트 안인가» 를 묻는다([[ADR-170]] 정정 5).
+    // 시트 밖과 같게 둔다 — 아톰이 이 값으로 «시트 안인가» 를 묻는다.
     // 목이 시트를 평범한 `View` 로 바꾸므로 여기서도 문맥이 없는 것이 사실이고, 그래서
     // 아래 입력은 안 그려진다 — 그래도 **있어야 한다**: `lib/nativewind-interop` 이 모듈을
     // 읽는 순간 이것을 등록하므로, 없으면 스위트가 뜨기도 전에 죽는다.
@@ -54,7 +54,7 @@ beforeEach(() => {
   mockPresent.mockClear()
 })
 
-describe('BottomSheet — [[ADR-039]] 가 정한 값을 넘긴다', () => {
+describe('BottomSheet — 가 정한 값을 넘긴다', () => {
   /**
    * 키보드 이벤트는 네이티브에서 오므로 **등록된 손잡이를 직접 잡아 흔든다** — 등록 순서가
    * 계약이다(뜨는 것 · 내리는 것).
@@ -115,8 +115,8 @@ describe('BottomSheet — [[ADR-039]] 가 정한 값을 넘긴다', () => {
     })
   })
 
-  // **위 테두리는 [[ADR-179]] 결정 4 가 걷었다.** 그 선은 면이 경계를 못 만들던 시절의 대타였고
-  // ([[ADR-039]] 결정 2 의 `border-t border-border`), 다크에서 몸통이 한 칸 올라간 지금은 밝아진
+  // **위 테두리는 가 걷었다.** 그 선은 면이 경계를 못 만들던 시절의 대타였고
+  // (의 `border-t border-border`), 다크에서 몸통이 한 칸 올라간 지금은 밝아진
   // 면 위에 뜬 줄 하나로 남는다(사용자 지정 2026-08-29).
   it('위 테두리를 그리지 않는다', async () => {
     const { getByTestId } = await open()
@@ -140,7 +140,7 @@ describe('BottomSheet — [[ADR-039]] 가 정한 값을 넘긴다', () => {
 
   /**
    * 라이브러리는 창 모드를 **자기가 안 바꾼다** — 이 프롭은 «키보드가 뜰 때 창이 실제로 어떻게
-   * 되는가» 를 알려 주는 것이고, 그 값으로 자기 보정량을 정한다([[ADR-170]] 정정 11).
+   * 되는가» 를 알려 주는 것이고, 그 값으로 자기 보정량을 정한다.
    *
    * **매니페스트의 `adjustResize` 를 믿으면 안 된다** — 이 앱은 edge-to-edge 라
    * (`android/gradle.properties` 의 `edgeToEdgeEnabled=true`) 그 값이 죽어 있다. 계측(API 36,
@@ -158,7 +158,7 @@ describe('BottomSheet — [[ADR-039]] 가 정한 값을 넘긴다', () => {
   })
 
   /**
-   * **올라간 것은 내려와야 한다**([[ADR-170]] 정정 5). 기본값 `none` 이면 라이브러리가 키보드
+   * **올라간 것은 내려와야 한다**. 기본값 `none` 이면 라이브러리가 키보드
    * 닫힘에서 **일찍 빠져나가** 위치를 다시 안 잰다:
    *
    *     if (status === HIDDEN && keyboardBlurBehavior === none) return
@@ -172,7 +172,7 @@ describe('BottomSheet — [[ADR-039]] 가 정한 값을 넘긴다', () => {
   })
 
   /**
-   * **키보드가 뜨면 아래 인셋을 안 남긴다**([[ADR-173]] 결정 4 정정 2).
+   * **키보드가 뜨면 아래 인셋을 안 남긴다**.
    *
    * 홈 인디케이터 몫(`insets.bottom`)은 «화면 맨 아래가 손가락에 닿는 자리라 비워 둔다» 는 값인데,
    * 키보드가 그 자리를 이미 덮고 있으면 **아무것도 아닌 빈 띠**가 된다 — 실기에서 빠른 칩과
@@ -220,7 +220,7 @@ describe('BottomSheet — [[ADR-039]] 가 정한 값을 넘긴다', () => {
     expect(backdrop.props.color).toBe(기본테마.scrim)
   })
 
-  // [[ADR-039]] 결정 3 — 바깥을 눌러 닫는다. 예전엔 라이브러리의 `pressBehavior="close"` 가 하던 일이라
+  // 바깥을 눌러 닫는다. 예전엔 라이브러리의 `pressBehavior="close"` 가 하던 일이라
   // 그 프롭 값만 검사했는데, 이제 우리 `onPress` 가 하므로 **실제로 눌러 본다.**
   it('스크림을 누르면 시트를 닫는다', async () => {
     const { getByTestId } = await open()
@@ -248,16 +248,16 @@ describe('BottomSheet — [[ADR-039]] 가 정한 값을 넘긴다', () => {
 })
 
 /**
- * 시트 스코프 ([[ADR-179]] 결정 1).
+ * 시트 스코프.
  *
  * 시트가 «자기가 덮고 있는 페이지와 같은 토큰»(`bg`)으로 서 있어 다크에서 스크림 깔린 배경과
  * 대비가 1.03~1.05 였다. 여기서 지키는 것은 두 고리다:
  *   ① 라이브러리가 칠하는 **껍데기**(`backgroundStyle` — 우리 서브트리 밖이라 변수가 안 닿는다)
  *   ② 시트 **안**의 `className` 이 올린 값으로 풀리는가 (이게 «시트 안 코드를 안 고친다» 의 실체다)
  *
- * 색은 손으로 적지 않는다 — `buildSheetScopeVariables` 가 내는 값과 대조한다([[ADR-006]]).
+ * 색은 손으로 적지 않는다 — `buildSheetScopeVariables` 가 내는 값과 대조한다.
  */
-describe('BottomSheet — 다크에서 표면 계열을 한 칸 올린다 ([[ADR-179]])', () => {
+describe('BottomSheet — 다크에서 표면 계열을 한 칸 올린다', () => {
   const 검은마법사 = getThemeDefinition('검은마법사')
   const 스코프 = buildSheetScopeVariables(검은마법사)
 

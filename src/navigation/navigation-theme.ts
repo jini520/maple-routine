@@ -22,7 +22,7 @@ export function useNavigationTheme(): Theme {
   // 정하면 타이포 규칙의 진실이 `design-system.md` 밖에 하나 더 생긴다.
   const base = isDark ? DarkTheme : DefaultTheme
 
-  // **배경 이미지가 있는 테마에서 화면 배경을 비울지**([[ADR-088]] 결정 4 의 RN 짝 · [[ADR-134]] 정정 5).
+  // **배경 이미지가 있는 테마에서 화면 배경을 비울지**(의 RN 짝).
   //
   // 웹에서 그 결정은 *"앱 루트의 `bg-bg` 를 빼라"* 였다 — 안 빼면 벽지가 **통째로 사라진다**
   // (2026-08-03 브라우저 확인: 어둡게 깔린 게 아니라 아예 안 보였다). RN 에서 같은 자리가 여기다:

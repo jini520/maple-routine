@@ -5,7 +5,7 @@
 // 순수 함수로 떼어내면서 그 아홉 중 **화면 없이 검사할 수 있는 것들**이 여기로 왔다.
 //
 // 여기서 못 보는 것은 그대로 남는다 — 프레임이 «같아 보이는가», origin 정합이 눈에 맞는가,
-// [[ADR-103]] 의 1.5배가 적당한가. 그것들은 실기기에서 사람이 본다.
+//  의 1.5배가 적당한가. 그것들은 실기기에서 사람이 본다.
 import {
   DROP_EFFECT_FPS,
   DROP_START_FRAME,
@@ -38,7 +38,7 @@ function run(
   return next
 }
 
-describe('[[ADR-103]] 결정 3 — 아이템은 8프레임 시점에 뜬다', () => {
+describe(' — 아이템은 8프레임 시점에 뜬다', () => {
   it('처음에는 기둥도 아이템도 없다', () => {
     const s = createDropEffectState()
 
@@ -159,7 +159,7 @@ describe('큰 dt 는 잘라낸다', () => {
   })
 })
 
-// ★ 회귀 가드 — 누적 시간만 바뀐 tick 은 «다시 그릴 것 없음» 이어야 한다([[ADR-174]] 정정 1).
+// ★ 회귀 가드 — 누적 시간만 바뀐 tick 은 «다시 그릴 것 없음» 이어야 한다.
 describe('rendersDifferently', () => {
   it('누적 시간만 흐른 tick 은 다시 그리지 않는다', () => {
     const a = createDropEffectState()

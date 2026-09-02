@@ -2,7 +2,7 @@
  * `rail` 규격의 호 경로와 각도. 치수는 `portrait-metrics` 가 갖는다.
  *
  * 각도는 **12시가 0도, 시계방향이 양수**다(음수면 반시계). SVG 의 3시 기준을 안 쓰는 것은 링이
- * 12시에서 시작하기로 돼 있어서다([[ADR-142]] 정정 1·3).
+ * 12시에서 시작하기로 돼 있어서다.
  */
 import { PORTRAIT_RAIL } from './portrait-metrics'
 
@@ -19,7 +19,7 @@ export function portraitTextArcPath(): string {
 /**
  * 레벨과 이름을 6시를 경계로 좌우에 붙이는 오프셋.
  *
- * @see [[ADR-142]] 정정 5. 줄이 아니라 둘의 경계를 가운데에 맞추는 이유.
+ * @see. 줄이 아니라 둘의 경계를 가운데에 맞추는 이유.
  */
 export function portraitTextOffsetPercent(side: 'left' | 'right'): string {
   const halfArcLength = Math.PI * PORTRAIT_RAIL.textR

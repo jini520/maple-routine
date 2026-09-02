@@ -1,5 +1,5 @@
 /**
- * 앱이 직접 그리는 SVG 들이 함께 쓰는 프롭과 뿌리 배선([[ADR-199]]).
+ * 앱이 직접 그리는 SVG 들이 함께 쓰는 프롭과 뿌리 배선.
  *
  * 세 겹이다. `IconProps` 는 호출부가 보는 프롭, `SvgFrame` 은 뿌리 배선과 격자, `IconSvg` 는 그
  * 위에 lucide 칠 프리셋을 얹은 것이다(정정 1). 새 아이콘은 좌표만 갖고 `IconSvg` 를 쓴다.
@@ -10,7 +10,7 @@ import type { SvgProps } from 'react-native-svg'
 import { Svg } from '../../../lib/nativewind-interop'
 
 /**
- * lucide 아이콘과 **같은 프롭 모양**이다([[ADR-199]] 결정 3).
+ * lucide 아이콘과 **같은 프롭 모양**이다.
  *
  * 하단바가 lucide 셋과 커스텀 둘을 같은 자리에 바꿔 끼운다. react-navigation 이 `tabBarIcon` 에
  * 색과 크기를 클래스가 아니라 값으로 넘기므로, 프롭 이름이 같아야 그 자리에서 통한다.
@@ -24,7 +24,7 @@ export interface IconProps {
    * 면으로 채울 색. 안 주면 lucide 규격대로 선만 그린다.
    *
    * **채워지는 자리는 그림마다 다르다.** 뿌리를 통째로 채우면 안쪽 선이 면에 묻혀 그림이
-   * 뭉개져서, 각자 도형마다 고른다([[ADR-132]] 정정 25). 각 파일의 설명을 볼 것.
+   * 뭉개져서, 각자 도형마다 고른다. 각 파일의 설명을 볼 것.
    */
   fill?: string
   /** `className` 이 크기를 안 줄 때의 폴백. lucide 와 같은 24 다. */
@@ -45,7 +45,7 @@ export interface SvgGrid {
   ratio: number
 }
 
-/** lucide 규격의 격자. 24 그리드 정사각이다([[ADR-066]] 결정 3). */
+/** lucide 규격의 격자. 24 그리드 정사각이다. */
 export const LUCIDE_GRID: SvgGrid = { viewBox: '0 0 24 24', ratio: 1 }
 
 /** 뿌리에 얹는 칠. `stroke` 계열은 SVG 상속 속성이라 자식이 전부 받는다. */
@@ -65,7 +65,7 @@ interface SvgFrameProps extends IconProps {
 }
 
 /**
- * SVG 뿌리 하나. **칠에는 의견이 없다**([[ADR-199]] 정정 1).
+ * SVG 뿌리 하나. **칠에는 의견이 없다**.
  *
  * 하는 일은 배선뿐이다. `size` 를 격자 비율에 맞춰 `width`·`height` 로 풀고, `className` 을
  * `lib/nativewind-interop` 이 배선한 `color` 로 잇는다.
@@ -105,13 +105,13 @@ export function SvgFrame({
 }
 
 /**
- * lucide 규격으로 선 SVG 뿌리([[ADR-199]] 결정 2). `SvgFrame` 에 칠 프리셋을 얹은 것이다.
+ * lucide 규격으로 선 SVG 뿌리. `SvgFrame` 에 칠 프리셋을 얹은 것이다.
  *
  * 24 그리드 · 면 없음 · `currentColor` 선 · 라운드 캡과 조인 · 굵기 기본 2. 이 규격을 벗어나면
- * 같은 줄에 선 lucide 아이콘과 선 굵기·광학 크기가 어긋난다([[ADR-066]] 결정 3).
+ * 같은 줄에 선 lucide 아이콘과 선 굵기·광학 크기가 어긋난다.
  *
  * **`fill` 프롭은 뿌리에 안 내려간다.** 뿌리를 채우면 자식 전부가 상속받아 안쪽 선이 사라진다.
- * 채우는 자리는 아이콘이 도형마다 고른다([[ADR-132]] 정정 25).
+ * 채우는 자리는 아이콘이 도형마다 고른다.
  *
  * @example
  * <IconSvg testID="gear-icon" {...props}>

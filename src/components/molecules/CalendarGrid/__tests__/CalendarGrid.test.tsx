@@ -1,7 +1,7 @@
-// 격자는 **그리기만** 한다([[ADR-169]] 결정 7) — 어떤 칸이 서는가는 `lib/calendar` 이 정하고
+// 격자는 **그리기만** 한다 — 어떤 칸이 서는가는 `lib/calendar` 이 정하고
 // 그쪽 테스트가 못 박는다. 여기서 보는 것은 «받은 것을 어떻게 보이느냐» 다.
 //
-// **칸이 표식 둘에서 금액 두 줄로 바뀌었다**([[ADR-169]] 정정 1, 사용자 레퍼런스 2026-08-23).
+// **칸이 표식 둘에서 금액 두 줄로 바뀌었다**(사용자 레퍼런스 2026-08-23).
 import { fireEvent, within } from '@testing-library/react-native'
 
 import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
@@ -25,7 +25,7 @@ function 그리기(overrides: Partial<React.ComponentProps<typeof CalendarGrid>>
       todayDateKey="2026-08-23"
       amounts={amounts}
       onSelectDate={jest.fn()}
-      // 화면이 하는 일과 같다 — 기준선은 **밖에서** 온다([[ADR-170]] 결정 12).
+      // 화면이 하는 일과 같다 — 기준선은 **밖에서** 온다.
       incomeMax={monthIncomeMax(팔월, amounts)}
       {...overrides}
     />,
@@ -51,7 +51,7 @@ describe('CalendarGrid — 격자', () => {
 
     expect(view.getAllByTestId(/^calendar-day-/)).toHaveLength(42)
     expect(view.getByTestId('calendar-day-2026-08-01')).toBeTruthy()
-    // 앞뒤 달로 채운 칸도 실재한다([[ADR-169]] 결정 7).
+    // 앞뒤 달로 채운 칸도 실재한다.
     expect(view.getByTestId('calendar-day-2026-07-26')).toBeTruthy()
   })
 
@@ -116,7 +116,7 @@ describe('CalendarGrid — 오늘과 고른 날', () => {
   })
 })
 
-describe('CalendarGrid — 금액 두 줄 ([[ADR-169]] 정정 1)', () => {
+describe('CalendarGrid — 금액 두 줄', () => {
   const 금액 = {
     '2026-08-11': { incomeMeso: 12_940_000_000, expenseMeso: 500_000_000 },
     '2026-08-12': { incomeMeso: 2_840_000_000, expenseMeso: 0 },
@@ -134,7 +134,7 @@ describe('CalendarGrid — 금액 두 줄 ([[ADR-169]] 정정 1)', () => {
     )
   })
 
-  // [[ADR-169]] 정정 3(사용자 지정 2026-08-25) — **수익 줄도 0 이면 비운다.** 전에는 «0» 을
+  // (사용자 지정 2026-08-25) — **수익 줄도 0 이면 비운다.** 전에는 «0» 을
   // 적었는데, 아무것도 안 한 날이 대부분이라 격자가 «0» 으로 뒤덮여 실제 숫자가 묻혔다.
   // 자리는 그대로 지킨다(아래 «두 줄은 값이 없어도» 테스트).
   it('값이 0 이면 두 줄 다 빈다', async () => {
@@ -196,7 +196,7 @@ describe('CalendarGrid — 금액 두 줄 ([[ADR-169]] 정정 1)', () => {
   })
 })
 
-describe('CalendarGrid — 열지도 ([[ADR-169]] 정정 1)', () => {
+describe('CalendarGrid — 열지도', () => {
   it('많이 번 날이 더 진하다 — 그 달 안에서 상대적이다', async () => {
     const view = await 그리기({
       amounts: {
@@ -212,7 +212,7 @@ describe('CalendarGrid — 열지도 ([[ADR-169]] 정정 1)', () => {
     expect(진하기('2026-08-12')).toBeGreaterThan(0)
   })
 
-  // [[ADR-169]] 정정 4(사용자 지정 2026-08-25) — 타일의 안쪽 여백이 **좌우에만** 있어서,
+  // (사용자 지정 2026-08-25) — 타일의 안쪽 여백이 **좌우에만** 있어서,
   // 칠해진 날이 세로로 이어지면 한 덩어리로 붙고 둥근 모서리가 사라졌다. 네 방향을 맞춘다.
   it('열지도 타일은 네 방향으로 같은 만큼 물러난다', async () => {
     const view = await 그리기({
@@ -283,7 +283,7 @@ describe('CalendarGrid — 열지도 ([[ADR-169]] 정정 1)', () => {
   })
 })
 
-// ══ 월간과 주간을 같은 격자가 그린다 ([[ADR-170]] 결정 11·12) ═══════════════════
+// ══ 월간과 주간을 같은 격자가 그린다 ═══════════════════
 
 describe('주간 격자', () => {
   const 팔월넷째주 = buildResetWeek('2026-08-20')
@@ -313,7 +313,7 @@ describe('주간 격자', () => {
     expect(labels).toEqual(['일', '월', '화', '수', '목', '금', '토'])
   })
 
-  // 이 테스트가 [[ADR-170]] 결정 12 의 전부다 — 이레만 받아도 진하기는 **그 달** 기준이다.
+  // 이 테스트가 의 전부다 — 이레만 받아도 진하기는 **그 달** 기준이다.
   // 기준이 주 안으로 좁아지면 8/20 이 최대가 되어 새까맣게 칠해진다.
   it('열지도 기준을 받은 주에서 다시 내지 않는다', async () => {
     const amounts = {

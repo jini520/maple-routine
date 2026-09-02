@@ -1,4 +1,4 @@
-// 보스 카드를 탭하면 열리는 파티 인원·난이도 모달 ([[ADR-121]]).
+// 보스 카드를 탭하면 열리는 파티 인원·난이도 모달.
 //
 // **표시 전용이다** — 모드(자동/수동)를 모르고, 난이도 선택이 무엇을 뜻하는지도 모른다. 수동
 // 모드에서는 멤버십 교체이고 자동 모드에서는 "어느 난이도의 파티 인원을 편집할지" 전환인데, 그
@@ -15,13 +15,13 @@
 //    웹의 `filter` 와 `mask-image` 를 각각 RN `filter` 스타일과 **뒤집은 그라데이션**으로
 //    푸는 일이다. 그 셋을 step 4 가 컨텐츠 카드에서 이미 한 벌 풀어 두었으므로 여기서는
 //    `FadedIllustration` 를 **부르기만 한다**(`variant="hero"` — 마스크 끝점이 카드와 다르다).
-//    보스 카드와 같은 컴포넌트를 쓰는 것이 [[ADR-121]] 결정 7 이 요구하는 *"같은 값"* 이다.
+//  보스 카드와 같은 컴포넌트를 쓰는 것이 이 요구하는 *"같은 값"* 이다.
 // ② **`bg-surface/60` 이 안 나온다.** NativeWind(v3 엔진)는 `var()` 색에 투명도 접미사를 만들지
 //    못한다(step 3 이 남긴 함정 둘 중 하나) — 클래스는 조용히 사라지고 닫기 버튼 배경이 없어진다.
 //    그래서 값에서 직접 rgba 를 만든다(`lib/color-alpha.ts` — step 6 의 경계 페이드가 같은 함정을
 //    밟아 두 번째 호출부가 됐다). 그 값이 `surface` 가 아니라 **`mediaSurface`** 인 것도 같은
 //    이유다 — 버튼이 `media-scope` 안이라 웹에서는 `var(--color-surface)` 가 이미 그것으로
-//    재선언돼 있었다([[ADR-064]] 결정 5).
+//  재선언돼 있었다.
 // ③ **글자 그림자·베일이 스타일이 아니라 컴포넌트가 된다.** `textShadow` 는 RN 에서
 //    `textShadowColor/Offset/Radius` 세 프롭이라 두 겹(웹은 그림자 둘)을 못 겹친다 — 강한 쪽
 //    하나만 남긴다. `linear-gradient` 베일은 `expo-linear-gradient` 로 그린다.
@@ -37,7 +37,7 @@ import { withAlpha } from '../../../lib/color'
 import { LinearGradient } from '../../../lib/nativewind-interop'
 import { Badge, Text, UsersIcon, XIcon } from '../../atoms'
 // 히어로 글자의 그림자는 카드 둘과 같은 값을 쓴다 — 세 번째 호출부가 생기며 `lib/text-styles.ts`
-// 로 올라갔다([[ADR-094]] 결정 1). 값·근거는 그 파일이 갖는다.
+// 로 올라갔다. 값·근거는 그 파일이 갖는다.
 import { ILLUSTRATION_TEXT_SHADOW_STYLE, TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { useThemeAppearance } from '../../../theme/context'
 import { MediaScope } from '../../../theme/MediaScope'
@@ -59,7 +59,7 @@ export function PartySizeModal(props: {
   onChangePartySize: (next: number) => void
   onClose: () => void
 }): React.JSX.Element {
-  // `MediaScope` 안에서 `--color-surface` 로 재선언되는 그 값이다([[ADR-064]] 결정 5) — 파생
+  // `MediaScope` 안에서 `--color-surface` 로 재선언되는 그 값이다 — 파생
   // 함수를 다시 부르지 않는다(`deriveMediaScope` 의 입력이 곧 이 토큰이다).
   const { definition } = useThemeAppearance()
   const mediaSurface = definition.mediaSurface
@@ -73,12 +73,12 @@ export function PartySizeModal(props: {
     // Modal.Panel: 일러스트가 모서리까지 가야 해서 카드 껍데기(p-6)를 쓰지 않고 직접 두른다.
     <Modal onClose={props.onClose} align="center" testId="party-size-modal">
       <Modal.Panel maxWidth="max-w-2xs">
-        {/* 스크림 위 테두리 톤다운([[ADR-122]])을 **이 View 가 직접** 쓴다 — RN 에는
+        {/* 스크림 위 테두리 톤다운을 **이 View 가 직접** 쓴다 — RN 에는
             `.panel-on-scrim-parent > *` 짝이 없다(`Modal.tsx` 의 `ModalPanel` 주석). 안쪽
             `border-t` 는 표면 위 구분선이라 대상이 아니다. */}
         <View className="overflow-hidden rounded-[14px] border border-panel-border bg-surface">
-          {/* 히어로 — 카드와 같은 bleed 레시피([[ADR-018]]). `MediaScope` 안이라 `bg-surface`·
-              `text-text` 가 media-* 로 해석된다([[ADR-064]] 결정 5). */}
+          {/* 히어로 — 카드와 같은 bleed 레시피. `MediaScope` 안이라 `bg-surface`·
+              `text-text` 가 media-* 로 해석된다. */}
           <MediaScope className="relative h-22 overflow-hidden bg-surface">
             {/* 일러스트 없는 보스(`portraitSlug: null`)는 히어로를 **비운다** — 폴백 디자인을 따로
                 만들지 않는다(`boss-scheduler.md`). 그 판정은 `FadedIllustration` 가 이미 갖고 있어

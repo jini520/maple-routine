@@ -57,7 +57,7 @@ export function PartySizeStepper(props: {
         <MinusIcon className={`${size.icon} text-text`} strokeWidth={2} aria-hidden />
       </Pressable>
 
-      {/* **단위를 안 적는다**([[ADR-173]] 결정 18, 사용자 지정 2026-08-27) — 이 앱의 스테퍼는
+      {/* **단위를 안 적는다**(사용자 지정 2026-08-27) — 이 앱의 스테퍼는
           숫자만 오르내린다. 무엇을 세는지는 곁의 라벨과 `Users` 표식이 말한다. */}
       <View className={`flex-row items-baseline ${size.valueSlot}`}>
         <Text className={`text-text ${size.value}`} style={TABULAR_NUMS}>

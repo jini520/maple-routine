@@ -23,7 +23,7 @@ afterEach(() => {
   jest.restoreAllMocks()
 })
 
-describe('TextInput — 같은 클램프를 받는다 ([[ADR-152]] 결정 4)', () => {
+describe('TextInput — 같은 클램프를 받는다', () => {
   it('작게 설정한 기기에서는 스케일링을 끈다', async () => {
     시스템_글자배수(0.823)
     const { getByTestId } = await renderAtom(<TextInput testID="키" value="" />)
@@ -41,7 +41,7 @@ describe('TextInput — 같은 클램프를 받는다 ([[ADR-152]] 결정 4)', (
 })
 
 /**
- * **조합이 도는 칸에는 앱이 글자를 되쓰지 않는다**([[ADR-170]] 정정 12).
+ * **조합이 도는 칸에는 앱이 글자를 되쓰지 않는다**.
  *
  * 한글은 IME 가 칸 안의 「조합 중」 구간을 갈아 끼우며 완성된다. 그 자리에 앱이 `value` 로 글자를
  * 되쓰면 모으던 자모가 그대로 확정된다 — 「안녕」이 「ㅇㅏㄴㄴㅕㅇ」이 됐다(실기·에뮬레이터 양쪽).
@@ -51,7 +51,7 @@ describe('TextInput — 같은 클램프를 받는다 ([[ADR-152]] 결정 4)', (
  *
  * 여기서 프롭을 보는 이유는 늘 같다: 계산이 맞아도 프롭이 안 붙으면 화면은 옛 동작이다.
  */
-describe('TextInput — 조합이 도는 칸은 value 를 씨앗으로만 받는다 ([[ADR-170]] 정정 12)', () => {
+describe('TextInput — 조합이 도는 칸은 value 를 씨앗으로만 받는다', () => {
   it('글자 칸은 defaultValue 로 심고 value 를 안 단다', async () => {
     const { getByTestId } = await renderAtom(<TextInput testID="이름" value="단풍" />)
 
@@ -89,14 +89,14 @@ describe('TextInput — 조합이 도는 칸은 value 를 씨앗으로만 받는
 })
 
 /**
- * **칸의 상자는 두 플랫폼이 같아야 한다**([[ADR-170]] 정정 13).
+ * **칸의 상자는 두 플랫폼이 같아야 한다**.
  *
  * 치수를 안 주면 안드로이드는 EditText 기본 패딩 + 글꼴 패딩을 얹어 **41.14dp**, iOS 는 **20.00pt**
  * 였다(같은 시트·같은 칸 실측). 셋을 끄면 20.19dp 로 내려와 맞는다.
  *
  * 여기서 프롭을 보는 이유는 늘 같다 — 계산이 맞아도 프롭이 안 붙으면 화면은 옛 동작이다.
  */
-describe('TextInput — 플랫폼 기본 상자를 지운다 ([[ADR-170]] 정정 13)', () => {
+describe('TextInput — 플랫폼 기본 상자를 지운다', () => {
   it('패딩·글꼴 패딩을 끄고 글자를 가운데 세운다', async () => {
     const { getByTestId } = await renderAtom(<TextInput testID="칸" value="" />)
 
@@ -117,7 +117,7 @@ describe('TextInput — 플랫폼 기본 상자를 지운다 ([[ADR-170]] 정정
 })
 
 /**
- * 자리표시자 색 ([[ADR-179]] 결정 5).
+ * 자리표시자 색.
  *
  * 안 주면 RN 이 플랫폼 기본값을 쓰는데, `app.json` 이 `userInterfaceStyle: "automatic"` 이라 그
  * 값이 **OS 외관**을 따른다 — OS 가 라이트인 채 앱 테마만 다크면 iOS 가 `#1A1A1C`(대비 1.13)를
@@ -128,9 +128,9 @@ describe('TextInput — 플랫폼 기본 상자를 지운다 ([[ADR-170]] 정정
  * `placeholderTextColor` 로 컴파일되는데, jest 의 `globalSetup` 은 `NATIVEWIND_OS` 를 안 세워 web
  * 프리셋으로 돈다 — 앱에서는 되지만 **여기서는 못 본다**(실측). 프롭이면 두 경로가 같다.
  *
- * 색을 손으로 적지 않는다 — `job-themes.json` 에서 읽는다([[ADR-006]]).
+ * 색을 손으로 적지 않는다 — `job-themes.json` 에서 읽는다.
  */
-describe('TextInput — 자리표시자 색을 아톰이 건다 ([[ADR-179]] 결정 5)', () => {
+describe('TextInput — 자리표시자 색을 아톰이 건다', () => {
   it('테마의 `text-disabled` 로 그린다 — 힌트이지 값이 아니다', async () => {
     const { getByTestId } = await renderAtom(
       <TextInput testID="칸" value="" placeholder="아이템 명" />,

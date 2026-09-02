@@ -1,7 +1,7 @@
 // 웹판의 다섯이 전부 산다(숨김 · `size` · clipPath 자식은 도형뿐 · id 충돌 없음 · motion-reduce).
 // 다섯째는 **보는 방법이 바뀌었다** — 클래스 문자열이 없어 *"반복 애니메이션을 걸었는가"* 를 본다
 // (`reduced-motion.ts` 의 `withRepeatSpy` 주석). 이동 거리·지속시간·이징을 웹 원본과 대조하던
-// `keyframes-parity.test.ts` 는 웹 소스와 함께 지워져([[ADR-155]]·[[ADR-156]]) 지금 그 셋을 보는
+// `keyframes-parity.test.ts` 는 웹 소스와 함께 지워져 지금 그 셋을 보는
 // 곳은 없다.
 //
 // 여기에 RN 에서 새로 생긴 계약 하나가 더해진다: **띠의 색이 `currentColor`, 페이드가 마스크**라는 것.
@@ -98,7 +98,7 @@ describe('MapleSweepSpinner', () => {
     expect(first.props.name).not.toEqual(second.props.name)
   })
 
-  // ★ [[ADR-061]] 정정 1 회귀 가드 — **띠가 마스크에 지워지던 결함.**
+  // ★ 회귀 가드 — **띠가 마스크에 지워지던 결함.**
   //
   // 이식 당시 마스크는 `maskUnits`·`maskContentUnits` 를 **둘 다 `objectBoundingBox`** 로 두고
   // 램프를 `<Rect x=0 y=0 width=1 height=1>` 로 적었다. 그런데 `react-native-svg`(15.15.4)는
@@ -109,7 +109,7 @@ describe('MapleSweepSpinner', () => {
   //
   // 그 실패는 **렌더 트리에서 보이지 않는다**(마스크도 램프도 «있다»). 보이는 것은 **좌표의 단위**뿐이라
   // 여기서 그것을 못 박는다: 램프는 user space 이고 띠와 **같은 크기**여야 한다.
-  it('마스크 램프는 user space 좌표다 — 1×1 이면 라이브러리가 띠를 통째로 지운다 ([[ADR-061]] 정정 1)', async () => {
+  it('마스크 램프는 user space 좌표다 — 1×1 이면 라이브러리가 띠를 통째로 지운다', async () => {
     const tree = (await renderAtom(<MapleSweepSpinner />)).toJSON()
 
     const { band, ramp } = bandAndRamp(tree)

@@ -63,7 +63,7 @@ describe('DropEffectOverlay — 구조', () => {
     expect(getByTestId('drop-effect-screen').props.style).toMatchObject({ mixBlendMode: 'screen' })
   })
 
-  // 중앙 아이템은 **엔진이 8프레임 시점에 켠다**([[ADR-103]] 결정 3). 마운트 직후에는 아직 꺼져
+  // 중앙 아이템은 **엔진이 8프레임 시점에 켠다**. 마운트 직후에는 아직 꺼져
   // 있고, 매핑 없는 아이템은 웹과 같은 분기로 영영 안 그려진다.
   it('중앙 아이템은 마운트 직후엔 그리지 않는다 — 엔진이 8프레임에 켠다', async () => {
     const { queryByTestId } = await renderOverlay(
@@ -122,7 +122,7 @@ describe('DropEffectOverlay — 구조', () => {
 
   // **엔진이 붙었다.** 다만 이 렌더 테스트가 프레임 그림을 볼 수는 없다 — jest 의 에셋 대역은
   // `{ testUri }` 뿐이라 `Image.resolveAssetSource` 가 크기를 안 준다. 크기를 모르면 아예 안 그리는
-  // 것이 `frame-layout.ts` 의 계약이므로(크기 없이 그리면 프레임마다 최대 26px 튄다, [[ADR-048]])
+  // 것이 `frame-layout.ts` 의 계약이므로(크기 없이 그리면 프레임마다 최대 26px 튄다)
   // 여기서는 **자리와 계약**만 보고, 재생 순서는 `drop-effect-player.test.ts` 가 본다.
   it('프레임 에셋이 네 단계 다 있고, 기둥·ScreenEff 자리가 서 있다', async () => {
     expect(DROP_EFFECT_FRAMES.screen.length).toBeGreaterThan(0)
@@ -138,7 +138,7 @@ describe('DropEffectOverlay — 구조', () => {
   })
 })
 
-// 배율 계산 자체는 core 에 있고 프레임과 무관하게 산다([[ADR-048]] 결정 5) — 웹판 두 케이스 그대로.
+// 배율 계산 자체는 core 에 있고 프레임과 무관하게 산다 — 웹판 두 케이스 그대로.
 describe('screenEffectScale', () => {
   const REF = { w: 1146, h: 685 }
 

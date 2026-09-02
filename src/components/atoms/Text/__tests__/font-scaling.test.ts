@@ -1,11 +1,11 @@
-// 클램프의 **산수**만 보는 테스트 — 렌더는 옆 파일(`Text.test.tsx`)이 본다([[ADR-152]] 결정 3).
+// 클램프의 **산수**만 보는 테스트 — 렌더는 옆 파일(`Text.test.tsx`)이 본다.
 //
 // 표의 12칸을 그대로 케이스로 두는 이유: 이 함수가 지키는 것은 "min/max 를 곱한다" 가 아니라
 // **«OS 가 줄 수 있는 값마다 무엇이 나오는가»** 다. 경계(1.0·1.235)만 검사하면 «하한을 끄기로
 // 만든다»(결정 3)는 구현 선택이 바뀌어도 초록으로 남는데, 그 선택이 곧 계약이다.
 import { FONT_SCALE_MAX, FONT_SCALE_MIN, fontScalingProps } from '../font-scaling'
 
-/** iOS 가 주는 12칸 — `RCTUtils.mm:366` 의 하드코딩 표와 같은 값이다([[ADR-152]] 맥락). */
+/** iOS 가 주는 12칸 — `RCTUtils.mm:366` 의 하드코딩 표와 같은 값이다(맥락). */
 const iOS_배수 = [
   0.823, 0.882, 0.941, 1.0, 1.118, 1.235, 1.353, 1.786, 2.143, 2.643, 3.143, 3.571,
 ]
@@ -16,7 +16,7 @@ function 실효배수(fontScale: number, fixed = false): number {
   return allowFontScaling ? Math.min(fontScale, maxFontSizeMultiplier) : 1
 }
 
-describe('[[ADR-152]] — 시스템 글자 배수를 [1.0, 1.235] 로 자른다', () => {
+describe(' — 시스템 글자 배수를 [1.0, 1.235] 로 자른다', () => {
   it('하한·상한이 결정한 값 그대로다', () => {
     expect(FONT_SCALE_MIN).toBe(1)
     expect(FONT_SCALE_MAX).toBe(1.235)

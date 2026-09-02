@@ -1,4 +1,4 @@
-// 두 층이 **같은 카드**를 쓴다는 것이 [[ADR-144]] 결정 2 의 요점이라, 이 테스트가 묻는 것은
+// 두 층이 **같은 카드**를 쓴다는 것이 의 요점이라, 이 테스트가 묻는 것은
 // 「좌우 슬롯 말고 갈리는 것이 있는가」다 — 2줄 규칙 넷 · 조회 불가 · 이니셜 폴백 · 슬롯 유무.
 //
 // 별의 두 케이스(배경 없음 · 흐려도 눌린다)는 «금지사항» 을 그대로 옮긴 것이다: 배경 배지를 두면
@@ -20,7 +20,7 @@ const 기본 = {
   imageUrl: 'https://open.api.nexon.com/static/maplestory/character/look/abc',
 }
 
-describe('CharacterRow — 2줄 규칙 ([[ADR-144]] 결정 2)', () => {
+describe('CharacterRow — 2줄 규칙', () => {
   it('레벨과 직업이 다 있으면 «Lv.285 아크메이지(썬, 콜)» 한 줄이다', async () => {
     const { getByText } = await renderAtom(<CharacterRow {...기본} />)
 
@@ -120,7 +120,7 @@ describe('CharacterRow — 좌우 슬롯', () => {
 
 })
 
-describe('RepresentativeStar ([[ADR-144]] 결정 4)', () => {
+describe('RepresentativeStar', () => {
   it('채운 별에 배경도 테두리도 없다 — 채움 자체가 이미 «찬 것 vs 빈 것» 이다', async () => {
     const { getByRole } = await renderAtom(
       <RepresentativeStar label="내옆에최성일" filled onPress={jest.fn()} />,

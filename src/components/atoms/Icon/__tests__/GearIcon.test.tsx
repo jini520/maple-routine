@@ -1,12 +1,12 @@
 // 이 톱니의 계약은 둘이다 — ① 채우면 **가운데가 구멍으로 남는다**(그러려고 새로 그렸다)
 // ② 그림이 lucide `settings` 와 **같다**(설정 화면들은 여전히 lucide 를 쓰므로, 좌표가 갈리면
-// 같은 앱 안에서 톱니가 두 가지가 된다 — [[ADR-066]] 결정 3 · [[ADR-132]] 정정 25).
+// 같은 앱 안에서 톱니가 두 가지가 된다 —).
 import Settings from 'lucide-react-native/icons/settings'
 
 import { findAllOfType, renderAtom } from '../../../__tests__/render-atom'
 import { GearIcon } from '../GearIcon'
 
-describe('GearIcon ([[ADR-132]] 정정 25)', () => {
+describe('GearIcon', () => {
   it('lucide 규격(24 그리드 · currentColor 선 · 라운드 캡/조인)으로 그린다', async () => {
     const { getByTestId } = await renderAtom(<GearIcon />)
 

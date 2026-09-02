@@ -1,4 +1,4 @@
-// 당김 인디케이터를 **얼마나 내리는가** ([[ADR-160]] 정정 1).
+// 당김 인디케이터를 **얼마나 내리는가**.
 //
 // 값이 하나가 아닌 이유는 두 플랫폼이 인디케이터를 **다른 자리에서 시작**하기 때문이다. 마스크에
 // 깎이는 것은 둘 다 같지만(뷰 트리로 걸린다 — 안드로이드에서도 `AndroidSwipeRefreshLayout` 이
@@ -19,7 +19,7 @@ import {
   resolvePullIndicatorOffset,
 } from '../pull-indicator-offset'
 
-describe('resolvePullIndicatorOffset ([[ADR-160]] 정정 1)', () => {
+describe('resolvePullIndicatorOffset', () => {
   // iOS 는 `UIRefreshControl.bounds` 원점을 그만큼 내릴 뿐이라 기본 자리가 화면 맨 위다.
   it('iOS 는 페이드 높이만큼 내린다', () => {
     expect(resolvePullIndicatorOffset({ fadeTopPx: 59, platform: 'ios' })).toBe(59)

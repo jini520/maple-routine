@@ -1,4 +1,4 @@
-// 이 앱이 **처음으로 직접 만드는 여는 목록**이라([[ADR-144]] 결정 6) 테스트가 지키는 것도 «값이
+// 이 앱이 **처음으로 직접 만드는 여는 목록**이라 테스트가 지키는 것도 «값이
 // 잘 나오는가» 보다 **«무엇을 두지 않기로 했는가»** 쪽이 많다 — 스크림 없음 · «명» 없음 ·
 // 지시받지 않은 문구 없음.
 //
@@ -68,7 +68,7 @@ function backgroundColors(node: unknown): unknown[] {
   return [...own, ...backgroundColors(current.children)]
 }
 
-describe('AccountSelect — 트리거 ([[ADR-144]] 결정 6)', () => {
+describe('AccountSelect — 트리거', () => {
   it('트리거가 선택된 계정의 행을 그린다 — 1줄 대표, 2줄 월드별 개수', async () => {
     const { getByTestId, getByText } = await renderOverlay(<AccountSelect {...props()} />)
 

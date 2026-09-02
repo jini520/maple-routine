@@ -1,4 +1,4 @@
-// 웹판이 지키던 것과 같다 — **기존 호출부 9곳의 모습을 바꾸지 않는 것**([[ADR-094]] 결정 4).
+// 웹판이 지키던 것과 같다 — **기존 호출부 9곳의 모습을 바꾸지 않는 것**.
 // 클래스 문자열이 트리에 안 남으므로 풀린 값을 본다.
 //
 // 여기서 특히 중요한 케이스는 `tone="third"` 다. 웹은 `` `bg-${tone}` `` 로 이름을 조립했는데 RN 에서
@@ -8,7 +8,7 @@ import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/rende
 import { ProgressBar } from '../ProgressBar'
 
 describe('ProgressBar', () => {
-  it('트랙과 채움이 [[ADR-061]] 결정 6의 h-1.5 프리미티브다', async () => {
+  it('트랙과 채움이의 h-1.5 프리미티브다', async () => {
     const { getByTestId } = await renderAtom(<ProgressBar percent={40} fillTestId="fill" />)
 
     const fill = getByTestId('fill')
@@ -21,7 +21,7 @@ describe('ProgressBar', () => {
       backgroundColor: 기본테마.track,
     })
     // 채움은 자기 높이를 갖지 않고 트랙을 채운다 — 둘이 각자 알면 한쪽만 바뀔 때 어긋난다
-    // ([[ADR-147]] 정정 18 이 위젯 3 에서 낸 회귀).
+    // (이 위젯 3 에서 낸 회귀).
     expect(flattenStyle(fill.props.style)).toMatchObject({
       height: '100%',
       borderRadius: 9999,
@@ -29,7 +29,7 @@ describe('ProgressBar', () => {
     })
   })
 
-  it('height="thin"이면 트랙만 h-1이 되고 채움은 그대로 따라온다 ([[ADR-061]] 정정 4)', async () => {
+  it('height="thin"이면 트랙만 h-1이 되고 채움은 그대로 따라온다', async () => {
     const { getByTestId } = await renderAtom(
       <ProgressBar percent={40} height="thin" fillTestId="fill" />,
     )

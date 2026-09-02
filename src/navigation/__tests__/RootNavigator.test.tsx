@@ -2,9 +2,9 @@
 //
 // 검사하는 것 넷:
 //   ① 온보딩 분기가 **양방향**으로 도는가 (미완료 → 온보딩만 / 완료 → 탭 + 하위 페이지)
-//   ② 하위 페이지 열둘이 **하나도 빠짐없이 열리는가**(계획서 §1 의 열하나 + [[ADR-144]] 의 하나)
-//   ③ 같은 상세를 두 경로가 가리키는가 ([[ADR-125]] 결정 3)
-//   ④ 하위 페이지가 열려도 아래 탭 화면이 **언마운트되지 않는가** ([[ADR-077]] · [[ADR-120]] 결정 4)
+//  ② 하위 페이지 열둘이 **하나도 빠짐없이 열리는가**(계획서 §1 의 열하나 + 의 하나)
+//  ③ 같은 상세를 두 경로가 가리키는가
+//  ④ 하위 페이지가 열려도 아래 탭 화면이 **언마운트되지 않는가**
 //
 // ── `act` 를 쓰는 규칙 (실측 2026-08-12) ──────────────────────────────────────────────
 //
@@ -34,12 +34,12 @@ type Status = 'awaitingApiKey' | 'completed'
  */
 const GUIDE = FEATURE_GUIDES[0]
 const GUIDE_ID = GUIDE.id
-// 웹의 `?s=` 자리([[ADR-125]] 결정 7) — 경로가 아니라 파라미터라 스택 한 단으로 읽히지 않는다.
+// 웹의 `?s=` 자리 — 경로가 아니라 파라미터라 스택 한 단으로 읽히지 않는다.
 const GUIDE_SECTION_ID = GUIDE.sections[0].id
 
 beforeEach(() => {
   installMemoryPreferences()
-  // `SettingsAbout` 이 마운트에서 실행 중인 번들 버전을 묻는다([[ADR-137]] 배선). 주입이 없으면
+  // `SettingsAbout` 이 마운트에서 실행 중인 번들 버전을 묻는다(배선). 주입이 없으면
   // 슬롯이 던져 **그 화면이 열리는가** 를 묻는 케이스가 배선과 무관한 이유로 빨개진다.
   // 지원하지 않는 환경으로 두는 것이 이 파일에 맞다 — 여기서 보는 것은 라우팅이지 OTA 가 아니다.
   setLiveUpdatePort({
@@ -53,7 +53,7 @@ beforeEach(() => {
     getNetworkType: async () => 'unknown',
     openStore: () => {} })
   useOnboardingStore.setState({ status: 'awaitingApiKey' })
-  // `ContentManage` 는 **수동 모드 전용**이라([[ADR-035]] 결정 18) 자동 모드로 두면 열리자마자
+  // `ContentManage` 는 **수동 모드 전용**이라 자동 모드로 두면 열리자마자
   // 물러난다 — 그러면 이 파일의 «열둘이 전부 열린다» 가 배선이 아니라 모드 때문에 빨개진다.
   useTrackingModeStore.setState({ mode: 'manual' })
 })
@@ -103,7 +103,7 @@ describe('온보딩 분기', () => {
 
 describe('하위 페이지 — 열둘', () => {
   // **`guideId` 가 실재해야 한다**(step 3 에서 갈린 것). 자리표시자는 받은 문자열을 그냥 찍어
-  // 아무 값이나 통했지만, 진짜 상세는 없는 id 면 조용히 pop 한다([[ADR-125]] 결정 3 — 옛 링크의
+  // 아무 값이나 통했지만, 진짜 상세는 없는 id 면 조용히 pop 한다(— 옛 링크의
   // 착지점이 빈 화면이면 안 된다). 그래서 여기 값이 카탈로그와 어긋나면 이 테스트가 먼저 깨진다.
   const params: Partial<Record<(typeof STACK_ROUTE_NAMES)[number], object>> = {
     SettingsFeatureGuide: { guideId: GUIDE_ID },
@@ -124,7 +124,7 @@ describe('하위 페이지 — 열둘', () => {
     expect(screen.getByTestId(`screen-${name}`)).toBeTruthy()
   })
 
-  // [[ADR-077]] 이 세우고 [[ADR-120]] 결정 4 가 일곱 곳으로 넓힌 계약 — 아래 화면이 살아 있어야
+  //  이 세우고 가 일곱 곳으로 넓힌 계약 — 아래 화면이 살아 있어야
   // 전환 중에 보여줄 것이 있고, 펼침·기간·스크롤도 남는다. 네이티브 스택이 공짜로 주는 성질이지만
   // 공짜라고 검사하지 않으면 나중에 `presentation` 을 바꿨을 때 조용히 잃는다.
   //
@@ -166,7 +166,7 @@ describe('하위 페이지 — 열둘', () => {
 // 파라미터를 그대로 찍어 "같은 데이터가 실렸는가"를 물었는데, 진짜 상세가 들어온 뒤에는 그보다
 // 강한 질문을 할 수 있다 — **두 경로가 같은 안내의 본문을 그리는가.** 마디 파라미터가 하는 일
 // (그 자리로 스크롤)은 레이아웃이 있어야 관측되므로 화면 자신의 테스트가 본다.
-describe('안내 상세는 두 경로가 같은 화면을 그린다 ([[ADR-125]] 결정 3)', () => {
+describe('안내 상세는 두 경로가 같은 화면을 그린다', () => {
   it.each(FEATURE_GUIDE_ROUTE_NAMES)('%s 로 열어도 같은 안내가 그려진다', async (routeName) => {
     useOnboardingStore.setState({ status: 'completed' })
     const navigationRef = createNavigationContainerRef<RootStackParamList>()

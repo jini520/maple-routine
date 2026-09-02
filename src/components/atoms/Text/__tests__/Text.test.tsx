@@ -1,4 +1,4 @@
-// 글자 atom 이 **실제로 그 프롭을 달고 나가는가**([[ADR-152]] 결정 4). 산수는 옆 파일
+// 글자 atom 이 **실제로 그 프롭을 달고 나가는가**. 산수는 옆 파일
 // (`font-scaling.test.ts`)이 보고, 여기서는 배선만 본다 — 계산이 맞아도 프롭이 안 붙으면
 // 화면은 그대로 옛 동작이다.
 //
@@ -23,7 +23,7 @@ afterEach(() => {
   jest.restoreAllMocks()
 })
 
-describe('Text — 시스템 글자 배수를 [1.0, 1.235] 로 자른다 ([[ADR-152]])', () => {
+describe('Text — 시스템 글자 배수를 [1.0, 1.235] 로 자른다', () => {
   it('기본(1.0)에서는 스케일링을 켜고 상한만 건다', async () => {
     시스템_글자배수(1)
     const { getByText } = await renderAtom(<Text>보스</Text>)

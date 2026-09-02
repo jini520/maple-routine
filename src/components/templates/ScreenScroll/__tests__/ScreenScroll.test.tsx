@@ -1,4 +1,4 @@
-// 화면 스크롤 셸([[ADR-099]]). 웹판 테스트가 지키던 것은 **"박스가 실제로 보이는 영역과 같다"** 였고
+// 화면 스크롤 셸. 웹판 테스트가 지키던 것은 **"박스가 실제로 보이는 영역과 같다"** 였고
 // (인디케이터가 노치를 침범하거나 탭바 뒤로 사라지는 것은 둘 다 실기기에서 관측된 회귀다) 여기서도
 // 같은 것을 지킨다 — 표현만 클래스 문자열에서 값으로 바뀐다.
 //
@@ -7,12 +7,12 @@
 // | `fixed inset-x-0` + `overflow-y-auto` | `ScrollView` 자체가 스크롤포트다 |
 // | `top-[var(--sa-top)]` + 안쪽 `-mt` | **헤더가 안전영역을 먹는다** — 헤더가 없을 때만 이 셸이 |
 // | `bottom-[var(--tab-bar-h)]` | 탭 내비게이터가 이미 뺀 상자를 준다(`bottom-inset.ts`) |
-// | `overscroll-y-none` | **안 옮긴다** — 러버밴드는 원하는 동작이다([[ADR-099]] 결정 3) |
-// | 배경색 없음 | 그대로 검사한다([[ADR-088]]) |
+// | `overscroll-y-none` | **안 옮긴다** — 러버밴드는 원하는 동작이다 |
+// | 배경색 없음 | 그대로 검사한다 |
 //
 // 하단 인셋의 판정 자체는 `bottom-inset.test.ts` 가 본다. 여기서는 그 결과가 **콘텐츠 패딩이 아니라
 // 상자 마진**으로 들어가는지를 본다 — 인디케이터는 콘텐츠가 아니라 스크롤포트 위에 겹쳐 그려지므로
-// 그 구분이 곧 [[ADR-099]] 결정 6 이 실기기에서 잡은 회귀다.
+// 그 구분이 곧 이 실기기에서 잡은 회귀다.
 
 import { getThemeDefinition } from '../../../../lib/theme/theme-registry'
 import { within } from '@testing-library/react-native'
@@ -25,7 +25,7 @@ import { __resetThemeAppearanceForTest } from '../../../../theme/appearance-stor
 import { resolveBottomBarMetrics } from '../../../../lib/bottom-bar-metrics'
 
 /**
- * 바가 먹는 몫은 **창 폭의 함수**다([[ADR-132]] 정정 30). 여기서 숫자를 적지 않고 같은 함수를
+ * 바가 먹는 몫은 **창 폭의 함수**다. 여기서 숫자를 적지 않고 같은 함수를
  * 부르는 것이 이 파일이 지키는 것이다 — 셸이 창 폭을 안 보면 이 값이 안 맞는다.
  */
 const 바_몫 = resolveBottomBarMetrics(Dimensions.get('window').width).spacePx
@@ -57,7 +57,7 @@ describe('ScreenScroll', () => {
     })
   })
 
-  // [[ADR-088]] — 불투명 배경은 테마 배경 이미지(백드롭)를 통째로 가린다. 웹에서 앱 루트의 `bg-bg` 를
+  // 불투명 배경은 테마 배경 이미지(백드롭)를 통째로 가린다. 웹에서 앱 루트의 `bg-bg` 를
   // 빼야 했던 것과 같은 자리다.
   it('배경색을 칠하지 않는다', async () => {
     rnThemeAppearancePort.apply('혼테일', getThemeDefinition('혼테일'))
@@ -66,7 +66,7 @@ describe('ScreenScroll', () => {
     expect(flattenStyle(getByTestId('screen-scroll').props.style).backgroundColor).toBeUndefined()
   })
 
-  // [[ADR-099]] 결정 3 — 실기기 확인 항목이 *"모멘텀·러버밴드가 문서 스크롤과 동등한가"* 였다.
+  // 실기기 확인 항목이 *"모멘텀·러버밴드가 문서 스크롤과 동등한가"* 였다.
   // 웹의 `overscroll-behavior-y: none` 을 `bounces={false}` 로 옮기면 그것을 우리가 없애는 셈이 된다
   // (그 선언이 막던 스크롤 체이닝은 RN 에 문서가 없어 일어날 수 없다).
   it('네이티브 러버밴드를 끄지 않는다', async () => {
@@ -77,7 +77,7 @@ describe('ScreenScroll', () => {
   })
 })
 
-describe('스크롤 인디케이터 색 ([[ADR-099]] 결정 5)', () => {
+describe('스크롤 인디케이터 색', () => {
   // 웹에서 안 걸었을 때 라이트 테마에 흰 인디케이터가 나왔다(실기기 2026-08-06). RN 기본값
   // `'default'` 도 같은 종류의 실패다 — OS 설정을 따라가지 우리 테마를 따라가지 않는다.
   it.each([
@@ -106,7 +106,7 @@ describe('상단 안전영역 — 헤더가 있으면 헤더가 먹는다', () =
   })
 
   // 헤더 없는 화면(설정 계열). **콘텐츠 패딩이 아니라 상자**여야 한다 — 패딩으로 밀면 글자는
-  // 내려가도 인디케이터는 노치까지 올라간다([[ADR-099]] 결정 6).
+  // 내려가도 인디케이터는 노치까지 올라간다.
   it('헤더가 없으면 이 셸이 상자를 안전영역만큼 내린다', async () => {
     const { getByTestId } = await renderOverlay(<ScreenScroll>{목록}</ScreenScroll>)
 
@@ -131,7 +131,7 @@ describe('하단 인셋이 들어가는 자리', () => {
     expect(flattenStyle(scroller.props.style).marginBottom).toBe(0)
   })
 
-  // 탭 화면의 바는 **떠 있다**([[ADR-132]] 결정 11) — 콘텐츠가 그 아래로 지나가므로 스크롤포트는
+  // 탭 화면의 바는 **떠 있다** — 콘텐츠가 그 아래로 지나가므로 스크롤포트는
   // 그대로 두고(`marginBottom` 0) 콘텐츠 끝에 «바의 몫 + 안전영역» 을 남긴다. 스크롤포트를 줄이면
   // 떠 있는 의미가 사라진다(그냥 화면이 작아진다).
   it('탭 화면(기본값)은 떠 있는 바의 몫을 콘텐츠 끝에 남긴다', async () => {
@@ -145,12 +145,12 @@ describe('하단 인셋이 들어가는 자리', () => {
   })
 })
 
-// ★ 회귀 가드 — **헤더는 스크롤 뷰 «안»에 있다**([[ADR-131]] 후속, 사용자 판정 2026-08-13).
+// ★ 회귀 가드 — **헤더는 스크롤 뷰 «안»에 있다**(후속, 사용자 판정 2026-08-13).
 //
 // 예전에는 스크롤 뷰의 **형제**라 영원히 화면에 붙어 있었다. 정책이 «고정을 푼다» 로 바뀌면서
 // 안으로 들어왔는데, 이 차이는 **렌더 트리에서만 보이고 화면에서는 굴려 봐야 안다** — 스크롤 0
 // 에서는 두 배치가 똑같이 생겼다. 그래서 위치를 트리로 고정한다.
-describe('[[ADR-131]] 헤더도 함께 스크롤된다', () => {
+describe(' 헤더도 함께 스크롤된다', () => {
   it('헤더가 스크롤 뷰의 자식이다 — 형제로 되돌리면 다시 고정된다', async () => {
     const { getByTestId } = await renderOverlay(
       <ScreenScroll header={<View testID="header" />}>{목록}</ScreenScroll>,
@@ -161,12 +161,12 @@ describe('[[ADR-131]] 헤더도 함께 스크롤된다', () => {
   })
 })
 
-// ★ 당김 인디케이터는 스크롤포트 «위» 가 아니라 **«안»** 에 그려진다 ([[ADR-160]] 결정 2).
+// ★ 당김 인디케이터는 스크롤포트 «위» 가 아니라 **«안»** 에 그려진다.
 //
 // 그래서 위 페이드가 그것도 **함께 깎는다** — 사용자가 당기면 자리는 열리는데 그 자리에 아무것도
 // 안 보이고, 자동 조회로 열렸을 때는 «상단에 빈 띠» 로 보인다(사용자 보고 2026-08-22). 페이드
 // 높이만큼 내려 구간 밖에서 돌게 한다.
-describe('[[ADR-160]] 당김 인디케이터는 페이드 구간 아래에서 돈다', () => {
+describe(' 당김 인디케이터는 페이드 구간 아래에서 돈다', () => {
   const 당김 = <RefreshControl refreshing={false} onRefresh={() => undefined} />
 
   it('상단을 깎는 화면에서는 그 높이만큼 내린다', async () => {
@@ -191,7 +191,7 @@ describe('[[ADR-160]] 당김 인디케이터는 페이드 구간 아래에서 �
     expect(getByTestId('screen-scroll').props.refreshControl.props.progressViewOffset).toBeUndefined()
   })
 
-  // 이 셸은 `refreshControl` 을 **그대로 넘기기만 한다**([[ADR-130]] 결정 1). 오프셋 하나를 얹느라
+  // 이 셸은 `refreshControl` 을 **그대로 넘기기만 한다**. 오프셋 하나를 얹느라
   // 화면이 정한 값(색·`refreshing`·`onRefresh`)이 바뀌면 그 계약이 깨진다.
   it('화면이 정한 값은 그대로 둔다', async () => {
     const { getByTestId } = await renderOverlay(
@@ -208,13 +208,13 @@ describe('[[ADR-160]] 당김 인디케이터는 페이드 구간 아래에서 �
   })
 })
 
-// ★ 안전영역 페이드 — **덮는 것이 아니라 깎는 것**이다 ([[ADR-134]]).
+// ★ 안전영역 페이드 — **덮는 것이 아니라 깎는 것**이다.
 //
 // 어디를 깎는지의 판정은 `safe-area-fade.test.ts` 가 본다. 여기서는 그 값이 **실제로 마스크로
 // 나가는지**와, 이 결정의 핵심인 «스크림이 아니다» 가 지켜지는지를 본다 — 마스크를 배경색
 // 그라디언트로 바꿔도 화면은 그럴듯해 보이지만(벽지 없는 테마 넷에서는 구분도 안 된다) 벽지
-// 테마에서는 [[ADR-133]] 이 걷어낸 띠가 정지 상태로 돌아온다.
-describe('[[ADR-134]] 안전영역 페이드', () => {
+// 테마에서는 이 걷어낸 띠가 정지 상태로 돌아온다.
+describe(' 안전영역 페이드', () => {
   const 인셋없는_기기: Metrics = {
     frame: { x: 0, y: 0, width: 360, height: 640 },
     insets: { top: 0, left: 0, right: 0, bottom: 0 },

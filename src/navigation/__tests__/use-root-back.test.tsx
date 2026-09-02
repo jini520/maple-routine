@@ -1,4 +1,4 @@
-// 탭 최상위의 뒤로가기 — [[ADR-120]] 결정 18(**묻지 않고 백그라운드로**).
+// 탭 최상위의 뒤로가기 —(**묻지 않고 백그라운드로**).
 //
 // 훅에서 시작해 포트를 지나 네이티브 모듈까지 **한 사슬로** 검사한다. 훅만 따로 보면 "불렀다"까지만
 // 알 수 있고, 어느 포트에 무엇이 들어갔는지가 뒤바뀌어도 통과한다.
@@ -53,7 +53,7 @@ afterEach(() => {
   __resetNativePortsForTest()
 })
 
-describe('useRootBackToBackground ([[ADR-120]] 결정 18)', () => {
+describe('useRootBackToBackground', () => {
   it('더 pop 할 것이 없으면 백그라운드로 보내고 뒤로가기를 삼킨다', async () => {
     const pressBack = captureBackHandler()
     await render(<Harness navigation={{ isReady: () => true, canGoBack: () => false }} />)
@@ -100,11 +100,11 @@ describe('useRootBackToBackground ([[ADR-120]] 결정 18)', () => {
   })
 })
 
-// [[ADR-132]] 결정 10 이 여기에 단을 하나 더 뒀었다 — 하단바의 «층» 기록이 react-navigation 이
+//  이 여기에 단을 하나 더 뒀었다 — 하단바의 «층» 기록이 react-navigation 이
 // 모르는 우리 것이라 `canGoBack()` 에 안 잡혔고, 그래서 «화면 스택 → 바 기록 → 백그라운드» 3단이
-// 됐다. [[ADR-167]] 결정 7 이 그 단을 걷었다: 층이 진짜 스택이면 하위 층까지 `canGoBack()` 에
+// 됐다. 이 그 단을 걷었다: 층이 진짜 스택이면 하위 층까지 `canGoBack()` 에
 // 잡히므로 우리가 알려 줄 것이 없다.
-describe('판정은 다시 하나다 ([[ADR-167]] 결정 7)', () => {
+describe('판정은 다시 하나다', () => {
   // 하위 «층» 에 서 있는 경우다. 예전에는 `canGoBack()` 이 거짓이라 앱이 백그라운드로 갔고,
   // 그것을 막으려고 바가 자기 뒤로가기를 등록했다. 지금은 층이 스택 한 단이라 이 값이 참이고,
   // 우리는 가로채지 않는다 — react-navigation 이 pop 한다.

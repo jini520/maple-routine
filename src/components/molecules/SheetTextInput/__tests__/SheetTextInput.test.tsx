@@ -1,12 +1,12 @@
 /**
- * 시트 안의 입력 칸 — **부품은 RN 것 그대로, 시트가 보는 값만 채운다**([[ADR-170]] 정정 10).
+ * 시트 안의 입력 칸 — **부품은 RN 것 그대로, 시트가 보는 값만 채운다**.
  *
  * `@gorhom/bottom-sheet` 는 `animatedKeyboardState.target` 이 비어 있으면 키보드 이벤트를 받고도
  * 상태를 **안 올린다**(라이브러리 `useAnimatedKeyboard`). 정정 5 는 그 값을 채우려고 라이브러리의
  * `BottomSheetTextInput` 을 썼는데, 그것은 안쪽이 `react-native-gesture-handler` 의 입력이라
  * **안드로이드 한글 조합이 깨졌다**(자모가 따로 확정된다). 그래서 부품을 되돌리고 값만 채운다.
  *
- * 그 값을 채우는 자리가 아톰에서 여기로 왔다([[ADR-170]] 정정 18). 아톰은 자기가 시트 안에
+ * 그 값을 채우는 자리가 아톰에서 여기로 왔다. 아톰은 자기가 시트 안에
  * 있는지 모른다.
  */
 const mockInsideSheet = jest.fn<unknown, [boolean?]>(() => null)
@@ -37,7 +37,7 @@ beforeEach(() => {
   mockInsideSheet.mockReset().mockReturnValue(null)
 })
 
-describe('SheetTextInput — 부품은 RN 것 하나다 ([[ADR-170]] 정정 10)', () => {
+describe('SheetTextInput — 부품은 RN 것 하나다', () => {
   it('시트 안이든 밖이든 같은 입력을 그린다', async () => {
     const 시트밖 = await renderAtom(<SheetTextInput testID="칸" />)
     expect(시트밖.getByTestId('칸')).toBeTruthy()
@@ -54,7 +54,7 @@ describe('SheetTextInput — 부품은 RN 것 하나다 ([[ADR-170]] 정정 10)'
     expect(mockInsideSheet).toHaveBeenCalledWith(true)
   })
 
-  // 이 아톰이 존재하는 첫째 이유다([[ADR-152]] 결정 4) — 시트 배선이 그것을 밀어내면 안 된다.
+  // 이 아톰이 존재하는 첫째 이유다 — 시트 배선이 그것을 밀어내면 안 된다.
   it('글자 배수 클램프가 그대로 붙는다', async () => {
     mockInsideSheet.mockReturnValue({ animatedKeyboardState: 키보드상태() })
     const view = await renderAtom(<SheetTextInput testID="칸" />)
@@ -63,7 +63,7 @@ describe('SheetTextInput — 부품은 RN 것 하나다 ([[ADR-170]] 정정 10)'
   })
 })
 
-describe('시트가 보는 초점 ([[ADR-170]] 정정 10)', () => {
+describe('시트가 보는 초점', () => {
   it('커서가 들어오면 채운다 — 이것이 없으면 시트가 안 올라간다', async () => {
     const 상태 = 키보드상태()
     mockInsideSheet.mockReturnValue({ animatedKeyboardState: 상태 })

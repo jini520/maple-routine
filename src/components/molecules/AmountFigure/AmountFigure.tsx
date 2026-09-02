@@ -4,8 +4,8 @@
  * 금액은 `props.value` 로 받은 것만 그린다. 한국어 단위로 접어(`8억 5천만`) 단위 글자만 한 단계
  * 작게 얹고, 오른쪽에 통화를 세운다.
  *
- * @see [[ADR-202]] 결정 1·9·10·11·12 · 정정 1 — 못 치는 이유 · 단위 서식 · 크기 · 앞 틈 · 카운트업 제거
- * @see [[ADR-173]] 결정 1·9 — 화면에 하나뿐이고 자기 윗선을 안 긋는다
+ * @see — 못 치는 이유 · 단위 서식 · 크기 · 앞 틈 · 카운트업 제거
+ * @see — 화면에 하나뿐이고 자기 윗선을 안 긋는다
  */
 import { View } from 'react-native'
 
@@ -19,13 +19,13 @@ export interface AmountFigureProps {
   unit: string
   /** 이름의 뿌리. 덩어리는 `${testID}-figure`, 통화는 `${testID}-unit` 이다. */
   testID: string
-  /** 앞에 `≈` 를 붙인다. 0 에는 안 붙는다([[ADR-175]] 결정 3). */
+  /** 앞에 `≈` 를 붙인다. 0 에는 안 붙는다. */
   approximate?: boolean
 }
 
 const OPAQUE_ZERO = { opacity: 0 }
 
-/** 단위 왼쪽 틈(dp). 폭만 있는 `View` 로 낸다 — 방법 넷의 실측은 [[ADR-202]] 결정 11 에 있다. */
+/** 단위 왼쪽 틈(dp). 폭만 있는 `View` 로 낸다 — 방법 넷의 실측은 에 있다. */
 const FIGURE_UNIT_GAP = 2
 
 const GAP_STYLE = { width: FIGURE_UNIT_GAP }
@@ -69,7 +69,7 @@ export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
 
   return (
     <View testID={`${props.testID}-figure`}>
-      {/* 기준선이 아니라 **같은 줄 상자**로 맞춘다([[ADR-178]] 정정 3). */}
+      {/* 기준선이 아니라 **같은 줄 상자**로 맞춘다. */}
       <View className="flex-row items-start gap-1.5">
         <View className="flex-1">
           <Text testID={props.testID} className={digits} style={TABULAR_NUMS}>

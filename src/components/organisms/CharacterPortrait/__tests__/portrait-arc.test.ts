@@ -1,4 +1,4 @@
-// 호 경로와 각도([[ADR-142]] 정정 1·3·5). 치수는 `portrait-metrics` 가 검사한다.
+// 호 경로와 각도. 치수는 `portrait-metrics` 가 검사한다.
 import {
   isFullTurn,
   portraitRingArcPath,
@@ -9,7 +9,7 @@ import {
 import { PORTRAIT_RAIL } from '../portrait-metrics'
 
 describe('글자 호', () => {
-  // 반지름은 인자가 아니다([[ADR-161]] 결정 1). 값이 하나뿐이라 경로도 하나뿐이다.
+  // 반지름은 인자가 아니다. 값이 하나뿐이라 경로도 하나뿐이다.
   //
   // 식을 다시 세우지 않고 **좌표를 그대로 적는다.** 상수에서 다시 계산하면 구현과 같은 식이라
   // 어느 상수가 바뀌어도 함께 따라가 아무것도 안 잡는다.

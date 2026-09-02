@@ -4,7 +4,7 @@
 //
 // 여기에 웹에 없던 계약 하나가 더해진다: `pathLength` 정규화가 사라진 만큼 **대시가 실측 둘레의
 // 70/30 이어야 한다**(컴포넌트 주석 참고). 지속시간·이징을 웹 원본과 대조하던
-// `keyframes-parity.test.ts` 는 웹 소스와 함께 지워져([[ADR-155]]·[[ADR-156]]) 지금 그 둘을 보는
+// `keyframes-parity.test.ts` 는 웹 소스와 함께 지워져 지금 그 둘을 보는
 // 곳은 없다.
 //
 // 쿼리에 `includeHiddenElements` 를 주는 것 자체가 `aria-hidden` 이 먹었다는 증거다 — RNTL 은 숨긴

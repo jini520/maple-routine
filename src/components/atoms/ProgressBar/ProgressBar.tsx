@@ -1,5 +1,5 @@
 /**
- * 결정형 진행률 바 atom([[ADR-061]] 결정 6 · [[ADR-094]] 결정 3).
+ * 결정형 진행률 바 atom.
  *
  * **값을 클램프하지 않는다.** 여기서 잘라 두면 호출부의 계산이 틀렸을 때 그 사실이 화면에서
  * 지워진다. 퍼센트 환산도 호출부 몫이다.
@@ -10,10 +10,10 @@ import { cubicBezier } from 'react-native-reanimated'
 import { AnimatedView } from '../../../lib/nativewind-interop'
 
 /**
- * 트랙 높이. `thin` 은 `today` 의 2x2 초기화 타일만 쓴다([[ADR-061]] 정정 4).
+ * 트랙 높이. `thin` 은 `today` 의 2x2 초기화 타일만 쓴다.
  *
  * **높이를 아는 것은 트랙뿐이다.** 채움은 `h-full` 로 따라온다. 둘이 각자 알면 한쪽만 바꿀 때
- * 어긋난다([[ADR-147]] 정정 18 이 위젯 3 에서 낸 회귀).
+ * 어긋난다(이 위젯 3 에서 낸 회귀).
  */
 const HEIGHT_CLASS = { base: 'h-1.5', thin: 'h-1' } as const
 
@@ -46,7 +46,7 @@ export interface ProgressBarProps {
   percent: number
   /** 채움 색. `third` 는 컨텐츠 스케줄러의 `IllustratedCard` 둘이 위에 선 배지와 맞추려고 쓴다. */
   tone?: keyof typeof FILL_CLASS
-  /** 두께. 기본은 [[ADR-061]] 결정 6 의 `h-1.5` 이고, 세 번째 값은 두지 않는다(정정 4). */
+  /** 두께. 기본은 의 `h-1.5` 이고, 세 번째 값은 두지 않는다(정정 4). */
   height?: keyof typeof HEIGHT_CLASS
   /**
    * 접근성 값. 주면 `accessibilityRole="progressbar"` 와 함께 낸다. 값이 이미 글자로 읽히는

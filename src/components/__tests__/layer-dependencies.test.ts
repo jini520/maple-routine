@@ -1,4 +1,4 @@
-// 아토믹 계층의 **의존 방향**을 강제한다([[ADR-094]] 결정 2). `app-capacitor` 의 같은 이름 테스트를
+// 아토믹 계층의 **의존 방향**을 강제한다. `app-capacitor` 의 같은 이름 테스트를
 // RN 쪽으로 옮긴 것이고, 규칙도 같다.
 //
 // 디렉터리를 나눈 실질이 여기 있다 — 규칙이 문서에만 있으면 시간이 지나며 어긋나고, 그때는
@@ -74,7 +74,7 @@ function findViolations(): Violation[] {
   return violations
 }
 
-describe('컴포넌트 계층 의존 방향 ([[ADR-094]] 결정 2)', () => {
+describe('컴포넌트 계층 의존 방향', () => {
   it('의존은 아래로만 흐른다 — 상위 계층을 import 하지 않는다', () => {
     const violations = findViolations().map(
       (v) => `${v.file}: ${v.from} → ${v.to} (${v.specifier})`,
@@ -94,7 +94,7 @@ describe('컴포넌트 계층 의존 방향 ([[ADR-094]] 결정 2)', () => {
   })
 
   // 계층 밖에 컴포넌트를 두면 규칙이 적용되지 않는 사각이 생긴다. 예외가 하나 있었으나
-  // ([[ADR-199]] 정정 3) 단풍잎 경로가 `atoms/Icon/maple-leaf.ts` 로 들어가 없어졌다.
+  // 단풍잎 경로가 `atoms/Icon/maple-leaf.ts` 로 들어가 없어졌다.
   it('components 바로 아래에는 계층 디렉터리만 둔다', () => {
     const entries = readdirSync(ROOT).filter((e) => e !== '__tests__')
     const unexpected = entries.filter((e) => !(LAYERS as readonly string[]).includes(e))

@@ -1,4 +1,4 @@
-// 하단바의 «층과 뒤로가기» 규칙 — [[ADR-167]] 이 층의 소유자를 바꾼 뒤의 명세.
+// 하단바의 «층과 뒤로가기» 규칙 — 이 층의 소유자를 바꾼 뒤의 명세.
 //
 // **무엇이 달라졌나.** 예전에는 이 함수들이 새 `BarState` 를 만들었고 바가 그것을 적용했다. 층을
 // 스택이 들면(결정 1) 상태는 react-navigation 것이므로, 같은 함수들이 **«무엇을 할지»(BarIntent)**
@@ -31,7 +31,7 @@ function at(page: BarState['page'], patch: Partial<BarState> = {}): BarState {
   return { ...initialBarState(), page, ...patch }
 }
 
-describe('그룹 표 ([[ADR-132]] 결정 1)', () => {
+describe('그룹 표', () => {
   it('그룹은 다섯이고 순서가 곧 바의 순서다', () => {
     expect(BAR_GROUPS.map((group) => group.id)).toEqual([
       'today',
@@ -43,7 +43,7 @@ describe('그룹 표 ([[ADR-132]] 결정 1)', () => {
   })
 
   // 라벨을 여기서 고정하는 이유는 바가 그것을 **두 층에서** 쓰기 때문이다 — 그룹 행의 글자와
-  // `accessibilityLabel`(`BottomBar` 의 `BarItem`)([[ADR-132]] 정정 33).
+  // `accessibilityLabel`(`BottomBar` 의 `BarItem`).
   it('그룹 라벨 다섯을 고정한다', () => {
     expect(BAR_GROUPS.map((group) => group.label)).toEqual([
       'today',
@@ -63,7 +63,7 @@ describe('그룹 표 ([[ADR-132]] 결정 1)', () => {
     }
   })
 
-  // [[ADR-167]] 결정 2 — 하위를 가진 그룹만 자기 «층 화면» 을 갖는다. 이 둘이 짝이 아니면
+  // 하위를 가진 그룹만 자기 «층 화면» 을 갖는다. 이 둘이 짝이 아니면
   // 그룹을 눌렀을 때 push 할 자리가 없거나, 아무도 안 쓰는 층 화면이 생긴다.
   it('층 화면은 하위를 가진 그룹에만 있다 — 그리고 표의 이름과 일치한다', () => {
     for (const group of BAR_GROUPS) {
@@ -77,7 +77,7 @@ describe('그룹 표 ([[ADR-132]] 결정 1)', () => {
     expect(['Groups', ...layers]).toEqual([...LAYER_ROUTE_NAMES])
   })
 
-  // [[ADR-145]] 결정 1 — 헤더 버튼으로만 열리던 화면이 컨텐츠·보스와 나란한 셋째 하위가 된다.
+  // 헤더 버튼으로만 열리던 화면이 컨텐츠·보스와 나란한 셋째 하위가 된다.
   it('스케줄러 하위는 컨텐츠·보스·보스 관리 셋이다', () => {
     expect(groupById('schedule').subs).toEqual([
       { page: 'Content', label: '컨텐츠' },
@@ -104,7 +104,7 @@ describe('그룹 표 ([[ADR-132]] 결정 1)', () => {
 
 // 어느 페이지가 어느 층 화면 안에 사는가 — 화면이 «탭으로 가고 싶다» 고 말할 때 그것을 중첩
 // 이동으로 옮기는 유일한 표다(`use-open-tab.ts`).
-describe('layerOfPage — 페이지가 사는 층 화면 ([[ADR-167]] 결정 2)', () => {
+describe('layerOfPage — 페이지가 사는 층 화면', () => {
   it('하위가 없는 그룹의 페이지는 그룹 층에 산다', () => {
     expect(layerOfPage('Today')).toBe('Groups')
     expect(layerOfPage('Utility')).toBe('Groups')
@@ -148,7 +148,7 @@ describe('← 는 하위 행에만 선다 (결정 3)', () => {
     expect(pressBack(at('Today'))).toEqual({ kind: 'none' })
   })
 
-  // **`showGroups` 가 사라진 자리다**([[ADR-167]] 결정 4). 예전에는 «기록이 없는데 하위 행에
+  // **`showGroups` 가 사라진 자리다**. 예전에는 «기록이 없는데 하위 행에
   // 있다» 는 상태가 가능해 ← 가 «페이지는 그대로 두고 그룹 행만 올리는» 안전망으로 떨어졌다.
   // 층이 스택이면 하위 행에 있다는 것이 곧 스택 깊이 ≥ 1 이라 그 상태가 만들어질 길이 없다.
   it('하위 행에서는 언제나 선다 — 되돌아갈 단이 반드시 있다', () => {
@@ -157,7 +157,7 @@ describe('← 는 하위 행에만 선다 (결정 3)', () => {
   })
 })
 
-describe('그룹을 누르면 (결정 4 · [[ADR-167]] 결정 1·3)', () => {
+describe('그룹을 누르면 (결정 4 ·3)', () => {
   it('설정 → 스케줄러 는 한 층 내려간다 — 그 단이 곧 뒤로 갈 자리다', () => {
     expect(pressGroup(at('Settings'), 'schedule')).toEqual({
       kind: 'openSubs',
@@ -201,7 +201,7 @@ describe('그룹을 누르면 (결정 4 · [[ADR-167]] 결정 1·3)', () => {
   })
 })
 
-describe('하위끼리는 같은 단 안의 옆걸음이다 ([[ADR-167]] 결정 3)', () => {
+describe('하위끼리는 같은 단 안의 옆걸음이다', () => {
   it('컨텐츠 → 보스 는 쌓지 않는다', () => {
     expect(pressSub(at('Content'), 'Boss')).toEqual({ kind: 'switchSub', page: 'Boss' })
   })
@@ -218,7 +218,7 @@ describe('하위끼리는 같은 단 안의 옆걸음이다 ([[ADR-167]] 결정 
   })
 })
 
-describe('rememberSub — 다시 들어갈 자리 ([[ADR-167]] 결정 4)', () => {
+describe('rememberSub — 다시 들어갈 자리', () => {
   // 그룹을 나가면 그 단이 언마운트되므로 «어느 하위였나» 는 우리가 기억해야 한다. `lastSub` 가
   // 스택으로 옮겨가지 못하고 남은 유일한 값이다.
   it('하위 페이지를 적는다', () => {
@@ -233,7 +233,7 @@ describe('rememberSub — 다시 들어갈 자리 ([[ADR-167]] 결정 4)', () =>
   })
 })
 
-describe('openPage — 바를 거치지 않은 이동 ([[ADR-167]] 결정 6)', () => {
+describe('openPage — 바를 거치지 않은 이동', () => {
   // 증상이었던 것: today 위젯으로 보스 수익에 간 뒤 ← 를 누르면 today 가 아니라 **가계부가 활성인
   // 채로** 그룹 행만 열렸다. 기록을 «바를 눌러 내려갈 때만» 적었기 때문이다. 층이 스택이면 위젯
   // 타일도 그냥 한 단 내려가는 이동이라 그 갈래 자체가 없어진다 — 규칙이 `pressGroup` 과 같다.
@@ -261,7 +261,7 @@ describe('openPage — 바를 거치지 않은 이동 ([[ADR-167]] 결정 6)', (
   })
 
   // `pressGroup` 과 달리 **목적지를 지목한다** — `lastSub` 를 보지 않는다. 위젯은 «보스 수익» 처럼
-  // 특정 페이지를 가리키기 때문이다([[ADR-145]] 대가 · [[ADR-140]] 결정 1 의 CTA 와 같은 성질).
+  // 특정 페이지를 가리키기 때문이다(대가 의 CTA 와 같은 성질).
   it('기억된 하위가 있어도 지목한 페이지로 간다', () => {
     const remembered = at('Today', { lastSub: { ledger: 'Cashbook' } })
 

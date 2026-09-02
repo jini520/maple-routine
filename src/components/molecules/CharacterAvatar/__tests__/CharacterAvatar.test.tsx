@@ -1,4 +1,4 @@
-// [[ADR-204]] 결정 1·2. 여덟 자리가 각자 그리던 얼굴 원을 이 부품이 든다.
+// . 여덟 자리가 각자 그리던 얼굴 원을 이 부품이 든다.
 import { View } from 'react-native'
 
 import { FACE_CROP_BOX, FACE_SOURCE_IMAGE_SIZE } from '../../../../lib/face-crop'
@@ -26,7 +26,7 @@ describe('CharacterAvatar', () => {
     })
   })
 
-  // [[ADR-188]] 결정 1 — 그림 뒤로 비치던 회색을 걷었다. 바탕이 필요한 것은 폴백뿐이라 그쪽이
+  // 그림 뒤로 비치던 회색을 걷었다. 바탕이 필요한 것은 폴백뿐이라 그쪽이
   // 자기 몫으로 든다. 부품이 기본값으로 깔면 그 결정이 여덟 자리에서 한꺼번에 되살아난다.
   it('원에는 배경색을 두지 않는다', async () => {
     const { getByTestId } = await renderAtom(
@@ -36,7 +36,7 @@ describe('CharacterAvatar', () => {
     expect(flattenStyle(getByTestId('얼굴').props.style).backgroundColor).toBeUndefined()
   })
 
-  // [[ADR-204]] 결정 3 이 걷으려는 그것이다. 복사본이 셋 있었고 하나는 값이 달랐다.
+  //  이 걷으려는 그것이다. 복사본이 셋 있었고 하나는 값이 달랐다.
   it('크롭은 `lib/face-crop` 의 표에서 나온다 — 지름에 따라 배율이 바뀐다', async () => {
     const { getByTestId } = await renderAtom(
       <CharacterAvatar imageTestID="그림" imageUrl="https://example.test/a.png" name="아무개" size={56} />,

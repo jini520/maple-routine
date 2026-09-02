@@ -10,7 +10,7 @@
 //
 // ## 기대값을 손으로 적지 않는다
 //
-// 색을 단언할 때는 `job-themes.json`(= `getThemeDefinition`)에서 읽는다([[ADR-006]] — 색은 사람이
+// 색을 단언할 때는 `job-themes.json`(= `getThemeDefinition`)에서 읽는다(— 색은 사람이
 // 확인해 커밋한 값이고, 테스트가 베끼면 두 벌이 된다). `theme/__tests__/ThemeProvider.test.tsx` 와
 // 같은 방식이다.
 import { getThemeDefinition } from '../../lib/theme/theme-registry'
@@ -38,7 +38,7 @@ export function renderAtom(ui: ReactElement): ReturnType<typeof render> {
  *
  * `initialMetrics` 를 주는 것은 선택이 아니라 필수다 — 없으면 실제 측정이 올 때까지 프로바이더가
  * 자식을 아예 렌더하지 않아 테스트가 빈 트리를 본다(react-navigation 의 테스트 권장 방식과 같다).
- * 값은 iPhone 계열의 인셋(상 59 · 하 34)이라 [[ADR-107]] 이 실측한 표와 같은 자리를 검사한다.
+ * 값은 iPhone 계열의 인셋(상 59 · 하 34)이라 이 실측한 표와 같은 자리를 검사한다.
  */
 export const 테스트_안전영역: Metrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -53,7 +53,7 @@ export function renderOverlay(
     <SafeAreaProvider initialMetrics={metrics}>
       <ThemeProvider>
         {/*
-          **바 위 슬롯을 함께 세운다**([[ADR-180]]). 화면이 소유한 오버레이 중 일부는 이제 자기가
+          **바 위 슬롯을 함께 세운다**. 화면이 소유한 오버레이 중 일부는 이제 자기가
           선 자리가 아니라 이 호스트에 그려지므로(`SpeedDial`), 호스트가 없으면 트리에서 통째로
           사라져 보인다 — `BottomBarOverlay` 는 «호스트가 없으면 아무 데도 안 그린다» 가 계약이다.
 

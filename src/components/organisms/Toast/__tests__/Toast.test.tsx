@@ -11,7 +11,7 @@
 // · 타이머 바는 **있고 없음만** 지킨다 — 줄어드는 것은 Reanimated 가 UI 스레드에서 하는 일이라
 //   렌더 트리에는 선언(`animationName`·`animationDuration`)만 남는다. 그 선언을 웹
 //   `@keyframes toast-shrink` 와 대조하던 `keyframes-parity.test.ts` 는 웹 소스와 함께 지워졌다
-//   ([[ADR-155]]·[[ADR-156]]).
+//
 jest.mock('react-native-reanimated', () =>
   // `jest.mock` 팩토리는 import 위로 끌어올려져 **밖의 값을 참조할 수 없다** — 그래서 `require` 가
   // 선택이 아니라 유일한 길이다(`reduced-motion.ts` 「쓰는 법」).
@@ -83,7 +83,7 @@ describe('Toast', () => {
     expect(onDismiss).toHaveBeenCalledTimes(1)
   })
 
-  // [[ADR-063]]: 기본 아이콘은 '다시 시도'를 전제한 RefreshCw 다 — 뜻이 다른 액션은 자기 아이콘을
+  // : 기본 아이콘은 '다시 시도'를 전제한 RefreshCw 다 — 뜻이 다른 액션은 자기 아이콘을
   // 넘겨야 하고, 그러지 않으면 무엇을 하는 버튼인지 어긋난다.
   it('action.icon 을 주면 기본 새로고침 아이콘 대신 그 아이콘을 그린다', async () => {
     const { getByLabelText } = await renderAtom(
@@ -95,7 +95,7 @@ describe('Toast', () => {
             // **core 의 타입이 웹을 향해 있다** — `ToastAction.icon` 이 `lucide-react` 의
             // `LucideIcon` 이라 `lucide-react-native` 아이콘이 그대로 안 들어간다(SVG DOM 프롭이
             // 달라 `fillRule` 에서 갈린다). core 는 이 단계에서 손대지 않는 것이 원칙이라
-            // ([[ADR-128]] 원칙 3) 여기서는 캐스팅으로 넘기고, **호출부가 아이콘을 넘기는 화면
+            // (원칙 3) 여기서는 캐스팅으로 넘기고, **호출부가 아이콘을 넘기는 화면
             // 단계에서 core 타입을 풀어야 한다**는 사실을 여기 남긴다.
             action: { label: '설정 열기', onClick: noop, icon: SettingsIcon as unknown as ToastAction['icon'] } })}
           onDismiss={noop}

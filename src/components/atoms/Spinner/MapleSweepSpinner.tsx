@@ -1,12 +1,12 @@
 /**
  * 스윕 스피너. 흐린 잎 위로 밝은 띠가 아래에서 위로 훑고 지나간다
- * ([[ADR-061]] 결정 1 · [[ADR-199]] 정정 2).
+ *
  *
  * **24px 이상 자리 전용이다.** 16px 버튼 안에서는 띠가 잎보다 커져 움직임이 안 읽히므로 그 크기에는
  * `MapleSpinner`(트레일 링)를 쓴다.
  *
  * 마스크가 `userSpaceOnUse` 여야 하는 이유는 `design-system.md` 의 로딩 표현 절에 있다
- * ([[ADR-061]] 정정 1). `maskContentUnits="objectBoundingBox"` 로 두면 **띠가 통째로 사라진다.**
+ * . `maskContentUnits="objectBoundingBox"` 로 두면 **띠가 통째로 사라진다.**
  */
 import { useId } from 'react'
 import Animated, { Easing, useAnimatedProps } from 'react-native-reanimated'

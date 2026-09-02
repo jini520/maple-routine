@@ -1,7 +1,7 @@
 // 웹판이 지키던 것과 같다. 클래스 문자열 단언(`toHaveClass('h-14','w-14')`)은 **풀린 값**으로 바꿨고
 // (RN 에 클래스가 안 남는다), 그 밖의 계약은 한 줄도 줄이지 않았다.
 //
-// `EmptyState` 의 `icon` 은 lucide 아이콘도 커스텀 아이콘도 받는다([[ADR-066]] 결정 5). 여기서
+// `EmptyState` 의 `icon` 은 lucide 아이콘도 커스텀 아이콘도 받는다. 여기서
 // `atoms/Icon/lucide` 를 거쳐 가져오는 것이 요점이다 — 직접 `lucide-react-native` 에서 가져오면 `className`
 // 이 조용히 무시된다(그 파일 주석).
 import { fireEvent } from '@testing-library/react-native'
@@ -40,7 +40,7 @@ describe('EmptyState', () => {
   })
 
   // 자동 모드("게임에서 등록해주세요")·보스 수익처럼 앱 안에 목적지가 없는 곳은 CTA를 만들지
-  // 않는다([[ADR-060]] 결정 3 — 액션이 없는 자리에 비활성 버튼을 두지 않는다).
+  // 않는다(— 액션이 없는 자리에 비활성 버튼을 두지 않는다).
   it('action이 없으면 버튼을 그리지 않는다', async () => {
     const { queryByRole } = await renderAtom(
       <EmptyState icon={SwordsIcon} title="등록된 주간 보스가 없습니다" />,
@@ -66,7 +66,7 @@ describe('EmptyState', () => {
     expect(getByTestId('empty-state-badge', HIDDEN).props['aria-hidden']).toBe(true)
   })
 
-  // page(캐릭터 미선택 3곳)와 inline(목록 8곳)은 배지 크기·타이포만 다르고 구조는 같다([[ADR-060]] 결정 1).
+  // page(캐릭터 미선택 3곳)와 inline(목록 8곳)은 배지 크기·타이포만 다르고 구조는 같다.
   it('기본은 inline 크기 — 56px 배지, 자체 카드 껍데기를 가진다', async () => {
     const { getByTestId } = await renderAtom(
       <EmptyState icon={SwordsIcon} title="추적할 주간 보스가 없습니다" />,
@@ -96,7 +96,7 @@ describe('EmptyState', () => {
     expect(flattenStyle(getByTestId('empty-state-title').props.style).fontSize).toBe(16)
   })
 
-  // [[ADR-060]] 정정: 캐릭터 미선택(page) 3곳은 컨텍스트 아이콘이 아니라 브랜드 마크(단풍잎)를 쓴다.
+  //  정정: 캐릭터 미선택(page) 3곳은 컨텍스트 아이콘이 아니라 브랜드 마크(단풍잎)를 쓴다.
   it('icon="leaf"면 lucide 아이콘 대신 단풍잎 마크를 그린다', async () => {
     const { getByTestId } = await renderAtom(
       <EmptyState size="page" icon="leaf" title="표시할 캐릭터가 없습니다" />,

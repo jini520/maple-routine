@@ -1,5 +1,5 @@
 /**
- * 떠 있는 캡슐 하단바 — [[ADR-132]] 결정 3·11(결정 9 의 광고 게이트는 [[ADR-150]] 에서 폐기).
+ * 떠 있는 캡슐 하단바 —(결정 9 의 광고 게이트는 에서 폐기).
  *
  * ## 이 파일이 하는 일은 «그리기 + 배선» 뿐이다
  *
@@ -37,7 +37,7 @@
  *
  * 블러로 흉내 내는 판을 한 번 만들어 봤고 되돌렸다. 재질은 흉내가 되는데 대가가 셋이었다 —
  * 대상을 잘못 주면 네이티브가 무한 재귀로 죽고(실기기 크래시), 스크롤 자크가 3.0 → 11.0% 로 뛰고,
- * 그 모든 것이 **플랫폼이 주지 않는 것을 억지로 만든** 값이다. 자세한 것은 [[ADR-132]] 정정 29.
+ * 그 모든 것이 **플랫폼이 주지 않는 것을 억지로 만든** 값이다. 자세한 것은.
  *
  * ## 층 전환 애니메이션
  *
@@ -52,7 +52,7 @@
  *
  * ## 키보드
  *
- * `tabBarHideOnKeyboard` 는 라이브러리 탭바의 기능이라 커스텀 바에는 오지 않는다([[ADR-132]] 대가).
+ * `tabBarHideOnKeyboard` 는 라이브러리 탭바의 기능이라 커스텀 바에는 오지 않는다(대가).
  * `use-keyboard-shown.ts` 가 라이브러리와 **같은 이벤트**를 구독해 그 자리를 메운다 — 입력 중엔
  * 바가 키보드 위에 얹혀 의미도 없고 시야만 가린다.
  */
@@ -106,7 +106,7 @@ import { useKeyboardShown } from './use-keyboard-shown'
 import type { LayerRouteName, TabRouteName } from './routes'
 
 /**
- * 바가 아는 이동은 **둘뿐이다** — [[ADR-167]] 결정 2.
+ * 바가 아는 이동은 **둘뿐이다** —.
  *
  * 층 화면 이름과 중첩 파라미터의 모양은 `Main` 에서 끝난다. 바가 내비게이션 구조를 직접 알면
  * 구조를 바꿀 때마다 바가 함께 움직이고, 바는 이 앱에서 정정이 제일 많이 쌓인 파일이다.
@@ -148,12 +148,12 @@ const PILL_OVERHANG = 23
  * 레퍼런스 두 장에서 «활성 알약 높이 ÷ 바 높이» 가 0.89 인데 우리는 0.80 이었다. 그 차이가 곧
  * 이 여백이고, 좁힐수록 알약이 바를 꽉 채워 «항목이 바 안에 떠 있는» 느낌이 사라진다.
  *
- * **바 높이가 기기마다 달라져도 이 값은 상수다**([[ADR-132]] 정정 30) — 여백은 «판 둘레의 선» 이라
+ * **바 높이가 기기마다 달라져도 이 값은 상수다** — 여백은 «판 둘레의 선» 이라
  * 판이 커진다고 함께 커질 이유가 없고, 커지면 위 비율(0.92)이 작은 기기에서 먼저 무너진다.
  */
 const BAR_PADDING = 3
 /**
- * ← 원이 **알약 높이에서 차지하는 비율** — 402pt 기기의 «48 / 66» 이다([[ADR-132]] 정정 30).
+ * ← 원이 **알약 높이에서 차지하는 비율** — 402pt 기기의 «48 / 66» 이다.
  *
  * 한때 48 «고정» 이었고, 그 지시가 겨눈 것은 **바 안쪽 여백**이었다(여백을 줄여도 원은 그대로).
  * 기기 폭은 다른 축이라 그대로 두면 하한(높이 64 · 알약 58)에서 원이 알약을 거의 채우고 태블릿
@@ -185,7 +185,7 @@ interface ShadowLayer {
 }
 
 /**
- * `shadow*` → `boxShadow` **번역기** ([[ADR-132]] 정정 28).
+ * `shadow*` → `boxShadow` **번역기**.
  *
  * ## 왜 옮기는가
  *
@@ -236,7 +236,7 @@ const PLATE_SHADOW: ShadowLayer = { opacity: 0.65, radius: 10, y: 3 }
 const LAYER_MS = 280
 /** 들어오는 행이 오른쪽에서 밀려 들어오는 거리. 크면 «날아온다» 가 되어 층 관계가 흐려진다. */
 const ROW_SHIFT = 10
-/** 앱이 이미 쓰는 스택 전환 커브([[ADR-120]])와 같은 가족. */
+/** 앱이 이미 쓰는 스택 전환 커브와 같은 가족. */
 const EASE = Easing.bezier(0.32, 0.72, 0, 1)
 
 /**
@@ -247,7 +247,7 @@ const EASE = Easing.bezier(0.32, 0.72, 0, 1)
  */
 const ICON_STROKE = 1.5
 /**
- * 활성인데 **채울 수 없는** 그림의 획 굵기 ([[ADR-132]] 정정 27).
+ * 활성인데 **채울 수 없는** 그림의 획 굵기.
  *
  * 채우기가 통하는 다섯(대시보드·렌치·장바구니·톱니·수익)은 면으로 활성을 말한다. 나머지
  * (달력·지갑·목록·검·조준경)는 안쪽 선이 의미를 져서 채울 수 없으므로 **굵기**로 말한다.
@@ -271,8 +271,8 @@ type IconComponent = React.ComponentType<{
  * 그룹·하위가 쓰는 아이콘.
  *
  * 컨텐츠·보스·설정과 **보스 수익**은 앱이 이미 쓰던 그림 그대로다(보스 수익은 커스텀 `ProfitIcon` —
- * [[ADR-066]] 이 금지한 «도메인 아이덴티티를 임의의 lucide 로 대체» 를 하지 않는다).
- * 나머지 다섯은 이번에 생긴 자리라 제안값이고, [[ADR-132]] 열린 질문에 그대로 적혀 있다.
+ *  이 금지한 «도메인 아이덴티티를 임의의 lucide 로 대체» 를 하지 않는다).
+ * 나머지 다섯은 이번에 생긴 자리라 제안값이고 열린 질문에 그대로 적혀 있다.
  */
 const ICONS: Readonly<Record<GroupId | TabRouteName, IconComponent>> = {
   today: LayoutDashboardIcon,
@@ -283,12 +283,12 @@ const ICONS: Readonly<Record<GroupId | TabRouteName, IconComponent>> = {
   Today: LayoutDashboardIcon,
   Content: ListChecksIcon,
   Boss: SwordsIcon,
-  // 검(보스)·목록(컨텐츠)과 겹치지 않으면서 «값을 맞추는 자리» 를 말하는 그림이다([[ADR-145]]
+  // 검(보스)·목록(컨텐츠)과 겹치지 않으면서 «값을 맞추는 자리» 를 말하는 그림이다(
   // 결정 1) — 위 다섯과 같은 **제안값**이고 확정은 실기기에서 나란히 보고 한다.
   BossManage: SlidersHorizontalIcon,
   Profit: ProfitIcon,
   // 가계부 = 장부. 달력 계열(`CalendarCheck` = 스케줄러 그룹)과 겹치지 않게 골랐다 —
-  // 위 다섯과 같은 **제안값**이고 확정은 실기기에서 나란히 보고 한다([[ADR-169]]).
+  // 위 다섯과 같은 **제안값**이고 확정은 실기기에서 나란히 보고 한다.
   Cashbook: CalendarIcon,
   Utility: WrenchIcon,
   Settings: GearIcon,
@@ -305,10 +305,10 @@ const ICONS: Readonly<Record<GroupId | TabRouteName, IconComponent>> = {
  *             검(칼날이 면으로 차고 손잡이 선은 남는다 — 사용자 판정으로 뒤늦게 편입)
  *   무너짐    톱니 → 가운데 구멍이 메워져 덩어리 ·
  *             달력·지갑 → 안쪽 체크·주머니를 잃음 · 목록·장부 → 선뿐이라 채울 «면» 이 없음
- *             수익(`ProfitIcon`) → 열린 호로 그린 커스텀이라 `fill="none"` 이 규격이다([[ADR-066]])
+ *  수익(`ProfitIcon`) → 열린 호로 그린 커스텀이라 `fill="none"` 이 규격이다
  *
  * 장바구니(지출)와 조준경(사냥 수익)이 이 표에서 빠진 것은 **그 두 탭이 없어졌기 때문**이다
- * ([[ADR-169]] 결정 2) — 판정이 바뀐 것이 아니다.
+ * 판정이 바뀐 것이 아니다.
  *
  * 아이콘 **컴포넌트**로 잡는 이유는 같은 그림이 두 자리에 쓰이기 때문이다(today 는 그룹과 페이지,
  * 렌치는 유틸리티 그룹과 페이지). 라우트 키로 잡으면 한쪽만 채워지는 사고가 난다.
@@ -343,13 +343,13 @@ interface BarItemProps {
    * 비활성 색 — `text-muted` 가 아니라 **채도를 뺀** 값이다(`bar-colors.ts` 의 `muted`).
    *
    * 바 안에서 색을 지는 자리는 활성 하나다. 클래스(`text-text-muted`)로 두면 레테처럼 `textMuted`
-   * 자체가 연보라인 테마에서 비활성까지 같은 색 계열로 읽힌다([[ADR-132]] 정정 24).
+   * 자체가 연보라인 테마에서 비활성까지 같은 색 계열로 읽힌다.
    */
   muted: string
   /** 층과 무관하게 같은 값이다 — 그룹 다섯이 꽉 찼을 때의 칸 폭(`BottomBar` 의 `itemWidth`). */
   width: number
   /**
-   * 알약 높이 = 바 높이 − 여백×2. **상수가 아니라 프롭인 것이 [[ADR-132]] 정정 30 이다** — 바
+   * 알약 높이 = 바 높이 − 여백×2. **상수가 아니라 프롭인 것이 이다** — 바
    * 세로가 기기 폭에서 나오므로 이 항목의 과녁도 함께 자란다(글리프는 안 자란다).
    */
   height: number
@@ -391,7 +391,7 @@ function BarItem({
           fixed
           numberOfLines={1}
           // `includeFontPadding` 은 **안드로이드에서만 읽히는 값**이고, 기본(참)일 때 글자 상자에
-          // 폰트 메트릭 여백을 더해 iOS 보다 큰 상자를 만든다 ([[ADR-132]] 정정 28). 실측으로
+          // 폰트 메트릭 여백을 더해 iOS 보다 큰 상자를 만든다. 실측으로
           // 아이콘→라벨이 27 → 30px 이 되고 블록이 5px 자라 **아이콘이 3px 위로 밀렸다** — 두
           // 플랫폼이 같은 리듬을 쓰려면 여기서 꺼야 한다(iOS 는 이 값을 무시한다).
           style={{ color: active ? accent : muted, includeFontPadding: false }}
@@ -405,14 +405,14 @@ function BarItem({
 }
 
 export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Element | null {
-  // **인셋이 아니라 하한이 깔린 값이다**([[ADR-132]] 정정 31) — 결정 11 의 들어올림이 0 이라 이
+  // **인셋이 아니라 하한이 깔린 값이다** — 결정 11 의 들어올림이 0 이라 이
   // 값이 곧 «캡슐이 바닥에서 뜨는 높이» 이고, 안드로이드 제스처 기기(15)에서는 그것이 iOS 의 절반도
   // 안 됐다. 콘텐츠가 남기는 몫(`ScreenScroll`)과 토스트도 같은 함수를 본다.
   const bottomSafeAreaPx = useBottomSafeAreaPx()
   const { definition } = useThemeAppearance()
   const lastSub = useLastSub()
   const isKeyboardShown = useKeyboardShown()
-  // **바의 세로는 창 폭에서 나온다**([[ADR-132]] 정정 30). 콘텐츠가 남기는 몫도 같은 함수를 보므로
+  // **바의 세로는 창 폭에서 나온다**. 콘텐츠가 남기는 몫도 같은 함수를 보므로
   // (`ScreenScroll` → `bottom-inset.ts`) 두 값이 어긋날 자리가 없다.
   const { width: windowWidth } = useWindowDimensions()
   const metrics = resolveBottomBarMetrics(windowWidth)
@@ -536,7 +536,7 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
     outputRange: [itemWidth + ROW_SHIFT, itemWidth],
   })
   // ← 는 전환의 **뒷절반에만** 존재한다 — 나갈 땐 먼저 비키고, 들어올 땐 자리가 다 생긴 뒤에 든다.
-  // ← 는 **투명도가 아니라 마운트로** 나타나고 사라진다 ([[ADR-132]] 정정 26).
+  // ← 는 **투명도가 아니라 마운트로** 나타나고 사라진다.
   //
   // 판이 `opacity: 0` 인 채로 마운트되면 iOS 가 그 `GlassView` 의 효과를 끄고, 뒤에 1 로 돌아와도
   // **되살리지 않는다.** 앱은 늘 그룹 행(← 없음)에서 시작하므로 매 실행마다 ← 만 재질을 잃었다 —
@@ -556,10 +556,10 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
     barRef.current = bar
   })
 
-  // 여기서 [[ADR-132]] 결정 9 의 광고 게이트를 태웠다(그래서 «무엇을 눌렀는가» 를 인자로 받았다).
-  // [[ADR-150]] 이 전면광고를 걷으며 함께 지웠다 — 지금 이 함수가 하는 일은 이동뿐이다.
+  // 여기서 의 광고 게이트를 태웠다(그래서 «무엇을 눌렀는가» 를 인자로 받았다).
+  //  이 전면광고를 걷으며 함께 지웠다 — 지금 이 함수가 하는 일은 이동뿐이다.
   //
-  // **상태가 아니라 지시를 받는다**([[ADR-167]] 결정 5) — 층은 스택이 들고 우리가 드는 것은
+  // **상태가 아니라 지시를 받는다** — 층은 스택이 들고 우리가 드는 것은
   // «다시 들어갈 자리»(`lastSub`) 하나다.
   const apply = useCallback(
     (intent: BarIntent) => {
@@ -599,7 +599,7 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
       testID="bottom-bar"
       style={{
         position: 'absolute',
-        // **좌우 여백은 «남는 폭을 가른» 값이다**([[ADR-132]] 정정 30). 상한(420)에 안 걸리는
+        // **좌우 여백은 «남는 폭을 가른» 값이다**. 상한(420)에 안 걸리는
         // 기기에서는 그냥 14 이고, 걸리면 남는 폭이 좌우로 갈라져 바가 가운데 선다. `width` 대신
         // 좌우를 주는 이유는 전제를 한 곳에 모으기 위해서다 — 어차피 «부모가 창 전체» 를 전제로
         // 폭을 계산했고, 여기서도 같은 전제를 쓰면 둘이 어긋날 수 없다.
@@ -637,7 +637,7 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
           glassEffectStyle="regular"
           // **OS 외형이 아니라 앱 테마를 따른다.** 기본값 `auto` 는 시스템 외형을 보는데, 이 앱은
           // 자체 테마를 쓴다 — 라이트 OS 에서 레테를 켜면 새까만 페이지 위에 밝은 유리판이 떴다
-          // (사용자 판정, [[ADR-132]] 정정 19).
+          // (사용자 판정).
           colorScheme={definition.mode}
           tintColor={colors.glassTint}
           pointerEvents="none"
@@ -798,7 +798,7 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
 
           남은 차이가 **트리에서의 자리** 하나였다. 알약은 바 루트의 직계 자식이고 ← 판만 두 겹
           안쪽(`Animated.View` → `Pressable` → `View`)에 있었다. 그래서 판을 꺼내 **알약과 같은
-          층**에 놓고, `Pressable` 은 그 위에 투명한 과녁으로만 남긴다([[ADR-132]] 정정 21). */}
+          층**에 놓고, `Pressable` 은 그 위에 투명한 과녁으로만 남긴다. */}
       {hasBack ? (
       <Animated.View
         testID="bar-back-plate"

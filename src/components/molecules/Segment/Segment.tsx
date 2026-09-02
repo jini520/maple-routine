@@ -4,7 +4,7 @@ import { Text } from '../../atoms'
 
 export function Segment<T extends string>(props: {
   options: readonly T[]
-  /** `null` 이면 **아무것도 안 골랐다** — 형태처럼 기본값을 안 정하는 자리가 있다([[ADR-166]] 정정 1). */
+  /** `null` 이면 **아무것도 안 골랐다** — 형태처럼 기본값을 안 정하는 자리가 있다. */
   selected: T | null
   onSelect: (value: T) => void
 }): React.JSX.Element {

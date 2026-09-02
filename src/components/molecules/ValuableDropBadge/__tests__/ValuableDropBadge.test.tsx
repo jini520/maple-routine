@@ -12,7 +12,7 @@ function drops(...names: string[]): RecordedDrop[] {
 }
 
 describe('ValuableDropBadge', () => {
-  it('라벨은 호출부가 정한다 — 자리마다 다른 문구를 받는다([[ADR-046]] 결정 4)', async () => {
+  it('라벨은 호출부가 정한다 — 자리마다 다른 문구를 받는다', async () => {
     const { getByTestId } = await renderAtom(
       <ValuableDropBadge drops={drops('칠흑의 보스 반지 상자')} label="이 기간 고가 드롭" />,
     )
@@ -58,7 +58,7 @@ describe('ValuableDropBadge', () => {
     ])
   })
 
-  // [[ADR-045]] 결정 3 — 골드는 **전 테마 공통 고정색**이다(테마 토큰이 아니다). 토큰으로 바꾸면
+  // 골드는 **전 테마 공통 고정색**이다(테마 토큰이 아니다). 토큰으로 바꾸면
   // 라이트 테마에서 배경에 묻힌다는 것이 그때의 실측 결론이었다.
   it('배지 골드는 테마와 무관한 고정 그라디언트다', async () => {
     const 머쉬맘 = await renderAtom(<ValuableDropBadge drops={drops('a')} label="고가 드롭" />)
@@ -143,7 +143,7 @@ describe('ValuableDropBadge', () => {
     ])
   })
 
-  // 배치는 호출부가 정한다([[ADR-046]] 결정 4) — 카드 우상단 절대배치 · 헤드라인 인라인 · 히스토리 줄.
+  // 배치는 호출부가 정한다 — 카드 우상단 절대배치 · 헤드라인 인라인 · 히스토리 줄.
   it('className 은 코어 뒤에 이어 붙는다', async () => {
     const { getByTestId } = await renderAtom(
       <ValuableDropBadge drops={drops('a')} label="고가 드롭" className="absolute -right-1.5 -top-2" />,

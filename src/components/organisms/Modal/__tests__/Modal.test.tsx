@@ -78,7 +78,7 @@ describe('Modal', () => {
     expect(style.padding).toBe(24)
   })
 
-  // [[ADR-065]] 결정 2 — 업데이트 모달의 부 동작 버튼이 작아 아래 여백이 커 보이던 것.
+  // 업데이트 모달의 부 동작 버튼이 작아 아래 여백이 커 보이던 것.
   it('Modal.Card 의 tight 는 하단 패딩만 줄인다', async () => {
     const { getByText } = await renderOverlay(
       <Modal onClose={noop}>
@@ -112,7 +112,7 @@ describe('Modal', () => {
     expect(style.maxWidth).toBe(384)
   })
 
-  // [[ADR-122]]: 라이트에서만 테두리를 배경색 쪽으로 눌러 가라앉힌다. RN 에는 선택자가 없어
+  // : 라이트에서만 테두리를 배경색 쪽으로 눌러 가라앉힌다. RN 에는 선택자가 없어
   // 그 결과를 `--color-panel-border` 토큰이 값으로 갖고 있고(`theme/theme-vars.ts`), 이 케이스는
   // **`Card` atom 의 `border-border` 를 그것이 실제로 덮는지**를 지킨다 — 클래스 순서가 아니라
   // 생성된 스타일시트 순서에 달린 자리라, 조용히 뒤집히면 라이트 모달 테두리가 도드라진다.
@@ -157,7 +157,7 @@ describe('Modal', () => {
     expect(style.paddingTop).toBeUndefined()
   })
 
-  // [[ADR-120]] 결정 18 후반 — 하드웨어 뒤로가기는 스택을 pop 하지 않고 이 오버레이만 닫는다.
+  //  후반 — 하드웨어 뒤로가기는 스택을 pop 하지 않고 이 오버레이만 닫는다.
   it('안드로이드 뒤로가기(onRequestClose)가 onClose 로 이어진다', async () => {
     const onClose = jest.fn()
     const { getByTestId } = await renderOverlay(

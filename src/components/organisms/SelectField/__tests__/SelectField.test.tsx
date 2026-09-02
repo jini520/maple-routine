@@ -1,5 +1,5 @@
 /**
- * 라벨–값 줄 모양의 커스텀 드롭다운([[ADR-173]] 결정 14).
+ * 라벨–값 줄 모양의 커스텀 드롭다운.
  *
  * **jest 는 레이아웃을 안 잰다** — `measureInWindow` 도 `onLayout` 도 안 오므로 목록은 늘
  * `opacity: 0` 이다(`AccountSelect` 테스트와 같은 사정). 여기서 지키는 것은 **내용과 배선**이고,
@@ -80,7 +80,7 @@ describe('SelectField', () => {
     expect(onSelect).toHaveBeenCalledWith(null)
   })
 
-  // 스크림이 없다 — 잡기만 한다([[ADR-144]] 결정 6 ①).
+  // 스크림이 없다 — 잡기만 한다.
   it('바깥을 누르면 닫힌다', async () => {
     const { view } = await 그리기()
     await 누르기(view, 'pick-trigger')
@@ -90,7 +90,7 @@ describe('SelectField', () => {
     expect(view.queryByTestId('pick-list')).toBeNull()
   })
 
-  // 목록이 갱신되는 순간 고른 값이 사라질 수 있다 — 렌더 중에 던지지 않는다([[ADR-127]]).
+  // 목록이 갱신되는 순간 고른 값이 사라질 수 있다 — 렌더 중에 던지지 않는다.
   it('고른 값이 목록에 없어도 안 죽는다', async () => {
     const { view } = await 그리기('사라진-ocid')
 

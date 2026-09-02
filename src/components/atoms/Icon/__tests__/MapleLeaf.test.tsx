@@ -1,4 +1,4 @@
-// 잎은 «아이콘처럼 쓰이지만 lucide 규격은 아닌» 자리다([[ADR-199]] 정정 1). 그 둘을 다 지키는지
+// 잎은 «아이콘처럼 쓰이지만 lucide 규격은 아닌» 자리다. 그 둘을 다 지키는지
 // 본다 — 호출부 프롭은 아이콘과 같고, 칠은 lucide 프리셋을 안 받는다.
 import Settings from 'lucide-react-native/icons/settings'
 
@@ -6,7 +6,7 @@ import { findAllOfType, flattenStyle, renderAtom, 기본테마 } from '../../../
 import { MapleLeaf } from '../MapleLeaf'
 import { LEAF_GRID } from '../maple-leaf'
 
-describe('MapleLeaf ([[ADR-199]] 정정 1·3)', () => {
+describe('MapleLeaf', () => {
   it('잎 격자로 선다 — 정사각이 아니다', async () => {
     const { getByTestId } = await renderAtom(<MapleLeaf size={42} />)
 

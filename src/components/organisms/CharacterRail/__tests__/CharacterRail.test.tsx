@@ -1,4 +1,4 @@
-// 레일의 계약([[ADR-142]] 결정 1). 칸 하나가 무엇을 그리는지는 `CharacterPortrait` 의 테스트가 든다.
+// 레일의 계약. 칸 하나가 무엇을 그리는지는 `CharacterPortrait` 의 테스트가 든다.
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { renderAtom } from '../../../__tests__/render-atom'
@@ -73,13 +73,13 @@ describe('CharacterRail', () => {
     expect(scroll.props.showsHorizontalScrollIndicator).toBe(false)
   })
 
-  // [[ADR-145]] 결정 5 — 링이 없는 레일(관리 화면 둘)도 같은 간격을 쓴다. 값을 정하는 곳은
+  // 링이 없는 레일(관리 화면 둘)도 같은 간격을 쓴다. 값을 정하는 곳은
   // `PORTRAIT_RAIL` 이고 여기서 물을 것은 **레일이 그 값을 실제로 보는가** 다. 숫자를 손으로 적어
   // 두면 치수 표와 레일이 서로 다른 값을 믿는 상태가 조용히 만들어진다.
   it.each([
     ['링이 있어도', [{ label: '주간', completed: 1, total: 5 }] as CharacterRailEntry['rings']],
     ['링이 없어도', [] as CharacterRailEntry['rings']],
-  ])('%s 같은 간격을 쓴다 ([[ADR-161]] 결정 1)', async (_label, rings) => {
+  ])('%s 같은 간격을 쓴다', async (_label, rings) => {
     const view = await render([entry({ rings })])
 
     const style = view.getByTestId('character-rail-scroll').props.contentContainerStyle as {

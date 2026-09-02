@@ -17,9 +17,9 @@ import type { ImageAssetRef } from '../../../types/image-asset'
 
 /**
  * 연출 프레임 목록. **숫자 순으로 정렬돼 있고 여기서 다시 안 한다.** 파일명 렉시코 정렬은 `10 < 2`
- * 라 틀리는데 그 정렬은 생성기가 한다([[ADR-129]]).
+ * 라 틀리는데 그 정렬은 생성기가 한다.
  *
- * @see [[ADR-038]]
+ * @see
  */
 export const DROP_EFFECT_FRAMES: Record<DropEffectPhase | 'screen', ImageAssetRef[]> =
   DROP_EFFECT_ASSETS

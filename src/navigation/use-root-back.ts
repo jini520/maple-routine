@@ -3,7 +3,7 @@ import { BackHandler } from 'react-native'
 import { moveAppToBackground } from '../native/back-gesture'
 
 /**
- * 스택이 비었을 때의 뒤로가기 — **묻지 않고 백그라운드로**([[ADR-120]] 결정 18).
+ * 스택이 비었을 때의 뒤로가기 — **묻지 않고 백그라운드로**.
  *
  * ## 이것만 프레임워크가 안 해 준다
  *
@@ -26,7 +26,7 @@ import { moveAppToBackground } from '../native/back-gesture'
  *
  * 판정을 `canGoBack()` **하나**로 둔 것이 그 성질을 만든다. "스택 깊이 > 0" 을 우리가 따로 세면
  * 그 값과 실제 내비게이션 상태가 어긋날 수 있고, 어긋난 프레임에서 뒤로가기가 두 단계 가거나
- * (웹뷰 시절 [[ADR-120]] 결정 6-b 가 `touchcancel` 에서 겪은 실패) 아무 일도 안 하게 된다.
+ * (웹뷰 시절-b 가 `touchcancel` 에서 겪은 실패) 아무 일도 안 하게 된다.
  *
  * ## 모달은 아직 여기 없다
  *
@@ -48,7 +48,7 @@ export function useRootBackToBackground(navigation: RootBackNavigation): void {
       if (!navigation.isReady()) return false
       if (navigation.canGoBack()) return false
 
-      // **판정이 다시 하나다**([[ADR-167]] 결정 7). [[ADR-132]] 결정 10 은 하단바의 «층» 기록이
+      // **판정이 다시 하나다**. 은 하단바의 «층» 기록이
       // react-navigation 이 모르는 우리 것이라 `canGoBack()` 에 안 잡힌다는 이유로 여기에 단을
       // 하나 더 뒀었다. 층이 진짜 스택이 된 지금은 그 판정에 **하위 층까지 포함해** 잡히므로,
       // 여기까지 왔다는 것은 정말로 pop 할 것이 없다는 뜻이다.

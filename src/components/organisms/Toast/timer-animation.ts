@@ -5,7 +5,7 @@
 //
 // **`TIMER_ANIMATION_BASE` 는 내보내지 않는다.** 이 고정 부분을 웹 선언과 견주던
 // `keyframes-parity.test.ts` 가 웹 소스와 함께 지워져 밖에서 볼 이유가 없어졌고
-// ([[ADR-155]]·[[ADR-156]]), 아래 `timerAnimation()` 만 이 값을 쓴다.
+// 아래 `timerAnimation()` 만 이 값을 쓴다.
 //
 // **지속시간만 빠져 있다.** 토스트마다 다르고(성공 2초 / 정보 2.5초) 그래서 웹도 클래스로 못 적고
 // 인라인 `style` 로 넣던 자리다(`animation: toast-shrink ${toast.duration}ms linear forwards`).

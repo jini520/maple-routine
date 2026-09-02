@@ -1,4 +1,4 @@
-// 모달은 **오버레이 + 패널** 두 조각의 합성이다([[ADR-094]] 3단계).
+// 모달은 **오버레이 + 패널** 두 조각의 합성이다(3단계).
 //
 // 왜 프롭이 아니라 구조인가 — 예전 API 는 `card` `maxWidth` `align` `tightBottom` 네 프롭을
 // 가졌고, 그중 `card={false}` 는 "카드 껍데기를 빼 달라"는 뜻이었다. 껍데기의 **유무**는 켜고 끄는
@@ -6,7 +6,7 @@
 // `maxWidth`·`tight` 는 그것이 실제로 의미를 갖는 패널에만 붙는다.
 //
 // 오버레이가 소유하는 취약 구조(전체 화면 덮기·스크림·안전영역 오프셋·바깥 탭)는 그대로 한곳에
-// 남는다 — 호출부가 그 관계를 깰 수 없다([[ADR-094]] 결정 1).
+// 남는다 — 호출부가 그 관계를 깰 수 없다.
 //
 // ── RN 으로 옮기며 갈린 것 다섯 ─────────────────────────────────────────────────────
 //
@@ -20,10 +20,10 @@
 //    누가 가져가는지(responder)를 정한다. 자식 `View` 가 터치를 안 가져가면 **바깥 `Pressable` 이
 //    받아 모달이 닫힌다** — 그래서 두 패널이 웹에서 `onClick={stopClickPropagation}` 을 갖던 바로
 //    그 자리에서 responder 를 선언한다(같은 자리, 같은 목적).
-// ④ **안드로이드 뒤로가기 → 닫기**([[ADR-120]] 결정 18 후반, 2단계가 organisms 몫으로 남긴 자리).
+// ④ **안드로이드 뒤로가기 → 닫기**(후반, 2단계가 organisms 몫으로 남긴 자리).
 // ⑤ **`overflow-y-auto` 는 안 옮긴다.** 웹은 오버레이가 스크롤을 가져 내용이 길면 굴렸는데, RN 에서
 //    같은 것을 하려면 스크롤 컨테이너가 바깥 탭 영역을 통째로 덮어 "바깥을 눌러 닫기"가 죽는다.
-//    [[ADR-107]] 결정 3 이 세운 규칙("스크롤포트는 **쓰는 쪽**이 자기 자리에 맞게 둔다")을 그대로
+//  이 세운 규칙("스크롤포트는 **쓰는 쪽**이 자기 자리에 맞게 둔다")을 그대로
 //    적용해, 길어질 수 있는 모달이 자기 안에 스크롤포트를 둔다.
 import type { ReactNode } from 'react'
 import { Modal as RNModal, Pressable, View } from 'react-native'
@@ -58,7 +58,7 @@ interface ModalPanelProps {
 interface ModalCardProps extends ModalPanelProps {
   /**
    * 하단 패딩만 줄인다(`p-6` → `pb-4`). 부 동작 버튼이 작아 아래 여백이 상대적으로 커 보이는
-   * 모달에 쓴다([[ADR-065]] 결정 2 — 업데이트 모달).
+   * 모달에 쓴다(— 업데이트 모달).
    */
   tight?: boolean
 }
@@ -69,7 +69,7 @@ const claimTouch = (): boolean => true
 /**
  * 카드 껍데기(테두리·배경·패딩)를 갖는 패널. 모달 대부분이 이것을 쓴다.
  *
- * 스크림 위 테두리 톤다운은 `border-panel-border` 한 클래스다([[ADR-122]]) — 웹의
+ * 스크림 위 테두리 톤다운은 `border-panel-border` 한 클래스다 — 웹의
  * `:root[data-mode='light'] .panel-on-scrim` 규칙이 계산하던 결과를 토큰으로 미리 만들어 뒀고
  * (`src/theme/theme-vars.ts`), 모드 분기는 거기서 `definition.mode` 로 딱 한 번 일어난다.
  * `Card` atom 이 갖고 있는 `border-border` 를 이 클래스가 덮는다.
@@ -91,7 +91,7 @@ function ModalCard(props: ModalCardProps): React.JSX.Element {
  * 껍데기 없이 위치만 잡는 패널 — children 이 이미 자기 카드 스타일을 갖고 있을 때 쓴다
  * (예: 온보딩 화면에서 그대로 재사용하는 `AccountFlowStatus`).
  *
- * **[[ADR-122]] 결정 3 의 두 클래스 중 이쪽 짝은 RN 에 없다.** 웹은
+ * ** 의 두 클래스 중 이쪽 짝은 RN 에 없다.** 웹은
  * `.panel-on-scrim-parent > *` 로 **직계 자식**의 테두리를 톤다운했는데, RN 에는 자손 선택자가
  * 없어 부모가 자식의 스타일을 정할 방법이 없다. 그래서 그 결정이 지키려던 것("스크림 위라는
  * 사실은 오버레이가 소유한다")을 **자식이 `border-panel-border` 를 직접 쓰는 것**으로 대신한다.

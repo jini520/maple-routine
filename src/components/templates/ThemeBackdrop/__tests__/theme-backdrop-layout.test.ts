@@ -1,6 +1,6 @@
 // 테마 벽지 기하 — CSS `background-size: cover` + `background-position` 을 그대로 옮겼는지 본다.
 //
-// **이 계산이 한 곳인 것이 [[ADR-088]] 결정 5-1 의 조건**이다. 백드롭(전면)과 헤더 조각이 같은
+// **이 계산이 한 곳인 것이 의 조건**이다. 백드롭(전면)과 헤더 조각이 같은
 // 값을 써야 이음매가 없고, 값이 두 벌이면 한쪽만 바뀌어도 아무 데서도 안 드러난다. 그래서 여기서
 // 지키는 것은 «그림이 예쁜가» 가 아니라 **두 자리가 같은 식을 쓰는가** 다.
 import { parseBackgroundPosition, resolveThemeBackdropLayout } from '../theme-backdrop-layout'

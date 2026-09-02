@@ -10,7 +10,7 @@
  * 이 파일은 조립만 한다. 얼굴은 `CharacterAvatar`, 링은 `PortraitRing`, 글자는 `PortraitCaption`,
  * 치수는 `portrait-metrics` 가 갖는다.
  *
- * @see [[ADR-204]] 정정 1. 규격 둘이 한 부품이 된 경위.
+ * @see. 규격 둘이 한 부품이 된 경위.
  */
 import { Pressable, View } from 'react-native'
 
@@ -22,7 +22,7 @@ import { PORTRAIT_COMPACT, PORTRAIT_RAIL } from './portrait-metrics'
 import { PortraitCaption } from './PortraitCaption'
 import { EmptyRing, ProgressArc, SegmentedRing, type PortraitRingProgress } from './PortraitRing'
 
-/** 안 고른 칸의 불투명도. 0.45 는 칸이 여섯을 넘으면 안 잡혔다([[ADR-161]] 결정 2). */
+/** 안 고른 칸의 불투명도. 0.45 는 칸이 여섯을 넘으면 안 잡혔다. */
 const SELECTED_DIM_OPACITY = 0.3
 
 interface CommonProps {
@@ -56,10 +56,10 @@ export function CharacterPortrait(props: CharacterPortraitProps): React.JSX.Elem
 }
 
 /**
- * 그림이 없을 때의 머리글자. 바탕이 있어야 얼굴이 없다는 것이 읽힌다([[ADR-188]] 결정 1).
+ * 그림이 없을 때의 머리글자. 바탕이 있어야 얼굴이 없다는 것이 읽힌다.
  *
  * 글자 크기를 호출부가 정한다. 규격마다 다르고(레일 14 · compact 12) 여기서 하나로 고르면 화면이
- * 바뀐다. 통일할지는 [[ADR-204]] 의 열린 질문이다.
+ * 바뀐다. 통일할지는 의 열린 질문이다.
  */
 function InitialFallback(props: {
   name: string
@@ -115,7 +115,7 @@ function RailPortrait(props: RailPortraitProps): React.JSX.Element {
       aria-selected={props.isSelected}
       aria-label={`${props.level !== null ? `Lv.${props.level} ` : ''}${props.characterName}${ringsLabel}`}
       onPress={props.onPress}
-      // 고른 칸은 그대로 두고 나머지를 흐리게 한다. 레이아웃은 안 움직인다([[ADR-145]] 결정 5).
+      // 고른 칸은 그대로 두고 나머지를 흐리게 한다. 레이아웃은 안 움직인다.
       style={{
         opacity: props.isSelected ? 1 : SELECTED_DIM_OPACITY,
         width: PORTRAIT_RAIL.slotW,
