@@ -44,7 +44,7 @@ import { Pressable, View, type GestureResponderEvent } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 
 import type { ToastItem, ToastVariant } from '../../../features/toast/store'
-import { shouldDismissFromSwipe } from '../../../lib/swipe-dismiss'
+import { shouldDismissFromSwipe } from './swipe-dismiss'
 
 import {
   AlertCircleIcon,

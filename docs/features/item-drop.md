@@ -37,7 +37,7 @@
 | 계산 | `lib/drop/drop-price.ts` | 판매가를 수익으로 환산 |
 | 계산 | `lib/assets/asset-lookup.ts` | 아이콘 조회. 일반 아이템은 `item-icons.json`, 반지는 `boss-ring-boxes.json` 의 `iconFile` 이다. 매핑이 없으면 플레이스홀더 |
 | 연출 | `components/organisms/DropEffectOverlay/` | 전체화면 연출 |
-| 연출 | `lib/assets/asset-lookup.ts` · `lib/drop/drop-effect-layout.ts` | 프레임 목록과 origin 테이블 |
+| 연출 | `components/organisms/DropEffectOverlay/drop-effect-layout.ts` | 프레임 목록과 origin 테이블 |
 | 도구 | `scripts/measure-drop-effect-origins.py` | origin 재계측 |
 | 참조 | `src/data/item-drop-table.json` | 보스별 드롭 테이블 |
 | 참조 | `src/data/boss-ring-boxes.json` · `accessory-boxes.json` | 상자 개봉 후보 |
@@ -192,7 +192,7 @@ black-crush와 `mix-blend:screen` 을 써서 29MB 를 약 2MB 로 줄였다. 원
 [[ADR-048]] 이다. 프레임 비트맵 크기가 제각각이라(가로 38~285px) 하단 중앙 앵커로는 기둥 축이 최대
 26px 흔들린다.
 
-최적화 과정에서 잃은 WZ `origin` 을 템플릿 정합으로 복원해 `lib/drop/drop-effect-layout.ts` 의
+최적화 과정에서 잃은 WZ `origin` 을 템플릿 정합으로 복원해 `components/organisms/DropEffectOverlay/drop-effect-layout.ts` 의
 테이블(39프레임 `[x, y]`)로 두고, `DropEffectOverlay` 가 그 점을 화면 앵커에 맞춘다
 (`transformOrigin:'0 0'` + `translate(-x·S,-y·S) scale(S)`). y는 전부 비트맵 하단(지면선)에 고정한다.
 

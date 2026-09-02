@@ -151,7 +151,7 @@ describe('Toast', () => {
   })
 })
 
-// 임계값(70px)은 `src/lib/swipe-dismiss` 가 갖는다 — 여기서는 그 판정이 제스처에 이어지는지만 본다.
+// 임계값(70px)은 `../swipe-dismiss` 가 갖는다 — 여기서는 그 판정이 제스처에 이어지는지만 본다.
 describe('Toast — 스와이프로 닫기', () => {
   /** 시작 → 이동 → 뗌. 웹판이 `pointerdown/move/up` 을 순서대로 쏘던 것과 같다. */
   async function swipe(root: AtomElement, dx: number): Promise<void> {

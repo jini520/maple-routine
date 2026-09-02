@@ -1,8 +1,6 @@
 import { BOSS_PORTRAIT_ASSETS } from '../../assets/generated/bosses'
 import { DAILY_QUEST_BACKGROUND_ASSETS } from '../../assets/generated/maps'
 import { DAILY_QUEST_ICON_ASSETS } from '../../assets/generated/map-icons'
-import { DROP_EFFECT_ASSETS } from '../../assets/generated/drop-effect'
-import type { DropEffectPhase } from '../drop/drop-effect-layout'
 import { FORCE_ASSETS } from '../../assets/generated/force'
 import type { ForceType } from '../../types/hunting-grounds'
 import { ITEM_ASSETS } from '../../assets/generated/items'
@@ -234,14 +232,3 @@ export function spendIconOf(label: string): SpendIcon | null {
 
   return null
 }
-
-// ── 드랍 연출 ────────────────────────────────────────────────────────────────────────
-
-/**
- * 고가 아이템 드롭 연출 프레임. **숫자 순으로 정렬돼 있고 여기서 다시 안 한다.** 파일명 렉시코
- * 정렬은 `10 < 2` 라 틀리는데 그 정렬은 생성기가 한다.
- *
- * @see [[ADR-038]]
- */
-export const DROP_EFFECT_FRAMES: Record<DropEffectPhase | 'screen', ImageAssetRef[]> =
-  DROP_EFFECT_ASSETS

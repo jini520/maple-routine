@@ -12,6 +12,18 @@
 // 계측해야 한다. 프레임 수가 어긋나는 것만 테스트가 잡고, 값의 드리프트는 잡지 못한다.
 // 재계측: `python3 scripts/measure-drop-effect-origins.py` — 아래 테이블을 그대로 찍어 준다.
 
+import { DROP_EFFECT_ASSETS } from '../../../assets/generated/drop-effect'
+import type { ImageAssetRef } from '../../../types/image-asset'
+
+/**
+ * 연출 프레임 목록. **숫자 순으로 정렬돼 있고 여기서 다시 안 한다.** 파일명 렉시코 정렬은 `10 < 2`
+ * 라 틀리는데 그 정렬은 생성기가 한다([[ADR-129]]).
+ *
+ * @see [[ADR-038]]
+ */
+export const DROP_EFFECT_FRAMES: Record<DropEffectPhase | 'screen', ImageAssetRef[]> =
+  DROP_EFFECT_ASSETS
+
 export type DropEffectPhase = 'pre' | 'loop' | 'end'
 
 export type DropEffectOrigin = readonly [x: number, y: number]
