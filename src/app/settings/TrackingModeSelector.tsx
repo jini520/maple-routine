@@ -1,11 +1,13 @@
-// TrackingModeModal 안에 들어가는 선택 목록. 모달 자체가 카드 역할을 하므로 여기서는 카드
-// 테두리를 다시 두르지 않는다. 문구와 **카드 안쪽 구조** 모두 온보딩 `TrackingModeStep` 과 같아야
-// 한다. 공용 카피 `features/tracking-mode/copy` 를 함께 쓰므로 한쪽만 고치면
-// 같은 선택지가 두 화면에서 다르게 생긴다. 규격은 `docs/features/settings.md` `트래킹 모드 옵션 카드`.
-//
-// **RN 에서 갈린 것은 온보딩 쪽과 완전히 같다**. 그쪽 파일(`app/onboarding/TrackingModeStep.tsx`)
-// 머리의 셋(`aria-pressed`→`aria-selected` · 글자 클래스가 안쪽 `Text` 로 · `hover:` 제거)을 그대로
-// 따른다. 두 화면이 같은 모양이어야 한다는 결정 22 가 **갈라지는 방식까지** 같기를 요구한다.
+/**
+ * TrackingModeModal 안에 들어가는 선택 목록. 모달 자체가 카드 역할을 하므로 여기서는 카드
+ * 테두리를 다시 두르지 않는다. 문구와 **카드 안쪽 구조** 모두 온보딩 `TrackingModeStep` 과 같아야
+ * 한다. 공용 카피 `features/tracking-mode/copy` 를 함께 쓰므로 한쪽만 고치면
+ * 같은 선택지가 두 화면에서 다르게 생긴다. 규격은 `docs/features/settings.md` `트래킹 모드 옵션 카드`.
+ *
+ * **RN 에서 갈린 것은 온보딩 쪽과 완전히 같다**. 그쪽 파일(`app/onboarding/TrackingModeStep.tsx`)
+ * 머리의 셋(`aria-pressed`→`aria-selected` · 글자 클래스가 안쪽 `Text` 로 · `hover:` 제거)을 그대로
+ * 따른다. 두 화면이 같은 모양이어야 한다는 결정 22 가 **갈라지는 방식까지** 같기를 요구한다.
+ */
 import { Pressable, View } from 'react-native'
 
 import { TRACKING_MODE_OPTIONS } from '../../features/tracking-mode/copy'

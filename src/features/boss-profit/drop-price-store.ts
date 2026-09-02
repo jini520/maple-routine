@@ -1,11 +1,13 @@
-// 가격 기록 화면의 상태. 한 주를 놓고 드롭에 값을 매긴다.
-//
-// 히스토리 스토어(`drop-history-store`)와 형제이되 축과 성격이 다르다: 저쪽은 **전 기간 읽기
-// 전용**이고 여기는 **한 주 쓰기**다. 그래서 저장 경로(`savePrice`·`skipPrice`)가 함께 산다.
-//
-// **왜 원본 레코드를 들고 있나**. 저장이 `replaceBossDropRecords`(그룹 통째 교체)라, 한 건의
-// 가격만 고치려 해도 **같은 (ocid, boss, difficulty, periodKey) 의 나머지 드롭을 함께 넘겨야**
-// 한다. 넘기지 않으면 그 그룹의 다른 기록이 사라진다.
+/**
+ * 가격 기록 화면의 상태. 한 주를 놓고 드롭에 값을 매긴다.
+ *
+ * 히스토리 스토어(`drop-history-store`)와 형제이되 축과 성격이 다르다: 저쪽은 **전 기간 읽기
+ * 전용**이고 여기는 **한 주 쓰기**다. 그래서 저장 경로(`savePrice`·`skipPrice`)가 함께 산다.
+ *
+ * **왜 원본 레코드를 들고 있나**. 저장이 `replaceBossDropRecords`(그룹 통째 교체)라, 한 건의
+ * 가격만 고치려 해도 **같은 (ocid, boss, difficulty, periodKey) 의 나머지 드롭을 함께 넘겨야**
+ * 한다. 넘기지 않으면 그 그룹의 다른 기록이 사라진다.
+ */
 
 import { withSqliteTimeout } from './sqlite-guards'
 import { create } from 'zustand'

@@ -1,16 +1,18 @@
-// 캐릭터 카드를 펼쳤을 때의 **본문**(화면에서 분리).
-//
-// 주간은 보스 행 목록만, 월간은 주차별 소계 + 월간 보스 행이다. 소계 행은 그 주를 조회할 수
-// 있는지에 따라 얼굴이 갈린다.
-//
-// ── RN 으로 옮기며 갈린 것 넷 ─────────────────────────────────────────────────────
-//
-// ① `<ul>`/`<li>` 가 사라진다(RN 에 목록 시맨틱이 없다). 대신 **마지막 보스 행을 부모가 알려
-//    준다**. 웹의 `last:border-b-transparent` 짝이다(`BossProfitBossRow` 의 `isLast`).
-// ② `space-y-*` → `gap-*`(NativeWind 에 형제 선택자가 없다).
-// ③ 팝오버 앵커가 비동기로 온다. 보스 행과 **같은 훅**(`useAnchoredPopover`)을 쓴다. 스크롤로
-//    닫던 효과는 별도 네이티브 윈도우라 구조가 대신 지킨다(`ItemRevenuePopover` 파일 머리 ②).
-// ④ 글자가 상자에서 `Text` 로 내려오고 `tabular-nums` 는 값으로 준다(`lib/text-styles.ts`).
+/**
+ * 캐릭터 카드를 펼쳤을 때의 **본문**(화면에서 분리).
+ *
+ * 주간은 보스 행 목록만, 월간은 주차별 소계 + 월간 보스 행이다. 소계 행은 그 주를 조회할 수
+ * 있는지에 따라 얼굴이 갈린다.
+ *
+ * ── RN 으로 옮기며 갈린 것 넷 ─────────────────────────────────────────────────────
+ *
+ * ① `<ul>`/`<li>` 가 사라진다(RN 에 목록 시맨틱이 없다). 대신 **마지막 보스 행을 부모가 알려
+ *    준다**. 웹의 `last:border-b-transparent` 짝이다(`BossProfitBossRow` 의 `isLast`).
+ * ② `space-y-*` → `gap-*`(NativeWind 에 형제 선택자가 없다).
+ * ③ 팝오버 앵커가 비동기로 온다. 보스 행과 **같은 훅**(`useAnchoredPopover`)을 쓴다. 스크롤로
+ *    닫던 효과는 별도 네이티브 윈도우라 구조가 대신 지킨다(`ItemRevenuePopover` 파일 머리 ②).
+ * ④ 글자가 상자에서 `Text` 로 내려오고 `tabular-nums` 는 값으로 준다(`lib/text-styles.ts`).
+ */
 import { Pressable, View } from 'react-native'
 
 import type { WeeklySubtotalState } from '../../features/boss-profit/store'

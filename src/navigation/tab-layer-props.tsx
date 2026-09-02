@@ -1,8 +1,10 @@
-// 층 안의 탭 내비게이터 셋이 공유하는 props.
-//
-// **파일이 따로인 이유는 벽지다.** 이 상수가 `screenLayout` 을 들어야 하는데(아래), 그것을
-// `Main.tsx` 에 두면 **컴포넌트만 내보내는 파일** 규칙이 깨져 fast refresh 가 죽는다. 값이 한 곳에
-// 있어야 셋이 갈라지지 않으므로 파일을 가른다.
+/**
+ * 층 안의 탭 내비게이터 셋이 공유하는 props.
+ *
+ * **파일이 따로인 이유는 벽지다.** 이 상수가 `screenLayout` 을 들어야 하는데(아래), 그것을
+ * `Main.tsx` 에 두면 **컴포넌트만 내보내는 파일** 규칙이 깨져 fast refresh 가 죽는다. 값이 한 곳에
+ * 있어야 셋이 갈라지지 않으므로 파일을 가른다.
+ */
 import type { ReactNode } from 'react'
 
 import { ScreenBackdrop } from '../components/templates/ThemeBackdrop/ScreenBackdrop'

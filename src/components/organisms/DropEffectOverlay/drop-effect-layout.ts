@@ -1,16 +1,18 @@
-// 고가 드롭 연출의 프레임 배치 기하. DropEff 프레임별 origin·기둥 배율, ScreenEff 고정 배율.
-//
-// DropEff origin: 각 값은 "그 프레임 비트맵 자신의 픽셀 좌표"로 표현한 빛 기둥의 지면 접점 [x, y]이고,
-// DropEffectOverlay 는 이 점을 화면의 고정 앵커에 맞춰 프레임을 배치한다.
-//
-// 인게임 클라이언트는 WZ 스프라이트마다 origin 을 갖지만 이 에셋은 원본 PNG 시퀀스를 검은배경 JPEG 로
-// 최적화하면서 origin 메타데이터가 유실됐다. 그래서 값을 추정하지 않고 커밋된 비트맵에서
-// 계측해 복원했다. x 는 loop 평균을 템플릿으로 한 matched filter 정합(수렴 후 서브픽셀 보간),
-// y 는 전 프레임 비트맵 하단(콘텐츠 하단 여백이 3~6px 로 일정 = 기둥이 지면선에서 잘려 있음).
-//
-// CRITICAL: 에셋(`packages/core/src/assets/drop-effect/{pre,loop,end}`)을 다시 export 하면 이 테이블도 함께 다시
-// 계측해야 한다. 프레임 수가 어긋나는 것만 테스트가 잡고, 값의 드리프트는 잡지 못한다.
-// 재계측: `python3 scripts/measure-drop-effect-origins.py`. 아래 테이블을 그대로 찍어 준다.
+/**
+ * 고가 드롭 연출의 프레임 배치 기하. DropEff 프레임별 origin·기둥 배율, ScreenEff 고정 배율.
+ *
+ * DropEff origin: 각 값은 "그 프레임 비트맵 자신의 픽셀 좌표"로 표현한 빛 기둥의 지면 접점 [x, y]이고,
+ * DropEffectOverlay 는 이 점을 화면의 고정 앵커에 맞춰 프레임을 배치한다.
+ *
+ * 인게임 클라이언트는 WZ 스프라이트마다 origin 을 갖지만 이 에셋은 원본 PNG 시퀀스를 검은배경 JPEG 로
+ * 최적화하면서 origin 메타데이터가 유실됐다. 그래서 값을 추정하지 않고 커밋된 비트맵에서
+ * 계측해 복원했다. x 는 loop 평균을 템플릿으로 한 matched filter 정합(수렴 후 서브픽셀 보간),
+ * y 는 전 프레임 비트맵 하단(콘텐츠 하단 여백이 3~6px 로 일정 = 기둥이 지면선에서 잘려 있음).
+ *
+ * CRITICAL: 에셋(`packages/core/src/assets/drop-effect/{pre,loop,end}`)을 다시 export 하면 이 테이블도 함께 다시
+ * 계측해야 한다. 프레임 수가 어긋나는 것만 테스트가 잡고, 값의 드리프트는 잡지 못한다.
+ * 재계측: `python3 scripts/measure-drop-effect-origins.py`. 아래 테이블을 그대로 찍어 준다.
+ */
 
 import { DROP_EFFECT_ASSETS } from '../../../assets/generated/drop-effect'
 import type { ImageAssetRef } from '../../../types/image-asset'

@@ -1,8 +1,10 @@
-// 기능 사용법 안내. **원천은 기능 카탈로그 한 벌**이고 개발 노트는 거기로 링크만
-// 건다(결정 1 정정, 2026-08-10). 같은 설명을 버전 축과 기능 축에 두 벌 두면 반드시 갈라진다.
-//
-// 노트 항목은 이 안내를 `ReleaseNoteItem.guideId`(+ `guideSectionId`) 문자열로 가리킨다. 본문이
-// 아니라 id 인 이유는 배포 스크립트가 `release-notes.ts` 를 Node 에서 직접 import 하기 때문이다.
+/**
+ * 기능 사용법 안내. **원천은 기능 카탈로그 한 벌**이고 개발 노트는 거기로 링크만
+ * 건다(결정 1 정정, 2026-08-10). 같은 설명을 버전 축과 기능 축에 두 벌 두면 반드시 갈라진다.
+ *
+ * 노트 항목은 이 안내를 `ReleaseNoteItem.guideId`(+ `guideSectionId`) 문자열로 가리킨다. 본문이
+ * 아니라 id 인 이유는 배포 스크립트가 `release-notes.ts` 를 Node 에서 직접 import 하기 때문이다.
+ */
 
 import type { ImageAssetRef } from './image-asset'
 

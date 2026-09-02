@@ -74,6 +74,21 @@ describe('주석 문체', () => {
     expect(offenders(/—/, allow)).toEqual([])
   })
 
+  it('파일 머리 주석은 JSDoc 이다', () => {
+    // `//` 는 선언에 안 붙어서 호출부에서 마우스를 올려도 안 보인다. `/** */` 는 붙는다.
+    // 머리 주석이 아예 없는 파일은 규칙 밖이다. 테스트 파일도 뺀다.
+    const slash: string[] = []
+    for (const file of FILES) {
+      if (file.includes('__tests__')) continue
+      const first = readFileSync(file, 'utf8')
+        .split('\n')
+        .find((l) => l.trim() !== '')
+      if (first?.trim().startsWith('//') === true) slash.push(file.slice(SRC.length + 1))
+    }
+
+    expect(slash).toEqual([])
+  })
+
   it('허용 목록이 낡지 않았다', () => {
     // 그 파일에서 `—` 가 사라졌으면 목록에서도 빼야 한다. 안 그러면 예외가 조용히 쌓인다.
     const stale = DASH_ALLOWED.filter((a) => !readFileSync(join(SRC, a.file), 'utf8').includes('—'))

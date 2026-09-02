@@ -1,4 +1,6 @@
-// PreferencesPort는 평문 저장이며 Keychain/Keystore 수준 암호화를 보장하지 않는다. 강화된 보안 저장 도입은 이후 별도 task로 미룬다.
+/**
+ * PreferencesPort는 평문 저장이며 Keychain/Keystore 수준 암호화를 보장하지 않는다. 강화된 보안 저장 도입은 이후 별도 task로 미룬다.
+ */
 import { preferences } from './ports'
 import type { NexonAuthConfig } from '../types'
 import { STORAGE_KEYS } from './keys'

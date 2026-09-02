@@ -1,7 +1,9 @@
-// 앱 전체가 쓰는 글꼴과 글자 상자의 기본값. `Text` 와 `TextInput` 이 같이 쓴다.
-//
-// 값을 여기 두는 이유는 `font-scaling.ts` 와 같다. 컴포넌트 파일에서 상수를 더 내보내면
-// `react-refresh` 규칙에 걸린다.
+/**
+ * 앱 전체가 쓰는 글꼴과 글자 상자의 기본값. `Text` 와 `TextInput` 이 같이 쓴다.
+ *
+ * 값을 여기 두는 이유는 `font-scaling.ts` 와 같다. 컴포넌트 파일에서 상수를 더 내보내면
+ * `react-refresh` 규칙에 걸린다.
+ */
 
 import { Platform } from 'react-native'
 

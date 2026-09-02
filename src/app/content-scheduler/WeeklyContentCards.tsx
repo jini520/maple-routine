@@ -1,12 +1,14 @@
-// **주간** 컨텐츠 카드(화면에서 분리). 에픽 던전·지역 주간 퀘스트·
-// 메이플 유니온·길드 3종.
-//
-// 카드마다 배경 일러스트와 배지 구성이 다르고, 어느 것을 그릴지는 `renderWeeklyContentCard` 가
-// 이름으로 가른다. 전부 자기 카드 안에서 끝나 화면의 고정 헤더와 무관하다.
-//
-// RN 으로 갈린 것은 일간 카드와 **같은 넷**이라 그쪽 파일 머리에 한 번만 적는다
-// (`DailyContentCards.tsx`). bleed 는 `FadedIllustration`, 껍데기는 `IllustratedCard`, `flex-row` 명시,
-// `<img>`/`<span>`/`text-shadow` 의 짝.
+/**
+ * **주간** 컨텐츠 카드(화면에서 분리). 에픽 던전·지역 주간 퀘스트·
+ * 메이플 유니온·길드 3종.
+ *
+ * 카드마다 배경 일러스트와 배지 구성이 다르고, 어느 것을 그릴지는 `renderWeeklyContentCard` 가
+ * 이름으로 가른다. 전부 자기 카드 안에서 끝나 화면의 고정 헤더와 무관하다.
+ *
+ * RN 으로 갈린 것은 일간 카드와 **같은 넷**이라 그쪽 파일 머리에 한 번만 적는다
+ * (`DailyContentCards.tsx`). bleed 는 `FadedIllustration`, 껍데기는 `IllustratedCard`, `flex-row` 명시,
+ * `<img>`/`<span>`/`text-shadow` 의 짝.
+ */
 import { isContentBlocked } from '../../lib/scheduler/required-level'
 import {
   getBossPortraitCrop,

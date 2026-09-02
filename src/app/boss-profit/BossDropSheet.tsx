@@ -1,31 +1,33 @@
-// 보스 드롭 기록 시트(→ →).
-//
-// 시트 껍데기는 `components/organisms/BottomSheet` 가 이미 소유한다(3단계). 여기서 다시 만들지
-// 않는다. 이 파일이 갖는 것은 **무엇을 고르게 할 것인가**다: 난이도 필터, 장비·소비 타일, 읽기
-// 전용 고정 드롭, 상자 드릴다운, 그리고 기록 직후의 가격 물음.
-//
-// ══ RN 으로 옮기며 갈린 것 여섯 ═══════════════════════════════════════════════════
-//
-// ① **CSS `grid` 가 없다.** `grid-cols-4 gap-2` 는 `flex-row flex-wrap` + 자식 `w-1/4` 로 옮기고,
-//    간격은 **자식 패딩 + 부모 음수 마진**으로 만든다. 퍼센트 폭과 `gap` 을 섞으면 4열의 마지막
-//    칸이 밀려 3열이 되는데(전체 폭 − 간격 합을 퍼센트로 표현할 수 없다), 패딩 방식은 그 계산이
-//    아예 없다. `col-span-2`(고정 드롭 3개의 마지막 칸)는 `w-full` 이다.
-// ② **하단 바가 `sticky` 가 아니다.** 웹은 `sticky bottom-0` 로 스크롤 중에도 `추가 완료`를
-//    붙들었다. RN 에서 그 짝은 `@gorhom/bottom-sheet` 의 `footerComponent` 인데, 그것은 시트
-//    **껍데기**(3단계 organism)의 API 라 여기서 정할 일이 아니다. 지금은 웹의 DOM 순서 그대로
-//    내용 맨 끝에 흐르게 두고, 실기기에서 "긴 시트에서 버튼이 멀다"가 확인되면 그때 껍데기에
-//    붙인다(육안 대조 목록). 안전영역 하단 패딩은 **껍데기가 이미 준다**(`BottomSheet` 의
-//    `contentContainerStyle`). 여기서 또 주면 두 겹이 된다.
-// ③ **가격 키패드는 step 8 이 채웠다**. 자리표시자였던 드릴다운에 `DropPricePadContent` 가 들어간다.
-//    흐름(`기록 → 확인 → 입력 → 복귀`)과 상태(`pricing`·`justAdded`)는 step 6 부터 그대로였고,
-//  가르지 않고 자리만 남겨 둔 이유가 의 **"시트가 살아서 하던 작업을 잇는다"**
-//    였다. 시트를 닫는 형태로 임시 구현했다면 그 계약이 사라졌을 것이다.
-// ④ `transition-colors`/`transition-transform`(연출 토글) → **없다.** 값이 즉시 바뀐다.
-// ⑤ `<button aria-pressed>` → **`aria-selected`**. RN 의 접근성 매핑에 `aria-pressed` 가 없어
-//    그대로 두면 **선택 상태가 조용히 사라진다**(에러 없이. 이 저장소가 반복해 만난 실패 모양,
-//    실측 확인). `aria-selected` 는 `accessibilityState.selected` 로 접힌다.
-// ⑥ 글자가 상자에서 `Text` 로 내려온다. `line-clamp-2` 는 `numberOfLines={2}` 이고, `text-balance`·
-//    `break-keep` 은 짝이 없어 사라진다(줄바꿈 품질만 달라진다).
+/**
+ * 보스 드롭 기록 시트(→ →).
+ *
+ * 시트 껍데기는 `components/organisms/BottomSheet` 가 이미 소유한다(3단계). 여기서 다시 만들지
+ * 않는다. 이 파일이 갖는 것은 **무엇을 고르게 할 것인가**다: 난이도 필터, 장비·소비 타일, 읽기
+ * 전용 고정 드롭, 상자 드릴다운, 그리고 기록 직후의 가격 물음.
+ *
+ * ══ RN 으로 옮기며 갈린 것 여섯 ═══════════════════════════════════════════════════
+ *
+ * ① **CSS `grid` 가 없다.** `grid-cols-4 gap-2` 는 `flex-row flex-wrap` + 자식 `w-1/4` 로 옮기고,
+ *    간격은 **자식 패딩 + 부모 음수 마진**으로 만든다. 퍼센트 폭과 `gap` 을 섞으면 4열의 마지막
+ *    칸이 밀려 3열이 되는데(전체 폭 − 간격 합을 퍼센트로 표현할 수 없다), 패딩 방식은 그 계산이
+ *    아예 없다. `col-span-2`(고정 드롭 3개의 마지막 칸)는 `w-full` 이다.
+ * ② **하단 바가 `sticky` 가 아니다.** 웹은 `sticky bottom-0` 로 스크롤 중에도 `추가 완료`를
+ *    붙들었다. RN 에서 그 짝은 `@gorhom/bottom-sheet` 의 `footerComponent` 인데, 그것은 시트
+ *    **껍데기**(3단계 organism)의 API 라 여기서 정할 일이 아니다. 지금은 웹의 DOM 순서 그대로
+ *    내용 맨 끝에 흐르게 두고, 실기기에서 "긴 시트에서 버튼이 멀다"가 확인되면 그때 껍데기에
+ *    붙인다(육안 대조 목록). 안전영역 하단 패딩은 **껍데기가 이미 준다**(`BottomSheet` 의
+ *    `contentContainerStyle`). 여기서 또 주면 두 겹이 된다.
+ * ③ **가격 키패드는 step 8 이 채웠다**. 자리표시자였던 드릴다운에 `DropPricePadContent` 가 들어간다.
+ *    흐름(`기록 → 확인 → 입력 → 복귀`)과 상태(`pricing`·`justAdded`)는 step 6 부터 그대로였고,
+ *  가르지 않고 자리만 남겨 둔 이유가 의 **"시트가 살아서 하던 작업을 잇는다"**
+ *    였다. 시트를 닫는 형태로 임시 구현했다면 그 계약이 사라졌을 것이다.
+ * ④ `transition-colors`/`transition-transform`(연출 토글) → **없다.** 값이 즉시 바뀐다.
+ * ⑤ `<button aria-pressed>` → **`aria-selected`**. RN 의 접근성 매핑에 `aria-pressed` 가 없어
+ *    그대로 두면 **선택 상태가 조용히 사라진다**(에러 없이. 이 저장소가 반복해 만난 실패 모양,
+ *    실측 확인). `aria-selected` 는 `accessibilityState.selected` 로 접힌다.
+ * ⑥ 글자가 상자에서 `Text` 로 내려온다. `line-clamp-2` 는 `numberOfLines={2}` 이고, `text-balance`·
+ *    `break-keep` 은 짝이 없어 사라진다(줄바꿈 품질만 달라진다).
+ */
 import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
