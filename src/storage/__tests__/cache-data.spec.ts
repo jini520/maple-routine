@@ -10,8 +10,8 @@ import {
 } from '../cache-data'
 import { BOSS_PROFIT_TABLE_NAMES, getBossProfitDb } from '../sqlite/db'
 // 한시적 core→app 참조 — `features/settings/cache-data` 가 core 로 오면(step 6) 상대
-// 경로로 돌아온다. 이 파일이 검사하는 `닫기 → 커버 → 리로드` 순서(ADR-117 결정 8)와 storage 쪽
-// 삭제 범위(ADR-052·058)는 같은 계약의 앞뒤라 떼어 놓지 않는다.
+// 경로로 돌아온다. 이 파일이 검사하는 `닫기 → 커버 → 리로드` 순서와 storage 쪽
+// 삭제 범위(058)는 같은 계약의 앞뒤라 떼어 놓지 않는다.
 import { clearCacheDataAndReload } from '../../features/settings/cache-data'
 
 // 팩토리 밖 이름은 `mock` 접두만 끌어올 수 있고 팩토리가 여러 번 불릴 수 있어, **같은 목을
@@ -37,10 +37,10 @@ function mockOnce(name: string, label: string): jest.Mock {
   return shared[name]
 }
 
-// clearCacheDataAndReload의 "닫기 → 커버 → 리로드" 순서를 잡기 위한 공유 호출 기록(ADR-117 결정 8).
+// clearCacheDataAndReload의 "닫기 → 커버 → 리로드" 순서를 잡기 위한 공유 호출 기록.
 // 각 mock이 호출되는 시점에 이름을 push하므로 배열 자체가 곧 실행 순서다. toHaveBeenCalled로는
 // 순서가 안 잡히고, 이 step이 고치는 것이 정확히 순서다.
-// ADR-052 결정 2: 삭제 대상 테이블 목록은 db.ts가 단일 진실 공급원이므로, 커넥션(getBossProfitDb)만
+// 삭제 대상 테이블 목록은 db.ts가 단일 진실 공급원이므로, 커넥션(getBossProfitDb)만
 // 가짜로 바꾸고 BOSS_PROFIT_TABLE_NAMES는 실제 값을 그대로 쓴다. 목록까지 모킹하면 "실제 테이블
 // 전부를 지우는가"를 검증하지 못한다.
 jest.mock('../sqlite/db', () => ({
@@ -82,9 +82,9 @@ beforeEach(async () => {
   jest.clearAllMocks()
 })
 
-// ADR-058 결정 2: 그룹 정의는 열거가 아니라 차집합이다. records만 명시 목록이고 general은
+// 그룹 정의는 열거가 아니라 차집합이다. records만 명시 목록이고 general은
 // 나머지 전부로 파생된다. 이 성질이 깨지면 새 테이블이 어느 그룹에도 안 잡혀 영영 안 지워진다
-// (ADR-052가 없앤 누락 결함의 부호만 뒤집힌 형태).
+// (가 없앤 누락 결함의 부호만 뒤집힌 형태).
 describe('그룹 ↔ 테이블 분할', () => {
   it('두 그룹의 합집합이 db.ts가 정의한 테이블 전체와 같다', () => {
     const union = new Set([...GENERAL_TABLE_NAMES, ...RECORD_TABLE_NAMES])
@@ -98,15 +98,15 @@ describe('그룹 ↔ 테이블 분할', () => {
     expect(GENERAL_TABLE_NAMES.filter((table) => records.has(table))).toEqual([])
   })
 
-  // ADR-058 결정 3: 재조회 표식만 남고 기록이 사라지면 loadPeriod의 isPeriodChecked 가드가
-  // 백필을 건너뛰어(ADR-023), API가 아직 주는 최근 2주치마저 되살릴 수 없게 된다.
+  // 재조회 표식만 남고 기록이 사라지면 loadPeriod의 isPeriodChecked 가드가
+  // 백필을 건너뛰어, API가 아직 주는 최근 2주치마저 되살릴 수 없게 된다.
   it('boss_profit_period_checks는 수익 기록과 같은 그룹이다', () => {
     expect(RECORD_TABLE_NAMES).toContain('boss_profit_records')
     expect(RECORD_TABLE_NAMES).toContain('boss_drop_records')
     expect(RECORD_TABLE_NAMES).toContain('boss_profit_period_checks')
   })
 
-  // ADR-058 결정 4: 기록이 아니라 설정이고, 어느 쪽으로 지워도 위험한 조합이 없다.
+  // 기록이 아니라 설정이고, 어느 쪽으로 지워도 위험한 조합이 없다.
   it('boss_party_settings는 일반 데이터 그룹이다', () => {
     expect(GENERAL_TABLE_NAMES).toContain('boss_party_settings')
   })
@@ -126,7 +126,7 @@ describe('그룹 ↔ 테이블 분할', () => {
 })
 
 describe('clearCacheData', () => {
-  // ADR-052 결정 1: trackingMode·dropEffect는 재조회로 복구되는 캐시가 아니라 사용자가 고른
+  // trackingMode·dropEffect는 재조회로 복구되는 캐시가 아니라 사용자가 고른
   // 취향 설정이라, theme과 같이 캐시 삭제에도 보존한다.
   it('apiKey·theme·trackingMode·dropEffect는 남긴다', async () => {
     await clearCacheData()
@@ -147,7 +147,7 @@ describe('clearCacheData', () => {
     }
   })
 
-  // 인자 없는 호출은 선택 삭제 도입 전과 같아야 한다(ADR-058 — 호출부 호환).
+  // 인자 없는 호출은 선택 삭제 도입 전과 같아야 한다(호출부 호환).
   it('인자 없이 호출하면 두 그룹을 모두 지운다', async () => {
     await clearCacheData()
 
@@ -226,7 +226,7 @@ describe('getCacheDataSizes', () => {
     // schedulerCache:ocid-1 '{}'(2) + characterBasicCache:index '[]'(2)
     // + trackedCharacters '[]'(2) + lastSelectedCharacter 'ocid-1'(6) = 12.
     // 보존 키(apiKey·selectedAccountId·theme·trackingMode·dropEffect)는 삭제되지 않으므로 제외 —
-    // trackingMode 'manual'(6)·dropEffect 'off'(3)를 seed해도 합계가 늘지 않아야 한다(ADR-052 결정 1).
+    // trackingMode 'manual'(6)·dropEffect 'off'(3)를 seed해도 합계가 늘지 않아야 한다.
     expect(sizes.general).toBe(12)
   })
 
@@ -262,10 +262,10 @@ describe('getCacheDataSizes', () => {
   })
 })
 
-// ADR-117 결정 8 — 캐시 삭제 경로는 OTA 적용 경로와 **같은 결함**을 갖고 있었다: 커버를 먼저
+// 캐시 삭제 경로는 OTA 적용 경로와 **같은 결함**을 갖고 있었다: 커버를 먼저
 // 올린 뒤 매달릴 수 있는 닫기를 돌고, 화면을 되살리는 일(reload)이 그 뒤에 있었다. 닫기가 응답하지
 // 않으면 리로드에 도달하지 못하고 브랜드 주황 커버만 남는다(이슈 #175와 같은 증상, 다른 트리거).
-// 여기서 고치는 것은 순서 하나뿐이다. 실패 UX는 만들지 않는다(ADR-065 결정 3: 항상 리로드하고
+// 여기서 고치는 것은 순서 하나뿐이다. 실패 UX는 만들지 않는다(: 항상 리로드하고
 // 실패는 pendingNotice로 부팅 후에 알린다).
 describe('clearCacheDataAndReload', () => {
   const ALL: CacheDataSelection = { general: true, records: true }
@@ -316,7 +316,7 @@ describe('clearCacheDataAndReload', () => {
   })
 
   // 커버는 시각적 장치일 뿐이라, 그것이 실패했다고 리로드를 막으면 본말전도다
-  // (ADR-027 2026-07-17 추가의 "스플래시 표시가 실패해도 진행한다"가 그대로 유효하다).
+  // (2026-07-17 추가의 "스플래시 표시가 실패해도 진행한다"가 그대로 유효하다).
   it('커버 표시가 실패해도 리로드한다', async () => {
     mockShowSplashMock.mockRejectedValueOnce(new Error('splash failed'))
     const reload = jest.fn(() => {

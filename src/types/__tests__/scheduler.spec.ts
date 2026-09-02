@@ -188,7 +188,7 @@ describe('wire 타입 샘플 객체 (Nexon API 원본 응답 그대로)', () => 
     expect(sample.character_name).toBe('낟낟')
   })
 
-  it('NexonSchedulerCharacterStateWire은 daily_contents/weekly_contents/boss_contents를 생략할 수 있다 (ADR-030: 미접속 시 응답에 없을 수 있음)', () => {
+  it('NexonSchedulerCharacterStateWire은 daily_contents/weekly_contents/boss_contents를 생략할 수 있다 (: 미접속 시 응답에 없을 수 있음)', () => {
     const sample: NexonSchedulerCharacterStateWire = {
       date: '2026-07-21T00:00+09:00',
       character_name: '낟낟',

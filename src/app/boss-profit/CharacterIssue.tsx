@@ -33,7 +33,7 @@ import { AlertTriangleIcon, BanIcon, Text } from '../../components/atoms'
 import { useThemeAppearance } from '../../theme/context'
 import type { PopoverAnchorRect } from './ItemRevenuePopover'
 
-// ADR-068 결정 3: 동기화가 실패한 캐릭터를 **카드에서** 식별한다. 전에는 토스트가 인원 수만 알려
+// 동기화가 실패한 캐릭터를 **카드에서** 식별한다. 전에는 토스트가 인원 수만 알려
 // 어느 카드인지 알 수 없었다(가 남긴 숙제, 이슈 #78 B).
 //
 // **표식은 아이콘 하나다. 금액 옆, 라벨 없음**(시안 A에서 두 번 정정, 실물 확인 후 사용자 확정

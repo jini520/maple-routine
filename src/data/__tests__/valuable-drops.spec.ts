@@ -3,7 +3,7 @@ import bossRingBoxes from '../boss-ring-boxes.json'
 import itemDropTable from '../item-drop-table.json'
 import valuableDrops from '../valuable-drops.json'
 
-// valuable-drops.json이 실제 존재하는 세트/아이템만 가리키게 강제한다(오타·유령 참조 방지, ADR-038).
+// valuable-drops.json이 실제 존재하는 세트/아이템만 가리키게 강제한다(오타·유령 참조 방지).
 
 const CATEGORIES = ['fixed', 'equipment', 'consumable'] as const
 

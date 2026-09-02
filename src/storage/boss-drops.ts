@@ -1,7 +1,7 @@
 import { getBossProfitDb } from './sqlite/db'
 import type { DropCategory, RecordedDrop } from '../types/drops'
 
-// ADR-038 결정 5: 한 보스/기간의 드롭 집합은 시트에서 통째로 편집되므로 replace-all(DELETE→INSERT)이
+// 한 보스/기간의 드롭 집합은 시트에서 통째로 편집되므로 replace-all(DELETE→INSERT)이
 // 수정에 가장 단순하다. drop_index 다중 행으로 저장한다. `storage/boss-profit.ts` 어댑터 패턴을 미러한다.
 //
 // **금액을 함께 저장한다**(반전). 기록 한 건에 붙는 실판매가다. 시세표가

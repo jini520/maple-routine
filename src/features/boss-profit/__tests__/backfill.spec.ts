@@ -19,7 +19,7 @@ beforeEach(() => {
   getBossDropRecordsMock.mockReset().mockResolvedValue([])
 })
 
-describe('loadPreviousPeriodTotal — 결정석만 (ADR-124 결정 7 정정)', () => {
+describe('loadPreviousPeriodTotal — 결정석만 (정정)', () => {
   it('결정석 기록 합만 낸다 — 그 기간에 아이템을 팔았어도 더하지 않는다', async () => {
     getBossProfitRecordsMock.mockResolvedValue([{ payoutMeso: 6_800_000_000 }])
     getBossDropRecordsMock.mockResolvedValue([

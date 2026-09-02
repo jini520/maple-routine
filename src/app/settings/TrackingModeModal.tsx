@@ -29,7 +29,7 @@ export interface TrackingModeModalProps {
 
 export function TrackingModeModal(props: TrackingModeModalProps): React.JSX.Element {
   const { mode, setMode } = useTrackingModeStore()
-  // ADR-035 결정 23: 옵션 탭은 고르는 것일 뿐이다. 고른 값을 여기서 들고 있다가 "적용"에서
+  // 옵션 탭은 고르는 것일 뿐이다. 고른 값을 여기서 들고 있다가 "적용"에서
   // 한 번만 setMode를 부른다. 전에는 탭이 곧 적용이라 되돌릴 자리가 없었다.
   const [selected, setSelected] = useState<TrackingMode>(mode)
   const [isApplying, setIsApplying] = useState(false)
@@ -38,7 +38,7 @@ export function TrackingModeModal(props: TrackingModeModalProps): React.JSX.Elem
   async function handleApply(): Promise<void> {
     if (isUnchanged) return
     setIsApplying(true)
-    // ADR-035 결정 15: setMode는 수동 전환 시 시드가 전부 끝난 뒤에만 resolve된다. 시드가
+    // setMode는 수동 전환 시 시드가 전부 끝난 뒤에만 resolve된다. 시드가
     // 끝나기 전에 닫으면 사용자가 방금 고른 모드가 아직 준비 안 된 상태를 보게 되므로 await 후 닫는다.
     await setMode(selected)
     //  정정: 시드는 저장소를 채우지만 수동 모드의 표시 목록을 정하는 것은 스토어
@@ -66,7 +66,7 @@ export function TrackingModeModal(props: TrackingModeModalProps): React.JSX.Elem
         </View>
         <TrackingModeSelector mode={selected} isApplying={isApplying} onSelect={setSelected} />
 
-        {/* ADR-035 결정 23: 설정의 다른 확정 모달(DisconnectConfirm/CacheClearConfirm)과 같은 골격.
+        {/*: 설정의 다른 확정 모달(DisconnectConfirm/CacheClearConfirm)과 같은 골격.
             다른 것은 색뿐 — 모드 전환은 파괴적 동작이 아니라 진행 동작이라 border-error 가 아니다. */}
         <View className="mt-4 flex-row justify-end gap-2">
           <Button

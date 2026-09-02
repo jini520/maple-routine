@@ -38,12 +38,12 @@ const navigate = jest.fn()
 // 층이 스택이 된 뒤로 **그룹 층으로 되돌리기** 는 액션이다. 화면이 이것도 부른다.
 const dispatch = jest.fn()
 
-// ADR-063: 동기화 실패는 인라인 문단이 아니라 토스트다.
+// 동기화 실패는 인라인 문단이 아니라 토스트다.
 jest.mock('../../../features/toast/store', () => ({
   useToastStore: { getState: () => ({ showError: mockShowError, showSuccess: jest.fn(), showInfo: jest.fn() }) },
 }))
 
-// ADR-115 결정 7 · ADR-116 결정 1: 401·429 는 토스트가 아니라 키 재입력 진입점으로 간다.
+// 결정 7 결정 1: 401·429 는 토스트가 아니라 키 재입력 진입점으로 간다.
 jest.mock('../../../features/onboarding/store', () => ({
   useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
 }))

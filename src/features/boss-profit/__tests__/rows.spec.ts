@@ -1,8 +1,8 @@
-// 행 도메인 순수 함수 직접 검증 — store.ts 에서 분리하며 비로소 가능해진 것이다(ADR-094 5단계).
+// 행 도메인 순수 함수 직접 검증 — store.ts 에서 분리하며 비로소 가능해진 것이다(5단계).
 //
 // 그 전에는 export 된 것이 dropRowKey 하나뿐이라, 89개 스토어 테스트가 전부 스토어를 거쳐
 // 간접 검증했다. 정렬처럼 "입력을 어떻게 주느냐"가 핵심인 로직은 그 방식으로는 경우를
-// 만들기가 번거로워, 실제로 결정적 정렬(ADR-036·#28)에 직접 붙은 테스트가 없었다.
+// 만들기가 번거로워, 실제로 결정적 정렬(#28)에 직접 붙은 테스트가 없었다.
 import weeklyBossesData from '../../../data/weekly-bosses.json'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
 import type { ManualTrackedItem } from '../../../storage/manual-tracked-content'
@@ -46,7 +46,7 @@ describe('sortRowsByOcidOrder', () => {
     expect(sorted.map((r) => r.ocid)).toEqual(['a', 'b'])
   })
 
-  // ADR-036·#28: 예전에는 ocid 로만 정렬하고 stable sort 에 기대 보스 순서를 데이터 소스가
+  // ·#28: 예전에는 ocid 로만 정렬하고 stable sort 에 기대 보스 순서를 데이터 소스가
   // 만든 순서 그대로 물려받았는데, 그 소스 순서가 비결정적이라(ORDER BY 없는 조회, Map 삽입
   // 순서) 로드마다 보스 순서가 달라졌다.
   it('같은 캐릭터 안에서는 참조 데이터 순서로 보스를 결정적으로 정렬한다', () => {
@@ -116,7 +116,7 @@ describe('matchesRowKey', () => {
     expect(matchesRowKey(row(), key)).toBe(true)
   })
 
-  it('난이도만 달라도 다른 행이다 — 등록 난이도 ≠ 처치 난이도 오류의 근원(ADR-033)', () => {
+  it('난이도만 달라도 다른 행이다 — 등록 난이도 ≠ 처치 난이도 오류의 근원', () => {
     expect(matchesRowKey(row({ difficulty: '하드' }), key)).toBe(false)
   })
 })
@@ -126,7 +126,7 @@ describe('matchesRowKey', () => {
 // `lib/boss/boss-drops` 쪽 동명 함수보다 **이쪽이 더 자주 터진다**. 저장소 행 → 도메인 변환이라
 // 난이도 확정 같은 특수 상황이 아니라 **DB에서 읽을 때마다** 지나간다. 여기서 필드를 빠뜨리면
 // 저장은 됐는데 화면은 영영 "미입력"으로 보인다.
-describe('toRecordedDrop — 가격 필드 (ADR-124)', () => {
+describe('toRecordedDrop — 가격 필드', () => {
   const base = {
     ocid: 'ocid-1',
     boss: '스우',

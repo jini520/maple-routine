@@ -27,7 +27,7 @@ export function getMostRecentWeeklyResetKst(now: Date): Date {
 }
 
 /**
- * 주어진 시점의 KST 기준 "오늘 날짜"를 YYYY-MM-DD로 반환한다 (ADR-030 — 일간 리셋 버킷 계산용).
+ * 주어진 시점의 KST 기준 "오늘 날짜"를 YYYY-MM-DD로 반환한다 (일간 리셋 버킷 계산용).
  * getMostRecentWeeklyResetKst와 동일하게 기기 로컬 타임존과 무관하게 항상 KST 기준으로 계산한다.
  */
 export function getCurrentKstDateKey(now: Date): string {

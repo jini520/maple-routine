@@ -1,4 +1,4 @@
-// 데이터에 선언된 **모든** 슬러그가 실제 번들 URL로 해석되는지 전수 검사한다(ADR-093).
+// 데이터에 선언된 **모든** 슬러그가 실제 번들 URL로 해석되는지 전수 검사한다.
 //
 // 왜 필요한가 — 자산 최적화(PNG→WebP 변환·고아 삭제)는 **파일만 바꾸고 코드를 안 바꾼다.**
 // 그래서 슬러그 하나가 해석되지 않아도 예외가 나지 않고 화면에는 폴백(일러스트 없는 카드)이
@@ -29,7 +29,7 @@ function collectPortraitSlugs(node: unknown, acc: Set<string>): void {
   })
 }
 
-describe('자산 슬러그 전수 해석 (ADR-093)', () => {
+describe('자산 슬러그 전수 해석', () => {
   it('weekly-bosses.json의 portraitSlug가 하나도 빠짐없이 URL로 해석된다', () => {
     const slugs = new Set<string>()
     collectPortraitSlugs(weeklyBossesData, slugs)
@@ -47,9 +47,9 @@ describe('자산 슬러그 전수 해석 (ADR-093)', () => {
     expect(unresolved).toEqual([])
   })
 
-  // 배경을 가진 테마는 현재 **0종**이다. 그림을 바꾸는 중이라 둘 다 뗐다(ADR-106).
+  // 배경을 가진 테마는 현재 **0종**이다. 그림을 바꾸는 중이라 둘 다 뗐다.
   // 0건이면 이 검사는 저절로 초록이 되므로, 원래 있던 `length > 0` 가르개를 떼는 대신 skip 으로
-  // 남긴다(ADR-106 결정 4). 새 그림이 붙으면 손대지 않아도 되살아난다.
+  // 남긴다. 새 그림이 붙으면 손대지 않아도 되살아난다.
   const declaredThemeBackgrounds = Object.entries(
     jobThemesData as Record<string, { background?: { image?: string } }>,
   )

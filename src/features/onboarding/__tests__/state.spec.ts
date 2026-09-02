@@ -80,7 +80,7 @@ describe('onboardingReducer', () => {
 
 
 
-  it('SELECT_TRACKING_MODE — selectingContentCharacters로 전이한다(ADR-035 결정 13)', () => {
+  it('SELECT_TRACKING_MODE — selectingContentCharacters로 전이한다', () => {
     const selecting: OnboardingState = {
       status: 'selectingTrackingMode',
       accounts: [account('acc-1')],
@@ -96,7 +96,7 @@ describe('onboardingReducer', () => {
     })
   })
 
-  it('SUBMIT_CONTENT_CHARACTERS — seedingTracking으로 전이한다(ADR-035 결정 15)', () => {
+  it('SUBMIT_CONTENT_CHARACTERS — seedingTracking으로 전이한다', () => {
     const selecting: OnboardingState = {
       status: 'selectingContentCharacters',
       accounts: [account('acc-1')],
@@ -128,9 +128,9 @@ describe('onboardingReducer', () => {
     })
   })
 
-  // ADR-115 결정 10: status를 바꾸지 않는 유일한 이벤트다. 뒤에 원래 화면이 남아 있어야
+  // status를 바꾸지 않는 유일한 이벤트다. 뒤에 원래 화면이 남아 있어야
   // 사용자가 무엇을 하다 이렇게 됐는지 보면서 이유를 읽는다. 이동은 확인 후 RESET이 한다.
-  // ADR-116 결정 1: 원인 둘(무효 키·429)이 같은 사슬을 타므로 이벤트가 kind를 싣는다.
+  // 원인 둘(무효 키·429)이 같은 사슬을 타므로 이벤트가 kind를 싣는다.
   it.each(['invalid', 'rateLimited'] as const)(
     'API_KEY_NOTICED(%s) — 원인만 담고 status·계정은 건드리지 않는다',
     (kind) => {
@@ -147,7 +147,7 @@ describe('onboardingReducer', () => {
     },
   )
 
-  // ADR-116 결정 2: 처방이 같아 갈아끼울 실익이 없고, 읽던 문구가 눈앞에서 바뀌면 안 된다.
+  // 처방이 같아 갈아끼울 실익이 없고, 읽던 문구가 눈앞에서 바뀌면 안 된다.
   // 같은 객체를 돌려주는 것까지 단언한다. 아니면 원인이 겹칠 때마다 헛렌더가 난다.
   it('API_KEY_NOTICED — 이미 알림이 있으면 덮어쓰지 않고 같은 state를 그대로 돌려준다', () => {
     const noticed: OnboardingState = {

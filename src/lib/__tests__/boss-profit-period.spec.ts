@@ -93,7 +93,7 @@ describe('isLatestPeriod', () => {
   })
 })
 
-describe('containsInProgressWeek / isPeriodRefreshable (ADR-076)', () => {
+describe('containsInProgressWeek / isPeriodRefreshable', () => {
   // 2026-07-30(목)이 7월의 마지막 리셋이라 7월 5주차는 8/5까지 이어진다. 8/1에 7월은 지난 달이
   // 되지만 그 주는 여전히 진행 중이다.
   const inWindow = new Date('2026-08-02T12:00:00+09:00') // 이번 주 2026-07-30, 이번 달 2026-08
@@ -169,7 +169,7 @@ describe('isPeriodQueryable', () => {
     expect(isPeriodQueryable('weekly', '2026-06-18', recentNow)).toBe(false) // 조회일 2026-06-24 < MIN_SCHEDULER_DATE
   })
 
-  // ADR-067 결정 2 정정 2: 상한이 생겼다. 이 테스트는 전에 "조회일이 아직 안 지났어도 날짜
+  // 상한이 생겼다. 이 테스트는 전에 "조회일이 아직 안 지났어도 날짜
   // 비교상 통과"를 그대로 기록하고 있었는데, 그게 바로 버그였다. 현재 달의 조회일(그 달
   // 마지막 날)은 미래이고 실제로 호출하면 400 OPENAPI00004다(실측).
   it('monthly: 그 달의 마지막 날이 아직 오지 않았으면 false다 (상한)', () => {
@@ -292,7 +292,7 @@ describe('getBackfillQueryDate', () => {
   })
 })
 
-// ADR-067 결정 2(+정정 1·2): 기간 상태를 여섯 가지로 나눈다. 판정에 필요한 입력을 전부 인자로
+// 결정 2(+정정 1·2): 기간 상태를 여섯 가지로 나눈다. 판정에 필요한 입력을 전부 인자로
 // 받는 순수 함수라 store·화면이 같은 값을 공유할 수 있다(전에는 화면은 isPeriodQueryable,
 // 백필은 target별로 따로 판정해 월간 탭에서 두 문구가 동시에 뜨는 경로가 있었다. 이슈 #78 E).
 describe('resolvePeriodDataState', () => {

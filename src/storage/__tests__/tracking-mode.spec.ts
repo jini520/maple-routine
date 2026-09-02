@@ -8,7 +8,7 @@ beforeEach(async () => {
   await prefs.remove('trackingMode')
 })
 
-describe('미선택 (ADR-086 결정 2)', () => {
+describe('미선택', () => {
   it('저장된 값이 없으면 null(미선택)을 반환한다 — auto로 위장하지 않는다', async () => {
     await expect(getTrackingMode()).resolves.toBeNull()
   })

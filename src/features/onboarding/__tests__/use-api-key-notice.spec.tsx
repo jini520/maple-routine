@@ -11,7 +11,7 @@ const noticeApiKeyIssueMock = jest.requireMock('../store').useOnboardingStore.ge
 
 const { useApiKeyNotice } = require('../use-api-key-notice') as typeof import('../use-api-key-notice')
 
-// ADR-116 결정 1: 원인 둘이 같은 사슬을 탄다. 넘기는 kind만 갈린다.
+// 원인 둘이 같은 사슬을 탄다. 넘기는 kind만 갈린다.
 const ROUTED: [ScheduleSyncError['kind'], ApiKeyNoticeKind][] = [
   ['invalidApiKey', 'invalid'],
   ['rateLimited', 'rateLimited'],

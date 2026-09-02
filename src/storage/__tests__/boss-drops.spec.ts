@@ -169,7 +169,7 @@ describe('getBossDropRecords', () => {
   })
 })
 
-// ADR-071 결정 1: 드롭 히스토리는 히스토리 전용 테이블이 아니라 이 테이블을 전 기간 조회한다.
+// 드롭 히스토리는 히스토리 전용 테이블이 아니라 이 테이블을 전 기간 조회한다.
 describe('getAllBossDropRecords', () => {
   it('ocids가 비면 DB를 호출하지 않고 빈 배열을 반환한다', async () => {
     const { getAllBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
@@ -190,7 +190,7 @@ describe('getAllBossDropRecords', () => {
     expect(values).toEqual(['ocid-1', 'ocid-2'])
   })
 
-  it('period_key DESC, drop_index 순으로 정렬한다 — recorded_at은 그룹 재기록으로 뒤집힌다 (ADR-071 결정 3)', async () => {
+  it('period_key DESC, drop_index 순으로 정렬한다 — recorded_at은 그룹 재기록으로 뒤집힌다', async () => {
     const { getAllBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
 
     await getAllBossDropRecords(['ocid-1'])
@@ -253,7 +253,7 @@ describe('getAllBossDropRecords', () => {
 
 // 가격 컬럼 왕복 — 저장한 값이 그대로 읽혀야 한다. 쓰기·읽기 어느 한쪽만
 // 컬럼을 알면 값이 조용히 사라진다.
-describe('가격 컬럼 왕복 (ADR-124)', () => {
+describe('가격 컬럼 왕복', () => {
   it('INSERT 에 price_state·price_meso·price_share 를 함께 싣는다', async () => {
     const { replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
 

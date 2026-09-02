@@ -65,7 +65,7 @@ describe('쓰기 실패 전파', () => {
   })
 })
 
-// ADR-042: content/boss로 갈려 있던 추적 목록을 단일 키로 통합한다.
+// content/boss로 갈려 있던 추적 목록을 단일 키로 통합한다.
 describe('통합 마이그레이션', () => {
   it('content·boss 목록을 중복 제거된 합집합으로 이관한다', async () => {
     await prefs.set('trackedCharacters:content', JSON.stringify(['a', 'b']))
@@ -156,9 +156,9 @@ describe('통합 마이그레이션', () => {
   })
 })
 
-// ADR-143 결정 4: 대표 캐릭터는 "표식"이다. 미지정이면 키가 없고, 그때 "첫 번째가 임시 대표"라는
+// 대표 캐릭터는 "표식"이다. 미지정이면 키가 없고, 그때 "첫 번째가 임시 대표"라는
 // 규칙은 읽는 쪽(화면)의 것이라 저장 레이어가 그 파생값을 만들지도 저장하지도 않는다.
-describe('대표 캐릭터 (ADR-143 결정 4)', () => {
+describe('대표 캐릭터', () => {
   it('저장 전에는 null을 반환한다', async () => {
     await expect(getRepresentativeCharacter()).resolves.toBeNull()
   })
@@ -193,7 +193,7 @@ describe('대표 캐릭터 (ADR-143 결정 4)', () => {
   })
 })
 
-// ADR-143 결정 4: 참조 무결성은 쓰는 쪽이 지킨다. 대표가 추적 목록에 없으면 그 키를 지운다.
+// 참조 무결성은 쓰는 쪽이 지킨다. 대표가 추적 목록에 없으면 그 키를 지운다.
 describe('setCharacterSelection (참조 무결성)', () => {
   it('목록과 대표를 함께 저장한다', async () => {
     await setCharacterSelection(['ocid-1', 'ocid-2'], 'ocid-2')

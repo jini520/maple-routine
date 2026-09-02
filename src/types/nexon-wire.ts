@@ -69,7 +69,7 @@ export interface NexonSchedulerCharacterStateWire {
   world_name: string
   character_level: number
   character_class: string
-  // ADR-030: 공식 문서 확인 — 캐릭터가 해당 기준일에 접속하지 않으면 응답 결과가 없을 수 있다.
+  // 공식 문서 확인 — 캐릭터가 해당 기준일에 접속하지 않으면 응답 결과가 없을 수 있다.
   // 세 필드 모두 누락되거나(undefined) 빈 배열로 올 수 있어 옵셔널로 둔다.
   daily_contents?: NexonDailyContentWire[]
   weekly_contents?: NexonWeeklyContentWire[]

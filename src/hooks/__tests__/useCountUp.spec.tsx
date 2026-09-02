@@ -118,7 +118,7 @@ describe('useCountUp', () => {
     expect(displayed()).toBe(1000)
   })
 
-  // ADR-087 결정 7 — 스테퍼 연타. 진행 중이던 tween 을 처음부터 다시 돌리면 숫자가 뒤로 튄다.
+  // 스테퍼 연타. 진행 중이던 tween 을 처음부터 다시 돌리면 숫자가 뒤로 튄다.
   it('굴러가는 도중 목표가 또 바뀌면 지금 그려진 값에서 재조준한다', async () => {
     const { rerender } = render(<Probe identity="a" value={0} />)
     rerender(<Probe identity="a" value={1000} />)
@@ -138,7 +138,7 @@ describe('useCountUp', () => {
     expect(displayed()).toBe(2000)
   })
 
-  // ADR-087 결정 8 — 마운트도 값 변경과 똑같이 다룬다.
+  // 마운트도 값 변경과 똑같이 다룬다.
   it('같은 identity 로 다시 마운트했는데 값이 달라졌으면 직전 표시값에서 굴러간다', async () => {
     const first = render(<Probe identity="a" value={1000} />)
     advance(COUNT_UP_DURATION_MS)

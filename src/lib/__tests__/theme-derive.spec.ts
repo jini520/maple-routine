@@ -11,7 +11,7 @@ import {
 const LIGHT_SEED: ThemeSeed = { primary: '#F58B0F', secondary: '#F7D00D', third: '#CA763A', mode: 'light' }
 const DARK_SEED: ThemeSeed = { primary: '#9975B3', secondary: '#D1C093', third: '#D8608F', mode: 'dark' }
 
-// ADR-064 결정 1의 핵심 요구 — "primary는 충분히 어둡다"를 전제하지 않는다. 아주 밝은 파스텔과
+// 결정 1의 핵심 요구 — "primary는 충분히 어둡다"를 전제하지 않는다. 아주 밝은 파스텔과
 // 아주 어두운 색을 양 극단으로 두고, 두 경우 모두 채움 위 전경이 성립하는지 본다.
 const PASTEL_SEED: ThemeSeed = { primary: '#BFE3F5', secondary: '#FBD9E3', third: '#D9F0D1', mode: 'light' }
 const DEEP_SEED: ThemeSeed = { primary: '#2B1454', secondary: '#123C2E', third: '#4A1220', mode: 'dark' }
@@ -56,7 +56,7 @@ describe('deriveTheme — 명도를 맞춰 만드는 토큰', () => {
   })
 })
 
-// ADR-064 결정 1 — text-white/text-bg 고정을 파기한 이유가 실제로 지켜지는지.
+// text-white/text-bg 고정을 파기한 이유가 실제로 지켜지는지.
 describe('on-* — 채움 위 전경색은 어느 쪽도 전제하지 않는다', () => {
   it('밝은 파스텔 primary 위에는 어두운 전경이 온다', () => {
     const tokens = deriveTheme(PASTEL_SEED)
@@ -78,7 +78,7 @@ describe('on-* — 채움 위 전경색은 어느 쪽도 전제하지 않는다'
   })
 })
 
-// ADR-064 결정 1 정정 — 흑/백 둘 중 하나로 퇴화하면 안 된다. 배경색마다 어울리는 전경색이 있다.
+// 정정 — 흑/백 둘 중 하나로 퇴화하면 안 된다. 배경색마다 어울리는 전경색이 있다.
 describe('on-* — 순수 흑/백이 아니라 채움색의 색조를 물려받는다', () => {
   const ON_KEYS = ['onPrimary', 'onSecondary', 'onThird', 'onError'] as const
   const FILL_OF = {
@@ -155,7 +155,7 @@ describe('on-* — 순수 흑/백이 아니라 채움색의 색조를 물려받�
   })
 })
 
-// ADR-064 판단 순서 — 잉크는 accent 원색을 그대로 쓰고, 정말 안 보일 때만 보정한다.
+// 판단 순서 — 잉크는 accent 원색을 그대로 쓰고, 정말 안 보일 때만 보정한다.
 // AA 를 겨냥하던 시절엔 머쉬맘 브랜드 주황이 짙은 갈색으로 눌려 탭·배지 53곳이 통째로 바뀌었다.
 describe('*-ink — accent 원색을 지킨다', () => {
   it('머쉬맘 브랜드 주황은 글자로 쓸 때도 그대로다', () => {
@@ -188,8 +188,8 @@ describe('*-ink — accent 원색을 지킨다', () => {
   })
 })
 
-// ADR-064 결정 4 재정정 — 트랙은 표면 톤을 따른다. 대비를 맞추려고 색을 밀지 않는다.
-// ADR-087 결정 5. 이 색이 지켜야 하는 것은 "빨강 = 늘었다"가 **모든 테마에서 같은 뜻**이라는 것과,
+// 트랙은 표면 톤을 따른다. 대비를 맞추려고 색을 밀지 않는다.
+// 결정 5. 이 색이 지켜야 하는 것은 "빨강 = 늘었다"가 **모든 테마에서 같은 뜻**이라는 것과,
 // 라이트·다크 어느 쪽에서도 읽힌다는 것 둘이다. 고정 hex 한 쌍으로는 후자가 깨진다.
 describe('rise/fall — 증감 신호색은 시드와 무관하게 휴가 고정된다', () => {
   it.each(ALL_SEEDS)('%s: rise 는 빨강, fall 은 파랑 계열이다', (_label, seed) => {
@@ -235,7 +235,7 @@ describe('track — 표면 톤을 따른다', () => {
   })
 })
 
-// ADR-064 결정 11 재정정 — 대비는 재서 보여줄 뿐 통과/실패를 매기지 않는다.
+// 대비는 재서 보여줄 뿐 통과/실패를 매기지 않는다.
 describe('measureThemeContrast — 관문이 아니라 계측', () => {
   it('기준선 아래여도 던지거나 실패로 표시하지 않는다', () => {
     const report = measureThemeContrast(deriveTheme(LIGHT_SEED))
@@ -280,7 +280,7 @@ describe('완료 배지 — 모드별로 다르게', () => {
   })
 })
 
-// ADR-064 결정 5 — 일러스트 카드 안은 카드 **위에 직접 놓이는** 것들만 기준을 바꾼다.
+// 일러스트 카드 안은 카드 **위에 직접 놓이는** 것들만 기준을 바꾼다.
 describe('deriveMediaScope — 카드 위에 직접 놓이는 것만 다시 묶는다', () => {
   it('표면·텍스트·보더가 media-* 를 가리킨다', () => {
     const tokens = deriveTheme(LIGHT_SEED)

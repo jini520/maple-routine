@@ -15,7 +15,7 @@ export function formatScheduleSyncError(error: ScheduleSyncError): string {
     // 상한이고, 처방은 인라인 자리(배너·ErrorState·설정 계정 카드)가 준다.
     case 'rateLimited':
       return '호출 한도를 초과했습니다'
-    // ADR-067 결정 1로 갈라진 세 종류. 문구가 서로 달라야 하는 이유는 처방이 다르기 때문이다 —
+    // 결정 1로 갈라진 세 종류. 문구가 서로 달라야 하는 이유는 처방이 다르기 때문이다 —
     // 아래 둘은 사용자가 지금 할 수 있는 것이 없고, characterUnavailable은 영구다.
     case 'characterUnavailable':
       return '이 캐릭터는 조회할 수 없습니다'
@@ -81,7 +81,7 @@ export function formatRosterError(error: ScheduleSyncError, place: RosterErrorPl
         title: '호출 한도를 초과했습니다',
         description: '입력하신 API 키가 서비스 단계 키인지 확인해주세요',
       }
-    // ADR-067 결정 1 + ADR-068 결정 4: 이 계정의 캐릭터를 조회할 수 없다(영구). 재시도 버튼을
+    // 결정 1 +: 이 계정의 캐릭터를 조회할 수 없다(영구). 재시도 버튼을
     // 주지 않는다. 눌러도 같은 400이다. 빠져나가려면 계정을 바꾸는 수밖에 없고 그 경로는 설정
     // (피커)·계정 선택(온보딩)에 이미 있다.
     case 'characterUnavailable':

@@ -73,7 +73,7 @@ describe('캐시가 없으면 네트워크로 받고 그 결과를 캐시에 쓴
   })
 })
 
-describe('5분 TTL 가드 (ADR-113 결정 1)', () => {
+describe('5분 TTL 가드', () => {
   it('TTL 안이면 네트워크를 부르지 않고 캐시 profile 을 돌려준다', async () => {
     const cached = profile({ name: '캐시값' })
     await seedCache(CHARACTER_BASIC_TTL_MS - 1, cached)
@@ -128,9 +128,9 @@ describe('신뢰할 수 없는 cachedAt 은 만료로 취급한다', () => {
   })
 })
 
-// ADR-144 결정 2: 직업은 character/basic 이 아니라 character/list 가 준다. 저장 경로가 이 함수
-// 하나뿐이므로(ADR-113 결정 1) 값을 손에 든 호출부가 여기로 함께 넘긴다.
-describe('jobClass — character/list 가 준 값을 엔트리에 함께 싣는다 (ADR-144 결정 2)', () => {
+// 직업은 character/basic 이 아니라 character/list 가 준다. 저장 경로가 이 함수
+// 하나뿐이므로 값을 손에 든 호출부가 여기로 함께 넘긴다.
+describe('jobClass — character/list 가 준 값을 엔트리에 함께 싣는다', () => {
   it('넘긴 값이 profile 에 실려 캐시에 쓰이고 그대로 반환된다', async () => {
     fetchCharacterBasicMock.mockResolvedValue(profile())
 

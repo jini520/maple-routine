@@ -8,7 +8,7 @@ export interface MatchedBoss {
   cycle: BossCycle
   isRegistered: boolean
   isComplete: boolean
-  ownComplete: boolean // 승격 없는 원본 완료 여부(ADR-032) — selectBossProfitBosses가 실제 처치 난이도를 판정할 때 사용
+  ownComplete: boolean // 승격 없는 원본 완료 여부 — selectBossProfitBosses가 실제 처치 난이도를 판정할 때 사용
   matchedBossName: string | null
   portraitSlug: string | null
   isSeasonBoss: boolean
@@ -157,7 +157,7 @@ export function getSupportedDifficulties(bossName: string): BossDifficulty[] {
   return BOSS_DIFFICULTIES_BY_NAME.get(bossName) ?? []
 }
 
-// ADR-055 결정 3: 수동 추적 항목 중 "주간 12개 한도에 잡히는" 보스 수. 관리 화면의 주간 섹션은
+// 수동 추적 항목 중 "주간 12개 한도에 잡히는" 보스 수. 관리 화면의 주간 섹션은
 // weekly와 eventWeekly를 합쳐 출처 구분을 잃고, 저장 배열은 월간 보스까지 kind: 'boss'로
 // 함께 담으므로, 주기와 시즌 여부를 참조표에서 되찾아야 한다. 제외 규칙은
 // countClearedWeeklyBosses와 같아야 한다. 어긋나면 선택은 12/12인데
@@ -175,7 +175,7 @@ function stripSpaces(value: string): string {
   return value.replace(/\s+/g, '')
 }
 
-// 공백 유무 방향이 보스마다 달라(API 쪽에 더 있을 때도, 데이터 쪽에 더 있을 때도 있음, ADR-007)
+// 공백 유무 방향이 보스마다 달라(API 쪽에 더 있을 때도, 데이터 쪽에 더 있을 때도 있음)
 // 양쪽 다 공백을 제거한 뒤 비교한다. apiAlias는 공백 제거로도 못 잡는 예외(예: "시즌 보스 메이린")를 위한 명시 매핑이다.
 function findReferenceEntry(apiName: string): ReferenceEntryWithOrigin | undefined {
   const normalizedApiName = stripSpaces(apiName)
@@ -258,7 +258,7 @@ export function selectDisplayBosses(bosses: MatchedBoss[]): MatchedBoss[] {
   return result
 }
 
-// 보스 수익 계산기 전용 선택 로직(ADR-032). selectDisplayBosses(카드 표시용, 등록 여부 우선)와
+// 보스 수익 계산기 전용 선택 로직. selectDisplayBosses(카드 표시용, 등록 여부 우선)와
 // 달리 "실제로 처치했는가"(ownComplete, 승격 없는 원본 완료 여부)를 우선한다. 등록한 난이도와
 // 실제로 처치한 난이도가 다를 수 있어, 수익 계산은 반드시 진짜 처치한 난이도의
 // 가격을 써야 한다. 같은 content_name·같은 cycle(weekly/monthly) 안에서는 게임 룰상 한
@@ -275,7 +275,7 @@ export function selectBossProfitBosses(bosses: MatchedBoss[]): MatchedBoss[] {
     }
     const registered = group.find((boss) => boss.isRegistered)
     if (registered !== undefined) {
-      result.push(registered) // 미완료 placeholder — 등록 난이도로 표시(ADR-032)
+      result.push(registered) // 미완료 placeholder — 등록 난이도로 표시
     }
   }
   return result

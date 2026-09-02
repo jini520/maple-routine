@@ -140,6 +140,18 @@ describe('ADR 인용 링크', () => {
     )
 
     expect([...new Set(offenders)]).toEqual([])
+
+    // 대괄호 없는 언급도 같다. 848건이 이 검사 밖에 있었다.
+    const bare: string[] = []
+    for (const file of filesUnder(SRC, /\.tsx?$/)) {
+      const rel = file.slice(REPO_ROOT.length + 1)
+      if (rel === SELF) continue
+      for (const line of readFileSync(file, 'utf8').split('\n')) {
+        if (/(?<!\[\[)ADR-\d{3}/.test(line)) bare.push(`${rel}: ${line.trim().slice(0, 60)}`)
+      }
+    }
+
+    expect([...new Set(bare)]).toEqual([])
   })
 
   it('`결정 N` 까지 특정한 인용의 번호가 그 문서에 실제로 있다', () => {

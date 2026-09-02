@@ -85,7 +85,7 @@ describe('getCurrentKstDateKey', () => {
   })
 })
 
-describe('getBackfillDateKeys (ADR-034 정정 — -1일부터 -13일까지 순차 조회용 날짜 목록)', () => {
+describe('getBackfillDateKeys (정정 — -1일부터 -13일까지 순차 조회용 날짜 목록)', () => {
   it('평소엔 어제(-1일)부터 13일 전까지 KST 기준 날짜를 최신순으로 13개 반환한다', () => {
     const keys = getBackfillDateKeys(new Date('2026-07-21T10:00:00+09:00'))
     expect(keys).toHaveLength(13)

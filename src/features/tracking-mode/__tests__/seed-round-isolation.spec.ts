@@ -1,4 +1,4 @@
-// ADR-147 정정 42 회귀 가드 — **`seed` 와 `syncSchedules` 를 둘 다 실물로 쓴다.**
+// 회귀 가드 — **`seed` 와 `syncSchedules` 를 둘 다 실물로 쓴다.**
 //
 // 결함은 그 둘의 **결합**에 있었고(시드가 ocid 마다 회차를 동시에 내다가 단일 비행으로 서로
 // 합류했고, 시드는 결과를 위치 `[0]` 로 집었다), 기존 테스트 둘은 서로의 사각을 만들고 있었다 —
@@ -127,7 +127,7 @@ beforeEach(() => {
   useTrackingModeStore.setState({ mode: 'auto' })
 })
 
-describe('auto → manual 전환 시드 (ADR-147 정정 42)', () => {
+describe('auto → manual 전환 시드', () => {
   it('각 캐릭터는 남의 것이 아니라 자기 스케줄로 시드된다', async () => {
     await useTrackingModeStore.getState().setMode('manual')
 

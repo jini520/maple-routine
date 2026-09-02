@@ -62,7 +62,7 @@ const INCOME_RECORDS_BODY = `(
 
 // 이 DB의 테이블 정의는 여기 하나뿐이다. openBossProfitDb가 이 배열을 순회해 스키마를 만들고,
 // storage/cache-data.ts가 아래 이름 배열로 캐시 삭제 범위·용량을 계산한다. 새 테이블은 여기에만
-// 추가하면 세 곳에 자동 반영된다(ADR-052 결정 2).
+// 추가하면 세 곳에 자동 반영된다.
 const TABLE_DEFINITIONS = [
   {
     name: 'boss_profit_records',
@@ -77,11 +77,11 @@ const TABLE_DEFINITIONS = [
     price_meso INTEGER NOT NULL,
     payout_meso INTEGER NOT NULL,
     recorded_at TEXT NOT NULL,
-    -- 기록 시점의 월드 스냅샷(ADR-069 결정 1). NULL이면 "월드 모름"이고 월드별 결정석 집계에서
+    -- 기록 시점의 월드 스냅샷. NULL이면 "월드 모름"이고 월드별 결정석 집계에서
     -- 제외된다. 월드를 파생값(캐시된 character/basic)으로 두면 월드 리프가 모든 과거 주의 귀속을
     -- 소급 이동시킨다. 분모(90 x 월드 수)까지 바뀐다.
     world TEXT,
-    -- 처치 **날짜**(KST YYYY-MM-DD, ADR-172). period_key 는 주(목요일)·달이라 "며칟날" 을 못 든다.
+    -- 처치 **날짜**(KST YYYY-MM-DD). period_key 는 주(목요일)·달이라 "며칟날" 을 못 든다.
     -- NULL 은 "모름" 이고 가계부의 월간 칸 집계에서 조용히 빠진다(world 와 같은 모양). 키가
     -- 아니므로 나중에 채워 넣어도 옛 행이 움직이지 않는다.
     defeated_on TEXT,
@@ -114,8 +114,8 @@ const TABLE_DEFINITIONS = [
   )
 `,
   },
-  // 보스별/기간별 드롭 기록(ADR-038). 한 보스가 여러 드롭을 가지므로 drop_index로 다중 행.
-  // 금액도 여기 담는다. 기록 한 건에 붙는 실판매가다(ADR-038 반전). 같은 행에 두면
+  // 보스별/기간별 드롭 기록. 한 보스가 여러 드롭을 가지므로 drop_index로 다중 행.
+  // 금액도 여기 담는다. 기록 한 건에 붙는 실판매가다(반전). 같은 행에 두면
   // 난이도 확정 이관·prune 삭제가 가격까지 함께 옮기고 지운다.
   {
     name: 'boss_drop_records',
@@ -268,7 +268,7 @@ const MIGRATE_MEIRIN_BOSS_KEY_PROFIT_RECORDS = `
   UPDATE boss_profit_records SET boss = '시즌 보스 메이린' WHERE boss = '메이린'
 `
 
-// ADR-069 결정 1: 이미 만들어진 DB에는 CREATE TABLE IF NOT EXISTS가 컬럼을 더해주지 않는다.
+// 이미 만들어진 DB에는 CREATE TABLE IF NOT EXISTS가 컬럼을 더해주지 않는다.
 // SQLite에 ADD COLUMN IF NOT EXISTS가 없으므로 table_info로 있는지 보고 없을 때만 더한다
 // (ALTER를 try/catch로 삼키면 다른 원인의 실패까지 숨는다).
 async function ensureColumn(
@@ -345,7 +345,7 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   }
 
   // 웹뷰가 리로드되면(OTA 적용: applyDownloadedLiveUpdate → CapacitorUpdater.set이 JS 컨텍스트를
-  // 파괴하고 재로드, ADR-027) 이전 로드의 네이티브 SQLite 연결이 남는다. dbPromise는 로드마다
+  // 파괴하고 재로드) 이전 로드의 네이티브 SQLite 연결이 남는다. dbPromise는 로드마다
   // 초기화되므로 isConnection이 true라는 건 그 stale 연결이라는 뜻 — 그대로 retrieve+open하면 첫
   // 쿼리가 막히므로, 닫고 새로 만든다.
   const alreadyConnected = await connection.isConnection(DB_NAME)
@@ -418,7 +418,7 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
 // 경우엔 재시도 호출도 같은 큐에 서므로 회복되지 않지만, 그 경우까지 JS에서 할 수 있는 일은 없다.
 const OPEN_TIMEOUT_MS = 10_000
 
-// 닫기에도 같은 상한을 주되 여는 쪽(10초)보다 짧다(ADR-117 결정 5). 여는 것은 파일 생성·테이블
+// 닫기에도 같은 상한을 주되 여는 쪽(10초)보다 짧다. 여는 것은 파일 생성·테이블
 // 생성·마이그레이션까지 포함하지만 닫는 것은 그렇지 않아 정상이면 수 ms 다. 게다가 이 값은 곧
 // OTA 적용 경로에서 사용자가 아무 반응 없는 화면을 견디는 시간의 상한이다. 적용은
 // closeBossProfitDb → 커버 → set() 순으로 돌고, 그 첫 구간의 길이가 정확히 이 값이다.
@@ -477,7 +477,7 @@ export async function closeBossProfitDb(): Promise<void> {
   try {
     // 닫기가 응답하지 않으면 이 함수는 영원히 resolve하지 않고, 호출부 둘(OTA 적용의
     // CapacitorUpdater.set·캐시 삭제의 reload)이 **그 뒤에 화면을 되살리는 일을 하므로** 그 리로드에
-    // 영영 도달하지 못한다. 커버만 남는 "주황 스플래시 무한"이 그것이다(ADR-117 결정 5). 대기 구간
+    // 영영 도달하지 못한다. 커버만 남는 "주황 스플래시 무한"이 그것이다. 대기 구간
     // 전체(dbPromise 대기 + closeConnection)를 한 번에 감싼다. 여는 쪽이 매달리면 닫기도 그 앞에서
     // 매달리므로 closeConnection만 감싸면 상한이 보장되지 않는다.
     // 타임아웃이 바꾸는 것은 "실패로 끝난다"가 아니라 **"끝난다"** 이다. 아래 catch가 그대로 삼킨다.

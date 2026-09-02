@@ -74,7 +74,7 @@ export function SettingsScreen(): React.JSX.Element {
   const [openModal, setOpenModal] = useState<OpenModal>(null)
   const [sizes, setSizes] = useState<CacheDataSizes | null>(null)
 
-  // ADR-118 결정 5: `계정 및 데이터` 행의 대표값. 캐시 행이 한 층 내려가면서 그 값은 한 층
+  // `계정 및 데이터` 행의 대표값. 캐시 행이 한 층 내려가면서 그 값은 한 층
   // 올라와, 들어가지 않고도 안을 짐작하게 한다. 실패는 자리표시(`- KB`)로 남긴다.
   useEffect(() => {
     loadCacheDataSizes()
@@ -96,7 +96,7 @@ export function SettingsScreen(): React.JSX.Element {
   }, [])
 
   const displayedVersion = packageJson.version
-  // 행에 쓰는 총합은 그룹별 용량의 합으로 파생한다(ADR-058 결정 8).
+  // 행에 쓰는 총합은 그룹별 용량의 합으로 파생한다.
   const totalCacheBytes = sizes === null ? null : sizes.general + sizes.records
 
   return (
@@ -112,7 +112,7 @@ export function SettingsScreen(): React.JSX.Element {
             <Text className="text-lg font-semibold text-text">설정</Text>
           </PageHeaderTitleRow>
 
-          {/* 값을 고르는 행 — 배지(현재값) + chevron 병기(ADR-118 결정 4). */}
+          {/* 값을 고르는 행 — 배지(현재값) + chevron 병기. */}
           <Card className="px-6" testID="settings-card">
             <SettingsRow
               label="스케줄 관리 방법"
@@ -164,7 +164,7 @@ export function SettingsScreen(): React.JSX.Element {
                 label="계정 및 데이터"
                 onPress={() => navigation.navigate('SettingsAccountData')}
                 rightContent={
-                  // ADR-061 결정 7: 조회 전에도 값과 같은 폭·타이포로 자리를 잡는다.
+                  // 조회 전에도 값과 같은 폭·타이포로 자리를 잡는다.
                   <SummaryValue>
                     {totalCacheBytes !== null ? formatBytes(totalCacheBytes) : '- KB'}
                   </SummaryValue>
@@ -181,7 +181,7 @@ export function SettingsScreen(): React.JSX.Element {
           </Card>
 
           {/* 이용약관 제6조④가 요구하는 출처 표기 — 문구를 의역하지 않고 원문 그대로 노출한다.
-              ADR-118 결정 8: 이 블록은 전부 읽고 끝나는 정적 문구라 톤(text-text-disabled)이
+              이 블록은 전부 읽고 끝나는 정적 문구라 톤(text-text-disabled)이
               균일하다 — 눌러야 하는 것 하나가 한 단계 밝은 색·밑줄로 섞여 있던 예외는
               /settings/about 의 행으로 내려가면서 사라졌다.
               (`text-center` 가 상자에서 각 `Text` 로 내려온 것은 RN 이 글자 정렬을 상속하지

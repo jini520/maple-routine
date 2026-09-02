@@ -69,8 +69,8 @@ describe('setMode', () => {
   })
 })
 
-describe('setMode — 시드 트리거 (a): auto → manual 전환 (ADR-035 결정 14)', () => {
-  // ADR-147 정정 42: 캐릭터마다 부르면 그 호출들이 단일 비행에 서로 합류해 전원이 첫 캐릭터의
+describe('setMode — 시드 트리거 (a): auto → manual 전환', () => {
+  // 캐릭터마다 부르면 그 호출들이 단일 비행에 서로 합류해 전원이 첫 캐릭터의
   // 스케줄로 시드된다. 목록을 통째로 넘겨 회차를 하나로 만드는 것이 계약이다.
   it('auto에서 manual로 전환하면 추적 중인 ocid 목록을 한 번에 넘겨 시드한다', async () => {
     jest.mocked(getTrackedCharacterOcids).mockResolvedValue(['ocid-a', 'ocid-b', 'ocid-c'])

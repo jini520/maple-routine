@@ -63,7 +63,7 @@ afterEach(() => {
   mockReducedMotion(false)
 })
 
-describe('펼침 (#27 · ADR-023)', () => {
+describe('펼침 (#27)', () => {
   it('기본은 접힘이라 보스 행이 안 보인다', async () => {
     const { queryByText } = await renderProfit(<CharacterAccordion group={그룹()} />)
 
@@ -97,7 +97,7 @@ describe('펼침 (#27 · ADR-023)', () => {
   })
 })
 
-describe('처치 진행 링 (ADR-054 · ADR-059)', () => {
+describe('처치 진행 링', () => {
   it('주간 탭은 한도(12)를 분모로 삼는다 — 리터럴이 아니라 참조 데이터에서 온다', async () => {
     const group = 그룹([보스행(), 보스행({ boss: 다른주간보스 })])
     const { getByLabelText } = await renderProfit(<CharacterAccordion group={group} />)
@@ -105,7 +105,7 @@ describe('처치 진행 링 (ADR-054 · ADR-059)', () => {
     expect(getByLabelText(`주간 보스 처치 2 / ${WEEKLY_BOSS_CLEAR_LIMIT}`)).toBeTruthy()
   })
 
-  it('월간 탭은 월간 보스 종류 수를 분모로 삼는다(ADR-059 결정 3·4) — 주간 처치 수를 끌어오지 않는다', async () => {
+  it('월간 탭은 월간 보스 종류 수를 분모로 삼는다 — 주간 처치 수를 끌어오지 않는다', async () => {
     const group = 그룹([보스행({ boss: 월간보스, cycle: 'monthly' })])
     const { getByLabelText } = await renderProfit(<CharacterAccordion group={group} />, 컨텍스트값({ tab: 'monthly' }))
 
@@ -113,7 +113,7 @@ describe('처치 진행 링 (ADR-054 · ADR-059)', () => {
   })
 })
 
-describe('고가 드롭 강조 (ADR-045)', () => {
+describe('고가 드롭 강조', () => {
   const 고가드롭 = { [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: [드롭({ itemName: 고가아이템 })] }
   const 평범한드롭 = { [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: [드롭()] }
 
@@ -140,7 +140,7 @@ describe('고가 드롭 강조 (ADR-045)', () => {
     expect(queryByLabelText('고가 드롭')).toBeNull()
   })
 
-  it('링 색과 두께는 웹의 degrade 폴백 그대로다 — 반경만 펼침에서 13으로 줄어든다(ADR-049 결정 3)', async () => {
+  it('링 색과 두께는 웹의 degrade 폴백 그대로다 — 반경만 펼침에서 13으로 줄어든다', async () => {
     const { getByTestId, getByRole } = await renderProfit(
       <CharacterAccordion group={그룹()} />,
       컨텍스트값({ dropsByRowKey: 고가드롭 }),
@@ -190,7 +190,7 @@ describe('고가 드롭 강조 (ADR-045)', () => {
   })
 })
 
-describe('아이템 수익 (ADR-124 결정 7)', () => {
+describe('아이템 수익', () => {
   const 값매긴드롭 = {
     [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: [
       드롭({ priceState: 'entered', priceMeso: 1_000_000_000, priceShare: 1 }),
@@ -258,7 +258,7 @@ describe('아이템 수익 (ADR-124 결정 7)', () => {
   })
 })
 
-describe('실패 표식 (ADR-068 결정 3)', () => {
+describe('실패 표식', () => {
   it('issue 가 없으면 배지를 붙이지 않는다', async () => {
     const { queryByTestId } = await renderProfit(<CharacterAccordion group={그룹()} />)
 

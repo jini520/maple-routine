@@ -27,7 +27,7 @@ describe('computeProfitDelta', () => {
     expect(delta.diffMeso).toBe(0)
   })
 
-  // ADR-087 결정 3 — 0으로 나눌 수 없으므로 퍼센트가 없다. 표시는 절대 증감이 대신 맡는다.
+  // 0으로 나눌 수 없으므로 퍼센트가 없다. 표시는 절대 증감이 대신 맡는다.
   it('직전 기간이 0이면 퍼센트가 null 이고 절대 증감만 남는다', () => {
     const delta = computeProfitDelta(1_284_500_000, 0)
     expect(delta.direction).toBe('up')
@@ -42,7 +42,7 @@ describe('computeProfitDelta', () => {
     expect(delta.diffMeso).toBe(0)
   })
 
-  // 직전 기간을 조회한 적 없는 경우도 0으로 들어온다(ADR-087 결정 3 — store 가 기록 합만 넘긴다).
+  // 직전 기간을 조회한 적 없는 경우도 0으로 들어온다(store 가 기록 합만 넘긴다).
   // 그래서 이 함수에는 "모른다"라는 입력 자체가 없다.
   it('현재가 0이고 직전이 있으면 down 이고 −100% 다', () => {
     const delta = computeProfitDelta(0, 1_142_800_000)
@@ -97,7 +97,7 @@ describe('formatProfitDeltaLabel — 화살표·색이 못 전하는 것을 문�
   })
 })
 
-// ADR-087 결정 2 — 직전 합계의 산식은 그 화면 총액 산식과 같아야 한다.
+// 직전 합계의 산식은 그 화면 총액 산식과 같아야 한다.
 describe('getComparisonPeriodKeys', () => {
   it('주간 탭은 직전 주 하나다', () => {
     expect(getComparisonPeriodKeys('weekly', '2026-07-30')).toEqual(['2026-07-23'])

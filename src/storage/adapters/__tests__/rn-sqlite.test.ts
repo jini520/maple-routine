@@ -107,7 +107,7 @@ describe('rnSqlitePort', () => {
     const db = await rnSqlitePort.createConnection('boss_profit', 'no-encryption', 1)
     await db.open()
 
-    // ADR-124: NULL 은 '미입력'이고 0 과 다르다. 바인딩에서 뭉개지면 거짓 기록이 된다.
+    // NULL 은 '미입력'이고 0 과 다르다. 바인딩에서 뭉개지면 거짓 기록이 된다.
     await db.run('INSERT INTO boss_drop_records VALUES (?, ?, ?)', ['abc123', null, 0])
 
     expect(mockOpened[0].statements.at(-1)?.values).toEqual(['abc123', null, 0])
@@ -128,7 +128,7 @@ describe('db.ts 와 맞물리는가', () => {
     __resetStoragePortsForTest()
   })
 
-  it('옛 스키마 DB 에는 빠진 컬럼을 더한다 (ADR-069 결정 1)', async () => {
+  it('옛 스키마 DB 에는 빠진 컬럼을 더한다', async () => {
     mockRowsFor = (statement) =>
       statement.startsWith('PRAGMA table_info') ? [{ name: 'ocid' }] : []
 

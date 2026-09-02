@@ -4,7 +4,7 @@ import { getMostRecentWeeklyResetKst } from '../scheduler/reset-clock'
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000
 
 /**
- * 스케줄러 API(`date` 파라미터)로 조회 가능한 최소 날짜(사용자 재실측, 2026-07-14, ADR-023 —
+ * 스케줄러 API(`date` 파라미터)로 조회 가능한 최소 날짜(사용자 재실측, 2026-07-14 —
  * 처음 확인했던 '2026-06-25'는 잘못된 확인이었다).
  * 이 API 자체가 신규 도입돼 그 이전 데이터가 존재하지 않는 고정 하한선이다. 오늘 날짜 기준으로
  * 매일 밀려나는 롤링 윈도우가 아니므로, 시간이 지나도 이 값을 다시 계산할 필요가 없다.
@@ -37,7 +37,7 @@ function toKstWallClock(date: Date): Date {
  *
  * - weekly: 가장 최근 주간 리셋(KST 목요일 00:00, lib/scheduler/reset-clock)의 KST 날짜를 periodKey로 쓴다.
  * - monthly: 월간 보스(검은마법사)의 Nexon 서버 리셋 시각은 KST 기준 매월 1일 00:00으로
- *   확정됐다(2026-07-21, ADR-030). 이전에는 실측 전 "가정"이었으나 이제 확정 사실이다.
+ *  확정됐다(2026-07-21). 이전에는 실측 전 "가정"이었으나 이제 확정 사실이다.
  */
 export function getCurrentBossProfitPeriod(cycle: BossCycle, now: Date): BossProfitPeriod {
   if (cycle === 'weekly') {

@@ -2,7 +2,7 @@ import { getSplashScreenPort } from './ports'
 
 // 네이티브 스플래시는 실행 시점부터 계속 떠 있고, 앱 콘텐츠가 준비되면 이 함수로 내린다.
 // 웹뷰에서는 그 위에 DOM 커버 두 장(#boot-cover · [data-splash-cover])이 함께 화면을 덮는데, 그
-// 두 장은 정의상 웹뷰 구현이라 어댑터가 걷는다(ADR-117 결정 4 — "전부" 걷는 것이 계약이다).
+// 두 장은 정의상 웹뷰 구현이라 어댑터가 걷는다("전부" 걷는 것이 계약이다).
 export async function hideSplashScreen(): Promise<void> {
   await getSplashScreenPort().hide()
 }

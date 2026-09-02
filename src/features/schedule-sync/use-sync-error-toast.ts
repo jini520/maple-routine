@@ -48,7 +48,7 @@ export function useScheduleSyncErrorToast(
     }
     lastShownRef.current = error
 
-    // ADR-115 결정 10 · ADR-116 결정 1: 이 훅은 **저장된 키로는 앞으로 갈 수 없는** 두 원인에
+    // 결정 10 결정 1: 이 훅은 **저장된 키로는 앞으로 갈 수 없는** 두 원인에
     // 아무 토스트도 띄우지 않는다. 그 원인은 토스트가 아니라 **닫을 수 없는 모달**로 알린다
     // (useApiKeyNotice → ApiKeyNoticeModal). 토스트는 스스로 사라져 놓칠 수 있는데, 이 실패들은
     // 확인하고 넘어가야 하는 종류다. 옛 액션(`설정 열기`)은 설정으로 보냈지만 그곳에는 키를 바꿀

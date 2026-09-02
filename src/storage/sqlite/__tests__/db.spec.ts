@@ -14,7 +14,7 @@ const dbExecuteMock = jest.fn()
 // SQLite 플러그인 모듈 목에서 주입된 가짜 포트로 바뀌었을 뿐, 검증 대상(어떤
 // 인자로 커넥션을 여는가·stale 커넥션을 닫는가·스키마와 마이그레이션을 도는가)은 그대로다.
 // `retrieveConnection` 을 쓰지 않는다는 것은 이제 포트 표면에 그 연산이 없어 구조적으로 보장된다.
-// ADR-069 결정 1: openBossProfitDb가 PRAGMA table_info로 world 컬럼 존재를 확인한다(SQLite에
+// openBossProfitDb가 PRAGMA table_info로 world 컬럼 존재를 확인한다(SQLite에
 // ADD COLUMN IF NOT EXISTS가 없다). 기본값은 "이미 있음"으로 둬 기존 케이스가 ALTER를 타지 않게 한다.
 const fakeDb = { open: dbOpenMock, execute: dbExecuteMock, query: dbQueryMock, run: jest.fn() }
 
@@ -130,7 +130,7 @@ describe('getBossProfitDb', () => {
     expect(createConnectionMock).toHaveBeenCalledTimes(1)
   })
 
-  // ADR-050 결정 2: 예기치 않은 리로드(탭 링크 기본 동작 누출, WebKit 콘텐츠 프로세스 사망 시
+  // 예기치 않은 리로드(탭 링크 기본 동작 누출, WebKit 콘텐츠 프로세스 사망 시
   // Capacitor의 자동 reload) 뒤에는 stale한 네이티브 커넥션이 남아 첫 호출이 에러 없이 멈출 수
   // 있다. reject 경로에만 복구가 있으면 그 죽은 커넥션이 dbPromise에 영구 캐시돼 앱을 재시작할
   // 때까지 모든 조회가 실패한다.
@@ -170,7 +170,7 @@ describe('getBossProfitDb', () => {
   })
 })
 
-// ADR-052 결정 2: 삭제 대상 테이블 목록의 단일 진실 공급원은 db.ts의 테이블 정의 배열 하나다.
+// 삭제 대상 테이블 목록의 단일 진실 공급원은 db.ts의 테이블 정의 배열 하나다.
 // 정의 배열을 순회해 CREATE하므로 구조적으로 drift가 어렵지만, 배열을 거치지 않고 db.execute에
 // CREATE 문을 직접 끼워 넣는 경우까지 잡기 위해 소스 자체를 읽어 대조한다. 여기서 누락되면
 // 캐시 데이터 삭제·용량 계산이 그 테이블을 조용히 빠뜨린다(boss_drop_records가 그랬다).
@@ -247,7 +247,7 @@ describe('closeBossProfitDb', () => {
     expect(createConnectionMock).toHaveBeenCalledTimes(1)
   })
 
-  // ADR-117 결정 5: 여는 쪽에는 타임아웃이 있는데(withOpenTimeout, 10초) 닫는 쪽은 맨몸이었다.
+  // 여는 쪽에는 타임아웃이 있는데(withOpenTimeout, 10초) 닫는 쪽은 맨몸이었다.
   // 네이티브 closeConnection이 응답하지 않으면 이 함수가 영원히 resolve하지 않고, 이 뒤에 오는
   // 리로드(라이브 업데이트 set · 페이지 리로드)가 실행되지 못한다. 그것이 곧 "주황
   // 스플래시 무한" 증상이다. 실기기에서 SQLite 네이티브 호출이 응답 없이 멈춘 사례가 둘 있다
@@ -335,9 +335,9 @@ describe('closeBossProfitDb', () => {
   })
 })
 
-// ADR-069 결정 1: 이미 만들어진 DB에는 CREATE TABLE IF NOT EXISTS가 컬럼을 더해주지 않는다.
+// 이미 만들어진 DB에는 CREATE TABLE IF NOT EXISTS가 컬럼을 더해주지 않는다.
 // SQLite에 ADD COLUMN IF NOT EXISTS가 없으므로 PRAGMA로 확인하고 없을 때만 ALTER한다.
-describe('world 컬럼 마이그레이션 (ADR-069 결정 1)', () => {
+describe('world 컬럼 마이그레이션', () => {
   it('컬럼이 없으면 ALTER TABLE로 더한다', async () => {
     isConnectionMock.mockResolvedValue(false)
     dbQueryMock.mockResolvedValue({ values: [{ name: 'ocid' }, { name: 'boss' }] })
@@ -364,7 +364,7 @@ describe('world 컬럼 마이그레이션 (ADR-069 결정 1)', () => {
 
 // 가격 세 컬럼도 같은 사정이다. 이미 드롭을 기록해 둔 사용자의 DB에는
 // `boss_drop_records` 가 이미 있으므로 CREATE 로는 컬럼이 붙지 않는다.
-describe('가격 컬럼 마이그레이션 (ADR-124 결정 4)', () => {
+describe('가격 컬럼 마이그레이션', () => {
   it('없으면 price_state·price_meso·price_share 를 ALTER 로 더한다', async () => {
     isConnectionMock.mockResolvedValue(false)
     dbQueryMock.mockResolvedValue({ values: [{ name: 'ocid' }] })

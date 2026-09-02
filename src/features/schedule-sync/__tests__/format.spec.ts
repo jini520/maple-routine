@@ -4,10 +4,10 @@ import type { ScheduleSyncError } from '../schedule-sync'
 describe('formatScheduleSyncError', () => {
   it.each<[ScheduleSyncError, string]>([
     [{ kind: 'invalidApiKey' }, 'API 키가 유효하지 않습니다'],
-    // ADR-114 결정 1·4: 토스트는 한 줄이 상한이라 원인만 말하고 처방은 인라인 자리가 준다.
+    // 토스트는 한 줄이 상한이라 원인만 말하고 처방은 인라인 자리가 준다.
     [{ kind: 'rateLimited' }, '호출 한도를 초과했습니다'],
     [{ kind: 'network' }, '네트워크 오류가 발생했습니다'],
-    // ADR-067 결정 1로 갈라진 세 종류
+    // 결정 1로 갈라진 세 종류
     [{ kind: 'characterUnavailable' }, '이 캐릭터는 조회할 수 없습니다'],
     [{ kind: 'periodOutOfRange' }, '이 기간은 조회할 수 없습니다'],
     [{ kind: 'notCollected' }, '아직 집계되지 않았습니다'],
@@ -16,7 +16,7 @@ describe('formatScheduleSyncError', () => {
   })
 })
 
-// ADR-062 결정 3: 같은 원인이라도 자리에 따라 줄 수 있는 행동이 다르다 —
+// 같은 원인이라도 자리에 따라 줄 수 있는 행동이 다르다 —
 // 피커는 설정으로 보낼 수 있지만 온보딩 중에는 설정 화면 자체가 없다.
 describe('formatRosterError', () => {
   it('모든 원인이 제목과 설명을 가진다', () => {
@@ -38,7 +38,7 @@ describe('formatRosterError', () => {
     }
   })
 
-  // ADR-062 결정 3 + ADR-067 결정 1: 영구 실패에는 버튼을 주지 않는다.
+  // 결정 3 +: 영구 실패에는 버튼을 주지 않는다.
   it.each(['picker', 'onboarding'] as const)('%s의 characterUnavailable은 액션이 없다(영구 실패)', (place) => {
     const copy = formatRosterError({ kind: 'characterUnavailable' }, place)
     expect(copy.action).toBeUndefined()
@@ -51,9 +51,9 @@ describe('formatRosterError', () => {
     }
   })
 
-  // '합니다'를 함께 허용하는 것은 규칙(ADR-062 결정 5)을 푸는 게 아니라 같은 하십시오체(~ㅂ니다)의
+  // '합니다'를 함께 허용하는 것은 규칙을 푸는 게 아니라 같은 하십시오체(~ㅂ니다)의
   // 다른 활용이기 때문이다. 아래 formatStaleRosterError가 '아닙니다'를 허용하는 것과 같은 이유고,
-  // 피커 401의 '키 입력 화면으로 이동합니다'(ADR-115 결정 1·7)가 그 경우다.
+  // 피커 401의 '키 입력 화면으로 이동합니다'가 그 경우다.
   it('모든 문구가 에러 어미 규칙(~습니다 / ~주세요)을 따른다', () => {
     const kinds: ScheduleSyncError[] = [{ kind: 'invalidApiKey' }, { kind: 'rateLimited' }, { kind: 'network' }]
 
@@ -66,7 +66,7 @@ describe('formatRosterError', () => {
     }
   })
 
-  // ADR-115 결정 1·7: 목적지가 설정에서 키 입력 화면으로 바뀌었고, 이동이 자동으로 이미
+  // 목적지가 설정에서 키 입력 화면으로 바뀌었고, 이동이 자동으로 이미
   // 일어나므로 누를 것이 없다. 옛 문구("설정에서 키를 다시 등록해주세요")는 거짓이었다 —
   // 설정에는 키를 바꿀 자리가 없다(ApiKeyModal 2026-07-25 제거).
   it('피커의 invalidApiKey는 액션 없이 이동을 알린다 — 설정으로 보내지 않는다', () => {
@@ -78,7 +78,7 @@ describe('formatRosterError', () => {
   })
 
   // 회귀 가드: 온보딩 중에는 무효화 경로가 성립하지 않으므로(status가 completed가 아니다,
-  // ADR-115 결정 6) 그 실패는 폼 자체의 에러이고 재시도가 실제 처방이다. 이 phase가 이 자리를
+  // 결정 6) 그 실패는 폼 자체의 에러이고 재시도가 실제 처방이다. 이 phase가 이 자리를
   // 건드리지 않았음이 이 단언으로 증명된다.
   it('온보딩의 invalidApiKey는 문구·액션이 그대로다 — 재시도가 실제 처방인 자리', () => {
     const copy = formatRosterError({ kind: 'invalidApiKey' }, 'onboarding')
@@ -88,14 +88,14 @@ describe('formatRosterError', () => {
     expect(copy.action).toEqual({ kind: 'retry', label: '다시 시도' })
   })
 
-  // ADR-114 결정 2(일부 폐기): 429의 처방은 재시도가 아니라 키 단계 확인이다.
+  // 결정 2(일부 폐기): 429의 처방은 재시도가 아니라 키 단계 확인이다.
   // 처방이 "키를 확인하라"인데 버튼이 "다시 시도"면 화면이 두 말을 한다.
   it.each(['picker', 'onboarding'] as const)('%s의 network는 재시도를 주지만 rateLimited는 액션이 없다', (place) => {
     expect(formatRosterError({ kind: 'network' }, place).action?.kind).toBe('retry')
     expect(formatRosterError({ kind: 'rateLimited' }, place).action).toBeUndefined()
   })
 
-  // ADR-114 결정 1: 문구는 확정값이다(사용자 확정 2026-08-08). 단계를 판정하지 않고 안내만 한다.
+  // 문구는 확정값이다(사용자 확정 2026-08-08). 단계를 판정하지 않고 안내만 한다.
   it.each(['picker', 'onboarding'] as const)('%s의 rateLimited는 키 단계 확인을 처방한다', (place) => {
     const copy = formatRosterError({ kind: 'rateLimited' }, place)
 
@@ -110,11 +110,11 @@ describe('formatRosterError', () => {
   })
 })
 
-// ADR-114 결정 3: 스탈 배너가 원인을 무시하던 것(호출부 2곳이 "목록이 최신이 아닙니다"를
+// 스탈 배너가 원인을 무시하던 것(호출부 2곳이 "목록이 최신이 아닙니다"를
 // 하드코딩)을 원인별로 가른다. ErrorState와 갈리는 근거는 자리다. 배너는 목록이 남아 있어
 // 액션이 없어도 막다른 길이 아니다.
 //
-// ADR-115 결정 7: 401의 `설정 열기`가 사라지면서 6종이 두 자리에서 전부 같아졌다. place를
+// 401의 `설정 열기`가 사라지면서 6종이 두 자리에서 전부 같아졌다. place를
 // 아무 데서도 쓰지 않게 돼 파라미터 자체가 없어졌다(시그니처가 인자 1개다).
 describe('formatStaleRosterError', () => {
   const KINDS: ScheduleSyncError['kind'][] = [
@@ -126,7 +126,7 @@ describe('formatStaleRosterError', () => {
     'network',
   ]
 
-  // 어미 규칙은 ADR-062 결정 5. '아닙니다'를 함께 허용하는 것은 규칙을 푸는 게 아니라 같은
+  // 어미 규칙은. '아닙니다'를 함께 허용하는 것은 규칙을 푸는 게 아니라 같은
   // 하십시오체(~ㅂ니다)의 다른 활용이기 때문이다.
   it('6종 전부 문구가 있고 에러 어미 규칙(~습니다 / ~주세요)을 따른다', () => {
     for (const kind of KINDS) {
@@ -155,7 +155,7 @@ describe('formatStaleRosterError', () => {
     expect(copy.action).toBeUndefined()
   })
 
-  // ADR-115 결정 7: 배너가 뜨는 순간 키 무효화가 화면을 키 입력으로 보내므로 누를 것이 없다.
+  // 배너가 뜨는 순간 키 무효화가 화면을 키 입력으로 보내므로 누를 것이 없다.
   // 문구는 그대로다. 바뀐 것은 액션뿐이다.
   it('invalidApiKey는 문구를 유지하고 액션만 잃는다 — 어디서도 설정으로 보내지 않는다', () => {
     const copy = formatStaleRosterError({ kind: 'invalidApiKey' })

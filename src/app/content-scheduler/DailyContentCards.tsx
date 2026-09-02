@@ -31,7 +31,7 @@ import { QUEST_STATE_LABELS, QUEST_STATE_VARIANT } from './content-badges'
 import { IllustratedCard, FadedIllustration } from '../../components/molecules/FadedIllustration/FadedIllustration'
 
 // "몬스터파크"만 배경+아이콘 카드로 확장한다. 다른 kind: 'contents' 항목이 생기면 그때
-// 매핑 테이블로 일반화할지 재검토한다(현재는 인스턴스가 하나뿐이라 과설계 방지, ADR-020).
+// 매핑 테이블로 일반화할지 재검토한다(현재는 인스턴스가 하나뿐이라 과설계 방지).
 export const MONSTER_PARK_NAME = '몬스터파크'
 export const MONSTER_PARK_BACKGROUND_SLUG = 'monsterPark'
 
@@ -49,7 +49,7 @@ export function DailyQuestCard(props: {
   const crop = props.crop ?? getDailyQuestRegionCrop(backgroundSlug)
 
   // 카드 배경/보더/이름 텍스트는 BossCard와 동일하게 앱 테마와 무관하게 레테(다크) 고정 배색을
-  // 쓴다. 일러스트 bleed·페이드·text-shadow가 어두운 배경을 전제로 튜닝됐기 때문(ADR-018/020).
+  // 쓴다. 일러스트 bleed·페이드·text-shadow가 어두운 배경을 전제로 튜닝됐기 때문(/020).
   return (
     <IllustratedCard className="h-20 overflow-hidden">
       <FadedIllustration source={backgroundUrl} crop={crop} />

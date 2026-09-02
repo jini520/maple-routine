@@ -61,7 +61,7 @@ describe('ocid 독립성', () => {
   })
 })
 
-describe('레거시 kind 마이그레이션 (ADR-035 결정 19)', () => {
+describe('레거시 kind 마이그레이션', () => {
   it("결정 19 이전의 kind: 'content' 항목은 템플릿 조회로 daily/weekly로 재분류된다", async () => {
     await prefs.set('manualTrackedContent:ocid-1', JSON.stringify([
         { contentName: '몬스터파크', kind: 'content', maxCount: 14 },

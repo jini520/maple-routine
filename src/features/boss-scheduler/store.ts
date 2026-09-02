@@ -28,7 +28,7 @@ import {
   type ManualTrackedItem,
 } from '../../storage/manual-tracked-content'
 
-// ADR-055 결정 1·2: 추가 시도의 결과. 'duplicate'는 이미 같은 (보스, 난이도)를 추적 중이라
+// 추가 시도의 결과. 'duplicate'는 이미 같은 (보스, 난이도)를 추적 중이라
 // 아무 일도 일어나지 않은 경우이고, 'limitReached'는 주간 12개 한도가 막은 경우다.
 export type ManualBossAddResult = 'added' | 'duplicate' | 'limitReached'
 
@@ -51,7 +51,7 @@ export interface BossCharacterView {
 
 export type BossSchedulerStatus = 'idle' | 'loading' | 'loaded' | 'error'
 
-// ADR-097 결정 4: "강제"가 기본값이고 게이트가 예외다. force 인자를 두면 강제해야 할 호출부를
+// "강제"가 기본값이고 게이트가 예외다. force 인자를 두면 강제해야 할 호출부를
 // 하나라도 빠뜨리는 순간 그 자리가 조용히 게이트에 걸리므로, 자동 진입 경로인 loadTrackedOcids()만
 // auto: true 를 넘긴다. 화면(헤더 버튼·당겨서 새로고침·재시도)은 인자를 안 넘겨 자동으로 강제 경로다.
 // 컨텐츠 스케줄러 스토어와 같은 이름·같은 모양이다. 같은 정책이 두 모양으로 존재하면 값을 바꿀 때
@@ -60,7 +60,7 @@ export interface RefreshOptions {
   auto?: boolean
 }
 
-// ADR-019 솔로/파티 서브 필터. **목록이 하나라 필터도 하나다**.
+// 솔로/파티 서브 필터. **목록이 하나라 필터도 하나다**.
 export type PartyFilter = 'all' | 'solo' | 'party'
 
 export interface BossSchedulerState {
@@ -68,10 +68,10 @@ export interface BossSchedulerState {
   characters: BossCharacterView[]
   error: ScheduleSyncError | null
   trackedOcids: string[] | null
-  // key: `${ocid}:${boss}:${difficulty}` (ADR-019 결정 3). 맵에 키가 없으면 "미설정"(솔로)을
+  // key: `${ocid}:${boss}:${difficulty}`. 맵에 키가 없으면 "미설정"(솔로)을
   // 뜻한다. 이 store는 없는 키를 1로 채워 넣지 않는다. 그 해석은 UI의 책임이다.
   partySizes: Record<string, number>
-  // ADR-035: 수동 모드에서 캐릭터별 추적 항목(멤버십). 값 필드는 여기 두지 않고 표시 시점에
+  // 수동 모드에서 캐릭터별 추적 항목(멤버십). 값 필드는 여기 두지 않고 표시 시점에
   // characters의 동기화 값 또는 참조 테이블에서 조회한다(단일 진실 공급원, 결정 6).
   manualTrackedByOcid: Record<string, ManualTrackedItem[]>
   // 화면 로컬 state가 아니라 스토어가 소유한다. 화면이 언마운트돼도 살아남는다(탭 이동 후 복귀).
@@ -106,7 +106,7 @@ export interface BossSchedulerStore extends BossSchedulerState {
    * 누르면 낡은 값이 넘어와 매칭 실패로 변경이 **무음 유실**된다. "이 보스의 난이도를 to 로
    * 만든다"는 명령형이면 그 실패 모드가 없다.
    *
-   * 개수가 변하지 않으므로 주간 12개 한도(ADR-055)에 걸리지 않는다. 반환값이 없는 이유다.
+   * 개수가 변하지 않으므로 주간 12개 한도에 걸리지 않는다. 반환값이 없는 이유다.
    */
   setManualBossDifficulty(ocid: string, contentName: string, to: string): Promise<void>
   // 필터 전환에 네트워크가 없어 동기 세터다(보스 수익 setTab과 다른 점).
@@ -127,14 +127,14 @@ export function partySizeKey(ocid: string, boss: string, difficulty: string): st
   return `${ocid}:${boss}:${difficulty}`
 }
 
-// ADR-101 결정 4: 부팅 선하이드레이션(`features/prehydrate`)과 화면 마운트가 같은 회차를 부르므로,
+// 부팅 선하이드레이션(`features/prehydrate`)과 화면 마운트가 같은 회차를 부르므로,
 // 진행 중인 회차가 있으면 그 Promise 를 그대로 돌려준다. **"평생 한 번"이 아니라 "동시에 하나만"**
 // 이다. 끝나면 잊는다. 영구 메모로 만들면 진입 재조회의 10분 TTL이 죽는다.
 // `storage/character-selection` 의 `migrationLock` 과 같은 모양·같은 이유(락 없이 겹쳐 돌면 같은
 // 응답을 두 번 받는다).
 let hydration: Promise<void> | null = null
 
-// ADR-017 결정 2: 캐시 단계(trackedOcids 저장 순서)와 동기화 단계(계정 전체 캐릭터
+// 캐시 단계(trackedOcids 저장 순서)와 동기화 단계(계정 전체 캐릭터
 // 목록에서 필터링한 순서)가 서로 달라 생기던 불일치를 없애기 위해, character-basic-cache의
 // level을 병합해 레벨 내림차순(동레벨이면 compareByName)으로 통일한다. 레벨 캐시가 없는
 // 캐릭터는 맨 뒤로 보낸다.
@@ -162,7 +162,7 @@ async function sortByCachedLevel(views: BossCharacterView[]): Promise<BossCharac
     .map((entry) => ({ ...entry.view, level: entry.level, imageUrl: entry.imageUrl }))
 }
 
-// ADR-043 결정 3: 저장 시점에 유지되는 캐릭터의 뷰가 메모리에 없을 때만 쓰는 폴백 —
+// 저장 시점에 유지되는 캐릭터의 뷰가 메모리에 없을 때만 쓰는 폴백 —
 // 네트워크(syncSchedules)는 새로 추가된 캐릭터에만 쓰고, 그 외에는 마지막 캐시를 읽는다.
 async function readCachedView(ocid: string): Promise<BossCharacterView | null> {
   const cached = await getCachedSchedulerState(ocid)
@@ -188,7 +188,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
   ...initialState,
 
   loadTrackedOcids() {
-    // ADR-101 결정 4: 동시 호출은 한 회차로 합친다(위 `hydration` 주석).
+    // 동시 호출은 한 회차로 합친다(위 `hydration` 주석).
     hydration ??= (async () => {
       // 저장된 선택은 **선택 스토어가 읽는다**. 이 스토어가 읽어 자기
       // 상태에 넣던 것이 **두 벌** 의 출처였다. 둘을 나란히 태우는 것은 그대로다(왕복 한 번).
@@ -198,7 +198,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       ])
       set({ trackedOcids: ocids })
       if (ocids !== null) {
-        // ADR-097 결정 4: 자동 진입 경로는 여기 하나뿐이라 게이트를 놓칠 자리가 생기지 않는다.
+        // 자동 진입 경로는 여기 하나뿐이라 게이트를 놓칠 자리가 생기지 않는다.
         await get().refresh(ocids, undefined, { auto: true })
       }
     })().finally(() => {
@@ -217,11 +217,11 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     }
     set({ trackedOcids: ocids })
 
-    // ADR-043 결정 2·3: 저장 시점에는 새로 추가된 캐릭터만 조회한다. 유지되는 캐릭터는
+    // 저장 시점에는 새로 추가된 캐릭터만 조회한다. 유지되는 캐릭터는
     // 이미 가진 뷰를 그대로 재사용하고, 제거만 했거나 아무것도 안 바뀌었으면 조회 자체를 하지 않는다.
     const added = ocids.filter((ocid) => !previousOcids.includes(ocid))
 
-    // ADR-035 결정 14(b): 수동 모드에서 새로 추적 목록에 추가된 캐릭터만 개별 시드하고, 그
+    // 결정 14(b): 수동 모드에서 새로 추적 목록에 추가된 캐릭터만 개별 시드하고, 그
     // 멤버십을 화면 상태에도 반영한다(동기화가 added만 훑으므로 refresh처럼 전체를 다시 읽지 않는다).
     // 동기화보다 먼저 실행 — 화면의 저장 진행률 모달이 saveTrackedOcids 전체를 기다리므로
     // 시드가 끝날 때까지 자연스럽게 로딩이 유지된다(결정 15).
@@ -233,7 +233,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       set((state) => ({ manualTrackedByOcid: { ...state.manualTrackedByOcid, ...seeded } }))
     }
 
-    // ADR-019: 파티 설정은 스케줄 동기화와 독립적인 로컬 조회라 위 diff와 무관하게 항상 새 집합
+    // 파티 설정은 스케줄 동기화와 독립적인 로컬 조회라 위 diff와 무관하게 항상 새 집합
     // 기준으로 다시 채운다. 그래야 추가된 캐릭터의 설정이 들어오고 제거된 캐릭터의 항목이 빠진다.
     // refresh와 동일하게 실패는 조용히 넘긴다(저장 진행률 모달이 안 닫히는 걸 막는다).
     try {
@@ -305,7 +305,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       return
     }
 
-    // ADR-035: 수동 모드에서만 캐릭터별 추적 항목(멤버십)을 읽어둔다. 표시 목록이 이 멤버십으로
+    // 수동 모드에서만 캐릭터별 추적 항목(멤버십)을 읽어둔다. 표시 목록이 이 멤버십으로
     // 결정되기 때문. auto 모드는 등록 여부로 목록을 결정하므로 불필요한 읽기를 건너뛴다.
     const manualMode = useTrackingModeStore.getState().mode === 'manual'
     const manualTrackedByOcid: Record<string, ManualTrackedItem[]> = manualMode
@@ -316,7 +316,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
         )
       : {}
 
-    // ADR-016: 캐시 우선 표시 — 재검증(fetch) 전에 마지막으로 성공한 캐시 값이 있으면
+    // 캐시 우선 표시 — 재검증(fetch) 전에 마지막으로 성공한 캐시 값이 있으면
     // 그 값으로 먼저 채워 화면이 비지 않게 한다. 재검증 응답이 오면 그대로 덮어쓴다.
     const cachedCharacters = (
       await Promise.all(
@@ -342,10 +342,10 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       )
     ).filter((view): view is BossCharacterView => view !== null)
 
-    // ADR-019: 파티 설정은 완료 여부·주차와 무관한 상시 데이터라 스케줄 동기화(캐시 우선 표시 →
+    // 파티 설정은 완료 여부·주차와 무관한 상시 데이터라 스케줄 동기화(캐시 우선 표시 →
     // 재검증)와 독립적이다. 벌크 조회 한 번으로 충분하다. 독립적이므로 조회가 실패해도(예: SQLite
     // 일시 오류) 스케줄 refresh 전체를 중단시키지 않는다. 그러지 않으면 저장 진행률 모달이 안 닫힌다.
-    // ADR-097: 아래 TTL 게이트보다 **앞이다**. 로컬 SQLite 조회라 네트워크 TTL 의 대상이 아니고,
+    // 아래 TTL 게이트보다 **앞이다**. 로컬 SQLite 조회라 네트워크 TTL 의 대상이 아니고,
     // 함께 건너뛰면 추적 목록이 바뀐 진입에서 파티원 수 배지·솔로/파티 필터가 옛 값으로 남는다.
     try {
       await get().loadPartySizes(ocids)
@@ -353,7 +353,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       // 파티 설정 로드 실패는 조용히 넘긴다(스케줄 표시·저장 완료를 막지 않는다)
     }
 
-    // ADR-097 결정 1~3: 화면 진입 자동 재조회는 데이터가 신선하면 건너뛴다. 판정 근거는 위
+    // 결정 1~3: 화면 진입 자동 재조회는 데이터가 신선하면 건너뛴다. 판정 근거는 위
     // 캐시 우선 표시 단계가 이미 읽은 syncedAt 이라 저장소를 다시 읽지 않는다(결정 4).
     if (
       options?.auto === true &&
@@ -442,10 +442,10 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     useToastStore.getState().showSuccess('파티원 수를 저장했어요')
   },
 
-  // ADR-035 결정 3·6: 저장소(단일 진실 공급원)에서 현재 배열을 읽어 (보스, 난이도) 멤버십만
+  // 저장소(단일 진실 공급원)에서 현재 배열을 읽어 (보스, 난이도) 멤버십만
   // 추가/삭제하고 다시 저장한 뒤 화면 상태를 갱신한다. 보스는 maxCount 개념이 없어 값 필드를
   // 채우지 않는다(완료 여부는 표시 시점에 동기화 결과에서 조회).
-  // ADR-055 결정 2: 한도 초과는 여기서 막고 결과 코드로 알린다. UI 사전 차단만으로는
+  // 한도 초과는 여기서 막고 결과 코드로 알린다. UI 사전 차단만으로는
   // 난이도 교체(remove → add)·시드 같은 다른 호출 경로가 새어나간다.
   async addManualBoss(ocid, contentName, difficulty) {
     const current = await getManualTrackedContent(ocid)
@@ -470,7 +470,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     return 'added'
   },
 
-  // ADR-121 결정 6: 읽기 → 배열 계산 → **쓰기 1회**. 전에는 화면이 removeManualBoss →
+  // 읽기 → 배열 계산 → **쓰기 1회**. 전에는 화면이 removeManualBoss →
   // addManualBoss 를 이어 불렀는데, 두 액션이 각자 커밋해 **첫 커밋 직후 "그 보스가 목록에 없는"
   // 상태가 저장소에 실재**했다. 거기서 두 번째가 실패하거나 앱이 죽으면 보스가 통째로 사라진다.
   // Preferences 는 키 하나에 배열 전체를 덮어쓰므로 set 한 번이 이미 원자적이다. 필요한 것은

@@ -76,7 +76,7 @@ afterEach(async () => {
 
 // SQLite 는 `ALTER TABLE` 로 기존 칸의 `NOT NULL` 을 못 뗀다. 테이블을 다시 쓰는 것이
 // 이 길뿐이고, **이 저장소가 처음 하는 종류의 마이그레이션**이라 잃을 것이 크다(수입 기록 전부).
-describe('income_records.meso_amount 재작성 (이슈 #265 · ADR-176)', () => {
+describe('income_records.meso_amount 재작성 (이슈 #265)', () => {
   it('처음 만드는 DB 는 처음부터 nullable 이다', async () => {
     await getBossProfitDb()
 

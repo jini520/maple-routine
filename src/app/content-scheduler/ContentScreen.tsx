@@ -78,7 +78,7 @@ export function ContentScreen(): React.JSX.Element {
     manualTrackedByOcid,
     loadTrackedOcids,
     refresh,
-    // ADR-096 결정 1: 탭은 스토어 소유다. 이 화면이 언마운트돼도 살아남고, 관리 페이지가
+    // 탭은 스토어 소유다. 이 화면이 언마운트돼도 살아남고, 관리 페이지가
     // 같은 값을 읽어 보던 탭 그대로 열린다.
     activeTab,
     setActiveTab,
@@ -95,7 +95,7 @@ export function ContentScreen(): React.JSX.Element {
   const topSafeAreaPx = useTopSafeAreaPx()
   const { definition } = useThemeAppearance()
   const reduceMotion = useReducedMotion()
-  // ADR-063: 동기화 전체 실패는 인라인 문단이 아니라 토스트로 알린다. 지속 상태("n분 전")는
+  // 동기화 전체 실패는 인라인 문단이 아니라 토스트로 알린다. 지속 상태("n분 전")는
   // 새로고침 옆 표기가 이미 담당하고, 토스트에는 원인을 푸는 액션을 붙일 수 있다.
   useScheduleSyncErrorToast(error, { onRetry: () => refresh(trackedOcids ?? []) })
 
@@ -104,7 +104,7 @@ export function ContentScreen(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // ADR-101 결정 1: `null` 은 "0명"이 아니라 **"저장소를 아직 안 읽었다"** 다. 둘을 `||` 로 묶으면
+  // `null` 은 "0명"이 아니라 **"저장소를 아직 안 읽었다"** 다. 둘을 `||` 로 묶으면
   // 콜드 스타트 첫 페인트가 아직 모르는 사실을 단정한다. 빈 상태는 읽고 확인한 뒤에만 그린다.
   const isEmpty = trackedOcids !== null && trackedOcids.length === 0
 
@@ -116,7 +116,7 @@ export function ContentScreen(): React.JSX.Element {
   // **공유했는데 화면마다 다른 캐릭터** 가 다시 생긴다.
   const selected = resolveSelectedCharacter(selectedOcid, characters)
 
-  // ADR-083 결정 1: 캐릭터별 실패도 인라인 문단이 아니라 토스트다(보스 스케줄러와 동일한 배선).
+  // 캐릭터별 실패도 인라인 문단이 아니라 토스트다(보스 스케줄러와 동일한 배선).
   // syncSchedules가 캐릭터 단위 실패를 던지지 않고 결과에 실어 반환하므로 실패의 대부분이 위의
   // 전역 error가 아니라 이 값으로 온다.
   useScheduleSyncErrorToast(selected?.error ?? null, { onRetry: () => refresh(trackedOcids ?? []) })
@@ -164,7 +164,7 @@ export function ContentScreen(): React.JSX.Element {
     openTab('Settings', { openPicker: true })
   }
 
-  // ADR-035 결정 18: 수동 모드의 추적 항목 편집은 이 화면이 아니라 전용 관리 페이지에서 한다.
+  // 수동 모드의 추적 항목 편집은 이 화면이 아니라 전용 관리 페이지에서 한다.
   // 잘린 버튼은 목적지를 잃는다. 줄어드는 것은 시각 텍스트뿐이다.
   const manualManageButton = mode === 'manual' && (
     <Pressable role="button" className="shrink-0" onPress={() => navigation.navigate('ContentManage')}>
@@ -172,7 +172,7 @@ export function ContentScreen(): React.JSX.Element {
     </Pressable>
   )
 
-  // ADR-060: 빈 상태 문구는 탭(일간/주간)과 모드(수동/자동)별로 나눈다. 수동 모드만 CTA를 준다 —
+  // 빈 상태 문구는 탭(일간/주간)과 모드(수동/자동)별로 나눈다. 수동 모드만 CTA를 준다 —
   // 자동 모드가 지시하는 곳("게임에서 등록")은 앱 밖이라 데려다줄 수 없다.
   function contentEmptyProps(tab: 'daily' | 'weekly'): React.ComponentProps<typeof EmptyState> {
     const label = tab === 'daily' ? '일간' : '주간'
@@ -218,7 +218,7 @@ export function ContentScreen(): React.JSX.Element {
   return (
     <View testID="screen-Content" className="flex-1">
       <ScreenScroll
-        // ADR-130 결정 1·3: 당김은 헤더 버튼과 **같은 재조회**를 부르고, 색만
+        // 당김은 헤더 버튼과 **같은 재조회**를 부르고, 색만
         // 테마에서 넘긴다. `refreshing` 이 `status` 라서 헤더 버튼으로 시작한 재조회에도 플랫폼
         // 인디케이터가 뜬다. 웹과 갈리는 자리가 여기뿐이고 그 대가는 ADR 이 적는다.
         refreshControl={
@@ -273,7 +273,7 @@ export function ContentScreen(): React.JSX.Element {
               />
             )}
 
-            {/* ADR-016: 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다 —
+            {/*: 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다 —
                 셸 승계 카드는 보여줄 데이터가 아예 없을 때만 그린다. */}
             {(status === 'idle' || status === 'loading') && characters.length === 0 && (
               <LoadingState size="page" message="불러오고 있어요" />

@@ -40,14 +40,14 @@ function normalizeWeeklyContent(wire: NexonWeeklyContentWire): WeeklyContent {
   }
 }
 
-// bossDaily 항목(힐라 하드·핑크빈 카오스 등 일간으로 격하된 보스)은 이 앱이 다루지 않는 대상이라 걸러낸다 (ADR-007)
+// bossDaily 항목(힐라 하드·핑크빈 카오스 등 일간으로 격하된 보스)은 이 앱이 다루지 않는 대상이라 걸러낸다
 //
 // 등록한 난이도와 실제로 처치한 난이도가 다를 수 있어, 등록된 항목은 자기 자신의
 // complete_flag가 false여도 같은 content_name의 다른 난이도가 complete_flag: true면 완료로
 // 승격시킨다(isComplete, 카드 뱃지 표시용). 이 승격은 등록된 항목에만 적용하고, 미등록 항목끼리는
 // 서로 전파하지 않는다. 미등록 완료 항목은 원본 complete_flag 그대로 lib/boss-matching의 카드
 // 선택 로직에서 쓰인다. ownComplete는 승격 없이 이 항목 자신의 원본 complete_flag를 그대로
-// 보존한다(ADR-032). 보스 수익 계산기가 "실제로 어느 난이도를 처치했는지" 판정할 때 isComplete만으론
+// 보존한다. 보스 수익 계산기가 "실제로 어느 난이도를 처치했는지" 판정할 때 isComplete만으론
 // 승격된 건지 진짜 완료인지 구분할 수 없어서 별도로 필요하다.
 function normalizeBossContent(wire: NexonBossContentWire, completedNames: Set<string>): BossContent | null {
   if (wire.cycle === 'bossDaily') {
@@ -70,15 +70,15 @@ function normalizeBossContent(wire: NexonBossContentWire, completedNames: Set<st
 export function normalizeSchedulerCharacterState(
   wire: NexonSchedulerCharacterStateWire,
 ): SchedulerCharacterState {
-  // ADR-030: 캐릭터가 해당 리셋 주기 이후 접속하지 않으면 이 필드들이 비거나(빈 배열) 아예
+  // 캐릭터가 해당 리셋 주기 이후 접속하지 않으면 이 필드들이 비거나(빈 배열) 아예
   // 없이(undefined) 온다. 두 경우를 동일하게 "이 섹션은 지금 신뢰할 수 없음"으로 취급한다.
   const dailyContentsWire = wire.daily_contents ?? []
   const weeklyContentsWire = wire.weekly_contents ?? []
   const bossContentsWire = wire.boss_contents ?? []
-  // bossDaily는 이 앱이 다루지 않는 대상이라(ADR-007) 완료 승격 판정에서도 제외해야 한다 —
+  // bossDaily는 이 앱이 다루지 않는 대상이라 완료 승격 판정에서도 제외해야 한다 —
   // 그렇지 않으면 같은 content_name이 bossDaily·bossWeekly에 함께 오는 보스(힐라 하드·핑크빈
   // 카오스 등)에서, 전혀 무관한 bossDaily 완료가 등록된 bossWeekly 항목을 잘못 완료로
-  // 승격시킨다(사용자 재현 확인, 2026-07-22, ADR-032).
+  // 승격시킨다(사용자 재현 확인, 2026-07-22).
   const completedBossNames = new Set(
     bossContentsWire
       .filter((boss) => boss.cycle !== 'bossDaily' && boss.complete_flag === 'true')
@@ -101,7 +101,7 @@ export function normalizeSchedulerCharacterState(
     isDailyStale: dailyContentsWire.length === 0,
     isWeeklyStale: weeklyContentsWire.length === 0,
     isWeeklyBossStale: !hasWeeklyBoss,
-    // ADR-067 결정 4: "그 cycle 항목이 있는가"만 보면 **축약 응답을 신선한 데이터로 신뢰**한다.
+    // "그 cycle 항목이 있는가"만 보면 **축약 응답을 신선한 데이터로 신뢰**한다.
     // 실측(2026-07-31): 미접속 캐릭터의 당일 응답은 단계적으로 줄어들어 결국 bossMonthly 2건
     // (검은마법사 하드·익스트림, 둘 다 reg=false·comp=false)만 남는다. 그 응답을 신뢰하면 그 달에
     // 처치한 월간 보스의 완료가 "신선한 false"로 덮어써져 사라진다(재현: 6.65억 기록 보유

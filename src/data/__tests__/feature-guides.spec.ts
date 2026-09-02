@@ -8,7 +8,7 @@ import {
   findFeatureGuide,
 } from '../feature-guides'
 
-// 안내는 노트 항목과 **다른 파일**에 산다(ADR-125 결정 2). 배포 스크립트가 `release-notes.ts` 를
+// 안내는 노트 항목과 **다른 파일**에 산다. 배포 스크립트가 `release-notes.ts` 를
 // Node 에서 직접 import 하는데(`scripts/publish-live-update.mjs`) 안내가 들고 오는 `.webp` import 를
 // Node 가 해석하지 못하기 때문이다. 파일이 갈린 대가로 **둘이 어긋날 자리**가 생기고, 그 방어선이
 // 이 파일이다. 타입은 `guideId`·`guideSectionId` 가 실재하는지 모른다. 문자열일 뿐이다.
@@ -134,7 +134,7 @@ describe('feature-guides 형식', () => {
     }
   })
 
-  // 안내 화면에서 이미지는 장식이 아니라 **정보를 나른다**(ADR-125 결정 6).
+  // 안내 화면에서 이미지는 장식이 아니라 **정보를 나른다**.
   it('이미지 블록에는 공백 아닌 대체 텍스트가 있다', () => {
     for (const guide of FEATURE_GUIDES) {
       for (const section of guide.sections) {
@@ -152,7 +152,7 @@ describe('feature-guides 형식', () => {
   })
 })
 
-describe('노트 항목 → 안내 참조 (ADR-125 결정 1 정정 · 결정 7)', () => {
+describe('노트 항목 → 안내 참조 (정정 · 결정 7)', () => {
   const links = RELEASE_NOTES.flatMap((note) =>
     note.items
       .filter((item) => item.guideId !== undefined)

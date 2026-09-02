@@ -4,7 +4,7 @@ import { useCharacterSelectionStore } from '../../character-selection/store'
 import type { CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
 import type { DailyContent, WeeklyContent } from '../../../types'
 
-// ADR-063: 스토어가 toScheduleSyncError로 원인을 살리므로 그 매핑은 실물을 쓴다(부분 모킹).
+// 스토어가 toScheduleSyncError로 원인을 살리므로 그 매핑은 실물을 쓴다(부분 모킹).
 jest.mock('../../schedule-sync/schedule-sync', () => ({
   ...jest.requireActual<typeof import('../../schedule-sync/schedule-sync')>('../../schedule-sync/schedule-sync'),
   syncSchedules: jest.fn(),
@@ -234,7 +234,7 @@ describe('useContentSchedulerStore', () => {
     expect(state.characters).toEqual([])
   })
 
-  it('ADR-016: 캐시된 값이 있으면 재검증 응답을 기다리지 않고 즉시 characters에 반영한다', async () => {
+  it(': 캐시된 값이 있으면 재검증 응답을 기다리지 않고 즉시 characters에 반영한다', async () => {
     getCachedSchedulerStateMock.mockResolvedValue({
       state: {
         asOf: '2026-07-11T00:00+09:00',
@@ -271,7 +271,7 @@ describe('useContentSchedulerStore', () => {
     void promise // 이 테스트는 재검증이 끝나길 기다리지 않는다
   })
 
-  it('ADR-016: 재검증 응답이 도착하면 캐시로 채운 값을 새 값으로 덮어쓴다', async () => {
+  it(': 재검증 응답이 도착하면 캐시로 채운 값을 새 값으로 덮어쓴다', async () => {
     getCachedSchedulerStateMock.mockResolvedValue({
       state: {
         asOf: '2026-07-11T00:00+09:00',
@@ -402,7 +402,7 @@ describe('useContentSchedulerStore', () => {
     })
   })
 
-  describe('ADR-043: 저장 시 추가된 캐릭터만 동기화', () => {
+  describe(': 저장 시 추가된 캐릭터만 동기화', () => {
     function characterView(ocid: string, characterName: string): ContentCharacterView {
       return {
         ocid,
@@ -528,7 +528,7 @@ describe('useContentSchedulerStore', () => {
     })
   })
 
-  describe('ADR-035 결정 14(b): 수동 모드에서 새 추적 캐릭터 개별 시드', () => {
+  describe('(b): 수동 모드에서 새 추적 캐릭터 개별 시드', () => {
     it('수동 모드에서 saveTrackedOcids는 새로 추가된 캐릭터만 refresh 전에 시드한다', async () => {
       mockTrackingModeStateMock.mode = 'manual'
       useContentSchedulerStore.setState({ trackedOcids: ['ocid-1'] })
@@ -567,7 +567,7 @@ describe('useContentSchedulerStore', () => {
     })
   })
 
-  describe('ADR-035: 수동 추적 항목 (manualTrackedContent)', () => {
+  describe(': 수동 추적 항목 (manualTrackedContent)', () => {
     it('수동 모드일 때 refresh는 추적 목록을 읽어 manualTrackedByOcid에 채운다', async () => {
       mockTrackingModeStateMock.mode = 'manual'
       syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1' })])
@@ -628,7 +628,7 @@ describe('useContentSchedulerStore', () => {
       }
     }
 
-    // ADR-057: 가드의 본체는 스토어다. UI 사전 차단만으로는 다른 호출 경로가 샌다.
+    // 가드의 본체는 스토어다. UI 사전 차단만으로는 다른 호출 경로가 샌다.
     it('addManualContent는 길드 미가입(guildName: null)이면 길드 콘텐츠를 거부한다', async () => {
       useContentSchedulerStore.setState({
         characters: [guardView({ guildName: null })],
@@ -683,7 +683,7 @@ describe('useContentSchedulerStore', () => {
     })
   })
 
-  describe('ADR-017: 캐릭터 순서 정렬 및 마지막 선택 캐릭터', () => {
+  describe(': 캐릭터 순서 정렬 및 마지막 선택 캐릭터', () => {
     it('실시간 동기화 결과의 캐릭터가 캐시된 레벨 기준 내림차순으로 정렬된다', async () => {
       syncSchedulesMock.mockResolvedValue([
         syncResult({ ocid: 'ocid-1', characterName: '레벨낮음' }),
@@ -763,9 +763,9 @@ describe('useContentSchedulerStore', () => {
     // `features/character-selection/__tests__/store.spec.ts` 로 옮겨갔다.
   })
 
-  // ADR-096 결정 1: 탭 선택을 화면 로컬 state가 아니라 스토어가 소유한다. 화면이 언마운트돼도
+  // 탭 선택을 화면 로컬 state가 아니라 스토어가 소유한다. 화면이 언마운트돼도
   // 값이 남고, 스케줄러와 관리 페이지가 같은 값을 본다.
-  describe('ADR-096: 탭 선택 상태', () => {
+  describe(': 탭 선택 상태', () => {
     it('초기 탭은 일간이다', () => {
       expect(useContentSchedulerStore.getInitialState().activeTab).toBe('daily')
     })
@@ -789,9 +789,9 @@ describe('useContentSchedulerStore', () => {
     })
   })
 
-  // ADR-097 결정 1~5: 화면에 들어왔다는 사실만으로는 조회하지 않는다. 게이트는 자동 진입 경로에만
+  // 결정 1~5: 화면에 들어왔다는 사실만으로는 조회하지 않는다. 게이트는 자동 진입 경로에만
   // 걸리고(결정 4), 판정 근거는 캐시 우선 표시 단계가 이미 읽은 syncedAt 이다.
-  describe('화면 진입 재조회 게이트 (ADR-097)', () => {
+  describe('화면 진입 재조회 게이트', () => {
     function minutesAgo(minutes: number): string {
       return new Date(Date.now() - minutes * 60 * 1000).toISOString()
     }

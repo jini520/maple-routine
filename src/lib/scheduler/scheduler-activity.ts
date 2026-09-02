@@ -2,7 +2,7 @@ import type { DailyContent, SchedulerCharacterState, WeeklyContent } from '../..
 import { matchBossContent, selectBossProfitBosses } from '../boss/boss-matching'
 import { getShareScope, isCumulativeScore } from './scheduler-content-scope'
 
-// ADR-034 추가 정정(2026-07-25): daily/weekly 섹션이 "완전히 비었는지(isXStale = length 0)"만으로는
+// 추가 정정(2026-07-25): daily/weekly 섹션이 "완전히 비었는지(isXStale = length 0)"만으로는
 // 부족하다. 콜드 스타트에서 당일 응답이 월드공유 항목(몬스터파크)만 남기고 character 범위 항목을
 // 통째로 누락시키면 length가 1이라 isDailyStale이 false가 되고, 로컬 캐시도 없어 항목 단위 병합이
 // 복원할 previous가 없다. 그래서 "그 섹션에 character 범위 항목이 하나라도 있는가"로 stale을 판정한다.
@@ -41,10 +41,10 @@ export function getSectionPresence(state: SchedulerCharacterState): SchedulerSec
   }
 }
 
-// ADR-086 결정 3: "완료"는 진행형 콘텐츠의 카운트가 올랐거나(nowCount > 0) 퀘스트가 완료(questState === 2)다.
+// "완료"는 진행형 콘텐츠의 카운트가 올랐거나(nowCount > 0) 퀘스트가 완료(questState === 2)다.
 // "등록만 하고 완료 안 함"은 활동 증거가 아니다.
 //
-// ADR-086 정정 2(2026-08-03, 실측): **누적 점수 항목은 제외한다.** 그 항목의 now_count는 리셋을
+// 정정 2(2026-08-03, 실측): **누적 점수 항목은 제외한다.** 그 항목의 now_count는 리셋을
 // 넘어서도 줄지 않아 "한 번이라도 해본 적 있음"이 영원히 "최근 14일에 했음"으로 읽힌다 —
 // `[길드] 지하 수로`(79579) 하나 때문에 그 콘텐츠를 해본 캐릭터 전원이 자격을 얻고 있었다.
 function isCompletedContent(item: DailyContent | WeeklyContent): boolean {

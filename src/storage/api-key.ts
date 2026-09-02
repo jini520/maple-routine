@@ -1,4 +1,4 @@
-// PreferencesPort는 평문 저장이며 Keychain/Keystore 수준 암호화를 보장하지 않는다. 강화된 보안 저장 도입은 이후 별도 task로 미룬다 (ADR-007).
+// PreferencesPort는 평문 저장이며 Keychain/Keystore 수준 암호화를 보장하지 않는다. 강화된 보안 저장 도입은 이후 별도 task로 미룬다.
 import { preferences } from './ports'
 import type { NexonAuthConfig } from '../types'
 import { STORAGE_KEYS } from './keys'
@@ -16,7 +16,7 @@ export async function setApiKey(apiKey: string): Promise<void> {
   await preferences.set(STORAGE_KEYS.apiKey, apiKey)
 }
 
-// ADR-115 결정 3: 키 무효화(400 OPENAPI00005 · 401/403) 전용 — apiKey **하나만** 지운다. 아래
+// 키 무효화(400 OPENAPI00005 · 401/403) 전용 — apiKey **하나만** 지운다. 아래
 // clearAuthConfig 로 갈아끼우지 마라(그쪽은 연결 해제용이라 지우는 범위가 넓다).
 // 키 재입력 후의 재개(결정 4)는 남아 있는 trackingMode·trackedCharacters 에서 파생된다.
 export async function removeApiKey(): Promise<void> {

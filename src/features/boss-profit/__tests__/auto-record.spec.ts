@@ -85,7 +85,7 @@ describe('autoRecordRows', () => {
     expect(result[0].payoutMeso).toBe(10_000_000)
   })
 
-  // ADR-019: 파티 설정이 있으면 그 값이 기본값이고, 분배는 내림이다.
+  // 파티 설정이 있으면 그 값이 기본값이고, 분배는 내림이다.
   it('파티 설정이 있으면 그 값으로 payoutMeso = floor(priceMeso / partySize)를 계산한다', async () => {
     getBossPartySizeMock.mockResolvedValue(3)
 
@@ -104,7 +104,7 @@ describe('autoRecordRows', () => {
     expect(result[0].payoutMeso).toBe(3_333_333)
   })
 
-  // ADR-067 결정 7 / ADR-111 결정 2: "출처가 지금의 사실인가" 하나가 두 작업을 함께 막는다.
+  // 결정 7 /: "출처가 지금의 사실인가" 하나가 두 작업을 함께 막는다.
   it('isSourceCurrent가 false인 행은 기록도 드롭 이관도 하지 않는다', async () => {
     const stale = row({ ocid: 'stale' })
 
@@ -121,7 +121,7 @@ describe('autoRecordRows', () => {
     expect(result).toEqual([stale])
   })
 
-  // ADR-050 결정 3: 조회 실패를 "기록 없음"으로 읽으면 사용자가 저장한 파티원 수가 1로 덮인다.
+  // 조회 실패를 "기록 없음"으로 읽으면 사용자가 저장한 파티원 수가 1로 덮인다.
   it('records가 null이면 아무 행도 기록하지 않고 드롭 이관도 하지 않는다', async () => {
     const rows = [row(), row({ boss: '스우' })]
 
@@ -138,7 +138,7 @@ describe('autoRecordRows', () => {
     expect(result).toEqual(rows)
   })
 
-  // ADR-032: 기록해버리면 나중에 실제로 완료됐을 때 0메소로 영구히 고정된다.
+  // 기록해버리면 나중에 실제로 완료됐을 때 0메소로 영구히 고정된다.
   it('미완료 placeholder는 기록하지 않는다', async () => {
     const pending = row({ isComplete: false })
 
@@ -156,7 +156,7 @@ describe('autoRecordRows', () => {
     expect(result).toEqual([pending])
   })
 
-  // ADR-069 결정 4: 이관 가드는 자동 기록 가드보다 **넓다**. 이미 기록된 조합도 난이도는 확정이다.
+  // 이관 가드는 자동 기록 가드보다 **넓다**. 이미 기록된 조합도 난이도는 확정이다.
   it('이미 기록된 행은 기록하지 않지만 드롭 이관은 한다', async () => {
     const recorded = row({ partySize: 2, payoutMeso: 5_000_000 })
 

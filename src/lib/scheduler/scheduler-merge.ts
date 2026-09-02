@@ -41,13 +41,13 @@ interface SectionResult {
   accountUpdates: Record<string, SharedProgressEntry>
 }
 
-// ADR-030 병합 알고리즘 (daily/weekly 공통):
+// 병합 알고리즘 (daily/weekly 공통):
 // 1. fresh 섹션이면 character 범위 항목은 그대로 쓰고, world/account 범위 항목은 개별 응답의
-//    registration_flag를 무시(마지막 활성 캐릭터 오염, ADR-030)하고 원장의 active를 ratchet(한번
+//  registration_flag를 무시(마지막 활성 캐릭터 오염)하고 원장의 active를 ratchet(한번
 //    true면 계속 true)한 뒤 값을 갱신한다.
 // 2. stale 섹션이면 character 범위 항목만 이전 캐시에서 이름/등록을 유지하고 진행값만 리셋한다.
 // 3. 두 경우 모두, 이 섹션 소속 world/account 카탈로그 항목 중 아직 결과에 없는 것을 원장에서
-//    복원한다(캐릭터 자신의 응답에 그 항목이 없어도 — 개별 항목 누락 오염, ADR-030). 원장 자체가
+//  복원한다(캐릭터 자신의 응답에 그 항목이 없어도 — 개별 항목 누락 오염). 원장 자체가
 //    리셋 경계를 넘겼는데 아무도 안 갱신했으면 진행값만 리셋한다.
 function mergeSection(
   section: 'daily' | 'weekly',
@@ -150,7 +150,7 @@ function mergeSection(
 // 항목(이름+난이도) 단위로 병합한다(정정): fresh에 있으면 그대로 쓰고, fresh에 없는데
 // previous에 있으면 isComplete·ownComplete를 false로 리셋해 복원한다. ownComplete도 함께 리셋해야
 // 한다. 안 그러면 지난 리셋에서의 완료 여부가 그대로 남아있어 보스 수익 계산기
-// (selectBossProfitBosses, ADR-032)가 이번 리셋에서 아직 처치하지 않은 보스를 "실제로 완료함"으로
+// (selectBossProfitBosses)가 이번 리셋에서 아직 처치하지 않은 보스를 "실제로 완료함"으로
 // 오판한다.
 function mergeBossCycle(cycle: BossCycle, freshBossContents: BossContent[], previousBossContents: BossContent[]): BossContent[] {
   const items: BossContent[] = []

@@ -17,7 +17,7 @@ describe('getBossDropCandidates', () => {
     const candidates = getBossDropCandidates('스우')
 
     expect(candidates.length).toBeGreaterThan(0)
-    // 선택 후보는 장비·소비만 (고정은 읽기 전용이라 제외, ADR-040)
+    // 선택 후보는 장비·소비만 (고정은 읽기 전용이라 제외)
     for (const candidate of candidates) {
       expect(['equipment', 'consumable']).toContain(candidate.category)
     }
@@ -41,7 +41,7 @@ describe('getBossDropCandidates', () => {
     expect(names).toContain('백옥의 보스 반지 상자') // 익스트림
   })
 
-  // ADR-070: 옛 scroll 카테고리는 코드가 순회하지 않아 화면에 나온 적이 없다. consumable로
+  // 옛 scroll 카테고리는 코드가 순회하지 않아 화면에 나온 적이 없다. consumable로
   // 흡수했으니 이제 선택 후보로 잡혀야 한다.
   it('주문서 교환권 3종은 소비 후보로 노출된다 (가디언 엔젤 슬라임 카오스)', () => {
     const coupons = getBossDropCandidates('가디언 엔젤 슬라임').filter((candidate) =>
@@ -59,7 +59,7 @@ describe('getBossDropCandidates', () => {
     }
   })
 
-  it('찬란한 흉성 노멀에도 교환권 3종이 있다 (ADR-070 결정 3, 신규 추가)', () => {
+  it('찬란한 흉성 노멀에도 교환권 3종이 있다 (신규 추가)', () => {
     const coupons = getBossDropCandidates('찬란한 흉성').filter((candidate) =>
       candidate.name.endsWith('교환권'),
     )
@@ -159,7 +159,7 @@ describe('isBoxItem', () => {
   })
 })
 
-describe('getRingBoxContents (백옥 기준 그룹핑, ADR-041)', () => {
+describe('getRingBoxContents (백옥 기준 그룹핑)', () => {
   it('백옥은 11 명명 반지만 반환하고 기타/연마석이 없다 (전부 레벨 있음)', () => {
     const c = getRingBoxContents('백옥의 보스 반지 상자')
 
@@ -226,7 +226,7 @@ describe('getAccessoryBoxContents', () => {
   })
 })
 
-// ADR-069 결정 4: 익스트림으로 등록·드롭 기록 → 백필이 하드로 확정하면, 드롭은 난이도를 포함한
+// 익스트림으로 등록·드롭 기록 → 백필이 하드로 확정하면, 드롭은 난이도를 포함한
 // 키에 남아 영구 고아가 된다(화면·환산 가치에서 사라지고 DB에만 남는다).
 describe('planConfirmedDifficultyDropMigration', () => {
   const extremeDrops: StoredDropRecord[] = [
@@ -298,7 +298,7 @@ describe('planConfirmedDifficultyDropMigration', () => {
 // `toRecordedDrop` 이 필드를 손으로 옮겨 적으므로, 새 컬럼을 빠뜨려도 **타입 에러 없이 통과하고**
 // 값만 `undefined` 가 된다. 화면에는 "미입력"으로 보여 버그로 인지되기까지 오래 걸린다. 그래서
 // 이관 계산에 가격 생존을 직접 못 박는다.
-describe('planConfirmedDifficultyDropMigration — 가격 생존 (ADR-124)', () => {
+describe('planConfirmedDifficultyDropMigration — 가격 생존', () => {
   it('이관된 드롭이 가격 세 필드를 그대로 들고 간다', () => {
     const plan = planConfirmedDifficultyDropMigration('스우', '하드', [
       {

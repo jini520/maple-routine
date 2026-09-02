@@ -32,7 +32,7 @@ afterEach(() => {
   cleanup()
 })
 
-describe('usePeriodLoadErrorToast (ADR-083 결정 3)', () => {
+describe('usePeriodLoadErrorToast', () => {
   it('실패가 아니면 띄우지 않는다', async () => {
     render(<Harness isFailed={false} isLoading={false} periodKey="2026-W31" />)
 

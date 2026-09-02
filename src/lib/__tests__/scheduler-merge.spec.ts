@@ -93,7 +93,7 @@ describe('mergeSchedulerState — character 범위', () => {
     expect(result.characterState.dailyContents).toEqual([])
   })
 
-  describe('ADR-034 정정 — stale이 아니어도 항목 단위로 previous의 누락 항목을 복원한다', () => {
+  describe(' 정정 — stale이 아니어도 항목 단위로 previous의 누락 항목을 복원한다', () => {
     it('daily가 stale이 아니고(빈 배열 아님) 일부 항목만 왔어도, previous에만 있던 항목은 진행값이 리셋된 채 복원된다', () => {
       const previous = baseState({
         dailyContents: [
@@ -337,7 +337,7 @@ describe('mergeSchedulerState — 보스 (cycle별 독립 stale)', () => {
     ])
   })
 
-  it('stale로 리셋될 때 ownComplete도 isComplete와 함께 false로 리셋된다(ADR-032) — 안 그러면 지난 리셋의 완료 여부가 새 주에 그대로 남는다', () => {
+  it('stale로 리셋될 때 ownComplete도 isComplete와 함께 false로 리셋된다 — 안 그러면 지난 리셋의 완료 여부가 새 주에 그대로 남는다', () => {
     const previous = baseState({
       bossContents: [
         { name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
@@ -351,7 +351,7 @@ describe('mergeSchedulerState — 보스 (cycle별 독립 stale)', () => {
     expect(result.characterState.bossContents[0].ownComplete).toBe(false)
   })
 
-  it('ADR-034 정정 — 주간 보스가 stale이 아니어도(일부 항목만 왔어도) previous에만 있던 난이도는 항목 단위로 복원된다', () => {
+  it(' 정정 — 주간 보스가 stale이 아니어도(일부 항목만 왔어도) previous에만 있던 난이도는 항목 단위로 복원된다', () => {
     const previous = baseState({
       bossContents: [
         { name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
@@ -371,7 +371,7 @@ describe('mergeSchedulerState — 보스 (cycle별 독립 stale)', () => {
     ])
   })
 
-  it('ADR-034 정정 — 같은 보스라도 난이도가 다르면 별개 항목으로 취급해 fresh에 없는 난이도만 복원한다', () => {
+  it(' 정정 — 같은 보스라도 난이도가 다르면 별개 항목으로 취급해 fresh에 없는 난이도만 복원한다', () => {
     const previous = baseState({
       bossContents: [
         { name: '카링', difficulty: '이지', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },

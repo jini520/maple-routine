@@ -10,7 +10,7 @@ import {
 } from '../../types/drops'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types/scheduler'
 
-// item-drop-table.json / boss-ring-boxes.json / accessory-boxes.json 조회 헬퍼(ADR-038). 게임
+// item-drop-table.json / boss-ring-boxes.json / accessory-boxes.json 조회 헬퍼. 게임
 // 수치 데이터는 여기서 읽기만 하고 추정하지 않는다.
 
 interface RawRewardItem {
@@ -46,7 +46,7 @@ function entriesForBoss(boss: string): RawRewardEntry[] {
     .sort((a, b) => difficultyOrder(a.difficulty) - difficultyOrder(b.difficulty))
 }
 
-// 보스의 선택 가능한 드롭 후보(장비·소비)를 난이도 무관하게 통합해 반환한다(ADR-040 결정 1).
+// 보스의 선택 가능한 드롭 후보(장비·소비)를 난이도 무관하게 통합해 반환한다.
 // 같은 아이템은 name+slot으로 dedupe하고, 등장하는 난이도를 difficulties에 정규 순서로 담는다.
 // 고정 드롭은 값이 난이도마다 달라 여기서 제외하고 getBossFixedDrops로 별도 표시한다.
 export function getBossDropCandidates(boss: string): DropCandidate[] {
@@ -78,7 +78,7 @@ export function getBossDropCandidates(boss: string): DropCandidate[] {
   return order.map((key) => byKey.get(key) as DropCandidate)
 }
 
-// 보스의 고정 드롭을 난이도별 그룹(정규 순서)으로 반환한다(ADR-040 결정 3). 읽기 전용 표시용.
+// 보스의 고정 드롭을 난이도별 그룹(정규 순서)으로 반환한다. 읽기 전용 표시용.
 export function getBossFixedDrops(boss: string): FixedDropGroup[] {
   const groups: FixedDropGroup[] = []
   for (const entry of entriesForBoss(boss)) {
@@ -268,11 +268,11 @@ export interface RingBoxContents {
   rings: RingOption[]
 }
 
-// '기타'(ADR-041): 백옥 반지 상자 목록 밖의 저가치 반지들을 한 칸으로 묶는 UI 전용 항목.
+// '기타': 백옥 반지 상자 목록 밖의 저가치 반지들을 한 칸으로 묶는 UI 전용 항목.
 const OTHER_RING_NAME = '기타'
 const OTHER_RING_ICON = 'Limit_Ring.webp' // 리밋 링 아이콘 재사용
 
-// 명명 반지 기준(baseline) = 백옥 상자 반지 집합. 데이터에서 동적 산출(하드코딩·추정 없음, ADR-041/ADR-006).
+// 명명 반지 기준(baseline) = 백옥 상자 반지 집합. 데이터에서 동적 산출(하드코딩·추정 없음,/).
 const baselineRingNames = new Set(
   (
     ringBoxes.find((box) => nfc(box.name) === nfc('백옥의 보스 반지 상자'))?.itemProbabilities ?? []
@@ -285,7 +285,7 @@ function isWhetstone(name: string): boolean {
 }
 
 // 반지 상자의 등급 후보와 반지 후보. 백옥 목록을 기준으로 명명 반지만 개별 노출하고, 그 밖 반지는
-// 단일 '기타'로 묶는다. 연마석은 별도(레벨 없음). 정렬: 명명 → 연마석 → 기타(ADR-041). 아니면 null.
+// 단일 '기타'로 묶는다. 연마석은 별도(레벨 없음). 정렬: 명명 → 연마석 → 기타. 아니면 null.
 export function getRingBoxContents(boxName: string): RingBoxContents | null {
   const box = ringBoxes.find((candidate) => nfc(candidate.name) === nfc(boxName))
   if (box === undefined) return null

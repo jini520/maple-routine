@@ -5,7 +5,7 @@ import { matchBossContent } from '../../../lib/boss/boss-matching'
 import type { CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
 import type { BossContent } from '../../../types'
 
-// ADR-063: 스토어가 toScheduleSyncError로 원인을 살리므로 그 매핑은 실물을 쓴다(부분 모킹).
+// 스토어가 toScheduleSyncError로 원인을 살리므로 그 매핑은 실물을 쓴다(부분 모킹).
 jest.mock('../../schedule-sync/schedule-sync', () => ({
   ...jest.requireActual<typeof import('../../schedule-sync/schedule-sync')>('../../schedule-sync/schedule-sync'),
   syncSchedules: jest.fn(),
@@ -239,7 +239,7 @@ describe('useBossSchedulerStore', () => {
     expect(state.characters[0].weeklyBosses[0].cycle).toBe('weekly')
   })
 
-  it('모든 캐릭터가 성공하면 status: loaded이고 클리어 카운트를 직접 계산한다(ADR-031)', async () => {
+  it('모든 캐릭터가 성공하면 status: loaded이고 클리어 카운트를 직접 계산한다', async () => {
     syncSchedulesMock.mockResolvedValue([
       syncResult({
         ocid: 'ocid-1',
@@ -257,7 +257,7 @@ describe('useBossSchedulerStore', () => {
     expect(state.characters[0].weeklyBossClearLimitCount).toBe(12)
   })
 
-  describe('ADR-031: 주간 처치 카운트 자체 계산', () => {
+  describe(': 주간 처치 카운트 자체 계산', () => {
     it('등록 없이 완료된 보스도 카운트에 포함된다', async () => {
       syncSchedulesMock.mockResolvedValue([
         syncResult({
@@ -301,7 +301,7 @@ describe('useBossSchedulerStore', () => {
       expect(useBossSchedulerStore.getState().characters[0].weeklyBossClearLimitCount).toBe(12)
     })
 
-    it('캐시된 값을 표시할 때도 카운트를 직접 계산한다(ADR-016 캐시 우선 표시)', async () => {
+    it('캐시된 값을 표시할 때도 카운트를 직접 계산한다(캐시 우선 표시)', async () => {
       getCachedSchedulerStateMock.mockResolvedValue({
         state: {
           asOf: '2026-07-11T00:00+09:00',
@@ -370,7 +370,7 @@ describe('useBossSchedulerStore', () => {
     expect(state.characters).toEqual([])
   })
 
-  it('ADR-016: 캐시된 값이 있으면 재검증 응답을 기다리지 않고 즉시 characters에 반영한다', async () => {
+  it(': 캐시된 값이 있으면 재검증 응답을 기다리지 않고 즉시 characters에 반영한다', async () => {
     getCachedSchedulerStateMock.mockResolvedValue({
       state: {
         asOf: '2026-07-11T00:00+09:00',
@@ -517,7 +517,7 @@ describe('useBossSchedulerStore', () => {
     })
   })
 
-  describe('ADR-043: 저장 시 추가된 캐릭터만 동기화', () => {
+  describe(': 저장 시 추가된 캐릭터만 동기화', () => {
     function characterView(ocid: string, characterName: string): BossCharacterView {
       return {
         ocid,
@@ -673,7 +673,7 @@ describe('useBossSchedulerStore', () => {
     })
   })
 
-  describe('ADR-035 결정 14(b): 수동 모드에서 새 추적 캐릭터 개별 시드', () => {
+  describe('(b): 수동 모드에서 새 추적 캐릭터 개별 시드', () => {
     it('수동 모드에서 saveTrackedOcids는 새로 추가된 캐릭터만 refresh 전에 시드한다', async () => {
       mockTrackingModeStateMock.mode = 'manual'
       useBossSchedulerStore.setState({ trackedOcids: ['ocid-1'] })
@@ -712,7 +712,7 @@ describe('useBossSchedulerStore', () => {
     })
   })
 
-  describe('ADR-035: 수동 추적 보스 (manualTrackedContent)', () => {
+  describe(': 수동 추적 보스 (manualTrackedContent)', () => {
     it('수동 모드일 때 refresh는 추적 목록을 읽어 manualTrackedByOcid에 채운다', async () => {
       mockTrackingModeStateMock.mode = 'manual'
       syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1' })])
@@ -785,7 +785,7 @@ describe('useBossSchedulerStore', () => {
       '윌',
     ]
 
-    // ADR-121 결정 6(2026-08-10): 난이도 교체는 remove → add 2단계가 아니라 단일 액션이다.
+    // 결정 6(2026-08-10): 난이도 교체는 remove → add 2단계가 아니라 단일 액션이다.
     // 2단계는 커밋이 2회라 첫 커밋 직후 "그 보스가 목록에 없는" 상태가 저장소에 실재했고,
     // 두 번째가 실패하면 보스가 통째로 사라졌다.
     describe('setManualBossDifficulty', () => {
@@ -864,7 +864,7 @@ describe('useBossSchedulerStore', () => {
         ])
       })
 
-      // 개수가 안 변하므로 주간 12개 한도(ADR-055)에 원리적으로 걸리지 않는다.
+      // 개수가 안 변하므로 주간 12개 한도에 원리적으로 걸리지 않는다.
       it('주간 12개가 찬 상태에서도 난이도를 바꿀 수 있다', async () => {
         const twelve = Array.from({ length: 12 }, (_, index) => ({
           contentName: WEEKLY_BOSS_NAMES[index],
@@ -907,9 +907,9 @@ describe('useBossSchedulerStore', () => {
     })
   })
 
-  // ADR-055 결정 2·3(이슈 #62): 한도 가드의 본체는 스토어다. UI에서만 막으면 난이도 교체·시드
+  // 결정 2·3(이슈 #62): 한도 가드의 본체는 스토어다. UI에서만 막으면 난이도 교체·시드
   // 같은 다른 호출 경로가 그대로 새어나간다.
-  describe('ADR-055: 수동 주간 보스 12개 한도', () => {
+  describe(': 수동 주간 보스 12개 한도', () => {
     // weekly-bosses.json 주간 섹션 앞부분 12종 — 실재하는 이름이어야 주기·시즌 판정이 통한다.
     const TWELVE_WEEKLY_BOSSES = [
       '자쿰',
@@ -988,7 +988,7 @@ describe('useBossSchedulerStore', () => {
     })
   })
 
-  describe('ADR-017: 캐릭터 순서 정렬 및 마지막 선택 캐릭터', () => {
+  describe(': 캐릭터 순서 정렬 및 마지막 선택 캐릭터', () => {
     it('실시간 동기화 결과의 캐릭터가 캐시된 레벨 기준 내림차순으로 정렬된다', async () => {
       syncSchedulesMock.mockResolvedValue([
         syncResult({ ocid: 'ocid-1', characterName: '레벨낮음' }),
@@ -1068,7 +1068,7 @@ describe('useBossSchedulerStore', () => {
     // `features/character-selection/__tests__/store.spec.ts` 로 옮겨갔다.
   })
 
-  describe('ADR-019: 파티 관리', () => {
+  describe(': 파티 관리', () => {
     it('loadPartySizes([])는 getBossPartySettings를 호출하지 않고 partySizes를 빈 객체로 만든다', async () => {
       useBossSchedulerStore.setState({ partySizes: { 'ocid-1:자쿰:카오스': 4 } })
 
@@ -1186,9 +1186,9 @@ describe('useBossSchedulerStore', () => {
     })
   })
 
-  // ADR-097 결정 1~5: 화면에 들어왔다는 사실만으로는 조회하지 않는다. 게이트는 자동 진입 경로에만
+  // 결정 1~5: 화면에 들어왔다는 사실만으로는 조회하지 않는다. 게이트는 자동 진입 경로에만
   // 걸리고(결정 4), 판정 근거는 캐시 우선 표시 단계가 이미 읽은 syncedAt 이다.
-  describe('화면 진입 재조회 게이트 (ADR-097)', () => {
+  describe('화면 진입 재조회 게이트', () => {
     function minutesAgo(minutes: number): string {
       return new Date(Date.now() - minutes * 60 * 1000).toISOString()
     }

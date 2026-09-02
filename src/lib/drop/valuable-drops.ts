@@ -2,7 +2,7 @@ import itemDropTableData from '../../data/item-drop-table.json'
 import valuableDropsData from '../../data/valuable-drops.json'
 import { DROP_CATEGORIES } from '../../types/drops'
 
-// 고가 아이템 드롭 연출 발동 판별(ADR-038). valuable-drops.json의 sets(item-drop-table의 set
+// 고가 아이템 드롭 연출 발동 판별. valuable-drops.json의 sets(item-drop-table의 set
 // 필드로 매칭) + items(개별 아이템명)로만 결정한다. 게임 데이터는 읽기만 하고 추정하지 않는다.
 
 interface RawRewardItem {

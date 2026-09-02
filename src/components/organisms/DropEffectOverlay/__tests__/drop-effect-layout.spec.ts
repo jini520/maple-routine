@@ -4,7 +4,7 @@ import { buildPillarFrames, buildScreenFrames } from '../frame-layout'
 const PHASES = ['pre', 'loop', 'end'] as const
 
 describe('DROP_EFFECT_ORIGINS', () => {
-  // 테이블은 에셋 비트맵에서 계측한 값이라 프레임과 인덱스로만 묶여 있다(ADR-048). 에셋을 다시 export 해
+  // 테이블은 에셋 비트맵에서 계측한 값이라 프레임과 인덱스로만 묶여 있다. 에셋을 다시 export 해
   // 프레임 수가 바뀌면 기둥이 엉뚱한 위치로 튀므로, 조용히 어긋나지 않게 개수를 고정한다.
   it.each(PHASES)('%s: origin 개수가 실제 프레임 수와 일치한다', (phase) => {
     expect(DROP_EFFECT_ORIGINS[phase]).toHaveLength(DROP_EFFECT_FRAMES[phase].length)
@@ -25,7 +25,7 @@ describe('DROP_EFFECT_ORIGINS', () => {
 // 예열로 미리 디코드해 둬도 55장(약 79MB)이 비트맵 캐시 한도를 넘겨 일부가 밀려났고, 밀려난 프레임은
 // 자기 차례를 거의 다 놓친 뒤 8ms 만 스쳤다(2026-08-26 갤럭시 Z Flip3 실측 — 버스트 9·12번).
 // 그래서 목록을 미리 만들어 **전부 마운트**한다. 이 테스트는 그 목록이 빠짐없이 만들어지는지 본다.
-describe('스프라이트 프레임 목록 (ADR-174 정정 1)', () => {
+describe('스프라이트 프레임 목록', () => {
   const sizeOf = (): { width: number; height: number } => ({ width: 100, height: 200 })
 
   it('기둥은 pre·loop·end 를 모두 담고 키가 겹치지 않는다', () => {

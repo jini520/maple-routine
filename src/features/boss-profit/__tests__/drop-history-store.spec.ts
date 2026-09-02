@@ -149,7 +149,7 @@ describe('useDropHistoryStore.load', () => {
     })
   })
 
-  it('확정 난이도 조합의 획득 불가 기록을 거른다 (ADR-071 결정 6)', async () => {
+  it('확정 난이도 조합의 획득 불가 기록을 거른다', async () => {
     getAllBossDropRecordsMock.mockResolvedValue([
       dropRecord({ itemName: '루즈 컨트롤 머신 마크', dropIndex: 0 }), // 하드+익스 → 유지
       dropRecord({ itemName: '컴플리트 언더컨트롤', slot: null, dropIndex: 1 }), // 익스 전용 → 제거

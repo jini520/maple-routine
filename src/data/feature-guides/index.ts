@@ -36,7 +36,7 @@ import { characterManageGuide } from './shared/character-manage'
 //  의 생성 목록에도 들어가지 않는다. 이 폴더는 슬러그로 찾는 곳이 아니다.
 //
 // **`release-notes.ts` 와 갈라져 있는 이유는 배포다**(결정 2). 배포 스크립트가 `release-notes.ts` 를
-// **Node 에서 직접 import** 하는데(ADR-119 결정 1), 이미지 import 를 그 파일에 넣으면 Node 가
+// **Node 에서 직접 import** 하는데, 이미지 import 를 그 파일에 넣으면 Node 가
 // `.webp` 를 해석하지 못해 그 자리에서 배포가 죽는다.
 //
 // ⚠️ **본문은 코드·설계 문서를 근거로 쓴 초안이고 아직 사용자 검토를 받지 않았다**(이슈 #198).

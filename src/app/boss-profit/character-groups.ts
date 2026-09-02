@@ -133,7 +133,7 @@ export function groupTotalMeso(
 }
 
 // 이 캐릭터가 현재 기간에 기록한 고가 아이템 드롭 목록. 드롭은 dropRowKey(ocid,boss,difficulty,periodKey)로
-// 저장되므로 그룹의 보스 행마다 조회해 isValuableDrop(ADR-038)로 거른다. weekly 탭 기준이며, monthly 탭에서는
+// 저장되므로 그룹의 보스 행마다 조회해 isValuableDrop로 거른다. weekly 탭 기준이며, monthly 탭에서는
 // 월간 보스 행의 드롭만 집계된다(주차별 합계에는 보스 행이 없어 대상이 아님).
 export function collectGroupValuableDrops(
   group: CharacterGroup,
@@ -160,7 +160,7 @@ export function collectGroupDrops(
   )
 }
 
-// 이 기간 전체(모든 추적 캐릭터)의 고가 드롭 — 총 수익 헤드라인 뱃지용(ADR-046). 캐릭터별 집계를
+// 이 기간 전체(모든 추적 캐릭터)의 고가 드롭 — 총 수익 헤드라인 뱃지용. 캐릭터별 집계를
 // 그대로 합치므로 월간 탭 한계(주차별 합계 행엔 보스 행이 없어 월간 보스 드롭만 잡힘)도 동일하게 승계한다.
 export function collectAllValuableDrops(
   groups: CharacterGroup[],
@@ -190,7 +190,7 @@ export function countGroupClearedWeeklyBosses(group: CharacterGroup): number {
 // world가 null인 캐릭터(구버전 캐시)는 어느 월드 한도에도 귀속시킬 수 없어 조용히 제외한다
 // (결정 6 — "미분류" 줄을 만들지 않는다). 결과 순서는 Map 삽입 순서 = 월드가 처음 등장한 캐릭터의
 // 정렬 순서라 렌더마다 흔들리지 않는다(표시 순서 고정).
-// ADR-069 결정 2: 집계 단위가 **행**이다. 전에는 `group.bossRows[0]?.world` 로 캐릭터당 월드를
+// 집계 단위가 **행**이다. 전에는 `group.bossRows[0]?.world` 로 캐릭터당 월드를
 // 하나로 정했는데, 주 중간에 월드를 옮기면 한 캐릭터의 행이 두 월드에 걸치므로 첫 행의 월드로
 // 전부 쏠렸다. 판매 한도(90)는 **월드마다 따로 산정**되므로(사용자 확인) 그 주의 판매량은 두
 // 월드에 각각 계상돼야 한다.

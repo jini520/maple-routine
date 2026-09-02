@@ -61,7 +61,7 @@ beforeEach(() => {
   replaceBossDropRecordsMock.mockReset().mockResolvedValue(undefined)
 })
 
-describe('loadDropsByRowKey — 가격 생존 (ADR-124)', () => {
+describe('loadDropsByRowKey — 가격 생존', () => {
   it('DB에서 읽은 가격을 화면 상태로 그대로 옮긴다', async () => {
     const { loadDropsByRowKey } = require('../drops-loader') as typeof import('../drops-loader')
 

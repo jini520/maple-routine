@@ -64,7 +64,7 @@ describe('normalizeCharacterList', () => {
     expect(normalizeCharacterList({ account_list: [] })).toEqual([])
   })
 
-  // ADR-127: 캐릭터가 0명인 메이플 ID는 **고를 수 있는 계정이 아니다**. 그대로 올리면 계정 선택
+  // 캐릭터가 0명인 메이플 ID는 **고를 수 있는 계정이 아니다**. 그대로 올리면 계정 선택
   // 화면이 대표 캐릭터를 세우지 못해 렌더 중에 던지고, 키가 이미 저장된 뒤라 재시작해도 같은
   // 단계로 되돌아온다(영구 크래시, 2026-08-12 테스터 보고).
   it('character_list가 빈 계정은 걸러낸다', () => {
@@ -146,7 +146,7 @@ describe('normalizeCharacterBasic', () => {
     expect(normalizeCharacterBasic(wire).world).toBe('엘리시움')
   })
 
-  // ADR-057: 길드 가입 여부 판정의 원천. "필드가 아예 없음"(구버전 캐시·응답 미포함)과
+  // 길드 가입 여부 판정의 원천. "필드가 아예 없음"(구버전 캐시·응답 미포함)과
   // "가입한 길드 없음"을 반드시 구분해야 한다. 둘을 같게 두면 전자에서 길드 콘텐츠를
   // 잘못 잠근다(사용자가 할 수 있는 일이 사라지는 방향의 실패).
   it('character_guild_name을 guildName으로 매핑한다', () => {
@@ -185,7 +185,7 @@ describe('normalizeCharacterBasic', () => {
     expect(normalizeCharacterBasic(wire).guildName).toBeUndefined()
   })
 
-  // ADR-147 결정 7: character_exp_rate 는 숫자가 아니라 **문자열**("80.300")이다. access_flag와 같은
+  // character_exp_rate 는 숫자가 아니라 **문자열**("80.300")이다. access_flag와 같은
   // 모양의 함정이라 여기서 풀어 두지 않으면 문자열째 비교돼("9.500" > "80.300" 이 사전순으로 참)
   // 진행률 바가 조용히 뒤집힌다.
   it('character_exp_rate 문자열을 expRate 숫자로 변환한다', () => {
@@ -249,7 +249,7 @@ describe('normalizeCharacterBasic', () => {
     expect(normalizeCharacterBasic(wire).expRate).toBe(0)
   })
 
-  // ADR-147 결정 7: 누적 절대값은 레벨이 오를수록 커져 "얼마나 남았나"를 못 말한다. 카드가 답해야
+  // 누적 절대값은 레벨이 오를수록 커져 "얼마나 남았나"를 못 말한다. 카드가 답해야
   // 하는 것은 진행률이라 도메인 타입이 이 값을 나르지 않는다.
   it('character_exp는 도메인 객체에 실리지 않는다', () => {
     const wire: NexonCharacterBasicResponse = {

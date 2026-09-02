@@ -17,7 +17,7 @@ import {
 
 // idle: 확인 전 / checking: 확인 중 / up-to-date: 최신 / update-available: 새 버전 있음(모달)
 // store-required: 스토어 업데이트 필요 / confirm-cellular: 셀룰러 데이터 확인 대기 / downloading: 진행 중
-// ready-to-apply: 다운로드 완료·적용 대기 / unsupported: web 등 미지원 (ADR-027)
+// ready-to-apply: 다운로드 완료·적용 대기 / unsupported: web 등 미지원
 // applying: 적용 진행 중 — 되돌릴 수 없는 구간에 들어갔다
 // updated: 적용·재시작이 끝난 직후 1회 — `업데이트를 마쳤어요` 안내.
 //          적용 성공 경로에는 상태 전환 코드가 없으므로(set()이 그 자리에서 JS 컨텍스트를 파괴한다)
@@ -161,7 +161,7 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
       set({ currentVersion: version, channel: getLiveUpdateChannel() })
     },
 
-    // 체크만 한다. 다운로드/적용 없음(ADR-027 결정 1). 결과에 따라 모달용 상태로 전환한다.
+    // 체크만 한다. 다운로드/적용 없음. 결과에 따라 모달용 상태로 전환한다.
     async check() {
       set({ status: 'checking', ...CLEARED })
       const result = await checkForLiveUpdate()
@@ -216,7 +216,7 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
       }
     },
 
-    // [다운로드] 탭 — 셀룰러면 데이터 경고를 먼저 띄우고, 아니면 바로 받는다(ADR-027 결정 6).
+    // [다운로드] 탭 — 셀룰러면 데이터 경고를 먼저 띄우고, 아니면 바로 받는다.
     async startDownload() {
       const network = await getNetworkType()
       if (network === 'cellular') {
@@ -231,13 +231,13 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
       await runDownload()
     },
 
-    // [지금 적용 (재시작)] 탭 — 어댑터가 닫기 → 커버 → set() 순으로 진행한다(ADR-117 결정 1).
+    // [지금 적용 (재시작)] 탭 — 어댑터가 닫기 → 커버 → set() 순으로 진행한다.
     // set()이 성공하면 그 자리에서 JS 컨텍스트가 파괴되므로 아래 코드는 성공 경로에서 실행되지
     // 않는다. 이 함수가 실제로 다루는 것은 반대편 — **실패했을 때 화면을 되돌리는 것**이다.
     async apply() {
       if (!get().hasDownloadedBundle) return
       // 재진입 가드 — 커버가 닫기 뒤로 밀리면서 그 구간(최대 5초) 동안 모달과 버튼이 살아 있게
-      // 됐다(ADR-117 결정 7). UI가 버튼을 감추더라도 스토어가 자기 불변식을 스스로 지킨다.
+      // 됐다. UI가 버튼을 감추더라도 스토어가 자기 불변식을 스스로 지킨다.
       if (get().status === 'applying') return
       // 전환은 어떤 await보다 앞이어야 원자적이다. 그 사이에 두 번째 탭이 끼면 가드가 무의미해진다.
       set({ status: 'applying' })
@@ -252,7 +252,7 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
         ])
       } catch {
         // 세 고리(커버 show() 미완료 · 커넥션 닫기 무응답 · set() reject) 중 어느 것이 끊겼든
-        // 화면은 돌아와야 한다. hideSplashScreen이 [data-splash-cover]까지 걷는다(ADR-117 결정 4) —
+        // 화면은 돌아와야 한다. hideSplashScreen이 [data-splash-cover]까지 걷는다 —
         // 그 하나가 여기 "커버를 걷고"를 실현 가능하게 만든다. 걷기 실패까지 삼켜야 상태 전환에 닿는다.
         await hideSplashScreen().catch(() => {})
         // hasDownloadedBundle 은 비우지 않는다. 받아둔 번들은 그대로 살아 있고 모달의 '다시 시도'가

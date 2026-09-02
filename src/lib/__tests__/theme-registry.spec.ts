@@ -173,7 +173,7 @@ describe('buildThemeCss', () => {
     })
   })
 
-  // ADR-064 결정 5 — 일러스트 카드 안은 기준 표면이 media-surface 로 바뀐다.
+  // 일러스트 카드 안은 기준 표면이 media-surface 로 바뀐다.
   describe('미디어 스코프', () => {
     it('.media-scope 블록을 함께 낸다', () => {
       expect(buildThemeCss(getThemeDefinition('머쉬맘'))).toContain('.media-scope {')

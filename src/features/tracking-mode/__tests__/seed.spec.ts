@@ -94,7 +94,7 @@ describe('seedManualTrackedContent', () => {
     ])
   })
 
-  it('템플릿에 없는 컨텐츠는 등록돼 있어도 시드에서 제외한다 (ADR-035 결정 19)', async () => {
+  it('템플릿에 없는 컨텐츠는 등록돼 있어도 시드에서 제외한다', async () => {
     jest.mocked(syncSchedules).mockResolvedValue([
       buildSyncResult(
         buildState({
@@ -111,7 +111,7 @@ describe('seedManualTrackedContent', () => {
     ])
   })
 
-  it('보스는 API 원문명이 아니라 matchBossContent 정규화 명으로 저장한다 (ADR-035 결정 19)', async () => {
+  it('보스는 API 원문명이 아니라 matchBossContent 정규화 명으로 저장한다', async () => {
     jest.mocked(syncSchedules).mockResolvedValue([
       buildSyncResult(
         buildState({
@@ -143,8 +143,8 @@ describe('seedManualTrackedContent', () => {
   })
 })
 
-// ADR-147 정정 42: 캐릭터마다 회차를 내다가 서로 합류해 전원이 남의 스케줄로 시드됐다.
-describe('seedManualTrackedContent — 여러 ocid (ADR-147 정정 42)', () => {
+// 캐릭터마다 회차를 내다가 서로 합류해 전원이 남의 스케줄로 시드됐다.
+describe('seedManualTrackedContent — 여러 ocid', () => {
   it('ocid가 여럿이어도 동기화는 한 회차다', async () => {
     jest.mocked(syncSchedules).mockResolvedValue([
       buildSyncResult(buildState(), 'ocid-1'),

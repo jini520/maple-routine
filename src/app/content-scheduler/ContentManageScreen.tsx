@@ -72,7 +72,7 @@ function categoryIcon(label: string | null): LucideIcon {
   return (label !== null ? CATEGORY_ICON[label] : undefined) ?? SparklesIcon
 }
 
-// ADR-035 결정 18: 컨텐츠 관리 페이지(수동 추적 항목 편집). 템플릿 전체를 일간/주간 탭 체크리스트로 항상
+// 컨텐츠 관리 페이지(수동 추적 항목 편집). 템플릿 전체를 일간/주간 탭 체크리스트로 항상
 // 보여주고 추적 중인 항목만 선택 상태로 그린다. 추가·삭제가 행 탭(토글) 하나로 통일되고,
 // 토글은 즉시 저장한다(로컬 Preferences 쓰기뿐이고 비파괴적이라 확인 버튼 없음). 대상 캐릭터는
 // 컨텐츠 스케줄러에서 선택된 캐릭터를 승계한다. 수동 모드 전용.
@@ -86,16 +86,16 @@ export function ContentManageScreen(): React.JSX.Element {
     loadTrackedOcids,
     addManualContent,
     removeManualContent,
-    // ADR-096 결정 2: 진입 시점의 스케줄러 탭을 이어받는다(일간에서 들어오면 일간).
+    // 진입 시점의 스케줄러 탭을 이어받는다(일간에서 들어오면 일간).
     activeTab: schedulerTab,
-    // ADR-096 결정 4: 선택 캐릭터는 스케줄러와 공유한다. 탭과 달리 "지금 누구를 보고 있는가"는
+    // 선택 캐릭터는 스케줄러와 공유한다. 탭과 달리 "지금 누구를 보고 있는가"는
     // 두 화면이 갈라지면 안 되는 값이다.
   } = useContentSchedulerStore()
   // 선택은 화면·스토어가 아니라 **여기 한 벌**이다.
   const { selectedOcid, select } = useCharacterSelectionStore()
   const { mode } = useTrackingModeStore()
   const navigation = useScreenNavigation()
-  // ADR-096 결정 2: 이어받는 것은 **진입 시점 한 번뿐**이고, 이 화면에서의 탭 전환은 스케줄러로
+  // 이어받는 것은 **진입 시점 한 번뿐**이고, 이 화면에서의 탭 전환은 스케줄러로
   // 되돌리지 않는다. 되돌리면 잠깐 다른 탭을 뒤져본 것 때문에 돌아갔을 때 보던 화면이 바뀌어,
   // 애초에 고치려던 문제("보던 자리를 잃는다")를 반대 방향으로 다시 만든다.
   const [activeTab, setActiveTab] = useState<ContentTab>(schedulerTab)
@@ -130,7 +130,7 @@ export function ContentManageScreen(): React.JSX.Element {
       .map((item) => item.contentName),
   )
 
-  // ADR-065 결정 4: 전에는 void로 프로미스를 버려 저장 실패가 무음이었다. 체크가 조용히
+  // 전에는 void로 프로미스를 버려 저장 실패가 무음이었다. 체크가 조용히
   // 되돌아가는 것 외에 설명이 없었다. 체크박스가 그 자리에 남으므로 토스트로 알린다.
   async function handleToggle(contentName: string): Promise<void> {
     if (selected === null) return
@@ -145,7 +145,7 @@ export function ContentManageScreen(): React.JSX.Element {
     }
   }
 
-  // ADR-057: null일 때만 "가입한 길드 없음"이다. undefined(구버전 캐시·응답에 필드 없음)는
+  // null일 때만 "가입한 길드 없음"이다. undefined(구버전 캐시·응답에 필드 없음)는
   // "모름"이라 잠그지 않는다. 모름을 미가입으로 취급하면 멀쩡한 사용자의 길드 콘텐츠가 막힌다.
   const hasNoGuild = selected?.guildName === null
 
@@ -166,7 +166,7 @@ export function ContentManageScreen(): React.JSX.Element {
               </Pressable>
               <Text className="text-lg font-semibold text-text">컨텐츠 관리</Text>
             </View>
-            {/* ADR-096 결정 4·5: 읽기 전용 칩이던 자리 — 이 화면에서 캐릭터를 갈아 가며 쓰는데도
+            {/*: 읽기 전용 칩이던 자리 — 이 화면에서 캐릭터를 갈아 가며 쓰는데도
                 바꾸려면 뒤로 나가야 했다. 자리와 크기감은 그대로 두고(compact) 누를 수 있게만 한다.
                 onSelect는 스케줄러와 같은 selectCharacter라 돌아갔을 때 그쪽도 같은 캐릭터다. */}
           </PageHeaderTitleRow>
@@ -215,7 +215,7 @@ export function ContentManageScreen(): React.JSX.Element {
       }
     >
       <View testID="screen-ContentManage">
-        {/* ADR-061 결정 10: 조회가 끝나기 전(idle·loading)에는 빈 상태 문구로 위장하지 않고
+        {/*: 조회가 끝나기 전(idle·loading)에는 빈 상태 문구로 위장하지 않고
             로딩 카드를 그린다 — 확정된 빈 상태는 조회가 끝난 뒤에만 말할 수 있다. */}
         {selected === null && (status === 'idle' || status === 'loading') ? (
           <View className="px-4 pb-4">

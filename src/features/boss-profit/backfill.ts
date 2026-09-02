@@ -1,4 +1,4 @@
-// 과거 기간 **백필**(ADR-094 결정 7로 store.ts 에서 분리). 어떤 (캐릭터, 기간)을 조회할지
+// 과거 기간 **백필**(로 store.ts 에서 분리). 어떤 (캐릭터, 기간)을 조회할지
 // 정하고, 조회해서 기록으로 남기고, 직전 기간 총액과 더 뒤로 갈 수 있는지를 판단한다.
 //
 // 의 조회 원장(같은 날짜 재조회 금지)이 여기서 읽고 쓰인다.
@@ -71,7 +71,7 @@ export async function backfillTarget(target: BackfillTarget, now: Date): Promise
     const state = await fetchSchedulerCharacterState(authConfig.apiKey, target.ocid, date)
     // selectBossProfitBosses로 그룹(content_name)당 실제 처치 난이도만 골라야 한다. 그렇지
     // 않으면 등록 난이도와 실제 처치 난이도가 다를 때 둘 다 완료로 잡혀 같은 보스 하나를 두 번
-    // 기록(이중 계산)하게 된다(ADR-032). 과거 기간 백필이므로 미완료 placeholder(ownComplete:
+    // 기록(이중 계산)하게 된다. 과거 기간 백필이므로 미완료 placeholder(ownComplete:
     // false)는 기록 대상에서 제외한다.
     const completedBosses = selectBossProfitBosses(
       state.bossContents.map(matchBossContent).filter((boss) => boss.cycle === target.cycle),
@@ -81,12 +81,12 @@ export async function backfillTarget(target: BackfillTarget, now: Date): Promise
       getBossProfitRecords([target.ocid], [target.periodKey]),
       [],
     )
-    // ADR-069 결정 1: 백필로 만드는 delta 행에도 월드를 박는다. 그 시점 캐시의 월드를 쓰는데,
+    // 백필로 만드는 delta 행에도 월드를 박는다. 그 시점 캐시의 월드를 쓰는데,
     // **리프 이전 주는 API가 400을 주므로 백필 자체가 불가능**하고(실측) 백필로 채워지는 리프 이후
     // 주는 현재 월드가 정답이라 실질 부정확이 없다.
     const backfillWorld = (await getCachedCharacterBasic(target.ocid))?.profile.world ?? null
 
-    // ADR-069 결정 4: 백필 응답이 **처치 난이도를 확정하는 지점**이다. 대상(캐릭터×기간)당 한 번만
+    // 백필 응답이 **처치 난이도를 확정하는 지점**이다. 대상(캐릭터×기간)당 한 번만
     // 읽어 아래 루프에서 재사용한다. 보스마다 조회하면 같은 쿼리를 보스 수만큼 반복한다.
     const dropRecords =
       completedBosses.length === 0
@@ -203,7 +203,7 @@ export async function canReachPreviousPeriod(
   if (isPeriodQueryable(tab, prevPeriodKey, now)) {
     return true
   }
-  // ADR-068 결정 5: **그 기간 또는 더 과거에** 기록이 있으면 통과시킨다. 전에는 바로 이전 한 칸의
+  // **그 기간 또는 더 과거에** 기록이 있으면 통과시킨다. 전에는 바로 이전 한 칸의
   // 기록만 봐서, 접속하지 않은 주가 벽이 되어 그 뒤의 기록 전체에 도달할 수 없었다(이슈 #78 —
   // 3·4주차 미접속 캐릭터의 1·2주차 기록이 DB에 있어도 화면으로 갈 방법이 없었다).
   // 빈 기간은 한 칸씩 지나가야 하지만(시안 A) 벽은 사라진다.

@@ -63,13 +63,13 @@ const MODAL_STATUSES: ReadonlySet<LiveUpdateStatus> = new Set([
   'downloading',
   'ready-to-apply',
   'store-required',
-  // ADR-065 결정 2: 사용자가 시작한 다운로드의 실패만 모달로 알린다. 매니페스트 조회 실패
+  // 사용자가 시작한 다운로드의 실패만 모달로 알린다. 매니페스트 조회 실패
   // ('check-error')는 자동 확인일 수 있어 여기 넣지 않는다. 설정 상태 행에만 남는다.
   'download-error',
-  // ADR-117 결정 7: 둘 다 사용자가 [지금 적용]을 눌러 시작한 흐름이라 위 분류를 그대로 따른다.
+  // 둘 다 사용자가 [지금 적용]을 눌러 시작한 흐름이라 위 분류를 그대로 따른다.
   'applying',
   'apply-error',
-  // ADR-126 결정 4: 적용·재시작이 끝난 직후 1회. 부팅 때 뒤늦게 판정되는 상태는 이것뿐이다.
+  // 적용·재시작이 끝난 직후 1회. 부팅 때 뒤늦게 판정되는 상태는 이것뿐이다.
   'updated',
 ])
 
@@ -108,7 +108,7 @@ function formatSize(bytes: number): string {
 
 const PRIMARY_BOX = 'w-full items-center'
 const PRIMARY_TEXT = 'text-sm'
-// ADR-065 결정 2: 부 동작이 주 동작과 같은 크기(px-5 py-2.5 text-sm)라 비중이 너무 컸다.
+// 부 동작이 주 동작과 같은 크기(px-5 py-2.5 text-sm)라 비중이 너무 컸다.
 // 이 상수를 네 분기가 공유하므로 줄이면 모달 전체에 함께 적용된다. 한 모달 안에서 부 동작
 // 크기가 갈리지 않게 하려는 의도다.
 const GHOST_BOX = 'w-full items-center px-4 py-1.5'
@@ -157,7 +157,7 @@ function BadgeRow({ children }: { children: React.ReactNode }): React.JSX.Elemen
   return <View className="flex-row flex-wrap items-center justify-center gap-1.5">{children}</View>
 }
 
-// info-tint 정보 콜아웃 — 부가 정보(용량, 최소 앱 버전 등)를 본문 문장과 분리해 보여준다(ADR-027).
+// info-tint 정보 콜아웃 — 부가 정보(용량, 최소 앱 버전 등)를 본문 문장과 분리해 보여준다.
 function InfoNote({ children }: { children: React.ReactNode }): React.JSX.Element {
   return (
     <View className="flex-row items-center gap-2 rounded-[10px] bg-info-tint px-3.5 py-2.5">
@@ -167,7 +167,7 @@ function InfoNote({ children }: { children: React.ReactNode }): React.JSX.Elemen
   )
 }
 
-// 받기 전 모달의 `자세히 보기`. 원격에서 온 핵심 목록을 **모달 안에서** 펼친다(ADR-126 결정 1).
+// 받기 전 모달의 `자세히 보기`. 원격에서 온 핵심 목록을 **모달 안에서** 펼친다.
 // 화면을 옮기지 않는 이유는 모달을 닫아야 하고 돌아왔을 때 다시 띄우는 처리가 필요한데, 정작 그
 // 화면(개발 노트)에는 아직 받지 않은 이 버전이 **없기** 때문이다.
 function HighlightsDisclosure({ highlights }: { highlights: string[] }): React.JSX.Element {
@@ -266,7 +266,7 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
                 </BadgeRow>
                 <Note>다운로드 크기 {sizeText}</Note>
               </View>
-              {/* ADR-126 결정 6: 없으면 **버튼째 그리지 않는다.** 옛 매니페스트에는 이 필드가 없고
+              {/*: 없으면 **버튼째 그리지 않는다.** 옛 매니페스트에는 이 필드가 없고
                   그것은 오류가 아니라 안 실려 온 것이라, 액션 없는 비활성 버튼을 두지 않는다. */}
               {state.availableHighlights !== null && (
                 <HighlightsDisclosure highlights={state.availableHighlights} />
@@ -324,7 +324,7 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
           {status === 'downloading' && (
             <View className="gap-3">
               <Title>다운로드 중</Title>
-              {/* ADR-061 결정 6: 결정형 진행률은 예외 없이 h-1.5 프리미티브 하나.
+              {/*: 결정형 진행률은 예외 없이 h-1.5 프리미티브 하나.
                   `animated` 를 쓰는 곳도 여기뿐이다. 여기만 값이 연속으로 흐른다. */}
               <ProgressBar
                 percent={state.downloadProgress}
@@ -338,9 +338,9 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
             </View>
           )}
 
-          {/* ADR-117 결정 7: 커버가 닫기 뒤로 밀린 구간(최대 5초). 적용은 퍼센트가 나오지 않아
+          {/*: 커버가 닫기 뒤로 밀린 구간(최대 5초). 적용은 퍼센트가 나오지 않아
               결정형 진행률을 쓰지 않고(가짜로 채우면 거짓 정보다) 모달 안 대기의 규격대로
-              스윕 스피너 + 문구만 둔다(ADR-061 결정 1·2). 버튼은 두지 않는다. */}
+              스윕 스피너 + 문구만 둔다. 버튼은 두지 않는다. */}
           {status === 'applying' && (
             <View className="gap-3" accessibilityRole="progressbar" aria-busy>
               <MapleSweepSpinner size={32} className="mx-auto text-primary" />
@@ -382,7 +382,7 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
             </>
           )}
 
-          {/* ADR-126 결정 4: 적용 성공 경로에는 상태 전환 코드가 없으므로(ADR-117 결정 1) 이 안내는
+          {/*: 적용 성공 경로에는 상태 전환 코드가 없으므로 이 안내는
               **재시작 뒤 부팅에서** 뜬다. 여기서만 `자세히 보기`가 화면을 옮긴다. */}
           {status === 'updated' && (
             <>
@@ -481,7 +481,7 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
             </>
           )}
 
-          {/* ADR-117 결정 1: 적용이 실패·타임아웃해도 화면은 돌아온다. download-error 와 같은
+          {/*: 적용이 실패·타임아웃해도 화면은 돌아온다. download-error 와 같은
               골격이되 주 동작이 다르다 — 받아둔 번들이 그대로 살아 있어 다시 받지 않고 apply()
               만 다시 부른다(스토어가 downloadedBundleId 를 비우지 않는다). */}
           {status === 'apply-error' && (

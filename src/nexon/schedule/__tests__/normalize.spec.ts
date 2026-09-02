@@ -167,7 +167,7 @@ describe('normalizeSchedulerCharacterState', () => {
   })
 })
 
-describe('normalizeSchedulerCharacterState — 등록 난이도 ≠ 처치 난이도 보정 (ADR-031)', () => {
+describe('normalizeSchedulerCharacterState — 등록 난이도 ≠ 처치 난이도 보정', () => {
   const wireWith = (
     bossContents: NexonSchedulerCharacterStateWire['boss_contents'],
   ): NexonSchedulerCharacterStateWire => ({
@@ -200,7 +200,7 @@ describe('normalizeSchedulerCharacterState — 등록 난이도 ≠ 처치 난�
     })
   })
 
-  it('ownComplete는 승격과 무관하게 이 난이도 자신의 원본 complete_flag를 그대로 보존한다(ADR-032)', () => {
+  it('ownComplete는 승격과 무관하게 이 난이도 자신의 원본 complete_flag를 그대로 보존한다', () => {
     const result = normalizeSchedulerCharacterState(
       wireWith([
         { content_name: '루시드', difficulty: 'easy', cycle: 'bossWeekly', registration_flag: 'true', complete_flag: 'false' },
@@ -247,7 +247,7 @@ describe('normalizeSchedulerCharacterState — 등록 난이도 ≠ 처치 난�
     })
   })
 
-  it('bossDaily 완료는 같은 content_name의 등록된 bossWeekly 항목을 승격시키지 않는다(교차 오염 방지, ADR-032)', () => {
+  it('bossDaily 완료는 같은 content_name의 등록된 bossWeekly 항목을 승격시키지 않는다(교차 오염 방지)', () => {
     const result = normalizeSchedulerCharacterState(
       wireWith([
         { content_name: '힐라', difficulty: 'hard', cycle: 'bossDaily', registration_flag: 'true', complete_flag: 'true' },
@@ -279,7 +279,7 @@ describe('normalizeSchedulerCharacterState — 등록 난이도 ≠ 처치 난�
   })
 })
 
-describe('normalizeSchedulerCharacterState — 미접속으로 인한 누락 (ADR-030)', () => {
+describe('normalizeSchedulerCharacterState — 미접속으로 인한 누락', () => {
   const minimalWire: NexonSchedulerCharacterStateWire = {
     date: '2026-07-21T00:00+09:00',
     character_name: '낟낟',
@@ -333,7 +333,7 @@ describe('normalizeSchedulerCharacterState — 미접속으로 인한 누락 (AD
     expect(result.isMonthlyBossStale).toBe(true)
   })
 
-  // ADR-067 결정 4로 뒤집힌 판정: bossWeekly가 하나도 없는 응답은 축약된 것이라 남은 bossMonthly도
+  // 결정 4로 뒤집힌 판정: bossWeekly가 하나도 없는 응답은 축약된 것이라 남은 bossMonthly도
   // 신뢰하지 않는다(실측 2026-07-31 — 미접속 캐릭터의 당일 응답이 정확히 이 형태다).
   it('boss_contents에 bossMonthly만 있으면 축약 응답으로 보고 둘 다 stale이다', () => {
     const result = normalizeSchedulerCharacterState({
@@ -348,7 +348,7 @@ describe('normalizeSchedulerCharacterState — 미접속으로 인한 누락 (AD
   })
 })
 
-// ADR-067 결정 4: 미접속 캐릭터의 축약 응답을 "신선한 데이터"로 신뢰하지 않는다.
+// 미접속 캐릭터의 축약 응답을 "신선한 데이터"로 신뢰하지 않는다.
 // 실측(2026-07-31) 형태 — 축약이 진행되면 bossWeekly가 먼저 사라지고 bossMonthly만 남는다.
 describe('축약 응답 판정 (isMonthlyBossStale)', () => {
   function wireWithBosses(
