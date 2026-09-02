@@ -35,7 +35,7 @@ export function toNativeKey(key: string, platform: PreferencesPlatform): string 
  * 저장소가 돌려준 키 목록 → 앱이 쓰는 키 목록. `toNativeKey` 의 정확한 역함수다.
  *
  * iOS 는 `UserDefaults.standard` 를 시스템과 함께 쓰므로 `AppleLanguages` 같은 남의 키가 섞여 온다.
- * 거르지 않으면 `cache-data.ts` 가 그것들까지 삭제 범위·용량에 넣는다([[ADR-052]]·[[ADR-058]]).
+ * 거르지 않으면 `cache-data.ts` 가 그것들까지 삭제 범위·용량에 넣는다.
  */
 export function toAppKeys(nativeKeys: string[], platform: PreferencesPlatform): string[] {
   if (platform !== 'ios') {

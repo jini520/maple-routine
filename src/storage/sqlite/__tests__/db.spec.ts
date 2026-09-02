@@ -10,7 +10,7 @@ const closeConnectionMock = jest.fn()
 const dbOpenMock = jest.fn()
 const dbExecuteMock = jest.fn()
 
-// 포트 역전 후([[ADR-128]]) db.ts는 플러그인이 아니라 SqlitePort에만 의존한다 — 가로채는 지점이
+// 포트 역전 후 db.ts는 플러그인이 아니라 SqlitePort에만 의존한다 — 가로채는 지점이
 // SQLite 플러그인 모듈 목에서 주입된 가짜 포트로 바뀌었을 뿐, 검증 대상(어떤
 // 인자로 커넥션을 여는가·stale 커넥션을 닫는가·스키마와 마이그레이션을 도는가)은 그대로다.
 // `retrieveConnection` 을 쓰지 않는다는 것은 이제 포트 표면에 그 연산이 없어 구조적으로 보장된다.
@@ -58,7 +58,7 @@ describe('getBossProfitDb', () => {
     expect(dbExecuteMock).toHaveBeenCalledWith(
       expect.stringContaining('CREATE TABLE IF NOT EXISTS boss_profit_period_checks'),
     )
-    // [[ADR-170]] 결정 2 · [[ADR-166]] — 가계부가 손으로 적는 둘.
+    // 가계부가 손으로 적는 둘.
     expect(dbExecuteMock).toHaveBeenCalledWith(
       expect.stringContaining('CREATE TABLE IF NOT EXISTS income_records'),
     )
@@ -251,7 +251,7 @@ describe('closeBossProfitDb', () => {
   // 네이티브 closeConnection이 응답하지 않으면 이 함수가 영원히 resolve하지 않고, 이 뒤에 오는
   // 리로드(라이브 업데이트 set · 페이지 리로드)가 실행되지 못한다 — 그것이 곧 "주황
   // 스플래시 무한" 증상이다. 실기기에서 SQLite 네이티브 호출이 응답 없이 멈춘 사례가 둘 있다
-  // ([[ADR-008]] 2026-07-17 정정, [[ADR-050]] 결정 2).
+  // (2026-07-17 정정).
   //
   // 가짜 타이머는 케이스 안에서만 켠다 — 파일 전역으로 켜면 위 레이스 케이스가 의존하는
   // 마이크로태스크 순서가 흔들린다.
@@ -356,13 +356,13 @@ describe('world 컬럼 마이그레이션 (ADR-069 결정 1)', () => {
     await getBossProfitDb()
 
     // **컬럼을 지목해 센다.** `ADD COLUMN` 전체를 세면 같은 `ensureColumn` 을 쓰는 다른 컬럼이
-    // 늘어날 때마다 이 테스트가 엉뚱하게 깨진다(실제로 [[ADR-124]] 가격 컬럼에서 그랬다).
+    // 늘어날 때마다 이 테스트가 엉뚱하게 깨진다(실제로 가격 컬럼에서 그랬다).
     const altered = dbExecuteMock.mock.calls.some(([sql]) => String(sql).includes('ADD COLUMN world'))
     expect(altered).toBe(false)
   })
 })
 
-// [[ADR-124]] 결정 4 — 가격 세 컬럼도 같은 사정이다. 이미 드롭을 기록해 둔 사용자의 DB에는
+// 가격 세 컬럼도 같은 사정이다. 이미 드롭을 기록해 둔 사용자의 DB에는
 // `boss_drop_records` 가 이미 있으므로 CREATE 로는 컬럼이 붙지 않는다.
 describe('가격 컬럼 마이그레이션 (ADR-124 결정 4)', () => {
   it('없으면 price_state·price_meso·price_share 를 ALTER 로 더한다', async () => {
@@ -397,9 +397,9 @@ describe('가격 컬럼 마이그레이션 (ADR-124 결정 4)', () => {
   })
 })
 
-// [[ADR-172]] — 처치 날짜(`defeated_on`)도 나중에 더한 컬럼이다. `world` 와 같은 사정이라
+// 처치 날짜(`defeated_on`)도 나중에 더한 컬럼이다. `world` 와 같은 사정이라
 // 여기 없으면 **이미 보스를 기록해 둔 기기에서만** 조용히 UPDATE 가 실패한다(새 기기는 멀쩡하다).
-describe('defeated_on 컬럼 마이그레이션 ([[ADR-172]])', () => {
+describe('defeated_on 컬럼 마이그레이션', () => {
   it('없으면 ALTER 로 더한다', async () => {
     isConnectionMock.mockResolvedValue(false)
     dbQueryMock.mockResolvedValue({ values: [{ name: 'ocid' }] })
@@ -429,8 +429,8 @@ describe('defeated_on 컬럼 마이그레이션 ([[ADR-172]])', () => {
 // **테이블을 세운 커밋과 컬럼을 더한 커밋이 갈렸다.** `spend_records` 는 `form` 없이 만들어졌고
 // (177c195b) 「지출 항목 고르기를 두 단계로」(89e806fa)가 뒤늦게 그 컬럼을 CREATE 문에만 더했다 —
 // 그 사이에 앱을 켠 기기는 `form` 없는 테이블을 들고 있어 **INSERT 가 통째로 실패한다**(실기
-// 재현 2026-08-25 — 지출이 하나도 안 적혔다). [[ADR-069]] 결정 1 이 적어 둔 함정 그대로다.
-describe('form 컬럼 마이그레이션 ([[ADR-069]] 결정 1)', () => {
+// 재현 2026-08-25 — 지출이 하나도 안 적혔다). 이 적어 둔 함정 그대로다.
+describe('form 컬럼 마이그레이션', () => {
   it('없으면 ALTER 로 더한다', async () => {
     isConnectionMock.mockResolvedValue(false)
     dbQueryMock.mockResolvedValue({ values: [{ name: 'id' }, { name: 'spent_on' }] })

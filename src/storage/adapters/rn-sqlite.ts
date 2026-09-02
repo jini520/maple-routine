@@ -12,7 +12,7 @@ import type { SqliteDbConnection, SqlitePort } from '../ports'
 import { toOpenOptions, type SqlitePlatform } from './capacitor-sqlite-open'
 
 /**
- * `SqlitePort` 의 RN 구현([[ADR-128]] 결정 4 — 밖으로 나가는 시그니처는 Capacitor 구현과 같다).
+ * `SqlitePort` 의 RN 구현(— 밖으로 나가는 시그니처는 Capacitor 구현과 같다).
  *
  * **op-sqlite 를 고른 이유는 성능이 아니라 `location` 이다.** 기존 DB 는 Capacitor 플러그인이
  * 정한 자리에 있고(`docs/migration/data.md` 결정 2), 자기 전용 디렉터리에만 파일을 만드는
@@ -21,8 +21,8 @@ import { toOpenOptions, type SqlitePlatform } from './capacitor-sqlite-open'
  * (`cpp/OPSqlite.cpp:81` — `/` 로 시작하면 그 경로를 그대로 쓴다) 네이티브 기준 디렉터리를
  * 상수로 내준다(`ANDROID_DATABASE_PATH`·`IOS_DOCUMENT_PATH`).
  *
- * 스키마 생성·컬럼 보강([[ADR-069]] 결정 1)·메이린 키 이관·stale 커넥션 복구([[ADR-050]] 결정 2)·
- * 타임아웃([[ADR-117]] 결정 5)은 전부 `src/storage/sqlite/db.ts` 에 그대로 있다. 이 파일이 맡는
+ * 스키마 생성·컬럼 보강·메이린 키 이관·stale 커넥션 복구·
+ * 타임아웃은 전부 `src/storage/sqlite/db.ts` 에 그대로 있다. 이 파일이 맡는
  * 것은 **플러그인 호출 그 자체**뿐이다.
  */
 const platform: SqlitePlatform = Platform.OS === 'ios' ? 'ios' : 'android'
@@ -34,7 +34,7 @@ const directories = {
 
 /**
  * 지금 열려 있는 DB. `isConnection` 이 여기 있는지로 답한다 — Capacitor 쪽 의미는 "커넥션 매니저에
- * 등록돼 있는가"였고 웹뷰 리로드가 남긴 stale 커넥션을 잡는 장치였는데([[ADR-050]] 결정 2),
+ * 등록돼 있는가"였고 웹뷰 리로드가 남긴 stale 커넥션을 잡는 장치였는데,
  * RN 에는 리로드가 없어 그 상황 자체가 없다. 그래서 흉내 내지 않고 **실제로 열려 있는지**를
  * 그대로 답한다(`db.ts` 는 참이면 닫고 새로 만들 뿐이라 어느 쪽이든 맞물린다).
  */
@@ -97,7 +97,7 @@ export const rnSqlitePort: SqlitePort = {
     await db.closeAsync()
   },
   // `version` 은 받지 않는다 — op-sqlite 에 스키마 버전 개념이 없고, 이 앱의 스키마 진화는
-  // `db.ts` 의 `CREATE TABLE IF NOT EXISTS` + `ensureColumn` 이 전부 맡는다([[ADR-069]] 결정 1).
+  // `db.ts` 의 `CREATE TABLE IF NOT EXISTS` + `ensureColumn` 이 전부 맡는다.
   async createConnection(database, encryption): Promise<SqliteDbConnection> {
     return createDbConnection(database, encryption)
   },

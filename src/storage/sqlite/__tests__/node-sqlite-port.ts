@@ -1,6 +1,6 @@
 /// <reference types="node" />
 /**
- * **진짜 SQLite 위에서 `db.ts` 를 돌리는 포트**([[ADR-176]] 결정 7).
+ * **진짜 SQLite 위에서 `db.ts` 를 돌리는 포트**.
  *
  * 이 저장소의 SQLite 테스트는 전부 목이었다 — `db.spec.ts` 는 가짜 포트를, `rn-sqlite.test.ts` 는
  * op-sqlite 의 «모양» 을 흉내 낸다. 그 둘이 지키는 것은 «어떤 문장이 어떤 차례로 나가는가» 이고,

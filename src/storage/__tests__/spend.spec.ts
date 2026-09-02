@@ -1,4 +1,4 @@
-// 지출 어댑터([[ADR-166]] · [[ADR-170]] 결정 2).
+// 지출 어댑터.
 import spendCatalog from '../../data/spend-catalog.json'
 import type { SpendRecord } from '../spend'
 
@@ -39,7 +39,7 @@ const mesoSpend: SpendRecord = {
   recordedAt: '2026-08-23T05:00:00.000Z',
 }
 
-/** 메포로 낸 것 — 시세가 **반드시** 함께 온다([[ADR-166]] 정정 2 ③). */
+/** 메포로 낸 것 — 시세가 **반드시** 함께 온다. */
 const pointSpend: SpendRecord = {
   ...mesoSpend,
   id: 'spd-2',
@@ -66,7 +66,7 @@ describe('insertSpendRecord', () => {
       '버프',
       '세이람의 영약',
       null,
-      // 종류는 「아이템 구매」의 것이다([[ADR-173]] 정정 1) — 다른 갈래에서는 NULL 이다.
+      // 종류는 「아이템 구매」의 것이다 — 다른 갈래에서는 NULL 이다.
       null,
       1,
       2_000_000,
@@ -97,7 +97,7 @@ describe('insertSpendRecord', () => {
   })
 })
 
-// [[ADR-166]] 정정 2 ③ — 시세 없이 저장하면 그 행은 **영영 메소로 표시할 수 없는 행**이 된다
+// 시세 없이 저장하면 그 행은 **영영 메소로 표시할 수 없는 행**이 된다
 // (결정 5 가 환율을 행에 박으므로 나중에 채울 수도 없다). 화면이 막더라도 저장소가 한 번 더 막는다.
 describe('메포 지출의 시세 요구', () => {
   it('시세가 없으면 저장하지 않고 던진다', async () => {
@@ -109,7 +109,7 @@ describe('메포 지출의 시세 요구', () => {
     expect(runMock).not.toHaveBeenCalled()
   })
 
-  // 환산이 나눗셈이라 0 이면 화면이 깨진다([[ADR-166]] 정정 2 ④ — 메포 × 1억 ÷ 시세).
+  // 환산이 나눗셈이라 0 이면 화면이 깨진다(— 메포 × 1억 ÷ 시세).
   it('시세가 0 이하면 던진다 — 환산이 나눗셈이다', async () => {
     const { insertSpendRecord } = require('../spend') as typeof import('../spend')
 
@@ -173,7 +173,7 @@ describe('getSpendRecordsBetween', () => {
   })
 
   /**
-   * **종류는 칸 하나로 왕복한다**([[ADR-173]] 정정 1 결정 4) — 이름이 어긋나면 타입 에러 없이
+   * **종류는 칸 하나로 왕복한다** — 이름이 어긋나면 타입 에러 없이
    * 「소비」로 적은 행이 **장비로 열리고**(NULL → 장비) 수량 줄이 사라진다.
    */
   it('종류를 그대로 되읽는다', async () => {
@@ -213,7 +213,7 @@ describe('getSpendRecordsBetween', () => {
 })
 
 describe('SPEND_CATEGORIES', () => {
-  it('[[ADR-166]] 정정 1 ② 의 다섯이다', () => {
+  it('저장하는 것은 다섯이다', () => {
     const { SPEND_CATEGORIES } = require('../spend') as typeof import('../spend')
 
     expect(SPEND_CATEGORIES).toEqual(['컨텐츠', '이벤트·BM', '버프', '아이템 구매', '기타'])
@@ -229,7 +229,7 @@ describe('SPEND_CATEGORIES', () => {
     }
   })
 
-  // 나머지 둘은 **직접 입력**이라 카탈로그에 항목이 없다([[ADR-166]] 정정 1 ②).
+  // 나머지 둘은 **직접 입력**이라 카탈로그에 항목이 없다.
   it('직접 입력 둘은 카탈로그에 없다', () => {
     expect(spendCatalog.categories).not.toContain('아이템 구매')
     expect(spendCatalog.categories).not.toContain('기타')
@@ -237,7 +237,7 @@ describe('SPEND_CATEGORIES', () => {
 })
 
 
-// [[ADR-171]] 결정 4·6 — 적은 것은 되돌릴 수 있어야 한다.
+// 적은 것은 되돌릴 수 있어야 한다.
 describe('updateSpendRecord', () => {
   it('id 로 갈아 끼운다 — 지우고 다시 넣지 않는다', async () => {
     const { updateSpendRecord } = require('../spend') as typeof import('../spend')
@@ -252,7 +252,7 @@ describe('updateSpendRecord', () => {
     expect(values[values.length - 1]).toBe('spd-1')
   })
 
-  // `recordedAt` 은 「적은 시각」이지 「마지막으로 만진 시각」이 아니다([[ADR-171]] 결정 4).
+  // `recordedAt` 은 「적은 시각」이지 「마지막으로 만진 시각」이 아니다.
   it('recorded_at 을 SET 에 안 넣는다', async () => {
     const { updateSpendRecord } = require('../spend') as typeof import('../spend')
 

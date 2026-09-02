@@ -7,12 +7,12 @@ export interface ToastAction {
   label: string
   onClick: () => void
   // 액션 슬롯은 아이콘만 보이고 label은 aria-label로만 쓰인다. 기본값(RefreshCw)이 '다시 시도'를
-  // 전제하므로, 뜻이 다른 액션은 자기 아이콘을 넘겨야 한다([[ADR-063]] — '설정 열기'에 새로고침
+  // 전제하므로, 뜻이 다른 액션은 자기 아이콘을 넘겨야 한다(— '설정 열기'에 새로고침
   // 아이콘을 쓰면 무엇을 하는 버튼인지 어긋난다).
   //
   // 타입이 **플랫폼 중립**인 이유: 이 필드는 원래 `lucide-react`(웹)의 `LucideIcon` 이었고, 그래서
   // `lucide-react-native` 의 같은 아이콘이 **타입상 들어가지 않았다**(SVG 프롭이 갈린다 — 넘기는
-  // 쪽이 `as unknown as` 로 우회하고 있었다). 웹 앱이 사라지면서([[ADR-155]]) 그 타입을 붙들 이유도
+  // 쪽이 `as unknown as` 로 우회하고 있었다). 웹 앱이 사라지면서 그 타입을 붙들 이유도
   // 함께 없어졌으므로, `Toast.tsx` 가 적어 둔 해법대로 **두 라이브러리가 다 들어가는 폭**으로
   // 넓힌다 — core 가 특정 아이콘 라이브러리를 아는 것 자체가 이 층에 안 맞기도 하다.
   icon?: ComponentType<{ size?: number; color?: string }>
@@ -35,7 +35,7 @@ interface ToastStore {
   dismiss: (id: string) => void
 }
 
-// 자동 소멸까지 걸리는 시간 — 변형별 고정값(호출부에서 개별 지정 불가, [[ADR-032와 무관, Toast 설계]] 확정 스펙).
+// 자동 소멸까지 걸리는 시간. 변형별 고정값이고 호출부에서 개별 지정할 수 없다.
 const DURATIONS: Record<ToastVariant, number | null> = {
   success: 2000,
   info: 2500,
@@ -105,7 +105,7 @@ export const useToastStore = create<ToastStore>()((set, get) => {
  * 이것이 필요한 이유는 타이머가 **모듈 스코프**에 살기 때문이다(위 `timers`). 토스트를 띄운 채
  * 끝난 케이스는 2~2.5초짜리 실제 `setTimeout` 을 남기고, 그러면 jest 가 *"Jest did not exit one
  * second after the test run has completed"* 로 멈춰 서 있다가 워커 정리와 겹쳐 `SIGSEGV` 로
- * 죽기까지 한다([[ADR-157]] — 러너를 합치며 이 자리가 드러났다. vitest 는 이 상태로도 그냥 끝났다).
+ * 죽기까지 한다(— 러너를 합치며 이 자리가 드러났다. vitest 는 이 상태로도 그냥 끝났다).
  *
  * `jest.setup.js` 의 전역 `afterEach` 가 이것을 부르므로 **개별 테스트는 아무것도 안 해도 된다.**
  * 관례는 `__resetNativePortsForTest`·`resetSyncRunStateForTests` 와 같다.

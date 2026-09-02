@@ -121,7 +121,7 @@ describe('matchesRowKey', () => {
   })
 })
 
-// ⚠️ 가격이 조용히 사라지는 자리 그 ② ([[ADR-124]] 결정 4)
+// ⚠️ 가격이 조용히 사라지는 자리 그 ②
 //
 // `lib/boss/boss-drops` 쪽 동명 함수보다 **이쪽이 더 자주 터진다** — 저장소 행 → 도메인 변환이라
 // 난이도 확정 같은 특수 상황이 아니라 **DB에서 읽을 때마다** 지나간다. 여기서 필드를 빠뜨리면
@@ -170,9 +170,9 @@ describe('toRecordedDrop — 가격 필드 (ADR-124)', () => {
   })
 })
 
-// [[ADR-187]] 결정 4 — 주간 한도를 채우면 미처치 placeholder 행은 아예 서지 않는다. 「마감」 배지를
+// 주간 한도를 채우면 미처치 placeholder 행은 아예 서지 않는다. 「마감」 배지를
 // 여기까지 들고 오지 않는다: 이 페이지는 정산이라 «벌지 않은 것» 은 줄을 갖지 않는다.
-describe('selectProfitDisplayBosses — 주간 한도 마감 ([[ADR-187]] 결정 4)', () => {
+describe('selectProfitDisplayBosses — 주간 한도 마감', () => {
   const WEEKLY_NAMES = (weeklyBossesData.weekly as { boss: string }[]).map((entry) => entry.boss)
   const PENDING = WEEKLY_NAMES[0]
 
@@ -203,7 +203,7 @@ describe('selectProfitDisplayBosses — 주간 한도 마감 ([[ADR-187]] 결정
     expect(names(selectProfitDisplayBosses(contents, 'auto', []))).not.toContain(PENDING)
   })
 
-  // 회귀 가드 — 한도 전이면 미완료 placeholder 는 그대로 선다([[ADR-032]] 결정 4).
+  // 회귀 가드 — 한도 전이면 미완료 placeholder 는 그대로 선다.
   it('자동 모드: 한 마리 모자라면 미완료 placeholder 는 그대로 선다', () => {
     const contents = [
       content({ name: PENDING, isRegistered: true }),

@@ -15,7 +15,7 @@ export type ScheduleSyncError =
   | { kind: 'notCollected' } // 400 OPENAPI00009 — 아직 집계 전(시간이 지나면 풀린다)
   | { kind: 'network' } // 그 외 네트워크/파싱 실패 + 코드를 모르는 400
 
-// 호출부가 reject를 원인으로 변환할 수 있게 export한다([[ADR-062]] 결정 2) — 피커·온보딩 스텝이
+// 호출부가 reject를 원인으로 변환할 수 있게 export한다 — 피커·온보딩 스텝이
 // getCharacterPickerRoster의 catch에서 이걸 통과시켜 loadError로 내려준다.
 export function toScheduleSyncError(error: unknown): ScheduleSyncError {
   // ADR-115 결정 9: 401/403 만이 아니라 400 OPENAPI00005 도 무효 키다. 판정은 nexon/errors 한 곳.
@@ -29,7 +29,7 @@ export function toScheduleSyncError(error: unknown): ScheduleSyncError {
   }
   // 코드를 아는 400만 갈라내고, 모르는 코드·본문 없는 400은 network로 degrade한다 —
   // 넥슨이 코드 체계를 바꿔도 최악의 경우 지금 동작(재시도 유도)으로 떨어지게 하는 안전판이다
-  // ([[ADR-067]] 트레이드오프).
+  // (트레이드오프).
   if (error instanceof NexonBadRequestError) {
     if (error.code === 'OPENAPI00003') {
       return { kind: 'characterUnavailable' }

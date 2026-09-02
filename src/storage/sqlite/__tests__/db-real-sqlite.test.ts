@@ -1,6 +1,6 @@
 /// <reference types="node" />
 /**
- * **목이 아닌 진짜 SQLite 로 한 번 태우는 자리**([[ADR-176]] 결정 7 · 이슈 #265).
+ * **목이 아닌 진짜 SQLite 로 한 번 태우는 자리**(이슈 #265).
  *
  * 옆의 `db.spec.ts` 는 가짜 포트로 «어떤 문장이 나가는가» 를 보고, `adapters/__tests__/rn-sqlite.test.ts`
  * 는 op-sqlite 의 «모양» 을 본다. 여기서 보는 것은 **그 문장이 진짜 엔진에서 통하는가** 다 —
@@ -16,7 +16,7 @@ import { getIncomeRecordsBetween, insertIncomeRecord, type IncomeRecord } from '
 import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
 
 /**
- * **처음 만들어졌을 때의 `income_records`**([[ADR-170]] 결정 1) — 수입이 메소뿐이라
+ * **처음 만들어졌을 때의 `income_records`** — 수입이 메소뿐이라
  * `meso_amount` 가 `NOT NULL` 이다. 실기기의 테이블은 이 DDL 로 만들어졌고, 그 뒤의 칸들은
  * 전부 `ensureColumn` 이 **뒤에 붙였다**(그래서 순서가 지금의 DDL 과 다르다).
  */
@@ -74,7 +74,7 @@ afterEach(async () => {
   real.dispose()
 })
 
-// [[ADR-176]] — SQLite 는 `ALTER TABLE` 로 기존 칸의 `NOT NULL` 을 못 뗀다. 테이블을 다시 쓰는 것이
+// SQLite 는 `ALTER TABLE` 로 기존 칸의 `NOT NULL` 을 못 뗀다. 테이블을 다시 쓰는 것이
 // 유일한 길이고, **이 저장소가 처음 하는 종류의 마이그레이션**이라 잃을 것이 크다(수입 기록 전부).
 describe('income_records.meso_amount 재작성 (이슈 #265 · ADR-176)', () => {
   it('처음 만드는 DB 는 처음부터 nullable 이다', async () => {
@@ -96,7 +96,7 @@ describe('income_records.meso_amount 재작성 (이슈 #265 · ADR-176)', () => 
   })
 
   // **이 결정의 진짜 위험이다.** 재작성은 DROP 을 포함하므로, 옮기다 어긋나면 사용자가 손으로 적은
-  // 수입이 통째로 사라진다 — 되살릴 API 가 0% 인 데이터다([[ADR-170]] 결정 2).
+  // 수입이 통째로 사라진다 — 되살릴 API 가 0% 인 데이터다.
   it('기존 행을 한 건도 안 잃는다 — 값까지 그대로다', async () => {
     real.inspect((db) => {
       db.exec(OLD_INCOME_TABLE)
@@ -138,7 +138,7 @@ describe('income_records.meso_amount 재작성 (이슈 #265 · ADR-176)', () => 
   })
 
   // 칸을 더한 커밋과 이 재작성이 또 갈린다 — 수수료·통화·사냥 칸을 아직 못 받은 기기가 실제로
-  // 있다([[ADR-170]] 정정 9·15 · [[ADR-175]] 결정 9). 지금 스키마의 칸 목록을 박아 두면 없는 칸을
+  // 있다. 지금 스키마의 칸 목록을 박아 두면 없는 칸을
   // `SELECT` 해 **그 자리에서 던진다** — 그 기기는 앱이 아예 안 열린다.
   it('칸이 모자란 옛 기기도 옮긴다 — 없던 칸은 NULL 이다', async () => {
     real.inspect((db) => {
@@ -159,14 +159,14 @@ describe('income_records.meso_amount 재작성 (이슈 #265 · ADR-176)', () => 
       mesoAmount: 900_000_000,
       saleFeePercent: null,
       pointAmount: null,
-      // 계산 입력이 없으니 옛 모양(금액을 직접 치는 시트)으로 연다([[ADR-175]] 결정 9).
+      // 계산 입력이 없으니 옛 모양(금액을 직접 치는 시트)으로 연다.
       hunt: null,
       quantity: null,
     })
     expect(notNullOfMesoAmount(real)).toBe(0)
   })
 
-  // 차례가 뒤집히면 «방금 ALTER 로 붙인 칸을 다시 만드는» 헛일이 된다([[ADR-176]] 결정 4).
+  // 차례가 뒤집히면 «방금 ALTER 로 붙인 칸을 다시 만드는» 헛일이 된다.
   // 재작성이 만드는 테이블은 지금의 DDL 전체라, 먼저 돌면 **income_records 에 ALTER 가 한 번도
   // 안 나가는 것**이 그 차례의 증거다.
   it('ensureColumn 들보다 먼저 돈다 — 옮긴 뒤엔 붙일 칸이 없다', async () => {
@@ -184,7 +184,7 @@ describe('income_records.meso_amount 재작성 (이슈 #265 · ADR-176)', () => 
   })
 
   // 재작성은 행을 통째로 옮기는 비싼 일이다. 메이린 UPDATE 들과 같은 성질을 가져야 한다 —
-  // **이미 됐으면 아무 일도 안 한다**([[ADR-176]] 결정 5).
+  // **이미 됐으면 아무 일도 안 한다**.
   it('두 번째 부팅에서는 한 문장도 안 나간다', async () => {
     real.inspect((db) => {
       db.exec(OLD_INCOME_TABLE)
@@ -296,7 +296,7 @@ describe('「기타」를 메포·캐시로 적어도 저장된다 (목이 아�
         sojae: 4,
         fragments: 83,
         fragmentPrice: 2_500_000,
-        // **그때의** 캐릭터 메소 획득량([[ADR-177]] 결정 8) — 칸이 하나 더 있다.
+        // **그때의** 캐릭터 메소 획득량 — 칸이 하나 더 있다.
         mesoRate: 149,
       },
     })

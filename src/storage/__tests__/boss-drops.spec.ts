@@ -251,7 +251,7 @@ describe('getAllBossDropRecords', () => {
   })
 })
 
-// 가격 컬럼 왕복 ([[ADR-124]] 결정 4) — 저장한 값이 그대로 읽혀야 한다. 쓰기·읽기 어느 한쪽만
+// 가격 컬럼 왕복 — 저장한 값이 그대로 읽혀야 한다. 쓰기·읽기 어느 한쪽만
 // 컬럼을 알면 값이 조용히 사라진다.
 describe('가격 컬럼 왕복 (ADR-124)', () => {
   it('INSERT 에 price_state·price_meso·price_share 를 함께 싣는다', async () => {

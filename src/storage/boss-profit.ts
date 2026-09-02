@@ -12,8 +12,8 @@ export interface BossProfitRecord {
   payoutMeso: number
   recordedAt: string // ISO 8601
   /**
-   * 기록 시점의 월드 스냅샷([[ADR-069]] 결정 1). `null` 이면 "월드 모름"이고 월드별 결정석 집계에서
-   * 제외된다([[ADR-054]] 결정 5의 기존 처리를 그대로 탄다).
+   * 기록 시점의 월드 스냅샷. `null` 이면 "월드 모름"이고 월드별 결정석 집계에서
+   * 제외된다(의 기존 처리를 그대로 탄다).
    *
    * 파생값(캐시된 `character/basic` 의 `world_name`)으로 두면 **월드 리프가 모든 과거 주의 귀속을
    * 소급 이동**시킨다 — 분모(`90 × 월드 수`)까지 바뀐다. 판매 한도가 월드마다 따로 산정된다는
@@ -39,8 +39,8 @@ const UPSERT_SQL = `
 
 /**
  * `boss_profit_records` 가 바뀔 때마다 오르는 수 — **이 표를 캐시하는 쪽이 «내 스냅샷이 낡았나» 를
- * 물을 수 있게** 하는 값이다([[ADR-189]] 결정 2). `storage/boss-drops` 의 그것과 같은 물건이고
- * 같은 규칙을 따른다([[ADR-147]] 정정 17).
+ * 물을 수 있게** 하는 값이다. `storage/boss-drops` 의 그것과 같은 물건이고
+ * 같은 규칙을 따른다.
  *
  * **쓰기 셋 전부에서 오른다** — 「이 쓰기는 저쪽이 안 읽는 칸이다」 로 고르지 않는다. 그 판단은
  * 읽는 쪽이 늘 때마다 다시 해야 하고, 한 번 틀리면 증상이 «가끔 안 맞는다» 로 나타나 잡기 어렵다.
@@ -82,7 +82,7 @@ const FILL_MISSING_WORLD_SQL = `
 `
 
 /**
- * `world` 가 비어 있는 기존 기록을 **지금 아는 월드**로 채운다([[ADR-069]] 결정 3).
+ * `world` 가 비어 있는 기존 기록을 **지금 아는 월드**로 채운다.
  *
  * 컬럼을 새로 더했으므로 그전 기록에는 월드가 없다. `NULL` 로 두면 안전하지만 기존 사용자의 과거 주
  * 결정석 칩이 통째로 사라지고, 현재 월드로 채우면 **이미 리프한 캐릭터의 과거만** 잘못 고정된다 —
@@ -139,7 +139,7 @@ export async function getBossProfitRecords(
 }
 
 /**
- * 이 기간 **또는 그보다 과거**에 기록이 하나라도 있는지 확인한다([[ADR-068]] 결정 5).
+ * 이 기간 **또는 그보다 과거**에 기록이 하나라도 있는지 확인한다.
  *
  * 이전 기간 게이트(`canReachPreviousPeriod`)가 **바로 이전 한 칸만** 봐서, 기록이 없는 기간이 벽이
  * 되어 그 뒤의 기록 전체가 화면에서 사라졌다 — 3·4주차에 접속하지 않은 캐릭터는 1·2주차 기록이
@@ -184,12 +184,12 @@ export interface BossProfitRecordKey {
 }
 
 /**
- * 이 캐릭터들의 **전 기간** 수익 기록 키만 읽는다([[ADR-071]] 결정 6).
+ * 이 캐릭터들의 **전 기간** 수익 기록 키만 읽는다.
  *
  * 드롭 히스토리는 "그 난이도에서 획득 불가한 기록"을 표시 단계에서 거르는데, **처치 난이도가 확정된
  * 조합에만** 걸어야 한다 — 확정 전 행에 걸면 익스트림으로 등록해두고 하드를 잡은 경우처럼 나중에
- * 이관되어 살아남을 기록을 미리 숨긴다([[ADR-069]] 결정 4). 이 테이블에 행이 있다는 것이 곧 그
- * 확정이므로([[ADR-014]] 자동 기록은 완료 행만 만든다) 키만 알면 된다.
+ * 이관되어 살아남을 기록을 미리 숨긴다. 이 테이블에 행이 있다는 것이 곧 그
+ * 확정이므로(자동 기록은 완료 행만 만든다) 키만 알면 된다.
  */
 export async function getAllBossProfitRecordKeys(ocids: string[]): Promise<BossProfitRecordKey[]> {
   if (ocids.length === 0) {
@@ -212,7 +212,7 @@ export async function getAllBossProfitRecordKeys(ocids: string[]): Promise<BossP
 }
 
 /**
- * 날짜가 붙은 수익 기록 — **가계부 캘린더가 읽는 모양**([[ADR-172]]).
+ * 날짜가 붙은 수익 기록 — **가계부 캘린더가 읽는 모양**.
  *
  * `BossProfitRecord` 를 안 쓰는 이유는 필요한 칸이 다르기 때문이다. 캘린더는 «누가 · 무엇을 ·
  * 며칟날 · 얼마» 만 쓰고 파티원 수·정가·월드는 안 본다. 그리고 `defeated_on IS NOT NULL` 로 걸러
@@ -231,7 +231,7 @@ export interface DatedBossProfitRecord {
  * 이 날짜 범위(**두 끝 포함**)에 잡은 것으로 **밝혀진** 기록.
  *
  * 날짜를 모르는 기록(`defeated_on IS NULL`)은 **안 나온다.** 그것을 어느 칸에 얹으면 그 순간
- * 거짓 날짜가 되기 때문이다([[ADR-170]] 결정 4 ②) — 주간 보기에서는 `period_key` 로 제자리에 서므로
+ * 거짓 날짜가 되기 때문이다 — 주간 보기에서는 `period_key` 로 제자리에 서므로
  * 잃는 것은 월간 칸뿐이다.
  */
 export async function getDatedBossProfitRecords(
@@ -267,7 +267,7 @@ export async function getDatedBossProfitRecords(
   })
 }
 
-/** 아직 날짜를 모르는 기록 — **캐낼 대상**이다([[ADR-172]] 결정 2). */
+/** 아직 날짜를 모르는 기록 — **캐낼 대상**이다. */
 export interface UndatedBossProfitRecord {
   ocid: string
   boss: string
@@ -280,7 +280,7 @@ export interface UndatedBossProfitRecord {
  * 이 기간들 안에서 아직 날짜를 모르는 기록.
  *
  * **기간을 반드시 받는다.** 걸지 않으면 «영영 캘 수 없는 옛 기록» 까지 끌어와 매번 훑게 되는데,
- * 캘 수 있는 범위는 조회 창(오늘−13)이 이미 정한다([[ADR-172]] 결정 4). 호출부가 그 창에서 기간을
+ * 캘 수 있는 범위는 조회 창(오늘−13)이 이미 정한다. 호출부가 그 창에서 기간을
  * 만들어 넘긴다.
  */
 export async function getUndatedBossProfitRecords(
@@ -316,7 +316,7 @@ export async function getUndatedBossProfitRecords(
 }
 
 /**
- * 캐낸 날짜를 박는다 — **upsert 를 안 탄다**([[ADR-172]] 결정 1).
+ * 캐낸 날짜를 박는다 — **upsert 를 안 탄다**.
  *
  * `upsertBossProfitRecord` 는 이 칸을 아예 안 적는다(INSERT 목록에도 `DO UPDATE SET` 에도 없다).
  * 그래서 자동 기록이 몇 번을 다시 돌아도 캐 놓은 날짜를 지우지 못한다 — `world` 가 `COALESCE` 로

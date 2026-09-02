@@ -12,7 +12,7 @@
  * 컨텐츠 전부**라 모든 캐릭터가 똑같이 «일퀘 18» 로 나왔다(= `scheduler-content-template.json` 의
  * `daily` 길이). 보스 쪽은 같은 이유로 `displayedBosses` 가 이미 나와 있었고, 이 파일이 그 짝이다.
  *
- * ## 판정 자체 ([[ADR-035]] 결정 3·6·19·20, [[ADR-142]] 결정 4)
+ * ## 판정 자체
  *
  * - **수동 모드**: 게임 등록 여부가 아니라 사용자가 앱에서 관리하는 멤버십(`manualTrackedContent`)이
  *   목록을 정하고, 값은 동기화 결과 또는 템플릿에서 즉석 조회한다(`mergeManualContentList`).
@@ -20,7 +20,7 @@
  * - **자동 모드**: `isRegistered` 인 항목만.
  * - 두 모드 다 **템플릿 순서**로 정렬한다 — 순서가 화면마다 다르면 같은 목록으로 안 보인다.
  *
- * **캐릭터를 인자로 받는다**([[ADR-142]] 결정 4) — 카드 목록과 레일의 링, 그리고 이제 today 의
+ * **캐릭터를 인자로 받는다** — 카드 목록과 레일의 링, 그리고 이제 today 의
  * 남은 개수가 **같은 함수**를 써야 «세는 것 = 보이는 것» 이 구조로 보장된다.
  */
 
@@ -33,7 +33,7 @@ import type { DailyContent, WeeklyContent } from '../../types'
 
 /**
  * 관리 페이지와 같은 `categorizeContentEntries` 평탄화 순서로 미리 정렬해 둔 템플릿
- * ([[ADR-035]] 결정 20 — 일간은 첫 등장 순서, 주간은 `WEEKLY_CATEGORY_ORDER`).
+ * (— 일간은 첫 등장 순서, 주간은 `WEEKLY_CATEGORY_ORDER`).
  * 캐릭터와 무관한 상수라 모듈 레벨에서 1회 계산한다.
  */
 const ORDERED_DAILY_TEMPLATE = categorizeContentEntries(CONTENT_TEMPLATE.daily).flatMap((group) =>

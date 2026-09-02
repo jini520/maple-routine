@@ -62,7 +62,7 @@ import type { BackfillTarget } from './backfill'
 
 
 /**
- * 월간 탭 주차 행의 상태([[ADR-068]] 결정 2). 기간 6상태([[ADR-067]] 결정 2)에 이 화면 고유의 두
+ * 월간 탭 주차 행의 상태. 기간 6상태에 이 화면 고유의 두
  * 상태를 더한다 — `inProgress`(지금 진행 중인 주)와 `upcoming`(아직 시작하지 않은 주).
  *
  * 전에는 `confirmed | inProgress | upcoming | unavailable` 넷이었고, **조회한 적 없는 주가
@@ -79,12 +79,12 @@ export interface BossProfitWeeklySubtotal {
   periodKey: string
   totalMeso: number
   /**
-   * 그 주에 기록된 드롭([[ADR-124]] 결정 7 정정). `totalMeso` 에 이미 환산돼 들어 있다.
+   * 그 주에 기록된 드롭(정정). `totalMeso` 에 이미 환산돼 들어 있다.
    *
    * **합이 아니라 목록으로 들고 있는 이유**: 월간 탭에서는 주간 수익이 소계에서만 나오므로
    * ① 총 수익에서 결정석/아이템을 가르는 데 쓰이고(합이면 충분했다) ② 주차 소계 행의 내역
    * 팝오버가 **아이템을 낱개로** 보여줘야 한다(2026-08-10 사용자 요청). 합만 들고 있으면 ②를
-   * 할 수 없어 [[ADR-071]] 결정 10 이 짚은 월간 탭의 한계가 그대로 남는다.
+   * 할 수 없어 이 짚은 월간 탭의 한계가 그대로 남는다.
    */
   drops: RecordedDrop[]
   state: WeeklySubtotalState
@@ -96,7 +96,7 @@ export type BossProfitStatus = 'idle' | 'loading' | 'loaded' | 'error'
 // 하나라도 빠뜨리는 순간 그 자리가 조용히 게이트에 걸리므로, 자동 진입 경로인 loadTrackedOcids()만
 // auto: true 를 넘긴다. 화면(헤더 버튼·당겨서 새로고침·재시도)은 인자를 안 넘겨 자동으로 강제 경로다.
 // 컨텐츠·보스 스케줄러 스토어와 같은 이름·같은 모양이다 — 이 스토어의 refresh 는 onProgress 를
-// 받지 않는다는 기존 차이만 그대로 둔다([[ADR-072]] 결정 3).
+// 받지 않는다는 기존 차이만 그대로 둔다.
 export interface RefreshOptions {
   auto?: boolean
 }
@@ -108,7 +108,7 @@ export interface BossProfitState {
   rows: BossProfitRow[] // 선택된 (tab, periodKey)의 보스 row. monthly 탭이면 그 달의 monthly-cycle 보스만
   /**
    * **지금 `rows`·`weeklySubtotals` 에 담겨 있는 데이터가 어느 (tab, periodKey) 의 것인가**
-   * ([[ADR-087]] 정정 1). 위의 `tab`·`periodKey` 는 "사용자가 보려고 누른 기간"이라 데이터보다
+   * . 위의 `tab`·`periodKey` 는 "사용자가 보려고 누른 기간"이라 데이터보다
    * 먼저 바뀐다(기간 라벨·네비게이션의 반응성) — 그 사이 한 커밋 동안 화면은 **새 기간 키 +
    * 옛 기간 금액**을 그린다.
    *
@@ -122,7 +122,7 @@ export interface BossProfitState {
   loadedPeriodKey: string
   /**
    * **«지금 기간» 의 행 전부**(주간·월간 두 주기가 함께 들어 있다) — 위의 `rows` 와 **뜻이 다른
-   * 값**이다([[ADR-153]]).
+   * 값**이다.
    *
    * `rows` 는 `filterRowsForTab` 이 `cycle` 까지 걸러 낸 «사용자가 보고 있는 (탭, 기간)» 한
    * 조각이라, 이 화면의 네비게이션을 따라 움직인다. **today 위젯은 그것을 읽으면 안 된다** — 그
@@ -138,11 +138,11 @@ export interface BossProfitState {
   dropsByRowKey: Record<string, RecordedDrop[]> // 보스 행별 기록된 드롭(ADR-038). 키는 dropRowKey(ocid|boss|difficulty|periodKey). rows와 독립 상태라 탭 전환 시 loadPeriod가 DB에서 재로드
   weeklySubtotals: BossProfitWeeklySubtotal[] // monthly 탭에서만 채워짐(주차별 합계). weekly 탭에서는 항상 []
   isPeriodLoading: boolean // periodKey 이동 후 백필(과거 기간 재조회) 진행 중
-  // 이 기간을 화면이 어떻게 말해야 하는지([[ADR-067]] 결정 2, 표현은 [[ADR-068]]). 전에는
+  // 이 기간을 화면이 어떻게 말해야 하는지(표현은). 전에는
   // periodUnavailable(boolean) 하나로 "집계 전"과 "그 외 실패"를 같은 문구로 말했다.
   periodState: PeriodDataState
   /**
-   * 직전 기간의 총 수익 ([[ADR-087]] 결정 2·3) — 증감 칩의 비교 기준.
+   * 직전 기간의 총 수익 — 증감 칩의 비교 기준.
    *
    * **기록 합만 담는다.** 조회한 적 없는 기간도 0이다(사용자 결정) — 그래서 이 값은 기간 상태
    * 기계(`periodState`)와 무관하고, 화면은 이 숫자 하나만 보고 칩을 그린다. 그 대가로 "0메소였다"와
@@ -153,8 +153,8 @@ export interface BossProfitState {
   error: ScheduleSyncError | null
   staleCharacterNames: string[]
   /**
-   * 동기화가 실패한 캐릭터의 카드에 붙일 표식([[ADR-068]] 결정 3). 키는 ocid —
-   * `staleCharacterNames`(토스트용 이름 목록, [[ADR-063]])만으로는 어느 **카드**인지 알 수 없다.
+   * 동기화가 실패한 캐릭터의 카드에 붙일 표식. 키는 ocid —
+   * `staleCharacterNames`(토스트용 이름 목록)만으로는 어느 **카드**인지 알 수 없다.
    *   `unavailable` 400 OPENAPI00003 — 이 캐릭터는 조회할 수 없다(영구)
    *   `failed`      그 외 실패(네트워크·타임아웃 등)
    */
@@ -171,7 +171,7 @@ export interface BossProfitStore extends BossProfitState {
   goToPreviousPeriod(): Promise<void>
   goToNextPeriod(): Promise<void>
   /**
-   * 지금 보고 있는 (tab, periodKey)를 다시 로드한다([[ADR-068]] 결정 1·2). 재시도(`failed`)와
+   * 지금 보고 있는 (tab, periodKey)를 다시 로드한다. 재시도(`failed`)와
    * 조회(`notChecked`) 두 상태가 사용자에게 주는 행동이 이것뿐이고 둘 다 같은 일을 한다 —
    * 그 기간의 미확인 target을 다시 백필한다. `refresh` 로는 대신할 수 없다(현재 기간으로 되돌린다).
    */
@@ -182,7 +182,7 @@ export interface BossProfitStore extends BossProfitState {
    * **다른 화면이 같은 그룹을 DB에 쓴 뒤** 이 스토어의 스냅샷만 맞춘다(쓰기 없음).
    *
    * 가격 기록 화면(`drop-price-store`)이 부른다 — 두 스토어가 같은 `boss_drop_records` 를 각자
-   * 캐시하는데, 이 화면은 스택 왕복에도 마운트를 유지하므로([[ADR-077]]) 알려주지 않으면 **옛
+   * 캐시하는데, 이 화면은 스택 왕복에도 마운트를 유지하므로 알려주지 않으면 **옛
    * 스냅샷을 계속 그린다**(사용자 보고 2026-08-10: "새로고침해야 반영된다").
    *
    * `setBossDrops` 를 쓸 수 없는 이유가 둘이다: DB 에 **두 번 쓰게 되고**, 그 함수는 현재 로드된
@@ -223,7 +223,7 @@ let requestGeneration = 0
 // 문제를 없앤다. 레벨 내림차순(동레벨이면 이름순)으로 항상 같은 순서를 계산해, 캐시 우선 표시
 // 단계부터 실시간 동기화·과거 기간 조회까지 전부 이 순서를 그대로 따르게 한다. character-basic-cache를
 // 이미 조회하는 김에 아바타용 imageUrl과 월드(world_name)도 함께 반환한다 — 같은 profile 객체에
-// 들어 있어 추가 조회 비용이 0이다([[ADR-054]] 결정 5). 캐릭터명은 반환하지 않는다 — rows의
+// 들어 있어 추가 조회 비용이 0이다. 캐릭터명은 반환하지 않는다 — rows의
 // characterName은 character/list·스케줄러 캐시가 출처이고 character-basic-cache의 이름은 갱신
 // 시점이 달라 신뢰도가 낮다(ADR-017). world는 정렬에 참여하지 않는다.
 async function getSortedCharacterInfo(ocids: string[]): Promise<SortedCharacterInfo[]> {
@@ -318,7 +318,7 @@ async function buildWeeklySubtotalsForMonth(
     ),
   )
 
-  // 아이템 수익도 소계에 넣는다([[ADR-124]] 결정 7) — 안 넣으면 **주간 탭과 월간 탭의 같은 주가
+  // 아이템 수익도 소계에 넣는다 — 안 넣으면 **주간 탭과 월간 탭의 같은 주가
   // 다른 숫자**가 된다(주간 탭은 보스 행에 더해 보여주므로). 주차 전체를 한 번에 읽어 접는다.
   const weekDrops = await withSqliteFallback(getBossDropRecords(ocids, weekKeys), [])
   const dropsByOcidWeek = new Map<string, RecordedDrop[]>()
@@ -372,7 +372,7 @@ async function buildWeeklySubtotalsForMonth(
         continue
       }
 
-      // 판정을 화면·백필과 공유하는 한 함수에 맡긴다([[ADR-067]] 결정 2) — 전에는 여기서
+      // 판정을 화면·백필과 공유하는 한 함수에 맡긴다 — 전에는 여기서
       // "기록 없음 + 조회 가능"을 confirmed로 떨어뜨려 **조회한 적 없는 주를 0메소로 위장**했다.
       const state = resolvePeriodDataState({
         isCurrentPeriod: false,
@@ -452,9 +452,9 @@ async function buildRowsFromRecords(
 
 
 /**
- * 정리 결과를 알린다 — **조용히 지우지 않는다**([[ADR-187]] 결정 5).
+ * 정리 결과를 알린다 — **조용히 지우지 않는다**.
  *
- * `showInfo`(자동 소멸)다: 실패가 아니라 규칙 안내라, [[ADR-055]] 정정 3 이 한도 토스트에 고른
+ * `showInfo`(자동 소멸)다: 실패가 아니라 규칙 안내라 이 한도 토스트에 고른
  * 변형과 같다. 지운 것이 없으면 말할 것도 없다(멱등한 회차마다 토스트가 뜨면 소음이 된다).
  */
 function notifyOrphanDropCleanup(removedDrops: number): void {
@@ -467,7 +467,7 @@ function notifyOrphanDropCleanup(removedDrops: number): void {
 type BossProfitSetter = (partial: Partial<BossProfitState>) => void
 
 /**
- * 드롭 맵이 담을 행 — **보고 있는 기간 ∪ 지금 기간**([[ADR-153]] 결정 3).
+ * 드롭 맵이 담을 행 — **보고 있는 기간 ∪ 지금 기간**.
  *
  * `dropsByRowKey` 는 사본을 만들지 않는다. 키(`dropRowKey`)에 `periodKey` 가 들어 있어 두 기간이 한
  * 맵에 있어도 충돌하지 않고, 사본을 두면 드롭 편집 경로(`setBossDrops`·`applyExternalDropEdit`)가
@@ -535,7 +535,7 @@ async function loadPeriod(
       dropsByRowKey,
       weeklySubtotals,
       isPeriodLoading: false,
-      // 현재 기간은 실시간 동기화가 원천이라 recorded/confirmedEmpty뿐이다([[ADR-067]] 결정 2).
+      // 현재 기간은 실시간 동기화가 원천이라 recorded/confirmedEmpty뿐이다.
       periodState: resolvePeriodDataState({
         isCurrentPeriod: true,
         hasRecords: rows.length > 0,
@@ -549,7 +549,7 @@ async function loadPeriod(
     return
   }
 
-  // 각 target(캐릭터×기간)의 상태를 모아 이 화면의 상태를 정한다([[ADR-067]] 결정 2).
+  // 각 target(캐릭터×기간)의 상태를 모아 이 화면의 상태를 정한다.
   // 조회 불가(구간 밖) target은 **호출하지도, checked로 굳히지도 않는다** — 날짜만 보면 언제든
   // 다시 판정할 수 있고, 굳히면 "0건 확정"과 구분이 사라진다(결정 3).
   // ADR-078 결정 1: target별 조회는 서로 독립이라 병렬로 던진다. 직렬 await 이면 월간 탭에서
@@ -592,11 +592,11 @@ async function loadPeriod(
     tab === 'monthly'
       ? await buildWeeklySubtotalsForMonth(sortedOcids, periodKey, [], profileSnapshot, now)
       : []
-  // **지난 기간의 고아 드롭을 지운다**([[ADR-187]] 결정 5 — 셋째 경로). 과거 기간은 기록이 곧
+  // **지난 기간의 고아 드롭을 지운다**(— 셋째 경로). 과거 기간은 기록이 곧
   // 사실이라(`buildRowsFromRecords`) 동기화 신선도를 따질 것이 없다 — 백필된 적 없는 주는 행이
   // 통째로 비어 안전 장치 ②가 알아서 막는다.
   //
-  // **정리 → 읽기 순서는 지키되 다른 둘과는 나란히 간다**([[ADR-078]] 결정 1) — 지운 것이 화면 맵에
+  // **정리 → 읽기 순서는 지키되 다른 둘과는 나란히 간다** — 지운 것이 화면 맵에
   // 남지 않으려면 `loadDropsByRowKey` 보다 앞이어야 하지만, 앞줄에 세워 직렬로 두면 기간을 옮길
   // 때마다 왕복이 하나 더 얹힌다. 그래서 **그 갈래 안에서만** 이어 붙인다.
   const [canGoPreviousPeriod, dropsByRowKey, previousPeriodTotalMeso] = await Promise.all([
@@ -670,17 +670,17 @@ const initialState: BossProfitState = {
 
 // ADR-101 결정 4: 부팅 선하이드레이션(`features/prehydrate`)과 화면 마운트가 같은 회차를 부르므로,
 // 진행 중인 회차가 있으면 그 Promise 를 그대로 돌려준다. **"평생 한 번"이 아니라 "동시에 하나만"**
-// 이다 — 끝나면 잊는다. 영구 메모로 만들면 진입 재조회의 10분 TTL([[ADR-097]])이 죽는다.
+// 이다 — 끝나면 잊는다. 영구 메모로 만들면 진입 재조회의 10분 TTL이 죽는다.
 let hydration: Promise<void> | null = null
 
 export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
   /**
-   * **이 스토어의 모든 커밋은 «지금 기간» 을 함께 싣는다**([[ADR-153]] 결정 2).
+   * **이 스토어의 모든 커밋은 «지금 기간» 을 함께 싣는다**.
    *
    * `currentPeriodRows` 의 내용은 `latestSyncSnapshot.rows` 와 같다. 그것을 «갱신하는 자리마다
    * 잊지 않고 함께 쓴다» 로 두면 사본 둘이 언젠가 어긋나고(그 어긋남은 `setPartySize` 에서 실제로
    * 한 번 터졌다 — 2026-07-22), 반대로 스냅샷을 바꿀 때마다 `set` 을 한 번씩 더 부르면 «건너뛴
-   * 진입의 커밋은 1회» 가 깨진다([[ADR-097]] 결정 5 정정 3 — 그 계약은 화면 깜빡임을 막는다).
+   * 진입의 커밋은 1회» 가 깨진다(— 그 계약은 화면 깜빡임을 막는다).
    *
    * 그래서 **커밋 자체에 얹는다** — 커밋 수는 그대로이고, 어느 커밋에서 보든 상태와 스냅샷이 같다.
    * 대신 스냅샷 대입은 **그것을 화면에 반영할 `set` 보다 앞**에 와야 한다(지금 네 자리 모두 그렇다).
@@ -753,7 +753,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     const sortedCharacterInfo = await getSortedCharacterInfo(ocids)
     const sortedOcids = sortedCharacterInfo.map((info) => info.ocid)
     const imageUrlByOcid = new Map(sortedCharacterInfo.map((info) => [info.ocid, info.imageUrl]))
-    // 월드도 같은 조회 결과에서 그대로 꺼내 행까지 흘린다([[ADR-054]] 결정 5).
+    // 월드도 같은 조회 결과에서 그대로 꺼내 행까지 흘린다.
     const worldByOcid = new Map(sortedCharacterInfo.map((info) => [info.ocid, info.world]))
 
     // ADR-069 결정 3: `world` 컬럼을 새로 더했으므로 그전 기록에는 월드가 없다. 지금 아는 월드로
@@ -788,7 +788,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     }
 
     // 캐시 엔트리 한 캐릭터분. 행뿐 아니라 게이트 판정값(syncedAt)과 **프로필**도 함께 나른다 —
-    // 프로필이 행에만 실려 있으면 행이 0인 캐릭터에서 그것을 꺼낼 방법이 없다([[ADR-111]] 결정 6).
+    // 프로필이 행에만 실려 있으면 행이 0인 캐릭터에서 그것을 꺼낼 방법이 없다.
     interface CachedCharacterEntry {
       syncedAt: string | null
       profile: CharacterProfileInfo | null
@@ -816,7 +816,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         // 보여준다(ADR-032) — selectBossProfitBosses가 그룹(같은 apiName)당 "실제로 처치한"
         // 난이도(ownComplete)를 우선하고, 없으면 등록 난이도를 미완료 placeholder로 대신
         // 고른다. boss-scheduler의 selectDisplayBosses(등록 여부 우선)와 달리, 등록 난이도와
-        // 실제 처치 난이도가 다를 수 있어([[ADR-031]]) 가격 계산에는 반드시 실제 처치 난이도를
+        // 실제 처치 난이도가 다를 수 있어 가격 계산에는 반드시 실제 처치 난이도를
         // 써야 한다. 수동 모드는 사용자 멤버십을 병합해 표시한다(ADR-035 결정 21).
         const displayBosses = selectProfitDisplayBosses(cached.state.bossContents, mode, manualItemsByOcid.get(ocid) ?? [])
         const profile: CharacterProfileInfo = {
@@ -861,7 +861,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
 
     // ADR-111 결정 6: 캐시 행에서 파생한 키만 쓰면 **행이 없는 기간의 기록을 조회조차 하지 않아**
     // 되살릴 재료가 애초에 없다(축약 응답으로 월간 행이 통째로 빠지는 경로가 실측됐다 —
-    // [[ADR-067]] 결정 4). 동기화 분기와 같이 현재 주·달 키를 항상 포함한다.
+    // ). 동기화 분기와 같이 현재 주·달 키를 항상 포함한다.
     const cachedPeriodKeys = Array.from(
       new Set([
         ...cachedRows.map((row) => row.periodKey),
@@ -870,8 +870,8 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       ]),
     )
     // 폴백을 []가 아니라 null로 둬 "조회 실패"와 "기록 없음"을 구분한다 — 아래 자동 기록이
-    // 실패를 "없음"으로 읽으면 사용자가 저장한 파티원 수가 1로 덮인다([[ADR-050]] 결정 3,
-    // [[ADR-111]] 결정 5-④). 캐시 행이 0인 진입에서도 조회한다 — 그 진입(축약 응답으로 행이 전부
+    // 실패를 "없음"으로 읽으면 사용자가 저장한 파티원 수가 1로 덮인다(
+    // -④). 캐시 행이 0인 진입에서도 조회한다 — 그 진입(축약 응답으로 행이 전부
     // 사라진 경우)이 정확히 아래 복원이 겨누는 시나리오라, 행 개수로 막으면 재료가 사라진다.
     const cachedRecords = await withSqliteFallback<BossProfitRecord[] | null>(
       getBossProfitRecords(ocids, cachedPeriodKeys),
@@ -899,7 +899,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // 재조회뿐이고, 수익의 "계산"인 자동 기록·드롭 이관은 여기서 한다. 자리는 아래 set()보다 앞이라
     // 총 수익이 0으로 그려졌다가 점프하지 않고, refreshInPlace 분기보다도 앞이라 두 분기가 함께
     // 덮인다. 건너뛰지 않는 진입은 종전대로 하지 않는다 — 그 캐시는 낡았을 수 있고 곧 실제 동기화가
-    // 오므로 [[ADR-017]]의 방어가 설 자리는 정확히 거기다(결정 5-②).
+    // 오므로의 방어가 설 자리는 정확히 거기다(결정 5-②).
     const cachedDropRecordsForMigration =
       skipSync && cachedRecords !== null
         ? await withSqliteFallback(getBossDropRecords(ocids, cachedPeriodKeys), [])
@@ -916,11 +916,11 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         })
       : cachedMergedRows
 
-    // ADR-111 결정 6: 기록만 있는 조합을 행으로 되살린다([[ADR-067]] 결정 4 의 캐시 단계 누락 보완).
+    // ADR-111 결정 6: 기록만 있는 조합을 행으로 되살린다(의 캐시 단계 누락 보완).
     // **자동 기록 뒤**여야 한다 — 복원 행은 기록에서 나와 partySize 가 이미 채워져 있어 자동 기록
     // 대상이 아니고, 앞에 두면 그 루프가 헛돈다(동기화 분기도 같은 순서다). **skipSync 여부와
     // 무관하게** 캐시 단계 일반에 적용한다 — 두 경로가 다른 화면을 그리면 그것이 다음 결함이 된다.
-    // 정렬은 여기서 한 번만 한다 — 복원 행이 정렬 밖에 남으면 캐릭터 아코디언 순서가 흔들린다([[ADR-036]]).
+    // 정렬은 여기서 한 번만 한다 — 복원 행이 정렬 밖에 남으면 캐릭터 아코디언 순서가 흔들린다.
     const cachedSortedRows = sortRowsByOcidOrder(
       appendRecordOnlyRows(cachedAutoRecordedRows, cachedRecords ?? [], cachedCharacterProfiles, now),
       sortedOcids,
@@ -974,7 +974,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
 
       // 캐시 단계가 그릴 것이 없으면 총 수익 헤드라인도 없으므로 그 비교 기준을 기다릴 이유가 없다
       // (값 자체는 아래 동기화 완료 단계가 쓴다). 판정은 **복원까지 끝낸 최종 행**으로 한다
-      // ([[ADR-111]] 결정 6) — 캐시 행이 0이어도 기록에서 되살아난 행이 있으면 헤드라인이 있다.
+      // 캐시 행이 0이어도 기록에서 되살아난 행이 있으면 헤드라인이 있다.
       // ADR-097: 건너뛰는 진입에는 이 값을 다시 채울 동기화 완료 단계가 없다 — 행이 하나도 없어도
       // (예: 주간 리셋 직후) 직전 기간 합계를 읽어야 증감 칩이 0으로 굳지 않는다.
       const [cachedDropsByRowKey, previousPeriodTotalMeso] = await Promise.all([
@@ -1015,7 +1015,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     } catch (error) {
       // syncSchedules 자체가 던지는 에러(온보딩 미완료 등)는
       // 캐릭터별 에러가 아니라 전체 조회 자체의 실패다.
-      // 원인은 toScheduleSyncError로 살린다([[ADR-063]]).
+      // 원인은 toScheduleSyncError로 살린다.
       if (myGeneration === requestGeneration) {
         set({ status: 'error', error: toScheduleSyncError(error) })
       }
@@ -1039,8 +1039,8 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     const characterIssues: Record<string, 'unavailable' | 'failed'> = {}
     // 동기화가 실패한 캐릭터. buildFallbackResult가 **마지막 캐시 상태를 그대로** 돌려주므로
     // (schedule-sync.ts) 그 state의 완료 여부는 "지금"의 사실이 아니다 — 자동 기록에서 제외한다
-    // ([[ADR-067]] 결정 7). 표시는 캐시 우선 표시 규약([[ADR-017]])을 그대로 따르고, 그 카드에
-    // 표식을 붙이는 것은 [[ADR-068]] 결정 3의 몫이다.
+    // . 표시는 캐시 우선 표시 규약을 그대로 따르고, 그 카드에
+    // 표식을 붙이는 것은의 몫이다.
     const staleOcids = new Set<string>()
     const characterProfiles = new Map<string, CharacterProfileInfo>()
 
@@ -1055,7 +1055,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       if (result.isStale) {
         staleCharacterNames.push(result.characterName)
         staleOcids.add(result.ocid)
-        // 영구(조회 불가)와 일시(그 외)를 카드에서도 갈라 말한다([[ADR-068]] 결정 3) — 전자는
+        // 영구(조회 불가)와 일시(그 외)를 카드에서도 갈라 말한다 — 전자는
         // 재시도가 무의미하고 할 수 있는 것이 추적 해제뿐이다.
         characterIssues[result.ocid] =
           result.error?.kind === 'characterUnavailable' ? 'unavailable' : 'failed'
@@ -1083,7 +1083,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       ]),
     )
     // 폴백을 []가 아니라 null로 둬 "조회 실패"와 "기록 없음"을 구분한다 — 실패를 "없음"으로 읽으면
-    // 아래 자동 기록이 사용자가 저장한 파티원 수를 1로 덮어쓴다([[ADR-050]] 결정 3).
+    // 아래 자동 기록이 사용자가 저장한 파티원 수를 1로 덮어쓴다.
     const records = await withSqliteFallback<BossProfitRecord[] | null>(
       getBossProfitRecords(ocids, periodKeys),
       null,
@@ -1097,7 +1097,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         : await withSqliteFallback(getBossDropRecords(ocids, periodKeys), [])
 
     // 동기화가 실패한 캐릭터의 행은 낡은 캐시에서 나온 것이라 기록·이관에서 제외한다
-    // ([[ADR-067]] 결정 7) — 이 경로가 술어에 넣는 "지금의 사실" 판정이다([[ADR-111]] 결정 1).
+    // 이 경로가 술어에 넣는 "지금의 사실" 판정이다.
     const autoRecordedRows = await autoRecordRows({
       rows: mergedRows,
       records,
@@ -1111,7 +1111,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     const sortedRows = sortRowsByOcidOrder(unionRows, syncedOcids)
     latestSyncSnapshot = { ocids: [...ocids], rows: sortedRows, characterProfiles }
 
-    // **잡지 않은 보스의 드롭을 지운다**([[ADR-187]] 결정 5) — 주간 한도 마감으로 행이 걷힌 자리,
+    // **잡지 않은 보스의 드롭을 지운다** — 주간 한도 마감으로 행이 걷힌 자리,
     // 추적에서 빠진 보스, 영영 미처치로 굳은 기간이 전부 여기로 온다(술어는 하나다).
     //
     // 자리가 여기인 이유 셋: ① `autoRecordRows` 의 **난이도 이관 뒤**여야 한다(안 그러면 옮겨질
@@ -1119,12 +1119,12 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // 것이 화면 맵에 남지 않는다 ③ `refreshInPlace` 분기보다 앞이라 두 갈래가 함께 탄다.
     //
     // `records === null` 이면 건너뛴다 — 기록 조회 자체가 실패한 것이라 «행이 없다» 가 아무것도
-    // 뜻하지 않는다([[ADR-050]] 결정 3 이 자동 기록을 멈추는 것과 같은 이유).
+    // 뜻하지 않는다(이 자동 기록을 멈추는 것과 같은 이유).
     if (records !== null) {
       const removedDrops = await sweepOrphanDrops({
         ocids,
         rows: sortedRows,
-        // 동기화가 실패한 캐릭터의 행은 낡은 캐시에서 나온 것이라 판정 근거가 못 된다([[ADR-067]] 결정 7).
+        // 동기화가 실패한 캐릭터의 행은 낡은 캐시에서 나온 것이라 판정 근거가 못 된다.
         trustedOcids: new Set(ocids.filter((ocid) => !staleOcids.has(ocid))),
         // 이 회차가 «사실» 을 아는 기간은 동기화가 덮은 지금 기간 둘뿐이다.
         knownPeriodKeys: new Set([
@@ -1145,7 +1145,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // 일어나도 화면에는 영향이 없다.
     set({ lastSyncedAt: new Date().toISOString() })
 
-    // **처치 날짜를 캔다**([[ADR-172]] 결정 9) — 자동 기록이 방금 만든 행까지 대상에 든다.
+    // **처치 날짜를 캔다** — 자동 기록이 방금 만든 행까지 대상에 든다.
     //
     // 기다리지 않는다. 이 화면은 `defeated_on` 을 **안 쓰므로**(쓰는 곳은 가계부 캘린더 하나다)
     // 결과가 화면을 바꾸지 않고, 기다리면 캘 것이 있는 첫 회차마다 동기화가 조회 수만큼 길어진다.
@@ -1275,7 +1275,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // (2026-07-22 재현 — "파티원 수를 고쳐도 다시 파티관리 기본값으로 돌아간다"로 보고된 증상의
     // 실제 원인).
     //
-    // **set 보다 앞이어야 한다**([[ADR-153]] 결정 2) — 아래 set 이 이 스냅샷을 그대로 실어
+    // **set 보다 앞이어야 한다** — 아래 set 이 이 스냅샷을 그대로 실어
     // `currentPeriodRows` 를 만든다. 뒤에 두면 이 수정이 today 위젯에 한 커밋 늦게 닿는다.
     if (latestSyncSnapshot !== null) {
       latestSyncSnapshot = { ...latestSyncSnapshot, rows: latestSyncSnapshot.rows.map(applyEdit) }

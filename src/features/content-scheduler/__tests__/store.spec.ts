@@ -65,7 +65,7 @@ import {
 } from '../../schedule-sync/sync-run-state'
 
 // 팩토리가 **모듈 평가보다 먼저** 불릴 수 있어(스토어를 import 하는 순간) `var` 로 올리고
-// 읽는 자리에서 채운다([[ADR-157]]).
+// 읽는 자리에서 채운다.
 var mockTrackingModeStateMock: { mode: 'auto' | 'manual' } = { mode: 'auto' }
 
 function dailyContent(name: string): DailyContent {
@@ -168,7 +168,7 @@ describe('useContentSchedulerStore', () => {
         isStale: false,
         syncedAt: '2026-07-11T00:00:00.000Z',
         error: null,
-        // [[ADR-142]] 결정 6: 캐시가 그 캐릭터를 모르면 둘 다 `null` 이다(레일이 레벨 호를 비운다).
+        // : 캐시가 그 캐릭터를 모르면 둘 다 `null` 이다(레일이 레벨 호를 비운다).
         level: null,
         imageUrl: null,
       },
@@ -342,8 +342,8 @@ describe('useContentSchedulerStore', () => {
       expect(useContentSchedulerStore.getState().trackedOcids).toBeNull()
     })
 
-    // [[ADR-101]] 결정 4: 부팅 선하이드레이션과 화면 마운트가 반드시 겹치므로, 동시 호출은
-    // 한 회차로 합친다 — 안 그러면 같은 응답을 두 번 받는다([[ADR-097]] 이 없애려던 낭비).
+    // : 부팅 선하이드레이션과 화면 마운트가 반드시 겹치므로, 동시 호출은
+    // 한 회차로 합친다 — 안 그러면 같은 응답을 두 번 받는다(이 없애려던 낭비).
     it('loadTrackedOcids를 동시에 두 번 불러도 한 회차만 돈다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
       syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -746,7 +746,7 @@ describe('useContentSchedulerStore', () => {
       ])
     })
 
-    // [[ADR-159]] 결정 2 — 저장된 선택을 읽는 것은 이 스토어가 아니라 선택 스토어다. 부르는
+    // 저장된 선택을 읽는 것은 이 스토어가 아니라 선택 스토어다. 부르는
     // 자리(진입 경로)는 그대로라 여기서 그 위임을 지킨다.
     it('loadTrackedOcids 는 선택 스토어를 하이드레이션한다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
@@ -760,7 +760,7 @@ describe('useContentSchedulerStore', () => {
     })
 
     // `selectCharacter` 테스트는 여기 있었다 — 선택이 이 스토어를 떠나면서
-    // `features/character-selection/__tests__/store.spec.ts` 로 옮겨갔다([[ADR-159]] 결정 1).
+    // `features/character-selection/__tests__/store.spec.ts` 로 옮겨갔다.
   })
 
   // ADR-096 결정 1: 탭 선택을 화면 로컬 state가 아니라 스토어가 소유한다. 화면이 언마운트돼도

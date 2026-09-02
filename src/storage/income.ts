@@ -1,4 +1,4 @@
-// 손입력 수입 어댑터([[ADR-170]] 결정 1·2).
+// 손입력 수입 어댑터.
 //
 // ## 이 저장소 최초의 대리키 테이블이다
 //
@@ -14,20 +14,20 @@
 // ## 원천을 적는 칸이 없다
 //
 // 설계 도중 `source`(`'manual' | 'timer' | 'boss'`)를 두려다 접었다 — **이 테이블에 드는 것은
-// 손입력 하나뿐이고, 테이블이 곧 원천**이다([[ADR-170]] 결정 2). 화면의 배지(`보스`·`손입력`)는
+// 손입력 하나뿐이고, 테이블이 곧 원천**이다. 화면의 배지(`보스`·`손입력`)는
 // 여러 원천을 읽어 합칠 때 붙는 **뷰 모델의 값**이지 컬럼이 아니다.
 import type { FeePercent } from '../lib/cashbook/item-split'
 import { getBossProfitDb } from './sqlite/db'
 
 /**
- * 수입의 갈래([[ADR-170]] 결정 1) — 사용자가 준 둘 + 안전망 하나.
+ * 수입의 갈래 — 사용자가 준 둘 + 안전망 하나.
  *
  * 「기타」가 없으면 셋으로 안 잡히는 수입이 **기록 자체를 못 남긴다**(가계부에 구멍이 뚫린다).
  * 넷째가 생기면 여기 한 줄을 더하면 된다 — 늘리는 것은 싸고 **지우는 쪽이 비싸다**(이미 그 갈래로
  * 적힌 행이 갈 곳을 잃는다).
  *
- * **차례가 곧 화면**이다([[ADR-170]] 정정 17) — 시트의 칩이 이 차례로 서고 `[0]` 이 «＋ 수입」 을
- * 열었을 때 골라져 있는 갈래다. 「사냥」이 앞인 것은 그 갈래가 계산기([[ADR-175]])라 손이 가장
+ * **차례가 곧 화면**이다 — 시트의 칩이 이 차례로 서고 `[0]` 이 «＋ 수입」 을
+ * 열었을 때 골라져 있는 갈래다. 「사냥」이 앞인 것은 그 갈래가 계산기라 손이 가장
  * 많이 가서이고, 「기타」는 안전망이라 끝이다. **줄을 옮기면 기본 갈래가 함께 바뀐다.**
  */
 export const INCOME_CATEGORIES = ['사냥', '아이템 판매', '기타'] as const
@@ -36,7 +36,7 @@ export type IncomeCategory = (typeof INCOME_CATEGORIES)[number]
 
 export interface IncomeRecord {
   id: string
-  /** `null` = 계정 단위가 기본이다([[ADR-166]] 결정 3). 고르면 그 캐릭터가 붙는다. */
+  /** `null` = 계정 단위가 기본이다. 고르면 그 캐릭터가 붙는다. */
   ocid: string | null
   /** `'YYYY-MM-DD'` KST. **사용자가 고른 날짜**라 캘린더 칸에 바로 선다. */
   earnedOn: string
@@ -44,9 +44,9 @@ export interface IncomeRecord {
   /** 판 것 / 사냥터 / 자유. 갈래가 이 칸의 **라벨만** 바꾼다. */
   item: string | null
   /**
-   * 메소로 들어온 수입. **통화가 갈리는 갈래(「기타」)에서는 `null` 일 수 있다**([[ADR-170]] 정정 15).
+   * 메소로 들어온 수입. **통화가 갈리는 갈래(「기타」)에서는 `null` 일 수 있다**.
    *
-   * 아이템 판매면 **수수료를 뗀 값**이다([[ADR-170]] 정정 9 ⑤) — 집계가 보는 칸이 이것 하나라,
+   * 아이템 판매면 **수수료를 뗀 값**이다 — 집계가 보는 칸이 이것 하나라,
    * 판매 대금을 넣으면 번 적 없는 돈이 수입으로 선다.
    *
    * > 정정 15 이전 행은 **언제나 숫자**다(그때는 수입이 메소뿐이었다). 타입이 `| null` 인 것은
@@ -54,18 +54,18 @@ export interface IncomeRecord {
    */
   mesoAmount: number | null
   /**
-   * 메포로 들어온 수입 — 이벤트 보상이 그렇다([[ADR-170]] 정정 15).
+   * 메포로 들어온 수입 — 이벤트 보상이 그렇다.
    *
    * **칸 이름을 지출과 같게 쓴다**(`point_amount`·`point_per_100m_meso`·`cash_amount`) — 그래야
    * 집계가 한 모양으로 접힌다(`incomeMesoOf` 는 `spendMesoOf` 와 같은 식이다).
    */
   pointAmount: number | null
-  /** 메소마켓 시세 — 단위는 **1억 메소당 메포**다([[ADR-166]] 정정 2 ④). */
+  /** 메소마켓 시세 — 단위는 **1억 메소당 메포**다. */
   pointPer100mMeso: number | null
-  /** **환산하지 않는다**([[ADR-166]] 정정 2 ①) — 지출과 같은 이유·같은 결과다. */
+  /** **환산하지 않는다** — 지출과 같은 이유·같은 결과다. */
   cashAmount: number | null
   /**
-   * 몇 회인가([[ADR-202]] 결정 4). 「기타」만 쓰고 나머지 갈래는 `null` 이다.
+   * 몇 회인가. 「기타」만 쓰고 나머지 갈래는 `null` 이다.
    *
    * 위 세 칸에는 **곱한 총액**이 들어간다. 수량을 안 남기면 수정으로 다시 열 때 되짚을 길이 없어
    * 수량이 1 로 서고 금액 칸에 총액이 들어간다(`금액 = 총액 ÷ 수량` 으로 되짚는다).
@@ -73,19 +73,19 @@ export interface IncomeRecord {
    * 이 칸이 없던 시절의 행도 `null` 이고 수량 1 로 열린다 — 그 행은 총액이 곧 금액이다.
    */
   quantity: number | null
-  /** 경매장 수수료율([[ADR-168]] `FeePercent`). `null` = 없음(직거래이거나 정정 9 이전 행). */
+  /** 경매장 수수료율(`FeePercent`). `null` = 없음(직거래이거나 정정 9 이전 행). */
   saleFeePercent: FeePercent | null
   /** 뗀 몫. **판매 대금 = `mesoAmount` + 이것** 이다 — 요율만으로는 내림 때문에 역산이 안 된다. */
   saleFeeMeso: number | null
   /**
-   * 「사냥」 갈래를 **어떻게 적었나**([[ADR-175]] 결정 9 · [[ADR-201]] 결정 3).
+   * 「사냥」 갈래를 **어떻게 적었나**.
    *
    * 합계(`mesoAmount`)만 남기면 사냥 기록을 다시 열 때 빈 시트가 서고, 무엇이든 만지는 순간
-   * 금액이 덮인다([[ADR-171]] 결정 2 가 걸어 둔 계약이 깨진다). 그래서 적을 때 쓴 값을 함께 남긴다.
+   * 금액이 덮인다(가 걸어 둔 계약이 깨진다). 그래서 적을 때 쓴 값을 함께 남긴다.
    *
-   * **다른 갈래에서는 전부 `null`** 이다. [[ADR-175]] 이전에 적힌 사냥 행도 `null` 인데, 그 행은
+   * **다른 갈래에서는 전부 `null`** 이다. 이전에 적힌 사냥 행도 `null` 인데, 그 행은
    * 수동 입력으로 연다 — 조각이 없어 합계가 곧 획득 메소이고 그것은 지어낸 값이 아니다
-   * ([[ADR-201]] 결정 4).
+   *
    *
    * 사냥터는 여기가 아니라 `item` 에 **이름 그대로** 들어간다(전역 유일이라 지역이 따라온다).
    * 수동 입력에는 그 칸이 없어 새 행은 `item` 이 비고, 옛 행의 이름은 그대로 들고 간다(결정 7).
@@ -96,7 +96,7 @@ export interface IncomeRecord {
 }
 
 /**
- * 사냥을 적은 두 모양([[ADR-201]] 결정 1). `mode` 가 어느 쪽인지 말한다.
+ * 사냥을 적은 두 모양. `mode` 가 어느 쪽인지 말한다.
  *
  * **가르는 이유는 칸이 서로 안 겹쳐서다.** 계산기는 사냥터가 정해져야 도는 값을 들고, 수동은 그
  * 값이 아예 없다. 한 벌로 두면 수동 행에 뜻 없는 0 이 들어가고, 읽는 쪽이 그것을 진짜 값으로
@@ -104,16 +104,16 @@ export interface IncomeRecord {
  */
 export type HuntingIncomeDetail = HuntingCalculatorDetail | HuntingManualDetail
 
-/** 사냥을 어느 폼으로 적나([[ADR-201]] 결정 5). 기록에 박히고 수정 중에는 안 바뀐다. */
+/** 사냥을 어느 폼으로 적나. 기록에 박히고 수정 중에는 안 바뀐다. */
 export type HuntInputMode = HuntingIncomeDetail['mode']
 
-/** 수동으로 적은 사냥([[ADR-201]] 결정 1) — 앱이 셀 근거가 없어 획득 메소를 사람이 친다. */
+/** 수동으로 적은 사냥 — 앱이 셀 근거가 없어 획득 메소를 사람이 친다. */
 export interface HuntingManualDetail {
   mode: 'manual'
   /**
    * 사용자가 친 획득 메소. 합계(`mesoAmount`)는 여기에 `fragments × fragmentPrice` 를 더한 값이다.
    *
-   * **합계에서 빼서 되돌리지 않고 그대로 저장한다**([[ADR-201]] 결정 3). 이 저장소가
+   * **합계에서 빼서 되돌리지 않고 그대로 저장한다**. 이 저장소가
    * `characterLevel`·`mesoRate` 를 다시 안 재는 것과 같은 이유이고, 되돌리는 길을 고르면 수동인지
    * 아닌지를 가릴 칸이 따로 필요해 결국 두 칸이 된다.
    */
@@ -128,14 +128,14 @@ export interface HuntingManualDetail {
 export interface HuntingCalculatorDetail {
   mode: 'calculator'
   /**
-   * **그때의** 캐릭터 레벨. `null` = 캐릭터를 안 골랐다(페널티 0 — [[ADR-175]] 결정 6).
+   * **그때의** 캐릭터 레벨. `null` = 캐릭터를 안 골랐다(페널티 0 —).
    *
    * 지금 레벨을 다시 읽지 않는 이유는 캐릭터가 레벨업하기 때문이다 — 그러면 한 달 전 기록의
    * 금액이 열 때마다 달라진다.
    */
   characterLevel: number | null
   /**
-   * 젠 한 번에 **놓치는 마릿수**(0~4) — 퍼센트가 아니다([[ADR-175]] 결정 3).
+   * 젠 한 번에 **놓치는 마릿수**(0~4) — 퍼센트가 아니다.
    *
    * 효율 %는 맵마다 다르므로(40마리의 −1 은 98%, 22마리의 −1 은 95%) 퍼센트를 남기면 수정으로
    * 열 때 **어느 조각이었는지 되짚으려고 맵을 거꾸로 풀어야 한다**. 마릿수는 맵과 무관하다.
@@ -145,15 +145,15 @@ export interface HuntingCalculatorDetail {
   boosts: string[]
   /** 소재 수 — 하나가 30분이다. */
   sojae: number
-  /** 솔 에르다 조각 개수 — 사용자가 직접 넣은 값이다([[ADR-175]] 결정 8). */
+  /** 솔 에르다 조각 개수 — 사용자가 직접 넣은 값이다. */
   fragments: number
   /** 조각 개당 메소. */
   fragmentPrice: number
   /**
-   * **그때의** 캐릭터 메소 획득량(%) — [[ADR-177]] 결정 8.
+   * **그때의** 캐릭터 메소 획득량(%) —.
    *
    * 캐릭터 레벨을 박아 두는 것과 **같은 이유**다: 장비를 갈아입으므로 지금 값으로 다시 재면
-   * 한 달 전 기록의 금액이 열 때마다 달라진다. `0` 은 **[[ADR-177]] 이전에 적힌 행**이기도 하고
+   * 한 달 전 기록의 금액이 열 때마다 달라진다. `0` 은 ** 이전에 적힌 행**이기도 하고
    * (그때는 메획이 계산에 없었다) 메획을 안 두른 캐릭터이기도 하다 — 둘 다 곱이 ×1 이라 같다.
    */
   mesoRate: number
@@ -165,10 +165,10 @@ function numberOrNull(value: unknown): number | null {
 }
 
 /**
- * 여덟 칸 ↔ 한 덩어리. 어느 모양인지는 **칸 둘이 가른다**([[ADR-201]] 결정 3).
+ * 여덟 칸 ↔ 한 덩어리. 어느 모양인지는 **칸 둘이 가른다**.
  *
  * `hunt_typed_meso` 가 있으면 수동이고, 없는데 `hunt_missed_mobs` 가 있으면 계산기다. 둘 다 없으면
- * [[ADR-175]] 이전에 적힌 행이라 `null` 이고, 그 행은 수동 입력 폼이 합계를 그대로 받아 연다.
+ *  이전에 적힌 행이라 `null` 이고, 그 행은 수동 입력 폼이 합계를 그대로 받아 연다.
  *
  * **친 메소가 `0` 이어도 수동이다.** 조각만 먹은 사냥이 그렇다. `0` 과 `NULL` 이 갈리는 자리라
  * `??` 로 접으면 그 행이 계산기 행으로 둔갑한다.
@@ -196,7 +196,7 @@ function rowToHunt(row: Record<string, unknown>): HuntingIncomeDetail | null {
     sojae: (row.hunt_sojae as number | null | undefined) ?? 0,
     fragments: (row.hunt_fragments as number | null | undefined) ?? 0,
     fragmentPrice: (row.hunt_fragment_price as number | null | undefined) ?? 0,
-    // **`NULL` 은 [[ADR-177]] 이전 행**이고 0 으로 읽는다 — 없는 값을 지어내면 옛 기록의 금액이
+    // **`NULL` 은 이전 행**이고 0 으로 읽는다 — 없는 값을 지어내면 옛 기록의 금액이
     // 지금 세는 값과 안 맞는다.
     mesoRate: (row.hunt_meso_rate as number | null | undefined) ?? 0,
   }
@@ -205,7 +205,7 @@ function rowToHunt(row: Record<string, unknown>): HuntingIncomeDetail | null {
 /**
  * 한 덩어리 → 칸 여덟. 없으면 전부 `null` 이다(다른 갈래의 행이 그렇다).
  *
- * **수동 행은 계산기 칸 넷을 비운다**([[ADR-201]] 결정 3). 0 을 채우면 그 행이 «놓친 마릿수 0 으로
+ * **수동 행은 계산기 칸 넷을 비운다**. 0 을 채우면 그 행이 «놓친 마릿수 0 으로
  * 센 행» 처럼 읽힌다. 비어 있는 것이 곧 앱이 센 값이 아니라는 뜻이다.
  */
 function huntToValues(hunt: HuntingIncomeDetail | null): Array<number | string | null> {
@@ -256,7 +256,7 @@ export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
   ])
 }
 
-/** 갈아 끼우기 — 지출과 같은 계약이다([[ADR-171]] 결정 4). `recorded_at` 은 SET 에 없다. */
+/** 갈아 끼우기 — 지출과 같은 계약이다. `recorded_at` 은 SET 에 없다. */
 const UPDATE_SQL = `
   UPDATE income_records SET
     ocid = ?, earned_on = ?, category = ?, item = ?, meso_amount = ?,
@@ -317,10 +317,10 @@ function rowToRecord(row: Record<string, unknown>): IncomeRecord {
 
 /**
  * 날짜 범위의 기록 — **두 끝을 포함**한다. 월간이든 주간이든 부르는 쪽이 범위만 정한다
- * (월간은 그 달의 첫날~마지막 날, 주간은 목요일~수요일 — [[ADR-170]] 결정 10).
+ * (월간은 그 달의 첫날~마지막 날, 주간은 목요일~수요일 —).
  *
  * **`ocid` 로 거르지 않는다.** 가계부는 «내가 번 돈» 이지 «이 캐릭터가 번 돈» 이 아니라
- * ([[ADR-166]] 결정 3) 계정 단위 행과 캐릭터 행이 한 날에 함께 서야 한다.
+ *  계정 단위 행과 캐릭터 행이 한 날에 함께 서야 한다.
  */
 export async function getIncomeRecordsBetween(
   fromDateKey: string,

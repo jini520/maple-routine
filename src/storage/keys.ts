@@ -1,6 +1,6 @@
 export const STORAGE_KEYS = {
   apiKey: 'apiKey',
-  // 레거시 — 계정 선택 단계가 사라져([[ADR-143]] 결정 7) 아무도 읽고 쓰지 않는다. 옛 설치본에
+  // 레거시 — 계정 선택 단계가 사라져 아무도 읽고 쓰지 않는다. 옛 설치본에
   // 남은 값을 치우기 위해 이름만 남긴다(연결 해제·캐시 삭제가 지운다).
   legacySelectedAccountId: 'selectedAccountId',
   theme: 'theme',
@@ -15,7 +15,7 @@ export const STORAGE_KEYS = {
   // **넣지 않는다** — 지워져도 다음 부팅이 조용히 다시 기록할 뿐이고, 그때 생기는 것은
   // 거짓 안내가 아니라 안내 없음이다.
   lastRunBundleVersion: 'lastRunBundleVersion',
-  // [[ADR-166]] 결정 5: 마지막으로 넣은 메소마켓 시세(1억 메소당 메포). 메포 지출은 시세가
+  // : 마지막으로 넣은 메소마켓 시세(1억 메소당 메포). 메포 지출은 시세가
   // **필수**인데(정정 2 ③) 그 칸이 매번 비어 있으면 입력이 막힌다 — 금액은 매번 다르지만 시세는
   // 좀처럼 안 바뀌므로 **기억하는 쪽**이 맞다(`DropPricePad` 가 금액을 일부러 안 기억하는 것과
   // 경계가 «자주 바뀌는가» 로 갈린다).
@@ -29,7 +29,7 @@ export function schedulerCacheKey(ocid: string): string {
   return `schedulerCache:${ocid}`
 }
 
-// [[ADR-177]] 결정 9: 캐릭터별 최대 메소 획득량(%)의 마지막 성공값. ocid 별 개별 키이고 **TTL 이
+// : 캐릭터별 최대 메소 획득량(%)의 마지막 성공값. ocid 별 개별 키이고 **TTL 이
 // 없다** — 장비를 갈아입을 때만 변하는 값이라, 캐릭터를 다시 고르는 것이 곧 갱신이다.
 export function mesoRateCacheKey(ocid: string): string {
   return `mesoRateCache:${ocid}`

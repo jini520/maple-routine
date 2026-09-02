@@ -36,7 +36,7 @@ export interface BossCharacterView {
   ocid: string
   characterName: string
   world?: string
-  // [[ADR-142]] 결정 6: 초상화 레일이 쓰는 둘 — 컨텐츠 스케줄러 뷰와 같은 자리·같은 규약이다
+  // : 초상화 레일이 쓰는 둘 — 컨텐츠 스케줄러 뷰와 같은 자리·같은 규약이다
   // (`null` = 캐시가 아직 모름). 정렬이 이미 읽는 캐시에서 함께 꺼내므로 조회가 안 는다.
   level?: number | null
   imageUrl?: string | null
@@ -60,7 +60,7 @@ export interface RefreshOptions {
   auto?: boolean
 }
 
-// ADR-019 솔로/파티 서브 필터. **목록이 하나라 필터도 하나다**([[ADR-164]] 결정 5).
+// ADR-019 솔로/파티 서브 필터. **목록이 하나라 필터도 하나다**.
 export type PartyFilter = 'all' | 'solo' | 'party'
 
 export interface BossSchedulerState {
@@ -77,12 +77,12 @@ export interface BossSchedulerState {
   // 화면 로컬 state가 아니라 스토어가 소유한다 — 화면이 언마운트돼도 살아남는다(탭 이동 후 복귀).
   // 영속화하지 않는다.
   //
-  // **`activeTab` 은 여기 없다**([[ADR-164]] 결정 4) — 주간/월간 탭이 두 화면에서 함께 걷혔다.
-  // [[ADR-096]] 결정 1·2 와 [[ADR-145]] 결정 2(«승계가 아니라 공유»)가 이 축에서 폐기된 자리다.
-  // 되살리지 말 것: 공유할 상대가 없는 공유 상태가 된다. 선택 캐릭터 쪽 공유는 [[ADR-159]] 가
+  // **`activeTab` 은 여기 없다** — 주간/월간 탭이 두 화면에서 함께 걷혔다.
+  //  와(«승계가 아니라 공유»)가 이 축에서 폐기된 자리다.
+  // 되살리지 말 것: 공유할 상대가 없는 공유 상태가 된다. 선택 캐릭터 쪽 공유는 가
   // 따로 갖고 있어 그대로다.
   //
-  // 필터도 하나다([[ADR-164]] 결정 5 — [[ADR-019]] 결정 6 정정). «두 축이 서로 독립» 은 탭이
+  // 필터도 하나다(— 정정). «두 축이 서로 독립» 은 탭이
   // 있을 때만 뜻이 있는 문장이었다.
   partyFilter: PartyFilter
 }
@@ -100,7 +100,7 @@ export interface BossSchedulerStore extends BossSchedulerState {
   addManualBoss(ocid: string, contentName: string, difficulty: string): Promise<ManualBossAddResult>
   removeManualBoss(ocid: string, contentName: string, difficulty: string): Promise<void>
   /**
-   * 추적 중인 보스의 난이도를 `to` 로 바꾼다 ([[ADR-121]] 결정 6).
+   * 추적 중인 보스의 난이도를 `to` 로 바꾼다.
    *
    * `from` 을 받지 않는 것이 의도다 — 호출부는 렌더 시점의 난이도를 넘기게 되는데, 칩을 연달아
    * 누르면 낡은 값이 넘어와 매칭 실패로 변경이 **무음 유실**된다. "이 보스의 난이도를 to 로
@@ -129,7 +129,7 @@ export function partySizeKey(ocid: string, boss: string, difficulty: string): st
 
 // ADR-101 결정 4: 부팅 선하이드레이션(`features/prehydrate`)과 화면 마운트가 같은 회차를 부르므로,
 // 진행 중인 회차가 있으면 그 Promise 를 그대로 돌려준다. **"평생 한 번"이 아니라 "동시에 하나만"**
-// 이다 — 끝나면 잊는다. 영구 메모로 만들면 진입 재조회의 10분 TTL([[ADR-097]])이 죽는다.
+// 이다 — 끝나면 잊는다. 영구 메모로 만들면 진입 재조회의 10분 TTL이 죽는다.
 // `storage/character-selection` 의 `migrationLock` 과 같은 모양·같은 이유(락 없이 겹쳐 돌면 같은
 // 응답을 두 번 받는다).
 let hydration: Promise<void> | null = null
@@ -138,7 +138,7 @@ let hydration: Promise<void> | null = null
 // 목록에서 필터링한 순서)가 서로 달라 생기던 불일치를 없애기 위해, character-basic-cache의
 // level을 병합해 레벨 내림차순(동레벨이면 compareByName)으로 통일한다. 레벨 캐시가 없는
 // 캐릭터는 맨 뒤로 보낸다.
-// [[ADR-142]] 결정 6: 정렬에 쓰는 level 을 버리지 않고 `imageUrl` 과 함께 뷰에 남긴다 — 초상화
+// : 정렬에 쓰는 level 을 버리지 않고 `imageUrl` 과 함께 뷰에 남긴다 — 초상화
 // 레일이 쓴다. 컨텐츠 스케줄러 스토어의 같은 이름 함수와 **같은 모양이어야 한다**(같은 정책이 두
 // 모양으로 있으면 값을 바꿀 때 한쪽만 바뀐다).
 async function sortByCachedLevel(views: BossCharacterView[]): Promise<BossCharacterView[]> {
@@ -190,7 +190,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
   loadTrackedOcids() {
     // ADR-101 결정 4: 동시 호출은 한 회차로 합친다(위 `hydration` 주석).
     hydration ??= (async () => {
-      // 저장된 선택은 **선택 스토어가 읽는다**([[ADR-159]] 결정 2) — 이 스토어가 읽어 자기
+      // 저장된 선택은 **선택 스토어가 읽는다** — 이 스토어가 읽어 자기
       // 상태에 넣던 것이 «두 벌» 의 출처였다. 둘을 나란히 태우는 것은 그대로다(왕복 한 번).
       const [ocids] = await Promise.all([
         getTrackedCharacterOcids(),
@@ -261,7 +261,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
         )
       ).filter((view): view is BossCharacterView => view != null)
 
-      // .catch(() => null)로 원인을 버리지 않는다 — 아래에서 종류를 살려야 한다([[ADR-063]]).
+      // .catch(() => null)로 원인을 버리지 않는다 — 아래에서 종류를 살려야 한다.
       const outcome = await syncSchedules(added, onProgress).then(
         (results) => ({ results, error: null as unknown }),
         (error: unknown) => ({ results: null, error }),
@@ -270,7 +270,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       if (results === null) {
         // syncSchedules 자체가 던지는 에러(온보딩 미완료 등)는 캐릭터별 에러가 아니라
         // 전체 조회 자체의 실패다. 원인은 버리지 않고
-        // toScheduleSyncError로 살린다([[ADR-063]]) — 전에는 network로 하드코딩해 401/429가 화면에 도달하지 못했다.
+        // toScheduleSyncError로 살린다 — 전에는 network로 하드코딩해 401/429가 화면에 도달하지 못했다.
         set({ status: 'error', error: toScheduleSyncError(outcome.error), characters: await sortByCachedLevel(keptViews) })
       } else {
         const addedViews: BossCharacterView[] = results.map((result) => {
@@ -386,7 +386,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     } catch (error) {
       // syncSchedules 자체가 던지는 에러(온보딩 미완료 등)는
       // 캐릭터별 에러가 아니라 전체 조회 자체의 실패다.
-      // 원인은 toScheduleSyncError로 살린다([[ADR-063]]).
+      // 원인은 toScheduleSyncError로 살린다.
       set({ status: 'error', error: toScheduleSyncError(error) })
       return
     }

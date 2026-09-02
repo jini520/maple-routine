@@ -142,17 +142,17 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE boss_drop_records ADD COLUMN price_meso INTEGER',
       'ALTER TABLE boss_drop_records ADD COLUMN price_share INTEGER',
       'ALTER TABLE spend_records ADD COLUMN form TEXT',
-      // 「아이템 구매」의 종류([[ADR-173]] 정정 1) — `form` 이 겪은 그 사정이다.
+      // 「아이템 구매」의 종류 — `form` 이 겪은 그 사정이다.
       'ALTER TABLE spend_records ADD COLUMN item_kind TEXT',
-      // [[ADR-170]] 정정 9 — 수입 테이블도 수수료 칸 없이 만들어진 기기가 있다.
+      // 수입 테이블도 수수료 칸 없이 만들어진 기기가 있다.
       'ALTER TABLE income_records ADD COLUMN sale_fee_percent INTEGER',
       'ALTER TABLE income_records ADD COLUMN sale_fee_meso INTEGER',
-      // 수입에도 통화가 있다([[ADR-170]] 정정 15) — 지출과 **같은 칸 이름**이다.
+      // 수입에도 통화가 있다 — 지출과 **같은 칸 이름**이다.
       'ALTER TABLE income_records ADD COLUMN point_amount INTEGER',
       'ALTER TABLE income_records ADD COLUMN point_per_100m_meso INTEGER',
       'ALTER TABLE income_records ADD COLUMN cash_amount INTEGER',
       'ALTER TABLE income_records ADD COLUMN quantity INTEGER',
-      // 사냥 계산 입력 일곱([[ADR-175]] 결정 9 + [[ADR-177]] 결정 8).
+      // 사냥 계산 입력 일곱(+).
       'ALTER TABLE income_records ADD COLUMN hunt_character_level INTEGER',
       'ALTER TABLE income_records ADD COLUMN hunt_missed_mobs INTEGER',
       'ALTER TABLE income_records ADD COLUMN hunt_boosts TEXT',
@@ -198,13 +198,13 @@ describe('db.ts 와 맞물리는가', () => {
     const executed = mockOpened[0].statements.map((entry) => entry.statement.trim())
     expect(executed.filter((statement) => statement.startsWith('ALTER TABLE'))).toEqual([])
     // 테이블 생성과 메이린 키 이관은 그대로 돈다(`docs/migration/data.md` «스키마 진화 코드»).
-    // **개수를 박지 않는다** — db.ts 가 테이블을 더할 때마다 이 숫자가 조용히 스탈해진다([[ADR-052]]
-    // 결정 2 가 목록의 단일 진실 공급원을 db.ts 로 둔 이유와 같다). [[ADR-170]] 이 둘을 더하며 겪었다.
+    // **개수를 박지 않는다** — db.ts 가 테이블을 더할 때마다 이 숫자가 조용히 스탈해진다(
+    // 결정 2 가 목록의 단일 진실 공급원을 db.ts 로 둔 이유와 같다). 이 둘을 더하며 겪었다.
     expect(executed.filter((statement) => statement.startsWith('CREATE TABLE'))).toHaveLength(
       BOSS_PROFIT_TABLE_NAMES.length,
     )
     /**
-     * **여기도 개수를 안 박는다** — 바로 위 `CREATE TABLE` 이 겪은 그 스탈이다([[ADR-166]] 정정 4 가
+     * **여기도 개수를 안 박는다** — 바로 위 `CREATE TABLE` 이 겪은 그 스탈이다(가
      * 마이그레이션 둘을 더하며 다시 겪었다). 대신 **성질**을 본다: 데이터 이관은 전부 `WHERE` 를
      * 갖는다 — 그것이 «이미 옮겨진 뒤에는 걸리는 행이 없다»(매번 실행해도 안전한 no-op)의 근거다.
      */

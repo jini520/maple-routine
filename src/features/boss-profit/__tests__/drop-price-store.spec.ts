@@ -1,11 +1,11 @@
-// 가격 기록 화면의 상태([[ADR-124]] 결정 8). 한 주를 놓고 값을 매기는 **쓰기** 화면이라,
+// 가격 기록 화면의 상태. 한 주를 놓고 값을 매기는 **쓰기** 화면이라,
 // 히스토리(읽기 전용)와 달리 저장 경로가 함께 검증돼야 한다.
 import type { BossDropRecord } from '../../../storage/boss-drops'
 
 var mockModule0: Record<string, unknown>
 jest.mock('../../../storage/boss-drops', () => {
   // `jest.resetModules()` 가 레지스트리를 비워도 **같은 목**을 돌려준다 — vitest 의
-  // `vi.hoisted` 가 그 경계를 넘어 살아남던 것을 여기서 재현한다([[ADR-157]]).
+  // `vi.hoisted` 가 그 경계를 넘어 살아남던 것을 여기서 재현한다.
   mockModule0 = mockModule0 ?? {
   getBossDropRecords: jest.fn(),
   replaceBossDropRecords: jest.fn(),
@@ -16,7 +16,7 @@ const { getBossDropRecords: getBossDropRecordsMock, replaceBossDropRecords: repl
 var mockModule1: Record<string, unknown>
 jest.mock('../../../storage/boss-profit', () => {
   // `jest.resetModules()` 가 레지스트리를 비워도 **같은 목**을 돌려준다 — vitest 의
-  // `vi.hoisted` 가 그 경계를 넘어 살아남던 것을 여기서 재현한다([[ADR-157]]).
+  // `vi.hoisted` 가 그 경계를 넘어 살아남던 것을 여기서 재현한다.
   mockModule1 = mockModule1 ?? { getBossProfitRecords: jest.fn() }
   return mockModule1
 })
@@ -24,7 +24,7 @@ const { getBossProfitRecords: getBossProfitRecordsMock } = jest.requireMock('../
 var mockModule2: Record<string, unknown>
 jest.mock('../../../storage/character-selection', () => {
   // `jest.resetModules()` 가 레지스트리를 비워도 **같은 목**을 돌려준다 — vitest 의
-  // `vi.hoisted` 가 그 경계를 넘어 살아남던 것을 여기서 재현한다([[ADR-157]]).
+  // `vi.hoisted` 가 그 경계를 넘어 살아남던 것을 여기서 재현한다.
   mockModule2 = mockModule2 ?? {
   getTrackedCharacterOcids: jest.fn(),
 }
@@ -34,7 +34,7 @@ const { getTrackedCharacterOcids: getTrackedCharacterOcidsMock } = jest.requireM
 var mockModule3: Record<string, unknown>
 jest.mock('../../../storage/character-basic-cache', () => {
   // `jest.resetModules()` 가 레지스트리를 비워도 **같은 목**을 돌려준다 — vitest 의
-  // `vi.hoisted` 가 그 경계를 넘어 살아남던 것을 여기서 재현한다([[ADR-157]]).
+  // `vi.hoisted` 가 그 경계를 넘어 살아남던 것을 여기서 재현한다.
   mockModule3 = mockModule3 ?? {
   getCachedCharacterBasic: jest.fn(),
 }
@@ -179,7 +179,7 @@ describe('savePrice · excludePrice', () => {
 // 2026-08-10 사용자 보고 — "가격 입력하고 보스 수익으로 가면 새로고침해야 반영된다".
 //
 // 두 스토어가 같은 테이블(`boss_drop_records`)을 각자 캐시한다. 보스 수익은 스택 화면 왕복에도
-// 마운트를 유지하므로([[ADR-077]]) 여기서 쓴 값을 **알려주지 않으면 옛 스냅샷을 계속 그린다**.
+// 마운트를 유지하므로 여기서 쓴 값을 **알려주지 않으면 옛 스냅샷을 계속 그린다**.
 describe('보스 수익 스토어 동기화', () => {
   it('저장하면 보스 수익의 dropsByRowKey 도 함께 갱신된다', async () => {
     const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')

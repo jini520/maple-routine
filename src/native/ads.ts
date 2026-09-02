@@ -1,7 +1,7 @@
 import { getAdsPort } from './ports'
 
 /**
- * AdMob 어댑터 ([[ADR-090]] 결정 4, [[ADR-005]]).
+ * AdMob 어댑터.
  *
  * `features/*`·`app/*` 은 이 파일만 부른다 — 플러그인을 직접 import 하지 않는다.
  * 웹(`npm run dev`)에서는 전부 no-op 이다. 가드가 없으면 개발 서버가 부팅 중 죽는데, 그 판정은

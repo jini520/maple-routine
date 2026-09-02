@@ -1,10 +1,10 @@
 /**
- * 네이티브 포트 — `native/*` 가 플랫폼 플러그인 대신 이 인터페이스에만 의존한다([[ADR-128]]).
+ * 네이티브 포트 — `native/*` 가 플랫폼 플러그인 대신 이 인터페이스에만 의존한다.
  *
- * [[ADR-003]]·[[ADR-005]] 가 그은 경계는 "`features/*` 가 네이티브 API를 직접 만지지 않는다"였고 그
+ *  가 그은 경계는 "`features/*` 가 네이티브 API를 직접 만지지 않는다"였고 그
  * 규칙은 지켜져 왔다. 다만 어댑터 자신이 Capacitor 플러그인을 직접 import 하고 있어서 **어댑터를
  * 프레임워크 없는 패키지로 옮길 수 없었다** — 여기서 뒤집는 것이 그 방향 하나뿐이다. 밖으로 나가는
- * `native/*` 함수 시그니처는 한 글자도 안 바뀐다([[ADR-128]] 결정 4).
+ * `native/*` 함수 시그니처는 한 글자도 안 바뀐다.
  *
  * **포트는 플랫폼을 모른다.** 지금 어댑터들이 `Capacitor.getPlatform()` 으로 웹이면 no-op 하는 그
  * 분기는 전부 구현(`native/adapters/*`) 안에 남는다. 이 인터페이스를 부르는 쪽이 아는 것은 "부르면
@@ -19,7 +19,7 @@
 import type { ThemeDefinition, ThemeName } from '../types/theme'
 
 /**
- * OS 라이트/다크 설정 ([[ADR-009]] 2026-07-14 · [[ADR-104]]).
+ * OS 라이트/다크 설정 (2026-07-14).
  *
  * 저장된 테마가 없을 때의 **1회성 판정**에만 쓴다 — 실행 중 OS 설정 변경을 실시간으로 따라가지
  * 않는다(범위 밖). 그래서 구독 API를 두지 않았다: 부를 곳이 없는 인터페이스는 구현마다 죽은
@@ -30,7 +30,7 @@ export interface ColorSchemePort {
 }
 
 /**
- * 고른 테마를 플랫폼 표면에 반영한다 ([[ADR-064]] 결정 10 · [[ADR-099]] · [[ADR-122]]).
+ * 고른 테마를 플랫폼 표면에 반영한다.
  *
  * 웹뷰에서는 34토큰을 `<style>` 하나로 주입하고 `data-theme`/`data-mode` · `color-scheme` ·
  * `scrollbar-color` 를 문서에 건다 — 전부 DOM 이라 구현이 갖는다. 상태바·내비바 명암은 이 포트가
@@ -43,7 +43,7 @@ export interface ThemeAppearancePort {
 }
 
 /**
- * 전면광고 ([[ADR-090]] 결정 4).
+ * 전면광고.
  *
  * 광고 단위 ID·테스트 광고 판정은 `native/ads.ts` 의 순수 함수가 갖고 있고 어댑터가 그것을 쓴다 —
  * 이 프로젝트에서 가장 비싼 실수(실 ID로 자기 광고 클릭)를 막는 것이 그 게이트뿐이라 플랫폼
@@ -62,14 +62,14 @@ export interface AdsPort {
 }
 
 /**
- * 스플래시 ([[ADR-025]]·[[ADR-027]]·[[ADR-117]]).
+ * 스플래시.
  *
  * 이 포트가 다루는 것은 "화면을 덮는다/되돌린다"이지 플러그인 호출이 아니다 — 웹뷰에서는 네이티브
  * 스플래시 + DOM 커버 두 장이 함께 그 일을 하고(`#boot-cover` · `[data-splash-cover]`), 그 두 장은
  * 정의상 웹뷰 구현이라 어댑터가 갖는다.
  */
 export interface SplashScreenPort {
-  /** 덮개를 전부 걷는다. 리로드가 실패해 남은 커버까지 포함해서다([[ADR-117]] 결정 4). */
+  /** 덮개를 전부 걷는다. 리로드가 실패해 남은 커버까지 포함해서다. */
   hide(): Promise<void>
   /** 리로드 직전에 화면을 덮는다. 덮을 것이 없는 환경이면 아무것도 하지 않는다. */
   show(): Promise<void>
@@ -124,7 +124,7 @@ export interface BackGestureHandlers {
   onCancelled?: () => void
 }
 
-/** 시스템 뒤로가기 ([[ADR-120]] 결정 17·18). */
+/** 시스템 뒤로가기. */
 export interface BackGesturePort {
   setEnabled(enabled: boolean): Promise<void>
   moveToBackground(): Promise<void>
@@ -135,7 +135,7 @@ export interface BackGesturePort {
 export type NetworkType = 'wifi' | 'cellular' | 'none' | 'unknown'
 
 /**
- * 확인 한 번의 결과 — **프로토콜과 무관한 «앱이 무엇을 할 수 있나» 의 분류**다([[ADR-137]] 결정 6).
+ * 확인 한 번의 결과 — **프로토콜과 무관한 «앱이 무엇을 할 수 있나» 의 분류**다.
  *
  * @capgo 와 `expo-updates` 는 매니페스트 형식도 다운로드 단위도 다르지만 이 다섯 갈래는 같다.
  * 그래서 이 타입은 포트와 함께 남고, 두 어댑터가 각자의 프로토콜을 여기로 번역한다.
@@ -145,27 +145,27 @@ export type LiveUpdateCheckResult =
   | { kind: 'error' } // 매니페스트 조회·파싱 실패
   | { kind: 'up-to-date' } // 최신
   /**
-   * 새 버전은 있는데 **라이브로 못 받는다** — 네이티브가 낮아 스토어를 거쳐야 한다([[ADR-027]] 결정 7).
+   * 새 버전은 있는데 **라이브로 못 받는다** — 네이티브가 낮아 스토어를 거쳐야 한다.
    *
    * `expo-updates` 에서는 프로토콜이 이것을 **204(업데이트 없음)로 삼킨다.** 그래서 RN 어댑터는
-   * 확인이 «최신» 으로 떨어졌을 때 한 번 더 물어 이 갈래를 되살린다([[ADR-137]] 결정 4) —
+   * 확인이 «최신» 으로 떨어졌을 때 한 번 더 물어 이 갈래를 되살린다 —
    * 삼켜진 채로 두면 사용자에게 *"최신 버전입니다"* 라는 **거짓**이 보인다.
    */
   /**
    * `minNativeVersion` 은 **선택**이다 — @capgo 는 우리가 손으로 적은 최소 네이티브 버전을 실어
    * 모달이 *"최소 앱 버전 1.0.7 이상 필요"* 라고 말할 수 있었지만, `expo-updates` 의
-   * `runtimeVersion` 은 fingerprint 해시라 사용자에게 보여 줄 이름이 아니다([[ADR-137]] 결정 3).
+   * `runtimeVersion` 은 fingerprint 해시라 사용자에게 보여 줄 이름이 아니다.
    * 그래서 RN 은 이 값을 비우고, 모달은 그 줄을 **안 그린다**(원래부터 조건부였다) — 없는 숫자를
    * 지어내지 않는다.
    */
   | { kind: 'store-required'; version: string; minNativeVersion?: string }
-  /** 라이브로 받을 수 있다. `highlights` 는 받기 전 모달의 「자세히 보기」가 펼친다([[ADR-126]]). */
+  /** 라이브로 받을 수 있다. `highlights` 는 받기 전 모달의 「자세히 보기」가 펼친다. */
   | { kind: 'update-available'; version: string; size: number; highlights?: string[] }
 
 /**
- * Live Update (OTA) ([[ADR-022]]·[[ADR-026]]·[[ADR-027]]·[[ADR-117]]·[[ADR-137]]).
+ * Live Update (OTA).
  *
- * ## 경계는 «프로토콜» 이 아니라 **«행위»** 다 ([[ADR-137]] 결정 6)
+ * ## 경계는 «프로토콜» 이 아니라 **«행위»** 다
  *
  * 이 인터페이스는 한때 @capgo 의 모양을 그대로 드러냈다 — `httpGet`(매니페스트를 **호출부가 직접
  * 판다**) · `download({url, checksum})` · `applyBundle(id)`. 셋 다 `expo-updates` 에 짝이 없다:
@@ -177,7 +177,7 @@ export type LiveUpdateCheckResult =
  * |---|---|
  * | 상태 14개 · 셀룰러 확인 · 12초 타임아웃 · 완료 안내 판정 | 매니페스트 형식 · 버전 비교 · 채널 |
  *
- * 즉 [[ADR-027]]·[[ADR-061]]·[[ADR-065]]·[[ADR-117]]·[[ADR-126]] 이 정한 **UX 는 전부 스토어에
+ * 즉 이 정한 **UX 는 전부 스토어에
  * 남는다.** 프로토콜이 바뀌어도 사용자가 보는 것은 안 바뀐다는 것이 이 경계의 목적이다.
  */
 export interface LiveUpdatePort {
@@ -192,25 +192,25 @@ export interface LiveUpdatePort {
   /** 지금 도는 번들의 **사용자 표시 버전**(`1.0.6`). 런타임이 없으면 `null`. */
   getCurrentVersion(): Promise<string | null>
   /**
-   * 빌드 시점에 고정된 채널 표시값([[ADR-026]] 관찰용 UI).
+   * 빌드 시점에 고정된 채널 표시값(관찰용 UI).
    *
    * 어댑터가 갖는 이유는 그것이 **빌드 시점 값**이기 때문이다 — core 가 `import.meta.env` 를
-   * 읽던 자리가 여기였고, 그 한 줄이 RN 에서 모듈을 평가하는 순간 죽였다([[ADR-137]] 결정 7).
+   * 읽던 자리가 여기였고, 그 한 줄이 RN 에서 모듈을 평가하는 순간 죽였다.
    */
   getChannel(): string
   /** 확인. 매니페스트 조회·파싱·버전 비교까지 **어댑터가** 끝낸다. */
   check(): Promise<LiveUpdateCheckResult>
-  /** 사용자 동의 후 받는다. 진행률은 0~100 으로 흘린다([[ADR-061]] 결정 1). */
+  /** 사용자 동의 후 받는다. 진행률은 0~100 으로 흘린다. */
   download(onProgress: (percent: number) => void): Promise<void>
   /**
    * 받아둔 번들로 갈아끼우고 리로드한다. **이후 코드는 실행되지 않는다.**
    *
    * 앞뒤 순서(커넥션 닫기 → 커버 → 이 호출)는 여전히 `native/live-update.ts` 한 함수가 통째로
-   * 소유한다([[ADR-117]] 결정 1) — 그 순서가 곧 그 결정이라 두 곳으로 나누지 않는다.
+   * 소유한다 — 그 순서가 곧 그 결정이라 두 곳으로 나누지 않는다.
    */
   apply(): Promise<void>
   getNetworkType(): Promise<NetworkType>
-  /** 스토어 업데이트가 필요할 때 스토어를 연다([[ADR-027]] 결정 7). */
+  /** 스토어 업데이트가 필요할 때 스토어를 연다. */
   openStore(): void
 }
 

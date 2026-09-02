@@ -1,4 +1,4 @@
-// 아코디언 한 줄에 들어가는 **짧은 이름**([[ADR-147]] 정정 26 · 41).
+// 아코디언 한 줄에 들어가는 **짧은 이름**.
 //
 // 두 축이 다른 규칙을 쓴다 — **일일은 지역명까지 줄이고, 주간은 접두어만 뗀다.** 그 비대칭이 이
 // 파일의 요점이라 두 축을 나란히 놓고 본다.
@@ -7,7 +7,7 @@ import { CONTENT_TEMPLATE } from '../../../lib/scheduler/scheduler-content-templ
 
 import { shortDailyContentName, shortWeeklyContentName } from '../short-content-name'
 
-describe('shortWeeklyContentName — 접두어만 뗀다 ([[ADR-147]] 정정 41)', () => {
+describe('shortWeeklyContentName — 접두어만 뗀다', () => {
   // 지역 매칭을 걷은 이유가 이 넷이다 — 정정 26 이 하던 일이 이것뿐이었고, 그중 둘이 같은 글자로
   // 접혔다(타락한 세계수 ×2).
   it.each([

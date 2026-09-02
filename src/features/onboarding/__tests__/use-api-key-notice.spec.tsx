@@ -48,10 +48,10 @@ describe('useApiKeyNotice', () => {
     expect(noticeApiKeyIssueMock).not.toHaveBeenCalled()
   })
 
-  // 이 케이스가 없으면 키를 다시 넣어도 곧바로 튕긴다([[ADR-115]] 결정 6의 재이동 루프 금지).
+  // 이 케이스가 없으면 키를 다시 넣어도 곧바로 튕긴다(의 재이동 루프 금지).
   // 동기화 스토어의 error는 화면이 언마운트돼도 살아남으므로, 재입력 후 화면이 다시 마운트될 때
   // **같은 객체**가 다시 훅에 들어온다 — 그때 다시 알리면 방금 저장한 유효한 키가 지워진다.
-  // 429도 같은 함정이다(그쪽도 확인하면 키를 지운다 — [[ADR-116]] 결정 1).
+  // 429도 같은 함정이다(그쪽도 확인하면 키를 지운다 —).
   it.each(ROUTED)('이미 넘긴 %s 객체는 재마운트해도 다시 넘기지 않는다', (kind, noticeKind) => {
     const staleError = { kind } as ScheduleSyncError
 

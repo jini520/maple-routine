@@ -1,8 +1,8 @@
-// 선택 캐릭터의 **단일 진실 원천** ([[ADR-159]]).
+// 선택 캐릭터의 **단일 진실 원천**.
 //
 // 정정 전에는 저장 키가 하나(`lastSelectedCharacter`)인데 메모리가 두 벌이었다 — 컨텐츠 스토어와
 // 보스 스토어가 각자 `selectedOcid` 를 들고, 저장소에서 그 값을 읽는 것은 **하이드레이션 한
-// 회차뿐**이었다([[ADR-101]] 결정 4 — «동시에 하나만» 이고 끝나면 잊는다). 그래서 컨텐츠에서
+// 회차뿐**이었다(— «동시에 하나만» 이고 끝나면 잊는다). 그래서 컨텐츠에서
 // 캐릭터를 바꾸면 저장소는 갱신되는데 이미 하이드레이션이 끝난 보스 스토어는 옛 값 그대로였다.
 
 jest.mock('../../../storage/character-selection', () => ({
@@ -21,7 +21,7 @@ beforeEach(() => {
   useCharacterSelectionStore.setState({ selectedOcid: null })
 })
 
-describe('select ([[ADR-159]] 결정 1)', () => {
+describe('select', () => {
   it('메모리와 저장소를 함께 갱신한다', async () => {
     await useCharacterSelectionStore.getState().select('ocid-2')
 
@@ -43,7 +43,7 @@ describe('select ([[ADR-159]] 결정 1)', () => {
   })
 })
 
-describe('hydrate ([[ADR-159]] 결정 2)', () => {
+describe('hydrate', () => {
   it('저장된 값을 읽어 온다', async () => {
     getLastSelectedCharacterMock.mockResolvedValue('ocid-9')
 

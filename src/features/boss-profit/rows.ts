@@ -29,7 +29,7 @@ export interface BossProfitRow {
   ocid: string
   characterName: string
   imageUrl: string | null // character/basic의 character_image(character-basic-cache 경유). 캐시가 없으면 null(이니셜 폴백)
-  world: string | null // character/basic의 world_name(character-basic-cache 경유). 이전 캐시엔 없을 수 있어 null 가능([[ADR-054]] 결정 5·6 — 월드를 모르는 캐릭터는 월드 집계에서 제외)
+  world: string | null // character/basic의 world_name(character-basic-cache 경유). 이전 캐시엔 없을 수 있어 null 가능(6 — 월드를 모르는 캐릭터는 월드 집계에서 제외)
   boss: string // matchedBossName ?? apiName (매핑 안 되면 원문 그대로, ADR-008)
   difficulty: BossDifficulty
   cycle: BossCycle
@@ -55,7 +55,7 @@ export interface CharacterProfileInfo {
 export interface SortedCharacterInfo {
   ocid: string
   imageUrl: string | null // character-basic-cache의 character_image. 아바타 렌더링용(ADR-023 "미확정" 해소)
-  world: string | null // 같은 캐시 프로필의 world_name. 월드별 결정석 한도 집계용([[ADR-054]] 결정 5)
+  world: string | null // 같은 캐시 프로필의 world_name. 월드별 결정석 한도 집계용
   // ADR-078 결정 2: 이 조회가 이미 읽은 이름을 버리지 않고 흘려보내, 뒤따르는 함수들이 같은 캐시를
   // 다시 읽지 않게 한다. **캐시가 없으면 null**이다 — 정렬용으로 쓰는 ''(빈 이름)를 그대로 넘기면
   // "캐시 없음"이 "이름이 빈 캐릭터"로 둔갑해 buildRowsFromRecords의 제외 규칙이 깨진다.
@@ -79,13 +79,13 @@ export function toProfileSnapshot(infos: SortedCharacterInfo[]): Map<string, Cha
 
 // rows(보스 단위, 캐릭터당 여러 개)를 sortedOcids가 정한 캐릭터 순서로 재배열하고, 같은 캐릭터
 // 안에서는 weekly-bosses.json 정규 순서(REFERENCE_ENTRIES: weekly → eventWeekly → monthly)로
-// 결정적으로 정렬한다([[ADR-036]], #28). 예전에는 캐릭터 순위(ocid)로만 정렬하고 stable sort에
+// 결정적으로 정렬한다(#28). 예전에는 캐릭터 순위(ocid)로만 정렬하고 stable sort에
 // 의존해 보스 순서를 데이터 소스가 만든 순서 그대로 물려받았는데, 그 소스 순서가 비결정적이라
 // (특히 ORDER BY 없는 getBossProfitRecords, 캐시/라이브 Map 삽입 순서) 로드/렌더마다 보스 순서가
 // 달라졌다. 모든 행 경로가 이 함수를 거치므로 여기서 2차 정렬 키를 부여하면 세 경로가 전부 같은
-// 순서로 고정된다. 참조에 없는 보스(매칭 실패 원문명, [[ADR-008]])는 맨 뒤로, 같은 보스의 여러
+// 순서로 고정된다. 참조에 없는 보스(매칭 실패 원문명)는 맨 뒤로, 같은 보스의 여러
 // 난이도는 난이도 순서로, 그래도 동률이면 보스명으로 완전 결정한다 — 그 세 키는 이제
-// `boss-matching` 의 공용 `compareBossOrder` 가 든다([[ADR-186]] 결정 2).
+// `boss-matching` 의 공용 `compareBossOrder` 가 든다.
 export function sortRowsByOcidOrder(rows: BossProfitRow[], sortedOcids: string[]): BossProfitRow[] {
   const rank = new Map(sortedOcids.map((ocid, index) => [ocid, index]))
   const ocidRank = (ocid: string): number => rank.get(ocid) ?? Number.MAX_SAFE_INTEGER
@@ -95,7 +95,7 @@ export function sortRowsByOcidOrder(rows: BossProfitRow[], sortedOcids: string[]
     // 순위가 같은데 ocid가 다르면(둘 다 sortedOcids 밖인 예외) 캐릭터끼리 섞이지 않게 ocid로 묶는다.
     if (a.ocid !== b.ocid) return a.ocid < b.ocid ? -1 : 1
     // 2차 키 셋(참조 인덱스 → 난이도 → 보스명)은 여기 인라인이던 것을 **참조표의 소유자**로
-    // 옮긴 것뿐이다([[ADR-186]] 결정 2) — 계약은 [[ADR-036]] 결정 3 그대로이고, 스케줄러·today·
+    // 옮긴 것뿐이다 — 계약은 그대로이고, 스케줄러·today·
     // 가계부가 이제 같은 함수를 부른다.
     return compareBossOrder(a, b)
   })
@@ -147,10 +147,10 @@ export function selectProfitDisplayBosses(
   manualItems: ManualTrackedItem[],
 ): MatchedBoss[] {
   const matched = bossContents.map(matchBossContent)
-  // **주간 한도를 채웠으면 미처치 placeholder 는 아예 안 세운다**([[ADR-187]] 결정 4 — 두 모드
+  // **주간 한도를 채웠으면 미처치 placeholder 는 아예 안 세운다**(— 두 모드
   // 공통이라 아래 ①②보다 앞에 선다). 판정은
   // 동기화 결과 전체로 한다 — 이 결정이 겨누는 상황이 «표시 목록 밖 보스로 12를 채웠다» 라,
-  // 목록만 보면 영영 12가 안 된다([[ADR-031]] 결정 1 이 «등록 여부와 무관하게» 세는 것과 같다).
+  // 목록만 보면 영영 12가 안 된다(이 «등록 여부와 무관하게» 세는 것과 같다).
   //
   // 「마감」 배지를 여기까지 들고 오지 않는 이유: 이 페이지는 정산이라 «벌지 않은 것» 은 줄을
   // 갖지 않는다(마감이 서는 자리는 보스 스케줄러 카드다). 그리고 «완료» 로 칠하지도 않는다 —
@@ -166,7 +166,7 @@ export function selectProfitDisplayBosses(
   const nameOf = (boss: MatchedBoss): string => boss.matchedBossName ?? boss.apiName
 
   // ① 실제 처치한 보스는 추적 여부와 무관하게 전부, 처치한 난이도·가격으로 노출한다(사용자 확정) —
-  // 보스 수익 페이지는 정산이 목적이라([[ADR-032]]) 실제로 번 것은 다 보여준다. selectBossProfitBosses가
+  // 보스 수익 페이지는 정산이 목적이라 실제로 번 것은 다 보여준다. selectBossProfitBosses가
   // 그룹당 실제 처치 난이도를 골라주며(등록 난이도와 다르게 처치했어도 처치 난이도로 잡힌다), 인게임
   // 등록-only(미처치) placeholder는 수동 모드에서 신뢰하지 않으므로 ownComplete인 것만 남긴다.
   const kills = selectBossProfitBosses(matched).filter((boss) => boss.ownComplete)
@@ -313,7 +313,7 @@ export function toRecordedDrop(record: BossDropRecord): RecordedDrop {
     ringLevel: record.ringLevel ?? undefined,
     quantity: record.quantity,
     // ⚠️ 이쪽이 `lib/boss/boss-drops` 의 동명 함수보다 자주 지나간다 — **DB에서 읽을 때마다**다.
-    // 빠뜨리면 저장은 됐는데 화면이 영영 "미입력"으로 보인다([[ADR-124]] 결정 4).
+    // 빠뜨리면 저장은 됐는데 화면이 영영 "미입력"으로 보인다.
     priceState: record.priceState ?? undefined,
     priceMeso: record.priceMeso ?? undefined,
     priceShare: record.priceShare ?? undefined,

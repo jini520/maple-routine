@@ -1,11 +1,11 @@
 /**
- * 사냥 계산기가 쓰는 **메소 획득량**의 오케스트레이션([[ADR-177]] 결정 7·9).
+ * 사냥 계산기가 쓰는 **메소 획득량**의 오케스트레이션.
  *
- * 화면은 `nexon/` 도 `storage/` 도 직접 안 부른다(CLAUDE.md CRITICAL · [[ADR-003]]·[[ADR-005]]).
+ * 화면은 `nexon/` 도 `storage/` 도 직접 안 부른다(CLAUDE.md CRITICAL).
  * 여기서 하는 일은 넷이다 — **키를 꺼내고 · 직업을 캐시에서 읽고 · 여섯을 부르고 · 성공하면
  * 캐시에 남긴다**.
  *
- * **부르는 계기는 시트에서 캐릭터를 고를 때 하나**다([[ADR-175]] 결정 9 가 레벨을 갈아 끼우는
+ * **부르는 계기는 시트에서 캐릭터를 고를 때 하나**다(가 레벨을 갈아 끼우는
  * 그 자리). 수정으로 열 때는 **안 부른다** — 그 행에 적힌 그때의 값이 있고, 지금 값으로 다시
  * 재면 옛 기록의 금액이 열 때마다 달라진다(결정 8).
  */
@@ -39,7 +39,7 @@ async function jobClassOf(ocid: string): Promise<string | null> {
 
 export async function loadMesoRate(ocid: string): Promise<MesoRateLoad> {
   const auth = await getAuthConfig()
-  // 키가 없으면 **부르지도 않는다** — 401 을 만들면 그 사슬이 저장된 키를 지운다([[ADR-116]] 결정 1).
+  // 키가 없으면 **부르지도 않는다** — 401 을 만들면 그 사슬이 저장된 키를 지운다.
   if (auth === null) return { kind: 'fallback', percent: await getCachedMesoRate(ocid) }
 
   try {

@@ -43,7 +43,7 @@ describe('displayedDailyContents', () => {
     expect(displayedDailyContents(input({ dailyContents: contents }), 'auto')).toEqual([])
   })
 
-  it('수동 모드는 등록 여부가 아니라 **멤버십**이 목록을 정한다 ([[ADR-035]] 결정 3)', () => {
+  it('수동 모드는 등록 여부가 아니라 **멤버십**이 목록을 정한다', () => {
     const contents = DAILY_NAMES.map((name) => daily(name, false)) // 게임 등록은 전부 없음
 
     const result = displayedDailyContents(

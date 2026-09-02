@@ -16,7 +16,7 @@ import AppBackground from '../../../modules/app-background'
  *
  * ## 왜 `moveToBackground` 만 남는가
  *
- * [[ADR-120]] 결정 18 은 *"탭 최상위의 뒤로가기는 묻지 않고 백그라운드 전환"* 이다. 내비게이션
+ *  은 *"탭 최상위의 뒤로가기는 묻지 않고 백그라운드 전환"* 이다. 내비게이션
  * 라이브러리는 **더 이상 pop 할 것이 없을 때 무엇을 할지**를 정해 주지 않고, 그 자리의 기본값은
  * 결정 18 이 명시적으로 거부한 종료다 — RN 자신의 주석이 그렇게 적어 두었다
  * (`ReactActivity.invokeDefaultOnBackPressed`: *"the fallback logic (**finish activity**)"*).
@@ -34,7 +34,7 @@ import AppBackground from '../../../modules/app-background'
  */
 
 const OWNED_BY_NATIVE_STACK =
-  'react-navigation 네이티브 스택이 시스템 뒤로가기를 소유합니다 — 스택에 쌓인 화면이 가로챌지 말지를 정하고, 진행률도 OS 가 그립니다([[ADR-120]] 결정 17). 이 자리에서 할 일이 없습니다.'
+  'react-navigation 네이티브 스택이 시스템 뒤로가기를 소유합니다 — 스택에 쌓인 화면이 가로챌지 말지를 정하고, 진행률도 OS 가 그립니다. 이 자리에서 할 일이 없습니다.'
 
 async function throwOwnedByNativeStack(method: string): Promise<never> {
   throw new Error(`BackGesturePort.${method}() 는 RN 에서 쓰지 않습니다 — ${OWNED_BY_NATIVE_STACK}`)

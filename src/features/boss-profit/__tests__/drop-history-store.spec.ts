@@ -3,7 +3,7 @@ import type { BossDropRecord } from '../../../storage/boss-drops'
 var mockModule0: Record<string, unknown>
 jest.mock('../../../storage/boss-drops', () => {
   // `jest.resetModules()` 가 레지스트리를 비워도 **같은 목**을 돌려준다 — vitest 의
-  // `vi.hoisted` 가 그 경계를 넘어 살아남던 것을 여기서 재현한다([[ADR-157]]).
+  // `vi.hoisted` 가 그 경계를 넘어 살아남던 것을 여기서 재현한다.
   mockModule0 = mockModule0 ?? {
   getAllBossDropRecords: jest.fn(),
   getBossDropRecordsRevision: jest.fn(),
@@ -14,7 +14,7 @@ const { getAllBossDropRecords: getAllBossDropRecordsMock, getBossDropRecordsRevi
 var mockModule1: Record<string, unknown>
 jest.mock('../../../storage/boss-profit', () => {
   // `jest.resetModules()` 가 레지스트리를 비워도 **같은 목**을 돌려준다 — vitest 의
-  // `vi.hoisted` 가 그 경계를 넘어 살아남던 것을 여기서 재현한다([[ADR-157]]).
+  // `vi.hoisted` 가 그 경계를 넘어 살아남던 것을 여기서 재현한다.
   mockModule1 = mockModule1 ?? {
   getAllBossProfitRecordKeys: jest.fn(),
 }
@@ -24,7 +24,7 @@ const { getAllBossProfitRecordKeys: getAllBossProfitRecordKeysMock } = jest.requ
 var mockModule2: Record<string, unknown>
 jest.mock('../../../storage/character-selection', () => {
   // `jest.resetModules()` 가 레지스트리를 비워도 **같은 목**을 돌려준다 — vitest 의
-  // `vi.hoisted` 가 그 경계를 넘어 살아남던 것을 여기서 재현한다([[ADR-157]]).
+  // `vi.hoisted` 가 그 경계를 넘어 살아남던 것을 여기서 재현한다.
   mockModule2 = mockModule2 ?? {
   getTrackedCharacterOcids: jest.fn(),
 }
@@ -34,7 +34,7 @@ const { getTrackedCharacterOcids: getTrackedCharacterOcidsMock } = jest.requireM
 var mockModule3: Record<string, unknown>
 jest.mock('../../../storage/character-basic-cache', () => {
   // `jest.resetModules()` 가 레지스트리를 비워도 **같은 목**을 돌려준다 — vitest 의
-  // `vi.hoisted` 가 그 경계를 넘어 살아남던 것을 여기서 재현한다([[ADR-157]]).
+  // `vi.hoisted` 가 그 경계를 넘어 살아남던 것을 여기서 재현한다.
   mockModule3 = mockModule3 ?? {
   getCachedCharacterBasic: jest.fn(),
 }
@@ -58,7 +58,7 @@ function dropRecord(overrides: Partial<BossDropRecord>): BossDropRecord {
     priceMeso: null,
     priceShare: null,
     quantity: 1,
-    // 히스토리는 이 값을 쓰지 않는다([[ADR-071]] 결정 2) — 그룹 재기록으로 덮이는 감사 필드다.
+    // 히스토리는 이 값을 쓰지 않는다 — 그룹 재기록으로 덮이는 감사 필드다.
     recordedAt: '2026-07-31T00:00:00.000Z',
     ...overrides,
   }
@@ -106,7 +106,7 @@ describe('useDropHistoryStore.load', () => {
   })
 
   // today 의 「최고가 아이템」(entered 만 순위)·「가격 미입력」(undefined 만 카운트)이 이 세 필드를
-  // 읽는다. 빠지면 저장은 됐는데 최고가는 영영 비고 미입력 건수는 안 준다([[ADR-124]] 결정 4).
+  // 읽는다. 빠지면 저장은 됐는데 최고가는 영영 비고 미입력 건수는 안 준다.
   it('가격 세 필드를 함께 담는다 — 빠지면 「입력해도 미입력」이 된다', async () => {
     getAllBossDropRecordsMock.mockResolvedValue([
       dropRecord({ priceState: 'entered', priceMeso: 1_200_000_000, priceShare: 2 }),

@@ -1,5 +1,5 @@
 /**
- * 처치 **날짜**를 캐낸다 — [[ADR-172]] · 이슈 #239.
+ * 처치 **날짜**를 캐낸다 — · 이슈 #239.
  *
  * `boss_profit_records` 의 `period_key` 는 주(목요일)·달이라 «며칟날 잡았나» 를 못 든다. 그런데
  * 스케줄러 API 도 그것을 **직접 알려 주지 않는다** — `date=D` 응답은 «D 시점의 완료 현황» 이라
@@ -12,12 +12,12 @@
  *
  * 응답 하나가 그 캐릭터의 **그날 보스 전부**를 담으므로, 한 주를 훑으면 그 주의 모든 보스가
  * 한꺼번에 풀린다 — 캐릭터당 주 7회가 상한이다. 날짜끼리 서로를 모르므로 **한꺼번에 나간다**
- * ([[ADR-148]] 결정 1).
+ *
  *
  * ## 두 번 불려도 안 겹친다
  *
  * 부르는 자리가 둘이다(결정 9) — 보스 수익 동기화 뒤와 가계부 진입. 겹침을 막는 것이 둘이다:
- * **조회 원장**이 «이미 본 날짜» 를 들고([[ADR-086]] 결정 4 + `bosses`), 아래 `inFlight` 가 같은
+ * **조회 원장**이 «이미 본 날짜» 를 들고(+ `bosses`), 아래 `inFlight` 가 같은
  * 순간에 두 번 도는 것을 막는다. 그래서 이 함수는 **어디서 몇 번 불려도 결과가 같다.**
  */
 import { getAuthConfig } from '../../storage/api-key'
@@ -57,7 +57,7 @@ export interface DefeatDateInput {
 }
 
 /**
- * 이 보스를 **며칟날 잡았나** — 모르면 `null` 이다([[ADR-172]] 결정 2·3).
+ * 이 보스를 **며칟날 잡았나** — 모르면 `null` 이다.
  *
  * 시작일부터 훑는다. 셋 중 하나로 끝난다:
  *
@@ -95,7 +95,7 @@ interface ResolvablePeriod {
 }
 
 /**
- * 지금 **캐낼 수 있는** 기간들 — 기간의 **첫 날**이 조회 창 안이어야 한다([[ADR-172]] 결정 4).
+ * 지금 **캐낼 수 있는** 기간들 — 기간의 **첫 날**이 조회 창 안이어야 한다.
  *
  * 첫 날을 못 보면 «그 앞엔 없었다» 를 말할 수 없어 어떤 조회도 답을 못 낸다. 그래서 그 기간은
  * 캐는 대상이 아니라 **부르지도 않는 대상**이다.
@@ -127,10 +127,10 @@ function missingDays(
     for (const day of getPeriodDateKeys(period.cycle, period.periodKey)) {
       if (day < floorDateKey || day > ceilingDateKey) continue
       const record = ledgerDates[day]
-      // `outOfRange` 는 그 날짜에 대해 영구다([[ADR-067]] 결정 1) — 다시 부르지 않는다.
+      // `outOfRange` 는 그 날짜에 대해 영구다 — 다시 부르지 않는다.
       if (record?.kind === 'outOfRange') continue
       // **`bosses` 가 없는 관측은 미조회로 친다.** 이 칸이 생기기 전에 남은 기록이라 보스를 안 봤고,
-      // 빈 배열(«그날 완료 0건»)로 읽으면 처치일이 그 뒤 어느 날로 밀린다([[ADR-172]] 결정 5).
+      // 빈 배열(«그날 완료 0건»)로 읽으면 처치일이 그 뒤 어느 날로 밀린다.
       if (record?.kind === 'observed' && record.bosses !== undefined) continue
       days.add(day)
     }
@@ -161,7 +161,7 @@ async function probeDays(
           await recordScheduleProbe(ocid, dateKey, { kind: 'outOfRange' })
           return
         }
-        // 집계 전(00009)·네트워크·파싱은 **기록하지 않는다** — 나중에 풀린다([[ADR-086]] 결정 4).
+        // 집계 전(00009)·네트워크·파싱은 **기록하지 않는다** — 나중에 풀린다.
         return
       }
 
@@ -251,7 +251,7 @@ async function runResolveDefeatDates(ocids: readonly string[], now: Date): Promi
   /**
    * **키는 조회할 때만 필요하다** — 여기서 막지 않는다(2026-08-27 실사용 조사).
    *
-   * 소거법과 리셋 당일은 **관측이 하나도 없어도 답이 나온다**([[ADR-172]] 결정 3). 키 검사를 함수
+   * 소거법과 리셋 당일은 **관측이 하나도 없어도 답이 나온다**. 키 검사를 함수
    * 맨 앞에 두었더니 조회할 것이 없는 건까지 0 으로 나갔고, 키를 지운 기기에서는 오늘 잡은 보스가
    * 영영 캘린더에 안 찍혔다.
    */

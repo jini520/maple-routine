@@ -225,9 +225,9 @@ describe('getAllBossProfitRecordKeys', () => {
   })
 })
 
-// [[ADR-172]] — 처치 날짜. `BossProfitRecord` 자체는 안 바뀐다(넣는 자리들이 날짜를 모른다).
+// 처치 날짜. `BossProfitRecord` 자체는 안 바뀐다(넣는 자리들이 날짜를 모른다).
 // 대신 **읽는 질문 둘**과 **채우는 쓰기 하나**가 는다.
-describe('처치 날짜 ([[ADR-172]])', () => {
+describe('처치 날짜', () => {
   it('upsert 는 defeated_on 을 안 건드린다 — 자동 기록이 캐 놓은 날짜를 지우면 안 된다', async () => {
     const { upsertBossProfitRecord } = require('../boss-profit') as typeof import('../boss-profit')
 
@@ -312,8 +312,8 @@ describe('처치 날짜 ([[ADR-172]])', () => {
 })
 
 /**
- * 표가 바뀐 것을 **읽는 쪽이 물을 수 있어야 한다**([[ADR-189]] 결정 2) — `boss_drop_records` 가
- * 먼저 갖고 있던 그 수([[ADR-147]] 정정 17)를 이 표에도 단다.
+ * 표가 바뀐 것을 **읽는 쪽이 물을 수 있어야 한다** — `boss_drop_records` 가
+ * 먼저 갖고 있던 그 수를 이 표에도 단다.
  */
 describe('getBossProfitRecordsRevision', () => {
   beforeEach(() => {

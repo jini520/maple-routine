@@ -61,7 +61,7 @@ const { seedManualTrackedContent: seedManualTrackedContentMock } = jest.requireM
 import { useOnboardingStore } from '../store'
 
 // 팩토리가 **모듈 평가보다 먼저** 불릴 수 있어(스토어를 import 하는 순간) `var` 로 올리고
-// 읽는 자리에서 채운다([[ADR-157]]).
+// 읽는 자리에서 채운다.
 var mockTrackingModeRef: { current: 'auto' | 'manual' } = { current: 'auto' }
 
 function account(accountId: string): MapleAccount {
@@ -169,7 +169,7 @@ describe('useOnboardingStore.restoreFromStorage', () => {
   })
 
 
-  // 재개는 **로컬 읽기뿐**이다([[ADR-143]] 결정 7 로 계정 선택이 사라진 뒤로는 네트워크가 없다).
+  // 재개는 **로컬 읽기뿐**이다(로 계정 선택이 사라진 뒤로는 네트워크가 없다).
   it('apiKey만 있으면 네트워크 없이 스케줄 관리 방법 단계로 재개한다', async () => {
     getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
     getTrackingModeMock.mockResolvedValue(null)

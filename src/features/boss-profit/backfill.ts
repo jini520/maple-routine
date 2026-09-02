@@ -1,7 +1,7 @@
 // 과거 기간 **백필**(ADR-094 결정 7로 store.ts 에서 분리) — 어떤 (캐릭터, 기간)을 조회할지
 // 정하고, 조회해서 기록으로 남기고, 직전 기간 총액과 더 뒤로 갈 수 있는지를 판단한다.
 //
-// [[ADR-086]] 결정 4의 조회 원장(같은 날짜 재조회 금지)이 여기서 읽고 쓰인다.
+// 의 조회 원장(같은 날짜 재조회 금지)이 여기서 읽고 쓰인다.
 
 import { getAuthConfig } from '../../storage/api-key'
 import { findPriceEntry } from '../../lib/boss/boss-crystal-prices'
@@ -54,11 +54,11 @@ export function buildBackfillTargets(tab: BossCycle, periodKey: string, ocids: s
 // 기본값(파티 관리 설정, 없으면 1)으로 채운다. 즉 **실시간으로 쌓인 기록이 base이고 백필은 빠진
 // 것만 채우는 delta**다.
 //
-// 반환값은 이번 시도의 결과다([[ADR-067]] 결정 2) — null이면 확인 완료(0건이든 기록을 채웠든),
+// 반환값은 이번 시도의 결과다 — null이면 확인 완료(0건이든 기록을 채웠든),
 // 'notCollected'면 아직 집계 전(시간이 지나면 풀린다), 'failed'면 그 외 실패(지금 재시도 가능).
 // **조회 불가(구간 밖) 대상은 여기 들어오지 않는다** — 호출부가 걸러낸다. 전에는 이 함수가 그
 // 대상을 markPeriodChecked로 굳혔는데, 그러면 "조회해서 0건을 봤다"와 "조회 불가라 굳혔다"가
-// 같은 기록이 되어 confirmedEmpty가 outOfRange로 격하되는 원인이었다([[ADR-067]] 결정 3).
+// 같은 기록이 되어 confirmedEmpty가 outOfRange로 격하되는 원인이었다.
 export async function backfillTarget(target: BackfillTarget, now: Date): Promise<PeriodQueryOutcome | null> {
   const date = getBackfillQueryDate(target.cycle, target.periodKey)
 
@@ -145,7 +145,7 @@ export async function backfillTarget(target: BackfillTarget, now: Date): Promise
     await withSqliteTimeout(markPeriodChecked(target.ocid, target.cycle, target.periodKey, now.toISOString()))
     return null
   } catch (error) {
-    // 코드가 알려주는 사실을 상태로 옮긴다([[ADR-067]] 결정 1).
+    // 코드가 알려주는 사실을 상태로 옮긴다.
     //  - notCollected(00009): 실패가 아니라 "아직" — 재시도 유도 문구를 띄우지 않는다.
     //  - periodOutOfRange(00004): 우리 계산상 조회 구간 안인데 API가 거부한 것 — 월드 리프 이전·
     //    휴면 등 그 캐릭터·날짜에 고유한 사정이라 "다시 시도"가 아니라 "조회할 수 없다"가 맞다.
@@ -164,7 +164,7 @@ export async function backfillTarget(target: BackfillTarget, now: Date): Promise
 //  3) 롤링 윈도우 밖이라 지금은 조회 불가지만 과거에 저장해둔 기록이 있으면 그대로 보여줄 수 있다 → 가능.
 // (이 캐시 존중이 롤링 하한을 그대로 이전 게이트로 쓰지 않는 이유다.)
 /**
- * 직전 기간 총 수익 ([[ADR-087]] 결정 2). SQLite 한 번이면 끝난다.
+ * 직전 기간 총 수익. SQLite 한 번이면 끝난다.
  *
  * `getComparisonPeriodKeys` 가 **그 화면 총액 산식과 짝을 맞춘 키 목록**을 준다 — 월간 탭이면
  * 직전 달(monthly)과 그 달에 속한 주차들(weekly)이 함께 들어 있고, 화면 총액도 그 둘을 더하므로
@@ -180,7 +180,7 @@ export async function loadPreviousPeriodTotal(
   if (ocids.length === 0) {
     return 0
   }
-  // **결정석만 센다**([[ADR-124]] 결정 7 정정, 2026-08-10 사용자 지정). 아이템 판매가는 그 주에
+  // **결정석만 센다**(정정, 2026-08-10 사용자 지정). 아이템 판매가는 그 주에
   // 실제로 판 값이라 주마다 들쭉날쭉하고, 섞으면 증감이 "이번 주 보스를 얼마나 돌았나"가 아니라
   // "비싼 게 떴나"를 말하게 된다. 화면도 같은 잣대로 이번 기간의 결정석 합만 넘긴다.
   const records = await withSqliteFallback(

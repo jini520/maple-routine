@@ -1,6 +1,6 @@
 /**
- * `NotificationsPort` 의 RN 구현([[ADR-128]] 결정 4 — 밖으로 나가는 시그니처는 Capacitor 구현과
- * 한 글자도 다르지 않다). 정책은 [[ADR-004]](서버 푸시 없이 로컬 알림만).
+ * `NotificationsPort` 의 RN 구현(— 밖으로 나가는 시그니처는 Capacitor 구현과
+ * 한 글자도 다르지 않다). 정책은(서버 푸시 없이 로컬 알림만).
  *
  * **notifee 를 고른 근거는 "실제로 붙는다"이다.** 이 저장소의 Expo SDK 57(RN 0.86)에서
  * `expo prebuild` → `assembleDebug` 로 확인했다 — 오토링킹(`:notifee_react-native`)·
@@ -32,7 +32,7 @@
  * 중요도·소리, notifee 의 기본 트리거가 WorkManager 라는 점(Capacitor 는 `AlarmManager` 를 쓰고
  * 가능하면 `setExact` 였다 — `LocalNotificationManager.java:374-395`). 뒤엣것은 발화 시각이 더
  * 느슨해질 수 있다는 뜻이고, 정확 알람으로 바꾸는 것은 Android 12+ 의 `SCHEDULE_EXACT_ALARM`
- * 권한 흐름을 동반하는 별개 결정이다([[ADR-004]] 는 이미 지연·누락을 감수한다고 적어 두었다).
+ * 권한 흐름을 동반하는 별개 결정이다(는 이미 지연·누락을 감수한다고 적어 두었다).
  */
 
 import notifee, { AuthorizationStatus, type NotificationSettings } from '@notifee/react-native'

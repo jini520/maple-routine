@@ -14,7 +14,7 @@ import type { SchedulerCharacterState } from '../../types'
 import { toScheduleSyncError } from './errors'
 
 /**
- * 후보 목록에 넣을 자격 — [[ADR-086]] 결정 3·5.
+ * 후보 목록에 넣을 자격 —.
  *
  * - `eligible`   목록에 넣는다
  * - `ineligible` 최근 14일간 활동 증거가 없다 — 추적 중이 아니면 목록에서 뺀다
@@ -34,9 +34,9 @@ function judgeFromLedger(ledger: ScheduleProbeLedger): CharacterEligibility | nu
 }
 
 /**
- * 네트워크 없이, 이미 가진 것만으로 내리는 판정([[ADR-086]] 결정 3). 피커의 stub 단계처럼
- * `character/list` 응답을 기다리지 않고 먼저 그려야 하는 자리가 쓴다([[ADR-017]] 결정 6).
- * `'unknown'` 은 "아직 확인하지 못했다"이고, 확인 전에는 목록에 넣지 않는다([[ADR-053]] 결정 1).
+ * 네트워크 없이, 이미 가진 것만으로 내리는 판정. 피커의 stub 단계처럼
+ * `character/list` 응답을 기다리지 않고 먼저 그려야 하는 자리가 쓴다.
+ * `'unknown'` 은 "아직 확인하지 못했다"이고, 확인 전에는 목록에 넣지 않는다.
  */
 export async function readKnownEligibility(
   ocid: string,
@@ -53,17 +53,17 @@ export async function readKnownEligibility(
 type DayOutcome = 'completion' | 'observed' | 'unavailable' | 'skipped'
 
 /**
- * `access_flag` 가 false 인 캐릭터에게 "최근 14일 안에 활동한 적이 있는가"를 묻는다([[ADR-086]] 결정 3).
+ * `access_flag` 가 false 인 캐릭터에게 "최근 14일 안에 활동한 적이 있는가"를 묻는다.
  *
  * 호출 비용은 조회 원장이 결정한다 — 이미 본 날짜는 다시 부르지 않으므로, 예열이 한 번 훑고 나면
  * 그 뒤로는 **그날 새로 윈도우에 들어온 날짜 1개**만 남는다(결정 4).
  *
- * **미조회 날짜는 한꺼번에 나간다**([[ADR-148]] 결정 1). 옛 루프는 하루씩 순서대로 물으며 완료를
+ * **미조회 날짜는 한꺼번에 나간다**. 옛 루프는 하루씩 순서대로 물으며 완료를
  * 찾은 날짜에서 멈췄는데, 이 함수가 피커의 캐릭터별 체인 안에서 `character/basic` **뒤에** 붙어
  * 있어서 그 직렬 구간이 그대로 «캐릭터가 화면에 뜨는 시간» 이었다(최대 13 RTT). 날짜끼리는 서로를
  * 모르므로 — 각 날짜가 하는 일은 «원장에 기록» 과 «완료를 봤는가» 뿐이다 — 순서를 없애도 답이
  * 바뀌지 않는다. 바뀌는 것은 **조기 종료가 아끼던 호출**뿐이고(결정 2), 그 대가는 서비스 단계 키의
- * 초당 500건 예산 안에서 치른다([[ADR-116]] 결정 1 — 개발 단계 키는 온보딩을 통과하지 못한다).
+ * 초당 500건 예산 안에서 치른다(— 개발 단계 키는 온보딩을 통과하지 못한다).
  *
  * `todayState` 는 이미 오늘 응답을 손에 쥔 호출부(예열)가 넘긴다 — 같은 호출을 두 번 하지 않기
  * 위해서다. 오늘 응답은 **원장에 기록하지 않는다**: 오늘은 아직 끝나지 않은 날이라 "완료 없음"을
@@ -109,7 +109,7 @@ export async function resolveCharacterEligibility(
           await recordScheduleProbe(ocid, dateKey, { kind: 'outOfRange' })
           return 'skipped'
         }
-        // notCollected(집계 전)·네트워크·파싱은 기록하지 않는다 — 나중에 다시 시도한다([[ADR-086]] 결정 4).
+        // notCollected(집계 전)·네트워크·파싱은 기록하지 않는다 — 나중에 다시 시도한다.
         return 'skipped'
       }
 
@@ -119,7 +119,7 @@ export async function resolveCharacterEligibility(
     }),
   )
 
-  // **`unavailable` 이 `completion` 을 이긴다**([[ADR-148]] 결정 4). 위 `judgeFromLedger` 가 원장을
+  // **`unavailable` 이 `completion` 을 이긴다**. 위 `judgeFromLedger` 가 원장을
   // 그 순서로 읽으므로(unavailable 먼저), 여기서 뒤집으면 같은 입력에 이번 회차와 다음 회차의 답이
   // 갈린다. 003 은 «그 ocid 는 어느 날짜로도 조회 불가» 라 실제로 섞일 일이 없고, 이 줄은 그 전제가
   // 깨졌을 때의 안전망이다.

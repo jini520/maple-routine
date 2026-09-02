@@ -1,4 +1,4 @@
-// 가격 기록 화면의 상태([[ADR-124]] 결정 8) — 한 주를 놓고 드롭에 값을 매긴다.
+// 가격 기록 화면의 상태 — 한 주를 놓고 드롭에 값을 매긴다.
 //
 // 히스토리 스토어(`drop-history-store`)와 형제이되 축과 성격이 다르다: 저쪽은 **전 기간 읽기
 // 전용**이고 여기는 **한 주 쓰기**다. 그래서 저장 경로(`savePrice`·`skipPrice`)가 함께 산다.
@@ -29,7 +29,7 @@ export interface DropPriceEntry {
   periodKey: string
   dropIndex: number
   drop: RecordedDrop
-  /** 분배 인원 스테퍼의 **기본값** — 그 행의 파티원 수다([[ADR-124]] 결정 2). */
+  /** 분배 인원 스테퍼의 **기본값** — 그 행의 파티원 수다. */
   partySize: number
 }
 
@@ -46,12 +46,12 @@ interface DropPriceState {
   groups: DropPriceGroup[]
   load: (periodKey: string) => Promise<void>
   savePrice: (entry: DropPriceEntry, priceMeso: number, share: number) => Promise<void>
-  /** 기록 안함 — 값을 매기지 않기로 한 결정을 저장한다(스킵과 다르다, [[ADR-124]] 결정 6 정정). */
+  /** 기록 안함 — 값을 매기지 않기로 한 결정을 저장한다(스킵과 다르다 정정). */
   excludePrice: (entry: DropPriceEntry) => Promise<void>
 }
 
 // 히스토리와 같은 사정 — 여기서 실패를 빈 배열로 바꾸면 "기록이 없습니다"라는 **거짓 빈 상태**가
-// 된다. 실패는 실패로 알린다([[ADR-062]]).
+// 된다. 실패는 실패로 알린다.
 
 function entryId(record: Pick<BossDropRecord, 'ocid' | 'boss' | 'difficulty' | 'periodKey' | 'dropIndex'>): string {
   return `${record.ocid}|${record.boss}|${record.difficulty}|${record.periodKey}|${record.dropIndex}`
@@ -61,7 +61,7 @@ function entryId(record: Pick<BossDropRecord, 'ocid' | 'boss' | 'difficulty' | '
  * 저장 그룹의 키 — `replaceBossDropRecords` 의 단위다(`dropIndex` 는 빠진다).
  *
  * `difficulty` 를 `string` 으로 받는 이유: 저장 계층(`BossDropRecord`·`BossProfitRecord`)은
- * 난이도를 좁히지 않은 문자열로 들고 있어([[ADR-008]] 매칭 실패 원문명이 들어올 수 있다) 같은
+ * 난이도를 좁히지 않은 문자열로 들고 있어(매칭 실패 원문명이 들어올 수 있다) 같은
  * 키 함수를 저장 행과 화면 엔트리 양쪽에 쓰려면 넓은 쪽에 맞춰야 한다.
  */
 function saveGroupKey(entry: { ocid: string; boss: string; difficulty: string; periodKey: string }): string {
@@ -185,7 +185,7 @@ async function writePrice(
     new Date().toISOString(),
   )
 
-  // 보스 수익 화면은 스택 왕복에도 마운트를 유지하므로([[ADR-077]]) 자기 스냅샷을 다시 읽지
+  // 보스 수익 화면은 스택 왕복에도 마운트를 유지하므로 자기 스냅샷을 다시 읽지
   // 않는다 — 여기서 알려주지 않으면 값이 "새로고침해야 반영"된다(사용자 보고 2026-08-10).
   // **쓰기가 성공한 뒤에만** 부른다: 실패한 값이 저쪽 화면에 남으면 저장된 것처럼 보인다.
   useBossProfitStore

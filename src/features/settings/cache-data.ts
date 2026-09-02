@@ -9,7 +9,7 @@ import { showSplashScreen } from '../../native/splash-screen'
 // 원래 화면(`app/settings/SettingsAccountDataScreen.tsx` 의 전신)이 `storage/cache-data` ·
 // `storage/pending-notice` · `storage/sqlite/db` · `native/splash-screen` 을 직접 불렀다.
 // CLAUDE.md 의 CRITICAL 규칙과
-// [[ADR-003]]·[[ADR-005]] 가 정한 레이어(화면은 `features/` 를 거치고, 저장소·네이티브 접근은
+//  가 정한 레이어(화면은 `features/` 를 거치고, 저장소·네이티브 접근은
 // 어댑터가 맡는다)를 어기고 남아 있던 자리가 여기뿐이었다 — 다른 `app/*` → `storage/` import 는 전부
 // type-only 라 무해하다.
 //

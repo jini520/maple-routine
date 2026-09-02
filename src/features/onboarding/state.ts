@@ -17,7 +17,7 @@ export type OnboardingError =
   | { kind: 'storageWriteFailed' } // 로컬 저장 실패
 
 /**
- * 저장된 키로는 앞으로 갈 수 없게 된 원인([[ADR-116]] 결정 1).
+ * 저장된 키로는 앞으로 갈 수 없게 된 원인.
  *
  * 원인은 둘이지만 **처방이 같다** — 사용자가 새 키를 넣어야 한다. 그래서 알림 사슬(모달 → 확인 →
  * 키 입력 화면 + `apiKey` 삭제)은 하나이고 갈리는 것은 문구뿐이다. 종류마다 다른 알림을 만들면
@@ -33,7 +33,7 @@ export interface OnboardingState {
   error: OnboardingError | null
   /**
    * 키를 다시 받아야 한다는 것을 **알렸고 사용자의 확인을 기다리는 중**이며, 그 **원인**이 무엇인지
-   * ([[ADR-115]] 결정 10 · [[ADR-116]] 결정 1). 알림이 없으면 `null`.
+   * . 알림이 없으면 `null`.
    *
    * `status` 와 **직교한다** — 이 값이 채워져 있는 동안에도 `status` 는 그대로여서 뒤에 원래 화면이
    * 남아 있고, 그 위에 닫을 수 없는 모달이 덮인다. 사용자가 "확인"을 누르는 순간에야 `RESET` 이
@@ -103,7 +103,7 @@ export function onboardingReducer(state: OnboardingState, event: OnboardingEvent
       }
 
     case 'API_KEY_VERIFIED':
-      // 계정을 고르는 단계가 없으므로([[ADR-143]] 결정 1) 키가 확인되면 곧바로 스케줄 관리 방법
+      // 계정을 고르는 단계가 없으므로 키가 확인되면 곧바로 스케줄 관리 방법
       // 단계다. `accounts` 는 화면이 그리지 않지만, 응답을 받았다는 사실 자체가 키 검증이라
       // 스토어가 재개 판정(같은 응답으로 추적 ocid 대조)에 쓴다.
       return {

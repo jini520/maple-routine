@@ -1,11 +1,11 @@
-// [[ADR-101]] 결정 2·3: 부팅 선하이드레이션은 세 탭 스토어를 **순차로** 돌린다.
-// 순서가 계약인 이유 — [[ADR-097]] 게이트의 신선도 조건은 앞 회차가 캐시를 다 쓴 뒤에야 참이
+// : 부팅 선하이드레이션은 세 탭 스토어를 **순차로** 돌린다.
+// 순서가 계약인 이유 — 게이트의 신선도 조건은 앞 회차가 캐시를 다 쓴 뒤에야 참이
 // 되므로, 병렬로 띄우면 셋 다 게이트를 통과해 같은 응답을 3번 받는다.
 import { prehydrateTabStores } from '../prehydrate'
 
 // jest 의 목 팩토리는 **`mock` 으로 시작하는 이름만** 밖에서 끌어올 수 있고, 팩토리가 여러 번
 // 불릴 수 있다. 그래서 «같은 목을 돌려주는» 멱등 팩토리로 둔다 — 테스트가 그 인스턴스에 직접
-// 단언하기 때문이다([[ADR-157]] — vitest 의 `vi.hoisted` 가 하던 일).
+// 단언하기 때문이다(— vitest 의 `vi.hoisted` 가 하던 일).
 var mockCalls: string[] | undefined
 var mockLoads: Record<string, jest.Mock> | undefined
 

@@ -11,7 +11,7 @@ import { dropRowKey, toRecordedDrop } from './rows'
 import { withSqliteFallback } from './sqlite-guards'
 import type { BossProfitRow } from './rows'
 /**
- * 처치 난이도가 확정된 순간, 옛 난이도 키에 남은 드롭을 확정 난이도로 이관한다([[ADR-069]] 결정 4).
+ * 처치 난이도가 확정된 순간, 옛 난이도 키에 남은 드롭을 확정 난이도로 이관한다.
  * 계산은 `planConfirmedDifficultyDropMigration` 이 하고 여기서는 쓰기만 한다.
  *
  * `dropRecords` 는 호출 측이 이미 읽어둔 것을 그대로 받는다 — 행마다 새로 조회하지 않기 위함이다.
@@ -72,7 +72,7 @@ export async function loadDropsByRowKey(
     const key = dropRowKey(record.ocid, record.boss, record.difficulty, record.periodKey)
     if (map[key] === undefined) map[key] = []
     // **변환은 `toRecordedDrop` 하나에 맡긴다.** 여기서 손으로 필드를 옮겨 적던 것이
-    // [[ADR-124]] 가격이 사라지던 원인이었다(사용자 보고 2026-08-10 — "지난주 갔다 오니
+    //  가격이 사라지던 원인이었다(사용자 보고 2026-08-10 — "지난주 갔다 오니
     // 아이템 수익이 사라진다"): 저장은 멀쩡한데 **읽을 때마다** 가격 세 필드가 떨어져 나갔고,
     // 시트에서 넣은 직후에는 스토어가 값을 들고 있어 보이다가 기간을 왕복하면 사라졌다.
     map[key].push(toRecordedDrop(record))

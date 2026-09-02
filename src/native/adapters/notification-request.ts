@@ -77,7 +77,7 @@ export interface TriggerNotificationRequest {
  * **지난 시각은 예약하지 않고 던진다.** Capacitor 는 두 플랫폼이 서로 달랐다 — iOS 는
  * *"Scheduled time must be \*after\* current time"* 으로 거절했고(`LocalNotificationsPlugin.swift:311-314`),
  * Android 는 지난 시각의 `AlarmManager` 알람이라 **즉시 발화**했다. 즉 보존할 "옛 동작"이 하나로
- * 있지도 않았다. 둘 중 즉시 발화를 고르지 않는 이유는 [[ADR-004]] 가 앱 실행 시 재예약을 전제하기
+ * 있지도 않았다. 둘 중 즉시 발화를 고르지 않는 이유는 가 앱 실행 시 재예약을 전제하기
  * 때문이다 — 시계가 조금만 어긋나도 재예약 한 번이 알림 무더기가 된다. 호출부의 계산 실수는
  * 사용자에게 알림으로 새어 나가는 대신 여기서 멈춘다.
  *

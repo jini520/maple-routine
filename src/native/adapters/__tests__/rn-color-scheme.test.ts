@@ -35,7 +35,7 @@ describe('rnColorSchemePort', () => {
   })
 
   // 포트 주석의 판단을 구조로 고정한다 — 부를 곳이 없는 구독 API는 구현마다 죽은 코드가 된다
-  // ([[ADR-104]]: 실행 중 OS 설정 변경은 따라가지 않는다).
+  // (: 실행 중 OS 설정 변경은 따라가지 않는다).
   it('구독 API 를 두지 않는다 — 키는 get 하나뿐', () => {
     expect(Object.keys(rnColorSchemePort)).toEqual(['get'])
   })

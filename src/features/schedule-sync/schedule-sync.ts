@@ -243,9 +243,9 @@ async function refreshCharacterBasics(
   await Promise.all(
     targets.map(async ({ character, accountId }) => {
       try {
-        // accountId 는 **그 캐릭터가 사는 계정**이다([[ADR-143]] 결정 6) — 캐시 인덱스가 계정별이라
-        // ([[ADR-086]] 결정 9) 틀리면 다른 계정 인덱스를 오염시킨다. jobClass 는 character/list 가
-        // 준 값을 그대로 실어 보낸다([[ADR-144]] 결정 2).
+        // accountId 는 **그 캐릭터가 사는 계정**이다 — 캐시 인덱스가 계정별이라
+        //  틀리면 다른 계정 인덱스를 오염시킨다. jobClass 는 character/list 가
+        // 준 값을 그대로 실어 보낸다.
         await fetchCharacterBasicCached(apiKey, accountId, character.ocid, now, character.jobClass)
       } catch {
         // best-effort — 기존 캐시를 그대로 둔다.

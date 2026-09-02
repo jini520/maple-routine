@@ -3,7 +3,7 @@ import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { getTrackingMode, setTrackingMode } from '../../storage/tracking-mode'
 import type { ResumableOnboardingStatus } from './state'
 
-/** 재개 지점. 계정을 고르는 단계가 없으므로 실어 보낼 계정 값도 없다([[ADR-143]] 결정 7). */
+/** 재개 지점. 계정을 고르는 단계가 없으므로 실어 보낼 계정 값도 없다. */
 export type ResumeTarget =
   | { status: 'awaitingApiKey' }
   | { status: ResumableOnboardingStatus }

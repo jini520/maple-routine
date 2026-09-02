@@ -88,7 +88,7 @@ describe('formatRosterError', () => {
     expect(copy.action).toEqual({ kind: 'retry', label: '다시 시도' })
   })
 
-  // ADR-114 결정 2([[ADR-062]] 결정 3 일부 폐기): 429의 처방은 재시도가 아니라 키 단계 확인이다.
+  // ADR-114 결정 2(일부 폐기): 429의 처방은 재시도가 아니라 키 단계 확인이다.
   // 처방이 "키를 확인하라"인데 버튼이 "다시 시도"면 화면이 두 말을 한다.
   it.each(['picker', 'onboarding'] as const)('%s의 network는 재시도를 주지만 rateLimited는 액션이 없다', (place) => {
     expect(formatRosterError({ kind: 'network' }, place).action?.kind).toBe('retry')
@@ -137,7 +137,7 @@ describe('formatStaleRosterError', () => {
   })
 
   // 문구를 여기서 못 박는다. 예전에는 화면 둘이 '목록이 최신이 아닙니다'를 하드코딩하고 있어
-  // 아래에 「화면과 한 글자도 다르지 않다」는 별도 가드가 있었는데, [[ADR-144]] 로 그 자리가
+  // 아래에 「화면과 한 글자도 다르지 않다」는 별도 가드가 있었는데 로 그 자리가
   // `CharacterManageBody` 하나가 되면서 화면이 이 함수를 부르게 됐다. 맞출 상대가 없어져
   // 그 가드를 지웠고(2026-09-03), 문구를 지키는 것은 이제 이 단언이다.
   it('network 계열 3종은 현행 문구 + 다시 시도를 유지한다', () => {
