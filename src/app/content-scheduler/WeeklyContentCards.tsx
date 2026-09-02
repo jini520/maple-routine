@@ -60,7 +60,7 @@ export const MONSTER_PARK_EXTREME_PREFIX = '[몬스터파크] '
 export function EpicDungeonCard(props: {
   content: WeeklyContent
   crop?: ImageCrop
-  /** 요구 레벨 미달 — 상태 배지를 «진행 불가» 로 대체한다. */
+  /** 요구 레벨 미달 — 상태 배지를 진행 불가 로 대체한다. */
   isBlocked?: boolean
 }): React.JSX.Element {
   const { content } = props
@@ -100,7 +100,7 @@ export function EpicDungeonCard(props: {
 export function WeeklyRegionalContentCard(props: {
   content: WeeklyContent
   crop?: ImageCrop
-  /** 요구 레벨 미달 — 상태 배지를 «진행 불가» 로 대체한다. */
+  /** 요구 레벨 미달 — 상태 배지를 진행 불가 로 대체한다. */
   isBlocked?: boolean
 }): React.JSX.Element {
   const { content } = props
@@ -152,7 +152,7 @@ export function WeeklyRegionalContentCard(props: {
 export function WeeklyQuestCard(props: {
   content: WeeklyContent
   crop?: ImageCrop
-  /** 요구 레벨 미달 — 상태 배지를 «진행 불가» 로 대체한다. */
+  /** 요구 레벨 미달 — 상태 배지를 진행 불가 로 대체한다. */
   isBlocked?: boolean
 }): React.JSX.Element {
   const { content } = props
@@ -325,7 +325,7 @@ export function renderWeeklyContentCard(
   characterLevel: number | null,
 ): React.JSX.Element {
   // 길드 셋과 유니온 둘은 참조표에 요구 레벨이 **없다** — 어떤 레벨에서도 진행 가능이라
-  // 그 카드들에는 이 프롭을 넘기지 않는다(「대가」).
+  // 그 카드들에는 이 프롭을 넘기지 않는다(`대가`).
   const isBlocked = isContentBlocked(characterLevel, content.name)
 
   if (content.name === GUILD_UNDERGROUND_WATERWAY_NAME) {

@@ -10,9 +10,9 @@
  *
  * ## 0 을 그리는 위젯은 이것뿐이다
  *
- * «큰 0 을 그리지 않는다»를 이 타일에서만 뒤집는다(사용자 지시). 그 규칙이
- * 지키려던 것 — «없다» 와 «모른다» 를 가르는 일 — 은 옆의 한 줄(*아직 이번 주 기록이 없습니다*)이
- * 진다. 그때는 **스택 바와 분해 금액도 함께 사라진다**: 0/0 인 바와 「결정석 0 · 아이템 0」은 분해할
+ * 큰 0 을 그리지 않는다를 이 타일에서만 뒤집는다(사용자 지시). 그 규칙이
+ * 지키려던 것 — 없다 와 모른다 를 가르는 일 — 은 옆의 한 줄(*아직 이번 주 기록이 없습니다*)이
+ * 진다. 그때는 **스택 바와 분해 금액도 함께 사라진다**: 0/0 인 바와 결정석 0 · 아이템 0은 분해할
  * 것이 없는데 분해한 척이다.
  *
  * ## 금액은 접고, 굴리지 않는다
@@ -30,8 +30,8 @@
  *
  * ## 크기가 버리는 것
  *
- * 4×auto·4x3 은 전부 · 4x2 는 캐릭터 행의 **내역** · 2x2 는 **캐릭터 목록**(158 폭에 「이름 + 금액」 행이 안
- * 들어간다) · 2x1 은 **금액만**. 단위 「메소」는 큰 금액 뒤에만 붙고 목록 행에는 안 붙는다 — 머리가
+ * 4×auto·4x3 은 전부 · 4x2 는 캐릭터 행의 **내역** · 2x2 는 **캐릭터 목록**(158 폭에 이름 + 금액 행이 안
+ * 들어간다) · 2x1 은 **금액만**. 단위 메소는 큰 금액 뒤에만 붙고 목록 행에는 안 붙는다 — 머리가
  * 이미 말했다.
  */
 
@@ -46,7 +46,7 @@ import type { WidgetHeight } from '../../../lib/today/widget-layout'
 import type { ProfitSplit, WeeklyProfitCharacterView, WeeklyProfitView } from '../view-model'
 import type { WidgetProps } from './types'
 
-/** 기록이 없을 때 옆에 서는 한 줄 — 큰 `0` 이 «없다» 로 읽히지 않게 막는 것이 이 줄뿐이다. */
+/** 기록이 없을 때 옆에 서는 한 줄 — 큰 `0` 이 없다 로 읽히지 않게 막는 것이 이 줄뿐이다. */
 const NO_RECORD_NOTE = '아직 이번 주 기록이 없습니다'
 
 const PERIOD_LABEL = '이번 주'
@@ -72,9 +72,9 @@ const LEGEND_DOT_CLASS = {
 const SEGMENT_LABEL = { crystal: '결정석', item: '아이템' } as const
 
 /**
- * 얼굴 지름 — **「남은 스케줄」과 같은 32**.
+ * 얼굴 지름 — **`남은 스케줄`과 같은 32**.
  *
- * 26 이던 이유는 «고정 3행 안에서 얼굴이 커지면 줄 간격을 먹는다» 였는데, 타일 높이가 내용을 따르게
+ * 26 이던 이유는 고정 3행 안에서 얼굴이 커지면 줄 간격을 먹는다 였는데, 타일 높이가 내용을 따르게
  * 된 뒤로 그 사정이 사라졌다. 같은 캐릭터가 두 타일에서 다른 크기로 서면 그것이 같은 목록의 같은
  * 사람이라는 것을 눈이 한 번 더 확인해야 한다.
  */
@@ -91,7 +91,7 @@ const RANK_SUFFIX = ['st', 'nd', 'rd'] as const
 /**
  * 순위 칸의 **바닥**(천장이 아니다 — 와 같은 이유).
  *
- * 「1st」는 폭이 고정된 글자가 아니다(숫자는 `tabular-nums` 라 고정이지만 `st`·`nd`·`rd` 는 아니다).
+ * 1st는 폭이 고정된 글자가 아니다(숫자는 `tabular-nums` 라 고정이지만 `st`·`nd`·`rd` 는 아니다).
  * 천장으로 두면 글자가 **줄바꿈되거나 잘리고**, 바닥으로 두면 세 순위가 같은 x 에서 시작하면서도
  * 넘칠 때 칸이 늘어난다. `numberOfLines={1}` 이 그 짝이다 — 폭이 모자라도 두 줄로 안 접힌다.
  */
@@ -229,7 +229,7 @@ function SplitBlock(props: {
  * 캐릭터 한 줄. **내역은 4x3 에만 선다** — 4x2 의 오른쪽 열은 폭이 타일의 절반도 안 돼 이름과 금액이
  * 먼저다.
  */
-/** 얼굴 — 「남은 스케줄」과 **같은 크롭·같은 폴백**이다(두 타일이 같은 캐릭터를 다르게 그리면 안 된다). */
+/** 얼굴 — `남은 스케줄`과 **같은 크롭·같은 폴백**이다(두 타일이 같은 캐릭터를 다르게 그리면 안 된다). */
 function Face(props: { character: WeeklyProfitCharacterView }): React.JSX.Element {
   return (
     <CharacterAvatar
@@ -287,7 +287,7 @@ function CharacterRow(props: {
             .join(' · ')}
         </Text>
       )}
-      {/* 목록 행에는 「메소」를 안 붙인다 — 머리가 이미 단위를 말했다. */}
+      {/* 목록 행에는 `메소`를 안 붙인다 — 머리가 이미 단위를 말했다. */}
       <Text fixed style={TABULAR_NUMS} className="shrink-0 text-[12.5px] font-bold text-text">
         {formatMesoShort(props.character.totalMeso)}
       </Text>
@@ -324,7 +324,7 @@ function PeriodLabel(): React.JSX.Element {
  * 4x3 전용 머리 — 라벨은 왼쪽, **기간 범위는 오른쪽 끝**이다(시안).
  *
  * 범위를 이 크기에만 두는 이유는 폭이다. 4x2 아래에서는 라벨과 범위가 한 줄에 서면 둘 다 잘리고,
- * 잘린 날짜는 «언제인지 모르겠는 숫자» 라 없는 것만 못하다.
+ * 잘린 날짜는 언제인지 모르겠는 숫자 라 없는 것만 못하다.
  */
 function PeriodHeader(props: { range: string }): React.JSX.Element {
   return (
@@ -381,7 +381,7 @@ export function WeeklyBossProfitWidget({ w, h, data }: WidgetProps): React.JSX.E
   }
 
   // **`flex-1` 이 없다** — 이 크기는 `h: 'auto'` 라 상자가 내용만큼만 서고, 늘릴 높이가
-  // 없는데 `flex-1` 을 걸면 그것이 «남은 자리를 채운다» 는 거짓 신호로 남는다.
+  // 없는데 `flex-1` 을 걸면 그것이 **남은 자리를 채운다** 는 거짓 신호로 남는다.
   return (
     <View testID="widget-weekly-boss-profit" className="gap-2 p-3.5">
       <View className="gap-1">

@@ -1,15 +1,15 @@
 // 온보딩 캐릭터 선택 단계.
 //
-// **옛 파일을 갱신하지 않고 다시 썼다** — 계약이 뒤집혔다. 이 단계는 더 이상 «고른 계정 하나의
-// 3열 그리드» 가 아니라 설정 하위 페이지와 **같은 두 층 본문**이고, 그래서 옛 케이스가 보던 것
+// **옛 파일을 갱신하지 않고 다시 썼다** — 계약이 뒤집혔다. 이 단계는 더 이상 **고른 계정 하나의
+// 3열 그리드** 가 아니라 설정 하위 페이지와 **같은 두 층 본문**이고, 그래서 옛 케이스가 보던 것
 // (`emptyAction` 탈출구 · 그리드 토글 · 로스터 로딩 분기)은 여기서 검사할 대상이 아니게 됐다.
-// 같은 이름을 남겨 두면 «검사했다» 로 오독된다.
+// 같은 이름을 남겨 두면 **검사했다** 로 오독된다.
 //
-// ── 그래서 이 파일이 보는 것은 «갈리는 것» 뿐이다 ──────────────────────────────────
+// ── 그래서 이 파일이 보는 것은 **갈리는 것** 뿐이다 ──────────────────────────────────
 //
 // 본문(`CharacterManageBody` + `useCharacterManage`)의 계약 — 두 층의 범위 · 이동 · 별 · TTL ·
 // 드롭다운 · 실패 표현 — 은 `../../settings/__tests__/SettingsCharactersScreen.test.tsx` 가 이미
-// 본다. 같은 컴포넌트를 두 곳에서 다시 검사하면 이 «머리와 CTA 만 갈린다» 로
+// 본다. 같은 컴포넌트를 두 곳에서 다시 검사하면 이 **머리와 CTA 만 갈린다** 로
 // 묶어 둔 것이 테스트에서 두 벌이 된다. 여기서 보는 것은 제목 · CTA 게이트 · 제출 payload ·
 // **429 만 넘기는 배선** 넷이다.
 import { act, fireEvent, within } from '@testing-library/react-native'
@@ -173,7 +173,7 @@ afterEach(() => {
 })
 
 describe('ContentCharacterStep — 머리와 CTA', () => {
-  it('제목 블록과 「계속하기」를 그린다', async () => {
+  it('제목 블록과 `계속하기`를 그린다', async () => {
     const { view } = await renderStep()
 
     expect(view.getByText('관리할 캐릭터를 선택해주세요')).toBeTruthy()
@@ -191,22 +191,22 @@ describe('ContentCharacterStep — 머리와 CTA', () => {
     expect(view.getByTestId('account-select-trigger')).toBeTruthy()
   })
 
-  // 옛 화면에 있던 「계정 다시 선택」 탈출구는 목적지가 없어졌다 —
+  // 옛 화면에 있던 `계정 다시 선택` 탈출구는 목적지가 없어졌다 —
   // 그 자리의 출구는 드롭다운을 되돌리는 것이다.
-  it('「계정 다시 선택」 탈출구를 두지 않는다', async () => {
+  it('`계정 다시 선택` 탈출구를 두지 않는다', async () => {
     const { view } = await renderStep()
 
     expect(view.queryByText('계정 다시 선택')).toBeNull()
   })
 
   // : 0개는 화면을 빈 상태로 만들 뿐 어떤 의도도 표현하지 않는다.
-  it('아무도 고르지 않으면 「계속하기」가 비활성이다', async () => {
+  it('아무도 고르지 않으면 `계속하기`가 비활성이다', async () => {
     const { view } = await renderStep()
 
     expect(stateOf(button(view, '계속하기')).disabled).toBe(true)
   })
 
-  it('하나라도 고르면 「계속하기」가 활성이 된다', async () => {
+  it('하나라도 고르면 `계속하기`가 활성이 된다', async () => {
     const { view } = await renderStep()
 
     await press(pressableOf(view.getByText('낟낟')))
@@ -214,7 +214,7 @@ describe('ContentCharacterStep — 머리와 CTA', () => {
     expect(stateOf(button(view, '계속하기')).disabled).toBe(false)
   })
 
-  it('저장 중에는 「계속하기」에 스피너가 겹치고 비활성이 된다', async () => {
+  it('저장 중에는 `계속하기`에 스피너가 겹치고 비활성이 된다', async () => {
     const { view } = await renderStep({ isSubmitting: true })
 
     const cta = button(view, '계속하기')
@@ -223,14 +223,14 @@ describe('ContentCharacterStep — 머리와 CTA', () => {
   })
 })
 
-//  (사용자 지정 2026-08-18) — 설정 하위 페이지의 「저장」과 **같은 액션 바**다.
+//  (사용자 지정 2026-08-18) — 설정 하위 페이지의 `저장`과 **같은 액션 바**다.
 // 본문이 그 화면과 같은 두 층이라(결정 1) 캐릭터가 많으면 본문 끝의 CTA 는 화면 밖에 있게 된다.
-describe('ContentCharacterStep — 「계속하기」는 하단에 고정된다', () => {
+describe('ContentCharacterStep — `계속하기`는 하단에 고정된다', () => {
   it('CTA 는 스크롤 뷰 **밖**의 고정 바 안에 선다', async () => {
     const { view } = await renderStep()
 
     expect(within(view.getByTestId('onboarding-action-bar')).getByText('계속하기')).toBeTruthy()
-    // 스크롤 뷰 안에 남아 있으면 «어디까지 굴렸든 지금 누른다» 가 깨진다 — 그것이 이 정정이
+    // 스크롤 뷰 안에 남아 있으면 **어디까지 굴렸든 지금 누른다** 가 깨진다 — 그것이 이 정정이
     // 옮긴 자리다.
     expect(within(view.getByTestId('onboarding-scroll')).queryByText('계속하기')).toBeNull()
   })
@@ -304,11 +304,11 @@ describe('ContentCharacterStep — 키 재입력 진입점은 429 만 탄다', (
   })
 
   //  "구현하며 정정한 것" 5 결정 2: **미배선이라는 선택**이다. 이 자리의
-  // 401 은 "방금 넣은 키가 나쁘다"는 뜻이라 폼 자체의 실패로 남고, 화면의 「다시 시도」가 처방이다.
+  // 401 은 "방금 넣은 키가 나쁘다"는 뜻이라 폼 자체의 실패로 남고, 화면의 `다시 시도`가 처방이다.
   // 설정 하위 페이지는 같은 401 을 진입점으로 넘긴다 — 두 화면이 갈리는 유일한 자리다.
-  // 그래서 문구도 갈린다 — 화면이 안 옮겨가는데 «키 입력 화면으로 이동합니다»(피커 어휘)를 쓰면
+  // 그래서 문구도 갈린다 — 화면이 안 옮겨가는데 **키 입력 화면으로 이동합니다**(피커 어휘)를 쓰면
   // 거짓인 데다 액션까지 없어 401 이 하드 잠금이 된다.
-  it('401 은 넘기지 않는다 — 폼 자체의 실패로 남고 「다시 시도」가 그 처방이다', async () => {
+  it('401 은 넘기지 않는다 — 폼 자체의 실패로 남고 `다시 시도`가 그 처방이다', async () => {
     rosterFailure = new NexonAuthError('401')
     const { view } = await renderStep()
 

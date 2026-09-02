@@ -85,7 +85,7 @@ describe('summarizeAccount — 월드 집계', () => {
     expect(summary?.worldCounts).toEqual([{ world: '베라', count: 2 }])
   })
 
-  it('셋째 월드를 «외 n» 같은 꼬리로 적지 않는다 — 목록이 정확히 둘이다', () => {
+  it('셋째 월드를 **외 n** 같은 꼬리로 적지 않는다 — 목록이 정확히 둘이다', () => {
     const summary = summarizeAccount(
       account([
         character({ name: '가', level: 200, world: '스카니아' }),
@@ -175,12 +175,12 @@ describe('buildSelectedCharacterViews', () => {
     expect(views[0].jobClass).toBeUndefined()
     expect(views[0].world).toBeUndefined()
     expect(views[0].ocid).toBe('ocid-unknown')
-    // 이름은 타입이 `string` 이라 «없음» 을 담을 자리가 빈 문자열뿐이다. 화면이 채울
-    // 자리표시자(«알 수 없음» 등)를 여기서 만들지 않는다.
+    // 이름은 타입이 `string` 이라 **없음** 을 담을 자리가 빈 문자열뿐이다. 화면이 채울
+    // 자리표시자(**알 수 없음** 등)를 여기서 만들지 않는다.
     expect(views[0].name).toBe('')
   })
 
-  it('캐시 엔트리가 null 로 들어와도 «없음» 과 똑같이 다룬다', () => {
+  it('캐시 엔트리가 null 로 들어와도 **없음** 과 똑같이 다룬다', () => {
     const views = buildSelectedCharacterViews(
       ['ocid-1'],
       new Map([['ocid-1', null]]),
@@ -247,9 +247,9 @@ describe('resolveRepresentative', () => {
   })
 })
 
-// ADR-147 정정 2 — today 의 「대표 캐릭터」 위젯이 ADR-143 결정 4의 «미지정이면 첫 번째» 를 읽는
+// ADR-147 정정 2 — today 의 `대표 캐릭터` 위젯이 ADR-143 결정 4의 **미지정이면 첫 번째** 를 읽는
 // 첫 화면이다. resolveRepresentative 와 **다른 질문**이라 옆에 하나 더 두었고, 아래 회귀 가드가
-// 그 둘이 합쳐지는 것을 막는다(합치면 ADR-144 결정 4의 «채워진 별이 하나도 없다» 가 깨진다).
+// 그 둘이 합쳐지는 것을 막는다(합치면 ADR-144 결정 4의 **채워진 별이 하나도 없다** 가 깨진다).
 describe('resolveDisplayRepresentative', () => {
   it('저장된 대표가 목록에 있으면 그것이다', () => {
     expect(resolveDisplayRepresentative(['a', 'b', 'c'], 'b')).toBe('b')
@@ -273,7 +273,7 @@ describe('resolveDisplayRepresentative', () => {
   })
 })
 
-// 사용자 지정 2026-08-17 — «더 높은 레벨이 존재하는 ID 가 먼저». 계정 자체에는 «주력» 을 말하는 값이
+// 사용자 지정 2026-08-17 — **더 높은 레벨이 존재하는 ID 가 먼저**. 계정 자체에는 **주력** 을 말하는 값이
 // 없고(accountId 는 불투명 문자열·응답 순서는 넥슨이 정한다), 사람이 실제로 쓰는 기준이 최고 레벨이다.
 describe('sortAccountSummaries', () => {
   function summary(accountId: string, level: number, name = `대표-${accountId}`) {

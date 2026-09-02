@@ -10,7 +10,7 @@ import { setPreferencesPort } from '../../storage/ports'
  *
  * 스토어를 목으로 덮지 않는 이유는 이 테스트들이 보는 것이 **배선**이라서다 — 목을 쓰면 step 5·7
  * 이 화면을 붙일 때마다 목 목록이 늘고, 그 목록이 곧 "무엇이 실제로 도는지 모른다"가 된다.
- * 값이 전부 비어 있으므로 화면은 «추적 캐릭터 0명» 가지를 그린다(네트워크 0회).
+ * 값이 전부 비어 있으므로 화면은 추적 캐릭터 0명 가지를 그린다(네트워크 0회).
  */
 export function installMemoryPreferences(): void {
   const store = new Map<string, string>()

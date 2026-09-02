@@ -178,7 +178,7 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
     // ADR-101 결정 4: 동시 호출은 한 회차로 합친다(위 `hydration` 주석).
     hydration ??= (async () => {
       // 저장된 선택은 **선택 스토어가 읽는다** — 이 스토어가 읽어 자기
-      // 상태에 넣던 것이 «두 벌» 의 출처였다. 둘을 나란히 태우는 것은 그대로다(왕복 한 번).
+      // 상태에 넣던 것이 **두 벌** 의 출처였다. 둘을 나란히 태우는 것은 그대로다(왕복 한 번).
       const [ocids] = await Promise.all([
         getTrackedCharacterOcids(),
         useCharacterSelectionStore.getState().hydrate(),

@@ -9,7 +9,7 @@
 // **비운다** — 색 없는 띠는 조용한 실패라, 되돌아가는 것을 여기서 막는다(컴포넌트 주석 ①).
 jest.mock('react-native-reanimated', () =>
   // `jest.mock` 팩토리는 import 위로 끌어올려져 **밖의 값을 참조할 수 없다** — 그래서 `require` 가
-  // 선택이 아니라 유일한 길이다(`reduced-motion.ts` 「쓰는 법」).
+  // 선택이 아니라 유일한 길이다(`reduced-motion.ts` `쓰는 법`).
   require('../../../__tests__/reduced-motion').reanimatedWithReducedMotion(),
 )
 
@@ -24,7 +24,7 @@ afterEach(() => {
   withRepeatSpy.mockClear()
 })
 
-/** 띠(마스크를 «무는» 쪽)와 램프(마스크 «안» 쪽)를 가른다. 둘 다 `RNSVGRect` 라 프롭으로 나눈다. */
+/** 띠(마스크를 무는 쪽)와 램프(마스크 안 쪽)를 가른다. 둘 다 `RNSVGRect` 라 프롭으로 나눈다. */
 function bandAndRamp(tree: unknown): { band?: TreeNode; ramp?: TreeNode } {
   const rects = findAllOfType(tree, 'RNSVGRect')
   return {
@@ -107,7 +107,7 @@ describe('MapleSweepSpinner', () => {
   // 마스크가 사실상 투명해져 `DST_IN` 이 띠를 통째로 지웠다 — 실기기에서 **띠가 한 번도 보인 적이
   // 없었다**(두 플랫폼 다, 2026-08-18).
   //
-  // 그 실패는 **렌더 트리에서 보이지 않는다**(마스크도 램프도 «있다»). 보이는 것은 **좌표의 단위**뿐이라
+  // 그 실패는 **렌더 트리에서 보이지 않는다**(마스크도 램프도 **있다**). 보이는 것은 **좌표의 단위**뿐이라
   // 여기서 그것을 못 박는다: 램프는 user space 이고 띠와 **같은 크기**여야 한다.
   it('마스크 램프는 user space 좌표다 — 1×1 이면 라이브러리가 띠를 통째로 지운다', async () => {
     const tree = (await renderAtom(<MapleSweepSpinner />)).toJSON()
@@ -115,11 +115,11 @@ describe('MapleSweepSpinner', () => {
     const { band, ramp } = bandAndRamp(tree)
     expect(ramp?.props.width).toBe(band?.props.width)
     expect(ramp?.props.height).toBe(band?.props.height)
-    // 「1」 은 objectBoundingBox 비율일 때만 뜻이 있는 값이고, 이 라이브러리에서는 그냥 1px 이다.
+    // `1` 은 objectBoundingBox 비율일 때만 뜻이 있는 값이고, 이 라이브러리에서는 그냥 1px 이다.
     expect(ramp?.props.width).not.toBe(1)
   })
 
-  // 램프가 제자리에 서 있으면 «고정된 창으로 내다보는» 그림이 된다(띠만 그 아래를 지나간다).
+  // 램프가 제자리에 서 있으면 **고정된 창으로 내다보는** 그림이 된다(띠만 그 아래를 지나간다).
   // 둘이 같은 shared value 에서 파생되므로 **시작 좌표가 같다**는 것으로 그 계약을 본다.
   it('램프가 띠와 같은 자리에서 시작한다 — 함께 움직인다', async () => {
     const tree = (await renderAtom(<MapleSweepSpinner />)).toJSON()

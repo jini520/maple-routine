@@ -54,7 +54,7 @@ beforeEach(() => {
     openStore: () => {} })
   useOnboardingStore.setState({ status: 'awaitingApiKey' })
   // `ContentManage` 는 **수동 모드 전용**이라 자동 모드로 두면 열리자마자
-  // 물러난다 — 그러면 이 파일의 «열둘이 전부 열린다» 가 배선이 아니라 모드 때문에 빨개진다.
+  // 물러난다 — 그러면 이 파일의 **열둘이 전부 열린다** 가 배선이 아니라 모드 때문에 빨개진다.
   useTrackingModeStore.setState({ mode: 'manual' })
 })
 

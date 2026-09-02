@@ -16,9 +16,9 @@ import type {
   NexonUnionRaiderResponse,
 } from '../../types'
 
-/** 잠재·에디셔널 표기(`+` 가 붙고 「증가」가 없다). */
+/** 잠재·에디셔널 표기(`+` 가 붙고 증가가 없다). */
 const POT = (percent: number) => `메소 획득량 +${percent}%`
-/** 어빌리티·유니온·아티팩트 표기(뒤에 「증가」가 붙는다). */
+/** 어빌리티·유니온·아티팩트 표기(뒤에 증가가 붙는다). */
 const INC = (percent: number) => `메소 획득량 ${percent}% 증가`
 
 /** 잠재 `pot` 줄 · 에디셔널 `add` 줄을 든 장비 하나. 슬롯은 각각 셋이 상한이다. */
@@ -127,7 +127,7 @@ describe('장비 — 잠재 + 에디셔널 합에 100% 캡, 프리셋 단위', (
   })
 
   it('잠재 슬롯은 셋까지다 — 넷째 칸은 존재하지 않으므로 안 읽는다', () => {
-    // 타입에도 없는 칸이라 캐스팅해서 넣는다 — «넷째가 오면 어쩌나» 가 아니라 «와도 안 읽는다» 를
+    // 타입에도 없는 칸이라 캐스팅해서 넣는다 — **넷째가 오면 어쩌나** 가 아니라 **와도 안 읽는다** 를
     // 잰다. 슬롯이 늘면 타입이 먼저 갈리고 이 케이스가 그때 이야기를 한다.
     const 넷째칸 = { potential_option_4: POT(20) } as unknown as NexonItemEquipmentItem
     expect(only({ itemEquipment: { item_equipment: [넷째칸] } })).toBe(0)
@@ -149,7 +149,7 @@ describe('어빌리티 — 프리셋 넷 중 최댓값', () => {
   })
 
   it('장비와 어빌리티는 축이 달라 각각의 최댓값이 더해진다', () => {
-    // 프리셋은 독립 전환이라 «장비 P1 + 어빌 P3» 세팅이 실제로 도달 가능하다.
+    // 프리셋은 독립 전환이라 **장비 P1 + 어빌 P3** 세팅이 실제로 도달 가능하다.
     expect(
       maxMesoRateOf({
         itemEquipment: { item_equipment_preset_1: [item([POT(20)])], item_equipment_preset_2: [] },
@@ -316,7 +316,7 @@ describe('챌린저스 — 이름과 설명문 둘로 가른다', () => {
   })
 })
 
-describe('직업이 스스로 갖는 메획 — 섀도어의 「그리드」', () => {
+describe('직업이 스스로 갖는 메획 — 섀도어의 `그리드`', () => {
   it('섀도어면 20% 다', () => {
     expect(jobMesoOf('섀도어')).toBe(20)
   })

@@ -26,13 +26,13 @@
 //
 // ── 고정 액션 바 — `footer` 를 준 단계에만 (사용자 지정 2026-08-18) ──────
 //
-// 설정 하위 페이지(`SettingsCharactersScreen`)의 「저장」 바와 **같은 것 한 벌**이다: 스크롤 뷰의
+// 설정 하위 페이지(`SettingsCharactersScreen`)의 `저장` 바와 **같은 것 한 벌**이다: 스크롤 뷰의
 // **형제**이자 절대 배치라 굴러가지 않고, 콘텐츠가 그 아래를 지나가므로 불투명해야 하며(색은 카드가
-// 아니라 «페이지 바닥» 이라 `bg-bg`), **안전영역을 이 바가 먹는다.**
+// 아니라 **페이지 바닥** 이라 `bg-bg`), **안전영역을 이 바가 먹는다.**
 //
 // **바 높이를 상수로 적지 않는다** — `onLayout` 으로 재서 그만큼 콘텐츠 아래를 비운다. 손으로 적으면
 // 글자 크기·안전영역이 다른 기기에서 마지막 행이 바 뒤로 숨는다. 그 잰 값 **안에 안전영역이 이미
-// 들어 있어** 콘텐츠 몫이 «안전영역» 에서 «바 높이» 로 바뀐다(둘을 더하면 목록 끝에 빈 띠가 한 겹
+// 들어 있어** 콘텐츠 몫이 **안전영역** 에서 **바 높이** 로 바뀐다(둘을 더하면 목록 끝에 빈 띠가 한 겹
 // 더 남는다).
 import { useState } from 'react'
 import { Platform, ScrollView, View } from 'react-native'
@@ -61,8 +61,8 @@ export function OnboardingStep({
 }): React.JSX.Element {
   const insets = useSafeAreaInsets()
   // **위아래가 갈린다.** 상단은 대로 인셋 그대로다 — 단계에 제목 줄이 없어 그
-  // `marginTop` 은 헤더 여백이 아니라 콘텐츠 여백이라 축이 다르다. 하단은 반대로 «탭바 없는 화면의
-  // 규칙»(아래) 그 자체라, 하한이 깔린 값을 본다.
+  // `marginTop` 은 헤더 여백이 아니라 콘텐츠 여백이라 축이 다르다. 하단은 반대로 **탭바 없는 화면의
+  // 규칙**(아래) 그 자체라, 하한이 깔린 값을 본다.
   const bottomSafeAreaPx = useBottomSafeAreaPx()
   const indicatorStyle = useScrollIndicatorStyle()
   // 고정 바가 덮는 높이 — 잰 값이 오기 전에는 0이라 마지막 행이 한 프레임 가려질 수 있지만, 그

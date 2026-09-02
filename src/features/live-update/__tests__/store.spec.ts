@@ -89,7 +89,7 @@ describe('useLiveUpdateStore', () => {
       expect(downloadLiveUpdateMock).not.toHaveBeenCalled()
     })
 
-    // ADR-126 결정 1: 받기 전 모달의 「자세히 보기」가 그리는 유일한 재료다.
+    // ADR-126 결정 1: 받기 전 모달의 `자세히 보기`가 그리는 유일한 재료다.
     it('highlights가 오면 담고, 없으면 null이다 — 없으면 모달이 버튼째 안 그린다', async () => {
       const highlights = ['보스 카드에서 인원 변경', '아이템 가격 입력']
       checkForLiveUpdateMock.mockResolvedValue({ ...AVAILABLE, highlights })
@@ -329,7 +329,7 @@ describe('useLiveUpdateStore', () => {
   })
 
   // ADR-126 결정 4·5 — 적용 성공 경로에는 상태 전환 코드가 없으므로(ADR-117 결정 1) "방금
-  // 업데이트했다"는 재시작 뒤에 알아내야 한다. 판정 근거는 「마지막으로 실행된 번들 버전」 하나다.
+  // 업데이트했다"는 재시작 뒤에 알아내야 한다. 판정 근거는 `마지막으로 실행된 번들 버전` 하나다.
   describe("checkOnBoot — 적용 완료 안내('updated')", () => {
     beforeEach(() => {
       getCurrentBundleVersionMock.mockResolvedValue('1.0.4')

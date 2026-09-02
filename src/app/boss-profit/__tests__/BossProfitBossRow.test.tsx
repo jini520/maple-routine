@@ -30,7 +30,7 @@ const 값매긴드롭: RecordedDrop[] = [
 ]
 
 describe('BossProfitBossRow — 금액을 모르는 행', () => {
-  it('미완료 placeholder 는 금액 대신 「미완료」 배지다', async () => {
+  it('미완료 placeholder 는 금액 대신 `미완료` 배지다', async () => {
     const { getByText, queryByText } = await renderProfit(
       <BossProfitBossRow row={보스행({ isComplete: false, payoutMeso: null })} drops={[]} />,
     )
@@ -39,7 +39,7 @@ describe('BossProfitBossRow — 금액을 모르는 행', () => {
     expect(queryByText(/메소/)).toBeNull()
   })
 
-  it('가격 미확정 보스는 금액 대신 「가격 미확정」 배지다', async () => {
+  it('가격 미확정 보스는 금액 대신 `가격 미확정` 배지다', async () => {
     const { getByText, queryByText } = await renderProfit(
       <BossProfitBossRow row={보스행({ priceMeso: null, payoutMeso: null })} drops={[]} />,
     )

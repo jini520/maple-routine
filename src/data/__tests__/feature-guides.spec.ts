@@ -144,7 +144,7 @@ describe('feature-guides 형식', () => {
           // `src` 의 타입은 이제 **RN 기준**이다(`ImageAssetRef` = 모듈 id 숫자) — 웹 프로그램이
           // 사라지면서 `image-asset.ts`(문자열 URL) 쪽을 보는 tsc 가 없어졌다.
           // 정작 이 테스트가 도는 vitest 에서는 Vite 가 같은 import 를 URL 문자열로 준다. 어느
-          // 쪽이든 여기서 묻는 것은 «비어 있지 않은가» 하나라 표현을 문자열로 눕혀서 본다.
+          // 쪽이든 여기서 묻는 것은 **비어 있지 않은가** 하나라 표현을 문자열로 눕혀서 본다.
           expect(String(block.image.src).trim(), `${guide.id} 에 src 가 빈 이미지`).not.toBe('')
         }
       }

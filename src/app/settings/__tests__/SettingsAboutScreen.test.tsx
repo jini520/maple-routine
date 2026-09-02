@@ -4,12 +4,12 @@
 // ① **라우터 프로브가 없다** — 뒤로·이동은 `goBack`/`navigate` 가 무엇으로 불렸는가로 본다
 //    (`SettingsScreen` 테스트 파일 머리 ①).
 // ② `getByRole('heading')` 이 없다 — RN 에 heading 역할이 없어 **제목 글자**로 본다. 웹의
-//    「제목이 하나뿐」 케이스도 그래서 「업데이트 카드가 자기 제목을 그리지 않는다」로만 남는다.
+//    `제목이 하나뿐` 케이스도 그래서 `업데이트 카드가 자기 제목을 그리지 않는다`로만 남는다.
 // ③ **OTA 상태를 이제 목으로 만들 수 있다**. 예전에는 스토어를 값으로 import 하는
-//  것만으로 죽어 이 화면이 상태를 **상수로 심었고**, 그래서 웹의 「최신이면
-//    최신 버전입니다」를 검사할 수 없었다. 그 벽 둘이 다 사라져(포트가 채워졌고 `import.meta.env`
+//  것만으로 죽어 이 화면이 상태를 **상수로 심었고**, 그래서 웹의 `최신이면
+//    최신 버전입니다`를 검사할 수 없었다. 그 벽 둘이 다 사라져(포트가 채워졌고 `import.meta.env`
 //    가 없어졌다) **포트를 갈아끼우는 것으로** 상태를 만든다. 문구 열넷의 계약은 여전히
-//    `AppUpdateSection` 테스트가 프롭을 직접 넣어 지킨다 — 여기서 보는 것은 «배선» 이다.
+//    `AppUpdateSection` 테스트가 프롭을 직접 넣어 지킨다 — 여기서 보는 것은 **배선** 이다.
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { useLiveUpdateStore } from '../../../features/live-update/store'
@@ -23,7 +23,7 @@ import { useSettingsNavigation } from '../use-settings-navigation'
 /**
  * 이 화면이 마운트에서 `loadCurrentVersion()` 을 부르므로 포트가 있어야 한다(배선).
  *
- * `isSupported` 를 케이스별로 갈라 «지원되지 않는 환경» 과 «도는 번들이 있는 환경» 을 둘 다
+ * `isSupported` 를 케이스별로 갈라 지원되지 않는 환경 과 도는 번들이 있는 환경 을 둘 다
  * 만든다 — 그 갈림이 곧 카드가 확인 버튼을 그리는지의 근거다.
  */
 function installLiveUpdatePort(overrides: Partial<LiveUpdatePort> = {}): void {
@@ -102,7 +102,7 @@ describe('SettingsAboutScreen', () => {
     expect(view.getByText('상태')).toBeTruthy()
   })
 
-  // 페이지 제목이 이미 「앱 정보」라 업데이트 카드가 자기 제목을 또 그리면 중복이다.
+  // 페이지 제목이 이미 `앱 정보`라 업데이트 카드가 자기 제목을 또 그리면 중복이다.
   it('업데이트 카드가 "앱 업데이트" 제목을 다시 그리지 않는다', async () => {
     const view = await renderOverlay(<SettingsAboutScreen />)
 
@@ -123,7 +123,7 @@ describe('SettingsAboutScreen', () => {
   })
 
   //  배선의 요점 — 화면이 **실행 중인 번들 버전**을 묻고 그리는가. 이것이 이
-  // 말한 «반영의 증거» 이고, 빌드 시점 값만 그리면 OTA 가 적용됐는지 화면으로 알 방법이 없다.
+  // 말한 **반영의 증거** 이고, 빌드 시점 값만 그리면 OTA 가 적용됐는지 화면으로 알 방법이 없다.
   it('실행 중인 번들 버전을 싣고 그린다(빌드 시점 값이 아니다)', async () => {
     installLiveUpdatePort({ getCurrentVersion: async () => '9.9.9' })
 

@@ -3,17 +3,17 @@
  * **진짜 SQLite 위에서 `db.ts` 를 돌리는 포트**.
  *
  * 이 저장소의 SQLite 테스트는 전부 목이었다 — `db.spec.ts` 는 가짜 포트를, `rn-sqlite.test.ts` 는
- * op-sqlite 의 «모양» 을 흉내 낸다. 그 둘이 지키는 것은 «어떤 문장이 어떤 차례로 나가는가» 이고,
+ * op-sqlite 의 모양 을 흉내 낸다. 그 둘이 지키는 것은 어떤 문장이 어떤 차례로 나가는가 이고,
  * **제약은 그 목록에 없다**: 목은 자기가 흉내 내라고 배운 것만 흉내 낸다. 그래서
- * `income_records.meso_amount` 가 `NOT NULL` 인 채 «메포·캐시 「기타」» 에 `null` 을 받아 INSERT 가
+ * `income_records.meso_amount` 가 `NOT NULL` 인 채 메포·캐시 기타 에 `null` 을 받아 INSERT 가
  * 던지는 것을 **한 스위트도 못 봤다**(이슈 #265).
  *
  * `node:sqlite` 는 노드 내장이라 **새 의존성이 0** 이고, 우리가 쓰는 표면(`exec`·`prepare().all()`
  * ·`prepare().run()`·`PRAGMA`)은 op-sqlite 와 같은 SQLite 다. 흉내 내는 것은 이제 **엔진이 아니라
  * 파일 자리**뿐이다.
  *
- * 파일로 여는 이유는 **닫았다 다시 여는 것을 봐야 하기 때문**이다(«두 번째 부팅에서는 재작성이 한
- * 문장도 안 나간다»). `:memory:` 는 닫는 순간 사라져 그 케이스가 성립하지 않는다.
+ * 파일로 여는 이유는 **닫았다 다시 여는 것을 봐야 하기 때문**이다(두 번째 부팅에서는 재작성이 한
+ * 문장도 안 나간다). `:memory:` 는 닫는 순간 사라져 그 케이스가 성립하지 않는다.
  */
 import { DatabaseSync } from 'node:sqlite'
 import { mkdtempSync, rmSync } from 'node:fs'
@@ -25,7 +25,7 @@ import type { SqliteDbConnection, SqlitePort } from '../../ports'
 export interface RealSqlite {
   /** `setSqlitePort()` 에 넣는다. */
   port: SqlitePort
-  /** `db.ts` 가 낸 문장 전부(차례대로) — «무엇이 안 나갔는가» 를 볼 때 쓴다. */
+  /** `db.ts` 가 낸 문장 전부(차례대로) — 무엇이 안 나갔는가 를 볼 때 쓴다. */
   statements: string[]
   /** 파일을 따로 열어 만진다 — 옛 스키마를 심고, 결과를 되짚는다. */
   inspect<T>(read: (db: DatabaseSync) => T): T

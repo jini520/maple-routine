@@ -17,8 +17,8 @@
 //
 // chevron 의 `testID` 가 아이콘이 아니라 **감싸는 `View`** 에 있는 것은 lucide 가 그 프롭을
 // 가로채 `data-testid` 로 바꿔 넘기기 때문이다(웹판과 코드를 공유하는 흔적 —
-// `lib/nativewind-interop.ts` 가 실측으로 적어 뒀다). 웹 테스트가 이 testID 로 「값과 화살표의
-// 병기」를 지키고 있어 이름을 유지해야 한다.
+// `lib/nativewind-interop.ts` 가 실측으로 적어 뒀다). 웹 테스트가 이 testID 로 `값과 화살표의
+// 병기`를 지키고 있어 이름을 유지해야 한다.
 import { Pressable, View } from 'react-native'
 
 import { ChevronRightIcon, Text } from '../../components/atoms'

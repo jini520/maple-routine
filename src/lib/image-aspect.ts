@@ -1,5 +1,5 @@
 /**
- * 「한 축만 정하고 나머지는 **그림이** 정한다」 — 웹 preflight `img { height: auto }` 의 짝
+ * 한 축만 정하고 나머지는 **그림이** 정한다 — 웹 preflight `img { height: auto }` 의 짝
  *
  *
  * ## RN 의 `<Image>` 는 우리가 이름을 부르지 않은 축을 **비워 두지 않는다**
@@ -14,13 +14,13 @@
  * 대신 해 주는 것이 없다.
  *
  * **그래서 `aspectRatio` 도 함께 죽는다.** Yoga 는 두 축이 다 정해지면 종횡비를 쓰지 않는다 —
- * 「그림이 일그러진다」로 보이는 증상의 정체가 이것이고, `resizeMode` 를 무엇으로 바꿔도 안 낫는다
+ * 그림이 일그러진다로 보이는 증상의 정체가 이것이고, `resizeMode` 를 무엇으로 바꿔도 안 낫는다
  * (상자가 이미 틀린 모양이라 `contain` 은 여백을 남기고 `stretch` 는 늘린다).
  *
- * ## 왜 «명시적 `undefined`» 가 답인가
+ * ## 왜 명시적 `undefined` 가 답인가
  *
- * `undefined` 를 적는 것은 **안 적는 것과 다르다.** RN 의 스타일 병합이 그것을 «앞의 값을 지우는
- * 값»으로 읽는다 — `ReactNativeAttributePayload.js` 의 주석 그대로다(*"An explicit value of
+ * `undefined` 를 적는 것은 **안 적는 것과 다르다.** RN 의 스타일 병합이 그것을 앞의 값을 지우는
+ * 값으로 읽는다 — `ReactNativeAttributePayload.js` 의 주석 그대로다(*"An explicit value of
  * undefined is treated as a null because it overrides any other preceding value"*), iOS 는
  * `flattenStyle` 의 `for…in` 이 같은 일을 한다. 지워진 축은 Yoga 에서 auto 가 되고 그제야
  * `aspectRatio` 가 그 자리를 채운다. **NativeWind 도 그 키를 보존한다**(실측 — `className="w-full"`
@@ -73,7 +73,7 @@ export type NaturalAspectAxis = { width: AxisValue } | { height: AxisValue }
  *     naturalAspectStyle(안내이미지, { width: '100%' }) → { width: '100%', height: undefined, aspectRatio: 2.72 }
  *
  * 고유 크기를 모르면 **준 축만** 돌려준다. 그때는 소스에도 크기가 없다는 뜻이라(그것이 `null` 인
- * 이유다) 샐 것이 애초에 없고, 없는 값을 지우겠다고 `undefined` 를 적으면 «무엇을 막고 있는지»가
+ * 이유다) 샐 것이 애초에 없고, 없는 값을 지우겠다고 `undefined` 를 적으면 무엇을 막고 있는지가
  * 안 읽힌다.
  */
 export function naturalAspectStyle(source: ImageAssetRef, given: NaturalAspectAxis): ImageStyle {

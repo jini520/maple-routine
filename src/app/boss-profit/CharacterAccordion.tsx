@@ -8,7 +8,7 @@
 // ══ 못 옮긴 것 — **중첩 sticky** ═══════════════════════════════════════
 //
 // 펼친 카드 헤더가 페이지 헤더 아래에 멈추지 않는다. 근거와 되살리는 두 길은
-// `BossProfitScreen.contract.md` «못 옮긴 것» 에 있고, 요약하면 이렇다 — RN 의 sticky
+// `BossProfitScreen.contract.md` **못 옮긴 것** 에 있고, 요약하면 이렇다 — RN 의 sticky
 // (`stickyHeaderIndices`)는 **스크롤 뷰의 직계 자식**만 붙일 수 있어 목록을 [헤더, 본문, 헤더, …]
 // 로 펴야 하는데 그러면 의 카드 링이 두 조각으로 갈려 이음매가 생기고(의
 // 셸 클리핑도 자를 상자를 잃는다), 손수 만드는 길은 공용 `ScreenScroll` 을 `Animated.ScrollView`

@@ -56,10 +56,10 @@ export function ThemeBackdrop(): React.JSX.Element | null {
     // **어두운 바탕을 먼저 깐다**. 그림은 `cover` 지만 **알파를 크게 쓴다**
     // (투명 50% / 36% — 가 하늘을 비워 두게 한 결과다). 그 뚫린 자리 뒤에는
     // 지금까지 아무 색도 없었다 — 배경 있는 테마에서는 내비게이션 테마가 화면을 `transparent` 로
-    // 두기 때문이다(`navigation-theme.ts`). 그래서 «어둡게» 를 `dim` 혼자 지고 있었고, 올릴수록
+    // 두기 때문이다(`navigation-theme.ts`). 그래서 **어둡게** 를 `dim` 혼자 지고 있었고, 올릴수록
     // 그림이 회색으로 죽었다.
     //
-    // 바탕이 있으면 `dim` 은 «검게 덮는 양» 이 아니라 **«그림을 바탕 쪽으로 당기는 양»** 이 된다.
+    // 바탕이 있으면 `dim` 은 **검게 덮는 양** 이 아니라 **그림을 바탕 쪽으로 당기는 양** 이 된다.
     <View
       testID="theme-backdrop"
       pointerEvents="none"

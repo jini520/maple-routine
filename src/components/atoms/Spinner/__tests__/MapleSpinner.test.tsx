@@ -11,7 +11,7 @@
 // 요소를 기본적으로 못 찾는다(플래그를 빼면 첫 케이스가 "찾을 수 없다"로 떨어진다, 실측).
 jest.mock('react-native-reanimated', () =>
   // `jest.mock` 팩토리는 import 위로 끌어올려져 **밖의 값을 참조할 수 없다** — 그래서 `require` 가
-  // 선택이 아니라 유일한 길이다(`reduced-motion.ts` 「쓰는 법」).
+  // 선택이 아니라 유일한 길이다(`reduced-motion.ts` `쓰는 법`).
   require('../../../__tests__/reduced-motion').reanimatedWithReducedMotion(),
 )
 

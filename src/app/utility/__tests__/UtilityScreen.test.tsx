@@ -32,16 +32,16 @@ async function press(element: AtomElement): Promise<void> {
 }
 
 describe('UtilityScreen', () => {
-  it('«유틸리티» 제목을 그린다', async () => {
+  it('**유틸리티** 제목을 그린다', async () => {
     const view = await renderOverlay(<UtilityScreen />)
 
     expect(view.getByText('유틸리티')).toBeTruthy()
     expect(view.getByTestId('screen-Utility')).toBeTruthy()
   })
 
-  // 껍데기였던 자리다. 도구가 들어왔으니 «개발 진행중» 은 사라져야 한다 —
+  // 껍데기였던 자리다. 도구가 들어왔으니 **개발 진행중** 은 사라져야 한다 —
   // 남아 있으면 도구 목록 아래에 "아직 없다"가 함께 서는 화면이 된다.
-  it('«개발 진행중» 자리표시자가 더는 없다', async () => {
+  it('**개발 진행중** 자리표시자가 더는 없다', async () => {
     const view = await renderOverlay(<UtilityScreen />)
 
     expect(view.queryByText('개발 진행중')).toBeNull()
@@ -55,7 +55,7 @@ describe('UtilityScreen', () => {
     expect(navigate).toHaveBeenCalledWith('UtilityItemSplit')
   })
 
-  // RN 의 `Text` 는 한글을 글자 단위로 끊는다(「판매 분배금 계 / 산기」). 단어마다 `Text` 를 두고
+  // RN 의 `Text` 는 한글을 글자 단위로 끊는다(`판매 분배금 계 / 산기`). 단어마다 `Text` 를 두고
   // flex 아이템으로 감싸 **아이템 경계에서만** 줄이 바뀌게 한 것이 이 계약이다(사용자 지정).
   it('타일 이름은 단어마다 쪼개져 있다 — 줄바꿈이 단어 경계에서만 일어나도록', async () => {
     const view = await renderOverlay(<UtilityScreen />)

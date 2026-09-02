@@ -38,7 +38,7 @@ export const MONSTER_PARK_BACKGROUND_SLUG = 'monsterPark'
 export function DailyQuestCard(props: {
   content: DailyContent
   crop?: ImageCrop
-  /** 요구 레벨 미달 — 상태 배지를 «진행 불가» 로 대체한다. */
+  /** 요구 레벨 미달 — 상태 배지를 진행 불가 로 대체한다. */
   isBlocked?: boolean
 }): React.JSX.Element {
   const { content } = props
@@ -87,7 +87,7 @@ export function DailyQuestCard(props: {
 export function MonsterParkCard(props: {
   content: DailyContent
   crop?: ImageCrop
-  /** 요구 레벨 미달 — 상태 배지를 «진행 불가» 로 대체한다. */
+  /** 요구 레벨 미달 — 상태 배지를 진행 불가 로 대체한다. */
   isBlocked?: boolean
 }): React.JSX.Element {
   const { content } = props

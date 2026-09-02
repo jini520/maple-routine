@@ -292,7 +292,7 @@ export function DropHistoryScreen(): React.JSX.Element {
         // 없다. 스크롤 상자가 노치까지 덮던 웹과 달리 **상단 안전영역을 헤더가 먹는다**는 계약은
         // 그대로다(`ScreenScroll` 은 헤더가 있으면 위를 안 건드린다).
         // **여백은 더하지 않는다** — 공용 셸과 같은 값이어야 가격 화면과 나란히 열릴 때
-        // 제목 높이가 안 갈린다. 그 «같은 값» 이 `useTopSafeAreaPx()` 다(—
+        // 제목 높이가 안 갈린다. 그 **같은 값** 이 `useTopSafeAreaPx()` 다(—
         // 안드로이드 하한 48).
         <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: topSafeAreaPx }}>
           <View className="gap-3">

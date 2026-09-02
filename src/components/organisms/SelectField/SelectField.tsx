@@ -43,7 +43,7 @@ import { placeDropdown } from '../AccountSelect/place-dropdown'
 const EDGE_GAP_PX = 12
 
 export interface SelectOption {
-  /** `null` 은 «안 고름» 이다 — 고르개마다 그 뜻이 다르므로 라벨은 호출부가 준다. */
+  /** `null` 은 안 고름 이다 — 고르개마다 그 뜻이 다르므로 라벨은 호출부가 준다. */
   value: string | null
   label: string
 }
@@ -105,7 +105,7 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
   }, [isOpen, close])
 
   // 고른 값이 목록에 없을 수 있다(캐릭터 목록이 갱신되는 순간). **렌더 중에 던지지 않는다** —
-  // 첫 칸(대개 «안 고름»)으로 읽어 준다.
+  // 첫 칸(대개 **안 고름**)으로 읽어 준다.
   const selectedLabel =
     props.options.find((option) => option.value === props.selected)?.label ??
     props.options[0]?.label ??

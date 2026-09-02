@@ -1157,7 +1157,7 @@ describe('useBossSchedulerStore', () => {
 
   // : 탭이 걷히면서 `activeTab` 도 함께 사라지고(
   //  가 이 축에서 폐기됐다), 목록이 하나가 되면서 필터도 하나가 된다
-  // (정정 — «두 축이 독립» 은 탭이 있을 때만 뜻이 있는 문장이었다).
+  // (정정 — **두 축이 독립** 은 탭이 있을 때만 뜻이 있는 문장이었다).
   describe(': 필터 상태 — 하나다', () => {
     it('초기 필터는 전체다', () => {
       expect(useBossSchedulerStore.getInitialState().partyFilter).toBe('all')
@@ -1169,7 +1169,7 @@ describe('useBossSchedulerStore', () => {
       expect(useBossSchedulerStore.getState().partyFilter).toBe('solo')
     })
 
-    // 탭이 남아 있으면 다음 세션이 «관리 화면만 쓰는 상태» 로 되살린다 — 없는 것을 못 박는다.
+    // 탭이 남아 있으면 다음 세션이 **관리 화면만 쓰는 상태** 로 되살린다 — 없는 것을 못 박는다.
     it('탭 상태와 세터가 스토어에 없다', () => {
       const state = useBossSchedulerStore.getState() as unknown as Record<string, unknown>
 

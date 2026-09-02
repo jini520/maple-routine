@@ -1,12 +1,12 @@
 /**
  * 처치 **날짜**를 캐낸다 — · 이슈 #239.
  *
- * `boss_profit_records` 의 `period_key` 는 주(목요일)·달이라 «며칟날 잡았나» 를 못 든다. 그런데
- * 스케줄러 API 도 그것을 **직접 알려 주지 않는다** — `date=D` 응답은 «D 시점의 완료 현황» 이라
- * 주간 보스가 완료로 보이면 «D 또는 그 이전(같은 주)» 이다.
+ * `boss_profit_records` 의 `period_key` 는 주(목요일)·달이라 며칟날 잡았나 를 못 든다. 그런데
+ * 스케줄러 API 도 그것을 **직접 알려 주지 않는다** — `date=D` 응답은 D 시점의 완료 현황 이라
+ * 주간 보스가 완료로 보이면 D 또는 그 이전(같은 주) 이다.
  *
  * **답은 두 날의 차이에 있다.** D−1 이 미완료이고 D 가 완료이면 그 보스는 D 에 잡혔다. 그래서 이
- * 모듈이 하는 일은 «한 날짜를 조회» 가 아니라 **«그 기간의 날짜들을 훑어 뒤집힌 지점을 찾기»** 다.
+ * 모듈이 하는 일은 한 날짜를 조회 가 아니라 ****그 기간의 날짜들을 훑어 뒤집힌 지점을 찾기**** 다.
  *
  * ## 비용이 보스 수가 아니라 날짜 수다
  *
@@ -17,7 +17,7 @@
  * ## 두 번 불려도 안 겹친다
  *
  * 부르는 자리가 둘이다(결정 9) — 보스 수익 동기화 뒤와 가계부 진입. 겹침을 막는 것이 둘이다:
- * **조회 원장**이 «이미 본 날짜» 를 들고(+ `bosses`), 아래 `inFlight` 가 같은
+ * **조회 원장**이 이미 본 날짜 를 들고(+ `bosses`), 아래 `inFlight` 가 같은
  * 순간에 두 번 도는 것을 막는다. 그래서 이 함수는 **어디서 몇 번 불려도 결과가 같다.**
  */
 import { getAuthConfig } from '../../storage/api-key'
@@ -49,7 +49,7 @@ import { withSqliteFallback } from './sqlite-guards'
 export interface DefeatDateInput {
   /** 그 기간의 날짜들 — **오름차순**(`getPeriodDateKeys`). 오늘 뒤는 안 본다. */
   readonly periodDays: readonly string[]
-  /** 관측한 날짜 → 그날 완료로 본 보스 키 집합. **없는 날짜는 «못 봤다»** 이지 «완료 0건» 이 아니다. */
+  /** 관측한 날짜 → 그날 완료로 본 보스 키 집합. **없는 날짜는 **못 봤다**** 이지 완료 0건 이 아니다. */
   readonly observed: ReadonlyMap<string, ReadonlySet<string>>
   readonly todayDateKey: string
   /** `bossCompletionKey(boss, difficulty)` — 기록의 키와 같은 이름·같은 난이도여야 한다. */
@@ -67,7 +67,7 @@ export interface DefeatDateInput {
  * | 못 본 날인데 그날이 **오늘**이다 | **오늘이다**(소거법 — 어제까지 미완료인데 기록이 있다) |
  * | 못 본 날인데 오늘이 아니다 | **`null`** — 구멍이라 그 뒤의 완료를 못 믿는다 |
  *
- * 소거법이 (a)«앱이 기록한 날» 과 다른 점: **어제가 미완료였다는 관측**이 있어야만 오늘이라고
+ * 소거법이 (a)앱이 기록한 날 과 다른 점: **어제가 미완료였다는 관측**이 있어야만 오늘이라고
  * 말한다. 하루 뒤에 열었다면 어제가 완료로 관측되어 어제로 적힌다. 이 함수는 **틀린 날짜를 만들
  * 수 없고**, 만들 수 있는 것은 `null` 뿐이다.
  */
@@ -97,7 +97,7 @@ interface ResolvablePeriod {
 /**
  * 지금 **캐낼 수 있는** 기간들 — 기간의 **첫 날**이 조회 창 안이어야 한다.
  *
- * 첫 날을 못 보면 «그 앞엔 없었다» 를 말할 수 없어 어떤 조회도 답을 못 낸다. 그래서 그 기간은
+ * 첫 날을 못 보면 그 앞엔 없었다 를 말할 수 없어 어떤 조회도 답을 못 낸다. 그래서 그 기간은
  * 캐는 대상이 아니라 **부르지도 않는 대상**이다.
  *
  * 그래서 월간(달 1일)은 **달의 앞 2주 안에서만** 캘 수 있다. 그 뒤에 잡은 검은마법사는 영영 NULL 이다.
@@ -130,7 +130,7 @@ function missingDays(
       // `outOfRange` 는 그 날짜에 대해 영구다 — 다시 부르지 않는다.
       if (record?.kind === 'outOfRange') continue
       // **`bosses` 가 없는 관측은 미조회로 친다.** 이 칸이 생기기 전에 남은 기록이라 보스를 안 봤고,
-      // 빈 배열(«그날 완료 0건»)로 읽으면 처치일이 그 뒤 어느 날로 밀린다.
+      // 빈 배열(**그날 완료 0건**)로 읽으면 처치일이 그 뒤 어느 날로 밀린다.
       if (record?.kind === 'observed' && record.bosses !== undefined) continue
       days.add(day)
     }
@@ -281,7 +281,7 @@ async function runResolveDefeatDates(ocids: readonly string[], now: Date): Promi
       }
 
       // **가진 것으로 먼저 풀어 본다.** 원장이 이미 답을 들고 있으면(다른 경로가 훑어 둔 날짜들)
-      // 호출이 0회다 — 그러지 않으면 «이미 아는 것» 을 확인하려고 그 주를 다시 훑게 된다.
+      // 호출이 0회다 — 그러지 않으면 **이미 아는 것** 을 확인하려고 그 주를 다시 훑게 된다.
       const unresolved = records.filter(
         (record) => resolveFor(record, observed, todayDateKey) === null,
       )

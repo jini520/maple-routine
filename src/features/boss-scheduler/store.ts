@@ -78,11 +78,11 @@ export interface BossSchedulerState {
   // 영속화하지 않는다.
   //
   // **`activeTab` 은 여기 없다** — 주간/월간 탭이 두 화면에서 함께 걷혔다.
-  //  와(«승계가 아니라 공유»)가 이 축에서 폐기된 자리다.
+  //  와(**승계가 아니라 공유**)가 이 축에서 폐기된 자리다.
   // 되살리지 말 것: 공유할 상대가 없는 공유 상태가 된다. 선택 캐릭터 쪽 공유는 가
   // 따로 갖고 있어 그대로다.
   //
-  // 필터도 하나다(— 정정). «두 축이 서로 독립» 은 탭이
+  // 필터도 하나다(— 정정). **두 축이 서로 독립** 은 탭이
   // 있을 때만 뜻이 있는 문장이었다.
   partyFilter: PartyFilter
 }
@@ -191,7 +191,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     // ADR-101 결정 4: 동시 호출은 한 회차로 합친다(위 `hydration` 주석).
     hydration ??= (async () => {
       // 저장된 선택은 **선택 스토어가 읽는다** — 이 스토어가 읽어 자기
-      // 상태에 넣던 것이 «두 벌» 의 출처였다. 둘을 나란히 태우는 것은 그대로다(왕복 한 번).
+      // 상태에 넣던 것이 **두 벌** 의 출처였다. 둘을 나란히 태우는 것은 그대로다(왕복 한 번).
       const [ocids] = await Promise.all([
         getTrackedCharacterOcids(),
         useCharacterSelectionStore.getState().hydrate(),

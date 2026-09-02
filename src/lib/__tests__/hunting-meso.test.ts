@@ -12,9 +12,9 @@ import {
 } from '../cashbook/hunting-meso'
 import { getItemIconUrlByFile } from '../assets/asset-lookup'
 
-/** 사용자가 준 예시의 맵 — 「밤의 길 3」(탈라하트, 40마리, lv.294). */
+/** 사용자가 준 예시의 맵 — 밤의 길 3(탈라하트, 40마리, lv.294). */
 const NIGHT_ROAD_3 = { name: '밤의 길 3', force: 700, mobs: 40, levels: [294] } as const
-/** 레벨이 둘인 맵 — 「풍화된 기쁨과 분노의 땅」(소멸의 여로). */
+/** 레벨이 둘인 맵 — 풍화된 기쁨과 분노의 땅(소멸의 여로). */
 const TWO_LEVEL_MAP = { name: '풍화된 기쁨과 분노의 땅', force: 30, mobs: 29, levels: [200, 201] } as const
 
 /** 34마리 맵 — 반올림이 실제로 일어나는 자리다(33/34 = 97.06%). */
@@ -113,8 +113,8 @@ describe('huntingMesoOf', () => {
   })
 
   /**
-   * **반올림은 라벨에만** 한다. 34마리에서 하나를 놓치면 세그먼트는 「97%」로
-   * 적히지만 곱하는 것은 33/34(=97.06%)다 — «33마리를 잡았다» 가 실제로 일어난 일이라, 표시하려고
+   * **반올림은 라벨에만** 한다. 34마리에서 하나를 놓치면 세그먼트는 97%로
+   * 적히지만 곱하는 것은 33/34(=97.06%)다 — 33마리를 잡았다 가 실제로 일어난 일이라, 표시하려고
    * 자른 값으로 돈을 세면 세그먼트 글자가 계산을 끌고 다니게 된다.
    */
   it('반올림한 퍼센트가 아니라 **실제 분수**로 곱한다', () => {
@@ -167,7 +167,7 @@ describe('huntingMesoOf', () => {
     expect(all).not.toBe(Math.floor(base * 3.19))
   })
 
-  it('캐릭터 레벨을 모르면 페널티가 없다 — 고르개가 「선택 안함」 인 상태다', () => {
+  it('캐릭터 레벨을 모르면 페널티가 없다 — 고르개가 `선택 안함` 인 상태다', () => {
     const unknown = huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3, characterLevel: null })
     const same = huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3, characterLevel: 294 })
     expect(unknown).toBe(same)

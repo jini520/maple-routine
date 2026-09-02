@@ -1,4 +1,4 @@
-// 캘린더 칸은 너비가 **화면 폭 ÷ 7** 이라 `formatMesoUnits`(「1억 2345만 6789」)가 안 들어간다
+// 캘린더 칸은 너비가 **화면 폭 ÷ 7** 이라 `formatMesoUnits`(`1억 2345만 6789`)가 안 들어간다
 // . 단위 하나 + 유효숫자 넷으로 줄인다.
 
 import { formatMesoCompact } from '../cashbook/meso-compact'
@@ -32,7 +32,7 @@ describe('formatMesoCompact — 만과 그 아래', () => {
     expect(formatMesoCompact(10_000)).toBe('1만')
   })
 
-  // 만 미만을 «0만» 으로 뭉개면 «적었는데 0» 이 되어 이 가른 «모름» 과 «없음» 이 섞인다.
+  // 만 미만을 **0만** 으로 뭉개면 **적었는데 0** 이 되어 이 가른 **모름** 과 **없음** 이 섞인다.
   it('만 미만은 그대로 적는다', () => {
     expect(formatMesoCompact(9_999)).toBe('9,999')
     expect(formatMesoCompact(1)).toBe('1')

@@ -55,7 +55,7 @@ export function renderOverlay(
         {/*
           **바 위 슬롯을 함께 세운다**. 화면이 소유한 오버레이 중 일부는 이제 자기가
           선 자리가 아니라 이 호스트에 그려지므로(`SpeedDial`), 호스트가 없으면 트리에서 통째로
-          사라져 보인다 — `BottomBarOverlay` 는 «호스트가 없으면 아무 데도 안 그린다» 가 계약이다.
+          사라져 보인다 — `BottomBarOverlay` 는 **호스트가 없으면 아무 데도 안 그린다** 가 계약이다.
 
           **기존 스냅샷은 안 흔들린다** — `PortalProvider` 도 호스트도 뷰를 하나도 안 그린다
           (`SafeAreaProvider` 를 `renderAtom` 에 합치지 않은 이유와 갈리는 지점).

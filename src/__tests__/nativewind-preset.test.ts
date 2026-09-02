@@ -7,7 +7,7 @@
  * `visibility` 로, `shadow` 가 `elevation` 이 아니라 `box-shadow` 로 나왔다.
  *
  * **이 어긋남은 조용하다.** 클래스 이름이 같아 테스트는 초록인데 앱은 다른 그림을 그린다.
- * `nativewind.config.js` 머리가 못박은 «둘이 같은 값으로 컴파일한다» 를 여기서 검사한다.
+ * `nativewind.config.js` 머리가 못박은 둘이 같은 값으로 컴파일한다 를 여기서 검사한다.
  */
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, readFileSync } from 'node:fs'

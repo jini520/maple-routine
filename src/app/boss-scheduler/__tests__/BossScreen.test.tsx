@@ -18,7 +18,7 @@
 //    RN 에서 그 순서를 만드는 것은 `AppShell` 의 `prehydrateTabStores` 이고 그쪽 테스트가 이미
 //  갖고 있다. 여기 남는 것은 **** — `null` 을 0명으로 읽지
 //    않는가 — 이고 그것은 한 케이스다.
-// ⑥ DOM 스냅샷 둘은 옮기지 않는다(전환 계획서 «잃는 안전망») — 대신 각 가지를 케이스로 적는다.
+// ⑥ DOM 스냅샷 둘은 옮기지 않는다(전환 계획서 **잃는 안전망**) — 대신 각 가지를 케이스로 적는다.
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import { act, fireEvent, screen, within } from '@testing-library/react-native'
 import { useState } from 'react'
@@ -42,7 +42,7 @@ const mockShowError = jest.fn()
 const mockShowInfo = jest.fn()
 const mockNoticeApiKeyIssue = jest.fn()
 const navigate = jest.fn()
-// 층이 스택이 된 뒤로 «그룹 층으로 되돌리기» 는 액션이다 — 화면이 이것도 부른다.
+// 층이 스택이 된 뒤로 **그룹 층으로 되돌리기** 는 액션이다 — 화면이 이것도 부른다.
 const dispatch = jest.fn()
 
 // : 동기화 실패·파티원 수 저장 실패는 인라인 문단이 아니라 토스트다.
@@ -89,7 +89,7 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     manualTrackedByOcid: {},
     loadTrackedOcids: jest.fn(),
     saveTrackedOcids: jest.fn(),
-    // 실물은 `Promise<void>` 다 — 당김 훅이 회차의 «끝» 을 기다린다.
+    // 실물은 `Promise<void>` 다 — 당김 훅이 회차의 **끝** 을 기다린다.
     refresh: jest.fn().mockResolvedValue(undefined),
     loadPartySizes: jest.fn(),
     setPartySize: jest.fn(),
@@ -111,7 +111,7 @@ function mockStore(overrides: Partial<Store> = {}): Store {
 /**
  * 화면에 **선** 섹션 헤더를 위에서 아래 순서로 — `['monthly', 'weekly']`.
  *
- * 무리가 비면 헤더도 안 서므로 이 배열이 곧 «지금 무엇이 보이는가» 다.
+ * 무리가 비면 헤더도 안 서므로 이 배열이 곧 지금 무엇이 보이는가 다.
  */
 function sectionOrder(): string[] {
   return screen
@@ -296,7 +296,7 @@ describe('BossScreen — 목록', () => {
     expect(screen.queryByRole('button', { name: '월간' })).toBeNull()
   })
 
-  // 화면에 그려진 순서를 직접 못 박는다 — «둘 다 보인다» 만으로는 위아래가 안 잡힌다.
+  // 화면에 그려진 순서를 직접 못 박는다 — **둘 다 보인다** 만으로는 위아래가 안 잡힌다.
   it('월간 무리가 주간 무리보다 위에 있다', async () => {
     withBosses()
 
@@ -305,9 +305,9 @@ describe('BossScreen — 목록', () => {
     expect(sectionOrder()).toEqual(['monthly', 'weekly'])
   })
 
-  // : 탭이 사라지며 갈 곳을 잃는 표시가 「주간」 헤더에 붙는다 — 12 는 주간
+  // : 탭이 사라지며 갈 곳을 잃는 표시가 `주간` 헤더에 붙는다 — 12 는 주간
   // 한도이므로 그 수치가 어느 무리의 것인지 헤더가 대신 말한다.
-  it('n/12 배지는 「주간」 섹션 헤더에 붙는다', async () => {
+  it('n/12 배지는 `주간` 섹션 헤더에 붙는다', async () => {
     withBosses()
 
     await renderScreen()
@@ -442,10 +442,10 @@ describe('BossScreen — 챌린저스 시즌 보스 배지', () => {
     expect(screen.getByText('season 미완료')).toBeTruthy()
   })
 
-  //  의 «빈 무리는 헤더도 걷는다» 에 예외가 하나 있다 — **배지를 싣고 있으면
+  //  의 **빈 무리는 헤더도 걷는다** 에 예외가 하나 있다 — **배지를 싣고 있으면
   // 남긴다.** 탭 시절 이 배지들은 목록이 비어도 탭 줄에 떠 있었고, 무리가 비었다는 이유로 지우면
-  // «이번 주 몇 마리 잡았나» 를 말할 자리가 아예 없어진다.
-  it('주간 카드가 하나도 안 서도 배지를 실은 「주간」 헤더는 남는다', async () => {
+  // **이번 주 몇 마리 잡았나** 를 말할 자리가 아예 없어진다.
+  it('주간 카드가 하나도 안 서도 배지를 실은 `주간` 헤더는 남는다', async () => {
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
@@ -548,11 +548,11 @@ describe('BossScreen — 재조회', () => {
     expect(refreshControl()).toBeDefined()
   })
 
-  // ★ 회귀 가드 — **«조회 중» 과 «당겼다» 는 다른 사실이다**.
+  // ★ 회귀 가드 — **조회 중 과 당겼다 는 다른 사실이다**.
   //
   // 종전에는 `refreshing = status === 'loading'` 이라, 화면 마운트 하이드레이션만으로 인디케이터가
   // 프로그램적으로 열렸다. 사용자 보고(2026-08-22) *"페이지 이동 시 새로고침 인디케이터가 저절로
-  // 돌고 상단이 빈 채로 멈춘다"* 가 그 증상이다. «조회 중...» 은 그대로 뜬다 — 그쪽이 조회를
+  // 돌고 상단이 빈 채로 멈춘다"* 가 그 증상이다. **조회 중...** 은 그대로 뜬다 — 그쪽이 조회를
   // 말하는 자리다.
   it('조회 중이어도 인디케이터는 안 돈다 — "조회 중..." 만 보여준다', async () => {
     loaded('loading')
@@ -696,7 +696,7 @@ describe('BossScreen — 솔로/파티 필터', () => {
     expect(screen.queryByText('자쿰')).toBeNull()
   })
 
-  // (정정) — 목록이 하나라 필터도 하나다. 「파티」를 고르면
+  // (정정) — 목록이 하나라 필터도 하나다. `파티`를 고르면
   // 두 무리 모두에 걸린다(전에는 주간 필터가 월간 목록을 건드리지 않았다).
   it('필터 하나가 두 무리에 함께 걸린다', async () => {
     mockStore({
@@ -935,19 +935,19 @@ describe('BossScreen — 수동 모드', () => {
     })
     await renderScreen()
 
-    // 월간 참조표의 보스라 「월간」 무리에 선다 — 탭을 누를 필요가 없다.
+    // 월간 참조표의 보스라 `월간` 무리에 선다 — 탭을 누를 필요가 없다.
     expect(screen.getByText('검은마법사')).toBeTruthy()
     expect(sectionOrder()).toEqual(['monthly'])
   })
 })
 
-// 주간 12마리를 채우면 남은 미처치 주간 보스는 「완료」 자리에 「마감」을 단다.
+// 주간 12마리를 채우면 남은 미처치 주간 보스는 `완료` 자리에 `마감`을 단다.
 // 완료로 칠하지 않는 것이 핵심이다: 안 잡은 보스를 완료로 두면 그 거짓이 보스 수익의 금액이 된다.
 describe('BossScreen — 주간 한도 마감 배지', () => {
   const WEEKLY_NAMES = (weeklyBossesData.weekly as { boss: string }[]).map((entry) => entry.boss)
   const PENDING = WEEKLY_NAMES[0]
 
-  /** 「끝에서부터」 실제로 처치한 주간 보스들 — `PENDING` 과 겹치지 않게 뒤에서 뽑는다. */
+  /** 끝에서부터 실제로 처치한 주간 보스들 — `PENDING` 과 겹치지 않게 뒤에서 뽑는다. */
   function cleared(count: number): MatchedBoss[] {
     return WEEKLY_NAMES.slice(-count).map((name) =>
       boss({
@@ -978,13 +978,13 @@ describe('BossScreen — 주간 한도 마감 배지', () => {
     })
   }
 
-  it('한도를 채우면 미처치 카드가 「마감」 배지를 단다', async () => {
+  it('한도를 채우면 미처치 카드가 `마감` 배지를 단다', async () => {
     withClearCount(WEEKLY_BOSS_CLEAR_LIMIT)
 
     await renderScreen()
 
     expect(screen.getByText('마감')).toBeTruthy()
-    // 처치한 열두 장은 그대로 「완료」다 — 마감이 완료를 대체하지 않는다.
+    // 처치한 열두 장은 그대로 `완료`다 — 마감이 완료를 대체하지 않는다.
     expect(screen.getAllByText('완료')).toHaveLength(WEEKLY_BOSS_CLEAR_LIMIT)
   })
 
@@ -996,7 +996,7 @@ describe('BossScreen — 주간 한도 마감 배지', () => {
     expect(screen.queryByText('마감')).toBeNull()
   })
 
-  // 「완료」 자리를 대신하는 배지라 **상자가 같아야** 한다(사용자 지정) — 크기가 다르면 같은 자리에서
+  // `완료` 자리를 대신하는 배지라 **상자가 같아야** 한다(사용자 지정) — 크기가 다르면 같은 자리에서
   // 배지가 커졌다 작아졌다 하며 카드 오른쪽 끝이 흔들린다. 색만 갈린다.
   it('마감 배지는 완료 배지와 같은 크기다', async () => {
     withClearCount(WEEKLY_BOSS_CLEAR_LIMIT)
@@ -1004,7 +1004,7 @@ describe('BossScreen — 주간 한도 마감 배지', () => {
     await renderScreen()
 
     // NativeWind 가 `className` 을 스타일로 컴파일하므로 **결과 스타일**을 본다 — 클래스 문자열을
-    // 비교하면 같은 값을 다른 표기로 쓴 것도 «다르다» 가 된다.
+    // 비교하면 같은 값을 다른 표기로 쓴 것도 **다르다** 가 된다.
     const boxOf = (label: string): Record<string, unknown> => {
       const { color, backgroundColor, ...box } = screen.getAllByText(label)[0].props.style as Record<
         string,
@@ -1019,12 +1019,12 @@ describe('BossScreen — 주간 한도 마감 배지', () => {
   })
 })
 
-//  후속(사용자 지정) — 한도를 채웠으면 진행 링도 꽉 찬다. 마감은 «이번 주에 더 할
-// 것이 없다» 이므로 링이 100%에 못 닿으면 링이 거짓을 말한다.
+//  후속(사용자 지정) — 한도를 채웠으면 진행 링도 꽉 찬다. 마감은 **이번 주에 더 할
+// 것이 없다** 이므로 링이 100%에 못 닿으면 링이 거짓을 말한다.
 describe('BossScreen — 한도 마감과 진행 링', () => {
   const WEEKLY_NAMES = (weeklyBossesData.weekly as { boss: string }[]).map((entry) => entry.boss)
 
-  /** 링의 접근성 이름에 실린 「주간 n/m」 — 링의 유일한 표현이라 계약이 여기 있다. */
+  /** 링의 접근성 이름에 실린 주간 n/m — 링의 유일한 표현이라 계약이 여기 있다. */
   function ringLabel(): string {
     const label = String(screen.getAllByTestId('character-portrait')[0].props.accessibilityLabel)
     return label.slice(label.indexOf('주간'))
@@ -1080,7 +1080,7 @@ describe('BossScreen — 한도 마감과 진행 링', () => {
     })
   }
 
-  it('한도를 채우면 링이 12/12로 꽉 찬다 — 마감도 «다 한 것» 이다', async () => {
+  it('한도를 채우면 링이 12/12로 꽉 찬다 — 마감도 **다 한 것** 이다', async () => {
     withTrackedTwelveAndOutsideKills()
 
     await renderScreen()

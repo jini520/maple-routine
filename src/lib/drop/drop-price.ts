@@ -51,7 +51,7 @@ export function formatMesoUnits(meso: number): string {
     rest %= size
     if (count > 0) parts.push(`${unitCount(count)}${suffix}`)
   }
-  // 단위가 안 붙는 나머지 — 여기에 「천」 을 쓰면 `1만 5천` 이 15,000 인지 5,000 인지 흐려진다.
+  // 단위가 안 붙는 나머지 — 여기에 `천` 을 쓰면 `1만 5천` 이 15,000 인지 5,000 인지 흐려진다.
   if (rest > 0) parts.push(String(rest))
   return parts.join(' ')
 }

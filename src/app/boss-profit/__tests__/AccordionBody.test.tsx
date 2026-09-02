@@ -65,7 +65,7 @@ describe('WeeklySubtotalRow — 상태마다 얼굴이 다르다', () => {
     { state: 'notCollected', label: '집계 전' },
   ]
 
-  it.each(금액없는상태)('$state 는 금액 대신 「$label」 만 말한다', async ({ state, label }) => {
+  it.each(금액없는상태)('$state 는 금액 대신 `$label` 만 말한다', async ({ state, label }) => {
     const { getByText, queryByText } = await renderProfit(
       <WeeklySubtotalRow subtotal={주차소계({ state, totalMeso: 0 })} />,
     )
@@ -79,7 +79,7 @@ describe('WeeklySubtotalRow — 상태마다 얼굴이 다르다', () => {
     { state: 'failed', label: '다시 시도' },
   ]
 
-  it.each(행동있는상태)('$state 에는 「$label」 버튼이 서고 누르면 그 기간을 다시 로드한다', async ({
+  it.each(행동있는상태)('$state 에는 `$label` 버튼이 서고 누르면 그 기간을 다시 로드한다', async ({
     state,
     label,
   }) => {
@@ -112,7 +112,7 @@ describe('WeeklySubtotalRow — 상태마다 얼굴이 다르다', () => {
     expect(getByText('0 메소')).toBeTruthy()
   })
 
-  it('진행 중인 주에는 「진행 중」 배지가 함께 선다', async () => {
+  it('진행 중인 주에는 `진행 중` 배지가 함께 선다', async () => {
     const { getByText } = await renderProfit(
       <WeeklySubtotalRow subtotal={주차소계({ state: 'inProgress' })} />,
     )

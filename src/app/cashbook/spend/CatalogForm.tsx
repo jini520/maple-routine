@@ -4,13 +4,13 @@
  * ## 고르면 채워진다
  *
  * 사용자가 준 항목에 **전부 가격이 붙어 있다**. 그래서 이 갈래들에는 금액 칸이 없고, 고르면 단가가
- * 그대로 금액이 되며 수량만 조절한다. 곱셈은 **앱이 한다** — 사용자가 대신하면 «몇 포인트 썼나» 를
+ * 그대로 금액이 되며 수량만 조절한다. 곱셈은 **앱이 한다** — 사용자가 대신하면 몇 포인트 썼나 를
  * 나중에 되물을 수 없다(정정 1 ③).
  *
  * ## 두 단계다 (사용자 지정 2026-08-25)
  *
  * ① 묶음별 **대표**를 고른다(하이마운틴 · 몬스터 파크 …). ② 대표가 여러 갈래를 품으면 그 안에서
- * 고른다 — **단계**(1·2단계)와 **형태**(경험치·솔 에르다). `choice` 가 «지금 어느 단계인가» 를
+ * 고른다 — **단계**(1·2단계)와 **형태**(경험치·솔 에르다). `choice` 가 지금 어느 단계인가 를
  * 든다: `null` 이면 목록이 서고, 있으면 그 안이 선다.
  */
 import { useState } from 'react'
@@ -43,7 +43,7 @@ import { useSpendSubmit } from './use-spend-submit'
 /**
  * 타일에 적는 값 — **단위를 붙이고, 단계가 여럿이면 나란히 적는다.**
  *
- * 단위를 붙이는 이유는 갈래 하나 안에서 통화가 갈리는 곳이 있어서다(「버프」의 영약은 메소,
+ * 단위를 붙이는 이유는 갈래 하나 안에서 통화가 갈리는 곳이 있어서다(버프의 영약은 메소,
  * 보약은 메포 —). **메소만 줄여 적는다** — 메포는 200~50,000 이라 그대로가
  * 읽히지만 메소는 백만 단위라 1/3 폭 타일에서 잘린다.
  */
@@ -144,7 +144,7 @@ function ItemTile(props: {
 export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   const editing = props.editing !== undefined
   /**
-   * **한 번만 되짚는다** — 이름만 카탈로그를 거친다. 「하이마운틴 2단계」 는
+   * **한 번만 되짚는다** — 이름만 카탈로그를 거친다. 하이마운틴 2단계 는
    * 행에서 한 글자지만 시트에서는 **대표와 단계 둘**이다. 못 찾으면 목록이 선다 — **시트가
    * 안 열리는 것보다 낫다.**
    */
@@ -168,12 +168,12 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   const forms = choice?.items[0]?.forms ?? []
   /** 단계가 여럿일 때만 ②에 단계 줄이 선다 — 하나뿐이면 고를 것이 없다. */
   const tiers = choice !== null && choice.items.length > 1 ? choice.items : []
-  // 형태가 있으면 **고르기 전에는 저장할 수 없다** — 안 고르고 저장하면 그 행은 «어느 쪽인지
-  // 모르는 행» 이 되고, 그것은 칸을 더한 뜻을 없앤다.
+  // 형태가 있으면 **고르기 전에는 저장할 수 없다** — 안 고르고 저장하면 그 행은 **어느 쪽인지
+  // 모르는 행** 이 되고, 그것은 칸을 더한 뜻을 없앤다.
   const formMissing = forms.length > 0 && form === null
   /**
    * 단계를 고르기 전에도 **대표가 아는 것** — 한 대표 안의 단계들은 단위도
-   * 통화도 같다. 그래서 수량과 시세는 «무엇을 골랐나» 를 안 기다려도 된다.
+   * 통화도 같다. 그래서 수량과 시세는 무엇을 골랐나 를 안 기다려도 된다.
    */
   const scope = item ?? choice?.items[0] ?? null
 
@@ -192,7 +192,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   function selectChoice(next: SpendCatalogChoice): void {
     setChoice(next)
     setItem(next.items.length === 1 ? next.items[0] : null)
-    // 형태는 있어도 **기본값을 안 고른다** — 앱이 «경험치였겠지» 라고 정하면 그것이 추정이 된다.
+    // 형태는 있어도 **기본값을 안 고른다** — 앱이 **경험치였겠지** 라고 정하면 그것이 추정이 된다.
     setForm(null)
     setQuantity(1)
     props.onScrollKeyChange(next.label)
@@ -238,14 +238,14 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
 
       {choice === null && !editing ? (
         // **여기에 스크롤을 두지 않는다.** 시트 껍데기가 이미 `BottomSheetScrollView` 이고 높이도
-        // «내용만큼, 82% 를 상한으로» 다. 안쪽에 또 두면 중첩 스크롤이 되어 손가락이 어느 쪽을
-        // 미는지 갈리고, 무엇보다 **목록이 상한선에서 잘려** 「더 있는지」가 안 보였다.
+        // **내용만큼, 82% 를 상한으로** 다. 안쪽에 또 두면 중첩 스크롤이 되어 손가락이 어느 쪽을
+        // 미는지 갈리고, 무엇보다 **목록이 상한선에서 잘려** `더 있는지`가 안 보였다.
         <View className="gap-1">
           {groups.map((group) => (
             <View key={group.group} className="gap-1 pb-2">
               {/*
                 **안 열린 묶음은 지우지 않고 흐리게 둔다**(사용자 선택).
-                기간제 이벤트는 열릴 때만 있는 것이라 숨기면 «그런 것이 있었지» 를 기억할 자리가
+                기간제 이벤트는 열릴 때만 있는 것이라 숨기면 **그런 것이 있었지** 를 기억할 자리가
                 사라진다. 자리는 남기고 **못 고르게** 한다.
               */}
               <View className="flex-row items-center gap-1.5">
@@ -282,7 +282,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
           <CharacterRow characters={props.characters} selected={ocid} onSelect={setOcid} />
 
           {forms.length > 0 && (
-            // 형태는 **기본값을 안 고른다** — 앱이 «경험치였겠지» 라고 정하면 그것이 추정이 된다.
+            // 형태는 **기본값을 안 고른다** — 앱이 **경험치였겠지** 라고 정하면 그것이 추정이 된다.
             <FieldRow label="형태">
               <Segment options={forms} selected={form} onSelect={setForm} />
             </FieldRow>
@@ -304,7 +304,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
           {scope !== null && scope.maxQuantity !== 1 && (
             /*
              * 단위·상한은 **대표가 안다** — 단계를 고르기 전에도 선다. **상한이 1이면 안 세운다**
-             * : 오르내릴 자리가 없는 스테퍼는 «조절할 수 있다» 는 거짓말이다.
+             * : 오르내릴 자리가 없는 스테퍼는 **조절할 수 있다** 는 거짓말이다.
              */
             <FieldRow label="수량">
               <QuantityStepper
@@ -359,8 +359,8 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
             category: props.category,
             item: item?.name ?? null,
             form,
-            // 종류는 「아이템 구매」의 것이다 — 여기서는 `null` 이라
-            // «장비를 산 컨텐츠 지출» 같은 행이 생기지 않는다.
+            // 종류는 `아이템 구매`의 것이다 — 여기서는 `null` 이라
+            // **장비를 산 컨텐츠 지출** 같은 행이 생기지 않는다.
             itemKind: null,
             quantity,
             mesoAmount: currency === 'meso' ? amount : null,

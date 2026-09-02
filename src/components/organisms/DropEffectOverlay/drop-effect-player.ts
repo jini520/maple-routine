@@ -161,7 +161,7 @@ export function advanceDropEffect(
 }
 
 /**
- * 닫기 요청 — end 재생으로 넘어간다. **이미 닫는 중이면 즉시 끝낸다**(웹과 같은 «두 번 탭하면 건너뛴다»).
+ * 닫기 요청 — end 재생으로 넘어간다. **이미 닫는 중이면 즉시 끝낸다**(웹과 같은 두 번 탭하면 건너뛴다).
  */
 export function requestDropEffectClose(
   state: DropEffectState,
@@ -188,7 +188,7 @@ export function requestDropEffectClose(
  *
  * 2026-08-26 갤럭시 Z Flip3 실측 — 그 낭비가 **재생 첫머리의 불균등**으로 나왔다. 상태는 제때
  * 진행하는데 렌더가 밀려, frame 0 이 82ms 서 있고 frame 2 가 25ms 만에 지나갔다(기대는 둘 다 44ms).
- * 누적 시간은 여기서 일부러 뺀다 — 그것 때문에 매번 «달라졌다» 가 되면 거르는 의미가 없다.
+ * 누적 시간은 여기서 일부러 뺀다 — 그것 때문에 매번 달라졌다 가 되면 거르는 의미가 없다.
  */
 export function rendersDifferently(a: DropEffectState, b: DropEffectState): boolean {
   return (

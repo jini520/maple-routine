@@ -207,9 +207,9 @@ describe('주간 카드', () => {
 })
 
 // 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). 진행할 수 없는 항목의
-// «완료/n회/n층» 은 뜻이 없다 — 그 값은 게임이 준 스냅샷이지 이 캐릭터가 할 수 있다는 뜻이 아니다.
+// **완료/n회/n층** 은 뜻이 없다 — 그 값은 게임이 준 스냅샷이지 이 캐릭터가 할 수 있다는 뜻이 아니다.
 describe('진행 불가 배지', () => {
-  it('요구 레벨에 못 미치면 상태 배지 자리에 «진행 불가» 가 선다', async () => {
+  it('요구 레벨에 못 미치면 상태 배지 자리에 **진행 불가** 가 선다', async () => {
     const 미달 = await renderAtom(renderDailyContentCard(daily({ name: '몬스터파크', nowCount: 3, maxCount: 14 }), 104))
 
     expect(미달.queryByText('진행 불가')).not.toBeNull()

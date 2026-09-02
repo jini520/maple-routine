@@ -5,10 +5,10 @@
 //
 // 값 규칙(`summarizeAccount`·`buildSelectedCharacterViews`·`resolveRepresentative`)과 문구
 // (`formatRosterError`)는 **실물을 쓴다** — 여기서 베끼면 규칙이 두 벌이 된다(머리
-// «값 규칙의 자리»). 세우는 것은 경계 넷뿐이다: 계정 목록 조회 · 후보 목록 조회 · 로컬 캐시 ·
+// **값 규칙의 자리**). 세우는 것은 경계 넷뿐이다: 계정 목록 조회 · 후보 목록 조회 · 로컬 캐시 ·
 // 저장 액션.
 //
-// ── 끌기는 여기서 «흉내» 내지 않는다 ────────────────────────────────────────────────
+// ── 끌기는 여기서 **흉내** 내지 않는다 ────────────────────────────────────────────────
 //
 // 제스처는 네이티브가 인식하고 jest 는 레이아웃을 계산하지 않아, 끄는 동작 자체를 재현하면 우리가
 // 만든 가짜만 검사하게 된다. 그래서 순서의 계약은 두 자리로 나뉜다 — 값 규칙은
@@ -277,7 +277,7 @@ describe('두 층 — 위는 계정을 넘고 아래는 계정 하나다', () =>
 
   // ★ — 대기 자리에 **문구가 보인다.** 예전에는 `aria-label` 만 있어 화면에는
   // 마크 하나뿐이었고, 그 마크가 대로 **움직이지도 않았다**. 사용자 보고가
-  // 그 조합을 «진행중인지 알 수 없다» 로 반려했다(2026-08-18).
+  // 그 조합을 **진행중인지 알 수 없다** 로 반려했다(2026-08-18).
   it('대기 문구가 화면에 보인다 — 마크만으로는 무엇을 기다리는지 모른다', async () => {
     mockContentStore({ trackedOcids: ['a1'] })
     rosterHangingAccounts.add('account-b')
@@ -301,7 +301,7 @@ describe('두 층 — 위는 계정을 넘고 아래는 계정 하나다', () =>
     expect(namesIn(view, 'character-manage-selected')).toEqual(['낟낟'])
   })
 
-  // 「후보 목록 로딩」 정책 그대로 — 보여줄 것이 남아 있으면 지우지 않고 위에 배너를 얹는다
+  // `후보 목록 로딩` 정책 그대로 — 보여줄 것이 남아 있으면 지우지 않고 위에 배너를 얹는다
   // . 캐시 stub 이 네트워크보다 먼저 오므로 이쪽이 기본 분기다.
   it('후보가 도착한 뒤 실패하면 목록을 지우지 않고 스탈 배너를 얹는다', async () => {
     mockContentStore({ trackedOcids: [] })
@@ -320,7 +320,7 @@ describe('두 층 — 위는 계정을 넘고 아래는 계정 하나다', () =>
 // ★ — **콜드 캐시에서 위 층이 비던 결함.**
 //
 // 위 층과 대표 얼굴은 로컬 캐시(`getCachedCharacterBasic`)만 읽었는데, 프로필 채우기 effect 가
-// **miss 에도 `null` 을 넣어** 그 ocid 를 영영 다시 안 읽었다(«모른다» 를 «없다» 로 기억). 온보딩에서는
+// **miss 에도 `null` 을 넣어** 그 ocid 를 영영 다시 안 읽었다(**모른다** 를 **없다** 로 기억). 온보딩에서는
 // 그 effect 가 로스터의 `character/basic` 이 캐시를 쓰기 **전에** 돌아, 신규 설치 사용자에게만 —
 // 그리고 하필 가장 눈에 띄는 대표 캐릭터에서 — 얼굴이 '?' 로, 고른 카드가 빈칸으로 남았다
 // (안드로이드 실기기 2026-08-18).
@@ -339,7 +339,7 @@ describe('콜드 캐시 — 캐시가 비어도 위 층이 빈칸으로 남지 �
     ]
   })
 
-  it('대표 얼굴이 로스터 응답으로 채워진다 — 캐시가 비었다고 «?» 로 두지 않는다', async () => {
+  it('대표 얼굴이 로스터 응답으로 채워진다 — 캐시가 비었다고 **?** 로 두지 않는다', async () => {
     const view = await renderScreen()
 
     expect(view.queryByTestId('account-select-face-fallback-account-a')).toBeNull()
@@ -355,9 +355,9 @@ describe('콜드 캐시 — 캐시가 비어도 위 층이 빈칸으로 남지 �
     expect(textsIn(view.getByTestId('character-manage-selected'))).toContain('Lv.260 나이트로드')
   })
 
-  // 결정 1-1 — 로스터가 못 채우는 자리(지금 열지 않은 계정의 캐릭터)로 «재시도를 막지 않는다» 를
+  // 결정 1-1 — 로스터가 못 채우는 자리(지금 열지 않은 계정의 캐릭터)로 **재시도를 막지 않는다** 를
   // 따로 본다. 캐시가 **나중에** 차면 그때 그려져야 한다.
-  it('캐시가 나중에 차면 그때 채워진다 — miss 를 «없음» 으로 굳히지 않는다', async () => {
+  it('캐시가 나중에 차면 그때 채워진다 — miss 를 **없음** 으로 굳히지 않는다', async () => {
     mockContentStore({ trackedOcids: ['b1'] })
     let 캐시가찼다 = false
     mockedGetCachedBasic.mockImplementation(async (ocid: string) =>
@@ -375,7 +375,7 @@ describe('콜드 캐시 — 캐시가 비어도 위 층이 빈칸으로 남지 �
   })
 })
 
-describe('이동 — 선택은 «표시» 가 아니라 «이동» 이다', () => {
+describe('이동 — 선택은 **표시** 가 아니라 **이동** 이다', () => {
   it('후보 카드를 누르면 아래에서 사라지고 위 리스트 **끝**에 붙는다', async () => {
     mockContentStore({ trackedOcids: ['a1'] })
     const view = await renderScreen()
@@ -427,7 +427,7 @@ describe('이동 — 선택은 «표시» 가 아니라 «이동» 이다', () =
   })
 })
 
-describe('대표 — 별의 뜻이 «고름» 에서 «대표» 로 바뀌었다', () => {
+describe('대표 — 별의 뜻이 **고름** 에서 **대표** 로 바뀌었다', () => {
   it('대표가 없으면 아무 별도 채워지지 않고 흐려지지도 않는다', async () => {
     mockContentStore({ trackedOcids: ['a1', 'a2'] })
 
@@ -462,7 +462,7 @@ describe('대표 — 별의 뜻이 «고름» 에서 «대표» 로 바뀌었다
     expect(isRepresentative(view, '낟낟')).toBe(false)
   })
 
-  it('후보 카드에는 별이 없다 — 자리가 곧 «고름» 이다', async () => {
+  it('후보 카드에는 별이 없다 — 자리가 곧 **고름** 이다', async () => {
     mockContentStore({ trackedOcids: [] })
 
     const view = await renderScreen()
@@ -470,7 +470,7 @@ describe('대표 — 별의 뜻이 «고름» 에서 «대표» 로 바뀌었다
     expect(view.queryByLabelText('낟낟 대표 캐릭터')).toBeNull()
   })
 
-  it('대표를 뺀 자리는 «대표 없음» 이 된다', async () => {
+  it('대표를 뺀 자리는 **대표 없음** 이 된다', async () => {
     mockContentStore({ trackedOcids: ['a1', 'a2'] })
     mockedGetRepresentative.mockResolvedValue('a1')
     const view = await renderScreen()
@@ -548,7 +548,7 @@ describe('순서 — 놓은 자리가 배열 순서다', () => {
     expect(actionLabels(handle(view, '낟낟'))).toEqual([])
   })
 
-  //  의 «멤버십으로만 판정하라» 가 뒤집힌 자리. 집합은
+  //  의 **멤버십으로만 판정하라** 가 뒤집힌 자리. 집합은
   // 그대로이고 순서만 달라진다.
   it('순서만 바꿔도 저장이 활성이 된다', async () => {
     mockContentStore({ trackedOcids: ['a1', 'a2'] })
@@ -610,7 +610,7 @@ describe('계정 전환 TTL', () => {
     expect(accountsOf()).toEqual(['account-a', 'account-b', 'account-a'])
   })
 
-  it('「다시 시도」는 TTL 과 무관하게 그 계정을 다시 조회한다', async () => {
+  it('`다시 시도`는 TTL 과 무관하게 그 계정을 다시 조회한다', async () => {
     rosterFailureByAccount['account-a'] = new Error('boom')
     const view = await renderScreen()
     delete rosterFailureByAccount['account-a']
@@ -638,7 +638,7 @@ describe('계정 전환 TTL', () => {
     }
   })
 
-  // 결정 6: «방금 확인함» 류의 표시를 두지 않는다 — 사용자가 아니라 구현의 사정이다.
+  // 결정 6: **방금 확인함** 류의 표시를 두지 않는다 — 사용자가 아니라 구현의 사정이다.
   it('TTL 을 알리는 표시가 화면에 없다', async () => {
     const view = await renderScreen()
 
@@ -673,13 +673,13 @@ describe('못 고르는 계정', () => {
     expect(mockNoticeApiKeyIssue).toHaveBeenCalledWith('invalid')
   })
 
-  it('후보를 전부 골랐으면 «모두 조회할 수 없어요» 가 아니라 빈 목록이다', async () => {
+  it('후보를 전부 골랐으면 **모두 조회할 수 없어요** 가 아니라 빈 목록이다', async () => {
     mockContentStore({ trackedOcids: ['a1', 'a2', 'a3'] })
 
     const view = await renderScreen()
 
     expect(view.getByText('표시할 캐릭터가 없어요')).toBeTruthy()
-    // 라벨 오른쪽의 «n개 중 m개 표시» 는 뺐다(사용자 지정 2026-08-17).
+    // 라벨 오른쪽의 **n개 중 m개 표시** 는 뺐다(사용자 지정 2026-08-17).
     expect(view.queryByText(/개 중 .*개 표시/)).toBeNull()
   })
 })
@@ -750,7 +750,7 @@ describe('저장', () => {
     expect(isSaveDisabled(view)).toBe(false)
   })
 
-  //  의 «멤버십으로만 판정하라» 가 뒤집히는 자리다 — 순서가 사용자 것이 되면서
+  //  의 **멤버십으로만 판정하라** 가 뒤집히는 자리다 — 순서가 사용자 것이 되면서
   // 그 근거(그리드 토글이 배열 끝에 append 해 순서가 의미 없이 흔들린다)가 사라졌다.
   it('집합이 같아도 순서가 달라지면 활성이다', async () => {
     mockContentStore({ trackedOcids: ['a1', 'a2'] })
@@ -841,7 +841,7 @@ describe('저장', () => {
   })
 
   // 사용자 지정 2026-08-17 — 뒤로가기가 둘(헤더 `←` · OS)인 화면에서 셋째 출구는 중복이다.
-  it('「닫기」 버튼은 없다 — 출구는 뒤로가기다', async () => {
+  it('`닫기` 버튼은 없다 — 출구는 뒤로가기다', async () => {
     const view = await renderScreen()
 
     expect(view.queryByText('닫기')).toBeNull()
@@ -860,7 +860,7 @@ describe('화면 골격', () => {
     expect(view.getByTestId('character-manage-action-bar')).toBeTruthy()
   })
 
-  // 사용자 지정 2026-08-17 — 「더 높은 레벨이 존재하는 ID 가 먼저」. 응답 순서(넥슨이 정한다)를
+  // 사용자 지정 2026-08-17 — `더 높은 레벨이 존재하는 ID 가 먼저`. 응답 순서(넥슨이 정한다)를
   // 그대로 쓰면 주력 ID 가 뒤에 설 수 있고, 화면은 목록의 첫 항목을 연다.
   it('메이플 ID 차례는 대표 레벨 내림차순이다 — 응답 순서를 따르지 않는다', async () => {
     // 응답을 뒤집어 준다: 계정B(대표 275) 가 먼저, 계정A(대표 294) 가 나중.

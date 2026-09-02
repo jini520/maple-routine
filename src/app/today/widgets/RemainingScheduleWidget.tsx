@@ -13,13 +13,13 @@
  * ## 세그먼트는 앱이 이미 쓰는 것이다
  *
  * `molecules/Segment`(— 가계부 시트가 통화·형태를 고르는 그 조각)를 **한 줄도 안
- * 고치고** 쓴다. 여기서만 다른 세그먼트를 만들면 앱에 «고르는 축» 이 두 벌이 된다.
+ * 고치고** 쓴다. 여기서만 다른 세그먼트를 만들면 앱에 고르는 축 이 두 벌이 된다.
  *
  * 그 조각이 고른 칸을 `primary-tint` 로 칠하는 것은 ** 의 금지에 안 걸린다** — 그
- * 규칙의 근거가 «타일 하나에 강조색이 **캐릭터 수만큼** 반복된다» 였고, 세그먼트는 머리글에 하나뿐이다.
+ * 규칙의 근거가 타일 하나에 강조색이 **캐릭터 수만큼** 반복된다 였고, 세그먼트는 머리글에 하나뿐이다.
  * 수치는 여전히 굵기로만 강조한다.
  *
- * ## 수치는 「갈래 N개」다
+ * ## 수치는 갈래 N개다
  *
  * ```
  * 일간   야간비행                      퀘스트 4개
@@ -29,18 +29,18 @@
  *
  * **값이 있는 갈래가 자기 이름과 함께 선다** — 탭마다 다른 모양이 없다(사용자 지정). 탭 이름만으로
  * 뜻이 닫히는 일간 · 월간에도 라벨을 두는 대신 규칙이 하나로 줄고, 열 표가 열로 갈랐던
- * «컨텐츠 / 보스» 묶음이 여기서는 **행 안**에 남는다.
+ * 컨텐츠 / 보스 묶음이 여기서는 **행 안**에 남는다.
  *
- * ## 0 은 언제나 `CLEAR` 다 — 「완료했다」가 아니다
+ * ## 0 은 언제나 `CLEAR` 다 — 완료했다가 아니다
  *
  * 그 탭의 남은 수가 0 이면 수치 자리에 `CLEAR` 하나. **대상이 애초에 없던 캐릭터도 같은 배지**를
  * 받는다(사용자 확정 — 레벨 미달로 보스가 안 뜨는 경우). 표기를 가르지 않기로 했으므로
- * **이 배지의 뜻은 «이 주기에 지금 할 게 없다»** 이고, 그래서 뷰모델이 분모를 셀 필요가 없다.
+ * **이 배지의 뜻은 **이 주기에 지금 할 게 없다**** 이고, 그래서 뷰모델이 분모를 셀 필요가 없다.
  *
  * ## 목록은 캐릭터 전부이고, **탭마다 다시 선다**
  *
- * 그 탭을 끝낸 캐릭터도 자리를 지킨다 — 사람 수가 늘 같아야 «어제와 같은 화면» 이고, 이 타일이
- * `4×auto` 라 목록이 줄면 **아래 위젯 전부가 하루 동안 따라 움직인다**. 「외 N명」 접기도 상한도 없다.
+ * 그 탭을 끝낸 캐릭터도 자리를 지킨다 — 사람 수가 늘 같아야 어제와 같은 화면 이고, 이 타일이
+ * `4×auto` 라 목록이 줄면 **아래 위젯 전부가 하루 동안 따라 움직인다**. 외 N명 접기도 상한도 없다.
  *
  * **순서는 보고 있는 주기가 정한다**(사용자 지정, 정정 1):
  *
@@ -48,7 +48,7 @@
  * ① 동기화 실패는 언제나 맨 아래   ② 그 주기에 남은 개수 많은 순   ③ 동수면 캐릭터 관리 순서
  * ```
  *
- * 뷰모델은 **관리 순서까지만** 세워 준다 — 「남은 개수 많은 순」은 «어느 주기의» 개수인지가 정해져야
+ * 뷰모델은 **관리 순서까지만** 세워 준다 — 남은 개수 많은 순은 어느 주기의 개수인지가 정해져야
  * 셀 수 있고 그 주기는 이 위젯의 탭이다. 동수의 기준인 관리 순서를 그대로 쓰려면 정렬이 한 번만
  * 일어나야 해서, 그 한 번을 여기서 한다.
  */
@@ -82,7 +82,7 @@ type Cycle = (typeof CYCLE_LABELS)[number]
 /**
  * 한 주기에 남은 것 — **뷰모델의 배열을 고를 뿐 새 판정을 하지 않는다**.
  *
- * 「검마」라는 이름은 화면에서 사라졌지만 그 전제는 그대로다 — 월간 보스가 하나뿐이라 월간 탭이
+ * 검마라는 이름은 화면에서 사라졌지만 그 전제는 그대로다 — 월간 보스가 하나뿐이라 월간 탭이
  * 성립한다. 둘이 되면 그때 다시 정한다(태도).
  */
 interface CycleItems {
@@ -107,7 +107,7 @@ function itemCount(items: CycleItems): number {
  * 것은 정렬의 안정성에 기대지 않기 위해서다(뷰모델의 `orderByTracked` 와 같은 태도).
  *
  * 실패한 캐릭터는 남은 개수를 **모르는** 것이라 개수 비교에 참여시키지 않는다 — 위로 올리면
- * «제일 밀린 캐릭터» 자리를 모르는 값이 거짓으로 차지한다(가 정한 태도).
+ * 제일 밀린 캐릭터 자리를 모르는 값이 거짓으로 차지한다(가 정한 태도).
  */
 function orderForCycle(rows: readonly ScheduleRowView[], cycle: Cycle): ScheduleRowView[] {
   return rows
@@ -127,7 +127,7 @@ function orderForCycle(rows: readonly ScheduleRowView[], cycle: Cycle): Schedule
 const VALUE_CLASS = 'text-right text-[11.5px] font-extrabold leading-tight text-text'
 const LABEL_CLASS = 'text-[11.5px] leading-tight text-text-muted'
 
-/** 수치 한 덩이 — 「퀘스트 3개」·「보스 1개」. */
+/** 수치 한 덩이 — 퀘스트 3개·보스 1개. */
 function Amount(props: { label: string; count: number }): React.JSX.Element {
   return (
     <View className="flex-row items-center gap-0.5">
@@ -145,7 +145,7 @@ function Amount(props: { label: string; count: number }): React.JSX.Element {
 }
 
 /**
- * **갈래 라벨은 어느 탭에서나 붙는다**(사용자 지정) — 일간은 「퀘스트 N개」, 월간은 「보스 N개」.
+ * **갈래 라벨은 어느 탭에서나 붙는다**(사용자 지정) — 일간은 퀘스트 N개, 월간은 보스 N개.
  *
  * 탭 이름만으로 뜻이 닫히는 자리에도 라벨을 두는 대신, 규칙이 **하나로 준다**: 값이 있는 갈래가
  * 자기 이름과 함께 선다. 그래서 탭마다 다른 모양을 만들 분기가 없다.
@@ -235,8 +235,8 @@ function BossChip(props: { boss: RemainingBossView }): React.JSX.Element {
 }
 
 /**
- * 이름표는 **갈래가 둘일 때만**(주간) 붙는다 — 여기서 라벨이 하는 일은 «퀘스트 칩과 보스 칩을
- * 가르는 것» 이라, 그릴 그룹이 하나뿐이면 할 일이 없다(접힘은 갈래마다 수치가 붙어 사정이 다르다).
+ * 이름표는 **갈래가 둘일 때만**(주간) 붙는다 — 여기서 라벨이 하는 일은 퀘스트 칩과 보스 칩을
+ * 가르는 것 이라, 그릴 그룹이 하나뿐이면 할 일이 없다(접힘은 갈래마다 수치가 붙어 사정이 다르다).
  */
 function DetailGroup(props: { label: string | null; children: React.ReactNode }): React.JSX.Element {
   return (
@@ -254,7 +254,7 @@ function DetailGroup(props: { label: string | null; children: React.ReactNode })
 /**
  * 펼친 본문 — **그 탭의 항목을 이름으로 낱개로** 센다.
  *
- * **자르지 않는다.** 일퀘가 여덟이면 여덟을 다 적는다 — 「외 3개」로 접으면 펼친 이유가 사라진다.
+ * **자르지 않는다.** 일퀘가 여덟이면 여덟을 다 적는다 — 외 3개로 접으면 펼친 이유가 사라진다.
  * 늘어난 높이는 `resolveWidgetPositions` 가 아래 타일을 밀어 흡수한다(그것이 `h: 'auto'` 를 둔 이유다).
  */
 function ScheduleDetail(props: { items: CycleItems; cycle: Cycle }): React.JSX.Element {
@@ -266,7 +266,7 @@ function ScheduleDetail(props: { items: CycleItems; cycle: Cycle }): React.JSX.E
       {items.quests.length > 0 && (
         <DetailGroup label={labelled ? '퀘스트' : null}>
           {/* **키가 이름이면 안 된다** — `[주간 퀘스트] 타락한 세계수 주간 임무` 와 `… 정화에 대한
-              보답` 이 둘 다 「타락한 세계수」로 접혀 같은 키가 둘이 된다. */}
+              보답` 이 둘 다 `타락한 세계수`로 접혀 같은 키가 둘이 된다. */}
           {items.quests.map((name, index) => (
             <NameChip key={`${name}-${String(index)}`} name={name} />
           ))}
@@ -339,8 +339,8 @@ function ScheduleRow(props: {
 export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Element {
   /**
    * 보고 있는 주기 — **저장소에 안 쓴다**. 앱을 다시 켜면 언제나 일간이고,
-   * **요일에 따라 기본 탭을 바꾸지 않는다**: 첫 화면이 날마다 다른 얼굴로 열리면 «어제와 같은
-   * 화면» 이 깨지고 그 규칙을 사람이 배워야 한다.
+   * **요일에 따라 기본 탭을 바꾸지 않는다**: 첫 화면이 날마다 다른 얼굴로 열리면 어제와 같은
+   * 화면 이 깨지고 그 규칙을 사람이 배워야 한다.
    */
   const [cycle, setCycle] = useState<Cycle>('일간')
 
@@ -363,7 +363,7 @@ export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
             selected={cycle}
             onSelect={(value) => {
               setCycle(value)
-              // 접힘이 「이 주기에 N개」인데 펼침이 다른 주기의 이름을 들면 두 층이 어긋난다.
+              // 접힘이 `이 주기에 N개`인데 펼침이 다른 주기의 이름을 들면 두 층이 어긋난다.
               setExpandedOcid(null)
             }}
           />
@@ -380,8 +380,8 @@ export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
             cycle={cycle}
             first={index === 0}
             expanded={expandedOcid === row.ocid}
-            // 열린 행을 다시 누르면 닫는다(사용자 지정) — 닫는 방법이 셰브런뿐이면 «어디를 눌러야
-            // 닫히나» 를 사용자가 배워야 한다.
+            // 열린 행을 다시 누르면 닫는다(사용자 지정) — 닫는 방법이 셰브런뿐이면 **어디를 눌러야
+            // 닫히나** 를 사용자가 배워야 한다.
             onToggle={() => setExpandedOcid((current) => (current === row.ocid ? null : row.ocid))}
           />
         ))

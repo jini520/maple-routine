@@ -4,7 +4,7 @@
 //
 // 웹은 `translate(..px, ..px) scale(s)` 문자열을 만들어 `transformOrigin: '0 0'` 과 짝으로 썼다
 // (그 함수를 옮겨 온 사본은 아무도 안 불러 2026-09-03 에 지웠다). RN 에도 `transform`·`transformOrigin` 이 있지만, 이 저장소는 이번 전환에서
-// **퍼센트·transformOrigin 같은 «되는지 확실치 않은» 스타일에 기대면 조용히 안 그려지는** 사례를
+// **퍼센트·transformOrigin 같은 되는지 확실치 않은 스타일에 기대면 조용히 안 그려지는** 사례를
 // 반복해서 겪었다(시트 스킨 3종·NativeWind 조건부 transform). 그래서 같은 결과를 **레이아웃 값**
 // (`left`·`top`·`width`·`height`)으로 낸다 — 계산은 곱셈 두 번이고, 안 그려질 자리가 없다.
 //
@@ -87,7 +87,7 @@ function centerDropFrame(scale: number, bitmap: FrameBitmapSize | null): FramePl
 
 
 /**
- * 스프라이트 한 장 — «어느 그림을 어디에» 의 최소 단위.
+ * 스프라이트 한 장 — 어느 그림을 어디에 의 최소 단위.
  *
  * 이 목록이 필요한 이유는 이다 — 재생이 `source` 를 갈아끼우는 대신 **전 프레임을
  * 마운트해 두고 `opacity` 로 한 장만 켜기** 때문에, 켜기 전에 39+16 장의 자리를 미리 다 알아야 한다.

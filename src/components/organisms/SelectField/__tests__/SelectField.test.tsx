@@ -71,7 +71,7 @@ describe('SelectField', () => {
   })
 
   // `null` 도 키가 되어야 한다 — 목록의 첫 칸이 대개 그것이다.
-  it('«안 고름» 도 고를 수 있다', async () => {
+  it('**안 고름** 도 고를 수 있다', async () => {
     const { view, onSelect } = await 그리기('ocid-1')
     await 누르기(view, 'pick-trigger')
 

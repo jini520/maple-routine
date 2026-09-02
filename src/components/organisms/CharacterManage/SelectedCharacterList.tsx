@@ -1,4 +1,4 @@
-// 「선택됨」 층의 행들 — **순서를 끌어서 바꾸는 자리**.
+// `선택됨` 층의 행들 — **순서를 끌어서 바꾸는 자리**.
 //
 // 카드 자체는 `CharacterRow` 한 벌 그대로다(결정 2). 이 파일이 더하는 것은 셋뿐이다 —
 // 왼쪽 핸들에 붙는 끌기 제스처 · 끄는 동안의 자동 스크롤 · 그 둘을 못 쓰는 사람을 위한 접근성 액션.
@@ -7,11 +7,11 @@
 //
 // 행 전체를 끌기 시작점으로 두면 **페이지 세로 스크롤과 다툰다** — 목록을 굴리려던 손가락이 행을
 // 집어 올린다. 그래서 제스처는 핸들을 감싼 상자에만 붙고, 카드의 나머지는 아무 제스처도 갖지
-// 않는다(아래 층 후보 카드는 «누르면 이동» 이라 애초에 끌 일이 없다 — 그쪽에는 핸들도 없다).
+// 않는다(아래 층 후보 카드는 **누르면 이동** 이라 애초에 끌 일이 없다 — 그쪽에는 핸들도 없다).
 //
 // ── 배열은 놓을 때 한 번만 바뀐다 ───────────────────────────────────────────────────
 //
-// 끄는 동안 화면은 «이렇게 될 것» 을 미리 그리지만(끌리는 행은 손가락을, 나머지는 비켜 준 자리를)
+// 끄는 동안 화면은 **이렇게 될 것** 을 미리 그리지만(끌리는 행은 손가락을, 나머지는 비켜 준 자리를)
 // 실제 배열은 손을 뗄 때 `onMove` 한 번으로 바뀐다. 도중에 취소되면 아무 일도 없었던 것이 되고,
 // 저장 활성 판정이 끌리는 내내 깜빡이지도 않는다.
 //
@@ -24,7 +24,7 @@
 //
 // 그래서 제스처에 물리는 함수는 **한 번 만들고 안 바꾼다**(`useMemo`). 끄는 도중에도 이 컴포넌트는
 // 다시 그려지는데(드롭 위치가 넘어갈 때) 그때마다 새 제스처를 붙이면 끌던 손가락을 놓칠 수 있다.
-// 대신 그 함수들이 읽는 «지금 값» 은 `latestRef` 가 갖는다 — 오래된 `onMove` 를 붙들고 있으면
+// 대신 그 함수들이 읽는 **지금 값** 은 `latestRef` 가 갖는다 — 오래된 `onMove` 를 붙들고 있으면
 // 놓는 순간 옛 목록으로 되돌린다.
 //
 // ── 칸 높이는 한 번만 잰다 ──────────────────────────────────────────────────────────
@@ -110,7 +110,7 @@ export function SelectedCharacterList(props: SelectedCharacterListProps): React.
     topPx: insets.top,
     bottomPx: windowHeightPx - insets.bottom,
   })
-  // deps 를 두지 않는다 — «매 렌더 뒤 최신으로» 가 이 effect 의 전부이고, 목록에 얹히는 값이
+  // deps 를 두지 않는다 — **매 렌더 뒤 최신으로** 가 이 effect 의 전부이고, 목록에 얹히는 값이
   // 하나 늘 때마다 deps 를 고쳐야 하는 자리를 만들면 빠뜨린 값이 조용히 낡는다.
   useEffect(() => {
     latestRef.current = {
@@ -276,7 +276,7 @@ function SelectedRow(props: SelectedRowProps): React.JSX.Element {
   const pan = useMemo(
     () =>
       Gesture.Pan()
-        // 위 파일 머리 「제스처 콜백은 JS 스레드에서 돈다」.
+        // 위 파일 머리 `제스처 콜백은 JS 스레드에서 돈다`.
         .runOnJS(true)
         // 세로로 움직여야 끌기다 — 그 전에는 아래의 `ScrollView` 가 손가락을 갖는다.
         .activeOffsetY([-ACTIVATE_OFFSET_PX, ACTIVATE_OFFSET_PX])
@@ -288,7 +288,7 @@ function SelectedRow(props: SelectedRowProps): React.JSX.Element {
     [drag, index],
   )
 
-  // **할 수 있는 것만 준다** — 첫 행에 「위로 옮기기」를 주면 눌러도 아무 일이 없다.
+  // **할 수 있는 것만 준다** — 첫 행에 `위로 옮기기`를 주면 눌러도 아무 일이 없다.
   const reorderActions = [
     ...(index > 0 ? [{ name: MOVE_UP, label: '위로 옮기기' }] : []),
     ...(index < count - 1 ? [{ name: MOVE_DOWN, label: '아래로 옮기기' }] : []),
@@ -306,7 +306,7 @@ function SelectedRow(props: SelectedRowProps): React.JSX.Element {
         leading={
           <GestureDetector gesture={pan}>
             {/* 끌기와 같은 결과를 내는 **화면 밖 경로** — 스크린리더가 이
-                핸들에 서면 로터에 「위로/아래로 옮기기」가 뜬다. 두 경로가 `onMove` 하나를 부른다. */}
+                핸들에 서면 로터에 `위로/아래로 옮기기`가 뜬다. 두 경로가 `onMove` 하나를 부른다. */}
             <View
               accessible
               accessibilityLabel={`${view.name} 순서 변경`}

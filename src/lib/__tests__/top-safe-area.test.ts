@@ -19,7 +19,7 @@ describe(' — 안드로이드 상단 안전영역에는 하한이 있다', () =
     expect(ANDROID_TOP_SAFE_AREA_MIN_PX).toBe(48)
   })
 
-  // 이 정정을 낳은 관측 — 실기기에서 «여백이 부족» 했고, 그 자리의 인셋이 31.3 이었다.
+  // 이 정정을 낳은 관측 — 실기기에서 **여백이 부족** 했고, 그 자리의 인셋이 31.3 이었다.
   it('안드로이드에서 인셋이 하한보다 얇으면 하한을 쓴다 (31.3 → 48)', () => {
     expect(resolveTopSafeAreaPx({ insetTopPx: 안드로이드_인셋, platform: 'android' })).toBe(48)
   })

@@ -108,15 +108,15 @@ export function BossManageScreen(): React.JSX.Element {
     removeManualBoss,
     setManualBossDifficulty,
     // **탭은 여기 없다** — 스케줄러가 한 목록이 되면서 이 화면의 탭도 함께
-    // 걷혔다. 와(«승계가 아니라 공유»)가 폐기된 자리다.
+    // 걷혔다. 와(**승계가 아니라 공유**)가 폐기된 자리다.
     // : 선택 캐릭터는 스케줄러와 공유한다 — 두 화면이 갈라지면 안 된다.
   } = useBossSchedulerStore()
   // 선택은 화면·스토어가 아니라 **여기 한 벌**이다.
   const { selectedOcid, select } = useCharacterSelectionStore()
   const { mode } = useTrackingModeStore()
-  // : 스위치가 뒤집혔다 — 「등록된 보스만 보기」(기본 켜짐) → 「모든 보스 보기」
-  // (기본 꺼짐). **표시 결과는 안 바뀐다**(기본은 여전히 등록된 보스만). 켜진 스위치가 «거른다» 를
-  // 뜻하면 «끄면 더 보인다» 가 되어 방향이 뒤집혀 읽힌다.
+  // : 스위치가 뒤집혔다 — `등록된 보스만 보기`(기본 켜짐) → `모든 보스 보기`
+  // (기본 꺼짐). **표시 결과는 안 바뀐다**(기본은 여전히 등록된 보스만). 켜진 스위치가 **거른다** 를
+  // 뜻하면 **끄면 더 보인다** 가 되어 방향이 뒤집혀 읽힌다.
   const [showAllBosses, setShowAllBosses] = useState(false)
   // 자동 모드에서 행마다 "어느 난이도의 파티 인원을 편집 중인지"를 담는 화면 전용 상태 —
   // 멤버십이 아니므로 저장하지 않는다(수동 모드의 난이도 선택은 멤버십 그 자체라 이걸 안 쓴다).
@@ -129,7 +129,7 @@ export function BossManageScreen(): React.JSX.Element {
   }, [])
 
   // 화면 넷이 **같은 규칙**으로 고른다 — 선택만 합치고 폴백을 화면마다 두면
-  // «공유했는데 화면마다 다른 캐릭터» 가 다시 생긴다.
+  // **공유했는데 화면마다 다른 캐릭터** 가 다시 생긴다.
   const selected = resolveSelectedCharacter(selectedOcid, characters)
 
   // : 링 없는 초상화 레일 — 이름과 레벨만 싣는다(`rings: []`).
@@ -178,8 +178,8 @@ export function BossManageScreen(): React.JSX.Element {
   // 보여준다. 월드를 모르는 구버전 캐시는 비-챌린저스로 취급한다 — 보스 스케줄러 화면의 시즌
   // 배지가 쓰는 판정과 **같은 함수**여야 두 화면이 갈라지지 않는다.
   const showsSeasonBosses = selected?.world !== undefined && isChallengersWorld(selected.world)
-  // **무리 둘이고 월간이 위다** — 스케줄러 목록과 같은 순서여야 «보는 화면과
-  // 편집 화면이 같은 목록» 이 성립한다(그 순서의 출처는 `displayed-bosses` 의 `BOSS_SECTION_ORDER`).
+  // **무리 둘이고 월간이 위다** — 스케줄러 목록과 같은 순서여야 **보는 화면과
+  // 편집 화면이 같은 목록** 이 성립한다(그 순서의 출처는 `displayed-bosses` 의 `BOSS_SECTION_ORDER`).
   const allSections = BOSS_SECTION_ORDER.map((cycle) => ({
     cycle,
     entries:
@@ -195,7 +195,7 @@ export function BossManageScreen(): React.JSX.Element {
   // 이 판정이 내는 목록은 전과 한 글자도 다르지 않다.
   //
   // **판정은 무리별이 아니라 목록 전체로 한다** — `registeredDifficultyByBoss.size` 는 두 무리를
-  // 합쳐 센 값이라, 검마만 등록한 캐릭터의 주간 무리가 «등록이 0이니 전체 목록» 으로 부풀지 않는다.
+  // 합쳐 센 값이라, 검마만 등록한 캐릭터의 주간 무리가 **등록이 0이니 전체 목록** 으로 부풀지 않는다.
   const showsRegisteredOnly =
     mode === 'auto' && !showAllBosses && registeredDifficultyByBoss.size > 0
   const visibleSections = allSections
@@ -206,7 +206,7 @@ export function BossManageScreen(): React.JSX.Element {
         : section.entries,
     }))
     // 무리가 비면 헤더도 안 선다. 스케줄러와 달리 여기서는 예외가 없다 —
-    // 「주간」 헤더가 싣는 `n/12` 는 **수동 모드에서 고른 개수**라, 고를 행이 하나도 없으면 그
+    // `주간` 헤더가 싣는 `n/12` 는 **수동 모드에서 고른 개수**라, 고를 행이 하나도 없으면 그
     // 수치를 보여 줄 이유도 없다(스케줄러 쪽은 게임이 세는 처치 수라 목록과 무관하다).
     .filter((section) => section.entries.length > 0)
 
@@ -293,8 +293,8 @@ export function BossManageScreen(): React.JSX.Element {
               탭이라 pop 할 스택이 없고, 뒤로 가는 일은 하단바가 진다. 같은 이유로
               `hasTabBar` 도 기본값(참)으로 돌아왔다 — 이제 바가 이 화면 아래에 뜬다.
 
-              줄이 제목 하나뿐이어도 `PageHeaderTitleRow` 를 쓴다(정정 1) — 그 최소 높이가 곧 «옆
-              탭과 같은 선» 이고, 여기서 그것을 빼면 보스 스케줄러와 2px 어긋난다. */}
+              줄이 제목 하나뿐이어도 `PageHeaderTitleRow` 를 쓴다(정정 1) — 그 최소 높이가 곧 **옆
+              탭과 같은 선** 이고, 여기서 그것을 빼면 보스 스케줄러와 2px 어긋난다. */}
           <PageHeaderTitleRow>
             <Text className="text-lg font-semibold text-text">보스 관리</Text>
           </PageHeaderTitleRow>
@@ -319,7 +319,7 @@ export function BossManageScreen(): React.JSX.Element {
                   파티 인원만 설정할 수 있어요")은 으로 사라졌다 — 화면이 이미
                   그것을 보여 준다(체크가 없고 스테퍼만 있다). 설명은 기능 안내가 계속 진다. */}
               {/*: **주간/월간 탭이 여기 있었다.** 스케줄러와 함께 걷혔고,
-                  탭에만 매달려 있던 `n/12` 카운터는 「주간」 섹션 헤더로 내려갔다(결정 3). */}
+                  탭에만 매달려 있던 `n/12` 카운터는 `주간` 섹션 헤더로 내려갔다(결정 3). */}
 
               {mode === 'auto' && (
                 <View className="flex-row items-center justify-between gap-3">

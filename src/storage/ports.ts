@@ -22,8 +22,8 @@ export interface PreferencesPort {
   remove(key: string): Promise<void>
   /**
    * 저장된 전체 키. **선택 사항이 아니다** — `storage/cache-data.ts` 가 이 목록을 훑어 캐시 삭제
-   * 범위와 용량을 계산한다. 빠지면 설정의 「캐시 삭제」·「계정 데이터
-   * 삭제」가 죽는다.
+   * 범위와 용량을 계산한다. 빠지면 설정의 캐시 삭제·계정 데이터
+   * 삭제가 죽는다.
    */
   keys(): Promise<string[]>
 }

@@ -1,5 +1,5 @@
 /**
- * 「사냥」 수동 입력 폼. **획득 메소를 사람이 친다.**
+ * 사냥 수동 입력 폼. **획득 메소를 사람이 친다.**
  *
  * 계산기(`HuntCalculatorForm`)는 사냥터 하나에 머무는 것을 전제하고 그 사냥터가 참조표 408개 안에
  * 있어야 한다. 그 밖의 사냥은 앱이 셀 근거가 없어 여기서 받는다. 그래서 지역·사냥터·사냥 효율·
@@ -98,7 +98,7 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
             pointAmount: null,
             pointPer100mMeso: null,
             cashAmount: null,
-            // 수량은 「기타」만 쓴다.
+            // 수량은 `기타`만 쓴다.
             quantity: null,
             hunt: { mode: 'manual', typedMeso, fragments, fragmentPrice },
             memo: null,

@@ -16,7 +16,7 @@ export interface HuntingGround {
   /** 맵에 한 번에 뜨는 몬스터 마릿수. */
   readonly mobs: number
   /**
-   * 몬스터 레벨. **배열인 이유**는 원 자료가 「lv.200-201」(붙은 둘)과 「lv.217,219」(떨어진 둘)를
+   * 몬스터 레벨. **배열인 이유**는 원 자료가 lv.200-201(붙은 둘)과 lv.217,219(떨어진 둘)를
    * 둘 다 쓰기 때문이다 — 한 값으로 접으면 그 구분이 사라진다. 셋 이상인 맵은 없다.
    */
   readonly levels: readonly number[]
@@ -26,7 +26,7 @@ export interface HuntingRegion {
   /** `assets/maps/icons/` 의 기존 지역 슬러그와 **같은 글자**다. */
   readonly slug: string
   readonly name: string
-  /** 「아케인 리버」·「그란디스」 — 사용자가 나눈 묶음이다. */
+  /** 아케인 리버·그란디스 — 사용자가 나눈 묶음이다. */
   readonly group: string
   readonly forceType: ForceType
   /** 지역이 덮는 레벨 범위. **캐릭터 레벨 ±20 과 겹치는지**를 이 둘로 잰다(결정 6). */

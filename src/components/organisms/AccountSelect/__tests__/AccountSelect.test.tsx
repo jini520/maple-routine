@@ -1,5 +1,5 @@
-// 이 앱이 **처음으로 직접 만드는 여는 목록**이라 테스트가 지키는 것도 «값이
-// 잘 나오는가» 보다 **«무엇을 두지 않기로 했는가»** 쪽이 많다 — 스크림 없음 · «명» 없음 ·
+// 이 앱이 **처음으로 직접 만드는 여는 목록**이라 테스트가 지키는 것도 **값이
+// 잘 나오는가** 보다 **무엇을 두지 않기로 했는가** 쪽이 많다 — 스크림 없음 · **명** 없음 ·
 // 지시받지 않은 문구 없음.
 //
 // 값 규칙(대표 · 월드 최대 둘)은 step 3 의 `summarizeAccount` 가 갖는다. 그래서 픽스처를 손으로
@@ -58,7 +58,7 @@ async function 열어서(overrides: Partial<Props> = {}): Promise<ReturnType<typ
   return rendered
 }
 
-/** 트리에서 배경색을 전부 모은다 — «어딘가에 스크림이 칠해져 있지 않은가» 를 묻는 용도. */
+/** 트리에서 배경색을 전부 모은다 — 어딘가에 스크림이 칠해져 있지 않은가 를 묻는 용도. */
 function backgroundColors(node: unknown): unknown[] {
   if (Array.isArray(node)) return node.flatMap(backgroundColors)
   if (node === null || typeof node !== 'object') return []
@@ -136,13 +136,13 @@ describe('AccountSelect — 열린 목록', () => {
     )
   })
 
-  it('캐릭터를 세는 단위가 «개» 다 — «명» 은 사람을 센다(결정 8)', async () => {
+  it('캐릭터를 세는 단위가 **개** 다 — **명** 은 사람을 센다(결정 8)', async () => {
     const { queryByText } = await 열어서()
 
     expect(queryByText(/\d+명/)).toBeNull()
   })
 
-  it('지시받지 않은 문구를 붙이지 않는다 — «선택 n개»·«방금 확인함» 이 없다', async () => {
+  it('지시받지 않은 문구를 붙이지 않는다 — **선택 n개**·**방금 확인함** 이 없다', async () => {
     const { queryByText } = await 열어서()
 
     expect(queryByText(/선택\s*\d+개/)).toBeNull()

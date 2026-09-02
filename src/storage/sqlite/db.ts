@@ -16,30 +16,30 @@ const INCOME_RECORDS_BODY = `(
  category TEXT NOT NULL, -- 아이템 판매 · 사냥 · 기타
  item TEXT, -- 판 것 / 사냥터 / 자유
  -- **수수료를 뗀 값**이다 — 캘린더도 합계도 이 칸 하나를 더한다.
- -- **NULL 이 될 수 있다**(이슈 #265): 「기타」는 통화가 갈려서 «메소로 번 것이
- -- 아니다» 가 성립한다. 0 으로 채우면 «메소를 0 벌었다» 와 같아져 수정
+ -- **NULL 이 될 수 있다**(이슈 #265): **기타**는 통화가 갈려서 **메소로 번 것이
+ -- 아니다** 가 성립한다. 0 으로 채우면 **메소를 0 벌었다** 와 같아져 수정
  -- 시트가 찬 칸으로 통화를 되짚던 자리를 잃는다(지출이 먼저 같은 자리를 지났다 —
  --). 처음엔 NOT NULL 이었고(수입이 메소뿐이던 시절 —)
- -- 그 제약이 메포·캐시 「기타」의 저장을 통째로 막았다. 이미 만들어진 테이블은 rebuildIncomeRecords 가 옮긴다.
+ -- 그 제약이 메포·캐시 **기타**의 저장을 통째로 막았다. 이미 만들어진 테이블은 rebuildIncomeRecords 가 옮긴다.
  meso_amount INTEGER,
  -- 경매장 수수료(3·5 — 의 FeePercent). NULL = 없음(직거래이거나 정정 9 이전 행).
  sale_fee_percent INTEGER,
  -- 뗀 몫. **판매 대금 = meso_amount + sale_fee_meso** 로 정확히 되짚는다 — 내림이 섞여 있어
  -- 요율만으로는 역산이 안 된다.
  sale_fee_meso INTEGER,
- -- 통화 칸 셋. 「기타」는 메포·캐시로도 들어오고, **지출과 같은 이름**을
+ -- 통화 칸 셋. **기타**는 메포·캐시로도 들어오고, **지출과 같은 이름**을
  -- 써야 집계가 한 모양으로 접힌다(incomeMesoOf = spendMesoOf). 뜻과 단위는 spend_records 의
  -- 같은 이름 칸들과 같다 — 시세는 1억 메소당 메포이고, 캐시는 환산하지 않는다.
  -- 이 셋은 정정 15 가 **ensureColumn 으로만** 붙여 CREATE 문에 없었다. 그 상태로는 재작성이
- -- 만드는 테이블에 칸이 모자라 이관이 그 자리에서 던진다 — DDL 이 곧 «지금의 스키마» 여야 한다.
+ -- 만드는 테이블에 칸이 모자라 이관이 그 자리에서 던진다 — DDL 이 곧 **지금의 스키마** 여야 한다.
  point_amount INTEGER,
  point_per_100m_meso INTEGER,
  cash_amount INTEGER,
- -- 몇 회인가. 「기타」만 쓰고 위 세 칸에는 **곱한 총액**이 들어간다.
+ -- 몇 회인가. **기타**만 쓰고 위 세 칸에는 **곱한 총액**이 들어간다.
  -- 수량을 안 남기면 수정 시트가 되짚을 길이 없어 수량 1 · 금액 = 총액 으로 열린다.
  -- NULL = 이 칸이 없던 시절의 행이고, 그 행도 같은 이유로 수량 1 로 연다.
  quantity INTEGER,
- -- 「사냥」 갈래의 **계산 입력**. 합계만 남기면 수정 시트가 빈 계산기로
+ -- **사냥** 갈래의 **계산 입력**. 합계만 남기면 수정 시트가 빈 계산기로
  -- 열려 만지는 순간 금액이 덮인다. 사냥터는 item 칸에 이름으로 들어간다
  -- (전역 유일이라 지역이 따라온다). **다른 갈래에서는 전부 NULL** 이다.
  -- 캐릭터 레벨을 박는 이유는 캐릭터가 레벨업하기 때문이다 — 지금 레벨로 다시 재면 한 달 전
@@ -141,12 +141,12 @@ const TABLE_DEFINITIONS = [
 )`,
   },
   // 가계부가 **손으로 적는** 둘. 앞의 넷과 갈리는 성질이 셋이다:
-  //  ① **대리키다.** 앞의 넷은 자연키 복합 PK 인데 손입력은 «같은 날 같은 것을 두 번» 이 정상이라
+  //  ① **대리키다.** 앞의 넷은 자연키 복합 PK 인데 손입력은 **같은 날 같은 것을 두 번** 이 정상이라
   //     자연키가 성립하지 않는다.
   //  ② **날짜가 참이다.** 사용자가 직접 고르므로 `period_key`(주·월)가 아니라 날짜를 든다 —
   //     그래서 캘린더 칸에 바로 설 수 있다(보스 기록은 #239 를 기다린다).
   //  ③ **API 가 없다.** 되살릴 길이 0% 라 `RECORD_TABLE_NAMES` 에 반드시 들어야 한다
-  //     (`storage/cache-data.ts` — 안 넣으면 차집합 파생으로 «지워도 되는 것» 에 끌려간다).
+  //     (`storage/cache-data.ts` — 안 넣으면 차집합 파생으로 **지워도 되는 것** 에 끌려간다).
   {
     name: 'income_records',
     createSql: `CREATE TABLE IF NOT EXISTS income_records ${INCOME_RECORDS_BODY}`,
@@ -160,16 +160,16 @@ const TABLE_DEFINITIONS = [
  -- 컨텐츠 · 이벤트·BM · 버프 · 아이템 구매 · 기타(정정 4)
  category TEXT NOT NULL,
  item TEXT,
- -- 같은 값을 두 형태로 받는 항목이 있다 — 에픽던전 리워드는 «경험치» 와 «솔 에르다» 중 하나다
- -- (카탈로그의 «forms»). **가격이 같아서** 금액으로는 구분이 안 되므로 따로 적는다:
- -- 안 적으면 «솔 에르다를 몇 번 받았나» 를 나중에 되물을 수 없다. 형태가 없는 항목은 NULL.
+ -- 같은 값을 두 형태로 받는 항목이 있다 — 에픽던전 리워드는 **경험치** 와 **솔 에르다** 중 하나다
+ -- (카탈로그의 **forms**). **가격이 같아서** 금액으로는 구분이 안 되므로 따로 적는다:
+ -- 안 적으면 **솔 에르다를 몇 번 받았나** 를 나중에 되물을 수 없다. 형태가 없는 항목은 NULL.
  form TEXT,
- -- 「아이템 구매」의 **종류**(장비·소비·기타 —). 이 값 하나가 수량과 관세를
+ -- **아이템 구매**의 **종류**(장비·소비·기타 —). 이 값 하나가 수량과 관세를
  -- 함께 가른다: 소비·기타는 **월드 간 거래가 안 되어** 관세가 없다. NULL 은 다른 갈래이거나
  -- **정정 1 이전 행**이고, 그 행은 장비로 연다(그때가 실제로 그 모양이었다).
  item_kind TEXT,
- -- 금액 = 카탈로그의 «unitPrice» × 이 값. 단위 이름은 안 적는다 —
- -- «src/data/spend-catalog.json» 이 항목별로 알고 있어 베끼면 두 벌이 어긋난다.
+ -- 금액 = 카탈로그의 **unitPrice** × 이 값. 단위 이름은 안 적는다 —
+ -- **src/data/spend-catalog.json** 이 항목별로 알고 있어 베끼면 두 벌이 어긋난다.
  quantity INTEGER,
  -- 통화별 칸 셋. 안 쓴 칸은 NULL 이다.
  -- **관세를 포함한 총액**이라 집계는 이 한 칸만 보면 된다(정정 2 ②).
@@ -178,7 +178,7 @@ const TABLE_DEFINITIONS = [
  -- 나누면 요율이 바뀌는 날 지난달 관세가 소급해 달라진다( 과 같은 이유).
  tariff_meso INTEGER,
  point_amount INTEGER,
- -- 메소마켓 시세 — 단위가 **1억 메소당 메포**다(정정 2 ④). «meso_per_point» 라는 이름이었는데
+ -- 메소마켓 시세 — 단위가 **1억 메소당 메포**다(정정 2 ④). **meso_per_point** 라는 이름이었는데
  -- **거짓이었다**: 이 값으로 하는 것은 곱셈이 아니라 **나눗셈**이다(메포 × 1억 ÷ 시세).
  -- point_amount 가 있으면 NOT NULL 이어야 하고(정정 2 ③) 0 이면 안 된다.
  point_per_100m_meso INTEGER,
@@ -198,7 +198,7 @@ export const BOSS_PROFIT_TABLE_NAMES: readonly string[] = TABLE_DEFINITIONS.map(
 )
 
 /**
- * 갈래 「상점·편의」 가 **「이벤트·BM」 으로 이름을 바꿨다**(사용자 지정 2026-08-27
+ * 갈래 상점·편의 가 **`이벤트·BM` 으로 이름을 바꿨다**(사용자 지정 2026-08-27
  * 정정 4). `category` 는 이름 그 자체가 값이라, 안 옮기면 기존 기록이 **어느 갈래에도 없는 고아**가
  * 된다 — 갈래 칩에도 안 걸리고 `spendGroupsOf` 도 빈손이라 목록 갈래가 직접 입력처럼 보인다.
  *
@@ -210,7 +210,7 @@ const MIGRATE_SHOP_CATEGORY_RENAME = `
 `
 
 /**
- * 보약 버프 둘이 **「버프」 에서 「이벤트·BM」 으로 옮겨갔다**(같은 지정). 갈래가 안 따라가면
+ * 보약 버프 둘이 **`버프` 에서 `이벤트·BM` 으로 옮겨갔다**(같은 지정). 갈래가 안 따라가면
  * `findSpendChoice(category, item)` 이 그 항목을 못 찾아 **수정 시트가 세부를 못 편다**.
  */
 const MIGRATE_TONIC_BUFF_CATEGORY = `
@@ -219,7 +219,7 @@ const MIGRATE_TONIC_BUFF_CATEGORY = `
 `
 
 /**
- * 농장 입장권 둘이 **「… 입장권」 을 뗀 이름**이 됐다(사용자 지정 2026-08-28).
+ * 농장 입장권 둘이 **`… 입장권` 을 뗀 이름**이 됐다(사용자 지정 2026-08-28).
  *
  * `item` 은 **이름 그 자체가 값**이라(갈래와 같은 성질) 안 옮기면 옛 기록이 카탈로그에서 사라진
  * 이름을 들고 남는다 — `findSpendChoice` 가 못 찾아 **수정 시트가 세부를 못 펴고**, 목록에서도
@@ -235,8 +235,8 @@ const MIGRATE_FARM_TICKET_ITEM_RENAME = `
 `
 
 /**
- * 퀵 패스 셋이 **「… 퀵패스」 를 뗀 이름**이 됐다(사용자 지정 2026-08-28).
- * 묶음 이름(「퀵 패스」)이 그 맥락을 이미 들고 있어 항목마다 되풀이할 이유가 없다.
+ * 퀵 패스 셋이 **`… 퀵패스` 를 뗀 이름**이 됐다(사용자 지정 2026-08-28).
+ * 묶음 이름(퀵 패스)이 그 맥락을 이미 들고 있어 항목마다 되풀이할 이유가 없다.
  *
  * 옮기는 이유는 농장 둘과 같다 — `item` 은 이름 자체가 값이라, 안 옮기면 옛 기록이 카탈로그에서
  * 사라진 이름을 들고 남는다.
@@ -249,8 +249,8 @@ const MIGRATE_QUICK_PASS_ITEM_RENAME = `
 `
 
 /**
- * 「미호로이드 교환권」 이 **「미호로이드」** 가 됐다(사용자 지정 2026-08-28).
- * 타일에서 「교환 / 권」 으로 끊기던 이름이고, 무엇을 사는지는 그림과 묶음이 이미 말한다.
+ * 미호로이드 교환권 이 **`미호로이드`** 가 됐다(사용자 지정 2026-08-28).
+ * 타일에서 교환 / 권 으로 끊기던 이름이고, 무엇을 사는지는 그림과 묶음이 이미 말한다.
  */
 const MIGRATE_MIHOROID_ITEM_RENAME = `
   UPDATE spend_records SET item = '미호로이드'
@@ -290,14 +290,14 @@ const INCOME_RECORDS_REBUILD_TABLE = 'income_records_rebuild'
 /**
  * **`income_records.meso_amount` 의 `NOT NULL` 을 뗀다**(이슈 #265).
  *
- * `ensureColumn` 은 «없는 칸을 더하는» 길뿐이고 **SQLite 는 `ALTER TABLE` 로 기존 칸의 제약을 못
+ * `ensureColumn` 은 없는 칸을 더하는 길뿐이고 **SQLite 는 `ALTER TABLE` 로 기존 칸의 제약을 못
  * 고친다.** 테이블을 다시 쓰는 수밖에 없다 — 새 테이블 → 복사 → DROP → RENAME.
  *
  * 지키는 것 넷:
  *
- * ① **한 트랜잭션이다.** 「옛 테이블은 지워졌고 새 이름은 아직 없는」 상태가 파일에 남으면 그
+ * ① **한 트랜잭션이다.** 옛 테이블은 지워졌고 새 이름은 아직 없는 상태가 파일에 남으면 그
  *  기기의 수입 기록이 **전부 사라진다** — 되살릴 API 가 0% 인 데이터다.
- *    던지면 되돌리고 그대로 올려보낸다(삼키면 «됐다» 는 거짓 위에서 다음 문장들이 돈다).
+ *    던지면 되돌리고 그대로 올려보낸다(삼키면 됐다 는 거짓 위에서 다음 문장들이 돈다).
  * ② **옮길 칸은 옛 테이블이 실제로 가진 칸**이다. `SELECT *` 는 못 쓴다 — `ensureColumn` 이 붙인
  *    칸은 **뒤에** 붙어 순서가 지금 DDL 과 다르고, 위치로 짝지으면 값이 **에러 없이 옆 칸으로
  *    옮겨 앉는다**(수수료가 메포가 된다). 지금 스키마의 칸 목록을 박아 두는 것도 못 쓴다 —
@@ -313,7 +313,7 @@ async function rebuildIncomeRecords(db: SqliteDbConnection): Promise<void> {
   const columns = (values ?? []) as { name: string; notnull: number }[]
   const mesoAmount = columns.find((column) => column.name === 'meso_amount')
   // `Number()` 를 씌우는 이유는 어댑터마다 이 값이 숫자로 오는지 글자로 오는지 계약이 없어서다.
-  // 글자 '0' 을 `=== 0` 으로 재면 **옮긴 뒤에도 «아직 NOT NULL»** 로 읽혀 부팅마다 다시 옮긴다.
+  // 글자 '0' 을 `=== 0` 으로 재면 **옮긴 뒤에도 아직 NOT NULL** 로 읽혀 부팅마다 다시 옮긴다.
   if (mesoAmount === undefined || Number(mesoAmount.notnull) === 0) {
     return
   }
@@ -358,7 +358,7 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   for (const table of TABLE_DEFINITIONS) {
     await db.execute(table.createSql)
   }
-  // **칸의 «모양» 은 이 길로만 바꿀 수 있어 `ensureColumn` 들보다 먼저 선다**(③).
+  // **칸의 모양 은 이 길로만 바꿀 수 있어 `ensureColumn` 들보다 먼저 선다**(③).
   await rebuildIncomeRecords(db)
   await ensureColumn(db, 'boss_profit_records', 'world', 'TEXT')
   // `world` 와 같은 사정이다. 이미 보스를 기록해 둔 기기에는 CREATE 가 안 붙인다.
@@ -368,7 +368,7 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'boss_drop_records', 'price_meso', 'INTEGER')
   await ensureColumn(db, 'boss_drop_records', 'price_share', 'INTEGER')
   // **테이블을 세운 커밋과 이 컬럼을 더한 커밋이 갈렸다.** `spend_records` 는 `form` 없이 만들어졌고
-  // (`177c195b`) 「지출 항목 고르기를 두 단계로」(`89e806fa`)가 그 컬럼을 **CREATE 문에만** 더했다.
+  // (`177c195b`) `지출 항목 고르기를 두 단계로`(`89e806fa`)가 그 컬럼을 **CREATE 문에만** 더했다.
   // 그 사이에 앱을 켠 기기는 `form` 없는 테이블을 들고 있고, INSERT 는 모든 칸을 적으므로
   // **지출이 하나도 안 적힌다**(실기 재현 2026-08-25). 위 둘과 같은 사정이다.
   await ensureColumn(db, 'spend_records', 'form', 'TEXT')
@@ -379,16 +379,16 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'income_records', 'sale_fee_percent', 'INTEGER')
   await ensureColumn(db, 'income_records', 'sale_fee_meso', 'INTEGER')
 
-  // 수입에도 통화가 있다(「기타」). **지출과 같은 칸 이름**을 쓴다:
+  // 수입에도 통화가 있다(`기타`). **지출과 같은 칸 이름**을 쓴다:
   // 그래야 집계가 한 모양으로 접힌다(`incomeMesoOf` = `spendMesoOf`).
   await ensureColumn(db, 'income_records', 'point_amount', 'INTEGER')
   await ensureColumn(db, 'income_records', 'point_per_100m_meso', 'INTEGER')
   await ensureColumn(db, 'income_records', 'cash_amount', 'INTEGER')
 
-  // 수입 「기타」의 수량. 위와 같은 사정이라 같은 길로 붙인다.
+  // 수입 `기타`의 수량. 위와 같은 사정이라 같은 길로 붙인다.
   await ensureColumn(db, 'income_records', 'quantity', 'INTEGER')
 
-  // 「사냥」 갈래의 계산 입력. 위 다섯과 **같은 사정**이라 같은 길로 붙인다:
+  // `사냥` 갈래의 계산 입력. 위 다섯과 **같은 사정**이라 같은 길로 붙인다:
   // INSERT 는 모든 칸을 적으므로 칸이 없으면 수입이 하나도 안 적힌다.
   await ensureColumn(db, 'income_records', 'hunt_character_level', 'INTEGER')
   await ensureColumn(db, 'income_records', 'hunt_missed_mobs', 'INTEGER')
@@ -397,7 +397,7 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'income_records', 'hunt_fragments', 'INTEGER')
   await ensureColumn(db, 'income_records', 'hunt_fragment_price', 'INTEGER')
   await ensureColumn(db, 'income_records', 'hunt_meso_rate', 'INTEGER')
-  // 수동으로 적힌 사냥의 친 메소이자 «수동인가» 의 판정자.
+  // 수동으로 적힌 사냥의 친 메소이자 **수동인가** 의 판정자.
   await ensureColumn(db, 'income_records', 'hunt_typed_meso', 'INTEGER')
   await db.execute(MIGRATE_SHOP_CATEGORY_RENAME)
   await db.execute(MIGRATE_TONIC_BUFF_CATEGORY)

@@ -4,7 +4,7 @@
 // 이 파일이 지키는 것 둘.
 //   ① 라이브러리를 import 하는 것만으로 죽지 않는다 — reanimated 4 가 `react-native-worklets` 의
 //      `.native.*` 변형을 물어 jest 에서 즉시 터지던 것을 `jest.resolver.js` 가 막는다.
-//   ② `BottomSheet.tsx` 「배선 전제」가 실제 전제다 — `GestureHandlerRootView` +
+//   ② `BottomSheet.tsx` `배선 전제`가 실제 전제다 — `GestureHandlerRootView` +
 //      `BottomSheetModalProvider` 아래에서만 선다. 그 둘을 빼면
 //      `'BottomSheetModalInternalContext' cannot be null!` 로 죽는다(실측).
 //

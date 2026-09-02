@@ -1,6 +1,6 @@
 // 글자 배수 클램프가 **빠짐없이 걸려 있는가**.
 //
-// ## 왜 정책 테스트인가 — 회귀가 «깨지는» 모양이 아니라 «빠지는» 모양으로 온다
+// ## 왜 정책 테스트인가 — 회귀가 **깨지는** 모양이 아니라 **빠지는** 모양으로 온다
 //
 // 클램프는 프롭 둘(`allowFontScaling`·`maxFontSizeMultiplier`)로 걸리고, 그 프롭은 **글자를 그리는
 // 자리마다** 있어야 한다. 한 자리가 `react-native` 에서 `Text` 를 직접 가져오면 그 자리만 조용히
@@ -8,8 +8,8 @@
 // 같다), 시스템 글자 크기를 바꾼 기기에서만 어긋난다. 즉 **개발 기기에서는 안 보이는** 종류의
 // 회귀다.
 //
-// ESLint 에도 같은 규칙이 있다(`no-restricted-imports`). 두 벌인 이유는 린트가 «고치는 순간»
-// 알려 주고 이 테스트가 «CI 에서» 막기 때문이고, 무엇보다 아래 두 번째 계약(위젯의 `fixed`)은
+// ESLint 에도 같은 규칙이 있다(`no-restricted-imports`). 두 벌인 이유는 린트가 **고치는 순간**
+// 알려 주고 이 테스트가 **CI 에서** 막기 때문이고, 무엇보다 아래 두 번째 계약(위젯의 `fixed`)은
 // 린트로 표현할 수 없기 때문이다.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
@@ -25,7 +25,7 @@ const ATOMS = [
 /**
  * 칸에 묶여 글자를 못 키우는 자리 — **여기의 `<Text>` 는 전부 `fixed` 다.**
  *
- * 넷뿐인 것이 계약이다. 새 자리를 더할 때는 ADR 의 기준(«상자가 글자를 따라 커지는가»)을 통과해야
+ * 넷뿐인 것이 계약이다. 새 자리를 더할 때는 ADR 의 기준(상자가 글자를 따라 커지는가)을 통과해야
  * 하고, 그 판단이 이 배열에 남는다.
  */
 const FIXED_BOX_PATHS = [
@@ -114,8 +114,8 @@ function resolveModule(base: string): string | null {
  * 배럴이 이 이름들을 **어느 파일에서** 내보내는가.
  *
  * **배럴은 비쳐 보여야 한다.** 안 그러면 배럴을 쓰는 파일이 전부 `atoms/index.ts` 하나를 가리켜
- * 「이 부품이 글자를 그리나」가 판별이 안 된다. 실제로 그렇게 멀었다: 이 import 를
- * 배럴로 바꾸자 `src/components` 아래 31개 파일이 탐지기 눈에서 사라졌고, 아래 「새는 자리」
+ * 이 부품이 글자를 그리나가 판별이 안 된다. 실제로 그렇게 멀었다: 이 import 를
+ * 배럴로 바꾸자 `src/components` 아래 31개 파일이 탐지기 눈에서 사라졌고, 아래 새는 자리
  * 단언이 빈 집합을 검사하며 통과했다.
  *
  * `atoms/Icon`·`atoms/Spinner` 처럼 배럴이 배럴을 내보내는 자리가 있어 한 겹 더 판다.
@@ -153,7 +153,7 @@ function localImportTargets(file: string): string[] {
 }
 
 /**
- * 글자를 그리는 자체 컴포넌트 파일 — 「글자 atom 을 import 한다」가 곧 그 정의다.
+ * 글자를 그리는 자체 컴포넌트 파일 — 글자 atom 을 import 한다가 곧 그 정의다.
  *
  * 문자열로 경로를 찾지 않고 `localImportTargets` 로 **푼 결과**를 본다. 깊은 경로와 배럴 두 모양이
  * 섞여 있어(`'../Text/Text'` · `'../../atoms'`) 문자열로는 한쪽만 잡힌다.
@@ -203,7 +203,7 @@ describe(' — 글자는 atom 한 곳에서만 나온다', () => {
  readFileSync(file, 'utf8').includes('BottomSheetTextInput'),
 ).map((file) => relative(SRC, file))
 
- // 「왜 안 쓰는가」를 적는 주석에는 이름이 나온다 — 코드가 아니라 글이다. 그 설명은 아톰과,
+ // `왜 안 쓰는가`를 적는 주석에는 이름이 나온다 — 코드가 아니라 글이다. 그 설명은 아톰과,
  // 값을 채우는 훅에 있다. 그 코드는 아톰 밖으로 나갔다.
  const 설명하는_파일 = ['components/atoms/TextInput/TextInput.tsx', 'hooks/useSheetKeyboardTarget.ts']
  expect(offenders.filter((file) => !설명하는_파일.includes(file))).toEqual([])

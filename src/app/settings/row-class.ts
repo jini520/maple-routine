@@ -1,4 +1,4 @@
-// 설정 행의 공유 골격 — `design-system.md` 「설정 리스트 행」절의 규정을 코드로 옮긴 것.
+// 설정 행의 공유 골격 — `design-system.md` `설정 리스트 행`절의 규정을 코드로 옮긴 것.
 //
 // **컴포넌트 파일이 아니라 별도 파일인 이유**: 외부 URL로 나가는 행은 다른 시맨틱을 가져야 하므로
 //  `SettingsRow` 와 `SettingsLinkRow` 가 같은 골격을 나눠 써야 하는데, 컴포넌트
@@ -23,6 +23,6 @@ export const SETTINGS_ROW_CLASS = 'w-full flex-row items-center justify-between 
  * 결과**이고, 다른 것은 그것을 CSS 가 아니라 호출부가 고른다는 점뿐이다.
  *
  * 카드가 아니라 행 쪽 파일에 있는 이유는 이 값이 `SETTINGS_ROW_CLASS` 와 짝이라서다 — 행의
- * 세로 여백(`py-4`)과 선이 함께 「설정 리스트 행」 규격을 이룬다.
+ * 세로 여백(`py-4`)과 선이 함께 설정 리스트 행 규격을 이룬다.
  */
 export const SETTINGS_ROW_DIVIDER_CLASS = 'border-t border-border'

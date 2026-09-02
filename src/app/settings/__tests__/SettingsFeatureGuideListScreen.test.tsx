@@ -77,7 +77,7 @@ const 수익안내: FeatureGuide = {
   groups: ['profit'],
   sections: [{ id: 'a', title: '마디', blocks: [{ text: '수익 설명' }] }],
 }
-// 「캐릭터 관리」처럼 **두 그룹에 서는** 안내 — 사본이 아니라 같은 글 한 벌이다.
+// `캐릭터 관리`처럼 **두 그룹에 서는** 안내 — 사본이 아니라 같은 글 한 벌이다.
 const 공통안내: FeatureGuide = {
   id: 'character-manage',
   title: '캐릭터 관리',
@@ -125,7 +125,7 @@ describe('SettingsFeatureGuideListScreen', () => {
     expect(view.queryByText('설정')).toBeNull()
   })
 
-  // 한 안내가 여러 그룹에 선다(정정) — 「캐릭터 관리」가 컨텐츠·보스 양쪽에
+  // 한 안내가 여러 그룹에 선다(정정) — `캐릭터 관리`가 컨텐츠·보스 양쪽에
   // 같은 글로 서야 한다. 사본을 두면 갈라진다.
   it('여러 그룹에 속한 안내는 그 그룹 탭마다 나온다', async () => {
     const view = await renderOverlay(<SettingsFeatureGuideListScreen />)

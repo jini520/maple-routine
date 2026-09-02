@@ -52,7 +52,7 @@ const AnimatedRect = Animated.createAnimatedComponent(Rect)
  * <MapleSweepSpinner size={32} className="text-primary" />
  */
 export function MapleSweepSpinner(props: SpinnerProps): React.JSX.Element {
-  // `useId()` 가 내는 값에는 구분자가 들어 있다(React 19 는 `«r0»`). `url(#...)` 를 문자열로 맞춰
+  // `useId()` 가 내는 값에는 구분자가 들어 있다(React 19 는 `r0`). `url(#...)` 를 문자열로 맞춰
   // 보는 `react-native-svg` 의 defs 조회에 그 문자가 어떻게 걸릴지 보장이 없어 영숫자만 남긴다.
   // 숫자 부분이 남으므로 인스턴스마다 다르다는 성질은 그대로다.
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '')

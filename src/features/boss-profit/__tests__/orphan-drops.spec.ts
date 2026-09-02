@@ -1,7 +1,7 @@
 // 잡지 않은 보스에 남은 드롭을 고르는 규칙 — **순수 함수라 여기서 직접 못박는다.**
 //
 // 이 판정이 틀리면 사용자가 적은 판매가까지 함께 사라지므로 안전 장치 넷을 케이스로
-// 하나씩 세운다. «행이 없다» 가 «안 잡았다» 를 뜻하지 않는 경우가 그 넷이다.
+// 하나씩 세운다. **행이 없다** 가 **안 잡았다** 를 뜻하지 않는 경우가 그 넷이다.
 import type { BossDropRecord } from '../../../storage/boss-drops'
 import { planOrphanDropCleanup } from '../orphan-drops'
 import type { BossProfitRow } from '../rows'
@@ -74,13 +74,13 @@ describe('planOrphanDropCleanup', () => {
     expect(plan({ rows: [row({ boss: '자쿰', difficulty: '카오스' })] })).toEqual([])
   })
 
-  // 안전 장치 ① — 난이도만 다른 행이 있으면 그것은 고아가 아니라 «난이도 키가 어긋난 것» 이고,
+  // 안전 장치 ① — 난이도만 다른 행이 있으면 그것은 고아가 아니라 **난이도 키가 어긋난 것** 이고,
   // 옮기는 일은 의 몫이다.
   it('같은 보스의 다른 난이도 행이 있으면 지우지 않는다 — 이관의 몫이다', () => {
     expect(plan({ rows: [row({ boss: '자쿰', difficulty: '노멀' })] })).toEqual([])
   })
 
-  // 안전 장치 ② — 백필된 적 없는 과거 주는 기록이 통째로 비어 「행 없음」이 아무것도 뜻하지 않는다.
+  // 안전 장치 ② — 백필된 적 없는 과거 주는 기록이 통째로 비어 `행 없음`이 아무것도 뜻하지 않는다.
   it('그 캐릭터·기간에 행이 하나도 없으면 판정하지 않는다', () => {
     expect(plan({ rows: [] })).toEqual([])
     expect(plan({ rows: [row({ periodKey: '2026-08-20' })] })).toEqual([])
@@ -105,7 +105,7 @@ describe('planOrphanDropCleanup', () => {
   // 이 결정이 겨누는 실제 상황 — 12마리를 채워 미완료 placeholder 가 사라진 자리.
   it('한도 마감으로 사라진 행의 드롭이 정확히 그 대상이다', () => {
     const result = planOrphanDropCleanup({
-      // 열두 마리를 잡아 행이 열둘, 그중 「자쿰」은 없다(한도 마감으로 걷혔다).
+      // 열두 마리를 잡아 행이 열둘, 그중 `자쿰`은 없다(한도 마감으로 걷혔다).
       rows: [row({ boss: '매그너스' }), row({ boss: '스우' })],
       records: [record({ boss: '자쿰' }), record({ boss: '스우', difficulty: '하드' })],
       trustedOcids: new Set(['ocid-1']),

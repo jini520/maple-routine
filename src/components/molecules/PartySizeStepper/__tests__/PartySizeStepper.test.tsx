@@ -72,7 +72,7 @@ describe('PartySizeStepper', () => {
    * **단위를 안 적는다**(사용자 지정 2026-08-27) — 이 앱의 스테퍼는 크기와
    * 무관하게 **숫자만** 오르내린다. 무엇을 세는지는 곁의 라벨과 `Users` 표식이 말한다.
    *
-   * 전에는 기본 크기만 「인」 을 그려서 **한 앱에 스테퍼가 두 모양**이었다.
+   * 전에는 기본 크기만 인 을 그려서 **한 앱에 스테퍼가 두 모양**이었다.
    */
   it.each(['default', 'compact'] as const)('%s 는 단위를 안 그린다', async (size) => {
     const { queryByText } = await renderAtom(

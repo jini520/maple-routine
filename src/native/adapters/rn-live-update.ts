@@ -15,13 +15,13 @@ import appJson from '../../../app.json'
  *
  *  이 *"별도 ADR"* 로 미뤄 두고 `not-implemented.ts` 가 던지던 자리다.
  *
- * ## 이 파일이 «번역기» 인 이유
+ * ## 이 파일이 번역기 인 이유
  *
  * 포트가 말하는 다섯 갈래(`unsupported`·`error`·`up-to-date`·`store-required`·`update-available`)는
- * **프로토콜과 무관한 «앱이 무엇을 할 수 있나»** 다. `expo-updates` 는 그중 넷을
+ * **프로토콜과 무관한 **앱이 무엇을 할 수 있나**** 다. `expo-updates` 는 그중 넷을
  * 직접 답하고, **`store-required` 하나만 삼킨다** — 런타임이 안 맞으면 서버가 204 를 주고 클라이언트는
  * 그것을 "업데이트 없음"으로 읽는다. 그대로 두면 사용자에게 *"최신 버전입니다"* 라는 **거짓**이
- * 보이므로, 「최신」으로 떨어졌을 때만 `/latest` 를 한 번 더 물어 그 갈래를 되살린다(결정 4).
+ * 보이므로, 최신으로 떨어졌을 때만 `/latest` 를 한 번 더 물어 그 갈래를 되살린다(결정 4).
  *
  * ## 여기 없는 것
  *
@@ -54,11 +54,11 @@ function readExtra(manifest: unknown): { appVersion: string | null; highlights?:
 }
 
 /**
- * 「최신」일 때만 부르는 확인 — 프로토콜이 204 로 삼킨 것을 되살린다.
+ * 최신일 때만 부르는 확인 — 프로토콜이 204 로 삼킨 것을 되살린다.
  *
  * 실패는 **삼킨다.** 여기서 실패했다는 것은 "스토어 업데이트가 필요한지 모른다"는 뜻이지 "확인이
  * 실패했다"가 아니다 — 앞의 확인은 이미 성공했고, 곁가지 때문에 그 결과를 오류로 뒤집으면
- *  가 가른 «사용자가 시작하지 않은 실패는 조용히》를 어긴다.
+ *  가 가른 **사용자가 시작하지 않은 실패는 조용히**를 어긴다.
  */
 async function checkStoreRequired(): Promise<LiveUpdateCheckResult | null> {
   try {
@@ -89,7 +89,7 @@ export const rnLiveUpdatePort: LiveUpdatePort = {
 
   /**
    * **정당한 no-op 이다** — 이 플랫폼에 그 개념이 없다(`not-implemented.ts` 가 세운 갈림 중
-   * «해야 하는데 아직 안 했다» 가 아니라 «이 플랫폼에 개념이 없다» 쪽).
+   * 해야 하는데 아직 안 했다 가 아니라 이 플랫폼에 개념이 없다 쪽).
    *
    * @capgo 는 번들이 스스로 *"나 정상이다"* 라고 말해 줘야 했고, 안 말하면 `appReadyTimeout` 뒤에
    * 직전 번들로 되돌렸다(→ 가 그 호출 자리를 `AppShell`
@@ -124,14 +124,14 @@ export const rnLiveUpdatePort: LiveUpdatePort = {
   async check(): Promise<LiveUpdateCheckResult> {
     const result = await Updates.checkForUpdateAsync()
     if (!result.isAvailable) {
-      // 프로토콜이 «런타임 불일치» 를 여기로 뭉쳐 넣는다 — 갈라서 되살린다(결정 4).
+      // 프로토콜이 **런타임 불일치** 를 여기로 뭉쳐 넣는다 — 갈라서 되살린다(결정 4).
       return (await checkStoreRequired()) ?? { kind: 'up-to-date' }
     }
     const { appVersion, highlights, sizeBytes } = readExtra(result.manifest)
     return {
       kind: 'update-available',
       // 매니페스트에 우리 축의 버전이 없으면(옛 스크립트가 만든 것) 버전 없이 말하지 않는다 —
-      // 모달이 "새 버전 v… " 를 그리는 자리라, 빈 문자열보다 «알 수 없음» 이 정직하다.
+      // 모달이 "새 버전 v… " 를 그리는 자리라, 빈 문자열보다 **알 수 없음** 이 정직하다.
       version: appVersion ?? '알 수 없음',
       size: sizeBytes,
       ...(highlights ? { highlights } : {}),
@@ -171,7 +171,7 @@ export const rnLiveUpdatePort: LiveUpdatePort = {
    *
    * **`'unknown'` 을 돌린다** — RN 에 네트워크 종류를 묻는 내장 API 가 없고,
    * `@react-native-community/netinfo` 는 **새 네이티브 의존성**이라 재빌드를 부른다. 호출부는
-   * `'unknown'` 에서 경고를 생략하므로(의 폴백) 동작은 «경고 없이 바로 받는다»
+   * `'unknown'` 에서 경고를 생략하므로(의 폴백) 동작은 경고 없이 바로 받는다
    * 가 된다. 없는 사실을 지어내지 않는 대신 경고 한 겹을 잃는 것이고, 되살리려면 그 패키지가
    * 선행 조건이다.
    */

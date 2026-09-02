@@ -2,14 +2,14 @@
 //
 // ## 이 저장소 최초의 대리키 테이블이다
 //
-// 앞의 넷은 전부 자연키 복합 PK 인데(`ocid|boss|difficulty|period_key` …) 손입력은 **«같은 날 같은
-// 것을 두 번» 이 정상**이라 자연키가 성립하지 않는다. 그래서 `INSERT` 에 `ON CONFLICT` 가 없다 —
+// 앞의 넷은 전부 자연키 복합 PK 인데(`ocid|boss|difficulty|period_key` …) 손입력은 **같은 날 같은
+// 것을 두 번 이 정상**이라 자연키가 성립하지 않는다. 그래서 `INSERT` 에 `ON CONFLICT` 가 없다 —
 // 덮어쓸 대상이 애초에 없다.
 //
 // ## `id` 와 `recordedAt` 은 **호출부가 준다**
 //
 // `boss-profit.ts` 가 `recordedAt` 을 받는 것과 같은 규약이다. 어댑터가 만들면 `Math.random()` ·
-// `Date.now()` 가 이 파일에 들어와 «같은 입력에 같은 SQL» 이 깨지고, 테스트가 값을 못 박을 수 없다.
+// `Date.now()` 가 이 파일에 들어와 **같은 입력에 같은 SQL** 이 깨지고, 테스트가 값을 못 박을 수 없다.
 //
 // ## 원천을 적는 칸이 없다
 //
@@ -22,13 +22,13 @@ import { getBossProfitDb } from './sqlite/db'
 /**
  * 수입의 갈래 — 사용자가 준 둘 + 안전망 하나.
  *
- * 「기타」가 없으면 셋으로 안 잡히는 수입이 **기록 자체를 못 남긴다**(가계부에 구멍이 뚫린다).
+ * 기타가 없으면 셋으로 안 잡히는 수입이 **기록 자체를 못 남긴다**(가계부에 구멍이 뚫린다).
  * 넷째가 생기면 여기 한 줄을 더하면 된다 — 늘리는 것은 싸고 **지우는 쪽이 비싸다**(이미 그 갈래로
  * 적힌 행이 갈 곳을 잃는다).
  *
- * **차례가 곧 화면**이다 — 시트의 칩이 이 차례로 서고 `[0]` 이 «＋ 수입」 을
- * 열었을 때 골라져 있는 갈래다. 「사냥」이 앞인 것은 그 갈래가 계산기라 손이 가장
- * 많이 가서이고, 「기타」는 안전망이라 끝이다. **줄을 옮기면 기본 갈래가 함께 바뀐다.**
+ * **차례가 곧 화면**이다 — 시트의 칩이 이 차례로 서고 `[0]` 이 **＋ 수입** 을
+ * 열었을 때 골라져 있는 갈래다. 사냥이 앞인 것은 그 갈래가 계산기라 손이 가장
+ * 많이 가서이고, 기타는 안전망이라 끝이다. **줄을 옮기면 기본 갈래가 함께 바뀐다.**
  */
 export const INCOME_CATEGORIES = ['사냥', '아이템 판매', '기타'] as const
 
@@ -44,7 +44,7 @@ export interface IncomeRecord {
   /** 판 것 / 사냥터 / 자유. 갈래가 이 칸의 **라벨만** 바꾼다. */
   item: string | null
   /**
-   * 메소로 들어온 수입. **통화가 갈리는 갈래(「기타」)에서는 `null` 일 수 있다**.
+   * 메소로 들어온 수입. **통화가 갈리는 갈래(`기타`)에서는 `null` 일 수 있다**.
    *
    * 아이템 판매면 **수수료를 뗀 값**이다 — 집계가 보는 칸이 이것 하나라,
    * 판매 대금을 넣으면 번 적 없는 돈이 수입으로 선다.
@@ -65,7 +65,7 @@ export interface IncomeRecord {
   /** **환산하지 않는다** — 지출과 같은 이유·같은 결과다. */
   cashAmount: number | null
   /**
-   * 몇 회인가. 「기타」만 쓰고 나머지 갈래는 `null` 이다.
+   * 몇 회인가. 기타만 쓰고 나머지 갈래는 `null` 이다.
    *
    * 위 세 칸에는 **곱한 총액**이 들어간다. 수량을 안 남기면 수정으로 다시 열 때 되짚을 길이 없어
    * 수량이 1 로 서고 금액 칸에 총액이 들어간다(`금액 = 총액 ÷ 수량` 으로 되짚는다).
@@ -78,7 +78,7 @@ export interface IncomeRecord {
   /** 뗀 몫. **판매 대금 = `mesoAmount` + 이것** 이다 — 요율만으로는 내림 때문에 역산이 안 된다. */
   saleFeeMeso: number | null
   /**
-   * 「사냥」 갈래를 **어떻게 적었나**.
+   * 사냥 갈래를 **어떻게 적었나**.
    *
    * 합계(`mesoAmount`)만 남기면 사냥 기록을 다시 열 때 빈 시트가 서고, 무엇이든 만지는 순간
    * 금액이 덮인다(가 걸어 둔 계약이 깨진다). 그래서 적을 때 쓴 값을 함께 남긴다.
@@ -205,8 +205,8 @@ function rowToHunt(row: Record<string, unknown>): HuntingIncomeDetail | null {
 /**
  * 한 덩어리 → 칸 여덟. 없으면 전부 `null` 이다(다른 갈래의 행이 그렇다).
  *
- * **수동 행은 계산기 칸 넷을 비운다**. 0 을 채우면 그 행이 «놓친 마릿수 0 으로
- * 센 행» 처럼 읽힌다. 비어 있는 것이 곧 앱이 센 값이 아니라는 뜻이다.
+ * **수동 행은 계산기 칸 넷을 비운다**. 0 을 채우면 그 행이 놓친 마릿수 0 으로
+ * 센 행 처럼 읽힌다. 비어 있는 것이 곧 앱이 센 값이 아니라는 뜻이다.
  */
 function huntToValues(hunt: HuntingIncomeDetail | null): Array<number | string | null> {
   if (hunt === null) return [null, null, null, null, null, null, null, null]
@@ -288,7 +288,7 @@ export async function updateIncomeRecord(record: IncomeRecord): Promise<void> {
   ])
 }
 
-/** 한 건만 지운다 — 대리키라 «같은 날 같은 것» 두 건 중 하나만 골라 지울 수 있다. */
+/** 한 건만 지운다 — 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */
 export async function deleteIncomeRecord(id: string): Promise<void> {
   const db = await getBossProfitDb()
   await db.run(`DELETE FROM income_records WHERE id = ?`, [id])
@@ -319,7 +319,7 @@ function rowToRecord(row: Record<string, unknown>): IncomeRecord {
  * 날짜 범위의 기록 — **두 끝을 포함**한다. 월간이든 주간이든 부르는 쪽이 범위만 정한다
  * (월간은 그 달의 첫날~마지막 날, 주간은 목요일~수요일 —).
  *
- * **`ocid` 로 거르지 않는다.** 가계부는 «내가 번 돈» 이지 «이 캐릭터가 번 돈» 이 아니라
+ * **`ocid` 로 거르지 않는다.** 가계부는 내가 번 돈 이지 이 캐릭터가 번 돈 이 아니라
  *  계정 단위 행과 캐릭터 행이 한 날에 함께 서야 한다.
  */
 export async function getIncomeRecordsBetween(

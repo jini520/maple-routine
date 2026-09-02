@@ -2,7 +2,7 @@
 //
 // 위(선택됨)와 아래(후보)는 같은 것들의 **두 상태**이지 다른 종류가 아니라, 카드는 한 벌이고
 // **좌우 슬롯만 갈린다**(`leading` 핸들 · `trailing` 은 `★ ✕` 또는 `＋`). 모양을 갈라 두면 카드가
-// 층을 옮길 때(결정 3) 「다른 물건」으로 보인다.
+// 층을 옮길 때(결정 3) `다른 물건`으로 보인다.
 //
 // ── 카드 안쪽 두 줄 ───────────────────────────────────────────────────────────────
 //
@@ -51,7 +51,7 @@ export interface CharacterRowProps {
   jobClass?: string
   world?: string
   imageUrl: string | null
-  /** 조회 불가 — 2줄이 «조회할 수 없는 캐릭터» 로 바뀐다. */
+  /** 조회 불가 — 2줄이 조회할 수 없는 캐릭터 로 바뀐다. */
   unavailable?: boolean
   /** 왼쪽 슬롯: 끌기 핸들(위 층에만 — 결정 5). */
   leading?: React.ReactNode
@@ -70,7 +70,7 @@ export function CharacterRow(props: CharacterRowProps): React.JSX.Element {
       {props.leading}
 
       {/* 이름 첫 글자가 아니라 **테마 주황 원 + `?`** 다(사용자 지정). 첫 글자는 이 캐릭터의 얼굴처럼
-          보여서 «못 가져왔다» 를 말하지 못했다. 글자색은 `on-primary`(그 색 위에 놓는 글자로 이미
+          보여서 **못 가져왔다** 를 말하지 못했다. 글자색은 `on-primary`(그 색 위에 놓는 글자로 이미
           정의된 토큰이라 테마마다 대비가 보장된다). */}
       <CharacterAvatar
         imageTestID="character-row-face"

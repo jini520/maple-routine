@@ -10,7 +10,7 @@
 // 열어 두는 일이다.
 //
 // **그런데 이 step 에서 옮기지 않는다.** 이 단계의 규칙이 `packages/core` 무수정이고(
-// 결정 4 가 83% 무수정을 지키는 조건이다), core 이동은 「어느 계산이 뷰 밖인가」를 화면 전부가
+// 결정 4 가 83% 무수정을 지키는 조건이다), core 이동은 `어느 계산이 뷰 밖인가`를 화면 전부가
 // 붙은 뒤에 한 번에 판정해야 하는 별도 결정이다. 지금 하나만 옮기면 그 판정이 파일 단위로 흩어진다.
 //
 // 옮길 때 확인할 것: 아래 함수들은 전부 `src/*` 만 참조하므로 **경로 수정 없이** 이동한다.
@@ -67,8 +67,8 @@ export function clamp(value: number, min: number, max: number): number {
  *
  * `payoutMeso` 가 `null` 인 두 경우(미완료 placeholder — / 가격 미확정 보스)를 0으로
  * 접는다. ** 의 "미입력 ≠ 0원" 과 다른 `null` 이다** — 저쪽은 사용자가 아직 안 적은
- * 드롭 판매가라 화면이 금액 대신 상태를 말해야 하고, 이쪽은 그 자리에 이미 「미완료」·「가격
- * 미확정」 배지가 서 있어(`BossProfitBossRow`) 0 이 금액으로 읽히지 않는다.
+ * 드롭 판매가라 화면이 금액 대신 상태를 말해야 하고, 이쪽은 그 자리에 이미 미완료·가격
+ * 미확정 배지가 서 있어(`BossProfitBossRow`) 0 이 금액으로 읽히지 않는다.
  */
 export function sumPayout(rows: BossProfitRow[]): number {
   return rows.reduce((sum, row) => sum + (row.payoutMeso ?? 0), 0)

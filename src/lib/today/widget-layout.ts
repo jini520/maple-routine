@@ -4,7 +4,7 @@
  * ## 왜 흐름이 아니라 좌표인가
  *
  * 자동 패킹(순서 배열을 주면 알고리즘이 빈칸을 채운다)을 기각한 이유가 이 파일의 존재 이유다 —
- * **검증할 것이 없어지기 때문**이다. 알고리즘은 늘 «어딘가에» 넣으므로 배치 실수가 실수로 드러나지
+ * **검증할 것이 없어지기 때문**이다. 알고리즘은 늘 어딘가에 넣으므로 배치 실수가 실수로 드러나지
  * 않는다. 좌표를 손으로 적는 대신 그 실수를 여기서 잡는다.
  *
  * 행(shelf) 단위 배치도 아니다 — 한 행의 높이가 하나면 `1x2`·`2x2` 같은 세로로 긴 타일이 원리적으로
@@ -19,7 +19,7 @@ import { tileHeightPx, tileWidthPx, type WidgetGridMetrics } from './widget-grid
 /**
  * 타일의 세로 크기 — 행 수, 또는 **내용이 정하는 높이**.
  *
- * `'auto'` 는 «높이를 미리 알 수 없다» 는 뜻이고, 그 값은 `resolveWidgetPositions` 에 실측으로
+ * `'auto'` 는 높이를 미리 알 수 없다 는 뜻이고, 그 값은 `resolveWidgetPositions` 에 실측으로
  * 들어온다. 선언한 `h` 는 그때 **최소 높이**로 남는다.
  */
 export type WidgetHeight = number | 'auto'
@@ -64,7 +64,7 @@ function formatSize(w: number, h: WidgetHeight): string {
  * 검증 다섯 — ① 겹치는 타일 없음 ② `col + w ≤ 4` ③ 통째로 빈 행 없음 ④ `(w, h)` 가 그 위젯이
  * 선언한 크기 안 ⑤ `h === 'auto'` 이면 `w === 4`.
  *
- * ④ 가 «크기별로 다르게 그린다»를 **약속으로 만드는** 자리다 — 선언 안 한
+ * ④ 가 크기별로 다르게 그린다를 **약속으로 만드는** 자리다 — 선언 안 한
  * 크기를 받으면 위젯은 그리는 방법을 모른다.
  */
 export function validateWidgetLayout(
@@ -82,7 +82,7 @@ export function validateWidgetLayout(
 
     // 가로를 다 쓰면 **옆에 아무도 없으므로** 늘어난 만큼 아래 전부가 같은 값으로 내려가 겹침이
     // 생길 수 없다. 좁은 타일에 auto 를 허용하면 옆 칸과 아래 칸이 서로 다른 만큼 밀려 좌표가
-    // 무너진다 — 자동 패킹을 기각한 것과 같은 이유(«검증할 것이 없어진다»)가 여기서 되살아난다.
+    // 무너진다 — 자동 패킹을 기각한 것과 같은 이유(**검증할 것이 없어진다**)가 여기서 되살아난다.
     if (h === 'auto' && w !== GRID_COLUMNS) {
       violations.push({ id, reason: `h: 'auto' 는 w === ${GRID_COLUMNS} 일 때만 쓸 수 있다 — w ${w}` })
     }
@@ -129,8 +129,8 @@ function findOverlaps(layout: readonly WidgetPlacement[]): LayoutViolation[] {
 /**
  * 통째로 빈 행을 찾는다.
  *
- * 위반은 **그 아래 첫 타일**의 것으로 적는다 — 빈 행 자체는 주인이 없고, 실수는 언제나 «그 아래
- * 타일의 `row` 를 밀어 놓고 위를 안 채운 것» 이기 때문이다.
+ * 위반은 **그 아래 첫 타일**의 것으로 적는다 — 빈 행 자체는 주인이 없고, 실수는 언제나 그 아래
+ * 타일의 `row` 를 밀어 놓고 위를 안 채운 것 이기 때문이다.
  */
 function findEmptyRows(layout: readonly WidgetPlacement[]): LayoutViolation[] {
   if (layout.length === 0) return []
@@ -176,7 +176,7 @@ export interface ResolvedTile {
  *
  * `'auto'` 타일이 최소 높이보다 커지면 **그 아래(`row` 가 큰) 타일 전부**를 그 초과분만큼 내린다 —
  * `y = 적어 둔 y + Σ(위쪽 auto 타일들의 초과분)`. auto 는 `w === 4` 일 때만 허용되므로(검증 ⑤)
- * 그 행에 옆 타일이 있을 수 없고, 그래서 «아래 전부가 같은 값으로 내려간다» 가 성립한다.
+ * 그 행에 옆 타일이 있을 수 없고, 그래서 아래 전부가 같은 값으로 내려간다 가 성립한다.
  *
  * **`row` 를 재계산해 다시 채우지 않는다**(자동 패킹) — 배치가 적어 둔 순서·자리를 그대로 지키는
  * 것이 결정 2 의 요점이다.

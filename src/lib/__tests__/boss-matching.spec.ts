@@ -231,8 +231,8 @@ describe('isWeeklyClearLimitReached', () => {
     expect(isWeeklyClearLimitReached(cleared(WEEKLY_BOSS_CLEAR_LIMIT))).toBe(true)
   })
 
-  // 세는 규칙은 countClearedWeeklyBosses 그대로여야 한다 — 두 벌이 되면 «선택은 12/12 인데
-  // 처치는 11/12» 가 다시 생긴다.
+  // 세는 규칙은 countClearedWeeklyBosses 그대로여야 한다 — 두 벌이 되면 **선택은 12/12 인데
+  // 처치는 11/12** 가 다시 생긴다.
   it('시즌 보스는 한도를 채우지 않는다', () => {
     const bosses = [
       ...cleared(WEEKLY_BOSS_CLEAR_LIMIT - 1),

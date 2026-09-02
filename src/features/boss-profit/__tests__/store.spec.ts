@@ -28,7 +28,7 @@ jest.mock('../../../storage/boss-profit', () => ({
 const { getBossProfitRecords: getBossProfitRecordsMock, hasBossProfitRecordsAtOrBefore: hasBossProfitRecordsAtOrBeforeMock, fillMissingRecordWorlds: fillMissingRecordWorldsMock, upsertBossProfitRecord: upsertBossProfitRecordMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 
 // 처치 날짜 캐기는 **동기화가 끝난 뒤 기다리지 않고** 튼다 — 이 화면은
-// `defeated_on` 을 안 쓰므로 결과를 기다릴 이유가 없다. 목으로 «떴는가» 만 본다.
+// `defeated_on` 을 안 쓰므로 결과를 기다릴 이유가 없다. 목으로 **떴는가** 만 본다.
 jest.mock('../defeat-dates', () => ({ resolveDefeatDates: jest.fn() }))
 const { resolveDefeatDates: resolveDefeatDatesMock } = jest.requireMock('../defeat-dates') as Record<string, jest.Mock>
 
@@ -98,8 +98,8 @@ import {
   resetSyncRunStateForTests,
 } from '../../schedule-sync/sync-run-state'
 import { useBossProfitStore } from '../store'
-// **Date 만 가짜로 만든다.** vitest 는 `toFake` 로 «가짜로 만들 것» 을 받았는데 jest 는 반대로
-// `doNotFake` 로 «건드리지 말 것» 을 받는다 — 그대로 두면 타이머까지 전부 가짜가 되어 실제
+// **Date 만 가짜로 만든다.** vitest 는 `toFake` 로 **가짜로 만들 것** 을 받았는데 jest 는 반대로
+// `doNotFake` 로 **건드리지 말 것** 을 받는다 — 그대로 두면 타이머까지 전부 가짜가 되어 실제
 // `setTimeout` 에 기대는 플러시가 영영 안 끝난다.
 const NOT_FAKED = ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'setImmediate', 'clearImmediate', 'nextTick', 'queueMicrotask', 'performance', 'requestAnimationFrame', 'cancelAnimationFrame', 'requestIdleCallback', 'cancelIdleCallback', 'hrtime',
 ] as never
@@ -592,7 +592,7 @@ describe('useBossProfitStore', () => {
     expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
   })
 
-  // : `rows` 는 «보고 있는 (탭, 기간)» 이고 today 위젯이 읽는 것은 «지금 기간» 이다.
+  // : `rows` 는 **보고 있는 (탭, 기간)** 이고 today 위젯이 읽는 것은 **지금 기간** 이다.
   // 사용자 보고(2026-08-19) — 이 화면을 월간 탭으로 옮기기만 해도 today 의 주간 보스 수익·주간
   // 결정석 한도가 함께 비었다. 그 화면은 이 화면의 네비게이션을 모르는 채로 이번 주를 그린다.
   it('월간 탭으로 옮겨도 currentPeriodRows 는 이번 주 행을 그대로 들고 있다', async () => {
@@ -626,7 +626,7 @@ describe('useBossProfitStore', () => {
     // `fixed` 는 난이도 획득 가능 판정을 타지 않는다 — 이 테스트가 보려는 것은
     // 드롭 맵의 **범위**이지 정리 규칙이 아니다.
     // **조회 인자를 지키는 목이어야 한다** — 통째로 같은 배열을 돌려주면 "그 기간을 조회했는가" 를
-    // 못 본다(이 결함이 정확히 «어느 기간 키로 읽는가» 의 문제다).
+    // 못 본다(이 결함이 정확히 **어느 기간 키로 읽는가** 의 문제다).
     getBossDropRecordsMock.mockImplementation(async (_ocids: string[], periodKeys: string[]) =>
       periodKeys.includes(weekKey)
         ? [
@@ -3218,7 +3218,7 @@ describe('잡지 않은 보스의 드롭 정리', () => {
   const WEEKLY = weeklyBossesData.weekly as { boss: string; difficulties: string[] }[]
   const WEEK_KEY = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
 
-  /** 「끝에서부터」 한도만큼 실제로 처치한 보스 — 「자쿰」(목록 맨 앞)과 겹치지 않는다. */
+  /** 끝에서부터 한도만큼 실제로 처치한 보스 — 자쿰(목록 맨 앞)과 겹치지 않는다. */
   function clearedContents(count: number): BossContent[] {
     return WEEKLY.slice(-count).map((entry) =>
       bossContent({
@@ -3301,7 +3301,7 @@ describe('잡지 않은 보스의 드롭 정리', () => {
   })
 
   // 셋째 경로 — 주가 바뀌면 미처치는 확정이다. 과거 기간 행은 전부 기록에서 오므로
-  // 「기록에 없다」가 곧 「안 잡았다」다(안전 장치 ③ 이 가격 미확정 보스를 이미 빼 둔다).
+  // `기록에 없다`가 곧 `안 잡았다`다(안전 장치 ③ 이 가격 미확정 보스를 이미 빼 둔다).
   it('지난 기간에 남은 미처치 드롭도 그 기간을 열 때 정리한다', async () => {
     syncSchedulesMock.mockResolvedValue([syncResult()])
     await useBossProfitStore.getState().refresh(['ocid-1'])
@@ -3309,7 +3309,7 @@ describe('잡지 않은 보스의 드롭 정리', () => {
     replaceBossDropRecordsMock.mockClear()
     mockShowInfo.mockClear()
 
-    // 그 주에 「스우」는 잡았고(기록 있음 — 안전 장치 ②의 근거) 「자쿰」은 안 잡았다.
+    // 그 주에 `스우`는 잡았고(기록 있음 — 안전 장치 ②의 근거) `자쿰`은 안 잡았다.
     isPeriodCheckedMock.mockResolvedValue(true)
     getBossProfitRecordsMock.mockResolvedValue([
       {
@@ -3339,7 +3339,7 @@ describe('잡지 않은 보스의 드롭 정리', () => {
     )
   })
 
-  // 안전 장치 ② — 백필된 적 없는 주는 기록이 통째로 비어 「행 없음」이 아무것도 뜻하지 않는다.
+  // 안전 장치 ② — 백필된 적 없는 주는 기록이 통째로 비어 `행 없음`이 아무것도 뜻하지 않는다.
   it('기록이 하나도 없는 과거 주는 손대지 않는다', async () => {
     syncSchedulesMock.mockResolvedValue([syncResult()])
     await useBossProfitStore.getState().refresh(['ocid-1'])

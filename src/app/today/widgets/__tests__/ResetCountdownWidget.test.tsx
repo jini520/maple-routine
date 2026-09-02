@@ -27,7 +27,7 @@ const MINUTE_MS = 60 * 1000
 const HOUR_MS = 60 * MINUTE_MS
 const DAY_MS = 24 * HOUR_MS
 
-// 위젯이 `Date.now()` 를 읽으므로(정정 39) 시계를 고정한다. 픽스처의 `atMs` 가 곧 «남은 ms» 라
+// 위젯이 `Date.now()` 를 읽으므로(정정 39) 시계를 고정한다. 픽스처의 `atMs` 가 곧 **남은 ms** 라
 // (`카운트다운` 이 그렇게 만든다) **`now` 를 0 으로 두면 `atMs − 0` 이 그대로 남은 시간**이 된다.
 beforeEach(() => {
   jest.useFakeTimers({ now: 0 })
@@ -91,8 +91,8 @@ describe('남은 시간 표기', () => {
     expect(getByText('43분')).toBeTruthy()
   })
 
-  // 아직 안 왔다는 사실이 «0분» 으로 읽히면 안 된다 — 다만 **초를 그리는 일일에는 안 쓴다**.
-  it('«1분 미만» 은 주간·월간에만 남는다 — 일일은 `20초` 라고 직접 말한다', async () => {
+  // 아직 안 왔다는 사실이 **0분** 으로 읽히면 안 된다 — 다만 **초를 그리는 일일에는 안 쓴다**.
+  it('**1분 미만** 은 주간·월간에만 남는다 — 일일은 `20초` 라고 직접 말한다', async () => {
     const { getByText, queryByText } = await 위젯(
       크기['2x1'],
       뷰모델({ resets: 초기화(20 * 1000, 20 * 1000, DAY_MS) }),
@@ -194,7 +194,7 @@ describe('임박을 색으로 말하지 않는다', () => {
 
 describe('누를 수 없는 타일이다', () => {
   // 초기화 시각은 이 타일이 다 말하고 더 볼 화면이 없다 — 갈 데 없는 것을 누르게 두면 무반응이
-  // «고장» 으로 읽힌다(격자가 `target` 없는 타일을 `Pressable` 로 감싸지 않는 것이 그 계약이다).
+  // **고장** 으로 읽힌다(격자가 `target` 없는 타일을 `Pressable` 로 감싸지 않는 것이 그 계약이다).
   it('레지스트리에 목적지가 없다', () => {
     expect(WIDGET_BY_ID['reset-countdown'].target).toBeUndefined()
   })
@@ -210,7 +210,7 @@ describe('1초마다 다시 그린다', () => {
       jest.advanceTimersByTime(1000)
     })
 
-    // `atMs` 는 그대로이고 «지금» 만 흘렀다 — 값이 그 차에서 나온다.
+    // `atMs` 는 그대로이고 **지금** 만 흘렀다 — 값이 그 차에서 나온다.
     expect(getByTestId('reset-value-daily').props.children).toBe('12시간 33분 59초')
   })
 
@@ -239,7 +239,7 @@ describe('1초마다 다시 그린다', () => {
     expect(getByTestId('reset-value-daily').props.children).toBe('0초')
   })
 
-  // 걷지 않으면 화면을 떠난 뒤에도 1초마다 상태를 갱신한다(경고와 누수). 남은 타이머 «수» 는
+  // 걷지 않으면 화면을 떠난 뒤에도 1초마다 상태를 갱신한다(경고와 누수). 남은 타이머 **수** 는
   // 테마·애니메이션 것이 섞여 못 세므로, **우리가 만든 그 id 가 걷혔는가** 를 묻는다.
   it('언마운트하면 자기 타이머를 걷는다', async () => {
     const 건다 = jest.spyOn(globalThis, 'setInterval')
@@ -262,7 +262,7 @@ describe('1초마다 다시 그린다', () => {
 
 describe('KST 기준이다', () => {
   // 뷰모델이 KST 절대 시각을 주고 이 위젯은 빼기만 한다 — 기기 타임존이 끼어들 자리가 없다.
-  // 그 계약을 «타임존을 바꿔도 같은 글자» 로 검사한다(`Date.now()` 는 타임존과 무관한 epoch 다).
+  // 그 계약을 **타임존을 바꿔도 같은 글자** 로 검사한다(`Date.now()` 는 타임존과 무관한 epoch 다).
   it('기기 타임존이 달라도 같은 값을 그린다', async () => {
     const 원래 = process.env.TZ
     const 결과: string[] = []

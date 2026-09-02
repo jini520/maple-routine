@@ -88,7 +88,7 @@ export interface BossOrderKey {
  * 함께 쓸 수 있게 `REFERENCE_ENTRIES` 의 **소유자**에 둔 것뿐이다:
  *
  * - `lib/boss/manual-boss-merge`(수동 목록)
- * - `features/boss-scheduler/displayed-bosses`(스케줄러 카드 · today 「남은 스케줄」 펼침)
+ * - `features/boss-scheduler/displayed-bosses`(스케줄러 카드 · today 남은 스케줄 펼침)
  * - `features/boss-profit/rows`(`sortRowsByOcidOrder` 의 2차 키)
  * - `features/cashbook/records`(펼친 결정석 줄의 보스 타일)
  *
@@ -96,7 +96,7 @@ export interface BossOrderKey {
  * 것과 같은 이유이고, 자동 모드에 넷째 사본을 새로 쓰지 않으려고 이 함수가 생겼다.
  *
  * **완전 결정적이다.** 참조표에 없는 보스(매칭 실패 원문명)는 맨 뒤로 가되 그들끼리도
- * 난이도·이름으로 갈린다 — 안정 정렬에 기대면 «입력 순서» 가 계약이 되는데, 그 입력이 `ORDER BY`
+ * 난이도·이름으로 갈린다 — 안정 정렬에 기대면 입력 순서 가 계약이 되는데, 그 입력이 `ORDER BY`
  * 없는 조회나 Map 삽입 순서라는 것이 이 고친 버그였다.
  */
 export function compareBossOrder(a: BossOrderKey, b: BossOrderKey): number {
@@ -230,14 +230,14 @@ export function countClearedWeeklyBosses(bosses: MatchedBoss[]): number {
  *
  * 세는 규칙을 새로 쓰지 않고 `countClearedWeeklyBosses`를 그대로 쓴다 —
  * 시즌 보스 제외·월간 제외·같은 보스의 여러 난이도는 1, 세 규칙이 여기서도 그대로여야
- * «선택은 12/12 인데 처치는 11/12» 같은 모순이 안 생긴다(이 이미 겪은 것).
+ * 선택은 12/12 인데 처치는 11/12 같은 모순이 안 생긴다(이 이미 겪은 것).
  *
  * 판정이 여기 있는 이유는 `WEEKLY_BOSS_CLEAR_LIMIT` 과 세는 함수를 **이 파일이 소유**하기
- * 때문이다 — 소비자(스케줄러 카드 · today 「남은 스케줄」 · 보스 수익)가 각자 `>= 12` 를 쓰면
+ * 때문이다 — 소비자(스케줄러 카드 · today 남은 스케줄 · 보스 수익)가 각자 `>= 12` 를 쓰면
  * 같은 규칙이 세 벌이 되고, 그때부터 화면마다 다른 말을 한다(와 같은 태도).
  *
  * **넥슨의 `weekly_boss_clear_count` 는 안 쓴다** — 그 필드는 타입에만 있고 제품 코드는 처음부터
- * 앱이 센 값을 쓴다. 대가는 «동기화가 낡으면 판정도 낡는다» 이고, 다음 동기화가 스스로 고친다.
+ * 앱이 센 값을 쓴다. 대가는 동기화가 낡으면 판정도 낡는다 이고, 다음 동기화가 스스로 고친다.
  */
 export function isWeeklyClearLimitReached(bosses: MatchedBoss[]): boolean {
   return countClearedWeeklyBosses(bosses) >= WEEKLY_BOSS_CLEAR_LIMIT

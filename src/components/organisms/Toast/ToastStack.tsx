@@ -38,7 +38,7 @@ export interface ToastStackProps {
 
 export function ToastStack(props: ToastStackProps): React.JSX.Element | null {
   const hasTabBar = props.hasTabBar ?? true
-  // **인셋이 아니라 하한이 깔린 값이다**. 토스트는 바 «위에» 쌓이므로 바와
+  // **인셋이 아니라 하한이 깔린 값이다**. 토스트는 바 **위에** 쌓이므로 바와
   // 같은 자리에서 출발해야 한다 — 여기만 인셋으로 두면 안드로이드 제스처 기기에서 바는 34 에
   // 뜨는데 토스트는 15 + 바 높이에 서서 캡슐 안으로 7px 들어간다.
   const bottomSafeAreaPx = useBottomSafeAreaPx()

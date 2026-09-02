@@ -54,7 +54,7 @@ describe('Button', () => {
   })
 
   // 주 CTA 옆/아래에 서는 부 동작. danger 와 같은 테두리 pill 이되 색이 중립이라
-  // 파괴적 동작과 헷갈리지 않는다(design-system.md 「기본 컴포넌트」).
+  // 파괴적 동작과 헷갈리지 않는다(design-system.md `기본 컴포넌트`).
   it('outline — 중립 테두리 pill', async () => {
     const { getByRole, getByText } = await renderAtom(
       <Button variant="outline">발급 방법 보기</Button>,

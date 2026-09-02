@@ -3,7 +3,7 @@
 // 자리에 있다.
 //
 // 위젯은 스토어를 모르고 `TodayViewModel` 만 받으므로 **목이 필요 없다** — 값
-// 조합이 곧 테스트 입력이다. 그 이득을 실제로 회수하려면 «전부 빈 상태» 하나가 있어야 하고, 각
+// 조합이 곧 테스트 입력이다. 그 이득을 실제로 회수하려면 **전부 빈 상태** 하나가 있어야 하고, 각
 // 테스트는 자기가 보는 필드만 덮어쓴다.
 
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../../lib/boss/boss-matching'
@@ -71,7 +71,7 @@ export const 대표_캐릭터: RepresentativeView = {
 /**
  * 남은 것이 넷 다 있는 행. **개수는 배열 길이에서 나온다** — 4·3·2·1 이라 테스트가 글자로 집을 수 있다.
  *
- * 이름은 실제 참조 데이터의 것을 쓴다(지어낸 이름은 «지역명만 쓴다» 판정을 타지 못한다).
+ * 이름은 실제 참조 데이터의 것을 쓴다(지어낸 이름은 지역명만 쓴다 판정을 타지 못한다).
  */
 export function 스케줄행(부분: Partial<ScheduleRowView> = {}): ScheduleRowView {
   const base: ScheduleRowView = {
@@ -118,7 +118,7 @@ export function 수익캐릭터(
   }
   const merged = { ...base, ...부분 }
 
-  // 합계를 손으로 적게 하면 «둘의 합이 총액» 이라는 뷰모델의 계약이 픽스처에서 깨진다.
+  // 합계를 손으로 적게 하면 **둘의 합이 총액** 이라는 뷰모델의 계약이 픽스처에서 깨진다.
   return {
     ...merged,
     totalMeso: 부분.totalMeso ?? merged.crystalMeso + merged.itemMeso,
@@ -165,14 +165,14 @@ export function 드롭(부분: Partial<PricedDropView> = {}): PricedDropView {
 /**
  * 월드 한도 한 줄 — **분모는 언제나 참조 데이터에서 온다**.
  *
- * 픽스처가 숫자를 적으면 위젯이 그 숫자를 그대로 그려도 «상수에서 왔는가» 를 못 묻는다. 그래서
+ * 픽스처가 숫자를 적으면 위젯이 그 숫자를 그대로 그려도 상수에서 왔는가 를 못 묻는다. 그래서
  * 기본값을 상수로 두고, 판별력 확인이 필요한 테스트만 `limit` 을 명시적으로 덮는다.
  */
 export function 월드한도(부분: Partial<CrystalLimitView> = {}): CrystalLimitView {
   return { world: '스카니아', cleared: 34, limit: WEEKLY_CRYSTAL_SALE_LIMIT, ...부분 }
 }
 
-/** n개 월드 — 이름과 소진량이 서로 달라 «합쳐졌는가» 를 글자로 물을 수 있다. */
+/** n개 월드 — 이름과 소진량이 서로 달라 합쳐졌는가 를 글자로 물을 수 있다. */
 export function 월드한도목록(n: number): CrystalLimitView[] {
   const 이름 = ['스카니아', '루나', '오로라', '베라', '크로아']
   return Array.from({ length: n }, (_, index) =>
@@ -197,7 +197,7 @@ export function 초기화(
   }
 }
 
-/** 1위 + 2~5위. `restCount` 가 4보다 작으면 그만큼만 선다(4x2 의 «모자라면 있는 만큼»). */
+/** 1위 + 2~5위. `restCount` 가 4보다 작으면 그만큼만 선다(4x2 의 모자라면 있는 만큼). */
 export function 최고가(restCount: number, 상위?: Partial<PricedDropView>): TodayViewModel['topItem'] {
   return {
     top: 드롭(상위),
@@ -213,7 +213,7 @@ export function 최고가(restCount: number, 상위?: Partial<PricedDropView>): 
 /**
  * 가격 미입력 한 벌 — 건수와 미리보기는 **따로 준다.**
  *
- * 뷰모델이 앞 셋만 미리보기에 싣고 나머지는 건수에만 남기므로(«외 N건»), 픽스처가 둘을 묶어 버리면
+ * 뷰모델이 앞 셋만 미리보기에 싣고 나머지는 건수에만 남기므로(외 N건), 픽스처가 둘을 묶어 버리면
  * 그 어긋남을 테스트가 만들 수 없다.
  */
 export function 미입력(
@@ -239,7 +239,7 @@ export function 미입력(
 /**
  * 가뭄 요약 한 벌 — **단계는 손으로 적지 않는다.**
  *
- * `tier`·`headlineCount` 를 픽스처가 직접 쓰면 «위젯이 `getValuableDroughtTier` 를 따르는가» 를
+ * `tier`·`headlineCount` 를 픽스처가 직접 쓰면 위젯이 `getValuableDroughtTier` 를 따르는가 를
  * 물을 수 없다(테스트가 답을 들고 와서 답을 맞추는 꼴이 된다). 뷰모델이 하는 것과 같은 파생을 한다.
  */
 export function 가뭄(weeksSince: number, 부분: Partial<DroughtView> = {}): DroughtView {

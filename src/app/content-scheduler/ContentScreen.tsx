@@ -30,7 +30,7 @@
 //  모달을 먹여 살리던 로스터 조회도 **설정
 //  화면으로 통째로 옮겨갔다** — 추적 목록은 이후 앱 전역 하나인데 그것을 고르는 자리만
 //    다섯이었다. 남은 흔적은 빈 상태 CTA 하나이고, 그것도 모달이 아니라 **설정 탭을 연다**.
-//    그래서 웹이 «모달을 셸 바깥 형제로 둔다»(`z-50` 이 셸의 스태킹 컨텍스트에 갇히는 것을 피한다)
+//    그래서 웹이 **모달을 셸 바깥 형제로 둔다**(`z-50` 이 셸의 스태킹 컨텍스트에 갇히는 것을 피한다)
 //    고 정한 자리가 이 파일에서 사라졌다.
 import { useEffect } from 'react'
 import { Pressable, RefreshControl, View } from 'react-native'
@@ -86,7 +86,7 @@ export function ContentScreen(): React.JSX.Element {
   // 선택은 화면·스토어가 아니라 **여기 한 벌**이다.
   const { selectedOcid, select } = useCharacterSelectionStore()
   // **당김이 시작한 회차에만** 인디케이터가 돈다. 헤더 버튼·자동 조회는 같은
-  // 재조회를 부르지만 인디케이터는 안 연다 — 버튼은 자기 스피너와 «조회 중...» 을 이미 갖고 있고
+  // 재조회를 부르지만 인디케이터는 안 연다 — 버튼은 자기 스피너와 **조회 중...** 을 이미 갖고 있고
   // 자동 조회는 원래 조용해야 하는 것이다.
   const pull = usePullRefresh(() => refresh(trackedOcids ?? []))
   const { mode } = useTrackingModeStore()
@@ -113,7 +113,7 @@ export function ContentScreen(): React.JSX.Element {
   const characters = orderByTracked(storeCharacters, trackedOcids ?? [])
 
   // 화면 넷이 **같은 규칙**으로 고른다 — 선택만 합치고 폴백을 화면마다 두면
-  // «공유했는데 화면마다 다른 캐릭터» 가 다시 생긴다.
+  // **공유했는데 화면마다 다른 캐릭터** 가 다시 생긴다.
   const selected = resolveSelectedCharacter(selectedOcid, characters)
 
   // ADR-083 결정 1: 캐릭터별 실패도 인라인 문단이 아니라 토스트다(보스 스케줄러와 동일한 배선).
@@ -121,9 +121,9 @@ export function ContentScreen(): React.JSX.Element {
   // 전역 error가 아니라 이 값으로 온다.
   useScheduleSyncErrorToast(selected?.error ?? null, { onRetry: () => refresh(trackedOcids ?? []) })
 
-  // 판정은 `features/content-scheduler/displayed-contents` 가 갖는다 — today 의 「남은 스케줄」이
-  // 같은 수를 세므로 화면 안에 두면 두 벌이 되고, 실제로 갈라졌던 자리다(모든 캐릭터 «일퀘 18»).
-  // 여기 남는 것은 «스토어에서 꺼내 넘기는 일» 뿐이다.
+  // 판정은 `features/content-scheduler/displayed-contents` 가 갖는다 — today 의 `남은 스케줄`이
+  // 같은 수를 세므로 화면 안에 두면 두 벌이 되고, 실제로 갈라졌던 자리다(모든 캐릭터 **일퀘 18**).
+  // 여기 남는 것은 **스토어에서 꺼내 넘기는 일** 뿐이다.
   function contentsInputOf(character: ContentCharacterView): DisplayedContentsInput {
     return {
       dailyContents: character.dailyContents,
@@ -236,7 +236,7 @@ export function ContentScreen(): React.JSX.Element {
           // 구조적으로 없다(`PageHeader` 파일 머리).
           <PageHeader>
             {/*: 동기화 상태가 드롭다운 줄에서 **제목 옆**으로 올라왔다. 오른쪽
-                끝은 관리 버튼 자리 그대로다 — 그쪽은 «가는 곳», 이쪽은 «상태» 라 성질이 다르다. */}
+                끝은 관리 버튼 자리 그대로다 — 그쪽은 **가는 곳**, 이쪽은 **상태** 라 성질이 다르다. */}
             <PageHeaderTitleRow className="justify-between">
               <View className="shrink flex-row items-center gap-2">
                 {/* 결정 3: 폭을 다투면 시각 텍스트만 줄어든다 — 제목은 화면의 이름이다. */}

@@ -1,5 +1,5 @@
 /**
- * 손입력이 고르는 **통화 셋** — 지출의 「기타」와 수입의 「기타」가 같이 쓴다
+ * 손입력이 고르는 **통화 셋** — 지출의 기타와 수입의 기타가 같이 쓴다
  *
  *
  * ## 왜 한 자리인가
@@ -11,7 +11,7 @@
  *
  * ## `unit` 이 라벨과 갈리는 자리
  *
- * 캐시는 라벨이 「캐시」(무엇으로 내나)이고 단위는 「원」(얼마인가)이다. 큰 숫자 옆에는 단위가,
+ * 캐시는 라벨이 캐시(무엇으로 내나)이고 단위는 원(얼마인가)이다. 큰 숫자 옆에는 단위가,
  * 통화를 고르는 자리에는 라벨이 선다 — 묻는 것이 달라서다.
  */
 export const FREE_CURRENCIES = [
@@ -33,7 +33,7 @@ export function currencyOfLabel(label: string): FreeCurrency {
   return FREE_CURRENCIES.find((each) => each.label === label)?.id ?? 'meso'
 }
 
-/** 큰 숫자 옆에 서는 단위 — 캐시만 「원」이다. */
+/** 큰 숫자 옆에 서는 단위 — 캐시만 원이다. */
 export function unitOfCurrency(id: FreeCurrency): string {
   return FREE_CURRENCIES.find((each) => each.id === id)?.unit ?? '메소'
 }

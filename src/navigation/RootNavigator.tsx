@@ -76,7 +76,7 @@ function screenFor(name: StackRouteName): React.ComponentType<Record<string, nev
  * 쌓으면 밀려나는 것이 층 화면 + 바가 되어 그 결정이 **구조로** 성립한다.
  *
  * 층(그룹 행 ↔ 하위 행)은 `Main` **안쪽** 스택이 진다. 두 스택이 같은 `animation`·`gestureEnabled`
- * 를 쓰므로 «하위 페이지처럼 열린다» 가 값이 아니라 구조로 성립한다(#240). 웹에서 오버레이를 포털로 탭 레이어 밖에 그려야 했던 이유(결정 3 —
+ * 를 쓰므로 하위 페이지처럼 열린다 가 값이 아니라 구조로 성립한다(#240). 웹에서 오버레이를 포털로 탭 레이어 밖에 그려야 했던 이유(결정 3 —
  * `transform` 이 containing block 을 만든다)도 여기서는 존재하지 않는다: 층을 겹치는 일을 OS 가 한다.
  *
  * 그래서 계획서 표의 *"탭 N 위 push"* 는 **루트 스택 push** 로 읽는다 — 실제로 어느 탭에서 열리는지는

@@ -1,7 +1,7 @@
 // 레지스트리와 **손으로 적은 배치**의 대조.
 //
 // 좌표를 손으로 적기로 한 이상 그 실수는 반드시 나고, **이 파일이 그것을 잡는 유일한 장치다** —
-// `validateWidgetLayout` 은 step 5 에서 이미 검증됐지만 «지금 쓰는 배치가 그 검증을 통과하는가» 는
+// `validateWidgetLayout` 은 step 5 에서 이미 검증됐지만 **지금 쓰는 배치가 그 검증을 통과하는가** 는
 // 아무도 안 묻고 있었다. 자동 패킹을 기각하며 산 값이 정확히 여기서 회수된다.
 
 import { validateWidgetLayout } from '../../../lib/today/widget-layout'
@@ -22,7 +22,7 @@ describe('기본 배치', () => {
   })
 
   // 배치가 코드 상수인 v1 에서는 **선언만 남고 아무도 안 쓰는 크기**가 생긴다(정정 13 — 남기기로
-  // 한 값이다). 그러니 «선언된 크기 = 쓰이는 크기» 로 적으면 안 되고, 반대 방향만 참이다.
+  // 한 값이다). 그러니 **선언된 크기 = 쓰이는 크기** 로 적으면 안 되고, 반대 방향만 참이다.
   it('배치가 쓰는 크기는 전부 그 위젯이 선언한 것이다 — 반대는 아니다', () => {
     for (const placement of TILE_LAYOUT) {
       expect(WIDGET_SIZES_BY_ID[placement.id]).toContainEqual({ w: placement.w, h: placement.h })
@@ -32,7 +32,7 @@ describe('기본 배치', () => {
     expect(declaredCount).toBeGreaterThan(TILE_LAYOUT.length)
   })
 
-  // 공유 컨텐츠가 「남은 스케줄」 **위**에 선다(사용자 지정) — 먼저 치우면
+  // 공유 컨텐츠가 `남은 스케줄` **위**에 선다(사용자 지정) — 먼저 치우면
   // 아래 목록이 줄어드는 관계라서다. 순서가 뒤집히면 그 근거가 사라지므로 좌표로 못 박는다.
   it('공유 컨텐츠가 남은 스케줄 바로 위다', () => {
     const rowOf = (id: string): number =>

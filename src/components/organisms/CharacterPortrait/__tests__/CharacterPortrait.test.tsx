@@ -89,7 +89,7 @@ describe('CharacterPortrait · rail 규격의 곡선 글자', () => {
     expect(svgTextContent(view.getByTestId('portrait-level-text'))).toBe('Lv.285')
     expect(svgTextContent(view.getByTestId('portrait-name-text'))).toBe('내옆에최성일')
 
-    // 「호 하나」의 증거 — 둘이 **같은 path** 를 가리킨다(정정 2).
+    // `호 하나`의 증거 — 둘이 **같은 path** 를 가리킨다(정정 2).
     const [levelPath, namePath] = [
       textPathOf(view.getByTestId('portrait-level-text')),
       textPathOf(view.getByTestId('portrait-name-text')),

@@ -134,7 +134,7 @@ describe('PartySizeModal', () => {
   it('베일은 카드가 아니라 히어로 정지점을 쓴다', async () => {
     const { getByTestId } = await renderOverlay(<PartySizeModal {...props()} />)
 
-    // 히어로 끝점 42/82 + 네이티브 전용 끝점 1(`design-system.md` 「파티 인원 모달」).
+    // 히어로 끝점 42/82 + 네이티브 전용 끝점 1(`design-system.md` `파티 인원 모달`).
     expect(getByTestId('faded-illustration-veil', HIDDEN).props.locations).toEqual([0, 0.42, 0.82, 1])
   })
 

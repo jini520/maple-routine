@@ -51,7 +51,7 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     manualTrackedByOcid: {},
     loadTrackedOcids: jest.fn(),
     saveTrackedOcids: jest.fn(),
-    // 실물은 `Promise<void>` 다 — 당김 훅이 회차의 «끝» 을 기다린다.
+    // 실물은 `Promise<void>` 다 — 당김 훅이 회차의 **끝** 을 기다린다.
     refresh: jest.fn().mockResolvedValue(undefined),
     addManualContent: jest.fn(async () => {}),
     removeManualContent: jest.fn(async () => {}),
@@ -181,7 +181,7 @@ describe('ContentManageScreen', () => {
 
     await press(row('주간'))
 
-    // 「무릉도장」은 그룹 헤더와 행 양쪽에 있다(단독 항목 그룹) — 행이 있다는 것으로 본다.
+    // `무릉도장`은 그룹 헤더와 행 양쪽에 있다(단독 항목 그룹) — 행이 있다는 것으로 본다.
     expect(row('무릉도장')).toBeTruthy()
   })
 

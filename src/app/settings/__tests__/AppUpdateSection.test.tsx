@@ -3,7 +3,7 @@
 // 갈린 것 셋
 // ① **스토어를 목하지 않는다 — 값을 프롭으로 받는다.** core 의 `live-update/store` 는 값으로
 //  import 하는 것만으로 죽어(`import.meta.env`) 목을 걸 자리조차 없다(
-//    `AppUpdateSection.tsx` 파일 머리). 그래서 웹 테스트의 「마운트 시 현재 버전을 불러온다」는
+//    `AppUpdateSection.tsx` 파일 머리). 그래서 웹 테스트의 `마운트 시 현재 버전을 불러온다`는
 //    **옮길 계약이 아니다** — 그 호출이 바로 던지는 포트라 컴포넌트에서 사라졌다.
 // ② `getByRole('button', { name })` → 글자에서 위로 올라가 잡는다.
 // ③ `toBeDisabled()` → `accessibilityState.disabled`.
@@ -78,7 +78,7 @@ describe('AppUpdateSection', () => {
     expect(view.getByText(FALLBACK_VERSION)).toBeTruthy()
   })
 
-  // : 이 카드가 놓이는 화면의 제목이 이미 「앱 정보」다.
+  // : 이 카드가 놓이는 화면의 제목이 이미 `앱 정보`다.
   it('섹션 제목을 스스로 그리지 않는다', async () => {
     const view = await render()
 

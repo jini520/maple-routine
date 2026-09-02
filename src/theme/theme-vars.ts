@@ -98,7 +98,7 @@ export function buildThemeVariables(definition: ThemeDefinition): Record<string,
  * **스크림 쪽으로는 못 고친다.** 다크의 `bg` 는 이미 OKLCH L 0.13~0.15 라 그 아래 여유가 없어,
  * 백드롭을 **완전 불투명 검정**으로 만들어도 대비는 1.07 이 천장이다. 라이트가 멀쩡한 이유도
  * 같다 — 거기는 L 0.95 에서 0.55 까지 0.40 을 내려갈 수 있다. 그래서 고칠 곳은 시트이고,
- * 다크에서 «떠 있음» 은 어둡게가 아니라 **밝게**로 만든다.
+ * 다크에서 떠 있음 은 어둡게가 아니라 **밝게**로 만든다.
  *
  * ## 넷을 **함께** 올린다
  *
@@ -118,9 +118,9 @@ export function buildThemeVariables(definition: ThemeDefinition): Record<string,
 const SHEET_SCOPE_TOKENS = ['bg', 'surface', 'surface2', 'track'] as const
 
 /**
- * 「한 칸」 — `deriveMediaScope` 가 카드 안 `surface → surface-2` 를 벌릴 때 쓰는 폭과 **같은 수**다.
+ * 한 칸 — `deriveMediaScope` 가 카드 안 `surface → surface-2` 를 벌릴 때 쓰는 폭과 **같은 수**다.
  *
- * 새 눈금을 만들지 않는다. 이 앱에서 «표면 한 단계» 는 이미 이 값이고, 두 벌이 되면 어느 쪽이
+ * 새 눈금을 만들지 않는다. 이 앱에서 표면 한 단계 는 이미 이 값이고, 두 벌이 되면 어느 쪽이
  * 진짜인지 알 수 없게 된다(테스트가 두 값의 일치를 지킨다).
  */
 export const SHEET_LIFT = 0.09

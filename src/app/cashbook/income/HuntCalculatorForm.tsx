@@ -1,5 +1,5 @@
 /**
- * 「사냥」 계산기 폼. **적는 것이 아니라 계산되는 것**이다.
+ * 사냥 계산기 폼. **적는 것이 아니라 계산되는 것**이다.
  *
  * 나머지 갈래는 얼마 벌었나를 사람이 알지만 사냥 메소는 **맵이 정해지면 셀 수 있는 값**이라 앱이
  * 낸다. 그래서 이 폼에만 줄이 여럿 서고(지역 · 사냥터 · 효율 · 메획 · 소재 · 조각) 큰 숫자가
@@ -50,7 +50,7 @@ import { CharacterField, FragmentFields, SaveRow, type IncomeFormProps } from '.
 import { useSheetSubmit } from './use-sheet-submit'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
-/** 「lv.294」·「lv.200-201」 — 원 자료의 표기를 그대로 되돌린다. */
+/** lv.294·lv.200-201 — 원 자료의 표기를 그대로 되돌린다. */
 function levelLabelOf(ground: HuntingGround): string {
   return `lv.${ground.levels.join('-')}`
 }
@@ -60,7 +60,7 @@ function levelLabelOf(ground: HuntingGround): string {
  *
  * 그림이 없으면 **글자만으로 선다**(`아케인 700`) — 비슷한 그림을 갖다 붙이면 틀린 것을 그리는
  * 셈이다(이 지출 타일에 세운 규칙과 같다). 읽어 주는 이름은 언제나 온전한
- * 말이라 그림이 있든 없든 「어센틱 포스 700」 으로 들린다.
+ * 말이라 그림이 있든 없든 어센틱 포스 700 으로 들린다.
  */
 function ForceBadge(props: { region: HuntingRegion; force: number }): React.JSX.Element {
   const icon = forceIconOf(props.region.forceType)
@@ -116,11 +116,11 @@ function GroundOptionRow(props: {
  * 메소 획득률 아이템 — **체크박스 + 그림**이다(사용자 지정 2026-08-29).
  *
  * 켜고 끄는 것이라 갈래 칩과 성질이 다르고, 그 사실을 **체크박스가 말한다** — 알약 테두리는
- * «고르는 하나» 로 읽혀 여럿이 동시에 켜지는 것과 안 맞았다. 그래서 **그림의 원형 테두리를 걷고**
+ * 고르는 하나 로 읽혀 여럿이 동시에 켜지는 것과 안 맞았다. 그래서 **그림의 원형 테두리를 걷고**
  * 그 자리를 체크박스가 든다.
  *
  * 증가율(`+50%`·`×1.2`)은 안 적는다 — 이미 아는 값이다. 이름도 안 적고
- * **읽어 주는 라벨**로만 남긴다(`aria-label`) — 그림만 남기고 이름을 지우면 낭독기에서 «버튼»
+ * **읽어 주는 라벨**로만 남긴다(`aria-label`) — 그림만 남기고 이름을 지우면 낭독기에서 버튼
  * 둘이 된다.
  */
 function BoostToggle(props: {
@@ -144,7 +144,7 @@ function BoostToggle(props: {
           . 파일명이 실제로 풀리는지는 `hunting-meso.test` 가 지킨다.
 
           **끈 것은 흐리다** — 체크박스가 상태를 말하지만, 그림까지 같이 옅어지면 줄을 훑을 때
-          켜진 것이 먼저 눈에 든다. 걷어내지 않는 것은 «무엇을 켤 수 있나» 도 함께 보여야 해서다. */}
+          켜진 것이 먼저 눈에 든다. 걷어내지 않는 것은 **무엇을 켤 수 있나** 도 함께 보여야 해서다. */}
       {props.icon === null ? (
         <View className="h-6 w-6" />
       ) : (
@@ -265,7 +265,7 @@ export function HuntCalculatorForm(
    * 캐릭터를 고르면 **레벨이 따라 바뀌고**, 그 레벨의 창 밖으로 나간 지역은 풀린다
    *
    *
-   * 안 풀면 고르개가 «목록에 없는 값» 을 들게 되어 트리거가 첫 칸(「선택 안함」)을 읽어 준다 —
+   * 안 풀면 고르개가 목록에 없는 값 을 들게 되어 트리거가 첫 칸(선택 안함)을 읽어 준다 —
    * 화면에는 다른 지역이 적히는데 계산은 옛 사냥터로 도는 상태가 된다.
    */
   function selectCharacter(next: string | null): void {
@@ -285,7 +285,7 @@ export function HuntCalculatorForm(
 
   /**
    * 캐릭터의 메획을 읽어 온다 — **고르는 그 순간**이 계기다(레벨을 갈아 끼우는
-   * 자리와 같다). 「선택 안함」 이면 읽을 대상이 없어 줄이 걷히고 곱이 ×1 로 돌아간다.
+   * 자리와 같다). 선택 안함 이면 읽을 대상이 없어 줄이 걷히고 곱이 ×1 로 돌아간다.
    */
   function loadMesoRateFor(next: string | null): void {
     mesoRateRequest.current = next
@@ -330,8 +330,8 @@ export function HuntCalculatorForm(
       {/*
         **지역과 사냥터는 각각 자기 줄**이다(사용자 지정 2026-09-01).
 
-        한 줄에 나란히 세워 봤더니(2026-08-29) 이름이 길어 둘 다 잘렸다 — 지역은 「츄츄 아일랜드」,
-        사냥터는 「풍화된 기쁨과 분노의 땅」 까지 간다. 시트가 한 줄 길어지는 대신 고른 것이 온전히
+        한 줄에 나란히 세워 봤더니(2026-08-29) 이름이 길어 둘 다 잘렸다 — 지역은 `츄츄 아일랜드`,
+        사냥터는 `풍화된 기쁨과 분노의 땅` 까지 간다. 시트가 한 줄 길어지는 대신 고른 것이 온전히
         읽힌다. 줄어든 높이는 아래에서 소비 아이템과 메소 획득량을 합쳐 되찾는다.
       */}
       <SelectField
@@ -388,7 +388,7 @@ export function HuntCalculatorForm(
             {levelLabelOf(huntGround)}
           </Text>
           {/* **감소한 마릿수**를 적는다(사용자 지정 2026-08-28) — 사냥터 목록은 맵의 제원
-              (40마리)을 적지만 이 줄은 «실제로 잡는 수» 다. 그것이 곧 계산에 드는 값이다. */}
+              (40마리)을 적지만 이 줄은 **실제로 잡는 수** 다. 그것이 곧 계산에 드는 값이다. */}
           <Text
             testID="income-sheet-killed-mobs"
             className="text-11 text-text-muted"
@@ -426,7 +426,7 @@ export function HuntCalculatorForm(
         되돌리면서 늘어난 높이를 여기서 되찾는다.
 
         `flex` 를 `style` 로 주는 이유는 **비율이 값이기 때문**이다 — 클래스에 임의 값을 적으면
-        그 수가 두 곳(둘의 합)으로 흩어져 «왜 이 비율인가» 가 안 읽힌다.
+        그 수가 두 곳(둘의 합)으로 흩어져 **왜 이 비율인가** 가 안 읽힌다.
       */}
       <View testID="income-sheet-meso-line" className="flex-row items-start gap-3">
         {/*
@@ -455,7 +455,7 @@ export function HuntCalculatorForm(
 
         {/*
           **언제나 선다**(사용자 지정 2026-08-29) — 캐릭터를 안 골랐어도 그 자리는 있다. 안 세우면
-          캐릭터를 고르는 순간 줄이 생겨 아래가 통째로 밀리고, 무엇보다 «메획이 안 든다» 는 사실을
+          캐릭터를 고르는 순간 줄이 생겨 아래가 통째로 밀리고, 무엇보다 **메획이 안 든다** 는 사실을
           화면이 말하지 않는다. 캐릭터가 없으면 캐릭터 메획이 0 이고, 켠 것이 없으면 **0%** 다.
 
           읽혔으면 **못 친다**(큰 숫자와 같은 논리). **치는 칸이 되는 것은** 캐릭터를 골랐는데
@@ -500,7 +500,7 @@ export function HuntCalculatorForm(
         </View>
       </View>
 
-      {/* 「소재」는 사용자가 실제로 세는 단위다 — 하나가 30분. */}
+      {/* `소재`는 사용자가 실제로 세는 단위다 — 하나가 30분. */}
       <FieldRow label="시간">
         <QuantityStepper
           value={sojae}
@@ -562,7 +562,7 @@ export function HuntCalculatorForm(
             pointAmount: null,
             pointPer100mMeso: null,
             cashAmount: null,
-            // 수량은 「기타」만 쓴다.
+            // 수량은 `기타`만 쓴다.
             quantity: null,
             // **계산 입력을 함께 남긴다** — 없으면 수정 시트가 빈 계산기로 열려
             // 만지는 순간 금액이 덮인다.

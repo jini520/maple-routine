@@ -21,8 +21,8 @@ export type TextProps = Clamped<RNTextProps>
  * @example
  * <Text className="text-sm text-text">문구</Text>
  *
- * // 상자가 글자를 못 따라가는 자리는 `fixed`. 기준은 «작아 보인다» 가 아니라
- * // «상자가 글자를 따라 커지는가» 다. 아래는 높이 76 으로 못박힌 today 타일 안이다
+ * // 상자가 글자를 못 따라가는 자리는 `fixed`. 기준은 작아 보인다 가 아니라
+ * // 상자가 글자를 따라 커지는가 다. 아래는 높이 76 으로 못박힌 today 타일 안이다
  * <Text fixed className="text-11 text-text-muted">{label}</Text>
  */
 export function Text({ fixed = false, style, ...rest }: TextProps): React.JSX.Element {

@@ -1,5 +1,5 @@
 // 격자 **껍데기**. 위젯 내용은 각자의 테스트가 보므로 이 파일이
-// 묻는 것은 하나다 — «타일 여덟이 적어 둔 좌표에 서는가».
+// 묻는 것은 하나다 — **타일 여덟이 적어 둔 좌표에 서는가**.
 //
 // ── 값을 손으로 적지 않는 자리 ──────────────────────────────────────────────────────
 // 치수는 `resolveWidgetGridMetrics` 에서 읽는다(`TabNavigator`·`ScreenScroll` 테스트가 바 치수를
@@ -22,7 +22,7 @@ import { WidgetGrid } from '../WidgetGrid'
 jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
 
 const navigate = jest.fn()
-// 층이 스택이 된 뒤로 «그룹 층으로 되돌리기» 는 액션이다 — 화면이 이것도 부른다.
+// 층이 스택이 된 뒤로 **그룹 층으로 되돌리기** 는 액션이다 — 화면이 이것도 부른다.
 const dispatch = jest.fn()
 const mockedUseScreenNavigation = jest.mocked(useScreenNavigation)
 
@@ -64,7 +64,7 @@ describe('WidgetGrid — 좌표 배치', () => {
   it('타일 아홉이 적어 둔 좌표에 선다', async () => {
     const view = await 격자()
 
-    // (0,0) 4x1 — 가로를 다 쓰는 타일의 폭은 «창폭 − 좌우 여백» 이다.
+    // (0,0) 4x1 — 가로를 다 쓰는 타일의 폭은 **창폭 − 좌우 여백** 이다.
     expect(스타일(타일(view, 'representative-character'))).toMatchObject({
       left: 0,
       top: 0,
@@ -145,7 +145,7 @@ describe('`h: auto` 타일', () => {
       })
     })
 
-    // 자기 자신과 위쪽 타일은 그대로다 — 밀리는 것은 «아래» 뿐이다.
+    // 자기 자신과 위쪽 타일은 그대로다 — 밀리는 것은 **아래** 뿐이다.
     expect(스타일(타일(view, 'reset-countdown'))).toMatchObject({ top: 행 })
     expect(스타일(타일(view, 'shared-contents'))).toMatchObject({ top: 2 * 행 })
     expect(스타일(타일(view, 'remaining-schedule'))).toMatchObject({ top: 3 * 행 })
@@ -185,7 +185,7 @@ describe('`h: auto` 타일', () => {
   // 계산으로 나오는 값을 재면 첫 프레임에 0 이고, 그 0 이 그대로 좌표가 된다.
   // 재는 것은 **auto 타일의 내용 상자 하나뿐**이다 — 나머지는 계산으로 나오고, 재면 첫 프레임에
   // 0 이라 타일이 한 프레임 접혀 있다(과 같은 이유).
-  it('auto 타일의 «내용» 만 잰다 — 타일 래퍼도 다른 타일도 안 잰다', async () => {
+  it('auto 타일의 **내용** 만 잰다 — 타일 래퍼도 다른 타일도 안 잰다', async () => {
     const view = await 격자()
 
     expect(view.getByTestId('widget-measure-remaining-schedule').props.onLayout).toBeInstanceOf(
@@ -201,7 +201,7 @@ describe('`h: auto` 타일', () => {
 })
 
 describe('타일 탭', () => {
-  // 여기서 «광고 게이트도 탄다» 를 함께 물었다. 이 전면광고를 걷으며 지웠고, 되살아나는
+  // 여기서 **광고 게이트도 탄다** 를 함께 물었다. 이 전면광고를 걷으며 지웠고, 되살아나는
   // 것은 `src/__tests__/interstitial-policy.test.ts` 가 소스로 막는다.
   it('`target` 이 있는 타일은 그 탭으로 보낸다', async () => {
     const view = await 격자()
@@ -219,8 +219,8 @@ describe('타일 탭', () => {
   })
 
   // 증상이었던 것: 위젯으로 보스 수익에 간 뒤 ← 를 누르면 today 가 아니라 **가계부가 활성인 채로**
-  // 그룹 행만 열렸다. 타일 탭이 «한 층 내려가는 이동» 인데 바 기록을 안 남겨, ← 가
-  // 결정 5 의 안전망(«기록이 없으면 페이지는 그대로 두고 그룹 행만 연다»)에 걸린 것이다.
+  // 그룹 행만 열렸다. 타일 탭이 **한 층 내려가는 이동** 인데 바 기록을 안 남겨, ← 가
+  // 결정 5 의 안전망(**기록이 없으면 페이지는 그대로 두고 그룹 행만 연다**)에 걸린 것이다.
   //
   // 지금은 **적을 기록이 없다.** 이동 자체가 스택 한 단이라 되돌아갈 자리가 구조로 실재하고,
   // 그 안전망도 함께 사라졌다. 그래서 이 결함을 막는 것은 위 한 줄이다.

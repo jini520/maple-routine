@@ -19,7 +19,7 @@ import type { RootStackParamList } from './routes'
  *
  * ## `UpdatePromptModal` 이 여기 있는 이유
  *
- * 어느 화면에 있든 떠야 하므로 **화면 안**은 안 된다. 그렇다고 `AppShell` 에 두면 「자세히 보기」가
+ * 어느 화면에 있든 떠야 하므로 **화면 안**은 안 된다. 그렇다고 `AppShell` 에 두면 자세히 보기가
  * 갈 곳(`SettingsReleaseNotes`)을 부를 방법이 없다 — 그 자리는 컨테이너 밖이라
  * 내비게이션을 못 잡는다. 그 둘을 동시에 만족하는 자리가 **컨테이너 안 · 내비게이터 밖**뿐이고,
  * 마침 여기가 ref 를 이미 들고 있다.

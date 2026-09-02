@@ -3,7 +3,7 @@ import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
 // today 뷰모델의 **조립 규칙**. 위젯이 스토어를 모르므로 화면이 값을 한
 // 번 모으는데, 그 조립을 순수 함수로 두면 **위젯이 한 줄도 없는 지금 로직 전부를 검증할 수 있다.**
 //
-// 여기서 지키는 것의 대부분은 «다시 구현하지 않았는가» 다 — 남은 개수는 `content-completion` ·
+// 여기서 지키는 것의 대부분은 **다시 구현하지 않았는가** 다 — 남은 개수는 `content-completion` ·
 // `displayedBosses` 가, 수익은 `groupTotalMeso` 가, 한도 분모는 `WEEKLY_CRYSTAL_SALE_LIMIT` 가
 // 판정한다. 판정이 두 벌이 되면 today 와 원래 화면이 **다른 수를 말한다.**
 
@@ -174,7 +174,7 @@ describe('남은 스케줄 — 분류 넷', () => {
     expect(model.schedule[0].weeklyNames).toHaveLength(1)
   })
 
-  // 무릉도장은 «다 했다» 가 정의되지 않는다 — 세면 링도 위젯도 영원히 안 찬다.
+  // 무릉도장은 **다 했다** 가 정의되지 않는다 — 세면 링도 위젯도 영원히 안 찬다.
   it('끝이 없는 항목(무릉도장)은 남은 개수에 들지 않는다', () => {
     const model = buildTodayViewModel(
       input({
@@ -231,7 +231,7 @@ describe('남은 스케줄 — 분류 넷', () => {
     expect(model.schedule[0].weeklyBosses).toHaveLength(0)
   })
 
-  // 주간 한도를 채우면 남은 미처치 보스는 «남은 일» 이 아니다. 판정은 여기
+  // 주간 한도를 채우면 남은 미처치 보스는 **남은 일** 이 아니다. 판정은 여기
   // 없다(`displayedBosses` 가 실어 보낸 `isWeeklyLimitClosed` 를 거를 뿐이다).
   it('주간 12마리를 채우면 미처치 등록 보스를 남은 것으로 세지 않는다', () => {
     const clearedNames = (weeklyBossesData.weekly as { boss: string }[])
@@ -279,7 +279,7 @@ describe('남은 스케줄 — 분류 넷', () => {
     expect(model.schedule[0].weeklyBosses.map((entry) => entry.name)).toEqual(['미처치보스'])
   })
 
-  it('선택된 캐릭터를 전부 담는다 — 「외 N명」 접기가 없다', () => {
+  it('선택된 캐릭터를 전부 담는다 — `외 N명` 접기가 없다', () => {
     const ocids = ['a', 'b', 'c', 'd', 'e', 'f']
     const model = buildTodayViewModel(
       input({
@@ -299,7 +299,7 @@ describe('남은 스케줄 — 순서는 **관리 순서**뿐이다', () => {
     })
   }
 
-  // 「남은 개수 많은 순」은 **어느 주기의** 개수인지가 정해져야 셀 수 있고, 그 주기는 위젯의 탭이다.
+  // `남은 개수 많은 순`은 **어느 주기의** 개수인지가 정해져야 셀 수 있고, 그 주기는 위젯의 탭이다.
   // 여기서 총합으로 한 번 세워 두면 위젯이 다시 세우게 되고 동수의 기준(관리 순서)이 뭉개진다.
   it('남은 개수로 다시 세우지 않는다 — 그 정렬은 탭을 아는 위젯의 몫이다', () => {
     const model = buildTodayViewModel(
@@ -323,7 +323,7 @@ describe('남은 스케줄 — 순서는 **관리 순서**뿐이다', () => {
     expect(model.schedule.map((row) => row.ocid)).toEqual(['c', 'a', 'b'])
   })
 
-  // 실패를 맨 아래로 내리는 것도 «순서» 라, 정렬을 한 번만 하기로 한 뒤로는 위젯이 함께 판다.
+  // 실패를 맨 아래로 내리는 것도 **순서** 라, 정렬을 한 번만 하기로 한 뒤로는 위젯이 함께 판다.
   it('동기화 실패도 여기서는 안 내린다 — 표식만 얹는다', () => {
     const model = buildTodayViewModel(
       input({
@@ -352,7 +352,7 @@ describe('대표 캐릭터', () => {
     expect(model.representative?.name).toBe('나')
   })
 
-  it('미지정이면 목록의 첫 번째가 선다 — «대표 없음» 상태가 없다', () => {
+  it('미지정이면 목록의 첫 번째가 선다 — **대표 없음** 상태가 없다', () => {
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a', 'b'],
@@ -400,7 +400,7 @@ describe('주간 보스 수익', () => {
     expect(model.profit.hasRecords).toBe(true)
   })
 
-  it('기록이 하나도 없으면 0 이고 «미기록» 을 함께 말한다', () => {
+  it('기록이 하나도 없으면 0 이고 **미기록** 을 함께 말한다', () => {
     const model = buildTodayViewModel(input())
 
     expect(model.profit.totalMeso).toBe(0)
@@ -480,7 +480,7 @@ describe('최고가 아이템', () => {
     expect(model.topItem?.rest.map((entry) => entry.itemName)).toEqual(['2위', '3위', '4위', '5위'])
   })
 
-  // today 가 답하는 질문은 «내가 얼마를 벌었나» 다 — 총액으로 그리면 같은 화면의 「주간 보스 수익」
+  // today 가 답하는 질문은 **내가 얼마를 벌었나** 다 — 총액으로 그리면 같은 화면의 `주간 보스 수익`
   // (`sumDropPayout` = 분배 후 합)보다 최고가가 큰 화면이 나온다.
   it('분배된 금액을 그린다 — 입력한 총액이 아니다', () => {
     const model = buildTodayViewModel(
@@ -527,7 +527,7 @@ describe('최고가 아이템', () => {
     expect(model.topItem?.top.shareCount).toBe(1)
   })
 
-  // 값을 모르는 것을 «가장 싼 것» 으로 단정하지 않는다.
+  // 값을 모르는 것을 **가장 싼 것** 으로 단정하지 않는다.
   it('가격 미입력 기록은 순위에 들지 않는다', () => {
     const model = buildTodayViewModel(
       input({
@@ -553,7 +553,7 @@ describe('최고가 아이템', () => {
     expect(model.unpricedCount).toBe(2)
   })
 
-  // 'excluded' 는 «값을 매기지 않기로 한» 사용자의 결정이라 기다리는 건이 아니다.
+  // 'excluded' 는 **값을 매기지 않기로 한** 사용자의 결정이라 기다리는 건이 아니다.
   it('기록 안함(excluded)은 미입력으로 세지 않는다', () => {
     const model = buildTodayViewModel(
       input({ dropGroups: [dropGroup([dropRecord({ itemName: 'a', priceState: 'excluded' })])] }),
@@ -578,7 +578,7 @@ describe('최고가 아이템', () => {
     expect(model.unpricedCount).toBe(0)
   })
 
-  // 위젯 4가 «캐릭터 · 보스» 를 그린다. ocid 는 사용자에게 뜻이 없는 값이라 대신 넣지 않는다.
+  // 위젯 4가 **캐릭터 · 보스** 를 그린다. ocid 는 사용자에게 뜻이 없는 값이라 대신 넣지 않는다.
   it('캐릭터 이름은 프로필 캐시에 있을 때만 싣는다', () => {
     const 기록 = dropRecord({ itemName: '반지', priceState: 'entered', priceMeso: 10 })
     const 있음 = buildTodayViewModel(
@@ -737,7 +737,7 @@ describe('공유 컨텐츠 — 계열로 묶는다', () => {
     expect(model.sharedContents.flatMap((group) => group.items)).toHaveLength(7)
   })
 
-  it('「남은 스케줄」에서는 일곱이 빠진다', () => {
+  it('`남은 스케줄`에서는 일곱이 빠진다', () => {
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a'],
@@ -803,7 +803,7 @@ describe('공유 컨텐츠 — 오른쪽 열은 `maxCount > 0` 하나로 갈린�
 
   it('완료하면 카운트를 안 준다 — 화면이 CLEAR 를 그린다', () => {
     // 익스트림 몬스터파커는 `quest_state` 로 완료를 판정하는 항목이라 `now_count` 의 충실도가
-    // 확인된 적이 없다. 완료한 항목의 «몇 번 했나» 는 언제나 max 라 카운트를 줄 이유가 없고,
+    // 확인된 적이 없다. 완료한 항목의 **몇 번 했나** 는 언제나 max 라 카운트를 줄 이유가 없고,
     // 안 주면 **끝낸 퀘스트가 `0/2` 로 보일 위험도 함께 사라진다**.
     const model = buildTodayViewModel(
       input({
@@ -821,7 +821,7 @@ describe('공유 컨텐츠 — 오른쪽 열은 `maxCount > 0` 하나로 갈린�
     expect(extreme).toMatchObject({ count: null, isComplete: true })
   })
 
-  it('카운트형도 다 채우면 카운트를 안 준다 — 「익스트림만 예외」는 이름으로 유추하는 규칙이 된다', () => {
+  it('카운트형도 다 채우면 카운트를 안 준다 — `익스트림만 예외`는 이름으로 유추하는 규칙이 된다', () => {
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a'],
@@ -964,7 +964,7 @@ describe('공유 컨텐츠 — 유니온만 조건부다', () => {
     expect(model.sharedRemaining).toBe(5)
   })
 
-  it('수동 모드에서는 추적 목록 멤버십이 «스케줄러에 있는가» 다', () => {
+  it('수동 모드에서는 추적 목록 멤버십이 **스케줄러에 있는가** 다', () => {
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a'],
@@ -979,9 +979,9 @@ describe('공유 컨텐츠 — 유니온만 조건부다', () => {
   })
 })
 
-// 요구 레벨에 못 미치는 항목은 «남은 것» 이 아니다. 게임이 등록을 허용해도
+// 요구 레벨에 못 미치는 항목은 **남은 것** 이 아니다. 게임이 등록을 허용해도
 // 이 캐릭터로는 못 하므로, 세면 그 숫자가 **영원히 안 줄어든다.** 스케줄러 카드·진행률·링과 같은
-// 판정 함수를 봐야(«한 글자도 다르면 안 된다»)이 성립한다.
+// 판정 함수를 봐야(**한 글자도 다르면 안 된다**)이 성립한다.
 //
 // 항목을 **캐릭터 단위**로 고른 것이 요점이다 — 몬스터파크(요구 레벨 105)는 월드 공유라 이 목록에
 // 애초에 안 든다. 공유 항목으로 재면 레벨과 무관하게 빠져 테스트가 거짓으로

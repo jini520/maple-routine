@@ -1,5 +1,5 @@
 /**
- * 「아이템 구매」 폼 — **종류가 나머지 둘을 정한다**.
+ * 아이템 구매 폼 — **종류가 나머지 둘을 정한다**.
  *
  * | 종류 | 금액 칸 | 수량 | 관세 |
  * |---|---|---|---|
@@ -33,7 +33,7 @@ import { useSpendSubmit } from './use-spend-submit'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
 /**
- * 관세 조각 둘 — **「없음」 이 첫 조각이고 기본값**이다.
+ * 관세 조각 둘 — **`없음` 이 첫 조각이고 기본값**이다.
  *
  * 요율은 `SPEND_TARIFF_PERCENT` **하나에서 나온다** — 여기 숫자를 적으면 참조표가 바뀌는 날
  * 글자와 셈이 갈린다.
@@ -81,7 +81,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
    * 종류를 바꾼다 — **수량은 1 로, 관세는 꺼진다.**
    *
    * 관세를 안 끄면 **화면에 없는 값이 저장된다**(소비·기타에는 그 체크가 아예 없다). **친 금액은
-   * 남긴다** — 수량이 1 이면 장비의 «금액» 과 소비의 «단가» 가 같은 값이라 거짓이 되지 않는다.
+   * 남긴다** — 수량이 1 이면 장비의 금액 과 소비의 단가 가 같은 값이라 거짓이 되지 않는다.
    */
   function selectItemKind(next: SpendItemKind): void {
     setItemKind(next)
@@ -134,7 +134,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
         /*
          * **관세도 라벨–값 줄이다** — 시트에서 고르는 것은 전부 이
          * 모양인데 관세만 큰 숫자 밑의 맨몸 체크박스였다. **장비에만 선다** — 끄는 것이 아니라
-         * 줄 자체가 없다: 있는데 못 누르면 «왜 못 누르나» 를 새로 묻게 된다.
+         * 줄 자체가 없다: 있는데 못 누르면 **왜 못 누르나** 를 새로 묻게 된다.
          *
          * **더해지는 금액을 안 적는다**(결정 5) — 큰 숫자가 그만큼 올라간다.
          */
@@ -151,9 +151,9 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
         // **스테퍼가 아니라 치는 칸**이다 — 주문서 300장을 스테퍼로
         // 세면 300번을 누른다.
         //
-        // **단위는 「개」다**(결정 17 정정, 사용자 지정 2026-08-29). 결정 17 이 «수량에 단위를 안
-        // 적는다» 고 한 근거는 **「기타」가 자유 입력이라 앱이 무엇을 세는지 모른다**는 것이었는데,
-        // 여기서 세는 것은 **아이템**이라 그 근거가 성립하지 않는다. 「기타」는 그대로 비어 있다.
+        // **단위는 개다**(결정 17 정정, 사용자 지정 2026-08-29). 결정 17 이 **수량에 단위를 안
+        // 적는다** 고 한 근거는 **기타가 자유 입력이라 앱이 무엇을 세는지 모른다**는 것이었는데,
+        // 여기서 세는 것은 **아이템**이라 그 근거가 성립하지 않는다. `기타`는 그대로 비어 있다.
         <FieldRow label="수량">
           <AmountInput
             testID="spend-sheet-quantity"
@@ -191,7 +191,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
             item: name.trim() === '' ? null : name.trim(),
             form: null,
             itemKind,
-            // 수량은 **곱할 것이 있을 때만** 실린다 — 그 `null` 이 곧 «곱하지 않은 행» 이라는 사실이다.
+            // 수량은 **곱할 것이 있을 때만** 실린다 — 그 `null` 이 곧 **곱하지 않은 행** 이라는 사실이다.
             quantity: counts ? quantity : null,
             mesoAmount: amount,
             // 총액과 그 몫을 **둘 다** 박는다(정정 2 ②) — 집계는 총액 한 칸만 본다.

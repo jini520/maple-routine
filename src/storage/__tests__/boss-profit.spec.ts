@@ -345,7 +345,7 @@ describe('getBossProfitRecordsRevision', () => {
     expect(getBossProfitRecordsRevision()).toBe(3)
   })
 
-  it('읽기로는 안 오른다 — 판은 «바뀌었나» 이지 «봤나» 가 아니다', async () => {
+  it('읽기로는 안 오른다 — 판은 **바뀌었나** 이지 **봤나** 가 아니다', async () => {
     const { getBossProfitRecordsRevision, getDatedBossProfitRecords } =
       require('../boss-profit') as typeof import('../boss-profit')
 

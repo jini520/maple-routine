@@ -9,7 +9,7 @@
 //
 // 자리를 컨트롤러(`useCharacterManage`)에 두는 이유는 과 같다: 설정 하위 페이지와
 // 온보딩 단계가 **같은 본문**을 쓰고 갈리는 것은 머리와 CTA 뿐이라, 두 화면이 각자 배선하면 그
-// «같은 본문» 이 반쪽만 같아진다.
+// **같은 본문** 이 반쪽만 같아진다.
 //
 // ── 오프셋을 낙관적으로 앞당기지 않는다 ─────────────────────────────────────────────
 //
@@ -22,7 +22,7 @@ import { useCallback, useMemo, useRef } from 'react'
 import type { NativeScrollEvent, NativeSyntheticEvent, ScrollView } from 'react-native'
 
 export interface ReorderScroll {
-  /** 지금 스크롤 오프셋(px). 끌기 보정이 «콘텐츠가 얼마나 흘렀나» 를 이 값으로 잰다. */
+  /** 지금 스크롤 오프셋(px). 끌기 보정이 콘텐츠가 얼마나 흘렀나 를 이 값으로 잰다. */
   offsetPx: () => number
   /** 그 자리로 즉시 옮긴다 — 애니메이션을 걸면 프레임마다 목표가 갈려 서로를 취소한다. */
   scrollToPx: (yPx: number) => void

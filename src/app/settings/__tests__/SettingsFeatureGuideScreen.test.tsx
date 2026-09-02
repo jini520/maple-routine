@@ -2,7 +2,7 @@
 //
 // 갈린 것 다섯
 // ① **부모를 계산하지 않는다.** 웹은 라우트가 둘이라 돌아갈 곳을 경로에서 깎아 썼고, 그래서
-//    「기능 설명에서 들어오면 기능 설명으로」·「개발 노트에서 들어오면 개발 노트로」 두 케이스가
+//    `기능 설명에서 들어오면 기능 설명으로`·`개발 노트에서 들어오면 개발 노트로` 두 케이스가
 //    있었다. RN 의 pop 은 스택이 이미 알고 있어 **한 케이스로 접힌다**(`use-settings-navigation.ts`).
 // ② **마디는 쿼리가 아니라 파라미터**다 — 목차를 누르면 `setParams` 이고, 그것이 웹의
 //  `replace` 와 같은 뜻(스택을 안 건드린다)이다.
@@ -10,7 +10,7 @@
 //    RN 에는 문서도 id 도 없어 마디가 자기 y 를 알려 줘야 하고(그 배선이 곧 이 화면의 계약이다),
 //    jest 는 레이아웃을 계산하지 않으므로 **테스트가 그 y 를 넣어 준다.**
 // ④ 없는 안내의 되돌리기는 `<Navigate replace>` → `goBack()` — 뜻(히스토리를 남기지 않는다)은 같다.
-//    웹의 「push 가 아니라 replace 다」 케이스는 **스택을 우리가 미는 RN 에서 성립하지 않는다.**
+//    웹의 `push 가 아니라 replace 다` 케이스는 **스택을 우리가 미는 RN 에서 성립하지 않는다.**
 // ⑤ `getByAltText` → `getByLabelText`(`alt` 의 짝은 `accessibilityLabel`), `src` → `source` —
 //  그리고 그 값은 URL 문자열이 아니라 **번들 에셋 참조**다.
 import { act, fireEvent } from '@testing-library/react-native'
@@ -199,7 +199,7 @@ describe('SettingsFeatureGuideScreen', () => {
 
   // 번호는 **버튼 밖**이라 누를 수 있는 이름이 제목 그대로 남는다 — 개발 노트가 가리키는 이름과
   // 어긋나면 안 된다(2026-08-11 사용자 지정).
-  it('목차는 「목차」 제목 + 번호 목록이고 번호는 버튼 밖이다', async () => {
+  it('목차는 `목차` 제목 + 번호 목록이고 번호는 버튼 밖이다', async () => {
     const view = await renderOverlay(<SettingsFeatureGuideScreen />)
 
     // 목차 덩이 전체 — 번호가 있고, **버튼 안에는 제목만** 있다.

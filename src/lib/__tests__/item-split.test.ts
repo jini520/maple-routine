@@ -1,7 +1,7 @@
 // 아이템 분배 계산기의 계산.
 //
-// 이 파일이 지키는 것은 «숫자 하나» 가 아니라 **불변식**이다 — 화면이 검산표를 안 그리기로 했으므로
-//  «이 값이 맞나» 를 물을 수 있는 자리가 여기뿐이다.
+// 이 파일이 지키는 것은 **숫자 하나** 가 아니라 **불변식**이다 — 화면이 검산표를 안 그리기로 했으므로
+//  **이 값이 맞나** 를 물을 수 있는 자리가 여기뿐이다.
 
 import { MAX_SALE_PRICE_MESO, netProceedsMeso, transferPerMember } from '../cashbook/item-split'
 
@@ -26,7 +26,7 @@ describe('netProceedsMeso — 판매 수수료를 뗀다', () => {
   })
 })
 
-describe('transferPerMember — 수수료를 거쳐도 같아지는 «보낼 금액»', () => {
+describe('transferPerMember — 수수료를 거쳐도 같아지는 **보낼 금액**', () => {
   //  의 표를 그대로 고정한다.
   it('판매가 10억 · 6인 · 판매 3% · 분배 3% 이면 162,479,061 을 보낸다', () => {
     expect(
@@ -61,7 +61,7 @@ describe('transferPerMember — 수수료를 거쳐도 같아지는 «보낼 금
   })
 })
 
-// **이 describe 가 결정 2 그 자체다.** 위의 고정값 하나는 표를 베낀 것이고, 아래는 «왜 그 값인가» 다.
+// **이 describe 가 결정 2 그 자체다.** 위의 고정값 하나는 표를 베낀 것이고, 아래는 **왜 그 값인가** 다.
 describe('불변식 — 여섯이 같아진다', () => {
   const CASES = [
     { salePriceMeso: 1_000_000_000, partySize: 6, saleFeePercent: 3, splitFeePercent: 3 },
@@ -88,7 +88,7 @@ describe('불변식 — 여섯이 같아진다', () => {
   )
 
   // 버림이라 남는 메소는 먹은 사람에게 간다 — 파티원이 더 받는 일은 없다…
-  // …단 «내림한 수수료» 가 최대 1 메소를 되돌려 주므로 그만큼은 허용한다.
+  // …단 **내림한 수수료** 가 최대 1 메소를 되돌려 주므로 그만큼은 허용한다.
   it.each(CASES)(
     '판매가 $salePriceMeso · $partySize 인 — 먹은 사람이 손해 보지 않는다',
     (input) => {

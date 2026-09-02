@@ -8,7 +8,7 @@
 //    딸려서 `stopPropagation`(바깥 클릭만 닫기)도 `Modal.Card` 의 responder 선언이 대신한다.
 // ② **`useBodyScrollLock` 이 사라진다.** 뒤 문서 스크롤 잠금을 네이티브 윈도우가 구조적으로 한다
 //    — 대체가 아니라 필요 자체가 없어진 것이라 짝을 만들지 않는다(`Modal.tsx` 파일 머리 ②).
-//    웹 테스트의 「뒷 페이지 스크롤을 막고 복원한다」는 그래서 옮길 계약이 아니다.
+//    웹 테스트의 `뒷 페이지 스크롤을 막고 복원한다`는 그래서 옮길 계약이 아니다.
 // ③ `disabled:opacity-50` → 조건부 클래스(NativeWind 의 `disabled:` 는 `Pressable` 프롭과 안 이어진다).
 //
 // 카드 폭·여백(`max-w-sm p-6`)과 세로 중앙 정렬은 `Modal.Card` + `align="center"` 가 그대로 낸다.

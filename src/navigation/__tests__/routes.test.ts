@@ -40,7 +40,7 @@ const PARITY_PATHS = [
 
 describe('ROUTE_TABLE — 계획서 §1 대조', () => {
   // **`origin` 으로 갈라 본다**. RN 에서 새로 생긴 화면 넷은 웹에 없으므로 이
-  // 대조에 섞이면 안 된다 — 섞으면 «계획서와 같은가» 라는 이 테스트의 질문이 답할 수 없는 것이 된다.
+  // 대조에 섞이면 안 된다 — 섞으면 **계획서와 같은가** 라는 이 테스트의 질문이 답할 수 없는 것이 된다.
   it('웹에서 온 17개 경로를 하나도 빠뜨리지 않고 순서까지 같다', () => {
     expect(ROUTE_TABLE.filter((row) => row.origin === 'web').map((row) => row.path)).toEqual(
       PARITY_PATHS,
@@ -83,7 +83,7 @@ describe('ROUTE_TABLE — 계획서 §1 대조', () => {
 
   // 위 케이스와 짝이다 — **한 케이스 안에서** 둘을 함께 단언한다. 갈린 것 자체가 결정이라
   //  *"둘이 지금 이렇게 갈려 있다"* 가 한 자리에 적혀 있어야, `today` 에 내용이
-  // 붙은 뒤 누군가 «불일치» 로 보고 `/` 를 `Today` 로 맞추는 일이 안 생긴다.
+  // 붙은 뒤 누군가 **불일치** 로 보고 `/` 를 `Today` 로 맞추는 일이 안 생긴다.
   it('첫 화면은 today 이고 `/` 행은 여전히 컨텐츠다', () => {
     expect(INITIAL_TAB_ROUTE).toBe('Today')
     expect(ROUTE_TABLE.find((row) => row.path === '/')?.target).toEqual({

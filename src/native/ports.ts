@@ -135,7 +135,7 @@ export interface BackGesturePort {
 export type NetworkType = 'wifi' | 'cellular' | 'none' | 'unknown'
 
 /**
- * 확인 한 번의 결과 — **프로토콜과 무관한 «앱이 무엇을 할 수 있나» 의 분류**다.
+ * 확인 한 번의 결과 — **프로토콜과 무관한 **앱이 무엇을 할 수 있나** 의 분류**다.
  *
  * @capgo 와 `expo-updates` 는 매니페스트 형식도 다운로드 단위도 다르지만 이 다섯 갈래는 같다.
  * 그래서 이 타입은 포트와 함께 남고, 두 어댑터가 각자의 프로토콜을 여기로 번역한다.
@@ -148,7 +148,7 @@ export type LiveUpdateCheckResult =
    * 새 버전은 있는데 **라이브로 못 받는다** — 네이티브가 낮아 스토어를 거쳐야 한다.
    *
    * `expo-updates` 에서는 프로토콜이 이것을 **204(업데이트 없음)로 삼킨다.** 그래서 RN 어댑터는
-   * 확인이 «최신» 으로 떨어졌을 때 한 번 더 물어 이 갈래를 되살린다 —
+   * 확인이 최신 으로 떨어졌을 때 한 번 더 물어 이 갈래를 되살린다 —
    * 삼켜진 채로 두면 사용자에게 *"최신 버전입니다"* 라는 **거짓**이 보인다.
    */
   /**
@@ -159,13 +159,13 @@ export type LiveUpdateCheckResult =
    * 지어내지 않는다.
    */
   | { kind: 'store-required'; version: string; minNativeVersion?: string }
-  /** 라이브로 받을 수 있다. `highlights` 는 받기 전 모달의 「자세히 보기」가 펼친다. */
+  /** 라이브로 받을 수 있다. `highlights` 는 받기 전 모달의 자세히 보기가 펼친다. */
   | { kind: 'update-available'; version: string; size: number; highlights?: string[] }
 
 /**
  * Live Update (OTA).
  *
- * ## 경계는 «프로토콜» 이 아니라 **«행위»** 다
+ * ## 경계는 프로토콜 이 아니라 ****행위**** 다
  *
  * 이 인터페이스는 한때 @capgo 의 모양을 그대로 드러냈다 — `httpGet`(매니페스트를 **호출부가 직접
  * 판다**) · `download({url, checksum})` · `applyBundle(id)`. 셋 다 `expo-updates` 에 짝이 없다:

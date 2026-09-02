@@ -231,10 +231,10 @@ describe('getSectionPresence', () => {
   })
 })
 
-// 조회 원장에 «그날 완료로 본 보스» 를 함께 남긴다. 그 목록이 처치 날짜를
+// 조회 원장에 **그날 완료로 본 보스** 를 함께 남긴다. 그 목록이 처치 날짜를
 // 캐는 원재료이므로, **기록에 쓰는 것과 같은 이름·같은 난이도**로 적혀야 한다.
 describe('completedBossKeys', () => {
-  it('ownComplete 인 보스만, 「이름|난이도」로 적는다', () => {
+  it('ownComplete 인 보스만, `이름|난이도`로 적는다', () => {
     const { completedBossKeys } = require('../scheduler/scheduler-activity') as typeof import('../scheduler/scheduler-activity')
 
     expect(
@@ -261,7 +261,7 @@ describe('completedBossKeys', () => {
     ).toEqual([])
   })
 
-  it('보스 섹션이 비면 빈 목록이다 — 접속하지 않은 날은 «미완료» 로 읽힌다', () => {
+  it('보스 섹션이 비면 빈 목록이다 — 접속하지 않은 날은 **미완료** 로 읽힌다', () => {
     const { completedBossKeys } = require('../scheduler/scheduler-activity') as typeof import('../scheduler/scheduler-activity')
 
     expect(completedBossKeys(state({ bossContents: [] }))).toEqual([])

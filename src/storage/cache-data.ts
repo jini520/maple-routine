@@ -18,7 +18,7 @@ const KEEP_KEYS = new Set<string>([
 // **그룹 이름이 `bossRecords` 에서 `records` 로 넓어졌다**.
 // 가계부가 손으로 적는 둘(`income_records`·`spend_records`)이 같은 갈등의 같은 편에 서기 때문이다 —
 // 그리고 **보스 기록보다 더 복구 불가능하다**(보스는 API 가 최근 2주치라도 주는데 손입력은 0%다).
-// 3그룹으로 쪼개지 않는 이유는 의 «갈등은 하나뿐이라 최소 분할만 둔다» 그대로다.
+// 3그룹으로 쪼개지 않는 이유는 의 **갈등은 하나뿐이라 최소 분할만 둔다** 그대로다.
 export type CacheDataGroupId = 'general' | 'records'
 
 export type CacheDataSelection = Record<CacheDataGroupId, boolean>
@@ -38,7 +38,7 @@ export const RECORD_TABLE_NAMES: readonly string[] = [
   'boss_drop_records',
   'boss_profit_period_checks',
   // 손입력에서만 오는 값이라 API 로 되살릴 길이 **0%** 다. 여기 안 넣으면
-  // 아래 차집합 파생이 이 둘을 «지워도 되는 것» 으로 끌어간다.
+  // 아래 차집합 파생이 이 둘을 **지워도 되는 것** 으로 끌어간다.
   'income_records',
   'spend_records',
 ]

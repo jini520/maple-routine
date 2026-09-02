@@ -150,7 +150,7 @@ for (const item of itemIconsData.items as ItemIconEntry[]) {
   }
 }
 
-// 「기타」는 백옥 반지 상자 목록 밖 저가치 반지 묶음이다. 실재 아이템명이 아니라 UI
+// `기타`는 백옥 반지 상자 목록 밖 저가치 반지 묶음이다. 실재 아이템명이 아니라 UI
 // 전용이라 `item-icons.json`(정합성 테스트가 드랍테이블 실재를 강제한다)이 아니라 여기서 맨다.
 iconByName['기타'.normalize('NFC')] = 'Limit_Ring.webp'
 

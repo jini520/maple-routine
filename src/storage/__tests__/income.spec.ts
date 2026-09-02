@@ -66,7 +66,7 @@ describe('insertIncomeRecord', () => {
       null,
       null,
       null,
-      // 수량 — 「기타」가 아니라 비어 있다.
+      // 수량 — `기타`가 아니라 비어 있다.
       null,
       // 사냥 칸 여덟 — 아이템
       // 판매라 전부 비어 있다.
@@ -105,7 +105,7 @@ describe('getIncomeRecordsBetween', () => {
     expect(parameters).toEqual(['2026-08-20', '2026-08-26'])
   })
 
-  // 가계부는 «내가 번 돈» 이지 «이 캐릭터가 번 돈» 이 아니다 — 계정 단위 행과
+  // 가계부는 **내가 번 돈** 이지 **이 캐릭터가 번 돈** 이 아니다 — 계정 단위 행과
   // 캐릭터 행이 한 날에 함께 서야 하므로 ocid 로 거르지 않는다.
   it('ocid 로 거르지 않는다', async () => {
     const { getIncomeRecordsBetween } = require('../income') as typeof import('../income')
@@ -165,11 +165,11 @@ describe('getIncomeRecordsBetween', () => {
 })
 
 describe('INCOME_CATEGORIES', () => {
-  // 사용자가 준 둘 + 안전망 하나. 「기타」가 없으면 갈래가 안 잡히는 수입이
+  // 사용자가 준 둘 + 안전망 하나. `기타`가 없으면 갈래가 안 잡히는 수입이
   // 기록 자체를 못 남긴다.
   //
   // **차례가 곧 화면**이다 — 칩이 서는 차례이고 `[0]` 이 열었을 때 골라져
-  // 있는 갈래다. 그래서 이 배열을 뒤집는 것이 «기본 갈래를 바꾼다» 와 같은 말이다.
+  // 있는 갈래다. 그래서 이 배열을 뒤집는 것이 **기본 갈래를 바꾼다** 와 같은 말이다.
   it('사냥 · 아이템 판매 · 기타 차례다 — 첫째가 기본 갈래다', () => {
     const { INCOME_CATEGORIES } = require('../income') as typeof import('../income')
 
@@ -423,7 +423,7 @@ describe('hunt_typed_meso — 수동으로 적힌 사냥', () => {
     const [sql, values] = runMock.mock.calls[0]
     expect(sql).toContain('hunt_typed_meso')
     // 사냥 칸 여덟 — 레벨 · 놓침 · 아이템 · 소재 · 조각 · 조각가 · 메획 · **친 메소**.
-    // 계산기 칸 넷이 null 인 것이 «앱이 센 값이 아니다» 를 말한다.
+    // 계산기 칸 넷이 null 인 것이 **앱이 센 값이 아니다** 를 말한다.
     expect(values.slice(12, 20)).toEqual([
       null,
       null,
@@ -547,7 +547,7 @@ describe('hunt_typed_meso — 수동으로 적힌 사냥', () => {
   })
 })
 
-// 수입 「기타」도 지출과 같이 **금액 × 수량**이다.
+// 수입 `기타`도 지출과 같이 **금액 × 수량**이다.
 //
 // 수량을 안 저장하면 그 행을 수정으로 다시 열 때 수량이 늘 1 로 서고 금액 칸에 총액이 들어간다.
 // 사용자가 안 적은 값이 사용자가 적은 값처럼 보이는 자리라 칸을 하나 더 든다.

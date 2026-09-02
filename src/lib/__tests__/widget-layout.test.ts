@@ -1,5 +1,5 @@
 // 좌표 배치의 **검증과 해석**. 배치를 손으로 적기로 한 이상 그
-// 실수는 반드시 나므로, 자동 패킹 대신 «검증» 을 산 값이 여기서 회수된다.
+// 실수는 반드시 나므로, 자동 패킹 대신 **검증** 을 산 값이 여기서 회수된다.
 
 import { GRID_GAP, GRID_ROW_HEIGHT, resolveWidgetGridMetrics } from '../today/widget-grid-metrics'
 import { resolveWidgetPositions, validateWidgetLayout, type WidgetPlacement } from '../today/widget-layout'
@@ -69,7 +69,7 @@ describe('validateWidgetLayout — 손으로 적은 좌표를 지킨다', () => 
   })
 
   // 중간에 빈 행이 나오면 `row` 를 잘못 적은 것이다 — 위젯을 하나 끼우고 아래를 미는 과정에서
-  // 가장 흔한 실수이고, 화면에는 «빈 사각형» 으로만 나타나 눈으로는 원인을 모른다.
+  // 가장 흔한 실수이고, 화면에는 **빈 사각형** 으로만 나타나 눈으로는 원인을 모른다.
   it('통째로 빈 행을 잡는다', () => {
     const violations = validateWidgetLayout(
       [
@@ -91,7 +91,7 @@ describe('validateWidgetLayout — 손으로 적은 좌표를 지킨다', () => 
     expect(violations.map((violation) => violation.id)).toEqual(['대표'])
   })
 
-  // 이것이 «크기별로 다르게 그린다» 를 **약속으로 만드는** 자리다 — 선언 안 한 크기를 받으면
+  // 이것이 **크기별로 다르게 그린다** 를 **약속으로 만드는** 자리다 — 선언 안 한 크기를 받으면
   // 위젯은 그리는 방법을 모른다.
   it('위젯이 선언하지 않은 크기를 잡는다', () => {
     const violations = validateWidgetLayout([{ id: '대표', col: 0, row: 0, w: 4, h: 2 }], sizes)

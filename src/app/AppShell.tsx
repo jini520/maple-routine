@@ -22,7 +22,7 @@ const MIN_SPLASH_MS = 1000
  * 앱 셸 — 웹 `AppShell`(573줄)의 짝. 화면이 아니라 **부팅 순서**가 이 파일의 실질이다.
  *
  * 웹이 하던 일을 넷으로 가른 전수 대조표(그대로 / 바뀜 / 사라짐 / 안 이어짐)는
- * `docs/migration/README.md` «4-0단계 결과» 에 있다. 여기에는 **이 파일에 남은 것과 그 순서**만
+ * `docs/migration/README.md` 4-0단계 결과 에 있다. 여기에는 **이 파일에 남은 것과 그 순서**만
  * 적는다.
  *
  * ## 순서
@@ -91,7 +91,7 @@ export function AppShell(): React.JSX.Element {
   }, [])
 
   // 여기서 의 `startAds()`(SDK 초기화 + 첫 광고 사전 로드)를 불렀다. 이
-  // 전면광고를 걷으며 지웠다 — 표시만 막고 사전 로드를 남기면 매 실행 «뜨지 않을 광고» 를 요청해
+  // 전면광고를 걷으며 지웠다 — 표시만 막고 사전 로드를 남기면 매 실행 **뜨지 않을 광고** 를 요청해
   // 임프레션 없는 요청으로 쌓인다. **인라인 광고를 붙일 때 SDK 초기화를 부를 자리가 여기다**
   // (`rnAdsPort.initialize()` 는 어댑터에 그대로 있다).
 
@@ -131,8 +131,8 @@ export function AppShell(): React.JSX.Element {
   //  이 벽 둘을 없애며 이 자리로 돌아왔다(파일 머리 7번).
   //
   // `void` 인 것이 요점이다 — 확인은 곁가지라 실패해도 앱은 떠야 한다. 스토어가 실패를
-  // `check-error` 로 삼켜 던지지 않지만(그쪽 `check()`), 여기서 await 하지 않는 것으로 «부팅이
-  // 네트워크를 기다리지 않는다» 를 구조로 못박는다.
+  // `check-error` 로 삼켜 던지지 않지만(그쪽 `check()`), 여기서 await 하지 않는 것으로 **부팅이
+  // 네트워크를 기다리지 않는다** 를 구조로 못박는다.
   useEffect(() => {
     void useLiveUpdateStore.getState().checkOnBoot()
   }, [])

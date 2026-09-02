@@ -19,14 +19,14 @@ import { getCachedMesoRate, setCachedMesoRate } from '../../storage/meso-rate-ca
  *
  * `read` 면 자동값이라 못 치고, `fallback` 이면 치는 칸이 되며 `percent` 는 그 칸의 기본값
  * (마지막 성공값, 없으면 `null` 이라 빈 칸)이다. **`read` 의 0 과 `fallback` 의 0 은 다르다** —
- * 앞은 «메획을 안 두른 캐릭터» 이고 뒤는 «못 읽었으니 사람이 적어라» 다.
+ * 앞은 메획을 안 두른 캐릭터 이고 뒤는 못 읽었으니 사람이 적어라 다.
  */
 export type MesoRateLoad =
   | { kind: 'read'; percent: number }
   | { kind: 'fallback'; percent: number | null }
 
 /**
- * 섀도어의 「그리드」를 세려면 **직업 이름**이 필요하다(사용자 지정 2026-09-01) — 그 값은
+ * 섀도어의 그리드를 세려면 **직업 이름**이 필요하다(사용자 지정 2026-09-01) — 그 값은
  * `character/list` 가 캐시에 남겨 둔 것이라 호출이 안 는다.
  *
  * 못 읽으면 `null` 이고 그 몫은 0 이 된다. **여기서 던지지 않는다** — 직업을 몰라서 메획 전체를

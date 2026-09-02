@@ -21,7 +21,7 @@
 //
 // ── RN 으로 옮기며 갈린 것 다섯 ───────────────────────────────────────────────────
 //
-// ① `useNavigate()` → **`onOpenReleaseNotes` 프롭.** 「자세히 보기」가 개발 노트 화면으로 옮기는
+// ① `useNavigate()` → **`onOpenReleaseNotes` 프롭.** `자세히 보기`가 개발 노트 화면으로 옮기는
 //  것은 이고, 그 이동을 아는 것은 이 컴포넌트가 아니라 마운트하는 셸이다.
 // ② `space-y-*` → `gap-*` · `<h2>`/`<p>` → `<Text>` · `text-center` 를 각 `Text` 로.
 // ③ 버튼 두 종류(`PRIMARY_BTN`·`GHOST_BTN`)가 `Button` atom + **델타 클래스**가 됐다. 웹은 raw
@@ -31,7 +31,7 @@
 // ④ `PRIMARY_BTN` 의 `disabled:opacity-50` 은 **뺐다.** 어느 분기도 `disabled` 를 주지 않는 데다,
 //    NativeWind 의 `disabled:` 는 CSS 의사 클래스라 `Pressable` 의 `disabled` 프롭과 이어져 있지
 //    않다(step 4 가 `PartySizeStepper` 에서 겪은 자리) — 남기면 "있는데 안 도는 코드"다.
-// ⑤ `transition-transform rotate-180` (「자세히 보기」 화살표) → `rotate-180` 만. NativeWind 의
+// ⑤ `transition-transform rotate-180` (`자세히 보기` 화살표) → `rotate-180` 만. NativeWind 의
 //    `transition-*` 은 Reanimated 배선을 타는데, 여기서 굴릴 것은 회전 하나뿐이라 step 7 이 정한
 //    두 갈래(`View` 스타일 = CSS API / SVG 속성 = `useAnimatedProps`) 중 어느 쪽도 아직 필요 없다.
 //    **웹에도 이 트랜지션은 `@keyframes` 가 아니라 CSS 트랜지션이라 7종 목록 밖이다.**
@@ -96,7 +96,7 @@ export interface UpdatePromptModalProps {
   state: UpdatePromptState
   actions: UpdatePromptActions
   /**
-   * 「자세히 보기」가 개발 노트 화면(`SettingsReleaseNotes`)으로 옮기는 자리.
+   * 자세히 보기가 개발 노트 화면(`SettingsReleaseNotes`)으로 옮기는 자리.
    * 웹의 `navigate('/settings/release-notes')` 이고, 닫는 것은 호출부가 함께 한다.
    */
   onOpenReleaseNotes: () => void
@@ -167,7 +167,7 @@ function InfoNote({ children }: { children: React.ReactNode }): React.JSX.Elemen
   )
 }
 
-// 받기 전 모달의 「자세히 보기」 — 원격에서 온 핵심 목록을 **모달 안에서** 펼친다(ADR-126 결정 1).
+// 받기 전 모달의 `자세히 보기` — 원격에서 온 핵심 목록을 **모달 안에서** 펼친다(ADR-126 결정 1).
 // 화면을 옮기지 않는 이유는 모달을 닫아야 하고 돌아왔을 때 다시 띄우는 처리가 필요한데, 정작 그
 // 화면(개발 노트)에는 아직 받지 않은 이 버전이 **없기** 때문이다.
 function HighlightsDisclosure({ highlights }: { highlights: string[] }): React.JSX.Element {
@@ -238,7 +238,7 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
   const isInProgress = status === 'downloading' || status === 'applying'
   const sizeText = state.availableSize !== null ? formatSize(state.availableSize) : ''
 
-  // 받은 뒤의 「자세히 보기」 — 여기서는 펼치지 않고 **전부 갖고 있는 화면으로 보낸다**(결정 1).
+  // 받은 뒤의 `자세히 보기` — 여기서는 펼치지 않고 **전부 갖고 있는 화면으로 보낸다**(결정 1).
   // 닫지 않으면 돌아왔을 때 같은 안내가 그대로 덮여 있다.
   const openReleaseNotes = (): void => {
     actions.dismiss()
@@ -383,7 +383,7 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
           )}
 
           {/* ADR-126 결정 4: 적용 성공 경로에는 상태 전환 코드가 없으므로(ADR-117 결정 1) 이 안내는
-              **재시작 뒤 부팅에서** 뜬다. 여기서만 「자세히 보기」가 화면을 옮긴다. */}
+              **재시작 뒤 부팅에서** 뜬다. 여기서만 `자세히 보기`가 화면을 옮긴다. */}
           {status === 'updated' && (
             <>
               <IconBadge icon={SparklesIcon} tone="primary" />

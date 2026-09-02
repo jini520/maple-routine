@@ -1,5 +1,5 @@
-// 지금까지 이 판정은 `BossScreen` 을 렌더해야만 검증됐다(지역 함수였다) — 화면으로 보면 «카드가
-// 몇 장인가» 까지만 알 수 있고 «어느 규칙이 그 장 수를 만들었는가» 는 못 본다. 꺼낸 김에 입출력으로
+// 지금까지 이 판정은 `BossScreen` 을 렌더해야만 검증됐다(지역 함수였다) — 화면으로 보면 **카드가
+// 몇 장인가** 까지만 알 수 있고 **어느 규칙이 그 장 수를 만들었는가** 는 못 본다. 꺼낸 김에 입출력으로
 // 직접 못 박는다.
 
 import type { BossCharacterView } from '../store'
@@ -41,7 +41,7 @@ function character(overrides: Partial<BossCharacterView> = {}): BossCharacterVie
 
 /**
  * 목록 원소는 `MatchedBoss` 가 아니라 `DisplayedBoss` 다 — 아래 동등 비교는
- * 그 필드까지 함께 본다. 기본값이 `false` 인 것은 이 파일 대부분의 상황이 «한도 전» 이라서다.
+ * 그 필드까지 함께 본다. 기본값이 `false` 인 것은 이 파일 대부분의 상황이 한도 전 이라서다.
  */
 function shown(matched: MatchedBoss, isWeeklyLimitClosed = false): DisplayedBoss {
   return { ...matched, isWeeklyLimitClosed }
@@ -53,7 +53,7 @@ function bossItem(contentName: string, difficulty: string): ManualTrackedItem {
 
 describe('displayedBosses — 자동 모드', () => {
   // : 등록한 난이도가 있으면 그것만(중복 카드 방지), 없으면 완료한 난이도를 대신.
-  it('등록된 보스와 «미등록이지만 완료된» 보스를 함께 보여준다', () => {
+  it('등록된 보스와 **미등록이지만 완료된** 보스를 함께 보여준다', () => {
     const registered = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true })
     const unregisteredComplete = boss({
       name: '루시드',
@@ -186,7 +186,7 @@ describe('displayedBosses — 순서는 weekly-bosses.json 정규 순서다', ()
 })
 
 describe('displayedBosses — 수동 모드', () => {
-  // : 게임 등록 여부가 아니라 «앱에서 관리하는 멤버십» 이 표시 목록을 정한다.
+  // : 게임 등록 여부가 아니라 **앱에서 관리하는 멤버십** 이 표시 목록을 정한다.
   it('추적 멤버십이 표시 목록을 정한다 — 등록·동기화된 적 없는 보스도 카드로 선다', () => {
     const result = displayedBosses(character(), 'weekly', 'manual', {
       'ocid-1': [bossItem('스우', '하드')],
@@ -272,7 +272,7 @@ describe('displayedBosses — 수동 모드', () => {
     expect(displayedBosses(view, 'weekly', 'manual', { 'ocid-2': [bossItem('스우', '하드')] })).toEqual([])
   })
 
-  // 화면이 캐릭터를 인자로 받는 이유 — 레일의 링은 «선택되지 않은» 캐릭터의
+  // 화면이 캐릭터를 인자로 받는 이유 — 레일의 링은 **선택되지 않은** 캐릭터의
   // 목록도 세야 하고, 그 목록은 그 캐릭터의 ocid 로 뽑은 멤버십이어야 한다.
   it('멤버십은 인자로 받은 캐릭터의 ocid 로 뽑는다', () => {
     const result = displayedBosses(character({ ocid: 'ocid-2' }), 'weekly', 'manual', {
@@ -284,7 +284,7 @@ describe('displayedBosses — 수동 모드', () => {
   })
 })
 
-// 탭이 걷히면서 «어느 순서로 서는가» 가 화면의 판단이 아니라 이 모듈의 판단이 된다(
+// 탭이 걷히면서 **어느 순서로 서는가** 가 화면의 판단이 아니라 이 모듈의 판단이 된다(
 // 결정 1) — 화면이 다시 해석하면 today 가 같은 목록을 다른 순서로 읽을 길이 열린다.
 describe('displayedBossSections — 통합 목록의 순서', () => {
   it('월간이 먼저, 그다음 주간이다', () => {
@@ -303,7 +303,7 @@ describe('displayedBossSections — 통합 목록의 순서', () => {
     ])
   })
 
-  // 빈 무리를 여기서 걷지 않는 것이 결정이다 — 솔로/파티 필터는 화면이 걸고, «비었다» 는 판정은
+  // 빈 무리를 여기서 걷지 않는 것이 결정이다 — 솔로/파티 필터는 화면이 걸고, **비었다** 는 판정은
   // 그 뒤에야 성립한다. 여기서 미리 걷으면 화면이 필터 후 다시 걷어야 한다.
   it('무리가 비어도 자리는 남긴다 — 걷는 것은 화면의 일이다', () => {
     const weekly = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true })
@@ -348,14 +348,14 @@ describe('displayedBossSections — 통합 목록의 순서', () => {
   })
 })
 
-// 주간 12마리를 채우면 남은 미처치 주간 보스는 «마감» 이다. 판정이 여기 있는
-// 이유는 today 「남은 스케줄」이 같은 함수를 부르기 때문이다 — 화면이 다시
+// 주간 12마리를 채우면 남은 미처치 주간 보스는 **마감** 이다. 판정이 여기 있는
+// 이유는 today `남은 스케줄`이 같은 함수를 부르기 때문이다 — 화면이 다시
 // 판정하면 그 등식이 깨진다.
 describe('displayedBosses — 주간 한도 마감', () => {
   // 참조표에서 앞에서부터 뽑는다 — 이름을 손으로 적지 않는다.
   const WEEKLY_NAMES = (weeklyBossesData.weekly as { boss: string }[]).map((entry) => entry.boss)
 
-  /** 「끝에서부터」 한도만큼 잡아 둔 주간 보스들 — 아래 미처치 보스와 겹치지 않게 뒤에서 뽑는다. */
+  /** 끝에서부터 한도만큼 잡아 둔 주간 보스들 — 아래 미처치 보스와 겹치지 않게 뒤에서 뽑는다. */
   function clearedBosses(count: number): MatchedBoss[] {
     return WEEKLY_NAMES.slice(-count).map((name) =>
       boss({

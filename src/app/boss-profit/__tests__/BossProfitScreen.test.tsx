@@ -10,7 +10,7 @@
 //    실측도 없다. 대신 *"헤더가 셸의 `header` 로 들어간다"* 를 본다.
 // ③ **중첩 sticky 오프셋** — sticky 를 못 옮겼다(`contract.md`).
 // ④ **DOM 스냅샷 두 파일** — 트리가 다르다. RN 트리 스냅샷을 **새 기준선**으로 남기고, 그것이
-//    답하는 것은 *"앞으로 안 바뀌는가"* 뿐이다(«예전과 같은가» 는 사람이 두 앱을 나란히 놓고 답한다).
+//    답하는 것은 *"앞으로 안 바뀌는가"* 뿐이다(**예전과 같은가** 는 사람이 두 앱을 나란히 놓고 답한다).
 // ⑤ **히스토리 왕복에도 언마운트되지 않는가** — 루트 스택 push 라 구조가 지킨다.
 //    화면 안에서 볼 자리가 없다.
 // ⑥ **접기 전후 스크롤** — 접기에 스크롤 코드가 아예 없다(`CharacterAccordion`).
@@ -41,7 +41,7 @@ import { BossProfitScreen } from '../BossProfitScreen'
 const mockShowError = jest.fn()
 const mockNoticeApiKeyIssue = jest.fn()
 const navigate = jest.fn()
-// 층이 스택이 된 뒤로 «그룹 층으로 되돌리기» 는 액션이다 — 화면이 이것도 부른다.
+// 층이 스택이 된 뒤로 **그룹 층으로 되돌리기** 는 액션이다 — 화면이 이것도 부른다.
 const dispatch = jest.fn()
 
 // : 동기화 실패·기간 로드 실패는 인라인 문단이 아니라 토스트다.
@@ -93,7 +93,7 @@ function mockStore(overrides: Partial<BossProfitStore> = {}): void {
     trackedOcids: ['ocid-1'],
     lastSyncedAt: null,
     loadTrackedOcids: jest.fn(),
-    // 실물은 `Promise<void>` 다 — 당김 훅이 회차의 «끝» 을 기다린다.
+    // 실물은 `Promise<void>` 다 — 당김 훅이 회차의 **끝** 을 기다린다.
     refresh: jest.fn().mockResolvedValue(undefined),
     setTab: jest.fn(),
     goToPreviousPeriod: jest.fn(),
@@ -187,7 +187,7 @@ describe('빈 상태', () => {
     expect(queryByText('아이템 가격')).toBeNull()
   })
 
-  // 의 «열어 둔 채로 보낸다» 는 그대로이고 **목적지만 바뀌었다** — 피커를 여는
+  // 의 **열어 둔 채로 보낸다** 는 그대로이고 **목적지만 바뀌었다** — 피커를 여는
   // 자리가 설정 하나가 됐다.
   it('빈 상태 CTA 는 피커를 열어 둔 채로 설정 탭에 보낸다', async () => {
     mockStore({ trackedOcids: [] })
@@ -345,11 +345,11 @@ describe('당겨서 새로고침', () => {
     expect(queryByLabelText('새로고침')).toBeNull()
   })
 
-  // ★ 회귀 가드 — **«조회 중» 과 «당겼다» 는 다른 사실이다**.
+  // ★ 회귀 가드 — **조회 중 과 당겼다 는 다른 사실이다**.
   //
   // 종전에는 `refreshing = status === 'loading'` 이라, 화면 마운트 하이드레이션만으로 인디케이터가
   // 프로그램적으로 열렸다. 사용자 보고(2026-08-22) *"페이지 이동 시 새로고침 인디케이터가 저절로
-  // 돌고 상단이 빈 채로 멈춘다"* 가 그 증상이다. «조회 중...» 은 그대로 뜬다 — 그쪽이 조회를
+  // 돌고 상단이 빈 채로 멈춘다"* 가 그 증상이다. **조회 중...** 은 그대로 뜬다 — 그쪽이 조회를
   // 말하는 자리다.
   it('재조회 중이어도 컨트롤은 안 돈다 — 당김이 연 회차가 아니다', async () => {
     mockStore({ status: 'loading' })

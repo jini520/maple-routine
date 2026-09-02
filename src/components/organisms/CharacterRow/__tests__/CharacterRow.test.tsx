@@ -1,7 +1,7 @@
 // 두 층이 **같은 카드**를 쓴다는 것이 의 요점이라, 이 테스트가 묻는 것은
-// 「좌우 슬롯 말고 갈리는 것이 있는가」다 — 2줄 규칙 넷 · 조회 불가 · 이니셜 폴백 · 슬롯 유무.
+// `좌우 슬롯 말고 갈리는 것이 있는가`다 — 2줄 규칙 넷 · 조회 불가 · 이니셜 폴백 · 슬롯 유무.
 //
-// 별의 두 케이스(배경 없음 · 흐려도 눌린다)는 «금지사항» 을 그대로 옮긴 것이다: 배경 배지를 두면
+// 별의 두 케이스(배경 없음 · 흐려도 눌린다)는 **금지사항** 을 그대로 옮긴 것이다: 배경 배지를 두면
 // 같은 말을 두 번 하게 되고, `disabled` 로 만들면 대표를 바꿀 방법이 사라진다.
 import { fireEvent } from '@testing-library/react-native'
 import { Text } from 'react-native'
@@ -21,7 +21,7 @@ const 기본 = {
 }
 
 describe('CharacterRow — 2줄 규칙', () => {
-  it('레벨과 직업이 다 있으면 «Lv.285 아크메이지(썬, 콜)» 한 줄이다', async () => {
+  it('레벨과 직업이 다 있으면 **Lv.285 아크메이지(썬, 콜)** 한 줄이다', async () => {
     const { getByText } = await renderAtom(<CharacterRow {...기본} />)
 
     expect(getByText('Lv.285 아크메이지(썬, 콜)')).toBeTruthy()
@@ -57,7 +57,7 @@ describe('CharacterRow — 2줄 규칙', () => {
 })
 
 describe('CharacterRow — 얼굴과 이름', () => {
-  // 사용자 지정 2026-08-17 — 이름 첫 글자는 «이 캐릭터의 얼굴» 처럼 보여 «못 가져왔다» 를 말하지
+  // 사용자 지정 2026-08-17 — 이름 첫 글자는 **이 캐릭터의 얼굴** 처럼 보여 **못 가져왔다** 를 말하지
   // 못했다. 주황 원 + `?` 는 그 자리가 **비어 있다는 사실**을 말한다.
   it('이미지가 없으면 이름 첫 글자가 아니라 주황 원 + ? 다', async () => {
     const { getByText, getByTestId, queryByTestId, queryByText } = await renderAtom(
@@ -121,7 +121,7 @@ describe('CharacterRow — 좌우 슬롯', () => {
 })
 
 describe('RepresentativeStar', () => {
-  it('채운 별에 배경도 테두리도 없다 — 채움 자체가 이미 «찬 것 vs 빈 것» 이다', async () => {
+  it('채운 별에 배경도 테두리도 없다 — 채움 자체가 이미 **찬 것 vs 빈 것** 이다', async () => {
     const { getByRole } = await renderAtom(
       <RepresentativeStar label="내옆에최성일" filled onPress={jest.fn()} />,
     )
@@ -167,7 +167,7 @@ describe('RepresentativeStar', () => {
 })
 
 describe('DragHandle · AddMark', () => {
-  it('핸들의 접근성 이름은 「순서 변경」이다 — 글리프 이름이 «메뉴» 라고 메뉴가 아니다', async () => {
+  it('핸들의 접근성 이름은 `순서 변경`이다 — 글리프 이름이 **메뉴** 라고 메뉴가 아니다', async () => {
     const { getByLabelText } = await renderAtom(<DragHandle />)
 
     expect(getByLabelText('순서 변경')).toBeTruthy()

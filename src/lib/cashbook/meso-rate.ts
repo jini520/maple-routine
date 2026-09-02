@@ -1,5 +1,5 @@
 /**
- * 캐릭터의 **메소 획득량**을 「최대 세팅」으로 낸다.
+ * 캐릭터의 **메소 획득량**을 최대 세팅으로 낸다.
  *
  * ══ 왜 `character/stat` 의 환산값을 안 쓰나 — 이유가 **둘이고 서로 별개**다 ═══════════
  *
@@ -43,9 +43,9 @@ import type {
 export const EQUIP_MESO_CAP = 100
 
 /**
- * 「메소 획득량」 한 줄에서 퍼센트를 꺼낸다. 없으면 0.
+ * 메소 획득량 한 줄에서 퍼센트를 꺼낸다. 없으면 0.
  *
- * **표기가 둘인데 정규식은 하나**다 — 잠재·에디셔널은 `메소 획득량 +20%`(`+` 가 붙고 「증가」가
+ * **표기가 둘인데 정규식은 하나**다 — 잠재·에디셔널은 `메소 획득량 +20%`(`+` 가 붙고 증가가
  * 없다)이고 어빌리티·유니온·아티팩트는 `메소 획득량 20% 증가` 다. 둘을 따로 파싱하면 한쪽 표기가
  * 바뀔 때 **조용히 0 이 된다**.
  *
@@ -114,7 +114,7 @@ const raiderMesoIn = (preset: NexonUnionRaiderPreset): number =>
  * 유니온 — 공격대원/점령 효과 + 스테이트 효과.
  *
  * `union_raider_preset_1~5` 는 **전 계정이 `null`** 인 죽은 필드라 현재 적용본으로 폴백한다.
- * 「있으면 최댓값, 없으면 현재값」으로 짜 두는 이유는 되살아났을 때 **코드가 자동으로 잡게**
+ * 있으면 최댓값, 없으면 현재값으로 짜 두는 이유는 되살아났을 때 **코드가 자동으로 잡게**
  * 하려는 것이다 — 그때 이 파일을 다시 열 계기가 없다.
  */
 function unionMeso(response: NexonUnionRaiderResponse): number {
@@ -137,7 +137,7 @@ function unionMeso(response: NexonUnionRaiderResponse): number {
 /**
  * 유니온 아티팩트 — **`effect` 만** 센다.
  *
- * `union_artifact_crystal` 의 「메소 획득량 증가」에는 수치가 없고, 그 크리스탈들의 레벨 합이
+ * `union_artifact_crystal` 의 메소 획득량 증가에는 수치가 없고, 그 크리스탈들의 레벨 합이
  * 이미 `effect` 에 접혀 있다(발록 lv5 + 자쿰 lv5 → `level: 10`). 같이 더하면 이중 계산이다.
  */
 function artifactMeso(response: NexonUnionArtifactResponse): number {
@@ -174,7 +174,7 @@ export function challengersMesoOf(response: NexonCharacterSkillResponse): number
 }
 
 /**
- * **직업이 스스로 갖는 메획**(%) — 지금은 섀도어의 「그리드」 하나다(사용자 확정 2026-09-01).
+ * **직업이 스스로 갖는 메획**(%) — 지금은 섀도어의 그리드 하나다(사용자 확정 2026-09-01).
  *
  * 스킬 응답을 안 본다: 그 직업이면 늘 켜져 있는 값이라 조회가 언제나 같은 답을 준다
  * (사용자 지정 2026-09-01). 직업이 늘면 이 표에 한 줄을 더한다.

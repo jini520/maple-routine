@@ -121,12 +121,12 @@ export interface BossProfitState {
   loadedTab: BossCycle
   loadedPeriodKey: string
   /**
-   * **«지금 기간» 의 행 전부**(주간·월간 두 주기가 함께 들어 있다) — 위의 `rows` 와 **뜻이 다른
+   * ****지금 기간** 의 행 전부**(주간·월간 두 주기가 함께 들어 있다) — 위의 `rows` 와 **뜻이 다른
    * 값**이다.
    *
-   * `rows` 는 `filterRowsForTab` 이 `cycle` 까지 걸러 낸 «사용자가 보고 있는 (탭, 기간)» 한
+   * `rows` 는 `filterRowsForTab` 이 `cycle` 까지 걸러 낸 사용자가 보고 있는 (탭, 기간) 한
    * 조각이라, 이 화면의 네비게이션을 따라 움직인다. **today 위젯은 그것을 읽으면 안 된다** — 그
-   * 화면은 언제나 «이번 주» 를 그리므로, 사용자가 여기서 월간 탭으로 옮기는 것만으로 주간 보스
+   * 화면은 언제나 이번 주 를 그리므로, 사용자가 여기서 월간 탭으로 옮기는 것만으로 주간 보스
    * 수익과 주간 결정석 한도가 함께 비었다(사용자 보고 2026-08-19).
    *
    * 내용은 `latestSyncSnapshot.rows` 와 같다 — **모든 커밋이 그 스냅샷을 함께 싣기 때문에**(아래
@@ -471,7 +471,7 @@ type BossProfitSetter = (partial: Partial<BossProfitState>) => void
  *
  * `dropsByRowKey` 는 사본을 만들지 않는다. 키(`dropRowKey`)에 `periodKey` 가 들어 있어 두 기간이 한
  * 맵에 있어도 충돌하지 않고, 사본을 두면 드롭 편집 경로(`setBossDrops`·`applyExternalDropEdit`)가
- * 둘로 갈려 «today 에만 반영이 안 되는» 결함이 아이템 수익 쪽에서 되풀이된다.
+ * 둘로 갈려 today 에만 반영이 안 되는 결함이 아이템 수익 쪽에서 되풀이된다.
  *
  * 조회는 늘어나지 않는다 — `loadDropsByRowKey` 가 기간 키를 모아 **한 번에** 읽는다. 행이 겹쳐도
  * 무해하다(그 함수의 정리 루프는 멱등이다).
@@ -675,12 +675,12 @@ let hydration: Promise<void> | null = null
 
 export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
   /**
-   * **이 스토어의 모든 커밋은 «지금 기간» 을 함께 싣는다**.
+   * **이 스토어의 모든 커밋은 **지금 기간** 을 함께 싣는다**.
    *
-   * `currentPeriodRows` 의 내용은 `latestSyncSnapshot.rows` 와 같다. 그것을 «갱신하는 자리마다
-   * 잊지 않고 함께 쓴다» 로 두면 사본 둘이 언젠가 어긋나고(그 어긋남은 `setPartySize` 에서 실제로
-   * 한 번 터졌다 — 2026-07-22), 반대로 스냅샷을 바꿀 때마다 `set` 을 한 번씩 더 부르면 «건너뛴
-   * 진입의 커밋은 1회» 가 깨진다(— 그 계약은 화면 깜빡임을 막는다).
+   * `currentPeriodRows` 의 내용은 `latestSyncSnapshot.rows` 와 같다. 그것을 갱신하는 자리마다
+   * 잊지 않고 함께 쓴다 로 두면 사본 둘이 언젠가 어긋나고(그 어긋남은 `setPartySize` 에서 실제로
+   * 한 번 터졌다 — 2026-07-22), 반대로 스냅샷을 바꿀 때마다 `set` 을 한 번씩 더 부르면 건너뛴
+   * 진입의 커밋은 1회 가 깨진다(— 그 계약은 화면 깜빡임을 막는다).
    *
    * 그래서 **커밋 자체에 얹는다** — 커밋 수는 그대로이고, 어느 커밋에서 보든 상태와 스냅샷이 같다.
    * 대신 스냅샷 대입은 **그것을 화면에 반영할 `set` 보다 앞**에 와야 한다(지금 네 자리 모두 그렇다).
@@ -1118,7 +1118,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // 기록을 고아로 오인한다 — 결정 5 안전 장치 ①) ② `loadDropsByRowKey` **앞**이어야 방금 지운
     // 것이 화면 맵에 남지 않는다 ③ `refreshInPlace` 분기보다 앞이라 두 갈래가 함께 탄다.
     //
-    // `records === null` 이면 건너뛴다 — 기록 조회 자체가 실패한 것이라 «행이 없다» 가 아무것도
+    // `records === null` 이면 건너뛴다 — 기록 조회 자체가 실패한 것이라 **행이 없다** 가 아무것도
     // 뜻하지 않는다(이 자동 기록을 멈추는 것과 같은 이유).
     if (records !== null) {
       const removedDrops = await sweepOrphanDrops({
@@ -1126,7 +1126,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         rows: sortedRows,
         // 동기화가 실패한 캐릭터의 행은 낡은 캐시에서 나온 것이라 판정 근거가 못 된다.
         trustedOcids: new Set(ocids.filter((ocid) => !staleOcids.has(ocid))),
-        // 이 회차가 «사실» 을 아는 기간은 동기화가 덮은 지금 기간 둘뿐이다.
+        // 이 회차가 **사실** 을 아는 기간은 동기화가 덮은 지금 기간 둘뿐이다.
         knownPeriodKeys: new Set([
           getCurrentBossProfitPeriod('weekly', now).periodKey,
           getCurrentBossProfitPeriod('monthly', now).periodKey,
@@ -1149,7 +1149,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     //
     // 기다리지 않는다. 이 화면은 `defeated_on` 을 **안 쓰므로**(쓰는 곳은 가계부 캘린더 하나다)
     // 결과가 화면을 바꾸지 않고, 기다리면 캘 것이 있는 첫 회차마다 동기화가 조회 수만큼 길어진다.
-    // 실패해도 삼킨다 — 못 캔 것은 «칸이 덜 채워진다» 이지 이 동기화의 실패가 아니다.
+    // 실패해도 삼킨다 — 못 캔 것은 **칸이 덜 채워진다** 이지 이 동기화의 실패가 아니다.
     void resolveDefeatDates(ocids, now).catch(() => undefined)
 
     // ADR-076 결정 2: 동기화·자동 기록은 위에서 다 끝났다. 보던 기간(지난 달)의 화면 반영은

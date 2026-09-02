@@ -4,7 +4,7 @@
  * ## 목적지가 없는 타일은 이것뿐이다
  *
  * 초기화 시각은 이 타일이 다 말하고 더 볼 화면이 없다 — 그래서 레지스트리에 `target` 이 없고
- * `WidgetGrid` 가 `Pressable` 로 감싸지 않는다(갈 데 없는 것을 누르게 두면 무반응이 «고장» 으로
+ * `WidgetGrid` 가 `Pressable` 로 감싸지 않는다(갈 데 없는 것을 누르게 두면 무반응이 고장 으로
  * 읽힌다).
  *
  * ## 시계를 읽는 위젯은 이것뿐이다 (사용자 지시)
@@ -13,10 +13,10 @@
  * 1초마다 다시 그리게 되면서** 그 규칙을 이 위젯에서만 뒤집는다. 뷰모델 전체를 1초마다 다시 만들면
  * 스케줄·수익·드롭이 같이 재계산되는데, 1초마다 갈리는 값은 아홉 위젯 중 이것 하나뿐이다.
  *
- * **기준은 `atMs`**(다음 초기화의 절대 시각)이지 «틱 수» 가 아니다. 틱을 세면 백그라운드에서 타이머가
+ * **기준은 `atMs`**(다음 초기화의 절대 시각)이지 틱 수 가 아니다. 틱을 세면 백그라운드에서 타이머가
  * 눌릴 때 **조용히 뒤처지고**, 그 오차는 화면을 다시 볼 때까지 안 드러난다. 절대 시각에서 빼면 몇
- * 번을 못 세도 다음 렌더가 맞는 값을 준다. `atMs` 는 구현 노트가 «지금 아무 위젯도 안
- * 읽는다» 로 남겨 둔 값이고, 여기서 처음 쓰인다.
+ * 번을 못 세도 다음 렌더가 맞는 값을 준다. `atMs` 는 구현 노트가 지금 아무 위젯도 안
+ * 읽는다 로 남겨 둔 값이고, 여기서 처음 쓰인다.
  *
  * ## 셋 다 KST 기준이다 (실측 확인 2026-08-18)
  *
@@ -28,7 +28,7 @@
  * ## 임박을 색으로 말하지 않는다
  *
  * 1시간 미만에 `error` 를 빌리는 안이 시안에 있었으나 **색이 확정되지 않았다** — 실패가 아니라
- * 임박인데 이 앱에는 «경고» 축이 없다(`error` 는 실패의 색이고 그 뜻이 흐려진다). 값이 무엇이든
+ * 임박인데 이 앱에는 경고 축이 없다(`error` 는 실패의 색이고 그 뜻이 흐려진다). 값이 무엇이든
  * 이 타일의 글자 스타일은 같다.
  *
  * ## 크기가 버리는 것
@@ -59,7 +59,7 @@ const DAY_MS = 24 * HOUR_MS
 const SECOND_MS = 1000
 
 /**
- * 분 미만은 «0분» 이 아니다 — 아직 안 왔다는 사실이 0으로 읽히면 안 된다.
+ * 분 미만은 0분 이 아니다 — 아직 안 왔다는 사실이 0으로 읽히면 안 된다.
  *
  * **초를 그리는 곳에서는 안 쓴다** — `43초` 가 그 말을 직접 한다.
  */
@@ -82,7 +82,7 @@ const CYCLE_LABEL: Record<CycleKey, string> = {
   monthly: '월간',
 }
 
-/** 2x1 · 2x2 · 4x1 · 1x1 — 이름이 크기가 아니라 «무엇을 그리는가» 를 말한다. */
+/** 2x1 · 2x2 · 4x1 · 1x1 — 이름이 크기가 아니라 무엇을 그리는가 를 말한다. */
 type Variant = 'mini' | 'compact' | 'wide' | 'tiny'
 
 function variantOf(w: number, h: WidgetHeight): Variant {
@@ -104,7 +104,7 @@ function formatResetRemaining(remainingMs: number, granularity: Granularity): st
 
   if (granularity === 'second') {
     const seconds = Math.floor((clamped % MINUTE_MS) / SECOND_MS)
-    // 일일은 24시간을 안 넘어 «일» 이 설 자리가 없다. 그래도 넘어오면 시간으로 합쳐 말한다.
+    // 일일은 24시간을 안 넘어 **일** 이 설 자리가 없다. 그래도 넘어오면 시간으로 합쳐 말한다.
     const totalHours = days * 24 + hours
     if (totalHours > 0) return `${totalHours}시간 ${minutes}분 ${seconds}초`
     if (minutes > 0) return `${minutes}분 ${seconds}초`
@@ -122,7 +122,7 @@ function formatResetRemaining(remainingMs: number, granularity: Granularity): st
 /**
  * **1초마다 지금**.
  *
- * 뷰모델의 `remainingMs` 는 화면이 만들어진 시점의 값이라 그대로 두면 멈춘 시계다. 여기서 «지금» 을
+ * 뷰모델의 `remainingMs` 는 화면이 만들어진 시점의 값이라 그대로 두면 멈춘 시계다. 여기서 지금 을
  * 새로 읽고 `atMs` 에서 빼는 것이 살아 있는 값이다 — **틱을 세지 않는 이유**는 파일 머리에 있다.
  *
  * 간격을 1초로 두면 표시 초가 최대 1초 늦게 넘어갈 수 있다(경계에 맞춰 정렬하지 않는다) — 카운트다운
@@ -139,7 +139,7 @@ function useNowMs(): number {
   return nowMs
 }
 
-/** 남은 시간 — 뷰모델이 준 절대 시각과 «지금» 의 차. */
+/** 남은 시간 — 뷰모델이 준 절대 시각과 지금 의 차. */
 function remainingOf(countdown: ResetCountdown, nowMs: number): number {
   return Math.max(0, countdown.atMs - nowMs)
 }
@@ -167,7 +167,7 @@ function Label(props: { cycle: CycleKey; sizeClass: string }): React.JSX.Element
  * 남은 시간 글자.
  *
  * **`className` 이 값에 따라 갈리지 않는다** — 임박을 색으로 말하지 않는다는 것이 파일 머리의
- * 결정이고, 그 계약은 «두 값에서 같은 클래스가 나오는가» 로 검사된다.
+ * 결정이고, 그 계약은 두 값에서 같은 클래스가 나오는가 로 검사된다.
  */
 function Value(props: {
   cycle: CycleKey

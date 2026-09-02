@@ -170,8 +170,8 @@ describe('toRecordedDrop — 가격 필드 (ADR-124)', () => {
   })
 })
 
-// 주간 한도를 채우면 미처치 placeholder 행은 아예 서지 않는다. 「마감」 배지를
-// 여기까지 들고 오지 않는다: 이 페이지는 정산이라 «벌지 않은 것» 은 줄을 갖지 않는다.
+// 주간 한도를 채우면 미처치 placeholder 행은 아예 서지 않는다. `마감` 배지를
+// 여기까지 들고 오지 않는다: 이 페이지는 정산이라 **벌지 않은 것** 은 줄을 갖지 않는다.
 describe('selectProfitDisplayBosses — 주간 한도 마감', () => {
   const WEEKLY_NAMES = (weeklyBossesData.weekly as { boss: string }[]).map((entry) => entry.boss)
   const PENDING = WEEKLY_NAMES[0]
@@ -187,7 +187,7 @@ describe('selectProfitDisplayBosses — 주간 한도 마감', () => {
     }
   }
 
-  /** 「끝에서부터」 한도만큼 실제로 처치한 보스들 — `PENDING` 과 겹치지 않게 뒤에서 뽑는다. */
+  /** 끝에서부터 한도만큼 실제로 처치한 보스들 — `PENDING` 과 겹치지 않게 뒤에서 뽑는다. */
   function cleared(count: number): BossContent[] {
     return WEEKLY_NAMES.slice(-count).map((name) =>
       content({ name, isRegistered: true, isComplete: true, ownComplete: true }),
@@ -220,7 +220,7 @@ describe('selectProfitDisplayBosses — 주간 한도 마감', () => {
     expect(names(selectProfitDisplayBosses(contents, 'manual', manual))).not.toContain(PENDING)
   })
 
-  // 마감은 «안 잡은 것» 에만 붙는다 — 실제로 번 것은 정산에서 사라지면 안 된다.
+  // 마감은 **안 잡은 것** 에만 붙는다 — 실제로 번 것은 정산에서 사라지면 안 된다.
   it('실제로 처치한 보스는 한도를 채워도 전부 남는다', () => {
     const contents = cleared(WEEKLY_BOSS_CLEAR_LIMIT)
 

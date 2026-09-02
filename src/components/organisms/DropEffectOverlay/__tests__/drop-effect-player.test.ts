@@ -4,7 +4,7 @@
 // `DropEffectOverlay.test.tsx` 머리에 *"재생을 보는 아홉은 여기 없다"* 고 적혀 있었다. 상태 전이를
 // 순수 함수로 떼어내면서 그 아홉 중 **화면 없이 검사할 수 있는 것들**이 여기로 왔다.
 //
-// 여기서 못 보는 것은 그대로 남는다 — 프레임이 «같아 보이는가», origin 정합이 눈에 맞는가,
+// 여기서 못 보는 것은 그대로 남는다 — 프레임이 **같아 보이는가**, origin 정합이 눈에 맞는가,
 //  의 1.5배가 적당한가. 그것들은 실기기에서 사람이 본다.
 import {
   DROP_EFFECT_FPS,
@@ -116,7 +116,7 @@ describe('닫기 — end 를 한 번 재생하고 끝난다', () => {
     expect(s.finished).toBe(true)
   })
 
-  // 웹의 «두 번 탭하면 건너뛴다»(`if (st.closing) finish()`).
+  // 웹의 **두 번 탭하면 건너뛴다**(`if (st.closing) finish()`).
   it('닫는 중에 또 요청하면 곧바로 끝낸다', () => {
     const once = requestDropEffectClose(createDropEffectState(), COUNTS)
     const twice = requestDropEffectClose(once, COUNTS)
@@ -159,7 +159,7 @@ describe('큰 dt 는 잘라낸다', () => {
   })
 })
 
-// ★ 회귀 가드 — 누적 시간만 바뀐 tick 은 «다시 그릴 것 없음» 이어야 한다.
+// ★ 회귀 가드 — 누적 시간만 바뀐 tick 은 **다시 그릴 것 없음** 이어야 한다.
 describe('rendersDifferently', () => {
   it('누적 시간만 흐른 tick 은 다시 그리지 않는다', () => {
     const a = createDropEffectState()

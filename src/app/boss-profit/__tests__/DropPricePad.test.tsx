@@ -25,7 +25,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
       return React.createElement(ReactNative.View, props)
     }),
     BottomSheetScrollView: (props: Record<string, unknown>) => React.createElement(ReactNative.View, props),
-    // 시트 밖과 같게 둔다 — 아톰이 이 값으로 «시트 안인가» 를 묻는다.
+    // 시트 밖과 같게 둔다 — 아톰이 이 값으로 **시트 안인가** 를 묻는다.
     // 목이 시트를 평범한 `View` 로 바꾸므로 여기서도 문맥이 없는 것이 사실이고, 그래서
     // 아래 입력은 안 그려진다 — 그래도 **있어야 한다**: `lib/nativewind-interop` 이 모듈을
     // 읽는 순간 이것을 등록하므로, 없으면 스위트가 뜨기도 전에 죽는다.

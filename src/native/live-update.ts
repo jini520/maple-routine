@@ -19,8 +19,8 @@ import { showSplashScreen } from './splash-screen'
  * `x.y.z` 세 자리를 비교해 **후보가 더 새것인가**를 답한다.
  *
  * 세 자리가 아니거나 숫자가 아니면 `false` 다 — 가 늦게 발견한 버그가 정확히 여기였고
- * (네이티브 `versionName` 이 `1.0` 두 자리라 OTA 가 한 번도 작동하지 않았다), 그래서 «파싱 못 하면
- * 새것이 아니다» 로 닫아 둔다. 모르는 값을 새것으로 치면 그 순간 잘못된 번들이 나간다.
+ * (네이티브 `versionName` 이 `1.0` 두 자리라 OTA 가 한 번도 작동하지 않았다), 그래서 파싱 못 하면
+ * 새것이 아니다 로 닫아 둔다. 모르는 값을 새것으로 치면 그 순간 잘못된 번들이 나간다.
  */
 export function isNewerVersion(current: string, candidate: string): boolean {
   const parse = (value: string): number[] | null => {

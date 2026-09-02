@@ -8,7 +8,7 @@ jest.mock('../../../features/cashbook/records', () => {
   const actual = jest.requireActual('../../../features/cashbook/records')
   return {
     // **순수 함수는 진짜를 쓴다** — 줄에 무엇이 적히나는 그 함수들이 정하고, 목으로 덮으면
-    // 화면 테스트가 «화면이 무엇을 그리나» 를 못 본다.
+    // 화면 테스트가 **화면이 무엇을 그리나** 를 못 본다.
     recordTitleOf: actual.recordTitleOf,
     recordMesoOf: actual.recordMesoOf,
     recordCashOf: actual.recordCashOf,
@@ -31,7 +31,7 @@ jest.mock('../../../features/cashbook/records', () => {
   }
 })
 
-// 자동 줄은 **보스 수익 탭으로 간다** — 그 이동을 목으로 받아 «어디로 갔나» 를 본다.
+// 자동 줄은 **보스 수익 탭으로 간다** — 그 이동을 목으로 받아 **어디로 갔나** 를 본다.
 // 이름이 `mock` 으로 시작해야 팩토리 안에서 참조할 수 있다(jest 의 호이스팅 가드).
 const mockOpenTab = jest.fn()
 jest.mock('../../use-open-tab', () => ({ useOpenTab: () => mockOpenTab }))
@@ -70,7 +70,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
     }),
     BottomSheetScrollView: (props: Record<string, unknown>) =>
       React.createElement(ReactNative.View, props),
-    // 시트 밖과 같게 둔다 — 아톰이 이 값으로 «시트 안인가» 를 묻는다.
+    // 시트 밖과 같게 둔다 — 아톰이 이 값으로 **시트 안인가** 를 묻는다.
     // 목이 시트를 평범한 `View` 로 바꾸므로 여기서도 문맥이 없는 것이 사실이고, 그래서
     // 아래 입력은 안 그려진다 — 그래도 **있어야 한다**: `lib/nativewind-interop` 이 모듈을
     // 읽는 순간 이것을 등록하므로, 없으면 스위트가 뜨기도 전에 죽는다.
@@ -139,7 +139,7 @@ async function 누르기(view: Rendered, testID: string): Promise<void> {
 
 /**
  * **기본이 주간이다**(정정). 월간의 거동을 보는 테스트는 들어와서 한 번 옮긴다 —
- * 그 한 줄이 «이 테스트가 어느 보기를 말하는가» 를 본문에 드러내 준다.
+ * 그 한 줄이 이 테스트가 어느 보기를 말하는가 를 본문에 드러내 준다.
  */
 async function 월간으로(view: Rendered): Promise<void> {
   await 이름으로누르기(view, '월간')
@@ -154,7 +154,7 @@ async function 이름으로누르기(view: Rendered, label: string): Promise<voi
 /**
  * 수입 시트의 치는 칸에 **친다** — OS 숫자 키보드다.
  *
- * 「아이템 판매」의 치는 자리는 **판매 대금 칸**이다(정정 9 ④) — 큰 숫자는 수수료를 뗀 합계라
+ * 아이템 판매의 치는 자리는 **판매 대금 칸**이다(정정 9 ④) — 큰 숫자는 수수료를 뗀 합계라
  * 못 친다. 시트는 **사냥으로 열리므로** 부르는 쪽이 갈래를 먼저 옮긴다.
  */
 async function 금액치기(view: Rendered, text: string): Promise<void> {
@@ -164,7 +164,7 @@ async function 금액치기(view: Rendered, text: string): Promise<void> {
 }
 
 describe('CashbookScreen — 자리와 머리', () => {
-  it('화면과 제목이 «가계부» 다', async () => {
+  it('화면과 제목이 **가계부** 다', async () => {
     const view = await 그리기()
 
     expect(view.getByTestId('screen-Cashbook')).toBeTruthy()
@@ -181,7 +181,7 @@ describe('CashbookScreen — 자리와 머리', () => {
 })
 
 // 기간 이동은 **보스 수익 탭의 그것과 같은 모양**이다 — 화살촉 둘 사이에
-// 두 줄(«이번 주» + 그 이레의 날짜)이 선다. 라벨은 `formatBossProfitPeriodLabel` 이 만든다.
+// 두 줄(**이번 주** + 그 이레의 날짜)이 선다. 라벨은 `formatBossProfitPeriodLabel` 이 만든다.
 describe('CashbookScreen — 기간 라벨', () => {
   it('가까운 기간은 상대 표현이고, 아랫줄이 그 날짜를 든다', async () => {
     const view = await 그리기()
@@ -190,7 +190,7 @@ describe('CashbookScreen — 기간 라벨', () => {
     expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('8월 20일 ~ 8월 26일')
   })
 
-  it('먼 기간은 절대 표현으로 바뀐다 — 「지난 주」 뒤부터는 주차다', async () => {
+  it('먼 기간은 절대 표현으로 바뀐다 — `지난 주` 뒤부터는 주차다', async () => {
     const view = await 그리기()
 
     await 이름으로누르기(view, '이전 주')
@@ -239,7 +239,7 @@ describe('CashbookScreen — 달 이동', () => {
     expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2025년 12월')
   })
 
-  // 달을 옮겨도 고른 날은 그대로다 — 옮긴 것은 «보는 달» 이지 «고른 날» 이 아니다.
+  // 달을 옮겨도 고른 날은 그대로다 — 옮긴 것은 **보는 달** 이지 **고른 날** 이 아니다.
   it('달을 옮겨도 고른 날은 안 바뀐다', async () => {
     const view = await 그리기()
     await 월간으로(view)
@@ -251,13 +251,13 @@ describe('CashbookScreen — 달 이동', () => {
 })
 
 /**
- * **앞으로는 못 간다** — 「다음 주」·「다음 달」은 **지금 기간에서 죽는다.**
+ * **앞으로는 못 간다** — 다음 주·다음 달은 **지금 기간에서 죽는다.**
  *
  * 판정은 보스 수익 탭이 쓰는 `isLatestPeriod` **그 함수**다(두 하위 탭이 같은 경계를 갖는다).
  * 죽었는지는 `disabled` 와 `aria-disabled` 둘 다로 본다 — 앞은 손가락을, 뒤는 스크린리더를 막는다.
  */
 describe('앞으로는 못 간다', () => {
-  it('이번 주에서 「다음 주」가 죽는다', async () => {
+  it('이번 주에서 다음 주가 죽는다', async () => {
     const view = await 그리기()
 
     const 다음 = view.getByLabelText('다음 주')
@@ -269,7 +269,7 @@ describe('앞으로는 못 간다', () => {
     expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('8월 20일 ~ 8월 26일')
   })
 
-  it('이번 달에서 「다음 달」이 죽는다', async () => {
+  it('이번 달에서 `다음 달`이 죽는다', async () => {
     const view = await 그리기()
     await 월간으로(view)
 
@@ -306,7 +306,7 @@ describe('앞으로는 못 간다', () => {
 
     await 누르기(view, 'calendar-day-2026-09-01')
 
-    // 고른 날은 **바뀐다** — 막는 것은 «보는 기간» 이지 «고른 날» 이 아니다(미래에도 적을 수 있다).
+    // 고른 날은 **바뀐다** — 막는 것은 **보는 기간** 이지 **고른 날** 이 아니다(미래에도 적을 수 있다).
     expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('9월 1일 (화)')
     // 격자는 8월에 남는다.
     expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 8월')
@@ -324,7 +324,7 @@ describe('앞으로는 못 간다', () => {
     expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 8월')
   })
 
-  it('「이전」 은 어느 기간에서도 안 죽는다', async () => {
+  it('`이전` 은 어느 기간에서도 안 죽는다', async () => {
     const view = await 그리기()
 
     expect(view.getByLabelText('이전 주').props.accessibilityState?.disabled).toBeFalsy()
@@ -378,7 +378,7 @@ describe('CashbookScreen — 아직 기록이 없다', () => {
     expect(view.getByTestId('cashbook-empty')).toBeTruthy()
   })
 
-  // 적은 것이 없는 날은 **두 줄 다 빈다**(전에는 수익 줄에 «0» 을 적었다).
+  // 적은 것이 없는 날은 **두 줄 다 빈다**(전에는 수익 줄에 **0** 을 적었다).
   it('적은 것이 없으면 칸이 비고 칠해지지도 않는다', async () => {
     const view = await 그리기()
 
@@ -403,7 +403,7 @@ describe('CashbookScreen — 아직 기록이 없다', () => {
 
 // ══ 주간/월간 전환 ═══════════════════════════════════
 //
-// **이 앱에는 「주」가 둘이다.** 월간 격자의 줄은 일요일에 시작하고 주간 보기는 **목요일**에
+// **이 앱에는 주가 둘이다.** 월간 격자의 줄은 일요일에 시작하고 주간 보기는 **목요일**에
 // 시작한다 — 후자가 게임의 주이고 보스 수익 탭이 이미 그 축을 쓴다. 화면이 그 둘을 오간다.
 
 describe('주간/월간 전환', () => {
@@ -473,7 +473,7 @@ describe('주간/월간 전환', () => {
     expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('8월 13일 ~ 8월 19일')
   })
 
-  // 달을 걸치는 주는 **달을 둘 다 적는다** — 「8월 27일 – 2일」 이면 어느 달의 2일인지 모른다.
+  // 달을 걸치는 주는 **달을 둘 다 적는다** — `8월 27일 – 2일` 이면 어느 달의 2일인지 모른다.
   it('달을 걸치는 주는 양쪽 달을 다 적는다', async () => {
     const view = await 그리기()
     await 이름으로누르기(view, '주간')
@@ -594,9 +594,9 @@ describe('칸에 숫자가 든다', () => {
   })
 
   /**
-   * 기간을 옮겨도 **고른 날은 안 바뀐다**(이후의 계약). 그런데 상세가 «격자가 덮는
-   * 범위로 읽어 온 칸 금액 표» 를 보고 서 있으면, 그 날이 범위 밖으로 나가는 순간 상세가 통째로
-   * 사라졌다 — 머리글은 「8월 25일」인데 아래는 「기록이 없어요」(사용자 보고 2026-08-26).
+   * 기간을 옮겨도 **고른 날은 안 바뀐다**(이후의 계약). 그런데 상세가 격자가 덮는
+   * 범위로 읽어 온 칸 금액 표 를 보고 서 있으면, 그 날이 범위 밖으로 나가는 순간 상세가 통째로
+   * 사라졌다 — 머리글은 8월 25일인데 아래는 기록이 없어요(사용자 보고 2026-08-26).
    *
    * 목은 **범위를 실제로 지킨다** — 그러지 않으면(어느 범위로 불러도 같은 표를 돌려주면) 이
    * 회귀가 목 안에서 사라져 테스트가 통과해 버린다.
@@ -703,7 +703,7 @@ describe('펼침판이 시트를 연다', () => {
   })
 })
 
-// 저장이 던지면 **닫히면 안 된다.** 닫고 나면 친 것이 사라지고, 화면에는 «적혔다» 와 구분되지
+// 저장이 던지면 **닫히면 안 된다.** 닫고 나면 친 것이 사라지고, 화면에는 **적혔다** 와 구분되지
 // 않는 그림만 남는다 — 실기에서 지출이 하나도 안 적히는데 시트는 매번 닫혔다(2026-08-25,
 // `spend_records.form` 마이그레이션 누락). 실패는 **말하고 자리를 지킨다**.
 describe('저장이 실패하면', () => {
@@ -745,7 +745,7 @@ describe('저장이 실패하면', () => {
     expect(useToastStore.getState().toasts[0]?.message).toBe('지출을 적지 못했습니다')
   })
 
-  // 다시 읽으면 «없는 것» 으로 칸이 덮인다 — 실패했으니 읽을 것도 안 바뀌었다.
+  // 다시 읽으면 **없는 것** 으로 칸이 덮인다 — 실패했으니 읽을 것도 안 바뀌었다.
   it('다시 읽지 않는다', async () => {
     records.loadLastPointRate.mockResolvedValue(1_180)
     records.recordSpend.mockRejectedValue(new Error('no such column'))
@@ -815,8 +815,8 @@ describe('그날 목록', () => {
     expect(view.getByText('몬스터 파크')).toBeTruthy()
   })
 
-  // 수량은 «몇 번» 이라 이름만으로는 금액이 왜 그런지 모른다. `×` 를 붙여야 «2번» 이지
-  // «2번째» 가 아니라는 것이 읽힌다.
+  // 수량은 **몇 번** 이라 이름만으로는 금액이 왜 그런지 모른다. `×` 를 붙여야 **2번** 이지
+  // **2번째** 가 아니라는 것이 읽힌다.
   /**
    * **캐릭터가 붙은 줄은 이름을 앞에 적는다**(사용자 지정 2026-08-27) —
    * 보스 줄이 이미 쓰던 어법이라 한 목록 안에서 어법이 하나로 유지된다.
@@ -838,7 +838,7 @@ describe('그날 목록', () => {
   })
 
   // **누를 수 있어 보여야 한다**(사용자 지적 2026-08-25) — 글자 둘만 놓인 줄은 목록이 아니라
-  // 요약으로 읽힌다. 이 저장소가 「눌러서 들어가는 줄」에 쓰는 표식이 오른쪽 화살촉이다
+  // 요약으로 읽힌다. 이 저장소가 `눌러서 들어가는 줄`에 쓰는 표식이 오른쪽 화살촉이다
   // (`SettingsFeatureGuideListScreen`).
   it('줄마다 갈래 표식과 들어가는 화살촉이 선다', async () => {
     const view = await 그리기()
@@ -875,7 +875,7 @@ describe('줄을 누르면 고칠 수 있다', () => {
     // **곧바로 세부로 열린다** — 고른 것이 이미 정해져 있다. 그리고 그것을
     // **못 바꾼다**: 항목이 글자로 서고 되돌아가기가 없다.
     expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('몬스터 파크')
-    // 그 행이 쓴 시세가 채워진다 — 「마지막으로 쓴 값」 이 아니다.
+    // 그 행이 쓴 시세가 채워진다 — `마지막으로 쓴 값` 이 아니다.
     expect(view.getByTestId('spend-sheet-rate').props.value).toBe('1180')
     expect(view.getByTestId('spend-sheet-delete')).toBeTruthy()
   })
@@ -964,7 +964,7 @@ describe('자동으로 흘러든 줄', () => {
       { boss: '데미안', difficulty: '노멀' },
     ],
   }
-  // 여섯을 넘겨야 «끊기는가» 를 볼 수 있다 — 두 마리로는 한 줄에 다 들어가 아무것도 안 드러난다.
+  // 여섯을 넘겨야 **끊기는가** 를 볼 수 있다 — 두 마리로는 한 줄에 다 들어가 아무것도 안 드러난다.
   const 보스여덟 = [
     { boss: '검은 마법사', difficulty: '하드' },
     { boss: '스우', difficulty: '하드' },
@@ -1012,7 +1012,7 @@ describe('자동으로 흘러든 줄', () => {
     expect(view.queryByTestId('income-sheet-date')).toBeNull()
   })
 
-  it('판매 줄은 보스 수익 탭으로 간다 — 「미입력」 이 저쪽 할 일을 가리킨다', async () => {
+  it('판매 줄은 보스 수익 탭으로 간다 — `미입력` 이 저쪽 할 일을 가리킨다', async () => {
     const view = await 그리기()
 
     await 이름으로누르기(view, '루디 · 아이템 판매 보스 수익에서 보기')
@@ -1033,7 +1033,7 @@ describe('자동으로 흘러든 줄', () => {
     expect(view.getByTestId('cashbook-boss-tile-데미안|노멀')).toBeTruthy()
   })
 
-  // 사용자가 지정한 것이 «초상화» 다 — 이름만 뜨면 그 지정을 안 지킨 것이다.
+  // 사용자가 지정한 것이 **초상화** 다 — 이름만 뜨면 그 지정을 안 지킨 것이다.
   it('타일마다 초상이 든다', async () => {
     const view = await 그리기()
     await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
@@ -1041,7 +1041,7 @@ describe('자동으로 흘러든 줄', () => {
     expect(view.getAllByTestId('boss-portrait')).toHaveLength(2)
   })
 
-  // 정정 2 — 56px 타일 위에 「익스트림」 넉 자가 앉으면 초상을 거의 다 덮는다.
+  // 정정 2 — 56px 타일 위에 `익스트림` 넉 자가 앉으면 초상을 거의 다 덮는다.
   it('난이도는 타일 안에 한 칸으로 든다', async () => {
     const view = await 그리기()
     await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
@@ -1064,7 +1064,7 @@ describe('자동으로 흘러든 줄', () => {
   //
   // **폭으로 재지 않는다.** 고정 px 면 기기마다 다섯도 일곱도 되고, 퍼센트(`w-1/6` = `16.67%`)면
   // 여섯이 100.02% 라 하나가 다음 줄로 밀린다(실측 — 처음에 그렇게 냈다가 다섯만 섰다).
-  // 그래서 «여섯» 이 레이아웃의 결과가 아니라 **구조**여야 하고, 그 구조를 여기서 본다.
+  // 그래서 **여섯** 이 레이아웃의 결과가 아니라 **구조**여야 하고, 그 구조를 여기서 본다.
   it('여덟 마리는 여섯 + 둘로 끊긴다', async () => {
     records.loadDayRecords.mockResolvedValue([{ ...결정석줄, count: 8, bosses: 보스여덟 }])
     const view = await 그리기()
@@ -1111,7 +1111,7 @@ describe('자동으로 흘러든 줄', () => {
   })
 
   // 눈으로 읽던 것이 사라졌으므로 그 자리를 접근성 이름이 받아야 한다.
-  it('읽어 주는 이름은 「난이도 + 보스」다', async () => {
+  it('읽어 주는 이름은 `난이도 + 보스`다', async () => {
     const view = await 그리기()
     await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
 
@@ -1119,7 +1119,7 @@ describe('자동으로 흘러든 줄', () => {
     expect(view.getByLabelText('노멀 데미안')).toBeTruthy()
   })
 
-  // 펼친 판은 줄과 **한 카드**여야 한다 — 따로 선 상자로 보이면 «이 줄이 편 것» 이 끊긴다.
+  // 펼친 판은 줄과 **한 카드**여야 한다 — 따로 선 상자로 보이면 **이 줄이 편 것** 이 끊긴다.
   // NativeWind 가 이 클래스를 못 만들면 조용히 테두리가 남으므로 값으로 본다.
   it('펼치면 줄과 판 사이의 선이 사라진다', async () => {
     const view = await 그리기()
@@ -1207,8 +1207,8 @@ describe('당겨서 새로고침', () => {
 /**
  * 기간 합계 세 칸 — 기간 이동과 격자 **사이**에 선다.
  *
- * 값은 **격자가 그린 칸을 그대로 접은 것**이라(결정 2) 여기서 보는 것은 «화면이 어느 격자를
- * 넣었나» 다: 주간이면 이레, 월간이면 그 달 칸만. 새 조회는 안 튼다 — `loadCalendarAmounts` 는
+ * 값은 **격자가 그린 칸을 그대로 접은 것**이라(결정 2) 여기서 보는 것은 화면이 어느 격자를
+ * 넣었나 다: 주간이면 이레, 월간이면 그 달 칸만. 새 조회는 안 튼다 — `loadCalendarAmounts` 는
  * 격자용으로 이미 부른 그 한 번이다.
  */
 describe('기간 합계 세 칸', () => {
@@ -1222,7 +1222,7 @@ describe('기간 합계 세 칸', () => {
     '2026-09-01': { incomeMeso: 700_000_000, expenseMeso: 700_000_000 },
   }
 
-  // 그린 순서를 그대로 훑는다 — 자리를 «몇 번째 자식» 으로 재면 상자가 하나 끼는 순간 깨진다.
+  // 그린 순서를 그대로 훑는다 — 자리를 **몇 번째 자식** 으로 재면 상자가 하나 끼는 순간 깨진다.
   function 그린순서(view: Rendered): string[] {
     const 순서: string[] = []
     const 훑기 = (node: unknown): void => {
@@ -1236,8 +1236,8 @@ describe('기간 합계 세 칸', () => {
   }
 
   /**
-   * 위에서부터 **범위 이동 → 합계 → 격자**(사용자 지정) — 「어느 기간인가」 를
-   * 말한 줄 바로 다음이 「그 기간이 얼마인가」 이고, 그 둘이 격자를 받친다.
+   * 위에서부터 **범위 이동 → 합계 → 격자**(사용자 지정) — 어느 기간인가 를
+   * 말한 줄 바로 다음이 그 기간이 얼마인가 이고, 그 둘이 격자를 받친다.
    */
   it('범위 이동 · 합계 · 격자 순으로 선다', async () => {
     const view = await 그리기()
@@ -1285,7 +1285,7 @@ describe('기간 합계 세 칸', () => {
 
   /**
    * 적자인 기간 — **부호가 색을 정한다**(결정 3). 색을 값으로 안 박고 **수익·지출 칸과 견준다**:
-   * 테마가 바뀌어도 «순 수익이 지출과 같은 색이다» 는 그대로여야 하는 계약이기 때문이다.
+   * 테마가 바뀌어도 순 수익이 지출과 같은 색이다 는 그대로여야 하는 계약이기 때문이다.
    */
   it('순 수익이 음수면 지출과 같은 색이고 `−` 절댓값이다', async () => {
     records.loadCalendarAmounts.mockResolvedValue({
@@ -1305,7 +1305,7 @@ describe('기간 합계 세 칸', () => {
   /**
    * **셋은 같은 무게가 아니다**(사용자 지정) — 수익·지출은 순 수익을 **내기 위한
    * 값**이라 약하게 서고, 답인 순 수익만 크게 선다. 값을 박지 않고 **셋을 서로 견준다**: 지켜야 할
-   * 것은 「16px」이 아니라 «답이 재료보다 크다» 는 관계다.
+   * 것은 16px이 아니라 답이 재료보다 크다 는 관계다.
    */
   it('순 수익이 수익·지출보다 크고 굵다', async () => {
     const view = await 그리기()
@@ -1320,7 +1320,7 @@ describe('기간 합계 세 칸', () => {
   })
 
   /**
-   * **답이 왼쪽 헤드라인, 재료 둘이 오른쪽에 쌓인다**(— 「저울」, 사용자 채택).
+   * **답이 왼쪽 헤드라인, 재료 둘이 오른쪽에 쌓인다**(— 저울, 사용자 채택).
    * 답은 카드에서 가장 큰 것이 되고 재료는 그 옆의 각주가 된다.
    */
   it('순 수익이 왼쪽 헤드라인이고 재료 둘은 오른쪽에 쌓인다', async () => {
@@ -1359,8 +1359,8 @@ describe('기간 합계 세 칸', () => {
  * **다시 들어오면 다시 읽는다 — 바뀌었을 때만**.
  *
  * 이 화면은 탭이라 마운트가 앱 실행당 한 번인데 원천 넷 중 둘은 남의 화면이
- * 쓴다. 사용자 보고(2026-08-30): *«보스 수익에서 아이템 가격을 입력하고 가계부로 가면 새로고침을
- * 해야 반영돼»*.
+ * 쓴다. 사용자 보고(2026-08-30): *보스 수익에서 아이템 가격을 입력하고 가계부로 가면 새로고침을
+ * 해야 반영돼*.
  */
 describe('CashbookScreen — 낡은 숫자', () => {
   it('판이 그대로면 다시 안 읽는다 — 탭을 오가는 것은 흔한 일이다', async () => {

@@ -6,7 +6,7 @@
  * `expo prebuild` → `assembleDebug` 로 확인했다 — 오토링킹(`:notifee_react-native`)·
  * `PackageList.java` 등록·dex 안 `app.notifee.core.*` 클래스까지 들어간다. 라이브러리가 2024-12
  * 릴리스라 새 아키텍처(TurboModule) 대응이 없는데도 되는 것은 RN 의 interop 레이어 덕이므로,
- * 이 사실은 **런타임이 아니라 빌드까지만** 확인된 것이다(아래 «검증되지 않은 것»).
+ * 이 사실은 **런타임이 아니라 빌드까지만** 확인된 것이다(아래 검증되지 않은 것).
  *
  * 그 밖에 이 포트가 필요로 하는 것을 전부 준다 — 호출부가 정한 ID 로 예약·취소하고
  * (`createTriggerNotification`/`cancelNotification`), 예약된 것만 세고

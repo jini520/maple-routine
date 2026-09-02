@@ -7,7 +7,7 @@ import { moveAppToBackground } from '../native/back-gesture'
  *
  * ## 이것만 프레임워크가 안 해 준다
  *
- * 하위 페이지가 열려 있으면 react-navigation 이 뒤로가기를 받아 pop 한다(결정 9 «진짜 pop» 이
+ * 하위 페이지가 열려 있으면 react-navigation 이 뒤로가기를 받아 pop 한다(결정 9 진짜 pop 이
  * 손으로 만들던 것). 남는 자리는 **더 pop 할 것이 없을 때**뿐이고, 그때의 기본값이 정확히 결정 18 이
  * 거부한 종료다 — RN 자신의 주석이 그렇게 적어 두었다(`ReactActivity.invokeDefaultOnBackPressed`:
  * *"the fallback logic (**finish activity**)"*). 끝내면 다음 실행이 콜드 스타트라 스플래시부터
@@ -48,7 +48,7 @@ export function useRootBackToBackground(navigation: RootBackNavigation): void {
       if (!navigation.isReady()) return false
       if (navigation.canGoBack()) return false
 
-      // **판정이 다시 하나다**. 은 하단바의 «층» 기록이
+      // **판정이 다시 하나다**. 은 하단바의 **층** 기록이
       // react-navigation 이 모르는 우리 것이라 `canGoBack()` 에 안 잡힌다는 이유로 여기에 단을
       // 하나 더 뒀었다. 층이 진짜 스택이 된 지금은 그 판정에 **하위 층까지 포함해** 잡히므로,
       // 여기까지 왔다는 것은 정말로 pop 할 것이 없다는 뜻이다.

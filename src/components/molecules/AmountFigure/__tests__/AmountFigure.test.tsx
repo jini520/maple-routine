@@ -37,7 +37,7 @@ describe('AmountFigure', () => {
   /**
    * 부품에서 입력 경로를 걷었다.
    *
-   * 이 자리가 다시 칸이 되면 «앱이 센 값을 사람이 덮어쓴다» 가 살아나므로 구조로 막아 둔다.
+   * 이 자리가 다시 칸이 되면 앱이 센 값을 사람이 덮어쓴다 가 살아나므로 구조로 막아 둔다.
    */
   it('치는 칸이 아예 없다', async () => {
     const view = await renderAtom(<AmountFigure value={700_000} unit="메소" testID="amount" />)
@@ -180,7 +180,7 @@ describe('≈ 표식', () => {
   })
 })
 
-// 눌러도 아무 일이 없어야 한다 — 이 덩어리는 이제 «보여 주기만» 하는 자리다.
+// 눌러도 아무 일이 없어야 한다 — 이 덩어리는 이제 **보여 주기만** 하는 자리다.
 it('덩어리를 눌러도 값이 안 바뀐다', async () => {
   const view = await renderAtom(<AmountFigure value={12} unit="메소" testID="amount" />)
 

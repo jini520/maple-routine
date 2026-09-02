@@ -63,7 +63,7 @@ describe('사냥터 참조표 정합성', () => {
     }
   })
 
-  it('레벨이 둘인 맵은 52개다 — 「lv.200-201」 과 「lv.217,219」 를 접지 않았다는 뜻이다', () => {
+  it('레벨이 둘인 맵은 52개다 — `lv.200-201` 과 `lv.217,219` 를 접지 않았다는 뜻이다', () => {
     expect(GROUNDS.filter((ground) => ground.levels.length === 2)).toHaveLength(52)
   })
 
@@ -77,8 +77,8 @@ describe('사냥터 참조표 정합성', () => {
     expect(byName('리버스 시티')).toMatchObject({ minLevel: 205, maxLevel: 209 })
   })
 
-  it('「세 갈래길 1」 은 **30마리**다 — 15 는 오기였다 (사용자 정정 2026-08-28)', () => {
-    // 바로 옆 「세 갈래길 2」 가 30마리인데 「1」 만 15 로 적혀 있었다. 원문을 옮길 때 섞인 값이고,
+  it('`세 갈래길 1` 은 **30마리**다 — 15 는 오기였다 (사용자 정정 2026-08-28)', () => {
+    // 바로 옆 `세 갈래길 2` 가 30마리인데 `1` 만 15 로 적혀 있었다. 원문을 옮길 때 섞인 값이고,
     // 사용자가 30 으로 확정했다(— 앱이 추정해 고친 것이 아니다).
     const 소멸의여로 = REGIONS.find((region) => region.name === '소멸의 여로')!
     const 셋 = 소멸의여로.grounds.filter((ground) => ground.name.startsWith('세 갈래길'))
@@ -94,7 +94,7 @@ describe('사냥터 참조표 정합성', () => {
   it('추천 레벨과 몬스터 레벨은 **다를 수 있다** — 리버스 시티가 그렇다', () => {
     const reverseCity = REGIONS.find((region) => region.name === '리버스 시티')!
     const levels = reverseCity.grounds.flatMap((ground) => ground.levels)
-    // 추천은 209 까지인데 「숨겨진 M타워」·「숨겨진 지하열차」 몬스터가 213 까지 있다.
+    // 추천은 209 까지인데 `숨겨진 M타워`·`숨겨진 지하열차` 몬스터가 213 까지 있다.
     expect(reverseCity.maxLevel).toBe(209)
     expect(Math.max(...levels)).toBe(213)
   })

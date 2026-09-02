@@ -4,7 +4,7 @@
 //
 // ① **라우터 프로브가 없다** — 뒤로는 `navigation.goBack()` 이 불렸는가로 봤다(`StackScreen` 이
 //  통째로 사라지고 루트 스택이 그 자리를 맡는다). ** 로 그 계약이
-//    없어졌다** — 이 화면은 탭이라 pop 할 스택이 없고, 남은 것은 «화면 안에 ← 가 없다» 하나다.
+//    없어졌다** — 이 화면은 탭이라 pop 할 스택이 없고, 남은 것은 **화면 안에 ← 가 없다** 하나다.
 // ② `closest('li')` 로 행을 잡던 자리가 **`aria-label` 로 잡는 토글 버튼**이다 — RN 에 DOM 조회가
 //    없고, 웹도 이미 그 버튼에 보스명을 `aria-label` 로 박아 두었다.
 // ③ `aria-pressed` → **`accessibilityState.selected`**(RN 접근성 상태에 *pressed* 가 없다).
@@ -72,7 +72,7 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     manualTrackedByOcid: {},
     loadTrackedOcids: jest.fn(),
     saveTrackedOcids: jest.fn(),
-    // 실물은 `Promise<void>` 다 — 당김 훅이 회차의 «끝» 을 기다린다.
+    // 실물은 `Promise<void>` 다 — 당김 훅이 회차의 **끝** 을 기다린다.
     refresh: jest.fn().mockResolvedValue(undefined),
     loadPartySizes: jest.fn(),
     setPartySize: jest.fn(),
@@ -229,7 +229,7 @@ describe('BossManageScreen — 공통', () => {
   })
 
   // 스케줄러가 한 목록이 되면서 이 화면의 탭도 함께 걷혔다.
-  // 결정 2 와(«승계가 아니라 공유»)가 이 축에서 폐기된 자리다 — 공유할 상대가
+  // 결정 2 와(**승계가 아니라 공유**)가 이 축에서 폐기된 자리다 — 공유할 상대가
   // 사라졌으므로 되살리지 말 것.
   it('탭 없이 월간·주간이 한 목록에 서고, 월간이 위다', async () => {
     mockStore({ characters: [character()] })
@@ -243,7 +243,7 @@ describe('BossManageScreen — 공통', () => {
   })
 
   // 선택 캐릭터는 스케줄러와 **공유**한다(탭과 달리 양방향).
-  // 정정 8: 드롭다운은 눌러도 안 열렸다 — 레일은 **실제로 바뀐다**. 로 그 «같은 선택»
+  // 정정 8: 드롭다운은 눌러도 안 열렸다 — 레일은 **실제로 바뀐다**. 로 그 **같은 선택**
   // 이 두 스토어의 우연이 아니라 **스토어 하나**가 됐고, 그래서 여기서 보는 값이 컨텐츠 스케줄러가
   // 보는 값과 같은 것이다.
   it('레일에서 다른 초상화를 누르면 고른 캐릭터가 그 ocid 가 된다', async () => {
@@ -275,7 +275,7 @@ describe('BossManageScreen — 수동 모드', () => {
     expect(stateOf(rowToggle('매그너스')).selected).toBe(false)
   })
 
-  it('월간 보스가 같은 목록의 「월간」 무리에 선다', async () => {
+  it('월간 보스가 같은 목록의 `월간` 무리에 선다', async () => {
     mockStore({ characters: [character()] })
 
     await renderScreen()
@@ -405,9 +405,9 @@ describe('BossManageScreen — 자동 모드', () => {
     expect(screen.queryByLabelText('자쿰')).toBeNull()
   })
 
-  // : 스위치가 뒤집혔다 — 이름은 「모든 보스 보기」이고 **기본이 꺼짐**이다.
+  // : 스위치가 뒤집혔다 — 이름은 `모든 보스 보기`이고 **기본이 꺼짐**이다.
   // 표시 결과는 그대로라(기본 = 등록된 보스만) 위 케이스가 그 절반을 이미 지킨다.
-  it('토글은 「모든 보스 보기」이고 기본으로 꺼져 있다', async () => {
+  it('토글은 `모든 보스 보기`이고 기본으로 꺼져 있다', async () => {
     mockStore({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
 
     await renderScreen()
@@ -520,8 +520,8 @@ describe('BossManageScreen — 주간 12개 한도', () => {
     expect(screen.getByText(`1/${WEEKLY_BOSS_CLEAR_LIMIT}`)).toBeTruthy()
   })
 
-  // : 탭이 없어져 «이 수치는 주간 것» 을 말할 자리가 「주간」 헤더로 옮겨왔다.
-  it('카운터는 「주간」 헤더에만 붙는다 — 12는 주간 한도다', async () => {
+  // : 탭이 없어져 **이 수치는 주간 것** 을 말할 자리가 `주간` 헤더로 옮겨왔다.
+  it('카운터는 `주간` 헤더에만 붙는다 — 12는 주간 한도다', async () => {
     mockStore({
       characters: [character()],
       manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', '카오스')] },

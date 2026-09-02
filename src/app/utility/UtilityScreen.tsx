@@ -26,7 +26,7 @@ import { ITEM_SPLIT_TOOL_NAME } from './tool-names'
 /**
  * 타일 이름 — **단어 단위로 줄바꿈한다**(사용자 지정, 2026-08-23).
  *
- * RN 의 `Text` 는 한글을 **글자 단위**로 끊는다(「판매 분배금 계 / 산기」). RN 에는 웹의
+ * RN 의 `Text` 는 한글을 **글자 단위**로 끊는다(판매 분배금 계 / 산기). RN 에는 웹의
  * `word-break` 에 해당하는 스타일이 없으므로, 단어마다 `Text` 를 하나씩 두고 **flex 아이템으로
  * 감싼다** — 줄바꿈이 아이템 경계에서만 일어나므로 단어가 통째로 움직인다. `
 ` 을 박아 넣는
@@ -67,12 +67,12 @@ export function UtilityScreen(): React.JSX.Element {
           <Pressable
             role="button"
             // 이름이 단어별 `Text` 로 쪼개져 있으므로(TileLabel) 접근성 이름은 여기서 한 벌로 준다 —
-            // 그러지 않으면 스크린리더가 «판매» «분배금» «계산기» 를 따로 읽는다.
+            // 그러지 않으면 스크린리더가 **판매** **분배금** **계산기** 를 따로 읽는다.
             aria-label={ITEM_SPLIT_TOOL_NAME}
             onPress={() => navigation.navigate('UtilityItemSplit')}
             className="w-[48%]"
           >
-            {/* 가로:세로 = 2:1, 안은 «아이콘 → 이름» 가로 배치(사용자 지정, 2026-08-23).
+            {/* 가로:세로 = 2:1, 안은 **아이콘 → 이름** 가로 배치(사용자 지정, 2026-08-23).
                 납작한 타일에는 세로 쌓기보다 가로가 맞는다 — 세로면 둘 다 눌려 보인다. */}
             <Card className="aspect-[2/1] flex-row items-center gap-3 px-4">
               <CalculatorIcon

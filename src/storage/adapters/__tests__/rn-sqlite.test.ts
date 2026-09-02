@@ -5,7 +5,7 @@
 //
 // 그래서 목으로 흉내 내는 것은 SQLite 의 동작이 아니라 **op-sqlite 가 우리에게 주는 모양**뿐이다
 // (`open()` 이 받는 옵션, `execute()` 가 돌려주는 `{ rows }`). 상상한 DB 엔진을 검증하지 않도록
-// 실제 계약 검사는 아래 «db.ts 와 맞물리는가» 가 `src/storage/sqlite` 의 진짜 코드로 한다.
+// 실제 계약 검사는 아래 **db.ts 와 맞물리는가** 가 `src/storage/sqlite` 의 진짜 코드로 한다.
 //
 // jest 기본 플랫폼은 ios 다(`jest-expo`) — data.md 가 유일하게 미검증으로 남긴 쪽, 즉 틀리면
 // 데이터가 안 보이는 쪽이 검사된다. android 경로 선택은 순수 테스트가 덮는다.
@@ -142,7 +142,7 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE boss_drop_records ADD COLUMN price_meso INTEGER',
       'ALTER TABLE boss_drop_records ADD COLUMN price_share INTEGER',
       'ALTER TABLE spend_records ADD COLUMN form TEXT',
-      // 「아이템 구매」의 종류 — `form` 이 겪은 그 사정이다.
+      // `아이템 구매`의 종류 — `form` 이 겪은 그 사정이다.
       'ALTER TABLE spend_records ADD COLUMN item_kind TEXT',
       // 수입 테이블도 수수료 칸 없이 만들어진 기기가 있다.
       'ALTER TABLE income_records ADD COLUMN sale_fee_percent INTEGER',
@@ -197,7 +197,7 @@ describe('db.ts 와 맞물리는가', () => {
 
     const executed = mockOpened[0].statements.map((entry) => entry.statement.trim())
     expect(executed.filter((statement) => statement.startsWith('ALTER TABLE'))).toEqual([])
-    // 테이블 생성과 메이린 키 이관은 그대로 돈다(`docs/migration/data.md` «스키마 진화 코드»).
+    // 테이블 생성과 메이린 키 이관은 그대로 돈다(`docs/migration/data.md` **스키마 진화 코드**).
     // **개수를 박지 않는다** — db.ts 가 테이블을 더할 때마다 이 숫자가 조용히 스탈해진다(
     // 결정 2 가 목록의 단일 진실 공급원을 db.ts 로 둔 이유와 같다). 이 둘을 더하며 겪었다.
     expect(executed.filter((statement) => statement.startsWith('CREATE TABLE'))).toHaveLength(
@@ -206,7 +206,7 @@ describe('db.ts 와 맞물리는가', () => {
     /**
      * **여기도 개수를 안 박는다** — 바로 위 `CREATE TABLE` 이 겪은 그 스탈이다(가
      * 마이그레이션 둘을 더하며 다시 겪었다). 대신 **성질**을 본다: 데이터 이관은 전부 `WHERE` 를
-     * 갖는다 — 그것이 «이미 옮겨진 뒤에는 걸리는 행이 없다»(매번 실행해도 안전한 no-op)의 근거다.
+     * 갖는다 — 그것이 이미 옮겨진 뒤에는 걸리는 행이 없다(매번 실행해도 안전한 no-op)의 근거다.
      */
     const updates = executed.filter((statement) => statement.startsWith('UPDATE'))
     expect(updates.length).toBeGreaterThan(0)

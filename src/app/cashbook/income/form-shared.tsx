@@ -35,10 +35,10 @@ export interface IncomeFormProps {
 }
 
 /**
- * 캐릭터 줄 — **기본은 「선택 안함」**(사용자 지정 2026-08-26).
+ * 캐릭터 줄 — **기본은 `선택 안함`**(사용자 지정 2026-08-26).
  *
  * 폼 안에 사는 이유는 이다 — 갈래를 옮기면 폼이 언마운트되어 고른 것이 함께
- * 사라진다. 껍데기에 두면 그것만 남아 «갈래를 옮겼는데 캐릭터는 그대로» 가 된다.
+ * 사라진다. 껍데기에 두면 그것만 남아 갈래를 옮겼는데 캐릭터는 그대로 가 된다.
  */
 export function CharacterField(props: {
   characters: readonly SheetCharacter[]

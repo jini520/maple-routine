@@ -14,7 +14,7 @@
 //  **육안 대조 1순위다** — 후속 3 이 소계 footer 를 지운 근거가 sticky 였으므로,
 //    없으면 보스 행을 스크롤하는 동안 그 캐릭터의 합계가 화면에서 사라진다.
 // ② **테마 배경 조각은 없앴다**. 한때 을 따라 헤더 첫 자식으로
-//  조각을 그렸는데, 그 구조가 서 있던 전제(«헤더가 불투명하고 화면에 고정») 를 이
+//  조각을 그렸는데, 그 구조가 서 있던 전제(**헤더가 불투명하고 화면에 고정**) 를 이
 //    없앴다. 지금은 벽지 한 장(`ThemeBackdrop`)만 있고 헤더는 아무것도 안 칠한다.
 //
 // ══ 구조가 대신 지키는 것 여섯 ═════════════════════════════════════════════════════
@@ -42,7 +42,7 @@
 //    다르게 동작하므로 `ScreenScroll` 의 `ref` 로 계속 부른다(`parity-inventory` §2.5 가 step 7
 //    의 자리로 지목한 넷 중 하나).
 // ③ `navigate('/boss?openPicker=1')` → **`navigate('Tabs', { screen: 'Settings', params: … })`**.
-//  의 «피커를 열어 둔 채로 보낸다» 는 그대로이고 **받는 화면만 바뀌었다** —
+//  의 **피커를 열어 둔 채로 보낸다** 는 그대로이고 **받는 화면만 바뀌었다** —
 //  피커를 여는 자리가 설정 하나가 됐다.
 // ④ **`useScreenStackStore` 깊이 게이트와 `<Outlet />` 이 사라진다**(위 표) — 웹이 이 화면에서
 //    당김을 끄던 세 조건 중 둘은 그대로 남는다(빈 상태 · 새로고침이 의미 없는 기간).
@@ -135,7 +135,7 @@ export function BossProfitScreen(): React.JSX.Element {
     dropsByRowKey,
   } = useBossProfitStore()
   // **당김이 시작한 회차에만** 인디케이터가 돈다. 헤더 버튼·자동 조회는 같은
-  // 재조회를 부르지만 인디케이터는 안 연다 — 버튼은 자기 스피너와 «조회 중...» 을 이미 갖고 있고
+  // 재조회를 부르지만 인디케이터는 안 연다 — 버튼은 자기 스피너와 **조회 중...** 을 이미 갖고 있고
   // 자동 조회는 원래 조용해야 하는 것이다.
   const pull = usePullRefresh(() => refresh(trackedOcids ?? []))
 
@@ -279,7 +279,7 @@ export function BossProfitScreen(): React.JSX.Element {
   const header = (
     // 공용 `PageHeader` 를 쓰지 않는 이유는 파일 머리 ① — 그 셸의 하단 페이드를 이 화면은 금지한다
     // . 나머지 값은 그 컴포넌트와 같고, **상단 여백을 더하지 않는 것도 함께다**
-    // (— 웹 `pt-[calc(1rem+var(--sa-top))]` 의 상수 몫을 옮기지 않는다). 그 «안전영역»
+    // (— 웹 `pt-[calc(1rem+var(--sa-top))]` 의 상수 몫을 옮기지 않는다). 그 **안전영역**
     // 은 `useTopSafeAreaPx()` 다 — 셸을 복제한 화면이 인셋을 직접 읽으면 이
     // 화면만 안드로이드에서 16.7px 위에 선다.
     <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: topSafeAreaPx }}>

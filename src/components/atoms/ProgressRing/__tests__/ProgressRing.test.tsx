@@ -31,8 +31,8 @@ describe('ProgressRing · 연속', () => {
     ])
   })
 
-  // `strokeLinecap="round"` 가 길이 0 인 호에 점 하나를 찍어 «아직 아무것도 안 했다» 가
-  // «조금 했다» 로 보인다.
+  // `strokeLinecap="round"` 가 길이 0 인 호에 점 하나를 찍어 **아직 아무것도 안 했다** 가
+  // **조금 했다** 로 보인다.
   it('0 이면 채운 호를 아예 안 그린다', async () => {
     const { getByTestId, queryByTestId } = await renderAtom(
       <ProgressRing size={56} stroke={4} direction="cw" {...색} progress={{ kind: 'continuous', ratio: 0 }} />,
@@ -52,7 +52,7 @@ describe('ProgressRing · 연속', () => {
   })
 
   // SVG 의 `fill` 기본값은 **검정**이다. 이 속성이 빠지면 링 안이 통째로 칠해진다. 이 부품에서
-  // `fill` 프롭은 «찬 자리의 색» 이라 이름이 겹치므로 실제로 덮인 적이 있다.
+  // `fill` 프롭은 **찬 자리의 색** 이라 이름이 겹치므로 실제로 덮인 적이 있다.
   it.each(['progress-ring-track', 'progress-ring-fill'])('%s 은 속을 안 채운다', async (testID) => {
     const { getByTestId } = await renderAtom(
       <ProgressRing size={56} stroke={4} direction="cw" {...색} progress={{ kind: 'continuous', ratio: 0.5 }} />,

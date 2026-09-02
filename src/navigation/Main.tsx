@@ -79,7 +79,7 @@ const LAYER_SCREENS = {
 } as const satisfies Record<LayerRouteName, React.ComponentType>
 
 /**
- * 「탭 레이어」를 대신하는 화면 하나 — **층 스택 + 그 위에 뜬 바**.
+ * 탭 레이어를 대신하는 화면 하나 — **층 스택 + 그 위에 뜬 바**.
  *
  * ## 층이 스택이면 제스처와 전환이 공짜다
  *
@@ -96,7 +96,7 @@ const LAYER_SCREENS = {
  *
  * 그리고 하위 페이지 열하나는 이 `Main` **통째**를 밀어내므로 바가 함께 나간다 —
  * (*"탭바가 아래 화면과 한 덩어리로 밀려 나간다"*)가 구조로 성립한다. 바를 앱
- * 층으로 끌어올렸다면 «하위 페이지에서는 언제 숨기나» 라는 판정이 새로 생기고 그 결정이 깨진다.
+ * 층으로 끌어올렸다면 하위 페이지에서는 언제 숨기나 라는 판정이 새로 생기고 그 결정이 깨진다.
  */
 export function Main(): React.JSX.Element {
   return (
@@ -113,7 +113,7 @@ export function Main(): React.JSX.Element {
           <BottomBarOverlayHost />
         </View>
       )}
-      // 루트 스택과 **같은 상수**다 — 그래서 «다른 하위 페이지처럼 열린다» 가 우연이 아니다.
+      // 루트 스택과 **같은 상수**다 — 그래서 **다른 하위 페이지처럼 열린다** 가 우연이 아니다.
       screenOptions={PUSH_SCREEN_OPTIONS}
     >
       {(Object.keys(LAYER_SCREENS) as LayerRouteName[]).map((name) => (

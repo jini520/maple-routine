@@ -91,7 +91,7 @@ describe('행의 신원은 여기서 만든다', () => {
     })
   })
 
-  // 손입력은 «같은 날 같은 것을 두 번» 이 정상이라 자연키가 없다.
+  // 손입력은 **같은 날 같은 것을 두 번** 이 정상이라 자연키가 없다.
   it('같은 것을 두 번 넣어도 서로 다른 행이다', async () => {
     const { recordIncome } = require('../records') as typeof import('../records')
 
@@ -283,7 +283,7 @@ describe('줄에 적는 것', () => {
     expect(recordTitleOf({ kind: 'spend', record: 지출행, characterName: '루디' })).toBe(
       '루디 · 몬스터 파크',
     )
-    // 「사냥」 은 첫 칸이 갈래라(아래 describe) 이름이 보이는 갈래로 잰다.
+    // `사냥` 은 첫 칸이 갈래라(아래 describe) 이름이 보이는 갈래로 잰다.
     expect(
       recordTitleOf({
         kind: 'income',
@@ -293,7 +293,7 @@ describe('줄에 적는 것', () => {
     ).toBe('아델 · 엘리시움')
   })
 
-  // 직접 입력에서 이름 칸을 비우면 이름이 없다 — 빈 줄은 «무엇인지 모르는 줄» 이다.
+  // 직접 입력에서 이름 칸을 비우면 이름이 없다 — 빈 줄은 **무엇인지 모르는 줄** 이다.
   it('이름이 없으면 갈래 이름을 대신 적는다', () => {
     const { recordTitleOf } = require('../records') as typeof import('../records')
 
@@ -467,8 +467,8 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
   /**
    * **미입력만 있으면 줄이 안 선다**(사용자 지정 2026-08-29).
    *
-   * 종전에는 «먹은 것 자체가 캘린더에서 사라진다» 를 근거로 0원짜리 줄을 세웠다(가
-   * «가격 미입력이 정상» 이라 정한 것을 받은 자리다). 그런데 가계부는 **돈이 오간 기록**을 세는
+   * 종전에는 먹은 것 자체가 캘린더에서 사라진다 를 근거로 0원짜리 줄을 세웠다(가
+   * 가격 미입력이 정상 이라 정한 것을 받은 자리다). 그런데 가계부는 **돈이 오간 기록**을 세는
    * 자리라, 아직 값이 없는 건이 0원으로 서면 그날의 목록이 그만큼 헐거워진다.
    */
   it('미입력만 있으면 줄이 **안 선다**', async () => {
@@ -483,7 +483,7 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
     expect(rows.map(recordTitleOf)).toEqual(['루디 · 보스 결정석'])
   })
 
-  // 판 것이 하나라도 있으면 그 줄은 선다 — 「미입력 n」 이 **저쪽에 할 일이 있다**고 말한다.
+  // 판 것이 하나라도 있으면 그 줄은 선다 — `미입력 n` 이 **저쪽에 할 일이 있다**고 말한다.
   it('판 것이 섞여 있으면 줄이 서고 미입력 건수를 함께 적는다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     bossDrops.getBossDropRecords.mockResolvedValue([
@@ -506,7 +506,7 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
    */
   it('손입력 줄이 캐릭터 이름을 든다 — 없으면 빈 문자열이다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([
-      // 「사냥」 은 첫 칸이 갈래라(아래 describe) 이름이 보이는 갈래로 잰다.
+      // `사냥` 은 첫 칸이 갈래라(아래 describe) 이름이 보이는 갈래로 잰다.
       { id: 'i1', ocid: 'ocid-1', earnedOn: '2026-08-21', category: '아이템 판매', item: '엘리시움', mesoAmount: 1, recordedAt: 'a' },
       { id: 'i2', ocid: null, earnedOn: '2026-08-21', category: '아이템 판매', item: '리우', mesoAmount: 1, recordedAt: 'b' },
     ])
@@ -531,7 +531,7 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
     expect(rows.map(isManualRecord)).toEqual([false, true])
   })
 
-  it('이름을 모르면 ocid 대신 「알 수 없음」 을 안 적는다 — 캐시가 비면 빈 이름 대신 갈래만 적는다', async () => {
+  it('이름을 모르면 ocid 대신 `알 수 없음` 을 안 적는다 — 캐시가 비면 빈 이름 대신 갈래만 적는다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     basicCache.getCachedCharacterBasic.mockResolvedValue(null)
     const { loadDayRecords, recordTitleOf } = require('../records') as typeof import('../records')
@@ -555,7 +555,7 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
   })
 
   // : ~~큰 것부터~~ → **`weekly-bosses.json` 정규 순서**다. 같은 보스 무리가 앱의 네
-  // 자리에서 서는데 차례가 자리마다 다르면 그것이 같은 목록임을 사람이 못 알아본다. 「제일 큰 것」
+  // 자리에서 서는데 차례가 자리마다 다르면 그것이 같은 목록임을 사람이 못 알아본다. `제일 큰 것`
   // 의 자리는 마리당 금액이 실제로 적힌 보스 수익 탭으로 남는다(타일 판은 금액을 안 적는다).
   it('금액이 아니라 weekly-bosses.json 순서로 선다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([
@@ -634,10 +634,10 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
 })
 
 /**
- * 시트가 고를 수 있는 캐릭터(— 「캐릭터를 선택해서 입력하는 방법」).
+ * 시트가 고를 수 있는 캐릭터(— 캐릭터를 선택해서 입력하는 방법).
  *
  * **이름을 모르는 캐릭터는 안 든다** — `ocid` 는 사용자에게 아무 뜻도 없는 문자열이라, 그것을
- * 목록에 세우면 «있지도 않은 캐릭터» 가 하나 생긴다(과 같은 이유).
+ * 목록에 세우면 있지도 않은 캐릭터 가 하나 생긴다(과 같은 이유).
  */
 describe('loadTrackedCharacters', () => {
   it('추적 캐릭터를 이름·레벨과 함께 든다', async () => {
@@ -677,7 +677,7 @@ describe('loadTrackedCharacters', () => {
     ])
   })
 
-  // 못 읽으면 목록이 빈다 — 그때 고르개에는 「선택 안함」 하나만 선다. 던지지 않는다.
+  // 못 읽으면 목록이 빈다 — 그때 고르개에는 `선택 안함` 하나만 선다. 던지지 않는다.
   it('추적 목록을 못 읽으면 빈 목록이다', async () => {
     selection.getTrackedCharacterOcids.mockRejectedValue(new Error('no such table'))
     const { loadTrackedCharacters } = require('../records') as typeof import('../records')
@@ -687,11 +687,11 @@ describe('loadTrackedCharacters', () => {
 })
 
 /**
- * 사냥 줄은 **「캐릭터 · 사냥」 + 「n재획」** 이다 (사용자 지정 2026-08-29).
+ * 사냥 줄은 **`캐릭터 · 사냥` + `n재획`** 이다 (사용자 지정 2026-08-29).
  *
- * 종전에는 첫 칸이 사냥터 이름(`item`)이었다. 그런데 그 줄이 답하는 것은 «오늘 무엇으로 벌었나»
- * 이고 «어느 맵이었나» 는 열어 봐야 뜻이 생기는 값이다 — 갈래 이름이 그 자리를 든다. 대신 **몇
- * 재획을 돌았나**를 세는 칸이 서는데, 그것은 보스 줄의 「n마리」와 **같은 자리·같은 모양**이다.
+ * 종전에는 첫 칸이 사냥터 이름(`item`)이었다. 그런데 그 줄이 답하는 것은 오늘 무엇으로 벌었나
+ * 이고 어느 맵이었나 는 열어 봐야 뜻이 생기는 값이다 — 갈래 이름이 그 자리를 든다. 대신 **몇
+ * 재획을 돌았나**를 세는 칸이 서는데, 그것은 보스 줄의 n마리와 **같은 자리·같은 모양**이다.
  */
 describe('사냥 줄의 이름과 셈', () => {
   const 사냥기록 = {
@@ -729,7 +729,7 @@ describe('사냥 줄의 이름과 셈', () => {
     expect(rows.map(recordTitleOf)).toEqual(['루디 · 사냥'])
   })
 
-  it('**n재획**을 센다 — 보스 줄의 「n마리」와 같은 자리다', async () => {
+  it('**n재획**을 센다 — 보스 줄의 `n마리`와 같은 자리다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([사냥기록])
     const { loadDayRecords, recordCountLabelOf } =
       require('../records') as typeof import('../records')
@@ -771,7 +771,7 @@ describe('사냥 줄의 이름과 셈', () => {
 })
 
 /**
- * 화면이 «내 숫자가 낡았나» 를 묻는 값. 화면은 `storage/` 를 직접 안 부르므로
+ * 화면이 내 숫자가 낡았나 를 묻는 값. 화면은 `storage/` 를 직접 안 부르므로
  * (CLAUDE.md CRITICAL) 두 표의 판을 여기서 하나로 접는다.
  */
 describe('cashbookDataRevision', () => {

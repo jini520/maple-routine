@@ -2,12 +2,12 @@
 /**
  * **목이 아닌 진짜 SQLite 로 한 번 태우는 자리**(이슈 #265).
  *
- * 옆의 `db.spec.ts` 는 가짜 포트로 «어떤 문장이 나가는가» 를 보고, `adapters/__tests__/rn-sqlite.test.ts`
- * 는 op-sqlite 의 «모양» 을 본다. 여기서 보는 것은 **그 문장이 진짜 엔진에서 통하는가** 다 —
- * 제약(`NOT NULL`)은 목이 흉내 낼 줄 모르는 것이고, 그래서 메포·캐시 「기타」가 저장되지 않는 결함이
+ * 옆의 `db.spec.ts` 는 가짜 포트로 어떤 문장이 나가는가 를 보고, `adapters/__tests__/rn-sqlite.test.ts`
+ * 는 op-sqlite 의 모양 을 본다. 여기서 보는 것은 **그 문장이 진짜 엔진에서 통하는가** 다 —
+ * 제약(`NOT NULL`)은 목이 흉내 낼 줄 모르는 것이고, 그래서 메포·캐시 기타가 저장되지 않는 결함이
  * 3,900 개 테스트를 그대로 통과했다.
  *
- * 새 케이스를 더할 기준: **스키마 제약·트랜잭션·데이터 이관**처럼 «엔진이 판정하는 것». 문장의
+ * 새 케이스를 더할 기준: **스키마 제약·트랜잭션·데이터 이관**처럼 엔진이 판정하는 것. 문장의
  * 차례·개수는 여기 말고 `db.spec.ts` 다(그쪽이 훨씬 싸다).
  */
 import { closeBossProfitDb, getBossProfitDb } from '../db'
@@ -166,7 +166,7 @@ describe('income_records.meso_amount 재작성 (이슈 #265 · ADR-176)', () => 
     expect(notNullOfMesoAmount(real)).toBe(0)
   })
 
-  // 차례가 뒤집히면 «방금 ALTER 로 붙인 칸을 다시 만드는» 헛일이 된다.
+  // 차례가 뒤집히면 **방금 ALTER 로 붙인 칸을 다시 만드는** 헛일이 된다.
   // 재작성이 만드는 테이블은 지금의 DDL 전체라, 먼저 돌면 **income_records 에 ALTER 가 한 번도
   // 안 나가는 것**이 그 차례의 증거다.
   it('ensureColumn 들보다 먼저 돈다 — 옮긴 뒤엔 붙일 칸이 없다', async () => {
@@ -211,7 +211,7 @@ describe('income_records.meso_amount 재작성 (이슈 #265 · ADR-176)', () => 
  * 이슈 #265 의 재현 그 자체다. 시트가 넘기는 드래프트는 `IncomeSheet.test.tsx` 가 붙들고 있고
  * (`mesoAmount: null` · `pointAmount: 30000` …), **그 아래가 여기서 처음 진짜 DB 를 만난다.**
  */
-describe('「기타」를 메포·캐시로 적어도 저장된다 (목이 아닌 SQLite)', () => {
+describe('기타를 메포·캐시로 적어도 저장된다 (목이 아닌 SQLite)', () => {
   const base = {
     ocid: null,
     earnedOn: '2026-08-28',
@@ -225,7 +225,7 @@ describe('「기타」를 메포·캐시로 적어도 저장된다 (목이 아�
     recordedAt: '2026-08-28T10:00:00.000Z',
   } as const
 
-  it('메포 「기타」', async () => {
+  it('메포 `기타`', async () => {
     await getBossProfitDb()
 
     await insertIncomeRecord({
@@ -249,7 +249,7 @@ describe('「기타」를 메포·캐시로 적어도 저장된다 (목이 아�
     ])
   })
 
-  it('캐시 「기타」', async () => {
+  it('캐시 `기타`', async () => {
     await getBossProfitDb()
 
     await insertIncomeRecord({
@@ -268,7 +268,7 @@ describe('「기타」를 메포·캐시로 적어도 저장된다 (목이 아�
   })
 
   // 막혀 있던 것은 메포·캐시 하나뿐이었다 — 고치면서 나머지가 조용히 상하지 않는지 함께 본다.
-  it('메소 「기타」와 사냥은 그대로다', async () => {
+  it('메소 `기타`와 사냥은 그대로다', async () => {
     await getBossProfitDb()
 
     await insertIncomeRecord({

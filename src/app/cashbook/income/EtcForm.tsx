@@ -1,11 +1,11 @@
 /**
- * 「기타」 폼 — 갈래 둘에 안 드는 수입.
+ * 기타 폼 — 갈래 둘에 안 드는 수입.
  *
  * **통화가 서는 자리는 여기 하나**다 — 아이템 판매는 경매장이라
  * 메소이고 사냥도 메소다. 갈래가 이미 아는 것을 다시 묻지 않는다. 이벤트 보상이 메포·캐시로도
  * 들어오므로 이 갈래만 축이 갈린다.
  *
- * **금액 × 수량**이다. 줄 차례가 지출 「기타」와 같아서, 한쪽을 고칠 때
+ * **금액 × 수량**이다. 줄 차례가 지출 기타와 같아서, 한쪽을 고칠 때
  * 다른 쪽이 눈에 들어온다. 큰 숫자는 그 곱이고 **못 친다**(결정 1).
  */
 import { useState } from 'react'
@@ -70,7 +70,7 @@ export function EtcForm(
   const typed = mesoValueOf(typedText)
   const usesPoint = currency === 'point'
   const rate = /^\d+$/.test(rateText) && Number(rateText) > 0 ? Number(rateText) : null
-  /** **언제나 곱한다** — 금액 × 수량. 지출 「기타」와 같은 식이다. */
+  /** **언제나 곱한다** — 금액 × 수량. 지출 기타와 같은 식이다. */
   const amount = typed * quantity
   /** 메포로 적으면 **시세가 있어야** 잰다. */
   const canSave = amount > 0 && (!usesPoint || rate !== null)
@@ -108,7 +108,7 @@ export function EtcForm(
       <FieldRow label="금액">
         <AmountInput testID="income-sheet-unit-price" value={typedText} onChange={setTypedText} />
         {/* 숫자만 있으면 무엇으로 받은 것인지 줄에서 사라진다. 이 줄이 묻는
-            것은 **얼마인가**라 라벨이 아니라 단위다 — 캐시는 「원」이고 큰 숫자와 같은 말이 된다. */}
+            것은 **얼마인가**라 라벨이 아니라 단위다 — 캐시는 `원`이고 큰 숫자와 같은 말이 된다. */}
         <Text
           testID="income-sheet-unit-price-unit"
           className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted"
@@ -117,7 +117,7 @@ export function EtcForm(
         </Text>
       </FieldRow>
 
-      {/* 「기타」가 세는 것은 «몇 회» 라 **스테퍼 그대로**다. */}
+      {/* `기타`가 세는 것은 **몇 회** 라 **스테퍼 그대로**다. */}
       <FieldRow label="수량">
         <QuantityStepper value={quantity} onChange={setQuantity} testID="income-sheet-quantity" />
       </FieldRow>
@@ -152,7 +152,7 @@ export function EtcForm(
         // **합계이고 못 친다** — 사람이 치는 것은 금액 한 개 값이지 합계가 아니다.
         value={amount}
         /*
-         * **단위는 고른 통화**다 — 캐시는 「원」이다(실제로 받는 돈이 원이라
+         * **단위는 고른 통화**다 — 캐시는 `원`이다(실제로 받는 돈이 원이라
          * 지출 시트가 그렇게 적고, 같은 값을 두 시트가 다르게 적을 이유가 없다).
          */
         unit={unitOfCurrency(currency)}

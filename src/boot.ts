@@ -52,7 +52,7 @@ import { rnSqlitePort } from './storage/adapters/rn-sqlite'
  * ## 이제 열셋이 전부 실구현이다
  *
  * 마지막까지 던지던 `LiveUpdatePort` 가 로 채워졌다(`rn-live-update.ts`) — 그 하나가
- * 「아직 안 만들었다」로 남아 있던 이유는 다른 열둘과 달리 **프로토콜 자체가 바뀌기** 때문이었고
+ * 아직 안 만들었다로 남아 있던 이유는 다른 열둘과 달리 **프로토콜 자체가 바뀌기** 때문이었고
  * 그래서 `not-implemented.ts` 는 이제 비었다.
  *
  * 그 목록을 먼저 떠난 것이 셋이다:

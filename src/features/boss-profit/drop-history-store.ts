@@ -38,9 +38,9 @@ interface DropHistoryState {
    *
    * 이 화면이 push 페이지였을 때는 필요 없었다 — 열 때마다 새로 마운트돼 늘 최신을 읽었다.
    * `today` 가 **탭**으로 같은 스토어를 상시 구독하면서 그 성질이 사라졌다(—
-   * *"탭 화면은 마운트된 채 남아 «진입 시점» 이라는 사건이 앱 실행당 한 번이 된다"*).
+   * *"탭 화면은 마운트된 채 남아 진입 시점 이라는 사건이 앱 실행당 한 번이 된다"*).
    *
-   * `-1` 은 «아직 아무것도 안 읽었다» 이고, 실제 리비전(0부터)과 절대 같아지지 않는다.
+   * `-1` 은 아직 아무것도 안 읽었다 이고, 실제 리비전(0부터)과 절대 같아지지 않는다.
    */
   loadedRevision: number
   load: (now?: Date) => Promise<void>
@@ -66,9 +66,9 @@ function toHistoryRecord(record: BossDropRecord): DropHistoryRecord {
     boxOrigin: record.boxOrigin ?? undefined,
     ringLevel: record.ringLevel ?? undefined,
     quantity: record.quantity,
-    // ⚠️ **가격 셋을 빠뜨리면 저장은 됐는데 화면이 영영 「미입력」으로 보인다**.
+    // ⚠️ **가격 셋을 빠뜨리면 저장은 됐는데 화면이 영영 미입력으로 보인다**.
     // `rows.ts` 의 같은 변환이 그 경고를 이미 적어 뒀는데 이 사본이 그것을 안 따라왔다 —
-    // 히스토리 화면은 금액을 안 그려서 안 터졌고, today 의 「최고가 아이템」·「가격 미입력」이
+    // 히스토리 화면은 금액을 안 그려서 안 터졌고, today 의 `최고가 아이템`·`가격 미입력`이
     // 처음으로 이 필드를 읽으면서 드러났다(최고가는 `entered` 가 하나도 없어 늘 비고, 미입력은
     // 전부 `undefined` 라 입력해도 건수가 안 준다).
     priceState: record.priceState ?? undefined,
@@ -87,8 +87,8 @@ export const useDropHistoryStore = create<DropHistoryState>((set) => ({
   async load(now = new Date()) {
     set({ status: 'loading' })
 
-    // **읽기 «전»에 찍는다.** 읽는 중에 다른 화면이 기록을 바꾸면 리비전이 더 올라가고, 그러면
-    // 이 스냅샷은 낡은 것이 맞다 — 다음 진입이 다시 읽는다. 읽은 «뒤»에 찍으면 그 변경을
+    // **읽기 전에 찍는다.** 읽는 중에 다른 화면이 기록을 바꾸면 리비전이 더 올라가고, 그러면
+    // 이 스냅샷은 낡은 것이 맞다 — 다음 진입이 다시 읽는다. 읽은 **뒤**에 찍으면 그 변경을
     // 이미 본 것으로 표시해 영영 놓친다.
     const revision = getBossDropRecordsRevision()
 
@@ -132,7 +132,7 @@ export const useDropHistoryStore = create<DropHistoryState>((set) => ({
         loadedRevision: revision,
       })
     } catch {
-      // 실패에는 리비전을 찍지 않는다 — 스냅샷이 없으므로 «어느 시점» 도 없고, 그대로 두면
+      // 실패에는 리비전을 찍지 않는다 — 스냅샷이 없으므로 **어느 시점** 도 없고, 그대로 두면
       // 다음 진입이 다시 시도한다.
       set({ status: 'failed', groups: [], drought: null, charactersByOcid: {} })
     }

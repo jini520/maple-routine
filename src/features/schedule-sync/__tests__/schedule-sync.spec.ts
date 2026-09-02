@@ -460,8 +460,8 @@ describe('syncSchedules', () => {
       resolveState(schedulerState('캐릭터1'))
       const [firstResults, secondResults] = await Promise.all([first, second])
 
-      // ADR-147 정정 42: 회차 결과를 «요청한 ocid» 로 거르면서 계약이 «같은 객체»에서
-      // «같은 내용»으로 내려왔다 — 거르기가 호출마다 새 배열을 만든다.
+      // ADR-147 정정 42: 회차 결과를 **요청한 ocid** 로 거르면서 계약이 **같은 객체**에서
+      // **같은 내용**으로 내려왔다 — 거르기가 호출마다 새 배열을 만든다.
       expect(secondResults).toEqual(firstResults)
     })
 
@@ -698,7 +698,7 @@ describe('syncSchedules', () => {
     // NOW = 2026-07-11T00:00:00.000Z = KST 2026-07-11T09:00:00(불안정 구간 아님)
     // → getBackfillDateKeys는 '2026-07-10'(-1일)부터 시작한다.
     //
-    // ADR-148 결정 1: 원장 필터를 통과한 날짜는 **전부** 나간다. 그래서 «-1일에서 멈춘다» 같은
+    // ADR-148 결정 1: 원장 필터를 통과한 날짜는 **전부** 나간다. 그래서 **-1일에서 멈춘다** 같은
     // 테스트도 조회는 14회(오늘 1 + 과거 13)이고, 멈추는 것은 **병합**이다. 앞 날짜에서 병합이
     // 끝나도 뒤 날짜 응답은 이미 와 있으므로, 그 응답을 받을 tail 기본값이 없으면 undefined 가
     // 흘러든다 — 그래서 아래 테스트들이 마지막에 `mockResolvedValue` 로 기본값을 깐다.
@@ -1046,7 +1046,7 @@ describe('syncSchedules', () => {
       questState: 2 as const,
     }
     // 아래 두 테스트의 tail 기본값 — 병합이 앞 날짜에서 멈춘 뒤에도 도착하는 날짜들이 받는 응답이다.
-    // 여전히 «월드공유만» 이라 이것이 병합까지 갔더라도 해결로 읽히지 않는다.
+    // 여전히 **월드공유만** 이라 이것이 병합까지 갔더라도 해결로 읽히지 않는다.
     const PARTIAL_DAILY_DAY = {
       ...schedulerState('그 밖의 과거'),
       dailyContents: [monsterParkOnly],
@@ -1913,7 +1913,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       ])
     })
 
-    // ADR-149 결정 1: 아래 둘은 «콜드 스타트에서는 완료 후 1회만» 을 단언하던 자리다. ③에 담기는
+    // ADR-149 결정 1: 아래 둘은 **콜드 스타트에서는 완료 후 1회만** 을 단언하던 자리다. ③에 담기는
     // 항목은 mockCharacter/basic 응답과 자격 판정을 통과한 **확인된** 것이라, 형제를 기다릴 이유가 없다.
     it('콜드 캐시 — 확인된 캐릭터는 형제를 기다리지 않고 그 자리에서 방출한다 (ADR-149 결정 1)', async () => {
       const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
@@ -1964,7 +1964,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       const onUpdate = jest.fn()
       await getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
-      // 자격 미확인 캐시는 어떤 방출에도 안 들어간다 — 「비공개」가 한 번도 안 보인다(ADR-053 결정 1).
+      // 자격 미확인 캐시는 어떤 방출에도 안 들어간다 — `비공개`가 한 번도 안 보인다(ADR-053 결정 1).
       const emittedNames = new Set(
         onUpdate.mock.calls.flatMap(([entries]) => (entries as CharacterPickerEntry[]).map((entry) => entry.name)),
       )
@@ -1988,7 +1988,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       const onUpdate = jest.fn()
       await getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
-      // 중간에 []를 흘렸다면 화면이 «모두 조회할 수 없어요» 를 그렸을 자리다.
+      // 중간에 []를 흘렸다면 화면이 **모두 조회할 수 없어요** 를 그렸을 자리다.
       expect(onUpdate).toHaveBeenCalledTimes(1)
       expect(onUpdate).toHaveBeenCalledWith([])
     })
@@ -2005,7 +2005,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
       const onUpdate = jest.fn()
       await getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
-      // 방출이 여러 번이므로(ADR-149 결정 1) «어떤 방출에도» 는 합집합으로 묻는다.
+      // 방출이 여러 번이므로(ADR-149 결정 1) **어떤 방출에도** 는 합집합으로 묻는다.
       const emittedOcids = new Set(
         onUpdate.mock.calls.flatMap(([entries]) => (entries as CharacterPickerEntry[]).map((entry) => entry.ocid)),
       )
@@ -2013,7 +2013,7 @@ describe('getCharacterPickerRoster (ADR-016: 캐시 우선 + 스트리밍 갱신
     })
 
     // ADR-149 결정 3: 스트리밍이 되면서 `globalError` 가드가 비로소 실효를 갖는다 — 실패가 먼저
-    // 확정되면 뒤이어 성공한 형제도 흘리지 않는다(불완전한 목록이 «완성» 으로 오해되면 안 된다).
+    // 확정되면 뒤이어 성공한 형제도 흘리지 않는다(불완전한 목록이 **완성** 으로 오해되면 안 된다).
     it('콜드 캐시 — 전역 실패(401)가 먼저 확정되면 뒤이은 성공도 흘리지 않고 그대로 던진다', async () => {
       const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])

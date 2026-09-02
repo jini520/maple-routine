@@ -1,5 +1,5 @@
 /**
- * 첫 화면 「today」 — 위젯 격자.
+ * 첫 화면 today — 위젯 격자.
  *
  * ## 이 화면이 하는 일은 셋뿐이다
  *
@@ -21,7 +21,7 @@
  *   통째로 우회해 예열이 방금 받은 응답을 한 번 더 받는다. 그래서 진입 경로는 `loadTrackedOcids`
  *  하나이고, 그 함수 안의 `{ auto: true }` 가 게이트를 태운다.
  * - **스토어 넷을 각자 트리거하지 않는다.** 보스·수익 스토어는 `prehydrate` 가 이미 같은 회차로
- *   예열했고, 여기서 또 부르면 «예열한 것을 다시 조회» 다. **대가는 적어 둔다** — 이 화면에 오래
+ *   예열했고, 여기서 또 부르면 예열한 것을 다시 조회 다. **대가는 적어 둔다** — 이 화면에 오래
  *   머무는 동안 TTL 이 만료되면 컨텐츠 쪽만 다시 동기화되고 보스·수익 위젯은 그 탭에 들어갈 때까지
  *   옛 스냅샷을 그린다. 당김·헤더 버튼(아래)은 셋을 모두 새로 읽으므로 사용자가 원하면 즉시 풀린다.
  * - **`drop-history` 는 이 셋과 다른 축이다** — 예열 목록에 없고(열린 질문: 더할지는
@@ -34,7 +34,7 @@
  *
  * ## 당김과 헤더 버튼은 **같은 재조회**이고, 그쪽은 셋을 다 읽는다
  *
- * 명시적 재조회는 TTL 을 무시한다 — 사용자가 «지금 이 화면을 최신으로» 를
+ * 명시적 재조회는 TTL 을 무시한다 — 사용자가 지금 이 화면을 최신으로 를
  * 요구한 것이라, 이 화면이 그리는 스토어 셋을 **동시에** 새로 읽는다. 세 번 나갈 것 같지만
  * `syncSchedules` 의 단일 비행이 셋을 한 회차로 합쳐 **네트워크는 한 바퀴**다.
  */
@@ -83,7 +83,7 @@ export function TodayScreen(): React.JSX.Element {
   const [representativeOcid, setRepresentativeOcid] = useState<string | null>(null)
 
   useEffect(() => {
-    // 파일 머리 «진입 자동 조회» — 게이트가 있는 문 하나. 드롭 기록은 아래 포커스 훅이 맡는다.
+    // 파일 머리 **진입 자동 조회** — 게이트가 있는 문 하나. 드롭 기록은 아래 포커스 훅이 맡는다.
     void content.loadTrackedOcids()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -93,14 +93,14 @@ export function TodayScreen(): React.JSX.Element {
    *
    * 이 화면은 탭이라 한 번 마운트되면 계속 살아 있다 — 마운트 이펙트는 앱 실행당 한 번뿐이고,
    * 그 사이 보스 수익·가격 입력 화면이 `boss_drop_records` 를 바꾸면 최고가·미입력·드롭 가뭄
-   * 셋이 **옛 스냅샷에 굳는다**(가 짚은 «진입 시점이 실행당 한 번» 의 대가).
+   * 셋이 **옛 스냅샷에 굳는다**(가 짚은 진입 시점이 실행당 한 번 의 대가).
    *
-   * 그래서 today 에 «진입 시점» 을 되돌려 준다. 다만 그 스토어는 **전 기간을 통째로 읽으므로**
+   * 그래서 today 에 진입 시점 을 되돌려 준다. 다만 그 스토어는 **전 기간을 통째로 읽으므로**
    *  포커스마다 읽으면 비싸다 — 저장 계층의 리비전을 물어 **실제로 바뀌었을 때만**
    * 다시 읽는다. 첫 포커스는 `status === 'idle'` 로 걸려 마운트 조회를 대신한다.
    */
   // 최신 스토어 값을 **deps 없이** 읽는 자리. 구독값을 deps 에 넣으면 `load()` 가 일으킨 상태
-  // 변화가 이펙트를 다시 돌려 «실패 → 재조회 → 실패» 가 무한히 돈다 — 포커스는 사건이지
+  // 변화가 이펙트를 다시 돌려 실패 → 재조회 → 실패 가 무한히 돈다 — 포커스는 사건이지
   // 상태 변화가 아니다.
   const dropHistoryRef = useRef(dropHistory)
   // 렌더 중에 ref 를 쓰면 `react-hooks/refs` 가 잡는다 — 커밋 뒤에 채운다. 포커스 콜백은 렌더가
@@ -167,7 +167,7 @@ export function TodayScreen(): React.JSX.Element {
     manualContentByOcid: content.manualTrackedByOcid,
     manualBossByOcid: boss.manualTrackedByOcid,
     characterIssues: profit.characterIssues,
-    // **«보고 있는 것» 이 아니라 «지금 기간» 이다** — `rows` 는 `filterRowsForTab` 이
+    // **보고 있는 것 이 아니라 지금 기간 이다** — `rows` 는 `filterRowsForTab` 이
     // `cycle` 까지 걸러 낸 보스 수익 화면의 한 조각이라, 그 화면을 월간 탭으로 옮기기만 해도 이
     // 화면의 주간 수익·결정석 한도가 함께 비었다(사용자 보고 2026-08-19). 이번 주로 자르는 것은
     // 종전대로 뷰모델이 한다.
@@ -181,11 +181,11 @@ export function TodayScreen(): React.JSX.Element {
     content.status === 'loading' || boss.status === 'loading' || profit.status === 'loading'
 
   /**
-   * 헤더 버튼과 당김이 **같은 함수**를 부른다 — 파일 머리 «당김과 헤더 버튼».
+   * 헤더 버튼과 당김이 **같은 함수**를 부른다 — 파일 머리 당김과 헤더 버튼.
    *
    * **`allSettled` 다**. 넷이 서로 독립이라 하나가 실패해도 나머지를 기다려야
    * 하고(각자 자기 스토어에 실패를 적는다), 넷이 다 끝나야 당김 인디케이터를 닫을 수 있다 —
-   * 종전에는 `void` 넷이라 «언제 끝났는가» 라는 값 자체가 없었다.
+   * 종전에는 `void` 넷이라 언제 끝났는가 라는 값 자체가 없었다.
    */
   async function refreshAll(): Promise<void> {
     await Promise.allSettled([
@@ -197,7 +197,7 @@ export function TodayScreen(): React.JSX.Element {
   }
 
   // **당김이 시작한 회차에만** 인디케이터가 돈다 — `isSyncing` 은 여전히 제목
-  // 옆 «조회 중...» 과 헤더 버튼의 스피너가 쓴다(그쪽은 자동 조회도 말해야 하는 자리다).
+  // 옆 **조회 중...** 과 헤더 버튼의 스피너가 쓴다(그쪽은 자동 조회도 말해야 하는 자리다).
   const pull = usePullRefresh(refreshAll)
 
   return (
@@ -214,13 +214,13 @@ export function TodayScreen(): React.JSX.Element {
         }
         header={
           <PageHeader>
-            {/* 과 같은 줄이다 — 제목 옆이 «이 화면이 얼마나 최신인가» 의 자리다.
+            {/* 과 같은 줄이다 — 제목 옆이 **이 화면이 얼마나 최신인가** 의 자리다.
                 오른쪽에 가는 곳이 없어 `justify-between` 만 빠진다. */}
             <PageHeaderTitleRow>
               <View className="shrink flex-row items-center gap-2">
                 <Text className="shrink-0 text-lg font-semibold text-text">today</Text>
                 <Text className="shrink text-15 text-text-muted" numberOfLines={1}>
-                  {/* 스케줄러 두 화면이 «선택된 캐릭터의 `syncedAt`» 을 쓰는 자리다. 이 화면에는
+                  {/* 스케줄러 두 화면이 **선택된 캐릭터의 `syncedAt`** 을 쓰는 자리다. 이 화면에는
                       선택이 없으므로 **페이지 전체 기준** 값을 쓴다 — 보스 수익 스토어의
                       `lastSyncedAt` 이 이미 그 뜻이고, 건너뛴 진입에서도 갱신된다. */}
                   {isSyncing ? '조회 중...' : formatSyncedAt(profit.lastSyncedAt)}

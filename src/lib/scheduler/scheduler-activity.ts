@@ -69,7 +69,7 @@ export function hasCharacterScopeCompletion(state: SchedulerCharacterState): boo
   return hasContentCompletion || state.bossContents.some((boss) => boss.ownComplete)
 }
 
-/** 원장에 남기는 «그날 잡은 것» 의 표기. 기록의 키와 **같은 이름·같은 난이도**여야 한다. */
+/** 원장에 남기는 그날 잡은 것 의 표기. 기록의 키와 **같은 이름·같은 난이도**여야 한다. */
 export function bossCompletionKey(boss: string, difficulty: string): string {
   return `${boss}|${difficulty}`
 }
@@ -83,7 +83,7 @@ export function bossCompletionKey(boss: string, difficulty: string): string {
  *
  * `ownComplete` 만 본다 — 승격된 `isComplete` 는 다른 난이도의 완료가 옮겨 붙은 값이다.
  *
- * **섹션이 비면 빈 목록**이고, 그것이 곧 «그날 아무것도 안 잡았다» 로 읽힌다. 접속하지 않으면
+ * **섹션이 비면 빈 목록**이고, 그것이 곧 그날 아무것도 안 잡았다 로 읽힌다. 접속하지 않으면
  * 섹션이 통째로 비지만 **접속하지 않은 날에 보스를 잡을 수는 없으므로** 그 답이 맞다.
  */
 export function completedBossKeys(state: SchedulerCharacterState): string[] {

@@ -6,7 +6,7 @@
  *
  * 웹은 `lucide-react` 로 DOM `<svg>` 를 그린다. RN 판은 같은 아이콘 세트를 `react-native-svg` 로
  * 그리는 공식 포트이고, **버전을 웹과 같은 1.24.0 으로 고정**했다 — 그림이 갈리면 같은 아이콘이
- * 두 앱에서 다르게 보인다(`design-system.md` 「아이콘」 이 lucide 규격을
+ * 두 앱에서 다르게 보인다(`design-system.md` 아이콘 이 lucide 규격을
  * 조건으로 단 것과 같은 이유).
  *
  * ## 목록을 한 파일에 모아 두는 이유
@@ -100,7 +100,7 @@ export const AlertCircleIcon = withIconInterop(CircleAlert)
 export const AlertTriangleIcon = withIconInterop(TriangleAlert)
 /** 직전 기간 대비 **감소** — 보스 수익 증감 칩. */
 export const ArrowDownIcon = withIconInterop(ArrowDown)
-/** 하위 페이지의 「뒤로」 — 설정 하위 화면 다섯. */
+/** 하위 페이지의 뒤로 — 설정 하위 화면 다섯. */
 export const ArrowLeftIcon = withIconInterop(ArrowLeft)
 /** 직전 기간 대비 **증가** — 보스 수익 증감 칩. */
 export const ArrowUpIcon = withIconInterop(ArrowUp)
@@ -166,8 +166,8 @@ export const MapPinIcon = withIconInterop(MapPin)
 /** 무릉도장 카테고리 — `ContentManageScreen` 그룹 헤더·행. */
 export const MedalIcon = withIconInterop(Medal)
 /**
- * 끌기 핸들 — `CharacterRow/DragHandle`. 이름이 «메뉴» 인 글리프지만 여기서
- * 뜻하는 것은 「순서 변경」이다 — 뜻은 자리와 접근성 이름이 진다.
+ * 끌기 핸들 — `CharacterRow/DragHandle`. 이름이 메뉴 인 글리프지만 여기서
+ * 뜻하는 것은 순서 변경이다 — 뜻은 자리와 접근성 이름이 진다.
  */
 export const MenuIcon = withIconInterop(Menu)
 /** 파티원 수 감소 — `PartySizeStepper`. */
@@ -179,7 +179,7 @@ export const MoonIcon = withIconInterop(Moon)
  * 가계부 — **빈 달력**(사용자 지정 2026-08-25).
  *
  * 스케줄러 그룹이 쓰는 `CalendarCheck`(체크가 든 달력)와 **같은 계열이되 다른 그림**이다. 이 탭이
- * 그리는 것이 실제로 달력이라 그림이 화면과 같은 말을 하고, 체크가 없어 «할 일» 로 안 읽힌다.
+ * 그리는 것이 실제로 달력이라 그림이 화면과 같은 말을 하고, 체크가 없어 할 일 로 안 읽힌다.
  */
 export const CalendarIcon = withIconInterop(Calendar)
 

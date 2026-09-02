@@ -3,7 +3,7 @@
  *
  * ## 여기 남는 것은 **갈래가 안 바꾸는 것**뿐이다
  *
- * 시트 상자와 «지금 어느 갈래인가» 하나. 머리줄 · 갈래 칩 · 캐릭터 줄부터 저장까지는 전부
+ * 시트 상자와 지금 어느 갈래인가 하나. 머리줄 · 갈래 칩 · 캐릭터 줄부터 저장까지는 전부
  * **갈래별 폼**이 든다(`spend/`) — 머리줄과 칩이 서는 자리가 갈래마다 다르기 때문이다(목록 갈래는
  * 둘째 화면에서 칩이 걷히고 제목이 되돌아가는 누르개가 된다).
  *
@@ -13,7 +13,7 @@
  * ## 자기가 어느 갈래인지 모른다
  *
  * 수입/지출 세그먼트가 없다. 갈래는 **펼침판이 시트 밖에서** 갈랐고 이 시트는
- * 「지출」이라는 사실조차 프롭으로 받지 않는다 — 애초에 지출만 그리는 컴포넌트다.
+ * 지출이라는 사실조차 프롭으로 받지 않는다 — 애초에 지출만 그리는 컴포넌트다.
  *
  * ## 날짜는 고르지 않는다
  *
@@ -37,7 +37,7 @@ export interface SpendSheetProps {
   dateKey: string
   /**
    * 고를 수 있는 캐릭터 — 화면이 읽어서 넘긴다(시트는 `storage/` 를 모른다).
-   * 비어 있으면 고르개에 「선택 안함」 하나만 선다.
+   * 비어 있으면 고르개에 선택 안함 하나만 선다.
    */
   characters: ReadonlyArray<{ ocid: string; name: string }>
   /**
@@ -48,7 +48,7 @@ export interface SpendSheetProps {
   onDelete?: () => void | Promise<void>
   /**
    * 마지막으로 쓴 메소마켓 시세. 필수 칸이 매번 비어 있으면 입력이 막히므로
-   * «기억한다» 가 여기서 결정적이다. `null` 이면 아직 한 번도 안 넣었다는 뜻이다.
+   * 기억한다 가 여기서 결정적이다. `null` 이면 아직 한 번도 안 넣었다는 뜻이다.
    */
   lastPointRate: number | null
   /** 던지면 **안 닫는다** — 친 것을 잃지 않는다. 실패를 말하는 것은 화면 몫이다(토스트). */
@@ -98,7 +98,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
       resetScrollKey={`${category}|${scrollKey}`}
     >
       <View className="gap-3 px-4 pb-2">
-        {/* **`key` 가 곧 «갈래를 옮기면 값이 사라진다»** 다 — 갈래가 바뀌면
+        {/* **`key` 가 곧 갈래를 옮기면 값이 사라진다** 다 — 갈래가 바뀌면
             리액트가 폼을 새로 심는다. 지울 것을 손으로 세지 않는다. */}
         <SpendForm key={category} category={category} formProps={formProps} />
       </View>

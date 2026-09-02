@@ -8,18 +8,18 @@
 // 이 저장소가 sticky 가드 디버그 도구 가드에서 쓴 방식과 같다:
 // **결정을 문서가 아니라 실패하는 테스트로 지킨다.**
 //
-// ## 경계는 «화면인가» 다
+// ## 경계는 **화면인가** 다
 //
 // 같은 글자 스타일을 모달(`ThemeModal`·`TrackingModeModal`·`DisconnectConfirm`)과 온보딩 단계
 // (`ApiKeyForm`·`TrackingModeStep`·`ContentCharacterStep`)도 쓰는데, **그 제목은 페이지 헤더가
 // 아니다** — 모달은 자기 판의 머리이고 온보딩 단계에는 헤더 줄 자체가 없다(범위표의
-// 「제외」와 같은 경계다). 파일 이름(`*Screen.tsx`)이 그 경계와 정확히 겹쳐서 그것으로 가른다.
+// `제외`와 같은 경계다). 파일 이름(`*Screen.tsx`)이 그 경계와 정확히 겹쳐서 그것으로 가른다.
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
 const APP = join(__dirname, '..', 'app')
 
-/** 화면 파일만 — 모달·단계·행 조각은 대상이 아니다(위 「경계」). */
+/** 화면 파일만 — 모달·단계·행 조각은 대상이 아니다(위 경계). */
 function screenFiles(dir: string): string[] {
   const out: string[] = []
   for (const entry of readdirSync(dir)) {

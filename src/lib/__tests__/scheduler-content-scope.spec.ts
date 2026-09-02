@@ -117,8 +117,8 @@ describe('getContentCatalogEntries', () => {
 
 describe('getSharedContentGroups', () => {
   it('계열은 카탈로그가 적어 둔 순서다 — 배열을 읽은 첫 등장 순서가 아니다', () => {
-    // worldShared → accountShared 로 읽으면 첫 등장 순서가 「몬스터파크 · 메이플 유니온 ·
-    // 에픽던전」이라 사용자가 지정한 순서와 다르다. 그래서 `sharedGroupOrder` 가 따로 있다.
+    // worldShared → accountShared 로 읽으면 첫 등장 순서가 `몬스터파크 · 메이플 유니온 ·
+    // 에픽던전`이라 사용자가 지정한 순서와 다르다. 그래서 `sharedGroupOrder` 가 따로 있다.
     expect(getSharedContentGroups().map((group) => group.group)).toEqual([
       '에픽던전',
       '몬스터파크',
@@ -159,7 +159,7 @@ describe('getSharedContentGroups', () => {
     })
   })
 
-  it('유니온 둘만 «스케줄러에 있을 때만» 표식을 단다', () => {
+  it('유니온 둘만 **스케줄러에 있을 때만** 표식을 단다', () => {
     const conditional = getSharedContentGroups()
       .flatMap((group) => group.entries)
       .filter((entry) => entry.onlyWhenScheduled)
@@ -175,7 +175,7 @@ describe('getSharedContentGroups', () => {
 
     expect(names).toHaveLength(7)
     expect(new Set(names).size).toBe(7)
-    // 카탈로그가 «공유» 라고 적은 것과 정확히 같은 집합이어야 한다 — 여기서 갈리면 「남은 스케줄」이
+    // 카탈로그가 **공유** 라고 적은 것과 정확히 같은 집합이어야 한다 — 여기서 갈리면 `남은 스케줄`이
     // 빼는 것과 이 위젯이 그리는 것이 어긋나 항목이 통째로 사라지거나 두 곳에 겹쳐 나온다.
     for (const name of names) {
       expect(getShareScope(name)).not.toBe('character')

@@ -1,5 +1,5 @@
 // 격자는 **그리기만** 한다 — 어떤 칸이 서는가는 `lib/calendar` 이 정하고
-// 그쪽 테스트가 못 박는다. 여기서 보는 것은 «받은 것을 어떻게 보이느냐» 다.
+// 그쪽 테스트가 못 박는다. 여기서 보는 것은 **받은 것을 어떻게 보이느냐** 다.
 //
 // **칸이 표식 둘에서 금액 두 줄로 바뀌었다**(사용자 레퍼런스 2026-08-23).
 import { fireEvent, within } from '@testing-library/react-native'
@@ -64,7 +64,7 @@ describe('CalendarGrid — 격자', () => {
     expect(onSelectDate).toHaveBeenCalledWith('2026-08-11')
   })
 
-  // 앞뒤 달 칸을 죽여 두면 «보이는데 안 눌리는» 칸이 생긴다. 누르면 그 날을 고르고, 달을 옮기는
+  // 앞뒤 달 칸을 죽여 두면 **보이는데 안 눌리는** 칸이 생긴다. 누르면 그 날을 고르고, 달을 옮기는
   // 것은 받는 쪽(화면)의 일이다.
   it('앞뒤 달로 채운 칸도 누를 수 있다', async () => {
     const onSelectDate = jest.fn()
@@ -78,9 +78,9 @@ describe('CalendarGrid — 격자', () => {
 
 describe('CalendarGrid — 고른 날 동그라미는 접히면 안 된다 (안드로이드, 2026-09-02)', () => {
   // 진짜 증상은 여기서 안 잡힌다 — 배경 없는 View 를 네이티브 뷰 없이 접는 것은 안드로이드
-  // 런타임이 하는 일이라 jest 에는 그 단계가 없다. 이 테스트가 막는 것은 «쓸모없어 보이는 프롭»
+  // 런타임이 하는 일이라 jest 에는 그 단계가 없다. 이 테스트가 막는 것은 **쓸모없어 보이는 프롭**
   // 으로 지워지는 것이다. 지우면 누른 날의 동그라미가 안드로이드에서 네모가 된다.
-  // 근거는 `docs/foundation/design-system.md` 의 «안드로이드는 그릴 것이 없는 View 를 접는다».
+  // 근거는 `docs/foundation/design-system.md` 의 **안드로이드는 그릴 것이 없는 View 를 접는다**.
   it('collapsable={false} 를 달고 있다', async () => {
     const screen = await 그리기()
 
@@ -99,7 +99,7 @@ describe('CalendarGrid — 오늘과 고른 날', () => {
   })
 
   // 오늘과 고른 날이 **같은 칸일 수 있다** — 두 표현이 겹치면 안 되므로 이름으로도 갈라 둔다.
-  it('오늘 칸은 이름에 «오늘» 이 붙는다', async () => {
+  it('오늘 칸은 이름에 **오늘** 이 붙는다', async () => {
     const view = await 그리기({ selectedDateKey: '2026-08-11', todayDateKey: '2026-08-23' })
 
     expect(view.getByLabelText('8월 23일 (일) 오늘')).toBeTruthy()
@@ -134,13 +134,13 @@ describe('CalendarGrid — 금액 두 줄', () => {
     )
   })
 
-  // (사용자 지정 2026-08-25) — **수익 줄도 0 이면 비운다.** 전에는 «0» 을
-  // 적었는데, 아무것도 안 한 날이 대부분이라 격자가 «0» 으로 뒤덮여 실제 숫자가 묻혔다.
-  // 자리는 그대로 지킨다(아래 «두 줄은 값이 없어도» 테스트).
+  // (사용자 지정 2026-08-25) — **수익 줄도 0 이면 비운다.** 전에는 **0** 을
+  // 적었는데, 아무것도 안 한 날이 대부분이라 격자가 **0** 으로 뒤덮여 실제 숫자가 묻혔다.
+  // 자리는 그대로 지킨다(아래 **두 줄은 값이 없어도** 테스트).
   it('값이 0 이면 두 줄 다 빈다', async () => {
     const view = await 그리기({ amounts: 금액 })
 
-    // `toHaveTextContent` 로는 «비었다» 를 못 박기 어렵다(빈 문자열은 무엇에나 통한다) —
+    // `toHaveTextContent` 로는 **비었다** 를 못 박기 어렵다(빈 문자열은 무엇에나 통한다) —
     // 그려 넣은 문자열을 직접 본다.
     expect(칸(view, '2026-08-13').getByTestId('calendar-income-2026-08-13').props.children).toBe(' ')
     expect(칸(view, '2026-08-12').getByTestId('calendar-expense-2026-08-12').props.children).toBe(' ')

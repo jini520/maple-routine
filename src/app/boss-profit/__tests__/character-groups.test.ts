@@ -56,7 +56,7 @@ describe('groupTotalMeso — 아이템 수익 합산', () => {
 })
 
 //  의 "미입력 ≠ 0원"과 **다른 `null`** 이다. 여기 0은 합산 편의값이고, 그 행의 화면에는
-// 금액 대신 「미완료」·「가격 미확정」 배지가 선다(`BossProfitBossRow` 테스트가 그쪽을 지킨다).
+// 금액 대신 `미완료`·`가격 미확정` 배지가 선다(`BossProfitBossRow` 테스트가 그쪽을 지킨다).
 describe('sumPayout — 금액을 모르는 행', () => {
   it('미완료 placeholder 와 가격 미확정 행은 0으로 접힌다', () => {
     const rows = [

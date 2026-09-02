@@ -1,11 +1,11 @@
 /**
- * 「기타」 폼 — 갈래 넷에 안 드는 지출.
+ * 기타 폼 — 갈래 넷에 안 드는 지출.
  *
  * **캐시는 여기서만 산다** — 통화도 여기서만 고른다. 그리고 **금액
- * × 수량**이다(라벨은) — 세는 것이 «몇 회» 라 수량은 스테퍼 그대로다.
+ * × 수량**이다(라벨은) — 세는 것이 몇 회 라 수량은 스테퍼 그대로다.
  *
  * **합계는 언제나 메소**다(결정 11) — 캐시만 예외인데, 환산을 안 하므로
- * 그 축에 얹을 값이 없고 그대로 「원」 으로 적는다.
+ * 그 축에 얹을 값이 없고 그대로 원 으로 적는다.
  */
 import { useState } from 'react'
 
@@ -119,7 +119,7 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
         </Text>
       </FieldRow>
 
-      {/* 「기타」가 세는 것은 «몇 회» 라 **스테퍼 그대로**다. */}
+      {/* `기타`가 세는 것은 **몇 회** 라 **스테퍼 그대로**다. */}
       <FieldRow label="수량">
         <QuantityStepper value={quantity} onChange={setQuantity} testID="spend-sheet-quantity" />
       </FieldRow>

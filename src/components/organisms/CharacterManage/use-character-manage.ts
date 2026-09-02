@@ -5,9 +5,9 @@
 //
 // ── 값 규칙은 여기 없다 ─────────────────────────────────────────────────────────────
 //
-// 드롭다운 행의 계정 요약 · 「선택됨」 층의 행 · 저장된 대표의 유효성은
+// 드롭다운 행의 계정 요약 · `선택됨` 층의 행 · 저장된 대표의 유효성은
 // `src/features/character-manage/derivations` 의 순수 함수가 갖는다(머리
-// «값 규칙의 자리»). 여기서 다시 계산하면 그 규칙을 테스트가 직접 물 수 없다.
+// **값 규칙의 자리**). 여기서 다시 계산하면 그 규칙을 테스트가 직접 물 수 없다.
 //
 // ── 조회 넷과 그 자리 ───────────────────────────────────────────────────────────────
 //
@@ -15,14 +15,14 @@
 // |---|---|---|
 // | 계정 목록(`character/list`) | 마운트 1회 | ○ — 드롭다운이 계정 전체를 알아야 한다 |
 // | 계정별 후보(`getCharacterPickerRoster`) | 계정을 **처음 열 때** | ○ — TTL 안이면 0 |
-// | 「선택됨」 층 프로필 | 목록에 새 ocid 가 생길 때 | ✕ 로컬 캐시만(결정 2 표) |
+// | `선택됨` 층 프로필 | 목록에 새 ocid 가 생길 때 | ✕ 로컬 캐시만(결정 2 표) |
 // | 조회 불가 여부 | 위와 같은 자리 | ✕ 조회 원장 |
 //
 // **계정 목록을 따로 부르는 대가**: `getCharacterPickerRoster` 도 안에서 `character/list` 를
 // 부르므로 화면을 처음 열면 그 응답이 두 번 온다. 로스터가 그 목록을 밖에서 받는 구조가 아니고
 // (`resolveRegisteredCharacters` 가 자기 안에서 부른다) 이 phase 는 core 를 건드리지 않는다.
 //
-// **`src/nexon` 을 화면 층에서 직접 부르는 자리다.** core 에 «계정 목록만 주는» 함수가 없고
+// **`src/nexon` 을 화면 층에서 직접 부르는 자리다.** core 에 **계정 목록만 주는** 함수가 없고
 // (`features/settings/store` 의 것은 계정 변경 플로우에 묶여 있는데 RN 에는 그 플로우가 없다 —
 // ) 이 phase 에서는 core 를 못 고친다. 저장소는 그대로 `storage/` 어댑터를
 // 거친다(CLAUDE.md CRITICAL).
@@ -30,24 +30,24 @@
 // ── 계정 전환 TTL ──────────────────────────────────────────────
 //
 // 한 번 **성공으로** 끝난 계정은 5분(`CHARACTER_BASIC_TTL_MS` — 새 상수를 만들지 않는다) 동안
-// 회차를 다시 시작하지 않는다. 조회 원장·`character/basic` 5분 가드는 «네트워크가 나가는가» 를
+// 회차를 다시 시작하지 않는다. 조회 원장·`character/basic` 5분 가드는 **네트워크가 나가는가** 를
 // 접지만 `character/list` 와 판정 루프 자체는 못 접는다.
 //
 // - **성공에만 도장을 찍는다**(`settledAt`) — 실패는 캐싱하지 않는다. SWR 이 stub 을 흘린 뒤
 //   실패하면 항목은 남고(스탈 배너 자리) 도장은 안 찍혀 다음에 다시 돈다.
-// - **「다시 시도」는 TTL 을 무시한다**(`force`) — 그러지 않으면 5분 동안 같은 실패 화면에 갇힌다.
-// - **수명은 이 훅이다.** 화면을 나가면 사라진다 — 영속화하면 «`character/list` 는 캐싱하지
-//  않는다» 를 저장소 층에서 뒤집는 것이 된다(정정).
+// - **다시 시도는 TTL 을 무시한다**(`force`) — 그러지 않으면 5분 동안 같은 실패 화면에 갇힌다.
+// - **수명은 이 훅이다.** 화면을 나가면 사라진다 — 영속화하면 **`character/list` 는 캐싱하지
+//  않는다** 를 저장소 층에서 뒤집는 것이 된다(정정).
 //
 // ── 회차를 **effect 가 아니라 사건이 시작한다** ─────────────────────────────────────
 //
-// 후보 조회를 `useEffect([selectedAccountId])` 로 걸면 «회차를 시작한다» 를 알리는
+// 후보 조회를 `useEffect([selectedAccountId])` 로 걸면 **회차를 시작한다** 를 알리는
 // `setIsRosterLoading(true)` 가 effect 본문에 직접 앉아 `react-hooks/set-state-in-effect` 에
 // 걸린다. 그것을 비동기 안으로 미루면 **모르는 사실을 그리는 프레임**이 한 장 생긴다(항목 0건 +
-// 로딩 아님 = «모두 조회할 수 없어요» 이 없앤 바로 그 얼굴).
+// 로딩 아님 = **모두 조회할 수 없어요** 이 없앤 바로 그 얼굴).
 //
 // 그래서 회차를 여는 자리를 **그것을 일으키는 사건**으로 옮겼다 — 계정 목록이 첫 계정을 정하는
-// 순간 · 드롭다운 선택 · 「다시 시도」 셋뿐이고, 전부 effect 밖이라 시작과 표시가 같은 커밋에서
+// 순간 · 드롭다운 선택 · `다시 시도` 셋뿐이고, 전부 effect 밖이라 시작과 표시가 같은 커밋에서
 // 일어난다.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
@@ -79,7 +79,7 @@ import type { CharacterPickerEntry } from '../../../types'
 
 import { moveOcid } from './reorder'
 
-/** 계정 하나의 후보 목록 + **성공 도장**. 도장이 없으면 TTL 판정에서 «아직» 이다. */
+/** 계정 하나의 후보 목록 + **성공 도장**. 도장이 없으면 TTL 판정에서 아직 이다. */
 interface AccountRoster {
   entries: CharacterPickerEntry[]
   settledAt: number | null
@@ -101,7 +101,7 @@ export interface CharacterManageController {
   // ── 아래 층 ──
   /** 이 계정에서 **아직 안 고른** 후보. 고른 것은 위로 옮겨간다(결정 3). */
   candidates: CharacterPickerEntry[]
-  /** 이 계정에서 고를 수 있는 캐릭터 수 — «{전체}개 중 {표시}개 표시» 의 앞자리. */
+  /** 이 계정에서 고를 수 있는 캐릭터 수 — {전체}개 중 {표시}개 표시 의 앞자리. */
   selectableCount: number
   isRosterLoading: boolean
   rosterError: ScheduleSyncError | null
@@ -138,16 +138,16 @@ export function useCharacterManage(): CharacterManageController {
   const [rosterError, setRosterError] = useState<ScheduleSyncError | null>(null)
 
   // **편집하기 전에는 저장된 목록이 그대로 보인다**(`null` = 아직 손대지 않았다). 늦게 도착하는
-  // `trackedOcids` 를 effect 로 «심으면» 그 setState 가 effect 본문에 직접 앉는다 — 파생이 답이다.
+  // `trackedOcids` 를 effect 로 **심으면** 그 setState 가 effect 본문에 직접 앉는다 — 파생이 답이다.
   const [editedOcids, setEditedOcids] = useState<string[] | null>(null)
-  // 같은 이유로 «아직 안 골랐다»(`undefined`)와 «없음으로 골랐다»(`null`)를 값으로 가른다.
+  // 같은 이유로 **아직 안 골랐다**(`undefined`)와 **없음으로 골랐다**(`null`)를 값으로 가른다.
   const [pickedRepresentative, setPickedRepresentative] = useState<string | null | undefined>(undefined)
   const [storedRepresentative, setStoredRepresentative] = useState<string | null>(null)
 
   const [profiles, setProfiles] = useState<Map<string, CachedCharacterBasicEntry | null>>(new Map())
   const [unavailableOcids, setUnavailableOcids] = useState<ReadonlySet<string>>(new Set())
 
-  // TTL 판정은 «지금 들고 있는 것» 을 봐야 하는데 그 읽기가 렌더 밖(사건 핸들러·비동기)에서
+  // TTL 판정은 **지금 들고 있는 것** 을 봐야 하는데 그 읽기가 렌더 밖(사건 핸들러·비동기)에서
   // 일어난다. **쓰기도 전부 그 자리에서만** 하므로 렌더 중에 ref 를 만지지 않는다.
   const rostersRef = useRef<Record<string, AccountRoster>>({})
   /** 지금 열려 있는 계정 — 늦게 도착한 회차의 결과를 버릴 기준이다. */
@@ -159,7 +159,7 @@ export function useCharacterManage(): CharacterManageController {
   }
 
   /**
-   * 한 계정의 후보 회차. **TTL 안이면 아무것도 시작하지 않는다** — 그때 «로딩 아님·실패 아님» 을
+   * 한 계정의 후보 회차. **TTL 안이면 아무것도 시작하지 않는다** — 그때 로딩 아님·실패 아님 을
    * 함께 확정해야 직전 계정의 실패가 이 계정 자리에 남지 않는다.
    */
   const loadRoster = useCallback((accountId: string, options?: { force?: boolean }): void => {
@@ -230,7 +230,7 @@ export function useCharacterManage(): CharacterManageController {
         if (cancelled) return
         // 캐릭터 0명 계정은 `normalizeCharacterList` 가 이미 걸렀고,
         // `summarizeAccount` 의 `null` 은 그 규칙이 뚫렸을 때의 안전망이다 — 렌더 중에 던지지 않는다.
-        // 차례는 «대표 레벨이 높은 계정이 먼저» 다(`sortAccountSummaries`) — 그래서 아래 `[0]` 이
+        // 차례는 **대표 레벨이 높은 계정이 먼저** 다(`sortAccountSummaries`) — 그래서 아래 `[0]` 이
         // 고르는 첫 계정도 주력 ID 가 된다.
         const summaries = sortAccountSummaries(
           list.map(summarizeAccount).filter((summary): summary is AccountSummaryView => summary !== null),
@@ -258,9 +258,9 @@ export function useCharacterManage(): CharacterManageController {
 
   // ── 로컬 프로필·조회 불가 ────────────────────────────────────────────────────────
   //
-  // 「선택됨」 층은 네트워크 없이 그린다(결정 2 표). 드롭다운 행의 얼굴도 **캐시에 있을 때만**
+  // `선택됨` 층은 네트워크 없이 그린다(결정 2 표). 드롭다운 행의 얼굴도 **캐시에 있을 때만**
   // 쓰므로(결정 6) 같은 자리에서 함께 읽는다 — 얼굴 하나 때문에 프로브를 돌리지 않는다.
-  // `useMemo` 인 것은 «값이 비싸서» 가 아니라 **아래 두 `useMemo` 의 deps 가 매 렌더 갈리지
+  // `useMemo` 인 것은 **값이 비싸서** 가 아니라 **아래 두 `useMemo` 의 deps 가 매 렌더 갈리지
   // 않게** 하기 위해서다(`??` 는 같은 내용이라도 새 배열을 만든다).
   const selectedOcids = useMemo(() => editedOcids ?? trackedOcids ?? [], [editedOcids, trackedOcids])
   const neededKey = [
@@ -285,7 +285,7 @@ export function useCharacterManage(): CharacterManageController {
       )
       if (cancelled) return
       // **miss 는 적지 않는다**. 적으면 `has(ocid)` 가 참이 되어 위
-      // `missing` 이 그 ocid 를 영영 거르고, «아직 모른다» 가 «그런 것은 없다» 로 굳는다 — 온보딩에서
+      // `missing` 이 그 ocid 를 영영 거르고, **아직 모른다** 가 **그런 것은 없다** 로 굳는다 — 온보딩에서
       // 이 회차는 로스터가 캐시를 **쓰기 전에** 돌므로 대표 캐릭터가 정확히 그 창에서 굳었다.
       const found = loaded.filter((item) => item.entry !== null)
       if (found.length > 0) {
@@ -323,9 +323,9 @@ export function useCharacterManage(): CharacterManageController {
    * 둘은 같은 값이고, 로스터가 stub 을 먼저 흘리는 구간(SWR)에서는 캐시 쪽이 덜 비어
    * 있다. 즉 로스터는 **캐시가 모르는 자리만** 채운다.
    *
-   * **요청은 하나도 늘지 않는다** — 결정 2 표의 «네트워크 없다» 가 금지한 것은 위 층을 그리려고
-   * 요청을 새로 내는 것이고, 여기서는 이미 온 응답을 버리지 않을 뿐이다(결정 6 의 «얼굴 하나 때문에
-   * 프로브를 돌리지 않는다» 도 그대로다).
+   * **요청은 하나도 늘지 않는다** — 결정 2 표의 네트워크 없다 가 금지한 것은 위 층을 그리려고
+   * 요청을 새로 내는 것이고, 여기서는 이미 온 응답을 버리지 않을 뿐이다(결정 6 의 얼굴 하나 때문에
+   * 프로브를 돌리지 않는다 도 그대로다).
    */
   const knownProfiles = useMemo(() => {
     const merged = new Map<string, KnownCharacterProfile | null>()
@@ -356,7 +356,7 @@ export function useCharacterManage(): CharacterManageController {
 
   const roster = selectedAccountId === null ? undefined : rosters[selectedAccountId]
   // 조회 불가는 아래 층에 서지 않는다 — 고를 수 없는 것을 고르라고 두지 않는다.
-  // 그래서 «빼면 어디에도 안 선다»(결정 3)가 필터 하나로 성립한다.
+  // 그래서 **빼면 어디에도 안 선다**(결정 3)가 필터 하나로 성립한다.
   const selectable = useMemo(
     () => (roster?.entries ?? []).filter((entry) => entry.unavailable !== true),
     [roster],
@@ -406,7 +406,7 @@ export function useCharacterManage(): CharacterManageController {
   )
 
   // 놓은 자리가 곧 배열 순서다. **저장 시점에 다시 정렬하지 않는다** —
-  // 레벨 내림차순은 «아직 순서를 정하지 않았을 때의 초기값» 으로 내려갔다.
+  // 레벨 내림차순은 **아직 순서를 정하지 않았을 때의 초기값** 으로 내려갔다.
   const moveCharacter = useCallback(
     (fromIndex: number, toIndex: number): void => {
       editSelection((previous) => moveOcid(previous, fromIndex, toIndex))
@@ -414,7 +414,7 @@ export function useCharacterManage(): CharacterManageController {
     [editSelection],
   )
 
-  // 대표를 지우는 코드는 없다 — `resolveRepresentative` 가 «목록에 없으면 null» 로 답한다.
+  // 대표를 지우는 코드는 없다 — `resolveRepresentative` 가 **목록에 없으면 null** 로 답한다.
   const removeCharacter = useCallback(
     (ocid: string): void => {
       editSelection((previous) => previous.filter((candidate) => candidate !== ocid))
@@ -422,7 +422,7 @@ export function useCharacterManage(): CharacterManageController {
     [editSelection],
   )
 
-  // 라디오다 — 채워진 별을 다시 눌러도 같은 값이라 바뀌는 것이 없다(결정 4: «여럿 고를 수 없다»).
+  // 라디오다 — 채워진 별을 다시 눌러도 같은 값이라 바뀌는 것이 없다(결정 4: **여럿 고를 수 없다**).
   const setRepresentative = useCallback((ocid: string): void => {
     setPickedRepresentative(ocid)
   }, [])

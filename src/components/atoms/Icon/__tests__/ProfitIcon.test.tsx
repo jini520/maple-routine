@@ -58,7 +58,7 @@ describe('ProfitIcon', () => {
   // 하단바 활성 자리를 위해 `fill` 을 열었다. **안 주면 안 들어가야 한다** —
   // `undefined` 를 그대로 넘기면 `react-native-svg` 가 뿌리의 `fill="none"` 을 상속하지 않고
   // 검정으로 떨어뜨려, 이 아이콘이 쓰이는 세 자리 전부에서 동전이 새까매진다(실측으로 잡았다).
-  it('fill 을 안 주면 채워지지 않는다 — 기본은 lucide 규격의 «면 없음» 이다', async () => {
+  it('fill 을 안 주면 채워지지 않는다 — 기본은 lucide 규격의 **면 없음** 이다', async () => {
     const tree = (await renderAtom(<ProfitIcon />)).toJSON()
 
     for (const shape of [...findAllOfType(tree, 'RNSVGEllipse'), ...findAllOfType(tree, 'RNSVGCircle')]) {
@@ -67,7 +67,7 @@ describe('ProfitIcon', () => {
   })
 
   // **단을 그리는 호는 건드리지 않는다.** 호까지 채우면 동전 사이의 층이 면에 묻혀 그림이
-  // 뭉개진다 — 호의 렌더값을 채운 판과 안 채운 판에서 비교해 «fill 이 새지 않았는지» 를 본다
+  // 뭉개진다 — 호의 렌더값을 채운 판과 안 채운 판에서 비교해 **fill 이 새지 않았는지** 를 본다
   // (호스트 단 `fill` 절대값은 기준이 못 된다 — 프롭 없는 호는 기본값을 보고한다).
   it('fill 을 주면 닫힌 모양(동전 둘)만 채워진다 — 단을 그리는 호는 그대로다', async () => {
     const tree = (await renderAtom(<ProfitIcon fill="#FF0000" />)).toJSON()

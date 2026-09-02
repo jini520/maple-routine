@@ -364,7 +364,7 @@ describe('resolvePagePeriodState', () => {
   })
 })
 
-// 처치 날짜를 캐려면 «그 기간의 날짜들» 이 필요하다. 한 날짜만 보는
+// 처치 날짜를 캐려면 **그 기간의 날짜들** 이 필요하다. 한 날짜만 보는
 // `getBackfillQueryDate` 로는 일간 해상도가 안 나온다.
 describe('getPeriodDateKeys', () => {
   it('주간은 리셋 목요일부터 이레다', () => {

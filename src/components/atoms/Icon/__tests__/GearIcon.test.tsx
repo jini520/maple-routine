@@ -18,7 +18,7 @@ describe('GearIcon', () => {
     expect(icon.props.strokeLinejoin).toBe('round')
   })
 
-  // **여기가 이 컴포넌트의 존재 이유다.** lucide 의 `Settings` 는 «톱니 패스 + 안쪽 원» 두
+  // **여기가 이 컴포넌트의 존재 이유다.** lucide 의 `Settings` 는 **톱니 패스 + 안쪽 원** 두
   // 요소라 `fill` 이 둘 다에 상속돼 가운데가 메워진다. 한 패스 두 서브패스 + `evenodd` 라야
   // 몸통만 차고 가운데가 빈다.
   // `react-native-svg` 는 호스트 단에서 `fillRule` 을 숫자로 바꾼다 — **0 이 evenodd** 다.
@@ -32,7 +32,7 @@ describe('GearIcon', () => {
     expect(paths[0]?.props.fillRule).toBe(0)
   })
 
-  it('채우기는 «주면 들어가고 안 주면 안 들어간다»', async () => {
+  it('채우기는 **주면 들어가고 안 주면 안 들어간다**', async () => {
     const pathOf = async (fill?: string): Promise<unknown> =>
       findAllOfType((await renderAtom(<GearIcon fill={fill} />)).toJSON(), 'RNSVGPath')[0]?.props
         .fill
@@ -56,8 +56,8 @@ describe('GearIcon', () => {
         .d as string
 
     expect(await pathOf()).toContain('3 3 0 1 1')
-    // **호출부는 «안 채움» 을 `undefined` 가 아니라 `'none'` 으로 넘긴다**(하단바가 그렇다).
-    // 이걸 «채움» 으로 세는 바람에 선 상태의 구멍이 커져 설정 화면의 톱니와 갈렸다(사용자가 잡았다).
+    // **호출부는 안 채움 을 `undefined` 가 아니라 `'none'` 으로 넘긴다**(하단바가 그렇다).
+    // 이걸 **채움** 으로 세는 바람에 선 상태의 구멍이 커져 설정 화면의 톱니와 갈렸다(사용자가 잡았다).
     expect(await pathOf('none')).toContain('3 3 0 1 1')
     expect(await pathOf('#FF0000')).toContain('4.5 4.5 0 1 1')
   })

@@ -1,7 +1,7 @@
 // 펼침판 — ＋ 하나가 갈래 둘을 편다.
 //
 // **움직임은 여기서 안 본다** — 값은 `speed-dial-motion.ts` 가 들고 그쪽 테스트가 붙든다. 여기서
-// 보는 것은 «무엇이 눌리고 무엇이 안 눌리는가» 다.
+// 보는 것은 **무엇이 눌리고 무엇이 안 눌리는가** 다.
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { flattenStyle, renderOverlay } from '../../../__tests__/render-atom'
@@ -74,7 +74,7 @@ describe('펼친 뒤', () => {
   })
 
   // 이름이 상태를 든다 — 그림은 하나이고 **각도만** 다르므로 스크린리더에는 회전이 안 들린다.
-  // 배경은 접근성 트리에 없어서(`accessible={false}`) 「닫기」가 **하나뿐**이다.
+  // 배경은 접근성 트리에 없어서(`accessible={false}`) `닫기`가 **하나뿐**이다.
   it('＋ 가 닫기가 된다 — 그림은 그대로다', async () => {
     const view = await 펼치기()
 
@@ -144,7 +144,7 @@ describe('차례', () => {
 })
 
 // 치수는 **두 곳이 나눠 쓴다**(`speed-dial-metrics.ts`) — 다이얼이 자기 높이를 정하고, 화면이
-// 그만큼을 콘텐츠 끝에 갚는다. 갈리면 화면에서는 «조금 가린다» 로만 보여서 알아채기 어렵다.
+// 그만큼을 콘텐츠 끝에 갚는다. 갈리면 화면에서는 **조금 가린다** 로만 보여서 알아채기 어렵다.
 describe('치수 ( 의 딸려 오는 결함)', () => {
   it('FAB 의 실제 높이가 화면이 갚는 값과 같은 상수에서 나온다', async () => {
     const view = await 그리기()
@@ -157,7 +157,7 @@ describe('치수 ( 의 딸려 오는 결함)', () => {
 
   it('콘텐츠가 갚을 몫은 뜨는 높이 + 지름 + 숨돌림이다', () => {
     expect(SPEED_DIAL_SPACE_PX).toBe(FAB_LIFT_PX + FAB_DIAMETER_PX + FAB_CONTENT_GAP_PX)
-    // 판별력: 셋 중 하나가 0 이면 «가린다» 가 그만큼 되살아난다.
+    // 판별력: 셋 중 하나가 0 이면 **가린다** 가 그만큼 되살아난다.
     expect(FAB_LIFT_PX).toBeGreaterThan(0)
     expect(FAB_CONTENT_GAP_PX).toBeGreaterThan(0)
   })
@@ -168,7 +168,7 @@ describe('치수 ( 의 딸려 오는 결함)', () => {
  *
  * 줄 둘은 접혀 있어도 **마운트된 채** `opacity: 0` 일 뿐이라, RN 에서는 그 자리가 그대로 터치를
  * 먹는다 — `disabled` 도 `onPress` 만 막고 히트테스트는 안 막는다. 그래서 떠 있는 ＋ 위쪽
- * 130px 남짓이 통째로 «눌리지 않는 구역» 이 됐다(그 뒤의 목록 줄이 안 눌렸다).
+ * 130px 남짓이 통째로 눌리지 않는 구역 이 됐다(그 뒤의 목록 줄이 안 눌렸다).
  *
  * 스크림은 이미 같은 처방을 쓰고 있었다(`pointerEvents={isOpen ? 'auto' : 'none'}`) — 줄에만
  * 빠져 있었다.

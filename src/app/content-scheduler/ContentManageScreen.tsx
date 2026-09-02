@@ -112,7 +112,7 @@ export function ContentManageScreen(): React.JSX.Element {
   }, [mode, navigation])
 
   // 화면 넷이 **같은 규칙**으로 고른다 — 선택만 합치고 폴백을 화면마다 두면
-  // «공유했는데 화면마다 다른 캐릭터» 가 다시 생긴다.
+  // **공유했는데 화면마다 다른 캐릭터** 가 다시 생긴다.
   const selected = resolveSelectedCharacter(selectedOcid, characters)
 
   // : 링 없는 초상화 레일 — 이름과 레벨만 싣는다(`rings: []`).

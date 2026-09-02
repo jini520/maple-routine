@@ -62,12 +62,12 @@
 // ⑤ **`<img src>` 갈아끼우기에는 웹에 없던 값이 붙는다 — 첫 디코드.** 웹은 `new Image()` 로
 //    프리로드해 두고 `el.complete` 를 봤다. RN 에는 그 짝이 없고, `<Image source>` 를 아직 안 그려
 //    본 프레임으로 바꾸면 **그 한 장이 통째로 빈다**(디코드가 비동기라 이번 합성에 못 댄다).
-//    프레임마다 한 번씩이므로 «첫 재생만» 깜빡이는데, 사용자가 연출을 보는 것이 바로 그 한 번이다.
+//    프레임마다 한 번씩이므로 **첫 재생만** 깜빡이는데, 사용자가 연출을 보는 것이 바로 그 한 번이다.
 //
 //    2026-08-26 갤럭시 Z Flip3(릴리스 빌드) 실측 — 연출이 뜬 1.86초부터 **3.95초까지 49장이
 //    빈 프레임**이었고, 빔의 간격은 정확히 단계별 fps 주기였다(버스트 44ms · 루프 58ms).
 //    3.95초는 **loop 24장을 처음 한 바퀴 다 돈 시점**이고, 그 뒤 6초 동안은 한 장도 안 빈다 —
-//    즉 «처음 그리는 프레임만» 빈다는 것이 그대로 드러난다. 디버그 빌드에서는 재현되지 않으니
+//    즉 **처음 그리는 프레임만** 빈다는 것이 그대로 드러난다. 디버그 빌드에서는 재현되지 않으니
 //    (이미지 경로가 다르다) **릴리스로 재야 한다.**
 //
 //    그래서 재생 전에 전 단계 프레임을 한 번씩 그려 디코드를 끝내 두고(아래 예열 층), 다 실린 뒤에
@@ -135,7 +135,7 @@ function bitmapSizeOf(source: number | { uri?: string }): FrameBitmapSize | null
  */
 /**
  * 프레임 한 장. **`memo` 인 이유는 tick 마다 55장을 전부 재조정하지 않기 위해서다** — 실제로 바뀌는
- * 것은 «켜지는 하나와 꺼지는 하나» 뿐이다.
+ * 것은 **켜지는 하나와 꺼지는 하나** 뿐이다.
  */
 const SpriteFrameView = memo(function SpriteFrameView(props: {
   frame: SpriteFrame
@@ -227,7 +227,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
   }, [props.onClose])
 
   // 재생 루프. **`requestAnimationFrame` 인 이유는 `drop-effect-player.ts` 머리에 적었다** —
-  // 스프라이트 재생은 «몇 번째 그림인가» 를 정하는 일이라 JS 스레드를 벗어날 수 없다.
+  // 스프라이트 재생은 **몇 번째 그림인가** 를 정하는 일이라 JS 스레드를 벗어날 수 없다.
   //
   // **예열이 끝나기 전에는 돌지 않는다**(파일 머리 ⑤) — 디코드가 안 끝난 프레임을 넘기면 그 한 장이
   // 통째로 빈다.
@@ -259,7 +259,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
     return () => cancelAnimationFrame(raf)
   }, [counts, warm])
 
-  // 탭 → end 재생 → 닫힘. 이미 닫는 중이면 즉시 끝난다(웹과 같은 «두 번 탭하면 건너뛴다»).
+  // 탭 → end 재생 → 닫힘. 이미 닫는 중이면 즉시 끝난다(웹과 같은 **두 번 탭하면 건너뛴다**).
   const handlePress = useCallback(() => {
     const next = requestDropEffectClose(stateRef.current, counts)
     stateRef.current = next

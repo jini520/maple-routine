@@ -100,7 +100,7 @@ function BossCard(props: {
   boss: DisplayedBoss
   crop?: ImageCrop
   partySize?: number
-  /** 요구 레벨 미달 — 「완료」 자리를 «진행 불가» 로 대체한다. */
+  /** 요구 레벨 미달 — 완료 자리를 진행 불가 로 대체한다. */
   isBlocked?: boolean
   onEdit: () => void
 }): React.JSX.Element {
@@ -145,20 +145,20 @@ function BossCard(props: {
           </View>
 
           <View className="flex-row items-center gap-1.5">
-            {/* — 진행 불가면 「완료」 자리를 대체한다. 진행할 수 없는 보스의
+            {/* — 진행 불가면 `완료` 자리를 대체한다. 진행할 수 없는 보스의
                 완료 여부는 게임이 준 스냅샷이지 이 캐릭터가 잡을 수 있다는 뜻이 아니다. */}
-            {/* — 주간 12마리를 채우면 남은 미처치 보스는 「마감」이다. **완료로
+            {/* — 주간 12마리를 채우면 남은 미처치 보스는 `마감`이다. **완료로
                 칠하지 않는다**: 안 잡은 보스를 완료로 두면 그 거짓이 보스 수익의 결정석 금액이
-                된다. 배색은 `Badge` 의 `muted` 톤을 그대로 쓴다(실패도 경고도 아니고 «이번 주엔
-                차례가 없다» 는 사실이라 눌린 회색이다 — 새 색을 만들지 않는다).
-                우선순위는 「진행 불가」 > 「마감」 > 「완료」 — 요구 레벨에 못 미치는 보스는
+                된다. 배색은 `Badge` 의 `muted` 톤을 그대로 쓴다(실패도 경고도 아니고 **이번 주엔
+                차례가 없다** 는 사실이라 눌린 회색이다 — 새 색을 만들지 않는다).
+                우선순위는 `진행 불가` > `마감` > `완료` — 요구 레벨에 못 미치는 보스는
                 한도와 무관하게 애초에 못 잡는다. */}
             {props.isBlocked === true ? (
               <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
             ) : boss.isWeeklyLimitClosed ? (
-              // **「완료」와 같은 상자다**(사용자 지정) — 자리를 대신하는 배지라 크기가 다르면 같은
+              // **완료와 같은 상자다**(사용자 지정) — 자리를 대신하는 배지라 크기가 다르면 같은
               // 자리에서 배지가 커졌다 작아졌다 하며 카드 오른쪽 끝이 흔들린다. 갈리는 것은 색뿐이고,
-              // 그 색은 `Badge` 의 `muted` 톤이다(실패도 경고도 아닌 «차례가 아니다» — 눌린 회색).
+              // 그 색은 `Badge` 의 `muted` 톤이다(실패도 경고도 아닌 **차례가 아니다** — 눌린 회색).
               <Badge variant="muted" weight="bold">
                 마감
               </Badge>
@@ -191,14 +191,14 @@ export function BossScreen(): React.JSX.Element {
     // : 탭과 두 필터는 스토어 소유다 — 이 화면이 언마운트돼도 살아남고, 관리
     // 페이지가 같은 탭 값을 읽어 보던 탭 그대로 열린다.
     // **필터는 하나다**(— 정정). 목록이 하나가 되면서
-    // «두 축이 서로 독립» 이라는 문장이 뜻을 잃었다(독립할 상대가 없다).
+    // **두 축이 서로 독립** 이라는 문장이 뜻을 잃었다(독립할 상대가 없다).
     partyFilter,
     setPartyFilter,
   } = useBossSchedulerStore()
   // 선택은 화면·스토어가 아니라 **여기 한 벌**이다.
   const { selectedOcid, select } = useCharacterSelectionStore()
   // **당김이 시작한 회차에만** 인디케이터가 돈다. 헤더 버튼·자동 조회는 같은
-  // 재조회를 부르지만 인디케이터는 안 연다 — 버튼은 자기 스피너와 «조회 중...» 을 이미 갖고 있고
+  // 재조회를 부르지만 인디케이터는 안 연다 — 버튼은 자기 스피너와 **조회 중...** 을 이미 갖고 있고
   // 자동 조회는 원래 조용해야 하는 것이다.
   const pull = usePullRefresh(() => refresh(trackedOcids ?? []))
   const { mode } = useTrackingModeStore()
@@ -228,7 +228,7 @@ export function BossScreen(): React.JSX.Element {
   const characters = orderByTracked(storeCharacters, trackedOcids ?? [])
 
   // 화면 넷이 **같은 규칙**으로 고른다 — 선택만 합치고 폴백을 화면마다 두면
-  // «공유했는데 화면마다 다른 캐릭터» 가 다시 생긴다.
+  // **공유했는데 화면마다 다른 캐릭터** 가 다시 생긴다.
   const selected = resolveSelectedCharacter(selectedOcid, characters)
 
   // : 캐릭터별 실패도 인라인 문단이 아니라 토스트다. syncSchedules는 캐릭터 단위
@@ -239,25 +239,25 @@ export function BossScreen(): React.JSX.Element {
 
   // 카드로 표시할 목록 — 수동 모드 멤버십과(미등록이어도 완료면
   // 포함)가 그 안에 있다. **이 화면의 지역 함수였던 것을 코어로 꺼냈다** —
-  // today 의 「캐릭터별 남은 스케줄」이 세는 «남은 보스» 가 이 화면이 보여 주는 것과 한 글자도
-  // 달라선 안 되기 때문이다. 이유·규칙·«캐릭터를 인자로 받는» 근거는 `displayed-bosses.ts` 파일 머리.
+  // today 의 `캐릭터별 남은 스케줄`이 세는 **남은 보스** 가 이 화면이 보여 주는 것과 한 글자도
+  // 달라선 안 되기 때문이다. 이유·규칙·**캐릭터를 인자로 받는** 근거는 `displayed-bosses.ts` 파일 머리.
   //
   // **순서는 여기서 정하지 않는다** — `displayedBossSections` 가 월간을 위에
   // 두고, 이 화면은 받은 순서대로 그린다. 화면이 다시 정렬하면 그 결정이 두 곳이 된다.
   const sections =
     selected === null ? [] : displayedBossSections(selected, mode, manualTrackedByOcid)
 
-  // : 링은 **주간 하나**다(온전한 원). 월간은 종류가 하나뿐이라 «몇 개 중 몇 개»
+  // : 링은 **주간 하나**다(온전한 원). 월간은 종류가 하나뿐이라 **몇 개 중 몇 개**
   // 가 뜻을 갖지 못한다 — 표현 방법은 따로 정한다(사용자 지시, 2026-08-16).
-  // **솔로/파티 필터는 안 탄다**(결정 4) — 필터는 «지금 보고 싶은 것» 이지 진행이 아니다.
+  // **솔로/파티 필터는 안 탄다**(결정 4) — 필터는 **지금 보고 싶은 것** 이지 진행이 아니다.
   //
   // **요구 레벨 미달은 분모에서 빠진다** — 남겨 두면 그 캐릭터의 링이
   // 100%에 절대 도달하지 못한다. 컨텐츠 진행률과 **같은 판정 함수**를 본다.
   //
-  // **마감도 «다 한 것» 으로 센다**(후속, 사용자 지정) — 주간 한도를 채웠으면
-  // 그 보스는 이번 주에 더 할 수 없으므로, 분자에서 빼면 링이 영영 100%에 못 닿고 «아직 남았다» 는
+  // **마감도 다 한 것 으로 센다**(후속, 사용자 지정) — 주간 한도를 채웠으면
+  // 그 보스는 이번 주에 더 할 수 없으므로, 분자에서 빼면 링이 영영 100%에 못 닿고 **아직 남았다** 는
   // 거짓을 말한다(레벨 미달을 분모에서 뺀 것과 같은 이유, 다른 자리). **분모에서 빼지 않는 것**이
-  // 레벨 미달과 갈리는 지점이다: 저쪽은 «이 캐릭터의 일이 아니다» 이고 이쪽은 «이번 주 일은 끝났다»
+  // 레벨 미달과 갈리는 지점이다: 저쪽은 **이 캐릭터의 일이 아니다** 이고 이쪽은 **이번 주 일은 끝났다**
   // 라, 12마리를 추적했으면 링은 `12/12` 로 읽혀야 한다.
   const bossRingProgress = (
     bosses: DisplayedBoss[],
@@ -313,7 +313,7 @@ export function BossScreen(): React.JSX.Element {
     })
   }
 
-  // 필터를 건 뒤에야 «비었다» 가 성립한다 — 그래서 빈 무리를 걷는 것이 여기다.
+  // 필터를 건 뒤에야 **비었다** 가 성립한다 — 그래서 빈 무리를 걷는 것이 여기다.
   // `displayedBossSections` 가 빈 무리도 자리를 남겨 주는 이유가 이 순서 때문이다.
   const filteredSections =
     selected === null
@@ -322,10 +322,10 @@ export function BossScreen(): React.JSX.Element {
           ...section,
           bosses: filterByPartySize(section.bosses, selected.ocid, partyFilter),
         }))
-  // 「주간」 헤더가 싣는 배지 — 이 값들은 **표시 목록과 무관하다**. `weeklyBossClearCount` 는
+  // `주간` 헤더가 싣는 배지 — 이 값들은 **표시 목록과 무관하다**. `weeklyBossClearCount` 는
   // **앱이 센** 이번 주 처치 수이고(`countClearedWeeklyBosses` — 넥슨의
   // `weekly_boss_clear_count` 는 타입에만 있고 제품 코드는 안 쓴다. 2026-08-30 정정:
-  // 이 자리에 «게임이 세는 수» 라고 적혀 있었다), 시즌 완료 여부도 등록과 무관하다
+  // 이 자리에 **게임이 세는 수** 라고 적혀 있었다), 시즌 완료 여부도 등록과 무관하다
   // (— 그래서 미등록·미완료 시즌 보스는 카드로 안 서면서 배지만 뜬다).
   const weeklySeasonState =
     seasonBosses.length === 0 ? null : isSeasonBossComplete ? ('complete' as const) : ('incomplete' as const)
@@ -333,9 +333,9 @@ export function BossScreen(): React.JSX.Element {
     weeklySeasonState !== null ||
     (selected?.weeklyBossClearCount != null && selected.weeklyBossClearLimitCount != null)
 
-  // 빈 무리의 헤더는 걷는다 — 이름만 남으면 «여기 뭔가 있었다» 로 읽힌다.
+  // 빈 무리의 헤더는 걷는다 — 이름만 남으면 **여기 뭔가 있었다** 로 읽힌다.
   // **단 배지를 싣고 있으면 남긴다.** 탭 시절 그 배지들은 목록이 비어도 떠 있었고(탭 줄에 있었다),
-  // 무리가 비었다는 이유로 지우면 «이번 주 3마리 잡았다» 를 화면이 말할 자리가 아예 없어진다.
+  // 무리가 비었다는 이유로 지우면 **이번 주 3마리 잡았다** 를 화면이 말할 자리가 아예 없어진다.
   const visibleSections = filteredSections.filter(
     (section) => section.bosses.length > 0 || (section.cycle === 'weekly' && hasWeeklyBadges),
   )
@@ -419,7 +419,7 @@ export function BossScreen(): React.JSX.Element {
   // 지시하는 곳("게임에서 등록")은 앱 밖이라 데려다줄 수 없다.
   //
   // **주기별로 나누던 축은 사라졌다**(— 정정). 목록이 하나라
-  // 판정도 하나이고, 무리별로 물으면 검마를 안 잡는 캐릭터마다 «추적할 월간 보스가 없습니다» 가
+  // 판정도 하나이고, 무리별로 물으면 검마를 안 잡는 캐릭터마다 **추적할 월간 보스가 없습니다** 가
   // 뜬다 — 그것은 빈 상태가 아니라 **그냥 그 캐릭터의 목록**이다.
   function bossEmptyProps(): React.ComponentProps<typeof EmptyState> {
     if (mode === 'manual') {
@@ -534,7 +534,7 @@ export function BossScreen(): React.JSX.Element {
             )}
 
             {/*: **주간/월간 탭이 여기 있었다.** 목록이 하나가 되면서 걷혔고,
-                탭에만 매달려 있던 `n/12`·`season` 배지는 「주간」 섹션 헤더로 내려갔다(결정 3) —
+                탭에만 매달려 있던 `n/12`·`season` 배지는 `주간` 섹션 헤더로 내려갔다(결정 3) —
                 그 수치가 어느 무리의 것인지 이제 헤더가 말한다. 남는 줄은 필터 하나뿐이다. */}
             {characters.length > 0 && selected !== null && (
               <View className="flex-row items-center gap-2">
@@ -564,7 +564,7 @@ export function BossScreen(): React.JSX.Element {
         {characters.length > 0 && selected !== null && (
           <View testID="pull-content" className="gap-4 px-4 pb-4">
             {/* 빈 상태 둘은 **목록 하나**를 보고 판정한다 — 무리별로 물으면
-                검마를 안 잡는 캐릭터마다 «추적할 월간 보스가 없습니다» 가 뜬다. */}
+                검마를 안 잡는 캐릭터마다 **추적할 월간 보스가 없습니다** 가 뜬다. */}
             {displayedCount === 0 && (mode === 'manual' || !selected.isStale) && (
               <EmptyState {...bossEmptyProps()} />
             )}
@@ -572,7 +572,7 @@ export function BossScreen(): React.JSX.Element {
             {displayedCount > 0 && filteredCount === 0 && <EmptyState {...filterEmptyProps()} />}
 
             {/* 순서는 `displayedBossSections` 것이고(결정 1), **비어 있는 무리는 이미 걷혔다**
-                (`visibleSections`) — 헤더만 남아 «여기 뭔가 있었다» 로 읽히지 않게 한다(결정 6). */}
+                (`visibleSections`) — 헤더만 남아 **여기 뭔가 있었다** 로 읽히지 않게 한다(결정 6). */}
             {visibleSections.map((section) => (
               <View key={section.cycle} className="gap-2">
                 <View

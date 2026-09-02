@@ -36,7 +36,7 @@ export type SqlitePlatform = 'ios' | 'android'
  * `NSDocumentDirectory` 로 푼다(`UtilsFile.swift:161-162`) — 즉 `<앱 컨테이너>/Documents` 다.
  *
  * 근거는 플러그인 소스지만 **실기기 앱 컨테이너를 열어 확인한 것은 아니다** — data.md
- * «미검증 항목» 에 남아 있고, 2단계(실기기 검증)에서 반드시 눈으로 확인해야 한다.
+ * 미검증 항목 에 남아 있고, 2단계(실기기 검증)에서 반드시 눈으로 확인해야 한다.
  */
 export interface CapacitorDatabaseDirectories {
   android: string
