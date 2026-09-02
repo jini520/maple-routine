@@ -1,4 +1,4 @@
-// 격자는 **그리기만** 한다([[ADR-169]] 결정 7) — 어떤 칸이 서는가는 `lib/calendar-month` 이 정하고
+// 격자는 **그리기만** 한다([[ADR-169]] 결정 7) — 어떤 칸이 서는가는 `lib/calendar` 이 정하고
 // 그쪽 테스트가 못 박는다. 여기서 보는 것은 «받은 것을 어떻게 보이느냐» 다.
 //
 // **칸이 표식 둘에서 금액 두 줄로 바뀌었다**([[ADR-169]] 정정 1, 사용자 레퍼런스 2026-08-23).
@@ -10,16 +10,16 @@ import {
   buildCalendarMonth,
   buildResetWeek,
   monthIncomeMax,
-} from '../../../../lib/calendar-month'
-import { CalendarMonth } from '../CalendarMonth'
+} from '../../../../lib/calendar'
+import { CalendarGrid } from '../CalendarGrid'
 
 const 팔월 = buildCalendarMonth('2026-08')
 
-function 그리기(overrides: Partial<React.ComponentProps<typeof CalendarMonth>> = {}) {
+function 그리기(overrides: Partial<React.ComponentProps<typeof CalendarGrid>> = {}) {
   const weeks = overrides.weeks ?? 팔월
   const amounts = overrides.amounts ?? {}
   return renderAtom(
-    <CalendarMonth
+    <CalendarGrid
       weeks={weeks}
       selectedDateKey="2026-08-23"
       todayDateKey="2026-08-23"
@@ -37,7 +37,7 @@ function 칸(view: ReturnType<typeof renderAtom> extends Promise<infer T> ? T : 
   return within(view.getByTestId(`calendar-day-${dateKey}`))
 }
 
-describe('CalendarMonth — 격자', () => {
+describe('CalendarGrid — 격자', () => {
   it('요일 머리를 일요일부터 일곱 개 그린다', async () => {
     const view = await 그리기()
 
@@ -76,7 +76,7 @@ describe('CalendarMonth — 격자', () => {
   })
 })
 
-describe('CalendarMonth — 오늘과 고른 날', () => {
+describe('CalendarGrid — 오늘과 고른 날', () => {
   it('고른 칸만 aria-selected 다', async () => {
     const view = await 그리기({ selectedDateKey: '2026-08-11' })
 
@@ -103,7 +103,7 @@ describe('CalendarMonth — 오늘과 고른 날', () => {
   })
 })
 
-describe('CalendarMonth — 금액 두 줄 ([[ADR-169]] 정정 1)', () => {
+describe('CalendarGrid — 금액 두 줄 ([[ADR-169]] 정정 1)', () => {
   const 금액 = {
     '2026-08-11': { incomeMeso: 12_940_000_000, expenseMeso: 500_000_000 },
     '2026-08-12': { incomeMeso: 2_840_000_000, expenseMeso: 0 },
@@ -160,7 +160,7 @@ describe('CalendarMonth — 금액 두 줄 ([[ADR-169]] 정정 1)', () => {
   })
 })
 
-describe('CalendarMonth — 열지도 ([[ADR-169]] 정정 1)', () => {
+describe('CalendarGrid — 열지도 ([[ADR-169]] 정정 1)', () => {
   it('많이 번 날이 더 진하다 — 그 달 안에서 상대적이다', async () => {
     const view = await 그리기({
       amounts: {

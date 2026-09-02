@@ -51,10 +51,10 @@
 
 | 조각 | 파일 | 하는 일 |
 |---|---|---|
-| 격자 계산 | `lib/calendar-month.ts` | 달 → ‘몇 주 × 7칸’ · **주 → 이레**(`buildResetWeek`·`resetWeekStartOf`). 각 칸의 KST 날짜 키, 이동·라벨, 열지도 단계(`heatLevel`·`monthIncomeMax`), **기간 합계**(`periodTotals`. [[ADR-184]]) |
+| 격자 계산 | `lib/calendar.ts` | 달 → ‘몇 주 × 7칸’ · **주 → 이레**(`buildResetWeek`·`resetWeekStartOf`). 각 칸의 KST 날짜 키, 이동·라벨, 열지도 단계(`heatLevel`·`monthIncomeMax`), **기간 합계**(`periodTotals`. [[ADR-184]]) |
 | 기간 라벨 | `lib/boss/boss-profit-period.ts` 의 `formatBossProfitPeriodLabel` | **보스 수익 탭과 같은 함수**다([[ADR-170]] 정정 3). 가계부가 자기 라벨을 갖지 않는다 |
 | 금액 표기 | `lib/cashbook/meso-compact.ts` | 좁은 칸용 축약(‘54.74억’·‘3,908만’). `formatMesoUnits` 와 목적이 다르다 |
-| 격자 표시 | `components/molecules/CalendarMonth/` | 받은 주 배열을 그린다. **판정을 하지 않는다**. 주 하나만 넘기면 그대로 주간 격자다 |
+| 격자 표시 | `components/molecules/CalendarGrid/` | 받은 주 배열을 그린다. **판정을 하지 않는다**. 주 하나만 넘기면 그대로 주간 격자다 |
 | 기록 저장 | `storage/income.ts` · `storage/spend.ts` | 손입력 둘. 넣기와 **날짜 범위** 조회 |
 | 참조표 읽기 | `lib/cashbook/spend-catalog.ts` | 종류 → 묶음 → 항목 · 환산 둘(메포→메소 · 관세) |
 | 사냥터 참조표 | `src/data/hunting-grounds.json` + `lib/cashbook/hunting-grounds.ts` | 지역 21 · 사냥터 408([[ADR-175]] 결정 2). 읽는 쪽이 쓰는 것은 **다섯**이다. 지역의 몬스터 레벨 범위(`monsterLevelRangeOf`. 참조표의 추천 레벨과 **다르다**) · 캐릭터 레벨로 지역 거르기(`huntingRegionsForLevel`) · 사냥터 줄 세우기(`huntingGroundsFor`·`levelGapOf`) · 지역의 사냥터 목록 · 이름으로 되짚기(`findHuntingGround`. 이름이 전역 유일이라 지역이 따라온다) |

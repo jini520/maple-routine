@@ -60,7 +60,7 @@ import {
   ShoppingCartIcon,
   Text,
 } from '../../components/atoms'
-import { CalendarMonth } from '../../components/molecules/CalendarMonth/CalendarMonth'
+import { CalendarGrid } from '../../components/molecules/CalendarGrid/CalendarGrid'
 import { DIFFICULTY_SHORT } from '../../constants/domain/boss-difficulty'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
@@ -87,7 +87,7 @@ import {
   periodTotals,
   resetWeekStartOf,
   type CalendarAmounts,
-} from '../../lib/calendar-month'
+} from '../../lib/calendar'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
@@ -965,7 +965,7 @@ export function CashbookScreen(): React.JSX.Element {
             expenseMeso={periodSums.expenseMeso}
           />
 
-          <CalendarMonth
+          <CalendarGrid
             weeks={weeks}
             selectedDateKey={selectedDateKey}
             todayDateKey={todayDateKey}
