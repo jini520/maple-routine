@@ -75,7 +75,7 @@ export function matchWeeklyQuestRegionSlug(displayName: string): string | null {
   return findRegion(WEEKLY_ENTRIES, displayName)?.backgroundSlug ?? null
 }
 
-/** 이 표만 **이름 전체**로 맞춘다 — 표가 지역이 아니라 컨텐츠 이름을 들고 있다. */
+/** 이 표만 **이름 전체**로 맞춘다. 표가 지역이 아니라 컨텐츠 이름을 들고 있어서다. */
 export function matchWeeklyRegionalQuestSlug(contentName: string): string | null {
   return REGIONAL_ENTRIES.find((candidate) => candidate.name === contentName)?.backgroundSlug ?? null
 }

@@ -1,3 +1,17 @@
+import { BOSS_PORTRAIT_ASSETS } from '../assets/generated/bosses'
+import { DAILY_QUEST_BACKGROUND_ASSETS } from '../assets/generated/maps'
+import { DAILY_QUEST_ICON_ASSETS } from '../assets/generated/map-icons'
+import { DROP_EFFECT_ASSETS } from '../assets/generated/drop-effect'
+import type { DropEffectPhase } from './drop-effect-layout'
+import { FORCE_ASSETS } from '../assets/generated/force'
+import type { ForceType } from '../types/hunting-grounds'
+import { ITEM_ASSETS } from '../assets/generated/items'
+import type { ImageAssetRef } from '../types/image-asset'
+import type { ImageCrop } from './image-crop'
+import { THEME_BACKGROUND_ASSETS } from '../assets/generated/themes'
+import { WORLD_EMBLEM_ASSETS } from '../assets/generated/worlds'
+import bossCropsData from '../data/boss-portrait-crops.json'
+import bossIconCropsData from '../data/boss-portrait-icon-crops.json'
 /**
  * 이름표를 번들 에셋으로 바꾼다. 앱의 그림이 화면에 붙는 유일한 길이다.
  *
@@ -8,29 +22,13 @@
  *
  * **없으면 `null` 이고 화면이 비운다.** 비슷한 그림을 갖다 붙이면 틀린 것을 그리는 셈이다.
  *
- * @see [[ADR-129]] — 목록(`assets/generated/*`)은 빌드가 아니라 커밋 시점에 생성된다
- * @see [[ADR-101]] 결정 1 — 모르는 것을 그리지 않는다
+ * @see [[ADR-129]]. 목록(`assets/generated/*`)은 빌드가 아니라 커밋 시점에 생성된다.
+ * @see [[ADR-101]] 결정 1. 모르는 것을 그리지 않는다.
  */
 import bossRingBoxesData from '../data/boss-ring-boxes.json'
-import bossCropsData from '../data/boss-portrait-crops.json'
-import bossIconCropsData from '../data/boss-portrait-icon-crops.json'
 import dailyQuestCropsData from '../data/daily-quest-region-crops.json'
 import itemIconsData from '../data/item-icons.json'
 import worldEmblemsData from '../data/world-emblems.json'
-
-import { BOSS_PORTRAIT_ASSETS } from '../assets/generated/bosses'
-import { DAILY_QUEST_BACKGROUND_ASSETS } from '../assets/generated/maps'
-import { DAILY_QUEST_ICON_ASSETS } from '../assets/generated/map-icons'
-import { DROP_EFFECT_ASSETS } from '../assets/generated/drop-effect'
-import { FORCE_ASSETS } from '../assets/generated/force'
-import { ITEM_ASSETS } from '../assets/generated/items'
-import { THEME_BACKGROUND_ASSETS } from '../assets/generated/themes'
-import { WORLD_EMBLEM_ASSETS } from '../assets/generated/worlds'
-
-import type { DropEffectPhase } from './drop-effect-layout'
-import type { ImageCrop } from './image-crop'
-import type { ForceType } from '../types/hunting-grounds'
-import type { ImageAssetRef } from '../types/image-asset'
 
 type AssetMap = Record<string, ImageAssetRef>
 
@@ -93,7 +91,7 @@ export function getThemeBackgroundUrl(slug: string): ImageAssetRef | null {
 
 // ── 월드 엠블럼 ──────────────────────────────────────────────────────────────────────
 
-/** 월드 이름 → 엠블럼 파일의 basename. **여기서는 NFC 를 안 건다** — 표의 키가 소스 리터럴이다. */
+/** 월드 이름 → 엠블럼 파일의 basename. **여기서는 NFC 를 안 건다.** 표의 키가 소스 리터럴이다. */
 const basenameByWorld = worldEmblemsData as Record<string, string>
 
 export function worldEmblemUrl(world: string): ImageAssetRef | null {
@@ -126,7 +124,7 @@ export function forceIconOf(forceType: ForceType): ImageAssetRef | null {
 
 // ── 아이템 아이콘 ────────────────────────────────────────────────────────────────────
 
-/** @see [[ADR-011]] 결정 6 · [[ADR-038]] 결정 4 — 이름에서 파일명을 계산하지 않고 표에서 찾는다 */
+/** 이름에서 파일명을 계산하지 않고 표에서 찾는다. @see [[ADR-011]] 결정 6 · [[ADR-038]] 결정 4 */
 interface ItemIconEntry {
   name: string
   iconFile?: string
@@ -137,7 +135,7 @@ type IconMapping = string | Record<string, string>
 
 const iconByName: Record<string, IconMapping> = {}
 
-// 반지를 먼저 넣고 `item-icons` 가 덮어써 우선한다 — 「생명의 연마석」은 반지 표에선 `iconFile` 이
+// 반지를 먼저 넣고 `item-icons` 가 덮어써 우선한다. `생명의 연마석` 은 반지 표에선 `iconFile` 이
 // null 이고 `item-icons` 의 `whetstone_life.png` 가 실제 아이콘이라 후자가 이겨야 한다.
 for (const box of bossRingBoxesData.boxes) {
   for (const ring of box.itemProbabilities) {
@@ -195,7 +193,7 @@ const ITEM_ICON_BY_LABEL: Record<string, string> = {
   '블루베리 농장': 'blueberry_farm_ticket.webp',
   '솔 에르다': 'sole_1000.webp',
   '블랙 서큘레이터': 'black_circulator.webp',
-  미호로이드: 'mihoroid.webp',
+  '미호로이드': 'mihoroid.webp',
   'VIP 사우나': 'vip_sauna_ticket.webp',
   '닉네임 변경': 'npc_mr_newname.webp',
   '세이람의 영약': 'seiram_elixir.webp',
@@ -205,9 +203,9 @@ const ITEM_ICON_BY_LABEL: Record<string, string> = {
 }
 
 const MAP_ICON_BY_LABEL: Record<string, string> = {
-  하이마운틴: 'highMountain',
+  '하이마운틴': 'highMountain',
   '앵글러 컴퍼니': 'anglerCompany',
-  악몽선경: 'nightmareParadise',
+  '악몽선경': 'nightmareParadise',
 }
 
 /**
@@ -240,7 +238,7 @@ export function spendIconOf(label: string): SpendIcon | null {
 // ── 드랍 연출 ────────────────────────────────────────────────────────────────────────
 
 /**
- * 고가 아이템 드롭 연출 프레임. **숫자 순으로 정렬돼 있고 여기서 다시 안 한다** — 파일명 렉시코
+ * 고가 아이템 드롭 연출 프레임. **숫자 순으로 정렬돼 있고 여기서 다시 안 한다.** 파일명 렉시코
  * 정렬은 `10 < 2` 라 틀리는데 그 정렬은 생성기가 한다.
  *
  * @see [[ADR-038]]
