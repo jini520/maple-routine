@@ -973,8 +973,6 @@ export function CashbookScreen(): React.JSX.Element {
             weekdayLabels={isWeekly ? WEEKDAY_LABELS_RESET : undefined}
             // 열지도 기준은 **화면이 낸다**([[ADR-170]] 결정 12) — 위 `heatWeeks` 참조.
             incomeMax={monthIncomeMax(heatWeeks, amounts)}
-            // 주간 격자는 자체가 한 주라 **자를 것이 없다.**
-            showResetDivider={!isWeekly}
             onSelectDate={selectDate}
           />
 
