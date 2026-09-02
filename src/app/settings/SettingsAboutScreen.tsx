@@ -1,30 +1,14 @@
 /**
- * 설정 하위 페이지 `앱 정보`. 현재 버전·상태·업데이트 확인 + 개인정보 처리방침.
+ * 설정 하위 페이지 `앱 정보`. 현재 버전·상태·업데이트 확인과 개인정보 처리방침으로 가는 줄.
  *
- * 골격은 새로 만들지 않고 다른 하위 페이지와 같은 것을 쓴다: `ScreenScroll` +
- * `PageHeader` + 좌측 `ArrowLeft`.
- * ══ `앱 업데이트`. 상태 열넷이 전부 도달 가능해졌다 ═══════════════════════════════
+ * 골격은 다른 하위 페이지와 같다(`ScreenScroll` + `PageHeader` + 좌측 `ArrowLeft`).
  *
- * 여기 있던 **도달 불가** 표를 지웠다. 그 표는 열넷 중 `unsupported` 하나만 도달한다고
- * 적었고 근거는 둘이었다. `LiveUpdatePort` 가 던진다는 것과, core 스토어를 **값으로 import 하는
- * 것만으로 죽는다**는 것(모듈 최상위의 `import.meta.env`). **둘 다 사라졌다**: 포트는
- * `rn-live-update.ts` 로 채워졌고, `import.meta.env` 는 채널이 폐기되며 그 줄째 없어졌다
+ * 상태를 여기서 심지 않고 스토어를 그대로 넘긴다. 문구 열넷은 `AppUpdateSection` 이 들고 있다.
  *
+ * `fallbackVersion` 이 남는 것은 스토어가 `loadCurrentVersion()` 을 끝내기 전 첫 렌더에
+ * `currentVersion` 이 `null` 이기 때문이다.
  *
- * 그래서 이 화면은 이제 상태를 **심지 않고** 스토어를 그대로 넘긴다. 표를 남겨 두면 **지금** 을
- * 말하는 문서가 거짓이 되므로 지웠지, 그 상태들이 없어진 것이 아니다. 문구 열넷은
- * `AppUpdateSection` 이 그대로 들고 있고 그것이 의 계약이다.
- *
- * `fallbackVersion` 은 남는다. 내장 번들로 돌 때(아직 OTA 를 한 번도 안 받았을 때) 어댑터가
- * `package.json` 버전을 돌려주므로 값이 겹치지만, 스토어가 아직 `loadCurrentVersion()` 을 끝내기
- * 전 첫 렌더에는 `currentVersion` 이 `null` 이다.
- *
- * ── 뒤로가기 줄을 다섯 화면이 복붙하는 것도 웹 그대로다 ──────────────────────────────
- *
- *  의 기준("호출부 2곳 이상")만 보면 뽑을 만하지만, 웹이 뽑지 않은 것을 이식하며
- * 뽑으면 **경로 변경 diff 에 구조 변경이 섞인다**(어댑터 시그니처에 대해
- * 정한 것과 같은 판단. *"이왕 하는 김에"* 손대면 이식이 재작성이 된다). 두 앱을 나란히 놓고
- * 대조하는 일이 전환 기간 내내 필요하므로(`migration/README.md`) 지금은 같은 모양으로 둔다.
+ * @see docs/features/live-update.md 업데이트 상태 정책
  */
 import { useEffect } from 'react'
 import { Pressable, View } from 'react-native'

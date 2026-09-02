@@ -1,37 +1,16 @@
 /**
- * today 위젯이 읽는 **하나의 뷰모델**. 화면이 스토어 넷을 읽어 한 번 모으고, 위젯에는 프롭으로만
- * 준다.
+ * today 위젯이 읽는 뷰모델 하나를 조립하는 순수 함수. 화면이 스토어 넷을 읽어 한 번 모으고 위젯에는
+ * 프롭으로만 준다.
  *
- * ## 이 파일이 순수 함수인 이유
+ * 스토어를 import 하지 않고 **상태를 값으로 받는다**. 그래야 로직 전부를 값 조합만으로 검증할 수
+ * 있다. 같은 이유로 `new Date()` 를 안 부르고 `now` 를 받는다.
  *
- * 스토어를 import 하지 않고 **상태를 값으로 받는다.** 그래야 위젯이 한 줄도 없는 지금 로직 전부를
- * 값 조합만으로 검증할 수 있고, 수익 0 · 캐릭터 없음 · 동기화 실패 같은 상태를 목 없이 만든다.
- * 같은 이유로 `new Date()` 를 부르지 않는다. `now` 를 받아야 카운트다운·기간 판정이 고정된다.
+ * **판정을 여기서 새로 쓰지 않는다.** today 가 세는 남은 것은 스케줄러 화면이 보여 주는 것과 한
+ * 글자도 다르면 안 되므로 전부 남의 것을 부른다. 컨텐츠 완료는 `content-completion`, 표시 대상
+ * 보스는 `displayed-bosses`, 수익 합산은 `character-groups`, 한도 분모는 `boss-matching` 이다.
  *
- * ## 여기서 판정 을 새로 쓰지 않는다
- *
- * today 가 세는 남은 것 은 스케줄러 화면이 보여 주는 것과 한 글자도 다르면 안 된다. 그래서 판정은
- * 전부 남의 것을 부른다:
- *
- * | 값 | 출처 |
- * |---|---|
- * | 컨텐츠 완료 | `../content-scheduler/content-completion` |
- * | 표시 대상 보스 | `src/features/boss-scheduler/displayed-bosses` |
- * | 수익 합산 | `../boss-profit/character-groups` 의 `groupTotalMeso` |
- * | 결정석·아이템 분해 | 같은 파일의 `sumPayout` + `src/lib/drop/drop-price` 의 `sumDropPayout` |
- * | 결정석 월드 집계 | 같은 파일의 `summarizeWorldCrystals` |
- * | 한도 분모 | `src/lib/boss/boss-matching` 의 `WEEKLY_CRYSTAL_SALE_LIMIT` |
- * | 대표 캐릭터 | `resolveDisplayRepresentative` |
- * | 초기화 시각 | `src/lib/scheduler/reset-clock` · `src/lib/boss/boss-profit-period` |
- *
- * 그 대가로 **화면 사이 import 가 둘 생긴다**(`content-scheduler`·`boss-profit`).이
- * 감수하기로 한 것이고, 판정을 두 벌로 만드는 것보다 낫다.
- *
- * ## 이번 주 의 범위
- *
- * 위젯 3·4·7 은 전부 **현재 주간 기간 키 하나**로 자른다. 보스 수익 화면의 주간 탭과 같은 범위다.
- * 월간 키(`YYYY-MM`)로 저장되는 검은마법사 기록은 여기 들지 않는다(그쪽은 그 화면의 월간 탭 몫).
- * 셋이 같은 범위여야 위젯 7이 위젯 4의 없음 을 설명할 수 있다.
+ * 대가로 화면 사이 import 가 둘 생긴다(`content-scheduler` · `boss-profit`). 판정을 두 벌로 만드는
+ * 것보다 낫다고 보고 감수한다.
  */
 
 import { isBossBlocked, isContentBlocked } from '../../lib/scheduler/required-level'
