@@ -1,7 +1,7 @@
 // ⚠️ 이 파일은 생성물이다 — **손으로 고치지 마라.** 고쳐도 다음 생성에서 사라진다.
 //
-// 만드는 법: `npm run assets:gen` (scripts/generate-asset-manifest.mjs · [[ADR-129]])
-// 무엇: 테마 배경 이미지 — `lib/theme-backgrounds.ts`([[ADR-088]] 결정 3)
+// 만드는 법: `npm run assets:gen` (scripts/generate-asset-manifest.mjs)
+// 무엇: 테마 배경 이미지 — `lib/theme-backgrounds.ts`
 // 원본: src/assets/themes/*.{webp,jpg,png}
 //
 // 값의 타입은 번들러가 정한다 — 웹(Vite)은 URL 문자열, RN(Metro)은 에셋 id 다. 그 차이를

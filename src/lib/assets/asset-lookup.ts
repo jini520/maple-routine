@@ -20,8 +20,8 @@ import bossIconCropsData from '../../data/boss-portrait-icon-crops.json'
  *
  * **없으면 `null` 이고 화면이 비운다.** 비슷한 그림을 갖다 붙이면 틀린 것을 그리는 셈이다.
  *
- * @see [[ADR-129]]. 목록(`assets/generated/*`)은 빌드가 아니라 커밋 시점에 생성된다.
- * @see [[ADR-101]] 결정 1. 모르는 것을 그리지 않는다.
+ * @see. 목록(`assets/generated/*`)은 빌드가 아니라 커밋 시점에 생성된다.
+ * @see. 모르는 것을 그리지 않는다.
  */
 import bossRingBoxesData from '../../data/boss-ring-boxes.json'
 import dailyQuestCropsData from '../../data/daily-quest-region-crops.json'
@@ -41,7 +41,7 @@ function bySlug(assets: AssetMap, slug: string | null): ImageAssetRef | null {
  * 같은 그림이라도 카드 bleed 와 원형 아이콘은 잘 보이는 자리가 달라 크롭 표가 둘이다. 값은
  * 사용자가 눈으로 맞춘 것이라 AI 가 채우지 않는다.
  *
- * @see [[ADR-018]] 결정 9 · [[ADR-006]]
+ * @see
  */
 const BOSS_PORTRAIT_CROPS = bossCropsData as Record<string, ImageCrop>
 const BOSS_PORTRAIT_ICON_CROPS = bossIconCropsData as Record<string, ImageCrop>
@@ -82,7 +82,7 @@ export function getDailyQuestRegionIconUrl(backgroundSlug: string | null): Image
 
 // ── 테마 배경 ────────────────────────────────────────────────────────────────────────
 
-/** 파일이 없으면 배경만 사라지고 테마는 산다. @see [[ADR-088]] 결정 3 */
+/** 파일이 없으면 배경만 사라지고 테마는 산다. @see */
 export function getThemeBackgroundUrl(slug: string): ImageAssetRef | null {
   return bySlug(THEME_BACKGROUND_ASSETS, slug)
 }
@@ -99,7 +99,7 @@ export function worldEmblemUrl(world: string): ImageAssetRef | null {
   return WORLD_EMBLEM_ASSETS[basename] ?? null
 }
 
-/** 이 표가 월드를 아는 유일한 자리라 판정도 여기서 한다. @see [[ADR-031]] 결정 3 */
+/** 이 표가 월드를 아는 유일한 자리라 판정도 여기서 한다. @see */
 export function isChallengersWorld(world: string): boolean {
   return basenameByWorld[world] === 'challengers'
 }
@@ -122,7 +122,7 @@ export function forceIconOf(forceType: ForceType): ImageAssetRef | null {
 
 // ── 아이템 아이콘 ────────────────────────────────────────────────────────────────────
 
-/** 이름에서 파일명을 계산하지 않고 표에서 찾는다. @see [[ADR-011]] 결정 6 · [[ADR-038]] 결정 4 */
+/** 이름에서 파일명을 계산하지 않고 표에서 찾는다. @see */
 interface ItemIconEntry {
   name: string
   iconFile?: string
@@ -150,7 +150,7 @@ for (const item of itemIconsData.items as ItemIconEntry[]) {
   }
 }
 
-// 「기타」([[ADR-041]])는 백옥 반지 상자 목록 밖 저가치 반지 묶음이다. 실재 아이템명이 아니라 UI
+// 「기타」는 백옥 반지 상자 목록 밖 저가치 반지 묶음이다. 실재 아이템명이 아니라 UI
 // 전용이라 `item-icons.json`(정합성 테스트가 드랍테이블 실재를 강제한다)이 아니라 여기서 맨다.
 iconByName['기타'.normalize('NFC')] = 'Limit_Ring.webp'
 
@@ -180,7 +180,7 @@ export function getItemIconUrlByFile(fileName: string): ImageAssetRef | null {
  * 표가 둘인 것은 원천이 둘이라서다. 에픽던전 셋만 지역 아이콘을 쓰는데(일일 퀘스트 화면과 같은
  * 그림이다) 두 생성물의 키 모양이 달라 파일명과 슬러그가 섞이면 안 된다.
  *
- * @see [[ADR-170]] 정정 16
+ * @see
  */
 const ITEM_ICON_BY_LABEL: Record<string, string> = {
   '몬스터 파크': 'monster_park_ticket.webp',

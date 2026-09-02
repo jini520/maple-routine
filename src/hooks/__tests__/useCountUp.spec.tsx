@@ -9,7 +9,7 @@ import {
 } from '../useCountUp'
 
 // vitest 의 `vi.stubGlobal` 짝. jest 에는 없어서 여기서 최소한으로 만든다 — 원래 값을 기억해 두고
-// `unstubAllGlobals()` 가 되돌린다 ([[ADR-157]]).
+// `unstubAllGlobals()` 가 되돌린다.
 const 원래전역: Record<string, unknown> = {}
 
 function stubGlobal(name: string, value: unknown): void {
@@ -198,7 +198,7 @@ describe('useCountUp', () => {
     expect(displayed()).toBe(100)
   })
 
-  // [[ADR-087]] 정정 1 — 언마운트 없이 identity 만 바뀌는 자리가 있다(총 수익 헤드라인은 기간이
+  // 언마운트 없이 identity 만 바뀌는 자리가 있다(총 수익 헤드라인은 기간이
   // 바뀌어도 재마운트되지 않는다). 마운트 때만 기억을 읽으면 그 자리는 옛 identity 의 값에서
   // 굴러가 버린다 — identity 변경은 값 변경이 아니라 "다른 값을 보게 된 것"이므로 리셋이다.
   it('살아 있는 인스턴스에서 identity 가 바뀌면 굴리지 않고 목표로 리셋한다', async () => {

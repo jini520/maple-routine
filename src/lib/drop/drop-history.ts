@@ -5,16 +5,16 @@ import type { BossCycle } from '../../types'
 import type { RecordedDrop } from '../../types/drops'
 import type { BossDifficulty } from '../../types/scheduler'
 
-// 드롭 획득 히스토리(전 기간)의 순수 집계([[ADR-071]], 이슈 #54).
+// 드롭 획득 히스토리(전 기간)의 순수 집계(이슈 #54).
 //
-// 핵심 규약 하나: **드롭이 일어난 시점은 `periodKey` 이고 `recordedAt` 이 아니다**([[ADR-071]] 결정 2).
+// 핵심 규약 하나: **드롭이 일어난 시점은 `periodKey` 이고 `recordedAt` 이 아니다**.
 // `recordedAt` 은 "이 그룹을 마지막으로 쓴 시각"이라 드롭 하나를 더 추가하면 기존 드롭들의 값까지
 // 오늘로 갱신된다 — 그래서 이 파일은 그 필드를 아예 받지 않는다.
 
 /**
  * SQLite `boss_drop_records` 한 행에서 이 집계에 필요한 부분만 추린 모양 — `recordedAt` 이 없는 것이
  * 의도다(위 규약). 저장 계층 타입을 쓰지 않는 이유는 `lib/` 가 `storage/` 를 의존하지 않기 위함이고
- * ([[ADR-003]]), `RecordedDrop` 을 상속하는 형태는 `StoredDropRecord`(`lib/boss/boss-drops`)와 같은 관례다
+ * `RecordedDrop` 을 상속하는 형태는 `StoredDropRecord`(`lib/boss/boss-drops`)와 같은 관례다
  * — 그래야 드롭 아이콘 스택·획득 가능 판정에 그대로 넘길 수 있다.
  */
 export interface DropHistoryRecord extends RecordedDrop {
@@ -53,9 +53,9 @@ export function getPeriodCycle(periodKey: string): BossCycle {
 
 /**
  * `periodKey` 가 가리키는 기간의 **시작 시점**(UTC ms). 주간은 그 리셋일 00:00 KST, 월간은 그 달
- * 1일 00:00 KST([[ADR-030]]).
+ * 1일 00:00 KST.
  *
- * 왜 필요한가([[ADR-071]] 결정 5): 두 형식을 문자열로 비교하면 시간순이 아니다 — `'2026-07-09' >
+ * 왜 필요한가: 두 형식을 문자열로 비교하면 시간순이 아니다 — `'2026-07-09' >
  * '2026-07'` 이라 월간 7월이 그 달 주차들보다 뒤로 밀린다. 한 축(시점)으로 환산해야 섞어 정렬할 수
  * 있고, 미획득 주 수도 이 시점 차이로 센다.
  */
@@ -71,7 +71,7 @@ export function getPeriodStartUtcMs(periodKey: string): number {
  * 획득하였습니다") 괄호 병기가 그 톤을 깬다.
  *
  * **마지막 글자가 아니라 마지막 한글 음절을 본다** — 슬롯별로 갈라진 익셉셔널 해머는 `)` 로 끝나고
- * ([[ADR-070]]) 수량·레벨을 붙이면 숫자가 섞인다.
+ *  수량·레벨을 붙이면 숫자가 섞인다.
  */
 export function objectParticle(word: string): '을' | '를' {
   const HANGUL_BASE = 0xac00
@@ -136,7 +136,7 @@ export function formatDropHistoryLine(
   characterName: string | undefined,
 ): DropHistoryLine {
   const who = characterName === undefined ? '' : `${characterName}님이 `
-  // 상자 개봉 결과는 어떤 상자를 열었는지가 기록의 절반이다([[ADR-010]]) — 아이템 앞에 두되 상자명도
+  // 상자 개봉 결과는 어떤 상자를 열었는지가 기록의 절반이다 — 아이템 앞에 두되 상자명도
   // 강조 대상이라 따로 뗀다. 강조가 둘이어도 **가치를 정하는 쪽은 결과**라 pill(고가 판정)은 결과에만
   // 붙고 상자명은 굵기만 받는다.
   const box =
@@ -173,7 +173,7 @@ export function confirmedDropKey(
 }
 
 /**
- * 기록을 기간별로 묶어 **최신 기간이 먼저** 오게 정렬한다([[ADR-071]] 결정 3·5).
+ * 기록을 기간별로 묶어 **최신 기간이 먼저** 오게 정렬한다.
  *
  * 같은 기간 안의 순서는 입력 순서를 그대로 보존한다 — 조회 SQL(`period_key DESC, ocid, boss,
  * difficulty, drop_index`)이 정한 순서가 표시 순서이고, `Array.prototype.sort` 는 안정 정렬이라
@@ -197,7 +197,7 @@ export function groupDropRecordsByPeriod(records: DropHistoryRecord[]): DropHist
 }
 
 /**
- * 그 난이도에서 획득 불가한 기록을 거른다 — **처치 난이도가 확정된 조합만**([[ADR-071]] 결정 6).
+ * 그 난이도에서 획득 불가한 기록을 거른다 — **처치 난이도가 확정된 조합만**.
  *
  * 보스 수익 화면의 정리(`pruneUnobtainableDrops`)는 화면에 뜬 기간에서만 lazy 하게 돌아, 한 번도
  * 열지 않은 과거 기간에는 정리되지 않은 행이 남아 있다. 히스토리가 그걸 보여주면 같은 기록을 한
@@ -205,7 +205,7 @@ export function groupDropRecordsByPeriod(records: DropHistoryRecord[]): DropHist
  *
  * `confirmedKeys` 밖의 조합은 손대지 않는다 — 익스트림으로 등록해두고 실제로는 하드를 잡아 하드
  * 전용 아이템을 기록한 경우, 등록 난이도로 걸러버리면 나중에 난이도가 확정되면 이관되어 **살아남을**
- * 기록을 미리 숨기게 된다([[ADR-069]] 결정 4).
+ * 기록을 미리 숨기게 된다.
  *
  * **쓰지 않는다** — 거르기만 하고 DB 정리는 기존 lazy 경로에 맡긴다(읽기 화면에 쓰기를 넣지 않는다).
  */
@@ -222,7 +222,7 @@ export function filterUnobtainableConfirmedDrops(
 }
 
 /**
- * 마지막으로 고가 아이템을 먹은 기간과 그 뒤로 지난 주 수([[ADR-071]] 결정 4).
+ * 마지막으로 고가 아이템을 먹은 기간과 그 뒤로 지난 주 수.
  *
  * - **고가 전체를 하나로** 집계한다 — 아이템별·세트별로 나누면 칠흑·광휘 구성원 수십 종이 대부분
  *   "기록 없음"으로 채워져 정보가 아니라 소음이 된다(사용자 확정).
@@ -233,7 +233,7 @@ export function filterUnobtainableConfirmedDrops(
  * - **고가 기록이 없으면 `null`** — 기준점이 없는데 기간을 만들어내지 않는다.
  */
 /**
- * 미획득이 길어질수록 요약이 **점점 슬퍼지는** 단계([[ADR-071]] 결정 8 후속, 사용자 확정 2026-08-01).
+ * 미획득이 길어질수록 요약이 **점점 슬퍼지는** 단계(후속, 사용자 확정 2026-08-01).
  *
  * 단계는 문구(여기)와 시각 표현(화면의 잎 색·기울기·투명도)이 함께 쓴다 — 값 하나가 두 축을 같이
  * 움직여야 "색은 슬픈데 문구는 신난" 어긋남이 생기지 않는다.
@@ -248,7 +248,7 @@ export function filterUnobtainableConfirmedDrops(
  * 문구는 **사용자가 직접 지정했다**(2026-08-01 다섯 줄 · 2026-08-17 추가 여섯 줄) — 아이템 드롭 가뭄에
  * 대한 플레이어 반응을 단계로 옮긴 것이라 구현자가 톤을 다듬지 않는다.
  *
- * **단계마다 문구가 풀이다**([[ADR-147]] 정정 6·10) — 처음엔 마지막 단계만 여럿이었는데, today 의
+ * **단계마다 문구가 풀이다** — 처음엔 마지막 단계만 여럿이었는데, today 의
  * 위젯이 같은 요약을 자주 띄우게 되면서 전 단계로 넓혔다. 각 풀의 **첫 항목이 원래 있던 문구**라
  * 인덱스를 주지 않은 호출은 예전과 같은 문구를 준다.
  *
@@ -275,7 +275,7 @@ const VALUABLE_DROUGHT_TIERS: readonly { maxWeeks: number; headlines: readonly s
 /**
  * 그 단계의 문구 개수 — 화면이 이 범위에서 인덱스를 무작위로 고른다.
  *
- * 단계마다 풀 크기가 달라 "마지막 단계 개수" 상수로는 모자란다([[ADR-147]] 정정 6). 인덱스를 감싸므로
+ * 단계마다 풀 크기가 달라 "마지막 단계 개수" 상수로는 모자란다. 인덱스를 감싸므로
  * 틀린 개수를 줘도 문구는 나오지만, 그러면 뽑히지 않는 문구가 생긴다.
  */
 export function valuableDroughtHeadlineCount(weeksSince: number): number {

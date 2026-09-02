@@ -1,4 +1,4 @@
-// 기능 사용법 안내([[ADR-125]]). **원천은 기능 카탈로그 한 벌**이고 개발 노트는 거기로 링크만
+// 기능 사용법 안내. **원천은 기능 카탈로그 한 벌**이고 개발 노트는 거기로 링크만
 // 건다(결정 1 정정, 2026-08-10) — 같은 설명을 버전 축과 기능 축에 두 벌 두면 반드시 갈라진다.
 //
 // 노트 항목은 이 안내를 `ReleaseNoteItem.guideId`(+ `guideSectionId`) 문자열로 가리킨다. 본문이
@@ -15,11 +15,11 @@ import type { ImageAssetRef } from './image-asset'
  */
 export type FeatureGuideGroup = 'content' | 'boss' | 'profit' | 'utility' | 'settings'
 
-/** 안내에 실리는 이미지. `alt` 를 `src` 와 한 덩이로 묶어 **빠뜨릴 수 없게** 한다([[ADR-125]] 결정 6). */
+/** 안내에 실리는 이미지. `alt` 를 `src` 와 한 덩이로 묶어 **빠뜨릴 수 없게** 한다. */
 export interface FeatureGuideImage {
   /**
    * `packages/core/src/assets/guide/` 에서 import 한 번들 자산. 웹은 URL 문자열, RN 은 에셋 id 라
-   * 타입이 `string` 이 아니라 `ImageAssetRef` 다([[ADR-129]]) — 안내 파일이 하는 일(에셋을 그냥
+   * 타입이 `string` 이 아니라 `ImageAssetRef` 다 — 안내 파일이 하는 일(에셋을 그냥
    * import 한다)은 그대로다.
    */
   src: ImageAssetRef
@@ -38,7 +38,7 @@ export interface FeatureGuideBlock {
 }
 
 /**
- * 안내의 한 마디. **목차의 한 줄이자 개발 노트가 가리키는 착지점**이다([[ADR-125]] 결정 7).
+ * 안내의 한 마디. **목차의 한 줄이자 개발 노트가 가리키는 착지점**이다.
  *
  * 노트 항목은 안내 페이지가 아니라 **여기**로 온다 — 릴리스에서 바뀐 것은 보통 기능 전체가
  * 아니라 그중 한 마디이고, 페이지 맨 위에 떨어뜨리면 읽는 사람이 그 마디를 다시 찾아야 한다.

@@ -1,6 +1,6 @@
 import spendCatalog from '../spend-catalog.json'
 
-// 지출 참조 목록 — [[ADR-166]] 결정 7 이 기다리던 값이고 사용자가 준 것이다([[ADR-006]]).
+// 지출 참조 목록 — 이 기다리던 값이고 사용자가 준 것이다.
 //
 // 이 스위트가 지키는 것은 **형태**이지 값이 아니다. 값은 도메인 전문가의 것이라 테스트가 베끼면
 // 두 벌이 되고, 그러면 게임이 바뀌었을 때 어느 쪽이 진실인지 알 수 없게 된다
@@ -31,8 +31,8 @@ describe('spend-catalog.json — 규약', () => {
     expect(items.length).toBeGreaterThan(0)
   })
 
-  // [[ADR-166]] 정정 2 ② — 사용자 확인값(2026-08-23)이고 «항상 고정» 이다. 화면이 이 값을 하드코딩
-  // 하면 [[ADR-006]] 이 막는 자리가 코드에 생긴다.
+  // 사용자 확인값(2026-08-23)이고 «항상 고정» 이다. 화면이 이 값을 하드코딩
+  // 하면 이 막는 자리가 코드에 생긴다.
   it('관세율은 10% 로 고정이다', () => {
     expect(spendCatalog.tariffPercent).toBe(10)
   })
@@ -49,7 +49,7 @@ describe('spend-catalog.json — 규약', () => {
     expect(new Set(names).size).toBe(names.length)
   })
 
-  // [[ADR-166]] 결정 1 이 통화 축을 세웠다. 여기 없는 통화가 새로 생기면 그 결정을 다시 봐야 한다.
+  //  이 통화 축을 세웠다. 여기 없는 통화가 새로 생기면 그 결정을 다시 봐야 한다.
   it('통화는 머리에 선언된 것만 쓴다', () => {
     const declared = Object.keys(spendCatalog.currencies)
 
@@ -73,7 +73,7 @@ describe('spend-catalog.json — 규약', () => {
     }
   })
 
-  // [[ADR-166]] 정정 1 ② — 큰 갈래 셋. 나머지 둘(아이템 구매·기타)은 직접 입력이라 항목이 없다.
+  // 큰 갈래 셋. 나머지 둘(아이템 구매·기타)은 직접 입력이라 항목이 없다.
   it('갈래는 머리에 선언된 셋뿐이다', () => {
     expect(spendCatalog.categories).toEqual(['컨텐츠', '이벤트·BM', '버프'])
 
@@ -142,12 +142,12 @@ describe('spend-catalog.json — 닻 (사용자 확인값, 2026-08-23)', () => {
 })
 
 /**
- * **묶음 표는 «지금 열렸나» 를 든다**([[ADR-166]] 정정 5).
+ * **묶음 표는 «지금 열렸나» 를 든다**.
  *
  * 기간제 이벤트(메이플 포인트 샵)는 열릴 때와 안 열릴 때가 있고 품목도 갈린다. 그 사실을 **날짜로
  * 판정하지 않는 것**이 결정이라(미뤄지는 날 앱이 거짓말을 한다) 여기 적힌 값이 곧 사실이다.
  */
-describe('spend-catalog.json — 묶음 표 ([[ADR-166]] 정정 5)', () => {
+describe('spend-catalog.json — 묶음 표', () => {
   it('표에 적힌 묶음은 실제로 있는 묶음이다', () => {
     const groups = new Set(items.map((item) => item.group))
 
@@ -166,12 +166,12 @@ describe('spend-catalog.json — 묶음 표 ([[ADR-166]] 정정 5)', () => {
 })
 
 /**
- * **상한이 1이면 셀 것이 없다**([[ADR-170]] 정정 14 ①).
+ * **상한이 1이면 셀 것이 없다**.
  *
  * 에픽던전 추가 리워드는 메이플 ID 당 주 1회라(사용자 확인 2026-08-27) 수량이 오르내릴 자리가 없다.
  * 화면은 이 값으로 수량 줄을 세울지 정하므로, 여기가 바뀌면 그 줄이 조용히 되살아난다.
  */
-describe('spend-catalog.json — 수량 상한 ([[ADR-170]] 정정 14 ①)', () => {
+describe('spend-catalog.json — 수량 상한', () => {
   it('에픽던전 추가 리워드 여섯은 상한이 1이다', () => {
     const epic = items.filter((item) => item.group === '에픽던전 추가 리워드')
 

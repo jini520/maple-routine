@@ -1,7 +1,7 @@
 /**
  * 테마 38토큰을 **CSS 커스텀 프로퍼티 이름 → 값** 맵으로 낸다. NativeWind 의 `vars()` 가 그 맵을
  * 받아 렌더 트리에 내려보내고, `className`(`bg-primary`·`text-text-muted` …)이 `var(--color-*)` 로
- * 그것을 읽는다([[ADR-128]] 3단계).
+ * 그것을 읽는다(3단계).
  *
  * ## 왜 CSS 문자열을 만들지 않는가
  *
@@ -27,14 +27,14 @@ export function toColorVariableName(token: string): string {
 }
 
 /**
- * 스크림 위 패널의 테두리 ([[ADR-122]]) — **RN 에는 선택자가 없어서 값으로 만든다.**
+ * 스크림 위 패널의 테두리 — **RN 에는 선택자가 없어서 값으로 만든다.**
  *
  * 웹은 `:root[data-mode='light'] .panel-on-scrim { border-color: color-mix(...) }` 로 푼다. RN 에는
  * `data-mode` 도 `color-mix` 도 없으므로, 그 규칙이 계산하는 **결과를 토큰 하나로 미리 만들어** 둔다.
- * 그러면 호출부는 `border-panel-border` 라고만 쓰면 되고([[ADR-128]] 3단계가 `className` 을 그대로
+ * 그러면 호출부는 `border-panel-border` 라고만 쓰면 되고(3단계가 `className` 을 그대로
  * 옮기려는 이유), 모드 분기는 이 함수 안에서 **딱 한 번** 일어난다.
  *
- * 분기 기준은 반드시 `definition.mode` 다 — 테마 **이름**으로 가르면 [[ADR-064]] 결정 8이 폐기한
+ * 분기 기준은 반드시 `definition.mode` 다 — 테마 **이름**으로 가르면이 폐기한
  * `DARK_THEMES` 수동 목록이 되살아난다(테마를 수십 개로 늘릴 계획이라 특히 안 된다).
  *
  * 다크에서 테두리를 그대로 두는 것도 결정이다 — 그쪽은 패널과 배경 대비가 1.07~1.18 이라
@@ -42,14 +42,14 @@ export function toColorVariableName(token: string): string {
  */
 export const PANEL_BORDER_TOKEN = 'panel-border'
 
-/** 라이트에서 `border` 를 `text` 쪽으로 미는 비중 — [[ADR-122]] 가 실기기에서 세 번 만에 잡은 값. */
+/** 라이트에서 `border` 를 `text` 쪽으로 미는 비중 — 가 실기기에서 세 번 만에 잡은 값. */
 const PANEL_BORDER_RATIO = 0.4
 
 /**
  * `color-mix(in srgb, base <ratio>%, other)` 와 같은 계산.
  *
- * core 의 `mixOklab` 을 쓰지 않는 이유는 [[ADR-122]] 가 **`in srgb`** 로 값을 잡았기 때문이다
- * (틴트 파생([[ADR-064]] 결정 2)은 `in oklab` 이라 색 공간이 다르다). 색 공간을 바꾸면 그 ADR 이
+ * core 의 `mixOklab` 을 쓰지 않는 이유는 가 **`in srgb`** 로 값을 잡았기 때문이다
+ * (틴트 파생은 `in oklab` 이라 색 공간이 다르다). 색 공간을 바꾸면 그 ADR 이
  * 실기기에서 확정한 세 값이 전부 달라진다.
  */
 function mixSrgb(base: string, other: string, ratio: number): string {
@@ -74,9 +74,9 @@ export function resolvePanelBorder(definition: ThemeDefinition): string {
  * `:root` 에 해당하는 변수 맵 — 38토큰 + 모드에서 파생되는 `--color-panel-border`.
  *
  * 배경 이미지(`--theme-bg-*`)는 내지 않는다. RN 은 벽지를 CSS 배경이 아니라 `<Image>` 로 그리므로
- * 값의 형태 자체가 다르다 — [[ADR-129]] 로 에셋이 들어온 뒤에도 그대로다(core 는 `url("…")` 을
+ * 값의 형태 자체가 다르다 — 로 에셋이 들어온 뒤에도 그대로다(core 는 `url("…")` 을
  * 내지만 RN 에서 그 안의 값은 URL 문자열이 아니다). 그리는 것은 `ThemeBackdrop` 몫이고,
- * **그리는 곳은 그 하나뿐이다**([[ADR-133]]).
+ * **그리는 곳은 그 하나뿐이다**.
  */
 export function buildThemeVariables(definition: ThemeDefinition): Record<string, string> {
   const variables: Record<string, string> = {}
@@ -88,7 +88,7 @@ export function buildThemeVariables(definition: ThemeDefinition): Record<string,
 }
 
 /**
- * 시트 스코프 ([[ADR-179]] 결정 1) — **미디어 스코프와 같은 기법, 다른 목적**이다.
+ * 시트 스코프 — **미디어 스코프와 같은 기법, 다른 목적**이다.
  *
  * ## 무엇이 어긋났나
  *
@@ -110,7 +110,7 @@ export function buildThemeVariables(definition: ThemeDefinition): Record<string,
  * ## 라이트는 안 건드린다
  *
  * 대비가 이미 멀쩡하고, 한 칸 더 올리면 `#FFFFFF` 에 부딪혀 눌린다. 분기 재료는 반드시
- * `definition.mode` 다 — 테마 **이름**으로 가르면 [[ADR-064]] 결정 8이 폐기한 `DARK_THEMES` 수동
+ * `definition.mode` 다 — 테마 **이름**으로 가르면이 폐기한 `DARK_THEMES` 수동
  * 목록이 되살아난다(`resolvePanelBorder` 가 바로 위에서 같은 모양으로 서 있다).
  *
  * 라이트에서도 **넷을 다 낸다** — 값이 같아 재선언이 무해하고, 호출부에 모드 분기가 안 생긴다.
@@ -135,7 +135,7 @@ export function buildSheetScopeVariables(definition: ThemeDefinition): Record<st
 }
 
 /**
- * `.media-scope` 에 해당하는 변수 맵 ([[ADR-064]] 결정 5).
+ * `.media-scope` 에 해당하는 변수 맵.
  *
  * 일러스트 카드 안은 바탕이 `surface` 가 아니라 `mediaSurface` 라 표면·텍스트·완료 배지를 **다시
  * 선언**해야 한다. 웹에서 그것이 필요한 이유("커스텀 프로퍼티는 선언된 요소에서 `var()` 가

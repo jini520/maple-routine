@@ -1,5 +1,5 @@
 /**
- * 한 값을 무한 반복시키는 훅([[ADR-199]] 정정 4). 지금 쓰는 곳은 `atoms/Spinner` 의 스피너 둘이다.
+ * 한 값을 무한 반복시키는 훅. 지금 쓰는 곳은 `atoms/Spinner` 의 스피너 둘이다.
  */
 import { useEffect } from 'react'
 import {

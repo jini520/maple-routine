@@ -63,7 +63,7 @@ function mergeSection(
   const items: ContentItem[] = []
   const seen = new Set<string>()
 
-  // character 범위: stale 여부와 무관하게 항상 항목(이름) 단위로 병합한다([[ADR-034]] 정정) —
+  // character 범위: stale 여부와 무관하게 항상 항목(이름) 단위로 병합한다(정정) —
   // fresh에 있으면 그대로 쓰고, fresh에 없는데 previous에 있으면 진행값을 리셋해 복원한다.
   // Nexon 응답이 섹션을 통째로 비우는 대신 개별 항목만 누락시키는 경우가 실측으로 확인돼
   // (2026-07-23), "섹션이 stale이 아니면 fresh만 신뢰"하던 이전 방식으로는 그 누락을 못 잡았다.
@@ -81,7 +81,7 @@ function mergeSection(
     seen.add(item.name)
   }
 
-  // world/account 범위: "마지막 활성 캐릭터" API 오염([[ADR-030]]) 때문에 previous가 아니라
+  // world/account 범위: "마지막 활성 캐릭터" API 오염 때문에 previous가 아니라
   // 원장을 신뢰해야 해서 위 정정의 범위 밖이다 — 기존처럼 fresh가 stale이 아닐 때만 처리한다.
   if (!freshIsStale) {
     for (const item of freshItems) {
@@ -147,7 +147,7 @@ function mergeSection(
 }
 
 // 보스는 전부 character 범위(2026-07-21 확인)라 world/account 원장 단계가 필요 없다 — cycle 내에서
-// 항목(이름+난이도) 단위로 병합한다([[ADR-034]] 정정): fresh에 있으면 그대로 쓰고, fresh에 없는데
+// 항목(이름+난이도) 단위로 병합한다(정정): fresh에 있으면 그대로 쓰고, fresh에 없는데
 // previous에 있으면 isComplete·ownComplete를 false로 리셋해 복원한다. ownComplete도 함께 리셋해야
 // 한다 — 안 그러면 지난 리셋에서의 완료 여부가 그대로 남아있어 보스 수익 계산기
 // (selectBossProfitBosses, ADR-032)가 이번 리셋에서 아직 처치하지 않은 보스를 "실제로 완료함"으로

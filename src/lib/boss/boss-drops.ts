@@ -11,7 +11,7 @@ import {
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types/scheduler'
 
 // item-drop-table.json / boss-ring-boxes.json / accessory-boxes.json 조회 헬퍼(ADR-038). 게임
-// 수치 데이터는 여기서 읽기만 하고 추정하지 않는다([[ADR-006]]).
+// 수치 데이터는 여기서 읽기만 하고 추정하지 않는다.
 
 interface RawRewardItem {
   name: string
@@ -95,7 +95,7 @@ export function getBossFixedDrops(boss: string): FixedDropGroup[] {
 }
 
 // 이 보스의 드롭 테이블에 표시 가능한 드롭(고정·장비·소비)이 있는 난이도를 정규 순서로 반환한다.
-// 드롭 시트의 난이도 토글 후보 목록에 쓴다 — 데이터 없는 난이도는 제외한다(추정 금지, [[ADR-006]]).
+// 드롭 시트의 난이도 토글 후보 목록에 쓴다 — 데이터 없는 난이도는 제외한다(추정 금지).
 export function getBossDifficulties(boss: string): BossDifficulty[] {
   const present = new Set<BossDifficulty>()
   for (const entry of entriesForBoss(boss)) {
@@ -118,7 +118,7 @@ export function getObtainableTileNames(boss: string, difficulty: BossDifficulty)
   )
 }
 
-// 드롭 히스토리는 이 판정을 기록 한 건마다 한다([[ADR-071]] 결정 6). getObtainableTileNames는 매
+// 드롭 히스토리는 이 판정을 기록 한 건마다 한다. getObtainableTileNames는 매
 // 호출마다 그 보스의 전 난이도 후보를 다시 순회하므로 난이도별 결과를 캐시한다 — 입력이 정적
 // JSON뿐이라 결과가 바뀔 일이 없다.
 const obtainableTileNamesCache = new Map<string, Set<string>>()
@@ -134,7 +134,7 @@ function obtainableTileNames(boss: string, difficulty: BossDifficulty): Set<stri
 }
 
 // 이 드롭이 그 난이도(처치 난이도)에서 획득 가능한지. 상자 결과는 상자명 기준. 레거시 고정(fixed)
-// 기록은 선택 대상이 아니므로 항상 true 다([[ADR-040]] 결정 3).
+// 기록은 선택 대상이 아니므로 항상 true 다.
 export function isObtainableDrop(
   boss: string,
   difficulty: BossDifficulty,
@@ -154,7 +154,7 @@ export function pruneUnobtainableDrops(
 
 /**
  * SQLite `boss_drop_records` 한 행에서 이 계산에 필요한 부분만 추린 모양. 저장 계층 타입을 쓰지
- * 않는 이유는 `lib/` 가 `storage/` 를 의존하지 않기 위함이다([[ADR-003]]).
+ * 않는 이유는 `lib/` 가 `storage/` 를 의존하지 않기 위함이다.
  */
 export interface StoredDropRecord extends RecordedDrop {
   difficulty: string
@@ -177,7 +177,7 @@ function toRecordedDrop(record: StoredDropRecord): RecordedDrop {
     ringLevel: record.ringLevel,
     quantity: record.quantity,
     // ⚠️ 가격 셋을 여기 빠뜨리면 **난이도가 확정되는 순간** 그 주 가격이 전부 날아간다 —
-    // 타입 에러가 나지 않으므로(전부 optional) 이걸 막는 것은 테스트뿐이다([[ADR-124]] 결정 4).
+    // 타입 에러가 나지 않으므로(전부 optional) 이걸 막는 것은 테스트뿐이다.
     priceState: record.priceState,
     priceMeso: record.priceMeso,
     priceShare: record.priceShare,
@@ -191,7 +191,7 @@ function compareStoredDrops(a: StoredDropRecord, b: StoredDropRecord): number {
 
 /**
  * 처치 난이도가 확정됐을 때, 옛 난이도 키에 남은 드롭을 확정 난이도로 어떻게 옮길지 계산한다
- * ([[ADR-069]] 결정 4).
+ *
  *
  * 왜 필요한가: 드롭은 `(ocid, boss, difficulty, period_key)` 로 저장된다. 익스트림으로 등록해두고
  * 드롭까지 기록한 뒤 백필이 실제 처치를 **하드**로 확정하면, 그 드롭은 아무 행도 읽지 않는 키에

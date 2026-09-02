@@ -1,9 +1,9 @@
 /**
- * 색 공간·대비 프리미티브 ([[ADR-064]]).
+ * 색 공간·대비 프리미티브.
  *
  * 테마 토큰 파생(`theme-derive.ts`)과 대비 검증 테스트가 함께 쓴다. 외부 색 라이브러리를 들이지
  * 않고 직접 구현하는 이유는 두 가지다 — (1) 필요한 연산이 OKLab 변환·WCAG 대비·믹스 셋뿐이고,
- * (2) 브라우저의 `color-mix(in oklab, ...)`([[ADR-064]] 결정 2)와 **같은 색 공간**에서 계산해야
+ * (2) 브라우저의 `color-mix(in oklab,...)`와 **같은 색 공간**에서 계산해야
  * 검증 결과가 실제 화면과 일치하는데, 그 보장을 남의 구현에 맡기고 싶지 않다.
  *
  * OKLab 변환 행렬은 Björn Ottosson의 공개 정의를 그대로 쓴다(CSS Color 4가 채택한 것과 동일).
@@ -165,7 +165,7 @@ export function hexToOklch(hex: string): Oklch {
  *
  * 채널을 그냥 잘라내면 색상(H)까지 틀어진다 — 예를 들어 머쉬맘 primary(`#F58B0F`, H≈60°)를
  * 어둡게 밀면 그 채도로는 sRGB 밖이라 클램프 결과가 H≈47°가 돼 "색상은 유지하고 명도만 조정"이라는
- * `*-ink` 파생 규칙([[ADR-064]] 결정 3)이 깨진다. 명도·색상을 고정하고 채도만 이분 탐색으로
+ * `*-ink` 파생 규칙이 깨진다. 명도·색상을 고정하고 채도만 이분 탐색으로
  * 낮추는 것이 CSS Color 4의 가뭄 매핑과 같은 방향이다.
  */
 export function oklchToHex(oklch: Oklch): string {
@@ -187,7 +187,7 @@ export function oklchToHex(oklch: Oklch): string {
   return toHex(oklabToRgb(toOklab({ ...oklch, c: low })))
 }
 
-/** 색상(H)·채도(C)는 그대로 두고 명도만 바꾼다 — `*-ink` 파생의 기본 연산([[ADR-064]] 결정 3). */
+/** 색상(H)·채도(C)는 그대로 두고 명도만 바꾼다 — `*-ink` 파생의 기본 연산. */
 export function withLightness(hex: string, lightness: number): string {
   const oklch = hexToOklch(hex)
   return oklchToHex({ ...oklch, l: lightness })

@@ -1,10 +1,10 @@
 /**
  * 시트 안 입력 칸이 초점을 받을 때 시트에게 **누가 초점을 가졌는지** 알려 준다
- * ([[ADR-170]] 정정 18).
+ *
  *
  * `@gorhom/bottom-sheet` 는 키보드가 올라오면 시트를 그만큼 밀어올리는데, `animatedKeyboardState`
  * 의 `target` 이 비어 있으면 **키보드 이벤트를 받고도 무시한다**(라이브러리 소스에 그렇게 적혀
- * 있다). 그 값을 채우지 않으면 시트가 키보드에 가린 채로 남는다([[ADR-170]] 정정 10).
+ * 있다). 그 값을 채우지 않으면 시트가 키보드에 가린 채로 남는다.
  *
  * 라이브러리의 `BottomSheetTextInput` 이 이 일을 하지만 **쓰면 안 된다.** 그것은 안쪽이
  * `react-native-gesture-handler` 의 입력이라 안드로이드에서 한글 조합이 자모로 흩어진다
@@ -44,7 +44,7 @@ function targetOf(event: FocusEvent | BlurEvent | undefined): number | undefined
  * `TextInput` 에 그대로 펼쳐 넣을 `onFocus`·`onBlur` 한 쌍을 낸다.
  *
  * **새 프롭을 안 만든다.** 둘 다 RN 의 `TextInput` 이 원래 주는 프롭이라, 아톰은 자기가 시트 안에
- * 있는지 모른 채로 있으면 된다([[ADR-170]] 정정 18 결정 18-1).
+ * 있는지 모른 채로 있으면 된다.
  *
  * @param onFocus 호출부가 따로 할 일. 시트에 알린 뒤에 부른다
  * @param onBlur 같음
@@ -83,7 +83,7 @@ export function useSheetKeyboardTarget(
 
     /**
      * 끄는 조건이 `켜져 있는 것이 나인가` 라, 시트 안 두 칸을 오갈 때 켬과 흐림이 어느 순서로 와도
-     * 성립한다([[ADR-170]] 정정 10).
+     * 성립한다.
      */
     onBlur(event) {
       const target = targetOf(event)

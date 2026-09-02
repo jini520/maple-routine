@@ -27,7 +27,7 @@ export interface ReleaseNoteItem {
    */
   requiresStoreUpdate?: boolean
   /**
-   * 이 항목이 설명하는 기능의 사용법 안내([[ADR-125]]). 값이 있으면 목록에서 그 항목만 눌리고
+   * 이 항목이 설명하는 기능의 사용법 안내. 값이 있으면 목록에서 그 항목만 눌리고
    * `›` 가 붙는다.
    *
    * **본문이 아니라 id 다.** 안내의 원천은 기능 카탈로그(`packages/core/src/data/feature-guides.ts`)이고 노트는
@@ -42,7 +42,7 @@ export interface ReleaseNoteItem {
    */
   guideId?: string
   /**
-   * 안내 **안의 어느 마디**로 떨어질지([[ADR-125]] 결정 7). `guideId` 없이 홀로 있으면 뜻이 없다.
+   * 안내 **안의 어느 마디**로 떨어질지. `guideId` 없이 홀로 있으면 뜻이 없다.
    *
    * 릴리스에서 바뀐 것은 보통 기능 전체가 아니라 그중 한 마디다 — 페이지 맨 위에 떨어뜨리면
    * 읽는 사람이 그 마디를 다시 찾아야 한다. 비워 두면 안내 첫머리로 간다.
@@ -57,7 +57,7 @@ export interface ReleaseNote {
   date: string
   items: ReleaseNoteItem[]
   /**
-   * **업데이트 모달이 받기 전에 보여줄 핵심 목록 3~4줄**([[ADR-126]] 결정 2). 배포 스크립트가 이
+   * **업데이트 모달이 받기 전에 보여줄 핵심 목록 3~4줄**. 배포 스크립트가 이
    * 배열만 뽑아 `latest.json` 의 `highlights` 로 싣는다 — 모달에 실리는 것은 `items` 가 아니다.
    *
    * **`items` 에서 파생하지 않는다**(결정 3). 앞 N개를 자르거나 `category` 로 거르면 "핵심"을

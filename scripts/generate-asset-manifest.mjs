@@ -1,4 +1,4 @@
-// 에셋 목록 생성기 ([[ADR-129]]). `npm run assets:gen`
+// 에셋 목록 생성기. `npm run assets:gen`
 //
 // `src/assets/` 아래 그림 파일을 훑어 **슬러그 → 에셋** 목록을
 // `src/assets/generated/*.ts` 로 낸다. 옛 `import.meta.glob` 이 하던 일과 같지만
@@ -11,7 +11,7 @@
 // 무엇을 훑을지는 이 파일이 아니라 `src/assets/asset-groups.ts` 가 정한다 —
 // 같은 표를 생성물 검사 테스트도 읽는다(표가 두 벌이면 검사가 통과하는데 목록이 틀릴 수 있다).
 // `.ts` 를 그대로 import 하는 것은 Node 내장 타입 스트리핑이고, `publish-live-update.mjs` 가
-// `data/release-notes.ts` 를 읽는 방식과 같다([[ADR-119]] 결정 1).
+// `data/release-notes.ts` 를 읽는 방식과 같다.
 
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
@@ -47,7 +47,7 @@ export function assetKey(fileName, rule) {
   return base.normalize('NFC')
 }
 
-/** `1.webp` → 1. 파일 이름 렉시코 정렬은 10 < 2 라 프레임 순서가 뒤집힌다([[ADR-038]]). */
+/** `1.webp` → 1. 파일 이름 렉시코 정렬은 10 < 2 라 프레임 순서가 뒤집힌다. */
 function frameIndex(fileName) {
   return Number.parseInt(fileName, 10)
 }
@@ -61,7 +61,7 @@ function header(group) {
   return [
     '// ⚠️ 이 파일은 생성물이다 — **손으로 고치지 마라.** 고쳐도 다음 생성에서 사라진다.',
     '//',
-    `// 만드는 법: \`npm run assets:gen\` (scripts/generate-asset-manifest.mjs · [[ADR-129]])`,
+    `// 만드는 법: \`npm run assets:gen\` (scripts/generate-asset-manifest.mjs)`,
     `// 무엇: ${group.purpose}`,
     `// 원본: ${group.dirs.map((dir) => `src/assets/${dir}/*.{${group.extensions.join(',')}}`).join(' · ')}`,
     '//',

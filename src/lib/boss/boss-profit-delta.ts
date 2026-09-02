@@ -2,11 +2,11 @@ import type { BossCycle } from '../../types'
 import { getAdjacentPeriodKey, getWeeklyPeriodKeysInMonth } from './boss-profit-period'
 
 /**
- * 보스 수익 "직전 기간 대비 증감" 계산 ([[ADR-087]]).
+ * 보스 수익 "직전 기간 대비 증감" 계산.
  *
  * **이 모듈에는 "모른다"라는 입력이 없다.** 직전 기간을 조회한 적이 없어도 store 가 기록 합(= 0)을
  * 넘긴다(결정 3, 사용자 결정) — 0메소와 미확인을 같은 표기로 통일했기 때문이다. 그 대가로 증감
- * 표시가 기간 상태 기계([[ADR-067]] 결정 2)에서 완전히 분리되고, 여기서는 두 숫자만 다룬다.
+ * 표시가 기간 상태 기계에서 완전히 분리되고, 여기서는 두 숫자만 다룬다.
  */
 
 export interface ProfitDelta {
@@ -64,7 +64,7 @@ export function formatProfitDeltaLabel(delta: ProfitDelta, periodLabel: string):
 }
 
 /**
- * 직전 기간의 합계를 구하려면 어떤 periodKey 들을 읽어야 하는지 ([[ADR-087]] 결정 2).
+ * 직전 기간의 합계를 구하려면 어떤 periodKey 들을 읽어야 하는지.
  *
  * **그 화면의 총액 산식과 짝을 맞춘다** — 월간 탭 총액은 `monthly` 보스 행 + 그 달의 주차별 합계라
  * (`groupTotalMeso`), 직전 달 합계도 `직전 달 monthly 기록 + 직전 달에 속한 weekly 기록`이다.

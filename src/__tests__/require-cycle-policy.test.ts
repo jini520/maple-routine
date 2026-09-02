@@ -36,7 +36,7 @@ function sourceFiles(dir: string): string[] {
   return out
 }
 
-/** 상대 경로만 푼다 — 패키지 의존은 사이클을 만들 수 없다([[ADR-155]] 결정 3 이후 alias 가 없다). */
+/** 상대 경로만 푼다 — 패키지 의존은 사이클을 만들 수 없다(이후 alias 가 없다). */
 function resolveSpecifier(fromFile: string, specifier: string): string | null {
   if (!specifier.startsWith('.')) return null
   const base = resolve(dirname(fromFile), specifier)
@@ -124,7 +124,7 @@ describe('런타임 import 사이클', () => {
 
   // 그래프를 못 읽고 있으면 위 테스트는 «사이클 0건» 으로 조용히 통과한다 — 해석이 실제로
   // 도는지 하나로 붙든다. 화면(`app/`)에서 로직 층(`features/`)까지 건너가는 것을 고르는 이유는
-  // [[ADR-155]] 로 둘이 한 트리가 됐어도 **그 방향의 의존이 여전히 이 그래프의 본론**이라서다.
+  //  로 둘이 한 트리가 됐어도 **그 방향의 의존이 여전히 이 그래프의 본론**이라서다.
   it('그래프를 실제로 읽는다', () => {
     const entry = join(SRC, 'app/AppShell.tsx')
     const deps = runtimeDependencies(entry)

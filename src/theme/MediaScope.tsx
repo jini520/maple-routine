@@ -6,7 +6,7 @@ import { useThemeAppearance } from './context'
 import { buildMediaScopeVariables } from './theme-vars'
 
 /**
- * 일러스트 카드 스코프 — 웹 `.media-scope` 클래스의 짝([[ADR-064]] 결정 5).
+ * 일러스트 카드 스코프 — 웹 `.media-scope` 클래스의 짝.
  *
  * 카드 안은 바탕이 `surface` 가 아니라 `mediaSurface` 라서 표면·텍스트·완료 배지 기준이 바뀐다.
  * **같은 이름을 서브트리에서 다시 선언**하면 그 안쪽만 새 기준을 쓰는데(웹의 커스텀 프로퍼티 상속과

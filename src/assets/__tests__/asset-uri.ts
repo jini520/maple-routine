@@ -7,7 +7,7 @@
  *
  * vitest 시절에는 이 함수가 필요 없었다. Vite 가 같은 import 를 **URL 문자열**로 줘서
  * `expect(url).toEqual(expect.stringContaining('lucid'))` 가 그대로 성립했다. 러너를 jest 하나로
- * 모으면서([[ADR-157]]) 그 전제가 사라졌고, 이 저장소의 RN 테스트들이 이미 쓰던 방식
+ * 모으면서 그 전제가 사라졌고, 이 저장소의 RN 테스트들이 이미 쓰던 방식
  * (`{ testUri }` 를 본다 — `ContentCards.test.tsx`·`BossPortrait.test.tsx`)으로 통일한다.
  */
 export function assetUri(ref: unknown): string {

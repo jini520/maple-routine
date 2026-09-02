@@ -1,9 +1,9 @@
 /**
- * 사냥 메소 계산([[ADR-175]] 결정 3·4·5).
+ * 사냥 메소 계산.
  *
  * 화면은 이 파일의 함수 둘만 부른다 — 「어디서 · 얼마나 · 무슨 버프로」를 주면 메소가 나온다.
  *
- * ══ 수치는 **전부 사용자가 준 것**이다 ([[ADR-006]]) ═════════════════════════════════
+ * ══ 수치는 **전부 사용자가 준 것**이다 ═════════════════════════════════
  *
  * 젠 주기(분당 8회) · 메소 계수(몬스터 레벨 × 7.5) · 레벨 차이 페널티 표 둘 · 아이템 증가율 둘 —
  * 하나도 AI 가 추정하지 않았다(2026-08-28 사용자 확정). 맵마다 다른 값은 `hunting-grounds.json`
@@ -18,12 +18,12 @@
  * **효율은 곱하는 값이 아니라 마릿수에 들어간다**(사용자 지정 2026-08-28) — 고르는 것이 퍼센트가
  * 아니라 «몇 마리를 놓치나» 이기 때문이다. 세그먼트에 적히는 %는 그 결과를 **맵이 정해 준 라벨**이다.
  *
- * **아이템 둘이 거는 자리가 다르다**([[ADR-177]] 정정 1, 사용자 지정 2026-08-28):
+ * **아이템 둘이 거는 자리가 다르다**(사용자 지정 2026-08-28):
  *
  *     (기본 100% + 템메획 + 유니온의 부 + 어빌/유니온/스킬) × 재물 획득의 비약(1.2배)
  *
  * 유니온의 부(+50%)는 **합산 통 안**이고 재획비는 **그 결과 전체에** 곱한다. 그래서 둘 다 켜면
- * ×1.8 이다(150% × 1.2). [[ADR-175]] 결정 3 은 둘을 한 통에 넣어 ×1.7 을 냈는데, 그것이 정정됐다.
+ * ×1.8 이다(150% × 1.2). 은 둘을 한 통에 넣어 ×1.7 을 냈는데, 그것이 정정됐다.
  *
  * **내림은 맨 끝에 한 번**이다. 단계마다 자르면 어느 단계에서 잘랐느냐로 값이 갈리고, 그 차이를
  * 사용자가 되짚을 방법이 없다. (실제 값으로는 8젠과 30분이 소수를 늘 걷어 가지만, 내림은 그
@@ -38,7 +38,7 @@ export const SPAWNS_PER_MINUTE = 8
 export const MESO_PER_MONSTER_LEVEL = 7.5
 
 /**
- * 「소재」 한 개가 도는 시간([[ADR-175]] 결정 7).
+ * 「소재」 한 개가 도는 시간.
  *
  * 소형 재물 획득의 비약을 줄인 메이플 용어이고 30분이다 — 사용자가 실제로 세는 단위가 그것이라
  * 「분」이나 「시간」으로 묻지 않는다.
@@ -78,9 +78,9 @@ export function killedMobsOf(mobs: number, missedMobs: number): number {
 }
 
 /**
- * 메소 획득률 증가 아이템(사용자 확정 2026-08-28 — [[ADR-006]]).
+ * 메소 획득률 증가 아이템(사용자 확정 2026-08-28 —).
  *
- * **`kind` 가 곧 계산식에서의 자리**다([[ADR-177]] 정정 1):
+ * **`kind` 가 곧 계산식에서의 자리**다:
  *
  * - `additive` — 합산 통 **안**. 캐릭터 메획과 같은 자리라 더해서 한 번 곱한다.
  * - `multiplier` — 통 **밖**. 합산이 끝난 값 전체에 곱한다(재획비 1.2배).
@@ -88,7 +88,7 @@ export function killedMobsOf(mobs: number, missedMobs: number): number {
  * 처음에는 둘 다 합연산이었는데(둘 다 켜면 ×1.7), 재획비는 **합산 결과에 곱하는 것**이라 정정됐다
  * — 유니온의 부만 켠 150% 에 1.2 가 걸려 **×1.8** 이 된다.
  *
- * `icon` 은 `assets/items/` 의 **파일명**이다([[ADR-177]] 정정 4) — 칩이 글자가 아니라 그림이라
+ * `icon` 은 `assets/items/` 의 **파일명**이다 — 칩이 글자가 아니라 그림이라
  * 없으면 칩이 **빈 채로 뜬다**(에러가 아니다). 그 자리를 `IncomeSheet.test` 가 붙든다.
  *
  * `id` 는 기록에 글자로 박히므로(`hunt_boosts`) **이름을 바꿔도 id 는 안 바꾼다** — 바꾸면 그전
@@ -164,7 +164,7 @@ export function levelPenaltyPercent(characterLevel: number, monsterLevel: number
  * 메획 149 캐릭터가 유니온의 부와 재획비를 둘 다 켜면 `(100+149+50) × 1.2 = 358.8` → **258%** 다.
  *
  * **셈에는 이 값을 안 쓴다.** 돈을 세는 것은 내림 전의 값이고(`huntingMesoOf`), 여기서 자른 값은
- * 화면에만 산다 — 효율 라벨과 같은 규칙이다([[ADR-175]] 결정 3-1 ①): 표시하려고 자른 숫자가
+ * 화면에만 산다 — 효율 라벨과 같은 규칙이다: 표시하려고 자른 숫자가
  * 돈을 세면 라벨이 계산을 끌고 다니게 된다.
  */
 export function appliedMesoRatePercent(boostPercent: number, boostMultiplier: number): number {
@@ -174,7 +174,7 @@ export function appliedMesoRatePercent(boostPercent: number, boostMultiplier: nu
 /**
  * 통 **안**에 드는 것들의 증가율 합(%). 모르는 id 는 0 으로 친다(지운 아이템을 든 옛 기록).
  *
- * **재획비는 여기 안 든다** — `boostMultiplierOf` 가 통 밖에서 곱한다([[ADR-177]] 정정 1).
+ * **재획비는 여기 안 든다** — `boostMultiplierOf` 가 통 밖에서 곱한다.
  */
 export function boostPercentOf(ids: readonly string[]): number {
   return ids.reduce((sum, id) => {
@@ -197,12 +197,12 @@ export function boostMultiplierOf(ids: readonly string[]): number {
 
 export interface HuntingMesoInput {
   ground: HuntingGround
-  /** `null` = 캐릭터를 안 골랐다 → **페널티 없음**([[ADR-175]] 결정 6). */
+  /** `null` = 캐릭터를 안 골랐다 → **페널티 없음**. */
   characterLevel: number | null
   /** 젠 한 번에 **놓치는 마릿수**(0~4). 퍼센트가 아니라 이것이 고르는 축이다. */
   missedMobs: number
   /**
-   * 합산 통에 드는 %의 합 — **캐릭터 메획 + 가산 아이템**이다([[ADR-177]] 결정 6·정정 1).
+   * 합산 통에 드는 %의 합 — **캐릭터 메획 + 가산 아이템**이다.
    * 화면이 이미 더해서 넘긴다(`boostPercentOf` + 읽어 온 메획).
    */
   boostPercent: number
@@ -215,7 +215,7 @@ export interface HuntingMesoInput {
 /**
  * 사냥터 하나에서 나오는 메소.
  *
- * **몬스터 레벨이 둘이면 레벨마다 재서 평균**낸다([[ADR-175]] 결정 5) — 평균 레벨 하나로 접으면
+ * **몬스터 레벨이 둘이면 레벨마다 재서 평균**낸다 — 평균 레벨 하나로 접으면
  * 레벨 차이가 소수(20.5)가 되어 정수 표에 못 넣고, 내리든 올리든 임의의 선택이 하나 생긴다.
  * 레벨이 하나인 맵(408 중 356)에서는 이 갈래가 아예 안 돈다.
  */
@@ -232,20 +232,20 @@ export function huntingMesoOf(input: HuntingMesoInput): number {
   }, 0)
 
   const perLevelMean = sum / input.ground.levels.length
-  // **합산이 끝난 값 전체에** 곱셈 배율이 걸린다 — 재획비는 통 안이 아니다([[ADR-177]] 정정 1).
+  // **합산이 끝난 값 전체에** 곱셈 배율이 걸린다 — 재획비는 통 안이 아니다.
   return Math.floor(perLevelMean * (1 + input.boostPercent / 100) * input.boostMultiplier)
 }
 
 export interface HuntingTotalInput extends Omit<HuntingMesoInput, 'ground'> {
   /** `null` = 아직 안 골랐다. 그때도 조각 값은 선다 — 계산기가 반쯤 찬 상태다. */
   ground: HuntingGround | null
-  /** 솔 에르다 조각 **획득 개수** — 앱이 추정하지 않는다([[ADR-175]] 결정 8). */
+  /** 솔 에르다 조각 **획득 개수** — 앱이 추정하지 않는다. */
   fragments: number
   /** 조각 개당 메소. */
   fragmentPrice: number
 }
 
-/** 큰 숫자에 서는 값 — **메소 + 조각 × 개당 가격**이다([[ADR-175]] 결정 1). */
+/** 큰 숫자에 서는 값 — **메소 + 조각 × 개당 가격**이다. */
 export function huntingTotalOf(input: HuntingTotalInput): number {
   const meso = input.ground === null ? 0 : huntingMesoOf({ ...input, ground: input.ground })
   return meso + input.fragments * input.fragmentPrice

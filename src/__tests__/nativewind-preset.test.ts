@@ -1,5 +1,5 @@
 /**
- * jest 와 Metro 가 **같은 프리셋으로** 컴파일하는지 지킨다([[ADR-179]] 정정 1).
+ * jest 와 Metro 가 **같은 프리셋으로** 컴파일하는지 지킨다.
  *
  * NativeWind 는 `NATIVEWIND_OS` 가 없거나 `web` 이면 web 프리셋으로 컴파일한다
  * (`nativewind/dist/tailwind/index.js`). Metro 는 `options.platform` 을 넣지만 jest 는 아무도 안
@@ -44,7 +44,7 @@ function ruleOf(css: string, selector: string): string | null {
 // 컴파일이 두 번 도는 무거운 스위트다 — 다른 스위트와 달리 타임아웃을 늘린다.
 jest.setTimeout(120_000)
 
-describe('NativeWind 프리셋 ([[ADR-179]] 정정 1)', () => {
+describe('NativeWind 프리셋', () => {
   const ios = compile('ios')
 
   it('jest 가 보는 값이 web 프리셋 산물이 아니다', () => {

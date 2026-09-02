@@ -1,5 +1,5 @@
 /**
- * 등록된 테마 이름 — `job-themes.json` 의 키에서 추론한다([[ADR-064]] 결정 10).
+ * 등록된 테마 이름 — `job-themes.json` 의 키에서 추론한다.
  *
  * 유니온을 손으로 적지 않는 이유는 테마를 수십 개로 늘릴 계획이기 때문이다. 값 목록·타입 가드·
  * 선택 UI·라이트/다크 판정이 모두 그 JSON 하나를 따라가므로, 테마 추가는 **JSON 한 블록**이다.
@@ -10,18 +10,18 @@ export type ThemeName = keyof typeof import('../data/job-themes.json')
 export type ThemeMode = 'light' | 'dark'
 
 /**
- * 테마가 속한 분류 ([[ADR-104]] 결정 1).
+ * 테마가 속한 분류.
  *
  * **한 테마는 하나만 갖는다** — 머쉬맘·혼테일은 보스이기도 하지만 "앱의 기본 라이트/다크"라는
  * 역할이 우선이라 `기본` 에만 둔다. 겹침을 허용하면 배열이 되고 같은 테마가 목록에 두 번 나온다.
- * 소속은 색에서 유도할 수 없는 **게임 도메인**이라 사람이 확인해 넣는다([[ADR-006]]).
+ * 소속은 색에서 유도할 수 없는 **게임 도메인**이라 사람이 확인해 넣는다.
  *
  * 표시 순서는 이 유니온이 아니라 `theme-registry` 의 `THEME_CATEGORIES` 가 정한다.
  */
 export type ThemeCategory = '기본' | '직업' | '보스'
 
 /**
- * 테마 38토큰 ([[ADR-064]], `rise`/`fall` 2쌍은 [[ADR-087]]).
+ * 테마 38토큰 (`rise`/`fall` 2쌍은).
  *
  * 이름 규칙 — `on-X` 는 X 채움 **위**의 전경, `X-ink` 는 X 계열 **텍스트/아이콘**,
  * `X-tint` 는 X 계열 **옅은 배경**이다. 자세한 용도·파생 규칙은 `docs/features/theme.md`.
@@ -78,7 +78,7 @@ export interface ThemeTokens {
   /** `infoTint` 위 텍스트·아이콘 */
   infoInk: string
 
-  /** 값이 **오른** 것을 말하는 칩 배경([[ADR-087]]) */
+  /** 값이 **오른** 것을 말하는 칩 배경 */
   riseTint: string
   /** `riseTint` 위 텍스트·아이콘 */
   riseInk: string
@@ -103,7 +103,7 @@ export interface ThemeTokens {
 }
 
 /**
- * 테마 배경 이미지 ([[ADR-088]] 결정 3).
+ * 테마 배경 이미지.
  *
  * 크기·위치·어둡기·페이드를 **값으로** 갖는 이유는 그림을 고치는 대신 JSON 한 줄로 조절하기
  * 위해서다 — "더 어둡게"는 `dim`, "아래쪽이 보이게"는 `position` 이다. 코드를 건드릴 일이
@@ -132,13 +132,13 @@ export interface ThemeBackground {
  *
  * `mode` 는 색이 아니라 **의도**다 — 상태바(`native/status-bar.ts`)·하단 내비 글리프
  * (`native/system-bars.ts`) 명암을 정한다. 자동 계산하지 않고 테마마다 사람이 명시한다
- * ([[ADR-064]] 결정 8) — 파스텔처럼 경계가 애매한 테마에서 오분류를 막기 위해서다.
+ * 파스텔처럼 경계가 애매한 테마에서 오분류를 막기 위해서다.
  */
 export interface ThemeDefinition extends ThemeTokens {
   mode: ThemeMode
-  /** 선택 목록의 섹션을 정한다 ([[ADR-104]] 결정 1) */
+  /** 선택 목록의 섹션을 정한다 */
   category: ThemeCategory
-  /** 없으면 배경은 `bg` 단색이다 — 지금은 **어느 테마도 갖지 않는다**([[ADR-088]], [[ADR-106]] 로 둘 다 뗌) */
+  /** 없으면 배경은 `bg` 단색이다 — 지금은 **어느 테마도 갖지 않는다**(로 둘 다 뗌) */
   background?: ThemeBackground
 }
 

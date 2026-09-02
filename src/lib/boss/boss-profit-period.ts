@@ -101,7 +101,7 @@ export function isLatestPeriod(cycle: BossCycle, periodKey: string, now: Date): 
 }
 
 /**
- * 이 기간이 이미 지난 기간인데도 **그 안에 아직 진행 중인 주가 들어 있는지** 확인한다([[ADR-076]]).
+ * 이 기간이 이미 지난 기간인데도 **그 안에 아직 진행 중인 주가 들어 있는지** 확인한다.
  *
  * 월간 탭에서 한 주가 달 경계를 걸칠 때만 참이다 — 2026년 7월의 마지막 리셋은 7월 30일(목)이라
  * 그 주(7/30~8/5)는 "7월 5주차"이면서 8월 5일까지 이어진다. 8월 1일 00:00에 7월은 지난 달이
@@ -118,8 +118,8 @@ export function containsInProgressWeek(cycle: BossCycle, periodKey: string, now:
 }
 
 /**
- * 이 기간을 화면에서 **지금 새로고침(실시간 재조회)하는 것이 의미가 있는지**([[ADR-076]]) —
- * 헤더 동기화 상태 영역 노출과 당겨서 새로고침 활성 조건이 **이 한 플래그를 공유한다**([[ADR-072]]
+ * 이 기간을 화면에서 **지금 새로고침(실시간 재조회)하는 것이 의미가 있는지** —
+ * 헤더 동기화 상태 영역 노출과 당겨서 새로고침 활성 조건이 **이 한 플래그를 공유한다**(
  * 결정 9). 갈라 두면 "버튼은 없는데 당기면 도는" 상태가 생긴다.
  *
  * 기간 네비게이션 게이트(다음 기간 비활성)는 여전히 isLatestPeriod다 — "이 기간이 최신인가"와
@@ -196,7 +196,7 @@ export function formatBossProfitPeriodLabel(
 }
 
 /**
- * 그 기간에 **든 날짜 전부**(KST `YYYY-MM-DD`, 오름차순) — [[ADR-172]] 결정 2.
+ * 그 기간에 **든 날짜 전부**(KST `YYYY-MM-DD`, 오름차순) —.
  *
  * `getBackfillQueryDate` 는 기간당 **한 날짜**만 낸다(그 기간이 가장 온전히 반영되는 시점). 그것으로는
  * «그 기간에 잡았다» 까지만 알 수 있고 **며칟날인지는 안 나온다** — 일간 해상도는 날짜들을 훑어
@@ -254,7 +254,7 @@ export function getMinQueryableDate(now: Date): string {
 
 /**
  * now(KST) 기준으로 스케줄러 API가 받아들이는 **최대** 날짜(YYYY-MM-DD) — 오늘−1일이다
- * ([[ADR-067]] 결정 2 정정 2, 실측 2026-07-31).
+ * (실측 2026-07-31).
  *
  * `date=오늘` 과 미래 날짜는 400 `OPENAPI00004` 다. `오늘−1일` 은 **집계가 끝나기 전(KST 새벽)엔
  * 400 `OPENAPI00009`** 지만 그 뒤에는 정상 조회된다 — 그래서 상한을 오늘−2일로 낮추지 않는다.
@@ -277,7 +277,7 @@ export function getMaxQueryableDate(now: Date): string {
  *
  * 하한 둘(API가 존재하기 시작한 고정 하한선 MIN_SCHEDULER_DATE, 매일 밀리는 롤링 하한선
  * getMinQueryableDate) 중 더 늦은 쪽과, 상한 하나(getMaxQueryableDate = 오늘−1일) 사이여야 한다.
- * **상한은 [[ADR-067]] 결정 2에서 추가됐다** — 전에는 하한만 봐서 현재 기간(조회일이 미래)에도
+ * **상한은에서 추가됐다** — 전에는 하한만 봐서 현재 기간(조회일이 미래)에도
  * "조회 가능"이라 답했고, 그 답을 믿고 호출하면 400이었다.
  *
  * 주의: 이 함수는 "백필 가능성"만 답한다. **현재 기간을 볼 수 있는가는 다른 질문이다** — 그건
@@ -295,13 +295,13 @@ export function isPeriodQueryable(cycle: BossCycle, periodKey: string, now: Date
  *
  * `outOfRange` 가 여기 있는 이유: 우리가 계산한 조회 구간 안인데도 API가 400 `OPENAPI00004` 로
  * 거부하는 경우가 있다 — 그 날짜에 이 캐릭터가 지금 월드에 없었거나(월드 리프) 휴면이었던 경우다
- * (실측, 구분 불가 — [[ADR-068]] 결정 6). 날짜만 보면 알 수 없으므로 **응답이 알려준 사실**로
+ * (실측, 구분 불가 —). 날짜만 보면 알 수 없으므로 **응답이 알려준 사실**로
  * 상태를 정한다. 다만 아직 영속하지 않으므로 다음 방문에 한 번 더 호출한다(후속 과제).
  */
 export type PeriodQueryOutcome = 'notCollected' | 'outOfRange' | 'failed'
 
 /**
- * 한 (캐릭터, 기간)의 표시 상태([[ADR-067]] 결정 2 + 정정 1·2). 표현은 [[ADR-068]].
+ * 한 (캐릭터, 기간)의 표시 상태(+ 정정 1·2). 표현은.
  *
  * | 상태 | 뜻 | 사용자 행동 |
  * |---|---|---|
@@ -344,7 +344,7 @@ export function resolvePeriodDataState(input: PeriodDataStateInput): PeriodDataS
   if (input.hasRecords) {
     return 'recorded'
   }
-  // 확인 기록은 "조회해서 0건을 봤다"만 의미한다([[ADR-067]] 결정 3) — 조회 불가 기간을 checked로
+  // 확인 기록은 "조회해서 0건을 봤다"만 의미한다 — 조회 불가 기간을 checked로
   // 굳히지 않도록 store를 함께 바꿨다. 그래서 이 분기가 시간이 지나도 outOfRange로 격하되지 않는다.
   if (input.isChecked) {
     return 'confirmedEmpty'
@@ -382,7 +382,7 @@ export function isEarliestNavigablePeriod(cycle: BossCycle, periodKey: string): 
  *
  * 우선순위: recorded > failed > notCollected > notChecked > outOfRange > confirmedEmpty
  * - recorded가 최상위인 이유: 보여줄 기록이 있으면 그것이 화면의 주인이고, 나머지 캐릭터의
- *   미확인은 목록 안 표식으로 다룬다([[ADR-068]] 결정 3).
+ *  미확인은 목록 안 표식으로 다룬다.
  * - failed·notChecked가 앞에 오는 이유: **사용자가 할 수 있는 행동이 있는 상태**라 묻히면 안 된다.
  */
 export function resolvePagePeriodState(states: PeriodDataState[]): PeriodDataState {

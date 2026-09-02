@@ -1,4 +1,4 @@
-// 하단 안전영역 정책 가드 — [[ADR-132]] 정정 31.
+// 하단 안전영역 정책 가드 —.
 //
 // **화면 하단은 `insets.bottom` 을 직접 읽지 않는다.** `top-safe-area-policy.test.ts` 와 같은 형태의
 // 가드이고 이유도 같다 — 안드로이드 하한이 값 하나에서 나오는 것이 이 정정의 전부인데 그 «하나» 는
@@ -27,7 +27,7 @@ const SRC = join(__dirname, '..')
  * 높이에서 출발해야 하고, 여기만 인셋으로 남으면 안드로이드에서 토스트가 캡슐 위에 겹친다
  * (실제로 그렇게 된다 — 바가 34 에 뜨는데 토스트는 15 + 바 높이에 서면 7px 이 캡슐 안이다).
  *
- * `OnboardingStep` 은 [[ADR-144]] 정정 2 가 넣었다 — 온보딩의 하단(콘텐츠 몫 · 고정 액션 바)을
+ * `OnboardingStep` 은 가 넣었다 — 온보딩의 하단(콘텐츠 몫 · 고정 액션 바)을
  * 그 셸이 갖는데 `*Screen.tsx` 가 아니라, 안 적으면 이 가드의 **사각**이 된다.
  */
 const SHELLS = [
@@ -40,7 +40,7 @@ const SHELLS = [
  * `ScreenScroll` 은 **둘 다 보는 유일한 자리**라 위 목록에 없다.
  *
  * 하위 페이지에서 스크롤포트가 비우는 몫은 «내비바가 실제로 차지하는 자리» 라 하한이 아니라
- * **인셋**이어야 한다([[ADR-132]] 정정 31 의 딸린 변경 — `bottom-inset.ts`). 그래서 이 파일에는
+ * **인셋**이어야 한다(의 딸린 변경 — `bottom-inset.ts`). 그래서 이 파일에는
  * 금지 대신 **하한 값을 함께 봐야 한다**는 요구만 건다.
  */
 const SCREEN_SCROLL = join(SRC, 'components', 'templates', 'ScreenScroll', 'ScreenScroll.tsx')
@@ -80,11 +80,11 @@ const read = (path: string): { name: string; source: string } => ({
 
 const files = [...screenFiles(join(SRC, 'app')), ...SHELLS].map(read)
 
-describe('[[ADR-132]] 정정 31 — 하단 안전영역은 한 자리에서 나온다', () => {
+describe(' — 하단 안전영역은 한 자리에서 나온다', () => {
   it('검사 대상을 실제로 찾는다', () => {
     // 경로가 틀려 0개를 훑고도 초록이 되는 것이 이 부류 가드의 흔한 실패다.
     expect(files.length).toBeGreaterThan(15)
-    // 셸 셋(온보딩 단계 셸이 여기 든다 — [[ADR-144]] 정정 2) + 자기 `paddingBottom` 을 직접 주는
+    // 셸 셋(온보딩 단계 셸이 여기 든다 —) + 자기 `paddingBottom` 을 직접 주는
     // 화면 둘(처리방침 · 캐릭터 관리).
     expect(
       files.filter((file) => file.source.includes('useBottomSafeAreaPx')).length,

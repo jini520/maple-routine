@@ -13,10 +13,10 @@ import { hideSplashScreen } from './native/splash-screen'
  * 웹뷰에서 이것은 코드가 아니라 설정이었다(`capacitor.config.ts` 의 `launchAutoHide: false`).
  * RN 에서 짝이 되는 것은 이 호출이고, `expo-splash-screen` 문서가 **React 컴포넌트·훅 안이 아니라
  * 전역 스코프**에서 부르라고 명시한다 — 늦으면 이미 내려간 뒤다. 안 부르면 스플래시가 첫 렌더
- * 전에 스스로 사라져 [[ADR-025]] 가 없애려던 깜빡임(테마 복원 전 화면 노출)이 그대로 난다.
+ * 전에 스스로 사라져 가 없애려던 깜빡임(테마 복원 전 화면 노출)이 그대로 난다.
  * 내리는 것은 `AppShell` 이다(최소 표시 시간 뒤).
  *
- * ## ② 실패 안전 타이머 — [[ADR-117]] 결정 3
+ * ## ② 실패 안전 타이머 —
  *
  * 스플래시를 내리는 정상 경로는 `AppShell` 의 이펙트 타이머 하나뿐이고, 그 타이머는 **언마운트
  * 클린업이 취소한다**. 부팅 렌더가 던지면 내릴 주체가 사라져 브랜드색 화면에 갇힌다. 그래서
@@ -32,7 +32,7 @@ import { hideSplashScreen } from './native/splash-screen'
  *   React 가 끝내 마운트되지 않는"* 경우뿐이다. 번들 평가 자체가 실패하면 여기까지 오지 않는다.
  * - `SplashScreen.hideAsync()` 를 직접 부르지 않고 **포트를 거친다**(`hideSplashScreen`). 스플래시를
  *   내리는 자리가 넷이 되어도(정상·`ErrorBoundary`·이 타이머·화면) 전부 같은 한 함수를 지나게 한다
- *   ([[ADR-117]] 결정 4 가 웹에서 세운 규칙). 포트는 `installPorts()` 가 이미 넣어 뒀다.
+ *  (가 웹에서 세운 규칙). 포트는 `installPorts()` 가 이미 넣어 뒀다.
  */
 export const SPLASH_FAILSAFE_MS = 8000
 

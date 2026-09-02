@@ -1,15 +1,20 @@
 // ADR 인용 링크 검사
 //
-// 소스와 문서에 `[[ADR-NNN]]` 인용이 9,800건 넘게 있는데, 이게 맞는 주소인지 확인하는 장치가
-// 지금까지 없었다. 링크가 깨져도 타입 검사도 테스트도 그대로 통과한다. 문서가 조용히 썩는
-// 자리라서 여기서 막는다.
+// 문서에 `[[ADR-NNN]]` 인용이 수천 건 있는데 이게 맞는 주소인지 확인하는 장치가 없었다. 링크가
+// 깨져도 타입 검사도 테스트도 그대로 통과한다. 문서가 조용히 썩는 자리라서 여기서 막는다.
 //
 // 검사는 넷이다.
 //
-//   1. `[[ADR-NNN]]` 이 실제 파일을 가리키는가
-//   2. 소스가 폐기(⛔)·삭제(🗑) ADR 을 인용하지 않는가
+//   1. 소스가 ADR 을 아예 인용하지 않는가
+//   2. 문서의 인용이 실제 파일을 가리키는가
 //   3. 「결정 N」 까지 특정한 인용의 N 이 그 문서에 실제로 있는가
 //   4. `docs/ADR.md` 인덱스의 배지가 각 파일의 배지와 같은가
+//
+// ## 1번이 소스 쪽 검사 전부다
+//
+// 참조는 한 방향이다. 문서가 파일을 가리키는 것은 결정이 코드를 관리하는 일이고, 그 반대에는
+// 권한이 없다. 종전에는 「소스가 완전히 죽은 ADR 을 인용하지 않는가」를 봤는데, 인용 자체를
+// 막으면 그 검사가 할 일이 없어진다.
 //
 // ## 3번을 전부에 걸지 않는 이유
 //
@@ -17,10 +22,9 @@
 // `**결정**:` 아래 번호 목록이거나 `## 결정` 아래 `### 1.` 이고, 아예 제목 없이 문단으로만
 // 적힌 것도 있다. 형식이 여섯 갈래라 기계가 안전하게 읽어낼 수 있는 것은 지금 16개뿐이다.
 //
-// 그래서 `### 결정 1.` 제목을 쓰는 문서만 엄격히 보고(인용 1,826건 — 전부 통과), 나머지는
-// 검사하지 않는다. 대신 `CANONICAL_BASELINE` 으로 기준선을 박아 **되돌아가는 것만 막는다**.
-// 문서를 정리해 형식을 맞추면 그 ADR 은 자동으로 검사 대상이 되고, 한 번 대상이 된 것은
-// 다시 빠질 수 없다.
+// 그래서 `### 결정 1.` 제목을 쓰는 문서만 엄격히 보고 나머지는 검사하지 않는다. 대신
+// `CANONICAL_BASELINE` 으로 기준선을 박아 **되돌아가는 것만 막는다**. 문서를 정리해 형식을
+// 맞추면 그 ADR 은 자동으로 검사 대상이 되고, 한 번 대상이 된 것은 다시 빠질 수 없다.
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -30,7 +34,7 @@ const DOCS = join(REPO_ROOT, 'docs')
 const ADR_DIR = join(DOCS, 'adr')
 const INDEX = join(DOCS, 'ADR.md')
 
-/** 인용 한 건. `[[ADR-170]] 결정 11` 이면 kind='결정', numbers=['11']. */
+/** 인용 한 건. `` 이면 kind='결정', numbers=['11']. */
 type Citation = { file: string; adr: string; kind?: string; numbers: string[] }
 
 /**
@@ -106,40 +110,32 @@ function declaredNumbers(body: string): { decisions: Set<string>; corrections: S
 const BODIES = adrBodies()
 const SRC_CITATIONS = citationsIn(filesUnder(SRC, /\.tsx?$/))
 const DOC_CITATIONS = citationsIn(filesUnder(DOCS, /\.md$/))
-const ALL_CITATIONS = [...SRC_CITATIONS, ...DOC_CITATIONS]
+
+/** 이 파일은 인용을 **패턴으로** 적어야 해서 스스로를 뺀다. */
+const SELF = join('src', '__tests__', 'adr-citation-policy.test.ts')
 
 describe('ADR 인용 링크', () => {
   it('훑을 것을 실제로 찾았다', () => {
     // 경로가 틀려 0건을 훑고도 초록이 되는 것이 이 부류 가드의 흔한 실패다.
     expect(BODIES.size).toBeGreaterThan(150)
-    expect(SRC_CITATIONS.length).toBeGreaterThan(3000)
     expect(DOC_CITATIONS.length).toBeGreaterThan(3000)
   })
 
   it('모든 인용이 실제 ADR 파일을 가리킨다', () => {
-    const dangling = ALL_CITATIONS.filter((c) => !BODIES.has(c.adr)).map(
+    const dangling = DOC_CITATIONS.filter((c) => !BODIES.has(c.adr)).map(
       (c) => `${c.file} → ADR-${c.adr}`,
     )
 
     expect([...new Set(dangling)]).toEqual([])
   })
 
-  it('소스는 «완전히 죽은» ADR 을 인용하지 않는다', () => {
-    // ⛔ 라고 전부 죽은 것은 아니다(CLAUDE.md). 웹뷰 시대 ADR 중 일부는 결정 몇 개가 RN 코드로
-    // 넘어왔고, 그런 문서는 배너에 🔗 줄로 «지금도 코드가 따르는 결정» 을 못박아 뒀다. 소스가
-    // 그것을 인용하는 것은 규약대로다.
+  it('소스는 ADR 을 인용하지 않는다', () => {
+    // 참조는 한 방향이다. 문서가 파일을 가리키는 것은 결정이 코드를 관리하는 일이고, 그 반대에는
+    // 권한이 없다. 주석뿐 아니라 문자열(테스트 이름·에러 문구)도 같다 — 어느 쪽이든 ADR 을 손볼
+    // 때 소스가 검토 대상이 되는 것은 마찬가지다.
     //
-    // 막는 것은 **🔗 도 없는 문서**를 인용하는 자리다. 거기엔 살아 있는 것이 하나도 없어서,
-    // 다음 세션이 그 번호를 따라가면 «무엇을 결정했었나» 요약만 나온다.
-    const dead = [...BODIES].filter(([, body]) => ['⛔', '🗑'].includes(badgeOf(body) ?? ''))
-    expect(dead.length).toBeGreaterThan(20)
-
-    const fullyDead = new Set(
-      dead.filter(([, body]) => !body.split('\n').slice(0, 14).join('\n').includes('🔗')).map(([n]) => n),
-    )
-    expect(fullyDead.size).toBeGreaterThan(5)
-
-    const offenders = SRC_CITATIONS.filter((c) => fullyDead.has(c.adr)).map(
+    // 이 파일만 예외다. 인용을 **패턴으로** 적어야 검사를 할 수 있다.
+    const offenders = SRC_CITATIONS.filter((c) => c.file !== SELF).map(
       (c) => `${c.file} → ADR-${c.adr}`,
     )
 
@@ -150,7 +146,7 @@ describe('ADR 인용 링크', () => {
     const broken: string[] = []
     let checked = 0
 
-    for (const c of ALL_CITATIONS) {
+    for (const c of DOC_CITATIONS) {
       if (!c.kind || c.numbers.length === 0) continue
       const declared = declaredNumbers(BODIES.get(c.adr) ?? '')
       if (!declared) continue
@@ -165,7 +161,8 @@ describe('ADR 인용 링크', () => {
       }
     }
 
-    expect(checked).toBeGreaterThan(1500)
+    // 소스 인용이 사라지면서 대상이 문서뿐이 됐다. 이 숫자는 「정말 훑었나」 가드다.
+    expect(checked).toBeGreaterThan(600)
     expect([...new Set(broken)]).toEqual([])
   })
 

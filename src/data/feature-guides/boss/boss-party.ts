@@ -1,11 +1,11 @@
 import type { FeatureGuide } from '../../../types'
 // 이미지는 `packages/core/src/assets/guide/boss-party/` 에 두고 여기서 import 한다. 명시적 import 라
-// 파일명이 틀리면 **빌드가 실패한다**([[ADR-125]] 결정 4).
+// 파일명이 틀리면 **빌드가 실패한다**.
 import manageImage from '../../../assets/guide/boss-party/03-manage.webp'
 import modalImage from '../../../assets/guide/boss-party/02-modal.webp'
 
 //
-// `card` 마디는 v1.0.4 개발 노트가 `guideSectionId` 로 가리키는 착지점이다([[ADR-125]] 결정 7) —
+// `card` 마디는 v1.0.4 개발 노트가 `guideSectionId` 로 가리키는 착지점이다 —
 // **id 를 바꾸면 그 링크가 깨진다.** 데이터 테스트가 그 조합을 검사한다.
 
 export const bossPartyGuide: FeatureGuide = {

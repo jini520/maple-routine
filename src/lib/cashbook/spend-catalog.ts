@@ -1,13 +1,13 @@
 /**
- * 지출 참조표를 **읽는 자리**([[ADR-166]] · [[ADR-170]]) — 화면이 JSON 을 직접 뒤지지 않게 한다.
+ * 지출 참조표를 **읽는 자리** — 화면이 JSON 을 직접 뒤지지 않게 한다.
  *
- * 파일 자체는 [[ADR-006]] 대상이라 **사용자가 준 값 그대로**이고, 그 형태는
+ * 파일 자체는 대상이라 **사용자가 준 값 그대로**이고, 그 형태는
  * `data/__tests__/spend-catalog.spec.ts` 가 붙든다. 이 모듈은 그것을 **갈래 → 묶음 → 항목**으로
  * 집어 주고, 그 파일이 정의한 **환산 둘**(메포→메소 · 관세)을 든다.
  *
  * ## 묶음은 앱이 다시 묶지 않는다
  *
- * `category` 는 앱이 정한 축이고 `group` 은 **사용자가 적어 준 이름 그대로**다([[ADR-166]] 정정
+ * `category` 는 앱이 정한 축이고 `group` 은 **사용자가 적어 준 이름 그대로**다(정정
  * 1 ②). 차례도 파일에 적힌 순서를 지킨다 — 이름순으로 정렬하면 «에픽던전 1단계 · 2단계» 처럼
  * 사용자가 의도한 순서가 깨진다.
  *
@@ -15,7 +15,7 @@
  *
  * 나눗셈 둘 다 **버린다**. 이 저장소의 돈 계산이 그렇고(`netProceedsMeso` ·
  * `boss-crystal-prices` 의 파티 분배), 게임이 어느 쪽으로 자르는지는 아직 확인 안 됐다
- * ([[ADR-166]] 열린 질문 — 1~수 메소 차이라 급하지 않다).
+ * (열린 질문 — 1~수 메소 차이라 급하지 않다).
  */
 import spendCatalog from '../../data/spend-catalog.json'
 import type { SpendCategory } from '../../storage/spend'
@@ -44,14 +44,14 @@ export interface SpendCatalogItem {
    *
    * 문장을 파싱해 뽑지 않는다. 몬스터 파크의 문장은 축이 셋(월드당 14 · 캐릭터당 7 · 무료 2)이라
    * 어느 것이 한 건의 상한인지 **글에는 안 적혀 있다** — 앱이 고르면 그 고름이 추정이 된다
-   * ([[ADR-006]]). 사용자가 14 로 지정했다.
+   * . 사용자가 14 로 지정했다.
    *
    * 기간 누계가 아니다. 「메이플 ID당 최대 2회」 를 이틀에 걸쳐 한 번씩 적으면 기록이 둘이고 앱은
-   * 그것을 합치지 않는다 — 세는 것은 사람이 한다([[ADR-166]] 정정 1 ⑤).
+   * 그것을 합치지 않는다 — 세는 것은 사람이 한다.
    */
   readonly maxQuantity?: number
   readonly note?: string
-  /** 메이플 포인트 샵은 **기간 운영**이라 시즌마다 상품이 갈린다([[ADR-166]] 정정 1 ①). */
+  /** 메이플 포인트 샵은 **기간 운영**이라 시즌마다 상품이 갈린다. */
   readonly seasonal?: boolean
 }
 
@@ -71,7 +71,7 @@ export interface SpendCatalogGroup {
   readonly group: string
   readonly choices: readonly SpendCatalogChoice[]
   /**
-   * **지금 고를 수 있는 묶음인가**([[ADR-166]] 정정 5).
+   * **지금 고를 수 있는 묶음인가**.
    *
    * 기간제 이벤트(메이플 포인트 샵)는 열려 있을 때만 있는 것이고, 그 사실을 카탈로그의 `groups`
    * 가 든다 — **날짜로 판정하지 않는다**(이벤트가 미뤄지는 날 앱이 거짓말을 한다). 표에 없는
@@ -88,7 +88,7 @@ const ITEMS = spendCatalog.items as readonly SpendCatalogItem[]
 /** 묶음 표 — 닫힌 것만 적혀 있다(없으면 열린 것이다). 사유는 `SpendCatalogGroup.active` 주석. */
 const GROUPS = spendCatalog.groups as Readonly<Record<string, { readonly active: boolean }>>
 
-/** 관세율 — **화면이 `* 1.1` 을 들면 게임 수치가 코드에 박히는 자리**가 된다([[ADR-006]]). */
+/** 관세율 — **화면이 `* 1.1` 을 들면 게임 수치가 코드에 박히는 자리**가 된다. */
 export const SPEND_TARIFF_PERCENT = spendCatalog.tariffPercent
 
 /** 시세의 단위 — `'pointPer100mMeso'`(1억 메소당 메포). 이름이 방향을 든다. */
@@ -132,7 +132,7 @@ export function spendGroupsOf(category: SpendCategory): SpendCatalogGroup[] {
 }
 
 /**
- * 적어 둔 이름에서 **고르던 자리를 되짚는다**([[ADR-171]] 결정 2).
+ * 적어 둔 이름에서 **고르던 자리를 되짚는다**.
  *
  * 기록에는 항목 이름만 있고(「하이마운틴 2단계」) 시트는 **대표와 단계 둘**을 든다. 수정으로
  * 시트를 열려면 그 둘을 이름에서 되찾아야 한다.
@@ -141,7 +141,7 @@ export function spendGroupsOf(category: SpendCategory): SpendCatalogGroup[] {
  * 「컨텐츠」로 되살아날 수 있다.
  *
  * 못 찾으면 `null` 이다 — 예외가 아니다. 카탈로그가 바뀌어 사라진 항목이 기록에는 남아 있을 수
- * 있고, 그때 **시트가 안 열리는 것보다 값만 채워 여는 편이 낫다**([[ADR-171]] 대가).
+ * 있고, 그때 **시트가 안 열리는 것보다 값만 채워 여는 편이 낫다**(대가).
  */
 export function findSpendChoice(
   category: SpendCategory,
@@ -158,7 +158,7 @@ export function findSpendChoice(
 }
 
 /**
- * 메포 → 메소. 시세의 단위가 **1억 메소당 메포**라 이것은 **나눗셈**이다([[ADR-166]] 정정 2 ④).
+ * 메포 → 메소. 시세의 단위가 **1억 메소당 메포**라 이것은 **나눗셈**이다.
  *
  * ```
  * 메소 = 메포 × 100,000,000 ÷ 시세
@@ -177,18 +177,18 @@ export function pointToMeso(pointAmount: number, pointPer100mMeso: number): numb
 
 /**
  * 구입가에 붙는 관세(메소). **시세를 안 물어도 된다** — 관세가 «메소 가치 기준 10%» 라
- * 메소마켓 시세가 양변에서 상쇄된다([[ADR-166]] 정정 2 ②).
+ * 메소마켓 시세가 양변에서 상쇄된다.
  */
 export function tariffMesoOf(priceMeso: number): number {
   return Math.floor((priceMeso * SPEND_TARIFF_PERCENT) / 100)
 }
 
 /**
- * 저장에 들어갈 **두 값** — 총액과 그중 관세분([[ADR-166]] 정정 2 ②).
+ * 저장에 들어갈 **두 값** — 총액과 그중 관세분.
  *
  * 총액을 함께 내는 이유는 집계가 `meso_amount` 한 칸만 보면 되게 하기 위해서다(«관세를 빠뜨려
  * 덜 세는» 사고가 구조적으로 없어진다). 관세분을 따로 박는 이유는 요율이 바뀌는 날 **지난달
- * 관세가 소급해 달라지지 않게** 하기 위해서다([[ADR-069]] 결정 1 과 같은 이유).
+ * 관세가 소급해 달라지지 않게** 하기 위해서다(과 같은 이유).
  *
  * 더해서 만들고 빼서 되돌릴 수 있다 — `mesoAmount - tariffMeso === priceMeso` 가 언제나 참이다.
  */

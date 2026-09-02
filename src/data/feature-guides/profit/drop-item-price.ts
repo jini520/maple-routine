@@ -8,7 +8,7 @@ import screenImage from '../../../assets/guide/drop-item-price/01-screen.webp'
 import steperImage from '../../../assets/guide/drop-item-price/05-steper.webp'
 
 //
-// v1.0.4 개발 노트가 **두 마디**를 각각 가리킨다([[ADR-125]] 결정 7) — `where`(판매가 입력)와
+// v1.0.4 개발 노트가 **두 마디**를 각각 가리킨다 — `where`(판매가 입력)와
 // `total`(결정석·아이템 갈라 보기). **id 를 바꾸면 그 링크가 깨지고**, 데이터 테스트가 잡는다.
 
 export const dropItemPriceGuide: FeatureGuide = {

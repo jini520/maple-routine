@@ -1,6 +1,6 @@
 import type { FeatureGuide } from '../../../types'
 
-// 컨텐츠 편(`content/ingame-sync-content.ts`)과 **다른 글**이다([[ADR-125]] 결정 1 정정) —
+// 컨텐츠 편(`content/ingame-sync-content.ts`)과 **다른 글**이다(정정) —
 // 같은 넥슨 API를 쓰지만 사용자가 신경 쓸 것이 다르다(난이도 단위 기록·조회 실패 시 자동 기록 정지).
 //
 // 이미지를 넣을 때: `packages/core/src/assets/guide/ingame-sync-boss/` 에 두고 여기서 import 한다.

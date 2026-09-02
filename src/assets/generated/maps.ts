@@ -1,6 +1,6 @@
 // ⚠️ 이 파일은 생성물이다 — **손으로 고치지 마라.** 고쳐도 다음 생성에서 사라진다.
 //
-// 만드는 법: `npm run assets:gen` (scripts/generate-asset-manifest.mjs · [[ADR-129]])
+// 만드는 법: `npm run assets:gen` (scripts/generate-asset-manifest.mjs)
 // 무엇: 일일/주간 콘텐츠 카드 지역 배경 — `lib/daily-quest-backgrounds.ts`
 // 원본: src/assets/maps/*.{webp,jpg,png}
 //

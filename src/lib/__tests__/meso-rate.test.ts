@@ -68,7 +68,7 @@ describe('mesoPercentOf — 표기 둘을 한 정규식이 받는다', () => {
   })
 
   it('수치가 없는 크리스탈 옵션명은 0 이다', () => {
-    // union_artifact_crystal 의 `crystal_option_name_*` 은 이름뿐이고 값이 없다([[ADR-177]] 결정 5 ②).
+    // union_artifact_crystal 의 `crystal_option_name_*` 은 이름뿐이고 값이 없다.
     expect(mesoPercentOf('메소 획득량 증가')).toBe(0)
   })
 
@@ -121,7 +121,7 @@ describe('장비 — 잠재 + 에디셔널 합에 100% 캡, 프리셋 단위', (
   })
 
   it('현재 적용본과 프리셋 배열을 합치지 않는다 — 최댓값 하나만 센다', () => {
-    // 같이 오는 필드라 전부 훑으면 200 으로 부푼다([[ADR-177]] 결정 5 ③).
+    // 같이 오는 필드라 전부 훑으면 200 으로 부푼다.
     const meso100 = Array.from({ length: 5 }, () => item([POT(20)]))
     expect(only({ itemEquipment: { item_equipment: meso100, item_equipment_preset_1: meso100 } })).toBe(100)
   })
@@ -149,7 +149,7 @@ describe('어빌리티 — 프리셋 넷 중 최댓값', () => {
   })
 
   it('장비와 어빌리티는 축이 달라 각각의 최댓값이 더해진다', () => {
-    // 프리셋은 독립 전환이라 «장비 P1 + 어빌 P3» 세팅이 실제로 도달 가능하다([[ADR-177]] 결정 4).
+    // 프리셋은 독립 전환이라 «장비 P1 + 어빌 P3» 세팅이 실제로 도달 가능하다.
     expect(
       maxMesoRateOf({
         itemEquipment: { item_equipment_preset_1: [item([POT(20)])], item_equipment_preset_2: [] },

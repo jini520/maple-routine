@@ -1,6 +1,6 @@
 // ⚠️ 이 파일은 생성물이다 — **손으로 고치지 마라.** 고쳐도 다음 생성에서 사라진다.
 //
-// 만드는 법: `npm run assets:gen` (scripts/generate-asset-manifest.mjs · [[ADR-129]])
+// 만드는 법: `npm run assets:gen` (scripts/generate-asset-manifest.mjs)
 // 무엇: 지역 아이콘 — `lib/daily-quest-icons.ts`(배경과 같은 슬러그를 쓴다)
 // 원본: src/assets/maps/icons/*.{png,webp}
 //

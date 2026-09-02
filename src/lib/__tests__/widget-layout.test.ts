@@ -1,4 +1,4 @@
-// 좌표 배치의 **검증과 해석**([[ADR-147]] 결정 2 · 정정 1). 배치를 손으로 적기로 한 이상 그
+// 좌표 배치의 **검증과 해석**. 배치를 손으로 적기로 한 이상 그
 // 실수는 반드시 나므로, 자동 패킹 대신 «검증» 을 산 값이 여기서 회수된다.
 
 import { GRID_GAP, GRID_ROW_HEIGHT, resolveWidgetGridMetrics } from '../today/widget-grid-metrics'
@@ -12,7 +12,7 @@ const sizes = {
   수익: [{ w: 4, h: 3 }],
 } as const
 
-/** [[ADR-147]] 정정 13 의 기본 배치 앞부분 — 실제로 쓸 좌표를 그대로 쓴다. */
+/** 의 기본 배치 앞부분 — 실제로 쓸 좌표를 그대로 쓴다. */
 const 유효한_배치: WidgetPlacement[] = [
   { id: '대표', col: 0, row: 0, w: 4, h: 1 },
   { id: '초기화', col: 0, row: 1, w: 2, h: 1 },
@@ -21,7 +21,7 @@ const 유효한_배치: WidgetPlacement[] = [
   { id: '수익', col: 0, row: 3, w: 4, h: 3 },
 ]
 
-describe('validateWidgetLayout — 손으로 적은 좌표를 지킨다 ([[ADR-147]] 결정 2)', () => {
+describe('validateWidgetLayout — 손으로 적은 좌표를 지킨다', () => {
   it('유효한 배치는 빈 배열이다', () => {
     expect(validateWidgetLayout(유효한_배치, sizes)).toEqual([])
   })
@@ -92,7 +92,7 @@ describe('validateWidgetLayout — 손으로 적은 좌표를 지킨다 ([[ADR-1
   })
 
   // 이것이 «크기별로 다르게 그린다» 를 **약속으로 만드는** 자리다 — 선언 안 한 크기를 받으면
-  // 위젯은 그리는 방법을 모른다([[ADR-147]] 결정 3).
+  // 위젯은 그리는 방법을 모른다.
   it('위젯이 선언하지 않은 크기를 잡는다', () => {
     const violations = validateWidgetLayout([{ id: '대표', col: 0, row: 0, w: 4, h: 2 }], sizes)
 
@@ -115,7 +115,7 @@ describe('validateWidgetLayout — 손으로 적은 좌표를 지킨다 ([[ADR-1
 
   // 가로를 다 쓰면 옆에 아무도 없으므로 늘어난 만큼 아래 전부가 **같은 값으로** 내려간다.
   // 좁은 타일에 auto 를 허용하면 옆 칸과 아래 칸이 서로 다른 만큼 밀려 좌표가 무너진다.
-  it("w < 4 인 타일은 h: 'auto' 를 쓸 수 없다 ([[ADR-147]] 정정 1)", () => {
+  it("w < 4 인 타일은 h: 'auto' 를 쓸 수 없다", () => {
     const violations = validateWidgetLayout([{ id: '반쪽', col: 0, row: 0, w: 2, h: 'auto' }], {
       반쪽: [{ w: 2, h: 'auto' }],
     })
@@ -126,7 +126,7 @@ describe('validateWidgetLayout — 손으로 적은 좌표를 지킨다 ([[ADR-1
   })
 })
 
-describe('resolveWidgetPositions — 좌표를 절대 위치로 ([[ADR-147]] 결정 2)', () => {
+describe('resolveWidgetPositions — 좌표를 절대 위치로', () => {
   const metrics = resolveWidgetGridMetrics(360)
 
   it('빈 배치는 높이 0 이다', () => {
@@ -145,7 +145,7 @@ describe('resolveWidgetPositions — 좌표를 절대 위치로 ([[ADR-147]] 결
     // 위 = row × (행 높이 + 간격)
     expect(byId['대표'].topPx).toBe(0)
     // 세로는 **행 높이의 함수**다 — 숫자를 손으로 적으면 행 높이를 조정할 때마다 여기가 깨진다
-    // ([[ADR-163]] 결정 3 으로 76 → 82 가 됐다).
+    // (으로 76 → 82 가 됐다).
     expect(byId['초기화'].topPx).toBe(GRID_ROW_HEIGHT + GRID_GAP)
     expect(byId['수익'].topPx).toBe(3 * (GRID_ROW_HEIGHT + GRID_GAP))
     expect(byId['수익'].heightPx).toBe(GRID_ROW_HEIGHT * 3 + GRID_GAP * 2)
@@ -178,7 +178,7 @@ describe('resolveWidgetPositions — 좌표를 절대 위치로 ([[ADR-147]] 결
     expect(실측).toEqual(기준)
   })
 
-  // 캐릭터 4명이면 `55 + 45 × 4 = 235` 인데 최소 높이가 행 높이라 그만큼이 초과분이다([[ADR-147]] 정정 1).
+  // 캐릭터 4명이면 `55 + 45 × 4 = 235` 인데 최소 높이가 행 높이라 그만큼이 초과분이다.
   it('auto 초과분만큼 아래 타일 전부가 내려간다', () => {
     const 기준 = resolveWidgetPositions(유효한_배치, metrics, {})
     const 늘어남 = resolveWidgetPositions(유효한_배치, metrics, { 스케줄: GRID_ROW_HEIGHT + 160 })

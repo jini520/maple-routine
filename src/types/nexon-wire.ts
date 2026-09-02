@@ -21,10 +21,10 @@ export interface NexonCharacterBasicResponse {
   character_level: number
   character_image: string
   access_flag: 'true' | 'false'
-  // 가입한 길드명(사용자 확인 2026-07-29, [[ADR-057]]). 미가입이면 null 또는 빈 문자열로 오고,
+  // 가입한 길드명(사용자 확인 2026-07-29). 미가입이면 null 또는 빈 문자열로 오고,
   // 응답 자체에 필드가 없을 수 있으므로 옵셔널이다 — 그 둘의 구분은 normalizeCharacterBasic이 한다.
   character_guild_name?: string | null
-  // 누적 경험치 절대값(사용자 확인 2026-08-17, [[ADR-147]] 결정 7). 도메인으로는 나르지 않는다 —
+  // 누적 경험치 절대값(사용자 확인 2026-08-17). 도메인으로는 나르지 않는다 —
   // 레벨이 오를수록 커지는 값이라 "얼마나 남았나"를 말하지 못한다.
   character_exp?: number
   // 현재 레벨 진행률(%). **number가 아니라 string이다** — `"80.300"` 처럼 소수 3자리 문자열로 온다
@@ -78,7 +78,7 @@ export interface NexonSchedulerCharacterStateWire {
   weekly_boss_clear_limit_count: number
 }
 
-// ── 메소 획득량을 읽는 다섯 ([[ADR-177]]) ─────────────────────────────────────────────
+// ── 메소 획득량을 읽는 다섯 ─────────────────────────────────────────────
 //
 // **읽는 필드만 적는다.** 응답은 훨씬 넓지만(장비 하나에만 30여 칸) 여기 없는 칸은 파서가 안 보므로
 // 적어 두면 «쓰는 것» 과 «오는 것» 이 뒤섞인다. 전부 옵셔널인 이유는 **미접속 캐릭터의 응답이
@@ -97,7 +97,7 @@ export interface NexonItemEquipmentItem {
 
 /**
  * 장비 응답. **현재 적용본(`item_equipment`)과 프리셋 셋이 같이 온다** — 전부 훑으면 값이
- * 부풀려지므로 파서는 넷을 각각 세서 최댓값을 고른다([[ADR-177]] 결정 5 ③).
+ * 부풀려지므로 파서는 넷을 각각 세서 최댓값을 고른다.
  */
 export interface NexonItemEquipmentResponse {
   item_equipment?: NexonItemEquipmentItem[] | null
@@ -145,7 +145,7 @@ export interface NexonUnionStateStatPreset {
 /**
  * 유니온 공격대. **`union_raider_preset_1~5` 는 전 계정 `null` 인 죽은 필드**이고
  * (`union_block`·`union_occupied_stat` 도 빈 배열) 파서는 현재 적용본으로 폴백한다.
- * 타입에 남겨 두는 이유는 되살아났을 때 **코드가 자동으로 잡게** 하기 위함이다([[ADR-177]] 결정 5 ①).
+ * 타입에 남겨 두는 이유는 되살아났을 때 **코드가 자동으로 잡게** 하기 위함이다.
  */
 export interface NexonUnionRaiderResponse {
   union_raider_stat?: string[] | null
@@ -191,7 +191,7 @@ export interface NexonCharacterSkill {
 
 /**
  * 스킬 목록(`character/skill`). **차수를 지정해서 부른다** — 챌린저스는 0차에 있다
- * (사용자 확인 2026-09-01, [[ADR-006]]).
+ * (사용자 확인 2026-09-01).
  *
  * 메획을 읽는 다섯과 달리 이 응답에서 보는 것은 **이름과 설명 두 칸**뿐이다.
  */

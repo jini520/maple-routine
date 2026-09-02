@@ -213,8 +213,8 @@ describe('countClearedWeeklyBosses (ADR-031)', () => {
   })
 })
 
-describe('isWeeklyClearLimitReached ([[ADR-187]] 결정 1)', () => {
-  // 참조표에서 앞에서부터 뽑는다 — 보스 이름을 손으로 적지 않는다([[ADR-006]]).
+describe('isWeeklyClearLimitReached', () => {
+  // 참조표에서 앞에서부터 뽑는다 — 보스 이름을 손으로 적지 않는다.
   const WEEKLY_NAMES = (weeklyBossesData.weekly as { boss: string }[]).map((entry) => entry.boss)
 
   function cleared(count: number): MatchedBoss[] {
@@ -232,7 +232,7 @@ describe('isWeeklyClearLimitReached ([[ADR-187]] 결정 1)', () => {
   })
 
   // 세는 규칙은 countClearedWeeklyBosses 그대로여야 한다 — 두 벌이 되면 «선택은 12/12 인데
-  // 처치는 11/12» 가 다시 생긴다([[ADR-055]] 결정 3).
+  // 처치는 11/12» 가 다시 생긴다.
   it('시즌 보스는 한도를 채우지 않는다', () => {
     const bosses = [
       ...cleared(WEEKLY_BOSS_CLEAR_LIMIT - 1),
@@ -376,10 +376,10 @@ describe('getBossReferenceOrder', () => {
   })
 })
 
-// [[ADR-186]]: 앱의 보스 목록 넷(스케줄러 · today 펼침 · 보스 수익 · 가계부 타일)이 이 비교자
-// 하나를 부른다. 키 셋은 [[ADR-036]] 결정 3 이 보스 수익에 정한 그것 그대로다 — 정렬 코드가 네
+// : 앱의 보스 목록 넷(스케줄러 · today 펼침 · 보스 수익 · 가계부 타일)이 이 비교자
+// 하나를 부른다. 키 셋은 이 보스 수익에 정한 그것 그대로다 — 정렬 코드가 네
 // 벌이면 값을 바꿀 때 한 벌만 바뀐다.
-describe('compareBossOrder ([[ADR-186]])', () => {
+describe('compareBossOrder', () => {
   function sorted(entries: { boss: string; difficulty: string }[]): string[] {
     return [...entries].sort(compareBossOrder).map((entry) => `${entry.boss}:${entry.difficulty}`)
   }
@@ -405,8 +405,8 @@ describe('compareBossOrder ([[ADR-186]])', () => {
     ).toEqual(['스우:이지', '스우:노멀', '스우:하드', '스우:익스트림'])
   })
 
-  // 참조에 없는 보스([[ADR-008]] 매칭 실패 원문명)는 맨 뒤이고, 그들끼리도 완전 결정적이어야
-  // 한다 — 입력 순서에 기대면 [[ADR-036]] 이 없앤 비결정성이 되살아난다.
+  // 참조에 없는 보스(매칭 실패 원문명)는 맨 뒤이고, 그들끼리도 완전 결정적이어야
+  // 한다 — 입력 순서에 기대면 이 없앤 비결정성이 되살아난다.
   it('참조에 없는 보스는 맨 뒤로 가고 그들끼리는 난이도·이름으로 갈린다', () => {
     expect(
       sorted([

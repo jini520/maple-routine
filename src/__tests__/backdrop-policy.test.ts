@@ -1,8 +1,8 @@
-// 배경 정책 가드 — [[ADR-133]].
+// 배경 정책 가드 —.
 //
 // **배경은 벽지 한 장뿐이다.** 그리는 곳은 `ThemeBackdrop` 하나이고, 헤더는 자기 배경을 칠하지
-// 않는다. [[ADR-088]] 결정 5-1 이 헤더 자리에 그림 조각을 따로 그리게 한 것은 «헤더가 불투명하고
-// 화면에 고정돼 있다» 는 전제 위에 있었는데, [[ADR-131]] 이 그 전제를 없앴다.
+// 않는다. 이 헤더 자리에 그림 조각을 따로 그리게 한 것은 «헤더가 불투명하고
+// 화면에 고정돼 있다» 는 전제 위에 있었는데 이 그 전제를 없앴다.
 //
 // ## 왜 «없음» 을 테스트하나
 //
@@ -40,11 +40,11 @@ function stripComments(source: string): string {
 }
 
 const FORBIDDEN: Array<{ pattern: RegExp; what: string }> = [
-  { pattern: /\bThemeHeaderBackdrop\b/, what: '[[ADR-088]] 결정 5-1 의 헤더 그림 조각' },
+  { pattern: /\bThemeHeaderBackdrop\b/, what: '헤더 그림 조각' },
   { pattern: /z-10 bg-bg/, what: '헤더 셸의 불투명 배경' },
 ]
 
-describe('[[ADR-133]] 배경은 벽지 한 장뿐이다', () => {
+describe(' 배경은 벽지 한 장뿐이다', () => {
   const files = sourceFiles(SRC)
 
   it('검사 대상 파일을 실제로 찾는다', () => {

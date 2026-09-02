@@ -29,7 +29,7 @@ export function useThemeAppearance(): ThemeAppearance {
 }
 
 /**
- * 라이트/다크 ([[ADR-122]] · [[ADR-064]] 결정 8).
+ * 라이트/다크.
  *
  * **테마 이름으로 분기하지 말고 이 값으로 분기하라.** 이름 목록(`DARK_THEMES`)은 이미 한 번 폐기된
  * 방식이고, 테마가 늘 때마다 목록을 고쳐야 하며 빠뜨리면 조용히 틀린다.
@@ -43,7 +43,7 @@ export function useThemeMode(): ThemeMode {
 }
 
 /**
- * 스크롤 인디케이터 명암 — 웹의 `color-scheme`·`scrollbar-color` 자리([[ADR-099]] 결정 5·6).
+ * 스크롤 인디케이터 명암 — 웹의 `color-scheme`·`scrollbar-color` 자리.
  *
  * 웹에서는 브라우저가 그리는 크롬이라 CSS 로 **알려 줘야** 했고(안 걸면 라이트 테마에서 흰
  * 인디케이터가 나왔다 — 실기기 2026-08-06), RN 에서는 우리가 `ScrollView` 에 **프롭으로 지정한다**.

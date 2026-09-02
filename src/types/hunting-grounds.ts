@@ -1,7 +1,7 @@
 /**
- * 사냥터 참조표의 모양([[ADR-175]] 결정 2).
+ * 사냥터 참조표의 모양.
  *
- * 값은 `src/data/hunting-grounds.json` 이고 **전부 사용자가 준 것**이다([[ADR-006]]) — 이 파일은
+ * 값은 `src/data/hunting-grounds.json` 이고 **전부 사용자가 준 것**이다 — 이 파일은
  * 그 형태에 이름만 붙인다. 형태가 실제 파일과 맞는지는 `data/__tests__/hunting-grounds.spec.ts`.
  */
 
@@ -23,7 +23,7 @@ export interface HuntingGround {
 }
 
 export interface HuntingRegion {
-  /** `assets/maps/icons/` 의 기존 지역 슬러그와 **같은 글자**다([[ADR-175]] 결정 2). */
+  /** `assets/maps/icons/` 의 기존 지역 슬러그와 **같은 글자**다. */
   readonly slug: string
   readonly name: string
   /** 「아케인 리버」·「그란디스」 — 사용자가 나눈 묶음이다. */

@@ -3,7 +3,7 @@ import huntingGrounds from '../hunting-grounds.json'
 const REGIONS = huntingGrounds.regions
 const GROUNDS = REGIONS.flatMap((region) => region.grounds)
 
-describe('사냥터 참조표 정합성 ([[ADR-175]] 결정 2)', () => {
+describe('사냥터 참조표 정합성', () => {
   it('지역 21개 · 사냥터 408개 — 사용자가 준 그대로다', () => {
     expect(REGIONS).toHaveLength(21)
     expect(GROUNDS).toHaveLength(408)
@@ -69,7 +69,7 @@ describe('사냥터 참조표 정합성 ([[ADR-175]] 결정 2)', () => {
 
   /**
    * `minLevel`·`maxLevel` 은 **추천 캐릭터 레벨**이고 그 안의 몬스터 레벨과 다를 수 있다
-   * ([[ADR-175]] 결정 6). 목록을 거르는 근거는 몬스터 쪽이다(`lib/cashbook/hunting-grounds.ts`).
+   * . 목록을 거르는 근거는 몬스터 쪽이다(`lib/cashbook/hunting-grounds.ts`).
    */
   it('앞의 둘은 **정정된 범위**다 — 상한 290 은 오기였다 (사용자 정정 2026-08-28)', () => {
     const byName = (name: string) => REGIONS.find((region) => region.name === name)
@@ -79,7 +79,7 @@ describe('사냥터 참조표 정합성 ([[ADR-175]] 결정 2)', () => {
 
   it('「세 갈래길 1」 은 **30마리**다 — 15 는 오기였다 (사용자 정정 2026-08-28)', () => {
     // 바로 옆 「세 갈래길 2」 가 30마리인데 「1」 만 15 로 적혀 있었다. 원문을 옮길 때 섞인 값이고,
-    // 사용자가 30 으로 확정했다([[ADR-006]] — 앱이 추정해 고친 것이 아니다).
+    // 사용자가 30 으로 확정했다(— 앱이 추정해 고친 것이 아니다).
     const 소멸의여로 = REGIONS.find((region) => region.name === '소멸의 여로')!
     const 셋 = 소멸의여로.grounds.filter((ground) => ground.name.startsWith('세 갈래길'))
     expect(셋.map((ground) => ground.mobs)).toEqual([30, 30])
@@ -100,7 +100,7 @@ describe('사냥터 참조표 정합성 ([[ADR-175]] 결정 2)', () => {
   })
 
   /**
-   * 효율 조각 다섯은 **맵의 마릿수에서 나온다**([[ADR-175]] 결정 3) — 두 조각이 같은 %로
+   * 효율 조각 다섯은 **맵의 마릿수에서 나온다** — 두 조각이 같은 %로
    * 반올림되면 세그먼트가 어느 것을 고른 것인지 못 가린다. 마릿수가 아주 커지면(≥ 200) 실제로
    * 겹치므로, 데이터가 그 방향으로 자라면 여기서 먼저 걸린다.
    */
