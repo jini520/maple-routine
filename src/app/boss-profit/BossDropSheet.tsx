@@ -50,7 +50,7 @@ import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { DropEffectOverlay } from '../../components/organisms/DropEffectOverlay/DropEffectOverlay'
 import { ChevronLeftIcon, FlaskConicalIcon, PackageOpenIcon, PinIcon, SwordIcon } from '../../lib/icons'
-import { TABULAR_NUMS } from '../../lib/text-styles'
+import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { DropPricePadContent } from './DropPricePad'
 
 // 선택 가능한 카테고리(장비·소비)의 라벨과 아이콘([[ADR-040]] 결정 4 — 노란 점 대신 아이콘). 고정은

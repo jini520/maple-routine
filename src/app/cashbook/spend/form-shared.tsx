@@ -8,7 +8,7 @@ import { Pressable, View } from 'react-native'
 
 import { Text } from '../../../components/atoms'
 import { ChevronLeftIcon } from '../../../lib/icons'
-import { TABULAR_NUMS } from '../../../lib/text-styles'
+import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { SelectField } from '../../../components/organisms/SelectField/SelectField'
 import { characterOptions } from '../character-options'
 import { DateStepper } from '../sheet-fields'

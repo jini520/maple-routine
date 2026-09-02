@@ -18,7 +18,7 @@ import {
   renderAtom,
   기본테마,
 } from '../../../../components/__tests__/render-atom'
-import { DROUGHT_TIER_STYLES } from '../../../../lib/drought-tier-styles'
+import { DROUGHT_TIER_STYLES } from '../../../../constants/style/drought-tier-styles'
 import { ThemeProvider } from '../../../../theme/ThemeProvider'
 import { ValuableDroughtWidget } from '../ValuableDroughtWidget'
 import { 가뭄, 뷰모델, 빈_뷰모델 } from './widget-fixture'

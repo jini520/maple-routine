@@ -1,4 +1,4 @@
-import type { BossDifficulty } from '../types'
+import type { BossDifficulty } from '../../types'
 
 /**
  * 한 칸짜리 표기 ([[ADR-172]] 정정 2). 글자를 놓을 자리가 없는 데서 쓴다. 가계부의 처치 타일이

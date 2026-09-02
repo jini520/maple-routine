@@ -33,8 +33,8 @@ import {
   transferPerMember,
   type FeePercent,
 } from '../../lib/item-split'
-import { MESO_QUICK_ADDS } from '../../lib/meso-quick-adds'
-import { TABULAR_NUMS } from '../../lib/text-styles'
+import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
+import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useScreenNavigation } from '../use-screen-navigation'
 import { ITEM_SPLIT_TOOL_NAME } from './tool-names'
 

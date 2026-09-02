@@ -11,7 +11,7 @@ import { View } from 'react-native'
 
 import { Text } from '../../atoms'
 import { formatMesoUnits } from '../../../lib/drop-price'
-import { TABULAR_NUMS } from '../../../lib/text-styles'
+import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 
 export interface AmountFigureProps {
   value: number

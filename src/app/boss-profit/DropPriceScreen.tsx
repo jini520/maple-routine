@@ -61,7 +61,7 @@ import { LoadingState } from '../../components/molecules/LoadingState/LoadingSta
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, PackageOpenIcon } from '../../lib/icons'
-import { TABULAR_NUMS } from '../../lib/text-styles'
+import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { useScreenNavigation } from '../use-screen-navigation'
 import { avatarFaceCropStyle } from './CharacterAvatar'

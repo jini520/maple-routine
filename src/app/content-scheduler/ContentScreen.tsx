@@ -58,7 +58,7 @@ import { LoadingState } from '../../components/molecules/LoadingState/LoadingSta
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { SPIN_ANIMATION } from '../../lib/animation'
+import { SPIN_ANIMATION } from '../../constants/style/animation'
 import { AnimatedView } from '../../lib/nativewind-interop'
 import { ListChecksIcon, RefreshCwIcon } from '../../lib/icons'
 import { useTopSafeAreaPx } from '../../lib/safe-area'

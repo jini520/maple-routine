@@ -60,7 +60,7 @@
 | 사냥터 참조표 | `src/data/hunting-grounds.json` + `lib/hunting-grounds.ts` | 지역 21 · 사냥터 408([[ADR-175]] 결정 2). 읽는 쪽이 쓰는 것은 **다섯**이다. 지역의 몬스터 레벨 범위(`monsterLevelRangeOf`. 참조표의 추천 레벨과 **다르다**) · 캐릭터 레벨로 지역 거르기(`huntingRegionsForLevel`) · 사냥터 줄 세우기(`huntingGroundsFor`·`levelGapOf`) · 지역의 사냥터 목록 · 이름으로 되짚기(`findHuntingGround`. 이름이 전역 유일이라 지역이 따라온다) |
 | 사냥 메소 계산 | `lib/hunting-meso.ts` | ‘어디서 · 얼마나 · 무슨 버프로’ → 메소. 젠·메소 계수·**레벨 차이 페널티 표 둘**·효율·아이템 증가율이 전부 여기 있다([[ADR-175]] 결정 3·4). 화면은 이 함수 하나만 부른다 |
 | 캐릭터 메소 획득량 | `lib/meso-rate.ts` + `nexon/meso-rate` + `storage/meso-rate-cache` | 캐릭터에 박힌 메획을 **최대 세팅**으로 낸다([[ADR-177]]). 소스 다섯(장비 잠재·에디셔널 · 어빌리티 · 심볼 · 유니온 공격대 · 유니온 아티팩트)을 **직접 파싱**하고 `character/stat` 환산값은 **안 쓴다**(현재 프리셋이고 일시 버프가 섞인다). 장비는 **잠재+에디셔널 합에 100% 캡**을 **프리셋 단위**로 건다 |
-| 포스 아이콘 | `lib/force-icons.ts` + `src/assets/force/` | `forceType`(`arcane`·`authentic`) → 그림. 에셋 그룹 `force`([[ADR-129]]) |
+| 포스 아이콘 | `lib/artwork.ts` + `src/assets/force/` | `forceType`(`arcane`·`authentic`) → 그림. 에셋 그룹 `force`([[ADR-129]]) |
 | 오케스트레이션 | `features/cashbook/records.ts` | 행의 신원(`id`·`recordedAt`) · 시세 기억 · **네 원천을 하루로 접기** · 줄의 표기(`recordTitleOf`·`recordCountLabelOf`) · **그날 합계**(`dayTotalsOf`) |
 | 보스 날짜 캐기 | `features/boss-profit/defeat-dates.ts` | 날짜별 응답을 훑어 ‘뒤집힌 날’을 찾아 `defeated_on` 을 채운다([[ADR-172]]) |
 | 입력 | `app/cashbook/SpendSheet.tsx` · `IncomeSheet.tsx` · `components/organisms/SpeedDial/`(`speed-dial-motion` 움직임 · `speed-dial-metrics` 치수) | 떠 있는 ＋ → 종류 둘 → 시트 |

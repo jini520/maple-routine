@@ -11,7 +11,6 @@
 import { fireEvent } from '@testing-library/react-native'
 
 import { renderOverlay, type AtomElement } from '../../../__tests__/render-atom'
-import { MEDIA_ART_MASK_HERO } from '../../../../lib/media-card'
 import { PartySizeModal } from '../PartySizeModal'
 
 /** 아트·베일은 `aria-hidden` 이라 기본 질의에서 빠진다(장식이라 그것이 옳다). */
@@ -130,15 +129,13 @@ describe('PartySizeModal', () => {
     expect(getByTestId('faded-illustration-veil', HIDDEN)).toBeTruthy()
   })
 
-  // 페이드 끝점이 카드와 다르다(`MEDIA_ART_MASK_HERO` — 42%/82%). 같은 값을 쓰면 넓고 낮은
+  // 페이드 끝점이 카드와 다르다(히어로 42%/82%). 같은 값을 쓰면 넓고 낮은
   // 히어로에서 그림이 너무 일찍 끊긴다.
   it('베일은 카드가 아니라 히어로 정지점을 쓴다', async () => {
     const { getByTestId } = await renderOverlay(<PartySizeModal {...props()} />)
 
-    // 웹 마스크(`… 42%, transparent 82%`)의 정지점 + 네이티브 전용 끝점 1.
-    const stops = [...MEDIA_ART_MASK_HERO.matchAll(/(\d+)%/g)].map(([, v]) => Number(v) / 100)
-
-    expect(getByTestId('faded-illustration-veil', HIDDEN).props.locations).toEqual([...stops, 1])
+    // 히어로 끝점 42/82 + 네이티브 전용 끝점 1(`design-system.md` 「파티 인원 모달」).
+    expect(getByTestId('faded-illustration-veil', HIDDEN).props.locations).toEqual([0, 0.42, 0.82, 1])
   })
 
   // 반대쪽 — 매핑에 없는 슬러그는 아트를 안 만든다(그림 없는 보스가 타던 분기 그대로).

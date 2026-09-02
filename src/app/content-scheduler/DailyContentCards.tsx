@@ -12,7 +12,7 @@
 //    가 클래스가 아니라 변수 스코프라([[ADR-064]] 결정 5) 컴포넌트가 그 자리를 맡는다.
 // ③ **`flex-row` 를 명시한다.** 웹 `flex` 의 기본 방향은 row 지만 RN 은 column 이다 — 빠뜨리면
 //    에러 없이 세로로 쌓인다.
-// ④ `<img>` → `<Image>`, `<span>` → `<Text>`, `text-shadow` → `MEDIA_TEXT_SHADOW_STYLE`
+// ④ `<img>` → `<Image>`, `<span>` → `<Text>`, `text-shadow` → `ILLUSTRATION_TEXT_SHADOW_STYLE`
 //    (`lib/text-styles.ts` — RN 은 그림자를 하나만 표현할 수 있어 강한 쪽을 남긴다).
 import { isContentBlocked } from '../../lib/required-level'
 import {
@@ -26,7 +26,7 @@ import type { DailyContent } from '../../types'
 import { Image, View } from 'react-native'
 
 import { Badge, Card, ProgressBar, Text } from '../../components/atoms'
-import { MEDIA_TEXT_SHADOW_STYLE } from '../../lib/text-styles'
+import { ILLUSTRATION_TEXT_SHADOW_STYLE } from '../../constants/style/text-styles'
 import { QUEST_STATE_LABELS, QUEST_STATE_VARIANT } from './content-badges'
 import { IllustratedCard, FadedIllustration } from '../../components/molecules/FadedIllustration/FadedIllustration'
 
@@ -64,7 +64,7 @@ export function DailyQuestCard(props: {
               className="h-6 w-6 shrink-0"
             />
           )}
-          <Text className="text-sm font-medium text-text" style={MEDIA_TEXT_SHADOW_STYLE}>
+          <Text className="text-sm font-medium text-text" style={ILLUSTRATION_TEXT_SHADOW_STYLE}>
             {displayName}
           </Text>
         </View>
@@ -111,7 +111,7 @@ export function MonsterParkCard(props: {
                 className="h-6 w-6 shrink-0"
               />
             )}
-            <Text className="text-sm font-medium text-text" style={MEDIA_TEXT_SHADOW_STYLE}>
+            <Text className="text-sm font-medium text-text" style={ILLUSTRATION_TEXT_SHADOW_STYLE}>
               {content.name}
             </Text>
           </View>

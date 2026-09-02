@@ -1,7 +1,7 @@
 # 게임 레퍼런스 데이터 (src/data)
 
 > **범위**: `src/data/*.json` 정적 참조 데이터의 역할·조인 방식·컨벤션. **CRITICAL: AI가 수치를 임의 추정해 채우지 않는다. 반드시 사용자(도메인 전문가) 확인 후 반영**([[ADR-006]]).
-> **관련 소스**: `src/data/*.json` · `src/data/__tests__/data-consistency.spec.ts` · `lib/boss-matching` · `lib/boss-icons` · `lib/item-icons`.
+> **관련 소스**: `src/data/*.json` · `src/data/__tests__/data-consistency.spec.ts` · `lib/boss-matching` · `lib/artwork` · `lib/artwork`.
 > **관련 ADR**: [[ADR-006]] [[ADR-007]] [[ADR-010]] [[ADR-011]] [[ADR-030]] [[ADR-055]]. **관련 문서**: [nexon-api.md](./nexon-api.md), [features/item-drop.md](../features/item-drop.md), [features/boss-profit.md](../features/boss-profit.md).
 
 ## 원칙 ([[ADR-006]])

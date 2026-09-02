@@ -4,7 +4,6 @@
  * @see [[ADR-018]] 결정 8 — bleed 레시피(38%/76% 페이드 · 블러 없음)
  * @see [[ADR-064]] 결정 5 — 카드 안은 색 기준이 `media-scope` 로 갈린다
  */
-import { MEDIA_ART_OPACITY } from '../../../lib/media-card'
 import type { ImageAssetRef } from '../../../types/image-asset'
 import { Image, View } from 'react-native'
 import { vars } from 'nativewind'
@@ -17,13 +16,17 @@ import { Card } from '../../atoms'
 import { imageNaturalSize } from '../../../lib/image-aspect'
 import { imageCropStyle, resolveImageCropLayout, type ImageCrop } from '../../../lib/image-crop'
 /**
- * 웹 `MEDIA_ART_FILTER`(`saturate(.85) brightness(.8)`)의 RN 짝. CSS 문자열을 런타임에 파싱하지 않고
- * 값으로 적는다. 두 벌이 어긋나는 것은 테스트가 `lib/media-card` 의 원본과 대조해 막는다.
+ * 그림을 눌러 위의 글자가 읽히게 하는 값 둘.
+ *
+ * 웹은 `filter: saturate(.85) brightness(.8)` + `opacity: .65` 였다. 옮긴 값이 맞는지는 **한 번
+ * 확인하고 `docs/foundation/design-system.md` 에 적었다** — 웹 소스가 [[ADR-155]] 로 없어져 더
+ * 갈릴 원본이 없으므로 대조용 CSS 사본을 코드에 두지 않는다.
  */
+const VEIL_OPACITY = 0.65
 const VEIL_FILTER = [{ saturate: 0.85 }, { brightness: 0.8 }]
 
 /**
- * 베일 그라데이션. `lib/media-card` 의 웹 마스크를 **뒤집은** 값이라, 마스크가 1인 구간이 덧칠 0 이다.
+ * 베일 그라데이션. 웹 마스크를 **뒤집은** 값이라, 마스크가 1인 구간이 덧칠 0 이다.
  *
  * RN 에는 마스크가 없다. 대신 카드 표면색을 반대 알파로 덧칠하면 **같은 색이 나온다**(근사가 아니다).
  * 마스크 알파를 m 이라 할 때 `bg(1−0.65m) + art·0.65m` 와 `[bg(1−0.65) + art·0.65]` 위에 알파 `1−m`
@@ -31,6 +34,8 @@ const VEIL_FILTER = [{ saturate: 0.85 }, { brightness: 0.8 }]
  *
  * 마지막 정지점 `1` 은 웹에 없다. `expo-linear-gradient` 가 정지점 **사이만** 보간해서, 안 적으면
  * 끝점 뒤가 안 덮인다. 알파는 두 자리가 같고 갈리는 것은 정지점뿐이다.
+ *
+ * 웹 마스크는 카드 `38%/76%` · 히어로 `42%/82%` 였다([[ADR-018]] 결정 8 · [[ADR-121]] 결정 7).
  */
 const VEIL_ALPHAS = [0, 0, 1, 1]
 const VEIL_LOCATIONS = {
@@ -67,7 +72,7 @@ export function FadedIllustration(props: FadedIllustrationProps): React.JSX.Elem
         aria-hidden
         pointerEvents="none"
         className="absolute inset-0"
-        style={{ opacity: MEDIA_ART_OPACITY, filter: VEIL_FILTER }}
+        style={{ opacity: VEIL_OPACITY, filter: VEIL_FILTER }}
       >
         <Image
           source={props.source}

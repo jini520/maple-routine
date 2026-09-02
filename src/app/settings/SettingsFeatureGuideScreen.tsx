@@ -39,7 +39,7 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { naturalAspectStyle } from '../../lib/image-aspect'
 import { ArrowLeftIcon } from '../../lib/icons'
-import { TABULAR_NUMS } from '../../lib/text-styles'
+import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import type { RootStackParamList } from '../../navigation/routes'
 import { useSettingsNavigation } from './use-settings-navigation'
 

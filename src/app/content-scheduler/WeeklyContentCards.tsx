@@ -25,7 +25,7 @@ import type { WeeklyContent } from '../../types'
 import { Image, View } from 'react-native'
 
 import { Badge, Card, ProgressBar, Text } from '../../components/atoms'
-import { MEDIA_TEXT_SHADOW_STYLE } from '../../lib/text-styles'
+import { ILLUSTRATION_TEXT_SHADOW_STYLE } from '../../constants/style/text-styles'
 import {
   QUEST_STATE_LABELS,
   QUEST_STATE_VARIANT,
@@ -79,7 +79,7 @@ export function EpicDungeonCard(props: {
       <View className="h-full flex-row items-center justify-between px-[14px]">
         <View className="flex-row items-center gap-2">
           <Badge variant="epicDungeon">에픽 던전</Badge>
-          <Text className="text-sm font-medium text-text" style={MEDIA_TEXT_SHADOW_STYLE}>
+          <Text className="text-sm font-medium text-text" style={ILLUSTRATION_TEXT_SHADOW_STYLE}>
             {displayName}
           </Text>
         </View>
@@ -129,7 +129,7 @@ export function WeeklyRegionalContentCard(props: {
           {iconUrl !== null && (
             <Image source={iconUrl} aria-hidden resizeMode="contain" className="h-6 w-6 shrink-0" />
           )}
-          <Text className="text-sm font-medium text-text" style={MEDIA_TEXT_SHADOW_STYLE}>
+          <Text className="text-sm font-medium text-text" style={ILLUSTRATION_TEXT_SHADOW_STYLE}>
             {displayName}
           </Text>
         </View>
@@ -171,7 +171,7 @@ export function WeeklyQuestCard(props: {
           {iconUrl !== null && (
             <Image source={iconUrl} aria-hidden resizeMode="contain" className="h-6 w-6 shrink-0" />
           )}
-          <Text className="text-sm font-medium text-text" style={MEDIA_TEXT_SHADOW_STYLE}>
+          <Text className="text-sm font-medium text-text" style={ILLUSTRATION_TEXT_SHADOW_STYLE}>
             {displayName}
           </Text>
         </View>
@@ -205,7 +205,7 @@ export function MapleUnionDragonCard(props: {
       <View className="h-full flex-row items-center justify-between px-[14px]">
         <View className="flex-row items-center gap-2">
           <Badge variant="mapleUnion">유니온</Badge>
-          <Text className="text-sm font-medium text-text" style={MEDIA_TEXT_SHADOW_STYLE}>
+          <Text className="text-sm font-medium text-text" style={ILLUSTRATION_TEXT_SHADOW_STYLE}>
             {displayName}
           </Text>
         </View>
@@ -236,7 +236,7 @@ export function GuildUndergroundWaterwayCard(props: {
       <View className="h-full flex-row items-center justify-between px-[14px]">
         <View className="flex-row items-center gap-2">
           <Badge variant="guild">길드</Badge>
-          <Text className="text-sm font-medium text-text" style={MEDIA_TEXT_SHADOW_STYLE}>
+          <Text className="text-sm font-medium text-text" style={ILLUSTRATION_TEXT_SHADOW_STYLE}>
             {displayName}
           </Text>
         </View>
@@ -265,7 +265,7 @@ export function GuildMissionPointsCard(props: {
         <View className="h-20 shrink-0 flex-row items-center justify-between px-[14px]">
           <View className="flex-row items-center gap-2">
             <Badge variant="guild">길드</Badge>
-            <Text className="text-sm font-medium text-text" style={MEDIA_TEXT_SHADOW_STYLE}>
+            <Text className="text-sm font-medium text-text" style={ILLUSTRATION_TEXT_SHADOW_STYLE}>
               {displayName}
             </Text>
           </View>
@@ -306,7 +306,7 @@ export function GuildFlagRaceCard(props: {
       <View className="h-full flex-row items-center justify-between px-[14px]">
         <View className="flex-row items-center gap-2">
           <Badge variant="guild">길드</Badge>
-          <Text className="text-sm font-medium text-text" style={MEDIA_TEXT_SHADOW_STYLE}>
+          <Text className="text-sm font-medium text-text" style={ILLUSTRATION_TEXT_SHADOW_STYLE}>
             {displayName}
           </Text>
         </View>

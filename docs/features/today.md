@@ -33,7 +33,7 @@
 | 위젯 | `app/today/widgets/types.ts` · `registry.ts` · `layout.ts` | 계약 · 목록 · 좌표 |
 | 위젯 | `app/today/widgets/` 의 아홉 컴포넌트 | `RepresentativeCharacterWidget` · `ResetCountdownWidget` · `RemainingScheduleWidget` · `CrystalLimitWidget` · `WeeklyBossProfitWidget` · `TopValuableItemWidget` · `UnpricedDropsWidget` · `ValuableDroughtWidget` · `SharedContentsWidget` |
 | 계산 | `lib/widget-grid-metrics.ts` · `lib/widget-layout.ts` | 치수와 좌표 검증 |
-| 계산 | `lib/drought-tier-styles.ts` | 잎 램프. 드롭 히스토리 화면과 공유한다 |
+| 계산 | `constants/style/drought-tier-styles.ts` | 잎 램프. 드롭 히스토리 화면과 공유한다 |
 | 원천 | `features/content-scheduler/store` · `features/boss-scheduler/store` · `features/boss-profit/store` | **읽기만 한다** |
 | 원천 | `features/boss-profit/drop-history-store` | 드롭 위젯 셋이 같은 투영을 공유한다 |
 | 판정 | `features/boss-scheduler/displayed-bosses.ts` 의 `displayedBosses` | **화면과 같은 함수를 부른다**([[ADR-147]] 결정 8) |
@@ -432,7 +432,7 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
 일부지 별도 항목이 아니고, 4x1 은 내부 높이가 52 뿐이라 그 한 줄이 크다. 넘치면 **닉네임이 줄어든다**
 (길드는 잘리면 다른 길드로 읽히지만 닉네임은 초상화가 이미 말한다).
 
-- **월드는 텍스트 배지가 아니라 엠블럼 이미지**다. `lib/world-emblem.ts` 의 `worldEmblemUrl(world)`
+- **월드는 텍스트 배지가 아니라 엠블럼 이미지**다. `lib/artwork.ts` 의 `worldEmblemUrl(world)`
   (`world-emblems.json` 18종 + `assets/worlds/*.png`). 매핑에 없거나 파일이 없으면 `null` 이고 그때는
   **엠블럼만 생략**한다(그 함수가 이미 정한 폴백).
 - **직업(`jobClass`)이 카드에 처음 나온다.** [[ADR-144]] 결정 2의 ‘레벨 + 직업’과 같은 조합이라 새
@@ -742,7 +742,7 @@ formatValuableDroughtHeadline(weeksSince, lateIndex)  →  (weeksSince, index)
 | 2x1 | 잎 22 + 헤드라인 + `3주째` 칩 |
 
 - **잎은 단계를 따라 늙는다**. 색·기울기·투명도·글로우를 `tier` 하나가 함께 고른다(값 하나가 두 축을
-  같이 움직여야 "색은 슬픈데 문구는 신난" 어긋남이 안 생긴다). 그 표(`lib/drought-tier-styles.ts`)는
+  같이 움직여야 "색은 슬픈데 문구는 신난" 어긋남이 안 생긴다). 그 표(`constants/style/drought-tier-styles.ts`)는
   **드롭 히스토리 화면과 한 벌**이다(구현 확정). 5행짜리 값 표를 양쪽이 각자 들면 한쪽만 고쳐져
   같은 단계가 두 화면에서 다른 색으로 늙는다([[ADR-094]] 결정 1의 ‘호출부 2곳’ 조건). 공유하는 것은
   **값뿐**이고 SVG 크기·testID·접근성 이름은 각 화면이 자기 사정대로 그린다.

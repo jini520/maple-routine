@@ -75,10 +75,10 @@ import { PartySizeModal } from '../../components/organisms/PartySizeModal/PartyS
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { SPIN_ANIMATION } from '../../lib/animation'
+import { SPIN_ANIMATION } from '../../constants/style/animation'
 import { AnimatedView } from '../../lib/nativewind-interop'
 import { RefreshCwIcon, SlidersHorizontalIcon, SwordsIcon, UsersIcon } from '../../lib/icons'
-import { MEDIA_TEXT_SHADOW_STYLE } from '../../lib/text-styles'
+import { ILLUSTRATION_TEXT_SHADOW_STYLE } from '../../constants/style/text-styles'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/tracked-order'
 import { useThemeAppearance } from '../../theme/context'
@@ -128,7 +128,7 @@ function BossCard(props: {
             <Badge variant={boss.difficulty}>
               {boss.difficulty}
             </Badge>
-            <Text className="text-sm font-medium text-text" style={MEDIA_TEXT_SHADOW_STYLE}>
+            <Text className="text-sm font-medium text-text" style={ILLUSTRATION_TEXT_SHADOW_STYLE}>
               {bossName}
             </Text>
             {partySize !== undefined && partySize > 1 && (

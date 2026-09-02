@@ -37,7 +37,7 @@ import { Circle } from 'react-native-svg'
 
 import { Text } from '../../../components/atoms'
 import { Svg } from '../../../lib/nativewind-interop'
-import { TABULAR_NUMS } from '../../../lib/text-styles'
+import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { WidgetHeight } from '../../../lib/widget-layout'
 import { useThemeAppearance } from '../../../theme/context'
 import type { CrystalLimitView } from '../view-model'

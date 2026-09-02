@@ -51,7 +51,7 @@ import { Pressable, RefreshControl, View } from 'react-native'
 
 import { Badge, ProfitIcon, Text } from '../../components/atoms'
 import { CalendarMonth } from '../../components/molecules/CalendarMonth/CalendarMonth'
-import { DIFFICULTY_SHORT } from '../../lib/boss-difficulty'
+import { DIFFICULTY_SHORT } from '../../constants/domain/boss-difficulty'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { SpeedDial } from '../../components/organisms/SpeedDial/SpeedDial'
@@ -88,7 +88,7 @@ import {
 } from '../../lib/icons'
 import { formatMesoCompact } from '../../lib/meso-compact'
 import { getCurrentKstDateKey } from '../../lib/reset-clock'
-import { TABULAR_NUMS } from '../../lib/text-styles'
+import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import {
   cashbookDataRevision,
   dayTotalsOf,

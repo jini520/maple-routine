@@ -41,7 +41,7 @@ import { ChevronLeftIcon } from '../../lib/icons'
 import { MesoAmountField } from '../../components/molecules/MesoPad/MesoAmountField'
 import { MesoKeypad } from '../../components/molecules/MesoPad/MesoKeypad'
 import { applyMesoKey, type MesoKey } from '../../components/molecules/MesoPad/meso-pad'
-import { TABULAR_NUMS } from '../../lib/text-styles'
+import { TABULAR_NUMS } from '../../constants/style/text-styles'
 
 export interface DropPricePadProps {
   drop: RecordedDrop

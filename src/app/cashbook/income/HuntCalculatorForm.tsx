@@ -42,7 +42,7 @@ import {
   huntingTotalOf,
   killedMobsOf,
 } from '../../../lib/hunting-meso'
-import { TABULAR_NUMS } from '../../../lib/text-styles'
+import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { ImageAssetRef } from '../../../types/image-asset'
 import type { HuntingGround, HuntingRegion } from '../../../types/hunting-grounds'
 import { CheckBox, FieldRow, QuantityStepper } from '../sheet-fields'

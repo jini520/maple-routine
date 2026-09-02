@@ -3,7 +3,7 @@ import type { RecordedDrop } from '../../../types/drops'
 import { Image, View } from 'react-native'
 
 import { SparklesIcon } from '../../../lib/icons'
-import { TABULAR_NUMS } from '../../../lib/text-styles'
+import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { LinearGradient } from '../../../lib/nativewind-interop'
 import { Text } from '../../atoms'
 
