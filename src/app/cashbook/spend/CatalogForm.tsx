@@ -44,7 +44,7 @@ import { useSpendSubmit } from './use-spend-submit'
  * 타일에 적는 값 — **단위를 붙이고, 단계가 여럿이면 나란히 적는다.**
  *
  * 단위를 붙이는 이유는 갈래 하나 안에서 통화가 갈리는 곳이 있어서다(버프의 영약은 메소,
- * 보약은 메포 —). **메소만 줄여 적는다**. 메포는 200~50,000 이라 그대로가
+ * 보약은 메포). **메소만 줄여 적는다**. 메포는 200~50,000 이라 그대로가
  * 읽히지만 메소는 백만 단위라 1/3 폭 타일에서 잘린다.
  */
 function tilePriceLabel(items: readonly SpendCatalogItem[]): string {

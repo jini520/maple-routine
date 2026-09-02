@@ -49,7 +49,7 @@ export class NexonBadRequestError extends NexonApiError {
 }
 
 /**
- * **무효한 API 키인가** —. 이 판정은 여기 한 곳뿐이고
+ * **무효한 API 키인가**. 이 판정은 여기 한 곳뿐이고
  * `toScheduleSyncError`·`toOnboardingError`·`toSettingsError` 셋이 첫 분기로 쓴다.
  *
  * `401`/`403` 만 보면 **실제 무효 키를 못 잡는다**. 넥슨은 무효한 키에 **400 `OPENAPI00005`**

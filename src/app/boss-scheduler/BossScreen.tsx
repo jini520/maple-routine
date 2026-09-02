@@ -13,7 +13,7 @@
 // ③ **`useScreenStackStore` 의 깊이로 당김을 끄던 배선**. 하위 페이지는 루트
 //    스택에 **덮여** 올라오므로 아래 화면의 스크롤 뷰에 손가락이 닿지 않는다.
 // ④ **`<Outlet />`**(언마운트 금지). 관리 페이지는 형제 라우트가 아니라 **형제 탭**이라
-//  (— 그전에는 루트 스택 push 였다) 이 화면이 트리에 그대로 남는다. 계약을
+//  (그전에는 루트 스택 push 였다) 이 화면이 트리에 그대로 남는다. 계약을
 //    코드가 아니라 내비게이터가 지킨다.
 //
 // ══ 갈린 것 다섯 ═══════════════════════════════════════════════════════════════════
@@ -28,7 +28,7 @@
 //  을 받던 라우트 파라미터도 **설정 화면으로 통째로 옮겨갔다**. 추적 목록은 이후 앱
 //    전역 하나인데 그것을 고르는 자리만 다섯이었다. 남은 흔적은 빈 상태 CTA 하나이고, 그것도 모달이
 //    아니라 **설정 탭을 피커가 열린 채로** 연다.
-// ③ **카드 눌림 피드백이 절반만 온다**(— 이 카드의 어포던스가 그것뿐이다).
+// ③ **카드 눌림 피드백이 절반만 온다**(이 카드의 어포던스가 그것뿐이다).
 //    `active:scale-[.985]` 는 NativeWind 가 그대로 낸다(실측). `active:brightness-110` 은 **조용히
 //    사라진다**. NativeWind 가 `brightness-*` 를 네이티브 `filter` 로 내보내지 않는다. 탈출구인
 //    `style={({pressed}) => …}` 함수도 못 쓴다: NativeWind 가 `Pressable` 의 style **함수를 통째로
@@ -190,7 +190,7 @@ export function BossScreen(): React.JSX.Element {
     setManualBossDifficulty,
     // : 탭과 두 필터는 스토어 소유다. 이 화면이 언마운트돼도 살아남고, 관리
     // 페이지가 같은 탭 값을 읽어 보던 탭 그대로 열린다.
-    // **필터는 하나다**(— 정정). 목록이 하나가 되면서
+    // **필터는 하나다**(정정). 목록이 하나가 되면서
     // **두 축이 서로 독립** 이라는 문장이 뜻을 잃었다(독립할 상대가 없다).
     partyFilter,
     setPartyFilter,
@@ -326,7 +326,7 @@ export function BossScreen(): React.JSX.Element {
   // **앱이 센** 이번 주 처치 수이고(`countClearedWeeklyBosses`. 넥슨의
   // `weekly_boss_clear_count` 는 타입에만 있고 제품 코드는 안 쓴다. 2026-08-30 정정:
   // 이 자리에 **게임이 세는 수** 라고 적혀 있었다), 시즌 완료 여부도 등록과 무관하다
-  // (— 그래서 미등록·미완료 시즌 보스는 카드로 안 서면서 배지만 뜬다).
+  // (그래서 미등록·미완료 시즌 보스는 카드로 안 서면서 배지만 뜬다).
   const weeklySeasonState =
     seasonBosses.length === 0 ? null : isSeasonBossComplete ? ('complete' as const) : ('incomplete' as const)
   const hasWeeklyBadges =
@@ -410,7 +410,7 @@ export function BossScreen(): React.JSX.Element {
   // 다투는 상대가 없다(의 `shrink-0` 짝이 하나만 남는다).
   //
   // 남는 것은 빈 상태 CTA 하나이고, 그것도 push 가 아니라 **같은 층의 형제**로 보낸다
-  // (— 보스 관리는 이 화면과 같은 스케줄러 단에 산다).
+  // (보스 관리는 이 화면과 같은 스케줄러 단에 산다).
   function goToBossManage(): void {
     openTab('BossManage')
   }
@@ -418,7 +418,7 @@ export function BossScreen(): React.JSX.Element {
   // : 빈 상태 문구는 모드(수동/자동)별로 나눈다. 수동 모드만 CTA를 준다. 자동 모드가
   // 지시하는 곳("게임에서 등록")은 앱 밖이라 데려다줄 수 없다.
   //
-  // **주기별로 나누던 축은 사라졌다**(— 정정). 목록이 하나라
+  // **주기별로 나누던 축은 사라졌다**(정정). 목록이 하나라
   // 판정도 하나이고, 무리별로 물으면 검마를 안 잡는 캐릭터마다 **추적할 월간 보스가 없습니다** 가
   // 뜬다. 그것은 빈 상태가 아니라 **그냥 그 캐릭터의 목록**이다.
   function bossEmptyProps(): React.ComponentProps<typeof EmptyState> {

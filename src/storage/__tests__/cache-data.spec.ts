@@ -15,7 +15,7 @@ import { BOSS_PROFIT_TABLE_NAMES, getBossProfitDb } from '../sqlite/db'
 import { clearCacheDataAndReload } from '../../features/settings/cache-data'
 
 // 팩토리 밖 이름은 `mock` 접두만 끌어올 수 있고 팩토리가 여러 번 불릴 수 있어, **같은 목을
-// 돌려주는** 멱등 헬퍼로 둔다(— vitest 의 `vi.hoisted` 가 하던 일).
+// 돌려주는** 멱등 헬퍼로 둔다(vitest 의 `vi.hoisted` 가 하던 일).
 var mockCallOrder: string[] | undefined
 var mockShared: Record<string, jest.Mock> | undefined
 

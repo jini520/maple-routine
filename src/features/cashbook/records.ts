@@ -278,7 +278,7 @@ export async function resolveTrackedDefeatDates(now: Date): Promise<number> {
 }
 
 /**
- * 시트가 고를 수 있는 **캐릭터 목록**(— 캐릭터를 선택해서 입력하는 방법).
+ * 시트가 고를 수 있는 **캐릭터 목록**(캐릭터를 선택해서 입력하는 방법).
  *
  * 추적 캐릭터만 든다. 가계부가 보스 줄의 이름을 붙일 때 쓰는 그 경로 그대로다.
  *
@@ -644,7 +644,7 @@ export function recordCashOf(entry: DayRecord): number | null {
  *
  * 갈래마다 세는 것이 다르다: 지출은 수량(`×2`. 맨 숫자는 2번째 로도 읽힌다), 결정석은 마리 수,
  * 판매는 건수와 **미입력 건수**다. 화면이 갈래별로 분기하지 않도록 여기서 한 문자열로 접는다
- * (— 판정과 그리기를 가른다).
+ * (판정과 그리기를 가른다).
  */
 export function recordCountLabelOf(entry: DayRecord): string | null {
   if (entry.kind === 'spend') {

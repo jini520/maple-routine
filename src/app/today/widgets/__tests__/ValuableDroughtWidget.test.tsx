@@ -53,7 +53,7 @@ function 잎스타일(view: Awaited<ReturnType<typeof renderAtom>>): Record<stri
   return (leaf?.props?.style ?? {}) as Record<string, unknown>
 }
 
-describe('요약이 없을 때 ( — 기준점이 없으면 `null`)', () => {
+describe('요약이 없을 때 (기준점이 없으면 `null`)', () => {
   // `0주째`로 위장하면 **이번 주에 먹었다** 는 정반대의 사실이 된다.
   it.each(Object.entries(크기))('%s — 0주째가 아니라 `기록이 없습니다`', async (_이름, 값) => {
     const view = await 위젯(값, 빈_뷰모델)
@@ -89,7 +89,7 @@ describe('잎은 단계를 따라 늙는다', () => {
 })
 
 describe('0주째만 배경이 바뀐다 — 격자에서 유일하게 축하하는 타일', () => {
-  // 기대값은 테마에서 읽는다(— 테스트가 색을 베끼면 두 벌이 된다).
+  // 기대값은 테마에서 읽는다(테스트가 색을 베끼면 두 벌이 된다).
   it.each(Object.entries(크기))('%s — 0주째는 `primary-tint`', async (_이름, 값) => {
     const { getByTestId } = await 위젯(값, 뷰모델({ drought: 가뭄(0) }))
 

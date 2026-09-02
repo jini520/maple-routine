@@ -52,7 +52,7 @@ export async function autoRecordRows({
 
     // 완료 행은 처치 난이도가 확정된 것이다. 다른 난이도 키에 남은 드롭을 이 난이도로 옮긴다
     // . 아래 자동 기록 가드보다 조건이 넓다: 가격 미확정이거나 이미 기록된
-    // 조합도 난이도는 확정된 상태다. 출처가 지금의 사실이 아닌 행은 제외한다(—
+    // 조합도 난이도는 확정된 상태다. 출처가 지금의 사실이 아닌 행은 제외한다(
     // 그 행의 난이도는 지금의 사실이 아니다).
     if (records !== null && sourceIsCurrent && row.isComplete) {
       await migrateDropsToConfirmedDifficulty(row, dropRecords, now)

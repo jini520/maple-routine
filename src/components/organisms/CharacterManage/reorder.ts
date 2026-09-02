@@ -74,7 +74,7 @@ interface AutoScrollInput {
  * **깊이에 비례**한다(경계에서 0, 끝에서 최대). 계단으로 두면 구간에 살짝 걸치기만 해도 최대
  * 속도로 튀어 놓을 자리 를 지나쳐 버린다. 화면 밖으로 나간 손가락도 최대에서 멈춘다.
  *
- * 고정 영역을 만들어 이 문제를 피하지 않는다(— 이 화면에는 고정된 자리가 없다).
+ * 고정 영역을 만들어 이 문제를 피하지 않는다(이 화면에는 고정된 자리가 없다).
  */
 export function resolveAutoScrollStepPx(input: AutoScrollInput): number {
   if (input.zonePx <= 0) return 0

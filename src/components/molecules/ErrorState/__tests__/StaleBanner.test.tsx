@@ -1,7 +1,7 @@
 // 웹판의 다섯을 그대로 옮겼다(웹은 `ErrorState.test.tsx` 안에 있었다. RN 에서는 스냅샷 이름이
 // 섞이지 않게 파일을 나눈다).
 //
-// 문구·라벨은 전부 **호출부가 넘긴 값**이고 컴포넌트는 분기를 갖지 않는다(—
+// 문구·라벨은 전부 **호출부가 넘긴 값**이고 컴포넌트는 분기를 갖지 않는다(
 // molecule 이 `ScheduleSyncError` 를 알면 계층 의존 방향이 뒤집힌다).
 import { fireEvent } from '@testing-library/react-native'
 

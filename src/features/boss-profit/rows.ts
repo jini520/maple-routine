@@ -147,7 +147,7 @@ export function selectProfitDisplayBosses(
   manualItems: ManualTrackedItem[],
 ): MatchedBoss[] {
   const matched = bossContents.map(matchBossContent)
-  // **주간 한도를 채웠으면 미처치 placeholder 는 아예 안 세운다**(— 두 모드
+  // **주간 한도를 채웠으면 미처치 placeholder 는 아예 안 세운다**(두 모드
   // 공통이라 아래 ①②보다 앞에 선다). 판정은
   // 동기화 결과 전체로 한다. 이 결정이 겨누는 상황이 **표시 목록 밖 보스로 12를 채웠다** 라,
   // 목록만 보면 영영 12가 안 된다(이 **등록 여부와 무관하게** 세는 것과 같다).

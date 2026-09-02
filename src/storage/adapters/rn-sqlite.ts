@@ -12,7 +12,7 @@ import type { SqliteDbConnection, SqlitePort } from '../ports'
 import { toOpenOptions, type SqlitePlatform } from './capacitor-sqlite-open'
 
 /**
- * `SqlitePort` 의 RN 구현(— 밖으로 나가는 시그니처는 Capacitor 구현과 같다).
+ * `SqlitePort` 의 RN 구현(밖으로 나가는 시그니처는 Capacitor 구현과 같다).
  *
  * **op-sqlite 를 고른 이유는 성능이 아니라 `location` 이다.** 기존 DB 는 Capacitor 플러그인이
  * 정한 자리에 있고(`docs/migration/data.md` 결정 2), 자기 전용 디렉터리에만 파일을 만드는

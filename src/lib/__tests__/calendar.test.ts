@@ -337,7 +337,7 @@ describe('periodTotals — 격자가 그린 칸을 그대로 접는다', () => {
   })
 
   it('주간 격자는 이레가 전부 든다 — 달을 걸쳐도 같다', () => {
-    // 8/27(목) 주는 9/2(수)까지 간다(— 이레는 전부 `inPeriod` 다).
+    // 8/27(목) 주는 9/2(수)까지 간다(이레는 전부 `inPeriod` 다).
     const totals = periodTotals([buildResetWeek('2026-08-27')], {
       '2026-08-27': { incomeMeso: 10, expenseMeso: 1 },
       '2026-09-02': { incomeMeso: 20, expenseMeso: 2 },

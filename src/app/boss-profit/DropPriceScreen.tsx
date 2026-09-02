@@ -217,7 +217,7 @@ export function DropPriceScreen(): React.JSX.Element {
       await write()
       advance()
     } catch {
-      // 조용히 삼키면 저장된 줄 알고 화면을 떠난다(— 예외 원문 대신 토스트).
+      // 조용히 삼키면 저장된 줄 알고 화면을 떠난다(예외 원문 대신 토스트).
       useToastStore.getState().showError('가격을 저장하지 못했습니다')
     }
   }

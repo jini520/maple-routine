@@ -60,7 +60,7 @@ export function ContentCharacterStep(props: ContentCharacterStepProps): React.JS
   const { scrollRef, onScroll, scroll } = useReorderScroll()
 
   // 파일 머리 — **429 만** 넘긴다. 두 조회가 각각 맞을 수 있어 두 번 부르지만 두 겹은 아니다
-  // (훅은 값 하나를 지켜보고, 멱등은 스토어 가드가 진다 —).
+  // (훅은 값 하나를 지켜보고, 멱등은 스토어 가드가 진다).
   useApiKeyNotice(manage.rosterError?.kind === 'rateLimited' ? manage.rosterError : null)
   useApiKeyNotice(manage.accountsError?.kind === 'rateLimited' ? manage.accountsError : null)
 
@@ -89,7 +89,7 @@ export function ContentCharacterStep(props: ContentCharacterStepProps): React.JS
       <View className="w-full gap-4">
         <View className="gap-1">
           <Text className="text-lg font-semibold text-text">관리할 캐릭터를 선택해주세요</Text>
-          {/* 캐릭터를 세는 단위는 **개** 다(— **명** 은 사람을 센다). */}
+          {/* 캐릭터를 세는 단위는 **개** 다(**명** 은 사람을 센다). */}
           <Text className="text-sm text-text-muted">
             선택한 캐릭터만 스케줄러 목록에 표시됩니다. 최소 한 개는 선택해주세요.
           </Text>

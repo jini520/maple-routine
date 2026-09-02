@@ -103,7 +103,7 @@ describe('온보딩 분기', () => {
 
 describe('하위 페이지 — 열둘', () => {
   // **`guideId` 가 실재해야 한다**(step 3 에서 갈린 것). 자리표시자는 받은 문자열을 그냥 찍어
-  // 아무 값이나 통했지만, 진짜 상세는 없는 id 면 조용히 pop 한다(— 옛 링크의
+  // 아무 값이나 통했지만, 진짜 상세는 없는 id 면 조용히 pop 한다(옛 링크의
   // 착지점이 빈 화면이면 안 된다). 그래서 여기 값이 카탈로그와 어긋나면 이 테스트가 먼저 깨진다.
   const params: Partial<Record<(typeof STACK_ROUTE_NAMES)[number], object>> = {
     SettingsFeatureGuide: { guideId: GUIDE_ID },

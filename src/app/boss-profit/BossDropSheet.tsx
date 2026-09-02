@@ -61,7 +61,7 @@ import { DropEffectOverlay } from '../../components/organisms/DropEffectOverlay/
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { DropPricePadContent } from './DropPricePad'
 
-// 선택 가능한 카테고리(장비·소비)의 라벨과 아이콘(— 노란 점 대신 아이콘). 고정은
+// 선택 가능한 카테고리(장비·소비)의 라벨과 아이콘(노란 점 대신 아이콘). 고정은
 // 읽기 전용 별도 섹션이라 여기 없다.
 const CATEGORY_META: Record<
   SelectableDropCategory,

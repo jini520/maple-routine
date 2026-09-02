@@ -128,7 +128,7 @@ export interface HuntingManualDetail {
 export interface HuntingCalculatorDetail {
   mode: 'calculator'
   /**
-   * **그때의** 캐릭터 레벨. `null` = 캐릭터를 안 골랐다(페널티 0 —).
+   * **그때의** 캐릭터 레벨. `null` = 캐릭터를 안 골랐다(페널티 0).
    *
    * 지금 레벨을 다시 읽지 않는 이유는 캐릭터가 레벨업하기 때문이다. 그러면 한 달 전 기록의
    * 금액이 열 때마다 달라진다.
@@ -150,7 +150,7 @@ export interface HuntingCalculatorDetail {
   /** 조각 개당 메소. */
   fragmentPrice: number
   /**
-   * **그때의** 캐릭터 메소 획득량(%) —.
+   * **그때의** 캐릭터 메소 획득량(%).
    *
    * 캐릭터 레벨을 박아 두는 것과 **같은 이유**다: 장비를 갈아입으므로 지금 값으로 다시 재면
    * 한 달 전 기록의 금액이 열 때마다 달라진다. `0` 은 ** 이전에 적힌 행**이기도 하고
@@ -317,7 +317,7 @@ function rowToRecord(row: Record<string, unknown>): IncomeRecord {
 
 /**
  * 날짜 범위의 기록 — **두 끝을 포함**한다. 월간이든 주간이든 부르는 쪽이 범위만 정한다
- * (월간은 그 달의 첫날~마지막 날, 주간은 목요일~수요일 —).
+ * (월간은 그 달의 첫날~마지막 날, 주간은 목요일~수요일).
  *
  * **`ocid` 로 거르지 않는다.** 가계부는 내가 번 돈 이지 이 캐릭터가 번 돈 이 아니라
  *  계정 단위 행과 캐릭터 행이 한 날에 함께 서야 한다.

@@ -1,6 +1,6 @@
 // 이 톱니의 계약은 둘이다. ① 채우면 **가운데가 구멍으로 남는다**(그러려고 새로 그렸다)
 // ② 그림이 lucide `settings` 와 **같다**(설정 화면들은 여전히 lucide 를 쓰므로, 좌표가 갈리면
-// 같은 앱 안에서 톱니가 두 가지가 된다 —).
+// 같은 앱 안에서 톱니가 두 가지가 된다).
 import Settings from 'lucide-react-native/icons/settings'
 
 import { findAllOfType, renderAtom } from '../../../__tests__/render-atom'

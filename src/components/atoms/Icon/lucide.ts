@@ -189,7 +189,7 @@ export const PackageOpenIcon = withIconInterop(PackageOpen)
 export const PinIcon = withIconInterop(Pin)
 /** 파티원 수 증가 — `PartySizeStepper`. */
 export const PlusIcon = withIconInterop(Plus)
-/** 토스트 액션의 기본 아이콘('다시 시도' 전제 —). `Toast`. */
+/** 토스트 액션의 기본 아이콘('다시 시도' 전제). `Toast`. */
 export const RefreshCwIcon = withIconInterop(RefreshCw)
 /** '다시 시작' — `ErrorBoundary` 폴백 · 가격 초기화 `DropPricePad`. */
 export const RotateCcwIcon = withIconInterop(RotateCcw)

@@ -22,7 +22,7 @@ describe('rnSplashScreenPort', () => {
     expect(mocked.hideAsync).toHaveBeenCalledTimes(1)
   })
 
-  // 스플래시를 내리는 주체가 여럿이라(정상 부팅 · 실패 catch · ErrorBoundary 폴백 —)
+  // 스플래시를 내리는 주체가 여럿이라(정상 부팅 · 실패 catch · ErrorBoundary 폴백)
   // 중복 호출이 정상 경로다. 두 번째 호출이 던지면 그 자리의 나머지 정리가 통째로 멈춘다.
   it('hide() 를 두 번 불러도 던지지 않는다', async () => {
     await rnSplashScreenPort.hide()

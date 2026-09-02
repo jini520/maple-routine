@@ -41,7 +41,7 @@ export const VALUABLE_CARD_GLOW_DURATION_MS = 2000
 export const VALUABLE_CARD_GLOW_TIMING = 'ease-in-out'
 
 /**
- * `.valuable-drop-card::before` 가 **degrade 했을 때** 그리는 그림(— `@property`
+ * `.valuable-drop-card::before` 가 **degrade 했을 때** 그리는 그림(`@property`
  * 미지원 WebView 를 위해 그 결정이 이미 설계해 둔 폴백이다).
  *
  * conic-gradient 의 `from var(--vd-angle)` 은 `initial-value: 0deg` 이고 그 각도에서 링의 대부분이

@@ -3,7 +3,7 @@ import * as SplashScreen from 'expo-splash-screen'
 import type { SplashScreenPort } from '../ports'
 
 /**
- * `SplashScreenPort` 의 RN 구현(— 밖으로 나가는 시그니처는 Capacitor 구현과 한
+ * `SplashScreenPort` 의 RN 구현(밖으로 나가는 시그니처는 Capacitor 구현과 한
  * 글자도 다르지 않다). 정책은·.
  *
  * **`expo-splash-screen` 을 고른 근거**는 버전이 SDK 에 묶인다는 것이다(`~57.0.6`. `expo` 의

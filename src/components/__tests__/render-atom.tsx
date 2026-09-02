@@ -10,7 +10,7 @@
 //
 // ## 기대값을 손으로 적지 않는다
 //
-// 색을 단언할 때는 `job-themes.json`(= `getThemeDefinition`)에서 읽는다(— 색은 사람이
+// 색을 단언할 때는 `job-themes.json`(= `getThemeDefinition`)에서 읽는다(색은 사람이
 // 확인해 커밋한 값이고, 테스트가 베끼면 두 벌이 된다). `theme/__tests__/ThemeProvider.test.tsx` 와
 // 같은 방식이다.
 import { getThemeDefinition } from '../../lib/theme/theme-registry'

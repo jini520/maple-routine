@@ -592,7 +592,7 @@ async function loadPeriod(
     tab === 'monthly'
       ? await buildWeeklySubtotalsForMonth(sortedOcids, periodKey, [], profileSnapshot, now)
       : []
-  // **지난 기간의 고아 드롭을 지운다**(— 셋째 경로). 과거 기간은 기록이 곧
+  // **지난 기간의 고아 드롭을 지운다**(셋째 경로). 과거 기간은 기록이 곧
   // 사실이라(`buildRowsFromRecords`) 동기화 신선도를 따질 것이 없다. 백필된 적 없는 주는 행이
   // 통째로 비어 안전 장치 ②가 알아서 막는다.
   //
@@ -680,7 +680,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
    * `currentPeriodRows` 의 내용은 `latestSyncSnapshot.rows` 와 같다. 그것을 갱신하는 자리마다
    * 잊지 않고 함께 쓴다 로 두면 사본 둘이 언젠가 어긋나고(그 어긋남은 `setPartySize` 에서 실제로
    * 한 번 터졌다. 2026-07-22), 반대로 스냅샷을 바꿀 때마다 `set` 을 한 번씩 더 부르면 건너뛴
-   * 진입의 커밋은 1회 가 깨진다(— 그 계약은 화면 깜빡임을 막는다).
+   * 진입의 커밋은 1회 가 깨진다(그 계약은 화면 깜빡임을 막는다).
    *
    * 그래서 **커밋 자체에 얹는다**. 커밋 수는 그대로이고, 어느 커밋에서 보든 상태와 스냅샷이 같다.
    * 대신 스냅샷 대입은 **그것을 화면에 반영할 `set` 보다 앞**에 와야 한다(지금 네 자리 모두 그렇다).

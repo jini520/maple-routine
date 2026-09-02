@@ -1,4 +1,4 @@
-// 상단 안전영역의 **하한** —.
+// 상단 안전영역의 **하한**.
 //
 // 이 값이 순수 함수라서 여기서 전부 볼 수 있다(`bottom-inset.test.ts`·`bottom-bar-metrics.test.ts`
 // 와 같은 자리). **컴포넌트 테스트로는 이 결정을 못 지킨다**. jest-expo 는 iOS 로 돌고, iOS 는

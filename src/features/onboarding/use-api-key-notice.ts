@@ -18,7 +18,7 @@ import { useOnboardingStore } from './store'
  * 일어난다(결정 10). 중복 호출은 noticeApiKeyIssue() 안의 멱등 가드가 막는다.
  *
  * 왜 features/onboarding 에 사는가: 이 훅이 다루는 것은 동기화가 아니라 **온보딩 상태**다
- * (처방이 "상태를 awaitingApiKey 로 되돌리는 것"이라서 —). `ScheduleSyncError` 는
+ * (처방이 "상태를 awaitingApiKey 로 되돌리는 것"이라서). `ScheduleSyncError` 는
  * 감지 쪽 어휘라 타입으로만 받는다.
  *
  * 여기에 자체 **멱등** 가드(ref)를 두지 않는다. 동시 실패가 모달을 하나로 접는 것은

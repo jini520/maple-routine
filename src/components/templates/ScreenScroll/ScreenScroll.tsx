@@ -120,7 +120,7 @@ export interface ScreenScrollProps {
   header?: React.ReactNode
   /**
    * 스크롤 뷰 자체의 ref. 웹에서는 당김 판정이 이 요소의 `scrollTop` 을 읽었고,
-   * RN 에서는 **당김 판정에 쓰이지 않는다**(— 스크롤 컨테이너가 제스처를 소유한다).
+   * RN 에서는 **당김 판정에 쓰이지 않는다**(스크롤 컨테이너가 제스처를 소유한다).
    * 프로그램적 스크롤이 필요한 화면(보스 수익의 최상단 이동)이 쓸 자리로 남겨 둔다.
    */
   ref?: React.Ref<ScrollViewType>
@@ -128,14 +128,14 @@ export interface ScreenScrollProps {
    * 당겨서 새로고침 — `<RefreshControl … />` 을 그대로 넘긴다.
    *
    * 셸이 **만들지 않고 받는** 이유는 `refreshing` 이 각 화면 스토어의 상태이고 `onRefresh` 가 그
-   * 화면의 재조회이기 때문이다(— 당김과 헤더 버튼은 같은 재조회를 부른다).
+   * 화면의 재조회이기 때문이다(당김과 헤더 버튼은 같은 재조회를 부른다).
    * 안 주면 당김이 없는 화면이다(설정 계열·하위 페이지).
    */
   refreshControl?: React.ComponentProps<typeof ScrollView>['refreshControl']
   /**
    * 스크롤 오프셋 통보 — **끌어서 순서 바꾸기의 자동 스크롤만** 쓴다.
    *
-   * 그 화면은 목록이 화면보다 길 때 페이지째 굴려야 하는데(— 고정 영역이 없다) 굴린
+   * 그 화면은 목록이 화면보다 길 때 페이지째 굴려야 하는데(고정 영역이 없다) 굴린
    * 만큼을 끌기 좌표에 되더해야 행이 손가락 밑에 남는다. 즉 필요한 것은 **지금 오프셋**이고, 그것을
    * 아는 길이 이 이벤트뿐이다.
    *
@@ -146,7 +146,7 @@ export interface ScreenScrollProps {
   /**
    * 아래에 탭바가 있는가 — 하단 인셋 처리만 가른다(`bottom-inset.ts`).
    *
-   * **하위 페이지는 `false` 다.** 스택 위로 올라간 화면에는 탭바가 없다(—
+   * **하위 페이지는 `false` 다.** 스택 위로 올라간 화면에는 탭바가 없다(
    * 탭바는 아래 화면과 한 덩어리로 밀려 나간다).
    */
   hasTabBar?: boolean

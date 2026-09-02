@@ -33,7 +33,7 @@ import type { DailyContent, WeeklyContent } from '../../types'
 
 /**
  * 관리 페이지와 같은 `categorizeContentEntries` 평탄화 순서로 미리 정렬해 둔 템플릿
- * (— 일간은 첫 등장 순서, 주간은 `WEEKLY_CATEGORY_ORDER`).
+ * (일간은 첫 등장 순서, 주간은 `WEEKLY_CATEGORY_ORDER`).
  * 캐릭터와 무관한 상수라 모듈 레벨에서 1회 계산한다.
  */
 const ORDERED_DAILY_TEMPLATE = categorizeContentEntries(CONTENT_TEMPLATE.daily).flatMap((group) =>

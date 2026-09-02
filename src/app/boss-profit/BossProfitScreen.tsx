@@ -279,7 +279,7 @@ export function BossProfitScreen(): React.JSX.Element {
   const header = (
     // 공용 `PageHeader` 를 쓰지 않는 이유는 파일 머리 ① — 그 셸의 하단 페이드를 이 화면은 금지한다
     // . 나머지 값은 그 컴포넌트와 같고, **상단 여백을 더하지 않는 것도 함께다**
-    // (— 웹 `pt-[calc(1rem+var(--sa-top))]` 의 상수 몫을 옮기지 않는다). 그 **안전영역**
+    // (웹 `pt-[calc(1rem+var(--sa-top))]` 의 상수 몫을 옮기지 않는다). 그 **안전영역**
     // 은 `useTopSafeAreaPx()` 다. 셸을 복제한 화면이 인셋을 직접 읽으면 이
     // 화면만 안드로이드에서 16.7px 위에 선다.
     <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: topSafeAreaPx }}>

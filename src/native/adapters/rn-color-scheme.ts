@@ -3,7 +3,7 @@ import { Appearance } from 'react-native'
 import type { ColorSchemePort } from '../ports'
 
 /**
- * `ColorSchemePort` 의 RN 구현(— 밖으로 나가는 시그니처는 Capacitor 구현과 한
+ * `ColorSchemePort` 의 RN 구현(밖으로 나가는 시그니처는 Capacitor 구현과 한
  * 글자도 다르지 않다). 정책은(2026-07-14 시스템 다크 모드 연동) ·.
  *
  * **"OS가 지금 무엇인가"는 플랫폼마다 묻는 법이 다르다**. 웹뷰는 `matchMedia('(prefers-color-scheme:

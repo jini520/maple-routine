@@ -15,7 +15,7 @@ const SQLITE_QUERY_TIMEOUT_MS = 5000
 
 // **경주가 끝나면 타이머를 반드시 끈다.** 안 끄면 쿼리가 이겨도 5초짜리 `setTimeout` 이 그대로
 // 남는다. 조회 한 번에 하나씩 쌓이고, 테스트에서는 jest 가 *"did not exit"* 로 멈춰 서 있다가
-// 워커 정리와 겹쳐 `SIGSEGV` 까지 갔다(— 러너를 합치며 드러났다).
+// 워커 정리와 겹쳐 `SIGSEGV` 까지 갔다(러너를 합치며 드러났다).
 function raceWithTimeout<T>(
   promise: Promise<T>,
   onTimeout: (settle: { resolve(value: T): void; reject(error: Error): void }) => void,

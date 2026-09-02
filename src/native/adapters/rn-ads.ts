@@ -1,5 +1,5 @@
 /**
- * `AdsPort` 의 RN 구현(— 밖으로 나가는 시그니처는 Capacitor 구현과 한 글자도
+ * `AdsPort` 의 RN 구현(밖으로 나가는 시그니처는 Capacitor 구현과 한 글자도
  * 다르지 않다). ID 배선과 테스트 광고 판정은 `features/ads.md`.
  *
  * ## 지금 이 어댑터를 부르는 곳은 **없다**

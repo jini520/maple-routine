@@ -40,7 +40,7 @@ describe('EmptyState', () => {
   })
 
   // 자동 모드("게임에서 등록해주세요")·보스 수익처럼 앱 안에 목적지가 없는 곳은 CTA를 만들지
-  // 않는다(— 액션이 없는 자리에 비활성 버튼을 두지 않는다).
+  // 않는다(액션이 없는 자리에 비활성 버튼을 두지 않는다).
   it('action이 없으면 버튼을 그리지 않는다', async () => {
     const { queryByRole } = await renderAtom(
       <EmptyState icon={SwordsIcon} title="등록된 주간 보스가 없습니다" />,

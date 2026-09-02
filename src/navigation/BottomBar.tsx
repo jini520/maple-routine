@@ -106,7 +106,7 @@ import { useKeyboardShown } from './use-keyboard-shown'
 import type { LayerRouteName, TabRouteName } from './routes'
 
 /**
- * 바가 아는 이동은 **둘뿐이다** —.
+ * 바가 아는 이동은 **둘뿐이다**.
  *
  * 층 화면 이름과 중첩 파라미터의 모양은 `Main` 에서 끝난다. 바가 내비게이션 구조를 직접 알면
  * 구조를 바꿀 때마다 바가 함께 움직이고, 바는 이 앱에서 정정이 제일 많이 쌓인 파일이다.

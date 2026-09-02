@@ -4,7 +4,7 @@
  * ## 왜 컴포넌트 파일이 아닌가
  *
  * 원래 `keyframes-parity.test.ts` 가 웹 `index.css` 를 **실제로 읽어** 이 값들과 대조했다. **그 테스트는
- * 없다**(웹 소스와 함께 지워졌다 —). 값이 컴포넌트가 아니라 여기 사는 이유는
+ * 없다**(웹 소스와 함께 지워졌다). 값이 컴포넌트가 아니라 여기 사는 이유는
  * 남은 하나다: 컴포넌트 파일에서 내보내면 fast refresh 가 깨진다(`valuable-card-glow.ts`·
  * `Button/variants.ts`·`row-class.ts` 와 같은 판단).
  *

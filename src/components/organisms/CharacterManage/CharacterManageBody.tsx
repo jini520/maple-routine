@@ -19,7 +19,7 @@
 // 위 층은 로컬 캐시로 그리므로(결정 2 표) 계정을 바꿔도 건드리지 않는다. 아래 자리의 로딩·빈·실패
 // 표현은 캐릭터 관리 피커의 정책 그대로다(`docs/features/content-scheduler.md` `후보 목록 로딩`) —
 // 항목이 있으면 지우지 않고 스탈 배너를 얹고, 401·429 는 액션 없이 문구만 남긴다
-// (— 화면이 곧 키 입력으로 옮겨간다).
+// (화면이 곧 키 입력으로 옮겨간다).
 //
 // **그 규칙에서 갈리는 값은 `place` 뿐이다.** 온보딩의 401 은 키 재입력 진입점에 배선하지
 // 않으므로(**방금 넣은 키가 나쁘다** 는 뜻이라 폼 자체의 실패다. "구현하며 정정한 것" 5)
@@ -79,7 +79,7 @@ export interface CharacterManageBodyProps {
 // 그 길이에서는 마크만으로 **무엇을** 기다리는지가 전달되지 않는다(사용자 보고 2026-08-18).
 //
 // `aria-label` 을 걷고 글자를 그린다. 둘을 함께 두면 스크린리더가 같은 말을 두 번 읽는다.
-// 카드 껍데기는 여전히 안 씌운다(`LoadingState` 를 쓰지 않는 이유 —).
+// 카드 껍데기는 여전히 안 씌운다(`LoadingState` 를 쓰지 않는 이유).
 function Waiting(props: { label: string }): React.JSX.Element {
   return (
     <View role="status" aria-busy className="min-h-[120px] flex-1 items-center justify-center gap-3">

@@ -134,7 +134,7 @@ function refreshControl(): { refreshing: boolean; onRefresh: () => void } {
   return screen.getByTestId('screen-scroll').props.refreshControl.props
 }
 
-/** 두 노드를 **같은 줄**로 묶는 가장 작은 상자(— 아래 케이스가 그것으로 자리를 본다). */
+/** 두 노드를 **같은 줄**로 묶는 가장 작은 상자(아래 케이스가 그것으로 자리를 본다). */
 function nearestCommonAncestor(a: AtomElement, b: AtomElement): AtomElement {
   const ancestors = new Set<AtomElement>()
   for (let node: AtomElement | null = a; node !== null; node = node.parent) ancestors.add(node)

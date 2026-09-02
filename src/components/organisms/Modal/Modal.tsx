@@ -58,7 +58,7 @@ interface ModalPanelProps {
 interface ModalCardProps extends ModalPanelProps {
   /**
    * 하단 패딩만 줄인다(`p-6` → `pb-4`). 부 동작 버튼이 작아 아래 여백이 상대적으로 커 보이는
-   * 모달에 쓴다(— 업데이트 모달).
+   * 모달에 쓴다(업데이트 모달).
    */
   tight?: boolean
 }

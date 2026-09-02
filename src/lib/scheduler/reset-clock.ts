@@ -49,7 +49,7 @@ function formatKstDateKey(kstWallClock: Date): string {
 }
 
 /**
- * KST 기준 `daysBack`일 전 날짜를 YYYY-MM-DD로 반환한다(— 조회 원장의
+ * KST 기준 `daysBack`일 전 날짜를 YYYY-MM-DD로 반환한다(조회 원장의
  * 윈도우 경계 계산용). `daysBack: 0` 은 [[getCurrentKstDateKey]] 와 같다.
  */
 export function getKstDateKeyDaysAgo(now: Date, daysBack: number): string {

@@ -124,7 +124,7 @@ function sameOrder(a: string[], b: string[]): boolean {
 }
 
 export function useCharacterManage(): CharacterManageController {
-  // 추적 목록의 진실은 컨텐츠 스케줄러 스토어 하나다(— 사본을 만들지 않는다).
+  // 추적 목록의 진실은 컨텐츠 스케줄러 스토어 하나다(사본을 만들지 않는다).
   const { trackedOcids } = useContentSchedulerStore()
 
   const [accounts, setAccounts] = useState<AccountSummaryView[]>([])
@@ -397,7 +397,7 @@ export function useCharacterManage(): CharacterManageController {
     [loadRoster],
   )
 
-  // 새로 고른 캐릭터는 **배열 끝**이다(— 레벨로 끼워 넣지 않는다).
+  // 새로 고른 캐릭터는 **배열 끝**이다(레벨로 끼워 넣지 않는다).
   const addCharacter = useCallback(
     (ocid: string): void => {
       editSelection((previous) => (previous.includes(ocid) ? previous : [...previous, ocid]))

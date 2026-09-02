@@ -52,7 +52,7 @@ export interface RosterErrorCopy {
   /**
    * **눌러도 실패하거나 누를 것이 없는 자리에는 액션을 주지 않는다**. 그래서
    * 옵셔널이다. `characterUnavailable`(400 OPENAPI00003)과 `rateLimited`
-   * 가 전자, 피커의 401이 후자다(— 이동이 이미 일어난다).
+   * 가 전자, 피커의 401이 후자다(이동이 이미 일어난다).
    */
   action?: { kind: 'retry'; label: string }
 }
@@ -72,7 +72,7 @@ export function formatRosterError(error: ScheduleSyncError, place: RosterErrorPl
             description: 'API 키를 다시 확인해주세요',
             action: RETRY,
           }
-    // 액션을 주지 않는다(—의 "429의 재시도 버튼은
+    // 액션을 주지 않는다(의 "429의 재시도 버튼은
     // 비활성화하지 않는다"를 폐기). 옛 결정은 "초당 한도라면 잠시 뒤 재시도가 통한다"를 전제했으나,
     // 사용자는 개발 단계 키를 쓰므로 일 1,000건을 소진했으면 다음 날까지 안 풀린다. 게다가 새 문구의
     // 처방이 재시도가 아니라 **키 단계 확인**이라, 버튼이 있으면 화면이 두 말을 한다.
@@ -148,7 +148,7 @@ export function formatStaleRosterError(error: ScheduleSyncError): StaleRosterErr
     // 400 OPENAPI00003은 영구다. 언제 눌러도 같은 400이라 액션을 주지 않는다.
     case 'characterUnavailable':
       return { message: '이 계정의 캐릭터를 조회할 수 없습니다' }
-    // 현행 문구·액션 그대로다(— 폐기가 아니라 좁혀진 것). 뒤 둘은 date를 쓰는
+    // 현행 문구·액션 그대로다(폐기가 아니라 좁혀진 것). 뒤 둘은 date를 쓰는
     // 보스 수익 백필에서만 나오는 종류라 여기 도달할 수 없지만, formatRosterError와 같은 이유로
     // network에 흡수해 종류가 늘 때 조용히 undefined가 되지 않게 한다.
     case 'periodOutOfRange':

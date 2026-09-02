@@ -15,7 +15,7 @@ import type { RootStackParamList } from '../routes'
  * 0 으로 두면 그 구간의 회귀를 스냅샷이 영원히 못 보기 때문이다.
  *
  * **`ThemeProvider` 는 step 2 가 더했다**. 자리표시자만 있을 때는 없어도 됐지만, 진짜 화면은 테마를
- * 읽는다(온보딩은 스크롤 인디케이터 색 —). 컨텍스트가 없으면 조용히 기본 테마로
+ * 읽는다(온보딩은 스크롤 인디케이터 색). 컨텍스트가 없으면 조용히 기본 테마로
  * 폴백하지 않고 **던지므로**(`theme/context.ts` 의 판단) 여기서 감싼다. 실제 트리와도 같은 순서다
  * (`App.tsx`: `SafeAreaProvider` → `ThemeProvider` → … → `AppNavigation`).
  *

@@ -285,7 +285,7 @@ describe('CharacterPortrait · rail 규격의 얼굴과 선택', () => {
 })
 
 //  로 보스 수익의 아바타가 이 부품으로 들어왔다. 아래는 그 화면의 계약이고,
-// 진행률을 나타내는 것이 링뿐이라(— `n/12` 글자 보류) 접근성 이름이 곧 그
+// 진행률을 나타내는 것이 링뿐이라(`n/12` 글자 보류) 접근성 이름이 곧 그
 // 정보다.
 describe('CharacterPortrait · compact 규격', () => {
   async function compact(

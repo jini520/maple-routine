@@ -43,7 +43,7 @@ import type { DroughtView } from '../view-model'
 import type { WidgetProps } from './types'
 
 /**
- * 고가 기록이 **한 건도 없을 때**(— 기준점이 없으면 요약이 `null` 이다).
+ * 고가 기록이 **한 건도 없을 때**(기준점이 없으면 요약이 `null` 이다).
  *
  * 0주째로 위장하지 않는다. 0주는 이번 주에 먹었다 는 뜻이라 정반대의 사실이 된다. 안 먹은
  * 것과 안 적은 것은 다르다.

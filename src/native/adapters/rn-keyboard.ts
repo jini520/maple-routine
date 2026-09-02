@@ -3,7 +3,7 @@ import { Keyboard } from 'react-native'
 import type { KeyboardPort } from '../ports'
 
 /**
- * `KeyboardPort` 의 RN 구현(— 밖으로 나가는 시그니처는 Capacitor 구현과 한 글자도
+ * `KeyboardPort` 의 RN 구현(밖으로 나가는 시그니처는 Capacitor 구현과 한 글자도
  * 다르지 않다).
  *
  * 쓰임은 그대로다. 키보드가 뜨면 화면 하단에 고정된 탭바가 키보드 바로 위에 얹혀 어색하므로 그동안

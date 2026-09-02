@@ -79,7 +79,7 @@ describe('사냥터 참조표 정합성', () => {
 
   it('`세 갈래길 1` 은 **30마리**다 — 15 는 오기였다 (사용자 정정 2026-08-28)', () => {
     // 바로 옆 `세 갈래길 2` 가 30마리인데 `1` 만 15 로 적혀 있었다. 원문을 옮길 때 섞인 값이고,
-    // 사용자가 30 으로 확정했다(— 앱이 추정해 고친 것이 아니다).
+    // 사용자가 30 으로 확정했다(앱이 추정해 고친 것이 아니다).
     const 소멸의여로 = REGIONS.find((region) => region.name === '소멸의 여로')!
     const 셋 = 소멸의여로.grounds.filter((ground) => ground.name.startsWith('세 갈래길'))
     expect(셋.map((ground) => ground.mobs)).toEqual([30, 30])

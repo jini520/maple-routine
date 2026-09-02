@@ -4,7 +4,7 @@ import { setPreferencesPort } from '../../storage/ports'
  * 인메모리 `PreferencesPort` 를 꽂는다. **step 4 부터 필요해졌다.**
  *
  * 자리표시자만 있을 때는 화면이 저장소를 안 건드렸는데, 진짜 탭 화면은 마운트하며 추적 목록을
- * 읽는다(— 빈 상태는 저장소를 읽고 확인한 뒤에만 그린다). 포트가 없으면
+ * 읽는다(빈 상태는 저장소를 읽고 확인한 뒤에만 그린다). 포트가 없으면
  * `getPreferencesPort()` 가 **던지고**(`core/storage/ports.ts` 의 의도된 설계), 그 거부가
  * 내비게이션 테스트를 화면 내용과 무관한 이유로 빨갛게 만든다.
  *

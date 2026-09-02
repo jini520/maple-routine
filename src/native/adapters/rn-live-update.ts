@@ -38,7 +38,7 @@ const LATEST_URL = `${appJson.expo.updates.url.replace(/\/manifest$/, '')}/lates
  *
  * **전부 선택 필드로 읽는다.** 가 `highlights` 를 필수 검사에 안 넣은 것과 같은 이유이고,
  * 이번에는 더 세다. 매니페스트를 만든 스크립트와 그것을 읽는 앱이 서로 다른 시점의 것일 수 있다.
- * 없으면 모달은 그 부분을 안 그린다(버튼째 없다 —).
+ * 없으면 모달은 그 부분을 안 그린다(버튼째 없다).
  */
 function readExtra(manifest: unknown): { appVersion: string | null; highlights?: string[]; sizeBytes: number } {
   const extra = (manifest as { extra?: Record<string, unknown> } | undefined)?.extra

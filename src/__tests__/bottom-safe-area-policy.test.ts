@@ -1,4 +1,4 @@
-// 하단 안전영역 정책 가드 —.
+// 하단 안전영역 정책 가드.
 //
 // **화면 하단은 `insets.bottom` 을 직접 읽지 않는다.** `top-safe-area-policy.test.ts` 와 같은 형태의
 // 가드이고 이유도 같다. 안드로이드 하한이 값 하나에서 나오는 것이 이 정정의 전부인데 그 **하나** 는
@@ -84,7 +84,7 @@ describe(' — 하단 안전영역은 한 자리에서 나온다', () => {
   it('검사 대상을 실제로 찾는다', () => {
     // 경로가 틀려 0개를 훑고도 초록이 되는 것이 이 부류 가드의 흔한 실패다.
     expect(files.length).toBeGreaterThan(15)
-    // 셸 셋(온보딩 단계 셸이 여기 든다 —) + 자기 `paddingBottom` 을 직접 주는
+    // 셸 셋(온보딩 단계 셸이 여기 든다) + 자기 `paddingBottom` 을 직접 주는
     // 화면 둘(처리방침 · 캐릭터 관리).
     expect(
       files.filter((file) => file.source.includes('useBottomSafeAreaPx')).length,

@@ -184,7 +184,7 @@ export function countGroupClearedWeeklyBosses(group: CharacterGroup): number {
   return clearedBossNames.size
 }
 
-// 월드별 주간 결정석 소진량(— 90은 계정이 아니라 월드당 한도다). 캐릭터별
+// 월드별 주간 결정석 소진량(90은 계정이 아니라 월드당 한도다). 캐릭터별
 // 처치 수는 위 countGroupClearedWeeklyBosses를 그대로 재사용하고(계산 두 벌 금지, 결정 3) 여기서는
 // 월드 묶음만 얹는다. 그룹의 행은 모두 같은 캐릭터에서 나오므로 월드도 첫 행에서 읽으면 된다.
 // world가 null인 캐릭터(구버전 캐시)는 어느 월드 한도에도 귀속시킬 수 없어 조용히 제외한다
@@ -232,7 +232,7 @@ export function summarizeWorldCrystals(groups: CharacterGroup[]): WorldCrystalSu
 
 // 이 캐릭터가 이 달에 처치한 월간 보스 수(보스명 distinct — 같은 보스를 여러 난이도로 잡아도 1).
 // 주간 쪽 countGroupClearedWeeklyBosses와 대칭이며, **월간 탭 진행 링과 월간 결정석 칩이 이 함수
-// 하나를 공유한다**(—의 "계산 두 벌 금지"를 월간에도 적용).
+// 하나를 공유한다**(의 "계산 두 벌 금지"를 월간에도 적용).
 export function countGroupClearedMonthlyBosses(group: CharacterGroup): number {
   const clearedBossNames = new Set<string>()
   for (const row of group.bossRows) {

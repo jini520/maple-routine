@@ -109,7 +109,7 @@ describe('메포 지출의 시세 요구', () => {
     expect(runMock).not.toHaveBeenCalled()
   })
 
-  // 환산이 나눗셈이라 0 이면 화면이 깨진다(— 메포 × 1억 ÷ 시세).
+  // 환산이 나눗셈이라 0 이면 화면이 깨진다(메포 × 1억 ÷ 시세).
   it('시세가 0 이하면 던진다 — 환산이 나눗셈이다', async () => {
     const { insertSpendRecord } = require('../spend') as typeof import('../spend')
 

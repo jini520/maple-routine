@@ -49,7 +49,7 @@ describe('ApiKeyNoticeModal', () => {
     })
 
     // 원인마다 다른 말을 해야 한다. 무효 키는 "다음에 무슨 일이 일어나는가"를, 429 는 처방을
-    // 말한다(— 모달은 줄바꿈이 되므로 처방까지 담는 자리다).
+    // 말한다(모달은 줄바꿈이 되므로 처방까지 담는 자리다).
     it('원인에 맞는 제목과 본문을 그린다', async () => {
       const { getByText } = await renderOverlay(<ApiKeyNoticeModal />)
 
@@ -68,7 +68,7 @@ describe('ApiKeyNoticeModal', () => {
     })
 
     // 닫을 수 없어야 한다: 저장된 키로는 앞으로 갈 수 없으므로 닫아서 돌아갈 곳이 없다.
-    // 429 도 마찬가지다(— 사용자 확정).
+    // 429 도 마찬가지다(사용자 확정).
     it('오버레이를 눌러도 닫히지 않는다', async () => {
       const { getByText, getByTestId } = await renderOverlay(<ApiKeyNoticeModal />)
 

@@ -553,7 +553,7 @@ export function HuntCalculatorForm(
             ocid,
             earnedOn: props.dateKey,
             category: '사냥',
-            // **고른 사냥터의 이름**이 그 자리다(— 전역 유일이라 지역이 따라온다).
+            // **고른 사냥터의 이름**이 그 자리다(전역 유일이라 지역이 따라온다).
             item: groundName,
             // **합계**다(메소 + 조각 × 가격). 큰 숫자에 서는 그 값이다.
             mesoAmount: huntTotal,

@@ -42,7 +42,7 @@ import type { RecordedDrop } from '../../../types/drops'
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { DropPricePad, DropPricePadContent } from '../DropPricePad'
 
-// 보스 이름·난이도는 게임 레퍼런스 데이터에서 뽑는다(— 테스트가 베끼면 두 벌이 된다).
+// 보스 이름·난이도는 게임 레퍼런스 데이터에서 뽑는다(테스트가 베끼면 두 벌이 된다).
 const 주간보스 = weeklyBossesData.weekly[0].boss
 
 function 드롭(overrides: Partial<RecordedDrop> = {}): RecordedDrop {

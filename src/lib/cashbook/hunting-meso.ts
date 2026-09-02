@@ -78,7 +78,7 @@ export function killedMobsOf(mobs: number, missedMobs: number): number {
 }
 
 /**
- * 메소 획득률 증가 아이템(사용자 확정 2026-08-28 —).
+ * 메소 획득률 증가 아이템(사용자 확정 2026-08-28).
  *
  * **`kind` 가 곧 계산식에서의 자리**다:
  *

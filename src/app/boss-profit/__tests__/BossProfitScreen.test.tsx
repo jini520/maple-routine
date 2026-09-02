@@ -575,7 +575,7 @@ describe('월간 탭', () => {
 })
 
 describe('구조 계약', () => {
-  it('페이지 헤더에는 경계 페이드를 두지 않는다( — 회귀 가드)', async () => {
+  it('페이지 헤더에는 경계 페이드를 두지 않는다(회귀 가드)', async () => {
     const { queryByTestId, getByTestId } = await renderScreen()
 
     expect(getByTestId('page-header')).toBeTruthy()

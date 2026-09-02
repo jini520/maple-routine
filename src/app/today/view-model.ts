@@ -181,7 +181,7 @@ export interface SharedContentGroupView {
  * `groupTotalMeso` 다(이번 주 계산에는 주차별 소계가 언제나 비어 있다).
  */
 export interface ProfitSplit {
-  /** 보스 행의 `payoutMeso` 합(— 드롭은 여기 안 든다). */
+  /** 보스 행의 `payoutMeso` 합(드롭은 여기 안 든다). */
   crystalMeso: number
   /** 그 행들에 기록된 드롭 판매가의 분배 후 합. */
   itemMeso: number
@@ -442,7 +442,7 @@ function contentsInputOf(
  * - **값**: 캐릭터의 원본 목록(`dailyContents`/`weeklyContents`). API 는 등록 여부와 무관하게
  *   진행을 준다. 그래서 아무도 등록 안 한 에픽 던전도 값이 있으면 `CLEAR` 로 그려진다.
  * - **있는가**: `displayed*Contents`(자동 모드 = `registration_flag`, 수동 모드 = 추적 목록 멤버십).
- *  `onlyWhenScheduled` 인 항목만 이 판정을 탄다(— 유니온 둘).
+ *  `onlyWhenScheduled` 인 항목만 이 판정을 탄다(유니온 둘).
  *
  * 둘을 한 목록으로 합치면 등록 안 했지만 진행은 있다 를 표현할 방법이 사라진다.
  */

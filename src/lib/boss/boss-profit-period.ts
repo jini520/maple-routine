@@ -196,7 +196,7 @@ export function formatBossProfitPeriodLabel(
 }
 
 /**
- * 그 기간에 **든 날짜 전부**(KST `YYYY-MM-DD`, 오름차순) —.
+ * 그 기간에 **든 날짜 전부**(KST `YYYY-MM-DD`, 오름차순).
  *
  * `getBackfillQueryDate` 는 기간당 **한 날짜**만 낸다(그 기간이 가장 온전히 반영되는 시점). 그것으로는
  * 그 기간에 잡았다 까지만 알 수 있고 **며칟날인지는 안 나온다**. 일간 해상도는 날짜들을 훑어
@@ -295,7 +295,7 @@ export function isPeriodQueryable(cycle: BossCycle, periodKey: string, now: Date
  *
  * `outOfRange` 가 여기 있는 이유: 우리가 계산한 조회 구간 안인데도 API가 400 `OPENAPI00004` 로
  * 거부하는 경우가 있다. 그 날짜에 이 캐릭터가 지금 월드에 없었거나(월드 리프) 휴면이었던 경우다
- * (실측, 구분 불가 —). 날짜만 보면 알 수 없으므로 **응답이 알려준 사실**로
+ * (실측, 구분 불가). 날짜만 보면 알 수 없으므로 **응답이 알려준 사실**로
  * 상태를 정한다. 다만 아직 영속하지 않으므로 다음 방문에 한 번 더 호출한다(후속 과제).
  */
 export type PeriodQueryOutcome = 'notCollected' | 'outOfRange' | 'failed'
