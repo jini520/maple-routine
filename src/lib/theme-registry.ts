@@ -18,7 +18,7 @@ import type {
   ThemeName,
 } from '../types/theme'
 import { deriveMediaScope } from './theme-derive'
-import { getThemeBackgroundUrl } from './artwork'
+import { getThemeBackgroundUrl } from './asset-lookup'
 
 const JOB_THEMES = jobThemesData as JobThemes
 

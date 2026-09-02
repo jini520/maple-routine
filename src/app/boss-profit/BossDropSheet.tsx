@@ -40,7 +40,7 @@ import {
 } from '../../lib/boss-drops'
 import { useDropEffectStore } from '../../features/drop-effect/store'
 import { getFixedDropIcons, type FixedDropIconSpec } from '../../lib/fixed-drops'
-import { getItemIconUrl, getItemIconUrlByFile } from '../../lib/artwork'
+import { getItemIconUrl, getItemIconUrlByFile } from '../../lib/asset-lookup'
 import { isValuableDrop } from '../../lib/valuable-drops'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types'
 import type { DropCandidate, DropCategory, RecordedDrop, SelectableDropCategory } from '../../types/drops'

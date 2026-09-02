@@ -1,6 +1,6 @@
 
 import { assetUri } from '../../assets/__tests__/asset-uri'
-import { getDailyQuestBackgroundUrl, getDailyQuestRegionCrop } from '../artwork'
+import { getDailyQuestBackgroundUrl, getDailyQuestRegionCrop } from '../asset-lookup'
 
 describe('getDailyQuestBackgroundUrl', () => {
   it('slug가 null이면 null을 반환한다', () => {

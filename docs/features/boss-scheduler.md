@@ -34,7 +34,7 @@
 | 저장 | `storage/boss-party-settings.ts` | SQLite `boss_party_settings` |
 | 계산 | `lib/boss-matching.ts` | 정렬(`compareBossOrder`), 한도 판정(`isWeeklyClearLimitReached`·`countManualWeeklyBosses`) |
 | 계산 | `lib/manual-boss-merge.ts` | 수동 모드 목록 합치기(`mergeManualBossList`) |
-| 계산 | `lib/artwork.ts` | 보스 초상화 |
+| 계산 | `lib/asset-lookup.ts` | 보스 초상화 |
 | UI | `components/molecules/BossSectionHeader` | ‘월간’·‘주간’ 섹션 헤더. 두 화면이 같은 것을 쓴다 |
 | 참조 | `src/data/weekly-bosses.json` | 보스명·난이도 매핑, 정규 순서, `requiredLevels` |
 | 참조 | `src/data/boss-crystal-prices.json` | 관리 화면이 보여줄 난이도 목록의 출처 |

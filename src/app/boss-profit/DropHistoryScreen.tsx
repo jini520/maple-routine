@@ -51,7 +51,7 @@ import type {
   DropHistoryRecord,
   ValuableDroughtSummary,
 } from '../../lib/drop-history'
-import { getItemIconUrl } from '../../lib/artwork'
+import { getItemIconUrl } from '../../lib/asset-lookup'
 import { isValuableDrop } from '../../lib/valuable-drops'
 
 import { MapleLeaf, Text } from '../../components/atoms'

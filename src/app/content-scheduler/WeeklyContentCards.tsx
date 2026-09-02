@@ -14,7 +14,7 @@ import {
   getDailyQuestBackgroundUrl,
   getDailyQuestRegionCrop,
   getDailyQuestRegionIconUrl,
-} from '../../lib/artwork'
+} from '../../lib/asset-lookup'
 import type { ImageCrop } from '../../lib/image-crop'
 import {
   matchWeeklyQuestRegionSlug,

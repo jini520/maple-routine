@@ -30,7 +30,7 @@
 // ⑤ `space-y`/`gap-[18px]` 은 `gap-*` 로, `tabular-nums` 는 스타일로(`lib/text-styles.ts`).
 import { Pressable, View } from 'react-native'
 
-import { getBossPortraitCrop, getBossPortraitUrl } from '../../../lib/artwork'
+import { getBossPortraitCrop, getBossPortraitUrl } from '../../../lib/asset-lookup'
 import type { BossDifficulty } from '../../../types'
 
 import { withAlpha } from '../../../lib/color'

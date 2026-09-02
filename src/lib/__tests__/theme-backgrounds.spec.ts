@@ -1,7 +1,7 @@
 
 import { assetUri } from '../../assets/__tests__/asset-uri'
 import jobThemes from '../../data/job-themes.json'
-import { getThemeBackgroundUrl } from '../artwork'
+import { getThemeBackgroundUrl } from '../asset-lookup'
 
 /**
  * 테마 배경 이미지 에셋 해석([[ADR-088]] 결정 3).

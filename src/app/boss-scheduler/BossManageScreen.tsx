@@ -42,7 +42,7 @@ import {
   isSeasonBossName,
   WEEKLY_BOSS_CLEAR_LIMIT,
 } from '../../lib/boss-matching'
-import { isChallengersWorld } from '../../lib/artwork'
+import { isChallengersWorld } from '../../lib/asset-lookup'
 import type { BossDifficulty } from '../../types'
 
 import { BossSectionHeader } from '../../components/molecules/BossSectionHeader/BossSectionHeader'

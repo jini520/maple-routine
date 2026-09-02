@@ -16,7 +16,7 @@
 import { useState } from 'react'
 import { Image, Modal, Pressable, View } from 'react-native'
 
-import { getItemIconUrlByFile, worldEmblemUrl } from '../../lib/artwork'
+import { getItemIconUrlByFile, worldEmblemUrl } from '../../lib/asset-lookup'
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss-matching'
 import { computeProfitDelta, formatProfitDeltaBody, formatProfitDeltaLabel } from '../../lib/boss-profit-delta'
 import { formatBossProfitPeriodLabel, getAdjacentPeriodKey } from '../../lib/boss-profit-period'

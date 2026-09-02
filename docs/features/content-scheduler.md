@@ -36,7 +36,7 @@
 | 계산 | `lib/content-category.ts` | `categorizeContentEntries`. 카테고리 도출 |
 | 계산 | `lib/required-level.ts` | 요구 레벨 판정([[ADR-162]]). **소비처 다섯이 이 한 곳을 쓴다** |
 | 계산 | `lib/tracked-order.ts` | `orderByTracked`. 저장 순서 적용 |
-| 계산 | `lib/artwork.ts` | 일일퀘스트 지역 배경 매칭 |
+| 계산 | `lib/asset-lookup.ts` | 일일퀘스트 지역 배경 매칭 |
 | 저장 | `storage/scheduler-cache.ts` | 캐릭터별 마지막 정상 상태와 `syncedAt` |
 | 저장 | `storage/shared-progress-cache.ts` | 월드·계정 공유 진행 원장 |
 | 저장 | `storage/schedule-probe-ledger.ts` | 어느 캐릭터를 어느 날짜로 조회했는지 |
@@ -479,7 +479,7 @@ mask `linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)`)이다.
 ```
 
 **지역 배경 매칭**은 `daily-quest-regions.json`(지역명 → 슬러그)과
-`daily-quest-region-crops.json`(슬러그 → 크롭)을 `lib/artwork` 가 조회한다. 공백을
+`daily-quest-region-crops.json`(슬러그 → 크롭)을 `lib/asset-lookup` 가 조회한다. 공백을
 제거한 표시명이 공백을 제거한 지역명으로 `startsWith` 하는지 본다(예: "레헬른의평온한밤"이
 "레헬른"으로 시작한다). 매칭이 안 되면 일러스트 층을 생략한다. 크롭을 맞추던 디버그 화면은 ⛔ ADR-092 에서 삭제했다.
 

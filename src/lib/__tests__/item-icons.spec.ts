@@ -1,6 +1,6 @@
 
 import { assetUri } from '../../assets/__tests__/asset-uri'
-import { getItemIconUrl, getItemIconUrlByFile } from '../artwork'
+import { getItemIconUrl, getItemIconUrlByFile } from '../asset-lookup'
 
 describe('getItemIconUrl', () => {
   it('item-icons.json에 매핑된 일반 아이템은 URL을 반환한다 (홍옥의 보스 반지 상자 -> boss_ring_box_red.png)', () => {

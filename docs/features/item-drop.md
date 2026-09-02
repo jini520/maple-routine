@@ -35,9 +35,9 @@
 | 계산 | `lib/drop-history.ts` | 전 기간 집계, `VALUABLE_DROUGHT_TIERS` |
 | 계산 | `constants/style/drought-tier-styles.ts` | 가뭄 단계 잎 램프. today 위젯과 공유한다 |
 | 계산 | `lib/drop-price.ts` | 판매가를 수익으로 환산 |
-| 계산 | `lib/artwork.ts` | 아이콘 조회. 일반 아이템은 `item-icons.json`, 반지는 `boss-ring-boxes.json` 의 `iconFile` 이다. 매핑이 없으면 플레이스홀더 |
+| 계산 | `lib/asset-lookup.ts` | 아이콘 조회. 일반 아이템은 `item-icons.json`, 반지는 `boss-ring-boxes.json` 의 `iconFile` 이다. 매핑이 없으면 플레이스홀더 |
 | 연출 | `components/organisms/DropEffectOverlay/` | 전체화면 연출 |
-| 연출 | `lib/artwork.ts` · `lib/drop-effect-layout.ts` | 프레임 목록과 origin 테이블 |
+| 연출 | `lib/asset-lookup.ts` · `lib/drop-effect-layout.ts` | 프레임 목록과 origin 테이블 |
 | 도구 | `scripts/measure-drop-effect-origins.py` | origin 재계측 |
 | 참조 | `src/data/item-drop-table.json` | 보스별 드롭 테이블 |
 | 참조 | `src/data/boss-ring-boxes.json` · `accessory-boxes.json` | 상자 개봉 후보 |

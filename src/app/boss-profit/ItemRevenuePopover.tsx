@@ -47,7 +47,7 @@ import { Dimensions, Image, Modal, Pressable, ScrollView, useWindowDimensions, V
 import { formatMesoShort } from '../../lib/boss-profit-delta'
 import { dropPayoutMeso } from '../../lib/drop-price'
 import type { RecordedDrop } from '../../types/drops'
-import { getItemIconUrl } from '../../lib/artwork'
+import { getItemIconUrl } from '../../lib/asset-lookup'
 import { anchorPopover } from '../../lib/popover-anchor'
 
 import { Text } from '../../components/atoms'

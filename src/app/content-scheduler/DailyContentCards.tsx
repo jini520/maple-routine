@@ -19,7 +19,7 @@ import {
   getDailyQuestBackgroundUrl,
   getDailyQuestRegionCrop,
   getDailyQuestRegionIconUrl,
-} from '../../lib/artwork'
+} from '../../lib/asset-lookup'
 import type { ImageCrop } from '../../lib/image-crop'
 import { matchDailyQuestRegionSlug, stripDailyQuestPrefix } from '../../lib/quest-region-matching'
 import type { DailyContent } from '../../types'

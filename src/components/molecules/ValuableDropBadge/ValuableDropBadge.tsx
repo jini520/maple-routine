@@ -1,4 +1,4 @@
-import { getItemIconUrl } from '../../../lib/artwork'
+import { getItemIconUrl } from '../../../lib/asset-lookup'
 import type { RecordedDrop } from '../../../types/drops'
 import { Image, View } from 'react-native'
 

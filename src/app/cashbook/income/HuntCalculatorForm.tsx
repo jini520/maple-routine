@@ -24,7 +24,7 @@ import {
   type SelectOption,
 } from '../../../components/organisms/SelectField/SelectField'
 import type { MesoRateLoad } from '../../../features/cashbook/meso-rate'
-import { FORCE_LABELS, forceIconOf, getItemIconUrlByFile } from '../../../lib/artwork'
+import { FORCE_LABELS, forceIconOf, getItemIconUrlByFile } from '../../../lib/asset-lookup'
 import {
   findHuntingGround,
   findHuntingRegion,
