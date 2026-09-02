@@ -127,8 +127,7 @@ describe('formatStaleRosterError', () => {
   ]
 
   // 어미 규칙은 ADR-062 결정 5. '아닙니다'를 함께 허용하는 것은 규칙을 푸는 게 아니라 같은
-  // 하십시오체(~ㅂ니다)의 다른 활용이기 때문이다 — network 계열 문구 '목록이 최신이 아닙니다'는
-  // 화면 하드코딩과 같아야 해서 바꿀 수 없다(아래 회귀 가드).
+  // 하십시오체(~ㅂ니다)의 다른 활용이기 때문이다.
   it('6종 전부 문구가 있고 에러 어미 규칙(~습니다 / ~주세요)을 따른다', () => {
     for (const kind of KINDS) {
       const copy = formatStaleRosterError({ kind })
@@ -137,18 +136,16 @@ describe('formatStaleRosterError', () => {
     }
   })
 
+  // 문구를 여기서 못 박는다. 예전에는 화면 둘이 '목록이 최신이 아닙니다'를 하드코딩하고 있어
+  // 아래에 「화면과 한 글자도 다르지 않다」는 별도 가드가 있었는데, [[ADR-144]] 로 그 자리가
+  // `CharacterManageBody` 하나가 되면서 화면이 이 함수를 부르게 됐다. 맞출 상대가 없어져
+  // 그 가드를 지웠고(2026-09-03), 문구를 지키는 것은 이제 이 단언이다.
   it('network 계열 3종은 현행 문구 + 다시 시도를 유지한다', () => {
     for (const kind of ['network', 'periodOutOfRange', 'notCollected'] as const) {
       const copy = formatStaleRosterError({ kind })
       expect(copy.message).toBe('목록이 최신이 아닙니다')
       expect(copy.action).toEqual({ kind: 'retry', label: '다시 시도' })
     }
-  })
-
-  // 회귀 가드: 이 문자열은 화면(ContentCharacterStep)에 하드코딩된 값과
-  // 정확히 같아야 한다. 이 phase가 바꾸는 것은 401뿐임이 이 단언으로 증명된다.
-  it('network의 문구는 화면 하드코딩과 한 글자도 다르지 않다', () => {
-    expect(formatStaleRosterError({ kind: 'network' }).message).toBe('목록이 최신이 아닙니다')
   })
 
   it('rateLimited는 액션 없이 키 단계 확인만 말한다', () => {

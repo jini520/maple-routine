@@ -77,13 +77,6 @@ export const DROP_EFFECT_ORIGINS: Record<DropEffectPhase, readonly DropEffectOri
   ],
 }
 
-// origin 점이 요소 좌상단(= 화면 앵커)에 오도록, 스케일된 origin 만큼 되민다.
-// `transformOrigin: '0 0'` 과 짝으로 쓴다. 소수 origin × 스케일의 부동소수 꼬리는 잘라 낸다.
-export function dropFrameTransform(origin: DropEffectOrigin, scale: number): string {
-  const px = (v: number): number => Math.round(v * -scale * 100) / 100
-  return `translate(${px(origin[0])}px, ${px(origin[1])}px) scale(${scale})`
-}
-
 // DropEff 기둥 확대 배율(앵커 = 기둥의 지면 접점).
 export const DROP_PILLAR_SCALE = 1.3
 

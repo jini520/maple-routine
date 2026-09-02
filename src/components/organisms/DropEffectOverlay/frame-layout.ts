@@ -1,9 +1,9 @@
 // 프레임 한 장을 화면 어디에 얼마나 크게 놓는가 — 웹의 `transform` 문자열을 **RN 배치 값**으로 옮긴다.
 //
-// ## 왜 `dropFrameTransform` 을 그대로 못 쓰나
+// ## 왜 CSS `transform` 문자열이 아니라 배치 값인가
 //
-// core 의 그 함수는 CSS 문자열(`translate(..px, ..px) scale(s)`)을 만들고 `transformOrigin: '0 0'`
-// 과 짝으로 쓴다. RN 에도 `transform`·`transformOrigin` 이 있지만, 이 저장소는 이번 전환에서
+// 웹은 `translate(..px, ..px) scale(s)` 문자열을 만들어 `transformOrigin: '0 0'` 과 짝으로 썼다
+// (그 함수를 옮겨 온 사본은 아무도 안 불러 2026-09-03 에 지웠다). RN 에도 `transform`·`transformOrigin` 이 있지만, 이 저장소는 이번 전환에서
 // **퍼센트·transformOrigin 같은 «되는지 확실치 않은» 스타일에 기대면 조용히 안 그려지는** 사례를
 // 반복해서 겪었다(시트 스킨 3종·NativeWind 조건부 transform). 그래서 같은 결과를 **레이아웃 값**
 // (`left`·`top`·`width`·`height`)으로 낸다 — 계산은 곱셈 두 번이고, 안 그려질 자리가 없다.
@@ -34,14 +34,14 @@ export interface FrameBitmapSize {
   height: number
 }
 
-export interface FramePlacement {
+interface FramePlacement {
   left: number
   top: number
   width: number
   height: number
 }
 
-/** 소수 origin × 스케일의 부동소수 꼬리를 자른다 — core `dropFrameTransform` 과 같은 자리·같은 규칙. */
+/** 소수 origin × 스케일의 부동소수 꼬리를 자른다. 웹도 같은 자리에서 같은 규칙을 썼다. */
 function round2(v: number): number {
   return Math.round(v * 100) / 100
 }
@@ -52,7 +52,7 @@ function round2(v: number): number {
  * 크기를 모르면(`null`) **놓지 않는다** — 웹이 `el.complete` 가 false 인 동안 좌표를 그대로 두고
  * 표시도 켜지 않던 것과 같은 판단이다. 크기 없이 그리면 프레임마다 최대 26px 씩 튄다([[ADR-048]]).
  */
-export function placeDropFrame(
+function placeDropFrame(
   origin: DropEffectOrigin,
   scale: number,
   bitmap: FrameBitmapSize | null,
@@ -75,7 +75,7 @@ export function placeDropFrame(
  *
  * 웹은 `translate(-50%,-50%)` 였지만 여기서는 같은 이유로 음수 마진을 쓴다(위 주석).
  */
-export function centerDropFrame(scale: number, bitmap: FrameBitmapSize | null): FramePlacement | null {
+function centerDropFrame(scale: number, bitmap: FrameBitmapSize | null): FramePlacement | null {
   if (bitmap === null) return null
   if (!Number.isFinite(bitmap.width) || bitmap.width <= 0) return null
   if (!Number.isFinite(bitmap.height) || bitmap.height <= 0) return null
