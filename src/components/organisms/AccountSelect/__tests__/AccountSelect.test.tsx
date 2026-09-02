@@ -191,7 +191,7 @@ describe('AccountSelect — 층은 그림자와 테두리가 말한다', () => {
   it('안드로이드 뒤로가기(onRequestClose)로 닫힌다', async () => {
     const rendered = await 열어서()
     // `Modal` 자신을 testID 로 잡는다 — 이 프롭은 호스트 뷰가 아니라 `Modal` 요소가 갖는다
-    // (`CharacterTrackingPicker` 테스트와 같은 방식). 상태를 바꾸므로 `act` 로 감싼다.
+    // 상태를 바꾸므로 `act` 로 감싼다.
     const modal = rendered.getByTestId('account-select-modal', { includeHiddenElements: true })
 
     await act(async () => {

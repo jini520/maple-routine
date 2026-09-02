@@ -8,7 +8,7 @@
 // ── RN 으로 옮기며 갈린 것 넷 ────────────────────────────────────────────────────────
 //
 // ① **`aria-pressed` → `aria-selected`.** RN 의 접근성 상태에 *pressed* 가 없다
-//    (`TrackingModeStep`·`DifficultySegment`·`CharacterTrackingGrid` 와 같은 판단).
+//    (`TrackingModeStep`·`DifficultySegment` 와 같은 판단).
 // ② **타일에 `aria-label` 을 명시한다.** 웹 `<button>` 은 접근 이름을 자식 글자에서 자동으로
 //    얻었지만 RN 은 중첩 `Text` 를 그렇게 접어 주지 않는다 — 같은 이름(테마 이름)을 직접 준다.
 // ③ **선택 링이 `box-shadow: inset` 이 아니라 두꺼운 테두리다.** RN 에는 inset 그림자가 없다.
@@ -90,8 +90,7 @@ export function ThemeSelector(props: ThemeSelectorProps): React.JSX.Element {
           >
             {group.category}
           </Text>
-          {/* CSS Grid 가 없어 `grid-cols-2` 를 **셀 패딩 + 줄 음수 마진**으로 만든다
-              (`CharacterTrackingGrid` 가 3열을 만든 방식과 같다).
+          {/* CSS Grid 가 없어 `grid-cols-2` 를 **셀 패딩 + 줄 음수 마진**으로 만든다.
               **`w-[calc(50%-5px)]` + `gap` 으로 두면 안 된다** — NativeWind 가 그 `calc()` 를
               만들지 않아 폭이 통째로 빠지고, 카드가 **글자 길이대로** 늘어나 한 줄에 셋이 서기도
               한다(2026-08-13 실기기 관측: 「엔젤릭버스터」만 넓었다). 에러도 경고도 없다.

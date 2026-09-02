@@ -9,8 +9,10 @@
 //    말을 두 번 한다(그 배지 문법은 [[ADR-118]] 의 «값 배지» 것이다).
 // ② **흐림은 톤만 낮춘다 — 비활성이 아니다.** 대표가 정해지면 나머지가 흐려지는 것은 «여럿 고를 수
 //    없다» 는 말이고, 못 누르게 하면 **대표를 바꿀 방법이 사라진다**.
-// ③ **`fill` 은 클래스가 아니라 프롭이다**(`CharacterTrackingGrid` 파일 머리 ⑦) — `fill-primary-ink`
-//    는 CSS 속성이라 NativeWind 가 RN 스타일로 내지 못하고 조용히 사라진다(별이 테두리만 남는다).
+// ③ **`fill` 은 클래스가 아니라 프롭이다.** `fill-primary-ink` 는 CSS 속성이라 NativeWind 가 RN
+//    스타일로 내지 못하고 조용히 사라진다(별이 테두리만 남는다). `currentColor` 로도 안 된다 — 그
+//    값의 출처는 `Svg` 의 `color` 프롭인데 lucide 는 색을 `stroke` 로만 넘긴다
+//    (`lib/nativewind-interop.ts`). 그래서 테마 값을 프롭으로 직접 넘긴다.
 import { Pressable } from 'react-native'
 
 import { StarIcon } from '../../atoms'

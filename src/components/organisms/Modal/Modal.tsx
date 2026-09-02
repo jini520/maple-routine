@@ -24,8 +24,7 @@
 // ⑤ **`overflow-y-auto` 는 안 옮긴다.** 웹은 오버레이가 스크롤을 가져 내용이 길면 굴렸는데, RN 에서
 //    같은 것을 하려면 스크롤 컨테이너가 바깥 탭 영역을 통째로 덮어 "바깥을 눌러 닫기"가 죽는다.
 //    [[ADR-107]] 결정 3 이 세운 규칙("스크롤포트는 **쓰는 쪽**이 자기 자리에 맞게 둔다")을 그대로
-//    적용해, 길어질 수 있는 모달이 자기 안에 스크롤포트를 둔다 — 실제로 그 문제를 가진
-//    `CharacterTrackingPicker` 는 이미 그렇게 되어 있다.
+//    적용해, 길어질 수 있는 모달이 자기 안에 스크롤포트를 둔다.
 import type { ReactNode } from 'react'
 import { Modal as RNModal, Pressable, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'

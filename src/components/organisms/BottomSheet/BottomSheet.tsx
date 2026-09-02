@@ -115,8 +115,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
   const ref = useRef<BottomSheetModal>(null)
   const scrollRef = useRef<{ scrollTo?: (options: { y: number; animated: boolean }) => void }>(null)
   const insets = useSafeAreaInsets()
-  // `82vh` 의 짝 — 인셋과 같은 프로바이더에서 나와 둘이 같은 순간을 가리킨다
-  // (`CharacterTrackingPicker` 가 `100dvh` 를 옮긴 것과 같은 이유).
+  // `82vh` 의 짝 — 인셋과 같은 프로바이더에서 나와 둘이 같은 순간을 가리킨다.
   const frame = useSafeAreaFrame()
   const { definition } = useThemeAppearance()
   /**
