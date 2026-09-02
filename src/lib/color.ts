@@ -216,3 +216,9 @@ export function mixOklab(base: string, other: string, ratio: number): string {
     }),
   )
 }
+
+/** `#rrggbb` 를 `rgba()` 로. 네이티브 그라데이션은 알파를 값으로 받아야 한다. */
+export function withAlpha(hex: string, alpha: number): string {
+  const { r, g, b } = parseHex(hex)
+  return `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${alpha})`
+}

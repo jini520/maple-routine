@@ -45,7 +45,7 @@ import { ProgressModal } from '../../components/organisms/ProgressModal/Progress
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { useBottomSafeAreaPx } from '../../lib/bottom-safe-area'
+import { useBottomSafeAreaPx } from '../../lib/safe-area'
 import { ArrowLeftIcon } from '../../lib/icons'
 import { reloadTabStores } from './reload-tab-stores'
 import { useSettingsNavigation } from './use-settings-navigation'

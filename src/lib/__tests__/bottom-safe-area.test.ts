@@ -4,7 +4,7 @@
 // 있고, **컴포넌트 테스트로는 이 결정을 못 지킨다** — jest-expo 는 iOS 로 돌고 iOS 인셋(34)이 곧
 // 하한이라 렌더 트리에서는 이 정정이 한 픽셀도 안 보인다.
 
-import { ANDROID_BOTTOM_SAFE_AREA_MIN_PX, resolveBottomSafeAreaPx } from '../bottom-safe-area'
+import { ANDROID_BOTTOM_SAFE_AREA_MIN_PX, resolveBottomSafeAreaPx } from '../safe-area'
 
 /** 안드로이드 실기기 실측 — `navigationBars` 45px @ density 3.0, 제스처 내비(2026-08-18). */
 const 안드로이드_제스처 = 45 / 3

@@ -33,7 +33,7 @@ import { Pressable, View } from 'react-native'
 import { getBossPortraitCrop, getBossPortraitUrl } from '../../../lib/artwork'
 import type { BossDifficulty } from '../../../types'
 
-import { withAlpha } from '../../../lib/color-alpha'
+import { withAlpha } from '../../../lib/color'
 import { LinearGradient } from '../../../lib/nativewind-interop'
 import { UsersIcon, XIcon } from '../../../lib/icons'
 // 히어로 글자의 그림자는 카드 둘과 같은 값을 쓴다 — 세 번째 호출부가 생기며 `lib/text-styles.ts`

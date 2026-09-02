@@ -85,7 +85,7 @@ import {
 } from '../../lib/icons'
 import { AnimatedView } from '../../lib/nativewind-interop'
 import { TABULAR_NUMS } from '../../lib/text-styles'
-import { useTopSafeAreaPx } from '../../lib/top-safe-area'
+import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/tracked-order'
 import { useThemeAppearance } from '../../theme/context'
 import { useOpenTab } from '../use-open-tab'

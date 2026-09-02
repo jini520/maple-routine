@@ -73,7 +73,7 @@ describe('[[ADR-139]] 정정 1 — 상단 안전영역은 한 자리에서 나�
   it('검사 대상을 실제로 찾는다', () => {
     // 경로가 틀려 0개를 훑고도 초록이 되는 것이 이 부류 가드의 흔한 실패다.
     expect(files.length).toBeGreaterThan(15)
-    expect(files.filter((file) => file.source.includes('top-safe-area')).length).toBeGreaterThan(5)
+    expect(files.filter((file) => file.source.includes('useTopSafeAreaPx')).length).toBeGreaterThan(5)
   })
 
   it('화면 상단은 `insets.top` 을 직접 읽지 않는다', () => {

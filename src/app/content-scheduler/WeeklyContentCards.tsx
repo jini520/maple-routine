@@ -16,8 +16,11 @@ import {
   getDailyQuestRegionIconUrl,
 } from '../../lib/artwork'
 import type { ImageCrop } from '../../lib/image-crop'
-import { matchWeeklyQuestRegionSlug, stripWeeklyQuestPrefix } from '../../lib/weekly-quest-matching'
-import { matchWeeklyRegionalQuestSlug } from '../../lib/weekly-regional-quest-matching'
+import {
+  matchWeeklyQuestRegionSlug,
+  matchWeeklyRegionalQuestSlug,
+  stripWeeklyQuestPrefix,
+} from '../../lib/quest-region-matching'
 import type { WeeklyContent } from '../../types'
 import { Image, View } from 'react-native'
 

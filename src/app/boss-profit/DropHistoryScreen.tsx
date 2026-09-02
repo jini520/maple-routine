@@ -63,7 +63,7 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { DROUGHT_GLOW_FILTER, DROUGHT_TIER_STYLES } from '../../lib/drought-tier-styles'
 import { ArrowLeftIcon, ScrollTextIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../lib/text-styles'
-import { useTopSafeAreaPx } from '../../lib/top-safe-area'
+import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { useScreenNavigation } from '../use-screen-navigation'
 
 /**

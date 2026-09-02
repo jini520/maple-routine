@@ -14,7 +14,7 @@ import {
 import { processColor, View } from 'react-native'
 
 import { 기본테마, flattenStyle, renderAtom } from '../../../__tests__/render-atom'
-import { withAlpha } from '../../../../lib/color-alpha'
+import { withAlpha } from '../../../../lib/color'
 import { IllustratedCard, FadedIllustration } from '../FadedIllustration'
 
 /** 실제 크롭 표에 있는 모양(`daily-quest-region-crops.json`) 하나. */

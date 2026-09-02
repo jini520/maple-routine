@@ -87,7 +87,7 @@ describe('[[ADR-132]] 정정 31 — 하단 안전영역은 한 자리에서 나�
     // 셸 셋(온보딩 단계 셸이 여기 든다 — [[ADR-144]] 정정 2) + 자기 `paddingBottom` 을 직접 주는
     // 화면 둘(처리방침 · 캐릭터 관리).
     expect(
-      files.filter((file) => file.source.includes('bottom-safe-area')).length,
+      files.filter((file) => file.source.includes('useBottomSafeAreaPx')).length,
     ).toBeGreaterThanOrEqual(SHELLS.length + 2)
   })
 
@@ -105,6 +105,6 @@ describe('[[ADR-132]] 정정 31 — 하단 안전영역은 한 자리에서 나�
     const { source } = read(SCREEN_SCROLL)
 
     expect(source).toMatch(/\binsets\.bottom\b/)
-    expect(source).toContain('bottom-safe-area')
+    expect(source).toContain('useBottomSafeAreaPx')
   })
 })

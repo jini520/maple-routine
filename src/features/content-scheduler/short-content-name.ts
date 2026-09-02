@@ -26,8 +26,11 @@
  * 표기를 하나로 모으는 것이 맞고, 그 판단은 이 파일이 아니라 화면의 일이다.
  */
 
-import { matchDailyQuestRegion, stripDailyQuestPrefix } from '../../lib/daily-quest-matching'
-import { stripWeeklyQuestPrefix } from '../../lib/weekly-quest-matching'
+import {
+  matchDailyQuestRegion,
+  stripDailyQuestPrefix,
+  stripWeeklyQuestPrefix,
+} from '../../lib/quest-region-matching'
 
 export function shortDailyContentName(name: string): string {
   const stripped = stripDailyQuestPrefix(name)

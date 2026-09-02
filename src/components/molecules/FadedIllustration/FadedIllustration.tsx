@@ -9,7 +9,7 @@ import type { ImageAssetRef } from '../../../types/image-asset'
 import { Image, View } from 'react-native'
 import { vars } from 'nativewind'
 
-import { withAlpha } from '../../../lib/color-alpha'
+import { withAlpha } from '../../../lib/color'
 import { LinearGradient } from '../../../lib/nativewind-interop'
 import { useThemeAppearance } from '../../../theme/context'
 import { buildMediaScopeVariables } from '../../../theme/theme-vars'

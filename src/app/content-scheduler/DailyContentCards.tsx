@@ -21,7 +21,7 @@ import {
   getDailyQuestRegionIconUrl,
 } from '../../lib/artwork'
 import type { ImageCrop } from '../../lib/image-crop'
-import { matchDailyQuestRegionSlug, stripDailyQuestPrefix } from '../../lib/daily-quest-matching'
+import { matchDailyQuestRegionSlug, stripDailyQuestPrefix } from '../../lib/quest-region-matching'
 import type { DailyContent } from '../../types'
 import { Image, View } from 'react-native'
 
