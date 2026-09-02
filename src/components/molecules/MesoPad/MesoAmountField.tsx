@@ -10,7 +10,7 @@
  */
 import { Pressable, View } from 'react-native'
 
-import { formatMesoUnits } from '../../../lib/drop-price'
+import { formatMesoUnits } from '../../../lib/drop/drop-price'
 import { RotateCcwIcon } from '../../../lib/icons'
 import { MESO_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'

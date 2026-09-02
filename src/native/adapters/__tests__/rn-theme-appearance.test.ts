@@ -3,7 +3,7 @@
 // 웹뷰 구현은 DOM 을 만지므로 "문서가 이렇게 됐는가"를 봤지만, RN 구현이 하는 일은 값을 한 칸에 놓고
 // 구독자에게 알리는 것이다. 그래서 검사 대상은 셋이다 — 초기값 · 갈아치우기 · 알림.
 
-import { DEFAULT_THEME, getThemeDefinition } from '../../../lib/theme-registry'
+import { DEFAULT_THEME, getThemeDefinition } from '../../../lib/theme/theme-registry'
 
 import {
   __resetThemeAppearanceForTest,

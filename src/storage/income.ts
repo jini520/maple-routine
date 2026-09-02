@@ -16,7 +16,7 @@
 // 설계 도중 `source`(`'manual' | 'timer' | 'boss'`)를 두려다 접었다 — **이 테이블에 드는 것은
 // 손입력 하나뿐이고, 테이블이 곧 원천**이다([[ADR-170]] 결정 2). 화면의 배지(`보스`·`손입력`)는
 // 여러 원천을 읽어 합칠 때 붙는 **뷰 모델의 값**이지 컬럼이 아니다.
-import type { FeePercent } from '../lib/item-split'
+import type { FeePercent } from '../lib/cashbook/item-split'
 import { getBossProfitDb } from './sqlite/db'
 
 /**
@@ -141,7 +141,7 @@ export interface HuntingCalculatorDetail {
    * 열 때 **어느 조각이었는지 되짚으려고 맵을 거꾸로 풀어야 한다**. 마릿수는 맵과 무관하다.
    */
   missedMobs: number
-  /** 켠 메소 획득률 아이템의 id(`lib/hunting-meso.ts` 의 `MESO_BOOSTS`). 빈 배열 = 없음. */
+  /** 켠 메소 획득률 아이템의 id(`lib/cashbook/hunting-meso.ts` 의 `MESO_BOOSTS`). 빈 배열 = 없음. */
   boosts: string[]
   /** 소재 수 — 하나가 30분이다. */
   sojae: number

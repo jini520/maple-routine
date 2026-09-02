@@ -1,6 +1,6 @@
 import { setManualTrackedContent, type ManualTrackedItem } from '../../storage/manual-tracked-content'
-import { matchBossContent } from '../../lib/boss-matching'
-import { TEMPLATE_DAILY_NAMES, TEMPLATE_WEEKLY_NAMES } from '../../lib/scheduler-content-template'
+import { matchBossContent } from '../../lib/boss/boss-matching'
+import { TEMPLATE_DAILY_NAMES, TEMPLATE_WEEKLY_NAMES } from '../../lib/scheduler/scheduler-content-template'
 import type { SchedulerCharacterState } from '../../types'
 import { syncSchedules } from '../schedule-sync/schedule-sync'
 

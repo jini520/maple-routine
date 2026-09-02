@@ -21,7 +21,7 @@ import {
   labelOfCurrency,
   unitOfCurrency,
   type FreeCurrency,
-} from '../../../lib/free-currency'
+} from '../../../lib/cashbook/free-currency'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { AmountInput, FieldRow, QuantityStepper } from '../sheet-fields'
 import { CharacterField, SaveRow, type IncomeFormProps } from './form-shared'

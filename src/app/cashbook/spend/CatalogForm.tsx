@@ -19,15 +19,15 @@ import { Image, Pressable, View } from 'react-native'
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { Segment } from '../../../components/molecules/Segment/Segment'
-import { formatMesoCompact } from '../../../lib/meso-compact'
-import { spendIconOf } from '../../../lib/asset-lookup'
+import { formatMesoCompact } from '../../../lib/cashbook/meso-compact'
+import { spendIconOf } from '../../../lib/assets/asset-lookup'
 import {
   findSpendChoice,
   pointToMeso,
   spendGroupsOf,
   type SpendCatalogChoice,
   type SpendCatalogItem,
-} from '../../../lib/spend-catalog'
+} from '../../../lib/cashbook/spend-catalog'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { FieldRow, QuantityStepper } from '../sheet-fields'
 import {

@@ -1,4 +1,4 @@
-import { getBackfillDateKeys, getCurrentKstDateKey, getMostRecentWeeklyResetKst } from '../reset-clock'
+import { getBackfillDateKeys, getCurrentKstDateKey, getMostRecentWeeklyResetKst } from '../scheduler/reset-clock'
 
 describe('getMostRecentWeeklyResetKst', () => {
   it('정확히 KST 목요일 00:00 시점이면 같은 시각을 반환한다', () => {

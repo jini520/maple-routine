@@ -16,7 +16,7 @@
  * 있어야 하기 때문이다([[ADR-147]] 정정 13, 사용자 확정).
  */
 
-import type { WidgetHeight, WidgetSize } from '../../../lib/widget-layout'
+import type { WidgetHeight, WidgetSize } from '../../../lib/today/widget-layout'
 import type { TabRouteName } from '../../../navigation/routes'
 import type { TodayViewModel } from '../view-model'
 

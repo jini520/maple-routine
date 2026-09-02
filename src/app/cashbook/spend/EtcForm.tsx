@@ -18,8 +18,8 @@ import {
   currencyOfLabel,
   labelOfCurrency,
   type FreeCurrency,
-} from '../../../lib/free-currency'
-import { pointToMeso } from '../../../lib/spend-catalog'
+} from '../../../lib/cashbook/free-currency'
+import { pointToMeso } from '../../../lib/cashbook/spend-catalog'
 import { AmountInput, FieldRow, QuantityStepper } from '../sheet-fields'
 import {
   CategoryChips,

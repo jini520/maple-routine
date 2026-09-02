@@ -11,8 +11,8 @@
 //   ③ `.media-scope` 재선언이 빠짐없이 실리는가([[ADR-064]] 결정 5)
 //   ④ `tailwind.config.js` 가 만든 유틸리티 이름과 변수 이름이 맞물리는가
 
-import { buildThemeCss, THEME_NAMES, getThemeDefinition } from '../../lib/theme-registry'
-import { THEME_TOKEN_KEYS } from '../../lib/theme-derive'
+import { buildThemeCss, THEME_NAMES, getThemeDefinition } from '../../lib/theme/theme-registry'
+import { THEME_TOKEN_KEYS } from '../../lib/theme/theme-derive'
 import { hexToOklch } from '../../lib/color'
 import type { ThemeName } from '../../types/theme'
 

@@ -15,7 +15,7 @@ import {
   WEEKLY_BOSS_CLEAR_LIMIT,
   WEEKLY_CRYSTAL_SALE_LIMIT,
   type MatchedBoss,
-} from '../boss-matching'
+} from '../boss/boss-matching'
 
 function bossContent(overrides: Partial<BossContent> = {}): BossContent {
   const merged = {

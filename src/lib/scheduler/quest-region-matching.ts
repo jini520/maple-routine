@@ -1,5 +1,5 @@
 /**
- * 컨텐츠 이름에서 **지역 슬러그**를 찾는다. 그 슬러그로 배경·아이콘을 조회한다(`lib/asset-lookup`).
+ * 컨텐츠 이름에서 **지역 슬러그**를 찾는다. 그 슬러그로 배경·아이콘을 조회한다(`lib/assets/asset-lookup`).
  *
  * 세 자리가 같은 모양이라 모았다. 갈리는 것은 표와 접두어뿐이다.
  *
@@ -19,9 +19,9 @@
  * 넥슨 이름에 지역 뒤로 꼬리가 붙는다(`아르카나 - 무릉도원`). 전체 일치로 두면 그 꼬리 때문에 다
  * 놓친다. 주간 지역 퀘스트만 전체 일치인 것은 그 표가 컨텐츠 이름을 통째로 들고 있어서다.
  */
-import dailyQuestRegionsData from '../data/daily-quest-regions.json'
-import weeklyQuestRegionsData from '../data/weekly-quest-regions.json'
-import weeklyRegionalQuestsData from '../data/weekly-regional-quests.json'
+import dailyQuestRegionsData from '../../data/daily-quest-regions.json'
+import weeklyQuestRegionsData from '../../data/weekly-quest-regions.json'
+import weeklyRegionalQuestsData from '../../data/weekly-regional-quests.json'
 
 interface RegionEntry {
   region: string

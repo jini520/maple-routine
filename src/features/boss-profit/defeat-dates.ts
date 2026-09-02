@@ -28,9 +28,9 @@ import {
   getMaxQueryableDate,
   getMinQueryableDate,
   getPeriodDateKeys,
-} from '../../lib/boss-profit-period'
-import { getCurrentKstDateKey } from '../../lib/reset-clock'
-import { bossCompletionKey, toProbeObservation } from '../../lib/scheduler-activity'
+} from '../../lib/boss/boss-profit-period'
+import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
+import { bossCompletionKey, toProbeObservation } from '../../lib/scheduler/scheduler-activity'
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
 import {
   getUndatedBossProfitRecords,

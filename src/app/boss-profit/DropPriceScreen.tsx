@@ -41,17 +41,17 @@ import {
   type DropPriceGroup,
 } from '../../features/boss-profit/drop-price-store'
 import { useToastStore } from '../../features/toast/store'
-import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry } from '../../lib/boss-crystal-prices'
-import { formatMesoShort } from '../../lib/boss-profit-delta'
+import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry } from '../../lib/boss/boss-crystal-prices'
+import { formatMesoShort } from '../../lib/boss/boss-profit-delta'
 import {
   formatBossProfitPeriodLabel,
   getAdjacentPeriodKey,
   isEarliestNavigablePeriod,
   isLatestPeriod,
-} from '../../lib/boss-profit-period'
-import { dropPayoutMeso } from '../../lib/drop-price'
-import { getItemIconUrl } from '../../lib/asset-lookup'
-import { isValuableDrop } from '../../lib/valuable-drops'
+} from '../../lib/boss/boss-profit-period'
+import { dropPayoutMeso } from '../../lib/drop/drop-price'
+import { getItemIconUrl } from '../../lib/assets/asset-lookup'
+import { isValuableDrop } from '../../lib/drop/valuable-drops'
 import type { RecordedDrop } from '../../types/drops'
 
 import { Badge, ProfitIcon, Text } from '../../components/atoms'

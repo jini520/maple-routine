@@ -1,6 +1,6 @@
 import { preferences } from './ports'
 import { manualTrackedContentKey } from './keys'
-import { TEMPLATE_DAILY_NAMES, TEMPLATE_WEEKLY_NAMES } from '../lib/scheduler-content-template'
+import { TEMPLATE_DAILY_NAMES, TEMPLATE_WEEKLY_NAMES } from '../lib/scheduler/scheduler-content-template'
 import type { ManualTrackedItem } from '../types/scheduler'
 
 // 타입 선언은 `src/types/scheduler` 에 있다(병합 순수 함수들이 core 에 있어서다 — 그쪽 주석 참고).

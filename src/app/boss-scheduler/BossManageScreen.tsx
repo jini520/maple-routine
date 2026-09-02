@@ -35,14 +35,14 @@ import { resolveSelectedCharacter } from '../../features/character-selection/sel
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useToastStore } from '../../features/toast/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
-import { getMaxPartySize } from '../../lib/boss-crystal-prices'
+import { getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
 import {
   countManualWeeklyBosses,
   getBossCycleByName,
   isSeasonBossName,
   WEEKLY_BOSS_CLEAR_LIMIT,
-} from '../../lib/boss-matching'
-import { isChallengersWorld } from '../../lib/asset-lookup'
+} from '../../lib/boss/boss-matching'
+import { isChallengersWorld } from '../../lib/assets/asset-lookup'
 import type { BossDifficulty } from '../../types'
 
 import { BossSectionHeader } from '../../components/molecules/BossSectionHeader/BossSectionHeader'
@@ -166,7 +166,7 @@ export function BossManageScreen(): React.JSX.Element {
     return registeredDifficultyByBoss.get(bossName) ?? difficulties[0] ?? null
   }
 
-  // [[ADR-055]] 결정 3: 12는 주간 한도이고 시즌 보스는 예외다 — 카운트 규칙은 lib/boss-matching
+  // [[ADR-055]] 결정 3: 12는 주간 한도이고 시즌 보스는 예외다 — 카운트 규칙은 lib/boss/boss-matching
   // 한 곳에만 있다(화면이 다시 세면 선택 `12/12` 인데 처치 `11/12` 인 모순이 생긴다).
   const weeklyTrackedCount = countManualWeeklyBosses(trackedBossItems)
   const isWeeklyLimitReached = mode === 'manual' && weeklyTrackedCount >= WEEKLY_BOSS_CLEAR_LIMIT

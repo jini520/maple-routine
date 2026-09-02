@@ -1,12 +1,12 @@
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
-import { mergeSchedulerState, type MergeOutput } from '../../lib/scheduler-merge'
-import { getBackfillDateKeys } from '../../lib/reset-clock'
+import { mergeSchedulerState, type MergeOutput } from '../../lib/scheduler/scheduler-merge'
+import { getBackfillDateKeys } from '../../lib/scheduler/reset-clock'
 import {
   isDailySectionMissing,
   isWeeklySectionMissing,
   toProbeObservation,
   type SchedulerSectionPresence,
-} from '../../lib/scheduler-activity'
+} from '../../lib/scheduler/scheduler-activity'
 import { getCachedSchedulerState, setCachedSchedulerState } from '../../storage/scheduler-cache'
 import {
   getScheduleProbeLedger,
@@ -256,7 +256,7 @@ async function refreshCharacterBasics(
 
 // ADR-030: fetch 자체는 성공했지만 캐릭터가 리셋 이후 미접속이라 daily/weekly/boss 섹션이
 // 비어있을 수 있고, 몬스터파크·에픽 던전처럼 월드/계정 전체가 공유하는 콘텐츠도 있다 — 이 두
-// 문제를 mergeSchedulerState(순수 함수, lib/scheduler-merge)가 흡수한 "실효 상태"를 캐싱·반환한다.
+// 문제를 mergeSchedulerState(순수 함수, lib/scheduler/scheduler-merge)가 흡수한 "실효 상태"를 캐싱·반환한다.
 async function syncOneCharacter(
   apiKey: string,
   character: MapleCharacter,

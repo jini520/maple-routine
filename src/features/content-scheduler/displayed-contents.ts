@@ -24,9 +24,9 @@
  * 남은 개수가 **같은 함수**를 써야 «세는 것 = 보이는 것» 이 구조로 보장된다.
  */
 
-import { categorizeContentEntries, WEEKLY_CATEGORY_ORDER } from '../../lib/content-category'
-import { mergeManualContentList, orderContentsByTemplate } from '../../lib/manual-content-merge'
-import { CONTENT_TEMPLATE } from '../../lib/scheduler-content-template'
+import { categorizeContentEntries, WEEKLY_CATEGORY_ORDER } from '../../lib/scheduler/content-category'
+import { mergeManualContentList, orderContentsByTemplate } from '../../lib/scheduler/manual-content-merge'
+import { CONTENT_TEMPLATE } from '../../lib/scheduler/scheduler-content-template'
 import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
 import type { TrackingMode } from '../../storage/tracking-mode'
 import type { DailyContent, WeeklyContent } from '../../types'

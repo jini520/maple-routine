@@ -7,7 +7,7 @@ import {
   huntingRegionsForLevel,
   levelGapOf,
   monsterLevelRangeOf,
-} from '../hunting-grounds'
+} from '../cashbook/hunting-grounds'
 
 describe('monsterLevelRangeOf', () => {
   /**

@@ -18,7 +18,7 @@
  */
 
 import { hexToOklch, parseHex, toHex, withLightness } from '../lib/color'
-import { THEME_TOKEN_KEYS, deriveMediaScope } from '../lib/theme-derive'
+import { THEME_TOKEN_KEYS, deriveMediaScope } from '../lib/theme/theme-derive'
 import type { ThemeDefinition } from '../types/theme'
 
 /** `mediaInkMuted` → `--color-media-ink-muted`. core 의 `toCustomPropertyName` 과 같은 규칙이다. */

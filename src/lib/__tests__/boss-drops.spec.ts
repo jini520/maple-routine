@@ -1,5 +1,5 @@
 import type { RecordedDrop } from '../../types/drops'
-import type { StoredDropRecord } from '../boss-drops'
+import type { StoredDropRecord } from '../boss/boss-drops'
 import {
   getAccessoryBoxContents,
   getBossDifficulties,
@@ -10,7 +10,7 @@ import {
   isBoxItem,
   planConfirmedDifficultyDropMigration,
   pruneUnobtainableDrops,
-} from '../boss-drops'
+} from '../boss/boss-drops'
 
 describe('getBossDropCandidates', () => {
   it('보스의 전 난이도 선택 후보(장비·소비)를 통합해 반환한다 (스우)', () => {

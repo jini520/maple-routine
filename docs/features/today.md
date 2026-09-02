@@ -32,13 +32,13 @@
 | 조립 | `app/today/view-model.ts` | **아홉이 읽는 값을 여기서 한 번에 만든다** |
 | 위젯 | `app/today/widgets/types.ts` · `registry.ts` · `layout.ts` | 계약 · 목록 · 좌표 |
 | 위젯 | `app/today/widgets/` 의 아홉 컴포넌트 | `RepresentativeCharacterWidget` · `ResetCountdownWidget` · `RemainingScheduleWidget` · `CrystalLimitWidget` · `WeeklyBossProfitWidget` · `TopValuableItemWidget` · `UnpricedDropsWidget` · `ValuableDroughtWidget` · `SharedContentsWidget` |
-| 계산 | `lib/widget-grid-metrics.ts` · `lib/widget-layout.ts` | 치수와 좌표 검증 |
+| 계산 | `lib/today/widget-grid-metrics.ts` · `lib/today/widget-layout.ts` | 치수와 좌표 검증 |
 | 계산 | `constants/style/drought-tier-styles.ts` | 잎 램프. 드롭 히스토리 화면과 공유한다 |
 | 원천 | `features/content-scheduler/store` · `features/boss-scheduler/store` · `features/boss-profit/store` | **읽기만 한다** |
 | 원천 | `features/boss-profit/drop-history-store` | 드롭 위젯 셋이 같은 투영을 공유한다 |
 | 판정 | `features/boss-scheduler/displayed-bosses.ts` 의 `displayedBosses` | **화면과 같은 함수를 부른다**([[ADR-147]] 결정 8) |
 | 판정 | `features/content-scheduler/displayed-contents.ts` 의 `displayedDailyContents` | 같다 |
-| 판정 | `lib/scheduler-content-scope.ts` 의 `getSharedContentGroups` | 공유 컨텐츠 계열 묶기(`onlyWhenScheduled`) |
+| 판정 | `lib/scheduler/scheduler-content-scope.ts` 의 `getSharedContentGroups` | 공유 컨텐츠 계열 묶기(`onlyWhenScheduled`) |
 | 저장 | `storage/character-selection` 의 `getRepresentativeCharacter` | 대표 캐릭터 |
 
 **관련 ADR**: [[ADR-147]](이 화면의 설계 전부) · [[ADR-153]](수익 위젯이 읽는 값: ‘지금 기간’) ·
@@ -85,7 +85,7 @@ jest 는 레이아웃을 계산하지 않아 auto 타일의 실측 높이조차 
 | 열 폭 | **유동**. `(창폭 − 32 − 12×3) / 4`. 360dp 에서 73 |
 | 행 높이 | **고정 76** (제안값) |
 
-- **치수는 `lib/widget-grid-metrics.ts` 의 `resolveWidgetGridMetrics(창폭)` 하나가 판다.** `onLayout`
+- **치수는 `lib/today/widget-grid-metrics.ts` 의 `resolveWidgetGridMetrics(창폭)` 하나가 판다.** `onLayout`
   실측을 쓰지 않는다. 첫 프레임에 0 이라 타일이 한 프레임 접혀 있다([[ADR-132]] 정정 30 과 같은 이유).
 - **행 높이를 열 폭에서 파생하지 않는다.** 정사각 셀로 두면 격자가 화면 폭에 **비례해 길어져**
   폴더블 펼침(~700dp)에서 4x2 타일 하나가 화면 절반을 넘는다. 위젯은 폭이 늘면 **넓어지는** 물건이다.
@@ -387,7 +387,7 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
 | 3 | `weekly-boss-profit` | 이번 주 총 수익 + 캐릭터 top3(아이템 판매 포함) | **4x3** · 4x2 · 2x2 · 2x1 | Profit | 보스 수익 스토어 `currentPeriodRows`([[ADR-153]]. ‘보고 있는 탭’이 아니다) |
 | 4 | `top-valuable-item` | 이번 주 최고가 아이템 (4x2 는 top 5) | **2x1** · 4x2 · 2x2 · 1x1 | Profit | `drop-history` |
 | 5 | `crystal-limit` | 주간 결정석 판매 한도 `n/90`(월드별) | **2x1** · 4x1 · 2x2 · 1x1 | Profit | 보스 수익 `currentPeriodRows` 파생([[ADR-054]] · [[ADR-153]]) |
-| 6 | `reset-countdown` | 일일/주간/월간 초기화까지 남은 시간(**일일은 초까지 · 1초 갱신**) | **2x1** · 2x2 · 4x1 · 1x1 | — | `lib/reset-clock.ts` |
+| 6 | `reset-countdown` | 일일/주간/월간 초기화까지 남은 시간(**일일은 초까지 · 1초 갱신**) | **2x1** · 2x2 · 4x1 · 1x1 | — | `lib/scheduler/reset-clock.ts` |
 | 7 | `unpriced-drops` | 가격 미입력 드롭 N건 | **2x1** · 2x2 · 1x1 | Profit | `drop-history` |
 | 8 | `valuable-drought` | ‘N주째 아이템 드롭 없음’ | **4x1** · 2x2 · 2x1 | Profit | `summarizeValuableDrought` |
 | 9 | `shared-contents` | **계정 및 메이플 ID 공유 컨텐츠**. 계열별(에픽던전 · 몬스터파크 · 메이플 유니온) | **`4×auto`** | 없음 | 컨텐츠 스토어 + `scheduler-content-catalog.json` |
@@ -432,7 +432,7 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
 일부지 별도 항목이 아니고, 4x1 은 내부 높이가 52 뿐이라 그 한 줄이 크다. 넘치면 **닉네임이 줄어든다**
 (길드는 잘리면 다른 길드로 읽히지만 닉네임은 초상화가 이미 말한다).
 
-- **월드는 텍스트 배지가 아니라 엠블럼 이미지**다. `lib/asset-lookup.ts` 의 `worldEmblemUrl(world)`
+- **월드는 텍스트 배지가 아니라 엠블럼 이미지**다. `lib/assets/asset-lookup.ts` 의 `worldEmblemUrl(world)`
   (`world-emblems.json` 18종 + `assets/worlds/*.png`). 매핑에 없거나 파일이 없으면 `null` 이고 그때는
   **엠블럼만 생략**한다(그 함수가 이미 정한 폴백).
 - **직업(`jobClass`)이 카드에 처음 나온다.** [[ADR-144]] 결정 2의 ‘레벨 + 직업’과 같은 조합이라 새
@@ -550,7 +550,7 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
   간격을 먹는다’)는 높이가 내용을 따르며 사라졌다.
 - **순위는 `1st · 2nd · 3rd`**([[ADR-183]] 결정 3). 칸은 **바닥 22px** 이고 `numberOfLines={1}` 이라
   줄바꿈도 잘림도 없다([[ADR-165]] 와 같은 ‘천장이 아니라 바닥’ 규칙).
-- **총 수익과 캐릭터별 수익은 결정석 + 아이템이다**([[ADR-124]]). 아이템 금액은 `lib/drop-price.ts`
+- **총 수익과 캐릭터별 수익은 결정석 + 아이템이다**([[ADR-124]]). 아이템 금액은 `lib/drop/drop-price.ts`
   의 `sumDropPayout` 을 쓴다. 합산을 두 벌로 만들면 이 위젯과 보스 수익 화면이 다른 규칙으로 더한다.
 
 **다섯 크기가 무엇을 버리는지**(구현 확정):
@@ -707,7 +707,7 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
 
 ### 8. 아이템 드롭 가뭄: 문구가 **단계마다 풀**이 된다 ([[ADR-147]] 정정 6)
 
-문구·단계는 `lib/drop-history.ts` 가 이미 갖고 있다(`getValuableDroughtTier` ·
+문구·단계는 `lib/drop/drop-history.ts` 가 이미 갖고 있다(`getValuableDroughtTier` ·
 `formatValuableDroughtHeadline`). 지금은 0~3주가 **한 줄 고정**이고 마지막 단계만 풀인데, 전 단계를
 풀로 바꾼다(사용자 지시: *"최근 한국 인터넷 밈을 활용해서 좀 다양하게"*).
 

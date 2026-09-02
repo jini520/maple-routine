@@ -1,4 +1,4 @@
-import { mergeManualBossList } from '../manual-boss-merge'
+import { mergeManualBossList } from '../boss/manual-boss-merge'
 import type { BossContent } from '../../types'
 import type { ManualTrackedItem } from '../../types/scheduler'
 

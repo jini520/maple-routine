@@ -10,7 +10,7 @@
 // ⚠️ 화면이 **예전(웹뷰 앱)과 같은지**는 여기서 답하지 않는다. 답하는 것은 "값이 흐르는가" 까지다.
 
 import { act, render } from '@testing-library/react-native'
-import { getThemeDefinition } from '../../lib/theme-registry'
+import { getThemeDefinition } from '../../lib/theme/theme-registry'
 import { Text, View } from 'react-native'
 
 import { rnThemeAppearancePort } from '../../native/adapters/rn-theme-appearance'

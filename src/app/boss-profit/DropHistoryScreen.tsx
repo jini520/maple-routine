@@ -38,21 +38,21 @@ import {
   useDropHistoryStore,
   type DropHistoryCharacter,
 } from '../../features/boss-profit/drop-history-store'
-import { formatBossProfitPeriodLabel } from '../../lib/boss-profit-period'
+import { formatBossProfitPeriodLabel } from '../../lib/boss/boss-profit-period'
 import {
   formatDropHistoryLine,
   formatValuableDroughtHeadline,
   formatValuableDroughtItems,
   getValuableDroughtTier,
   valuableDroughtHeadlineCount,
-} from '../../lib/drop-history'
+} from '../../lib/drop/drop-history'
 import type {
   DropHistoryPeriodGroup,
   DropHistoryRecord,
   ValuableDroughtSummary,
-} from '../../lib/drop-history'
-import { getItemIconUrl } from '../../lib/asset-lookup'
-import { isValuableDrop } from '../../lib/valuable-drops'
+} from '../../lib/drop/drop-history'
+import { getItemIconUrl } from '../../lib/assets/asset-lookup'
+import { isValuableDrop } from '../../lib/drop/valuable-drops'
 
 import { MapleLeaf, Text } from '../../components/atoms'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'

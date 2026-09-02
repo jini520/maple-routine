@@ -16,13 +16,13 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 import { useDropHistoryStore } from '../../../features/boss-profit/drop-history-store'
 import weeklyBossesData from '../../../data/weekly-bosses.json'
-import { formatBossProfitPeriodLabel } from '../../../lib/boss-profit-period'
+import { formatBossProfitPeriodLabel } from '../../../lib/boss/boss-profit-period'
 import {
   formatValuableDroughtHeadline,
   valuableDroughtHeadlineCount,
   WORD_JOINER,
   type DropHistoryRecord,
-} from '../../../lib/drop-history'
+} from '../../../lib/drop/drop-history'
 
 import {
   flattenStyle,

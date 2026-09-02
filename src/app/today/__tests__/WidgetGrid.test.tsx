@@ -14,7 +14,7 @@ import {
   flattenStyle,
   type AtomElement,
 } from '../../../components/__tests__/render-atom'
-import { resolveWidgetGridMetrics } from '../../../lib/widget-grid-metrics'
+import { resolveWidgetGridMetrics } from '../../../lib/today/widget-grid-metrics'
 import { useScreenNavigation } from '../../use-screen-navigation'
 import { 빈_뷰모델 } from '../widgets/__tests__/widget-fixture'
 import { WidgetGrid } from '../WidgetGrid'

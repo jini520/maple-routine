@@ -4,7 +4,7 @@ import {
   displayedWeeklyContents,
   type DisplayedContentsInput,
 } from '../displayed-contents'
-import { CONTENT_TEMPLATE } from '../../../lib/scheduler-content-template'
+import { CONTENT_TEMPLATE } from '../../../lib/scheduler/scheduler-content-template'
 import type { DailyContent, WeeklyContent } from '../../../types'
 
 // 「표시 대상 컨텐츠」는 `ContentScreen.tsx` 지역 함수였다가 today 의 「남은 스케줄」이 같은 수를

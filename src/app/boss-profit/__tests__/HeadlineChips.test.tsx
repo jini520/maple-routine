@@ -5,7 +5,7 @@
 // 하므로 웹판 다섯을 그대로 옮겼다.
 import { act, fireEvent } from '@testing-library/react-native'
 
-import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss-matching'
+import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss/boss-matching'
 import type { BossProfitRow } from '../../../features/boss-profit/store'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'

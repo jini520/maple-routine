@@ -47,10 +47,10 @@ jest.mock('../../../storage/shared-progress-cache', () => ({
 }))
 const { getWorldSharedProgress: getWorldSharedProgressMock, getAccountSharedProgress: getAccountSharedProgressMock, setWorldSharedProgressEntry: setWorldSharedProgressEntryMock, setAccountSharedProgressEntry: setAccountSharedProgressEntryMock } = jest.requireMock('../../../storage/shared-progress-cache') as Record<string, jest.Mock>
 
-jest.mock('../../../lib/scheduler-merge', () => ({
+jest.mock('../../../lib/scheduler/scheduler-merge', () => ({
   mergeSchedulerState: jest.fn(),
 }))
-const { mergeSchedulerState: mergeSchedulerStateMock } = jest.requireMock('../../../lib/scheduler-merge') as Record<string, jest.Mock>
+const { mergeSchedulerState: mergeSchedulerStateMock } = jest.requireMock('../../../lib/scheduler/scheduler-merge') as Record<string, jest.Mock>
 
 // ADR-086: 조회 원장(storage/schedule-probe-ledger)과 추적 목록(storage/character-selection)은
 // 실물을 쓰고 그 아래 PreferencesPort만 인메모리로 바꾼다 — 원장이 "같은 날짜를 두 번 부르지 않는다"를
@@ -142,7 +142,7 @@ beforeEach(async () => {
   setWorldSharedProgressEntryMock.mockResolvedValue(undefined)
   setAccountSharedProgressEntryMock.mockResolvedValue(undefined)
   // 기본값: 병합 없이 fresh 그대로 통과(ledger 갱신 없음) — ADR-030 병합 알고리즘 자체는
-  // lib/scheduler-merge의 자체 단위 테스트가 검증하고, 여기서는 syncOneCharacter가 그 결과를
+  // lib/scheduler/scheduler-merge 의 자체 단위 테스트가 검증하고, 여기서는 syncOneCharacter가 그 결과를
   // 올바른 곳(캐시·원장)에 정확히 반영하는지만 확인한다.
   mergeSchedulerStateMock.mockImplementation((input: { fresh: SchedulerCharacterState }) => ({
     characterState: input.fresh,

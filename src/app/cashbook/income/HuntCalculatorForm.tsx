@@ -8,7 +8,7 @@
  * 사냥의 다른 한 모양은 `HuntManualForm` 이다([[ADR-201]] 결정 6). 그쪽은 계산기가 못 세는 사냥에
  * 쓰고, 어느 폼이 서는지는 기록에 박힌 값이 정한다.
  *
- * 계산은 한 자리에 있다(`lib/hunting-meso`) — 이 파일은 고른 것을 넘기고 받은 숫자를 그린다.
+ * 계산은 한 자리에 있다(`lib/cashbook/hunting-meso`) — 이 파일은 고른 것을 넘기고 받은 숫자를 그린다.
  * 캐릭터의 메소 획득량은 `features/cashbook/meso-rate` 가 읽어 준다([[ADR-177]]) — 폼은 `nexon/` 도
  * `storage/` 도 모른다.
  */
@@ -24,13 +24,13 @@ import {
   type SelectOption,
 } from '../../../components/organisms/SelectField/SelectField'
 import type { MesoRateLoad } from '../../../features/cashbook/meso-rate'
-import { FORCE_LABELS, forceIconOf, getItemIconUrlByFile } from '../../../lib/asset-lookup'
+import { FORCE_LABELS, forceIconOf, getItemIconUrlByFile } from '../../../lib/assets/asset-lookup'
 import {
   findHuntingGround,
   findHuntingRegion,
   huntingGroundsFor,
   huntingRegionsForLevel,
-} from '../../../lib/hunting-grounds'
+} from '../../../lib/cashbook/hunting-grounds'
 import {
   MESO_BOOSTS,
   MISSED_MOB_OPTIONS,
@@ -41,7 +41,7 @@ import {
   huntingMesoOf,
   huntingTotalOf,
   killedMobsOf,
-} from '../../../lib/hunting-meso'
+} from '../../../lib/cashbook/hunting-meso'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { ImageAssetRef } from '../../../types/image-asset'
 import type { HuntingGround, HuntingRegion } from '../../../types/hunting-grounds'

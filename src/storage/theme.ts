@@ -1,5 +1,5 @@
 import { preferences } from './ports'
-import { isThemeName } from '../lib/theme-registry'
+import { isThemeName } from '../lib/theme/theme-registry'
 import type { ThemeName } from '../types'
 import { STORAGE_KEYS } from './keys'
 

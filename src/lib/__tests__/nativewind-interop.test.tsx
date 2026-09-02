@@ -5,7 +5,7 @@
 // (`jest.setup.js` 가 컴파일된 `global.css` 를 주입하고 `ThemeProvider` 가 변수를 내려보내는 것까지가
 //  전제다 — 그 고리들은 `src/__tests__/nativewind-wiring.test.tsx` · `src/theme/__tests__` 가 지킨다.)
 import { render } from '@testing-library/react-native'
-import { getThemeDefinition } from '../theme-registry'
+import { getThemeDefinition } from '../theme/theme-registry'
 import { Path } from 'react-native-svg'
 
 import { ThemeProvider } from '../../theme/ThemeProvider'

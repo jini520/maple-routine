@@ -20,8 +20,8 @@ import {
   type BossSchedulerStore,
 } from '../../../features/boss-scheduler/store'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
-import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss-matching'
-import type { MatchedBoss } from '../../../lib/boss-matching'
+import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
+import type { MatchedBoss } from '../../../lib/boss/boss-matching'
 import type { ManualTrackedItem } from '../../../types'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'

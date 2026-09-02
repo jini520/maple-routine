@@ -1,4 +1,4 @@
-import type { BossCycle } from '../types'
+import type { BossCycle } from '../../types'
 import { getAdjacentPeriodKey, getWeeklyPeriodKeysInMonth } from './boss-profit-period'
 
 /**

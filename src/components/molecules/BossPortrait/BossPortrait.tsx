@@ -10,7 +10,7 @@
  */
 import { Image, View } from 'react-native'
 
-import { getBossPortraitIconCrop, getBossPortraitUrl } from '../../../lib/asset-lookup'
+import { getBossPortraitIconCrop, getBossPortraitUrl } from '../../../lib/assets/asset-lookup'
 import { imageNaturalSize } from '../../../lib/image-aspect'
 import { imageCropStyle, resolveImageCropLayout, type ImageCrop } from '../../../lib/image-crop'
 

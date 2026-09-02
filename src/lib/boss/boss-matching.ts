@@ -1,6 +1,6 @@
-import weeklyBossesData from '../data/weekly-bosses.json'
-import { BOSS_DIFFICULTIES, type ManualTrackedItem } from '../types/scheduler'
-import type { BossContent, BossCycle, BossDifficulty } from '../types'
+import weeklyBossesData from '../../data/weekly-bosses.json'
+import { BOSS_DIFFICULTIES, type ManualTrackedItem } from '../../types/scheduler'
+import type { BossContent, BossCycle, BossDifficulty } from '../../types'
 
 export interface MatchedBoss {
   apiName: string
@@ -87,7 +87,7 @@ export interface BossOrderKey {
  * 키 셋은 [[ADR-036]] 결정 3 이 보스 수익에 정한 그것 **그대로**이고, 이 함수는 그것을 네 소비자가
  * 함께 쓸 수 있게 `REFERENCE_ENTRIES` 의 **소유자**에 둔 것뿐이다:
  *
- * - `lib/manual-boss-merge`(수동 목록, [[ADR-035]] 결정 20)
+ * - `lib/boss/manual-boss-merge`(수동 목록, [[ADR-035]] 결정 20)
  * - `features/boss-scheduler/displayed-bosses`(스케줄러 카드 · today 「남은 스케줄」 펼침)
  * - `features/boss-profit/rows`(`sortRowsByOcidOrder` 의 2차 키)
  * - `features/cashbook/records`(펼친 결정석 줄의 보스 타일)

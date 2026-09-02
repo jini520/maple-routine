@@ -32,7 +32,7 @@ import type {
   NexonUnionArtifactResponse,
   NexonUnionRaiderPreset,
   NexonUnionRaiderResponse,
-} from '../types'
+} from '../../types'
 
 /**
  * 장비(잠재 + 에디셔널) 합의 상한(%). **심볼은 이 캡 밖**이다(사용자 확정 2026-08-28).

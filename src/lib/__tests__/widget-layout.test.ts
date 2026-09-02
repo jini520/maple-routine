@@ -1,8 +1,8 @@
 // 좌표 배치의 **검증과 해석**([[ADR-147]] 결정 2 · 정정 1). 배치를 손으로 적기로 한 이상 그
 // 실수는 반드시 나므로, 자동 패킹 대신 «검증» 을 산 값이 여기서 회수된다.
 
-import { GRID_GAP, GRID_ROW_HEIGHT, resolveWidgetGridMetrics } from '../widget-grid-metrics'
-import { resolveWidgetPositions, validateWidgetLayout, type WidgetPlacement } from '../widget-layout'
+import { GRID_GAP, GRID_ROW_HEIGHT, resolveWidgetGridMetrics } from '../today/widget-grid-metrics'
+import { resolveWidgetPositions, validateWidgetLayout, type WidgetPlacement } from '../today/widget-layout'
 
 const sizes = {
   대표: [{ w: 4, h: 1 }],

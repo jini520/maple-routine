@@ -63,9 +63,9 @@ import { useRef, useState } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 
-import { formatMesoShort } from '../../lib/boss-profit-delta'
-import { sumDropPayout } from '../../lib/drop-price'
-import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss-matching'
+import { formatMesoShort } from '../../lib/boss/boss-profit-delta'
+import { sumDropPayout } from '../../lib/drop/drop-price'
+import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss/boss-matching'
 import type { PopoverAnchorGeometry } from '../../lib/popover-anchor'
 import weeklyBossesData from '../../data/weekly-bosses.json'
 

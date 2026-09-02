@@ -1,9 +1,9 @@
-import { isObtainableDrop } from './boss-drops'
-import { getCurrentBossProfitPeriod } from './boss-profit-period'
+import { isObtainableDrop } from '../boss/boss-drops'
+import { getCurrentBossProfitPeriod } from '../boss/boss-profit-period'
 import { isValuableDrop } from './valuable-drops'
-import type { BossCycle } from '../types'
-import type { RecordedDrop } from '../types/drops'
-import type { BossDifficulty } from '../types/scheduler'
+import type { BossCycle } from '../../types'
+import type { RecordedDrop } from '../../types/drops'
+import type { BossDifficulty } from '../../types/scheduler'
 
 // 드롭 획득 히스토리(전 기간)의 순수 집계([[ADR-071]], 이슈 #54).
 //
@@ -14,7 +14,7 @@ import type { BossDifficulty } from '../types/scheduler'
 /**
  * SQLite `boss_drop_records` 한 행에서 이 집계에 필요한 부분만 추린 모양 — `recordedAt` 이 없는 것이
  * 의도다(위 규약). 저장 계층 타입을 쓰지 않는 이유는 `lib/` 가 `storage/` 를 의존하지 않기 위함이고
- * ([[ADR-003]]), `RecordedDrop` 을 상속하는 형태는 `StoredDropRecord`(`lib/boss-drops`)와 같은 관례다
+ * ([[ADR-003]]), `RecordedDrop` 을 상속하는 형태는 `StoredDropRecord`(`lib/boss/boss-drops`)와 같은 관례다
  * — 그래야 드롭 아이콘 스택·획득 가능 판정에 그대로 넘길 수 있다.
  */
 export interface DropHistoryRecord extends RecordedDrop {

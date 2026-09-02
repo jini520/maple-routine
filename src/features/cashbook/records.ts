@@ -13,10 +13,10 @@
  */
 import { withSqliteFallback } from '../boss-profit/sqlite-guards'
 import type { BossDifficulty } from '../../types'
-import { compareBossOrder } from '../../lib/boss-matching'
+import { compareBossOrder } from '../../lib/boss/boss-matching'
 import type { CalendarAmounts, CalendarDayAmounts } from '../../lib/calendar-month'
-import { dropPayoutMeso } from '../../lib/drop-price'
-import { pointToMeso } from '../../lib/spend-catalog'
+import { dropPayoutMeso } from '../../lib/drop/drop-price'
+import { pointToMeso } from '../../lib/cashbook/spend-catalog'
 import { getBossDropRecords, getBossDropRecordsRevision } from '../../storage/boss-drops'
 import { getBossProfitRecordsRevision, getDatedBossProfitRecords } from '../../storage/boss-profit'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'

@@ -30,7 +30,7 @@ import {
 } from '../../../features/boss-scheduler/store'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import weeklyBossesData from '../../../data/weekly-bosses.json'
-import { WEEKLY_BOSS_CLEAR_LIMIT, type MatchedBoss } from '../../../lib/boss-matching'
+import { WEEKLY_BOSS_CLEAR_LIMIT, type MatchedBoss } from '../../../lib/boss/boss-matching'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../use-screen-navigation'

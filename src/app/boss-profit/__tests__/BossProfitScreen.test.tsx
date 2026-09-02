@@ -26,8 +26,8 @@ import {
   type BossProfitRow,
   type BossProfitStore,
   type BossProfitWeeklySubtotal } from '../../../features/boss-profit/store'
-import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss-matching'
-import { getCurrentBossProfitPeriod } from '../../../lib/boss-profit-period'
+import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss/boss-matching'
+import { getCurrentBossProfitPeriod } from '../../../lib/boss/boss-profit-period'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import type { RecordedDrop } from '../../../types/drops'
 

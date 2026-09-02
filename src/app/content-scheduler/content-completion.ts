@@ -19,12 +19,12 @@
 //
 // **길드 지하 수로는 여기 있다가 나갔다**([[ADR-142]] 정정 7) — 점수에 상한이 없는 것은 같지만,
 // «0점이 아니면 완료» 라는 답이 있었다(사용자 지시). 상한이 없다고 판정이 불가능한 것은 아니다.
-import { isContentBlocked } from '../../lib/required-level'
+import { isContentBlocked } from '../../lib/scheduler/required-level'
 import {
   matchWeeklyQuestRegionSlug,
   matchWeeklyRegionalQuestSlug,
   stripWeeklyQuestPrefix,
-} from '../../lib/quest-region-matching'
+} from '../../lib/scheduler/quest-region-matching'
 import type { DailyContent, WeeklyContent } from '../../types'
 
 import {
@@ -120,7 +120,7 @@ function tally(completions: ContentCompletion[]): ContentProgress {
  * **요구 레벨에 못 미치는 항목은 분모에서도 뺀다**([[ADR-162]] 결정 1).
  *
  * 남겨 두면 그 캐릭터의 링이 100%에 **절대 도달하지 못하고**, today 「남은 스케줄」의 숫자도 영원히
- * 안 줄어든다. 판정은 `lib/required-level` 한 곳이 갖는다 — 이 화면과 today 가 **같은 함수**를
+ * 안 줄어든다. 판정은 `lib/scheduler/required-level` 한 곳이 갖는다 — 이 화면과 today 가 **같은 함수**를
  * 봐야 [[ADR-147]] 결정 8(*"한 글자도 다르면 안 된다"*)이 성립한다.
  */
 function progressible<T extends { name: string }>(contents: T[], characterLevel: number | null): T[] {

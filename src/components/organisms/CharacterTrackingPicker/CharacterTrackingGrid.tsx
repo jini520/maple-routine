@@ -30,7 +30,7 @@
 import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
-import { worldEmblemUrl } from '../../../lib/asset-lookup'
+import { worldEmblemUrl } from '../../../lib/assets/asset-lookup'
 import type { CharacterPickerEntry } from '../../../types'
 
 import { naturalAspectStyle } from '../../../lib/image-aspect'

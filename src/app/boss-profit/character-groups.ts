@@ -21,9 +21,9 @@
 
 import { dropRowKey } from '../../features/boss-profit/store'
 import type { BossProfitRow, BossProfitWeeklySubtotal } from '../../features/boss-profit/store'
-import { isSeasonBossName } from '../../lib/boss-matching'
-import { isValuableDrop } from '../../lib/valuable-drops'
-import { sumDropPayout } from '../../lib/drop-price'
+import { isSeasonBossName } from '../../lib/boss/boss-matching'
+import { isValuableDrop } from '../../lib/drop/valuable-drops'
+import { sumDropPayout } from '../../lib/drop/drop-price'
 import type { RecordedDrop } from '../../types/drops'
 import weeklyBossesData from '../../data/weekly-bosses.json'
 

@@ -24,7 +24,7 @@
  * 다른 격자로 그려진다.
  */
 
-import { getCurrentKstDateKey } from './reset-clock'
+import { getCurrentKstDateKey } from './scheduler/reset-clock'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 

@@ -19,8 +19,8 @@ import {
   matchBossContent,
   selectDisplayBosses,
   type MatchedBoss,
-} from '../../lib/boss-matching'
-import { mergeManualBossList } from '../../lib/manual-boss-merge'
+} from '../../lib/boss/boss-matching'
+import { mergeManualBossList } from '../../lib/boss/manual-boss-merge'
 import type { BossContent, BossCycle } from '../../types'
 import type { ManualTrackedItem } from '../../types/scheduler'
 import type { TrackingMode } from '../../storage/tracking-mode'
@@ -115,7 +115,7 @@ function stampLimitClosed(bosses: MatchedBoss[], limitReached: boolean): Display
  * 다시 세우는 것은 멱등이고, 대신 이 모듈의 «어느 순서로 내는가» 계약이 **한 줄**이 된다 — 모드
  * 분기 안에 넣으면 그 계약이 다시 두 벌이고, 한쪽만 고치는 날이 온다.
  *
- * 비교자는 참조표의 소유자(`lib/boss-matching`)가 든다 — 여기서 자기 정렬을 쓰면 같은 규칙이 앱에
+ * 비교자는 참조표의 소유자(`lib/boss/boss-matching`)가 든다 — 여기서 자기 정렬을 쓰면 같은 규칙이 앱에
  * 네 벌이 된다([[ADR-186]] 결정 2).
  *
  * **완료는 여전히 자리를 안 바꾼다**([[ADR-164]] 결정 2) — 이 함수가 보는 것은 이름과 난이도뿐이다.

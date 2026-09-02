@@ -63,7 +63,7 @@ import {
   formatBossProfitPeriodLabel,
   getAdjacentPeriodKey,
   isLatestPeriod,
-} from '../../lib/boss-profit-period'
+} from '../../lib/boss/boss-profit-period'
 import {
   WEEKDAY_LABELS_RESET,
   buildCalendarMonth,
@@ -86,8 +86,8 @@ import {
   ChevronUpIcon,
   ShoppingCartIcon,
 } from '../../lib/icons'
-import { formatMesoCompact } from '../../lib/meso-compact'
-import { getCurrentKstDateKey } from '../../lib/reset-clock'
+import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
+import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import {
   cashbookDataRevision,

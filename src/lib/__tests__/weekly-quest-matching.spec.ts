@@ -1,4 +1,4 @@
-import { matchWeeklyQuestRegionSlug, stripWeeklyQuestPrefix } from '../quest-region-matching'
+import { matchWeeklyQuestRegionSlug, stripWeeklyQuestPrefix } from '../scheduler/quest-region-matching'
 
 describe('stripWeeklyQuestPrefix', () => {
   it('"[주간 퀘스트] " 접두어를 제거한다', () => {

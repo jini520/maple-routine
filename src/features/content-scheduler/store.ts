@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { syncSchedules, toScheduleSyncError, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
 import { hasSyncAttemptedThisRun } from '../schedule-sync/sync-run-state'
-import { isSyncFresh } from '../../lib/sync-freshness'
+import { isSyncFresh } from '../../lib/scheduler/sync-freshness'
 import { getTrackedCharacterOcids, setTrackedCharacterOcids } from '../../storage/character-selection'
 import { useCharacterSelectionStore } from '../character-selection/store'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
@@ -15,8 +15,8 @@ import {
   setManualTrackedContent,
   type ManualTrackedItem,
 } from '../../storage/manual-tracked-content'
-import { isGuildContent } from '../../lib/content-category'
-import type { SchedulerContentTemplateEntry } from '../../lib/manual-content-merge'
+import { isGuildContent } from '../../lib/scheduler/content-category'
+import type { SchedulerContentTemplateEntry } from '../../lib/scheduler/manual-content-merge'
 import schedulerContentTemplate from '../../data/scheduler-content-template.json'
 import type { DailyContent, WeeklyContent } from '../../types'
 

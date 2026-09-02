@@ -9,7 +9,7 @@ import {
   isBossBlocked,
   isContentBlocked,
   isLevelBlocked,
-} from '../required-level'
+} from '../scheduler/required-level'
 
 describe('참조표 조회', () => {
   // 값은 [[ADR-006]] 절차로 들어온 사용자 제공분이다 — 여기서 확인하는 것은 «읽어 오는가» 이지

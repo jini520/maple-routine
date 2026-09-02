@@ -3,7 +3,7 @@
 // 이 파일이 지키는 것은 «숫자 하나» 가 아니라 **불변식**이다 — 화면이 검산표를 안 그리기로 했으므로
 // ([[ADR-168]] 결정 8) «이 값이 맞나» 를 물을 수 있는 자리가 여기뿐이다.
 
-import { MAX_SALE_PRICE_MESO, netProceedsMeso, transferPerMember } from '../item-split'
+import { MAX_SALE_PRICE_MESO, netProceedsMeso, transferPerMember } from '../cashbook/item-split'
 
 /** 수수료를 내림으로 뗀 실수령 — 게임의 반올림 방향은 미확인이다([[ADR-168]] 열린 질문). */
 function afterFee(amount: number, feePercent: number): number {

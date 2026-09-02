@@ -166,7 +166,7 @@ export async function getBossDropRecords(
  * 보스가 섞이지 않게 `ocid`·`boss`·`difficulty` 까지 정렬 키에 넣어 순서를 완전히 결정한다.
  *
  * 주간(`YYYY-MM-DD`)·월간(`YYYY-MM`) 키가 섞이면 문자열 DESC 는 시간순이 아니다(월간 `2026-07` 이
- * 그 달 주차들보다 뒤로 밀린다) — 시간축 정렬은 `lib/drop-history` 가 기간 시작 시점으로 환산해
+ * 그 달 주차들보다 뒤로 밀린다) — 시간축 정렬은 `lib/drop/drop-history` 가 기간 시작 시점으로 환산해
  * 다시 한다. 여기서는 **같은 기간 안의 순서**만 보장하면 되고, 그 순서를 안정 정렬이 보존한다.
  */
 export async function getAllBossDropRecords(ocids: string[]): Promise<BossDropRecord[]> {

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { DEFAULT_DARK_THEME, DEFAULT_THEME, getThemeDefinition } from '../../lib/theme-registry'
+import { DEFAULT_DARK_THEME, DEFAULT_THEME, getThemeDefinition } from '../../lib/theme/theme-registry'
 import type { ThemeName } from '../../types'
 import { getTheme, setTheme } from '../../storage/theme'
 import { getColorSchemePort, getThemeAppearancePort } from '../../native/ports'

@@ -1,5 +1,5 @@
 import { preferences } from './ports'
-import { getKstDateKeyDaysAgo } from '../lib/reset-clock'
+import { getKstDateKeyDaysAgo } from '../lib/scheduler/reset-clock'
 import { scheduleProbeKey } from './keys'
 
 /**

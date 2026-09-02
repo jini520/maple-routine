@@ -1,5 +1,5 @@
-import type { DailyContent, SchedulerCharacterState, WeeklyContent } from '../types'
-import { matchBossContent, selectBossProfitBosses } from './boss-matching'
+import type { DailyContent, SchedulerCharacterState, WeeklyContent } from '../../types'
+import { matchBossContent, selectBossProfitBosses } from '../boss/boss-matching'
 import { getShareScope, isCumulativeScore } from './scheduler-content-scope'
 
 // ADR-034 추가 정정(2026-07-25): daily/weekly 섹션이 "완전히 비었는지(isXStale = length 0)"만으로는

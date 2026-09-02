@@ -14,14 +14,14 @@
 //    에러 없이 세로로 쌓인다.
 // ④ `<img>` → `<Image>`, `<span>` → `<Text>`, `text-shadow` → `ILLUSTRATION_TEXT_SHADOW_STYLE`
 //    (`lib/text-styles.ts` — RN 은 그림자를 하나만 표현할 수 있어 강한 쪽을 남긴다).
-import { isContentBlocked } from '../../lib/required-level'
+import { isContentBlocked } from '../../lib/scheduler/required-level'
 import {
   getDailyQuestBackgroundUrl,
   getDailyQuestRegionCrop,
   getDailyQuestRegionIconUrl,
-} from '../../lib/asset-lookup'
+} from '../../lib/assets/asset-lookup'
 import type { ImageCrop } from '../../lib/image-crop'
-import { matchDailyQuestRegionSlug, stripDailyQuestPrefix } from '../../lib/quest-region-matching'
+import { matchDailyQuestRegionSlug, stripDailyQuestPrefix } from '../../lib/scheduler/quest-region-matching'
 import type { DailyContent } from '../../types'
 import { Image, View } from 'react-native'
 
@@ -144,7 +144,7 @@ export function MonsterParkCard(props: {
 // 카드 종류 분기를 한 곳으로 모은다. 카드 컴포넌트 자체는 그대로 재사용한다.
 export function renderDailyContentCard(
   content: DailyContent,
-  /** 이 카드를 보는 캐릭터의 레벨 — 판정은 `lib/required-level` 한 곳이 한다([[ADR-162]] 결정 1). */
+  /** 이 카드를 보는 캐릭터의 레벨 — 판정은 `lib/scheduler/required-level` 한 곳이 한다([[ADR-162]] 결정 1). */
   characterLevel: number | null,
 ): React.JSX.Element {
   const isBlocked = isContentBlocked(characterLevel, content.name)

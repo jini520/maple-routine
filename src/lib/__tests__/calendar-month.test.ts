@@ -222,8 +222,8 @@ describe('resetWeekStartOf', () => {
   // 같은 주가 두 화면에서 다른 날짜로 시작한다 — 그것이 목요일 주를 고른 이유를 통째로 무효화한다.
   it('보스 수익의 주간 periodKey 와 같은 답을 낸다', () => {
     const { getCurrentBossProfitPeriod } =
-      require('../boss-profit-period') as typeof import('../boss-profit-period')
-    const { getCurrentKstDateKey } = require('../reset-clock') as typeof import('../reset-clock')
+      require('../boss/boss-profit-period') as typeof import('../boss/boss-profit-period')
+    const { getCurrentKstDateKey } = require('../scheduler/reset-clock') as typeof import('../scheduler/reset-clock')
 
     // KST 정오로 스무 날을 훑는다 — 리셋 경계(KST 00:00)를 넘나드는 시각은 reset-clock 의 몫이라
     // 여기서 다시 재지 않는다.

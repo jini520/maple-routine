@@ -8,16 +8,16 @@
 // 여기 있는 것의 공통점: **행을 만들고·합치고·거르고·정렬한다.** 비동기 오케스트레이션,
 // SQLite 복원력 래퍼, 백필 대상 계산은 스토어의 흐름에 붙어 있어 그대로 남겼다.
 
-import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry } from '../../lib/boss-crystal-prices'
+import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry } from '../../lib/boss/boss-crystal-prices'
 import {
   compareBossOrder,
   isWeeklyClearLimitReached,
   matchBossContent,
   selectBossProfitBosses,
-} from '../../lib/boss-matching'
-import type { MatchedBoss } from '../../lib/boss-matching'
-import { formatBossProfitPeriodLabel, getCurrentBossProfitPeriod } from '../../lib/boss-profit-period'
-import { mergeManualBossList } from '../../lib/manual-boss-merge'
+} from '../../lib/boss/boss-matching'
+import type { MatchedBoss } from '../../lib/boss/boss-matching'
+import { formatBossProfitPeriodLabel, getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
+import { mergeManualBossList } from '../../lib/boss/manual-boss-merge'
 import type { BossDropRecord } from '../../storage/boss-drops'
 import type { BossProfitRecord, getBossProfitRecords } from '../../storage/boss-profit'
 import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
@@ -312,7 +312,7 @@ export function toRecordedDrop(record: BossDropRecord): RecordedDrop {
     boxOrigin: record.boxOrigin ?? undefined,
     ringLevel: record.ringLevel ?? undefined,
     quantity: record.quantity,
-    // ⚠️ 이쪽이 `lib/boss-drops` 의 동명 함수보다 자주 지나간다 — **DB에서 읽을 때마다**다.
+    // ⚠️ 이쪽이 `lib/boss/boss-drops` 의 동명 함수보다 자주 지나간다 — **DB에서 읽을 때마다**다.
     // 빠뜨리면 저장은 됐는데 화면이 영영 "미입력"으로 보인다([[ADR-124]] 결정 4).
     priceState: record.priceState ?? undefined,
     priceMeso: record.priceMeso ?? undefined,

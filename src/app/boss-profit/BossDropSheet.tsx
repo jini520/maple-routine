@@ -37,11 +37,11 @@ import {
   getObtainableTileNames,
   getRingBoxContents,
   isBoxItem,
-} from '../../lib/boss-drops'
+} from '../../lib/boss/boss-drops'
 import { useDropEffectStore } from '../../features/drop-effect/store'
-import { getFixedDropIcons, type FixedDropIconSpec } from '../../lib/fixed-drops'
-import { getItemIconUrl, getItemIconUrlByFile } from '../../lib/asset-lookup'
-import { isValuableDrop } from '../../lib/valuable-drops'
+import { getFixedDropIcons, type FixedDropIconSpec } from '../../lib/drop/fixed-drops'
+import { getItemIconUrl, getItemIconUrlByFile } from '../../lib/assets/asset-lookup'
+import { isValuableDrop } from '../../lib/drop/valuable-drops'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types'
 import type { DropCandidate, DropCategory, RecordedDrop, SelectableDropCategory } from '../../types/drops'
 

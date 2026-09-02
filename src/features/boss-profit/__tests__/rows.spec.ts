@@ -4,7 +4,7 @@
 // 간접 검증했다. 정렬처럼 "입력을 어떻게 주느냐"가 핵심인 로직은 그 방식으로는 경우를
 // 만들기가 번거로워, 실제로 결정적 정렬(ADR-036·#28)에 직접 붙은 테스트가 없었다.
 import weeklyBossesData from '../../../data/weekly-bosses.json'
-import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss-matching'
+import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
 import type { ManualTrackedItem } from '../../../storage/manual-tracked-content'
 import type { BossContent } from '../../../types'
 import {
@@ -123,7 +123,7 @@ describe('matchesRowKey', () => {
 
 // ⚠️ 가격이 조용히 사라지는 자리 그 ② ([[ADR-124]] 결정 4)
 //
-// `lib/boss-drops` 쪽 동명 함수보다 **이쪽이 더 자주 터진다** — 저장소 행 → 도메인 변환이라
+// `lib/boss/boss-drops` 쪽 동명 함수보다 **이쪽이 더 자주 터진다** — 저장소 행 → 도메인 변환이라
 // 난이도 확정 같은 특수 상황이 아니라 **DB에서 읽을 때마다** 지나간다. 여기서 필드를 빠뜨리면
 // 저장은 됐는데 화면은 영영 "미입력"으로 보인다.
 describe('toRecordedDrop — 가격 필드 (ADR-124)', () => {

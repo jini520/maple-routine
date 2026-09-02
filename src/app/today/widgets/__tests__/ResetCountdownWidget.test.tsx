@@ -14,7 +14,7 @@ import { ResetCountdownWidget } from '../ResetCountdownWidget'
 import { WIDGET_BY_ID } from '../registry'
 import { 뷰모델, 초기화 } from './widget-fixture'
 import type { TodayViewModel } from '../../view-model'
-import type { WidgetHeight } from '../../../../lib/widget-layout'
+import type { WidgetHeight } from '../../../../lib/today/widget-layout'
 
 const 크기 = {
   '2x1': { w: 2, h: 1 },

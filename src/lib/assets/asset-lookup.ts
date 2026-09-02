@@ -1,17 +1,17 @@
-import { BOSS_PORTRAIT_ASSETS } from '../assets/generated/bosses'
-import { DAILY_QUEST_BACKGROUND_ASSETS } from '../assets/generated/maps'
-import { DAILY_QUEST_ICON_ASSETS } from '../assets/generated/map-icons'
-import { DROP_EFFECT_ASSETS } from '../assets/generated/drop-effect'
-import type { DropEffectPhase } from './drop-effect-layout'
-import { FORCE_ASSETS } from '../assets/generated/force'
-import type { ForceType } from '../types/hunting-grounds'
-import { ITEM_ASSETS } from '../assets/generated/items'
-import type { ImageAssetRef } from '../types/image-asset'
-import type { ImageCrop } from './image-crop'
-import { THEME_BACKGROUND_ASSETS } from '../assets/generated/themes'
-import { WORLD_EMBLEM_ASSETS } from '../assets/generated/worlds'
-import bossCropsData from '../data/boss-portrait-crops.json'
-import bossIconCropsData from '../data/boss-portrait-icon-crops.json'
+import { BOSS_PORTRAIT_ASSETS } from '../../assets/generated/bosses'
+import { DAILY_QUEST_BACKGROUND_ASSETS } from '../../assets/generated/maps'
+import { DAILY_QUEST_ICON_ASSETS } from '../../assets/generated/map-icons'
+import { DROP_EFFECT_ASSETS } from '../../assets/generated/drop-effect'
+import type { DropEffectPhase } from '../drop/drop-effect-layout'
+import { FORCE_ASSETS } from '../../assets/generated/force'
+import type { ForceType } from '../../types/hunting-grounds'
+import { ITEM_ASSETS } from '../../assets/generated/items'
+import type { ImageAssetRef } from '../../types/image-asset'
+import type { ImageCrop } from '../image-crop'
+import { THEME_BACKGROUND_ASSETS } from '../../assets/generated/themes'
+import { WORLD_EMBLEM_ASSETS } from '../../assets/generated/worlds'
+import bossCropsData from '../../data/boss-portrait-crops.json'
+import bossIconCropsData from '../../data/boss-portrait-icon-crops.json'
 /**
  * 이름표를 번들 에셋으로 바꾼다. 앱의 그림이 화면에 붙는 유일한 길이다.
  *
@@ -25,10 +25,10 @@ import bossIconCropsData from '../data/boss-portrait-icon-crops.json'
  * @see [[ADR-129]]. 목록(`assets/generated/*`)은 빌드가 아니라 커밋 시점에 생성된다.
  * @see [[ADR-101]] 결정 1. 모르는 것을 그리지 않는다.
  */
-import bossRingBoxesData from '../data/boss-ring-boxes.json'
-import dailyQuestCropsData from '../data/daily-quest-region-crops.json'
-import itemIconsData from '../data/item-icons.json'
-import worldEmblemsData from '../data/world-emblems.json'
+import bossRingBoxesData from '../../data/boss-ring-boxes.json'
+import dailyQuestCropsData from '../../data/daily-quest-region-crops.json'
+import itemIconsData from '../../data/item-icons.json'
+import worldEmblemsData from '../../data/world-emblems.json'
 
 type AssetMap = Record<string, ImageAssetRef>
 

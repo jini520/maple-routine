@@ -1,5 +1,5 @@
-import { DROP_EFFECT_FRAMES } from '../asset-lookup'
-import { DROP_EFFECT_ORIGINS, dropFrameTransform } from '../drop-effect-layout'
+import { DROP_EFFECT_FRAMES } from '../assets/asset-lookup'
+import { DROP_EFFECT_ORIGINS, dropFrameTransform } from '../drop/drop-effect-layout'
 import {
   buildPillarFrames,
   buildScreenFrames,

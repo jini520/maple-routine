@@ -14,7 +14,7 @@
 // 상자 마진**으로 들어가는지를 본다 — 인디케이터는 콘텐츠가 아니라 스크롤포트 위에 겹쳐 그려지므로
 // 그 구분이 곧 [[ADR-099]] 결정 6 이 실기기에서 잡은 회귀다.
 
-import { getThemeDefinition } from '../../../../lib/theme-registry'
+import { getThemeDefinition } from '../../../../lib/theme/theme-registry'
 import { within } from '@testing-library/react-native'
 import { Dimensions, RefreshControl, Text, View } from 'react-native'
 import type { Metrics } from 'react-native-safe-area-context'

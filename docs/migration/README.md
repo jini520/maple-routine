@@ -329,7 +329,7 @@ CSS 변수는 테마 시스템의 뼈대라 이 하나로 못 쓴다. 마지막 
   반드시 `definition.mode` 이고 테마 **이름**은 보지 않는다([[ADR-064]] 결정 8). 색 공간은 `in srgb`
   여야 한다(틴트 파생의 `in oklab` 과 다르다) — ADR 본문 표의 세 확정값을 테스트가 그대로 지킨다.
 
-**막힌 것 하나 — core 가 Vite 를 전제로 쓰여 있다.** `@core/lib/theme-registry` 를 import 하는 것만으로
+**막힌 것 하나 — core 가 Vite 를 전제로 쓰여 있다.** `@core/lib/theme/theme-registry` 를 import 하는 것만으로
 RN 이 부팅에 실패한다: 그 파일이 부르는 `lib/theme-backgrounds.ts` 가 `import.meta.glob` 으로 에셋
 목록을 만드는데 Metro 엔 짝이 없어 **모듈 평가 시점에** 던진다(`__ExpoImportMetaRegistry.glob is not a
 function`). core 는 배포 중인 웹과 공유돼 못 고치므로(원칙 3), **앱이 자기 번들러에게 대체 모듈을

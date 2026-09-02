@@ -10,7 +10,7 @@
 import weeklyBossesData from '../../data/weekly-bosses.json'
 import dailyQuestRegionCrops from '../../data/daily-quest-region-crops.json'
 import jobThemesData from '../../data/job-themes.json'
-import { getBossPortraitUrl, getDailyQuestBackgroundUrl, getThemeBackgroundUrl } from '../asset-lookup'
+import { getBossPortraitUrl, getDailyQuestBackgroundUrl, getThemeBackgroundUrl } from '../assets/asset-lookup'
 
 function collectPortraitSlugs(node: unknown, acc: Set<string>): void {
   if (Array.isArray(node)) {

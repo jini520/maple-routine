@@ -14,7 +14,7 @@ import {
   WORD_JOINER,
   type DropHistoryLine,
   type DropHistoryRecord,
-} from '../drop-history'
+} from '../drop/drop-history'
 
 /** 보이지 않는 줄바꿈 금지 문자를 걷어내 사람이 읽는 문장으로 되돌린다. */
 function plain(text: string): string {

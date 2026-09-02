@@ -25,7 +25,7 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { THEME_NAMES, getThemeDefinition, groupThemesByCategory } from '../../lib/theme-registry'
+import { THEME_NAMES, getThemeDefinition, groupThemesByCategory } from '../../lib/theme/theme-registry'
 import type { ThemeName } from '../../types/theme'
 
 import { Text } from '../../components/atoms'

@@ -11,7 +11,7 @@
 | 화면 | `app/utility/UtilityScreen.tsx` | 도구 목록(2열 타일) |
 | 화면 | `app/utility/ItemSplitScreen.tsx` | 판매 분배금 계산기 |
 | 화면 | `app/utility/tool-names.ts` | 화면에 뜨는 이름. 타일과 하위 페이지 제목이 공유한다 |
-| 계산 | `lib/item-split.ts` | 순수 계산 |
+| 계산 | `lib/cashbook/item-split.ts` | 순수 계산 |
 | 배선 | `navigation/routes.ts` · `RootNavigator.tsx` | `UtilityItemSplit` 라우트 |
 
 **관련 ADR**: [[ADR-168]](아이템 분배 계산기와 유틸리티 화면 구조) · [[ADR-132]] 결정 12(탭은

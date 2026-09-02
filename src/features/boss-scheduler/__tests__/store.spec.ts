@@ -1,7 +1,7 @@
 
 import { useCharacterSelectionStore } from '../../character-selection/store'
 import { waitFor } from '../../../__tests__/wait-for'
-import { matchBossContent } from '../../../lib/boss-matching'
+import { matchBossContent } from '../../../lib/boss/boss-matching'
 import type { CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
 import type { BossContent } from '../../../types'
 

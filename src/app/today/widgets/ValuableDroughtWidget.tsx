@@ -34,11 +34,11 @@
 import { useState } from 'react'
 import { View } from 'react-native'
 
-import { formatValuableDroughtHeadline } from '../../../lib/drop-history'
+import { formatValuableDroughtHeadline } from '../../../lib/drop/drop-history'
 
 import { MapleLeaf, Text } from '../../../components/atoms'
 import { DROUGHT_GLOW_FILTER, DROUGHT_TIER_STYLES } from '../../../constants/style/drought-tier-styles'
-import type { WidgetHeight } from '../../../lib/widget-layout'
+import type { WidgetHeight } from '../../../lib/today/widget-layout'
 import type { DroughtView } from '../view-model'
 import type { WidgetProps } from './types'
 

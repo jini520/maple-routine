@@ -31,13 +31,13 @@
 | 상태 | `features/drop-effect/` | 연출 on·off |
 | 저장 | `storage/boss-drop-records.ts` | SQLite `boss_drop_records` |
 | 저장 | `storage/drop-effect.ts` | 연출 토글 |
-| 계산 | `lib/boss-drops.ts` | `pruneUnobtainableDrops` · `planConfirmedDifficultyDropMigration` |
-| 계산 | `lib/drop-history.ts` | 전 기간 집계, `VALUABLE_DROUGHT_TIERS` |
+| 계산 | `lib/boss/boss-drops.ts` | `pruneUnobtainableDrops` · `planConfirmedDifficultyDropMigration` |
+| 계산 | `lib/drop/drop-history.ts` | 전 기간 집계, `VALUABLE_DROUGHT_TIERS` |
 | 계산 | `constants/style/drought-tier-styles.ts` | 가뭄 단계 잎 램프. today 위젯과 공유한다 |
-| 계산 | `lib/drop-price.ts` | 판매가를 수익으로 환산 |
-| 계산 | `lib/asset-lookup.ts` | 아이콘 조회. 일반 아이템은 `item-icons.json`, 반지는 `boss-ring-boxes.json` 의 `iconFile` 이다. 매핑이 없으면 플레이스홀더 |
+| 계산 | `lib/drop/drop-price.ts` | 판매가를 수익으로 환산 |
+| 계산 | `lib/assets/asset-lookup.ts` | 아이콘 조회. 일반 아이템은 `item-icons.json`, 반지는 `boss-ring-boxes.json` 의 `iconFile` 이다. 매핑이 없으면 플레이스홀더 |
 | 연출 | `components/organisms/DropEffectOverlay/` | 전체화면 연출 |
-| 연출 | `lib/asset-lookup.ts` · `lib/drop-effect-layout.ts` | 프레임 목록과 origin 테이블 |
+| 연출 | `lib/assets/asset-lookup.ts` · `lib/drop/drop-effect-layout.ts` | 프레임 목록과 origin 테이블 |
 | 도구 | `scripts/measure-drop-effect-origins.py` | origin 재계측 |
 | 참조 | `src/data/item-drop-table.json` | 보스별 드롭 테이블 |
 | 참조 | `src/data/boss-ring-boxes.json` · `accessory-boxes.json` | 상자 개봉 후보 |
@@ -192,7 +192,7 @@ black-crush와 `mix-blend:screen` 을 써서 29MB 를 약 2MB 로 줄였다. 원
 [[ADR-048]] 이다. 프레임 비트맵 크기가 제각각이라(가로 38~285px) 하단 중앙 앵커로는 기둥 축이 최대
 26px 흔들린다.
 
-최적화 과정에서 잃은 WZ `origin` 을 템플릿 정합으로 복원해 `lib/drop-effect-layout.ts` 의
+최적화 과정에서 잃은 WZ `origin` 을 템플릿 정합으로 복원해 `lib/drop/drop-effect-layout.ts` 의
 테이블(39프레임 `[x, y]`)로 두고, `DropEffectOverlay` 가 그 점을 화면 앵커에 맞춘다
 (`transformOrigin:'0 0'` + `translate(-x·S,-y·S) scale(S)`). y는 전부 비트맵 하단(지면선)에 고정한다.
 
@@ -445,7 +445,7 @@ end     18   fps   7프레임 · 389ms   (화면 탭 시)
 11종을 비교한 끝에 **브랜드 마크가 시드는** 안을 택했다. **단풍잎은 원래 색을 잃고 기울다 떨어지므로
 억지 장식이 아니다.**
 
-- **단계 하나가 문구와 시각 표현을 함께 움직인다.** 경계와 문구는 `lib/drop-history` 의
+- **단계 하나가 문구와 시각 표현을 함께 움직인다.** 경계와 문구는 `lib/drop/drop-history` 의
   `VALUABLE_DROUGHT_TIERS`, 잎 램프는 `constants/style/drought-tier-styles.ts` 의 `DROUGHT_TIER_STYLES` 이고 같은
   인덱스를 쓴다. 잎 램프가
   화면이 아니라 `lib` 에 있는 이유는 today의 아이템 드롭 가뭄 위젯이 같은 표를 읽기 때문이다(호출부

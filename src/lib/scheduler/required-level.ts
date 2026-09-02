@@ -25,7 +25,7 @@
  * 둘·길드 셋), 표식 없이 «미확정» 을 «진행 불가» 로 읽으면 [[ADR-006]] 위반이다.
  */
 
-import weeklyBossesData from '../data/weekly-bosses.json'
+import weeklyBossesData from '../../data/weekly-bosses.json'
 import { CONTENT_TEMPLATE } from './scheduler-content-template'
 
 /** 컨텐츠 이름 → 요구 레벨. 참조표에 없거나 값이 없으면 `null`. */

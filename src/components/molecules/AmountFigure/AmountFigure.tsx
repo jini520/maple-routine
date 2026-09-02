@@ -10,7 +10,7 @@
 import { View } from 'react-native'
 
 import { Text } from '../../atoms'
-import { formatMesoUnits } from '../../../lib/drop-price'
+import { formatMesoUnits } from '../../../lib/drop/drop-price'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 
 export interface AmountFigureProps {
