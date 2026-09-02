@@ -56,7 +56,7 @@ export function resolveDropIndex(
   return clampIndex(fromIndex + Math.round(offsetPx / pitchPx), count)
 }
 
-export interface AutoScrollInput {
+interface AutoScrollInput {
   /** 손가락의 화면 좌표(`absoluteY`). */
   pointerYPx: number
   /** 굴릴 수 있는 영역의 위·아래 — 화면 가장자리(안전영역 안쪽)다. */

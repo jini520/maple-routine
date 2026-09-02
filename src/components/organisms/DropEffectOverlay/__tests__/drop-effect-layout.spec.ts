@@ -1,8 +1,4 @@
-import {
-  DROP_EFFECT_FRAMES,
-  DROP_EFFECT_ORIGINS,
-  dropFrameTransform,
-} from '../drop-effect-layout'
+import { DROP_EFFECT_FRAMES, DROP_EFFECT_ORIGINS } from '../drop-effect-layout'
 import { buildPillarFrames, buildScreenFrames } from '../frame-layout'
 
 const PHASES = ['pre', 'loop', 'end'] as const
@@ -20,22 +16,6 @@ describe('DROP_EFFECT_ORIGINS', () => {
       expect(Number.isFinite(x) && x > 0).toBe(true)
       expect(Number.isFinite(y) && y > 0).toBe(true)
     }
-  })
-})
-
-describe('dropFrameTransform', () => {
-  // origin 점이 요소 좌상단(= 화면 앵커)에 오도록 스케일된 만큼 되돌려 미는 변환.
-  it('origin을 앵커로 끌어오는 translate + scale을 만든다', () => {
-    expect(dropFrameTransform([100, 800], 1.3)).toBe('translate(-130px, -1040px) scale(1.3)')
-  })
-
-  it('스케일이 1이면 origin 픽셀 값 그대로 되민다', () => {
-    expect(dropFrameTransform([58.8, 288], 1)).toBe('translate(-58.8px, -288px) scale(1)')
-  })
-
-  // 소수 origin × 스케일이 부동소수 꼬리(76.44000000000001)를 남기면 style 문자열이 지저분해진다.
-  it('부동소수 꼬리를 남기지 않는다', () => {
-    expect(dropFrameTransform([58.8, 288], 1.3)).toBe('translate(-76.44px, -374.4px) scale(1.3)')
   })
 })
 

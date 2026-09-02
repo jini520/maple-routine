@@ -30,7 +30,7 @@ export const DROP_START_FRAME = 8
 /** 한 tick 이 삼킬 수 있는 최대 시간 — 백그라운드에서 돌아왔을 때 폭주 방지(웹과 같은 값). */
 export const MAX_TICK_MS = 100
 
-export type DropPillarPhase = 'pre' | 'loop' | 'end'
+type DropPillarPhase = 'pre' | 'loop' | 'end'
 
 export interface DropEffectFrameCounts {
   screen: number
@@ -39,7 +39,7 @@ export interface DropEffectFrameCounts {
   end: number
 }
 
-export interface DropEffectState {
+interface DropEffectState {
   /** ScreenEff 진행 — `done` 이면 더 그리지 않는다. */
   screenIndex: number
   screenDone: boolean

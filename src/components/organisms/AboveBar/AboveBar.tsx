@@ -31,7 +31,7 @@ import { Portal, PortalHost } from '@gorhom/portal'
 import { NavigationContext } from '@react-navigation/native'
 
 /** 호스트 이름 — 시트의 루트 호스트와 **다른 이름**이라 둘이 섞이지 않는다. */
-export const ABOVE_BAR_HOST = 'above-bar'
+const ABOVE_BAR_HOST = 'above-bar'
 
 /**
  * 「내 화면이 지금 보이나」.

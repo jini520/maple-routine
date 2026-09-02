@@ -28,7 +28,7 @@ export interface ReorderScroll {
   scrollToPx: (yPx: number) => void
 }
 
-export interface ReorderScrollWiring {
+interface ReorderScrollWiring {
   /** `ScreenScroll` 의 `ref` 로 넘긴다. */
   scrollRef: React.RefObject<ScrollView | null>
   /** `ScreenScroll` 의 `onScroll` 로 넘긴다 — 오프셋은 여기서만 온다. */

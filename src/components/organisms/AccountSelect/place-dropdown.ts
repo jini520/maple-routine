@@ -7,7 +7,7 @@
  * 웹뷰 앱에 짝이 되는 화면이 없기 때문이다(적용 범위는 `app-rn` 뿐 — [[ADR-144]]).
  */
 
-export interface DropdownPlacementInput {
+interface DropdownPlacementInput {
   /** 트리거의 윈도우 기준 윗변·높이(`measureInWindow`). */
   anchorTop: number
   anchorHeight: number
@@ -19,7 +19,7 @@ export interface DropdownPlacementInput {
   edgeGap: number
 }
 
-export interface DropdownPlacement {
+interface DropdownPlacement {
   top: number
   /** 넘치는 목록은 잘리고 안에서 굴린다. */
   maxHeight: number
