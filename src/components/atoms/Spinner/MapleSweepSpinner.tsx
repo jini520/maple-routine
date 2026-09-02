@@ -12,9 +12,10 @@ import { useId } from 'react'
 import Animated, { Easing, useAnimatedProps } from 'react-native-reanimated'
 import { ClipPath, Defs, G, LinearGradient, Mask, Path, Rect, Stop } from 'react-native-svg'
 
+import { useLoopedValue } from '../../../hooks/useLoopedValue'
 import { SvgFrame } from '../Icon/icon-base'
 import { LEAF_GRID, MAPLE_LEAF_PATH } from '../Icon/maple-leaf'
-import { useLoopedValue, type SpinnerProps } from './spinner-base'
+import type { SpinnerProps } from './spinner-base'
 
 // 띠는 잎 아래(y=140, viewBox 밖)에서 시작해 위로 230 이동하며 잎을 완전히 통과한다.
 const BAND_START_Y = 140

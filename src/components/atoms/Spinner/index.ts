@@ -5,8 +5,8 @@
  * **크기로 고른다.** 16px 버튼 안은 `MapleSpinner`, 24px 이상은 `MapleSweepSpinner` 다
  * ([[ADR-061]] 결정 1).
  *
- * `spinner-base.tsx` 는 안 내보낸다 — 여기서 스피너를 그릴 때만 쓴다. 정지한 잎은 `atoms/Icon` 의
- * `MapleLeaf` 다.
+ * `spinner-base.ts` 는 안 내보낸다. 스피너 둘이 공유하는 프롭 타입만 들었다. 정지한 잎은
+ * `atoms/Icon` 의 `MapleLeaf` 다.
  */
 export { MapleSpinner } from './MapleSpinner'
 export { MapleSweepSpinner } from './MapleSweepSpinner'
