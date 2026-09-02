@@ -1120,7 +1120,7 @@ RN 에서는 우리가 그 해석을 대신하므로 **틀려도 에러가 안 �
 **생긴 것 셋.** ① `ScreenScroll` 에 `refreshControl` 프롭(셸이 만들지 않고 **받는다** — `refreshing`
 이 각 화면 스토어의 상태다) ② `app/use-screen-navigation.ts` — step 3 이 `settings/` 아래 두었던 훅이
 설정 밖 두 번째 호출부가 생기며 올라왔다(옛 자리는 별칭만 남는다) ③ `lib/text-styles.ts` 의
-`MEDIA_TEXT_SHADOW_STYLE` — 세 번째 호출부가 생겨 `PartySizeModal` 의 사본이 여기로 접혔다.
+`ILLUSTRATION_TEXT_SHADOW_STYLE` — 세 번째 호출부가 생겨 `PartySizeModal` 의 사본이 여기로 접혔다.
 
 **`animate-spin` 은 NativeWind 에 없다.** 새로고침 아이콘의 회전을 Reanimated CSS 애니메이션으로
 값으로 준다(step 7 이 `@keyframes` 넷에 쓴 방식과 같다) — **없는 클래스는 에러가 아니라 안 도는

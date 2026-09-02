@@ -133,7 +133,7 @@ L 0.13~0.15 라 **스크림을 완전 불투명 검정으로 만들어도 1.07 �
        마스크 linear-gradient(90deg,#000 0%,#000 42%,transparent 82%)  ← 카드는 38/76, 모달이 넓어 끝점만 뒤로
        베일   media-surface → transparent 세로 그라디언트(0% → 62%)
        닫기   우상단 32px 원, bg-surface/60 + text-text (스코프 안이라 media 토큰), aria-label="닫기"
-       텍스트 키커 10px text-text-muted / 이름 text-xl font-extrabold text-text, 둘 다 MEDIA_TEXT_SHADOW
+       텍스트 키커 10px text-text-muted / 이름 text-xl font-extrabold text-text, 둘 다 ILLUSTRATION_TEXT_SHADOW
 경계   본문에 border-t border-border   ← media-scope **바깥**
 본문   p-[18px] · 필드 간격 18
 난이도 라벨 + 난이도 배지 세그먼트(미선택 = 같은 뱃지 + opacity-40)

@@ -6,11 +6,11 @@
 // RN 쪽 값은 `FadedIllustration.tsx` 안에 있고 **안 내보낸다**(컴포넌트 파일이 값을 내보내면 fast
 // refresh 가 깨진다 — [[ADR-198]] 결정 3). 그래서 상수끼리가 아니라 **그려진 결과**와 견준다.
 import {
-  MEDIA_ART_FILTER,
-  MEDIA_ART_MASK_CARD,
-  MEDIA_ART_MASK_HERO,
-  MEDIA_ART_OPACITY,
-} from '../../../../constants/style/media-card'
+  ILLUSTRATION_FILTER,
+  ILLUSTRATION_MASK_CARD,
+  ILLUSTRATION_MASK_HERO,
+  ILLUSTRATION_OPACITY,
+} from '../../../../constants/style/illustration-card'
 import { processColor, View } from 'react-native'
 
 import { 기본테마, flattenStyle, renderAtom } from '../../../__tests__/render-atom'
@@ -33,7 +33,7 @@ function maskStops(mask: string): number[] {
 
 describe('core 의 bleed 값과 대조', () => {
   it('필터는 웹의 `saturate(.85) brightness(.8)` 과 같은 값이다', async () => {
-    const parsed = [...MEDIA_ART_FILTER.matchAll(/(\w+)\(([\d.]+)\)/g)].map(([, name, value]) => ({
+    const parsed = [...ILLUSTRATION_FILTER.matchAll(/(\w+)\(([\d.]+)\)/g)].map(([, name, value]) => ({
       [name]: Number(value),
     }))
     const { getByTestId } = await renderAtom(<FadedIllustration source={7} crop={CROP} />)
@@ -44,8 +44,8 @@ describe('core 의 bleed 값과 대조', () => {
   // 베일은 마스크를 **뒤집은** 것이다 — 마스크가 1(불투명 검정)인 구간에서 덧칠이 0이어야 한다.
   // 두 자리(카드·모달 히어로)가 **끝점만 다르다** — 같은 값을 쓰면 히어로에서 그림이 일찍 끊긴다.
   it.each([
-    ['카드', MEDIA_ART_MASK_CARD, undefined, [0, 0.38, 0.76]],
-    ['모달 히어로', MEDIA_ART_MASK_HERO, 'hero', [0, 0.42, 0.82]],
+    ['카드', ILLUSTRATION_MASK_CARD, undefined, [0, 0.38, 0.76]],
+    ['모달 히어로', ILLUSTRATION_MASK_HERO, 'hero', [0, 0.42, 0.82]],
   ] as const)(
     '%s 베일 정지점은 웹 마스크의 정지점을 뒤집은 것이다',
     async (_label, mask, variant, expected) => {
@@ -72,7 +72,7 @@ describe('core 의 bleed 값과 대조', () => {
   )
 
   it('두 정지점이 실제로 다르다 — 한 벌로 합치면 히어로가 카드 끝점을 쓴다', () => {
-    expect(maskStops(MEDIA_ART_MASK_HERO)).not.toEqual(maskStops(MEDIA_ART_MASK_CARD))
+    expect(maskStops(ILLUSTRATION_MASK_HERO)).not.toEqual(maskStops(ILLUSTRATION_MASK_CARD))
   })
 })
 
@@ -90,7 +90,7 @@ describe('FadedIllustration', () => {
     const { getByTestId } = await renderAtom(<FadedIllustration source={7} crop={CROP} />)
 
     const art = flattenStyle(getByTestId('faded-illustration', HIDDEN).props.style)
-    expect(art.opacity).toBe(MEDIA_ART_OPACITY)
+    expect(art.opacity).toBe(ILLUSTRATION_OPACITY)
     expect(getByTestId('faded-illustration-veil', HIDDEN)).toBeTruthy()
   })
 
@@ -116,7 +116,7 @@ describe('FadedIllustration', () => {
       히어로.getByTestId('faded-illustration-veil', HIDDEN).props.locations,
     )
     expect(카드.getByTestId('faded-illustration-veil', HIDDEN).props.locations).toEqual(
-      [...maskStops(MEDIA_ART_MASK_CARD), 1],
+      [...maskStops(ILLUSTRATION_MASK_CARD), 1],
     )
   })
 })
