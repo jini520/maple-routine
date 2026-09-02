@@ -19,7 +19,7 @@ import { SheetTextInput } from '../../components/molecules/SheetTextInput/SheetT
 import { CheckIcon } from '../../lib/icons'
 import { formatDayLabel, shiftDateKey } from '../../lib/calendar-month'
 import { ChevronLeftIcon, ChevronRightIcon, MinusIcon, PlusIcon } from '../../lib/icons'
-import { TABULAR_NUMS } from '../../lib/text-styles'
+import { TABULAR_NUMS } from '../../constants/style/text-styles'
 
 /**
  * 머리의 **날짜 고르개**([[ADR-178]] 정정 6, 사용자 지정 2026-08-29) — **두 시트가 함께 쓴다**.

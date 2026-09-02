@@ -10,7 +10,7 @@ import {
   MEDIA_ART_MASK_CARD,
   MEDIA_ART_MASK_HERO,
   MEDIA_ART_OPACITY,
-} from '../../../../lib/media-card'
+} from '../../../../constants/style/media-card'
 import { processColor, View } from 'react-native'
 
 import { 기본테마, flattenStyle, renderAtom } from '../../../__tests__/render-atom'

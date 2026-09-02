@@ -43,7 +43,7 @@
 | 계산 | `lib/boss-profit-period.ts` | 기간 키 계산과 기간 상태 판정 |
 | 계산 | `lib/boss-profit-delta.ts` | 직전 기간 대비 증감 |
 | 계산 | `lib/drop-price.ts` | 드롭 판매가를 수익으로 환산 |
-| 계산 | `lib/world-emblem.ts` · `lib/item-icons.ts` | 월드 엠블럼과 결정석 아이콘 |
+| 계산 | `lib/artwork.ts` · `lib/artwork.ts` | 월드 엠블럼과 결정석 아이콘 |
 | 계산 | `lib/boss-matching.ts` | 보스 정렬 순서, `WEEKLY_BOSS_CLEAR_LIMIT`, `WEEKLY_CRYSTAL_SALE_LIMIT`, `isSeasonBossName` |
 | 훅 | `hooks/useCountUp.ts` | 금액이 바뀌면 목표까지 굴러가는 숫자([[ADR-087]]) |
 | UI | `components/atoms/AnimatedNumber/` | 그 훅을 **잎에 가두는** 컴포넌트(정정 3). 매 프레임 다시 그리는 범위를 좁히는 것이 존재 이유다 |

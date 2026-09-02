@@ -53,7 +53,7 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import type { TabParamList } from '../../navigation/routes'
 import { useSettingsNavigation } from './use-settings-navigation'
-import { TABULAR_NUMS } from '../../lib/text-styles'
+import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { SettingsRow } from './SettingsRow'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
 import { ThemeModal } from './ThemeModal'

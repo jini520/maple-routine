@@ -22,7 +22,7 @@ import {
   unitOfCurrency,
   type FreeCurrency,
 } from '../../../lib/free-currency'
-import { TABULAR_NUMS } from '../../../lib/text-styles'
+import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { AmountInput, FieldRow, QuantityStepper } from '../sheet-fields'
 import { CharacterField, SaveRow, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from './use-sheet-submit'

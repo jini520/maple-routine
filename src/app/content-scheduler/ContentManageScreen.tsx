@@ -50,7 +50,7 @@ import {
   SparklesIcon,
   SwordsIcon,
 } from '../../lib/icons'
-import { TABULAR_NUMS } from '../../lib/text-styles'
+import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useScreenNavigation } from '../use-screen-navigation'
 
 // 카테고리 → 아이콘은 표현 계층 결정이라 여기 둔다(카테고리 자체는 lib/content-category가 데이터에서 도출).

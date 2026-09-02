@@ -33,7 +33,7 @@
 | 주입 | `src/theme/screen-backdrop-policy.ts` | 화면이 자기 배경을 직접 그릴지 판정 |
 | 계산 | `lib/theme-derive.ts` | 파생 규칙 본체 |
 | 계산 | `lib/color.ts` | 색 공간과 대비 프리미티브 |
-| 계산 | `lib/theme-backgrounds.ts` | 슬러그에서 에셋 찾기 |
+| 계산 | `lib/artwork.ts` | 슬러그에서 에셋 찾기 |
 | UI | `components/templates/ThemeBackdrop/` | 배경 한 장 |
 | 데이터 | `src/data/job-themes.json` | 값의 원천([[ADR-006]]) |
 | 에셋 | `src/assets/themes/` · `src/assets/generated/themes.ts` | 배경 그림과 커밋된 목록 |
@@ -472,7 +472,7 @@ x=413/800(**51.6%**)이라 `center` 로 두면 화면에서 오른쪽으로 치�
   되살아난다.
 - **원본 `.png` 를 `src/assets/themes/` 에 남기지 말 것**([[ADR-108]] 결정 3). 같은 이름의 `.png` 와
   `.webp` 가 **같은 슬러그로 충돌**해 한쪽이 조용히 다른 쪽을 덮고, 안 쓰는 원본까지 번들에 실린다.
-- **에셋 해석은 커밋된 목록으로 한다.** `lib/theme-backgrounds.ts` 가 `src/assets/generated/themes.ts`
+- **에셋 해석은 커밋된 목록으로 한다.** `lib/artwork.ts` 가 `src/assets/generated/themes.ts`
   에서 슬러그로 에셋을 찾는다([[ADR-129]]). JSON은 번들 경로를 모른다. 그림을 넣거나 지우면
   **`npm run assets:gen` 을 돌려야** 목록이 따라오고, 안 돌리면 자산 목록 테스트가 실패한다.
   **목록에 든 파일은 어느 테마도 안 써도 번들에 실리므로** 쓰지 않게 된 그림은 파일째 지워야 실제로

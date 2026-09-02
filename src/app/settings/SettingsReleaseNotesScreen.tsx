@@ -36,7 +36,7 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { ArrowLeftIcon, ChevronRightIcon, FileTextIcon } from '../../lib/icons'
-import { TABULAR_NUMS } from '../../lib/text-styles'
+import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useSettingsNavigation } from './use-settings-navigation'
 
 export function SettingsReleaseNotesScreen(): React.JSX.Element {

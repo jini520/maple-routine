@@ -28,7 +28,7 @@ import {
   type SpendCatalogChoice,
   type SpendCatalogItem,
 } from '../../../lib/spend-catalog'
-import { TABULAR_NUMS } from '../../../lib/text-styles'
+import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { FieldRow, QuantityStepper } from '../sheet-fields'
 import {
   CategoryChips,

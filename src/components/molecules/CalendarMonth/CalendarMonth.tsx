@@ -43,7 +43,7 @@ import {
   type CalendarWeek,
 } from '../../../lib/calendar-month'
 import { formatMesoCompact } from '../../../lib/meso-compact'
-import { TABULAR_NUMS } from '../../../lib/text-styles'
+import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 
 export interface CalendarMonthProps {
   readonly weeks: readonly CalendarWeek[]

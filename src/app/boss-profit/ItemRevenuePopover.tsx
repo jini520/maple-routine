@@ -51,7 +51,7 @@ import { getItemIconUrl } from '../../lib/artwork'
 import { anchorPopover } from '../../lib/popover-anchor'
 
 import { Text } from '../../components/atoms'
-import { TABULAR_NUMS } from '../../lib/text-styles'
+import { TABULAR_NUMS } from '../../constants/style/text-styles'
 
 export const ITEM_POPOVER_WIDTH = 248
 const ITEM_POPOVER_EDGE_GAP = 12

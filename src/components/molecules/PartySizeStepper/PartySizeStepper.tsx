@@ -1,7 +1,7 @@
 import { Pressable, View } from 'react-native'
 
 import { MinusIcon, PlusIcon, UsersIcon } from '../../../lib/icons'
-import { TABULAR_NUMS } from '../../../lib/text-styles'
+import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { Text } from '../../atoms'
 
 // 파티원 수 스테퍼 — 보스 관리 페이지 행과 파티 인원 모달이 공유한다(ADR-121 결정 7).

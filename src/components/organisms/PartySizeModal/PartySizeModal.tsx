@@ -38,7 +38,7 @@ import { LinearGradient } from '../../../lib/nativewind-interop'
 import { UsersIcon, XIcon } from '../../../lib/icons'
 // 히어로 글자의 그림자는 카드 둘과 같은 값을 쓴다 — 세 번째 호출부가 생기며 `lib/text-styles.ts`
 // 로 올라갔다([[ADR-094]] 결정 1). 값·근거는 그 파일이 갖는다.
-import { MEDIA_TEXT_SHADOW_STYLE, TABULAR_NUMS } from '../../../lib/text-styles'
+import { MEDIA_TEXT_SHADOW_STYLE, TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { useThemeAppearance } from '../../../theme/context'
 import { MediaScope } from '../../../theme/MediaScope'
 import { Badge, Text } from '../../atoms'

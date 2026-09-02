@@ -27,7 +27,7 @@ import type { CacheDataGroupId, CacheDataSelection } from '../../storage/cache-d
 import { Button, Text } from '../../components/atoms'
 import { Modal } from '../../components/organisms/Modal/Modal'
 import { CheckIcon } from '../../lib/icons'
-import { TABULAR_NUMS } from '../../lib/text-styles'
+import { TABULAR_NUMS } from '../../constants/style/text-styles'
 
 export interface CacheClearConfirmProps {
   isOpen: boolean

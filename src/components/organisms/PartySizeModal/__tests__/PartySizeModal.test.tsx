@@ -11,7 +11,7 @@
 import { fireEvent } from '@testing-library/react-native'
 
 import { renderOverlay, type AtomElement } from '../../../__tests__/render-atom'
-import { MEDIA_ART_MASK_HERO } from '../../../../lib/media-card'
+import { MEDIA_ART_MASK_HERO } from '../../../../constants/style/media-card'
 import { PartySizeModal } from '../PartySizeModal'
 
 /** 아트·베일은 `aria-hidden` 이라 기본 질의에서 빠진다(장식이라 그것이 옳다). */

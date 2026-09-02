@@ -75,7 +75,7 @@ import { UnavailableNotice } from '../../components/molecules/EmptyState/Unavail
 import { ValuableDropBadge } from '../../components/molecules/ValuableDropBadge/ValuableDropBadge'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { SPIN_ANIMATION } from '../../lib/animation'
+import { SPIN_ANIMATION } from '../../constants/style/animation'
 import {
   ChevronDownIcon,
   ChevronLeftIcon,
@@ -84,7 +84,7 @@ import {
   RefreshCwIcon,
 } from '../../lib/icons'
 import { AnimatedView } from '../../lib/nativewind-interop'
-import { TABULAR_NUMS } from '../../lib/text-styles'
+import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/tracked-order'
 import { useThemeAppearance } from '../../theme/context'

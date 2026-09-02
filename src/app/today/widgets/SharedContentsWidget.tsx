@@ -73,7 +73,7 @@ import { Pressable, View } from 'react-native'
 
 import { Text } from '../../../components/atoms'
 import { CheckIcon, CircleQuestionMarkIcon } from '../../../lib/icons'
-import { TABULAR_NUMS } from '../../../lib/text-styles'
+import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { SharedContentGroupView, SharedContentItemView } from '../view-model'
 import type { WidgetProps } from './types'
 

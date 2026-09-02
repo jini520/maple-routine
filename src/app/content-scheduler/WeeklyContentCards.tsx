@@ -25,7 +25,7 @@ import type { WeeklyContent } from '../../types'
 import { Image, View } from 'react-native'
 
 import { Badge, Card, ProgressBar, Text } from '../../components/atoms'
-import { MEDIA_TEXT_SHADOW_STYLE } from '../../lib/text-styles'
+import { MEDIA_TEXT_SHADOW_STYLE } from '../../constants/style/text-styles'
 import {
   QUEST_STATE_LABELS,
   QUEST_STATE_VARIANT,

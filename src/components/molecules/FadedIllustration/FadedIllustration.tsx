@@ -4,7 +4,7 @@
  * @see [[ADR-018]] 결정 8 — bleed 레시피(38%/76% 페이드 · 블러 없음)
  * @see [[ADR-064]] 결정 5 — 카드 안은 색 기준이 `media-scope` 로 갈린다
  */
-import { MEDIA_ART_OPACITY } from '../../../lib/media-card'
+import { MEDIA_ART_OPACITY } from '../../../constants/style/media-card'
 import type { ImageAssetRef } from '../../../types/image-asset'
 import { Image, View } from 'react-native'
 import { vars } from 'nativewind'

@@ -1,7 +1,7 @@
 # 디자인 시스템 (Design System)
 
 > **범위**: 디자인 원칙·안티패턴·기본 색 팔레트·시맨틱 색·기본 컴포넌트(카드/버튼/입력)·여러 화면이 공유하는 UI 컴포넌트·공유 레이아웃 패턴·타이포·아이콘. 테마별 토큰 표·런타임 전환은 [features/theme.md](../features/theme.md), 기능 전용 컴포넌트는 각 `features/*.md`.
-> **관련 소스**: `components/`(아토믹 4계층: atoms/molecules/organisms/templates) · `src/theme/theme-vars.ts`·`global.css`·`tailwind.config.js` · `navigation/` · `lib/world-emblem`.
+> **관련 소스**: `components/`(아토믹 4계층: atoms/molecules/organisms/templates) · `src/theme/theme-vars.ts`·`global.css`·`tailwind.config.js` · `navigation/` · `lib/artwork`.
 > **관련 ADR**: [[ADR-009]] [[ADR-015]] ADR-016 [[ADR-018]] [[ADR-064]] ADR-072 ADR-073 [[ADR-074]] [[ADR-152]]. **관련 문서**: [features/theme.md](../features/theme.md).
 
 ## 디자인 원칙
@@ -171,7 +171,7 @@ default  pill 40 · 버튼 32 · 아이콘 16 · 값 19 · 단위 "인" 12    �
 즐겨찾기: lucide Star, top-1.5 right-1.5. 미선택 text-text-muted 아웃라인 / 선택 fill-primary text-primary
 텍스트: 이름 text-xs font-semibold text-text + 서버 엠블럼(h-3.5), 레벨 text-xs text-text-muted (직업 미표시)
 ```
-정렬: **즐겨찾기(선택) 먼저, 그다음 나머지**, 각 그룹 내부 레벨 내림차순: 즐겨찾기 토글 시 즉시 재배치. `character/basic` 실패 캐릭터는 "?" 플레이스홀더 + 이름·레벨 유지(선택 가능). 단 [[ADR-053]] 이후 이 폴백은 **캐시가 있는 캐릭터에만** 적용된다(캐시도 없고 조회도 실패한 캐릭터는 `access_flag` 를 확인할 길이 없어 목록에 아예 넣지 않는다). 서버 엠블럼은 `lib/world-emblem`(데이터 `world-emblems.json`) 재사용, world 없거나 미매핑이면 생략. 모달 헤더(제목+설명 `mb-4 space-y-1`), **이 모달은 오버레이 클릭으로 닫히지 않음**(닫기/저장 버튼만, 자체 오버레이라 이 모달에만 적용).
+정렬: **즐겨찾기(선택) 먼저, 그다음 나머지**, 각 그룹 내부 레벨 내림차순: 즐겨찾기 토글 시 즉시 재배치. `character/basic` 실패 캐릭터는 "?" 플레이스홀더 + 이름·레벨 유지(선택 가능). 단 [[ADR-053]] 이후 이 폴백은 **캐시가 있는 캐릭터에만** 적용된다(캐시도 없고 조회도 실패한 캐릭터는 `access_flag` 를 확인할 길이 없어 목록에 아예 넣지 않는다). 서버 엠블럼은 `lib/artwork`(데이터 `world-emblems.json`) 재사용, world 없거나 미매핑이면 생략. 모달 헤더(제목+설명 `mb-4 space-y-1`), **이 모달은 오버레이 클릭으로 닫히지 않음**(닫기/저장 버튼만, 자체 오버레이라 이 모달에만 적용).
 
 **모달 높이와 스크롤포트 (ADR-107, 2026-08-06)**: 카드 높이의 상한은 **안전영역을 뺀 화면**이고, 스크롤포트는 그리드가 아니라 **쓰는 쪽**이 갖는다([[ADR-099]] 가 화면 스크롤에 세운 규칙과 같다. 인디케이터는 콘텐츠가 아니라 스크롤포트 위에 그려지므로, 스크롤포트가 카드 `p-6` 안쪽이면 인디케이터도 24px 안쪽에 뜬다).
 ```

@@ -33,11 +33,11 @@
 | 저장 | `storage/drop-effect.ts` | 연출 토글 |
 | 계산 | `lib/boss-drops.ts` | `pruneUnobtainableDrops` · `planConfirmedDifficultyDropMigration` |
 | 계산 | `lib/drop-history.ts` | 전 기간 집계, `VALUABLE_DROUGHT_TIERS` |
-| 계산 | `lib/drought-tier-styles.ts` | 가뭄 단계 잎 램프. today 위젯과 공유한다 |
+| 계산 | `constants/style/drought-tier-styles.ts` | 가뭄 단계 잎 램프. today 위젯과 공유한다 |
 | 계산 | `lib/drop-price.ts` | 판매가를 수익으로 환산 |
-| 계산 | `lib/item-icons.ts` | 아이콘 조회. 일반 아이템은 `item-icons.json`, 반지는 `boss-ring-boxes.json` 의 `iconFile` 이다. 매핑이 없으면 플레이스홀더 |
+| 계산 | `lib/artwork.ts` | 아이콘 조회. 일반 아이템은 `item-icons.json`, 반지는 `boss-ring-boxes.json` 의 `iconFile` 이다. 매핑이 없으면 플레이스홀더 |
 | 연출 | `components/organisms/DropEffectOverlay/` | 전체화면 연출 |
-| 연출 | `lib/drop-effect-frames.ts` · `lib/drop-effect-layout.ts` | 프레임 목록과 origin 테이블 |
+| 연출 | `lib/artwork.ts` · `lib/drop-effect-layout.ts` | 프레임 목록과 origin 테이블 |
 | 도구 | `scripts/measure-drop-effect-origins.py` | origin 재계측 |
 | 참조 | `src/data/item-drop-table.json` | 보스별 드롭 테이블 |
 | 참조 | `src/data/boss-ring-boxes.json` · `accessory-boxes.json` | 상자 개봉 후보 |
@@ -446,7 +446,7 @@ end     18   fps   7프레임 · 389ms   (화면 탭 시)
 억지 장식이 아니다.**
 
 - **단계 하나가 문구와 시각 표현을 함께 움직인다.** 경계와 문구는 `lib/drop-history` 의
-  `VALUABLE_DROUGHT_TIERS`, 잎 램프는 `lib/drought-tier-styles.ts` 의 `DROUGHT_TIER_STYLES` 이고 같은
+  `VALUABLE_DROUGHT_TIERS`, 잎 램프는 `constants/style/drought-tier-styles.ts` 의 `DROUGHT_TIER_STYLES` 이고 같은
   인덱스를 쓴다. 잎 램프가
   화면이 아니라 `lib` 에 있는 이유는 today의 아이템 드롭 가뭄 위젯이 같은 표를 읽기 때문이다(호출부
   2곳, [[ADR-094]] 결정 1). 양쪽이 각자 가지면 한 단계가 두 화면에서 다른 색으로 늙는다. **공유하는
