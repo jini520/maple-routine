@@ -3,18 +3,6 @@
  *
  * 일일 퀘스트는 지역 배경 일러스트를 bleed 로 깔고, 몬스터파크는 진행 카운트를
  * 진행률 바로 보여준다. 어느 카드를 그릴지는 `renderDailyContentCard` 가 종류로 가른다.
- *
- * ── RN 으로 옮기며 갈린 것 넷 ─────────────────────────────────────────────────────
- *
- * ① **bleed 네 줄(배경 이미지·크롭·필터·마스크)이 `FadedIllustration` 한 줄로 접혔다**. RN 에는 배경
- *    이미지도 마스크도 없어 `<Image>` 를 손으로 앉히고 베일을 덧칠해야 한다. 기하 변환과 그것이
- *    웹과 같은 색을 내는 이유는 `FadedIllustration.tsx` 의 베일 상수 주석에 있다.
- * ② **카드 껍데기가 `IllustratedCard`**. 웹 `<Card className="media-scope …">` 의 짝이다. `.media-scope`
- *  가 클래스가 아니라 변수 스코프라 컴포넌트가 그 자리를 맡는다.
- * ③ **`flex-row` 를 명시한다.** 웹 `flex` 의 기본 방향은 row 지만 RN 은 column 이다. 빠뜨리면
- *    에러 없이 세로로 쌓인다.
- * ④ `<img>` → `<Image>`, `<span>` → `<Text>`, `text-shadow` → `ILLUSTRATION_TEXT_SHADOW_STYLE`
- *    (`lib/text-styles.ts`. RN 은 그림자를 하나만 표현할 수 있어 강한 쪽을 남긴다).
  */
 import { isContentBlocked } from '../../lib/scheduler/required-level'
 import {

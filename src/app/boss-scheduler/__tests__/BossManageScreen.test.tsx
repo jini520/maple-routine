@@ -1,15 +1,4 @@
 // 웹판(`BossManageScreen.test.tsx` 574줄)의 **명세를 읽어 다시 쓴 것**이다.
-//
-// ── 갈린 것 넷 ───────────────────────────────────────────────────────────────────────
-//
-// ① **라우터 프로브가 없다**. 뒤로는 `navigation.goBack()` 이 불렸는가로 봤다(`StackScreen` 이
-//  통째로 사라지고 루트 스택이 그 자리를 맡는다). ** 로 그 계약이
-//    없어졌다**. 이 화면은 탭이라 pop 할 스택이 없고, 남은 것은 **화면 안에 ← 가 없다** 하나다.
-// ② `closest('li')` 로 행을 잡던 자리가 **`aria-label` 로 잡는 토글 버튼**이다. RN 에 DOM 조회가
-//    없고, 웹도 이미 그 버튼에 보스명을 `aria-label` 로 박아 두었다.
-// ③ `aria-pressed` → **`accessibilityState.selected`**(RN 접근성 상태에 *pressed* 가 없다).
-// ④ **보스 목록·난이도·상한은 전부 참조 데이터에서 온다**. 이 파일에도 게임 수치를 손으로 적지
-//  않는다. 12개 한도 케이스의 보스 이름도 `weekly-bosses.json` 에서 뽑아 쓴다.
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import { act, fireEvent, screen, within } from '@testing-library/react-native'
 

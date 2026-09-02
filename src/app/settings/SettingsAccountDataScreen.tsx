@@ -15,21 +15,6 @@
  * 않았으므로 범위는 웹과 같은 코드가 정한다**. 여기서 넓히거나 좁힐 자리가 구조적으로 없다.
  * 삭제 뒤 흐름(타임아웃 경쟁 → `closeBossProfitDb()` → 스플래시 → 리로드)도
  * 같은 이유로 core 에 그대로 있다.
- *
- * ── RN 으로 옮기며 갈린 것 넷 ────────────────────────────────────────────────────────
- *
- * ① **`StackScreen` → 루트 스택 + `ScreenScroll`**(`SettingsAboutScreen` 파일 머리와 같다).
- * ② **`overlays` 프롭이 사라진다.** 웹은 모달을 스크롤 상자 밖·셸 밖 **어디에도 둘 수 없어**
- *  (`fixed` 셸의 스태킹 컨텍스트에 갇히거나, 탭 레이어라 오버레이 아래로 내려간다.
- *    결정 3·8) 셸이 받아 자기 자리에 그려 줬다. RN 의 `Modal` 은 **별도 네이티브 윈도우**라 갇힐
- *    상자가 없어, 화면이 그냥 형제로 두면 된다(`SettingsScreen` 과 같은 모양).
- * ③ **리로드가 `window.location.reload()` → `reloadAppAsync()`.** `expo` 가 내보내는 그 함수는
- *    release·debug 양쪽에서 **지금 도는 것과 같은 번들**을 다시 실행한다. 새 업데이트를 집는
- *  `Updates.reloadAsync()` 와 갈리는 지점이 정확히 그것이라 OTA 미연결과
- *    무관하다(`ErrorBoundary` 가 이미 같은 판단을 했다). 주입 가능한 프롭으로 두는 것은 웹 그대로다.
- * ④ **`isDisconnecting` 이 끝까지 유지되는 성질이 더 분명해진다**. `disconnect()` 는 온보딩을
- *    `RESET` 하고, 그러면 `RootNavigator` 의 화면 목록 자체가 갈려 이 화면이 통째로 사라진다
- *    (웹은 라우트 가드가 `/onboarding` 으로 리다이렉트했다). 어느 쪽이든 이 화면은 다시 안 그려진다.
  */
 import { useEffect, useState } from 'react'
 import { Pressable, View } from 'react-native'

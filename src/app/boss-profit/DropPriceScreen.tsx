@@ -18,19 +18,6 @@
  * core 가 이미 지킨다(`dropPayoutMeso` 가 `priceState !== 'entered'` 를 0으로 접는다). 여기서
  * 지키는 것은 **표시**이고, `priceMeso` 는 있는데 `priceState` 가 없는 기록이 가장 강한 반례다
  * (`priceMeso ?? 0` 계열로 그리면 거기서 금액이 샌다).
- *
- * ══ RN 으로 옮기며 갈린 것 넷 ═════════════════════════════════════════════════════
- *
- * ① **셸·헤더·뒤로가기**는 히스토리와 글자 그대로 같다(그 파일 머리 ①·②·③). 두 형제가 같은
- *    제스처에 다르게 반응하면 그 자체가 회귀다.
- * ② **키패드가 `overlays` 프롭이 아니라 형제로 선다.** 웹은 `StackScreen` 의 `overlays` 로 넘겨
- *    오버레이가 탭 레이어의 `transform` 에 딸려 밀리지 않게 했는데, RN 의 시트는 별도 네이티브
- *    호스트에 뜨므로(`BottomSheetModalProvider`) 갇힐 상자가 없다. 프롭이 통째로 사라진다.
- * ③ `<li className="valuable-drop-row">` → **`ValuableRowBackground`**. 웹 `index.css` 의 그 클래스가
- *    RN 에서 값 셋으로 갈린 자리이고, 보스 행에 이어 **두 번째 호출부**라 step 8 이 그 컴포넌트를
- *  `BossProfitBossRow` 밖으로 꺼냈다.
- * ④ 웹의 `<img className="absolute max-w-none">` 자리는 **`CharacterAvatar`** 다.
- *    크롭 값은 한 자리도 안 바뀌고, 얼굴이 원격 주소라는 것도 그 부품이 안다.
  */
 import { useEffect, useState } from 'react'
 import { Image, Pressable, View } from 'react-native'

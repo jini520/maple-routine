@@ -3,24 +3,6 @@
  *
  * 파티원 수 조절, 드롭 기록 시트 열기, 획득 아이템 아이콘 스택이 여기 산다. 아코디언을 펼쳤을 때
  * 카드 안에 나열되는 단위이고, 자기 행 안에서 끝나 카드의 고정 헤더와는 무관하다.
- *
- * ══ RN 으로 옮기며 갈린 것 여섯 ═══════════════════════════════════════════════════
- *
- * ① **`.valuable-drop-row` 가 클래스에서 값이 된다**. 웹은 `index.css` 의 한
- *    클래스가 셋을 했고 RN 에는 그 셋의 짝이 전부 따로 있다. 그 사정은 `ValuableRowBackground`
- *    가 갖는다. **step 8 에서 그 컴포넌트가 이 파일 밖으로 나갔다**(가격 기록 화면의 행이 두 번째
- *  호출부다).
- * ② **파티 스테퍼를 `PartySizeStepper` 로 접지 않는다.** 그 molecule 은 이
- *    정한 **두 크기**(관리 페이지 행 · 모달)이고 이 행은 셋째 모양이다. 버튼 18px(그쪽 24·32),
- *    `Users` 표식 없음, −/+ 에 `bg-surface-2` 채움(그쪽은 "채움을 두지 않는다"가 명시된 결정).
- *    합치면 두 화면 중 하나의 모습이 반드시 바뀐다. 웹도 이 자리는 자체 마크업이었다.
- * ③ `disabled:opacity-40` → **JS 조건**. NativeWind 의 `disabled:` 는 웹 CSS 의 의사 클래스라
- *    `Pressable disabled` 와 이어져 있지 않다. 남겨 두면 비활성 버튼이 멀쩡한 색으로 보인다.
- * ④ **팝오버 앵커가 비동기로 온다**. `ItemRevenuePopover` 의 `useAnchoredPopover` 가 그 사정을
- *    전부 가진다(그 파일 머리 ①·②). 스크롤로 닫던 효과는 구조가 대신 지켜 사라진다.
- * ⑤ `<li>` → `View`, `<button>` → `Pressable` + `Text`. 목록 시맨틱(`ul`/`li`)은 RN 에 없다.
- * ⑥ **드롭 아이콘 스택의 겹침(`marginLeft: -2`)과 층 순서(`zIndex`)는 그대로다**. 둘 다 RN 스타일에
- *    같은 이름으로 있다.
  */
 import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'

@@ -19,23 +19,6 @@
  * 그래서 **스토어를 부르지 않고 값을 프롭으로 받는다.** 타입만은 core 에서 가져오므로
  * (`import type` 은 컴파일에서 지워져 모듈이 평가되지 않는다) 상태 아홉과 필드 이름이 두 벌이 되지
  * 않고, OTA 가 붙는 날 배선은 `state={useLiveUpdateStore()}` 한 줄이다.
- *
- * ── RN 으로 옮기며 갈린 것 다섯 ───────────────────────────────────────────────────
- *
- * ① `useNavigate()` → **`onOpenReleaseNotes` 프롭.** `자세히 보기`가 개발 노트 화면으로 옮기는
- *  것은 이고, 그 이동을 아는 것은 이 컴포넌트가 아니라 마운트하는 셸이다.
- * ② `space-y-*` → `gap-*` · `<h2>`/`<p>` → `<Text>` · `text-center` 를 각 `Text` 로.
- * ③ 버튼 두 종류(`PRIMARY_BTN`·`GHOST_BTN`)가 `Button` atom + **델타 클래스**가 됐다. 웹은 raw
- *    `<button>` + 클래스 문자열이었지만 RN 에서는 상자/글자를 어차피 갈라야 해서(step 3), 인라인으로
- *  두면 이 없앤 복붙이 그대로 되살아난다. `GHOST_*` 가 네 분기에 공유되는 성질
- *  ("줄이면 모달 전체에 함께 적용된다")은 상수로 유지된다.
- * ④ `PRIMARY_BTN` 의 `disabled:opacity-50` 은 **뺐다.** 어느 분기도 `disabled` 를 주지 않는 데다,
- *    NativeWind 의 `disabled:` 는 CSS 의사 클래스라 `Pressable` 의 `disabled` 프롭과 이어져 있지
- *    않다(step 4 가 `PartySizeStepper` 에서 겪은 자리). 남기면 "있는데 안 도는 코드"다.
- * ⑤ `transition-transform rotate-180` (`자세히 보기` 화살표) → `rotate-180` 만. NativeWind 의
- *    `transition-*` 은 Reanimated 배선을 타는데, 여기서 굴릴 것은 회전 하나뿐이라 step 7 이 정한
- *    두 갈래(`View` 스타일 = CSS API / SVG 속성 = `useAnimatedProps`) 중 어느 쪽도 아직 필요 없다.
- *    **웹에도 이 트랜지션은 `@keyframes` 가 아니라 CSS 트랜지션이라 7종 목록 밖이다.**
  */
 import { useState } from 'react'
 import { View } from 'react-native'

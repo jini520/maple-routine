@@ -11,19 +11,6 @@
  *
  * **닫을 수 없다**: `onClose` 가 no-op 이라 오버레이를 눌러도 닫히지 않고, 취소 버튼도 없다.
  * 두 원인 모두 그 상태에서는 어느 화면도 제 기능을 못 하므로 **닫아서 돌아갈 곳이 없다**.
- *
- * ── RN 으로 옮기며 갈린 것 넷 ─────────────────────────────────────────────────────
- *
- * ① **"확인"을 누르면 실제로 화면이 바뀌는 경로는 그대로다.** `confirmApiKeyNotice()` 가 저장된
- *    `apiKey` 를 지우고 온보딩 상태를 `awaitingApiKey` 로 되돌리면, `RootNavigator` 가 **화면 목록
- *    자체를 갈아 끼워**(3-2단계) 온보딩만 남는다. 웹은 라우트 가드가 `/onboarding` 으로 보냈고
- *  RN 은 갈 곳이 그것뿐이 된다. 계약은 같고 수단이 다르다.
- * ② `space-y-*` → `gap-*`(NativeWind 에 형제 간격 유틸이 없다).
- * ③ `text-center` 는 **컨테이너가 아니라 각 `Text`** 가 갖는다. RN 은 글자 스타일이 상속되지 않는다.
- * ④ 확인 버튼이 `Button` atom 이 됐다. 웹의 클래스 문자열
- *    (`rounded-full bg-primary text-on-primary font-semibold px-5 py-2.5 text-sm`)에서 `hover:` 만
- *    빠지고 나머지는 `primary` 변형이 그대로 갖는다. 웹이 `text-sm` 으로 줄여 쓰던 것만
- *    `textClassName` 으로 옮긴다(atom 기본은 `text-base`).
  */
 import { View } from 'react-native'
 

@@ -8,27 +8,6 @@
  *
  * 파티 인원은 (보스 + 난이도)에 붙어 있어 난이도를 바꾸면 값과 상한이 함께 갈아탄다
  * (스우: 하드 6인 / 익스트림 2인). 라벨 옆 `n / max` 배지가 그 사실을 말한다.
- *
- * ── RN 으로 옮기며 갈린 것 다섯 ─────────────────────────────────────────────────────
- *
- * ① **그림이 앉았다(step 5).** 3단계가 *"셋이 한 덩어리라 따로 못 옮긴다"* 며 미뤄 둔 자리.
- *    크롭의 CSS 값(`background-size: "100% auto"` / `position: "50% 45%"`)을 RN 기하로 바꾸고,
- *    웹의 `filter` 와 `mask-image` 를 각각 RN `filter` 스타일과 **뒤집은 그라데이션**으로
- *    푸는 일이다. 그 셋을 step 4 가 컨텐츠 카드에서 이미 한 벌 풀어 두었으므로 여기서는
- *    `FadedIllustration` 를 **부르기만 한다**(`variant="hero"`. 마스크 끝점이 카드와 다르다).
- *  보스 카드와 같은 컴포넌트를 쓰는 것이 이 요구하는 *"같은 값"* 이다.
- * ② **`bg-surface/60` 이 안 나온다.** NativeWind(v3 엔진)는 `var()` 색에 투명도 접미사를 만들지
- *    못한다(step 3 이 남긴 함정 둘 중 하나). 클래스는 조용히 사라지고 닫기 버튼 배경이 없어진다.
- *    그래서 값에서 직접 rgba 를 만든다(`lib/color-alpha.ts`. step 6 의 경계 페이드가 같은 함정을
- *    밟아 두 번째 호출부가 됐다). 그 값이 `surface` 가 아니라 **`mediaSurface`** 인 것도 같은
- *    이유다. 버튼이 `media-scope` 안이라 웹에서는 `var(--color-surface)` 가 이미 그것으로
- *  재선언돼 있었다.
- * ③ **글자 그림자·베일이 스타일이 아니라 컴포넌트가 된다.** `textShadow` 는 RN 에서
- *    `textShadowColor/Offset/Radius` 세 프롭이라 두 겹(웹은 그림자 둘)을 못 겹친다. 강한 쪽
- *    하나만 남긴다. `linear-gradient` 베일은 `expo-linear-gradient` 로 그린다.
- * ④ `border-t` 경계선은 `media-scope` **바깥**이다. 다크 테마는 media-surface ≈ surface 이고
- *    검은마법사는 값이 완전히 같아(#1C1319) 경계가 이 선뿐이다. 웹과 같은 자리에 그대로 둔다.
- * ⑤ `space-y`/`gap-[18px]` 은 `gap-*` 로, `tabular-nums` 는 스타일로(`lib/text-styles.ts`).
  */
 import { Pressable, View } from 'react-native'
 

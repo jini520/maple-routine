@@ -7,24 +7,6 @@
  *
  * `zIndex: 20` 은 **카드 루트가 카드 안에 가둔다**. 페이지 헤더나 탭바 위로 올라가지 않는다.
  * 그 관계는 `CharacterAccordion` 이 소유하고 여기는 층 번호만 안다.
- *
- * ══ RN 으로 옮기며 갈린 것 넷 ═════════════════════════════════════════════════════
- *
- * ① **배지가 `<span>` 에서 `Pressable` 이 된다. 웹의 대가가 사라진다.** 웹이 span 을 쓴 이유는
- *    카드 헤더가 `<button>` 이라 그 안의 button 이 **중첩 인터랙티브(HTML 위반)** 가 되기
- *    때문이었고, 대가로 "키보드 포커스를 못 받는다"를 감수했다. RN 에는 그 규칙이 없고 터치는
- *    **가장 깊은 곳이 가져간다**(responder). 중첩 `Pressable` 이 정상이고 부모 아코디언은 안
- *    열린다. 그래서 웹의 `stopPropagation` + `preventDefault` 두 줄도 함께 사라진다.
- * ② **측정이 이 파일에서 나간다.** 웹의 `measureIssueAnchor(card, money)` 는 두 요소를 받아 그
- *    자리에서 `getBoundingClientRect()` 를 불렀다. RN 의 측정은 **비동기**(`measureInWindow`)라
- *    같은 자리에서 못 부르므로, 재는 일은 호출부(step 7 의 `CharacterAccordion`)가 하고 여기는
- *    **잰 값을 받아 앵커 기하로 환산**한다. 이름도 그 사실에 맞춰 `resolveIssueAnchor` 다.
- *    배지 x 를 어떻게 앵커 중심으로 옮기는지(`-4 + 7`)는 여전히 이 파일의 지식이다.
- * ③ `ring-1 ring-bg` → 같은 크기의 `boxShadow` 확산. Tailwind 의 ring 은 **박스 바깥**에 그려져
- *    레이아웃을 안 건드리는데 `borderWidth` 로 옮기면 14px 원 안쪽을 깎아 아이콘이 작아진다
- *    (`ValuableDropBadge` 가 먼저 밟은 자리).
- * ④ `title`(마우스 툴팁)은 RN 에 짝이 없어 사라진다. 터치 기기에서는 웹에서도 뜨지 않았다.
- *    팝오버가 그 문구를 이미 말한다.
  */
 import { Pressable, View } from 'react-native'
 

@@ -8,25 +8,6 @@
  *
  * **컴포넌트는 하나다**. `RootNavigator` 가 두 이름에 같은 것을 꽂는다(`routes.ts` 의
  * `FEATURE_GUIDE_ROUTE_NAMES`). 사본을 두면 같은 글이 두 벌이 되어 반드시 갈라진다.
- *
- * ── RN 으로 옮기며 갈린 것 넷 ────────────────────────────────────────────────────────
- *
- * ① **부모를 계산하지 않는다.** 웹은 라우트가 둘이라 돌아갈 곳을 `resolveParentPath(pathname)` 로
- *    현재 경로에서 **깎아** 썼다. RN 의 pop 은 "누가 밀었는지"를 스택이 이미 알고 있어 깎을 것이
- *    없다. 계약(*"어디서 왔든 그리로 돌아간다"*)은 그대로고 계산만 사라진다
- *    (`use-settings-navigation.ts`).
- * ② **마디는 쿼리(`?s=`)가 아니라 라우트 파라미터다.** 웹에서 그것이 세그먼트가 아니라 쿼리였던
- *    이유는 `resolveStackDirection` 이 세그먼트를 스택 한 단으로 읽어 목차를 누를 때마다 화면이
- *  밀려 들어오기 때문이었는데, RN 에는 그 판정 자체가 없다(push 는 우리가
- *    명시한다). 목차 클릭은 `setParams` 라 **스택을 건드리지 않는다**. 웹의 `replace` 와 같은 뜻이다.
- * ③ **스크롤 목적지를 우리가 잰다.** 웹은 `getElementById` + `scrollIntoView` 였다. RN 에는 문서도
- *    id 도 없으므로 각 마디가 `onLayout` 으로 자기 y 를 알려 주고, 그 값으로 `scrollTo` 한다.
- *    래퍼의 y 를 함께 더하는 것은 마디의 `onLayout` y 가 **부모 기준**이기 때문이다. 래퍼가 마침
- *    콘텐츠 맨 위라 지금은 0 이지만, 그 사실에 기대면 위에 무언가 붙는 날 조용히 어긋난다.
- * ④ **없는 안내의 처리가 렌더 중 `<Navigate replace>` 에서 이펙트 안 `goBack()` 으로.** RN 에서는
- *    렌더 도중 내비게이션을 만질 수 없다. 뜻은 같다. 히스토리를 남기지 않고 들어온 목록으로
- *    돌려보낸다. **딥링크를 두지 않아 지금은 도달 불가한 자리**지만(`routes.ts`), 데이터에서 안내가
- *    사라지면 노트의 `guideId` 가 그대로 이리로 온다.
  */
 import { ArrowLeftIcon, Text } from '../../components/atoms'
 import { useEffect, useRef, useState } from 'react'

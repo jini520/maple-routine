@@ -2,17 +2,6 @@
  * 고가 아이템을 획득한 **행의 배경**. 테두리·글로우가 아니라 배경 효과다
  * (사용자 요청). 콘텐츠보다 먼저 그려지므로 자연히 뒤에 깔린다(웹이 `li` 자체 배경으로 둔 것과
  * 같은 자리. z-index 다툼 없음).
- *
- * ── 웹의 한 클래스가 RN 에서는 셋으로 갈린다 ──────────────────────────────────────
- *
- * 웹 `index.css` 의 `.valuable-drop-row` 한 클래스가 셋을 했다: 정적 골드 틴트 · 오른쪽에서
- * 배어나오는 radial 글로우 · 2.6s 맥동. RN 에는 그 셋의 짝이 전부 따로 있다. 틴트는
- * `backgroundColor`, 글로우는 **`react-native-svg` 의 `RadialGradient`**(RN 에 배경 그라디언트가
- * 없다), 맥동은 Reanimated CSS 애니메이션이다. `@media (prefers-reduced-motion)` 짝은
- * `useReducedMotion()` 이고, 값은 전부 `valuable-row-glow.ts` 가 갖는다.
- *
- * **step 6 이 `BossProfitBossRow` 안에 두었던 것을 step 8 이 꺼냈다**. 가격 기록 화면의 행이
- * 두 번째 호출부다(그 파일 머리).
  */
 import { useId } from 'react'
 import { StyleSheet, View } from 'react-native'

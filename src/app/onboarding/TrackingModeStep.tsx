@@ -10,15 +10,6 @@
  *
  * 설명·주의는 접지 않고 항상 보여준다(고르기 **전에** 둘을 비교하는 화면이다). 기본 선택은 없으며,
  * 사용자가 직접 고르기 전까지 "계속하기"를 비활성화한다(결정 17).
- *
- * ── RN 으로 옮기며 갈린 것 셋 ─────────────────────────────────────────────────────
- *
- * ① **`aria-pressed` → `aria-selected`.** RN 의 접근성 상태에 *pressed* 가 없다
- *    (`DifficultySegment` 와 같은 판단). 전달되는 사실은 같다.
- * ② 글자 클래스가 상자에서 안쪽 `Text` 로 내려온다(RN 은 글자 스타일이 상속되지 않는다). 웹에서
- *    `<span className="text-xs text-info-ink">` 하나가 아이콘 색과 글자를 함께 정하던 주의 박스는
- *    상자(`bg-info-tint`)·아이콘(`text-info-ink`)·글자(`text-xs text-info-ink`)로 나뉜다.
- * ③ `hover:bg-primary-tint` 제거(터치 기기에 hover 가 없다. atoms 와 같은 규칙).
  */
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'

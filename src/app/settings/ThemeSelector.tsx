@@ -5,24 +5,6 @@
  * **테마 이름을 손으로 적지 않는다**. 목록·카테고리·모드가 전부
  * `job-themes.json` 에서 파생된 레지스트리에서 온다. 테마 하나를 더하는 일이 JSON 한 블록으로
  * 끝난다는 것이 그 결정의 요점이고, 화면이 이름을 열거하는 순간 그것이 깨진다.
- *
- * ── RN 으로 옮기며 갈린 것 넷 ────────────────────────────────────────────────────────
- *
- * ① **`aria-pressed` → `aria-selected`.** RN 의 접근성 상태에 *pressed* 가 없다
- *    (`TrackingModeStep`·`DifficultySegment` 와 같은 판단).
- * ② **타일에 `aria-label` 을 명시한다.** 웹 `<button>` 은 접근 이름을 자식 글자에서 자동으로
- *    얻었지만 RN 은 중첩 `Text` 를 그렇게 접어 주지 않는다. 같은 이름(테마 이름)을 직접 준다.
- * ③ **선택 링이 `box-shadow: inset` 이 아니라 두꺼운 테두리다.** RN 에는 inset 그림자가 없다.
- *    웹은 1px 테두리 위에 같은 색 inset 1px 을 겹쳐 "두 겹"을 냈고, 여기서는 `borderWidth: 2` 가
- *    같은 두께를 낸다(RN 의 테두리는 상자 **안쪽**으로 자라 바깥 크기가 안 바뀐다).
- * ④ **이름 줄이 `Text` 하나가 아니라 행이다**. 웹은 `<span>` 안에 글자와 아이콘을 나란히 뒀는데
- *    RN 에서 `Text` 안의 뷰는 인라인 배치가 까다로워, 같은 결과를 `flex-row` 로 낸다.
- *
- * **아이콘 색만은 `style` 이 아니라 `color` 프롭으로 준다.** 웹은 부모 `<span>` 의 `color` 를
- * `currentColor` 가 물려받았고, RN 에서 그 자리를 대신하는 것이 `Svg` 의 `color` 프롭인데
- * `style.color` → `color` 로 옮겨 주는 것은 **`className` 경로뿐**이다(`lib/nativewind-interop.ts`).
- * 여기 색은 클래스가 아니라 레지스트리 값이라 그 경로를 못 타므로 프롭으로 직접 준다. 안 그러면
- * 에러 없이 아이콘만 기본색으로 남는다.
  */
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'

@@ -20,13 +20,6 @@
  * 둔다**. 지금 도달하는 것은 호출부가 심는 `unsupported` 하나뿐이지만, 그 표가 곧·
  *  이 정한 계약이고 OTA 가 붙는 날 배선은 `state={useLiveUpdateStore()}`
  * 한 줄이다. 어느 상태가 왜 도달 불가인지는 `SettingsAboutScreen` 이 그 자리에서 적는다.
- *
- * ── 그 밖에 RN 으로 옮기며 갈린 것 셋 ────────────────────────────────────────────────
- *
- * ① `<span>` → `Text`, `divide-y` → 두 번째 행부터 `border-t`(NativeWind 에 형제 선택자가 없다).
- * ② `Button` 의 글자 클래스가 `textClassName` 으로, `disabled:opacity-50` 이 조건부 클래스로.
- * ③ **`loadCurrentVersion()` 을 마운트에서 부르던 이펙트가 사라진다.** 그 호출이 곧 ①의 포트라
- *    부르면 던진다. 값은 호출부가 넘기고, 이 카드는 받은 것을 그린다.
  */
 import { View } from 'react-native'
 

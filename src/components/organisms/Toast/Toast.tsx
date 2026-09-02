@@ -8,31 +8,6 @@
  * 액션 슬롯은 아이콘만 보이고 라벨은 접근성 이름으로만 쓴다. 기본 아이콘이 '다시 시도'를
  * 전제하므로 뜻이 다른 액션은 자기 아이콘을 넘긴다('설정 열기'에 새로고침 아이콘을
  * 쓰면 무엇을 하는 버튼인지 어긋난다).
- *
- * ── RN 으로 옮기며 갈린 것 다섯 ─────────────────────────────────────────────────────
- *
- * ① **스와이프는 responder 프롭으로 그대로 옮긴다.** 웹은 `onPointerDown/Move/Up` 에 `clientX` 를
- *    썼고 RN 은 같은 자리에 `onResponder*` 와 `pageX` 가 있다. 임계값 판정은 `src/lib/
- *    swipe-dismiss` 의 `shouldDismissFromSwipe` 를 그대로 부른다. **`PanResponder` 를 쓰지
- *    않는다**: 그것은 터치 히스토리에서 제스처 상태를 스스로 계산해, 웹이 갖고 있던 "시작점
- *    하나와 현재 x" 라는 단순한 모델을 대신 세운다(그리고 그 계산 때문에 테스트에서 제스처를
- *    합성하려면 `touchHistory` 를 통째로 지어내야 한다). **`onMove…` 에서만 responder 를 가져오는
- *    것이 요점**. 시작에서 가져가면 안쪽 버튼(액션·닫기)이 눌리지 않는다. 웹이 `closest('button')`
- *    로 걸러내던 것과 같은 목적이고, RN 에서는 responder 규칙이 그것을 구조로 해 준다.
- * ② **`toast-shrink` 는 Reanimated 의 CSS 애니메이션이다**(step 7). 웹은 인라인
- *    `animation: toast-shrink ${duration}ms linear forwards` 였고. 지속시간이 토스트마다 달라
- *    (`@keyframes` 주석: 성공 2초/정보 2.5초) 클래스로 표현할 수 없던 자리다. 그 성질이 그대로
- *    `animationDuration` 에 들어간다. `origin-left` 는 RN 의 `transformOrigin` 이 받는다.
- *    **모션 줄이기면 바가 통째로 사라진다**(웹 `motion-reduce:hidden`). 줄지 않는 막대를 남기면
- *    "시간이 안 간다"로 읽히므로 없애는 쪽이 맞다는 웹의 판단을 그대로 옮긴다.
- * ③ **진입 트랜지션도 CSS 트랜지션으로 옮겼다.** 웹은 `transition-opacity duration-200 ease-out` 이라
- *    **투명도만** 흐르고 `translate-y-3 → translate-y-0` 은 즉시 튄다(투명도 0 이라 안 보인다).
- *    드래그 중에는 웹이 `transition: 'none'` 으로 껐으므로 여기서도 트랜지션 프롭을 빼 손가락을
- *    그대로 따라간다. 모션 줄이기면 시작 위치의 `translate-y-3` 만 없어진다(웹
- *    `motion-reduce:translate-y-0`. 투명도 트랜지션은 그쪽에서도 유지된다).
- * ④ **`truncate` → `numberOfLines={1}`**(RN 은 그 둘을 스타일이 아니라 `Text` 프롭으로 받는다).
- * ⑤ `role`·`aria-live` 는 그대로. RN 이 같은 이름의 ARIA 값을 받는다(error 는 즉시 알림).
- *
  * ── 남은 어긋남: `ToastAction.icon` 의 타입이 웹을 향해 있다 ─────────────────────────
  *
  * core 의 `ToastAction.icon` 은 `lucide-react`(웹)의 `LucideIcon` 이라 `lucide-react-native` 의

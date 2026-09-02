@@ -6,19 +6,6 @@
  * **범위 자체는 이 파일에 없다**. 화면은 `CacheDataSelection` 두 불리언을 넘길 뿐이고, 어떤 키와
  * 어떤 테이블이 지워지는지는 core 의 `storage/cache-data.ts` 가 혼자 정한다(CLAUDE.md CRITICAL).
  * 전환하며 그 파일을 한 글자도 건드리지 않았으므로 범위는 웹과 **같은 코드**가 정한다.
- *
- * ── RN 으로 옮기며 갈린 것 넷 ────────────────────────────────────────────────────────
- *
- * ① **자체 오버레이가 아니라 공용 `Modal`.** 웹도 같은 이유로 이미 그랬는데(직접 그리면 호출부의
- *    `space-y-*` margin 에 `fixed inset-0` 높이가 깎여 하단 딤이 빠졌다), RN 에서는 더 강하다.
- *    `absolute inset-0` 은 **부모 상자**에 갇혀 탭바조차 못 덮는다(`Modal.tsx` 파일 머리 ①).
- * ② **`role="checkbox"` + `aria-checked` 는 그대로 산다**. RN 접근성에도 같은 역할·상태가 있다
- *    (`aria-selected` 로 바꾼 선택 카드들과 갈리는 지점이다: 여기는 진짜 다중 선택이다).
- *    `Pressable` 은 역할 기본값을 강요하지 않아 `role` 을 그대로 덮어쓸 수 있다.
- * ③ 그룹 행의 `<span>` 중첩이 `View`/`Text` 로 갈린다. 글자 정렬·색이 상속되지 않아 각 `Text` 가
- *    자기 클래스를 갖는다.
- * ④ `divide`·`border-b` 로 그리던 목록 경계가 **행마다 `border-b`** 그대로다. 웹도 형제 선택자가
- *    아니라 각 행에 직접 걸고 있었다.
  */
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'

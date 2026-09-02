@@ -17,18 +17,6 @@
  * 진짜인가** 가 사라진다. 그래서 아래 목록에서 ①④가 그쪽 파일로 옮겨 갔다. **왜 그렇게 그리는지는
  * 그 파일들이 든다.** 여기 남는 것은 **무엇을 그 위아래에 세우는가** 다(드롭 머리 · 분배 인원 ·
  * 기록 안함/스킵/저장).
- *
- * ══ RN 으로 옮기며 갈린 것 ═══════════════════════════════════════════════════════
- *
- * ② **하단 안전영역을 여기서 넣지 않는다.** 웹은 `pb-[calc(1.25rem+var(--sa-bottom))]` 이었는데
- *    RN 에서는 시트 껍데기(`BottomSheet` 의 `contentContainerStyle`)가 이미 `insets.bottom` 을
- *    준다. 두 번 주면 두 겹이 된다. 남는 것은 상수 몫 `pb-5` 뿐이고, 이는 드릴다운 모드에도
- *    같다(웹 주석이 *"드릴다운은 안전영역을 넣지 않는다"* 고 적어 둔 갈래가 **양쪽 다 그렇게** 되어
- *    사라진다).
- * ③ `active:bg-surface-2` 는 NativeWind 가 낸다(`active:` 는 `Pressable` 의 눌림에 이어져 있다).
- *    **`disabled:opacity-40` 은 안 낸다**. 웹 CSS 의사 클래스라 `Pressable disabled` 와 이어져
- *    있지 않다(`BossProfitBossRow` ③이 먼저 밟았다). JS 조건으로 쓴다.
- * ⑤ `⌫` 는 글자 그대로 남는다. 지금은 `MesoKeypad` 가 그리고 `aria-label` 도 그대로다.
  */
 import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'

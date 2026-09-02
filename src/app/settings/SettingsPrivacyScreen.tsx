@@ -24,15 +24,6 @@
  * **`navigator.onLine` 사전 검사는 함께 사라진다.** 그것은 웹 API 이고, 이 앱에서 네트워크 종류를
  * 묻는 길은 `getNetworkType` 하나인데 그것이 `LiveUpdatePort` 를 타서 지금 던진다.
  * 없는 신호를 지어내느니 `onError` 에 맡긴다. 오프라인이면 그쪽이 곧바로 온다.
- *
- * ── 그 밖에 갈린 것 둘 ───────────────────────────────────────────────────────────────
- *
- * ① **`X-Frame-Options` 의존이 사라진다.** GitHub Pages 가 그 헤더를 안 보낸다는 사실 위에 웹판이
- *    서 있었는데(헤더가 생기면 화면이 빈다), `WebView` 는 최상위 탐색이라 프레임 조상 정책의
- *    대상이 아니다. **웹판이 적어 둔 그 위험이 여기서는 존재하지 않는다.**
- * ② **`ScreenScroll` 을 쓰지 않는다.** 웹도 같은 이유로 `scroll={false}` 였다. 문서가 자기
- *    스크롤을 갖는다. 안전영역도 이 화면이 직접 비우고, 하단은 `WebView` 안쪽에 여백을 넣을 수
- *    없으므로 **상자 자체를 홈 인디케이터 위에서 끝낸다.**
  */
 import { useEffect, useState } from 'react'
 import { Linking, Pressable, View } from 'react-native'

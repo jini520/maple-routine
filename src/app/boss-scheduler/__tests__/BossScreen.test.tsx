@@ -1,24 +1,5 @@
 // 웹판 넷(`BossScreen.test.tsx` 1,695줄 · `.view-state` · `.cold-start` · `.dom-snapshot`)의
 // **명세를 읽어 다시 쓴 것**이다.
-//
-// ── 갈린 것 여섯 ─────────────────────────────────────────────────────────────────────
-//
-// ① **라우터 프로브가 없다**. 이동은 `navigation.navigate(…)` 가 불렸는가로 본다. 웹은
-//  `/boss/manage` 에 프로브 요소를 두고 그것이 나타나는지 봤다. **목적지는 로
-//    `'BossManage'`(push) → `('Tabs', { screen: 'BossManage' })`(형제 탭) 이 됐다.**
-// ② **당겨서 새로고침이 `RefreshControl` 이다**. 웹의 제스처 시뮬레이션 넷(임계
-//    넘김/미달 · 배너 위치 · 목록 transform)은 **옮길 계약이 아니다**. 그 값들을 이제 OS 가 갖는다.
-//  남는 계약은 *"당김이 헤더 버튼과 같은 재조회를 부르는가"*와 *"버튼이 그대로
-//    남는가"*(결정 10) 둘이고, 컨텐츠 스케줄러와 **같은 방식으로** 본다(두 탭이 갈리면 회귀다).
-// ③ **고정 헤더 실측·spacer 계약이 사라진다**. `fixed` 도 spacer 도 옮길 자리가 없고
-//  (`PageHeader` 파일 머리) 뒤로는 헤더가 고정되지도
-//    않는다. 대신 *"헤더가 셸의 `header` 로 들어가고 모달은 셸 바깥"* 을 본다.
-// ④ `getByRole('combobox')`(웹 `<select>`) → **드롭다운 트리거의 캐릭터 이름**으로 기다린다.
-// ⑤ **콜드 스타트 파일이 따로 없다**. 웹은 선하이드레이션 하네스를 세워 프레임 순서를 봤는데,
-//    RN 에서 그 순서를 만드는 것은 `AppShell` 의 `prehydrateTabStores` 이고 그쪽 테스트가 이미
-//  갖고 있다. 여기 남는 것은 ****. `null` 을 0명으로 읽지
-//    않는가. 이고 그것은 한 케이스다.
-// ⑥ DOM 스냅샷 둘은 옮기지 않는다(전환 계획서 **잃는 안전망**). 대신 각 가지를 케이스로 적는다.
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import { act, fireEvent, screen, within } from '@testing-library/react-native'
 import { useState } from 'react'

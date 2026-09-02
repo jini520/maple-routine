@@ -1,23 +1,5 @@
 /**
  * 컨텐츠 관리. 수동 추적 항목 편집.
- *
- * ══ RN 으로 옮기며 갈린 것 다섯 ═══════════════════════════════════════════════════
- *
- * ① **`StackScreen` 이 통째로 사라진다**. 포털 오버레이·푸시/팝 전환·가장자리 스와이프·
- *    탭바 밀어내기 넷이 전부 루트 스택의 성질이라, 셸은 `ScreenScroll(hasTabBar={false})` +
- *    `PageHeader` 다(설정 하위 화면과 같은 골격).
- * ② **`useStackBack(PARENT_PATH)` → `goBack()`**, 그래서 `PARENT_PATH` 상수도 사라진다. 딥링크가
- *    없어 *"돌아갈 곳이 없는 경우"* 가 존재하지 않는다(`app/use-screen-navigation.ts`).
- * ③ **자동 모드 리다이렉트가 도달 불가능해졌다.** 웹의 `<Navigate to="/content" replace />` 는
- *    **주소로 직접 들어오는 경로**를 막던 것인데(URL 이 있는 세계의 문제), RN 에서 이 화면에 오는
- *    길은 수동 모드에서만 보이는 버튼 하나뿐이고 그 위에 덮여 있는 동안 설정 탭에 닿을 수도 없다.
- *    그래도 **계약은 남긴다**. 모드가 바뀌면 물러난다. 비용이 effect 한 줄이고, 지우면 "왜 없어도
- *    되는지"를 다음 사람이 다시 증명해야 한다.
- * ④ `<button aria-pressed>` → `Pressable` + **`aria-selected`**(RN 접근성 상태에 *pressed* 가 없다.
- *    설정·온보딩의 선택 카드가 이미 밟은 자리).
- * ⑤ **잠금 스크림에서 `backdrop-blur-[2px]` 가 빠진다**.
- *  RN 에 `backdrop-filter` 가 없어 되붙일 방법이 없고 이 웹에서 그것을 걷어낸 뒤라
- *    **방향도 같다.** 규칙의 본체("사유는 오른쪽 뱃지가 아니라 행 위를 덮는 한 줄")는 그대로다.
  */
 import { useEffect, useState } from 'react'
 import { Pressable, View } from 'react-native'
