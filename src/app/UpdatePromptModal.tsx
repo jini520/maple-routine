@@ -1,24 +1,10 @@
 /**
- * 사용자 동의형 업데이트 모달. 실행 시(또는 설정에서 수동 확인 시) 새 버전이 있으면 뜬다
- * . 상태별 분기 아홉과 문구는 웹판을 그대로 옮겼다.
+ * 사용자 동의형 업데이트 모달. 새 버전이 있으면 받을지 묻고 적용까지 미는 화면.
  *
- * ══ 이 컴포넌트는 **아직 아무 데도 마운트되지 않는다** ══════════════════════════════════
+ * 상태별 분기 아홉과 문구를 갖는다. 관찰용 카드(`AppUpdateSection`)와 갈리는 것은 이쪽이 **받고
+ * 적용하는 동의 플로우**를 든다는 점이다.
  *
- * 그릴 줄은 알지만 **그릴 값을 얻을 방법이 없다.** 벽이 둘이고, 둘 다 이
- * 별도 ADR 로 미뤄 둔 OTA 재설계에 걸려 있다.
- *
- * ① **`LiveUpdatePort` 가 던진다**(`native/adapters/not-implemented.ts`). @capgo → expo-updates 는
- *    SDK 교체가 아니라 **매니페스트 프로토콜 자체**가 바뀌는 일이라 어댑터로 덮을 수 없다.
- * ② **core 의 스토어를 import 하는 것만으로 죽는다**(실측 2026-08-12). `features/live-update/store.ts`
- *  가 **모듈 최상위**에서 `import.meta.env.VITE_LIVE_UPDATE_CHANNEL` 을 읽는데(빌드
- *    시점 채널 분리), Metro·jest 에서 `import.meta.env` 는 `undefined` 라 그 자리에서
- *    `TypeError: Cannot read properties of undefined` 로 끝난다. `import.meta.glob` 과 **같은 종류의
- *    벽**이고(`core-shims.js`), 이쪽은 아직 치환 대상이 아니다. 대체 구현이 곧 "가짜 OTA 스토어"라
- *    프로토콜을 정하기 전에 만들면 그 결정을 코드가 몰래 대신 내린다.
- *
- * 그래서 **스토어를 부르지 않고 값을 프롭으로 받는다.** 타입만은 core 에서 가져오므로
- * (`import type` 은 컴파일에서 지워져 모듈이 평가되지 않는다) 상태 아홉과 필드 이름이 두 벌이 되지
- * 않고, OTA 가 붙는 날 배선은 `state={useLiveUpdateStore()}` 한 줄이다.
+ * @see docs/features/live-update.md 업데이트 정책
  */
 import { useState } from 'react'
 import { View } from 'react-native'
