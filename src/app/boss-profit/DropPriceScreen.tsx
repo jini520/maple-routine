@@ -71,7 +71,7 @@ import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { useScreenNavigation } from '../use-screen-navigation'
 import { CharacterAvatar } from '../../components/molecules/CharacterAvatar/CharacterAvatar'
-import { PORTRAIT_COMPACT } from '../../components/molecules/CharacterPortrait/portrait-metrics'
+import { PORTRAIT_COMPACT } from '../../components/organisms/CharacterPortrait/portrait-metrics'
 import { DropPricePad } from './DropPricePad'
 import { ValuableRowBackground } from './ValuableRowBackground'
 

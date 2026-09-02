@@ -26,7 +26,7 @@ import { Image, Pressable, View } from 'react-native'
 import { worldEmblemUrl } from '../../../lib/assets/asset-lookup'
 
 import { FACE_AVATAR_SIZE } from '../../../lib/face-crop'
-import { CharacterAvatar } from '../CharacterAvatar/CharacterAvatar'
+import { CharacterAvatar } from '../../molecules/CharacterAvatar/CharacterAvatar'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { Text } from '../../atoms'
 

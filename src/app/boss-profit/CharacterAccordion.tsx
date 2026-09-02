@@ -75,7 +75,7 @@ import { AnimatedView } from '../../lib/nativewind-interop'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { MonthlyAccordionBody, WeeklyAccordionBody } from './AccordionBody'
 import { useBossProfitContext } from './boss-profit-context'
-import { CharacterPortrait } from '../../components/molecules/CharacterPortrait/CharacterPortrait'
+import { CharacterPortrait } from '../../components/organisms/CharacterPortrait/CharacterPortrait'
 import {
   CharacterIssueBadge,
   CharacterIssuePopover,

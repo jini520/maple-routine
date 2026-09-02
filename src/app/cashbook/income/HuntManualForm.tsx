@@ -12,7 +12,7 @@
  */
 import { useState } from 'react'
 
-import { mesoTextOf, mesoValueOf } from '../../../components/molecules/MesoPad/meso-pad'
+import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { AmountInput, FieldRow } from '../sheet-fields'

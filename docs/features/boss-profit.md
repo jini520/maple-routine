@@ -757,7 +757,7 @@ today 화면은 언제나 이번 주를 그리므로 이 화면의 네비게이�
   └ 슬롯 크기는 링 칸 수(주간 12 · 월간 1)와 무관하게 항상 40px 고정: 탭 전환 때마다 카드가 튀는 것을 막는다
   └ 링은 두 탭·모든 기간에 항상 그리므로 clears는 널이 아니다(ADR-059)
 
-진행 링(SegmentedRing · molecules/CharacterPortrait/PortraitRing): 초상화 바깥에 2px 여백을 두고 도는 SVG. 칸 수 = total (주간 12 · 월간 1 = 온전한 원)
+진행 링(SegmentedRing · organisms/CharacterPortrait/PortraitRing): 초상화 바깥에 2px 여백을 두고 도는 SVG. 칸 수 = total (주간 12 · 월간 1 = 온전한 원)
   circle × total, r = (40 − stroke)/2 = 19, strokeWidth 2, strokeLinecap round → 안쪽 끝 18 vs 초상화 반지름 16 = 2px 여백
   칸 = strokeDasharray(`${dash} ${둘레 − dash}`) + strokeDashoffset(−(i × seg + stroke/2)), seg = 둘레/total, gap 2.4
       dash = seg − gap − stroke  (round 캡이 양끝을 stroke/2씩 더 그리므로 미리 빼둔다, ADR-054 정정 5)

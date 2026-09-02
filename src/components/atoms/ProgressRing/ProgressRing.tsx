@@ -6,7 +6,7 @@
  * 도메인도 모른다. 읽어 주는 이름도 호출부 몫이다(무엇을 셌는지는 화면이 안다).
  *
  * 반원 둘로 가르는 링은 여기 없다. 그것만 `Path` 로 그리고 곡선 글자와 같은 중심을 읽어
- * `molecules/CharacterPortrait/portrait-ring` 에 남는다.
+ * `organisms/CharacterPortrait/portrait-ring` 에 남는다.
  */
 import { Circle } from 'react-native-svg'
 

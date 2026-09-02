@@ -14,7 +14,7 @@ import { formatMesoUnits } from '../../../lib/drop/drop-price'
 import { RotateCcwIcon, Text } from '../../atoms'
 import { MESO_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import { SheetTextInput } from '../SheetTextInput/SheetTextInput'
+import { SheetTextInput } from '../../molecules/SheetTextInput/SheetTextInput'
 import { MAX_MESO, parseMesoText } from './meso-pad'
 
 export function MesoAmountField(props: {

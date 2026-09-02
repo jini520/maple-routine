@@ -42,8 +42,8 @@ import {
 import { useOnboardingStore } from '../../../features/onboarding/store'
 
 import { MapleSweepSpinner, Text } from '../../atoms'
-import { AddMark } from '../../molecules/CharacterRow/AddMark'
-import { CharacterRow } from '../../molecules/CharacterRow/CharacterRow'
+import { AddMark } from '../../organisms/CharacterRow/AddMark'
+import { CharacterRow } from '../../organisms/CharacterRow/CharacterRow'
 import { EmptyState } from '../../molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../molecules/ErrorState/ErrorState'
 import { StaleBanner } from '../../molecules/ErrorState/StaleBanner'

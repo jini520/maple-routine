@@ -110,9 +110,9 @@ Text(라이트): text-[#8A7362] hover:text-[#5B4636]   Text(다크): text-neutra
 - **채운 값이 0 이면 호를 아예 안 그린다.** `strokeLinecap="round"` 가 길이 0 인 호에 점 하나를 찍어
   아직 아무것도 안 했다는 것이 조금 했다로 보인다.
 - 반원 둘로 가르는 링은 여기 없다. 그것만 `Path` 로 그리고 곡선 글자와 같은 중심을 읽어
-  `molecules/CharacterPortrait/PortraitRing` 에 남는다.
+  `organisms/CharacterPortrait/PortraitRing` 에 남는다.
 
-### 캐릭터 초상화 (`components/molecules/CharacterPortrait`): [[ADR-204]] 정정 1 (2026-09-02)
+### 캐릭터 초상화 (`components/organisms/CharacterPortrait`): [[ADR-204]] 정정 1 (2026-09-02)
 
 얼굴 원 + 그 둘레의 링. **규격이 둘이고 프롭이 갈래마다 다르다**(판별 유니온).
 

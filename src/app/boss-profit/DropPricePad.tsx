@@ -37,9 +37,9 @@ import type { RecordedDrop } from '../../types/drops'
 
 import { Badge, ChevronLeftIcon, Text } from '../../components/atoms'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
-import { MesoAmountField } from '../../components/molecules/MesoPad/MesoAmountField'
-import { MesoKeypad } from '../../components/molecules/MesoPad/MesoKeypad'
-import { applyMesoKey, type MesoKey } from '../../components/molecules/MesoPad/meso-pad'
+import { MesoAmountField } from '../../components/organisms/MesoPad/MesoAmountField'
+import { MesoKeypad } from '../../components/organisms/MesoPad/MesoKeypad'
+import { applyMesoKey, type MesoKey } from '../../components/organisms/MesoPad/meso-pad'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 
 export interface DropPricePadProps {
