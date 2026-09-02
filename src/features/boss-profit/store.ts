@@ -859,9 +859,8 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       null,
     )
 
-    // 캐시 행에서 파생한 키만 쓰면 **행이 없는 기간의 기록을 조회조차 하지 않아**
-    // 되살릴 재료가 애초에 없다(축약 응답으로 월간 행이 통째로 빠지는 경로가 실측됐다.
-    // ). 동기화 분기와 같이 현재 주·달 키를 항상 포함한다.
+    // 캐시 행에서 파생한 키만 쓰면 행이 없는 기간을 조회조차 안 해 되살릴 재료가 없다.
+    // 동기화 분기와 같이 현재 주·달 키를 항상 포함한다.
     const cachedPeriodKeys = Array.from(
       new Set([
         ...cachedRows.map((row) => row.periodKey),

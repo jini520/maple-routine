@@ -111,7 +111,7 @@ export function CacheClearConfirm(props: CacheClearConfirmProps): React.JSX.Elem
                   <View className="min-w-0 flex-1">
                     <View className="flex-row items-center justify-between gap-3">
                       <Text className="text-sm font-semibold text-text">{group.label}</Text>
-                      {/*: 조회 전에도 같은 자리·같은 타이포로 자리표시를 둬야
+                      {/* 조회 전에도 같은 자리·같은 타이포로 자리표시를 둬야
                           값이 들어올 때 행 레이아웃이 점프하지 않는다. */}
                       <Text
                         style={TABULAR_NUMS}

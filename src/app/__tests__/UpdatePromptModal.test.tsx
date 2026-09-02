@@ -1,10 +1,10 @@
 // 업데이트 모달. 갈린 것 셋.
 //
-// · **스토어를 모킹하지 않는다. 애초에 쓰지 않는다.** RN 판은 값을 프롭으로 받는다(그 이유는
+// **스토어를 모킹하지 않는다. 애초에 쓰지 않는다.** RN 판은 값을 프롭으로 받는다(그 이유는
 //   `UpdatePromptModal.tsx` 파일 머리: core 의 live-update 스토어는 `import.meta.env` 때문에
 //   import 하는 것만으로 죽는다).
-// · `useNavigate` 대신 `onOpenReleaseNotes` 프롭이 불렸는가를 본다.
-// · 진행률 바는 클래스가 아니라 **실제 `width` 스타일**을 잰다(RN 에는 클래스 문자열이 안 남는다).
+// `useNavigate` 대신 `onOpenReleaseNotes` 프롭이 불렸는가를 본다.
+// 진행률 바는 클래스가 아니라 **실제 `width` 스타일**을 잰다(RN 에는 클래스 문자열이 안 남는다).
 //
 // **이 모달이 아직 아무 데도 마운트되지 않는다는 사실은 여기서 검사하지 않는다**.
 // `src/__tests__/boot-order.test.tsx` 가 셸 쪽에서 본다.
@@ -132,7 +132,7 @@ describe('UpdatePromptModal', () => {
     expect(actions.dismiss).toHaveBeenCalledTimes(1)
   })
 
-  // : 되돌릴 수 없는 구간이라 버튼을 두지 않는다. dismiss 가
+  // 되돌릴 수 없는 구간이라 버튼을 두지 않는다. dismiss 가
   // downloadedBundleId 를 비우면 재시도할 번들 참조를 잃는다.
   it('applying: 진행 표시만 두고 버튼을 전부 치운다', async () => {
     const { view } = await renderModal({ status: 'applying' })
@@ -241,7 +241,7 @@ describe('UpdatePromptModal', () => {
       expect(expanded.transform).not.toEqual(collapsed.transform)
     })
 
-    // : 옛 매니페스트에는 이 필드가 없고 그것은 오류가 아니라 안 실려 온
+    // 옛 매니페스트에는 이 필드가 없고 그것은 오류가 아니라 안 실려 온
     // 것이라, 액션 없는 비활성 버튼을 두지 않는다.
     it('핵심 목록이 없으면 버튼 자체가 없다', async () => {
       const { view } = await renderModal({

@@ -36,7 +36,7 @@ export interface BossCharacterView {
   ocid: string
   characterName: string
   world?: string
-  // : 초상화 레일이 쓰는 둘. 컨텐츠 스케줄러 뷰와 같은 자리·같은 규약이다
+  // 초상화 레일이 쓰는 둘. 컨텐츠 스케줄러 뷰와 같은 자리·같은 규약이다
   // (`null` = 캐시가 아직 모름). 정렬이 이미 읽는 캐시에서 함께 꺼내므로 조회가 안 는다.
   level?: number | null
   imageUrl?: string | null
@@ -138,7 +138,7 @@ let hydration: Promise<void> | null = null
 // 목록에서 필터링한 순서)가 서로 달라 생기던 불일치를 없애기 위해, character-basic-cache의
 // level을 병합해 레벨 내림차순(동레벨이면 compareByName)으로 통일한다. 레벨 캐시가 없는
 // 캐릭터는 맨 뒤로 보낸다.
-// : 정렬에 쓰는 level 을 버리지 않고 `imageUrl` 과 함께 뷰에 남긴다. 초상화
+// 정렬에 쓰는 level 을 버리지 않고 `imageUrl` 과 함께 뷰에 남긴다. 초상화
 // 레일이 쓴다. 컨텐츠 스케줄러 스토어의 같은 이름 함수와 **같은 모양이어야 한다**(같은 정책이 두
 // 모양으로 있으면 값을 바꿀 때 한쪽만 바뀐다).
 async function sortByCachedLevel(views: BossCharacterView[]): Promise<BossCharacterView[]> {

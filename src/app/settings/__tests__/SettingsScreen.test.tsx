@@ -43,7 +43,7 @@ jest.mock('../../../features/tracking-mode/store', () => ({ useTrackingModeStore
 jest.mock('../../../features/settings/cache-data', () => ({ loadCacheDataSizes: jest.fn() }))
 jest.mock('../use-settings-navigation', () => ({ useSettingsNavigation: jest.fn() }))
 
-// : 저장은 컨텐츠 스케줄러 스토어의 액션을 그대로 부른다(세 번째 사본 금지).
+// 저장은 컨텐츠 스케줄러 스토어의 액션을 그대로 부른다(세 번째 사본 금지).
 // 훅으로도(배지·저장) `getState()` 로도(결정 5 정정의 모드 전환 재로드) 만지므로 둘 다 세운다.
 jest.mock('../../../features/content-scheduler/store', () => {
   const hook = jest.fn()
@@ -126,7 +126,7 @@ function hasChevron(node: AtomElement): boolean {
 const ROW_LABELS = [
   '스케줄 관리 방법',
   '테마',
-  // : `테마` **아래**(사용자 지정). 이 자리가 계약이다.
+  // `테마` **아래**(사용자 지정). 이 자리가 계약이다.
   '캐릭터 관리',
   '기능 설명',
   '개발 노트',
@@ -225,7 +225,7 @@ describe('SettingsScreen', () => {
     expect(labelsIn(cards[1])).toEqual(['기능 설명', '개발 노트', '계정 및 데이터', '앱 정보'])
   })
 
-  // : 화살표가 "값이 있는가"가 아니라 "누르면 무언가 열린다"를 말한다.
+  // 화살표가 "값이 있는가"가 아니라 "누르면 무언가 열린다"를 말한다.
   // 옛 배타(`rightContent ?? chevron`)에서는 값이 있는 행에서 화살표가 사라졌다.
   it.each([
     ['스케줄 관리 방법', '수동'],
@@ -261,7 +261,7 @@ describe('SettingsScreen', () => {
     expect(await view.findByText('1.5MB')).toBeTruthy()
   })
 
-  // : 조회 전에도 값과 같은 자리를 잡는다(빈 문자열이면 값이 툭 나타나며 행이 밀린다).
+  // 조회 전에도 값과 같은 자리를 잡는다(빈 문자열이면 값이 툭 나타나며 행이 밀린다).
   it('캐시 용량 조회 전에는 "- KB" 로 자리를 잡는다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
 
@@ -350,7 +350,7 @@ describe('SettingsScreen', () => {
     expect(view.getByTestId('theme-modal-overlay')).toBeTruthy()
   })
 
-  // : 셋 다 `/settings/account-data` 로 내려갔다. 되돌아오면 결정 1 의
+  // 셋 다 `/settings/account-data` 로 내려갔다. 되돌아오면 결정 1 의
   // "값을 고르는 카드"가 다시 혼종이 된다.
   it.each(['계정 변경', '연결 해제', '캐시 데이터 삭제', 'API 키 재입력'])(
     '"%s" 행을 본화면에 두지 않는다',
@@ -370,7 +370,7 @@ describe('SettingsScreen', () => {
     expect(view.getByText('Maple Routine is not associated with NEXON Korea')).toBeTruthy()
   })
 
-  // : 개인정보 처리방침은 `/settings/about` 의 행으로 옮겼고, 고지 블록은
+  // 개인정보 처리방침은 `/settings/about` 의 행으로 옮겼고, 고지 블록은
   // 전부 읽고 끝나는 정적 문구만 남는다. 링크가 여기로 되돌아오면 그 균일함이 다시 깨진다.
   it('고지 블록은 4줄이고 링크를 두지 않는다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
@@ -392,7 +392,7 @@ describe('SettingsScreen: 캐릭터 관리', () => {
     expect(hasChevron(row)).toBe(true)
   })
 
-  // : `null` 은 "0개"가 아니라 **"아직 안 읽었다"** 다. 모르는 사실을 단정하지 않는다.
+  // `null` 은 "0개"가 아니라 **"아직 안 읽었다"** 다. 모르는 사실을 단정하지 않는다.
   it('추적 목록이 null(미로드)이면 배지를 그리지 않는다', async () => {
     mockContentStore({ trackedOcids: null })
     const view = await renderOverlay(<SettingsScreen />)
@@ -407,7 +407,7 @@ describe('SettingsScreen: 캐릭터 관리', () => {
     expect(textsIn(rowOf(view, '캐릭터 관리'))).toEqual(['캐릭터 관리', '0', '개'])
   })
 
-  // : 모달이 아니라 **화면 push** 다. 그래서 로스터 조회·저장이 이 화면을 떠났다.
+  // 모달이 아니라 **화면 push** 다. 그래서 로스터 조회·저장이 이 화면을 떠났다.
   // 여기 남은 것은 **누르면 그리로 간다** 하나다.
   it('행을 누르면 캐릭터 관리 화면을 민다', async () => {
     const view = await renderOverlay(<SettingsScreen />)

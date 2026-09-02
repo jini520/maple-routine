@@ -78,7 +78,7 @@ describe('AppUpdateSection', () => {
     expect(view.getByText(FALLBACK_VERSION)).toBeTruthy()
   })
 
-  // : 이 카드가 놓이는 화면의 제목이 이미 `앱 정보`다.
+  // 이 카드가 놓이는 화면의 제목이 이미 `앱 정보`다.
   it('섹션 제목을 스스로 그리지 않는다', async () => {
     const view = await render()
 
@@ -101,7 +101,7 @@ describe('AppUpdateSection', () => {
     expect(check).toHaveBeenCalledTimes(1)
   })
 
-  // : `현재 버전` 바로 아래 행이라 주어가 생략되면 무엇이 최신인지가 문장에 없다.
+  // `현재 버전` 바로 아래 행이라 주어가 생략되면 무엇이 최신인지가 문장에 없다.
   it('최신이면 "최신 버전입니다"를 표시한다', async () => {
     const view = await render({ status: 'up-to-date' })
 
@@ -124,7 +124,7 @@ describe('AppUpdateSection', () => {
     })
   })
 
-  // : 네트워크 왕복이라 disabled 만으로는 진행 중인지 멈춘 건지 구분되지 않는다.
+  // 네트워크 왕복이라 disabled 만으로는 진행 중인지 멈춘 건지 구분되지 않는다.
   // 정정 3 이 그 신호를 라벨에서 스피너로 옮겼다. 라벨은 가려진 채 자리를 지킨다.
   it('확인 중에는 버튼이 대기 상태가 되고 라벨은 자리를 지킨다', async () => {
     const view = await render({ status: 'checking' })
@@ -133,7 +133,7 @@ describe('AppUpdateSection', () => {
     expect(buttonOf(view, '업데이트 확인').props.accessibilityState).toMatchObject({ busy: true })
   })
 
-  // : 말줄임표는 '...'(마침표 3개)로 통일하고 한 글자 '…' 는 쓰지 않는다.
+  // 말줄임표는 '...'(마침표 3개)로 통일하고 한 글자 '…' 는 쓰지 않는다.
   it.each([
     'idle',
     'checking',

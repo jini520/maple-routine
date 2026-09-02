@@ -1,5 +1,5 @@
 // 캘린더 칸은 너비가 **화면 폭 ÷ 7** 이라 `formatMesoUnits`(`1억 2345만 6789`)가 안 들어간다
-// . 단위 하나 + 유효숫자 넷으로 줄인다.
+// 단위 하나 + 유효숫자 넷으로 줄인다.
 
 import { formatMesoCompact } from '../cashbook/meso-compact'
 

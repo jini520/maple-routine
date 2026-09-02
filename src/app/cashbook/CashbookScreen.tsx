@@ -857,7 +857,7 @@ export function CashbookScreen(): React.JSX.Element {
   return (
     <View testID="screen-Cashbook" className="flex-1">
       <ScreenScroll
-        // : 색만 테마에서 넘기고 컨트롤은 셸이 그대로 받는다.
+        // 색만 테마에서 넘기고 컨트롤은 셸이 그대로 받는다.
         refreshControl={
           <RefreshControl
             refreshing={pull.refreshing}

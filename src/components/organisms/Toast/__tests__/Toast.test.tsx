@@ -1,14 +1,14 @@
 // 토스트. 갈린 것 넷.
 //
-// · **액션 아이콘 케이스**: 클래스로 lucide 아이콘을 구분할 수 없다. RN 의 lucide 는
+// **액션 아이콘 케이스**: 클래스로 lucide 아이콘을 구분할 수 없다. RN 의 lucide 는
 //   `testID` 를 삼키므로(`nativewind-interop.ts`) 그 아이콘이 실제로 그린 **`Path` 의 `d`** 를
 //   비교한다. 기대값을 손으로 적지 않고 두 아이콘을 나란히 렌더해 서로 다름을 본다.
 //   **한 케이스 안에서 `unmount()` 후 다시 렌더하지 않는다**. RNTL 14 에서 그러면 이후 렌더가
 //   빈 트리가 되고(실측), 그 트리를 스냅샷으로 굳히면 아무것도 안 지키는 기준선이 남는다.
-// · **스와이프**: `fireEvent.pointer` → responder 이벤트. 좌표가 `clientX` → `pageX` 로 바뀔 뿐
+// **스와이프**: `fireEvent.pointer` → responder 이벤트. 좌표가 `clientX` → `pageX` 로 바뀔 뿐
 //   임계값 판정은 같은 `shouldDismissFromSwipe` 다.
-// · `role`·`aria-live` 는 그대로 남았다(RN 이 같은 이름의 프롭을 받는다).
-// · 타이머 바는 **있고 없음만** 지킨다. 줄어드는 것은 Reanimated 가 UI 스레드에서 하는 일이라
+// `role`·`aria-live` 는 그대로 남았다(RN 이 같은 이름의 프롭을 받는다).
+// 타이머 바는 **있고 없음만** 지킨다. 줄어드는 것은 Reanimated 가 UI 스레드에서 하는 일이라
 //   렌더 트리에는 선언(`animationName`·`animationDuration`)만 남는다. 그 선언을 웹
 //   `@keyframes toast-shrink` 와 대조하던 `keyframes-parity.test.ts` 는 웹 소스와 함께 지워졌다
 //
@@ -83,7 +83,7 @@ describe('Toast', () => {
     expect(onDismiss).toHaveBeenCalledTimes(1)
   })
 
-  // : 기본 아이콘은 '다시 시도'를 전제한 RefreshCw 다. 뜻이 다른 액션은 자기 아이콘을
+  // 기본 아이콘은 '다시 시도'를 전제한 RefreshCw 다. 뜻이 다른 액션은 자기 아이콘을
   // 넘겨야 하고, 그러지 않으면 무엇을 하는 버튼인지 어긋난다.
   it('action.icon 을 주면 기본 새로고침 아이콘 대신 그 아이콘을 그린다', async () => {
     const { getByLabelText } = await renderAtom(

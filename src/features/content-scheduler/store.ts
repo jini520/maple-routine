@@ -45,7 +45,7 @@ export interface ContentCharacterView {
   // 같은 캐시에서 함께 꺼내는 길드명. null = 미가입(길드 콘텐츠 잠금 근거),
   // undefined = 모름(잠그지 않음).
   guildName?: string | null
-  // : 초상화 레일이 쓰는 둘. 같은 캐시에서 정렬과 함께 꺼내므로 조회가 안 는다.
+  // 초상화 레일이 쓰는 둘. 같은 캐시에서 정렬과 함께 꺼내므로 조회가 안 는다.
   // `null` 은 **캐시가 아직 그 캐릭터를 모른다**는 뜻이다. 레일은 그때 레벨 호를 비운다.
   level?: number | null
   imageUrl?: string | null
@@ -113,7 +113,7 @@ const initialState: ContentSchedulerState = {
 // 캐릭터는 맨 뒤로 보낸다.
 // 길드명은 여기서 함께 꺼내 뷰에 실어 보낸다. 정렬을 위해 이미 읽는 캐시 객체
 // 안에 있으므로 추가 조회가 0이고, 화면이 character-basic-cache를 다시 읽을 이유가 없다.
-// : `level`·`imageUrl` 도 **같은 이유로** 함께 실어 보낸다(초상화 레일이 쓴다).
+// `level`·`imageUrl` 도 **같은 이유로** 함께 실어 보낸다(초상화 레일이 쓴다).
 // 이 함수가 이미 캐릭터마다 캐시를 한 번씩 읽고 있어 조회가 늘지 않는다. 정렬에 쓰던 level 을
 // 버리지 않고 뷰에 남기는 것뿐이다.
 async function sortByCachedLevel(views: ContentCharacterView[]): Promise<ContentCharacterView[]> {

@@ -86,7 +86,7 @@ export function EpicDungeonCard(props: {
           </Text>
         </View>
 
-        {/*. 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
+        {/* 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
         {props.isBlocked === true ? (
           <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
         ) : (
@@ -136,7 +136,7 @@ export function WeeklyRegionalContentCard(props: {
           </Text>
         </View>
 
-        {/*. 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
+        {/* 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
         {props.isBlocked === true ? (
           <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
         ) : (
@@ -178,7 +178,7 @@ export function WeeklyQuestCard(props: {
           </Text>
         </View>
 
-        {/*. 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
+        {/* 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
         {props.isBlocked === true ? (
           <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
         ) : (

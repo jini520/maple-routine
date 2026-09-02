@@ -81,7 +81,7 @@ export function ContentScreen(): React.JSX.Element {
   // 콜드 스타트 첫 페인트가 아직 모르는 사실을 단정한다. 빈 상태는 읽고 확인한 뒤에만 그린다.
   const isEmpty = trackedOcids !== null && trackedOcids.length === 0
 
-  // : 스토어가 내는 것은 **기준 순서**(레벨 내림차순)이고, 화면 순서는 사용자가
+  // 스토어가 내는 것은 **기준 순서**(레벨 내림차순)이고, 화면 순서는 사용자가
   // 캐릭터 관리에서 정한 저장 배열 순서다. core 를 안 고치는 이유는 `orderByTracked` 머리에 있다.
   const characters = orderByTracked(storeCharacters, trackedOcids ?? [])
 
@@ -116,7 +116,7 @@ export function ContentScreen(): React.JSX.Element {
   const displayDailyContents: DailyContent[] = selected === null ? [] : dailyContentsOf(selected)
   const displayWeeklyContents: WeeklyContent[] = selected === null ? [] : weeklyContentsOf(selected)
 
-  // : 링 **하나를 좌·우 반원으로 가른다**. 왼쪽 일간, 오른쪽 주간. 둘 다 12시에서
+  // 링 **하나를 좌·우 반원으로 가른다**. 왼쪽 일간, 오른쪽 주간. 둘 다 12시에서
   // 시작해 아래로 차므로 두 반원을 나란히 읽을 수 있다.
   const railEntries: CharacterRailEntry[] = characters.map((character) => ({
     ocid: character.ocid,
@@ -131,7 +131,7 @@ export function ContentScreen(): React.JSX.Element {
     ],
   }))
 
-  // : 이 화면은 더 이상 피커를 열지 않는다. 추적 목록을 고르는 자리는 설정
+  // 이 화면은 더 이상 피커를 열지 않는다. 추적 목록을 고르는 자리는 설정
   // 하나뿐이라, 빈 상태 CTA 는 모달 대신 **설정 탭을 피커가 열린 채로** 연다.
   function goToCharacterManage(): void {
     openTab('Settings', { openPicker: true })
@@ -208,7 +208,7 @@ export function ContentScreen(): React.JSX.Element {
           // 자식이다. `fixed` 도 spacer 도 없다. 그 문제가
           // 구조적으로 없다(`PageHeader` 파일 머리).
           <PageHeader>
-            {/*: 동기화 상태가 드롭다운 줄에서 **제목 옆**으로 올라왔다. 오른쪽
+            {/* 동기화 상태가 드롭다운 줄에서 **제목 옆**으로 올라왔다. 오른쪽
                 끝은 관리 버튼 자리 그대로다. 그쪽은 **가는 곳**, 이쪽은 **상태** 라 성질이 다르다. */}
             <PageHeaderTitleRow className="justify-between">
               <View className="shrink flex-row items-center gap-2">
@@ -246,7 +246,7 @@ export function ContentScreen(): React.JSX.Element {
               />
             )}
 
-            {/*: 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다.
+            {/* 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다.
                 셸 승계 카드는 보여줄 데이터가 아예 없을 때만 그린다. */}
             {(status === 'idle' || status === 'loading') && characters.length === 0 && (
               <LoadingState size="page" message="불러오고 있어요" />

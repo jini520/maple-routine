@@ -10,7 +10,7 @@ export function formatOnboardingError(error: OnboardingError): string {
       return 'API 키가 유효하지 않습니다'
     // 처방("입력하신 API 키가 서비스 단계 키인지 확인해주세요")을 붙이지 않는다. 이 함수의
     // 반환값은 전부 토스트 본문이고(store.ts), Toast 본문이 truncate라 한 줄이 상한이다
-    // . 같은 429가 app/settings/error-message.ts 에서 처방까지 담아 더 긴
+    // 같은 429가 app/settings/error-message.ts 에서 처방까지 담아 더 긴
     // 것은 그쪽이 인라인 자리라서다. 문구가 갈리는 것이 의도이니 통일하지 말 것.
     case 'rateLimited':
       return '호출 한도를 초과했습니다'

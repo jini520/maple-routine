@@ -1,4 +1,4 @@
-// . 링을 채우는 셈이 네 자리에서 두 벌로 베껴져 있던 것을 여기로 모았다.
+// 링을 채우는 셈이 네 자리에서 두 벌로 베껴져 있던 것을 여기로 모았다.
 import { processColor } from 'react-native'
 
 import { flattenStyle, renderAtom, type AtomElement } from '../../../__tests__/render-atom'

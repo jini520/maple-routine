@@ -113,7 +113,7 @@ describe('SettingsReleaseNotesScreen', () => {
     }
   })
 
-  // : "최신이 먼저"는 데이터의 계약이고 그 강제는 데이터 테스트가 한다. 화면이 다시
+  // "최신이 먼저"는 데이터의 계약이고 그 강제는 데이터 테스트가 한다. 화면이 다시
   // 정렬하면 같은 규칙의 진실이 두 곳에 생긴다.
   it('배열 순서를 그대로 그린다. 화면이 정렬하지 않는다', async () => {
     setNotes([
@@ -128,7 +128,7 @@ describe('SettingsReleaseNotesScreen', () => {
     ])
   })
 
-  // : 표식은 버전이 아니라 **항목**에 붙는다. 한 릴리스에 OTA 변경과 네이티브
+  // 표식은 버전이 아니라 **항목**에 붙는다. 한 릴리스에 OTA 변경과 네이티브
   // 변경이 섞이는 것이 정상이고, 버전 단위로 묶으면 OTA 로 받을 수 있는 나머지까지 못 받는
   // 것처럼 읽힌다.
   it('requiresStoreUpdate 인 항목에만 `스토어 업데이트 필요` 표식을 붙인다', async () => {
@@ -154,7 +154,7 @@ describe('SettingsReleaseNotesScreen', () => {
     expect(textsIn(block as AtomElement)).not.toContain('OTA 로 가는 변경')
   })
 
-  // : 항목마다 배지를 반복하는 대신 카테고리로 묶는다. 순서는 데이터가 아니라
+  // 항목마다 배지를 반복하는 대신 카테고리로 묶는다. 순서는 데이터가 아니라
   // RELEASE_NOTE_CATEGORY_ORDER 가 정한다. 어떤 순서로 적든 화면은 같아야 한다.
   it('카테고리로 묶어 그리고, 순서는 데이터 순서가 아니라 정해진 순서다', async () => {
     setNotes([
@@ -225,7 +225,7 @@ describe('SettingsReleaseNotesScreen', () => {
     expect(view.queryAllByTestId('release-note')).toHaveLength(0)
   })
 
-  // : 안내가 있는 항목만 눌린다. 버그 수정 한 줄에 붙일 사용법은 없고, 액션이
+  // 안내가 있는 항목만 눌린다. 버그 수정 한 줄에 붙일 사용법은 없고, 액션이
   // 없는 자리에 액션처럼 보이는 것을 두지 않는다.
   it('guideId 가 있는 항목만 눌리고, 누르면 그 안내로 민다', async () => {
     setNotes([
@@ -253,7 +253,7 @@ describe('SettingsReleaseNotesScreen', () => {
     })
   })
 
-  // : 릴리스에서 바뀐 것은 보통 기능 전체가 아니라 그중 한 마디다.
+  // 릴리스에서 바뀐 것은 보통 기능 전체가 아니라 그중 한 마디다.
   it('guideSectionId 가 있으면 그 마디까지 넘긴다', async () => {
     setNotes([
       {

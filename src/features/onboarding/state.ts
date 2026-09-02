@@ -33,7 +33,7 @@ export interface OnboardingState {
   error: OnboardingError | null
   /**
    * 키를 다시 받아야 한다는 것을 **알렸고 사용자의 확인을 기다리는 중**이며, 그 **원인**이 무엇인지
-   * . 알림이 없으면 `null`.
+   * 알림이 없으면 `null`.
    *
    * `status` 와 **직교한다**. 이 값이 채워져 있는 동안에도 `status` 는 그대로여서 뒤에 원래 화면이
    * 남아 있고, 그 위에 닫을 수 없는 모달이 덮인다. 사용자가 "확인"을 누르는 순간에야 `RESET` 이

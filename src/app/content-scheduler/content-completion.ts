@@ -53,8 +53,8 @@ function byParticipation(content: { nowCount: number }): ContentCompletion {
 /**
  * 일간 항목. `renderDailyContentCard` 의 갈래와 같다.
  *
- * · `kind: 'quest'` → 일일 퀘스트 카드가 `questState` 배지를 그린다.
- * · 그 밖(몬스터파크·폴백) → 진행률 바라 카운트가 답이다.
+ * `kind: 'quest'` → 일일 퀘스트 카드가 `questState` 배지를 그린다.
+ * 그 밖(몬스터파크·폴백) → 진행률 바라 카운트가 답이다.
  */
 export function dailyContentCompletion(content: DailyContent): ContentCompletion {
   return content.kind === 'quest' ? byQuestState(content) : byCount(content)

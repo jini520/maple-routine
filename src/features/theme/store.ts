@@ -20,14 +20,10 @@ function resolveSystemTheme(): ThemeName {
 }
 
 /**
- * 고른 테마를 화면에 반영한다.
+ * 고른 테마를 화면에 반영.
  *
- * **토큰을 어떻게 칠하는가는 플랫폼마다 다르다**. 웹뷰는 34토큰을 `<style>` 하나로 주입하고
- * `data-theme`/`data-mode`·`color-scheme`·`scrollbar-color` 를 문서에 건다(
- *). 그 DOM 작업은 `ThemeAppearancePort` 구현이 갖는다.
- *
- * 반면 **상태바·내비바 명암은 여기 남는다**: 이미 자기 포트가 있고, "다크 테마면 밝은 글리프"라는
- * 판단 자체는 플랫폼과 무관하다.
+ * 토큰을 칠하는 일은 `ThemeAppearancePort` 구현이 갖는다. 플랫폼마다 방법이 달라서다.
+ * 상태바·내비바 명암은 여기 남는다. 다크 테마면 밝은 글리프라는 판단이 플랫폼과 무관해서다.
  */
 function applyTheme(theme: ThemeName): void {
   const definition = getThemeDefinition(theme)

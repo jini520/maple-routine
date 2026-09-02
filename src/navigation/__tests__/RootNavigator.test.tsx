@@ -11,8 +11,8 @@
 // **렌더 *전*에 `act()` 를 부르면 그 뒤의 `render()` 가 `null` 을 낸다.** RNTL 14 의 `render` 가
 // 비동기라(동시성 루트) 이미 열린 act 스코프와 겹치는 것으로 보인다. 원인을 끝까지 파지는 않았고,
 // 대신 규칙 둘로 우회한다:
-//   · 렌더 전 상태 준비는 **그냥 `setState`**(마운트된 컴포넌트가 없어 `act` 가 필요 없다)
-//   · 렌더 후 갱신은 **`await act(async () =>...)`**. `await` 없는 동기 `act` 는 갱신이
+// 렌더 전 상태 준비는 **그냥 `setState`**(마운트된 컴포넌트가 없어 `act` 가 필요 없다)
+// 렌더 후 갱신은 **`await act(async () =>...)`**. `await` 없는 동기 `act` 는 갱신이
 //     반영되지 않은 채 통과한다(단언이 옛 화면을 보고도 초록이 된다)
 import { act, render, screen } from '@testing-library/react-native'
 import { createNavigationContainerRef } from '@react-navigation/native'

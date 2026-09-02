@@ -236,7 +236,7 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
                 </BadgeRow>
                 <Note>다운로드 크기 {sizeText}</Note>
               </View>
-              {/*: 없으면 **버튼째 그리지 않는다.** 옛 매니페스트에는 이 필드가 없고
+              {/* 없으면 **버튼째 그리지 않는다.** 옛 매니페스트에는 이 필드가 없고
                   그것은 오류가 아니라 안 실려 온 것이라, 액션 없는 비활성 버튼을 두지 않는다. */}
               {state.availableHighlights !== null && (
                 <HighlightsDisclosure highlights={state.availableHighlights} />
@@ -294,7 +294,7 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
           {status === 'downloading' && (
             <View className="gap-3">
               <Title>다운로드 중</Title>
-              {/*: 결정형 진행률은 예외 없이 h-1.5 프리미티브 하나.
+              {/* 결정형 진행률은 예외 없이 h-1.5 프리미티브 하나.
                   `animated` 를 쓰는 곳도 여기뿐이다. 여기만 값이 연속으로 흐른다. */}
               <ProgressBar
                 percent={state.downloadProgress}
@@ -308,7 +308,7 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
             </View>
           )}
 
-          {/*: 커버가 닫기 뒤로 밀린 구간(최대 5초). 적용은 퍼센트가 나오지 않아
+          {/* 커버가 닫기 뒤로 밀린 구간(최대 5초). 적용은 퍼센트가 나오지 않아
               결정형 진행률을 쓰지 않고(가짜로 채우면 거짓 정보다) 모달 안 대기의 규격대로
               스윕 스피너 + 문구만 둔다. 버튼은 두지 않는다. */}
           {status === 'applying' && (
@@ -352,7 +352,7 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
             </>
           )}
 
-          {/*: 적용 성공 경로에는 상태 전환 코드가 없으므로 이 안내는
+          {/* 적용 성공 경로에는 상태 전환 코드가 없으므로 이 안내는
               **재시작 뒤 부팅에서** 뜬다. 여기서만 `자세히 보기`가 화면을 옮긴다. */}
           {status === 'updated' && (
             <>
@@ -451,7 +451,7 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
             </>
           )}
 
-          {/*: 적용이 실패·타임아웃해도 화면은 돌아온다. download-error 와 같은
+          {/* 적용이 실패·타임아웃해도 화면은 돌아온다. download-error 와 같은
               골격이되 주 동작이 다르다. 받아둔 번들이 그대로 살아 있어 다시 받지 않고 apply()
               만 다시 부른다(스토어가 downloadedBundleId 를 비우지 않는다). */}
           {status === 'apply-error' && (

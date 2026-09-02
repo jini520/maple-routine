@@ -249,7 +249,7 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
   { path: '/today', screen: 'TodayScreen', target: { kind: 'tab', route: 'Today' }, origin: 'rn' },
   // 사냥 수익(`/profit/hunting`)·지출(`/spend`) 두 행이 **여기 있었다.** 둘은 자리를 예약하던
   // **개발 진행중** 자리표시자였고, 그 자리가 가계부로 정해지면서 삭제됐다
-  //. 되살릴 근거는 그 ADR 과 git 이 들고 있다.
+  // 되살릴 근거는 그 ADR 과 git 이 들고 있다.
   { path: '/cashbook', screen: 'CashbookScreen', target: { kind: 'tab', route: 'Cashbook' }, origin: 'rn' },
   { path: '/utility', screen: 'UtilityScreen', target: { kind: 'tab', route: 'Utility' }, origin: 'rn' },
   {

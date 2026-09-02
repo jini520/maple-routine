@@ -304,7 +304,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
           {scope !== null && scope.maxQuantity !== 1 && (
             /*
              * 단위·상한은 **대표가 안다**. 단계를 고르기 전에도 선다. **상한이 1이면 안 세운다**
-             * : 오르내릴 자리가 없는 스테퍼는 **조절할 수 있다** 는 거짓말이다.
+             * 오르내릴 자리가 없는 스테퍼는 **조절할 수 있다** 는 거짓말이다.
              */
             <FieldRow label="수량">
               <QuantityStepper

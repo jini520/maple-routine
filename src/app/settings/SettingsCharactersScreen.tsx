@@ -55,7 +55,7 @@ export function SettingsCharactersScreen(): React.JSX.Element {
   // 프레임은 바가 그려지는 바로 그 프레임이라 사용자가 스크롤을 시작하기 전이다.
   const [actionBarHeightPx, setActionBarHeightPx] = useState(0)
 
-  // : 두 조회가 맞는 401·429 도 키 재입력 진입점으로 간다.
+  // 두 조회가 맞는 401·429 도 키 재입력 진입점으로 간다.
   // 두 번 부르는 것은 두 겹이 아니다. 훅은 값 하나를 지켜보고, 멱등은 스토어 가드가 진다.
   useApiKeyNotice(manage.rosterError)
   useApiKeyNotice(manage.accountsError)

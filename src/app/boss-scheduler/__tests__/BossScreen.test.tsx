@@ -26,14 +26,14 @@ const navigate = jest.fn()
 // 층이 스택이 된 뒤로 **그룹 층으로 되돌리기** 는 액션이다. 화면이 이것도 부른다.
 const dispatch = jest.fn()
 
-// : 동기화 실패·파티원 수 저장 실패는 인라인 문단이 아니라 토스트다.
+// 동기화 실패·파티원 수 저장 실패는 인라인 문단이 아니라 토스트다.
 jest.mock('../../../features/toast/store', () => ({
   useToastStore: {
     getState: () => ({ showError: mockShowError, showSuccess: jest.fn(), showInfo: mockShowInfo }),
   },
 }))
 
-// : 401·429 는 토스트가 아니라 키 재입력 진입점으로 간다.
+// 401·429 는 토스트가 아니라 키 재입력 진입점으로 간다.
 jest.mock('../../../features/onboarding/store', () => ({
   useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
 }))
@@ -216,7 +216,7 @@ describe('BossScreen: 빈 상태와 마운트', () => {
     expect(screen.getByText('불러오고 있어요')).toBeTruthy()
   })
 
-  // : 이 화면은 피커를 열지 않는다. 설정 탭을 **열린 채로** 연다.
+  // 이 화면은 피커를 열지 않는다. 설정 탭을 **열린 채로** 연다.
 // 피커를 여는 파라미터를 받던 자리도 그리로 옮겨갔다(`SettingsScreen.test.tsx`).
   it('빈 상태 CTA 를 누르면 설정 탭을 피커가 열린 채로 연다', async () => {
     mockStore({ trackedOcids: [] })
@@ -262,7 +262,7 @@ describe('BossScreen: 목록', () => {
       ],
     })
 
-  // : 탭이 없다. 한 목록에 월간이 먼저 서고 주간이 뒤따르며, 무리마다
+  // 탭이 없다. 한 목록에 월간이 먼저 서고 주간이 뒤따르며, 무리마다
   // 섹션 헤더가 붙는다.
   it('탭 없이 월간·주간이 한 목록에 서고, 등록된 보스만 보인다', async () => {
     withBosses()
@@ -286,7 +286,7 @@ describe('BossScreen: 목록', () => {
     expect(sectionOrder()).toEqual(['monthly', 'weekly'])
   })
 
-  // : 탭이 사라지며 갈 곳을 잃는 표시가 `주간` 헤더에 붙는다. 12 는 주간
+  // 탭이 사라지며 갈 곳을 잃는 표시가 `주간` 헤더에 붙는다. 12 는 주간
   // 한도이므로 그 수치가 어느 무리의 것인지 헤더가 대신 말한다.
   it('n/12 배지는 `주간` 섹션 헤더에 붙는다', async () => {
     withBosses()
@@ -343,7 +343,7 @@ describe('BossScreen: 목록', () => {
     await renderScreen()
 
     // **모달이 셸 바깥인지를 묻던 짝은 함께 사라졌다**. 이 화면에 캐릭터 관리 모달이 없다
-    //. 파티 인원 모달은 아래 절이 따로 본다.
+    // 파티 인원 모달은 아래 절이 따로 본다.
     expect(screen.getByTestId('page-header')).toBeTruthy()
     expect(screen.getByTestId('screen-scroll')).toBeTruthy()
   })
@@ -359,7 +359,7 @@ describe('BossScreen: 목록', () => {
     expect(screen.queryByText('보스 관리')).toBeNull()
   })
 
-  // : 스토어는 레벨 내림차순으로 준다. 그 위에 사용자가
+  // 스토어는 레벨 내림차순으로 준다. 그 위에 사용자가
   // 정한 저장 배열 순서를 얹는다. 그래서 **입력 순서와 다른 순서**로 주는 것이 이 케이스의 요점이다.
   it('레일 순서는 스토어 순서가 아니라 trackedOcids 저장 순서다', async () => {
     mockStore({
@@ -543,7 +543,7 @@ describe('BossScreen: 재조회', () => {
     expect(refreshControl().refreshing).toBe(false)
   })
 
-  // : 동기화 상태는 드롭다운 줄이 아니라 **제목 줄**에 있다(컨텐츠 스케줄러와
+  // 동기화 상태는 드롭다운 줄이 아니라 **제목 줄**에 있다(컨텐츠 스케줄러와
   // 같은 케이스. 그 파일이 판정 방법을 적는다).
   it('새로고침과 동기화 시각이 제목과 같은 줄에 있다', async () => {
     loaded()
@@ -746,7 +746,7 @@ describe('BossScreen: 빈 상태 문구', () => {
     expect(screen.queryByText('보스 관리')).toBeNull()
   })
 
-  // : CTA 는 남되 목적지가 하위 페이지가 아니라 **형제 탭**이다. 헤더 버튼이
+  // CTA 는 남되 목적지가 하위 페이지가 아니라 **형제 탭**이다. 헤더 버튼이
   // 사라져 같은 라벨을 다투는 상대도 없어졌다.
   it('수동 모드는 "보스 관리" CTA 를 주고, 누르면 그 탭으로 간다', async () => {
     useTrackingModeStore.setState({ mode: 'manual' })

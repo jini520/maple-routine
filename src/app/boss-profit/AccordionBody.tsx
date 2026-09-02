@@ -21,7 +21,7 @@ import { useBossProfitContext } from './boss-profit-context'
 import { rowKey } from './character-groups'
 import { ItemRevenuePopover, useAnchoredPopover } from './ItemRevenuePopover'
 
-// : **행동이 있는 상태에만 버튼을 준다.** 여섯 상태 중 사용자가 할 수 있는 것은
+// **행동이 있는 상태에만 버튼을 준다.** 여섯 상태 중 사용자가 할 수 있는 것은
 // notChecked(조회)와 failed(다시 시도) 둘뿐이고, 나머지는 금액 또는 비활성 배지로 정적이다.
 // **금액을 모르는 상태에 0을 쓰지 않는 것이 핵심이다**. 0은 "0원 벌었다"로 읽힌다(가
 // 드롭 가격에서 지키는 것과 같은 원칙이 기간 상태에도 선다).

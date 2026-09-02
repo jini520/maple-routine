@@ -176,7 +176,7 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
       // selectingContentCharacters 에서 일어나는데, 그 상태가 completed 가 아니라 통째로 막혔다.
       // 막는 대상은 그대로다: 이 두 상태가 곧 "이미 키 입력 화면"이라 보낼 곳이 없고, 그래서
       // 재이동 루프도 여전히 불가능하다. 폼에서 다시 나는 실패는 폼 자체의 토스트가 맡는다
-      // .
+      //
       const { status } = get()
       if (status === 'awaitingApiKey' || status === 'verifyingApiKey') {
         return

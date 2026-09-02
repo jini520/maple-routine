@@ -20,7 +20,7 @@ const HEIGHT_CLASS = { base: 'h-1.5', thin: 'h-1' } as const
 const TRACK_CLASS = 'w-full overflow-hidden rounded-full bg-track'
 
 /**
- * 채움 색. **이름을 `` `bg-${tone}` `` 로 조립하지 않는다.** Tailwind 는 소스를 문자열로 훑어
+ * 채움 색. **이름을 `bg-${tone}` 로 조립하지 않는다.** Tailwind 는 소스를 문자열로 훑어
  * 조립한 이름을 못 찾고, 없는 클래스는 에러가 아니라 **색 없는 막대**가 된다.
  */
 const FILL_CLASS = {

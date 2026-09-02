@@ -60,7 +60,7 @@ describe('SettingsPrivacyScreen', () => {
     expect(goBack).toHaveBeenCalledTimes(1)
   })
 
-  // : **사본을 두지 않는다**. 같은 사이트를 싣기만 한다. 그래서 이 화면이
+  // **사본을 두지 않는다**. 같은 사이트를 싣기만 한다. 그래서 이 화면이
   // 아는 것은 주소 하나뿐이고, 본문은 저장소 루트 `PRIVACY.md` 의 단일 원본에서 온다.
   it('사본이 아니라 사이트를 그대로 싣는다', async () => {
     const view = await renderOverlay(<SettingsPrivacyScreen />)
@@ -124,7 +124,7 @@ describe('SettingsPrivacyScreen', () => {
     expect(view.getByTestId('privacy-frame')).toBeTruthy()
   })
 
-  // : 실패의 원인을 **실제로 푸는 행동**을 준다. 여기서 안 되는 것을 되는
+  // 실패의 원인을 **실제로 푸는 행동**을 준다. 여기서 안 되는 것을 되는
   // 곳으로 보낸다. "다시 시도"는 오프라인에서 같은 실패를 반복할 뿐이다.
   it('실패하면 "브라우저로 열기"로 앱 밖에서 볼 길을 준다', async () => {
     const view = await renderOverlay(<SettingsPrivacyScreen />)

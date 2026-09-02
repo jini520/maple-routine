@@ -44,7 +44,7 @@ describe('StaleBanner', () => {
     expect(onClick).toHaveBeenCalledTimes(1)
   })
 
-  // : 재시도가 통하지 않는 실패(429·characterUnavailable·401)에는 액션이
+  // 재시도가 통하지 않는 실패(429·characterUnavailable·401)에는 액션이
   // 없다. 배너는 목록이 남아 있는 자리라 액션이 없어도 막다른 길이 아니다.
   it('액션이 없으면 버튼을 만들지 않는다', async () => {
     const { getByText, queryByRole } = await renderAtom(

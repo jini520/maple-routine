@@ -194,7 +194,7 @@ describe('DropPricePad: 분배 인원', () => {
 // 아이템에 치던 금액과 인원이 그대로 남아 다음 아이템에 얹힌다.
 //
 // **대상 교체를 `rerender` 로 하지 않는다**. 그것은 루트를 통째로 갈아치워 프로바이더까지 날린다
-//. 부모가 상태를 들고 버튼으로 바꾼다.
+// 부모가 상태를 들고 버튼으로 바꾼다.
 function PadHost(): React.JSX.Element {
   const [name, setName] = useState('루즈 컨트롤 머신 마크')
   return (

@@ -132,7 +132,7 @@ function setStores(
     tab: 'weekly',
     periodKey: WEEK_KEY,
     rows: [],
-    // : 이 화면이 읽는 것은 **지금 기간** 이다. `rows`(보고 있는 탭·기간)가 아니다.
+    // 이 화면이 읽는 것은 **지금 기간** 이다. `rows`(보고 있는 탭·기간)가 아니다.
     currentPeriodRows: [],
     loadedTab: 'weekly',
     loadedPeriodKey: WEEK_KEY,

@@ -108,7 +108,7 @@ describe('SettingsAccountDataScreen', () => {
     expect(goBack).toHaveBeenCalledTimes(1)
   })
 
-  // : 이 앱에는 `계정 변경`이 없다. 계정을 바꾸는 일이 `캐릭터 관리`의
+  // 이 앱에는 `계정 변경`이 없다. 계정을 바꾸는 일이 `캐릭터 관리`의
   // 드롭다운 안으로 들어갔다. 이 요구한 **파괴적 행을 계정 변경과
   // 다른 카드로** 는 그 짝이 없어져 저절로 성립하므로, 여기서는 **그 행이 정말 없는지**와 남은
   // 위험 색 행 둘이 한 카드에 함께 있는지를 본다.
@@ -120,7 +120,7 @@ describe('SettingsAccountDataScreen', () => {
     expect(cardOf(view, '연결 해제')).toBe(cardOf(view, '캐시 데이터 삭제'))
   })
 
-  // : chevron 이 있으면 누르면 무언가 열리고, 없는 위험 색 행은 누르면 지운다.
+  // chevron 이 있으면 누르면 무언가 열리고, 없는 위험 색 행은 누르면 지운다.
   it('위험 색 행 둘에는 chevron 이 없다', async () => {
     const view = await renderOverlay(<SettingsAccountDataScreen />)
 
@@ -136,7 +136,7 @@ describe('SettingsAccountDataScreen', () => {
     expect(await view.findByText('1.5KB')).toBeTruthy()
   })
 
-  // : 조회 전에도 값과 같은 폭·타이포로 자리를 잡는다.
+  // 조회 전에도 값과 같은 폭·타이포로 자리를 잡는다.
   it('용량 조회 전에는 "- KB" 자리표시를 보여준다', async () => {
     const view = await renderOverlay(<SettingsAccountDataScreen />)
 

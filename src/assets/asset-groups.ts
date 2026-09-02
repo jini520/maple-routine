@@ -1,18 +1,15 @@
 /**
- * 에셋 목록 생성의 **명세 한 벌**.
+ * 에셋 목록 생성의 명세 한 벌.
  *
- * `src/assets/generated/*.ts` 는 이 표를 읽어 만들어지고(`scripts/generate-asset-manifest.mjs`),
- * *"생성물이 지금 디렉터리와 맞는가"* 를 보는 테스트도 같은 표를 읽는다
- * (`generated/__tests__/asset-manifest.test.ts`). 표가 두 벌이면 생성기와 검사기가 서로 다른
- * 것을 보게 되어 **검사가 통과하는데 목록이 틀린** 상태가 생긴다.
+ * `src/assets/generated/*.ts` 가 이 표를 읽어 만들어지고(`scripts/generate-asset-manifest.mjs`),
+ * 생성물이 지금 디렉터리와 맞는지 보는 테스트도 같은 표를 읽는다. 표가 두 벌이면 검사는
+ * 통과하는데 목록이 틀린 상태가 생긴다.
  *
- * 스크립트는 `.mjs` 인데 이 파일은 `.ts` 다. Node 24 의 내장 타입 스트리핑으로 그대로 import
- * 한다(`scripts/publish-live-update.mjs` 가 `data/release-notes.ts` 를 읽는 것과 같은 방식,
- * ). 그래서 **여기에는 값과 타입만 둔다**(런타임 의존 0개).
+ * 여기에는 값과 타입만 둔다. `.mjs` 스크립트가 Node 의 타입 스트리핑으로 이 `.ts` 를 그대로
+ * import 하므로 런타임 의존이 있으면 그 경로가 깨진다.
  *
- * `dirs` 의 경로는 이 파일이 있는 `src/assets/` 기준이고 **하위 디렉터리를 훑지 않는다**.
- * 옛 Vite 글롭 패턴(`'../assets/maps/*.…'`)의 `*` 가 `/` 를 안 넘던 것과 같은 규칙이다
- * (그래서 `maps/` 와 `maps/icons/` 가 서로 다른 목록으로 남는다).
+ * `dirs` 의 경로는 `src/assets/` 기준이고 하위 디렉터리를 훑지 않는다. 그래서 `maps/` 와
+ * `maps/icons/` 가 서로 다른 목록으로 남는다.
  */
 
 /** 키를 파일 이름에서 뽑는 방법. */

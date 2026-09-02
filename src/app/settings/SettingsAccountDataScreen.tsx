@@ -100,7 +100,7 @@ export function SettingsAccountDataScreen(
               onPress={() => setIsCacheClearOpen(true)}
               danger
               showChevron={false}
-              // : 조회 전에도 값과 같은 폭·타이포로 자리를 잡는다(빈 문자열이면
+              // 조회 전에도 값과 같은 폭·타이포로 자리를 잡는다(빈 문자열이면
               // 값이 툭 나타나며 행이 밀린다).
               rightContent={
                 <Text style={TABULAR_NUMS} className="text-sm text-text-muted">

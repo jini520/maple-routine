@@ -6,7 +6,7 @@
  * `MapleSpinner`(트레일 링)를 쓴다.
  *
  * 마스크가 `userSpaceOnUse` 여야 하는 이유는 `design-system.md` 의 로딩 표현 절에 있다
- *. `maskContentUnits="objectBoundingBox"` 로 두면 **띠가 통째로 사라진다.**
+ * `maskContentUnits="objectBoundingBox"` 로 두면 **띠가 통째로 사라진다.**
  */
 import { useId } from 'react'
 import Animated, { Easing, useAnimatedProps } from 'react-native-reanimated'

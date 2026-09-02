@@ -69,7 +69,7 @@ afterEach(() => {
 })
 
 describe('TrackingModeModal', () => {
-  // : 고르기 **전에** 둘을 비교하는 화면이라 설명·주의를 접지 않는다.
+  // 고르기 **전에** 둘을 비교하는 화면이라 설명·주의를 접지 않는다.
   it('두 옵션의 설명과 주의 문구를 모두 보여준다', async () => {
     const view = await renderOverlay(<TrackingModeModal onClose={jest.fn()} />)
 
@@ -173,7 +173,7 @@ describe('TrackingModeModal', () => {
     expect(mockReloadTabStores).not.toHaveBeenCalled()
   })
 
-  // : 수동 전환의 `setMode` 는 시드가 전부 끝난 뒤에만 resolve 된다. 그동안
+  // 수동 전환의 `setMode` 는 시드가 전부 끝난 뒤에만 resolve 된다. 그동안
   // 닫히면 사용자가 방금 고른 모드가 아직 준비 안 된 상태를 본다.
   it('setMode가 resolve되기 전까지 옵션·취소·적용이 모두 비활성이고 모달이 닫히지 않는다', async () => {
     let finish: () => void = () => {}

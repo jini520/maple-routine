@@ -60,7 +60,7 @@ jest.mock('../../../storage/character-selection', () => ({
 }))
 jest.mock('../../../storage/schedule-probe-ledger', () => ({ getScheduleProbeLedger: jest.fn() }))
 
-// : `toScheduleSyncError` 는 실물을 쓴다(문구가 원인에서 나온다). `...requireActual` 을
+// `toScheduleSyncError` 는 실물을 쓴다(문구가 원인에서 나온다). `...requireActual` 을
 // 통째로 쓰면 순환 참조가 아직 구성 중인 모듈을 `undefined` 로 만난다. 부분 모킹이 그 처방이다.
 jest.mock('../../../features/schedule-sync/schedule-sync', () => ({
   toScheduleSyncError: jest.requireActual<typeof import('../../../features/schedule-sync/errors')>(
@@ -73,14 +73,14 @@ jest.mock('../../../features/content-scheduler/store', () => {
   const hook = jest.fn()
   return { useContentSchedulerStore: hook }
 })
-// : 저장 뒤 다시 읽히는 둘. 화면은 `getState()` 로만 만진다.
+// 저장 뒤 다시 읽히는 둘. 화면은 `getState()` 로만 만진다.
 jest.mock('../../../features/boss-scheduler/store', () => ({
   useBossSchedulerStore: { getState: () => ({ loadTrackedOcids: mockLoadBossTracked }) },
 }))
 jest.mock('../../../features/boss-profit/store', () => ({
   useBossProfitStore: { getState: () => ({ loadTrackedOcids: mockLoadProfitTracked }) },
 }))
-// : 401·429 는 키 재입력 진입점으로 간다.
+// 401·429 는 키 재입력 진입점으로 간다.
 jest.mock('../../../features/onboarding/store', () => ({
   useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
 }))
@@ -302,7 +302,7 @@ describe('두 층. 위는 계정을 넘고 아래는 계정 하나다', () => {
   })
 
   // `후보 목록 로딩` 정책 그대로. 보여줄 것이 남아 있으면 지우지 않고 위에 배너를 얹는다
-  //. 캐시 stub 이 네트워크보다 먼저 오므로 이쪽이 기본 분기다.
+  // 캐시 stub 이 네트워크보다 먼저 오므로 이쪽이 기본 분기다.
   it('후보가 도착한 뒤 실패하면 목록을 지우지 않고 스탈 배너를 얹는다', async () => {
     mockContentStore({ trackedOcids: [] })
     mockedRoster.mockImplementation(async (onUpdate) => {
@@ -731,7 +731,7 @@ describe('저장', () => {
     expect(isSaveDisabled(await renderScreen())).toBe(true)
   })
 
-  // : 0개는 어떤 사용자 의도도 표현하지 않는다.
+  // 0개는 어떤 사용자 의도도 표현하지 않는다.
   it('0개면 비활성이다', async () => {
     mockContentStore({ trackedOcids: ['a1'] })
     const view = await renderScreen()

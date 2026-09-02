@@ -43,7 +43,7 @@ jest.mock('../../../storage/character-selection', () => ({
 }))
 jest.mock('../../../storage/schedule-probe-ledger', () => ({ getScheduleProbeLedger: jest.fn() }))
 
-// : `toScheduleSyncError` 는 실물을 쓴다(문구가 원인에서 나온다). `...requireActual` 을
+// `toScheduleSyncError` 는 실물을 쓴다(문구가 원인에서 나온다). `...requireActual` 을
 // 통째로 쓰면 순환 참조가 아직 구성 중인 모듈을 `undefined` 로 만난다. 부분 모킹이 그 처방이다.
 jest.mock('../../../features/schedule-sync/schedule-sync', () => ({
   toScheduleSyncError: jest.requireActual<typeof import('../../../features/schedule-sync/errors')>(
@@ -54,7 +54,7 @@ jest.mock('../../../features/schedule-sync/schedule-sync', () => ({
 
 jest.mock('../../../features/content-scheduler/store', () => ({ useContentSchedulerStore: jest.fn() }))
 
-// : 429 는 키 재입력 진입점으로 간다(#176 하드 잠금의 출구는 이것뿐이다).
+// 429 는 키 재입력 진입점으로 간다(#176 하드 잠금의 출구는 이것뿐이다).
 // **`useApiKeyNotice` 는 실물을 쓴다**. 이 파일이 보려는 것이 "무엇을 그 훅에 넘기는가"라,
 // 훅을 목으로 세우면 검사 대상이 사라진다. 그래서 그 끝인 스토어만 세운다.
 jest.mock('../../../features/onboarding/store', () => ({
@@ -199,7 +199,7 @@ describe('ContentCharacterStep: 머리와 CTA', () => {
     expect(view.queryByText('계정 다시 선택')).toBeNull()
   })
 
-  // : 0개는 화면을 빈 상태로 만들 뿐 어떤 의도도 표현하지 않는다.
+  // 0개는 화면을 빈 상태로 만들 뿐 어떤 의도도 표현하지 않는다.
   it('아무도 고르지 않으면 `계속하기`가 비활성이다', async () => {
     const { view } = await renderStep()
 
@@ -287,7 +287,7 @@ describe('ContentCharacterStep: 제출 payload', () => {
 })
 
 describe('ContentCharacterStep: 키 재입력 진입점은 429 만 탄다', () => {
-  // : 로스터가 429 로 비면 출구가 전부 막힌다(CTA 영구 비활성 · 재시도는 같은
+  // 로스터가 429 로 비면 출구가 전부 막힌다(CTA 영구 비활성 · 재시도는 같은
   // 키로 또 429 · 단계는 라우트가 아니라 status switch). 그 자리를 여는 것이 이 배선이다.
   it('후보 조회 429 는 키 재입력 진입점으로 넘어간다', async () => {
     rosterFailure = new NexonRateLimitError('429')

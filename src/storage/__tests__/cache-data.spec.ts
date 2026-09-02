@@ -111,7 +111,7 @@ describe('그룹 ↔ 테이블 분할', () => {
     expect(GENERAL_TABLE_NAMES).toContain('boss_party_settings')
   })
 
-  // : 그룹 이름이 `bossRecords` 에서 `records` 로 넓어진
+  // 그룹 이름이 `bossRecords` 에서 `records` 로 넓어진
   // 이유가 이 둘이다. 손입력이 유일한 원천이라 **API 로 되살릴 길이 0%** 이고, 아무것도 안 하면
   // 차집합 파생 때문에 **지워도 되는 것**(general)으로 끌려간다.
   it('손입력 기록 둘은 `기록` 그룹이다. 지워지면 되살릴 길이 없다', () => {

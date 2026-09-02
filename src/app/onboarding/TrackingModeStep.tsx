@@ -20,7 +20,7 @@ import type { TrackingMode } from '../../storage/tracking-mode'
 import { Button, Gamepad2Icon, InfoIcon, ListChecksIcon, Text } from '../../components/atoms'
 
 // 자동은 "게임에서 정한 것을 따른다"는 주어를 가리키고, 수동은 "앱에서 고른다"를 가리킨다
-// . RefreshCw(동기화)는 이 앱에서 새로고침 버튼의 기능 신호라 누를 수 없는
+// RefreshCw(동기화)는 이 앱에서 새로고침 버튼의 기능 신호라 누를 수 없는
 // 자리에 두면 뜻이 흐려져 기각했다.
 const OPTION_ICONS = { auto: Gamepad2Icon, manual: ListChecksIcon } as const
 

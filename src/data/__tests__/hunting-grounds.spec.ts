@@ -69,7 +69,7 @@ describe('사냥터 참조표 정합성', () => {
 
   /**
    * `minLevel`·`maxLevel` 은 **추천 캐릭터 레벨**이고 그 안의 몬스터 레벨과 다를 수 있다
-   * . 목록을 거르는 근거는 몬스터 쪽이다(`lib/cashbook/hunting-grounds.ts`).
+   * 목록을 거르는 근거는 몬스터 쪽이다(`lib/cashbook/hunting-grounds.ts`).
    */
   it('앞의 둘은 **정정된 범위**다. 상한 290 은 오기였다 (사용자 정정 2026-08-28)', () => {
     const byName = (name: string) => REGIONS.find((region) => region.name === name)

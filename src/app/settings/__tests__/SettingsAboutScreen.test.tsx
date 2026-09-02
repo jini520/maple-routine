@@ -109,7 +109,7 @@ describe('SettingsAboutScreen', () => {
     expect(view.queryByText('앱 업데이트')).toBeNull()
   })
 
-  // : `LiveUpdatePort` 가 던져 확인 경로가 없다. **없는 것을 있는 척하지 않는
+  // `LiveUpdatePort` 가 던져 확인 경로가 없다. **없는 것을 있는 척하지 않는
   // 것이 이 화면의 계약**이라 확인 버튼도 함께 사라진다.
   // 런타임이 없는 환경(개발 서버)에서는 확인 버튼 자체가 없어야 한다. 누를 수 없는 것을 그리면
   // 눌러 보고 아무 일도 안 일어나는 자리가 된다.
@@ -141,7 +141,7 @@ describe('SettingsAboutScreen', () => {
     expect(view.getByText(packageJson.version)).toBeTruthy()
   })
 
-  // : 앱을 벗어나던 링크가 앱 안 하위 페이지가 됐다.
+  // 앱을 벗어나던 링크가 앱 안 하위 페이지가 됐다.
   // 사본을 만드는 것이 아니라 같은 사이트를 싣는 것이라 "법적 문서를 두 벌로 만들지 않는다"는 그대로다.
   it('개인정보 처리방침 행이 앱 밖으로 나가지 않고 하위 페이지를 민다', async () => {
     const view = await renderOverlay(<SettingsAboutScreen />)

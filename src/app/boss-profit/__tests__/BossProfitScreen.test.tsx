@@ -6,7 +6,7 @@
 // ① **당김 제스처 시뮬레이션 다섯**. 임계 넘김/미달·목록 `transform`·
 //  전환 켜고 끄기는 이제 OS 가 갖는다. 남는 계약은 *"당김이 헤더 버튼과 같은
 //    재조회를 부르는가"* 와 *"의미 없는 기간에서는 꺼지는가"* 둘이고 그것은 본다.
-// ② **`fixed` 헤더 + 실측 spacer + `` 한 커밋 반영**. 헤더가 스크롤 뷰의 형제라 spacer 도
+// ② **`fixed` 헤더 + 실측 spacer + 한 커밋 반영**. 헤더가 스크롤 뷰의 형제라 spacer 도
 //    실측도 없다. 대신 *"헤더가 셸의 `header` 로 들어간다"* 를 본다.
 // ③ **중첩 sticky 오프셋**. sticky 를 못 옮겼다(`contract.md`).
 // ④ **DOM 스냅샷 두 파일**. 트리가 다르다. RN 트리 스냅샷을 **새 기준선**으로 남기고, 그것이
@@ -44,12 +44,12 @@ const navigate = jest.fn()
 // 층이 스택이 된 뒤로 **그룹 층으로 되돌리기** 는 액션이다. 화면이 이것도 부른다.
 const dispatch = jest.fn()
 
-// : 동기화 실패·기간 로드 실패는 인라인 문단이 아니라 토스트다.
+// 동기화 실패·기간 로드 실패는 인라인 문단이 아니라 토스트다.
 jest.mock('../../../features/toast/store', () => ({
   useToastStore: {
     getState: () => ({ showError: mockShowError, showSuccess: jest.fn(), showInfo: jest.fn() }) } }))
 
-// : 401 은 토스트가 아니라 키 무효화 진입점으로 간다(이 화면에는 로스터 조회가
+// 401 은 토스트가 아니라 키 무효화 진입점으로 간다(이 화면에는 로스터 조회가
 // 없어 동기화 경로 하나뿐이다).
 jest.mock('../../../features/onboarding/store', () => ({
   useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) } }))
@@ -436,7 +436,7 @@ describe('로딩', () => {
   })
 })
 
-// : 카드가 서는 차례는 행의 순서(= 스토어의 레벨 내림차순)가
+// 카드가 서는 차례는 행의 순서(= 스토어의 레벨 내림차순)가
 // 아니라 사용자가 캐릭터 관리에서 정한 저장 배열 순서다.
 describe('캐릭터 카드 순서', () => {
   /** 카드 헤더에 그려진 캐릭터 이름을 카드 순서대로. */

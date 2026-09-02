@@ -97,7 +97,7 @@ export function TodayScreen(): React.JSX.Element {
     }, []),
   )
 
-  // : 화면 순서는 사용자가 캐릭터 관리에서 정한 저장 배열 순서다.
+  // 화면 순서는 사용자가 캐릭터 관리에서 정한 저장 배열 순서다.
   const orderedOcids = content.trackedOcids ?? []
   // 배열 자체는 매 렌더 새 참조라 deps 로 쓸 수 없다. 목록이 실제로 바뀌었을 때만 다시 읽는다.
   const orderedOcidsKey = orderedOcids.join(',')

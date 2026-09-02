@@ -163,7 +163,7 @@ function liftAboveMuted(accent: string, muted: string): string {
  * 채도를 **0** 으로 뺀다.
  *
  * **맞추는 것은 tint 가 아니라 **유리의 순 결과** 다.** tint 만 옮기면(α.05 = 0.95) 판이 한참 어둡다
- *. 유리는 tint 로 내린 만큼을 재질의 하이라이트로 도로 올리기 때문이다(정정 18 실측: tint 를 아예
+ * 유리는 tint 로 내린 만큼을 재질의 하이라이트로 도로 올리기 때문이다(정정 18 실측: tint 를 아예
  * 빼도 뒤보다 +11.4). 그래서 상수는 그 **합**을 실측해서 정한다: 0.98 에서 엔젤릭버스터가
  * `#F5F5F5` 로, iOS 실기 실측 (246,245,245) 과 **한 자리 안**에서 만난다.
  *
@@ -171,7 +171,7 @@ function liftAboveMuted(accent: string, muted: string): string {
  * 진다**. 유리 쪽도 사정이 같고(정정 22), 그래서 폴백 그림자를 유리와 같은 값으로 올렸다.
  *
  * **세기를 더 주고 싶어지면 그림자를 볼 것.** 판이 색을 지기 시작하면 정정 1 이 되돌린 그 자리
- *. 강조는 판이 아니라 글리프가 진다. 로 다시 간다. 층은 그림자가 만든다(정정 22·28).
+ * 강조는 판이 아니라 글리프가 진다. 로 다시 간다. 층은 그림자가 만든다(정정 22·28).
  */
 function neutralPlate(bar: string, text: string): string {
   return withChroma(mixOklab(bar, text, 0.98), 0)

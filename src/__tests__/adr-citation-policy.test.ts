@@ -34,7 +34,7 @@ const DOCS = join(REPO_ROOT, 'docs')
 const ADR_DIR = join(DOCS, 'adr')
 const INDEX = join(DOCS, 'ADR.md')
 
-/** 인용 한 건. `` 이면 kind='결정', numbers=['11']. */
+/** 인용 한 건. 이면 kind='결정', numbers=['11']. */
 type Citation = { file: string; adr: string; kind?: string; numbers: string[] }
 
 /**

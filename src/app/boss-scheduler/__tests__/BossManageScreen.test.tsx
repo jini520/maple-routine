@@ -73,7 +73,7 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     ...overrides,
   } as Store
 
-  // : 탭이 걷혔다. 목이 흉내 낼 탭 상태가 없다.
+  // 탭이 걷혔다. 목이 흉내 낼 탭 상태가 없다.
   mockedStore.mockImplementation(() => base)
   return base
 }
@@ -165,7 +165,7 @@ beforeEach(() => {
 })
 
 describe('BossManageScreen: 공통', () => {
-  // : 제목 줄 우측의 compact 드롭다운이 **초상화 레일**이 됐다. 캐릭터 이름은
+  // 제목 줄 우측의 compact 드롭다운이 **초상화 레일**이 됐다. 캐릭터 이름은
   // 이제 SVG 곡선 글자라 `getByText` 로 안 잡힌다. 레일이 섰는지로 본다.
   //
   // **뒤로 버튼을 묻던 짝은 사라졌다**. 이 화면은 하위 페이지가 아니라 탭이라
@@ -380,7 +380,7 @@ describe('BossManageScreen: 수동 모드', () => {
 })
 
 describe('BossManageScreen: 자동 모드', () => {
-  // : 상단 안내 한 줄을 없앤다. 체크가 없고 스테퍼만 있다는 것을 화면이 이미
+  // 상단 안내 한 줄을 없앤다. 체크가 없고 스테퍼만 있다는 것을 화면이 이미
   // 보여 준다. 설명은 기능 안내(`boss-manage` 가이드)가 계속 진다.
   it('안내 문구 없이 등록 보스만 나오고 체크 토글이 없다', async () => {
     mockStore({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
@@ -394,7 +394,7 @@ describe('BossManageScreen: 자동 모드', () => {
     expect(screen.queryByLabelText('자쿰')).toBeNull()
   })
 
-  // : 스위치가 뒤집혔다. 이름은 `모든 보스 보기`이고 **기본이 꺼짐**이다.
+  // 스위치가 뒤집혔다. 이름은 `모든 보스 보기`이고 **기본이 꺼짐**이다.
   // 표시 결과는 그대로라(기본 = 등록된 보스만) 위 케이스가 그 절반을 이미 지킨다.
   it('토글은 `모든 보스 보기`이고 기본으로 꺼져 있다', async () => {
     mockStore({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
@@ -509,7 +509,7 @@ describe('BossManageScreen: 주간 12개 한도', () => {
     expect(screen.getByText(`1/${WEEKLY_BOSS_CLEAR_LIMIT}`)).toBeTruthy()
   })
 
-  // : 탭이 없어져 **이 수치는 주간 것** 을 말할 자리가 `주간` 헤더로 옮겨왔다.
+  // 탭이 없어져 **이 수치는 주간 것** 을 말할 자리가 `주간` 헤더로 옮겨왔다.
   it('카운터는 `주간` 헤더에만 붙는다. 12는 주간 한도다', async () => {
     mockStore({
       characters: [character()],

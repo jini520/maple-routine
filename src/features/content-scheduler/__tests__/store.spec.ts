@@ -168,7 +168,7 @@ describe('useContentSchedulerStore', () => {
         isStale: false,
         syncedAt: '2026-07-11T00:00:00.000Z',
         error: null,
-        // : 캐시가 그 캐릭터를 모르면 둘 다 `null` 이다(레일이 레벨 호를 비운다).
+        // 캐시가 그 캐릭터를 모르면 둘 다 `null` 이다(레일이 레벨 호를 비운다).
         level: null,
         imageUrl: null,
       },
@@ -342,7 +342,7 @@ describe('useContentSchedulerStore', () => {
       expect(useContentSchedulerStore.getState().trackedOcids).toBeNull()
     })
 
-    // : 부팅 선하이드레이션과 화면 마운트가 반드시 겹치므로, 동시 호출은
+    // 부팅 선하이드레이션과 화면 마운트가 반드시 겹치므로, 동시 호출은
     // 한 회차로 합친다. 안 그러면 같은 응답을 두 번 받는다(없애려던 낭비).
     it('loadTrackedOcids를 동시에 두 번 불러도 한 회차만 돈다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])

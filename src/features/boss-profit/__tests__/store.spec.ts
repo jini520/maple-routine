@@ -79,7 +79,7 @@ jest.mock('../../../storage/boss-drops', () => ({
 }))
 const { getBossDropRecords: getBossDropRecordsMock, replaceBossDropRecords: replaceBossDropRecordsMock } = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
 
-// : 잡지 않은 보스의 드롭을 지운 뒤 **건수를 토스트로 알린다**. 값까지 사라지므로.
+// 잡지 않은 보스의 드롭을 지운 뒤 **건수를 토스트로 알린다**. 값까지 사라지므로.
 const mockShowInfo = jest.fn()
 jest.mock('../../toast/store', () => ({
   useToastStore: { getState: () => ({ showInfo: mockShowInfo, showError: jest.fn(), showSuccess: jest.fn() }) },
@@ -106,7 +106,7 @@ const NOT_FAKED = ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval',
 
 // "시세표(boss-crystal-prices.json)에 없는 보스" 표본. 실재 보스명을 쓰면 그 보스의 가격이
 // 확정되는 날 검증하려던 것과 반대 상태를 검증하게 된다. 벨로나가 실제로 그랬다
-// . 어떤 보스도 이 이름을 갖지 않는다는 사실이 이 픽스처의 불변조건이다.
+// 어떤 보스도 이 이름을 갖지 않는다는 사실이 이 픽스처의 불변조건이다.
 const UNPRICED_BOSS = '미확정 보스'
 
 function bossContent(overrides: Partial<BossContent> = {}): BossContent {
@@ -592,7 +592,7 @@ describe('useBossProfitStore', () => {
     expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
   })
 
-  // : `rows` 는 **보고 있는 (탭, 기간)** 이고 today 위젯이 읽는 것은 **지금 기간** 이다.
+  // `rows` 는 **보고 있는 (탭, 기간)** 이고 today 위젯이 읽는 것은 **지금 기간** 이다.
   // 사용자 보고(2026-08-19). 이 화면을 월간 탭으로 옮기기만 해도 today 의 주간 보스 수익·주간
   // 결정석 한도가 함께 비었다. 그 화면은 이 화면의 네비게이션을 모르는 채로 이번 주를 그린다.
   it('월간 탭으로 옮겨도 currentPeriodRows 는 이번 주 행을 그대로 들고 있다', async () => {
@@ -1204,7 +1204,7 @@ describe('useBossProfitStore', () => {
       expect(useBossProfitStore.getState().trackedOcids).toBeNull()
     })
 
-    // : 부팅 선하이드레이션과 화면 마운트가 반드시 겹치므로, 동시 호출은
+    // 부팅 선하이드레이션과 화면 마운트가 반드시 겹치므로, 동시 호출은
     // 한 회차로 합친다. 안 그러면 같은 응답을 두 번 받는다(없애려던 낭비).
     it('loadTrackedOcids를 동시에 두 번 불러도 한 회차만 돈다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
@@ -2977,7 +2977,7 @@ describe('useBossProfitStore', () => {
       })
 
       // 결정 5-④: 조회 실패를 "기록 없음"으로 읽으면 사용자가 저장한 파티원 수가 1로 덮인다
-      // . 캐시 단계의 폴백을 [] 에서 null 로 바꾼 것이 이 가드의 선행 조건이다.
+      // 캐시 단계의 폴백을 [] 에서 null 로 바꾼 것이 이 가드의 선행 조건이다.
       it('캐시 단계의 기록 조회가 실패하면 기록하지 않는다', async () => {
         markSyncAttemptedThisRun()
         getCachedSchedulerStateMock.mockResolvedValue(cachedEntry(minutesAgo(5)))

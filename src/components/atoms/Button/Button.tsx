@@ -3,7 +3,7 @@
  *
  *
  * **외형만 갖고 레이아웃은 호출부에 남긴다.** 폭·정렬·간격은 `className` 으로 준다
- * . 색·여백·글자를 정하는 표는 `variants.ts` 에 있다(결정 3).
+ * 색·여백·글자를 정하는 표는 `variants.ts` 에 있다(결정 3).
  */
 import { Children, type ReactNode } from 'react'
 import { Pressable, View, type PressableProps } from 'react-native'

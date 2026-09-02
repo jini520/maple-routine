@@ -81,7 +81,7 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
                 </Text>
               </View>
 
-              {/*: 항목마다 배지를 다는 대신 **카테고리로 묶는다.** 배지는 항목
+              {/* 항목마다 배지를 다는 대신 **카테고리로 묶는다.** 배지는 항목
                   수만큼 반복돼 같은 말이 열 번 나오지만, 묶음 제목은 한 번만 말하고 그 아래
                   전부에 적용된다. 순서는 데이터가 아니라 RELEASE_NOTE_CATEGORY_ORDER 가 정한다.
                   노트를 쓰는 사람이 항목을 어떤 순서로 적든 화면은 늘 같아야 한다.
@@ -103,7 +103,7 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
                         const body = (
                           <View className="min-w-0 flex-1 gap-1">
                             <Text className="text-sm text-text-muted">{item.text}</Text>
-                            {/*: 표식은 버전이 아니라 이 항목에 붙는다. 톤은 스토어
+                            {/* 표식은 버전이 아니라 이 항목에 붙는다. 톤은 스토어
                                 이동을 말하는 다른 자리(UpdatePromptModal 의 store-required)와 같은
                                 third 다. */}
                             {item.requiresStoreUpdate === true && (
@@ -119,7 +119,7 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
                             <Text aria-hidden className="text-sm text-text-disabled">
                               ·
                             </Text>
-                            {/*: **안내가 있는 항목만** 눌린다. 없는 것은 결함이
+                            {/* **안내가 있는 항목만** 눌린다. 없는 것은 결함이
                                 아니라 정상이므로 비활성 버튼을 두지 않고, 그 항목의 트리는 종전
                                 그대로다. 래퍼도 클래스도 만들지 않는다. chevron 은 설정 행과 같은
                                 약속이다(있으면 누르면 무언가 열린다). */}

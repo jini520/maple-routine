@@ -1,4 +1,4 @@
-// . 여덟 자리가 각자 그리던 얼굴 원을 이 부품이 든다.
+// 여덟 자리가 각자 그리던 얼굴 원을 이 부품이 든다.
 import { View } from 'react-native'
 
 import { FACE_CROP_BOX, FACE_SOURCE_IMAGE_SIZE } from '../../../../lib/face-crop'

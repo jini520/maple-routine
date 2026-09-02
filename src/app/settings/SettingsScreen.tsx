@@ -39,7 +39,7 @@ type OpenModal = 'theme' | 'trackingMode' | null
 export function SettingsScreen(): React.JSX.Element {
   const { theme } = useThemeStore()
   const { mode: trackingMode } = useTrackingModeStore()
-  // : 저장 로직을 새로 갖지 않는다. 통합 키 쓰기·수동 모드 시드·추가분만 동기화·
+  // 저장 로직을 새로 갖지 않는다. 통합 키 쓰기·수동 모드 시드·추가분만 동기화·
   // 진행률 보고가 이 액션에 이미 한 벌로 들어 있다. 이름이 **컨텐츠** 인 것은 이전의
   // 흔적이고, 목록 자체는 앱 전역 하나다(그 대가는 ADR 이 적는다).
   const { trackedOcids } = useContentSchedulerStore()
@@ -57,7 +57,7 @@ export function SettingsScreen(): React.JSX.Element {
       .catch(() => {})
   }, [])
 
-  // : 보스 수익의 "캐릭터 선택하러 가기"와 두 스케줄러의 빈
+  // 보스 수익의 "캐릭터 선택하러 가기"와 두 스케줄러의 빈
   // 상태 CTA 가 캐릭터 관리를 **열어 둔 채로** 이 탭에 보낸다.
   // 목적지가 모달에서 화면으로 바뀌어도 계약은 그대로다.
   //
@@ -101,7 +101,7 @@ export function SettingsScreen(): React.JSX.Element {
                 rightContent={<ValueBadge>{theme}</ValueBadge>}
               />
             </View>
-            {/*: `테마` 아래(사용자 지정). 이 카드에 남는 이유는 성질이 같기
+            {/* `테마` 아래(사용자 지정). 이 카드에 남는 이유는 성질이 같기
                 때문이다. 고르면 그 자리에서 끝난다(화면이 pop 되면 설정으로 돌아온다). 배지는
                 **추적 캐릭터 수**이고, 아직 못 읽었으면(`null`) 그리지 않는다(
                 `null` 은 "0개"가 아니다). 단위가 **명** 이 아니라 **개** 인 것은

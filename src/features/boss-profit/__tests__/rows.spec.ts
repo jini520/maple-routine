@@ -46,9 +46,8 @@ describe('sortRowsByOcidOrder', () => {
     expect(sorted.map((r) => r.ocid)).toEqual(['a', 'b'])
   })
 
-  // ·#28: 예전에는 ocid 로만 정렬하고 stable sort 에 기대 보스 순서를 데이터 소스가
-  // 만든 순서 그대로 물려받았는데, 그 소스 순서가 비결정적이라(ORDER BY 없는 조회, Map 삽입
-  // 순서) 로드마다 보스 순서가 달라졌다.
+  // ocid 로만 정렬하고 stable sort 에 기대면 보스 순서가 데이터 소스 순서를 물려받는다.
+  // 그 소스 순서는 비결정적이라(ORDER BY 없는 조회 · Map 삽입 순서) 로드마다 달라진다.
   it('같은 캐릭터 안에서는 참조 데이터 순서로 보스를 결정적으로 정렬한다', () => {
     const rows = [row({ boss: '스우' }), row({ boss: '자쿰' }), row({ boss: '루시드' })]
 

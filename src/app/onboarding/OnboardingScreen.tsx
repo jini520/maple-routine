@@ -82,7 +82,7 @@ export function OnboardingScreen(): React.JSX.Element {
           </OnboardingStep>
         )
 
-      // : 스케줄 관리 방법(자동/수동)을 고르는 단계. 이 앱에서는 키 입력 **다음**
+      // 스케줄 관리 방법(자동/수동)을 고르는 단계. 이 앱에서는 키 입력 **다음**
       // 이다(예열이 없어졌다).
       case 'selectingTrackingMode':
         return (
@@ -91,10 +91,9 @@ export function OnboardingScreen(): React.JSX.Element {
           </OnboardingStep>
         )
 
-      //  ·: 관리할 캐릭터를 1개 이상 고르는 단계. 계정 드롭다운이
-      // 그 안에 있어 여러 메이플 ID 를 넘나든다.
-      // **이 case 만 셸을 안 두른다**(파일 머리). 단계가 자기 CTA 를 고정 바로 넘기려고 셸을
-      // 직접 두르고, 끌기 자동 스크롤 배선도 함께 갖는다.
+      // 관리할 캐릭터를 1개 이상 고르는 단계. 계정 드롭다운이 그 안에 있어 여러 메이플 ID 를 넘나든다.
+      // 이 case 만 셸을 안 두른다. 단계가 자기 CTA 를 고정 바로 넘기려고 셸을 직접 두르고 끌기
+      // 자동 스크롤 배선도 함께 갖는다.
       case 'selectingContentCharacters':
         return (
           <ContentCharacterStep
@@ -105,12 +104,12 @@ export function OnboardingScreen(): React.JSX.Element {
           />
         )
 
-      // : 수동 모드 시드가 끝날 때까지 스피너를 보여준다(진행률 숫자 없음.
+      // 수동 모드 시드가 끝날 때까지 스피너를 보여준다(진행률 숫자 없음.
       // 템플릿 기본값으로 먼저 그리지 않고 최종 값이 확정될 때까지 로딩만 유지).
       case 'seedingTracking':
         return (
           <OnboardingStep center>
-            {/*: 화면 전체 대기라 셸 승계 카드를 씌우지 않는다(뒤에 카드가 오지 않는다).
+            {/* 화면 전체 대기라 셸 승계 카드를 씌우지 않는다(뒤에 카드가 오지 않는다).
                 24px 이상 자리이므로 스피너는 스윕. */}
             <View className="items-center gap-3" role="status" aria-busy>
               <MapleSweepSpinner size={32} className="text-primary" />

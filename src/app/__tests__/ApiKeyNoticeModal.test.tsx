@@ -1,9 +1,9 @@
 // API 키 안내 모달. 갈린 것 둘.
 //
-// · 스토어를 **모킹하지 않고 `setState` 로 몬다**. 이 패키지의 관례다(`RootNavigator.test.tsx`).
+// 스토어를 **모킹하지 않고 `setState` 로 몬다**. 이 패키지의 관례다(`RootNavigator.test.tsx`).
 //   실물 리듀서를 쓰므로 `apiKeyNotice` 가 실제로 그 값을 가질 수 있는지까지 함께 검사된다.
 //   `confirmApiKeyNotice` 만 갈아 끼운다(실물은 저장소를 만지고, 여기서는 **불렸는가**가 계약이다).
-// · `getAllByRole('button')` → RN 에서는 `Modal` 오버레이 자체가 `Pressable` 이라 버튼 수를 세면
+// `getAllByRole('button')` → RN 에서는 `Modal` 오버레이 자체가 `Pressable` 이라 버튼 수를 세면
 //   자리마다 값이 달라진다. 대신 **닫기 수단이 없다**는 사실을 직접 본다(오버레이를 눌러도
 //   확인이 안 불리고 화면이 그대로다).
 import { fireEvent } from '@testing-library/react-native'

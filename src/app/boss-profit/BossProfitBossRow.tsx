@@ -139,7 +139,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
     </Text>
   )
 
-  // : 예외 메시지를 그대로 렌더하던 인라인 문단을 걷어내고 토스트로 알린다. 개발자용
+  // 예외 메시지를 그대로 렌더하던 인라인 문단을 걷어내고 토스트로 알린다. 개발자용
   // 문구와 SQLite 네이티브 원문이 사용자에게 새는 자리가 여기뿐이었다. 문구는 보스 관리 화면과 같아
   // 두 경로가 통일된다.
   async function handleChange(delta: number): Promise<void> {

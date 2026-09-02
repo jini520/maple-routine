@@ -110,7 +110,7 @@ describe('OnboardingScreen', () => {
     expect(view.queryByText(/확인하고 있어요/)).toBeNull()
   })
 
-  // : 이 앱에는 계정 선택도 예열도 없다. 리듀서를 안 고쳤으므로 두 상태는
+  // 이 앱에는 계정 선택도 예열도 없다. 리듀서를 안 고쳤으므로 두 상태는
   // 타입상 남아 있고, 그 자리에 **빈 화면 대신 키 입력 폼**이 선다. 출구 없는 흰 화면을 만들지
   // 않는다(없앤 잠금과 같은 얼굴이다).
   // 자동 여백·중앙 정렬(`seedingTracking` 의 `justify-center`)은 **부모가 남는 세로 공간을 줄 때만**
@@ -163,7 +163,7 @@ describe('OnboardingScreen', () => {
     const view = await renderOverlay(<OnboardingScreen />)
 
     expect(view.getByText('체크리스트를 준비하고 있어요')).toBeTruthy()
-    // : 24px 이상 자리는 스윕 스피너.
+    // 24px 이상 자리는 스윕 스피너.
     expect(view.getByTestId('maple-sweep-spinner', { includeHiddenElements: true })).toBeTruthy()
   })
 

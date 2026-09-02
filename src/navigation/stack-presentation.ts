@@ -16,7 +16,7 @@ export const PUSH_SCREEN_OPTIONS: NativeStackNavigationOptions = {
   // 페이지 헤더는 앱이 직접 그린다(`PageHeader`, templates). 라이브러리 헤더를 켜면 두 겹이 된다.
   headerShown: false,
 
-  //. iOS 에서는 `default`(UIKit push)로 해석되는데, 그 결정의 값 네 줄
+  // iOS 에서는 `default`(UIKit push)로 해석되는데, 그 결정의 값 네 줄
   // (`translateX(100% → 0)` · 아래 화면 `-30%` · 스크림 `0.12` · 왼쪽 그림자)이 애초에 그 전환을
   // 흉내 낸 것이라 원본으로 돌아가는 셈이다. 안드로이드에서는 이 값이 **플랫폼 기본 대신 iOS 식
   // 슬라이드**를 그린다. 웹뷰 앱이 두 플랫폼에 같은 전환을 그렸으므로(`stack-transition.ts` 는

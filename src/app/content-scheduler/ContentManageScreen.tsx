@@ -99,7 +99,7 @@ export function ContentManageScreen(): React.JSX.Element {
   // **공유했는데 화면마다 다른 캐릭터** 가 다시 생긴다.
   const selected = resolveSelectedCharacter(selectedOcid, characters)
 
-  // : 링 없는 초상화 레일. 이름과 레벨만 싣는다(`rings: []`).
+  // 링 없는 초상화 레일. 이름과 레벨만 싣는다(`rings: []`).
   const railEntries: CharacterRailEntry[] = characters.map((character) => ({
     ocid: character.ocid,
     characterName: character.characterName,
@@ -150,12 +150,12 @@ export function ContentManageScreen(): React.JSX.Element {
               </Pressable>
               <Text className="text-lg font-semibold text-text">컨텐츠 관리</Text>
             </View>
-            {/*: 읽기 전용 칩이던 자리. 이 화면에서 캐릭터를 갈아 가며 쓰는데도
+            {/* 읽기 전용 칩이던 자리. 이 화면에서 캐릭터를 갈아 가며 쓰는데도
                 바꾸려면 뒤로 나가야 했다. 자리와 크기감은 그대로 두고(compact) 누를 수 있게만 한다.
                 onSelect는 스케줄러와 같은 selectCharacter라 돌아갔을 때 그쪽도 같은 캐릭터다. */}
           </PageHeaderTitleRow>
 
-          {/*: 제목 줄 우측의 compact 드롭다운이 **초상화 레일**이 됐다(스케줄러와
+          {/* 제목 줄 우측의 compact 드롭다운이 **초상화 레일**이 됐다(스케줄러와
               같은 컴포넌트). **여기에는 진행 링이 없다**(`rings: []`). 이 화면의 일은 캐릭터를 고르는
               것이지 진행을 보는 것이 아니고, 링 자리를 비우면 글자가 얼굴 쪽으로 들어와 칸도 낮아진다.
               제목 줄에서 내려온 이유는 레일이 그 작은 자리에 안 들어가기 때문이다. */}
@@ -199,7 +199,7 @@ export function ContentManageScreen(): React.JSX.Element {
       }
     >
       <View testID="screen-ContentManage">
-        {/*: 조회가 끝나기 전(idle·loading)에는 빈 상태 문구로 위장하지 않고
+        {/* 조회가 끝나기 전(idle·loading)에는 빈 상태 문구로 위장하지 않고
             로딩 카드를 그린다. 확정된 빈 상태는 조회가 끝난 뒤에만 말할 수 있다. */}
         {selected === null && (status === 'idle' || status === 'loading') ? (
           <View className="px-4 pb-4">

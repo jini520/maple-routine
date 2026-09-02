@@ -163,7 +163,7 @@ describe('SettingsFeatureGuideScreen', () => {
     expect(view.getByText('파티 인원 관리')).toBeTruthy()
   })
 
-  // : 같은 화면이 두 라우트에 걸린다. **어디서 왔든 그리로 돌아간다**. RN 은
+  // 같은 화면이 두 라우트에 걸린다. **어디서 왔든 그리로 돌아간다**. RN 은
   // 스택이 그것을 알고 있어 계산이 사라지고 `goBack()` 하나만 남는다.
   it.each(['SettingsFeatureGuide', 'SettingsReleaseNoteGuide'])(
     '%s 로 들어와도 뒤로는 그냥 pop 이다',
@@ -178,7 +178,7 @@ describe('SettingsFeatureGuideScreen', () => {
     },
   )
 
-  // : 블록은 이미지만·문단만·둘 다를 모두 허용한다.
+  // 블록은 이미지만·문단만·둘 다를 모두 허용한다.
   it('마디와 블록을 데이터 순서대로 그린다', async () => {
     const view = await renderOverlay(<SettingsFeatureGuideScreen />)
 

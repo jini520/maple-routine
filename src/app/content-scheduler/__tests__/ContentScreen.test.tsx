@@ -179,7 +179,7 @@ describe('ContentScreen: 빈 상태와 마운트', () => {
     expect(screen.getByText('불러오고 있어요')).toBeTruthy()
   })
 
-  // : 이 화면은 피커를 열지 않는다. 설정 탭을 **열린 채로** 연다.
+  // 이 화면은 피커를 열지 않는다. 설정 탭을 **열린 채로** 연다.
   it('빈 상태 CTA 를 누르면 설정 탭을 피커가 열린 채로 연다', async () => {
     mockStore({ trackedOcids: [] })
     await renderScreen()
@@ -250,7 +250,7 @@ describe('ContentScreen: 목록', () => {
     expect(screen.getByTestId('screen-scroll')).toBeTruthy()
   })
 
-  // : 헤더에서 없어진 것은 이 버튼 하나이고, 수동 모드의 "컨텐츠 관리"는 남는다
+  // 헤더에서 없어진 것은 이 버튼 하나이고, 수동 모드의 "컨텐츠 관리"는 남는다
   // (그쪽은 아래 `수동 트래킹 모드` 절이 본다).
   it('헤더에 "캐릭터 관리" 버튼이 없다', async () => {
     withContents()
@@ -288,9 +288,9 @@ describe('ContentScreen: 목록', () => {
     expect(screen.getByText('불러오고 있어요')).toBeTruthy()
   })
 
-  // : 드롭다운이 초상화 레일이 되면서 **실제로 캐릭터가 바뀐다**. 전에는 목록(열린
+  // 드롭다운이 초상화 레일이 되면서 **실제로 캐릭터가 바뀐다**. 전에는 목록(열린
   // 상태)이 없어 이 케이스가 **프롭이 있다** 까지밖에 못 봤다.
-  // : **부르는가** 가 아니라 **고른 것이 바뀌는가** 를 본다. 선택이 스토어 하나가 되면서
+  // **부르는가** 가 아니라 **고른 것이 바뀌는가** 를 본다. 선택이 스토어 하나가 되면서
   // 그 값이 곧 다른 화면이 보는 값이다(공유가 전파 단계 없이 성립하는 자리).
   it('레일에서 다른 초상화를 누르면 고른 캐릭터가 그 ocid 가 된다', async () => {
     mockStore({
@@ -327,7 +327,7 @@ describe('ContentScreen: 목록', () => {
     expect(screen.getByTestId('character-portrait').props.accessibilityLabel).toContain('일간 1/2')
   })
 
-  // : 스토어는 레벨 내림차순으로 준다. 그 위에 사용자가
+  // 스토어는 레벨 내림차순으로 준다. 그 위에 사용자가
   // 정한 저장 배열 순서를 얹는다. 그래서 **입력 순서와 다른 순서**로 주는 것이 이 케이스의 요점이다.
   it('레일 순서는 스토어 순서가 아니라 trackedOcids 저장 순서다', async () => {
     mockStore({
@@ -433,7 +433,7 @@ describe('ContentScreen: 재조회', () => {
     expect(refreshControl().refreshing).toBe(false)
   })
 
-  // : 동기화 상태는 드롭다운 줄이 아니라 **제목 줄**에 있다. `같은 줄인가`는
+  // 동기화 상태는 드롭다운 줄이 아니라 **제목 줄**에 있다. `같은 줄인가`는
   // 최소 공통 조상으로 본다. 제목과 새로고침의 공통 조상 안에 캐릭터 드롭다운이 **없으면**
   // 그 조상이 곧 제목 줄이다(있으면 헤더 전체를 집은 것이라 아무것도 보장하지 못한다).
   it('새로고침과 동기화 시각이 제목과 같은 줄에 있다', async () => {

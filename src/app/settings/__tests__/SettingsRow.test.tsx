@@ -42,7 +42,7 @@ describe('SettingsRow', () => {
     expect(view.getByTestId('settings-row-chevron')).toBeTruthy()
   })
 
-  // : 배타에서 병기로. 값이 있으면 화살표가 사라지던 옛 동작에서는 화살표가
+  // 배타에서 병기로. 값이 있으면 화살표가 사라지던 옛 동작에서는 화살표가
   // "누르면 열린다"가 아니라 "값이 있는가"를 말했다.
   it('rightContent를 주면 그 내용과 chevron이 함께 보인다', async () => {
     const view = await renderAtom(

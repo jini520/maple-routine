@@ -52,7 +52,7 @@ function bossItem(contentName: string, difficulty: string): ManualTrackedItem {
 }
 
 describe('displayedBosses: 자동 모드', () => {
-  // : 등록한 난이도가 있으면 그것만(중복 카드 방지), 없으면 완료한 난이도를 대신.
+  // 등록한 난이도가 있으면 그것만(중복 카드 방지), 없으면 완료한 난이도를 대신.
   it('등록된 보스와 **미등록이지만 완료된** 보스를 함께 보여준다', () => {
     const registered = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true })
     const unregisteredComplete = boss({
@@ -117,7 +117,7 @@ describe('displayedBosses: 자동 모드', () => {
   })
 })
 
-// : 자동 모드는 정렬이 아예 없어 Nexon `boss_contents` **응답 순서**로 서고 있었다.
+// 자동 모드는 정렬이 아예 없어 Nexon `boss_contents` **응답 순서**로 서고 있었다.
 // 이제 두 모드가 같은 비교자(`compareBossOrder`)를 지나므로 응답이 어떤 차례로 오든 화면이 안 흔들린다.
 describe('displayedBosses: 순서는 weekly-bosses.json 정규 순서다', () => {
   it('자동 모드가 응답 순서를 버리고 정규 순서로 낸다', () => {
@@ -186,7 +186,7 @@ describe('displayedBosses: 순서는 weekly-bosses.json 정규 순서다', () =>
 })
 
 describe('displayedBosses: 수동 모드', () => {
-  // : 게임 등록 여부가 아니라 **앱에서 관리하는 멤버십** 이 표시 목록을 정한다.
+  // 게임 등록 여부가 아니라 **앱에서 관리하는 멤버십** 이 표시 목록을 정한다.
   it('추적 멤버십이 표시 목록을 정한다. 등록·동기화된 적 없는 보스도 카드로 선다', () => {
     const result = displayedBosses(character(), 'weekly', 'manual', {
       'ocid-1': [bossItem('스우', '하드')],

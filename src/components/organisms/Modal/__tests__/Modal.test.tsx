@@ -1,10 +1,10 @@
 // 사라지거나 형태가 바뀐 케이스만 여기 적는다.
 //
-// · *"body 직속으로 렌더링한다"* → **`react-native` 의 `Modal` 을 쓴다**로 바뀐다(같은 계약의 RN 판:
+// *"body 직속으로 렌더링한다"* → **`react-native` 의 `Modal` 을 쓴다**로 바뀐다(같은 계약의 RN 판:
 //   부모 레이아웃과 무관하게 화면 전체를 덮는다).
-// · *"뒷 페이지 스크롤을 막는다"* → **사라진다.** 네이티브 윈도우가 구조적으로 한다.
-// · 클래스 문자열을 보던 자리는 **스타일 값**을 본다(`panel-on-scrim` → 실제 테두리 색).
-// · `align` 두 케이스는 `pt-[calc(var(--sa-top)+2rem)]` 대신 실제 `paddingTop` 숫자를 잰다.
+// *"뒷 페이지 스크롤을 막는다"* → **사라진다.** 네이티브 윈도우가 구조적으로 한다.
+// 클래스 문자열을 보던 자리는 **스타일 값**을 본다(`panel-on-scrim` → 실제 테두리 색).
+// `align` 두 케이스는 `pt-[calc(var(--sa-top)+2rem)]` 대신 실제 `paddingTop` 숫자를 잰다.
 import { fireEvent } from '@testing-library/react-native'
 import { Text, View } from 'react-native'
 
@@ -112,7 +112,7 @@ describe('Modal', () => {
     expect(style.maxWidth).toBe(384)
   })
 
-  // : 라이트에서만 테두리를 배경색 쪽으로 눌러 가라앉힌다. RN 에는 선택자가 없어
+  // 라이트에서만 테두리를 배경색 쪽으로 눌러 가라앉힌다. RN 에는 선택자가 없어
   // 그 결과를 `--color-panel-border` 토큰이 값으로 갖고 있고(`theme/theme-vars.ts`), 이 케이스는
   // **`Card` atom 의 `border-border` 를 그것이 실제로 덮는지**를 지킨다. 클래스 순서가 아니라
   // 생성된 스타일시트 순서에 달린 자리라, 조용히 뒤집히면 라이트 모달 테두리가 도드라진다.

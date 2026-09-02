@@ -1,6 +1,6 @@
 // 에러 바운더리. 갈린 것 둘.
 //
-// · *"다시 시작을 누르면 리로드한다"* → **주입한 `onRestart` 를 부른다**. RN 에는
+// *"다시 시작을 누르면 리로드한다"* → **주입한 `onRestart` 를 부른다**. RN 에는
 //   `window.location.reload()` 짝이 없어 기본값이 없어졌다(`ErrorBoundary.tsx` 파일 머리).
 //   테스트 전용이던 프롭이 여기서는 계약이라, 이 케이스가 그 계약을 지킨다.
 // *"폴백이 뜨면 스플래시를 내린다"* 는 그대로 남지만 **이유가 하나로 줄어든다**(
@@ -72,7 +72,7 @@ describe('ErrorBoundary', () => {
     expect(onRestart).toHaveBeenCalledTimes(1)
   })
 
-  // : 폴백의 목적은 복구 도구를 주는 게 아니라 빈 화면을 없애는 것이다.
+  // 폴백의 목적은 복구 도구를 주는 게 아니라 빈 화면을 없애는 것이다.
   // 선택지를 하나로 줄이면 그 하나가 분명해진다.
   it('다시 시작 외의 버튼을 두지 않는다', async () => {
     const { getAllByRole } = await renderAtom(

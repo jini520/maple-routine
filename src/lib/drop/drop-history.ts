@@ -15,7 +15,7 @@ import type { BossDifficulty } from '../../types/scheduler'
  * SQLite `boss_drop_records` 한 행에서 이 집계에 필요한 부분만 추린 모양. `recordedAt` 이 없는 것이
  * 의도다(위 규약). 저장 계층 타입을 쓰지 않는 이유는 `lib/` 가 `storage/` 를 의존하지 않기 위함이고
  * `RecordedDrop` 을 상속하는 형태는 `StoredDropRecord`(`lib/boss/boss-drops`)와 같은 관례다
- *. 그래야 드롭 아이콘 스택·획득 가능 판정에 그대로 넘길 수 있다.
+ * 그래야 드롭 아이콘 스택·획득 가능 판정에 그대로 넘길 수 있다.
  */
 export interface DropHistoryRecord extends RecordedDrop {
   ocid: string

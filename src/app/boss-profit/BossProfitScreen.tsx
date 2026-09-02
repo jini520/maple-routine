@@ -113,9 +113,9 @@ export function BossProfitScreen(): React.JSX.Element {
   const { definition } = useThemeAppearance()
   const reduceMotion = useReducedMotion()
 
-  // : 동기화 전체 실패는 토스트로 알린다. 기간 라벨·"n분 전" 표기가 남아 맥락은 화면에 있다.
+  // 동기화 전체 실패는 토스트로 알린다. 기간 라벨·"n분 전" 표기가 남아 맥락은 화면에 있다.
   useScheduleSyncErrorToast(error, { onRetry: () => refresh(trackedOcids ?? []) })
-  // : 일부 캐릭터만 실패한 경우도 토스트다. 본문이 한 줄이라 이름을 나열하면
+  // 일부 캐릭터만 실패한 경우도 토스트다. 본문이 한 줄이라 이름을 나열하면
   // 잘리므로 **인원 수**만 싣는다.
   useStaleCharactersToast(staleCharacterNames, () => refresh(trackedOcids ?? []))
 
@@ -124,7 +124,7 @@ export function BossProfitScreen(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // : `null` 은 "0명"이 아니라 **"저장소를 아직 안 읽었다"** 다. 둘을 묶으면
+  // `null` 은 "0명"이 아니라 **"저장소를 아직 안 읽었다"** 다. 둘을 묶으면
   // 콜드 스타트 첫 페인트가 아직 모르는 사실을 단정한다(실기기 2026-08-06).
   const isEmpty = trackedOcids !== null && trackedOcids.length === 0
 
@@ -132,7 +132,7 @@ export function BossProfitScreen(): React.JSX.Element {
   // "현재 기간 판정"과 "기간 라벨"이 서로 다른 기간을 가리킬 수 있다.
   const now = new Date()
   const isCurrentPeriod = isLatestPeriod(tab, periodKey, now)
-  // : 동기화 상태 영역·당겨서 새로고침의 **공통** 게이트. "이 기간이 최신인가"가 아니라
+  // 동기화 상태 영역·당겨서 새로고침의 **공통** 게이트. "이 기간이 최신인가"가 아니라
   // "지금 재조회하면 이 화면의 숫자가 달라질 수 있는가"다. 갈라 두면 "버튼은 없는데 당기면 도는"
   // 상태가 생긴다.
   const canRefreshPeriod = isPeriodRefreshable(tab, periodKey, now)
@@ -159,13 +159,13 @@ export function BossProfitScreen(): React.JSX.Element {
 
   // 훅(아래 `usePeriodLoadErrorToast`)이 이 값을 읽으므로 조기 반환보다 위에서 계산한다. 순수
   // 함수라 위치를 올려도 결과가 같고, 토스트 조건과 화면 조건이 같은 값을 보게 된다.
-  // : 그룹의 순서는 행의 순서(= 스토어의 레벨 내림차순.
+  // 그룹의 순서는 행의 순서(= 스토어의 레벨 내림차순.
   // 결정 2)가 아니라 사용자가 캐릭터 관리에서 정한 저장 배열 순서다. **캐릭터 안쪽 보스 순서는
   // 안 건드린다**. 바뀌는 것은 카드가
   // 서는 차례뿐이다. core 를 안 고치는 이유는 `orderByTracked` 머리에 있다.
   const characterGroups = orderByTracked(buildCharacterGroups(rows, weeklySubtotals), trackedOcids ?? [])
 
-  // : 기간 로드 실패는 **카드가 있을 때만** 토스트다. 카드가 없으면 문구가 사라진
+  // 기간 로드 실패는 **카드가 있을 때만** 토스트다. 카드가 없으면 문구가 사라진
   // 자리에 빈 칸이 남으므로 아래에서 `ErrorState` 를 그린다(같은 실패의 두 얼굴, 문구는 통일).
   usePeriodLoadErrorToast({
     isFailed: periodState === 'failed' && characterGroups.length > 0,
@@ -359,12 +359,12 @@ export function BossProfitScreen(): React.JSX.Element {
           </Pressable>
         </View>
 
-        {/*: 보여줄 데이터가 아예 없을 때만 셸 승계 카드를 그린다. */}
+        {/* 보여줄 데이터가 아예 없을 때만 셸 승계 카드를 그린다. */}
         {!isPeriodLoading &&
           (status === 'idle' || status === 'loading') &&
           characterGroups.length === 0 && <LoadingState size="page" message="불러오고 있어요" />}
 
-        {/*: 상태마다 얼굴이 다르다. 기록이 있으면 아무것도 띄우지 않는다.
+        {/* 상태마다 얼굴이 다르다. 기록이 있으면 아무것도 띄우지 않는다.
             목요일 새벽처럼 백필만 막힌 경우 기록은 정확하고 사용자가 할 일도 없다. `failed` 는
             액션이 필요해 토스트로 옮겼다. */}
         {!isPeriodLoading && characterGroups.length > 0 && periodState === 'notCollected' && (
@@ -409,7 +409,7 @@ export function BossProfitScreen(): React.JSX.Element {
                 className="text-xl font-extrabold leading-none text-primary-ink"
                 style={TABULAR_NUMS}
               >
-                {/*: **이 키에만 기간이 없다**. 기간이 바뀌어도 같은 자리의 같은
+                {/* **이 키에만 기간이 없다**. 기간이 바뀌어도 같은 자리의 같은
                     뜻을 가진 하나의 숫자로 보고 굴린다("기간 이동은 총 수익만", 사용자 결정). */}
                 <AnimatedNumber identity={`total|${loadedTab}`} value={totalMeso} />{' '}
                 <Text className="text-xs font-bold text-text-muted">메소</Text>
@@ -449,7 +449,7 @@ export function BossProfitScreen(): React.JSX.Element {
         <ScreenScroll
           ref={scrollRef}
           header={header}
-          // : 당김은 헤더 버튼과 **같은 재조회**를 부르고
+          // 당김은 헤더 버튼과 **같은 재조회**를 부르고
           // 색만 테마에서 넘긴다. 빈 상태는 이 가지에 오지 않고(위 조기 반환), 새로고침이 의미
           // 없는 기간에서는 컨트롤 자체를 달지 않는다.
           // 헤더 버튼과 **같은 플래그**다.
@@ -466,7 +466,7 @@ export function BossProfitScreen(): React.JSX.Element {
           }
         >
           <View testID="pull-content" className="gap-2 px-4 pb-4">
-            {/*: 점선 박스(빈 상태의 어법)와 비-브랜드 링을 버리고 셸 승계
+            {/* 점선 박스(빈 상태의 어법)와 비-브랜드 링을 버리고 셸 승계
                 카드를 쓴다. 백필이 끝나면 같은 자리·같은 껍데기에 캐릭터 카드가 들어온다. */}
             {isPeriodLoading && (
               <LoadingState message={`${periodLabel.primary} 기록을 불러오고 있어요`} />

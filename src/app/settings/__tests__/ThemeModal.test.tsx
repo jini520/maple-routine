@@ -66,7 +66,7 @@ describe('ThemeModal', () => {
     for (const name of THEME_NAMES) expect(view.getByLabelText(name)).toBeTruthy()
   })
 
-  // : 모달 자신이 선택 테마의 색으로 그려지므로 그 자리에서 갈아입혀 보게 둔다.
+  // 모달 자신이 선택 테마의 색으로 그려지므로 그 자리에서 갈아입혀 보게 둔다.
   it('테마를 선택하면 selectTheme 만 호출하고 모달은 열려 있다', async () => {
     const selectTheme = jest.fn(async () => {})
     const onClose = jest.fn()

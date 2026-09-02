@@ -48,7 +48,7 @@ export function CharacterRail(props: CharacterRailProps): React.JSX.Element {
         // 스크롤바를 안 그린다. **더 있다** 는 잘린 초상화가 말한다(ADR 대가에 적힌 그 값이다).
         showsHorizontalScrollIndicator={false}
         // 간격은 칸이 아니라 레일이 준다. 값은 칸의 치수 표에서 온다. 링 유무로 안 갈린다
-        // . 숫자를 여기 적으면 표와 레일이 서로 다른 값을 믿는다.
+        // 숫자를 여기 적으면 표와 레일이 서로 다른 값을 믿는다.
         contentContainerStyle={{ paddingHorizontal: HEADER_PADDING, gap: PORTRAIT_RAIL.gap }}
       >
         {props.entries.map((entry) => (

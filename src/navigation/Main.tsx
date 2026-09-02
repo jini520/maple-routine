@@ -34,7 +34,7 @@ const LedgerTabs = createBottomTabNavigator<LedgerSubsParamList>()
 
 /**
  * 층 안의 화면들은 **탭이다**. 그래서 옆걸음에 전환이 없고 서로 언마운트하지 않는다
- * . 바는 이 내비게이터들이 그리지 않는다(`tabBar` 가 아무것도 안 낸다);
+ * 바는 이 내비게이터들이 그리지 않는다(`tabBar` 가 아무것도 안 낸다);
  * 층 스택의 `layout` 이 한 벌만 그린다.
  *
  * `backBehavior="none"` 은 가 정한 그대로다. `"history"` 는 **모든 탭 전환**을 쌓아서

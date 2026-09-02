@@ -135,12 +135,12 @@ function ItemAwareMoney(props: { wrap: boolean; children: React.ReactNode }): Re
 
 export function CharacterAccordion(props: {
   group: CharacterGroup
-  /**: 이 캐릭터의 동기화가 실패했으면 그 종류(없으면 `undefined`). */
+  /** 이 캐릭터의 동기화가 실패했으면 그 종류(없으면 `undefined`). */
   issue?: CharacterIssue
 }): React.JSX.Element {
   const { tab, loadedTab, loadedPeriodKey, dropsByRowKey } = useBossProfitContext()
   const [isExpanded, setIsExpanded] = useState(false)
-  // : 아이콘만으로는 원인을 말할 수 없어, 탭하면 설명 팝오버를 연다.
+  // 아이콘만으로는 원인을 말할 수 없어, 탭하면 설명 팝오버를 연다.
   const [isIssueOpen, setIsIssueOpen] = useState(false)
   const [issueGeometry, setIssueGeometry] = useState<PopoverAnchorGeometry>({
     left: ISSUE_POPOVER_EDGE_GAP,
@@ -268,7 +268,7 @@ export function CharacterAccordion(props: {
         <Pressable
           role="button"
           aria-expanded={isExpanded}
-          // : 접기는 **상태만 바꾼다.** 여기에 스크롤 조작을 다시 넣지 말 것.
+          // 접기는 **상태만 바꾼다.** 여기에 스크롤 조작을 다시 넣지 말 것.
           onPress={() => {
             // 카드를 여닫으면 설명 팝오버를 닫는다. 펼침이 레이아웃을 바꿔 열기 직전에 잰 위치가
             // 낡은 값이 되고, 헤더 탭은 팝오버 바깥 탭으로 잡히지도 않는다.

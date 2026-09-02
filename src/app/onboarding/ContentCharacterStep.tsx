@@ -41,7 +41,7 @@ export function ContentCharacterStep(props: ContentCharacterStepProps): React.JS
   useApiKeyNotice(manage.rosterError?.kind === 'rateLimited' ? manage.rosterError : null)
   useApiKeyNotice(manage.accountsError?.kind === 'rateLimited' ? manage.accountsError : null)
 
-  // : 최소 1개. 이 제약은 온보딩 전용이고 설정 화면에는 **변경 없음** 게이트가
+  // 최소 1개. 이 제약은 온보딩 전용이고 설정 화면에는 **변경 없음** 게이트가
   // 따로 있다(`isDirty`). 그래서 두 화면의 CTA 가 갈린다.
   const isSubmitDisabled = manage.selectedOcids.length === 0 || props.isSubmitting
 

@@ -45,7 +45,7 @@ describe('TrackingModeStep', () => {
     expect(isSelected(view, '수동')).toBe(false)
   })
 
-  // : 고르기 **전에** 둘을 비교하는 화면이라 설명·주의를 선택 시에만 펼치지 않는다.
+  // 고르기 **전에** 둘을 비교하는 화면이라 설명·주의를 선택 시에만 펼치지 않는다.
   it('설명과 주의 문구가 선택 전에도 두 옵션 모두 보인다', async () => {
     const view = await renderAtom(<TrackingModeStep onSubmit={jest.fn()} />)
 
