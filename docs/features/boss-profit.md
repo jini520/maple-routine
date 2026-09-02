@@ -749,14 +749,15 @@ today 화면은 언제나 이번 주를 그리므로 이 화면의 네비게이�
 있다.
 
 ```
-아바타 슬롯: relative flex h-10 w-10 shrink-0 items-center justify-center  (40px: 초상화보다 크다)
+부품은 <CharacterPortrait variant="compact" clears={{cleared,total,label}} /> 다([[ADR-204]] 정정 1).
+아바타 슬롯: relative h-10 w-10 shrink-0 items-center justify-center  (40px: 초상화보다 크다)
   └ 슬롯이 8px 커진 만큼 헤더 상하 패딩을 p-4 → py-3으로 줄여 헤더 높이를 64px로 되돌린다(ADR-054 정정 6)
-  └ 안에 초상화 span relative h-8 w-8 overflow-hidden rounded-full bg-surface-2 (32px, 중앙)
-    relative를 이 span에 유지할 것. 40px 슬롯이 크롭 기준이 되면 얼굴이 4px씩 밀린다(ADR-015 기법)
+  └ 안에 얼굴 CharacterAvatar size=32 className="bg-surface-2" (32px, 중앙)
+    크롭 기준 상자는 이 32px다. 40px 슬롯이 기준이 되면 얼굴이 4px씩 밀린다(ADR-015 기법)
   └ 슬롯 크기는 링 칸 수(주간 12 · 월간 1)와 무관하게 항상 40px 고정: 탭 전환 때마다 카드가 튀는 것을 막는다
-  └ 링은 두 탭·모든 기간에 항상 그리므로 CharacterAvatar의 clearProgress는 널이 아니다(ADR-059)
+  └ 링은 두 탭·모든 기간에 항상 그리므로 clears는 널이 아니다(ADR-059)
 
-진행 링(AvatarClearRing): 초상화 바깥에 2px 여백을 두고 도는 SVG. 칸 수 = total (주간 12 · 월간 1 = 온전한 원)
+진행 링(SegmentedRing · molecules/CharacterPortrait/PortraitRing): 초상화 바깥에 2px 여백을 두고 도는 SVG. 칸 수 = total (주간 12 · 월간 1 = 온전한 원)
   circle × total, r = (40 − stroke)/2 = 19, strokeWidth 2, strokeLinecap round → 안쪽 끝 18 vs 초상화 반지름 16 = 2px 여백
   칸 = strokeDasharray(`${dash} ${둘레 − dash}`) + strokeDashoffset(−(i × seg + stroke/2)), seg = 둘레/total, gap 2.4
       dash = seg − gap − stroke  (round 캡이 양끝을 stroke/2씩 더 그리므로 미리 빼둔다, ADR-054 정정 5)
@@ -1346,7 +1347,8 @@ SQLite 커넥션을 정상 종료하지 않으면 stale 커넥션이 남아 **�
   폐기하며 [[ADR-017]] 의 "합계는 헤더에만" 원칙으로 되돌아간 셈이다.
 - ~~아코디언 아바타를 이니셜로 둘지 `character/basic` 이미지로 바꿀지 미정~~ →
   `character-basic-cache` 의 `imageUrl` 로 확정하고 없으면 이니셜로 떨어뜨린다. 구현 완료
-  (`CharacterAvatar`. `getSortedCharacterInfo` 가 정렬용 캐시를 조회하는 김에 함께 반환한다).
+  (`CharacterPortrait` 의 compact 규격. `getSortedCharacterInfo` 가 정렬용 캐시를 조회하는 김에
+  함께 반환한다).
   [[ADR-023]] 의 미확정을 해소했다.
 - ~~보스 행 높이가 자식 중 최대값으로 결정(91.5 / 89 / 90.5px 혼재)~~ → 이름 줄 `h-6`, 칩 `h-6`,
   `last:border-b-transparent` 로 89px 고정(⛔ ADR-049).

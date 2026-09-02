@@ -33,10 +33,8 @@
  */
 
 import { View } from 'react-native'
-import { Circle } from 'react-native-svg'
 
-import { Text } from '../../../components/atoms'
-import { Svg } from '../../../lib/nativewind-interop'
+import { ProgressRing, Text } from '../../../components/atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { WidgetHeight } from '../../../lib/today/widget-layout'
 import { useThemeAppearance } from '../../../theme/context'
@@ -83,15 +81,11 @@ function ratioOf(view: CrystalLimitView): number {
 /**
  * 소진량 링 + 그 안의 분수.
  *
- * 색은 [[ADR-142]] 링·위젯 3 스택 바와 같은 짝이다(`primary` = 결정석). 링 색이 `className` 이
- * 아니라 `stroke` 프롭인 이유는 `CharacterAvatar` 가 적어 둔 그대로다 — `react-native-svg` 의 도형은
- * `cssInterop` 에 등록돼 있지 않고, 등록해도 한 `<Svg>` 안에서 두 색을 못 쓴다.
+ * 링을 채우는 셈은 `atoms/ProgressRing` 이 든다([[ADR-204]] 정정 2). 여기 남는 것은 이 타일의
+ * 치수와 가운데 분수다. 색은 [[ADR-142]] 링·위젯 3 스택 바와 같은 짝이다(`primary` = 결정석).
  */
 function Ring(props: { view: CrystalLimitView; sizePx: number }): React.JSX.Element {
   const { definition } = useThemeAppearance()
-  const radius = (props.sizePx - RING_STROKE) / 2
-  const circumference = 2 * Math.PI * radius
-  const filled = circumference * ratioOf(props.view)
 
   // 링 크기가 변형마다 달라 글자도 함께 따라간다 — 비율로 묶어 두면 «42 링의 글자» 를 따로 정하는
   // 자리가 안 생긴다. 분모는 분자보다 한 단계 작다(같은 값의 두 부분이지 두 값이 아니다).
@@ -106,39 +100,17 @@ function Ring(props: { view: CrystalLimitView; sizePx: number }): React.JSX.Elem
       className="shrink-0 items-center justify-center"
       style={{ width: props.sizePx, height: props.sizePx }}
     >
-      {/* 12시에서 시작해 시계방향으로 찬다 — SVG 원은 3시에서 시작하므로 상자를 4분의 1 바퀴
-          되돌린다(`270deg` 로 적는 것은 이 파일에 한도 숫자와 헷갈릴 값을 남기지 않기 위해서다). */}
-      <Svg
-        width={props.sizePx}
-        height={props.sizePx}
-        viewBox={`0 0 ${props.sizePx} ${props.sizePx}`}
-        style={{ position: 'absolute', transform: [{ rotate: '270deg' }] }}
-      >
-        <Circle
-          testID="crystal-ring-track"
-          cx={props.sizePx / 2}
-          cy={props.sizePx / 2}
-          r={radius}
-          fill="none"
-          strokeWidth={RING_STROKE}
-          stroke={definition.track}
+      {/* 링은 상자를 꽉 채우고 분수가 그 위에 앉는다. 12시에서 시계방향으로 차는 것은 atom 몫이다. */}
+      <View className="absolute inset-0">
+        <ProgressRing
+          size={props.sizePx}
+          stroke={RING_STROKE}
+          direction="cw"
+          track={definition.track}
+          fill={definition.primary}
+          progress={{ kind: 'continuous', ratio: ratioOf(props.view) }}
         />
-        {/* 소진이 0이면 호를 그리지 않는다 — `round` 캡이 점 하나를 찍어 «조금 팔았다» 로 보인다
-            (`portraitRingArcPath` 가 같은 이유로 빈 경로를 돌려준다). */}
-        {filled > 0 && (
-          <Circle
-            testID="crystal-ring-fill"
-            cx={props.sizePx / 2}
-            cy={props.sizePx / 2}
-            r={radius}
-            fill="none"
-            strokeWidth={RING_STROKE}
-            strokeLinecap="round"
-            stroke={definition.primary}
-            strokeDasharray={`${filled} ${circumference - filled}`}
-          />
-        )}
-      </Svg>
+      </View>
 
       {/* 정정 15 — 두 줄이지만 한 값이다. 줄 높이를 글자보다 낮춰 분수로 읽히게 한다. */}
       <Text

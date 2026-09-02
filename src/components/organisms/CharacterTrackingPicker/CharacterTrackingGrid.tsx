@@ -35,30 +35,13 @@ import type { CharacterPickerEntry } from '../../../types'
 
 import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { BanIcon, StarIcon, Text } from '../../atoms'
+import { CharacterAvatar } from '../../molecules/CharacterAvatar/CharacterAvatar'
 import { useThemeAppearance } from '../../../theme/context'
 
-// [[ADR-015]]: character/basic 이 주는 300x300 전신 룩에서 얼굴만 보이도록 확대·정렬해 자른다.
-// 헤어스타일/포즈에 따라 완벽히 얼굴만 나오지 않을 수 있는 근사치다(ADR-015 미확정 항목).
-const SOURCE_IMAGE_SIZE = 300
-const FACE_CROP_BOX = { x: 115, y: 120, size: 64 }
+// 얼굴 원은 `CharacterAvatar` 가 그린다([[ADR-204]] 결정 1). 이 파일은 `{x:115, y:120, size:64}` 를
+// 사설 표로 들고 있었는데, 그것은 [[ADR-144]] 가 «같은 얼굴이 두 자리에서 다르게 잘린다» 며 버린
+// 값이라 이 화면에서만 얼굴+주변이 보였다([[ADR-204]] 결정 3).
 const AVATAR_SIZE = 56
-
-interface FaceCropStyle {
-  width: number
-  height: number
-  left: number
-  top: number
-}
-
-function faceCropStyle(): FaceCropStyle {
-  const scale = AVATAR_SIZE / FACE_CROP_BOX.size
-  return {
-    width: SOURCE_IMAGE_SIZE * scale,
-    height: SOURCE_IMAGE_SIZE * scale,
-    left: -FACE_CROP_BOX.x * scale,
-    top: -FACE_CROP_BOX.y * scale,
-  }
-}
 
 // [[ADR-015]]: 즐겨찾기(선택)한 캐릭터를 그룹 맨 앞으로 보내고, 각 그룹 내부에서는 entries 가 이미
 // 레벨 내림차순이므로 필터만으로 순서가 그대로 유지된다.
@@ -135,20 +118,18 @@ export function CharacterTrackingGrid(props: CharacterTrackingGridProps): React.
             />
           )}
 
-          <View className="h-14 w-14 overflow-hidden rounded-full bg-surface-2">
-            {entry.imageUrl !== null ? (
-              <Image
-                testID={`character-face-${entry.ocid}`}
-                accessibilityLabel={entry.name}
-                source={{ uri: entry.imageUrl }}
-                style={{ position: 'absolute', ...faceCropStyle() }}
-              />
-            ) : (
+          <CharacterAvatar
+            imageTestID={`character-face-${entry.ocid}`}
+            imageUrl={entry.imageUrl}
+            name={entry.name}
+            size={AVATAR_SIZE}
+            className="bg-surface-2"
+            fallback={
               <View className="h-full w-full items-center justify-center">
                 <Text className="text-xs text-text-muted">?</Text>
               </View>
-            )}
-          </View>
+            }
+          />
 
           <View className="w-full flex-row items-center justify-center gap-0.5">
             {emblemUrl !== null && (

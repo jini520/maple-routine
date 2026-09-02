@@ -12,8 +12,9 @@
 // 제자리에 서고 스크롤만 화면 끝까지 간다.
 import { ScrollView, View } from 'react-native'
 
-import { CharacterPortrait, type PortraitRingProgress } from './CharacterPortrait'
-import { portraitMetrics } from './character-portrait-geometry'
+import { CharacterPortrait } from '../CharacterPortrait/CharacterPortrait'
+import { PORTRAIT_RAIL } from '../CharacterPortrait/portrait-metrics'
+import type { PortraitRingProgress } from '../CharacterPortrait/PortraitRing'
 
 export interface CharacterRailEntry {
   ocid: string
@@ -37,10 +38,6 @@ export interface CharacterRailProps {
 const HEADER_PADDING = 16
 
 export function CharacterRail(props: CharacterRailProps): React.JSX.Element {
-  // 한 레일의 칸들은 같은 갈래다(한 화면이 링을 주거나 안 주거나 둘 중 하나다) — 간격은 레일이
-  // 한 번 정해야 하는 값이라 여기서 묻는다([[ADR-145]] 결정 5). 링이 없으면 간격을 걷는다.
-  const { gap } = portraitMetrics()
-
   return (
     <View testID="character-rail" style={{ marginHorizontal: -HEADER_PADDING }}>
       <ScrollView
@@ -48,11 +45,14 @@ export function CharacterRail(props: CharacterRailProps): React.JSX.Element {
         horizontal
         // 스크롤바를 안 그린다 — «더 있다» 는 잘린 초상화가 말한다(ADR 대가에 적힌 그 값이다).
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: HEADER_PADDING, gap }}
+        // 간격은 칸이 아니라 레일이 준다. 값은 칸의 치수 표에서 온다. 링 유무로 안 갈린다
+        // ([[ADR-161]] 결정 1). 숫자를 여기 적으면 표와 레일이 서로 다른 값을 믿는다.
+        contentContainerStyle={{ paddingHorizontal: HEADER_PADDING, gap: PORTRAIT_RAIL.gap }}
       >
         {props.entries.map((entry) => (
           <CharacterPortrait
             key={entry.ocid}
+            variant="rail"
             ocid={entry.ocid}
             characterName={entry.characterName}
             level={entry.level}

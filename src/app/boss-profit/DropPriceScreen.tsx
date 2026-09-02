@@ -28,9 +28,8 @@
 // ③ `<li className="valuable-drop-row">` → **`ValuableRowBackground`**. 웹 `index.css` 의 그 클래스가
 //    RN 에서 값 셋으로 갈린 자리이고, 보스 행에 이어 **두 번째 호출부**라 step 8 이 그 컴포넌트를
 //    `BossProfitBossRow` 밖으로 꺼냈다([[ADR-094]] 결정 1).
-// ④ `<img className="absolute max-w-none" style={avatarFaceCropStyle()}>` → `<Image>` + **같은 절대
-//    좌표**. 크롭 값은 한 자리도 안 바뀐다(`CharacterAvatar` 가 먼저 밟은 자리) — 얼굴은 넥슨이
-//    주는 원격 주소라 `{ uri }` 로 감싼다.
+// ④ 웹의 `<img className="absolute max-w-none">` 자리는 **`CharacterAvatar`** 다([[ADR-204]] 결정 1).
+//    크롭 값은 한 자리도 안 바뀌고, 얼굴이 원격 주소라는 것도 그 부품이 안다.
 import { useEffect, useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
@@ -71,7 +70,8 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { useScreenNavigation } from '../use-screen-navigation'
-import { avatarFaceCropStyle } from './CharacterAvatar'
+import { CharacterAvatar } from '../../components/molecules/CharacterAvatar/CharacterAvatar'
+import { PORTRAIT_COMPACT } from '../../components/molecules/CharacterPortrait/portrait-metrics'
 import { DropPricePad } from './DropPricePad'
 import { ValuableRowBackground } from './ValuableRowBackground'
 
@@ -374,22 +374,19 @@ export function DropPriceScreen(): React.JSX.Element {
                 >
                   {/* 캐릭터 머리 — 보스 수익 아코디언 헤더와 같은 짜임(아바타 32 + 이름 + 금액). */}
                   <View className="flex-row items-center gap-3 border-b border-border p-4">
-                    <View className="h-8 w-8 shrink-0 overflow-hidden rounded-full bg-surface-2">
-                      {group.imageUrl !== null ? (
-                        <Image
-                          // 얼굴은 넥슨이 주는 **원격 주소**라 `{ uri }` 로 감싼다(번들 에셋은 반대로
-                          // 감싸면 안 뜬다 — `CharacterTrackingGrid` 가 적어 둔 함정).
-                          source={{ uri: group.imageUrl }}
-                          style={avatarFaceCropStyle()}
-                        />
-                      ) : (
+                    <CharacterAvatar
+                      imageUrl={group.imageUrl}
+                      name={group.characterName}
+                      size={PORTRAIT_COMPACT.faceSize}
+                      className="shrink-0 bg-surface-2"
+                      fallback={
                         <View className="h-full w-full items-center justify-center">
                           <Text className="text-xs font-bold text-text">
                             {group.characterName.charAt(0)}
                           </Text>
                         </View>
-                      )}
-                    </View>
+                      }
+                    />
                     <Text numberOfLines={1} className="flex-1 text-sm font-semibold text-text">
                       {group.characterName}
                     </Text>

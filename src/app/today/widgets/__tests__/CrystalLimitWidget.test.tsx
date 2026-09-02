@@ -160,8 +160,8 @@ describe('링', () => {
       뷰모델({ crystalLimits: [월드한도({ cleared: 0 })] }),
     )
 
-    expect(getByTestId('crystal-ring-track')).toBeTruthy()
-    expect(queryByTestId('crystal-ring-fill')).toBeNull()
+    expect(getByTestId('progress-ring-track')).toBeTruthy()
+    expect(queryByTestId('progress-ring-fill')).toBeNull()
   })
 
   it('분자와 분모가 글자보다 낮은 줄 높이로 붙는다 ([[ADR-147]] 정정 15)', async () => {

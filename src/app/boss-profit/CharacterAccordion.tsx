@@ -75,7 +75,7 @@ import { AnimatedView } from '../../lib/nativewind-interop'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { MonthlyAccordionBody, WeeklyAccordionBody } from './AccordionBody'
 import { useBossProfitContext } from './boss-profit-context'
-import { CharacterAvatar } from './CharacterAvatar'
+import { CharacterPortrait } from '../../components/molecules/CharacterPortrait/CharacterPortrait'
 import {
   CharacterIssueBadge,
   CharacterIssuePopover,
@@ -329,10 +329,15 @@ export function CharacterAccordion(props: {
               : 'w-full flex-row items-center gap-3 rounded-[14px] border border-border bg-surface px-4 py-3'
           }
         >
-          <CharacterAvatar
+          <CharacterPortrait
+            variant="compact"
             characterName={group.characterName}
             imageUrl={group.imageUrl}
-            clearProgress={clearProgress}
+            clears={{
+              cleared: clearProgress.cleared,
+              total: clearProgress.total,
+              label: clearProgress.cycle === 'weekly' ? '주간' : '월간',
+            }}
           />
           <Text numberOfLines={1} className="flex-1 text-sm font-semibold text-text">
             {group.characterName}

@@ -60,7 +60,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import type { AccountSummaryView } from '../../../features/character-manage/derivations'
 import { worldEmblemUrl } from '../../../lib/assets/asset-lookup'
 
-import { faceCropStyle } from '../../../lib/face-crop'
+import { FACE_AVATAR_SIZE } from '../../../lib/face-crop'
+import { CharacterAvatar } from '../../molecules/CharacterAvatar/CharacterAvatar'
 import { ChevronDownIcon, Text } from '../../atoms'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { placeDropdown } from './place-dropdown'
@@ -88,25 +89,23 @@ function AccountRow(props: AccountRowProps): React.JSX.Element {
 
   return (
     <View className="flex-row items-center gap-2.5">
-      {/* 초상화 규칙은 `CharacterRow` 와 같다(사용자 지정 2026-08-17) — 상자에 배경색 없음, 못 가져온
-          자리는 **주황 원 + `?`**. 두 자리가 갈리면 같은 얼굴이 화면마다 다르게 없어진다. */}
-      <View className="h-9 w-9 shrink-0 overflow-hidden rounded-full">
-        {props.portraitUrl !== null ? (
-          <Image
-            testID={`account-select-face-${accountId}`}
-            accessibilityLabel={representative.name}
-            source={{ uri: props.portraitUrl }}
-            style={{ position: 'absolute', ...faceCropStyle() }}
-          />
-        ) : (
+      {/* 초상화 규칙은 `CharacterRow` 와 같다(사용자 지정 2026-08-17). 두 자리가 갈리면 같은 얼굴이
+          화면마다 다르게 없어진다. */}
+      <CharacterAvatar
+        imageTestID={`account-select-face-${accountId}`}
+        imageUrl={props.portraitUrl}
+        name={representative.name}
+        size={FACE_AVATAR_SIZE}
+        className="shrink-0"
+        fallback={
           <View
             testID={`account-select-face-fallback-${accountId}`}
             className="h-full w-full items-center justify-center bg-primary"
           >
             <Text className="text-sm font-bold text-on-primary">?</Text>
           </View>
-        )}
-      </View>
+        }
+      />
 
       <View className="min-w-0 flex-1 gap-0.5">
         <View className="flex-row items-center gap-1">

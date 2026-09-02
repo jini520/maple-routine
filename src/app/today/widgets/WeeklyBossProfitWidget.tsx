@@ -35,12 +35,12 @@
  * 이미 말했다([[ADR-147]] 정정 4).
  */
 
-import { Image, View, type DimensionValue } from 'react-native'
+import { View, type DimensionValue } from 'react-native'
 
 import { formatMesoShort } from '../../../lib/boss/boss-profit-delta'
 
 import { Text } from '../../../components/atoms'
-import { faceCropStyle } from '../../../lib/face-crop'
+import { CharacterAvatar } from '../../../components/molecules/CharacterAvatar/CharacterAvatar'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { WidgetHeight } from '../../../lib/today/widget-layout'
 import type { ProfitSplit, WeeklyProfitCharacterView, WeeklyProfitView } from '../view-model'
@@ -232,26 +232,21 @@ function SplitBlock(props: {
 /** 얼굴 — 「남은 스케줄」과 **같은 크롭·같은 폴백**이다(두 타일이 같은 캐릭터를 다르게 그리면 안 된다). */
 function Face(props: { character: WeeklyProfitCharacterView }): React.JSX.Element {
   return (
-    <View
-      className="shrink-0 overflow-hidden rounded-full"
-      style={{ width: FACE_PX, height: FACE_PX }}
-    >
-      {props.character.imageUrl !== null ? (
-        <Image
-          testID="profit-character-face"
-          accessibilityLabel={props.character.characterName}
-          source={{ uri: props.character.imageUrl }}
-          style={{ position: 'absolute', ...faceCropStyle(FACE_PX) }}
-        />
-      ) : (
+    <CharacterAvatar
+      imageTestID="profit-character-face"
+      imageUrl={props.character.imageUrl}
+      name={props.character.characterName}
+      size={FACE_PX}
+      className="shrink-0"
+      fallback={
         <View
           testID="profit-character-face-fallback"
           className="h-full w-full items-center justify-center bg-primary"
         >
           <Text fixed className="text-13 font-bold text-on-primary">?</Text>
         </View>
-      )}
-    </View>
+      }
+    />
   )
 }
 
