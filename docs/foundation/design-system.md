@@ -516,7 +516,7 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
   ```
   **정정 31 (2026-08-18 · 안드로이드 실기기)**. 안드로이드에만 **하단 안전영역 하한 34**. 결정 11 의 ‘안전영역 위 12’가 0 이 되면서 바의 자리가 `insets.bottom` ‘그대로’가 됐고, 그 값의 플랫폼 차이가 화면에 나왔다(iOS **34** 홈 인디케이터 대 안드로이드 **15** = `navigationBars` 45px @3.0 제스처). 상단(31.3 대 59)과 **같은 비율**이라 처방도 같다. [[ADR-139]] 정정 1 의 하단 판이다.
   ```
-  값      resolveBottomSafeAreaPx({ insetBottomPx, platform }). `lib/bottom-safe-area.ts`
+  값      resolveBottomSafeAreaPx({ insetBottomPx, platform }). `lib/safe-area.ts`
           안드로이드 = max(인셋, 34) · 그 밖 = 인셋 그대로.
           34 는 ‘안드로이드를 더 띄우는 값’이 아니라 **‘iOS 와 같아지는 값’**이다.
           iOS 인셋 자체가 34 라 한 픽셀도 안 바뀌고, 3버튼(48)에는 아무것도 안 더한다
@@ -583,7 +583,7 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
   ```
   **정정 1 (2026-08-18 · 안드로이드 실기기)**. 안드로이드에만 **상단 안전영역 하한 48**. `insets.top` ‘그대로’가 플랫폼 차이를 화면에 드러냈다(iOS **59** 대 안드로이드 **31.3** = 상태바 94px @3.0). 하한을 **헤더가 아니라 안전영역 값 자체**에 깐다. 헤더에만 더하면 위 ‘경계’의 ‘제목 윗변 = 페이드 끝선’이 갈라지고 페이드는 짧은 채로 남는다.
   ```
-  값      resolveTopSafeAreaPx({ insetTopPx, platform }). `lib/top-safe-area.ts`
+  값      resolveTopSafeAreaPx({ insetTopPx, platform }). `lib/safe-area.ts`
           안드로이드 = max(인셋, 48) · 그 밖 = 인셋 그대로.
           **Math.max 이지 + 가 아니다**. 인셋이 이미 48 이상인 기기엔 아무것도 안 더하고,
           iOS(59)는 한 픽셀도 안 바뀐다

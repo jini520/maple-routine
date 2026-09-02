@@ -1,6 +1,6 @@
 import { View } from 'react-native'
 
-import { useTopSafeAreaPx } from '../../../lib/top-safe-area'
+import { useTopSafeAreaPx } from '../../../lib/safe-area'
 
 
 // 화면 상단 헤더 셸([[ADR-094]] 4단계). 스케줄러 계열 4화면이 **글자 하나까지 같은** 마크업을
@@ -71,7 +71,7 @@ import { useTopSafeAreaPx } from '../../../lib/top-safe-area'
 // (smoothstep² 은 양 끝 기울기가 0 이다) 제목이 불투명하지만 **여유가 0** 이다 — 페이드 길이
 // (`safe-area-fade.ts`)를 늘리면 제목 윗변부터 갉힌다. 두 값이 이제 서로를 본다.
 //
-// **그래서 안드로이드 하한이 여기가 아니라 `lib/top-safe-area.ts` 에 있다**([[ADR-139]] 정정 1).
+// **그래서 안드로이드 하한이 여기가 아니라 `lib/safe-area.ts` 에 있다**([[ADR-139]] 정정 1).
 // 이 헤더에만 더하면 제목은 내려가는데 페이드는 짧은 채로 남아 **그 선이 갈라진다** — 결정 1 이
 // 대가를 치르고 얻은 성질을 그대로 버리는 셈이다. 밑에 깔면 둘이 계속 같은 값을 본다.
 //

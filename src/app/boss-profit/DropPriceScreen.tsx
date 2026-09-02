@@ -50,7 +50,7 @@ import {
   isLatestPeriod,
 } from '../../lib/boss-profit-period'
 import { dropPayoutMeso } from '../../lib/drop-price'
-import { getItemIconUrl } from '../../lib/item-icons'
+import { getItemIconUrl } from '../../lib/artwork'
 import { isValuableDrop } from '../../lib/valuable-drops'
 import type { RecordedDrop } from '../../types/drops'
 
@@ -62,7 +62,7 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, PackageOpenIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../lib/text-styles'
-import { useTopSafeAreaPx } from '../../lib/top-safe-area'
+import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { useScreenNavigation } from '../use-screen-navigation'
 import { avatarFaceCropStyle } from './CharacterAvatar'
 import { DropPricePad } from './DropPricePad'

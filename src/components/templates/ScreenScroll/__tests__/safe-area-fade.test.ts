@@ -3,7 +3,7 @@
 // 둘 다 화면을 렌더하지 않고 볼 수 있어서 여기 따로 있다. `bottom-inset.test.ts` 와 같은 이유이고,
 // 실제로 하단 값은 그 판정에서 **파생**되므로(결정 3) 두 파일이 같은 자리를 지킨다.
 
-import { resolveBottomSafeAreaPx } from '../../../../lib/bottom-safe-area'
+import { resolveBottomSafeAreaPx } from '../../../../lib/safe-area'
 import { resolveScreenBottomInset } from '../bottom-inset'
 import { FADE_MASK_ALPHAS, FADE_MASK_LOCATIONS, resolveSafeAreaFade } from '../safe-area-fade'
 

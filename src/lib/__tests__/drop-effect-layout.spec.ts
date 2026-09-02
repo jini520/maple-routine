@@ -1,4 +1,4 @@
-import { DROP_EFFECT_FRAMES } from '../drop-effect-frames'
+import { DROP_EFFECT_FRAMES } from '../artwork'
 import { DROP_EFFECT_ORIGINS, dropFrameTransform } from '../drop-effect-layout'
 import {
   buildPillarFrames,

@@ -6,7 +6,7 @@
 //
 // 3단계는 플레이스홀더 쪽만 그렸다. 막고 있던 것 둘이 차례로 풀렸다 — 에셋은 [[ADR-129]] 가
 // 번들에 넣었고(`getBossPortraitUrl` 이 진짜 참조를 돌려준다), 남아 있던 **기하**는 step 4 가
-// 컨텐츠 카드에서 푼 변환을 그대로 쓴다(`MediaCardArt/media-card-art.ts` 파일 머리 — CSS
+// 컨텐츠 카드에서 푼 변환을 그대로 쓴다(`lib/image-crop.ts` 파일 머리 — CSS
 // `background-size`/`position` 퍼센트를 `width`+`aspectRatio`, `left`+`translateX` 로 옮긴다).
 //
 // **여기서 다시 계산하지 않는다.** 카드 bleed 와 이 원형 초상은 크롭 표만 다르고(`…-crops` vs
@@ -18,21 +18,17 @@
 // 역할 `img` 가 붙는다(웹과 **같은 이름**이다 — RN 의 `role` 은 ARIA 이름을 그대로 받는다).
 import { Image, View } from 'react-native'
 
-import { getBossPortraitIconCrop, getBossPortraitUrl } from '../../../lib/boss-icons'
-import type { BossPortraitCrop } from '../../../lib/boss-icons'
+import { getBossPortraitIconCrop, getBossPortraitUrl } from '../../../lib/artwork'
+import { imageNaturalSize } from '../../../lib/image-aspect'
+import { imageCropStyle, resolveImageCropLayout, type ImageCrop } from '../../../lib/image-crop'
 
 import { Text } from '../../atoms'
-import {
-  mediaArtImageStyle,
-  mediaArtNaturalSize,
-  resolveMediaArtLayout,
-} from '../MediaCardArt/media-card-art'
 
 export interface BossPortraitProps {
   portraitSlug: string | null
   label: string
   size?: number // px, 기본값 40(보스 수익 화면 기존 h-10 크기)
-  crop?: BossPortraitCrop // 없으면 boss-portrait-icon-crops.json에서 portraitSlug로 조회(없으면 cover/center)
+  crop?: ImageCrop // 없으면 boss-portrait-icon-crops.json에서 portraitSlug로 조회(없으면 cover/center)
   /**
    * 상자의 모양 — **기본은 원형**이다([[ADR-172]] 정정 2 로 는 축).
    *
@@ -65,7 +61,7 @@ export function BossPortrait(props: BossPortraitProps): React.JSX.Element {
   }
 
   const crop = props.crop ?? getBossPortraitIconCrop(props.portraitSlug)
-  const layout = resolveMediaArtLayout(crop, mediaArtNaturalSize(url))
+  const layout = resolveImageCropLayout(crop, imageNaturalSize(url))
 
   return (
     <View
@@ -78,9 +74,9 @@ export function BossPortrait(props: BossPortraitProps): React.JSX.Element {
       <Image
         testID="boss-portrait-image"
         source={url}
-        // 상자를 종횡비로 이미 맞췄으므로 `stretch` 가 왜곡을 만들지 않는다(`MediaCardArt` 와 같은 이유).
+        // 상자를 종횡비로 이미 맞췄으므로 `stretch` 가 왜곡을 만들지 않는다(`FadedIllustration` 와 같은 이유).
         resizeMode={layout.kind === 'cover' ? 'cover' : 'stretch'}
-        style={mediaArtImageStyle(layout)}
+        style={imageCropStyle(layout)}
       />
     </View>
   )

@@ -44,7 +44,7 @@ const WIDTH_TRANSITION = {
 export interface ProgressBarProps {
   /** 채움 비율(0~100). 클램프는 호출부가 한다(파일 머리). */
   percent: number
-  /** 채움 색. `third` 는 컨텐츠 스케줄러의 `MediaCard` 둘이 위에 선 배지와 맞추려고 쓴다. */
+  /** 채움 색. `third` 는 컨텐츠 스케줄러의 `IllustratedCard` 둘이 위에 선 배지와 맞추려고 쓴다. */
   tone?: keyof typeof FILL_CLASS
   /** 두께. 기본은 [[ADR-061]] 결정 6 의 `h-1.5` 이고, 세 번째 값은 두지 않는다(정정 4). */
   height?: keyof typeof HEIGHT_CLASS

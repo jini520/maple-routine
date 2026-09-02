@@ -70,7 +70,7 @@ import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 
 import { GearIcon, ProfitIcon, Text } from '../components/atoms'
 import { BAR_LIFT, resolveBottomBarMetrics } from '../lib/bottom-bar-metrics'
-import { useBottomSafeAreaPx } from '../lib/bottom-safe-area'
+import { useBottomSafeAreaPx } from '../lib/safe-area'
 import {
   ArrowLeftIcon,
   CalendarCheckIcon,

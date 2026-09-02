@@ -23,7 +23,7 @@ import { View } from 'react-native'
 
 import { useToastStore } from '../../../features/toast/store'
 
-import { useBottomSafeAreaPx } from '../../../lib/bottom-safe-area'
+import { useBottomSafeAreaPx } from '../../../lib/safe-area'
 import { Toast } from './Toast'
 
 /** 하단 탭바 높이 — 웹 `AppShell` 의 `h-16`(4rem)과 같은 기준(파일 머리 ③). */

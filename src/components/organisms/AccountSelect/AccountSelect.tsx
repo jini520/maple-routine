@@ -58,7 +58,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import type { AccountSummaryView } from '../../../features/character-manage/derivations'
-import { worldEmblemUrl } from '../../../lib/world-emblem'
+import { worldEmblemUrl } from '../../../lib/artwork'
 
 import { faceCropStyle } from '../../../lib/face-crop'
 import { ChevronDownIcon } from '../../../lib/icons'

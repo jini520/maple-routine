@@ -4,7 +4,7 @@
 // 와 같은 자리). **컴포넌트 테스트로는 이 결정을 못 지킨다** — jest-expo 는 iOS 로 돌고, iOS 는
 // 하한을 아예 보지 않기 때문에 렌더 트리에서는 이 정정이 한 픽셀도 안 보인다.
 
-import { ANDROID_TOP_SAFE_AREA_MIN_PX, resolveTopSafeAreaPx } from '../top-safe-area'
+import { ANDROID_TOP_SAFE_AREA_MIN_PX, resolveTopSafeAreaPx } from '../safe-area'
 
 /** 안드로이드 실기기 실측 — 상태바 94px @ density 3.0 (1080×2640, 2026-08-18). */
 const 안드로이드_인셋 = 94 / 3

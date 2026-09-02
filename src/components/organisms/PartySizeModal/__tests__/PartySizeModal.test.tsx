@@ -2,7 +2,7 @@
 //
 // · *"일러스트가 있으면 카드와 같은 필터·불투명도로 그린다"* → **step 5 에서 온전히 성립한다.**
 //   3단계는 자리만 만들고 그림을 못 앉혔는데(크롭의 CSS 값을 RN 기하로 옮기는 일이 남아 있었다),
-//   step 4 가 컨텐츠 카드에서 그 변환을 풀어 두어 이제 **보스 카드와 같은 `MediaCardArt`** 를
+//   step 4 가 컨텐츠 카드에서 그 변환을 풀어 두어 이제 **보스 카드와 같은 `FadedIllustration`** 를
 //   부른다([[ADR-121]] 결정 7 이 요구하는 "같은 값"이 컴포넌트 공유로 성립한다).
 //   화면 전용 testID(`party-size-modal-art`)는 사라졌다 — 아트와 베일이 둘 다 `absolute inset-0`
 //   이라 감싸는 순간 기준 상자가 바뀌어 그림이 사라진다(컴포넌트 주석).
@@ -11,7 +11,7 @@
 import { fireEvent } from '@testing-library/react-native'
 
 import { renderOverlay, type AtomElement } from '../../../__tests__/render-atom'
-import { MEDIA_ART_VEIL_LOCATIONS_HERO } from '../../../molecules/MediaCardArt/media-card-art'
+import { MEDIA_ART_MASK_HERO } from '../../../../lib/media-card'
 import { PartySizeModal } from '../PartySizeModal'
 
 /** 아트·베일은 `aria-hidden` 이라 기본 질의에서 빠진다(장식이라 그것이 옳다). */
@@ -120,14 +120,14 @@ describe('PartySizeModal', () => {
     )
 
     expect(getByText('스우')).toBeTruthy()
-    expect(queryByTestId('media-card-art', HIDDEN)).toBeNull()
+    expect(queryByTestId('faded-illustration', HIDDEN)).toBeNull()
   })
 
   it('에셋이 있는 슬러그는 히어로에 일러스트를 그린다', async () => {
     const { getByTestId } = await renderOverlay(<PartySizeModal {...props()} />)
 
-    expect(getByTestId('media-card-art', HIDDEN)).toBeTruthy()
-    expect(getByTestId('media-card-art-veil', HIDDEN)).toBeTruthy()
+    expect(getByTestId('faded-illustration', HIDDEN)).toBeTruthy()
+    expect(getByTestId('faded-illustration-veil', HIDDEN)).toBeTruthy()
   })
 
   // 페이드 끝점이 카드와 다르다(`MEDIA_ART_MASK_HERO` — 42%/82%). 같은 값을 쓰면 넓고 낮은
@@ -135,9 +135,10 @@ describe('PartySizeModal', () => {
   it('베일은 카드가 아니라 히어로 정지점을 쓴다', async () => {
     const { getByTestId } = await renderOverlay(<PartySizeModal {...props()} />)
 
-    expect(getByTestId('media-card-art-veil', HIDDEN).props.locations).toEqual([
-      ...MEDIA_ART_VEIL_LOCATIONS_HERO,
-    ])
+    // 웹 마스크(`… 42%, transparent 82%`)의 정지점 + 네이티브 전용 끝점 1.
+    const stops = [...MEDIA_ART_MASK_HERO.matchAll(/(\d+)%/g)].map(([, v]) => Number(v) / 100)
+
+    expect(getByTestId('faded-illustration-veil', HIDDEN).props.locations).toEqual([...stops, 1])
   })
 
   // 반대쪽 — 매핑에 없는 슬러그는 아트를 안 만든다(그림 없는 보스가 타던 분기 그대로).
@@ -146,7 +147,7 @@ describe('PartySizeModal', () => {
       <PartySizeModal {...props({ portraitSlug: '없는보스' })} />,
     )
 
-    expect(queryByTestId('media-card-art', HIDDEN)).toBeNull()
+    expect(queryByTestId('faded-illustration', HIDDEN)).toBeNull()
   })
 
   it('난이도가 하나뿐인 보스도 세그먼트를 그린다', async () => {

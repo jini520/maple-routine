@@ -44,7 +44,7 @@
 
 import { Image, View } from 'react-native'
 
-import { worldEmblemUrl } from '../../../lib/world-emblem'
+import { worldEmblemUrl } from '../../../lib/artwork'
 
 import { ProgressBar, Text } from '../../../components/atoms'
 import { faceCropStyle } from '../../../lib/face-crop'

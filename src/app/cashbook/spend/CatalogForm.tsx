@@ -20,7 +20,7 @@ import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { formatMesoCompact } from '../../../lib/meso-compact'
-import { spendIconOf } from '../../../lib/spend-icons'
+import { spendIconOf } from '../../../lib/artwork'
 import {
   findSpendChoice,
   pointToMeso,

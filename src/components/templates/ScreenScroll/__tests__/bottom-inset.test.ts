@@ -2,7 +2,7 @@
 // 걸려 있어 렌더로 검사하려면 `Platform.OS` 를 조작해야 하고(그러면 무엇을 지키는 테스트인지가
 // 흐려진다), 무엇보다 **RN 이 웹뷰만큼 못 가르는 자리**라 그 대가가 이름을 갖고 드러나야 한다.
 
-import { resolveBottomSafeAreaPx } from '../../../../lib/bottom-safe-area'
+import { resolveBottomSafeAreaPx } from '../../../../lib/safe-area'
 import { resolveScreenBottomInset } from '../bottom-inset'
 
 const 홈인디케이터 = 34

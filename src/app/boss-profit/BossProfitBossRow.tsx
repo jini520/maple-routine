@@ -27,7 +27,7 @@ import type { BossProfitRow } from '../../features/boss-profit/store'
 import { useToastStore } from '../../features/toast/store'
 import { formatMesoShort } from '../../lib/boss-profit-delta'
 import { sumDropPayout } from '../../lib/drop-price'
-import { getItemIconUrl } from '../../lib/item-icons'
+import { getItemIconUrl } from '../../lib/artwork'
 import { isValuableDrop } from '../../lib/valuable-drops'
 import type { RecordedDrop } from '../../types/drops'
 

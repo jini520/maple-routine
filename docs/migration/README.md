@@ -1199,11 +1199,11 @@ string length` 가 난다. `normalize-tree.ts` 가 그런 프롭을 `<element:�
 
 | 옮긴 것 | 왜 지금인가 |
 |---|---|
-| `MediaCardArt`·`media-card-art.ts` → `components/molecules/MediaCardArt/` | 세 번째 호출부(보스 카드 · 파티 인원 모달 히어로 · 원형 초상)가 붙었다. 화면 폴더에 두면 `app/boss-scheduler/` 가 `app/content-scheduler/` 를 import 하는데, **계층 테스트가 못 보는 사각**이다 |
+| `FadedIllustration`·`faded-illustration.ts` → `components/molecules/FadedIllustration/` | 세 번째 호출부(보스 카드 · 파티 인원 모달 히어로 · 원형 초상)가 붙었다. 화면 폴더에 두면 `app/boss-scheduler/` 가 `app/content-scheduler/` 를 import 하는데, **계층 테스트가 못 보는 사각**이다 |
 | `SPIN_ANIMATION` → `lib/animation.ts` | 새로고침 아이콘 회전의 두 번째 호출부. step 4 가 화면 안 비-export 상수로 두며 *"step 5 에서 둘이 된다"* 고 적어 둔 자리 |
 
 **그림 셋이 한꺼번에 살아났다** — 보스 카드 bleed · 파티 인원 모달 히어로 · 관리 페이지 원형 초상.
-셋 다 step 4 가 푼 변환(`resolveMediaArtLayout`)을 **부르기만 한다**. 크롭 표만 다르고
+셋 다 step 4 가 푼 변환(`resolveImageCropLayout`)을 **부르기만 한다**. 크롭 표만 다르고
 (`boss-portrait-crops`(카드·히어로) vs `boss-portrait-icon-crops`(원형)) 값의 형태가 같아서, 변환을
 두 벌로 두면 한쪽만 고쳐지는 사고가 열린다. 갈린 자리는 둘이다 — ① 페이드 끝점이 카드(38%/76%)와
 히어로(42%/82%)로 달라 `variant` 프롭으로 가른다(core 의 두 마스크가 원래 그렇게 갈라져 있다)

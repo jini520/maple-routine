@@ -61,7 +61,7 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { SPIN_ANIMATION } from '../../lib/animation'
 import { AnimatedView } from '../../lib/nativewind-interop'
 import { ListChecksIcon, RefreshCwIcon } from '../../lib/icons'
-import { useTopSafeAreaPx } from '../../lib/top-safe-area'
+import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/tracked-order'
 import { useThemeAppearance } from '../../theme/context'
 import { useOpenTab } from '../use-open-tab'

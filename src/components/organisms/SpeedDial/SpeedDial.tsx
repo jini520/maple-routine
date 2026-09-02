@@ -54,7 +54,7 @@ import Animated, {
 import { FAB_LIFT_PX } from './speed-dial-metrics'
 import { AboveBar } from '../AboveBar/AboveBar'
 import { resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
-import { useBottomSafeAreaPx } from '../../../lib/bottom-safe-area'
+import { useBottomSafeAreaPx } from '../../../lib/safe-area'
 import { useThemeAppearance } from '../../../theme/context'
 import type { ThemeDefinition } from '../../../types/theme'
 import { ProfitIcon, Text } from '../../atoms'

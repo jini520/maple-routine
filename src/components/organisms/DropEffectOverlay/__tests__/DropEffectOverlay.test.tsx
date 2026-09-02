@@ -12,7 +12,7 @@
 import { fireEvent } from '@testing-library/react-native'
 import { Dimensions } from 'react-native'
 
-import { DROP_EFFECT_FRAMES } from '../../../../lib/drop-effect-frames'
+import { DROP_EFFECT_FRAMES } from '../../../../lib/artwork'
 import { screenEffectScale } from '../../../../lib/drop-effect-layout'
 
 import { renderOverlay } from '../../../__tests__/render-atom'

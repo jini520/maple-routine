@@ -38,7 +38,7 @@ import { useState } from 'react'
 import { Platform, ScrollView, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useBottomSafeAreaPx } from '../../lib/bottom-safe-area'
+import { useBottomSafeAreaPx } from '../../lib/safe-area'
 import { useScrollIndicatorStyle } from '../../theme/context'
 
 // `props` 를 통째로 받지 않고 **구조 분해**하는 것이 계약이다 — `react-hooks/refs` 는 ref 를 품은
