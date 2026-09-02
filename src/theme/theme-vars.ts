@@ -1,20 +1,12 @@
 /**
- * 테마 38토큰을 **CSS 커스텀 프로퍼티 이름 → 값** 맵으로 낸다. NativeWind 의 `vars()` 가 그 맵을
- * 받아 렌더 트리에 내려보내고, `className`(`bg-primary`·`text-text-muted` …)이 `var(--color-*)` 로
- * 그것을 읽는다(3단계).
+ * 테마 38토큰을 CSS 커스텀 프로퍼티 이름과 값의 맵으로 내는 함수. NativeWind 의 `vars()` 가 그
+ * 맵을 받아 렌더 트리에 내려보내고 `className` 이 `var(--color-*)` 로 읽는다.
  *
- * ## 왜 CSS 문자열을 만들지 않는가
+ * 문자열을 만들지 않는다. `ThemeDefinition extends ThemeTokens` 라 굳기 전의 값이 이미 객체로 있다.
  *
- * 웹뷰 구현은 `buildThemeCss(definition)` 로 `<style>` 하나를 만들어 문서에 붙인다. RN 에는 CSS 도
- * DOM 도 없지만, **애초에 문자열이 될 필요가 없다**. `ThemeDefinition extends ThemeTokens` 라
- * 문자열로 굳기 전의 값이 이미 객체로 있다. 그래서 이 파일은 `buildThemeCss` 를 부르지 않고 같은
- * 값을 같은 이름에 실어 넘긴다(`buildThemeCss` 는 웹이 계속 쓴다).
- *
- * **이름 규칙은 core 와 한 글자도 달라선 안 된다**. `tailwind.config.js` 가 만든 유틸리티가
- * `var(--color-surface-2)` 를 참조하는데 여기서 `--color-surface2` 를 내면 색이 **조용히 사라진다**
- * (변수를 못 찾으면 그 스타일 속성 자체가 빠진다, 실측). core 의 변환 함수는 export 되지 않아
- * 규칙을 여기 한 번 더 적었고, 그래서 `__tests__/theme-vars.test.ts` 가 이 파일의 출력과
- * `buildThemeCss` 의 출력을 **직접 대조**해 두 벌이 갈라지는 것을 막는다.
+ * ⚠️ **이름 규칙이 한 글자도 달라선 안 된다.** `tailwind.config.js` 가 만든 유틸리티가
+ * `var(--color-surface-2)` 를 참조하는데 여기서 `--color-surface2` 를 내면 색이 조용히 사라진다.
+ * NativeWind 는 못 찾은 변수를 버린다.
  */
 
 import { hexToOklch, parseHex, toHex, withLightness } from '../lib/color'
