@@ -40,7 +40,7 @@ const SHELLS = [
  * `ScreenScroll` 은 **둘 다 보는 것은 여기뿐**이라 위 목록에 없다.
  *
  * 하위 페이지에서 스크롤포트가 비우는 몫은 내비바가 실제로 차지하는 자리 라 하한이 아니라
- * **인셋**이어야 한다(의 딸린 변경. `bottom-inset.ts`). 그래서 이 파일에는
+ * **인셋**이어야 한다. 그래서 이 파일에는
  * 금지 대신 **하한 값을 함께 봐야 한다**는 요구만 건다.
  */
 const SCREEN_SCROLL = join(SRC, 'components', 'templates', 'ScreenScroll', 'ScreenScroll.tsx')

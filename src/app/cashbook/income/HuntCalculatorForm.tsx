@@ -59,7 +59,7 @@ function levelLabelOf(ground: HuntingGround): string {
  * 포스 배지. **그림 + 숫자**다.
  *
  * 그림이 없으면 **글자만으로 선다**(`아케인 700`). 비슷한 그림을 갖다 붙이면 틀린 것을 그리는
- * 셈이다(이 지출 타일에 세운 규칙과 같다). 읽어 주는 이름은 언제나 온전한
+ * 셈이다(지출 타일에 세운 규칙과 같다). 읽어 주는 이름은 언제나 온전한
  * 말이라 그림이 있든 없든 어센틱 포스 700 으로 들린다.
  */
 function ForceBadge(props: { region: HuntingRegion; force: number }): React.JSX.Element {

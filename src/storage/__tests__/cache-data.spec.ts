@@ -84,7 +84,7 @@ beforeEach(async () => {
 
 // 그룹 정의는 열거가 아니라 차집합이다. records만 명시 목록이고 general은
 // 나머지 전부로 파생된다. 이 성질이 깨지면 새 테이블이 어느 그룹에도 안 잡혀 영영 안 지워진다
-// (가 없앤 누락 결함의 부호만 뒤집힌 형태).
+//
 describe('그룹 ↔ 테이블 분할', () => {
   it('두 그룹의 합집합이 db.ts가 정의한 테이블 전체와 같다', () => {
     const union = new Set([...GENERAL_TABLE_NAMES, ...RECORD_TABLE_NAMES])

@@ -25,7 +25,7 @@ export const TABULAR_NUMS: TextStyle = { fontVariant: ['tabular-nums'] }
  *
  * **웹은 그림자를 둘 겹쳤지만 RN 의 `Text` 는 `textShadow*` 세 프롭으로 하나만 표현할 수 있어**
  * 강한 쪽(`0 1px 3px rgba(0,0,0,.9)`)을 남긴다. 여기 있는 이유는 쓰는 자리가 셋이기 때문이다.
- * 파티 인원 모달 히어로 + 일간 카드 + 주간 카드(의 "호출부 2곳 이상").
+ * 파티 인원 모달 히어로 + 일간 카드 + 주간 카드.
  */
 export const ILLUSTRATION_TEXT_SHADOW_STYLE: TextStyle = {
   textShadowColor: 'rgba(0,0,0,0.9)',

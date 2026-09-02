@@ -96,7 +96,7 @@ describe('오른쪽 열은 `count` 유무 하나로 갈린다', () => {
     expect(String(getByText('7').props.style.fontWeight)).toBe('800')
   })
 
-  // 뷰모델이 완료한 항목에 카운트를 안 준다(의 살아 있는 절반). 완료한 항목의
+  // 뷰모델이 완료한 항목에 카운트를 안 준다. 완료한 항목의
   // **몇 번 했나** 는 언제나 max 라 `14/14` 가 더 말하는 것이 없다.
   it('완료한 항목은 오른쪽이 통째로 빈다. 체크박스가 그 말을 한다', async () => {
     const { queryByTestId, getAllByTestId } = await 위젯([

@@ -154,7 +154,7 @@ export function resolveRepresentative(orderedOcids: string[], stored: string | n
 }
 
 /**
- * 지금 대표 자리 에 설 캐릭터. 미지정이면 목록의 첫 번째(의 임시 대표).
+ * 지금 대표 자리 에 설 캐릭터. 미지정이면 목록의 첫 번째.
  * **저장하지 않는 파생값**이다. 저장하면 순서가 바뀔 때마다 사용자가 고른 대표 와 앱이 적어 둔
  * 대표 두 진실이 갈린다.
  *

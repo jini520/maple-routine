@@ -193,7 +193,7 @@ export function BossProfitScreen(): React.JSX.Element {
   // 함수라 위치를 올려도 결과가 같고, 토스트 조건과 화면 조건이 같은 값을 보게 된다.
   // : 그룹의 순서는 행의 순서(= 스토어의 레벨 내림차순.
   // 결정 2)가 아니라 사용자가 캐릭터 관리에서 정한 저장 배열 순서다. **캐릭터 안쪽 보스 순서는
-  // 안 건드린다**(의 `weekly-bosses.json` 정규 순서는 그대로다). 바뀌는 것은 카드가
+  // 안 건드린다**. 바뀌는 것은 카드가
   // 서는 차례뿐이다. core 를 안 고치는 이유는 `orderByTracked` 머리에 있다.
   const characterGroups = orderByTracked(buildCharacterGroups(rows, weeklySubtotals), trackedOcids ?? [])
 
@@ -278,7 +278,7 @@ export function BossProfitScreen(): React.JSX.Element {
 
   const header = (
     // 공용 `PageHeader` 를 쓰지 않는 이유는 파일 머리 ①. 그 셸의 하단 페이드를 이 화면은 금지한다
-    // . 나머지 값은 그 컴포넌트와 같고, **상단 여백을 더하지 않는 것도 함께다**
+    // 나머지 값은 그 컴포넌트와 같고, **상단 여백을 더하지 않는 것도 함께다**
     // (웹 `pt-[calc(1rem+var(--sa-top))]` 의 상수 몫을 옮기지 않는다). 그 **안전영역**
     // 은 `useTopSafeAreaPx()` 다. 셸을 복제한 화면이 인셋을 직접 읽으면 이
     // 화면만 안드로이드에서 16.7px 위에 선다.

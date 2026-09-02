@@ -145,7 +145,7 @@ describe('resolveWidgetPositions: 좌표를 절대 위치로', () => {
     // 위 = row × (행 높이 + 간격)
     expect(byId['대표'].topPx).toBe(0)
     // 세로는 **행 높이의 함수**다. 숫자를 손으로 적으면 행 높이를 조정할 때마다 여기가 깨진다
-    // (으로 76 → 82 가 됐다).
+    // (76 → 82 가 됐다).
     expect(byId['초기화'].topPx).toBe(GRID_ROW_HEIGHT + GRID_GAP)
     expect(byId['수익'].topPx).toBe(3 * (GRID_ROW_HEIGHT + GRID_GAP))
     expect(byId['수익'].heightPx).toBe(GRID_ROW_HEIGHT * 3 + GRID_GAP * 2)

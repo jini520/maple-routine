@@ -15,13 +15,13 @@
  *
  * | 값 | 출처 |
  * |---|---|
- * | 컨텐츠 완료 | `../content-scheduler/content-completion`(의 규칙의 출처) |
+ * | 컨텐츠 완료 | `../content-scheduler/content-completion` |
  * | 표시 대상 보스 | `src/features/boss-scheduler/displayed-bosses` |
  * | 수익 합산 | `../boss-profit/character-groups` 의 `groupTotalMeso` |
  * | 결정석·아이템 분해 | 같은 파일의 `sumPayout` + `src/lib/drop/drop-price` 의 `sumDropPayout` |
  * | 결정석 월드 집계 | 같은 파일의 `summarizeWorldCrystals` |
  * | 한도 분모 | `src/lib/boss/boss-matching` 의 `WEEKLY_CRYSTAL_SALE_LIMIT` |
- * | 대표 캐릭터 | `resolveDisplayRepresentative`(의 임시 대표) |
+ * | 대표 캐릭터 | `resolveDisplayRepresentative` |
  * | 초기화 시각 | `src/lib/scheduler/reset-clock` · `src/lib/boss/boss-profit-period` |
  *
  * 그 대가로 **화면 사이 import 가 둘 생긴다**(`content-scheduler`·`boss-profit`).이
@@ -591,7 +591,7 @@ function remainingBosses(
     .filter((matched) => !matched.isComplete)
     // **주간 한도를 채우면 남은 것이 아니다**. 이번 주엔 더 잡을 수 없다.
     // 판정은 여기 없다: `displayedBosses` 가 실어 보낸 값을 거를 뿐이라 스케줄러가 `마감` 배지를
-    // 다는 보스와 **정확히 같은 집합**이다(의 등식).
+    // 다는 보스와 **정확히 같은 집합**이다.
     .filter((matched) => !matched.isWeeklyLimitClosed)
     .map((matched) => ({
       name: matched.matchedBossName ?? matched.apiName,

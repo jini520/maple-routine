@@ -13,7 +13,7 @@ import { AnimatedView } from '../../../lib/nativewind-interop'
  * 트랙 높이. `thin` 은 `today` 의 2x2 초기화 타일만 쓴다.
  *
  * **높이를 아는 것은 트랙뿐이다.** 채움은 `h-full` 로 따라온다. 둘이 각자 알면 한쪽만 바꿀 때
- * 어긋난다(이 위젯 3 에서 낸 회귀).
+ * 어긋난다(위젯 3 에서 낸 회귀).
  */
 const HEIGHT_CLASS = { base: 'h-1.5', thin: 'h-1' } as const
 

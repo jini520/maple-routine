@@ -21,7 +21,7 @@ const MAX_COUNT_OVERRIDES = catalog.maxCountOverrides as Record<string, number>
 const SHARED_GROUP_ORDER = catalog.sharedGroupOrder as string[]
 const CUMULATIVE_SCORES = catalog.cumulativeScores as string[]
 
-// 공백 유무 방향이 항목마다 달라(의 보스명 매칭과 동일한 이유) 양쪽 공백을 제거한 뒤 비교한다.
+// 공백 유무 방향이 항목마다 달라 양쪽 공백을 제거한 뒤 비교한다.
 function stripSpaces(value: string): string {
   return value.replace(/\s+/g, '')
 }

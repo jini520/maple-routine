@@ -152,7 +152,7 @@ export function buildCalendarMonth(monthKey: string): CalendarWeek[] {
  * 전부 진해서 많이 번 날 이 안 보인다. 열지도가 말하려는 것이 그 대비다.
  *
  * 0 과 가장 작은 단계 를 가르는 것이 계약이다: 1 메소라도 있으면 칸이 칠해져야 적은 날 과
- * 안 적은 날 이 구분된다(의 태도).
+ * 안 적은 날 이 구분된다.
  */
 export const HEAT_LEVELS = 4
 

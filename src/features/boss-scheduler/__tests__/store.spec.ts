@@ -460,7 +460,7 @@ describe('useBossSchedulerStore', () => {
     })
 
     // : 부팅 선하이드레이션과 화면 마운트가 반드시 겹치므로, 동시 호출은
-    // 한 회차로 합친다. 안 그러면 같은 응답을 두 번 받는다(이 없애려던 낭비).
+    // 한 회차로 합친다. 안 그러면 같은 응답을 두 번 받는다(없애려던 낭비).
     it('loadTrackedOcids를 동시에 두 번 불러도 한 회차만 돈다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
       syncSchedulesMock.mockResolvedValue([syncResult()])

@@ -106,7 +106,7 @@ function sortPickerEntries(entries: CharacterPickerEntry[]): CharacterPickerEntr
 //
 // 목록에 넣을지는 **자격**이 정한다(access_flag 단독 게이트 폐기). 자격이 없어도
 // 추적 중이면 남긴다. 빼면 trackedOcids에 남은 그 ocid를 해제할 방법이 없다(이슈 #78 A-1).
-// 뒤집으면 추적 중이 아닌 자격 X 캐릭터는 넣지 않는다(의 "조회 불가는 항상 남긴다"
+// 뒤집으면 추적 중이 아닌 자격 X 캐릭터는 넣지 않는다("조회 불가는 항상 남긴다"
 // 정정. 남기는 목적이 해제 경로였으므로 추적 중이 아니면 남길 이유가 없다).
 function shouldShowEntry(
   eligibility: CharacterEligibility | 'unknown',
@@ -128,7 +128,7 @@ export interface CharacterPickerRosterOptions {
 // 정정했다. 억제의 근거는 **콜드 스타트의 중간 결과는 추측이거나 튀는 레이아웃** 이었는데, 그것은
 // 캐시로 채우는 ②에만 맞았다. ③에 담기는 항목은 character/basic 응답과 자격 판정을 통과한
 // **확인된** 것이라 결정 1 이 요구하는 조건을 이미 만족한다. 형제가 안 끝났다는 이유로 그것을
-// 붙들고 있으면 45명 중 40명이 확인됐는데 가장 느린 1명이 화면 전체를 잡는다(이 막으려던
+// 붙들고 있으면 45명 중 40명이 확인됐는데 가장 느린 1명이 화면 전체를 잡는다(막으려던
 // 바로 그 그림이다).
 //
 // 그래서 단계별 분기가 사라지고 아래 `emit` 의 조건 둘로 접힌다.

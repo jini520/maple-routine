@@ -32,7 +32,7 @@ import { hideSplashScreen } from './native/splash-screen'
  *   React 가 끝내 마운트되지 않는"* 경우뿐이다. 번들 평가 자체가 실패하면 여기까지 오지 않는다.
  * - `SplashScreen.hideAsync()` 를 직접 부르지 않고 **포트를 거친다**(`hideSplashScreen`). 스플래시를
  *   내리는 자리가 넷이 되어도(정상·`ErrorBoundary`·이 타이머·화면) 전부 같은 한 함수를 지나게 한다
- *  (가 웹에서 세운 규칙). 포트는 `installPorts()` 가 이미 넣어 뒀다.
+ * 포트는 `installPorts()` 가 이미 넣어 뒀다.
  */
 export const SPLASH_FAILSAFE_MS = 8000
 

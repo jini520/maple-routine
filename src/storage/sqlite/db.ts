@@ -363,7 +363,7 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'boss_profit_records', 'world', 'TEXT')
   // `world` 와 같은 사정이다. 이미 보스를 기록해 둔 기기에는 CREATE 가 안 붙인다.
   await ensureColumn(db, 'boss_profit_records', 'defeated_on', 'TEXT')
-  // 이미 만들어진 DB에는 위 CREATE 가 컬럼을 더해주지 않는다(과 같은 사정).
+  // 이미 만들어진 DB에는 위 CREATE 가 컬럼을 더해주지 않는다.
   await ensureColumn(db, 'boss_drop_records', 'price_state', 'TEXT')
   await ensureColumn(db, 'boss_drop_records', 'price_meso', 'INTEGER')
   await ensureColumn(db, 'boss_drop_records', 'price_share', 'INTEGER')

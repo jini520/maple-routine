@@ -213,7 +213,7 @@ export function CharacterAccordion(props: {
   const hasValuable = valuableDrops.length > 0
   const groupDrops = collectGroupDrops(group, dropsByRowKey)
   // 월간 탭에서는 주간 보스 수익이 **주차 소계로 뭉쳐** 들어오므로 그 안의 아이템분도 더해야 카드
-  // 합계와 맞는다. 낱개로는 못 꺼내지만 합은 안다(과 같은 구조적 한계).
+  // 합계와 맞는다. 낱개로는 못 꺼내지만 합은 안다.
   const itemTotal =
     sumDropPayout(groupDrops) +
     group.weeklySubtotals.reduce((sum, subtotal) => sum + sumDropPayout(subtotal.drops), 0)

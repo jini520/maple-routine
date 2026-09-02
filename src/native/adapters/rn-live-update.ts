@@ -171,7 +171,7 @@ export const rnLiveUpdatePort: LiveUpdatePort = {
    *
    * **`'unknown'` 을 돌린다**. RN 에 네트워크 종류를 묻는 내장 API 가 없고,
    * `@react-native-community/netinfo` 는 **새 네이티브 의존성**이라 재빌드를 부른다. 호출부는
-   * `'unknown'` 에서 경고를 생략하므로(의 폴백) 동작은 경고 없이 바로 받는다
+   * `'unknown'` 에서 경고를 생략하므로 동작은 경고 없이 바로 받는다
    * 가 된다. 없는 사실을 지어내지 않는 대신 경고 한 겹을 잃는 것이고, 되살리려면 그 패키지가
    * 선행 조건이다.
    */

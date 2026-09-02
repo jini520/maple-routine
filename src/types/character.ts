@@ -44,7 +44,7 @@ export interface CharacterBasicProfile {
   world?: string
   // 캐릭터 카드 2줄의 **레벨 + 직업**. **값의 출처는 `character/basic` 이 아니라
   // `character/list`** 다. basic 응답에도 직업이 있을 수 있지만 우리 wire 타입이 그것을 선언한 적도
-  // 실측한 적도 없어(의 태도) `normalizeCharacterBasic` 이 채우지 않고 **캐시에 쓰는 쪽이
+  // 실측한 적도 없어 `normalizeCharacterBasic` 이 채우지 않고 **캐시에 쓰는 쪽이
   // 함께 넘긴다**. 그래서 옛 엔트리에는 없고, 그때는 화면이 레벨만 그린다.
   jobClass?: string
   // 현재 레벨 진행률(%). wire의 문자열 `character_exp_rate` 를 Number로 푼 값.

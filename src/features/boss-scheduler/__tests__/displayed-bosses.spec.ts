@@ -154,7 +154,7 @@ describe('displayedBosses: 순서는 weekly-bosses.json 정규 순서다', () =>
   })
 
   // 같은 보스를 여러 난이도로 완료할 수는 없지만(게임 룰), 미등록 완료가 여러 난이도로 오는
-  // 응답이 실재한다. 그때도 자리가 결정적이어야 한다(의 2차 키).
+  // 응답이 실재한다. 그때도 자리가 결정적이어야 한다.
   it('같은 보스의 여러 난이도는 난이도 순서로 선다', () => {
     const 하드 = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isComplete: true, ownComplete: true })
     const 노멀 = boss({ name: '스우', difficulty: '노멀', cycle: 'weekly', isComplete: true, ownComplete: true })

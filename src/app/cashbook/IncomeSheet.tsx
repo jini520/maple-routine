@@ -110,7 +110,7 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
   const [dateKey, setDateKey] = useState(props.dateKey)
   /**
    * 사냥을 어느 폼으로 적나. **수정으로 열면 기록이 정하고 안 바뀐다**.
-   * 모드를 바꾸면 앱이 센 합계가 사람이 친 값으로 둔갑한다(와 같은 자리).
+   * 모드를 바꾸면 앱이 센 합계가 사람이 친 값으로 둔갑한다.
    */
   const [huntMode, setHuntMode] = useState<HuntInputMode>(huntModeOf(props.editing))
 

@@ -21,7 +21,7 @@ describe('ProgressBar', () => {
       backgroundColor: 기본테마.track,
     })
     // 채움은 자기 높이를 갖지 않고 트랙을 채운다. 둘이 각자 알면 한쪽만 바뀔 때 어긋난다
-    // (이 위젯 3 에서 낸 회귀).
+    // (위젯 3 에서 낸 회귀).
     expect(flattenStyle(fill.props.style)).toMatchObject({
       height: '100%',
       borderRadius: 9999,

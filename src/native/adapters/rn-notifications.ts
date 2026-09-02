@@ -32,7 +32,7 @@
  * 중요도·소리, notifee 의 기본 트리거가 WorkManager 라는 점(Capacitor 는 `AlarmManager` 를 쓰고
  * 가능하면 `setExact` 였다. `LocalNotificationManager.java:374-395`). 뒤엣것은 발화 시각이 더
  * 느슨해질 수 있다는 뜻이고, 정확 알람으로 바꾸는 것은 Android 12+ 의 `SCHEDULE_EXACT_ALARM`
- * 권한 흐름을 동반하는 별개 결정이다(는 이미 지연·누락을 감수한다고 적어 두었다).
+ * 권한 흐름을 동반하는 별개 결정이다(이미 지연·누락을 감수한다고 적어 두었다).
  */
 
 import notifee, { AuthorizationStatus, type NotificationSettings } from '@notifee/react-native'

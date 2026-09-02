@@ -9,7 +9,7 @@
 //  ⓐ ~~**프레임 에셋이 없다.**~~ → 가 채웠다. `DROP_EFFECT_FRAMES` 는 이제 네 단계가
 //      전부 차 있다(웹과 같은 목록·같은 순서). 남은 것은 ⓑ 하나다.
 //   ⓑ **재생 엔진이 없다.** 웹은 `requestAnimationFrame` 루프가 단계별 고정 fps
-//  (이 1.5배로 올린 값. screen 22.5 / pre 21 / loop 17.25 / end 18)로 `img.src` 를
+//  (1.5배로 올린 값. screen 22.5 / pre 21 / loop 17.25 / end 18)로 `img.src` 를
 //  갈아끼우고, 프레임마다 의 origin 테이블로 좌표를 함께 옮긴다. 그 엔진은 DOM
 //      (`new Image()` 프리로드 · `el.complete` · `el.style.transform`) 위에 서 있어 RN 에서는
 //      다시 써야 한다.

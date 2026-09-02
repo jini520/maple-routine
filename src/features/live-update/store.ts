@@ -49,7 +49,7 @@ export type LiveUpdateStatus =
 //
 // 여기 있던 `import.meta.env.VITE_LIVE_UPDATE_CHANNEL` 두 줄이 이 파일을 **RN 에서 import 하는
 // 것만으로 죽게** 만들었다. 모듈 최상위라 평가를 피할 수 없고, RN 런타임에서 `import.meta.env` 는
-// `undefined` 다(가 남긴 마지막 벽). `core-shims.js` 는 OTA 를 이을 때 그 표가 이 자리를
+// `undefined` 다. `core-shims.js` 는 OTA 를 이을 때 그 표가 이 자리를
 // 맡을 것이라 예측해 두었지만 **빗나갔다**: 우회한 것이 아니라 **원인이 사라졌다.**
 
 // 적용 전체(커넥션 닫기 → 커버 → set())를 덮는 하나의 상한. 고리별로 나누지
@@ -76,7 +76,7 @@ export interface LiveUpdateStore {
    *
    * 한때 번들 id 문자열이었다. @capgo 가 `download()` 에서 id 를 돌려주고 `set({id})` 로 적용했기
    * 때문이다. `expo-updates` 는 그 id 를 안 보여주고 마지막으로 받은 것 을 런타임이 안다
-   * . 스토어가 이 값으로 하던 일은 처음부터 **있나 없나** 둘뿐이었다:
+   * 스토어가 이 값으로 하던 일은 처음부터 **있나 없나** 둘뿐이었다:
    * `apply()` 의 진입 판정과, `apply-error` 가 재시도할 것이 남아 있다는 표시.
    */
   hasDownloadedBundle: boolean

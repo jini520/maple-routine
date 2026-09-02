@@ -454,7 +454,7 @@ describe('BossManageScreen: 자동 모드', () => {
     expect(store.setPartySize).toHaveBeenCalledWith('ocid-1', '스우', '하드', 2)
   })
 
-  // 자동 모드의 난이도 선택은 멤버십이 아니라 "편집 대상" 전환이다(과 같은 뜻).
+  // 자동 모드의 난이도 선택은 멤버십이 아니라 "편집 대상" 전환이다.
   it('자동 모드에서 난이도를 바꿔도 멤버십 API 를 부르지 않는다', async () => {
     const store = mockStore({
       characters: [

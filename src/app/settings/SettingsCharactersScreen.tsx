@@ -8,7 +8,7 @@
 // 선택 단계가 같은 것을 페이지로 쓴다(결정 1. 갈리는 것은 머리와 CTA 뿐이다). 여기 있는 것은
 // `←` + 제목 · `닫기/저장` · 저장 배선 셋이다.
 //
-// ── 고정되는 것은 **저장 버튼 하나**다 (의 **하단 액션 바** 예외, 사용자 판정 2026-08-17)
+// ── 고정되는 것은 **저장 버튼 하나**다
 //
 // 두 층은 그대로 페이지와 함께 굴러간다. 위 리스트가 길면 아래 목록이 화면 밖으로 나가는 것도
 // 그대로다(대가). 바뀐 것은 **CTA 뿐**이고 이 **고정 영역 없음** 을 정하면서
@@ -60,7 +60,7 @@ export function SettingsCharactersScreen(): React.JSX.Element {
   const { scrollRef, onScroll, scroll } = useReorderScroll()
   const [saveProgress, setSaveProgress] = useState<{ completed: number; total: number } | null>(null)
   // 하단 액션 바가 안전영역을 먹는다(아래). 그 **안전영역** 은 인셋이 아니라 하한이 깔린 값이다
-  // . 이 화면만 인셋으로 두면 하위 페이지들과 바닥 여백이 갈린다.
+  // 이 화면만 인셋으로 두면 하위 페이지들과 바닥 여백이 갈린다.
   const bottomSafeAreaPx = useBottomSafeAreaPx()
   // 고정 바가 덮는 높이. 잰 값이 오기 전에는 0이라 마지막 행이 한 프레임 가려질 수 있지만, 그
   // 프레임은 바가 그려지는 바로 그 프레임이라 사용자가 스크롤을 시작하기 전이다.

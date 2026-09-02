@@ -33,7 +33,7 @@ export const BOSS_SECTION_ORDER: readonly BossCycle[] = ['monthly', 'weekly']
  * 표시 목록의 한 항목. `MatchedBoss` 에 **이 캐릭터의 주간 한도 상태**를 얹은 것.
  *
  * 마감을 화면이 다시 판정하지 않게 하려고 여기 싣는다. 스케줄러 카드는 완료 자리에 배지를
- * 바꿔 달고, today 남은 스케줄은 이 값으로 남은 것 에서 뺀다(의 등식).
+ * 바꿔 달고, today 남은 스케줄은 이 값으로 남은 것 에서 뺀다.
  */
 export interface DisplayedBoss extends MatchedBoss {
   /** 주간 12마리를 채운 뒤 남은 **미처치 주간 보스**. 이번 주엔 더 잡을 수 없다. */

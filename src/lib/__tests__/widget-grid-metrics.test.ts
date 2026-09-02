@@ -37,7 +37,7 @@ describe('열 폭은 창 폭에서 나온다', () => {
     expect(tileWidthPx(4, metrics)).toBe(328)
 
     // 세로는 **행 높이의 함수**다. 숫자를 손으로 적으면 행 높이를 조정할 때마다 여기가 깨진다
-    // (로 76 → 82 가 됐다). 폭 쪽이 73·328 을 적는 것과 성질이 다르다: 그쪽은 창 폭에서
+    // (76 → 82 가 됐다). 폭 쪽이 73·328 을 적는 것과 성질이 다르다: 그쪽은 창 폭에서
     // 나눠 떨어진 값이라 **계산이 맞는가** 를 묻는 자리다.
     expect(tileHeightPx(1, metrics)).toBe(GRID_ROW_HEIGHT)
     expect(tileHeightPx(2, metrics)).toBe(GRID_ROW_HEIGHT * 2 + GRID_GAP)

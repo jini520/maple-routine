@@ -3,7 +3,7 @@
  *
  * 이 갈래만 **수수료를 뗀다**. 경매장이 3% 또는 5% 를 가져가므로 판 값 과
  * 번 돈 이 다르다. 그래서 치는 자리가 큰 숫자가 아니라 **판매 대금** 줄이고, 큰 숫자는 **못 치는
- * 합계**가 된다(과 같은 모양).
+ * 합계**가 된다.
  *
  * 상태가 이 컴포넌트에 매여 있으므로 갈래를 옮기면 **함께 사라진다**.
  */
@@ -44,7 +44,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
   const [name, setName] = useState(props.editing?.item ?? '')
   /**
    * 치는 값은 **판매 대금**이다. 행에 남는 것은 수수료를 뗀 값이라, 되짚을 때 뗀 몫을 되돌린다
-   * . 요율만 들고 역산하면 내림 때문에 1 메소가 어긋난다.
+   * 요율만 들고 역산하면 내림 때문에 1 메소가 어긋난다.
    */
   const [grossText, setGrossText] = useState(
     mesoTextOf((props.editing?.mesoAmount ?? 0) + (props.editing?.saleFeeMeso ?? 0)),

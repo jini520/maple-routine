@@ -161,7 +161,7 @@ function Title(props: { sizeClass: string }): React.JSX.Element {
  * 2x2 의 나머지 월드 한 줄.
  *
  * 하나면 이름과 잔량을 그대로 말하고, 둘 이상이면 **개수만** 말한다. 158 폭에 이름 둘과 숫자 둘을
- * 밀어 넣으면 전부 잘려서 아무것도 안 읽힌다(가 칩에 수치만 남긴 것과 같은 판단).
+ * 밀어 넣으면 전부 잘려서 아무것도 안 읽힌다.
  */
 function RestWorlds(props: { rest: CrystalLimitView[] }): React.JSX.Element | null {
   if (props.rest.length === 0) return null

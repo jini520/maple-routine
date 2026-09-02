@@ -126,7 +126,7 @@ function EntryRow(props: {
 
   return (
     // 웹의 `last:border-b-transparent` 자리. RN 에는 `:last-child` 가 없어 목록을 아는 부모가
-    // 알려 준다. 테두리를 아예 빼지 않고 **색만 지우는** 것이 요점이다(와 같은 규칙).
+    // 알려 준다. 테두리를 아예 빼지 않고 **색만 지우는** 것이 요점이다.
     <View>
       {isValuableDrop(drop.itemName) && <ValuableRowBackground />}
       {/* 행 전체가 버튼이다. 입력이든 수정이든 같은 자리를 누른다. */}

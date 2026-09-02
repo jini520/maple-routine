@@ -29,7 +29,7 @@ describe('BossPortrait', () => {
     })
 
     // 그림이 **진짜 번들 에셋**이라는 것이 계약이다. 슬러그가 안 풀리면 조용히 플레이스홀더로
-    // 떨어지므로(이 웹에서 잡던 그 실패), 소스가 실재하는지까지 본다.
+    // 떨어지므로(웹에서 잡던 그 실패), 소스가 실재하는지까지 본다.
     expect(getByTestId('boss-portrait-image').props.source).toBeDefined()
   })
 

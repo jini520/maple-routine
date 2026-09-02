@@ -138,7 +138,7 @@ export interface ThemeDefinition extends ThemeTokens {
   mode: ThemeMode
   /** 선택 목록의 섹션을 정한다 */
   category: ThemeCategory
-  /** 없으면 배경은 `bg` 단색이다. 지금은 **어느 테마도 갖지 않는다**(로 둘 다 뗌) */
+  /** 없으면 배경은 `bg` 단색이다. 지금은 **어느 테마도 갖지 않는다**(둘 다 뗌) */
   background?: ThemeBackground
 }
 

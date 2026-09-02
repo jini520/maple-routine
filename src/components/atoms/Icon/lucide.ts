@@ -24,7 +24,7 @@
  *   배럴   3,365 모듈 · 5.5 MB
  *   개별   1,626 모듈 · 3.7 MB   ← **1.8 MB 차이**
  *
- * OTA 로 나가는 앱이라 이 차이가 매 배포의 다운로드 크기가 된다(이 웹에서
+ * OTA 로 나가는 앱이라 이 차이가 매 배포의 다운로드 크기가 된다(웹에서
  * 재던 것과 같은 축). **여기 목록이 늘어도 배럴로 되돌리지 말 것.**
  *
  * 이름은 lucide 의 **정규 이름**(kebab-case 파일명)이다. 웹이 쓰는 `AlertTriangle` 은 옛 별칭이라
@@ -193,7 +193,7 @@ export const PlusIcon = withIconInterop(Plus)
 export const RefreshCwIcon = withIconInterop(RefreshCw)
 /** '다시 시작'`ErrorBoundary` 폴백 · 가격 초기화 `DropPricePad`. */
 export const RotateCcwIcon = withIconInterop(RotateCcw)
-/** 기록된 드롭이 하나도 없을 때. `DropHistoryScreen` 빈 상태(의 컨텍스트 아이콘). */
+/** 기록된 드롭이 하나도 없을 때. `DropHistoryScreen` 빈 상태. */
 export const ScrollTextIcon = withIconInterop(ScrollText)
 /** 토스트 액션이 기본 아이콘을 덮을 수 있음을 지키는 자리. `Toast` 테스트. */
 export const SettingsIcon = withIconInterop(Settings)
@@ -201,7 +201,7 @@ export const SettingsIcon = withIconInterop(Settings)
 export const ShoppingCartIcon = withIconInterop(ShoppingCart)
 /** 모바일 데이터 확인. `UpdatePromptModal`(confirm-cellular). */
 export const SignalIcon = withIconInterop(Signal)
-/** 솔로·파티 필터가 가린 빈 상태. `BossScreen`(의 컨텍스트 아이콘). */
+/** 솔로·파티 필터가 가린 빈 상태. `BossScreen`. */
 export const SlidersHorizontalIcon = withIconInterop(SlidersHorizontal)
 /** 고가 드롭 반짝임. `ValuableDropBadge` · 업데이트 완료 안내 `UpdatePromptModal`(updated). */
 export const SparklesIcon = withIconInterop(Sparkles)

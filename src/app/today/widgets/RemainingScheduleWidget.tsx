@@ -107,7 +107,7 @@ function itemCount(items: CycleItems): number {
  * 것은 정렬의 안정성에 기대지 않기 위해서다(뷰모델의 `orderByTracked` 와 같은 태도).
  *
  * 실패한 캐릭터는 남은 개수를 **모르는** 것이라 개수 비교에 참여시키지 않는다. 위로 올리면
- * 제일 밀린 캐릭터 자리를 모르는 값이 거짓으로 차지한다(가 정한 태도).
+ * 제일 밀린 캐릭터 자리를 모르는 값이 거짓으로 차지한다.
  */
 function orderForCycle(rows: readonly ScheduleRowView[], cycle: Cycle): ScheduleRowView[] {
   return rows

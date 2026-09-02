@@ -1,4 +1,4 @@
-// 보스 수익 화면의 **캐릭터 그룹 계산** 순수 함수들(로 화면에서 분리).
+// 보스 수익 화면의 **캐릭터 그룹 계산** 순수 함수들(화면에서 분리).
 //
 // 행을 캐릭터 단위로 묶고, 그 묶음에서 총액·처치 수·결정석 수·고가 드롭을 뽑는다.
 //
@@ -232,7 +232,7 @@ export function summarizeWorldCrystals(groups: CharacterGroup[]): WorldCrystalSu
 
 // 이 캐릭터가 이 달에 처치한 월간 보스 수(보스명 distinct. 같은 보스를 여러 난이도로 잡아도 1).
 // 주간 쪽 countGroupClearedWeeklyBosses와 대칭이며, **월간 탭 진행 링과 월간 결정석 칩이 이 함수
-// 하나를 공유한다**(의 "계산 두 벌 금지"를 월간에도 적용).
+// 하나를 공유한다**.
 export function countGroupClearedMonthlyBosses(group: CharacterGroup): number {
   const clearedBossNames = new Set<string>()
   for (const row of group.bossRows) {

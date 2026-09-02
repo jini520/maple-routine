@@ -1,4 +1,4 @@
-// 총 수익 헤드라인 옆의 **칩 2종**(로 화면에서 분리).
+// 총 수익 헤드라인 옆의 **칩 2종**(화면에서 분리).
 //
 // 결정석 판매 한도 요약(월드별로 집계한다)과 직전 기간 대비 증감
 // (상승 빨강·하락 파랑, 방향이 없으면 테마 색). 둘 다 자기 상자 안에서 끝난다.
@@ -43,7 +43,7 @@ export const MONTHLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crys
 // 헤더를 그대로 높여 목록을 잠식했다(헤더를 줄여둔 작업을 되돌리는 셈).
 // **칩 높이는 라벨(text-xs = 16px)을 넘지 않아야 한다**. 이 줄에 흐름으로 들어가는 요소가 라벨행
 // (h-6 = 24px)을 넘으면 라벨행이 튀고, 그것이 바로 고가 드롭 뱃지(24px)를 절대배치로 빼낸 이유다
-// . 그 뱃지가 여전히 우측 끝을 절대배치로 쓰므로 칩은 좌측(라벨 옆)에 붙는다.
+// 그 뱃지가 여전히 우측 끝을 절대배치로 쓰므로 칩은 좌측(라벨 옆)에 붙는다.
 // 월드별 분해는 흐름이 아니라 **절대배치 팝오버**로 띄운다. 펼쳐도 헤더 높이가 변하지 않는다.
 export function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGroup[] }): React.JSX.Element | null {
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false)

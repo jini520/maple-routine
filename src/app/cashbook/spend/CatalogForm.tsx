@@ -184,7 +184,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   const amount = (item?.unitPrice ?? 0) * quantity
   const totalMeso = usesPoint ? pointToMeso(amount, rate ?? 0) : amount
   // **메소로 셀 수 없는 상태.** 시세 줄의 빨간 `*` 와 꺼진 저장 버튼이 그 사실을 말한다
-  // (가 큰 숫자 밑의 문구를 걷었다).
+  //
   const blocked = usesPoint && (rate === null || rate <= 0)
   const canSave = item !== null && !formMissing && !blocked
 

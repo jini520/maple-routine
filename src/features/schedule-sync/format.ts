@@ -72,7 +72,7 @@ export function formatRosterError(error: ScheduleSyncError, place: RosterErrorPl
             description: 'API 키를 다시 확인해주세요',
             action: RETRY,
           }
-    // 액션을 주지 않는다(의 "429의 재시도 버튼은
+    // 액션을 주지 않는다("429의 재시도 버튼은
     // 비활성화하지 않는다"를 폐기). 옛 결정은 "초당 한도라면 잠시 뒤 재시도가 통한다"를 전제했으나,
     // 사용자는 개발 단계 키를 쓰므로 일 1,000건을 소진했으면 다음 날까지 안 풀린다. 게다가 새 문구의
     // 처방이 재시도가 아니라 **키 단계 확인**이라, 버튼이 있으면 화면이 두 말을 한다.
@@ -109,7 +109,7 @@ export function formatRosterError(error: ScheduleSyncError, place: RosterErrorPl
 }
 
 // 스탈 배너(항목이 남아 있는 채로 실패했을 때 목록 위에 얹는 한 줄)의 문구·액션
-// . 그전까지 호출부 2곳이 "목록이 최신이 아닙니다"를 하드코딩해 401·429·
+// 그전까지 호출부 2곳이 "목록이 최신이 아닙니다"를 하드코딩해 401·429·
 // characterUnavailable·네트워크가 전부 같은 한 줄로 보였다.
 //
 // 왜 formatRosterError를 재사용하지 않고 새 함수인가. 두 가지가 다르다.
@@ -118,7 +118,7 @@ export function formatRosterError(error: ScheduleSyncError, place: RosterErrorPl
 // 2. **액션 규칙**: 배너는 목록이 남아 있어 액션이 없어도 막다른 길이 아니라 401·429·
 //    characterUnavailable 전부 액션이 없다. ErrorState는 자리 전체가 실패라 온보딩 401에서
 //    액션을 빼면 화면에 아무 길도 남지 않으므로, 같은 401이 formatRosterError에서는 **온보딩에만**
-//  재시도를 남긴다(로 피커 401은 두 함수 모두 액션이 없어졌다. 화면이 곧
+//  재시도를 남긴다(피커 401은 두 함수 모두 액션이 없어졌다. 화면이 곧
 //    키 입력으로 이동해 누를 것이 없다).
 //
 // 자리가 문구와 액션을 정한다는의 기준을 액션 쪽으로 한 번 더 적용한 것이라 예외가 아니다.

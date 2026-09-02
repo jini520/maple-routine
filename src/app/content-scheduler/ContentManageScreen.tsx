@@ -14,7 +14,7 @@
 //    되는지"를 다음 사람이 다시 증명해야 한다.
 // ④ `<button aria-pressed>` → `Pressable` + **`aria-selected`**(RN 접근성 상태에 *pressed* 가 없다.
 //    설정·온보딩의 선택 카드가 이미 밟은 자리).
-// ⑤ **잠금 스크림에서 `backdrop-blur-[2px]` 가 빠진다**(의 표기 규칙 중 흐림 몫).
+// ⑤ **잠금 스크림에서 `backdrop-blur-[2px]` 가 빠진다**.
 //  RN 에 `backdrop-filter` 가 없어 되붙일 방법이 없고 이 웹에서 그것을 걷어낸 뒤라
 //    **방향도 같다.** 규칙의 본체("사유는 오른쪽 뱃지가 아니라 행 위를 덮는 한 줄")는 그대로다.
 import { useEffect, useState } from 'react'

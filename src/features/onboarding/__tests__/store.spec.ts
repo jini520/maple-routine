@@ -169,7 +169,7 @@ describe('useOnboardingStore.restoreFromStorage', () => {
   })
 
 
-  // 재개는 **로컬 읽기뿐**이다(로 계정 선택이 사라진 뒤로는 네트워크가 없다).
+  // 재개는 **로컬 읽기뿐**이다(계정 선택이 사라진 뒤로는 네트워크가 없다).
   it('apiKey만 있으면 네트워크 없이 스케줄 관리 방법 단계로 재개한다', async () => {
     getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
     getTrackingModeMock.mockResolvedValue(null)
@@ -715,7 +715,7 @@ describe('useOnboardingStore.confirmApiKeyNotice', () => {
   })
 
   // 결정 3의 "알려진 열화": 삭제가 실패해도 같은 길을 한 번 더 돌 뿐이라 막다른 길이 아니다.
-  // rethrow하면 호출부가 void 호출이라 미처리 rejection이 된다(의 그 결함).
+  // rethrow하면 호출부가 void 호출이라 미처리 rejection이 된다.
   it('저장소 삭제가 실패해도 reject하지 않고 화면 이동은 그대로다', async () => {
     primeNoticed()
     removeApiKeyMock.mockRejectedValue(new Error('disk full'))

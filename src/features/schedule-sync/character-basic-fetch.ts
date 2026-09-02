@@ -45,8 +45,8 @@ function isFresh(cachedAt: string, now: Date): boolean {
 
 /**
  * `jobClass` 는 **`character/basic` 이 주는 값이 아니라 `character/list` 가 주는 값**이다
- * . 저장 경로가 이 함수 하나뿐이라, 그 값을 손에 든 호출부가 여기로 함께
- * 넘겨 엔트리에 실린다. `normalizeCharacterBasic` 은 채우지 않는다(의 태도: basic
+ * 저장 경로가 이 함수 하나뿐이라, 그 값을 손에 든 호출부가 여기로 함께
+ * 넘겨 엔트리에 실린다. `normalizeCharacterBasic` 은 채우지 않는다(태도: basic
  * 응답이 직업을 준다는 것을 실측한 적이 없다).
  *
  * **모르면 넘기지 않는다.** 그때는 캐시에 이미 있던 값을 그대로 유지한다. 아는 값을

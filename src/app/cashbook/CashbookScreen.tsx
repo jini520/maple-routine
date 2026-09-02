@@ -39,7 +39,7 @@
  *
  * 월간은 `monthKey`, 주간은 `weekStartKey`(목요일)를 든다. 하나로 합쳐 파생시키면 달을 넘겨도
  * 고른 날은 안 바뀐다 는 기존 계약이 깨진다(이후 테스트가 붙들고 있다). 대신
- * **모드를 오갈 때 한 번씩 맞춘다**(의 함정):
+ * **모드를 오갈 때 한 번씩 맞춘다**:
  *
  * - 주간으로 → **고른 날이 든 주**. 화면 아래 상세가 그 날을 말하고 있으므로 격자도 그 주여야 한다.
  * - 월간으로 → **그 주의 목요일이 든 달**. 주가 두 달에 걸쳐도 `weekStartKey` 가 답을 하나로 만든다.
@@ -294,7 +294,7 @@ function PeriodSummary(props: { incomeMeso: number; expenseMeso: number }): Reac
         >
           {net > 0 ? '+' : net < 0 ? '−' : ''}
           {formatMesoCompact(Math.abs(net))}{' '}
-          {/* 단위는 **작은 글자로 격하하되 사이에 진짜 공백**을 남긴다(과 같은 처방).
+          {/* 단위는 **작은 글자로 격하하되 사이에 진짜 공백**을 남긴다.
               마진으로만 띄우면 읽히는 문자열이 `N메소`로 붙어 스크린리더가 이어 읽는다. */}
           <Text className="text-11 font-bold text-text-muted">메소</Text>
         </Text>
@@ -387,7 +387,7 @@ function chunkBosses(bosses: readonly DefeatedBoss[]): DefeatedBoss[][] {
 /**
  * 펼친 결정석 줄의 **타일 판**. 그날 잡은 보스를 초상으로 편다.
  *
- * **새로 만든 그림이 0개**다(와 같은 태도). 초상은 `BossPortrait`, 난이도는
+ * **새로 만든 그림이 0개**다. 초상은 `BossPortrait`, 난이도는
  * `Badge`, 슬러그는 `findPortraitSlug`. 셋 다 보스 수익 탭의 보스 행이 쓰는 그것이다.
  *
  * **마리당 금액을 안 적는다.** 줄 머리가 합계를 이미 들고 있고, 마리당 금액은 파티원 수·정가와
@@ -647,7 +647,7 @@ export function CashbookScreen(): React.JSX.Element {
   /**
    * **마지막으로 읽은 판**. 다시 들어올 때 내 숫자가 낡았나 를 재는 기준이다.
    *
-   * 조회 전에 찍는다(의 그 규칙). 읽는 중에 들어온 변경을 본 것으로
+   * 조회 전에 찍는다. 읽는 중에 들어온 변경을 본 것으로
    * 표시하면 영영 놓친다. 반대 방향(읽는 중의 변경을 못 본 것으로 남겨 다음 포커스에 한 번 더
    * 읽는 것)은 낡은 화면을 안 남기므로 안전하다.
    */
@@ -785,7 +785,7 @@ export function CashbookScreen(): React.JSX.Element {
    * 줄을 누르면. **손입력은 시트, 자동은 보스 수익 탭**이다(=).
    *
    * 자동 줄을 여기서 고치게 하면 두 곳에서 고칠 수 있게 되어 **어느 쪽이 참인지 사라진다**
-   * . 삭제도 없다. 가계부에서 지워도 원천이 그대로라 다음에 읽으면 되살아난다.
+   * 삭제도 없다. 가계부에서 지워도 원천이 그대로라 다음에 읽으면 되살아난다.
    */
   function openRecord(entry: DayRecord): void {
     if (isManualRecord(entry)) {
@@ -864,7 +864,7 @@ export function CashbookScreen(): React.JSX.Element {
    *
    * 판정은 보스 수익 탭이 쓰는 `isLatestPeriod` **그 함수**다. 두 축의 `periodKey` 가 이미 그쪽과
    * 같은 모양이라(주간은 목요일 날짜, 월간은 `YYYY-MM`) 넘길 것이 그대로 있고, 같은 그룹의 두
-   * 하위가 **한 경계**를 갖게 된다(이 라벨에서 한 것과 같은 태도).
+   * 하위가 **한 경계**를 갖게 된다(라벨에서 한 것과 같은 태도).
    */
   const isLatest = isLatestPeriod(isWeekly ? 'weekly' : 'monthly', isWeekly ? weekStartKey : monthKey, now)
 

@@ -13,7 +13,7 @@ export interface BossProfitRecord {
   recordedAt: string // ISO 8601
   /**
    * 기록 시점의 월드 스냅샷. `null` 이면 "월드 모름"이고 월드별 결정석 집계에서
-   * 제외된다(의 기존 처리를 그대로 탄다).
+   * 제외된다.
    *
    * 파생값(캐시된 `character/basic` 의 `world_name`)으로 두면 **월드 리프가 모든 과거 주의 귀속을
    * 소급 이동**시킨다. 분모(`90 × 월드 수`)까지 바뀐다. 판매 한도가 월드마다 따로 산정된다는

@@ -411,7 +411,7 @@ describe('DropHistoryScreen: 미획득 요약', () => {
     const leaf = getByTestId('valuable-drought-leaf', { includeHiddenElements: true })
     expect(flattenStyle(leaf.props.style).transform).toEqual([{ rotate: `${rotate}deg` }])
     // 잎 색은 테마 토큰이 아니라 고정 hex 다. "골드 → 무채색 → 회청색" 한 줄기라 테마마다
-    // 갈리면 의미를 잃는다(와 같은 사정).
+    // 갈리면 의미를 잃는다.
     expect(잎색(leaf)).toMatchObject({ payload: processColor(color) })
   })
 

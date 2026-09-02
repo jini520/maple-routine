@@ -159,7 +159,7 @@ export type StackRouteName = Exclude<keyof RootStackParamList, 'Onboarding' | 'M
  *
  * - `initial`. 웹의 `/` 리디렉트. RN 에는 URL 이 없으므로 *"처음 서 있는 탭"* 이 그 자리다.
  * - `root`. 루트 스택의 화면이되 탭이 아닌 것(온보딩). 탭과 **배타**로 그려진다(아래).
- * - `tab`. 탭 여덟(이 사냥 수익·지출을 걷고 가계부를 넣어 아홉에서 줄었다).
+ * - `tab`. 탭 여덟(사냥 수익·지출을 걷고 가계부를 넣어 아홉에서 줄었다).
  * - `push`. 탭 위로 밀려 들어오는 하위 페이지. 루트 스택에 쌓인다.
  */
 export type RouteTarget =

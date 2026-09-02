@@ -108,7 +108,7 @@ export interface BossProfitState {
   rows: BossProfitRow[] // 선택된 (tab, periodKey)의 보스 row. monthly 탭이면 그 달의 monthly-cycle 보스만
   /**
    * **지금 `rows`·`weeklySubtotals` 에 담겨 있는 데이터가 어느 (tab, periodKey) 의 것인가**
-   * . 위의 `tab`·`periodKey` 는 "사용자가 보려고 누른 기간"이라 데이터보다
+   * 위의 `tab`·`periodKey` 는 "사용자가 보려고 누른 기간"이라 데이터보다
    * 먼저 바뀐다(기간 라벨·네비게이션의 반응성). 그 사이 한 커밋 동안 화면은 **새 기간 키 +
    * 옛 기간 금액**을 그린다.
    *
@@ -515,7 +515,7 @@ async function loadPeriod(
           )
         : []
     // 서로 독립인 SQLite 조회라 병렬로 던진다. 직렬로 두면 조회 하나가 지연될 때마다
-    // withSqliteFallback 의 5초 타임아웃이 줄줄이 더해진다(과 같은 이유).
+    // withSqliteFallback 의 5초 타임아웃이 줄줄이 더해진다.
     const [canGoPreviousPeriod, dropsByRowKey, previousPeriodTotalMeso] = await Promise.all([
       canReachPreviousPeriod(tab, periodKey, ocids, now),
       loadDropsByRowKey(ocids, withCurrentPeriodRows(rows), now),
@@ -916,7 +916,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         })
       : cachedMergedRows
 
-    // 기록만 있는 조합을 행으로 되살린다(의 캐시 단계 누락 보완).
+    // 기록만 있는 조합을 행으로 되살린다.
     // **자동 기록 뒤**여야 한다. 복원 행은 기록에서 나와 partySize 가 이미 채워져 있어 자동 기록
     // 대상이 아니고, 앞에 두면 그 루프가 헛돈다(동기화 분기도 같은 순서다). **skipSync 여부와
     // 무관하게** 캐시 단계 일반에 적용한다. 두 경로가 다른 화면을 그리면 그것이 다음 결함이 된다.
@@ -944,7 +944,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       if (myGeneration !== requestGeneration) return
       // 건너뛰는 진입도 이 분기의 규약을 그대로 따른다. 화면 반영은 loadPeriod가 하고
       // (그 함수가 status/rows/periodState를 정한다) 여기서는 실패 표식만 비운다. 건너뛰는 것은
-      // syncSchedules(와 그에 딸린 자동 기록)뿐이고, loadPeriod의 기록 조회·백필 규칙은 무변경이다.
+      // syncSchedules뿐이고, loadPeriod의 기록 조회·백필 규칙은 무변경이다.
       if (skipSync) {
         set({
           error: null,
@@ -1039,7 +1039,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     const characterIssues: Record<string, 'unavailable' | 'failed'> = {}
     // 동기화가 실패한 캐릭터. buildFallbackResult가 **마지막 캐시 상태를 그대로** 돌려주므로
     // (schedule-sync.ts) 그 state의 완료 여부는 "지금"의 사실이 아니다. 자동 기록에서 제외한다
-    // . 표시는 캐시 우선 표시 규약을 그대로 따르고, 그 카드에
+    // 표시는 캐시 우선 표시 규약을 그대로 따르고, 그 카드에
     // 표식을 붙이는 것은의 몫이다.
     const staleOcids = new Set<string>()
     const characterProfiles = new Map<string, CharacterProfileInfo>()
@@ -1119,7 +1119,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // 것이 화면 맵에 남지 않는다 ③ `refreshInPlace` 분기보다 앞이라 두 갈래가 함께 탄다.
     //
     // `records === null` 이면 건너뛴다. 기록 조회 자체가 실패한 것이라 **행이 없다** 가 아무것도
-    // 뜻하지 않는다(이 자동 기록을 멈추는 것과 같은 이유).
+    // 뜻하지 않는다(자동 기록을 멈추는 것과 같은 이유).
     if (records !== null) {
       const removedDrops = await sweepOrphanDrops({
         ocids,
