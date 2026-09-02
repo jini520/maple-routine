@@ -7,7 +7,7 @@ import { View } from 'react-native'
 import { PortalProvider } from '@gorhom/portal'
 import { NavigationContext } from '@react-navigation/native'
 
-import { AboveBar, AboveBarHost } from '../AboveBar'
+import { BottomBarOverlay, BottomBarOverlayHost } from '../BottomBarOverlay'
 
 /** `toJSON()` 트리를 훑어 testID 를 **그리는 순서대로** 낸다 — 뒤에 있는 것이 위에 그려진다. */
 function 그리는순서(): string[] {
@@ -37,12 +37,12 @@ async function 그리기(options: { 호스트?: boolean } = {}) {
   return render(
     <PortalProvider shouldAddRootHost={false}>
       <View testID="화면">
-        <AboveBar>
+        <BottomBarOverlay>
           <View testID="떠있는것" />
-        </AboveBar>
+        </BottomBarOverlay>
       </View>
       <View testID="바" />
-      {호스트 ? <AboveBarHost /> : null}
+      {호스트 ? <BottomBarOverlayHost /> : null}
     </PortalProvider>,
   )
 }
@@ -102,11 +102,11 @@ describe('화면이 초점을 잃으면 안 그린다', () => {
     await render(
       <PortalProvider shouldAddRootHost={false}>
         <NavigationContext.Provider value={가짜.navigation as never}>
-          <AboveBar>
+          <BottomBarOverlay>
             <View testID="떠있는것" />
-          </AboveBar>
+          </BottomBarOverlay>
         </NavigationContext.Provider>
-        <AboveBarHost />
+        <BottomBarOverlayHost />
       </PortalProvider>,
     )
 

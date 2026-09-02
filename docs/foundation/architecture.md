@@ -55,7 +55,7 @@ RootNavigator (스택)
 │   ├── 층 스택 (Groups · ScheduleSubs · LedgerSubs)
 │   │     └── 각 층은 탭 내비게이터: 옆걸음은 안 쌓이고 언마운트도 없다
 │   ├── BottomBar                 # 층 스택의 `layout` 이 그린다 → 층이 밀려도 안 밀린다
-│   └── AboveBarHost              # 같은 `layout` 의 **바 뒤**: 화면이 소유한 오버레이가 여기 뜬다
+│   └── BottomBarOverlayHost              # 같은 `layout` 의 **바 뒤**: 화면이 소유한 오버레이가 여기 뜬다
 └── 하위 페이지 열하나            # `Main` **통째**를 밀어낸다 → 바도 함께 나간다
 ```
 
@@ -63,7 +63,7 @@ RootNavigator (스택)
 는 같은 부모 안에서만 겨루므로, ‘누가 위인가’는 이 트리에서 누가 **뒤에** 서는가와 같은 말이다. 아래에서 위로: 벽지 → 화면 → **바** → 바 위 슬롯(펼침판) → API 키 안내 → 토스트 → **시트**.
 시트가 맨 위인 것은 `PortalProvider` 가 `{children}` 뒤에 루트 호스트를 붙이기 때문이고, 바 위 슬롯은
 그 기구(`@gorhom/portal`)를 한 번 더 쓴 것이다. 슬롯에 그린 것은 화면이 숨어도 안 숨으므로
-**슬롯이 초점을 판정한다**(`components/organisms/AboveBar`).
+**슬롯이 초점을 판정한다**(`navigation/BottomBarOverlay`).
 
 **그룹 행 → 하위 행이 스택 한 단**이라는 것이 [[ADR-167]] 이다. 전환 애니메이션과 iOS 가장자리
 스와이프가 ‘만드는 것’이 아니라 ‘단이 있으면 OS 가 주는 것’이라, 그 단이 없던 동안은 안드로이드

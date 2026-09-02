@@ -21,7 +21,7 @@ import type { RootStackParamList } from '../routes'
  *
  * **`PortalProvider` 도 같은 이유로 있다**([[ADR-180]]). 실제 트리에서는 `BottomSheetModalProvider`
  * 가 그것을 세우는데, 그 프로바이더를 통째로 들이면 시트 호스팅 컨테이너(빈 View 하나)가 딸려 와
- * 이 스위트의 스냅샷이 흔들린다 — 포털만 세우면 뷰가 하나도 안 늘고, 바 위 슬롯(`AboveBarHost`,
+ * 이 스위트의 스냅샷이 흔들린다 — 포털만 세우면 뷰가 하나도 안 늘고, 바 위 슬롯(`BottomBarOverlayHost`,
  * `Main` 의 `layout`)이 실제와 같은 자리에서 돈다. 없으면 그 슬롯을 쓰는 화면이 렌더 중에
  * **던진다**(«PortalProvider 를 루트에 두라»).
  */
