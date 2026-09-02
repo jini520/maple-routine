@@ -24,9 +24,8 @@ import { Pressable, View } from 'react-native'
 import { formatBytes } from '../../lib/format-bytes'
 import type { CacheDataGroupId, CacheDataSelection } from '../../storage/cache-data'
 
-import { Button, Text } from '../../components/atoms'
+import { Button, CheckIcon, Text } from '../../components/atoms'
 import { Modal } from '../../components/organisms/Modal/Modal'
-import { CheckIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 
 export interface CacheClearConfirmProps {

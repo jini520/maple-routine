@@ -49,7 +49,17 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useFocusEffect } from '@react-navigation/native'
 import { Pressable, RefreshControl, View } from 'react-native'
 
-import { Badge, ProfitIcon, Text } from '../../components/atoms'
+import {
+  Badge,
+  CalendarIcon,
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronUpIcon,
+  ProfitIcon,
+  ShoppingCartIcon,
+  Text,
+} from '../../components/atoms'
 import { CalendarMonth } from '../../components/molecules/CalendarMonth/CalendarMonth'
 import { DIFFICULTY_SHORT } from '../../constants/domain/boss-difficulty'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
@@ -78,14 +88,6 @@ import {
   resetWeekStartOf,
   type CalendarAmounts,
 } from '../../lib/calendar-month'
-import {
-  CalendarIcon,
-  ChevronDownIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronUpIcon,
-  ShoppingCartIcon,
-} from '../../lib/icons'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'

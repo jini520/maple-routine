@@ -22,8 +22,13 @@ import { computeProfitDelta, formatProfitDeltaBody, formatProfitDeltaLabel } fro
 import { formatBossProfitPeriodLabel, getAdjacentPeriodKey } from '../../lib/boss/boss-profit-period'
 import type { BossCycle } from '../../types'
 
-import { Text } from '../../components/atoms'
-import { ArrowDownIcon, ArrowUpIcon, ChevronDownIcon, ChevronUpIcon } from '../../lib/icons'
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  Text,
+} from '../../components/atoms'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { countMonthlyCrystals, summarizeWorldCrystals } from './character-groups'
 import type { CharacterGroup } from './character-groups'

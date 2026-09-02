@@ -3,7 +3,7 @@
  * 풀린다([[ADR-197]]).
  *
  * SVG·그라디언트·애니메이션 상자는 **여기서 가져올 것.** 원본 모듈에서 직접 가져오면 등록이 안 된
- * 채로 쓰게 되고, 그때 에러 없이 색과 크기만 없다. lucide 아이콘은 `lib/icons.ts` 를 거친다.
+ * 채로 쓰게 되고, 그때 에러 없이 색과 크기만 없다. lucide 아이콘은 `components/atoms/Icon/lucide.ts` 를 거친다.
  */
 
 import { LinearGradient } from 'expo-linear-gradient'
@@ -35,10 +35,10 @@ cssInterop(Animated.View, { className: 'style' })
 const AnimatedView = Animated.View
 
 /**
- * lucide 아이콘 하나를 `className` 을 받도록 등록한다. `lib/icons.ts` 가 아이콘마다 부른다.
+ * lucide 아이콘 하나를 `className` 을 받도록 등록한다. `components/atoms/Icon/lucide.ts` 가 아이콘마다 부른다.
  *
  * `text-*` 는 `stroke` 색, `h-*`·`w-*` 는 상자 크기, 나머지 유틸리티는 `style` 로 간다. 새 아이콘은
- * `lib/icons.ts` 에 더할 것. `testID` 는 lucide 가 `data-testid` 로 바꾸므로 통하지 않는다. 테스트에서
+ * `components/atoms/Icon/lucide.ts` 에 더할 것. `testID` 는 lucide 가 `data-testid` 로 바꾸므로 통하지 않는다. 테스트에서
  * 지목해야 하면 감싸는 `View` 에 준다([[ADR-197]] 결정 4).
  */
 function withIconInterop<T extends LucideIcon>(Icon: T): T {

@@ -2,10 +2,9 @@ import { getItemIconUrl } from '../../../lib/assets/asset-lookup'
 import type { RecordedDrop } from '../../../types/drops'
 import { Image, View } from 'react-native'
 
-import { SparklesIcon } from '../../../lib/icons'
+import { SparklesIcon, Text } from '../../atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { LinearGradient } from '../../../lib/nativewind-interop'
-import { Text } from '../../atoms'
 
 // 실제 획득한 고가 아이템 아이콘(최대 3개 + 나머지 개수)을 골드 반짝임 칩으로 보여준다([[ADR-045]]).
 // 배치·라벨은 호출부가 정한다([[ADR-046]]) — 캐릭터 카드는 우상단 절대배치, 총 수익 헤드라인은

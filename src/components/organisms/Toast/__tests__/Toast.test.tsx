@@ -24,7 +24,7 @@ import type { ToastAction, ToastItem } from '../../../../features/toast/store'
 
 import { mockReducedMotion } from '../../../__tests__/reduced-motion'
 import { renderAtom, type AtomElement } from '../../../__tests__/render-atom'
-import { SettingsIcon } from '../../../../lib/icons'
+import { SettingsIcon } from '../../../atoms'
 import { Toast } from '../Toast'
 
 afterEach(() => {

@@ -47,8 +47,7 @@ import { View } from 'react-native'
 
 import { hideSplashScreen } from '../../../native/splash-screen'
 
-import { AlertTriangleIcon, RotateCcwIcon } from '../../../lib/icons'
-import { Button, Text } from '../../atoms'
+import { AlertTriangleIcon, Button, RotateCcwIcon, Text } from '../../atoms'
 
 interface ErrorBoundaryProps {
   children: ReactNode

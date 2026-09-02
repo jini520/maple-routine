@@ -57,8 +57,7 @@ import { resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
 import { useBottomSafeAreaPx } from '../../../lib/safe-area'
 import { useThemeAppearance } from '../../../theme/context'
 import type { ThemeDefinition } from '../../../types/theme'
-import { ProfitIcon, Text } from '../../atoms'
-import { PlusIcon, ShoppingCartIcon } from '../../../lib/icons'
+import { PlusIcon, ProfitIcon, ShoppingCartIcon, Text } from '../../atoms'
 import {
   DIAL_MOTION,
   DIAL_RISE_PX,

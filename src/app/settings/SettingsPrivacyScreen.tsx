@@ -36,12 +36,11 @@ import { useEffect, useState } from 'react'
 import { Linking, Pressable, View } from 'react-native'
 import { WebView } from 'react-native-webview'
 
-import { Text } from '../../components/atoms'
+import { ArrowLeftIcon, Text } from '../../components/atoms'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { useBottomSafeAreaPx, useTopSafeAreaPx } from '../../lib/safe-area'
-import { ArrowLeftIcon } from '../../lib/icons'
 import { useSettingsNavigation } from './use-settings-navigation'
 
 export const PRIVACY_URL = 'https://mapleroutine.store/privacy'

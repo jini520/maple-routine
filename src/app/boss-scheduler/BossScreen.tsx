@@ -65,7 +65,14 @@ import type { ImageCrop } from '../../lib/image-crop'
 import { getSupportedDifficulties, type MatchedBoss } from '../../lib/boss/boss-matching'
 import { getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
 
-import { Badge, Text } from '../../components/atoms'
+import {
+  Badge,
+  RefreshCwIcon,
+  SlidersHorizontalIcon,
+  SwordsIcon,
+  Text,
+  UsersIcon,
+} from '../../components/atoms'
 import { BossSectionHeader } from '../../components/molecules/BossSectionHeader/BossSectionHeader'
 import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
@@ -77,7 +84,6 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { SPIN_ANIMATION } from '../../constants/style/animation'
 import { AnimatedView } from '../../lib/nativewind-interop'
-import { RefreshCwIcon, SlidersHorizontalIcon, SwordsIcon, UsersIcon } from '../../lib/icons'
 import { ILLUSTRATION_TEXT_SHADOW_STYLE } from '../../constants/style/text-styles'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'

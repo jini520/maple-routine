@@ -6,10 +6,10 @@
 // 면적이 넓다.
 //
 // 끌기 제스처 자체는 여기 없다 — 그것은 **목록**의 일이고(자동 스크롤·자리 계산), 이 파일은 잡는
-// 자리만 그린다. 아이콘에는 `testID` 가 안 통해 감싸는 `View` 가 그것을 갖는다(`lib/icons.ts`).
+// 자리만 그린다. 아이콘에는 `testID` 가 안 통해 감싸는 `View` 가 그것을 갖는다(`atoms/Icon/lucide.ts`).
 import { View } from 'react-native'
 
-import { MenuIcon } from '../../../lib/icons'
+import { MenuIcon } from '../../atoms'
 
 export function DragHandle(): React.JSX.Element {
   return (

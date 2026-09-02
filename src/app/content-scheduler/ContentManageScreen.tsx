@@ -34,14 +34,9 @@ import { useCharacterSelectionStore } from '../../features/character-selection/s
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { useToastStore } from '../../features/toast/store'
 
-import { Badge, Text } from '../../components/atoms'
-import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
-import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
-import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
-import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
-import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import {
   ArrowLeftIcon,
+  Badge,
   CastleIcon,
   FlagIcon,
   LayoutGridIcon,
@@ -49,7 +44,13 @@ import {
   MedalIcon,
   SparklesIcon,
   SwordsIcon,
-} from '../../lib/icons'
+  Text,
+} from '../../components/atoms'
+import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
+import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
+import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
+import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useScreenNavigation } from '../use-screen-navigation'
 

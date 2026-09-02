@@ -54,13 +54,20 @@ import { getItemIconUrl } from '../../lib/assets/asset-lookup'
 import { isValuableDrop } from '../../lib/drop/valuable-drops'
 import type { RecordedDrop } from '../../types/drops'
 
-import { Badge, ProfitIcon, Text } from '../../components/atoms'
+import {
+  ArrowLeftIcon,
+  Badge,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  PackageOpenIcon,
+  ProfitIcon,
+  Text,
+} from '../../components/atoms'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, PackageOpenIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { useScreenNavigation } from '../use-screen-navigation'

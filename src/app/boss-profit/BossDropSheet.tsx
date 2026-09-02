@@ -45,11 +45,19 @@ import { isValuableDrop } from '../../lib/drop/valuable-drops'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types'
 import type { DropCandidate, DropCategory, RecordedDrop, SelectableDropCategory } from '../../types/drops'
 
-import { Badge, ProfitIcon, Text } from '../../components/atoms'
+import {
+  Badge,
+  ChevronLeftIcon,
+  FlaskConicalIcon,
+  PackageOpenIcon,
+  PinIcon,
+  ProfitIcon,
+  SwordIcon,
+  Text,
+} from '../../components/atoms'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { DropEffectOverlay } from '../../components/organisms/DropEffectOverlay/DropEffectOverlay'
-import { ChevronLeftIcon, FlaskConicalIcon, PackageOpenIcon, PinIcon, SwordIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { DropPricePadContent } from './DropPricePad'
 

@@ -23,8 +23,7 @@
 
 import { View } from 'react-native'
 
-import { Text } from '../../../components/atoms'
-import { ChevronRightIcon } from '../../../lib/icons'
+import { ChevronRightIcon, Text } from '../../../components/atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { WidgetHeight } from '../../../lib/today/widget-layout'
 import type { UnpricedDropView } from '../view-model'

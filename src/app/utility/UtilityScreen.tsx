@@ -16,11 +16,10 @@
 
 import { Pressable, View } from 'react-native'
 
-import { Card, Text } from '../../components/atoms'
+import { CalculatorIcon, Card, Text } from '../../components/atoms'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { CalculatorIcon } from '../../lib/icons'
 import { useScreenNavigation } from '../use-screen-navigation'
 import { ITEM_SPLIT_TOOL_NAME } from './tool-names'
 

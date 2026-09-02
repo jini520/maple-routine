@@ -30,12 +30,18 @@ import {
   RELEASE_NOTE_CATEGORY_ORDER,
 } from '../../data/release-notes'
 
-import { Badge, Card, Text } from '../../components/atoms'
+import {
+  ArrowLeftIcon,
+  Badge,
+  Card,
+  ChevronRightIcon,
+  FileTextIcon,
+  Text,
+} from '../../components/atoms'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { ArrowLeftIcon, ChevronRightIcon, FileTextIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useSettingsNavigation } from './use-settings-navigation'
 

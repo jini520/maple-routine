@@ -28,9 +28,8 @@ import { View } from 'react-native'
 import { useOnboardingStore } from '../features/onboarding/store'
 import type { ApiKeyNoticeKind } from '../features/onboarding/state'
 
-import { Button, Text } from '../components/atoms'
+import { Button, GaugeIcon, KeyRoundIcon, Text } from '../components/atoms'
 import { Modal } from '../components/organisms/Modal/Modal'
-import { GaugeIcon, KeyRoundIcon } from '../lib/icons'
 
 interface NoticeCopy {
   icon: typeof KeyRoundIcon

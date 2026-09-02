@@ -51,10 +51,10 @@ import {
   CheckCircle2Icon,
   InfoIcon,
   RefreshCwIcon,
+  Text,
   XIcon,
-} from '../../../lib/icons'
+} from '../../atoms'
 import { AnimatedView } from '../../../lib/nativewind-interop'
-import { Text } from '../../atoms'
 import { ENTER_TRANSITION, timerAnimation } from './timer-animation'
 
 export interface ToastProps {

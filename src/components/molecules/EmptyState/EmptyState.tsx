@@ -32,7 +32,7 @@ interface EmptyStateProps {
    * 목록 빈 상태는 무엇이 비었는지 알려주는 아이콘, 캐릭터 미선택(page)은 브랜드 마크 'leaf'.
    * 타입이 `LucideIcon` 이 아니라 "우리가 실제로 넘기는 두 prop"인 이유는 커스텀 아이콘도 받기
    * 위해서다([[ADR-066]] 결정 5) — `LucideIcon` 은 forwardRef 타입이라 평범한 함수 컴포넌트가
-   * 대입되지 않는다. lucide 아이콘은 이 타입에 그대로 들어온다(`lib/icons.ts` 에서 가져올 것 —
+   * 대입되지 않는다. lucide 아이콘은 이 타입에 그대로 들어온다(`atoms` 배럴에서 가져올 것 —
    * 등록을 거치지 않으면 `className` 이 조용히 무시된다).
    */
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }> | 'leaf'

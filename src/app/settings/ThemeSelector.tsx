@@ -28,8 +28,7 @@ import { Pressable, View } from 'react-native'
 import { THEME_NAMES, getThemeDefinition, groupThemesByCategory } from '../../lib/theme/theme-registry'
 import type { ThemeName } from '../../types/theme'
 
-import { Text } from '../../components/atoms'
-import { CheckIcon, MoonIcon, SunIcon } from '../../lib/icons'
+import { CheckIcon, MoonIcon, SunIcon, Text } from '../../components/atoms'
 
 export interface ThemeSelectorProps {
   theme: ThemeName

@@ -49,7 +49,7 @@ import {
   type DisplayedContentsInput,
 } from '../../features/content-scheduler/displayed-contents'
 
-import { Text } from '../../components/atoms'
+import { ListChecksIcon, RefreshCwIcon, Text } from '../../components/atoms'
 import { dailyContentProgress, weeklyContentProgress } from './content-completion'
 
 import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
@@ -60,7 +60,6 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { SPIN_ANIMATION } from '../../constants/style/animation'
 import { AnimatedView } from '../../lib/nativewind-interop'
-import { ListChecksIcon, RefreshCwIcon } from '../../lib/icons'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import { useThemeAppearance } from '../../theme/context'

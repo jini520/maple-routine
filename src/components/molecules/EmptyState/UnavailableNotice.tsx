@@ -20,8 +20,7 @@
 //    있어(basis auto 해석), 필요한 것만 — 줄어들지 않게 — 명시한다.
 import { View } from 'react-native'
 
-import { ClockIcon, InfoIcon } from '../../../lib/icons'
-import { Text } from '../../atoms'
+import { ClockIcon, InfoIcon, Text } from '../../atoms'
 
 /** 기간 조회 하한은 실측 13일이지만 넥슨 한도 자체는 14일이라 **문구는 14일**이다([[ADR-068]] 결정 1). */
 const COPY = {

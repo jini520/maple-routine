@@ -7,7 +7,7 @@
 // 별과 나란히 서므로 크기·히트 슬롭을 `RepresentativeStar` 와 맞춘다.
 import { Pressable } from 'react-native'
 
-import { XIcon } from '../../../lib/icons'
+import { XIcon } from '../../atoms'
 
 /** 시각 크기(20px)와 권장 타깃(44px)의 차이를 사방으로 나눠 채운다(`RepresentativeStar` 와 같다). */
 const HIT_SLOP = { top: 12, bottom: 12, left: 12, right: 12 }

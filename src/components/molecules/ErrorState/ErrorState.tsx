@@ -34,8 +34,7 @@
 //    (`px-4 py-2 text-xs`), 덮어쓰기는 클래스 순서가 아니라 스타일시트 순서에 달려 조용히 갈린다.
 import { Pressable, View } from 'react-native'
 
-import { AlertTriangleIcon } from '../../../lib/icons'
-import { Text } from '../../atoms'
+import { AlertTriangleIcon, Text } from '../../atoms'
 
 interface ErrorStateAction {
   label: string

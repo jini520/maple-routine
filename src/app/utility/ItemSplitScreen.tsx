@@ -20,13 +20,12 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { Card, Text, TextInput } from '../../components/atoms'
+import { ArrowLeftIcon, Card, Text, TextInput } from '../../components/atoms'
 import { PartySizeStepper } from '../../components/molecules/PartySizeStepper/PartySizeStepper'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { formatMesoUnits } from '../../lib/drop/drop-price'
-import { ArrowLeftIcon } from '../../lib/icons'
 import {
   MAX_PARTY_SIZE,
   MAX_SALE_PRICE_MESO,

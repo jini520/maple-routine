@@ -6,8 +6,7 @@
  */
 import { Pressable, View } from 'react-native'
 
-import { Text } from '../../../components/atoms'
-import { ChevronLeftIcon } from '../../../lib/icons'
+import { ChevronLeftIcon, Text } from '../../../components/atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { SelectField } from '../../../components/organisms/SelectField/SelectField'
 import { characterOptions } from '../character-options'

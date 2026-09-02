@@ -747,12 +747,12 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 | SVG 를 그리는 컴포넌트 | `import { Svg } from 'lib/nativewind-interop'` |
 | 그라디언트 배경 | `import { LinearGradient } from 'lib/nativewind-interop'` |
 | 애니메이션이 붙는 상자 | `import { AnimatedView } from 'lib/nativewind-interop'` |
-| lucide 아이콘 | `import { Users } from 'lib/icons'` |
+| lucide 아이콘 | `import { Users } from 'components/atoms'` |
 | 커스텀 아이콘 | `import { ProfitIcon } from 'components/atoms/Icon'` |
 
 - **`react-native-svg` 에서 직접 가져와도 되는 것은 자식 도형뿐이다**(`Path`·`Circle`·`Defs` 등).
   그것들은 `className` 을 안 받는다. 뿌리인 `Svg` 는 반드시 `lib/nativewind-interop` 에서.
-- **새 lucide 아이콘은 `lib/icons.ts` 에 먼저 더한다.** 배럴(`from 'lucide-react-native'`)에서 바로
+- **새 lucide 아이콘은 `components/atoms/Icon/lucide.ts` 에 먼저 더한다.** 배럴(`from 'lucide-react-native'`)에서 바로
   가져오면 클래스가 무시되고 번들도 1.8MB 커진다.
 - **아이콘에 `testID` 를 주지 말 것.** lucide 가 그것을 `data-testid` 로 바꿔서 `getByTestId` 가 못
   찾는다. 감싸는 `View` 에 준다.
