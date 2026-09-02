@@ -98,14 +98,14 @@ describe('fetchMesoRate', () => {
     await expect(fetchMesoRate('api-key', 'ocid-1', null)).resolves.toBe(169)
   })
 
-  it('섀도어면 그리드로 20 이 더 붙는다 — 스킬 조회를 안 거친다', async () => {
+  it('섀도어면 그리드로 20 이 더 붙는다. 스킬 조회를 안 거친다', async () => {
     const fetchMock = 정상응답()
     stubGlobal('fetch', fetchMock)
 
     await expect(fetchMesoRate('api-key', 'ocid-1', '섀도어')).resolves.toBe(169)
   })
 
-  it('여섯은 병렬이다 — 앞의 응답을 기다리지 않는다', async () => {
+  it('여섯은 병렬이다. 앞의 응답을 기다리지 않는다', async () => {
     let 동시 = 0
     let 최대동시 = 0
     stubGlobal(
@@ -124,7 +124,7 @@ describe('fetchMesoRate', () => {
     expect(최대동시).toBe(6)
   })
 
-  it('하나라도 실패하면 던진다 — 반쪽짜리 최대치를 내지 않는다', async () => {
+  it('하나라도 실패하면 던진다. 반쪽짜리 최대치를 내지 않는다', async () => {
     stubGlobal(
       'fetch',
       jest.fn(async (url: string) => {
@@ -137,7 +137,7 @@ describe('fetchMesoRate', () => {
     await expect(fetchMesoRate('api-key', 'ocid-1', null)).rejects.toBeInstanceOf(NexonAuthError)
   })
 
-  it('스킬 조회가 실패해도 던진다 — 챌린저스가 빠진 값은 최대치가 아니다', async () => {
+  it('스킬 조회가 실패해도 던진다. 챌린저스가 빠진 값은 최대치가 아니다', async () => {
     stubGlobal(
       'fetch',
       jest.fn(async (url: string) => {

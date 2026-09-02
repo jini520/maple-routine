@@ -1,5 +1,5 @@
 /**
- * 금액 칸 — 자릿수 전체가 **주 표기**이고 억/만은 보조 줄이다.
+ * 금액 칸. 자릿수 전체가 **주 표기**이고 억/만은 보조 줄이다.
  *
  * 억/만으로 접어 보여줬더니 한 자를 칠 때마다 `3억` → `32억` → `3억 2,000만` 처럼 단위가
  * 갈아엎여 **지금 무엇을 치고 있는지 안 읽혔다.** 원시 표기는 왼쪽으로 자라기만 하므로 흔들림이
@@ -20,7 +20,7 @@ import { MAX_MESO, parseMesoText } from './meso-pad'
 export function MesoAmountField(props: {
   meso: number
   onChange: (next: number) => void
-  /** 테스트와 스크린리더가 이 칸을 집는 이름 — 부르는 자리마다 다르다(가격 · 금액). */
+  /** 테스트와 스크린리더가 이 칸을 집는 이름. 부르는 자리마다 다르다(가격 · 금액). */
   resetLabel: string
   amountTestID: string
   /** 숫자 옆에 붙는 단위. 기본은 메소다. */
@@ -60,13 +60,13 @@ export function MesoAmountField(props: {
     <View testID={`${props.amountTestID}-field`}>
       {/* 초기화는 **금액 왼쪽**이다(2026-08-10 사용자 요청). 키패드 자리를 안 뺏고(⌫ 는 한 자씩
           지우는 별개 동작이라 남는다), 고칠 대상인 숫자 바로 옆이라 겨냥이 자명하다. 값이 0 이면
-          지울 것이 없으므로 **자리만 지킨다** — 없애면 금액이 좌우로 흔들린다. */}
+          지울 것이 없으므로 **자리만 지킨다**. 없애면 금액이 좌우로 흔들린다. */}
       <View className="mt-5 flex-row items-center justify-end gap-1.5 border-b border-border pb-1.5">
         <Pressable
           role="button"
           onPress={() => props.onChange(0)}
           aria-label={props.resetLabel}
-          // 웹 `invisible` 의 짝 — RN 에 `visibility` 가 없어 투명도로 대신하고, 투명한 버튼이
+          // 웹 `invisible` 의 짝. RN 에 `visibility` 가 없어 투명도로 대신하고, 투명한 버튼이
           // 눌리지 않도록 터치를 함께 끈다.
           pointerEvents={props.meso === 0 ? 'none' : 'auto'}
           className={`mr-auto h-7 flex-row items-center gap-1 rounded-full border border-border px-2.5 active:bg-surface-2${
@@ -105,7 +105,7 @@ export function MesoAmountField(props: {
       </View>
 
       {/* 항상 자리를 지킨다. 0 에서 사라지면 첫 타건에 아래가 통째로 밀린다. 단위 고르개가
-          있으면 그 줄을 **나눠 쓴다**(왼쪽 고르개 · 오른쪽 억/만) — 높이는 칩에 맞춰 커진다. */}
+          있으면 그 줄을 **나눠 쓴다**(왼쪽 고르개 · 오른쪽 억/만). 높이는 칩에 맞춰 커진다. */}
       {(mesoHelpers || props.unitPicker !== undefined) && (
         <View
           className={`mt-1.5 flex-row items-center gap-2 ${
@@ -119,8 +119,8 @@ export function MesoAmountField(props: {
         </View>
       )}
 
-      {/* 다섯 개가 390px 한 줄에 들어가도록 여백·글자를 한 단계 줄였다. `flex-wrap` 은 안전장치다 —
-          더 좁은 기기에서는 넘치는 대신 줄을 바꾼다. 값은 `lib/meso-quick-adds` 가 든다 —
+      {/* 다섯 개가 390px 한 줄에 들어가도록 여백·글자를 한 단계 줄였다. `flex-wrap` 은 안전장치다.
+          더 좁은 기기에서는 넘치는 대신 줄을 바꾼다. 값은 `lib/meso-quick-adds` 가 든다.
           아이템 분배 계산기도 같은 눈금을 쓴다. */}
       <View className="mt-2 flex-row flex-wrap justify-end gap-1.5">
         {mesoHelpers &&

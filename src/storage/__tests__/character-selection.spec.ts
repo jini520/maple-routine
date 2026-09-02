@@ -179,7 +179,7 @@ describe('대표 캐릭터', () => {
     await expect(getRepresentativeCharacter()).resolves.toBeNull()
   })
 
-  it('미지정이면 목록의 첫 번째를 대신 돌려주지 않는다 — 파생값을 만들지 않는다', async () => {
+  it('미지정이면 목록의 첫 번째를 대신 돌려주지 않는다. 파생값을 만들지 않는다', async () => {
     await setTrackedCharacterOcids(['ocid-1', 'ocid-2'])
     await expect(getRepresentativeCharacter()).resolves.toBeNull()
   })

@@ -49,7 +49,7 @@ const INACTIVE_TAB_TEXT_CLASS = 'text-sm font-medium text-text-muted'
 export function SettingsFeatureGuideListScreen(): React.JSX.Element {
   const navigation = useSettingsNavigation()
 
-  // **비어 있는 그룹은 탭째 감춘다**(개발 노트의 카테고리 묶음·`ThemeSelector` 와 같은 규칙) —
+  // **비어 있는 그룹은 탭째 감춘다**(개발 노트의 카테고리 묶음·`ThemeSelector` 와 같은 규칙).
   // 빈 탭을 열면 아무것도 없는 화면을 만난다. 지금은 `유틸리티` 가 그렇다. 순서는 데이터가
   // 아니라 상수가 정한다.
   const groups = FEATURE_GUIDE_GROUP_ORDER.filter((group) =>
@@ -121,7 +121,7 @@ export function SettingsFeatureGuideListScreen(): React.JSX.Element {
               {guides.map((guide, index) => (
                 <View
                   key={guide.id}
-                  // 웹의 `divide-y` 자리 — NativeWind 에 형제 선택자가 없어 첫 행을 제외한
+                  // 웹의 `divide-y` 자리. NativeWind 에 형제 선택자가 없어 첫 행을 제외한
                   // 나머지가 직접 얹는다(`row-class.ts`).
                   className={index === 0 ? undefined : SETTINGS_ROW_DIVIDER_CLASS}
                 >

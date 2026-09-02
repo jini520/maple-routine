@@ -70,7 +70,7 @@ function CategoryChip(props: {
 export interface IncomeSheetProps {
   dateKey: string
   /**
-   * 고를 수 있는 캐릭터 — 화면이 읽어서 넘긴다(시트는 `storage/` 를 모른다).
+   * 고를 수 있는 캐릭터. 화면이 읽어서 넘긴다(시트는 `storage/` 를 모른다).
    * 비어 있으면 고르개에 선택 안함 하나만 선다.
    *
    * `level` 은 **사냥 계산기가 쓴다**. 지역 목록을 거르고 레벨 차이 페널티를
@@ -78,7 +78,7 @@ export interface IncomeSheetProps {
    */
   characters: readonly SheetCharacter[]
   /**
-   * 마지막으로 쓴 메소마켓 시세 — 기타를 메포로 적을 때의 기본값이다.
+   * 마지막으로 쓴 메소마켓 시세. 기타를 메포로 적을 때의 기본값이다.
    * 지출 시트와 **같은 계약**이라 화면이 한 값을 두 시트에 그대로 넘긴다.
    */
   lastPointRate: number | null
@@ -109,7 +109,7 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
    */
   const [dateKey, setDateKey] = useState(props.dateKey)
   /**
-   * 사냥을 어느 폼으로 적나. **수정으로 열면 기록이 정하고 안 바뀐다** —
+   * 사냥을 어느 폼으로 적나. **수정으로 열면 기록이 정하고 안 바뀐다**.
    * 모드를 바꾸면 앱이 센 합계가 사람이 친 값으로 둔갑한다(와 같은 자리).
    */
   const [huntMode, setHuntMode] = useState<HuntInputMode>(huntModeOf(props.editing))
@@ -171,7 +171,7 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
 
         {/* **`key` 가 곧 갈래를 옮기면 값이 사라진다** 다. 갈래가 바뀌면
             리액트가 폼을 새로 심는다. 지울 것을 손으로 세지 않는다. 사냥의 두 모드도 같은 열쇠에
-            들어간다 — 모드를 옮기는 것도 **다른 것을 적기 시작하는 일** 이다. */}
+            들어간다. 모드를 옮기는 것도 **다른 것을 적기 시작하는 일** 이다. */}
         <IncomeForm
           key={`${category}:${huntMode}`}
           category={category}
@@ -195,7 +195,7 @@ function huntModeOf(editing: IncomeRecord | undefined): HuntInputMode {
   return editing.hunt?.mode ?? 'manual'
 }
 
-/** 갈래 하나에 폼 하나 — 고르는 자리는 여기 하나뿐이다. 사냥만 그 아래로 한 번 더 갈린다. */
+/** 갈래 하나에 폼 하나. 고르는 자리는 여기 하나뿐이다. 사냥만 그 아래로 한 번 더 갈린다. */
 function IncomeForm(
   props: IncomeSheetProps & {
     category: IncomeCategory

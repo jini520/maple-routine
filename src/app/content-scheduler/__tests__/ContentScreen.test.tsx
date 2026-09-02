@@ -65,7 +65,7 @@ const mockedNavigation = jest.mocked(useScreenNavigation)
 type Store = ContentSchedulerStore
 
 /**
- * 탭이 스토어 소유라 정적 목으로는 전환이 렌더에 반영되지 않는다 —
+ * 탭이 스토어 소유라 정적 목으로는 전환이 렌더에 반영되지 않는다.
  * `setActiveTab` 을 불러도 다시 그릴 이유가 없다. 모킹된 훅도 렌더 중에 불리므로 여기서 `useState`
  * 로 실물과 같은 "값 + 세터" 쌍을 흉내 낸다(웹판과 같은 처방).
  */
@@ -141,7 +141,7 @@ function nearestCommonAncestor(a: AtomElement, b: AtomElement): AtomElement {
   for (let node: AtomElement | null = b; node !== null; node = node.parent) {
     if (ancestors.has(node)) return node
   }
-  throw new Error('공통 조상이 없다 — 두 노드가 같은 트리에 있지 않다')
+  throw new Error('공통 조상이 없다. 두 노드가 같은 트리에 있지 않다')
 }
 
 function contains(ancestor: AtomElement, node: AtomElement): boolean {
@@ -166,7 +166,7 @@ beforeEach(() => {
   useCharacterSelectionStore.setState({ selectedOcid: null })
 })
 
-describe('ContentScreen — 빈 상태와 마운트', () => {
+describe('ContentScreen: 빈 상태와 마운트', () => {
   it('마운트하면 loadTrackedOcids 를 부른다', async () => {
     const store = mockStore()
 
@@ -216,7 +216,7 @@ describe('ContentScreen — 빈 상태와 마운트', () => {
   })
 })
 
-describe('ContentScreen — 목록', () => {
+describe('ContentScreen: 목록', () => {
   const withContents = (): void => {
     mockStore({
       status: 'loaded',
@@ -378,7 +378,7 @@ describe('ContentScreen — 목록', () => {
   })
 })
 
-describe('ContentScreen — 재조회', () => {
+describe('ContentScreen: 재조회', () => {
   const loaded = (status: Store['status'] = 'loaded'): Store =>
     mockStore({ status, trackedOcids: ['ocid-1'], characters: [character()] })
 
@@ -412,13 +412,13 @@ describe('ContentScreen — 재조회', () => {
     expect(refreshControl()).toBeDefined()
   })
 
-  // ★ 회귀 가드 — **조회 중 과 당겼다 는 다른 사실이다**.
+  // ★ 회귀 가드. **조회 중 과 당겼다 는 다른 사실이다**.
   //
   // 종전에는 `refreshing = status === 'loading'` 이라, 화면 마운트 하이드레이션만으로 인디케이터가
   // 프로그램적으로 열렸다. 사용자 보고(2026-08-22) *"페이지 이동 시 새로고침 인디케이터가 저절로
   // 돌고 상단이 빈 채로 멈춘다"* 가 그 증상이다. **조회 중...** 은 그대로 뜬다. 그쪽이 조회를
   // 말하는 자리다.
-  it('조회 중이어도 인디케이터는 안 돈다 — "조회 중..." 만 보여준다', async () => {
+  it('조회 중이어도 인디케이터는 안 돈다. "조회 중..." 만 보여준다', async () => {
     loaded('loading')
     await renderScreen()
 
@@ -467,7 +467,7 @@ describe('ContentScreen — 재조회', () => {
   })
 })
 
-describe('ContentScreen — 실패의 목적지', () => {
+describe('ContentScreen: 실패의 목적지', () => {
   const failWith = (error: Store['error']): void => {
     mockStore({ status: 'error', error, trackedOcids: ['ocid-1'], characters: [character()] })
   }
@@ -481,7 +481,7 @@ describe('ContentScreen — 실패의 목적지', () => {
     expect(mockShowError).not.toHaveBeenCalled()
   })
 
-  it('429 도 같은 진입점을 탄다 — 토스트는 아예 없다', async () => {
+  it('429 도 같은 진입점을 탄다. 토스트는 아예 없다', async () => {
     failWith({ kind: 'rateLimited' })
 
     await renderScreen()
@@ -547,7 +547,7 @@ describe('ContentScreen — 실패의 목적지', () => {
   })
 })
 
-describe('ContentScreen — 수동 트래킹 모드', () => {
+describe('ContentScreen: 수동 트래킹 모드', () => {
   beforeEach(() => {
     useTrackingModeStore.setState({ mode: 'manual' })
   })

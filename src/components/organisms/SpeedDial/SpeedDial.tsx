@@ -1,5 +1,5 @@
 /**
- * 펼침판 — 떠 있는 ＋ 하나가 갈래 둘을 편다.
+ * 펼침판. 떠 있는 ＋ 하나가 갈래 둘을 편다.
  *
  * ## 갈래가 시트 **밖**에서 갈린다
  *
@@ -20,7 +20,7 @@
  *
  * ## 아이콘은 이 앱이 이미 고른 둘이다
  *
- * 수입은 `ProfitIcon`(원통형 동전 더미 — 이 수익 을 가리키는 자리 셋에 쓰라고 정한
+ * 수입은 `ProfitIcon`(원통형 동전 더미. 이 수익 을 가리키는 자리 셋에 쓰라고 정한
  * 커스텀), 지출은 `ShoppingCartIcon`(가 지운 지출 탭이 쓰던 그림). **새로
  * 만든 그림이 0개**이고, lucide `coins` 를 쓰면 안 된다. 그것도 동전 더미라 `ProfitIcon` 과
  * 거의 같은데 미묘하게 다른 동전 두 개 가 된다.
@@ -69,22 +69,22 @@ import {
 } from './speed-dial-motion'
 
 /**
- * 애니메이션이 붙는 상자 — **`nativewind-interop` 의 `AnimatedView` 를 쓰지 않는다.**
+ * 애니메이션이 붙는 상자. **`nativewind-interop` 의 `AnimatedView` 를 쓰지 않는다.**
  *
  * 그쪽은 `cssInterop` 에 등록된 `Animated.View` 이고, 등록된 컴포넌트에 **정적 스타일과 애니메이션
- * 스타일을 한 배열로** 넘기면 **정적 쪽이 사라진다**(iOS 실측 2026-08-25 — 원이 44px 도 채움색도
+ * 스타일을 한 배열로** 넘기면 **정적 쪽이 사라진다**(iOS 실측 2026-08-25. 원이 44px 도 채움색도
  * 없이 아이콘만 남았고, 애니메이션 스타일만 떼면 즉시 정상이었다). 스크림에서는 그 탓에
  * `position: absolute` 가 사라져 화면을 통째로 밀어냈다.
  *
  * `BottomSheet` 의 `SheetScrim` 이 처음부터 `Animated.createAnimatedComponent(Pressable)` 로
- * **직접 만든** 컴포넌트를 쓰는 것이 같은 자리다. 여기도 그 형태를 따른다 —
+ * **직접 만든** 컴포넌트를 쓰는 것이 같은 자리다. 여기도 그 형태를 따른다.
  * 대가는 `className` 을 못 쓰는 것이고, 그래서 이 파일의 애니메이션 상자들은 색까지 `style` 로 준다.
  */
 const AnimatedBox = Animated.createAnimatedComponent(View)
 
-/** 앱이 이미 쓰는 스택 전환 커브 — `BottomBar` 의 `EASE` 와 같은 가족이다. */
+/** 앱이 이미 쓰는 스택 전환 커브. `BottomBar` 의 `EASE` 와 같은 가족이다. */
 const EASE = Easing.bezier(0.32, 0.72, 0, 1)
-/** 닫힘은 가속만 — 끝에서 머뭇거리면 접히는 중 이 길어 보인다. */
+/** 닫힘은 가속만. 끝에서 머뭇거리면 접히는 중 이 길어 보인다. */
 const EASE_IN = Easing.bezier(0.4, 0, 1, 1)
 
 /** 0(접힘) ↔ 1(펼침) 하나로 그 요소의 모든 값을 만든다. */
@@ -102,7 +102,7 @@ function useDialProgress(step: DialStep, isOpen: boolean, reduceMotion: boolean)
   return progress
 }
 
-/** 원의 지름 — 아래 FAB(56)보다 작다. 위계가 크기로 드러난다. */
+/** 원의 지름. 아래 FAB(56)보다 작다. 위계가 크기로 드러난다. */
 const CIRCLE_PX = 44
 
 interface DialRowProps {
@@ -165,7 +165,7 @@ function DialRow(props: DialRowProps): React.JSX.Element {
       className="flex-row items-center gap-2"
     >
       {/*
-        색과 치수를 `style` 로 주는 이유는 위 `AnimatedBox` 주석에 있다 — 이 상자는 `className` 을
+        색과 치수를 `style` 로 주는 이유는 위 `AnimatedBox` 주석에 있다. 이 상자는 `className` 을
         못 받는다.
       */}
       <AnimatedBox
@@ -220,7 +220,7 @@ export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
    * 뒤다. 처음에 그렇게 뒀더니 FAB 가 캡슐에 반쯤 가려 안 보였다(실기기 확인 2026-08-25).
    *
    * 값은 `ScreenScroll` 이 콘텐츠 끝에 남기는 몫과 **같은 함수에서 나온다**
-   * (`bottomSafeAreaPx + barSpacePx`, `bottom-inset.ts`). 손으로 옮겨 적으면 기기마다 갈린다 —
+   * (`bottomSafeAreaPx + barSpacePx`, `bottom-inset.ts`). 손으로 옮겨 적으면 기기마다 갈린다.
    * 바 높이가 창 폭의 함수이기 때문이다.
    *
    * 이 컴포넌트는 **탭 화면에 선다고 전제한다.** 바가 없는 하위 페이지에 놓을 일이 생기면 그때
@@ -247,7 +247,7 @@ export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
   return (
     <BottomBarOverlay>
       {/*
-        스크림은 **접혀 있을 때 터치를 안 먹는다** — 먹으면 판이 닫힌 채로 캘린더를 덮어 날짜를
+        스크림은 **접혀 있을 때 터치를 안 먹는다**. 먹으면 판이 닫힌 채로 캘린더를 덮어 날짜를
         고를 수 없게 된다(투명해서 원인이 안 보이는 종류의 결함이다).
       */}
       <AnimatedBox

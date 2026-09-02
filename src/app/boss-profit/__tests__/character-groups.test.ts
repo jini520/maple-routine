@@ -26,7 +26,7 @@ const priced: RecordedDrop[] = [
   },
 ]
 
-describe('groupTotalMeso — 아이템 수익 합산', () => {
+describe('groupTotalMeso: 아이템 수익 합산', () => {
   it('보스 행 결정석 합에 그 행의 드롭 수익을 더한다', () => {
     const drops = { [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: priced }
 
@@ -37,7 +37,7 @@ describe('groupTotalMeso — 아이템 수익 합산', () => {
     expect(groupTotalMeso(group([보스행()]), {})).toBe(6_800_000_000)
   })
 
-  it('다른 행의 드롭은 세지 않는다 — 키가 (ocid, boss, difficulty, periodKey) 다', () => {
+  it('다른 행의 드롭은 세지 않는다. 키가 (ocid, boss, difficulty, periodKey) 다', () => {
     const drops = { [dropRowKey('ocid-1', 다른주간보스, '카오스', PERIOD)]: priced }
 
     expect(groupTotalMeso(group([보스행()]), drops)).toBe(6_800_000_000)
@@ -57,7 +57,7 @@ describe('groupTotalMeso — 아이템 수익 합산', () => {
 
 //  의 "미입력 ≠ 0원"과 **다른 `null`** 이다. 여기 0은 합산 편의값이고, 그 행의 화면에는
 // 금액 대신 `미완료`·`가격 미확정` 배지가 선다(`BossProfitBossRow` 테스트가 그쪽을 지킨다).
-describe('sumPayout — 금액을 모르는 행', () => {
+describe('sumPayout: 금액을 모르는 행', () => {
   it('미완료 placeholder 와 가격 미확정 행은 0으로 접힌다', () => {
     const rows = [
       보스행({ isComplete: false, payoutMeso: null }),

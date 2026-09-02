@@ -1,4 +1,4 @@
-// 대표 캐릭터 표식 — `선택됨` 층 행의 오른쪽.
+// 대표 캐릭터 표식. `선택됨` 층 행의 오른쪽.
 //
 // 별의 **뜻이 바뀌었다**: 에서 별은 **고름** 이었는데, 카드가 자리를 옮기는 것이 곧 고름이
 // 되면서(결정 3) 그 자리가 비었고 **대표** 가 들어왔다.
@@ -22,7 +22,7 @@ import { useThemeAppearance } from '../../../theme/context'
 const HIT_SLOP = { top: 12, bottom: 12, left: 12, right: 12 }
 
 export interface RepresentativeStarProps {
-  /** 접근성 이름 접두 — 목록에서 어느 행의 별인지 구분한다(캐릭터 이름). */
+  /** 접근성 이름 접두. 목록에서 어느 행의 별인지 구분한다(캐릭터 이름). */
   label: string
   filled: boolean
   /** 대표가 **다른 행에** 정해졌다. 톤만 낮춘다(위 ②). */

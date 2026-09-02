@@ -76,7 +76,7 @@ export function resolveScreenBottomInset(options: {
    */
   bottomSafeAreaPx: number
   /**
-   * 떠 있는 바가 먹는 세로 몫 — `resolveBottomBarMetrics(창 폭).spacePx`.
+   * 떠 있는 바가 먹는 세로 몫. `resolveBottomBarMetrics(창 폭).spacePx`.
    *
    * **예전에는 이 파일의 상수(`FLOATING_BAR_SPACE_PX = 72`)였다.** 그 주석이 *"`BottomBar.tsx` 의
    * `BAR_HEIGHT + LIFT` 와 같은 값이어야 한다"* 였다는 것이 이 인자의 근거다. 원래부터 파생값을

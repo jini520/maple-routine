@@ -101,7 +101,7 @@ function addTo(
 }
 
 /**
- * 자동으로 흘러든 하루치 — **캐릭터 하나 × 하루**.
+ * 자동으로 흘러든 하루치. **캐릭터 하나 × 하루**.
  *
  * 보스마다 한 줄이 아니라 이 요약이 한 줄이 된다. 의 한 줄이 한 기록 에서
  * 보스만 빠지는 이유는 그 규칙의 근거가 접으면 어느 쪽을 고치는지 못 고른다 였는데, **보스 줄은
@@ -113,7 +113,7 @@ interface BossDaySummary {
   crystalMeso: number
   bossCount: number
   /**
-   * 그날 잡은 보스 — 줄을 펼치면 뜨는 타일의 원재료다.
+   * 그날 잡은 보스. 줄을 펼치면 뜨는 타일의 원재료다.
    *
    * **새로 읽는 것이 아니다.** `getDatedBossProfitRecords` 가 이미 보스·난이도를 돌려주고 있었고,
    * 그것을 `crystalMeso` 로 접기만 하고 버리던 것을 들고 있게 한 것뿐이다.
@@ -132,7 +132,7 @@ function summaryKey(dateKey: string, ocid: string): string {
   return `${dateKey}|${ocid}`
 }
 
-/** 드롭이 짝인 수익 행을 찾는 키 — 넷이 같으면 같은 처치다. */
+/** 드롭이 짝인 수익 행을 찾는 키. 넷이 같으면 같은 처치다. */
 function bossRowKey(record: {
   ocid: string
   boss: string
@@ -143,7 +143,7 @@ function bossRowKey(record: {
 }
 
 /**
- * 이 범위(**두 끝 포함**)에 잡은 것으로 밝혀진 보스 수익 — 날짜를 **모르는 기록은 안 든다**
+ * 이 범위(**두 끝 포함**)에 잡은 것으로 밝혀진 보스 수익. 날짜를 **모르는 기록은 안 든다**
  * . 그것을 어느 칸에 얹으면 그 순간 거짓 날짜가 되고, 주간 보기에서는
  * `period_key` 로 제자리에 서므로 잃는 것은 월간 칸뿐이다.
  *
@@ -223,7 +223,7 @@ async function loadBossDaySummaries(
 }
 
 /**
- * 날짜 범위의 칸 금액 — **두 끝을 포함**한다.
+ * 날짜 범위의 칸 금액. **두 끝을 포함**한다.
  *
  * 접는 원천이 **넷**이다. 손입력 둘(`income_records`·`spend_records`)과 보스 둘(결정석 · 아이템
  * 판매). 넷째까지 붙은 것이 **#239**이고, **넷이 전부다**. 다섯째로 예정돼 있던
@@ -339,7 +339,7 @@ export async function refreshCashbook(now: Date): Promise<void> {
 }
 
 /**
- * 화면이 내 숫자가 낡았나 를 묻는 값 — 이 화면이 읽는 두 표의 판 을 하나로
+ * 화면이 내 숫자가 낡았나 를 묻는 값. 이 화면이 읽는 두 표의 판 을 하나로
  * 접는다. 화면은 다시 들어올 때 이 값이 달라졌을 때만 조회를 다시 튼다.
  *
  * **여기 있는 이유**는 화면이 `storage/` 를 직접 안 부르기 때문이다(CLAUDE.md CRITICAL ·
@@ -370,7 +370,7 @@ export async function loadLastPointRate(): Promise<number | null> {
  */
 interface ManualDayRecordBase {
   /**
-   * 그 기록에 붙은 캐릭터의 이름 — **없으면 빈 문자열**이다.
+   * 그 기록에 붙은 캐릭터의 이름. **없으면 빈 문자열**이다.
    *
    * `ocid` 가 `null`(계정 단위, 기본)이거나 캐시에 이름이 없으면 빈다. 줄은 그때 항목만 적는다.
    */
@@ -395,7 +395,7 @@ export interface DefeatedBoss {
  */
 interface AutoDayRecordBase {
   ocid: string
-  /** 캐시에 없으면 빈 문자열 — 그때 줄은 갈래 이름만 적는다(`recordTitleOf`). */
+  /** 캐시에 없으면 빈 문자열. 그때 줄은 갈래 이름만 적는다(`recordTitleOf`). */
   characterName: string
   payoutMeso: number
   /** 결정석이면 마리, 판매면 건. */
@@ -410,7 +410,7 @@ interface AutoDayRecordBase {
  */
 export interface BossCrystalDayRecord extends AutoDayRecordBase {
   kind: 'bossCrystal'
-  /** 그날 잡은 보스 — **큰 것부터**다(`toAutoRecords`). 비어 있지 않다(이 줄이 서는 조건이다). */
+  /** 그날 잡은 보스. **큰 것부터**다(`toAutoRecords`). 비어 있지 않다(이 줄이 서는 조건이다). */
   bosses: readonly DefeatedBoss[]
 }
 
@@ -442,7 +442,7 @@ export function isManualRecord(entry: DayRecord): entry is ManualDayRecord {
 }
 
 /**
- * 목록의 `key`. 손입력은 행의 `id`(자연키가 없어 만든 신원), 자동 줄은 **갈래 + 캐릭터**다 —
+ * 목록의 `key`. 손입력은 행의 `id`(자연키가 없어 만든 신원), 자동 줄은 **갈래 + 캐릭터**다.
  * 하루에 그 조합이 하나뿐이라 그것이 곧 신원이다.
  */
 export function rowKeyOf(entry: DayRecord): string {
@@ -491,7 +491,7 @@ export async function loadDayRecords(dateKey: string): Promise<DayRecord[]> {
 }
 
 /**
- * `ocid` → 캐릭터 이름 — **줄에 이름은 여기서만 붙인다**.
+ * `ocid` → 캐릭터 이름. **줄에 이름은 여기서만 붙인다**.
  *
  * 자동 줄(보스)과 손입력 줄이 같은 표를 쓴다. 갈라 두면 같은 캐릭터가 한 목록 안에서 다르게
  * 불릴 수 있다.
@@ -510,7 +510,7 @@ async function namesByOcid(ocids: readonly string[]): Promise<Map<string, string
   )
 }
 
-/** 요약을 줄로 — 이름은 부르는 쪽이 이미 찾아 둔 표에서 온다(캘린더 칸은 이름이 필요 없다). */
+/** 요약을 줄로. 이름은 부르는 쪽이 이미 찾아 둔 표에서 온다(캘린더 칸은 이름이 필요 없다). */
 function toAutoRecords(
   summaries: BossDaySummary[],
   names: Map<string, string>,
@@ -530,7 +530,7 @@ function toAutoRecords(
          * 한 순서를 쓴다. ~~큰 것부터~~는 여기서 죽은 한 줄이고, 제일 큰
          * 것 의 자리는 마리당 금액이 실제로 적힌 보스 수익 탭으로 남는다.
          *
-         * 비교자가 **완전 결정적**이라 `getDatedBossProfitRecords` 의 조회 순서에 안 기댄다 —
+         * 비교자가 **완전 결정적**이라 `getDatedBossProfitRecords` 의 조회 순서에 안 기댄다.
          * 그 SELECT 에는 `ORDER BY` 가 없고(가 그렇게 정했다) 앞의 주석은
          * 그 사실과 반대로 조회 순서는 이 결정적으로 만든다 고 적고 있었다.
          */
@@ -567,7 +567,7 @@ const AUTO_LABELS: Record<AutoDayRecord['kind'], string> = {
 }
 
 /**
- * 줄에 적는 이름 — 손입력은 항목이고, 없으면 **갈래 이름**이다.
+ * 줄에 적는 이름. 손입력은 항목이고, 없으면 **갈래 이름**이다.
  *
  * 직접 입력에서 이름 칸을 비우는 것은 정상이라(비워 둬도 됩니다) 이름 없는 기록이 실제로 생긴다.
  * 그 줄을 비워 두면 무엇인지 모르는 줄 이 되는데, 갈래는 언제나 있으므로 그것을 쓴다.
@@ -576,7 +576,7 @@ const AUTO_LABELS: Record<AutoDayRecord['kind'], string> = {
  * 사용자에게 아무 뜻도 없는 문자열이고, 알 수 없음 은 있지도 않은 캐릭터를 만들어 낸다.
  */
 /**
- * 손입력 줄의 첫 칸 — 적어 둔 이름, 없으면 갈래.
+ * 손입력 줄의 첫 칸. 적어 둔 이름, 없으면 갈래.
  *
  * **사냥만 갈래로 적는다**(사용자 지정 2026-08-29). 거기 적힌 이름은 사냥터인데, 그 줄이
  * 답하는 것은 **오늘 무엇으로 벌었나** 이고 **어느 맵이었나** 는 열어 봐야 뜻이 생기는 값이다
@@ -640,7 +640,7 @@ export function recordCashOf(entry: DayRecord): number | null {
 }
 
 /**
- * 이름과 금액 **사이**에 서는 작은 글자 — 없으면 `null`.
+ * 이름과 금액 **사이**에 서는 작은 글자. 없으면 `null`.
  *
  * 갈래마다 세는 것이 다르다: 지출은 수량(`×2`. 맨 숫자는 2번째 로도 읽힌다), 결정석은 마리 수,
  * 판매는 건수와 **미입력 건수**다. 화면이 갈래별로 분기하지 않도록 여기서 한 문자열로 접는다
@@ -673,7 +673,7 @@ export function recordCountLabelOf(entry: DayRecord): string | null {
 }
 
 /**
- * 고치기 — `recordedAt` 은 안 바뀐다. 시세를 기억하는 순서는 넣을 때와 같다:
+ * 고치기. `recordedAt` 은 안 바뀐다. 시세를 기억하는 순서는 넣을 때와 같다:
  * **성공한 뒤에만.**
  */
 export async function editSpend(record: SpendRecord): Promise<void> {
@@ -687,7 +687,7 @@ export async function editIncome(record: IncomeRecord): Promise<void> {
   await updateIncomeRecord(record)
 }
 
-/** 지우기 — 갈래가 어느 테이블인지를 안다. **손입력만** 받는다. */
+/** 지우기. 갈래가 어느 테이블인지를 안다. **손입력만** 받는다. */
 export async function removeRecord(entry: ManualDayRecord): Promise<void> {
   if (entry.kind === 'spend') {
     await deleteSpendRecord(entry.record.id)

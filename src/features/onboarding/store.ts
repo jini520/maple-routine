@@ -29,7 +29,7 @@ export interface OnboardingStore extends OnboardingState {
   // 원인은 무효 키(400 OPENAPI00005 · 401/403)와 429 둘이고, 사슬은 하나이며 문구만 갈린다.
   // 알리기만 하고(모달) 이동·삭제는 하지 않는다. 그것은 아래 confirmApiKeyNotice 가 한다.
   noticeApiKeyIssue(kind: ApiKeyNoticeKind): void
-  // 그 모달의 "확인" — 키 입력 화면으로 이동하고 저장된 apiKey 를 지운다(원인과 무관하게 같다).
+  // 그 모달의 "확인"키 입력 화면으로 이동하고 저장된 apiKey 를 지운다(원인과 무관하게 같다).
   confirmApiKeyNotice(): Promise<void>
   reset(): Promise<void>
 }
@@ -187,7 +187,7 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
       set((state) => onboardingReducer(state, { type: 'API_KEY_NOTICED', kind }))
     },
 
-    // 모달의 "확인" — 여기서야 이동과 삭제가 일어난다.
+    // 모달의 "확인"여기서야 이동과 삭제가 일어난다.
     // 원인별로 갈라 처리하지 않는다. 429도 키를 지운다(사용자 결정 2026-08-08).
     // 안 지우면 재시작 때 같은 키로 completed 에 복귀해 또 막히고, 사용자에게는 "재시작하면 되는
     // 것처럼 보이다가 안 되는" 상태가 된다. 같은 키를 다시 붙여넣는 것은 막지 않는다.

@@ -20,14 +20,14 @@ describe('AmountFigure', () => {
     expect(view.getByText('메소')).toBeTruthy()
   })
 
-  // 결정 9 — 접어도 **값을 안 깎는다**. 이 자리가 곧 저장될 총액이라 화면과 저장이 갈리면 안 된다.
+  // 결정 9. 접어도 **값을 안 깎는다**. 이 자리가 곧 저장될 총액이라 화면과 저장이 갈리면 안 된다.
   it('만 미만 나머지까지 그대로 적는다', async () => {
     const view = await renderAtom(<AmountFigure value={123_456_789} unit="메소" testID="amount" />)
 
     expect(view.getByTestId('amount')).toHaveTextContent('1억 2345만 6789')
   })
 
-  it('0 이면 흐린 색으로 그린다 — 아직 셀 것이 없다는 뜻이다', async () => {
+  it('0 이면 흐린 색으로 그린다. 아직 셀 것이 없다는 뜻이다', async () => {
     const view = await renderAtom(<AmountFigure value={0} unit="메소" testID="amount" />)
 
     expect(view.getByTestId('amount')).toHaveTextContent('0')
@@ -48,7 +48,7 @@ describe('AmountFigure', () => {
     expect(view.queryAllByText('70만', { includeHiddenElements: true })).toHaveLength(1)
   })
 
-  // 결정 6 — 큰 숫자가 사용자의 값이 아니게 되어 되돌릴 대상이 없다. 지울 값은 각자의 칸에 있다.
+  // 결정 6. 큰 숫자가 사용자의 값이 아니게 되어 되돌릴 대상이 없다. 지울 값은 각자의 칸에 있다.
   it('초기화 버튼이 없다', async () => {
     const view = await renderAtom(<AmountFigure value={12} unit="메소" testID="amount" />)
 
@@ -67,7 +67,7 @@ describe('AmountFigure', () => {
     expect(view.queryByTestId('a-hint')).toBeNull()
   })
 
-  // 결정 9 — 위 줄의 밑줄이 경계를 겸한다. 여기서 또 그으면 선이 두 줄이 된다.
+  // 결정 9. 위 줄의 밑줄이 경계를 겸한다. 여기서 또 그으면 선이 두 줄이 된다.
   it('자기 윗선을 안 긋는다', async () => {
     const view = await renderAtom(<AmountFigure value={12} unit="메소" testID="amount" />)
 
@@ -83,7 +83,7 @@ describe('AmountFigure', () => {
  * 정의상 같은 자리다. 두 글꼴 크기의 차이를 **픽셀로 적지 않는 이유**가 그것이다.
  */
 describe('줄 상자', () => {
-  it('숫자의 줄 상자는 글자보다 크다 — ascent 가 잘리지 않는다', async () => {
+  it('숫자의 줄 상자는 글자보다 크다. ascent 가 잘리지 않는다', async () => {
     const view = await renderAtom(<AmountFigure value={700_000} unit="메소" testID="amount" />)
 
     const style = flattenStyle(view.getByTestId('amount').props.style) as {
@@ -100,7 +100,7 @@ describe('줄 상자', () => {
    * 단위 글자(`조`·`억`·`만`·`천`)는 숫자보다 **계단 한 칸 아래**다.
    *
    * `text-2xl` 안에 `text-xl` 을 안친 것이라 줄 높이 28 이 함께 온다. 그 줄 높이가 바깥 줄 상자를
-   * 흔들지 않는 것은 안드로이드에서 잰 값이다(실측 2026-09-02 — 큰 숫자 줄이 픽셀 단위로 같다).
+   * 흔들지 않는 것은 안드로이드에서 잰 값이다(실측 2026-09-02. 큰 숫자 줄이 픽셀 단위로 같다).
    */
   it('단위 글자는 숫자보다 한 단계 작다', async () => {
     const view = await renderAtom(<AmountFigure value={850_000_000} unit="메소" testID="amount" />)
@@ -134,7 +134,7 @@ describe('줄 상자', () => {
     expect(단위.lineHeight).toBe(숫자.lineHeight)
   })
 
-  it('단위 줄에 **숫자와 같은 크기**의 글자가 심겨 있다 — 그 줄의 지표를 그것이 정한다', async () => {
+  it('단위 줄에 **숫자와 같은 크기**의 글자가 심겨 있다. 그 줄의 지표를 그것이 정한다', async () => {
     const view = await renderAtom(<AmountFigure value={7_250_000} unit="메소" testID="amount" />)
 
     const 숫자 = flattenStyle(view.getByTestId('amount').props.style) as { fontSize: number }
@@ -165,7 +165,7 @@ describe('≈ 표식', () => {
     expect(view.getByTestId('amount')).toHaveTextContent('≈ 4176만')
   })
 
-  it('0 에는 안 붙는다 — 아직 어림할 것이 없다', async () => {
+  it('0 에는 안 붙는다. 아직 어림할 것이 없다', async () => {
     const view = await renderAtom(
       <AmountFigure value={0} unit="메소" testID="amount" approximate />,
     )
@@ -173,7 +173,7 @@ describe('≈ 표식', () => {
     expect(view.getByTestId('amount')).toHaveTextContent('0')
   })
 
-  it('안 주면 안 붙는다 — 판매·지출은 실제로 오간 값이다', async () => {
+  it('안 주면 안 붙는다. 판매·지출은 실제로 오간 값이다', async () => {
     const view = await renderAtom(<AmountFigure value={41_760_000} unit="메소" testID="amount" />)
 
     expect(view.getByTestId('amount')).toHaveTextContent('4176만')

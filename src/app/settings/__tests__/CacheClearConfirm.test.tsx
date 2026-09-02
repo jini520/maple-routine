@@ -5,10 +5,10 @@
 //    `accessibilityLabel` 이 되므로 `getByLabelText` 가 그대로 그 행을 준다. 웹에서 라벨이 자식
 //    글자에서 계산되던 것을 여기서는 컴포넌트가 명시로 준다(`CacheClearConfirm.tsx` ②).
 // ② `toBeDisabled()` → `accessibilityState.disabled`.
-// ③ **누른 뒤 화면을 보려면 `act` 로 한 번 흘려보내야 한다**(실측 — 이 파일에서 처음 걸렸다).
+// ③ **누른 뒤 화면을 보려면 `act` 로 한 번 흘려보내야 한다**(실측. 이 파일에서 처음 걸렸다).
 //    RNTL 14 에서 `fireEvent` 는 갱신을 **예약만** 하고, 그 프레임의 렌더는 그 뒤에 온다. 그래서
 //    `fireEvent` 직후의 질의는 **누르기 전 화면**을 본다(단언이 옛 값을 보고도 초록이 될 수 있다).
-//    `onPress` 가 밖으로 나가는 콜백을 부르는 경우(`SettingsRow`·`DisconnectConfirm`)에는 안 걸린다 —
+//    `onPress` 가 밖으로 나가는 콜백을 부르는 경우(`SettingsRow`·`DisconnectConfirm`)에는 안 걸린다.
 //    그 콜백은 렌더와 무관하게 즉시 불리기 때문이다. **다시 그려진 화면을 볼 때만** 이 헬퍼를 쓴다.
 //
 // **`role="checkbox"` 와 `aria-checked` 는 갈리지 않는다**. 진짜 다중 선택이라 RN 접근성에도

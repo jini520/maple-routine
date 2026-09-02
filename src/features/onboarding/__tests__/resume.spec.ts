@@ -29,7 +29,7 @@ afterEach(() => {
   jest.resetAllMocks()
 })
 
-// 재개 파생표 — 부팅(restoreFromStorage)과 키 재입력(submitApiKey)이
+// 재개 파생표. 부팅(restoreFromStorage)과 키 재입력(submitApiKey)이
 // 이 함수 하나를 공유한다. 두 벌이 되면 재개 규칙의 진실이 둘이 된다.
 describe('deriveResumeTarget', () => {
   it('apiKey가 없으면 awaitingApiKey다', async () => {
@@ -41,7 +41,7 @@ describe('deriveResumeTarget', () => {
     expect(getTrackedCharacterOcidsMock).not.toHaveBeenCalled()
   })
 
-  it('trackingMode를 고르지 않았으면 selectingTrackingMode다 — 자동으로 확정하지 않는다', async () => {
+  it('trackingMode를 고르지 않았으면 selectingTrackingMode다. 자동으로 확정하지 않는다', async () => {
     getTrackingModeMock.mockResolvedValue(null)
     getTrackedCharacterOcidsMock.mockResolvedValue(null)
 
@@ -59,7 +59,7 @@ describe('deriveResumeTarget', () => {
     })
   })
 
-  it('추적 캐릭터가 빈 배열이어도 미완료로 본다 — 0명은 사용자 의도가 아니다', async () => {
+  it('추적 캐릭터가 빈 배열이어도 미완료로 본다. 0명은 사용자 의도가 아니다', async () => {
     getTrackedCharacterOcidsMock.mockResolvedValue([])
 
     await expect(deriveResumeTarget()).resolves.toEqual({
@@ -91,7 +91,7 @@ describe('deriveResumeTarget', () => {
 // RN 은 메이플 ID 를 고르지 않는다. 표에서 **한 행만** 빠지고 나머지는 그대로다.
 // 위 describe 가 그대로 'single' 표(웹뷰 앱 회귀 가드)이므로, 여기서는 "무엇이 빠졌고 무엇이
 // 안 빠졌는가"를 본다.
-describe('deriveResumeTarget — 계정 범위 all', () => {
+describe('deriveResumeTarget: 계정 범위 all', () => {
   beforeEach(() => {
     // 계정을 고른 적이 없는 것이 RN 의 정상 상태다.
     getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
@@ -144,7 +144,7 @@ describe('deriveResumeTarget — 계정 범위 all', () => {
 
   // 웹뷰 앱을 쓰다 RN 으로 넘어온 설치본에는 이 값이 남아 있다(지우지 않는다).
   // 읽지 않는 값이라 판정을 바꾸지 않고, 있으면 있는 그대로 실어 보낸다.
-  it('저장된 selectedAccountId가 있으면 그 값을 그대로 싣는다 — 판정은 바뀌지 않는다', async () => {
+  it('저장된 selectedAccountId가 있으면 그 값을 그대로 싣는다. 판정은 바뀌지 않는다', async () => {
     getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
 
     await expect(deriveResumeTarget()).resolves.toEqual({

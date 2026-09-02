@@ -29,7 +29,7 @@ export interface SpendFormProps {
   lastPointRate: number | null
   onSave: (draft: SpendDraft) => void | Promise<void>
   onClose: () => void
-  /** 시트 껍데기의 스크롤을 되돌릴 열쇠 — 목록 갈래가 단계를 오갈 때 부른다. */
+  /** 시트 껍데기의 스크롤을 되돌릴 열쇠. 목록 갈래가 단계를 오갈 때 부른다. */
   onScrollKeyChange: (key: string) => void
   /** 머리에서 날짜를 바꾼다. 수입 시트와 같은 계약이다. */
   onDateChange: (next: string) => void
@@ -115,9 +115,9 @@ function CategoryChip(props: {
 }
 
 /**
- * 갈래 칩 — **고르는 화면에만 선다**.
+ * 갈래 칩. **고르는 화면에만 선다**.
  *
- * 둘째 화면에서는 머리의 `‹` 가 이미 되돌아가는 길이다. **수정 모드에도 없다**(결정 15) —
+ * 둘째 화면에서는 머리의 `‹` 가 이미 되돌아가는 길이다. **수정 모드에도 없다**(결정 15).
  * 갈래를 바꾸면 그 기록은 다른 것 이 되고, 무엇이었는지는 제목이 이미 말한다.
  */
 export function CategoryChips(props: {

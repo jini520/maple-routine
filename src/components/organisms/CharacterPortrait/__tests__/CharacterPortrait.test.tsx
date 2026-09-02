@@ -60,7 +60,7 @@ function svgTextContent(node: AtomElement): string {
  * `Text` 아래의 `TextPath` 노드. `startOffset`·`href` 는 여기 붙는다.
  *
  * **`textAnchor` 는 여기 없다.** `react-native-svg` 가 그것을 `Text` 의 `font` 객체로 접어 넣는다
- * (실측 — `TextPath` 에 주면 조용히 버려진다). 그래서 아래 케이스가 둘을 다른 노드에서 읽는다.
+ * (실측. `TextPath` 에 주면 조용히 버려진다). 그래서 아래 케이스가 둘을 다른 노드에서 읽는다.
  */
 function textPathOf(node: AtomElement): AtomElement {
   const found = node.children.find(
@@ -89,7 +89,7 @@ describe('CharacterPortrait · rail 규격의 곡선 글자', () => {
     expect(svgTextContent(view.getByTestId('portrait-level-text'))).toBe('Lv.285')
     expect(svgTextContent(view.getByTestId('portrait-name-text'))).toBe('내옆에최성일')
 
-    // `호 하나`의 증거 — 둘이 **같은 path** 를 가리킨다(정정 2).
+    // `호 하나`의 증거. 둘이 **같은 path** 를 가리킨다(정정 2).
     const [levelPath, namePath] = [
       textPathOf(view.getByTestId('portrait-level-text')),
       textPathOf(view.getByTestId('portrait-name-text')),
@@ -145,7 +145,7 @@ describe('CharacterPortrait · rail 규격의 호 링', () => {
     expect(view.getAllByTestId('portrait-ring-fill')).toHaveLength(2)
   })
 
-  // 정정 1: 하나만 받으면 **온전한 원**이다(보스 스케줄러 — 월간은 링에서 뺐다).
+  // 정정 1: 하나만 받으면 **온전한 원**이다(보스 스케줄러. 월간은 링에서 뺐다).
   it('링을 하나만 받으면 온전한 원 하나만 그린다', async () => {
     const view = await rail({ rings: [{ label: '주간', completed: 2, total: 12 }] })
 

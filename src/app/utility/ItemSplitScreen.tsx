@@ -1,17 +1,17 @@
 /**
- * 아이템 분배 계산기 — 유틸리티의 첫 도구.
+ * 아이템 분배 계산기. 유틸리티의 첫 도구.
  *
  * ## 무엇을 푸는가
  *
  * 파티가 먹은 아이템을 한 명이 경매장에 팔아 나눠 줄 때 **수수료가 두 번** 떼인다(판매 · 분배).
  * 그래서 정산 대상 ÷ 인원을 그대로 보내면 받는 사람만 분배 수수료를 물어 균등이 깨진다.
- * 화면이 내놓는 것은 그 역산값 하나 — **한 명에게 보낼 금액**이다.
+ * 화면이 내놓는 것은 그 역산값 하나. **한 명에게 보낼 금액**이다.
  *
  * 계산은 전부 `lib/cashbook/item-split` 이 진다. 이 파일에는 어떤 입력이 그 인자로 가는가 만 있다.
  *
  * ## 금액 입력에 자체 키패드를 두지 않는다
  *
- * `DropPricePad`가 키패드를 그리는 이유는 둘이었고 여기서는 하나만 남는다 —
+ * `DropPricePad`가 키패드를 그리는 이유는 둘이었고 여기서는 하나만 남는다.
  * *"자릿수를 세게 된다"* 는 여기서도 참이지만(그래서 **단위 칩을 가져온다**), *"키보드가 뜨면
  * 시트가 밀리거나 잘린다"* 는 바텀시트 안이라서 생긴 문제고 이 화면은 스크롤되는 전체 화면이다.
  * 324줄짜리 패드를 추출 리팩터해서 얻는 것이 여기서는 성립하지 않는 이유 하나뿐이라 안 한다.
@@ -61,7 +61,7 @@ function parseMesoInput(text: string): number {
 }
 
 function FeeToggle(props: {
-  /** 판매·분배 — 접근성 이름의 접두이기도 하다. */
+  /** 판매·분배. 접근성 이름의 접두이기도 하다. */
   label: string
   value: FeePercent
   onChange: (next: FeePercent) => void
@@ -189,7 +189,7 @@ export function ItemSplitScreen(): React.JSX.Element {
         <Card className="gap-3 px-4 py-4">
           <Text className="text-xs font-semibold text-text-muted">경매장 수수료</Text>
           {/* MVP 실버 등급 이상이면 5% → 3%(사용자 확인 2026-08-23). 판매와 분배를
-              각각 고르는 것이 결정이다 — 세 대표 상황 밖의 조합도 나온다. */}
+              각각 고르는 것이 결정이다. 세 대표 상황 밖의 조합도 나온다. */}
           <FeeToggle label="판매" value={saleFeePercent} onChange={setSaleFeePercent} />
           <FeeToggle label="분배" value={splitFeePercent} onChange={setSplitFeePercent} />
         </Card>

@@ -1,4 +1,4 @@
-// 초기화 카운트다운 위젯. 이 파일이 지키는 것 넷 —
+// 초기화 카운트다운 위젯. 이 파일이 지키는 것 넷.
 // ① **일일은 초까지 세고 1초마다 다시 그린다**(기준은 `atMs`. 틱을 세지 않는다)
 // ② **크기마다 무엇을 버리는지**(2x1 은 월간 · 1x1 은 일일만 + 단위 하나)
 // ③ **임박을 색으로 말하지 않는다**(값이 무엇이든 글자 스타일이 같다. 색이 확정되지 않았다)
@@ -37,7 +37,7 @@ afterEach(() => {
   jest.useRealTimers()
 })
 
-/** 셋이 서로 다른 단위로 접히는 값 — 일일 `12시간 34분` · 주간 `2일 12시간` · 월간 `13일 12시간`. */
+/** 셋이 서로 다른 단위로 접히는 값. 일일 `12시간 34분` · 주간 `2일 12시간` · 월간 `13일 12시간`. */
 const 기본 = 뷰모델({
   resets: 초기화(
     12 * HOUR_MS + 34 * MINUTE_MS,
@@ -54,7 +54,7 @@ async function 위젯(
 }
 
 describe('남은 시간 표기', () => {
-  it.each(Object.entries(크기))('%s — 일일은 어느 크기에서나 선다', async (_이름, 값) => {
+  it.each(Object.entries(크기))('%s: 일일은 어느 크기에서나 선다', async (_이름, 값) => {
     const { getByTestId } = await 위젯(값)
 
     expect(getByTestId('reset-value-daily')).toBeTruthy()
@@ -66,14 +66,14 @@ describe('남은 시간 표기', () => {
     expect(getByText('12시간 34분 0초')).toBeTruthy()
   })
 
-  it('주간·월간은 분까지다 — 수십 시간 남은 값에 초를 붙이면 글자만 길어진다', async () => {
+  it('주간·월간은 분까지다. 수십 시간 남은 값에 초를 붙이면 글자만 길어진다', async () => {
     const { getByText } = await 위젯(크기['2x2'])
 
     expect(getByText('2일 12시간')).toBeTruthy()
     expect(getByText('13일 12시간')).toBeTruthy()
   })
 
-  it('앞의 0 단위는 뗀다 — `0시간 43분 12초` 가 아니다', async () => {
+  it('앞의 0 단위는 뗀다. `0시간 43분 12초` 가 아니다', async () => {
     const { getByText } = await 위젯(
       크기['2x1'],
       뷰모델({ resets: 초기화(43 * MINUTE_MS + 12 * 1000, DAY_MS, DAY_MS) }),
@@ -92,7 +92,7 @@ describe('남은 시간 표기', () => {
   })
 
   // 아직 안 왔다는 사실이 **0분** 으로 읽히면 안 된다. 다만 **초를 그리는 일일에는 안 쓴다**.
-  it('**1분 미만** 은 주간·월간에만 남는다 — 일일은 `20초` 라고 직접 말한다', async () => {
+  it('**1분 미만** 은 주간·월간에만 남는다. 일일은 `20초` 라고 직접 말한다', async () => {
     const { getByText, queryByText } = await 위젯(
       크기['2x1'],
       뷰모델({ resets: 초기화(20 * 1000, 20 * 1000, DAY_MS) }),
@@ -151,7 +151,7 @@ describe('크기가 버리는 것', () => {
   })
 })
 
-describe('진행 바 — 주기의 어디쯤인가', () => {
+describe('진행 바. 주기의 어디쯤인가', () => {
   it('지난 몫만큼 찬다', async () => {
     const { getAllByTestId } = await 위젯(
       크기['2x2'],
@@ -226,7 +226,7 @@ describe('1초마다 다시 그린다', () => {
     expect(getByTestId('reset-value-daily').props.children).toBe('12시간 24분 0초')
   })
 
-  it('0 밑으로 내려가지 않는다 — 지난 시각을 음수로 말하지 않는다', async () => {
+  it('0 밑으로 내려가지 않는다. 지난 시각을 음수로 말하지 않는다', async () => {
     const { getByTestId } = await 위젯(
       크기['2x1'],
       뷰모델({ resets: 초기화(2 * 1000, DAY_MS, DAY_MS) }),

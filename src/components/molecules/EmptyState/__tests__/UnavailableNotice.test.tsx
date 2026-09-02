@@ -8,7 +8,7 @@ import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/rende
 import { UnavailableNotice } from '../UnavailableNotice'
 
 describe('UnavailableNotice', () => {
-  // "조회 불가"는 빈 상태가 아니라 확인 자체를 못 한 상태 — 디자인을 공유하면 "데이터가 없다"로
+  // "조회 불가"는 빈 상태가 아니라 확인 자체를 못 한 상태. 디자인을 공유하면 "데이터가 없다"로
   // 오해된다.
   it('제목과 설명을 렌더링한다', async () => {
     const { getByText, getByTestId } = await renderAtom(<UnavailableNotice />)
@@ -36,7 +36,7 @@ describe('UnavailableNotice', () => {
 
   // `notCollected` 는 넷째 얼굴이다. "영구히 확인할 수 없다"(정보 톤)와 같은
   // 말을 하면 거짓말이 되므로 중립 톤 + Clock 이고, **시각을 암시하는 표현을 쓰지 않는다**
-  // (트레이드오프 — 집계 시각은 브래킷만 실측됐다).
+  // (트레이드오프. 집계 시각은 브래킷만 실측됐다).
   it('notCollected 는 중립 톤에 "자동으로 채워집니다" 문구다', async () => {
     const { getByText, getByTestId } = await renderAtom(<UnavailableNotice variant="notCollected" />)
 

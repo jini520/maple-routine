@@ -1,7 +1,7 @@
-// 회귀 가드 — **`seed` 와 `syncSchedules` 를 둘 다 실물로 쓴다.**
+// 회귀 가드. **`seed` 와 `syncSchedules` 를 둘 다 실물로 쓴다.**
 //
 // 결함은 그 둘의 **결합**에 있었고(시드가 ocid 마다 회차를 동시에 내다가 단일 비행으로 서로
-// 합류했고, 시드는 결과를 위치 `[0]` 로 집었다), 기존 테스트 둘은 서로의 사각을 만들고 있었다 —
+// 합류했고, 시드는 결과를 위치 `[0]` 로 집었다), 기존 테스트 둘은 서로의 사각을 만들고 있었다.
 // `store.test.ts` 는 `seed` 를, `seed.test.ts` 는 `syncSchedules` 를 목으로 바꾼다. 그래서 여기서는
 // **넥슨 계층과 저장 계층만** 목으로 두고 그 사이는 전부 실물이다.
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
@@ -138,7 +138,7 @@ describe('auto → manual 전환 시드', () => {
     }
   })
 
-  it('추적 캐릭터 전원을 한 회차로 훑는다 — 캐릭터마다 회차를 내지 않는다', async () => {
+  it('추적 캐릭터 전원을 한 회차로 훑는다. 캐릭터마다 회차를 내지 않는다', async () => {
     await useTrackingModeStore.getState().setMode('manual')
 
     expect(fetchCharacterListMock).toHaveBeenCalledTimes(1)

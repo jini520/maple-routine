@@ -9,7 +9,7 @@ import { BossProfitContextProvider, useBossProfitContext } from '../boss-profit-
 import { PERIOD, 컨텍스트값 } from './harness'
 
 // 한글 이름은 대문자로 시작할 수 없어 `react-hooks/rules-of-hooks` 가 컴포넌트로 인식하지 못한다
-// — 훅을 부르는 테스트 컴포넌트만 영문 이름을 쓴다.
+// 훅을 부르는 테스트 컴포넌트만 영문 이름을 쓴다.
 function PeriodLabel(): React.JSX.Element {
   const { periodKey, loadedPeriodKey } = useBossProfitContext()
   return <Text>{`${periodKey}/${loadedPeriodKey}`}</Text>

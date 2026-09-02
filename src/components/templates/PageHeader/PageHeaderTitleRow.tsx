@@ -3,7 +3,7 @@
 // ## 왜 줄에 프리미티브가 필요한가
 //
 // 셸(`PageHeader`)은 모든 화면이 같은데도 **제목의 세로 위치가 화면마다 달랐다**(사용자 관측
-// 2026-08-17 — *"탭을 이동할 때마다 title 행 위치가 좀 달라"*). 원인은 여백이 아니라 줄 높이다:
+// 2026-08-17. *"탭을 이동할 때마다 title 행 위치가 좀 달라"*). 원인은 여백이 아니라 줄 높이다:
 // 줄이 `items-center` 라 **가장 높은 자식이 높이를 정하고** 제목(줄높이 28)은 그 안에서 세로
 // 중앙에 앉는데, 함께 서는 것이 화면마다 달랐다.
 //
@@ -43,7 +43,7 @@ export const PAGE_HEADER_TITLE_ROW_MIN_H = 32
 
 export interface PageHeaderTitleRowProps {
   children: React.ReactNode
-  /** 화면마다 다른 몫 — `justify-between` · `gap-2` 등. 바닥(최소 높이)은 여기서 못 바꾼다. */
+  /** 화면마다 다른 몫. `justify-between` · `gap-2` 등. 바닥(최소 높이)은 여기서 못 바꾼다. */
   className?: string
 }
 

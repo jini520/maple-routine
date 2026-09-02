@@ -34,7 +34,7 @@ jest.mock('../features/onboarding/store', () => ({
       restoreFromStorage: async () => {
         mockCalls.push('restore:onboarding')
       },
-      // `ApiKeyNoticeModal` 이 읽는 둘 — 이 파일의 관심사가 아니라 꺼진 상태로 둔다.
+      // `ApiKeyNoticeModal` 이 읽는 둘. 이 파일의 관심사가 아니라 꺼진 상태로 둔다.
       apiKeyNotice: null,
       confirmApiKeyNotice: async () => {},
     }),
@@ -79,7 +79,7 @@ jest.mock('../app/prehydrate', () => ({
   },
 }))
 
-// OTA 부팅 확인도 포트를 거친다. 다른 스토어와 같은 방식으로 대체해 **순서만** 본다 —
+// OTA 부팅 확인도 포트를 거친다. 다른 스토어와 같은 방식으로 대체해 **순서만** 본다.
 // 확인이 실제로 무엇을 하는지는 어댑터·스토어 테스트의 몫이다.
 jest.mock('../features/live-update/store', () => ({
   __esModule: true,
@@ -201,7 +201,7 @@ describe('② 진입점이 무엇을 먼저 하는가', () => {
   })
 })
 
-describe('③ OTA 배선 — 벽이 사라졌고, 사라진 채로 있어야 한다', () => {
+describe('③ OTA 배선. 벽이 사라졌고, 사라진 채로 있어야 한다', () => {
   /** `packages/app-rn` 의 **제품 소스** 전부(테스트·스냅샷 제외). */
   const sources = ((): string[] => {
     const walk = (dir: string): string[] =>
@@ -230,7 +230,7 @@ describe('③ OTA 배선 — 벽이 사라졌고, 사라진 채로 있어야 한
   // 이제 묻는 것은 **벽이 정말 사라졌는가** 다. 벽은 core 가 **Vite 전용 API** 를 쓰는 것이었고,
   // 그것이 되살아나면 RN 은 다시 **import 하는 것만으로 죽는** 상태로 돌아간다. 그때 실패해야 하는
   // 자리는 이 모듈을 쓰는 화면 하나가 아니라 여기다.
-  it('core 의 live-update 스토어에 `import.meta` 가 없다 — 그것이 벽이었다', () => {
+  it('core 의 live-update 스토어에 `import.meta` 가 없다. 그것이 벽이었다', () => {
     const store = readFileSync(
       path.join(RN_ROOT, 'src', 'features', 'live-update', 'store.ts'),
       'utf8',
@@ -242,7 +242,7 @@ describe('③ OTA 배선 — 벽이 사라졌고, 사라진 채로 있어야 한
     expect(codeLines.filter((line) => line.includes('import.meta'))).toEqual([])
   })
 
-  // 배선이 실제로 있는가 — 없으면 모달은 **그릴 줄은 알지만 아무것도 안 뜨는** 상태로 조용히
+  // 배선이 실제로 있는가. 없으면 모달은 **그릴 줄은 알지만 아무것도 안 뜨는** 상태로 조용히
   // 되돌아간다(그 상태가 정상처럼 보이는 것이 원래 이 describe 가 걱정하던 것이다).
   it('`UpdatePromptModal` 이 마운트돼 있다', () => {
     const importers = sources.filter((file) =>

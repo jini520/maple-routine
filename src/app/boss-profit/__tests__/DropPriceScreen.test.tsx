@@ -1,4 +1,4 @@
-// 가격 기록 화면 — 웹판(251줄)의 명세를 읽어 다시 쓴 것.
+// 가격 기록 화면. 웹판(251줄)의 명세를 읽어 다시 쓴 것.
 //
 // 갈린 것 셋
 // ① **라우터가 없다**. 뒤로는 `goBack` 이 불렸는가로 본다.
@@ -117,11 +117,11 @@ beforeEach(() => {
   mockStores()
 })
 
-// ★ 회귀 가드 — 이 화면은 공용 `PageHeader` 를 쓰지 않고 **같은 값을 자기 파일에서**
+// ★ 회귀 가드. 이 화면은 공용 `PageHeader` 를 쓰지 않고 **같은 값을 자기 파일에서**
 // 낸다(드랍 히스토리·보스 수익과 같은 사정). 공용 셸만 고치고 여기를 빠뜨리면 히스토리·가격 두
 // 하위 페이지의 제목 높이가 16px 갈리는데, 두 화면은 같은 진입점 줄에서 나란히 열린다.
-describe('DropPriceScreen — 셸', () => {
-  it('헤더가 상단 안전영역만큼만 먹는다 — 여백을 더하지 않는다', async () => {
+describe('DropPriceScreen: 셸', () => {
+  it('헤더가 상단 안전영역만큼만 먹는다. 여백을 더하지 않는다', async () => {
     const { getByTestId } = await renderOverlay(<DropPriceScreen />)
 
     expect(flattenStyle(getByTestId('page-header').props.style).paddingTop).toBe(
@@ -130,7 +130,7 @@ describe('DropPriceScreen — 셸', () => {
   })
 })
 
-describe('DropPriceScreen — 기간을 이어받는다', () => {
+describe('DropPriceScreen: 기간을 이어받는다', () => {
   it('보스 수익에서 보던 주를 그대로 연다', async () => {
     await renderOverlay(<DropPriceScreen />)
 
@@ -171,7 +171,7 @@ describe('DropPriceScreen — 기간을 이어받는다', () => {
     expect(getByLabelText('이전 기간').props.accessibilityState.disabled).toBe(true)
   })
 
-  it('뒤로는 pop 이다 — 딥링크가 없어 돌아갈 곳을 계산하지 않는다', async () => {
+  it('뒤로는 pop 이다. 딥링크가 없어 돌아갈 곳을 계산하지 않는다', async () => {
     const { getByLabelText } = await renderOverlay(<DropPriceScreen />)
 
     await act(async () => {
@@ -182,7 +182,7 @@ describe('DropPriceScreen — 기간을 이어받는다', () => {
   })
 })
 
-describe('DropPriceScreen — 값 매기기', () => {
+describe('DropPriceScreen: 값 매기기', () => {
   it('행을 탭하면 그 기록을 들고 키패드가 열리고, 저장하면 스토어로 간다', async () => {
     const { getByLabelText, getByText } = await renderOverlay(<DropPriceScreen />)
 
@@ -214,7 +214,7 @@ describe('DropPriceScreen — 값 매기기', () => {
     expect(getByText('3인')).toBeTruthy()
   })
 
-  it('저장이 실패하면 토스트로 알린다 — 조용히 삼키면 저장된 줄 알고 떠난다', async () => {
+  it('저장이 실패하면 토스트로 알린다. 조용히 삼키면 저장된 줄 알고 떠난다', async () => {
     savePrice.mockRejectedValue(new Error('쓰기 실패'))
     const { getByLabelText, getByText } = await renderOverlay(<DropPriceScreen />)
 
@@ -254,7 +254,7 @@ describe('DropPriceScreen — 값 매기기', () => {
 })
 
 // **미입력은 0원이 아니다**. 이 화면이 그 구분을 가장 직접적으로 보여주는 자리다.
-describe('DropPriceScreen — 미입력 ≠ 0원', () => {
+describe('DropPriceScreen: 미입력 ≠ 0원', () => {
   it('미입력 행의 금액 자리에는 0 이 아니라 "입력" 이 선다', async () => {
     const { getByLabelText } = await renderOverlay(<DropPriceScreen />)
 
@@ -266,7 +266,7 @@ describe('DropPriceScreen — 미입력 ≠ 0원', () => {
     expect(row.queryByText('0')).toBeNull()
   })
 
-  // 가장 강한 반례 — `priceMeso ?? 0` 계열로 그리면 여기서 금액이 샌다.
+  // 가장 강한 반례. `priceMeso ?? 0` 계열로 그리면 여기서 금액이 샌다.
   it('priceMeso 는 있고 priceState 가 없는 기록은 여전히 미입력이고 합계를 안 움직인다', async () => {
     mockStores({
       price: { groups: 그룹([항목({ drop: 드롭({ priceMeso: 9_000_000_000 }) })]) },
@@ -297,7 +297,7 @@ describe('DropPriceScreen — 미입력 ≠ 0원', () => {
     expect(getByText('1 / 2 정함')).toBeTruthy()
   })
 
-  it('값을 매긴 행만 인원을 말한다 — 미입력에 "1인" 이 서면 정해진 값처럼 읽힌다', async () => {
+  it('값을 매긴 행만 인원을 말한다. 미입력에 "1인" 이 서면 정해진 값처럼 읽힌다', async () => {
     mockStores({
       price: {
         groups: 그룹([
@@ -326,8 +326,8 @@ describe('DropPriceScreen — 미입력 ≠ 0원', () => {
   })
 })
 
-describe('DropPriceScreen — 표시 규칙 정정 (2026-08-10)', () => {
-  it('상자명은 쓰지 않는다 — 이름이 길어 아이템명과 보스를 밀어냈다', async () => {
+describe('DropPriceScreen: 표시 규칙 정정 (2026-08-10)', () => {
+  it('상자명은 쓰지 않는다. 이름이 길어 아이템명과 보스를 밀어냈다', async () => {
     mockStores({
       price: {
         groups: 그룹([
@@ -351,7 +351,7 @@ describe('DropPriceScreen — 표시 규칙 정정 (2026-08-10)', () => {
     expect(getByText('리스트레인트 링 3레벨')).toBeTruthy()
   })
 
-  it('고가 아이템 행에는 골드 배경이 깔린다 — 보스 행과 같은 표현이다', async () => {
+  it('고가 아이템 행에는 골드 배경이 깔린다. 보스 행과 같은 표현이다', async () => {
     const 고가 = weeklyBossesData.weekly[0].boss
     mockStores({
       price: { groups: 그룹([항목({ boss: 고가, drop: 드롭({ itemName: '루즈 컨트롤 머신 마크' }) })]) },
@@ -372,7 +372,7 @@ describe('DropPriceScreen — 표시 규칙 정정 (2026-08-10)', () => {
 // **스킵과 기록 안함은 다른 일이다**(정정).
 //   기록 안함 = "값을 매길 만하지 않다"는 결정 → 저장한다(미입력에서 빠진다)
 //   스킵       = "아직 안 팔렸다, 팔리면 넣겠다" → **아무것도 저장하지 않고** 미입력에 머문다
-describe('DropPriceScreen — 순차 입력', () => {
+describe('DropPriceScreen: 순차 입력', () => {
   it('"기록 안함" 은 결정을 저장한다', async () => {
     const { getByLabelText, getByText } = await renderOverlay(<DropPriceScreen />)
 
@@ -386,7 +386,7 @@ describe('DropPriceScreen — 순차 입력', () => {
     expect(excludePrice).toHaveBeenCalledWith(expect.objectContaining({ boss: 주간보스 }))
   })
 
-  it('단건 편집에는 스킵이 없다 — 닫으면 같은 일이라 버튼을 늘리지 않는다', async () => {
+  it('단건 편집에는 스킵이 없다. 닫으면 같은 일이라 버튼을 늘리지 않는다', async () => {
     const { getByLabelText, queryByText } = await renderOverlay(<DropPriceScreen />)
 
     await act(async () => {

@@ -56,7 +56,7 @@ export function 뷰모델(부분: Partial<TodayViewModel>): TodayViewModel {
   return { ...빈_뷰모델, ...부분 }
 }
 
-/** 모든 줄이 채워진 대표 캐릭터 — 없는 것을 지우는 테스트가 여기서 하나씩 뺀다. */
+/** 모든 줄이 채워진 대표 캐릭터. 없는 것을 지우는 테스트가 여기서 하나씩 뺀다. */
 export const 대표_캐릭터: RepresentativeView = {
   ocid: 'ocid-대표',
   name: '단풍루틴',
@@ -91,7 +91,7 @@ export function 스케줄행(부분: Partial<ScheduleRowView> = {}): ScheduleRow
   return { ...base, ...부분 }
 }
 
-/** n명짜리 목록 — 이름·ocid 만 갈린다(스냅샷이 캐릭터 수만 다르게 찍힌다). */
+/** n명짜리 목록. 이름·ocid 만 갈린다(스냅샷이 캐릭터 수만 다르게 찍힌다). */
 export function 스케줄목록(n: number): ScheduleRowView[] {
   return Array.from({ length: n }, (_, index) =>
     스케줄행({
@@ -125,7 +125,7 @@ export function 수익캐릭터(
   }
 }
 
-/** 기록이 있는 한 주 — 캐릭터 셋의 합이 그대로 타일의 총액이다. */
+/** 기록이 있는 한 주. 캐릭터 셋의 합이 그대로 타일의 총액이다. */
 export function 수익(캐릭터들: WeeklyProfitCharacterView[]): TodayViewModel['profit'] {
   return {
     totalMeso: 캐릭터들.reduce((sum, entry) => sum + entry.totalMeso, 0),
@@ -137,7 +137,7 @@ export function 수익(캐릭터들: WeeklyProfitCharacterView[]): TodayViewMode
   }
 }
 
-/** 상위 셋 — 금액이 내림차순이고 셋 다 다르다(뷰모델이 이미 정렬해 준 모양). */
+/** 상위 셋. 금액이 내림차순이고 셋 다 다르다(뷰모델이 이미 정렬해 준 모양). */
 export function 수익캐릭터셋(): WeeklyProfitCharacterView[] {
   return [
     수익캐릭터({ ocid: 'ocid-1', characterName: '가', crystalMeso: 2_000_000_000, itemMeso: 500_000_000 }),
@@ -172,7 +172,7 @@ export function 월드한도(부분: Partial<CrystalLimitView> = {}): CrystalLim
   return { world: '스카니아', cleared: 34, limit: WEEKLY_CRYSTAL_SALE_LIMIT, ...부분 }
 }
 
-/** n개 월드 — 이름과 소진량이 서로 달라 합쳐졌는가 를 글자로 물을 수 있다. */
+/** n개 월드. 이름과 소진량이 서로 달라 합쳐졌는가 를 글자로 물을 수 있다. */
 export function 월드한도목록(n: number): CrystalLimitView[] {
   const 이름 = ['스카니아', '루나', '오로라', '베라', '크로아']
   return Array.from({ length: n }, (_, index) =>
@@ -180,7 +180,7 @@ export function 월드한도목록(n: number): CrystalLimitView[] {
   )
 }
 
-/** 남은 시간 한 벌 — 주기 길이는 실제 값과 같게 두고 남은 시간만 테스트가 정한다. */
+/** 남은 시간 한 벌. 주기 길이는 실제 값과 같게 두고 남은 시간만 테스트가 정한다. */
 export function 카운트다운(remainingMs: number, periodMs: number): ResetCountdown {
   return { atMs: remainingMs, remainingMs, periodMs }
 }
@@ -211,7 +211,7 @@ export function 최고가(restCount: number, 상위?: Partial<PricedDropView>): 
 }
 
 /**
- * 가격 미입력 한 벌 — 건수와 미리보기는 **따로 준다.**
+ * 가격 미입력 한 벌. 건수와 미리보기는 **따로 준다.**
  *
  * 뷰모델이 앞 셋만 미리보기에 싣고 나머지는 건수에만 남기므로(외 N건), 픽스처가 둘을 묶어 버리면
  * 그 어긋남을 테스트가 만들 수 없다.
@@ -237,7 +237,7 @@ export function 미입력(
 }
 
 /**
- * 가뭄 요약 한 벌 — **단계는 손으로 적지 않는다.**
+ * 가뭄 요약 한 벌. **단계는 손으로 적지 않는다.**
  *
  * `tier`·`headlineCount` 를 픽스처가 직접 쓰면 위젯이 `getValuableDroughtTier` 를 따르는가 를
  * 물을 수 없다(테스트가 답을 들고 와서 답을 맞추는 꼴이 된다). 뷰모델이 하는 것과 같은 파생을 한다.
@@ -267,7 +267,7 @@ export function 공유계열(group: string, items: SharedContentItemView[]): Sha
   return { group, items }
 }
 
-/** 카탈로그 일곱을 다 그린 상태 — 남은 것 넷(악몽선경 · 일간 · 익스트림 · PC방). */
+/** 카탈로그 일곱을 다 그린 상태. 남은 것 넷(악몽선경 · 일간 · 익스트림 · PC방). */
 export function 공유컨텐츠(): SharedContentGroupView[] {
   return [
     공유계열('에픽던전', [

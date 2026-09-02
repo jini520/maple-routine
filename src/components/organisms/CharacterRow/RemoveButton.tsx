@@ -13,7 +13,7 @@ import { XIcon } from '../../atoms'
 const HIT_SLOP = { top: 12, bottom: 12, left: 12, right: 12 }
 
 export interface RemoveButtonProps {
-  /** 접근성 이름 접두 — 목록에서 어느 행의 `✕` 인지 구분한다(캐릭터 이름). */
+  /** 접근성 이름 접두. 목록에서 어느 행의 `✕` 인지 구분한다(캐릭터 이름). */
   label: string
   onPress: () => void
 }

@@ -22,7 +22,7 @@ import { toScheduleSyncError } from './errors'
  */
 export type CharacterEligibility = 'eligible' | 'ineligible' | 'unavailable'
 
-/** 이미 가진 원장만으로 내리는 판정 — API를 부르지 않는다. `null` 이면 아직 모른다(스윕이 필요하다). */
+/** 이미 가진 원장만으로 내리는 판정. API를 부르지 않는다. `null` 이면 아직 모른다(스윕이 필요하다). */
 function judgeFromLedger(ledger: ScheduleProbeLedger): CharacterEligibility | null {
   if (ledger.unavailable) {
     return 'unavailable'
@@ -61,7 +61,7 @@ type DayOutcome = 'completion' | 'observed' | 'unavailable' | 'skipped'
  * **미조회 날짜는 한꺼번에 나간다**. 옛 루프는 하루씩 순서대로 물으며 완료를
  * 찾은 날짜에서 멈췄는데, 이 함수가 피커의 캐릭터별 체인 안에서 `character/basic` **뒤에** 붙어
  * 있어서 그 직렬 구간이 그대로 캐릭터가 화면에 뜨는 시간 이었다(최대 13 RTT). 날짜끼리는 서로를
- * 모르므로 — 각 날짜가 하는 일은 원장에 기록 과 완료를 봤는가 뿐이다. 순서를 없애도 답이
+ * 모르므로. 각 날짜가 하는 일은 원장에 기록 과 완료를 봤는가 뿐이다. 순서를 없애도 답이
  * 바뀌지 않는다. 바뀌는 것은 **조기 종료가 아끼던 호출**뿐이고(결정 2), 그 대가는 서비스 단계 키의
  * 초당 500건 예산 안에서 치른다(개발 단계 키는 온보딩을 통과하지 못한다).
  *

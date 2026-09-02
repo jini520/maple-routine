@@ -1,4 +1,4 @@
-// 주간 결정석 판매 한도 위젯. 이 파일이 지키는 것 넷 —
+// 주간 결정석 판매 한도 위젯. 이 파일이 지키는 것 넷.
 // ① **분모가 참조 데이터에서 온다**(리터럴이 아니다. 값을 바꾸면 화면이 따라 바뀐다)
 // ② **월드별 한도를 합치지 않는다**(90은 계정이 아니라 월드마다 각각이다)
 // ③ **넘치는 월드는 크기마다 다르게 접힌다**(4x1 은 셋까지 · 2x2 는 **외 N개 월드**)
@@ -35,14 +35,14 @@ async function 위젯(
 }
 
 describe('분모는 참조 데이터에서 온다', () => {
-  it.each(Object.entries(크기))('%s — 링이 `n/한도` 를 그린다', async (_이름, 값) => {
+  it.each(Object.entries(크기))('%s: 링이 `n/한도` 를 그린다', async (_이름, 값) => {
     const { getByText } = await 위젯(값)
 
     expect(getByText('34')).toBeTruthy()
     expect(getByText(`/${WEEKLY_CRYSTAL_SALE_LIMIT}`)).toBeTruthy()
   })
 
-  // 판별력 — 분모를 박아 뒀다면 이 케이스가 여전히 실제 한도를 그린다.
+  // 판별력. 분모를 박아 뒀다면 이 케이스가 여전히 실제 한도를 그린다.
   it('한도가 달라지면 분모도 따라 달라진다', async () => {
     const { getByText, queryByText } = await 위젯(
       크기['2x1'],
@@ -135,7 +135,7 @@ describe('넘치는 월드 (타일 안에서 스크롤하지 않는다)', () => 
   })
 
   // 이 크기의 정직함이 월드 하나까지라는 사실을 계약으로 남긴다(파일 머리 · 위젯 주석).
-  it('1x1 은 링만 그린다 — 월드 이름이 사라진다', async () => {
+  it('1x1 은 링만 그린다. 월드 이름이 사라진다', async () => {
     const { getByTestId, queryByTestId } = await 위젯(크기['1x1'], 뷰모델({ crystalLimits: 월드한도목록(2) }))
 
     expect(getByTestId('crystal-ring')).toBeTruthy()
@@ -175,7 +175,7 @@ describe('링', () => {
 })
 
 describe('집계할 것이 없을 때', () => {
-  it.each(Object.entries(크기))('%s — 자기 타일 안에서 그 사실만 말한다', async (_이름, 값) => {
+  it.each(Object.entries(크기))('%s: 자기 타일 안에서 그 사실만 말한다', async (_이름, 값) => {
     const { getByTestId, queryByTestId } = await 위젯(값, 빈_뷰모델)
 
     // 위젯은 사라지지 않는다. 좌표 배치라 자리를 비우면 빈 사각형이 남는다.

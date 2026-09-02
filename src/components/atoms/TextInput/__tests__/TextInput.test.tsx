@@ -23,7 +23,7 @@ afterEach(() => {
   jest.restoreAllMocks()
 })
 
-describe('TextInput — 같은 클램프를 받는다', () => {
+describe('TextInput: 같은 클램프를 받는다', () => {
   it('작게 설정한 기기에서는 스케일링을 끈다', async () => {
     시스템_글자배수(0.823)
     const { getByTestId } = await renderAtom(<TextInput testID="키" value="" />)
@@ -51,7 +51,7 @@ describe('TextInput — 같은 클램프를 받는다', () => {
  *
  * 여기서 프롭을 보는 이유는 늘 같다: 계산이 맞아도 프롭이 안 붙으면 화면은 옛 동작이다.
  */
-describe('TextInput — 조합이 도는 칸은 value 를 씨앗으로만 받는다', () => {
+describe('TextInput: 조합이 도는 칸은 value 를 씨앗으로만 받는다', () => {
   it('글자 칸은 defaultValue 로 심고 value 를 안 단다', async () => {
     const { getByTestId } = await renderAtom(<TextInput testID="이름" value="단풍" />)
 
@@ -59,7 +59,7 @@ describe('TextInput — 조합이 도는 칸은 value 를 씨앗으로만 받는
     expect(getByTestId('이름').props.value).toBeUndefined()
   })
 
-  it('숫자 키패드 칸은 종전대로 value 로 통제한다 — 서식이 살아야 한다', async () => {
+  it('숫자 키패드 칸은 종전대로 value 로 통제한다. 서식이 살아야 한다', async () => {
     const { getByTestId } = await renderAtom(
       <TextInput testID="금액" value="1,234" keyboardType="number-pad" />,
     )
@@ -96,7 +96,7 @@ describe('TextInput — 조합이 도는 칸은 value 를 씨앗으로만 받는
  *
  * 여기서 프롭을 보는 이유는 늘 같다. 계산이 맞아도 프롭이 안 붙으면 화면은 옛 동작이다.
  */
-describe('TextInput — 플랫폼 기본 상자를 지운다', () => {
+describe('TextInput: 플랫폼 기본 상자를 지운다', () => {
   it('패딩·글꼴 패딩을 끄고 글자를 가운데 세운다', async () => {
     const { getByTestId } = await renderAtom(<TextInput testID="칸" value="" />)
 
@@ -107,7 +107,7 @@ describe('TextInput — 플랫폼 기본 상자를 지운다', () => {
     })
   })
 
-  it('호출부가 준 치수가 이긴다 — 기본값은 **앞**에 깔린다', async () => {
+  it('호출부가 준 치수가 이긴다. 기본값은 **앞**에 깔린다', async () => {
     const { getByTestId } = await renderAtom(
       <TextInput testID="칸" value="" style={{ paddingVertical: 8 }} />,
     )
@@ -130,8 +130,8 @@ describe('TextInput — 플랫폼 기본 상자를 지운다', () => {
  *
  * 색을 손으로 적지 않는다. `job-themes.json` 에서 읽는다.
  */
-describe('TextInput — 자리표시자 색을 아톰이 건다', () => {
-  it('테마의 `text-disabled` 로 그린다 — 힌트이지 값이 아니다', async () => {
+describe('TextInput: 자리표시자 색을 아톰이 건다', () => {
+  it('테마의 `text-disabled` 로 그린다. 힌트이지 값이 아니다', async () => {
     const { getByTestId } = await renderAtom(
       <TextInput testID="칸" value="" placeholder="아이템 명" />,
     )
@@ -140,7 +140,7 @@ describe('TextInput — 자리표시자 색을 아톰이 건다', () => {
   })
 
   // 아톰이 안 걸면 그 자리만 조용히 플랫폼 기본값으로 남는다. 이 아톰이 존재하는 이유가 그것이다.
-  it('자리표시자가 없는 칸에도 값이 붙는다 — 빠지는 자리를 안 만든다', async () => {
+  it('자리표시자가 없는 칸에도 값이 붙는다. 빠지는 자리를 안 만든다', async () => {
     const { getByTestId } = await renderAtom(<TextInput testID="칸" value="" />)
 
     expect(getByTestId('칸').props.placeholderTextColor).toBe(기본테마.textDisabled)

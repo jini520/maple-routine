@@ -1,5 +1,5 @@
 /**
- * 위젯 5 — **주간 결정석 판매 한도**.
+ * 위젯 5. **주간 결정석 판매 한도**.
  *
  * ## 한도는 계정이 아니라 **월드마다** 각각이다
  *
@@ -52,14 +52,14 @@ const TITLE = '결정석 판매'
  */
 const EMPTY_NOTE = '집계할 기록이 없습니다'
 
-/** 4x1 이 나란히 세우는 월드 수 — 그보다 많으면 그냥 잘린다(타일은 스크롤하지 않는다). */
+/** 4x1 이 나란히 세우는 월드 수. 그보다 많으면 그냥 잘린다(타일은 스크롤하지 않는다). */
 const SIDE_BY_SIDE_WORLDS = 3
 
-/** 링 굵기와 크기 — 크기는 배치가 정한 타일에 맞춘 값이라 변형마다 다르다. */
+/** 링 굵기와 크기. 크기는 배치가 정한 타일에 맞춘 값이라 변형마다 다르다. */
 const RING_STROKE = 4
 const RING_PX = { mini: 42, wide: 38, compact: 56, tiny: 44 } as const
 
-/** 2x1 · 4x1 · 2x2 · 1x1 — 이름이 크기가 아니라 무엇을 그리는가 를 말한다. */
+/** 2x1 · 4x1 · 2x2 · 1x1. 이름이 크기가 아니라 무엇을 그리는가 를 말한다. */
 type Variant = keyof typeof RING_PX
 
 function variantOf(w: number, h: WidgetHeight): Variant {
@@ -112,7 +112,7 @@ function Ring(props: { view: CrystalLimitView; sizePx: number }): React.JSX.Elem
         />
       </View>
 
-      {/* 정정 15 — 두 줄이지만 한 값이다. 줄 높이를 글자보다 낮춰 분수로 읽히게 한다. */}
+      {/* 정정 15. 두 줄이지만 한 값이다. 줄 높이를 글자보다 낮춰 분수로 읽히게 한다. */}
       <Text
         fixed
         testID="crystal-ring-numerator"
@@ -232,7 +232,7 @@ export function CrystalLimitWidget({ w, h, data }: WidgetProps): React.JSX.Eleme
     )
   }
 
-  // 4x1 — 제목을 버리고 그 폭을 월드에 쓴다. 넷째부터는 잘린다(타일은 스크롤하지 않는다).
+  // 4x1. 제목을 버리고 그 폭을 월드에 쓴다. 넷째부터는 잘린다(타일은 스크롤하지 않는다).
   return (
     <View testID="widget-crystal-limit" className="flex-1 flex-row items-center gap-2 p-3">
       {worlds.slice(0, SIDE_BY_SIDE_WORLDS).map((view) => (

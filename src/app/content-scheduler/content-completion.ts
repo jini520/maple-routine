@@ -43,7 +43,7 @@ import {
 /** `'unmeasurable'` = 끝이 없는 항목(파일 머리). 완료도 미완료도 아니라 세지 않는다. */
 export type ContentCompletion = 'complete' | 'incomplete' | 'unmeasurable'
 
-/** 카운트형 — `maxCount` 가 0이면 채울 것이 없다 라 완료로 치지 않는다(0/0을 100%로 읽지 않는다). */
+/** 카운트형. `maxCount` 가 0이면 채울 것이 없다 라 완료로 치지 않는다(0/0을 100%로 읽지 않는다). */
 function byCount(content: { nowCount: number; maxCount: number }): ContentCompletion {
   if (content.maxCount <= 0) return 'incomplete'
   return content.nowCount >= content.maxCount ? 'complete' : 'incomplete'
@@ -59,7 +59,7 @@ function byParticipation(content: { nowCount: number }): ContentCompletion {
 }
 
 /**
- * 일간 항목 — `renderDailyContentCard` 의 갈래와 같다.
+ * 일간 항목. `renderDailyContentCard` 의 갈래와 같다.
  *
  * · `kind: 'quest'` → 일일 퀘스트 카드가 `questState` 배지를 그린다.
  * · 그 밖(몬스터파크·폴백) → 진행률 바라 카운트가 답이다.
@@ -69,7 +69,7 @@ export function dailyContentCompletion(content: DailyContent): ContentCompletion
 }
 
 /**
- * 주간 항목 — `renderWeeklyContentCard` 의 **갈래 순서를 그대로** 따른다. 순서가 곧 규칙이라
+ * 주간 항목. `renderWeeklyContentCard` 의 **갈래 순서를 그대로** 따른다. 순서가 곧 규칙이라
  * (이름 일치가 접두사 일치보다 앞이다) 재배열하면 판정이 달라진다.
  */
 export function weeklyContentCompletion(content: WeeklyContent): ContentCompletion {

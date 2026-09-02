@@ -12,7 +12,7 @@
  * 달라진다.
  */
 
-/** 자릿수 상한 — 조 단위를 넘기면 `Number` 정밀도가 아니라 **화면이 먼저 깨진다.** */
+/** 자릿수 상한. 조 단위를 넘기면 `Number` 정밀도가 아니라 **화면이 먼저 깨진다.** */
 export const MAX_MESO = 9_999_999_999_999
 
 export const MESO_KEYS = [
@@ -47,7 +47,7 @@ export function applyMesoKey(meso: number, key: MesoKey): number {
 }
 
 /**
- * 칸에 들어온 글자를 값으로 — **숫자만 남긴다.**
+ * 칸에 들어온 글자를 값으로. **숫자만 남긴다.**
  *
  * 칸이 콤마를 그리므로 들어오는 글자에 콤마가 섞이고, 붙여넣기·자동완성은 그 밖의 것도 들여보낸다.
  * 다 걷고 남은 자릿수가 값이다(앞자리 0 은 `Number` 가 접는다).
@@ -66,11 +66,11 @@ export function parseMesoText(meso: number, text: string): number {
   return Number.isFinite(next) && next <= MAX_MESO ? next : meso
 }
 
-/** 상한의 자릿수 — 0 만 길게 이어지면 값으로는 안 걸려서 이것으로도 막는다. */
+/** 상한의 자릿수. 0 만 길게 이어지면 값으로는 안 걸려서 이것으로도 막는다. */
 const MAX_MESO_DIGITS = String(MAX_MESO).length
 
 /**
- * 칸에 남길 글자 — **숫자만 남긴다**.
+ * 칸에 남길 글자. **숫자만 남긴다**.
  *
  * `parseMesoText` 와 갈리는 자리는 하나다: **앞자리 0 을 안 걷는다.** `80000000000` 에서 `8` 을
  * 지운 `0000000000` 은 편집 중이지 0 이 아니다. 여기서 접으면 칸이 비어 처음부터 다시 쳐야 한다.
@@ -85,12 +85,12 @@ export function acceptMesoText(prev: string, next: string): string {
   return Number.isFinite(value) && value <= MAX_MESO ? digits : prev
 }
 
-/** 셈에 쓰는 값 — 빈 칸도 0 이다. */
+/** 셈에 쓰는 값. 빈 칸도 0 이다. */
 export function mesoValueOf(text: string): number {
   return text === '' ? 0 : Number(text)
 }
 
-/** 값을 칸의 글자로 — **0 은 빈 칸**이다(자리표시자 `0` 이 그 자리를 대신한다). */
+/** 값을 칸의 글자로. **0 은 빈 칸**이다(자리표시자 `0` 이 그 자리를 대신한다). */
 export function mesoTextOf(value: number): string {
   return value === 0 ? '' : String(value)
 }

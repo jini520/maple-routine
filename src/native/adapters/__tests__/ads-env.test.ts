@@ -2,7 +2,7 @@
 //
 // 틀려도 화면에는 아무 증상이 없다. 테스트 ID 가 남으면 광고는 멀쩡히 뜨는데 수익만 0이고,
 // 반대로 실 ID 가 개발 빌드에 나가면 자기 광고를 한 번 누르는 순간 무효 트래픽으로 AdMob 계정이
-// 위험해진다(되돌리기 매우 어려움 — `features/ads.md`). 그래서 판정을 눈으로 확인할 방법이 없고
+// 위험해진다(되돌리기 매우 어려움. `features/ads.md`). 그래서 판정을 눈으로 확인할 방법이 없고
 // 막는 것은 여기뿐이다.
 //
 // **판정 함수는 `src/native/ads` 의 진짜 것을 쓴다.** 흉내 내면 core 가 규칙을 바꿨을 때
@@ -13,7 +13,7 @@ import { shouldUseTestAds } from '../../ads'
 
 import { toAdsEnv, type AdsEnvSource } from '../ads-env'
 
-/** 스토어에 나가는 릴리스 빌드의 기본값 — 개발 번들도 아니고 환경 변수도 없다. */
+/** 스토어에 나가는 릴리스 빌드의 기본값. 개발 번들도 아니고 환경 변수도 없다. */
 const STORE_BUILD: AdsEnvSource = {
   isDevBundle: false,
   adsTest: undefined,
@@ -36,7 +36,7 @@ describe('toAdsEnv → shouldUseTestAds', () => {
     expect(usesTestAds({ adsTest: '1' })).toBe(true)
   })
 
-  it('베타 채널 빌드는 테스트 광고를 쓴다 — 정의상 스토어에 나가지 않는다', () => {
+  it('베타 채널 빌드는 테스트 광고를 쓴다. 정의상 스토어에 나가지 않는다', () => {
     expect(usesTestAds({ liveUpdateChannel: 'beta' })).toBe(true)
   })
 
@@ -68,7 +68,7 @@ describe('__DEV__ 는 테스트 광고 쪽으로만 기운다', () => {
     expect(usesTestAds({ ...source, isDevBundle: true })).toBe(true)
   })
 
-  // 반대편 — `__DEV__` 가 꺼지면 이 값은 아무것도 하지 않고 판정을 환경 변수에 그대로 넘긴다.
+  // 반대편. `__DEV__` 가 꺼지면 이 값은 아무것도 하지 않고 판정을 환경 변수에 그대로 넘긴다.
   // (릴리스 빌드는 `__DEV__ === false` 라, 이것만으로는 실기기 테스트 빌드를 못 막는다.)
   it('릴리스 번들에서는 환경 변수가 그대로 판정한다', () => {
     expect(usesTestAds({ isDevBundle: false, adsTest: '1' })).toBe(true)

@@ -142,20 +142,20 @@ export interface BossProfitState {
   // periodUnavailable(boolean) 하나로 "집계 전"과 "그 외 실패"를 같은 문구로 말했다.
   periodState: PeriodDataState
   /**
-   * 직전 기간의 총 수익 — 증감 칩의 비교 기준.
+   * 직전 기간의 총 수익. 증감 칩의 비교 기준.
    *
    * **기록 합만 담는다.** 조회한 적 없는 기간도 0이다(사용자 결정). 그래서 이 값은 기간 상태
    * 기계(`periodState`)와 무관하고, 화면은 이 숫자 하나만 보고 칩을 그린다. 그 대가로 "0메소였다"와
    * "모른다"가 구분되지 않는다(의도된 손실 트레이드오프).
    */
   previousPeriodTotalMeso: number
-  canGoPreviousPeriod: boolean // 현재 선택된 기간에서 한 칸 더 과거로 이동할 수 있는지(#29) — 이전 기간이 지금 조회 가능하거나 이미 캐시된 기록이 있을 때만 true. 조회 불가·레코드 없는 기간에 착지하는 것을 막는다.
+  canGoPreviousPeriod: boolean // 현재 선택된 기간에서 한 칸 더 과거로 이동할 수 있는지(#29). 이전 기간이 지금 조회 가능하거나 이미 캐시된 기록이 있을 때만 true. 조회 불가·레코드 없는 기간에 착지하는 것을 막는다.
   error: ScheduleSyncError | null
   staleCharacterNames: string[]
   /**
-   * 동기화가 실패한 캐릭터의 카드에 붙일 표식. 키는 ocid —
+   * 동기화가 실패한 캐릭터의 카드에 붙일 표식. 키는 ocid.
    * `staleCharacterNames`(토스트용 이름 목록)만으로는 어느 **카드**인지 알 수 없다.
-   *   `unavailable` 400 OPENAPI00003 — 이 캐릭터는 조회할 수 없다(영구)
+   *   `unavailable` 400 OPENAPI00003. 이 캐릭터는 조회할 수 없다(영구)
    *   `failed`      그 외 실패(네트워크·타임아웃 등)
    */
   characterIssues: Record<string, 'unavailable' | 'failed'>
@@ -172,7 +172,7 @@ export interface BossProfitStore extends BossProfitState {
   goToNextPeriod(): Promise<void>
   /**
    * 지금 보고 있는 (tab, periodKey)를 다시 로드한다. 재시도(`failed`)와
-   * 조회(`notChecked`) 두 상태가 사용자에게 주는 행동이 이것뿐이고 둘 다 같은 일을 한다 —
+   * 조회(`notChecked`) 두 상태가 사용자에게 주는 행동이 이것뿐이고 둘 다 같은 일을 한다.
    * 그 기간의 미확인 target을 다시 백필한다. `refresh` 로는 대신할 수 없다(현재 기간으로 되돌린다).
    */
   retryPeriod(): Promise<void>
@@ -218,7 +218,7 @@ let requestGeneration = 0
 
 
 
-// 결정 2와 동일한 원칙 — 캐시 단계(trackedOcids 저장 순서)와 동기화 단계(Nexon
+// 결정 2와 동일한 원칙. 캐시 단계(trackedOcids 저장 순서)와 동기화 단계(Nexon
 // character/list 응답 순서)가 서로 달라 캐릭터 목록 위치가 API 응답 이후 갑자기 바뀌어 보이던
 // 문제를 없앤다. 레벨 내림차순(동레벨이면 이름순)으로 항상 같은 순서를 계산해, 캐시 우선 표시
 // 단계부터 실시간 동기화·과거 기간 조회까지 전부 이 순서를 그대로 따르게 한다. character-basic-cache를
@@ -238,7 +238,7 @@ async function getSortedCharacterInfo(ocids: string[]): Promise<SortedCharacterI
         name: cached?.profile.name ?? '',
         characterName: cached?.profile.name ?? null,
         imageUrl: cached?.profile.imageUrl ?? null,
-        // profile.world는 옵셔널(string | undefined)이라 imageUrl과 같은 규약으로 null 정규화한다 —
+        // profile.world는 옵셔널(string | undefined)이라 imageUrl과 같은 규약으로 null 정규화한다.
         // 화면이 부재를 두 가지 형태로 구분할 이유가 없다.
         world: cached?.profile.world ?? null,
       }
@@ -467,7 +467,7 @@ function notifyOrphanDropCleanup(removedDrops: number): void {
 type BossProfitSetter = (partial: Partial<BossProfitState>) => void
 
 /**
- * 드롭 맵이 담을 행 — **보고 있는 기간 ∪ 지금 기간**.
+ * 드롭 맵이 담을 행. **보고 있는 기간 ∪ 지금 기간**.
  *
  * `dropsByRowKey` 는 사본을 만들지 않는다. 키(`dropRowKey`)에 `periodKey` 가 들어 있어 두 기간이 한
  * 맵에 있어도 충돌하지 않고, 사본을 두면 드롭 편집 경로(`setBossDrops`·`applyExternalDropEdit`)가
@@ -494,7 +494,7 @@ async function loadPeriod(
 ): Promise<void> {
   const currentPeriodKey = getCurrentBossProfitPeriod(tab, now).periodKey
   // buildWeeklySubtotalsForMonth의 캐릭터별 행 순서를 항상 동일하게 유지하기 위해 여기서도
-  // 같은 정렬 규칙을 적용한다(refresh()와 동일한 이유 — API 응답 순서에 좌우되지 않도록).
+  // 같은 정렬 규칙을 적용한다(refresh()와 동일한 이유. API 응답 순서에 좌우되지 않도록).
   const sortedCharacterInfo = await getSortedCharacterInfo(ocids)
   const sortedOcids = sortedCharacterInfo.map((info) => info.ocid)
   // 위 조회가 이미 캐릭터당 한 번씩 프로필을 읽었다. 그 결과를 아래 두 함수에
@@ -526,7 +526,7 @@ async function loadPeriod(
     // 또한 이 함수는 항상 requestGeneration을 올린 네비게이션 뒤에만 실행되므로, 진행 중이던
     // refresh의 'loading'은 이미 무효화된 상태다. 여기서 status를 'loaded'로 확정하지 않으면,
     // refresh 도중 기간을 이동했다가 돌아왔을 때 refresh의 최종 'loaded' set이 세대 가드에 막혀
-    // status가 'loading'에 영구히 갇히는 버그가 생긴다(사용자 보고 — "조회 중..." 무한 진행).
+    // status가 'loading'에 영구히 갇히는 버그가 생긴다(사용자 보고. "조회 중..." 무한 진행).
     set({
       status: 'loaded',
       rows,
@@ -787,7 +787,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       )
     }
 
-    // 캐시 엔트리 한 캐릭터분. 행뿐 아니라 게이트 판정값(syncedAt)과 **프로필**도 함께 나른다 —
+    // 캐시 엔트리 한 캐릭터분. 행뿐 아니라 게이트 판정값(syncedAt)과 **프로필**도 함께 나른다.
     // 프로필이 행에만 실려 있으면 행이 0인 캐릭터에서 그것을 꺼낼 방법이 없다.
     interface CachedCharacterEntry {
       syncedAt: string | null
@@ -795,9 +795,9 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       rows: BossProfitRow[]
     }
 
-    // 캐시 우선 표시 — 재검증(syncSchedules) 전에 마지막으로 성공한
+    // 캐시 우선 표시. 재검증(syncSchedules) 전에 마지막으로 성공한
     // 스케줄 캐시가 있으면 완료된 보스만 걸러 화면을 먼저 채운다. 이미 저장된 기록이
-    // 있으면 함께 조회해 partySize/payoutMeso도 바로 보여준다(단순 읽기이므로 안전) —
+    // 있으면 함께 조회해 partySize/payoutMeso도 바로 보여준다(단순 읽기이므로 안전).
     // 다만 기록이 없는 조합에 대한 자동 기록(upsert)은 **재검증하는 진입에서는** 이 단계에서
     // 하지 않는다. 낡은 캐시를 기준으로 잘못된 파티원 수를 기록해버리는 걸 막기 위해, 그
     // 경로의 자동 기록은 지금처럼 실제 재검증(syncSchedules) 이후에만 수행한다.
@@ -834,7 +834,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     const cachedRows = cachedByOcid.flatMap((entry) => entry.rows)
 
     // 프로필 맵은 **행이 아니라 캐시 엔트리**에서 만든다. 행에서 만들면 축약 응답으로
-    // 행이 0인 캐릭터는 프로필이 없고, appendRecordOnlyRows 가 그 캐릭터를 통째로 건너뛴다 —
+    // 행이 0인 캐릭터는 프로필이 없고, appendRecordOnlyRows 가 그 캐릭터를 통째로 건너뛴다.
     // 정확히 그 복원이 겨누는 시나리오가 프로필 부재로 다시 막힌다. 캐시 엔트리 자체가 없는 ocid는
     // 여전히 제외한다(이름을 모르면 행을 만들 수 없다).
     const cachedCharacterProfiles = new Map<string, CharacterProfileInfo>()
@@ -860,7 +860,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     )
 
     // 캐시 행에서 파생한 키만 쓰면 **행이 없는 기간의 기록을 조회조차 하지 않아**
-    // 되살릴 재료가 애초에 없다(축약 응답으로 월간 행이 통째로 빠지는 경로가 실측됐다 —
+    // 되살릴 재료가 애초에 없다(축약 응답으로 월간 행이 통째로 빠지는 경로가 실측됐다.
     // ). 동기화 분기와 같이 현재 주·달 키를 항상 포함한다.
     const cachedPeriodKeys = Array.from(
       new Set([
@@ -880,7 +880,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     const cachedMergedRows = mergeRecordsIntoRows(cachedRows, cachedRecords ?? [])
 
     // 이 행의 출처 캐시가 **보스 리셋 경계를 넘었는지**만 본다. `buildBossProfitRow`
-    // 가 periodKey를 now로 계산하므로 그 경우에만 지난 기간의 처치가 이번 기간 수익으로 굳는다 —
+    // 가 periodKey를 now로 계산하므로 그 경우에만 지난 기간의 처치가 이번 기간 수익으로 굳는다.
     // 한 기간 안에서는 "처치 완료"가 되돌아가지 않아 다른 손해 시나리오가 없다. 판정 기준은 캐시의
     // syncedAt이다(API 응답의 asOf가 아니다). row.periodKey를 계산한 now와 **같은 기기 시계**여야
     // 하고, 게이트(isSyncFresh)가 이미 그 값을 쓰므로 기준이 하나로 남는다.
@@ -890,7 +890,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       if (syncedAt === null) return false
       const syncedAtDate = new Date(syncedAt)
       if (Number.isNaN(syncedAtDate.getTime())) return false
-      // cycle로 갈라야 주간 행은 주간 리셋(목요일 00:00), 월간 행은 월간 리셋(1일 00:00)으로 본다 —
+      // cycle로 갈라야 주간 행은 주간 리셋(목요일 00:00), 월간 행은 월간 리셋(1일 00:00)으로 본다.
       // 두 주기의 경계 시점이 다르므로 한쪽으로 뭉뚱그리면 반대쪽이 조용히 틀린다.
       return getCurrentBossProfitPeriod(row.cycle, syncedAtDate).periodKey === row.periodKey
     }
@@ -1024,7 +1024,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
 
     // 후단(이슈 #139): 방금 끝난 syncSchedules 가 대상 캐릭터의 character/basic 도
     // 함께 받아 character-basic-cache 를 갱신했다(편승 갱신). 이 화면만 프로필을 동기화 **이전에**
-    // 읽으므로(위 sortedCharacterInfo — 캐시 우선 표시가 즉시 그리려면 그래야 한다), 여기서 다시
+    // 읽으므로(위 sortedCharacterInfo. 캐시 우선 표시가 즉시 그리려면 그래야 한다), 여기서 다시
     // 읽지 않으면 갱신된 레벨·이미지가 이 회차 화면에 반영되지 않고 다음 진입으로 밀린다.
     // character-basic-cache 를 읽는 로컬 조회라 네트워크는 0회다. 캐시 우선 표시 단계는 위의 옛
     // 값을 그대로 쓴다. 거기서 새 값을 기다리면 첫 페인트가 그만큼 늦어진다.
@@ -1272,7 +1272,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // latestSyncSnapshot(모듈 스코프 캐시)도 함께 갱신해야 한다. 그렇지 않으면 이 수정 후
     // 탭을 전환했다가 돌아오거나 기간을 이동했다 복귀할 때, loadPeriod의 "현재 기간" 분기가
     // 이 스냅샷에서 그대로 슬라이스하므로 방금 수정한 값이 낡은 스냅샷 값으로 되돌아가 보인다
-    // (2026-07-22 재현 — "파티원 수를 고쳐도 다시 파티관리 기본값으로 돌아간다"로 보고된 증상의
+    // (2026-07-22 재현. "파티원 수를 고쳐도 다시 파티관리 기본값으로 돌아간다"로 보고된 증상의
     // 실제 원인).
     //
     // **set 보다 앞이어야 한다**. 아래 set 이 이 스냅샷을 그대로 실어

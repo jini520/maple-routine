@@ -1,5 +1,5 @@
 /**
- * 저장소 포트 — `storage/*` 가 플랫폼 플러그인 대신 이 인터페이스에만 의존한다.
+ * 저장소 포트. `storage/*` 가 플랫폼 플러그인 대신 이 인터페이스에만 의존한다.
  *
  *  가 그은 어댑터 경계는 원래 "`features/*` 가 저장소를 직접 만지지 않는다"
  * 였고, 그 규칙은 지켜져 왔다(`features/` 의 Capacitor 직접 import 는 0개다). 다만 어댑터 자신은
@@ -72,7 +72,7 @@ export function setSqlitePort(port: SqlitePort): void {
 export function getPreferencesPort(): PreferencesPort {
   if (preferencesPort === null) {
     throw new Error(
-      'PreferencesPort가 주입되지 않았습니다 — 저장소를 쓰기 전에 setPreferencesPort()를 부르세요.',
+      'PreferencesPort가 주입되지 않았습니다. 저장소를 쓰기 전에 setPreferencesPort()를 부르세요.',
     )
   }
   return preferencesPort
@@ -81,7 +81,7 @@ export function getPreferencesPort(): PreferencesPort {
 export function getSqlitePort(): SqlitePort {
   if (sqlitePort === null) {
     throw new Error(
-      'SqlitePort가 주입되지 않았습니다 — 저장소를 쓰기 전에 setSqlitePort()를 부르세요.',
+      'SqlitePort가 주입되지 않았습니다. 저장소를 쓰기 전에 setSqlitePort()를 부르세요.',
     )
   }
   return sqlitePort
@@ -98,7 +98,7 @@ export const preferences: PreferencesPort = {
   keys: () => getPreferencesPort().keys(),
 }
 
-/** 테스트 전용 — 주입된 포트를 비운다. */
+/** 테스트 전용. 주입된 포트를 비운다. */
 export function __resetStoragePortsForTest(): void {
   preferencesPort = null
   sqlitePort = null

@@ -11,7 +11,7 @@ import { dropHistoryGuide } from './profit/drop-history'
 import { apiKeyGuide } from './settings/api-key'
 import { characterManageGuide } from './shared/character-manage'
 
-// 기능 사용법 안내의 **진실 원천 한 벌**(정정). 두 곳에서 읽는다 —
+// 기능 사용법 안내의 **진실 원천 한 벌**(정정). 두 곳에서 읽는다.
 // 기능 설명 화면(`/settings/guide`)이 기능 축으로 전체를 나열하고, 개발 노트 항목이
 // `guideId`(+`guideSectionId`)로 그중 한 마디를 가리켜 같은 화면을 연다.
 //
@@ -84,7 +84,7 @@ export const FEATURE_GUIDES: FeatureGuide[] = [
   dropItemRecordGuide,
   dropItemPriceGuide,
   dropHistoryGuide,
-  // 유틸리티 — 아직 없음
+  // 유틸리티. 아직 없음
   // 설정
   apiKeyGuide,
 ]

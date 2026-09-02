@@ -1,10 +1,10 @@
-// 컨텐츠 스케줄러 — 일간/주간 콘텐츠 진행 상태(`docs/features/content-scheduler.md`).
+// 컨텐츠 스케줄러. 일간/주간 콘텐츠 진행 상태(`docs/features/content-scheduler.md`).
 //
 // **이 화면에 걸린 ADR 이 스물하나다.** 대부분은 화면에 안 보이는 판단이라(캐시 우선 표시 · 실패의
 // 목적지 · 빈 상태의 판정 시점) 아래 주석이 그 자리를 지목한다. 목록은
 // `docs/migration/parity-inventory.md` §2.3.
 //
-// ══ RN 으로 옮기며 **사라진** 것 넷 — 전부 구조가 대신한다 ═══════════════════════════
+// ══ RN 으로 옮기며 **사라진** 것 넷. 전부 구조가 대신한다 ═══════════════════════════
 //
 // ① **당김을 손으로 만들던 제스처 훅과 커스텀 인디케이터**. 지금은
 //    `RefreshControl` 이 맡는다. 안드로이드에는 당김 거리 신호 자체가 없어 커스텀 마크를 고르면
@@ -172,7 +172,7 @@ export function ContentScreen(): React.JSX.Element {
     </Pressable>
   )
 
-  // 빈 상태 문구는 탭(일간/주간)과 모드(수동/자동)별로 나눈다. 수동 모드만 CTA를 준다 —
+  // 빈 상태 문구는 탭(일간/주간)과 모드(수동/자동)별로 나눈다. 수동 모드만 CTA를 준다.
   // 자동 모드가 지시하는 곳("게임에서 등록")은 앱 밖이라 데려다줄 수 없다.
   function contentEmptyProps(tab: 'daily' | 'weekly'): React.ComponentProps<typeof EmptyState> {
     const label = tab === 'daily' ? '일간' : '주간'
@@ -192,7 +192,7 @@ export function ContentScreen(): React.JSX.Element {
   }
 
   if (isEmpty) {
-    // 헤더 셸을 쓰지 않는 가지라(제목 줄이 목록 없이 혼자 선다) 상단 안전영역을 여기서 먹는다 —
+    // 헤더 셸을 쓰지 않는 가지라(제목 줄이 목록 없이 혼자 선다) 상단 안전영역을 여기서 먹는다.
     // 웹의 `min-h-[calc(100dvh …)]` 자리는 `flex-1` 이다(탭 상자가 이미 탭바를 뺀 크기다).
     return (
       <View testID="screen-Content" className="flex-1 p-4" style={{ paddingTop: topSafeAreaPx }}>
@@ -236,7 +236,7 @@ export function ContentScreen(): React.JSX.Element {
           // 구조적으로 없다(`PageHeader` 파일 머리).
           <PageHeader>
             {/*: 동기화 상태가 드롭다운 줄에서 **제목 옆**으로 올라왔다. 오른쪽
-                끝은 관리 버튼 자리 그대로다 — 그쪽은 **가는 곳**, 이쪽은 **상태** 라 성질이 다르다. */}
+                끝은 관리 버튼 자리 그대로다. 그쪽은 **가는 곳**, 이쪽은 **상태** 라 성질이 다르다. */}
             <PageHeaderTitleRow className="justify-between">
               <View className="shrink flex-row items-center gap-2">
                 {/* 결정 3: 폭을 다투면 시각 텍스트만 줄어든다. 제목은 화면의 이름이다. */}
@@ -273,7 +273,7 @@ export function ContentScreen(): React.JSX.Element {
               />
             )}
 
-            {/*: 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다 —
+            {/*: 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다.
                 셸 승계 카드는 보여줄 데이터가 아예 없을 때만 그린다. */}
             {(status === 'idle' || status === 'loading') && characters.length === 0 && (
               <LoadingState size="page" message="불러오고 있어요" />

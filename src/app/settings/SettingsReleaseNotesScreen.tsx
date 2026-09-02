@@ -96,7 +96,7 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
 
               {/*: 항목마다 배지를 다는 대신 **카테고리로 묶는다.** 배지는 항목
                   수만큼 반복돼 같은 말이 열 번 나오지만, 묶음 제목은 한 번만 말하고 그 아래
-                  전부에 적용된다. 순서는 데이터가 아니라 RELEASE_NOTE_CATEGORY_ORDER 가 정한다 —
+                  전부에 적용된다. 순서는 데이터가 아니라 RELEASE_NOTE_CATEGORY_ORDER 가 정한다.
                   노트를 쓰는 사람이 항목을 어떤 순서로 적든 화면은 늘 같아야 한다.
                   **비어 있는 묶음은 제목째 감춘다**(ThemeSelector 의 카테고리 섹션과 같은 규칙). */}
               {RELEASE_NOTE_CATEGORY_ORDER.map((category) => {
@@ -134,7 +134,7 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
                             </Text>
                             {/*: **안내가 있는 항목만** 눌린다. 없는 것은 결함이
                                 아니라 정상이므로 비활성 버튼을 두지 않고, 그 항목의 트리는 종전
-                                그대로다 — 래퍼도 클래스도 만들지 않는다. chevron 은 설정 행과 같은
+                                그대로다. 래퍼도 클래스도 만들지 않는다. chevron 은 설정 행과 같은
                                 약속이다(있으면 누르면 무언가 열린다). */}
                             {guideId === undefined ? (
                               body
@@ -142,7 +142,7 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
                               <Pressable
                                 role="button"
                                 onPress={() => {
-                                  // 마디까지 가리키면 그 자리로 떨어진다 —
+                                  // 마디까지 가리키면 그 자리로 떨어진다.
                                   // 릴리스에서 바뀐 것은 보통 기능 전체가 아니라 그중 한 마디다.
                                   // 웹의 `?s=` 쿼리가 여기서는 라우트 파라미터다(`routes.ts`).
                                   navigation.navigate('SettingsReleaseNoteGuide', {

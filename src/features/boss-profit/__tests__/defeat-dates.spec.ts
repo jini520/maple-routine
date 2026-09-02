@@ -1,4 +1,4 @@
-// 처치 날짜 캐기. 이 파일이 지키는 것 넷 —
+// 처치 날짜 캐기. 이 파일이 지키는 것 넷.
 //
 // ① **뒤집힌 날**이 처치일이다(결정 2). 완료로 보이는 첫 날이고, 리셋 당일이면 그날이다.
 // ② **구멍이 있으면 확정하지 않는다**. 시작일부터 끊김 없이 봐야 **그 앞엔 없었다** 를 말한다.
@@ -53,7 +53,7 @@ const WEEK = [
   '2026-08-26',
 ]
 
-describe('resolveDefeatedOn — 뒤집힌 날 (결정 2)', () => {
+describe('resolveDefeatedOn: 뒤집힌 날 (결정 2)', () => {
   it('미완료 → 완료로 바뀐 날이 처치일이다', () => {
     expect(
       resolveDefeatedOn({
@@ -70,7 +70,7 @@ describe('resolveDefeatedOn — 뒤집힌 날 (결정 2)', () => {
     ).toBe('2026-08-22')
   })
 
-  it('리셋 당일에 이미 완료면 그날이다 — 그 앞이 없다', () => {
+  it('리셋 당일에 이미 완료면 그날이다. 그 앞이 없다', () => {
     expect(
       resolveDefeatedOn({
         periodDays: WEEK,
@@ -92,7 +92,7 @@ describe('resolveDefeatedOn — 뒤집힌 날 (결정 2)', () => {
     ).toBeNull()
   })
 
-  it('난이도가 다르면 다른 보스다 — 키에 난이도가 들어 있다', () => {
+  it('난이도가 다르면 다른 보스다. 키에 난이도가 들어 있다', () => {
     expect(
       resolveDefeatedOn({
         periodDays: WEEK,
@@ -104,8 +104,8 @@ describe('resolveDefeatedOn — 뒤집힌 날 (결정 2)', () => {
   })
 })
 
-describe('resolveDefeatedOn — 구멍 (결정 2)', () => {
-  it('시작일을 못 봤으면 확정하지 않는다 — 그 앞을 모른다', () => {
+describe('resolveDefeatedOn: 구멍 (결정 2)', () => {
+  it('시작일을 못 봤으면 확정하지 않는다. 그 앞을 모른다', () => {
     expect(
       resolveDefeatedOn({
         periodDays: WEEK,
@@ -127,7 +127,7 @@ describe('resolveDefeatedOn — 구멍 (결정 2)', () => {
     ).toBeNull()
   })
 
-  it('구멍이 처치일 뒤에 있으면 답이 안 바뀐다 — 이미 확정한 뒤다', () => {
+  it('구멍이 처치일 뒤에 있으면 답이 안 바뀐다. 이미 확정한 뒤다', () => {
     expect(
       resolveDefeatedOn({
         periodDays: WEEK,
@@ -139,7 +139,7 @@ describe('resolveDefeatedOn — 구멍 (결정 2)', () => {
   })
 })
 
-describe('resolveDefeatedOn — 오늘은 소거법 (결정 3)', () => {
+describe('resolveDefeatedOn: 오늘은 소거법 (결정 3)', () => {
   it('어제까지 전부 미완료인데 기록이 있으면 오늘이다', () => {
     expect(
       resolveDefeatedOn({
@@ -162,7 +162,7 @@ describe('resolveDefeatedOn — 오늘은 소거법 (결정 3)', () => {
     ).toBe('2026-08-20')
   })
 
-  it('기간이 이미 닫혔으면 소거법이 안 선다 — 오늘이 그 안에 없다', () => {
+  it('기간이 이미 닫혔으면 소거법이 안 선다. 오늘이 그 안에 없다', () => {
     expect(
       resolveDefeatedOn({
         periodDays: WEEK,
@@ -181,7 +181,7 @@ describe('resolveDefeatedOn — 오늘은 소거법 (결정 3)', () => {
     ).toBeNull()
   })
 
-  it('오늘 뒤의 날짜는 안 본다 — 아직 오지 않은 날에 잡을 수 없다', () => {
+  it('오늘 뒤의 날짜는 안 본다. 아직 오지 않은 날에 잡을 수 없다', () => {
     expect(
       resolveDefeatedOn({
         periodDays: WEEK,
@@ -230,14 +230,14 @@ const 미확정_스우 = {
   periodKey: '2026-08-20',
 }
 
-describe('resolveDefeatDates — 안 부르는 길 (결정 4)', () => {
+describe('resolveDefeatDates: 안 부르는 길 (결정 4)', () => {
   it('캐릭터가 없으면 아무것도 안 한다', async () => {
     await expect(resolveDefeatDates([], NOW)).resolves.toBe(0)
     expect(getUndatedMock).not.toHaveBeenCalled()
     expect(fetchStateMock).not.toHaveBeenCalled()
   })
 
-  it('미확정 기록이 없으면 API 를 안 부른다 — 정상 상태의 재진입이 공짜다', async () => {
+  it('미확정 기록이 없으면 API 를 안 부른다. 정상 상태의 재진입이 공짜다', async () => {
     await expect(resolveDefeatDates(['ocid-1'], NOW)).resolves.toBe(0)
     expect(fetchStateMock).not.toHaveBeenCalled()
     expect(getAuthConfigMock).not.toHaveBeenCalled()
@@ -264,7 +264,7 @@ describe('resolveDefeatDates — 안 부르는 길 (결정 4)', () => {
   })
 })
 
-describe('resolveDefeatDates — 원장이 겹침을 막는다 (결정 5)', () => {
+describe('resolveDefeatDates: 원장이 겹침을 막는다 (결정 5)', () => {
   it('이미 bosses 를 들고 있는 날짜는 다시 안 부른다', async () => {
     getUndatedMock.mockResolvedValue([미확정_스우])
     getLedgerMock.mockResolvedValue({
@@ -283,7 +283,7 @@ describe('resolveDefeatDates — 원장이 겹침을 막는다 (결정 5)', () =
     expect(setDefeatedOnMock).toHaveBeenCalledWith(미확정_스우, '2026-08-21')
   })
 
-  it('bosses 가 없는 옛 관측은 미조회로 친다 — 빈 배열과 섞으면 관측을 잃는다', async () => {
+  it('bosses 가 없는 옛 관측은 미조회로 친다. 빈 배열과 섞으면 관측을 잃는다', async () => {
     getUndatedMock.mockResolvedValue([미확정_스우])
     getLedgerMock.mockResolvedValue({
       unavailable: false,
@@ -314,7 +314,7 @@ describe('resolveDefeatDates — 원장이 겹침을 막는다 (결정 5)', () =
   })
 })
 
-describe('resolveDefeatDates — 캐낸 값을 박는다', () => {
+describe('resolveDefeatDates: 캐낸 값을 박는다', () => {
   it('창 안의 날짜만 묻고, 뒤집힌 날을 저장한다', async () => {
     getUndatedMock.mockResolvedValue([미확정_스우])
     fetchStateMock.mockImplementation(async (_key: string, _ocid: string, dateKey: string) =>
@@ -330,7 +330,7 @@ describe('resolveDefeatDates — 캐낸 값을 박는다', () => {
     expect(recordProbeMock).toHaveBeenCalledTimes(4)
   })
 
-  it('창 안이 전부 미완료면 오늘로 박는다 — 소거법 (결정 3)', async () => {
+  it('창 안이 전부 미완료면 오늘로 박는다. 소거법 (결정 3)', async () => {
     getUndatedMock.mockResolvedValue([미확정_스우])
     fetchStateMock.mockResolvedValue(schedulerState([]))
 
@@ -350,7 +350,7 @@ describe('resolveDefeatDates — 캐낸 값을 박는다', () => {
   })
 })
 
-describe('resolveDefeatDates — 두 화면이 같이 불러도 한 번만 돈다 (결정 9)', () => {
+describe('resolveDefeatDates: 두 화면이 같이 불러도 한 번만 돈다 (결정 9)', () => {
   it('겹친 호출은 같은 약속을 나눠 쓴다', async () => {
     getUndatedMock.mockResolvedValue([미확정_스우])
     fetchStateMock.mockResolvedValue(schedulerState([]))
@@ -373,7 +373,7 @@ describe('resolveDefeatDates — 두 화면이 같이 불러도 한 번만 돈�
  * 보스가 영영 캘린더에 안 찍힌다.
  */
 describe('키가 없을 때', () => {
-  it('조회가 필요 없는 건은 그대로 채운다 — 리셋 당일', async () => {
+  it('조회가 필요 없는 건은 그대로 채운다. 리셋 당일', async () => {
     getAuthConfigMock.mockResolvedValue(null)
     getUndatedMock.mockResolvedValue([
       { ocid: 'o1', boss: '스우', difficulty: '하드', cycle: 'weekly', periodKey: '2026-08-27' },

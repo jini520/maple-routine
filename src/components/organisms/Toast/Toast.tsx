@@ -1,4 +1,4 @@
-// 토스트 한 장 — 아이콘 + 문구 + (선택) 액션 + 닫기 + 남은 시간 바.
+// 토스트 한 장. 아이콘 + 문구 + (선택) 액션 + 닫기 + 남은 시간 바.
 //
 // 톤 배경은 `*-tint` 토큰이다. Tailwind 투명도 접미사(`bg-secondary/10`)를 쓰면
 // 투명과 섞여 배경이 거의 안 보인다. 그 문제를 이 파일이 `color-mix` 로 우회하고 있었는데, 이제
@@ -19,7 +19,7 @@
 //    것이 요점**. 시작에서 가져가면 안쪽 버튼(액션·닫기)이 눌리지 않는다. 웹이 `closest('button')`
 //    로 걸러내던 것과 같은 목적이고, RN 에서는 responder 규칙이 그것을 구조로 해 준다.
 // ② **`toast-shrink` 는 Reanimated 의 CSS 애니메이션이다**(step 7). 웹은 인라인
-//    `animation: toast-shrink ${duration}ms linear forwards` 였고 — 지속시간이 토스트마다 달라
+//    `animation: toast-shrink ${duration}ms linear forwards` 였고. 지속시간이 토스트마다 달라
 //    (`@keyframes` 주석: 성공 2초/정보 2.5초) 클래스로 표현할 수 없던 자리다. 그 성질이 그대로
 //    `animationDuration` 에 들어간다. `origin-left` 는 RN 의 `transformOrigin` 이 받는다.
 //    **모션 줄이기면 바가 통째로 사라진다**(웹 `motion-reduce:hidden`). 줄지 않는 막대를 남기면
@@ -30,7 +30,7 @@
 //    그대로 따라간다. 모션 줄이기면 시작 위치의 `translate-y-3` 만 없어진다(웹
 //    `motion-reduce:translate-y-0`. 투명도 트랜지션은 그쪽에서도 유지된다).
 // ④ **`truncate` → `numberOfLines={1}`**(RN 은 그 둘을 스타일이 아니라 `Text` 프롭으로 받는다).
-// ⑤ `role`·`aria-live` 는 그대로 — RN 이 같은 이름의 ARIA 값을 받는다(error 는 즉시 알림).
+// ⑤ `role`·`aria-live` 는 그대로. RN 이 같은 이름의 ARIA 값을 받는다(error 는 즉시 알림).
 //
 // ── 남은 어긋남: `ToastAction.icon` 의 타입이 웹을 향해 있다 ─────────────────────────
 //

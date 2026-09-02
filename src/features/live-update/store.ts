@@ -18,8 +18,8 @@ import {
 // idle: 확인 전 / checking: 확인 중 / up-to-date: 최신 / update-available: 새 버전 있음(모달)
 // store-required: 스토어 업데이트 필요 / confirm-cellular: 셀룰러 데이터 확인 대기 / downloading: 진행 중
 // ready-to-apply: 다운로드 완료·적용 대기 / unsupported: web 등 미지원
-// applying: 적용 진행 중 — 되돌릴 수 없는 구간에 들어갔다
-// updated: 적용·재시작이 끝난 직후 1회 — `업데이트를 마쳤어요` 안내.
+// applying: 적용 진행 중. 되돌릴 수 없는 구간에 들어갔다
+// updated: 적용·재시작이 끝난 직후 1회. `업데이트를 마쳤어요` 안내.
 //          적용 성공 경로에는 상태 전환 코드가 없으므로(set()이 그 자리에서 JS 컨텍스트를 파괴한다)
 //          이 상태만은 **부팅 때 뒤늦게** 판정된다.
 //
@@ -124,7 +124,7 @@ async function consumeJustUpdated(current: string | null): Promise<boolean> {
 }
 
 export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
-  // 동의 후 실제 다운로드 — 진행률을 흘리고 완료 시 적용 대기로 전환한다.
+  // 동의 후 실제 다운로드. 진행률을 흘리고 완료 시 적용 대기로 전환한다.
   // **받아도 자동으로 적용되지 않는다**(결정 4). 적용은 apply() 로 사용자가 명시적으로 한다.
   //
   // **무엇을 받을지** 를 넘기지 않는 이유는 이다: 그 정보(주소·체크섬·id)는
@@ -145,7 +145,7 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
   return {
     currentVersion: null,
     status: 'idle',
-    // **초기값은 비어 있고 `loadCurrentVersion()` 이 채운다.** 여기서 어댑터에 물으면 안 된다 —
+    // **초기값은 비어 있고 `loadCurrentVersion()` 이 채운다.** 여기서 어댑터에 물으면 안 된다.
     // zustand 는 이 초기화 함수를 `create()` 시점, 즉 **모듈 평가 중**에 부르는데 그때는 포트가
     // 아직 주입되기 전이라 슬롯이 던진다. 그것은 이 파일이 로 방금 없앤
     // **import 하는 것만으로 죽는다** 를 다른 이유로 되살리는 것이다.
@@ -194,14 +194,14 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
       }
     },
 
-    // 부팅 시퀀스 — 현재 버전을 싣고 체크만 한다. 업데이트가 있으면 실행 시 모달이 뜬다(자동 다운로드/적용 없음).
+    // 부팅 시퀀스. 현재 버전을 싣고 체크만 한다. 업데이트가 있으면 실행 시 모달이 뜬다(자동 다운로드/적용 없음).
     //
-    // 여기서 완료 안내도 함께 판정한다. 순서가 규칙이다 —
+    // 여기서 완료 안내도 함께 판정한다. 순서가 규칙이다.
     // **판정(기록 포함)은 체크보다 앞이고, 전환은 체크보다 뒤다.**
     //  · 앞인 이유: 기록을 판정과 같은 자리에서 끝내야 체크 결과에 밀려 안내를 못 띄웠어도
     //    다음 부팅에 되풀이되지 않는다(큐를 만들면 "언젠가 뜨는 안내"라는 지속 상태가 생긴다).
     //  · 뒤인 이유: `check()` 가 첫 문장에서 status 를 'checking' 으로 덮으므로, 먼저 전환하면
-    //    그대로 지워진다. 그리고 새 업데이트가 또 있다면 **그쪽이 이겨야** 한다(결정 5) —
+    //    그대로 지워진다. 그리고 새 업데이트가 또 있다면 **그쪽이 이겨야** 한다(결정 5).
     //    회고를 먼저 띄우면 안내를 두 번 닫아야 하고 두 번째가 첫 번째를 무효로 만드는 것처럼 읽힌다.
     async checkOnBoot() {
       await get().loadCurrentVersion()
@@ -216,7 +216,7 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
       }
     },
 
-    // [다운로드] 탭 — 셀룰러면 데이터 경고를 먼저 띄우고, 아니면 바로 받는다.
+    // [다운로드] 탭. 셀룰러면 데이터 경고를 먼저 띄우고, 아니면 바로 받는다.
     async startDownload() {
       const network = await getNetworkType()
       if (network === 'cellular') {
@@ -231,12 +231,12 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
       await runDownload()
     },
 
-    // [지금 적용 (재시작)] 탭 — 어댑터가 닫기 → 커버 → set() 순으로 진행한다.
+    // [지금 적용 (재시작)] 탭. 어댑터가 닫기 → 커버 → set() 순으로 진행한다.
     // set()이 성공하면 그 자리에서 JS 컨텍스트가 파괴되므로 아래 코드는 성공 경로에서 실행되지
-    // 않는다. 이 함수가 실제로 다루는 것은 반대편 — **실패했을 때 화면을 되돌리는 것**이다.
+    // 않는다. 이 함수가 실제로 다루는 것은 반대편. **실패했을 때 화면을 되돌리는 것**이다.
     async apply() {
       if (!get().hasDownloadedBundle) return
-      // 재진입 가드 — 커버가 닫기 뒤로 밀리면서 그 구간(최대 5초) 동안 모달과 버튼이 살아 있게
+      // 재진입 가드. 커버가 닫기 뒤로 밀리면서 그 구간(최대 5초) 동안 모달과 버튼이 살아 있게
       // 됐다. UI가 버튼을 감추더라도 스토어가 자기 불변식을 스스로 지킨다.
       if (get().status === 'applying') return
       // 전환은 어떤 await보다 앞이어야 원자적이다. 그 사이에 두 번째 탭이 끼면 가드가 무의미해진다.
@@ -252,7 +252,7 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
         ])
       } catch {
         // 세 고리(커버 show() 미완료 · 커넥션 닫기 무응답 · set() reject) 중 어느 것이 끊겼든
-        // 화면은 돌아와야 한다. hideSplashScreen이 [data-splash-cover]까지 걷는다 —
+        // 화면은 돌아와야 한다. hideSplashScreen이 [data-splash-cover]까지 걷는다.
         // 그 하나가 여기 "커버를 걷고"를 실현 가능하게 만든다. 걷기 실패까지 삼켜야 상태 전환에 닿는다.
         await hideSplashScreen().catch(() => {})
         // hasDownloadedBundle 은 비우지 않는다. 받아둔 번들은 그대로 살아 있고 모달의 '다시 시도'가
@@ -268,7 +268,7 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
       openStoreForUpdate()
     },
 
-    // [나중에]/[취소] 탭 — 기존 버전 유지, 다운로드/적용 안 함. "매번 물음"이라 다음 실행 때 다시 뜬다.
+    // [나중에]/[취소] 탭. 기존 버전 유지, 다운로드/적용 안 함. "매번 물음"이라 다음 실행 때 다시 뜬다.
     dismiss() {
       set({ status: 'idle', ...CLEARED })
     },

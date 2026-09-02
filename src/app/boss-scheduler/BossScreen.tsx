@@ -1,10 +1,10 @@
-// 보스 스케줄러 — 주간/월간 보스 진행 상태(`docs/features/boss-scheduler.md`).
+// 보스 스케줄러. 주간/월간 보스 진행 상태(`docs/features/boss-scheduler.md`).
 //
 // **이 화면에 걸린 ADR 이 스물여섯이다**. 저장소에서 `BossProfitScreen` 다음으로 무겁다. 대부분은
 // 화면에 안 보이는 판단이라(완료 승격 · 시즌 보스 판정 · 실패의 목적지 · 빈 상태의 판정 시점) 아래
 // 주석이 그 자리를 지목한다. 목록은 `docs/migration/parity-inventory.md` §2.4.
 //
-// ══ RN 으로 옮기며 **사라진** 것 넷 — 컨텐츠 스케줄러와 같다 ═══════════════════════════
+// ══ RN 으로 옮기며 **사라진** 것 넷. 컨텐츠 스케줄러와 같다 ═══════════════════════════
 //
 // ① **당김을 손으로 만들던 제스처 훅과 커스텀 인디케이터**. 지금은
 //    `RefreshControl` 이 맡는다. **컨텐츠 스케줄러와 같은 배선이어야 한다**. 두 탭이 같은 제스처에
@@ -100,7 +100,7 @@ function BossCard(props: {
   boss: DisplayedBoss
   crop?: ImageCrop
   partySize?: number
-  /** 요구 레벨 미달 — 완료 자리를 진행 불가 로 대체한다. */
+  /** 요구 레벨 미달. 완료 자리를 진행 불가 로 대체한다. */
   isBlocked?: boolean
   onEdit: () => void
 }): React.JSX.Element {
@@ -150,8 +150,8 @@ function BossCard(props: {
             {/*. 주간 12마리를 채우면 남은 미처치 보스는 `마감`이다. **완료로
                 칠하지 않는다**: 안 잡은 보스를 완료로 두면 그 거짓이 보스 수익의 결정석 금액이
                 된다. 배색은 `Badge` 의 `muted` 톤을 그대로 쓴다(실패도 경고도 아니고 **이번 주엔
-                차례가 없다** 는 사실이라 눌린 회색이다 — 새 색을 만들지 않는다).
-                우선순위는 `진행 불가` > `마감` > `완료` — 요구 레벨에 못 미치는 보스는
+                차례가 없다** 는 사실이라 눌린 회색이다. 새 색을 만들지 않는다).
+                우선순위는 `진행 불가` > `마감` > `완료`. 요구 레벨에 못 미치는 보스는
                 한도와 무관하게 애초에 못 잡는다. */}
             {props.isBlocked === true ? (
               <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
@@ -219,7 +219,7 @@ export function BossScreen(): React.JSX.Element {
   }, [])
 
   // : `null` 은 "0명"이 아니라 **"저장소를 아직 안 읽었다"** 다. 둘을 `||` 로 묶으면
-  // 콜드 스타트 첫 페인트가 아직 모르는 사실을 단정한다(실기기 2026-08-06 — "표시할 캐릭터가
+  // 콜드 스타트 첫 페인트가 아직 모르는 사실을 단정한다(실기기 2026-08-06. "표시할 캐릭터가
   // 없습니다"가 목록보다 먼저 한 프레임 스쳤다). 빈 상태는 읽고 0명임을 **확인한 뒤에만** 그린다.
   const isEmpty = trackedOcids !== null && trackedOcids.length === 0
 
@@ -237,8 +237,8 @@ export function BossScreen(): React.JSX.Element {
   // (전역 error가 채워지는 경로에서는 characters가 캐시 뷰로 교체되고 그 뷰의 error는 null이다).
   useScheduleSyncErrorToast(selected?.error ?? null, { onRetry: () => refresh(trackedOcids ?? []) })
 
-  // 카드로 표시할 목록 — 수동 모드 멤버십과(미등록이어도 완료면
-  // 포함)가 그 안에 있다. **이 화면의 지역 함수였던 것을 코어로 꺼냈다** —
+  // 카드로 표시할 목록. 수동 모드 멤버십과(미등록이어도 완료면
+  // 포함)가 그 안에 있다. **이 화면의 지역 함수였던 것을 코어로 꺼냈다**.
   // today 의 `캐릭터별 남은 스케줄`이 세는 **남은 보스** 가 이 화면이 보여 주는 것과 한 글자도
   // 달라선 안 되기 때문이다. 이유·규칙·**캐릭터를 인자로 받는** 근거는 `displayed-bosses.ts` 파일 머리.
   //
@@ -302,7 +302,7 @@ export function BossScreen(): React.JSX.Element {
     return partySizes[partySizeKey(ocid, bossName, boss.difficulty)]
   }
 
-  // : boss_party_settings에 없는 조합은 솔로(1인) 취급 — 별도 API 재호출
+  // : boss_party_settings에 없는 조합은 솔로(1인) 취급. 별도 API 재호출
   // 없이 이미 로드된 partySizes 맵으로만 클라이언트 사이드 필터링한다.
   // 원소 타입을 안 좁힌다. 거르기만 하는 함수라 `DisplayedBoss` 가 들어오면 그대로 나가야 한다.
   function filterByPartySize<T extends MatchedBoss>(bosses: T[], ocid: string, filter: PartyFilter): T[] {
@@ -404,7 +404,7 @@ export function BossScreen(): React.JSX.Element {
     openTab('Settings', { openPicker: true })
   }
 
-  //  이 만든 헤더 진입점("보스 관리")은 **여기 없다** —
+  //  이 만든 헤더 진입점("보스 관리")은 **여기 없다**.
   // 그 화면이 스케줄 그룹의 하위 탭이 되면서 진입 자리를 하단바가 가져갔다. 이 걷은
   // "캐릭터 관리"에 이어 제목 줄의 두 번째이자 마지막 버튼이 사라진 것이라, 이제 그 줄에서 폭을
   // 다투는 상대가 없다(의 `shrink-0` 짝이 하나만 남는다).
@@ -448,7 +448,7 @@ export function BossScreen(): React.JSX.Element {
   }
 
   if (isEmpty) {
-    // 헤더 셸을 쓰지 않는 가지라(제목 줄이 목록 없이 혼자 선다) 상단 안전영역을 여기서 먹는다 —
+    // 헤더 셸을 쓰지 않는 가지라(제목 줄이 목록 없이 혼자 선다) 상단 안전영역을 여기서 먹는다.
     // 웹의 `min-h-[calc(100dvh …)]` 자리는 `flex-1` 이다(탭 상자가 이미 탭바를 뺀 크기다).
     return (
       <View testID="screen-Boss" className="flex-1 p-4" style={{ paddingTop: topSafeAreaPx }}>
@@ -493,7 +493,7 @@ export function BossScreen(): React.JSX.Element {
           <PageHeader>
             {/*: 동기화 상태가 드롭다운 줄에서 **제목 옆**으로 올라왔고, 폭을
                 다투면 시각 텍스트만 줄어든다(제목·새로고침은 `shrink-0`). 오른쪽 끝에서 자리를 지키던
-                관리 버튼이 로 사라져 바깥 `justify-between` 줄도 함께 걷었다 —
+                관리 버튼이 로 사라져 바깥 `justify-between` 줄도 함께 걷었다.
                 가를 상대가 없는 줄에서 그 속성은 아무 일도 하지 않는다. */}
             <PageHeaderTitleRow className="gap-2">
               <Text className="shrink-0 text-lg font-semibold text-text">보스 스케줄러</Text>
@@ -527,14 +527,14 @@ export function BossScreen(): React.JSX.Element {
               />
             )}
 
-            {/*: 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다 —
+            {/*: 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다.
                 셸 승계 카드는 보여줄 데이터가 아예 없을 때만 그린다. */}
             {(status === 'idle' || status === 'loading') && characters.length === 0 && (
               <LoadingState size="page" message="불러오고 있어요" />
             )}
 
             {/*: **주간/월간 탭이 여기 있었다.** 목록이 하나가 되면서 걷혔고,
-                탭에만 매달려 있던 `n/12`·`season` 배지는 `주간` 섹션 헤더로 내려갔다(결정 3) —
+                탭에만 매달려 있던 `n/12`·`season` 배지는 `주간` 섹션 헤더로 내려갔다(결정 3).
                 그 수치가 어느 무리의 것인지 이제 헤더가 말한다. 남는 줄은 필터 하나뿐이다. */}
             {characters.length > 0 && selected !== null && (
               <View className="flex-row items-center gap-2">
@@ -572,7 +572,7 @@ export function BossScreen(): React.JSX.Element {
             {displayedCount > 0 && filteredCount === 0 && <EmptyState {...filterEmptyProps()} />}
 
             {/* 순서는 `displayedBossSections` 것이고(결정 1), **비어 있는 무리는 이미 걷혔다**
-                (`visibleSections`) — 헤더만 남아 **여기 뭔가 있었다** 로 읽히지 않게 한다(결정 6). */}
+                (`visibleSections`). 헤더만 남아 **여기 뭔가 있었다** 로 읽히지 않게 한다(결정 6). */}
             {visibleSections.map((section) => (
               <View key={section.cycle} className="gap-2">
                 <View

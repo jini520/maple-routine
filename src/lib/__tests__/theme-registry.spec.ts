@@ -13,7 +13,7 @@ import type { ThemeDefinition, ThemeName } from '../../types/theme'
 
 const NAMES = Object.keys(jobThemes) as ThemeName[]
 
-describe('THEME_NAMES / isThemeName — JSON 키가 단일 진실 공급원', () => {
+describe('THEME_NAMES / isThemeName: JSON 키가 단일 진실 공급원', () => {
   it('등록된 테마를 하나도 빠뜨리거나 더하지 않는다', () => {
     expect([...THEME_NAMES].sort()).toEqual([...NAMES].sort())
   })
@@ -43,7 +43,7 @@ describe('THEME_NAMES / isThemeName — JSON 키가 단일 진실 공급원', ()
   })
 })
 
-describe('groupThemesByCategory — 선택 목록의 섹션', () => {
+describe('groupThemesByCategory: 선택 목록의 섹션', () => {
   it('카테고리 순서대로 그룹을 낸다', () => {
     const groups = groupThemesByCategory(THEME_NAMES)
 
@@ -217,10 +217,10 @@ describe('buildThemeCss', () => {
       }
     })
 
-    it('accent 틴트·잉크는 스코프가 건드리지 않는다 — 칩은 자기 배경을 갖는다', () => {
+    it('accent 틴트·잉크는 스코프가 건드리지 않는다. 칩은 자기 배경을 갖는다', () => {
       const scope = buildThemeCss(getThemeDefinition('머쉬맘')).split('.media-scope {')[1]
 
-      // secondary 만 예외 — 완료 배지가 카드 안에서만 쓰여 모드별 값을 준다.
+      // secondary 만 예외. 완료 배지가 카드 안에서만 쓰여 모드별 값을 준다.
       for (const accent of ['primary', 'third', 'error']) {
         expect(scope, `${accent}-tint`).not.toContain(`--color-${accent}-tint:`)
         expect(scope, `${accent}-ink`).not.toContain(`--color-${accent}-ink:`)

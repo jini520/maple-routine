@@ -32,7 +32,7 @@ import { rnSqlitePort } from './storage/adapters/rn-sqlite'
  * (아래 `setThemeAppearancePort` 가 값을 놓는 자리는 `src/theme/appearance-store.ts` 이고 그것을
  * 읽는 것은 `ThemeProvider` 다. 이 포트만 부팅 배선과 렌더 트리가 함께 있어야 성립한다.)
  *
- * ## 언제 불러야 하는가 — **저장소·네이티브를 처음 만지는 코드보다 먼저**
+ * ## 언제 불러야 하는가. **저장소·네이티브를 처음 만지는 코드보다 먼저**
  *
  * 웹 쪽 참조 구현(`main.tsx`)이 세터 셋을 파일 맨 위에 두고 그 이유를 적어 두었다: 바로 아래
  * `checkOnBoot()` 부터 Preferences 를 읽고 라이브 업데이트를 확인하며, 그 실패 경로는 스플래시까지
@@ -46,7 +46,7 @@ import { rnSqlitePort } from './storage/adapters/rn-sqlite'
  * ## 왜 세터를 한 함수에 모으는가
  *
  * 하나라도 빠지면 **그 기능만** 던지고 나머지는 멀쩡히 돌아 발견이 늦다. 그래서 "전부"를 한
- * 자리에서 보장한다(`installCapacitorNativePorts` 와 같은 판단). 주입 순서는 서로 무관하다 —
+ * 자리에서 보장한다(`installCapacitorNativePorts` 와 같은 판단). 주입 순서는 서로 무관하다.
  * 포트끼리 참조하지 않는다.
  *
  * ## 이제 열셋이 전부 실구현이다
@@ -62,11 +62,11 @@ import { rnSqlitePort } from './storage/adapters/rn-sqlite'
  *   던지되 사유가 갈린다: *"아직 안 했다"* 가 아니라 *"이제 네이티브 스택이 소유한다."*
  *   그래서 메시지도 `not-implemented.ts` 가 아니라 `rn-back-gesture.ts` 가 갖는다.
  * - `SystemBarsPort`(step 6, templates). 이쪽도 절반씩이다. `setNavigationBarStyle` 은 로컬 Expo
- *   모듈로 그대로 옮겼고, `refreshSafeAreaInsets` 는 **의도적인 no-op** 이다(던지지 않는다 —
+ *   모듈로 그대로 옮겼고, `refreshSafeAreaInsets` 는 **의도적인 no-op** 이다(던지지 않는다.
  *   `SafeAreaProvider` 가 그 갱신을 이미 자동으로 하므로 거부가 진짜 고장과 구분을 없앤다).
  */
 export function installPorts(): void {
-  // 저장소 먼저 — 웹 쪽 `main.tsx` 와 같은 순서다(기술적 의존은 없고, 두 앱을 나란히 읽기 위한 것).
+  // 저장소 먼저. 웹 쪽 `main.tsx` 와 같은 순서다(기술적 의존은 없고, 두 앱을 나란히 읽기 위한 것).
   setPreferencesPort(rnPreferencesPort)
   setSqlitePort(rnSqlitePort)
 

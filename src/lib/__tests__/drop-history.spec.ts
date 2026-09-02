@@ -60,7 +60,7 @@ describe('getPeriodStartUtcMs', () => {
     expect(getPeriodStartUtcMs('2026-07')).toBe(Date.UTC(2026, 5, 30, 15, 0, 0))
   })
 
-  it('두 형식을 한 축에서 비교할 수 있다 — 문자열 비교로는 불가능한 순서', () => {
+  it('두 형식을 한 축에서 비교할 수 있다. 문자열 비교로는 불가능한 순서', () => {
     // 문자열로는 '2026-07-09' > '2026-07'(접두사)이지만 시간축에서는 월간 7월이 더 이르다.
     expect(getPeriodStartUtcMs('2026-07')).toBeLessThan(getPeriodStartUtcMs('2026-07-09'))
     expect(getPeriodStartUtcMs('2026-07')).toBeGreaterThan(getPeriodStartUtcMs('2026-06-25'))
@@ -89,12 +89,12 @@ describe('groupDropRecordsByPeriod', () => {
     expect(groups.map((group) => group.periodKey)).toEqual(['2026-07-09', '2026-07', '2026-06-25'])
   })
 
-  it('그룹에 cycle을 붙인다 — 기간 라벨 포맷이 주간/월간으로 갈리기 때문', () => {
+  it('그룹에 cycle을 붙인다. 기간 라벨 포맷이 주간/월간으로 갈리기 때문', () => {
     const groups = groupDropRecordsByPeriod([record({ periodKey: '2026-07' })])
     expect(groups[0].cycle).toBe('monthly')
   })
 
-  it('같은 기간 안에서는 입력 순서를 보존한다 — 조회 SQL이 정한 순서가 표시 순서다', () => {
+  it('같은 기간 안에서는 입력 순서를 보존한다. 조회 SQL이 정한 순서가 표시 순서다', () => {
     const groups = groupDropRecordsByPeriod([
       record({ itemName: '루즈 컨트롤 머신 마크' }),
       record({ itemName: '주문의 흔적', category: 'fixed', slot: undefined }),
@@ -149,7 +149,7 @@ describe('filterUnobtainableConfirmedDrops', () => {
     ])
   })
 
-  it('확정되지 않은 조합은 건드리지 않는다 — 나중에 이관되어 살아남을 기록이다', () => {
+  it('확정되지 않은 조합은 건드리지 않는다. 나중에 이관되어 살아남을 기록이다', () => {
     // 익스트림으로 등록해두고 실제로는 하드를 잡은 상황: 하드 전용 기록이 익스트림 키에 들어 있다.
     // 여기서 걸러버리면 난이도가 확정되면 살아남을 기록을 미리 숨기게 된다.
     const records = [record({ difficulty: '익스트림', itemName: '녹옥의 보스 반지 상자' })]
@@ -193,7 +193,7 @@ describe('summarizeValuableDrought', () => {
     expect(summary).toMatchObject({ periodKey: '2026-07-16', weeksSince: 2 })
   })
 
-  it('그 기간의 고가 기록을 함께 반환한다 — 아이콘 스택 표시용', () => {
+  it('그 기간의 고가 기록을 함께 반환한다. 아이콘 스택 표시용', () => {
     const summary = summarizeValuableDrought(
       [
         record({ periodKey: '2026-07-16', itemName: '루즈 컨트롤 머신 마크' }),
@@ -204,7 +204,7 @@ describe('summarizeValuableDrought', () => {
       now,
     )
 
-    // 고가만, 그리고 마지막 기간(7-16)만 — 고가 아닌 링과 이전 기간 연마석은 빠진다.
+    // 고가만, 그리고 마지막 기간(7-16)만. 고가 아닌 링과 이전 기간 연마석은 빠진다.
     expect(summary?.records.map((entry) => entry.itemName)).toEqual([
       '루즈 컨트롤 머신 마크',
       '창세의 뱃지',
@@ -228,7 +228,7 @@ describe('summarizeValuableDrought', () => {
     expect(summary).toMatchObject({ periodKey: '2026-07', cycle: 'monthly', weeksSince: 4 })
   })
 
-  it('고가 기록이 하나도 없으면 null — "∞주째" 같은 값을 만들지 않는다', () => {
+  it('고가 기록이 하나도 없으면 null"∞주째" 같은 값을 만들지 않는다', () => {
     const summary = summarizeValuableDrought(
       [record({ itemName: '리스트레인트 링', category: 'consumable', slot: undefined })],
       now,
@@ -243,15 +243,15 @@ describe('summarizeValuableDrought', () => {
 
 describe('objectParticle', () => {
   it('받침이 있으면 "을", 없으면 "를"', () => {
-    expect(objectParticle('가디언 엔젤링')).toBe('을') // 링 — 받침 ㅇ
-    expect(objectParticle('루즈 컨트롤 머신 마크')).toBe('를') // 크 — 받침 없음
-    expect(objectParticle('생명의 연마석')).toBe('을') // 석 — 받침 ㄱ
+    expect(objectParticle('가디언 엔젤링')).toBe('을') // 링. 받침 ㅇ
+    expect(objectParticle('루즈 컨트롤 머신 마크')).toBe('를') // 크. 받침 없음
+    expect(objectParticle('생명의 연마석')).toBe('을') // 석. 받침 ㄱ
   })
 
   it('한글이 아닌 문자로 끝나면 마지막 한글 음절로 판단한다', () => {
     // 슬롯별로 분리된 익셉셔널 해머는 ')'로 끝난다. 괄호를 보고 판단하면 틀린다.
-    expect(objectParticle('익셉셔널 해머(벨트)')).toBe('를') // 트 — 받침 없음
-    expect(objectParticle('익셉셔널 해머(눈장식)')).toBe('을') // 식 — 받침 ㄱ
+    expect(objectParticle('익셉셔널 해머(벨트)')).toBe('를') // 트. 받침 없음
+    expect(objectParticle('익셉셔널 해머(눈장식)')).toBe('을') // 식. 받침 ㄱ
   })
 
   it('한글이 없으면 "을"로 둔다', () => {
@@ -260,7 +260,7 @@ describe('objectParticle', () => {
 })
 
 // 사용자 지정 형식(2026-07-31): "지내우시님이 가디언 엔젤 슬라임(카오스)에서 가디언 엔젤링을
-// 획득하였습니다." — 아이템만 강조 대상으로 떼어내 반환한다(고가면 화면이 골드 pill로 감싼다).
+// 획득하였습니다."아이템만 강조 대상으로 떼어내 반환한다(고가면 화면이 골드 pill로 감싼다).
 describe('formatDropHistoryLine', () => {
   it('캐릭터·보스·난이도·아이템으로 한 줄 문장을 만든다', () => {
     const line = formatDropHistoryLine(
@@ -294,7 +294,7 @@ describe('formatDropHistoryLine', () => {
     expect(line.prefix).toContain(`가디언 엔젤 슬라임${WORD_JOINER}(카오스)${WORD_JOINER}에서`)
   })
 
-  it('캐릭터명을 모르면 이름 부분을 비운다 — ocid를 노출하지 않는다', () => {
+  it('캐릭터명을 모르면 이름 부분을 비운다. ocid를 노출하지 않는다', () => {
     const line = formatDropHistoryLine(
       record({ boss: '스우', difficulty: '하드', itemName: '가디언 엔젤링', slot: undefined }),
       undefined,
@@ -329,7 +329,7 @@ describe('formatDropHistoryLine', () => {
     )
 
     expect(line.item).toBe('리스트레인트 링 3레벨')
-    expect(line.particle).toBe('을') // 벨 — 받침 ㄹ
+    expect(line.particle).toBe('을') // 벨. 받침 ㄹ
   })
 
   it('상자 개봉 결과는 어떤 상자를 열었는지 함께 말한다', () => {
@@ -358,9 +358,9 @@ describe('formatDropHistoryLine', () => {
 })
 
 // 후속(사용자 확정 2026-08-01, 시안 W4): 미획득 기간이 길어질수록 요약이 "점점
-// 슬퍼진다" — 단계는 문구와 시각 표현이 함께 쓰고, 문구 쪽만 여기서 검증한다.
+// 슬퍼진다"단계는 문구와 시각 표현이 함께 쓰고, 문구 쪽만 여기서 검증한다.
 describe('getValuableDroughtTier', () => {
-  it('사용자가 말한 "N주차"는 미획득 N-1주다 — 1주차(와따리)가 곧 먹은 그 주', () => {
+  it('사용자가 말한 "N주차"는 미획득 N-1주다. 1주차(와따리)가 곧 먹은 그 주', () => {
     expect(getValuableDroughtTier(0)).toBe(0)
   })
 
@@ -370,7 +370,7 @@ describe('getValuableDroughtTier', () => {
   })
 })
 
-/** 그 주 수의 풀 전체 — 인덱스를 0부터 개수만큼 돌려 모은다. */
+/** 그 주 수의 풀 전체. 인덱스를 0부터 개수만큼 돌려 모은다. */
 function pool(weeksSince: number): string[] {
   return Array.from({ length: valuableDroughtHeadlineCount(weeksSince) }, (_, index) =>
     formatValuableDroughtHeadline(weeksSince, index),
@@ -397,7 +397,7 @@ describe('formatValuableDroughtHeadline', () => {
     expect(pool(3)).toEqual(['선넘네?!', '이게 억까지 뭐야'])
   })
 
-  it('4주 이상은 기존 다섯 줄 그대로다 — 채택된 추가 문구가 없다', () => {
+  it('4주 이상은 기존 다섯 줄 그대로다. 채택된 추가 문구가 없다', () => {
     expect(pool(9)).toEqual([
       '이건 아니지...',
       '적당히 해!',
@@ -407,17 +407,17 @@ describe('formatValuableDroughtHeadline', () => {
     ])
   })
 
-  it('풀 안에서 문구가 겹치지 않는다 — 같은 말이 두 슬롯을 차지하면 랜덤이 덜 랜덤해진다', () => {
+  it('풀 안에서 문구가 겹치지 않는다. 같은 말이 두 슬롯을 차지하면 랜덤이 덜 랜덤해진다', () => {
     for (const weeks of [0, 1, 2, 3, 9]) {
       expect(new Set(pool(weeks)).size).toBe(valuableDroughtHeadlineCount(weeks))
     }
   })
 
-  it('index는 주 수와 무관하게 같은 문구를 준다 — 4주와 200주가 같은 풀을 쓴다', () => {
+  it('index는 주 수와 무관하게 같은 문구를 준다. 4주와 200주가 같은 풀을 쓴다', () => {
     expect(formatValuableDroughtHeadline(4, 2)).toBe(formatValuableDroughtHeadline(200, 2))
   })
 
-  // 호출부가 경계를 신경 쓰지 않아도 되는 성질 — 단계마다 풀 크기가 달라져 더 중요해졌다.
+  // 호출부가 경계를 신경 쓰지 않아도 되는 성질. 단계마다 풀 크기가 달라져 더 중요해졌다.
   it('index가 범위를 벗어나도 단계마다 감싸서 고른다', () => {
     for (const weeks of [0, 1, 2, 3, 9]) {
       const count = valuableDroughtHeadlineCount(weeks)
@@ -430,7 +430,7 @@ describe('formatValuableDroughtHeadline', () => {
     }
   })
 
-  it('index를 주지 않으면 항상 같은 문구다 — 렌더마다 깜빡이지 않게 하는 기본값', () => {
+  it('index를 주지 않으면 항상 같은 문구다. 렌더마다 깜빡이지 않게 하는 기본값', () => {
     expect(formatValuableDroughtHeadline(9)).toBe(formatValuableDroughtHeadline(9))
     expect(formatValuableDroughtHeadline(0)).toBe(formatValuableDroughtHeadline(0, 0))
   })
@@ -455,7 +455,7 @@ describe('formatValuableDroughtItems', () => {
     )
   })
 
-  it('여럿이면 첫 항목 + "외 N개" — 전부 나열하면 한 줄을 넘긴다', () => {
+  it('여럿이면 첫 항목 + "외 N개"전부 나열하면 한 줄을 넘긴다', () => {
     expect(
       formatValuableDroughtItems([
         record({ itemName: '루즈 컨트롤 머신 마크' }),
@@ -465,7 +465,7 @@ describe('formatValuableDroughtItems', () => {
     ).toBe('루즈 컨트롤 머신 마크 외 2개')
   })
 
-  it('비면 빈 문자열 — 호출부가 부재를 판단한다', () => {
+  it('비면 빈 문자열. 호출부가 부재를 판단한다', () => {
     expect(formatValuableDroughtItems([])).toBe('')
   })
 })

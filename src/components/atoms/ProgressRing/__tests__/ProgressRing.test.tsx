@@ -42,7 +42,7 @@ describe('ProgressRing · 연속', () => {
     expect(queryByTestId('progress-ring-fill')).toBeNull()
   })
 
-  it('넘겨받은 색을 그대로 쓴다 — 테마를 안 읽는다', async () => {
+  it('넘겨받은 색을 그대로 쓴다. 테마를 안 읽는다', async () => {
     const { getByTestId } = await renderAtom(
       <ProgressRing size={56} stroke={4} direction="cw" {...색} progress={{ kind: 'continuous', ratio: 1 }} />,
     )

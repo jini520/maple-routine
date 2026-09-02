@@ -17,12 +17,12 @@ import { FADE_MASK_ALPHAS, FADE_MASK_LOCATIONS, resolveSafeAreaFade } from '../s
  */
 const 인셋 = { top: 59, bottom: 34 }
 
-/** 기준 기기(402pt)의 바 몫 — 정정 30 이후 기기마다 다르다(`bottom-bar-metrics.ts`). */
+/** 기준 기기(402pt)의 바 몫. 정정 30 이후 기기마다 다르다(`bottom-bar-metrics.ts`). */
 const 바_몫 = 72
-/** 페이드가 바 위로 올라가는 몫 — 바 몫의 절반. */
+/** 페이드가 바 위로 올라가는 몫. 바 몫의 절반. */
 const 바_페이드 = 바_몫 / 2
 
-/** 화면 하나분의 인자 — 하단 판정(`bottom-inset.ts`)을 그대로 태워서 넘긴다. */
+/** 화면 하나분의 인자. 하단 판정(`bottom-inset.ts`)을 그대로 태워서 넘긴다. */
 const 화면 = (
   hasTabBar: boolean,
   platform: string,
@@ -47,7 +47,7 @@ const 화면 = (
 }
 
 describe('페이드는 콘텐츠가 실제로 지나가는 자리에만 있다', () => {
-  it('헤더가 있으면 상단은 상단 안전영역만큼이다 — 굴리면 콘텐츠가 상태바 밑을 지나간다', () => {
+  it('헤더가 있으면 상단은 상단 안전영역만큼이다. 굴리면 콘텐츠가 상태바 밑을 지나간다', () => {
     const fade = resolveSafeAreaFade(화면(true, 'ios'))
 
     expect(fade.topPx).toBe(59)
@@ -55,7 +55,7 @@ describe('페이드는 콘텐츠가 실제로 지나가는 자리에만 있다',
 
   // 설정 계열. 셸이 스크롤포트를 안전영역만큼 내리므로 콘텐츠가 그 자리에
   // 애초에 못 온다. 깎으면 **콘텐츠의 첫 줄**을 깎게 된다.
-  it('헤더가 없으면 상단은 0이다 — 셸이 이미 상자를 내렸다', () => {
+  it('헤더가 없으면 상단은 0이다. 셸이 이미 상자를 내렸다', () => {
     const fade = resolveSafeAreaFade({ ...화면(true, 'ios'), hasHeader: false })
 
     expect(fade.topPx).toBe(0)
@@ -64,7 +64,7 @@ describe('페이드는 콘텐츠가 실제로 지나가는 자리에만 있다',
   // **정정 1**. 예전에는 안전영역까지만이었다. 그러면 콘텐츠가 **선명한 채로 캡슐 밑에 들어가고**
   // 녹는 것은 이미 바가 가린 뒤가 된다(실물 확인). 콘텐츠가 크롬과 처음 겹치는 자리는 바닥이
   // 아니라 **바의 윗변**이다.
-  it('탭 화면의 하단은 안전영역 + 바의 절반이다 — 캡슐 한가운데에서 0이 된다', () => {
+  it('탭 화면의 하단은 안전영역 + 바의 절반이다. 캡슐 한가운데에서 0이 된다', () => {
     const fade = resolveSafeAreaFade(화면(true, 'ios'))
 
     expect(fade.bottomPx).toBe(인셋.bottom + 바_페이드)
@@ -109,7 +109,7 @@ describe('페이드는 콘텐츠가 실제로 지나가는 자리에만 있다',
     expect(fade.bottomPx).toBe(34 - 45 / 3)
   })
 
-  // 스크롤포트가 이미 비운 몫은 깎지 않는다는 계약 — 판정을 두 벌로 두면
+  // 스크롤포트가 이미 비운 몫은 깎지 않는다는 계약. 판정을 두 벌로 두면
   // 한쪽만 고쳐도 페이드가 빈 자리를 깎거나 겹치는 자리를 놓친다.
   it('안전영역 몫은 `bottom-inset.ts` 가 비운 만큼을 뺀 값이다', () => {
     for (const [hasTabBar, platform, insetBottomPx] of [
@@ -180,7 +180,7 @@ describe('마스크 곡선은 smoothstep² 이다', () => {
 
   // **정정 2**. 요청은 **효과를 더 강하게** 였고, 그것이 이 한 숫자다. 구간 한가운데에서 콘텐츠가
   // 4분의 1만 남는다(제곱 전에는 절반이었다).
-  it('구간 한가운데 알파가 0.25 다 — 옛 곡선의 절반', () => {
+  it('구간 한가운데 알파가 0.25 다. 옛 곡선의 절반', () => {
     const 한가운데 = FADE_MASK_ALPHAS[(FADE_MASK_ALPHAS.length - 1) / 2]
 
     expect(한가운데).toBeCloseTo(0.25, 10)
@@ -190,7 +190,7 @@ describe('마스크 곡선은 smoothstep² 이다', () => {
   // 정지점은 **취향** 이 아니라 **곡선에 딸린 값**이다. 곡선을 더 가파르게 바꾸면서 개수를 그대로
   // 두면 그라디언트가 곡선을 못 따라가고(구간 선형 근사), 그 오차가 눈에는 **띠** 로 보인다.
   // 정정 2 가 다섯 → 아홉으로 늘린 이유가 이것이라, 그 관계를 숫자로 못 박는다.
-  it('정지점이 곡선을 2% 안으로 따라간다 — 곡선을 세게 하면 개수도 함께 늘려야 한다', () => {
+  it('정지점이 곡선을 2% 안으로 따라간다. 곡선을 세게 하면 개수도 함께 늘려야 한다', () => {
     const 참값 = (t: number): number => smoothstep(t) ** 2
     const 근사 = (t: number): number => {
       const i = FADE_MASK_LOCATIONS.findIndex((stop, index) => index > 0 && t <= stop)
@@ -211,7 +211,7 @@ describe('마스크 곡선은 smoothstep² 이다', () => {
 
   // 이 성질이 곡선을 고른 이유다. 양 끝의 기울기가 0에 가까워 **페이드가 시작·끝나는 선** 이 안
   // 보인다. 선형이면 모든 구간의 증가량이 같아 이 단언이 깨진다.
-  it('양 끝 구간이 가운데 구간보다 완만하다 — 선형이 아니다', () => {
+  it('양 끝 구간이 가운데 구간보다 완만하다. 선형이 아니다', () => {
     const 증가량 = FADE_MASK_ALPHAS.slice(1).map((alpha, i) => alpha - FADE_MASK_ALPHAS[i])
     const 가운데 = 증가량[Math.floor(증가량.length / 2)]
 

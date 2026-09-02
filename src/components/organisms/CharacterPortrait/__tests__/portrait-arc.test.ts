@@ -37,7 +37,7 @@ describe('링 구간', () => {
     expect(isFullTurn(full)).toBe(true)
   })
 
-  it('반원은 한 바퀴가 아니다 — 호로 그린다', () => {
+  it('반원은 한 바퀴가 아니다. 호로 그린다', () => {
     expect(isFullTurn(portraitRingSpan('left'))).toBe(false)
     expect(isFullTurn(portraitRingSpan('right'))).toBe(false)
   })

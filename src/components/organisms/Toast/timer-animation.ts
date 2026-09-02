@@ -1,4 +1,4 @@
-// 토스트 남은 시간 바 애니메이션 — `index.css` 의 `@keyframes toast-shrink`(step 7).
+// 토스트 남은 시간 바 애니메이션. `index.css` 의 `@keyframes toast-shrink`(step 7).
 //
 // **`Toast.tsx` 가 아니라 별도 파일인 이유**는 `Button/variants.ts` 와 같다: 컴포넌트 파일이 컴포넌트
 // 아닌 값을 함께 export 하면 fast refresh 가 깨진다.

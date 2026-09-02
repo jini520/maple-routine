@@ -11,7 +11,7 @@ import type { ColorSchemePort } from '../ports'
  * 있는 것은 그 한 줄뿐이다.
  *
  * `Appearance.getColorScheme()` 은 **`null` 을 돌려줄 수 있다**(네이티브 Appearance 모듈이 없거나 OS가
- * 판정을 주지 않은 경우 — `Appearance.js:76-91`). 그때는 라이트로 읽는다: Capacitor 구현이
+ * 판정을 주지 않은 경우. `Appearance.js:76-91`). 그때는 라이트로 읽는다: Capacitor 구현이
  * `matchMedia` 부재에 내린 것과 같은 판단이고, 모르는 것을 다크로 읽으면 **저장된 테마가 없는 첫
  * 실행이 통째로 다크로 열린다**. `=== 'dark'` 비교 하나가 `'light'`·`null`·`undefined` 셋을 함께
  * 라이트로 접는다.

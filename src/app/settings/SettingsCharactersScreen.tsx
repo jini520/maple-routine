@@ -5,7 +5,7 @@
 // 성질(**고르면 그 자리에서 끝난다**)은 유지된다. 화면이 pop 되면 설정으로 돌아온다.
 //
 // **본문은 이 파일에 없다.** `CharacterManageBody` + `useCharacterManage` 가 갖고, 온보딩 캐릭터
-// 선택 단계가 같은 것을 페이지로 쓴다(결정 1 — 갈리는 것은 머리와 CTA 뿐이다). 여기 있는 것은
+// 선택 단계가 같은 것을 페이지로 쓴다(결정 1. 갈리는 것은 머리와 CTA 뿐이다). 여기 있는 것은
 // `←` + 제목 · `닫기/저장` · 저장 배선 셋이다.
 //
 // ── 고정되는 것은 **저장 버튼 하나**다 (의 **하단 액션 바** 예외, 사용자 판정 2026-08-17)
@@ -56,13 +56,13 @@ export function SettingsCharactersScreen(): React.JSX.Element {
   // 끌어서 순서를 바꾸는 동안 화면 가장자리에서 자동으로 굴러간다. 이 화면에는
   // 고정 영역이 없어 굴릴 것이 페이지 자신뿐이고, 그래서 그 배선은 스크롤 뷰를 가진
   // **화면**의 것이다. 컨트롤러에 실으면 그 객체가 ref 를 품어 읽는 자리마다 `react-hooks/refs`
-  // 에 걸린다. 온보딩 단계도 같은 두 줄을 갖는다(결정 1 — 갈리는 것은 머리와 CTA 다).
+  // 에 걸린다. 온보딩 단계도 같은 두 줄을 갖는다(결정 1. 갈리는 것은 머리와 CTA 다).
   const { scrollRef, onScroll, scroll } = useReorderScroll()
   const [saveProgress, setSaveProgress] = useState<{ completed: number; total: number } | null>(null)
   // 하단 액션 바가 안전영역을 먹는다(아래). 그 **안전영역** 은 인셋이 아니라 하한이 깔린 값이다
   // . 이 화면만 인셋으로 두면 하위 페이지들과 바닥 여백이 갈린다.
   const bottomSafeAreaPx = useBottomSafeAreaPx()
-  // 고정 바가 덮는 높이 — 잰 값이 오기 전에는 0이라 마지막 행이 한 프레임 가려질 수 있지만, 그
+  // 고정 바가 덮는 높이. 잰 값이 오기 전에는 0이라 마지막 행이 한 프레임 가려질 수 있지만, 그
   // 프레임은 바가 그려지는 바로 그 프레임이라 사용자가 스크롤을 시작하기 전이다.
   const [actionBarHeightPx, setActionBarHeightPx] = useState(0)
 
@@ -128,7 +128,7 @@ export function SettingsCharactersScreen(): React.JSX.Element {
         </View>
       </ScreenScroll>
 
-      {/* 스크롤 뷰의 **형제**이자 절대 배치라 굴러가지 않는다(파일 머리 — 의 하단 액션 바
+      {/* 스크롤 뷰의 **형제**이자 절대 배치라 굴러가지 않는다(파일 머리. 의 하단 액션 바
           예외). 불투명해야 하는 이유는 콘텐츠가 이 아래를 지나가기 때문이고, 색은 카드가 아니라
           **페이지 바닥** 이라 `bg-bg` 다. 안전영역은 이 바가 먹는다(스크롤포트는 `ScreenScroll` 이
           이미 자기 몫을 뺐다). */}

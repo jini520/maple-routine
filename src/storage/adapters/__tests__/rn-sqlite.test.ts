@@ -1,5 +1,5 @@
 // 순수 규칙(`capacitor-sqlite-open.test.ts`)이 지키는 것은 "어느 파일을 여는가" 이고, 이 파일이
-// 지키는 것은 **어댑터가 포트 계약을 지키는가** 다. 특히 `query` 의 반환 모양 — op-sqlite 는 `rows`
+// 지키는 것은 **어댑터가 포트 계약을 지키는가** 다. 특히 `query` 의 반환 모양. op-sqlite 는 `rows`
 // 로 주고 `db.ts`·`storage/boss-*.ts` 는 `values` 를 읽으므로, 안 감싸면 타입 에러 없이 모든 조회가
 // 빈 결과가 되고 화면에는 기록이 사라진 것으로 보인다.
 //
@@ -57,7 +57,7 @@ afterEach(async () => {
 })
 
 describe('rnSqlitePort', () => {
-  it('웹 폴백이 없다 — RN 에는 웹 타깃이 없다', async () => {
+  it('웹 폴백이 없다. RN 에는 웹 타깃이 없다', async () => {
     expect(rnSqlitePort.isWebPlatform()).toBe(false)
     await expect(rnSqlitePort.initWebStore()).resolves.toBeUndefined()
   })
@@ -142,7 +142,7 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE boss_drop_records ADD COLUMN price_meso INTEGER',
       'ALTER TABLE boss_drop_records ADD COLUMN price_share INTEGER',
       'ALTER TABLE spend_records ADD COLUMN form TEXT',
-      // `아이템 구매`의 종류 — `form` 이 겪은 그 사정이다.
+      // `아이템 구매`의 종류. `form` 이 겪은 그 사정이다.
       'ALTER TABLE spend_records ADD COLUMN item_kind TEXT',
       // 수입 테이블도 수수료 칸 없이 만들어진 기기가 있다.
       'ALTER TABLE income_records ADD COLUMN sale_fee_percent INTEGER',

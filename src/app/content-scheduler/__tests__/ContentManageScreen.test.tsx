@@ -126,7 +126,7 @@ beforeEach(() => {
 })
 
 describe('ContentManageScreen', () => {
-  it('마운트하면 loadTrackedOcids 를 부른다 — 직접 진입해도 스토어가 채워진다', async () => {
+  it('마운트하면 loadTrackedOcids 를 부른다. 직접 진입해도 스토어가 채워진다', async () => {
     const store = mockStore({ characters: [character()] })
 
     await renderScreen()
@@ -240,7 +240,7 @@ describe('ContentManageScreen', () => {
   })
 })
 
-describe('ContentManageScreen — 길드 미가입 잠금', () => {
+describe('ContentManageScreen: 길드 미가입 잠금', () => {
   const GUILD_ITEM = '지하 수로'
 
   async function renderWeekly(guildName: string | null | undefined, tracked: string[] = []): Promise<void> {

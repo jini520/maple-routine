@@ -3,7 +3,7 @@
  * **목이 아닌 진짜 SQLite 로 한 번 태우는 자리**(이슈 #265).
  *
  * 옆의 `db.spec.ts` 는 가짜 포트로 어떤 문장이 나가는가 를 보고, `adapters/__tests__/rn-sqlite.test.ts`
- * 는 op-sqlite 의 모양 을 본다. 여기서 보는 것은 **그 문장이 진짜 엔진에서 통하는가** 다 —
+ * 는 op-sqlite 의 모양 을 본다. 여기서 보는 것은 **그 문장이 진짜 엔진에서 통하는가** 다.
  * 제약(`NOT NULL`)은 목이 흉내 낼 줄 모르는 것이고, 그래서 메포·캐시 기타가 저장되지 않는 결함이
  * 3,900 개 테스트를 그대로 통과했다.
  *
@@ -34,7 +34,7 @@ const OLD_INCOME_TABLE = `
   )
 `
 
-/** 그 뒤 `ensureColumn` 이 붙여 온 칸들 — **지금 기기의 테이블**이 이 모양이다. */
+/** 그 뒤 `ensureColumn` 이 붙여 온 칸들. **지금 기기의 테이블**이 이 모양이다. */
 const OLD_INCOME_ALTERS = [
   'sale_fee_percent INTEGER',
   'sale_fee_meso INTEGER',
@@ -97,7 +97,7 @@ describe('income_records.meso_amount 재작성 (이슈 #265)', () => {
 
   // **이 결정의 진짜 위험이다.** 재작성은 DROP 을 포함하므로, 옮기다 어긋나면 사용자가 손으로 적은
   // 수입이 통째로 사라진다. 되살릴 API 가 0% 인 데이터다.
-  it('기존 행을 한 건도 안 잃는다 — 값까지 그대로다', async () => {
+  it('기존 행을 한 건도 안 잃는다. 값까지 그대로다', async () => {
     real.inspect((db) => {
       db.exec(OLD_INCOME_TABLE)
       for (const alter of OLD_INCOME_ALTERS) db.exec(alter)
@@ -140,7 +140,7 @@ describe('income_records.meso_amount 재작성 (이슈 #265)', () => {
   // 칸을 더한 커밋과 이 재작성이 또 갈린다. 수수료·통화·사냥 칸을 아직 못 받은 기기가 실제로
   // 있다. 지금 스키마의 칸 목록을 박아 두면 없는 칸을
   // `SELECT` 해 **그 자리에서 던진다**. 그 기기는 앱이 아예 안 열린다.
-  it('칸이 모자란 옛 기기도 옮긴다 — 없던 칸은 NULL 이다', async () => {
+  it('칸이 모자란 옛 기기도 옮긴다. 없던 칸은 NULL 이다', async () => {
     real.inspect((db) => {
       db.exec(OLD_INCOME_TABLE)
       db.prepare(
@@ -169,7 +169,7 @@ describe('income_records.meso_amount 재작성 (이슈 #265)', () => {
   // 차례가 뒤집히면 **방금 ALTER 로 붙인 칸을 다시 만드는** 헛일이 된다.
   // 재작성이 만드는 테이블은 지금의 DDL 전체라, 먼저 돌면 **income_records 에 ALTER 가 한 번도
   // 안 나가는 것**이 그 차례의 증거다.
-  it('ensureColumn 들보다 먼저 돈다 — 옮긴 뒤엔 붙일 칸이 없다', async () => {
+  it('ensureColumn 들보다 먼저 돈다. 옮긴 뒤엔 붙일 칸이 없다', async () => {
     real.inspect((db) => {
       db.exec(OLD_INCOME_TABLE)
     })
@@ -183,7 +183,7 @@ describe('income_records.meso_amount 재작성 (이슈 #265)', () => {
     ).toEqual([])
   })
 
-  // 재작성은 행을 통째로 옮기는 비싼 일이다. 메이린 UPDATE 들과 같은 성질을 가져야 한다 —
+  // 재작성은 행을 통째로 옮기는 비싼 일이다. 메이린 UPDATE 들과 같은 성질을 가져야 한다.
   // **이미 됐으면 아무 일도 안 한다**.
   it('두 번째 부팅에서는 한 문장도 안 나간다', async () => {
     real.inspect((db) => {
@@ -296,7 +296,7 @@ describe('기타를 메포·캐시로 적어도 저장된다 (목이 아닌 SQLi
         sojae: 4,
         fragments: 83,
         fragmentPrice: 2_500_000,
-        // **그때의** 캐릭터 메소 획득량 — 칸이 하나 더 있다.
+        // **그때의** 캐릭터 메소 획득량. 칸이 하나 더 있다.
         mesoRate: 149,
       },
     })

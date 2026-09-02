@@ -9,7 +9,7 @@
  * | 주간 격자(`buildResetWeek`) | 게임의 주 | **목요일**. 주간 리셋 |
  *
  * 둘은 뒤집힌 관계가 아니라 **하는 일이 다르다.** 월간 격자는 달력 이라 일요일 시작이 관습이고
- * (목요일에서 시작하는 달력은 읽을 수 없다), 주간 보기는 기간 이라 게임 축이 맞는다 —
+ * (목요일에서 시작하는 달력은 읽을 수 없다), 주간 보기는 기간 이라 게임 축이 맞는다.
  * 보스 수익 탭이 이미 그 축이고, 그래서 같은 그룹의 두
  * 하위가 이번 주로 같은 숫자를 말한다.
  *
@@ -50,7 +50,7 @@ export interface CalendarDay {
 export type CalendarWeek = readonly CalendarDay[]
 
 /**
- * 하루치 금액 — 칸이 그리는 두 줄.
+ * 하루치 금액. 칸이 그리는 두 줄.
  *
  * **`expenseMeso` 는 메소 축의 지출이다**. 메소로 낸 것과 **메소마켓 시세로 환산한 메포**를
  * 합친 값이다.
@@ -106,7 +106,7 @@ export function formatDayLabel(dateKey: string): string {
 }
 
 /**
- * 하루 단위로 옮긴 날짜 열쇠 — 달·해 경계와 윤년을 `Date` 가 알아서 넘긴다.
+ * 하루 단위로 옮긴 날짜 열쇠. 달·해 경계와 윤년을 `Date` 가 알아서 넘긴다.
  *
  * **UTC 로 센다**. `formatDayLabel` 과 같은 이유다. 기기 표준시로 세면 자정 언저리에서 하루가
  * 밀려, 같은 열쇠가 화면과 저장에서 갈린다.
@@ -162,7 +162,7 @@ export function heatLevel(amount: number, monthMax: number): number {
 }
 
 /**
- * 진하기의 기준선 — **이번 달 칸만** 센다. 앞뒤 달로 채운 칸(결정 7)이 기준을 정해 버리면 이번
+ * 진하기의 기준선. **이번 달 칸만** 센다. 앞뒤 달로 채운 칸(결정 7)이 기준을 정해 버리면 이번
  * 달의 대비가 엉뚱해진다: 지난달에 큰 날이 하나 있으면 이번 달이 통째로 흐려진다.
  */
 export function monthIncomeMax(weeks: readonly CalendarWeek[], amounts: CalendarAmounts): number {
@@ -204,7 +204,7 @@ export function periodTotals(
   return { incomeMeso, expenseMeso }
 }
 
-// ══ 주간 격자 — 게임의 주 ══════════════════════════════
+// ══ 주간 격자. 게임의 주 ══════════════════════════════
 
 /** 목요일에서 시작한다. **월간 라벨을 회전한 것**이라 요일 이름이 한 곳에만 산다. */
 export const WEEKDAY_LABELS_RESET: readonly string[] = [
@@ -219,7 +219,7 @@ const THURSDAY = 4
  * 이 날짜가 속한 **게임 주의 시작(목요일)**. `YYYY-MM-DD`.
  *
  * `boss-profit-period.ts` 의 `getCurrentBossProfitPeriod('weekly', now).periodKey` 와 **같은 답을
- * 내야 한다**(테스트가 그 일치를 붙든다). 그쪽을 그대로 부르지 않는 이유는 입력이 다르기 때문이다 —
+ * 내야 한다**(테스트가 그 일치를 붙든다). 그쪽을 그대로 부르지 않는 이유는 입력이 다르기 때문이다.
  * 저쪽은 `Date`(시각)를 받아 KST 리셋 경계를 재는데, 여기 오는 것은 **이미 KST 달력 날짜**라
  * 다시 시각으로 바꾸면 타임존이 한 번 더 개입한다. 이 파일이 문자열·UTC 필드 산술만 쓰는 이유가
  * 그것이다(파일 머리).

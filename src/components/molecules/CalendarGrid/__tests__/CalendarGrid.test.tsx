@@ -37,7 +37,7 @@ function 칸(view: ReturnType<typeof renderAtom> extends Promise<infer T> ? T : 
   return within(view.getByTestId(`calendar-day-${dateKey}`))
 }
 
-describe('CalendarGrid — 격자', () => {
+describe('CalendarGrid: 격자', () => {
   it('요일 머리를 일요일부터 일곱 개 그린다', async () => {
     const view = await 그리기()
 
@@ -46,7 +46,7 @@ describe('CalendarGrid — 격자', () => {
     }
   })
 
-  it('받은 주의 모든 칸을 그린다 — 8월은 여섯 주 마흔두 칸', async () => {
+  it('받은 주의 모든 칸을 그린다. 8월은 여섯 주 마흔두 칸', async () => {
     const view = await 그리기()
 
     expect(view.getAllByTestId(/^calendar-day-/)).toHaveLength(42)
@@ -76,7 +76,7 @@ describe('CalendarGrid — 격자', () => {
   })
 })
 
-describe('CalendarGrid — 고른 날 동그라미는 접히면 안 된다 (안드로이드, 2026-09-02)', () => {
+describe('CalendarGrid: 고른 날 동그라미는 접히면 안 된다 (안드로이드, 2026-09-02)', () => {
   // 진짜 증상은 여기서 안 잡힌다. 배경 없는 View 를 네이티브 뷰 없이 접는 것은 안드로이드
   // 런타임이 하는 일이라 jest 에는 그 단계가 없다. 이 테스트가 막는 것은 **쓸모없어 보이는 프롭**
   // 으로 지워지는 것이다. 지우면 누른 날의 동그라미가 안드로이드에서 네모가 된다.
@@ -89,7 +89,7 @@ describe('CalendarGrid — 고른 날 동그라미는 접히면 안 된다 (안�
   })
 })
 
-describe('CalendarGrid — 오늘과 고른 날', () => {
+describe('CalendarGrid: 오늘과 고른 날', () => {
   it('고른 칸만 aria-selected 다', async () => {
     const view = await 그리기({ selectedDateKey: '2026-08-11' })
 
@@ -116,7 +116,7 @@ describe('CalendarGrid — 오늘과 고른 날', () => {
   })
 })
 
-describe('CalendarGrid — 금액 두 줄', () => {
+describe('CalendarGrid: 금액 두 줄', () => {
   const 금액 = {
     '2026-08-11': { incomeMeso: 12_940_000_000, expenseMeso: 500_000_000 },
     '2026-08-12': { incomeMeso: 2_840_000_000, expenseMeso: 0 },
@@ -140,7 +140,7 @@ describe('CalendarGrid — 금액 두 줄', () => {
   it('값이 0 이면 두 줄 다 빈다', async () => {
     const view = await 그리기({ amounts: 금액 })
 
-    // `toHaveTextContent` 로는 **비었다** 를 못 박기 어렵다(빈 문자열은 무엇에나 통한다) —
+    // `toHaveTextContent` 로는 **비었다** 를 못 박기 어렵다(빈 문자열은 무엇에나 통한다).
     // 그려 넣은 문자열을 직접 본다.
     expect(칸(view, '2026-08-13').getByTestId('calendar-income-2026-08-13').props.children).toBe(' ')
     expect(칸(view, '2026-08-12').getByTestId('calendar-expense-2026-08-12').props.children).toBe(' ')
@@ -196,8 +196,8 @@ describe('CalendarGrid — 금액 두 줄', () => {
   })
 })
 
-describe('CalendarGrid — 열지도', () => {
-  it('많이 번 날이 더 진하다 — 그 달 안에서 상대적이다', async () => {
+describe('CalendarGrid: 열지도', () => {
+  it('많이 번 날이 더 진하다. 그 달 안에서 상대적이다', async () => {
     const view = await 그리기({
       amounts: {
         '2026-08-11': { incomeMeso: 100_000_000_000, expenseMeso: 0 },
@@ -274,7 +274,7 @@ describe('CalendarGrid — 열지도', () => {
     expect(팔월십일).toBeGreaterThan(0.2)
   })
 
-  it('그 달이 통째로 비어 있어도 칠하지 않는다 — NaN 이 안 실린다', async () => {
+  it('그 달이 통째로 비어 있어도 칠하지 않는다. NaN 이 안 실린다', async () => {
     const view = await 그리기({ amounts: {} })
 
     for (const heat of view.getAllByTestId(/^calendar-heat-/)) {
@@ -288,7 +288,7 @@ describe('CalendarGrid — 열지도', () => {
 describe('주간 격자', () => {
   const 팔월넷째주 = buildResetWeek('2026-08-20')
 
-  it('주 하나만 넘기면 이레만 그린다 — 새 컴포넌트가 아니다', async () => {
+  it('주 하나만 넘기면 이레만 그린다. 새 컴포넌트가 아니다', async () => {
     const view = await 그리기({ weeks: [팔월넷째주] })
 
     for (const day of ['20', '21', '22', '23', '24', '25', '26']) {
@@ -298,7 +298,7 @@ describe('주간 격자', () => {
     expect(view.queryByTestId('calendar-day-2026-08-27')).toBeNull()
   })
 
-  it('요일 머리를 넘기면 그것을 쓴다 — 목요일부터다', async () => {
+  it('요일 머리를 넘기면 그것을 쓴다. 목요일부터다', async () => {
     const view = await 그리기({ weeks: [팔월넷째주], weekdayLabels: WEEKDAY_LABELS_RESET })
 
     // 머리 일곱 칸이 목~수 순서로 선다. 같은 글자가 칸 안에는 없으므로 화면 전체로 집어도 된다.
@@ -306,7 +306,7 @@ describe('주간 격자', () => {
     expect(labels).toEqual(['목', '금', '토', '일', '월', '화', '수'])
   })
 
-  it('안 넘기면 월간의 일~토가 기본이다 — 월간 호출부는 안 바뀐다', async () => {
+  it('안 넘기면 월간의 일~토가 기본이다. 월간 호출부는 안 바뀐다', async () => {
     const view = await 그리기()
 
     const labels = view.getAllByText(/^[일월화수목금토]$/).map((node) => node.props.children)
@@ -332,7 +332,7 @@ describe('주간 격자', () => {
     expect(heat.opacity).toBeLessThan(0.2)
   })
 
-  it('같은 값이라도 기준이 주로 좁아지면 가장 진해진다 — 그래서 밖에서 넣는다', async () => {
+  it('같은 값이라도 기준이 주로 좁아지면 가장 진해진다. 그래서 밖에서 넣는다', async () => {
     const amounts = { '2026-08-20': { incomeMeso: 10_000_000_000, expenseMeso: 0 } }
 
     const view = await 그리기({

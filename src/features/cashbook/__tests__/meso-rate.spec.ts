@@ -29,7 +29,7 @@ beforeEach(() => {
   getCachedCharacterBasic.mockReset().mockResolvedValue(null)
 })
 
-it('읽히면 자동값이다 — 그 값으로 캐시를 갱신한다', async () => {
+it('읽히면 자동값이다. 그 값으로 캐시를 갱신한다', async () => {
   await expect(loadMesoRate('ocid-1')).resolves.toEqual({ kind: 'read', percent: 149 })
 
   expect(fetchMesoRate).toHaveBeenCalledWith('api-key', 'ocid-1', null)
@@ -51,7 +51,7 @@ it('실패했는데 마지막 성공값도 없으면 빈 칸이다', async () =>
   await expect(loadMesoRate('ocid-1')).resolves.toEqual({ kind: 'fallback', percent: null })
 })
 
-it('키가 없으면 부르지도 않는다 — 401 을 만들어 키를 지우게 두지 않는다', async () => {
+it('키가 없으면 부르지도 않는다. 401 을 만들어 키를 지우게 두지 않는다', async () => {
   getAuthConfig.mockResolvedValue(null)
   getCachedMesoRate.mockResolvedValue(149)
 
@@ -60,7 +60,7 @@ it('키가 없으면 부르지도 않는다 — 401 을 만들어 키를 지우�
 })
 
 // 메획을 안 두른 캐릭터가 실제로 있다. `0 을 읽었다`와 `못 읽었다`는 다른 상태다.
-it('0 을 읽은 것은 성공이다 — 손입력으로 안 내려간다', async () => {
+it('0 을 읽은 것은 성공이다. 손입력으로 안 내려간다', async () => {
   fetchMesoRate.mockResolvedValue(0)
 
   await expect(loadMesoRate('ocid-1')).resolves.toEqual({ kind: 'read', percent: 0 })
@@ -83,7 +83,7 @@ it('캐시에 든 직업 이름을 함께 넘긴다', async () => {
   expect(fetchMesoRate).toHaveBeenCalledWith('api-key', 'ocid-1', '섀도어')
 })
 
-it('캐시가 아직 안 따뜻하면 직업을 모르는 채로 부른다 — 아무 값이나 얹지 않는다', async () => {
+it('캐시가 아직 안 따뜻하면 직업을 모르는 채로 부른다. 아무 값이나 얹지 않는다', async () => {
   getCachedCharacterBasic.mockResolvedValue({ profile: { name: '루디', level: 294 } })
 
   await loadMesoRate('ocid-1')

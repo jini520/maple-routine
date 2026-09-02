@@ -14,7 +14,7 @@ import {
 } from '../meso-pad'
 
 describe('applyMesoKey', () => {
-  it('숫자는 오른쪽에 붙는다 — 값이 왼쪽으로 자란다', () => {
+  it('숫자는 오른쪽에 붙는다. 값이 왼쪽으로 자란다', () => {
     expect(applyMesoKey(0, '1')).toBe(1)
     expect(applyMesoKey(1, '2')).toBe(12)
     expect(applyMesoKey(12, '3')).toBe(123)
@@ -24,7 +24,7 @@ describe('applyMesoKey', () => {
     expect(applyMesoKey(1, '00')).toBe(100)
   })
 
-  it('0 에서 0 을 쳐도 0 이다 — 앞자리 0 이 쌓이지 않는다', () => {
+  it('0 에서 0 을 쳐도 0 이다. 앞자리 0 이 쌓이지 않는다', () => {
     expect(applyMesoKey(0, '0')).toBe(0)
     expect(applyMesoKey(0, '00')).toBe(0)
   })
@@ -36,7 +36,7 @@ describe('applyMesoKey', () => {
   })
 
   // 조 단위를 넘기면 `Number` 정밀도가 아니라 **화면이 먼저 깨진다**. 그래서 타건을 막는다.
-  it('상한을 넘기는 타건은 무시한다 — 값이 그대로다', () => {
+  it('상한을 넘기는 타건은 무시한다. 값이 그대로다', () => {
     expect(applyMesoKey(MAX_MESO, '9')).toBe(MAX_MESO)
   })
 
@@ -46,7 +46,7 @@ describe('applyMesoKey', () => {
 })
 
 describe('MESO_KEYS', () => {
-  it('3열 넉 줄 — 1~9 · 00 · 0 · ⌫', () => {
+  it('3열 넉 줄. 1~9 · 00 · 0 · ⌫', () => {
     expect(MESO_KEYS).toEqual(['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', 'del'])
   })
 })
@@ -58,16 +58,16 @@ describe('MESO_KEYS', () => {
  * 상한 규칙은 `applyMesoKey` 와 **같아야 한다**(넘기면 안 먹는다).
  */
 describe('parseMesoText', () => {
-  it('콤마를 걷는다 — 칸이 그린 것이 그대로 돌아온다', () => {
+  it('콤마를 걷는다. 칸이 그린 것이 그대로 돌아온다', () => {
     expect(parseMesoText(0, '1,200')).toBe(1200)
   })
 
-  it('숫자가 아닌 글자를 걷는다 — 붙여넣기·자동완성이 들여보낼 수 있다', () => {
+  it('숫자가 아닌 글자를 걷는다. 붙여넣기·자동완성이 들여보낼 수 있다', () => {
     expect(parseMesoText(0, '1억 2000만')).toBe(12000)
     expect(parseMesoText(0, '-5')).toBe(5)
   })
 
-  it('비면 0 이다 — 다 지운 것은 **0 원** 이지 **그대로** 가 아니다', () => {
+  it('비면 0 이다. 다 지운 것은 **0 원** 이지 **그대로** 가 아니다', () => {
     expect(parseMesoText(1200, '')).toBe(0)
     expect(parseMesoText(1200, '메소')).toBe(0)
   })
@@ -77,7 +77,7 @@ describe('parseMesoText', () => {
   })
 
   // `applyMesoKey` 와 **같은 규칙**이다. 잘라 넣으면 사용자가 친 것과 다른 값이 남는다.
-  it('상한을 넘기는 입력은 안 먹는다 — 값이 그대로다', () => {
+  it('상한을 넘기는 입력은 안 먹는다. 값이 그대로다', () => {
     expect(parseMesoText(MAX_MESO, `${MAX_MESO}0`)).toBe(MAX_MESO)
   })
 })
@@ -89,13 +89,13 @@ describe('parseMesoText', () => {
  * 지운 `0000000000` 이 0 으로 접히고 빈 칸이 되던 자리가 그것이다.
  */
 describe('acceptMesoText', () => {
-  it('숫자만 남긴다 — 붙여넣기·자동완성이 그 밖의 것을 들여보낸다', () => {
+  it('숫자만 남긴다. 붙여넣기·자동완성이 그 밖의 것을 들여보낸다', () => {
     expect(acceptMesoText('', '1,200')).toBe('1200')
     expect(acceptMesoText('', '1억 2000만')).toBe('12000')
   })
 
   // **여기서 앞자리 0 을 안 걷는 것이 핵심**이다. 그것이 곧 편집 중인 상태다.
-  it('앞자리 0 을 그대로 둔다 — 편집 중인 글자를 안 건드린다', () => {
+  it('앞자리 0 을 그대로 둔다. 편집 중인 글자를 안 건드린다', () => {
     expect(acceptMesoText('80000000000', '0000000000')).toBe('0000000000')
     expect(acceptMesoText('0000000000', '60000000000')).toBe('60000000000')
   })
@@ -105,7 +105,7 @@ describe('acceptMesoText', () => {
   })
 
   // `applyMesoKey`·`parseMesoText` 와 **같은 규칙**이다. 넘기면 안 먹는다.
-  it('상한을 넘기는 입력은 안 먹는다 — 글자가 그대로다', () => {
+  it('상한을 넘기는 입력은 안 먹는다. 글자가 그대로다', () => {
     expect(acceptMesoText(`${MAX_MESO}`, `${MAX_MESO}0`)).toBe(`${MAX_MESO}`)
   })
 

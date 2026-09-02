@@ -32,7 +32,7 @@ function findDuplicates(keys: string[]): string[] {
 
 // item-drop-table.json 상단 note에 데이터 없음/의도적 제외로 이미 문서화된 조합.
 // weekly-bosses.json에 새 보스/난이도가 추가되면서 드랍 데이터가 누락된 경우와
-// 구분하기 위한 허용 목록 — 여기 없는 조합이 빠지면 테스트가 실패해야 한다.
+// 구분하기 위한 허용 목록. 여기 없는 조합이 빠지면 테스트가 실패해야 한다.
 // 남은 여섯은 전부 "상세 보상 정보 자체가 제공되지 않은" 구보스다. 벨로나 세 조합은
 // 출시분 반영으로 빠졌다. 이제 이 목록에 "미출시" 사유는 없다.
 const KNOWN_MISSING_DROP_ENTRIES = new Set([

@@ -236,7 +236,7 @@ describe('normalizeCharacterBasic', () => {
     expect(normalizeCharacterBasic(wire).expRate).toBeUndefined()
   })
 
-  // 위 두 케이스와 갈리는 자리 — 진짜 0%는 "모름"이 아니라 사실이므로 실어야 한다.
+  // 위 두 케이스와 갈리는 자리. 진짜 0%는 "모름"이 아니라 사실이므로 실어야 한다.
   it('character_exp_rate가 "0.000"이면 expRate는 0이다', () => {
     const wire: NexonCharacterBasicResponse = {
       character_name: '갓만든캐릭',

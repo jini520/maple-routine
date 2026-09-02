@@ -1,5 +1,5 @@
 /**
- * 시트 안의 입력 칸 — **부품은 RN 것 그대로, 시트가 보는 값만 채운다**.
+ * 시트 안의 입력 칸. **부품은 RN 것 그대로, 시트가 보는 값만 채운다**.
  *
  * `@gorhom/bottom-sheet` 는 `animatedKeyboardState.target` 이 비어 있으면 키보드 이벤트를 받고도
  * 상태를 **안 올린다**(라이브러리 `useAnimatedKeyboard`). 정정 5 는 그 값을 채우려고 라이브러리의
@@ -37,7 +37,7 @@ beforeEach(() => {
   mockInsideSheet.mockReset().mockReturnValue(null)
 })
 
-describe('SheetTextInput — 부품은 RN 것 하나다', () => {
+describe('SheetTextInput: 부품은 RN 것 하나다', () => {
   it('시트 안이든 밖이든 같은 입력을 그린다', async () => {
     const 시트밖 = await renderAtom(<SheetTextInput testID="칸" />)
     expect(시트밖.getByTestId('칸')).toBeTruthy()
@@ -64,7 +64,7 @@ describe('SheetTextInput — 부품은 RN 것 하나다', () => {
 })
 
 describe('시트가 보는 초점', () => {
-  it('커서가 들어오면 채운다 — 이것이 없으면 시트가 안 올라간다', async () => {
+  it('커서가 들어오면 채운다. 이것이 없으면 시트가 안 올라간다', async () => {
     const 상태 = 키보드상태()
     mockInsideSheet.mockReturnValue({ animatedKeyboardState: 상태 })
     const view = await renderAtom(<SheetTextInput testID="칸" />)
@@ -113,7 +113,7 @@ describe('시트가 보는 초점', () => {
     expect(상태.현재().target).toBe(9)
   })
 
-  it('언마운트하면 내 초점을 거둔다 — 남의 것은 두고', async () => {
+  it('언마운트하면 내 초점을 거둔다. 남의 것은 두고', async () => {
     const 상태 = 키보드상태()
     mockInsideSheet.mockReturnValue({ animatedKeyboardState: 상태 })
     const view = await renderAtom(<SheetTextInput testID="칸" />)

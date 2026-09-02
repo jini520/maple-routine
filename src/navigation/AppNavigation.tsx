@@ -9,7 +9,7 @@ import { useRootBackToBackground } from './use-root-back'
 import type { RootStackParamList } from './routes'
 
 /**
- * 내비게이션 루트 — 컨테이너 + 루트 스택 + 시스템 뒤로가기의 마지막 자리.
+ * 내비게이션 루트. 컨테이너 + 루트 스택 + 시스템 뒤로가기의 마지막 자리.
  *
  * `<ThemeProvider>` **안**에 있어야 한다(`useNavigationTheme` 이 테마 컨텍스트를 읽는다). 컨텍스트가
  * 없으면 조용히 기본 테마로 폴백하지 않고 던진다. `src/theme/context.ts` 의 판단이다.

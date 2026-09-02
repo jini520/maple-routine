@@ -1,6 +1,6 @@
 // 레지스트리와 **손으로 적은 배치**의 대조.
 //
-// 좌표를 손으로 적기로 한 이상 그 실수는 반드시 나고, **그것을 잡는 것은 이 파일뿐이다** —
+// 좌표를 손으로 적기로 한 이상 그 실수는 반드시 나고, **그것을 잡는 것은 이 파일뿐이다**.
 // `validateWidgetLayout` 은 step 5 에서 이미 검증됐지만 **지금 쓰는 배치가 그 검증을 통과하는가** 는
 // 아무도 안 묻고 있었다. 자동 패킹을 기각하며 산 값이 정확히 여기서 회수된다.
 
@@ -9,7 +9,7 @@ import { TILE_LAYOUT } from '../widgets/layout'
 import { WIDGETS, WIDGET_SIZES_BY_ID } from '../widgets/registry'
 
 describe('기본 배치', () => {
-  it('검증 다섯을 전부 통과한다 — 위반이 없다', () => {
+  it('검증 다섯을 전부 통과한다. 위반이 없다', () => {
     expect(validateWidgetLayout(TILE_LAYOUT, WIDGET_SIZES_BY_ID)).toEqual([])
   })
 
@@ -21,9 +21,9 @@ describe('기본 배치', () => {
     expect(new Set(placedIds).size).toBe(placedIds.length)
   })
 
-  // 배치가 코드 상수인 v1 에서는 **선언만 남고 아무도 안 쓰는 크기**가 생긴다(정정 13 — 남기기로
+  // 배치가 코드 상수인 v1 에서는 **선언만 남고 아무도 안 쓰는 크기**가 생긴다(정정 13. 남기기로
   // 한 값이다). 그러니 **선언된 크기 = 쓰이는 크기** 로 적으면 안 되고, 반대 방향만 참이다.
-  it('배치가 쓰는 크기는 전부 그 위젯이 선언한 것이다 — 반대는 아니다', () => {
+  it('배치가 쓰는 크기는 전부 그 위젯이 선언한 것이다. 반대는 아니다', () => {
     for (const placement of TILE_LAYOUT) {
       expect(WIDGET_SIZES_BY_ID[placement.id]).toContainEqual({ w: placement.w, h: placement.h })
     }

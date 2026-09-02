@@ -70,7 +70,7 @@ describe('getBossDropCandidates', () => {
     }
   })
 
-  it('듄켈 하드의 교환권은 하나로 통합된다 — 옛 이름 갈림이 해소됐다', () => {
+  it('듄켈 하드의 교환권은 하나로 통합된다. 옛 이름 갈림이 해소됐다', () => {
     const names = getBossDropCandidates('듄켈')
       .map((candidate) => candidate.name)
       .filter((name) => name.includes('악세서리'))
@@ -88,7 +88,7 @@ describe('getBossFixedDrops', () => {
     const groups = getBossFixedDrops('스우')
 
     expect(groups.map((group) => group.difficulty)).toEqual(['노멀', '하드', '익스트림'])
-    // 같은 아이템도 난이도마다 값이 다름 — 그룹별 값을 그대로 유지한다
+    // 같은 아이템도 난이도마다 값이 다름. 그룹별 값을 그대로 유지한다
     const hard = groups.find((group) => group.difficulty === '하드')
     expect(hard?.items).toContainEqual(
       expect.objectContaining({ name: '솔 에르다의 기운', amount: '50' }),
@@ -237,7 +237,7 @@ describe('planConfirmedDifficultyDropMigration', () => {
   it('옛 난이도 키의 드롭을 확정 난이도로 옮기고, 그 난이도에서 못 나오는 항목은 삭제한다', () => {
     const plan = planConfirmedDifficultyDropMigration('스우', '하드', extremeDrops)
 
-    // 컴플리트 언더컨트롤은 익스 전용 — 되살리지 않는다(거짓 기록, 사용자 판단)
+    // 컴플리트 언더컨트롤은 익스 전용. 되살리지 않는다(거짓 기록, 사용자 판단)
     expect(plan?.drops.map((drop) => drop.itemName)).toEqual(['루즈 컨트롤 머신 마크'])
     expect(plan?.staleDifficulties).toEqual(['익스트림'])
   })
@@ -254,7 +254,7 @@ describe('planConfirmedDifficultyDropMigration', () => {
     ])
   })
 
-  it('이관분이 전부 삭제돼도 옛 키는 비워야 한다 — 고아를 남기지 않는다', () => {
+  it('이관분이 전부 삭제돼도 옛 키는 비워야 한다. 고아를 남기지 않는다', () => {
     const plan = planConfirmedDifficultyDropMigration('스우', '하드', [
       { difficulty: '익스트림', dropIndex: 0, category: 'equipment', itemName: '컴플리트 언더컨트롤', quantity: 1 },
     ])
@@ -275,7 +275,7 @@ describe('planConfirmedDifficultyDropMigration', () => {
     ])
   })
 
-  it('옛 난이도 키가 없으면 null — 쓸 일이 없다는 뜻이다(멱등)', () => {
+  it('옛 난이도 키가 없으면 null: 쓸 일이 없다는 뜻이다(멱등)', () => {
     expect(
       planConfirmedDifficultyDropMigration('스우', '하드', [
         { difficulty: '하드', dropIndex: 0, category: 'equipment', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
@@ -298,7 +298,7 @@ describe('planConfirmedDifficultyDropMigration', () => {
 // `toRecordedDrop` 이 필드를 손으로 옮겨 적으므로, 새 컬럼을 빠뜨려도 **타입 에러 없이 통과하고**
 // 값만 `undefined` 가 된다. 화면에는 "미입력"으로 보여 버그로 인지되기까지 오래 걸린다. 그래서
 // 이관 계산에 가격 생존을 직접 못 박는다.
-describe('planConfirmedDifficultyDropMigration — 가격 생존', () => {
+describe('planConfirmedDifficultyDropMigration: 가격 생존', () => {
   it('이관된 드롭이 가격 세 필드를 그대로 들고 간다', () => {
     const plan = planConfirmedDifficultyDropMigration('스우', '하드', [
       {
@@ -324,7 +324,7 @@ describe('planConfirmedDifficultyDropMigration — 가격 생존', () => {
     ])
   })
 
-  it('스킵 상태도 이관에서 살아남는다 — 미입력으로 되돌아가면 다시 묻게 된다', () => {
+  it('스킵 상태도 이관에서 살아남는다. 미입력으로 되돌아가면 다시 묻게 된다', () => {
     const plan = planConfirmedDifficultyDropMigration('스우', '하드', [
       {
         difficulty: '익스트림',

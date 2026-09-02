@@ -14,7 +14,7 @@
 // 을 건드리면 설치는 그대로 성공하고 화면만 다시 검어진다.
 //
 // **`@expo/ui` 의 `MaskedView` 로 갈아타는 길도 막는다.** 그쪽은 검정을 없애지만 안드로이드에서
-// 자식을 Compose interop(`RNHostView`)로 감싸 **마스크 안의 탭이 통째로 죽는다**(실기기 실측 —
+// 자식을 Compose interop(`RNHostView`)로 감싸 **마스크 안의 탭이 통째로 죽는다**(실기기 실측.
 // 마스크 안 탭 0.00% 대 마스크를 끈 대조군 34.91%).
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
@@ -26,7 +26,7 @@ const REPO_ROOT = join(__dirname, '..', '..')
 const PATCH_DIR = join(REPO_ROOT, 'patches')
 const PATCH_TARGET = '@react-native-masked-view+masked-view'
 
-/** 검정을 없애지만 마스크 안 터치를 죽이는 대체재 — 되돌아오면 안 된다. */
+/** 검정을 없애지만 마스크 안 터치를 죽이는 대체재. 되돌아오면 안 된다. */
 const FORBIDDEN_MODULE = '@expo/ui/community/masked-view'
 
 function sourceFiles(dir: string): string[] {
@@ -52,7 +52,7 @@ function patchBody(): string {
   return readFileSync(join(PATCH_DIR, file as string), 'utf8')
 }
 
-describe(' — 마스크는 인덱스가 아니라 참조로 잡힌다', () => {
+describe('마스크는 인덱스가 아니라 참조로 잡힌다', () => {
   it('패치 파일이 하나 있다', () => {
     expect(existsSync(PATCH_DIR)).toBe(true)
 
@@ -82,7 +82,7 @@ describe(' — 마스크는 인덱스가 아니라 참조로 잡힌다', () => {
     expect(Object.keys(manifest.devDependencies ?? {})).toContain('patch-package')
   })
 
-  it(`대체재(${FORBIDDEN_MODULE})를 쓰지 않는다 — 마스크 안 터치가 죽는다`, () => {
+  it(`대체재(${FORBIDDEN_MODULE})를 쓰지 않는다. 마스크 안 터치가 죽는다`, () => {
     const files = sourceFiles(SRC)
     // 경로가 틀려 0개를 훑고도 초록이 되는 것이 이 부류 가드의 흔한 실패다.
     expect(files.length).toBeGreaterThan(50)

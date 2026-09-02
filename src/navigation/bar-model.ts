@@ -1,9 +1,9 @@
 /**
- * 하단바의 층과 뒤로가기 규칙 —~4·6 을 이 다시 앉힌 자리.
+ * 하단바의 층과 뒤로가기 규칙.
  *
  * ## 층은 이제 이 모듈이 기억 하지 않는다
  *
- * 예전에는 여기가 `history` 와 `showGroups` 를 들고 뒤로가기를 손으로 만들었다. 그 이유는 하나였다 —
+ * 예전에는 여기가 `history` 와 `showGroups` 를 들고 뒤로가기를 손으로 만들었다. 그 이유는 하나였다.
  * 그룹→하위 이동이 **형제 탭 전환**이라 되돌아갈 단이 없었기 때문이다. 이 그 이동을
  * 진짜 스택 push 로 바꾸면서 **되돌아갈 단이 실재하게** 됐고, 그러자 두 값은 합쳐진 것이 아니라
  * **존재 이유를 잃었다**:
@@ -195,7 +195,7 @@ export function pressGroup(state: BarState, id: GroupId): BarIntent {
   }
 }
 
-/** 하위를 눌렀을 때 — 같은 층의 옆걸음이라 **쌓지 않는다**(결정 4). */
+/** 하위를 눌렀을 때. 같은 층의 옆걸음이라 **쌓지 않는다**(결정 4). */
 export function pressSub(state: BarState, page: TabRouteName): BarIntent {
   if (page === state.page) return NONE
   return { kind: 'switchSub', page }

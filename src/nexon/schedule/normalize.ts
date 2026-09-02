@@ -75,7 +75,7 @@ export function normalizeSchedulerCharacterState(
   const dailyContentsWire = wire.daily_contents ?? []
   const weeklyContentsWire = wire.weekly_contents ?? []
   const bossContentsWire = wire.boss_contents ?? []
-  // bossDaily는 이 앱이 다루지 않는 대상이라 완료 승격 판정에서도 제외해야 한다 —
+  // bossDaily는 이 앱이 다루지 않는 대상이라 완료 승격 판정에서도 제외해야 한다.
   // 그렇지 않으면 같은 content_name이 bossDaily·bossWeekly에 함께 오는 보스(힐라 하드·핑크빈
   // 카오스 등)에서, 전혀 무관한 bossDaily 완료가 등록된 bossWeekly 항목을 잘못 완료로
   // 승격시킨다(사용자 재현 확인, 2026-07-22).

@@ -72,7 +72,7 @@ afterEach(() => {
 })
 
 describe('easeOutExpo', () => {
-  it('빠르게 출발해 점점 느려진다 — 절반을 10% 지점에서 지난다', async () => {
+  it('빠르게 출발해 점점 느려진다. 절반을 10% 지점에서 지난다', async () => {
     expect(easeOutExpo(0)).toBe(0)
     expect(easeOutExpo(1)).toBe(1)
     expect(easeOutExpo(0.1)).toBeCloseTo(0.5, 2)

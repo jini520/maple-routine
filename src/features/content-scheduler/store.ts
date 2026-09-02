@@ -113,7 +113,7 @@ const initialState: ContentSchedulerState = {
 // 캐릭터는 맨 뒤로 보낸다.
 // 길드명은 여기서 함께 꺼내 뷰에 실어 보낸다. 정렬을 위해 이미 읽는 캐시 객체
 // 안에 있으므로 추가 조회가 0이고, 화면이 character-basic-cache를 다시 읽을 이유가 없다.
-// : `level`·`imageUrl` 도 **같은 이유로** 함께 실어 보낸다(초상화 레일이 쓴다) —
+// : `level`·`imageUrl` 도 **같은 이유로** 함께 실어 보낸다(초상화 레일이 쓴다).
 // 이 함수가 이미 캐릭터마다 캐시를 한 번씩 읽고 있어 조회가 늘지 않는다. 정렬에 쓰던 level 을
 // 버리지 않고 뷰에 남기는 것뿐이다.
 async function sortByCachedLevel(views: ContentCharacterView[]): Promise<ContentCharacterView[]> {
@@ -147,7 +147,7 @@ async function sortByCachedLevel(views: ContentCharacterView[]): Promise<Content
     }))
 }
 
-// 저장 시점에 유지되는 캐릭터의 뷰가 메모리에 없을 때만 쓰는 폴백 —
+// 저장 시점에 유지되는 캐릭터의 뷰가 메모리에 없을 때만 쓰는 폴백.
 // 네트워크(syncSchedules)는 새로 추가된 캐릭터에만 쓰고, 그 외에는 마지막 캐시를 읽는다.
 async function readCachedView(ocid: string): Promise<ContentCharacterView | null> {
   const cached = await getCachedSchedulerState(ocid)
@@ -210,7 +210,7 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
 
     // 결정 14(b): 수동 모드에서 새로 추적 목록에 추가된 캐릭터만 개별 시드하고, 그
     // 멤버십을 화면 상태에도 반영한다(동기화가 added만 훑으므로 refresh처럼 전체를 다시 읽지 않는다).
-    // 동기화보다 먼저 실행 — 화면의 저장 진행률 모달이 saveTrackedOcids 전체를 기다리므로
+    // 동기화보다 먼저 실행. 화면의 저장 진행률 모달이 saveTrackedOcids 전체를 기다리므로
     // 시드가 끝날 때까지 자연스럽게 로딩이 유지된다(결정 15).
     if (added.length > 0 && useTrackingModeStore.getState().mode === 'manual') {
       await seedManualTrackedContent(added)
@@ -221,7 +221,7 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
     }
 
     if (added.length === 0) {
-      // 네트워크 0회 — 이미 가진 뷰에서 빠진 캐릭터만 걷어내면 화면이 정확해진다.
+      // 네트워크 0회. 이미 가진 뷰에서 빠진 캐릭터만 걷어내면 화면이 정확해진다.
       set({
         status: 'loaded',
         error: null,
@@ -289,7 +289,7 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
         )
       : {}
 
-    // 캐시 우선 표시 — 재검증(fetch) 전에 마지막으로 성공한 캐시 값이 있으면
+    // 캐시 우선 표시. 재검증(fetch) 전에 마지막으로 성공한 캐시 값이 있으면
     // 그 값으로 먼저 채워 화면이 비지 않게 한다. 재검증 응답이 오면 그대로 덮어쓴다.
     const cachedCharacters = (
       await Promise.all(

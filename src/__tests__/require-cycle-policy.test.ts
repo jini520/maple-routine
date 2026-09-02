@@ -1,4 +1,4 @@
-// 런타임 import 사이클 가드 — `docs/foundation/architecture.md` `런타임 import 사이클을 만들지 않는다`.
+// 런타임 import 사이클 가드. `docs/foundation/architecture.md` `런타임 import 사이클을 만들지 않는다`.
 //
 // ## 왜 테스트가 필요한가
 //

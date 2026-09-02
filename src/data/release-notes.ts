@@ -1,6 +1,6 @@
 import type { ReleaseNote, ReleaseNoteCategory } from '../types'
 
-/** 묶음 제목·매니페스트 머리표에 쓰는 이름 — 이슈 접두사와 **글자까지 같다**. */
+/** 묶음 제목·매니페스트 머리표에 쓰는 이름. 이슈 접두사와 **글자까지 같다**. */
 export const RELEASE_NOTE_CATEGORY_LABELS: Record<ReleaseNoteCategory, string> = {
   feature: '기능',
   improvement: '개선',
@@ -8,7 +8,7 @@ export const RELEASE_NOTE_CATEGORY_LABELS: Record<ReleaseNoteCategory, string> =
 }
 
 /**
- * 화면에 묶음이 나오는 순서. **데이터 순서와 무관하게 이 순서로 그린다** —
+ * 화면에 묶음이 나오는 순서. **데이터 순서와 무관하게 이 순서로 그린다**.
  * 노트를 쓰는 사람이 항목을 어떤 순서로 적든 화면은 늘 같아야 한다.
  * 새로 생긴 것 → 나아진 것 → 고친 것 순이다.
  */
@@ -39,8 +39,8 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     version: '1.0.7',
     // `chore(release): 1.0.7` 커밋 날짜다(작성일과 같은 날이라 정정할 것이 없었다).
     date: '2026-08-30',
-    // 다섯 줄이다(사용자가 정한 문장 — 넷은 2026-08-30, 첫 줄은 2026-09-01). `버그 수정.`은
-    // `items` 의 `fix` 를 한 줄로 뭉친 것이라 **어떤 파생 규칙으로도 안 나온다** —
+    // 다섯 줄이다(사용자가 정한 문장. 넷은 2026-08-30, 첫 줄은 2026-09-01). `버그 수정.`은
+    // `items` 의 `fix` 를 한 줄로 뭉친 것이라 **어떤 파생 규칙으로도 안 나온다**.
     // 결정 3 이 `highlights` 를 `items` 에서 파생하지 않기로 한 이유가 정확히 이런 줄이다.
     //
     // **첫 줄이 맨 위에 선다**. 1.0.7 을 이미 받은 사람에게 이 번들이 다시 뜨고, 그때 새로 보는
@@ -91,7 +91,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
         text: 'today 페이지의 글자 잘림 문제 수정.',
       },
       // 아래 둘은 **1.0.7 이 출시된 뒤에 고친 것**이고 같은 버전 번호로 다시 나간다(사용자 지정
-      // 2026-09-01). 위 주석의 **같은 범위에서 고쳐진 회귀는 안 적는다** 에 걸리지 않는다 —
+      // 2026-09-01). 위 주석의 **같은 범위에서 고쳐진 회귀는 안 적는다** 에 걸리지 않는다.
       // 그 규칙은 아무도 겪은 적 없는 회귀의 이야기이고, 이 둘은 출시된 앱에서 실제로 겪었다.
       {
         category: 'fix',
@@ -282,7 +282,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 ]
 
 /**
- * 그 버전의 노트를 찾는다. 없으면 **던지지 않고 `undefined`** 다 —
+ * 그 버전의 노트를 찾는다. 없으면 **던지지 않고 `undefined`** 다.
  * "노트가 없다"의 판정은 호출부가 한다(배포 가드는 중단하고, 화면은 그냥 안 그린다).
  */
 export function findReleaseNote(version: string): ReleaseNote | undefined {

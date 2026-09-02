@@ -45,7 +45,7 @@ describe('PageHeaderTitleRow', () => {
 
   // 화면마다 오른쪽 자리(`justify-between`)나 사이 간격(`gap-2`)이 다르다. 그것까지 프리미티브가
   // 정하면 호출부가 줄을 다시 손으로 그리게 된다. 바닥만 정하고 나머지는 받는다.
-  it('넘겨받은 클래스를 함께 쓴다 — 최소 높이는 그대로다', async () => {
+  it('넘겨받은 클래스를 함께 쓴다. 최소 높이는 그대로다', async () => {
     const { getByTestId } = await renderOverlay(
       <PageHeaderTitleRow className="justify-between gap-2">
         <Text>보스 스케줄러</Text>

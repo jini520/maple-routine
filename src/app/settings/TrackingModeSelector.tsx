@@ -1,4 +1,4 @@
-// TrackingModeModal 안에 들어가는 선택 목록 — 모달 자체가 카드 역할을 하므로 여기서는 카드
+// TrackingModeModal 안에 들어가는 선택 목록. 모달 자체가 카드 역할을 하므로 여기서는 카드
 // 테두리를 다시 두르지 않는다. 문구와 **카드 안쪽 구조** 모두 온보딩 `TrackingModeStep` 과 같아야
 // 한다. 공용 카피 `features/tracking-mode/copy` 를 함께 쓰므로 한쪽만 고치면
 // 같은 선택지가 두 화면에서 다르게 생긴다. 규격은 `docs/features/settings.md` `트래킹 모드 옵션 카드`.

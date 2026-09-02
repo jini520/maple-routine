@@ -1,4 +1,4 @@
-// 가격 기록 화면의 상태 — 한 주를 놓고 드롭에 값을 매긴다.
+// 가격 기록 화면의 상태. 한 주를 놓고 드롭에 값을 매긴다.
 //
 // 히스토리 스토어(`drop-history-store`)와 형제이되 축과 성격이 다르다: 저쪽은 **전 기간 읽기
 // 전용**이고 여기는 **한 주 쓰기**다. 그래서 저장 경로(`savePrice`·`skipPrice`)가 함께 산다.
@@ -50,7 +50,7 @@ interface DropPriceState {
   excludePrice: (entry: DropPriceEntry) => Promise<void>
 }
 
-// 히스토리와 같은 사정 — 여기서 실패를 빈 배열로 바꾸면 "기록이 없습니다"라는 **거짓 빈 상태**가
+// 히스토리와 같은 사정. 여기서 실패를 빈 배열로 바꾸면 "기록이 없습니다"라는 **거짓 빈 상태**가
 // 된다. 실패는 실패로 알린다.
 
 function entryId(record: Pick<BossDropRecord, 'ocid' | 'boss' | 'difficulty' | 'periodKey' | 'dropIndex'>): string {
@@ -58,7 +58,7 @@ function entryId(record: Pick<BossDropRecord, 'ocid' | 'boss' | 'difficulty' | '
 }
 
 /**
- * 저장 그룹의 키 — `replaceBossDropRecords` 의 단위다(`dropIndex` 는 빠진다).
+ * 저장 그룹의 키. `replaceBossDropRecords` 의 단위다(`dropIndex` 는 빠진다).
  *
  * `difficulty` 를 `string` 으로 받는 이유: 저장 계층(`BossDropRecord`·`BossProfitRecord`)은
  * 난이도를 좁히지 않은 문자열로 들고 있어(매칭 실패 원문명이 들어올 수 있다) 같은

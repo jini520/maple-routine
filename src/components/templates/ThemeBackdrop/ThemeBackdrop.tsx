@@ -1,7 +1,7 @@
 // 테마 배경 벽지. 화면 전체에 깔리는 한 장.
 //
 // 웹은 `position: fixed` 요소 한 장을 앱 루트 첫 자식으로 두고 `z-index: -1` 을 줬다. 그 결정이
-// `background-attachment: fixed` 를 피한 이유(iOS WKWebView 에서 불안정 — 이 저장소가·
+// `background-attachment: fixed` 를 피한 이유(iOS WKWebView 에서 불안정. 이 저장소가·
 //  로 이미 겪은 계열)는 RN 에 없지만, **한 장으로 깐다**는 형태는 그대로다.
 //
 // ## RN 에서 갈린 것
@@ -54,7 +54,7 @@ export function ThemeBackdrop(): React.JSX.Element | null {
 
   return (
     // **어두운 바탕을 먼저 깐다**. 그림은 `cover` 지만 **알파를 크게 쓴다**
-    // (투명 50% / 36% — 가 하늘을 비워 두게 한 결과다). 그 뚫린 자리 뒤에는
+    // (투명 50% / 36% 가 하늘을 비워 두게 한 결과다). 그 뚫린 자리 뒤에는
     // 지금까지 아무 색도 없었다. 배경 있는 테마에서는 내비게이션 테마가 화면을 `transparent` 로
     // 두기 때문이다(`navigation-theme.ts`). 그래서 **어둡게** 를 `dim` 혼자 지고 있었고, 올릴수록
     // 그림이 회색으로 죽었다.

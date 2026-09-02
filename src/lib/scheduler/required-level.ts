@@ -1,5 +1,5 @@
 /**
- * 이 캐릭터가 이 항목을 진행할 수 있는가 — 요구 레벨 판정 **한 곳**.
+ * 이 캐릭터가 이 항목을 진행할 수 있는가. 요구 레벨 판정 **한 곳**.
  *
  * ## 왜 한 곳인가
  *
@@ -21,7 +21,7 @@
  * | 캐릭터 레벨을 모른다 | 진행 가능 | 모르는 것을 단정하지 않는다(태도) |
  * | 참조표에 요구 레벨이 없다 | 진행 가능 | 제한 없음 과 미확정 을 안 가른다(사용자 판정) |
  *
- * 두 번째가 결정이다. 지금 데이터는 둘을 **필드 생략** 하나로 표현하고(주간 컨텐츠 5개 — 유니온
+ * 두 번째가 결정이다. 지금 데이터는 둘을 **필드 생략** 하나로 표현하고(주간 컨텐츠 5개. 유니온
  * 둘·길드 셋), 표식 없이 미확정 을 진행 불가 로 읽으면 위반이다.
  */
 
@@ -54,18 +54,18 @@ const BOSS_REQUIRED_LEVELS: ReadonlyMap<string, Readonly<Record<string, number>>
   }),
 )
 
-/** 컨텐츠의 요구 레벨 — 참조표에 없으면 `null`(제한 없음 으로 읽힌다). */
+/** 컨텐츠의 요구 레벨. 참조표에 없으면 `null`(제한 없음 으로 읽힌다). */
 export function contentRequiredLevel(contentName: string): number | null {
   return CONTENT_REQUIRED_LEVELS.get(contentName) ?? null
 }
 
-/** 보스+난이도의 요구 레벨 — 참조표에 없으면 `null`. */
+/** 보스+난이도의 요구 레벨. 참조표에 없으면 `null`. */
 export function bossRequiredLevel(bossName: string, difficulty: string): number | null {
   return BOSS_REQUIRED_LEVELS.get(bossName)?.[difficulty] ?? null
 }
 
 /**
- * 판정의 알맹이 — **둘 중 하나라도 모르면 **진행 가능**** 이다(위 표).
+ * 판정의 알맹이. **둘 중 하나라도 모르면 **진행 가능**** 이다(위 표).
  *
  * 순수 비교라 참조표를 안 거치는 호출부(이미 요구 레벨을 손에 든 자리)도 그대로 쓸 수 있다.
  */

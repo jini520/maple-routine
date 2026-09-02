@@ -1,6 +1,6 @@
 // 캐릭터 **로스터 조회**. 계정 컨텍스트 해석부터 피커 목록 방출까지.
 //
-// `schedule-sync.ts` 에서 분리했다. 그 파일은 580줄에 **두 가지 일**을 하고 있었다 —
+// `schedule-sync.ts` 에서 분리했다. 그 파일은 580줄에 **두 가지 일**을 하고 있었다.
 // 여기(로스터)와 동기화 오케스트레이션. 둘 사이 참조는 한 방향뿐이라(동기화 → 로스터)
 // 경계가 뚜렷했다.
 
@@ -64,7 +64,7 @@ export interface TrackedCharacterContext {
  * 넘어 번진다.
  *
  * **`selectedAccountId` 를 읽지 않는다**. RN 에는 계정을 고르는 단계가 없어
- * 그 값이 영영 `null` 이다. 응답에 없는 ocid 는 결과에서 빠진다(캐릭터 삭제·월드 이전 경로 —
+ * 그 값이 영영 `null` 이다. 응답에 없는 ocid 는 결과에서 빠진다(캐릭터 삭제·월드 이전 경로.
  * 지금 동작 그대로다). 순서는 `character/list` 응답 순서를 그대로 따른다: 표시 순서를 다시
  * 세우는 일은 이 함수가 아니라 화면 셀렉터의 몫이다.
  */
@@ -107,7 +107,7 @@ function sortPickerEntries(entries: CharacterPickerEntry[]): CharacterPickerEntr
 // 목록에 넣을지는 **자격**이 정한다(access_flag 단독 게이트 폐기). 자격이 없어도
 // 추적 중이면 남긴다. 빼면 trackedOcids에 남은 그 ocid를 해제할 방법이 없다(이슈 #78 A-1).
 // 뒤집으면 추적 중이 아닌 자격 X 캐릭터는 넣지 않는다(의 "조회 불가는 항상 남긴다"
-// 정정 — 남기는 목적이 해제 경로였으므로 추적 중이 아니면 남길 이유가 없다).
+// 정정. 남기는 목적이 해제 경로였으므로 추적 중이 아니면 남길 이유가 없다).
 function shouldShowEntry(
   eligibility: CharacterEligibility | 'unknown',
   isTracked: boolean,
@@ -172,7 +172,7 @@ export async function getCharacterPickerRoster(
 
   // 결정 6 (2026-07-12 재수정): character/list는 캐싱하지 않으므로(개명·전직·레벨업
   // 정확성 우선, ADR 2026-07-11 정정) 이 함수가 열릴 때마다 그 네트워크 응답을 기다려야 한다.
-  // 그동안 character-basic-cache에 이미 있는 캐릭터는(추적 여부 무관 — 온보딩 예열이 계정
+  // 그동안 character-basic-cache에 이미 있는 캐릭터는(추적 여부 무관. 온보딩 예열이 계정
   // 전체 캐릭터를 채워둔다) 전부 즉시 후보 목록에 채워, 피커를 열 때마다 아직
   // 캐싱되지 않은 캐릭터를 뺀 나머지가 잠깐씩 비어 보이던 문제를 없앤다.
   // 인덱스가 계정별이라 이 단계가 더 이상 이전 계정 캐릭터를 그리지 않는다.
@@ -296,7 +296,7 @@ export async function getCharacterPickerRoster(
           emit()
           return
         }
-        // 그 외 개별 실패 — 이미 있던 캐시 값을 그대로 유지
+        // 그 외 개별 실패. 이미 있던 캐시 값을 그대로 유지
       }
     }),
   )

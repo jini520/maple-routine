@@ -75,7 +75,7 @@ export function ApiKeyNoticeModal(): React.JSX.Element | null {
         <View className="gap-5">
           {/* 톤은 두 원인 모두 `error` 다. 429 도 어미 규칙상 실패(`~습니다`)이고
               error-resilience.md 의 실패 표에 함께 서 있다. 아이콘만 원인을 가리킨다:
-              무효 키는 `KeyRound`, 한도 초과는 계기판(`Gauge`) — 시간이 지나면 풀린다는 뜻이
+              무효 키는 `KeyRound`, 한도 초과는 계기판(`Gauge`). 시간이 지나면 풀린다는 뜻이
               읽히는 타이머 계열은 처방(키 단계 확인)과 어긋나 고르지 않았다. */}
           <View className="mx-auto h-14 w-14 items-center justify-center rounded-full bg-error-tint">
             <Icon className="h-7 w-7 text-error-ink" strokeWidth={1.75} aria-hidden />

@@ -45,7 +45,7 @@ export function ThemeModal(props: ThemeModalProps): React.JSX.Element {
           }}
         />
 
-        {/* 설정의 다른 모달(TrackingModeModal·DisconnectConfirm)과 같은 골격 — 버튼만 하나다. */}
+        {/* 설정의 다른 모달(TrackingModeModal·DisconnectConfirm)과 같은 골격. 버튼만 하나다. */}
         <View className="mt-4 flex-row justify-end">
           <Button variant="primary" onPress={props.onClose} textClassName="text-sm">
             완료

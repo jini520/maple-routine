@@ -167,7 +167,7 @@ describe('normalizeSchedulerCharacterState', () => {
   })
 })
 
-describe('normalizeSchedulerCharacterState — 등록 난이도 ≠ 처치 난이도 보정', () => {
+describe('normalizeSchedulerCharacterState: 등록 난이도 ≠ 처치 난이도 보정', () => {
   const wireWith = (
     bossContents: NexonSchedulerCharacterStateWire['boss_contents'],
   ): NexonSchedulerCharacterStateWire => ({
@@ -219,7 +219,7 @@ describe('normalizeSchedulerCharacterState — 등록 난이도 ≠ 처치 난�
     expect(normal?.ownComplete).toBe(true)
   })
 
-  it('미등록 난이도끼리는 서로 완료 여부를 전파하지 않는다 — 각자 원본 complete_flag를 유지한다', () => {
+  it('미등록 난이도끼리는 서로 완료 여부를 전파하지 않는다. 각자 원본 complete_flag를 유지한다', () => {
     const result = normalizeSchedulerCharacterState(
       wireWith([
         { content_name: '루시드', difficulty: 'normal', cycle: 'bossWeekly', registration_flag: 'false', complete_flag: 'false' },
@@ -279,7 +279,7 @@ describe('normalizeSchedulerCharacterState — 등록 난이도 ≠ 처치 난�
   })
 })
 
-describe('normalizeSchedulerCharacterState — 미접속으로 인한 누락', () => {
+describe('normalizeSchedulerCharacterState: 미접속으로 인한 누락', () => {
   const minimalWire: NexonSchedulerCharacterStateWire = {
     date: '2026-07-21T00:00+09:00',
     character_name: '낟낟',
@@ -334,7 +334,7 @@ describe('normalizeSchedulerCharacterState — 미접속으로 인한 누락', (
   })
 
   // 결정 4로 뒤집힌 판정: bossWeekly가 하나도 없는 응답은 축약된 것이라 남은 bossMonthly도
-  // 신뢰하지 않는다(실측 2026-07-31 — 미접속 캐릭터의 당일 응답이 정확히 이 형태다).
+  // 신뢰하지 않는다(실측 2026-07-31. 미접속 캐릭터의 당일 응답이 정확히 이 형태다).
   it('boss_contents에 bossMonthly만 있으면 축약 응답으로 보고 둘 다 stale이다', () => {
     const result = normalizeSchedulerCharacterState({
       ...minimalWire,
@@ -349,7 +349,7 @@ describe('normalizeSchedulerCharacterState — 미접속으로 인한 누락', (
 })
 
 // 미접속 캐릭터의 축약 응답을 "신선한 데이터"로 신뢰하지 않는다.
-// 실측(2026-07-31) 형태 — 축약이 진행되면 bossWeekly가 먼저 사라지고 bossMonthly만 남는다.
+// 실측(2026-07-31) 형태. 축약이 진행되면 bossWeekly가 먼저 사라지고 bossMonthly만 남는다.
 describe('축약 응답 판정 (isMonthlyBossStale)', () => {
   function wireWithBosses(
     bosses: { content_name: string; difficulty: string; cycle: string }[],
@@ -374,7 +374,7 @@ describe('축약 응답 판정 (isMonthlyBossStale)', () => {
     } as NexonSchedulerCharacterStateWire
   }
 
-  it('bossWeekly가 하나도 없으면 월간도 stale로 본다 — 축약 응답의 잔재를 신뢰하지 않는다', () => {
+  it('bossWeekly가 하나도 없으면 월간도 stale로 본다. 축약 응답의 잔재를 신뢰하지 않는다', () => {
     const state = normalizeSchedulerCharacterState(
       wireWithBosses([
         { content_name: '검은 마법사', difficulty: 'hard', cycle: 'bossMonthly' },

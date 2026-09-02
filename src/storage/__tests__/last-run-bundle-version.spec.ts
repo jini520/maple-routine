@@ -20,7 +20,7 @@ describe('last-run-bundle-version 저장', () => {
     await expect(getLastRunBundleVersion()).resolves.toBe('1.0.4')
   })
 
-  it('다시 적으면 마지막 값만 남는다 — 이력이 아니라 마지막 한 번이다', async () => {
+  it('다시 적으면 마지막 값만 남는다. 이력이 아니라 마지막 한 번이다', async () => {
     await setLastRunBundleVersion('1.0.4')
     await setLastRunBundleVersion('1.0.5')
     await expect(getLastRunBundleVersion()).resolves.toBe('1.0.5')

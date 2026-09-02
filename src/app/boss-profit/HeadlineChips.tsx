@@ -34,7 +34,7 @@ import { countMonthlyCrystals, summarizeWorldCrystals } from './character-groups
 import type { CharacterGroup } from './character-groups'
 
 // 결정석 아이콘(주간/월간). 드랍 테이블 항목이 아니라 UI 표시 전용이라 item-icons.json에 등록하지 않고
-// 파일명으로 직접 조회한다. 파일이 없으면 null — 아이콘만 생략하고 숫자는 그대로 둔다.
+// 파일명으로 직접 조회한다. 파일이 없으면 null. 아이콘만 생략하고 숫자는 그대로 둔다.
 export const WEEKLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_weekly.webp')
 export const MONTHLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_monthly.webp')
 
@@ -63,7 +63,7 @@ export function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGro
   const isExpandable = worlds.length > 1
   const label = isWeekly ? `주간 결정석 판매 ${cleared} / ${limit}` : `월간 결정석 ${cleared}개`
 
-  // 칩은 화면에 "간단히"만 — 월드 수·월드명 같은 부가 표기는 팝오버로 넘긴다(사용자 요청).
+  // 칩은 화면에 "간단히"만. 월드 수·월드명 같은 부가 표기는 팝오버로 넘긴다(사용자 요청).
   const chipContent = (
     <>
       {iconUrl !== null && <Image source={iconUrl} resizeMode="contain" className="h-4 w-4 shrink-0" />}
@@ -152,7 +152,7 @@ export function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGro
   )
 }
 
-// 직전 기간 대비 증감 칩 — **금액행** 오른쪽에 붙는다. 라벨행이 아니라
+// 직전 기간 대비 증감 칩. **금액행** 오른쪽에 붙는다. 라벨행이 아니라
 // 금액행(아이콘 32px)이라의 h-6 제약과 무관하고 헤더 높이가 늘지 않는다.
 //
 // 비교 기준(`previousMeso`)은 store 가 기록 합만 넘긴 값이다. 조회한 적 없는 기간도 0이라

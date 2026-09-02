@@ -5,7 +5,7 @@
  *
  * ══ 수치는 **전부 사용자가 준 것**이다 ═════════════════════════════════
  *
- * 젠 주기(분당 8회) · 메소 계수(몬스터 레벨 × 7.5) · 레벨 차이 페널티 표 둘 · 아이템 증가율 둘 —
+ * 젠 주기(분당 8회) · 메소 계수(몬스터 레벨 × 7.5) · 레벨 차이 페널티 표 둘 · 아이템 증가율 둘.
  * 하나도 AI 가 추정하지 않았다(2026-08-28 사용자 확정). 맵마다 다른 값은 `hunting-grounds.json`
  * 이고 여기 있는 것은 **게임 전체의 규칙**이라 JSON 이 아니라 코드에 산다.
  *
@@ -31,7 +31,7 @@
  */
 import type { HuntingGround } from '../../types/hunting-grounds'
 
-/** 젠 주기 — 분당 8회(사용자 제공). 40마리 맵의 1분은 320마리다. */
+/** 젠 주기. 분당 8회(사용자 제공). 40마리 맵의 1분은 320마리다. */
 export const SPAWNS_PER_MINUTE = 8
 
 /** 통상 획득 메소 = 몬스터 레벨 × 7.5(사용자 제공). */
@@ -46,7 +46,7 @@ export const MESO_PER_MONSTER_LEVEL = 7.5
 export const MINUTES_PER_SOJAE = 30
 
 /**
- * 사냥 효율 조각 다섯 — **고르는 것은 **몇 마리를 놓치나**** 다(사용자 지정 2026-08-28).
+ * 사냥 효율 조각 다섯. **고르는 것은 **몇 마리를 놓치나**** 다(사용자 지정 2026-08-28).
  *
  * 처음에는 100·95·90·85·80 이라는 **고정 퍼센트**였는데, 그것은 맵을 모르는 값이다. 40마리에서
  * 하나를 놓치는 것(97.5%)과 22마리에서 하나를 놓치는 것(95.5%)은 같은 손해가 아니다. 그래서
@@ -72,7 +72,7 @@ export function efficiencyPercentOf(mobs: number, missedMobs: number): number {
   return Math.round((killedMobsOf(mobs, missedMobs) / mobs) * 100)
 }
 
-/** 실제로 잡는 마릿수 — 사냥터 요약 줄이 이 숫자를 적는다(사용자 지정 2026-08-28). */
+/** 실제로 잡는 마릿수. 사냥터 요약 줄이 이 숫자를 적는다(사용자 지정 2026-08-28). */
 export function killedMobsOf(mobs: number, missedMobs: number): number {
   return Math.max(0, mobs - missedMobs)
 }
@@ -109,7 +109,7 @@ export const MESO_BOOSTS = [
 export type MesoBoostId = (typeof MESO_BOOSTS)[number]['id']
 
 /**
- * 레벨 차이 페널티 — **차이 11 부터의 감소폭**이고 배열 자리가 곧 차이다(`[0]` = 차이 11).
+ * 레벨 차이 페널티. **차이 11 부터의 감소폭**이고 배열 자리가 곧 차이다(`[0]` = 차이 11).
  *
  * 방향마다 표가 다르다. 몬스터가 높은 쪽은 규칙으로 접히지만(-3%씩 → -5%씩) **낮은 쪽은 안
  * 접힌다**. …-11 다음이 -8, 그다음이 -13, -3 이다. 게임의 표가 그런 것이라 배열이 곧 사실이다.
@@ -118,20 +118,20 @@ export type MesoBoostId = (typeof MESO_BOOSTS)[number]['id']
  * 끝난다**. 옮겨 적다 틀리면 테스트가 거기서 잡는다.
  */
 const PENALTY_STEPS_MONSTER_HIGHER = [
-  // 차이 11~20 — -3%씩
+  // 차이 11~20. -3%씩
   3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-  // 차이 21~34 — -5%씩
+  // 차이 21~34. -5%씩
   5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
 ] as const
 
 const PENALTY_STEPS_MONSTER_LOWER = [
-  // 차이 11~20 — -2%씩
+  // 차이 11~20. -2%씩
   2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-  // 차이 21~30 — 고르지 않다. 규칙이 아니라 표다.
+  // 차이 21~30. 고르지 않다. 규칙이 아니라 표다.
   5, 6, 7, 8, 9, 10, 11, 8, 13, 3,
 ] as const
 
-/** 페널티가 안 걸리는 차이의 상한 — 여기까지는 0% 다. */
+/** 페널티가 안 걸리는 차이의 상한. 여기까지는 0% 다. */
 const PENALTY_FREE_DIFF = 10
 
 /**
@@ -202,13 +202,13 @@ export interface HuntingMesoInput {
   /** 젠 한 번에 **놓치는 마릿수**(0~4). 퍼센트가 아니라 이것이 고르는 축이다. */
   missedMobs: number
   /**
-   * 합산 통에 드는 %의 합 — **캐릭터 메획 + 가산 아이템**이다.
+   * 합산 통에 드는 %의 합. **캐릭터 메획 + 가산 아이템**이다.
    * 화면이 이미 더해서 넘긴다(`boostPercentOf` + 읽어 온 메획).
    */
   boostPercent: number
   /** 통 밖에서 곱하는 배율(`boostMultiplierOf`). 안 켰으면 **1** 이다. */
   boostMultiplier: number
-  /** 소재 수 — 하나가 30분이다. */
+  /** 소재 수. 하나가 30분이다. */
   sojae: number
 }
 
@@ -245,7 +245,7 @@ export interface HuntingTotalInput extends Omit<HuntingMesoInput, 'ground'> {
   fragmentPrice: number
 }
 
-/** 큰 숫자에 서는 값 — **메소 + 조각 × 개당 가격**이다. */
+/** 큰 숫자에 서는 값. **메소 + 조각 × 개당 가격**이다. */
 export function huntingTotalOf(input: HuntingTotalInput): number {
   const meso = input.ground === null ? 0 : huntingMesoOf({ ...input, ground: input.ground })
   return meso + input.fragments * input.fragmentPrice

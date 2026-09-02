@@ -37,7 +37,7 @@ describe('CharacterAvatar', () => {
   })
 
   //  이 걷으려는 그것이다. 복사본이 셋 있었고 하나는 값이 달랐다.
-  it('크롭은 `lib/face-crop` 의 표에서 나온다 — 지름에 따라 배율이 바뀐다', async () => {
+  it('크롭은 `lib/face-crop` 의 표에서 나온다. 지름에 따라 배율이 바뀐다', async () => {
     const { getByTestId } = await renderAtom(
       <CharacterAvatar imageTestID="그림" imageUrl="https://example.test/a.png" name="아무개" size={56} />,
     )

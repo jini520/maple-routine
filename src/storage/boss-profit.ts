@@ -38,7 +38,7 @@ const UPSERT_SQL = `
 `
 
 /**
- * `boss_profit_records` 가 바뀔 때마다 오르는 수 — **이 표를 캐시하는 쪽이 **내 스냅샷이 낡았나** 를
+ * `boss_profit_records` 가 바뀔 때마다 오르는 수. **이 표를 캐시하는 쪽이 **내 스냅샷이 낡았나** 를
  * 물을 수 있게** 하는 값이다. `storage/boss-drops` 의 그것과 같은 물건이고
  * 같은 규칙을 따른다.
  *
@@ -85,7 +85,7 @@ const FILL_MISSING_WORLD_SQL = `
  * `world` 가 비어 있는 기존 기록을 **지금 아는 월드**로 채운다.
  *
  * 컬럼을 새로 더했으므로 그전 기록에는 월드가 없다. `NULL` 로 두면 안전하지만 기존 사용자의 과거 주
- * 결정석 칩이 통째로 사라지고, 현재 월드로 채우면 **이미 리프한 캐릭터의 과거만** 잘못 고정된다 —
+ * 결정석 칩이 통째로 사라지고, 현재 월드로 채우면 **이미 리프한 캐릭터의 과거만** 잘못 고정된다.
  * 아직 실사용자가 없어(사용자 확인 2026-07-31) 후자를 택했다. **배포 후에는 할 수 없는 선택이므로
  * 지금 하지 않으면 비용이 커진다.**
  *
@@ -212,7 +212,7 @@ export async function getAllBossProfitRecordKeys(ocids: string[]): Promise<BossP
 }
 
 /**
- * 날짜가 붙은 수익 기록 — **가계부 캘린더가 읽는 모양**.
+ * 날짜가 붙은 수익 기록. **가계부 캘린더가 읽는 모양**.
  *
  * `BossProfitRecord` 를 안 쓰는 이유는 필요한 칸이 다르기 때문이다. 캘린더는 누가 · 무엇을 ·
  * 며칟날 · 얼마 만 쓰고 파티원 수·정가·월드는 안 본다. 그리고 `defeated_on IS NOT NULL` 로 걸러
@@ -267,7 +267,7 @@ export async function getDatedBossProfitRecords(
   })
 }
 
-/** 아직 날짜를 모르는 기록 — **캐낼 대상**이다. */
+/** 아직 날짜를 모르는 기록. **캐낼 대상**이다. */
 export interface UndatedBossProfitRecord {
   ocid: string
   boss: string

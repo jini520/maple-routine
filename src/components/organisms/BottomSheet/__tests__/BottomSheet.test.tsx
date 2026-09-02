@@ -4,7 +4,7 @@
 // 테스트가 지켰을 계약**을 직접 적는다.
 //
 // **이 파일은 라이브러리를 세워 둔다(`jest.mock`).** 진짜 `@gorhom/bottom-sheet` 은 레이아웃 측정과
-// UI 스레드 애니메이션 위에 서 있어 jest 에서 시트 내용이 아예 마운트되지 않는다(실측 — `waitFor`
+// UI 스레드 애니메이션 위에 서 있어 jest 에서 시트 내용이 아예 마운트되지 않는다(실측. `waitFor`
 // 로 1초를 기다려도 안 나온다). 그래서 여기서 보는 것은 **우리가 무엇을 넘겼는가**이고, 그 값들이
 // 라이브러리가 실제로 받는 프롭인지는 **타입 검사**가 지킨다(컴포넌트가 진짜 타입을 import 한다).
 // 라이브러리를 진짜로 세워 마운트되는지는 옆 파일(`BottomSheet.wiring.test.tsx`)이 본다.
@@ -54,7 +54,7 @@ beforeEach(() => {
   mockPresent.mockClear()
 })
 
-describe('BottomSheet — 가 정한 값을 넘긴다', () => {
+describe('BottomSheet: 가 정한 값을 넘긴다', () => {
   /**
    * 키보드 이벤트는 네이티브에서 오므로 **등록된 손잡이를 직접 잡아 흔든다**. 등록 순서가
    * 계약이다(뜨는 것 · 내리는 것).
@@ -87,14 +87,14 @@ describe('BottomSheet — 가 정한 값을 넘긴다', () => {
     })
   }
 
-  it('children 과 testId 를 그대로 전달한다 — 공개 API 는 웹과 같다', async () => {
+  it('children 과 testId 를 그대로 전달한다. 공개 API 는 웹과 같다', async () => {
     const { getByText, getByTestId } = await open()
 
     expect(getByText('시트 내용')).toBeTruthy()
     expect(getByTestId('boss-drop-sheet')).toBeTruthy()
   })
 
-  // 결정 2 의 스킨 — 라이브러리 기본 핸들 색·라운딩이 아니라 이 값들이어야 한다.
+  // 결정 2 의 스킨. 라이브러리 기본 핸들 색·라운딩이 아니라 이 값들이어야 한다.
   it('그랩 핸들·배경·라운딩이 스킨 그대로다', async () => {
     const { getByTestId } = await open()
     const sheet = getByTestId('sheet')
@@ -128,7 +128,7 @@ describe('BottomSheet — 가 정한 값을 넘긴다', () => {
 
   // `max-h-[82vh]` 는 **상한**이지 높이가 아니다. 고정 스냅 포인트(라이브러리의 흔한 사용법)로
   // 옮기면 내용이 짧아도 시트가 항상 82%까지 올라온다.
-  it('높이는 내용이 정하고 82%가 상한이다 — 고정 스냅 포인트가 아니다', async () => {
+  it('높이는 내용이 정하고 82%가 상한이다. 고정 스냅 포인트가 아니다', async () => {
     const { getByTestId } = await open()
     const sheet = getByTestId('sheet')
 
@@ -151,7 +151,7 @@ describe('BottomSheet — 가 정한 값을 넘긴다', () => {
    * 둔다(소스: `heightWithinContainer = 0` 후 early return). 그래서 시트가 키보드에 그대로
    * 가렸다. `adjustPan` 이 사실이다. 창은 안 움직인다, 네가 올려라.
    */
-  it('창이 안 움직인다고 알려 준다 — adjustPan (edge-to-edge 라 adjustResize 는 죽은 값)', async () => {
+  it('창이 안 움직인다고 알려 준다. adjustPan (edge-to-edge 라 adjustResize 는 죽은 값)', async () => {
     const { getByTestId } = await open()
 
     expect(getByTestId('sheet').props.android_keyboardInputMode).toBe('adjustPan')
@@ -165,7 +165,7 @@ describe('BottomSheet — 가 정한 값을 넘긴다', () => {
    *
    * 그러면 시트가 올라간 자리에 그대로 남는다(실기 보고).
    */
-  it('키보드가 닫히면 제자리로 돌아온다 — restore', async () => {
+  it('키보드가 닫히면 제자리로 돌아온다. restore', async () => {
     const { getByTestId } = await open()
 
     expect(getByTestId('sheet').props.keyboardBlurBehavior).toBe('restore')
@@ -195,7 +195,7 @@ describe('BottomSheet — 가 정한 값을 넘긴다', () => {
     expect(여백()).toBe(34 + 16)
   })
 
-  it('폭은 max-w-md(448) 중앙 정렬이다 — 라이브러리 기본은 전폭이다', async () => {
+  it('폭은 max-w-md(448) 중앙 정렬이다. 라이브러리 기본은 전폭이다', async () => {
     const { getByTestId } = await open()
 
     expect(flattenStyle(getByTestId('sheet').props.style)).toMatchObject({
@@ -257,7 +257,7 @@ describe('BottomSheet — 가 정한 값을 넘긴다', () => {
  *
  * 색은 손으로 적지 않는다. `buildSheetScopeVariables` 가 내는 값과 대조한다.
  */
-describe('BottomSheet — 다크에서 표면 계열을 한 칸 올린다', () => {
+describe('BottomSheet: 다크에서 표면 계열을 한 칸 올린다', () => {
   const 검은마법사 = getThemeDefinition('검은마법사')
   const 스코프 = buildSheetScopeVariables(검은마법사)
 
@@ -277,7 +277,7 @@ describe('BottomSheet — 다크에서 표면 계열을 한 칸 올린다', () =
     return rendered
   }
 
-  it('껍데기는 한 칸 올린 `bg` 로 칠해진다 — 변수가 안 닿는 자리라 값으로 넘긴다', async () => {
+  it('껍데기는 한 칸 올린 `bg` 로 칠해진다. 변수가 안 닿는 자리라 값으로 넘긴다', async () => {
     const { getByTestId } = await 다크시트()
 
     expect(flattenStyle(getByTestId('sheet').props.backgroundStyle).backgroundColor).toBe(
@@ -287,7 +287,7 @@ describe('BottomSheet — 다크에서 표면 계열을 한 칸 올린다', () =
     expect(스코프['--color-bg']).not.toBe(검은마법사.bg)
   })
 
-  it('시트 안 `bg-surface`·`bg-bg` 가 올린 값으로 풀린다 — 화면 코드를 안 고치는 이유', async () => {
+  it('시트 안 `bg-surface`·`bg-bg` 가 올린 값으로 풀린다. 화면 코드를 안 고치는 이유', async () => {
     const { getByTestId } = await 다크시트()
 
     expect(flattenStyle(getByTestId('시트안-카드').props.style).backgroundColor).toBe(

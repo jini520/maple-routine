@@ -1,6 +1,6 @@
 export const STORAGE_KEYS = {
   apiKey: 'apiKey',
-  // 레거시 — 계정 선택 단계가 사라져 아무도 읽고 쓰지 않는다. 옛 설치본에
+  // 레거시. 계정 선택 단계가 사라져 아무도 읽고 쓰지 않는다. 옛 설치본에
   // 남은 값을 치우기 위해 이름만 남긴다(연결 해제·캐시 삭제가 지운다).
   legacySelectedAccountId: 'selectedAccountId',
   theme: 'theme',
@@ -47,7 +47,7 @@ export function characterBasicCacheIndexKey(accountId: string): string {
 
 export const LEGACY_CHARACTER_BASIC_CACHE_INDEX_KEY = 'characterBasicCache:index'
 
-// (ocid, 날짜) 조회 원장 — 같은 캐릭터를 같은 날짜로 두 번 조회하지 않는다.
+// (ocid, 날짜) 조회 원장. 같은 캐릭터를 같은 날짜로 두 번 조회하지 않는다.
 export function scheduleProbeKey(ocid: string): string {
   return `scheduleProbe:${ocid}`
 }
@@ -61,7 +61,7 @@ export function lastSelectedCharacterKey(): string {
   return 'lastSelectedCharacter'
 }
 
-// 사용자가 "대표"라고 말한 캐릭터(ocid 하나). 미지정이면 키 자체가 없다 —
+// 사용자가 "대표"라고 말한 캐릭터(ocid 하나). 미지정이면 키 자체가 없다.
 // "첫 번째가 임시 대표"는 읽는 쪽의 규칙이고, 그 파생값을 여기 적어두면 사용자가 고른 대표와
 // 앱이 계산한 대표 두 진실이 갈린다. `lastSelectedCharacter`(앱이 쓰는 값)와는 다른 축이다.
 export function representativeCharacterKey(): string {

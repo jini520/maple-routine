@@ -1,4 +1,4 @@
-// 드랍 연출 재생 순서 — **웹판에는 없던 안전망**이다.
+// 드랍 연출 재생 순서. **웹판에는 없던 안전망**이다.
 //
 // 웹은 이 로직이 `useEffect` 안의 클로저 + DOM 변이와 한 덩어리라 단위로 검사할 수 없었고, 그래서
 // `DropEffectOverlay.test.tsx` 머리에 *"재생을 보는 아홉은 여기 없다"* 고 적혀 있었다. 상태 전이를
@@ -38,7 +38,7 @@ function run(
   return next
 }
 
-describe(' — 아이템은 8프레임 시점에 뜬다', () => {
+describe('아이템은 8프레임 시점에 뜬다', () => {
   it('처음에는 기둥도 아이템도 없다', () => {
     const s = createDropEffectState()
 
@@ -61,7 +61,7 @@ describe(' — 아이템은 8프레임 시점에 뜬다', () => {
   })
 })
 
-describe('DropEff — pre 1회 뒤 loop 무한', () => {
+describe('DropEff: pre 1회 뒤 loop 무한', () => {
   it('pre 가 끝나면 loop 로 넘어간다', () => {
     const start = MS(DROP_EFFECT_FPS.screen, DROP_START_FRAME) + 20
     const s = run(createDropEffectState(), start + MS(DROP_EFFECT_FPS.pre, COUNTS.pre) + 20)
@@ -84,7 +84,7 @@ describe('DropEff — pre 1회 뒤 loop 무한', () => {
   })
 })
 
-describe('ScreenEff — 1회 재생 뒤 사라진다', () => {
+describe('ScreenEff: 1회 재생 뒤 사라진다', () => {
   it('16프레임을 지나면 더 그리지 않는다', () => {
     const s = run(createDropEffectState(), MS(DROP_EFFECT_FPS.screen, COUNTS.screen) + 50)
 
@@ -100,7 +100,7 @@ describe('ScreenEff — 1회 재생 뒤 사라진다', () => {
   })
 })
 
-describe('닫기 — end 를 한 번 재생하고 끝난다', () => {
+describe('닫기. end 를 한 번 재생하고 끝난다', () => {
   it('탭하면 end 로 넘어가되 아직 안 끝난다', () => {
     const closing = requestDropEffectClose(createDropEffectState(), COUNTS)
 
@@ -141,7 +141,7 @@ describe('에셋이 비어도 멈추지 않는다', () => {
     expect(s.finished).toBe(false)
   })
 
-  it('ScreenEff 가 없으면 기둥을 곧바로 켠다 — 트리거가 영영 안 오는 것을 막는다', () => {
+  it('ScreenEff 가 없으면 기둥을 곧바로 켠다. 트리거가 영영 안 오는 것을 막는다', () => {
     const s = advanceDropEffect(createDropEffectState(), 16, { ...COUNTS, screen: 0 })
 
     expect(s.screenDone).toBe(true)
@@ -159,7 +159,7 @@ describe('큰 dt 는 잘라낸다', () => {
   })
 })
 
-// ★ 회귀 가드 — 누적 시간만 바뀐 tick 은 **다시 그릴 것 없음** 이어야 한다.
+// ★ 회귀 가드. 누적 시간만 바뀐 tick 은 **다시 그릴 것 없음** 이어야 한다.
 describe('rendersDifferently', () => {
   it('누적 시간만 흐른 tick 은 다시 그리지 않는다', () => {
     const a = createDropEffectState()

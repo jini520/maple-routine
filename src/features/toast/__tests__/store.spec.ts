@@ -142,7 +142,7 @@ describe('useToastStore', () => {
     useToastStore.getState().dismiss(firstId)
     expect(useToastStore.getState().toasts.map((t) => t.message)).toEqual(['2'])
 
-    // '1'의 취소된 타이머가 뒤늦게 발화해 다른 항목을 잘못 지우지 않는지 확인 — '2'는 자기 타이머로 정상 소멸.
+    // '1'의 취소된 타이머가 뒤늦게 발화해 다른 항목을 잘못 지우지 않는지 확인. '2'는 자기 타이머로 정상 소멸.
     jest.advanceTimersByTime(2000)
     expect(useToastStore.getState().toasts).toHaveLength(0)
   })

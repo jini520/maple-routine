@@ -4,8 +4,8 @@
  * 금액은 `props.value` 로 받은 것만 그린다. 한국어 단위로 접어(`8억 5천만`) 단위 글자만 한 단계
  * 작게 얹고, 오른쪽에 통화를 세운다.
  *
- * @see — 못 치는 이유 · 단위 서식 · 크기 · 앞 틈 · 카운트업 제거
- * @see — 화면에 하나뿐이고 자기 윗선을 안 긋는다
+ * @see. 못 치는 이유 · 단위 서식 · 크기 · 앞 틈 · 카운트업 제거
+ * @see. 화면에 하나뿐이고 자기 윗선을 안 긋는다
  */
 import { View } from 'react-native'
 
@@ -15,7 +15,7 @@ import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 
 export interface AmountFigureProps {
   value: number
-  /** 숫자 옆에 서는 통화 — `메소` · `메포` · `원`. */
+  /** 숫자 옆에 서는 통화. `메소` · `메포` · `원`. */
   unit: string
   /** 이름의 뿌리. 덩어리는 `${testID}-figure`, 통화는 `${testID}-unit` 이다. */
   testID: string

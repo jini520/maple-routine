@@ -7,14 +7,14 @@
  *
  * ## 이름 하나로 지역이 따라온다
  *
- * 사냥터 이름이 **전역 유일**이라(408개 중 중복 0 — 그 사실을 테스트가 지킨다) 기록에 지역을
- * 안 적는다. 그래서 `findHuntingGround` 가 사냥터와 지역을 **함께** 돌려준다 —
+ * 사냥터 이름이 **전역 유일**이라(408개 중 중복 0. 그 사실을 테스트가 지킨다) 기록에 지역을
+ * 안 적는다. 그래서 `findHuntingGround` 가 사냥터와 지역을 **함께** 돌려준다.
  * 부르는 쪽이 지역을 다시 찾게 두면 그 조회가 화면마다 한 벌씩 생긴다.
  */
 import huntingGrounds from '../../data/hunting-grounds.json'
 import type { HuntingGround, HuntingGroundTable, HuntingRegion } from '../../types/hunting-grounds'
 
-/** 참조표 전체 — **차례는 파일에 적힌 그대로**다(사용자가 매긴 순서라 정렬하지 않는다). */
+/** 참조표 전체. **차례는 파일에 적힌 그대로**다(사용자가 매긴 순서라 정렬하지 않는다). */
 export const HUNTING_REGIONS: readonly HuntingRegion[] = (huntingGrounds as HuntingGroundTable)
   .regions
 
@@ -52,7 +52,7 @@ export function monsterLevelRangeOf(region: HuntingRegion): { min: number; max: 
  * 추천 레벨로 재면 목록이 **뒤집힌다**: 리버스 시티(추천 205-209)가 lv.213 짜리에게서 빠지는데
  * 거기 몬스터는 213 까지라 정작 그 캐릭터가 가장 잘 잡는 자리다.
  *
- * **지역 안의 맵까지 거르지는 않는다.** 한 맵이라도 들면 지역이 서고, 그 안에는 창 밖의 맵도 있다 —
+ * **지역 안의 맵까지 거르지는 않는다.** 한 맵이라도 들면 지역이 서고, 그 안에는 창 밖의 맵도 있다.
  * 사냥터 줄이 레벨을 적어 두므로(결정 10) 고르는 사람이 본다.
  *
  * **레벨을 모르면(`null`) 전부 선다**. 캐릭터 고르개의 기본이 선택 안함이라(
@@ -92,7 +92,7 @@ export function levelGapOf(ground: HuntingGround, characterLevel: number): numbe
  * **레벨을 모르면 마릿수 많은 순**이다. 차이가 다 모름 이라 첫 열쇠에서 전부 동률이고, 둘째
  * 열쇠가 그대로 차례가 된다. 새 규칙을 만드는 것이 아니라 같은 규칙이 접히는 것이다.
  *
- * 완전 동률이면 **참조표 순서**다(`sort` 가 안정 정렬이다). 원본 배열은 안 건드린다 —
+ * 완전 동률이면 **참조표 순서**다(`sort` 가 안정 정렬이다). 원본 배열은 안 건드린다.
  * `HUNTING_REGIONS` 는 모듈 하나가 들고 도는 값이라 제자리 정렬하면 다음 호출이 달라진다.
  */
 export function huntingGroundsFor(
@@ -114,7 +114,7 @@ export function findHuntingRegion(slug: string): HuntingRegion | null {
 }
 
 /**
- * 이름으로 사냥터 하나 — **지역과 함께** 돌려준다.
+ * 이름으로 사냥터 하나. **지역과 함께** 돌려준다.
  *
  * 못 찾으면 `null` 이고, 그것이 정상 경로다: 이전에 적힌 사냥 기록은 이 칸에
  * **자유 입력 글자**를 들고 있어 어느 사냥터에도 안 걸린다. 그때 화면은 계산기 대신 옛 모양으로

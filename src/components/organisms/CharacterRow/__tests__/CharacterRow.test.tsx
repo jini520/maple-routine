@@ -20,14 +20,14 @@ const 기본 = {
   imageUrl: 'https://open.api.nexon.com/static/maplestory/character/look/abc',
 }
 
-describe('CharacterRow — 2줄 규칙', () => {
+describe('CharacterRow: 2줄 규칙', () => {
   it('레벨과 직업이 다 있으면 **Lv.285 아크메이지(썬, 콜)** 한 줄이다', async () => {
     const { getByText } = await renderAtom(<CharacterRow {...기본} />)
 
     expect(getByText('Lv.285 아크메이지(썬, 콜)')).toBeTruthy()
   })
 
-  it('직업을 모르면 레벨만 선다 — 빈칸을 지어내지 않는다', async () => {
+  it('직업을 모르면 레벨만 선다. 빈칸을 지어내지 않는다', async () => {
     const { getByText } = await renderAtom(<CharacterRow {...기본} jobClass={undefined} />)
 
     expect(getByText('Lv.285')).toBeTruthy()
@@ -40,7 +40,7 @@ describe('CharacterRow — 2줄 규칙', () => {
     expect(queryByText(/Lv\./)).toBeNull()
   })
 
-  it('둘 다 모르면 **2줄 자체가 없다** — 빈 줄을 남기지 않는다', async () => {
+  it('둘 다 모르면 **2줄 자체가 없다**. 빈 줄을 남기지 않는다', async () => {
     const { queryByTestId } = await renderAtom(
       <CharacterRow {...기본} level={null} jobClass={undefined} />,
     )
@@ -48,7 +48,7 @@ describe('CharacterRow — 2줄 규칙', () => {
     expect(queryByTestId('character-row-caption')).toBeNull()
   })
 
-  it('조회 불가면 2줄이 그 사실로 바뀐다 — 레벨·직업보다 먼저 알아야 한다', async () => {
+  it('조회 불가면 2줄이 그 사실로 바뀐다. 레벨·직업보다 먼저 알아야 한다', async () => {
     const { getByText, queryByText } = await renderAtom(<CharacterRow {...기본} unavailable />)
 
     expect(getByText('조회할 수 없는 캐릭터')).toBeTruthy()
@@ -56,8 +56,8 @@ describe('CharacterRow — 2줄 규칙', () => {
   })
 })
 
-describe('CharacterRow — 얼굴과 이름', () => {
-  // 사용자 지정 2026-08-17 — 이름 첫 글자는 **이 캐릭터의 얼굴** 처럼 보여 **못 가져왔다** 를 말하지
+describe('CharacterRow: 얼굴과 이름', () => {
+  // 사용자 지정 2026-08-17. 이름 첫 글자는 **이 캐릭터의 얼굴** 처럼 보여 **못 가져왔다** 를 말하지
   // 못했다. 주황 원 + `?` 는 그 자리가 **비어 있다는 사실**을 말한다.
   it('이미지가 없으면 이름 첫 글자가 아니라 주황 원 + ? 다', async () => {
     const { getByText, getByTestId, queryByTestId, queryByText } = await renderAtom(
@@ -79,7 +79,7 @@ describe('CharacterRow — 얼굴과 이름', () => {
     expect(queryByTestId('character-row-emblem')).toBeNull()
   })
 
-  it('onPress 를 주면 카드 전체가 버튼이다 (결정 3 — 누르는 것은 `＋` 가 아니다)', async () => {
+  it('onPress 를 주면 카드 전체가 버튼이다 (결정 3. 누르는 것은 `＋` 가 아니다)', async () => {
     const onPress = jest.fn()
     const { getByRole } = await renderAtom(<CharacterRow {...기본} onPress={onPress} />)
 
@@ -95,8 +95,8 @@ describe('CharacterRow — 얼굴과 이름', () => {
   })
 })
 
-describe('CharacterRow — 좌우 슬롯', () => {
-  it('leading 없이도 그려진다 (아래 층에는 핸들이 없다 — 결정 5)', async () => {
+describe('CharacterRow: 좌우 슬롯', () => {
+  it('leading 없이도 그려진다 (아래 층에는 핸들이 없다. 결정 5)', async () => {
     const { getByText, queryByTestId } = await renderAtom(
       <CharacterRow {...기본} trailing={<AddMark />} />,
     )
@@ -121,7 +121,7 @@ describe('CharacterRow — 좌우 슬롯', () => {
 })
 
 describe('RepresentativeStar', () => {
-  it('채운 별에 배경도 테두리도 없다 — 채움 자체가 이미 **찬 것 vs 빈 것** 이다', async () => {
+  it('채운 별에 배경도 테두리도 없다. 채움 자체가 이미 **찬 것 vs 빈 것** 이다', async () => {
     const { getByRole } = await renderAtom(
       <RepresentativeStar label="내옆에최성일" filled onPress={jest.fn()} />,
     )
@@ -140,7 +140,7 @@ describe('RepresentativeStar', () => {
     expect(getByRole('button').props.accessibilityState.selected).toBe(true)
   })
 
-  it('흐려도 눌린다 — 비활성이면 대표를 바꿀 방법이 없어진다', async () => {
+  it('흐려도 눌린다. 비활성이면 대표를 바꿀 방법이 없어진다', async () => {
     const onPress = jest.fn()
     const { getByRole } = await renderAtom(
       <RepresentativeStar label="밤샘메린" filled={false} dimmed onPress={onPress} />,
@@ -167,7 +167,7 @@ describe('RepresentativeStar', () => {
 })
 
 describe('DragHandle · AddMark', () => {
-  it('핸들의 접근성 이름은 `순서 변경`이다 — 글리프 이름이 **메뉴** 라고 메뉴가 아니다', async () => {
+  it('핸들의 접근성 이름은 `순서 변경`이다. 글리프 이름이 **메뉴** 라고 메뉴가 아니다', async () => {
     const { getByLabelText } = await renderAtom(<DragHandle />)
 
     expect(getByLabelText('순서 변경')).toBeTruthy()

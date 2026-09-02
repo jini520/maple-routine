@@ -50,7 +50,7 @@ const mockedNavigation = jest.mocked(useScreenNavigation)
 
 type Store = BossSchedulerStore
 
-/** 참조표에서 뽑은 이름 — 손으로 적으면 데이터가 바뀔 때 조용히 어긋난다. */
+/** 참조표에서 뽑은 이름. 손으로 적으면 데이터가 바뀔 때 조용히 어긋난다. */
 const WEEKLY_NAMES = weeklyBossesData.weekly
   .filter((entry) => (entry as { status?: string }).status !== 'unreleased')
   .map((entry) => entry.boss)
@@ -89,7 +89,7 @@ function mockStore(overrides: Partial<Store> = {}): Store {
   return base
 }
 
-/** 화면에 선 섹션 헤더를 위에서 아래 순서로 — 스케줄러 화면의 같은 이름 헬퍼와 같은 규칙이다. */
+/** 화면에 선 섹션 헤더를 위에서 아래 순서로. 스케줄러 화면의 같은 이름 헬퍼와 같은 규칙이다. */
 function sectionOrder(): string[] {
   return screen
     .queryAllByTestId(/^boss-section-header-/)
@@ -140,7 +140,7 @@ async function press(element: AtomElement): Promise<void> {
   })
 }
 
-/** 수동 모드 행의 추적 토글 — 웹도 이 버튼에 보스명을 `aria-label` 로 박아 두었다. */
+/** 수동 모드 행의 추적 토글. 웹도 이 버튼에 보스명을 `aria-label` 로 박아 두었다. */
 function rowToggle(bossName: string): AtomElement {
   return screen.getByLabelText(bossName)
 }
@@ -175,7 +175,7 @@ beforeEach(() => {
   useCharacterSelectionStore.setState({ selectedOcid: null })
 })
 
-describe('BossManageScreen — 공통', () => {
+describe('BossManageScreen: 공통', () => {
   // : 제목 줄 우측의 compact 드롭다운이 **초상화 레일**이 됐다. 캐릭터 이름은
   // 이제 SVG 곡선 글자라 `getByText` 로 안 잡힌다. 레일이 섰는지로 본다.
   //
@@ -202,7 +202,7 @@ describe('BossManageScreen — 공통', () => {
     expect(screen.queryAllByTestId('portrait-ring-fill')).toHaveLength(0)
   })
 
-  it('마운트하면 loadTrackedOcids 를 부른다 — 스케줄러를 거치지 않고 들어와도 채워진다', async () => {
+  it('마운트하면 loadTrackedOcids 를 부른다. 스케줄러를 거치지 않고 들어와도 채워진다', async () => {
     const store = mockStore({ characters: [character()] })
 
     await renderScreen()
@@ -258,7 +258,7 @@ describe('BossManageScreen — 공통', () => {
   })
 })
 
-describe('BossManageScreen — 수동 모드', () => {
+describe('BossManageScreen: 수동 모드', () => {
   beforeEach(() => {
     useTrackingModeStore.setState({ mode: 'manual' })
   })
@@ -390,7 +390,7 @@ describe('BossManageScreen — 수동 모드', () => {
   })
 })
 
-describe('BossManageScreen — 자동 모드', () => {
+describe('BossManageScreen: 자동 모드', () => {
   // : 상단 안내 한 줄을 없앤다. 체크가 없고 스테퍼만 있다는 것을 화면이 이미
   // 보여 준다. 설명은 기능 안내(`boss-manage` 가이드)가 계속 진다.
   it('안내 문구 없이 등록 보스만 나오고 체크 토글이 없다', async () => {
@@ -475,7 +475,7 @@ describe('BossManageScreen — 자동 모드', () => {
   })
 })
 
-describe('BossManageScreen — 주간 12개 한도', () => {
+describe('BossManageScreen: 주간 12개 한도', () => {
   // 참조표에서 앞에서부터 12마리를 뽑는다. 이름을 손으로 적지 않는다.
   const TWELVE = WEEKLY_NAMES.slice(0, WEEKLY_BOSS_CLEAR_LIMIT)
 
@@ -521,7 +521,7 @@ describe('BossManageScreen — 주간 12개 한도', () => {
   })
 
   // : 탭이 없어져 **이 수치는 주간 것** 을 말할 자리가 `주간` 헤더로 옮겨왔다.
-  it('카운터는 `주간` 헤더에만 붙는다 — 12는 주간 한도다', async () => {
+  it('카운터는 `주간` 헤더에만 붙는다. 12는 주간 한도다', async () => {
     mockStore({
       characters: [character()],
       manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', '카오스')] },
@@ -536,7 +536,7 @@ describe('BossManageScreen — 주간 12개 한도', () => {
     ).toBeNull()
   })
 
-  it('자동 모드에는 카운터를 표시하지 않는다 — 선택 자체가 없다', async () => {
+  it('자동 모드에는 카운터를 표시하지 않는다. 선택 자체가 없다', async () => {
     useTrackingModeStore.setState({ mode: 'auto' })
     mockStore({
       characters: [character()],
@@ -606,7 +606,7 @@ describe('BossManageScreen — 주간 12개 한도', () => {
   })
 })
 
-describe('BossManageScreen — 목록 구성', () => {
+describe('BossManageScreen: 목록 구성', () => {
   beforeEach(() => {
     useTrackingModeStore.setState({ mode: 'manual' })
   })
@@ -615,7 +615,7 @@ describe('BossManageScreen — 목록 구성', () => {
   // 남아 있으므로 테스트도 남기되, 표본이 없으면 건너뛴다.
   const 미출시표본있음 = UNRELEASED_NAME !== undefined
   ;(미출시표본있음 ? it : it.skip)(
-    '미출시 보스는 목록에 나오지 않는다 — 이름이 아니라 status 로 거른다',
+    '미출시 보스는 목록에 나오지 않는다. 이름이 아니라 status 로 거른다',
     async () => {
       mockStore({ characters: [character()] })
 

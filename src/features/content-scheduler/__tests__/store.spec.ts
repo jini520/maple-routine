@@ -614,7 +614,7 @@ describe('useContentSchedulerStore', () => {
       expect(setManualTrackedContentMock).not.toHaveBeenCalled()
     })
 
-    // 가드 테스트용 최소 뷰 — 가드가 보는 건 ocid·guildName뿐이다.
+    // 가드 테스트용 최소 뷰. 가드가 보는 건 ocid·guildName뿐이다.
     function guardView(overrides: Partial<ContentCharacterView>): ContentCharacterView {
       return {
         ocid: 'ocid-1',

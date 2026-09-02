@@ -13,8 +13,8 @@
 //
 // | 무엇 | 언제 | 네트워크 |
 // |---|---|---|
-// | 계정 목록(`character/list`) | 마운트 1회 | ○ — 드롭다운이 계정 전체를 알아야 한다 |
-// | 계정별 후보(`getCharacterPickerRoster`) | 계정을 **처음 열 때** | ○ — TTL 안이면 0 |
+// | 계정 목록(`character/list`) | 마운트 1회 | ○ 드롭다운이 계정 전체를 알아야 한다 |
+// | 계정별 후보(`getCharacterPickerRoster`) | 계정을 **처음 열 때** | ○ TTL 안이면 0 |
 // | `선택됨` 층 프로필 | 목록에 새 ocid 가 생길 때 | ✕ 로컬 캐시만(결정 2 표) |
 // | 조회 불가 여부 | 위와 같은 자리 | ✕ 조회 원장 |
 //
@@ -23,7 +23,7 @@
 // (`resolveRegisteredCharacters` 가 자기 안에서 부른다) 이 phase 는 core 를 건드리지 않는다.
 //
 // **`src/nexon` 을 화면 층에서 직접 부르는 자리다.** core 에 **계정 목록만 주는** 함수가 없고
-// (`features/settings/store` 의 것은 계정 변경 플로우에 묶여 있는데 RN 에는 그 플로우가 없다 —
+// (`features/settings/store` 의 것은 계정 변경 플로우에 묶여 있는데 RN 에는 그 플로우가 없다.
 // ) 이 phase 에서는 core 를 못 고친다. 저장소는 그대로 `storage/` 어댑터를
 // 거친다(CLAUDE.md CRITICAL).
 //
@@ -101,18 +101,18 @@ export interface CharacterManageController {
   // ── 아래 층 ──
   /** 이 계정에서 **아직 안 고른** 후보. 고른 것은 위로 옮겨간다(결정 3). */
   candidates: CharacterPickerEntry[]
-  /** 이 계정에서 고를 수 있는 캐릭터 수 — {전체}개 중 {표시}개 표시 의 앞자리. */
+  /** 이 계정에서 고를 수 있는 캐릭터 수. {전체}개 중 {표시}개 표시 의 앞자리. */
   selectableCount: number
   isRosterLoading: boolean
   rosterError: ScheduleSyncError | null
 
-  /** 저장 활성 조건 — 집합 ∪ 순서 ∪ 대표 중 하나라도 다르면 참(결정 7). */
+  /** 저장 활성 조건. 집합 ∪ 순서 ∪ 대표 중 하나라도 다르면 참(결정 7). */
   isDirty: boolean
 
   selectAccount: (accountId: string) => void
   addCharacter: (ocid: string) => void
   removeCharacter: (ocid: string) => void
-  /** 끌어 놓았을 때·접근성 액션일 때 — 둘 다 `moveOcid` 하나를 통과한다. */
+  /** 끌어 놓았을 때·접근성 액션일 때. 둘 다 `moveOcid` 하나를 통과한다. */
   moveCharacter: (fromIndex: number, toIndex: number) => void
   setRepresentative: (ocid: string) => void
   retryAccounts: () => void
@@ -150,7 +150,7 @@ export function useCharacterManage(): CharacterManageController {
   // TTL 판정은 **지금 들고 있는 것** 을 봐야 하는데 그 읽기가 렌더 밖(사건 핸들러·비동기)에서
   // 일어난다. **쓰기도 전부 그 자리에서만** 하므로 렌더 중에 ref 를 만지지 않는다.
   const rostersRef = useRef<Record<string, AccountRoster>>({})
-  /** 지금 열려 있는 계정 — 늦게 도착한 회차의 결과를 버릴 기준이다. */
+  /** 지금 열려 있는 계정. 늦게 도착한 회차의 결과를 버릴 기준이다. */
   const openAccountRef = useRef<string | null>(null)
 
   function commitRosters(next: Record<string, AccountRoster>): void {
@@ -312,7 +312,7 @@ export function useCharacterManage(): CharacterManageController {
 
   // ── 파생 ─────────────────────────────────────────────────────────────────────────
   /**
-   * 위 층과 대표 얼굴이 실제로 읽는 표 — **캐시 위에 이미 받은 로스터를 얹는다**
+   * 위 층과 대표 얼굴이 실제로 읽는 표. **캐시 위에 이미 받은 로스터를 얹는다**
    *
    *
    * 아래 층은 같은 순간에 이름·레벨·초상화를 **이미 들고 있다**(`rosters`). 그 값이 위로 흐르지 않아
@@ -405,7 +405,7 @@ export function useCharacterManage(): CharacterManageController {
     [editSelection],
   )
 
-  // 놓은 자리가 곧 배열 순서다. **저장 시점에 다시 정렬하지 않는다** —
+  // 놓은 자리가 곧 배열 순서다. **저장 시점에 다시 정렬하지 않는다**.
   // 레벨 내림차순은 **아직 순서를 정하지 않았을 때의 초기값** 으로 내려갔다.
   const moveCharacter = useCallback(
     (fromIndex: number, toIndex: number): void => {

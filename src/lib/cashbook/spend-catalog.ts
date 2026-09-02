@@ -15,7 +15,7 @@
  *
  * 나눗셈 둘 다 **버린다**. 이 저장소의 돈 계산이 그렇고(`netProceedsMeso` ·
  * `boss-crystal-prices` 의 파티 분배), 게임이 어느 쪽으로 자르는지는 아직 확인 안 됐다
- * (열린 질문 — 1~수 메소 차이라 급하지 않다).
+ * (열린 질문. 1~수 메소 차이라 급하지 않다).
  */
 import spendCatalog from '../../data/spend-catalog.json'
 import type { SpendCategory } from '../../storage/spend'
@@ -26,7 +26,7 @@ export interface SpendCatalogItem {
   readonly name: string
   readonly currency: 'meso' | 'point'
   readonly unitPrice: number
-  /** 가격 하나가 무엇 하나의 값인가 — 회 · 개 · 포인트 · 시간. 수량 칸의 라벨이 된다. */
+  /** 가격 하나가 무엇 하나의 값인가. 회 · 개 · 포인트 · 시간. 수량 칸의 라벨이 된다. */
   readonly unit: string
   /**
    * 이름 안에 글자로만 있던 축을 뺀 칸(사용자 지정 2026-08-25).
@@ -36,11 +36,11 @@ export interface SpendCatalogItem {
    */
   readonly base?: string
   readonly tier?: string
-  /** 같은 값을 받는 두 형태 — 경험치·솔 에르다. **가격을 안 바꾼다.** */
+  /** 같은 값을 받는 두 형태. 경험치·솔 에르다. **가격을 안 바꾼다.** */
   readonly forms?: readonly string[]
   readonly limit?: string
   /**
-   * 기록 **한 건**의 수량 상한 — `limit` 문장에서 **사용자가 고른 숫자**다(2026-08-25).
+   * 기록 **한 건**의 수량 상한. `limit` 문장에서 **사용자가 고른 숫자**다(2026-08-25).
    *
    * 문장을 파싱해 뽑지 않는다. 몬스터 파크의 문장은 축이 셋(월드당 14 · 캐릭터당 7 · 무료 2)이라
    * 어느 것이 한 건의 상한인지 **글에는 안 적혀 있다**. 앱이 고르면 그 고름이 추정이 된다
@@ -62,7 +62,7 @@ export interface SpendCatalogItem {
  * `items` 가 둘 이상이면 **고른 뒤 한 번 더 골라야 한다**.
  */
 export interface SpendCatalogChoice {
-  /** 칸에 적히는 이름 — `base` 가 있으면 그것, 없으면 항목 이름 그대로다. */
+  /** 칸에 적히는 이름. `base` 가 있으면 그것, 없으면 항목 이름 그대로다. */
   readonly label: string
   readonly items: readonly SpendCatalogItem[]
 }
@@ -85,19 +85,19 @@ export interface SpendCatalogGroup {
 
 const ITEMS = spendCatalog.items as readonly SpendCatalogItem[]
 
-/** 묶음 표 — 닫힌 것만 적혀 있다(없으면 열린 것이다). 사유는 `SpendCatalogGroup.active` 주석. */
+/** 묶음 표. 닫힌 것만 적혀 있다(없으면 열린 것이다). 사유는 `SpendCatalogGroup.active` 주석. */
 const GROUPS = spendCatalog.groups as Readonly<Record<string, { readonly active: boolean }>>
 
-/** 관세율 — **화면이 `* 1.1` 을 들면 게임 수치가 코드에 박히는 자리**가 된다. */
+/** 관세율. **화면이 `* 1.1` 을 들면 게임 수치가 코드에 박히는 자리**가 된다. */
 export const SPEND_TARIFF_PERCENT = spendCatalog.tariffPercent
 
-/** 시세의 단위 — `'pointPer100mMeso'`(1억 메소당 메포). 이름이 방향을 든다. */
+/** 시세의 단위. `'pointPer100mMeso'`(1억 메소당 메포). 이름이 방향을 든다. */
 export const SPEND_MARKET_RATE_UNIT = spendCatalog.marketRateUnit
 
 const MESO_PER_RATE_UNIT = 100_000_000
 
 /**
- * 갈래 하나의 묶음들 — **파일에 적힌 차례 그대로**다.
+ * 갈래 하나의 묶음들. **파일에 적힌 차례 그대로**다.
  *
  * 직접 입력 갈래(아이템 구매 · 기타)는 목록이 없으므로 **빈 배열**이다. 예외가 아니라
  * 고를 것이 없다 는 사실이고, 화면은 그 갈래에서 입력 칸을 그린다.

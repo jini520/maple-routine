@@ -1,7 +1,7 @@
 /**
  * 캐릭터의 **메소 획득량**을 최대 세팅으로 낸다.
  *
- * ══ 왜 `character/stat` 의 환산값을 안 쓰나 — 이유가 **둘이고 서로 별개**다 ═══════════
+ * ══ 왜 `character/stat` 의 환산값을 안 쓰나. 이유가 **둘이고 서로 별개**다 ═══════════
  *
  * ① 그 값은 **현재 프리셋**의 것이다. 사냥할 때는 메획 세팅으로 갈아입으므로 조회 순간이 보스
  *    세팅이면 딴 값이 된다(실측 13명 중 7명이 현재 ≠ 최대, 격차 최대 +120%p).
@@ -57,7 +57,7 @@ export function mesoPercentOf(text: string | null | undefined): number {
   return matched === null ? 0 : Number(matched[1])
 }
 
-/** 장비 하나가 든 메획 — 잠재 셋 + 에디셔널 셋. **넷째 칸은 존재하지 않는다.** */
+/** 장비 하나가 든 메획. 잠재 셋 + 에디셔널 셋. **넷째 칸은 존재하지 않는다.** */
 function mesoInItem(item: NexonItemEquipmentItem): number {
   return (
     mesoPercentOf(item.potential_option_1) +
@@ -72,7 +72,7 @@ function mesoInItem(item: NexonItemEquipmentItem): number {
 const sum = (values: readonly number[]): number => values.reduce((total, each) => total + each, 0)
 
 /**
- * 장비의 최대 메획 — **프리셋마다 캡을 걸고** 그중 최댓값.
+ * 장비의 최대 메획. **프리셋마다 캡을 걸고** 그중 최댓값.
  *
  * 합산한 뒤 캡을 걸면 틀린다: 프리셋 둘이 각각 60 이면 답은 60 인데 `min(120, 100)` 은 100 이
  * 된다. 현재 적용본을 후보에 함께 넣는 이유는 그것이 프리셋 배열과 **갈릴 수 있기 때문**이고,
@@ -91,7 +91,7 @@ function maxEquipMeso(response: NexonItemEquipmentResponse): number {
   )
 }
 
-/** 어빌리티의 최대 메획 — 프리셋 셋 + 현재 적용본 중 최댓값. 캡은 없다. */
+/** 어빌리티의 최대 메획. 프리셋 셋 + 현재 적용본 중 최댓값. 캡은 없다. */
 function maxAbilityMeso(response: NexonAbilityResponse): number {
   const presets = [
     response.ability_info,
@@ -102,7 +102,7 @@ function maxAbilityMeso(response: NexonAbilityResponse): number {
   return Math.max(0, ...presets.map((lines) => sum((lines ?? []).map((each) => mesoPercentOf(each.ability_value)))))
 }
 
-/** 심볼 — `symbol_meso_rate`(`"13%"`)를 더한다. 문자열 파싱이 필요 없는 축은 이것뿐이다. */
+/** 심볼. `symbol_meso_rate`(`"13%"`)를 더한다. 문자열 파싱이 필요 없는 축은 이것뿐이다. */
 function symbolMeso(response: NexonSymbolEquipmentResponse): number {
   return sum((response.symbol ?? []).map((each) => Number.parseFloat(each.symbol_meso_rate ?? '0') || 0))
 }
@@ -111,7 +111,7 @@ const raiderMesoIn = (preset: NexonUnionRaiderPreset): number =>
   sum([...(preset.union_raider_stat ?? []), ...(preset.union_occupied_stat ?? [])].map(mesoPercentOf))
 
 /**
- * 유니온 — 공격대원/점령 효과 + 스테이트 효과.
+ * 유니온. 공격대원/점령 효과 + 스테이트 효과.
  *
  * `union_raider_preset_1~5` 는 **전 계정이 `null`** 인 죽은 필드라 현재 적용본으로 폴백한다.
  * 있으면 최댓값, 없으면 현재값으로 짜 두는 이유는 되살아났을 때 **코드가 자동으로 잡게**
@@ -135,7 +135,7 @@ function unionMeso(response: NexonUnionRaiderResponse): number {
 }
 
 /**
- * 유니온 아티팩트 — **`effect` 만** 센다.
+ * 유니온 아티팩트. **`effect` 만** 센다.
  *
  * `union_artifact_crystal` 의 메소 획득량 증가에는 수치가 없고, 그 크리스탈들의 레벨 합이
  * 이미 `effect` 에 접혀 있다(발록 lv5 + 자쿰 lv5 → `level: 10`). 같이 더하면 이중 계산이다.
@@ -182,7 +182,7 @@ export function challengersMesoOf(response: NexonCharacterSkillResponse): number
 export const JOB_MESO_PERCENTS: Readonly<Record<string, number>> = { 섀도어: 20 }
 
 /**
- * `jobClass` 는 `character/list` 가 준 직업 이름이고 캐시에 실려 온다. **모르면 0** 이다 —
+ * `jobClass` 는 `character/list` 가 준 직업 이름이고 캐시에 실려 온다. **모르면 0** 이다.
  * 캐시가 아직 안 따뜻한 캐릭터가 있고, 그때 아무 값이나 얹으면 금액이 조용히 틀린다.
  */
 export function jobMesoOf(jobClass: string | null | undefined): number {
@@ -200,7 +200,7 @@ export interface MesoRateSources {
   symbol: NexonSymbolEquipmentResponse
   unionRaider: NexonUnionRaiderResponse
   unionArtifact: NexonUnionArtifactResponse
-  /** 0차 스킬 목록 — 여기서 보는 것은 챌린저스 하나다. */
+  /** 0차 스킬 목록. 여기서 보는 것은 챌린저스 하나다. */
   skill: NexonCharacterSkillResponse
   /** 직업 이름. 모르면 `null` 이고 그때 직업 스킬 몫은 0 이다. */
   jobClass: string | null

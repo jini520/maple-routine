@@ -83,13 +83,13 @@ async function 에픽던전(view: Rendered, 대표: string, 형태: string, 단�
 }
 
 describe('머리', () => {
-  it('어느 날에 적히는지 말한다 — FAB 는 날짜를 안 들고 온다', async () => {
+  it('어느 날에 적히는지 말한다. FAB 는 날짜를 안 들고 온다', async () => {
     const view = await 그리기()
 
     expect(view.getByTestId('spend-sheet-date')).toHaveTextContent('8월 23일 (일)')
   })
 
-  it('수입/지출 세그먼트가 없다 — 갈래는 펼침판이 이미 갈랐다', async () => {
+  it('수입/지출 세그먼트가 없다. 갈래는 펼침판이 이미 갈랐다', async () => {
     const view = await 그리기()
 
     expect(view.queryByLabelText('수입')).toBeNull()
@@ -97,7 +97,7 @@ describe('머리', () => {
 })
 
 describe('갈래 칩', () => {
-  //  의 다섯 — 목록 셋과 직접 입력 둘.
+  //  의 다섯. 목록 셋과 직접 입력 둘.
   it('다섯이 다 선다', async () => {
     const view = await 그리기()
 
@@ -127,7 +127,7 @@ describe('갈래 칩', () => {
    * 둘째 화면에서는 머리의 `‹` 가 되돌아가는 길이다. 칩까지 두면 길이 둘이 되고, 그 화면이
    * 답하는 질문(얼마인가)에 무엇을 이 섞인다.
    */
-  it('고른 뒤에는 칩이 안 보인다 — 되돌아가는 길은 머리 하나다', async () => {
+  it('고른 뒤에는 칩이 안 보인다. 되돌아가는 길은 머리 하나다', async () => {
     const view = await 그리기()
 
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
@@ -161,7 +161,7 @@ describe('갈래 칩', () => {
   })
 })
 
-describe('항목 — 고르면 채워진다', () => {
+describe('항목. 고르면 채워진다', () => {
   // 가격이 전부 고정이라 **목록만 받고 금액은 매번 입력** 이 아니다.
   it('묶음 이름과 **대표**가 파일 차례대로 선다', async () => {
     const view = await 그리기()
@@ -182,7 +182,7 @@ describe('항목 — 고르면 채워진다', () => {
   })
 
   // 단계가 여럿이면 **나란히** 적는다(사용자 지정 2026-08-25). 한 대표 안의 단계는 통화가 같으므로
-  // 단위는 한 번만 — 두 번 적으면 좁은 칸에서 숫자가 밀린다.
+  // 단위는 한 번만. 두 번 적으면 좁은 칸에서 숫자가 밀린다.
   it('단계가 여럿인 대표는 가격을 나란히 적는다', async () => {
     const view = await 그리기()
 
@@ -191,7 +191,7 @@ describe('항목 — 고르면 채워진다', () => {
     expect(view.getByText('12,500 | 50,000 메포')).toBeTruthy()
   })
 
-  it('메소 항목은 단위가 `메소`이고 줄여 적는다 — 좁은 칸이다', async () => {
+  it('메소 항목은 단위가 `메소`이고 줄여 적는다. 좁은 칸이다', async () => {
     const view = await 그리기()
     await 누르기(view, '버프')
 
@@ -203,7 +203,7 @@ describe('항목 — 고르면 채워진다', () => {
   /**
    * 타일이 **자기 통화를 적는다**. 값이 어디서 오는지는 항목이 안다.
    *
-   * 보약 버프 둘이 이벤트·BM 으로 옮겨가면서 버프 는 메소뿐이 됐다 —
+   * 보약 버프 둘이 이벤트·BM 으로 옮겨가면서 버프 는 메소뿐이 됐다.
    * 두 갈래를 나란히 본다.
    */
   it('타일이 자기 통화를 적는다', async () => {
@@ -272,14 +272,14 @@ describe('항목 — 고르면 채워진다', () => {
   })
 })
 
-describe('수량 — 곱셈은 앱이 한다', () => {
+describe('수량. 곱셈은 앱이 한다', () => {
   /**
    * 스테퍼는 **숫자만** 든다(사용자 지정 2026-08-27).
    *
    * 단위가 `+` 오른쪽에 붙어 있어 알약의 좌우가 안 맞았고(기타는 단위가 없어 그 자리가 빈 채로
    * 간격만 남았다), 무엇보다 **한 앱에 스테퍼가 두 모양**이 됐다.
    */
-  it('단위를 안 적는다 — 숫자만 오르내린다', async () => {
+  it('단위를 안 적는다. 숫자만 오르내린다', async () => {
     const view = await 그리기()
     await 누르기(view, '이벤트·BM')
 
@@ -375,7 +375,7 @@ describe('수량 — 곱셈은 앱이 한다', () => {
   })
 
   // 한도를 적어만 두면 **넘겨서 적을 수 있다**. 스테퍼가 막아야 한다(사용자 지적 2026-08-25).
-  // 몬스터 파크는 상한이 14 다(사용자 지정 — 축 셋 중 **월드당 일간**).
+  // 몬스터 파크는 상한이 14 다(사용자 지정. 축 셋 중 **월드당 일간**).
   it('한도가 있으면 스테퍼가 그 수에서 멈춘다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
     await 누르기(view, '몬스터 파크')
@@ -428,7 +428,7 @@ describe('메소마켓 시세', () => {
     expect(view.getByTestId('spend-sheet-rate')).toBeTruthy()
   })
 
-  it('메소 항목에는 안 선다 — 물어볼 이유가 없다', async () => {
+  it('메소 항목에는 안 선다. 물어볼 이유가 없다', async () => {
     const view = await 그리기()
     await 누르기(view, '버프')
 
@@ -492,7 +492,7 @@ describe('메소마켓 시세', () => {
 })
 
 describe('저장', () => {
-  it('메포 항목은 원금과 시세를 함께 박는다 — 메소 칸은 비운다', async () => {
+  it('메포 항목은 원금과 시세를 함께 박는다. 메소 칸은 비운다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave, lastPointRate: 1_180 })
 
@@ -628,7 +628,7 @@ describe('아이템 구매', () => {
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('0')
   })
 
-  it('갔다 돌아와도 0 이다 — 기억에서 되살아나지 않는다', async () => {
+  it('갔다 돌아와도 0 이다. 기억에서 되살아나지 않는다', async () => {
     const view = await 그리기()
     await 누르기(view, '아이템 구매')
     await 치기(view, '1200000000')
@@ -739,7 +739,7 @@ describe('아이템 구매', () => {
   })
 })
 
-describe('기타 — 캐시는 여기서만 산다', () => {
+describe('기타. 캐시는 여기서만 산다', () => {
   it('통화 셋을 고른다', async () => {
     const view = await 그리기()
 
@@ -792,7 +792,7 @@ describe('기타 — 캐시는 여기서만 산다', () => {
 
   // **캐시는 환산하지 않는다**. 현금과 게임 재화의 교환비가 실제로
   // 성립하는 경로가 운영정책 위반 거래라, 앱이 그 숫자를 적으면 그 경로에 값을 매기는 것처럼 읽힌다.
-  it('캐시는 시세를 안 묻는다 — 환산 자체를 안 한다', async () => {
+  it('캐시는 시세를 안 묻는다. 환산 자체를 안 한다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
     await 누르기(view, '기타')
 
@@ -818,7 +818,7 @@ describe('기타 — 캐시는 여기서만 산다', () => {
     })
   })
 
-  it('캐시 금액에는 메소 빠른 칩이 안 뜬다 — 1만원짜리에 +100억은 없다', async () => {
+  it('캐시 금액에는 메소 빠른 칩이 안 뜬다. 1만원짜리에 +100억은 없다', async () => {
     const view = await 그리기()
     await 누르기(view, '기타')
 
@@ -843,7 +843,7 @@ describe('기타 — 캐시는 여기서만 산다', () => {
     })
   })
 
-  it('통화를 바꿔도 친 금액은 남는다 — 단위만 갈린다', async () => {
+  it('통화를 바꿔도 친 금액은 남는다. 단위만 갈린다', async () => {
     const view = await 그리기()
     await 누르기(view, '기타')
     await 금액치기(view, '123')
@@ -901,7 +901,7 @@ describe('시세가 비어 있을 때', () => {
     expect(view.getByTestId('spend-sheet-required')).toBeTruthy()
   })
 
-  it('메소 항목에는 시세 칸도 별표도 없다 — 물어본 적이 없다', async () => {
+  it('메소 항목에는 시세 칸도 별표도 없다. 물어본 적이 없다', async () => {
     const view = await 그리기({ lastPointRate: null })
     await 누르기(view, '버프')
 
@@ -939,7 +939,7 @@ describe('캐릭터 귀속', () => {
     expect(view.queryByTestId('spend-sheet-character-trigger')).toBeNull()
   })
 
-  it('목록 갈래에서도 고를 수 있다 — 대표를 고른 뒤에 선다', async () => {
+  it('목록 갈래에서도 고를 수 있다. 대표를 고른 뒤에 선다', async () => {
     const view = await 그리기()
 
     await 누르기(view, '하이마운틴')
@@ -960,7 +960,7 @@ describe('캐릭터 귀속', () => {
     expect(onSave.mock.calls[0][0]).toMatchObject({ ocid: 'ocid-2' })
   })
 
-  it('안 고르면 계정 단위로 저장한다 — `ocid` 가 `null` 이다', async () => {
+  it('안 고르면 계정 단위로 저장한다. `ocid` 가 `null` 이다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
     await 누르기(view, '아이템 구매')
@@ -988,7 +988,7 @@ describe('캐릭터 귀속', () => {
  *
  * 큰 숫자가 **치는 칸** 에서 **합계** 로 바뀐다. 목록 갈래와 같은 모양이 된다.
  */
-describe('기타 — 금액 × 수량', () => {
+describe('기타. 금액 × 수량', () => {
   async function 기타(overrides: Partial<React.ComponentProps<typeof SpendSheet>> = {}) {
     const view = await 그리기({ lastPointRate: 1_180, ...overrides })
     await 누르기(view, '기타')
@@ -1002,7 +1002,7 @@ describe('기타 — 금액 × 수량', () => {
     expect(view.getByLabelText('수량 늘리기')).toBeTruthy()
   })
 
-  it('큰 숫자는 못 친다 — 합계 자리다', async () => {
+  it('큰 숫자는 못 친다. 합계 자리다', async () => {
     const view = await 기타()
 
     expect(view.getByTestId('spend-sheet-amount').props.onChangeText).toBeUndefined()
@@ -1092,7 +1092,7 @@ describe('수정 모드', () => {
     expect(view.queryByText('지출 수정')).toBeNull()
   })
 
-  it('갈래를 못 바꾼다 — 칩이 아예 없다', async () => {
+  it('갈래를 못 바꾼다. 칩이 아예 없다', async () => {
     const view = await 고치기()
 
     expect(view.queryByLabelText('아이템 구매')).toBeNull()
@@ -1109,7 +1109,7 @@ describe('수정 모드', () => {
   })
 
   // 에픽던전 기록이라 **수량은 없다**. 고칠 수 있는 것은 시세와 캐릭터다.
-  it('세부는 그대로 고친다 — 시세·캐릭터', async () => {
+  it('세부는 그대로 고친다. 시세·캐릭터', async () => {
     const view = await 고치기()
 
     expect(view.queryByTestId('spend-sheet-quantity')).toBeNull()
@@ -1146,7 +1146,7 @@ describe('수량 줄', () => {
     expect(view.queryByTestId('spend-sheet-quantity')).toBeNull()
   })
 
-  it('그래도 금액은 단가 그대로 선다 — 수량 1 이다', async () => {
+  it('그래도 금액은 단가 그대로 선다. 수량 1 이다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
 
     await 에픽던전(view, '하이마운틴', '경험치', '1단계')
@@ -1155,7 +1155,7 @@ describe('수량 줄', () => {
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('6억 3559만 3220')
   })
 
-  it('상한이 여럿인 항목은 수량이 그대로 선다 — 규칙이지 특별 취급이 아니다', async () => {
+  it('상한이 여럿인 항목은 수량이 그대로 선다. 규칙이지 특별 취급이 아니다', async () => {
     const view = await 그리기()
 
     await 누르기(view, '몬스터 파크')
@@ -1211,7 +1211,7 @@ describe('직접 입력의 이름 칸', () => {
     expect(view.getByTestId('spend-sheet-name-label')).toHaveTextContent('구매 아이템')
   })
 
-  it('기타는 `내용` 이다 — 수입 `기타`와 같은 낱말이다', async () => {
+  it('기타는 `내용` 이다. 수입 `기타`와 같은 낱말이다', async () => {
     const view = await 그리기()
 
     await 누르기(view, '기타')
@@ -1262,12 +1262,12 @@ describe('타일 그림', () => {
     }
   })
 
-  it('그림이 없는 것에는 안 붙는다 — 지어내지 않는다', async () => {
+  it('그림이 없는 것에는 안 붙는다. 지어내지 않는다', async () => {
     const view = await 그리기()
 
     await 누르기(view, '이벤트·BM')
 
-    // 아직 그림을 안 받은 셋 — `이벤트` 묶음이 통째로 그렇다.
+    // 아직 그림을 안 받은 셋. `이벤트` 묶음이 통째로 그렇다.
     expect(view.queryByTestId('spend-tile-icon-출석 이벤트 패스')).toBeNull()
     expect(view.queryByTestId('spend-tile-icon-보약 버프 추가 구매')).toBeNull()
   })
@@ -1302,7 +1302,7 @@ describe('타일 그림', () => {
     }
   })
 
-  it('퀵 패스 셋도 그림을 단다 — 이름에서 `퀵패스` 를 뗐다', async () => {
+  it('퀵 패스 셋도 그림을 단다. 이름에서 `퀵패스` 를 뗐다', async () => {
     const view = await 그리기()
 
     for (const label of ['에픽던전', '일간 퀘스트', '주간 퀘스트']) {
@@ -1365,7 +1365,7 @@ describe('아이템 구매의 종류', () => {
     })
   }
 
-  it('기본은 장비다 — 수량 줄이 없고 관세가 있다', async () => {
+  it('기본은 장비다. 수량 줄이 없고 관세가 있다', async () => {
     const view = await 구매()
 
     expect(
@@ -1398,7 +1398,7 @@ describe('아이템 구매의 종류', () => {
    * **스테퍼가 아니다**(정정 1 결정 3, 사용자 지정). *"몇 백개 단위로도 살 수 있어서 스태퍼로
    * 하면 안돼."* 주문서 300장을 스테퍼로 세면 300번을 누른다(과 같은 이유).
    */
-  it('수량은 치는 칸이다 — 스테퍼 버튼이 없다', async () => {
+  it('수량은 치는 칸이다. 스테퍼 버튼이 없다', async () => {
     const view = await 구매('소비')
 
     expect(view.queryByLabelText('수량 늘리기')).toBeNull()
@@ -1662,13 +1662,13 @@ describe('관세 줄의 모양', () => {
     return view
   }
 
-  it('체크박스가 아니라 세그먼트다 — `없음` 이 기본이다', async () => {
+  it('체크박스가 아니라 세그먼트다. `없음` 이 기본이다', async () => {
     const view = await 장비()
 
     const 관세 = within(view.getByTestId('spend-sheet-tariff'))
     expect(관세.getByLabelText('없음').props.accessibilityState?.selected).toBe(true)
     expect(관세.getByLabelText('10%')).toBeTruthy()
-    // 옛 모양의 흔적 — 체크박스 역할도, 줄에 박힌 `관세 10%` 라벨도 남지 않는다.
+    // 옛 모양의 흔적. 체크박스 역할도, 줄에 박힌 `관세 10%` 라벨도 남지 않는다.
     expect(view.queryByLabelText('관세 10%')).toBeNull()
   })
 
@@ -1716,7 +1716,7 @@ describe('관세 줄의 모양', () => {
  * 갈래마다 **자기 폼**이다.
  *
  * 한 함수가 갈래 다섯의 상태를 전부 들고 조건문으로 그리던 것이 갈래를 옮겨도 값을 들고 다닌다
- * 의 원인이었다(사용자 보고 2026-08-29 — 형태 · 단계 · 종류 · 통화). 이제 갈래가 폼을 가르므로
+ * 의 원인이었다(사용자 보고 2026-08-29. 형태 · 단계 · 종류 · 통화). 이제 갈래가 폼을 가르므로
  * 옮기면 언마운트된다.
  */
 describe('갈래마다 자기 폼', () => {
@@ -1783,7 +1783,7 @@ describe('갈래마다 자기 폼', () => {
  * 수정으로 열면 **그 기록의 값이 곧바로 선다**.
  *
  * 이 자리는 한때 카운트업의 기억(모듈 수준이라 시트를 닫아도 남았다) 때문에 **지난 기록의 금액에서
- * 굴러왔다**(사용자 보고 2026-08-29 — 56억을 봤다가 121억을 열면 오르는 애니메이션이 났다).
+ * 굴러왔다**(사용자 보고 2026-08-29. 56억을 봤다가 121억을 열면 오르는 애니메이션이 났다).
  * 이름표를 발급해 막았다가, 결정 12 가 카운트업 자체를 걷으면서 그 장치가 통째로 사라졌다.
  * 회귀를 막으려고 결과는 그대로 붙든다.
  */
@@ -1834,7 +1834,7 @@ describe('아이템 구매의 수량 단위', () => {
     expect(view.getByTestId('spend-sheet-quantity-unit')).toHaveTextContent('개')
   })
 
-  it('장비에는 수량 줄 자체가 없다 — 단위도 없다', async () => {
+  it('장비에는 수량 줄 자체가 없다. 단위도 없다', async () => {
     const view = await 그리기()
     await 갈래누르기(view, '아이템 구매')
 
@@ -1843,7 +1843,7 @@ describe('아이템 구매의 수량 단위', () => {
     expect(view.queryByTestId('spend-sheet-quantity-unit')).toBeNull()
   })
 
-  it('`기타` 갈래의 수량에는 여전히 단위가 없다 — 무엇을 세는지 모른다', async () => {
+  it('`기타` 갈래의 수량에는 여전히 단위가 없다. 무엇을 세는지 모른다', async () => {
     const view = await 그리기()
     await 갈래누르기(view, '기타')
 
@@ -1855,7 +1855,7 @@ describe('아이템 구매의 수량 단위', () => {
 /**
  * 머리에서 **날짜를 바꾼다** (사용자 지정 2026-08-29).
  *
- * 수입 시트가 먼저 갖고(정정 6) 두 시트가 한 뼈대라 지출도 같은 부품을 쓴다 —
+ * 수입 시트가 먼저 갖고(정정 6) 두 시트가 한 뼈대라 지출도 같은 부품을 쓴다.
  * 한쪽만 되는 상태가 남으면 그 자체가 왜 저기선 안 되나 가 된다.
  */
 describe('날짜 바꾸기', () => {

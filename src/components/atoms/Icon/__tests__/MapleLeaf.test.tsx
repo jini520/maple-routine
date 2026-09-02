@@ -7,7 +7,7 @@ import { MapleLeaf } from '../MapleLeaf'
 import { LEAF_GRID } from '../maple-leaf'
 
 describe('MapleLeaf', () => {
-  it('잎 격자로 선다 — 정사각이 아니다', async () => {
+  it('잎 격자로 선다. 정사각이 아니다', async () => {
     const { getByTestId } = await renderAtom(<MapleLeaf size={42} />)
 
     const leaf = getByTestId('maple-leaf', { includeHiddenElements: true })
@@ -20,7 +20,7 @@ describe('MapleLeaf', () => {
 
   // **여기가 이 컴포넌트가 `IconSvg` 를 못 쓰는 이유다.** lucide 프리셋은 뿌리에 stroke 를 두는데
   // 그것은 상속 속성이라, 채운 잎에 2px 윤곽선이 얹힌다.
-  it('뿌리에 선 프리셋이 없다 — 채운 잎에 윤곽선이 생기면 안 된다', async () => {
+  it('뿌리에 선 프리셋이 없다. 채운 잎에 윤곽선이 생기면 안 된다', async () => {
     const leaf = (await renderAtom(<MapleLeaf />)).getByTestId('maple-leaf', {
       includeHiddenElements: true,
     })
@@ -31,7 +31,7 @@ describe('MapleLeaf', () => {
     expect(leaf.props.stroke).toBeUndefined()
   })
 
-  it('색은 className 이 정한다 — 아이콘과 같은 경로다', async () => {
+  it('색은 className 이 정한다. 아이콘과 같은 경로다', async () => {
     const { getByTestId } = await renderAtom(<MapleLeaf className="text-primary-ink" />)
 
     expect(getByTestId('maple-leaf', { includeHiddenElements: true }).props.color).toBe(

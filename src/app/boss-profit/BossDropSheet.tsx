@@ -22,7 +22,7 @@
 //    였다. 시트를 닫는 형태로 임시 구현했다면 그 계약이 사라졌을 것이다.
 // ④ `transition-colors`/`transition-transform`(연출 토글) → **없다.** 값이 즉시 바뀐다.
 // ⑤ `<button aria-pressed>` → **`aria-selected`**. RN 의 접근성 매핑에 `aria-pressed` 가 없어
-//    그대로 두면 **선택 상태가 조용히 사라진다**(에러 없이 — 이 저장소가 반복해 만난 실패 모양,
+//    그대로 두면 **선택 상태가 조용히 사라진다**(에러 없이. 이 저장소가 반복해 만난 실패 모양,
 //    실측 확인). `aria-selected` 는 `accessibilityState.selected` 로 접힌다.
 // ⑥ 글자가 상자에서 `Text` 로 내려온다. `line-clamp-2` 는 `numberOfLines={2}` 이고, `text-balance`·
 //    `break-keep` 은 짝이 없어 사라진다(줄바꿈 품질만 달라진다).
@@ -168,7 +168,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   // 하나이고, 셋은 이렇게 갈린다: ① 물음이 그 기록 하나에 붙어 여러 개를 찍어도 섞이지 않고
   // ② 드릴다운이라 입력 후 시트가 살아서 그리드로 돌아오며 ③ 상태는 타일의 수익 배지가 말한다.
   const [pricing, setPricing] = useState<RecordedDrop | null>(null)
-  // 방금 기록한 드롭 — 아래 확인 줄의 대상이다. 새로 기록하면 갈아타고, 그 기록을 취소하면 사라진다.
+  // 방금 기록한 드롭. 아래 확인 줄의 대상이다. 새로 기록하면 갈아타고, 그 기록을 취소하면 사라진다.
   const [justAdded, setJustAdded] = useState<RecordedDrop | null>(null)
   const effectEnabled = useDropEffectStore((state) => state.enabled)
   const setEffectEnabled = useDropEffectStore((state) => state.setEnabled)
@@ -270,7 +270,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
     <>
       <BottomSheet onClose={props.onClose} testId="boss-drop-sheet">
         {pricing !== null && props.pricing !== undefined ? (
-          // 가격 드릴다운 — 시트는 열린 채다. 저장·기록 안함 후 목록으로 돌아와 고르던 작업을 잇는다.
+          // 가격 드릴다운. 시트는 열린 채다. 저장·기록 안함 후 목록으로 돌아와 고르던 작업을 잇는다.
           // **`onLater`(스킵)는 넘기지 않는다**: 그 버튼은 순차 모드 전용이고(결정 6
           // 정정) 여기는 방금 기록한 한 건이라, 뒤로 누르는 것이 곧 같은 일이다.
           <DropPricePadContent
@@ -349,7 +349,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                         </View>
                         <Text className="text-xs font-bold text-text-muted">{label}</Text>
                       </View>
-                      {/* 4열 — 간격은 자식 패딩 + 부모 음수 마진(파일 머리 ①). */}
+                      {/* 4열. 간격은 자식 패딩 + 부모 음수 마진(파일 머리 ①). */}
                       <View className="-mx-1 -mb-2 flex-row flex-wrap">
                         {(byCategory.get(category) ?? []).map((candidate) => {
                           const box = isBoxItem(candidate.name)
@@ -374,7 +374,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                                   </View>
                                 )}
                                 {/* 가격이 **입력된** 타일에만 수익 배지가 붙는다(사용자 지정
-                                    2026-08-10). 자리는 좌상단 — 우상단은 선택 체크가 이미 쓴다 —
+                                    2026-08-10). 자리는 좌상단. 우상단은 선택 체크가 이미 쓴다.
                                     이고 크기·모양을 그 체크와 맞춰 두 배지가 한 쌍으로 읽힌다.
                                     스킵은 "기록된 가격"이 아니므로 표식이 없다(= 미입력과 같은
                                     얼굴). 그 구분은 가격 기록 화면이 맡는다. */}
@@ -525,7 +525,7 @@ interface BoxDrillDownProps {
 }
 
 // 랜덤 상자 결과 선택. 반지 상자=등급+반지 2축, 칠흑 장신구=1축. 확률 자동추정 없음.
-// 이미 지정된 상자는 타일 재탭으로 제거하므로 이 화면은 항상 새 선택 전용 — 제거 버튼 없음.
+// 이미 지정된 상자는 타일 재탭으로 제거하므로 이 화면은 항상 새 선택 전용. 제거 버튼 없음.
 function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
   const ring = getRingBoxContents(props.boxName)
   const accessory = ring === null ? getAccessoryBoxContents(props.boxName) : null

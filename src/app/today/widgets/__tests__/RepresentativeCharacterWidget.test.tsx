@@ -1,4 +1,4 @@
-// 대표 캐릭터 위젯. 이 파일이 묻는 것 셋 —
+// 대표 캐릭터 위젯. 이 파일이 묻는 것 셋.
 // ① 세 크기가 **같은 구조**를 그리는가(정정 7) ② 모르는 것을 지어내지 않는가(EXP·엠블럼·직업·길드)
 // ③ 진행률이 API 가 준 소수 3자리 그대로인가(반올림하면 `99.999%` 가 `100%` 가 된다).
 //
@@ -34,7 +34,7 @@ const 크기 = {
 } as const
 
 describe('세 크기가 같은 구조다', () => {
-  it.each(Object.entries(크기))('%s — 엠블럼 + 두 줄 + EXP', async (_이름, 값) => {
+  it.each(Object.entries(크기))('%s: 엠블럼 + 두 줄 + EXP', async (_이름, 값) => {
     const { getByText, getByTestId } = await 위젯(값)
 
     expect(getByTestId('representative-emblem')).toBeTruthy()
@@ -60,7 +60,7 @@ describe('모르는 것을 그리지 않는다', () => {
     expect(getByText('단풍루틴')).toBeTruthy()
   })
 
-  it('`expRate` 가 0 이면 **그린다** — 0 은 아는 값이다', async () => {
+  it('`expRate` 가 0 이면 **그린다**. 0 은 아는 값이다', async () => {
     const { getByTestId, getByText } = await 위젯(
       크기['4x1'],
       뷰모델({ representative: { ...대표_캐릭터, expRate: 0 } }),
@@ -131,7 +131,7 @@ describe('EXP 표기', () => {
 })
 
 describe('**대표 없음** 은 추적 캐릭터가 없을 때뿐이다', () => {
-  it('그때는 한 줄로 그 사실을 말한다 — **임시 대표** 표시도 CTA 도 없다', async () => {
+  it('그때는 한 줄로 그 사실을 말한다. **임시 대표** 표시도 CTA 도 없다', async () => {
     const { getByText, queryByTestId } = await 위젯(크기['4x1'], 빈_뷰모델)
 
     expect(getByText('추적 중인 캐릭터가 없습니다')).toBeTruthy()
@@ -141,13 +141,13 @@ describe('**대표 없음** 은 추적 캐릭터가 없을 때뿐이다', () => 
 })
 
 describe('2x2 는 잘리되 지우지 않는다', () => {
-  it('직업 줄이 한 줄로 잘린다 — 158 폭의 한계다', async () => {
+  it('직업 줄이 한 줄로 잘린다. 158 폭의 한계다', async () => {
     const { getByTestId } = await 위젯(크기['2x2'])
 
     expect(getByTestId('representative-job').props.numberOfLines).toBe(1)
   })
 
-  it('이름 색은 테마 `text` 다 — 강조색을 얹지 않는다', async () => {
+  it('이름 색은 테마 `text` 다. 강조색을 얹지 않는다', async () => {
     const { getByText } = await 위젯(크기['2x2'])
 
     expect(flattenStyle(getByText('단풍루틴').props.style).color).toBe(기본테마.text)
@@ -157,7 +157,7 @@ describe('2x2 는 잘리되 지우지 않는다', () => {
 describe('길드는 닉네임 옆이다', () => {
   // 셋째 줄에 혼자 서던 값이다. 4x1 은 내부 높이가 52 뿐이라 그 한 줄이 크고, 길드는 **누구인가** 의
   // 일부지 별도 항목이 아니다.
-  it.each(Object.entries(크기))('%s — 닉네임과 길드가 같은 줄이다', async (_이름, 값) => {
+  it.each(Object.entries(크기))('%s: 닉네임과 길드가 같은 줄이다', async (_이름, 값) => {
     const view = await 위젯(값)
     const 이름줄 = within(view.getByTestId('representative-name-line'))
 
@@ -177,7 +177,7 @@ describe('길드는 닉네임 옆이다', () => {
   })
 
   // 길드는 잘리면 **다른 길드로 읽힌다**. 닉네임은 초상화가 이미 **누구인가** 를 말한다.
-  it('자리가 모자라면 닉네임이 줄어든다 — 길드가 아니라', async () => {
+  it('자리가 모자라면 닉네임이 줄어든다. 길드가 아니라', async () => {
     const { getByTestId } = await 위젯(크기['4x1'])
 
     expect(flattenStyle(getByTestId('representative-name').props.style).flexShrink).toBe(1)
@@ -186,7 +186,7 @@ describe('길드는 닉네임 옆이다', () => {
 })
 
 describe('EXP 열이 길어졌다', () => {
-  it('4x1 의 EXP 열은 100px 다 — 바가 짧아 진행률이 눈에 안 들어왔다', async () => {
+  it('4x1 의 EXP 열은 100px 다. 바가 짧아 진행률이 눈에 안 들어왔다', async () => {
     const { getByTestId } = await 위젯(크기['4x1'])
 
     expect(flattenStyle(getByTestId('representative-exp').props.style).width).toBe(100)

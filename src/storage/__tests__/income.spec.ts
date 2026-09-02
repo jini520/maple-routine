@@ -24,7 +24,7 @@ beforeEach(() => {
 
 const sample: IncomeRecord = {
   id: 'inc-1',
-  // 계산기 이전의 행 — 사냥 칸 여섯이 없다.
+  // 계산기 이전의 행. 사냥 칸 여섯이 없다.
   hunt: null,
   quantity: null,
   ocid: null,
@@ -42,7 +42,7 @@ const sample: IncomeRecord = {
 }
 
 describe('insertIncomeRecord', () => {
-  it('대리키로 넣는다 — 같은 날 같은 것을 두 번 팔아도 서로 다른 행이다', async () => {
+  it('대리키로 넣는다. 같은 날 같은 것을 두 번 팔아도 서로 다른 행이다', async () => {
     const { insertIncomeRecord } = require('../income') as typeof import('../income')
 
     await insertIncomeRecord(sample)
@@ -62,13 +62,13 @@ describe('insertIncomeRecord', () => {
       1_200_000_000,
       null,
       null,
-      // 통화 칸 셋 — 메소로 번 것이라 셋 다 비어 있다.
+      // 통화 칸 셋. 메소로 번 것이라 셋 다 비어 있다.
       null,
       null,
       null,
-      // 수량 — `기타`가 아니라 비어 있다.
+      // 수량. `기타`가 아니라 비어 있다.
       null,
-      // 사냥 칸 여덟 — 아이템
+      // 사냥 칸 여덟. 아이템
       // 판매라 전부 비어 있다.
       null,
       null,
@@ -84,7 +84,7 @@ describe('insertIncomeRecord', () => {
     ])
   })
 
-  it('캐릭터를 고르면 그 ocid 가 붙는다 — 기본은 계정 단위(NULL)다', async () => {
+  it('캐릭터를 고르면 그 ocid 가 붙는다. 기본은 계정 단위(NULL)다', async () => {
     const { insertIncomeRecord } = require('../income') as typeof import('../income')
 
     await insertIncomeRecord({ ...sample, ocid: 'ocid-1' })
@@ -115,7 +115,7 @@ describe('getIncomeRecordsBetween', () => {
     expect(queryMock.mock.calls[0][0]).not.toContain('ocid')
   })
 
-  it('행을 레코드로 옮긴다 — 빈 칸은 null 로 정규화한다', async () => {
+  it('행을 레코드로 옮긴다. 빈 칸은 null 로 정규화한다', async () => {
     queryMock.mockResolvedValue({
       values: [
         {
@@ -156,7 +156,7 @@ describe('getIncomeRecordsBetween', () => {
     ])
   })
 
-  it('값이 없으면 빈 배열이다 — undefined 를 흘리지 않는다', async () => {
+  it('값이 없으면 빈 배열이다. undefined 를 흘리지 않는다', async () => {
     queryMock.mockResolvedValue({})
     const { getIncomeRecordsBetween } = require('../income') as typeof import('../income')
 
@@ -170,7 +170,7 @@ describe('INCOME_CATEGORIES', () => {
   //
   // **차례가 곧 화면**이다. 칩이 서는 차례이고 `[0]` 이 열었을 때 골라져
   // 있는 갈래다. 그래서 이 배열을 뒤집는 것이 **기본 갈래를 바꾼다** 와 같은 말이다.
-  it('사냥 · 아이템 판매 · 기타 차례다 — 첫째가 기본 갈래다', () => {
+  it('사냥 · 아이템 판매 · 기타 차례다. 첫째가 기본 갈래다', () => {
     const { INCOME_CATEGORIES } = require('../income') as typeof import('../income')
 
     expect(INCOME_CATEGORIES).toEqual(['사냥', '아이템 판매', '기타'])
@@ -180,7 +180,7 @@ describe('INCOME_CATEGORIES', () => {
 
 // 지출과 같은 계약이다.
 describe('updateIncomeRecord', () => {
-  it('id 로 갈아 끼운다 — 지우고 다시 넣지 않는다', async () => {
+  it('id 로 갈아 끼운다. 지우고 다시 넣지 않는다', async () => {
     const { updateIncomeRecord } = require('../income') as typeof import('../income')
 
     await updateIncomeRecord({ ...sample, mesoAmount: 999 })
@@ -246,7 +246,7 @@ describe('판매 수수료 칸 둘', () => {
     expect(values).toContain(1_140_000_000)
   })
 
-  it('고칠 때도 함께 간다 — 요율을 바꾸면 행의 몫도 바뀐다', async () => {
+  it('고칠 때도 함께 간다. 요율을 바꾸면 행의 몫도 바뀐다', async () => {
     const { updateIncomeRecord } = require('../income') as typeof import('../income')
 
     await updateIncomeRecord(수수료낸판매)
@@ -257,7 +257,7 @@ describe('판매 수수료 칸 둘', () => {
     expect(values).toContain(60_000_000)
   })
 
-  it('읽을 때 되살린다 — 없으면 null 이다', async () => {
+  it('읽을 때 되살린다. 없으면 null 이다', async () => {
     const { getIncomeRecordsBetween } = require('../income') as typeof import('../income')
     queryMock.mockResolvedValue({
       values: [
@@ -298,7 +298,7 @@ describe('판매 수수료 칸 둘', () => {
 })
 
 // ── 메소 획득량 칸 ────────────────────────────────────────────────
-describe('hunt_meso_rate — 그때의 메소 획득량', () => {
+describe('hunt_meso_rate: 그때의 메소 획득량', () => {
   const 계산기입력: HuntingCalculatorDetail = {
     mode: 'calculator',
     characterLevel: 294,
@@ -347,8 +347,8 @@ describe('hunt_meso_rate — 그때의 메소 획득량', () => {
     expect(values.filter((each: unknown) => each === null).length).toBeGreaterThanOrEqual(7)
   })
 
-  //  이전에 적힌 계산기 행 — 그때는 메획이 계산에 없었다.
-  it('NULL 은 0 으로 읽는다 — 없는 값을 지어내지 않는다', async () => {
+  //  이전에 적힌 계산기 행. 그때는 메획이 계산에 없었다.
+  it('NULL 은 0 으로 읽는다. 없는 값을 지어내지 않는다', async () => {
     queryMock.mockResolvedValue({
       values: [
         {
@@ -400,7 +400,7 @@ describe('hunt_meso_rate — 그때의 메소 획득량', () => {
 })
 
 // ── 수동 입력 칸 ──────────────────────────────────────────────────
-describe('hunt_typed_meso — 수동으로 적힌 사냥', () => {
+describe('hunt_typed_meso: 수동으로 적힌 사냥', () => {
   const 수동입력: HuntingManualDetail = {
     mode: 'manual',
     typedMeso: 1_000_000_000,
@@ -422,7 +422,7 @@ describe('hunt_typed_meso — 수동으로 적힌 사냥', () => {
 
     const [sql, values] = runMock.mock.calls[0]
     expect(sql).toContain('hunt_typed_meso')
-    // 사냥 칸 여덟 — 레벨 · 놓침 · 아이템 · 소재 · 조각 · 조각가 · 메획 · **친 메소**.
+    // 사냥 칸 여덟. 레벨 · 놓침 · 아이템 · 소재 · 조각 · 조각가 · 메획 · **친 메소**.
     // 계산기 칸 넷이 null 인 것이 **앱이 센 값이 아니다** 를 말한다.
     expect(values.slice(12, 20)).toEqual([
       null,
@@ -446,7 +446,7 @@ describe('hunt_typed_meso — 수동으로 적힌 사냥', () => {
     expect(values).toEqual(expect.arrayContaining([2_000_000_000]))
   })
 
-  it('값이 있으면 수동으로 읽는다 — 계산기 칸을 안 본다', async () => {
+  it('값이 있으면 수동으로 읽는다. 계산기 칸을 안 본다', async () => {
     queryMock.mockResolvedValue({
       values: [
         {
@@ -475,7 +475,7 @@ describe('hunt_typed_meso — 수동으로 적힌 사냥', () => {
     })
   })
 
-  // 조각을 안 넣은 수동 행 — 합계가 곧 친 메소다.
+  // 조각을 안 넣은 수동 행. 합계가 곧 친 메소다.
   it('조각이 없으면 0 으로 읽는다', async () => {
     queryMock.mockResolvedValue({
       values: [
@@ -525,7 +525,7 @@ describe('hunt_typed_meso — 수동으로 적힌 사냥', () => {
     expect(record.hunt?.mode).toBe('manual')
   })
 
-  //  이전에 적힌 행 — 칸이 여덟 다 비어 있다. 지어낼 것이 없으므로 `null` 이다.
+  //  이전에 적힌 행. 칸이 여덟 다 비어 있다. 지어낼 것이 없으므로 `null` 이다.
   it('칸이 전부 비면 여전히 null 이다', async () => {
     queryMock.mockResolvedValue({
       values: [
@@ -551,7 +551,7 @@ describe('hunt_typed_meso — 수동으로 적힌 사냥', () => {
 //
 // 수량을 안 저장하면 그 행을 수정으로 다시 열 때 수량이 늘 1 로 서고 금액 칸에 총액이 들어간다.
 // 사용자가 안 적은 값이 사용자가 적은 값처럼 보이는 자리라 칸을 하나 더 든다.
-describe('quantity — 수입의 수량', () => {
+describe('quantity: 수입의 수량', () => {
   const 세번받은보상: IncomeRecord = {
     ...sample,
     category: '기타',
@@ -601,8 +601,8 @@ describe('quantity — 수입의 수량', () => {
     expect(record.quantity).toBe(3)
   })
 
-  // 이 칸이 없던 시절의 행 — 수량 1 로 열리고 총액이 곧 금액이다(결정 4).
-  it('칸이 비면 null 이다 — 0 으로 접지 않는다', async () => {
+  // 이 칸이 없던 시절의 행. 수량 1 로 열리고 총액이 곧 금액이다(결정 4).
+  it('칸이 비면 null 이다. 0 으로 접지 않는다', async () => {
     queryMock.mockResolvedValue({
       values: [
         {

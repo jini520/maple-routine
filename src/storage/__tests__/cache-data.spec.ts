@@ -9,7 +9,7 @@ import {
   getCacheDataSizes,
 } from '../cache-data'
 import { BOSS_PROFIT_TABLE_NAMES, getBossProfitDb } from '../sqlite/db'
-// 한시적 core→app 참조 — `features/settings/cache-data` 가 core 로 오면(step 6) 상대
+// 한시적 core→app 참조. `features/settings/cache-data` 가 core 로 오면(step 6) 상대
 // 경로로 돌아온다. 이 파일이 검사하는 `닫기 → 커버 → 리로드` 순서와 storage 쪽
 // 삭제 범위(058)는 같은 계약의 앞뒤라 떼어 놓지 않는다.
 import { clearCacheDataAndReload } from '../../features/settings/cache-data'
@@ -92,7 +92,7 @@ describe('그룹 ↔ 테이블 분할', () => {
     expect(union).toEqual(new Set(BOSS_PROFIT_TABLE_NAMES))
   })
 
-  it('두 그룹이 겹치지 않는다 — 한 테이블은 정확히 한 그룹에만 속한다', () => {
+  it('두 그룹이 겹치지 않는다. 한 테이블은 정확히 한 그룹에만 속한다', () => {
     const records = new Set<string>(RECORD_TABLE_NAMES)
 
     expect(GENERAL_TABLE_NAMES.filter((table) => records.has(table))).toEqual([])
@@ -114,7 +114,7 @@ describe('그룹 ↔ 테이블 분할', () => {
   // : 그룹 이름이 `bossRecords` 에서 `records` 로 넓어진
   // 이유가 이 둘이다. 손입력이 유일한 원천이라 **API 로 되살릴 길이 0%** 이고, 아무것도 안 하면
   // 차집합 파생 때문에 **지워도 되는 것**(general)으로 끌려간다.
-  it('손입력 기록 둘은 `기록` 그룹이다 — 지워지면 되살릴 길이 없다', () => {
+  it('손입력 기록 둘은 `기록` 그룹이다. 지워지면 되살릴 길이 없다', () => {
     expect(RECORD_TABLE_NAMES).toContain('income_records')
     expect(RECORD_TABLE_NAMES).toContain('spend_records')
   })
@@ -225,7 +225,7 @@ describe('getCacheDataSizes', () => {
 
     // schedulerCache:ocid-1 '{}'(2) + characterBasicCache:index '[]'(2)
     // + trackedCharacters '[]'(2) + lastSelectedCharacter 'ocid-1'(6) = 12.
-    // 보존 키(apiKey·selectedAccountId·theme·trackingMode·dropEffect)는 삭제되지 않으므로 제외 —
+    // 보존 키(apiKey·selectedAccountId·theme·trackingMode·dropEffect)는 삭제되지 않으므로 제외.
     // trackingMode 'manual'(6)·dropEffect 'off'(3)를 seed해도 합계가 늘지 않아야 한다.
     expect(sizes.general).toBe(12)
   })

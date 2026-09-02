@@ -19,7 +19,7 @@ import { join } from 'node:path'
 
 const APP = join(__dirname, '..', 'app')
 
-/** 화면 파일만 — 모달·단계·행 조각은 대상이 아니다(위 경계). */
+/** 화면 파일만. 모달·단계·행 조각은 대상이 아니다(위 경계). */
 function screenFiles(dir: string): string[] {
   const out: string[] = []
   for (const entry of readdirSync(dir)) {
@@ -38,7 +38,7 @@ function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
 }
 
-/** 화면 제목의 글자 — `text-lg font-semibold text-text`(`design-system.md` 타이포). */
+/** 화면 제목의 글자. `text-lg font-semibold text-text`(`design-system.md` 타이포). */
 const TITLE_CLASS = /text-lg font-semibold text-text/
 
 const files = screenFiles(APP).map((path) => ({
@@ -46,7 +46,7 @@ const files = screenFiles(APP).map((path) => ({
   source: stripComments(readFileSync(path, 'utf8')),
 }))
 
-describe(' — 제목 줄은 프리미티브 하나로 그린다', () => {
+describe('제목 줄은 프리미티브 하나로 그린다', () => {
   it('검사 대상 화면을 실제로 찾는다', () => {
     // 경로가 틀려 0개를 훑고도 초록이 되는 것이 이 부류 가드의 흔한 실패다.
     expect(files.length).toBeGreaterThan(15)

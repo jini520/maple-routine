@@ -8,7 +8,7 @@ import { hideSplashScreen } from './native/splash-screen'
  * 진입점(`index.ts`)이 `registerRootComponent` 앞에서 이 함수 하나를 부른다. 왜 컴포넌트가 아니라
  * 여기인지는 둘 다 이유가 다르다.
  *
- * ## ① 붙들기 — `preventAutoHideAsync()` 는 전역 스코프여야 한다
+ * ## ① 붙들기. `preventAutoHideAsync()` 는 전역 스코프여야 한다
  *
  * 웹뷰에서 이것은 코드가 아니라 설정이었다(`capacitor.config.ts` 의 `launchAutoHide: false`).
  * RN 에서 짝이 되는 것은 이 호출이고, `expo-splash-screen` 문서가 **React 컴포넌트·훅 안이 아니라
@@ -16,7 +16,7 @@ import { hideSplashScreen } from './native/splash-screen'
  * 전에 스스로 사라져 가 없애려던 깜빡임(테마 복원 전 화면 노출)이 그대로 난다.
  * 내리는 것은 `AppShell` 이다(최소 표시 시간 뒤).
  *
- * ## ② 실패 안전 타이머 —
+ * ## ② 실패 안전 타이머.
  *
  * 스플래시를 내리는 정상 경로는 `AppShell` 의 이펙트 타이머 하나뿐이고, 그 타이머는 **언마운트
  * 클린업이 취소한다**. 부팅 렌더가 던지면 내릴 주체가 사라져 브랜드색 화면에 갇힌다. 그래서

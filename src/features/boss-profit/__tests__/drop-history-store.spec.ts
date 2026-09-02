@@ -107,7 +107,7 @@ describe('useDropHistoryStore.load', () => {
 
   // today 의 `최고가 아이템`(entered 만 순위)·`가격 미입력`(undefined 만 카운트)이 이 세 필드를
   // 읽는다. 빠지면 저장은 됐는데 최고가는 영영 비고 미입력 건수는 안 준다.
-  it('가격 세 필드를 함께 담는다 — 빠지면 `입력해도 미입력`이 된다', async () => {
+  it('가격 세 필드를 함께 담는다. 빠지면 `입력해도 미입력`이 된다', async () => {
     getAllBossDropRecordsMock.mockResolvedValue([
       dropRecord({ priceState: 'entered', priceMeso: 1_200_000_000, priceShare: 2 }),
     ])
@@ -122,7 +122,7 @@ describe('useDropHistoryStore.load', () => {
     })
   })
 
-  it('저장 계층의 null 은 undefined 로 정규화한다 — `미입력`과 `0메소`가 갈린다', async () => {
+  it('저장 계층의 null 은 undefined 로 정규화한다. `미입력`과 `0메소`가 갈린다', async () => {
     getAllBossDropRecordsMock.mockResolvedValue([
       dropRecord({ priceState: null, priceMeso: null, priceShare: null }),
     ])
@@ -213,7 +213,7 @@ describe('useDropHistoryStore.load', () => {
 
   // 이 화면이 push 페이지일 때는 열 때마다 새로 마운트돼 늘 최신을 읽었다. `today` 가 **탭**으로
   // 같은 스토어를 상시 구독하면서 **내 스냅샷이 낡았나** 를 물을 수 있어야 했다.
-  it('스냅샷을 **읽기 전** 리비전으로 찍는다 — 읽는 중에 들어온 변경을 본 것으로 표시하지 않는다', async () => {
+  it('스냅샷을 **읽기 전** 리비전으로 찍는다. 읽는 중에 들어온 변경을 본 것으로 표시하지 않는다', async () => {
     getBossDropRecordsRevisionMock.mockReturnValue(7)
     getAllBossDropRecordsMock.mockImplementation(async () => {
       // 조회가 도는 사이 다른 화면이 기록을 바꿨다.
@@ -228,7 +228,7 @@ describe('useDropHistoryStore.load', () => {
     expect(store.getState().loadedRevision).toBe(7)
   })
 
-  it('추적 캐릭터가 없는 조기 종료에도 리비전을 찍는다 — 그 상태도 **지금의 사실** 이다', async () => {
+  it('추적 캐릭터가 없는 조기 종료에도 리비전을 찍는다. 그 상태도 **지금의 사실** 이다', async () => {
     getBossDropRecordsRevisionMock.mockReturnValue(3)
     getTrackedCharacterOcidsMock.mockResolvedValue([])
     const store = await loadStore()
@@ -238,7 +238,7 @@ describe('useDropHistoryStore.load', () => {
     expect(store.getState().loadedRevision).toBe(3)
   })
 
-  it('실패에는 리비전을 찍지 않는다 — 스냅샷이 없으므로 다음 진입이 다시 시도해야 한다', async () => {
+  it('실패에는 리비전을 찍지 않는다. 스냅샷이 없으므로 다음 진입이 다시 시도해야 한다', async () => {
     getBossDropRecordsRevisionMock.mockReturnValue(5)
     getAllBossDropRecordsMock.mockRejectedValue(new Error('SQLite 죽음'))
     const store = await loadStore()
@@ -248,7 +248,7 @@ describe('useDropHistoryStore.load', () => {
     expect(store.getState().loadedRevision).toBe(-1)
   })
 
-  it('조회가 실패하면 failed다 — 빈 목록("기록이 없습니다")으로 위장하지 않는다', async () => {
+  it('조회가 실패하면 failed다. 빈 목록("기록이 없습니다")으로 위장하지 않는다', async () => {
     getAllBossDropRecordsMock.mockRejectedValue(new Error('SQLite 죽음'))
     const store = await loadStore()
 

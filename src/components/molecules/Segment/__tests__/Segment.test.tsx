@@ -43,7 +43,7 @@ describe('Segment', () => {
   })
 
   // **칩이 아니다.** 조각들이 한 상자 안에 붙어 있고, 고른 것만 그 안에서 칠해진다.
-  it('한 상자 안에 붙어 있다 — 조각마다 테두리를 두르지 않는다', async () => {
+  it('한 상자 안에 붙어 있다. 조각마다 테두리를 두르지 않는다', async () => {
     const view = await renderAtom(
       <Segment options={['메소', '메포']} selected="메소" onSelect={jest.fn()} />,
     )

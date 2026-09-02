@@ -18,7 +18,7 @@
 export function resolveSelectedCharacter<T extends { readonly ocid: string }>(
   /** `useCharacterSelectionStore` 의 값. 아직 아무것도 안 골랐으면 `null`. */
   selectedOcid: string | null,
-  /** 이 화면이 실제로 그릴 수 있는 캐릭터들 — **화면 순서 그대로** 넘길 것(첫 번째가 폴백이다). */
+  /** 이 화면이 실제로 그릴 수 있는 캐릭터들. **화면 순서 그대로** 넘길 것(첫 번째가 폴백이다). */
   characters: readonly T[],
 ): T | null {
   return characters.find((character) => character.ocid === selectedOcid) ?? characters[0] ?? null

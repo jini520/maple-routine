@@ -3,9 +3,9 @@ import type { BackGesturePort } from '../ports'
 import AppBackground from '../../../modules/app-background'
 
 /**
- * `BackGesturePort` 의 RN 구현 — **셋 중 하나만 구현이고 둘은 계속 던진다.**
+ * `BackGesturePort` 의 RN 구현. **셋 중 하나만 구현이고 둘은 계속 던진다.**
  *
- * 계획서는 이 포트를 통째로 *"삭제 — 네이티브 스택 기본"* 으로 적어 두었다
+ * 계획서는 이 포트를 통째로 *"삭제. 네이티브 스택 기본"* 으로 적어 두었다
  * (`docs/migration/parity-inventory.md` §5). 절반은 맞았다:
  *
  * | 메서드 | 웹뷰에서 하던 일 | RN |
@@ -34,10 +34,10 @@ import AppBackground from '../../../modules/app-background'
  */
 
 const OWNED_BY_NATIVE_STACK =
-  'react-navigation 네이티브 스택이 시스템 뒤로가기를 소유합니다 — 스택에 쌓인 화면이 가로챌지 말지를 정하고, 진행률도 OS 가 그립니다. 이 자리에서 할 일이 없습니다.'
+  'react-navigation 네이티브 스택이 시스템 뒤로가기를 소유합니다. 스택에 쌓인 화면이 가로챌지 말지를 정하고, 진행률도 OS 가 그립니다. 이 자리에서 할 일이 없습니다.'
 
 async function throwOwnedByNativeStack(method: string): Promise<never> {
-  throw new Error(`BackGesturePort.${method}() 는 RN 에서 쓰지 않습니다 — ${OWNED_BY_NATIVE_STACK}`)
+  throw new Error(`BackGesturePort.${method}() 는 RN 에서 쓰지 않습니다. ${OWNED_BY_NATIVE_STACK}`)
 }
 
 export const rnBackGesturePort: BackGesturePort = {
@@ -46,7 +46,7 @@ export const rnBackGesturePort: BackGesturePort = {
   addListeners: () => throwOwnedByNativeStack('addListeners'),
 
   /**
-   * iOS 에서는 네이티브 모듈이 없어 `AppBackground` 가 `null` 이고, 그때는 아무것도 하지 않는다 —
+   * iOS 에서는 네이티브 모듈이 없어 `AppBackground` 가 `null` 이고, 그때는 아무것도 하지 않는다.
    * 그 플랫폼에는 시스템 뒤로가기도 없고 프로그램으로 앱을 백그라운드로 보내는 것도 금지다.
    */
   async moveToBackground(): Promise<void> {

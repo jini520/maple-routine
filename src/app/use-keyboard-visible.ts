@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { addKeyboardVisibilityListener } from '../native/keyboard'
 
 /**
- * 키보드가 떠 있는가 — 웹 `AppShell` 의 `isKeyboardVisible` state 자리.
+ * 키보드가 떠 있는가. 웹 `AppShell` 의 `isKeyboardVisible` state 자리.
  *
  * **RN 의 `Keyboard` 를 직접 듣지 않고 포트를 거친다.** 그 판정은 1단계가 만든 `rn-keyboard.ts` 에서만 하는
  * 자리이고(iOS 의 `will` 계열을 안 쓰는 이유·안드로이드에서 이벤트가 아예 안 올 수 있다는

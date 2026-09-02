@@ -1,4 +1,4 @@
-// 드롭 획득 히스토리 — 전 기간을 가로지르는 읽기 전용 목록(이슈 #54). 보스 수익 화면의
+// 드롭 획득 히스토리. 전 기간을 가로지르는 읽기 전용 목록(이슈 #54). 보스 수익 화면의
 // 고가 강조는 전부 "지금 보고 있는 기간"에 갇혀 있어(`dropsByRowKey`) 과거 기록은 그 기간으로
 // 이동해야만 보였다. 이 화면은 화면 rows 가 아니라 DB를 직접 읽으므로 그 제약도, 월간 탭의 주차별
 // 합계 한계도 없다.
@@ -16,7 +16,7 @@
 //    없고 헤더가 **흐름 안**이라(`PageHeader` 파일 머리) 같은 그림이 공용 셸로 곧장 나온다.
 //    푸시/팝 전환·스와이프 백·탭바 밀어내기는 루트 스택의 성질이라 `StackScreen` 은 소멸한다
 //
-// ② **공용 `PageHeader` 는 쓰지 않는다.** 웹의 그 셸 주석이 이 화면을 **명시적으로 제외**했다 —
+// ② **공용 `PageHeader` 는 쓰지 않는다.** 웹의 그 셸 주석이 이 화면을 **명시적으로 제외**했다.
 //    배경 조각도 하단 페이드도 없는 서브 화면이라 넣으면 없던 것이 생긴다. 그래서 헤더 마크업은
 //  이 화면이 직접 든다(보스 수익이 때문에 같은 선택을 한 것과 자리는 다르되
 //    결과는 같다).
@@ -66,7 +66,7 @@ import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { useScreenNavigation } from '../use-screen-navigation'
 
 /**
- * 웹 `index.css` 의 `.valuable-drop-badge` 스킨 — **여기서는 단색으로 내려앉는다**(파일 머리 ④).
+ * 웹 `index.css` 의 `.valuable-drop-badge` 스킨. **여기서는 단색으로 내려앉는다**(파일 머리 ④).
  *
  * 그라디언트(`linear-gradient(135deg, #ffe98a, #f7c400)`)의 **끝 정지점**을 그대로 쓴다. 새 골드를
  * 뽑지 않는 것이 의 요구다(*"임의의 골드 hex 를 새로 뽑으면 어느 한쪽 테마에서
@@ -79,7 +79,7 @@ const VALUABLE_INLINE_INK = '#6b4e00'
 /** 단풍잎 한 변(px). 단계별 색·기울기가 이 요소의 감정을 지고 있어 작으면 차이가 읽히지 않는다. */
 const DROUGHT_LEAF_SIZE = 42
 
-// 미획득 기간 요약 — 고가 전체를 **하나로** 집계한다. 아이템별·세트별로 나누지
+// 미획득 기간 요약. 고가 전체를 **하나로** 집계한다. 아이템별·세트별로 나누지
 // 않는다(칠흑·광휘 구성원 수십 종이 대부분 "기록 없음"으로 채워져 소음이 된다).
 function ValuableDrought(props: { summary: ValuableDroughtSummary; now: Date }): React.JSX.Element {
   const label = formatBossProfitPeriodLabel(props.summary.cycle, props.summary.periodKey, props.now)
@@ -99,7 +99,7 @@ function ValuableDrought(props: { summary: ValuableDroughtSummary; now: Date }):
   return (
     <View
       testID="valuable-drought"
-      // 웹의 `data-drought-tier` 자리 — RN 에는 데이터 속성이 없어 접근성 이름으로 옮긴다. 테스트는
+      // 웹의 `data-drought-tier` 자리. RN 에는 데이터 속성이 없어 접근성 이름으로 옮긴다. 테스트는
       // 이 이름으로만 단계를 지목할 수 있고, 스크린리더에도 단계가 문구로만 남는 것보다 낫다.
       aria-label={`고가 드롭 미획득 ${tier}단계`}
       className="flex-row items-center justify-center gap-2.5"
@@ -168,14 +168,14 @@ function DropHistoryEntry(props: {
 
           웹의 `break-keep`·`text-balance` 는 RN 에 짝이 없어 사라진다(줄바꿈 품질만 달라진다).
           난이도 괄호를 묶는 WORD JOINER 는 **`formatDropHistoryLine` 이 문자열에 박아 두므로**
-          그대로 온다 — 그 처방은 화면이 아니라 core 가 갖고 있었다. */}
+          그대로 온다. 그 처방은 화면이 아니라 core 가 갖고 있었다. */}
       <Text
         className={`text-center text-xs leading-snug ${isValuable ? 'text-text' : 'text-text-muted'}`}
       >
         {line.prefix}
         {/* 상자명도 강조 대상이다(사용자 지정 2026-08-01). 반지 상자·칠흑 장신구 상자를 열어 나온
             기록은 "무엇을 열었는지"가 정보의 절반이라 아이템과 같은 굵기를 준다. 골드
-            강조(고가)는 결과에만 붙는다 — 가치를 정하는 쪽이 결과이고, 강조 둘 다 골드면 어느 쪽이
+            강조(고가)는 결과에만 붙는다. 가치를 정하는 쪽이 결과이고, 강조 둘 다 골드면 어느 쪽이
             값인지 흐려진다. */}
         {line.box !== undefined && (
           <Text>
@@ -192,7 +192,7 @@ function DropHistoryEntry(props: {
             >
               {/* 아이콘은 문장 안 인라인 이미지다. 크기를 명시해야 RN 이 줄 안에 앉힌다. 웹의
                   `gap-1` 자리는 공백 문자다(중첩 `Text` 에는 `gap` 이 없다). 아이콘이 없으면 그
-                  공백도 만들지 않는다 — 배경이 칠해진 자리라 앞쪽 여백이 그대로 보인다. */}
+                  공백도 만들지 않는다. 배경이 칠해진 자리라 앞쪽 여백이 그대로 보인다. */}
               {iconUrl !== null && (
                 <Text>
                   <Image source={iconUrl} resizeMode="contain" className="h-3.5 w-3.5" />{' '}
@@ -200,7 +200,7 @@ function DropHistoryEntry(props: {
               )}
               {line.item}
             </Text>
-            {/* `whitespace-nowrap` 이 사라진 자리 — 중첩 `Text` 는 원자적 인라인 박스가 아니라
+            {/* `whitespace-nowrap` 이 사라진 자리. 중첩 `Text` 는 원자적 인라인 박스가 아니라
                 경계에 줄바꿈 지점을 만들지 않는다(파일 머리 ④). */}
             {line.particle}
           </Text>
@@ -230,9 +230,9 @@ function DropHistoryPeriodSection(props: {
       {/* 기간 라벨은 본문과 같이 가운데, `primary` 하나만 둔다(사용자 지정 2026-07-31). 날짜 구간
           (`secondary`, "7월 30일 ~ 8월 5일")은 그 아래 작게 붙는다.
 
-          라벨 양옆에 헤어라인을 두고 글자는 가볍게 물러나게 한다 — 구분이 글자 굵기가 아니라 선에서
+          라벨 양옆에 헤어라인을 두고 글자는 가볍게 물러나게 한다. 구분이 글자 굵기가 아니라 선에서
           나오므로 라벨이 본문보다 튀지 않아도 된다. **헤어라인은 라벨 줄이 아니라 라벨+날짜 두 줄
-          블록 기준으로 세로 중앙**이다(사용자 지정 2026-08-01) — 선을 라벨과 같은 행에 두면 날짜
+          블록 기준으로 세로 중앙**이다(사용자 지정 2026-08-01). 선을 라벨과 같은 행에 두면 날짜
           줄이 아래로 매달려 선이 위로 치우쳐 보인다. */}
       <View testID="drop-history-period" className="flex-row items-center gap-2 pb-1.5">
         <View testID="drop-history-period-rule" className="h-px flex-1 bg-border" aria-hidden />
@@ -240,10 +240,10 @@ function DropHistoryPeriodSection(props: {
           <Text className="text-center text-xs font-semibold tracking-wide text-text-muted">
             {label.primary}
           </Text>
-          {/* 날짜 구간은 라벨 바로 아래 작게 — `leading-tight` + 마진 없이 붙여 한 덩어리로 읽히게 한다.
+          {/* 날짜 구간은 라벨 바로 아래 작게. `leading-tight` + 마진 없이 붙여 한 덩어리로 읽히게 한다.
 
               **같은 값이면 렌더하지 않는다**: 월간 과거 기간은 `primary` 가 곧 `secondary` 다
-              (`formatBossProfitPeriodLabel` 의 월간 폴백이 `{ primary: secondary, secondary }` 를 준다) —
+              (`formatBossProfitPeriodLabel` 의 월간 폴백이 `{ primary: secondary, secondary }` 를 준다).
               그대로 두면 "2026년 3월"이 두 줄로 겹쳐 나온다. */}
           {label.secondary !== label.primary && (
             <Text
@@ -288,7 +288,7 @@ export function DropHistoryScreen(): React.JSX.Element {
     <ScreenScroll
       hasTabBar={false}
       header={
-        // 공용 `PageHeader` 를 쓰지 않는 이유는 파일 머리 ② — 이 화면에는 배경 조각도 하단 페이드도
+        // 공용 `PageHeader` 를 쓰지 않는 이유는 파일 머리 ②. 이 화면에는 배경 조각도 하단 페이드도
         // 없다. 스크롤 상자가 노치까지 덮던 웹과 달리 **상단 안전영역을 헤더가 먹는다**는 계약은
         // 그대로다(`ScreenScroll` 은 헤더가 있으면 위를 안 건드린다).
         // **여백은 더하지 않는다**. 공용 셸과 같은 값이어야 가격 화면과 나란히 열릴 때
@@ -316,7 +316,7 @@ export function DropHistoryScreen(): React.JSX.Element {
       {/* 하단 안전영역은 `ScreenScroll` 이 넣는다(웹이 콘텐츠 블록에 직접
           계산해 넣던 자리). 여기 남는 것은 상수 몫뿐이다.
 
-          `screen-<라우트 이름>` 은 자리표시자에게서 그대로 물려받은 계약이다 — 내비게이션 테스트가
+          `screen-<라우트 이름>` 은 자리표시자에게서 그대로 물려받은 계약이다. 내비게이션 테스트가
           "그 라우트로 밀면 그 화면이 열리는가"를 이 이름으로 묻는다. */}
       <View testID="screen-DropHistory" className="gap-4 px-4 pb-4">
         {(status === 'idle' || status === 'loading') && (

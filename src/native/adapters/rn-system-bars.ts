@@ -3,7 +3,7 @@ import type { SystemBarsPort } from '../ports'
 import AppSystemBars from '../../../modules/app-system-bars'
 
 /**
- * `SystemBarsPort` 의 RN 구현 — **두 메서드의 사정이 정반대다.**
+ * `SystemBarsPort` 의 RN 구현. **두 메서드의 사정이 정반대다.**
  *
  * | 메서드 | 웹뷰에서 하던 일 | RN |
  * |---|---|---|
@@ -22,7 +22,7 @@ import AppSystemBars from '../../../modules/app-system-bars'
  *
  * 그래서 던지지 않는다. `not-implemented.ts` 가 세운 기준에 그대로 얹으면 이쪽은
  * *"해야 하는데 아직 안 했다"* 가 아니라 *"이 플랫폼에 그 개념이 없다"* 이고, 그 칸의 처리는
- * **정당한 no-op** 이다(`rn-splash-screen.ts` 의 `show()` 와 같은 자리). 던지게 두면 반대로 나쁘다 —
+ * **정당한 no-op** 이다(`rn-splash-screen.ts` 의 `show()` 와 같은 자리). 던지게 두면 반대로 나쁘다.
  * 안전영역은 **정상 동작 중인데** 부팅마다 처리되지 않은 거부가 남아, 진짜 고장과 구분이 안 된다.
  *
  * 이 no-op 이 조용하지 않다는 것은 `__tests__/rn-system-bars.test.ts` 가 맡는다. *"아무것도 안 한다"*
@@ -30,7 +30,7 @@ import AppSystemBars from '../../../modules/app-system-bars'
  */
 export const rnSystemBarsPort: SystemBarsPort = {
   /**
-   * iOS 에서는 네이티브 모듈이 없어 `AppSystemBars` 가 `null` 이고, 그때는 아무것도 하지 않는다 —
+   * iOS 에서는 네이티브 모듈이 없어 `AppSystemBars` 가 `null` 이고, 그때는 아무것도 하지 않는다.
    * 그 플랫폼에는 하단 시스템 내비게이션 바 자체가 없다(웹뷰 구현의 `platform !== 'android'` 가드와
    * 같은 자리다).
    */

@@ -25,7 +25,7 @@ export type UnavailableNoticeVariant = keyof typeof COPY
 interface UnavailableNoticeProps {
   /** 기본값은 `outOfRange`. 기존 호출부(롤링 윈도우 밖)의 의미를 그대로 유지한다. */
   variant?: UnavailableNoticeVariant
-  /** 캐릭터 카드 안처럼 이미 카드에 중첩될 때 — 한 단계 축소하고 설명을 생략한다. */
+  /** 캐릭터 카드 안처럼 이미 카드에 중첩될 때. 한 단계 축소하고 설명을 생략한다. */
   compact?: boolean
 }
 

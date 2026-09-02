@@ -80,7 +80,7 @@ describe('TrackingModeModal', () => {
     }
   })
 
-  //  의 핵심 — 탭은 **고르는 것일 뿐**이다.
+  //  의 핵심. 탭은 **고르는 것일 뿐**이다.
   it('옵션을 탭해도 setMode를 부르지 않고 모달도 닫히지 않는다', async () => {
     const setMode = jest.fn(async () => {})
     const onClose = jest.fn()
@@ -204,7 +204,7 @@ describe('TrackingModeModal', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
-  // "저장 도중엔 닫을 수 없다" — 캐릭터 관리 저장 진행률 모달과 같은 원칙.
+  // "저장 도중엔 닫을 수 없다"캐릭터 관리 저장 진행률 모달과 같은 원칙.
   it('적용 중에는 오버레이를 눌러도 닫히지 않는다', async () => {
     const setMode = jest.fn(() => new Promise<void>(() => {}))
     const onClose = jest.fn()

@@ -1,6 +1,6 @@
 import spendCatalog from '../spend-catalog.json'
 
-// 지출 참조 목록 — 이 기다리던 값이고 사용자가 준 것이다.
+// 지출 참조 목록. 이 기다리던 값이고 사용자가 준 것이다.
 //
 // 이 스위트가 지키는 것은 **형태**이지 값이 아니다. 값은 도메인 전문가의 것이라 테스트가 베끼면
 // 두 벌이 되고, 그러면 게임이 바뀌었을 때 어느 쪽이 진실인지 알 수 없게 된다
@@ -20,7 +20,7 @@ const items = spendCatalog.items as {
   seasonal?: boolean
 }[]
 
-describe('spend-catalog.json — 규약', () => {
+describe('spend-catalog.json: 규약', () => {
   it('기존 참조표와 같은 머리를 갖는다', () => {
     expect(spendCatalog.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
     expect(spendCatalog.source).toContain('사용자 제공')
@@ -44,7 +44,7 @@ describe('spend-catalog.json — 규약', () => {
     expect(spendCatalog.marketRateNote).toContain('1억 메소당 메포')
   })
 
-  it('이름이 중복되지 않는다 — 선택 목록의 키가 된다', () => {
+  it('이름이 중복되지 않는다. 선택 목록의 키가 된다', () => {
     const names = items.map((item) => item.name)
     expect(new Set(names).size).toBe(names.length)
   })
@@ -93,18 +93,18 @@ describe('spend-catalog.json — 규약', () => {
     }
   })
 
-  it('갈래 셋이 모두 항목을 갖는다 — 빈 갈래는 고를 수 없는 자리가 된다', () => {
+  it('갈래 셋이 모두 항목을 갖는다. 빈 갈래는 고를 수 없는 자리가 된다', () => {
     for (const category of spendCatalog.categories) {
       expect(items.some((item) => item.category === category)).toBe(true)
     }
   })
 })
 
-describe('spend-catalog.json — 닻 (사용자 확인값, 2026-08-23)', () => {
+describe('spend-catalog.json: 닻 (사용자 확인값, 2026-08-23)', () => {
   const priceOf = (name: string): number | undefined =>
     items.find((item) => item.name === name)?.unitPrice
 
-  // 형태만 검사하면 **값이 조용히 바뀌는** 사고를 못 잡는다. 묶음마다 하나씩만 못 박는다 —
+  // 형태만 검사하면 **값이 조용히 바뀌는** 사고를 못 잡는다. 묶음마다 하나씩만 못 박는다.
   // 전부 베끼면 두 벌이 되고, 하나도 안 박으면 오타가 통과한다.
   it('묶음마다 대표값 하나가 고정돼 있다', () => {
     expect(priceOf('하이마운틴 1단계')).toBe(7500)
@@ -147,7 +147,7 @@ describe('spend-catalog.json — 닻 (사용자 확인값, 2026-08-23)', () => {
  * 기간제 이벤트(메이플 포인트 샵)는 열릴 때와 안 열릴 때가 있고 품목도 갈린다. 그 사실을 **날짜로
  * 판정하지 않는 것**이 결정이라(미뤄지는 날 앱이 거짓말을 한다) 여기 적힌 값이 곧 사실이다.
  */
-describe('spend-catalog.json — 묶음 표', () => {
+describe('spend-catalog.json: 묶음 표', () => {
   it('표에 적힌 묶음은 실제로 있는 묶음이다', () => {
     const groups = new Set(items.map((item) => item.group))
 
@@ -160,7 +160,7 @@ describe('spend-catalog.json — 묶음 표', () => {
     expect(spendCatalog.groups['메이플 포인트 샵'].active).toBe(false)
   })
 
-  it('표에 없는 묶음은 언제나 열린 것이다 — 닫힘을 적는 자리만 있다', () => {
+  it('표에 없는 묶음은 언제나 열린 것이다. 닫힘을 적는 자리만 있다', () => {
     expect(Object.keys(spendCatalog.groups)).toEqual(['메이플 포인트 샵'])
   })
 })
@@ -171,7 +171,7 @@ describe('spend-catalog.json — 묶음 표', () => {
  * 에픽던전 추가 리워드는 메이플 ID 당 주 1회라(사용자 확인 2026-08-27) 수량이 오르내릴 자리가 없다.
  * 화면은 이 값으로 수량 줄을 세울지 정하므로, 여기가 바뀌면 그 줄이 조용히 되살아난다.
  */
-describe('spend-catalog.json — 수량 상한', () => {
+describe('spend-catalog.json: 수량 상한', () => {
   it('에픽던전 추가 리워드 여섯은 상한이 1이다', () => {
     const epic = items.filter((item) => item.group === '에픽던전 추가 리워드')
 

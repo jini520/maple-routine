@@ -3,7 +3,7 @@ import { getKstDateKeyDaysAgo } from '../lib/scheduler/reset-clock'
 import { scheduleProbeKey } from './keys'
 
 /**
- * (ocid, 날짜) 조회 원장 —(=의 "포기 기록").
+ * (ocid, 날짜) 조회 원장. 같은 날짜를 다시 안 캐게 하는 "포기 기록"이다.
  *
  * "이 캐릭터를 이 날짜로 이미 조회했고 결과가 이랬다"를 남겨 **같은 날짜를 두 번 부르지 않게** 한다.
  * 소비자가 셋이다. ① 후보 자격 스윕(`features/schedule-sync/character-eligibility`)이 미조회
@@ -31,7 +31,7 @@ export type ScheduleProbeRecord =
       hasCompletion: boolean
       sections: ProbeSectionPresence
       /**
-       * 그날 완료로 본 보스 —`이름|난이도` 목록. 처치 날짜를 캐는 원재료다.
+       * 그날 완료로 본 보스. `이름|난이도` 목록이고 처치 날짜를 캐는 원재료다.
        *
        * **`undefined` 와 `[]` 는 다른 뜻이다.** `[]` 는 그날 완료가 0건 이라는 관측이고,
        * `undefined` 는 이 칸이 생기기 전에 남은 기록이라 **보스를 안 본 관측**이다. 섞으면
@@ -39,7 +39,7 @@ export type ScheduleProbeRecord =
        */
       bosses?: readonly string[]
     }
-  // 400 OPENAPI00004 — 그 날짜에 대해 영구. 윈도우 밖·월드 이전 이전.
+  // 400 OPENAPI00004. 그 날짜에 대해 영구. 윈도우 밖·월드 이전 이전.
   | { kind: 'outOfRange' }
 
 export interface ScheduleProbeLedger {

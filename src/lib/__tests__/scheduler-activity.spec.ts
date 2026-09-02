@@ -87,7 +87,7 @@ describe('hasCharacterScopeCompletion', () => {
     expect(hasCharacterScopeCompletion(state({ weeklyContents: [weekly({ questState: 2 })] }))).toBe(true)
   })
 
-  it('보스는 ownComplete만 본다 — 승격된 isComplete는 다른 난이도의 완료다', () => {
+  it('보스는 ownComplete만 본다. 승격된 isComplete는 다른 난이도의 완료다', () => {
     expect(
       hasCharacterScopeCompletion(state({ bossContents: [boss({ isComplete: true, ownComplete: false })] })),
     ).toBe(false)
@@ -249,7 +249,7 @@ describe('completedBossKeys', () => {
     ).toEqual(['스우|하드'])
   })
 
-  it('승격된 isComplete 는 안 센다 — 다른 난이도의 완료가 옮겨 붙은 값이다', () => {
+  it('승격된 isComplete 는 안 센다. 다른 난이도의 완료가 옮겨 붙은 값이다', () => {
     const { completedBossKeys } = require('../scheduler/scheduler-activity') as typeof import('../scheduler/scheduler-activity')
 
     expect(
@@ -261,13 +261,13 @@ describe('completedBossKeys', () => {
     ).toEqual([])
   })
 
-  it('보스 섹션이 비면 빈 목록이다 — 접속하지 않은 날은 **미완료** 로 읽힌다', () => {
+  it('보스 섹션이 비면 빈 목록이다. 접속하지 않은 날은 **미완료** 로 읽힌다', () => {
     const { completedBossKeys } = require('../scheduler/scheduler-activity') as typeof import('../scheduler/scheduler-activity')
 
     expect(completedBossKeys(state({ bossContents: [] }))).toEqual([])
   })
 
-  it('toProbeObservation 이 그 목록을 함께 낸다 — 원장이 관측 하나로 둘을 든다', () => {
+  it('toProbeObservation 이 그 목록을 함께 낸다. 원장이 관측 하나로 둘을 든다', () => {
     const { toProbeObservation } = require('../scheduler/scheduler-activity') as typeof import('../scheduler/scheduler-activity')
 
     const observation = toProbeObservation(

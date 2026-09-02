@@ -1,9 +1,9 @@
-// 드랍 연출 재생 상태 기계 — 웹 `DropEffectOverlay` 의 `tick()` 을 **순수 함수로** 옮긴 것이다.
+// 드랍 연출 재생 상태 기계. 웹 `DropEffectOverlay` 의 `tick()` 을 **순수 함수로** 옮긴 것이다.
 //
 // ## 왜 컴포넌트에서 떼어냈나
 //
 // 웹판은 이 로직이 `useEffect` 안의 클로저 + DOM 변이(`el.src`·`el.style`)와 한 덩어리라 **단위로
-// 검사할 방법이 없었다.** 여기서 지켜야 할 것들 — 8프레임 시점에 아이템이 뜬다 ·
+// 검사할 방법이 없었다.** 여기서 지켜야 할 것들. 8프레임 시점에 아이템이 뜬다 ·
 // pre 가 끝나면 loop 로 넘어가 무한 반복한다 · 닫기는 end 를 한 번 재생하고 끝난다. 은 전부
 // **눈에 안 보이는 순서**라, 화면 없이 검사할 수 있는 형태가 아니면 회귀를 못 잡는다.
 //
@@ -18,16 +18,16 @@
 // 없고(워크릿은 React 트리를 못 바꾼다), 웹판도 같은 이유로 `requestAnimationFrame` 이었다.
 // 이 파일이 만드는 것은 좌표가 아니라 **몇 번째 그림인가**다.
 
-/** 단계별 고정 fps — 방식, 값은 이 1.5배로 상향한 것. */
+/** 단계별 고정 fps. 방식, 값은 이 1.5배로 상향한 것. */
 export const DROP_EFFECT_FPS = { screen: 22.5, pre: 21, loop: 17.25, end: 18 } as const
 
 /**
- * 아이템 등장 트리거 — **시간이 아니라 ScreenEff 프레임 인덱스**다.
+ * 아이템 등장 트리거. **시간이 아니라 ScreenEff 프레임 인덱스**다.
  * 버스트가 최대로 벌어지는 그림에 묶여 있어 fps 배율이 바뀌어도 이 값은 그대로다.
  */
 export const DROP_START_FRAME = 8
 
-/** 한 tick 이 삼킬 수 있는 최대 시간 — 백그라운드에서 돌아왔을 때 폭주 방지(웹과 같은 값). */
+/** 한 tick 이 삼킬 수 있는 최대 시간. 백그라운드에서 돌아왔을 때 폭주 방지(웹과 같은 값). */
 export const MAX_TICK_MS = 100
 
 type DropPillarPhase = 'pre' | 'loop' | 'end'
@@ -40,17 +40,17 @@ export interface DropEffectFrameCounts {
 }
 
 interface DropEffectState {
-  /** ScreenEff 진행 — `done` 이면 더 그리지 않는다. */
+  /** ScreenEff 진행. `done` 이면 더 그리지 않는다. */
   screenIndex: number
   screenDone: boolean
   screenAcc: number
-  /** DropEff 기둥 — 시작 전에는 `null`(그릴 것이 없다). */
+  /** DropEff 기둥. 시작 전에는 `null`(그릴 것이 없다). */
   pillarPhase: DropPillarPhase | null
   pillarIndex: number
   pillarAcc: number
   /** 아이템은 기둥과 같은 순간에 뜬다(웹 `startDrop`). */
   itemVisible: boolean
-  /** 닫는 중 — end 를 재생하고 있다. */
+  /** 닫는 중. end 를 재생하고 있다. */
   closing: boolean
   /** 재생이 끝나 부모가 언마운트해야 하는 상태. */
   finished: boolean
@@ -161,7 +161,7 @@ export function advanceDropEffect(
 }
 
 /**
- * 닫기 요청 — end 재생으로 넘어간다. **이미 닫는 중이면 즉시 끝낸다**(웹과 같은 두 번 탭하면 건너뛴다).
+ * 닫기 요청. end 재생으로 넘어간다. **이미 닫는 중이면 즉시 끝낸다**(웹과 같은 두 번 탭하면 건너뛴다).
  */
 export function requestDropEffectClose(
   state: DropEffectState,
@@ -186,7 +186,7 @@ export function requestDropEffectClose(
  * 단계별 fps 로만 바뀐다. screen 22.5 · loop 17.25. 그 차이를 안 걸러내면 120Hz 기기에서 초당
  * 120번 트리를 다시 그리면서 정작 그림은 22번만 바뀐다.
  *
- * 2026-08-26 갤럭시 Z Flip3 실측 — 그 낭비가 **재생 첫머리의 불균등**으로 나왔다. 상태는 제때
+ * 2026-08-26 갤럭시 Z Flip3 실측. 그 낭비가 **재생 첫머리의 불균등**으로 나왔다. 상태는 제때
  * 진행하는데 렌더가 밀려, frame 0 이 82ms 서 있고 frame 2 가 25ms 만에 지나갔다(기대는 둘 다 44ms).
  * 누적 시간은 여기서 일부러 뺀다. 그것 때문에 매번 달라졌다 가 되면 거르는 의미가 없다.
  */

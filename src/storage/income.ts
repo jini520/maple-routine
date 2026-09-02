@@ -3,7 +3,7 @@
 // ## 이 저장소 최초의 대리키 테이블이다
 //
 // 앞의 넷은 전부 자연키 복합 PK 인데(`ocid|boss|difficulty|period_key` …) 손입력은 **같은 날 같은
-// 것을 두 번 이 정상**이라 자연키가 성립하지 않는다. 그래서 `INSERT` 에 `ON CONFLICT` 가 없다 —
+// 것을 두 번 이 정상**이라 자연키가 성립하지 않는다. 그래서 `INSERT` 에 `ON CONFLICT` 가 없다.
 // 덮어쓸 대상이 애초에 없다.
 //
 // ## `id` 와 `recordedAt` 은 **호출부가 준다**
@@ -20,7 +20,7 @@ import type { FeePercent } from '../lib/cashbook/item-split'
 import { getBossProfitDb } from './sqlite/db'
 
 /**
- * 수입의 갈래 — 사용자가 준 둘 + 안전망 하나.
+ * 수입의 갈래. 사용자가 준 둘 + 안전망 하나.
  *
  * 기타가 없으면 셋으로 안 잡히는 수입이 **기록 자체를 못 남긴다**(가계부에 구멍이 뚫린다).
  * 넷째가 생기면 여기 한 줄을 더하면 된다. 늘리는 것은 싸고 **지우는 쪽이 비싸다**(이미 그 갈래로
@@ -54,13 +54,13 @@ export interface IncomeRecord {
    */
   mesoAmount: number | null
   /**
-   * 메포로 들어온 수입 — 이벤트 보상이 그렇다.
+   * 메포로 들어온 수입. 이벤트 보상이 그렇다.
    *
    * **칸 이름을 지출과 같게 쓴다**(`point_amount`·`point_per_100m_meso`·`cash_amount`). 그래야
    * 집계가 한 모양으로 접힌다(`incomeMesoOf` 는 `spendMesoOf` 와 같은 식이다).
    */
   pointAmount: number | null
-  /** 메소마켓 시세 — 단위는 **1억 메소당 메포**다. */
+  /** 메소마켓 시세. 단위는 **1억 메소당 메포**다. */
   pointPer100mMeso: number | null
   /** **환산하지 않는다**. 지출과 같은 이유·같은 결과다. */
   cashAmount: number | null
@@ -107,7 +107,7 @@ export type HuntingIncomeDetail = HuntingCalculatorDetail | HuntingManualDetail
 /** 사냥을 어느 폼으로 적나. 기록에 박히고 수정 중에는 안 바뀐다. */
 export type HuntInputMode = HuntingIncomeDetail['mode']
 
-/** 수동으로 적은 사냥 — 앱이 셀 근거가 없어 획득 메소를 사람이 친다. */
+/** 수동으로 적은 사냥. 앱이 셀 근거가 없어 획득 메소를 사람이 친다. */
 export interface HuntingManualDetail {
   mode: 'manual'
   /**
@@ -124,7 +124,7 @@ export interface HuntingManualDetail {
   fragmentPrice: number
 }
 
-/** 계산기로 적은 사냥 — 계산에 쓴 입력 한 벌이고 일곱이 **함께 있거나 함께 없다**. */
+/** 계산기로 적은 사냥. 계산에 쓴 입력 한 벌이고 일곱이 **함께 있거나 함께 없다**. */
 export interface HuntingCalculatorDetail {
   mode: 'calculator'
   /**
@@ -143,9 +143,9 @@ export interface HuntingCalculatorDetail {
   missedMobs: number
   /** 켠 메소 획득률 아이템의 id(`lib/cashbook/hunting-meso.ts` 의 `MESO_BOOSTS`). 빈 배열 = 없음. */
   boosts: string[]
-  /** 소재 수 — 하나가 30분이다. */
+  /** 소재 수. 하나가 30분이다. */
   sojae: number
-  /** 솔 에르다 조각 개수 — 사용자가 직접 넣은 값이다. */
+  /** 솔 에르다 조각 개수. 사용자가 직접 넣은 값이다. */
   fragments: number
   /** 조각 개당 메소. */
   fragmentPrice: number
@@ -256,7 +256,7 @@ export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
   ])
 }
 
-/** 갈아 끼우기 — 지출과 같은 계약이다. `recorded_at` 은 SET 에 없다. */
+/** 갈아 끼우기. 지출과 같은 계약이다. `recorded_at` 은 SET 에 없다. */
 const UPDATE_SQL = `
   UPDATE income_records SET
     ocid = ?, earned_on = ?, category = ?, item = ?, meso_amount = ?,
@@ -316,7 +316,7 @@ function rowToRecord(row: Record<string, unknown>): IncomeRecord {
 }
 
 /**
- * 날짜 범위의 기록 — **두 끝을 포함**한다. 월간이든 주간이든 부르는 쪽이 범위만 정한다
+ * 날짜 범위의 기록. **두 끝을 포함**한다. 월간이든 주간이든 부르는 쪽이 범위만 정한다
  * (월간은 그 달의 첫날~마지막 날, 주간은 목요일~수요일).
  *
  * **`ocid` 로 거르지 않는다.** 가계부는 내가 번 돈 이지 이 캐릭터가 번 돈 이 아니라

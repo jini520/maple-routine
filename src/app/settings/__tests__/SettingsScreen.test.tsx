@@ -4,10 +4,10 @@
 // ① **라우터 프로브가 없다.** 웹은 `MemoryRouter` 에 목적지를 세워 이동을 봤는데, RN 은 라우트
 //    이름으로 미므로 **`navigate` 가 무엇으로 불렸는가**를 본다(실제로 그 화면이 열리는 것은
 //    `RootNavigator` 테스트가 이미 본다. 그쪽이 라우트 표 전체를 훑는다).
-// ② `getAllByRole('button')` 으로 행을 세던 것이 **`SettingsRow` 가 심는 라벨 목록**이 된다 —
+// ② `getAllByRole('button')` 으로 행을 세던 것이 **`SettingsRow` 가 심는 라벨 목록**이 된다.
 //    RN 은 자식 글자를 합쳐 접근성 이름을 만들지 않아 `row.textContent` 같은 축이 없다.
 // ③ **콘텐츠 블록이 상단 안전영역을 직접 갖는다는 옮길 계약이 아니다.** 웹에서 그 트릭이
-//    필요했던 이유(안쪽 래퍼의 `-mt` 가 콘텐츠를 y=0 으로 끌어올린다)가 RN 에 없다 —
+//    필요했던 이유(안쪽 래퍼의 `-mt` 가 콘텐츠를 y=0 으로 끌어올린다)가 RN 에 없다.
 //    `ScreenScroll` 이 헤더 없는 화면에서는 **스크롤포트 상자 자체를** 내린다(그 파일 `상단`절).
 // ④ **하단 버전은 실행 중인 OTA 번들이 아니라 빌드 시점 값이다**. 웹의
 //    폴백 경로만 남았다. 그래서 웹의 `OTA 번들 버전을 표시한다` 케이스가 그 폴백 케이스로 접힌다.
@@ -53,7 +53,7 @@ jest.mock('../../../features/content-scheduler/store', () => {
     }),
   }
 })
-// 결정 5: 저장 뒤 다시 읽히는 나머지 둘 — 화면은 `getState()` 로만 만진다(구독하지 않는다).
+// 결정 5: 저장 뒤 다시 읽히는 나머지 둘. 화면은 `getState()` 로만 만진다(구독하지 않는다).
 jest.mock('../../../features/boss-scheduler/store', () => ({
   useBossSchedulerStore: { getState: () => ({ loadTrackedOcids: mockLoadBossTracked }) },
 }))
@@ -104,7 +104,7 @@ function rowOf(view: Rendered, label: string): AtomElement {
   return node
 }
 
-/** 서브트리의 글자를 나온 순서대로 — 웹 테스트의 `row.textContent` 자리다. */
+/** 서브트리의 글자를 나온 순서대로. 웹 테스트의 `row.textContent` 자리다. */
 function textsIn(node: AtomElement): string[] {
   const texts: string[] = []
   const walk = (current: AtomElement): void => {
@@ -122,7 +122,7 @@ function hasChevron(node: AtomElement): boolean {
   return node.children.some((child) => typeof child !== 'string' && hasChevron(child))
 }
 
-/** 카드 안에 선 행 라벨들 — 순서가 곧 화면 순서다. */
+/** 카드 안에 선 행 라벨들. 순서가 곧 화면 순서다. */
 const ROW_LABELS = [
   '스케줄 관리 방법',
   '테마',
@@ -174,9 +174,9 @@ beforeEach(() => {
     goBack: jest.fn(),
     setParams,
   } as unknown as ReturnType<typeof useSettingsNavigation>)
-  // 기본은 "영원히 조회 중" — 자리표시(`- KB`)가 기본 상태라, 값이 필요한 케이스만 따로 세운다.
+  // 기본은 "영원히 조회 중"자리표시(`- KB`)가 기본 상태라, 값이 필요한 케이스만 따로 세운다.
   mockedLoadCacheDataSizes.mockReturnValue(new Promise(() => {}))
-  // 로스터도 기본은 "영원히 조회 중" — 케이스가 필요할 때 `deferredRoster` 로 갈아 세운다.
+  // 로스터도 기본은 "영원히 조회 중"케이스가 필요할 때 `deferredRoster` 로 갈아 세운다.
   mockedRoster.mockReturnValue(new Promise(() => {}))
   mockLoadContentTracked.mockResolvedValue(undefined)
   mockLoadBossTracked.mockResolvedValue(undefined)
@@ -188,7 +188,7 @@ afterEach(() => {
 })
 
 describe('SettingsScreen', () => {
-  //  딸림 작업 — 문서 스크롤에 얹혀 있던 **마지막 탭 화면**이 자기 스크롤을 소유하게
+  //  딸림 작업. 문서 스크롤에 얹혀 있던 **마지막 탭 화면**이 자기 스크롤을 소유하게
   // 됐다. RN 에서는 그것이 기본값이지만, 셸을 안 쓰고 직접 그리면 다시 잃는다.
   it('자기 스크롤 컨테이너를 소유한다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
@@ -330,7 +330,7 @@ describe('SettingsScreen', () => {
     await press(view.getByText('수동'))
     await press(view.getByText('적용'))
 
-    // 컨텐츠가 끝나기 전에는 다음이 시작되지 않는다(게이트 — `prehydrateTabStores` 와
+    // 컨텐츠가 끝나기 전에는 다음이 시작되지 않는다(게이트. `prehydrateTabStores` 와
     // 같은 이유). 모달은 그 셋을 기다리지 않고 닫힌다.
     expect(order).toEqual(['content'])
     expect(view.queryByTestId('tracking-mode-modal-overlay')).toBeNull()
@@ -380,7 +380,7 @@ describe('SettingsScreen', () => {
   })
 })
 
-describe('SettingsScreen — 캐릭터 관리', () => {
+describe('SettingsScreen: 캐릭터 관리', () => {
   // 결정 3: 파생·추정값이 아니라 저장된 목록의 길이다. **단위가 명 이 아니라 개** 인 것은
   //  이 그 표기를 정정했기 때문이다. 캐릭터는 사람이 아니다.
   it('행 오른쪽에 추적 캐릭터 수 배지와 chevron 이 함께 있다', async () => {
@@ -400,14 +400,14 @@ describe('SettingsScreen — 캐릭터 관리', () => {
     expect(textsIn(rowOf(view, '캐릭터 관리'))).toEqual(['캐릭터 관리'])
   })
 
-  it('0개면 "0개" 배지를 그린다 — 미로드와 다른 상태다', async () => {
+  it('0개면 "0개" 배지를 그린다. 미로드와 다른 상태다', async () => {
     mockContentStore({ trackedOcids: [] })
     const view = await renderOverlay(<SettingsScreen />)
 
     expect(textsIn(rowOf(view, '캐릭터 관리'))).toEqual(['캐릭터 관리', '0', '개'])
   })
 
-  // : 모달이 아니라 **화면 push** 다. 그래서 로스터 조회·저장이 이 화면을 떠났다 —
+  // : 모달이 아니라 **화면 push** 다. 그래서 로스터 조회·저장이 이 화면을 떠났다.
   // 여기 남은 것은 **누르면 그리로 간다** 하나다.
   it('행을 누르면 캐릭터 관리 화면을 민다', async () => {
     const view = await renderOverlay(<SettingsScreen />)

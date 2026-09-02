@@ -1,4 +1,4 @@
-// 스케줄 관리 방법(자동/수동) 전환 모달 — **선택 → 확인 2단계**.
+// 스케줄 관리 방법(자동/수동) 전환 모달. **선택 → 확인 2단계**.
 //
 // ── RN 으로 옮기며 갈린 것 셋 ────────────────────────────────────────────────────────
 //
@@ -67,7 +67,7 @@ export function TrackingModeModal(props: TrackingModeModalProps): React.JSX.Elem
         <TrackingModeSelector mode={selected} isApplying={isApplying} onSelect={setSelected} />
 
         {/*: 설정의 다른 확정 모달(DisconnectConfirm/CacheClearConfirm)과 같은 골격.
-            다른 것은 색뿐 — 모드 전환은 파괴적 동작이 아니라 진행 동작이라 border-error 가 아니다. */}
+            다른 것은 색뿐. 모드 전환은 파괴적 동작이 아니라 진행 동작이라 border-error 가 아니다. */}
         <View className="mt-4 flex-row justify-end gap-2">
           <Button
             variant="text"

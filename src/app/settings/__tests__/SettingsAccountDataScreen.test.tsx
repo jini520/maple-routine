@@ -50,7 +50,7 @@ function rowOf(view: Rendered, label: string): AtomElement {
   return node
 }
 
-/** 그 행이 속한 카드 — `Card` atom 이 심는 testID 가 없어 조상 관계로 가른다. */
+/** 그 행이 속한 카드. `Card` atom 이 심는 testID 가 없어 조상 관계로 가른다. */
 function cardOf(view: Rendered, label: string): AtomElement {
   const cards = view.getAllByTestId('settings-card')
   const row = rowOf(view, label)

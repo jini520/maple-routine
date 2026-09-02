@@ -8,7 +8,7 @@
 // ## 왜 **없음** 을 테스트하나
 //
 // 이 정책은 의 중첩 sticky 를 **안 만들기로 한** 결정이라, 지켜야 할 코드가 없다.
-// 그래서 회귀는 **기능이 깨지는** 모양이 아니라 **없기로 한 것이 슬그머니 생기는** 모양으로 온다 —
+// 그래서 회귀는 **기능이 깨지는** 모양이 아니라 **없기로 한 것이 슬그머니 생기는** 모양으로 온다.
 // 누군가 카드 헤더를 고정하고 싶어 `stickyHeaderIndices` 를 한 줄 넣으면 그것으로 정책이 뒤집히고,
 // 리뷰에서 **왜 안 되는지** 를 아는 사람이 없으면 그대로 남는다.
 //
@@ -26,7 +26,7 @@ import { join } from 'node:path'
 
 const SRC = join(__dirname, '..')
 
-/** 검사 대상 — 소스만. 이 파일과 ADR 을 인용하는 주석은 대상이 아니다(아래 `stripComments`). */
+/** 검사 대상. 소스만. 이 파일과 ADR 을 인용하는 주석은 대상이 아니다(아래 `stripComments`). */
 function sourceFiles(dir: string): string[] {
   const out: string[] = []
   for (const entry of readdirSync(dir)) {
@@ -57,7 +57,7 @@ const FORBIDDEN: Array<{ pattern: RegExp; what: string }> = [
  { pattern: /\bstickyTop\b/, what: ' 의 sticky 오프셋 프롭' },
 ]
 
-describe(' 고정되는 영역이 없다 — sticky 가 코드에 하나도 없다', () => {
+describe(' 고정되는 영역이 없다. sticky 가 코드에 하나도 없다', () => {
  const files = sourceFiles(SRC)
 
  it('검사 대상 파일을 실제로 찾는다', () => {

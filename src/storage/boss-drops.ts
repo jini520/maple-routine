@@ -24,7 +24,7 @@ export interface BossDropRecord {
   priceState: 'entered' | 'excluded' | null
   /** 판매 **총액**. 수량이 2 이상이어도 묶음가 하나다. */
   priceMeso: number | null
-  /** 분배 인원 스냅샷 — 그 행의 `party_size` 와 다를 수 있다. */
+  /** 분배 인원 스냅샷. 그 행의 `party_size` 와 다를 수 있다. */
   priceShare: number | null
 }
 
@@ -42,7 +42,7 @@ const INSERT_SQL = `
 
 // 한 보스/기간의 드롭 집합을 통째로 교체한다(기존 삭제 후 0..n으로 재삽입). 빈 배열이면 삭제만.
 /**
- * `boss_drop_records` 가 바뀔 때마다 오르는 수 — **이 테이블을 캐시하는 쪽이 **내 스냅샷이 낡았나** 를
+ * `boss_drop_records` 가 바뀔 때마다 오르는 수. **이 테이블을 캐시하는 쪽이 **내 스냅샷이 낡았나** 를
  * 물을 수 있게** 하는 값이다.
  *
  * ## 왜 저장 계층에 있나

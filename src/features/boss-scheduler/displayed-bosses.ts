@@ -7,9 +7,9 @@
 // 바뀌었다**. 클로저로 읽던 `mode`·`manualTrackedByOcid` 가 인자가 된 것이 전부다.
 //
 // 이 함수 안에 결정 둘이 들어 있다:
-// - — **수동 모드**는 게임 등록 여부가 아니라 앱의 추적 멤버십이 표시
+// - **수동 모드**는 게임 등록 여부가 아니라 앱의 추적 멤버십이 표시
 //   목록을 정하고, 완료 여부는 값 복제 없이 동기화 결과에서 즉석 조회한다(`mergeManualBossList`).
-// - — **자동 모드**는 등록된 난이도가 있으면 그것만, 없으면 완료된 난이도를
+// - **자동 모드**는 등록된 난이도가 있으면 그것만, 없으면 완료된 난이도를
 //   대신 보여준다(`selectDisplayBosses`). 즉 미등록이어도 완료했으면 목록에 든다.
 //
 // 의존이 코어 모듈과 인자뿐이라(화면·저장소·네이티브를 안 만진다) 여기 있을 수 있다.
@@ -26,11 +26,11 @@ import type { ManualTrackedItem } from '../../types/scheduler'
 import type { TrackingMode } from '../../storage/tracking-mode'
 import type { BossCharacterView } from './store'
 
-/** 통합 목록에서 무리가 서는 순서 — **월간이 위**다(이슈 #247). */
+/** 통합 목록에서 무리가 서는 순서. **월간이 위**다(이슈 #247). */
 export const BOSS_SECTION_ORDER: readonly BossCycle[] = ['monthly', 'weekly']
 
 /**
- * 표시 목록의 한 항목 — `MatchedBoss` 에 **이 캐릭터의 주간 한도 상태**를 얹은 것.
+ * 표시 목록의 한 항목. `MatchedBoss` 에 **이 캐릭터의 주간 한도 상태**를 얹은 것.
  *
  * 마감을 화면이 다시 판정하지 않게 하려고 여기 싣는다. 스케줄러 카드는 완료 자리에 배지를
  * 바꿔 달고, today 남은 스케줄은 이 값으로 남은 것 에서 뺀다(의 등식).
@@ -109,7 +109,7 @@ function stampLimitClosed(bosses: MatchedBoss[], limitReached: boolean): Display
 }
 
 /**
- * 무리 안의 차례 — **`weekly-bosses.json` 정규 순서 → 난이도 → 보스명**.
+ * 무리 안의 차례. **`weekly-bosses.json` 정규 순서 → 난이도 → 보스명**.
  *
  * **모드를 안 가른다.** 수동 경로는 `mergeManualBossList` 가 이미 같은 비교자로 세워 두므로 여기서
  * 다시 세우는 것은 멱등이고, 대신 이 모듈의 어느 순서로 내는가 계약이 **한 줄**이 된다. 모드

@@ -16,7 +16,7 @@ describe('isInvalidApiKeyError', () => {
     expect(isInvalidApiKeyError(new NexonAuthError('x'))).toBe(true)
   })
 
-  it('400 OPENAPI00005 는 무효 키다 — 이 코드가 실제 응답이다', () => {
+  it('400 OPENAPI00005 는 무효 키다. 이 코드가 실제 응답이다', () => {
     expect(isInvalidApiKeyError(new NexonBadRequestError('x', 'OPENAPI00005'))).toBe(true)
   })
 

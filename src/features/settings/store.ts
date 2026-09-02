@@ -3,7 +3,7 @@ import { create } from 'zustand'
 import { useOnboardingStore } from '../onboarding/store'
 
 /**
- * 설정 화면의 스토어 — 지금 남은 일은 **연결 해제 하나**다.
+ * 설정 화면의 스토어. 지금 남은 일은 **연결 해제 하나**다.
  *
  * 원래 이 스토어의 본체는 계정(메이플 ID) 변경 플로우였다(키 재조회 ·
  * 계정 선택 · 예열 · 캐릭터 재선택 커밋). 그 기능은 이 폐지했고(계정을 바꾸는

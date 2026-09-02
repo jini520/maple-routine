@@ -1,5 +1,5 @@
 /**
- * 테마를 읽는 쪽의 API — 컨텍스트와 훅.
+ * 테마를 읽는 쪽의 API. 컨텍스트와 훅.
  *
  * 컴포넌트(`ThemeProvider`·`MediaScope`)와 **파일을 나눈 이유**는 fast refresh 다. 한 파일이
  * 컴포넌트와 값을 함께 export 하면 갱신 경계가 깨진다(`Button/variants.ts`·`row-class.ts` 와 같은
@@ -23,7 +23,7 @@ export const ThemeContext = createContext<ThemeAppearance | null>(null)
 export function useThemeAppearance(): ThemeAppearance {
   const appearance = useContext(ThemeContext)
   if (appearance === null) {
-    throw new Error('테마 컨텍스트가 없습니다 — 화면을 <ThemeProvider> 안에 두세요.')
+    throw new Error('테마 컨텍스트가 없습니다. 화면을 <ThemeProvider> 안에 두세요.')
   }
   return appearance
 }
@@ -43,7 +43,7 @@ export function useThemeMode(): ThemeMode {
 }
 
 /**
- * 스크롤 인디케이터 명암 — 웹의 `color-scheme`·`scrollbar-color` 자리.
+ * 스크롤 인디케이터 명암. 웹의 `color-scheme`·`scrollbar-color` 자리.
  *
  * 웹에서는 브라우저가 그리는 크롬이라 CSS 로 **알려 줘야** 했고(안 걸면 라이트 테마에서 흰
  * 인디케이터가 나왔다. 실기기 2026-08-06), RN 에서는 우리가 `ScrollView` 에 **프롭으로 지정한다**.

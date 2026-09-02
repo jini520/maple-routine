@@ -1,4 +1,4 @@
-// 펼침판 — ＋ 하나가 갈래 둘을 편다.
+// 펼침판. ＋ 하나가 갈래 둘을 편다.
 //
 // **움직임은 여기서 안 본다**. 값은 `speed-dial-motion.ts` 가 들고 그쪽 테스트가 붙든다. 여기서
 // 보는 것은 **무엇이 눌리고 무엇이 안 눌리는가** 다.
@@ -52,7 +52,7 @@ describe('접혀 있을 때', () => {
     expect(onSelectExpense).not.toHaveBeenCalled()
   })
 
-  it('스크림이 터치를 안 먹는다 — 뒤의 캘린더를 그대로 쓸 수 있다', async () => {
+  it('스크림이 터치를 안 먹는다. 뒤의 캘린더를 그대로 쓸 수 있다', async () => {
     const view = await 그리기()
 
     expect(view.getByTestId('speed-dial-scrim').props.pointerEvents).toBe('none')
@@ -75,7 +75,7 @@ describe('펼친 뒤', () => {
 
   // 이름이 상태를 든다. 그림은 하나이고 **각도만** 다르므로 스크린리더에는 회전이 안 들린다.
   // 배경은 접근성 트리에 없어서(`accessible={false}`) `닫기`가 **하나뿐**이다.
-  it('＋ 가 닫기가 된다 — 그림은 그대로다', async () => {
+  it('＋ 가 닫기가 된다. 그림은 그대로다', async () => {
     const view = await 펼치기()
 
     expect(view.getByLabelText('닫기')).toBeTruthy()
@@ -108,7 +108,7 @@ describe('펼친 뒤', () => {
     expect(onSelectExpense).toHaveBeenCalledTimes(1)
   })
 
-  it('스크림을 누르면 접힌다 — 아무것도 안 고른다', async () => {
+  it('스크림을 누르면 접힌다. 아무것도 안 고른다', async () => {
     const onSelectIncome = jest.fn()
     const onSelectExpense = jest.fn()
     const view = await 펼치기({ onSelectIncome, onSelectExpense })
@@ -134,7 +134,7 @@ describe('펼친 뒤', () => {
 // 수입이 위 · 지출이 아래다. 칸의 두 줄과 같은 순서이고, 덕분에 **잦은
 // 지출이 FAB 에 더 가깝다**(엄지가 올라오며 먼저 닿는다).
 describe('차례', () => {
-  it('수입이 지출보다 먼저 그려진다 — 위에 선다', async () => {
+  it('수입이 지출보다 먼저 그려진다. 위에 선다', async () => {
     const view = await 그리기()
 
     const 줄 = view.getAllByTestId(/^speed-dial-row-/).map((node) => node.props.testID)
@@ -192,7 +192,7 @@ describe('접혀 있을 때 뒤를 안 막는다', () => {
   })
 
   // 줄 사이의 빈 자리와 오른쪽 여백도 상자다. 상자가 터치를 먹으면 같은 결함이 남는다.
-  it('줄을 담은 상자는 자기 자리를 안 먹는다 — box-none', async () => {
+  it('줄을 담은 상자는 자기 자리를 안 먹는다. box-none', async () => {
     const view = await 그리기()
 
     expect(view.getByTestId('speed-dial-actions').props.pointerEvents).toBe('box-none')

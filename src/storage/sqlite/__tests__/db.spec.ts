@@ -255,7 +255,7 @@ describe('closeBossProfitDb', () => {
   //
   // 가짜 타이머는 케이스 안에서만 켠다. 파일 전역으로 켜면 위 레이스 케이스가 의존하는
   // 마이크로태스크 순서가 흔들린다.
-  it('닫기가 응답하지 않아도 5초 타임아웃으로 끝난다 — 던지지 않는다(best-effort)', async () => {
+  it('닫기가 응답하지 않아도 5초 타임아웃으로 끝난다. 던지지 않는다(best-effort)', async () => {
     jest.useFakeTimers()
     try {
       closeConnectionMock.mockImplementation(() => new Promise<void>(() => {}))
@@ -348,7 +348,7 @@ describe('world 컬럼 마이그레이션', () => {
     expect(dbExecuteMock).toHaveBeenCalledWith('ALTER TABLE boss_profit_records ADD COLUMN world TEXT')
   })
 
-  it('이미 있으면 ALTER하지 않는다 — 매번 열려도 안전한 no-op이다', async () => {
+  it('이미 있으면 ALTER하지 않는다. 매번 열려도 안전한 no-op이다', async () => {
     isConnectionMock.mockResolvedValue(false)
     dbQueryMock.mockResolvedValue({ values: [{ name: 'world' }] })
 
@@ -427,9 +427,9 @@ describe('defeated_on 컬럼 마이그레이션', () => {
 })
 
 // **테이블을 세운 커밋과 컬럼을 더한 커밋이 갈렸다.** `spend_records` 는 `form` 없이 만들어졌고
-// (177c195b) `지출 항목 고르기를 두 단계로`(89e806fa)가 뒤늦게 그 컬럼을 CREATE 문에만 더했다 —
+// (177c195b) `지출 항목 고르기를 두 단계로`(89e806fa)가 뒤늦게 그 컬럼을 CREATE 문에만 더했다.
 // 그 사이에 앱을 켠 기기는 `form` 없는 테이블을 들고 있어 **INSERT 가 통째로 실패한다**(실기
-// 재현 2026-08-25 — 지출이 하나도 안 적혔다). 이 적어 둔 함정 그대로다.
+// 재현 2026-08-25. 지출이 하나도 안 적혔다). 이 적어 둔 함정 그대로다.
 describe('form 컬럼 마이그레이션', () => {
   it('없으면 ALTER 로 더한다', async () => {
     isConnectionMock.mockResolvedValue(false)
@@ -441,7 +441,7 @@ describe('form 컬럼 마이그레이션', () => {
     expect(dbExecuteMock).toHaveBeenCalledWith('ALTER TABLE spend_records ADD COLUMN form TEXT')
   })
 
-  it('이미 있으면 안 더한다 — 매번 열려도 안전한 no-op 이다', async () => {
+  it('이미 있으면 안 더한다. 매번 열려도 안전한 no-op 이다', async () => {
     isConnectionMock.mockResolvedValue(false)
     dbQueryMock.mockResolvedValue({ values: [{ name: 'form' }] })
 

@@ -38,7 +38,7 @@ describe('PartySizeStepper', () => {
     expect(atMax.getByLabelText(증가).props.accessibilityState.disabled).toBe(true)
   })
 
-  // 웹의 `disabled:opacity-40` 자리 — RN 에서는 JS 조건이 대신한다(컴포넌트 주석 ①).
+  // 웹의 `disabled:opacity-40` 자리. RN 에서는 JS 조건이 대신한다(컴포넌트 주석 ①).
   it('비활성 버튼은 흐리게 그린다', async () => {
     const { getByLabelText } = await renderAtom(
       <PartySizeStepper label="스우" value={1} max={6} onChange={jest.fn()} />,
@@ -88,7 +88,7 @@ describe('PartySizeStepper', () => {
     expect(flattenStyle(getByText('6').props.style).fontVariant).toEqual(['tabular-nums'])
   })
 
-  // 히트 영역을 넓히던 웹의 `-m-1 p-1` 자리 — RN 은 레이아웃을 안 건드리는 `hitSlop` 을 쓴다.
+  // 히트 영역을 넓히던 웹의 `-m-1 p-1` 자리. RN 은 레이아웃을 안 건드리는 `hitSlop` 을 쓴다.
   it('시각 크기보다 넓은 히트 영역을 갖는다', async () => {
     const { getByLabelText } = await renderAtom(
       <PartySizeStepper label="스우" value={3} max={6} onChange={jest.fn()} />,

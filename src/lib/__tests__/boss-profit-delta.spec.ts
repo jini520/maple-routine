@@ -35,7 +35,7 @@ describe('computeProfitDelta', () => {
     expect(delta.diffMeso).toBe(1_284_500_000)
   })
 
-  it('둘 다 0이면 same 이다 — 0에서 0으로는 아무 일도 없었다', () => {
+  it('둘 다 0이면 same 이다. 0에서 0으로는 아무 일도 없었다', () => {
     const delta = computeProfitDelta(0, 0)
     expect(delta.direction).toBe('same')
     expect(delta.percent).toBe(0)
@@ -52,7 +52,7 @@ describe('computeProfitDelta', () => {
   })
 })
 
-describe('formatProfitDeltaBody — 칩 안에 들어가는 글자', () => {
+describe('formatProfitDeltaBody: 칩 안에 들어가는 글자', () => {
   it('퍼센트는 소수 1자리 절댓값이고 부호를 붙이지 않는다(화살표가 방향을 말한다)', () => {
     expect(formatProfitDeltaBody(computeProfitDelta(1_284_500_000, 1_142_800_000))).toBe('12.4%')
     expect(formatProfitDeltaBody(computeProfitDelta(786_300_000, 1_142_800_000))).toBe('31.2%')
@@ -72,7 +72,7 @@ describe('formatProfitDeltaBody — 칩 안에 들어가는 글자', () => {
   })
 })
 
-describe('formatProfitDeltaLabel — 화살표·색이 못 전하는 것을 문장으로', () => {
+describe('formatProfitDeltaLabel: 화살표·색이 못 전하는 것을 문장으로', () => {
   it('증가·감소를 말로 풀고 기간 이름을 앞에 둔다', () => {
     expect(formatProfitDeltaLabel(computeProfitDelta(1_284_500_000, 1_142_800_000), '지난 주')).toBe(
       '지난 주 대비 12.4퍼센트 증가',

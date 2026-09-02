@@ -1,4 +1,4 @@
-// 웹판의 여섯을 그대로 옮겼다. **문구는 테스트가 만든 값이고, 컴포넌트는 문구를 갖지 않는다** —
+// 웹판의 여섯을 그대로 옮겼다. **문구는 테스트가 만든 값이고, 컴포넌트는 문구를 갖지 않는다**.
 // 원인별 문구는 `features/schedule-sync/format.ts` 가 정하고 여기는 껍데기다.
 import { fireEvent } from '@testing-library/react-native'
 

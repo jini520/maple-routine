@@ -1,6 +1,6 @@
-// `BackGesturePort` 의 RN 구현 — **하나는 구현이고 둘은 던진다**는 사실 자체가 계약이다.
+// `BackGesturePort` 의 RN 구현. **하나는 구현이고 둘은 던진다**는 사실 자체가 계약이다.
 //
-// 계획서는 이 포트를 통째로 *"삭제 — 네이티브 스택 기본"* 으로 적어 두었는데, 실제로는 절반만
+// 계획서는 이 포트를 통째로 *"삭제. 네이티브 스택 기본"* 으로 적어 두었는데, 실제로는 절반만
 // 맞았다(`rn-back-gesture.ts`). 그 갈림을 여기서 고정한다. 나중에 "다 없앴는데 왜 남아 있지"
 // 하며 지우면 이 조용히 사라진다(앱이 종료되고 다음 실행이 콜드 스타트가
 // 되는데, 그것을 알아채려면 실기기에서 두 번 실행해 봐야 한다).
@@ -23,7 +23,7 @@ beforeEach(() => {
   mockNativeModule = { moveToBackground: jest.fn(async () => {}) }
 })
 
-describe('moveToBackground — 하나뿐인 실구현', () => {
+describe('moveToBackground: 하나뿐인 실구현', () => {
   it('네이티브 모듈을 부른다', async () => {
     await rnBackGesturePort.moveToBackground()
 
@@ -31,7 +31,7 @@ describe('moveToBackground — 하나뿐인 실구현', () => {
   })
 
   // iOS 에는 이 개념이 없어 모듈이 `null` 이다(`platforms: ["android"]`). 그 자리는 `not-implemented`
-  // 의 기준으로 *"이 플랫폼에 그 개념이 없다"* 쪽이라 **정당한 no-op** 이고, 던지면 안 된다 —
+  // 의 기준으로 *"이 플랫폼에 그 개념이 없다"* 쪽이라 **정당한 no-op** 이고, 던지면 안 된다.
   // 던지면 iOS 에서 뒤로가기 훅이 매번 처리되지 않은 거부를 남긴다.
   it('네이티브 모듈이 없는 플랫폼(iOS)에서는 조용히 아무것도 하지 않는다', async () => {
     mockNativeModule = null

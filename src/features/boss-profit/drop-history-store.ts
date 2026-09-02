@@ -53,7 +53,7 @@ interface DropHistoryState {
 
 // 저장 계층은 부재를 null 로, `RecordedDrop` 은 optional(undefined)로 표현한다. 여기서 한 번
 // 정규화한다(`loadDropsByRowKey` 가 하는 것과 같은 변환). `recordedAt` 은 옮기지 않는다(
-// 결정 2 — 히스토리가 이 값을 쓸 수 없으므로 타입에서 아예 뺀다).
+// 결정 2. 히스토리가 이 값을 쓸 수 없으므로 타입에서 아예 뺀다).
 function toHistoryRecord(record: BossDropRecord): DropHistoryRecord {
   return {
     ocid: record.ocid,
@@ -67,7 +67,7 @@ function toHistoryRecord(record: BossDropRecord): DropHistoryRecord {
     ringLevel: record.ringLevel ?? undefined,
     quantity: record.quantity,
     // ⚠️ **가격 셋을 빠뜨리면 저장은 됐는데 화면이 영영 미입력으로 보인다**.
-    // `rows.ts` 의 같은 변환이 그 경고를 이미 적어 뒀는데 이 사본이 그것을 안 따라왔다 —
+    // `rows.ts` 의 같은 변환이 그 경고를 이미 적어 뒀는데 이 사본이 그것을 안 따라왔다.
     // 히스토리 화면은 금액을 안 그려서 안 터졌고, today 의 `최고가 아이템`·`가격 미입력`이
     // 처음으로 이 필드를 읽으면서 드러났다(최고가는 `entered` 가 하나도 없어 늘 비고, 미입력은
     // 전부 `undefined` 라 입력해도 건수가 안 준다).

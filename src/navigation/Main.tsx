@@ -66,7 +66,7 @@ function LedgerLayer(): React.JSX.Element {
   return (
     <LedgerTabs.Navigator {...TAB_LAYER_PROPS}>
       <LedgerTabs.Screen name="Profit" component={BossProfitScreen} />
-      {/* 껍데기 둘(사냥 수익·지출)이 있던 자리 — 가계부 하나로 합쳐졌다. */}
+      {/* 껍데기 둘(사냥 수익·지출)이 있던 자리. 가계부 하나로 합쳐졌다. */}
       <LedgerTabs.Screen name="Cashbook" component={CashbookScreen} />
     </LedgerTabs.Navigator>
   )
@@ -79,7 +79,7 @@ const LAYER_SCREENS = {
 } as const satisfies Record<LayerRouteName, React.ComponentType>
 
 /**
- * 탭 레이어를 대신하는 화면 하나 — **층 스택 + 그 위에 뜬 바**.
+ * 탭 레이어를 대신하는 화면 하나. **층 스택 + 그 위에 뜬 바**.
  *
  * ## 층이 스택이면 제스처와 전환이 공짜다
  *
@@ -94,7 +94,7 @@ const LAYER_SCREENS = {
  * 층이 밀려도 **안 움직이고**, 층 스택의 `state`·`navigation` 을 그대로 받는다(키를 겨냥하거나
  * 바깥에서 상태를 훑을 일이 없다).
  *
- * 그리고 하위 페이지 열하나는 이 `Main` **통째**를 밀어내므로 바가 함께 나간다 —
+ * 그리고 하위 페이지 열하나는 이 `Main` **통째**를 밀어내므로 바가 함께 나간다.
  * (*"탭바가 아래 화면과 한 덩어리로 밀려 나간다"*)가 구조로 성립한다. 바를 앱
  * 층으로 끌어올렸다면 하위 페이지에서는 언제 숨기나 라는 판정이 새로 생기고 그 결정이 깨진다.
  */

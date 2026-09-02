@@ -21,7 +21,7 @@ import { join } from 'node:path'
 const SRC = join(__dirname, '..')
 
 /**
- * 하단 안전영역을 **소유**하는 셋 — 화면 파일은 아니지만 같은 값을 봐야 한다.
+ * 하단 안전영역을 **소유**하는 셋. 화면 파일은 아니지만 같은 값을 봐야 한다.
  *
  * `ToastStack` 이 여기 있는 것이 상단 가드와 다른 점이다. 토스트는 **바 위에 쌓이므로** 바가 뜨는
  * 높이에서 출발해야 하고, 여기만 인셋으로 남으면 안드로이드에서 토스트가 캡슐 위에 겹친다
@@ -40,7 +40,7 @@ const SHELLS = [
  * `ScreenScroll` 은 **둘 다 보는 것은 여기뿐**이라 위 목록에 없다.
  *
  * 하위 페이지에서 스크롤포트가 비우는 몫은 내비바가 실제로 차지하는 자리 라 하한이 아니라
- * **인셋**이어야 한다(의 딸린 변경 — `bottom-inset.ts`). 그래서 이 파일에는
+ * **인셋**이어야 한다(의 딸린 변경. `bottom-inset.ts`). 그래서 이 파일에는
  * 금지 대신 **하한 값을 함께 봐야 한다**는 요구만 건다.
  */
 const SCREEN_SCROLL = join(SRC, 'components', 'templates', 'ScreenScroll', 'ScreenScroll.tsx')
@@ -80,7 +80,7 @@ const read = (path: string): { name: string; source: string } => ({
 
 const files = [...screenFiles(join(SRC, 'app')), ...SHELLS].map(read)
 
-describe(' — 하단 안전영역은 한 자리에서 나온다', () => {
+describe('하단 안전영역은 한 자리에서 나온다', () => {
   it('검사 대상을 실제로 찾는다', () => {
     // 경로가 틀려 0개를 훑고도 초록이 되는 것이 이 부류 가드의 흔한 실패다.
     expect(files.length).toBeGreaterThan(15)

@@ -1,8 +1,8 @@
-// `SystemBarsPort` 의 RN 구현 — **한 메서드는 네이티브를 부르고 하나는 의도적으로 아무것도 안 한다**는
+// `SystemBarsPort` 의 RN 구현. **한 메서드는 네이티브를 부르고 하나는 의도적으로 아무것도 안 한다**는
 // 사실 자체가 계약이다.
 //
 // 계획서(`docs/migration/parity-inventory.md` §5)와 `not-implemented.ts` 는 이 포트를 통째로
-// *"3단계에서 채워진다"* 로 적어 두었는데, 실제로는 둘의 사정이 달랐다. 그 갈림을 여기서 고정한다 —
+// *"3단계에서 채워진다"* 로 적어 두었는데, 실제로는 둘의 사정이 달랐다. 그 갈림을 여기서 고정한다.
 // 특히 `refreshSafeAreaInsets` 의 빈 본문은 **읽는 사람이 "구현이 빠졌다"로 오해하기 쉬운 모양**이라,
 // 지우거나 던지게 바꾸면 부팅마다 처리되지 않은 거부가 남는다(안전영역은 멀쩡히 도는데도).
 
@@ -23,7 +23,7 @@ beforeEach(() => {
   mockNativeModule = { setNavigationBarStyle: jest.fn(async () => {}) }
 })
 
-describe('setNavigationBarStyle — 네이티브 한 줄을 그대로 옮겼다', () => {
+describe('setNavigationBarStyle: 네이티브 한 줄을 그대로 옮겼다', () => {
   // 명암의 방향이 이 어댑터의 전부다. `dark` 를 그대로 넘기고 뒤집는 일은 네이티브가 한다
   // (`setAppearanceLightNavigationBars(!dark)`). 웹뷰 플러그인과 같은 자리, 같은 방향이다.
   // 여기서 한 번 더 뒤집으면 어두운 배경에 어두운 글리프가 되어 바가 통째로 안 보이는데,
@@ -44,11 +44,11 @@ describe('setNavigationBarStyle — 네이티브 한 줄을 그대로 옮겼다'
   })
 })
 
-describe('refreshSafeAreaInsets — 할 일이 없다는 것이 결론이다', () => {
+describe('refreshSafeAreaInsets: 할 일이 없다는 것이 결론이다', () => {
   // *"못 한다"* 가 아니라 *"이미 되고 있다"* 다. 이 함수는 웹뷰에서 **유실 복구**용이었다(네이티브의
   // 최초 인셋 주입이 DOM 준비보다 빠르면 값이 사라진다). RN 에는 주입도 유실도 없고,
   // `SafeAreaProvider` 가 회전·접힘·키보드 변화까지 자기 리스너로 다시 내려준다.
-  it('던지지 않는다 — 안전영역은 정상 동작 중이고 거부는 진짜 고장과 구분을 없앤다', async () => {
+  it('던지지 않는다. 안전영역은 정상 동작 중이고 거부는 진짜 고장과 구분을 없앤다', async () => {
     await expect(rnSystemBarsPort.refreshSafeAreaInsets()).resolves.toBeUndefined()
   })
 

@@ -1,4 +1,4 @@
-// `ThemeAppearancePort` 의 RN 구현 — **값이 어디로 흐르는가**를 지킨다(3단계).
+// `ThemeAppearancePort` 의 RN 구현. **값이 어디로 흐르는가**를 지킨다(3단계).
 //
 // 웹뷰 구현은 DOM 을 만지므로 "문서가 이렇게 됐는가"를 봤지만, RN 구현이 하는 일은 값을 한 칸에 놓고
 // 구독자에게 알리는 것이다. 그래서 검사 대상은 셋이다. 초기값 · 갈아치우기 · 알림.
@@ -54,7 +54,7 @@ describe('rnThemeAppearancePort', () => {
     expect(listener).not.toHaveBeenCalled()
   })
 
-  // `useSyncExternalStore` 는 `getSnapshot` 이 바뀌지 않았을 때 **같은 객체**를 돌려주기를 요구한다 —
+  // `useSyncExternalStore` 는 `getSnapshot` 이 바뀌지 않았을 때 **같은 객체**를 돌려주기를 요구한다.
   // 매번 새로 만들면 React 가 무한 리렌더로 읽는다.
   it('바뀌지 않았으면 같은 스냅샷 객체를 준다', () => {
     expect(getThemeAppearance()).toBe(getThemeAppearance())

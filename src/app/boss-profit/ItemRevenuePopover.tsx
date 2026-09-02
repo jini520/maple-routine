@@ -1,4 +1,4 @@
-// 아이템 수익 내역 상자 — 보스 행과 캐릭터 카드가 **같은 것을 쓴다**.
+// 아이템 수익 내역 상자. 보스 행과 캐릭터 카드가 **같은 것을 쓴다**.
 //
 // **화면 위에 별도 네이티브 윈도우로 띄운다.** 카드 셸은 펼침 상태에서 `overflow-clip` 이라
 //  트리거 옆에 절대배치하면 잘리고, 카드 루트에 붙이는 방식은 트리거가
@@ -11,7 +11,7 @@
 // 기록 단위 실판매가라 **같은 아이템도 건마다 판 값이 다를 수 있고**, 접으면
 // 그 차이가 합계 하나로 뭉개진다. 접는 순간 이 기능이 애초에 왜 기록 단위인지를 배신한다.
 //
-// ══ 무엇으로 그렸나 — `react-native` 의 `Modal` (step 6 결정) ═══════════════════════
+// ══ 무엇으로 그렸나. `react-native` 의 `Modal` (step 6 결정) ═══════════════════════
 //
 // step 지시가 준 세 갈래를 실제 제약에 대 보면 남는 것이 하나다.
 //
@@ -56,12 +56,12 @@ import { TABULAR_NUMS } from '../../constants/style/text-styles'
 export const ITEM_POPOVER_WIDTH = 248
 const ITEM_POPOVER_EDGE_GAP = 12
 const ITEM_CARET_SIZE = 8
-/** 트리거 밑변과 상자 윗변 사이 — 꼬리(8px의 절반이 삐져나온다)가 닿아 보이는 최소값. */
+/** 트리거 밑변과 상자 윗변 사이. 꼬리(8px의 절반이 삐져나온다)가 닿아 보이는 최소값. */
 const ITEM_POPOVER_GAP = 8
 /** 목록이 길어지면 상자가 화면을 넘긴다. 안에서 스크롤시킨다. */
 const ITEM_LIST_MAX_HEIGHT = 260
 
-/** 트리거의 **윈도우 기준** 사각형 — 웹 `DOMRect` 자리. `measureInWindow` 가 주는 네 값 그대로다. */
+/** 트리거의 **윈도우 기준** 사각형. 웹 `DOMRect` 자리. `measureInWindow` 가 주는 네 값 그대로다. */
 export interface PopoverAnchorRect {
   left: number
   top: number
@@ -71,11 +71,11 @@ export interface PopoverAnchorRect {
 
 export interface AnchoredPopover {
   /**
-   * 트리거에 다는 ref — 이것을 재서 상자를 앉힌다.
+   * 트리거에 다는 ref. 이것을 재서 상자를 앉힌다.
    *
    * **`RefObject` 가 아니라 콜백 ref 다.** 훅이 `RefObject` 를 객체에 담아 돌려주면 호출부의
    * `popover.toggle` 같은 평범한 프로퍼티 접근까지 `react-hooks/refs` 가 "렌더 중 ref 접근"으로
-   * 읽는다(실측 — 이 파일 하나 때문에 lint 에러 14건). 노드를 훅 안에 가둬 두면 밖으로 나가는
+   * 읽는다(실측. 이 파일 하나 때문에 lint 에러 14건). 노드를 훅 안에 가둬 두면 밖으로 나가는
    * 것은 함수와 값뿐이라 그 물음 자체가 사라진다. 웹의 `use-measured-height`
    * 가 같은 형태를 고른 것과 이유가 겹친다.
    */
@@ -140,7 +140,7 @@ export function ItemRevenuePopover(props: {
   anchor: PopoverAnchorRect | null
   onClose: () => void
   /**
-   * 이 층의 결정석 합과 아이템 합(2026-08-10 사용자 요청 — 세 자리 모두 갈라 본다).
+   * 이 층의 결정석 합과 아이템 합(2026-08-10 사용자 요청. 세 자리 모두 갈라 본다).
    *
    * **목록에서 더하지 않고 받는다.** 목록은 "이름을 댈 수 있는 것"만 담는데 그게 아이템 전부가
    * 아닐 수 있다. 월간 탭에서는 주간 보스 수익이 주차 소계로 뭉쳐 들어와 그 안의 아이템을

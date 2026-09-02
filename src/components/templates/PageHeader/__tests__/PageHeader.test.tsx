@@ -28,12 +28,12 @@ const 내용 = <Text>내용</Text>
 const HIDDEN = { includeHiddenElements: true } as const
 
 describe('PageHeader', () => {
-  // ★ — **딱 안전영역만큼이다.** 웹의 `pt-[calc(1rem+var(--sa-top))]` 에서 상수 몫
+  // ★ **딱 안전영역만큼이다.** 웹의 `pt-[calc(1rem+var(--sa-top))]` 에서 상수 몫
   // 1rem 을 뺐다: 그 16 은 불투명 헤더 판의 안쪽 여백이자 고정 헤더와 상태바의 분리였는데,
   // RN 헤더는 배경을 안 칠하고 고정도 아니라 둘 다 해당이 없다.
   // **`toBe` 로 못 박는 이유**는 이 값이 상단 페이드의 끝선과 **같은 선**이 됐기
   // 때문이다. 한쪽이 움직이면 제목이 갉히거나 띄워지고, 그 어긋남은 여기서만 보인다.
-  it('상단 안전영역만큼만 자기 패딩으로 먹는다 — 여백을 더하지 않는다', async () => {
+  it('상단 안전영역만큼만 자기 패딩으로 먹는다. 여백을 더하지 않는다', async () => {
     const { getByTestId } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
 
     expect(flattenStyle(getByTestId('page-header').props.style).paddingTop).toBe(
@@ -41,7 +41,7 @@ describe('PageHeader', () => {
     )
   })
 
-  // ★ 회귀 가드 — **헤더는 자기 배경을 칠하지 않는다.**
+  // ★ 회귀 가드. **헤더는 자기 배경을 칠하지 않는다.**
   //
   // 예전에는 여기서 헤더의 `backgroundColor` 가 테마 `bg` 인지 확인했다. 그때는 헤더가 불투명해야 했고
   // (화면에 고정돼 있었으므로) 그 위에 테마 배경 조각을 이어 그렸다.
@@ -49,13 +49,13 @@ describe('PageHeader', () => {
   //
   // 배경 없는 테마에서는 **보이는 그림이 바뀌지 않는다**. 내비게이션 테마가 화면을 같은 `bg` 로
   // 칠하므로 뒤에 같은 색이 있다. 그래서 이 검사는 **색이 무엇인가** 가 아니라 **칠하지 않는가** 다.
-  it('자기 배경을 칠하지 않는다 — 배경은 벽지 한 장이 진다', async () => {
+  it('자기 배경을 칠하지 않는다. 배경은 벽지 한 장이 진다', async () => {
     const { getByTestId } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
 
     expect(flattenStyle(getByTestId('page-header').props.style).backgroundColor).toBeUndefined()
   })
 
-  // ★ 회귀 가드 — **웹의 형태를 되살리지 말 것.**
+  // ★ 회귀 가드. **웹의 형태를 되살리지 말 것.**
   //
   // 웹에서 이 셸은 `fixed` + 실측 spacer 였고 는 그 spacer 가 헤더보다 한 프레임 늦게
   // 갱신되는 결함(이슈 #168, 약 90px)을 고치느라 measure/observe 두 effect 를 두었다. RN 에서
@@ -63,9 +63,9 @@ describe('PageHeader', () => {
   // 통보라 "같은 커밋에 갱신"이 원리적으로 불가능하고, 그것이 이 금지한
   // "첫 프레임에 spacer 0" 그 자체다.
   //
-  // 지금 구조에서는 헤더가 흐름 안에 있어 맞출 대상이 없다. 그 사실을 **자식 수**로 고정한다 —
+  // 지금 구조에서는 헤더가 흐름 안에 있어 맞출 대상이 없다. 그 사실을 **자식 수**로 고정한다.
   // spacer 를 넣으면 여기가 빨개진다.
-  it('spacer 를 두지 않는다 — 헤더가 흐름 안에 있어 맞출 대상이 없다', async () => {
+  it('spacer 를 두지 않는다. 헤더가 흐름 안에 있어 맞출 대상이 없다', async () => {
     const { toJSON } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
 
     const header = findByTestID(toJSON(), 'page-header')
@@ -95,15 +95,15 @@ describe('PageHeader', () => {
   })
 })
 
-// **경계 페이드는 걷어냈다**(2026-08-13, 사용자 판정 — 실기기에서 띠가 엉뚱한 자리에 보였고
+// **경계 페이드는 걷어냈다**(2026-08-13, 사용자 판정. 실기기에서 띠가 엉뚱한 자리에 보였고
 // 제거 승인). 예전에는 이 자리에 여섯 케이스(위치·알파 프로파일·색 파생·테마 추종
 // 블러 금지)가 있었고, 전부 **그 띠가 있다** 를 전제로 했다.
 //
 // 남기는 것은 **없다는 사실 하나**다. 되살릴 때 지켜야 할 값(알파 (1−t)² 프로파일 · 테마 `bg`
-// 알파 변주 · 블러 금지)은 **웹 원본**에 그대로 있고, 되살릴 조건은 컴포넌트 주석에 적어 뒀다 —
+// 알파 변주 · 블러 금지)은 **웹 원본**에 그대로 있고, 되살릴 조건은 컴포넌트 주석에 적어 뒀다.
 //  의 중첩 sticky 가 먼저다.
 describe('경계 페이드', () => {
-  it('그리지 않는다 — 되살리려면 중첩 sticky 가 먼저다', async () => {
+  it('그리지 않는다. 되살리려면 중첩 sticky 가 먼저다', async () => {
     const { queryByTestId } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
 
     expect(queryByTestId('page-header-fade', HIDDEN)).toBeNull()
@@ -124,7 +124,7 @@ describe('below 슬롯', () => {
   })
 
   // 페이드를 걷어낸 뒤로 `below` 가 없으면 **내용이 곧 마지막**이다(예전엔 페이드가 그 자리였다).
-  it('below 를 안 주면 내용이 마지막이다 — 아무것도 더 그리지 않는다', async () => {
+  it('below 를 안 주면 내용이 마지막이다. 아무것도 더 그리지 않는다', async () => {
     const { toJSON } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
 
     const header = findByTestID(toJSON(), 'page-header')

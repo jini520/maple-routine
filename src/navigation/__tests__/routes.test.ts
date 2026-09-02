@@ -1,4 +1,4 @@
-// 라우트 표가 계획서 §1 과 어긋나지 않는지 본다. **화면 동작이 아니라 목록의 완전성**이 대상이다 —
+// 라우트 표가 계획서 §1 과 어긋나지 않는지 본다. **화면 동작이 아니라 목록의 완전성**이 대상이다.
 // 실제로 열리는지는 `RootNavigator.test.tsx` 가 본다.
 //
 // 이 파일이 있는 이유는 하나다: 계획서(`docs/migration/parity-inventory.md` §1)와 코드가 두 벌이면
@@ -38,7 +38,7 @@ const PARITY_PATHS = [
   '/settings/about/privacy',
 ]
 
-describe('ROUTE_TABLE — 계획서 §1 대조', () => {
+describe('ROUTE_TABLE: 계획서 §1 대조', () => {
   // **`origin` 으로 갈라 본다**. RN 에서 새로 생긴 화면 넷은 웹에 없으므로 이
   // 대조에 섞이면 안 된다. 섞으면 **계획서와 같은가** 라는 이 테스트의 질문이 답할 수 없는 것이 된다.
   it('웹에서 온 17개 경로를 하나도 빠뜨리지 않고 순서까지 같다', () => {
@@ -105,7 +105,7 @@ describe('ROUTE_TABLE — 계획서 §1 대조', () => {
       'Profit',
       'Settings',
       'Today',
-      // 사냥 수익·지출 자리에 들어온 하나 — 아홉에서 여덟이 됐다.
+      // 사냥 수익·지출 자리에 들어온 하나. 아홉에서 여덟이 됐다.
       'Cashbook',
       'Utility',
     ])
@@ -135,7 +135,7 @@ describe('ROUTE_TABLE — 계획서 §1 대조', () => {
       'SettingsAccountData',
       'SettingsAbout',
       'SettingsPrivacy',
-      // 유틸리티의 첫 도구 — 웹에 그런 화면 자체가 없다.
+      // 유틸리티의 첫 도구. 웹에 그런 화면 자체가 없다.
       'UtilityItemSplit',
       // 웹에 짝이 없다. 그쪽에서는 설정의 모달이다.
       'SettingsCharacters',
@@ -166,7 +166,7 @@ describe('안내 상세는 두 경로가 같은 화면을 가리킨다', () => {
     ])
   })
 
-  it('둘의 `screen` 이 같다 — 사본이 아니라 한 벌이다', () => {
+  it('둘의 `screen` 이 같다. 사본이 아니라 한 벌이다', () => {
     expect(guideRows.map((row) => row.screen)).toEqual([
       'SettingsFeatureGuideScreen',
       'SettingsFeatureGuideScreen',

@@ -6,7 +6,7 @@
 
 import { tabNavigateArgs } from '../tab-navigate'
 
-describe('tabNavigateArgs — 탭 이름을 중첩 이동으로 옮긴다', () => {
+describe('tabNavigateArgs: 탭 이름을 중첩 이동으로 옮긴다', () => {
   it('하위 페이지는 그 그룹의 층 화면을 거친다', () => {
     expect(tabNavigateArgs('Profit')).toEqual([
       'Main',
@@ -25,7 +25,7 @@ describe('tabNavigateArgs — 탭 이름을 중첩 이동으로 옮긴다', () =
     ])
   })
 
-  // 웹의 `?openPicker=1` 자리 — 파라미터는 **가장 안쪽 화면**에 붙어야 한다.
+  // 웹의 `?openPicker=1` 자리. 파라미터는 **가장 안쪽 화면**에 붙어야 한다.
   // 한 단 위에 붙이면 층 화면이 그것을 받고 정작 설정 화면은 못 본다.
   it('파라미터는 가장 안쪽 화면에 붙는다', () => {
     expect(tabNavigateArgs('Settings', { openPicker: true })).toEqual([

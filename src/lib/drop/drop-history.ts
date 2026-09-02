@@ -12,7 +12,7 @@ import type { BossDifficulty } from '../../types/scheduler'
 // 오늘로 갱신된다. 그래서 이 파일은 그 필드를 아예 받지 않는다.
 
 /**
- * SQLite `boss_drop_records` 한 행에서 이 집계에 필요한 부분만 추린 모양 — `recordedAt` 이 없는 것이
+ * SQLite `boss_drop_records` 한 행에서 이 집계에 필요한 부분만 추린 모양. `recordedAt` 이 없는 것이
  * 의도다(위 규약). 저장 계층 타입을 쓰지 않는 이유는 `lib/` 가 `storage/` 를 의존하지 않기 위함이고
  * `RecordedDrop` 을 상속하는 형태는 `StoredDropRecord`(`lib/boss/boss-drops`)와 같은 관례다
  *. 그래야 드롭 아이콘 스택·획득 가능 판정에 그대로 넘길 수 있다.
@@ -36,7 +36,7 @@ export interface ValuableDroughtSummary {
   cycle: BossCycle
   /** 그 기간 이후 지난 주 수(달력 기준). 0이면 이번 주에 먹었다는 뜻 */
   weeksSince: number
-  /** 그 기간의 고가 기록 — 아이콘 스택 표시용 */
+  /** 그 기간의 고가 기록. 아이콘 스택 표시용 */
   records: DropHistoryRecord[]
 }
 
@@ -99,7 +99,7 @@ export const WORD_JOINER = '⁠'
 
 /** 히스토리 한 줄을 강조 대상(상자명·아이템)만 떼어 나눈 것. */
 export interface DropHistoryLine {
-  /** 아이템 앞 — "지내우시님이 가디언 엔젤 슬라임(카오스)에서 " */
+  /** 아이템 앞. "지내우시님이 가디언 엔젤 슬라임(카오스)에서 " */
   prefix: string
   /**
    * 상자 개봉 결과일 때만 있다. 상자명도 아이템처럼 강조 대상이라(사용자 지정 2026-08-01) 문장에서
@@ -107,7 +107,7 @@ export interface DropHistoryLine {
    * 계산할 필요가 없다.
    */
   box?: { name: string; connector: string }
-  /** 강조 대상 — "가디언 엔젤링", "리스트레인트 링 3레벨", "주문의 흔적 240개" */
+  /** 강조 대상. "가디언 엔젤링", "리스트레인트 링 3레벨", "주문의 흔적 240개" */
   item: string
   /**
    * 아이템에 붙는 목적격 조사. **`item` 과 따로 주는 이유**: 고가 아이템은 화면이 `item` 을 골드
@@ -116,7 +116,7 @@ export interface DropHistoryLine {
    * 묶어 그리도록 조각을 나눠 준다.
    */
   particle: '을' | '를'
-  /** 서술부 — " 획득하였습니다." (앞 공백 포함. 여기서는 줄바꿈해도 된다) */
+  /** 서술부. " 획득하였습니다." (앞 공백 포함. 여기서는 줄바꿈해도 된다) */
   suffix: string
 }
 
@@ -253,7 +253,7 @@ export function filterUnobtainableConfirmedDrops(
  * 인덱스를 주지 않은 호출은 예전과 같은 문구를 준다.
  *
  * **무작위 선택은 이 파일이 하지 않는다.** `Math.random()` 을 여기서 부르면 순수 함수가 아니게 되고
- * 테스트가 값을 고정할 수 없다. 화면이 인덱스를 골라 넘긴다(마운트당 한 번 — 매 렌더마다 고르면
+ * 테스트가 값을 고정할 수 없다. 화면이 인덱스를 골라 넘긴다(마운트당 한 번. 매 렌더마다 고르면
  * 리렌더 때 문구가 깜빡인다).
  *
  * `maxWeeks` 는 **미획득 주 수**(`weeksSince`)다. 사용자가 말한 "N주차"보다 하나 작다(1주차 = 먹은
@@ -266,14 +266,14 @@ const VALUABLE_DROUGHT_TIERS: readonly { maxWeeks: number; headlines: readonly s
   { maxWeeks: 3, headlines: ['선넘네?!', '이게 억까지 뭐야'] },
   {
     // 마지막 단계(4주 이상). 앞 둘은 사용자 지정, 뒤 셋은 같은 톤으로 이어 붙인 것
-    // (애원 · 포기 · 자기검열 — 분노 다음에 오는 감정들). 여기엔 추가 채택이 없었다.
+    // (애원 · 포기 · 자기검열. 분노 다음에 오는 감정들). 여기엔 추가 채택이 없었다.
     maxWeeks: Number.POSITIVE_INFINITY,
     headlines: ['이건 아니지...', '적당히 해!', '제발 한 번만...', '이제 기대도 안 해', '내가 뭘 잘못했나'],
   },
 ]
 
 /**
- * 그 단계의 문구 개수 — 화면이 이 범위에서 인덱스를 무작위로 고른다.
+ * 그 단계의 문구 개수. 화면이 이 범위에서 인덱스를 무작위로 고른다.
  *
  * 단계마다 풀 크기가 달라 "마지막 단계 개수" 상수로는 모자란다. 인덱스를 감싸므로
  * 틀린 개수를 줘도 문구는 나오지만, 그러면 뽑히지 않는 문구가 생긴다.

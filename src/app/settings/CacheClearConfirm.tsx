@@ -1,4 +1,4 @@
-// 캐시 데이터 삭제 확인 — **범위를 고르는 화면**이다.
+// 캐시 데이터 삭제 확인. **범위를 고르는 화면**이다.
 //
 // 그룹 문구는 `storage/cache-data.ts` 의 실제 삭제 범위와 같아야 한다. 어긋나면 사용자가 잘못된
 // 정보 위에서 되돌릴 수 없는 삭제를 승인한다(의 원칙을 그룹 단위로 이어받음).
@@ -9,7 +9,7 @@
 // ── RN 으로 옮기며 갈린 것 넷 ────────────────────────────────────────────────────────
 //
 // ① **자체 오버레이가 아니라 공용 `Modal`.** 웹도 같은 이유로 이미 그랬는데(직접 그리면 호출부의
-//    `space-y-*` margin 에 `fixed inset-0` 높이가 깎여 하단 딤이 빠졌다), RN 에서는 더 강하다 —
+//    `space-y-*` margin 에 `fixed inset-0` 높이가 깎여 하단 딤이 빠졌다), RN 에서는 더 강하다.
 //    `absolute inset-0` 은 **부모 상자**에 갇혀 탭바조차 못 덮는다(`Modal.tsx` 파일 머리 ①).
 // ② **`role="checkbox"` + `aria-checked` 는 그대로 산다**. RN 접근성에도 같은 역할·상태가 있다
 //    (`aria-selected` 로 바꾼 선택 카드들과 갈리는 지점이다: 여기는 진짜 다중 선택이다).
@@ -31,7 +31,7 @@ import { TABULAR_NUMS } from '../../constants/style/text-styles'
 export interface CacheClearConfirmProps {
   isOpen: boolean
   isClearing: boolean
-  /** 그룹별 용량. 조회 전이면 null — 용량 없이 그룹만 보여준다. */
+  /** 그룹별 용량. 조회 전이면 null. 용량 없이 그룹만 보여준다. */
   sizes: Record<CacheDataGroupId, number> | null
   onConfirm: (selection: CacheDataSelection) => void
   onCancel: () => void

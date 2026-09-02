@@ -1,5 +1,5 @@
 /**
- * 라우트 표 — `docs/migration/parity-inventory.md` §1 을 **데이터로** 옮긴 것(3단계).
+ * 라우트 표. `docs/migration/parity-inventory.md` §1 을 **데이터로** 옮긴 것(3단계).
  *
  * ## 왜 표를 코드에 두는가
  *
@@ -9,7 +9,7 @@
  *
  * `path` 는 RN 에서 **쓰이지 않는다**(딥링크 설정을 두지 않았다. 아래). 남겨 두는 이유는 대조를
  * 위해서다: 웹 앱과 나란히 두고 "이 경로가 어디로 갔나"를 물을 수 있어야 하고, 그 대조가 전환 기간
- * 내내 필요하다(`docs/migration/README.md` 잃는 안전망 — 예전과의 비교는 사람이 한다).
+ * 내내 필요하다(`docs/migration/README.md` 잃는 안전망. 예전과의 비교는 사람이 한다).
  *
  * **딥링크(`linking`)는 두지 않는다.** 지금 앱에는 딥링크가 없고(웹뷰는 `https://localhost` 로만
  * 돈다), 설정을 두면 이 표가 문서에서 **동작**으로 바뀌어 없던 진입 경로가 생긴다.
@@ -20,7 +20,7 @@
 import type { NavigatorScreenParams } from '@react-navigation/native'
 
 /**
- * 탭 내비게이터의 화면 아홉 — **그룹이 아니라 페이지다**.
+ * 탭 내비게이터의 화면 아홉. **그룹이 아니라 페이지다**.
  *
  * 아홉째가 `BossManage` 다. **웹의 하위 경로가 탭이 되는 자리는 여기뿐이다**.
  * 그 화면을 여는 버튼이 뒤로 보스 스케줄러 헤더에 하나 남아 있었고, 하단바가 이미
@@ -67,7 +67,7 @@ export type TabParamList = {
 }
 
 /**
- * 층 스택의 화면 — **그룹 층 하나 + 하위를 가진 그룹마다 하나**.
+ * 층 스택의 화면. **그룹 층 하나 + 하위를 가진 그룹마다 하나**.
  *
  * 이 이름들이 곧 층 이다. 그룹 행에 서 있으면 `Groups` 한 단이고, 하위로 내려가면 그 그룹의
  * 화면이 그 위에 **push** 된다. 그래서 전환 애니메이션과 가장자리 스와이프가 공짜로 붙는다
@@ -78,7 +78,7 @@ export type TabParamList = {
  */
 export type LayerRouteName = 'Groups' | 'ScheduleSubs' | 'LedgerSubs'
 
-/** 그룹 층에 서는 화면 — **하위가 없는 그룹의 페이지**들이다. */
+/** 그룹 층에 서는 화면. **하위가 없는 그룹의 페이지**들이다. */
 export type GroupLayerParamList = {
   Today: undefined
   Utility: undefined
@@ -120,10 +120,10 @@ export interface FeatureGuideParams {
 export type RootStackParamList = {
   Onboarding: undefined
   /**
-   * 탭 레이어를 대신하는 화면 하나 — **안에 층 스택과 바가 형제로 산다**.
+   * 탭 레이어를 대신하는 화면 하나. **안에 층 스택과 바가 형제로 산다**.
    *
    * 이름이 `Tabs` 가 아닌 이유: 이제 이 자리는 탭 내비게이터가 아니라 **스택**이고, 탭은 그 스택의
-   * 각 단 안에 있다. 하위 페이지 열하나는 여전히 이것 **위**로 밀려 들어와 `Main` 통째를 밀어낸다 —
+   * 각 단 안에 있다. 하위 페이지 열하나는 여전히 이것 **위**로 밀려 들어와 `Main` 통째를 밀어낸다.
    * 바가 그 안에 있으므로(*"탭바가 아래 화면과 한 덩어리로 밀려 나간다"*)가
    * 구조로 그대로 성립한다.
    */
@@ -139,14 +139,14 @@ export type RootStackParamList = {
   SettingsAbout: undefined
   SettingsPrivacy: undefined
   /**
-   * 아이템 분배 계산기 — **유틸리티의 첫 도구다**. 웹에 없다.
+   * 아이템 분배 계산기. **유틸리티의 첫 도구다**. 웹에 없다.
    *
    * 이 자리가 유틸리티의 구조를 정한다: 도구는 유틸리티 화면 **안의 카드**가 아니라 루트 스택에
    * 쌓이는 하위 페이지이고, 뒤에 오는 도구들이 그대로 물려받는다.
    */
   UtilityItemSplit: undefined
   /**
-   * 캐릭터 관리 — **웹에 없는 화면이다**. 웹뷰 앱에서는 모달이고, RN 에서는
+   * 캐릭터 관리. **웹에 없는 화면이다**. 웹뷰 앱에서는 모달이고, RN 에서는
    * 두 층 + 드롭다운 + 순서 + 대표가 385px 모달 본문에 안 들어가 하위 페이지가 됐다.
    */
   SettingsCharacters: undefined
@@ -169,9 +169,9 @@ export type RouteTarget =
   | { readonly kind: 'push'; readonly route: StackRouteName }
 
 export interface RouteRow {
-  /** 웹(react-router) 경로 — parity-inventory §1 의 첫 열. `origin: 'rn'` 이면 웹에 없는 경로다(아래). */
+  /** 웹(react-router) 경로. parity-inventory §1 의 첫 열. `origin: 'rn'` 이면 웹에 없는 경로다(아래). */
   readonly path: string
-  /** 그 경로가 그리던 화면 — parity-inventory §1 의 둘째 열. **두 행이 같은 값을 가질 수 있다.** */
+  /** 그 경로가 그리던 화면. parity-inventory §1 의 둘째 열. **두 행이 같은 값을 가질 수 있다.** */
   readonly screen: string
   readonly target: RouteTarget
   /**
@@ -280,19 +280,19 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
   },
 ]
 
-/** 하위 페이지 이름 — `RootNavigator` 가 이 목록으로 `<Stack.Screen>` 을 그린다. */
+/** 하위 페이지 이름. `RootNavigator` 가 이 목록으로 `<Stack.Screen>` 을 그린다. */
 export const STACK_ROUTE_NAMES: readonly StackRouteName[] = ROUTE_TABLE.flatMap((row) =>
   row.target.kind === 'push' ? [row.target.route] : [],
 )
 
-/** 기능 안내 상세를 가리키는 두 라우트 — 같은 컴포넌트가 그린다. */
+/** 기능 안내 상세를 가리키는 두 라우트. 같은 컴포넌트가 그린다. */
 export const FEATURE_GUIDE_ROUTE_NAMES = [
   'SettingsFeatureGuide',
   'SettingsReleaseNoteGuide',
 ] as const satisfies readonly StackRouteName[]
 
 /**
- * 탭 내비게이터가 그리는 화면 이름 아홉 — 표에서 파생한다.
+ * 탭 내비게이터가 그리는 화면 이름 아홉. 표에서 파생한다.
  *
  * **라벨은 여기 없다.** 라벨은 그룹과 함께 `bar-model.ts` 의 `BAR_GROUPS` 가 갖는다. 바가 라벨을
  * 두 층(그룹 이름 · 하위 이름)으로 쓰기 때문에, 여기에도 두면 같은 문구가 두 벌이 된다.
@@ -302,7 +302,7 @@ export const TAB_ROUTE_NAMES: readonly TabRouteName[] = ROUTE_TABLE.flatMap((row
 )
 
 /**
- * 처음 서 있는 탭 — **`/` 행과 갈렸다**.
+ * 처음 서 있는 탭. **`/` 행과 갈렸다**.
  *
  * 타입이 `TabRouteName` 이 아니라 **`keyof GroupLayerParamList`** 인 것이 의 산물이다.
  * 앱은 탭 여덟 중 하나 가 아니라 **그룹 층의 첫 화면**에서 시작한다. 하위 층은 push 로만 열리므로

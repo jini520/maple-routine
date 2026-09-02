@@ -41,7 +41,7 @@ afterEach(() => {
   unstubAllGlobals()
 })
 
-describe('requestJson — 에러 코드 보존', () => {
+describe('requestJson: 에러 코드 보존', () => {
   it('400 응답 본문의 error.name을 NexonBadRequestError.code로 살린다', async () => {
     stubGlobal('fetch', jest.fn(async () => response(400, { error: { name: 'OPENAPI00003', message: 'Please input valid id' } })),
     )
@@ -56,7 +56,7 @@ describe('requestJson — 에러 코드 보존', () => {
     await expect(requestJson('/x', 'key')).rejects.toMatchObject({ code })
   })
 
-  it('400인데 본문을 읽을 수 없으면 code는 null이다 — 알 수 없는 실패로 degrade한다', async () => {
+  it('400인데 본문을 읽을 수 없으면 code는 null이다. 알 수 없는 실패로 degrade한다', async () => {
     stubGlobal('fetch', jest.fn(async () => response(400, undefined)))
 
     await expect(requestJson('/x', 'key')).rejects.toMatchObject({ code: null })
@@ -79,7 +79,7 @@ describe('requestJson — 에러 코드 보존', () => {
   })
 })
 
-describe('requestJson — 기존 분기 유지', () => {
+describe('requestJson: 기존 분기 유지', () => {
   it.each([401, 403])('%i 는 NexonAuthError', async (status) => {
     stubGlobal('fetch', jest.fn(async () => response(status, { error: { name: 'OPENAPI00001' } })))
     await expect(requestJson('/x', 'key')).rejects.toBeInstanceOf(NexonAuthError)

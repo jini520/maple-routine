@@ -50,7 +50,7 @@ import { CharacterField, FragmentFields, SaveRow, type IncomeFormProps } from '.
 import { useSheetSubmit } from './use-sheet-submit'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
-/** lv.294·lv.200-201 — 원 자료의 표기를 그대로 되돌린다. */
+/** lv.294·lv.200-201. 원 자료의 표기를 그대로 되돌린다. */
 function levelLabelOf(ground: HuntingGround): string {
   return `lv.${ground.levels.join('-')}`
 }
@@ -113,7 +113,7 @@ function GroundOptionRow(props: {
 }
 
 /**
- * 메소 획득률 아이템 — **체크박스 + 그림**이다(사용자 지정 2026-08-29).
+ * 메소 획득률 아이템. **체크박스 + 그림**이다(사용자 지정 2026-08-29).
  *
  * 켜고 끄는 것이라 갈래 칩과 성질이 다르고, 그 사실을 **체크박스가 말한다**. 알약 테두리는
  * 고르는 하나 로 읽혀 여럿이 동시에 켜지는 것과 안 맞았다. 그래서 **그림의 원형 테두리를 걷고**
@@ -185,7 +185,7 @@ export function HuntCalculatorForm(
       props.characters.find((each) => each.ocid === props.editing?.ocid)?.level ??
       null,
   )
-  /** 고른 사냥터 이름 — 지역은 여기서 따라온다(이름이 전역 유일이다). */
+  /** 고른 사냥터 이름. 지역은 여기서 따라온다(이름이 전역 유일이다). */
   const [groundName, setGroundName] = useState<string | null>(
     detail === null ? null : (props.editing?.item ?? null),
   )
@@ -204,14 +204,14 @@ export function HuntCalculatorForm(
   const [fragmentsText, setFragmentsText] = useState(mesoTextOf(detail?.fragments ?? 0))
   const [fragmentPriceText, setFragmentPriceText] = useState(mesoTextOf(detail?.fragmentPrice ?? 0))
   /**
-   * 캐릭터의 메소 획득량 — **읽었으면 못 치고, 못 읽었으면 치는 칸**이 된다(결정 7).
+   * 캐릭터의 메소 획득량. **읽었으면 못 치고, 못 읽었으면 치는 칸**이 된다(결정 7).
    *
    * 수정으로 열면 **그때의 값**이 자동값으로 선다(결정 8). 레벨과 같은 이유다.
    */
   const [mesoRate, setMesoRate] = useState<MesoRateLoad | { kind: 'loading' }>(
     detail === null ? { kind: 'fallback', percent: null } : { kind: 'read', percent: detail.mesoRate },
   )
-  /** 폴백 칸에 친 글자 — 지우는 중간 상태가 있어 숫자가 아니라 글자로 든다. */
+  /** 폴백 칸에 친 글자. 지우는 중간 상태가 있어 숫자가 아니라 글자로 든다. */
   const [mesoRateText, setMesoRateText] = useState('')
   /**
    * **마지막으로 요청한 캐릭터**. 캐릭터를 빠르게 두 번 바꾸면 먼저 부른 응답이 늦게 도착해
@@ -223,7 +223,7 @@ export function HuntCalculatorForm(
   const huntRegions = huntingRegionsForLevel(huntLevel)
   const huntRegion = regionSlug === null ? null : findHuntingRegion(regionSlug)
   /**
-   * 목록에 서는 차례 — **레벨 차이가 적은 순, 같으면 마릿수가 많은 순**.
+   * 목록에 서는 차례. **레벨 차이가 적은 순, 같으면 마릿수가 많은 순**.
    * 거르는 것이 아니라 줄 세우는 것이라 지역 안의 맵은 전부 든다.
    */
   const huntGrounds = huntRegion === null ? [] : huntingGroundsFor(huntRegion, huntLevel)
@@ -232,7 +232,7 @@ export function HuntCalculatorForm(
       ? null
       : (huntRegion.grounds.find((each) => each.name === groundName) ?? null)
 
-  /** 폴백 칸의 값 — 못 읽었을 때만 쓰인다. 비어 있으면 0 이고, 그때 곱은 ×1 이다. */
+  /** 폴백 칸의 값. 못 읽었을 때만 쓰인다. 비어 있으면 0 이고, 그때 곱은 ×1 이다. */
   const typedMesoRate = /^\d+$/.test(mesoRateText) ? Number(mesoRateText) : 0
   /**
    * 계산에 드는 메획(%). **읽은 값이면 그것, 못 읽었으면 친 값**이다. 읽는 중(`loading`)에는 0 이라
@@ -244,10 +244,10 @@ export function HuntCalculatorForm(
    * **캐릭터 메획과 가산 아이템이 한 통**이다. 더해서 한 번 곱한다.
    */
   const boostPercent = boostPercentOf(boosts) + mesoRatePercent
-  /** 통 **밖**에서 곱하는 배율 — 재획비다. 합산이 끝난 값 전체에 걸린다. */
+  /** 통 **밖**에서 곱하는 배율. 재획비다. 합산이 끝난 값 전체에 걸린다. */
   const boostMultiplier = boostMultiplierOf(boosts)
   /**
-   * 줄에 적히는 수 — **켠 아이템까지 반영한 증가량**이고 소수점은 버린다.
+   * 줄에 적히는 수. **켠 아이템까지 반영한 증가량**이고 소수점은 버린다.
    * **이 값으로 돈을 세지 않는다**. 셈은 내림 전의 값으로 돈다.
    */
   const appliedRate = appliedMesoRatePercent(boostPercent, boostMultiplier)
@@ -265,7 +265,7 @@ export function HuntCalculatorForm(
    * 캐릭터를 고르면 **레벨이 따라 바뀌고**, 그 레벨의 창 밖으로 나간 지역은 풀린다
    *
    *
-   * 안 풀면 고르개가 목록에 없는 값 을 들게 되어 트리거가 첫 칸(선택 안함)을 읽어 준다 —
+   * 안 풀면 고르개가 목록에 없는 값 을 들게 되어 트리거가 첫 칸(선택 안함)을 읽어 준다.
    * 화면에는 다른 지역이 적히는데 계산은 옛 사냥터로 도는 상태가 된다.
    */
   function selectCharacter(next: string | null): void {
@@ -330,7 +330,7 @@ export function HuntCalculatorForm(
       {/*
         **지역과 사냥터는 각각 자기 줄**이다(사용자 지정 2026-09-01).
 
-        한 줄에 나란히 세워 봤더니(2026-08-29) 이름이 길어 둘 다 잘렸다 — 지역은 `츄츄 아일랜드`,
+        한 줄에 나란히 세워 봤더니(2026-08-29) 이름이 길어 둘 다 잘렸다. 지역은 `츄츄 아일랜드`,
         사냥터는 `풍화된 기쁨과 분노의 땅` 까지 간다. 시트가 한 줄 길어지는 대신 고른 것이 온전히
         읽힌다. 줄어든 높이는 아래에서 소비 아이템과 메소 획득량을 합쳐 되찾는다.
       */}
@@ -421,11 +421,11 @@ export function HuntCalculatorForm(
       {/*
         **켜는 것과 세어진 값이 한 줄**이다(사용자 지정 2026-09-01).
 
-        종전에는 위아래 두 줄이었다 — 켜는 자리와 그 결과를 갈라 놓은 것인데,
+        종전에는 위아래 두 줄이었다. 켜는 자리와 그 결과를 갈라 놓은 것인데,
         둘은 원인과 결과라 **옆에 붙어 있어도 그 관계가 읽힌다**. 지역·사냥터를 각각 자기 줄로
         되돌리면서 늘어난 높이를 여기서 되찾는다.
 
-        `flex` 를 `style` 로 주는 이유는 **비율이 값이기 때문**이다 — 클래스에 임의 값을 적으면
+        `flex` 를 `style` 로 주는 이유는 **비율이 값이기 때문**이다. 클래스에 임의 값을 적으면
         그 수가 두 곳(둘의 합)으로 흩어져 **왜 이 비율인가** 가 안 읽힌다.
       */}
       <View testID="income-sheet-meso-line" className="flex-row items-start gap-3">
@@ -459,7 +459,7 @@ export function HuntCalculatorForm(
           화면이 말하지 않는다. 캐릭터가 없으면 캐릭터 메획이 0 이고, 켠 것이 없으면 **0%** 다.
 
           읽혔으면 **못 친다**(큰 숫자와 같은 논리). **치는 칸이 되는 것은** 캐릭터를 골랐는데
-          못 읽었을 때뿐이다 — 고르지도 않은 캐릭터의 메획을 물을 수는 없다.
+          못 읽었을 때뿐이다. 고르지도 않은 캐릭터의 메획을 물을 수는 없다.
         */}
         <View testID="income-sheet-meso-rate-slot" style={{ flex: 1 }}>
           <FieldRow label="메소 획득량">
@@ -515,7 +515,7 @@ export function HuntCalculatorForm(
 
           **`≈` 를 붙인다**(사용자 지정 2026-08-29). 이 수는 젠 주기·마릿수·레벨로 **미리 세어 둔
           값**이지 실제로 받은 액수가 아니다. 표식이 없으면 정산된 금액처럼
-          읽힌다. 0 에는 안 붙인다 — 아직 어림할 것이 없다. */}
+          읽힌다. 0 에는 안 붙인다. 아직 어림할 것이 없다. */}
       <FieldRow label="획득 메소">
         <Text
           testID="income-sheet-hunt-meso"

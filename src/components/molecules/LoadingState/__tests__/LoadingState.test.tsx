@@ -1,5 +1,5 @@
 // 웹판이 지키던 여섯을 그대로 옮겼다. 클래스 문자열은 트리에 안 남으므로 **풀린 값**을 본다
-// (`atoms` 와 같은 규칙 — `render-atom.tsx`).
+// (`atoms` 와 같은 규칙. `render-atom.tsx`).
 import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
 import { LoadingState } from '../LoadingState'
 

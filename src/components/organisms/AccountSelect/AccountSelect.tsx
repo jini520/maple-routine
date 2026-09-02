@@ -1,4 +1,4 @@
-// 메이플 ID 드롭다운 — 캐릭터 관리 화면 **아래 층의 머리**.
+// 메이플 ID 드롭다운. 캐릭터 관리 화면 **아래 층의 머리**.
 //
 // **이 앱이 여는 목록을 직접 만드는 첫 자리다.** RN 에는 `<select>` 가 없고 이
 // **눌러도 안 열리는** `CharacterSelectDropdown` 을 지웠다. 참고할 옛 디자인이 존재하지 않는다.
@@ -72,7 +72,7 @@ import { placeDropdown } from './place-dropdown'
 /** 목록이 화면 가장자리에 붙지 않게 남기는 여백. */
 const EDGE_GAP_PX = 12
 
-/** 트리거와 목록 행이 공유하는 안쪽 여백 — 둘이 어긋나면 한 덩어리 가 깨진다. */
+/** 트리거와 목록 행이 공유하는 안쪽 여백. 둘이 어긋나면 한 덩어리 가 깨진다. */
 const ROW_PADDING = 'px-3 py-2.5'
 
 interface AccountRowProps {
@@ -140,7 +140,7 @@ export interface AccountSelectProps {
   /** step 3 의 파생값. 값 규칙(대표 · 월드 둘까지)은 이미 여기 담겨 온다. */
   accounts: AccountSummaryView[]
   selectedAccountId: string
-  /** 그 계정의 대표 캐릭터 얼굴 — **캐시에 있을 때만**. 없으면 이니셜. */
+  /** 그 계정의 대표 캐릭터 얼굴. **캐시에 있을 때만**. 없으면 이니셜. */
   portraitByAccountId: Record<string, string | null>
   onSelect: (accountId: string) => void
 }
@@ -173,7 +173,7 @@ export function AccountSelect(props: AccountSelectProps): React.JSX.Element {
     return () => subscription.remove()
   }, [isOpen, close])
 
-  // 고른 계정이 목록에 없을 수 있다(계정 목록이 갱신되는 순간). 렌더 중에 던지지 않는다 —
+  // 고른 계정이 목록에 없을 수 있다(계정 목록이 갱신되는 순간). 렌더 중에 던지지 않는다.
   // 그것이 이 고친 사고다.
   const selected = props.accounts.find((account) => account.accountId === props.selectedAccountId)
   if (selected === undefined) return <></>
@@ -245,7 +245,7 @@ export function AccountSelect(props: AccountSelectProps): React.JSX.Element {
             }`}
           >
             <ScrollView>
-              {/* 자연 높이를 재는 자리 — `ScrollView` 안이라 바깥 `maxHeight` 에 눌리지 않는다. */}
+              {/* 자연 높이를 재는 자리. `ScrollView` 안이라 바깥 `maxHeight` 에 눌리지 않는다. */}
               <View onLayout={(event) => setContentHeight(event.nativeEvent.layout.height)}>
                 {props.accounts.map((account) => {
                   const isSelected = account.accountId === props.selectedAccountId

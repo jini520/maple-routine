@@ -5,7 +5,7 @@ import {
   findReleaseNote,
 } from '../release-notes'
 
-// 릴리스 노트는 손으로 쓰는 파일이고, 그 형식을 배포 게이트가 읽는다 —
+// 릴리스 노트는 손으로 쓰는 파일이고, 그 형식을 배포 게이트가 읽는다.
 // 형식이 어긋난 채 커밋되면 배포 시점에야 드러나므로 여기서 형식 자체를 강제한다.
 // 런타임에 정렬·중복 제거를 하지 않는 것도 같은 이유다(잘못 쓴 파일이 조용히 통과한다).
 
@@ -37,7 +37,7 @@ describe('release-notes 형식', () => {
     expect(new Set(versions).size).toBe(versions.length)
   })
 
-  it('버전 내림차순이다 — 최신이 먼저 온다', () => {
+  it('버전 내림차순이다. 최신이 먼저 온다', () => {
     for (let i = 1; i < RELEASE_NOTES.length; i++) {
       const previous = RELEASE_NOTES[i - 1].version
       const current = RELEASE_NOTES[i].version
@@ -91,7 +91,7 @@ describe('release-notes 형식', () => {
   // 배포 스크립트가 막는 것과 같은 조건이지만 **여기서 먼저 걸린다**. 배포
   // 직전이 아니라 커밋 시점에 알아야 고칠 시간이 있다. 과거 버전에는 없는 것이 정상이라
   // (이미 발행됐고 다시 매니페스트에 실리지 않는다) 맨 앞 하나만 본다.
-  it('최신 노트에는 highlights 가 있다 — 다음 배포가 그것을 싣는다', () => {
+  it('최신 노트에는 highlights 가 있다. 다음 배포가 그것을 싣는다', () => {
     expect(RELEASE_NOTES[0].highlights?.length ?? 0).toBeGreaterThan(0)
   })
 })
@@ -102,7 +102,7 @@ describe('findReleaseNote', () => {
     expect(findReleaseNote(existing.version)).toBe(existing)
   })
 
-  it('없는 버전에는 던지지 않고 undefined 를 돌린다 — "노트가 없다"의 판정은 호출부가 한다', () => {
+  it('없는 버전에는 던지지 않고 undefined 를 돌린다. "노트가 없다"의 판정은 호출부가 한다', () => {
     expect(findReleaseNote('0.0.1')).toBeUndefined()
   })
 })

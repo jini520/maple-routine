@@ -48,7 +48,7 @@ describe('안내 파일과 index 가 어긋나지 않는다', () => {
     }
   })
 
-  it('FEATURE_GUIDES 의 안내 수가 파일 수와 같다 — 한 파일에 몰아 넣지 않는다', () => {
+  it('FEATURE_GUIDES 의 안내 수가 파일 수와 같다. 한 파일에 몰아 넣지 않는다', () => {
     expect(FEATURE_GUIDES.length).toBe(Object.keys(modules).length)
   })
 })
@@ -159,7 +159,7 @@ describe('노트 항목 → 안내 참조 (정정 · 결정 7)', () => {
       .map((item) => ({ guideId: item.guideId as string, sectionId: item.guideSectionId })),
   )
 
-  it('모든 guideId 에 대응하는 안내가 있다 — 미아 참조 금지', () => {
+  it('모든 guideId 에 대응하는 안내가 있다. 미아 참조 금지', () => {
     const guideIds = new Set(FEATURE_GUIDES.map((guide) => guide.id))
     for (const link of links) {
       expect(guideIds.has(link.guideId), `노트 항목이 없는 안내 "${link.guideId}" 를 가리킨다`).toBe(
@@ -193,7 +193,7 @@ describe('노트 항목 → 안내 참조 (정정 · 결정 7)', () => {
   // **반대 방향은 강제하지 않는다**. 이것이 결정 1 정정의 핵심이다. 원천이 기능 카탈로그로
   // 옮겨갔으므로 "노트에 안 걸린 안내"는 결함이 아니라 **정상**이다: 옛 기능은 릴리스 노트가
   // 남아 있지 않아도 사용법은 있어야 한다. (버전 축이던 시절엔 "고아 안내"라 금지 대상이었다.)
-  it('노트가 가리키지 않는 안내가 있어도 된다 — 카탈로그가 원천이다', () => {
+  it('노트가 가리키지 않는 안내가 있어도 된다. 카탈로그가 원천이다', () => {
     const linked = new Set(links.map((link) => link.guideId))
     expect(FEATURE_GUIDES.some((guide) => !linked.has(guide.id))).toBe(true)
   })

@@ -1,4 +1,4 @@
-// 테마 벽지 기하 — CSS `background-size: cover` + `background-position` 을 그대로 옮겼는지 본다.
+// 테마 벽지 기하. CSS `background-size: cover` + `background-position` 을 그대로 옮겼는지 본다.
 //
 // **이 계산이 한 곳인 것이 의 조건**이다. 백드롭(전면)과 헤더 조각이 같은
 // 값을 써야 이음매가 없고, 값이 두 벌이면 한쪽만 바뀌어도 아무 데서도 안 드러난다. 그래서 여기서
@@ -23,7 +23,7 @@ describe('background-position 읽기', () => {
     expect(parseBackgroundPosition('left')).toEqual({ x: 0, y: 0.5 })
   })
 
-  it('못 읽는 값은 center 로 떨어진다 — 안 보이는 것보다 낫다', () => {
+  it('못 읽는 값은 center 로 떨어진다. 안 보이는 것보다 낫다', () => {
     expect(parseBackgroundPosition('나쁜값')).toEqual({ x: 0.5, y: 0.5 })
   })
 })
@@ -32,7 +32,7 @@ describe('cover 배치', () => {
   const VIEWPORT = { width: 400, height: 800 }
 
   // `cover` = 덮는 **최소** 배율. 세로가 긴 뷰포트 + 가로가 긴 그림이면 높이가 기준이 된다.
-  it('덮는 최소 배율을 쓴다 — 한 축은 딱 맞고 다른 축이 넘친다', () => {
+  it('덮는 최소 배율을 쓴다. 한 축은 딱 맞고 다른 축이 넘친다', () => {
     const layout = resolveThemeBackdropLayout(VIEWPORT, { width: 1000, height: 500 }, 'center')
 
     // 배율 = max(400/1000, 800/500) = 1.6 → 1600×800
@@ -48,7 +48,7 @@ describe('cover 배치', () => {
     expect(centered?.left).toBeCloseTo((400 - 1600) / 2) // center = 절반씩
   })
 
-  it('bottom 은 아래를 맞춘다 — 실제 두 테마가 쓰는 값이다', () => {
+  it('bottom 은 아래를 맞춘다. 실제 두 테마가 쓰는 값이다', () => {
     const layout = resolveThemeBackdropLayout(VIEWPORT, { width: 500, height: 1000 }, '45% bottom')
 
     // 배율 = max(400/500, 800/1000) = 0.8 → 400×800. 세로도 딱 맞아 여백이 0 이다.

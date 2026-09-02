@@ -15,7 +15,7 @@ import type { IncomeRecord } from '../../../storage/income'
 
 export type IncomeDraft = Omit<IncomeRecord, 'id' | 'recordedAt'>
 
-/** 고를 수 있는 캐릭터 — `level` 은 사냥 계산기가 쓴다. */
+/** 고를 수 있는 캐릭터. `level` 은 사냥 계산기가 쓴다. */
 export interface SheetCharacter {
   ocid: string
   name: string

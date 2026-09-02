@@ -146,7 +146,7 @@ export async function backfillTarget(target: BackfillTarget, now: Date): Promise
     return null
   } catch (error) {
     // 코드가 알려주는 사실을 상태로 옮긴다.
-    //  - notCollected(00009): 실패가 아니라 "아직" — 재시도 유도 문구를 띄우지 않는다.
+    //  - notCollected(00009): 실패가 아니라 "아직"재시도 유도 문구를 띄우지 않는다.
     //  - periodOutOfRange(00004): 우리 계산상 조회 구간 안인데 API가 거부한 것. 월드 리프 이전·
     //    휴면 등 그 캐릭터·날짜에 고유한 사정이라 "다시 시도"가 아니라 "조회할 수 없다"가 맞다.
     const kind = toScheduleSyncError(error).kind
@@ -204,7 +204,7 @@ export async function canReachPreviousPeriod(
     return true
   }
   // **그 기간 또는 더 과거에** 기록이 있으면 통과시킨다. 전에는 바로 이전 한 칸의
-  // 기록만 봐서, 접속하지 않은 주가 벽이 되어 그 뒤의 기록 전체에 도달할 수 없었다(이슈 #78 —
+  // 기록만 봐서, 접속하지 않은 주가 벽이 되어 그 뒤의 기록 전체에 도달할 수 없었다(이슈 #78.
   // 3·4주차 미접속 캐릭터의 1·2주차 기록이 DB에 있어도 화면으로 갈 방법이 없었다).
   // 빈 기간은 한 칸씩 지나가야 하지만(시안 A) 벽은 사라진다.
   return hasBossProfitRecordsAtOrBefore(ocids, tab, prevPeriodKey)

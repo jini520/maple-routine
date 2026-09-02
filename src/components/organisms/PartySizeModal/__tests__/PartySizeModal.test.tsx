@@ -43,7 +43,7 @@ function stateOf(node: AtomElement): State {
   return (node.props.accessibilityState ?? {}) as State
 }
 
-/** 난이도 칩 — 글자를 담은 `Text` 에서 위로 올라가 `role="button"` 인 첫 조상. */
+/** 난이도 칩. 글자를 담은 `Text` 에서 위로 올라가 `role="button"` 인 첫 조상. */
 function chip(getByText: (text: string) => AtomElement, label: string): AtomElement {
   let node: AtomElement | null = getByText(label)
   while (node !== null && node.props.role !== 'button') node = node.parent
@@ -138,7 +138,7 @@ describe('PartySizeModal', () => {
     expect(getByTestId('faded-illustration-veil', HIDDEN).props.locations).toEqual([0, 0.42, 0.82, 1])
   })
 
-  // 반대쪽 — 매핑에 없는 슬러그는 아트를 안 만든다(그림 없는 보스가 타던 분기 그대로).
+  // 반대쪽. 매핑에 없는 슬러그는 아트를 안 만든다(그림 없는 보스가 타던 분기 그대로).
   it('에셋이 없는 슬러그는 일러스트를 그리지 않는다', async () => {
     const { queryByTestId } = await renderOverlay(
       <PartySizeModal {...props({ portraitSlug: '없는보스' })} />,

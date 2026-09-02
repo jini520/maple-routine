@@ -37,7 +37,7 @@ const CATEGORY_OVERRIDE: Record<string, string> = {
   무릉도장: '무릉도장',
 }
 
-// 카운트 참고 태그의 도메인 오버라이드 — 리셋/제한 규칙(월드당·ID당 등)이라 사용자 지정값만 반영한다
+// 카운트 참고 태그의 도메인 오버라이드. 리셋/제한 규칙(월드당·ID당 등)이라 사용자 지정값만 반영한다
 // (확인 완료, 2026-07-24). null = 태그 숨김. 아이템(content_name) → 카테고리 → 기본 규칙 순.
 const TAG_BY_CONTENT: Record<string, string | null> = {
   몬스터파크: '월드 당 최대 14회', // 일간
@@ -104,7 +104,7 @@ export function categorizeContentEntries(
   for (const entry of entries) {
     const { category, displayName } = parse(entry.content_name)
     if (category === null) {
-      // 단독 항목마다 유니크 키 — 실제 카테고리명은 trim되므로 선행 공백 접두사면 절대 안 겹친다
+      // 단독 항목마다 유니크 키. 실제 카테고리명은 trim되므로 선행 공백 접두사면 절대 안 겹친다
       const key = ` standalone-${standaloneCount++}`
       order.push(key)
       groups.set(key, { label: null, items: [{ entry, displayName }] })

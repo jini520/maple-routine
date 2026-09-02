@@ -36,7 +36,7 @@ async function 누르기(view: Awaited<ReturnType<typeof renderOverlay>>, testID
 }
 
 describe('SelectField', () => {
-  it('고른 것을 줄에 적는다 — 안 골랐으면 그 라벨이 곧 값이다', async () => {
+  it('고른 것을 줄에 적는다. 안 골랐으면 그 라벨이 곧 값이다', async () => {
     const { view } = await 그리기(null)
 
     expect(view.getByTestId('pick-trigger')).toHaveTextContent('캐릭터선택 안함')

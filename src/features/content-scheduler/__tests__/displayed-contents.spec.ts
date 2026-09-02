@@ -28,7 +28,7 @@ function input(overrides: Partial<DisplayedContentsInput> = {}): DisplayedConten
 }
 
 describe('displayedDailyContents', () => {
-  it('자동 모드는 **등록된 것만** 센다 — 카탈로그 전체가 아니다', () => {
+  it('자동 모드는 **등록된 것만** 센다. 카탈로그 전체가 아니다', () => {
     const contents = DAILY_NAMES.map((name, index) => daily(name, index < 2))
 
     const result = displayedDailyContents(input({ dailyContents: contents }), 'auto')
@@ -37,7 +37,7 @@ describe('displayedDailyContents', () => {
     expect(result.length).toBeLessThan(DAILY_NAMES.length)
   })
 
-  it('등록이 하나도 없으면 빈 목록이다 — 카탈로그 길이로 떨어지지 않는다', () => {
+  it('등록이 하나도 없으면 빈 목록이다. 카탈로그 길이로 떨어지지 않는다', () => {
     const contents = DAILY_NAMES.map((name) => daily(name, false))
 
     expect(displayedDailyContents(input({ dailyContents: contents }), 'auto')).toEqual([])
@@ -69,7 +69,7 @@ describe('displayedDailyContents', () => {
     expect(result).toEqual([])
   })
 
-  it('자동 모드도 템플릿 순서로 정렬한다 — 순서가 화면마다 다르면 같은 목록으로 안 보인다', () => {
+  it('자동 모드도 템플릿 순서로 정렬한다. 순서가 화면마다 다르면 같은 목록으로 안 보인다', () => {
     const picked = [DAILY_NAMES[3], DAILY_NAMES[1], DAILY_NAMES[0]]
     const contents = picked.map((name) => daily(name, true))
 

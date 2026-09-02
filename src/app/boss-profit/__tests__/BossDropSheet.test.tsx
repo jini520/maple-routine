@@ -1,11 +1,11 @@
-// 드롭 기록 시트 — 웹판 스무 케이스 중 **RN 에서 옮길 계약이 남은 것**을 다시 썼다.
+// 드롭 기록 시트. 웹판 스무 케이스 중 **RN 에서 옮길 계약이 남은 것**을 다시 썼다.
 //
 // **라이브러리를 세워 둔다(`jest.mock`).** 진짜 `@gorhom/bottom-sheet` 은 레이아웃 측정과 UI 스레드
 // 애니메이션 위에 서 있어 jest 에서 시트 내용이 아예 마운트되지 않는다(`BottomSheet.test.tsx` 가
 // 실측해 적어 둔 사실). 껍데기가 값을 제대로 넘기는지는 그 파일이 보고, 여기서는
 // **시트 안에서 무엇을 고르게 하는가**만 본다.
 //
-// 옮기지 않은 것 셋 — ① 하단 바의 안전영역 패딩(웹은 시트 내용이 직접 줬고 RN 은 **껍데기가
+// 옮기지 않은 것 셋. ① 하단 바의 안전영역 패딩(웹은 시트 내용이 직접 줬고 RN 은 **껍데기가
 // 준다**) ② 가격 키패드 **내부**(`DropPricePad.test.tsx` 가 갖는다. 여기서는 그 자리로 들어갔다
 // 나오는 흐름과 값이 그 기록 하나에 붙는지만 본다) ③ 난이도 뱃지의 흐림 정도(값이 아니라 그림이라
 // 육안 대조 목록).
@@ -85,7 +85,7 @@ function renderSheet(overrides: Partial<React.ComponentProps<typeof BossDropShee
   return { result, onSave, onClose }
 }
 
-describe('BossDropSheet — 타일 선택', () => {
+describe('BossDropSheet: 타일 선택', () => {
   it('일반 아이템을 토글하고 추가 완료 시 onSave 에 기록이 담긴다', async () => {
     const { result, onSave, onClose } = renderSheet()
     const { getByLabelText, getByText } = await result
@@ -133,7 +133,7 @@ describe('BossDropSheet — 타일 선택', () => {
   })
 })
 
-describe('BossDropSheet — 난이도 표시', () => {
+describe('BossDropSheet: 난이도 표시', () => {
   it('완료면 난이도를 고를 수 없고 완료 난이도만 보여준다', async () => {
     const { result } = renderSheet()
     const { getAllByText, queryByLabelText } = await result
@@ -170,7 +170,7 @@ describe('BossDropSheet — 난이도 표시', () => {
   })
 })
 
-describe('BossDropSheet — 드롭 연출', () => {
+describe('BossDropSheet: 드롭 연출', () => {
   it('토글은 연출이 켜져 있을 때 켜짐이다(반전 회귀 방지)', async () => {
     const { result } = renderSheet()
     const { getByLabelText } = await result
@@ -213,7 +213,7 @@ describe('BossDropSheet — 드롭 연출', () => {
   })
 })
 
-describe('BossDropSheet — 상자 드릴다운', () => {
+describe('BossDropSheet: 상자 드릴다운', () => {
   it('반지 상자를 탭하면 반지와 등급을 골라 기록한다', async () => {
     const { result, onSave } = renderSheet({ boss: '더스크', difficulty: '카오스' })
     const { getByLabelText, getByText } = await result
@@ -221,7 +221,7 @@ describe('BossDropSheet — 상자 드릴다운', () => {
     await act(async () => {
       fireEvent.press(getByLabelText('흑옥의 보스 반지 상자'))
     })
-    // 드릴다운 — 시트는 살아 있고 내용만 갈렸다.
+    // 드릴다운. 시트는 살아 있고 내용만 갈렸다.
     expect(getByText('흑옥의 보스 반지 상자')).toBeTruthy()
 
     await act(async () => {
@@ -276,8 +276,8 @@ describe('BossDropSheet — 상자 드릴다운', () => {
   })
 })
 
-describe('BossDropSheet — 시트 안 가격 입력', () => {
-  it('아이템을 기록하면 가격을 물어본다 — 기록 자체는 막지 않는다', async () => {
+describe('BossDropSheet: 시트 안 가격 입력', () => {
+  it('아이템을 기록하면 가격을 물어본다. 기록 자체는 막지 않는다', async () => {
     const { result } = renderSheet({ pricing: PRICING })
     const { getByLabelText, getByTestId, getByText } = await result
 
@@ -321,7 +321,7 @@ describe('BossDropSheet — 시트 안 가격 입력', () => {
     expect(getByText(/에스텔라 이어링 기록됨/)).toBeTruthy()
   })
 
-  // step 8 이 자리표시자를 `DropPricePadContent` 로 갈아 끼웠다. 지키는 계약은 그대로다 —
+  // step 8 이 자리표시자를 `DropPricePadContent` 로 갈아 끼웠다. 지키는 계약은 그대로다.
   // **시트가 살아서 하던 작업을 잇는다**.
   it('"가격 입력" 은 시트를 닫지 않고 들어갔다가 그리드로 돌아온다', async () => {
     const { result, onClose } = renderSheet({ pricing: PRICING })
@@ -362,7 +362,7 @@ describe('BossDropSheet — 시트 안 가격 입력', () => {
     expect(getByText('저장')).toBeTruthy()
   })
 
-  it('키패드에서 값을 매기면 그 기록에만 붙고 그리드로 돌아온다 — 배지가 그 사실을 말한다', async () => {
+  it('키패드에서 값을 매기면 그 기록에만 붙고 그리드로 돌아온다. 배지가 그 사실을 말한다', async () => {
     const { result, onSave } = renderSheet({ pricing: PRICING })
     const { getByLabelText, getAllByLabelText, getByText } = await result
 
@@ -398,7 +398,7 @@ describe('BossDropSheet — 시트 안 가격 입력', () => {
     ])
   })
 
-  it('pricing 을 넘기지 않으면 물음도 배지도 뜨지 않는다 — 가격 개념이 없는 호출부 보호', async () => {
+  it('pricing 을 넘기지 않으면 물음도 배지도 뜨지 않는다. 가격 개념이 없는 호출부 보호', async () => {
     const { result } = renderSheet()
     const { getByLabelText, queryByTestId } = await result
 
@@ -450,7 +450,7 @@ describe('BossDropSheet — 시트 안 가격 입력', () => {
   })
 })
 
-describe('BossDropSheet — 드롭 데이터가 없는 보스', () => {
+describe('BossDropSheet: 드롭 데이터가 없는 보스', () => {
   it('빈 상태로 안내하고 타일을 만들지 않는다', async () => {
     const { result } = renderSheet({ boss: '알 수 없는 보스' })
     const { getByText } = await result

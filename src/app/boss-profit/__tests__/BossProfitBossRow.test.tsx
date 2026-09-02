@@ -29,7 +29,7 @@ const 값매긴드롭: RecordedDrop[] = [
   },
 ]
 
-describe('BossProfitBossRow — 금액을 모르는 행', () => {
+describe('BossProfitBossRow: 금액을 모르는 행', () => {
   it('미완료 placeholder 는 금액 대신 `미완료` 배지다', async () => {
     const { getByText, queryByText } = await renderProfit(
       <BossProfitBossRow row={보스행({ isComplete: false, payoutMeso: null })} drops={[]} />,
@@ -48,7 +48,7 @@ describe('BossProfitBossRow — 금액을 모르는 행', () => {
     expect(queryByText(/메소/)).toBeNull()
   })
 
-  it('두 경우 모두 파티 스테퍼를 비활성한다 — 조정해도 계산이 0으로 고정된다', async () => {
+  it('두 경우 모두 파티 스테퍼를 비활성한다. 조정해도 계산이 0으로 고정된다', async () => {
     const { getByLabelText } = await renderProfit(
       <BossProfitBossRow row={보스행({ isComplete: false, payoutMeso: null })} drops={[]} />,
     )
@@ -58,8 +58,8 @@ describe('BossProfitBossRow — 금액을 모르는 행', () => {
   })
 })
 
-describe('BossProfitBossRow — 금액과 아이템 칩', () => {
-  it('드롭이 없으면 결정석 금액만 낸다 — 칩 래퍼조차 만들지 않는다', async () => {
+describe('BossProfitBossRow: 금액과 아이템 칩', () => {
+  it('드롭이 없으면 결정석 금액만 낸다. 칩 래퍼조차 만들지 않는다', async () => {
     const { getByText, queryByLabelText } = await renderProfit(<BossProfitBossRow row={보스행()} drops={[]} />)
 
     expect(getByText('6,800,000,000 메소')).toBeTruthy()
@@ -104,7 +104,7 @@ describe('BossProfitBossRow — 금액과 아이템 칩', () => {
   })
 })
 
-describe('BossProfitBossRow — 드롭 지시자', () => {
+describe('BossProfitBossRow: 드롭 지시자', () => {
   it('드롭이 없으면 "＋ 드롭 추가" 칩이다', async () => {
     const { getByText } = await renderProfit(<BossProfitBossRow row={보스행()} drops={[]} />)
 
@@ -125,8 +125,8 @@ describe('BossProfitBossRow — 드롭 지시자', () => {
   })
 })
 
-describe('BossProfitBossRow — 고가 드롭 강조', () => {
-  // 판정은 `isValuableDrop` 한 곳이 하고 이 테스트는 그 판정을 베끼지 않는다 —
+describe('BossProfitBossRow: 고가 드롭 강조', () => {
+  // 판정은 `isValuableDrop` 한 곳이 하고 이 테스트는 그 판정을 베끼지 않는다.
   // 목록에서 실제로 하나 뽑고, 없는 이름 하나를 반대편으로 쓴다.
   const 고가아이템 = valuableDropsData.items[0]
 
@@ -150,7 +150,7 @@ describe('BossProfitBossRow — 고가 드롭 강조', () => {
   })
 })
 
-describe('BossProfitBossRow — 파티원 수', () => {
+describe('BossProfitBossRow: 파티원 수', () => {
   it('+ 를 누르면 스토어에 1 늘린 값을 저장한다', async () => {
     const setPartySize = jest.fn().mockResolvedValue(undefined)
     const row = 보스행()

@@ -10,8 +10,8 @@
 // ③ `closest('li')` → **항목 텍스트에서 위로 올라가** 그 행을 잡는다.
 // ④ **픽스처 주입 방식이 갈린다. getter 가 안 통한다.** 웹은 `vi.mock` 이 돌려준 객체에 getter 를
 //    얹어 매 접근마다 픽스처를 갈아 끼웠는데, jest + Babel 조합에서는 **모듈 네임스페이스가 한 번
-//    복사되면서 getter 가 그때 딱 한 번 평가된다**(실측 — `__esModule: true` 를 붙여도 같다).
-//    그래서 **배열의 정체성을 고정해 두고 내용만 갈아 끼운다**(`mockNotes` 를 비우고 다시 채운다) —
+//    복사되면서 getter 가 그때 딱 한 번 평가된다**(실측. `__esModule: true` 를 붙여도 같다).
+//    그래서 **배열의 정체성을 고정해 두고 내용만 갈아 끼운다**(`mockNotes` 를 비우고 다시 채운다).
 //    화면이 렌더할 때 `.map`/`.length` 를 읽으므로 같은 효과이고, 방식은 오히려 단순해진다.
 import { act, fireEvent } from '@testing-library/react-native'
 
@@ -56,7 +56,7 @@ async function press(element: AtomElement): Promise<void> {
   })
 }
 
-/** 그 문구를 담은 눌리는 항목 — 없으면 null(안내가 없는 항목은 눌리지 않는다). */
+/** 그 문구를 담은 눌리는 항목. 없으면 null(안내가 없는 항목은 눌리지 않는다). */
 function pressableItem(view: Rendered, text: string): AtomElement | null {
   let node: AtomElement | null = view.getByText(text)
   while (node !== null && node.props.role !== 'button') node = node.parent
@@ -115,7 +115,7 @@ describe('SettingsReleaseNotesScreen', () => {
 
   // : "최신이 먼저"는 데이터의 계약이고 그 강제는 데이터 테스트가 한다. 화면이 다시
   // 정렬하면 같은 규칙의 진실이 두 곳에 생긴다.
-  it('배열 순서를 그대로 그린다 — 화면이 정렬하지 않는다', async () => {
+  it('배열 순서를 그대로 그린다. 화면이 정렬하지 않는다', async () => {
     setNotes([
       { version: '1.0.4', date: '2026-08-20', items: [{ category: 'feature', text: '나중 것' }] },
       { version: '1.0.3', date: '2026-08-09', items: [{ category: 'feature', text: '먼저 것' }] },
@@ -178,7 +178,7 @@ describe('SettingsReleaseNotesScreen', () => {
     expect(textsIn(groups[2])).toContain('고친 것')
   })
 
-  // `ThemeSelector` 의 카테고리 섹션과 같은 규칙 — 거른 결과가 0이면 헤더째 감춘다.
+  // `ThemeSelector` 의 카테고리 섹션과 같은 규칙. 거른 결과가 0이면 헤더째 감춘다.
   it('항목이 없는 카테고리는 제목째 그리지 않는다', async () => {
     setNotes([
       { version: '1.0.4', date: '2026-08-20', items: [{ category: 'fix', text: '고친 것' }] },

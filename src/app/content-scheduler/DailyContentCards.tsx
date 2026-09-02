@@ -38,7 +38,7 @@ export const MONSTER_PARK_BACKGROUND_SLUG = 'monsterPark'
 export function DailyQuestCard(props: {
   content: DailyContent
   crop?: ImageCrop
-  /** 요구 레벨 미달 — 상태 배지를 진행 불가 로 대체한다. */
+  /** 요구 레벨 미달. 상태 배지를 진행 불가 로 대체한다. */
   isBlocked?: boolean
 }): React.JSX.Element {
   const { content } = props
@@ -87,7 +87,7 @@ export function DailyQuestCard(props: {
 export function MonsterParkCard(props: {
   content: DailyContent
   crop?: ImageCrop
-  /** 요구 레벨 미달 — 상태 배지를 진행 불가 로 대체한다. */
+  /** 요구 레벨 미달. 상태 배지를 진행 불가 로 대체한다. */
   isBlocked?: boolean
 }): React.JSX.Element {
   const { content } = props
@@ -144,7 +144,7 @@ export function MonsterParkCard(props: {
 // 카드 종류 분기를 한 곳으로 모은다. 카드 컴포넌트 자체는 그대로 재사용한다.
 export function renderDailyContentCard(
   content: DailyContent,
-  /** 이 카드를 보는 캐릭터의 레벨 — 판정은 `lib/scheduler/required-level` 한 곳이 한다. */
+  /** 이 카드를 보는 캐릭터의 레벨. 판정은 `lib/scheduler/required-level` 한 곳이 한다. */
   characterLevel: number | null,
 ): React.JSX.Element {
   const isBlocked = isContentBlocked(characterLevel, content.name)

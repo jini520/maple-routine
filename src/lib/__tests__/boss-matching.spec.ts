@@ -128,12 +128,12 @@ describe('WEEKLY_CRYSTAL_SALE_LIMIT', () => {
     expect(WEEKLY_CRYSTAL_SALE_LIMIT).toBe(90)
   })
 
-  it('캐릭터당 한도(12)와 월드당 한도(90)는 서로 다른 값이다 — 둘을 혼용하는 회귀 가드', () => {
+  it('캐릭터당 한도(12)와 월드당 한도(90)는 서로 다른 값이다. 둘을 혼용하는 회귀 가드', () => {
     expect(WEEKLY_CRYSTAL_SALE_LIMIT).not.toBe(WEEKLY_BOSS_CLEAR_LIMIT)
   })
 })
 
-// 보스 표시명(BossProfitRow.boss)으로 시즌 보스 여부를 조회한다 —
+// 보스 표시명(BossProfitRow.boss)으로 시즌 보스 여부를 조회한다.
 // 주간 처치 수·결정석 판매 수 집계에서 시즌 보스를 빼는 판정에 쓴다.
 describe('isSeasonBossName', () => {
   it('eventWeekly 소속 보스명은 true다', () => {
@@ -174,7 +174,7 @@ describe('countClearedWeeklyBosses', () => {
     expect(countClearedWeeklyBosses(bosses)).toBe(1)
   })
 
-  it('등록 여부와 무관하게 완료된 주간 보스는 카운트에 포함된다 — 등록 없이 잡아도 센다', () => {
+  it('등록 여부와 무관하게 완료된 주간 보스는 카운트에 포함된다. 등록 없이 잡아도 센다', () => {
     const bosses = [matchedBoss({ apiName: '자쿰', isRegistered: false, isComplete: true })]
     expect(countClearedWeeklyBosses(bosses)).toBe(1)
   })
@@ -293,7 +293,7 @@ describe('selectDisplayBosses', () => {
 
 describe('selectBossProfitBosses', () => {
   it('등록 난이도와 실제 처치 난이도가 다르면, 실제 처치 난이도(ownComplete)를 선택하고 등록 난이도는 제외한다', () => {
-    // 이지로 등록했지만 실제로는 노멀을 처치한 상황 — isComplete는 승격으로 이지도 true지만
+    // 이지로 등록했지만 실제로는 노멀을 처치한 상황. isComplete는 승격으로 이지도 true지만
     // ownComplete는 노멀만 true다.
     const registeredEasy = matchedBoss({
       apiName: '루시드',
@@ -459,11 +459,11 @@ describe('countManualWeeklyBosses', () => {
     expect(countManualWeeklyBosses([bossItem('자쿰', '카오스'), bossItem('스우', '하드')])).toBe(2)
   })
 
-  it('시즌 보스(메이린)는 세지 않는다 — countClearedWeeklyBosses와 같은 규칙', () => {
+  it('시즌 보스(메이린)는 세지 않는다. countClearedWeeklyBosses와 같은 규칙', () => {
     expect(countManualWeeklyBosses([bossItem('자쿰', '카오스'), bossItem('시즌 보스 메이린', '노멀')])).toBe(1)
   })
 
-  it('월간 보스(검은마법사)는 세지 않는다 — 같은 배열에 kind: boss로 저장되지만 주간 한도와 무관하다', () => {
+  it('월간 보스(검은마법사)는 세지 않는다. 같은 배열에 kind: boss로 저장되지만 주간 한도와 무관하다', () => {
     expect(countManualWeeklyBosses([bossItem('자쿰', '카오스'), bossItem('검은마법사', '하드')])).toBe(1)
   })
 
@@ -480,7 +480,7 @@ describe('countManualWeeklyBosses', () => {
     expect(countManualWeeklyBosses([bossItem('알 수 없는 보스', '노멀')])).toBe(0)
   })
 
-  it('같은 보스의 다른 난이도는 각각 센다 — 저장 단위가 (보스, 난이도) 쌍이다', () => {
+  it('같은 보스의 다른 난이도는 각각 센다. 저장 단위가 (보스, 난이도) 쌍이다', () => {
     expect(countManualWeeklyBosses([bossItem('스우', '노멀'), bossItem('스우', '하드')])).toBe(2)
   })
 })

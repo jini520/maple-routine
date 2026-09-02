@@ -49,7 +49,7 @@ async function press(testID: string): Promise<void> {
   })
 }
 
-/** 루트 스택이 든 화면 이름들 — 하위 페이지는 `Main` **위**로 쌓인다. */
+/** 루트 스택이 든 화면 이름들. 하위 페이지는 `Main` **위**로 쌓인다. */
 function 루트_단들(): string[] {
   return (navigationRef?.getRootState().routes ?? []).map((route) => route.name)
 }
@@ -71,7 +71,7 @@ function 지금_화면(): string | undefined {
 }
 
 describe('그룹 진입이 스택 한 단을 만든다', () => {
-  it('앱을 켜면 층은 한 단이다 — 그룹 행이고 되돌아갈 자리가 없다', async () => {
+  it('앱을 켜면 층은 한 단이다. 그룹 행이고 되돌아갈 자리가 없다', async () => {
     await 앱을_켠다()
 
     expect(루트_단들()).toEqual(['Main'])
@@ -81,7 +81,7 @@ describe('그룹 진입이 스택 한 단을 만든다', () => {
 
   // **이슈 #240 의 답이다.** 예전에는 이 이동 뒤에도 층이 한 단이었고(형제 탭 전환), 그래서
   // 가장자리 스와이프가 걸릴 자리가 없었다.
-  it('스케줄러를 누르면 한 단 쌓인다 — 여기가 제스처가 걸리는 자리다', async () => {
+  it('스케줄러를 누르면 한 단 쌓인다. 여기가 제스처가 걸리는 자리다', async () => {
     await 앱을_켠다()
 
     await press('bar-group-schedule')
@@ -90,7 +90,7 @@ describe('그룹 진입이 스택 한 단을 만든다', () => {
     expect(지금_화면()).toBe('Content')
   })
 
-  it('← 를 누르면 그 단이 없어진다 — 스와이프가 만드는 것과 같은 결과다', async () => {
+  it('← 를 누르면 그 단이 없어진다. 스와이프가 만드는 것과 같은 결과다', async () => {
     await 앱을_켠다()
     await press('bar-group-schedule')
 

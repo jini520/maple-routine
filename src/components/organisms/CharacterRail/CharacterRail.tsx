@@ -2,7 +2,7 @@
 //
 // **드롭다운이 못 채운 계약을 여기서 채운다.** `CharacterSelectDropdown` 은 닫힌 상태만 옮겨 와
 // `onSelect` 가 한 번도 안 불렸다(그 파일 머리 **⚠️ 목록은 아직 없다**). 레일에는 열고 닫을 것이 없어
-// — 항목이 곧 목록이다. 누르면 그 자리에서 바뀐다.
+// 항목이 곧 목록이다. 누르면 그 자리에서 바뀐다.
 //
 // ── 음수 마진이 하는 일 ───────────────────────────────────────────────────────────
 //
@@ -23,7 +23,7 @@ export interface CharacterRailEntry {
   imageUrl: string | null
   /**
    * 0개면 링 없음(관리 화면), 1개면 온전한 원, 2개면 좌·우 반원
-   * (8 — `CharacterPortrait` 의 같은 프롭).
+   * (8. `CharacterPortrait` 의 같은 프롭).
    */
   rings: [] | [PortraitRingProgress] | [PortraitRingProgress, PortraitRingProgress]
 }

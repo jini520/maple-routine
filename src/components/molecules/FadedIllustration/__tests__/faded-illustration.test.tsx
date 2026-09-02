@@ -15,7 +15,7 @@ import { IllustratedCard, FadedIllustration } from '../FadedIllustration'
 /** 실제 크롭 표에 있는 모양(`daily-quest-region-crops.json`) 하나. */
 const CROP = { size: '220% auto', position: '60% 40%' }
 
-// `aria-hidden` 이 붙어 있어 RNTL 기본 질의에서 **빠진다**(접근성 트리에서 숨긴 요소다) —
+// `aria-hidden` 이 붙어 있어 RNTL 기본 질의에서 **빠진다**(접근성 트리에서 숨긴 요소다).
 // 장식이라 그것이 옳고, 그래서 여기서는 숨은 요소까지 훑는다.
 const HIDDEN = { includeHiddenElements: true } as const
 
@@ -61,7 +61,7 @@ describe('일러스트를 누르는 값', () => {
 // ── 렌더 ────────────────────────────────────────────────────────────────────────────
 
 describe('FadedIllustration', () => {
-  it('그림이 없으면 아무것도 그리지 않는다 — 뷰가 늘지 않는다', async () => {
+  it('그림이 없으면 아무것도 그리지 않는다. 뷰가 늘지 않는다', async () => {
     const { queryByTestId } = await renderAtom(<FadedIllustration source={null} crop={CROP} />)
 
     expect(queryByTestId('faded-illustration', HIDDEN)).toBeNull()
@@ -94,7 +94,7 @@ describe('IllustratedCard', () => {
     expect(flattenStyle(getByTestId('card').props.style).backgroundColor).toBe(기본테마.mediaSurface)
   })
 
-  it('`Card` atom 의 라운딩을 그대로 쓴다 — 카드 토큰을 다시 적지 않았다', async () => {
+  it('`Card` atom 의 라운딩을 그대로 쓴다. 카드 토큰을 다시 적지 않았다', async () => {
     const { getByTestId } = await renderAtom(<IllustratedCard testID="card">{null}</IllustratedCard>)
 
     expect(flattenStyle(getByTestId('card').props.style).borderRadius).toBe(14)

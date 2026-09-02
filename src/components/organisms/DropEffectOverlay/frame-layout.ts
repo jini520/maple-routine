@@ -1,4 +1,4 @@
-// 프레임 한 장을 화면 어디에 얼마나 크게 놓는가 — 웹의 `transform` 문자열을 **RN 배치 값**으로 옮긴다.
+// 프레임 한 장을 화면 어디에 얼마나 크게 놓는가. 웹의 `transform` 문자열을 **RN 배치 값**으로 옮긴다.
 //
 // ## 왜 CSS `transform` 문자열이 아니라 배치 값인가
 //
@@ -87,7 +87,7 @@ function centerDropFrame(scale: number, bitmap: FrameBitmapSize | null): FramePl
 
 
 /**
- * 스프라이트 한 장 — 어느 그림을 어디에 의 최소 단위.
+ * 스프라이트 한 장. 어느 그림을 어디에 의 최소 단위.
  *
  * 이 목록이 필요한 이유는 이다. 재생이 `source` 를 갈아끼우는 대신 **전 프레임을
  * 마운트해 두고 `opacity` 로 한 장만 켜기** 때문에, 켜기 전에 39+16 장의 자리를 미리 다 알아야 한다.
@@ -101,7 +101,7 @@ export interface SpriteFrame {
 /** 비트맵 크기를 못 구한 프레임은 **빼 버린다**. 크기 없이 그리면 프레임마다 최대 26px 튄다. */
 type SizeOf = (source: ImageAssetRef) => FrameBitmapSize | null
 
-/** DropEff 기둥 39장 — 각자 자기 origin 으로 놓인다. */
+/** DropEff 기둥 39장. 각자 자기 origin 으로 놓인다. */
 export function buildPillarFrames(sizeOf: SizeOf): SpriteFrame[] {
   const phases: DropEffectPhase[] = ['pre', 'loop', 'end']
   return phases.flatMap((phase) =>
@@ -116,7 +116,7 @@ export function buildPillarFrames(sizeOf: SizeOf): SpriteFrame[] {
   )
 }
 
-/** ScreenEff 16장 — 전 프레임 같은 배율로 화면 중앙. */
+/** ScreenEff 16장. 전 프레임 같은 배율로 화면 중앙. */
 export function buildScreenFrames(scale: number, sizeOf: SizeOf): SpriteFrame[] {
   return DROP_EFFECT_FRAMES.screen.flatMap((source, i) => {
     const placement = centerDropFrame(scale, sizeOf(source))

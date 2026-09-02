@@ -28,7 +28,7 @@ import path from 'node:path'
 
 const SRC = path.resolve(__dirname, '..')
 
-/** `src/` 아래 `.ts`/`.tsx` 를 전부 훑는다(테스트는 제품 코드가 아니라 제외 — vitest 는 Vite 위에서
+/** `src/` 아래 `.ts`/`.tsx` 를 전부 훑는다(테스트는 제품 코드가 아니라 제외. vitest 는 Vite 위에서
  *  돌아 그쪽에서는 글롭이 **사실**이고, 실제로 `data/__tests__` 가 하나 쓴다). */
 function productSourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {

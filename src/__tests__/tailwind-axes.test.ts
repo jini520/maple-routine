@@ -42,12 +42,12 @@ describe('v4 축 파생', () => {
     expect(axes.SPACING_STEP).toBe(0.25)
   })
 
-  // v3 고정 계단에는 없는 값들 — 파생이 끊기면 클래스가 통째로 사라진다.
+  // v3 고정 계단에는 없는 값들. 파생이 끊기면 클래스가 통째로 사라진다.
   it.each([
-    ['4', '1rem'], // p-4 — 화면 패딩(design-system **레이아웃**)
+    ['4', '1rem'], // p-4. 화면 패딩(design-system **레이아웃**)
     ['13', '3.25rem'], // h-13
-    ['22', '5.5rem'], // h-22 — 파티 인원 모달 히어로 88
-    ['2.5', '0.625rem'], // py-2.5 — 버튼(design-system **기본 컴포넌트**)
+    ['22', '5.5rem'], // h-22. 파티 인원 모달 히어로 88
+    ['2.5', '0.625rem'], // py-2.5. 버튼(design-system **기본 컴포넌트**)
   ])('spacing[%s] = %s', (key, expected) => {
     expect(axes.theme.spacing[key]).toBe(expected)
   })

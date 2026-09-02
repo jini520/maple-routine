@@ -90,7 +90,7 @@ export function MapleSweepSpinner(props: SpinnerProps): React.JSX.Element {
           <Stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
         </LinearGradient>
         {/* 범위는 띠의 **여정 전체**를 덮는 정적 상자다(범위까지 굴리면 `<Defs>` 안의 노드를
-            애니메이션해야 한다). 램프는 띠와 같은 크기로 **같은 `bandY`** 를 따라간다 — 그래야
+            애니메이션해야 한다). 램프는 띠와 같은 크기로 **같은 `bandY`** 를 따라간다. 그래야
             램프가 띠에 딸려 간다. `maskContentUnits` 도 적어 둔다: 지금 라이브러리는 안 읽지만
             언젠가 읽게 되어도 좌표의 뜻이 바뀌지 않아야 한다. */}
         <Mask
@@ -113,7 +113,7 @@ export function MapleSweepSpinner(props: SpinnerProps): React.JSX.Element {
         </Mask>
       </Defs>
 
-      {/* 바탕 잎 — 띠가 지나가지 않는 동안에도 형태가 남아 무엇을 기다리는지가 보인다. */}
+      {/* 바탕 잎. 띠가 지나가지 않는 동안에도 형태가 남아 무엇을 기다리는지가 보인다. */}
       <Path d={MAPLE_LEAF_PATH} fill="currentColor" opacity={0.32} />
 
       <G clipPath={`url(#${clipId})`}>

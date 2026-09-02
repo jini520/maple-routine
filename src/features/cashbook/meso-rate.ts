@@ -15,10 +15,10 @@ import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getCachedMesoRate, setCachedMesoRate } from '../../storage/meso-rate-cache'
 
 /**
- * 읽었나 못 읽었나 — 화면이 **줄의 모양을 가르는** 값이다.
+ * 읽었나 못 읽었나. 화면이 **줄의 모양을 가르는** 값이다.
  *
  * `read` 면 자동값이라 못 치고, `fallback` 이면 치는 칸이 되며 `percent` 는 그 칸의 기본값
- * (마지막 성공값, 없으면 `null` 이라 빈 칸)이다. **`read` 의 0 과 `fallback` 의 0 은 다르다** —
+ * (마지막 성공값, 없으면 `null` 이라 빈 칸)이다. **`read` 의 0 과 `fallback` 의 0 은 다르다**.
  * 앞은 메획을 안 두른 캐릭터 이고 뒤는 못 읽었으니 사람이 적어라 다.
  */
 export type MesoRateLoad =

@@ -55,7 +55,7 @@ beforeEach(() => {
   openStoreForUpdateMock.mockReset()
   showSplashScreenMock.mockReset().mockResolvedValue(undefined)
   hideSplashScreenMock.mockReset().mockResolvedValue(undefined)
-  // 기본은 "적어 둔 적 없음" — 완료 안내가 뜨지 않는 쪽이라 다른 테스트를 오염시키지 않는다.
+  // 기본은 "적어 둔 적 없음"완료 안내가 뜨지 않는 쪽이라 다른 테스트를 오염시키지 않는다.
   getLastRunBundleVersionMock.mockReset().mockResolvedValue(null)
   setLastRunBundleVersionMock.mockReset().mockResolvedValue(undefined)
   useLiveUpdateStore.setState(INITIAL)
@@ -90,7 +90,7 @@ describe('useLiveUpdateStore', () => {
     })
 
     // 받기 전 모달의 `자세히 보기`가 그리는 재료는 이것뿐이다.
-    it('highlights가 오면 담고, 없으면 null이다 — 없으면 모달이 버튼째 안 그린다', async () => {
+    it('highlights가 오면 담고, 없으면 null이다. 없으면 모달이 버튼째 안 그린다', async () => {
       const highlights = ['보스 카드에서 인원 변경', '아이템 가격 입력']
       checkForLiveUpdateMock.mockResolvedValue({ ...AVAILABLE, highlights })
       await s().check()
@@ -114,7 +114,7 @@ describe('useLiveUpdateStore', () => {
       expect(s().status).toBe('up-to-date')
     })
 
-    // 매니페스트 조회 실패는 자동 확인일 수 있어 모달을 띄우지 않는다 —
+    // 매니페스트 조회 실패는 자동 확인일 수 있어 모달을 띄우지 않는다.
     // 다운로드 실패와 종류를 갈라 둔다.
     it('매니페스트 조회 실패는 check-error (모달 대상 아님)', async () => {
       checkForLiveUpdateMock.mockResolvedValue({ kind: 'error' })
@@ -330,7 +330,7 @@ describe('useLiveUpdateStore', () => {
 
   // 적용 성공 경로에는 상태 전환 코드가 없으므로 "방금
   // 업데이트했다"는 재시작 뒤에 알아내야 한다. 판정 근거는 `마지막으로 실행된 번들 버전` 하나다.
-  describe("checkOnBoot — 적용 완료 안내('updated')", () => {
+  describe("checkOnBoot: 적용 완료 안내('updated')", () => {
     beforeEach(() => {
       getCurrentBundleVersionMock.mockResolvedValue('1.0.4')
       checkForLiveUpdateMock.mockResolvedValue({ kind: 'up-to-date' })

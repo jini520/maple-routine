@@ -115,7 +115,7 @@ describe('seedManualTrackedContent', () => {
     jest.mocked(syncSchedules).mockResolvedValue([
       buildSyncResult(
         buildState({
-          // API가 공백 없이 내려주는 케이스 — 우리 데이터 이름은 "선택받은 세렌"
+          // API가 공백 없이 내려주는 케이스. 우리 데이터 이름은 "선택받은 세렌"
           bossContents: [buildBoss('선택받은세렌', '하드', true)],
         }),
       ),
@@ -144,7 +144,7 @@ describe('seedManualTrackedContent', () => {
 })
 
 // 캐릭터마다 회차를 내다가 서로 합류해 전원이 남의 스케줄로 시드됐다.
-describe('seedManualTrackedContent — 여러 ocid', () => {
+describe('seedManualTrackedContent: 여러 ocid', () => {
   it('ocid가 여럿이어도 동기화는 한 회차다', async () => {
     jest.mocked(syncSchedules).mockResolvedValue([
       buildSyncResult(buildState(), 'ocid-1'),

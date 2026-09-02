@@ -12,12 +12,12 @@ import {
 } from '../cashbook/hunting-meso'
 import { getItemIconUrlByFile } from '../assets/asset-lookup'
 
-/** 사용자가 준 예시의 맵 — 밤의 길 3(탈라하트, 40마리, lv.294). */
+/** 사용자가 준 예시의 맵. 밤의 길 3(탈라하트, 40마리, lv.294). */
 const NIGHT_ROAD_3 = { name: '밤의 길 3', force: 700, mobs: 40, levels: [294] } as const
-/** 레벨이 둘인 맵 — 풍화된 기쁨과 분노의 땅(소멸의 여로). */
+/** 레벨이 둘인 맵. 풍화된 기쁨과 분노의 땅(소멸의 여로). */
 const TWO_LEVEL_MAP = { name: '풍화된 기쁨과 분노의 땅', force: 30, mobs: 29, levels: [200, 201] } as const
 
-/** 34마리 맵 — 반올림이 실제로 일어나는 자리다(33/34 = 97.06%). */
+/** 34마리 맵. 반올림이 실제로 일어나는 자리다(33/34 = 97.06%). */
 const ODIUM_1 = { name: '성문으로 가는 길 1', force: 130, mobs: 34, levels: [270] } as const
 
 const BASE = {
@@ -29,13 +29,13 @@ const BASE = {
 } as const
 
 describe('levelPenaltyPercent', () => {
-  it('레벨 차이가 10 이하면 페널티가 없다 — 방향 무관', () => {
+  it('레벨 차이가 10 이하면 페널티가 없다. 방향 무관', () => {
     expect(levelPenaltyPercent(200, 200)).toBe(0)
     expect(levelPenaltyPercent(200, 210)).toBe(0)
     expect(levelPenaltyPercent(210, 200)).toBe(0)
   })
 
-  describe('몬스터가 높을 때 — 11부터 -3%씩, 21부터 -5%씩', () => {
+  describe('몬스터가 높을 때. 11부터 -3%씩, 21부터 -5%씩', () => {
     it.each([
       [11, 3],
       [15, 15],
@@ -46,13 +46,13 @@ describe('levelPenaltyPercent', () => {
       expect(levelPenaltyPercent(200, 200 + diff)).toBe(percent)
     })
 
-    it('34 를 넘으면 -100% 에 머문다 — 표 밖으로 안 넘어간다', () => {
+    it('34 를 넘으면 -100% 에 머문다. 표 밖으로 안 넘어간다', () => {
       expect(levelPenaltyPercent(200, 235)).toBe(100)
       expect(levelPenaltyPercent(200, 300)).toBe(100)
     })
   })
 
-  describe('몬스터가 낮을 때 — 11부터 -2%씩, 21부터 고르지 않은 표', () => {
+  describe('몬스터가 낮을 때. 11부터 -2%씩, 21부터 고르지 않은 표', () => {
     it.each([
       [11, 2],
       [20, 20],
@@ -76,7 +76,7 @@ describe('levelPenaltyPercent', () => {
     })
   })
 
-  it('두 표 다 **정확히 -100% 에서 끝난다** — 옮겨 적다 틀리면 여기서 잡힌다', () => {
+  it('두 표 다 **정확히 -100% 에서 끝난다**. 옮겨 적다 틀리면 여기서 잡힌다', () => {
     expect(levelPenaltyPercent(200, 234)).toBe(100)
     expect(levelPenaltyPercent(200, 233)).toBe(95)
     expect(levelPenaltyPercent(230, 200)).toBe(100)
@@ -85,7 +85,7 @@ describe('levelPenaltyPercent', () => {
 })
 
 describe('huntingMesoOf', () => {
-  it('사용자가 준 예시를 그대로 낸다 — 290레벨 40마리 1시간 = 41,760,000', () => {
+  it('사용자가 준 예시를 그대로 낸다. 290레벨 40마리 1시간 = 41,760,000', () => {
     const meso = huntingMesoOf({
       ...BASE,
       ground: { name: '가상', force: 0, mobs: 40, levels: [290] },
@@ -93,7 +93,7 @@ describe('huntingMesoOf', () => {
     expect(meso).toBe(41_760_000)
   })
 
-  it('소재는 30분이다 — 하나면 절반이고 넷이면 두 배다', () => {
+  it('소재는 30분이다. 하나면 절반이고 넷이면 두 배다', () => {
     const one = huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3, sojae: 1 })
     const two = huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3, sojae: 2 })
     const four = huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3, sojae: 4 })
@@ -102,11 +102,11 @@ describe('huntingMesoOf', () => {
     expect(four).toBe(two * 2)
   })
 
-  it('소재가 0 이면 0 이다 — 안 사냥한 시간에 메소가 나오지 않는다', () => {
+  it('소재가 0 이면 0 이다. 안 사냥한 시간에 메소가 나오지 않는다', () => {
     expect(huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3, sojae: 0 })).toBe(0)
   })
 
-  it('놓친 마릿수만큼 덜 잡는다 — 40마리에서 둘을 놓치면 38/40 이다', () => {
+  it('놓친 마릿수만큼 덜 잡는다. 40마리에서 둘을 놓치면 38/40 이다', () => {
     const full = huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3 })
     const missedTwo = huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3, missedMobs: 2 })
     expect(missedTwo).toBe(Math.floor((full * 38) / 40))
@@ -134,7 +134,7 @@ describe('huntingMesoOf', () => {
    *  은 둘을 한 통에 넣어 ×1.7 을 냈는데, 재획비는 **합산 결과 전체에** 곱하는
    * 것이라 유니온의 부만 켠 150% 에 1.2 가 걸려 **×1.8** 이 된다.
    */
-  it('유니온의 부는 통 안, 재획비는 통 밖이다 — 둘 다 켜면 ×1.8', () => {
+  it('유니온의 부는 통 안, 재획비는 통 밖이다. 둘 다 켜면 ×1.8', () => {
     const base = huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3 })
     const both = huntingMesoOf({
       ...BASE,
@@ -147,14 +147,14 @@ describe('huntingMesoOf', () => {
     expect(both).not.toBe(Math.floor(base * 1.7))
   })
 
-  it('가산끼리는 여전히 합연산이다 — 메획과 유니온의 부가 한 통이다', () => {
+  it('가산끼리는 여전히 합연산이다. 메획과 유니온의 부가 한 통이다', () => {
     const base = huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3 })
     // 메획 149 + 유니온의 부 50 = 199 → (1 + 1.99) = ×2.99
     const additive = huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3, boostPercent: 199 })
     expect(additive).toBe(Math.floor(base * 2.99))
   })
 
-  it('재획비는 **합산 결과 전체에** 곱한다 — 메획 149 + 유니온의 부 50 이면 ×3.588', () => {
+  it('재획비는 **합산 결과 전체에** 곱한다. 메획 149 + 유니온의 부 50 이면 ×3.588', () => {
     const base = huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3 })
     const all = huntingMesoOf({
       ...BASE,
@@ -167,7 +167,7 @@ describe('huntingMesoOf', () => {
     expect(all).not.toBe(Math.floor(base * 3.19))
   })
 
-  it('캐릭터 레벨을 모르면 페널티가 없다 — 고르개가 `선택 안함` 인 상태다', () => {
+  it('캐릭터 레벨을 모르면 페널티가 없다. 고르개가 `선택 안함` 인 상태다', () => {
     const unknown = huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3, characterLevel: null })
     const same = huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3, characterLevel: 294 })
     expect(unknown).toBe(same)
@@ -186,7 +186,7 @@ describe('huntingMesoOf', () => {
     ).toBe(0)
   })
 
-  it('레벨이 둘인 맵은 **레벨마다 재서 평균**낸다 — 페널티가 레벨마다 다르기 때문이다', () => {
+  it('레벨이 둘인 맵은 **레벨마다 재서 평균**낸다. 페널티가 레벨마다 다르기 때문이다', () => {
     // 캐릭터 221 · 몬스터 200/201 → 차이 21(-25%) 과 20(-20%). 평균 레벨 200.5 로 접으면
     // 차이가 20.5 가 되어 정수 표에 안 들어간다.
     const characterLevel = 221
@@ -199,20 +199,20 @@ describe('huntingMesoOf', () => {
     ).toBe(Math.floor((at200 + at201) / 2))
   })
 
-  it('레벨이 하나인 맵은 평균 갈래를 안 탄다 — 곱셈 그대로다', () => {
+  it('레벨이 하나인 맵은 평균 갈래를 안 탄다. 곱셈 그대로다', () => {
     const perMinute = NIGHT_ROAD_3.mobs * 8
     expect(huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3 })).toBe(
       Math.floor(294 * 7.5 * perMinute * 60),
     )
   })
 
-  it('**언제나 정수**를 낸다 — 메소에 소수점은 없다', () => {
+  it('**언제나 정수**를 낸다. 메소에 소수점은 없다', () => {
     // 레벨 계수 7.5 와 평균 갈래가 소수를 만들 수 있는 자리다. 실제 값으로는 8젠·30분이 늘
     // 걷어 가지만(그래서 이 단언이 통과한다) 내림은 그 사실에 기대지 않는다.
     for (const missedMobs of MISSED_MOB_OPTIONS) {
       // 메획이 든 통도 훑는다. 149 처럼 큰 값이 실제로 들어온다.
       for (const boostPercent of [0, 20, 50, 70, 149, 199]) {
-        // 통 밖의 배율 축 — 1.2 가 소수를 새로 만든다.
+        // 통 밖의 배율 축. 1.2 가 소수를 새로 만든다.
         for (const boostMultiplier of [1, 1.2]) {
           for (const characterLevel of [null, 200, 221, 294]) {
             for (const ground of [NIGHT_ROAD_3, TWO_LEVEL_MAP, ODIUM_1]) {
@@ -249,31 +249,31 @@ describe('huntingTotalOf', () => {
     ).toBe(meso)
   })
 
-  it('사냥터를 아직 안 골랐으면 조각 값만 선다 — 계산기가 반쯤 찬 상태다', () => {
+  it('사냥터를 아직 안 골랐으면 조각 값만 선다. 계산기가 반쯤 찬 상태다', () => {
     expect(
       huntingTotalOf({ ...BASE, ground: null, fragments: 3, fragmentPrice: 1_000_000 }),
     ).toBe(3_000_000)
   })
 })
 
-describe('boostPercentOf — 통 **안**의 것만 더한다', () => {
+describe('boostPercentOf: 통 **안**의 것만 더한다', () => {
   it('가산 아이템의 %를 더한다', () => {
     expect(boostPercentOf([])).toBe(0)
     expect(boostPercentOf(['union'])).toBe(50)
     expect(boostPercentOf(['union', 'potion'])).toBe(50)
   })
 
-  it('재획비는 여기 안 든다 — 통 밖에서 곱한다', () => {
+  it('재획비는 여기 안 든다. 통 밖에서 곱한다', () => {
     expect(boostPercentOf(['potion'])).toBe(0)
   })
 
-  it('모르는 id 는 0 으로 친다 — 옛 기록이 지운 아이템을 들고 있을 수 있다', () => {
+  it('모르는 id 는 0 으로 친다. 옛 기록이 지운 아이템을 들고 있을 수 있다', () => {
     expect(boostPercentOf(['union', 'gone'])).toBe(50)
   })
 })
 
-describe('boostMultiplierOf — 통 **밖**의 것만 곱한다', () => {
-  it('아무것도 안 켜면 1 이다 — 곱해도 값이 안 변한다', () => {
+describe('boostMultiplierOf: 통 **밖**의 것만 곱한다', () => {
+  it('아무것도 안 켜면 1 이다. 곱해도 값이 안 변한다', () => {
     expect(boostMultiplierOf([])).toBe(1)
     expect(boostMultiplierOf(['union'])).toBe(1)
   })
@@ -288,33 +288,33 @@ describe('boostMultiplierOf — 통 **밖**의 것만 곱한다', () => {
   })
 })
 
-describe('appliedMesoRatePercent — 화면에 적히는 증가량', () => {
+describe('appliedMesoRatePercent: 화면에 적히는 증가량', () => {
   it('아무것도 안 켜면 캐릭터 메획 그대로다', () => {
     expect(appliedMesoRatePercent(149, 1)).toBe(149)
     expect(appliedMesoRatePercent(0, 1)).toBe(0)
   })
 
-  it('가산은 그대로 더해진다 — 메획 149 + 유니온의 부 50', () => {
+  it('가산은 그대로 더해진다. 메획 149 + 유니온의 부 50', () => {
     expect(appliedMesoRatePercent(199, 1)).toBe(199)
   })
 
-  it('곱셈은 **기본 100% 를 포함해** 걸린다 — 재획비만 켜면 198%', () => {
+  it('곱셈은 **기본 100% 를 포함해** 걸린다. 재획비만 켜면 198%', () => {
     // (100 + 149) × 1.2 = 298.8 → 298 − 100
     expect(appliedMesoRatePercent(149, 1.2)).toBe(198)
   })
 
-  it('둘 다 켜면 258% 다 — (100+149+50)×1.2 = 358.8', () => {
+  it('둘 다 켜면 258% 다. (100+149+50)×1.2 = 358.8', () => {
     expect(appliedMesoRatePercent(199, 1.2)).toBe(258)
   })
 
-  it('**소수점은 버린다** — 반올림이 아니다', () => {
+  it('**소수점은 버린다**. 반올림이 아니다', () => {
     // 358.8 은 259 로 오르지 않는다.
     expect(appliedMesoRatePercent(199, 1.2)).toBe(258)
     // (100+0)×1.2 = 120 → 20 (딱 떨어지는 자리)
     expect(appliedMesoRatePercent(0, 1.2)).toBe(20)
   })
 
-  it('부동소수가 1 을 깎지 않는다 — 가산 전 구간을 훑는다', () => {
+  it('부동소수가 1 을 깎지 않는다. 가산 전 구간을 훑는다', () => {
     for (let boostPercent = 0; boostPercent <= 400; boostPercent += 1) {
       // 정수 연산으로 낸 참값과 같아야 한다.
       const exact = Math.floor(((100 + boostPercent) * 12) / 10) - 100
@@ -341,7 +341,7 @@ describe('efficiencyPercentOf', () => {
     expect(MISSED_MOB_OPTIONS.map((missed) => efficiencyPercentOf(mobs, missed))).toEqual(expected)
   })
 
-  it('**소수 첫째자리에서 반올림**한다 — 라벨은 언제나 정수다', () => {
+  it('**소수 첫째자리에서 반올림**한다. 라벨은 언제나 정수다', () => {
     expect(efficiencyPercentOf(40, 1)).toBe(98) // 97.5 → 98
     expect(efficiencyPercentOf(34, 2)).toBe(94) // 94.12 → 94
     expect(efficiencyPercentOf(22, 2)).toBe(91) // 90.91 → 91
@@ -359,7 +359,7 @@ describe('표', () => {
   })
 
   // 칩이 **글자가 아니라 그림**이라 파일명이 어긋나면 칩이 빈 채로 뜬다.
-  it('파일명이 번들 에셋으로 실제로 풀린다 — 오타면 칩이 조용히 빈다', () => {
+  it('파일명이 번들 에셋으로 실제로 풀린다. 오타면 칩이 조용히 빈다', () => {
     for (const boost of MESO_BOOSTS) {
       expect(getItemIconUrlByFile(boost.icon)).not.toBeNull()
     }

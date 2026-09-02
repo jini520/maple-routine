@@ -7,8 +7,8 @@
 //
 // ── 그래서 이 파일이 보는 것은 **갈리는 것** 뿐이다 ──────────────────────────────────
 //
-// 본문(`CharacterManageBody` + `useCharacterManage`)의 계약 — 두 층의 범위 · 이동 · 별 · TTL ·
-// 드롭다운 · 실패 표현 — 은 `../../settings/__tests__/SettingsCharactersScreen.test.tsx` 가 이미
+// 본문(`CharacterManageBody` + `useCharacterManage`)의 계약. 두 층의 범위 · 이동 · 별 · TTL ·
+// 드롭다운 · 실패 표현. 은 `../../settings/__tests__/SettingsCharactersScreen.test.tsx` 가 이미
 // 본다. 같은 컴포넌트를 두 곳에서 다시 검사하면 이 **머리와 CTA 만 갈린다** 로
 // 묶어 둔 것이 테스트에서 두 벌이 된다. 여기서 보는 것은 제목 · CTA 게이트 · 제출 payload ·
 // **429 만 넘기는 배선** 넷이다.
@@ -172,7 +172,7 @@ afterEach(() => {
   jest.clearAllMocks()
 })
 
-describe('ContentCharacterStep — 머리와 CTA', () => {
+describe('ContentCharacterStep: 머리와 CTA', () => {
   it('제목 블록과 `계속하기`를 그린다', async () => {
     const { view } = await renderStep()
 
@@ -182,7 +182,7 @@ describe('ContentCharacterStep — 머리와 CTA', () => {
 
   // 설정 하위 페이지가 그리는 것과 **같은 본문**이다. 갈리는 것은 위 케이스의 둘뿐이라,
   // 여기서는 그것이 정말 그 본문인지(사본이 아닌지)만 확인한다.
-  it('설정 화면과 같은 두 층 본문을 그린다 — 드롭다운이 아래 층의 머리다', async () => {
+  it('설정 화면과 같은 두 층 본문을 그린다. 드롭다운이 아래 층의 머리다', async () => {
     const { view } = await renderStep()
 
     expect(view.getByTestId('character-manage-body')).toBeTruthy()
@@ -191,7 +191,7 @@ describe('ContentCharacterStep — 머리와 CTA', () => {
     expect(view.getByTestId('account-select-trigger')).toBeTruthy()
   })
 
-  // 옛 화면에 있던 `계정 다시 선택` 탈출구는 목적지가 없어졌다 —
+  // 옛 화면에 있던 `계정 다시 선택` 탈출구는 목적지가 없어졌다.
   // 그 자리의 출구는 드롭다운을 되돌리는 것이다.
   it('`계정 다시 선택` 탈출구를 두지 않는다', async () => {
     const { view } = await renderStep()
@@ -225,7 +225,7 @@ describe('ContentCharacterStep — 머리와 CTA', () => {
 
 //  (사용자 지정 2026-08-18). 설정 하위 페이지의 `저장`과 **같은 액션 바**다.
 // 본문이 그 화면과 같은 두 층이라(결정 1) 캐릭터가 많으면 본문 끝의 CTA 는 화면 밖에 있게 된다.
-describe('ContentCharacterStep — `계속하기`는 하단에 고정된다', () => {
+describe('ContentCharacterStep: `계속하기`는 하단에 고정된다', () => {
   it('CTA 는 스크롤 뷰 **밖**의 고정 바 안에 선다', async () => {
     const { view } = await renderStep()
 
@@ -260,7 +260,7 @@ describe('ContentCharacterStep — `계속하기`는 하단에 고정된다', ()
   })
 })
 
-describe('ContentCharacterStep — 제출 payload', () => {
+describe('ContentCharacterStep: 제출 payload', () => {
   // 고른 순서가 곧 저장 순서다. 새로 고른 것은 배열 끝에 붙는다.
   it('고른 순서 그대로 ocid 를 넘긴다', async () => {
     const { view, onSubmit } = await renderStep()
@@ -286,7 +286,7 @@ describe('ContentCharacterStep — 제출 payload', () => {
   })
 })
 
-describe('ContentCharacterStep — 키 재입력 진입점은 429 만 탄다', () => {
+describe('ContentCharacterStep: 키 재입력 진입점은 429 만 탄다', () => {
   // : 로스터가 429 로 비면 출구가 전부 막힌다(CTA 영구 비활성 · 재시도는 같은
   // 키로 또 429 · 단계는 라우트가 아니라 status switch). 그 자리를 여는 것이 이 배선이다.
   it('후보 조회 429 는 키 재입력 진입점으로 넘어간다', async () => {
@@ -308,7 +308,7 @@ describe('ContentCharacterStep — 키 재입력 진입점은 429 만 탄다', (
   // 설정 하위 페이지는 같은 401 을 진입점으로 넘긴다. 두 화면은 여기서만 갈린다.
   // 그래서 문구도 갈린다. 화면이 안 옮겨가는데 **키 입력 화면으로 이동합니다**(피커 어휘)를 쓰면
   // 거짓인 데다 액션까지 없어 401 이 하드 잠금이 된다.
-  it('401 은 넘기지 않는다 — 폼 자체의 실패로 남고 `다시 시도`가 그 처방이다', async () => {
+  it('401 은 넘기지 않는다. 폼 자체의 실패로 남고 `다시 시도`가 그 처방이다', async () => {
     rosterFailure = new NexonAuthError('401')
     const { view } = await renderStep()
 

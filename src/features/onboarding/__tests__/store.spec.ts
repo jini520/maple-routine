@@ -126,7 +126,7 @@ describe('useOnboardingStore.restoreFromStorage', () => {
       getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
     })
 
-    it('스케줄 관리 방법을 고르지 않았으면 그 단계부터 재개한다 — 자동으로 확정하지 않는다', async () => {
+    it('스케줄 관리 방법을 고르지 않았으면 그 단계부터 재개한다. 자동으로 확정하지 않는다', async () => {
       getTrackingModeMock.mockResolvedValue(null)
       getTrackedCharacterOcidsMock.mockResolvedValue(null)
 
@@ -148,7 +148,7 @@ describe('useOnboardingStore.restoreFromStorage', () => {
       expect(useOnboardingStore.getState().status).toBe('selectingContentCharacters')
     })
 
-    it('추적 캐릭터가 빈 배열이어도 미완료로 본다 — 0명은 사용자 의도가 아니다', async () => {
+    it('추적 캐릭터가 빈 배열이어도 미완료로 본다. 0명은 사용자 의도가 아니다', async () => {
       getTrackingModeMock.mockResolvedValue('manual')
       getTrackedCharacterOcidsMock.mockResolvedValue([])
 
@@ -183,7 +183,7 @@ describe('useOnboardingStore.restoreFromStorage', () => {
   })
 })
 
-describe('useOnboardingStore.submitApiKey — 무효 키(400 OPENAPI00005)', () => {
+describe('useOnboardingStore.submitApiKey: 무효 키(400 OPENAPI00005)', () => {
   // 넥슨은 무효 키에 401 이 아니라 400 OPENAPI00005 를 준다(실측 2026-08-08).
   // 전에는 이 경로가 "모르는 400"이라 network 로 degrade 돼, 키를 잘못 입력한 사용자에게
   // 화면이 "네트워크 오류가 발생했습니다"라고 말했다. 원인이 키인데 네트워크를 가리켰다.
@@ -237,7 +237,7 @@ describe('useOnboardingStore.submitApiKey', () => {
   // 넣으면서도 토스트는 그 값을 쓰지 않았다.
   it.each([
     [new NexonAuthError('invalid'), 'API 키가 유효하지 않습니다'],
-    // 토스트는 원인만 — 처방은 인라인 자리가 준다.
+    // 토스트는 원인만. 처방은 인라인 자리가 준다.
     [new NexonRateLimitError('rate limited'), '호출 한도를 초과했습니다'],
     [new NexonNetworkError('network fail'), '네트워크 오류가 발생했습니다'],
   ])('목록 조회 실패를 원인별 문구로 알린다 (%o)', async (error, expected) => {
@@ -341,7 +341,7 @@ describe('useOnboardingStore.submitApiKey', () => {
       expect(useOnboardingStore.getState().status).toBe('selectingTrackingMode')
     })
 
-    // 이슈 #157 의 요구사항 그 자체 — 무효화되면 키만 다시 받고 원래 자리로 돌아온다.
+    // 이슈 #157 의 요구사항 그 자체. 무효화되면 키만 다시 받고 원래 자리로 돌아온다.
     it('무효화 → 키 재입력 왕복이면 다시 completed이고 저장된 계정이 그대로다', async () => {
       useOnboardingStore.setState({
         status: 'completed',
@@ -367,7 +367,7 @@ describe('useOnboardingStore.submitApiKey', () => {
 
   // 대조할 selectedAccountId 가 없으므로 **같은 목적을 같은 응답으로** 다시 세운다.
   // 막는 것은 "남의 계정 키로 이전 계정 ocid 추적 목록을 그대로 쓰는 것" 하나다.
-  describe('키 재입력 후 재개 — 계정 범위 all', () => {
+  describe('키 재입력 후 재개. 계정 범위 all', () => {
     beforeEach(() => {
       // RN 은 계정을 고른 적이 없다.
       getAuthConfigMock.mockResolvedValue({ apiKey: 'key-2' })
@@ -376,7 +376,7 @@ describe('useOnboardingStore.submitApiKey', () => {
     afterEach(() => {
     })
 
-    it('추적 ocid가 하나라도 응답에 있으면 재개한다 — 추가 호출은 없다', async () => {
+    it('추적 ocid가 하나라도 응답에 있으면 재개한다. 추가 호출은 없다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-acc-2'])
       fetchCharacterListMock.mockResolvedValue([account('acc-1'), account('acc-2')])
       const seen: string[] = []
@@ -427,7 +427,7 @@ describe('useOnboardingStore.submitApiKey', () => {
       expect(useOnboardingStore.getState().status).toBe('selectingTrackingMode')
     })
 
-    it('추적 목록이 빈 배열이어도 같다 — 지킬 것이 없다', async () => {
+    it('추적 목록이 빈 배열이어도 같다. 지킬 것이 없다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue([])
       getTrackingModeMock.mockResolvedValue(null)
       fetchCharacterListMock.mockResolvedValue([account('acc-1')])
@@ -460,7 +460,7 @@ describe('useOnboardingStore.selectAccount', () => {
 
 
 
-  // 인라인 문구를 걷어내면서 이 경로가 유일하게 토스트가 없는 자리가 됐다 —
+  // 인라인 문구를 걷어내면서 이 경로가 유일하게 토스트가 없는 자리가 됐다.
   // 그대로 두면 계정을 눌렀는데 아무 일도 안 일어난 것처럼 보인다.
 })
 
@@ -573,7 +573,7 @@ describe('useOnboardingStore.submitContentCharacters', () => {
 
 // 결정 10 결정 1: 저장된 키로 앞으로 갈 수 없게 됐을 때 부르는 진입점은 이것뿐이다.
 // 원인은 둘(무효 키 400 OPENAPI00005·401/403 · 429)이고 사슬은 하나다. 처방이 같아 화면도 같다.
-// **알리기만 하고** 이동·삭제는 사용자가 "확인"을 눌러야(confirmApiKeyNotice) 일어난다 —
+// **알리기만 하고** 이동·삭제는 사용자가 "확인"을 눌러야(confirmApiKeyNotice) 일어난다.
 // 결정 1의 "토스트 + 즉시 이동"은 폐기됐다(이유를 읽기 전에 화면이 바뀌면 원인과 결과가 안 이어진다).
 describe('useOnboardingStore.noticeApiKeyIssue', () => {
   function primeCompleted(): void {
@@ -585,9 +585,9 @@ describe('useOnboardingStore.noticeApiKeyIssue', () => {
     })
   }
 
-  // 결정 10의 핵심 — 뒤에 원래 화면이 남아 있어야 사용자가 무엇을 하다 이렇게 됐는지 보면서 읽는다.
+  // 결정 10의 핵심. 뒤에 원래 화면이 남아 있어야 사용자가 무엇을 하다 이렇게 됐는지 보면서 읽는다.
   it.each(['invalid', 'rateLimited'] as const)(
-    '원인(%s)만 담고 status는 그대로다 — 화면을 빼앗지 않는다',
+    '원인(%s)만 담고 status는 그대로다. 화면을 빼앗지 않는다',
     (kind) => {
       primeCompleted()
 
@@ -601,7 +601,7 @@ describe('useOnboardingStore.noticeApiKeyIssue', () => {
 
   // 알리는 시점에는 아무것도 지우지 않는다. 확인 전에 지우면 사용자가 취소할 수 없는 일이 이미 끝난다.
   it.each(['invalid', 'rateLimited'] as const)(
-    '%s — 저장소를 건드리지 않고 토스트도 띄우지 않는다(문구는 모달이 말한다)',
+    '%s. 저장소를 건드리지 않고 토스트도 띄우지 않는다(문구는 모달이 말한다)',
     (kind) => {
       primeCompleted()
 
@@ -647,10 +647,10 @@ describe('useOnboardingStore.noticeApiKeyIssue', () => {
     },
   )
 
-  // 결정 2가 여는 자리 — 옛 가드(`status !== 'completed'`)에서는 전부 no-op이었다.
+  // 결정 2가 여는 자리. 옛 가드(`status !== 'completed'`)에서는 전부 no-op이었다.
   // 이슈 #176의 하드 잠금은 selectingContentCharacters에서 나므로, 여기서 알리지 못하면
   // 이 phase가 만들려는 출구가 정작 잠긴 사람에게 안 열린다.
-  it.each(['selectingContentCharacters', 'error'] as const)('온보딩 중간 단계(%s)에서도 알린다 — #176의 잠금이 여기서 일어난다', (status) => {
+  it.each(['selectingContentCharacters', 'error'] as const)('온보딩 중간 단계(%s)에서도 알린다. #176의 잠금이 여기서 일어난다', (status) => {
     useOnboardingStore.setState({
       status,
       accounts: [account('acc-1')],
@@ -680,7 +680,7 @@ describe('useOnboardingStore.confirmApiKeyNotice', () => {
 
   // 결정 2: 상태를 뒤집는 것이 곧 이동이다. App.tsx의 isCompleted 가드가 라우터로 보낸다.
   it.each(['invalid', 'rateLimited'] as const)(
-    '%s — completed를 awaitingApiKey로 되돌린다(알림도 함께 꺼진다)',
+    '%s. completed를 awaitingApiKey로 되돌린다(알림도 함께 꺼진다)',
     async (kind) => {
       primeNoticed(kind)
 
@@ -693,7 +693,7 @@ describe('useOnboardingStore.confirmApiKeyNotice', () => {
   // clearAuthConfig는 selectedAccountId까지 지워 결정 4의 재개를 불가능하게 만든다.
   // 429도 키를 지운다. 원인별로 갈라 처리하지 않는다.
   it.each(['invalid', 'rateLimited'] as const)(
-    '%s — 저장소에서 apiKey만 지운다(연결 해제 경로 clearAuthConfig를 타지 않는다)',
+    '%s. 저장소에서 apiKey만 지운다(연결 해제 경로 clearAuthConfig를 타지 않는다)',
     async (kind) => {
       primeNoticed(kind)
 

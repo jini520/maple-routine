@@ -2,7 +2,7 @@
  * 로컬 알림에서 **실기기 없이 검증되는 규칙**. 채널 정의·ID 변환·예약 시각 판정.
  *
  * step 1 의 `capacitor-storage-keys.ts`·step 2 의 `capacitor-sqlite-open.ts` 와 같은 자리다.
- * 여기 있는 셋은 전부 틀려도 컴파일되고 예외도 안 나는 종류라 이걸 막는 것은 테스트뿐이다 —
+ * 여기 있는 셋은 전부 틀려도 컴파일되고 예외도 안 나는 종류라 이걸 막는 것은 테스트뿐이다.
  * ID 가 어긋나면 **끈 알림이 계속 뜨고**, 채널 소리를 빠뜨리면 **알림이 조용히 무음이 된다**.
  */
 
@@ -61,7 +61,7 @@ export const NOTIFICATION_CHANNEL: AndroidChannel = {
  */
 export function toNotificationId(id: number): string {
   if (!Number.isSafeInteger(id)) {
-    throw new Error(`알림 ID 는 정수여야 합니다: ${id} — 정수가 아니면 취소로 되찾을 수 없습니다.`)
+    throw new Error(`알림 ID 는 정수여야 합니다: ${id}. 정수가 아니면 취소로 되찾을 수 없습니다.`)
   }
   return String(id)
 }

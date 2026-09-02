@@ -42,7 +42,7 @@ describe('getMostRecentWeeklyResetKst', () => {
   })
 
   it('기기 로컬 타임존과 무관하게 항상 같은 절대 시각을 기준으로 계산한다', () => {
-    // "2026-07-10T15:00:00Z"는 "2026-07-11T00:00:00+09:00"과 동일한 절대 시각이다 —
+    // "2026-07-10T15:00:00Z"는 "2026-07-11T00:00:00+09:00"과 동일한 절대 시각이다.
     // 어떤 표기로 Date를 구성하든(UTC 문자열이든 KST 오프셋 문자열이든) 결과가 같아야
     // 로컬 타임존에 의존하지 않는다는 뜻이다.
     const asUtcString = new Date('2026-07-10T15:00:00Z')
@@ -85,7 +85,7 @@ describe('getCurrentKstDateKey', () => {
   })
 })
 
-describe('getBackfillDateKeys (정정 — -1일부터 -13일까지 순차 조회용 날짜 목록)', () => {
+describe('getBackfillDateKeys (정정. -1일부터 -13일까지 순차 조회용 날짜 목록)', () => {
   it('평소엔 어제(-1일)부터 13일 전까지 KST 기준 날짜를 최신순으로 13개 반환한다', () => {
     const keys = getBackfillDateKeys(new Date('2026-07-21T10:00:00+09:00'))
     expect(keys).toHaveLength(13)

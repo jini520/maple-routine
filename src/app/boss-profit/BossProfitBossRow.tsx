@@ -47,7 +47,7 @@ export interface BossProfitBossRowProps {
   row: BossProfitRow
   drops: RecordedDrop[]
   /**
-   * 웹의 `last:border-b-transparent` 자리 — RN 에는 `:last-child` 가 없어 **목록을
+   * 웹의 `last:border-b-transparent` 자리. RN 에는 `:last-child` 가 없어 **목록을
    * 아는 부모가 알려 준다**(`disabled:` 를 JS 조건으로 옮긴 것과 같은 종류의 갈림).
    *
    * 테두리를 아예 빼지 않고 **색만 지우는** 것이 요점이다: 빼면 그 행만 1px 짧아진다.
@@ -134,13 +134,13 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
   //
   //  의 identity 는 **행 자신의 (ocid, 보스, 난이도, 기간)** 이다. 기간이 키에 들어
   // 있으므로 기간을 옮기면 "값이 변한 것"이 아니라 "다른 값을 보게 된 것"이라 굴러가지 않는다
-  // (정정 1 — 기간 이동에 굴러가는 것은 총 수익 헤드라인 하나뿐이다). `row.periodKey` 는 그려지는
+  // (정정 1. 기간 이동에 굴러가는 것은 총 수익 헤드라인 하나뿐이다). `row.periodKey` 는 그려지는
   // 데이터에서 오므로 스토어의 목표 기간보다 먼저 바뀌는 일이 없다.
   const amount = (
     <Text
       className={
         dropTotal > 0
-          ? // 아이템이 섞이면 **금액 색이 달라진다**(2026-08-10 사용자 요청) — 캐릭터 합계와 같은
+          ? // 아이템이 섞이면 **금액 색이 달라진다**(2026-08-10 사용자 요청). 캐릭터 합계와 같은
             // 규칙·같은 잉크라, 카드를 펼치면 "어느 행이 그 색을 만들었는지"가 바로 이어진다.
             'text-sm font-semibold text-primary-ink'
           : 'text-sm font-semibold text-text'
@@ -187,7 +187,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           role="button"
           onPress={() => setIsDropSheetOpen(true)}
           aria-label={`${row.boss} ${row.difficulty} 드롭 아이템 관리`}
-          // h-6 고정 — 자식(난이도 뱃지 20px · 보스명 20px · 드롭 지시자 24px) 중
+          // h-6 고정. 자식(난이도 뱃지 20px · 보스명 20px · 드롭 지시자 24px) 중
           // 최대값에 높이를 맡기면 지시자 종류가 바뀔 때마다 행 높이가 흔들린다.
           className="h-6 w-full flex-row items-center gap-1.5"
         >
@@ -242,7 +242,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
             <Badge variant="primary" className="shrink-0">
               가격 미확정
             </Badge>
-          ) : // 아이템이 섞이면 **금액 아래에 칩이 선다** — 그 존재가 곧 "이 숫자는 결정석만이
+          ) : // 아이템이 섞이면 **금액 아래에 칩이 선다**. 그 존재가 곧 "이 숫자는 결정석만이
           // 아니다"라는 표시이고, 동시에 내역을 여는 버튼이다(사용자 지정 2026-08-10). 값을 매긴
           // 아이템이 없으면 **래퍼조차 만들지 않는다**. 그 행의 트리가 종전과 달라지지 않아야
           // "보스 행은 건드리지 않았다"가 말뿐이 아니게 된다.

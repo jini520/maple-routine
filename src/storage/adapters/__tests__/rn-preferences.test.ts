@@ -40,7 +40,7 @@ describe('rnPreferencesPort (iOS)', () => {
     expect([...mockStore.entries()]).toEqual([['CapacitorStorage.apiKey', 'live_abc']])
   })
 
-  // Capacitor 앱이 남기고 간 값을 읽는 경로 — 이 전환에서 가장 중요한 한 줄이다.
+  // Capacitor 앱이 남기고 간 값을 읽는 경로. 이 전환에서 가장 중요한 한 줄이다.
   it('Capacitor 가 저장해 둔 값을 그대로 읽는다', async () => {
     mockStore.set('CapacitorStorage.theme', '혼테일')
 

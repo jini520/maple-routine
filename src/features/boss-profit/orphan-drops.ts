@@ -1,6 +1,6 @@
 // **잡지 않은 보스에 남은 드롭 정리**.
 //
-// 미완료 placeholder 행에도 드롭을 적을 수 있다(배경 3 — 처치 직후 `complete_flag` 가
+// 미완료 placeholder 행에도 드롭을 적을 수 있다(배경 3. 처치 직후 `complete_flag` 가
 // 갱신되기 전에 적으려고 연 자리다). 그래서 **끝내 잡지 않은 보스에 기록이 남는** 경로가 생긴다.
 //
 // ## 규칙은 하나다
@@ -11,7 +11,7 @@
 // 영영 미처치로 굳음) **셋이 같은 모양**이라 술어 하나로 덮는다. 경로마다 정리 코드를 쓰면 넷째
 // 경로가 생길 때 또 빠진다(이 **선택 불가** 를 사유 하나로 모델링한 것과 같다).
 //
-// ## 왜 지워야 하나 — 안 지우면 화면마다 다르게 보인다
+// ## 왜 지워야 하나. 안 지우면 화면마다 다르게 보인다
 //
 // | 소비처 | 고아 드롭이 |
 // |---|---|
@@ -31,13 +31,13 @@ import type { BossDifficulty } from '../../types'
 import { withSqliteFallback } from './sqlite-guards'
 import type { BossProfitRow } from './rows'
 
-/** 지울 드롭 한 무리 — `replaceBossDropRecords` 의 삭제 단위와 같은 키다. */
+/** 지울 드롭 한 무리. `replaceBossDropRecords` 의 삭제 단위와 같은 키다. */
 export interface OrphanDropGroup {
   ocid: string
   boss: string
   difficulty: string
   periodKey: string
-  /** 이 무리가 들고 있던 기록 수 — 토스트가 말할 값이다. */
+  /** 이 무리가 들고 있던 기록 수. 토스트가 말할 값이다. */
   dropCount: number
 }
 
@@ -47,11 +47,11 @@ export interface OrphanDropPlanInput {
   /** 이미 읽어 둔 드롭 기록. */
   records: readonly BossDropRecord[]
   /**
-   * 판정을 믿어도 되는 캐릭터 — 동기화가 실패해 낡은 캐시로 그려진 캐릭터는 여기 없다
+   * 판정을 믿어도 되는 캐릭터. 동기화가 실패해 낡은 캐시로 그려진 캐릭터는 여기 없다
    * (이 자동 기록에 쓰는 술어와 같다).
    */
   trustedOcids: ReadonlySet<string>
-  /** 이 회차가 사실 을 아는 기간 — 그 밖의 기간은 손대지 않는다. */
+  /** 이 회차가 사실 을 아는 기간. 그 밖의 기간은 손대지 않는다. */
   knownPeriodKeys: ReadonlySet<string>
 }
 
@@ -64,7 +64,7 @@ const periodKeyOf = (ocid: string, periodKey: string): string => `${ocid}|${peri
  * 안전 장치 넷이 행이 없다가 안 잡았다를 뜻하지 않는 경우를 전부 막는다:
  *
  * 1. **같은 (ocid, 보스, 기간) 에 행이 하나도 없어야 한다.** 난이도만 다른 행이 있으면 그것은
- *  고아가 아니라 난이도 키가 어긋난 것이고, 옮기는 일은 의 몫이다 —
+ *  고아가 아니라 난이도 키가 어긋난 것이고, 옮기는 일은 의 몫이다.
  *    그래서 이 정리는 **언제나 이관 뒤**에 돈다.
  * 2. **그 (ocid, 기간) 에 행이 하나라도 있어야 한다.** 백필된 적 없는 과거 주는 기록이 통째로
  *    비어 행 없음이 아무것도 뜻하지 않는다.
@@ -119,7 +119,7 @@ export interface OrphanDropSweepInput {
 /**
  * 계획대로 지우고 **지운 기록 수**를 돌려준다(0이면 아무것도 안 했다. 멱등).
  *
- * 빈 배열로 `replaceBossDropRecords` 를 부르는 것이 곧 삭제다(그 함수의 계약 — DELETE 뒤 0건 삽입).
+ * 빈 배열로 `replaceBossDropRecords` 를 부르는 것이 곧 삭제다(그 함수의 계약. DELETE 뒤 0건 삽입).
  * 실패는 삼킨다. 정리는 화면의 목적이 아니라 뒷정리라, 못 지웠다고 보스 수익이 서지 못하면 안 된다.
  */
 export async function sweepOrphanDrops(input: OrphanDropSweepInput): Promise<number> {

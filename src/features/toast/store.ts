@@ -86,7 +86,7 @@ export const useToastStore = create<ToastStore>()((set, get) => {
 
       const { toasts, queue } = get()
       const remaining = toasts.filter((t) => t.id !== id)
-      if (remaining.length === toasts.length) return // 보이는 목록에 없는 id — 할 일 없음
+      if (remaining.length === toasts.length) return // 보이는 목록에 없는 id. 할 일 없음
 
       if (queue.length > 0) {
         const [next, ...restQueue] = queue
@@ -100,7 +100,7 @@ export const useToastStore = create<ToastStore>()((set, get) => {
 })
 
 /**
- * 테스트 전용 — 떠 있는 토스트와 **예약된 자동 소멸 타이머**를 전부 걷는다.
+ * 테스트 전용. 떠 있는 토스트와 **예약된 자동 소멸 타이머**를 전부 걷는다.
  *
  * 이것이 필요한 이유는 타이머가 **모듈 스코프**에 살기 때문이다(위 `timers`). 토스트를 띄운 채
  * 끝난 케이스는 2~2.5초짜리 실제 `setTimeout` 을 남기고, 그러면 jest 가 *"Jest did not exit one

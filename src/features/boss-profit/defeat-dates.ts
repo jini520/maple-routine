@@ -47,7 +47,7 @@ import { toScheduleSyncError } from '../schedule-sync/errors'
 import { withSqliteFallback } from './sqlite-guards'
 
 export interface DefeatDateInput {
-  /** 그 기간의 날짜들 — **오름차순**(`getPeriodDateKeys`). 오늘 뒤는 안 본다. */
+  /** 그 기간의 날짜들. **오름차순**(`getPeriodDateKeys`). 오늘 뒤는 안 본다. */
   readonly periodDays: readonly string[]
   /** 관측한 날짜 → 그날 완료로 본 보스 키 집합. **없는 날짜는 **못 봤다**** 이지 완료 0건 이 아니다. */
   readonly observed: ReadonlyMap<string, ReadonlySet<string>>
@@ -64,7 +64,7 @@ export interface DefeatDateInput {
  * | 만나는 것 | 답 |
  * |---|---|
  * | 그날 완료로 관측됐다 | **그날이다**. 그 앞은 전부 미완료로 봤다 |
- * | 못 본 날인데 그날이 **오늘**이다 | **오늘이다**(소거법 — 어제까지 미완료인데 기록이 있다) |
+ * | 못 본 날인데 그날이 **오늘**이다 | **오늘이다**(소거법. 어제까지 미완료인데 기록이 있다) |
  * | 못 본 날인데 오늘이 아니다 | **`null`**. 구멍이라 그 뒤의 완료를 못 믿는다 |
  *
  * 소거법이 (a)앱이 기록한 날 과 다른 점: **어제가 미완료였다는 관측**이 있어야만 오늘이라고
@@ -95,7 +95,7 @@ interface ResolvablePeriod {
 }
 
 /**
- * 지금 **캐낼 수 있는** 기간들 — 기간의 **첫 날**이 조회 창 안이어야 한다.
+ * 지금 **캐낼 수 있는** 기간들. 기간의 **첫 날**이 조회 창 안이어야 한다.
  *
  * 첫 날을 못 보면 그 앞엔 없었다 를 말할 수 없어 어떤 조회도 답을 못 낸다. 그래서 그 기간은
  * 캐는 대상이 아니라 **부르지도 않는 대상**이다.
@@ -115,7 +115,7 @@ function resolvablePeriods(now: Date, floorDateKey: string): ResolvablePeriod[] 
   return periods
 }
 
-/** 이 캐릭터를 위해 **아직 안 본 날짜**들 — 창 안이고, 원장이 답을 안 들고 있는 날. */
+/** 이 캐릭터를 위해 **아직 안 본 날짜**들. 창 안이고, 원장이 답을 안 들고 있는 날. */
 function missingDays(
   ledgerDates: Record<string, { kind: string; bosses?: readonly string[] }>,
   periods: ResolvablePeriod[],
@@ -176,7 +176,7 @@ async function probeDays(
 
 const EMPTY_OBSERVED: ReadonlyMap<string, ReadonlySet<string>> = new Map()
 
-/** 기록 하나의 날짜 판정 — 기간의 날짜들과 보스 키를 그 기록에서 뽑아 순수 함수에 넘긴다. */
+/** 기록 하나의 날짜 판정. 기간의 날짜들과 보스 키를 그 기록에서 뽑아 순수 함수에 넘긴다. */
 function resolveFor(
   record: UndatedBossProfitRecord,
   observed: ReadonlyMap<string, ReadonlySet<string>>,
@@ -190,7 +190,7 @@ function resolveFor(
   })
 }
 
-/** 이 기록들이 걸쳐 있는 기간들 — 조회할 날짜를 그 기간에서만 뽑는다. */
+/** 이 기록들이 걸쳐 있는 기간들. 조회할 날짜를 그 기간에서만 뽑는다. */
 function periodsOf(records: readonly UndatedBossProfitRecord[]): ResolvablePeriod[] {
   const seen = new Map<string, ResolvablePeriod>()
   for (const record of records) {
@@ -205,7 +205,7 @@ function periodsOf(records: readonly UndatedBossProfitRecord[]): ResolvablePerio
 let inFlight: Promise<number> | null = null
 
 /**
- * 아직 날짜를 모르는 보스 기록을 캐내 `defeated_on` 을 채운다. **채운 건수**를 돌려준다 —
+ * 아직 날짜를 모르는 보스 기록을 캐내 `defeated_on` 을 채운다. **채운 건수**를 돌려준다.
  * 0 이면 화면이 다시 읽을 이유가 없다.
  *
  * 한 번도 API 를 안 부르는 길이 넷이다: 캐릭터가 없다 · 캘 수 있는 기간에 **미확정 기록이 없다** ·

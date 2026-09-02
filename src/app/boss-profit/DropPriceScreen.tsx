@@ -1,9 +1,9 @@
-// 가격 기록 화면 — 보스 수익의 하위 스택 화면(이슈 #185).
+// 가격 기록 화면. 보스 수익의 하위 스택 화면(이슈 #185).
 //
 // 히스토리와 형제이고 같은 셸을 쓴다. 축이 다르다. 히스토리는 **전 기간**을 한 목록에 펼치는
 // 읽기 전용이고, 여기는 **한 기간**을 놓고 값을 매기는 쓰기 화면이다.
 //
-// 뼈대는 기간 → 캐릭터 → 기록이다. 캐릭터로 한 번 묶는 이유는 가격이 기록 단위이기 때문이다 —
+// 뼈대는 기간 → 캐릭터 → 기록이다. 캐릭터로 한 번 묶는 이유는 가격이 기록 단위이기 때문이다.
 // 같은 아이템도 캐릭터마다 판 값이 다를 수 있고, 그 차이가 곧 캐릭터별 수익의 차이가 된다.
 //
 // **보스 수익에서 보던 기간을 통째로 이어받는다**. 주기까지 함께다. 처음엔 주
@@ -80,7 +80,7 @@ function characterTotal(group: DropPriceGroup): number {
 }
 
 /**
- * 상태 pill — 세 상태를 색이 아니라 **형태**로 가른다(채움 / 회색 / 점선).
+ * 상태 pill. 세 상태를 색이 아니라 **형태**로 가른다(채움 / 회색 / 점선).
  *
  * **미입력 자리에 `0` 을 쓰지 않는다**. `entered` 가 아니면 금액을 아예 그리지 않고
  * `입력`·`기록 안함` 이라는 말이 선다. 값을 모르는 것과 0원인 것은 다른 사실이다.
@@ -125,7 +125,7 @@ function EntryRow(props: {
   const shareLabel = drop.priceState === 'entered' ? ` · ${drop.priceShare ?? 1}인` : ''
 
   return (
-    // 웹의 `last:border-b-transparent` 자리 — RN 에는 `:last-child` 가 없어 목록을 아는 부모가
+    // 웹의 `last:border-b-transparent` 자리. RN 에는 `:last-child` 가 없어 목록을 아는 부모가
     // 알려 준다. 테두리를 아예 빼지 않고 **색만 지우는** 것이 요점이다(와 같은 규칙).
     <View>
       {isValuableDrop(drop.itemName) && <ValuableRowBackground />}
@@ -177,7 +177,7 @@ export function DropPriceScreen(): React.JSX.Element {
   const { tab, periodKey: profitPeriodKey } = useBossProfitStore()
   const { status, groups, load, savePrice, excludePrice } = useDropPriceStore()
 
-  // 화면이 한 번만 만든 '지금' — 두 번 부르면 기간 경계를 사이에 두고 갈릴 수 있다
+  // 화면이 한 번만 만든 '지금'두 번 부르면 기간 경계를 사이에 두고 갈릴 수 있다
   // (보스 수익 화면과 같은 규약).
   const [now] = useState(() => new Date())
   const [cycle] = useState(tab)
@@ -205,7 +205,7 @@ export function DropPriceScreen(): React.JSX.Element {
     setPricing(first)
   }
 
-  /** 저장·스킵 뒤 다음 행동 — 순차 모드면 다음 건, 아니면 닫는다. */
+  /** 저장·스킵 뒤 다음 행동. 순차 모드면 다음 건, 아니면 닫는다. */
   function advance(): void {
     const [next, ...rest] = queue
     setQueue(rest)
@@ -227,7 +227,7 @@ export function DropPriceScreen(): React.JSX.Element {
       <ScreenScroll
         hasTabBar={false}
         header={
-          // 히스토리 화면과 같은 헤더 레시피 — 공용 `PageHeader` 를 쓰지 않는 이유도 같다
+          // 히스토리 화면과 같은 헤더 레시피. 공용 `PageHeader` 를 쓰지 않는 이유도 같다
           // (배경 조각도 하단 페이드도 없는 서브 화면이다). 상단 여백을 안 더하는 것도, 그 안전영역을
           // `useTopSafeAreaPx()` 로 받는 것도 같다(정정 1).
           <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: topSafeAreaPx }}>
@@ -248,7 +248,7 @@ export function DropPriceScreen(): React.JSX.Element {
         {/* `screen-<라우트 이름>` 은 자리표시자에게서 그대로 물려받은 계약이다. 내비게이션
             테스트가 "그 라우트로 밀면 그 화면이 열리는가"를 이 이름으로 묻는다. */}
         <View testID="screen-DropPrice" className="gap-4 px-4 pb-6">
-          {/* 기간 네비게이터 — **보스 수익 화면의 것을 그대로 옮겼다**(같은 h-7 원형 버튼 + 가운데
+          {/* 기간 네비게이터. **보스 수익 화면의 것을 그대로 옮겼다**(같은 h-7 원형 버튼 + 가운데
               2줄 라벨). 이 화면은 그 화면에서 보던 기간을 이어받아 열리므로 넘기는 손짓도 같아야 한다. */}
           <View className="flex-row items-center justify-center gap-4">
             <Pressable
@@ -304,7 +304,7 @@ export function DropPriceScreen(): React.JSX.Element {
                   수익 총 수익에 내린 판단이 이 화면에도 그대로 성립한다: 아래가 전부 같은 카드
                   셸이라 요약도 카드면 "흰 카드의 반복"으로 묻힌다.
 
-                  아래 칩 셋은 **목록의 범례**다 — 생김새가 행의 상태 pill 과 같아(채움 / 회색 /
+                  아래 칩 셋은 **목록의 범례**다. 생김새가 행의 상태 pill 과 같아(채움 / 회색 /
                   점선) 칩만 봐도 무엇이 몇 개인지 읽힌다. 0인 상태는 칩을 만들지 않는다. */}
               <View>
                 <View className="h-6 flex-row items-center">
@@ -372,7 +372,7 @@ export function DropPriceScreen(): React.JSX.Element {
                   key={group.ocid}
                   className="overflow-hidden rounded-[14px] border border-border bg-surface"
                 >
-                  {/* 캐릭터 머리 — 보스 수익 아코디언 헤더와 같은 짜임(아바타 32 + 이름 + 금액). */}
+                  {/* 캐릭터 머리. 보스 수익 아코디언 헤더와 같은 짜임(아바타 32 + 이름 + 금액). */}
                   <View className="flex-row items-center gap-3 border-b border-border p-4">
                     <CharacterAvatar
                       imageUrl={group.imageUrl}

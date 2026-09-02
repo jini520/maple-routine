@@ -31,7 +31,7 @@ function mockStore(toasts: ToastItem[]): { dismiss: jest.Mock } {
   return { dismiss }
 }
 
-/** 어떤 요소 아래의 글자 — 순서를 보는 데 쓴다. */
+/** 어떤 요소 아래의 글자. 순서를 보는 데 쓴다. */
 function textsUnder(node: AtomElement): string[] {
   const out: string[] = []
   const visit = (current: AtomElement | string): void => {

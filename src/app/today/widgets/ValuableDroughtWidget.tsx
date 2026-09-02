@@ -1,5 +1,5 @@
 /**
- * 위젯 8 — **아이템 드롭 가뭄**.
+ * 위젯 8. **아이템 드롭 가뭄**.
  *
  * ## 위젯 4와 겹쳐 보이지만 **묻는 것이 다르다**
  *
@@ -52,7 +52,7 @@ const NO_RECORD_NOTE = '아직 아이템 드롭 기록이 없습니다'
 
 
 
-/** 4x1 · 2x2 · 2x1 — 이름이 크기가 아니라 무엇을 그리는가 를 말한다. */
+/** 4x1 · 2x2 · 2x1. 이름이 크기가 아니라 무엇을 그리는가 를 말한다. */
 type Variant = 'wide' | 'compact' | 'mini'
 
 /** 잎 한 변(px). 이 요소의 감정을 잎이 지고 있어 2x2 는 크게 세운다. */
@@ -64,7 +64,7 @@ function variantOf(w: number, h: WidgetHeight): Variant {
 }
 
 /**
- * 기간 길이 — **0주는 **이번 주** 다.**
+ * 기간 길이. **0주는 **이번 주** 다.**
  *
  * 0주째는 셈은 맞지만 뜻이 없다(그 주에 먹었다는 것이 0주의 정의다). 히스토리 화면이 0주에서
  * 마지막 에픽 빔!을 떼는 것과 같은 판단이다.
@@ -114,7 +114,7 @@ function Leaf(props: { tier: number; sizePx: number }): React.JSX.Element {
   )
 }
 
-/** 기간 길이 칩 — 4x1·2x1 이 쓴다. 잎이 이미 슬픔을 말하므로 색은 얹지 않는다. */
+/** 기간 길이 칩. 4x1·2x1 이 쓴다. 잎이 이미 슬픔을 말하므로 색은 얹지 않는다. */
 function WeeksChip(props: { weeksSince: number }): React.JSX.Element {
   return (
     <View
@@ -129,7 +129,7 @@ function WeeksChip(props: { weeksSince: number }): React.JSX.Element {
 }
 
 /**
- * 기록 자체가 없을 때의 잎 — **단계 램프를 안 탄다.**
+ * 기록 자체가 없을 때의 잎. **단계 램프를 안 탄다.**
  *
  * 단계는 몇 주째 못 먹었나 인데 여기는 셀 기록이 아예 없다. 가장 슬픈 단계의 잎을 빌려 쓰면
  * 오래 못 먹었다 로 읽혀 이 금지한 위장(0주째 로 그리지 않는다)을 색으로 다시
@@ -146,7 +146,7 @@ function BlankLeaf(props: { sizePx: number }): React.JSX.Element {
 }
 
 function NoRecord(props: { variant: Variant }): React.JSX.Element {
-  // 4x1 — 채워진 상태와 같은 **잎 좌 · 글자 우** 골격이라 기록이 생겨도 줄이 안 흔들린다.
+  // 4x1. 채워진 상태와 같은 **잎 좌 · 글자 우** 골격이라 기록이 생겨도 줄이 안 흔들린다.
   if (props.variant === 'wide') {
     return (
       <View testID="widget-valuable-drought" className="flex-1 flex-row items-center gap-3 p-3">

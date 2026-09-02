@@ -18,7 +18,7 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
 import { renderOverlay } from '../../../__tests__/render-atom'
 import { BottomSheet } from '../BottomSheet'
 
-describe('BottomSheet — 배선', () => {
+describe('BottomSheet: 배선', () => {
   it('앱 셸이 세울 프로바이더 아래에서 예외 없이 마운트된다', async () => {
     const { toJSON } = await renderOverlay(
       <GestureHandlerRootView>

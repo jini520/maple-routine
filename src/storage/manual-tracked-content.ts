@@ -12,7 +12,7 @@ type StoredManualTrackedItem = Omit<ManualTrackedItem, 'kind'> & {
   kind: ManualTrackedItem['kind'] | 'content'
 }
 
-// 레거시 'content' 항목은 읽기 시점에 템플릿 조회로 재분류하고, 템플릿에 없으면 제외한다 —
+// 레거시 'content' 항목은 읽기 시점에 템플릿 조회로 재분류하고, 템플릿에 없으면 제외한다.
 // "템플릿에 없는 콘텐츠는 애초에 추가 대상이 아니다"(결정 11)의 일관 적용이고, 관리 페이지
 // 체크리스트(결정 18)가 템플릿 기반이라 템플릿 밖 항목은 편집 불가능한 고아가 되기 때문.
 function migrateLegacyKinds(items: StoredManualTrackedItem[]): ManualTrackedItem[] {

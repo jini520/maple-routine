@@ -14,7 +14,7 @@ import {
 describe('참조표 조회', () => {
   // 값은 절차로 들어온 사용자 제공분이다. 여기서 확인하는 것은 **읽어 오는가** 이지
   // 값 자체가 아니다(값을 지키는 것은 `data/__tests__` 의 형태 검사다).
-  it('컨텐츠 이름으로 요구 레벨을 찾는다 — 일간·주간 둘 다', () => {
+  it('컨텐츠 이름으로 요구 레벨을 찾는다. 일간·주간 둘 다', () => {
     expect(contentRequiredLevel('몬스터파크')).toBe(105)
     expect(contentRequiredLevel('없는 컨텐츠')).toBeNull()
   })
@@ -38,7 +38,7 @@ describe('isLevelBlocked', () => {
     expect(isLevelBlocked(200, 105)).toBe(false)
   })
 
-  // 두 **없음** 을 똑같이 다룬다(사용자 판정 — *"가르지 마"*).
+  // 두 **없음** 을 똑같이 다룬다(사용자 판정. *"가르지 마"*).
   it('캐릭터 레벨을 모르면 단정하지 않는다', () => {
     expect(isLevelBlocked(null, 105)).toBe(false)
   })
@@ -50,7 +50,7 @@ describe('isLevelBlocked', () => {
 })
 
 describe('항목별 판정', () => {
-  it('컨텐츠 — 이름으로 참조표를 거쳐 답한다', () => {
+  it('컨텐츠. 이름으로 참조표를 거쳐 답한다', () => {
     expect(isContentBlocked(104, '몬스터파크')).toBe(true)
     expect(isContentBlocked(105, '몬스터파크')).toBe(false)
   })
@@ -62,7 +62,7 @@ describe('항목별 판정', () => {
     expect(isContentBlocked(1, '[길드] 지하 수로')).toBe(false)
   })
 
-  it('보스 — 난이도까지 보고 답한다', () => {
+  it('보스. 난이도까지 보고 답한다', () => {
     expect(isBossBlocked(89, '자쿰', '카오스')).toBe(true)
     expect(isBossBlocked(90, '자쿰', '카오스')).toBe(false)
   })

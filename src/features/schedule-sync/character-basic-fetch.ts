@@ -64,7 +64,7 @@ export async function fetchCharacterBasicCached(
     return cached.profile
   }
 
-  // 실패는 **캐시로 폴백하지 않고 그대로 던진다.** 호출부들이 그 예외에 판정을 걸고 있다 —
+  // 실패는 **캐시로 폴백하지 않고 그대로 던진다.** 호출부들이 그 예외에 판정을 걸고 있다.
   // 400 `OPENAPI00003` 로 계정의 조회 불가를 확정하고(`toScheduleSyncError` 의
   // `characterUnavailable`), 401·429 는 전역 실패로 갈라진다. 여기서 삼키면 그 판정이 통째로 죽는다.
   const fetched = await fetchCharacterBasic(apiKey, ocid)

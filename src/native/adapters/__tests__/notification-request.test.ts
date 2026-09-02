@@ -1,4 +1,4 @@
-// 순수 규칙 — 채널 정의·ID 변환·예약 시각 판정. 셋 다 틀려도 타입 에러가 안 나고 예외도 안 나는
+// 순수 규칙. 채널 정의·ID 변환·예약 시각 판정. 셋 다 틀려도 타입 에러가 안 나고 예외도 안 나는
 // 종류라(무음 채널 / 취소 안 되는 알림 / 지난 시각 예약) 막는 것은 이 파일뿐이다.
 //
 // notifee 를 목으로 바꾸는 것은 이 모듈이 열거형 **값**(`AndroidImportance`·`TriggerType`)을 쓰기
@@ -43,7 +43,7 @@ describe('채널', () => {
     expect(NOTIFICATION_CHANNEL.importance).toBe(AndroidImportance.DEFAULT)
   })
 
-  // notifee 의 기본값은 "소리 없음"이라 이 값을 빼면 채널이 통째로 무음이 된다 —
+  // notifee 의 기본값은 "소리 없음"이라 이 값을 빼면 채널이 통째로 무음이 된다.
   // Capacitor 는 아무것도 안 해서 시스템 기본음이 났으므로 정반대다.
   it('시스템 기본 알림음을 쓴다', () => {
     expect(NOTIFICATION_CHANNEL.sound).toBe('default')
@@ -85,7 +85,7 @@ describe('toTriggerNotification', () => {
     expect(trigger).toEqual({ type: TriggerType.TIMESTAMP, timestamp: NOW + 60_000 })
   })
 
-  // Capacitor 는 iOS 가 거절하고 Android 가 즉시 발화해 플랫폼끼리 달랐다. 여기서는 둘 다 던진다 —
+  // Capacitor 는 iOS 가 거절하고 Android 가 즉시 발화해 플랫폼끼리 달랐다. 여기서는 둘 다 던진다.
   //  가 앱 실행마다 재예약을 전제하므로 즉시 발화를 고르면 시계가 조금 어긋난 재예약
   // 한 번이 알림 무더기가 된다.
   it('지난 시각은 던진다', () => {

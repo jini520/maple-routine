@@ -7,7 +7,7 @@
 //
 // | | 기본 자리(오프셋 0) | 페이드 구간을 벗어나려면 |
 // |---|---|---|
-// | iOS | 당긴 틈의 가운데 — 화면 맨 위에서 시작 | 구간 높이 **전부** |
+// | iOS | 당긴 틈의 가운데. 화면 맨 위에서 시작 | 구간 높이 **전부** |
 // | 안드로이드 | 원이 이미 **24dp** 내려온 자리에서 멈춘다 | 구간 높이 **− 24** |
 //
 // 안드로이드의 24 는 우리가 고른 값이 아니라 플랫폼 상수의 차다. RN 의
@@ -33,7 +33,7 @@ describe('resolvePullIndicatorOffset', () => {
   })
 
   // 큰 컷아웃 기기(인셋이 하한 48보다 큰 경우)에서도 뺄셈은 같다.
-  it('페이드가 더 길면 그만큼 더 내린다 — 뺄셈은 그대로다', () => {
+  it('페이드가 더 길면 그만큼 더 내린다. 뺄셈은 그대로다', () => {
     expect(resolvePullIndicatorOffset({ fadeTopPx: 72, platform: 'android' })).toBe(48)
   })
 
@@ -43,7 +43,7 @@ describe('resolvePullIndicatorOffset', () => {
     expect(resolvePullIndicatorOffset({ fadeTopPx: 20, platform: 'android' })).toBe(0)
   })
 
-  // 헤더가 없는 화면(설정 계열)은 셸이 상자를 내려 안전영역을 먹으므로 위를 안 깎는다 —
+  // 헤더가 없는 화면(설정 계열)은 셸이 상자를 내려 안전영역을 먹으므로 위를 안 깎는다.
   // 깎지 않으면 가려질 일도 없고, 그래도 내리면 엉뚱하게 낮은 자리에서 돈다.
   it('상단을 안 깎는 화면에서는 두 플랫폼 다 0 이다', () => {
     expect(resolvePullIndicatorOffset({ fadeTopPx: 0, platform: 'ios' })).toBe(0)

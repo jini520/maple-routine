@@ -12,7 +12,7 @@ export interface ThemeStore {
   selectTheme(theme: ThemeName): Promise<void>
 }
 
-// 저장된 테마가 없을 때만 쓰는 1회성 판정 — OS 다크모드 설정 변경을 앱 실행 중 실시간으로
+// 저장된 테마가 없을 때만 쓰는 1회성 판정. OS 다크모드 설정 변경을 앱 실행 중 실시간으로
 // 반영하지는 않는다(범위 밖 2026-07-14 참고). "OS가 지금 무엇인가"는 플랫폼마다
 // 묻는 법이 달라(웹뷰는 미디어 쿼리, RN 은 Appearance) 포트가 답한다.
 function resolveSystemTheme(): ThemeName {

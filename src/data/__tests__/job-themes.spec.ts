@@ -16,7 +16,7 @@ const NAMES = Object.keys(JOB_THEMES) as ThemeName[]
  * 여기서도 특정 대비선을 강제하지 않는다. 다만 "이 색을 글자로 쓸 수 있게 만든 값"인 토큰
  * (`text`·`text-muted`·`*-ink`)은 그 목적을 실제로 달성해야 하므로 그것만 확인한다.
  */
-describe('job-themes.json — 스키마', () => {
+describe('job-themes.json: 스키마', () => {
   it('테마가 하나 이상 있다', () => {
     expect(NAMES.length).toBeGreaterThan(0)
   })
@@ -75,7 +75,7 @@ describe('job-themes.json — 스키마', () => {
   })
 })
 
-describe('job-themes.json — 파생 규칙', () => {
+describe('job-themes.json: 파생 규칙', () => {
   const ACCENTS = ['primary', 'secondary', 'third', 'error'] as const
 
   // "이 색을 글자로 쓸 수 있게 만든 값"은 그 목적을 달성해야 한다.
@@ -148,7 +148,7 @@ describe('job-themes.json — 파생 규칙', () => {
   })
 })
 
-describe('job-themes.json — 대비 계측', () => {
+describe('job-themes.json: 대비 계측', () => {
   // 관문이 아니라 기록이다. 기준선 아래 항목이 있어도 실패시키지 않되, 계측 자체는 동작해야 한다.
   it.each(NAMES)('%s: 모든 색 쌍의 대비를 잴 수 있다', (name) => {
     const report = measureThemeContrast(JOB_THEMES[name])

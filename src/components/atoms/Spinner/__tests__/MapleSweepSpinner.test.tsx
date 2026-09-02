@@ -52,7 +52,7 @@ describe('MapleSweepSpinner', () => {
     expect(getByTestId('maple-sweep-spinner', HIDDEN).props.width).toBe(24)
   })
 
-  it('색은 className 이 정한다 — `currentColor` 가 읽는 `color` 프롭으로 들어간다', async () => {
+  it('색은 className 이 정한다. `currentColor` 가 읽는 `color` 프롭으로 들어간다', async () => {
     const { getByTestId } = await renderAtom(<MapleSweepSpinner className="text-text-muted" />)
 
     expect(getByTestId('maple-sweep-spinner', HIDDEN).props.color).toBe(기본테마.textMuted)
@@ -67,7 +67,7 @@ describe('MapleSweepSpinner', () => {
     expect(childTypes(clip)).toEqual(['RNSVGPath'])
   })
 
-  it('띠는 `currentColor` 로 칠하고 페이드는 마스크가 만든다 — 정지점에 currentColor 금지', async () => {
+  it('띠는 `currentColor` 로 칠하고 페이드는 마스크가 만든다. 정지점에 currentColor 금지', async () => {
     const tree = (await renderAtom(<MapleSweepSpinner />)).toJSON()
 
     // 그라디언트가 실제로 만들어졌는지(= 정지점이 유효한 색인지) 본다. `currentColor` 였다면
@@ -98,7 +98,7 @@ describe('MapleSweepSpinner', () => {
     expect(first.props.name).not.toEqual(second.props.name)
   })
 
-  // ★ 회귀 가드 — **띠가 마스크에 지워지던 결함.**
+  // ★ 회귀 가드. **띠가 마스크에 지워지던 결함.**
   //
   // 이식 당시 마스크는 `maskUnits`·`maskContentUnits` 를 **둘 다 `objectBoundingBox`** 로 두고
   // 램프를 `<Rect x=0 y=0 width=1 height=1>` 로 적었다. 그런데 `react-native-svg`(15.15.4)는
@@ -109,7 +109,7 @@ describe('MapleSweepSpinner', () => {
   //
   // 그 실패는 **렌더 트리에서 보이지 않는다**(마스크도 램프도 **있다**). 보이는 것은 **좌표의 단위**뿐이라
   // 여기서 그것을 못 박는다: 램프는 user space 이고 띠와 **같은 크기**여야 한다.
-  it('마스크 램프는 user space 좌표다 — 1×1 이면 라이브러리가 띠를 통째로 지운다', async () => {
+  it('마스크 램프는 user space 좌표다. 1×1 이면 라이브러리가 띠를 통째로 지운다', async () => {
     const tree = (await renderAtom(<MapleSweepSpinner />)).toJSON()
 
     const { band, ramp } = bandAndRamp(tree)
@@ -121,7 +121,7 @@ describe('MapleSweepSpinner', () => {
 
   // 램프가 제자리에 서 있으면 **고정된 창으로 내다보는** 그림이 된다(띠만 그 아래를 지나간다).
   // 둘이 같은 shared value 에서 파생되므로 **시작 좌표가 같다**는 것으로 그 계약을 본다.
-  it('램프가 띠와 같은 자리에서 시작한다 — 함께 움직인다', async () => {
+  it('램프가 띠와 같은 자리에서 시작한다. 함께 움직인다', async () => {
     const tree = (await renderAtom(<MapleSweepSpinner />)).toJSON()
 
     const { band, ramp } = bandAndRamp(tree)
@@ -129,8 +129,8 @@ describe('MapleSweepSpinner', () => {
   })
 })
 
-describe('MapleSweepSpinner — 모션 줄이기', () => {
-  it('켜져 있으면 애니메이션을 아예 걸지 않는다 — 웹의 `motion-reduce:animate-none`', async () => {
+describe('MapleSweepSpinner: 모션 줄이기', () => {
+  it('켜져 있으면 애니메이션을 아예 걸지 않는다. 웹의 `motion-reduce:animate-none`', async () => {
     mockReducedMotion(true)
 
     const tree = (await renderAtom(<MapleSweepSpinner />)).toJSON()
@@ -142,7 +142,7 @@ describe('MapleSweepSpinner — 모션 줄이기', () => {
     expect(band?.props.y).toBe(140)
   })
 
-  it('꺼져 있으면 되감기 없이 무한 반복한다 — 웹의 `infinite`(alternate 가 아니다)', async () => {
+  it('꺼져 있으면 되감기 없이 무한 반복한다. 웹의 `infinite`(alternate 가 아니다)', async () => {
     await renderAtom(<MapleSweepSpinner />)
 
     expect(withRepeatSpy).toHaveBeenCalledTimes(1)

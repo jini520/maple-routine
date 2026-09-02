@@ -45,7 +45,7 @@ describe('ProgressBar', () => {
     expect(flattenStyle(getByTestId('fill').props.style).width).toBe('40%')
   })
 
-  it('tone="third"면 채움만 third 색이 된다 — 컨텐츠 카드의 진행률', async () => {
+  it('tone="third"면 채움만 third 색이 된다. 컨텐츠 카드의 진행률', async () => {
     const { getByTestId } = await renderAtom(
       <ProgressBar percent={50} tone="third" fillTestId="fill" />,
     )
@@ -70,13 +70,13 @@ describe('ProgressBar', () => {
     })
   })
 
-  it('animated 가 없으면 트랜지션 키가 아예 없다 — 값이 바뀌면 그 자리로 점프한다', async () => {
+  it('animated 가 없으면 트랜지션 키가 아예 없다. 값이 바뀌면 그 자리로 점프한다', async () => {
     const { getByTestId } = await renderAtom(<ProgressBar percent={10} fillTestId="fill" />)
 
     expect(getByTestId('fill').props.jestInlineStyle).not.toHaveProperty('transitionProperty')
   })
 
-  it('트랜지션이 붙어도 그려지는 스타일은 같다 — 폭만 흐르고 모습은 안 바뀐다', async () => {
+  it('트랜지션이 붙어도 그려지는 스타일은 같다. 폭만 흐르고 모습은 안 바뀐다', async () => {
     const plain = await renderAtom(<ProgressBar percent={10} fillTestId="fill" />)
     const animated = await renderAtom(<ProgressBar percent={10} animated fillTestId="fill" />)
 

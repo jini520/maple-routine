@@ -1,6 +1,6 @@
-// 보스 수익 **행(row) 도메인의 순수 함수**들 — 스토어에서 분리했다(5단계).
+// 보스 수익 **행(row) 도메인의 순수 함수**들. 스토어에서 분리했다(5단계).
 //
-// 왜 분리하나 — 이 함수들은 입출력만 있고 스토어·저장소·DOM 을 만지지 않는데, 1,548줄짜리
+// 왜 분리하나. 이 함수들은 입출력만 있고 스토어·저장소·DOM 을 만지지 않는데, 1,548줄짜리
 // store.ts 안에 있어서 **직접 테스트할 수 없었다**(export 된 것은 dropRowKey 하나뿐이라
 // 89개 스토어 테스트가 전부 스토어를 거쳐 간접 검증했다). 여기로 나오면서 각 함수를
 // 입출력으로 바로 검증할 수 있다.
@@ -29,17 +29,17 @@ export interface BossProfitRow {
   ocid: string
   characterName: string
   imageUrl: string | null // character/basic의 character_image(character-basic-cache 경유). 캐시가 없으면 null(이니셜 폴백)
-  world: string | null // character/basic의 world_name(character-basic-cache 경유). 이전 캐시엔 없을 수 있어 null 가능(6 — 월드를 모르는 캐릭터는 월드 집계에서 제외)
+  world: string | null // character/basic의 world_name(character-basic-cache 경유). 이전 캐시엔 없을 수 있어 null 가능(6. 월드를 모르는 캐릭터는 월드 집계에서 제외)
   boss: string // matchedBossName ?? apiName (매핑 안 되면 원문 그대로)
   difficulty: BossDifficulty
   cycle: BossCycle
   periodKey: string
-  periodLabel: string // formatBossProfitPeriodLabel(cycle, periodKey, now).primary — "이번 주"/"지난 주"/"이번 달"/"지난 달"/절대 표기
+  periodLabel: string // formatBossProfitPeriodLabel(cycle, periodKey, now).primary"이번 주"/"지난 주"/"이번 달"/"지난 달"/절대 표기
   priceMeso: number | null // 시세표에 없으면 null ("가격 미확정"). 기록이 있으면 기록값으로 복원(라이브 재계산 방지)
   maxPartySize: number
   partySize: number | null // 사용자가 아직 입력 안 했으면 null
   payoutMeso: number | null // partySize가 null이거나 priceMeso가 null이면 null
-  isComplete: boolean // false면 보스 스케줄러에 등록만 되고 아직 처치 전(미완료 placeholder) — payoutMeso는 항상 0이고 DB에 기록되지 않는다
+  isComplete: boolean // false면 보스 스케줄러에 등록만 되고 아직 처치 전(미완료 placeholder). payoutMeso는 항상 0이고 DB에 기록되지 않는다
 }
 
 export type BossProfitRowKey = Pick<BossProfitRow, 'ocid' | 'boss' | 'difficulty' | 'cycle' | 'periodKey'>
@@ -138,7 +138,7 @@ export function buildBossProfitRow(
 }
 
 // bossContents(API 원문/캐시)에서 이번 기간 표시할 보스 목록을 고른다. 트래킹 모드에 따라 분기한다.
-// - 자동 모드: 기존 동작 그대로 — selectBossProfitBosses(그룹당 실제 처치 난이도 우선, 없으면 인게임 등록 난이도 placeholder).
+// - 자동 모드: 기존 동작 그대로. selectBossProfitBosses(그룹당 실제 처치 난이도 우선, 없으면 인게임 등록 난이도 placeholder).
 // - 수동 모드: "실제 처치한 보스 전부(처치 난이도)" ∪ "수동 추적 중이지만 미처치인 보스(고른 난이도 placeholder)".
 //   자동 모드와 대칭이며 placeholder의 출처만 인게임 등록 → 수동 멤버십으로 바뀐다.
 export function selectProfitDisplayBosses(
@@ -153,7 +153,7 @@ export function selectProfitDisplayBosses(
   // 목록만 보면 영영 12가 안 된다(이 **등록 여부와 무관하게** 세는 것과 같다).
   //
   // `마감` 배지를 여기까지 들고 오지 않는 이유: 이 페이지는 정산이라 **벌지 않은 것** 은 줄을
-  // 갖지 않는다(마감이 서는 자리는 보스 스케줄러 카드다). 그리고 **완료** 로 칠하지도 않는다 —
+  // 갖지 않는다(마감이 서는 자리는 보스 스케줄러 카드다). 그리고 **완료** 로 칠하지도 않는다.
   // 그러면 안 잡은 보스의 결정석이 금액이 된다.
   const limitReached = isWeeklyClearLimitReached(matched)
   const isLimitClosed = (boss: MatchedBoss): boolean =>
@@ -165,7 +165,7 @@ export function selectProfitDisplayBosses(
 
   const nameOf = (boss: MatchedBoss): string => boss.matchedBossName ?? boss.apiName
 
-  // ① 실제 처치한 보스는 추적 여부와 무관하게 전부, 처치한 난이도·가격으로 노출한다(사용자 확정) —
+  // ① 실제 처치한 보스는 추적 여부와 무관하게 전부, 처치한 난이도·가격으로 노출한다(사용자 확정).
   // 보스 수익 페이지는 정산이 목적이라 실제로 번 것은 다 보여준다. selectBossProfitBosses가
   // 그룹당 실제 처치 난이도를 골라주며(등록 난이도와 다르게 처치했어도 처치 난이도로 잡힌다), 인게임
   // 등록-only(미처치) placeholder는 수동 모드에서 신뢰하지 않으므로 ownComplete인 것만 남긴다.
@@ -173,7 +173,7 @@ export function selectProfitDisplayBosses(
   const killedNames = new Set(kills.map(nameOf))
 
   // ② 수동 추적 중이지만 아직 처치하지 않은 보스는 고른 난이도로 미완료 placeholder(#33). 보스 관리
-  // 페이지와 동일 규약(mergeManualBossList — 정규화 명 매칭, cycle 폴백)으로 병합하되, 이미 ①에서 처치
+  // 페이지와 동일 규약(mergeManualBossList. 정규화 명 매칭, cycle 폴백)으로 병합하되, 이미 ①에서 처치
   // 난이도로 나온 보스명은 중복 배제한다.
   const placeholders = mergeManualBossList(
     manualItems.filter((item) => item.kind === 'boss'),

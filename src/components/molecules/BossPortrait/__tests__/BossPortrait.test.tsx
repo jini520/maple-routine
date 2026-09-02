@@ -17,7 +17,7 @@ describe('BossPortrait', () => {
 
     const portrait = getByTestId('boss-portrait')
     expect(portrait.props.accessibilityLabel).toBe('루시드')
-    // 웹 `role="img"` 의 짝 — 플레이스홀더에는 없다(그쪽은 이름만 읽힌다).
+    // 웹 `role="img"` 의 짝. 플레이스홀더에는 없다(그쪽은 이름만 읽힌다).
     expect(portrait.props.role).toBe('img')
     expect(queryByText('?')).toBeNull()
 
@@ -63,7 +63,7 @@ describe('BossPortrait', () => {
 
   // 격자로 서는 자리(가계부의 처치 타일)를 위한 둘째 모양. 원이 격자로 서면
   // 네 귀가 비어 사이가 성겨 보인다.
-  it('네모를 지정하면 귀만 둥근 상자다 — 기본은 원형 그대로다', async () => {
+  it('네모를 지정하면 귀만 둥근 상자다. 기본은 원형 그대로다', async () => {
     const 네모 = await renderAtom(
       <BossPortrait portraitSlug="lucid" label="루시드" shape="square" />,
     )
@@ -80,7 +80,7 @@ describe('BossPortrait', () => {
     expect(지정없음.toJSON()).toEqual(원형지정.toJSON())
   })
 
-  it('플레이스홀더도 같은 모양을 따른다 — 그림 유무로 귀가 달라지면 안 된다', async () => {
+  it('플레이스홀더도 같은 모양을 따른다. 그림 유무로 귀가 달라지면 안 된다', async () => {
     const { getByTestId } = await renderAtom(
       <BossPortrait portraitSlug={null} label="벨로나" shape="square" />,
     )
@@ -91,7 +91,7 @@ describe('BossPortrait', () => {
   it.each([
     ['슬러그가 없을 때', null],
     ['존재하지 않는 슬러그일 때', '존재하지않는슬러그'],
-  ])('%s 는 플레이스홀더다 — 그림이 없다는 사실을 화면이 인정한다', async (_label, slug) => {
+  ])('%s 는 플레이스홀더다. 그림이 없다는 사실을 화면이 인정한다', async (_label, slug) => {
     const { getByTestId, getByText } = await renderAtom(
       <BossPortrait portraitSlug={slug} label="알 수 없는 보스" />,
     )

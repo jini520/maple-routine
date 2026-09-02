@@ -122,7 +122,7 @@ describe('SettingsAboutScreen', () => {
     expect(view.queryByText('업데이트 확인')).toBeNull()
   })
 
-  //  배선의 요점 — 화면이 **실행 중인 번들 버전**을 묻고 그리는가. 이것이 이
+  //  배선의 요점. 화면이 **실행 중인 번들 버전**을 묻고 그리는가. 이것이 이
   // 말한 **반영의 증거** 이고, 빌드 시점 값만 그리면 OTA 가 적용됐는지 화면으로 알 방법이 없다.
   it('실행 중인 번들 버전을 싣고 그린다(빌드 시점 값이 아니다)', async () => {
     installLiveUpdatePort({ getCurrentVersion: async () => '9.9.9' })

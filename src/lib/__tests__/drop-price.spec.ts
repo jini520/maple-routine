@@ -15,7 +15,7 @@ describe('dropPayoutMeso', () => {
     )
   })
 
-  it('기록 안함은 0이다 — 값을 매기지 않기로 한 것이지 0원에 판 것이 아니다', () => {
+  it('기록 안함은 0이다. 값을 매기지 않기로 한 것이지 0원에 판 것이 아니다', () => {
     expect(dropPayoutMeso({ priceState: 'excluded' })).toBe(0)
   })
 
@@ -23,15 +23,15 @@ describe('dropPayoutMeso', () => {
     expect(dropPayoutMeso({})).toBe(0)
   })
 
-  it("금액이 있어도 상태가 'entered' 가 아니면 세지 않는다 — 스킵으로 바꾸며 남은 값이 새지 않게", () => {
+  it("금액이 있어도 상태가 'entered' 가 아니면 세지 않는다. 스킵으로 바꾸며 남은 값이 새지 않게", () => {
     expect(dropPayoutMeso({ priceState: 'excluded', priceMeso: 5_000_000_000 })).toBe(0)
   })
 
-  it('저장 계층의 null 도 그대로 받는다 — BossDropRecord 와 RecordedDrop 이 같은 함수를 쓴다', () => {
+  it('저장 계층의 null 도 그대로 받는다. BossDropRecord 와 RecordedDrop 이 같은 함수를 쓴다', () => {
     expect(dropPayoutMeso({ priceState: null, priceMeso: null, priceShare: null })).toBe(0)
   })
 
-  it('분배 인원이 없거나 0이면 1인으로 본다 — Infinity 가 수익에 섞이지 않게', () => {
+  it('분배 인원이 없거나 0이면 1인으로 본다. Infinity 가 수익에 섞이지 않게', () => {
     expect(dropPayoutMeso({ priceState: 'entered', priceMeso: 900, priceShare: 0 })).toBe(900)
     expect(dropPayoutMeso({ priceState: 'entered', priceMeso: 900 })).toBe(900)
   })
@@ -63,7 +63,7 @@ describe('formatMesoUnits', () => {
     expect(formatMesoUnits(0)).toBe('0')
   })
 
-  it('비어 있는 자리는 건너뛴다 — "32억 0만" 을 만들지 않는다', () => {
+  it('비어 있는 자리는 건너뛴다. "32억 0만" 을 만들지 않는다', () => {
     expect(formatMesoUnits(3_200_000_000)).toBe('32억')
     expect(formatMesoUnits(5_000)).toBe('5000')
   })

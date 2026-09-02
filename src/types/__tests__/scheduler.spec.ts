@@ -111,7 +111,7 @@ describe('domain 타입 샘플 객체', () => {
     expect(account.characters).toHaveLength(1)
   })
 
-  it('NexonAuthConfig 는 API 키 하나다 — 계정 선택이 사라졌다', () => {
+  it('NexonAuthConfig 는 API 키 하나다. 계정 선택이 사라졌다', () => {
     const config: NexonAuthConfig = { apiKey: 'test-key' }
     expect(config.apiKey).toBe('test-key')
   })

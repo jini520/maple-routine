@@ -1,4 +1,4 @@
-// 아이템 드롭 가뭄 위젯. 이 파일이 지키는 것 다섯 —
+// 아이템 드롭 가뭄 위젯. 이 파일이 지키는 것 다섯.
 // ① **요약이 없으면 아직 기록이 없습니다**(0주째로 위장하지 않는다. 안 먹은 것과 안 적은 것은
 //    다르고, 0주는 **이번 주에 먹었다** 는 **정반대**의 사실이다)
 // ② **잎의 각도·투명도가 `getValuableDroughtTier` 를 따른다**(단계 표는 히스토리 화면과 한 벌이다)
@@ -55,7 +55,7 @@ function 잎스타일(view: Awaited<ReturnType<typeof renderAtom>>): Record<stri
 
 describe('요약이 없을 때 (기준점이 없으면 `null`)', () => {
   // `0주째`로 위장하면 **이번 주에 먹었다** 는 정반대의 사실이 된다.
-  it.each(Object.entries(크기))('%s — 0주째가 아니라 `기록이 없습니다`', async (_이름, 값) => {
+  it.each(Object.entries(크기))('%s: 0주째가 아니라 `기록이 없습니다`', async (_이름, 값) => {
     const view = await 위젯(값, 빈_뷰모델)
 
     expect(view.getByText('아직 아이템 드롭 기록이 없습니다')).toBeTruthy()
@@ -63,7 +63,7 @@ describe('요약이 없을 때 (기준점이 없으면 `null`)', () => {
     expect(view.queryByTestId('drought-headline')).toBeNull()
   })
 
-  it('타일은 남는다 — 좌표 배치라 빼면 빈 사각형이다', async () => {
+  it('타일은 남는다. 좌표 배치라 빼면 빈 사각형이다', async () => {
     const { getByTestId } = await 위젯(크기['4x1'], 빈_뷰모델)
 
     expect(getByTestId('widget-valuable-drought')).toBeTruthy()
@@ -72,7 +72,7 @@ describe('요약이 없을 때 (기준점이 없으면 `null`)', () => {
 
 describe('잎은 단계를 따라 늙는다', () => {
   // 뷰모델의 `tier` 가 `getValuableDroughtTier` 의 값이고, 위젯은 그 첨자로 표를 읽는다.
-  it.each([0, 1, 2, 3, 7])('%i주째 — 각도·투명도가 그 단계의 값이다', async (weeksSince) => {
+  it.each([0, 1, 2, 3, 7])('%i주째. 각도·투명도가 그 단계의 값이다', async (weeksSince) => {
     const 기대 = DROUGHT_TIER_STYLES[getValuableDroughtTier(weeksSince)]
 
     const style = 잎스타일(await 위젯(크기['4x1'], 뷰모델({ drought: 가뭄(weeksSince) })))
@@ -88,9 +88,9 @@ describe('잎은 단계를 따라 늙는다', () => {
   })
 })
 
-describe('0주째만 배경이 바뀐다 — 격자에서 유일하게 축하하는 타일', () => {
+describe('0주째만 배경이 바뀐다. 격자에서 유일하게 축하하는 타일', () => {
   // 기대값은 테마에서 읽는다(테스트가 색을 베끼면 두 벌이 된다).
-  it.each(Object.entries(크기))('%s — 0주째는 `primary-tint`', async (_이름, 값) => {
+  it.each(Object.entries(크기))('%s: 0주째는 `primary-tint`', async (_이름, 값) => {
     const { getByTestId } = await 위젯(값, 뷰모델({ drought: 가뭄(0) }))
 
     expect(flattenStyle(getByTestId('widget-valuable-drought').props.style).backgroundColor).toBe(
@@ -101,7 +101,7 @@ describe('0주째만 배경이 바뀐다 — 격자에서 유일하게 축하하
   // `Card` 는 `rounded-[14px]` 를 갖되 `overflow-hidden` 을 **일부러** 안 건다(클리핑은 호출부의
   // 일이다). 그래서 타일 전면을 칠하는 배경이 사각이면 네 모서리에서 카드의 둥근 테두리 안쪽을
   // 덮어 **테두리가 잘려 보인다**. 실제로 그렇게 났다.
-  it.each(Object.entries(크기))('%s — 배경도 모서리를 둥글린다 (테두리를 안 덮는다)', async (_이름, 값) => {
+  it.each(Object.entries(크기))('%s: 배경도 모서리를 둥글린다 (테두리를 안 덮는다)', async (_이름, 값) => {
     const { getByTestId } = await 위젯(값, 뷰모델({ drought: 가뭄(0) }))
 
     expect(flattenStyle(getByTestId('widget-valuable-drought').props.style).borderRadius).toBe(13)
@@ -164,8 +164,8 @@ describe('문구는 마운트당 한 번 고른다', () => {
     jest.restoreAllMocks()
   })
 
-  it('리렌더에도 안 바뀐다 — 렌더마다 고르면 깜빡인다', async () => {
-    // 부를 때마다 답이 달라지는 시계 — 렌더 본문에서 부르면 문구가 매 렌더 갈린다.
+  it('리렌더에도 안 바뀐다. 렌더마다 고르면 깜빡인다', async () => {
+    // 부를 때마다 답이 달라지는 시계. 렌더 본문에서 부르면 문구가 매 렌더 갈린다.
     const 값들 = [0, 0.99, 0.5]
     let 회차 = 0
     const random = jest.spyOn(Math, 'random').mockImplementation(() => 값들[회차++ % 값들.length])
@@ -173,7 +173,7 @@ describe('문구는 마운트당 한 번 고른다', () => {
     const view = await 위젯(크기['4x1'])
     const 처음 = view.getByTestId('drought-headline').props.children
 
-    // 두 가지가 다 필요하다 —
+    // 두 가지가 다 필요하다.
     // ① `renderAtom` 과 **같은 트리 모양**(프로바이더를 빼면 위젯이 통째로 다시 마운트되는데,
     //    그러면 문구가 다시 뽑히는 것이 정상이라 이 테스트가 아무것도 못 묻는다)
     // ② **`act`**. 이 런타임에서 `rerender` 만 부르면 커밋이 안 나 컴포넌트가 다시 불리지 않는다
@@ -195,17 +195,17 @@ describe('문구는 마운트당 한 번 고른다', () => {
 
     const view = await 위젯(크기['4x1'])
 
-    // 3주 단계의 풀 — 어느 것이 나오든 그 둘 중 하나다.
+    // 3주 단계의 풀. 어느 것이 나오든 그 둘 중 하나다.
     expect(['선넘네?!', '이게 억까지 뭐야']).toContain(
       view.getByTestId('drought-headline').props.children,
     )
   })
 })
 
-// 정정 14 — 화면에 보이는 한국어는 `아이템 드롭`이다. 영문 식별자는 그대로 두므로 이 검사는
+// 정정 14. 화면에 보이는 한국어는 `아이템 드롭`이다. 영문 식별자는 그대로 두므로 이 검사는
 // **렌더 결과**에만 건다.
 describe('`물욕`을 쓰지 않는다', () => {
-  it.each(Object.entries(크기))('%s — 어디에도 없다', async (_이름, 값) => {
+  it.each(Object.entries(크기))('%s: 어디에도 없다', async (_이름, 값) => {
     expect(모든글자(await 위젯(값))).not.toContain('물욕')
   })
 

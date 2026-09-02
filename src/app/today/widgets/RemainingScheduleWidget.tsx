@@ -1,5 +1,5 @@
 /**
- * 위젯 2 — **캐릭터별 남은 스케줄**(`4×auto`).
+ * 위젯 2. **캐릭터별 남은 스케줄**(`4×auto`).
  *
  * ## 주기는 열이 아니라 **탭**이다
  *
@@ -34,7 +34,7 @@
  * ## 0 은 언제나 `CLEAR` 다. 완료했다가 아니다
  *
  * 그 탭의 남은 수가 0 이면 수치 자리에 `CLEAR` 하나. **대상이 애초에 없던 캐릭터도 같은 배지**를
- * 받는다(사용자 확정 — 레벨 미달로 보스가 안 뜨는 경우). 표기를 가르지 않기로 했으므로
+ * 받는다(사용자 확정. 레벨 미달로 보스가 안 뜨는 경우). 표기를 가르지 않기로 했으므로
  * **이 배지의 뜻은 **이 주기에 지금 할 게 없다**** 이고, 그래서 뷰모델이 분모를 셀 필요가 없다.
  *
  * ## 목록은 캐릭터 전부이고, **탭마다 다시 선다**
@@ -63,7 +63,7 @@ import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { RemainingBossView, ScheduleRowView } from '../view-model'
 import type { WidgetProps } from './types'
 
-/** 행 초상화 지름 — 목록 밀도(행 45px)에 맞춘 값이라 `FACE_AVATAR_SIZE`(36)보다 작다. */
+/** 행 초상화 지름. 목록 밀도(행 45px)에 맞춘 값이라 `FACE_AVATAR_SIZE`(36)보다 작다. */
 const PORTRAIT_PX = 32
 
 /**
@@ -75,7 +75,7 @@ const PORTRAIT_PX = 32
  */
 const VALUE_MIN_WIDTH_PX = 14
 
-/** 세그먼트가 고르는 값 — 라벨이 곧 값이다(`Segment` 가 `options` 를 그대로 그린다). */
+/** 세그먼트가 고르는 값. 라벨이 곧 값이다(`Segment` 가 `options` 를 그대로 그린다). */
 const CYCLE_LABELS = ['일간', '주간', '월간'] as const
 type Cycle = (typeof CYCLE_LABELS)[number]
 
@@ -101,7 +101,7 @@ function itemCount(items: CycleItems): number {
 }
 
 /**
- * 그 탭의 순서 — **실패는 맨 아래 · 남은 개수 많은 순 · 동수면 관리 순서**.
+ * 그 탭의 순서. **실패는 맨 아래 · 남은 개수 많은 순 · 동수면 관리 순서**.
  *
  * 받은 배열이 이미 관리 순서라(뷰모델) 그 **인덱스가 곧 동수의 기준**이다. 인덱스를 얹어 정렬하는
  * 것은 정렬의 안정성에 기대지 않기 위해서다(뷰모델의 `orderByTracked` 와 같은 태도).
@@ -127,7 +127,7 @@ function orderForCycle(rows: readonly ScheduleRowView[], cycle: Cycle): Schedule
 const VALUE_CLASS = 'text-right text-[11.5px] font-extrabold leading-tight text-text'
 const LABEL_CLASS = 'text-[11.5px] leading-tight text-text-muted'
 
-/** 수치 한 덩이 — 퀘스트 3개·보스 1개. */
+/** 수치 한 덩이. 퀘스트 3개·보스 1개. */
 function Amount(props: { label: string; count: number }): React.JSX.Element {
   return (
     <View className="flex-row items-center gap-0.5">
@@ -163,7 +163,7 @@ function Amounts(props: { items: CycleItems }): React.JSX.Element {
 
 /** 상태 배지. 톤 둘뿐이라 `Badge` atom(primary/third)이 아니라 여기서 인라인으로 둔다. */
 function StatusBadge(props: { testID: string; tone: 'clear' | 'issue'; label: string }): React.JSX.Element {
-  // 같은 줄에 서는 난이도 배지가 `mini` 라 이것도 `mini` 다(사용자 규칙 2026-09-01 —
+  // 같은 줄에 서는 난이도 배지가 `mini` 라 이것도 `mini` 다(사용자 규칙 2026-09-01.
   // 같은 곳에 서는 배지는 같은 크기를 쓴다).
   return (
     <Badge
@@ -200,7 +200,7 @@ function Portrait(props: { row: ScheduleRowView }): React.JSX.Element {
   )
 }
 
-/** 본문의 항목 하나 — 이름만 있는 알약. 보스는 아래 `BossChip` 이 난이도를 앞에 단다. */
+/** 본문의 항목 하나. 이름만 있는 알약. 보스는 아래 `BossChip` 이 난이도를 앞에 단다. */
 function NameChip(props: { name: string }): React.JSX.Element {
   return (
     <Text
@@ -223,7 +223,7 @@ function NameChip(props: { name: string }): React.JSX.Element {
 function BossChip(props: { boss: RemainingBossView }): React.JSX.Element {
   return (
     <View testID="schedule-detail-boss" className="flex-row items-center gap-1">
-      {/* 작은 크기 — 20px 배지가 줄 높이를 혼자 정하고 있었다. */}
+      {/* 작은 크기. 20px 배지가 줄 높이를 혼자 정하고 있었다. */}
       <Badge variant={props.boss.difficulty} size="mini">
         {props.boss.difficulty}
       </Badge>
@@ -252,7 +252,7 @@ function DetailGroup(props: { label: string | null; children: React.ReactNode })
 }
 
 /**
- * 펼친 본문 — **그 탭의 항목을 이름으로 낱개로** 센다.
+ * 펼친 본문. **그 탭의 항목을 이름으로 낱개로** 센다.
  *
  * **자르지 않는다.** 일퀘가 여덟이면 여덟을 다 적는다. 외 3개로 접으면 펼친 이유가 사라진다.
  * 늘어난 높이는 `resolveWidgetPositions` 가 아래 타일을 밀어 흡수한다(그것이 `h: 'auto'` 를 둔 이유다).
@@ -338,14 +338,14 @@ function ScheduleRow(props: {
 
 export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Element {
   /**
-   * 보고 있는 주기 — **저장소에 안 쓴다**. 앱을 다시 켜면 언제나 일간이고,
+   * 보고 있는 주기. **저장소에 안 쓴다**. 앱을 다시 켜면 언제나 일간이고,
    * **요일에 따라 기본 탭을 바꾸지 않는다**: 첫 화면이 날마다 다른 얼굴로 열리면 어제와 같은
    * 화면 이 깨지고 그 규칙을 사람이 배워야 한다.
    */
   const [cycle, setCycle] = useState<Cycle>('일간')
 
   /**
-   * 펼친 행 하나 — **`null` 은 전부 접힘**이다.
+   * 펼친 행 하나. **`null` 은 전부 접힘**이다.
    *
    * **하나만 연다.** 여섯 명이 다 열리면 이 타일이 1,000px 을 넘고, 타일 안 스크롤은
    *  이 금지한다. 기억하지도 않는다(화면이 탭이라 앱을 켜 둔 동안은 남는다).

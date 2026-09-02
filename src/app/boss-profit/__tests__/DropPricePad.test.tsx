@@ -1,4 +1,4 @@
-// 가격 입력 키패드 — **웹에는 이 파일이 없다**(키패드 케이스가 화면 테스트에
+// 가격 입력 키패드. **웹에는 이 파일이 없다**(키패드 케이스가 화면 테스트에
 // 섞여 있었다). RN 에서는 두 자리(가격 기록 화면의 시트 · 드롭 시트의 드릴다운)가 같은 본문을
 // 쓰므로 본문 계약을 여기 모아 두고, 두 호출부 테스트는 **그 자리로 들어갔다 나오는 흐름**만 본다.
 //
@@ -68,8 +68,8 @@ function renderPad(overrides: Partial<React.ComponentProps<typeof DropPricePadCo
   return { result, onSave, onExclude }
 }
 
-describe('DropPricePad — 금액 입력', () => {
-  it('키를 누른 순서대로 자릿수가 자란다 — 접지 않고 원시 표기다', async () => {
+describe('DropPricePad: 금액 입력', () => {
+  it('키를 누른 순서대로 자릿수가 자란다. 접지 않고 원시 표기다', async () => {
     const { result } = renderPad()
     const { getByLabelText, getByTestId } = await result
 
@@ -143,7 +143,7 @@ describe('DropPricePad — 금액 입력', () => {
   })
 })
 
-describe('DropPricePad — 분배 인원', () => {
+describe('DropPricePad: 분배 인원', () => {
   it('기본값은 그 행의 파티원 수이고, 저장된 값이 있으면 그쪽이 이긴다', async () => {
     const { result } = renderPad()
     const { getByText } = await result
@@ -169,7 +169,7 @@ describe('DropPricePad — 분배 인원', () => {
     expect(getByLabelText('분배 인원 증가').props.accessibilityState.disabled).toBe(true)
   })
 
-  it('1인이면 1인당 금액을 말하지 않는다 — 나눌 상대가 없다', async () => {
+  it('1인이면 1인당 금액을 말하지 않는다. 나눌 상대가 없다', async () => {
     const { result } = renderPad({ defaultShare: 1 })
     const { getByText, queryByText } = await result
 
@@ -214,7 +214,7 @@ function PadHost(): React.JSX.Element {
   )
 }
 
-describe('DropPricePad — 대상이 갈리면 값이 따라간다', () => {
+describe('DropPricePad: 대상이 갈리면 값이 따라간다', () => {
   it('다른 아이템으로 바뀌면 금액과 인원이 그 아이템의 것으로 되돌아간다', async () => {
     const { getByLabelText, getByTestId, getByText } = await renderOverlay(<PadHost />)
 
@@ -235,7 +235,7 @@ describe('DropPricePad — 대상이 갈리면 값이 따라간다', () => {
   })
 })
 
-describe('DropPricePad — 기록 안함 · 스킵 ( 정정)', () => {
+describe('DropPricePad: 기록 안함 · 스킵 ( 정정)', () => {
   it('"기록 안함" 은 값 없이도 눌리고 결정을 올려보낸다', async () => {
     const { result, onExclude } = renderPad()
     const { getByText } = await result
@@ -259,7 +259,7 @@ describe('DropPricePad — 기록 안함 · 스킵 ( 정정)', () => {
     expect(getSeq('1 / 3')).toBeTruthy()
   })
 
-  it('스킵은 아무것도 저장하지 않는다 — 미입력에 그대로 둔다', async () => {
+  it('스킵은 아무것도 저장하지 않는다. 미입력에 그대로 둔다', async () => {
     const onLater = jest.fn()
     const { result, onSave, onExclude } = renderPad({ onLater, progress: { current: 1, total: 2 } })
     const { getByText } = await result
@@ -274,7 +274,7 @@ describe('DropPricePad — 기록 안함 · 스킵 ( 정정)', () => {
   })
 })
 
-describe('DropPricePad — 두 자리가 같은 본문을 쓴다', () => {
+describe('DropPricePad: 두 자리가 같은 본문을 쓴다', () => {
   it('드릴다운(onBack)에만 뒤로 버튼이 있다', async () => {
     const { result } = renderPad()
     const { queryByLabelText } = await result

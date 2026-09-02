@@ -12,7 +12,7 @@ function drops(...names: string[]): RecordedDrop[] {
 }
 
 describe('ValuableDropBadge', () => {
-  it('라벨은 호출부가 정한다 — 자리마다 다른 문구를 받는다', async () => {
+  it('라벨은 호출부가 정한다. 자리마다 다른 문구를 받는다', async () => {
     const { getByTestId } = await renderAtom(
       <ValuableDropBadge drops={drops('칠흑의 보스 반지 상자')} label="이 기간 고가 드롭" />,
     )
@@ -40,7 +40,7 @@ describe('ValuableDropBadge', () => {
     expect(queryByText(/^\+/)).toBeNull()
   })
 
-  // 스택 규칙 — 뒤로 갈수록 6px 겹치고, **앞선 것이 위**다. 순서가 뒤집히면 겹침이 반대로 보인다.
+  // 스택 규칙. 뒤로 갈수록 6px 겹치고, **앞선 것이 위**다. 순서가 뒤집히면 겹침이 반대로 보인다.
   it('아이콘이 6px 씩 겹치고 앞선 것이 위에 온다', async () => {
     const { getAllByTestId } = await renderAtom(
       <ValuableDropBadge drops={drops('a', 'b', 'c')} label="고가 드롭" />,
@@ -93,14 +93,14 @@ describe('ValuableDropBadge', () => {
   // 이 컴포넌트는 `getItemIconUrl` 을 **아예 부르지 않아** 아이콘 자리가 늘 폴백 원이었다(에셋
   // 레이어가 값을 대는 데까지였고 그림 붙이기는 화면 작업 몫이었다). 어두운 테마에서 그 원이
   // 까맣게 보여 **아이템 이미지가 안 나온다** 로 보고됐다(사용자, 2026-08-14).
-  it('매핑이 있는 아이템은 그림을 그린다 — 폴백 원이 아니다', async () => {
+  it('매핑이 있는 아이템은 그림을 그린다. 폴백 원이 아니다', async () => {
     const { getAllByTestId } = await renderAtom(
       <ValuableDropBadge drops={drops('홍옥의 보스 반지 상자')} label="고가 드롭" />,
     )
 
     const [icon] = getAllByTestId('valuable-drop-icon')
     expect(icon.props.source).toBeDefined()
-    // 웹의 `object-contain` 짝 — 정사각 원 안에서 비율을 지킨다.
+    // 웹의 `object-contain` 짝. 정사각 원 안에서 비율을 지킨다.
     expect(icon.props.resizeMode).toBe('contain')
     // 그림이 있는 자리의 바탕은 `surface`(폴백 원만 `surface-2`)다. 웹과 같은 갈림이다.
     expect(flattenStyle(icon.props.style).backgroundColor).toBe(기본테마.surface)

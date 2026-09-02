@@ -17,7 +17,7 @@
 // ⑤ **콜드 스타트 파일이 따로 없다**. 웹은 선하이드레이션 하네스를 세워 프레임 순서를 봤는데,
 //    RN 에서 그 순서를 만드는 것은 `AppShell` 의 `prehydrateTabStores` 이고 그쪽 테스트가 이미
 //  갖고 있다. 여기 남는 것은 ****. `null` 을 0명으로 읽지
-//    않는가 — 이고 그것은 한 케이스다.
+//    않는가. 이고 그것은 한 케이스다.
 // ⑥ DOM 스냅샷 둘은 옮기지 않는다(전환 계획서 **잃는 안전망**). 대신 각 가지를 케이스로 적는다.
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import { act, fireEvent, screen, within } from '@testing-library/react-native'
@@ -76,7 +76,7 @@ const mockedNavigation = jest.mocked(useScreenNavigation)
 type Store = BossSchedulerStore
 
 /**
- * 탭과 두 필터가 스토어 소유라 정적 목으로는 전환이 렌더에 반영되지 않는다 —
+ * 탭과 두 필터가 스토어 소유라 정적 목으로는 전환이 렌더에 반영되지 않는다.
  * 모킹된 훅도 렌더 중에 불리므로 여기서 `useState` 로 실물과 같은 "값 + 세터" 쌍을 흉내 낸다.
  */
 function mockStore(overrides: Partial<Store> = {}): Store {
@@ -109,7 +109,7 @@ function mockStore(overrides: Partial<Store> = {}): Store {
 }
 
 /**
- * 화면에 **선** 섹션 헤더를 위에서 아래 순서로 — `['monthly', 'weekly']`.
+ * 화면에 **선** 섹션 헤더를 위에서 아래 순서로. `['monthly', 'weekly']`.
  *
  * 무리가 비면 헤더도 안 서므로 이 배열이 곧 지금 무엇이 보이는가 다.
  */
@@ -180,7 +180,7 @@ function nearestCommonAncestor(a: AtomElement, b: AtomElement): AtomElement {
   for (let node: AtomElement | null = b; node !== null; node = node.parent) {
     if (ancestors.has(node)) return node
   }
-  throw new Error('공통 조상이 없다 — 두 노드가 같은 트리에 있지 않다')
+  throw new Error('공통 조상이 없다. 두 노드가 같은 트리에 있지 않다')
 }
 
 function contains(ancestor: AtomElement, node: AtomElement): boolean {
@@ -206,7 +206,7 @@ beforeEach(() => {
   useCharacterSelectionStore.setState({ selectedOcid: null })
 })
 
-describe('BossScreen — 빈 상태와 마운트', () => {
+describe('BossScreen: 빈 상태와 마운트', () => {
   it('마운트하면 loadTrackedOcids 를 부른다', async () => {
     const store = mockStore()
 
@@ -253,7 +253,7 @@ describe('BossScreen — 빈 상태와 마운트', () => {
   })
 })
 
-describe('BossScreen — 목록', () => {
+describe('BossScreen: 목록', () => {
   const withBosses = (): Store =>
     mockStore({
       status: 'loaded',
@@ -414,7 +414,7 @@ describe('BossScreen — 목록', () => {
 })
 
 // 판정은 화면이 아니라 `isChallengersWorld` 가 한다.
-describe('BossScreen — 챌린저스 시즌 보스 배지', () => {
+describe('BossScreen: 챌린저스 시즌 보스 배지', () => {
   const seasonBoss = (overrides: Partial<MatchedBoss> = {}): MatchedBoss =>
     boss({
       apiName: '시즌 보스 메이린',
@@ -513,7 +513,7 @@ describe('BossScreen — 챌린저스 시즌 보스 배지', () => {
   })
 })
 
-describe('BossScreen — 재조회', () => {
+describe('BossScreen: 재조회', () => {
   const loaded = (status: Store['status'] = 'loaded'): Store =>
     mockStore({ status, trackedOcids: ['ocid-1'], characters: [character({ weeklyBosses: [boss()] })] })
 
@@ -548,13 +548,13 @@ describe('BossScreen — 재조회', () => {
     expect(refreshControl()).toBeDefined()
   })
 
-  // ★ 회귀 가드 — **조회 중 과 당겼다 는 다른 사실이다**.
+  // ★ 회귀 가드. **조회 중 과 당겼다 는 다른 사실이다**.
   //
   // 종전에는 `refreshing = status === 'loading'` 이라, 화면 마운트 하이드레이션만으로 인디케이터가
   // 프로그램적으로 열렸다. 사용자 보고(2026-08-22) *"페이지 이동 시 새로고침 인디케이터가 저절로
   // 돌고 상단이 빈 채로 멈춘다"* 가 그 증상이다. **조회 중...** 은 그대로 뜬다. 그쪽이 조회를
   // 말하는 자리다.
-  it('조회 중이어도 인디케이터는 안 돈다 — "조회 중..." 만 보여준다', async () => {
+  it('조회 중이어도 인디케이터는 안 돈다. "조회 중..." 만 보여준다', async () => {
     loaded('loading')
     await renderScreen()
 
@@ -563,7 +563,7 @@ describe('BossScreen — 재조회', () => {
   })
 
   // : 동기화 상태는 드롭다운 줄이 아니라 **제목 줄**에 있다(컨텐츠 스케줄러와
-  // 같은 케이스 — 그 파일이 판정 방법을 적는다).
+  // 같은 케이스. 그 파일이 판정 방법을 적는다).
   it('새로고침과 동기화 시각이 제목과 같은 줄에 있다', async () => {
     loaded()
     await renderScreen()
@@ -581,7 +581,7 @@ describe('BossScreen — 재조회', () => {
   })
 })
 
-describe('BossScreen — 실패의 목적지', () => {
+describe('BossScreen: 실패의 목적지', () => {
   const failWith = (error: Store['error']): Store =>
     mockStore({ status: 'error', error, trackedOcids: ['ocid-1'], characters: [character()] })
 
@@ -594,7 +594,7 @@ describe('BossScreen — 실패의 목적지', () => {
     expect(mockShowError).not.toHaveBeenCalled()
   })
 
-  it('429 도 같은 진입점을 탄다 — 토스트는 아예 없다', async () => {
+  it('429 도 같은 진입점을 탄다. 토스트는 아예 없다', async () => {
     failWith({ kind: 'rateLimited' })
 
     await renderScreen()
@@ -655,14 +655,14 @@ describe('BossScreen — 실패의 목적지', () => {
   })
 })
 
-describe('BossScreen — 솔로/파티 필터', () => {
+describe('BossScreen: 솔로/파티 필터', () => {
   const 스우 = boss({ apiName: '스우', matchedBossName: '스우', difficulty: '하드', portraitSlug: 'lucid' })
 
   const withFilterFixture = (): Store =>
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
-      // 자쿰만 4인 파티 — 나머지는 설정이 없어 솔로로 친다.
+      // 자쿰만 4인 파티. 나머지는 설정이 없어 솔로로 친다.
       partySizes: { 'ocid-1:자쿰:카오스': 4 },
       characters: [character({ weeklyBosses: [boss(), 스우] })],
     })
@@ -753,14 +753,14 @@ describe('BossScreen — 솔로/파티 필터', () => {
   })
 })
 
-describe('BossScreen — 빈 상태 문구', () => {
-  it('자동 모드는 게임 등록을 안내하고 CTA 가 없다 — 목적지가 앱 밖이다', async () => {
+describe('BossScreen: 빈 상태 문구', () => {
+  it('자동 모드는 게임 등록을 안내하고 CTA 가 없다. 목적지가 앱 밖이다', async () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
 
     await renderScreen()
 
     expect(screen.getByText('등록된 보스가 없습니다')).toBeTruthy()
-    // 헤더 버튼이 사라졌으므로 이 화면에 "보스 관리"라는 글자는 **하나도 없다** —
+    // 헤더 버튼이 사라졌으므로 이 화면에 "보스 관리"라는 글자는 **하나도 없다**.
     // 자동 모드에는 CTA 도 없다.
     expect(screen.queryByText('보스 관리')).toBeNull()
   })
@@ -803,7 +803,7 @@ describe('BossScreen — 빈 상태 문구', () => {
   })
 })
 
-describe('BossScreen — 카드 탭 → 파티 인원 모달', () => {
+describe('BossScreen: 카드 탭 → 파티 인원 모달', () => {
   const opened = async (overrides: Partial<Store> = {}): Promise<Store> => {
     const store = mockStore({
       status: 'loaded',
@@ -882,7 +882,7 @@ describe('BossScreen — 카드 탭 → 파티 인원 모달', () => {
 
     expect(store.setManualBossDifficulty).not.toHaveBeenCalled()
 
-    // 편집 대상이 옮겨졌다는 증거 — 이제 스테퍼가 그 난이도로 저장한다.
+    // 편집 대상이 옮겨졌다는 증거. 이제 스테퍼가 그 난이도로 저장한다.
     await press(screen.getByLabelText('스우 파티원 수 증가'))
     expect(store.setPartySize).toHaveBeenCalledWith('ocid-1', '스우', '익스트림', 2)
   })
@@ -906,7 +906,7 @@ describe('BossScreen — 카드 탭 → 파티 인원 모달', () => {
   })
 })
 
-describe('BossScreen — 수동 모드', () => {
+describe('BossScreen: 수동 모드', () => {
   beforeEach(() => {
     useTrackingModeStore.setState({ mode: 'manual' })
   })
@@ -943,11 +943,11 @@ describe('BossScreen — 수동 모드', () => {
 
 // 주간 12마리를 채우면 남은 미처치 주간 보스는 `완료` 자리에 `마감`을 단다.
 // 완료로 칠하지 않는 것이 핵심이다: 안 잡은 보스를 완료로 두면 그 거짓이 보스 수익의 금액이 된다.
-describe('BossScreen — 주간 한도 마감 배지', () => {
+describe('BossScreen: 주간 한도 마감 배지', () => {
   const WEEKLY_NAMES = (weeklyBossesData.weekly as { boss: string }[]).map((entry) => entry.boss)
   const PENDING = WEEKLY_NAMES[0]
 
-  /** 끝에서부터 실제로 처치한 주간 보스들 — `PENDING` 과 겹치지 않게 뒤에서 뽑는다. */
+  /** 끝에서부터 실제로 처치한 주간 보스들. `PENDING` 과 겹치지 않게 뒤에서 뽑는다. */
   function cleared(count: number): MatchedBoss[] {
     return WEEKLY_NAMES.slice(-count).map((name) =>
       boss({
@@ -1021,17 +1021,17 @@ describe('BossScreen — 주간 한도 마감 배지', () => {
 
 //  후속(사용자 지정). 한도를 채웠으면 진행 링도 꽉 찬다. 마감은 **이번 주에 더 할
 // 것이 없다** 이므로 링이 100%에 못 닿으면 링이 거짓을 말한다.
-describe('BossScreen — 한도 마감과 진행 링', () => {
+describe('BossScreen: 한도 마감과 진행 링', () => {
   const WEEKLY_NAMES = (weeklyBossesData.weekly as { boss: string }[]).map((entry) => entry.boss)
 
-  /** 링의 접근성 이름에 실린 주간 n/m — 링을 나타내는 것이 이것뿐이라 계약이 여기 있다. */
+  /** 링의 접근성 이름에 실린 주간 n/m. 링을 나타내는 것이 이것뿐이라 계약이 여기 있다. */
   function ringLabel(): string {
     const label = String(screen.getAllByTestId('character-portrait')[0].props.accessibilityLabel)
     return label.slice(label.indexOf('주간'))
   }
 
   /**
-   * 이 결정이 겨누는 실제 상황 — 열둘을 추적해 두고 **그중 열만** 잡은 뒤 목록 밖 둘로 한도를 채웠다.
+   * 이 결정이 겨누는 실제 상황. 열둘을 추적해 두고 **그중 열만** 잡은 뒤 목록 밖 둘로 한도를 채웠다.
    * 추적 목록은 열두 개 그대로이므로 링의 분모도 12다.
    */
   function withTrackedTwelveAndOutsideKills(): void {
@@ -1080,7 +1080,7 @@ describe('BossScreen — 한도 마감과 진행 링', () => {
     })
   }
 
-  it('한도를 채우면 링이 12/12로 꽉 찬다 — 마감도 **다 한 것** 이다', async () => {
+  it('한도를 채우면 링이 12/12로 꽉 찬다. 마감도 **다 한 것** 이다', async () => {
     withTrackedTwelveAndOutsideKills()
 
     await renderScreen()
@@ -1088,7 +1088,7 @@ describe('BossScreen — 한도 마감과 진행 링', () => {
     expect(ringLabel()).toBe(`주간 ${WEEKLY_BOSS_CLEAR_LIMIT}/${WEEKLY_BOSS_CLEAR_LIMIT}`)
   })
 
-  // 회귀 가드 — 한도 전에는 미처치가 그대로 분자에서 빠진다.
+  // 회귀 가드. 한도 전에는 미처치가 그대로 분자에서 빠진다.
   it('한도 전에는 미처치가 링에서 빠진다', async () => {
     const tracked = WEEKLY_NAMES.slice(0, WEEKLY_BOSS_CLEAR_LIMIT)
     useTrackingModeStore.setState({ mode: 'manual' })

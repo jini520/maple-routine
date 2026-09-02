@@ -33,10 +33,10 @@ import type { SpendFormProps } from './spend/form-shared'
 export type { SpendDraft } from './spend/form-shared'
 
 export interface SpendSheetProps {
-  /** 어느 날에 적히나 — 캘린더에서 고른 날이다. */
+  /** 어느 날에 적히나. 캘린더에서 고른 날이다. */
   dateKey: string
   /**
-   * 고를 수 있는 캐릭터 — 화면이 읽어서 넘긴다(시트는 `storage/` 를 모른다).
+   * 고를 수 있는 캐릭터. 화면이 읽어서 넘긴다(시트는 `storage/` 를 모른다).
    * 비어 있으면 고르개에 선택 안함 하나만 선다.
    */
   characters: ReadonlyArray<{ ocid: string; name: string }>
@@ -61,7 +61,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
     props.editing?.category ?? SPEND_CATEGORIES[0],
   )
   /**
-   * 스크롤을 되돌릴 열쇠 — 목록 갈래가 단계를 오갈 때 채운다. 갈래가 바뀌거나 단계를 오가면
+   * 스크롤을 되돌릴 열쇠. 목록 갈래가 단계를 오갈 때 채운다. 갈래가 바뀌거나 단계를 오가면
    * 내용이 통째로 갈리므로 **밀린 자리에서 시작하면 안 된다.**
    */
   const [scrollKey, setScrollKey] = useState('')
@@ -106,7 +106,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   )
 }
 
-/** 갈래 하나에 폼 하나 — 고르는 자리는 여기 하나뿐이다. */
+/** 갈래 하나에 폼 하나. 고르는 자리는 여기 하나뿐이다. */
 function SpendForm(props: {
   category: SpendCategory
   formProps: SpendFormProps

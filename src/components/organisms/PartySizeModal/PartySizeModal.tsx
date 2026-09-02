@@ -10,7 +10,7 @@
 //
 // ── RN 으로 옮기며 갈린 것 다섯 ─────────────────────────────────────────────────────
 //
-// ① **그림이 앉았다(step 5).** 3단계가 *"셋이 한 덩어리라 따로 못 옮긴다"* 며 미뤄 둔 자리 —
+// ① **그림이 앉았다(step 5).** 3단계가 *"셋이 한 덩어리라 따로 못 옮긴다"* 며 미뤄 둔 자리.
 //    크롭의 CSS 값(`background-size: "100% auto"` / `position: "50% 45%"`)을 RN 기하로 바꾸고,
 //    웹의 `filter` 와 `mask-image` 를 각각 RN `filter` 스타일과 **뒤집은 그라데이션**으로
 //    푸는 일이다. 그 셋을 step 4 가 컨텐츠 카드에서 이미 한 벌 풀어 두었으므로 여기서는
@@ -48,7 +48,7 @@ import { Modal } from '../Modal/Modal'
 
 export function PartySizeModal(props: {
   bossName: string
-  /** 히어로의 키커 — '주간 보스' / '월간 보스'. */
+  /** 히어로의 키커. '주간 보스' / '월간 보스'. */
   cycleLabel: string
   portraitSlug: string | null
   difficulties: BossDifficulty[]
@@ -77,7 +77,7 @@ export function PartySizeModal(props: {
             `.panel-on-scrim-parent > *` 짝이 없다(`Modal.tsx` 의 `ModalPanel` 주석). 안쪽
             `border-t` 는 표면 위 구분선이라 대상이 아니다. */}
         <View className="overflow-hidden rounded-[14px] border border-panel-border bg-surface">
-          {/* 히어로 — 카드와 같은 bleed 레시피. `MediaScope` 안이라 `bg-surface`·
+          {/* 히어로. 카드와 같은 bleed 레시피. `MediaScope` 안이라 `bg-surface`·
               `text-text` 가 media-* 로 해석된다. */}
           <MediaScope className="relative h-22 overflow-hidden bg-surface">
             {/* 일러스트 없는 보스(`portraitSlug: null`)는 히어로를 **비운다**. 폴백 디자인을 따로
@@ -90,7 +90,7 @@ export function PartySizeModal(props: {
                 이 자리의 계약은 공용 `faded-illustration` 가 나른다. */}
             <FadedIllustration source={portraitUrl} crop={crop} variant="hero" />
 
-            {/* 글자를 앉히는 베일 — 하드코딩 rgba 가 아니라 스코프의 표면색을 쓴다. */}
+            {/* 글자를 앉히는 베일. 하드코딩 rgba 가 아니라 스코프의 표면색을 쓴다. */}
             <LinearGradient
               className="absolute inset-0"
               colors={[mediaSurface, 'transparent']}

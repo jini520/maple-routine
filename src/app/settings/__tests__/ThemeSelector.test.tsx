@@ -40,7 +40,7 @@ function 첫테마(names: readonly ThemeName[]): ThemeName {
   return name
 }
 
-describe('ThemeSelector — 선택 계약', () => {
+describe('ThemeSelector: 선택 계약', () => {
   it.each(THEME_NAMES)('현재 테마가 %s면 그 타일만 선택된 상태다', async (current) => {
     const view = await renderAtom(<ThemeSelector theme={current} onSelect={jest.fn()} />)
 
@@ -61,7 +61,7 @@ describe('ThemeSelector — 선택 계약', () => {
   })
 })
 
-describe('ThemeSelector — 카테고리 섹션', () => {
+describe('ThemeSelector: 카테고리 섹션', () => {
   it('등록된 모든 테마를 보여준다', async () => {
     const view = await renderAtom(
       <ThemeSelector theme={첫테마(THEME_NAMES)} onSelect={jest.fn()} />,
@@ -85,7 +85,7 @@ describe('ThemeSelector — 카테고리 섹션', () => {
   })
 })
 
-describe('ThemeSelector — 라이트·다크 필터', () => {
+describe('ThemeSelector: 라이트·다크 필터', () => {
   it('기본값은 전체다', async () => {
     const view = await renderAtom(
       <ThemeSelector theme={첫테마(THEME_NAMES)} onSelect={jest.fn()} />,
@@ -156,7 +156,7 @@ describe('ThemeSelector — 라이트·다크 필터', () => {
   })
 })
 
-describe('ThemeSelector — 프리뷰 타일', () => {
+describe('ThemeSelector: 프리뷰 타일', () => {
   // 비활성 테마의 색을 미리 보여주는 것이 이 타일의 일이라, 색이 **활성 테마의 토큰이 아니라
   // 레지스트리에서 직접** 와야 한다.
   it.each(THEME_NAMES)('%s 타일이 그 테마의 배경색으로 자기를 칠한다', async (name) => {
@@ -180,7 +180,7 @@ describe('ThemeSelector — 프리뷰 타일', () => {
   })
 })
 
-// ★ 회귀 가드 — **한 줄에 둘**(의 `grid-cols-2`).
+// ★ 회귀 가드. **한 줄에 둘**(의 `grid-cols-2`).
 //
 // 원래는 카드에 `w-[calc(50%-5px)]` 를 줬는데 **NativeWind 가 그 `calc()` 를 만들지 않아** 폭이
 // 통째로 빠졌고, 카드가 글자 길이대로 늘어나 한 줄에 셋이 서기도 했다(2026-08-13 실기기 관측:
@@ -189,8 +189,8 @@ describe('ThemeSelector — 프리뷰 타일', () => {
 //
 // 그래서 **둘씩 선다** 를 **셀의 폭**으로 고정한다. 값이 `50%` 라는 것이 곧 2열이라는 뜻이고,
 // 퍼센트 하나뿐이라 NativeWind 가 그대로 내보낸다.
-describe('ThemeSelector — 2열 배치', () => {
-  it('카드는 감싸는 셀이 절반 폭을 정한다 — 글자 길이가 폭을 정하지 않는다', async () => {
+describe('ThemeSelector: 2열 배치', () => {
+  it('카드는 감싸는 셀이 절반 폭을 정한다. 글자 길이가 폭을 정하지 않는다', async () => {
     const { getByLabelText } = await renderAtom(
       <ThemeSelector theme={THEME_NAMES[0]} onSelect={() => {}} />,
     )

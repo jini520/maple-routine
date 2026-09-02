@@ -17,7 +17,7 @@
 // ── 대기·실패는 **아래 자리에만** 그린다 ────────────────────────────────────────────
 //
 // 위 층은 로컬 캐시로 그리므로(결정 2 표) 계정을 바꿔도 건드리지 않는다. 아래 자리의 로딩·빈·실패
-// 표현은 캐릭터 관리 피커의 정책 그대로다(`docs/features/content-scheduler.md` `후보 목록 로딩`) —
+// 표현은 캐릭터 관리 피커의 정책 그대로다(`docs/features/content-scheduler.md` `후보 목록 로딩`).
 // 항목이 있으면 지우지 않고 스탈 배너를 얹고, 401·429 는 액션 없이 문구만 남긴다
 // (화면이 곧 키 입력으로 옮겨간다).
 //
@@ -55,7 +55,7 @@ import type { ReorderScroll } from './use-reorder-scroll'
 export interface CharacterManageBodyProps {
   manage: CharacterManageController
   /**
-   * 끌기 중 자동 스크롤이 만질 스크롤 뷰 — **화면이 소유한다.**
+   * 끌기 중 자동 스크롤이 만질 스크롤 뷰. **화면이 소유한다.**
    *
    * 컨트롤러에 실어 내려보내지 않는 이유는 그 안에 `ref` 가 들어가기 때문이다: 컨트롤러 객체가
    * ref 를 품는 순간 렌더 중에 ref 를 만졌다 가 되어(`react-hooks/refs`) 그 객체를 읽는 자리가
@@ -71,11 +71,11 @@ export interface CharacterManageBodyProps {
   place: RosterErrorPlace
 }
 
-// 대기 자리 — **마크와 문구가 함께 선다**.
+// 대기 자리. **마크와 문구가 함께 선다**.
 //
 // 예전에는 `aria-label` 만 있어 화면에는 잎 하나뿐이었다(배정표 2·4 의 **문구 없음**).
 // 그 결정이 서 있던 전제는 **띠가 움직인다** 였는데 그것이 한 번도 참이 아니었고(정정 1), 되살린
-// 뒤에도 이 자리는 콜드 캐시에서 `character/basic` 을 캐릭터 수만큼 부르느라 **대기가 길다** —
+// 뒤에도 이 자리는 콜드 캐시에서 `character/basic` 을 캐릭터 수만큼 부르느라 **대기가 길다**.
 // 그 길이에서는 마크만으로 **무엇을** 기다리는지가 전달되지 않는다(사용자 보고 2026-08-18).
 //
 // `aria-label` 을 걷고 글자를 그린다. 둘을 함께 두면 스크린리더가 같은 말을 두 번 읽는다.
@@ -101,7 +101,7 @@ function Notice(props: { children: React.ReactNode }): React.JSX.Element {
   )
 }
 
-/** 아래 층의 목록 자리 — 피커의 `PickerBody` 와 같은 순서로 갈린다. */
+/** 아래 층의 목록 자리. 피커의 `PickerBody` 와 같은 순서로 갈린다. */
 function CandidateArea({
   manage,
   place,
@@ -233,7 +233,7 @@ export function CharacterManageBody({
               />
             )}
             {/* 라벨 오른쪽의 **{n}개 중 {m}개 표시** 는 뺐다(사용자 지정 2026-08-17). 그 줄이 답하던
-                질문(**왜 12개가 아니라 7개인가**)은 이 화면에서 물을 수 없는 질문이었다 — 안 보이는
+                질문(**왜 12개가 아니라 7개인가**)은 이 화면에서 물을 수 없는 질문이었다. 안 보이는
                 캐릭터가 왜 안 보이는지는 그 숫자로도 알 수 없다. */}
             <SectionLabel>캐릭터 추가</SectionLabel>
             <CandidateArea manage={manage} place={place} />

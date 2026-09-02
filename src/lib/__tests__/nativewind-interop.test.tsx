@@ -23,7 +23,7 @@ function flattenStyle(style: unknown): Record<string, unknown> {
 }
 
 describe('NativeWind ↔ 써드파티 배선', () => {
-  it('Svg — `text-*` 가 `color` 프롭이 되어 자식의 `currentColor` 를 채운다', async () => {
+  it('Svg: `text-*` 가 `color` 프롭이 되어 자식의 `currentColor` 를 채운다', async () => {
     const { getByTestId } = await render(
       <ThemeProvider>
         <Svg testID="svg" className="text-primary" viewBox="0 0 24 24">
@@ -35,7 +35,7 @@ describe('NativeWind ↔ 써드파티 배선', () => {
     expect(getByTestId('svg').props.color).toBe(머쉬맘.primary)
   })
 
-  it('Svg — 크기 유틸이 상자 크기가 된다', async () => {
+  it('Svg: 크기 유틸이 상자 크기가 된다', async () => {
     const { getByTestId } = await render(
       <ThemeProvider>
         <Svg testID="svg" className="h-5 w-5" viewBox="0 0 24 24" />
@@ -45,7 +45,7 @@ describe('NativeWind ↔ 써드파티 배선', () => {
     expect(flattenStyle(getByTestId('svg').props.style)).toMatchObject({ width: 20, height: 20 })
   })
 
-  it('LinearGradient — `className` 이 style 로 풀린다', async () => {
+  it('LinearGradient: `className` 이 style 로 풀린다', async () => {
     const { getByTestId } = await render(
       <ThemeProvider>
         <LinearGradient testID="g" colors={['#000', '#fff']} className="h-5 rounded-full px-2.5" />

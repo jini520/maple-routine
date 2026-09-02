@@ -1,5 +1,5 @@
 /**
- * react-navigation 이 **자기가 칠하는 자리**에 쓸 색 — 화면 배경·카드·구분선 같은 것들.
+ * react-navigation 이 **자기가 칠하는 자리**에 쓸 색. 화면 배경·카드·구분선 같은 것들.
  *
  * `className` 으로 접히지 않는 자리라 컨텍스트에서 값을 읽는다(`useScrollIndicatorStyle` 과 같은
  * 부류다. `src/theme/context.ts` 가 그 판단을 적어 두었다).

@@ -1,6 +1,6 @@
 // 지출 어댑터(건 + 정정 3).
 //
-// 대리키·`ON CONFLICT` 없음·`id`/`recordedAt` 을 호출부가 주는 규약은 `income.ts` 와 같다 —
+// 대리키·`ON CONFLICT` 없음·`id`/`recordedAt` 을 호출부가 주는 규약은 `income.ts` 와 같다.
 // 그쪽 파일 머리에 사유를 적어 뒀다.
 //
 // ## 통화 칸이 셋이고 대개 둘은 비어 있다
@@ -11,7 +11,7 @@
 import { getBossProfitDb } from './sqlite/db'
 
 /**
- * 지출의 갈래 — 앞의 셋은 **선택 목록**이고 뒤의 둘은 **직접 입력**이다.
+ * 지출의 갈래. 앞의 셋은 **선택 목록**이고 뒤의 둘은 **직접 입력**이다.
  *
  * 앞의 셋은 `src/data/spend-catalog.json` 의 `categories` 와 **같은 이름이어야 한다**(그 파일이
  * 항목을 그 이름으로 묶는다). 어긋나면 고른 항목의 카테고리와 레코드의 카테고리가 달라져
@@ -30,7 +30,7 @@ export const SPEND_CATEGORIES = [
 export type SpendCategory = (typeof SPEND_CATEGORIES)[number]
 
 /**
- * 아이템 구매의 종류 — **게임의 인벤토리 탭 이름**이다.
+ * 아이템 구매의 종류. **게임의 인벤토리 탭 이름**이다.
  *
  * 기타가 `SPEND_CATEGORIES` 의 갈래 이름과 겹치지만 **고치지 않는다**: 사용자가 아는 말이
  * 그것이라 우리가 바꿔 부르면 게임과 갈라진다. 대신 **부르는 말을 나눈다**. 이쪽은 언제나
@@ -76,7 +76,7 @@ export interface SpendRecord {
    */
   itemKind: SpendItemKind | null
   /**
-   * 금액 = 카탈로그의 `unitPrice` × 이 값. **단위 이름은 안 적는다** —
+   * 금액 = 카탈로그의 `unitPrice` × 이 값. **단위 이름은 안 적는다**.
    * 카탈로그가 항목별로 알고 있어(`unit`) 베끼면 목록이 바뀔 때 두 벌이 어긋난다.
    */
   quantity: number | null
@@ -95,7 +95,7 @@ export interface SpendRecord {
   /** 메포 원금. 표시는 아래 시세로 환산한 메소다. */
   pointAmount: number | null
   /**
-   * 메소마켓 시세 — 단위가 **1억 메소당 메포**다.
+   * 메소마켓 시세. 단위가 **1억 메소당 메포**다.
    * 환산은 `메포 × 100,000,000 ÷ 시세` 로 **나눗셈**이다.
    */
   pointPer100mMeso: number | null
@@ -161,7 +161,7 @@ export async function insertSpendRecord(record: SpendRecord): Promise<void> {
 }
 
 /**
- * 갈아 끼우기 — **지우고 다시 넣지 않는다**.
+ * 갈아 끼우기. **지우고 다시 넣지 않는다**.
  *
  * 지우고 넣으면 `id` 와 `recorded_at` 이 새것이 되는데, 그 둘은 언제 적었나 를 든 칸이라
  * **고친 시각이 적은 시각을 덮어쓴다.** 그래서 `SET` 에 `recorded_at` 이 없다. 적은 시각이지
@@ -229,7 +229,7 @@ function rowToRecord(row: Record<string, unknown>): SpendRecord {
   }
 }
 
-/** 날짜 범위의 기록 — **두 끝을 포함**한다. `ocid` 로 거르지 않는 이유는 `income.ts` 와 같다. */
+/** 날짜 범위의 기록. **두 끝을 포함**한다. `ocid` 로 거르지 않는 이유는 `income.ts` 와 같다. */
 export async function getSpendRecordsBetween(
   fromDateKey: string,
   toDateKey: string,

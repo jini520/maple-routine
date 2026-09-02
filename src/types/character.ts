@@ -49,7 +49,7 @@ export interface CharacterBasicProfile {
   jobClass?: string
   // 현재 레벨 진행률(%). wire의 문자열 `character_exp_rate` 를 Number로 푼 값.
   // 옛 캐시 엔트리와 축약 응답에는 없어 옵셔널이고, 없으면 화면이 경험치 줄 자체를 그리지 않는다
-  // (0%로 채우면 "모름"이 "0%"가 된다 —과 같은 구분).
+  // (0%로 채우면 "모름"이 "0%"가 된다).
   expRate?: number
   // character/basic 응답의 character_guild_name. 세 상태를 구분한다:
   // 문자열 = 그 길드 소속, null = 가입한 길드 없음(API가 알려준 사실), undefined = 모름

@@ -5,7 +5,7 @@ import { showSplashScreen } from './splash-screen'
 /**
  * OTA 의 **정책** 층.
  *
- * 여기 있던 것 중 프로토콜에 속한 것. 매니페스트 URL·`parseLiveUpdateManifest`·조회·비교 —
+ * 여기 있던 것 중 프로토콜에 속한 것. 매니페스트 URL·`parseLiveUpdateManifest`·조회·비교.
  * 은 전부 **어댑터로 갔다**(@capgo 것은 `app-capacitor/native/adapters/capacitor-live-update.ts`,
  * `expo-updates` 것은 `app-rn/native/adapters/rn-live-update.ts`). 지우는 것이 아니라 **옮긴 것**이라
  * capacitor 앱은 계속 돈다. 전환이 끝날 때까지 스토어에 있는 것은 아직 그 앱이다.
@@ -44,7 +44,7 @@ export async function notifyLiveUpdateReady(): Promise<void> {
 }
 
 /**
- * 현재 실행 중인 번들 버전 — OTA 적용 후 값이 바뀌므로 관찰용 UI에서 반영의 "증거"가 된다.
+ * 현재 실행 중인 번들 버전. OTA 적용 후 값이 바뀌므로 관찰용 UI에서 반영의 "증거"가 된다.
  * 라이브 업데이트 런타임이 없는 환경(web/개발 서버)에서는 `null` 을 반환한다.
  */
 export async function getCurrentBundleVersion(): Promise<string | null> {
@@ -85,9 +85,9 @@ export async function downloadLiveUpdate(onProgress: (percent: number) => void):
 }
 
 /**
- * 내려받아 둔 번들을 즉시 적용한다(적용은 JS 컨텍스트를 파괴하고 재로드 — 이후 코드는 실행되지 않는다).
+ * 내려받아 둔 번들을 즉시 적용한다(적용은 JS 컨텍스트를 파괴하고 재로드. 이후 코드는 실행되지 않는다).
  *
- * **순서는 닫기 → 커버 → 적용이다.** 커버가 닫기 **뒤**인 것이 요점이다 —
+ * **순서는 닫기 → 커버 → 적용이다.** 커버가 닫기 **뒤**인 것이 요점이다.
  * 먼저 올리면 닫기가 매달릴 때 사용자가 브랜드 주황 스플래시에 갇힌다(이슈 #175). 커버의 목적은
  * "리로드 동안 네이티브 배경색이 드러나는 것"을 덮는 것이지 그 앞의 준비 작업까지 덮는 것이 아니므로,
  * 커버가 떠 있는 구간을 실제 리로드 직전으로 좁힌다.
@@ -111,7 +111,7 @@ export async function applyLiveUpdate(): Promise<void> {
 export type { NetworkType, LiveUpdateCheckResult }
 
 /**
- * 현재 네트워크 종류 — 셀룰러면 다운로드 전에 데이터 사용 경고를 띄운다.
+ * 현재 네트워크 종류. 셀룰러면 다운로드 전에 데이터 사용 경고를 띄운다.
  * 조회에 실패하면 `'unknown'` 으로 폴백해 경고를 생략한다. 알 수 없다는 이유로 다운로드를 막지 않는다.
  */
 export async function getNetworkType(): Promise<NetworkType> {

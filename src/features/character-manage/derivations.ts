@@ -56,10 +56,10 @@ export function summarizeAccount(account: MapleAccount): AccountSummaryView | nu
 }
 
 /**
- * 드롭다운 목록의 차례 — **대표 캐릭터의 레벨이 높은 계정이 먼저**다(사용자 지정 2026-08-17).
+ * 드롭다운 목록의 차례. **대표 캐릭터의 레벨이 높은 계정이 먼저**다(사용자 지정 2026-08-17).
  *
  * 계정 자체에는 어느 것이 주력인가 를 말하는 값이 없다(`accountId` 는 불투명 문자열이고 응답 순서는
- * 넥슨이 정한다). 그 자리에서 사람이 실제로 쓰는 기준이 **가장 높은 캐릭터**라, 그것으로 세운다 —
+ * 넥슨이 정한다). 그 자리에서 사람이 실제로 쓰는 기준이 **가장 높은 캐릭터**라, 그것으로 세운다.
  * 대표는 이미 각 계정의 최고 레벨이므로(`summarizeAccount`) 새로 셀 것도 없다.
  *
  * 동레벨이면 대표 **이름순**이다. 응답 순서를 따르면 같은 키로 열 때마다 차례가 달라 보인다.
@@ -73,7 +73,7 @@ export function sortAccountSummaries(summaries: AccountSummaryView[]): AccountSu
   )
 }
 
-/** 선택됨 층의 행 하나 — 네트워크 없이 로컬 캐시로만 그린다. */
+/** 선택됨 층의 행 하나. 네트워크 없이 로컬 캐시로만 그린다. */
 export interface SelectedCharacterView {
   ocid: string
   /** 캐시가 없으면 빈 문자열이다. 자리표시자 문구를 지어내지 않는다. */
@@ -143,7 +143,7 @@ export function buildSelectedCharacterViews(
  * 캐릭터의 별이 채워져 있는 상태가 만들어진다. 목록에서 빠진 대표를 지우는 일은 저장 헬퍼
  * (`setCharacterSelection`)가 이미 한다.
  *
- * **`resolveDisplayRepresentative` 와 합치지 마라.** 이름은 비슷하지만 묻는 것이 다르다 —
+ * **`resolveDisplayRepresentative` 와 합치지 마라.** 이름은 비슷하지만 묻는 것이 다르다.
  * 이쪽은 사용자가 대표라고 **말했는가**, 저쪽은 지금 대표 **자리에 설** 캐릭터는 누구인가.
  */
 export function resolveRepresentative(orderedOcids: string[], stored: string | null): string | null {

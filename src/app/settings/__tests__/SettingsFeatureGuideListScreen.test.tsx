@@ -4,7 +4,7 @@
 // ① **라우터 프로브가 없다**. 안내를 누르면 `navigate('SettingsFeatureGuide', { guideId })` 가
 //    불리는지를 본다(웹이 경로를 조립하던 자리 · `routes.ts`).
 // ② `getByRole('tab', { name })` → **탭 글자에서 위로 올라가** 잡고, `aria-selected` 는
-//    `accessibilityState.selected` 로 읽는다(RN 에 `tablist` 컨테이너 역할이 없다 —
+//    `accessibilityState.selected` 로 읽는다(RN 에 `tablist` 컨테이너 역할이 없다.
 //    `SettingsFeatureGuideListScreen.tsx` 파일 머리 ②).
 // ③ 픽스처는 **배열 정체성을 고정해 내용만 갈아 끼운다**(`SettingsReleaseNotesScreen` 테스트
 //    파일 머리 ④ 와 같은 이유·같은 처방).
@@ -77,7 +77,7 @@ const 수익안내: FeatureGuide = {
   groups: ['profit'],
   sections: [{ id: 'a', title: '마디', blocks: [{ text: '수익 설명' }] }],
 }
-// `캐릭터 관리`처럼 **두 그룹에 서는** 안내 — 사본이 아니라 같은 글 한 벌이다.
+// `캐릭터 관리`처럼 **두 그룹에 서는** 안내. 사본이 아니라 같은 글 한 벌이다.
 const 공통안내: FeatureGuide = {
   id: 'character-manage',
   title: '캐릭터 관리',
@@ -115,7 +115,7 @@ describe('SettingsFeatureGuideListScreen', () => {
     expect(view.getAllByTestId('guide-group-tab').map(labelOf)).toEqual(['컨텐츠', '보스', '수익'])
   })
 
-  // `ThemeSelector`·개발 노트의 카테고리 섹션과 같은 규칙 — 거른 결과가 0이면 탭째 감춘다.
+  // `ThemeSelector`·개발 노트의 카테고리 섹션과 같은 규칙. 거른 결과가 0이면 탭째 감춘다.
   // 빈 탭을 열면 아무것도 없는 화면을 만난다.
   it('안내가 없는 그룹은 탭째 그리지 않는다', async () => {
     const view = await renderOverlay(<SettingsFeatureGuideListScreen />)

@@ -1,5 +1,5 @@
 /**
- * `image-asset.ts` 의 RN 짝 — **웹 프로그램은 이 파일을 보지 않는다.**
+ * `image-asset.ts` 의 RN 짝. **웹 프로그램은 이 파일을 보지 않는다.**
  *
  * Metro 는 `import x from './a.webp'` 를 `AssetRegistry` 에 등록된 **에셋 id(number)** 로 만든다.
  * `<Image source={ref} />` 가 그 숫자를 그대로 받고, 원격 URI 처럼 `{ uri }` 로 감싸지 않는다

@@ -1,5 +1,5 @@
 /**
- * 아이템 판매 폼 — 경매장에서 판 것.
+ * 아이템 판매 폼. 경매장에서 판 것.
  *
  * 이 갈래만 **수수료를 뗀다**. 경매장이 3% 또는 5% 를 가져가므로 판 값 과
  * 번 돈 이 다르다. 그래서 치는 자리가 큰 숫자가 아니라 **판매 대금** 줄이고, 큰 숫자는 **못 치는
@@ -21,7 +21,7 @@ import { useSheetSubmit } from './use-sheet-submit'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
 /**
- * 수수료 조각 셋 — **`없음` 이 첫 조각이고 기본값**이다.
+ * 수수료 조각 셋. **`없음` 이 첫 조각이고 기본값**이다.
  *
  * 3%·5% 만 두면 직거래를 못 적고, 무엇보다 **정정 9 이전에 적힌 행**이 거짓이 된다: 수정 시트가
  * 그 행을 열 때 요율 하나를 억지로 세우면 열기만 해도 금액이 달라진다.
@@ -76,7 +76,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
           서는 이유는 계산 차례 그대로이기 때문이다: 무엇을 · 얼마에 · 몇 % 떼고 → 합계. */}
       <FieldRow label="판매 대금">
         <AmountInput testID="income-sheet-gross" value={grossText} onChange={setGrossText} />
-        {/* 큰 숫자는 **수수료를 뗀 합계**라(정정 9 ④) 이 줄과 축이 같은지 헷갈린다 —
+        {/* 큰 숫자는 **수수료를 뗀 합계**라(정정 9 ④) 이 줄과 축이 같은지 헷갈린다.
             둘 다 메소라는 것을 여기서 말한다. */}
         <Text
           testID="income-sheet-gross-unit"

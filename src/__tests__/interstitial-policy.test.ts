@@ -19,13 +19,13 @@
 //   **뜨지 않을 광고** 를 요청해 임프레션 없는 요청(매치율 0)으로 쌓이기 때문이다.
 // - **안 잡는다**: `src/native/ads`. 어댑터(`rn-ads.ts`)가 `resolveInterstitialAdId`·
 //  `shouldUseTestAds` 를 계속 부른다. 그 둘은 인라인 광고도 쓸 함수다.
-// - **안 잡는다**: `AdsPort`·`setAdsPort`·`rn-ads.ts` 자체 — 포트 배선은 남기기로 한 자산이다.
+// - **안 잡는다**: `AdsPort`·`setAdsPort`·`rn-ads.ts` 자체. 포트 배선은 남기기로 한 자산이다.
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
 const SRC = join(__dirname, '..')
 
-/** 검사 대상 — 소스만. 이 파일과 ADR 을 인용하는 주석은 대상이 아니다(아래 `stripComments`). */
+/** 검사 대상. 소스만. 이 파일과 ADR 을 인용하는 주석은 대상이 아니다(아래 `stripComments`). */
 function sourceFiles(dir: string): string[] {
   const out: string[] = []
   for (const entry of readdirSync(dir)) {
@@ -74,9 +74,9 @@ describe(' app-rn 에 전면광고가 없다', () => {
     expect(offenders.map((f) => f.slice(SRC.length + 1))).toEqual([])
   })
 
-  // 결정 2 — **어댑터는 남는다.** 위 목록이 넓어져 이것까지 걷어내면 인라인 광고가 처음부터
+  // 결정 2. **어댑터는 남는다.** 위 목록이 넓어져 이것까지 걷어내면 인라인 광고가 처음부터
   // 배선을 다시 세워야 한다(앱 ID·`app-ads.txt`·테스트 광고 강제가 전부 그 배선에 딸려 있다).
-  it('어댑터 배선은 그대로 있다 — 걷은 것은 포맷이지 SDK 가 아니다', () => {
+  it('어댑터 배선은 그대로 있다. 걷은 것은 포맷이지 SDK 가 아니다', () => {
     const adapter = readFileSync(join(SRC, 'native/adapters/rn-ads.ts'), 'utf8')
     const boot = readFileSync(join(SRC, 'boot.ts'), 'utf8')
 

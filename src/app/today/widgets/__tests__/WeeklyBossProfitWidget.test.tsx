@@ -1,5 +1,5 @@
-// 주간 보스 수익 위젯. 이 파일이 지키는 것 넷 —
-// ① **증감이 없다**(칩도, 퍼센트도, `rise`/`fall` 색도 — 회귀 가드)
+// 주간 보스 수익 위젯. 이 파일이 지키는 것 넷.
+// ① **증감이 없다**(칩도, 퍼센트도, `rise`/`fall` 색도. 회귀 가드)
 // ② **0 을 그리되 없다 로 읽히게 두지 않는다**(큰 `0 메소` + 미기록 한 줄, 이 위젯만의 예외)
 // ③ **스택 바가 총액을 결정석/아이템으로 가른다**(폭이 비율이고 분해 금액이 그 색을 읽는 법을 말한다)
 // ④ **크기가 버리는 것이 정해져 있다**(2x2 는 목록 · 4x2 는 행 내역 · 2x1 은 바까지)
@@ -60,7 +60,7 @@ function 모든색(view: Awaited<ReturnType<typeof renderAtom>>): unknown[] {
 describe('높이는 내용이 정한다', () => {
   // 기본 배치가 `4×auto` 로 바뀌었다. 이 크기가 4x3 과 **같은 것**을 그리지 않으면 화면이 통째로
   // 다른 밀도로 바뀐다(`variantOf` 가 auto 를 안 알면 4x2 용 **wide** 로 떨어진다).
-  it('`4×auto` 는 4x3 과 같은 것을 그린다 — 기간 머리와 순위 목록이 선다', async () => {
+  it('`4×auto` 는 4x3 과 같은 것을 그린다. 기간 머리와 순위 목록이 선다', async () => {
     const auto = await 위젯(크기['4×auto'])
     const 고정 = await 위젯(크기['4x3'])
 
@@ -70,7 +70,7 @@ describe('높이는 내용이 정한다', () => {
   })
 
   // 남는 자리를 채울 높이가 없는데 `flex-1` 을 걸면 그것이 **채운다** 는 거짓 신호로 남는다.
-  it('바깥 상자에 `flex-1` 이 없다 — 늘릴 높이가 없다', async () => {
+  it('바깥 상자에 `flex-1` 이 없다. 늘릴 높이가 없다', async () => {
     const { getByTestId } = await 위젯(크기['4×auto'])
 
     expect(flattenStyle(getByTestId('widget-weekly-boss-profit').props.style).flexGrow).toBeUndefined()
@@ -89,7 +89,7 @@ describe('순위는 `1st · 2nd · 3rd` 다 (사용자 지정)', () => {
   })
 
   // `1st`는 폭이 고정된 글자가 아니다. 천장으로 두면 줄바꿈되거나 잘린다(와 같은 이유).
-  it('칸은 **바닥**이고 한 줄로 못박는다 — 줄바꿈도 잘림도 없다', async () => {
+  it('칸은 **바닥**이고 한 줄로 못박는다. 줄바꿈도 잘림도 없다', async () => {
     const { getAllByTestId } = await 위젯(크기['4×auto'])
 
     for (const node of getAllByTestId('profit-character-rank')) {
@@ -104,7 +104,7 @@ describe('순위는 `1st · 2nd · 3rd` 다 (사용자 지정)', () => {
 describe('증감은 어디에도 없다', () => {
   // `rise`/`fall` 은 이 증감 전용으로 만든 토큰이라, 그 색이 이 타일에 나타나는 것은
   // 증감 표기가 되살아났다는 뜻이다. 퍼센트 기호도 같은 신호다.
-  it.each(Object.entries(크기))('%s — 퍼센트도 `rise`/`fall` 색도 안 쓴다', async (_이름, 값) => {
+  it.each(Object.entries(크기))('%s: 퍼센트도 `rise`/`fall` 색도 안 쓴다', async (_이름, 값) => {
     const view = await 위젯(값)
 
     expect(모든글자(view)).not.toContain('%')
@@ -123,7 +123,7 @@ describe('증감은 어디에도 없다', () => {
 })
 
 describe('기록이 없으면 0 을 그리고 그 사실을 함께 말한다', () => {
-  it.each(Object.entries(크기))('%s — `0 메소` + 미기록 한 줄', async (_이름, 값) => {
+  it.each(Object.entries(크기))('%s: `0 메소` + 미기록 한 줄', async (_이름, 값) => {
     const { getByText, getByTestId } = await 위젯(값, 빈_뷰모델)
 
     expect(getByText('0')).toBeTruthy()
@@ -159,7 +159,7 @@ describe('스택 바가 총액을 가른다', () => {
 
   // 조각에 높이가 박혀 있으면 트랙만 키웠을 때 **아래쪽이 빈 채로** 남는다(실제로 그렇게 났다).
   // 조각은 자기 높이를 알면 안 되고 트랙을 그대로 채워야 한다.
-  it.each(['4x3', '4x2', '2x2'] as const)('%s — 조각이 트랙 높이를 그대로 채운다', async (size) => {
+  it.each(['4x3', '4x2', '2x2'] as const)('%s: 조각이 트랙 높이를 그대로 채운다', async (size) => {
     const { getByTestId } = await 위젯(크기[size])
 
     for (const key of ['crystal', 'item'] as const) {
@@ -168,7 +168,7 @@ describe('스택 바가 총액을 가른다', () => {
     }
   })
 
-  it('두 조각의 색이 링과 같은 짝이다 — 결정석 `primary` · 아이템 `third`', async () => {
+  it('두 조각의 색이 링과 같은 짝이다. 결정석 `primary` · 아이템 `third`', async () => {
     const { getByTestId } = await 위젯(크기['4x3'])
 
     expect(flattenStyle(getByTestId('profit-fill-crystal').props.style).backgroundColor).toBe(
@@ -188,7 +188,7 @@ describe('스택 바가 총액을 가른다', () => {
     expect(getByText('8.0억')).toBeTruthy()
   })
 
-  // 가격 미확정 보스만 처치한 주 — 기록은 있는데 금액이 0 이다. 나누면 NaN 폭이 된다.
+  // 가격 미확정 보스만 처치한 주. 기록은 있는데 금액이 0 이다. 나누면 NaN 폭이 된다.
   it('합이 0 이면 나누지 않고 빈 트랙을 남긴다', async () => {
     const { getByTestId, queryByTestId } = await 위젯(
       크기['4x3'],
@@ -247,11 +247,11 @@ describe('단위는 큰 금액에만 붙는다', () => {
 
     expect(getByText('40.0억')).toBeTruthy()
     expect(getAllByText('메소')).toHaveLength(1)
-    // `가`의 총액 — 같은 줄에 `메소`가 따라붙지 않는다.
+    // `가`의 총액. 같은 줄에 `메소`가 따라붙지 않는다.
     expect(getByText('25.0억')).toBeTruthy()
   })
 
-  it('금액에 `tabular-nums` 가 걸린다 — 자릿수가 바뀌어도 폭이 안 흔들린다', async () => {
+  it('금액에 `tabular-nums` 가 걸린다. 자릿수가 바뀌어도 폭이 안 흔들린다', async () => {
     const { getByText } = await 위젯(크기['4x3'])
 
     expect(flattenStyle(getByText('40.0억').props.style).fontVariant).toEqual(['tabular-nums'])

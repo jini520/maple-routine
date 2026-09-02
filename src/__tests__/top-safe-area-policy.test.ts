@@ -30,7 +30,7 @@ const SRC = join(__dirname, '..')
  */
 const EXEMPT = new Set(['OnboardingScreen.tsx'])
 
-/** 상단 안전영역을 **소유**하는 셸 둘 — 화면 파일은 아니지만 같은 값을 봐야 한다. */
+/** 상단 안전영역을 **소유**하는 셸 둘. 화면 파일은 아니지만 같은 값을 봐야 한다. */
 const SHELLS = [
   join(SRC, 'components', 'templates', 'PageHeader', 'PageHeader.tsx'),
   join(SRC, 'components', 'templates', 'ScreenScroll', 'ScreenScroll.tsx'),
@@ -69,7 +69,7 @@ const files = [...screenFiles(join(SRC, 'app')), ...SHELLS].map((path) => ({
   source: stripComments(readFileSync(path, 'utf8')),
 }))
 
-describe(' — 상단 안전영역은 한 자리에서 나온다', () => {
+describe('상단 안전영역은 한 자리에서 나온다', () => {
   it('검사 대상을 실제로 찾는다', () => {
     // 경로가 틀려 0개를 훑고도 초록이 되는 것이 이 부류 가드의 흔한 실패다.
     expect(files.length).toBeGreaterThan(15)

@@ -1,4 +1,4 @@
-// 남은 스케줄 위젯 — **주기 탭**이다. 이 파일이 지키는 것 다섯 —
+// 남은 스케줄 위젯. **주기 탭**이다. 이 파일이 지키는 것 다섯.
 // ① **탭이 목록의 전부를 정한다**(그 주기의 수치만 · 펼침도 그 주기만)
 // ② **수치는 N개이고 강조는 굵기 하나뿐**(테마 색 금지. 칠하면 강조가 캐릭터 수만큼 반복된다)
 // ③ **0 은 언제나 `CLEAR`**. `완료했다`가 아니라 **이 주기에 지금 할 게 없다** 라, 대상이 애초에
@@ -47,7 +47,7 @@ describe('주기 탭', () => {
     expect(view.queryByText('20')).toBeNull()
   })
 
-  it('기본은 일간이다 — 일퀘 수만 서고 다른 주기의 수치는 안 보인다', async () => {
+  it('기본은 일간이다. 일퀘 수만 서고 다른 주기의 수치는 안 보인다', async () => {
     const view = await 위젯([스케줄행()])
 
     expect(view.getByLabelText('일간').props.accessibilityState?.selected).toBe(true)
@@ -58,7 +58,7 @@ describe('주기 탭', () => {
     expect(view.queryByText('3')).toBeNull()
   })
 
-  it('주간 탭만 갈래가 둘이다 — 퀘스트와 보스가 나란히 선다', async () => {
+  it('주간 탭만 갈래가 둘이다. 퀘스트와 보스가 나란히 선다', async () => {
     const view = await 위젯([스케줄행()])
 
     await 탭(view, '주간')
@@ -80,7 +80,7 @@ describe('주기 탭', () => {
   })
 
   // 라벨은 **어느 탭에서나** 붙는다(사용자 지정). 값이 있는 갈래가 자기 이름과 함께 선다.
-  it('월간 탭은 `보스 N개`다 — `검마`라는 낱말은 안 쓴다', async () => {
+  it('월간 탭은 `보스 N개`다. `검마`라는 낱말은 안 쓴다', async () => {
     const view = await 위젯([스케줄행()])
 
     await 탭(view, '월간')
@@ -93,7 +93,7 @@ describe('주기 탭', () => {
 })
 
 describe('수치는 `갈래 N개`다', () => {
-  it('탭마다 다른 모양이 없다 — 값이 있는 갈래가 자기 이름과 함께 선다', async () => {
+  it('탭마다 다른 모양이 없다. 값이 있는 갈래가 자기 이름과 함께 선다', async () => {
     const view = await 위젯([스케줄행()])
 
     expect(view.getAllByText('퀘스트')).toHaveLength(1)
@@ -122,7 +122,7 @@ describe('수치는 `갈래 N개`다', () => {
 
   // 숫자를 `primary-ink` 로 칠하면 이 타일 하나에 강조색이 **캐릭터 수만큼** 반복된다
   // (세그먼트는 머리글에 하나뿐이라 그 규칙에 안 걸린다).
-  it('숫자 색은 닉네임과 같은 `text` 이고 `개`는 `text-muted` 다 — 테마 강조색이 아니다', async () => {
+  it('숫자 색은 닉네임과 같은 `text` 이고 `개`는 `text-muted` 다. 테마 강조색이 아니다', async () => {
     const view = await 위젯([스케줄행()])
 
     expect(flattenStyle(view.getByText('4').props.style).color).toBe(기본테마.text)
@@ -131,7 +131,7 @@ describe('수치는 `갈래 N개`다', () => {
     expect(flattenStyle(view.getByText('4').props.style).color).not.toBe(기본테마.primaryInk)
   })
 
-  it('숫자에 `tabular-nums` 와 **바닥 폭**이 걸린다 — 천장은 없다', async () => {
+  it('숫자에 `tabular-nums` 와 **바닥 폭**이 걸린다. 천장은 없다', async () => {
     const view = await 위젯([스케줄행()])
 
     const 숫자 = flattenStyle(view.getByText('4').props.style)
@@ -149,7 +149,7 @@ describe('0 은 언제나 CLEAR', () => {
     expect(view.queryByTestId('schedule-stats')).toBeNull()
   })
 
-  it('CLEAR 는 **그 탭의 말**이다 — 다른 주기에 남아 있어도 상관없다', async () => {
+  it('CLEAR 는 **그 탭의 말**이다. 다른 주기에 남아 있어도 상관없다', async () => {
     const view = await 위젯([스케줄행({ dailyNames: [] })])
 
     expect(view.getByTestId('schedule-clear')).toBeTruthy()
@@ -160,7 +160,7 @@ describe('0 은 언제나 CLEAR', () => {
     expect(view.getByTestId('schedule-stats')).toBeTruthy()
   })
 
-  // 레벨 미달로 대상이 아닌 보스도 여기서는 0 이다. **가르지 않는다**(사용자 확정) —
+  // 레벨 미달로 대상이 아닌 보스도 여기서는 0 이다. **가르지 않는다**(사용자 확정).
   // 그래서 이 배지의 뜻이 `완료했다`가 아니라 **이 주기에 지금 할 게 없다** 로 정해졌다.
   it('대상이 애초에 없던 캐릭터도 같은 배지를 받는다', async () => {
     const view = await 위젯([스케줄행({ monthlyBosses: [] })])
@@ -170,7 +170,7 @@ describe('0 은 언제나 CLEAR', () => {
     expect(view.getByTestId('schedule-clear')).toBeTruthy()
   })
 
-  it('동기화 실패는 어느 탭에서나 그 사실을 말한다 — CLEAR 가 아니다', async () => {
+  it('동기화 실패는 어느 탭에서나 그 사실을 말한다. CLEAR 가 아니다', async () => {
     const view = await 위젯([스케줄행({ hasSyncIssue: true })])
 
     expect(view.getByTestId('schedule-issue')).toBeTruthy()
@@ -184,7 +184,7 @@ describe('0 은 언제나 CLEAR', () => {
 })
 
 describe('목록은 캐릭터 전부다', () => {
-  it('그 탭을 끝낸 캐릭터도 목록에 남는다 — 사람 수가 늘 같다', async () => {
+  it('그 탭을 끝낸 캐릭터도 목록에 남는다. 사람 수가 늘 같다', async () => {
     const [첫, 둘, 셋] = 스케줄목록(3)
     const view = await 위젯([
       첫 as ScheduleRowView,
@@ -197,7 +197,7 @@ describe('목록은 캐릭터 전부다', () => {
   })
 
   // 순서는 **보고 있는 주기**가 정한다(정정 1, 사용자 지정). 뷰모델은 관리 순서까지만 세워 준다.
-  it('그 주기에 남은 개수 많은 순으로 선다 — 탭을 바꾸면 다시 선다', async () => {
+  it('그 주기에 남은 개수 많은 순으로 선다. 탭을 바꾸면 다시 선다', async () => {
     const view = await 위젯([
       스케줄행({ ocid: 'a', characterName: '가', dailyNames: ['하나'], weeklyNames: ['하나', '둘', '셋'] }),
       스케줄행({ ocid: 'b', characterName: '나', dailyNames: ['하나', '둘', '셋'], weeklyNames: [] }),
@@ -214,7 +214,7 @@ describe('목록은 캐릭터 전부다', () => {
     expect(이름들()).toEqual(['가', '다', '나'])
   })
 
-  it('동수면 캐릭터 관리 순서다 — 뷰모델이 준 차례가 곧 그 기준이다', async () => {
+  it('동수면 캐릭터 관리 순서다. 뷰모델이 준 차례가 곧 그 기준이다', async () => {
     const view = await 위젯([
       스케줄행({ ocid: 'c', characterName: '다', dailyNames: ['하나', '둘'] }),
       스케줄행({ ocid: 'a', characterName: '가', dailyNames: ['하나', '둘'] }),
@@ -230,7 +230,7 @@ describe('목록은 캐릭터 전부다', () => {
 
   // 남은 개수를 **모르는** 것이라 개수 비교에 참여시키지 않는다. 위로 올리면 **제일 밀린 캐릭터**
   // 자리를 모르는 값이 거짓으로 차지한다(의 태도).
-  it('동기화 실패는 어느 탭에서나 맨 아래다 — CLEAR 보다도 아래다', async () => {
+  it('동기화 실패는 어느 탭에서나 맨 아래다. CLEAR 보다도 아래다', async () => {
     const view = await 위젯([
       스케줄행({ ocid: '실패', characterName: '실패한캐릭터', hasSyncIssue: true }),
       스케줄행({ ocid: 'clear', characterName: '끝낸캐릭터', dailyNames: [], weeklyNames: [] }),
@@ -271,7 +271,7 @@ describe('펼침도 그 탭의 것만이다', () => {
     expect(view.queryByTestId('schedule-detail')).toBeNull()
   })
 
-  it('일간 탭에서 펼치면 일퀘 이름만 선다 — 보스는 안 딸려 온다', async () => {
+  it('일간 탭에서 펼치면 일퀘 이름만 선다. 보스는 안 딸려 온다', async () => {
     const view = await 위젯([스케줄행()])
 
     await 펼치기(view)
@@ -283,7 +283,7 @@ describe('펼침도 그 탭의 것만이다', () => {
     expect(view.queryByText('검은마법사')).toBeNull()
   })
 
-  it('주간 탭에서 펼치면 주간퀘와 주간 보스가 함께 선다 — 검마는 아니다', async () => {
+  it('주간 탭에서 펼치면 주간퀘와 주간 보스가 함께 선다. 검마는 아니다', async () => {
     const view = await 위젯([스케줄행()])
 
     await 탭(view, '주간')
@@ -296,7 +296,7 @@ describe('펼침도 그 탭의 것만이다', () => {
     expect(view.queryByText('소멸의 여로')).toBeNull()
   })
 
-  it('월간 탭에서 펼치면 검마 하나다 — 공용 난이도 배지를 쓴다', async () => {
+  it('월간 탭에서 펼치면 검마 하나다. 공용 난이도 배지를 쓴다', async () => {
     const view = await 위젯([스케줄행()])
 
     await 탭(view, '월간')
@@ -307,7 +307,7 @@ describe('펼침도 그 탭의 것만이다', () => {
     expect(view.getByText('하드')).toBeTruthy()
   })
 
-  it('탭을 바꾸면 펼친 행이 닫힌다 — 두 층이 다른 주기를 말하면 안 된다', async () => {
+  it('탭을 바꾸면 펼친 행이 닫힌다. 두 층이 다른 주기를 말하면 안 된다', async () => {
     const view = await 위젯([스케줄행()])
 
     await 펼치기(view)
@@ -338,7 +338,7 @@ describe('펼침도 그 탭의 것만이다', () => {
     expect(view.getAllByTestId('schedule-detail')).toHaveLength(1)
   })
 
-  it('CLEAR 와 동기화 실패는 누를 수 없다 — 보여 줄 것이 없거나 모른다', async () => {
+  it('CLEAR 와 동기화 실패는 누를 수 없다. 보여 줄 것이 없거나 모른다', async () => {
     const view = await 위젯([
       스케줄행({ ocid: 'open' }),
       스케줄행({ ocid: 'clear', dailyNames: [] }),
@@ -350,7 +350,7 @@ describe('펼침도 그 탭의 것만이다', () => {
 
   // 20px 배지가 줄 높이를 혼자 정하고 있었다. 이제 상자에 높이를 안 박고
   // 여백이 높이를 만들므로, `작다`는 **글자 크기**로 잰다.
-  it('보스 배지가 작은 크기다 — 본문보다 작은 칩 계단을 쓴다', async () => {
+  it('보스 배지가 작은 크기다. 본문보다 작은 칩 계단을 쓴다', async () => {
     const view = await 위젯([스케줄행()])
 
     await 탭(view, '월간')

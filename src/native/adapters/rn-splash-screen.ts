@@ -39,7 +39,7 @@ export const rnSplashScreenPort: SplashScreenPort = {
    * 다시 로드하는 일 자체가 없어** 덮을 구간이 생기지 않는다. 포트 주석이 적어 둔 *"덮을 것이 없는
    * 환경이면 아무것도 하지 않는다"* 가 정확히 이 경우다.
    *
-   * 흉내 내려면 `preventAutoHideAsync()` 뿐인데 그건 **이미 내려간 스플래시에는 아무 효과가 없다** —
+   * 흉내 내려면 `preventAutoHideAsync()` 뿐인데 그건 **이미 내려간 스플래시에는 아무 효과가 없다**.
    * 화면은 그대로인데 호출부만 덮였다고 믿게 되므로, 없는 것보다 나쁘다. `expo-splash-screen` 의 API
    * 는 `preventAutoHideAsync`·`setOptions`·`hide`·`hideAsync` 넷뿐이고 다시 띄우는 것은 없다
    * (`react-native-bootsplash` 도 같다).

@@ -7,8 +7,8 @@
  *
  * | | 네임스페이스 방식 | TS 로 표현되는가 |
  * |---|---|---|
- * | Android | `CapacitorStorage` 라는 **별도 SharedPreferences 파일** (키는 접두사 없음) | 아니오 — 파일을 여는 것은 네이티브만 할 수 있다 |
- * | iOS | 공용 `UserDefaults.standard` 안의 **키 접두사** | 예 — 문자열 연산이 전부다 |
+ * | Android | `CapacitorStorage` 라는 **별도 SharedPreferences 파일** (키는 접두사 없음) | 아니오. 파일을 여는 것은 네이티브만 할 수 있다 |
+ * | iOS | 공용 `UserDefaults.standard` 안의 **키 접두사** | 예. 문자열 연산이 전부다 |
  *
  * 표현되는 쪽(iOS 접두사)을 TS 에 두면 **실기기 없이 검증된다.** 이 단계에서 오타 하나가 가장 비싼
  * 자리가 정확히 여기라 그 값이 크다. 접두사가 틀리면 예외도 없이 조용히 아무것도 안 읽히고,

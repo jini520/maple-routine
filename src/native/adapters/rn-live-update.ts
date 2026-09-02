@@ -30,7 +30,7 @@ import appJson from '../../../app.json'
  * 안 드는 이유가 그것이고, 그래서 포트 시그니처에서 인자가 사라졌다.
  */
 
-/** 매니페스트 URL 의 형제 — 같은 Worker 의 다른 경로다. */
+/** 매니페스트 URL 의 형제. 같은 Worker 의 다른 경로다. */
 const LATEST_URL = `${appJson.expo.updates.url.replace(/\/manifest$/, '')}/latest`
 
 /**
@@ -54,7 +54,7 @@ function readExtra(manifest: unknown): { appVersion: string | null; highlights?:
 }
 
 /**
- * 최신일 때만 부르는 확인 — 프로토콜이 204 로 삼킨 것을 되살린다.
+ * 최신일 때만 부르는 확인. 프로토콜이 204 로 삼킨 것을 되살린다.
  *
  * 실패는 **삼킨다.** 여기서 실패했다는 것은 "스토어 업데이트가 필요한지 모른다"는 뜻이지 "확인이
  * 실패했다"가 아니다. 앞의 확인은 이미 성공했고, 곁가지 때문에 그 결과를 오류로 뒤집으면
@@ -130,7 +130,7 @@ export const rnLiveUpdatePort: LiveUpdatePort = {
     const { appVersion, highlights, sizeBytes } = readExtra(result.manifest)
     return {
       kind: 'update-available',
-      // 매니페스트에 우리 축의 버전이 없으면(옛 스크립트가 만든 것) 버전 없이 말하지 않는다 —
+      // 매니페스트에 우리 축의 버전이 없으면(옛 스크립트가 만든 것) 버전 없이 말하지 않는다.
       // 모달이 "새 버전 v… " 를 그리는 자리라, 빈 문자열보다 **알 수 없음** 이 정직하다.
       version: appVersion ?? '알 수 없음',
       size: sizeBytes,

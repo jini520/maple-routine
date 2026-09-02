@@ -19,7 +19,7 @@
 //
 // ① **`StackScreen` → 루트 스택 + `ScreenScroll`**(`SettingsAboutScreen` 파일 머리와 같다).
 // ② **`overlays` 프롭이 사라진다.** 웹은 모달을 스크롤 상자 밖·셸 밖 **어디에도 둘 수 없어**
-//  (`fixed` 셸의 스태킹 컨텍스트에 갇히거나, 탭 레이어라 오버레이 아래로 내려간다 —
+//  (`fixed` 셸의 스태킹 컨텍스트에 갇히거나, 탭 레이어라 오버레이 아래로 내려간다.
 //    결정 3·8) 셸이 받아 자기 자리에 그려 줬다. RN 의 `Modal` 은 **별도 네이티브 윈도우**라 갇힐
 //    상자가 없어, 화면이 그냥 형제로 두면 된다(`SettingsScreen` 과 같은 모양).
 // ③ **리로드가 `window.location.reload()` → `reloadAppAsync()`.** `expo` 가 내보내는 그 함수는
@@ -51,7 +51,7 @@ import { SettingsRow } from './SettingsRow'
 import { useSettingsNavigation } from './use-settings-navigation'
 
 export interface SettingsAccountDataScreenProps {
-  /** 테스트 주입용 — 기본은 지금 도는 번들의 재실행(파일 머리 ③). */
+  /** 테스트 주입용. 기본은 지금 도는 번들의 재실행(파일 머리 ③). */
   reload?: () => void
 }
 

@@ -112,7 +112,7 @@ describe('시세를 기억한다', () => {
     expect(rate.setLastPointRate).toHaveBeenCalledWith(1_180)
   })
 
-  it('메소 지출은 시세를 안 건드린다 — 물어본 적이 없다', async () => {
+  it('메소 지출은 시세를 안 건드린다. 물어본 적이 없다', async () => {
     const { recordSpend } = require('../records') as typeof import('../records')
 
     await recordSpend({ ...메포지출, pointAmount: null, pointPer100mMeso: null }, 지금)
@@ -131,7 +131,7 @@ describe('시세를 기억한다', () => {
   })
 })
 
-describe('spendMesoOf — 메소 축으로 접는다', () => {
+describe('spendMesoOf: 메소 축으로 접는다', () => {
   const { spendMesoOf } = require('../records') as typeof import('../records')
 
   const 행 = { ...메포지출, id: 'x', recordedAt: '' }
@@ -145,7 +145,7 @@ describe('spendMesoOf — 메소 축으로 접는다', () => {
       .toBe(2_000_000)
   })
 
-  it('둘 다 쓴 행은 합친다 — 아이템 구매의 모양이다', () => {
+  it('둘 다 쓴 행은 합친다. 아이템 구매의 모양이다', () => {
     expect(spendMesoOf({ ...행, mesoAmount: 935_000_000 })).toBe(935_000_000 + 2_542_372_881)
   })
 
@@ -174,7 +174,7 @@ describe('loadCalendarAmounts', () => {
     })
   })
 
-  it('기록이 없는 날은 아예 없다 — 0 을 채워 넣지 않는다', async () => {
+  it('기록이 없는 날은 아예 없다. 0 을 채워 넣지 않는다', async () => {
     const { loadCalendarAmounts } = require('../records') as typeof import('../records')
 
     expect(await loadCalendarAmounts('2026-08-01', '2026-08-31')).toEqual({})
@@ -191,7 +191,7 @@ describe('loadCalendarAmounts', () => {
 })
 
 
-// ── — 적은 것은 되돌릴 수 있어야 한다 ─────────────────────────────
+// ── 적은 것은 되돌릴 수 있어야 한다 ─────────────────────────────
 const 수입행 = {
   hunt: null,
   quantity: null,
@@ -228,7 +228,7 @@ const 지출행 = {
   recordedAt: '2026-08-25T02:00:00.000Z',
 }
 
-describe('loadDayRecords — 그날 적은 것을 한 줄씩', () => {
+describe('loadDayRecords: 그날 적은 것을 한 줄씩', () => {
   it('수입과 지출을 한 목록으로 접는다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([수입행])
     spend.getSpendRecordsBetween.mockResolvedValue([지출행])
@@ -274,7 +274,7 @@ describe('줄에 적는 것', () => {
   })
 
   /**
-   * **캐릭터가 붙어 있으면 이름이 앞에 선다**(사용자 지정 2026-08-27) —
+   * **캐릭터가 붙어 있으면 이름이 앞에 선다**(사용자 지정 2026-08-27).
    * 보스 줄이 이미 쓰던 어법 그대로다. 손입력만 다르게 적으면 한 목록에 두 어법이 생긴다.
    */
   it('캐릭터가 붙어 있으면 이름을 앞에 적는다', () => {
@@ -390,7 +390,7 @@ function 드롭(overrides: Record<string, unknown> = {}): Record<string, unknown
   }
 }
 
-describe('loadCalendarAmounts — 보스가 칸에 든다', () => {
+describe('loadCalendarAmounts: 보스가 칸에 든다', () => {
   it('결정석과 아이템 판매를 그 날의 수익에 더한다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     bossDrops.getBossDropRecords.mockResolvedValue([드롭()])
@@ -402,7 +402,7 @@ describe('loadCalendarAmounts — 보스가 칸에 든다', () => {
     expect(amounts['2026-08-21']).toEqual({ incomeMeso: 6_100_000_000, expenseMeso: 0 })
   })
 
-  it('드롭은 자기 날짜가 없다 — 짝인 보스 행의 날짜에 선다', async () => {
+  it('드롭은 자기 날짜가 없다. 짝인 보스 행의 날짜에 선다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([{ ...스우기록, defeatedOn: '2026-08-22' }])
     bossDrops.getBossDropRecords.mockResolvedValue([드롭()])
     const { loadCalendarAmounts } = require('../records') as typeof import('../records')
@@ -413,7 +413,7 @@ describe('loadCalendarAmounts — 보스가 칸에 든다', () => {
     expect(amounts['2026-08-21']).toBeUndefined()
   })
 
-  it('짝인 보스 행이 없는 드롭은 어느 칸에도 안 든다 — 물려받을 날짜가 없다', async () => {
+  it('짝인 보스 행이 없는 드롭은 어느 칸에도 안 든다. 물려받을 날짜가 없다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     bossDrops.getBossDropRecords.mockResolvedValue([드롭({ boss: '가디언 엔젤 슬라임' })])
     const { loadCalendarAmounts } = require('../records') as typeof import('../records')
@@ -432,7 +432,7 @@ describe('loadCalendarAmounts — 보스가 칸에 든다', () => {
     expect(bossProfit.getDatedBossProfitRecords).not.toHaveBeenCalled()
   })
 
-  it('보스 기록이 없으면 드롭도 안 읽는다 — 물려받을 날짜가 없다', async () => {
+  it('보스 기록이 없으면 드롭도 안 읽는다. 물려받을 날짜가 없다', async () => {
     const { loadCalendarAmounts } = require('../records') as typeof import('../records')
 
     await loadCalendarAmounts('2026-08-01', '2026-08-31')
@@ -441,7 +441,7 @@ describe('loadCalendarAmounts — 보스가 칸에 든다', () => {
   })
 })
 
-describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
+describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
   it('결정석과 판매를 갈라 두 줄로 세운다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록, 데미안기록])
     bossDrops.getBossDropRecords.mockResolvedValue([드롭(), 드롭({ dropIndex: 1, priceState: null, priceMeso: null })])
@@ -504,7 +504,7 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
    * 이름 표를 **한 번에** 찾는 것이 계약이다. 손입력과 보스가 같은 캐릭터를 가리킬 수 있어,
    * 갈라 부르면 같은 `ocid` 를 두 번 읽는다.
    */
-  it('손입력 줄이 캐릭터 이름을 든다 — 없으면 빈 문자열이다', async () => {
+  it('손입력 줄이 캐릭터 이름을 든다. 없으면 빈 문자열이다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([
       // `사냥` 은 첫 칸이 갈래라(아래 describe) 이름이 보이는 갈래로 잰다.
       { id: 'i1', ocid: 'ocid-1', earnedOn: '2026-08-21', category: '아이템 판매', item: '엘리시움', mesoAmount: 1, recordedAt: 'a' },
@@ -531,7 +531,7 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
     expect(rows.map(isManualRecord)).toEqual([false, true])
   })
 
-  it('이름을 모르면 ocid 대신 `알 수 없음` 을 안 적는다 — 캐시가 비면 빈 이름 대신 갈래만 적는다', async () => {
+  it('이름을 모르면 ocid 대신 `알 수 없음` 을 안 적는다. 캐시가 비면 빈 이름 대신 갈래만 적는다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     basicCache.getCachedCharacterBasic.mockResolvedValue(null)
     const { loadDayRecords, recordTitleOf } = require('../records') as typeof import('../records')
@@ -622,7 +622,7 @@ describe('loadDayRecords — 캐릭터당 두 줄 (결정 7)', () => {
     expect(dayTotalsOf(rows)).toEqual(amounts['2026-08-21'])
   })
 
-  it('보스 줄은 손입력이 아니다 — 여기서 못 고친다 (결정 8)', async () => {
+  it('보스 줄은 손입력이 아니다. 여기서 못 고친다 (결정 8)', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     const { loadDayRecords, isManualRecord, rowKeyOf } = require('../records') as typeof import('../records')
 
@@ -657,7 +657,7 @@ describe('loadTrackedCharacters', () => {
 
   // 캐시가 따뜻해지기 전이면 레벨만 없다. 이름이 있으면 목록에는 선다. 그때 계산기는 페널티
   // 없이 세고, 그 사실을 시트가 한 줄로 말한다.
-  it('레벨을 모르면 null 로 든다 — 그 캐릭터를 빼지는 않는다', async () => {
+  it('레벨을 모르면 null 로 든다. 그 캐릭터를 빼지는 않는다', async () => {
     selection.getTrackedCharacterOcids.mockResolvedValue(['ocid-1'])
     basicCache.getCachedCharacterBasic.mockResolvedValue({ profile: { name: '루디' } })
     const { loadTrackedCharacters } = require('../records') as typeof import('../records')
@@ -729,7 +729,7 @@ describe('사냥 줄의 이름과 셈', () => {
     expect(rows.map(recordTitleOf)).toEqual(['루디 · 사냥'])
   })
 
-  it('**n재획**을 센다 — 보스 줄의 `n마리`와 같은 자리다', async () => {
+  it('**n재획**을 센다. 보스 줄의 `n마리`와 같은 자리다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([사냥기록])
     const { loadDayRecords, recordCountLabelOf } =
       require('../records') as typeof import('../records')
@@ -775,7 +775,7 @@ describe('사냥 줄의 이름과 셈', () => {
  * (CLAUDE.md CRITICAL) 두 표의 판을 여기서 하나로 접는다.
  */
 describe('cashbookDataRevision', () => {
-  it('원천 둘의 판을 합한다 — 어느 쪽이 올라도 값이 달라진다', () => {
+  it('원천 둘의 판을 합한다. 어느 쪽이 올라도 값이 달라진다', () => {
     const { cashbookDataRevision } = require('../records') as typeof import('../records')
 
     expect(cashbookDataRevision()).toBe(0)

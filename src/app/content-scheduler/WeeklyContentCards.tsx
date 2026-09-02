@@ -48,7 +48,7 @@ export const GUILD_FLAG_RACE_NAME = '[길드] 플래그 레이스'
 export const GUILD_UNDERGROUND_WATERWAY_BACKGROUND_SLUG = 'arcanus'
 export const GUILD_MISSION_POINTS_BACKGROUND_SLUG = 'hallOfHeroes'
 export const GUILD_FLAG_RACE_BACKGROUND_SLUG = 'flagRace'
-// 메이플 유니온 주간 드래곤 퇴치 — 실제로 등장하는 드래곤은 매주 바뀌지만 API가 어떤 드래곤인지
+// 메이플 유니온 주간 드래곤 퇴치. 실제로 등장하는 드래곤은 매주 바뀌지만 API가 어떤 드래곤인지
 // 알려주지 않아, 에픽 던전 카드와 동일하게 대표 이미지 하나로 고정한다(연장, 2026-07-21).
 export const MAPLE_UNION_PREFIX = '[메이플 유니온] '
 export const MAPLE_UNION_DRAGON_BOSS_SLUG = 'armorDragon'
@@ -60,7 +60,7 @@ export const MONSTER_PARK_EXTREME_PREFIX = '[몬스터파크] '
 export function EpicDungeonCard(props: {
   content: WeeklyContent
   crop?: ImageCrop
-  /** 요구 레벨 미달 — 상태 배지를 진행 불가 로 대체한다. */
+  /** 요구 레벨 미달. 상태 배지를 진행 불가 로 대체한다. */
   isBlocked?: boolean
 }): React.JSX.Element {
   const { content } = props
@@ -100,7 +100,7 @@ export function EpicDungeonCard(props: {
 export function WeeklyRegionalContentCard(props: {
   content: WeeklyContent
   crop?: ImageCrop
-  /** 요구 레벨 미달 — 상태 배지를 진행 불가 로 대체한다. */
+  /** 요구 레벨 미달. 상태 배지를 진행 불가 로 대체한다. */
   isBlocked?: boolean
 }): React.JSX.Element {
   const { content } = props
@@ -152,7 +152,7 @@ export function WeeklyRegionalContentCard(props: {
 export function WeeklyQuestCard(props: {
   content: WeeklyContent
   crop?: ImageCrop
-  /** 요구 레벨 미달 — 상태 배지를 진행 불가 로 대체한다. */
+  /** 요구 레벨 미달. 상태 배지를 진행 불가 로 대체한다. */
   isBlocked?: boolean
 }): React.JSX.Element {
   const { content } = props
@@ -321,7 +321,7 @@ export function GuildFlagRaceCard(props: {
 
 export function renderWeeklyContentCard(
   content: WeeklyContent,
-  /** 이 카드를 보는 캐릭터의 레벨 — 판정은 `lib/scheduler/required-level` 한 곳이 한다. */
+  /** 이 카드를 보는 캐릭터의 레벨. 판정은 `lib/scheduler/required-level` 한 곳이 한다. */
   characterLevel: number | null,
 ): React.JSX.Element {
   // 길드 셋과 유니온 둘은 참조표에 요구 레벨이 **없다**. 어떤 레벨에서도 진행 가능이라

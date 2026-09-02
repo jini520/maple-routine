@@ -19,8 +19,8 @@ beforeEach(() => {
   getBossDropRecordsMock.mockReset().mockResolvedValue([])
 })
 
-describe('loadPreviousPeriodTotal — 결정석만 (정정)', () => {
-  it('결정석 기록 합만 낸다 — 그 기간에 아이템을 팔았어도 더하지 않는다', async () => {
+describe('loadPreviousPeriodTotal: 결정석만 (정정)', () => {
+  it('결정석 기록 합만 낸다. 그 기간에 아이템을 팔았어도 더하지 않는다', async () => {
     getBossProfitRecordsMock.mockResolvedValue([{ payoutMeso: 6_800_000_000 }])
     getBossDropRecordsMock.mockResolvedValue([
       { priceState: 'entered', priceMeso: 15_000_000_000, priceShare: 3 },
@@ -32,7 +32,7 @@ describe('loadPreviousPeriodTotal — 결정석만 (정정)', () => {
     )
   })
 
-  it('드롭 테이블을 아예 읽지 않는다 — 쓰지 않을 값을 조회하지 않는다', async () => {
+  it('드롭 테이블을 아예 읽지 않는다. 쓰지 않을 값을 조회하지 않는다', async () => {
     getBossProfitRecordsMock.mockResolvedValue([{ payoutMeso: 1 }])
     const { loadPreviousPeriodTotal } = require('../backfill') as typeof import('../backfill')
 

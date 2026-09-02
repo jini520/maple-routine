@@ -151,7 +151,7 @@ function renderScreen(): ReturnType<typeof render> {
 
 beforeEach(() => {
   jest.clearAllMocks()
-  // 카운트업의 '직전 표시값' 기억은 모듈 수준이라 언마운트를 건너 산다 —
+  // 카운트업의 '직전 표시값' 기억은 모듈 수준이라 언마운트를 건너 산다.
   // 테스트 하나가 곧 세션 하나다.
   clearCountUpMemory()
   dispatch.mockClear()
@@ -170,7 +170,7 @@ describe('빈 상태', () => {
     expect(loadTrackedOcids).toHaveBeenCalledTimes(1)
   })
 
-  it('`trackedOcids` 가 `null` 이면 빈 상태를 그리지 않는다 — "아직 안 읽었다" 는 "0명" 이 아니다', async () => {
+  it('`trackedOcids` 가 `null` 이면 빈 상태를 그리지 않는다. "아직 안 읽었다" 는 "0명" 이 아니다', async () => {
     mockStore({ trackedOcids: null })
     const { queryByText, getByText } = await renderScreen()
 
@@ -178,7 +178,7 @@ describe('빈 상태', () => {
     expect(getByText('보스 수익')).toBeTruthy()
   })
 
-  it('빈 배열이면 빈 상태만 보인다 — 진입점 둘은 두지 않는다', async () => {
+  it('빈 배열이면 빈 상태만 보인다. 진입점 둘은 두지 않는다', async () => {
     mockStore({ trackedOcids: [] })
     const { getByText, queryByText } = await renderScreen()
 
@@ -207,7 +207,7 @@ describe('빈 상태', () => {
 })
 
 describe('제목 줄 진입점', () => {
-  it('가격이 히스토리 **왼쪽**이다 — 값을 매기는 쪽이 주마다 들르는 자리다', async () => {
+  it('가격이 히스토리 **왼쪽**이다. 값을 매기는 쪽이 주마다 들르는 자리다', async () => {
     const { getByTestId } = await renderScreen()
 
     // 둘은 같은 부모의 형제라 **렌더 순서가 곧 화면 순서**다(`flex-row`).
@@ -273,7 +273,7 @@ describe('탭과 기간 네비게이터', () => {
     expect(getByLabelText('다음 기간')).not.toBeDisabled()
   })
 
-  it('이전 이동 가능 여부는 **스토어가 판단한다**(#29) — 화면이 다시 계산하지 않는다', async () => {
+  it('이전 이동 가능 여부는 **스토어가 판단한다**(#29). 화면이 다시 계산하지 않는다', async () => {
     mockStore({ canGoPreviousPeriod: false })
     const { getByLabelText } = await renderScreen()
 
@@ -337,7 +337,7 @@ describe('당겨서 새로고침', () => {
     expect(refresh).toHaveBeenCalledWith(['ocid-1'])
   })
 
-  it('새로고침이 의미 없는 기간에서는 컨트롤 자체를 달지 않는다 — 헤더 버튼과 같은 플래그다', async () => {
+  it('새로고침이 의미 없는 기간에서는 컨트롤 자체를 달지 않는다. 헤더 버튼과 같은 플래그다', async () => {
     mockStore({ periodKey: '2026-07-09' })
     const { getByTestId, queryByLabelText } = await renderScreen()
 
@@ -345,13 +345,13 @@ describe('당겨서 새로고침', () => {
     expect(queryByLabelText('새로고침')).toBeNull()
   })
 
-  // ★ 회귀 가드 — **조회 중 과 당겼다 는 다른 사실이다**.
+  // ★ 회귀 가드. **조회 중 과 당겼다 는 다른 사실이다**.
   //
   // 종전에는 `refreshing = status === 'loading'` 이라, 화면 마운트 하이드레이션만으로 인디케이터가
   // 프로그램적으로 열렸다. 사용자 보고(2026-08-22) *"페이지 이동 시 새로고침 인디케이터가 저절로
   // 돌고 상단이 빈 채로 멈춘다"* 가 그 증상이다. **조회 중...** 은 그대로 뜬다. 그쪽이 조회를
   // 말하는 자리다.
-  it('재조회 중이어도 컨트롤은 안 돈다 — 당김이 연 회차가 아니다', async () => {
+  it('재조회 중이어도 컨트롤은 안 돈다. 당김이 연 회차가 아니다', async () => {
     mockStore({ status: 'loading' })
     const { getByTestId } = await renderScreen()
 
@@ -360,7 +360,7 @@ describe('당겨서 새로고침', () => {
 })
 
 describe('기간 상태별 표현', () => {
-  it('`confirmedEmpty` 는 확정된 빈 상태다 — 조회 불가와 디자인을 공유하지 않는다', async () => {
+  it('`confirmedEmpty` 는 확정된 빈 상태다. 조회 불가와 디자인을 공유하지 않는다', async () => {
     mockStore({ status: 'loaded', periodState: 'confirmedEmpty' })
     const { getByText } = await renderScreen()
 
@@ -394,7 +394,7 @@ describe('기간 상태별 표현', () => {
     expect(retryPeriod).toHaveBeenCalled()
   })
 
-  it('카드가 있는 `failed` 는 인라인이 아니라 토스트다 — 문구가 사라진 자리에 빈 칸이 남지 않는다', async () => {
+  it('카드가 있는 `failed` 는 인라인이 아니라 토스트다. 문구가 사라진 자리에 빈 칸이 남지 않는다', async () => {
     mockStore({ status: 'loaded', periodState: 'failed', rows: [보스행()] })
     const { queryByText } = await renderScreen()
 
@@ -449,7 +449,7 @@ describe('캐릭터 카드 순서', () => {
     )
   }
 
-  it('저장 배열 순서가 카드 순서다 — 행 순서가 아니다', async () => {
+  it('저장 배열 순서가 카드 순서다. 행 순서가 아니다', async () => {
     expect(
       await 카드이름들({
         trackedOcids: ['ocid-2', 'ocid-1'],
@@ -480,7 +480,7 @@ describe('총 수익 헤드라인', () => {
     expect(getByText(/^8,000,000 /)).toBeTruthy()
   })
 
-  it('단위 앞에 **실제 공백 문자**를 남긴다 — 스크린리더가 붙여 읽지 않게', async () => {
+  it('단위 앞에 **실제 공백 문자**를 남긴다. 스크린리더가 붙여 읽지 않게', async () => {
     mockStore({ status: 'loaded', periodState: 'recorded', rows: [보스행()] })
     const { getByText } = await renderScreen()
 
@@ -504,7 +504,7 @@ describe('총 수익 헤드라인', () => {
     expect(getAllByText(/^7,000,000 /)).toHaveLength(2)
   })
 
-  it('미입력 드롭은 총액을 한 푼도 움직이지 않는다 — 0원이 아니라 "아직 안 적었다" 다', async () => {
+  it('미입력 드롭은 총액을 한 푼도 움직이지 않는다. 0원이 아니라 "아직 안 적었다" 다', async () => {
     mockStore({
       status: 'loaded',
       periodState: 'recorded',
@@ -582,7 +582,7 @@ describe('구조 계약', () => {
     expect(queryByTestId('page-header-fade')).toBeNull()
   })
 
-  it('기간이 바뀌면 스크롤을 최상단으로 옮긴다 — 목적지가 0 인 것이 계약이다', async () => {
+  it('기간이 바뀌면 스크롤을 최상단으로 옮긴다. 목적지가 0 인 것이 계약이다', async () => {
     const scrollTo = jest.spyOn(ScrollView.prototype, 'scrollTo')
     const { rerender } = await renderScreen()
     scrollTo.mockClear()
@@ -602,7 +602,7 @@ describe('구조 계약', () => {
     scrollTo.mockRestore()
   })
 
-  it('탭·기간이 그대로면 스크롤을 건드리지 않는다 — 히스토리 왕복의 위치 유지가 깨진다', async () => {
+  it('탭·기간이 그대로면 스크롤을 건드리지 않는다. 히스토리 왕복의 위치 유지가 깨진다', async () => {
     const scrollTo = jest.spyOn(ScrollView.prototype, 'scrollTo')
     const { rerender } = await renderScreen()
     scrollTo.mockClear()

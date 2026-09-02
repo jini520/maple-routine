@@ -1,7 +1,7 @@
 import type { DailyContent, WeeklyContent } from '../../types'
 import type { ManualTrackedItem } from '../../types/scheduler'
 
-// scheduler-content-template.json의 항목 shape — Nexon wire 응답(NexonDailyContentWire/
+// scheduler-content-template.json의 항목 shape. Nexon wire 응답(NexonDailyContentWire/
 // NexonWeeklyContentWire)과 동일하다. 값은 개발자가 직접 채운다.
 export interface SchedulerContentTemplateEntry {
   content_name: string
@@ -24,7 +24,7 @@ function parseQuestState(raw: '0' | '1' | '2' | null): 0 | 1 | 2 | null {
 // 복제하지 않아 모드 전환/재동기화 시 값이 어긋나지 않는다.
 //
 // - tracked: 해당 탭의 kind('daily' 또는 'weekly')인 manualTrackedContent 항목만 넘긴다
-//  (호출부에서 필터링 — 일간/주간 구분은 저장 시점에 확정돼 있다).
+//  (호출부에서 필터링. 일간/주간 구분은 저장 시점에 확정돼 있다).
 // - synced: 이 캐릭터의 dailyContents 또는 weeklyContents(schedulerCache 기반 최신 동기화 결과).
 // - template: 표시 순서 겸 값 default 소스. 호출부는 컨텐츠 관리 페이지와 동일한 정렬
 //  (categorizeContentEntries 평탄화)로 넘긴다.

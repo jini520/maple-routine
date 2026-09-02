@@ -1,7 +1,7 @@
 /**
  * `ThemeAppearancePort` 가 쓰고 뷰가 읽는 **한 칸짜리 저장소**.
  *
- * ## 왜 이런 게 있나 — 값이 흐르는 방향이 웹뷰와 반대다
+ * ## 왜 이런 게 있나. 값이 흐르는 방향이 웹뷰와 반대다
  *
  * 웹뷰에서 테마 적용은 side-effect 다: 포트가 `<style>` 을 갈아끼우면 끝이고 React 는 그 사실을
  * 모른다. RN 에서는 테마가 **렌더 트리의 일부**라(`vars()` 를 얹은 View) 누군가 리렌더를 일으켜야
@@ -65,7 +65,7 @@ export function setThemeAppearance(theme: ThemeName, definition: ThemeDefinition
   for (const listener of [...listeners]) listener()
 }
 
-/** 테스트 격리용 — 포트 슬롯의 `__reset*ForTest` 와 같은 자리. */
+/** 테스트 격리용. 포트 슬롯의 `__reset*ForTest` 와 같은 자리. */
 export function __resetThemeAppearanceForTest(): void {
   current = defaultAppearance()
   listeners.clear()

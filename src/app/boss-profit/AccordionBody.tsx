@@ -66,7 +66,7 @@ export function WeeklySubtotalRow(props: { subtotal: BossProfitWeeklySubtotal })
   const label = formatBossProfitPeriodLabel('weekly', subtotal.periodKey, now)
   const actionLabel = SUBTOTAL_ACTION_LABEL[subtotal.state]
   const staticLabel = SUBTOTAL_STATIC_LABEL[subtotal.state]
-  // 금액을 말할 수 있는 상태 — 기록이 있거나(recorded), 조회해서 0건을 확인했거나, 진행 중.
+  // 금액을 말할 수 있는 상태. 기록이 있거나(recorded), 조회해서 0건을 확인했거나, 진행 중.
   const showsMeso =
     subtotal.state === 'recorded' || subtotal.state === 'confirmedEmpty' || subtotal.state === 'inProgress'
 
@@ -110,7 +110,7 @@ export function WeeklySubtotalRow(props: { subtotal: BossProfitWeeklySubtotal })
 
       {staticLabel !== undefined && <Text className="text-xs text-text-muted">{staticLabel}</Text>}
 
-      {/* 누를 수 있는 행만 어포던스(칩)를 갖는다. 한 주를 누르면 그 달의 미확인 주를 함께 채운다 —
+      {/* 누를 수 있는 행만 어포던스(칩)를 갖는다. 한 주를 누르면 그 달의 미확인 주를 함께 채운다.
           같은 백필이 그 달 전체를 대상으로 돌기 때문이고, 탭 수를 늘릴 이유가 없다. */}
       {actionLabel !== undefined && (
         <Pressable

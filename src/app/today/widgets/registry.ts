@@ -59,7 +59,7 @@ export const WIDGETS: readonly WidgetDefinition[] = [
     sizes: [{ w: 4, h: 'auto' }],
     // **`target` 이 없다**. 행이 각자 눌려 아코디언을 여닫으므로 타일 전체를
     // 감싼 누름 영역이 설 수 없고(중첩 `Pressable`), 컨텐츠 화면으로 보내던 경로도 함께 사라졌다
-    // (사용자 지정 — 하단바의 **스케줄 → 컨텐츠** 가 이미 그 길이다).
+    // (사용자 지정. 하단바의 **스케줄 → 컨텐츠** 가 이미 그 길이다).
     Component: RemainingScheduleWidget,
   },
   {
@@ -136,7 +136,7 @@ export const WIDGET_BY_ID: Readonly<Record<WidgetId, WidgetDefinition>> = Object
 ) as Record<WidgetId, WidgetDefinition>
 
 /**
- * 검증이 읽는 선언된 크기 표 — **표에서 파생시킨다.**
+ * 검증이 읽는 선언된 크기 표. **표에서 파생시킨다.**
  *
  * `validateWidgetLayout` 이 레지스트리를 import 하지 않고 이 값을 인자로 받는 것이 step 5 의 결정이라
  * (검증이 순수 함수로 남는다), 그 인자를 손으로 적으면 같은 목록이 두 벌이 된다.

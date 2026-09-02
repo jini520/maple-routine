@@ -2,7 +2,7 @@ import { preferences } from './ports'
 import { STORAGE_KEYS } from './keys'
 import { BOSS_PROFIT_TABLE_NAMES, getBossProfitDb } from './sqlite/db'
 
-// 캐시 데이터 삭제 — 인증·사용자 설정만 남기고 나머지 저장 데이터를 지운다.
+// 캐시 데이터 삭제. 인증·사용자 설정만 남기고 나머지 저장 데이터를 지운다.
 // trackingMode·dropEffect는 재조회로 복구되는 캐시가 아니라 사용자가 명시적으로 고른 취향 설정이라
 // theme과 같이 보존한다. 어떤 그룹을 골라도 이 5개는 삭제 대상이 아니다.
 const KEEP_KEYS = new Set<string>([
@@ -16,7 +16,7 @@ const KEEP_KEYS = new Set<string>([
 // 기록은 남기고 싶다" 하나뿐이라, 그 축을 정확히 가르는 최소 분할만 둔다.
 //
 // **그룹 이름이 `bossRecords` 에서 `records` 로 넓어졌다**.
-// 가계부가 손으로 적는 둘(`income_records`·`spend_records`)이 같은 갈등의 같은 편에 서기 때문이다 —
+// 가계부가 손으로 적는 둘(`income_records`·`spend_records`)이 같은 갈등의 같은 편에 서기 때문이다.
 // 그리고 **보스 기록보다 더 복구 불가능하다**(보스는 API 가 최근 2주치라도 주는데 손입력은 0%다).
 // 3그룹으로 쪼개지 않는 이유는 의 **갈등은 하나뿐이라 최소 분할만 둔다** 그대로다.
 export type CacheDataGroupId = 'general' | 'records'
@@ -55,7 +55,7 @@ function tablesFor(selection: CacheDataSelection): readonly string[] {
   ]
 }
 
-// 선택한 그룹만 지운다. 인자를 생략하면 두 그룹 모두 — 선택 삭제 도입 전과 같은 전체 삭제다.
+// 선택한 그룹만 지운다. 인자를 생략하면 두 그룹 모두. 선택 삭제 도입 전과 같은 전체 삭제다.
 export async function clearCacheData(selection: CacheDataSelection = ALL_GROUPS): Promise<void> {
   if (selection.general) {
     const keys = await preferences.keys()

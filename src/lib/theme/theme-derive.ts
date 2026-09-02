@@ -59,7 +59,7 @@ const AA_NON_TEXT = 3
  */
 const DERIVE_MARGIN = 0.1
 
-/** 틴트 농도 — 자리마다 달랐던 4종(/10·/12·/15·/25)을 하나로 통일했다. */
+/** 틴트 농도. 자리마다 달랐던 4종(/10·/12·/15·/25)을 하나로 통일했다. */
 const TINT_RATIO = 0.15
 
 
@@ -125,7 +125,7 @@ const RISE_HUE = 26
 const FALL_HUE = 262
 
 /**
- * `ERROR_RAMP` 와 같은 형태 — 다크 테마에서는 밝고 옅게 올려야 어두운 표면 위에서 읽힌다.
+ * `ERROR_RAMP` 와 같은 형태. 다크 테마에서는 밝고 옅게 올려야 어두운 표면 위에서 읽힌다.
  * 고정 hex 한 쌍으로는 라이트·다크 중 한쪽이 반드시 죽으므로 이 램프가 있어야 한다.
  */
 const SIGNAL_RAMP = { light: { l: 0.5, c: 0.2 }, dark: { l: 0.7, c: 0.16 } } as const
@@ -374,7 +374,7 @@ export function deriveTheme(seed: ThemeSeed): DerivedTheme {
 export type MediaScopeTokens = {
   surface: string
   /**
-   * 완료 배지 전용 — 이 두 값은 `.media-scope` 안에서만 다르게 잡는다.
+   * 완료 배지 전용. 이 두 값은 `.media-scope` 안에서만 다르게 잡는다.
    *
    * 라이트 테마는 페이지 틴트를 그대로 쓴다. 어두운 카드 위의 옅은 칩이 잘 보인다.
    * 다크 테마에서는 그 틴트가 카드 안 "시작 안함" 배지(`surface-2`)와 너무 비슷해져 구분이
@@ -385,7 +385,7 @@ export type MediaScopeTokens = {
    */
   secondaryTint: string
   secondaryInk: string
-  /** 카드 안쪽 한 단계 위 표면 — 진행 상태 pill·파티 배지가 쓴다. */
+  /** 카드 안쪽 한 단계 위 표면. 진행 상태 pill·파티 배지가 쓴다. */
   surface2: string
   /** 카드 안쪽 진행률 트랙. 전역 규칙대로 `surface2` 를 따른다. */
   track: string

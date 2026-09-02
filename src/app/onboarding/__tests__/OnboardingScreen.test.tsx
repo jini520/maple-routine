@@ -12,7 +12,7 @@
 // ── 단계가 다섯에서 셋이 됐다 ────────────────────────────────
 //
 // `selectingAccount`·`prefetching` 은 이 앱에서 **도달할 수 없는 상태**이고(재개 파생이 그 행을
-// 태우지 않는다), 그래서 그 둘을 보던 옛 케이스는 **어떤 화면이 오는가** 를 물을 대상이 아니다 —
+// 태우지 않는다), 그래서 그 둘을 보던 옛 케이스는 **어떤 화면이 오는가** 를 물을 대상이 아니다.
 // 갱신이 아니라 **뒤집힌 계약**이라 지우고, 대신 **그 자리에 출구 없는 빈 화면이 서지 않는가** 를
 // 묻는 케이스로 바꿨다.
 import { useOnboardingStore } from '../../../features/onboarding/store'
@@ -24,7 +24,7 @@ jest.mock('../../../features/onboarding/store', () => ({
   useOnboardingStore: jest.fn(),
 }))
 
-// `ContentCharacterStep` 의 본문(`useCharacterManage`)이 마운트 시 부르는 경계 — 이 파일이 보는
+// `ContentCharacterStep` 의 본문(`useCharacterManage`)이 마운트 시 부르는 경계. 이 파일이 보는
 // 것은 "어느 status 에서 어떤 화면이 오는가" 하나라 전부 빈 응답으로 둔다(본문의 계약은
 // `ContentCharacterStep` 테스트가 본다).
 jest.mock('../../../features/schedule-sync/schedule-sync', () => ({
@@ -192,7 +192,7 @@ describe('OnboardingScreen', () => {
     },
   )
 
-  // 내비게이션 계약 — `RootNavigator` 의 온보딩 분기 테스트가 이 이름으로 화면을 지목한다
+  // 내비게이션 계약. `RootNavigator` 의 온보딩 분기 테스트가 이 이름으로 화면을 지목한다
   // (자리표시자가 쓰던 `screen-<라우트 이름>` 규약을 그대로 잇는다).
   it('라우트 이름 testID 를 루트에 유지한다', async () => {
     mockStore({ status: 'awaitingApiKey' })

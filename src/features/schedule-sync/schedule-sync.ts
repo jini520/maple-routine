@@ -83,7 +83,7 @@ function needsBackfill(state: SchedulerCharacterState): boolean {
 
 // 이미 조회한 날짜를 **다시 부를 가치가 있는가**. 원장은 그 날짜에 각 섹션의
 // 내용이 있었는지만 기억하므로(값은 기억하지 않는다), 지금 비어 있는 섹션 중 하나라도 그 날짜에
-// 있었다면 값을 가져오러 다시 부른다. 하나도 없었다면 불러봐야 같은 0건이라 건너뛴다 —
+// 있었다면 값을 가져오러 다시 부른다. 하나도 없었다면 불러봐야 같은 0건이라 건너뛴다.
 // 보스 0건 캐릭터가 매번 13일을 소진하던 고리가 여기서 끊긴다.
 function canResolveAnyStaleSection(
   originallyStale: SchedulerSectionPresence,
@@ -116,7 +116,7 @@ function canResolveAnyStaleSection(
 //
 // 그 갈림이 만드는 새 사실 하나: 폴드가 일찍 멈춰도 **뒷 날짜 응답은 이미 손에 있다.** 그것을
 // 버리면 원장이 안 차 다음 동기화가 같은 13일을 다시 훑고 이슈 #87 문제 1이 되살아나므로,
-// 기록은 폴드가 아니라 **발사 지점**에서 한다(결정 3 — 최적화가 아니라 병렬화의 성립 조건).
+// 기록은 폴드가 아니라 **발사 지점**에서 한다(결정 3. 최적화가 아니라 병렬화의 성립 조건).
 async function fillMissingSections(
   apiKey: string,
   ocid: string,
@@ -248,7 +248,7 @@ async function refreshCharacterBasics(
         // 준 값을 그대로 실어 보낸다.
         await fetchCharacterBasicCached(apiKey, accountId, character.ocid, now, character.jobClass)
       } catch {
-        // best-effort — 기존 캐시를 그대로 둔다.
+        // best-effort. 기존 캐시를 그대로 둔다.
       }
     }),
   )
@@ -359,7 +359,7 @@ async function runSyncRound(
 
   // character/basic 편승 갱신을 스케줄 병렬 구간과 **같은 Promise.all** 로 묶어
   // 동시에 내보낸다. 체감 대기 시간이 늘지 않는다. 자리는 isGlobalFailure 를 걸러 낸 **뒤**여야
-  // 한다(순서 보존 — 401/429 인데 캐릭터 수만큼 호출을 낭비하지 않는다). 대상은
+  // 한다(순서 보존. 401/429 인데 캐릭터 수만큼 호출을 낭비하지 않는다). 대상은
   // targets 전체다: 프리플라이트로 이미 동기화한 첫 캐릭터도 basic 갱신 대상이다.
   const [restResults] = await Promise.all([
     Promise.all(

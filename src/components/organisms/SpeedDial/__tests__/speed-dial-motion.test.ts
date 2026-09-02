@@ -12,13 +12,13 @@ import {
   dialTiming,
 } from '../speed-dial-motion'
 
-describe('열림 — 계단이 FAB 에서 멀어지는 방향이다', () => {
+describe('열림. 계단이 FAB 에서 멀어지는 방향이다', () => {
   // 가까운 것부터 밀려 나와야 **두 개가 동시에 나타났다** 가 아니라 **이 버튼에서 나왔다** 로 읽힌다.
-  it('지출이 수입보다 먼저 뜬다 — FAB 에 더 가깝다', () => {
+  it('지출이 수입보다 먼저 뜬다. FAB 에 더 가깝다', () => {
     expect(DIAL_MOTION.expenseCircle.openDelayMs).toBeLessThan(DIAL_MOTION.incomeCircle.openDelayMs)
   })
 
-  it('지출 원이 맨 먼저다 — 지연이 없다', () => {
+  it('지출 원이 맨 먼저다. 지연이 없다', () => {
     expect(DIAL_MOTION.expenseCircle.openDelayMs).toBe(0)
   })
 
@@ -31,13 +31,13 @@ describe('열림 — 계단이 FAB 에서 멀어지는 방향이다', () => {
     expect(DIAL_MOTION.incomeChip.openDelayMs).toBeGreaterThan(DIAL_MOTION.incomeCircle.openDelayMs)
   })
 
-  it('스크림과 FAB 는 기다리지 않는다 — 판이 열리는 것 자체는 즉시다', () => {
+  it('스크림과 FAB 는 기다리지 않는다. 판이 열리는 것 자체는 즉시다', () => {
     expect(DIAL_MOTION.scrim.openDelayMs).toBe(0)
     expect(DIAL_MOTION.fab.openDelayMs).toBe(0)
   })
 })
 
-describe('닫힘 — 더 빠르고 역순이다', () => {
+describe('닫힘. 더 빠르고 역순이다', () => {
   // 닫기가 열기만큼 길면 답답하다.
   it('무엇이든 닫는 쪽이 짧다', () => {
     for (const [name, step] of Object.entries(DIAL_MOTION)) {
@@ -58,14 +58,14 @@ describe('닫힘 — 더 빠르고 역순이다', () => {
     expect(칩).toBeLessThan(원)
   })
 
-  it('각 줄 안에서는 수입이 먼저다 — FAB 에서 먼 쪽이다', () => {
+  it('각 줄 안에서는 수입이 먼저다. FAB 에서 먼 쪽이다', () => {
     expect(DIAL_MOTION.incomeChip.closeDelayMs).toBeLessThan(DIAL_MOTION.expenseChip.closeDelayMs)
     expect(DIAL_MOTION.incomeCircle.closeDelayMs).toBeLessThan(
       DIAL_MOTION.expenseCircle.closeDelayMs,
     )
   })
 
-  it('맨 먼저 접히는 것은 수입 칩이다 — 기다리지 않는다', () => {
+  it('맨 먼저 접히는 것은 수입 칩이다. 기다리지 않는다', () => {
     expect(DIAL_MOTION.incomeChip.closeDelayMs).toBe(0)
   })
 
@@ -96,7 +96,7 @@ describe('dialTiming', () => {
     expect(dialTiming(DIAL_MOTION.expenseCircle, false, true).delay).toBe(0)
   })
 
-  it('움직임을 줄여도 길이는 남긴다 — 페이드는 여전히 필요하다', () => {
+  it('움직임을 줄여도 길이는 남긴다. 페이드는 여전히 필요하다', () => {
     expect(dialTiming(DIAL_MOTION.incomeChip, true, true).duration).toBe(180)
   })
 })
@@ -109,7 +109,7 @@ describe('이동 거리', () => {
     expect(DIAL_SLIDE_PX).toBe(10)
   })
 
-  it('원이 조금 작게 시작한다 — 사라지지는 않는다', () => {
+  it('원이 조금 작게 시작한다. 사라지지는 않는다', () => {
     expect(DIAL_START_SCALE).toBeGreaterThan(0.5)
     expect(DIAL_START_SCALE).toBeLessThan(1)
   })

@@ -1,5 +1,5 @@
 /**
- * 아이템 구매 폼 — **종류가 나머지 둘을 정한다**.
+ * 아이템 구매 폼. **종류가 나머지 둘을 정한다**.
  *
  * | 종류 | 금액 칸 | 수량 | 관세 |
  * |---|---|---|---|
@@ -33,7 +33,7 @@ import { useSpendSubmit } from './use-spend-submit'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
 /**
- * 관세 조각 둘 — **`없음` 이 첫 조각이고 기본값**이다.
+ * 관세 조각 둘. **`없음` 이 첫 조각이고 기본값**이다.
  *
  * 요율은 `SPEND_TARIFF_PERCENT` **하나에서 나온다**. 여기 숫자를 적으면 참조표가 바뀌는 날
  * 글자와 셈이 갈린다.
@@ -69,7 +69,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
   const quantity = mesoValueOf(quantityText)
   /** **곱할 것이 있는가**. 장비는 하나를 사므로 없다(2). */
   const counts = countsQuantity(itemKind)
-  /** 관세를 얹기 **전**의 값 — 곱할 것이 없으면 친 값 그대로다. */
+  /** 관세를 얹기 **전**의 값. 곱할 것이 없으면 친 값 그대로다. */
   const subtotal = counts ? typed * quantity : typed
   // 관세는 **친 숫자를 안 바꾼다**. 아래에 한 줄로 더한다. 금액 자체를 고치면 껐다 켰다 할 때
   // 8.5억 → 9.35억 → 10.28억 으로 부푼다.

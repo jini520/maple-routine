@@ -1,5 +1,5 @@
 /**
- * 첫 화면 today — 위젯 격자.
+ * 첫 화면 today. 위젯 격자.
  *
  * ## 이 화면이 하는 일은 셋뿐이다
  *
@@ -11,7 +11,7 @@
  * 조립 자체는 `view-model.ts` 의 순수 함수가 한다. 이 파일에 남는 것은 **어느 스토어의 어느
  * 값인가** 라는 배선뿐이고, 그래서 판정이 한 줄도 여기 없다.
  *
- * ## 진입 자동 조회 — 트리거는 **하나**다
+ * ## 진입 자동 조회. 트리거는 **하나**다
  *
  * *"`today` 는 그 순차 밖의 **네 번째 트리거**"*. `prehydrate` 가 탭 스토어 셋을 순차로 예열하고
  *  이 화면은 그 밖에서 **한 번** 더 부른다. 다른 스케줄러 화면과 같은
@@ -184,7 +184,7 @@ export function TodayScreen(): React.JSX.Element {
    * 헤더 버튼과 당김이 **같은 함수**를 부른다. 파일 머리 당김과 헤더 버튼.
    *
    * **`allSettled` 다**. 넷이 서로 독립이라 하나가 실패해도 나머지를 기다려야
-   * 하고(각자 자기 스토어에 실패를 적는다), 넷이 다 끝나야 당김 인디케이터를 닫을 수 있다 —
+   * 하고(각자 자기 스토어에 실패를 적는다), 넷이 다 끝나야 당김 인디케이터를 닫을 수 있다.
    * 종전에는 `void` 넷이라 언제 끝났는가 라는 값 자체가 없었다.
    */
   async function refreshAll(): Promise<void> {
@@ -221,7 +221,7 @@ export function TodayScreen(): React.JSX.Element {
                 <Text className="shrink-0 text-lg font-semibold text-text">today</Text>
                 <Text className="shrink text-15 text-text-muted" numberOfLines={1}>
                   {/* 스케줄러 두 화면이 **선택된 캐릭터의 `syncedAt`** 을 쓰는 자리다. 이 화면에는
-                      선택이 없으므로 **페이지 전체 기준** 값을 쓴다 — 보스 수익 스토어의
+                      선택이 없으므로 **페이지 전체 기준** 값을 쓴다. 보스 수익 스토어의
                       `lastSyncedAt` 이 이미 그 뜻이고, 건너뛴 진입에서도 갱신된다. */}
                   {isSyncing ? '조회 중...' : formatSyncedAt(profit.lastSyncedAt)}
                 </Text>

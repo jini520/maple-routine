@@ -59,7 +59,7 @@ describe('레거시 selectedAccountId', () => {
     await expect(prefs.get(STORAGE_KEYS.legacySelectedAccountId)).resolves.toBeNull()
   })
 
-  it('removeApiKey 는 레거시 키를 건드리지 않는다 — 지우는 범위가 다르다', async () => {
+  it('removeApiKey 는 레거시 키를 건드리지 않는다. 지우는 범위가 다르다', async () => {
     await setApiKey('test-api-key')
     await prefs.set(STORAGE_KEYS.legacySelectedAccountId, 'account-1')
 

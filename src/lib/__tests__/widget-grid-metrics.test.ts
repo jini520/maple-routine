@@ -1,4 +1,4 @@
-// today 위젯 격자의 **치수**. 격자를 렌더하지 않고 볼 수 있어서 따로 있다 —
+// today 위젯 격자의 **치수**. 격자를 렌더하지 않고 볼 수 있어서 따로 있다.
 // `bottom-bar-metrics.test.ts` 와 같은 판단이다.
 
 import {
@@ -11,7 +11,7 @@ import {
   tileWidthPx,
 } from '../today/widget-grid-metrics'
 
-/** 안드로이드 최소 폭 — 이 열 폭 73 을 적어 둔 그 기기다. */
+/** 안드로이드 최소 폭. 이 열 폭 73 을 적어 둔 그 기기다. */
 const 안드로이드_최소 = 360
 
 describe('열 폭은 창 폭에서 나온다', () => {
@@ -61,7 +61,7 @@ describe('행 높이는 창 폭을 따라가지 않는다', () => {
     expect(resolveWidgetGridMetrics(안드로이드_최소 * 2).rowHeightPx).toBe(GRID_ROW_HEIGHT)
   })
 
-  it.each([320, 360, 402, 430, 674, 834, 1024])('창 %ipx — 행 높이 76 · 간격 12 · 좌우 16', (창폭) => {
+  it.each([320, 360, 402, 430, 674, 834, 1024])('창 %ipx: 행 높이 76 · 간격 12 · 좌우 16', (창폭) => {
     const metrics = resolveWidgetGridMetrics(창폭)
 
     expect(metrics.rowHeightPx).toBe(GRID_ROW_HEIGHT)

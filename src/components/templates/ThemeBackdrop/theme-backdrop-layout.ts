@@ -1,4 +1,4 @@
-// 테마 배경 벽지의 기하 — CSS `background-size: cover` + `background-position` 을 RN 배치로 옮긴다
+// 테마 배경 벽지의 기하. CSS `background-size: cover` + `background-position` 을 RN 배치로 옮긴다
 //
 //
 // ## 왜 순수 함수로 떼어내나
@@ -15,7 +15,7 @@
 // 상자를 **덮는 최소 배율**이다: `max(상자폭/그림폭, 상자높이/그림높이)`. 그래서 한 축은 딱 맞고
 // 다른 축은 넘치며, 넘치는 만큼을 `background-position` 이 어디로 밀지 정한다.
 
-/** `background-position` 의 한 축 — 퍼센트 또는 키워드. */
+/** `background-position` 의 한 축. 퍼센트 또는 키워드. */
 const KEYWORDS: Record<string, number> = {
   left: 0,
   top: 0,
@@ -39,7 +39,7 @@ export interface BackdropPlacement {
 /**
  * `"45% bottom"` · `"center"` · `"25% 80%"` 을 0~1 두 축으로 읽는다.
  *
- * 한 값만 오면 CSS 와 같이 **가로에 쓰고 세로는 center** 다. 못 읽는 값은 `0.5`(center)로 —
+ * 한 값만 오면 CSS 와 같이 **가로에 쓰고 세로는 center** 다. 못 읽는 값은 `0.5`(center)로.
  * 그림이 안 보이는 것보다 가운데라도 보이는 편이 낫고, 웹의 기본값도 `0% 0%` 가 아니라 `center` 다.
  */
 export function parseBackgroundPosition(position: string): { x: number; y: number } {

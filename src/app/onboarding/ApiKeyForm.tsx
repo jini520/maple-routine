@@ -1,4 +1,4 @@
-// API 키 입력 — 온보딩의 첫 관문.
+// API 키 입력. 온보딩의 첫 관문.
 //
 // 갈림길 레이아웃(`docs/features/onboarding.md`)을 그대로 옮긴다: 이 화면에 오는 사람은 둘뿐이라
 // (키가 있는 사람 / 없는 사람) 폼이 먼저이고 넥슨 바로 가기가 인풋에 붙으며, 가이드는 구분선 뒤에서
@@ -23,7 +23,7 @@
 // ⑤ **`<a target="_blank">` → `Pressable role="link"` + `Linking.openURL`.** 하이브리드 앱에서
 //    시스템 브라우저로 나가던 동작이 RN 에서는 이 호출이다. `rel="noopener noreferrer"` 는 브라우저
 //    탭 사이의 문제라 짝이 없다. OS 브라우저가 열리는 순간 관계 자체가 없다.
-//    가이드 버튼은 `Button` atom 에 `role="link"` 를 덮어 쓴다(atom 이 `{...rest}` 를 뒤에 펼친다) —
+//    가이드 버튼은 `Button` atom 에 `role="link"` 를 덮어 쓴다(atom 이 `{...rest}` 를 뒤에 펼친다).
 //  **겉모습만 outline 을 입고 시맨틱은 링크**라는 후속 결정이 그대로 산다.
 // ⑥ `hover:` 제거(터치 기기에 hover 가 없다. atoms 와 같은 규칙), `disabled:opacity-50` 는 CSS
 //    의사 클래스라 RN 프롭과 안 이어져 조건부 클래스가 된다.
@@ -41,9 +41,9 @@ import {
   TextInput,
 } from '../../components/atoms'
 
-/** 1차 경로 — 처음 쓰는 사용자를 넥슨 첫 화면에 떨궈 놓지 않는다. */
+/** 1차 경로. 처음 쓰는 사용자를 넥슨 첫 화면에 떨궈 놓지 않는다. */
 const GUIDE_URL = 'https://mapleroutine.store/api-key'
-/** 이미 키를 발급받은 사용자의 동선 — 7단계 안내를 경유시키지 않는다. */
+/** 이미 키를 발급받은 사용자의 동선. 7단계 안내를 경유시키지 않는다. */
 const NEXON_OPEN_API_URL = 'https://openapi.nexon.com'
 
 export interface ApiKeyFormProps {
@@ -55,7 +55,7 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
   const [apiKey, setApiKey] = useState('')
   const [isRevealed, setIsRevealed] = useState(false)
 
-  // 웹 `handleSubmit` 그대로 — `preventDefault` 만 빠졌다(파일 머리 ①).
+  // 웹 `handleSubmit` 그대로. `preventDefault` 만 빠졌다(파일 머리 ①).
   function handleSubmit(): void {
     if (props.isSubmitting) return
     const trimmed = apiKey.trim()
@@ -105,7 +105,7 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
             )}
           </Pressable>
         </View>
-        {/* 이미 키를 발급받은 사용자의 동선 — 인풋에 붙여 한 덩어리로 읽히게 한다. */}
+        {/* 이미 키를 발급받은 사용자의 동선. 인풋에 붙여 한 덩어리로 읽히게 한다. */}
         <Pressable
           role="link"
           onPress={() => void Linking.openURL(NEXON_OPEN_API_URL)}

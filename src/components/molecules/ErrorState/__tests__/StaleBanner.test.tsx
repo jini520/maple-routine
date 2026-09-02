@@ -48,10 +48,10 @@ describe('StaleBanner', () => {
   // 없다. 배너는 목록이 남아 있는 자리라 액션이 없어도 막다른 길이 아니다.
   it('액션이 없으면 버튼을 만들지 않는다', async () => {
     const { getByText, queryByRole } = await renderAtom(
-      <StaleBanner message="호출 한도를 초과했습니다 — 서비스 단계 키인지 확인해주세요" />,
+      <StaleBanner message="호출 한도를 초과했습니다. 서비스 단계 키인지 확인해주세요" />,
     )
 
-    expect(getByText('호출 한도를 초과했습니다 — 서비스 단계 키인지 확인해주세요')).toBeTruthy()
+    expect(getByText('호출 한도를 초과했습니다. 서비스 단계 키인지 확인해주세요')).toBeTruthy()
     expect(queryByRole('button')).toBeNull()
   })
 

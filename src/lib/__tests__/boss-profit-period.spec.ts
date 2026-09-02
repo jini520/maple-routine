@@ -97,7 +97,7 @@ describe('containsInProgressWeek / isPeriodRefreshable', () => {
   // 2026-07-30(목)이 7월의 마지막 리셋이라 7월 5주차는 8/5까지 이어진다. 8/1에 7월은 지난 달이
   // 되지만 그 주는 여전히 진행 중이다.
   const inWindow = new Date('2026-08-02T12:00:00+09:00') // 이번 주 2026-07-30, 이번 달 2026-08
-  const afterWindow = new Date('2026-08-10T12:00:00+09:00') // 이번 주 2026-08-06 — 7월은 완전히 닫혔다
+  const afterWindow = new Date('2026-08-10T12:00:00+09:00') // 이번 주 2026-08-06. 7월은 완전히 닫혔다
 
   it('진행 중인 주가 그 달에서 시작했으면 지난 달이어도 true다', () => {
     expect(containsInProgressWeek('monthly', '2026-07', inWindow)).toBe(true)
@@ -107,11 +107,11 @@ describe('containsInProgressWeek / isPeriodRefreshable', () => {
     expect(containsInProgressWeek('monthly', '2026-07', afterWindow)).toBe(false)
   })
 
-  it('이번 달은 false다 — 이미 최신 기간이라 이 판정이 필요 없다', () => {
+  it('이번 달은 false다. 이미 최신 기간이라 이 판정이 필요 없다', () => {
     expect(containsInProgressWeek('monthly', '2026-08', inWindow)).toBe(false)
   })
 
-  it('weekly 탭에서는 항상 false다 — 지난 주는 언제나 완전히 닫혀 있다', () => {
+  it('weekly 탭에서는 항상 false다. 지난 주는 언제나 완전히 닫혀 있다', () => {
     expect(containsInProgressWeek('weekly', '2026-07-30', inWindow)).toBe(false)
     expect(containsInProgressWeek('weekly', '2026-07-23', inWindow)).toBe(false)
   })
@@ -125,19 +125,19 @@ describe('containsInProgressWeek / isPeriodRefreshable', () => {
 })
 
 describe('isEarliestNavigablePeriod', () => {
-  it('weekly: MIN_SCHEDULER_DATE(2026-07-01)가 백필 조회일인 주(2026-06-25)에서는 true다 — 더 과거로 갈 수 없다', () => {
+  it('weekly: MIN_SCHEDULER_DATE(2026-07-01)가 백필 조회일인 주(2026-06-25)에서는 true다. 더 과거로 갈 수 없다', () => {
     expect(isEarliestNavigablePeriod('weekly', '2026-06-25')).toBe(true)
   })
 
-  it('weekly: 그보다 늦은 주(2026-07-02)에서는 false다 — 한 주 전(2026-06-25)까지는 갈 수 있다', () => {
+  it('weekly: 그보다 늦은 주(2026-07-02)에서는 false다. 한 주 전(2026-06-25)까지는 갈 수 있다', () => {
     expect(isEarliestNavigablePeriod('weekly', '2026-07-02')).toBe(false)
   })
 
-  it('monthly: 이번 달(2026-07)에서는 true다 — 지난 달(2026-06)은 통째로 MIN_SCHEDULER_DATE 이전이라 갈 수 없다', () => {
+  it('monthly: 이번 달(2026-07)에서는 true다. 지난 달(2026-06)은 통째로 MIN_SCHEDULER_DATE 이전이라 갈 수 없다', () => {
     expect(isEarliestNavigablePeriod('monthly', '2026-07')).toBe(true)
   })
 
-  it('monthly: 다음 달(2026-08)에서는 false다 — 한 달 전(2026-07)까지는 갈 수 있다', () => {
+  it('monthly: 다음 달(2026-08)에서는 false다. 한 달 전(2026-07)까지는 갈 수 있다', () => {
     expect(isEarliestNavigablePeriod('monthly', '2026-08')).toBe(false)
   })
 })
@@ -158,8 +158,8 @@ describe('isPeriodQueryable', () => {
     expect(isPeriodQueryable('weekly', '2026-07-09', now)).toBe(true)
   })
 
-  it('weekly: 롤링 윈도우를 벗어나면(조회일이 2026-07-09 미만) false다 — 오늘-14일(2026-07-08)은 조회 불가', () => {
-    // periodKey 2026-07-02의 조회일은 2026-07-08 — 오늘(2026-07-22) 기준 정확히 14일 전
+  it('weekly: 롤링 윈도우를 벗어나면(조회일이 2026-07-09 미만) false다. 오늘-14일(2026-07-08)은 조회 불가', () => {
+    // periodKey 2026-07-02의 조회일은 2026-07-08. 오늘(2026-07-22) 기준 정확히 14일 전
     expect(isPeriodQueryable('weekly', '2026-07-02', now)).toBe(false)
   })
 
@@ -182,13 +182,13 @@ describe('isPeriodQueryable', () => {
     expect(isPeriodQueryable('monthly', '2026-07', new Date('2026-08-05T12:00:00+09:00'))).toBe(true)
   })
 
-  it('오늘·미래 조회일은 상한에 막힌다 — 실측 400 OPENAPI00004', () => {
+  it('오늘·미래 조회일은 상한에 막힌다. 실측 400 OPENAPI00004', () => {
     // now 2026-07-22 → 이번 주(2026-07-16)의 조회일은 2026-07-22 = 오늘
     expect(isPeriodQueryable('weekly', '2026-07-16', now)).toBe(false)
     expect(getMaxQueryableDate(now)).toBe('2026-07-21')
   })
 
-  it('오늘-1일은 상한 안이다 — 새벽엔 OPENAPI00009지만 집계가 끝나면 조회된다(정정 2)', () => {
+  it('오늘-1일은 상한 안이다. 새벽엔 OPENAPI00009지만 집계가 끝나면 조회된다(정정 2)', () => {
     // 조회일이 정확히 오늘-1일(2026-07-21)인 주 = periodKey 2026-07-15? weekly는 목요일이므로
     // 조회일 오늘-1일을 만들려면 periodKey = 2026-07-15 - 6 = 2026-07-15가 아니다. 대신 상한
     // 경계값 자체를 확인한다.
@@ -304,12 +304,12 @@ describe('resolvePeriodDataState', () => {
     lastOutcome: null,
   } as const
 
-  it('기록이 있으면 recorded — 조회 가능성과 무관하다', () => {
+  it('기록이 있으면 recorded: 조회 가능성과 무관하다', () => {
     expect(resolvePeriodDataState({ ...base, hasRecords: true })).toBe('recorded')
     expect(resolvePeriodDataState({ ...base, hasRecords: true, isQueryable: false })).toBe('recorded')
   })
 
-  it('확인 기록이 있고 기록이 없으면 confirmedEmpty — 시간이 지나도 격하되지 않는다(결정 3)', () => {
+  it('확인 기록이 있고 기록이 없으면 confirmedEmpty: 시간이 지나도 격하되지 않는다(결정 3)', () => {
     expect(resolvePeriodDataState({ ...base, isChecked: true })).toBe('confirmedEmpty')
     // 롤링 윈도우를 벗어난 뒤에도 "0건 확정"이 유지된다. 전에는 여기서 조회 불가로 바뀌었다
     expect(resolvePeriodDataState({ ...base, isChecked: true, isQueryable: false })).toBe('confirmedEmpty')
@@ -327,7 +327,7 @@ describe('resolvePeriodDataState', () => {
     expect(resolvePeriodDataState({ ...base, lastOutcome: 'failed' })).toBe('failed')
   })
 
-  it('조회 가능한데 확인도 시도도 없으면 notChecked — 조회 버튼을 주는 상태(정정 1)', () => {
+  it('조회 가능한데 확인도 시도도 없으면 notChecked: 조회 버튼을 주는 상태(정정 1)', () => {
     expect(resolvePeriodDataState(base)).toBe('notChecked')
   })
 
@@ -344,7 +344,7 @@ describe('resolvePeriodDataState', () => {
 })
 
 describe('resolvePagePeriodState', () => {
-  it('기록이 하나라도 있으면 recorded — 화면의 주인은 보여줄 기록이다', () => {
+  it('기록이 하나라도 있으면 recorded: 화면의 주인은 보여줄 기록이다', () => {
     expect(resolvePagePeriodState(['outOfRange', 'recorded', 'failed'])).toBe('recorded')
   })
 
@@ -354,7 +354,7 @@ describe('resolvePagePeriodState', () => {
     expect(resolvePagePeriodState(['notCollected', 'failed'])).toBe('failed')
   })
 
-  it('전원이 확정했을 때만 confirmedEmpty다 — 불확실을 확정으로 위장하지 않는다', () => {
+  it('전원이 확정했을 때만 confirmedEmpty다. 불확실을 확정으로 위장하지 않는다', () => {
     expect(resolvePagePeriodState(['confirmedEmpty', 'confirmedEmpty'])).toBe('confirmedEmpty')
     expect(resolvePagePeriodState(['confirmedEmpty', 'outOfRange'])).toBe('outOfRange')
   })

@@ -27,7 +27,7 @@ const SIZES = {
 const HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 }
 
 export function PartySizeStepper(props: {
-  /** aria-label 접두 — 목록에서 어느 행의 스테퍼인지 구분한다(보스명). */
+  /** aria-label 접두. 목록에서 어느 행의 스테퍼인지 구분한다(보스명). */
   label: string
   value: number
   max: number

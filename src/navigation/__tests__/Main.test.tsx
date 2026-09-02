@@ -32,7 +32,7 @@ const isLiquidGlassAvailableMock = isLiquidGlassAvailable as jest.MockedFunction
 >
 
 // **`act()` 로 감싸지 않는다.** 이 시점에는 마운트된 컴포넌트가 없어 감쌀 이유가 없고, 렌더 *전*의
-// `act` 는 뒤따르는 `render()` 가 `null` 을 내게 만든다(실측 — `RootNavigator.test.tsx` 머리말).
+// `act` 는 뒤따르는 `render()` 가 `null` 을 내게 만든다(실측. `RootNavigator.test.tsx` 머리말).
 beforeEach(() => {
   installMemoryPreferences()
   resetBarStoreForTests()
@@ -64,8 +64,8 @@ async function press(testID: string): Promise<void> {
 // 네이티브 렌더는 jest 로 못 보므로, **깨졌던 구조 자체**를 건다.
 // 활성 아이콘은 **가려서** 채운다.
 //
-// fill 과 stroke 가 같은 색이라, 안쪽에 선이 있는 lucide 아이콘은 채우는 순간 그 선이 사라진다 —
-// 조준경은 십자선을 잃어 원판이 되고 달력·지갑은 안쪽 체크·주머니를 잃는다(사용자 판정 —
+// fill 과 stroke 가 같은 색이라, 안쪽에 선이 있는 lucide 아이콘은 채우는 순간 그 선이 사라진다.
+// 조준경은 십자선을 잃어 원판이 되고 달력·지갑은 안쪽 체크·주머니를 잃는다(사용자 판정.
 // *"싹다 채워버리면 어떡해"*). 목록을 늘릴 때 이 검사가 **전부 채우기** 로 돌아가는 것을 막는다.
 //
 // 톱니와 수익은 **우리가 그린 아이콘이라 채울 자리를 고를 수 있어** 채우는 쪽인데, 여기서는 안
@@ -86,11 +86,11 @@ describe('채우지 못하는 아이콘은 활성일 때 굵어진다', () => {
   // 활성이 되는 자리로 고른다. 그룹 행에서 ← 를 누르면 기록이 있어 **today 로 돌아가므로**
   // 그 경로로는 스케줄이 활성이 되지 않는다.
   it.each([
-    ['bar-sub-Content', 'bar-group-schedule', true],   // 목록 — 선뿐이라 못 채운다
-    ['bar-sub-Cashbook', 'bar-group-ledger', true],    // 장부 — 선뿐이라 못 채운다
-    ['bar-sub-Boss', 'bar-group-schedule', false],     // 검 — 칼날이 면으로 찬다(채우는 쪽)
-    ['bar-sub-Profit', 'bar-group-ledger', false],     // 수익 — 동전 두 개가 면으로 찬다
-    ['bar-group-utility', 'bar-group-utility', false], // 렌치 — 채운다
+    ['bar-sub-Content', 'bar-group-schedule', true],   // 목록. 선뿐이라 못 채운다
+    ['bar-sub-Cashbook', 'bar-group-ledger', true],    // 장부. 선뿐이라 못 채운다
+    ['bar-sub-Boss', 'bar-group-schedule', false],     // 검. 칼날이 면으로 찬다(채우는 쪽)
+    ['bar-sub-Profit', 'bar-group-ledger', false],     // 수익. 동전 두 개가 면으로 찬다
+    ['bar-group-utility', 'bar-group-utility', false], // 렌치. 채운다
   ] as const)('%s 가 활성일 때 굵어지는가: %s', async (target, entry, thicker) => {
     await render(<NavigationHarness />)
     await press(entry)
@@ -193,7 +193,7 @@ describe('바는 **지금 페이지** 가 정하는 층을 그린다', () => {
  expect(screen.getByTestId('bar-back')).toBeTruthy()
  })
 
- it('하위가 없는 그룹은 그룹 행을 유지한다 — ← 도 안 선다', async () => {
+ it('하위가 없는 그룹은 그룹 행을 유지한다. ← 도 안 선다', async () => {
  await render(<NavigationHarness />)
 
  await press('bar-group-settings')
@@ -231,7 +231,7 @@ describe('펼침판은 바보다 뒤에 그려진다', () => {
  return order
  }
 
- it('가계부의 스크림·＋ 가 바 뒤에 선다 — 백드롭이 바를 덮는다', async () => {
+ it('가계부의 스크림·＋ 가 바 뒤에 선다. 백드롭이 바를 덮는다', async () => {
  await render(<NavigationHarness />)
 
  await press('bar-group-ledger')
@@ -275,11 +275,11 @@ describe('← 는 **한 층 내려온 자리**로 되돌린다 (결정 4)', () =
  expect(screen.getByTestId('screen-Utility')).toBeTruthy()
  })
 
- // 결정 5 의 **기록 없는 ←**(페이지를 두고 그룹 행만 연다)는 **앱을 켠 뒤로는 도달하지 않는다** —
+ // 결정 5 의 **기록 없는 ←**(페이지를 두고 그룹 행만 연다)는 **앱을 켠 뒤로는 도달하지 않는다**.
  // 첫 화면이 그룹 행이라 하위로 내려가는 순간 기록이 반드시 하나 생기기 때문이다. 처음 이 자리를
  // 그 규칙의 테스트로 쓰려다 실패해서 알았고(← 가 today 로 나갔다), 그 사실 자체가 결정 5 가
  // **안전망** 인 근거라 여기 남긴다. 규칙 자체는 `bar-model.test.ts` 가 상태를 직접 만들어 고정한다.
- it('하위를 오간 뒤에도 ← 는 내려오기 전 자리로 나간다 — 그룹 행만 열리지 않는다', async () => {
+ it('하위를 오간 뒤에도 ← 는 내려오기 전 자리로 나간다. 그룹 행만 열리지 않는다', async () => {
  await render(<NavigationHarness />)
 
  await press('bar-group-schedule')
@@ -308,7 +308,7 @@ describe('바의 스타일이 플랫폼을 안 가린다', () => {
  >
 
  it.each(['bottom-bar', 'bar-pill', 'bar-back-plate'])(
- '%s — 그림자를 boxShadow 로 쓴다',
+ '%s. 그림자를 boxShadow 로 쓴다',
  async (testID) => {
  await render(<NavigationHarness />)
  // ← 판은 하위 행에만 마운트된다.
@@ -365,12 +365,12 @@ describe('바의 스타일이 플랫폼을 안 가린다', () => {
 // 재질이 없는 쪽은 **흉내 내지 않는다**.
 //
 // `expo-glass-effect` 는 iOS 26 이상에서만 산다. 그 아래 iOS 와 안드로이드에는 이 재질이 없고, 없는
-// 것을 블러로 흉내 내는 판을 한 번 만들었다가 되돌렸다(사용자 지시 — 억지로 만들지 말고 색만 맞출 것).
+// 것을 블러로 흉내 내는 판을 한 번 만들었다가 되돌렸다(사용자 지시. 억지로 만들지 말고 색만 맞출 것).
 //
 // 그래서 폴백에서 지켜야 하는 것은 둘이다: **재질을 흉내 내는 판이 없을 것**, 그리고 그 자리를
 // **불투명 캡슐**이 채울 것. 색 관계는 `bar-colors.test.ts` 가 테마 전부에 대고 따로 건다.
 describe('재질이 없는 쪽은 흉내 내지 않는다', () => {
- it('유리가 없으면 불투명 캡슐이다 — 블러 판을 얹지 않는다', async () => {
+ it('유리가 없으면 불투명 캡슐이다. 블러 판을 얹지 않는다', async () => {
  isLiquidGlassAvailableMock.mockReturnValue(false)
  setThemeAppearance('엔젤릭버스터', (jobThemes as Record<ThemeName, ThemeDefinition>)['엔젤릭버스터'])
 

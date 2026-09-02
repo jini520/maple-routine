@@ -92,13 +92,13 @@ import { dailyContentCompletion, weeklyContentCompletion } from '../content-sche
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
-/** 캐릭터별 수익 목록에 담는 캐릭터 수 — 4x3 타일이 세 줄이다. */
+/** 캐릭터별 수익 목록에 담는 캐릭터 수. 4x3 타일이 세 줄이다. */
 const TOP_CHARACTER_COUNT = 3
 
-/** 최고가 아이템 순위 길이 — 4x2 타일이 1위 + 2~5위를 그린다. */
+/** 최고가 아이템 순위 길이. 4x2 타일이 1위 + 2~5위를 그린다. */
 const TOP_ITEM_COUNT = 5
 
-/** 가격 미입력 미리보기 길이 — 2x2 타일이 이름 셋까지 세우고 나머지는 외 N건 이다. */
+/** 가격 미입력 미리보기 길이. 2x2 타일이 이름 셋까지 세우고 나머지는 외 N건 이다. */
 const UNPRICED_PREVIEW_COUNT = 3
 
 /** 대표 캐릭터 카드가 그리는 것. 값이 없는 줄은 위젯이 그리지 않는다. */
@@ -155,7 +155,7 @@ export interface ScheduleRowView {
 export interface SharedContentItemView {
   /** API 원문 이름. 화면은 안 쓰지만 어느 항목인가 의 신원이라 남긴다. */
   name: string
-  /** 그리는 이름 — 계열명이 위에 있으므로 그것을 뺀 나머지다(카탈로그의 `shortName`). */
+  /** 그리는 이름. 계열명이 위에 있으므로 그것을 뺀 나머지다(카탈로그의 `shortName`). */
   shortName: string
   /**
    * `null` 이면 화면이 `CLEAR`(완료) 또는 **빈칸**(미완료)을 그린다.
@@ -174,7 +174,7 @@ export interface SharedContentGroupView {
 }
 
 /**
- * 총액을 가른 둘 — 위젯 3의 스택 바와 분해 금액이 읽는 값이다.
+ * 총액을 가른 둘. 위젯 3의 스택 바와 분해 금액이 읽는 값이다.
  *
  * **위젯이 스토어를 모르므로** 총액만 주면 갈라 그릴 방법이 없다. 그렇다고 여기서
  * 새로 세지도 않는다. 결정석은 `sumPayout`, 아이템은 `sumDropPayout` 이고 둘의 합이 곧
@@ -216,7 +216,7 @@ export interface WeeklyProfitView extends ProfitSplit {
 export interface UnpricedDropView {
   ocid: string
   /**
-   * 프로필 캐시에 있을 때만 — 없으면 위젯이 보스만 그린다(ocid 는 사용자에게 뜻이 없는 값이라
+   * 프로필 캐시에 있을 때만. 없으면 위젯이 보스만 그린다(ocid 는 사용자에게 뜻이 없는 값이라
    * 대신 넣지 않는다, 대표 카드와 같은 규칙).
    */
   characterName?: string
@@ -262,14 +262,14 @@ export interface DroughtView {
   /** 잎 색·기울기를 고르는 단계(0 = 이번 주 획득). */
   tier: number
   /**
-   * 그 단계의 문구 개수 — **무작위 인덱스는 위젯이 마운트당 한 번** 고른다.
+   * 그 단계의 문구 개수. **무작위 인덱스는 위젯이 마운트당 한 번** 고른다.
    * `Math.random()` 이 여기 들어오면 이 파일이 순수 함수가 아니게 된다.
    */
   headlineCount: number
   periodKey: string
   cycle: BossCycle
   /**
-   * 그 기간의 사람이 읽는 이름(`이번 주` · `7월 3주차`). **위젯이 만들 수 없다** —
+   * 그 기간의 사람이 읽는 이름(`이번 주` · `7월 3주차`). **위젯이 만들 수 없다**.
    * `formatBossProfitPeriodLabel` 이 지금이 언제인가 를 받아야 이번 주 를 말할 수 있는데,
    * 타일마다 시계를 읽으면 같은 화면의 두 타일이 다른 시각을 말한다(위젯 6과 같은 규칙).
    */
@@ -326,7 +326,7 @@ export interface TodayViewModelInput {
    */
   manualContentByOcid: Record<string, ManualTrackedItem[]> | null
   manualBossByOcid: Record<string, ManualTrackedItem[]> | null
-  /** 보스 수익 스토어의 캐릭터 단위 실패 표식 — 위젯 2·3 이 물려받는다. */
+  /** 보스 수익 스토어의 캐릭터 단위 실패 표식. 위젯 2·3 이 물려받는다. */
   characterIssues: Readonly<Record<string, 'unavailable' | 'failed'>>
   /** 보스 수익 스토어. 이번 주가 아닌 기간의 행은 이 파일이 걸러낸다(파일 머리 이번 주). */
   profitRows: readonly BossProfitRow[]
@@ -338,21 +338,21 @@ export interface TodayViewModelInput {
 
 export interface TodayViewModel {
   representative: RepresentativeView | null
-  /** 계열별로 묶인 공유 컨텐츠 — 위젯 9. */
+  /** 계열별로 묶인 공유 컨텐츠. 위젯 9. */
   sharedContents: SharedContentGroupView[]
   /** 그중 완료가 아닌 **줄**의 수. 캐릭터 수와 무관하다. 그게 이 분리의 이유다. */
   sharedRemaining: number
-  /** **캐릭터 관리 순서**의 목록 — 남은 개수 많은 순은 탭을 아는 위젯이 세운다. */
+  /** **캐릭터 관리 순서**의 목록. 남은 개수 많은 순은 탭을 아는 위젯이 세운다. */
   schedule: ScheduleRowView[]
   profit: WeeklyProfitView
   topItem: TopItemView | null
-  /** 이번 주 가격 미입력 드롭 건수 — 위젯 7의 값이라 위젯 4 안에 넣지 않는다. */
+  /** 이번 주 가격 미입력 드롭 건수. 위젯 7의 값이라 위젯 4 안에 넣지 않는다. */
   unpricedCount: number
   /**
-   * 그중 앞 몇 건 — 2x2 타일이 **이름**을 보여 준다. 값을 적어야지보다 그 연마석 얼마에
+   * 그중 앞 몇 건. 2x2 타일이 **이름**을 보여 준다. 값을 적어야지보다 그 연마석 얼마에
    * 팔았지가 손을 움직이는 문장이라, 건수만으로는 그 문장을 만들 수 없다.
    *
-   * 순서는 스토어가 준 순서 그대로다(`period_key DESC, ocid, boss, difficulty, drop_index`) —
+   * 순서는 스토어가 준 순서 그대로다(`period_key DESC, ocid, boss, difficulty, drop_index`).
    * 여기서 다시 정렬하면 무엇 기준으로 앞 셋인가 라는 주장이 생기는데, 미입력 건에는 비교할
    * 값이 없다.
    */
@@ -416,7 +416,7 @@ function sameContentName(a: string, b: string): boolean {
   return a.replace(/\s+/g, '') === b.replace(/\s+/g, '')
 }
 
-/** 한 캐릭터의 컨텐츠 입력 — 남은 스케줄과 공유 위젯이 같은 모양으로 읽는다. */
+/** 한 캐릭터의 컨텐츠 입력. 남은 스케줄과 공유 위젯이 같은 모양으로 읽는다. */
 function contentsInputOf(
   input: TodayViewModelInput,
   content: ContentCharacterView | undefined,
@@ -480,7 +480,7 @@ function buildSharedContents(input: TodayViewModelInput): SharedContentGroupView
                 ? dailyContentCompletion(item as DailyContent)
                 : weeklyContentCompletion(item as WeeklyContent)) === 'complete',
           )
-          // `maxCount` 는 스토어가 이미 `maxCountOverride` 를 얹은 값이다(`scheduler-merge`) —
+          // `maxCount` 는 스토어가 이미 `maxCountOverride` 를 얹은 값이다(`scheduler-merge`).
           // 여기서 다시 얹으면 오버라이드의 출처가 둘이 된다.
           const max = Math.max(0, ...matches.map((item) => item.maxCount))
           const now = Math.max(0, ...matches.map((item) => item.nowCount))
@@ -570,7 +570,7 @@ function buildScheduleRows(input: TodayViewModelInput): ScheduleRowView[] {
 }
 
 /**
- * 남은 보스 — **개수가 아니라 목록**이다(아코디언 본문이 이름을 그린다).
+ * 남은 보스. **개수가 아니라 목록**이다(아코디언 본문이 이름을 그린다).
  *
  * 이름은 `matchedBossName ?? apiName`. 참조 데이터에 매핑된 이름이 있으면 그것, 없으면 API 원문
  * 그대로다(매핑 실패는 원문 그대로).
@@ -662,7 +662,7 @@ function collectWeeklyDrops(
 /**
  * 저장 행 하나 → 위젯이 읽는 모양. **금액은 싣지 않는다**. 값이 있는 쪽만 그것을 얹는다.
  *
- * 캐릭터 이름이 옵셔널인 것이 요점이다(프로필 캐시에 있을 때만 — ocid 를 대신 넣지 않는다).
+ * 캐릭터 이름이 옵셔널인 것이 요점이다(프로필 캐시에 있을 때만. ocid 를 대신 넣지 않는다).
  */
 function toDropView(
   record: DropHistoryRecord,
@@ -736,7 +736,7 @@ function buildResets(now: Date): ResetCountdownView {
   })
 
   const monthlyPeriodKey = getCurrentBossProfitPeriod('monthly', now).periodKey
-  // 이번 달의 두 경계 — 길이는 그 차이다(28~31일이라 상수로 둘 수 없다).
+  // 이번 달의 두 경계. 길이는 그 차이다(28~31일이라 상수로 둘 수 없다).
   const monthlyStartMs = getPeriodStartUtcMs(monthlyPeriodKey)
   const monthlyAtMs = getPeriodStartUtcMs(getAdjacentPeriodKey('monthly', monthlyPeriodKey, 'next'))
 

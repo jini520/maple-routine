@@ -48,7 +48,7 @@ describe('rnSplashScreenPort', () => {
 
   // DOM 커버(`#boot-cover`·`[data-splash-cover]`)는 정의상 웹뷰 구현이다.
   // RN 에는 문서가 없으므로 흉내 낼 것도, 걷을 것도 없다.
-  it('DOM 커버 개념을 흉내 내지 않는다 — document 없이도 돈다', async () => {
+  it('DOM 커버 개념을 흉내 내지 않는다. document 없이도 돈다', async () => {
     const document = (globalThis as { document?: unknown }).document
     delete (globalThis as { document?: unknown }).document
     try {

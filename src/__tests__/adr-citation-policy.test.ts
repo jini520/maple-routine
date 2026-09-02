@@ -38,7 +38,7 @@ const INDEX = join(DOCS, 'ADR.md')
 type Citation = { file: string; adr: string; kind?: string; numbers: string[] }
 
 /**
- * 인용 정규식. 쉼표 뒤는 날짜가 오는 자리라(`결정 7, 2026-08-25`) 번호 목록으로 읽지 않는다 —
+ * 인용 정규식. 쉼표 뒤는 날짜가 오는 자리라(`결정 7, 2026-08-25`) 번호 목록으로 읽지 않는다.
  * 가운뎃점만 목록 구분자다(`결정 3·4`).
  */
 const CITATION = /\[\[ADR-(\d{3})\]\](?: *(결정|정정) *(\d+(?:-\d+)?(?: *· *\d+(?:-\d+)?)*))?/g

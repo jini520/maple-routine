@@ -3,7 +3,7 @@
  *
  * ## 왜 흐름이 아니라 좌표인가
  *
- * 자동 패킹(순서 배열을 주면 알고리즘이 빈칸을 채운다)을 기각한 이유가 이 파일의 존재 이유다 —
+ * 자동 패킹(순서 배열을 주면 알고리즘이 빈칸을 채운다)을 기각한 이유가 이 파일의 존재 이유다.
  * **검증할 것이 없어지기 때문**이다. 알고리즘은 늘 어딘가에 넣으므로 배치 실수가 실수로 드러나지
  * 않는다. 좌표를 손으로 적는 대신 그 실수를 여기서 잡는다.
  *
@@ -17,7 +17,7 @@
 import { tileHeightPx, tileWidthPx, type WidgetGridMetrics } from './widget-grid-metrics'
 
 /**
- * 타일의 세로 크기 — 행 수, 또는 **내용이 정하는 높이**.
+ * 타일의 세로 크기. 행 수, 또는 **내용이 정하는 높이**.
  *
  * `'auto'` 는 높이를 미리 알 수 없다 는 뜻이고, 그 값은 `resolveWidgetPositions` 에 실측으로
  * 들어온다. 선언한 `h` 는 그때 **최소 높이**로 남는다.
@@ -45,7 +45,7 @@ export interface LayoutViolation {
   reason: string
 }
 
-/** `'auto'` 타일이 좌표계에서 차지하는 행 수 — 선언한 `h` 가 없으므로 최소인 1이다. */
+/** `'auto'` 타일이 좌표계에서 차지하는 행 수. 선언한 `h` 가 없으므로 최소인 1이다. */
 const AUTO_NOMINAL_ROWS = 1
 
 const GRID_COLUMNS = 4
@@ -61,7 +61,7 @@ function formatSize(w: number, h: WidgetHeight): string {
 /**
  * 배치의 실수를 잡는다. **반환값이 빈 배열이면 유효한 배치다.**
  *
- * 검증 다섯 — ① 겹치는 타일 없음 ② `col + w ≤ 4` ③ 통째로 빈 행 없음 ④ `(w, h)` 가 그 위젯이
+ * 검증 다섯. ① 겹치는 타일 없음 ② `col + w ≤ 4` ③ 통째로 빈 행 없음 ④ `(w, h)` 가 그 위젯이
  * 선언한 크기 안 ⑤ `h === 'auto'` 이면 `w === 4`.
  *
  * ④ 가 크기별로 다르게 그린다를 **약속으로 만드는** 자리다. 선언 안 한
@@ -77,19 +77,19 @@ export function validateWidgetLayout(
     const { id, col, w, h } = placement
 
     if (col + w > GRID_COLUMNS) {
-      violations.push({ id, reason: `가로가 격자를 넘는다 — col ${col} + w ${w} > ${GRID_COLUMNS}` })
+      violations.push({ id, reason: `가로가 격자를 넘는다. col ${col} + w ${w} > ${GRID_COLUMNS}` })
     }
 
     // 가로를 다 쓰면 **옆에 아무도 없으므로** 늘어난 만큼 아래 전부가 같은 값으로 내려가 겹침이
     // 생길 수 없다. 좁은 타일에 auto 를 허용하면 옆 칸과 아래 칸이 서로 다른 만큼 밀려 좌표가
     // 무너진다. 자동 패킹을 기각한 것과 같은 이유(**검증할 것이 없어진다**)가 여기서 되살아난다.
     if (h === 'auto' && w !== GRID_COLUMNS) {
-      violations.push({ id, reason: `h: 'auto' 는 w === ${GRID_COLUMNS} 일 때만 쓸 수 있다 — w ${w}` })
+      violations.push({ id, reason: `h: 'auto' 는 w === ${GRID_COLUMNS} 일 때만 쓸 수 있다. w ${w}` })
     }
 
     const declared = sizesById[id] ?? []
     if (!declared.some((size) => size.w === w && size.h === h)) {
-      violations.push({ id, reason: `위젯이 선언하지 않은 크기다 — ${formatSize(w, h)}` })
+      violations.push({ id, reason: `위젯이 선언하지 않은 크기다. ${formatSize(w, h)}` })
     }
   }
 
@@ -119,7 +119,7 @@ function findOverlaps(layout: readonly WidgetPlacement[]): LayoutViolation[] {
     }
 
     if (collidedWith !== null) {
-      violations.push({ id: placement.id, reason: `다른 타일과 겹친다 — ${collidedWith}` })
+      violations.push({ id: placement.id, reason: `다른 타일과 겹친다. ${collidedWith}` })
     }
   }
 
@@ -157,7 +157,7 @@ function findEmptyRows(layout: readonly WidgetPlacement[]): LayoutViolation[] {
         null,
       )
 
-    if (below !== null) violations.push({ id: below.id, reason: `위에 통째로 빈 행이 있다 — ${row} 행` })
+    if (below !== null) violations.push({ id: below.id, reason: `위에 통째로 빈 행이 있다. ${row} 행` })
   }
 
   return violations
@@ -174,7 +174,7 @@ export interface ResolvedTile {
 /**
  * 좌표를 격자 컨테이너 안의 **절대 위치**로 푼다.
  *
- * `'auto'` 타일이 최소 높이보다 커지면 **그 아래(`row` 가 큰) 타일 전부**를 그 초과분만큼 내린다 —
+ * `'auto'` 타일이 최소 높이보다 커지면 **그 아래(`row` 가 큰) 타일 전부**를 그 초과분만큼 내린다.
  * `y = 적어 둔 y + Σ(위쪽 auto 타일들의 초과분)`. auto 는 `w === 4` 일 때만 허용되므로(검증 ⑤)
  * 그 행에 옆 타일이 있을 수 없고, 그래서 아래 전부가 같은 값으로 내려간다 가 성립한다.
  *

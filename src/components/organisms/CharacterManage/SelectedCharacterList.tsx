@@ -1,6 +1,6 @@
-// `선택됨` 층의 행들 — **순서를 끌어서 바꾸는 자리**.
+// `선택됨` 층의 행들. **순서를 끌어서 바꾸는 자리**.
 //
-// 카드 자체는 `CharacterRow` 한 벌 그대로다(결정 2). 이 파일이 더하는 것은 셋뿐이다 —
+// 카드 자체는 `CharacterRow` 한 벌 그대로다(결정 2). 이 파일이 더하는 것은 셋뿐이다.
 // 왼쪽 핸들에 붙는 끌기 제스처 · 끄는 동안의 자동 스크롤 · 그 둘을 못 쓰는 사람을 위한 접근성 액션.
 //
 // ── 핸들에서만 끌기가 시작된다 ──────────────────────────────────────────────────────
@@ -47,7 +47,7 @@ import { RepresentativeStar } from '../../organisms/CharacterRow/RepresentativeS
 import { resolveAutoScrollStepPx, resolveDropIndex, resolveRowShiftSteps } from './reorder'
 import type { ReorderScroll } from './use-reorder-scroll'
 
-/** 행 사이 간격 — 컨테이너의 `gap-2` 와 같은 값이어야 칸 높이가 맞는다. */
+/** 행 사이 간격. 컨테이너의 `gap-2` 와 같은 값이어야 칸 높이가 맞는다. */
 const GAP_PX = 8
 /** 화면 위·아래 이만큼 안쪽부터 자동 스크롤 구간이다. */
 const AUTO_SCROLL_ZONE_PX = 72
@@ -56,14 +56,14 @@ const AUTO_SCROLL_MAX_STEP_PX = 12
 /** 이만큼 세로로 움직이면 끌기로 본다. 핸들을 그냥 누른 것과 가른다. */
 const ACTIVATE_OFFSET_PX = 4
 
-/** 접근성 액션 식별자 — 사람이 듣는 것은 `label` 이고 이 이름은 우리끼리 쓴다. */
+/** 접근성 액션 식별자. 사람이 듣는 것은 `label` 이고 이 이름은 우리끼리 쓴다. */
 const MOVE_UP = 'moveUp'
 const MOVE_DOWN = 'moveDown'
 
 interface DragState {
   fromIndex: number
   toIndex: number
-  /** 끌기가 시작될 때의 스크롤 오프셋 — 그 뒤 흐른 만큼이 보정값이다. */
+  /** 끌기가 시작될 때의 스크롤 오프셋. 그 뒤 흐른 만큼이 보정값이다. */
   startOffsetPx: number
   translationPx: number
   pointerYPx: number
@@ -83,7 +83,7 @@ export interface SelectedCharacterListProps {
   representativeOcid: string | null
   /** 자동 스크롤이 만질 화면의 스크롤 뷰(`use-reorder-scroll`). */
   scroll: ReorderScroll
-  /** 놓았을 때 · 접근성 액션일 때 — **같은 문**이다(`moveOcid` 를 부른다). */
+  /** 놓았을 때 · 접근성 액션일 때. **같은 문**이다(`moveOcid` 를 부른다). */
   onMove: (fromIndex: number, toIndex: number) => void
   onRemove: (ocid: string) => void
   onSelectRepresentative: (ocid: string) => void

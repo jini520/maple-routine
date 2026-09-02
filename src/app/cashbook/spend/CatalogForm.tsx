@@ -1,5 +1,5 @@
 /**
- * **고르는 갈래**의 폼 — 컨텐츠 · 이벤트·BM · 버프.
+ * **고르는 갈래**의 폼. 컨텐츠 · 이벤트·BM · 버프.
  *
  * ## 고르면 채워진다
  *
@@ -41,7 +41,7 @@ import {
 import { useSpendSubmit } from './use-spend-submit'
 
 /**
- * 타일에 적는 값 — **단위를 붙이고, 단계가 여럿이면 나란히 적는다.**
+ * 타일에 적는 값. **단위를 붙이고, 단계가 여럿이면 나란히 적는다.**
  *
  * 단위를 붙이는 이유는 갈래 하나 안에서 통화가 갈리는 곳이 있어서다(버프의 영약은 메소,
  * 보약은 메포). **메소만 줄여 적는다**. 메포는 200~50,000 이라 그대로가
@@ -57,7 +57,7 @@ function tilePriceLabel(items: readonly SpendCatalogItem[]): string {
 }
 
 /**
- * 타일 그림의 한 변 — 자리마다 다르다.
+ * 타일 그림의 한 변. 자리마다 다르다.
  *
  * **타일 왼쪽**(기본)은 이름 두 줄(≈32)보다 낮으면 높이를 안 건드린다. **이름 옆**(에픽던전 셋)은
  * 이름 한 줄(≈16)과 나란히 서므로 더 작아야 그 줄이 안 두꺼워진다.
@@ -70,7 +70,7 @@ function ItemTile(props: {
   /** 값이 하나로 정해지는 칸만 가격을 적는다. 단계가 여럿이면 단계마다 값이 달라 못 적는다. */
   price: string | null
   selected: boolean
-  /** 안 열린 묶음의 타일 — 흐리고 **안 눌린다**. */
+  /** 안 열린 묶음의 타일. 흐리고 **안 눌린다**. */
   disabled?: boolean
   onPress: () => void
 }): React.JSX.Element {
@@ -214,7 +214,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   }
 
   /**
-   * 수정 모드의 머리 — **고른 것**을 적는다. 카탈로그가 그 항목을 못 찾으면
+   * 수정 모드의 머리. **고른 것**을 적는다. 카탈로그가 그 항목을 못 찾으면
    * (참조표가 갈렸다) 기록에 적힌 이름을 그대로 쓴다.
    */
   const title = editing
@@ -277,7 +277,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
           ))}
         </View>
       ) : (
-        // 고른 뒤 — 라벨–값 줄들이 서고 **합계가 저장 바로 위**에 선다.
+        // 고른 뒤. 라벨–값 줄들이 서고 **합계가 저장 바로 위**에 선다.
         <>
           <CharacterRow characters={props.characters} selected={ocid} onSelect={setOcid} />
 

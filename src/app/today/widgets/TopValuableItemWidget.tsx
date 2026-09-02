@@ -1,5 +1,5 @@
 /**
- * 위젯 4 — **이번 주 최고가 아이템**.
+ * 위젯 4. **이번 주 최고가 아이템**.
  *
  * ## 가장 비싼은 시세가 아니라 **기록된 판매가** 순위다
  *
@@ -16,7 +16,7 @@
  * ## 크기가 버리는 것
  *
  * 2x1(기본)은 **아이템 이름**을 버린다. 이름은 잘려야 들어가고, 잘린 한 조각보다 얼마였나 가 이
- * 타일이 답하는 질문이다. 1x1 은 **단위 `메소`까지** 버린다(정정 11 — 물리적으로 안 들어간다).
+ * 타일이 답하는 질문이다. 1x1 은 **단위 `메소`까지** 버린다(정정 11. 물리적으로 안 들어간다).
  * 4x2 만 2~5위를 함께 그린다.
  *
  * ## 아이콘은 `slot` 과 함께 묻는다
@@ -41,7 +41,7 @@ const EMPTY_NOTE = '가격이 입력된 아이템이 없습니다'
 
 const TITLE = '이번 주 최고가'
 
-/** 4x2 · 2x2 · 2x1 · 1x1 — 이름이 크기가 아니라 무엇을 그리는가 를 말한다. */
+/** 4x2 · 2x2 · 2x1 · 1x1. 이름이 크기가 아니라 무엇을 그리는가 를 말한다. */
 type Variant = 'wide' | 'compact' | 'mini' | 'tiny'
 
 function variantOf(w: number, h: WidgetHeight): Variant {
@@ -54,7 +54,7 @@ function Icon(props: { drop: PricedDropView; sizePx: number }): React.JSX.Elemen
   const url = getItemIconUrl(props.drop.itemName, props.drop.slot)
 
   if (url === null) {
-    // `ItemRevenuePopover` 와 같은 폴백 — 빈 상자다. 다른 아이템 그림을 대신 세우면 **이 아이템** 으로
+    // `ItemRevenuePopover` 와 같은 폴백. 빈 상자다. 다른 아이템 그림을 대신 세우면 **이 아이템** 으로
     // 읽힌다.
     return (
       <View
@@ -89,7 +89,7 @@ function Amount(props: { meso: number; sizeClass: string; unit: boolean }): Reac
   )
 }
 
-/** 아이템 이름 — **한 줄**이다. 두 줄로 접으면 행 높이가 데이터에 따라 흔들린다(정정 5). */
+/** 아이템 이름. **한 줄**이다. 두 줄로 접으면 행 높이가 데이터에 따라 흔들린다(정정 5). */
 function ItemName(props: { drop: PricedDropView; sizeClass: string }): React.JSX.Element {
   return (
     <Text
@@ -143,7 +143,7 @@ function Origin(props: { drop: PricedDropView }): React.JSX.Element {
   )
 }
 
-/** 2~5위 — 4x2 의 오른쪽 열만 쓴다. 항목이 모자라면 있는 만큼만 선다. */
+/** 2~5위. 4x2 의 오른쪽 열만 쓴다. 항목이 모자라면 있는 만큼만 선다. */
 function RestList(props: { rest: PricedDropView[] }): React.JSX.Element | null {
   if (props.rest.length === 0) return null
 
@@ -170,7 +170,7 @@ function RestList(props: { rest: PricedDropView[] }): React.JSX.Element | null {
 }
 
 /**
- * 빈 상태 — **채워진 상태의 골격을 그대로 쓴다.**
+ * 빈 상태. **채워진 상태의 골격을 그대로 쓴다.**
  *
  * 글자만 남기면 자리가 무너져 타일이 비었다 가 아니라 타일이 고장났다 로 보인다. 아이콘이
  * 서던 자리에 **같은 크기의 빈 슬롯**을 세우면 값이 들어왔을 때 자리가 안 움직이고, 지금이

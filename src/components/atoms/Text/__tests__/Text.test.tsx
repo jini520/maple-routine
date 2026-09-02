@@ -23,7 +23,7 @@ afterEach(() => {
   jest.restoreAllMocks()
 })
 
-describe('Text — 시스템 글자 배수를 [1.0, 1.235] 로 자른다', () => {
+describe('Text: 시스템 글자 배수를 [1.0, 1.235] 로 자른다', () => {
   it('기본(1.0)에서는 스케일링을 켜고 상한만 건다', async () => {
     시스템_글자배수(1)
     const { getByText } = await renderAtom(<Text>보스</Text>)
@@ -32,7 +32,7 @@ describe('Text — 시스템 글자 배수를 [1.0, 1.235] 로 자른다', () =>
     expect(getByText('보스').props.maxFontSizeMultiplier).toBe(FONT_SCALE_MAX)
   })
 
-  it('작게 설정한 기기(0.823)에서는 스케일링을 끈다 — 하한 1.0', async () => {
+  it('작게 설정한 기기(0.823)에서는 스케일링을 끈다. 하한 1.0', async () => {
     시스템_글자배수(0.823)
     const { getByText } = await renderAtom(<Text>보스</Text>)
 
@@ -47,14 +47,14 @@ describe('Text — 시스템 글자 배수를 [1.0, 1.235] 로 자른다', () =>
     expect(getByText('보스').props.maxFontSizeMultiplier).toBe(FONT_SCALE_MAX)
   })
 
-  it('fixed 는 배수와 무관하게 끈다 — 칸에 묶인 글자(결정 5)', async () => {
+  it('fixed 는 배수와 무관하게 끈다. 칸에 묶인 글자(결정 5)', async () => {
     시스템_글자배수(3.571)
     const { getByText } = await renderAtom(<Text fixed>73</Text>)
 
     expect(getByText('73').props.allowFontScaling).toBe(false)
   })
 
-  it('className 은 그대로 스타일로 풀린다 — 래퍼가 NativeWind 를 가리지 않는다', async () => {
+  it('className 은 그대로 스타일로 풀린다. 래퍼가 NativeWind 를 가리지 않는다', async () => {
     시스템_글자배수(1)
     const { getByText } = await renderAtom(<Text className="text-sm font-semibold">보스</Text>)
 

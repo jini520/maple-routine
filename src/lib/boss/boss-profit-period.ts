@@ -4,7 +4,7 @@ import { getMostRecentWeeklyResetKst } from '../scheduler/reset-clock'
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000
 
 /**
- * 스케줄러 API(`date` 파라미터)로 조회 가능한 최소 날짜(사용자 재실측, 2026-07-14 —
+ * 스케줄러 API(`date` 파라미터)로 조회 가능한 최소 날짜(사용자 재실측, 2026-07-14.
  * 처음 확인했던 '2026-06-25'는 잘못된 확인이었다).
  * 이 API 자체가 신규 도입돼 그 이전 데이터가 존재하지 않는 고정 하한선이다. 오늘 날짜 기준으로
  * 매일 밀려나는 롤링 윈도우가 아니므로, 시간이 지나도 이 값을 다시 계산할 필요가 없다.
@@ -13,7 +13,7 @@ export const MIN_SCHEDULER_DATE = '2026-07-01'
 
 /**
  * 스케줄러 API `date` 파라미터가 실제로 받아들이는 롤링 조회 가능 일수(사용자 실측,
- * 2026-07-22 — 오늘(2026-07-22) 기준 2026-07-08(오늘-14일)은 조회되지 않고 2026-07-09(오늘-13일)까지만
+ * 2026-07-22. 오늘(2026-07-22) 기준 2026-07-08(오늘-14일)은 조회되지 않고 2026-07-09(오늘-13일)까지만
  * 조회된다). MIN_SCHEDULER_DATE(API 자체가 존재하기 시작한 고정 하한선)와는 별개로, 매일
  * 하루씩 앞으로 밀리는 제약이다.
  */
@@ -118,7 +118,7 @@ export function containsInProgressWeek(cycle: BossCycle, periodKey: string, now:
 }
 
 /**
- * 이 기간을 화면에서 **지금 새로고침(실시간 재조회)하는 것이 의미가 있는지** —
+ * 이 기간을 화면에서 **지금 새로고침(실시간 재조회)하는 것이 의미가 있는지**.
  * 헤더 동기화 상태 영역 노출과 당겨서 새로고침 활성 조건이 **이 한 플래그를 공유한다**(
  * 결정 9). 갈라 두면 "버튼은 없는데 당기면 도는" 상태가 생긴다.
  *
@@ -131,7 +131,7 @@ export function isPeriodRefreshable(cycle: BossCycle, periodKey: string, now: Da
 
 export interface BossProfitPeriodLabel {
   primary: string // "이번 주" | "지난 주" | "이번 달" | "지난 달" | "{M}월 {N}주차" | "{YYYY}년 {M}월"
-  secondary: string // weekly: "{M}월 {D}일 ~ {M}월 {D}일" (그 주의 시작~끝 날짜), monthly: "{YYYY}년 {M}월" — primary와 무관하게 항상 정확한 날짜를 담는다
+  secondary: string // weekly: "{M}월 {D}일 ~ {M}월 {D}일" (그 주의 시작~끝 날짜), monthly: "{YYYY}년 {M}월"primary와 무관하게 항상 정확한 날짜를 담는다
 }
 
 /**
@@ -202,7 +202,7 @@ export function formatBossProfitPeriodLabel(
  * 그 기간에 잡았다 까지만 알 수 있고 **며칟날인지는 안 나온다**. 일간 해상도는 날짜들을 훑어
  * 미완료 → 완료 로 뒤집힌 지점을 찾아야 나오므로, 이 함수가 그 훑을 목록을 만든다.
  *
- * 주간은 리셋 목요일부터 이레, 월간은 1일부터 그 달 마지막 날까지다. **달을 넘는 주도 그냥 이어진다** —
+ * 주간은 리셋 목요일부터 이레, 월간은 1일부터 그 달 마지막 날까지다. **달을 넘는 주도 그냥 이어진다**.
  * `Date.UTC` 로 더하므로 월말 경계를 따로 다루지 않는다.
  */
 export function getPeriodDateKeys(cycle: BossCycle, periodKey: string): string[] {
@@ -223,7 +223,7 @@ export function getPeriodDateKeys(cycle: BossCycle, periodKey: string): string[]
 
 /**
  * 과거 기간 백필(스케줄러 API의 date 파라미터 조회) 시 사용할 조회 날짜(YYYY-MM-DD)를 계산한다.
- * 그 기간의 완료 현황이 가장 온전히 반영되는 시점 — 다음 리셋 직전(그 기간의 마지막 날). 을 쓴다.
+ * 그 기간의 완료 현황이 가장 온전히 반영되는 시점. 다음 리셋 직전(그 기간의 마지막 날). 을 쓴다.
  * weekly: periodKey(리셋 목요일) + 6일. monthly: periodKey가 속한 달의 마지막 날.
  */
 export function getBackfillQueryDate(cycle: BossCycle, periodKey: string): string {
@@ -239,7 +239,7 @@ export function getBackfillQueryDate(cycle: BossCycle, periodKey: string): strin
 }
 
 /**
- * now(KST) 기준으로 스케줄러 API가 실제로 조회 가능한 최소 날짜(YYYY-MM-DD)를 반환한다 —
+ * now(KST) 기준으로 스케줄러 API가 실제로 조회 가능한 최소 날짜(YYYY-MM-DD)를 반환한다.
  * ROLLING_QUERY_WINDOW_DAYS만큼 매일 앞으로 밀리는 하한선이다.
  */
 export function getMinQueryableDate(now: Date): string {
@@ -321,7 +321,7 @@ export type PeriodDataState =
   | 'failed'
 
 export interface PeriodDataStateInput {
-  /** 그 tab의 "지금" 기간인가 — 실시간 동기화가 원천이라 백필 조회 가능성을 보지 않는다. */
+  /** 그 tab의 "지금" 기간인가. 실시간 동기화가 원천이라 백필 조회 가능성을 보지 않는다. */
   isCurrentPeriod: boolean
   hasRecords: boolean
   /** boss_profit_period_checks에 확인 기록이 있는가 = **조회해서 확인했다**(조회 불가로 굳힌 것이 아니다). */

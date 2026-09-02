@@ -75,7 +75,7 @@ function findViolations(): Violation[] {
 }
 
 describe('컴포넌트 계층 의존 방향', () => {
-  it('의존은 아래로만 흐른다 — 상위 계층을 import 하지 않는다', () => {
+  it('의존은 아래로만 흐른다. 상위 계층을 import 하지 않는다', () => {
     const violations = findViolations().map(
       (v) => `${v.file}: ${v.from} → ${v.to} (${v.specifier})`,
     )

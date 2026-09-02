@@ -5,7 +5,7 @@
  * 그 형태에 이름만 붙인다. 형태가 실제 파일과 맞는지는 `data/__tests__/hunting-grounds.spec.ts`.
  */
 
-/** 지역이 요구하는 힘의 종류 — 아이콘도 이것으로 갈린다(`lib/force-icons.ts`). */
+/** 지역이 요구하는 힘의 종류. 아이콘도 이것으로 갈린다(`lib/force-icons.ts`). */
 export type ForceType = 'arcane' | 'authentic'
 
 export interface HuntingGround {
@@ -26,7 +26,7 @@ export interface HuntingRegion {
   /** `assets/maps/icons/` 의 기존 지역 슬러그와 **같은 글자**다. */
   readonly slug: string
   readonly name: string
-  /** 아케인 리버·그란디스 — 사용자가 나눈 묶음이다. */
+  /** 아케인 리버·그란디스. 사용자가 나눈 묶음이다. */
   readonly group: string
   readonly forceType: ForceType
   /** 지역이 덮는 레벨 범위. **캐릭터 레벨 ±20 과 겹치는지**를 이 둘로 잰다(결정 6). */

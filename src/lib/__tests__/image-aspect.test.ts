@@ -1,6 +1,6 @@
 // `한 축만 정하고 나머지는 그림이 정한다`의 계약.
 //
-// **이 테스트가 무엇을 못 하는지부터 적는다.** 렌더해서 **그림이 안 늘어났다** 를 볼 수는 없다 —
+// **이 테스트가 무엇을 못 하는지부터 적는다.** 렌더해서 **그림이 안 늘어났다** 를 볼 수는 없다.
 // jest 프리셋이 `Image` 를 `mockComponent` 로 통째로 갈아 끼워(`@react-native/jest-preset` 의
 // `jest/mocks/Image.js`) 실제 구현의 세 겹 스타일 병합이 아예 안 돈다. 이 병이 테스트 693개를
 // 초록으로 통과한 이유가 그것이다.
@@ -12,7 +12,7 @@ import { Image } from 'react-native'
 
 import { imageNaturalSize, naturalAspectStyle } from '../image-aspect'
 
-/** 실제 에셋 크기들 — 월드 엠블럼 46×50, 안내 이미지 746×274, 보스 초상 778×556. */
+/** 실제 에셋 크기들. 월드 엠블럼 46×50, 안내 이미지 746×274, 보스 초상 778×556. */
 function 고유크기(width: number | undefined, height: number | undefined): void {
   jest
     .spyOn(Image, 'resolveAssetSource')
@@ -46,7 +46,7 @@ describe('imageNaturalSize', () => {
   })
 })
 
-describe('naturalAspectStyle — 나머지 축은 그림이 정한다', () => {
+describe('naturalAspectStyle: 나머지 축은 그림이 정한다', () => {
   it('높이를 주면 폭이 비율로 따라온다 (웹 `h-[17px] w-auto object-contain`)', () => {
     고유크기(46, 50)
 
@@ -72,7 +72,7 @@ describe('naturalAspectStyle — 나머지 축은 그림이 정한다', () => {
   it.each([
     ['높이를 준 쪽', { height: 17 } as const, 'width'],
     ['폭을 준 쪽', { width: '100%' } as const, 'height'],
-  ])('%s 도 **두 축의 이름이 다 나온다** — 안 적은 축은 고유 크기가 살아남는다', (_label, given, 지운축) => {
+  ])('%s 도 **두 축의 이름이 다 나온다**. 안 적은 축은 고유 크기가 살아남는다', (_label, given, 지운축) => {
     고유크기(778, 556)
 
     const style = naturalAspectStyle(7 as never, given)
@@ -81,7 +81,7 @@ describe('naturalAspectStyle — 나머지 축은 그림이 정한다', () => {
     expect(style[지운축 as 'width' | 'height']).toBeUndefined()
   })
 
-  it('퍼센트 축도 그대로 통과한다 — 부모를 재지 않는다', () => {
+  it('퍼센트 축도 그대로 통과한다. 부모를 재지 않는다', () => {
     고유크기(778, 556)
 
     expect(naturalAspectStyle(7 as never, { width: '220%' })).toMatchObject({ width: '220%' })
@@ -89,7 +89,7 @@ describe('naturalAspectStyle — 나머지 축은 그림이 정한다', () => {
 
   // 고유 크기를 모르면 **소스에도 크기가 없다**(그것이 `null` 인 이유다). 샐 것이 없으므로
   // 없는 값을 지우겠다고 `undefined` 를 적지 않는다. 그러면 무엇을 막고 있는지가 안 읽힌다.
-  it('고유 크기를 모르면 준 축만 돌려준다 — 지울 것이 없다', () => {
+  it('고유 크기를 모르면 준 축만 돌려준다. 지울 것이 없다', () => {
     고유크기(undefined, undefined)
 
     const style = naturalAspectStyle(7 as never, { height: 17 })

@@ -15,12 +15,12 @@ describe('SYNC_TTL_MS', () => {
 })
 
 describe('isSyncFresh', () => {
-  it('추적 대상이 없으면 신선하다 — 조회할 것이 없다', () => {
+  it('추적 대상이 없으면 신선하다. 조회할 것이 없다', () => {
     expect(isSyncFresh([], 0, NOW)).toBe(true)
   })
 
   it('캐시가 없는 캐릭터가 하나라도 있으면 만료다', () => {
-    // 추적 3명인데 캐시는 2명분 — 새로 추가된 캐릭터가 조회 없이 빈 채로 남으면 안 된다.
+    // 추적 3명인데 캐시는 2명분. 새로 추가된 캐릭터가 조회 없이 빈 채로 남으면 안 된다.
     expect(isSyncFresh([agoIso(MINUTE), agoIso(MINUTE)], 3, NOW)).toBe(false)
   })
 
@@ -30,7 +30,7 @@ describe('isSyncFresh', () => {
     )
   })
 
-  it('하나만 TTL 밖이면 만료다 — 판정은 가장 오래된 값 기준이다', () => {
+  it('하나만 TTL 밖이면 만료다. 판정은 가장 오래된 값 기준이다', () => {
     expect(isSyncFresh([agoIso(MINUTE), agoIso(11 * MINUTE), agoIso(MINUTE)], 3, NOW)).toBe(false)
   })
 
@@ -39,7 +39,7 @@ describe('isSyncFresh', () => {
     expect(isSyncFresh([agoIso(SYNC_TTL_MS - 1)], 1, NOW)).toBe(true)
   })
 
-  it('미래 시각은 만료다 — 신선으로 읽으면 영영 조회하지 않는다', () => {
+  it('미래 시각은 만료다. 신선으로 읽으면 영영 조회하지 않는다', () => {
     expect(isSyncFresh([new Date(NOW.getTime() + 60 * MINUTE).toISOString()], 1, NOW)).toBe(false)
   })
 

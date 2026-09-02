@@ -1,5 +1,5 @@
 /**
- * 네이티브 포트 — `native/*` 가 플랫폼 플러그인 대신 이 인터페이스에만 의존한다.
+ * 네이티브 포트. `native/*` 가 플랫폼 플러그인 대신 이 인터페이스에만 의존한다.
  *
  *  가 그은 경계는 "`features/*` 가 네이티브 API를 직접 만지지 않는다"였고 그
  * 규칙은 지켜져 왔다. 다만 어댑터 자신이 Capacitor 플러그인을 직접 import 하고 있어서 **어댑터를
@@ -45,7 +45,7 @@ export interface ThemeAppearancePort {
 /**
  * 전면광고.
  *
- * 광고 단위 ID·테스트 광고 판정은 `native/ads.ts` 의 순수 함수가 갖고 있고 어댑터가 그것을 쓴다 —
+ * 광고 단위 ID·테스트 광고 판정은 `native/ads.ts` 의 순수 함수가 갖고 있고 어댑터가 그것을 쓴다.
  * 이 프로젝트에서 가장 비싼 실수(실 ID로 자기 광고 클릭)를 막는 것이 그 게이트뿐이라 플랫폼
  * 구현마다 다시 쓰이면 안 된다.
  */
@@ -135,7 +135,7 @@ export interface BackGesturePort {
 export type NetworkType = 'wifi' | 'cellular' | 'none' | 'unknown'
 
 /**
- * 확인 한 번의 결과 — **프로토콜과 무관한 **앱이 무엇을 할 수 있나** 의 분류**다.
+ * 확인 한 번의 결과. **프로토콜과 무관한 **앱이 무엇을 할 수 있나** 의 분류**다.
  *
  * @capgo 와 `expo-updates` 는 매니페스트 형식도 다운로드 단위도 다르지만 이 다섯 갈래는 같다.
  * 그래서 이 타입은 포트와 함께 남고, 두 어댑터가 각자의 프로토콜을 여기로 번역한다.
@@ -148,7 +148,7 @@ export type LiveUpdateCheckResult =
    * 새 버전은 있는데 **라이브로 못 받는다**. 네이티브가 낮아 스토어를 거쳐야 한다.
    *
    * `expo-updates` 에서는 프로토콜이 이것을 **204(업데이트 없음)로 삼킨다.** 그래서 RN 어댑터는
-   * 확인이 최신 으로 떨어졌을 때 한 번 더 물어 이 갈래를 되살린다 —
+   * 확인이 최신 으로 떨어졌을 때 한 번 더 물어 이 갈래를 되살린다.
    * 삼켜진 채로 두면 사용자에게 *"최신 버전입니다"* 라는 **거짓**이 보인다.
    */
   /**
@@ -231,7 +231,7 @@ function createPortSlot<T>(name: string): {
     get: () => {
       if (port === null) {
         throw new Error(
-          `${name}가 주입되지 않았습니다 — 네이티브 API를 쓰기 전에 set${name}()를 부르세요.`,
+          `${name}가 주입되지 않았습니다. 네이티브 API를 쓰기 전에 set${name}()를 부르세요.`,
         )
       }
       return port
@@ -283,7 +283,7 @@ export const getBackGesturePort = backGestureSlot.get
 export const setLiveUpdatePort = liveUpdateSlot.set
 export const getLiveUpdatePort = liveUpdateSlot.get
 
-/** 테스트 전용 — 주입된 포트를 전부 비운다(`storage/ports.ts` 의 `__resetStoragePortsForTest` 관례). */
+/** 테스트 전용. 주입된 포트를 전부 비운다(`storage/ports.ts` 의 `__resetStoragePortsForTest` 관례). */
 export function __resetNativePortsForTest(): void {
   for (const slot of [
     colorSchemeSlot,

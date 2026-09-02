@@ -1,6 +1,6 @@
 // 글자 배수 클램프가 **빠짐없이 걸려 있는가**.
 //
-// ## 왜 정책 테스트인가 — 회귀가 **깨지는** 모양이 아니라 **빠지는** 모양으로 온다
+// ## 왜 정책 테스트인가. 회귀가 **깨지는** 모양이 아니라 **빠지는** 모양으로 온다
 //
 // 클램프는 프롭 둘(`allowFontScaling`·`maxFontSizeMultiplier`)로 걸리고, 그 프롭은 **글자를 그리는
 // 자리마다** 있어야 한다. 한 자리가 `react-native` 에서 `Text` 를 직접 가져오면 그 자리만 조용히
@@ -23,7 +23,7 @@ const ATOMS = [
 ]
 
 /**
- * 칸에 묶여 글자를 못 키우는 자리 — **여기의 `<Text>` 는 전부 `fixed` 다.**
+ * 칸에 묶여 글자를 못 키우는 자리. **여기의 `<Text>` 는 전부 `fixed` 다.**
  *
  * 넷뿐인 것이 계약이다. 새 자리를 더할 때는 ADR 의 기준(상자가 글자를 따라 커지는가)을 통과해야
  * 하고, 그 판단이 이 배열에 남는다.
@@ -153,7 +153,7 @@ function localImportTargets(file: string): string[] {
 }
 
 /**
- * 글자를 그리는 자체 컴포넌트 파일 — 글자 atom 을 import 한다가 곧 그 정의다.
+ * 글자를 그리는 자체 컴포넌트 파일. 글자 atom 을 import 한다가 곧 그 정의다.
  *
  * 문자열로 경로를 찾지 않고 `localImportTargets` 로 **푼 결과**를 본다. 깊은 경로와 배럴 두 모양이
  * 섞여 있어(`'../Text/Text'` · `'../../atoms'`) 문자열로는 한쪽만 잡힌다.
@@ -164,8 +164,8 @@ function textRenderingComponentFiles(): string[] {
 )
 }
 
-describe(' — 글자는 atom 한 곳에서만 나온다', () => {
- it('훑을 파일이 있다 — 스캐너가 빈손이면 아래 단언이 전부 무의미하다', () => {
+describe('글자는 atom 한 곳에서만 나온다', () => {
+ it('훑을 파일이 있다. 스캐너가 빈손이면 아래 단언이 전부 무의미하다', () => {
  expect(FILES.length).toBeGreaterThan(100)
  })
 
@@ -181,7 +181,7 @@ describe(' — 글자는 atom 한 곳에서만 나온다', () => {
  expect(offenders).toEqual([])
  })
 
- it('atom 은 원본을 가져온다 — 예외가 실제로 그 자리에 있다', () => {
+ it('atom 은 원본을 가져온다. 예외가 실제로 그 자리에 있다', () => {
  const imported = ATOMS.flatMap((atom) => reactNativeImportNames(readFileSync(atom, 'utf8')))
 
  expect(imported).toEqual(expect.arrayContaining(['Text', 'TextInput']))
@@ -210,7 +210,7 @@ describe(' — 글자는 atom 한 곳에서만 나온다', () => {
  })
 })
 
-describe(' — 칸에 묶인 글자는 `fixed` 다', () => {
+describe('칸에 묶인 글자는 `fixed` 다', () => {
  it('고정칸 넷의 `<Text>` 는 하나도 빠짐없이 `fixed` 를 단다', () => {
  const missing = fixedBoxFiles().flatMap((file) =>
  openingTextTags(readFileSync(file, 'utf8'))
@@ -221,7 +221,7 @@ describe(' — 칸에 묶인 글자는 `fixed` 다', () => {
  expect(missing).toEqual([])
  })
 
- it('고정칸이 쓰는 글자 컴포넌트도 고정칸이다 — 한 겹 아래에서 새는 자리를 막는다', () => {
+ it('고정칸이 쓰는 글자 컴포넌트도 고정칸이다. 한 겹 아래에서 새는 자리를 막는다', () => {
  // `<Text fixed>` 만 검사하면 **자식 컴포넌트가 그리는 글자**가 그대로 샌다. 실제로 그렇게
  // 샜다: 76px 타일 안의 난이도 배지가 자기 `<Text>` 를 갖고 있어 배수를 그대로 받았다.
  // 그 컴포넌트들은 `fixed` 프롭을 받는 대신 **자기 자신이 고정칸**이어야 한다(상자가 `h-5` 처럼
@@ -238,11 +238,11 @@ describe(' — 칸에 묶인 글자는 `fixed` 다', () => {
  expect([...new Set(leaking)]).toEqual([])
  })
 
- it('글자 컴포넌트를 실제로 찾아냈다 — 위 단언이 빈 표를 검사하는 것이 아니다', () => {
+ it('글자 컴포넌트를 실제로 찾아냈다. 위 단언이 빈 표를 검사하는 것이 아니다', () => {
  expect(textRenderingComponentFiles().length).toBeGreaterThan(5)
  })
 
- it('위젯에서 실제로 글자를 그리고 있다 — 위 단언이 빈 목록을 검사하는 것이 아니다', () => {
+ it('위젯에서 실제로 글자를 그리고 있다. 위 단언이 빈 목록을 검사하는 것이 아니다', () => {
  const tags = fixedBoxFiles().flatMap((file) =>
  openingTextTags(readFileSync(file, 'utf8')),
 )

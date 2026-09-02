@@ -1,4 +1,4 @@
-// 배지 하나가 열세 가지 모양을 낸다. 여기서 지키는 것은 **풀린 값**이다 —
+// 배지 하나가 열세 가지 모양을 낸다. 여기서 지키는 것은 **풀린 값**이다.
 // NativeWind 가 렌더 시점에 `className` 을 style 로 바꿔 먹어 트리에 문자열이 안 남는다.
 //
 // 토큰 색 기대값은 손으로 적지 않고 `job-themes.json` 에서 읽는다. 난이도 색은 테마
@@ -15,7 +15,7 @@ function boxOf(label: AtomElement): AtomElement {
   return parent
 }
 
-describe('평면 variant — 색만 갈리고 상자는 같다', () => {
+describe('평면 variant: 색만 갈리고 상자는 같다', () => {
   it('primary 는 `*-tint` 배경 위 `*-ink` 글자', async () => {
     const { getByText } = await renderAtom(<Badge variant="primary">3</Badge>)
 
@@ -97,7 +97,7 @@ describe('평면 variant — 색만 갈리고 상자는 같다', () => {
   })
 })
 
-describe('난이도 variant — 그라디언트·테두리·그림자', () => {
+describe('난이도 variant: 그라디언트·테두리·그림자', () => {
   it('난이도마다 다른 세로 그라디언트를 깐다', async () => {
     const { getByText } = await renderAtom(<Badge variant="익스트림">익스트림</Badge>)
 
@@ -182,7 +182,7 @@ describe('size 둘', () => {
   })
 
   // 난이도만 글자가 작다(사용자 지정 2026-09-01). 이름이 최대 넉 자라 12px 로는 배지가 넓어진다.
-  it('난이도는 글자가 10px 다 — 크기의 기본값을 variant 가 덮는다', async () => {
+  it('난이도는 글자가 10px 다. 크기의 기본값을 variant 가 덮는다', async () => {
     const 평면 = await renderAtom(<Badge variant="muted">진행 불가</Badge>)
     const 난이도 = await renderAtom(<Badge variant="하드">하드</Badge>)
 
@@ -194,7 +194,7 @@ describe('size 둘', () => {
     expect(flattenStyle(작게.getByText('하드').props.style).fontSize).toBe(9)
   })
 
-  it('mini 는 높이와 글자만 줄인다 — 색은 한 값도 안 갈린다', async () => {
+  it('mini 는 높이와 글자만 줄인다. 색은 한 값도 안 갈린다', async () => {
     const 기본 = await renderAtom(<Badge variant="카오스">카오스</Badge>)
     const 작게 = await renderAtom(<Badge variant="카오스" size="mini">카오스</Badge>)
 
@@ -293,7 +293,7 @@ describe('프롭', () => {
     expect(flattenStyle(굵게.getByText('마감').props.style).fontWeight).toBe('700')
   })
 
-  it('className 은 코어 뒤에 붙는다 — 레이아웃은 호출부가 소유한다', async () => {
+  it('className 은 코어 뒤에 붙는다. 레이아웃은 호출부가 소유한다', async () => {
     const { getByText } = await renderAtom(
       <Badge variant="primary" className="ml-auto">12</Badge>,
     )

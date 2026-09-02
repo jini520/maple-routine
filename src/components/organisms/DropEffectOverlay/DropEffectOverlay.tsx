@@ -9,7 +9,7 @@
 //  ⓐ ~~**프레임 에셋이 없다.**~~ → 가 채웠다. `DROP_EFFECT_FRAMES` 는 이제 네 단계가
 //      전부 차 있다(웹과 같은 목록·같은 순서). 남은 것은 ⓑ 하나다.
 //   ⓑ **재생 엔진이 없다.** 웹은 `requestAnimationFrame` 루프가 단계별 고정 fps
-//  (이 1.5배로 올린 값 — screen 22.5 / pre 21 / loop 17.25 / end 18)로 `img.src` 를
+//  (이 1.5배로 올린 값. screen 22.5 / pre 21 / loop 17.25 / end 18)로 `img.src` 를
 //  갈아끼우고, 프레임마다 의 origin 테이블로 좌표를 함께 옮긴다. 그 엔진은 DOM
 //      (`new Image()` 프리로드 · `el.complete` · `el.style.transform`) 위에 서 있어 RN 에서는
 //      다시 써야 한다.
@@ -54,7 +54,7 @@
 //    다만 **어느 요소에 거는지가 값보다 중요하다**. 처음엔 프레임을 감싸는 안쪽 View 에 걸었는데
 //    검은 사각형이 그대로 보였다(2026-08-13 실측: 프레임 상자 안이 순검정 `rgb(0,0,0)`, 바깥은
 //    그라디언트). 앵커 View 의 `zIndex` 가 **스태킹 컨텍스트**를 만들어 블렌드가 그 안에 갇히고,
-//    빈 배경과 합성되니 검정이 검정으로 남은 것이다. 그래서 블렌드를 **앵커 자신**에 건다 —
+//    빈 배경과 합성되니 검정이 검정으로 남은 것이다. 그래서 블렌드를 **앵커 자신**에 건다.
 //    그러면 합성 상대가 오버레이의 방사 그라디언트가 된다.
 // ④ 오버레이의 색은 **테마를 따르지 않는다**(적용 범위 밖). 스프라이트가 어두운
 //    바탕을 전제로 그려져서, 밝은 테마에서 표면색으로 바꾸면 연출 자체가 사라진다. 웹과 같은
@@ -64,9 +64,9 @@
 //    본 프레임으로 바꾸면 **그 한 장이 통째로 빈다**(디코드가 비동기라 이번 합성에 못 댄다).
 //    프레임마다 한 번씩이므로 **첫 재생만** 깜빡이는데, 사용자가 연출을 보는 것이 바로 그 한 번이다.
 //
-//    2026-08-26 갤럭시 Z Flip3(릴리스 빌드) 실측 — 연출이 뜬 1.86초부터 **3.95초까지 49장이
+//    2026-08-26 갤럭시 Z Flip3(릴리스 빌드) 실측. 연출이 뜬 1.86초부터 **3.95초까지 49장이
 //    빈 프레임**이었고, 빔의 간격은 정확히 단계별 fps 주기였다(버스트 44ms · 루프 58ms).
-//    3.95초는 **loop 24장을 처음 한 바퀴 다 돈 시점**이고, 그 뒤 6초 동안은 한 장도 안 빈다 —
+//    3.95초는 **loop 24장을 처음 한 바퀴 다 돈 시점**이고, 그 뒤 6초 동안은 한 장도 안 빈다.
 //    즉 **처음 그리는 프레임만** 빈다는 것이 그대로 드러난다. 디버그 빌드에서는 재현되지 않으니
 //    (이미지 경로가 다르다) **릴리스로 재야 한다.**
 //
@@ -103,7 +103,7 @@ const ITEM_SIZE_PX = 72
 /** DropEff 기둥만 아이템과 무관하게 세로 이동(양수 = 아래로). */
 const DROP_OFFSET_Y_PX = 8
 
-/** 배경 방사 그라디언트 — 테마 밖 고정색(파일 머리 ④). */
+/** 배경 방사 그라디언트. 테마 밖 고정색(파일 머리 ④). */
 const BACKDROP_INNER = '#1b0f29'
 const BACKDROP_OUTER = '#05010a'
 /** CSS `farthest-corner` 의 근사(파일 머리 ②). */
@@ -116,7 +116,7 @@ interface DropEffectOverlayProps {
 }
 
 /**
- * 프레임 비트맵 크기 — 번들 에셋은 스스로 안다(이후). 모르면 `null` 이고, 그때는
+ * 프레임 비트맵 크기. 번들 에셋은 스스로 안다(이후). 모르면 `null` 이고, 그때는
  * 아예 안 그린다(`frame-layout.ts`. 크기 없이 그리면 프레임마다 최대 26px 튄다).
  */
 function bitmapSizeOf(source: number | { uri?: string }): FrameBitmapSize | null {
@@ -127,7 +127,7 @@ function bitmapSizeOf(source: number | { uri?: string }): FrameBitmapSize | null
 }
 
 /**
- * 스프라이트 한 층 — **전 프레임을 마운트해 두고 `opacity` 로 한 장만 켠다**(파일 머리 ⑤).
+ * 스프라이트 한 층. **전 프레임을 마운트해 두고 `opacity` 로 한 장만 켠다**(파일 머리 ⑤).
  *
  * `source` 를 갈아끼우지 않는 것이 요점이다. 붙어 있는 `<Image>` 는 자기 비트맵을 쥐고 있어
  * 캐시에서 밀려나도 그릴 수 있다. 갈아끼우는 구조에서는 그 순간 캐시를 다시 뒤지고, 없으면
@@ -226,7 +226,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
     onCloseRef.current = props.onClose
   }, [props.onClose])
 
-  // 재생 루프. **`requestAnimationFrame` 인 이유는 `drop-effect-player.ts` 머리에 적었다** —
+  // 재생 루프. **`requestAnimationFrame` 인 이유는 `drop-effect-player.ts` 머리에 적었다**.
   // 스프라이트 재생은 **몇 번째 그림인가** 를 정하는 일이라 JS 스레드를 벗어날 수 없다.
   //
   // **예열이 끝나기 전에는 돌지 않는다**(파일 머리 ⑤). 디코드가 안 끝난 프레임을 넘기면 그 한 장이
@@ -306,9 +306,9 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
         </Svg>
 
 
-        {/* DropEff 기둥 — 이 View 의 좌상단이 **기둥의 지면 앵커**이고, 프레임은 자기 origin 이 그
+        {/* DropEff 기둥. 이 View 의 좌상단이 **기둥의 지면 앵커**이고, 프레임은 자기 origin 이 그
             점에 오도록 음수 좌표로 놓인다(`frame-layout.ts`). 검은 배경 위 가산 합성
-            스프라이트라 `mixBlendMode: 'screen'` 이 필수다 — 없으면 검은 사각형이 그대로 보인다.
+            스프라이트라 `mixBlendMode: 'screen'` 이 필수다. 없으면 검은 사각형이 그대로 보인다.
             **블렌드는 이 앵커가 진다**(안쪽 View 에 걸면 `zIndex` 가 만든 스태킹 컨텍스트에 갇힌다,
             파일 머리 ③). 웹에서는 `<img>` 하나가 지던 자리다. */}
         <View
@@ -330,7 +330,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
         </View>
 
         {/* 중앙 아이템(투명 PNG). 이후 매핑이 있는 아이템은 여기까지 오지만, 그림을
-            앉히는 `<Image>` 는 재생 엔진(파일 머리 ⓑ)과 함께 온다 — 팝인 트리거가 8프레임 시점이라
+            앉히는 `<Image>` 는 재생 엔진(파일 머리 ⓑ)과 함께 온다. 팝인 트리거가 8프레임 시점이라
             엔진 없이는 켤 것이 없다. 매핑이 없는 아이템은 웹과 같은 분기로 그대로 비어 있다. */}
         {itemUrl !== null && state.itemVisible && (
           <View
@@ -367,7 +367,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
           </View>
         )}
 
-        {/* ScreenEff — 전 프레임 동일 배율 + 화면 중앙. 기둥과 같은 이유로
+        {/* ScreenEff. 전 프레임 동일 배율 + 화면 중앙. 기둥과 같은 이유로
             가산 합성이다. */}
         <View
           testID="drop-effect-screen"

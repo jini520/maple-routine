@@ -31,7 +31,7 @@ import { useScreenNavigation } from '../../use-screen-navigation'
 import { TodayScreen } from '../TodayScreen'
 
 // **훅만 갈아끼우고 나머지는 실물을 남긴다.** 스토어 모듈은 훅 말고도 순수 헬퍼를 내보내는데
-// (`dropRowKey`·`partySizeKey`) 그것을 이 화면이 아니라 **뷰모델이 부르는 계산기**가 쓴다 —
+// (`dropRowKey`·`partySizeKey`) 그것을 이 화면이 아니라 **뷰모델이 부르는 계산기**가 쓴다.
 // 통째로 목으로 덮으면 그 헬퍼가 `undefined` 가 되어 조립이 렌더 도중 죽는다(실제로 그렇게 갔다).
 jest.mock('../../../features/content-scheduler/store', () => ({
   ...jest.requireActual('../../../features/content-scheduler/store'),
@@ -69,7 +69,7 @@ const mockedGetCachedCharacterBasic = jest.mocked(getCachedCharacterBasic)
 const mockedGetRepresentative = jest.mocked(getRepresentativeCharacter)
 const mockedNavigation = jest.mocked(useScreenNavigation)
 
-// 2026-08-17(월) 12:00 KST — `view-model.test.ts` 와 같은 시각이라 주간 기간 키가 2026-08-13 이다.
+// 2026-08-17(월) 12:00 KST. `view-model.test.ts` 와 같은 시각이라 주간 기간 키가 2026-08-13 이다.
 // 시각을 고정하지 않으면 초기화 카운트다운이 회차마다 달라 스냅샷이 못 선다.
 const NOW = new Date('2026-08-17T03:00:00.000Z')
 const WEEK_KEY = '2026-08-13'
@@ -301,7 +301,7 @@ async function press(element: AtomElement): Promise<void> {
   })
 }
 
-/** 스크롤 셸에 붙은 당겨서 새로고침 컨트롤 — 스케줄러 테스트와 같은 자리다. */
+/** 스크롤 셸에 붙은 당겨서 새로고침 컨트롤. 스케줄러 테스트와 같은 자리다. */
 function refreshControl(): { refreshing: boolean; onRefresh: () => void } {
   return screen.getByTestId('screen-scroll').props.refreshControl.props
 }
@@ -348,7 +348,7 @@ beforeEach(() => {
   setStores()
 })
 
-describe('TodayScreen — 진입 조회', () => {
+describe('TodayScreen: 진입 조회', () => {
   //  **today 는 그 순차 밖의 **네 번째 트리거****. 예열이 셋을 돌고 이 화면이
   // 하나를 더 낸다. 스케줄러 화면 하나와 같은 횟수다.
   it('진입하면 동기화 트리거를 정확히 한 번 낸다', async () => {
@@ -360,7 +360,7 @@ describe('TodayScreen — 진입 조회', () => {
     expect(mocks.profit.loadTrackedOcids).not.toHaveBeenCalled()
   })
 
-  // 회귀 가드 — 게이트는 `loadTrackedOcids` **안**에 있다. 진입이 `refresh` 를
+  // 회귀 가드. 게이트는 `loadTrackedOcids` **안**에 있다. 진입이 `refresh` 를
   // 부르는 순간 10분 TTL 이 통째로 사라지고, 그 손실은 화면에서 아무 표시도 남기지 않는다.
   it('진입은 게이트를 우회하는 refresh 를 부르지 않는다', async () => {
     setStores(캐릭터_넷)
@@ -389,13 +389,13 @@ describe('TodayScreen — 진입 조회', () => {
 // 보스 수익 스토어의 `rows` 는 **사용자가 보고 있는 (탭, 기간)** 이고 이 화면이 그리는 것은 **이번
 // 주** 다. 사용자 보고(2026-08-19). 그 화면을 월간 탭으로 옮기기만 해도 위젯 3·5 가
 // 함께 비었다. 이 화면은 그 네비게이션을 **모르는 채로** 서야 한다.
-describe('TodayScreen — 수익 위젯이 읽는 값', () => {
+describe('TodayScreen: 수익 위젯이 읽는 값', () => {
   it('보스 수익 화면이 월간 탭을 보고 있어도 이번 주 수익을 그린다', async () => {
     setStores({
       ...캐릭터_넷,
       profit: {
         ...캐릭터_넷.profit,
-        // 월간 탭을 보고 있는 상태 — `rows` 에는 이번 주 행이 한 줄도 없다(`filterRowsForTab`).
+        // 월간 탭을 보고 있는 상태. `rows` 에는 이번 주 행이 한 줄도 없다(`filterRowsForTab`).
         tab: 'monthly',
         rows: [],
         dropsByRowKey: {} } })
@@ -403,14 +403,14 @@ describe('TodayScreen — 수익 위젯이 읽는 값', () => {
     await renderScreen()
 
     expect(screen.queryByText('아직 이번 주 기록이 없습니다')).toBeNull()
-    // 1 + 2 + 3 + 4 백만 — 화면의 접기 규칙은 `formatMesoShort` 하나가 판다(총액과 결정석 분해가
+    // 1 + 2 + 3 + 4 백만. 화면의 접기 규칙은 `formatMesoShort` 하나가 판다(총액과 결정석 분해가
     // 같은 값이라 자리는 여럿이다).
     expect(screen.getAllByText(formatMesoShort(10_000_000)).length).toBeGreaterThan(0)
   })
 })
 
-describe('TodayScreen — 수동 멤버십을 어느 스토어에서 읽는가', () => {
-  it('컨텐츠 멤버십은 컨텐츠 스토어에서 읽는다 — 보스 스토어의 사본이 아니다', async () => {
+describe('TodayScreen: 수동 멤버십을 어느 스토어에서 읽는가', () => {
+  it('컨텐츠 멤버십은 컨텐츠 스토어에서 읽는다. 보스 스토어의 사본이 아니다', async () => {
     useTrackingModeStore.setState({ mode: 'manual' })
     setStores({
       content: {
@@ -428,7 +428,7 @@ describe('TodayScreen — 수동 멤버십을 어느 스토어에서 읽는가',
     expect(screen.queryAllByTestId('schedule-stats').length).toBeGreaterThan(0)
   })
 
-  it('보스 멤버십은 보스 스토어에서 읽는다 — 컨텐츠 스토어의 사본이 아니다', async () => {
+  it('보스 멤버십은 보스 스토어에서 읽는다. 컨텐츠 스토어의 사본이 아니다', async () => {
     useTrackingModeStore.setState({ mode: 'manual' })
     setStores({
       content: { trackedOcids: ['ocid-1'], characters: [contentView('ocid-1', 1)] },
@@ -451,7 +451,7 @@ describe('TodayScreen — 수동 멤버십을 어느 스토어에서 읽는가',
   })
 })
 
-describe('TodayScreen — 명시적 재조회', () => {
+describe('TodayScreen: 명시적 재조회', () => {
   // 당김과 헤더 버튼은 **같은 재조회**다.
   it('당김이 헤더 버튼과 같은 재조회를 부른다', async () => {
     setStores(캐릭터_넷)
@@ -472,7 +472,7 @@ describe('TodayScreen — 명시적 재조회', () => {
   })
 
   // 명시적 재조회는 TTL 을 무시하고 **이 화면이 그리는 스토어 셋을 모두** 읽는다
-  // — 하나만 읽으면 당겨도 보스·수익 위젯이 안 바뀐다. 셋이 동시에 나가도 `syncSchedules` 의 단일
+  // 하나만 읽으면 당겨도 보스·수익 위젯이 안 바뀐다. 셋이 동시에 나가도 `syncSchedules` 의 단일
   // 비행이 한 회차로 합친다.
   it('재조회는 화면이 그리는 스토어 셋을 모두 읽는다', async () => {
     setStores(캐릭터_넷)
@@ -495,13 +495,13 @@ describe('TodayScreen — 명시적 재조회', () => {
     expect(refreshControl()).toBeDefined()
   })
 
-  // ★ 회귀 가드 — **조회 중 과 당겼다 는 다른 사실이다**.
+  // ★ 회귀 가드. **조회 중 과 당겼다 는 다른 사실이다**.
   //
   // 종전에는 `refreshing = status === 'loading'` 이라, 화면 마운트 하이드레이션만으로 인디케이터가
   // 프로그램적으로 열렸다. 사용자 보고(2026-08-22) *"페이지 이동 시 새로고침 인디케이터가 저절로
   // 돌고 상단이 빈 채로 멈춘다"* 가 그 증상이다. **조회 중...** 은 그대로 뜬다. 그쪽이 조회를
   // 말하는 자리다.
-  it('조회 중이어도 인디케이터는 안 돈다 — "조회 중..." 만 보여준다', async () => {
+  it('조회 중이어도 인디케이터는 안 돈다. "조회 중..." 만 보여준다', async () => {
     setStores({ ...캐릭터_넷, boss: { ...캐릭터_넷.boss, status: 'loading' } })
 
     await renderScreen()
@@ -521,7 +521,7 @@ describe('TodayScreen — 명시적 재조회', () => {
   })
 })
 
-describe('TodayScreen — 격자', () => {
+describe('TodayScreen: 격자', () => {
   // 데이터가 없다고 타일을 빼지 않는다. 콜드 스타트(스토어 전부 빈 값)에서도
   // 여덟이 서고, 각자 자기 타일 안에서 빈 상태를 말한다.
   it('스토어가 비어 있어도 위젯 여덟이 전부 선다', async () => {

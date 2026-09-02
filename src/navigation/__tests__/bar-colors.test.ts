@@ -20,7 +20,7 @@ function contrast(a: string, b: string): number {
   return (high + 0.05) / (low + 0.05)
 }
 
-/** 두 색이 다른 색으로 보이는가 — 명도만이 아니라 채도·색상까지 함께 본다. */
+/** 두 색이 다른 색으로 보이는가. 명도만이 아니라 채도·색상까지 함께 본다. */
 function oklabDistance(a: string, b: string): number {
   const point = (hex: string): readonly [number, number, number] => {
     const { l, c, h } = hexToOklch(hex)
@@ -33,24 +33,24 @@ function oklabDistance(a: string, b: string): number {
 }
 
 describe('떠 있는 바의 색', () => {
-  it('테마가 하나 이상 등록돼 있다 — 아래 검사가 공회전하지 않는다', () => {
+  it('테마가 하나 이상 등록돼 있다. 아래 검사가 공회전하지 않는다', () => {
     expect(THEMES.length).toBeGreaterThan(0)
   })
 
   // **페이지와 바를 가르는 것은 색이 아니라 테두리다.** 한때 바탕을 어둡게 밀어 갈랐는데 그러면
   // 그 위 글자가 안 읽힌다(사용자 판정). 분리는 이 선이 지고, 바탕은 밝은 쪽에 남는다.
-  it.each(THEMES)('%s — 테두리가 페이지 배경과 갈린다', (_name, theme) => {
+  it.each(THEMES)('%s: 테두리가 페이지 배경과 갈린다', (_name, theme) => {
     expect(contrast(resolveBarColors(theme).edge, theme.bg)).toBeGreaterThan(1.3)
   })
 
-  it.each(THEMES)('%s — 바가 그 모드에서 가장 밝은 표면이다', (_name, theme) => {
+  it.each(THEMES)('%s: 바가 그 모드에서 가장 밝은 표면이다', (_name, theme) => {
     const { bar } = resolveBarColors(theme)
 
     expect(bar).toBe(theme.mode === 'dark' ? theme.surface2 : theme.surface)
     expect(luminance(bar)).toBeGreaterThan(luminance(theme.mode === 'dark' ? theme.surface : theme.surface2))
   })
 
-  it.each(THEMES)('%s — 활성 알약이 바와 갈린다', (_name, theme) => {
+  it.each(THEMES)('%s: 활성 알약이 바와 갈린다', (_name, theme) => {
     const { bar, pill } = resolveBarColors(theme)
 
     expect(contrast(pill, bar)).toBeGreaterThan(theme.mode === 'dark' ? 1.2 : 1.03)
@@ -65,13 +65,13 @@ describe('떠 있는 바의 색', () => {
   //
   // 지키는 것은 **어떤 색인가** 가 아니라 **방향**이다. 채도가 없고(강조는 글리프가 진다, 정정 1),
   // 유리 tint 와 같은 쪽(`text` 쪽 = 바보다 어둡다)으로 간다.
-  it.each(THEMES)('%s — 라이트 폴백 알약은 무채색이다', (_name, theme) => {
+  it.each(THEMES)('%s: 라이트 폴백 알약은 무채색이다', (_name, theme) => {
     if (theme.mode !== 'light') return
 
     expect(hexToOklch(resolveBarColors(theme).pill).c).toBeLessThan(0.005)
   })
 
-  it.each(THEMES)('%s — 라이트 폴백 알약이 유리 tint 와 같은 방향이다', (_name, theme) => {
+  it.each(THEMES)('%s: 라이트 폴백 알약이 유리 tint 와 같은 방향이다', (_name, theme) => {
     if (theme.mode !== 'light') return
     const { pill, bar } = resolveBarColors(theme)
 
@@ -82,11 +82,11 @@ describe('떠 있는 바의 색', () => {
   })
 
   // ── 글자 ──────────────────────────────────────────────────────────────────────
-  // **강조색은 테마의 메인 컬러다** (사용자 판정 — *"active 탭의 컬러가 왜
+  // **강조색은 테마의 메인 컬러다** (사용자 판정. *"active 탭의 컬러가 왜
   // 저래? 테마의 메인컬러를 넣어."*). 예전에는 알약 위 대비 4.5 를 맞추려고 `text` 쪽으로 섞었는데,
   // 그 방향은 채도를 같이 빼앗아 머쉬맘의 주황이 갈색이 됐다. 지금 지키는 것은 대비가 아니라
   // **그 색이 그 테마의 색인가** 다.
-  it.each(THEMES)('%s — 라이트는 메인 컬러를 그대로 쓴다', (_name, theme) => {
+  it.each(THEMES)('%s: 라이트는 메인 컬러를 그대로 쓴다', (_name, theme) => {
     if (theme.mode !== 'light') return
 
     expect(resolveBarColors(theme).accent).toBe(theme.primaryInk)
@@ -95,11 +95,11 @@ describe('떠 있는 바의 색', () => {
   // 다크는 원색이 알약보다 어두워 **활성이 비활성보다 흐려진다**(레테 실측 L0.62 vs muted L0.73).
   // 그때만 명도를 올리는데 **색상도 채도도 건드리지 않는다**. 섞어서 미는 것과의 결정적 차이다.
   //
-  // **채도가 상한이고 명도가 그 아래에서 움직인다**(사용자 판정 — *"테마의
+  // **채도가 상한이고 명도가 그 아래에서 움직인다**(사용자 판정. *"테마의
   // 메인 컬러와 다르게 좀 칙칙"*). 목표 명도가 sRGB 밖이면 가뭄 매핑이 채도를 깎는데(검은마법사
   // C0.219 → 0.131 · 60%), 그것은 정정 23 이 버린 **`text` 쪽으로 섞기** 와 같은 것을 빼앗는
   // 일이었다. 그래서 목표까지 올리되 **원 채도를 못 지키는 지점에서 멈춘다.**
-  it.each(THEMES)('%s — 다크는 색상·채도를 유지한 채 명도만 올린다', (_name, theme) => {
+  it.each(THEMES)('%s: 다크는 색상·채도를 유지한 채 명도만 올린다', (_name, theme) => {
     if (theme.mode !== 'dark') return
 
     const [lifted, origin] = [
@@ -127,18 +127,18 @@ describe('떠 있는 바의 색', () => {
     )
   })
 
-  it.each(THEMES)('%s — 비활성 라벨이 바 위에서 읽힌다', (_name, theme) => {
+  it.each(THEMES)('%s: 비활성 라벨이 바 위에서 읽힌다', (_name, theme) => {
     const { muted, bar } = resolveBarColors(theme)
 
     expect(contrast(muted, bar)).toBeGreaterThan(4.5)
   })
 
-  // **바 안에서 색을 지는 자리는 활성 하나다** (사용자 관찰 — *"레테 테마만
-  // 비활성 탭의 색이 같은 보라계열이야"*). 레테의 `textMuted` 는 그 자체가 연보라(C0.056 — 여섯 중
+  // **바 안에서 색을 지는 자리는 활성 하나다** (사용자 관찰. *"레테 테마만
+  // 비활성 탭의 색이 같은 보라계열이야"*). 레테의 `textMuted` 는 그 자체가 연보라(C0.056. 여섯 중
   // 가장 높고 혼테일의 4.7 배)라, 그대로 쓰면 비활성까지 강조색과 같은 계열로 읽힌다.
   //
   // 테마 이름으로 레테만 예외 두는 길은 이 막으므로 규칙으로 둔다.
-  it.each(THEMES)('%s — 바의 비활성은 무채색이다', (_name, theme) => {
+  it.each(THEMES)('%s: 바의 비활성은 무채색이다', (_name, theme) => {
     expect(hexToOklch(resolveBarColors(theme).muted).c).toBeLessThan(0.005)
   })
 
@@ -156,7 +156,7 @@ describe('떠 있는 바의 색', () => {
   // **명도 대비로 재면 안 된다.** 여섯 테마 전부 활성↔비활성 대비가 1.02~1.41 로 낮은데, 라이트는
   // 색상이 갈려서 멀쩡히 구분된다(머쉬맘 주황 ↔ 올리브). 명도만 보면 멀쩡한 테마까지 창백하게
   // 밀어 버리므로, 명도·채도·색상을 함께 보는 oklab 거리로 잰다.
-  it.each(THEMES)('%s — 활성 강조색이 비활성 라벨과 **다른 색** 이다', (_name, theme) => {
+  it.each(THEMES)('%s: 활성 강조색이 비활성 라벨과 **다른 색** 이다', (_name, theme) => {
     const { accent, muted } = resolveBarColors(theme)
 
     expect(oklabDistance(accent, muted)).toBeGreaterThan(0.07)
@@ -164,7 +164,7 @@ describe('떠 있는 바의 색', () => {
 
   // ── 유리 알약의 tint 방향 ────────────────────────────────
   // 라이트에서 흰 tint 를 얹으면 알약이 **뒤보다 밝아진다**. `clear` 재질이 이미 하이라이트를
-  // 얹고 있어서 거기에 흰색을 더하면 흰 카드 위에서 그냥 흰 덩어리가 된다(사용자 판정 —
+  // 얹고 있어서 거기에 흰색을 더하면 흰 카드 위에서 그냥 흰 덩어리가 된다(사용자 판정.
   // *"왜 가계부 쪽에는 안돼있지?"*, 실측 알약−카드 +11.4). 그래서 라이트의 tint 는 **얹는** 값이
   // 아니라 그 하이라이트를 **덜어내는** 값이어야 한다. 실수로 다시 `surface` 로 되돌리면 여기서 잡힌다.
   it('라이트 유리 알약 tint 는 바보다 **어두운** 쪽이다', () => {

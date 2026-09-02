@@ -67,7 +67,7 @@ describe('주간 완료 판정', () => {
     expect(weeklyContentCompletion(weekly({ name, nowCount: 0 }))).toBe('incomplete')
   })
 
-  // (사용자 지시): 점수에 상한이 없어도 **참여했는가** 는 잴 수 있다 —
+  // (사용자 지시): 점수에 상한이 없어도 **참여했는가** 는 잴 수 있다.
   // `unmeasurable` 이었다가 판정 대상이 됐다.
   it('길드 지하 수로는 점수가 0이 아니면 완료다', () => {
     const name = '[길드] 지하 수로'
@@ -110,7 +110,7 @@ describe('주간 완료 판정', () => {
     expect(weeklyContentCompletion(weekly({ name, questState: 0 }))).toBe('incomplete')
   })
 
-  // 결정 4의 핵심 — 끝이 없는 항목은 **미완료** 가 아니라 **세지 않음** 이다. 정정 7 이후 이 자리에
+  // 결정 4의 핵심. 끝이 없는 항목은 **미완료** 가 아니라 **세지 않음** 이다. 정정 7 이후 이 자리에
   // 남은 것은 무릉도장 하나다(층수는 참여 여부로도 못 접는다. 1층도 **했다** 인지는 답이 없다).
   it('무릉도장은 판정하지 않는다', () => {
     const name = '[주간 퀘스트] 무릉도장'

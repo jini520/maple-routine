@@ -1,5 +1,5 @@
 /**
- * 위젯 1 — **대표 캐릭터**.
+ * 위젯 1. **대표 캐릭터**.
  *
  * ## 세 크기가 같은 구조다
  *
@@ -38,7 +38,7 @@
  *
  * ## 엠블럼은 번들 에셋이라 두 축을 다 이름 부른다
  *
- * `naturalAspectStyle` 이 없으면 폭에 그림의 고유 픽셀값이 남아 좌우 여백이 생긴다 —
+ * `naturalAspectStyle` 이 없으면 폭에 그림의 고유 픽셀값이 남아 좌우 여백이 생긴다.
  * `CharacterRow` 가 이미 밟은 자리라 그 함수를 그대로 쓴다.
  */
 
@@ -64,7 +64,7 @@ const VARIANT = {
     caption: 'text-[11.5px]',
     guild: 'text-11',
   },
-  /** 4x2 — 같은 구조를 크게. EXP 바가 아래 전폭이다. */
+  /** 4x2. 같은 구조를 크게. EXP 바가 아래 전폭이다. */
   large: {
     portraitPx: 72,
     emblemPx: 20,
@@ -72,7 +72,7 @@ const VARIANT = {
     caption: 'text-sm',
     guild: 'text-13',
   },
-  /** 2x2 — 가운데 정렬. 158 폭이라 **직업이 잘린다**(열린 질문). */
+  /** 2x2. 가운데 정렬. 158 폭이라 **직업이 잘린다**(열린 질문). */
   compact: {
     portraitPx: 56,
     emblemPx: 16,
@@ -137,7 +137,7 @@ function NameLine(props: {
       >
         {props.view.name}
       </Text>
-      {/* 길드는 **모르는 것**(undefined)과 **미가입**(null)이 둘 다 그릴 것이 없다 —
+      {/* 길드는 **모르는 것**(undefined)과 **미가입**(null)이 둘 다 그릴 것이 없다.
           이 카드가 가르는 자리는 아니라 둘 다 비운다. */}
       {props.view.guildName !== undefined && props.view.guildName !== null && (
         <Text
@@ -181,7 +181,7 @@ function CaptionLine(props: {
 }
 
 /**
- * EXP — 4x1 은 오른쪽 **100px 열**, 나머지는 아래 전폭.
+ * EXP. 4x1 은 오른쪽 **100px 열**, 나머지는 아래 전폭.
  *
  * 100 은 70 에서 늘린 값이다(사용자 지시). 바가 짧아 진행률이 눈에 안
  * 들어왔다. 늘어난 30px 은 이름 줄에서 가져오고, 그래서 닉네임이 먼저 줄어든다(`NameLine`).

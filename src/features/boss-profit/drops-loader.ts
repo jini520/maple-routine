@@ -72,7 +72,7 @@ export async function loadDropsByRowKey(
     const key = dropRowKey(record.ocid, record.boss, record.difficulty, record.periodKey)
     if (map[key] === undefined) map[key] = []
     // **변환은 `toRecordedDrop` 하나에 맡긴다.** 여기서 손으로 필드를 옮겨 적던 것이
-    //  가격이 사라지던 원인이었다(사용자 보고 2026-08-10 — "지난주 갔다 오니
+    //  가격이 사라지던 원인이었다(사용자 보고 2026-08-10. "지난주 갔다 오니
     // 아이템 수익이 사라진다"): 저장은 멀쩡한데 **읽을 때마다** 가격 세 필드가 떨어져 나갔고,
     // 시트에서 넣은 직후에는 스토어가 값을 들고 있어 보이다가 기간을 왕복하면 사라졌다.
     map[key].push(toRecordedDrop(record))
@@ -80,7 +80,7 @@ export async function loadDropsByRowKey(
 
   // 처치 난이도가 확정된(완료) 행에 한해, 그 난이도에서 획득 불가한 드롭을 제거한다(후속).
   // 미완료 시트의 표시용 난이도 토글로 다른 난이도 전용 아이템이 행 난이도 키에 섞여 저장될 수
-  // 있기 때문. 변경이 있으면 DB에도 영구 반영한다(멱등 — 이미 정리됐으면 재기록 없음). 미완료
+  // 있기 때문. 변경이 있으면 DB에도 영구 반영한다(멱등. 이미 정리됐으면 재기록 없음). 미완료
   // 행은 아직 처치 난이도가 없으므로 건드리지 않는다(scratchpad).
   for (const row of rows) {
     if (!row.isComplete) continue

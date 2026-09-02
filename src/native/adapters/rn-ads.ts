@@ -7,10 +7,10 @@
  * app-rn 은 전면광고를 걷었다. 노출 지점도, 부팅 사전 로드도 없다. 그런데도 이 파일과 `app.json`
  * 의 앱 ID·`app-ads.txt`·테스트 광고 강제를 **남긴 것은 인라인 광고가 그대로 물려받을 배선**이기
  * 때문이다(결정 2). 아래 실 ID 로 자기 광고를 누르면 계정이 정지된다 는 위험은 **포맷과 무관**
- * 하므로 그 방어선도 함께 선다. 인라인을 붙일 때 `initialize()` 를 부를 자리를 새로 정해야 한다 —
+ * 하므로 그 방어선도 함께 선다. 인라인을 붙일 때 `initialize()` 를 부를 자리를 새로 정해야 한다.
  * 그 호출을 하던 `AppShell` 의 `startAds()` 가 사라졌다.
  *
- * **광고 단위 ID 결정은 이 파일에 없다.** `src/native/ads` 의 순수 함수 둘을 그대로 부른다 —
+ * **광고 단위 ID 결정은 이 파일에 없다.** `src/native/ads` 의 순수 함수 둘을 그대로 부른다.
  * `shouldUseTestAds`(테스트 광고인가)와 `resolveInterstitialAdId`(그래서 어느 ID 인가). 이 프로젝트에서
  * 가장 비싼 실수는 실 ID 로 자기 광고를 누르는 것이고(무효 트래픽 → AdMob 계정 정지, 되돌리기 매우
  * 어려움) 그것을 막는 것이 저 두 함수뿐이라, 플랫폼 구현마다 복제되면 한쪽만 틀려도 사고가 난다.
@@ -23,7 +23,7 @@
  *
  * ---
  *
- * ## Capacitor 플러그인과 다른 점 — 로드 완료를 **이벤트로** 안다
+ * ## Capacitor 플러그인과 다른 점. 로드 완료를 **이벤트로** 안다
  *
  * `AdMob.prepareInterstitial()` 은 로드가 끝나야 resolve 하는 하나의 Promise 였다. RN 쪽
  * `InterstitialAd` 는 `load()` 가 즉시 반환하고 결과가 `LOADED`/`ERROR` 이벤트로 오므로, 그 둘을
@@ -120,7 +120,7 @@ export const rnAdsPort: AdsPort = {
     if (adId() === null) return false
 
     const ad = loadedAd
-    // 성공이든 실패든 이 광고는 소진됐다고 본다(core `showInterstitial` 의 `finally` 와 같은 판단) —
+    // 성공이든 실패든 이 광고는 소진됐다고 본다(core `showInterstitial` 의 `finally` 와 같은 판단).
     // 실패한 광고를 다시 띄우려 매달리면 같은 실패를 반복한다.
     loadedAd = null
     if (ad === null) return false

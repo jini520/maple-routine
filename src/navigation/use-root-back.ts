@@ -3,7 +3,7 @@ import { BackHandler } from 'react-native'
 import { moveAppToBackground } from '../native/back-gesture'
 
 /**
- * 스택이 비었을 때의 뒤로가기 — **묻지 않고 백그라운드로**.
+ * 스택이 비었을 때의 뒤로가기. **묻지 않고 백그라운드로**.
  *
  * ## 이것만 프레임워크가 안 해 준다
  *

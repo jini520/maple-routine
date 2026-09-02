@@ -789,7 +789,7 @@ describe('useBossSchedulerStore', () => {
     // 2단계는 커밋이 2회라 첫 커밋 직후 "그 보스가 목록에 없는" 상태가 저장소에 실재했고,
     // 두 번째가 실패하면 보스가 통째로 사라졌다.
     describe('setManualBossDifficulty', () => {
-      it('쓰기 1회로 난이도를 교체한다 — 중간 상태(보스가 빠진 배열)를 저장하지 않는다', async () => {
+      it('쓰기 1회로 난이도를 교체한다. 중간 상태(보스가 빠진 배열)를 저장하지 않는다', async () => {
         getManualTrackedContentMock.mockResolvedValue([
           { contentName: '스우', kind: 'boss', difficulty: '하드' },
           { contentName: '무릉도장', kind: 'weekly' },
@@ -910,7 +910,7 @@ describe('useBossSchedulerStore', () => {
   // 결정 2·3(이슈 #62): 한도 가드의 본체는 스토어다. UI에서만 막으면 난이도 교체·시드
   // 같은 다른 호출 경로가 그대로 새어나간다.
   describe(': 수동 주간 보스 12개 한도', () => {
-    // weekly-bosses.json 주간 섹션 앞부분 12종 — 실재하는 이름이어야 주기·시즌 판정이 통한다.
+    // weekly-bosses.json 주간 섹션 앞부분 12종. 실재하는 이름이어야 주기·시즌 판정이 통한다.
     const TWELVE_WEEKLY_BOSSES = [
       '자쿰',
       '매그너스',
@@ -948,7 +948,7 @@ describe('useBossSchedulerStore', () => {
       expect(setManualTrackedContentMock).toHaveBeenCalled()
     })
 
-    it('시즌 보스(메이린)는 한도가 찼어도 추가할 수 있다 — 처치 카운트 제외 규칙과 동일', async () => {
+    it('시즌 보스(메이린)는 한도가 찼어도 추가할 수 있다. 처치 카운트 제외 규칙과 동일', async () => {
       getManualTrackedContentMock.mockResolvedValue(trackedBosses(TWELVE_WEEKLY_BOSSES))
 
       const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', '시즌 보스 메이린', '노멀')
@@ -957,7 +957,7 @@ describe('useBossSchedulerStore', () => {
       expect(setManualTrackedContentMock).toHaveBeenCalled()
     })
 
-    it('월간 보스(검은마법사)는 한도가 찼어도 추가할 수 있다 — 12는 주간 한도다', async () => {
+    it('월간 보스(검은마법사)는 한도가 찼어도 추가할 수 있다. 12는 주간 한도다', async () => {
       getManualTrackedContentMock.mockResolvedValue(trackedBosses(TWELVE_WEEKLY_BOSSES))
 
       const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', '검은마법사', '하드')
@@ -966,7 +966,7 @@ describe('useBossSchedulerStore', () => {
       expect(setManualTrackedContentMock).toHaveBeenCalled()
     })
 
-    it('시즌·월간 보스는 주간 카운트를 채우지 않는다 — 그 둘이 섞여 있어도 주간 12개까지 선택 가능', async () => {
+    it('시즌·월간 보스는 주간 카운트를 채우지 않는다. 그 둘이 섞여 있어도 주간 12개까지 선택 가능', async () => {
       getManualTrackedContentMock.mockResolvedValue([
         ...trackedBosses(TWELVE_WEEKLY_BOSSES.slice(0, 11)),
         { contentName: '시즌 보스 메이린', kind: 'boss', difficulty: '노멀' },
@@ -1157,8 +1157,8 @@ describe('useBossSchedulerStore', () => {
 
   // : 탭이 걷히면서 `activeTab` 도 함께 사라지고(
   //  가 이 축에서 폐기됐다), 목록이 하나가 되면서 필터도 하나가 된다
-  // (정정 — **두 축이 독립** 은 탭이 있을 때만 뜻이 있는 문장이었다).
-  describe(': 필터 상태 — 하나다', () => {
+  // (정정. **두 축이 독립** 은 탭이 있을 때만 뜻이 있는 문장이었다).
+  describe(': 필터 상태. 하나다', () => {
     it('초기 필터는 전체다', () => {
       expect(useBossSchedulerStore.getInitialState().partyFilter).toBe('all')
     })

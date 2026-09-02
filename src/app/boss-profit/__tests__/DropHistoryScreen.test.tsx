@@ -1,4 +1,4 @@
-// 드롭 획득 히스토리 — 웹판(500줄)의 명세를 읽어 다시 쓴 것.
+// 드롭 획득 히스토리. 웹판(500줄)의 명세를 읽어 다시 쓴 것.
 //
 // 갈린 것 넷
 // ① **라우터가 없다**. 빈 상태 CTA 는 `goBack` 이 불렸는가로 본다(웹은 location 프로브였다).
@@ -63,7 +63,7 @@ function 문장(node: AtomElement): string {
 }
 
 /**
- * 잎의 색 — `<Path fill>` 이라 글자가 아니라 트리에서 집는다. 두 가지가 갈린다.
+ * 잎의 색. `<Path fill>` 이라 글자가 아니라 트리에서 집는다. 두 가지가 갈린다.
  *
  * ① RNTL 14 의 요소에는 `findAll` 이 없어(실측) `children` 을 직접 훑는다. 잎 경로는 `d` 를 가진
  *    유일한 노드라 그것으로 찾는다. `fill` 로 찾으면 그 위의 그룹이 먼저 걸린다(기본 검정).
@@ -111,7 +111,7 @@ function mockStore(overrides: Partial<Store> = {}): void {
 
 /**
  * **`rerender` 로 프로바이더를 날리지 않으려면 같은 트리를 다시 넘겨야 한다**(step 3 이 실측해 적어
- * 둔 함정). 그래서 `renderOverlay` 대신 트리를 여기서 짜고 `rerenderSame` 을 함께 돌려준다 —
+ * 둔 함정). 그래서 `renderOverlay` 대신 트리를 여기서 짜고 `rerenderSame` 을 함께 돌려준다.
  * 마운트당 한 번만 하는 일(무작위 문구 고정)을 확인하는 케이스가 그것을 쓴다.
  */
 async function renderHistory() {
@@ -136,7 +136,7 @@ beforeEach(() => {
   mockStore()
 })
 
-describe('DropHistoryScreen — 셸과 조회', () => {
+describe('DropHistoryScreen: 셸과 조회', () => {
   // 웹은 *"`screen-scroll` 이 없어야 한다"* 였다. 공용 셸의 `-mt-[var(--sa-top)]` 이 흐름 밖 `fixed`
   // 헤더를 전제한 보정이라 이 화면의 sticky 헤더와 겹쳤기 때문이다(실기기 계측 31px). RN 에는 그
   // 보정 자체가 없고 헤더가 스크롤 뷰의 **형제**라 공용 셸이 곧 맞는 그림이다.
@@ -199,9 +199,9 @@ describe('DropHistoryScreen — 셸과 조회', () => {
   })
 })
 
-// 사용자 지정 형식 — 한 기록이 목록에서 큰 비중을 차지하지 않도록 아이콘·난이도
+// 사용자 지정 형식. 한 기록이 목록에서 큰 비중을 차지하지 않도록 아이콘·난이도
 // 배지·2단 레이아웃 없이 한 줄 문장으로만 둔다.
-describe('DropHistoryScreen — 기록 한 줄', () => {
+describe('DropHistoryScreen: 기록 한 줄', () => {
   it('고가가 아닌 기록은 한 줄 문장으로만 보여준다', async () => {
     mockStore({
       groups: [
@@ -222,14 +222,14 @@ describe('DropHistoryScreen — 기록 한 줄', () => {
     expect(queryByTestId('valuable-drop-inline')).toBeNull()
   })
 
-  it('고가 기록만 골드로 꾸민다 — 아이템명 배경 + 아이템 아이콘', async () => {
+  it('고가 기록만 골드로 꾸민다. 아이템명 배경 + 아이템 아이콘', async () => {
     // 루즈 컨트롤 머신 마크 = 칠흑의 보스 세트(고가).
     mockStore({ groups: [{ periodKey: PERIOD, cycle: 'weekly', records: [기록()] }] })
     const { getByLabelText, getByTestId } = await renderHistory()
 
-    // 웹의 `data-valuable` 자리 — RN 에는 데이터 속성이 없어 접근성 이름으로 옮겼다.
+    // 웹의 `data-valuable` 자리. RN 에는 데이터 속성이 없어 접근성 이름으로 옮겼다.
     expect(getByLabelText('고가 드롭 기록')).toBeTruthy()
-    // 웹의 `.valuable-drop-badge` 는 그라디언트 pill 이었고 RN 에서는 단색 배경만 남는다 —
+    // 웹의 `.valuable-drop-badge` 는 그라디언트 pill 이었고 RN 에서는 단색 배경만 남는다.
     // 지켜야 하는 것은 *"골드 위에 골드 잉크"* 라는 사실이다(파일 머리 ④).
     const inline = flattenStyle(getByTestId('valuable-drop-inline').props.style)
     expect(inline.backgroundColor).toBe('#f7c400')
@@ -314,7 +314,7 @@ describe('DropHistoryScreen — 기록 한 줄', () => {
   })
 })
 
-describe('DropHistoryScreen — 기간 구분', () => {
+describe('DropHistoryScreen: 기간 구분', () => {
   it('기간 라벨 아래에 날짜 구간을 작게 붙이고 양옆에 헤어라인을 둔다', async () => {
     mockStore({ groups: [{ periodKey: PERIOD, cycle: 'weekly', records: [기록()] }] })
     const { getByTestId, getAllByTestId } = await renderHistory()
@@ -338,7 +338,7 @@ describe('DropHistoryScreen — 기간 구분', () => {
     expect(queryByTestId('drop-history-period-range')).toBeNull()
   })
 
-  it('기간 그룹마다 기간 라벨을 보여준다 — 주간·월간이 한 목록에 섞인다', async () => {
+  it('기간 그룹마다 기간 라벨을 보여준다. 주간·월간이 한 목록에 섞인다', async () => {
     mockStore({
       groups: [
         { periodKey: PERIOD, cycle: 'weekly', records: [기록()] },
@@ -358,13 +358,13 @@ describe('DropHistoryScreen — 기간 구분', () => {
 })
 
 // 제목이 슬픔 단계를 말하고, 아래 줄이 "마지막 에픽 빔! {기간} · {아이템}" 이다.
-describe('DropHistoryScreen — 미획득 요약', () => {
+describe('DropHistoryScreen: 미획득 요약', () => {
   function 가뭄(weeksSince: number, records = [기록()]) {
     return { periodKey: PERIOD, cycle: 'weekly' as const, weeksSince, records }
   }
 
   /**
-   * 그 단계의 문구 풀 — 단계마다 여럿이고 화면이 마운트당 하나를 무작위로 고른다.
+   * 그 단계의 문구 풀. 단계마다 여럿이고 화면이 마운트당 하나를 무작위로 고른다.
    * 그래서 화면 테스트는 문구를 단정하지 않고 "그 단계의 풀에 있는가"만 본다(단계 자체는 접근성
    * 이름이 말한다).
    */
@@ -403,7 +403,7 @@ describe('DropHistoryScreen — 미획득 요약', () => {
     })
     const { getByLabelText, getByTestId } = await renderHistory()
 
-    // 웹의 `data-drought-tier` 자리 — 데이터 속성이 없어 접근성 이름으로 옮겼다.
+    // 웹의 `data-drought-tier` 자리. 데이터 속성이 없어 접근성 이름으로 옮겼다.
     expect(getByLabelText(`고가 드롭 미획득 ${weeks}단계`)).toBeTruthy()
     const summary = 문장(getByTestId('valuable-drought'))
     expect(문구풀(weeks).some((headline) => summary.includes(headline))).toBe(true)
@@ -480,7 +480,7 @@ describe('DropHistoryScreen — 미획득 요약', () => {
     expect(문장(getByTestId('valuable-drought'))).toContain('루즈 컨트롤 머신 마크 외 1개')
   })
 
-  it('고가 기록이 없으면 요약 요소를 렌더하지 않는다 — "∞주째"를 만들지 않는다 (결정 4)', async () => {
+  it('고가 기록이 없으면 요약 요소를 렌더하지 않는다. "∞주째"를 만들지 않는다 (결정 4)', async () => {
     mockStore({ groups: [{ periodKey: PERIOD, cycle: 'weekly', records: [기록()] }], drought: null })
     const { queryByTestId } = await renderHistory()
 

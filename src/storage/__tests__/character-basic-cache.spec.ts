@@ -139,7 +139,7 @@ describe('계정별 인덱스', () => {
     await expect(getAllCachedCharacterBasicOcids(OTHER)).resolves.toEqual(['ocid-9'])
   })
 
-  it('엔트리 자체는 계정과 무관하게 읽힌다 — 되돌아오면 따뜻한 캐시를 재사용한다', async () => {
+  it('엔트리 자체는 계정과 무관하게 읽힌다. 되돌아오면 따뜻한 캐시를 재사용한다', async () => {
     await setCachedCharacterBasic(OTHER, 'ocid-9', sampleEntry)
     await expect(getCachedCharacterBasic('ocid-9')).resolves.toEqual(sampleEntry)
   })
@@ -152,7 +152,7 @@ describe('계정별 인덱스', () => {
     await expect(prefs.get('characterBasicCache:index')).resolves.toBeNull()
   })
 
-  it('이관은 인자가 아니라 저장된 selectedAccountId를 따른다 — 커밋 전 후보 계정에 흘러들지 않는다', async () => {
+  it('이관은 인자가 아니라 저장된 selectedAccountId를 따른다. 커밋 전 후보 계정에 흘러들지 않는다', async () => {
     await prefs.set('selectedAccountId', ACCOUNT)
     await prefs.set('characterBasicCache:index', JSON.stringify(['ocid-1']))
 

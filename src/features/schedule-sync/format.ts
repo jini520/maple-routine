@@ -1,6 +1,6 @@
 import type { ScheduleSyncError } from './schedule-sync'
 
-// tsconfig에 noImplicitReturns가 없어 switch가 소진되지 않아도 타입 오류가 나지 않는다 —
+// tsconfig에 noImplicitReturns가 없어 switch가 소진되지 않아도 타입 오류가 나지 않는다.
 // ScheduleSyncError에 종류를 더했을 때 이 함수가 조용히 undefined를 반환하던 사고가 실제로
 // 있었다(작업 중). 이 가드가 그 자리에서 컴파일 오류를 낸다.
 function assertNever(value: never): never {
@@ -15,7 +15,7 @@ export function formatScheduleSyncError(error: ScheduleSyncError): string {
     // 상한이고, 처방은 인라인 자리(배너·ErrorState·설정 계정 카드)가 준다.
     case 'rateLimited':
       return '호출 한도를 초과했습니다'
-    // 결정 1로 갈라진 세 종류. 문구가 서로 달라야 하는 이유는 처방이 다르기 때문이다 —
+    // 결정 1로 갈라진 세 종류. 문구가 서로 달라야 하는 이유는 처방이 다르기 때문이다.
     // 아래 둘은 사용자가 지금 할 수 있는 것이 없고, characterUnavailable은 영구다.
     case 'characterUnavailable':
       return '이 캐릭터는 조회할 수 없습니다'
@@ -112,7 +112,7 @@ export function formatRosterError(error: ScheduleSyncError, place: RosterErrorPl
 // . 그전까지 호출부 2곳이 "목록이 최신이 아닙니다"를 하드코딩해 401·429·
 // characterUnavailable·네트워크가 전부 같은 한 줄로 보였다.
 //
-// 왜 formatRosterError를 재사용하지 않고 새 함수인가 — 두 가지가 다르다.
+// 왜 formatRosterError를 재사용하지 않고 새 함수인가. 두 가지가 다르다.
 //
 // 1. **담을 수 있는 양**: 배너는 한 줄이고 ErrorState는 제목 + 설명 두 줄이다.
 // 2. **액션 규칙**: 배너는 목록이 남아 있어 액션이 없어도 막다른 길이 아니라 401·429·

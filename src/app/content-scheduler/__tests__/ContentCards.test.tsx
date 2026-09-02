@@ -1,11 +1,11 @@
-// 컨텐츠 카드 — **어떤 항목이 어떤 카드로 그려지는가**.
+// 컨텐츠 카드. **어떤 항목이 어떤 카드로 그려지는가**.
 //
 // 웹은 이 계약을 `ContentScreen.test.tsx` 안에서 화면째 렌더해 검사했다. 여기서는 `render*Card`
 // 를 직접 부른다. 묻는 것이 **분기와 배지**이지 화면 배선이 아니고, 스토어 목 없이 같은 계약을
 // 그대로 볼 수 있기 때문이다(화면 쪽 계약은 `ContentScreen.test.tsx` 가 따로 본다).
 //
 // **그림은 `testUri` 로 본다.** jest 에서 번들 에셋은 숫자가 아니라 `{ testUri }` 대역이라
-// (의 `image-asset.native.ts`) *"어느 파일로 해석됐는가"* 를 그 문자열로 묻는다 —
+// (의 `image-asset.native.ts`) *"어느 파일로 해석됐는가"* 를 그 문자열로 묻는다.
 // 웹이 `src` 속성으로 묻던 것과 같은 질문이다.
 import type { DailyContent, WeeklyContent } from '../../../types'
 
@@ -50,7 +50,7 @@ function artUri(view: Awaited<ReturnType<typeof renderAtom>>): string | null {
 }
 
 /**
- * 진행률 바가 낸 접근성 값 — **`getByRole('progressbar')` 로는 못 찾는다.** RNTL 14 의 역할 질의는
+ * 진행률 바가 낸 접근성 값. **`getByRole('progressbar')` 로는 못 찾는다.** RNTL 14 의 역할 질의는
  * 접근성 요소로 표시된 노드만 보는데 이 트랙은 `accessible` 없이 `accessibilityRole` 만 달고 있고
  * (`ProgressBar` atom 이 웹의 `role`/`aria-*` 를 그대로 옮긴 모양), 그쪽 테스트도 같은 이유로
  * 트리를 직접 훑는다.
@@ -87,7 +87,7 @@ describe('일간 카드', () => {
     expect(artUri(view)).toContain('monsterPark')
   })
 
-  it('지역이 안 잡히면 배경 없이 이름만 그린다 — 폴백이 조용하다', async () => {
+  it('지역이 안 잡히면 배경 없이 이름만 그린다. 폴백이 조용하다', async () => {
     const view = await renderAtom(
       renderDailyContentCard(daily({ name: '[일일 퀘스트] 없는지역', kind: 'quest', questState: 0 }), 300),
     )

@@ -31,7 +31,7 @@ describe('getShareScope', () => {
     expect(getShareScope('[메이플유니온] 주간 드래곤 퇴치')).toBe('world')
   })
 
-  // 정정 1(2026-08-03, 실측): 접두·수식이 붙은 변형은 **별도 항목**이다 —
+  // 정정 1(2026-08-03, 실측): 접두·수식이 붙은 변형은 **별도 항목**이다.
   // 매칭이 완전 일치라 '몬스터파크'가 아래 항목을 잡아주지 않는다. 이 사각 때문에 월드 공유
   // 진행이 캐릭터 활동으로 읽혀 미접속 캐릭터가 후보 목록에 남았다(게터, 실기기 계측).
   describe('접두·수식이 붙은 변형', () => {
@@ -40,7 +40,7 @@ describe('getShareScope', () => {
     })
 
     // 같은 계열이라도 공유 단위가 다르다(사용자 확인 2026-08-03). 이름으로 유추하면 틀린다.
-    it('PC방 주간 드래곤 퇴치는 account다 — 접두 없는 쪽(world)과 공유 단위가 다르다', () => {
+    it('PC방 주간 드래곤 퇴치는 account다. 접두 없는 쪽(world)과 공유 단위가 다르다', () => {
       expect(getShareScope('[메이플 유니온] 주간 드래곤 퇴치')).toBe('world')
       expect(getShareScope('[메이플 유니온] PC방 주간 드래곤 퇴치')).toBe('account')
     })
@@ -59,7 +59,7 @@ describe('getContentSection', () => {
   })
 })
 
-// 공유 여부와는 다른 축 — 개인 기록이지만 리셋 없이 누적되는 항목.
+// 공유 여부와는 다른 축. 개인 기록이지만 리셋 없이 누적되는 항목.
 describe('isCumulativeScore', () => {
   it('카탈로그에 등록된 누적 점수 항목은 true다', () => {
     expect(isCumulativeScore('[길드] 지하 수로')).toBe(true)
@@ -69,13 +69,13 @@ describe('isCumulativeScore', () => {
     expect(isCumulativeScore('[길드]지하수로')).toBe(true)
   })
 
-  it('주기마다 리셋되는 항목은 false다 — 같은 길드 콘텐츠여도 축이 다르다', () => {
+  it('주기마다 리셋되는 항목은 false다. 같은 길드 콘텐츠여도 축이 다르다', () => {
     expect(isCumulativeScore('[길드] 주간 미션 포인트')).toBe(false)
     expect(isCumulativeScore('[길드] 플래그 레이스')).toBe(false)
     expect(isCumulativeScore('몬스터파크')).toBe(false)
   })
 
-  it('누적 점수 항목도 공유가 아니라 캐릭터 범위다 — 두 축은 독립이다', () => {
+  it('누적 점수 항목도 공유가 아니라 캐릭터 범위다. 두 축은 독립이다', () => {
     expect(getShareScope('[길드] 지하 수로')).toBe('character')
   })
 })
@@ -116,7 +116,7 @@ describe('getContentCatalogEntries', () => {
 })
 
 describe('getSharedContentGroups', () => {
-  it('계열은 카탈로그가 적어 둔 순서다 — 배열을 읽은 첫 등장 순서가 아니다', () => {
+  it('계열은 카탈로그가 적어 둔 순서다. 배열을 읽은 첫 등장 순서가 아니다', () => {
     // worldShared → accountShared 로 읽으면 첫 등장 순서가 `몬스터파크 · 메이플 유니온 ·
     // 에픽던전`이라 사용자가 지정한 순서와 다르다. 그래서 `sharedGroupOrder` 가 따로 있다.
     expect(getSharedContentGroups().map((group) => group.group)).toEqual([
@@ -146,7 +146,7 @@ describe('getSharedContentGroups', () => {
     ])
   })
 
-  it('원문 이름·section·scope 를 함께 나른다 — 호출부가 응답에서 항목을 다시 찾는다', () => {
+  it('원문 이름·section·scope 를 함께 나른다. 호출부가 응답에서 항목을 다시 찾는다', () => {
     const [epic] = getSharedContentGroups()
 
     expect(epic?.entries[0]).toEqual({
@@ -183,7 +183,7 @@ describe('getSharedContentGroups', () => {
   })
 })
 
-describe('getMaxCountOverride — 익스트림 몬스터파커', () => {
+describe('getMaxCountOverride: 익스트림 몬스터파커', () => {
   it('템플릿의 5가 아니라 사용자 확정값 2를 준다', () => {
     // `scheduler-content-template.json` 은 이 항목에 `max_count: 5` 를 들고 있다. 게임 규칙은
     // 주 2회라 오버라이드가 이긴다(사용자 확정 2026-08-18).

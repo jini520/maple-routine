@@ -31,7 +31,7 @@ export interface SchedulerSectionPresence {
   monthlyBoss: boolean
 }
 
-/** 그 응답에 각 섹션의 캐릭터 범위 내용이 있었는가 — 조회 원장에 기록해 선채움이 재조회를 건너뛴다. */
+/** 그 응답에 각 섹션의 캐릭터 범위 내용이 있었는가. 조회 원장에 기록해 선채움이 재조회를 건너뛴다. */
 export function getSectionPresence(state: SchedulerCharacterState): SchedulerSectionPresence {
   return {
     daily: !isDailySectionMissing(state),
@@ -45,7 +45,7 @@ export function getSectionPresence(state: SchedulerCharacterState): SchedulerSec
 // "등록만 하고 완료 안 함"은 활동 증거가 아니다.
 //
 // 정정 2(2026-08-03, 실측): **누적 점수 항목은 제외한다.** 그 항목의 now_count는 리셋을
-// 넘어서도 줄지 않아 "한 번이라도 해본 적 있음"이 영원히 "최근 14일에 했음"으로 읽힌다 —
+// 넘어서도 줄지 않아 "한 번이라도 해본 적 있음"이 영원히 "최근 14일에 했음"으로 읽힌다.
 // `[길드] 지하 수로`(79579) 하나 때문에 그 콘텐츠를 해본 캐릭터 전원이 자격을 얻고 있었다.
 function isCompletedContent(item: DailyContent | WeeklyContent): boolean {
   if (isCumulativeScore(item.name)) {
@@ -93,7 +93,7 @@ export function completedBossKeys(state: SchedulerCharacterState): string[] {
 }
 
 /**
- * 조회 원장에 남길 관측 — 자격 판정(`character-eligibility`)과 선채움(`schedule-sync`) 둘 다
+ * 조회 원장에 남길 관측. 자격 판정(`character-eligibility`)과 선채움(`schedule-sync`) 둘 다
  * 이 함수로 기록을 만든다. 두 모듈이 서로를 import 하지 않도록 여기 둔다.
  *
  * 소비자가 셋이 됐다. 처치 날짜 캐기가 `bosses` 를 읽는다. 같은 관측 하나에

@@ -162,7 +162,7 @@ export interface StoredDropRecord extends RecordedDrop {
 }
 
 export interface DropMigrationPlan {
-  /** 확정 난이도 키에 새로 기록할 드롭 목록 — 기존분 뒤에 이관분을 이어 붙인 것 */
+  /** 확정 난이도 키에 새로 기록할 드롭 목록. 기존분 뒤에 이관분을 이어 붙인 것 */
   drops: RecordedDrop[]
   /** 비워야 하는 옛 난이도 키들 */
   staleDifficulties: string[]
@@ -176,7 +176,7 @@ function toRecordedDrop(record: StoredDropRecord): RecordedDrop {
     boxOrigin: record.boxOrigin,
     ringLevel: record.ringLevel,
     quantity: record.quantity,
-    // ⚠️ 가격 셋을 여기 빠뜨리면 **난이도가 확정되는 순간** 그 주 가격이 전부 날아간다 —
+    // ⚠️ 가격 셋을 여기 빠뜨리면 **난이도가 확정되는 순간** 그 주 가격이 전부 날아간다.
     // 타입 에러가 나지 않으므로(전부 optional) 이걸 막는 것은 테스트뿐이다.
     priceState: record.priceState,
     priceMeso: record.priceMeso,

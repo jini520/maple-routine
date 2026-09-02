@@ -36,7 +36,7 @@ export const characterManageGuide: FeatureGuide = {
       id: 'active-only',
       title: '선택 할 수 있는 캐릭터',
       blocks: [
-        // TODO(#198): 캐릭터 관리 피커 목록 — 아직 스크린샷이 없다
+        // TODO(#198): 캐릭터 관리 피커 목록. 아직 스크린샷이 없다
         {
           text: '조회가 가능한 것으로 확인된 캐릭터만 목록에 나옵니다. 넥슨 API가 아직 응답하지 않은 캐릭터는 확인이 끝난 뒤에 나타납니다.',
         },

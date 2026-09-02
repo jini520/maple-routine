@@ -3,7 +3,7 @@
 import { findAllOfType, renderOverlay, type TreeNode } from '../../../__tests__/render-atom'
 import { ProgressModal } from '../ProgressModal'
 
-/** 진행률 바의 값 — `accessibilityRole="progressbar"` 를 가진 첫 노드에서 읽는다. */
+/** 진행률 바의 값. `accessibilityRole="progressbar"` 를 가진 첫 노드에서 읽는다. */
 function progressValue(tree: unknown): number | undefined {
   const track = findAllOfType(tree, 'View').find(
     (node: TreeNode) => node.props.accessibilityRole === 'progressbar',

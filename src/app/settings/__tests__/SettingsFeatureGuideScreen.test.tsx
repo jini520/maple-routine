@@ -11,7 +11,7 @@
 //    jest 는 레이아웃을 계산하지 않으므로 **테스트가 그 y 를 넣어 준다.**
 // ④ 없는 안내의 되돌리기는 `<Navigate replace>` → `goBack()`. 뜻(히스토리를 남기지 않는다)은 같다.
 //    웹의 `push 가 아니라 replace 다` 케이스는 **스택을 우리가 미는 RN 에서 성립하지 않는다.**
-// ⑤ `getByAltText` → `getByLabelText`(`alt` 의 짝은 `accessibilityLabel`), `src` → `source` —
+// ⑤ `getByAltText` → `getByLabelText`(`alt` 의 짝은 `accessibilityLabel`), `src` → `source`.
 //  그리고 그 값은 URL 문자열이 아니라 **번들 에셋 참조**다.
 import { act, fireEvent } from '@testing-library/react-native'
 import { ScrollView } from 'react-native'
@@ -202,7 +202,7 @@ describe('SettingsFeatureGuideScreen', () => {
   it('목차는 `목차` 제목 + 번호 목록이고 번호는 버튼 밖이다', async () => {
     const view = await renderOverlay(<SettingsFeatureGuideScreen />)
 
-    // 목차 덩이 전체 — 번호가 있고, **버튼 안에는 제목만** 있다.
+    // 목차 덩이 전체. 번호가 있고, **버튼 안에는 제목만** 있다.
     const toc = view.getByText('목차').parent as AtomElement
     expect(textsIn(toc)).toEqual([
       '목차',
@@ -292,8 +292,8 @@ describe('SettingsFeatureGuideScreen', () => {
   // 웹은 `w-full` 한 줄이었다. 높이는 preflight 의 `img { height: auto }` 가 정했다. RN 에 그
   // 짝이 없어 **높이를 이름 부르지 않으면** 스크린샷의 고유 픽셀 높이가 상자 높이로 남고,
   // `contain` 이 그 안에 그림을 넣어 **위아래로 큰 여백**이 생긴다(746×274 안내는 각 71px, 세로로
-  // 긴 780×1438 안내는 각 389px — 보고 ②).
-  it('이미지는 폭을 채우고 높이를 그림에 맡긴다 — 두 축의 이름이 다 나온다', async () => {
+  // 긴 780×1438 안내는 각 389px. 보고 ②).
+  it('이미지는 폭을 채우고 높이를 그림에 맡긴다. 두 축의 이름이 다 나온다', async () => {
     const view = await renderOverlay(<SettingsFeatureGuideScreen />)
 
     const style = flattenStyle(view.getByLabelText('보스 카드를 탭해 연 파티 모달').props.style)

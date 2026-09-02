@@ -40,7 +40,7 @@ function makeToast(overrides: Partial<ToastItem> = {}): ToastItem {
     ...overrides }
 }
 
-/** 어떤 요소 아래의 SVG path `d` 목록 — 아이콘 그림이 실제로 바뀌었는지 본다. */
+/** 어떤 요소 아래의 SVG path `d` 목록. 아이콘 그림이 실제로 바뀌었는지 본다. */
 function pathsUnder(node: AtomElement): string[] {
   const out: string[] = []
   const visit = (current: AtomElement | string): void => {
@@ -152,7 +152,7 @@ describe('Toast', () => {
 })
 
 // 임계값(70px)은 `../swipe-dismiss` 가 갖는다. 여기서는 그 판정이 제스처에 이어지는지만 본다.
-describe('Toast — 스와이프로 닫기', () => {
+describe('Toast: 스와이프로 닫기', () => {
   /** 시작 → 이동 → 뗌. 웹판이 `pointerdown/move/up` 을 순서대로 쏘던 것과 같다. */
   async function swipe(root: AtomElement, dx: number): Promise<void> {
     await fireEvent(root, 'responderGrant', { nativeEvent: { pageX: 0 } })
@@ -179,10 +179,10 @@ describe('Toast — 스와이프로 닫기', () => {
   })
 })
 
-// 모션 줄이기 — 웹의 `motion-reduce:hidden`(파일 머리 ②). 줄지 않는 막대를 남기면 "시간이 안 간다"로
+// 모션 줄이기. 웹의 `motion-reduce:hidden`(파일 머리 ②). 줄지 않는 막대를 남기면 "시간이 안 간다"로
 // 읽히므로 통째로 없앤다. **바깥 껍데기(`toast-timer`)는 남는다**. 자리를 차지하지 않는 절대 배치라
 // 있고 없고가 레이아웃을 바꾸지 않고, 웹도 `motion-reduce:hidden` 을 안쪽 바에만 걸었다.
-describe('Toast — 모션 줄이기', () => {
+describe('Toast: 모션 줄이기', () => {
   it('켜져 있으면 남은 시간 바가 그려지지 않는다', async () => {
     mockReducedMotion(true)
     const { getByTestId } = await renderAtom(<Toast toast={makeToast()} onDismiss={noop} />)

@@ -69,7 +69,7 @@ describe('생성된 에셋 목록이 디렉터리와 맞는다', () => {
   })
 
   it.each(ASSET_GROUPS.map((group) => [group.file, group] as const))(
-    '%s — 키 집합이 파일 목록과 같다 (다르면 `npm run assets:gen`)',
+    '%s. 키 집합이 파일 목록과 같다 (다르면 `npm run assets:gen`)',
     (_file, group) => {
       const actual = new Set(Object.keys(GENERATED[group.file]))
       const expected = expectedKeys(group)
@@ -82,7 +82,7 @@ describe('생성된 에셋 목록이 디렉터리와 맞는다', () => {
   // 프레임은 키가 네 단계 이름이라 위 검사가 **개수를 안 본다**. 그림을 하나 더 넣어도 키는
   // 그대로 넷이다. 그래서 배열 길이를 따로 본다.
   it.each(ASSET_GROUPS.filter((group) => group.kind === 'frames'))(
-    '$file — 단계마다 프레임 개수가 파일 수와 같다',
+    '$file. 단계마다 프레임 개수가 파일 수와 같다',
     (group) => {
       for (const dir of group.dirs) {
         const phase = path.basename(dir)

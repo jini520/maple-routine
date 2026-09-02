@@ -1,4 +1,4 @@
-// 온보딩 마지막 단계 — 관리할 캐릭터 고르기.
+// 온보딩 마지막 단계. 관리할 캐릭터 고르기.
 //
 // **본문은 이 파일에 없다.** 설정 하위 페이지(`SettingsCharactersScreen`)와 **같은**
 // `CharacterManageBody` + `useCharacterManage` 를 쓰고, 갈리는 것은 머리와 CTA 뿐이다
@@ -9,7 +9,7 @@
 // | 전 | 후 |
 // |---|---|
 // | 3열 그리드(옛 `CharacterTrackingGrid`, 2026-09-03 삭제) 한 층 | `선택됨`/`고르는 곳` 두 층의 행 카드 |
-// | 고른 계정 하나의 후보 | 계정 드롭다운 — 여러 메이플 ID 를 넘나든다 |
+// | 고른 계정 하나의 후보 | 계정 드롭다운. 여러 메이플 ID 를 넘나든다 |
 // | `accountId` 프롭(설정 계정 변경이 넘기던 후보 계정) | 없다. 그 플로우가 폐지됐다(결정 7) |
 // | `submitLabel` 프롭 | 없다. 이 컴포넌트는 이제 온보딩 전용이다 |
 // | 후보 0건의 `계정 다시 선택`(`emptyAction`) | 없다. 출구는 **드롭다운을 되돌리는 것**이다(결정 10) |
@@ -19,7 +19,7 @@
 // 설정 화면은 `manage.rosterError` 를 통째로 키 재입력 진입점에 넘기지만 **이 자리는 429 만** 넘긴다.
 // 여기의 401 은 "사용자가 방금 넣은 키가 나쁘다"는 뜻이라 성질이 다르고, 그래서 폼 자체의 실패로
 // 남아 아래 `ErrorState` 의 `다시 시도`가 실제 처방이 된다. 429 만 넘기는 이유는 반대로 그 자리가
-// **하드 잠금**이기 때문이다(이슈 #176 — 고를 캐릭터가 없어 CTA 가 영구 비활성이고, 재시도는 같은
+// **하드 잠금**이기 때문이다(이슈 #176. 고를 캐릭터가 없어 CTA 가 영구 비활성이고, 재시도는 같은
 // 키로 또 429 이며, 단계는 라우트가 아니라 `status` switch 라 되돌릴 UI 도 없다).
 //
 // ── 대표 캐릭터도 여기서 함께 넘긴다 ───────────────────────────
@@ -59,7 +59,7 @@ export function ContentCharacterStep(props: ContentCharacterStepProps): React.JS
   const manage = useCharacterManage()
   const { scrollRef, onScroll, scroll } = useReorderScroll()
 
-  // 파일 머리 — **429 만** 넘긴다. 두 조회가 각각 맞을 수 있어 두 번 부르지만 두 겹은 아니다
+  // 파일 머리. **429 만** 넘긴다. 두 조회가 각각 맞을 수 있어 두 번 부르지만 두 겹은 아니다
   // (훅은 값 하나를 지켜보고, 멱등은 스토어 가드가 진다).
   useApiKeyNotice(manage.rosterError?.kind === 'rateLimited' ? manage.rosterError : null)
   useApiKeyNotice(manage.accountsError?.kind === 'rateLimited' ? manage.accountsError : null)

@@ -1,4 +1,4 @@
-// ThemeModal 안에 들어가는 선택 목록 — 모달 자체가 카드 역할을 하므로 여기서는 카드 테두리를
+// ThemeModal 안에 들어가는 선택 목록. 모달 자체가 카드 역할을 하므로 여기서는 카드 테두리를
 // 다시 두르지 않는다.
 //
 // **테마 이름을 손으로 적지 않는다**. 목록·카테고리·모드가 전부
@@ -131,7 +131,7 @@ function ThemeTile(props: ThemeTileProps): React.JSX.Element {
   const ModeIcon = tokens.mode === 'dark' ? MoonIcon : SunIcon
 
   return (
-    // 셀 — **한 줄에 둘**을 만드는 자리다. `w-1/2` 는 퍼센트 하나뿐이라 NativeWind 가 그대로
+    // 셀. **한 줄에 둘**을 만드는 자리다. `w-1/2` 는 퍼센트 하나뿐이라 NativeWind 가 그대로
     // 내보내고(`calc()` 와 달리), 패딩 5px 이 칸 사이 10px 을 만든다.
     <View className="w-1/2 p-[5px]">
         <Pressable

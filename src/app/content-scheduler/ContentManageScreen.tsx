@@ -1,4 +1,4 @@
-// 컨텐츠 관리 — 수동 추적 항목 편집.
+// 컨텐츠 관리. 수동 추적 항목 편집.
 //
 // ══ RN 으로 옮기며 갈린 것 다섯 ═══════════════════════════════════════════════════
 //
@@ -12,7 +12,7 @@
 //    길은 수동 모드에서만 보이는 버튼 하나뿐이고 그 위에 덮여 있는 동안 설정 탭에 닿을 수도 없다.
 //    그래도 **계약은 남긴다**. 모드가 바뀌면 물러난다. 비용이 effect 한 줄이고, 지우면 "왜 없어도
 //    되는지"를 다음 사람이 다시 증명해야 한다.
-// ④ `<button aria-pressed>` → `Pressable` + **`aria-selected`**(RN 접근성 상태에 *pressed* 가 없다 —
+// ④ `<button aria-pressed>` → `Pressable` + **`aria-selected`**(RN 접근성 상태에 *pressed* 가 없다.
 //    설정·온보딩의 선택 카드가 이미 밟은 자리).
 // ⑤ **잠금 스크림에서 `backdrop-blur-[2px]` 가 빠진다**(의 표기 규칙 중 흐림 몫).
 //  RN 에 `backdrop-filter` 가 없어 되붙일 방법이 없고 이 웹에서 그것을 걷어낸 뒤라
@@ -77,7 +77,7 @@ function categoryIcon(label: string | null): LucideIcon {
 // 토글은 즉시 저장한다(로컬 Preferences 쓰기뿐이고 비파괴적이라 확인 버튼 없음). 대상 캐릭터는
 // 컨텐츠 스케줄러에서 선택된 캐릭터를 승계한다. 수동 모드 전용.
 // 리디자인(2026-07-24, 와이어프레임 리뷰): content_name에 이미 있는 접두사(lib/scheduler/content-category)로
-// 카테고리 그룹핑 — 반복되는 "[일일 퀘스트] …"를 헤더로 한 번만 묶고 행에는 알맹이만 표시한다.
+// 카테고리 그룹핑. 반복되는 "[일일 퀘스트] …"를 헤더로 한 번만 묶고 행에는 알맹이만 표시한다.
 export function ContentManageScreen(): React.JSX.Element {
   const {
     status,
@@ -106,7 +106,7 @@ export function ContentManageScreen(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // 파일 머리 ③ — 웹 `<Navigate to="/content" replace />` 의 자리.
+  // 파일 머리 ③. 웹 `<Navigate to="/content" replace />` 의 자리.
   useEffect(() => {
     if (mode !== 'manual') navigation.goBack()
   }, [mode, navigation])
@@ -115,7 +115,7 @@ export function ContentManageScreen(): React.JSX.Element {
   // **공유했는데 화면마다 다른 캐릭터** 가 다시 생긴다.
   const selected = resolveSelectedCharacter(selectedOcid, characters)
 
-  // : 링 없는 초상화 레일 — 이름과 레벨만 싣는다(`rings: []`).
+  // : 링 없는 초상화 레일. 이름과 레벨만 싣는다(`rings: []`).
   const railEntries: CharacterRailEntry[] = characters.map((character) => ({
     ocid: character.ocid,
     characterName: character.characterName,
@@ -166,13 +166,13 @@ export function ContentManageScreen(): React.JSX.Element {
               </Pressable>
               <Text className="text-lg font-semibold text-text">컨텐츠 관리</Text>
             </View>
-            {/*: 읽기 전용 칩이던 자리 — 이 화면에서 캐릭터를 갈아 가며 쓰는데도
+            {/*: 읽기 전용 칩이던 자리. 이 화면에서 캐릭터를 갈아 가며 쓰는데도
                 바꾸려면 뒤로 나가야 했다. 자리와 크기감은 그대로 두고(compact) 누를 수 있게만 한다.
                 onSelect는 스케줄러와 같은 selectCharacter라 돌아갔을 때 그쪽도 같은 캐릭터다. */}
           </PageHeaderTitleRow>
 
           {/*: 제목 줄 우측의 compact 드롭다운이 **초상화 레일**이 됐다(스케줄러와
-              같은 컴포넌트). **여기에는 진행 링이 없다**(`rings: []`) — 이 화면의 일은 캐릭터를 고르는
+              같은 컴포넌트). **여기에는 진행 링이 없다**(`rings: []`). 이 화면의 일은 캐릭터를 고르는
               것이지 진행을 보는 것이 아니고, 링 자리를 비우면 글자가 얼굴 쪽으로 들어와 칸도 낮아진다.
               제목 줄에서 내려온 이유는 레일이 그 작은 자리에 안 들어가기 때문이다. */}
           {selected !== null && (
@@ -216,7 +216,7 @@ export function ContentManageScreen(): React.JSX.Element {
     >
       <View testID="screen-ContentManage">
         {/*: 조회가 끝나기 전(idle·loading)에는 빈 상태 문구로 위장하지 않고
-            로딩 카드를 그린다 — 확정된 빈 상태는 조회가 끝난 뒤에만 말할 수 있다. */}
+            로딩 카드를 그린다. 확정된 빈 상태는 조회가 끝난 뒤에만 말할 수 있다. */}
         {selected === null && (status === 'idle' || status === 'loading') ? (
           <View className="px-4 pb-4">
             <LoadingState size="page" message="불러오고 있어요" />
@@ -224,7 +224,7 @@ export function ContentManageScreen(): React.JSX.Element {
         ) : selected === null ? (
           <View className="px-4 pb-4">
             <Text className="text-sm text-text-muted">
-              캐릭터를 먼저 선택해주세요 — 컨텐츠 스케줄러의 "캐릭터 관리"에서 추가할 수 있어요.
+              캐릭터를 먼저 선택해주세요. 컨텐츠 스케줄러의 "캐릭터 관리"에서 추가할 수 있어요.
             </Text>
           </View>
         ) : (
@@ -255,7 +255,7 @@ export function ContentManageScreen(): React.JSX.Element {
                       const isTracked = trackedNames.has(entry.content_name)
                       const isLocked = isGuildBlocked(entry.content_name)
                       const tag = contentCountTag(entry, group.label)
-                      // 사유는 오른쪽 뱃지가 아니라 흐려진 행 위에 얹는 한 줄로 알린다 —
+                      // 사유는 오른쪽 뱃지가 아니라 흐려진 행 위에 얹는 한 줄로 알린다.
                       // 보스 관리 화면과 같은 규칙(사용자 피드백).
                       return (
                         <View key={entry.content_name}>
@@ -289,7 +289,7 @@ export function ContentManageScreen(): React.JSX.Element {
                             )}
                           </Pressable>
 
-                          {/* 보스 관리 화면과 같은 규칙 — 흐림은 콘텐츠 opacity가 아니라 그 위를
+                          {/* 보스 관리 화면과 같은 규칙. 흐림은 콘텐츠 opacity가 아니라 그 위를
                               덮는 스크림이다. 이 행은 자체 배경이 없어 페이지 배경색(bg)으로 덮는다.
                               `backdrop-blur` 는 RN 에 없어 빠진다(파일 머리 ⑤). */}
                           {isLocked && (

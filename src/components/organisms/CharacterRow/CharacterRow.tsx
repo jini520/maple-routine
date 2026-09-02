@@ -37,7 +37,7 @@ import { Text } from '../../atoms'
 
 const ROW_CLASS = 'flex-row items-center gap-2 rounded-[14px] border border-border bg-surface px-2.5 py-2'
 
-/** 2줄에 설 글자 — 아무것도 모르면 `null` 이고, 그때 그 줄은 아예 그려지지 않는다. */
+/** 2줄에 설 글자. 아무것도 모르면 `null` 이고, 그때 그 줄은 아예 그려지지 않는다. */
 function captionText(level: number | null, jobClass: string | undefined): string | null {
   const parts = [level !== null ? `Lv.${level}` : null, jobClass ?? null].filter(
     (part): part is string => part !== null,
@@ -51,13 +51,13 @@ export interface CharacterRowProps {
   jobClass?: string
   world?: string
   imageUrl: string | null
-  /** 조회 불가 — 2줄이 조회할 수 없는 캐릭터 로 바뀐다. */
+  /** 조회 불가. 2줄이 조회할 수 없는 캐릭터 로 바뀐다. */
   unavailable?: boolean
-  /** 왼쪽 슬롯: 끌기 핸들(위 층에만 — 결정 5). */
+  /** 왼쪽 슬롯: 끌기 핸들(위 층에만. 결정 5). */
   leading?: React.ReactNode
   /** 오른쪽 슬롯: 위 층은 별+✕, 아래 층은 ＋. */
   trailing?: React.ReactNode
-  /** 주면 **카드 전체**가 버튼이 된다(결정 3 — `＋` 는 표시일 뿐 버튼이 아니다). */
+  /** 주면 **카드 전체**가 버튼이 된다(결정 3. `＋` 는 표시일 뿐 버튼이 아니다). */
   onPress?: () => void
 }
 

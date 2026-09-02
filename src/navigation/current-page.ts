@@ -33,7 +33,7 @@ function isTabRoute(name: unknown): name is TabRouteName {
 function firstPageOfLayer(layer: string): TabRouteName | undefined {
   const group = BAR_GROUPS.find((candidate) => candidate.layer === layer)
   if (group !== undefined) return group.subs[0].page
-  // 그룹 층 — 하위가 없는 그룹들의 페이지 중 첫째다.
+  // 그룹 층. 하위가 없는 그룹들의 페이지 중 첫째다.
   if (layer === ('Groups' satisfies LayerRouteName)) {
     return BAR_GROUPS.find((candidate) => candidate.page !== null)?.page ?? undefined
   }

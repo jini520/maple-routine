@@ -177,7 +177,7 @@ describe('갈래', () => {
   })
 
   // 사냥은 자유 입력이 아니라 **고르개 둘**이다. 그 칸이 아예 안 선다.
-  it('사냥에는 이름 칸이 없다 — 사냥터는 고르는 것이다', async () => {
+  it('사냥에는 이름 칸이 없다. 사냥터는 고르는 것이다', async () => {
     const view = await 그리기()
 
     await 누르기(view, '사냥')
@@ -203,7 +203,7 @@ describe('갈래', () => {
  *
  * **치는 자리는 `금액` 칸**이다. 큰 숫자는 그 곱을 그리기만 한다.
  */
-describe('금액 — OS 숫자 키보드다', () => {
+describe('금액. OS 숫자 키보드다', () => {
   it('앱 키패드를 안 그린다', async () => {
     const view = await 그리기()
 
@@ -211,7 +211,7 @@ describe('금액 — OS 숫자 키보드다', () => {
     expect(view.queryByLabelText('00')).toBeNull()
   })
 
-  it('숫자 키보드를 부른다 — 글자 키보드가 아니다', async () => {
+  it('숫자 키보드를 부른다. 글자 키보드가 아니다', async () => {
     const view = await 직접치는시트()
 
     expect(view.getByTestId('income-sheet-unit-price').props.keyboardType).toBe('number-pad')
@@ -243,7 +243,7 @@ describe('금액 — OS 숫자 키보드다', () => {
    * 값에서 글자를 다시 만들던 때는 `80000000000` 에서 `8` 을 지운 `0000000000` 이 0 으로 접혀
    * 칸이 통째로 비었다. 처음부터 다시 쳐야 했다(사용자 보고 2026-09-02).
    */
-  it('앞자리를 지워도 나머지가 남는다 — 처음부터 다시 안 친다', async () => {
+  it('앞자리를 지워도 나머지가 남는다. 처음부터 다시 안 친다', async () => {
     const view = await 직접치는시트()
     await 치기(view, '80000000000')
 
@@ -283,11 +283,11 @@ describe('금액 — OS 숫자 키보드다', () => {
   /**
    * **빠른 칩은 없다**(폐기, 사용자 지정 2026-08-26).
    *
-   * 폼 안에 두면 저장과 이웃하고, 키보드 위로 내보내면 자리를 못 잡았다(라이브러리 슬롯) —
+   * 폼 안에 두면 저장과 이웃하고, 키보드 위로 내보내면 자리를 못 잡았다(라이브러리 슬롯).
    * 시트 마지막 자식으로 붙여 본 뒤에도 판정은 *"별로다"* 였다. 자리를 세 번 옮겨도 안 나아지는
    * 것은 **없는 편이 낫다.**
    */
-  it('빠른 칩이 없다 — 커서를 넣어도 안 뜬다', async () => {
+  it('빠른 칩이 없다. 커서를 넣어도 안 뜬다', async () => {
     const view = await 직접치는시트()
 
     await act(async () => {
@@ -318,7 +318,7 @@ describe('금액 — OS 숫자 키보드다', () => {
 /**
  * **아이템 판매는 경매장 수수료를 뗀 값이 수입**이다(사용자 지정 2026-08-27).
  *
- * 요율은 의 `FeePercent`(3·5 — 사용자 확인값)를 그대로 쓰고, 계산도
+ * 요율은 의 `FeePercent`(3·5. 사용자 확인값)를 그대로 쓰고, 계산도
  * `netProceedsMeso` 를 그대로 부른다. 여기서 다시 짜면 분배 계산기와 1 메소가 어긋난다.
  */
 describe('판매 수수료', () => {
@@ -427,7 +427,7 @@ describe('판매 수수료', () => {
 })
 
 describe('저장', () => {
-  it('갈래와 이름과 금액을 넘긴다 — 통화 칸이 없다', async () => {
+  it('갈래와 이름과 금액을 넘긴다. 통화 칸이 없다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
 
@@ -491,7 +491,7 @@ describe('캐릭터 귀속', () => {
     expect(onSave.mock.calls[0][0]).toMatchObject({ ocid: 'ocid-2' })
   })
 
-  it('안 고르면 계정 단위로 저장한다 — `ocid` 가 `null` 이다', async () => {
+  it('안 고르면 계정 단위로 저장한다. `ocid` 가 `null` 이다', async () => {
     const onSave = jest.fn()
     const view = await 판매시트({ onSave })
     await 대금치기(view, '1200')
@@ -534,7 +534,7 @@ describe('수정 모드', () => {
     expect(view.queryByLabelText('사냥')).toBeNull()
   })
 
-  it('세부는 그대로 고친다 — 이름·금액·캐릭터', async () => {
+  it('세부는 그대로 고친다. 이름·금액·캐릭터', async () => {
     const view = await 그리기({ editing: 판매기록, onDelete: jest.fn() })
 
     expect(view.getByTestId('income-sheet-name-label')).toHaveTextContent('판매 아이템')
@@ -585,7 +585,7 @@ describe('통화', () => {
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
 
-  it('메포는 메포 칸에 담기고 시세가 함께 실린다 — 메소 칸은 비운다', async () => {
+  it('메포는 메포 칸에 담기고 시세가 함께 실린다. 메소 칸은 비운다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave, lastPointRate: 1_180 })
     await 이름으로누르기(view, '기타')
@@ -645,7 +645,7 @@ describe('통화', () => {
       expect(onSave.mock.calls[0][0]).toMatchObject({ mesoAmount: 60_000_000, quantity: 2 })
     })
 
-    it('수정으로 열면 금액을 되짚는다 — `총액 ÷ 수량` 이다', async () => {
+    it('수정으로 열면 금액을 되짚는다. `총액 ÷ 수량` 이다', async () => {
       const view = await 그리기({
         editing: {
           id: 'inc-q',
@@ -672,8 +672,8 @@ describe('통화', () => {
       expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('6천만')
     })
 
-    // 이 칸이 없던 시절의 행 — `quantity` 가 `null` 이라 수량 1 로 열리고 총액이 곧 금액이다.
-    it('수량이 없는 옛 행은 수량 1 로 열린다 — 금액이 안 바뀐다', async () => {
+    // 이 칸이 없던 시절의 행. `quantity` 가 `null` 이라 수량 1 로 열리고 총액이 곧 금액이다.
+    it('수량이 없는 옛 행은 수량 1 로 열린다. 금액이 안 바뀐다', async () => {
       const view = await 그리기({
         editing: {
           id: 'inc-old',
@@ -815,7 +815,7 @@ describe('사냥 계산기', () => {
   it('지역 목록이 **±20 안의 몬스터가 있는** 것만 선다 (결정 6)', async () => {
     const view = await 그리기()
     await 누르기(view, '사냥')
-    // 루디는 294 — 탈라하트(몬스터 290-294)는 들고 츄츄 아일랜드(210-219)는 안 든다.
+    // 루디는 294. 탈라하트(몬스터 290-294)는 들고 츄츄 아일랜드(210-219)는 안 든다.
     await 루디고르기(view)
     await 아이디로누르기(view, 'income-sheet-region-trigger')
 
@@ -842,7 +842,7 @@ describe('사냥 계산기', () => {
    * 고르개가 바로 위에 **비어 있는 채로** 있으므로 그 사실은 이미 화면에 있고, 문장은 자리만
    * 차지했다(시트가 82vh 를 넘기던 그 자리다).
    */
-  it('레벨 안내 줄이 없다 — 빈 캐릭터 고르개가 이미 그 말을 한다', async () => {
+  it('레벨 안내 줄이 없다. 빈 캐릭터 고르개가 이미 그 말을 한다', async () => {
     const view = await 그리기()
     await 누르기(view, '사냥')
 
@@ -855,7 +855,7 @@ describe('사냥 계산기', () => {
     await 밤의길3(view)
     expect(view.getByTestId('income-sheet-ground-trigger')).toHaveTextContent('사냥터밤의 길 3')
 
-    // 아델은 210 — 탈라하트(290-294)가 창(190~230) 밖이다. 안 풀면 화면에는 다른 지역이
+    // 아델은 210. 탈라하트(290-294)가 창(190~230) 밖이다. 안 풀면 화면에는 다른 지역이
     // 적히는데 계산은 옛 사냥터로 도는 상태가 된다.
     await 아이디로누르기(view, 'income-sheet-character-trigger')
     await 아이디로누르기(view, 'income-sheet-character-option-ocid-2')
@@ -867,7 +867,7 @@ describe('사냥 계산기', () => {
     )
   })
 
-  it('지역을 옮기면 사냥터가 풀린다 — 남의 맵으로 계산이 돌지 않는다', async () => {
+  it('지역을 옮기면 사냥터가 풀린다. 남의 맵으로 계산이 돌지 않는다', async () => {
     const view = await 그리기()
     await 밤의길3(view)
 
@@ -877,7 +877,7 @@ describe('사냥 계산기', () => {
     expect(view.getByTestId('income-sheet-ground-trigger')).toHaveTextContent('사냥터선택 안함')
   })
 
-  it('사냥터를 고르면 **획득 메소가 선다** — 사용자가 준 그 예시다', async () => {
+  it('사냥터를 고르면 **획득 메소가 선다**. 사용자가 준 그 예시다', async () => {
     const view = await 그리기()
     await 밤의길3(view)
 
@@ -886,7 +886,7 @@ describe('사냥 계산기', () => {
     expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 21,168,000')
   })
 
-  it('고른 사냥터의 값이 **자기 줄**로 선다 — 포스 배지·레벨·마릿수 (결정 10)', async () => {
+  it('고른 사냥터의 값이 **자기 줄**로 선다. 포스 배지·레벨·마릿수 (결정 10)', async () => {
     const view = await 그리기()
     await 밤의길3(view)
 
@@ -895,7 +895,7 @@ describe('사냥 계산기', () => {
     expect(view.getAllByLabelText('어센틱 포스 700').length).toBeGreaterThan(0)
   })
 
-  it('소재를 늘리면 메소가 그만큼 는다 — 하나가 30분이다 (결정 7)', async () => {
+  it('소재를 늘리면 메소가 그만큼 는다. 하나가 30분이다 (결정 7)', async () => {
     const view = await 그리기()
     await 밤의길3(view)
 
@@ -922,7 +922,7 @@ describe('사냥 계산기', () => {
     expect(view.queryByLabelText('85%')).toBeNull()
   })
 
-  it('맵을 바꾸면 조각 글자가 다시 계산된다 — 고른 조각은 그대로다', async () => {
+  it('맵을 바꾸면 조각 글자가 다시 계산된다. 고른 조각은 그대로다', async () => {
     const view = await 그리기()
     await 밤의길3(view)
     await 누르기(view, '95%') // 40마리에서 둘을 놓친다
@@ -937,7 +937,7 @@ describe('사냥 계산기', () => {
     expect(view.getByTestId('income-sheet-killed-mobs')).toHaveTextContent('20마리')
   })
 
-  it('놓친 만큼 덜 잡는다 — 요약 줄의 마릿수가 준다 (사용자 지정)', async () => {
+  it('놓친 만큼 덜 잡는다. 요약 줄의 마릿수가 준다 (사용자 지정)', async () => {
     const view = await 그리기()
     await 밤의길3(view)
     expect(view.getByTestId('income-sheet-killed-mobs')).toHaveTextContent('40마리')
@@ -965,7 +965,7 @@ describe('사냥 계산기', () => {
       .getAllByTestId(/^income-sheet-ground-option-/)
       .map((each) => each.props.testID.replace('income-sheet-ground-option-', ''))
 
-    // 오디움은 몬스터가 270-274 이고 루디는 294 — 274 짜리가 가장 가깝다.
+    // 오디움은 몬스터가 270-274 이고 루디는 294. 274 짜리가 가장 가깝다.
     // 첫 칸은 `선택 안함`(값이 `null` 이라 이름이 빈 글자다).
     expect(이름들.slice(0, 5)).toEqual([
       '',
@@ -978,7 +978,7 @@ describe('사냥 계산기', () => {
     expect(이름들.indexOf('성문으로 가는 길 1')).toBeGreaterThan(10)
   })
 
-  it('사냥터를 고르기 전에는 효율 줄이 안 선다 — 적을 글자가 없다', async () => {
+  it('사냥터를 고르기 전에는 효율 줄이 안 선다. 적을 글자가 없다', async () => {
     const view = await 그리기()
     await 누르기(view, '사냥')
 
@@ -994,7 +994,7 @@ describe('사냥 계산기', () => {
    * 유니온의 부는 합산 통 안이고 재획비는 그 결과 전체에 곱한다. 는 둘을 한 통에 넣어
    * ×1.7 을 냈는데, 그 값이 정정으로 갈렸다.
    */
-  it('유니온의 부는 통 안, 재획비는 통 밖이다 — 둘을 켜면 ×1.8', async () => {
+  it('유니온의 부는 통 안, 재획비는 통 밖이다. 둘을 켜면 ×1.8', async () => {
     const view = await 그리기()
     await 밤의길3(view)
 
@@ -1005,7 +1005,7 @@ describe('사냥 계산기', () => {
     expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 38,102,400')
   })
 
-  it('재획비만 켜면 ×1.2 가 걸린다 — 다만 칩엔 수를 안 적는다', async () => {
+  it('재획비만 켜면 ×1.2 가 걸린다. 다만 칩엔 수를 안 적는다', async () => {
     const view = await 그리기()
     await 밤의길3(view)
     await 누르기(view, '소형 재물 획득의 비약')
@@ -1046,7 +1046,7 @@ describe('사냥 계산기', () => {
     // 캐릭터를 안 골랐으면 페널티가 0 이다: 270 × 7.5 × 34 × 8 × 30 = 16,524,000
     expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 16,524,000')
 
-    // 루디는 294 — 몬스터가 24 낮으니 20% 에 5·6·7·8 을 더해 −46% 다. 오디움은 루디의 바닥
+    // 루디는 294. 몬스터가 24 낮으니 20% 에 5·6·7·8 을 더해 −46% 다. 오디움은 루디의 바닥
     // (274)에 걸쳐 있어 목록에 남는다. 남으면서 가장 많이 깎이는 자리다.
     await 루디고르기(view)
 
@@ -1075,7 +1075,7 @@ describe('사냥 계산기', () => {
    * **조각은 스테퍼가 아니라 치는 칸이다**(사용자 지적 2026-08-28). 30분에 10개 내외라
    * 8소재면 80개가 넘는데, 스테퍼로는 여든 번을 눌러야 한다.
    */
-  it('조각을 한 번에 친다 — 스테퍼 버튼이 없다', async () => {
+  it('조각을 한 번에 친다. 스테퍼 버튼이 없다', async () => {
     const view = await 그리기()
     await 누르기(view, '사냥')
 
@@ -1097,7 +1097,7 @@ describe('사냥 계산기', () => {
     expect(view.getByTestId('income-sheet-fragments').props.value).toBe('12340')
   })
 
-  it('사냥터를 안 골라도 조각만으로 적을 수 있다 — 계산기가 반쯤 찬 상태다', async () => {
+  it('사냥터를 안 골라도 조각만으로 적을 수 있다. 계산기가 반쯤 찬 상태다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
     await 누르기(view, '사냥')
@@ -1135,7 +1135,7 @@ describe('사냥 계산기', () => {
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
       category: '사냥',
-      // 사냥터는 `item` 에 이름 그대로 — 전역 유일이라 지역이 따라온다(결정 2).
+      // 사냥터는 `item` 에 이름 그대로. 전역 유일이라 지역이 따라온다(결정 2).
       item: '밤의 길 3',
       ocid: 'ocid-1',
       hunt: {
@@ -1363,7 +1363,7 @@ describe('메소 획득량', () => {
     expect(view.queryByTestId('income-sheet-meso-rate-input')).toBeNull()
   })
 
-  it('캐릭터가 없어도 켠 것은 든다 — 유니온의 부만 켜면 50%', async () => {
+  it('캐릭터가 없어도 켠 것은 든다. 유니온의 부만 켜면 50%', async () => {
     const view = await 그리기()
     await 누르기(view, '사냥')
     await 누르기(view, '유니온의 부')
@@ -1392,7 +1392,7 @@ describe('메소 획득량', () => {
     expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 52,708,320')
   })
 
-  it('메획 0 을 읽은 캐릭터는 곱이 ×1 이다 — `못 읽었다`와 다르다', async () => {
+  it('메획 0 을 읽은 캐릭터는 곱이 ×1 이다. `못 읽었다`와 다르다', async () => {
     const view = await 그리기({
       loadMesoRate: async () => ({ kind: 'read' as const, percent: 0 }),
     })
@@ -1437,7 +1437,7 @@ describe('메소 획득량', () => {
     expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 42,336,000')
   })
 
-  it('캐릭터를 바꾸면 **다시 읽는다** — 그건 사용자가 한 일이다', async () => {
+  it('캐릭터를 바꾸면 **다시 읽는다**. 그건 사용자가 한 일이다', async () => {
     const loadMesoRate = jest.fn(async (ocid: string) => ({
       kind: 'read' as const,
       percent: ocid === 'ocid-1' ? 149 : 46,
@@ -1477,7 +1477,7 @@ describe('메소 획득량', () => {
     expect(view.getByTestId('income-sheet-meso-rate')).toHaveTextContent('199%')
   })
 
-  it('재획비를 켜면 198% 다 — (100+149)×1.2 = 298.8', async () => {
+  it('재획비를 켜면 198% 다. (100+149)×1.2 = 298.8', async () => {
     const view = await 그리기({ loadMesoRate: async () => ({ kind: 'read' as const, percent: 149 }) })
     await 밤의길3(view)
     await 루디고르기(view)
@@ -1487,7 +1487,7 @@ describe('메소 획득량', () => {
     expect(view.getByTestId('income-sheet-meso-rate')).toHaveTextContent('198%')
   })
 
-  it('둘 다 켜면 258% 다 — 358.8 의 **소수점을 버린다**', async () => {
+  it('둘 다 켜면 258% 다. 358.8 의 **소수점을 버린다**', async () => {
     const view = await 그리기({ loadMesoRate: async () => ({ kind: 'read' as const, percent: 149 }) })
     await 밤의길3(view)
     await 루디고르기(view)
@@ -1502,7 +1502,7 @@ describe('메소 획득량', () => {
    * **자른 숫자가 돈을 세지 않는다**(과 같은 규칙). 줄에는 258% 가 적히지만
    * 곱하는 것은 358.8% 다. 라벨이 계산을 끌고 다니면 왜 저 금액인가 를 되짚을 수 없다.
    */
-  it('돈은 **내림 전 값**으로 센다 — 줄의 258% 가 아니라 358.8%', async () => {
+  it('돈은 **내림 전 값**으로 센다. 줄의 258% 가 아니라 358.8%', async () => {
     const view = await 그리기({ loadMesoRate: async () => ({ kind: 'read' as const, percent: 149 }) })
     await 밤의길3(view)
     await 루디고르기(view)
@@ -1534,7 +1534,7 @@ describe('메소 획득량', () => {
    * **켜는 자리와 세어진 값이 위아래로 갈린다**(사용자 지정 2026-08-29).
    * 윗 줄이 켜고 끄는 것 둘, 아랫 줄이 그 결과다.
    */
-  it('켜는 줄과 값 줄이 갈린다 — 값은 켜는 줄 안에 없다', async () => {
+  it('켜는 줄과 값 줄이 갈린다. 값은 켜는 줄 안에 없다', async () => {
     const view = await 그리기({ loadMesoRate: async () => ({ kind: 'read' as const, percent: 149 }) })
     await 누르기(view, '사냥')
     await 루디고르기(view)
@@ -1614,7 +1614,7 @@ describe('메소 획득량', () => {
  * 수정으로 열면 **그 기록의 값이 곧바로 선다**.
  *
  * 이 자리는 한때 카운트업의 기억(모듈 수준이라 시트를 닫아도 남았다) 때문에 **지난 기록의 금액에서
- * 굴러왔다**(사용자 보고 2026-08-29 — 56억을 봤다가 121억을 열면 오르는 애니메이션이 났다).
+ * 굴러왔다**(사용자 보고 2026-08-29. 56억을 봤다가 121억을 열면 오르는 애니메이션이 났다).
  * 이름표를 발급해 막았다가, 결정 12 가 카운트업 자체를 걷으면서 그 장치가 통째로 사라졌다.
  * 회귀를 막으려고 결과는 그대로 붙든다.
  */
@@ -1650,7 +1650,7 @@ describe('수정으로 열 때의 큰 숫자', () => {
     expect(나중.getByTestId('income-sheet-amount')).toHaveTextContent('121억')
   })
 
-  it('사냥 · 기타도 같다 — 갈래마다 자기 이름표를 갖는다', async () => {
+  it('사냥 · 기타도 같다. 갈래마다 자기 이름표를 갖는다', async () => {
     const 먼저 = await 그리기({
       editing: { ...판매기록(5_600_000_000), category: '기타' as const },
       onDelete: jest.fn(),
@@ -1716,7 +1716,7 @@ describe('사냥 폼의 줄 배치 (사용자 지정 2026-09-01)', () => {
     expect(소비.flex).toBe(메획.flex * 2)
   })
 
-  it('켜고 끄는 것은 **체크박스**다 — 눌리면 상태가 뒤집힌다', async () => {
+  it('켜고 끄는 것은 **체크박스**다. 눌리면 상태가 뒤집힌다', async () => {
     const view = await 그리기()
     await 사냥열기(view)
 
@@ -1780,7 +1780,7 @@ describe('날짜 바꾸기', () => {
     expect(view.getByTestId('income-sheet-gross').props.value).toBe('1200000000')
   })
 
-  it('수정으로 열어도 바꿀 수 있다 — 그 기록이 다른 날로 옮겨 간다', async () => {
+  it('수정으로 열어도 바꿀 수 있다. 그 기록이 다른 날로 옮겨 간다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({
       onSave,

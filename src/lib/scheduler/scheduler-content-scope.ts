@@ -65,7 +65,7 @@ export function getMaxCountOverride(name: string): number | null {
   return match?.[1] ?? null
 }
 
-/** 공유 항목 하나 — 계열까지 붙은 카탈로그 줄 그대로다. */
+/** 공유 항목 하나. 계열까지 붙은 카탈로그 줄 그대로다. */
 export interface SharedContentEntry {
   /** API 가 보내는 이름. 호출부가 캐릭터 응답에서 이 항목을 다시 찾을 때 쓴다. */
   name: string

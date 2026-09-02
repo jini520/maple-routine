@@ -39,7 +39,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ChevronDownIcon, Text } from '../../atoms'
 import { placeDropdown } from '../AccountSelect/place-dropdown'
 
-/** 목록이 화면 가장자리에 붙지 않게 남기는 여백 — `AccountSelect` 와 같은 값이다. */
+/** 목록이 화면 가장자리에 붙지 않게 남기는 여백. `AccountSelect` 와 같은 값이다. */
 const EDGE_GAP_PX = 12
 
 export interface SelectOption {
@@ -104,7 +104,7 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
     return () => subscription.remove()
   }, [isOpen, close])
 
-  // 고른 값이 목록에 없을 수 있다(캐릭터 목록이 갱신되는 순간). **렌더 중에 던지지 않는다** —
+  // 고른 값이 목록에 없을 수 있다(캐릭터 목록이 갱신되는 순간). **렌더 중에 던지지 않는다**.
   // 첫 칸(대개 **안 고름**)으로 읽어 준다.
   const selectedLabel =
     props.options.find((option) => option.value === props.selected)?.label ??
@@ -177,7 +177,7 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
             }`}
           >
             <ScrollView>
-              {/* 자연 높이를 재는 자리 — `ScrollView` 안이라 바깥 `maxHeight` 에 안 눌린다. */}
+              {/* 자연 높이를 재는 자리. `ScrollView` 안이라 바깥 `maxHeight` 에 안 눌린다. */}
               <View onLayout={(event) => setContentHeight(event.nativeEvent.layout.height)}>
                 {props.options.map((option) => {
                   const isSelected = option.value === props.selected

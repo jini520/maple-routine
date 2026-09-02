@@ -10,7 +10,7 @@ import { rnKeyboardPort } from '../rn-keyboard'
  * 그러려면 내부 `_emitter` 를 거쳐야 한다. RN 0.86 의 `KeyboardImpl` 은 `emit` 을 밖에 내주지
  * 않는다(타입 선언은 `NativeEventEmitter` 를 상속한다고 적지만 실제 프로토타입에는
  * `addListener`·`removeAllListeners`·`dismiss`·`isVisible`·`metrics`·`scheduleLayoutAnimation`
- * 뿐이다). RN 업그레이드로 이 필드가 사라지면 아래 가드가 **읽을 수 있는 메시지로** 깨진다 —
+ * 뿐이다). RN 업그레이드로 이 필드가 사라지면 아래 가드가 **읽을 수 있는 메시지로** 깨진다.
  * 조용히 초록이 되는 것보다 낫다.
  */
 const EVENT = {
@@ -23,7 +23,7 @@ function emit(eventName: string): void {
   const emitter = (Keyboard as unknown as { _emitter?: { emit?: unknown } })._emitter
   if (typeof emitter?.emit !== 'function') {
     throw new Error(
-      'Keyboard._emitter.emit 이 없습니다 — RN 내부 구조가 바뀌었습니다. 이 테스트가 검사하려는 것은 ' +
+      'Keyboard._emitter.emit 이 없습니다. RN 내부 구조가 바뀌었습니다. 이 테스트가 검사하려는 것은 ' +
         '"해제 함수가 리스너를 실제로 떼는가"이므로, 목으로 대체하지 말고 emit 경로를 다시 찾으세요.',
     )
   }
@@ -42,7 +42,7 @@ describe('rnKeyboardPort', () => {
     unsubscribe()
   })
 
-  it('해제하면 그 뒤 이벤트에는 반응하지 않는다 — 두 리스너 모두', async () => {
+  it('해제하면 그 뒤 이벤트에는 반응하지 않는다. 두 리스너 모두', async () => {
     const onChange = jest.fn()
     const unsubscribe = await rnKeyboardPort.addVisibilityListener(onChange)
 

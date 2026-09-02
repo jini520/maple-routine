@@ -10,7 +10,7 @@
  *
  * ## 왜 `EXPO_PUBLIC_*` 인가
  *
- * Capacitor 쪽은 `import.meta.env` 를 넘긴다(`VITE_ADS_TEST` · `VITE_LIVE_UPDATE_CHANNEL`) —
+ * Capacitor 쪽은 `import.meta.env` 를 넘긴다(`VITE_ADS_TEST` · `VITE_LIVE_UPDATE_CHANNEL`).
  * **빌드 시점에 번들로 박히는 값**이라는 것이 요점이었다. RN 에서 정확히 같은 성질을 갖는 것이
  * Expo 의 `EXPO_PUBLIC_*` 이다(`babel-preset-expo` 가 번들에 리터럴로 인라인한다). 그래서 이름만
  * 갈아끼운다. `EXPO_PUBLIC_ADS_TEST` · `EXPO_PUBLIC_LIVE_UPDATE_CHANNEL`.
@@ -19,7 +19,7 @@
  * Vite 에 묶여 있지 않고 키 두 개짜리 객체를 받을 뿐이라, 이름을 고치는 것은 core 를 고치는 것이고
  * 이 전환의 규칙에 어긋난다.
  *
- * ## ⚠️ 실측 — Metro 트랜스폼 캐시가 이 값을 무효화하지 않는다
+ * ## ⚠️ 실측. Metro 트랜스폼 캐시가 이 값을 무효화하지 않는다
  *
  * `expo export --platform android` 로 번들 해시를 재 봤다(2026-08-11).
  *
@@ -42,7 +42,7 @@
  *
  * ## `__DEV__` 는 **테스트 광고 쪽으로만** 기운다
  *
- * Capacitor 초안이 `import.meta.env.DEV` 로 갈랐다가 실패한 이력이 있다(`features/ads.md` ⚠️) —
+ * Capacitor 초안이 `import.meta.env.DEV` 로 갈랐다가 실패한 이력이 있다(`features/ads.md` ⚠️).
  * Vite 가 빌드 산출물에서 그 값을 항상 `false` 로 치환하는데 Capacitor 앱은 개발 중에도 언제나
  * 빌드된 번들로 돌아서, **실기기 테스트 빌드에 실 광고가 나가고 있었다.** RN 의 `__DEV__` 도 같은
  * 한계를 갖는다. 테스터에게 나가는 릴리스 빌드는 `__DEV__ === false` 라 이것만으로는 못 막는다.

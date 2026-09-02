@@ -27,7 +27,7 @@ export function toColorVariableName(token: string): string {
 }
 
 /**
- * 스크림 위 패널의 테두리 — **RN 에는 선택자가 없어서 값으로 만든다.**
+ * 스크림 위 패널의 테두리. **RN 에는 선택자가 없어서 값으로 만든다.**
  *
  * 웹은 `:root[data-mode='light'] .panel-on-scrim { border-color: color-mix(...) }` 로 푼다. RN 에는
  * `data-mode` 도 `color-mix` 도 없으므로, 그 규칙이 계산하는 **결과를 토큰 하나로 미리 만들어** 둔다.
@@ -42,7 +42,7 @@ export function toColorVariableName(token: string): string {
  */
 export const PANEL_BORDER_TOKEN = 'panel-border'
 
-/** 라이트에서 `border` 를 `text` 쪽으로 미는 비중 — 가 실기기에서 세 번 만에 잡은 값. */
+/** 라이트에서 `border` 를 `text` 쪽으로 미는 비중. 가 실기기에서 세 번 만에 잡은 값. */
 const PANEL_BORDER_RATIO = 0.4
 
 /**
@@ -71,7 +71,7 @@ export function resolvePanelBorder(definition: ThemeDefinition): string {
 }
 
 /**
- * `:root` 에 해당하는 변수 맵 — 38토큰 + 모드에서 파생되는 `--color-panel-border`.
+ * `:root` 에 해당하는 변수 맵. 38토큰 + 모드에서 파생되는 `--color-panel-border`.
  *
  * 배경 이미지(`--theme-bg-*`)는 내지 않는다. RN 은 벽지를 CSS 배경이 아니라 `<Image>` 로 그리므로
  * 값의 형태 자체가 다르다. 로 에셋이 들어온 뒤에도 그대로다(core 는 `url("…")` 을
@@ -88,7 +88,7 @@ export function buildThemeVariables(definition: ThemeDefinition): Record<string,
 }
 
 /**
- * 시트 스코프 — **미디어 스코프와 같은 기법, 다른 목적**이다.
+ * 시트 스코프. **미디어 스코프와 같은 기법, 다른 목적**이다.
  *
  * ## 무엇이 어긋났나
  *
@@ -118,7 +118,7 @@ export function buildThemeVariables(definition: ThemeDefinition): Record<string,
 const SHEET_SCOPE_TOKENS = ['bg', 'surface', 'surface2', 'track'] as const
 
 /**
- * 한 칸 — `deriveMediaScope` 가 카드 안 `surface → surface-2` 를 벌릴 때 쓰는 폭과 **같은 수**다.
+ * 한 칸. `deriveMediaScope` 가 카드 안 `surface → surface-2` 를 벌릴 때 쓰는 폭과 **같은 수**다.
  *
  * 새 눈금을 만들지 않는다. 이 앱에서 표면 한 단계 는 이미 이 값이고, 두 벌이 되면 어느 쪽이
  * 진짜인지 알 수 없게 된다(테스트가 두 값의 일치를 지킨다).

@@ -1,4 +1,4 @@
-// 관찰용 카드 — 현재 실행 번들 버전과 상태를 보여주고 수동 확인을 제공한다.
+// 관찰용 카드. 현재 실행 번들 버전과 상태를 보여주고 수동 확인을 제공한다.
 // 새 버전을 실제로 받고 적용하는 동의 플로우는 `UpdatePromptModal` 이 담당한다.
 //
 // 섹션 제목(`앱 업데이트`)을 스스로 그리지 않는다. 이 카드가 놓이는 `/settings/about` 의 페이지
@@ -45,7 +45,7 @@ export type AppUpdateSectionActions = Pick<LiveUpdateStore, 'check'>
 export interface AppUpdateSectionProps {
   state: AppUpdateSectionState
   actions: AppUpdateSectionActions
-  /** `currentVersion` 이 없을 때 쓸 값 — 웹은 `package.json` 을 직접 읽었다(`SettingsScreen` 주석). */
+  /** `currentVersion` 이 없을 때 쓸 값. 웹은 `package.json` 을 직접 읽었다(`SettingsScreen` 주석). */
   fallbackVersion: string
 }
 

@@ -33,7 +33,7 @@ export function currencyOfLabel(label: string): FreeCurrency {
   return FREE_CURRENCIES.find((each) => each.label === label)?.id ?? 'meso'
 }
 
-/** 큰 숫자 옆에 서는 단위 — 캐시만 원이다. */
+/** 큰 숫자 옆에 서는 단위. 캐시만 원이다. */
 export function unitOfCurrency(id: FreeCurrency): string {
   return FREE_CURRENCIES.find((each) => each.id === id)?.unit ?? '메소'
 }

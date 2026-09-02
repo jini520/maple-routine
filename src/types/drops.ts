@@ -33,7 +33,7 @@ export interface FixedDropGroup {
   items: FixedDropItem[]
 }
 
-// 랜덤 상자 개봉 결과 — 반지 상자: itemName + ringLevel, 칠흑 장신구 상자: itemName만
+// 랜덤 상자 개봉 결과. 반지 상자: itemName + ringLevel, 칠흑 장신구 상자: itemName만
 export interface BoxResult {
   boxName: string
   itemName: string

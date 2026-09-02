@@ -143,7 +143,7 @@ describe('Modal', () => {
     expect(flattenStyle(getByTestId('test-modal').props.style).paddingTop).toBe(59 + 32)
   })
 
-  it('align="center" 면 세로 중앙에 놓는다 — 키보드를 띄우지 않는 모달용', async () => {
+  it('align="center" 면 세로 중앙에 놓는다. 키보드를 띄우지 않는 모달용', async () => {
     const { getByTestId } = await renderOverlay(
       <Modal onClose={noop} align="center" testId="test-modal">
         <Modal.Card>
@@ -157,7 +157,7 @@ describe('Modal', () => {
     expect(style.paddingTop).toBeUndefined()
   })
 
-  //  후반 — 하드웨어 뒤로가기는 스택을 pop 하지 않고 이 오버레이만 닫는다.
+  //  후반. 하드웨어 뒤로가기는 스택을 pop 하지 않고 이 오버레이만 닫는다.
   it('안드로이드 뒤로가기(onRequestClose)가 onClose 로 이어진다', async () => {
     const onClose = jest.fn()
     const { getByTestId } = await renderOverlay(

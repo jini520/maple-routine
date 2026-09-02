@@ -1,5 +1,5 @@
 /**
- * 위젯 3 — **이번 주 보스 수익**.
+ * 위젯 3. **이번 주 보스 수익**.
  *
  * ## 이 타일에는 증감이 없다
  *
@@ -11,7 +11,7 @@
  * ## 0 을 그리는 위젯은 이것뿐이다
  *
  * 큰 0 을 그리지 않는다를 이 타일에서만 뒤집는다(사용자 지시). 그 규칙이
- * 지키려던 것. 없다 와 모른다 를 가르는 일 — 은 옆의 한 줄(*아직 이번 주 기록이 없습니다*)이
+ * 지키려던 것. 없다 와 모른다 를 가르는 일. 은 옆의 한 줄(*아직 이번 주 기록이 없습니다*)이
  * 진다. 그때는 **스택 바와 분해 금액도 함께 사라진다**: 0/0 인 바와 결정석 0 · 아이템 0은 분해할
  * 것이 없는데 분해한 척이다.
  *
@@ -72,7 +72,7 @@ const LEGEND_DOT_CLASS = {
 const SEGMENT_LABEL = { crystal: '결정석', item: '아이템' } as const
 
 /**
- * 얼굴 지름 — **`남은 스케줄`과 같은 32**.
+ * 얼굴 지름. **`남은 스케줄`과 같은 32**.
  *
  * 26 이던 이유는 고정 3행 안에서 얼굴이 커지면 줄 간격을 먹는다 였는데, 타일 높이가 내용을 따르게
  * 된 뒤로 그 사정이 사라졌다. 같은 캐릭터가 두 타일에서 다른 크기로 서면 그것이 같은 목록의 같은
@@ -81,7 +81,7 @@ const SEGMENT_LABEL = { crystal: '결정석', item: '아이템' } as const
 const FACE_PX = 32
 
 /**
- * 순위 표기 — **`1st · 2nd · 3rd`**(사용자 지정).
+ * 순위 표기. **`1st · 2nd · 3rd`**(사용자 지정).
  *
  * 상한이 셋이라(`TOP_CHARACTER_COUNT`) 표는 셋이면 충분하지만, 상한이 늘 때 **조용히 틀린 글자**가
  * 서는 것보다는 `4th` 로 물러나는 편이 낫다.
@@ -103,7 +103,7 @@ function rankLabel(rank: number): string {
 
 type SegmentKey = keyof typeof SEGMENT_CLASS
 
-/** 4x3 · 4x2 · 2x2 · 2x1 — 그리는 것이 갈리므로 이름이 크기가 아니라 밀도를 말한다. */
+/** 4x3 · 4x2 · 2x2 · 2x1. 그리는 것이 갈리므로 이름이 크기가 아니라 밀도를 말한다. */
 type Variant = 'full' | 'wide' | 'compact' | 'mini'
 
 function variantOf(w: number, h: WidgetHeight): Variant {
@@ -170,7 +170,7 @@ function StackBar(props: { split: ProfitSplit; thick?: boolean }): React.JSX.Ele
   )
 }
 
-/** 분해 금액 — 같은 두 색 점을 달아 바를 읽는 법을 말한다. 좁은 타일에서는 세로로 선다. */
+/** 분해 금액. 같은 두 색 점을 달아 바를 읽는 법을 말한다. 좁은 타일에서는 세로로 선다. */
 function Breakdown(props: {
   split: ProfitSplit
   column: boolean
@@ -229,7 +229,7 @@ function SplitBlock(props: {
  * 캐릭터 한 줄. **내역은 4x3 에만 선다**. 4x2 의 오른쪽 열은 폭이 타일의 절반도 안 돼 이름과 금액이
  * 먼저다.
  */
-/** 얼굴 — `남은 스케줄`과 **같은 크롭·같은 폴백**이다(두 타일이 같은 캐릭터를 다르게 그리면 안 된다). */
+/** 얼굴. `남은 스케줄`과 **같은 크롭·같은 폴백**이다(두 타일이 같은 캐릭터를 다르게 그리면 안 된다). */
 function Face(props: { character: WeeklyProfitCharacterView }): React.JSX.Element {
   return (
     <CharacterAvatar
@@ -321,7 +321,7 @@ function PeriodLabel(): React.JSX.Element {
 }
 
 /**
- * 4x3 전용 머리 — 라벨은 왼쪽, **기간 범위는 오른쪽 끝**이다(시안).
+ * 4x3 전용 머리. 라벨은 왼쪽, **기간 범위는 오른쪽 끝**이다(시안).
  *
  * 범위를 이 크기에만 두는 이유는 폭이다. 4x2 아래에서는 라벨과 범위가 한 줄에 서면 둘 다 잘리고,
  * 잘린 날짜는 언제인지 모르겠는 숫자 라 없는 것만 못하다.

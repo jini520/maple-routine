@@ -24,8 +24,8 @@ export type OnboardingError =
  * 문구·액션 표가 두 벌이 된다.
  */
 export type ApiKeyNoticeKind =
-  | 'invalid' // 400 OPENAPI00005 · 401/403 — 키 자체가 무효해졌다
-  | 'rateLimited' // 429 — 개발 단계 키의 호출 한도 초과
+  | 'invalid' // 400 OPENAPI00005 · 401/403. 키 자체가 무효해졌다
+  | 'rateLimited' // 429. 개발 단계 키의 호출 한도 초과
 
 export interface OnboardingState {
   status: OnboardingStatus

@@ -13,7 +13,7 @@
  * 남는다. 웹에서 `w-full` 한 줄로 끝난 이유가 preflight 의 `height: auto` 였고 RN 에는 그 말을
  * 대신 해 주는 것이 없다.
  *
- * **그래서 `aspectRatio` 도 함께 죽는다.** Yoga 는 두 축이 다 정해지면 종횡비를 쓰지 않는다 —
+ * **그래서 `aspectRatio` 도 함께 죽는다.** Yoga 는 두 축이 다 정해지면 종횡비를 쓰지 않는다.
  * 그림이 일그러진다로 보이는 증상의 정체가 이것이고, `resizeMode` 를 무엇으로 바꿔도 안 낫는다
  * (상자가 이미 틀린 모양이라 `contain` 은 여백을 남기고 `stretch` 는 늘린다).
  *
@@ -23,7 +23,7 @@
  * 값으로 읽는다. `ReactNativeAttributePayload.js` 의 주석 그대로다(*"An explicit value of
  * undefined is treated as a null because it overrides any other preceding value"*), iOS 는
  * `flattenStyle` 의 `for…in` 이 같은 일을 한다. 지워진 축은 Yoga 에서 auto 가 되고 그제야
- * `aspectRatio` 가 그 자리를 채운다. **NativeWind 도 그 키를 보존한다**(실측 — `className="w-full"`
+ * `aspectRatio` 가 그 자리를 채운다. **NativeWind 도 그 키를 보존한다**(실측. `className="w-full"`
  * 과 함께 줘도 병합 결과에 `height` 키가 남는다).
  *
  * ## 왜 함수 하나로 모으나
@@ -46,7 +46,7 @@ export interface ImageNaturalSize {
 }
 
 /**
- * 번들 에셋의 고유 픽셀 크기 — 모르면 `null`.
+ * 번들 에셋의 고유 픽셀 크기. 모르면 `null`.
  *
  * 검사가 `<= 0` 이 아니라 **`Number.isFinite`** 인 것은 `resolveImageCropLayout` 이 밟은 자리와 같다.
  * `undefined <= 0` 은 **false** 라 크기 없는 소스가 가드를 통과하면 `aspectRatio: NaN` 이 나가고,

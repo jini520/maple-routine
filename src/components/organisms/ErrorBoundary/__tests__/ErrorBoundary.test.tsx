@@ -72,7 +72,7 @@ describe('ErrorBoundary', () => {
     expect(onRestart).toHaveBeenCalledTimes(1)
   })
 
-  // : 폴백의 목적은 복구 도구를 주는 게 아니라 빈 화면을 없애는 것이다 —
+  // : 폴백의 목적은 복구 도구를 주는 게 아니라 빈 화면을 없애는 것이다.
   // 선택지를 하나로 줄이면 그 하나가 분명해진다.
   it('다시 시작 외의 버튼을 두지 않는다', async () => {
     const { getAllByRole } = await renderAtom(

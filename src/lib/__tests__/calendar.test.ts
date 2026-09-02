@@ -14,7 +14,7 @@ import {
   periodTotals,
 } from '../calendar'
 
-describe('getCurrentMonthKey — KST 기준', () => {
+describe('getCurrentMonthKey: KST 기준', () => {
   it('지금이 속한 달을 YYYY-MM 으로 준다', () => {
     expect(getCurrentMonthKey(new Date('2026-08-23T05:00:00Z'))).toBe('2026-08')
   })
@@ -24,7 +24,7 @@ describe('getCurrentMonthKey — KST 기준', () => {
     expect(getCurrentMonthKey(new Date('2026-08-31T15:00:00Z'))).toBe('2026-09')
   })
 
-  it('KST 로 아직 8월이면 8월이다 — 경계 1분 전', () => {
+  it('KST 로 아직 8월이면 8월이다. 경계 1분 전', () => {
     expect(getCurrentMonthKey(new Date('2026-08-31T14:59:00Z'))).toBe('2026-08')
   })
 })
@@ -36,7 +36,7 @@ describe('monthKeyOf', () => {
   })
 })
 
-describe('getAdjacentMonthKey — 해를 넘긴다', () => {
+describe('getAdjacentMonthKey: 해를 넘긴다', () => {
   it('한 달 뒤·앞', () => {
     expect(getAdjacentMonthKey('2026-08', 1)).toBe('2026-09')
     expect(getAdjacentMonthKey('2026-08', -1)).toBe('2026-07')
@@ -53,7 +53,7 @@ describe('getAdjacentMonthKey — 해를 넘긴다', () => {
 
 
 describe('formatDayLabel', () => {
-  it('**8월 23일 (일)** — 요일까지 붙는다', () => {
+  it('**8월 23일 (일)**. 요일까지 붙는다', () => {
     expect(formatDayLabel('2026-08-23')).toBe('8월 23일 (일)')
   })
 
@@ -70,7 +70,7 @@ describe('WEEKDAY_LABELS', () => {
   })
 })
 
-describe('buildCalendarMonth — 격자', () => {
+describe('buildCalendarMonth: 격자', () => {
   it('모든 주가 정확히 일곱 칸이다', () => {
     for (const monthKey of ['2026-08', '2026-02', '2027-02', '2026-11']) {
       for (const week of buildCalendarMonth(monthKey)) {
@@ -79,8 +79,8 @@ describe('buildCalendarMonth — 격자', () => {
     }
   })
 
-  // 결정 7 — 빈 View 로 두면 6주째가 통째로 비는 달에서 격자 높이가 달라진다.
-  it('달 경계의 빈칸을 앞뒤 달 날짜로 채운다 — 빈 칸이 없다', () => {
+  // 결정 7. 빈 View 로 두면 6주째가 통째로 비는 달에서 격자 높이가 달라진다.
+  it('달 경계의 빈칸을 앞뒤 달 날짜로 채운다. 빈 칸이 없다', () => {
     for (const week of buildCalendarMonth('2026-08')) {
       for (const day of week) {
         expect(day.dateKey).toMatch(/^\d{4}-\d{2}-\d{2}$/)
@@ -97,7 +97,7 @@ describe('buildCalendarMonth — 격자', () => {
     expect(formatDayLabel(last?.dateKey ?? '')).toContain('(토)')
   })
 
-  it('2026-08 은 6주다 — 1일이 토요일이라 첫 주가 앞달로 여섯 칸 채워진다', () => {
+  it('2026-08 은 6주다. 1일이 토요일이라 첫 주가 앞달로 여섯 칸 채워진다', () => {
     const weeks = buildCalendarMonth('2026-08')
 
     expect(weeks).toHaveLength(6)
@@ -105,7 +105,7 @@ describe('buildCalendarMonth — 격자', () => {
     expect(weeks[0]?.[0]).toEqual({ dateKey: '2026-07-26', day: 26, inPeriod: false })
   })
 
-  it('그 달의 날짜만 inPeriod 다 — 8월은 정확히 31칸', () => {
+  it('그 달의 날짜만 inPeriod 다. 8월은 정확히 31칸', () => {
     const inPeriod = buildCalendarMonth('2026-08')
       .flat()
       .filter((day) => day.inPeriod)
@@ -142,7 +142,7 @@ describe('buildCalendarMonth — 격자', () => {
 })
 
 // 칸이 표식에서 **금액 두 줄 + 열지도**로 바뀌었다.
-describe('heatLevel — 그 달 안에서 상대적이다', () => {
+describe('heatLevel: 그 달 안에서 상대적이다', () => {
   it('가장 큰 날이 최고 단계다', () => {
     expect(heatLevel(100, 100)).toBe(HEAT_LEVELS)
   })
@@ -163,7 +163,7 @@ describe('heatLevel — 그 달 안에서 상대적이다', () => {
     expect(heatLevel(-5, 100)).toBe(0)
   })
 
-  // 기록이 하나도 없는 달 — 나누기가 0 으로 떨어지면 NaN 이 칸마다 실린다.
+  // 기록이 하나도 없는 달. 나누기가 0 으로 떨어지면 NaN 이 칸마다 실린다.
   it('그 달이 통째로 비어 있어도 0 이다', () => {
     expect(heatLevel(0, 0)).toBe(0)
     expect(heatLevel(10, 0)).toBe(0)
@@ -174,7 +174,7 @@ describe('heatLevel — 그 달 안에서 상대적이다', () => {
   })
 })
 
-// ══ 주간 격자 — 목요일 리셋 주 ══════════════════════════
+// ══ 주간 격자. 목요일 리셋 주 ══════════════════════════
 //
 // **이 앱에는 주가 둘이다.** 월간 격자의 주는 일요일에 시작하고 주간 보기의
 // 주는 목요일에 시작한다. 후자는 게임의 주이고 보스 수익 탭이 이미 그 축을 쓴다.
@@ -187,7 +187,7 @@ describe('WEEKDAY_LABELS_RESET', () => {
   })
 
   // 회전이라 두 목록의 원소가 같다. 한쪽만 고치면 요일 이름이 갈린다.
-  it('월간 라벨을 회전한 것이다 — 새로 적지 않는다', () => {
+  it('월간 라벨을 회전한 것이다. 새로 적지 않는다', () => {
     const { WEEKDAY_LABELS, WEEKDAY_LABELS_RESET } =
       require('../calendar') as typeof import('../calendar')
 
@@ -239,7 +239,7 @@ describe('resetWeekStartOf', () => {
 describe('buildResetWeek', () => {
   const { buildResetWeek } = require('../calendar') as typeof import('../calendar')
 
-  it('딱 이레다 — 목요일부터 수요일까지', () => {
+  it('딱 이레다. 목요일부터 수요일까지', () => {
     const week = buildResetWeek('2026-08-20')
 
     expect(week).toHaveLength(7)
@@ -261,7 +261,7 @@ describe('buildResetWeek', () => {
     ])
   })
 
-  // 월간 격자와 갈리는 자리 — 거기서는 앞뒤 달 칸이 `inPeriod: false` 로 흐려지는데, 주간에는
+  // 월간 격자와 갈리는 자리. 거기서는 앞뒤 달 칸이 `inPeriod: false` 로 흐려지는데, 주간에는
   // **앞뒤 달** 이라는 것이 없다. **이레가 전부 그 주다**.
   it('달을 걸쳐도 이레가 전부 그 기간에 든다', () => {
     const week = buildResetWeek('2026-08-27')
@@ -285,7 +285,7 @@ describe('buildResetWeek', () => {
 
 
 /**
- * 하루 단위로 옮긴 날짜 열쇠 — 수입 시트가 머리에서 날짜를 바꿀 때 쓴다.
+ * 하루 단위로 옮긴 날짜 열쇠. 수입 시트가 머리에서 날짜를 바꿀 때 쓴다.
  *
  * UTC 로 세는 것은 `formatDayLabel` 과 같은 이유다. 기기 표준시로 세면 자정 언저리에서 하루가
  * 밀린다.
@@ -315,15 +315,15 @@ describe('shiftDateKey', () => {
 })
 
 /**
- * 보고 있는 기간의 합계 — 격자 위에 서는 세 칸이 이것을 읽는다.
+ * 보고 있는 기간의 합계. 격자 위에 서는 세 칸이 이것을 읽는다.
  *
  * **기준이 `monthIncomeMax` 와 같은 `inPeriod`** 다. 월간 격자는 앞뒤 달 날짜로 빈칸을 채우므로
  * (`buildCalendarMonth`) 그 칸을 세면 8월 합계에 7월 말·9월 초가 섞인다.
  */
-describe('periodTotals — 격자가 그린 칸을 그대로 접는다', () => {
+describe('periodTotals: 격자가 그린 칸을 그대로 접는다', () => {
   const { buildResetWeek } = require('../calendar') as typeof import('../calendar')
 
-  it('그 기간 칸만 더한다 — 앞뒤 달로 채운 칸은 안 든다', () => {
+  it('그 기간 칸만 더한다. 앞뒤 달로 채운 칸은 안 든다', () => {
     const weeks = buildCalendarMonth('2026-08')
     // 8/1(토)은 첫 주의 마지막 칸이고, 7/26~7/31 이 그 앞을 채운다.
     const totals = periodTotals(weeks, {
@@ -336,7 +336,7 @@ describe('periodTotals — 격자가 그린 칸을 그대로 접는다', () => {
     expect(totals).toEqual({ incomeMeso: 300, expenseMeso: 100 })
   })
 
-  it('주간 격자는 이레가 전부 든다 — 달을 걸쳐도 같다', () => {
+  it('주간 격자는 이레가 전부 든다. 달을 걸쳐도 같다', () => {
     // 8/27(목) 주는 9/2(수)까지 간다(이레는 전부 `inPeriod` 다).
     const totals = periodTotals([buildResetWeek('2026-08-27')], {
       '2026-08-27': { incomeMeso: 10, expenseMeso: 1 },
@@ -347,7 +347,7 @@ describe('periodTotals — 격자가 그린 칸을 그대로 접는다', () => {
     expect(totals).toEqual({ incomeMeso: 30, expenseMeso: 3 })
   })
 
-  it('기록이 없는 기간은 0 이다 — `undefined` 가 새어 나가면 안 된다', () => {
+  it('기록이 없는 기간은 0 이다. `undefined` 가 새어 나가면 안 된다', () => {
     expect(periodTotals(buildCalendarMonth('2026-08'), {})).toEqual({
       incomeMeso: 0,
       expenseMeso: 0,

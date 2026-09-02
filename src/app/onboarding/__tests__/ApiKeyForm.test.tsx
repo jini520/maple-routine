@@ -37,7 +37,7 @@ function submitButton(view: Rendered): AtomElement {
 }
 
 /**
- * `Pressable` 이 접어 넣는 접근성 상태 — `disabled`·`aria-busy` 를 프롭으로 직접 읽을 수 없다
+ * `Pressable` 이 접어 넣는 접근성 상태. `disabled`·`aria-busy` 를 프롭으로 직접 읽을 수 없다
  * (호스트 `View` 로 그대로 넘기지 않고 `accessibilityState` 로 접는다. 실측).
  */
 function stateOf(node: AtomElement): { disabled?: boolean; busy?: boolean } {
@@ -75,7 +75,7 @@ describe('ApiKeyForm', () => {
     expect(stateOf(submitButton(view)).disabled).toBe(true)
   })
 
-  it('isSubmitting이면 스피너가 라벨을 덮는다 — 라벨은 폭과 스크린리더를 위해 남는다', async () => {
+  it('isSubmitting이면 스피너가 라벨을 덮는다. 라벨은 폭과 스크린리더를 위해 남는다', async () => {
     const view = await renderAtom(<ApiKeyForm isSubmitting={true} onSubmit={jest.fn()} />)
 
     // 라벨을 지우지 않고 가린다. 지우면 버튼 폭이 줄고 스크린리더가 읽을
@@ -174,7 +174,7 @@ describe('ApiKeyForm', () => {
     expect(view.getByLabelText('Nexon Open API 키').props.secureTextEntry).toBe(true)
   })
 
-  // type 이 text 가 되는 구간이 생기므로 — 모바일 키보드가 첫 글자를 대문자로 바꾸면
+  // type 이 text 가 되는 구간이 생기므로. 모바일 키보드가 첫 글자를 대문자로 바꾸면
   // 조용히 틀린 키가 된다.
   it('키 입력란은 자동 대문자·자동 수정·맞춤법 검사를 끈다', async () => {
     const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)

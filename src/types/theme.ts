@@ -1,5 +1,5 @@
 /**
- * 등록된 테마 이름 — `job-themes.json` 의 키에서 추론한다.
+ * 등록된 테마 이름. `job-themes.json` 의 키에서 추론한다.
  *
  * 유니온을 손으로 적지 않는 이유는 테마를 수십 개로 늘릴 계획이기 때문이다. 값 목록·타입 가드·
  * 선택 UI·라이트/다크 판정이 모두 그 JSON 하나를 따라가므로, 테마 추가는 **JSON 한 블록**이다.
@@ -23,7 +23,7 @@ export type ThemeCategory = '기본' | '직업' | '보스'
 /**
  * 테마 38토큰 (`rise`/`fall` 2쌍은).
  *
- * 이름 규칙 — `on-X` 는 X 채움 **위**의 전경, `X-ink` 는 X 계열 **텍스트/아이콘**,
+ * 이름 규칙. `on-X` 는 X 채움 **위**의 전경, `X-ink` 는 X 계열 **텍스트/아이콘**,
  * `X-tint` 는 X 계열 **옅은 배경**이다. 자세한 용도·파생 규칙은 `docs/features/theme.md`.
  */
 export interface ThemeTokens {
@@ -96,9 +96,9 @@ export interface ThemeTokens {
   /** 일러스트 위 보조 텍스트 */
   mediaInkMuted: string
 
-  /** 모달·바텀시트 오버레이 — 반투명이라 8자리 hex(#RRGGBBAA) */
+  /** 모달·바텀시트 오버레이. 반투명이라 8자리 hex(#RRGGBBAA) */
   scrim: string
-  /** 그림자·text-shadow 색 — 반투명이라 8자리 hex(#RRGGBBAA) */
+  /** 그림자·text-shadow 색. 반투명이라 8자리 hex(#RRGGBBAA) */
   shadowColor: string
 }
 
@@ -110,13 +110,13 @@ export interface ThemeTokens {
  * 없어야 다른 테마에도 값 한 블록으로 붙는다.
  */
 export interface ThemeBackground {
-  /** `packages/core/src/assets/themes/<slug>.webp` 의 슬러그 — 번들 경로가 아니다 */
+  /** `packages/core/src/assets/themes/<slug>.webp` 의 슬러그. 번들 경로가 아니다 */
   image: string
   /** `background-size` (예: `cover`) */
   size: string
   /** `background-position` (예: `center`) */
   position: string
-  /** 이미지 위에 덮는 검정 불투명도 0~1 — 그림 위에서 텍스트가 읽히게 한다 */
+  /** 이미지 위에 덮는 검정 불투명도 0~1. 그림 위에서 텍스트가 읽히게 한다 */
   dim: number
   /**
    * 위쪽에서 `--color-bg` 로 페이드되는 높이.

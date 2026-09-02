@@ -6,7 +6,7 @@
 // · `useNavigate` 대신 `onOpenReleaseNotes` 프롭이 불렸는가를 본다.
 // · 진행률 바는 클래스가 아니라 **실제 `width` 스타일**을 잰다(RN 에는 클래스 문자열이 안 남는다).
 //
-// **이 모달이 아직 아무 데도 마운트되지 않는다는 사실은 여기서 검사하지 않는다** —
+// **이 모달이 아직 아무 데도 마운트되지 않는다는 사실은 여기서 검사하지 않는다**.
 // `src/__tests__/boot-order.test.tsx` 가 셸 쪽에서 본다.
 import { fireEvent } from '@testing-library/react-native'
 
@@ -190,7 +190,7 @@ describe('UpdatePromptModal', () => {
     expect(actions.openStore).toHaveBeenCalledTimes(1)
   })
 
-  describe('update-available: 자세히 보기(핵심 목록) —', () => {
+  describe('update-available: 자세히 보기(핵심 목록)', () => {
     const highlights = ['보스 카드에서 파티 인원을 고칠 수 있어요', '기능 설명 화면이 생겼어요']
 
     it('접힌 채로 뜨고, 누르면 핵심 목록이 나열된다', async () => {
@@ -221,7 +221,7 @@ describe('UpdatePromptModal', () => {
 
     // 아래 케이스가 지키는 것은 그림이 아니라 **앱이 멈추지 않는 것**이다(실측 2026-08-12).
     // 화살표 래퍼의 transform 이 접힘 상태에 없으면, 펼칠 때 NativeWind 가 호스트를
-    // `Animated.View` 로 올려야 하는데 리마운트라 포기하고 개발 경고를 찍고 — 그 경고가
+    // `Animated.View` 로 올려야 하는데 리마운트라 포기하고 개발 경고를 찍고. 그 경고가
     // `originalProps`(React 엘리먼트)를 직렬화하다 **힙을 다 쓴다**. 근거와 사슬은
     // `UpdatePromptModal.tsx` 의 그 자리 주석. 되돌리면 이 케이스가 실패가 아니라 **OOM** 으로
     // 죽으므로, 그때 여기를 보라고 남긴다.
@@ -263,7 +263,7 @@ describe('UpdatePromptModal', () => {
     })
   })
 
-  describe('updated: 적용 완료 안내 —', () => {
+  describe('updated: 적용 완료 안내', () => {
     it('마쳤다는 사실과 지금 버전을 말하고, [확인]→dismiss', async () => {
       const { view, actions } = await renderModal({ status: 'updated' })
 

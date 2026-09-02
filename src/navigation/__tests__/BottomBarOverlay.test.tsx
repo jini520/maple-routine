@@ -30,7 +30,7 @@ function 그리는순서(): string[] {
   return order
 }
 
-/** 바 하나 + 화면 하나 를 세운 실제 트리의 축소판 — 호스트는 바 **뒤**다. */
+/** 바 하나 + 화면 하나 를 세운 실제 트리의 축소판. 호스트는 바 **뒤**다. */
 async function 그리기(options: { 호스트?: boolean } = {}) {
   const { 호스트 = true } = options
 
@@ -47,7 +47,7 @@ async function 그리기(options: { 호스트?: boolean } = {}) {
   )
 }
 
-it('선 자리가 아니라 호스트에 그린다 — 그래서 바보다 뒤에 선다', async () => {
+it('선 자리가 아니라 호스트에 그린다. 그래서 바보다 뒤에 선다', async () => {
   await 그리기()
 
   const order = 그리는순서()

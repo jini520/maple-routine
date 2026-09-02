@@ -12,7 +12,7 @@ const sizes = {
   수익: [{ w: 4, h: 3 }],
 } as const
 
-/** 의 기본 배치 앞부분 — 실제로 쓸 좌표를 그대로 쓴다. */
+/** 의 기본 배치 앞부분. 실제로 쓸 좌표를 그대로 쓴다. */
 const 유효한_배치: WidgetPlacement[] = [
   { id: '대표', col: 0, row: 0, w: 4, h: 1 },
   { id: '초기화', col: 0, row: 1, w: 2, h: 1 },
@@ -21,7 +21,7 @@ const 유효한_배치: WidgetPlacement[] = [
   { id: '수익', col: 0, row: 3, w: 4, h: 3 },
 ]
 
-describe('validateWidgetLayout — 손으로 적은 좌표를 지킨다', () => {
+describe('validateWidgetLayout: 손으로 적은 좌표를 지킨다', () => {
   it('유효한 배치는 빈 배열이다', () => {
     expect(validateWidgetLayout(유효한_배치, sizes)).toEqual([])
   })
@@ -45,7 +45,7 @@ describe('validateWidgetLayout — 손으로 적은 좌표를 지킨다', () => 
     expect(violations[0].reason).toContain('겹')
   })
 
-  it('세로로 겹치는 것도 잡는다 — 높이가 2 이상인 타일', () => {
+  it('세로로 겹치는 것도 잡는다. 높이가 2 이상인 타일', () => {
     const violations = validateWidgetLayout(
       [
         { id: '수익', col: 0, row: 0, w: 4, h: 3 },
@@ -58,7 +58,7 @@ describe('validateWidgetLayout — 손으로 적은 좌표를 지킨다', () => 
     expect(violations.map((violation) => violation.id)).toEqual(['대표'])
   })
 
-  it('가로가 격자를 넘으면 잡는다 — col + w > 4', () => {
+  it('가로가 격자를 넘으면 잡는다. col + w > 4', () => {
     const violations = validateWidgetLayout(
       [{ id: '결정석', col: 3, row: 0, w: 2, h: 1 }],
       { 결정석: [{ w: 2, h: 1 }] },
@@ -126,7 +126,7 @@ describe('validateWidgetLayout — 손으로 적은 좌표를 지킨다', () => 
   })
 })
 
-describe('resolveWidgetPositions — 좌표를 절대 위치로', () => {
+describe('resolveWidgetPositions: 좌표를 절대 위치로', () => {
   const metrics = resolveWidgetGridMetrics(360)
 
   it('빈 배치는 높이 0 이다', () => {

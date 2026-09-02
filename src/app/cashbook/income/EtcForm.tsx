@@ -1,5 +1,5 @@
 /**
- * 기타 폼 — 갈래 둘에 안 드는 수입.
+ * 기타 폼. 갈래 둘에 안 드는 수입.
  *
  * **통화가 서는 자리는 여기 하나**다. 아이템 판매는 경매장이라
  * 메소이고 사냥도 메소다. 갈래가 이미 아는 것을 다시 묻지 않는다. 이벤트 보상이 메포·캐시로도
@@ -30,7 +30,7 @@ import { SheetTextInput } from '../../../components/molecules/SheetTextInput/She
 
 export function EtcForm(
   props: IncomeFormProps & {
-    /** 마지막으로 쓴 메소마켓 시세 — 메포로 적을 때의 기본값이다. */
+    /** 마지막으로 쓴 메소마켓 시세. 메포로 적을 때의 기본값이다. */
     lastPointRate: number | null
   },
 ): React.JSX.Element {
@@ -61,7 +61,7 @@ export function EtcForm(
         ? 'point'
         : 'meso',
   )
-  /** 메포로 적을 때만 쓰는 시세 — 글자로 든다(지출 시트와 같다: 지우는 중간 상태가 있다). */
+  /** 메포로 적을 때만 쓰는 시세. 글자로 든다(지출 시트와 같다: 지우는 중간 상태가 있다). */
   const [rateText, setRateText] = useState(
     (props.editing?.pointPer100mMeso ?? props.lastPointRate)?.toString() ?? '',
   )
@@ -108,7 +108,7 @@ export function EtcForm(
       <FieldRow label="금액">
         <AmountInput testID="income-sheet-unit-price" value={typedText} onChange={setTypedText} />
         {/* 숫자만 있으면 무엇으로 받은 것인지 줄에서 사라진다. 이 줄이 묻는
-            것은 **얼마인가**라 라벨이 아니라 단위다 — 캐시는 `원`이고 큰 숫자와 같은 말이 된다. */}
+            것은 **얼마인가**라 라벨이 아니라 단위다. 캐시는 `원`이고 큰 숫자와 같은 말이 된다. */}
         <Text
           testID="income-sheet-unit-price-unit"
           className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted"
@@ -123,7 +123,7 @@ export function EtcForm(
       </FieldRow>
 
       {usesPoint && (
-        // 메포를 메소 축으로 옮기는 값 — **1억 메소당 메포**다.
+        // 메포를 메소 축으로 옮기는 값. **1억 메소당 메포**다.
         <View className="min-h-7 flex-row items-center gap-2 border-b border-border pb-2">
           <Text className="shrink-0 text-xs text-text-muted">
             시세 · 1억당

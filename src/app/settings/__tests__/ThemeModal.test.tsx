@@ -1,4 +1,4 @@
-// 웹판(97줄)의 명세를 읽어 다시 쓴 것. 검사하는 것은 —
+// 웹판(97줄)의 명세를 읽어 다시 쓴 것. 검사하는 것은.
 // **적용은 즉시지만 닫기는 따라오지 않는다.**
 //
 // 갈린 것 둘
@@ -22,7 +22,7 @@ const mockedStore = jest.mocked(useThemeStore)
 
 const [현재테마, 다른테마, 또다른테마] = THEME_NAMES
 if (현재테마 === undefined || 다른테마 === undefined || 또다른테마 === undefined) {
-  throw new Error('테마가 셋 미만이다 — 이 파일의 케이스가 성립하지 않는다')
+  throw new Error('테마가 셋 미만이다. 이 파일의 케이스가 성립하지 않는다')
 }
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>

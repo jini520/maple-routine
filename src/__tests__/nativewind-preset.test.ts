@@ -60,7 +60,7 @@ describe('NativeWind 프리셋', () => {
    * 안드로이드가 `elevation` 을 더하는 것 말고는 글자까지 같다. jest 는 iOS 로 도므로 이 세 값은
    * 테스트가 렌더로는 못 보고, 그래서 컴파일 결과를 직접 본다.
    */
-  it('안드로이드는 그림자에 elevation 을 더한다 — iOS 에는 없다', () => {
+  it('안드로이드는 그림자에 elevation 을 더한다. iOS 에는 없다', () => {
     const android = compile('android')
 
     expect(ruleOf(android, '.shadow')).toContain('-rn-elevation: 3')
@@ -69,7 +69,7 @@ describe('NativeWind 프리셋', () => {
     expect(ruleOf(ios, '.shadow-lg')).not.toContain('-rn-elevation')
   })
 
-  it('그 밖에는 두 플랫폼이 같다 — 갈리는 자리가 늘면 여기서 걸린다', () => {
+  it('그 밖에는 두 플랫폼이 같다. 갈리는 자리가 늘면 여기서 걸린다', () => {
     const android = compile('android')
 
     /** 선택자 → 선언 집합. `elevation` 은 위 케이스가 지키므로 여기서 뺀다. */

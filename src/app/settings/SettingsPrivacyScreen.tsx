@@ -9,7 +9,7 @@
 // 어긋난 법적 문서가 된다. 어긋난 처방침이 안 보이는 처방침보다 나쁘다고 봤다. 대신 실패를
 // 감지해 "브라우저로 열기"를 준다.
 //
-// 부모가 `/settings` 가 아니라 `/settings/about` 인 것은 그 화면의 행에서 열리기 때문이다 —
+// 부모가 `/settings` 가 아니라 `/settings/about` 인 것은 그 화면의 행에서 열리기 때문이다.
 // 이 앱에서 스택이 2단이 되는 자리가 여기뿐이다.
 //
 // ══ `iframe` → `WebView`, 그리고 실패 신호가 하나 늘어난다 ═════════════════════════════
@@ -45,7 +45,7 @@ import { useSettingsNavigation } from './use-settings-navigation'
 
 export const PRIVACY_URL = 'https://mapleroutine.store/privacy'
 
-/** 매달린 요청의 상한 — 즉시 실패는 `onError` 가 먼저 잡는다(파일 머리). */
+/** 매달린 요청의 상한. 즉시 실패는 `onError` 가 먼저 잡는다(파일 머리). */
 const LOAD_TIMEOUT_MS = 8000
 
 type LoadStatus = 'loading' | 'loaded' | 'failed'
@@ -74,7 +74,7 @@ export function SettingsPrivacyScreen(): React.JSX.Element {
       style={{ paddingTop: topSafeAreaPx, paddingBottom: bottomSafeAreaPx }}
     >
       {/* 상단 여백은 없다. 바깥 상자가 안전영역만큼 내려온 자리에서 곧바로 시작한다.
-          그 안전영역은 인셋이 아니라 `useTopSafeAreaPx()` 다(정정 1) — 헤더를 쓰는 화면들과 같은
+          그 안전영역은 인셋이 아니라 `useTopSafeAreaPx()` 다(정정 1). 헤더를 쓰는 화면들과 같은
           값이어야 하위 페이지를 오갈 때 제목이 안 튄다. */}
       <PageHeaderTitleRow className="gap-2 px-4 pb-2">
         <Pressable
@@ -113,7 +113,7 @@ export function SettingsPrivacyScreen(): React.JSX.Element {
               onError={() => {
                 setStatus('failed')
               }}
-              // 웹판의 `opacity` 토글 짝 — 다 그려지기 전의 빈 흰 면을 로딩 표시가 덮게 한다.
+              // 웹판의 `opacity` 토글 짝. 다 그려지기 전의 빈 흰 면을 로딩 표시가 덮게 한다.
               style={{ opacity: status === 'loaded' ? 1 : 0, backgroundColor: 'transparent' }}
               className="flex-1"
             />

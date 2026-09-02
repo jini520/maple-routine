@@ -110,7 +110,7 @@ describe('메포 지출의 시세 요구', () => {
   })
 
   // 환산이 나눗셈이라 0 이면 화면이 깨진다(메포 × 1억 ÷ 시세).
-  it('시세가 0 이하면 던진다 — 환산이 나눗셈이다', async () => {
+  it('시세가 0 이하면 던진다. 환산이 나눗셈이다', async () => {
     const { insertSpendRecord } = require('../spend') as typeof import('../spend')
 
     await expect(insertSpendRecord({ ...pointSpend, pointPer100mMeso: 0 })).rejects.toThrow(/시세/)
@@ -146,7 +146,7 @@ describe('getSpendRecordsBetween', () => {
     expect(parameters).toEqual(['2026-08-01', '2026-08-31'])
   })
 
-  it('행을 레코드로 옮긴다 — 빈 칸은 null 로 정규화한다', async () => {
+  it('행을 레코드로 옮긴다. 빈 칸은 null 로 정규화한다', async () => {
     queryMock.mockResolvedValue({
       values: [
         {
@@ -239,7 +239,7 @@ describe('SPEND_CATEGORIES', () => {
 
 // 적은 것은 되돌릴 수 있어야 한다.
 describe('updateSpendRecord', () => {
-  it('id 로 갈아 끼운다 — 지우고 다시 넣지 않는다', async () => {
+  it('id 로 갈아 끼운다. 지우고 다시 넣지 않는다', async () => {
     const { updateSpendRecord } = require('../spend') as typeof import('../spend')
 
     await updateSpendRecord({ ...mesoSpend, quantity: 3, mesoAmount: 6_000_000 })

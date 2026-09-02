@@ -28,7 +28,7 @@ export function EmptyState(props: EmptyStateProps): React.JSX.Element {
           isPage ? 'h-[84px] w-[84px]' : 'h-14 w-14'
         }`}
       >
-        {/* 마크 색은 primary 계열로 통일 — primary-ink 는 라이트 테마에선 더 또렷하지만 레테(다크)에서
+        {/* 마크 색은 primary 계열로 통일. primary-ink 는 라이트 테마에선 더 또렷하지만 레테(다크)에서
             배지 배경에 묻힌다(그 테마만 primary-ink 가 primary 보다 어둡다). */}
         {Icon === 'leaf' ? (
           <MapleLeaf size={isPage ? 42 : 28} className="text-primary-ink" />

@@ -79,7 +79,7 @@ export function contrastRatio(a: Rgb, b: Rgb): number {
   return (lighter + 0.05) / (darker + 0.05)
 }
 
-/** hex 두 개의 대비비 — 호출부 대부분이 hex를 들고 있어 얇게 감싼다. */
+/** hex 두 개의 대비비. 호출부 대부분이 hex를 들고 있어 얇게 감싼다. */
 export function contrastHex(a: string, b: string): number {
   return contrastRatio(parseHex(a), parseHex(b))
 }

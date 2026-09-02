@@ -39,14 +39,14 @@ describe('usePeriodLoadErrorToast', () => {
     expect(showErrorMock).not.toHaveBeenCalled()
   })
 
-  it('로딩 중에는 아직 띄우지 않는다 — 결과가 나온 뒤에 말한다', async () => {
+  it('로딩 중에는 아직 띄우지 않는다. 결과가 나온 뒤에 말한다', async () => {
     render(<Harness isFailed={true} isLoading={true} periodKey="2026-W31" />)
 
     expect(showErrorMock).not.toHaveBeenCalled()
   })
 
   // 문구는 카드가 없을 때의 ErrorState 제목과 같다. 같은 실패의 두 얼굴이 다른 말을 하면 안 된다.
-  // "— 다시 시도해주세요"는 액션 버튼이 대신하므로 뗀다.
+  // "다시 시도해주세요"는 액션 버튼이 대신하므로 뗀다.
   it('실패하면 문구 + 다시 시도 액션을 띄운다', async () => {
     const onRetry = jest.fn()
     render(<Harness isFailed={true} isLoading={false} periodKey="2026-W31" onRetry={onRetry} />)

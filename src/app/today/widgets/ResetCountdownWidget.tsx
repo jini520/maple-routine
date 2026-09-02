@@ -1,5 +1,5 @@
 /**
- * 위젯 6 — **초기화 카운트다운**.
+ * 위젯 6. **초기화 카운트다운**.
  *
  * ## 목적지가 없는 타일은 이것뿐이다
  *
@@ -82,7 +82,7 @@ const CYCLE_LABEL: Record<CycleKey, string> = {
   monthly: '월간',
 }
 
-/** 2x1 · 2x2 · 4x1 · 1x1 — 이름이 크기가 아니라 무엇을 그리는가 를 말한다. */
+/** 2x1 · 2x2 · 4x1 · 1x1. 이름이 크기가 아니라 무엇을 그리는가 를 말한다. */
 type Variant = 'mini' | 'compact' | 'wide' | 'tiny'
 
 function variantOf(w: number, h: WidgetHeight): Variant {
@@ -92,7 +92,7 @@ function variantOf(w: number, h: WidgetHeight): Variant {
 }
 
 /**
- * 남은 시간 — 잘기는 `granularity` 가 정한다(위 타입).
+ * 남은 시간. 잘기는 `granularity` 가 정한다(위 타입).
  *
  * 앞의 0 단위는 뗀다: `43분 12초` 이지 `0시간 43분 12초` 가 아니다.
  */
@@ -139,13 +139,13 @@ function useNowMs(): number {
   return nowMs
 }
 
-/** 남은 시간 — 뷰모델이 준 절대 시각과 지금 의 차. */
+/** 남은 시간. 뷰모델이 준 절대 시각과 지금 의 차. */
 function remainingOf(countdown: ResetCountdown, nowMs: number): number {
   return Math.max(0, countdown.atMs - nowMs)
 }
 
 /**
- * 주기의 어디쯤인가 — 지난 몫이다. `periodMs` 를 뷰모델이 함께 주는 이유는 그쪽 주석이 갖는다.
+ * 주기의 어디쯤인가. 지난 몫이다. `periodMs` 를 뷰모델이 함께 주는 이유는 그쪽 주석이 갖는다.
  * 0~100 으로 자르는 것은 `ProgressBar` 가 클램프하지 않기 때문이다.
  */
 function elapsedPercent(countdown: ResetCountdown, remainingMs: number): number {
@@ -286,7 +286,7 @@ export function ResetCountdownWidget({ w, h, data }: WidgetProps): React.JSX.Ele
     )
   }
 
-  // 2x1 — 월간은 대개 멀어 지금 급한 것이 아니다.
+  // 2x1. 월간은 대개 멀어 지금 급한 것이 아니다.
   return (
     <View testID="widget-reset-countdown" className="flex-1 justify-center gap-1 p-3">
       <Title sizeClass="text-10" />

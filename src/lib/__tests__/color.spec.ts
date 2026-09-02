@@ -50,7 +50,7 @@ describe('relativeLuminance / contrastRatio', () => {
     expect(contrastRatio(parseHex('#9975B3'), parseHex('#9975B3'))).toBeCloseTo(1, 10)
   })
 
-  // 알려진 실패 사례 — 레테 info-tint 사고(배경 ①). 폐기 전 값이 실제로 AA에 한참 못 미쳤음을
+  // 알려진 실패 사례. 레테 info-tint 사고(배경 ①). 폐기 전 값이 실제로 AA에 한참 못 미쳤음을
   // 회귀로 박아둬, 대비 계산이 틀어지면 이 테스트가 먼저 깨지게 한다.
   it('폐기된 레테 info-tint(#C9D6F2) 대 text(#E8DFEC)는 1.2:1 미만이다', () => {
     expect(contrastRatio(parseHex('#C9D6F2'), parseHex('#E8DFEC'))).toBeLessThan(1.2)

@@ -1,4 +1,4 @@
-// 최고가 아이템 위젯. 이 파일이 지키는 것 넷 —
+// 최고가 아이템 위젯. 이 파일이 지키는 것 넷.
 // ① **미입력 건수를 여기서 말하지 않는다**(옆 타일이 든다. 건수를 두 곳에서 말하지 않는다)
 // ② **0건 문구는 한 줄뿐**(**N건이 값을 기다립니다** 를 만들지 않는다)
 // ③ **이름은 한 줄**(두 줄로 접으면 행 높이가 데이터에 따라 흔들린다)
@@ -36,7 +36,7 @@ function 모든글자(view: Awaited<ReturnType<typeof renderAtom>>): string {
 }
 
 describe('금액은 네 크기에 다 서고 단위만 1x1 에서 빠진다', () => {
-  it.each(Object.entries(크기))('%s — 금액을 그린다', async (_이름, 값) => {
+  it.each(Object.entries(크기))('%s: 금액을 그린다', async (_이름, 값) => {
     const { getByText } = await 위젯(값)
 
     expect(getByText('120.0억')).toBeTruthy()
@@ -60,7 +60,7 @@ describe('금액은 네 크기에 다 서고 단위만 1x1 에서 빠진다', ()
 })
 
 describe('0건', () => {
-  it.each(Object.entries(크기))('%s — 한 줄로 그 사실만 말한다', async (_이름, 값) => {
+  it.each(Object.entries(크기))('%s: 한 줄로 그 사실만 말한다', async (_이름, 값) => {
     const { getByText, queryByTestId } = await 위젯(값, 빈_뷰모델)
 
     expect(getByText('가격이 입력된 아이템이 없습니다')).toBeTruthy()
@@ -84,13 +84,13 @@ describe('0건', () => {
 })
 
 describe('분배 표기', () => {
-  it('4x2 는 **N인 분배** 를 단다 — 총액보다 작은 이유를 그 자리에서 말한다', async () => {
+  it('4x2 는 **N인 분배** 를 단다. 총액보다 작은 이유를 그 자리에서 말한다', async () => {
     const { getByTestId } = await 위젯(크기['4x2'], 뷰모델({ topItem: 최고가(2, { shareCount: 3 }) }))
 
     expect(getByTestId('top-item-share')).toHaveTextContent('3인 분배')
   })
 
-  it('단독이면 안 단다 — 나눈 적 없는데 **1인 분배** 는 없는 사건을 말하는 것이다', async () => {
+  it('단독이면 안 단다. 나눈 적 없는데 **1인 분배** 는 없는 사건을 말하는 것이다', async () => {
     const { queryByTestId } = await 위젯(크기['4x2'], 뷰모델({ topItem: 최고가(2, { shareCount: 1 }) }))
 
     expect(queryByTestId('top-item-share')).toBeNull()
@@ -145,7 +145,7 @@ describe('크기가 버리는 것', () => {
 })
 
 describe('아이템 이름과 출처', () => {
-  it('이름은 한 줄이다 — 두 줄로 접으면 행 높이가 데이터에 흔들린다', async () => {
+  it('이름은 한 줄이다. 두 줄로 접으면 행 높이가 데이터에 흔들린다', async () => {
     const { getByTestId } = await 위젯(크기['2x2'])
 
     expect(getByTestId('top-item-name').props.numberOfLines).toBe(1)

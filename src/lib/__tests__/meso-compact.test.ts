@@ -3,7 +3,7 @@
 
 import { formatMesoCompact } from '../cashbook/meso-compact'
 
-describe('formatMesoCompact — 억', () => {
+describe('formatMesoCompact: 억', () => {
   it('유효숫자 넷을 유지한다', () => {
     expect(formatMesoCompact(5_474_000_000)).toBe('54.74억')
     expect(formatMesoCompact(2_224_000_000)).toBe('22.24억')
@@ -15,7 +15,7 @@ describe('formatMesoCompact — 억', () => {
     expect(formatMesoCompact(129_400_000_000)).toBe('1,294억')
   })
 
-  it('10억 미만은 소수 셋까지 — 여전히 유효숫자 넷이다', () => {
+  it('10억 미만은 소수 셋까지. 여전히 유효숫자 넷이다', () => {
     expect(formatMesoCompact(543_200_000)).toBe('5.432억')
   })
 
@@ -26,7 +26,7 @@ describe('formatMesoCompact — 억', () => {
   })
 })
 
-describe('formatMesoCompact — 만과 그 아래', () => {
+describe('formatMesoCompact: 만과 그 아래', () => {
   it('1억 미만은 만 단위 정수다', () => {
     expect(formatMesoCompact(39_080_000)).toBe('3,908만')
     expect(formatMesoCompact(10_000)).toBe('1만')

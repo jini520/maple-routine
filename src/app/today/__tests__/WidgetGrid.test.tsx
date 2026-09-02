@@ -60,11 +60,11 @@ afterEach(() => {
   jest.clearAllMocks()
 })
 
-describe('WidgetGrid — 좌표 배치', () => {
+describe('WidgetGrid: 좌표 배치', () => {
   it('타일 아홉이 적어 둔 좌표에 선다', async () => {
     const view = await 격자()
 
-    // (0,0) 4x1 — 가로를 다 쓰는 타일의 폭은 **창폭 − 좌우 여백** 이다.
+    // (0,0) 4x1. 가로를 다 쓰는 타일의 폭은 **창폭 − 좌우 여백** 이다.
     expect(스타일(타일(view, 'representative-character'))).toMatchObject({
       left: 0,
       top: 0,
@@ -109,9 +109,9 @@ describe('`h: auto` 타일', () => {
   })
 
   // ⚠️ 한때 `onLayout` 이 **최소 높이를 진 상자**(`Card` 를 감싼 래퍼)에 붙어 있었다. 그러면 재는
-  // 값이 `max(minHeight, 내용)` 이고 그것이 다시 다음 `minHeight` 가 되어 **늘기만 하고 줄지 않는다** —
+  // 값이 `max(minHeight, 내용)` 이고 그것이 다시 다음 `minHeight` 가 되어 **늘기만 하고 줄지 않는다**.
   // 아코디언을 한 번 펼쳤다 접으면 접힌 내용 위로 펼쳤을 때의 높이가 그대로 남았다.
-  it('실측이 줄면 타일도 줄어든다 — 늘기만 하는 래칫이 아니다', async () => {
+  it('실측이 줄면 타일도 줄어든다. 늘기만 하는 래칫이 아니다', async () => {
     const view = await 격자()
     const 측정상자 = () => view.getByTestId('widget-measure-remaining-schedule')
     const 카드 = () =>
@@ -159,7 +159,7 @@ describe('`h: auto` 타일', () => {
   // auto 타일이 **셋**이 됐다. `w === 4` 라 옆 칸이 없어 초과분이
   // **누적**된다.
   // 이 규칙이 깨지면 두 타일이 서로를 덮는다.
-  it('auto 타일 둘의 초과분이 누적된다 — 위의 것이 아래 것을 민다', async () => {
+  it('auto 타일 둘의 초과분이 누적된다. 위의 것이 아래 것을 민다', async () => {
     const view = await 격자()
     const 공유초과 = 120 - metrics.rowHeightPx
     const 스케줄초과 = 200 - metrics.rowHeightPx
@@ -185,7 +185,7 @@ describe('`h: auto` 타일', () => {
   // 계산으로 나오는 값을 재면 첫 프레임에 0 이고, 그 0 이 그대로 좌표가 된다.
   // 재는 것은 **auto 타일의 내용 상자 하나뿐**이다. 나머지는 계산으로 나오고, 재면 첫 프레임에
   // 0 이라 타일이 한 프레임 접혀 있다(과 같은 이유).
-  it('auto 타일의 **내용** 만 잰다 — 타일 래퍼도 다른 타일도 안 잰다', async () => {
+  it('auto 타일의 **내용** 만 잰다. 타일 래퍼도 다른 타일도 안 잰다', async () => {
     const view = await 격자()
 
     expect(view.getByTestId('widget-measure-remaining-schedule').props.onLayout).toBeInstanceOf(
@@ -225,7 +225,7 @@ describe('타일 탭', () => {
   // 지금은 **적을 기록이 없다.** 이동 자체가 스택 한 단이라 되돌아갈 자리가 구조로 실재하고,
   // 그 안전망도 함께 사라졌다. 그래서 이 결함을 막는 것은 위 한 줄이다.
 
-  it('하위가 없는 그룹으로 보내면 그룹 층 안의 옆걸음이다 — 층이 안 쌓인다', async () => {
+  it('하위가 없는 그룹으로 보내면 그룹 층 안의 옆걸음이다. 층이 안 쌓인다', async () => {
     const view = await 격자()
 
     await act(async () => {

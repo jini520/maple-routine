@@ -11,7 +11,7 @@ import {
 const LIGHT_SEED: ThemeSeed = { primary: '#F58B0F', secondary: '#F7D00D', third: '#CA763A', mode: 'light' }
 const DARK_SEED: ThemeSeed = { primary: '#9975B3', secondary: '#D1C093', third: '#D8608F', mode: 'dark' }
 
-// 결정 1의 핵심 요구 — "primary는 충분히 어둡다"를 전제하지 않는다. 아주 밝은 파스텔과
+// 결정 1의 핵심 요구. "primary는 충분히 어둡다"를 전제하지 않는다. 아주 밝은 파스텔과
 // 아주 어두운 색을 양 극단으로 두고, 두 경우 모두 채움 위 전경이 성립하는지 본다.
 const PASTEL_SEED: ThemeSeed = { primary: '#BFE3F5', secondary: '#FBD9E3', third: '#D9F0D1', mode: 'light' }
 const DEEP_SEED: ThemeSeed = { primary: '#2B1454', secondary: '#123C2E', third: '#4A1220', mode: 'dark' }
@@ -23,7 +23,7 @@ const ALL_SEEDS: Array<[string, ThemeSeed]> = [
   ['아주 어두운', DEEP_SEED],
 ]
 
-describe('deriveTheme — 스키마', () => {
+describe('deriveTheme: 스키마', () => {
   it.each(ALL_SEEDS)('%s: 38개 토큰을 빠짐없이 만든다', (_label, seed) => {
     const tokens = deriveTheme(seed)
     expect(Object.keys(tokens).sort()).toEqual([...THEME_TOKEN_KEYS].sort())
@@ -46,7 +46,7 @@ describe('deriveTheme — 스키마', () => {
 
 // 대비는 관문이 아니지만, **명도를 맞춰서 만드는 토큰**은 그 목표를 실제로 달성해야 한다.
 // 본문 텍스트와 accent 잉크가 그렇다(on-* 는 색감 우선이라 여기 없다. 아래 별도 describe).
-describe('deriveTheme — 명도를 맞춰 만드는 토큰', () => {
+describe('deriveTheme: 명도를 맞춰 만드는 토큰', () => {
   it.each(ALL_SEEDS)('%s: 본문·보조 텍스트가 배경 대비 AA 를 지킨다', (_label, seed) => {
     const tokens = deriveTheme(seed)
     for (const surface of [tokens.bg, tokens.surface]) {
@@ -57,7 +57,7 @@ describe('deriveTheme — 명도를 맞춰 만드는 토큰', () => {
 })
 
 // text-white/text-bg 고정을 파기한 이유가 실제로 지켜지는지.
-describe('on-* — 채움 위 전경색은 어느 쪽도 전제하지 않는다', () => {
+describe('on-*. 채움 위 전경색은 어느 쪽도 전제하지 않는다', () => {
   it('밝은 파스텔 primary 위에는 어두운 전경이 온다', () => {
     const tokens = deriveTheme(PASTEL_SEED)
     expect(hexToOklch(tokens.onPrimary).l).toBeLessThan(hexToOklch(tokens.primary).l)
@@ -78,8 +78,8 @@ describe('on-* — 채움 위 전경색은 어느 쪽도 전제하지 않는다'
   })
 })
 
-// 정정 — 흑/백 둘 중 하나로 퇴화하면 안 된다. 배경색마다 어울리는 전경색이 있다.
-describe('on-* — 순수 흑/백이 아니라 채움색의 색조를 물려받는다', () => {
+// 정정. 흑/백 둘 중 하나로 퇴화하면 안 된다. 배경색마다 어울리는 전경색이 있다.
+describe('on-*. 순수 흑/백이 아니라 채움색의 색조를 물려받는다', () => {
   const ON_KEYS = ['onPrimary', 'onSecondary', 'onThird', 'onError'] as const
   const FILL_OF = {
     onPrimary: 'primary',
@@ -155,9 +155,9 @@ describe('on-* — 순수 흑/백이 아니라 채움색의 색조를 물려받�
   })
 })
 
-// 판단 순서 — 잉크는 accent 원색을 그대로 쓰고, 정말 안 보일 때만 보정한다.
+// 판단 순서. 잉크는 accent 원색을 그대로 쓰고, 정말 안 보일 때만 보정한다.
 // AA 를 겨냥하던 시절엔 머쉬맘 브랜드 주황이 짙은 갈색으로 눌려 탭·배지 53곳이 통째로 바뀌었다.
-describe('*-ink — accent 원색을 지킨다', () => {
+describe('*-ink: accent 원색을 지킨다', () => {
   it('머쉬맘 브랜드 주황은 글자로 쓸 때도 그대로다', () => {
     const tokens = deriveTheme(LIGHT_SEED)
     expect(tokens.primaryInk).toBe(tokens.primary)
@@ -174,7 +174,7 @@ describe('*-ink — accent 원색을 지킨다', () => {
     }
   })
 
-  // 이 토큰을 만든 이유였던 사고 — 렌의 창백한 하늘색은 글자로 1.24:1이라 아예 안 보였다.
+  // 이 토큰을 만든 이유였던 사고. 렌의 창백한 하늘색은 글자로 1.24:1이라 아예 안 보였다.
   it('아예 안 보이는 색만 보정한다', () => {
     const pale = deriveTheme({ ...LIGHT_SEED, third: '#C9EEF2' })
     expect(contrastHex(pale.third, pale.surface)).toBeLessThan(1.5)
@@ -191,7 +191,7 @@ describe('*-ink — accent 원색을 지킨다', () => {
 // 트랙은 표면 톤을 따른다. 대비를 맞추려고 색을 밀지 않는다.
 // 결정 5. 이 색이 지켜야 하는 것은 "빨강 = 늘었다"가 **모든 테마에서 같은 뜻**이라는 것과,
 // 라이트·다크 어느 쪽에서도 읽힌다는 것 둘이다. 고정 hex 한 쌍으로는 후자가 깨진다.
-describe('rise/fall — 증감 신호색은 시드와 무관하게 휴가 고정된다', () => {
+describe('rise/fall: 증감 신호색은 시드와 무관하게 휴가 고정된다', () => {
   it.each(ALL_SEEDS)('%s: rise 는 빨강, fall 은 파랑 계열이다', (_label, seed) => {
     const tokens = deriveTheme(seed)
     // 휴는 원형이라 빨강(≈26)은 0 부근에서 감싸 돈다. 좁은 구간으로 못 박아 시드가 새는 것을 막는다.
@@ -222,13 +222,13 @@ describe('rise/fall — 증감 신호색은 시드와 무관하게 휴가 고정
   })
 })
 
-describe('track — 표면 톤을 따른다', () => {
+describe('track: 표면 톤을 따른다', () => {
   it.each(ALL_SEEDS)('%s: track 이 surface-2 와 같다', (_label, seed) => {
     const tokens = deriveTheme(seed)
     expect(tokens.track).toBe(tokens.surface2)
   })
 
-  it('특정 테마만 덮을 수 있다 — surface-2 를 쓰는 다른 자리는 안 건드린다', () => {
+  it('특정 테마만 덮을 수 있다. surface-2 를 쓰는 다른 자리는 안 건드린다', () => {
     const tokens = deriveTheme({ ...LIGHT_SEED, overrides: { track: '#585545' } })
     expect(tokens.track).toBe('#585545')
     expect(tokens.surface2).not.toBe('#585545')
@@ -236,7 +236,7 @@ describe('track — 표면 톤을 따른다', () => {
 })
 
 // 대비는 재서 보여줄 뿐 통과/실패를 매기지 않는다.
-describe('measureThemeContrast — 관문이 아니라 계측', () => {
+describe('measureThemeContrast: 관문이 아니라 계측', () => {
   it('기준선 아래여도 던지거나 실패로 표시하지 않는다', () => {
     const report = measureThemeContrast(deriveTheme(LIGHT_SEED))
     expect(report.measurements.length).toBeGreaterThan(10)
@@ -245,7 +245,7 @@ describe('measureThemeContrast — 관문이 아니라 계측', () => {
   })
 
   it('기준선 아래인 항목을 숨기지 않고 목록으로 준다', () => {
-    // 머쉬맘 주황 위 아이보리는 2.16:1 — 받아들이기로 한 값이지만 수치는 그대로 보고한다.
+    // 머쉬맘 주황 위 아이보리는 2.16:1. 받아들이기로 한 값이지만 수치는 그대로 보고한다.
     const report = measureThemeContrast(deriveTheme(LIGHT_SEED))
     const onPrimary = report.measurements.find(
       (entry) => entry.token === 'onPrimary' && entry.against === 'primary',
@@ -258,8 +258,8 @@ describe('measureThemeContrast — 관문이 아니라 계측', () => {
 })
 
 // 완료 배지는 카드 안에서만 쓰이므로 스코프가 모드별로 값을 준다(정정).
-describe('완료 배지 — 모드별로 다르게', () => {
-  it('라이트: 페이지 틴트를 그대로 쓴다 — 어두운 카드 위 옅은 칩이 잘 보인다', () => {
+describe('완료 배지. 모드별로 다르게', () => {
+  it('라이트: 페이지 틴트를 그대로 쓴다. 어두운 카드 위 옅은 칩이 잘 보인다', () => {
     const tokens = deriveTheme(LIGHT_SEED)
     const scope = deriveMediaScope(tokens, 'light')
 
@@ -281,7 +281,7 @@ describe('완료 배지 — 모드별로 다르게', () => {
 })
 
 // 일러스트 카드 안은 카드 **위에 직접 놓이는** 것들만 기준을 바꾼다.
-describe('deriveMediaScope — 카드 위에 직접 놓이는 것만 다시 묶는다', () => {
+describe('deriveMediaScope: 카드 위에 직접 놓이는 것만 다시 묶는다', () => {
   it('표면·텍스트·보더가 media-* 를 가리킨다', () => {
     const tokens = deriveTheme(LIGHT_SEED)
     const scope = deriveMediaScope(tokens, 'light')

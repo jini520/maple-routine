@@ -1,6 +1,6 @@
 // 캐릭터 동기화 **실패 표식과 그 설명 팝오버**(로 분리).
 //
-// 셋이 한 덩어리인 이유 — 배지를 탭하면 팝오버가 열리고, 그 팝오버의 가로 위치를
+// 셋이 한 덩어리인 이유. 배지를 탭하면 팝오버가 열리고, 그 팝오버의 가로 위치를
 // `resolveIssueAnchor` 가 카드 폭 안에서 정한다. 서로를 전제하므로 갈라 두면 한쪽만 고쳐지는
 // 종류의 버그가 생긴다.
 //
@@ -17,7 +17,7 @@
 // ② **측정이 이 파일에서 나간다.** 웹의 `measureIssueAnchor(card, money)` 는 두 요소를 받아 그
 //    자리에서 `getBoundingClientRect()` 를 불렀다. RN 의 측정은 **비동기**(`measureInWindow`)라
 //    같은 자리에서 못 부르므로, 재는 일은 호출부(step 7 의 `CharacterAccordion`)가 하고 여기는
-//    **잰 값을 받아 앵커 기하로 환산**한다. 이름도 그 사실에 맞춰 `resolveIssueAnchor` 다 —
+//    **잰 값을 받아 앵커 기하로 환산**한다. 이름도 그 사실에 맞춰 `resolveIssueAnchor` 다.
 //    배지 x 를 어떻게 앵커 중심으로 옮기는지(`-4 + 7`)는 여전히 이 파일의 지식이다.
 // ③ `ring-1 ring-bg` → 같은 크기의 `boxShadow` 확산. Tailwind 의 ring 은 **박스 바깥**에 그려져
 //    레이아웃을 안 건드리는데 `borderWidth` 로 옮기면 14px 원 안쪽을 깎아 아이콘이 작아진다
@@ -90,7 +90,7 @@ export const ISSUE_CARET_SIZE = 8
 // 웹의 `-top-3.5 -left-1` 을 값으로 적는 이유는 파일 머리 ③ 과 같다. 안 풀리는 클래스는 조용히
 // 사라지고, 이 두 값은 위 문단이 근거를 갖는 **미세 조정값**이라 사라지면 안 된다.
 const BADGE_OFFSET = { top: -14, left: -4 } as const
-/** 배지 지름 — 앵커 중심 계산(`left + 지름/2`)이 이 값을 쓴다. */
+/** 배지 지름. 앵커 중심 계산(`left + 지름/2`)이 이 값을 쓴다. */
 const BADGE_SIZE = 14
 
 export function CharacterIssueBadge(props: {

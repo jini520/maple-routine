@@ -1,4 +1,4 @@
-// 공유 컨텐츠 위젯(~31). 이 파일이 지키는 것 넷 —
+// 공유 컨텐츠 위젯(~31). 이 파일이 지키는 것 넷.
 // ① **계열이 축이다**(월드·계정 라벨이 화면에 한 번도 안 나온다)
 // ② **오른쪽 열은 카운트 있음 → n/max · 그 밖 → 빈칸**(CLEAR 는 걷었다)
 // ③ **머리의 `?` 가 월드 한계를 말하되 타일 높이를 안 바꾼다**(정정 34)
@@ -53,7 +53,7 @@ describe('계열이 축이다', () => {
     expect(queryByText(/스카니아/)).toBeNull()
   })
 
-  it('머리에 남은 줄 수를 단다 — 캐릭터 수와 무관하다', async () => {
+  it('머리에 남은 줄 수를 단다. 캐릭터 수와 무관하다', async () => {
     const { getByTestId } = await 위젯(공유컨텐츠())
 
     // 악몽선경 · 일간 · 익스트림 · PC방
@@ -64,7 +64,7 @@ describe('계열이 축이다', () => {
 describe('오른쪽 열은 `count` 유무 하나로 갈린다', () => {
   // 체크박스와 취소선이 이미 완료를 말한다. 배지는 같은 말의 세 번째였고, 그 46px 이 반폭 열에서
   // 긴 이름을 말줄임으로 밀어냈다(사용자 지시).
-  it('완료해도 오른쪽에 배지가 안 선다 — CLEAR 를 걷었다', async () => {
+  it('완료해도 오른쪽에 배지가 안 선다. CLEAR 를 걷었다', async () => {
     const { queryAllByTestId, queryByText } = await 위젯([
       공유계열('에픽던전', [
         공유항목('하이마운틴', { isComplete: true }),
@@ -98,7 +98,7 @@ describe('오른쪽 열은 `count` 유무 하나로 갈린다', () => {
 
   // 뷰모델이 완료한 항목에 카운트를 안 준다(의 살아 있는 절반). 완료한 항목의
   // **몇 번 했나** 는 언제나 max 라 `14/14` 가 더 말하는 것이 없다.
-  it('완료한 항목은 오른쪽이 통째로 빈다 — 체크박스가 그 말을 한다', async () => {
+  it('완료한 항목은 오른쪽이 통째로 빈다. 체크박스가 그 말을 한다', async () => {
     const { queryByTestId, getAllByTestId } = await 위젯([
       공유계열('몬스터파크', [공유항목('일간', { isComplete: true })]),
     ])
@@ -110,7 +110,7 @@ describe('오른쪽 열은 `count` 유무 하나로 갈린다', () => {
     ).toBe(기본테마.primary)
   })
 
-  it('숫자에 `tabular-nums` 가 걸린다 — 자릿수가 달라도 오른쪽 끝이 안 흔들린다', async () => {
+  it('숫자에 `tabular-nums` 가 걸린다. 자릿수가 달라도 오른쪽 끝이 안 흔들린다', async () => {
     const { getByText } = await 위젯([
       공유계열('몬스터파크', [
         공유항목('일간', { count: { now: 7, max: 14 } }),
@@ -129,7 +129,7 @@ describe('두 열로 선다', () => {
     열.queryAllByTestId('shared-group-name').map((node) => node.props.children)
 
   // 지그재그(홀짝)로 나누면 왼쪽이 **에픽던전 + 유니온**(7줄)이 되어 타일이 한 줄 더 높다.
-  it('계열 셋을 순서를 지키며 가른다 — 높이가 가장 고른 지점에서', async () => {
+  it('계열 셋을 순서를 지키며 가른다. 높이가 가장 고른 지점에서', async () => {
     const { getAllByTestId } = await 위젯(공유컨텐츠())
 
     const 열들 = getAllByTestId('shared-column')
@@ -146,7 +146,7 @@ describe('두 열로 선다', () => {
     expect(열이름(within(열들[1] as never))).toEqual(['몬스터파크'])
   })
 
-  it('계열이 하나뿐이면 한 열로 그린다 — 반폭만 쓰면 그 자체가 여백이다', async () => {
+  it('계열이 하나뿐이면 한 열로 그린다. 반폭만 쓰면 그 자체가 여백이다', async () => {
     const { getAllByTestId } = await 위젯(공유컨텐츠().slice(0, 1))
 
     expect(getAllByTestId('shared-column')).toHaveLength(1)
@@ -176,14 +176,14 @@ describe('완료는 체크와 취소선이 말한다', () => {
     expect(상자들[1]?.props.children).toBeFalsy()
   })
 
-  // **채운 상자는 언제나 `primary` 다**(사용자 판정 — *"테마 색이랑 관련 없는
+  // **채운 상자는 언제나 `primary` 다**(사용자 판정. *"테마 색이랑 관련 없는
   // 색이 들어가 있어"*). `완료 = `secondary`` 계보를 따랐더니 `secondary` 가 테마의 두 번째
   // 시드라 메인 컬러와 색상이 무관했다(렌은 빨강 테마에 틸 `#437B71`, 엔젤릭버스터는 분홍 테마에
   // 하늘 `#82B5C3`). 앱의 다른 체크박스 셋(설정·가계부·테마 선택)이 쓰는 색으로 되돌린다.
   // 체크 표시(`shared-checkbox-mark`)의 색은 여기서 못 잰다. SVG 는 `testID` 를 호스트 노드로
   // 안 넘긴다(렌더 트리에 `RNSVGSvgView` 만 남는다). 상자의 두 값이 같은 토큰을 가리키는 것으로
   // `secondary 로 되돌아가지 않았다`를 잡는다.
-  it('채운 상자는 채움도 테두리도 primary 다 — secondary 가 아니다', async () => {
+  it('채운 상자는 채움도 테두리도 primary 다. secondary 가 아니다', async () => {
     const { getAllByTestId } = await 위젯([
       공유계열('에픽던전', [공유항목('하이마운틴', { isComplete: true })]),
     ])
@@ -211,7 +211,7 @@ describe('완료는 체크와 취소선이 말한다', () => {
   })
 
   // 게임에서 오는 값이라 앱이 못 뒤집는다. 못 뒤집는 것을 누를 수 있게 두면 무반응이 **고장** 이다.
-  it('체크박스는 누를 수 없다 — 읽기 전용이다', async () => {
+  it('체크박스는 누를 수 없다. 읽기 전용이다', async () => {
     const { getAllByTestId, queryAllByRole } = await 위젯(공유컨텐츠())
 
     for (const 상자 of getAllByTestId('shared-checkbox', 숨은것포함)) {
@@ -224,7 +224,7 @@ describe('완료는 체크와 취소선이 말한다', () => {
 })
 
 describe('빈 상태와 이동', () => {
-  it('계열이 하나도 없어도 타일은 선다 — 위젯은 사라지지 않는다', async () => {
+  it('계열이 하나도 없어도 타일은 선다. 위젯은 사라지지 않는다', async () => {
     const { getByTestId, queryAllByTestId } = await 위젯([], 0)
 
     expect(getByTestId('widget-shared-contents')).toBeTruthy()
@@ -233,7 +233,7 @@ describe('빈 상태와 이동', () => {
 
   // 타일 자체에는 `target` 이 없다(레지스트리). 여기서 누를 수 있는 것은 **설명 토글 하나뿐**이고
   // 그것은 화면을 옮기지 않는다. 계열 머리도 항목 줄도 누를 수 없다(위젯 2 의 아코디언과 다르다).
-  it('누를 수 있는 것은 설명 토글 하나뿐이다 — 가는 곳은 없다', async () => {
+  it('누를 수 있는 것은 설명 토글 하나뿐이다. 가는 곳은 없다', async () => {
     const { queryAllByRole, getByTestId } = await 위젯(공유컨텐츠())
 
     const 누름자리 = queryAllByRole('button')
@@ -249,10 +249,10 @@ describe('빈 상태와 이동', () => {
   })
 })
 
-describe('머리의 `?` — 월드 한계를 말한다', () => {
+describe('머리의 `?`. 월드 한계를 말한다', () => {
   const 문장 = '계정 및 메이플 ID 공유 컨텐츠는 가장 마지막에 접속한 월드 기준으로 표시됩니다.'
 
-  it('평소에는 안 보인다 — 늘 떠 있는 각주는 격자에서 잡음이다', async () => {
+  it('평소에는 안 보인다. 늘 떠 있는 각주는 격자에서 잡음이다', async () => {
     const { queryByTestId, queryByText } = await 위젯(공유컨텐츠())
 
     expect(queryByTestId('shared-note')).toBeNull()

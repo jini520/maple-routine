@@ -8,7 +8,7 @@ export interface MatchedBoss {
   cycle: BossCycle
   isRegistered: boolean
   isComplete: boolean
-  ownComplete: boolean // 승격 없는 원본 완료 여부 — selectBossProfitBosses가 실제 처치 난이도를 판정할 때 사용
+  ownComplete: boolean // 승격 없는 원본 완료 여부. selectBossProfitBosses가 실제 처치 난이도를 판정할 때 사용
   matchedBossName: string | null
   portraitSlug: string | null
   isSeasonBoss: boolean
@@ -228,7 +228,7 @@ export function countClearedWeeklyBosses(bosses: MatchedBoss[]): number {
 /**
  * **이번 주 주간 보스 한도(12)를 채웠는가**.
  *
- * 세는 규칙을 새로 쓰지 않고 `countClearedWeeklyBosses`를 그대로 쓴다 —
+ * 세는 규칙을 새로 쓰지 않고 `countClearedWeeklyBosses`를 그대로 쓴다.
  * 시즌 보스 제외·월간 제외·같은 보스의 여러 난이도는 1, 세 규칙이 여기서도 그대로여야
  * 선택은 12/12 인데 처치는 11/12 같은 모순이 안 생긴다(이 이미 겪은 것).
  *
@@ -275,7 +275,7 @@ export function selectBossProfitBosses(bosses: MatchedBoss[]): MatchedBoss[] {
     }
     const registered = group.find((boss) => boss.isRegistered)
     if (registered !== undefined) {
-      result.push(registered) // 미완료 placeholder — 등록 난이도로 표시
+      result.push(registered) // 미완료 placeholder. 등록 난이도로 표시
     }
   }
   return result

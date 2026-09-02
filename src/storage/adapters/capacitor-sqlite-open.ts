@@ -1,5 +1,5 @@
 /**
- * Capacitor 시절 DB 파일을 **그대로 여는** 데 필요한 순수 규칙 — 파일명·디렉터리·암호화 모드
+ * Capacitor 시절 DB 파일을 **그대로 여는** 데 필요한 순수 규칙. 파일명·디렉터리·암호화 모드
  * (`docs/migration/data.md` 결정 2).
  *
  * 파일을 실제로 여는 것은 네이티브지만 "어느 파일을 여는가"는 전부 문자열 규칙이라 여기 둔다.
@@ -65,7 +65,7 @@ export function toOpenOptions(
 ): CapacitorDatabaseOpenOptions {
   if (encryption !== 'no-encryption') {
     throw new Error(
-      `지원하지 않는 암호화 모드입니다: ${encryption} — 기존 사용자의 DB 는 평문이라 암호화를 켜면 읽을 수 없게 됩니다.`,
+      `지원하지 않는 암호화 모드입니다: ${encryption}. 기존 사용자의 DB 는 평문이라 암호화를 켜면 읽을 수 없게 됩니다.`,
     )
   }
   return {

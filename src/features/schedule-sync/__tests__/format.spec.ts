@@ -16,7 +16,7 @@ describe('formatScheduleSyncError', () => {
   })
 })
 
-// 같은 원인이라도 자리에 따라 줄 수 있는 행동이 다르다 —
+// 같은 원인이라도 자리에 따라 줄 수 있는 행동이 다르다.
 // 피커는 설정으로 보낼 수 있지만 온보딩 중에는 설정 화면 자체가 없다.
 describe('formatRosterError', () => {
   it('모든 원인이 제목과 설명을 가진다', () => {
@@ -67,9 +67,9 @@ describe('formatRosterError', () => {
   })
 
   // 목적지가 설정에서 키 입력 화면으로 바뀌었고, 이동이 자동으로 이미
-  // 일어나므로 누를 것이 없다. 옛 문구("설정에서 키를 다시 등록해주세요")는 거짓이었다 —
+  // 일어나므로 누를 것이 없다. 옛 문구("설정에서 키를 다시 등록해주세요")는 거짓이었다.
   // 설정에는 키를 바꿀 자리가 없다(ApiKeyModal 2026-07-25 제거).
-  it('피커의 invalidApiKey는 액션 없이 이동을 알린다 — 설정으로 보내지 않는다', () => {
+  it('피커의 invalidApiKey는 액션 없이 이동을 알린다. 설정으로 보내지 않는다', () => {
     const copy = formatRosterError({ kind: 'invalidApiKey' }, 'picker')
 
     expect(copy.title).toBe('API 키가 유효하지 않습니다')
@@ -80,7 +80,7 @@ describe('formatRosterError', () => {
   // 회귀 가드: 온보딩 중에는 무효화 경로가 성립하지 않으므로(status가 completed가 아니다,
   // 결정 6) 그 실패는 폼 자체의 에러이고 재시도가 실제 처방이다. 이 phase가 이 자리를
   // 건드리지 않았음이 이 단언으로 증명된다.
-  it('온보딩의 invalidApiKey는 문구·액션이 그대로다 — 재시도가 실제 처방인 자리', () => {
+  it('온보딩의 invalidApiKey는 문구·액션이 그대로다. 재시도가 실제 처방인 자리', () => {
     const copy = formatRosterError({ kind: 'invalidApiKey' }, 'onboarding')
 
     expect(copy.title).toBe('API 키가 유효하지 않습니다')
@@ -103,7 +103,7 @@ describe('formatRosterError', () => {
     expect(copy.description).toBe('입력하신 API 키가 서비스 단계 키인지 확인해주세요')
   })
 
-  it('rateLimited와 network는 제목이 다르다 — 원인을 구분해 말해야 한다', () => {
+  it('rateLimited와 network는 제목이 다르다. 원인을 구분해 말해야 한다', () => {
     expect(formatRosterError({ kind: 'rateLimited' }, 'picker').title).not.toBe(
       formatRosterError({ kind: 'network' }, 'picker').title,
     )
@@ -157,7 +157,7 @@ describe('formatStaleRosterError', () => {
 
   // 배너가 뜨는 순간 키 무효화가 화면을 키 입력으로 보내므로 누를 것이 없다.
   // 문구는 그대로다. 바뀐 것은 액션뿐이다.
-  it('invalidApiKey는 문구를 유지하고 액션만 잃는다 — 어디서도 설정으로 보내지 않는다', () => {
+  it('invalidApiKey는 문구를 유지하고 액션만 잃는다. 어디서도 설정으로 보내지 않는다', () => {
     const copy = formatStaleRosterError({ kind: 'invalidApiKey' })
 
     expect(copy.message).toBe('API 키가 유효하지 않아 목록을 갱신하지 못했습니다')
@@ -168,7 +168,7 @@ describe('formatStaleRosterError', () => {
     expect(formatStaleRosterError({ kind: 'characterUnavailable' }).action).toBeUndefined()
   })
 
-  it('원인마다 문구가 갈린다 — 401·429·characterUnavailable·network가 서로 다르다', () => {
+  it('원인마다 문구가 갈린다: 401·429·characterUnavailable·network가 서로 다르다', () => {
     const messages = ['invalidApiKey', 'rateLimited', 'characterUnavailable', 'network'].map(
       (kind) => formatStaleRosterError({ kind } as ScheduleSyncError).message,
     )

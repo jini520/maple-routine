@@ -90,7 +90,7 @@ describe('load', () => {
     expect(groups[0].entries[0].boss).toBe('스우')
   })
 
-  it('분배 인원 기본값은 그 행의 파티원 수다 — 기록이 없으면 1인', async () => {
+  it('분배 인원 기본값은 그 행의 파티원 수다. 기록이 없으면 1인', async () => {
     getBossProfitRecordsMock.mockResolvedValue([
       { ocid: 'ocid-1', boss: '스우', difficulty: '하드', periodKey: PERIOD, partySize: 3 },
     ])
@@ -101,7 +101,7 @@ describe('load', () => {
     expect(useDropPriceStore.getState().groups[0].entries[0].partySize).toBe(3)
   })
 
-  it('이름을 모르는 캐릭터는 그룹을 만들지 않는다 — ocid 를 이름 대신 쓰지 않는다', async () => {
+  it('이름을 모르는 캐릭터는 그룹을 만들지 않는다. ocid 를 이름 대신 쓰지 않는다', async () => {
     getCachedCharacterBasicMock.mockResolvedValue(null)
     const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
 
@@ -110,7 +110,7 @@ describe('load', () => {
     expect(useDropPriceStore.getState().groups).toEqual([])
   })
 
-  it('조회가 실패하면 failed 다 — 빈 목록으로 위장하지 않는다', async () => {
+  it('조회가 실패하면 failed 다. 빈 목록으로 위장하지 않는다', async () => {
     getBossDropRecordsMock.mockRejectedValue(new Error('SQLite 실패'))
     const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
 
@@ -142,7 +142,7 @@ describe('savePrice · excludePrice', () => {
     )
   })
 
-  it('저장하면 화면 상태도 즉시 갱신된다 — 재조회를 기다리지 않는다', async () => {
+  it('저장하면 화면 상태도 즉시 갱신된다. 재조회를 기다리지 않는다', async () => {
     const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
     await useDropPriceStore.getState().load(PERIOD)
     const target = useDropPriceStore.getState().groups[0].entries[0]
@@ -166,7 +166,7 @@ describe('savePrice · excludePrice', () => {
     expect(drop.priceMeso).toBeUndefined()
   })
 
-  it('저장이 실패하면 던진다 — 화면이 토스트로 알릴 수 있어야 한다', async () => {
+  it('저장이 실패하면 던진다. 화면이 토스트로 알릴 수 있어야 한다', async () => {
     replaceBossDropRecordsMock.mockRejectedValue(new Error('쓰기 실패'))
     const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
     await useDropPriceStore.getState().load(PERIOD)
@@ -176,7 +176,7 @@ describe('savePrice · excludePrice', () => {
   })
 })
 
-// 2026-08-10 사용자 보고 — "가격 입력하고 보스 수익으로 가면 새로고침해야 반영된다".
+// 2026-08-10 사용자 보고. "가격 입력하고 보스 수익으로 가면 새로고침해야 반영된다".
 //
 // 두 스토어가 같은 테이블(`boss_drop_records`)을 각자 캐시한다. 보스 수익은 스택 화면 왕복에도
 // 마운트를 유지하므로 여기서 쓴 값을 **알려주지 않으면 옛 스냅샷을 계속 그린다**.
@@ -207,7 +207,7 @@ describe('보스 수익 스토어 동기화', () => {
     ).toBe('excluded')
   })
 
-  it('쓰기가 실패하면 전파하지 않는다 — 저장되지 않은 값이 화면에 남으면 안 된다', async () => {
+  it('쓰기가 실패하면 전파하지 않는다. 저장되지 않은 값이 화면에 남으면 안 된다', async () => {
     const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
     const { useBossProfitStore } = require('../store') as typeof import('../store')
     await useDropPriceStore.getState().load(PERIOD)

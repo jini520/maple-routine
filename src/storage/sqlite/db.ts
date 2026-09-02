@@ -18,11 +18,11 @@ const INCOME_RECORDS_BODY = `(
  -- **수수료를 뗀 값**이다. 캘린더도 합계도 이 칸 하나를 더한다.
  -- **NULL 이 될 수 있다**(이슈 #265): **기타**는 통화가 갈려서 **메소로 번 것이
  -- 아니다** 가 성립한다. 0 으로 채우면 **메소를 0 벌었다** 와 같아져 수정
- -- 시트가 찬 칸으로 통화를 되짚던 자리를 잃는다(지출이 먼저 같은 자리를 지났다 —
+ -- 시트가 찬 칸으로 통화를 되짚던 자리를 잃는다(지출이 먼저 같은 자리를 지났다.
  --). 처음엔 NOT NULL 이었고(수입이 메소뿐이던 시절)
  -- 그 제약이 메포·캐시 **기타**의 저장을 통째로 막았다. 이미 만들어진 테이블은 rebuildIncomeRecords 가 옮긴다.
  meso_amount INTEGER,
- -- 경매장 수수료(3·5 — 의 FeePercent). NULL = 없음(직거래이거나 정정 9 이전 행).
+ -- 경매장 수수료(3·5. 의 FeePercent). NULL = 없음(직거래이거나 정정 9 이전 행).
  sale_fee_percent INTEGER,
  -- 뗀 몫. **판매 대금 = meso_amount + sale_fee_meso** 로 정확히 되짚는다. 내림이 섞여 있어
  -- 요율만으로는 역산이 안 된다.
@@ -48,7 +48,7 @@ const INCOME_RECORDS_BODY = `(
  hunt_missed_mobs INTEGER, -- 젠 한 번에 놓치는 마릿수(0~4). 효율 %는 맵이 정한다
  hunt_boosts TEXT, -- 켠 아이템 id 를 쉼표로. '' = 없음
  hunt_sojae INTEGER, -- 소재 수(하나가 30분)
- hunt_fragments INTEGER, -- 솔 에르다 조각 개수(사용자가 직접 넣는다 — 결정 8)
+ hunt_fragments INTEGER, -- 솔 에르다 조각 개수(사용자가 직접 넣는다. 결정 8)
  hunt_fragment_price INTEGER, -- 조각 개당 메소
  hunt_meso_rate INTEGER, -- 그때의 캐릭터 메소 획득량(%). NULL = 이전 행 → 0 으로 읽는다
  -- 수동으로 적힌 사냥에서 사용자가 친 획득 메소. NULL 이 아니면 수동으로
@@ -143,7 +143,7 @@ const TABLE_DEFINITIONS = [
   // 가계부가 **손으로 적는** 둘. 앞의 넷과 갈리는 성질이 셋이다:
   //  ① **대리키다.** 앞의 넷은 자연키 복합 PK 인데 손입력은 **같은 날 같은 것을 두 번** 이 정상이라
   //     자연키가 성립하지 않는다.
-  //  ② **날짜가 참이다.** 사용자가 직접 고르므로 `period_key`(주·월)가 아니라 날짜를 든다 —
+  //  ② **날짜가 참이다.** 사용자가 직접 고르므로 `period_key`(주·월)가 아니라 날짜를 든다.
   //     그래서 캘린더 칸에 바로 설 수 있다(보스 기록은 #239 를 기다린다).
   //  ③ **API 가 없다.** 되살릴 길이 0% 라 `RECORD_TABLE_NAMES` 에 반드시 들어야 한다
   //     (`storage/cache-data.ts`. 안 넣으면 차집합 파생으로 **지워도 되는 것** 에 끌려간다).
@@ -168,7 +168,7 @@ const TABLE_DEFINITIONS = [
  -- 함께 가른다: 소비·기타는 **월드 간 거래가 안 되어** 관세가 없다. NULL 은 다른 갈래이거나
  -- **정정 1 이전 행**이고, 그 행은 장비로 연다(그때가 실제로 그 모양이었다).
  item_kind TEXT,
- -- 금액 = 카탈로그의 **unitPrice** × 이 값. 단위 이름은 안 적는다 —
+ -- 금액 = 카탈로그의 **unitPrice** × 이 값. 단위 이름은 안 적는다.
  -- **src/data/spend-catalog.json** 이 항목별로 알고 있어 베끼면 두 벌이 어긋난다.
  quantity INTEGER,
  -- 통화별 칸 셋. 안 쓴 칸은 NULL 이다.
@@ -178,7 +178,7 @@ const TABLE_DEFINITIONS = [
  -- 나누면 요율이 바뀌는 날 지난달 관세가 소급해 달라진다( 과 같은 이유).
  tariff_meso INTEGER,
  point_amount INTEGER,
- -- 메소마켓 시세 — 단위가 **1억 메소당 메포**다(정정 2 ④). **meso_per_point** 라는 이름이었는데
+ -- 메소마켓 시세. 단위가 **1억 메소당 메포**다(정정 2 ④). **meso_per_point** 라는 이름이었는데
  -- **거짓이었다**: 이 값으로 하는 것은 곱셈이 아니라 **나눗셈**이다(메포 × 1억 ÷ 시세).
  -- point_amount 가 있으면 NOT NULL 이어야 하고(정정 2 ③) 0 이면 안 된다.
  point_per_100m_meso INTEGER,
@@ -300,11 +300,11 @@ const INCOME_RECORDS_REBUILD_TABLE = 'income_records_rebuild'
  *    던지면 되돌리고 그대로 올려보낸다(삼키면 됐다 는 거짓 위에서 다음 문장들이 돈다).
  * ② **옮길 칸은 옛 테이블이 실제로 가진 칸**이다. `SELECT *` 는 못 쓴다. `ensureColumn` 이 붙인
  *    칸은 **뒤에** 붙어 순서가 지금 DDL 과 다르고, 위치로 짝지으면 값이 **에러 없이 옆 칸으로
- *    옮겨 앉는다**(수수료가 메포가 된다). 지금 스키마의 칸 목록을 박아 두는 것도 못 쓴다 —
+ *    옮겨 앉는다**(수수료가 메포가 된다). 지금 스키마의 칸 목록을 박아 두는 것도 못 쓴다.
  *  그 칸이 아직 없는 기기가 실제로 있다.
  * ③ **`ensureColumn` 들보다 먼저** 돈다. 여기서 만드는 테이블은 지금의 DDL 전체라 칸이 이미 다
  *    있고, 뒤의 `ensureColumn` 열하나는 그대로 no-op 이 된다.
- * ④ **판정은 스키마 자신에게 묻는다**(`notnull`). 이미 nullable 이면 **한 문장도 안 나간다** —
+ * ④ **판정은 스키마 자신에게 묻는다**(`notnull`). 이미 nullable 이면 **한 문장도 안 나간다**.
  *    메이린 UPDATE 들과 같은 성질이다(매번 열려도 안전한 no-op). 재작성은 행을 통째로 옮기는
  *    비싼 일이라 이 판정이 값싸야 한다.
  */
@@ -346,7 +346,7 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
 
   // 웹뷰가 리로드되면(OTA 적용: applyDownloadedLiveUpdate → CapacitorUpdater.set이 JS 컨텍스트를
   // 파괴하고 재로드) 이전 로드의 네이티브 SQLite 연결이 남는다. dbPromise는 로드마다
-  // 초기화되므로 isConnection이 true라는 건 그 stale 연결이라는 뜻 — 그대로 retrieve+open하면 첫
+  // 초기화되므로 isConnection이 true라는 건 그 stale 연결이라는 뜻. 그대로 retrieve+open하면 첫
   // 쿼리가 막히므로, 닫고 새로 만든다.
   const alreadyConnected = await connection.isConnection(DB_NAME)
   if (alreadyConnected) {

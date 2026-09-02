@@ -10,7 +10,7 @@ const BADGE_GRADIENT = ['#ffe98a', '#f7c400'] as const
 const BADGE_INK = '#6b4e00'
 const BADGE_GLOW = [{ offsetX: 0, offsetY: 0, blurRadius: 8, color: 'rgba(247, 208, 13, 0.55)' }]
 
-/** 아이콘 원의 흰 링 — 웹의 `ring-[1.5px] ring-white/80`. */
+/** 아이콘 원의 흰 링. 웹의 `ring-[1.5px] ring-white/80`. */
 const ICON_RING = [
   { offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: 1.5, color: 'rgba(255, 255, 255, 0.8)' },
 ]

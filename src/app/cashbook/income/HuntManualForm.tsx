@@ -53,7 +53,7 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
       <CharacterField characters={props.characters} selected={ocid} onSelect={setOcid} />
 
       {/* 계산기에서는 앱이 세어 못 치는 줄이다. 여기서는 그 줄이 치는 칸이
-          된다 — 같은 자리·같은 라벨이라 두 폼을 오갈 때 눈이 안 미끄러진다. */}
+          된다. 같은 자리·같은 라벨이라 두 폼을 오갈 때 눈이 안 미끄러진다. */}
       <FieldRow label="획득 메소">
         <AmountInput
           testID="income-sheet-hunt-meso"

@@ -9,7 +9,7 @@ import { imageCropStyle, resolveImageCropLayout } from '../image-crop'
 const CROP = { size: '220% auto', position: '60% 40%' }
 const NATURAL = { width: 800, height: 400 }
 
-describe('resolveImageCropLayout — CSS 배경 크롭 → RN 배치', () => {
+describe('resolveImageCropLayout: CSS 배경 크롭 → RN 배치', () => {
   it('`N% auto` 는 부모 폭 기준 폭 + 고유 종횡비가 된다', () => {
     const layout = resolveImageCropLayout(CROP, NATURAL)
 
@@ -33,26 +33,26 @@ describe('resolveImageCropLayout — CSS 배경 크롭 → RN 배치', () => {
     expect(layout).toMatchObject({ left: '0%', translateX: '0%', top: '100%', translateY: '-100%' })
   })
 
-  it('100% 를 넘는 position 도 그대로 통과한다 — 크롭 표에 실제로 있다', () => {
+  it('100% 를 넘는 position 도 그대로 통과한다. 크롭 표에 실제로 있다', () => {
     expect(resolveImageCropLayout({ size: '170% auto', position: '110% 100%' }, NATURAL)).toMatchObject({
       left: '110%',
       translateX: '-110%',
     })
   })
 
-  it('고유 크기를 모르면 cover 로 떨어진다 — 그림을 안 그리는 것이 아니다', () => {
+  it('고유 크기를 모르면 cover 로 떨어진다. 그림을 안 그리는 것이 아니다', () => {
     expect(resolveImageCropLayout(CROP, null)).toEqual({ kind: 'cover' })
     expect(resolveImageCropLayout(CROP, { width: 0, height: 0 })).toEqual({ kind: 'cover' })
   })
 
-  // step 5 실측 — jest 의 에셋 대역(`{ testUri }`)이 크기 없이 오는데 `undefined <= 0` 은 false 라
+  // step 5 실측. jest 의 에셋 대역(`{ testUri }`)이 크기 없이 오는데 `undefined <= 0` 은 false 라
   // 가드를 통과했고 `aspectRatio: NaN` 이 나갔다. NaN 은 에러가 아니라 레이아웃이 조용히 무너지는 값이다.
   it.each([
     ['둘 다 없음', { width: undefined, height: undefined }],
     ['높이만 없음', { width: 800, height: undefined }],
     ['NaN', { width: Number.NaN, height: 400 }],
     ['무한대', { width: 800, height: Number.POSITIVE_INFINITY }],
-  ])('크기가 숫자가 아니면(%s) cover 다 — NaN 종횡비를 내보내지 않는다', (_label, natural) => {
+  ])('크기가 숫자가 아니면(%s) cover 다. NaN 종횡비를 내보내지 않는다', (_label, natural) => {
     expect(resolveImageCropLayout(CROP, natural as unknown as { width: number; height: number })).toEqual({
       kind: 'cover',
     })
@@ -97,7 +97,7 @@ describe('imageCropStyle', () => {
   it.each([
     ['cover', { kind: 'cover' } as const],
     ['sized', resolveImageCropLayout(CROP, NATURAL)],
-  ])('%s 는 두 축을 다 이름 부른다 — 안 적은 축은 고유 크기가 살아남는다', (_label, layout) => {
+  ])('%s 는 두 축을 다 이름 부른다. 안 적은 축은 고유 크기가 살아남는다', (_label, layout) => {
     const style = imageCropStyle(layout)
 
     expect(Object.keys(style)).toContain('width')

@@ -1,4 +1,4 @@
-// 사용자 동의형 업데이트 모달 — 실행 시(또는 설정에서 수동 확인 시) 새 버전이 있으면 뜬다
+// 사용자 동의형 업데이트 모달. 실행 시(또는 설정에서 수동 확인 시) 새 버전이 있으면 뜬다
 // . 상태별 분기 아홉과 문구는 웹판을 그대로 옮겼다.
 //
 // ══ 이 컴포넌트는 **아직 아무 데도 마운트되지 않는다** ══════════════════════════════════
@@ -157,7 +157,7 @@ function BadgeRow({ children }: { children: React.ReactNode }): React.JSX.Elemen
   return <View className="flex-row flex-wrap items-center justify-center gap-1.5">{children}</View>
 }
 
-// info-tint 정보 콜아웃 — 부가 정보(용량, 최소 앱 버전 등)를 본문 문장과 분리해 보여준다.
+// info-tint 정보 콜아웃. 부가 정보(용량, 최소 앱 버전 등)를 본문 문장과 분리해 보여준다.
 function InfoNote({ children }: { children: React.ReactNode }): React.JSX.Element {
   return (
     <View className="flex-row items-center gap-2 rounded-[10px] bg-info-tint px-3.5 py-2.5">
@@ -190,13 +190,13 @@ function HighlightsDisclosure({ highlights }: { highlights: string[] }): React.J
             **죽는다**. step 3 이 찾은 SVG 함정들과 같은 가족이되 이쪽은 조용하지 않다.
 
             **접힌 쪽이 빈 문자열이 아니라 `rotate-0` 인 것도 값이 아니라 계약이다**(실측
-            2026-08-12 — 이 자리가 실제로 앱을 멈춰 세웠다). transform 이 **첫 렌더에 없다가
+            2026-08-12. 이 자리가 실제로 앱을 멈춰 세웠다). transform 이 **첫 렌더에 없다가
             나중에 생기면** NativeWind 는 호스트를 `Animated.View` 로 올려야 하는데 그러면
             리마운트라, 대신 **올리기를 포기하고 개발 경고를 찍는다**. 그 경고가 원인 파악을
             돕겠다고 `originalProps` 를 직렬화하는데(`render-component.js` 의 `stringify`)
             그 프롭에 든 것이 React 엘리먼트라 순환 가드가 **경로 단위**뿐인 그 함수가 파이버
             그래프를 헤매다 **힙을 다 쓴다**(jest 는 OOM 으로 죽고, dev 번들도 같은 코드다).
-            두 상태 모두 transform 을 갖고 있으면 첫 렌더에 올라가 이 사슬의 첫 고리가 없다 —
+            두 상태 모두 transform 을 갖고 있으면 첫 렌더에 올라가 이 사슬의 첫 고리가 없다.
             라이브러리 경고문이 말하는 *"기본 스타일을 두라"* 가 정확히 이것이다. */}
         <View testID="update-highlights-chevron" className={isOpen ? 'rotate-180' : 'rotate-0'}>
           <ChevronDownIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2} aria-hidden />
@@ -482,7 +482,7 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
           )}
 
           {/*: 적용이 실패·타임아웃해도 화면은 돌아온다. download-error 와 같은
-              골격이되 주 동작이 다르다 — 받아둔 번들이 그대로 살아 있어 다시 받지 않고 apply()
+              골격이되 주 동작이 다르다. 받아둔 번들이 그대로 살아 있어 다시 받지 않고 apply()
               만 다시 부른다(스토어가 downloadedBundleId 를 비우지 않는다). */}
           {status === 'apply-error' && (
             <>

@@ -67,7 +67,7 @@ describe('EmptyState', () => {
   })
 
   // page(캐릭터 미선택 3곳)와 inline(목록 8곳)은 배지 크기·타이포만 다르고 구조는 같다.
-  it('기본은 inline 크기 — 56px 배지, 자체 카드 껍데기를 가진다', async () => {
+  it('기본은 inline 크기. 56px 배지, 자체 카드 껍데기를 가진다', async () => {
     const { getByTestId } = await renderAtom(
       <EmptyState icon={SwordsIcon} title="추적할 주간 보스가 없습니다" />,
     )
@@ -115,7 +115,7 @@ describe('EmptyState', () => {
 
   // 웹은 `fill-primary-ink` 로 색을 줬다. RN 에는 `fill` 스타일이 없어 `text-*` → `color` 프롭 →
   // 자식의 `currentColor` 로 흐른다(`lib/nativewind-interop.ts`). **통로가 끊기면 잎이 검게 된다.**
-  it('단풍잎 색은 className 이 정한다 — `currentColor` 가 읽는 `color` 프롭으로 들어간다', async () => {
+  it('단풍잎 색은 className 이 정한다. `currentColor` 가 읽는 `color` 프롭으로 들어간다', async () => {
     const { getByTestId } = await renderAtom(
       <EmptyState size="page" icon="leaf" title="표시할 캐릭터가 없습니다" />,
     )

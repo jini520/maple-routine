@@ -70,7 +70,7 @@ export function mergeManualBossList(
       return { ...match, isComplete: match.isComplete || isCompleteByAnyDifficulty }
     }
 
-    // 한 번도 동기화 응답에 나타난 적 없는 보스 — cycle만 참조 테이블에서 채우고 미완료로 둔다.
+    // 한 번도 동기화 응답에 나타난 적 없는 보스. cycle만 참조 테이블에서 채우고 미완료로 둔다.
     return {
       name: item.contentName,
       difficulty: item.difficulty as BossContent['difficulty'],

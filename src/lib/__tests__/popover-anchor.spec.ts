@@ -6,14 +6,14 @@ import { anchorPopover } from '../popover-anchor'
 describe('anchorPopover', () => {
   const base = { containerWidth: 343, popoverWidth: 220, edgeGap: 12, caretSize: 8 }
 
-  it('꼬리가 트리거 중심을 가리킨다 — 트리거 x가 달라도 따라간다', () => {
+  it('꼬리가 트리거 중심을 가리킨다. 트리거 x가 달라도 따라간다', () => {
     for (const anchorCenterX of [199, 264, 120]) {
       const { left, caretLeft } = anchorPopover({ ...base, anchorCenterX })
       expect(left + caretLeft + base.caretSize / 2).toBe(anchorCenterX)
     }
   })
 
-  it('팝오버가 컨테이너 밖으로 나가지 않는다 — 좌우 여백 안쪽으로 clamp한다', () => {
+  it('팝오버가 컨테이너 밖으로 나가지 않는다. 좌우 여백 안쪽으로 clamp한다', () => {
     const farRight = anchorPopover({ ...base, anchorCenterX: 335 })
     expect(farRight.left + base.popoverWidth).toBeLessThanOrEqual(base.containerWidth - base.edgeGap)
 
@@ -21,7 +21,7 @@ describe('anchorPopover', () => {
     expect(farLeft.left).toBeGreaterThanOrEqual(base.edgeGap)
   })
 
-  it('clamp된 뒤에도 꼬리는 팝오버 안에 머문다 — 둥근 모서리에 잘리지 않는다', () => {
+  it('clamp된 뒤에도 꼬리는 팝오버 안에 머문다. 둥근 모서리에 잘리지 않는다', () => {
     for (const anchorCenterX of [0, 343]) {
       const { caretLeft } = anchorPopover({ ...base, anchorCenterX })
       expect(caretLeft).toBeGreaterThanOrEqual(10)

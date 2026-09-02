@@ -1,7 +1,7 @@
 export interface PopoverAnchorInput {
   /** 팝오버가 들어갈 컨테이너(카드)의 폭 */
   containerWidth: number
-  /** 트리거 중심의 x — 컨테이너 왼쪽 변 기준 */
+  /** 트리거 중심의 x. 컨테이너 왼쪽 변 기준 */
   anchorCenterX: number
   popoverWidth: number
   /** 컨테이너 좌우로 남길 최소 여백 */

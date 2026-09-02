@@ -4,21 +4,21 @@ import type { RecordedDrop } from '../../types/drops'
 
 // 보스 수익 화면의 **기간·탭 맥락과 스토어 바인딩**을 자손에게 내리는 컨텍스트(3단계).
 //
-// 왜 컨텍스트인가 — 이 값들은 `BossProfitScreen → CharacterAccordion → Weekly/MonthlyAccordionBody
+// 왜 컨텍스트인가. 이 값들은 `BossProfitScreen → CharacterAccordion → Weekly/MonthlyAccordionBody
 // → BossProfitBossRow` **4단계**를 타고 내려가며 타입 선언 25곳 + JSX 전달 26곳, 합쳐 **51지점**을
 // 만들고 있었다. 그중 어느 것도 중간 컴포넌트가 쓰지 않고 그냥 통과시키기만 한다.
 //
 // 아코디언을 헤더/본문 compound 로 가르는 안은 이 문제를 하나도 줄이지 못한다(본문이 여전히
-// 같은 값을 받아야 한다) —의 정정 참고.
+// 같은 값을 받아야 한다).
 //
 // **여기 담는 것과 담지 않는 것**. "화면 전체가 공유하는 맥락"만 담는다. 특정 캐릭터·특정
 // 보스에 매인 값(`group` `row` `issue` `stickyTop`)은 프롭으로 남는다. 컨텍스트가 그런 것까지
 // 삼키면 "이 컴포넌트가 무엇에 대한 것인지"가 시그니처에서 사라진다.
 //
-// ══ RN 으로 옮기며 **사라진 것 하나 — `scrollRoot`** ═══════════════════════════════
+// ══ RN 으로 옮기며 **사라진 것 하나. `scrollRoot`** ═══════════════════════════════
 //
 // 웹의 여덟 번째 필드는 이 화면의 스크롤 컨테이너였다. 그것이 컨텍스트에
-// 있어야 했던 이유는 **4단계 아래 자손이 그것을 읽었기** 때문인데, 읽는 목적은 하나뿐이었다 —
+// 있어야 했던 이유는 **4단계 아래 자손이 그것을 읽었기** 때문인데, 읽는 목적은 하나뿐이었다.
 // `fixed` 팝오버(아이템 수익 · 캐릭터 이슈)를 **스크롤이 시작되면 닫는 것**. `fixed` 상자는
 // 스크롤을 따라오지 않아 그대로 두면 "어느 줄의 내역인지"를 잃는다.
 //
@@ -54,7 +54,7 @@ export interface BossProfitContextValue {
   setBossDrops: BossProfitStore['setBossDrops']
   /** 월간 탭에서 이 기간을 실제로 조회할 수 있는지. */
   isMonthlyBossQueryable: boolean
-  /** 주차 행의 조회·다시 시도 — 이 기간을 다시 로드한다(store.retryPeriod). */
+  /** 주차 행의 조회·다시 시도. 이 기간을 다시 로드한다(store.retryPeriod). */
   onRetryPeriod: () => void
 }
 

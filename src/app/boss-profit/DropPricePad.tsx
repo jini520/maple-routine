@@ -47,7 +47,7 @@ export interface DropPricePadProps {
   boss: string
   difficulty: BossDifficulty
   characterName: string
-  /** 분배 인원 기본값 — 그 행의 파티원 수(사용자 결정). 저장하면 이 값과 무관해진다. */
+  /** 분배 인원 기본값. 그 행의 파티원 수(사용자 결정). 저장하면 이 값과 무관해진다. */
   defaultShare: number
   maxShare: number
   /** 순차 모드의 진행 표기(`3 / 6`). 단건 편집이면 넘기지 않는다. */
@@ -143,9 +143,9 @@ export function DropPricePadContent(
           amountTestID="drop-price-amount"
         />
 
-        {/* 분배 인원 — 스테퍼는 파티 인원 모달과 같은 어휘를 축소한 것이다.
+        {/* 분배 인원. 스테퍼는 파티 인원 모달과 같은 어휘를 축소한 것이다.
             **`PartySizeStepper` 로 접지 않는다**: 그 molecule 이 정한 두 크기(관리 행 24 · 모달 32)
-            중 어느 쪽도 아닌 22px 이고 `Users` 표식이 없다 — 보스 행이 셋째 모양인 것과 같은 사정
+            중 어느 쪽도 아닌 22px 이고 `Users` 표식이 없다. 보스 행이 셋째 모양인 것과 같은 사정
             (`BossProfitBossRow` ②)이라 넷째 모양을 만들지 않고 웹처럼 자체 마크업으로 둔다. */}
         <View className="mt-4 flex-row items-center justify-between gap-2.5 border-t border-border pt-3.5">
           <Text className="text-xs font-semibold text-text-muted">분배 인원</Text>
@@ -186,7 +186,7 @@ export function DropPricePadContent(
       <MesoKeypad onKey={pressKey} />
 
       {/* **기록 안함**은 "값이 없다"가 아니라 "값을 매기지 않기로 했다"는 결정이라 저장과 같은
-          층에 선다. **스킵**은 그 옆의 글자 버튼이다 — 아무것도 저장하지 않고 다음으로만 가므로
+          층에 선다. **스킵**은 그 옆의 글자 버튼이다. 아무것도 저장하지 않고 다음으로만 가므로
           테두리를 주면 결정처럼 보인다(정정).
           하단 안전영역은 시트 껍데기가 이미 준다(파일 머리 ②). */}
       <View className="flex-row items-center gap-2 px-4 pb-5 pt-1.5">

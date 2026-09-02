@@ -1,7 +1,7 @@
 // 층 스택의 상태에서 **지금 페이지** 를 뽑는 규칙.
 //
 // 바는 층 스택의 `layout` 이 그린다. 그래서 그 내비게이터의 **상태를 그대로 받는다**. 거기서
-// 가장 안쪽 화면 이름을 뽑는 훑기가 이 파일의 대상이고, 순수 함수라 렌더 없이 못 박는다 —
+// 가장 안쪽 화면 이름을 뽑는 훑기가 이 파일의 대상이고, 순수 함수라 렌더 없이 못 박는다.
 // 페이지의 진실 공급원은 여전히 react-navigation 하나이고 우리는 읽기만 한다.
 
 import { pageFromLayerState, type NavRouteLike, type NavStateLike } from '../current-page'
@@ -11,7 +11,7 @@ function layer(top: NavRouteLike): NavStateLike {
   return { index: 0, routes: [top] }
 }
 
-/** 중첩 상태가 붙은 라우트 조립기 — react-navigation 이 주는 모양 그대로다. */
+/** 중첩 상태가 붙은 라우트 조립기. react-navigation 이 주는 모양 그대로다. */
 function route(name: string, inner?: NavRouteLike, params?: Record<string, unknown>): NavRouteLike {
   return {
     name,
@@ -20,13 +20,13 @@ function route(name: string, inner?: NavRouteLike, params?: Record<string, unkno
   }
 }
 
-describe('pageFromLayerState — 가장 안쪽 화면이 곧 지금 페이지다', () => {
+describe('pageFromLayerState: 가장 안쪽 화면이 곧 지금 페이지다', () => {
   it('그룹 층의 화면을 읽는다', () => {
     expect(pageFromLayerState(layer(route('Groups', route('Today'))))).toBe('Today')
     expect(pageFromLayerState(layer(route('Groups', route('Settings'))))).toBe('Settings')
   })
 
-  it('하위 층의 화면을 읽는다 — 한 단 더 깊어도 같다', () => {
+  it('하위 층의 화면을 읽는다. 한 단 더 깊어도 같다', () => {
     expect(pageFromLayerState(layer(route('ScheduleSubs', route('Boss'))))).toBe('Boss')
     expect(pageFromLayerState(layer(route('LedgerSubs', route('Cashbook'))))).toBe('Cashbook')
   })
@@ -52,7 +52,7 @@ describe('pageFromLayerState — 가장 안쪽 화면이 곧 지금 페이지다
     expect(pageFromLayerState(pending)).toBe('Cashbook')
   })
 
-  // 마지막 안전망 — 둘 다 없으면 그 층의 첫 화면이다. 표에서 나오므로 지어낸 값이 아니다.
+  // 마지막 안전망. 둘 다 없으면 그 층의 첫 화면이다. 표에서 나오므로 지어낸 값이 아니다.
   it('상태도 파라미터도 없으면 그 층의 첫 화면이다', () => {
     const bare: NavStateLike = { index: 0, routes: [{ name: 'ScheduleSubs' }] }
 
