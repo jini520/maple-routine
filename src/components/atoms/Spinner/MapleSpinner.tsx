@@ -9,9 +9,10 @@
 import Animated, { Easing, useAnimatedProps } from 'react-native-reanimated'
 import { Path } from 'react-native-svg'
 
+import { useLoopedValue } from '../../../hooks/useLoopedValue'
 import { SvgFrame } from '../Icon/icon-base'
 import { LEAF_GRID, MAPLE_LEAF_PATH, MAPLE_LEAF_PATH_LENGTH } from '../Icon/maple-leaf'
-import { useLoopedValue, type SpinnerProps } from './spinner-base'
+import type { SpinnerProps } from './spinner-base'
 
 /** 웹의 `strokeDasharray="210 90"`. 정규화 둘레 300 기준 70% / 30% 다. */
 const TRAIL_RATIO = 0.7
