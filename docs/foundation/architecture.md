@@ -36,6 +36,7 @@ src/
 │   ├── ports.ts  adapters/rn-*.ts
 ├── theme/                  # ThemeProvider · theme-vars(NativeWind vars) · appearance-store
 ├── components/             # 아토믹 4계층([[ADR-094]]): atoms/ molecules/ organisms/ templates/
+│                           #   molecules 는 잎, organisms 는 조합([[ADR-205]] 결정 1)
 ├── assets/                 # items/(+rings/) · bosses/ · maps/ · worlds/ · themes/ · generated/
 ├── lib/                    # 범용 유틸(reset-clock, item-icons, boss-icons, boss-matching,
 │                           #   scheduler-merge, boss-profit-period, widget-layout, drop-history …)

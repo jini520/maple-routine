@@ -47,7 +47,7 @@ import type { BossDifficulty } from '../../types'
 
 import { Badge, Text } from '../../components/atoms'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
-import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
+import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
 import { DifficultySegment } from '../../components/molecules/DifficultySegment/DifficultySegment'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { PartySizeStepper } from '../../components/molecules/PartySizeStepper/PartySizeStepper'

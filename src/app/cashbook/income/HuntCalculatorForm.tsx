@@ -17,7 +17,7 @@ import { Image, Pressable, View } from 'react-native'
 
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
-import { mesoTextOf, mesoValueOf } from '../../../components/molecules/MesoPad/meso-pad'
+import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import {
   SelectField,

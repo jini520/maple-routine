@@ -66,7 +66,7 @@
 | 입력 | `app/cashbook/SpendSheet.tsx` · `IncomeSheet.tsx` · `components/organisms/SpeedDial/`(`speed-dial-motion` 움직임 · `speed-dial-metrics` 치수) | 떠 있는 ＋ → 종류 둘 → 시트 |
 | 큰 숫자 | `components/molecules/AmountFigure/` | 숫자 한 줄. **저장 바로 위**에 놓이고 자기 윗선을 안 긋는다([[ADR-173]] 결정 1·9). **못 치는 글자만 그린다**([[ADR-202]] 결정 5). 한국어 단위로 접혀 서고(결정 9) 값이 바뀌면 **곧바로** 갈아 끼운다(결정 12가 카운트업을 걷었다). 밑의 힌트 한 줄은 없앴다 |
 | 축 고르개 | `components/molecules/Segment/` | 통화·형태·단계. **종류 칩과 모양이 다르다**([[ADR-173]] 결정 3). 같은 알약 세 종류가 안 읽히던 것이 다시 짠 이유였다 |
-| 글자→값 | `components/molecules/MesoPad/meso-pad.ts` 의 `parseMesoText` | OS 키보드가 넣은 글자에서 숫자만 남긴다. `MesoAmountField`·`MesoKeypad` 는 **드롭 판매가 전용**으로 남는다([[ADR-124]] 결정 5) |
+| 글자→값 | `components/organisms/MesoPad/meso-pad.ts` 의 `parseMesoText` | OS 키보드가 넣은 글자에서 숫자만 남긴다. `MesoAmountField`·`MesoKeypad` 는 **드롭 판매가 전용**으로 남는다([[ADR-124]] 결정 5) |
 | 보스 타일 | `components/molecules/BossPortrait/`(`shape`) · `components/atoms/Badge/`(난이도 variant + `DIFFICULTY_SHORT`) + `app/boss-profit/character-groups.ts` 의 `findPortraitSlug` | 펼친 결정석 줄이 그리는 네모 타일([[ADR-172]] 정정 1·2). **셋 다 보스 수익 탭이 쓰는 그것**이고, 프롭 둘이 ‘네모’와 ‘한 글자 표기’만 더한다 |
 | 캐릭터 고르개 | `components/organisms/SelectField/` + `app/cashbook/character-options.ts` | 라벨–값 줄 모양의 커스텀 드롭다운. 세로 배치는 `AccountSelect/place-dropdown` 을 그대로 쓴다 |
 | 당겨서 새로고침 | `features/cashbook/records.ts` 의 `refreshCashbook` + `app/use-pull-refresh.ts` | **동기화 → 날짜 캐기 → 다시 읽기** 차례([[ADR-170]] 정정 8). 보스 수익 탭의 당김과 같은 재조회를 부른다 |

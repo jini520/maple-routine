@@ -46,7 +46,7 @@ import {
   SwordsIcon,
   Text,
 } from '../../components/atoms'
-import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
+import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'

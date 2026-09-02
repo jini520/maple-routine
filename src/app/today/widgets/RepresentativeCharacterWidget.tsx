@@ -47,7 +47,7 @@ import { Image, View } from 'react-native'
 import { worldEmblemUrl } from '../../../lib/assets/asset-lookup'
 
 import { ProgressBar, Text } from '../../../components/atoms'
-import { faceCropStyle } from '../../../lib/face-crop'
+import { CharacterAvatar } from '../../../components/molecules/CharacterAvatar/CharacterAvatar'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { WidgetHeight } from '../../../lib/today/widget-layout'
@@ -96,17 +96,13 @@ function formatExpRate(rate: number): string {
 
 function Portrait(props: { view: RepresentativeView; sizePx: number }): React.JSX.Element {
   return (
-    <View
-      className="shrink-0 overflow-hidden rounded-full"
-      style={{ width: props.sizePx, height: props.sizePx }}
-    >
-      <Image
-        testID="representative-face"
-        accessibilityLabel={props.view.name}
-        source={{ uri: props.view.imageUrl }}
-        style={{ position: 'absolute', ...faceCropStyle(props.sizePx) }}
-      />
-    </View>
+    <CharacterAvatar
+      imageTestID="representative-face"
+      imageUrl={props.view.imageUrl}
+      name={props.view.name}
+      size={props.sizePx}
+      className="shrink-0"
+    />
   )
 }
 

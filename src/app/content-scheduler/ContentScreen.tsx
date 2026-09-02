@@ -52,7 +52,7 @@ import {
 import { ListChecksIcon, RefreshCwIcon, Text } from '../../components/atoms'
 import { dailyContentProgress, weeklyContentProgress } from './content-completion'
 
-import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
+import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'

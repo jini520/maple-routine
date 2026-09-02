@@ -25,7 +25,8 @@ import { Image, Pressable, View } from 'react-native'
 
 import { worldEmblemUrl } from '../../../lib/assets/asset-lookup'
 
-import { faceCropStyle } from '../../../lib/face-crop'
+import { FACE_AVATAR_SIZE } from '../../../lib/face-crop'
+import { CharacterAvatar } from '../../molecules/CharacterAvatar/CharacterAvatar'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { Text } from '../../atoms'
 
@@ -68,29 +69,24 @@ export function CharacterRow(props: CharacterRowProps): React.JSX.Element {
     <>
       {props.leading}
 
-      {/* 상자에 배경색을 두지 않는다(사용자 지정 2026-08-17) — 얼굴 크롭이 원을 꽉 채우므로 그 색은
-          이미지가 뜨기 전 한 프레임에만 보이고, 그 한 프레임이 «회색 원이 깜빡인다» 로 읽혔다.
-          이미지가 **없을 때**만 아래 폴백이 자기 배경을 갖는다. */}
-      <View className="h-9 w-9 shrink-0 overflow-hidden rounded-full">
-        {props.imageUrl !== null ? (
-          <Image
-            testID="character-row-face"
-            accessibilityLabel={props.name}
-            source={{ uri: props.imageUrl }}
-            style={{ position: 'absolute', ...faceCropStyle() }}
-          />
-        ) : (
-          // 이름 첫 글자가 아니라 **테마 주황 원 + `?`** 다(사용자 지정) — 첫 글자는 «이 캐릭터의
-          // 얼굴» 처럼 보여서 «못 가져왔다» 를 말하지 못했다. 글자색은 `on-primary`(그 색 위에 놓는
-          // 글자로 이미 정의된 토큰 — 테마마다 흰색 계열이다).
+      {/* 이름 첫 글자가 아니라 **테마 주황 원 + `?`** 다(사용자 지정). 첫 글자는 이 캐릭터의 얼굴처럼
+          보여서 «못 가져왔다» 를 말하지 못했다. 글자색은 `on-primary`(그 색 위에 놓는 글자로 이미
+          정의된 토큰이라 테마마다 대비가 보장된다). */}
+      <CharacterAvatar
+        imageTestID="character-row-face"
+        imageUrl={props.imageUrl}
+        name={props.name}
+        size={FACE_AVATAR_SIZE}
+        className="shrink-0"
+        fallback={
           <View
             testID="character-row-face-fallback"
             className="h-full w-full items-center justify-center bg-primary"
           >
             <Text className="text-base font-bold text-on-primary">?</Text>
           </View>
-        )}
-      </View>
+        }
+      />
 
       <View className="min-w-0 flex-1 gap-0.5">
         <View className="flex-row items-center gap-1">
