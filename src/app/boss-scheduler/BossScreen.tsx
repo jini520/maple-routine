@@ -73,7 +73,6 @@ import {
   Text,
   UsersIcon,
 } from '../../components/atoms'
-import { BossSectionHeader } from '../../components/molecules/BossSectionHeader/BossSectionHeader'
 import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
@@ -576,12 +575,29 @@ export function BossScreen(): React.JSX.Element {
                 (`visibleSections`) — 헤더만 남아 «여기 뭔가 있었다» 로 읽히지 않게 한다(결정 6). */}
             {visibleSections.map((section) => (
               <View key={section.cycle} className="gap-2">
-                <BossSectionHeader
-                  cycle={section.cycle}
-                  seasonState={section.cycle === 'weekly' ? weeklySeasonState : null}
-                  clearCount={section.cycle === 'weekly' ? selected.weeklyBossClearCount : null}
-                  clearLimit={section.cycle === 'weekly' ? selected.weeklyBossClearLimitCount : null}
-                />
+                <View
+                  testID={`boss-section-header-${section.cycle}`}
+                  className="flex-row items-center justify-between gap-2"
+                >
+                  <Text className="text-sm font-semibold text-text">
+                    {section.cycle === 'weekly' ? '주간' : '월간'}
+                  </Text>
+                  {section.cycle === 'weekly' && (
+                    <View className="flex-row items-center gap-2">
+                      {weeklySeasonState !== null && (
+                        <Badge variant={weeklySeasonState === 'complete' ? 'secondary' : 'primary'}>
+                          {`season ${weeklySeasonState === 'complete' ? '완료' : '미완료'}`}
+                        </Badge>
+                      )}
+                      {selected.weeklyBossClearCount !== null &&
+                        selected.weeklyBossClearLimitCount !== null && (
+                          <Badge variant="primary">
+                            {selected.weeklyBossClearCount}/{selected.weeklyBossClearLimitCount}
+                          </Badge>
+                        )}
+                    </View>
+                  )}
+                </View>
                 {section.bosses.length > 0 && renderBossCards(section.bosses, selected.ocid)}
               </View>
             ))}

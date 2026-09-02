@@ -45,8 +45,7 @@ import {
 import { isChallengersWorld } from '../../lib/assets/asset-lookup'
 import type { BossDifficulty } from '../../types'
 
-import { BossSectionHeader } from '../../components/molecules/BossSectionHeader/BossSectionHeader'
-import { Text } from '../../components/atoms'
+import { Badge, Text } from '../../components/atoms'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
 import { DifficultySegment } from '../../components/molecules/DifficultySegment/DifficultySegment'
@@ -363,14 +362,22 @@ export function BossManageScreen(): React.JSX.Element {
           <View className="gap-2 px-4 pb-4">
             {visibleSections.map((section) => (
               <View key={section.cycle} className="gap-2">
-                {/* 스케줄러와 **같은 컴포넌트**다 — 두 화면의 무리 머리가 갈리면 «같은 목록» 으로
-                    안 읽힌다. 시즌 배지는 여기 없다(그것은 진행이고 이 화면은 편집이다). */}
-                <BossSectionHeader
-                  cycle={section.cycle}
-                  seasonState={null}
-                  clearCount={mode === 'manual' && section.cycle === 'weekly' ? weeklyTrackedCount : null}
-                  clearLimit={mode === 'manual' && section.cycle === 'weekly' ? WEEKLY_BOSS_CLEAR_LIMIT : null}
-                />
+                {/* 스케줄러 헤더(`BossScreen`)와 같은 모양을 쓴다. 두 화면의 무리 머리가 갈리면
+                    같은 목록으로 안 읽힌다. 시즌 배지는 여기 없다. 그것은 진행이고 이 화면은
+                    편집이다. `n/12` 도 여기서는 고른 개수라 뜻이 다르다. */}
+                <View
+                  testID={`boss-section-header-${section.cycle}`}
+                  className="flex-row items-center justify-between gap-2"
+                >
+                  <Text className="text-sm font-semibold text-text">
+                    {section.cycle === 'weekly' ? '주간' : '월간'}
+                  </Text>
+                  {mode === 'manual' && section.cycle === 'weekly' && (
+                    <Badge variant="primary">
+                      {weeklyTrackedCount}/{WEEKLY_BOSS_CLEAR_LIMIT}
+                    </Badge>
+                  )}
+                </View>
                 {section.entries.map((entry) => {
               const trackedDifficulty = mode === 'manual' ? trackedDifficultyOf(entry.boss) : null
               const isTracked = trackedDifficulty !== null
