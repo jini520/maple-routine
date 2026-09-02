@@ -11,7 +11,7 @@ import { addKeyboardVisibilityListener } from '../native/keyboard'
  *
  * ## 탭바를 숨기는 것은 이 훅이 아니다
  *
- * 웹은 이 값으로 `<BottomTabBar />` 를 **언마운트**했다. RN 에서는 `tabBarHideOnKeyboard`
+ * 이 값으로 바를 감춘다. `tabBarHideOnKeyboard`
  * (`TabNavigator`)가 같은 일을 하고, 그쪽은 라이브러리가 자기 `Keyboard` 구독으로 판정한다.
  * 두 관측자가 생기지만 **같은 OS 이벤트**를 보고, iOS 에서만 한 프레임 어긋난다(라이브러리는
  * `keyboardWillShow`, 우리 어댑터는 `keyboardDidShow`). 하나로 합치려면 이 값을 내비게이터까지

@@ -154,7 +154,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
   const [state, setState] = useState(createDropEffectState)
 
   // 상태를 ref 로도 들고 있는 이유: tick 은 `requestAnimationFrame` 콜백이라 **자기 클로저의 옛
-  // state 를 본다.** 웹판이 `st` 객체 하나를 변이하며 돌던 자리와 같은 역할이다.
+  // state 를 본다.**
   //
   // **ref 가 원본이고 state 는 그림자다**. 렌더 때 `stateRef.current = state` 로 되맞추지 않는다.
   // 그 방향이면 렌더 중 ref 를 건드리게 되고(React 규칙 위반), 무엇보다 필요가 없다: 값을 바꾸는
@@ -284,7 +284,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
               marginTop: -ITEM_SIZE_PX / 2,
             }}
           >
-            {/* 웹이 레이어를 셋으로 가른 이유가 RN 에서도 그대로다. 중앙정렬(바깥)·부유(가운데)·
+        {/* 레이어를 셋으로 가른다. 중앙정렬(바깥)·부유(가운데)·
                 팝인(안쪽)이 한 요소에 겹치면 서로의 transform 을 덮어쓴다.
                 모션 줄이기면 둘 다 안 건다(웹의 `prefers-reduced-motion` 짝). */}
             <AnimatedView

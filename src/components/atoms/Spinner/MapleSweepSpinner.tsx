@@ -24,7 +24,7 @@ const BAND_X = -10
 const BAND_WIDTH = 147
 
 /**
- * 웹의 `@keyframes maple-sweep { to { transform: translateY(-230px) } }` 의 **이동 거리**.
+ * `translateY(-230px)` 의 **이동 거리**.
  *
  * 부호가 없는 것은 RN 이 transform 이 아니라 `<Rect>` 의 `y` 를 굴리기 때문이다. `<G>` 의 transform
  * 은 JS 에서 matrix 로 접혀 나가 UI 스레드 갱신이 그 접기를 건너뛰는데, `Rect` 는 `y` 를 손대지 않고

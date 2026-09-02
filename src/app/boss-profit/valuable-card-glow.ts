@@ -12,7 +12,7 @@
 /**
  * `.valuable-drop-card` 의 **정적** `box-shadow`.
  *
- * 웹에서 이 값이 그대로 보이는 자리가 셋이다. `@property` 미지원 WebView · `prefers-reduced-motion`
+ * 이 값이 그대로 보이는 자리가 셋이다. `@property` 미지원 · `prefers-reduced-motion`
  * **펼침 상태**(`.valuable-drop-card--expanded { animation: none }`).
  */
 export const VALUABLE_CARD_GLOW_STATIC = [

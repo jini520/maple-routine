@@ -76,7 +76,7 @@ function screenFor(name: StackRouteName): React.ComponentType<Record<string, nev
  * 쌓으면 밀려나는 것이 층 화면 + 바가 되어 그 결정이 **구조로** 성립한다.
  *
  * 층(그룹 행 ↔ 하위 행)은 `Main` **안쪽** 스택이 진다. 두 스택이 같은 `animation`·`gestureEnabled`
- * 를 쓰므로 하위 페이지처럼 열린다 가 값이 아니라 구조로 성립한다(#240). 웹에서 오버레이를 포털로 탭 레이어 밖에 그려야 했던 이유(결정 3.
+ * 를 쓰므로 하위 페이지처럼 열린다 가 값이 아니라 구조로 성립한다(#240).
  * `transform` 이 containing block 을 만든다)도 여기서는 존재하지 않는다: 층을 겹치는 일을 OS 가 한다.
  *
  * 그래서 계획서 표의 *"탭 N 위 push"* 는 **루트 스택 push** 로 읽는다. 실제로 어느 탭에서 열리는지는
@@ -84,7 +84,7 @@ function screenFor(name: StackRouteName): React.ComponentType<Record<string, nev
  *
  * ## 온보딩 분기. 리다이렉트가 아니라 **화면 목록 자체가 갈린다**
  *
- * 웹은 라우트마다 `isCompleted ? <Screen /> : <Navigate to="/onboarding" replace />` 를 걸었다.
+ * 온보딩 분기를 라우트마다 걸지 않는다.
  * URL 이 있는 세계에서는 사용자가 주소로 아무 데나 들어올 수 있으니 라우트마다 문을 잠가야 했다.
  * RN 에는 그 진입 경로가 없으므로(딥링크 미설정, `routes.ts`) **아예 다른 화면 목록을 그린다**.
  * 온보딩 미완료면 스택에 온보딩 하나뿐이고, 완료되면 탭과 하위 페이지로 통째로 바뀐다.

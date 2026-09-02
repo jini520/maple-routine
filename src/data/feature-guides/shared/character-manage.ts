@@ -4,7 +4,7 @@ import type { FeatureGuide } from '../../../types'
 // RN 앱에서 그것을 **여는 자리**다).
 // 그래서 어느 한쪽 폴더에 두면 나머지에서 찾을 수 없다.
 //
-// 이미지는 `packages/core/src/assets/guide/character-manage/` 에 두고 여기서 import 한다.
+// 이미지는 `src/assets/guide/character-manage/` 에 두고 여기서 import 한다.
 import openImage from '../../../assets/guide/character-manage/01-open.webp'
 
 export const characterManageGuide: FeatureGuide = {

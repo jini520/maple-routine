@@ -127,7 +127,6 @@ function ValuableCardRing(props: { isExpanded: boolean }): React.JSX.Element {
  * 아이템 칩이 있을 때만 금액을 세로 스택으로 감싼다. 없으면 자식을 그대로 흘려보낸다.
  *
  * **값을 안 매긴 카드는 뷰가 한 겹도 늘지 않는다**.
- * 웹에서 스냅샷이 이것을 두 번 잡아냈다(래퍼 `span`, `nowrap` 클래스 누출).
  */
 function ItemAwareMoney(props: { wrap: boolean; children: React.ReactNode }): React.JSX.Element {
   if (!props.wrap) return <>{props.children}</>
@@ -194,7 +193,7 @@ export function CharacterAccordion(props: {
    * 배지를 탭하면 두 상자를 재서 팝오버를 앉힌다(파일 머리 ①).
    *
    * 측정이 오기 전에도 팝오버는 뜬다. `resolveIssueAnchor` 의 기본 기하(왼쪽 끝)로 서 있다가
-   * 다음 프레임에 제자리를 잡는다. 웹은 동기라 이 틈이 없었다.
+   * 다음 프레임에 제자리를 잡는다.
    */
   function toggleIssue(): void {
     if (isIssueOpen) {
@@ -214,7 +213,7 @@ export function CharacterAccordion(props: {
   }
 
   return (
-    // 웹의 `isolate` 는 배지의 `z-10` 을 카드 안에 가두는 장치였다. RN 은 형제 순서가 곧 그리는
+    // 형제 순서가 곧 그리는
     // 순서이고 `zIndex` 도 부모 안에서만 겨루므로 그 격리가 기본값이다. 새어나갈 곳이 없다.
     <View
       ref={cardRef}
@@ -247,8 +246,7 @@ export function CharacterAccordion(props: {
         />
       )}
 
-      {/* 배지는 셸 바깥·카드 우상단이다. 펼침에도 같은 자리인 것이 웹과 갈리는
-          지점이고(레일이 sticky 와 함께 사라졌다, 파일 머리), 웹의 접힘 구조 그대로다. */}
+      {/* 배지는 셸 바깥·카드 우상단이다. 펼침에도 같은 자리다. */}
       {hasValuable && (
         <ValuableDropBadge
           drops={valuableDrops}
@@ -352,8 +350,7 @@ export function CharacterAccordion(props: {
             <MonthlyAccordionBody bossRows={group.bossRows} weeklySubtotals={group.weeklySubtotals} />
           ))}
 
-        {/* 링은 셸 **안**의 마지막 자식이라 콘텐츠 위에 그려진다. 웹이 `::before` 에 `z-index: 6`
-            을 준 것과 같은 자리다. */}
+        {/* 링은 셸 **안**의 마지막 자식이라 콘텐츠 위에 그려진다. */}
         {hasValuable && <ValuableCardRing isExpanded={isExpanded} />}
       </View>
     </View>

@@ -60,7 +60,7 @@ export function OnboardingStep({
         paddingBottom: footer === undefined ? bottomSafeAreaPx : actionBarHeightPx,
       }}
       // 키보드가 떠 있는 동안에도 첫 탭이 버튼에 닿는다. 없으면 그 탭이 키보드를 내리는 데만 쓰인다
-      // (`ApiKeyForm` 의 확인 버튼이 그 자리다). 웹에서는 없던 문제라 짝이 없는 프롭이다.
+      // (`ApiKeyForm` 의 확인 버튼이 그 자리다).
       keyboardShouldPersistTaps="handled"
       // iOS 는 키보드가 떠도 스크롤 뷰 크기가 그대로라 확인 버튼이 가려질 수 있다(안드로이드는 창이
       // `adjustResize` 로 줄어 저절로 해결된다). 그 인셋을 OS 가 넣게 한다. 안드로이드에서는 no-op.

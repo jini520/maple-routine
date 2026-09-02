@@ -34,7 +34,7 @@ export interface BackdropPlacement {
  * `"45% bottom"` · `"center"` · `"25% 80%"` 을 0~1 두 축으로 읽는다.
  *
  * 한 값만 오면 CSS 와 같이 **가로에 쓰고 세로는 center** 다. 못 읽는 값은 `0.5`(center)로.
- * 그림이 안 보이는 것보다 가운데라도 보이는 편이 낫고, 웹의 기본값도 `0% 0%` 가 아니라 `center` 다.
+ * 그림이 안 보이는 것보다 가운데라도 보이는 편이 낫다.
  */
 export function parseBackgroundPosition(position: string): { x: number; y: number } {
   const axis = (token: string | undefined, fallback: number): number => {

@@ -63,7 +63,7 @@ export function createDropEffectState(): DropEffectState {
 /**
  * `dt` 밀리초만큼 흘려보낸 다음 상태를 돌려준다. **입력을 바꾸지 않는다.**
  *
- * 프레임이 하나도 없는 단계는 건너뛴다. 에셋이 빠져도 재생이 멈추지 않고 닫기까지 간다(웹과 같은
+ * 프레임이 하나도 없는 단계는 건너뛴다. 에셋이 빠져도 재생이 멈추지 않고 닫기까지 간다.
  * 방어: `frames.loop.length === 0` 이면 연출 없이 닫기만).
  */
 export function advanceDropEffect(

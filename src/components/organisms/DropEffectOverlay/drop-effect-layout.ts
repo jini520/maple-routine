@@ -9,7 +9,7 @@
  * 계측해 복원했다. x 는 loop 평균을 템플릿으로 한 matched filter 정합(수렴 후 서브픽셀 보간),
  * y 는 전 프레임 비트맵 하단(콘텐츠 하단 여백이 3~6px 로 일정 = 기둥이 지면선에서 잘려 있음).
  *
- * CRITICAL: 에셋(`packages/core/src/assets/drop-effect/{pre,loop,end}`)을 다시 export 하면 이 테이블도 함께 다시
+ * CRITICAL: 프레임 에셋을 다시 export 하면 이 테이블도 함께 다시
  * 계측해야 한다. 프레임 수가 어긋나는 것만 테스트가 잡고, 값의 드리프트는 잡지 못한다.
  * 재계측: `python3 scripts/measure-drop-effect-origins.py`. 아래 테이블을 그대로 찍어 준다.
  */

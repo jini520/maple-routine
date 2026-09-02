@@ -11,7 +11,7 @@ export const SETTINGS_ROW_CLASS = 'w-full flex-row items-center justify-between 
 /**
  * 형제 행 사이의 구분선.
  *
- * 웹은 부모 카드가 `divide-y divide-border` 로 **형제 사이에만** 선을 그렸다(첫 자식 제외).
+ * 선은 **형제 사이에만** 긋는다(첫 자식 제외).
  * NativeWind 에는 형제 선택자가 없어 그 유틸리티가 없으므로, 부모가 첫 행을 제외한 나머지에
  * 이 클래스를 직접 얹는다. `divide-y` 가 생성하던 규칙(`border-top`, 첫 자식 제외)과 **같은
  * 결과**이고, 다른 것은 그것을 CSS 가 아니라 호출부가 고른다는 점뿐이다.

@@ -2,7 +2,7 @@
  * 단풍잎 마크의 **경로와 격자**. `MapleLeaf` 와 스피너 둘이 이것으로 그린다.
  *
  * 그림을 그리는 컴포넌트의 곁 파일이다(배지 색 표를 `variants.ts` 로
- * 가른 것과 같은 자리). 값은 웹에서 한 글자도 안 바꿨다.
+ * 가른 것과 같은 자리).
  */
 import type { SvgGrid } from './icon-base'
 
@@ -19,14 +19,14 @@ export const MAPLE_LEAF_PATH =
  * 위 경로의 **실제 둘레**(viewBox 0 0 127 130 의 사용자 단위). 소수 넷째 자리까지 수렴한 값이다
  * (경로를 곡선당 200·2,000·20,000 조각으로 나눠 재도 601.3157 로 같았다).
  *
- * ## 왜 웹에는 없던 상수인가. `pathLength` 가 RN 에 없다
+ * ## 왜 둘레를 상수로 두나. `pathLength` 가 RN 에 없다
  *
- * 웹은 `pathLength={300}` 으로 둘레를 300 으로 **정규화**하고 `strokeDasharray="210 90"` 처럼
+ * `pathLength={300}` 으로 둘레를 300 으로 **정규화**하고 `strokeDasharray="210 90"` 처럼
  * 읽기 쉬운 값을 썼다. `react-native-svg` 는 그 속성을 네이티브에서 지원하지 않는다(라이브러리
  * 안에서 `pathLength` 는 웹 빌드 전용 통과 목록에만 있다). 그래서 정규화 대신 **실제 길이에 비율을
  * 곱한다**. 같은 그림을 얻는 다른 계산이다.
  *
- * step 7(애니메이션)의 `maple-trail` 도 이 값을 쓴다(웹은 dashoffset 을 −300 까지 굴렸고, RN 은
+ * 스피너의 `maple-trail` 도 이 값을 쓴다(정규화된 −300 이 아니라
  * −601.3157 까지 굴려야 한 바퀴다).
  */
 export const MAPLE_LEAF_PATH_LENGTH = 601.3157

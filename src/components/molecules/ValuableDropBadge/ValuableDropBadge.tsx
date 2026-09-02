@@ -10,7 +10,7 @@ const BADGE_GRADIENT = ['#ffe98a', '#f7c400'] as const
 const BADGE_INK = '#6b4e00'
 const BADGE_GLOW = [{ offsetX: 0, offsetY: 0, blurRadius: 8, color: 'rgba(247, 208, 13, 0.55)' }]
 
-/** 아이콘 원의 흰 링. 웹의 `ring-[1.5px] ring-white/80`. */
+/** 아이콘 원의 흰 링. `ring-[1.5px] ring-white/80` 과 같은 자리에 그린다. */
 const ICON_RING = [
   { offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: 1.5, color: 'rgba(255, 255, 255, 0.8)' },
 ]
@@ -40,7 +40,7 @@ export function ValuableDropBadge(props: {
       <View className="flex-row items-center">
         {shown.map((drop, index) => {
           const url = getItemIconUrl(drop.itemName, drop.slot)
-          // 스택·링은 **두 갈래가 같다**(파일 머리 ⑥). 웹도 두 분기에 같은 클래스를 적어 두었다.
+  // 스택·링은 **두 갈래가 같다**(파일 머리 ⑥).
           const stackStyle = {
             marginLeft: index === 0 ? 0 : -6,
             zIndex: shown.length - index,

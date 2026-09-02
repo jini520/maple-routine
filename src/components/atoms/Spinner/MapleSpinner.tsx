@@ -14,11 +14,11 @@ import { SvgFrame } from '../Icon/icon-base'
 import { LEAF_GRID, MAPLE_LEAF_PATH, MAPLE_LEAF_PATH_LENGTH } from '../Icon/maple-leaf'
 import type { SpinnerProps } from './spinner-base'
 
-/** 웹의 `strokeDasharray="210 90"`. 정규화 둘레 300 기준 70% / 30% 다. */
+/** `strokeDasharray="210 90"`. 정규화 둘레 300 기준 70% / 30% 다. */
 const TRAIL_RATIO = 0.7
 
 /**
- * 대시 길이 둘. **웹의 `pathLength={300}` 정규화가 RN 에 없다.**
+ * 대시 길이 둘. **`pathLength={300}` 정규화가 RN 에 없다.**
  *
  * `react-native-svg` 는 그 속성을 네이티브에서 안 받는다. 그래서
  * 정규화된 300 대신 **실측 둘레**에 같은 비율을 곱한다. 그림은 같고 숫자만 정규화 전 값이다.
@@ -32,7 +32,7 @@ const TRAIL_DASH: readonly number[] = [
 export const MAPLE_TRAIL_DURATION_MS = 900
 
 /**
- * 한 주기의 끝. 웹은 정규화된 `-300` 이었고 여기는 실측 둘레라 숫자가 다르다.
+ * 한 주기의 끝. 정규화된 `-300` 이 아니라 실측 둘레라 숫자가 다르다.
  *
  * 같아야 하는 것은 **한 주기가 둘레 한 바퀴**라는 성질이다. 그게 깨지면 반복이 이어붙는 자리에서
  * 트레일이 튄다. `-300` 을 그대로 베끼는 실수를 잡던 `keyframes-parity.test.ts` 는 웹 소스와 함께

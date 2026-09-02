@@ -127,14 +127,14 @@ export type RootStackParamList = {
   SettingsAbout: undefined
   SettingsPrivacy: undefined
   /**
-   * 아이템 분배 계산기. **유틸리티의 첫 도구다**. 웹에 없다.
+ * 아이템 분배 계산기. **유틸리티의 첫 도구다**.
    *
    * 이 자리가 유틸리티의 구조를 정한다: 도구는 유틸리티 화면 **안의 카드**가 아니라 루트 스택에
    * 쌓이는 하위 페이지이고, 뒤에 오는 도구들이 그대로 물려받는다.
    */
   UtilityItemSplit: undefined
   /**
-   * 캐릭터 관리. **웹에 없는 화면이다**. 웹뷰 앱에서는 모달이고, RN 에서는
+ * 캐릭터 관리.
    * 두 층 + 드롭다운 + 순서 + 대표가 385px 모달 본문에 안 들어가 하위 페이지가 됐다.
    */
   SettingsCharacters: undefined
@@ -157,7 +157,7 @@ export type RouteTarget =
   | { readonly kind: 'push'; readonly route: StackRouteName }
 
 export interface RouteRow {
-  /** 웹(react-router) 경로. parity-inventory §1 의 첫 열. `origin: 'rn'` 이면 웹에 없는 경로다(아래). */
+/** 대조용 경로 이름표. `origin: 'rn'` 이면 옛 앱에 없던 화면이다(아래). */
   readonly path: string
   /** 그 경로가 그리던 화면. parity-inventory §1 의 둘째 열. **두 행이 같은 값을 가질 수 있다.** */
   readonly screen: string
@@ -166,7 +166,7 @@ export interface RouteRow {
    * 이 행이 **어디서 왔는가**.
    *
    * - `web`. 웹 앱에 실제로 있는 경로. 계획서 §1 과 대조되는 행이고 **17개로 고정**이다.
-   * - `rn`. RN 에서 새로 생긴 화면. 웹에는 없다. `path` 는 그 화면이 웹 규칙대로였다면 가졌을
+ * - `rn`. 이 앱에서 새로 생긴 화면. `path` 는 그 화면이 같은 규칙이었다면 가졌을
    *   경로이고 **대조가 아니라 이름표**다. 이 값으로 계획서를 검사하지 말 것(테스트가 갈라 본다).
    */
   readonly origin: 'web' | 'rn'
@@ -242,10 +242,10 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
     origin: 'web',
   },
   // ── 여기부터 RN 에서 새로 생긴 화면 ──
-  // 웹에는 없다. `path` 는 대조용이 아니라 이름표다. 탭 셋은 전부 진짜 화면이 됐다. today 는
+  // `path` 는 대조용이 아니라 이름표다. 탭 셋은 전부 진짜 화면이 됐다. today 는
   // 위젯 격자·유틸리티는 도구 목록·가계부는 캘린더다.
   // 하위 페이지 둘도 진짜 화면이다. 캐릭터 관리는 웹뷰 앱에서 설정의 모달이 하던 일이고,
-  // 아이템 분배 계산기는 웹에 없던 도구다.
+  // 아이템 분배 계산기는 새로 생긴 도구다.
   { path: '/today', screen: 'TodayScreen', target: { kind: 'tab', route: 'Today' }, origin: 'rn' },
   // 사냥 수익(`/profit/hunting`)·지출(`/spend`) 두 행이 **여기 있었다.** 둘은 자리를 예약하던
   // **개발 진행중** 자리표시자였고, 그 자리가 가계부로 정해지면서 삭제됐다

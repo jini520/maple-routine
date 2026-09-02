@@ -47,8 +47,7 @@ export interface AnchoredPopover {
    * **`RefObject` 가 아니라 콜백 ref 다.** 훅이 `RefObject` 를 객체에 담아 돌려주면 호출부의
    * `popover.toggle` 같은 평범한 프로퍼티 접근까지 `react-hooks/refs` 가 "렌더 중 ref 접근"으로
    * 읽는다(실측. 이 파일 하나 때문에 lint 에러 14건). 노드를 훅 안에 가둬 두면 밖으로 나가는
-   * 것은 함수와 값뿐이라 그 물음 자체가 사라진다. 웹의 `use-measured-height`
-   * 가 같은 형태를 고른 것과 이유가 겹친다.
+ * 것은 함수와 값뿐이라 그 물음 자체가 사라진다.
    */
   ref: (node: View | null) => void
   /** 열려 있는가. 위치를 아직 몰라도 `true` 일 수 있다(파일 머리 ①). */
@@ -60,8 +59,7 @@ export interface AnchoredPopover {
 }
 
 /**
- * 트리거를 재서 팝오버를 여닫는다. 웹의 `chipRef` + `anchor` state + `openPopover` + 스크롤 닫기
- * 효과가 하던 일 전부.
+ * 트리거를 재서 팝오버를 여닫는다.
  *
  * **호출부가 셋이라 여기 산다**(보스 행 · 주차 소계 행 · 캐릭터 카드). 의
  * "호출부 2곳 이상". 팝오버 자신의 관심사라 별도 파일로 가르지 않는다.
@@ -91,7 +89,7 @@ export function useAnchoredPopover(): AnchoredPopover {
     })
   }
 
-  // 회전하면 잰 좌표가 거짓이 된다. 웹의 `resize` 리스너 자리다. 스크롤 쪽은 구조가 대신
+  // 회전하면 잰 좌표가 거짓이 된다. 스크롤 쪽은 구조가 대신
   // 지키므로(파일 머리 ②) 여기 없다.
   useEffect(() => {
     if (!isOpen) return
@@ -150,7 +148,7 @@ export function ItemRevenuePopover(props: {
 
   return (
     <Modal visible transparent animationType="none" statusBarTranslucent navigationBarTranslucent onRequestClose={props.onClose}>
-      {/* 바깥 탭으로 닫는다. **스크림이 없다**. 웹의 백드롭도 투명했다(파일 머리 표). */}
+      {/* 바깥 탭으로 닫는다. **스크림이 없다**. */}
       <Pressable aria-label="아이템 수익 닫기" onPress={props.onClose} className="flex-1" />
       <View
         testID="item-revenue-popover"

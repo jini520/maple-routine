@@ -5,7 +5,7 @@
  * 정보 위에서 되돌릴 수 없는 삭제를 승인한다.
  * **범위 자체는 이 파일에 없다**. 화면은 `CacheDataSelection` 두 불리언을 넘길 뿐이고, 어떤 키와
  * 어떤 테이블이 지워지는지는 core 의 `storage/cache-data.ts` 가 혼자 정한다(CLAUDE.md CRITICAL).
- * 전환하며 그 파일을 한 글자도 건드리지 않았으므로 범위는 웹과 **같은 코드**가 정한다.
+ * 그 파일이 범위를 정한다.
  */
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'

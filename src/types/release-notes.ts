@@ -1,5 +1,5 @@
 /**
- * 릴리스 노트. 진실 원천은 `packages/core/src/data/release-notes.ts` 한 벌이고, 거기서 두 갈래로
+ * 릴리스 노트. 진실 원천은 `src/data/release-notes.ts` 한 벌이고, 거기서 두 갈래로
  * 나간다. 앱 번들에 그대로 실려 개발 노트 화면이 과거 전체를 읽고, 배포 스크립트가 그 버전
  * 하나만 뽑아 `latest.json` 의 `notes` 로 실어 업데이트 모달이 읽는다.
  * 형식이 JSON 이 아니라 `.ts` 인 이유가 이 파일이다. 항목 단위 표식이 오타로 조용히
@@ -32,14 +32,14 @@ export interface ReleaseNoteItem {
    * 이 항목이 설명하는 기능의 사용법 안내. 값이 있으면 목록에서 그 항목만 눌리고
    * `›` 가 붙는다.
    *
-   * **본문이 아니라 id 다.** 안내의 원천은 기능 카탈로그(`packages/core/src/data/feature-guides.ts`)이고 노트는
+   * **본문이 아니라 id 다.** 안내의 원천은 기능 카탈로그(`src/data/feature-guides.ts`)이고 노트는
    * 거기로 **링크만** 건다(결정 1 정정). 같은 설명이 버전 축과 기능 축에 두 벌 있으면 반드시
    * 갈라진다. 그리고 본문을 여기 둘 수도 없다: 배포 스크립트가 이 파일을 **Node 에서 직접
    * import** 하는데(`scripts/publish-live-update.mjs`), 안내가 들고 오는 `.webp`
    * import 를 Node 가 해석하지 못해 그 자리에서 배포가 죽는다.
    *
    * 그래서 이 참조는 **타입이 지켜 주지 못한다**(문자열일 뿐이다). 미아 참조는
-   * `packages/core/src/data/__tests__/feature-guides.test.ts` 가 막는다. 반대 방향(노트가 안 가리키는 안내)은
+   * `src/data/__tests__/feature-guides.test.ts` 가 막는다. 반대 방향(노트가 안 가리키는 안내)은
    * **정상이다**: 카탈로그가 원천이므로 옛 기능은 노트 없이 안내만 있는 것이 맞다.
    */
   guideId?: string

@@ -396,8 +396,7 @@ export function DropPriceScreen(): React.JSX.Element {
         </View>
       </ScreenScroll>
 
-      {/* 웹의 `StackScreen overlays` 자리(파일 머리 ②). RN 시트는 별도 네이티브 호스트에 떠서
-          갇힐 상자가 없으므로 형제로 둔다. */}
+      {/* 시트는 별도 네이티브 호스트에 떠서 갇힐 상자가 없으므로 형제로 둔다. */}
       {pricing !== null && (
         <DropPricePad
           drop={pricing.drop}

@@ -20,7 +20,7 @@ export type FeatureGuideGroup = 'content' | 'boss' | 'profit' | 'utility' | 'set
 /** 안내에 실리는 이미지. `alt` 를 `src` 와 한 덩이로 묶어 **빠뜨릴 수 없게** 한다. */
 export interface FeatureGuideImage {
   /**
-   * `packages/core/src/assets/guide/` 에서 import 한 번들 자산. 웹은 URL 문자열, RN 은 에셋 id 라
+ * `src/assets/guide/` 에서 import 한 번들 자산. 값이 에셋 id 라
    * 타입이 `string` 이 아니라 `ImageAssetRef` 다. 안내 파일이 하는 일(에셋을 그냥
    * import 한다)은 그대로다.
    */

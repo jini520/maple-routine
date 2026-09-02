@@ -97,7 +97,7 @@ export function Toast(props: ToastProps): React.JSX.Element {
       onResponderRelease={handleRelease}
       onResponderTerminate={() => setDragX(null)}
       className={`relative flex-row items-center gap-2 overflow-hidden rounded-[14px] border border-border px-2.5 py-2 ${TONE_CLASSES[toast.variant]} ${enterClasses}`}
-      // 드래그 중에는 트랜지션을 주지 않는다. 웹의 `transition: 'none'` 자리다(파일 머리 ③).
+  // 드래그 중에는 트랜지션을 주지 않는다(파일 머리 ③).
       style={
         isDragging
           ? { transform: [{ translateX: dragX }], opacity: dragOpacity }
@@ -155,7 +155,7 @@ export function Toast(props: ToastProps): React.JSX.Element {
 /**
  * 남은 시간 바의 색.
  *
- * 웹은 `bg-current` + `text-*-ink` 로 글자색을 배경에 물려받았는데, RN 에는 `currentColor` 가 없어
+ * RN 에는 `currentColor` 가 없어
  * (`tailwind.config.js` 가 `current` 를 일부러 뺐다) **배경 토큰을 직접 쓴다.**
  */
 const TIMER_CLASSES: Record<ToastVariant, string> = {

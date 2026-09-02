@@ -49,7 +49,7 @@ import { useScreenNavigation } from '../use-screen-navigation'
  * 그라디언트(`linear-gradient(135deg, #ffe98a, #f7c400)`)의 **끝 정지점**을 그대로 쓴다. 새 골드를
  * 뽑지 않는 것이 의 요구다(*"임의의 골드 hex 를 새로 뽑으면 어느 한쪽 테마에서
  * 대비가 깨진다"*). 두 정지점 중 어두운 쪽이라 골드 잉크와의 대비가 밝은 쪽보다 보수적이다.
- * 잉크는 웹과 **같은 값**이고, 둘 다 테마 토큰이 아니라 전 테마 공통 고정색이다.
+ * 잉크는 테마 토큰이 아니라 전 테마 공통 고정색이다.
  */
 const VALUABLE_INLINE_BG = '#f7c400'
 const VALUABLE_INLINE_INK = '#6b4e00'
@@ -168,8 +168,8 @@ function DropHistoryEntry(props: {
               className="text-11 font-bold"
               style={{ backgroundColor: VALUABLE_INLINE_BG, color: VALUABLE_INLINE_INK }}
             >
-              {/* 아이콘은 문장 안 인라인 이미지다. 크기를 명시해야 RN 이 줄 안에 앉힌다. 웹의
-                  `gap-1` 자리는 공백 문자다(중첩 `Text` 에는 `gap` 이 없다). 아이콘이 없으면 그
+              {/* 아이콘은 문장 안 인라인 이미지다. 크기를 명시해야 RN 이 줄 안에 앉힌다. 사이의
+                  틈은 공백 문자다(중첩 `Text` 에는 `gap` 이 없다). 아이콘이 없으면 그
                   공백도 만들지 않는다. 배경이 칠해진 자리라 앞쪽 여백이 그대로 보인다. */}
               {iconUrl !== null && (
                 <Text>
@@ -267,7 +267,7 @@ export function DropHistoryScreen(): React.JSX.Element {
       hasTabBar={false}
       header={
         // 공용 `PageHeader` 를 쓰지 않는 이유는 파일 머리 ②. 이 화면에는 배경 조각도 하단 페이드도
-        // 없다. 스크롤 상자가 노치까지 덮던 웹과 달리 **상단 안전영역을 헤더가 먹는다**는 계약은
+        // 없다. **상단 안전영역을 헤더가 먹는다**는 계약은
         // 그대로다(`ScreenScroll` 은 헤더가 있으면 위를 안 건드린다).
         // **여백은 더하지 않는다**. 공용 셸과 같은 값이어야 가격 화면과 나란히 열릴 때
         // 제목 높이가 안 갈린다. 그 **같은 값** 이 `useTopSafeAreaPx()` 다(
@@ -291,8 +291,8 @@ export function DropHistoryScreen(): React.JSX.Element {
         </View>
       }
     >
-      {/* 하단 안전영역은 `ScreenScroll` 이 넣는다(웹이 콘텐츠 블록에 직접
-          계산해 넣던 자리). 여기 남는 것은 상수 몫뿐이다.
+      {/* 하단 안전영역은 `ScreenScroll` 이 넣는다.
+                  여기 남는 것은 상수 몫뿐이다.
 
           `screen-<라우트 이름>` 은 자리표시자에게서 그대로 물려받은 계약이다. 내비게이션 테스트가
           "그 라우트로 밀면 그 화면이 열리는가"를 이 이름으로 묻는다. */}
@@ -316,7 +316,7 @@ export function DropHistoryScreen(): React.JSX.Element {
             icon={ScrollTextIcon}
             title="아직 기록된 드롭이 없습니다"
             description="보스 수익 화면에서 보스를 눌러 드롭을 기록하면 여기에 쌓입니다"
-            // 웹은 `navigate('/profit')` 이었다. 이 화면은 **언제나 그 탭이 민 것**이라(딥링크 없음)
+            // 이 화면은 **언제나 그 탭이 민 것**이라(딥링크 없음)
             // pop 이 곧 그 목적지이고, 새로 push 하면 같은 화면이 스택에 두 겹 쌓인다.
             action={{ label: '보스 수익으로', onClick: () => navigation.goBack() }}
           />

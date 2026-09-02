@@ -32,8 +32,7 @@ export function SettingsAboutScreen(): React.JSX.Element {
   const liveUpdate = useLiveUpdateStore()
   const { loadCurrentVersion } = liveUpdate
 
-  // 이 화면이 열릴 때 실행 중인 번들 버전을 싣는다. 웹의 `AppUpdateSection` 이 마운트에서 하던
-  // 일이고(그 파일 주석 ③), RN 에서는 포트가 던져 지웠던 자리다. 이제 되살린다.
+  // 이 화면이 열릴 때 실행 중인 번들 버전을 싣는다.
   useEffect(() => {
     void loadCurrentVersion()
   }, [loadCurrentVersion])

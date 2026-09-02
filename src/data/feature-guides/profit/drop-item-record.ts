@@ -1,5 +1,5 @@
 import type { FeatureGuide } from '../../../types'
-// 이미지는 `packages/core/src/assets/guide/drop-item-record/` 에 두고 여기서 import 한다.
+// 이미지는 `src/assets/guide/drop-item-record/` 에 두고 여기서 import 한다.
 import buttonImage from '../../../assets/guide/drop-item-record/01-button.webp'
 import confirmImage from '../../../assets/guide/drop-item-record/03-confirm.webp'
 import sheetImage from '../../../assets/guide/drop-item-record/02-sheet.webp'

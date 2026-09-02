@@ -453,7 +453,7 @@ export function BossScreen(): React.JSX.Element {
         }
         header={
           // 제목~솔로/파티 필터도 목록과 **함께 스크롤된다**. 헤더는 `ScreenScroll`
-          // 의 첫 자식이다. `fixed` 도 spacer 도 없다: 가 웹에서 풀던 문제가
+          // 의 첫 자식이다. `fixed` 도 spacer 도 없다. 그 문제가
           // 구조적으로 없다(`PageHeader` 파일 머리).
           <PageHeader>
             {/*: 동기화 상태가 드롭다운 줄에서 **제목 옆**으로 올라왔고, 폭을

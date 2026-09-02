@@ -53,7 +53,7 @@ const claimTouch = (): boolean => true
 /**
  * 카드 껍데기(테두리·배경·패딩)를 갖는 패널. 모달 대부분이 이것을 쓴다.
  *
- * 스크림 위 테두리 톤다운은 `border-panel-border` 한 클래스다. 웹의
+ * 스크림 위 테두리 톤다운은 `border-panel-border` 한 클래스다.
  * `:root[data-mode='light'].panel-on-scrim` 규칙이 계산하던 결과를 토큰으로 미리 만들어 뒀고
  * (`src/theme/theme-vars.ts`), 모드 분기는 거기서 `definition.mode` 로 딱 한 번 일어난다.
  * `Card` atom 이 갖고 있는 `border-border` 를 이 클래스가 덮는다.
@@ -75,7 +75,7 @@ function ModalCard(props: ModalCardProps): React.JSX.Element {
  * 껍데기 없이 위치만 잡는 패널. children 이 이미 자기 카드 스타일을 갖고 있을 때 쓴다
  * (예: 온보딩 화면에서 그대로 재사용하는 `AccountFlowStatus`).
  *
- * ** 의 두 클래스 중 이쪽 짝은 RN 에 없다.** 웹은
+ * **이쪽 짝은 RN 에 없다.**
  * `.panel-on-scrim-parent > *` 로 **직계 자식**의 테두리를 톤다운했는데, RN 에는 자손 선택자가
  * 없어 부모가 자식의 스타일을 정할 방법이 없다. 그래서 그 결정이 지키려던 것("스크림 위라는
  * 사실은 오버레이가 소유한다")을 **자식이 `border-panel-border` 를 직접 쓰는 것**으로 대신한다.
@@ -107,7 +107,7 @@ export function Modal(props: ModalProps): React.JSX.Element {
       navigationBarTranslucent
       onRequestClose={props.onClose}
     >
-      {/* 웹은 가로 중앙을 `justify-center`(row), 세로를 `items-*` 로 잡았다. RN 의 기본 방향이
+        {/* RN 의 기본 방향이
           column 이라 두 축의 클래스가 서로 바뀐다. 그려지는 결과는 같다. */}
       <Pressable
         testID={props.testId}

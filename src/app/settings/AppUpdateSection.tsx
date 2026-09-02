@@ -27,7 +27,7 @@ export type AppUpdateSectionActions = Pick<LiveUpdateStore, 'check'>
 export interface AppUpdateSectionProps {
   state: AppUpdateSectionState
   actions: AppUpdateSectionActions
-  /** `currentVersion` 이 없을 때 쓸 값. 웹은 `package.json` 을 직접 읽었다(`SettingsScreen` 주석). */
+  /** `currentVersion` 이 없을 때 쓸 값. */
   fallbackVersion: string
 }
 

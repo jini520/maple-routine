@@ -21,7 +21,7 @@ export function toColorVariableName(token: string): string {
 /**
  * 스크림 위 패널의 테두리. **RN 에는 선택자가 없어서 값으로 만든다.**
  *
- * 웹은 `:root[data-mode='light'].panel-on-scrim { border-color: color-mix(...) }` 로 푼다. RN 에는
+ * 라이트에서 합성된 중간 회색 위에 테두리를 녹이는 계산이다. RN 에는
  * `data-mode` 도 `color-mix` 도 없으므로, 그 규칙이 계산하는 **결과를 토큰 하나로 미리 만들어** 둔다.
  * 그러면 호출부는 `border-panel-border` 라고만 쓰면 되고(3단계가 `className` 을 그대로
  * 옮기려는 이유), 모드 분기는 이 함수 안에서 **딱 한 번** 일어난다.
@@ -130,7 +130,7 @@ export function buildSheetScopeVariables(definition: ThemeDefinition): Record<st
  * `.media-scope` 에 해당하는 변수 맵.
  *
  * 일러스트 카드 안은 바탕이 `surface` 가 아니라 `mediaSurface` 라 표면·텍스트·완료 배지를 **다시
- * 선언**해야 한다. 웹에서 그것이 필요한 이유("커스텀 프로퍼티는 선언된 요소에서 `var()` 가
+ * 선언**해야 한다. 커스텀 프로퍼티는 선언된 요소에서 `var()` 가
  * 해석된다")가 RN 에서도 **그대로 성립한다**. `vars()` 는 렌더 트리를 따라 상속되고 하위에서 같은
  * 이름을 다시 선언하면 그 서브트리만 새 기준을 쓴다(실측 2026-08-11).
  */

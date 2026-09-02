@@ -5,7 +5,7 @@
  *
  * RN 으로 옮기며 바뀐 것은 둘뿐이다. `space-y-2` → `gap-2`(NativeWind 에 형제 간격 유틸이 없다),
  * `<p>` → `<Text>`. `onClose` 가 no-op 이므로 안드로이드 뒤로가기도 아무 일이 없다(`Modal` 이
- * 그것을 `onClose` 로 잇는다). 웹에서 오버레이 클릭이 무시되던 것과 같은 뜻이다.
+ * 그것을 `onClose` 로 잇는다). 오버레이 클릭은 무시된다.
  */
 import { View } from 'react-native'
 

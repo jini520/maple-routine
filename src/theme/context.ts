@@ -43,13 +43,13 @@ export function useThemeMode(): ThemeMode {
 }
 
 /**
- * 스크롤 인디케이터 명암. 웹의 `color-scheme`·`scrollbar-color` 자리.
+ * 스크롤 인디케이터 명암.
  *
- * 웹에서는 브라우저가 그리는 크롬이라 CSS 로 **알려 줘야** 했고(안 걸면 라이트 테마에서 흰
+ * 플랫폼에 **알려 줘야** 한다(안 걸면 라이트 테마에서 흰
  * 인디케이터가 나왔다. 실기기 2026-08-06), RN 에서는 우리가 `ScrollView` 에 **프롭으로 지정한다**.
  * 그래서 이 값은 포트가 아니라 뷰가 갖는다.
  *
- * `'default'` 를 쓰지 않는 이유는 그 값이 곧 웹에서 겪은 실패다. 플랫폼 기본에 맡기면 테마가 아니라
+ * `'default'` 를 쓰지 않는다. 플랫폼 기본에 맡기면 테마가 아니라
  * OS 설정을 따라간다. 우리 테마의 `mode` 가 정해야 한다.
  */
 export function useScrollIndicatorStyle(): 'black' | 'white' {

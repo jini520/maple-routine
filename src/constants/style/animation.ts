@@ -3,7 +3,7 @@
  *
  * ## `animate-spin`
  *
- * 웹은 Tailwind 기본 유틸 `animate-spin`(1초 선형 무한 회전)을 새로고침 아이콘에 건다. NativeWind
+ * Tailwind 기본 유틸 `animate-spin`(1초 선형 무한 회전)을 새로고침 아이콘에 건다. NativeWind
  * 에는 그 클래스가 없고, **없는 클래스는 에러가 아니라 안 도는 아이콘**이라 값으로 준다
  * (Reanimated 의 CSS 애니메이션 스타일. `AnimatedView` 에 얹는다).
  *

@@ -193,7 +193,7 @@ export function ContentScreen(): React.JSX.Element {
       <ScreenScroll
         // 당김은 헤더 버튼과 **같은 재조회**를 부르고, 색만
         // 테마에서 넘긴다. `refreshing` 이 `status` 라서 헤더 버튼으로 시작한 재조회에도 플랫폼
-        // 인디케이터가 뜬다. 웹과 갈리는 자리가 여기뿐이고 그 대가는 ADR 이 적는다.
+        // 인디케이터가 뜬다. 그 대가는 ADR 이 적는다.
         refreshControl={
           <RefreshControl
             refreshing={pull.refreshing}
@@ -205,7 +205,7 @@ export function ContentScreen(): React.JSX.Element {
         }
         header={
           // 제목~탭도 목록과 **함께 스크롤된다**. 헤더는 `ScreenScroll` 의 첫
-          // 자식이다. `fixed` 도 spacer 도 없다: 가 웹에서 풀던 문제가
+          // 자식이다. `fixed` 도 spacer 도 없다. 그 문제가
           // 구조적으로 없다(`PageHeader` 파일 머리).
           <PageHeader>
             {/*: 동기화 상태가 드롭다운 줄에서 **제목 옆**으로 올라왔다. 오른쪽

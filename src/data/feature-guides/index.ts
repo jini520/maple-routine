@@ -30,7 +30,7 @@ import { characterManageGuide } from './shared/character-manage'
 // └── shared/      두 그룹 이상에 서는 안내
 // ```
 //
-// **이미지는 안내 파일이 직접 import 한다**. `packages/core/src/assets/guide/<안내 id>/` 에 두고 그 파일
+// **이미지는 안내 파일이 직접 import 한다**. `src/assets/guide/<안내 id>/` 에 두고 그 파일
 // 상단에서 `import`. 디렉터리를 통째로 훑는 방식을 쓰지 않는 이유는 파일명이 틀렸을 때 `undefined`
 // 로 조용히 통과하는 대신 **빌드가 실패해야** 하기 때문이다(결정 4). 그래서 `guide/` 는
 //  의 생성 목록에도 들어가지 않는다. 이 폴더는 슬러그로 찾는 곳이 아니다.

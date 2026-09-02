@@ -29,7 +29,7 @@ interface Loop {
  * 파고들어야 닿는다(실측). 사설 경로에 기대는 대신 문서화된 훅을 쓴다. 그래서 이 저장소의 모션은
  * 두 갈래다. View 스타일은 CSS API, SVG 속성은 `useAnimatedProps`.
  *
- * 모션 줄이기(`useReducedMotion`)면 애니메이션을 아예 안 건다. 값이 `from` 에 머물러 웹에서
+ * 모션 줄이기(`useReducedMotion`)면 애니메이션을 아예 안 건다. 값이 `from` 에 머물러
  * `animation: none` 이 남기던 그림이 그대로 나온다.
  *
  * @param loop 시작·끝 값과 주기. 곡선은 CSS 와 같은 것을 쓸 것. `Easing.inOut(Easing.ease)` 는

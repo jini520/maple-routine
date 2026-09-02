@@ -36,7 +36,7 @@ interface FramePlacement {
   height: number
 }
 
-/** 소수 origin × 스케일의 부동소수 꼬리를 자른다. 웹도 같은 자리에서 같은 규칙을 썼다. */
+/** 소수 origin × 스케일의 부동소수 꼬리를 자른다. */
 function round2(v: number): number {
   return Math.round(v * 100) / 100
 }
@@ -44,7 +44,7 @@ function round2(v: number): number {
 /**
  * 앵커(부모의 좌상단)에 origin 점이 오도록 프레임을 놓는다.
  *
- * 크기를 모르면(`null`) **놓지 않는다**. 웹이 `el.complete` 가 false 인 동안 좌표를 그대로 두고
+ * 크기를 모르면(`null`) **놓지 않는다**. 크기 없이 그리면
  * 표시도 켜지 않던 것과 같은 판단이다. 크기 없이 그리면 프레임마다 최대 26px 씩 튄다.
  */
 function placeDropFrame(
@@ -68,7 +68,7 @@ function placeDropFrame(
  * ScreenEff 는 origin 테이블이 없다. 크롭이 이미 버스트 원점 기준 중앙이라 **화면 중앙 정렬**이면
  * 되고, 배율만 전 프레임에 똑같이 걸린다.
  *
- * 웹은 `translate(-50%,-50%)` 였지만 여기서는 같은 이유로 음수 마진을 쓴다(위 주석).
+ * 가운데 맞춤도 퍼센트가 아니라 음수 마진으로 한다(위 주석).
  */
 function centerDropFrame(scale: number, bitmap: FrameBitmapSize | null): FramePlacement | null {
   if (bitmap === null) return null

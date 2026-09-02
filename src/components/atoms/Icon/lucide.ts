@@ -75,7 +75,7 @@ import X from 'lucide-react-native/icons/x'
 
 import { withIconInterop } from '../../../lib/nativewind-interop'
 
-/** 실패 토스트. `Toast`(error). 웹의 `AlertCircle` 은 옛 별칭이고 실물이 `circle-alert` 다. */
+/** 실패 토스트. `Toast`(error). lucide 실물 이름은 `circle-alert` 다. */
 export const AlertCircleIcon = withIconInterop(CircleAlert)
 /** 실패·경고. `ErrorState` · `StaleBanner` · `ErrorBoundary`. */
 export const AlertTriangleIcon = withIconInterop(TriangleAlert)
@@ -97,7 +97,7 @@ export const CalendarCheckIcon = withIconInterop(CalendarCheck)
 export const CastleIcon = withIconInterop(Castle)
 /** 선택 표식. `CacheClearConfirm` 체크박스 · `ThemeSelector` 선택 타일. */
 export const CheckIcon = withIconInterop(Check)
-/** 성공 토스트. `Toast`(success). 웹의 `CheckCircle2` 실물은 `circle-check-big` 이다. */
+/** 성공 토스트. `Toast`(success). lucide 실물 이름은 `circle-check-big` 다. */
 export const CheckCircle2Icon = withIconInterop(CircleCheckBig)
 /** 드롭다운 화살표. `CharacterSelectDropdown`. */
 export const ChevronDownIcon = withIconInterop(ChevronDown)

@@ -18,7 +18,7 @@ import { imageCropStyle, resolveImageCropLayout, type ImageCrop } from '../../..
 /**
  * 그림을 눌러 위의 글자가 읽히게 하는 값 둘.
  *
- * 웹은 `filter: saturate(.85) brightness(.8)` + `opacity:.65` 였다. 옮긴 값이 맞는지는 **한 번
+ * `saturate(.85) brightness(.8)` + `opacity:.65` 를 옮긴 값이 맞는지는 **한 번
  * 확인하고 `docs/foundation/design-system.md` 에 적었다.** 웹 소스가 로 없어져 더
  * 갈릴 원본이 없으므로 대조용 CSS 사본을 코드에 두지 않는다.
  */
@@ -32,7 +32,7 @@ const VEIL_FILTER = [{ saturate: 0.85 }, { brightness: 0.8 }]
  * 마스크 알파를 m 이라 할 때 `bg(1−0.65m) + art·0.65m` 와 `[bg(1−0.65) + art·0.65]` 위에 알파 `1−m`
  * 로 `bg` 를 얹은 것이 같은 식이다.
  *
- * 마지막 정지점 `1` 은 웹에 없다. `expo-linear-gradient` 가 정지점 **사이만** 보간해서, 안 적으면
+ * 마지막 정지점 `1` 이 필요하다. `expo-linear-gradient` 가 정지점 **사이만** 보간해서, 안 적으면
  * 끝점 뒤가 안 덮인다. 알파는 두 자리가 같고 갈리는 것은 정지점뿐이다.
  *
  * 웹 마스크는 카드 `38%/76%` · 히어로 `42%/82%` 였다.

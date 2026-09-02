@@ -8,7 +8,7 @@
  * `keyframes-parity.test.ts` 가 웹 소스와 함께 지워져 밖에서 볼 이유가 없어졌고
  * 아래 `timerAnimation()` 만 이 값을 쓴다.
  *
- * **지속시간만 빠져 있다.** 토스트마다 다르고(성공 2초 / 정보 2.5초) 그래서 웹도 클래스로 못 적고
+ * **지속시간만 빠져 있다.** 토스트마다 다르고(성공 2초 / 정보 2.5초) 런타임 값이라
  * 인라인 `style` 로 넣던 자리다(`animation: toast-shrink ${toast.duration}ms linear forwards`).
  * 런타임 값이라 대조할 상수가 없으므로 나눠 둔다.
  *
@@ -24,13 +24,13 @@ const TIMER_ANIMATION_BASE = {
   animationFillMode: 'forwards',
 } as const
 
-/** 웹이 인라인으로 넣던 지속시간을 얹는다. */
+/** 지속시간을 얹는다. */
 export function timerAnimation(durationMs: number) {
   return { ...TIMER_ANIMATION_BASE, animationDuration: `${durationMs}ms` } as const
 }
 
 /**
- * 웹의 `transition-opacity duration-200 ease-out`. 흐르는 것은 투명도 하나뿐이다.
+ * `transition-opacity duration-200 ease-out`. 흐르는 것은 투명도 하나뿐이다.
  *
  * `as const` 인 이유는 `DropEffectOverlay` 의 `FLOAT_ANIMATION` 과 같다(Reanimated 의 CSS 타입으로
  * 주석을 달면 `Animated.View` 의 `style` 과 안 맞물린다. 그 파일 주석 참고).
