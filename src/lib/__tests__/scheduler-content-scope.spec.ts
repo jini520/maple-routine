@@ -5,7 +5,7 @@ import {
   getShareScope,
   getSharedContentGroups,
   isCumulativeScore,
-} from '../scheduler-content-scope'
+} from '../scheduler/scheduler-content-scope'
 
 describe('getShareScope', () => {
   it('worldShared에 등록된 항목은 world를 반환한다', () => {

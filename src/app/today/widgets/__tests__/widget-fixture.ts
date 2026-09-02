@@ -6,9 +6,9 @@
 // 조합이 곧 테스트 입력이다. 그 이득을 실제로 회수하려면 «전부 빈 상태» 하나가 있어야 하고, 각
 // 테스트는 자기가 보는 필드만 덮어쓴다.
 
-import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../../lib/boss-matching'
+import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../../lib/boss/boss-matching'
 
-import { getValuableDroughtTier, valuableDroughtHeadlineCount } from '../../../../lib/drop-history'
+import { getValuableDroughtTier, valuableDroughtHeadlineCount } from '../../../../lib/drop/drop-history'
 
 import type {
   CrystalLimitView,

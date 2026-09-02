@@ -27,12 +27,12 @@
 
 import { Image, View } from 'react-native'
 
-import { formatMesoShort } from '../../../lib/boss-profit-delta'
-import { getItemIconUrl } from '../../../lib/artwork'
+import { formatMesoShort } from '../../../lib/boss/boss-profit-delta'
+import { getItemIconUrl } from '../../../lib/assets/asset-lookup'
 
 import { Text } from '../../../components/atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import type { WidgetHeight } from '../../../lib/widget-layout'
+import type { WidgetHeight } from '../../../lib/today/widget-layout'
 import type { PricedDropView } from '../view-model'
 import type { WidgetProps } from './types'
 

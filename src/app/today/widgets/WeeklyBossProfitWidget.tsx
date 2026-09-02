@@ -37,12 +37,12 @@
 
 import { Image, View, type DimensionValue } from 'react-native'
 
-import { formatMesoShort } from '../../../lib/boss-profit-delta'
+import { formatMesoShort } from '../../../lib/boss/boss-profit-delta'
 
 import { Text } from '../../../components/atoms'
 import { faceCropStyle } from '../../../lib/face-crop'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import type { WidgetHeight } from '../../../lib/widget-layout'
+import type { WidgetHeight } from '../../../lib/today/widget-layout'
 import type { ProfitSplit, WeeklyProfitCharacterView, WeeklyProfitView } from '../view-model'
 import type { WidgetProps } from './types'
 

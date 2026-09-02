@@ -5,8 +5,8 @@ import type {
   SchedulerCharacterState,
   SharedProgressEntry,
   WeeklyContent,
-} from '../types'
-import { getCurrentBossProfitPeriod } from './boss-profit-period'
+} from '../../types'
+import { getCurrentBossProfitPeriod } from '../boss/boss-profit-period'
 import { getCurrentKstDateKey } from './reset-clock'
 import { getContentCatalogEntries, getMaxCountOverride, getShareScope } from './scheduler-content-scope'
 

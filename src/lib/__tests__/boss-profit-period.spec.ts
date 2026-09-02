@@ -15,7 +15,7 @@ import {
   resolvePagePeriodState,
   resolvePeriodDataState,
   MIN_SCHEDULER_DATE,
-} from '../boss-profit-period'
+} from '../boss/boss-profit-period'
 
 describe('MIN_SCHEDULER_DATE', () => {
   it('사용자 재실측(2026-07-14)으로 확인된 스케줄러 API 조회 가능 최소 날짜다', () => {

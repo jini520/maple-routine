@@ -56,10 +56,9 @@
 import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
-import { Badge, Text } from '../../../components/atoms'
+import { Badge, ChevronDownIcon, ChevronUpIcon, Text } from '../../../components/atoms'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { faceCropStyle } from '../../../lib/face-crop'
-import { ChevronDownIcon, ChevronUpIcon } from '../../../lib/icons'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { RemainingBossView, ScheduleRowView } from '../view-model'
 import type { WidgetProps } from './types'

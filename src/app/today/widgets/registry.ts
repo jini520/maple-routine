@@ -19,7 +19,7 @@
  * 실기기에서 눌러 보고 정한다([[ADR-147]] 열린 질문).
  */
 
-import type { WidgetSize } from '../../../lib/widget-layout'
+import type { WidgetSize } from '../../../lib/today/widget-layout'
 import { CrystalLimitWidget } from './CrystalLimitWidget'
 import { RemainingScheduleWidget } from './RemainingScheduleWidget'
 import { SharedContentsWidget } from './SharedContentsWidget'

@@ -1,4 +1,4 @@
-import { matchDailyQuestRegionSlug, stripDailyQuestPrefix } from '../quest-region-matching'
+import { matchDailyQuestRegionSlug, stripDailyQuestPrefix } from '../scheduler/quest-region-matching'
 
 describe('stripDailyQuestPrefix', () => {
   it('"[일일 퀘스트] " 접두어를 제거한다', () => {

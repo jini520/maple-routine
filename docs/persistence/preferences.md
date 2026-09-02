@@ -197,7 +197,7 @@ flowchart TD
   }
 }
 ```
-`lastUpdatedBucket`은 리셋 경계 판단용 키다(일간은 `lib/reset-clock`의 KST 날짜, 주간은 `lib/boss-profit-period`의 `periodKey`). 이 값이 현재 리셋 구간보다 오래됐으면 화면 표시 시 진행값만 리셋하고 `active`는 유지한다.
+`lastUpdatedBucket`은 리셋 경계 판단용 키다(일간은 `lib/scheduler/reset-clock`의 KST 날짜, 주간은 `lib/boss/boss-profit-period`의 `periodKey`). 이 값이 현재 리셋 구간보다 오래됐으면 화면 표시 시 진행값만 리셋하고 `active`는 유지한다.
 
 ## 캐릭터가 여러 명일 때
 

@@ -64,10 +64,19 @@ import {
   isLatestPeriod,
   isPeriodQueryable,
   isPeriodRefreshable,
-} from '../../lib/boss-profit-period'
-import { sumDropPayout } from '../../lib/drop-price'
+} from '../../lib/boss/boss-profit-period'
+import { sumDropPayout } from '../../lib/drop/drop-price'
 
-import { AnimatedNumber, ProfitIcon, Text } from '../../components/atoms'
+import {
+  AnimatedNumber,
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ClockIcon,
+  ProfitIcon,
+  RefreshCwIcon,
+  Text,
+} from '../../components/atoms'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
@@ -76,17 +85,10 @@ import { ValuableDropBadge } from '../../components/molecules/ValuableDropBadge/
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { SPIN_ANIMATION } from '../../constants/style/animation'
-import {
-  ChevronDownIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ClockIcon,
-  RefreshCwIcon,
-} from '../../lib/icons'
 import { AnimatedView } from '../../lib/nativewind-interop'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
-import { orderByTracked } from '../../lib/tracked-order'
+import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import { useThemeAppearance } from '../../theme/context'
 import { useOpenTab } from '../use-open-tab'
 import { useScreenNavigation } from '../use-screen-navigation'

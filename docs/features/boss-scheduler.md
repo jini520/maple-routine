@@ -32,9 +32,9 @@
 | 상태 | `features/boss-scheduler/store.ts` | 동기화, 추적 목록, `partyFilter` |
 | 상태 | `features/boss-scheduler/displayed-bosses.ts` | **어떤 보스를 보여줄지 판정한다.** 아래 [표시 판정](#표시-판정은-화면이-아니라-displayed-bossests-가-한다) |
 | 저장 | `storage/boss-party-settings.ts` | SQLite `boss_party_settings` |
-| 계산 | `lib/boss-matching.ts` | 정렬(`compareBossOrder`), 한도 판정(`isWeeklyClearLimitReached`·`countManualWeeklyBosses`) |
-| 계산 | `lib/manual-boss-merge.ts` | 수동 모드 목록 합치기(`mergeManualBossList`) |
-| 계산 | `lib/artwork.ts` | 보스 초상화 |
+| 계산 | `lib/boss/boss-matching.ts` | 정렬(`compareBossOrder`), 한도 판정(`isWeeklyClearLimitReached`·`countManualWeeklyBosses`) |
+| 계산 | `lib/boss/manual-boss-merge.ts` | 수동 모드 목록 합치기(`mergeManualBossList`) |
+| 계산 | `lib/assets/asset-lookup.ts` | 보스 초상화 |
 | UI | `components/molecules/BossSectionHeader` | ‘월간’·‘주간’ 섹션 헤더. 두 화면이 같은 것을 쓴다 |
 | 참조 | `src/data/weekly-bosses.json` | 보스명·난이도 매핑, 정규 순서, `requiredLevels` |
 | 참조 | `src/data/boss-crystal-prices.json` | 관리 화면이 보여줄 난이도 목록의 출처 |
@@ -57,7 +57,7 @@ ADR-073(인디케이터) · ADR-098(헤더 고정). **각 파일 배너의 🔗 
 | | 지금 규칙 |
 |---|---|
 | 섹션 순서 | **월간 → 주간**. `displayed-bosses` 의 `BOSS_SECTION_ORDER` 와 `displayedBossSections` 가 정한다. 화면은 다시 정렬하지 않는다 |
-| 섹션 **안**의 순서 | **`weekly-bosses.json` 정규 순서 → 난이도 → 보스명**([[ADR-186]], 2026-08-30). 자동·수동 모드를 가르지 않고 `displayedBosses` 끝에서 공용 `compareBossOrder`(`lib/boss-matching`)로 한 번 정렬한다 |
+| 섹션 **안**의 순서 | **`weekly-bosses.json` 정규 순서 → 난이도 → 보스명**([[ADR-186]], 2026-08-30). 자동·수동 모드를 가르지 않고 `displayedBosses` 끝에서 공용 `compareBossOrder`(`lib/boss/boss-matching`)로 한 번 정렬한다 |
 | 주기 구분 | **섹션 헤더 두 줄**(‘월간’·‘주간’). 공용 `components/molecules/BossSectionHeader` 를 두 화면이 같이 쓴다 |
 | `n/12` · 시즌 배지(`isSeasonBoss`) | ‘주간’ 헤더에 붙는다. 탭이 있던 시절 `activeTab === 'weekly'` 조건에 매달려 있던 것을 헤더로 옮겼다 |
 | 완료 정렬 | **없다.** 주기가 순서를 정하고 완료는 순서를 바꾸지 않는다. 완료한 검은마법사도 맨 위에 남는다 |
@@ -142,7 +142,7 @@ ADR-073(인디케이터) · ADR-098(헤더 고정). **각 파일 배너의 🔗 
   배지라 크기가 다르면 카드 오른쪽 끝이 배지에 따라 흔들린다. 다른 것은 색뿐이다. ‘진행 불가’도
   2026-08-31 부터 같은 상자다([[ADR-094]] 결정 3 의 정정).
 - **우선순위는 ‘진행 불가’ > ‘마감’ > ‘완료’** 다.
-- **판정은 `lib/boss-matching` 의 `isWeeklyClearLimitReached` 한 곳에서만 한다.** `displayedBosses`
+- **판정은 `lib/boss/boss-matching` 의 `isWeeklyClearLimitReached` 한 곳에서만 한다.** `displayedBosses`
   가 그 결과를 `isWeeklyLimitClosed` 로 함께 넘긴다. today가 같은 판정을 따로 다시 하면
   [[ADR-147]] 결정 8의 등식(today가 세는 것 = 이 화면이 보여주는 것)이 깨진다.
 - **완료로 칠하지 않는 것이 핵심이다.** 안 잡은 보스를 완료로 두면 그 거짓이 보스 수익의 결정석
@@ -512,7 +512,7 @@ Modal.Panel maxWidth="max-w-2xs"(288) · align="center"   ← 키보드를 안 �
   `kind: 'boss'` 로 저장되므로 `kind` 만으로 세면 안 되고 **주기로 걸러야 한다.**
 - **시즌 보스(메이린)는 뺀다.** `countClearedWeeklyBosses`([[ADR-031]] 결정 1)와
   `isSeasonBossName`([[ADR-054]] 결정 3)과 같은 규칙이다. 어긋나면 선택은 `12/12` 인데 처치는
-  `11/12` 인 모순이 생긴다. 카운트 규칙은 `lib/boss-matching` 의 `countManualWeeklyBosses` 한 곳에만
+  `11/12` 인 모순이 생긴다. 카운트 규칙은 `lib/boss/boss-matching` 의 `countManualWeeklyBosses` 한 곳에만
   둔다. 화면이 주기 정보를 잃으면 `getBossCycleByName` 으로 되찾는다.
 - **UI**([[ADR-055]] 정정 3): ‘주간’ 섹션 헤더에 `n/12` 배지를 단다(`BossScreen` 배지 스타일 재사용.
   새 스타일 금지). 한도에 닿으면 **미선택 행만 흐리게**(`opacity-40`) 두고 **`disabled` 로 만들지

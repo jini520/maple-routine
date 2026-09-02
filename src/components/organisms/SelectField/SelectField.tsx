@@ -36,8 +36,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { ChevronDownIcon } from '../../../lib/icons'
-import { Text } from '../../atoms'
+import { ChevronDownIcon, Text } from '../../atoms'
 import { placeDropdown } from '../AccountSelect/place-dropdown'
 
 /** 목록이 화면 가장자리에 붙지 않게 남기는 여백 — `AccountSelect` 와 같은 값이다. */

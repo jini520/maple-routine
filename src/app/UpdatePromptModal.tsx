@@ -40,18 +40,22 @@ import { View } from 'react-native'
 
 import type { LiveUpdateStatus, LiveUpdateStore } from '../features/live-update/store'
 
-import { Badge, Button, MapleSweepSpinner, ProgressBar, Text } from '../components/atoms'
-import { Modal } from '../components/organisms/Modal/Modal'
 import {
   AlertTriangleIcon,
+  Badge,
+  Button,
   CheckCircle2Icon,
   ChevronDownIcon,
   CloudDownloadIcon,
   InfoIcon,
+  MapleSweepSpinner,
+  ProgressBar,
   SignalIcon,
   SparklesIcon,
   StoreIcon,
-} from '../lib/icons'
+  Text,
+} from '../components/atoms'
+import { Modal } from '../components/organisms/Modal/Modal'
 
 const MODAL_STATUSES: ReadonlySet<LiveUpdateStatus> = new Set([
   'update-available',

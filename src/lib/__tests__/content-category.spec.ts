@@ -3,9 +3,9 @@ import {
   contentCountTag,
   isGuildContent,
   WEEKLY_CATEGORY_ORDER,
-} from '../content-category'
-import { CONTENT_TEMPLATE } from '../scheduler-content-template'
-import type { SchedulerContentTemplateEntry } from '../manual-content-merge'
+} from '../scheduler/content-category'
+import { CONTENT_TEMPLATE } from '../scheduler/scheduler-content-template'
+import type { SchedulerContentTemplateEntry } from '../scheduler/manual-content-merge'
 
 function entry(
   content_name: string,

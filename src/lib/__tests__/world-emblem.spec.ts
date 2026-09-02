@@ -1,4 +1,4 @@
-import { isChallengersWorld, worldEmblemUrl } from '../artwork'
+import { isChallengersWorld, worldEmblemUrl } from '../assets/asset-lookup'
 
 describe('worldEmblemUrl', () => {
   it('매핑된 월드는 엠블럼 URL을 반환한다', () => {

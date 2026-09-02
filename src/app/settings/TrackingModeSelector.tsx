@@ -11,8 +11,7 @@ import { Pressable, View } from 'react-native'
 import { TRACKING_MODE_OPTIONS } from '../../features/tracking-mode/copy'
 import type { TrackingMode } from '../../storage/tracking-mode'
 
-import { Text } from '../../components/atoms'
-import { Gamepad2Icon, InfoIcon, ListChecksIcon } from '../../lib/icons'
+import { Gamepad2Icon, InfoIcon, ListChecksIcon, Text } from '../../components/atoms'
 
 export interface TrackingModeSelectorProps {
   mode: TrackingMode

@@ -7,20 +7,20 @@
 // RN 으로 갈린 것은 일간 카드와 **같은 넷**이라 그쪽 파일 머리에 한 번만 적는다
 // (`DailyContentCards.tsx`) — bleed 는 `FadedIllustration`, 껍데기는 `IllustratedCard`, `flex-row` 명시,
 // `<img>`/`<span>`/`text-shadow` 의 짝.
-import { isContentBlocked } from '../../lib/required-level'
+import { isContentBlocked } from '../../lib/scheduler/required-level'
 import {
   getBossPortraitCrop,
   getBossPortraitUrl,
   getDailyQuestBackgroundUrl,
   getDailyQuestRegionCrop,
   getDailyQuestRegionIconUrl,
-} from '../../lib/artwork'
+} from '../../lib/assets/asset-lookup'
 import type { ImageCrop } from '../../lib/image-crop'
 import {
   matchWeeklyQuestRegionSlug,
   matchWeeklyRegionalQuestSlug,
   stripWeeklyQuestPrefix,
-} from '../../lib/quest-region-matching'
+} from '../../lib/scheduler/quest-region-matching'
 import type { WeeklyContent } from '../../types'
 import { Image, View } from 'react-native'
 
@@ -321,7 +321,7 @@ export function GuildFlagRaceCard(props: {
 
 export function renderWeeklyContentCard(
   content: WeeklyContent,
-  /** 이 카드를 보는 캐릭터의 레벨 — 판정은 `lib/required-level` 한 곳이 한다([[ADR-162]] 결정 1). */
+  /** 이 카드를 보는 캐릭터의 레벨 — 판정은 `lib/scheduler/required-level` 한 곳이 한다([[ADR-162]] 결정 1). */
   characterLevel: number | null,
 ): React.JSX.Element {
   // 길드 셋과 유니온 둘은 참조표에 요구 레벨이 **없다** — 어떤 레벨에서도 진행 가능이라

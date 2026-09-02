@@ -46,7 +46,7 @@ import { View } from 'react-native'
 
 import { ProgressBar, Text } from '../../../components/atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import type { WidgetHeight } from '../../../lib/widget-layout'
+import type { WidgetHeight } from '../../../lib/today/widget-layout'
 import type { ResetCountdown, ResetCountdownView } from '../view-model'
 import type { WidgetProps } from './types'
 

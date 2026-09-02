@@ -1,6 +1,6 @@
 // 드롭 판매가 → 수익 환산([[ADR-124]] 결정 7). 이 함수가 틀리면 캐릭터 합계·총 수익·증감 칩이
 // 한꺼번에 틀리므로 규칙을 여기서 못 박는다.
-import { dropPayoutMeso, formatMesoUnits, sumDropPayout } from '../drop-price'
+import { dropPayoutMeso, formatMesoUnits, sumDropPayout } from '../drop/drop-price'
 
 describe('dropPayoutMeso', () => {
   it('분배 인원으로 나눈 몫을 내림한다', () => {

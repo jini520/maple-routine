@@ -10,13 +10,13 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../../lib/boss-matching'
+import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../../lib/boss/boss-matching'
 
 import { renderAtom } from '../../../../components/__tests__/render-atom'
 import { CrystalLimitWidget } from '../CrystalLimitWidget'
 import { 뷰모델, 빈_뷰모델, 월드한도, 월드한도목록 } from './widget-fixture'
 import type { TodayViewModel } from '../../view-model'
-import type { WidgetHeight } from '../../../../lib/widget-layout'
+import type { WidgetHeight } from '../../../../lib/today/widget-layout'
 
 const 크기 = {
   '2x1': { w: 2, h: 1 },

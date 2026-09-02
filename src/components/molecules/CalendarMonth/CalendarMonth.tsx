@@ -9,7 +9,7 @@
  *
  * 처음에는 표식 두 개(점)였다. 사용자가 레퍼런스를 주며 *"단순 달력만 있는게 아니라 일별 데이터도
  * 함께 볼 수 있는 형태"* 를 지정했고(2026-08-23), 그 이미지가 «칸이 좁아 억 단위가 잘린다» 는
- * 근거를 반박했다 — **줄여 적으면 들어간다**(`lib/meso-compact`).
+ * 근거를 반박했다 — **줄여 적으면 들어간다**(`lib/cashbook/meso-compact`).
  *
  * 위 줄이 수익(`rise-ink`), 아래 줄이 지출(`fall-ink`)이다. **둘 다 0 이면 비운다**
  * ([[ADR-169]] 정정 3, 사용자 지정 2026-08-25). 처음에는 수익 줄만 «0» 을 적었는데(고른 시안이
@@ -42,7 +42,7 @@ import {
   type CalendarAmounts,
   type CalendarWeek,
 } from '../../../lib/calendar-month'
-import { formatMesoCompact } from '../../../lib/meso-compact'
+import { formatMesoCompact } from '../../../lib/cashbook/meso-compact'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 
 export interface CalendarMonthProps {

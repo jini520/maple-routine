@@ -23,7 +23,7 @@
 //    에셋의 고유 픽셀 크기를 남기므로, 높이만 정하고 폭을 그림에 맡기려면 그 축을 지워야 한다.
 import { Image, Pressable, View } from 'react-native'
 
-import { worldEmblemUrl } from '../../../lib/artwork'
+import { worldEmblemUrl } from '../../../lib/assets/asset-lookup'
 
 import { faceCropStyle } from '../../../lib/face-crop'
 import { naturalAspectStyle } from '../../../lib/image-aspect'

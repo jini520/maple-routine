@@ -8,7 +8,7 @@ import {
   type DropHistoryPeriodGroup,
   type DropHistoryRecord,
   type ValuableDroughtSummary,
-} from '../../lib/drop-history'
+} from '../../lib/drop/drop-history'
 import {
   getAllBossDropRecords,
   getBossDropRecordsRevision,

@@ -9,16 +9,16 @@
  * 하나라도 빠뜨리면 조용히 어긋났다. 이제 테마 추가는 **JSON 한 블록**이다.
  */
 
-import jobThemesData from '../data/job-themes.json'
+import jobThemesData from '../../data/job-themes.json'
 import type {
   JobThemes,
   ThemeBackground,
   ThemeCategory,
   ThemeDefinition,
   ThemeName,
-} from '../types/theme'
+} from '../../types/theme'
 import { deriveMediaScope } from './theme-derive'
-import { getThemeBackgroundUrl } from './artwork'
+import { getThemeBackgroundUrl } from '../assets/asset-lookup'
 
 const JOB_THEMES = jobThemesData as JobThemes
 

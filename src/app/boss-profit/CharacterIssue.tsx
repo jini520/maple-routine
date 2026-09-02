@@ -29,8 +29,7 @@ import { Pressable, View } from 'react-native'
 import { anchorPopover } from '../../lib/popover-anchor'
 import type { PopoverAnchorGeometry } from '../../lib/popover-anchor'
 
-import { Text } from '../../components/atoms'
-import { AlertTriangleIcon, BanIcon } from '../../lib/icons'
+import { AlertTriangleIcon, BanIcon, Text } from '../../components/atoms'
 import { useThemeAppearance } from '../../theme/context'
 import type { PopoverAnchorRect } from './ItemRevenuePopover'
 

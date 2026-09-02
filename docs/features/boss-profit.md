@@ -40,11 +40,11 @@
 | 저장 | `storage/boss-profit` | SQLite `boss_profit_records`. `defeated_on` 칸 포함 |
 | 저장 | `storage/schedule-probe-ledger` | 어느 날짜를 이미 조회했는지 적는 원장. `bosses` 칸 포함 |
 | 저장 | `storage/sqlite/db.ts` | 커넥션. `closeBossProfitDb()` |
-| 계산 | `lib/boss-profit-period.ts` | 기간 키 계산과 기간 상태 판정 |
-| 계산 | `lib/boss-profit-delta.ts` | 직전 기간 대비 증감 |
-| 계산 | `lib/drop-price.ts` | 드롭 판매가를 수익으로 환산 |
-| 계산 | `lib/artwork.ts` · `lib/artwork.ts` | 월드 엠블럼과 결정석 아이콘 |
-| 계산 | `lib/boss-matching.ts` | 보스 정렬 순서, `WEEKLY_BOSS_CLEAR_LIMIT`, `WEEKLY_CRYSTAL_SALE_LIMIT`, `isSeasonBossName` |
+| 계산 | `lib/boss/boss-profit-period.ts` | 기간 키 계산과 기간 상태 판정 |
+| 계산 | `lib/boss/boss-profit-delta.ts` | 직전 기간 대비 증감 |
+| 계산 | `lib/drop/drop-price.ts` | 드롭 판매가를 수익으로 환산 |
+| 계산 | `lib/assets/asset-lookup.ts` · `lib/assets/asset-lookup.ts` | 월드 엠블럼과 결정석 아이콘 |
+| 계산 | `lib/boss/boss-matching.ts` | 보스 정렬 순서, `WEEKLY_BOSS_CLEAR_LIMIT`, `WEEKLY_CRYSTAL_SALE_LIMIT`, `isSeasonBossName` |
 | 훅 | `hooks/useCountUp.ts` | 금액이 바뀌면 목표까지 굴러가는 숫자([[ADR-087]]) |
 | UI | `components/atoms/AnimatedNumber/` | 그 훅을 **잎에 가두는** 컴포넌트(정정 3). 매 프레임 다시 그리는 범위를 좁히는 것이 존재 이유다 |
 | 참조 | `src/data/boss-crystal-prices.json` | 결정석 정가 |
@@ -130,7 +130,7 @@ Nexon API는 파티원 수를 모른다. 그래서 **캐릭터 + 보스 + 난이
 안 판 결정석은 다음 주로 넘어가지 않는다. 매주 초기화된다.
 
 두 값의 출처는 `src/data/weekly-bosses.json` 의 `weeklyBossSelectionLimit` 과 `weeklyCrystalSaleLimit`
-이고, `lib/boss-matching` 이 위 두 상수로 나란히 export 한다. 한 파일에 두면 둘을 헷갈릴 일이 줄어든다.
+이고, `lib/boss/boss-matching` 이 위 두 상수로 나란히 export 한다. 한 파일에 두면 둘을 헷갈릴 일이 줄어든다.
 
 ### 처치 수는 store가 아니라 화면에서 만든다
 
@@ -339,7 +339,7 @@ placeholder 행을 지운다([[ADR-187]] 결정 4, 2026-08-30).
   실제로 두 개를 먹은 경우와 구분할 방법이 없어서 임의로 합치지 않는다.
 - **사용자에게 알리지 않는다.** 실패가 아니라 정정이다.
 - **계산과 쓰기를 나눈다.** 계산은 순수 함수
-  `lib/boss-drops.planConfirmedDifficultyDropMigration(boss, 확정난이도, records)` 가 하고, 옮길 것이
+  `lib/boss/boss-drops.planConfirmedDifficultyDropMigration(boss, 확정난이도, records)` 가 하고, 옮길 것이
   없으면 `null` 을 돌려 쓰기도 일어나지 않는다(멱등). 쓰기는 store의
   `migrateDropsToConfirmedDifficulty` 다. SQLite는 `ORDER BY drop_index` 만 보장하므로 난이도가 섞이면
   순서가 미정이다. 정규 난이도 순서로 정렬해 결과를 결정적으로 만든다.
@@ -405,7 +405,7 @@ placeholder 행을 지운다([[ADR-187]] 결정 4, 2026-08-30).
 | `outOfRange` | 조회 구간 밖. 윈도우 밖이거나 월드 이전 전 | 함(영구) | 없음 | `UnavailableNotice` · `— 메소` |
 | `failed` | 그 밖의 실패(네트워크·타임아웃 등) | 하지 않는다 | **다시 시도** | `ErrorState` · 재시도 버튼 |
 
-판정은 `lib/boss-profit-period` 의 순수 함수 둘이 맡는다. `resolvePeriodDataState`(캐릭터 × 기간)가
+판정은 `lib/boss/boss-profit-period` 의 순수 함수 둘이 맡는다. `resolvePeriodDataState`(캐릭터 × 기간)가
 먼저 판정하고 `resolvePagePeriodState`(화면)가 화면 하나로 접는다. **화면과 백필이 같은 값을 공유해야**
 두 문구가 동시에 뜨는 경로(이슈 #78 E)가 사라진다. 화면이 읽는 것은 store의 `periodState` 이고,
 `periodUnavailable` 은 거기서 파생되는 하위 호환 플래그다.
@@ -586,7 +586,7 @@ today 화면은 언제나 이번 주를 그리므로 이 화면의 네비게이�
 - **캐릭터 카드 순서**([[ADR-143]] 결정 3, 구현 완료 2026-08-17): 카드가 나오는 차례는 행의 순서
   (`getSortedCharacterInfo` 의 레벨 내림차순)가 아니라 사용자가 캐릭터 관리에서 정한
   `trackedCharacters` 배열 순서다. 화면이 `buildCharacterGroups` 결과를 `orderByTracked`
-  (`src/lib/tracked-order.ts`, 두 스케줄러 레일과 같은 함수)로 한 번 통과시킨다. **캐릭터 안쪽 보스
+  (`src/lib/scheduler/tracked-order.ts`, 두 스케줄러 레일과 같은 함수)로 한 번 통과시킨다. **캐릭터 안쪽 보스
   순서는 위 [[ADR-036]] 그대로**이고, 저장 목록에 없는 캐릭터의 카드도 사라지지 않는다(뒤에 남는다).
 
 ## 처치 날짜
@@ -626,7 +626,7 @@ today 화면은 언제나 이번 주를 그리므로 이 화면의 네비게이�
 담당하고, **여기서는 그 값이 수익 숫자에 어떻게 들어오는지만** 정한다.
 
 ```
-기록 한 건   price_state === 'entered' ? floor(price_meso / price_share) : 0   (lib/drop-price)
+기록 한 건   price_state === 'entered' ? floor(price_meso / price_share) : 0   (lib/drop/drop-price)
 보스 행      결정석 payout + 그 행 (ocid, boss, difficulty, periodKey) 의 드롭 합
 캐릭터·총액  행의 합. 손댈 곳이 없다
 ```

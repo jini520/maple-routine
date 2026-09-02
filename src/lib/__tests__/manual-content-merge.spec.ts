@@ -2,7 +2,7 @@ import {
   mergeManualContentList,
   orderContentsByTemplate,
   type SchedulerContentTemplateEntry,
-} from '../manual-content-merge'
+} from '../scheduler/manual-content-merge'
 import type { DailyContent } from '../../types'
 import type { ManualTrackedItem } from '../../types/scheduler'
 

@@ -28,7 +28,7 @@
  * 기각하며 산 값이 거기서 회수된다.
  */
 
-import type { WidgetPlacement } from '../../../lib/widget-layout'
+import type { WidgetPlacement } from '../../../lib/today/widget-layout'
 import type { WidgetId } from './types'
 
 /** `WidgetPlacement` 의 `id` 를 레지스트리에 있는 것으로 좁힌다 — 오타가 타입에서 걸린다. */

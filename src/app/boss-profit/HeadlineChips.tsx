@@ -16,14 +16,19 @@
 import { useState } from 'react'
 import { Image, Modal, Pressable, View } from 'react-native'
 
-import { getItemIconUrlByFile, worldEmblemUrl } from '../../lib/artwork'
-import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss-matching'
-import { computeProfitDelta, formatProfitDeltaBody, formatProfitDeltaLabel } from '../../lib/boss-profit-delta'
-import { formatBossProfitPeriodLabel, getAdjacentPeriodKey } from '../../lib/boss-profit-period'
+import { getItemIconUrlByFile, worldEmblemUrl } from '../../lib/assets/asset-lookup'
+import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss/boss-matching'
+import { computeProfitDelta, formatProfitDeltaBody, formatProfitDeltaLabel } from '../../lib/boss/boss-profit-delta'
+import { formatBossProfitPeriodLabel, getAdjacentPeriodKey } from '../../lib/boss/boss-profit-period'
 import type { BossCycle } from '../../types'
 
-import { Text } from '../../components/atoms'
-import { ArrowDownIcon, ArrowUpIcon, ChevronDownIcon, ChevronUpIcon } from '../../lib/icons'
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  Text,
+} from '../../components/atoms'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { countMonthlyCrystals, summarizeWorldCrystals } from './character-groups'
 import type { CharacterGroup } from './character-groups'

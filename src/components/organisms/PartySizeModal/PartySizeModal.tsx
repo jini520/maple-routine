@@ -30,18 +30,17 @@
 // ⑤ `space-y`/`gap-[18px]` 은 `gap-*` 로, `tabular-nums` 는 스타일로(`lib/text-styles.ts`).
 import { Pressable, View } from 'react-native'
 
-import { getBossPortraitCrop, getBossPortraitUrl } from '../../../lib/artwork'
+import { getBossPortraitCrop, getBossPortraitUrl } from '../../../lib/assets/asset-lookup'
 import type { BossDifficulty } from '../../../types'
 
 import { withAlpha } from '../../../lib/color'
 import { LinearGradient } from '../../../lib/nativewind-interop'
-import { UsersIcon, XIcon } from '../../../lib/icons'
+import { Badge, Text, UsersIcon, XIcon } from '../../atoms'
 // 히어로 글자의 그림자는 카드 둘과 같은 값을 쓴다 — 세 번째 호출부가 생기며 `lib/text-styles.ts`
 // 로 올라갔다([[ADR-094]] 결정 1). 값·근거는 그 파일이 갖는다.
 import { ILLUSTRATION_TEXT_SHADOW_STYLE, TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { useThemeAppearance } from '../../../theme/context'
 import { MediaScope } from '../../../theme/MediaScope'
-import { Badge, Text } from '../../atoms'
 import { DifficultySegment } from '../../molecules/DifficultySegment/DifficultySegment'
 import { FadedIllustration } from '../../molecules/FadedIllustration/FadedIllustration'
 import { PartySizeStepper } from '../../molecules/PartySizeStepper/PartySizeStepper'

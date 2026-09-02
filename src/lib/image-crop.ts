@@ -8,8 +8,8 @@
  * 조회(`boss-icons` · `daily-quest-backgrounds`)와 그리기(`FadedIllustration` · `BossPortrait`)
  * **양쪽이 쓰기 때문에** `lib/` 에 있다. `components/` 에 두면 조회 쪽이 위 계층을 import 하게 된다.
  *
- * @see [[ADR-018]] 결정 8 · 9 — 크롭 표를 둔 이유와 표가 둘로 갈린 이유
- * @see [[ADR-135]] — 두 축을 다 이름 부른다
+ * @see [[ADR-018]] 결정 8 · 9. 크롭 표를 둔 이유와 표가 둘로 갈린 이유가 거기 있다.
+ * @see [[ADR-135]]. 두 축을 다 이름 부른다.
  */
 import type { ImageStyle } from 'react-native'
 

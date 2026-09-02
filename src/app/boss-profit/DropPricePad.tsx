@@ -31,13 +31,12 @@
 import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
-import { getItemIconUrl } from '../../lib/artwork'
+import { getItemIconUrl } from '../../lib/assets/asset-lookup'
 import type { BossDifficulty } from '../../types'
 import type { RecordedDrop } from '../../types/drops'
 
-import { Badge, Text } from '../../components/atoms'
+import { Badge, ChevronLeftIcon, Text } from '../../components/atoms'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
-import { ChevronLeftIcon } from '../../lib/icons'
 import { MesoAmountField } from '../../components/molecules/MesoPad/MesoAmountField'
 import { MesoKeypad } from '../../components/molecules/MesoPad/MesoKeypad'
 import { applyMesoKey, type MesoKey } from '../../components/molecules/MesoPad/meso-pad'

@@ -21,27 +21,22 @@ import { useEffect, useState } from 'react'
 import { Pressable, View } from 'react-native'
 import type { LucideIcon } from 'lucide-react-native'
 
-import { CONTENT_TEMPLATE } from '../../lib/scheduler-content-template'
+import { CONTENT_TEMPLATE } from '../../lib/scheduler/scheduler-content-template'
 import {
   categorizeContentEntries,
   contentCountTag,
   isGuildContent,
   WEEKLY_CATEGORY_ORDER,
-} from '../../lib/content-category'
+} from '../../lib/scheduler/content-category'
 import { useContentSchedulerStore, type ContentTab } from '../../features/content-scheduler/store'
 import { resolveSelectedCharacter } from '../../features/character-selection/selected-character'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { useToastStore } from '../../features/toast/store'
 
-import { Badge, Text } from '../../components/atoms'
-import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
-import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
-import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
-import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
-import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import {
   ArrowLeftIcon,
+  Badge,
   CastleIcon,
   FlagIcon,
   LayoutGridIcon,
@@ -49,7 +44,13 @@ import {
   MedalIcon,
   SparklesIcon,
   SwordsIcon,
-} from '../../lib/icons'
+  Text,
+} from '../../components/atoms'
+import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
+import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
+import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
+import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useScreenNavigation } from '../use-screen-navigation'
 
@@ -75,7 +76,7 @@ function categoryIcon(label: string | null): LucideIcon {
 // 보여주고 추적 중인 항목만 선택 상태로 그린다 — 추가·삭제가 행 탭(토글) 하나로 통일되고,
 // 토글은 즉시 저장한다(로컬 Preferences 쓰기뿐이고 비파괴적이라 확인 버튼 없음). 대상 캐릭터는
 // 컨텐츠 스케줄러에서 선택된 캐릭터를 승계한다. 수동 모드 전용.
-// 리디자인(2026-07-24, 와이어프레임 리뷰): content_name에 이미 있는 접두사(lib/content-category)로
+// 리디자인(2026-07-24, 와이어프레임 리뷰): content_name에 이미 있는 접두사(lib/scheduler/content-category)로
 // 카테고리 그룹핑 — 반복되는 "[일일 퀘스트] …"를 헤더로 한 번만 묶고 행에는 알맹이만 표시한다.
 export function ContentManageScreen(): React.JSX.Element {
   const {

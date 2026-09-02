@@ -25,7 +25,7 @@
 //
 // 실제로 잡은 보스는 추적을 꺼도 이 화면에 계속 뜬다(`selectProfitDisplayBosses` ①). 술어를
 // 「추적 목록에 없다」로 쓰면 진짜 처치 기록의 드롭이 날아간다.
-import { findPriceEntry } from '../../lib/boss-crystal-prices'
+import { findPriceEntry } from '../../lib/boss/boss-crystal-prices'
 import { getBossDropRecords, replaceBossDropRecords, type BossDropRecord } from '../../storage/boss-drops'
 import type { BossDifficulty } from '../../types'
 import { withSqliteFallback } from './sqlite-guards'

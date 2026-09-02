@@ -44,10 +44,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Dimensions, Image, Modal, Pressable, ScrollView, useWindowDimensions, View } from 'react-native'
 
-import { formatMesoShort } from '../../lib/boss-profit-delta'
-import { dropPayoutMeso } from '../../lib/drop-price'
+import { formatMesoShort } from '../../lib/boss/boss-profit-delta'
+import { dropPayoutMeso } from '../../lib/drop/drop-price'
 import type { RecordedDrop } from '../../types/drops'
-import { getItemIconUrl } from '../../lib/artwork'
+import { getItemIconUrl } from '../../lib/assets/asset-lookup'
 import { anchorPopover } from '../../lib/popover-anchor'
 
 import { Text } from '../../components/atoms'

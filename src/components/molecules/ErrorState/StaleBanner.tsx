@@ -23,8 +23,7 @@
 // ② 액션 라벨의 `hover:text-primary-hover` 를 뺐다(터치 기기에 hover 가 없다 — atoms 와 같은 규칙).
 import { Pressable, View } from 'react-native'
 
-import { AlertTriangleIcon } from '../../../lib/icons'
-import { Text } from '../../atoms'
+import { AlertTriangleIcon, Text } from '../../atoms'
 
 interface StaleBannerAction {
   label: string

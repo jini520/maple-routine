@@ -26,7 +26,7 @@
 //    렌더 도중 내비게이션을 만질 수 없다. 뜻은 같다 — 히스토리를 남기지 않고 들어온 목록으로
 //    돌려보낸다. **딥링크를 두지 않아 지금은 도달 불가한 자리**지만(`routes.ts`), 데이터에서 안내가
 //    사라지면 노트의 `guideId` 가 그대로 이리로 온다.
-import { Text } from '../../components/atoms'
+import { ArrowLeftIcon, Text } from '../../components/atoms'
 import { useEffect, useRef, useState } from 'react'
 import type { ScrollView as ScrollViewType } from 'react-native'
 import { Image, Pressable, View } from 'react-native'
@@ -38,7 +38,6 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { naturalAspectStyle } from '../../lib/image-aspect'
-import { ArrowLeftIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import type { RootStackParamList } from '../../navigation/routes'
 import { useSettingsNavigation } from './use-settings-navigation'

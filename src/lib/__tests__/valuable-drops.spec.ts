@@ -1,6 +1,6 @@
 import itemDropTable from '../../data/item-drop-table.json'
 import valuableDrops from '../../data/valuable-drops.json'
-import { isValuableDrop } from '../valuable-drops'
+import { isValuableDrop } from '../drop/valuable-drops'
 
 describe('isValuableDrop', () => {
   it('칠흑의 보스 세트 구성원은 고가 (장신구·비장신구 모두)', () => {

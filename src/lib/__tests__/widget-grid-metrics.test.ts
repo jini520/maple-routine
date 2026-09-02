@@ -9,7 +9,7 @@ import {
   resolveWidgetGridMetrics,
   tileHeightPx,
   tileWidthPx,
-} from '../widget-grid-metrics'
+} from '../today/widget-grid-metrics'
 
 /** 안드로이드 최소 폭 — [[ADR-147]] 결정 1 이 열 폭 73 을 적어 둔 그 기기다. */
 const 안드로이드_최소 = 360

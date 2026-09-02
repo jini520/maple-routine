@@ -1,5 +1,5 @@
-import { getBackfillDateKeys } from '../../lib/reset-clock'
-import { hasCharacterScopeCompletion, toProbeObservation } from '../../lib/scheduler-activity'
+import { getBackfillDateKeys } from '../../lib/scheduler/reset-clock'
+import { hasCharacterScopeCompletion, toProbeObservation } from '../../lib/scheduler/scheduler-activity'
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
 import {
   getScheduleProbeLedger,

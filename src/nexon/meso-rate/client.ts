@@ -20,7 +20,7 @@ import type {
   NexonUnionArtifactResponse,
   NexonUnionRaiderResponse,
 } from '../../types'
-import { maxMesoRateOf } from '../../lib/meso-rate'
+import { maxMesoRateOf } from '../../lib/cashbook/meso-rate'
 import { requestJson } from '../http'
 
 const withOcid = (path: string, ocid: string): string => `${path}?ocid=${encodeURIComponent(ocid)}`

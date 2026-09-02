@@ -1,7 +1,7 @@
 # 디자인 시스템 (Design System)
 
 > **범위**: 디자인 원칙·안티패턴·기본 색 팔레트·시맨틱 색·기본 컴포넌트(카드/버튼/입력)·여러 화면이 공유하는 UI 컴포넌트·공유 레이아웃 패턴·타이포·아이콘. 테마별 토큰 표·런타임 전환은 [features/theme.md](../features/theme.md), 기능 전용 컴포넌트는 각 `features/*.md`.
-> **관련 소스**: `components/`(아토믹 4계층: atoms/molecules/organisms/templates) · `src/theme/theme-vars.ts`·`global.css`·`tailwind.config.js` · `navigation/` · `lib/artwork`.
+> **관련 소스**: `components/`(아토믹 4계층: atoms/molecules/organisms/templates) · `src/theme/theme-vars.ts`·`global.css`·`tailwind.config.js` · `navigation/` · `lib/assets/asset-lookup`.
 > **관련 ADR**: [[ADR-009]] [[ADR-015]] ADR-016 [[ADR-018]] [[ADR-064]] ADR-072 ADR-073 [[ADR-074]] [[ADR-152]]. **관련 문서**: [features/theme.md](../features/theme.md).
 
 ## 디자인 원칙
@@ -187,7 +187,7 @@ default  pill 40 · 버튼 32 · 아이콘 16 · 값 19 · 단위 "인" 12    �
 즐겨찾기: lucide Star, top-1.5 right-1.5. 미선택 text-text-muted 아웃라인 / 선택 fill-primary text-primary
 텍스트: 이름 text-xs font-semibold text-text + 서버 엠블럼(h-3.5), 레벨 text-xs text-text-muted (직업 미표시)
 ```
-정렬: **즐겨찾기(선택) 먼저, 그다음 나머지**, 각 그룹 내부 레벨 내림차순: 즐겨찾기 토글 시 즉시 재배치. `character/basic` 실패 캐릭터는 "?" 플레이스홀더 + 이름·레벨 유지(선택 가능). 단 [[ADR-053]] 이후 이 폴백은 **캐시가 있는 캐릭터에만** 적용된다(캐시도 없고 조회도 실패한 캐릭터는 `access_flag` 를 확인할 길이 없어 목록에 아예 넣지 않는다). 서버 엠블럼은 `lib/artwork`(데이터 `world-emblems.json`) 재사용, world 없거나 미매핑이면 생략. 모달 헤더(제목+설명 `mb-4 space-y-1`), **이 모달은 오버레이 클릭으로 닫히지 않음**(닫기/저장 버튼만, 자체 오버레이라 이 모달에만 적용).
+정렬: **즐겨찾기(선택) 먼저, 그다음 나머지**, 각 그룹 내부 레벨 내림차순: 즐겨찾기 토글 시 즉시 재배치. `character/basic` 실패 캐릭터는 "?" 플레이스홀더 + 이름·레벨 유지(선택 가능). 단 [[ADR-053]] 이후 이 폴백은 **캐시가 있는 캐릭터에만** 적용된다(캐시도 없고 조회도 실패한 캐릭터는 `access_flag` 를 확인할 길이 없어 목록에 아예 넣지 않는다). 서버 엠블럼은 `lib/assets/asset-lookup`(데이터 `world-emblems.json`) 재사용, world 없거나 미매핑이면 생략. 모달 헤더(제목+설명 `mb-4 space-y-1`), **이 모달은 오버레이 클릭으로 닫히지 않음**(닫기/저장 버튼만, 자체 오버레이라 이 모달에만 적용).
 
 **모달 높이와 스크롤포트 (ADR-107, 2026-08-06)**: 카드 높이의 상한은 **안전영역을 뺀 화면**이고, 스크롤포트는 그리드가 아니라 **쓰는 쪽**이 갖는다([[ADR-099]] 가 화면 스크롤에 세운 규칙과 같다. 인디케이터는 콘텐츠가 아니라 스크롤포트 위에 그려지므로, 스크롤포트가 카드 `p-6` 안쪽이면 인디케이터도 24px 안쪽에 뜬다).
 ```
@@ -747,12 +747,12 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 | SVG 를 그리는 컴포넌트 | `import { Svg } from 'lib/nativewind-interop'` |
 | 그라디언트 배경 | `import { LinearGradient } from 'lib/nativewind-interop'` |
 | 애니메이션이 붙는 상자 | `import { AnimatedView } from 'lib/nativewind-interop'` |
-| lucide 아이콘 | `import { Users } from 'lib/icons'` |
+| lucide 아이콘 | `import { Users } from 'components/atoms'` |
 | 커스텀 아이콘 | `import { ProfitIcon } from 'components/atoms/Icon'` |
 
 - **`react-native-svg` 에서 직접 가져와도 되는 것은 자식 도형뿐이다**(`Path`·`Circle`·`Defs` 등).
   그것들은 `className` 을 안 받는다. 뿌리인 `Svg` 는 반드시 `lib/nativewind-interop` 에서.
-- **새 lucide 아이콘은 `lib/icons.ts` 에 먼저 더한다.** 배럴(`from 'lucide-react-native'`)에서 바로
+- **새 lucide 아이콘은 `components/atoms/Icon/lucide.ts` 에 먼저 더한다.** 배럴(`from 'lucide-react-native'`)에서 바로
   가져오면 클래스가 무시되고 번들도 1.8MB 커진다.
 - **아이콘에 `testID` 를 주지 말 것.** lucide 가 그것을 `data-testid` 로 바꿔서 `getByTestId` 가 못
   찾는다. 감싸는 `View` 에 준다.

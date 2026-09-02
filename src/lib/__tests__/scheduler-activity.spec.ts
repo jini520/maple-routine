@@ -1,5 +1,5 @@
 import type { BossContent, DailyContent, SchedulerCharacterState, WeeklyContent } from '../../types'
-import { getSectionPresence, hasCharacterScopeCompletion } from '../scheduler-activity'
+import { getSectionPresence, hasCharacterScopeCompletion } from '../scheduler/scheduler-activity'
 
 function daily(overrides: Partial<DailyContent> = {}): DailyContent {
   return {
@@ -235,7 +235,7 @@ describe('getSectionPresence', () => {
 // 캐는 원재료이므로, **기록에 쓰는 것과 같은 이름·같은 난이도**로 적혀야 한다.
 describe('completedBossKeys ([[ADR-172]])', () => {
   it('ownComplete 인 보스만, 「이름|난이도」로 적는다', () => {
-    const { completedBossKeys } = require('../scheduler-activity') as typeof import('../scheduler-activity')
+    const { completedBossKeys } = require('../scheduler/scheduler-activity') as typeof import('../scheduler/scheduler-activity')
 
     expect(
       completedBossKeys(
@@ -250,7 +250,7 @@ describe('completedBossKeys ([[ADR-172]])', () => {
   })
 
   it('승격된 isComplete 는 안 센다 — 다른 난이도의 완료가 옮겨 붙은 값이다 ([[ADR-032]])', () => {
-    const { completedBossKeys } = require('../scheduler-activity') as typeof import('../scheduler-activity')
+    const { completedBossKeys } = require('../scheduler/scheduler-activity') as typeof import('../scheduler/scheduler-activity')
 
     expect(
       completedBossKeys(
@@ -262,13 +262,13 @@ describe('completedBossKeys ([[ADR-172]])', () => {
   })
 
   it('보스 섹션이 비면 빈 목록이다 — 접속하지 않은 날은 «미완료» 로 읽힌다 ([[ADR-030]])', () => {
-    const { completedBossKeys } = require('../scheduler-activity') as typeof import('../scheduler-activity')
+    const { completedBossKeys } = require('../scheduler/scheduler-activity') as typeof import('../scheduler/scheduler-activity')
 
     expect(completedBossKeys(state({ bossContents: [] }))).toEqual([])
   })
 
   it('toProbeObservation 이 그 목록을 함께 낸다 — 원장이 관측 하나로 둘을 든다', () => {
-    const { toProbeObservation } = require('../scheduler-activity') as typeof import('../scheduler-activity')
+    const { toProbeObservation } = require('../scheduler/scheduler-activity') as typeof import('../scheduler/scheduler-activity')
 
     const observation = toProbeObservation(
       state({ bossContents: [boss({ name: '스우', difficulty: '하드', ownComplete: true })] }),

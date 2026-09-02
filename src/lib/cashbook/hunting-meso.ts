@@ -29,7 +29,7 @@
  * 사용자가 되짚을 방법이 없다. (실제 값으로는 8젠과 30분이 소수를 늘 걷어 가지만, 내림은 그
  * 사실에 기대지 않는다.)
  */
-import type { HuntingGround } from '../types/hunting-grounds'
+import type { HuntingGround } from '../../types/hunting-grounds'
 
 /** 젠 주기 — 분당 8회(사용자 제공). 40마리 맵의 1분은 320마리다. */
 export const SPAWNS_PER_MINUTE = 8

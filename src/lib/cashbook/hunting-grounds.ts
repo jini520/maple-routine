@@ -1,6 +1,6 @@
 /**
  * 사냥터 참조표를 **읽는 자리**([[ADR-175]] 결정 2·6) — 화면이 JSON 을 직접 뒤지지 않게 한다.
- * `lib/spend-catalog.ts` 가 지출 참조표에 하는 일과 같은 자리다.
+ * `lib/cashbook/spend-catalog.ts` 가 지출 참조표에 하는 일과 같은 자리다.
  *
  * 파일 자체는 [[ADR-006]] 대상이라 **사용자가 준 값 그대로**이고, 그 형태는
  * `data/__tests__/hunting-grounds.spec.ts` 가 붙든다. 여기 있는 것은 조회 셋뿐이다.
@@ -11,8 +11,8 @@
  * 안 적는다([[ADR-175]] 결정 2). 그래서 `findHuntingGround` 가 사냥터와 지역을 **함께** 돌려준다 —
  * 부르는 쪽이 지역을 다시 찾게 두면 그 조회가 화면마다 한 벌씩 생긴다.
  */
-import huntingGrounds from '../data/hunting-grounds.json'
-import type { HuntingGround, HuntingGroundTable, HuntingRegion } from '../types/hunting-grounds'
+import huntingGrounds from '../../data/hunting-grounds.json'
+import type { HuntingGround, HuntingGroundTable, HuntingRegion } from '../../types/hunting-grounds'
 
 /** 참조표 전체 — **차례는 파일에 적힌 그대로**다(사용자가 매긴 순서라 정렬하지 않는다). */
 export const HUNTING_REGIONS: readonly HuntingRegion[] = (huntingGrounds as HuntingGroundTable)

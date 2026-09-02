@@ -1,6 +1,6 @@
 /**
  * 이 앱이 쓰는 lucide 아이콘 — **`className` 이 풀리도록 등록한 뒤** 다시 내보낸다
- * (등록의 원리와 매핑 근거는 `nativewind-interop.ts` 의 `withIconInterop`).
+ * (등록의 원리와 매핑 근거는 `lib/nativewind-interop.ts` 의 `withIconInterop`).
  *
  * ## 왜 `lucide-react-native` 인가
  *
@@ -92,7 +92,7 @@ import Wallet from 'lucide-react-native/icons/wallet'
 import Wrench from 'lucide-react-native/icons/wrench'
 import X from 'lucide-react-native/icons/x'
 
-import { withIconInterop } from './nativewind-interop'
+import { withIconInterop } from '../../../lib/nativewind-interop'
 
 /** 실패 토스트 — `Toast`(error). 웹의 `AlertCircle` 은 옛 별칭이고 실물이 `circle-alert` 다. */
 export const AlertCircleIcon = withIconInterop(CircleAlert)

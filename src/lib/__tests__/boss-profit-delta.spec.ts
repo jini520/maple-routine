@@ -3,7 +3,7 @@ import {
   formatProfitDeltaBody,
   formatProfitDeltaLabel,
   getComparisonPeriodKeys,
-} from '../boss-profit-delta'
+} from '../boss/boss-profit-delta'
 
 describe('computeProfitDelta', () => {
   it('늘었으면 up 이고 퍼센트는 절댓값이다', () => {

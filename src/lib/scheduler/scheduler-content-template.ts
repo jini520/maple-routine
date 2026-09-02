@@ -1,4 +1,4 @@
-import schedulerContentTemplate from '../data/scheduler-content-template.json'
+import schedulerContentTemplate from '../../data/scheduler-content-template.json'
 import type { SchedulerContentTemplateEntry } from './manual-content-merge'
 
 // scheduler-content-template.json의 타입 캐스팅과 일간/주간 이름 셋을 한곳에 모은다 —

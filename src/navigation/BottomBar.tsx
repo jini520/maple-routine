@@ -68,20 +68,22 @@ import {
 } from 'react-native'
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 
-import { GearIcon, ProfitIcon, Text } from '../components/atoms'
-import { BAR_LIFT, resolveBottomBarMetrics } from '../lib/bottom-bar-metrics'
-import { useBottomSafeAreaPx } from '../lib/safe-area'
 import {
   ArrowLeftIcon,
   CalendarCheckIcon,
+  CalendarIcon,
+  GearIcon,
   LayoutDashboardIcon,
   ListChecksIcon,
-  CalendarIcon,
+  ProfitIcon,
   SlidersHorizontalIcon,
   SwordsIcon,
+  Text,
   WalletIcon,
   WrenchIcon,
-} from '../lib/icons'
+} from '../components/atoms'
+import { BAR_LIFT, resolveBottomBarMetrics } from '../lib/bottom-bar-metrics'
+import { useBottomSafeAreaPx } from '../lib/safe-area'
 import { useThemeAppearance } from '../theme/context'
 import { resolveBarColors } from './bar-colors'
 import {

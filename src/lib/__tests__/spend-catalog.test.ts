@@ -9,7 +9,7 @@ import {
   spendGroupsOf,
   tariffMesoOf,
   withTariffMeso,
-} from '../spend-catalog'
+} from '../cashbook/spend-catalog'
 
 describe('spendGroupsOf — 갈래 → 묶음들', () => {
   it('사용자가 적어 준 묶음 이름 그대로 묶는다 — 앱이 다시 묶지 않는다', () => {

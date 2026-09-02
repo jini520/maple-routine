@@ -40,7 +40,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
 })
 
 import { flattenStyle, renderOverlay, 기본테마 } from '../../../__tests__/render-atom'
-import { getThemeDefinition } from '../../../../lib/theme-registry'
+import { getThemeDefinition } from '../../../../lib/theme/theme-registry'
 import {
   __resetThemeAppearanceForTest,
   setThemeAppearance,

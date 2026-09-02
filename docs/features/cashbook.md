@@ -52,15 +52,15 @@
 | 조각 | 파일 | 하는 일 |
 |---|---|---|
 | 격자 계산 | `lib/calendar-month.ts` | 달 → ‘몇 주 × 7칸’ · **주 → 이레**(`buildResetWeek`·`resetWeekStartOf`). 각 칸의 KST 날짜 키, 이동·라벨, 열지도 단계(`heatLevel`·`monthIncomeMax`), **기간 합계**(`periodTotals`. [[ADR-184]]) |
-| 기간 라벨 | `lib/boss-profit-period.ts` 의 `formatBossProfitPeriodLabel` | **보스 수익 탭과 같은 함수**다([[ADR-170]] 정정 3). 가계부가 자기 라벨을 갖지 않는다 |
-| 금액 표기 | `lib/meso-compact.ts` | 좁은 칸용 축약(‘54.74억’·‘3,908만’). `formatMesoUnits` 와 목적이 다르다 |
+| 기간 라벨 | `lib/boss/boss-profit-period.ts` 의 `formatBossProfitPeriodLabel` | **보스 수익 탭과 같은 함수**다([[ADR-170]] 정정 3). 가계부가 자기 라벨을 갖지 않는다 |
+| 금액 표기 | `lib/cashbook/meso-compact.ts` | 좁은 칸용 축약(‘54.74억’·‘3,908만’). `formatMesoUnits` 와 목적이 다르다 |
 | 격자 표시 | `components/molecules/CalendarMonth/` | 받은 주 배열을 그린다. **판정을 하지 않는다**. 주 하나만 넘기면 그대로 주간 격자다 |
 | 기록 저장 | `storage/income.ts` · `storage/spend.ts` | 손입력 둘. 넣기와 **날짜 범위** 조회 |
-| 참조표 읽기 | `lib/spend-catalog.ts` | 종류 → 묶음 → 항목 · 환산 둘(메포→메소 · 관세) |
-| 사냥터 참조표 | `src/data/hunting-grounds.json` + `lib/hunting-grounds.ts` | 지역 21 · 사냥터 408([[ADR-175]] 결정 2). 읽는 쪽이 쓰는 것은 **다섯**이다. 지역의 몬스터 레벨 범위(`monsterLevelRangeOf`. 참조표의 추천 레벨과 **다르다**) · 캐릭터 레벨로 지역 거르기(`huntingRegionsForLevel`) · 사냥터 줄 세우기(`huntingGroundsFor`·`levelGapOf`) · 지역의 사냥터 목록 · 이름으로 되짚기(`findHuntingGround`. 이름이 전역 유일이라 지역이 따라온다) |
-| 사냥 메소 계산 | `lib/hunting-meso.ts` | ‘어디서 · 얼마나 · 무슨 버프로’ → 메소. 젠·메소 계수·**레벨 차이 페널티 표 둘**·효율·아이템 증가율이 전부 여기 있다([[ADR-175]] 결정 3·4). 화면은 이 함수 하나만 부른다 |
-| 캐릭터 메소 획득량 | `lib/meso-rate.ts` + `nexon/meso-rate` + `storage/meso-rate-cache` | 캐릭터에 박힌 메획을 **최대 세팅**으로 낸다([[ADR-177]]). 소스 다섯(장비 잠재·에디셔널 · 어빌리티 · 심볼 · 유니온 공격대 · 유니온 아티팩트)을 **직접 파싱**하고 `character/stat` 환산값은 **안 쓴다**(현재 프리셋이고 일시 버프가 섞인다). 장비는 **잠재+에디셔널 합에 100% 캡**을 **프리셋 단위**로 건다 |
-| 포스 아이콘 | `lib/artwork.ts` + `src/assets/force/` | `forceType`(`arcane`·`authentic`) → 그림. 에셋 그룹 `force`([[ADR-129]]) |
+| 참조표 읽기 | `lib/cashbook/spend-catalog.ts` | 종류 → 묶음 → 항목 · 환산 둘(메포→메소 · 관세) |
+| 사냥터 참조표 | `src/data/hunting-grounds.json` + `lib/cashbook/hunting-grounds.ts` | 지역 21 · 사냥터 408([[ADR-175]] 결정 2). 읽는 쪽이 쓰는 것은 **다섯**이다. 지역의 몬스터 레벨 범위(`monsterLevelRangeOf`. 참조표의 추천 레벨과 **다르다**) · 캐릭터 레벨로 지역 거르기(`huntingRegionsForLevel`) · 사냥터 줄 세우기(`huntingGroundsFor`·`levelGapOf`) · 지역의 사냥터 목록 · 이름으로 되짚기(`findHuntingGround`. 이름이 전역 유일이라 지역이 따라온다) |
+| 사냥 메소 계산 | `lib/cashbook/hunting-meso.ts` | ‘어디서 · 얼마나 · 무슨 버프로’ → 메소. 젠·메소 계수·**레벨 차이 페널티 표 둘**·효율·아이템 증가율이 전부 여기 있다([[ADR-175]] 결정 3·4). 화면은 이 함수 하나만 부른다 |
+| 캐릭터 메소 획득량 | `lib/cashbook/meso-rate.ts` + `nexon/meso-rate` + `storage/meso-rate-cache` | 캐릭터에 박힌 메획을 **최대 세팅**으로 낸다([[ADR-177]]). 소스 다섯(장비 잠재·에디셔널 · 어빌리티 · 심볼 · 유니온 공격대 · 유니온 아티팩트)을 **직접 파싱**하고 `character/stat` 환산값은 **안 쓴다**(현재 프리셋이고 일시 버프가 섞인다). 장비는 **잠재+에디셔널 합에 100% 캡**을 **프리셋 단위**로 건다 |
+| 포스 아이콘 | `lib/assets/asset-lookup.ts` + `src/assets/force/` | `forceType`(`arcane`·`authentic`) → 그림. 에셋 그룹 `force`([[ADR-129]]) |
 | 오케스트레이션 | `features/cashbook/records.ts` | 행의 신원(`id`·`recordedAt`) · 시세 기억 · **네 원천을 하루로 접기** · 줄의 표기(`recordTitleOf`·`recordCountLabelOf`) · **그날 합계**(`dayTotalsOf`) |
 | 보스 날짜 캐기 | `features/boss-profit/defeat-dates.ts` | 날짜별 응답을 훑어 ‘뒤집힌 날’을 찾아 `defeated_on` 을 채운다([[ADR-172]]) |
 | 입력 | `app/cashbook/SpendSheet.tsx` · `IncomeSheet.tsx` · `components/organisms/SpeedDial/`(`speed-dial-motion` 움직임 · `speed-dial-metrics` 치수) | 떠 있는 ＋ → 종류 둘 → 시트 |
@@ -80,7 +80,7 @@
 
 - **월간 격자의 축은 달력 월**이고 **주는 일요일에 시작**한다([[ADR-169]] 결정 4·8).
 - **주간 보기의 축은 목요일 리셋 주**다([[ADR-170]] 결정 10 · [[ADR-169]] 정정 2 · [[ADR-166]] 정정 3).
-  보스 수익 탭과 **같은 주**이고, 기간 이동은 `lib/boss-profit-period.ts` 의 `getAdjacentPeriodKey` 를
+  보스 수익 탭과 **같은 주**이고, 기간 이동은 `lib/boss/boss-profit-period.ts` 의 `getAdjacentPeriodKey` 를
   그대로 부른다. 그래서 **월간 격자의 한 줄 ≠ 주간의 한 주**이고, 그 어긋남은 월간 격자의
   **목요일 열 세로 점선**(`calendar-reset-divider`)이 드러낸다. 주간에는 안 그린다(격자 자체가 한 주라
   자를 것이 없다).
@@ -248,7 +248,7 @@
   콤마 세 자리는 만·억·조와 자리가 안 맞아 팔억인지 팔십억인지 눈으로 다시 세게 만든다.
   **값은 하나도 안 깎는다** — 이 자리가 곧 저장될 총액이라 뭉개면 화면과 저장이 갈린다.
   서식은 셋: 조·억·만을 쓰고 만 미만은 단위 없이 붙이고(`1억 2345만 6789`), 천 단위로 떨어지면
-  접고(`5천만`), 콤마는 조 자리에만. 셈은 `lib/drop-price.ts` 의 `formatMesoUnits` 한 벌이 한다.
+  접고(`5천만`), 콤마는 조 자리에만. 셈은 `lib/drop/drop-price.ts` 의 `formatMesoUnits` 한 벌이 한다.
 - **큰 숫자 밑에 힌트 줄이 없다**(결정 9가 [[ADR-173]] 결정 2를 폐기). 억/만 환산은 큰 숫자가
   직접 하고, 실제로 내는 메포와 ‘시세를 넣어야…’ 같은 **막힌 이유는 없앴다**(사용자 지정
   2026-09-02). 막힌 이유의 몫은 **시세 줄의 빨간 `*`와 꺼진 저장 버튼**이 받는다.
@@ -579,7 +579,7 @@ SpendSheet    껍데기: 시트 상자 · 종류 하나 · 스크롤 키
   타일은 **네모난 초상(44px) + 그 위 왼쪽 아래의 난이도 한 글자**이고 **`weekly-bosses.json` 정규
   순서 → 난이도 → 보스명** 순으로 놓인다([[ADR-186]], 2026-08-30: 앱의 네 자리가 한 순서를 쓴다.
   ~~큰 것부터~~ 는 [[ADR-172]] 정정 1 에서 죽은 한 줄이다). 정렬은 공용 `compareBossOrder`
-  (`lib/boss-matching`)가 하고, 정렬에만 쓰이던 마리당 `payoutMeso` 는 함께 사라졌다.
+  (`lib/boss/boss-matching`)가 하고, 정렬에만 쓰이던 마리당 `payoutMeso` 는 함께 사라졌다.
   **이름은 없다**(정정 3). 초상이 그것을 대신하고, 읽어 주는 이름은 초상이 ‘난이도 + 보스’로 제공한다.
   그림 둘(`BossPortrait`·난이도 배지)은 보스 수익 탭의 행이 쓰는 그것 그대로다. 같은 보스가
   두 화면에서 다르게 생기면 안 된다. 갈리는 것 둘: 초상이 **네모**이고(`shape="square"`, 기본은

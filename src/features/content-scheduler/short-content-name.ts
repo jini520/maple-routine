@@ -30,7 +30,7 @@ import {
   matchDailyQuestRegion,
   stripDailyQuestPrefix,
   stripWeeklyQuestPrefix,
-} from '../../lib/quest-region-matching'
+} from '../../lib/scheduler/quest-region-matching'
 
 export function shortDailyContentName(name: string): string {
   const stripped = stripDailyQuestPrefix(name)

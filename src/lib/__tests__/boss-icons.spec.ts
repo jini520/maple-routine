@@ -1,6 +1,6 @@
 
 import { assetUri } from '../../assets/__tests__/asset-uri'
-import { getBossPortraitCrop, getBossPortraitUrl } from '../artwork'
+import { getBossPortraitCrop, getBossPortraitUrl } from '../assets/asset-lookup'
 
 describe('getBossPortraitUrl', () => {
   it('portraitSlug가 null이면 null을 반환한다', () => {

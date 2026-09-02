@@ -44,13 +44,13 @@
 
 import { Image, View } from 'react-native'
 
-import { worldEmblemUrl } from '../../../lib/artwork'
+import { worldEmblemUrl } from '../../../lib/assets/asset-lookup'
 
 import { ProgressBar, Text } from '../../../components/atoms'
 import { faceCropStyle } from '../../../lib/face-crop'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import type { WidgetHeight } from '../../../lib/widget-layout'
+import type { WidgetHeight } from '../../../lib/today/widget-layout'
 import type { RepresentativeView } from '../view-model'
 import type { WidgetProps } from './types'
 

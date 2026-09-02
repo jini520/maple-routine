@@ -17,8 +17,8 @@
  * `boss-crystal-prices` 의 파티 분배), 게임이 어느 쪽으로 자르는지는 아직 확인 안 됐다
  * ([[ADR-166]] 열린 질문 — 1~수 메소 차이라 급하지 않다).
  */
-import spendCatalog from '../data/spend-catalog.json'
-import type { SpendCategory } from '../storage/spend'
+import spendCatalog from '../../data/spend-catalog.json'
+import type { SpendCategory } from '../../storage/spend'
 
 export interface SpendCatalogItem {
   readonly category: string

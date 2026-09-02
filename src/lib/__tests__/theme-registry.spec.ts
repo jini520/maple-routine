@@ -8,7 +8,7 @@ import {
   getThemeDefinition,
   groupThemesByCategory,
   isThemeName,
-} from '../theme-registry'
+} from '../theme/theme-registry'
 import type { ThemeDefinition, ThemeName } from '../../types/theme'
 
 const NAMES = Object.keys(jobThemes) as ThemeName[]

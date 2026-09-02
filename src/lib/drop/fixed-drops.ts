@@ -1,4 +1,4 @@
-import type { FixedDropItem } from '../types/drops'
+import type { FixedDropItem } from '../../types/drops'
 
 // 고정 드롭 표시용 로직(순수 함수). URL 해석은 컴포넌트가 item-icons에서 처리한다 — 여기선
 // "무슨 아이콘을 몇 개로 보여줄지"만 결정한다.

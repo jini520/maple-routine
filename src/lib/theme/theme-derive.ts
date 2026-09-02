@@ -9,14 +9,14 @@
  * 사용자 확인을 거쳐 `job-themes.json` 에 커밋해야 하고, 런타임 계산은 그 절차를 없앤다.
  */
 
-import type { ThemeMode, ThemeTokens } from '../types/theme'
-import { contrastHex, hexToOklch, mixOklab, oklchToHex, withLightness } from './color'
+import type { ThemeMode, ThemeTokens } from '../../types/theme'
+import { contrastHex, hexToOklch, mixOklab, oklchToHex, withLightness } from '../color'
 
 /**
  * 38토큰 스키마는 `types/theme.ts` 가 단일 진실 공급원이다(프로젝트 규칙: 타입은 `types/`).
  * 여기서는 파생 규칙만 다루고, `DerivedTheme` 은 그 스키마의 별칭으로 남겨 호출부 문맥을 살린다.
  */
-export type { ThemeMode } from '../types/theme'
+export type { ThemeMode } from '../../types/theme'
 export type DerivedTheme = ThemeTokens
 
 export const THEME_TOKEN_KEYS = [

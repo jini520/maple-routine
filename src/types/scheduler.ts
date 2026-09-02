@@ -42,7 +42,7 @@ export interface SchedulerCharacterState {
   bossContents: BossContent[]
   // ADR-030: 캐릭터가 해당 리셋 주기 이후 게임에 접속하지 않으면 이 섹션이 통째로 비거나
   // 없는 채로 응답이 온다. wire의 daily_contents/weekly_contents가 비었거나 없었는지,
-  // boss_contents에 그 cycle 항목이 하나도 없었는지를 그대로 보존해 병합 단계(lib/scheduler-merge)가
+  // boss_contents에 그 cycle 항목이 하나도 없었는지를 그대로 보존해 병합 단계(lib/scheduler/scheduler-merge)가
   // "지금 이 섹션을 신뢰할 수 있는지"를 판단하는 데 쓴다.
   isDailyStale: boolean
   isWeeklyStale: boolean
@@ -59,7 +59,7 @@ export interface SharedProgressEntry {
   nowCount: number
   maxCount: number
   questState: 0 | 1 | 2 | null
-  lastUpdatedBucket: string // 리셋 경계 판단용(주간은 lib/boss-profit-period의 periodKey, 일간은 lib/reset-clock의 getCurrentKstDateKey)
+  lastUpdatedBucket: string // 리셋 경계 판단용(주간은 lib/boss/boss-profit-period 의 periodKey, 일간은 lib/scheduler/reset-clock 의 getCurrentKstDateKey)
 }
 
 // ADR-035 결정 6: 멤버십(+사용자 입력 max_count)만 저장한다 — nowCount/questState/isComplete 같은
@@ -68,7 +68,7 @@ export interface SharedProgressEntry {
 // 'daily' | 'weekly'로 세분한다(표시 시점 추론 없음).
 //
 // 선언이 `storage/manual-tracked-content` 가 아니라 여기 있는 이유: 그 값을 병합하는 순수 함수
-// (`lib/manual-boss-merge`·`lib/manual-content-merge`·`lib/boss-matching`)가 core 로 오면서
+// (`lib/boss/manual-boss-merge`·`lib/scheduler/manual-content-merge`·`lib/boss/boss-matching`)가 core 로 오면서
 // core → app 방향 참조가 생기기 때문이다([[ADR-128]] 결정 3). 저장 모듈은 이 타입을 그대로
 // 재-export 하므로 기존 import 경로는 전부 그대로 쓴다.
 export interface ManualTrackedItem {

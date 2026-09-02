@@ -1,5 +1,5 @@
 import type { SchedulerCharacterState, SharedProgressEntry } from '../../types'
-import { mergeSchedulerState } from '../scheduler-merge'
+import { mergeSchedulerState } from '../scheduler/scheduler-merge'
 
 function baseState(overrides: Partial<SchedulerCharacterState> = {}): SchedulerCharacterState {
   return {

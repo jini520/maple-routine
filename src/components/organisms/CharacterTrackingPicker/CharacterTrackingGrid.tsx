@@ -30,13 +30,12 @@
 import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
-import { worldEmblemUrl } from '../../../lib/artwork'
+import { worldEmblemUrl } from '../../../lib/assets/asset-lookup'
 import type { CharacterPickerEntry } from '../../../types'
 
 import { naturalAspectStyle } from '../../../lib/image-aspect'
-import { BanIcon, StarIcon } from '../../../lib/icons'
+import { BanIcon, StarIcon, Text } from '../../atoms'
 import { useThemeAppearance } from '../../../theme/context'
-import { Text } from '../../atoms'
 
 // [[ADR-015]]: character/basic 이 주는 300x300 전신 룩에서 얼굴만 보이도록 확대·정렬해 자른다.
 // 헤어스타일/포즈에 따라 완벽히 얼굴만 나오지 않을 수 있는 근사치다(ADR-015 미확정 항목).

@@ -1,48 +1,32 @@
+import { BOSS_PORTRAIT_ASSETS } from '../../assets/generated/bosses'
+import { DAILY_QUEST_BACKGROUND_ASSETS } from '../../assets/generated/maps'
+import { DAILY_QUEST_ICON_ASSETS } from '../../assets/generated/map-icons'
+import { FORCE_ASSETS } from '../../assets/generated/force'
+import type { ForceType } from '../../types/hunting-grounds'
+import { ITEM_ASSETS } from '../../assets/generated/items'
+import type { ImageAssetRef } from '../../types/image-asset'
+import type { ImageCrop } from '../image-crop'
+import { THEME_BACKGROUND_ASSETS } from '../../assets/generated/themes'
+import { WORLD_EMBLEM_ASSETS } from '../../assets/generated/worlds'
+import bossCropsData from '../../data/boss-portrait-crops.json'
+import bossIconCropsData from '../../data/boss-portrait-icon-crops.json'
 /**
- * 키로 **번들 에셋을 찾는다.** 앱의 그림이 화면에 붙는 유일한 길이다.
+ * 이름표를 번들 에셋으로 바꾼다. 앱의 그림이 화면에 붙는 유일한 길이다.
  *
- * 아홉 자리에 흩어져 있던 것을 모았다. 전부 같은 모양이었다.
+ * 전부 같은 모양이다. `키 → (표를 한 번 거쳐) ASSETS[…] ?? null`.
  *
- *     키 → (표를 한 번 거쳐) ASSETS[…] ?? null
+ * **조회 쪽을 NFC 로 정규화한다.** macOS 파일시스템은 한글 파일명을 NFD 로 저장하는데 소스의
+ * 문자열 리터럴은 NFC 라, 육안으로 같아 보여도 키가 안 맞는다. 목록 쪽은 생성기가 맞춘다.
  *
- * 갈리는 것은 **중간 표가 있는지, 그 표가 어디 있는지**뿐이라 파일을 아홉으로 둘 이유가 없었다.
- * 아래 세 규칙도 각 파일에 따로 적혀 서로를 참조하고 있었다.
+ * **없으면 `null` 이고 화면이 비운다.** 비슷한 그림을 갖다 붙이면 틀린 것을 그리는 셈이다.
  *
- * ## 목록은 커밋 시점에 만들어져 있다
- *
- * `assets/generated/*` 는 빌드가 아니라 커밋 때 생성된다([[ADR-129]]). 확장자가 섞여 있어
- * (webp/png/jpg) 키는 파일명 전체가 아니라 **확장자를 뗀 슬러그**다.
- *
- * ## 조회 쪽을 NFC 로 정규화한다
- *
- * macOS 파일시스템은 한글 파일명을 NFD(분해형)로 저장하지만 소스의 문자열 리터럴은 보통
- * NFC(완성형)라, 육안으로 같아 보여도 안 맞는다. 목록 쪽 정규화는 생성기가 한다.
- *
- * ## 없으면 `null` 이고, 화면이 비운다
- *
- * 비슷한 그림을 갖다 붙이지 않는다 — 그것은 **틀린 것을 그리는** 일이다([[ADR-101]] 결정 1 ·
- * [[ADR-170]] 정정 16).
+ * @see [[ADR-129]]. 목록(`assets/generated/*`)은 빌드가 아니라 커밋 시점에 생성된다.
+ * @see [[ADR-101]] 결정 1. 모르는 것을 그리지 않는다.
  */
-import bossRingBoxesData from '../data/boss-ring-boxes.json'
-import bossCropsData from '../data/boss-portrait-crops.json'
-import bossIconCropsData from '../data/boss-portrait-icon-crops.json'
-import dailyQuestCropsData from '../data/daily-quest-region-crops.json'
-import itemIconsData from '../data/item-icons.json'
-import worldEmblemsData from '../data/world-emblems.json'
-
-import { BOSS_PORTRAIT_ASSETS } from '../assets/generated/bosses'
-import { DAILY_QUEST_BACKGROUND_ASSETS } from '../assets/generated/maps'
-import { DAILY_QUEST_ICON_ASSETS } from '../assets/generated/map-icons'
-import { DROP_EFFECT_ASSETS } from '../assets/generated/drop-effect'
-import { FORCE_ASSETS } from '../assets/generated/force'
-import { ITEM_ASSETS } from '../assets/generated/items'
-import { THEME_BACKGROUND_ASSETS } from '../assets/generated/themes'
-import { WORLD_EMBLEM_ASSETS } from '../assets/generated/worlds'
-
-import type { DropEffectPhase } from './drop-effect-layout'
-import type { ImageCrop } from './image-crop'
-import type { ForceType } from '../types/hunting-grounds'
-import type { ImageAssetRef } from '../types/image-asset'
+import bossRingBoxesData from '../../data/boss-ring-boxes.json'
+import dailyQuestCropsData from '../../data/daily-quest-region-crops.json'
+import itemIconsData from '../../data/item-icons.json'
+import worldEmblemsData from '../../data/world-emblems.json'
 
 type AssetMap = Record<string, ImageAssetRef>
 
@@ -54,9 +38,10 @@ function bySlug(assets: AssetMap, slug: string | null): ImageAssetRef | null {
 // ── 보스 초상 ────────────────────────────────────────────────────────────────────────
 
 /**
- * 크롭 표가 **둘**이다([[ADR-018]] 결정 9). 카드 bleed 는 큰 사각형이고 원형 아이콘은 작아, 같은
- * 그림이라도 잘 보이는 자리가 다르다. 값은 사용자가 눈으로 맞춘 것이라 AI 가 채우지 않는다
- * ([[ADR-006]] 과 같은 원칙).
+ * 같은 그림이라도 카드 bleed 와 원형 아이콘은 잘 보이는 자리가 달라 크롭 표가 둘이다. 값은
+ * 사용자가 눈으로 맞춘 것이라 AI 가 채우지 않는다.
+ *
+ * @see [[ADR-018]] 결정 9 · [[ADR-006]]
  */
 const BOSS_PORTRAIT_CROPS = bossCropsData as Record<string, ImageCrop>
 const BOSS_PORTRAIT_ICON_CROPS = bossIconCropsData as Record<string, ImageCrop>
@@ -97,17 +82,14 @@ export function getDailyQuestRegionIconUrl(backgroundSlug: string | null): Image
 
 // ── 테마 배경 ────────────────────────────────────────────────────────────────────────
 
-/**
- * `job-themes.json` 은 번들 경로가 아니라 **슬러그**만 적는다([[ADR-088]] 결정 3) — 파일을
- * `assets/themes/` 에 넣고 슬러그를 적으면 붙는다. 파일이 없으면 배경만 사라지고 테마는 산다.
- */
+/** 파일이 없으면 배경만 사라지고 테마는 산다. @see [[ADR-088]] 결정 3 */
 export function getThemeBackgroundUrl(slug: string): ImageAssetRef | null {
   return bySlug(THEME_BACKGROUND_ASSETS, slug)
 }
 
 // ── 월드 엠블럼 ──────────────────────────────────────────────────────────────────────
 
-/** 월드 이름 → 엠블럼 파일의 basename. **여기서는 NFC 를 안 건다** — 표의 키가 소스 리터럴이다. */
+/** 월드 이름 → 엠블럼 파일의 basename. **여기서는 NFC 를 안 건다.** 표의 키가 소스 리터럴이다. */
 const basenameByWorld = worldEmblemsData as Record<string, string>
 
 export function worldEmblemUrl(world: string): ImageAssetRef | null {
@@ -117,7 +99,7 @@ export function worldEmblemUrl(world: string): ImageAssetRef | null {
   return WORLD_EMBLEM_ASSETS[basename] ?? null
 }
 
-/** 판정을 화면이 아니라 여기가 한다([[ADR-031]] 결정 3) — 이 표가 월드를 아는 유일한 자리다. */
+/** 이 표가 월드를 아는 유일한 자리라 판정도 여기서 한다. @see [[ADR-031]] 결정 3 */
 export function isChallengersWorld(world: string): boolean {
   return basenameByWorld[world] === 'challengers'
 }
@@ -134,17 +116,13 @@ const FORCE_SLUGS: Record<ForceType, string> = {
   authentic: 'authentic-force',
 }
 
-/** 없으면 `null` 이고 **배지는 글자만으로 선다**. */
 export function forceIconOf(forceType: ForceType): ImageAssetRef | null {
   return FORCE_ASSETS[FORCE_SLUGS[forceType]] ?? null
 }
 
 // ── 아이템 아이콘 ────────────────────────────────────────────────────────────────────
 
-/**
- * 이름에서 파일명을 **계산하지 않는다** — 표에서 조회하고 없으면 폴백이다([[ADR-011]] 결정 6 ·
- * [[ADR-038]] 결정 4). 반지도 링 접미사 휴리스틱 대신 `iconFile` 값을 직접 쓴다.
- */
+/** 이름에서 파일명을 계산하지 않고 표에서 찾는다. @see [[ADR-011]] 결정 6 · [[ADR-038]] 결정 4 */
 interface ItemIconEntry {
   name: string
   iconFile?: string
@@ -155,7 +133,7 @@ type IconMapping = string | Record<string, string>
 
 const iconByName: Record<string, IconMapping> = {}
 
-// 반지를 먼저 넣고 `item-icons` 가 덮어써 우선한다 — 「생명의 연마석」은 반지 표에선 `iconFile` 이
+// 반지를 먼저 넣고 `item-icons` 가 덮어써 우선한다. `생명의 연마석` 은 반지 표에선 `iconFile` 이
 // null 이고 `item-icons` 의 `whetstone_life.png` 가 실제 아이콘이라 후자가 이겨야 한다.
 for (const box of bossRingBoxesData.boxes) {
   for (const ring of box.itemProbabilities) {
@@ -196,13 +174,13 @@ export function getItemIconUrlByFile(fileName: string): ImageAssetRef | null {
 // ── 지출 타일 ────────────────────────────────────────────────────────────────────────
 
 /**
- * 지출 목록의 타일 그림([[ADR-170]] 정정 16). 키는 **타일에 적히는 이름**(카탈로그의 `base ?? name`)
- * 이다. 카탈로그가 사용자 데이터라([[ADR-006]]) 이름이 바뀌면 이 표도 손봐야 하고, 안 고치면
- * 그림만 조용히 사라진다 — 그 자리를 `SpendSheet.test` 가 붙든다.
+ * 키가 **타일에 적히는 이름**이다(카탈로그의 `base ?? name`). 카탈로그를 사용자가 고치면 이 표도
+ * 함께 고쳐야 하고, 안 고치면 그림만 조용히 사라진다. `SpendSheet.test` 가 그 자리를 붙든다.
  *
- * 원천이 둘이다. 대부분은 아이템 그림이지만 **에픽던전 셋은 지역 아이콘**이라 일일 퀘스트 화면과
- * 같은 그림을 쓴다(복사해 두 벌로 두면 한쪽만 갈린다). 두 생성물의 키 모양이 달라서
- * (파일명 vs 슬러그) 표를 둘로 나눠 그 차이를 이름으로 드러낸다.
+ * 표가 둘인 것은 원천이 둘이라서다. 에픽던전 셋만 지역 아이콘을 쓰는데(일일 퀘스트 화면과 같은
+ * 그림이다) 두 생성물의 키 모양이 달라 파일명과 슬러그가 섞이면 안 된다.
+ *
+ * @see [[ADR-170]] 정정 16
  */
 const ITEM_ICON_BY_LABEL: Record<string, string> = {
   '몬스터 파크': 'monster_park_ticket.webp',
@@ -213,7 +191,7 @@ const ITEM_ICON_BY_LABEL: Record<string, string> = {
   '블루베리 농장': 'blueberry_farm_ticket.webp',
   '솔 에르다': 'sole_1000.webp',
   '블랙 서큘레이터': 'black_circulator.webp',
-  미호로이드: 'mihoroid.webp',
+  '미호로이드': 'mihoroid.webp',
   'VIP 사우나': 'vip_sauna_ticket.webp',
   '닉네임 변경': 'npc_mr_newname.webp',
   '세이람의 영약': 'seiram_elixir.webp',
@@ -223,17 +201,16 @@ const ITEM_ICON_BY_LABEL: Record<string, string> = {
 }
 
 const MAP_ICON_BY_LABEL: Record<string, string> = {
-  하이마운틴: 'highMountain',
+  '하이마운틴': 'highMountain',
   '앵글러 컴퍼니': 'anglerCompany',
-  악몽선경: 'nightmareParadise',
+  '악몽선경': 'nightmareParadise',
 }
 
 /**
- * 그림 하나 — **어디에 서는지까지** 든다.
+ * 그림과 **서는 자리**를 함께 든다. `beside` 는 이름 바로 옆이고 아니면 타일 왼쪽 끝이다.
  *
- * `beside` 는 이름 바로 옆이다(아니면 타일 왼쪽 끝). 에픽던전 셋만 그쪽이고 그것은 사용자가 자리를
- * 그렇게 지정했기 때문이다(2026-08-28). 지금은 「지역 아이콘 = 이름 옆」이 우연히 일치하지만 그
- * 둘은 다른 이야기라 **자리를 표가 직접 말한다.**
+ * 지금은 `지역 아이콘이면 이름 옆` 이 우연히 일치하지만 그 둘은 다른 이야기라, 자리를 표가 아니라
+ * 이 값이 직접 말한다(사용자 지정 2026-08-28).
  */
 export interface SpendIcon {
   readonly ref: ImageAssetRef
@@ -255,12 +232,3 @@ export function spendIconOf(label: string): SpendIcon | null {
 
   return null
 }
-
-// ── 드랍 연출 ────────────────────────────────────────────────────────────────────────
-
-/**
- * 고가 아이템 드롭 연출 프레임([[ADR-038]]). **숫자 순으로 정렬돼 있다** — 파일명 렉시코 정렬은
- * `10 < 2` 라 틀리는데, 그 정렬을 생성기가 하므로 여기서 다시 안 한다.
- */
-export const DROP_EFFECT_FRAMES: Record<DropEffectPhase | 'screen', ImageAssetRef[]> =
-  DROP_EFFECT_ASSETS

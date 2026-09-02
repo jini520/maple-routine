@@ -38,7 +38,7 @@
 // ⑤ `animate-spin` → Reanimated CSS 애니메이션(`lib/animation.ts`). step 4 가 화면 안 상수로 두며
 //    *"보스 스케줄러가 붙는 step 5 에서 둘이 된다"* 고 적어 둔 자리라, 여기서 `lib/` 로 올렸다
 //    ([[ADR-094]] 결정 1).
-import { isBossBlocked } from '../../lib/required-level'
+import { isBossBlocked } from '../../lib/scheduler/required-level'
 import { useEffect, useState } from 'react'
 import { Pressable, RefreshControl, View } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
@@ -60,12 +60,19 @@ import { formatSyncedAt } from '../../features/schedule-sync/format'
 import { useScheduleSyncErrorToast } from '../../features/schedule-sync/use-sync-error-toast'
 import { useToastStore } from '../../features/toast/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
-import { getBossPortraitCrop, getBossPortraitUrl, isChallengersWorld } from '../../lib/artwork'
+import { getBossPortraitCrop, getBossPortraitUrl, isChallengersWorld } from '../../lib/assets/asset-lookup'
 import type { ImageCrop } from '../../lib/image-crop'
-import { getSupportedDifficulties, type MatchedBoss } from '../../lib/boss-matching'
-import { getMaxPartySize } from '../../lib/boss-crystal-prices'
+import { getSupportedDifficulties, type MatchedBoss } from '../../lib/boss/boss-matching'
+import { getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
 
-import { Badge, Text } from '../../components/atoms'
+import {
+  Badge,
+  RefreshCwIcon,
+  SlidersHorizontalIcon,
+  SwordsIcon,
+  Text,
+  UsersIcon,
+} from '../../components/atoms'
 import { BossSectionHeader } from '../../components/molecules/BossSectionHeader/BossSectionHeader'
 import { CharacterRail, type CharacterRailEntry } from '../../components/molecules/CharacterRail/CharacterRail'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
@@ -77,10 +84,9 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { SPIN_ANIMATION } from '../../constants/style/animation'
 import { AnimatedView } from '../../lib/nativewind-interop'
-import { RefreshCwIcon, SlidersHorizontalIcon, SwordsIcon, UsersIcon } from '../../lib/icons'
 import { ILLUSTRATION_TEXT_SHADOW_STYLE } from '../../constants/style/text-styles'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
-import { orderByTracked } from '../../lib/tracked-order'
+import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import { useThemeAppearance } from '../../theme/context'
 import { useOpenTab } from '../use-open-tab'
 import { usePullRefresh } from '../use-pull-refresh'

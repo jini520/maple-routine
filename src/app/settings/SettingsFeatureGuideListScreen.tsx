@@ -32,12 +32,11 @@ import {
 } from '../../data/feature-guides'
 import type { FeatureGuideGroup } from '../../types'
 
-import { Card, Text } from '../../components/atoms'
+import { ArrowLeftIcon, BookOpenIcon, Card, ChevronRightIcon, Text } from '../../components/atoms'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { ArrowLeftIcon, BookOpenIcon, ChevronRightIcon } from '../../lib/icons'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
 import { useSettingsNavigation } from './use-settings-navigation'
 

@@ -15,7 +15,7 @@
 // - **`dim` 은 그림 위에 덮는 검정 한 겹**이다. 웹과 같은 값·같은 자리.
 import { Image, View, useWindowDimensions } from 'react-native'
 
-import { getThemeBackgroundUrl } from '../../../lib/artwork'
+import { getThemeBackgroundUrl } from '../../../lib/assets/asset-lookup'
 
 import { useThemeAppearance } from '../../../theme/context'
 import { resolveThemeBackdropLayout } from './theme-backdrop-layout'

@@ -1,7 +1,7 @@
 # Nexon Open API 연동
 
 > **범위**: Nexon Open API 호출·인증·엔드포인트·정규화·호출 제한. 별도 서버/프록시 없이 사용자 개인 키로 기기에서 직접 호출한다([[ADR-003]], [[ADR-007]]).
-> **관련 소스**: `nexon/client` · `nexon/character` · `nexon/schedule`(client/normalize) · `nexon/meso-rate`(+ `lib/meso-rate` 파서) · `lib/boss-matching`.
+> **관련 소스**: `nexon/client` · `nexon/character` · `nexon/schedule`(client/normalize) · `nexon/meso-rate`(+ `lib/cashbook/meso-rate` 파서) · `lib/boss/boss-matching`.
 > **관련 ADR**: [[ADR-007]] [[ADR-003]] [[ADR-006]] [[ADR-067]] [[ADR-177]]. **관련 문서**: [architecture.md](./architecture.md), [error-resilience.md](./error-resilience.md), [features/content-scheduler.md](../features/content-scheduler.md), [features/boss-scheduler.md](../features/boss-scheduler.md).
 
 ## 클라이언트·인증
@@ -158,8 +158,8 @@ HTTP 400
 
 ## 정규화
 - 난이도: 영문 소문자 ↔ 한글 변환(`nexon/normalize`).
-- 보스명: **양쪽 문자열 공백을 전부 제거한 뒤 비교**(`lib/boss-matching`). 공백이 API 쪽에 더 있을 때도, 데이터 쪽에 더 있을 때도 있어 한쪽으로 가정하면 안 됨(예: API `검은 마법사` vs 데이터 `검은마법사`, 반대로 API `블러디퀸` vs 데이터 `블러디 퀸`). 공백 제거로도 못 잡는 예외(API `시즌 보스 메이린` ↔ 데이터 `메이린`)는 `weekly-bosses.json` 의 `apiAlias` 로 명시 매핑. 매핑 실패는 원문 그대로 "알 수 없는 콘텐츠"(크래시 금지).
-- `nexon/` 은 `src/data/` 를 몰라야 독립 테스트가 가능하므로, 보스명 매칭은 `nexon/` 이 아니라 `lib/boss-matching` 이 담당하고 결과를 feature 가 소비한다.
+- 보스명: **양쪽 문자열 공백을 전부 제거한 뒤 비교**(`lib/boss/boss-matching`). 공백이 API 쪽에 더 있을 때도, 데이터 쪽에 더 있을 때도 있어 한쪽으로 가정하면 안 됨(예: API `검은 마법사` vs 데이터 `검은마법사`, 반대로 API `블러디퀸` vs 데이터 `블러디 퀸`). 공백 제거로도 못 잡는 예외(API `시즌 보스 메이린` ↔ 데이터 `메이린`)는 `weekly-bosses.json` 의 `apiAlias` 로 명시 매핑. 매핑 실패는 원문 그대로 "알 수 없는 콘텐츠"(크래시 금지).
+- `nexon/` 은 `src/data/` 를 몰라야 독립 테스트가 가능하므로, 보스명 매칭은 `nexon/` 이 아니라 `lib/boss/boss-matching` 이 담당하고 결과를 feature 가 소비한다.
 
 ## 확인 완료된 사실 (레퍼런스)
 - `access_flag` 는 boolean이 아니라 **문자열 `"true"`/`"false"`**. `normalizeCharacterBasic` 이 `=== 'true'` 로 변환한다(실측 재확인 2026-07-31). truthy 검사로 바꾸면 모든 캐릭터가 활성으로 읽힌다.
@@ -172,7 +172,7 @@ HTTP 400
 - `character/basic`·`scheduler` 응답의 `date` 필드는 당일 조회에서 `null` 이거나 요청일을 그대로 돌려준다. **타임스탬프 비교에 쓸 수 없다**(마지막 갱신 시각이 아니다).
 - `weekly_boss_clear_count`·`weekly_boss_clear_limit_count` 는 wire 타입에만 있고 **앱이 소비하지 않는다**. 미접속 캐릭터는 `limit_count: 0` 으로 오므로(실측) 이 값을 분모로 쓰기 시작하면 축약 응답에서 0으로 나눈다.
 - `weekly_boss_clear_limit_count` = 캐릭터당 주간 보스 12마리 제한 카운트. 시즌보스(메이린)는 예외.
-- 주간 리셋 = KST 목요일 00:00(`lib/reset-clock` 과 정확히 일치). 월간 보스 리셋 = 매월 1일 00:00 KST([[ADR-030]] 확정).
+- 주간 리셋 = KST 목요일 00:00(`lib/scheduler/reset-clock` 과 정확히 일치). 월간 보스 리셋 = 매월 1일 00:00 KST([[ADR-030]] 확정).
 - 온보딩 계정 표기: 각 `account_id` 는 그 계정 최고 레벨 캐릭터의 닉네임+직업+레벨로 표기(`account_id` 해시 비노출).
 
 ## 폐기된 정책 (history)

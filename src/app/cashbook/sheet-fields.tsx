@@ -10,15 +10,20 @@
  */
 import { Pressable, View } from 'react-native'
 
-import { Text } from '../../components/atoms'
+import {
+  CheckIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  MinusIcon,
+  PlusIcon,
+  Text,
+} from '../../components/atoms'
 import {
   acceptMesoText,
   settleMesoText,
 } from '../../components/molecules/MesoPad/meso-pad'
 import { SheetTextInput } from '../../components/molecules/SheetTextInput/SheetTextInput'
-import { CheckIcon } from '../../lib/icons'
 import { formatDayLabel, shiftDateKey } from '../../lib/calendar-month'
-import { ChevronLeftIcon, ChevronRightIcon, MinusIcon, PlusIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 
 /**

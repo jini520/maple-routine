@@ -7,7 +7,7 @@
  * 그래서 「정산 대상 ÷ 인원」을 그대로 보내면 받는 사람만 분배 수수료를 물어 균등이 깨진다.
  * 화면이 내놓는 것은 그 역산값 하나 — **한 명에게 보낼 금액**이다([[ADR-168]] 결정 8).
  *
- * 계산은 전부 `lib/item-split` 이 진다. 이 파일에는 «어떤 입력이 그 인자로 가는가» 만 있다.
+ * 계산은 전부 `lib/cashbook/item-split` 이 진다. 이 파일에는 «어떤 입력이 그 인자로 가는가» 만 있다.
  *
  * ## 금액 입력에 자체 키패드를 두지 않는다 ([[ADR-168]] 결정 9)
  *
@@ -20,19 +20,18 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { Card, Text, TextInput } from '../../components/atoms'
+import { ArrowLeftIcon, Card, Text, TextInput } from '../../components/atoms'
 import { PartySizeStepper } from '../../components/molecules/PartySizeStepper/PartySizeStepper'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { formatMesoUnits } from '../../lib/drop-price'
-import { ArrowLeftIcon } from '../../lib/icons'
+import { formatMesoUnits } from '../../lib/drop/drop-price'
 import {
   MAX_PARTY_SIZE,
   MAX_SALE_PRICE_MESO,
   transferPerMember,
   type FeePercent,
-} from '../../lib/item-split'
+} from '../../lib/cashbook/item-split'
 import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useScreenNavigation } from '../use-screen-navigation'

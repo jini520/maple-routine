@@ -1,4 +1,4 @@
-import { matchWeeklyRegionalQuestSlug } from '../quest-region-matching'
+import { matchWeeklyRegionalQuestSlug } from '../scheduler/quest-region-matching'
 
 describe('matchWeeklyRegionalQuestSlug', () => {
   const cases: Array<[string, string]> = [

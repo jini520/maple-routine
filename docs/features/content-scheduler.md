@@ -31,12 +31,12 @@
 | 상태 | `features/content-scheduler` | 동기화, `activeTab`, 추적 목록 |
 | 상태 | `features/character-selection/store.ts` | 고른 캐릭터. 화면 넷이 구독한다([[ADR-159]]) |
 | 상태 | `features/schedule-sync` | `getCharacterPickerRoster` · `resolveCharacterEligibility` · `format.ts` |
-| 계산 | `lib/scheduler-merge.ts` | 3단 캐시 병합 |
-| 계산 | `lib/scheduler-content-scope.ts` | `getShareScope(name)`. 캐릭터·월드·계정 구분 |
-| 계산 | `lib/content-category.ts` | `categorizeContentEntries`. 카테고리 도출 |
-| 계산 | `lib/required-level.ts` | 요구 레벨 판정([[ADR-162]]). **소비처 다섯이 이 한 곳을 쓴다** |
-| 계산 | `lib/tracked-order.ts` | `orderByTracked`. 저장 순서 적용 |
-| 계산 | `lib/artwork.ts` | 일일퀘스트 지역 배경 매칭 |
+| 계산 | `lib/scheduler/scheduler-merge.ts` | 3단 캐시 병합 |
+| 계산 | `lib/scheduler/scheduler-content-scope.ts` | `getShareScope(name)`. 캐릭터·월드·계정 구분 |
+| 계산 | `lib/scheduler/content-category.ts` | `categorizeContentEntries`. 카테고리 도출 |
+| 계산 | `lib/scheduler/required-level.ts` | 요구 레벨 판정([[ADR-162]]). **소비처 다섯이 이 한 곳을 쓴다** |
+| 계산 | `lib/scheduler/tracked-order.ts` | `orderByTracked`. 저장 순서 적용 |
+| 계산 | `lib/assets/asset-lookup.ts` | 일일퀘스트 지역 배경 매칭 |
 | 저장 | `storage/scheduler-cache.ts` | 캐릭터별 마지막 정상 상태와 `syncedAt` |
 | 저장 | `storage/shared-progress-cache.ts` | 월드·계정 공유 진행 원장 |
 | 저장 | `storage/schedule-probe-ledger.ts` | 어느 캐릭터를 어느 날짜로 조회했는지 |
@@ -88,7 +88,7 @@
 
 ### 요구 레벨 미달은 ‘진행 불가’ 배지에 집계 제외다
 
-[[ADR-162]](구현 완료 2026-08-22, 실기기 미검증)다. 판정은 `lib/required-level.ts` **한 곳**이
+[[ADR-162]](구현 완료 2026-08-22, 실기기 미검증)다. 판정은 `lib/scheduler/required-level.ts` **한 곳**이
 갖는다(참조표 조회까지). 소비처가 다섯이라(컨텐츠 카드 · 보스 카드 · 진행률 분모 · 초상화 링 ·
 today ‘남은 스케줄’) 흩어지면 같은 항목이 화면마다 다르게 세어지고, 그것은 [[ADR-147]] 결정 8이
 금지하는 상태다.
@@ -227,7 +227,7 @@ today ‘남은 스케줄’) 흩어지면 같은 항목이 화면마다 다르�
 들어온 캐릭터는 **배열 끝**이고, 전환 설치본을 레벨 순으로 정규화하지 않는다.
 
 - **순서를 얹는 곳은 store가 아니라 화면이다.** store의 `sortByCachedLevel` 은 그대로 두고, 화면이
-  순수 함수 `orderByTracked(items, orderedOcids)`(`src/lib/tracked-order.ts`)를 세 곳에서 통과시킨다.
+  순수 함수 `orderByTracked(items, orderedOcids)`(`src/lib/scheduler/tracked-order.ts`)를 세 곳에서 통과시킨다.
   컨텐츠 레일 · 보스 레일 · 보스 수익 캐릭터 그룹이다. 순서 인자는 세 store가 이미 갖고 있는
   `trackedOcids` 라 저장소 조회가 늘지 않는다.
 - **모르는 항목은 버리지 않고 뒤에 남긴다.** 두 목록이 한순간 어긋날 때(저장 직후 · 동기화 중간
@@ -278,7 +278,7 @@ today ‘남은 스케줄’) 흩어지면 같은 항목이 화면마다 다르�
      기준으로 삼는다.
 4. **표시할 때** character 항목은 캐릭터 캐시 값을 쓰고, world·account 항목은 원장의 `active` 로 노출
    여부를 정하고 진행값도 원장에서 가져온다. 원장이 낡았는지는 `lastUpdatedBucket` 을
-   `lib/reset-clock` 의 리셋 경계와 비교해 판정한다. 경계를 넘겼는데 아무도 갱신하지 않았으면
+   `lib/scheduler/reset-clock` 의 리셋 경계와 비교해 판정한다. 경계를 넘겼는데 아무도 갱신하지 않았으면
    **진행값만 리셋하고 `active` 는 유지**한다.
 
 **원장의 ‘계정’은 ‘지금 고른 계정’이 아니라 ‘그 캐릭터가 사는 계정’이다**([[ADR-143]] 결정 6, 구현
@@ -292,7 +292,7 @@ today ‘남은 스케줄’) 흩어지면 같은 항목이 화면마다 다르�
 **알려진 한계 둘**: 몬스터파크(world)의 월드 간 오염은 구분할 신호가 없어 처리하지 않는다. 길드 주간
 미션 포인트의 `max_count` 는 `maxCountOverride`(10)로 고정한다.
 
-핵심 로직 `lib/scheduler-merge` · `lib/scheduler-content-scope` · `storage/shared-progress-cache` 는
+핵심 로직 `lib/scheduler/scheduler-merge` · `lib/scheduler/scheduler-content-scope` · `storage/shared-progress-cache` 는
 TDD로 단위 테스트를 갖췄다.
 
 ## 실패를 알리는 법
@@ -479,7 +479,7 @@ mask `linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)`)이다.
 ```
 
 **지역 배경 매칭**은 `daily-quest-regions.json`(지역명 → 슬러그)과
-`daily-quest-region-crops.json`(슬러그 → 크롭)을 `lib/artwork` 가 조회한다. 공백을
+`daily-quest-region-crops.json`(슬러그 → 크롭)을 `lib/assets/asset-lookup` 가 조회한다. 공백을
 제거한 표시명이 공백을 제거한 지역명으로 `startsWith` 하는지 본다(예: "레헬른의평온한밤"이
 "레헬른"으로 시작한다). 매칭이 안 되면 일러스트 층을 생략한다. 크롭을 맞추던 디버그 화면은 ⛔ ADR-092 에서 삭제했다.
 
@@ -562,7 +562,7 @@ mask `linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)`)이다.
 
 **카테고리 도출**은 둘이다. (1) `content_name` 접두사(`[X] Y` → 카테고리 X, `에픽 던전 : Y` → "에픽
 던전"), (2) 명시적 오버라이드 맵 `CATEGORY_OVERRIDE`. 게임 도메인 분류라 **사용자가 지정한 값만**
-쓴다([[ADR-006]]). 도출 로직은 공용 유틸 `lib/content-category.ts` 의 `categorizeContentEntries` 이고
+쓴다([[ADR-006]]). 도출 로직은 공용 유틸 `lib/scheduler/content-category.ts` 의 `categorizeContentEntries` 이고
 단위 테스트가 있다.
 
 **사용자 확정 오버라이드**(2026-07-24): 일간 `몬스터파크`(단독 그룹, 주간 몬파와 아이콘 통일), 주간

@@ -2,7 +2,7 @@
 // 볼 수 있어서 따로 있다. 이 함수를 보는 자리가 셋(컨텐츠 레일 · 보스 레일 · 보스 수익 그룹)이라,
 // 렌더로만 검사하면 셋 중 하나만 어긋난 상태를 못 잡는다(`bottom-bar-metrics.test.ts` 와 같은 판단).
 
-import { orderByTracked } from '../tracked-order'
+import { orderByTracked } from '../scheduler/tracked-order'
 
 interface 항목 {
   ocid: string

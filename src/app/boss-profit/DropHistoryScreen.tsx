@@ -38,30 +38,29 @@ import {
   useDropHistoryStore,
   type DropHistoryCharacter,
 } from '../../features/boss-profit/drop-history-store'
-import { formatBossProfitPeriodLabel } from '../../lib/boss-profit-period'
+import { formatBossProfitPeriodLabel } from '../../lib/boss/boss-profit-period'
 import {
   formatDropHistoryLine,
   formatValuableDroughtHeadline,
   formatValuableDroughtItems,
   getValuableDroughtTier,
   valuableDroughtHeadlineCount,
-} from '../../lib/drop-history'
+} from '../../lib/drop/drop-history'
 import type {
   DropHistoryPeriodGroup,
   DropHistoryRecord,
   ValuableDroughtSummary,
-} from '../../lib/drop-history'
-import { getItemIconUrl } from '../../lib/artwork'
-import { isValuableDrop } from '../../lib/valuable-drops'
+} from '../../lib/drop/drop-history'
+import { getItemIconUrl } from '../../lib/assets/asset-lookup'
+import { isValuableDrop } from '../../lib/drop/valuable-drops'
 
-import { MapleLeaf, Text } from '../../components/atoms'
+import { ArrowLeftIcon, MapleLeaf, ScrollTextIcon, Text } from '../../components/atoms'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { DROUGHT_GLOW_FILTER, DROUGHT_TIER_STYLES } from '../../constants/style/drought-tier-styles'
-import { ArrowLeftIcon, ScrollTextIcon } from '../../lib/icons'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { useScreenNavigation } from '../use-screen-navigation'

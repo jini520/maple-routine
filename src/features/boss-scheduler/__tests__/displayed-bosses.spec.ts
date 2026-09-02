@@ -9,7 +9,7 @@ import {
   matchBossContent,
   WEEKLY_BOSS_CLEAR_LIMIT,
   type MatchedBoss,
-} from '../../../lib/boss-matching'
+} from '../../../lib/boss/boss-matching'
 import type { BossContent, BossCycle, BossDifficulty } from '../../../types'
 import type { ManualTrackedItem } from '../../../types/scheduler'
 

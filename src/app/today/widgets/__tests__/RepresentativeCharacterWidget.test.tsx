@@ -16,7 +16,7 @@ import {
 } from '../../../../components/__tests__/render-atom'
 import { RepresentativeCharacterWidget } from '../RepresentativeCharacterWidget'
 import { 대표_캐릭터, 뷰모델, 빈_뷰모델 } from './widget-fixture'
-import type { WidgetHeight } from '../../../../lib/widget-layout'
+import type { WidgetHeight } from '../../../../lib/today/widget-layout'
 
 const 채워진 = 뷰모델({ representative: 대표_캐릭터 })
 

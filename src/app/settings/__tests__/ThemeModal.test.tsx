@@ -9,7 +9,7 @@
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { useThemeStore } from '../../../features/theme/store'
-import { THEME_NAMES } from '../../../lib/theme-registry'
+import { THEME_NAMES } from '../../../lib/theme/theme-registry'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { ThemeModal } from '../ThemeModal'

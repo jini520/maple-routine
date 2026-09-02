@@ -6,7 +6,7 @@ import {
   deriveTheme,
   measureThemeContrast,
   type ThemeSeed,
-} from '../theme-derive'
+} from '../theme/theme-derive'
 
 const LIGHT_SEED: ThemeSeed = { primary: '#F58B0F', secondary: '#F7D00D', third: '#CA763A', mode: 'light' }
 const DARK_SEED: ThemeSeed = { primary: '#9975B3', secondary: '#D1C093', third: '#D8608F', mode: 'dark' }

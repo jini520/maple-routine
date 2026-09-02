@@ -9,8 +9,8 @@ import {
   huntingMesoOf,
   huntingTotalOf,
   levelPenaltyPercent,
-} from '../hunting-meso'
-import { getItemIconUrlByFile } from '../artwork'
+} from '../cashbook/hunting-meso'
+import { getItemIconUrlByFile } from '../assets/asset-lookup'
 
 /** 사용자가 준 예시의 맵 — 「밤의 길 3」(탈라하트, 40마리, lv.294). */
 const NIGHT_ROAD_3 = { name: '밤의 길 3', force: 700, mobs: 40, levels: [294] } as const

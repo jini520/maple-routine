@@ -37,7 +37,7 @@ import {
   setRepresentativeCharacter,
 } from '../../storage/character-selection'
 
-import { Button, Text } from '../../components/atoms'
+import { ArrowLeftIcon, Button, Text } from '../../components/atoms'
 import { CharacterManageBody } from '../../components/organisms/CharacterManage/CharacterManageBody'
 import { useCharacterManage } from '../../components/organisms/CharacterManage/use-character-manage'
 import { useReorderScroll } from '../../components/organisms/CharacterManage/use-reorder-scroll'
@@ -46,7 +46,6 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { useBottomSafeAreaPx } from '../../lib/safe-area'
-import { ArrowLeftIcon } from '../../lib/icons'
 import { reloadTabStores } from './reload-tab-stores'
 import { useSettingsNavigation } from './use-settings-navigation'
 

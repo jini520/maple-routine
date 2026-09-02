@@ -1,9 +1,9 @@
-import { DROP_EFFECT_FRAMES } from '../artwork'
-import { DROP_EFFECT_ORIGINS, dropFrameTransform } from '../drop-effect-layout'
 import {
-  buildPillarFrames,
-  buildScreenFrames,
-} from '../../components/organisms/DropEffectOverlay/frame-layout'
+  DROP_EFFECT_FRAMES,
+  DROP_EFFECT_ORIGINS,
+  dropFrameTransform,
+} from '../drop-effect-layout'
+import { buildPillarFrames, buildScreenFrames } from '../frame-layout'
 
 const PHASES = ['pre', 'loop', 'end'] as const
 

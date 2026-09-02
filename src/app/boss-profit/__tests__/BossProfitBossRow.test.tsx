@@ -6,7 +6,7 @@
 import { act, fireEvent } from '@testing-library/react-native'
 
 import valuableDropsData from '../../../data/valuable-drops.json'
-import { isValuableDrop } from '../../../lib/valuable-drops'
+import { isValuableDrop } from '../../../lib/drop/valuable-drops'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import type { RecordedDrop } from '../../../types/drops'
 

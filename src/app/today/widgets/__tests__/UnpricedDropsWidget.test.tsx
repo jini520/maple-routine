@@ -12,7 +12,7 @@ import { renderAtom, findAllOfType } from '../../../../components/__tests__/rend
 import { UnpricedDropsWidget } from '../UnpricedDropsWidget'
 import { 뷰모델, 미입력, 빈_뷰모델 } from './widget-fixture'
 import type { TodayViewModel } from '../../view-model'
-import type { WidgetHeight } from '../../../../lib/widget-layout'
+import type { WidgetHeight } from '../../../../lib/today/widget-layout'
 
 const 크기 = {
   '2x1': { w: 2, h: 1 },

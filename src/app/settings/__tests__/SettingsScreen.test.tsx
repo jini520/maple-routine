@@ -22,7 +22,7 @@ import { useThemeStore } from '../../../features/theme/store'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import { useContentSchedulerStore, type ContentSchedulerStore } from '../../../features/content-scheduler/store'
 import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
-import { THEME_NAMES } from '../../../lib/theme-registry'
+import { THEME_NAMES } from '../../../lib/theme/theme-registry'
 
 import packageJson from '../../../../package.json'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'

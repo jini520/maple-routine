@@ -19,9 +19,9 @@ import {
   useContentSchedulerStore,
   type ContentCharacterView } from '../../../features/content-scheduler/store'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
-import { formatMesoShort } from '../../../lib/boss-profit-delta'
-import type { MatchedBoss } from '../../../lib/boss-matching'
-import type { DropHistoryPeriodGroup, DropHistoryRecord } from '../../../lib/drop-history'
+import { formatMesoShort } from '../../../lib/boss/boss-profit-delta'
+import type { MatchedBoss } from '../../../lib/boss/boss-matching'
+import type { DropHistoryPeriodGroup, DropHistoryRecord } from '../../../lib/drop/drop-history'
 import { getCachedCharacterBasic } from '../../../storage/character-basic-cache'
 import { getRepresentativeCharacter } from '../../../storage/character-selection'
 import type { DailyContent, WeeklyContent } from '../../../types'

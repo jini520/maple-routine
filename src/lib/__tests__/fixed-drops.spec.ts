@@ -6,7 +6,7 @@ import {
   SOL_ERDA_ENERGY_NAME,
   decomposeSolErda,
   getFixedDropIcons,
-  parseFixedAmount } from '../fixed-drops'
+  parseFixedAmount } from '../drop/fixed-drops'
 
 const itemsDir = join(__dirname, '../../assets/items')
 

@@ -13,7 +13,7 @@
 //    는 CSS 속성이라 NativeWind 가 RN 스타일로 내지 못하고 조용히 사라진다(별이 테두리만 남는다).
 import { Pressable } from 'react-native'
 
-import { StarIcon } from '../../../lib/icons'
+import { StarIcon } from '../../atoms'
 import { useThemeAppearance } from '../../../theme/context'
 
 /** 시각 크기(20px)와 권장 타깃(44px)의 차이를 사방으로 나눠 채운다(`PartySizeStepper` 와 같은 처방). */

@@ -1,5 +1,5 @@
 import weeklyBossesData from '../../../data/weekly-bosses.json'
-import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss-matching'
+import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
 // today 뷰모델의 **조립 규칙**([[ADR-147]] 결정 4·8·9). 위젯이 스토어를 모르므로 화면이 값을 한
 // 번 모으는데, 그 조립을 순수 함수로 두면 **위젯이 한 줄도 없는 지금 로직 전부를 검증할 수 있다.**
 //
@@ -7,9 +7,9 @@ import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss-matching'
 // `displayedBosses` 가, 수익은 `groupTotalMeso` 가, 한도 분모는 `WEEKLY_CRYSTAL_SALE_LIMIT` 가
 // 판정한다. 판정이 두 벌이 되면 today 와 원래 화면이 **다른 수를 말한다.**
 
-import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss-matching'
-import type { MatchedBoss } from '../../../lib/boss-matching'
-import type { DropHistoryPeriodGroup, DropHistoryRecord } from '../../../lib/drop-history'
+import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss/boss-matching'
+import type { MatchedBoss } from '../../../lib/boss/boss-matching'
+import type { DropHistoryPeriodGroup, DropHistoryRecord } from '../../../lib/drop/drop-history'
 import type { BossProfitRow } from '../../../features/boss-profit/store'
 import type { ContentCharacterView } from '../../../features/content-scheduler/store'
 import type { BossCharacterView } from '../../../features/boss-scheduler/store'
