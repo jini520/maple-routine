@@ -48,7 +48,7 @@ const ROW_PADDING = 'px-3 py-2.5'
 
 interface AccountRowProps {
   summary: AccountSummaryView
-  /** 캐시에 있을 때만 온다. 없으면 대표 이름의 첫 글자를 그린다. */
+  /** 캐시에 있을 때만 오는 초상 주소. 없으면 대표 이름의 첫 글자를 그린다. */
   portraitUrl: string | null
   /** 오른쪽 슬롯: 트리거만 `▾` 를 갖는다. */
   trailing?: React.ReactNode

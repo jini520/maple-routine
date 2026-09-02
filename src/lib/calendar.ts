@@ -18,7 +18,7 @@ import { getCurrentKstDateKey } from './scheduler/reset-clock'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
-/** 일요일에서 시작한다. 한국 달력의 관습이다. */
+/** 월간 격자의 요일 이름. 일요일에서 시작한다. 한국 달력의 관습이다. */
 export const WEEKDAY_LABELS: readonly string[] = ['일', '월', '화', '수', '목', '금', '토']
 
 export interface CalendarDay {
@@ -196,7 +196,7 @@ export function periodTotals(
 
 // ══ 주간 격자. 게임의 주 ══════════════════════════════
 
-/** 목요일에서 시작한다. **월간 라벨을 회전한 것**이라 요일 이름이 한 곳에만 산다. */
+/** 주간 격자의 요일 이름. 목요일에서 시작하고 **월간 라벨을 회전한 것**이라 이름이 한 곳에만 산다. */
 export const WEEKDAY_LABELS_RESET: readonly string[] = [
   ...WEEKDAY_LABELS.slice(4),
   ...WEEKDAY_LABELS.slice(0, 4),

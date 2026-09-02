@@ -58,7 +58,7 @@ export function formatMesoUnits(meso: number): string {
   return parts.join(' ')
 }
 
-/** 큰 것부터 본다. 만 미만은 단위가 없어 나머지로 남는다. */
+/** 금액을 접는 단위 표. 큰 것부터 보고 만 미만은 단위 없이 나머지로 남는다. */
 const AMOUNT_UNITS = [
   [1_000_000_000_000, '조'],
   [100_000_000, '억'],

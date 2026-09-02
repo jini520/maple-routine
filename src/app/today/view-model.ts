@@ -202,7 +202,7 @@ export interface UnpricedDropView {
   boss: string
   difficulty: string
   itemName: string
-  /** 아이콘 조회(`getItemIconUrl(name, slot)`)가 쓴다. 안 넘기면 조용한 폴백 원이 된다. */
+  /** 아이콘 조회(`getItemIconUrl(name, slot)`)가 쓰는 칸. 안 넘기면 조용한 폴백 원이다. */
   slot?: string
   ringLevel?: number
   quantity: number

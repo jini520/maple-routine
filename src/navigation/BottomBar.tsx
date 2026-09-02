@@ -432,7 +432,7 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
    */
   const backCircleMargin = BAR_PADDING + (pillHeight - backCircle) / 2
   const pillWidth = itemWidth + PILL_OVERHANG
-  /** 하위 행은 ← 가 차지한 첫 칸 다음에서 시작한다. 그룹 행의 격자를 그대로 쓴다. */
+  /** 행이 시작하는 칸. 하위 행은 ← 가 차지한 첫 칸 다음이고 격자는 그룹 행과 같다. */
   const rowOffset = layer === 'sub' ? itemWidth : 0
   const pillX = rowOffset + activeIndex * itemWidth + (itemWidth - pillWidth) / 2
 

@@ -46,7 +46,7 @@ export interface FeatureGuideBlock {
  * 아니라 그중 한 마디이고, 페이지 맨 위에 떨어뜨리면 읽는 사람이 그 마디를 다시 찾아야 한다.
  */
 export interface FeatureGuideSection {
-  /** 안내 안에서 유일해야 한다. `?s=` 로 이 값을 받아 그 자리로 스크롤한다 */
+  /** 마디 id. 안내 안에서 유일해야 하고, `section` 파라미터로 이 값을 받아 그리로 스크롤한다. */
   id: string
   /** 목차 줄이자 본문 소제목 */
   title: string

@@ -24,7 +24,7 @@ import type { WidgetHeight } from '../../../lib/today/widget-layout'
 import type { PricedDropView } from '../view-model'
 import type { WidgetProps } from './types'
 
-/** N건이 값을 기다립니다를 여기 두지 않는다. 건수는 위젯 7의 몫이다. */
+/** 기록이 없을 때의 한 줄. 건수는 위젯 7 의 몫이라 여기서 말하지 않는다. */
 const EMPTY_NOTE = '가격이 입력된 아이템이 없습니다'
 
 const TITLE = '이번 주 최고가'

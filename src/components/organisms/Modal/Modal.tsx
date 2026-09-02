@@ -47,7 +47,7 @@ interface ModalCardProps extends ModalPanelProps {
   tight?: boolean
 }
 
-/** 터치를 이 요소가 가져간다. 바깥 `Pressable` 로 흘러가 모달이 닫히는 것을 막는다(파일 머리 ③). */
+/** 터치를 이 요소가 가져가게 하는 responder. 바깥으로 흘러가 모달이 닫히는 것을 막는다. */
 const claimTouch = (): boolean => true
 
 /**

@@ -125,7 +125,7 @@ export function formatRosterError(error: ScheduleSyncError, place: RosterErrorPl
 export interface StaleRosterErrorCopy {
   /** 배너 한 줄에 들어가는 문구. 제목·설명으로 쪼개지 않는다. 배너는 한 줄이다. */
   message: string
-  /** 재시도가 실제로 통하는 실패에만 준다. */
+  /** 재시도가 실제로 통하는 실패에만 주는 액션. */
   action?: { kind: 'retry'; label: string }
 }
 

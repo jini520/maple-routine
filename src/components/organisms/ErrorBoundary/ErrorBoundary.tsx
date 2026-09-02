@@ -23,7 +23,7 @@ import { AlertTriangleIcon, Button, RotateCcwIcon, Text } from '../../atoms'
 
 interface ErrorBoundaryProps {
   children: ReactNode
-  /** 앱을 다시 실행한다. 기본값을 두지 않는 이유는 파일 머리 참고. */
+  /** 앱을 다시 실행하는 콜백. 기본값을 두지 않는 이유는 파일 머리 참고. */
   onRestart: () => void
 }
 

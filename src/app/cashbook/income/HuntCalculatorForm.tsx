@@ -162,7 +162,7 @@ function BoostToggle(props: {
 
 export function HuntCalculatorForm(
   props: IncomeFormProps & {
-    /** 캐릭터의 메소 획득량을 읽어 온다. 폼은 `nexon/` 도 `storage/` 도 모른다. */
+  /** 캐릭터의 메소 획득량을 읽어 오는 함수. 폼은 `nexon/` 도 `storage/` 도 모른다. */
     loadMesoRate: (ocid: string) => Promise<MesoRateLoad>
   },
 ): React.JSX.Element {
@@ -258,7 +258,7 @@ export function HuntCalculatorForm(
   const fragments = mesoValueOf(fragmentsText)
   const fragmentPrice = mesoValueOf(fragmentPriceText)
   const huntTotal = huntingTotalOf({ ...huntInput, ground: huntGround, fragments, fragmentPrice })
-  /** 사냥은 **합계가 0 보다 크면** 된다. 사냥터를 안 골라도 조각만 적을 수 있다. */
+  /** 저장 가능 여부. 합계가 0 보다 크면 된다. 사냥터를 안 골라도 조각만 적을 수 있다. */
   const canSave = huntTotal > 0
 
   /**

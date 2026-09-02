@@ -36,7 +36,7 @@ const GAP_PX = 8
 const AUTO_SCROLL_ZONE_PX = 72
 /** 그 구간 끝에서의 한 프레임 이동량. */
 const AUTO_SCROLL_MAX_STEP_PX = 12
-/** 이만큼 세로로 움직이면 끌기로 본다. 핸들을 그냥 누른 것과 가른다. */
+/** 끌기로 판정하는 세로 이동 거리. 핸들을 그냥 누른 것과 가른다. */
 const ACTIVATE_OFFSET_PX = 4
 
 /** 접근성 액션 식별자. 사람이 듣는 것은 `label` 이고 이 이름은 우리끼리 쓴다. */

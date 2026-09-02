@@ -17,7 +17,7 @@ import { Gamepad2Icon, InfoIcon, ListChecksIcon, Text } from '../../components/a
 
 export interface TrackingModeSelectorProps {
   mode: TrackingMode
-  /** 결정 14(a) 시드가 진행 중이면 옵션을 비활성화한다. */
+  /** 시드가 진행 중인지. 참이면 옵션이 비활성이다. */
   isApplying: boolean
   onSelect: (mode: TrackingMode) => void
 }

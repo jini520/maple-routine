@@ -10,7 +10,7 @@ import { getAdjacentPeriodKey, getWeeklyPeriodKeysInMonth } from './boss-profit-
  */
 
 export interface ProfitDelta {
-  /** 'same' 이면 방향 표식을 그리지 않는다. 표기 "-" 자체가 표식이라 대시 아이콘까지 얹으면 겹친다. */
+  /** 증감 방향. `same` 이면 표식을 안 그린다. 표기 `-` 자체가 표식이라 아이콘까지 얹으면 겹친다. */
   direction: 'up' | 'down' | 'same'
   /** 직전 기간이 0이면 나눌 수 없어 `null`. 그때는 절대 증감이 표시를 대신한다. 부호를 유지한다. */
   percent: number | null

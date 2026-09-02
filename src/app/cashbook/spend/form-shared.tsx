@@ -21,7 +21,7 @@ export type SpendDraft = Omit<SpendRecord, 'id' | 'recordedAt'>
 export interface SpendFormProps {
   dateKey: string
   characters: ReadonlyArray<{ ocid: string; name: string }>
-  /** 갈래 칩이 이 둘을 쓴다. 칩은 폼이 그린다(갈래마다 서는 자리가 달라서다). */
+  /** 갈래 칩이 쓰는 값. 칩은 폼이 그린다(갈래마다 서는 자리가 달라서다). */
   category: SpendCategory
   onSelectCategory: (next: SpendCategory) => void
   editing?: SpendRecord
@@ -49,7 +49,7 @@ export function SpendHeader(props: {
   dateKey: string
   /** 머리에서 날짜를 바꾼다. 수입 시트와 **같은 부품**이다. */
   onDateChange: (next: string) => void
-  /** 있으면 제목이 **되돌아가는 누르개**가 된다. 수정 모드에는 되돌아갈 곳이 없어 안 준다. */
+  /** 제목을 **되돌아가는 누르개**로 만드는 콜백. 수정 모드에는 되돌아갈 곳이 없어 안 준다. */
   onBack?: () => void
 }): React.JSX.Element {
   return (

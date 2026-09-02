@@ -17,7 +17,7 @@
  * 띠가 그만큼 커진다.
  */
 export interface ScreenBottomInset {
-  /** 스크롤포트를 화면 바닥에서 이만큼 올려 끝낸다. */
+  /** 스크롤포트를 화면 바닥에서 올릴 양. */
   portBottomPx: number
   /** 스크롤 콘텐츠 끝에 남기는 여백. */
   contentBottomPx: number

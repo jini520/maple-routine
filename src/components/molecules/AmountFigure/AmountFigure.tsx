@@ -30,7 +30,7 @@ const FIGURE_UNIT_GAP = 2
 
 const GAP_STYLE = { width: FIGURE_UNIT_GAP }
 
-/** 잡는 괄호라 `split` 이 단위 글자도 함께 돌려준다. */
+/** 단위 글자를 가르는 정규식. 잡는 괄호라 `split` 이 단위 글자도 함께 돌려준다. */
 const AMOUNT_UNIT = /([조억만천])/
 
 /**

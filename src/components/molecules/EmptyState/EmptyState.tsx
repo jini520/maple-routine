@@ -10,7 +10,7 @@ interface EmptyStateProps {
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }> | 'leaf'
   title: string
   description?: string
-  /** 문구가 지시하는 목적지가 앱 안에 있을 때만 준다. 없으면 CTA를 만들지 않는다. */
+  /** 문구가 지시하는 목적지가 앱 안에 있을 때만 주는 CTA. 없으면 만들지 않는다. */
   action?: EmptyStateAction
   size?: 'page' | 'inline'
 }

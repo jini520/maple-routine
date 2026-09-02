@@ -59,7 +59,7 @@ interface SvgFrameProps extends IconProps {
   testID: string
   /** 안 주면 lucide 24 그리드다. */
   grid?: SvgGrid
-  /** 안 주면 뿌리가 칠을 안 정한다. 자식이 각자 고른다. */
+  /** 뿌리가 정할 칠. 안 주면 자식이 각자 고른다. */
   paint?: SvgPaint
   children: ReactNode
 }
