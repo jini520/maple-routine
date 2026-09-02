@@ -1,9 +1,9 @@
 /**
- * 수입 시트의 **갈래별 폼이 함께 쓰는 것**([[ADR-178]] 결정 3).
+ * 수입 시트의 **갈래별 폼이 함께 쓰는 것**.
  *
  * 갈래마다 폼이 따로 서지만 캐릭터를 고르는 줄과 저장·삭제 줄은 전부 똑같다. 여러 벌로 갈리면
- * 한쪽만 고쳐지는 자리가 생기므로 한 벌만 둔다([[ADR-173]] 결정 10 이 두 시트를 한 뼈대로 묶은
- * 이유와 같다). 조각 두 줄도 사냥 폼 둘이 나눠 쓴다([[ADR-201]] 결정 6).
+ * 한쪽만 고쳐지는 자리가 생기므로 한 벌만 둔다(이 두 시트를 한 뼈대로 묶은
+ * 이유와 같다). 조각 두 줄도 사냥 폼 둘이 나눠 쓴다.
  */
 import { Pressable } from 'react-native'
 
@@ -15,7 +15,7 @@ import type { IncomeRecord } from '../../../storage/income'
 
 export type IncomeDraft = Omit<IncomeRecord, 'id' | 'recordedAt'>
 
-/** 고를 수 있는 캐릭터 — `level` 은 사냥 계산기가 쓴다([[ADR-175]] 결정 6). */
+/** 고를 수 있는 캐릭터 — `level` 은 사냥 계산기가 쓴다. */
 export interface SheetCharacter {
   ocid: string
   name: string
@@ -26,7 +26,7 @@ export interface SheetCharacter {
 export interface IncomeFormProps {
   dateKey: string
   characters: readonly SheetCharacter[]
-  /** 있으면 **수정 모드**다([[ADR-171]] 결정 2). */
+  /** 있으면 **수정 모드**다. */
   editing?: IncomeRecord
   onDelete?: () => void | Promise<void>
   /** 던지면 **안 닫는다** — 친 것을 잃지 않는다. */
@@ -35,9 +35,9 @@ export interface IncomeFormProps {
 }
 
 /**
- * 캐릭터 줄 — **기본은 「선택 안함」**([[ADR-166]] 결정 3, 사용자 지정 2026-08-26).
+ * 캐릭터 줄 — **기본은 「선택 안함」**(사용자 지정 2026-08-26).
  *
- * 폼 안에 사는 이유는 [[ADR-178]] 결정 3 이다 — 갈래를 옮기면 폼이 언마운트되어 고른 것이 함께
+ * 폼 안에 사는 이유는 이다 — 갈래를 옮기면 폼이 언마운트되어 고른 것이 함께
  * 사라진다. 껍데기에 두면 그것만 남아 «갈래를 옮겼는데 캐릭터는 그대로» 가 된다.
  */
 export function CharacterField(props: {
@@ -57,9 +57,9 @@ export function CharacterField(props: {
 }
 
 /**
- * 솔 에르다 조각 두 줄 — 사냥 폼 **둘이 함께** 쓴다([[ADR-201]] 결정 6).
+ * 솔 에르다 조각 두 줄 — 사냥 폼 **둘이 함께** 쓴다.
  *
- * 계산기든 수동이든 조각은 **사용자가 직접 넣는 값**이라([[ADR-175]] 결정 8) 갈릴 이유가 없다.
+ * 계산기든 수동이든 조각은 **사용자가 직접 넣는 값**이라 갈릴 이유가 없다.
  * 스테퍼가 아니라 치는 칸인 이유는 30분에 10개 내외라 8소재면 80개가 넘어서다.
  */
 export function FragmentFields(props: {
@@ -92,9 +92,9 @@ export function FragmentFields(props: {
 }
 
 /**
- * 저장 · 삭제 줄 — 큰 숫자 **바로 아래**다([[ADR-173]] 결정 1).
+ * 저장 · 삭제 줄 — 큰 숫자 **바로 아래**다.
  *
- * 삭제는 **버튼처럼 안 생겼다**([[ADR-171]] 결정 3) — 이미 두 번 눌러야 여기까지 온다.
+ * 삭제는 **버튼처럼 안 생겼다** — 이미 두 번 눌러야 여기까지 온다.
  */
 export function SaveRow(props: {
   editing: boolean

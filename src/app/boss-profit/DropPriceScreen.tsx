@@ -1,4 +1,4 @@
-// 가격 기록 화면 — 보스 수익의 하위 스택 화면([[ADR-124]] 결정 8, 이슈 #185).
+// 가격 기록 화면 — 보스 수익의 하위 스택 화면(이슈 #185).
 //
 // 히스토리와 형제이고 같은 셸을 쓴다. 축이 다르다 — 히스토리는 **전 기간**을 한 목록에 펼치는
 // 읽기 전용이고, 여기는 **한 기간**을 놓고 값을 매기는 쓰기 화면이다.
@@ -6,11 +6,11 @@
 // 뼈대는 기간 → 캐릭터 → 기록이다. 캐릭터로 한 번 묶는 이유는 가격이 기록 단위이기 때문이다 —
 // 같은 아이템도 캐릭터마다 판 값이 다를 수 있고, 그 차이가 곧 캐릭터별 수익의 차이가 된다.
 //
-// **보스 수익에서 보던 기간을 통째로 이어받는다**([[ADR-124]] 결정 8) — 주기까지 함께다. 처음엔 주
+// **보스 수익에서 보던 기간을 통째로 이어받는다** — 주기까지 함께다. 처음엔 주
 // 단위로만 열었는데, 그러면 **월간 보스(검은마법사) 드롭에 닿을 길이 없다**(사용자 보고 2026-08-10):
 // 그 기록의 `period_key` 는 `YYYY-MM` 이라 어느 주차 조회에도 안 걸린다.
 //
-// ══ [[ADR-124]] 가 이 화면에서 가장 직접적으로 드러난다 — **미입력은 0원이 아니다** ═══════
+// ══ 가 이 화면에서 가장 직접적으로 드러난다 — **미입력은 0원이 아니다** ═══════
 //
 // 사용자가 값을 넣는 자리라 세 상태가 눈에 보여야 한다. 상태 pill 은 색이 아니라 **형태**로 가르고
 // (채움 / 회색 / 점선), 미입력 행의 금액 자리에는 **`0` 이 아니라 `입력`** 이 선다. 합산 층은
@@ -27,8 +27,8 @@
 //    호스트에 뜨므로(`BottomSheetModalProvider`) 갇힐 상자가 없다 — 프롭이 통째로 사라진다.
 // ③ `<li className="valuable-drop-row">` → **`ValuableRowBackground`**. 웹 `index.css` 의 그 클래스가
 //    RN 에서 값 셋으로 갈린 자리이고, 보스 행에 이어 **두 번째 호출부**라 step 8 이 그 컴포넌트를
-//    `BossProfitBossRow` 밖으로 꺼냈다([[ADR-094]] 결정 1).
-// ④ 웹의 `<img className="absolute max-w-none">` 자리는 **`CharacterAvatar`** 다([[ADR-204]] 결정 1).
+//  `BossProfitBossRow` 밖으로 꺼냈다.
+// ④ 웹의 `<img className="absolute max-w-none">` 자리는 **`CharacterAvatar`** 다.
 //    크롭 값은 한 자리도 안 바뀌고, 얼굴이 원격 주소라는 것도 그 부품이 안다.
 import { useEffect, useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
@@ -82,7 +82,7 @@ function characterTotal(group: DropPriceGroup): number {
 /**
  * 상태 pill — 세 상태를 색이 아니라 **형태**로 가른다(채움 / 회색 / 점선).
  *
- * **미입력 자리에 `0` 을 쓰지 않는다**([[ADR-124]]). `entered` 가 아니면 금액을 아예 그리지 않고
+ * **미입력 자리에 `0` 을 쓰지 않는다**. `entered` 가 아니면 금액을 아예 그리지 않고
  * `입력`·`기록 안함` 이라는 말이 선다 — 값을 모르는 것과 0원인 것은 다른 사실이다.
  */
 function PriceStatePill(props: { drop: RecordedDrop }): React.JSX.Element {
@@ -126,10 +126,10 @@ function EntryRow(props: {
 
   return (
     // 웹의 `last:border-b-transparent` 자리 — RN 에는 `:last-child` 가 없어 목록을 아는 부모가
-    // 알려 준다. 테두리를 아예 빼지 않고 **색만 지우는** 것이 요점이다([[ADR-049]] 와 같은 규칙).
+    // 알려 준다. 테두리를 아예 빼지 않고 **색만 지우는** 것이 요점이다(와 같은 규칙).
     <View>
       {isValuableDrop(drop.itemName) && <ValuableRowBackground />}
-      {/* 행 전체가 버튼이다 — 입력이든 수정이든 같은 자리를 누른다([[ADR-124]] 결정 5). */}
+      {/* 행 전체가 버튼이다 — 입력이든 수정이든 같은 자리를 누른다. */}
       <Pressable
         role="button"
         onPress={props.onSelect}
@@ -217,7 +217,7 @@ export function DropPriceScreen(): React.JSX.Element {
       await write()
       advance()
     } catch {
-      // 조용히 삼키면 저장된 줄 알고 화면을 떠난다([[ADR-063]] — 예외 원문 대신 토스트).
+      // 조용히 삼키면 저장된 줄 알고 화면을 떠난다(— 예외 원문 대신 토스트).
       useToastStore.getState().showError('가격을 저장하지 못했습니다')
     }
   }
@@ -229,7 +229,7 @@ export function DropPriceScreen(): React.JSX.Element {
         header={
           // 히스토리 화면과 같은 헤더 레시피 — 공용 `PageHeader` 를 쓰지 않는 이유도 같다
           // (배경 조각도 하단 페이드도 없는 서브 화면이다). 상단 여백을 안 더하는 것도, 그 안전영역을
-          // `useTopSafeAreaPx()` 로 받는 것도 같다([[ADR-139]] · 정정 1).
+          // `useTopSafeAreaPx()` 로 받는 것도 같다(정정 1).
           <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: topSafeAreaPx }}>
             <PageHeaderTitleRow className="gap-1">
               <Pressable
@@ -286,7 +286,7 @@ export function DropPriceScreen(): React.JSX.Element {
           {status === 'loading' || status === 'idle' ? (
             <LoadingState size="page" message="불러오고 있어요" />
           ) : status === 'failed' ? (
-            // 실패를 빈 목록으로 위장하지 않는다([[ADR-062]]).
+            // 실패를 빈 목록으로 위장하지 않는다.
             <ErrorState
               title="가격 기록을 불러오지 못했습니다"
               description="기기에 저장된 기록을 읽지 못했습니다. 다시 시도해주세요."
@@ -300,7 +300,7 @@ export function DropPriceScreen(): React.JSX.Element {
             />
           ) : (
             <>
-              {/* 요약은 **카드가 아니라 헤드라인**이다(B안 채택 2026-08-10) — [[ADR-046]] 이 보스
+              {/* 요약은 **카드가 아니라 헤드라인**이다(B안 채택 2026-08-10) — 이 보스
                   수익 총 수익에 내린 판단이 이 화면에도 그대로 성립한다: 아래가 전부 같은 카드
                   셸이라 요약도 카드면 "흰 카드의 반복"으로 묻힌다.
 
@@ -320,7 +320,7 @@ export function DropPriceScreen(): React.JSX.Element {
                     <ProfitIcon className="h-[18px] w-[18px] text-primary-ink" strokeWidth={2} aria-hidden />
                   </View>
                   {/* 단위 앞의 실제 공백은 남긴다 — 마진만으로 띄우면 읽는 값이 "N메소"로 붙어
-                      스크린리더가 이어 읽는다([[ADR-046]] 규약). */}
+                      스크린리더가 이어 읽는다(규약). */}
                   <Text
                     className="text-xl font-extrabold leading-none text-primary-ink"
                     style={TABULAR_NUMS}
@@ -426,7 +426,7 @@ export function DropPriceScreen(): React.JSX.Element {
           progress={queue.length > 0 ? { current: unpriced - queue.length, total: unpriced } : undefined}
           onSave={(priceMeso, share) => void runWrite(() => savePrice(pricing, priceMeso, share))}
           onExclude={() => void runWrite(() => excludePrice(pricing))}
-          // 스킵은 저장하지 않는다 — 미입력에 그대로 두고 다음 건으로만 간다([[ADR-124]] 결정 6 정정).
+          // 스킵은 저장하지 않는다 — 미입력에 그대로 두고 다음 건으로만 간다(정정).
           onLater={queue.length > 0 ? advance : undefined}
           onClose={() => {
             setQueue([])

@@ -1,12 +1,12 @@
-// API 키 입력 — 온보딩의 첫 관문([[ADR-003]] · [[ADR-007]] · [[ADR-110]]).
+// API 키 입력 — 온보딩의 첫 관문.
 //
 // 갈림길 레이아웃(`docs/features/onboarding.md`)을 그대로 옮긴다: 이 화면에 오는 사람은 둘뿐이라
 // (키가 있는 사람 / 없는 사람) 폼이 먼저이고 넥슨 바로 가기가 인풋에 붙으며, 가이드는 구분선 뒤에서
-// 처음으로 누를 수 있는 크기가 된다. [[ADR-110]] 이 두 링크를 *"중복이 아니라 서로 다른 두 진입점"*
+// 처음으로 누를 수 있는 크기가 된다. 이 두 링크를 *"중복이 아니라 서로 다른 두 진입점"*
 // 이라 적은 것을 화면 구조로 옮긴 것이라, 둘 중 하나를 빼면 그 결정이 깨진다.
 //
 // 키는 이 컴포넌트가 저장하지 않는다 — `onSubmit` 으로 넘기면 스토어가 `storage/api-key` 를 거친다
-// (CLAUDE.md CRITICAL · [[ADR-003]] 백엔드 없음).
+// (CLAUDE.md CRITICAL 백엔드 없음).
 //
 // ── RN 으로 옮기며 갈린 것 일곱 ─────────────────────────────────────────────────────
 //
@@ -24,7 +24,7 @@
 //    시스템 브라우저로 나가던 동작이 RN 에서는 이 호출이다. `rel="noopener noreferrer"` 는 브라우저
 //    탭 사이의 문제라 짝이 없다 — OS 브라우저가 열리는 순간 관계 자체가 없다.
 //    가이드 버튼은 `Button` atom 에 `role="link"` 를 덮어 쓴다(atom 이 `{...rest}` 를 뒤에 펼친다) —
-//    **겉모습만 outline 을 입고 시맨틱은 링크**라는 [[ADR-110]] 후속 결정이 그대로 산다.
+//  **겉모습만 outline 을 입고 시맨틱은 링크**라는 후속 결정이 그대로 산다.
 // ⑥ `hover:` 제거(터치 기기에 hover 가 없다 — atoms 와 같은 규칙), `disabled:opacity-50` 는 CSS
 //    의사 클래스라 RN 프롭과 안 이어져 조건부 클래스가 된다.
 // ⑦ **`placeholder` 색을 지정하지 않는다.** 웹도 지정하지 않아 브라우저 기본값이었고, 여기서도
@@ -41,7 +41,7 @@ import {
   TextInput,
 } from '../../components/atoms'
 
-/** 1차 경로 — 처음 쓰는 사용자를 넥슨 첫 화면에 떨궈 놓지 않는다([[ADR-110]]). */
+/** 1차 경로 — 처음 쓰는 사용자를 넥슨 첫 화면에 떨궈 놓지 않는다. */
 const GUIDE_URL = 'https://mapleroutine.store/api-key'
 /** 이미 키를 발급받은 사용자의 동선 — 7단계 안내를 경유시키지 않는다. */
 const NEXON_OPEN_API_URL = 'https://openapi.nexon.com'
@@ -70,8 +70,8 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
       <View className="gap-1">
         <Text className="text-lg font-semibold text-text">넥슨 API 키를 입력해주세요</Text>
         <Text className="text-sm text-text-muted">스케줄러 API를 사용하려면 개인 API 키가 필요해요</Text>
-        {/* 키는 기기에 저장된다(storage/api-key, [[ADR-007]]) — "저장하지 않는다"는 약속은 지킬 수
-            없다. 사실인 것은 백엔드가 없어([[ADR-003]]) 우리가 수집하지 않는다는 것뿐이다. */}
+        {/* 키는 기기에 저장된다(storage/api-key) — "저장하지 않는다"는 약속은 지킬 수
+            없다. 사실인 것은 백엔드가 없어 우리가 수집하지 않는다는 것뿐이다. */}
         <Text className="text-xs text-text-muted">
           입력한 키는 이 기기에만 저장되고 넥슨 외 어디로도 전송되지 않아요
         </Text>

@@ -1,10 +1,10 @@
-// 캐릭터 관리 화면([[ADR-144]]) — **웹에 짝이 없는 화면**이라 옮겨 적을 명세가 없다. 그래서 이
+// 캐릭터 관리 화면 — **웹에 짝이 없는 화면**이라 옮겨 적을 명세가 없다. 그래서 이
 // 파일이 보는 것은 그 ADR 의 성공 기준 그대로다: 두 층의 범위 · 이동 · 별 · TTL · 저장 활성 조건.
 //
 // ── 무엇을 목으로 세우는가 ──────────────────────────────────────────────────────────
 //
 // 값 규칙(`summarizeAccount`·`buildSelectedCharacterViews`·`resolveRepresentative`)과 문구
-// (`formatRosterError`)는 **실물을 쓴다** — 여기서 베끼면 규칙이 두 벌이 된다([[ADR-144]] 머리
+// (`formatRosterError`)는 **실물을 쓴다** — 여기서 베끼면 규칙이 두 벌이 된다(머리
 // «값 규칙의 자리»). 세우는 것은 경계 넷뿐이다: 계정 목록 조회 · 후보 목록 조회 · 로컬 캐시 ·
 // 저장 액션.
 //
@@ -60,7 +60,7 @@ jest.mock('../../../storage/character-selection', () => ({
 }))
 jest.mock('../../../storage/schedule-probe-ledger', () => ({ getScheduleProbeLedger: jest.fn() }))
 
-// [[ADR-062]]: `toScheduleSyncError` 는 실물을 쓴다(문구가 원인에서 나온다). `...requireActual` 을
+// : `toScheduleSyncError` 는 실물을 쓴다(문구가 원인에서 나온다). `...requireActual` 을
 // 통째로 쓰면 순환 참조가 아직 구성 중인 모듈을 `undefined` 로 만난다 — 부분 모킹이 그 처방이다.
 jest.mock('../../../features/schedule-sync/schedule-sync', () => ({
   toScheduleSyncError: jest.requireActual<typeof import('../../../features/schedule-sync/errors')>(
@@ -73,14 +73,14 @@ jest.mock('../../../features/content-scheduler/store', () => {
   const hook = jest.fn()
   return { useContentSchedulerStore: hook }
 })
-// [[ADR-140]] 결정 5: 저장 뒤 다시 읽히는 둘 — 화면은 `getState()` 로만 만진다.
+// : 저장 뒤 다시 읽히는 둘 — 화면은 `getState()` 로만 만진다.
 jest.mock('../../../features/boss-scheduler/store', () => ({
   useBossSchedulerStore: { getState: () => ({ loadTrackedOcids: mockLoadBossTracked }) },
 }))
 jest.mock('../../../features/boss-profit/store', () => ({
   useBossProfitStore: { getState: () => ({ loadTrackedOcids: mockLoadProfitTracked }) },
 }))
-// [[ADR-115]] 결정 7 · [[ADR-116]] 결정 1: 401·429 는 키 재입력 진입점으로 간다.
+// : 401·429 는 키 재입력 진입점으로 간다.
 jest.mock('../../../features/onboarding/store', () => ({
   useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
 }))
@@ -243,7 +243,7 @@ afterEach(() => {
   jest.clearAllMocks()
 })
 
-describe('두 층 — 위는 계정을 넘고 아래는 계정 하나다 ([[ADR-144]] 결정 2)', () => {
+describe('두 층 — 위는 계정을 넘고 아래는 계정 하나다', () => {
   it('위는 저장 순서 그대로, 아래는 그 계정에서 아직 안 고른 후보다', async () => {
     mockContentStore({ trackedOcids: ['a1'] })
 
@@ -275,10 +275,10 @@ describe('두 층 — 위는 계정을 넘고 아래는 계정 하나다 ([[ADR-
     expect(namesIn(view, 'character-manage-selected')).toEqual(['낟낟'])
   })
 
-  // ★ [[ADR-061]] 정정 2 — 대기 자리에 **문구가 보인다.** 예전에는 `aria-label` 만 있어 화면에는
-  // 마크 하나뿐이었고, 그 마크가 [[ADR-061]] 정정 1 대로 **움직이지도 않았다**. 사용자 보고가
+  // ★ — 대기 자리에 **문구가 보인다.** 예전에는 `aria-label` 만 있어 화면에는
+  // 마크 하나뿐이었고, 그 마크가 대로 **움직이지도 않았다**. 사용자 보고가
   // 그 조합을 «진행중인지 알 수 없다» 로 반려했다(2026-08-18).
-  it('대기 문구가 화면에 보인다 — 마크만으로는 무엇을 기다리는지 모른다 ([[ADR-061]] 정정 2)', async () => {
+  it('대기 문구가 화면에 보인다 — 마크만으로는 무엇을 기다리는지 모른다', async () => {
     mockContentStore({ trackedOcids: ['a1'] })
     rosterHangingAccounts.add('account-b')
     const view = await renderScreen()
@@ -302,7 +302,7 @@ describe('두 층 — 위는 계정을 넘고 아래는 계정 하나다 ([[ADR-
   })
 
   // 「후보 목록 로딩」 정책 그대로 — 보여줄 것이 남아 있으면 지우지 않고 위에 배너를 얹는다
-  // ([[ADR-062]] 결정 4). 캐시 stub 이 네트워크보다 먼저 오므로 이쪽이 기본 분기다.
+  // . 캐시 stub 이 네트워크보다 먼저 오므로 이쪽이 기본 분기다.
   it('후보가 도착한 뒤 실패하면 목록을 지우지 않고 스탈 배너를 얹는다', async () => {
     mockContentStore({ trackedOcids: [] })
     mockedRoster.mockImplementation(async (onUpdate) => {
@@ -317,7 +317,7 @@ describe('두 층 — 위는 계정을 넘고 아래는 계정 하나다 ([[ADR-
   })
 })
 
-// ★ [[ADR-144]] 정정 1 — **콜드 캐시에서 위 층이 비던 결함.**
+// ★ — **콜드 캐시에서 위 층이 비던 결함.**
 //
 // 위 층과 대표 얼굴은 로컬 캐시(`getCachedCharacterBasic`)만 읽었는데, 프로필 채우기 effect 가
 // **miss 에도 `null` 을 넣어** 그 ocid 를 영영 다시 안 읽었다(«모른다» 를 «없다» 로 기억). 온보딩에서는
@@ -326,7 +326,7 @@ describe('두 층 — 위는 계정을 넘고 아래는 계정 하나다 ([[ADR-
 // (안드로이드 실기기 2026-08-18).
 //
 // 여기서는 캐시를 **끝까지 비워** 그 창을 영구화한다. 값은 이미 화면에 있는 로스터 응답에서 와야 한다.
-describe('콜드 캐시 — 캐시가 비어도 위 층이 빈칸으로 남지 않는다 ([[ADR-144]] 정정 1)', () => {
+describe('콜드 캐시 — 캐시가 비어도 위 층이 빈칸으로 남지 않는다', () => {
   const 얼굴 = 'https://example.test/a1.png'
 
   beforeEach(() => {
@@ -375,14 +375,14 @@ describe('콜드 캐시 — 캐시가 비어도 위 층이 빈칸으로 남지 �
   })
 })
 
-describe('이동 — 선택은 «표시» 가 아니라 «이동» 이다 ([[ADR-144]] 결정 3)', () => {
+describe('이동 — 선택은 «표시» 가 아니라 «이동» 이다', () => {
   it('후보 카드를 누르면 아래에서 사라지고 위 리스트 **끝**에 붙는다', async () => {
     mockContentStore({ trackedOcids: ['a1'] })
     const view = await renderScreen()
 
     await press(view.getByText('별헤는밤'))
 
-    // 레벨(250)로 끼워 넣지 않는다 — 새로 고른 캐릭터는 배열 끝이다([[ADR-143]] 결정 3).
+    // 레벨(250)로 끼워 넣지 않는다 — 새로 고른 캐릭터는 배열 끝이다.
     expect(namesIn(view, 'character-manage-selected')).toEqual(['낟낟', '별헤는밤'])
     expect(namesIn(view, 'character-manage-candidates')).toEqual(['달의아이'])
   })
@@ -407,7 +407,7 @@ describe('이동 — 선택은 «표시» 가 아니라 «이동» 이다 ([[ADR
     expect(namesIn(view, 'character-manage-candidates')).toEqual(['달의아이', '별헤는밤'])
   })
 
-  // [[ADR-068]] 결정 4 가 원한 결말 — 뺄 수 있으면 됐고, 다시 고를 수 있어야 할 이유는 없다.
+  //  가 원한 결말 — 뺄 수 있으면 됐고, 다시 고를 수 있어야 할 이유는 없다.
   it('조회 불가 캐릭터는 위에 남아 해제되고, 빼면 어디에도 서지 않는다', async () => {
     mockContentStore({ trackedOcids: ['a2'] })
     rosterByAccount['account-a'] = [후보(낟낟), 후보(달의아이, { unavailable: true })]
@@ -427,7 +427,7 @@ describe('이동 — 선택은 «표시» 가 아니라 «이동» 이다 ([[ADR
   })
 })
 
-describe('대표 — 별의 뜻이 «고름» 에서 «대표» 로 바뀌었다 ([[ADR-144]] 결정 4)', () => {
+describe('대표 — 별의 뜻이 «고름» 에서 «대표» 로 바뀌었다', () => {
   it('대표가 없으면 아무 별도 채워지지 않고 흐려지지도 않는다', async () => {
     mockContentStore({ trackedOcids: ['a1', 'a2'] })
 
@@ -482,7 +482,7 @@ describe('대표 — 별의 뜻이 «고름» 에서 «대표» 로 바뀌었다
   })
 })
 
-describe('순서 — 놓은 자리가 배열 순서다 ([[ADR-144]] 결정 5)', () => {
+describe('순서 — 놓은 자리가 배열 순서다', () => {
   function handle(view: Rendered, name: string): AtomElement {
     return view.getByLabelText(`${name} 순서 변경`)
   }
@@ -548,7 +548,7 @@ describe('순서 — 놓은 자리가 배열 순서다 ([[ADR-144]] 결정 5)', 
     expect(actionLabels(handle(view, '낟낟'))).toEqual([])
   })
 
-  // [[ADR-043]] 결정 1 의 «멤버십으로만 판정하라» 가 뒤집힌 자리([[ADR-144]] 결정 7). 집합은
+  //  의 «멤버십으로만 판정하라» 가 뒤집힌 자리. 집합은
   // 그대로이고 순서만 달라진다.
   it('순서만 바꿔도 저장이 활성이 된다', async () => {
     mockContentStore({ trackedOcids: ['a1', 'a2'] })
@@ -581,12 +581,12 @@ describe('순서 — 놓은 자리가 배열 순서다 ([[ADR-144]] 결정 5)', 
     await press(node as AtomElement)
     await act(async () => {})
 
-    // 레벨(294 · 260 · 250)로 되돌리지 않는다([[ADR-143]] 결정 3).
+    // 레벨(294 · 260 · 250)로 되돌리지 않는다.
     expect(saveTrackedOcids).toHaveBeenCalledWith(['a2', 'a1', 'a3'], expect.any(Function))
   })
 })
 
-describe('계정 전환 TTL ([[ADR-144]] 결정 6)', () => {
+describe('계정 전환 TTL', () => {
   function accountsOf(): string[] {
     return mockedRoster.mock.calls.map((call) => call[1]?.accountId ?? '')
   }
@@ -649,7 +649,7 @@ describe('계정 전환 TTL ([[ADR-144]] 결정 6)', () => {
   })
 })
 
-describe('못 고르는 계정 ([[ADR-143]] 결정 10)', () => {
+describe('못 고르는 계정', () => {
   it('그 계정의 후보가 0건이면 그 사실을 말하고, 출구는 드롭다운이다', async () => {
     rosterByAccount['account-a'] = []
 
@@ -684,7 +684,7 @@ describe('못 고르는 계정 ([[ADR-143]] 결정 10)', () => {
   })
 })
 
-describe('키 재입력 진입점 ([[ADR-115]] 결정 7 · [[ADR-116]] 결정 1)', () => {
+describe('키 재입력 진입점', () => {
   it.each([
     ['401', new NexonAuthError('401'), 'invalid'],
     ['429', new NexonRateLimitError('429'), 'rateLimited'],
@@ -713,7 +713,7 @@ describe('키 재입력 진입점 ([[ADR-115]] 결정 7 · [[ADR-116]] 결정 1)
   })
 })
 
-describe('저장 ([[ADR-144]] 결정 7 · [[ADR-140]] 결정 4·5)', () => {
+describe('저장', () => {
   function saveButton(view: Rendered): AtomElement {
     let node: AtomElement | null = view.getByText('저장')
     while (node !== null && node.props.role !== 'button') node = node.parent
@@ -731,7 +731,7 @@ describe('저장 ([[ADR-144]] 결정 7 · [[ADR-140]] 결정 4·5)', () => {
     expect(isSaveDisabled(await renderScreen())).toBe(true)
   })
 
-  // [[ADR-086]] 결정 7: 0개는 어떤 사용자 의도도 표현하지 않는다.
+  // : 0개는 어떤 사용자 의도도 표현하지 않는다.
   it('0개면 비활성이다', async () => {
     mockContentStore({ trackedOcids: ['a1'] })
     const view = await renderScreen()
@@ -750,7 +750,7 @@ describe('저장 ([[ADR-144]] 결정 7 · [[ADR-140]] 결정 4·5)', () => {
     expect(isSaveDisabled(view)).toBe(false)
   })
 
-  // [[ADR-043]] 결정 1 의 «멤버십으로만 판정하라» 가 뒤집히는 자리다 — 순서가 사용자 것이 되면서
+  //  의 «멤버십으로만 판정하라» 가 뒤집히는 자리다 — 순서가 사용자 것이 되면서
   // 그 근거(그리드 토글이 배열 끝에 append 해 순서가 의미 없이 흔들린다)가 사라졌다.
   it('집합이 같아도 순서가 달라지면 활성이다', async () => {
     mockContentStore({ trackedOcids: ['a1', 'a2'] })
@@ -849,7 +849,7 @@ describe('저장 ([[ADR-144]] 결정 7 · [[ADR-140]] 결정 4·5)', () => {
 })
 
 describe('화면 골격', () => {
-  it('자기 스크롤 컨테이너를 갖고, 고정되는 것은 저장 바 하나다 ([[ADR-131]] 의 하단 액션 바 예외)', async () => {
+  it('자기 스크롤 컨테이너를 갖고, 고정되는 것은 저장 바 하나다 ( 의 하단 액션 바 예외)', async () => {
     const view = await renderScreen()
 
     // 헤더가 스크롤 뷰의 **자식**이다 — 형제로 두면 화면에 붙어 영원히 고정된다.

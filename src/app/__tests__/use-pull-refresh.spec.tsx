@@ -1,7 +1,7 @@
-// 당김 인디케이터가 **누구 것인가** — [[ADR-160]] 결정 1.
+// 당김 인디케이터가 **누구 것인가** —.
 //
-// [[ADR-130]] 결정 1 은 `refreshing = status === 'loading'` 이었다. 그 값은 사용자의 당김만
-// 세우는 것이 아니라 **화면 마운트 하이드레이션**([[ADR-097]] 결정 4 · [[ADR-101]] 결정 4)과 헤더
+//  은 `refreshing = status === 'loading'` 이었다. 그 값은 사용자의 당김만
+// 세우는 것이 아니라 **화면 마운트 하이드레이션**과 헤더
 // 버튼도 함께 세운다. 그래서 탭을 옮기기만 해도 인디케이터가 프로그램적으로 열렸다(사용자 보고
 // 2026-08-22 — *"페이지 이동 시 새로고침 인디케이터가 저절로 돌고"*).
 
@@ -9,7 +9,7 @@ import { act, renderHook, waitFor } from '@testing-library/react-native'
 
 import { usePullRefresh } from '../use-pull-refresh'
 
-describe('usePullRefresh ([[ADR-160]] 결정 1)', () => {
+describe('usePullRefresh', () => {
   it('당기기 전에는 돌지 않는다', async () => {
     const { result } = await renderHook(() => usePullRefresh(async () => undefined))
 
@@ -39,7 +39,7 @@ describe('usePullRefresh ([[ADR-160]] 결정 1)', () => {
   })
 
   // 회차가 실패해도 인디케이터는 닫혀야 한다 — 안 닫으면 «상단이 빈 채로 멈춘다» 가 실패 경로에서
-  // 그대로 재현된다(실패 자체는 토스트가 말한다, [[ADR-063]]).
+  // 그대로 재현된다(실패 자체는 토스트가 말한다).
   it('회차가 실패해도 멈춘다', async () => {
     const { result } = await renderHook(() =>
       usePullRefresh(async () => {

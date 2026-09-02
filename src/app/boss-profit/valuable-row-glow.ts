@@ -1,21 +1,21 @@
 /**
- * 웹 `index.css` 의 **`.valuable-drop-row`** 가 내려온 값들([[ADR-045]] 결정 5).
+ * 웹 `index.css` 의 **`.valuable-drop-row`** 가 내려온 값들.
  *
  * ## 왜 컴포넌트 파일이 아닌가
  *
  * 원래 `keyframes-parity.test.ts` 가 웹 `index.css` 를 **실제로 읽어** 이 값들과 대조했다. **그 테스트는
- * 없다**(웹 소스와 함께 지워졌다 — [[ADR-155]]·[[ADR-156]]). 값이 컴포넌트가 아니라 여기 사는 이유는
+ * 없다**(웹 소스와 함께 지워졌다 —). 값이 컴포넌트가 아니라 여기 사는 이유는
  * 남은 하나다: 컴포넌트 파일에서 내보내면 fast refresh 가 깨진다(`valuable-card-glow.ts`·
  * `Button/variants.ts`·`row-class.ts` 와 같은 판단).
  *
  * ## step 6 이 `BossProfitBossRow` 안에 두었던 것이 여기로 왔다
  *
  * 그때는 호출부가 보스 행 하나뿐이었다. step 8 의 **가격 기록 화면 행**(`DropPriceScreen` 의
- * `EntryRow` — 웹도 같은 `valuable-drop-row` 클래스를 쓴다)이 두 번째가 되어 [[ADR-094]] 결정 1 의
+ * `EntryRow` — 웹도 같은 `valuable-drop-row` 클래스를 쓴다)이 두 번째가 되어 의
  * "호출부 2곳 이상"을 넘겼다. 옮기지 않고 `BossProfitBossRow` 에서 가져오면 가격 화면이 드롭 시트·
  * 팝오버·보스 초상까지 딸린 모듈에 매달린다.
  *
- * **드롭 히스토리에는 쓰지 않는다** — [[ADR-071]] 결정 8 이 명시적으로 뺐다(줄간격을 좁히면 배경
+ * **드롭 히스토리에는 쓰지 않는다** — 이 명시적으로 뺐다(줄간격을 좁히면 배경
  * 블록끼리 붙어 서로를 잡아먹는다). 그 화면의 고가 표시는 pill 과 본문색만 담당한다.
  */
 

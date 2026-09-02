@@ -2,7 +2,7 @@
 // (`jest.config.js` 의 `testMatch` 가 이름으로 거른다), `components/__tests__/render-atom.tsx` 와 같은
 // 자리에 있다.
 //
-// 위젯은 스토어를 모르고 `TodayViewModel` 만 받으므로([[ADR-147]] 결정 4) **목이 필요 없다** — 값
+// 위젯은 스토어를 모르고 `TodayViewModel` 만 받으므로 **목이 필요 없다** — 값
 // 조합이 곧 테스트 입력이다. 그 이득을 실제로 회수하려면 «전부 빈 상태» 하나가 있어야 하고, 각
 // 테스트는 자기가 보는 필드만 덮어쓴다.
 
@@ -163,7 +163,7 @@ export function 드롭(부분: Partial<PricedDropView> = {}): PricedDropView {
 }
 
 /**
- * 월드 한도 한 줄 — **분모는 언제나 참조 데이터에서 온다**([[ADR-006]]).
+ * 월드 한도 한 줄 — **분모는 언제나 참조 데이터에서 온다**.
  *
  * 픽스처가 숫자를 적으면 위젯이 그 숫자를 그대로 그려도 «상수에서 왔는가» 를 못 묻는다. 그래서
  * 기본값을 상수로 두고, 판별력 확인이 필요한 테스트만 `limit` 을 명시적으로 덮는다.
@@ -255,7 +255,7 @@ export function 가뭄(weeksSince: number, 부분: Partial<DroughtView> = {}): D
   }
 }
 
-/** 공유 컨텐츠 한 줄 — 카운트가 없으면 `CLEAR`/빈칸으로 그려진다([[ADR-147]] 정정 29). */
+/** 공유 컨텐츠 한 줄 — 카운트가 없으면 `CLEAR`/빈칸으로 그려진다. */
 export function 공유항목(
   shortName: string,
   부분: Partial<SharedContentItemView> = {},

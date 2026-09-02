@@ -4,7 +4,7 @@
 // ① `getByRole('button', { name })` → **글자에서 위로 올라가** 그 행을 잡는다 — RN 은 자식 글자를
 //    합쳐 하나의 접근성 이름으로 만들지 않는다(온보딩 테스트와 같은 헬퍼).
 // ② `toHaveClass('text-error-ink')` → **컴파일된 스타일의 색**을 본다. 클래스는 스타일로 바뀌어
-//    사라지므로, 기대값은 손으로 적지 않고 `job-themes.json` 에서 읽는다([[ADR-006]] · `render-atom`).
+//  사라지므로, 기대값은 손으로 적지 않고 `job-themes.json` 에서 읽는다(`render-atom`).
 // ③ `onClick` → `onPress`. 계약("누르면 한 번 불린다")은 그대로다.
 import { fireEvent } from '@testing-library/react-native'
 import { Text } from 'react-native'
@@ -42,7 +42,7 @@ describe('SettingsRow', () => {
     expect(view.getByTestId('settings-row-chevron')).toBeTruthy()
   })
 
-  // [[ADR-118]] 결정 4: 배타에서 병기로. 값이 있으면 화살표가 사라지던 옛 동작에서는 화살표가
+  // : 배타에서 병기로. 값이 있으면 화살표가 사라지던 옛 동작에서는 화살표가
   // "누르면 열린다"가 아니라 "값이 있는가"를 말했다.
   it('rightContent를 주면 그 내용과 chevron이 함께 보인다', async () => {
     const view = await renderAtom(

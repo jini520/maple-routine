@@ -36,7 +36,7 @@ beforeEach(() => {
   useOnboardingStore.setState({ apiKeyNotice: null, confirmApiKeyNotice })
 })
 
-describe('ApiKeyNoticeModal ([[ADR-116]] 결정 1)', () => {
+describe('ApiKeyNoticeModal', () => {
   it('알림이 꺼져 있으면 아무것도 그리지 않는다', async () => {
     const { queryByTestId } = await renderOverlay(<ApiKeyNoticeModal />)
 
@@ -49,7 +49,7 @@ describe('ApiKeyNoticeModal ([[ADR-116]] 결정 1)', () => {
     })
 
     // 원인마다 다른 말을 해야 한다 — 무효 키는 "다음에 무슨 일이 일어나는가"를, 429 는 처방을
-    // 말한다([[ADR-116]] 결정 1 · [[ADR-114]] 결정 4 — 모달은 줄바꿈이 되므로 처방까지 담는 자리다).
+    // 말한다(— 모달은 줄바꿈이 되므로 처방까지 담는 자리다).
     it('원인에 맞는 제목과 본문을 그린다', async () => {
       const { getByText } = await renderOverlay(<ApiKeyNoticeModal />)
 
@@ -68,7 +68,7 @@ describe('ApiKeyNoticeModal ([[ADR-116]] 결정 1)', () => {
     })
 
     // 닫을 수 없어야 한다: 저장된 키로는 앞으로 갈 수 없으므로 닫아서 돌아갈 곳이 없다.
-    // 429 도 마찬가지다([[ADR-116]] 결정 1 — 사용자 확정).
+    // 429 도 마찬가지다(— 사용자 확정).
     it('오버레이를 눌러도 닫히지 않는다', async () => {
       const { getByText, getByTestId } = await renderOverlay(<ApiKeyNoticeModal />)
 
@@ -78,7 +78,7 @@ describe('ApiKeyNoticeModal ([[ADR-116]] 결정 1)', () => {
       expect(confirmApiKeyNotice).not.toHaveBeenCalled()
     })
 
-    // RN 에서만 물을 수 있는 것 — 안드로이드 시스템 뒤로가기도 닫기다([[ADR-120]] 결정 18 후반).
+    // RN 에서만 물을 수 있는 것 — 안드로이드 시스템 뒤로가기도 닫기다(후반).
     // `onClose` 가 no-op 이므로 아무 일도 일어나지 않아야 한다.
     it('안드로이드 뒤로가기로도 닫히지 않는다', async () => {
       const { getByText, getByTestId } = await renderOverlay(<ApiKeyNoticeModal />)

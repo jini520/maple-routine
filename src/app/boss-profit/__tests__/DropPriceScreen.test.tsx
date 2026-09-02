@@ -1,10 +1,10 @@
-// 가격 기록 화면([[ADR-124]] 결정 8) — 웹판(251줄)의 명세를 읽어 다시 쓴 것.
+// 가격 기록 화면 — 웹판(251줄)의 명세를 읽어 다시 쓴 것.
 //
 // 갈린 것 셋
 // ① **라우터가 없다** — 뒤로는 `goBack` 이 불렸는가로 본다.
 // ② 키패드 **내부** 계약은 `DropPricePad.test.tsx` 가 갖는다(웹은 화면 테스트에 섞여 있었다).
 //    여기서는 *"행을 누르면 그 기록을 들고 열리는가 · 저장이 스토어까지 가는가"* 만 본다.
-// ③ **[[ADR-124]] 표시 계약을 케이스로 못박았다** — 웹에 없던 것이다. 미입력 자리에 `0` 이
+// ③ ** 표시 계약을 케이스로 못박았다** — 웹에 없던 것이다. 미입력 자리에 `0` 이
 //    없는지, `priceMeso` 는 있고 `priceState` 가 없는 기록(가장 강한 반례)이 여전히 미입력으로
 //    읽히는지, 그 기록이 합계를 한 푼도 안 움직이는지.
 import type { ReactNode } from 'react'
@@ -23,7 +23,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
       return React.createElement(ReactNative.View, props)
     }),
     BottomSheetScrollView: (props: Record<string, unknown>) => React.createElement(ReactNative.View, props),
-    // 시트 밖과 같게 둔다 — 아톰이 이 값으로 «시트 안인가» 를 묻는다([[ADR-170]] 정정 5).
+    // 시트 밖과 같게 둔다 — 아톰이 이 값으로 «시트 안인가» 를 묻는다.
     // 목이 시트를 평범한 `View` 로 바꾸므로 여기서도 문맥이 없는 것이 사실이고, 그래서
     // 아래 입력은 안 그려진다 — 그래도 **있어야 한다**: `lib/nativewind-interop` 이 모듈을
     // 읽는 순간 이것을 등록하므로, 없으면 스위트가 뜨기도 전에 죽는다.
@@ -60,7 +60,7 @@ const mockedNavigation = jest.mocked(useScreenNavigation)
 // 스토어가 상태 타입을 내보내지 않아 훅에서 판다(`drop-history-store` 쪽과 같은 방식).
 type PriceStore = ReturnType<typeof useDropPriceStore>
 
-// 보스 이름·난이도는 게임 레퍼런스 데이터에서 뽑는다([[ADR-006]]).
+// 보스 이름·난이도는 게임 레퍼런스 데이터에서 뽑는다.
 const 주간보스 = weeklyBossesData.weekly[0].boss
 const PERIOD = '2026-08-06'
 
@@ -117,7 +117,7 @@ beforeEach(() => {
   mockStores()
 })
 
-// ★ [[ADR-139]] 회귀 가드 — 이 화면은 공용 `PageHeader` 를 쓰지 않고 **같은 값을 자기 파일에서**
+// ★ 회귀 가드 — 이 화면은 공용 `PageHeader` 를 쓰지 않고 **같은 값을 자기 파일에서**
 // 낸다(드랍 히스토리·보스 수익과 같은 사정). 공용 셸만 고치고 여기를 빠뜨리면 히스토리·가격 두
 // 하위 페이지의 제목 높이가 16px 갈리는데, 두 화면은 같은 진입점 줄에서 나란히 열린다.
 describe('DropPriceScreen — 셸', () => {
@@ -130,7 +130,7 @@ describe('DropPriceScreen — 셸', () => {
   })
 })
 
-describe('DropPriceScreen — 기간을 이어받는다 ([[ADR-124]] 결정 8)', () => {
+describe('DropPriceScreen — 기간을 이어받는다', () => {
   it('보스 수익에서 보던 주를 그대로 연다', async () => {
     await renderOverlay(<DropPriceScreen />)
 
@@ -231,7 +231,7 @@ describe('DropPriceScreen — 값 매기기', () => {
     expect(mockShowError).toHaveBeenCalledWith('가격을 저장하지 못했습니다')
   })
 
-  it('조회 실패는 빈 목록으로 위장하지 않는다 ([[ADR-062]])', async () => {
+  it('조회 실패는 빈 목록으로 위장하지 않는다', async () => {
     mockStores({ price: { status: 'failed', groups: [] } })
     const { getByText } = await renderOverlay(<DropPriceScreen />)
 
@@ -254,7 +254,7 @@ describe('DropPriceScreen — 값 매기기', () => {
 })
 
 // **미입력은 0원이 아니다** — 이 화면이 그 구분을 가장 직접적으로 보여주는 자리다.
-describe('DropPriceScreen — 미입력 ≠ 0원 ([[ADR-124]])', () => {
+describe('DropPriceScreen — 미입력 ≠ 0원', () => {
   it('미입력 행의 금액 자리에는 0 이 아니라 "입력" 이 선다', async () => {
     const { getByLabelText } = await renderOverlay(<DropPriceScreen />)
 
@@ -351,7 +351,7 @@ describe('DropPriceScreen — 표시 규칙 정정 (2026-08-10)', () => {
     expect(getByText('리스트레인트 링 3레벨')).toBeTruthy()
   })
 
-  it('고가 아이템 행에는 골드 배경이 깔린다 — 보스 행과 같은 표현이다 ([[ADR-045]] 결정 5)', async () => {
+  it('고가 아이템 행에는 골드 배경이 깔린다 — 보스 행과 같은 표현이다', async () => {
     const 고가 = weeklyBossesData.weekly[0].boss
     mockStores({
       price: { groups: 그룹([항목({ boss: 고가, drop: 드롭({ itemName: '루즈 컨트롤 머신 마크' }) })]) },
@@ -369,7 +369,7 @@ describe('DropPriceScreen — 표시 규칙 정정 (2026-08-10)', () => {
   })
 })
 
-// **스킵과 기록 안함은 다른 일이다**([[ADR-124]] 결정 6 정정).
+// **스킵과 기록 안함은 다른 일이다**(정정).
 //   기록 안함 = "값을 매길 만하지 않다"는 결정 → 저장한다(미입력에서 빠진다)
 //   스킵       = "아직 안 팔렸다, 팔리면 넣겠다" → **아무것도 저장하지 않고** 미입력에 머문다
 describe('DropPriceScreen — 순차 입력', () => {

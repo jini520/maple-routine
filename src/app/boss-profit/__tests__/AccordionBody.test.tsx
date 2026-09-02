@@ -1,8 +1,8 @@
 // 펼친 카드의 본문 — 주간(보스 행)과 월간(주차 소계 + 월간 보스)이다.
 //
-// **[[ADR-068]] 결정 2 가 이 파일의 중심이다**: 여섯 상태 중 행동이 있는 둘만 버튼을 갖고,
+// ** 가 이 파일의 중심이다**: 여섯 상태 중 행동이 있는 둘만 버튼을 갖고,
 // **금액을 모르는 상태에는 0을 쓰지 않는다.** 0을 쓰면 "조회한 적 없다"가 "0원 벌었다"가 된다 —
-// [[ADR-124]] 가 드롭 가격에서 지키는 것과 같은 원칙이다.
+//  가 드롭 가격에서 지키는 것과 같은 원칙이다.
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
@@ -18,7 +18,7 @@ beforeEach(() => {
 
 describe('WeeklyAccordionBody', () => {
   // 웹의 `last:border-b-transparent` 짝 — RN 에는 `:last-child` 가 없어 부모가 알려 준다.
-  // 테두리를 **빼지 않고 색만** 지우는 것이 요점이라 두께는 두 행이 같아야 한다([[ADR-049]]).
+  // 테두리를 **빼지 않고 색만** 지우는 것이 요점이라 두께는 두 행이 같아야 한다.
   it('보스 행을 순서대로 그리고 마지막 행만 테두리 색을 지운다', async () => {
     const rows = [보스행(), 보스행({ boss: 다른주간보스 })]
     const { getByLabelText, getAllByTestId } = await renderProfit(<WeeklyAccordionBody rows={rows} />)
@@ -58,7 +58,7 @@ describe('WeeklyAccordionBody', () => {
   })
 })
 
-describe('WeeklySubtotalRow — 상태마다 얼굴이 다르다 ([[ADR-068]] 결정 2)', () => {
+describe('WeeklySubtotalRow — 상태마다 얼굴이 다르다', () => {
   const 금액없는상태: { state: WeeklySubtotalState; label: string }[] = [
     { state: 'upcoming', label: '예정' },
     { state: 'outOfRange', label: '조회 불가' },

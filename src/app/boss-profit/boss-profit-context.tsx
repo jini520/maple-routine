@@ -2,14 +2,14 @@ import { createContext, useContext } from 'react'
 import type { BossProfitStore } from '../../features/boss-profit/store'
 import type { RecordedDrop } from '../../types/drops'
 
-// 보스 수익 화면의 **기간·탭 맥락과 스토어 바인딩**을 자손에게 내리는 컨텍스트([[ADR-094]] 3단계).
+// 보스 수익 화면의 **기간·탭 맥락과 스토어 바인딩**을 자손에게 내리는 컨텍스트(3단계).
 //
 // 왜 컨텍스트인가 — 이 값들은 `BossProfitScreen → CharacterAccordion → Weekly/MonthlyAccordionBody
 // → BossProfitBossRow` **4단계**를 타고 내려가며 타입 선언 25곳 + JSX 전달 26곳, 합쳐 **51지점**을
 // 만들고 있었다. 그중 어느 것도 중간 컴포넌트가 쓰지 않고 그냥 통과시키기만 한다.
 //
 // 아코디언을 헤더/본문 compound 로 가르는 안은 이 문제를 하나도 줄이지 못한다(본문이 여전히
-// 같은 값을 받아야 한다) — [[ADR-094]] 결정 3의 정정 참고.
+// 같은 값을 받아야 한다) —의 정정 참고.
 //
 // **여기 담는 것과 담지 않는 것** — "화면 전체가 공유하는 맥락"만 담는다. 특정 캐릭터·특정
 // 보스에 매인 값(`group` `row` `issue` `stickyTop`)은 프롭으로 남는다. 컨텍스트가 그런 것까지
@@ -17,17 +17,17 @@ import type { RecordedDrop } from '../../types/drops'
 //
 // ══ RN 으로 옮기며 **사라진 것 하나 — `scrollRoot`** ═══════════════════════════════
 //
-// 웹의 여덟 번째 필드는 이 화면의 스크롤 컨테이너였다([[ADR-100]] 결정 5). 그것이 컨텍스트에
+// 웹의 여덟 번째 필드는 이 화면의 스크롤 컨테이너였다. 그것이 컨텍스트에
 // 있어야 했던 이유는 **4단계 아래 자손이 그것을 읽었기** 때문인데, 읽는 목적은 하나뿐이었다 —
 // `fixed` 팝오버(아이템 수익 · 캐릭터 이슈)를 **스크롤이 시작되면 닫는 것**. `fixed` 상자는
-// 스크롤을 따라오지 않아 그대로 두면 "어느 줄의 내역인지"를 잃는다([[ADR-100]] 결정 4).
+// 스크롤을 따라오지 않아 그대로 두면 "어느 줄의 내역인지"를 잃는다.
 //
 // RN 에서 그 팝오버는 **별도 네이티브 윈도우**(`Modal`)라 열려 있는 동안 아래 화면에 손가락이
 // 닿지 않는다 — **스크롤이 일어날 수 없으므로 닫을 일도 없다.** 지켜야 할 계약이 사라진 것이
 // 아니라 구조가 그것을 대신 지킨다(step 4·5 의 `useScreenStackStore` 깊이 게이트가 사라진 것과
 // 같은 종류다).
 //
-// **`scrollTo` 는 컨텍스트를 쓴 적이 없다** — 기간·탭 이동의 최상단 복귀([[ADR-080]])는 화면이
+// **`scrollTo` 는 컨텍스트를 쓴 적이 없다** — 기간·탭 이동의 최상단 복귀는 화면이
 // 자기 로컬 ref 로 직접 부른다(웹도 그랬다). RN 에서도 `ScreenScroll` 의 `ref` 프롭이 그 자리이고,
 // 그 배선은 step 7 의 몫이다.
 
@@ -37,7 +37,7 @@ export interface BossProfitContextValue {
   /** 보고 있는 기간의 키. */
   periodKey: string
   /**
-   * **지금 그려지고 있는 데이터의 (탭, 기간)** — 카운트업 identity 전용([[ADR-087]] 정정 1).
+   * **지금 그려지고 있는 데이터의 (탭, 기간)** — 카운트업 identity 전용.
    * 위의 `tab`·`periodKey` 는 데이터보다 먼저 바뀌므로 identity 에 쓰면 "새 키 + 옛 금액" 커밋이
    * 기억을 오염시킨다. 라벨·네비게이션은 계속 위의 값을 쓴다.
    */
@@ -52,7 +52,7 @@ export interface BossProfitContextValue {
   dropsByRowKey: Record<string, RecordedDrop[]>
   setPartySize: BossProfitStore['setPartySize']
   setBossDrops: BossProfitStore['setBossDrops']
-  /** 월간 탭에서 이 기간을 실제로 조회할 수 있는지([[ADR-068]] 결정 2). */
+  /** 월간 탭에서 이 기간을 실제로 조회할 수 있는지. */
   isMonthlyBossQueryable: boolean
   /** 주차 행의 조회·다시 시도 — 이 기간을 다시 로드한다(store.retryPeriod). */
   onRetryPeriod: () => void

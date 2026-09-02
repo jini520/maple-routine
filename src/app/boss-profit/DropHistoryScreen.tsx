@@ -1,11 +1,11 @@
-// 드롭 획득 히스토리 — 전 기간을 가로지르는 읽기 전용 목록([[ADR-071]], 이슈 #54). 보스 수익 화면의
+// 드롭 획득 히스토리 — 전 기간을 가로지르는 읽기 전용 목록(이슈 #54). 보스 수익 화면의
 // 고가 강조는 전부 "지금 보고 있는 기간"에 갇혀 있어(`dropsByRowKey`) 과거 기록은 그 기간으로
 // 이동해야만 보였다. 이 화면은 화면 rows 가 아니라 DB를 직접 읽으므로 그 제약도, 월간 탭의 주차별
-// 합계 한계도 없다([[ADR-071]] 결정 10).
+// 합계 한계도 없다.
 //
 // **삭제·수정 기능은 두지 않는다** — 기록 편집은 드롭 입력 시트 한 곳에서만 하고, 거기서 지운 것은
-// 같은 테이블을 읽는 이 화면에서 자동으로 사라진다([[ADR-071]] 결정 1). **쿼리를 화면이 짜지
-// 않는다** — `useDropHistoryStore.load()` 가 전 기간 조회·획득 불가 필터([[ADR-071]] 결정 6)·
+// 같은 테이블을 읽는 이 화면에서 자동으로 사라진다. **쿼리를 화면이 짜지
+// 않는다** — `useDropHistoryStore.load()` 가 전 기간 조회·획득 불가 필터·
 // 가뭄 집계를 전부 갖는다.
 //
 // ══ RN 으로 옮기며 갈린 것 다섯 ═══════════════════════════════════════════════════
@@ -15,17 +15,17 @@
 //    `fixed` 헤더를 전제해 sticky 헤더와 겹쳤기 때문이다(실기기 계측: 31px). RN 에는 그 보정 자체가
 //    없고 헤더가 **흐름 안**이라(`PageHeader` 파일 머리) 같은 그림이 공용 셸로 곧장 나온다.
 //    푸시/팝 전환·스와이프 백·탭바 밀어내기는 루트 스택의 성질이라 `StackScreen` 은 소멸한다
-//    ([[ADR-120]]).
+//
 // ② **공용 `PageHeader` 는 쓰지 않는다.** 웹의 그 셸 주석이 이 화면을 **명시적으로 제외**했다 —
 //    배경 조각도 하단 페이드도 없는 서브 화면이라 넣으면 없던 것이 생긴다. 그래서 헤더 마크업은
-//    이 화면이 직접 든다(보스 수익이 [[ADR-047]] 결정 6 때문에 같은 선택을 한 것과 자리는 다르되
+//  이 화면이 직접 든다(보스 수익이 때문에 같은 선택을 한 것과 자리는 다르되
 //    결과는 같다).
 // ③ **`useStackBack(PARENT_PATH)` → `goBack()`**, `PARENT_PATH` 상수도 사라진다 — 딥링크가 없어
 //    *"돌아갈 곳이 없는 경우"* 가 존재하지 않는다(`app/use-screen-navigation.ts`).
 // ④ **고가 pill 이 `View` 가 아니라 중첩 `Text` 다.** 웹은 `inline-flex` pill(골드 그라디언트 +
 //    글로우 + 라운드)이었는데 RN 의 문장 안에는 그 상자를 넣을 수 없다 — 중첩 `Text` 가 받는 것은
 //    `backgroundColor` 하나뿐이라 **그라디언트도 라운드도 글로우도 못 온다**(단색 골드 + 골드 잉크로
-//    degrade). 딸려서 **[[ADR-071]] 결정 8 의 줄바꿈 처방 하나가 통째로 필요 없어진다**: pill 이
+//  degrade). 딸려서 ** 의 줄바꿈 처방 하나가 통째로 필요 없어진다**: pill 이
 //    원자적 인라인 박스가 아니게 되어 "조사만 다음 줄로 떨어지는" 일이 구조적으로 안 일어난다
 //    (`particle` 을 따로 받는 것은 그대로지만 `whitespace-nowrap` 묶음은 사라진다).
 // ⑤ **잎의 `filter: drop-shadow(...)` 는 남는다** — RN 0.76+ 의 `filter` 스타일이 CSS 문자열을
@@ -69,9 +69,9 @@ import { useScreenNavigation } from '../use-screen-navigation'
  * 웹 `index.css` 의 `.valuable-drop-badge` 스킨 — **여기서는 단색으로 내려앉는다**(파일 머리 ④).
  *
  * 그라디언트(`linear-gradient(135deg, #ffe98a, #f7c400)`)의 **끝 정지점**을 그대로 쓴다. 새 골드를
- * 뽑지 않는 것이 [[ADR-071]] 결정 8 의 요구다(*"임의의 골드 hex 를 새로 뽑으면 어느 한쪽 테마에서
+ * 뽑지 않는 것이 의 요구다(*"임의의 골드 hex 를 새로 뽑으면 어느 한쪽 테마에서
  * 대비가 깨진다"*) — 두 정지점 중 어두운 쪽이라 골드 잉크와의 대비가 밝은 쪽보다 보수적이다.
- * 잉크는 웹과 **같은 값**이고, 둘 다 테마 토큰이 아니라 전 테마 공통 고정색이다([[ADR-045]]).
+ * 잉크는 웹과 **같은 값**이고, 둘 다 테마 토큰이 아니라 전 테마 공통 고정색이다.
  */
 const VALUABLE_INLINE_BG = '#f7c400'
 const VALUABLE_INLINE_INK = '#6b4e00'
@@ -79,7 +79,7 @@ const VALUABLE_INLINE_INK = '#6b4e00'
 /** 단풍잎 한 변(px). 단계별 색·기울기가 이 요소의 감정을 지고 있어 작으면 차이가 읽히지 않는다. */
 const DROUGHT_LEAF_SIZE = 42
 
-// 미획득 기간 요약([[ADR-071]] 결정 4) — 고가 전체를 **하나로** 집계한다. 아이템별·세트별로 나누지
+// 미획득 기간 요약 — 고가 전체를 **하나로** 집계한다. 아이템별·세트별로 나누지
 // 않는다(칠흑·광휘 구성원 수십 종이 대부분 "기록 없음"으로 채워져 소음이 된다).
 function ValuableDrought(props: { summary: ValuableDroughtSummary; now: Date }): React.JSX.Element {
   const label = formatBossProfitPeriodLabel(props.summary.cycle, props.summary.periodKey, props.now)
@@ -142,7 +142,7 @@ function ValuableDrought(props: { summary: ValuableDroughtSummary; now: Date }):
 }
 
 /**
- * 기록 한 건 = **한 줄 문장**이다([[ADR-071]] 결정 8): "지내우시님이 가디언 엔젤 슬라임(카오스)에서
+ * 기록 한 건 = **한 줄 문장**이다: "지내우시님이 가디언 엔젤 슬라임(카오스)에서
  * 가디언 엔젤링을 획득하였습니다."
  *
  * 아이콘·난이도 배지·2단 레이아웃을 두지 않는다 — 한 기록이 목록에서 큰 비중을 차지하지 않게 하려는
@@ -174,7 +174,7 @@ function DropHistoryEntry(props: {
       >
         {line.prefix}
         {/* 상자명도 강조 대상이다(사용자 지정 2026-08-01) — 반지 상자·칠흑 장신구 상자를 열어 나온
-            기록은 "무엇을 열었는지"가 정보의 절반이라([[ADR-010]]) 아이템과 같은 굵기를 준다. 골드
+            기록은 "무엇을 열었는지"가 정보의 절반이라 아이템과 같은 굵기를 준다. 골드
             강조(고가)는 결과에만 붙는다 — 가치를 정하는 쪽이 결과이고, 강조 둘 다 골드면 어느 쪽이
             값인지 흐려진다. */}
         {line.box !== undefined && (
@@ -262,7 +262,7 @@ function DropHistoryPeriodSection(props: {
         {props.group.records.map((record, index) => (
           <DropHistoryEntry
             // 같은 기간·보스에 같은 아이템을 두 개 먹은 경우를 구분할 수 없으므로 index를 키에 넣는다
-            // (기록 자체가 그 둘을 구분하지 않는다, [[ADR-069]] 결정 4의 "임의로 합치지 않는다").
+            // (기록 자체가 그 둘을 구분하지 않는다 결정 4의 "임의로 합치지 않는다").
             key={`${record.ocid}-${record.boss}-${record.difficulty}-${record.itemName}-${index}`}
             record={record}
             character={props.charactersByOcid[record.ocid]}
@@ -291,8 +291,8 @@ export function DropHistoryScreen(): React.JSX.Element {
         // 공용 `PageHeader` 를 쓰지 않는 이유는 파일 머리 ② — 이 화면에는 배경 조각도 하단 페이드도
         // 없다. 스크롤 상자가 노치까지 덮던 웹과 달리 **상단 안전영역을 헤더가 먹는다**는 계약은
         // 그대로다(`ScreenScroll` 은 헤더가 있으면 위를 안 건드린다).
-        // **여백은 더하지 않는다**([[ADR-139]]) — 공용 셸과 같은 값이어야 가격 화면과 나란히 열릴 때
-        // 제목 높이가 안 갈린다. 그 «같은 값» 이 `useTopSafeAreaPx()` 다([[ADR-139]] 정정 1 —
+        // **여백은 더하지 않는다** — 공용 셸과 같은 값이어야 가격 화면과 나란히 열릴 때
+        // 제목 높이가 안 갈린다. 그 «같은 값» 이 `useTopSafeAreaPx()` 다(—
         // 안드로이드 하한 48).
         <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: topSafeAreaPx }}>
           <View className="gap-3">
@@ -313,7 +313,7 @@ export function DropHistoryScreen(): React.JSX.Element {
         </View>
       }
     >
-      {/* 하단 안전영역은 `ScreenScroll` 이 넣는다([[ADR-120]] 결정 16 — 웹이 콘텐츠 블록에 직접
+      {/* 하단 안전영역은 `ScreenScroll` 이 넣는다(— 웹이 콘텐츠 블록에 직접
           계산해 넣던 자리). 여기 남는 것은 상수 몫뿐이다.
 
           `screen-<라우트 이름>` 은 자리표시자에게서 그대로 물려받은 계약이다 — 내비게이션 테스트가
@@ -323,7 +323,7 @@ export function DropHistoryScreen(): React.JSX.Element {
           <LoadingState size="page" message="불러오고 있어요" />
         )}
 
-        {/* 실패를 빈 목록으로 위장하지 않는다([[ADR-062]]) — "기록이 없습니다"는 확정된 사실일 때만
+        {/* 실패를 빈 목록으로 위장하지 않는다 — "기록이 없습니다"는 확정된 사실일 때만
             할 수 있는 말이고, 조회가 실패한 상태에서는 기록이 있는지조차 모른다. */}
         {status === 'failed' && (
           <ErrorState

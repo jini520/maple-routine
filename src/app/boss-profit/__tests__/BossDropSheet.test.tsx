@@ -2,7 +2,7 @@
 //
 // **라이브러리를 세워 둔다(`jest.mock`).** 진짜 `@gorhom/bottom-sheet` 은 레이아웃 측정과 UI 스레드
 // 애니메이션 위에 서 있어 jest 에서 시트 내용이 아예 마운트되지 않는다(`BottomSheet.test.tsx` 가
-// 실측해 적어 둔 사실). 껍데기가 [[ADR-039]] 값을 제대로 넘기는지는 그 파일이 보고, 여기서는
+// 실측해 적어 둔 사실). 껍데기가 값을 제대로 넘기는지는 그 파일이 보고, 여기서는
 // **시트 안에서 무엇을 고르게 하는가**만 본다.
 //
 // 옮기지 않은 것 셋 — ① 하단 바의 안전영역 패딩(웹은 시트 내용이 직접 줬고 RN 은 **껍데기가
@@ -41,7 +41,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
       return React.createElement(ReactNative.View, props)
     }),
     BottomSheetScrollView: (props: Record<string, unknown>) => React.createElement(ReactNative.View, props),
-    // 시트 밖과 같게 둔다 — 아톰이 이 값으로 «시트 안인가» 를 묻는다([[ADR-170]] 정정 5).
+    // 시트 밖과 같게 둔다 — 아톰이 이 값으로 «시트 안인가» 를 묻는다.
     // 목이 시트를 평범한 `View` 로 바꾸므로 여기서도 문맥이 없는 것이 사실이고, 그래서
     // 아래 입력은 안 그려진다 — 그래도 **있어야 한다**: `lib/nativewind-interop` 이 모듈을
     // 읽는 순간 이것을 등록하므로, 없으면 스위트가 뜨기도 전에 죽는다.
@@ -60,7 +60,7 @@ import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { BossDropSheet } from '../BossDropSheet'
 
 // 연출 토글은 전역 스토어라 케이스 사이 오염을 막기 위해 매번 기본값(연출 표시)으로 되돌린다.
-// 토글은 저장소까지 내려가므로 포트도 함께 주입한다([[ADR-128]]).
+// 토글은 저장소까지 내려가므로 포트도 함께 주입한다.
 beforeEach(() => {
   installMemoryPreferences()
   useDropEffectStore.setState({ enabled: true })
@@ -85,7 +85,7 @@ function renderSheet(overrides: Partial<React.ComponentProps<typeof BossDropShee
   return { result, onSave, onClose }
 }
 
-describe('BossDropSheet — 타일 선택 ([[ADR-040]])', () => {
+describe('BossDropSheet — 타일 선택', () => {
   it('일반 아이템을 토글하고 추가 완료 시 onSave 에 기록이 담긴다', async () => {
     const { result, onSave, onClose } = renderSheet()
     const { getByLabelText, getByText } = await result
@@ -133,7 +133,7 @@ describe('BossDropSheet — 타일 선택 ([[ADR-040]])', () => {
   })
 })
 
-describe('BossDropSheet — 난이도 표시 ([[ADR-044]])', () => {
+describe('BossDropSheet — 난이도 표시', () => {
   it('완료면 난이도를 고를 수 없고 완료 난이도만 보여준다', async () => {
     const { result } = renderSheet()
     const { getAllByText, queryByLabelText } = await result
@@ -170,7 +170,7 @@ describe('BossDropSheet — 난이도 표시 ([[ADR-044]])', () => {
   })
 })
 
-describe('BossDropSheet — 드롭 연출 ([[ADR-040]] 결정 6 · 정정 4)', () => {
+describe('BossDropSheet — 드롭 연출', () => {
   it('토글은 연출이 켜져 있을 때 켜짐이다(반전 회귀 방지)', async () => {
     const { result } = renderSheet()
     const { getByLabelText } = await result
@@ -213,7 +213,7 @@ describe('BossDropSheet — 드롭 연출 ([[ADR-040]] 결정 6 · 정정 4)', (
   })
 })
 
-describe('BossDropSheet — 상자 드릴다운 ([[ADR-041]])', () => {
+describe('BossDropSheet — 상자 드릴다운', () => {
   it('반지 상자를 탭하면 반지와 등급을 골라 기록한다', async () => {
     const { result, onSave } = renderSheet({ boss: '더스크', difficulty: '카오스' })
     const { getByLabelText, getByText } = await result
@@ -276,7 +276,7 @@ describe('BossDropSheet — 상자 드릴다운 ([[ADR-041]])', () => {
   })
 })
 
-describe('BossDropSheet — 시트 안 가격 입력 ([[ADR-124]] 결정 6)', () => {
+describe('BossDropSheet — 시트 안 가격 입력', () => {
   it('아이템을 기록하면 가격을 물어본다 — 기록 자체는 막지 않는다', async () => {
     const { result } = renderSheet({ pricing: PRICING })
     const { getByLabelText, getByTestId, getByText } = await result
@@ -286,7 +286,7 @@ describe('BossDropSheet — 시트 안 가격 입력 ([[ADR-124]] 결정 6)', ()
     })
 
     expect(getByTestId('drop-price-prompt')).toBeTruthy()
-    // 기록은 이미 끝났다 — 물음이 그것을 막지 않는다([[ADR-040]] 탭 즉시 기록).
+    // 기록은 이미 끝났다 — 물음이 그것을 막지 않는다(탭 즉시 기록).
     expect(getByText('추가 완료 · 1개')).toBeTruthy()
   })
 
@@ -322,7 +322,7 @@ describe('BossDropSheet — 시트 안 가격 입력 ([[ADR-124]] 결정 6)', ()
   })
 
   // step 8 이 자리표시자를 `DropPricePadContent` 로 갈아 끼웠다. 지키는 계약은 그대로다 —
-  // **시트가 살아서 하던 작업을 잇는다**([[ADR-124]] 결정 6).
+  // **시트가 살아서 하던 작업을 잇는다**.
   it('"가격 입력" 은 시트를 닫지 않고 들어갔다가 그리드로 돌아온다', async () => {
     const { result, onClose } = renderSheet({ pricing: PRICING })
     const { getByLabelText, getByTestId, getByText, queryByTestId } = await result
@@ -346,7 +346,7 @@ describe('BossDropSheet — 시트 안 가격 입력 ([[ADR-124]] 결정 6)', ()
   })
 
   // 드릴다운은 **순차 모드가 아니다** — 방금 기록한 한 건이라 뒤로가 곧 스킵이고, 그래서 그 버튼을
-  // 늘리지 않는다([[ADR-124]] 결정 6 정정). 저장 버튼 문구도 `다음` 이 아니라 `저장` 이다.
+  // 늘리지 않는다(정정). 저장 버튼 문구도 `다음` 이 아니라 `저장` 이다.
   it('드릴다운에는 스킵이 없고 저장 버튼은 "저장" 이다', async () => {
     const { result } = renderSheet({ pricing: PRICING })
     const { getByLabelText, getByText, queryByText } = await result
@@ -372,7 +372,7 @@ describe('BossDropSheet — 시트 안 가격 입력 ([[ADR-124]] 결정 6)', ()
     await act(async () => {
       fireEvent.press(getByText('가격 입력'))
     })
-    // `1` `00` → 100 메소. 자릿수 전체가 주 표기다([[ADR-124]] 결정 5).
+    // `1` `00` → 100 메소. 자릿수 전체가 주 표기다.
     await act(async () => {
       fireEvent.press(getByLabelText('1'))
     })
@@ -429,7 +429,7 @@ describe('BossDropSheet — 시트 안 가격 입력 ([[ADR-124]] 결정 6)', ()
     expect(getByLabelText('가격 입력됨')).toBeTruthy()
   })
 
-  // 스킵은 "기록된 가격"이 아니므로 표식이 없다(= 미입력과 같은 얼굴). [[ADR-124]] 의 세 상태 중
+  // 스킵은 "기록된 가격"이 아니므로 표식이 없다(= 미입력과 같은 얼굴). 의 세 상태 중
   // 이 화면이 가르는 것은 `entered` 하나뿐이고, 나머지 구분은 가격 기록 화면이 맡는다.
   it('스킵한 기록에는 수익 배지가 붙지 않는다', async () => {
     const { result } = renderSheet({

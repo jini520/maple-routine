@@ -1,4 +1,4 @@
-// 웹판(154줄)의 명세를 읽어 다시 쓴 것. 검사하는 것은 [[ADR-035]] 결정 23 의 **선택 → 확인** 2단계다.
+// 웹판(154줄)의 명세를 읽어 다시 쓴 것. 검사하는 것은 의 **선택 → 확인** 2단계다.
 //
 // 갈린 것 셋
 // ① 옵션을 **제목 글자에서 위로 올라가** 잡는다 — RN 은 자식 글자를 합쳐 접근성 이름을 만들지
@@ -69,7 +69,7 @@ afterEach(() => {
 })
 
 describe('TrackingModeModal', () => {
-  // [[ADR-035]] 결정 22: 고르기 **전에** 둘을 비교하는 화면이라 설명·주의를 접지 않는다.
+  // : 고르기 **전에** 둘을 비교하는 화면이라 설명·주의를 접지 않는다.
   it('두 옵션의 설명과 주의 문구를 모두 보여준다', async () => {
     const view = await renderOverlay(<TrackingModeModal onClose={jest.fn()} />)
 
@@ -80,7 +80,7 @@ describe('TrackingModeModal', () => {
     }
   })
 
-  // [[ADR-035]] 결정 23 의 핵심 — 탭은 **고르는 것일 뿐**이다.
+  //  의 핵심 — 탭은 **고르는 것일 뿐**이다.
   it('옵션을 탭해도 setMode를 부르지 않고 모달도 닫히지 않는다', async () => {
     const setMode = jest.fn(async () => {})
     const onClose = jest.fn()
@@ -121,7 +121,7 @@ describe('TrackingModeModal', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
-  // [[ADR-140]] 결정 5 정정: 시드는 저장소를 채우지만 수동 모드의 표시 목록을 정하는 것은 스토어
+  //  정정: 시드는 저장소를 채우지만 수동 모드의 표시 목록을 정하는 것은 스토어
   // 메모리의 사본이고, RN 탭 화면은 마운트된 채 남아 스스로 다시 읽지 않는다 — 그래서 적용이
   // 끝나면 세 탭 스토어를 여기서 다시 읽힌다(안 그러면 자동 → 수동 직후 보스 탭이 빈 상태로 뜬다).
   it('적용이 끝나면 컨텐츠·보스·수익 세 탭 스토어를 다시 읽힌다', async () => {
@@ -169,11 +169,11 @@ describe('TrackingModeModal', () => {
 
     expect(setMode).not.toHaveBeenCalled()
     expect(onClose).toHaveBeenCalledTimes(1)
-    // 바뀐 것이 없으면 다시 읽힐 것도 없다([[ADR-140]] 결정 5 정정).
+    // 바뀐 것이 없으면 다시 읽힐 것도 없다(정정).
     expect(mockReloadTabStores).not.toHaveBeenCalled()
   })
 
-  // [[ADR-035]] 결정 15: 수동 전환의 `setMode` 는 시드가 전부 끝난 뒤에만 resolve 된다 — 그동안
+  // : 수동 전환의 `setMode` 는 시드가 전부 끝난 뒤에만 resolve 된다 — 그동안
   // 닫히면 사용자가 방금 고른 모드가 아직 준비 안 된 상태를 본다.
   it('setMode가 resolve되기 전까지 옵션·취소·적용이 모두 비활성이고 모달이 닫히지 않는다', async () => {
     let finish: () => void = () => {}
@@ -190,7 +190,7 @@ describe('TrackingModeModal', () => {
     await press(optionCard(view, 'manual'))
     await press(climb(view, '적용'))
 
-    // [[ADR-061]] 정정 3 — 스피너가 라벨을 덮고 라벨은 그대로 남는다.
+    // 스피너가 라벨을 덮고 라벨은 그대로 남는다.
     const applying = climb(view, '적용')
     expect(applying.props.accessibilityState).toMatchObject({ disabled: true, busy: true })
     expect(climb(view, '취소').props.accessibilityState?.disabled).toBe(true)

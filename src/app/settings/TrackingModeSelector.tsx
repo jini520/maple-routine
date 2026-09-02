@@ -1,6 +1,6 @@
 // TrackingModeModal 안에 들어가는 선택 목록 — 모달 자체가 카드 역할을 하므로 여기서는 카드
 // 테두리를 다시 두르지 않는다. 문구와 **카드 안쪽 구조** 모두 온보딩 `TrackingModeStep` 과 같아야
-// 한다([[ADR-035]] 결정 22) — 공용 카피 `features/tracking-mode/copy` 를 함께 쓰므로 한쪽만 고치면
+// 한다 — 공용 카피 `features/tracking-mode/copy` 를 함께 쓰므로 한쪽만 고치면
 // 같은 선택지가 두 화면에서 다르게 생긴다. 규격은 `docs/features/settings.md` 「트래킹 모드 옵션 카드」.
 //
 // **RN 에서 갈린 것은 온보딩 쪽과 완전히 같다** — 그쪽 파일(`app/onboarding/TrackingModeStep.tsx`)
@@ -15,12 +15,12 @@ import { Gamepad2Icon, InfoIcon, ListChecksIcon, Text } from '../../components/a
 
 export interface TrackingModeSelectorProps {
   mode: TrackingMode
-  /** 결정 14(a) 시드가 진행 중이면 옵션을 비활성화한다([[ADR-035]] 결정 15). */
+  /** 결정 14(a) 시드가 진행 중이면 옵션을 비활성화한다. */
   isApplying: boolean
   onSelect: (mode: TrackingMode) => void
 }
 
-// 온보딩 TrackingModeStep과 같은 뜻의 아이콘을 쓴다 — 선택 이유는 그쪽 파일 주석([[ADR-035]] 결정 22).
+// 온보딩 TrackingModeStep과 같은 뜻의 아이콘을 쓴다 — 선택 이유는 그쪽 파일 주석.
 const OPTION_ICONS = { auto: Gamepad2Icon, manual: ListChecksIcon } as const
 
 export function TrackingModeSelector(props: TrackingModeSelectorProps): React.JSX.Element {
@@ -48,7 +48,7 @@ export function TrackingModeSelector(props: TrackingModeSelectorProps): React.JS
               </View>
             </View>
             {/* 고칠 수 없는 알려진 제약이라 실패(error)가 아니라 고지다 — `UnavailableNotice` 와
-                같은 정보 톤을 카드 안 크기로 승계한다([[ADR-060]] 결정 5, [[ADR-035]] 결정 22). */}
+                같은 정보 톤을 카드 안 크기로 승계한다. */}
             <View className="mt-2 flex-row items-start gap-1.5 rounded-[8px] bg-info-tint px-2.5 py-1.5">
               <InfoIcon
                 className="mt-px h-3.5 w-3.5 flex-none text-info-ink"

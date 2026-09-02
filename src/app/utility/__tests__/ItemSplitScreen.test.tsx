@@ -1,4 +1,4 @@
-// 아이템 분배 계산기 화면([[ADR-168]]).
+// 아이템 분배 계산기 화면.
 //
 // 계산 자체의 불변식은 `lib/__tests__/item-split.test.ts` 가 진다. 여기서 보는 것은 **배선**이다 —
 // 어느 입력이 어느 인자로 가는가, 그리고 결과가 없는 두 자리(1인 파티 · 판매가 0)에서 화면이
@@ -68,7 +68,7 @@ describe('ItemSplitScreen — 골격', () => {
 
 describe('ItemSplitScreen — 결과', () => {
   // 기본값은 **2인** · 판매 3% · 분배 3% 다(사용자 지정) — ⌊97,000,000,000 / 197⌋.
-  // [[ADR-168]] 결정 2 표의 6인 예시는 `lib/__tests__/item-split.test.ts` 가 고정한다.
+  //  표의 6인 예시는 `lib/__tests__/item-split.test.ts` 가 고정한다.
   it('판매가 10억을 넣으면 492,385,786 을 보내라고 한다', async () => {
     const view = await renderOverlay(<ItemSplitScreen />)
 
@@ -129,7 +129,7 @@ describe('ItemSplitScreen — 결과가 없는 두 자리', () => {
   })
 })
 
-describe('ItemSplitScreen — 금액 입력 ([[ADR-168]] 결정 9)', () => {
+describe('ItemSplitScreen — 금액 입력', () => {
   // 칩이 자릿수 눈금이다 — 키패드를 두 벌 만들지 않는 대신 이것을 가져왔다.
   it('단위 칩이 금액을 더한다', async () => {
     const view = await renderOverlay(<ItemSplitScreen />)
@@ -159,7 +159,7 @@ describe('ItemSplitScreen — 금액 입력 ([[ADR-168]] 결정 9)', () => {
     expect(view.getByLabelText('판매가').props.value).toBe('1,000,000')
   })
 
-  // [[ADR-168]] 결정 10 — 상한을 넘기면 `N × 100` 이 안전 정수를 벗어나 계산이 조용히 틀린다.
+  // 상한을 넘기면 `N × 100` 이 안전 정수를 벗어나 계산이 조용히 틀린다.
   it('상한을 넘는 입력은 상한에서 멈춘다', async () => {
     const view = await renderOverlay(<ItemSplitScreen />)
 

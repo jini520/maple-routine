@@ -9,7 +9,7 @@
 // ③ 스토어 목이 **셀렉터를 받는다** — `useOnboardingStore()` 는 전체 상태를 돌려주지만 같은 훅을
 //    `RootNavigator` 등이 셀렉터와 함께 부르므로, 목 하나가 두 쓰임을 다 받아야 한다.
 //
-// ── 단계가 다섯에서 셋이 됐다 ([[ADR-143]] 결정 1) ────────────────────────────────
+// ── 단계가 다섯에서 셋이 됐다 ────────────────────────────────
 //
 // `selectingAccount`·`prefetching` 은 이 앱에서 **도달할 수 없는 상태**이고(재개 파생이 그 행을
 // 태우지 않는다), 그래서 그 둘을 보던 옛 케이스는 «어떤 화면이 오는가» 를 물을 대상이 아니다 —
@@ -105,14 +105,14 @@ describe('OnboardingScreen', () => {
     const view = await renderOverlay(<OnboardingScreen />)
 
     expect(view.getByLabelText('Nexon Open API 키')).toBeTruthy()
-    // 라벨은 가려질 뿐 트리에 남는다([[ADR-061]] 정정 3). 대기는 `aria-busy` 가 말한다.
+    // 라벨은 가려질 뿐 트리에 남는다. 대기는 `aria-busy` 가 말한다.
     expect(view.getByText('확인')).toBeTruthy()
     expect(view.queryByText(/확인하고 있어요/)).toBeNull()
   })
 
-  // [[ADR-143]] 결정 1·8: 이 앱에는 계정 선택도 예열도 없다. 리듀서를 안 고쳤으므로 두 상태는
+  // : 이 앱에는 계정 선택도 예열도 없다. 리듀서를 안 고쳤으므로 두 상태는
   // 타입상 남아 있고, 그 자리에 **빈 화면 대신 키 입력 폼**이 선다 — 출구 없는 흰 화면을 만들지
-  // 않는다([[ADR-116]] 이 없앤 잠금과 같은 얼굴이다).
+  // 않는다(이 없앤 잠금과 같은 얼굴이다).
   // 자동 여백·중앙 정렬(`seedingTracking` 의 `justify-center`)은 **부모가 남는 세로 공간을 줄 때만**
   // 작동한다(웹에서는 컨테이너의 `min-h-[calc(100dvh-…)]` 이 그 공간을 만들었다 — 사용자 보고
   // 2026-08-09). RN 에서 그 짝이 콘텐츠 컨테이너의 `flexGrow` 다.
@@ -142,9 +142,9 @@ describe('OnboardingScreen', () => {
 
     expect(view.getByText('관리할 캐릭터를 선택해주세요')).toBeTruthy()
     expect(view.getByText('계속하기')).toBeTruthy()
-    // 설정 하위 페이지와 **같은 본문**이다([[ADR-144]] 결정 1) — 사본이 아님을 여기서도 확인한다.
+    // 설정 하위 페이지와 **같은 본문**이다 — 사본이 아님을 여기서도 확인한다.
     expect(view.getByTestId('character-manage-body')).toBeTruthy()
-    // CTA 는 고정 바 안이다([[ADR-144]] 정정 2) — 그 계약은 단계 테스트가 자세히 본다.
+    // CTA 는 고정 바 안이다 — 그 계약은 단계 테스트가 자세히 본다.
     expect(view.getByTestId('onboarding-action-bar')).toBeTruthy()
   })
 
@@ -163,7 +163,7 @@ describe('OnboardingScreen', () => {
     const view = await renderOverlay(<OnboardingScreen />)
 
     expect(view.getByText('체크리스트를 준비하고 있어요')).toBeTruthy()
-    // [[ADR-061]] 결정 1: 24px 이상 자리는 스윕 스피너.
+    // : 24px 이상 자리는 스윕 스피너.
     expect(view.getByTestId('maple-sweep-spinner', { includeHiddenElements: true })).toBeTruthy()
   })
 
@@ -177,7 +177,7 @@ describe('OnboardingScreen', () => {
 
   // 실패 피드백은 토스트(`features/onboarding/store` 의 showError)로 옮겨서, 여기서는 폼이
   // 그대로 남아 재입력할 수 있는지만 확인한다 — 인라인 에러 문구는 더 이상 없다.
-  // **`accounts` 로 갈리지 않는다**([[ADR-143]] 결정 1) — 계정 목록 화면 자체가 없어졌으므로,
+  // **`accounts` 로 갈리지 않는다** — 계정 목록 화면 자체가 없어졌으므로,
   // 값이 남아 있어도 이 앱이 그릴 수 있는 것은 폼 하나다.
   // 한 겹 더 감싼 것은 jest 규칙이다 — `it.each` 의 행이 배열이면 그것을 **인자 목록**으로 편다.
   it.each([[[]], [[{ accountId: 'account-1', characters: [] }]]])(

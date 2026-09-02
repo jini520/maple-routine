@@ -1,15 +1,15 @@
 // 사용자 동의형 업데이트 모달 — 실행 시(또는 설정에서 수동 확인 시) 새 버전이 있으면 뜬다
-// ([[ADR-027]]). 상태별 분기 아홉과 문구는 웹판을 그대로 옮겼다.
+// . 상태별 분기 아홉과 문구는 웹판을 그대로 옮겼다.
 //
 // ══ 이 컴포넌트는 **아직 아무 데도 마운트되지 않는다** ══════════════════════════════════
 //
-// 그릴 줄은 알지만 **그릴 값을 얻을 방법이 없다.** 벽이 둘이고, 둘 다 [[ADR-128]] 결정 7 이
+// 그릴 줄은 알지만 **그릴 값을 얻을 방법이 없다.** 벽이 둘이고, 둘 다 이
 // 별도 ADR 로 미뤄 둔 OTA 재설계에 걸려 있다.
 //
 // ① **`LiveUpdatePort` 가 던진다**(`native/adapters/not-implemented.ts`). @capgo → expo-updates 는
 //    SDK 교체가 아니라 **매니페스트 프로토콜 자체**가 바뀌는 일이라 어댑터로 덮을 수 없다.
 // ② **core 의 스토어를 import 하는 것만으로 죽는다**(실측 2026-08-12). `features/live-update/store.ts`
-//    가 **모듈 최상위**에서 `import.meta.env.VITE_LIVE_UPDATE_CHANNEL` 을 읽는데([[ADR-024]] 빌드
+//  가 **모듈 최상위**에서 `import.meta.env.VITE_LIVE_UPDATE_CHANNEL` 을 읽는데(빌드
 //    시점 채널 분리), Metro·jest 에서 `import.meta.env` 는 `undefined` 라 그 자리에서
 //    `TypeError: Cannot read properties of undefined` 로 끝난다. `import.meta.glob` 과 **같은 종류의
 //    벽**이고(`core-shims.js`), 이쪽은 아직 치환 대상이 아니다 — 대체 구현이 곧 "가짜 OTA 스토어"라
@@ -22,12 +22,12 @@
 // ── RN 으로 옮기며 갈린 것 다섯 ───────────────────────────────────────────────────
 //
 // ① `useNavigate()` → **`onOpenReleaseNotes` 프롭.** 「자세히 보기」가 개발 노트 화면으로 옮기는
-//    것은 [[ADR-126]] 결정 1 이고, 그 이동을 아는 것은 이 컴포넌트가 아니라 마운트하는 셸이다.
+//  것은 이고, 그 이동을 아는 것은 이 컴포넌트가 아니라 마운트하는 셸이다.
 // ② `space-y-*` → `gap-*` · `<h2>`/`<p>` → `<Text>` · `text-center` 를 각 `Text` 로.
 // ③ 버튼 두 종류(`PRIMARY_BTN`·`GHOST_BTN`)가 `Button` atom + **델타 클래스**가 됐다. 웹은 raw
 //    `<button>` + 클래스 문자열이었지만 RN 에서는 상자/글자를 어차피 갈라야 해서(step 3), 인라인으로
-//    두면 [[ADR-094]] 결정 3 이 없앤 복붙이 그대로 되살아난다. `GHOST_*` 가 네 분기에 공유되는 성질
-//    ([[ADR-065]] 결정 2 — "줄이면 모달 전체에 함께 적용된다")은 상수로 유지된다.
+//  두면 이 없앤 복붙이 그대로 되살아난다. `GHOST_*` 가 네 분기에 공유되는 성질
+//  (— "줄이면 모달 전체에 함께 적용된다")은 상수로 유지된다.
 // ④ `PRIMARY_BTN` 의 `disabled:opacity-50` 은 **뺐다.** 어느 분기도 `disabled` 를 주지 않는 데다,
 //    NativeWind 의 `disabled:` 는 CSS 의사 클래스라 `Pressable` 의 `disabled` 프롭과 이어져 있지
 //    않다(step 4 가 `PartySizeStepper` 에서 겪은 자리) — 남기면 "있는데 안 도는 코드"다.
@@ -96,7 +96,7 @@ export interface UpdatePromptModalProps {
   state: UpdatePromptState
   actions: UpdatePromptActions
   /**
-   * 「자세히 보기」가 개발 노트 화면(`SettingsReleaseNotes`)으로 옮기는 자리([[ADR-126]] 결정 1).
+   * 「자세히 보기」가 개발 노트 화면(`SettingsReleaseNotes`)으로 옮기는 자리.
    * 웹의 `navigate('/settings/release-notes')` 이고, 닫는 것은 호출부가 함께 한다.
    */
   onOpenReleaseNotes: () => void

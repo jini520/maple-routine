@@ -6,12 +6,12 @@
 //    `ContentCards.test.tsx` 가 `render*Card` 를 직접 불러 같은 것을 묻는다(그 파일 머리).
 //    여기 남는 것은 **화면이 무엇을 목록에 넣는가**(등록 필터·수동 멤버십·탭 분리)다.
 // ② **라우터 프로브가 없다** — 이동은 `navigation.navigate('ContentManage')` 가 불렸는가로 본다.
-// ③ **당겨서 새로고침이 `RefreshControl` 이다**([[ADR-130]]). 웹의 제스처 시뮬레이션 넷
+// ③ **당겨서 새로고침이 `RefreshControl` 이다**. 웹의 제스처 시뮬레이션 넷
 //    (임계 넘김/미달·배너 위치·목록 transform)은 **옮길 계약이 아니다** — 그 값들을 이제 OS 가
-//    갖는다. 남는 계약은 *"당김이 헤더 버튼과 같은 재조회를 부르는가"*([[ADR-072]] 결정 2)와
+//  갖는다. 남는 계약은 *"당김이 헤더 버튼과 같은 재조회를 부르는가"*와
 //    *"버튼이 그대로 남는가"*(결정 10) 둘이고, 그것을 스크롤 셸에 붙은 프롭으로 본다.
 // ④ **고정 헤더 실측·spacer 계약이 사라진다** — `fixed` 도 spacer 도 옮길 자리가 없고
-//    ([[ADR-085]]·[[ADR-112]], `PageHeader` 파일 머리), [[ADR-131]] 뒤로는 헤더가 고정되지도
+//  (`PageHeader` 파일 머리) 뒤로는 헤더가 고정되지도
 //    않는다. 대신 *"헤더가 셸의 `header` 로 들어가고 목록은 그 안에 있다"* 를 본다.
 // ⑤ `getByRole('combobox')`(웹 `<select>`) → **드롭다운 트리거의 캐릭터 이름**으로 기다린다.
 // ⑥ DOM 스냅샷 셋은 옮기지 않는다(전환 계획서 «잃는 안전망») — 대신 각 가지를 케이스로 적는다.
@@ -35,7 +35,7 @@ import { useScreenNavigation } from '../../use-screen-navigation'
 const mockShowError = jest.fn()
 const mockNoticeApiKeyIssue = jest.fn()
 const navigate = jest.fn()
-// 층이 스택이 된 뒤로 «그룹 층으로 되돌리기» 는 액션이다([[ADR-167]]) — 화면이 이것도 부른다.
+// 층이 스택이 된 뒤로 «그룹 층으로 되돌리기» 는 액션이다 — 화면이 이것도 부른다.
 const dispatch = jest.fn()
 
 // ADR-063: 동기화 실패는 인라인 문단이 아니라 토스트다.
@@ -53,7 +53,7 @@ jest.mock('../../../features/content-scheduler/store', () => ({
 }))
 
 // **로스터 조회 목은 여기 없다** — 이 화면은 더 이상 피커를 열지 않으므로 `schedule-sync` 를
-// 아예 부르지 않는다([[ADR-140]]). 그 목은 설정 화면 테스트로 옮겨갔다.
+// 아예 부르지 않는다. 그 목은 설정 화면 테스트로 옮겨갔다.
 
 jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
 
@@ -65,7 +65,7 @@ const mockedNavigation = jest.mocked(useScreenNavigation)
 type Store = ContentSchedulerStore
 
 /**
- * 탭이 스토어 소유라([[ADR-096]] 결정 1) 정적 목으로는 전환이 렌더에 반영되지 않는다 —
+ * 탭이 스토어 소유라 정적 목으로는 전환이 렌더에 반영되지 않는다 —
  * `setActiveTab` 을 불러도 다시 그릴 이유가 없다. 모킹된 훅도 렌더 중에 불리므로 여기서 `useState`
  * 로 실물과 같은 "값 + 세터" 쌍을 흉내 낸다(웹판과 같은 처방).
  */
@@ -78,7 +78,7 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     manualTrackedByOcid: {},
     loadTrackedOcids: jest.fn(),
     saveTrackedOcids: jest.fn(),
-    // 실물은 `Promise<void>` 다 — 당김 훅이 회차의 «끝» 을 기다린다([[ADR-160]] 결정 1).
+    // 실물은 `Promise<void>` 다 — 당김 훅이 회차의 «끝» 을 기다린다.
     refresh: jest.fn().mockResolvedValue(undefined),
     addManualContent: jest.fn(),
     removeManualContent: jest.fn(),
@@ -129,12 +129,12 @@ function button(label: string): AtomElement {
   return buttonAt(label)
 }
 
-/** 스크롤 셸에 붙은 당겨서 새로고침 컨트롤([[ADR-130]] 결정 1). */
+/** 스크롤 셸에 붙은 당겨서 새로고침 컨트롤. */
 function refreshControl(): { refreshing: boolean; onRefresh: () => void } {
   return screen.getByTestId('screen-scroll').props.refreshControl.props
 }
 
-/** 두 노드를 **같은 줄**로 묶는 가장 작은 상자([[ADR-141]] — 아래 케이스가 그것으로 자리를 본다). */
+/** 두 노드를 **같은 줄**로 묶는 가장 작은 상자(— 아래 케이스가 그것으로 자리를 본다). */
 function nearestCommonAncestor(a: AtomElement, b: AtomElement): AtomElement {
   const ancestors = new Set<AtomElement>()
   for (let node: AtomElement | null = a; node !== null; node = node.parent) ancestors.add(node)
@@ -160,7 +160,7 @@ beforeEach(() => {
   useTrackingModeStore.setState({ mode: 'auto' })
 })
 
-// 선택은 이제 화면 스토어가 아니라 `useCharacterSelectionStore` 가 갖는다([[ADR-159]]).
+// 선택은 이제 화면 스토어가 아니라 `useCharacterSelectionStore` 가 갖는다.
 // 실물 스토어라 값이 파일 안에서 넘어가므로 테스트마다 되돌린다.
 beforeEach(() => {
   useCharacterSelectionStore.setState({ selectedOcid: null })
@@ -184,7 +184,7 @@ describe('ContentScreen — 빈 상태와 마운트', () => {
     expect(screen.queryByTestId('screen-scroll')).toBeNull()
   })
 
-  // [[ADR-101]] 결정 1 — `null` 은 "0명"이 아니라 "아직 안 읽었다"다. 콜드 스타트 첫 페인트가
+  // `null` 은 "0명"이 아니라 "아직 안 읽었다"다. 콜드 스타트 첫 페인트가
   // 모르는 사실을 단정하면 안 된다.
   it('추적 목록이 null(미로드)이면 빈 상태가 아니라 로딩을 보여준다', async () => {
     mockStore({ trackedOcids: null, status: 'idle' })
@@ -195,14 +195,14 @@ describe('ContentScreen — 빈 상태와 마운트', () => {
     expect(screen.getByText('불러오고 있어요')).toBeTruthy()
   })
 
-  // [[ADR-140]] 결정 1·2: 이 화면은 피커를 열지 않는다 — 설정 탭을 **열린 채로** 연다.
+  // : 이 화면은 피커를 열지 않는다 — 설정 탭을 **열린 채로** 연다.
   it('빈 상태 CTA 를 누르면 설정 탭을 피커가 열린 채로 연다', async () => {
     mockStore({ trackedOcids: [] })
     await renderScreen()
 
     await press(button('캐릭터 선택하기'))
 
-    // 층이 스택이 되면서 이동이 두 단 중첩이 됐다([[ADR-167]] 결정 2) — 설정은 **그룹 층**에
+    // 층이 스택이 되면서 이동이 두 단 중첩이 됐다 — 설정은 **그룹 층**에
     // 살고, 파라미터는 가장 안쪽 화면에 붙는다.
     expect(navigate).toHaveBeenCalledWith('Main', {
       screen: 'Groups',
@@ -210,7 +210,7 @@ describe('ContentScreen — 빈 상태와 마운트', () => {
     })
     // **먼저 층을 바닥으로 되돌린다.** 이 화면은 하위 층에 살고 설정은 그룹 층에 사는데, 그룹 층은
     // 스택 바닥이라 그냥 이동하면 바닥에 있는 것을 한 번 더 쌓는다 — 그러면 바는 ← 를 안 그리는데
-    // 가장자리 스와이프는 뒤로 가는 어긋난 프레임이 된다([[ADR-167]] 결정 8).
+    // 가장자리 스와이프는 뒤로 가는 어긋난 프레임이 된다.
     expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: 'POP_TO_TOP' }))
     expect(screen.queryByTestId('character-tracking-picker-modal')).toBeNull()
   })
@@ -261,12 +261,12 @@ describe('ContentScreen — 목록', () => {
 
     // 둘 다 셸이 그린다 — 헤더는 `header` 프롭으로, 목록은 자식으로. 헤더가 스크롤 뷰 «안» 인지는
     // `ScreenScroll` 테스트가 본다. **모달이 셸 바깥인지를 묻던 짝은 함께 사라졌다** — 이 화면에
-    // 모달이 없다([[ADR-140]]).
+    // 모달이 없다.
     expect(screen.getByTestId('page-header')).toBeTruthy()
     expect(screen.getByTestId('screen-scroll')).toBeTruthy()
   })
 
-  // [[ADR-140]] 결정 1: 헤더에서 없어진 것은 이 버튼 하나이고, 수동 모드의 "컨텐츠 관리"는 남는다
+  // : 헤더에서 없어진 것은 이 버튼 하나이고, 수동 모드의 "컨텐츠 관리"는 남는다
   // (그쪽은 아래 「수동 트래킹 모드」 절이 본다).
   it('헤더에 "캐릭터 관리" 버튼이 없다', async () => {
     withContents()
@@ -276,7 +276,7 @@ describe('ContentScreen — 목록', () => {
     expect(screen.queryByText('캐릭터 관리')).toBeNull()
   })
 
-  // [[ADR-016]] — 캐시가 있으면 재검증 중에도 계속 보여준다(셸 승계 카드는 보여줄 게 없을 때만).
+  // 캐시가 있으면 재검증 중에도 계속 보여준다(셸 승계 카드는 보여줄 게 없을 때만).
   it('status 가 loading 이어도 캐시된 목록이 있으면 로딩 표시 대신 목록을 보여준다', async () => {
     mockStore({
       status: 'loading',
@@ -304,9 +304,9 @@ describe('ContentScreen — 목록', () => {
     expect(screen.getByText('불러오고 있어요')).toBeTruthy()
   })
 
-  // [[ADR-142]]: 드롭다운이 초상화 레일이 되면서 **실제로 캐릭터가 바뀐다** — 전에는 목록(열린
+  // : 드롭다운이 초상화 레일이 되면서 **실제로 캐릭터가 바뀐다** — 전에는 목록(열린
   // 상태)이 없어 이 케이스가 «프롭이 있다» 까지밖에 못 봤다.
-  // [[ADR-159]]: «부르는가» 가 아니라 **«고른 것이 바뀌는가»** 를 본다 — 선택이 스토어 하나가 되면서
+  // : «부르는가» 가 아니라 **«고른 것이 바뀌는가»** 를 본다 — 선택이 스토어 하나가 되면서
   // 그 값이 곧 다른 화면이 보는 값이다(공유가 전파 단계 없이 성립하는 자리).
   it('레일에서 다른 초상화를 누르면 고른 캐릭터가 그 ocid 가 된다', async () => {
     mockStore({
@@ -343,7 +343,7 @@ describe('ContentScreen — 목록', () => {
     expect(screen.getByTestId('character-portrait').props.accessibilityLabel).toContain('일간 1/2')
   })
 
-  // [[ADR-143]] 결정 3: 스토어는 레벨 내림차순으로 준다([[ADR-017]] 결정 2) — 그 위에 사용자가
+  // : 스토어는 레벨 내림차순으로 준다 — 그 위에 사용자가
   // 정한 저장 배열 순서를 얹는다. 그래서 **입력 순서와 다른 순서**로 주는 것이 이 케이스의 요점이다.
   it('레일 순서는 스토어 순서가 아니라 trackedOcids 저장 순서다', async () => {
     mockStore({
@@ -378,7 +378,7 @@ describe('ContentScreen — 목록', () => {
   })
 })
 
-describe('ContentScreen — 재조회 ([[ADR-072]] · [[ADR-130]])', () => {
+describe('ContentScreen — 재조회', () => {
   const loaded = (status: Store['status'] = 'loaded'): Store =>
     mockStore({ status, trackedOcids: ['ocid-1'], characters: [character()] })
 
@@ -391,7 +391,7 @@ describe('ContentScreen — 재조회 ([[ADR-072]] · [[ADR-130]])', () => {
     expect(store.refresh).toHaveBeenCalledWith(['ocid-1'])
   })
 
-  // [[ADR-130]] 결정 1 — 당김과 버튼이 **같은 재조회**를 부른다([[ADR-072]] 결정 2).
+  // 당김과 버튼이 **같은 재조회**를 부른다.
   it('당겨서 새로고침은 헤더 버튼과 같은 재조회를 부른다', async () => {
     const store = loaded()
     await renderScreen()
@@ -403,7 +403,7 @@ describe('ContentScreen — 재조회 ([[ADR-072]] · [[ADR-130]])', () => {
     expect(store.refresh).toHaveBeenCalledWith(['ocid-1'])
   })
 
-  // [[ADR-072]] 결정 10 — 제스처를 붙여도 버튼은 그대로 남는다(추가 수단이지 대체가 아니다).
+  // 제스처를 붙여도 버튼은 그대로 남는다(추가 수단이지 대체가 아니다).
   it('제스처가 붙어도 헤더 버튼은 남는다', async () => {
     loaded()
     await renderScreen()
@@ -412,7 +412,7 @@ describe('ContentScreen — 재조회 ([[ADR-072]] · [[ADR-130]])', () => {
     expect(refreshControl()).toBeDefined()
   })
 
-  // ★ 회귀 가드 — **«조회 중» 과 «당겼다» 는 다른 사실이다** ([[ADR-160]] 결정 1).
+  // ★ 회귀 가드 — **«조회 중» 과 «당겼다» 는 다른 사실이다**.
   //
   // 종전에는 `refreshing = status === 'loading'` 이라, 화면 마운트 하이드레이션만으로 인디케이터가
   // 프로그램적으로 열렸다. 사용자 보고(2026-08-22) *"페이지 이동 시 새로고침 인디케이터가 저절로
@@ -449,7 +449,7 @@ describe('ContentScreen — 재조회 ([[ADR-072]] · [[ADR-130]])', () => {
     expect(refreshControl().refreshing).toBe(false)
   })
 
-  // [[ADR-141]] 결정 1: 동기화 상태는 드롭다운 줄이 아니라 **제목 줄**에 있다. 「같은 줄인가」는
+  // : 동기화 상태는 드롭다운 줄이 아니라 **제목 줄**에 있다. 「같은 줄인가」는
   // 최소 공통 조상으로 본다 — 제목과 새로고침의 공통 조상 안에 캐릭터 드롭다운이 **없으면**
   // 그 조상이 곧 제목 줄이다(있으면 헤더 전체를 집은 것이라 아무것도 보장하지 못한다).
   it('새로고침과 동기화 시각이 제목과 같은 줄에 있다', async () => {
@@ -462,7 +462,7 @@ describe('ContentScreen — 재조회 ([[ADR-072]] · [[ADR-130]])', () => {
     )
 
     expect(contains(titleRow, screen.getByText('동기화 기록 없음'))).toBe(true)
-    // 아래 줄에 있어야 하는 것은 이제 초상화 레일이다([[ADR-142]]).
+    // 아래 줄에 있어야 하는 것은 이제 초상화 레일이다.
     expect(contains(titleRow, screen.getByTestId('character-rail'))).toBe(false)
   })
 })
@@ -506,7 +506,7 @@ describe('ContentScreen — 실패의 목적지', () => {
     expect(store.refresh).toHaveBeenCalledWith(['ocid-1'])
   })
 
-  // [[ADR-083]] 결정 1 — 실패의 대부분은 전역이 아니라 **캐릭터별**로 온다.
+  // 실패의 대부분은 전역이 아니라 **캐릭터별**로 온다.
   it('캐릭터별 실패도 토스트다', async () => {
     mockStore({
       status: 'loaded',
@@ -519,7 +519,7 @@ describe('ContentScreen — 실패의 목적지', () => {
     expect(mockShowError).toHaveBeenCalledTimes(1)
   })
 
-  // [[ADR-083]] 결정 2 — 영구 실패라 "다시 시도"는 눌러도 같은 400 이다.
+  // 영구 실패라 "다시 시도"는 눌러도 같은 400 이다.
   it('characterUnavailable 토스트에는 액션이 없다', async () => {
     mockStore({
       status: 'loaded',
@@ -547,7 +547,7 @@ describe('ContentScreen — 실패의 목적지', () => {
   })
 })
 
-describe('ContentScreen — 수동 트래킹 모드 ([[ADR-035]])', () => {
+describe('ContentScreen — 수동 트래킹 모드', () => {
   beforeEach(() => {
     useTrackingModeStore.setState({ mode: 'manual' })
   })
@@ -571,7 +571,7 @@ describe('ContentScreen — 수동 트래킹 모드 ([[ADR-035]])', () => {
     expect(screen.getByText('3/14')).toBeTruthy()
   })
 
-  // [[ADR-035]] 결정 19 — 멤버십의 `kind` 가 저장 시점에 확정돼 각 탭은 자기 것만 그린다.
+  // 멤버십의 `kind` 가 저장 시점에 확정돼 각 탭은 자기 것만 그린다.
   it('항목은 자기 kind 의 탭에만 나온다', async () => {
     mockStore({
       status: 'loaded',
@@ -597,7 +597,7 @@ describe('ContentScreen — 수동 트래킹 모드 ([[ADR-035]])', () => {
     expect(navigate).toHaveBeenCalledWith('ContentManage')
   })
 
-  // [[ADR-060]] — 빈 상태 CTA 가 지시하는 곳으로 데려간다(자동 모드는 목적지가 앱 밖이라 CTA 없음).
+  // 빈 상태 CTA 가 지시하는 곳으로 데려간다(자동 모드는 목적지가 앱 밖이라 CTA 없음).
   it('빈 상태 CTA 도 같은 곳으로 민다', async () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
     await renderScreen()

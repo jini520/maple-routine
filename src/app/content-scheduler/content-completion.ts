@@ -1,4 +1,4 @@
-// 컨텐츠 항목의 **완료 판정** — 초상화 레일의 진행 링이 세는 규칙([[ADR-142]] 결정 4).
+// 컨텐츠 항목의 **완료 판정** — 초상화 레일의 진행 링이 세는 규칙.
 //
 // ## 왜 이 파일이 생겼나
 //
@@ -17,7 +17,7 @@
 // 항목은 `'unmeasurable'` 이고 링의 분모에서도 빠진다: 영원히 안 차는 칸을 넣으면 링이 «항상
 // 미완료» 를 말한다. 목록에서 빼는 것이 아니라 **세지 않는** 것뿐이다.
 //
-// **길드 지하 수로는 여기 있다가 나갔다**([[ADR-142]] 정정 7) — 점수에 상한이 없는 것은 같지만,
+// **길드 지하 수로는 여기 있다가 나갔다** — 점수에 상한이 없는 것은 같지만,
 // «0점이 아니면 완료» 라는 답이 있었다(사용자 지시). 상한이 없다고 판정이 불가능한 것은 아니다.
 import { isContentBlocked } from '../../lib/scheduler/required-level'
 import {
@@ -73,7 +73,7 @@ export function dailyContentCompletion(content: DailyContent): ContentCompletion
  * (이름 일치가 접두사 일치보다 앞이다) 재배열하면 판정이 달라진다.
  */
 export function weeklyContentCompletion(content: WeeklyContent): ContentCompletion {
-  // **점수가 0이 아니면 완료다**([[ADR-142]] 정정 7, 사용자 지시). 점수에 상한이 없어 «다 했다» 를
+  // **점수가 0이 아니면 완료다**(사용자 지시). 점수에 상한이 없어 «다 했다» 를
   // 카운트로는 못 재지만, 그 주에 **참여했는가** 는 잴 수 있고 그것이 링이 물어야 할 것이다.
   // 카드는 그대로 `n점` 배지다 — 얼마나 했는지는 값이 말하고, 링은 했는지만 센다.
   if (content.name === GUILD_UNDERGROUND_WATERWAY_NAME) return byParticipation(content)
@@ -117,11 +117,11 @@ function tally(completions: ContentCompletion[]): ContentProgress {
 }
 
 /**
- * **요구 레벨에 못 미치는 항목은 분모에서도 뺀다**([[ADR-162]] 결정 1).
+ * **요구 레벨에 못 미치는 항목은 분모에서도 뺀다**.
  *
  * 남겨 두면 그 캐릭터의 링이 100%에 **절대 도달하지 못하고**, today 「남은 스케줄」의 숫자도 영원히
  * 안 줄어든다. 판정은 `lib/scheduler/required-level` 한 곳이 갖는다 — 이 화면과 today 가 **같은 함수**를
- * 봐야 [[ADR-147]] 결정 8(*"한 글자도 다르면 안 된다"*)이 성립한다.
+ * 봐야(*"한 글자도 다르면 안 된다"*)이 성립한다.
  */
 function progressible<T extends { name: string }>(contents: T[], characterLevel: number | null): T[] {
   return contents.filter((content) => !isContentBlocked(characterLevel, content.name))

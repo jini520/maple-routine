@@ -1,6 +1,6 @@
 import weeklyBossesData from '../../../data/weekly-bosses.json'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
-// today 뷰모델의 **조립 규칙**([[ADR-147]] 결정 4·8·9). 위젯이 스토어를 모르므로 화면이 값을 한
+// today 뷰모델의 **조립 규칙**. 위젯이 스토어를 모르므로 화면이 값을 한
 // 번 모으는데, 그 조립을 순수 함수로 두면 **위젯이 한 줄도 없는 지금 로직 전부를 검증할 수 있다.**
 //
 // 여기서 지키는 것의 대부분은 «다시 구현하지 않았는가» 다 — 남은 개수는 `content-completion` ·
@@ -156,7 +156,7 @@ function input(overrides: Partial<TodayViewModelInput> = {}): TodayViewModelInpu
   }
 }
 
-describe('남은 스케줄 — 분류 넷 ([[ADR-147]] 정정 3)', () => {
+describe('남은 스케줄 — 분류 넷', () => {
   it('일퀘·주간퀘는 content-completion 의 미완료 수다', () => {
     const model = buildTodayViewModel(
       input({
@@ -211,7 +211,7 @@ describe('남은 스케줄 — 분류 넷 ([[ADR-147]] 정정 3)', () => {
     expect(model.schedule[0].monthlyBosses).toHaveLength(1)
   })
 
-  // [[ADR-031]] 결정 5 — 미등록이어도 완료했으면 목록에 든다(그리고 완료라 남은 수엔 안 든다).
+  // 미등록이어도 완료했으면 목록에 든다(그리고 완료라 남은 수엔 안 든다).
   // 판정을 여기서 다시 쓰면 이 규칙이 today 에서만 빠진다.
   it('등록되지 않았지만 완료한 보스는 displayedBosses 규칙대로 다뤄진다', () => {
     const model = buildTodayViewModel(
@@ -231,7 +231,7 @@ describe('남은 스케줄 — 분류 넷 ([[ADR-147]] 정정 3)', () => {
     expect(model.schedule[0].weeklyBosses).toHaveLength(0)
   })
 
-  // [[ADR-187]] 결정 3 — 주간 한도를 채우면 남은 미처치 보스는 «남은 일» 이 아니다. 판정은 여기
+  // 주간 한도를 채우면 남은 미처치 보스는 «남은 일» 이 아니다. 판정은 여기
   // 없다(`displayedBosses` 가 실어 보낸 `isWeeklyLimitClosed` 를 거를 뿐이다).
   it('주간 12마리를 채우면 미처치 등록 보스를 남은 것으로 세지 않는다', () => {
     const clearedNames = (weeklyBossesData.weekly as { boss: string }[])
@@ -292,7 +292,7 @@ describe('남은 스케줄 — 분류 넷 ([[ADR-147]] 정정 3)', () => {
   })
 })
 
-describe('남은 스케줄 — 순서는 **관리 순서**뿐이다 ([[ADR-181]] 정정 1)', () => {
+describe('남은 스케줄 — 순서는 **관리 순서**뿐이다', () => {
   function withRemaining(ocid: string, remaining: number): ContentCharacterView {
     return contentView(ocid, {
       dailyContents: Array.from({ length: remaining }, (_, index) => daily({ name: `${ocid}-${index}` })),
@@ -338,7 +338,7 @@ describe('남은 스케줄 — 순서는 **관리 순서**뿐이다 ([[ADR-181]]
   })
 })
 
-describe('대표 캐릭터 ([[ADR-147]] 정정 2)', () => {
+describe('대표 캐릭터', () => {
   it('저장된 대표를 쓴다', () => {
     const model = buildTodayViewModel(
       input({
@@ -385,7 +385,7 @@ describe('대표 캐릭터 ([[ADR-147]] 정정 2)', () => {
   })
 })
 
-describe('주간 보스 수익 ([[ADR-147]] 정정 4)', () => {
+describe('주간 보스 수익', () => {
   it('결정석과 아이템 판매가를 함께 더한다', () => {
     const drops = { [`a|스우|노멀|${WEEK_KEY}`]: [{ category: 'equipment' as const, itemName: '반지', quantity: 1, priceState: 'entered' as const, priceMeso: 60, priceShare: 2 }] }
     const model = buildTodayViewModel(
@@ -457,7 +457,7 @@ describe('주간 보스 수익 ([[ADR-147]] 정정 4)', () => {
   })
 })
 
-describe('최고가 아이템 ([[ADR-147]] 결정 9 · 정정 5)', () => {
+describe('최고가 아이템', () => {
   it('기록된 판매가 순위이고 최대 다섯이다', () => {
     const priced = (itemName: string, priceMeso: number): DropHistoryRecord =>
       dropRecord({ itemName, priceState: 'entered', priceMeso })
@@ -481,7 +481,7 @@ describe('최고가 아이템 ([[ADR-147]] 결정 9 · 정정 5)', () => {
   })
 
   // today 가 답하는 질문은 «내가 얼마를 벌었나» 다 — 총액으로 그리면 같은 화면의 「주간 보스 수익」
-  // (`sumDropPayout` = 분배 후 합)보다 최고가가 큰 화면이 나온다([[ADR-147]] 정정 21).
+  // (`sumDropPayout` = 분배 후 합)보다 최고가가 큰 화면이 나온다.
   it('분배된 금액을 그린다 — 입력한 총액이 아니다', () => {
     const model = buildTodayViewModel(
       input({
@@ -604,7 +604,7 @@ describe('최고가 아이템 ([[ADR-147]] 결정 9 · 정정 5)', () => {
   })
 })
 
-describe('주간 결정석 판매 한도 ([[ADR-054]])', () => {
+describe('주간 결정석 판매 한도', () => {
   it('월드별로 갈리고 분모는 WEEKLY_CRYSTAL_SALE_LIMIT 이다', () => {
     const model = buildTodayViewModel(
       input({
@@ -625,7 +625,7 @@ describe('주간 결정석 판매 한도 ([[ADR-054]])', () => {
   })
 })
 
-describe('아이템 드롭 가뭄 ([[ADR-147]] 정정 6)', () => {
+describe('아이템 드롭 가뭄', () => {
   it('단계와 풀 크기를 함께 실어 화면이 인덱스만 고르게 한다', () => {
     const model = buildTodayViewModel(
       input({
@@ -667,7 +667,7 @@ describe('초기화 카운트다운', () => {
 })
 
 // ────────────────────────────────────────────────────────────────────────────
-// 공유 컨텐츠 ([[ADR-147]] 정정 28~31)
+// 공유 컨텐츠 (~31)
 // ────────────────────────────────────────────────────────────────────────────
 
 const MONSTER_PARK = '몬스터파크'
@@ -701,7 +701,7 @@ function sharedRows(model: ReturnType<typeof buildTodayViewModel>) {
   ])
 }
 
-describe('공유 컨텐츠 — 계열로 묶는다 ([[ADR-147]] 정정 28)', () => {
+describe('공유 컨텐츠 — 계열로 묶는다', () => {
   it('계열 셋을 카탈로그 순서로 낸다 — 월드/계정은 그리지 않는다', () => {
     const model = buildTodayViewModel(
       input({ orderedOcids: ['a'], contentCharacters: [sharedView('a')] }),
@@ -758,7 +758,7 @@ describe('공유 컨텐츠 — 계열로 묶는다 ([[ADR-147]] 정정 28)', () 
   })
 })
 
-describe('공유 컨텐츠 — 오른쪽 열은 `maxCount > 0` 하나로 갈린다 ([[ADR-147]] 정정 29)', () => {
+describe('공유 컨텐츠 — 오른쪽 열은 `maxCount > 0` 하나로 갈린다', () => {
   it('몬스터파크는 7/14 — 월드 총합을 그대로 그린다', () => {
     const model = buildTodayViewModel(
       input({
@@ -801,7 +801,7 @@ describe('공유 컨텐츠 — 오른쪽 열은 `maxCount > 0` 하나로 갈린�
     expect(epic?.items[1]).toMatchObject({ shortName: '앵글러컴퍼니', count: null, isComplete: false })
   })
 
-  it('완료하면 카운트를 안 준다 — 화면이 CLEAR 를 그린다 ([[ADR-147]] 정정 33)', () => {
+  it('완료하면 카운트를 안 준다 — 화면이 CLEAR 를 그린다', () => {
     // 익스트림 몬스터파커는 `quest_state` 로 완료를 판정하는 항목이라 `now_count` 의 충실도가
     // 확인된 적이 없다. 완료한 항목의 «몇 번 했나» 는 언제나 max 라 카운트를 줄 이유가 없고,
     // 안 주면 **끝낸 퀘스트가 `0/2` 로 보일 위험도 함께 사라진다**.
@@ -904,7 +904,7 @@ describe('공유 컨텐츠 — 오른쪽 열은 `maxCount > 0` 하나로 갈린�
   })
 })
 
-describe('공유 컨텐츠 — 유니온만 조건부다 ([[ADR-147]] 정정 30)', () => {
+describe('공유 컨텐츠 — 유니온만 조건부다', () => {
   it('아무 캐릭터의 스케줄러에도 없으면 유니온 계열이 통째로 빠진다', () => {
     const model = buildTodayViewModel(
       input({
@@ -979,14 +979,14 @@ describe('공유 컨텐츠 — 유니온만 조건부다 ([[ADR-147]] 정정 30)
   })
 })
 
-// [[ADR-162]] 결정 1·4 — 요구 레벨에 못 미치는 항목은 «남은 것» 이 아니다. 게임이 등록을 허용해도
+// 요구 레벨에 못 미치는 항목은 «남은 것» 이 아니다. 게임이 등록을 허용해도
 // 이 캐릭터로는 못 하므로, 세면 그 숫자가 **영원히 안 줄어든다.** 스케줄러 카드·진행률·링과 같은
-// 판정 함수를 봐야 [[ADR-147]] 결정 8(«한 글자도 다르면 안 된다»)이 성립한다.
+// 판정 함수를 봐야(«한 글자도 다르면 안 된다»)이 성립한다.
 //
 // 항목을 **캐릭터 단위**로 고른 것이 요점이다 — 몬스터파크(요구 레벨 105)는 월드 공유라 이 목록에
-// 애초에 안 든다([[ADR-147]] 정정 28). 공유 항목으로 재면 레벨과 무관하게 빠져 테스트가 거짓으로
+// 애초에 안 든다. 공유 항목으로 재면 레벨과 무관하게 빠져 테스트가 거짓으로
 // 통과한다.
-describe('요구 레벨 미달은 남은 개수에서 빠진다 ([[ADR-162]])', () => {
+describe('요구 레벨 미달은 남은 개수에서 빠진다', () => {
   const 항목 = [
     daily({ name: '[일일 퀘스트] 소멸의 여로 조사' }), // 요구 레벨 200
     daily({ name: '[일일 퀘스트] 츄츄 아일랜드 최고의 요리' }), // 요구 레벨 210
@@ -1012,7 +1012,7 @@ describe('요구 레벨 미달은 남은 개수에서 빠진다 ([[ADR-162]])', 
     expect(남은것(199)).toHaveLength(0)
   })
 
-  // 레벨을 모르면 단정하지 않는다 — 전부 센다([[ADR-057]] 태도).
+  // 레벨을 모르면 단정하지 않는다 — 전부 센다(태도).
   it('레벨을 모르면 아무것도 안 뺀다', () => {
     expect(남은것()).toHaveLength(2)
   })

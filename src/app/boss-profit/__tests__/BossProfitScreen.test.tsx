@@ -3,17 +3,17 @@
 //
 // ── 옮기지 않은 계약 여섯 ────────────────────────────────────────────────────────────
 //
-// ① **당김 제스처 시뮬레이션 다섯**([[ADR-072]]) — 임계 넘김/미달·목록 `transform`·
-//    전환 켜고 끄기는 이제 OS 가 갖는다([[ADR-130]]). 남는 계약은 *"당김이 헤더 버튼과 같은
+// ① **당김 제스처 시뮬레이션 다섯** — 임계 넘김/미달·목록 `transform`·
+//  전환 켜고 끄기는 이제 OS 가 갖는다. 남는 계약은 *"당김이 헤더 버튼과 같은
 //    재조회를 부르는가"* 와 *"의미 없는 기간에서는 꺼지는가"* 둘이고 그것은 본다.
 // ② **`fixed` 헤더 + 실측 spacer + `ADR-112` 한 커밋 반영** — 헤더가 스크롤 뷰의 형제라 spacer 도
 //    실측도 없다. 대신 *"헤더가 셸의 `header` 로 들어간다"* 를 본다.
-// ③ **중첩 sticky 오프셋**([[ADR-100]] 결정 3) — sticky 를 못 옮겼다(`contract.md`).
+// ③ **중첩 sticky 오프셋** — sticky 를 못 옮겼다(`contract.md`).
 // ④ **DOM 스냅샷 두 파일** — 트리가 다르다. RN 트리 스냅샷을 **새 기준선**으로 남기고, 그것이
 //    답하는 것은 *"앞으로 안 바뀌는가"* 뿐이다(«예전과 같은가» 는 사람이 두 앱을 나란히 놓고 답한다).
-// ⑤ **히스토리 왕복에도 언마운트되지 않는가**([[ADR-077]]) — 루트 스택 push 라 구조가 지킨다.
+// ⑤ **히스토리 왕복에도 언마운트되지 않는가** — 루트 스택 push 라 구조가 지킨다.
 //    화면 안에서 볼 자리가 없다.
-// ⑥ **접기 전후 스크롤**([[ADR-102]]) — 접기에 스크롤 코드가 아예 없다(`CharacterAccordion`).
+// ⑥ **접기 전후 스크롤** — 접기에 스크롤 코드가 아예 없다(`CharacterAccordion`).
 import { act, fireEvent, within } from '@testing-library/react-native'
 import { render } from '@testing-library/react-native'
 import { ScrollView } from 'react-native'
@@ -41,15 +41,15 @@ import { BossProfitScreen } from '../BossProfitScreen'
 const mockShowError = jest.fn()
 const mockNoticeApiKeyIssue = jest.fn()
 const navigate = jest.fn()
-// 층이 스택이 된 뒤로 «그룹 층으로 되돌리기» 는 액션이다([[ADR-167]]) — 화면이 이것도 부른다.
+// 층이 스택이 된 뒤로 «그룹 층으로 되돌리기» 는 액션이다 — 화면이 이것도 부른다.
 const dispatch = jest.fn()
 
-// [[ADR-063]]: 동기화 실패·기간 로드 실패는 인라인 문단이 아니라 토스트다.
+// : 동기화 실패·기간 로드 실패는 인라인 문단이 아니라 토스트다.
 jest.mock('../../../features/toast/store', () => ({
   useToastStore: {
     getState: () => ({ showError: mockShowError, showSuccess: jest.fn(), showInfo: jest.fn() }) } }))
 
-// [[ADR-115]] 결정 7: 401 은 토스트가 아니라 키 무효화 진입점으로 간다(이 화면에는 로스터 조회가
+// : 401 은 토스트가 아니라 키 무효화 진입점으로 간다(이 화면에는 로스터 조회가
 // 없어 동기화 경로 하나뿐이다).
 jest.mock('../../../features/onboarding/store', () => ({
   useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) } }))
@@ -93,7 +93,7 @@ function mockStore(overrides: Partial<BossProfitStore> = {}): void {
     trackedOcids: ['ocid-1'],
     lastSyncedAt: null,
     loadTrackedOcids: jest.fn(),
-    // 실물은 `Promise<void>` 다 — 당김 훅이 회차의 «끝» 을 기다린다([[ADR-160]] 결정 1).
+    // 실물은 `Promise<void>` 다 — 당김 훅이 회차의 «끝» 을 기다린다.
     refresh: jest.fn().mockResolvedValue(undefined),
     setTab: jest.fn(),
     goToPreviousPeriod: jest.fn(),
@@ -151,7 +151,7 @@ function renderScreen(): ReturnType<typeof render> {
 
 beforeEach(() => {
   jest.clearAllMocks()
-  // 카운트업의 '직전 표시값' 기억은 모듈 수준이라 언마운트를 건너 산다([[ADR-087]] 결정 8) —
+  // 카운트업의 '직전 표시값' 기억은 모듈 수준이라 언마운트를 건너 산다 —
   // 테스트 하나가 곧 세션 하나다.
   clearCountUpMemory()
   dispatch.mockClear()
@@ -161,7 +161,7 @@ beforeEach(() => {
   mockStore()
 })
 
-describe('빈 상태 ([[ADR-101]] 결정 1 · [[ADR-060]])', () => {
+describe('빈 상태', () => {
   it('마운트하면 추적 목록을 한 번 읽는다', async () => {
     const loadTrackedOcids = jest.fn()
     mockStore({ loadTrackedOcids })
@@ -187,9 +187,9 @@ describe('빈 상태 ([[ADR-101]] 결정 1 · [[ADR-060]])', () => {
     expect(queryByText('아이템 가격')).toBeNull()
   })
 
-  // [[ADR-068]] 결정 4의 «열어 둔 채로 보낸다» 는 그대로이고 **목적지만 바뀌었다** — 피커를 여는
-  // 자리가 설정 하나가 됐다([[ADR-140]] 결정 1·2).
-  it('빈 상태 CTA 는 피커를 열어 둔 채로 설정 탭에 보낸다([[ADR-068]] 결정 4 · [[ADR-140]])', async () => {
+  // 의 «열어 둔 채로 보낸다» 는 그대로이고 **목적지만 바뀌었다** — 피커를 여는
+  // 자리가 설정 하나가 됐다.
+  it('빈 상태 CTA 는 피커를 열어 둔 채로 설정 탭에 보낸다', async () => {
     mockStore({ trackedOcids: [] })
     const { getByText } = await renderScreen()
 
@@ -197,7 +197,7 @@ describe('빈 상태 ([[ADR-101]] 결정 1 · [[ADR-060]])', () => {
       fireEvent.press(getByText('캐릭터 선택하러 가기'))
     })
 
-    // 층이 스택이 되면서 이동이 두 단 중첩이 됐다([[ADR-167]] 결정 2) — 설정은 **그룹 층**에
+    // 층이 스택이 되면서 이동이 두 단 중첩이 됐다 — 설정은 **그룹 층**에
     // 살고, 파라미터는 가장 안쪽 화면에 붙는다.
     expect(navigate).toHaveBeenCalledWith('Main', {
       screen: 'Groups',
@@ -206,7 +206,7 @@ describe('빈 상태 ([[ADR-101]] 결정 1 · [[ADR-060]])', () => {
   })
 })
 
-describe('제목 줄 진입점 ([[ADR-071]] 결정 7 · [[ADR-124]] 결정 8)', () => {
+describe('제목 줄 진입점', () => {
   it('가격이 히스토리 **왼쪽**이다 — 값을 매기는 쪽이 주마다 들르는 자리다', async () => {
     const { getByTestId } = await renderScreen()
 
@@ -230,7 +230,7 @@ describe('제목 줄 진입점 ([[ADR-071]] 결정 7 · [[ADR-124]] 결정 8)', 
   })
 })
 
-describe('탭과 기간 네비게이터 ([[ADR-023]] · [[ADR-037]])', () => {
+describe('탭과 기간 네비게이터', () => {
   it('탭을 누르면 `setTab` 이 불린다', async () => {
     const setTab = jest.fn()
     mockStore({ setTab })
@@ -281,7 +281,7 @@ describe('탭과 기간 네비게이터 ([[ADR-023]] · [[ADR-037]])', () => {
   })
 })
 
-describe('동기화 상태 영역 ([[ADR-049]] 결정 1 · [[ADR-076]])', () => {
+describe('동기화 상태 영역', () => {
   it('현재 기간에서 새로고침을 누르면 추적 목록으로 재조회한다', async () => {
     const refresh = jest.fn()
     mockStore({ refresh, trackedOcids: ['ocid-1', 'ocid-2'] })
@@ -323,7 +323,7 @@ describe('동기화 상태 영역 ([[ADR-049]] 결정 1 · [[ADR-076]])', () => 
   })
 })
 
-describe('당겨서 새로고침 ([[ADR-072]] 결정 2·9 · [[ADR-076]] · [[ADR-130]])', () => {
+describe('당겨서 새로고침', () => {
   it('현재 기간에서는 당김이 헤더 버튼과 **같은 재조회**를 부른다', async () => {
     const refresh = jest.fn().mockResolvedValue(undefined)
     mockStore({ refresh, trackedOcids: ['ocid-1'] })
@@ -345,7 +345,7 @@ describe('당겨서 새로고침 ([[ADR-072]] 결정 2·9 · [[ADR-076]] · [[AD
     expect(queryByLabelText('새로고침')).toBeNull()
   })
 
-  // ★ 회귀 가드 — **«조회 중» 과 «당겼다» 는 다른 사실이다** ([[ADR-160]] 결정 1).
+  // ★ 회귀 가드 — **«조회 중» 과 «당겼다» 는 다른 사실이다**.
   //
   // 종전에는 `refreshing = status === 'loading'` 이라, 화면 마운트 하이드레이션만으로 인디케이터가
   // 프로그램적으로 열렸다. 사용자 보고(2026-08-22) *"페이지 이동 시 새로고침 인디케이터가 저절로
@@ -359,7 +359,7 @@ describe('당겨서 새로고침 ([[ADR-072]] 결정 2·9 · [[ADR-076]] · [[AD
   })
 })
 
-describe('기간 상태별 표현 ([[ADR-060]] · [[ADR-068]] 결정 1 · [[ADR-083]] 결정 3)', () => {
+describe('기간 상태별 표현', () => {
   it('`confirmedEmpty` 는 확정된 빈 상태다 — 조회 불가와 디자인을 공유하지 않는다', async () => {
     mockStore({ status: 'loaded', periodState: 'confirmedEmpty' })
     const { getByText } = await renderScreen()
@@ -411,7 +411,7 @@ describe('기간 상태별 표현 ([[ADR-060]] · [[ADR-068]] 결정 1 · [[ADR-
   })
 })
 
-describe('로딩 ([[ADR-061]] 결정 2)', () => {
+describe('로딩', () => {
   it('보여줄 데이터가 없을 때만 셸 승계 카드를 그린다', async () => {
     mockStore({ status: 'loading' })
     const { getByText } = await renderScreen()
@@ -419,7 +419,7 @@ describe('로딩 ([[ADR-061]] 결정 2)', () => {
     expect(getByText('불러오고 있어요')).toBeTruthy()
   })
 
-  it('캐시된 행이 있으면 재조회 중에도 목록을 계속 보여준다([[ADR-017]])', async () => {
+  it('캐시된 행이 있으면 재조회 중에도 목록을 계속 보여준다', async () => {
     mockStore({ status: 'loading', rows: [보스행()] })
     const { queryByText, getByText } = await renderScreen()
 
@@ -436,9 +436,9 @@ describe('로딩 ([[ADR-061]] 결정 2)', () => {
   })
 })
 
-// [[ADR-143]] 결정 3: 카드가 서는 차례는 행의 순서(= 스토어의 레벨 내림차순, [[ADR-017]] 결정 2)가
+// : 카드가 서는 차례는 행의 순서(= 스토어의 레벨 내림차순)가
 // 아니라 사용자가 캐릭터 관리에서 정한 저장 배열 순서다.
-describe('캐릭터 카드 순서 ([[ADR-143]] 결정 3)', () => {
+describe('캐릭터 카드 순서', () => {
   /** 카드 헤더에 그려진 캐릭터 이름을 카드 순서대로. */
   async function 카드이름들(store: Partial<BossProfitStore>): Promise<string[]> {
     mockStore({ status: 'loaded', periodState: 'recorded', ...store })
@@ -468,7 +468,7 @@ describe('캐릭터 카드 순서 ([[ADR-143]] 결정 3)', () => {
   })
 })
 
-describe('총 수익 헤드라인 ([[ADR-046]] · [[ADR-054]] · [[ADR-124]] 결정 7)', () => {
+describe('총 수익 헤드라인', () => {
   it('여러 캐릭터의 합계가 하나의 숫자로 선다', async () => {
     mockStore({
       status: 'loaded',
@@ -537,7 +537,7 @@ describe('총 수익 헤드라인 ([[ADR-046]] · [[ADR-054]] · [[ADR-124]] 결
     expect(getByLabelText(`주간 결정석 판매 1 / ${WEEKLY_CRYSTAL_SALE_LIMIT}`)).toBeTruthy()
   })
 
-  it('기간 전체 고가 드롭이 있으면 헤드라인에도 뱃지가 붙는다([[ADR-046]])', async () => {
+  it('기간 전체 고가 드롭이 있으면 헤드라인에도 뱃지가 붙는다', async () => {
     mockStore({
       status: 'loaded',
       periodState: 'recorded',
@@ -575,14 +575,14 @@ describe('월간 탭', () => {
 })
 
 describe('구조 계약', () => {
-  it('페이지 헤더에는 경계 페이드를 두지 않는다([[ADR-047]] 결정 6 — 회귀 가드)', async () => {
+  it('페이지 헤더에는 경계 페이드를 두지 않는다( — 회귀 가드)', async () => {
     const { queryByTestId, getByTestId } = await renderScreen()
 
     expect(getByTestId('page-header')).toBeTruthy()
     expect(queryByTestId('page-header-fade')).toBeNull()
   })
 
-  it('기간이 바뀌면 스크롤을 최상단으로 옮긴다([[ADR-080]]) — 목적지가 0 인 것이 계약이다', async () => {
+  it('기간이 바뀌면 스크롤을 최상단으로 옮긴다 — 목적지가 0 인 것이 계약이다', async () => {
     const scrollTo = jest.spyOn(ScrollView.prototype, 'scrollTo')
     const { rerender } = await renderScreen()
     scrollTo.mockClear()
@@ -602,7 +602,7 @@ describe('구조 계약', () => {
     scrollTo.mockRestore()
   })
 
-  it('탭·기간이 그대로면 스크롤을 건드리지 않는다 — 히스토리 왕복의 위치 유지([[ADR-077]])가 깨진다', async () => {
+  it('탭·기간이 그대로면 스크롤을 건드리지 않는다 — 히스토리 왕복의 위치 유지가 깨진다', async () => {
     const scrollTo = jest.spyOn(ScrollView.prototype, 'scrollTo')
     const { rerender } = await renderScreen()
     scrollTo.mockClear()

@@ -1,14 +1,14 @@
-// 첫 화면 「today」의 **배선**([[ADR-147]] 결정 4 · [[ADR-132]] 결정 7·8).
+// 첫 화면 「today」의 **배선**.
 //
 // 이 화면에는 판정이 한 줄도 없다 — 조립은 `view-model.ts`(그 테스트), 그림은 위젯 여덟(각자의
 // 테스트), 좌표는 `WidgetGrid`(그 테스트)가 이미 본다. 그래서 여기서 묻는 것은 넷뿐이다.
 //
 // ① **어느 문으로 조회하는가** — 진입은 게이트가 있는 `loadTrackedOcids` 하나이고, 게이트를
-//    우회하는 `refresh` 는 진입에서 부르지 않는다([[ADR-097]] 결정 2·4).
+//  우회하는 `refresh` 는 진입에서 부르지 않는다.
 //    **게이트 자체는 여기서 못 본다** — 그것은 스토어 안의 계약이라 core 테스트가 지킨다. 화면이
 //    보장할 수 있는 것은 «어느 문을 쓰는가» 이고, 그 문이 바뀌면 TTL 이 통째로 사라진다.
-// ② **당김과 헤더 버튼이 같은 재조회인가**([[ADR-072]] 결정 2 · [[ADR-130]] 결정 1).
-// ③ **스토어가 비어도 서는가** — 콜드 스타트에 위젯 여덟이 전부 빈 상태로 선다([[ADR-147]] 결정 5).
+// ② **당김과 헤더 버튼이 같은 재조회인가**.
+// ③ **스토어가 비어도 서는가** — 콜드 스타트에 위젯 여덟이 전부 빈 상태로 선다.
 // ④ **캐릭터 넷의 기본 배치**(스냅샷) — 헤더 + 격자가 실제 값 위에서 함께 그려지는 유일한 자리다.
 import { act, fireEvent, screen } from '@testing-library/react-native'
 
@@ -132,7 +132,7 @@ function setStores(
     tab: 'weekly',
     periodKey: WEEK_KEY,
     rows: [],
-    // [[ADR-153]]: 이 화면이 읽는 것은 «지금 기간» 이다 — `rows`(보고 있는 탭·기간)가 아니다.
+    // : 이 화면이 읽는 것은 «지금 기간» 이다 — `rows`(보고 있는 탭·기간)가 아니다.
     currentPeriodRows: [],
     loadedTab: 'weekly',
     loadedPeriodKey: WEEK_KEY,
@@ -262,7 +262,7 @@ const 캐릭터_넷 = {
     characters: OCIDS.map((ocid, index) => bossView(ocid, index + 1)) },
   profit: {
     trackedOcids: OCIDS,
-    // 주간 탭·현재 기간에서는 둘이 같은 내용이다([[ADR-153]] 대가) — 픽스처도 그 상태를 그대로 둔다.
+    // 주간 탭·현재 기간에서는 둘이 같은 내용이다(대가) — 픽스처도 그 상태를 그대로 둔다.
     rows: OCIDS.map((ocid, index) => profitRow(ocid, index + 1)),
     currentPeriodRows: OCIDS.map((ocid, index) => profitRow(ocid, index + 1)),
     lastSyncedAt: new Date(NOW.getTime() - 5 * 60 * 1000).toISOString() },
@@ -301,7 +301,7 @@ async function press(element: AtomElement): Promise<void> {
   })
 }
 
-/** 스크롤 셸에 붙은 당겨서 새로고침 컨트롤([[ADR-130]] 결정 1) — 스케줄러 테스트와 같은 자리다. */
+/** 스크롤 셸에 붙은 당겨서 새로고침 컨트롤 — 스케줄러 테스트와 같은 자리다. */
 function refreshControl(): { refreshing: boolean; onRefresh: () => void } {
   return screen.getByTestId('screen-scroll').props.refreshControl.props
 }
@@ -317,7 +317,7 @@ function buttonOf(node: AtomElement): AtomElement {
  * 지금까지 쌓인 «재조회» 호출을 그대로 떠서 돌려주고 목을 비운다.
  *
  * 두 경로(버튼·당김)가 **같은 재조회인가** 를 보려면 각각이 남긴 자국을 통째로 견줘야 한다
- * ([[ADR-072]] 결정 2) — 어느 스토어를 어떤 인자로 몇 번 불렀는지가 전부 같아야 «같은» 이다.
+ * 어느 스토어를 어떤 인자로 몇 번 불렀는지가 전부 같아야 «같은» 이다.
  */
 function 재조회_기록(): unknown {
   const 목 = [mocks.content.refresh, mocks.boss.refresh, mocks.profit.refresh, mocks.dropHistory.load]
@@ -336,7 +336,7 @@ afterAll(() => {
 
 beforeEach(() => {
   mocks = {
-    // 실물은 넷 다 `Promise` 다 — 당김 훅이 `allSettled` 로 넷의 «끝» 을 기다린다([[ADR-160]] 결정 1).
+    // 실물은 넷 다 `Promise` 다 — 당김 훅이 `allSettled` 로 넷의 «끝» 을 기다린다.
     content: { loadTrackedOcids: jest.fn(), refresh: jest.fn().mockResolvedValue(undefined) },
     boss: { loadTrackedOcids: jest.fn(), refresh: jest.fn().mockResolvedValue(undefined) },
     profit: { loadTrackedOcids: jest.fn(), refresh: jest.fn().mockResolvedValue(undefined) },
@@ -349,7 +349,7 @@ beforeEach(() => {
 })
 
 describe('TodayScreen — 진입 조회', () => {
-  // [[ADR-132]] 결정 8 «today 는 그 순차 밖의 **네 번째 트리거**» — 예열이 셋을 돌고 이 화면이
+  //  «today 는 그 순차 밖의 **네 번째 트리거**» — 예열이 셋을 돌고 이 화면이
   // 하나를 더 낸다. 스케줄러 화면 하나와 같은 횟수다.
   it('진입하면 동기화 트리거를 정확히 한 번 낸다', async () => {
     await renderScreen()
@@ -360,7 +360,7 @@ describe('TodayScreen — 진입 조회', () => {
     expect(mocks.profit.loadTrackedOcids).not.toHaveBeenCalled()
   })
 
-  // 회귀 가드 — 게이트는 `loadTrackedOcids` **안**에 있다([[ADR-097]] 결정 4). 진입이 `refresh` 를
+  // 회귀 가드 — 게이트는 `loadTrackedOcids` **안**에 있다. 진입이 `refresh` 를
   // 부르는 순간 10분 TTL 이 통째로 사라지고, 그 손실은 화면에서 아무 표시도 남기지 않는다.
   it('진입은 게이트를 우회하는 refresh 를 부르지 않는다', async () => {
     setStores(캐릭터_넷)
@@ -372,7 +372,7 @@ describe('TodayScreen — 진입 조회', () => {
     expect(mocks.profit.refresh).not.toHaveBeenCalled()
   })
 
-  // 드롭 히스토리는 예열 목록 밖이고 네트워크도 안 탄다([[ADR-071]]) — 동기화 트리거 수에 들지
+  // 드롭 히스토리는 예열 목록 밖이고 네트워크도 안 탄다 — 동기화 트리거 수에 들지
   // 않으므로 위 케이스와 갈라 둔다.
   it('예열 밖인 드롭 히스토리는 이 화면이 읽는다', async () => {
     await renderScreen()
@@ -385,11 +385,11 @@ describe('TodayScreen — 진입 조회', () => {
 // 수동 멤버십은 저장소 키 하나인데 **스토어 둘이 각자 사본**을 든다. 사본을 갱신하는 것은 각자
 // 자기 계열을 바꿀 때뿐이라(컨텐츠 추가는 컨텐츠 스토어만, 보스 추가는 보스 스토어만) 계열마다
 // 주인이 정해져 있다 — 이 화면은 **두 계열을 한 화면에서** 그리는 유일한 자리라 둘을 다 읽어야
-// 한다([[ADR-147]] 정정 43).
+// 한다.
 // 보스 수익 스토어의 `rows` 는 «사용자가 보고 있는 (탭, 기간)» 이고 이 화면이 그리는 것은 «이번
-// 주» 다([[ADR-153]]). 사용자 보고(2026-08-19) — 그 화면을 월간 탭으로 옮기기만 해도 위젯 3·5 가
+// 주» 다. 사용자 보고(2026-08-19) — 그 화면을 월간 탭으로 옮기기만 해도 위젯 3·5 가
 // 함께 비었다. 이 화면은 그 네비게이션을 **모르는 채로** 서야 한다.
-describe('TodayScreen — 수익 위젯이 읽는 값 ([[ADR-153]])', () => {
+describe('TodayScreen — 수익 위젯이 읽는 값', () => {
   it('보스 수익 화면이 월간 탭을 보고 있어도 이번 주 수익을 그린다', async () => {
     setStores({
       ...캐릭터_넷,
@@ -417,14 +417,14 @@ describe('TodayScreen — 수동 멤버십을 어느 스토어에서 읽는가',
         trackedOcids: ['ocid-1'],
         characters: [contentView('ocid-1', 1)],
         // character 범위 항목이어야 「남은 스케줄」에 남는다 — 공유 컨텐츠는 별도 위젯으로 뗐다
-        // ([[ADR-147]] 정정 28).
+        //
         manualTrackedByOcid: {
           'ocid-1': [{ contentName: '[일일 퀘스트] 소멸의 여로 조사', kind: 'daily' }] } },
       boss: { trackedOcids: ['ocid-1'], characters: [bossView('ocid-1', 1)] } })
 
     await renderScreen()
 
-    // 일일 퀘스트라 기본 탭(일간)에서 바로 수치가 선다([[ADR-181]] 결정 1).
+    // 일일 퀘스트라 기본 탭(일간)에서 바로 수치가 선다.
     expect(screen.queryAllByTestId('schedule-stats').length).toBeGreaterThan(0)
   })
 
@@ -439,7 +439,7 @@ describe('TodayScreen — 수동 멤버십을 어느 스토어에서 읽는가',
 
     await renderScreen()
 
-    // 주간 보스라 **주간 탭**에서 선다 — 위젯이 탭마다 다른 배열을 보므로([[ADR-181]] 결정 1)
+    // 주간 보스라 **주간 탭**에서 선다 — 위젯이 탭마다 다른 배열을 보므로
     // 기본 탭(일간)에는 이 캐릭터에 남은 것이 없다.
     expect(screen.queryAllByTestId('schedule-stats')).toHaveLength(0)
 
@@ -452,7 +452,7 @@ describe('TodayScreen — 수동 멤버십을 어느 스토어에서 읽는가',
 })
 
 describe('TodayScreen — 명시적 재조회', () => {
-  // [[ADR-072]] 결정 2 — 당김과 헤더 버튼은 **같은 재조회**다.
+  // 당김과 헤더 버튼은 **같은 재조회**다.
   it('당김이 헤더 버튼과 같은 재조회를 부른다', async () => {
     setStores(캐릭터_넷)
     await renderScreen()
@@ -471,7 +471,7 @@ describe('TodayScreen — 명시적 재조회', () => {
     expect(재조회_기록()).toEqual(버튼)
   })
 
-  // 명시적 재조회는 TTL 을 무시하고([[ADR-097]] 결정 2) **이 화면이 그리는 스토어 셋을 모두** 읽는다
+  // 명시적 재조회는 TTL 을 무시하고 **이 화면이 그리는 스토어 셋을 모두** 읽는다
   // — 하나만 읽으면 당겨도 보스·수익 위젯이 안 바뀐다. 셋이 동시에 나가도 `syncSchedules` 의 단일
   // 비행이 한 회차로 합친다.
   it('재조회는 화면이 그리는 스토어 셋을 모두 읽는다', async () => {
@@ -495,7 +495,7 @@ describe('TodayScreen — 명시적 재조회', () => {
     expect(refreshControl()).toBeDefined()
   })
 
-  // ★ 회귀 가드 — **«조회 중» 과 «당겼다» 는 다른 사실이다** ([[ADR-160]] 결정 1).
+  // ★ 회귀 가드 — **«조회 중» 과 «당겼다» 는 다른 사실이다**.
   //
   // 종전에는 `refreshing = status === 'loading'` 이라, 화면 마운트 하이드레이션만으로 인디케이터가
   // 프로그램적으로 열렸다. 사용자 보고(2026-08-22) *"페이지 이동 시 새로고침 인디케이터가 저절로
@@ -522,7 +522,7 @@ describe('TodayScreen — 명시적 재조회', () => {
 })
 
 describe('TodayScreen — 격자', () => {
-  // [[ADR-147]] 결정 5 — 데이터가 없다고 타일을 빼지 않는다. 콜드 스타트(스토어 전부 빈 값)에서도
+  // 데이터가 없다고 타일을 빼지 않는다. 콜드 스타트(스토어 전부 빈 값)에서도
   // 여덟이 서고, 각자 자기 타일 안에서 빈 상태를 말한다.
   it('스토어가 비어 있어도 위젯 여덟이 전부 선다', async () => {
     await renderScreen()

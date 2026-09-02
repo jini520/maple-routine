@@ -65,7 +65,7 @@ describe('DisconnectConfirm', () => {
     expect(onCancel).toHaveBeenCalledTimes(1)
   })
 
-  // [[ADR-061]] 정정 3 — 스피너가 라벨을 덮는다. 되돌릴 수 없는 동작이라 진행 중인지 멈춘 건지가
+  // 스피너가 라벨을 덮는다. 되돌릴 수 없는 동작이라 진행 중인지 멈춘 건지가
   // `disabled` 만으로는 구분되지 않는다.
   it('isDisconnecting이 true면 확인 버튼이 대기 상태가 되고 비활성이다', async () => {
     const view = await renderOverlay(<DisconnectConfirm {...props({ isDisconnecting: true })} />)

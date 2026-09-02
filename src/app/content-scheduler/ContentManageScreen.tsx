@@ -1,8 +1,8 @@
-// 컨텐츠 관리 — 수동 추적 항목 편집([[ADR-035]] 결정 18).
+// 컨텐츠 관리 — 수동 추적 항목 편집.
 //
 // ══ RN 으로 옮기며 갈린 것 다섯 ═══════════════════════════════════════════════════
 //
-// ① **`StackScreen` 이 통째로 사라진다**([[ADR-120]]). 포털 오버레이·푸시/팝 전환·가장자리 스와이프·
+// ① **`StackScreen` 이 통째로 사라진다**. 포털 오버레이·푸시/팝 전환·가장자리 스와이프·
 //    탭바 밀어내기 넷이 전부 루트 스택의 성질이라, 셸은 `ScreenScroll(hasTabBar={false})` +
 //    `PageHeader` 다(설정 하위 화면과 같은 골격).
 // ② **`useStackBack(PARENT_PATH)` → `goBack()`**, 그래서 `PARENT_PATH` 상수도 사라진다 — 딥링크가
@@ -14,8 +14,8 @@
 //    되는지"를 다음 사람이 다시 증명해야 한다.
 // ④ `<button aria-pressed>` → `Pressable` + **`aria-selected`**(RN 접근성 상태에 *pressed* 가 없다 —
 //    설정·온보딩의 선택 카드가 이미 밟은 자리).
-// ⑤ **잠금 스크림에서 `backdrop-blur-[2px]` 가 빠진다**([[ADR-055]] 정정 1 의 표기 규칙 중 흐림 몫).
-//    RN 에 `backdrop-filter` 가 없어 되붙일 방법이 없고, [[ADR-123]] 이 웹에서 그것을 걷어낸 뒤라
+// ⑤ **잠금 스크림에서 `backdrop-blur-[2px]` 가 빠진다**(의 표기 규칙 중 흐림 몫).
+//  RN 에 `backdrop-filter` 가 없어 되붙일 방법이 없고 이 웹에서 그것을 걷어낸 뒤라
 //    **방향도 같다.** 규칙의 본체("사유는 오른쪽 뱃지가 아니라 행 위를 덮는 한 줄")는 그대로다.
 import { useEffect, useState } from 'react'
 import { Pressable, View } from 'react-native'
@@ -91,7 +91,7 @@ export function ContentManageScreen(): React.JSX.Element {
     // ADR-096 결정 4: 선택 캐릭터는 스케줄러와 공유한다 — 탭과 달리 "지금 누구를 보고 있는가"는
     // 두 화면이 갈라지면 안 되는 값이다.
   } = useContentSchedulerStore()
-  // 선택은 화면·스토어가 아니라 **여기 한 벌**이다([[ADR-159]] 결정 1).
+  // 선택은 화면·스토어가 아니라 **여기 한 벌**이다.
   const { selectedOcid, select } = useCharacterSelectionStore()
   const { mode } = useTrackingModeStore()
   const navigation = useScreenNavigation()
@@ -111,11 +111,11 @@ export function ContentManageScreen(): React.JSX.Element {
     if (mode !== 'manual') navigation.goBack()
   }, [mode, navigation])
 
-  // 화면 넷이 **같은 규칙**으로 고른다([[ADR-159]] 결정 3) — 선택만 합치고 폴백을 화면마다 두면
+  // 화면 넷이 **같은 규칙**으로 고른다 — 선택만 합치고 폴백을 화면마다 두면
   // «공유했는데 화면마다 다른 캐릭터» 가 다시 생긴다.
   const selected = resolveSelectedCharacter(selectedOcid, characters)
 
-  // [[ADR-142]] 정정 8: 링 없는 초상화 레일 — 이름과 레벨만 싣는다(`rings: []`).
+  // : 링 없는 초상화 레일 — 이름과 레벨만 싣는다(`rings: []`).
   const railEntries: CharacterRailEntry[] = characters.map((character) => ({
     ocid: character.ocid,
     characterName: character.characterName,
@@ -149,7 +149,7 @@ export function ContentManageScreen(): React.JSX.Element {
   // "모름"이라 잠그지 않는다 — 모름을 미가입으로 취급하면 멀쩡한 사용자의 길드 콘텐츠가 막힌다.
   const hasNoGuild = selected?.guildName === null
 
-  // 이미 추적 중인 항목은 잠그지 않는다 — 길드를 나가도 해제할 수 있어야 한다([[ADR-057]] 결정 5).
+  // 이미 추적 중인 항목은 잠그지 않는다 — 길드를 나가도 해제할 수 있어야 한다.
   function isGuildBlocked(contentName: string): boolean {
     return !trackedNames.has(contentName) && hasNoGuild && isGuildContent(contentName)
   }
@@ -171,7 +171,7 @@ export function ContentManageScreen(): React.JSX.Element {
                 onSelect는 스케줄러와 같은 selectCharacter라 돌아갔을 때 그쪽도 같은 캐릭터다. */}
           </PageHeaderTitleRow>
 
-          {/* [[ADR-142]] 정정 8: 제목 줄 우측의 compact 드롭다운이 **초상화 레일**이 됐다(스케줄러와
+          {/*: 제목 줄 우측의 compact 드롭다운이 **초상화 레일**이 됐다(스케줄러와
               같은 컴포넌트). **여기에는 진행 링이 없다**(`rings: []`) — 이 화면의 일은 캐릭터를 고르는
               것이지 진행을 보는 것이 아니고, 링 자리를 비우면 글자가 얼굴 쪽으로 들어와 칸도 낮아진다.
               제목 줄에서 내려온 이유는 레일이 그 작은 자리에 안 들어가기 때문이다. */}
@@ -216,7 +216,7 @@ export function ContentManageScreen(): React.JSX.Element {
     >
       <View testID="screen-ContentManage">
         {/* ADR-061 결정 10: 조회가 끝나기 전(idle·loading)에는 빈 상태 문구로 위장하지 않고
-            로딩 카드를 그린다 — 확정된 빈 상태는 조회가 끝난 뒤에만 말할 수 있다([[ADR-060]]). */}
+            로딩 카드를 그린다 — 확정된 빈 상태는 조회가 끝난 뒤에만 말할 수 있다. */}
         {selected === null && (status === 'idle' || status === 'loading') ? (
           <View className="px-4 pb-4">
             <LoadingState size="page" message="불러오고 있어요" />
@@ -256,7 +256,7 @@ export function ContentManageScreen(): React.JSX.Element {
                       const isLocked = isGuildBlocked(entry.content_name)
                       const tag = contentCountTag(entry, group.label)
                       // 사유는 오른쪽 뱃지가 아니라 흐려진 행 위에 얹는 한 줄로 알린다 —
-                      // 보스 관리 화면과 같은 규칙(사용자 피드백, [[ADR-055]] 정정 1).
+                      // 보스 관리 화면과 같은 규칙(사용자 피드백).
                       return (
                         <View key={entry.content_name}>
                           <Pressable

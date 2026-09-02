@@ -1,5 +1,5 @@
 /**
- * 탭 스토어 선하이드레이션([[ADR-101]] 결정 2·5·6)을 부르는 **한 자리** — 동적 `import()` 를 여기
+ * 탭 스토어 선하이드레이션을 부르는 **한 자리** — 동적 `import()` 를 여기
  * 가둔다.
  *
  * 셸이 직접 `void import('../features/prehydrate').then(...)` 를 쓰던 것을 이 한 줄로 바꾼 것이고,
@@ -7,7 +7,7 @@
  *
  * ## ① 동적 import 를 왜 그대로 두는가
  *
- * 웹이 그 형태를 고른 이유([[ADR-092]] 번들 스플리팅)는 RN 에서 사라진다 — Metro 는 단일 번들이고
+ * 웹이 그 형태를 고른 이유(번들 스플리팅)는 RN 에서 사라진다 — Metro 는 단일 번들이고
  * `React.lazy` 도 안 쓴다. 그래도 정적 import 로 되돌리지 않는 것은 **모듈 평가 시점**이 달라지기
  * 때문이다: 이 패키지의 Metro 설정은 `inlineRequires: false` 라(실측 — `@expo/metro-config`
  * 기본값), 정적 import 면 세 탭 스토어와 그들이 끌고 오는 `data/*.json` 이 **셸을 require 하는
@@ -19,7 +19,7 @@
  *
  * jest 에서 `import()` 는 `--experimental-vm-modules` 없이는 **동기적으로 던진다**(실측
  * 2026-08-12 — `TypeError: A dynamic import callback was invoked without …`). 셸 이펙트 안에서
- * 그러면 마운트가 통째로 죽어, [[ADR-101]] 결정 6(*"온보딩이 완료됐을 때만 돈다"* — 아니면
+ * 그러면 마운트가 통째로 죽어 결정 6(*"온보딩이 완료됐을 때만 돈다"* — 아니면
  * `syncSchedules` 가 던져 스토어가 error 로 시작하고 토스트까지 울린다)을 **어떤 테스트로도 못
  * 붙든다.** 이 파일이 정적 import 로 대체 가능한 경계가 되어 `src/__tests__/boot-order.test.tsx` 가
  * 그 게이트를 본다.

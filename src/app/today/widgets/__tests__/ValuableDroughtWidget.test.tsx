@@ -1,4 +1,4 @@
-// 아이템 드롭 가뭄 위젯([[ADR-071]] 결정 9 · [[ADR-147]] 정정 6·10·13·14). 이 파일이 지키는 것 다섯 —
+// 아이템 드롭 가뭄 위젯. 이 파일이 지키는 것 다섯 —
 // ① **요약이 없으면 「아직 기록이 없습니다」**(0주째로 위장하지 않는다 — 안 먹은 것과 안 적은 것은
 //    다르고, 0주는 «이번 주에 먹었다» 는 **정반대**의 사실이다)
 // ② **잎의 각도·투명도가 `getValuableDroughtTier` 를 따른다**(단계 표는 히스토리 화면과 한 벌이다)
@@ -53,7 +53,7 @@ function 잎스타일(view: Awaited<ReturnType<typeof renderAtom>>): Record<stri
   return (leaf?.props?.style ?? {}) as Record<string, unknown>
 }
 
-describe('요약이 없을 때 ([[ADR-071]] — 기준점이 없으면 `null`)', () => {
+describe('요약이 없을 때 ( — 기준점이 없으면 `null`)', () => {
   // 「0주째」로 위장하면 «이번 주에 먹었다» 는 정반대의 사실이 된다.
   it.each(Object.entries(크기))('%s — 0주째가 아니라 「기록이 없습니다」', async (_이름, 값) => {
     const view = await 위젯(값, 빈_뷰모델)
@@ -70,7 +70,7 @@ describe('요약이 없을 때 ([[ADR-071]] — 기준점이 없으면 `null`)',
   })
 })
 
-describe('잎은 단계를 따라 늙는다 ([[ADR-071]] 결정 9)', () => {
+describe('잎은 단계를 따라 늙는다', () => {
   // 뷰모델의 `tier` 가 `getValuableDroughtTier` 의 값이고, 위젯은 그 첨자로 표를 읽는다.
   it.each([0, 1, 2, 3, 7])('%i주째 — 각도·투명도가 그 단계의 값이다', async (weeksSince) => {
     const 기대 = DROUGHT_TIER_STYLES[getValuableDroughtTier(weeksSince)]
@@ -89,7 +89,7 @@ describe('잎은 단계를 따라 늙는다 ([[ADR-071]] 결정 9)', () => {
 })
 
 describe('0주째만 배경이 바뀐다 — 격자에서 유일하게 축하하는 타일', () => {
-  // 기대값은 테마에서 읽는다([[ADR-006]] — 테스트가 색을 베끼면 두 벌이 된다).
+  // 기대값은 테마에서 읽는다(— 테스트가 색을 베끼면 두 벌이 된다).
   it.each(Object.entries(크기))('%s — 0주째는 `primary-tint`', async (_이름, 값) => {
     const { getByTestId } = await 위젯(값, 뷰모델({ drought: 가뭄(0) }))
 
@@ -159,7 +159,7 @@ describe('크기마다 버리는 것', () => {
   })
 })
 
-describe('문구는 마운트당 한 번 고른다 ([[ADR-147]] 정정 6)', () => {
+describe('문구는 마운트당 한 번 고른다', () => {
   afterEach(() => {
     jest.restoreAllMocks()
   })
@@ -195,7 +195,7 @@ describe('문구는 마운트당 한 번 고른다 ([[ADR-147]] 정정 6)', () =
 
     const view = await 위젯(크기['4x1'])
 
-    // 3주 단계의 풀([[ADR-147]] 정정 10) — 어느 것이 나오든 그 둘 중 하나다.
+    // 3주 단계의 풀 — 어느 것이 나오든 그 둘 중 하나다.
     expect(['선넘네?!', '이게 억까지 뭐야']).toContain(
       view.getByTestId('drought-headline').props.children,
     )
@@ -204,7 +204,7 @@ describe('문구는 마운트당 한 번 고른다 ([[ADR-147]] 정정 6)', () =
 
 // 정정 14 — 화면에 보이는 한국어는 「아이템 드롭」이다. 영문 식별자는 그대로 두므로 이 검사는
 // **렌더 결과**에만 건다.
-describe('「물욕」을 쓰지 않는다 ([[ADR-147]] 정정 14)', () => {
+describe('「물욕」을 쓰지 않는다', () => {
   it.each(Object.entries(크기))('%s — 어디에도 없다', async (_이름, 값) => {
     expect(모든글자(await 위젯(값))).not.toContain('물욕')
   })

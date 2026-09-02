@@ -1,10 +1,10 @@
-// 가격 입력 키패드([[ADR-124]] 결정 5) — **웹에는 이 파일이 없다**(키패드 케이스가 화면 테스트에
+// 가격 입력 키패드 — **웹에는 이 파일이 없다**(키패드 케이스가 화면 테스트에
 // 섞여 있었다). RN 에서는 두 자리(가격 기록 화면의 시트 · 드롭 시트의 드릴다운)가 같은 본문을
 // 쓰므로 본문 계약을 여기 모아 두고, 두 호출부 테스트는 **그 자리로 들어갔다 나오는 흐름**만 본다.
 //
 // 여기서 지키는 것 넷
 // ① 자릿수 전체가 주 표기다 — 억/만은 보조 줄이고 값이 0이면 그 줄이 **비되 자리는 남는다**
-// ② **`0` 은 저장할 수 없다**([[ADR-124]]) — 미입력과 0원은 다른 사실이라 저장 버튼이 잠긴다
+// ② **`0` 은 저장할 수 없다** — 미입력과 0원은 다른 사실이라 저장 버튼이 잠긴다
 // ③ 대상이 갈리면 값이 그 아이템의 것으로 되돌아간다(순차 모드·드릴다운은 언마운트가 없다)
 // ④ 스킵은 순차 모드에서만 뜨고 **아무것도 저장하지 않는다**(결정 6 정정)
 import { useState, type ReactNode } from 'react'
@@ -25,7 +25,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
       return React.createElement(ReactNative.View, props)
     }),
     BottomSheetScrollView: (props: Record<string, unknown>) => React.createElement(ReactNative.View, props),
-    // 시트 밖과 같게 둔다 — 아톰이 이 값으로 «시트 안인가» 를 묻는다([[ADR-170]] 정정 5).
+    // 시트 밖과 같게 둔다 — 아톰이 이 값으로 «시트 안인가» 를 묻는다.
     // 목이 시트를 평범한 `View` 로 바꾸므로 여기서도 문맥이 없는 것이 사실이고, 그래서
     // 아래 입력은 안 그려진다 — 그래도 **있어야 한다**: `lib/nativewind-interop` 이 모듈을
     // 읽는 순간 이것을 등록하므로, 없으면 스위트가 뜨기도 전에 죽는다.
@@ -42,7 +42,7 @@ import type { RecordedDrop } from '../../../types/drops'
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { DropPricePad, DropPricePadContent } from '../DropPricePad'
 
-// 보스 이름·난이도는 게임 레퍼런스 데이터에서 뽑는다([[ADR-006]] — 테스트가 베끼면 두 벌이 된다).
+// 보스 이름·난이도는 게임 레퍼런스 데이터에서 뽑는다(— 테스트가 베끼면 두 벌이 된다).
 const 주간보스 = weeklyBossesData.weekly[0].boss
 
 function 드롭(overrides: Partial<RecordedDrop> = {}): RecordedDrop {
@@ -68,7 +68,7 @@ function renderPad(overrides: Partial<React.ComponentProps<typeof DropPricePadCo
   return { result, onSave, onExclude }
 }
 
-describe('DropPricePad — 금액 입력 ([[ADR-124]] 결정 5)', () => {
+describe('DropPricePad — 금액 입력', () => {
   it('키를 누른 순서대로 자릿수가 자란다 — 접지 않고 원시 표기다', async () => {
     const { result } = renderPad()
     const { getByLabelText, getByTestId } = await result
@@ -114,7 +114,7 @@ describe('DropPricePad — 금액 입력 ([[ADR-124]] 결정 5)', () => {
     expect(getByTestId('drop-price-amount').props.children).toBe('0')
   })
 
-  // **미입력은 0원이 아니다**([[ADR-124]]) — 0을 저장할 수 있으면 "값을 매겼는데 0원"이라는
+  // **미입력은 0원이 아니다** — 0을 저장할 수 있으면 "값을 매겼는데 0원"이라는
   // 없는 사실이 기록된다. 그래서 저장은 값이 있어야만 눌린다.
   it('0 은 저장할 수 없다', async () => {
     const { result, onSave } = renderPad()
@@ -143,7 +143,7 @@ describe('DropPricePad — 금액 입력 ([[ADR-124]] 결정 5)', () => {
   })
 })
 
-describe('DropPricePad — 분배 인원 ([[ADR-124]] 결정 2)', () => {
+describe('DropPricePad — 분배 인원', () => {
   it('기본값은 그 행의 파티원 수이고, 저장된 값이 있으면 그쪽이 이긴다', async () => {
     const { result } = renderPad()
     const { getByText } = await result
@@ -235,7 +235,7 @@ describe('DropPricePad — 대상이 갈리면 값이 따라간다', () => {
   })
 })
 
-describe('DropPricePad — 기록 안함 · 스킵 ([[ADR-124]] 결정 6 정정)', () => {
+describe('DropPricePad — 기록 안함 · 스킵 ( 정정)', () => {
   it('"기록 안함" 은 값 없이도 눌리고 결정을 올려보낸다', async () => {
     const { result, onExclude } = renderPad()
     const { getByText } = await result

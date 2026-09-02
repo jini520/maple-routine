@@ -1,4 +1,4 @@
-// **[[ADR-124]] 의 표시 층 계약이 여기 산다.**
+// ** 의 표시 층 계약이 여기 산다.**
 //
 // 합산은 `dropPayoutMeso` 가 스킵과 미입력을 똑같이 0으로 접지만(core, 의도된 설계) **화면은
 // 그 둘도 0원도 서로 다르게 말해야 한다** — 미입력에 `0` 을 쓰면 사용자가 적지 않은 사실이
@@ -41,7 +41,7 @@ function renderPopover(props: {
   )
 }
 
-describe('ItemRevenuePopover — 미입력은 0원이 아니다 ([[ADR-124]])', () => {
+describe('ItemRevenuePopover — 미입력은 0원이 아니다', () => {
   // 일부러 `priceMeso` 는 있고 `priceState` 만 없는 기록을 준다 — 상태를 안 보고 금액만 읽는
   // 구현(`priceMeso ?? 0` 계열)이면 여기서 `30.0억` 이 새어 나온다.
   it('값을 안 매긴 기록은 금액 대신 "미입력" 이라고 말한다', async () => {

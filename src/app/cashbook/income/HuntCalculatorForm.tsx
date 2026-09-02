@@ -1,15 +1,15 @@
 /**
- * 「사냥」 계산기 폼([[ADR-175]]). **적는 것이 아니라 계산되는 것**이다.
+ * 「사냥」 계산기 폼. **적는 것이 아니라 계산되는 것**이다.
  *
  * 나머지 갈래는 얼마 벌었나를 사람이 알지만 사냥 메소는 **맵이 정해지면 셀 수 있는 값**이라 앱이
  * 낸다. 그래서 이 폼에만 줄이 여럿 서고(지역 · 사냥터 · 효율 · 메획 · 소재 · 조각) 큰 숫자가
  * **못 치는 합계**가 된다.
  *
- * 사냥의 다른 한 모양은 `HuntManualForm` 이다([[ADR-201]] 결정 6). 그쪽은 계산기가 못 세는 사냥에
+ * 사냥의 다른 한 모양은 `HuntManualForm` 이다. 그쪽은 계산기가 못 세는 사냥에
  * 쓰고, 어느 폼이 서는지는 기록에 박힌 값이 정한다.
  *
  * 계산은 한 자리에 있다(`lib/cashbook/hunting-meso`) — 이 파일은 고른 것을 넘기고 받은 숫자를 그린다.
- * 캐릭터의 메소 획득량은 `features/cashbook/meso-rate` 가 읽어 준다([[ADR-177]]) — 폼은 `nexon/` 도
+ * 캐릭터의 메소 획득량은 `features/cashbook/meso-rate` 가 읽어 준다 — 폼은 `nexon/` 도
  * `storage/` 도 모른다.
  */
 import { useRef, useState } from 'react'
@@ -56,10 +56,10 @@ function levelLabelOf(ground: HuntingGround): string {
 }
 
 /**
- * 포스 배지 — **그림 + 숫자**다([[ADR-175]] 결정 10).
+ * 포스 배지 — **그림 + 숫자**다.
  *
  * 그림이 없으면 **글자만으로 선다**(`아케인 700`) — 비슷한 그림을 갖다 붙이면 틀린 것을 그리는
- * 셈이다([[ADR-170]] 정정 16 이 지출 타일에 세운 규칙과 같다). 읽어 주는 이름은 언제나 온전한
+ * 셈이다(이 지출 타일에 세운 규칙과 같다). 읽어 주는 이름은 언제나 온전한
  * 말이라 그림이 있든 없든 「어센틱 포스 700」 으로 들린다.
  */
 function ForceBadge(props: { region: HuntingRegion; force: number }): React.JSX.Element {
@@ -83,7 +83,7 @@ function ForceBadge(props: { region: HuntingRegion; force: number }): React.JSX.
   )
 }
 
-/** 사냥터 목록의 한 줄 — 이름 · 포스 배지 · 레벨 · 마릿수([[ADR-175]] 결정 10). */
+/** 사냥터 목록의 한 줄 — 이름 · 포스 배지 · 레벨 · 마릿수. */
 function GroundOptionRow(props: {
   region: HuntingRegion
   ground: HuntingGround
@@ -113,13 +113,13 @@ function GroundOptionRow(props: {
 }
 
 /**
- * 메소 획득률 아이템 — **체크박스 + 그림**이다([[ADR-178]] 정정 5, 사용자 지정 2026-08-29).
+ * 메소 획득률 아이템 — **체크박스 + 그림**이다(사용자 지정 2026-08-29).
  *
  * 켜고 끄는 것이라 갈래 칩과 성질이 다르고, 그 사실을 **체크박스가 말한다** — 알약 테두리는
  * «고르는 하나» 로 읽혀 여럿이 동시에 켜지는 것과 안 맞았다. 그래서 **그림의 원형 테두리를 걷고**
  * 그 자리를 체크박스가 든다.
  *
- * 증가율(`+50%`·`×1.2`)은 안 적는다([[ADR-177]] 정정 4) — 이미 아는 값이다. 이름도 안 적고
+ * 증가율(`+50%`·`×1.2`)은 안 적는다 — 이미 아는 값이다. 이름도 안 적고
  * **읽어 주는 라벨**로만 남긴다(`aria-label`) — 그림만 남기고 이름을 지우면 낭독기에서 «버튼»
  * 둘이 된다.
  */
@@ -141,7 +141,7 @@ function BoostToggle(props: {
     >
       <CheckBox checked={props.selected} />
       {/* 그림이 없으면 **빈 자리로 둔다** — 비슷한 것을 갖다 붙이면 틀린 것을 그리는 셈이다
-          ([[ADR-101]] 결정 1). 파일명이 실제로 풀리는지는 `hunting-meso.test` 가 지킨다.
+          . 파일명이 실제로 풀리는지는 `hunting-meso.test` 가 지킨다.
 
           **끈 것은 흐리다** — 체크박스가 상태를 말하지만, 그림까지 같이 옅어지면 줄을 훑을 때
           켜진 것이 먼저 눈에 든다. 걷어내지 않는 것은 «무엇을 켤 수 있나» 도 함께 보여야 해서다. */}
@@ -162,13 +162,13 @@ function BoostToggle(props: {
 
 export function HuntCalculatorForm(
   props: IncomeFormProps & {
-    /** 캐릭터의 메소 획득량을 읽어 온다([[ADR-177]] 결정 7·9) — 폼은 `nexon/` 도 `storage/` 도 모른다. */
+    /** 캐릭터의 메소 획득량을 읽어 온다 — 폼은 `nexon/` 도 `storage/` 도 모른다. */
     loadMesoRate: (ocid: string) => Promise<MesoRateLoad>
   },
 ): React.JSX.Element {
   const editing = props.editing !== undefined
   /**
-   * 이 폼이 되살릴 수 있는 입력([[ADR-201]] 결정 3). **계산기로 적힌 행일 때만** 값이 있다.
+   * 이 폼이 되살릴 수 있는 입력. **계산기로 적힌 행일 때만** 값이 있다.
    *
    * 수동으로 적힌 행은 이 폼으로 안 열리지만(`IncomeSheet` 가 갈라 준다) 타입이 그 사실을 모르므로
    * 여기서 한 번 좁힌다. 아래 상태들은 이 값 하나만 본다.
@@ -176,7 +176,7 @@ export function HuntCalculatorForm(
   const detail = props.editing?.hunt?.mode === 'calculator' ? props.editing.hunt : null
   const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
   /**
-   * 캐릭터 레벨을 상태로 드는 이유는 **그때의 값**이어야 하기 때문이다([[ADR-175]] 결정 9):
+   * 캐릭터 레벨을 상태로 드는 이유는 **그때의 값**이어야 하기 때문이다:
    * 캐릭터는 레벨업하므로 지금 레벨을 다시 읽으면 옛 기록의 금액이 열 때마다 달라진다. 대신
    * 사용자가 고르개로 캐릭터를 **바꾸면** 그 캐릭터의 지금 레벨로 갈아 끼운다 — 그건 사용자가 한 일이다.
    */
@@ -185,7 +185,7 @@ export function HuntCalculatorForm(
       props.characters.find((each) => each.ocid === props.editing?.ocid)?.level ??
       null,
   )
-  /** 고른 사냥터 이름 — 지역은 여기서 따라온다(이름이 전역 유일이다, [[ADR-175]] 결정 2). */
+  /** 고른 사냥터 이름 — 지역은 여기서 따라온다(이름이 전역 유일이다). */
   const [groundName, setGroundName] = useState<string | null>(
     detail === null ? null : (props.editing?.item ?? null),
   )
@@ -195,7 +195,7 @@ export function HuntCalculatorForm(
     return name === null ? null : (findHuntingGround(name)?.region.slug ?? null)
   })
   /**
-   * 고르는 것은 **놓치는 마릿수**(0~4)이지 퍼센트가 아니다([[ADR-175]] 결정 3) — 효율 %는 맵이
+   * 고르는 것은 **놓치는 마릿수**(0~4)이지 퍼센트가 아니다 — 효율 %는 맵이
    * 정하는 라벨이라 맵을 바꾸면 같은 조각의 글자가 달라진다.
    */
   const [missedMobs, setMissedMobs] = useState(detail?.missedMobs ?? 0)
@@ -204,7 +204,7 @@ export function HuntCalculatorForm(
   const [fragmentsText, setFragmentsText] = useState(mesoTextOf(detail?.fragments ?? 0))
   const [fragmentPriceText, setFragmentPriceText] = useState(mesoTextOf(detail?.fragmentPrice ?? 0))
   /**
-   * 캐릭터의 메소 획득량([[ADR-177]]) — **읽었으면 못 치고, 못 읽었으면 치는 칸**이 된다(결정 7).
+   * 캐릭터의 메소 획득량 — **읽었으면 못 치고, 못 읽었으면 치는 칸**이 된다(결정 7).
    *
    * 수정으로 열면 **그때의 값**이 자동값으로 선다(결정 8) — 레벨과 같은 이유다.
    */
@@ -223,7 +223,7 @@ export function HuntCalculatorForm(
   const huntRegions = huntingRegionsForLevel(huntLevel)
   const huntRegion = regionSlug === null ? null : findHuntingRegion(regionSlug)
   /**
-   * 목록에 서는 차례 — **레벨 차이가 적은 순, 같으면 마릿수가 많은 순**([[ADR-175]] 결정 6-1).
+   * 목록에 서는 차례 — **레벨 차이가 적은 순, 같으면 마릿수가 많은 순**.
    * 거르는 것이 아니라 줄 세우는 것이라 지역 안의 맵은 전부 든다.
    */
   const huntGrounds = huntRegion === null ? [] : huntingGroundsFor(huntRegion, huntLevel)
@@ -241,13 +241,13 @@ export function HuntCalculatorForm(
   const mesoRatePercent =
     mesoRate.kind === 'read' ? mesoRate.percent : mesoRate.kind === 'fallback' ? typedMesoRate : 0
   /**
-   * **캐릭터 메획과 가산 아이템이 한 통**이다([[ADR-177]] 결정 6) — 더해서 한 번 곱한다.
+   * **캐릭터 메획과 가산 아이템이 한 통**이다 — 더해서 한 번 곱한다.
    */
   const boostPercent = boostPercentOf(boosts) + mesoRatePercent
-  /** 통 **밖**에서 곱하는 배율 — 재획비다([[ADR-177]] 정정 1). 합산이 끝난 값 전체에 걸린다. */
+  /** 통 **밖**에서 곱하는 배율 — 재획비다. 합산이 끝난 값 전체에 걸린다. */
   const boostMultiplier = boostMultiplierOf(boosts)
   /**
-   * 줄에 적히는 수 — **켠 아이템까지 반영한 증가량**이고 소수점은 버린다([[ADR-177]] 정정 2).
+   * 줄에 적히는 수 — **켠 아이템까지 반영한 증가량**이고 소수점은 버린다.
    * **이 값으로 돈을 세지 않는다** — 셈은 내림 전의 값으로 돈다.
    */
   const appliedRate = appliedMesoRatePercent(boostPercent, boostMultiplier)
@@ -263,7 +263,7 @@ export function HuntCalculatorForm(
 
   /**
    * 캐릭터를 고르면 **레벨이 따라 바뀌고**, 그 레벨의 창 밖으로 나간 지역은 풀린다
-   * ([[ADR-175]] 결정 6).
+   *
    *
    * 안 풀면 고르개가 «목록에 없는 값» 을 들게 되어 트리거가 첫 칸(「선택 안함」)을 읽어 준다 —
    * 화면에는 다른 지역이 적히는데 계산은 옛 사냥터로 도는 상태가 된다.
@@ -284,7 +284,7 @@ export function HuntCalculatorForm(
   }
 
   /**
-   * 캐릭터의 메획을 읽어 온다([[ADR-177]] 결정 9) — **고르는 그 순간**이 계기다(레벨을 갈아 끼우는
+   * 캐릭터의 메획을 읽어 온다 — **고르는 그 순간**이 계기다(레벨을 갈아 끼우는
    * 자리와 같다). 「선택 안함」 이면 읽을 대상이 없어 줄이 걷히고 곱이 ×1 로 돌아간다.
    */
   function loadMesoRateFor(next: string | null): void {
@@ -357,7 +357,7 @@ export function HuntCalculatorForm(
         selected={groundName}
         onSelect={setGroundName}
         testID="income-sheet-ground"
-        // 목록 한 줄에 포스 배지·레벨·마릿수가 함께 선다([[ADR-175]] 결정 10·11).
+        // 목록 한 줄에 포스 배지·레벨·마릿수가 함께 선다.
         renderOption={(option: SelectOption, isSelected: boolean) => {
           const ground =
             huntRegion === null || option.value === null
@@ -400,7 +400,7 @@ export function HuntCalculatorForm(
       )}
 
       {huntGround !== null && (
-        // **효율 조각은 맵이 정한다**([[ADR-175]] 결정 3) — 40마리의 −1 은 98%, 22마리의 −1 은 95%
+        // **효율 조각은 맵이 정한다** — 40마리의 −1 은 98%, 22마리의 −1 은 95%
         // 다. 그래서 사냥터를 고르기 전에는 적을 글자가 없어 줄이 아예 안 선다.
         <FieldRow label="사냥 효율" testID="income-sheet-efficiency">
           <Segment
@@ -421,7 +421,7 @@ export function HuntCalculatorForm(
       {/*
         **켜는 것과 세어진 값이 한 줄**이다(사용자 지정 2026-09-01).
 
-        종전에는 위아래 두 줄이었다([[ADR-178]] 정정 5) — 켜는 자리와 그 결과를 갈라 놓은 것인데,
+        종전에는 위아래 두 줄이었다 — 켜는 자리와 그 결과를 갈라 놓은 것인데,
         둘은 원인과 결과라 **옆에 붙어 있어도 그 관계가 읽힌다**. 지역·사냥터를 각각 자기 줄로
         되돌리면서 늘어난 높이를 여기서 되찾는다.
 
@@ -459,7 +459,7 @@ export function HuntCalculatorForm(
           화면이 말하지 않는다. 캐릭터가 없으면 캐릭터 메획이 0 이고, 켠 것이 없으면 **0%** 다.
 
           읽혔으면 **못 친다**(큰 숫자와 같은 논리). **치는 칸이 되는 것은** 캐릭터를 골랐는데
-          못 읽었을 때뿐이다([[ADR-177]] 결정 7) — 고르지도 않은 캐릭터의 메획을 물을 수는 없다.
+          못 읽었을 때뿐이다 — 고르지도 않은 캐릭터의 메획을 물을 수는 없다.
         */}
         <View testID="income-sheet-meso-rate-slot" style={{ flex: 1 }}>
           <FieldRow label="메소 획득량">
@@ -500,7 +500,7 @@ export function HuntCalculatorForm(
         </View>
       </View>
 
-      {/* 「소재」는 사용자가 실제로 세는 단위다([[ADR-175]] 결정 7) — 하나가 30분. */}
+      {/* 「소재」는 사용자가 실제로 세는 단위다 — 하나가 30분. */}
       <FieldRow label="시간">
         <QuantityStepper
           value={sojae}
@@ -514,7 +514,7 @@ export function HuntCalculatorForm(
       {/* **못 친다** — 앱이 세는 값이다. 큰 숫자(합계)와 다른 값이라 자기 줄을 갖는다.
 
           **`≈` 를 붙인다**(사용자 지정 2026-08-29) — 이 수는 젠 주기·마릿수·레벨로 **미리 세어 둔
-          값**이지 실제로 받은 액수가 아니다([[ADR-175]] 결정 3). 표식이 없으면 정산된 금액처럼
+          값**이지 실제로 받은 액수가 아니다. 표식이 없으면 정산된 금액처럼
           읽힌다. 0 에는 안 붙인다 — 아직 어림할 것이 없다. */}
       <FieldRow label="획득 메소">
         <Text
@@ -536,11 +536,11 @@ export function HuntCalculatorForm(
       />
 
       <AmountFigure
-        // **사냥의 큰 숫자는 합계**다([[ADR-175]] 결정 1) — 획득 메소 + 조각 × 가격. 앱이 세므로 못 친다.
+        // **사냥의 큰 숫자는 합계**다 — 획득 메소 + 조각 × 가격. 앱이 세므로 못 친다.
         value={huntTotal}
         unit="메소"
         testID="income-sheet-amount"
-        // **합계도 어림이다** — 조각 값만 실제로 받은 값이고 메소 쪽은 센 값이다([[ADR-175]] 결정 3).
+        // **합계도 어림이다** — 조각 값만 실제로 받은 값이고 메소 쪽은 센 값이다.
         approximate
       />
 
@@ -553,7 +553,7 @@ export function HuntCalculatorForm(
             ocid,
             earnedOn: props.dateKey,
             category: '사냥',
-            // **고른 사냥터의 이름**이 그 자리다([[ADR-175]] 결정 9 — 전역 유일이라 지역이 따라온다).
+            // **고른 사냥터의 이름**이 그 자리다(— 전역 유일이라 지역이 따라온다).
             item: groundName,
             // **합계**다(메소 + 조각 × 가격) — 큰 숫자에 서는 그 값이다.
             mesoAmount: huntTotal,
@@ -562,9 +562,9 @@ export function HuntCalculatorForm(
             pointAmount: null,
             pointPer100mMeso: null,
             cashAmount: null,
-            // 수량은 「기타」만 쓴다([[ADR-202]] 결정 4).
+            // 수량은 「기타」만 쓴다.
             quantity: null,
-            // **계산 입력을 함께 남긴다**([[ADR-175]] 결정 9) — 없으면 수정 시트가 빈 계산기로 열려
+            // **계산 입력을 함께 남긴다** — 없으면 수정 시트가 빈 계산기로 열려
             // 만지는 순간 금액이 덮인다.
             hunt: {
               mode: 'calculator',
@@ -574,7 +574,7 @@ export function HuntCalculatorForm(
               sojae,
               fragments,
               fragmentPrice,
-              // **그때의** 메획이다([[ADR-177]] 결정 8) — 장비를 갈아입어도 이 기록은 안 흔들린다.
+              // **그때의** 메획이다 — 장비를 갈아입어도 이 기록은 안 흔들린다.
               mesoRate: mesoRatePercent,
             },
             memo: null,

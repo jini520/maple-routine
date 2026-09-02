@@ -63,7 +63,7 @@ describe('CacheClearConfirm', () => {
     expect(view.queryByTestId('cache-clear-confirm-overlay')).toBeNull()
   })
 
-  // [[ADR-058]]: 지울 데이터를 2그룹 중 골라서 지운다.
+  // : 지울 데이터를 2그룹 중 골라서 지운다.
   it('삭제 대상을 2그룹 체크리스트로 보여준다', async () => {
     const view = await renderOverlay(<CacheClearConfirm {...props()} />)
 
@@ -71,7 +71,7 @@ describe('CacheClearConfirm', () => {
     expect(view.getByLabelText('수익·지출 기록')).toBeTruthy()
   })
 
-  // [[ADR-058]] 결정 6: 열고 바로 삭제하면 기존 전체 삭제와 같아야 한다.
+  // : 열고 바로 삭제하면 기존 전체 삭제와 같아야 한다.
   it('기본값은 두 그룹 모두 선택된 상태다', async () => {
     const view = await renderOverlay(<CacheClearConfirm {...props()} />)
 
@@ -86,7 +86,7 @@ describe('CacheClearConfirm', () => {
     expect(view.getByText('512B')).toBeTruthy()
   })
 
-  // [[ADR-061]] 결정 7: 조회 전에도 같은 자리·같은 타이포로 자리를 잡는다.
+  // : 조회 전에도 같은 자리·같은 타이포로 자리를 잡는다.
   it('용량을 아직 모르면(null) 각 그룹에 "- KB" 자리표시를 보여준다', async () => {
     const view = await renderOverlay(<CacheClearConfirm {...props({ sizes: null })} />)
 
@@ -132,7 +132,7 @@ describe('CacheClearConfirm', () => {
     expect(onConfirm).toHaveBeenCalledWith({ general: true, records: false })
   })
 
-  // [[ADR-058]] 결정 6: 지난번에 해제해둔 체크가 남아 있으면 "열고 바로 삭제"가 사람마다 다른
+  // : 지난번에 해제해둔 체크가 남아 있으면 "열고 바로 삭제"가 사람마다 다른
   // 범위를 지운다.
   //
   // `rerender` 를 쓰지 않고 **부모가 `isOpen` 을 들고 있게** 한다 — RNTL 의 `rerender` 는 넘긴
@@ -161,7 +161,7 @@ describe('CacheClearConfirm', () => {
     expect(view.getByLabelText('일반 데이터').props.accessibilityState?.checked).toBe(true)
   })
 
-  // [[ADR-052]] 결정 3: 그룹 문구가 실제 삭제 범위와 어긋나면 사용자가 잘못된 정보 위에서
+  // : 그룹 문구가 실제 삭제 범위와 어긋나면 사용자가 잘못된 정보 위에서
   // 되돌릴 수 없는 삭제를 승인한다.
   it('일반 데이터 행에 그 그룹이 지우는 대표 항목을 적는다', async () => {
     const view = await renderOverlay(<CacheClearConfirm {...props()} />)
@@ -185,7 +185,7 @@ describe('CacheClearConfirm', () => {
 
     expect(buttonOf(view, '취소').props.accessibilityState?.disabled).toBe(true)
     expect(view.getByLabelText('일반 데이터').props.accessibilityState?.disabled).toBe(true)
-    // [[ADR-061]] 정정 3 — 스피너가 라벨을 덮고 라벨은 그대로 남는다.
+    // 스피너가 라벨을 덮고 라벨은 그대로 남는다.
     expect(confirmButton(view).props.accessibilityState).toMatchObject({
       disabled: true,
       busy: true,

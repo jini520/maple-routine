@@ -1,7 +1,7 @@
-// 총 수익 헤드라인 옆의 **칩 2종**([[ADR-094]] 결정 7로 화면에서 분리).
+// 총 수익 헤드라인 옆의 **칩 2종**(로 화면에서 분리).
 //
-// 결정석 판매 한도 요약([[ADR-054]] 결정 5 — 월드별로 집계한다)과 직전 기간 대비 증감
-// ([[ADR-087]] — 상승 빨강·하락 파랑, 방향이 없으면 테마 색). 둘 다 자기 상자 안에서 끝난다.
+// 결정석 판매 한도 요약(— 월드별로 집계한다)과 직전 기간 대비 증감
+// (— 상승 빨강·하락 파랑, 방향이 없으면 테마 색). 둘 다 자기 상자 안에서 끝난다.
 //
 // ══ RN 으로 옮기며 갈린 것 셋 ═════════════════════════════════════════════════════
 //
@@ -34,16 +34,16 @@ import { countMonthlyCrystals, summarizeWorldCrystals } from './character-groups
 import type { CharacterGroup } from './character-groups'
 
 // 결정석 아이콘(주간/월간). 드랍 테이블 항목이 아니라 UI 표시 전용이라 item-icons.json에 등록하지 않고
-// 파일명으로 직접 조회한다([[ADR-054]] 결정 10). 파일이 없으면 null — 아이콘만 생략하고 숫자는 그대로 둔다.
+// 파일명으로 직접 조회한다. 파일이 없으면 null — 아이콘만 생략하고 숫자는 그대로 둔다.
 export const WEEKLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_weekly.webp')
 export const MONTHLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_monthly.webp')
 
-// 총 수익 헤드라인의 결정석 판매 현황([[ADR-054]] 결정 9, 정정 2·3으로 배치 변경) — **라벨행의
+// 총 수익 헤드라인의 결정석 판매 현황(3으로 배치 변경) — **라벨행의
 // "{기간} 총 수익" 텍스트 바로 옆** 칩이다(사용자 요청). 원래는 금액행 아래 새 줄이었는데 그 한 줄이
-// 헤더를 그대로 높여 목록을 잠식했다(헤더를 줄여둔 [[ADR-049]] 작업을 되돌리는 셈).
+// 헤더를 그대로 높여 목록을 잠식했다(헤더를 줄여둔 작업을 되돌리는 셈).
 // **칩 높이는 라벨(text-xs = 16px)을 넘지 않아야 한다** — 이 줄에 흐름으로 들어가는 요소가 라벨행
 // (h-6 = 24px)을 넘으면 라벨행이 튀고, 그것이 바로 고가 드롭 뱃지(24px)를 절대배치로 빼낸 이유다
-// ([[ADR-049]] 결정 2). 그 뱃지가 여전히 우측 끝을 절대배치로 쓰므로 칩은 좌측(라벨 옆)에 붙는다.
+// . 그 뱃지가 여전히 우측 끝을 절대배치로 쓰므로 칩은 좌측(라벨 옆)에 붙는다.
 // 월드별 분해는 흐름이 아니라 **절대배치 팝오버**로 띄운다 — 펼쳐도 헤더 높이가 변하지 않는다.
 export function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGroup[] }): React.JSX.Element | null {
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false)
@@ -68,7 +68,7 @@ export function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGro
     <>
       {iconUrl !== null && <Image source={iconUrl} resizeMode="contain" className="h-4 w-4 shrink-0" />}
       {/* 숫자와 단위 사이는 마진이 아니라 실제 공백 문자로 띄운다 — 마진만으론 읽는 문자열이
-          "34/90"으로 붙어 스크린리더가 이어 읽는다([[ADR-046]]에서 "메소" 단위로 정한 규약).
+          "34/90"으로 붙어 스크린리더가 이어 읽는다(에서 "메소" 단위로 정한 규약).
           "개"는 한국어 표기상 숫자에 붙으므로 공백을 넣지 않는다. */}
       {isWeekly ? (
         <Text className="text-xs font-bold leading-none text-primary-ink" style={TABULAR_NUMS}>
@@ -152,8 +152,8 @@ export function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGro
   )
 }
 
-// 직전 기간 대비 증감 칩([[ADR-087]] 결정 1·3·5) — **금액행** 오른쪽에 붙는다. 라벨행이 아니라
-// 금액행(아이콘 32px)이라 [[ADR-054]] 정정 4의 h-6 제약과 무관하고 헤더 높이가 늘지 않는다.
+// 직전 기간 대비 증감 칩 — **금액행** 오른쪽에 붙는다. 라벨행이 아니라
+// 금액행(아이콘 32px)이라의 h-6 제약과 무관하고 헤더 높이가 늘지 않는다.
 //
 // 비교 기준(`previousMeso`)은 store 가 기록 합만 넘긴 값이다 — 조회한 적 없는 기간도 0이라
 // (결정 3, 사용자 결정) 이 컴포넌트는 기간 상태를 전혀 보지 않는다.

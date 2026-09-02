@@ -1,7 +1,7 @@
-// 캐시 데이터 삭제 확인 — **범위를 고르는 화면**이다([[ADR-052]] · [[ADR-058]]).
+// 캐시 데이터 삭제 확인 — **범위를 고르는 화면**이다.
 //
 // 그룹 문구는 `storage/cache-data.ts` 의 실제 삭제 범위와 같아야 한다 — 어긋나면 사용자가 잘못된
-// 정보 위에서 되돌릴 수 없는 삭제를 승인한다([[ADR-052]] 결정 3 의 원칙을 그룹 단위로 이어받음).
+// 정보 위에서 되돌릴 수 없는 삭제를 승인한다(의 원칙을 그룹 단위로 이어받음).
 // **범위 자체는 이 파일에 없다** — 화면은 `CacheDataSelection` 두 불리언을 넘길 뿐이고, 어떤 키와
 // 어떤 테이블이 지워지는지는 core 의 `storage/cache-data.ts` 가 혼자 정한다(CLAUDE.md CRITICAL).
 // 전환하며 그 파일을 한 글자도 건드리지 않았으므로 범위는 웹과 **같은 코드**가 정한다.
@@ -49,7 +49,7 @@ const GROUPS: { id: CacheDataGroupId; label: string; detail: string; warning?: s
     id: 'records',
     label: '수익·지출 기록',
     detail: '보스 처치·드롭 · 손으로 적은 수입·지출',
-    // **경고의 근거가 둘로 갈린다**([[ADR-166]] 결정 9). 보스 기록은 «API 가 2주치만 준다» 인데
+    // **경고의 근거가 둘로 갈린다**. 보스 기록은 «API 가 2주치만 준다» 인데
     // 손입력 수입·지출은 **API 가 애초에 없다** — 더 강한 쪽을 앞에 둔다.
     warning:
       '손으로 적은 수입·지출은 되살릴 방법이 없고, 보스 기록은 NEXON Open API가 최근 2주치만 제공합니다.',
@@ -58,7 +58,7 @@ const GROUPS: { id: CacheDataGroupId; label: string; detail: string; warning?: s
 
 export function CacheClearConfirm(props: CacheClearConfirmProps): React.JSX.Element | null {
   // 닫았다 다시 열면 기본값(전체 선택)으로 되돌린다 — 지난번에 해제해둔 체크가 남아 있으면
-  // "열고 바로 삭제"가 사람마다 다른 범위를 지우게 된다([[ADR-058]] 결정 6). 이 컴포넌트는 닫힌
+  // "열고 바로 삭제"가 사람마다 다른 범위를 지우게 된다. 이 컴포넌트는 닫힌
   // 동안에도 마운트된 채 null만 반환하므로, prop 변화에 맞춰 렌더 중에 상태를 조정하는 React
   // 공식 패턴을 쓴다(effect로 setState하면 여분의 렌더가 한 번 더 돈다).
   const [selection, setSelection] = useState<CacheDataSelection>(ALL_SELECTED)
@@ -164,7 +164,7 @@ export function CacheClearConfirm(props: CacheClearConfirmProps): React.JSX.Elem
               }`}
             >
               {/* 대기 중에도 이 라벨이 자리를 지켜 버튼 폭이 안 줄고, 스크린리더는 그대로 읽는다
-                  ([[ADR-061]] 정정 3). 최대 10초(CLEAR_TIMEOUT_MS) 걸리고 되돌릴 수 없는
+                  . 최대 10초(CLEAR_TIMEOUT_MS) 걸리고 되돌릴 수 없는
                   버튼이라 그 둘이 특히 중요하다. */}
               {selectedBytes !== null ? `삭제 (${formatBytes(selectedBytes)})` : '삭제'}
             </Button>

@@ -38,15 +38,15 @@ function cta(view: Rendered): AtomElement {
 }
 
 describe('TrackingModeStep', () => {
-  it('초기에는 어느 옵션도 선택돼 있지 않다 ([[ADR-035]] 결정 17)', async () => {
+  it('초기에는 어느 옵션도 선택돼 있지 않다', async () => {
     const view = await renderAtom(<TrackingModeStep onSubmit={jest.fn()} />)
 
     expect(isSelected(view, '자동')).toBe(false)
     expect(isSelected(view, '수동')).toBe(false)
   })
 
-  // [[ADR-035]] 결정 22: 고르기 **전에** 둘을 비교하는 화면이라 설명·주의를 선택 시에만 펼치지 않는다.
-  it('설명과 주의 문구가 선택 전에도 두 옵션 모두 보인다 ([[ADR-035]] 결정 22)', async () => {
+  // : 고르기 **전에** 둘을 비교하는 화면이라 설명·주의를 선택 시에만 펼치지 않는다.
+  it('설명과 주의 문구가 선택 전에도 두 옵션 모두 보인다', async () => {
     const view = await renderAtom(<TrackingModeStep onSubmit={jest.fn()} />)
 
     for (const option of TRACKING_MODE_OPTIONS) {
@@ -55,7 +55,7 @@ describe('TrackingModeStep', () => {
     }
   })
 
-  it('한 옵션을 골라도 다른 옵션의 설명·주의가 그대로 남는다 ([[ADR-035]] 결정 22)', async () => {
+  it('한 옵션을 골라도 다른 옵션의 설명·주의가 그대로 남는다', async () => {
     const view = await renderAtom(<TrackingModeStep onSubmit={jest.fn()} />)
 
     await fireEvent.press(optionCard(view, '자동'))
@@ -77,7 +77,7 @@ describe('TrackingModeStep', () => {
     expect(onSubmit).not.toHaveBeenCalled()
   })
 
-  it('추천 배지는 표시되지 않는다 ([[ADR-035]] 결정 17)', async () => {
+  it('추천 배지는 표시되지 않는다', async () => {
     const view = await renderAtom(<TrackingModeStep onSubmit={jest.fn()} />)
 
     expect(view.queryByText('추천')).toBeNull()

@@ -1,4 +1,4 @@
-// 설정 하위 페이지 「기능 설명」([[ADR-125]] 결정 1 정정, 2026-08-10) — 앱 기능을 **기능 축**으로
+// 설정 하위 페이지 「기능 설명」(정정, 2026-08-10) — 앱 기능을 **기능 축**으로
 // 나열한 카탈로그이고, 사용법 설명의 **원천**이다.
 //
 // 처음엔 이 화면이 없었다. 안내가 개발 노트 항목에 붙어 버전 축으로만 존재했는데, 그러면
@@ -19,7 +19,7 @@
 //    상태를 나르는 것은 각 탭의 `aria-selected` 이고 그것은 그대로 산다.
 // ③ **경로가 아니라 파라미터로 민다.** 웹은 경로를 조립하는 작은 모듈을 따로 뒀는데, 목록이 안내
 //    카탈로그를 import 하지 않게 하려는 것이 그 요점이었다. RN 은 라우트 이름 + `{ guideId }` 라
-//    조립할 경로가 없어 그 요점이 저절로 지켜지고, 그래서 그 모듈은 삭제됐다([[ADR-125]] 결정 7
+//  조립할 경로가 없어 그 요점이 저절로 지켜지고, 그래서 그 모듈은 삭제됐다(결정 7
 //    정정). 여기서 `FEATURE_GUIDES` 를 읽는 것은 목록 행(제목·그룹)을 그리기 위해서지 본문 때문이
 //    아니다.
 import { useState } from 'react'
@@ -40,7 +40,7 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
 import { useSettingsNavigation } from './use-settings-navigation'
 
-// 탭 토글은 `design-system.md` 「탭 토글」절 그대로다([[ADR-018]]) — **새 스타일을 만들지 않는다.**
+// 탭 토글은 `design-system.md` 「탭 토글」절 그대로다 — **새 스타일을 만들지 않는다.**
 const ACTIVE_TAB_CLASS = 'rounded-full bg-primary-tint px-3 py-[5px]'
 const ACTIVE_TAB_TEXT_CLASS = 'text-sm font-semibold text-primary-ink'
 const INACTIVE_TAB_CLASS = 'px-3 py-[5px]'
@@ -88,7 +88,7 @@ export function SettingsFeatureGuideListScreen(): React.JSX.Element {
       <View className="gap-3 px-4 pb-4" testID="screen-SettingsFeatureGuideList">
         {groups.length === 0 ? (
           // 지금은 도달할 수 없는 자리다(안내가 열한 벌 있다) — 그래도 데이터가 비어도 화면이
-          // 깨지지 않아야 한다. 목록 빈 상태라 컨텍스트 아이콘 + inline 크기([[ADR-060]]).
+          // 깨지지 않아야 한다. 목록 빈 상태라 컨텍스트 아이콘 + inline 크기.
           <EmptyState icon={BookOpenIcon} title="아직 준비된 기능 설명이 없습니다" />
         ) : (
           <>

@@ -1,7 +1,7 @@
 /**
- * 위젯 2 — **캐릭터별 남은 스케줄**(`4×auto`, [[ADR-181]]).
+ * 위젯 2 — **캐릭터별 남은 스케줄**(`4×auto`).
  *
- * ## 주기는 열이 아니라 **탭**이다 ([[ADR-181]] 결정 1)
+ * ## 주기는 열이 아니라 **탭**이다
  *
  * 제목 줄 오른쪽, **합계 `N개` 가 있던 자리**에 세그먼트 셋(일간 · 주간 · 월간)이 선다. 목록은 그
  * 탭의 수치만 그린다. 별도 줄에 두면 타일이 34px 높아지는데 제목 줄에 얹으면 6px 이다.
@@ -10,16 +10,16 @@
  * 캐릭터만 잡아 대부분의 날에 그 열이 완료 표식으로만 찬다(사용자 판정). 탭으로 접으면 **월간 탭이
  * 곧 검마의 자리**가 된다.
  *
- * ## 세그먼트는 앱이 이미 쓰는 것이다 ([[ADR-181]] 결정 2)
+ * ## 세그먼트는 앱이 이미 쓰는 것이다
  *
- * `molecules/Segment`([[ADR-173]] 결정 3 — 가계부 시트가 통화·형태를 고르는 그 조각)를 **한 줄도 안
+ * `molecules/Segment`(— 가계부 시트가 통화·형태를 고르는 그 조각)를 **한 줄도 안
  * 고치고** 쓴다. 여기서만 다른 세그먼트를 만들면 앱에 «고르는 축» 이 두 벌이 된다.
  *
- * 그 조각이 고른 칸을 `primary-tint` 로 칠하는 것은 **[[ADR-147]] 정정 9 의 금지에 안 걸린다** — 그
+ * 그 조각이 고른 칸을 `primary-tint` 로 칠하는 것은 ** 의 금지에 안 걸린다** — 그
  * 규칙의 근거가 «타일 하나에 강조색이 **캐릭터 수만큼** 반복된다» 였고, 세그먼트는 머리글에 하나뿐이다.
  * 수치는 여전히 굵기로만 강조한다.
  *
- * ## 수치는 「갈래 N개」다 ([[ADR-181]] 결정 3)
+ * ## 수치는 「갈래 N개」다
  *
  * ```
  * 일간   야간비행                      퀘스트 4개
@@ -31,13 +31,13 @@
  * 뜻이 닫히는 일간 · 월간에도 라벨을 두는 대신 규칙이 하나로 줄고, 열 표가 열로 갈랐던
  * «컨텐츠 / 보스» 묶음이 여기서는 **행 안**에 남는다.
  *
- * ## 0 은 언제나 `CLEAR` 다 — 「완료했다」가 아니다 ([[ADR-181]] 결정 5)
+ * ## 0 은 언제나 `CLEAR` 다 — 「완료했다」가 아니다
  *
  * 그 탭의 남은 수가 0 이면 수치 자리에 `CLEAR` 하나. **대상이 애초에 없던 캐릭터도 같은 배지**를
- * 받는다(사용자 확정 — 레벨 미달로 보스가 안 뜨는 경우, [[ADR-162]]). 표기를 가르지 않기로 했으므로
+ * 받는다(사용자 확정 — 레벨 미달로 보스가 안 뜨는 경우). 표기를 가르지 않기로 했으므로
  * **이 배지의 뜻은 «이 주기에 지금 할 게 없다»** 이고, 그래서 뷰모델이 분모를 셀 필요가 없다.
  *
- * ## 목록은 캐릭터 전부이고, **탭마다 다시 선다** ([[ADR-181]] 결정 6 · 정정 1)
+ * ## 목록은 캐릭터 전부이고, **탭마다 다시 선다**
  *
  * 그 탭을 끝낸 캐릭터도 자리를 지킨다 — 사람 수가 늘 같아야 «어제와 같은 화면» 이고, 이 타일이
  * `4×auto` 라 목록이 줄면 **아래 위젯 전부가 하루 동안 따라 움직인다**. 「외 N명」 접기도 상한도 없다.
@@ -67,10 +67,10 @@ import type { WidgetProps } from './types'
 const PORTRAIT_PX = 32
 
 /**
- * 숫자 칸의 **바닥**(천장이 아니다 — [[ADR-165]]).
+ * 숫자 칸의 **바닥**(천장이 아니다 —).
  *
- * 14 는 한 자리 수치가 라벨에서 떨어져 보이지 않게 잡은 값이고([[ADR-147]] 정정 40), 두 자리가
- * 오면 칸이 내용을 따라 늘어난다. **`width` 로 두면 안 된다** — 고정 폭이던 시절 [[ADR-163]] 이
+ * 14 는 한 자리 수치가 라벨에서 떨어져 보이지 않게 잡은 값이고, 두 자리가
+ * 오면 칸이 내용을 따라 늘어난다. **`width` 로 두면 안 된다** — 고정 폭이던 시절 이
  * 글자만 +1px 올리자 두 자리 수치의 마지막 글자가 오른쪽에서 잘렸다(시뮬레이터 3x 실측).
  */
 const VALUE_MIN_WIDTH_PX = 14
@@ -80,10 +80,10 @@ const CYCLE_LABELS = ['일간', '주간', '월간'] as const
 type Cycle = (typeof CYCLE_LABELS)[number]
 
 /**
- * 한 주기에 남은 것 — **뷰모델의 배열을 고를 뿐 새 판정을 하지 않는다**([[ADR-147]] 정정 26).
+ * 한 주기에 남은 것 — **뷰모델의 배열을 고를 뿐 새 판정을 하지 않는다**.
  *
  * 「검마」라는 이름은 화면에서 사라졌지만 그 전제는 그대로다 — 월간 보스가 하나뿐이라 월간 탭이
- * 성립한다([[ADR-147]] 정정 3). 둘이 되면 그때 다시 정한다([[ADR-006]] 태도).
+ * 성립한다. 둘이 되면 그때 다시 정한다(태도).
  */
 interface CycleItems {
   quests: readonly string[]
@@ -101,13 +101,13 @@ function itemCount(items: CycleItems): number {
 }
 
 /**
- * 그 탭의 순서 — **실패는 맨 아래 · 남은 개수 많은 순 · 동수면 관리 순서**([[ADR-181]] 정정 1).
+ * 그 탭의 순서 — **실패는 맨 아래 · 남은 개수 많은 순 · 동수면 관리 순서**.
  *
  * 받은 배열이 이미 관리 순서라(뷰모델) 그 **인덱스가 곧 동수의 기준**이다. 인덱스를 얹어 정렬하는
  * 것은 정렬의 안정성에 기대지 않기 위해서다(뷰모델의 `orderByTracked` 와 같은 태도).
  *
  * 실패한 캐릭터는 남은 개수를 **모르는** 것이라 개수 비교에 참여시키지 않는다 — 위로 올리면
- * «제일 밀린 캐릭터» 자리를 모르는 값이 거짓으로 차지한다([[ADR-147]] 정정 12 가 정한 태도).
+ * «제일 밀린 캐릭터» 자리를 모르는 값이 거짓으로 차지한다(가 정한 태도).
  */
 function orderForCycle(rows: readonly ScheduleRowView[], cycle: Cycle): ScheduleRowView[] {
   return rows
@@ -223,7 +223,7 @@ function NameChip(props: { name: string }): React.JSX.Element {
 function BossChip(props: { boss: RemainingBossView }): React.JSX.Element {
   return (
     <View testID="schedule-detail-boss" className="flex-row items-center gap-1">
-      {/* 작은 크기 — 20px 배지가 줄 높이를 혼자 정하고 있었다([[ADR-147]] 정정 40). */}
+      {/* 작은 크기 — 20px 배지가 줄 높이를 혼자 정하고 있었다. */}
       <Badge variant={props.boss.difficulty} size="mini">
         {props.boss.difficulty}
       </Badge>
@@ -252,7 +252,7 @@ function DetailGroup(props: { label: string | null; children: React.ReactNode })
 }
 
 /**
- * 펼친 본문 — **그 탭의 항목을 이름으로 낱개로** 센다([[ADR-181]] 결정 7).
+ * 펼친 본문 — **그 탭의 항목을 이름으로 낱개로** 센다.
  *
  * **자르지 않는다.** 일퀘가 여덟이면 여덟을 다 적는다 — 「외 3개」로 접으면 펼친 이유가 사라진다.
  * 늘어난 높이는 `resolveWidgetPositions` 가 아래 타일을 밀어 흡수한다(그것이 `h: 'auto'` 를 둔 이유다).
@@ -266,7 +266,7 @@ function ScheduleDetail(props: { items: CycleItems; cycle: Cycle }): React.JSX.E
       {items.quests.length > 0 && (
         <DetailGroup label={labelled ? '퀘스트' : null}>
           {/* **키가 이름이면 안 된다** — `[주간 퀘스트] 타락한 세계수 주간 임무` 와 `… 정화에 대한
-              보답` 이 둘 다 「타락한 세계수」로 접혀 같은 키가 둘이 된다([[ADR-147]] 정정 40). */}
+              보답` 이 둘 다 「타락한 세계수」로 접혀 같은 키가 둘이 된다. */}
           {items.quests.map((name, index) => (
             <NameChip key={`${name}-${String(index)}`} name={name} />
           ))}
@@ -338,7 +338,7 @@ function ScheduleRow(props: {
 
 export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Element {
   /**
-   * 보고 있는 주기 — **저장소에 안 쓴다**([[ADR-181]] 결정 1). 앱을 다시 켜면 언제나 일간이고,
+   * 보고 있는 주기 — **저장소에 안 쓴다**. 앱을 다시 켜면 언제나 일간이고,
    * **요일에 따라 기본 탭을 바꾸지 않는다**: 첫 화면이 날마다 다른 얼굴로 열리면 «어제와 같은
    * 화면» 이 깨지고 그 규칙을 사람이 배워야 한다.
    */
@@ -348,13 +348,13 @@ export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
    * 펼친 행 하나 — **`null` 은 전부 접힘**이다.
    *
    * **하나만 연다.** 여섯 명이 다 열리면 이 타일이 1,000px 을 넘고, 타일 안 스크롤은
-   * [[ADR-147]] 결정 3 이 금지한다. 기억하지도 않는다(화면이 탭이라 앱을 켜 둔 동안은 남는다).
+   *  이 금지한다. 기억하지도 않는다(화면이 탭이라 앱을 켜 둔 동안은 남는다).
    */
   const [expandedOcid, setExpandedOcid] = useState<string | null>(null)
 
   return (
     <View testID="widget-remaining-schedule" className="p-3">
-      {/* 제목 줄이 곧 탭 줄이다 — 합계 `N개` 가 있던 자리에 세그먼트가 선다([[ADR-181]] 결정 1·4). */}
+      {/* 제목 줄이 곧 탭 줄이다 — 합계 `N개` 가 있던 자리에 세그먼트가 선다. */}
       <View className="flex-row items-center border-b border-border-strong pb-2">
         <Text fixed className="text-11 font-bold text-text-muted">남은 스케줄</Text>
         <View className="ml-auto">

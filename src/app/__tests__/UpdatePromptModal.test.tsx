@@ -61,7 +61,7 @@ describe('UpdatePromptModal', () => {
   it.each(['idle', 'checking', 'up-to-date', 'unsupported', 'check-error'] as const)(
     '%s 상태에서는 모달을 띄우지 않는다',
     async (status) => {
-      // check-error 가 여기 있는 것이 요점이다([[ADR-065]] 결정 2) — 자동 확인일 수 있어
+      // check-error 가 여기 있는 것이 요점이다 — 자동 확인일 수 있어
       // 모달로 알리지 않고 설정 상태 행에만 남긴다.
       const { view } = await renderModal({ status })
 
@@ -132,7 +132,7 @@ describe('UpdatePromptModal', () => {
     expect(actions.dismiss).toHaveBeenCalledTimes(1)
   })
 
-  // [[ADR-117]] 결정 7: 되돌릴 수 없는 구간이라 버튼을 두지 않는다 — dismiss 가
+  // : 되돌릴 수 없는 구간이라 버튼을 두지 않는다 — dismiss 가
   // downloadedBundleId 를 비우면 재시도할 번들 참조를 잃는다.
   it('applying: 진행 표시만 두고 버튼을 전부 치운다', async () => {
     const { view } = await renderModal({ status: 'applying' })
@@ -190,7 +190,7 @@ describe('UpdatePromptModal', () => {
     expect(actions.openStore).toHaveBeenCalledTimes(1)
   })
 
-  describe('update-available: 자세히 보기(핵심 목록) — [[ADR-126]] 결정 1', () => {
+  describe('update-available: 자세히 보기(핵심 목록) —', () => {
     const highlights = ['보스 카드에서 파티 인원을 고칠 수 있어요', '기능 설명 화면이 생겼어요']
 
     it('접힌 채로 뜨고, 누르면 핵심 목록이 나열된다', async () => {
@@ -241,7 +241,7 @@ describe('UpdatePromptModal', () => {
       expect(expanded.transform).not.toEqual(collapsed.transform)
     })
 
-    // [[ADR-126]] 결정 6: 옛 매니페스트에는 이 필드가 없고 그것은 오류가 아니라 안 실려 온
+    // : 옛 매니페스트에는 이 필드가 없고 그것은 오류가 아니라 안 실려 온
     // 것이라, 액션 없는 비활성 버튼을 두지 않는다.
     it('핵심 목록이 없으면 버튼 자체가 없다', async () => {
       const { view } = await renderModal({
@@ -263,7 +263,7 @@ describe('UpdatePromptModal', () => {
     })
   })
 
-  describe('updated: 적용 완료 안내 — [[ADR-126]] 결정 4', () => {
+  describe('updated: 적용 완료 안내 —', () => {
     it('마쳤다는 사실과 지금 버전을 말하고, [확인]→dismiss', async () => {
       const { view, actions } = await renderModal({ status: 'updated' })
 

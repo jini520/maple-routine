@@ -125,7 +125,7 @@ describe('SettingsFeatureGuideListScreen', () => {
     expect(view.queryByText('설정')).toBeNull()
   })
 
-  // 한 안내가 여러 그룹에 선다([[ADR-125]] 결정 1 정정) — 「캐릭터 관리」가 컨텐츠·보스 양쪽에
+  // 한 안내가 여러 그룹에 선다(정정) — 「캐릭터 관리」가 컨텐츠·보스 양쪽에
   // 같은 글로 서야 한다. 사본을 두면 갈라진다.
   it('여러 그룹에 속한 안내는 그 그룹 탭마다 나온다', async () => {
     const view = await renderOverlay(<SettingsFeatureGuideListScreen />)

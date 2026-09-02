@@ -1,7 +1,7 @@
 /**
- * **고르는 갈래**의 폼([[ADR-178]] 결정 3) — 컨텐츠 · 이벤트·BM · 버프.
+ * **고르는 갈래**의 폼 — 컨텐츠 · 이벤트·BM · 버프.
  *
- * ## 고르면 채워진다 ([[ADR-166]] 정정 1 ①)
+ * ## 고르면 채워진다
  *
  * 사용자가 준 항목에 **전부 가격이 붙어 있다**. 그래서 이 갈래들에는 금액 칸이 없고, 고르면 단가가
  * 그대로 금액이 되며 수량만 조절한다. 곱셈은 **앱이 한다** — 사용자가 대신하면 «몇 포인트 썼나» 를
@@ -44,7 +44,7 @@ import { useSpendSubmit } from './use-spend-submit'
  * 타일에 적는 값 — **단위를 붙이고, 단계가 여럿이면 나란히 적는다.**
  *
  * 단위를 붙이는 이유는 갈래 하나 안에서 통화가 갈리는 곳이 있어서다(「버프」의 영약은 메소,
- * 보약은 메포 — [[ADR-166]] 정정 1 ②). **메소만 줄여 적는다** — 메포는 200~50,000 이라 그대로가
+ * 보약은 메포 —). **메소만 줄여 적는다** — 메포는 200~50,000 이라 그대로가
  * 읽히지만 메소는 백만 단위라 1/3 폭 타일에서 잘린다.
  */
 function tilePriceLabel(items: readonly SpendCatalogItem[]): string {
@@ -57,7 +57,7 @@ function tilePriceLabel(items: readonly SpendCatalogItem[]): string {
 }
 
 /**
- * 타일 그림의 한 변 — 자리마다 다르다([[ADR-170]] 정정 16 ③).
+ * 타일 그림의 한 변 — 자리마다 다르다.
  *
  * **타일 왼쪽**(기본)은 이름 두 줄(≈32)보다 낮으면 높이를 안 건드린다. **이름 옆**(에픽던전 셋)은
  * 이름 한 줄(≈16)과 나란히 서므로 더 작아야 그 줄이 안 두꺼워진다.
@@ -70,7 +70,7 @@ function ItemTile(props: {
   /** 값이 하나로 정해지는 칸만 가격을 적는다 — 단계가 여럿이면 단계마다 값이 달라 못 적는다. */
   price: string | null
   selected: boolean
-  /** 안 열린 묶음의 타일 — 흐리고 **안 눌린다**([[ADR-166]] 정정 5). */
+  /** 안 열린 묶음의 타일 — 흐리고 **안 눌린다**. */
   disabled?: boolean
   onPress: () => void
 }): React.JSX.Element {
@@ -89,7 +89,7 @@ function ItemTile(props: {
         걸면 그 값이 위쪽의 늘어난 상자에서 풀려, 타일 하나가 목록 높이를 통째로 먹는다
         (iOS 실측 2026-08-25). 한 줄 안의 높이는 `flex-1` 이 맞춘다.
 
-        **그림 자리는 둘이다**([[ADR-170]] 정정 16 ③) — 기본은 타일 왼쪽 끝이고(위에 얹으면 그림
+        **그림 자리는 둘이다** — 기본은 타일 왼쪽 끝이고(위에 얹으면 그림
         있는 타일만 한 층 커진다), **에픽던전 셋만 이름 바로 옆**이다. 어느 쪽인지는 `spendIconOf`
         가 든다.
       */}
@@ -144,7 +144,7 @@ function ItemTile(props: {
 export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   const editing = props.editing !== undefined
   /**
-   * **한 번만 되짚는다** — 이름만 카탈로그를 거친다([[ADR-171]] 결정 2). 「하이마운틴 2단계」 는
+   * **한 번만 되짚는다** — 이름만 카탈로그를 거친다. 「하이마운틴 2단계」 는
    * 행에서 한 글자지만 시트에서는 **대표와 단계 둘**이다. 못 찾으면 목록이 선다 — **시트가
    * 안 열리는 것보다 낫다.**
    */
@@ -172,7 +172,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   // 모르는 행» 이 되고, 그것은 칸을 더한 뜻을 없앤다.
   const formMissing = forms.length > 0 && form === null
   /**
-   * 단계를 고르기 전에도 **대표가 아는 것**([[ADR-173]] 결정 8) — 한 대표 안의 단계들은 단위도
+   * 단계를 고르기 전에도 **대표가 아는 것** — 한 대표 안의 단계들은 단위도
    * 통화도 같다. 그래서 수량과 시세는 «무엇을 골랐나» 를 안 기다려도 된다.
    */
   const scope = item ?? choice?.items[0] ?? null
@@ -184,7 +184,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   const amount = (item?.unitPrice ?? 0) * quantity
   const totalMeso = usesPoint ? pointToMeso(amount, rate ?? 0) : amount
   // **메소로 셀 수 없는 상태.** 시세 줄의 빨간 `*` 와 꺼진 저장 버튼이 그 사실을 말한다
-  // ([[ADR-202]] 결정 9 가 큰 숫자 밑의 문구를 걷었다).
+  // (가 큰 숫자 밑의 문구를 걷었다).
   const blocked = usesPoint && (rate === null || rate <= 0)
   const canSave = item !== null && !formMissing && !blocked
 
@@ -214,7 +214,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   }
 
   /**
-   * 수정 모드의 머리([[ADR-173]] 결정 15) — **고른 것**을 적는다. 카탈로그가 그 항목을 못 찾으면
+   * 수정 모드의 머리 — **고른 것**을 적는다. 카탈로그가 그 항목을 못 찾으면
    * (참조표가 갈렸다) 기록에 적힌 이름을 그대로 쓴다.
    */
   const title = editing
@@ -244,7 +244,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
           {groups.map((group) => (
             <View key={group.group} className="gap-1 pb-2">
               {/*
-                **안 열린 묶음은 지우지 않고 흐리게 둔다**([[ADR-166]] 정정 5, 사용자 선택).
+                **안 열린 묶음은 지우지 않고 흐리게 둔다**(사용자 선택).
                 기간제 이벤트는 열릴 때만 있는 것이라 숨기면 «그런 것이 있었지» 를 기억할 자리가
                 사라진다. 자리는 남기고 **못 고르게** 한다.
               */}
@@ -277,7 +277,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
           ))}
         </View>
       ) : (
-        // 고른 뒤 — 라벨–값 줄들이 서고 **합계가 저장 바로 위**에 선다([[ADR-173]] 결정 1).
+        // 고른 뒤 — 라벨–값 줄들이 서고 **합계가 저장 바로 위**에 선다.
         <>
           <CharacterRow characters={props.characters} selected={ocid} onSelect={setOcid} />
 
@@ -304,7 +304,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
           {scope !== null && scope.maxQuantity !== 1 && (
             /*
              * 단위·상한은 **대표가 안다** — 단계를 고르기 전에도 선다. **상한이 1이면 안 세운다**
-             * ([[ADR-170]] 정정 14 ①): 오르내릴 자리가 없는 스테퍼는 «조절할 수 있다» 는 거짓말이다.
+             * : 오르내릴 자리가 없는 스테퍼는 «조절할 수 있다» 는 거짓말이다.
              */
             <FieldRow label="수량">
               <QuantityStepper
@@ -317,8 +317,8 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
           )}
 
           {item?.limit !== undefined && (
-            // **적어만 두고 세지 않는다**([[ADR-166]] 정정 1 ⑤). 몬스터 파크 한도는 축이 셋이라
-            // 앱이 하나를 골라 수량을 막으면 그 고름이 곧 추정이 된다([[ADR-006]]).
+            // **적어만 두고 세지 않는다**. 몬스터 파크 한도는 축이 셋이라
+            // 앱이 하나를 골라 수량을 막으면 그 고름이 곧 추정이 된다.
             <Text
               testID="spend-sheet-limit"
               className="-mt-1 text-11 leading-4 text-text-disabled"
@@ -346,7 +346,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
         </>
       )}
 
-      {/* **타일 격자에만 저장이 없다**([[ADR-173]] 결정 1) — 거기엔 셀 자리 자체가 없다. */}
+      {/* **타일 격자에만 저장이 없다** — 거기엔 셀 자리 자체가 없다. */}
       <SaveRow
         showSave={choice !== null || editing}
         editing={editing}
@@ -359,7 +359,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
             category: props.category,
             item: item?.name ?? null,
             form,
-            // 종류는 「아이템 구매」의 것이다([[ADR-173]] 정정 1 결정 4) — 여기서는 `null` 이라
+            // 종류는 「아이템 구매」의 것이다 — 여기서는 `null` 이라
             // «장비를 산 컨텐츠 지출» 같은 행이 생기지 않는다.
             itemKind: null,
             quantity,

@@ -1,4 +1,4 @@
-// 초기화 카운트다운 위젯([[ADR-147]] 결정 6 · 정정 13·39). 이 파일이 지키는 것 넷 —
+// 초기화 카운트다운 위젯. 이 파일이 지키는 것 넷 —
 // ① **일일은 초까지 세고 1초마다 다시 그린다**(기준은 `atMs` — 틱을 세지 않는다)
 // ② **크기마다 무엇을 버리는지**(2x1 은 월간 · 1x1 은 일일만 + 단위 하나)
 // ③ **임박을 색으로 말하지 않는다**(값이 무엇이든 글자 스타일이 같다 — 색이 확정되지 않았다)
@@ -60,7 +60,7 @@ describe('남은 시간 표기', () => {
     expect(getByTestId('reset-value-daily')).toBeTruthy()
   })
 
-  it('일일은 초까지 센다 ([[ADR-147]] 정정 39)', async () => {
+  it('일일은 초까지 센다', async () => {
     const { getByText } = await 위젯(크기['2x1'])
 
     expect(getByText('12시간 34분 0초')).toBeTruthy()
@@ -112,7 +112,7 @@ describe('남은 시간 표기', () => {
   })
 })
 
-describe('크기가 버리는 것 ([[ADR-147]] 정정 13)', () => {
+describe('크기가 버리는 것', () => {
   // 월간은 대개 멀어 지금 급한 것이 아니다.
   it('2x1 은 일일·주간 두 줄이고 월간이 없다', async () => {
     const { getByTestId, queryByTestId } = await 위젯(크기['2x1'])
@@ -168,7 +168,7 @@ describe('진행 바 — 주기의 어디쯤인가', () => {
       크기['2x2'],
       뷰모델({
         resets: {
-          // 남은 시간은 이제 `atMs − 지금`(= atMs, 시계가 0 이므로)에서 나온다([[ADR-147]] 정정 39).
+          // 남은 시간은 이제 `atMs − 지금`(= atMs, 시계가 0 이므로)에서 나온다.
           daily: { atMs: 0, remainingMs: 0, periodMs: DAY_MS },
           weekly: { atMs: 0, remainingMs: 0, periodMs: 7 * DAY_MS },
           monthly: { atMs: 14 * DAY_MS, remainingMs: 14 * DAY_MS, periodMs: 28 * DAY_MS },
@@ -200,7 +200,7 @@ describe('누를 수 없는 타일이다', () => {
   })
 })
 
-describe('1초마다 다시 그린다 ([[ADR-147]] 정정 39)', () => {
+describe('1초마다 다시 그린다', () => {
   it('1초가 지나면 일일이 1초 줄어든다', async () => {
     const { getByTestId } = await 위젯(크기['2x1'])
 
@@ -260,7 +260,7 @@ describe('1초마다 다시 그린다 ([[ADR-147]] 정정 39)', () => {
   })
 })
 
-describe('KST 기준이다 ([[ADR-147]] 정정 39)', () => {
+describe('KST 기준이다', () => {
   // 뷰모델이 KST 절대 시각을 주고 이 위젯은 빼기만 한다 — 기기 타임존이 끼어들 자리가 없다.
   // 그 계약을 «타임존을 바꿔도 같은 글자» 로 검사한다(`Date.now()` 는 타임존과 무관한 epoch 다).
   it('기기 타임존이 달라도 같은 값을 그린다', async () => {

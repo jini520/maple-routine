@@ -1,6 +1,6 @@
-// 설정 하위 페이지 「개발 노트」([[ADR-118]] 결정 2 · [[ADR-119]]) — 버전별 변경 목록.
+// 설정 하위 페이지 「개발 노트」 — 버전별 변경 목록.
 //
-// **데이터는 앱 번들 안에 있다**([[ADR-119]] 결정 1) — `src/data/release-notes.ts` 를 그대로 읽으므로
+// **데이터는 앱 번들 안에 있다** — `src/data/release-notes.ts` 를 그대로 읽으므로
 // 네트워크 0회이고 오프라인에서도 과거 전체가 보인다. 그래서 이 화면에는 로딩·에러 상태가 없다.
 // 원격 조회는 업데이트 모달의 몫이고 그쪽은 `latest.json` 을 쓴다(원천 하나 + 소비 둘).
 //
@@ -14,7 +14,7 @@
 //    그대로다.
 // ② **`사용 중` 배지의 기준이 빌드 시점 버전으로 좁혀진다.** 웹은 `loadCurrentVersion()` 으로 지금
 //    실행 중인 OTA 번들 버전을 물었는데 RN 에서는 그 스토어를 **값으로 import 하는 것만으로 죽는다**
-//    ([[ADR-128]] 결정 7 · `AppUpdateSection` 파일 머리). 그래서 웹이 `currentVersion === null` 일
+//  (`AppUpdateSection` 파일 머리). 그래서 웹이 `currentVersion === null` 일
 //    때 쓰던 **폴백 경로만 남는다** — 값을 지어내지 않고 이미 있던 분기 하나로 좁힌 것이다.
 //    그 결과 지금은 배지가 `package.json` 버전과 같은 카드에 붙는다.
 // ③ **글자 정렬·색이 상속되지 않아** `<li>` 의 `text-sm text-text-muted` 가 상자에서 각 `Text` 로
@@ -49,7 +49,7 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
   const navigation = useSettingsNavigation()
 
   // 폴백까지 했는데도 일치하는 노트가 없으면 아무 배지도 붙지 않는다 — 1.0.2 이전 사용자는
-  // 자기 버전이 목록에 없고([[ADR-119]] 결정 4), 없는 것을 지어내지 않는다.
+  // 자기 버전이 목록에 없고, 없는 것을 지어내지 않는다.
   const runningVersion = packageJson.version
 
   return (
@@ -75,7 +75,7 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
       <View className="gap-3 px-4 pb-4" testID="screen-SettingsReleaseNotes">
         {RELEASE_NOTES.length === 0 ? (
           // 지금은 도달할 수 없는 자리다 — 그래도 데이터가 비어도 화면이 깨지지 않아야 한다.
-          // 목록 빈 상태라 컨텍스트 아이콘 + inline 크기([[ADR-060]]).
+          // 목록 빈 상태라 컨텍스트 아이콘 + inline 크기.
           <EmptyState icon={FileTextIcon} title="아직 기록된 변경 내역이 없습니다" />
         ) : (
           RELEASE_NOTES.map((note) => (
@@ -94,7 +94,7 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
                 </Text>
               </View>
 
-              {/* [[ADR-119]] 결정 9: 항목마다 배지를 다는 대신 **카테고리로 묶는다.** 배지는 항목
+              {/*: 항목마다 배지를 다는 대신 **카테고리로 묶는다.** 배지는 항목
                   수만큼 반복돼 같은 말이 열 번 나오지만, 묶음 제목은 한 번만 말하고 그 아래
                   전부에 적용된다. 순서는 데이터가 아니라 RELEASE_NOTE_CATEGORY_ORDER 가 정한다 —
                   노트를 쓰는 사람이 항목을 어떤 순서로 적든 화면은 늘 같아야 한다.
@@ -116,7 +116,7 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
                         const body = (
                           <View className="min-w-0 flex-1 gap-1">
                             <Text className="text-sm text-text-muted">{item.text}</Text>
-                            {/* [[ADR-119]] 결정 3: 표식은 버전이 아니라 이 항목에 붙는다. 톤은 스토어
+                            {/*: 표식은 버전이 아니라 이 항목에 붙는다. 톤은 스토어
                                 이동을 말하는 다른 자리(UpdatePromptModal 의 store-required)와 같은
                                 third 다. */}
                             {item.requiresStoreUpdate === true && (
@@ -132,17 +132,17 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
                             <Text aria-hidden className="text-sm text-text-disabled">
                               ·
                             </Text>
-                            {/* [[ADR-125]] 결정 5: **안내가 있는 항목만** 눌린다. 없는 것은 결함이
+                            {/*: **안내가 있는 항목만** 눌린다. 없는 것은 결함이
                                 아니라 정상이므로 비활성 버튼을 두지 않고, 그 항목의 트리는 종전
                                 그대로다 — 래퍼도 클래스도 만들지 않는다. chevron 은 설정 행과 같은
-                                약속이다(있으면 누르면 무언가 열린다, [[ADR-118]] 결정 4). */}
+                                약속이다(있으면 누르면 무언가 열린다). */}
                             {guideId === undefined ? (
                               body
                             ) : (
                               <Pressable
                                 role="button"
                                 onPress={() => {
-                                  // 마디까지 가리키면 그 자리로 떨어진다([[ADR-125]] 결정 7) —
+                                  // 마디까지 가리키면 그 자리로 떨어진다 —
                                   // 릴리스에서 바뀐 것은 보통 기능 전체가 아니라 그중 한 마디다.
                                   // 웹의 `?s=` 쿼리가 여기서는 라우트 파라미터다(`routes.ts`).
                                   navigation.navigate('SettingsReleaseNoteGuide', {

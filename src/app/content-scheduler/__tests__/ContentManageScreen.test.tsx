@@ -51,7 +51,7 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     manualTrackedByOcid: {},
     loadTrackedOcids: jest.fn(),
     saveTrackedOcids: jest.fn(),
-    // 실물은 `Promise<void>` 다 — 당김 훅이 회차의 «끝» 을 기다린다([[ADR-160]] 결정 1).
+    // 실물은 `Promise<void>` 다 — 당김 훅이 회차의 «끝» 을 기다린다.
     refresh: jest.fn().mockResolvedValue(undefined),
     addManualContent: jest.fn(async () => {}),
     removeManualContent: jest.fn(async () => {}),
@@ -60,7 +60,7 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     ...overrides,
   } as Store
 
-  // 이 화면의 탭은 **로컬**이지만(진입 시점 승계, [[ADR-096]] 결정 2) 스토어 탭이 초기값이므로
+  // 이 화면의 탭은 **로컬**이지만(진입 시점 승계) 스토어 탭이 초기값이므로
   // 목도 같은 모양으로 둔다.
   mockedStore.mockImplementation(() => {
     const [activeTab, setActiveTab] = useState(base.activeTab)
@@ -119,7 +119,7 @@ beforeEach(() => {
   useTrackingModeStore.setState({ mode: 'manual' })
 })
 
-// 선택은 이제 화면 스토어가 아니라 `useCharacterSelectionStore` 가 갖는다([[ADR-159]]).
+// 선택은 이제 화면 스토어가 아니라 `useCharacterSelectionStore` 가 갖는다.
 // 실물 스토어라 값이 파일 안에서 넘어가므로 테스트마다 되돌린다.
 beforeEach(() => {
   useCharacterSelectionStore.setState({ selectedOcid: null })
@@ -206,7 +206,7 @@ describe('ContentManageScreen', () => {
     expect(store.removeManualContent).toHaveBeenCalledWith('ocid-1', '몬스터파크', 'daily')
   })
 
-  // [[ADR-065]] 결정 4 — 전에는 프로미스를 버려 저장 실패가 무음이었다.
+  // 전에는 프로미스를 버려 저장 실패가 무음이었다.
   it('토글 저장이 실패하면 토스트로 알린다', async () => {
     mockStore({
       characters: [character()],
@@ -221,7 +221,7 @@ describe('ContentManageScreen', () => {
     expect(mockShowError).toHaveBeenCalledWith('추적 목록을 저장하지 못했습니다')
   })
 
-  // [[ADR-061]] 결정 10 — 확정된 빈 상태는 조회가 끝난 뒤에만 말할 수 있다([[ADR-060]]).
+  // 확정된 빈 상태는 조회가 끝난 뒤에만 말할 수 있다.
   it('조회가 끝나기 전에는 빈 상태 문구 대신 로딩 카드를 보여준다', async () => {
     mockStore({ status: 'loading', characters: [] })
 
@@ -240,7 +240,7 @@ describe('ContentManageScreen', () => {
   })
 })
 
-describe('ContentManageScreen — 길드 미가입 잠금 ([[ADR-057]])', () => {
+describe('ContentManageScreen — 길드 미가입 잠금', () => {
   const GUILD_ITEM = '지하 수로'
 
   async function renderWeekly(guildName: string | null | undefined, tracked: string[] = []): Promise<void> {
@@ -281,7 +281,7 @@ describe('ContentManageScreen — 길드 미가입 잠금 ([[ADR-057]])', () => 
     expect(stateOf(row('무릉도장')).disabled).toBeFalsy()
   })
 
-  // 길드를 나가도 해제할 수 있어야 한다([[ADR-057]] 결정 5).
+  // 길드를 나가도 해제할 수 있어야 한다.
   it('이미 추적 중인 길드 콘텐츠는 미가입이어도 활성이다', async () => {
     await renderWeekly(null, ['[길드] 지하 수로'])
 

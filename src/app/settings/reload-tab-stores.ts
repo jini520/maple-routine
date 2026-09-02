@@ -3,7 +3,7 @@ import { useBossSchedulerStore } from '../../features/boss-scheduler/store'
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
 
 /**
- * 설정에서 무언가 바뀐 뒤 탭 스토어를 다시 읽히는 **한 자리**([[ADR-140]] 결정 5 + 그 정정).
+ * 설정에서 무언가 바뀐 뒤 탭 스토어를 다시 읽히는 **한 자리**(+ 그 정정).
  *
  * **웹에서는 라우트 언마운트가 하던 몫이다** — 화면을 옮길 때마다 `loadTrackedOcids()` 가 저장소를
  * 다시 읽었다. RN 의 탭 화면은 한 번 뜨면 마운트된 채 남아 스스로 다시 읽지 않으므로, 설정이
@@ -24,7 +24,7 @@ const LOADERS: Record<TabStoreName, () => Promise<void>> = {
 
 /**
  * 넘긴 순서대로 **순차** 재로드한다. 병렬이 아닌 이유는 `prehydrateTabStores` 와 같다 —
- * [[ADR-097]] 게이트의 신선도는 앞 회차가 캐시를 **다 쓴 뒤에야** 참이 되므로, 동시에 띄우면 전부
+ *  게이트의 신선도는 앞 회차가 캐시를 **다 쓴 뒤에야** 참이 되므로, 동시에 띄우면 전부
  * 옛 `syncedAt` 을 보고 같은 응답을 여러 번 받는다.
  *
  * **기다리지 않는다**(반환값이 없는 이유다). 사용자가 고른 일은 이미 끝났고, 뒤따르는 회차는 그 탭에

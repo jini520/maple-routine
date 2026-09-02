@@ -1,4 +1,4 @@
-// 레지스트리와 **손으로 적은 배치**의 대조([[ADR-147]] 결정 2·3 · 정정 13).
+// 레지스트리와 **손으로 적은 배치**의 대조.
 //
 // 좌표를 손으로 적기로 한 이상 그 실수는 반드시 나고, **이 파일이 그것을 잡는 유일한 장치다** —
 // `validateWidgetLayout` 은 step 5 에서 이미 검증됐지만 «지금 쓰는 배치가 그 검증을 통과하는가» 는
@@ -8,7 +8,7 @@ import { validateWidgetLayout } from '../../../lib/today/widget-layout'
 import { TILE_LAYOUT } from '../widgets/layout'
 import { WIDGETS, WIDGET_SIZES_BY_ID } from '../widgets/registry'
 
-describe('기본 배치 ([[ADR-147]] 정정 13)', () => {
+describe('기본 배치', () => {
   it('검증 다섯을 전부 통과한다 — 위반이 없다', () => {
     expect(validateWidgetLayout(TILE_LAYOUT, WIDGET_SIZES_BY_ID)).toEqual([])
   })
@@ -32,7 +32,7 @@ describe('기본 배치 ([[ADR-147]] 정정 13)', () => {
     expect(declaredCount).toBeGreaterThan(TILE_LAYOUT.length)
   })
 
-  // 공유 컨텐츠가 「남은 스케줄」 **위**에 선다([[ADR-147]] 정정 32, 사용자 지정) — 먼저 치우면
+  // 공유 컨텐츠가 「남은 스케줄」 **위**에 선다(사용자 지정) — 먼저 치우면
   // 아래 목록이 줄어드는 관계라서다. 순서가 뒤집히면 그 근거가 사라지므로 좌표로 못 박는다.
   it('공유 컨텐츠가 남은 스케줄 바로 위다', () => {
     const rowOf = (id: string): number =>
@@ -42,7 +42,7 @@ describe('기본 배치 ([[ADR-147]] 정정 13)', () => {
     expect(rowOf('shared-contents')).toBeGreaterThan(rowOf('crystal-limit'))
   })
 
-  it('`h: auto` 를 선언한 위젯은 가로 4칸짜리 크기만 갖는다 ([[ADR-147]] 정정 1)', () => {
+  it('`h: auto` 를 선언한 위젯은 가로 4칸짜리 크기만 갖는다', () => {
     for (const widget of WIDGETS) {
       for (const size of widget.sizes) {
         if (size.h === 'auto') expect(size.w).toBe(4)

@@ -1,7 +1,7 @@
 // 총 수익 헤드라인 옆 칩 둘.
 //
 // `DeltaChip` 은 2026-08-10 에 화면에서 **떼어냈지만**(총 수익에서는 뜻이 퇴색한다는 사용자 판단 —
-// 통계 기능으로 옮긴다) 컴포넌트와 계약은 그대로 둔다. 되살릴 때 [[ADR-087]] 의 계약이 서 있어야
+// 통계 기능으로 옮긴다) 컴포넌트와 계약은 그대로 둔다. 되살릴 때 의 계약이 서 있어야
 // 하므로 웹판 다섯을 그대로 옮겼다.
 import { act, fireEvent } from '@testing-library/react-native'
 
@@ -13,7 +13,7 @@ import { CrystalSummaryChip, DeltaChip } from '../HeadlineChips'
 import type { CharacterGroup } from '../character-groups'
 import { 다른주간보스, 보스행 } from './harness'
 
-// 비교 대상 라벨("지난 주")은 now 기준 상대 표현이라([[ADR-023]]) 시각을 고정해 넘긴다.
+// 비교 대상 라벨("지난 주")은 now 기준 상대 표현이라 시각을 고정해 넘긴다.
 // 2026-07-22 기준 이번 주는 2026-07-16, 그 직전 주가 2026-07-09 다.
 const NOW = new Date('2026-07-22T12:00:00+09:00')
 
@@ -29,7 +29,7 @@ function renderDelta(totalMeso: number, previousMeso: number): ReturnType<typeof
   )
 }
 
-describe('DeltaChip ([[ADR-087]])', () => {
+describe('DeltaChip', () => {
   it('늘었으면 퍼센트와 함께 증가를 말한다', async () => {
     const { getByLabelText, getByText } = await renderDelta(5_000_000, 4_000_000)
 
@@ -79,7 +79,7 @@ function group(rows: BossProfitRow[]): CharacterGroup {
   }
 }
 
-describe('CrystalSummaryChip ([[ADR-054]])', () => {
+describe('CrystalSummaryChip', () => {
   it('월드를 아는 캐릭터가 없으면 아예 그리지 않는다 — 대비할 한도가 없다', async () => {
     // 프로바이더는 남으므로 트리 전체가 아니라 **칩이 없는 것**을 본다.
     const { queryByLabelText } = await renderOverlay(

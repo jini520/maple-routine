@@ -5,14 +5,14 @@
 //    「기능 설명에서 들어오면 기능 설명으로」·「개발 노트에서 들어오면 개발 노트로」 두 케이스가
 //    있었다. RN 의 pop 은 스택이 이미 알고 있어 **한 케이스로 접힌다**(`use-settings-navigation.ts`).
 // ② **마디는 쿼리가 아니라 파라미터**다 — 목차를 누르면 `setParams` 이고, 그것이 웹의
-//    `replace` 와 같은 뜻(스택을 안 건드린다)이다([[ADR-125]] 결정 7).
+//  `replace` 와 같은 뜻(스택을 안 건드린다)이다.
 // ③ **스크롤 검사가 `scrollIntoView` 스파이에서 `scrollTo` 스파이 + `onLayout` 주입으로** 바뀐다.
 //    RN 에는 문서도 id 도 없어 마디가 자기 y 를 알려 줘야 하고(그 배선이 곧 이 화면의 계약이다),
 //    jest 는 레이아웃을 계산하지 않으므로 **테스트가 그 y 를 넣어 준다.**
 // ④ 없는 안내의 되돌리기는 `<Navigate replace>` → `goBack()` — 뜻(히스토리를 남기지 않는다)은 같다.
 //    웹의 「push 가 아니라 replace 다」 케이스는 **스택을 우리가 미는 RN 에서 성립하지 않는다.**
 // ⑤ `getByAltText` → `getByLabelText`(`alt` 의 짝은 `accessibilityLabel`), `src` → `source` —
-//    그리고 그 값은 URL 문자열이 아니라 **번들 에셋 참조**다([[ADR-129]]).
+//  그리고 그 값은 URL 문자열이 아니라 **번들 에셋 참조**다.
 import { act, fireEvent } from '@testing-library/react-native'
 import { ScrollView } from 'react-native'
 
@@ -163,7 +163,7 @@ describe('SettingsFeatureGuideScreen', () => {
     expect(view.getByText('파티 인원 관리')).toBeTruthy()
   })
 
-  // [[ADR-125]] 결정 3: 같은 화면이 두 라우트에 걸린다. **어디서 왔든 그리로 돌아간다** — RN 은
+  // : 같은 화면이 두 라우트에 걸린다. **어디서 왔든 그리로 돌아간다** — RN 은
   // 스택이 그것을 알고 있어 계산이 사라지고 `goBack()` 하나만 남는다.
   it.each(['SettingsFeatureGuide', 'SettingsReleaseNoteGuide'])(
     '%s 로 들어와도 뒤로는 그냥 pop 이다',
@@ -178,7 +178,7 @@ describe('SettingsFeatureGuideScreen', () => {
     },
   )
 
-  // [[ADR-125]] 결정 6: 블록은 이미지만·문단만·둘 다를 모두 허용한다.
+  // : 블록은 이미지만·문단만·둘 다를 모두 허용한다.
   it('마디와 블록을 데이터 순서대로 그린다', async () => {
     const view = await renderOverlay(<SettingsFeatureGuideScreen />)
 
@@ -189,7 +189,7 @@ describe('SettingsFeatureGuideScreen', () => {
     ).toBeTruthy()
   })
 
-  // [[ADR-125]] 결정 7 — 목차가 곧 개발 노트의 착지점 목록이다.
+  // 목차가 곧 개발 노트의 착지점 목록이다.
   it('마디가 둘 이상이면 목차를 그린다', async () => {
     const view = await renderOverlay(<SettingsFeatureGuideScreen />)
 
@@ -236,7 +236,7 @@ describe('SettingsFeatureGuideScreen', () => {
   })
 
   // 릴리스에서 바뀐 것은 보통 기능 전체가 아니라 그중 한 마디다 — 첫머리에 떨어뜨리면 읽는
-  // 사람이 그 마디를 다시 찾아야 한다([[ADR-125]] 결정 7). **`scroll-mt-4` 몫 16px 을 뺀 자리**다.
+  // 사람이 그 마디를 다시 찾아야 한다. **`scroll-mt-4` 몫 16px 을 뺀 자리**다.
   it('section 파라미터로 들어오면 그 마디로 스크롤한다', async () => {
     mockRoute = {
       name: 'SettingsFeatureGuide',
@@ -292,7 +292,7 @@ describe('SettingsFeatureGuideScreen', () => {
   // 웹은 `w-full` 한 줄이었다 — 높이는 preflight 의 `img { height: auto }` 가 정했다. RN 에 그
   // 짝이 없어 **높이를 이름 부르지 않으면** 스크린샷의 고유 픽셀 높이가 상자 높이로 남고,
   // `contain` 이 그 안에 그림을 넣어 **위아래로 큰 여백**이 생긴다(746×274 안내는 각 71px, 세로로
-  // 긴 780×1438 안내는 각 389px — [[ADR-135]] 보고 ②).
+  // 긴 780×1438 안내는 각 389px — 보고 ②).
   it('이미지는 폭을 채우고 높이를 그림에 맡긴다 — 두 축의 이름이 다 나온다', async () => {
     const view = await renderOverlay(<SettingsFeatureGuideScreen />)
 

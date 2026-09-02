@@ -1,4 +1,4 @@
-// 보스 수익 화면의 **캐릭터 그룹 계산** 순수 함수들([[ADR-094]] 결정 7로 화면에서 분리).
+// 보스 수익 화면의 **캐릭터 그룹 계산** 순수 함수들(로 화면에서 분리).
 //
 // 행을 캐릭터 단위로 묶고, 그 묶음에서 총액·처치 수·결정석 수·고가 드롭을 뽑는다.
 //
@@ -9,7 +9,7 @@
 // 069·094·124)이 걸린 계산이 두 앱에 두 벌로 남는 것은 전환이 끝날 때까지 그 여덟이 갈릴 자리를
 // 열어 두는 일이다.
 //
-// **그런데 이 step 에서 옮기지 않는다.** 이 단계의 규칙이 `packages/core` 무수정이고([[ADR-128]]
+// **그런데 이 step 에서 옮기지 않는다.** 이 단계의 규칙이 `packages/core` 무수정이고(
 // 결정 4 가 83% 무수정을 지키는 조건이다), core 이동은 「어느 계산이 뷰 밖인가」를 화면 전부가
 // 붙은 뒤에 한 번에 판정해야 하는 별도 결정이다. 지금 하나만 옮기면 그 판정이 파일 단위로 흩어진다.
 //
@@ -65,8 +65,8 @@ export function clamp(value: number, min: number, max: number): number {
 /**
  * 보스 행의 **결정석** 합.
  *
- * `payoutMeso` 가 `null` 인 두 경우(미완료 placeholder — [[ADR-032]] / 가격 미확정 보스)를 0으로
- * 접는다. **[[ADR-124]] 의 "미입력 ≠ 0원" 과 다른 `null` 이다** — 저쪽은 사용자가 아직 안 적은
+ * `payoutMeso` 가 `null` 인 두 경우(미완료 placeholder — / 가격 미확정 보스)를 0으로
+ * 접는다. ** 의 "미입력 ≠ 0원" 과 다른 `null` 이다** — 저쪽은 사용자가 아직 안 적은
  * 드롭 판매가라 화면이 금액 대신 상태를 말해야 하고, 이쪽은 그 자리에 이미 「미완료」·「가격
  * 미확정」 배지가 서 있어(`BossProfitBossRow`) 0 이 금액으로 읽히지 않는다.
  */
@@ -107,7 +107,7 @@ export function buildCharacterGroups(
 }
 
 /**
- * 이 캐릭터가 이 기간에 번 전부 — 결정석 + 아이템([[ADR-124]] 결정 7).
+ * 이 캐릭터가 이 기간에 번 전부 — 결정석 + 아이템.
  *
  * **드롭을 프롭으로 받는 이유**: 보스 행의 `payoutMeso` 는 결정석만 담고(그 값이 DB 기록이라
  * 가격을 고칠 때마다 재기록할 수 없다) 아이템은 **읽는 시점에** 더한다. 그래서 이 함수가 그
@@ -117,7 +117,7 @@ export function buildCharacterGroups(
  * `dropsByRowKey` 는 지금 화면의 행만 담으므로(월간 탭이면 월간 보스 행) 이중 계산이 없다.
  *
  * **값을 안 매긴 드롭은 여기서도 0 이다** — `sumDropPayout` 이 `priceState !== 'entered'` 를
- * 통째로 거른다([[ADR-124]] 결정 4). 합산에서 스킵과 미입력이 같은 것은 의도이고, 둘을 가르는
+ * 통째로 거른다. 합산에서 스킵과 미입력이 같은 것은 의도이고, 둘을 가르는
  * 일은 표시 층이 한다(`ItemRevenuePopover`).
  */
 export function groupTotalMeso(
@@ -149,7 +149,7 @@ export function collectGroupValuableDrops(
   return valuable
 }
 
-// 이 캐릭터가 이 기간에 기록한 드롭 전체([[ADR-124]] 결정 7) — 고가로 거르지 않는다.
+// 이 캐릭터가 이 기간에 기록한 드롭 전체 — 고가로 거르지 않는다.
 // 캐릭터 카드 내역 팝오버가 이것을 아이템 단위로 접어 보여준다.
 export function collectGroupDrops(
   group: CharacterGroup,
@@ -169,7 +169,7 @@ export function collectAllValuableDrops(
   return groups.flatMap((group) => collectGroupValuableDrops(group, dropsByRowKey))
 }
 
-// 이 캐릭터가 이번 주에 처치한 주간 보스 수([[ADR-054]] 결정 3) — 처치 수는 store 필드가 아니라
+// 이 캐릭터가 이번 주에 처치한 주간 보스 수 — 처치 수는 store 필드가 아니라
 // rows에서 파생한다. 보스명 기준 distinct라 같은 보스를 여러 난이도로 완료해도 1로 센다(게임 룰이
 // 그렇고, 보스 스케줄러가 쓰는 countClearedWeeklyBosses도 content_name 그룹당 1이다 — 두 지표가
 // 어긋나면 같은 숫자가 화면마다 다르게 보인다). 시즌 보스(메이린)는 12마리 제한 예외라 제외한다.
@@ -184,12 +184,12 @@ export function countGroupClearedWeeklyBosses(group: CharacterGroup): number {
   return clearedBossNames.size
 }
 
-// 월드별 주간 결정석 소진량([[ADR-054]] 결정 1 — 90은 계정이 아니라 월드당 한도다). 캐릭터별
+// 월드별 주간 결정석 소진량(— 90은 계정이 아니라 월드당 한도다). 캐릭터별
 // 처치 수는 위 countGroupClearedWeeklyBosses를 그대로 재사용하고(계산 두 벌 금지, 결정 3) 여기서는
 // 월드 묶음만 얹는다. 그룹의 행은 모두 같은 캐릭터에서 나오므로 월드도 첫 행에서 읽으면 된다.
 // world가 null인 캐릭터(구버전 캐시)는 어느 월드 한도에도 귀속시킬 수 없어 조용히 제외한다
 // (결정 6 — "미분류" 줄을 만들지 않는다). 결과 순서는 Map 삽입 순서 = 월드가 처음 등장한 캐릭터의
-// 정렬 순서라 렌더마다 흔들리지 않는다(표시 순서 고정, [[ADR-036]]).
+// 정렬 순서라 렌더마다 흔들리지 않는다(표시 순서 고정).
 // ADR-069 결정 2: 집계 단위가 **행**이다. 전에는 `group.bossRows[0]?.world` 로 캐릭터당 월드를
 // 하나로 정했는데, 주 중간에 월드를 옮기면 한 캐릭터의 행이 두 월드에 걸치므로 첫 행의 월드로
 // 전부 쏠렸다. 판매 한도(90)는 **월드마다 따로 산정**되므로(사용자 확인) 그 주의 판매량은 두
@@ -197,7 +197,7 @@ export function countGroupClearedWeeklyBosses(group: CharacterGroup): number {
 //
 // 같은 보스는 한 주에 한 번만 처치할 수 있어(사용자 확인) 한 행은 정확히 한 월드에 속한다 —
 // 그래서 행 단위로 갈라도 "보스명 distinct"의 의미가 유지된다(캐릭터별로 세던 것과 결과가 같고,
-// 걸치는 주에서만 갈린다). 월드를 모르는 행(컬럼 도입 전 기록)은 조용히 빠진다([[ADR-054]] 결정 5).
+// 걸치는 주에서만 갈린다). 월드를 모르는 행(컬럼 도입 전 기록)은 조용히 빠진다.
 //
 // 캐릭터 카드의 진행 링은 이 함수를 쓰지 않는다 — 클리어 수는 캐릭터 단위로 이어지므로 월드와
 // 무관하게 그 주 전체를 센다. 두 숫자의 집계 단위가 다른 것은 게임 규칙이 그렇게 갈려 있어서다.
@@ -212,7 +212,7 @@ export function summarizeWorldCrystals(groups: CharacterGroup[]): WorldCrystalSu
         continue
       }
       // **월드 집합과 처치 수를 분리한다**: 월드를 아는 행이 있으면 처치가 0이어도 그 월드를
-      // 목록에 넣어 `0 / 90` 을 보여준다([[ADR-054]] 결정 — "월드는 알고 처치가 0이면 0 / 90을
+      // 목록에 넣어 `0 / 90` 을 보여준다(결정 — "월드는 알고 처치가 0이면 0 / 90을
       // 그대로 보여준다"). 완료 조건을 월드 판정에 섞으면 그 표시가 사라진다.
       const byCharacter = bossNamesByWorld.get(row.world) ?? new Map<string, Set<string>>()
       const bossNames = byCharacter.get(row.ocid) ?? new Set<string>()
@@ -232,7 +232,7 @@ export function summarizeWorldCrystals(groups: CharacterGroup[]): WorldCrystalSu
 
 // 이 캐릭터가 이 달에 처치한 월간 보스 수(보스명 distinct — 같은 보스를 여러 난이도로 잡아도 1).
 // 주간 쪽 countGroupClearedWeeklyBosses와 대칭이며, **월간 탭 진행 링과 월간 결정석 칩이 이 함수
-// 하나를 공유한다**([[ADR-059]] 결정 5 — [[ADR-054]] 결정 3의 "계산 두 벌 금지"를 월간에도 적용).
+// 하나를 공유한다**(—의 "계산 두 벌 금지"를 월간에도 적용).
 export function countGroupClearedMonthlyBosses(group: CharacterGroup): number {
   const clearedBossNames = new Set<string>()
   for (const row of group.bossRows) {
@@ -242,7 +242,7 @@ export function countGroupClearedMonthlyBosses(group: CharacterGroup): number {
   return clearedBossNames.size
 }
 
-// 이 기간 월간 보스(검은마법사) 결정석 개수. 주간 90 한도에 포함되지 않는 별개 수치라([[ADR-054]]
+// 이 기간 월간 보스(검은마법사) 결정석 개수. 주간 90 한도에 포함되지 않는 별개 수치라(
 // 결정 1·8) 위 주간 집계와 섞지 않는다 — 시즌 보스는 weekly 소속이라 여기선 판정할 것이 없다.
 // 결정석은 캐릭터마다 각자 나오므로 그룹별 처치 수를 더한다.
 export function countMonthlyCrystals(groups: CharacterGroup[]): number {

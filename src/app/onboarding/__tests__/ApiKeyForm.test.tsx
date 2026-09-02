@@ -6,7 +6,7 @@
 //    없어 `aria-label` 이 곧 접근성 이름이다).
 // ② `type="password"` → **`secureTextEntry`** 프롭을 본다.
 // ③ `getByRole('link', …)` + `href` → **`Linking.openURL` 이 무엇으로 불렸는가**. RN 에 `href` 가
-//    없으므로 링크의 계약은 "그 주소로 나간다" 하나뿐이고, [[ADR-110]] 이 지키려는 것도 그것이다.
+//  없으므로 링크의 계약은 "그 주소로 나간다" 하나뿐이고 이 지키려는 것도 그것이다.
 // ④ `toBeDisabled()`·`aria-busy` 속성 대신 **`accessibilityState`** 를 본다 — `Pressable` 이
 //    `disabled`·`aria-busy` 를 호스트 뷰에 그대로 넘기지 않고 그 객체로 접는다(실측).
 // ⑤ Enter 제출 → `await fireEvent(input, 'submitEditing')`.
@@ -78,7 +78,7 @@ describe('ApiKeyForm', () => {
   it('isSubmitting이면 스피너가 라벨을 덮는다 — 라벨은 폭과 스크린리더를 위해 남는다', async () => {
     const view = await renderAtom(<ApiKeyForm isSubmitting={true} onSubmit={jest.fn()} />)
 
-    // [[ADR-061]] 정정 3 — 라벨을 지우지 않고 가린다. 지우면 버튼 폭이 줄고 스크린리더가 읽을
+    // 라벨을 지우지 않고 가린다. 지우면 버튼 폭이 줄고 스크린리더가 읽을
     // 것이 없다.
     expect(view.getByText('확인')).toBeTruthy()
     expect(stateOf(submitButton(view)).busy).toBe(true)
@@ -108,7 +108,7 @@ describe('ApiKeyForm', () => {
     expect(onSubmit).toHaveBeenCalledWith('test-api-key-123')
   })
 
-  // [[ADR-110]] 후속(이슈 #61): 발급 절차는 안내 사이트가 담당하고 앱은 링크만 준다. 처음 쓰는
+  //  후속(이슈 #61): 발급 절차는 안내 사이트가 담당하고 앱은 링크만 준다. 처음 쓰는
   // 사용자를 넥슨 첫 화면에 떨궈 놓지 않도록 가이드가 1차 경로다.
   it('API 키 발급 가이드를 1차 경로로 제공한다', async () => {
     const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
@@ -144,7 +144,7 @@ describe('ApiKeyForm', () => {
     expect(view.getByText('스케줄러 API를 사용하려면 개인 API 키가 필요해요')).toBeTruthy()
   })
 
-  // 요청은 "수집하거나 저장하지 않는다"였으나 키는 기기에 저장된다(storage/api-key, [[ADR-007]]).
+  // 요청은 "수집하거나 저장하지 않는다"였으나 키는 기기에 저장된다(storage/api-key).
   // 사실인 것은 "우리가 수집하지 않는다"뿐이라 지킬 수 있는 약속만 적는다.
   it('키가 기기 밖으로 나가지 않는다는 안내를 보여준다', async () => {
     const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)

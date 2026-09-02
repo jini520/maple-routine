@@ -1,15 +1,15 @@
-// 보스 한 줄과 그 줄의 **드롭 표시**([[ADR-094]] 결정 7로 화면에서 분리).
+// 보스 한 줄과 그 줄의 **드롭 표시**(로 화면에서 분리).
 //
 // 파티원 수 조절, 드롭 기록 시트 열기, 획득 아이템 아이콘 스택이 여기 산다. 아코디언을 펼쳤을 때
 // 카드 안에 나열되는 단위이고, 자기 행 안에서 끝나 카드의 고정 헤더와는 무관하다.
 //
 // ══ RN 으로 옮기며 갈린 것 여섯 ═══════════════════════════════════════════════════
 //
-// ① **`.valuable-drop-row` 가 클래스에서 값이 된다**([[ADR-045]] 결정 5). 웹은 `index.css` 의 한
+// ① **`.valuable-drop-row` 가 클래스에서 값이 된다**. 웹은 `index.css` 의 한
 //    클래스가 셋을 했고 RN 에는 그 셋의 짝이 전부 따로 있다 — 그 사정은 `ValuableRowBackground`
 //    가 갖는다. **step 8 에서 그 컴포넌트가 이 파일 밖으로 나갔다**(가격 기록 화면의 행이 두 번째
-//    호출부다 — [[ADR-094]] 결정 1).
-// ② **파티 스테퍼를 `PartySizeStepper` 로 접지 않는다.** 그 molecule 은 [[ADR-121]] 결정 7 이
+//  호출부다 —).
+// ② **파티 스테퍼를 `PartySizeStepper` 로 접지 않는다.** 그 molecule 은 이
 //    정한 **두 크기**(관리 페이지 행 · 모달)이고 이 행은 셋째 모양이다 — 버튼 18px(그쪽 24·32),
 //    `Users` 표식 없음, −/+ 에 `bg-surface-2` 채움(그쪽은 "채움을 두지 않는다"가 명시된 결정).
 //    합치면 두 화면 중 하나의 모습이 반드시 바뀐다. 웹도 이 자리는 자체 마크업이었다.
@@ -47,7 +47,7 @@ export interface BossProfitBossRowProps {
   row: BossProfitRow
   drops: RecordedDrop[]
   /**
-   * 웹의 `last:border-b-transparent` 자리([[ADR-049]]) — RN 에는 `:last-child` 가 없어 **목록을
+   * 웹의 `last:border-b-transparent` 자리 — RN 에는 `:last-child` 가 없어 **목록을
    * 아는 부모가 알려 준다**(`disabled:` 를 JS 조건으로 옮긴 것과 같은 종류의 갈림).
    *
    * 테두리를 아예 빼지 않고 **색만 지우는** 것이 요점이다: 빼면 그 행만 1px 짧아진다.
@@ -55,11 +55,11 @@ export interface BossProfitBossRowProps {
   isLast?: boolean
 }
 
-// 접힌 보스 행의 이름 라인 오른쪽에 붙는 드롭 지시자([[ADR-038]]). 있으면 아이콘 스택+개수, 없으면
+// 접힌 보스 행의 이름 라인 오른쪽에 붙는 드롭 지시자. 있으면 아이콘 스택+개수, 없으면
 // "＋ 드롭 추가" 칩. 상자 결과는 실제 나온 아이템(반지 등) 아이콘으로 뜬다.
 export function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Element {
   if (props.drops.length === 0) {
-    // 아이콘 스택(h-6)과 같은 슬롯이라 높이도 h-6으로 맞춘다([[ADR-049]]) — 패딩으로 높이를 만들면
+    // 아이콘 스택(h-6)과 같은 슬롯이라 높이도 h-6으로 맞춘다 — 패딩으로 높이를 만들면
     // 글꼴 line-height가 그대로 행 높이에 실려 드롭 유무로 행이 튄다.
     return (
       <View className="ml-auto h-6 shrink-0 flex-row items-center rounded-full border border-dashed border-primary bg-primary-tint px-2.5">
@@ -86,8 +86,8 @@ export function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Eleme
             ) : (
               <View className="h-6 w-6 rounded-md border-[1.5px] border-surface bg-surface-2" />
             )}
-            {/* 특수 스킬 반지(반지 상자 드릴다운 결과, [[ADR-041]])만 등급이 기록된다 — 드롭 시트
-                ItemThumb의 lv 뱃지와 같은 규칙. 절대배치라 이름 줄의 h-6 고정([[ADR-049]])에는
+            {/* 특수 스킬 반지(반지 상자 드릴다운 결과)만 등급이 기록된다 — 드롭 시트
+                ItemThumb의 lv 뱃지와 같은 규칙. 절대배치라 이름 줄의 h-6 고정에는
                 영향을 주지 않는다. */}
             {drop.ringLevel !== undefined && (
               <View className="absolute -bottom-1 -right-0.5 rounded-full bg-primary px-0.5 py-px">
@@ -124,7 +124,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
   const hasValuableDrop = props.drops.some((drop) => isValuableDrop(drop.itemName))
   const isPriceUnknown = row.priceMeso === null
   // 미완료(보스 스케줄러에 등록만 되고 아직 처치 전) placeholder는 파티원 수를 조정해도 의미가
-  // 없다 — 계산은 항상 0메소로 고정된다([[ADR-032]]). "가격 미확정"과 동일한 비활성 처리를 재사용한다.
+  // 없다 — 계산은 항상 0메소로 고정된다. "가격 미확정"과 동일한 비활성 처리를 재사용한다.
   const isEditable = row.isComplete && !isPriceUnknown
   const partySize = row.partySize ?? 1
   const canDecrease = isEditable && partySize > 1
@@ -132,7 +132,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
 
   // 금액 마크업은 한 벌이다 — 칩이 붙든 안 붙든 같은 `Text` 라 두 갈래가 서로 어긋날 수 없다.
   //
-  // [[ADR-087]] 의 identity 는 **행 자신의 (ocid, 보스, 난이도, 기간)** 이다. 기간이 키에 들어
+  //  의 identity 는 **행 자신의 (ocid, 보스, 난이도, 기간)** 이다. 기간이 키에 들어
   // 있으므로 기간을 옮기면 "값이 변한 것"이 아니라 "다른 값을 보게 된 것"이라 굴러가지 않는다
   // (정정 1 — 기간 이동에 굴러가는 것은 총 수익 헤드라인 하나뿐이다). `row.periodKey` 는 그려지는
   // 데이터에서 오므로 스토어의 목표 기간보다 먼저 바뀌는 일이 없다.
@@ -155,7 +155,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
     </Text>
   )
 
-  // [[ADR-063]]: 예외 메시지를 그대로 렌더하던 인라인 문단을 걷어내고 토스트로 알린다 — 개발자용
+  // : 예외 메시지를 그대로 렌더하던 인라인 문단을 걷어내고 토스트로 알린다 — 개발자용
   // 문구와 SQLite 네이티브 원문이 사용자에게 새는 자리가 여기뿐이었다. 문구는 보스 관리 화면과 같아
   // 두 경로가 통일된다.
   async function handleChange(delta: number): Promise<void> {
@@ -170,7 +170,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
   const stepperButtonClass = 'h-[18px] w-[18px] items-center justify-center rounded-full bg-surface-2'
 
   return (
-    // 마지막 행도 테두리 "박스"는 남기고 색만 지운다([[ADR-049]]).
+    // 마지막 행도 테두리 "박스"는 남기고 색만 지운다.
     <View
       testID="boss-profit-boss-row"
       className={`flex-row items-start gap-3 border-b p-4 ${
@@ -182,12 +182,12 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
       <BossPortrait portraitSlug={findPortraitSlug(row.boss)} label={row.boss} size={BOSS_PORTRAIT_SIZE} />
 
       <View className="min-w-0 flex-1">
-        {/* 이름 라인 전체가 드롭 시트 열기 버튼([[ADR-038]]). 파티 스테퍼는 아래 줄이라 탭 충돌 없음. */}
+        {/* 이름 라인 전체가 드롭 시트 열기 버튼. 파티 스테퍼는 아래 줄이라 탭 충돌 없음. */}
         <Pressable
           role="button"
           onPress={() => setIsDropSheetOpen(true)}
           aria-label={`${row.boss} ${row.difficulty} 드롭 아이템 관리`}
-          // h-6 고정([[ADR-049]]) — 자식(난이도 뱃지 20px · 보스명 20px · 드롭 지시자 24px) 중
+          // h-6 고정 — 자식(난이도 뱃지 20px · 보스명 20px · 드롭 지시자 24px) 중
           // 최대값에 높이를 맡기면 지시자 종류가 바뀔 때마다 행 높이가 흔들린다.
           className="h-6 w-full flex-row items-center gap-1.5"
         >
@@ -231,7 +231,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
             </Pressable>
           </View>
 
-          {/* **[[ADR-124]]·[[ADR-032]]: 금액을 모르는 행에 0 을 쓰지 않는다.** 미완료는 아직 안
+          {/* **·: 금액을 모르는 행에 0 을 쓰지 않는다.** 미완료는 아직 안
               잡은 것이고 가격 미확정은 참조 데이터에 값이 없는 것이라, 둘 다 "0메소 벌었다"가
               아니다. 그래서 그 자리는 금액이 아니라 배지가 선다. */}
           {!row.isComplete ? (
@@ -245,7 +245,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           ) : // 아이템이 섞이면 **금액 아래에 칩이 선다** — 그 존재가 곧 "이 숫자는 결정석만이
           // 아니다"라는 표시이고, 동시에 내역을 여는 버튼이다(사용자 지정 2026-08-10). 값을 매긴
           // 아이템이 없으면 **래퍼조차 만들지 않는다** — 그 행의 트리가 종전과 달라지지 않아야
-          // "보스 행은 건드리지 않았다"가 말뿐이 아니게 된다([[ADR-094]] 결정 4).
+          // "보스 행은 건드리지 않았다"가 말뿐이 아니게 된다.
           dropTotal === 0 ? (
             amount
           ) : (
@@ -287,7 +287,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           initialDrops={props.drops}
           onSave={(drops) => setBossDrops(row, drops)}
           onClose={() => setIsDropSheetOpen(false)}
-          // 기록한 자리에서 바로 값을 매긴다([[ADR-124]] 결정 6). 분배 기본값은 **이 행의
+          // 기록한 자리에서 바로 값을 매긴다. 분배 기본값은 **이 행의
           // 파티원 수**이고, 저장하면 그 값과 독립한다(결정 2) — 나중에 파티원 수를 고쳐도
           // 이미 매긴 금액이 흔들리지 않는다.
           pricing={{

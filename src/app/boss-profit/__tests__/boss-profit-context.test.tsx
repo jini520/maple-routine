@@ -38,7 +38,7 @@ describe('useBossProfitContext', () => {
   })
 })
 
-// [[ADR-087]] 정정 1 — 라벨·네비게이션은 `periodKey` 를, 카운트업 identity 는 `loadedPeriodKey` 를
+// 라벨·네비게이션은 `periodKey` 를, 카운트업 identity 는 `loadedPeriodKey` 를
 // 쓴다. 둘이 갈리는 순간(사용자가 기간을 눌러 데이터가 오기 전)이 실재하므로 필드가 둘이다.
 describe('loaded* 는 목표 기간과 갈릴 수 있다', () => {
   it('목표 기간이 먼저 바뀌어도 그려지는 데이터의 기간은 따로 남는다', async () => {

@@ -1,5 +1,5 @@
 /**
- * 지출 시트의 **갈래별 폼이 함께 쓰는 것**([[ADR-178]] 결정 3).
+ * 지출 시트의 **갈래별 폼이 함께 쓰는 것**.
  *
  * 머리줄 · 갈래 칩 · 캐릭터 줄 · 시세 줄 · 저장·삭제 줄은 갈래가 안 바꾼다. 세 벌로 갈리면 한쪽만
  * 고쳐지는 자리가 생기므로 한 벌만 둔다.
@@ -31,7 +31,7 @@ export interface SpendFormProps {
   onClose: () => void
   /** 시트 껍데기의 스크롤을 되돌릴 열쇠 — 목록 갈래가 단계를 오갈 때 부른다. */
   onScrollKeyChange: (key: string) => void
-  /** 머리에서 날짜를 바꾼다([[ADR-178]] 정정 6·7) — 수입 시트와 같은 계약이다. */
+  /** 머리에서 날짜를 바꾼다 — 수입 시트와 같은 계약이다. */
   onDateChange: (next: string) => void
 }
 
@@ -47,7 +47,7 @@ export interface SpendFormProps {
 export function SpendHeader(props: {
   title: string
   dateKey: string
-  /** 머리에서 날짜를 바꾼다([[ADR-178]] 정정 7) — 수입 시트와 **같은 부품**이다. */
+  /** 머리에서 날짜를 바꾼다 — 수입 시트와 **같은 부품**이다. */
   onDateChange: (next: string) => void
   /** 있으면 제목이 **되돌아가는 누르개**가 된다. 수정 모드에는 되돌아갈 곳이 없어 안 준다. */
   onBack?: () => void
@@ -115,7 +115,7 @@ function CategoryChip(props: {
 }
 
 /**
- * 갈래 칩 — **고르는 화면에만 선다**([[ADR-173]] 결정 8).
+ * 갈래 칩 — **고르는 화면에만 선다**.
  *
  * 둘째 화면에서는 머리의 `‹` 가 이미 되돌아가는 길이다. **수정 모드에도 없다**(결정 15) —
  * 갈래를 바꾸면 그 기록은 «다른 것» 이 되고, 무엇이었는지는 제목이 이미 말한다.
@@ -126,7 +126,7 @@ export function CategoryChips(props: {
 }): React.JSX.Element {
   return (
     // **테스트가 이 줄을 지목할 수 있어야 한다** — 「기타」가 갈래 이름이자 「아이템 구매」의
-    // 종류 이름이라([[ADR-173]] 정정 1) 라벨만으로는 둘이 안 갈린다.
+    // 종류 이름이라 라벨만으로는 둘이 안 갈린다.
     <View testID="spend-sheet-categories" className="flex-row flex-wrap gap-1.5">
       {SPEND_CATEGORIES.map((each) => (
         <CategoryChip
@@ -141,7 +141,7 @@ export function CategoryChips(props: {
 }
 
 /**
- * 캐릭터 줄 — **기본은 「선택 안함」**([[ADR-166]] 결정 3, 사용자 지정 2026-08-26).
+ * 캐릭터 줄 — **기본은 「선택 안함」**(사용자 지정 2026-08-26).
  *
  * **고를 것을 고르는 화면(타일 격자)에는 안 선다** — 거기엔 아직 적을 기록이 없다.
  */
@@ -162,7 +162,7 @@ export function CharacterRow(props: {
 }
 
 /**
- * 시세 줄 — 메포를 쓸 때만 선다([[ADR-166]] 정정 2 ③).
+ * 시세 줄 — 메포를 쓸 때만 선다.
  *
  * 시세는 네 자리라 **OS 숫자 키패드로 충분하다**. `*` 는 «지금 비었다» 가 아니라 «이 칸은 반드시
  * 있어야 한다» 를 말하므로 채워도 안 사라진다.
@@ -197,10 +197,10 @@ export function RateRow(props: {
 }
 
 /**
- * 저장 · 삭제 줄 — 큰 숫자 **바로 아래**다([[ADR-173]] 결정 1).
+ * 저장 · 삭제 줄 — 큰 숫자 **바로 아래**다.
  *
  * **타일 격자에는 저장이 없다** — 거기엔 셀 자리 자체가 없다. 그래서 `showSave` 를 받는다.
- * 삭제는 **버튼처럼 안 생겼다**([[ADR-171]] 결정 3) — 이미 두 번 눌러야 여기까지 온다.
+ * 삭제는 **버튼처럼 안 생겼다** — 이미 두 번 눌러야 여기까지 온다.
  */
 export function SaveRow(props: {
   showSave: boolean

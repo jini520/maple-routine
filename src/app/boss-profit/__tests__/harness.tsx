@@ -5,7 +5,7 @@
 // 사라진다), 안전영역(시트가 읽는다), 그리고 **보스 수익 컨텍스트**(`useBossProfitContext` 는
 // 밖에서 부르면 던진다 — 그것이 그 컨텍스트의 계약이다).
 //
-// 픽스처의 보스 이름·난이도는 **`weekly-bosses.json` 에서 뽑는다**([[ADR-006]] — 게임 레퍼런스
+// 픽스처의 보스 이름·난이도는 **`weekly-bosses.json` 에서 뽑는다**(— 게임 레퍼런스
 // 값을 테스트가 베끼면 두 벌이 된다).
 import { render } from '@testing-library/react-native'
 import type { ReactElement, ReactNode } from 'react'

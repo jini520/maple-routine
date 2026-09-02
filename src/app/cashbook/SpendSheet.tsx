@@ -1,5 +1,5 @@
 /**
- * 지출 기록 시트의 **껍데기**([[ADR-178]] 결정 3).
+ * 지출 기록 시트의 **껍데기**.
  *
  * ## 여기 남는 것은 **갈래가 안 바꾸는 것**뿐이다
  *
@@ -12,7 +12,7 @@
  *
  * ## 자기가 어느 갈래인지 모른다
  *
- * 수입/지출 세그먼트가 없다. 갈래는 **펼침판이 시트 밖에서** 갈랐고([[ADR-170]] 결정 6) 이 시트는
+ * 수입/지출 세그먼트가 없다. 갈래는 **펼침판이 시트 밖에서** 갈랐고 이 시트는
  * 「지출」이라는 사실조차 프롭으로 받지 않는다 — 애초에 지출만 그리는 컴포넌트다.
  *
  * ## 날짜는 고르지 않는다
@@ -36,18 +36,18 @@ export interface SpendSheetProps {
   /** 어느 날에 적히나 — 캘린더에서 고른 날이다. */
   dateKey: string
   /**
-   * 고를 수 있는 캐릭터([[ADR-166]] 결정 3) — 화면이 읽어서 넘긴다(시트는 `storage/` 를 모른다).
+   * 고를 수 있는 캐릭터 — 화면이 읽어서 넘긴다(시트는 `storage/` 를 모른다).
    * 비어 있으면 고르개에 「선택 안함」 하나만 선다.
    */
   characters: ReadonlyArray<{ ocid: string; name: string }>
   /**
-   * 고칠 기록. 있으면 **수정 모드**다([[ADR-171]] 결정 2) — 머리와 버튼 글자가 갈리고 삭제가 선다.
+   * 고칠 기록. 있으면 **수정 모드**다 — 머리와 버튼 글자가 갈리고 삭제가 선다.
    * 화면을 따로 만들지 않는 이유는 **입력 규칙이 한 벌이어야** 하기 때문이다.
    */
   editing?: SpendRecord
   onDelete?: () => void | Promise<void>
   /**
-   * 마지막으로 쓴 메소마켓 시세([[ADR-166]] 결정 5). 필수 칸이 매번 비어 있으면 입력이 막히므로
+   * 마지막으로 쓴 메소마켓 시세. 필수 칸이 매번 비어 있으면 입력이 막히므로
    * «기억한다» 가 여기서 결정적이다. `null` 이면 아직 한 번도 안 넣었다는 뜻이다.
    */
   lastPointRate: number | null
@@ -66,7 +66,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
    */
   const [scrollKey, setScrollKey] = useState('')
   /**
-   * **어느 날에 적히나** — 시트를 연 날로 시작하고 머리에서 바꾼다([[ADR-178]] 정정 6·7).
+   * **어느 날에 적히나** — 시트를 연 날로 시작하고 머리에서 바꾼다.
    *
    * 갈래 폼은 `key={category}` 로만 다시 심기므로, 날짜를 바꿔도 **친 것이 안 사라진다**.
    */
@@ -98,7 +98,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
       resetScrollKey={`${category}|${scrollKey}`}
     >
       <View className="gap-3 px-4 pb-2">
-        {/* **`key` 가 곧 «갈래를 옮기면 값이 사라진다»** 다([[ADR-178]] 결정 3) — 갈래가 바뀌면
+        {/* **`key` 가 곧 «갈래를 옮기면 값이 사라진다»** 다 — 갈래가 바뀌면
             리액트가 폼을 새로 심는다. 지울 것을 손으로 세지 않는다. */}
         <SpendForm key={category} category={category} formProps={formProps} />
       </View>

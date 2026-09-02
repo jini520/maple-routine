@@ -1,4 +1,4 @@
-// 격자 **껍데기**([[ADR-147]] 결정 2·3·5 · 정정 1). 위젯 내용은 각자의 테스트가 보므로 이 파일이
+// 격자 **껍데기**. 위젯 내용은 각자의 테스트가 보므로 이 파일이
 // 묻는 것은 하나다 — «타일 여덟이 적어 둔 좌표에 서는가».
 //
 // ── 값을 손으로 적지 않는 자리 ──────────────────────────────────────────────────────
@@ -22,7 +22,7 @@ import { WidgetGrid } from '../WidgetGrid'
 jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
 
 const navigate = jest.fn()
-// 층이 스택이 된 뒤로 «그룹 층으로 되돌리기» 는 액션이다([[ADR-167]]) — 화면이 이것도 부른다.
+// 층이 스택이 된 뒤로 «그룹 층으로 되돌리기» 는 액션이다 — 화면이 이것도 부른다.
 const dispatch = jest.fn()
 const mockedUseScreenNavigation = jest.mocked(useScreenNavigation)
 
@@ -77,7 +77,7 @@ describe('WidgetGrid — 좌표 배치', () => {
       top: 행,
       width: 2 * metrics.colWidthPx + metrics.gapPx,
     })
-    // (0,2)~(0,4) 4×auto **셋** — 그 아래는 2x1 둘 · 4x1 이 이어 붙는다([[ADR-183]]).
+    // (0,2)~(0,4) 4×auto **셋** — 그 아래는 2x1 둘 · 4x1 이 이어 붙는다.
     expect(스타일(타일(view, 'shared-contents'))).toMatchObject({ left: 0, top: 2 * 행 })
     expect(스타일(타일(view, 'remaining-schedule'))).toMatchObject({ left: 0, top: 3 * 행 })
     expect(스타일(타일(view, 'weekly-boss-profit'))).toMatchObject({ left: 0, top: 4 * 행 })
@@ -96,9 +96,9 @@ describe('WidgetGrid — 좌표 배치', () => {
 
 })
 
-describe('`h: auto` 타일 ([[ADR-147]] 정정 1)', () => {
+describe('`h: auto` 타일', () => {
   // 선언한 `h` 는 **최소 높이**다 — 실측이 오기 전에도 그 값으로 자리를 잡아야 격자가 첫 프레임부터
-  // 맞는다(측정을 기다리면 한 프레임 접혀 있다 — [[ADR-132]] 정정 30 과 같은 이유).
+  // 맞는다(측정을 기다리면 한 프레임 접혀 있다 — 과 같은 이유).
   it('측정 전에는 nominal 최소 높이로 그린다', async () => {
     const view = await 격자()
     const 카드 = within(타일(view, 'remaining-schedule')).getByTestId('widget-remaining-schedule')
@@ -156,7 +156,7 @@ describe('`h: auto` 타일 ([[ADR-147]] 정정 1)', () => {
     })
   })
 
-  // auto 타일이 **셋**이 됐다([[ADR-147]] 정정 32 · [[ADR-183]]) — `w === 4` 라 옆 칸이 없어 초과분이
+  // auto 타일이 **셋**이 됐다 — `w === 4` 라 옆 칸이 없어 초과분이
   // **누적**된다.
   // 이 규칙이 깨지면 두 타일이 서로를 덮는다.
   it('auto 타일 둘의 초과분이 누적된다 — 위의 것이 아래 것을 민다', async () => {
@@ -184,7 +184,7 @@ describe('`h: auto` 타일 ([[ADR-147]] 정정 1)', () => {
 
   // 계산으로 나오는 값을 재면 첫 프레임에 0 이고, 그 0 이 그대로 좌표가 된다.
   // 재는 것은 **auto 타일의 내용 상자 하나뿐**이다 — 나머지는 계산으로 나오고, 재면 첫 프레임에
-  // 0 이라 타일이 한 프레임 접혀 있다([[ADR-132]] 정정 30 과 같은 이유).
+  // 0 이라 타일이 한 프레임 접혀 있다(과 같은 이유).
   it('auto 타일의 «내용» 만 잰다 — 타일 래퍼도 다른 타일도 안 잰다', async () => {
     const view = await 격자()
 
@@ -200,8 +200,8 @@ describe('`h: auto` 타일 ([[ADR-147]] 정정 1)', () => {
   })
 })
 
-describe('타일 탭 ([[ADR-147]] 결정 5)', () => {
-  // 여기서 «광고 게이트도 탄다» 를 함께 물었다. [[ADR-150]] 이 전면광고를 걷으며 지웠고, 되살아나는
+describe('타일 탭', () => {
+  // 여기서 «광고 게이트도 탄다» 를 함께 물었다. 이 전면광고를 걷으며 지웠고, 되살아나는
   // 것은 `src/__tests__/interstitial-policy.test.ts` 가 소스로 막는다.
   it('`target` 이 있는 타일은 그 탭으로 보낸다', async () => {
     const view = await 격자()
@@ -211,7 +211,7 @@ describe('타일 탭 ([[ADR-147]] 결정 5)', () => {
     })
 
     // **한 층 내려가는 이동이다** — 보스 수익은 수익·지출 그룹의 하위라 그 층 화면을 연다.
-    // 그것이 곧 스택 한 단이므로 ← 도, 가장자리 스와이프도 today 로 돌아온다([[ADR-167]] 결정 6).
+    // 그것이 곧 스택 한 단이므로 ← 도, 가장자리 스와이프도 today 로 돌아온다.
     expect(navigate).toHaveBeenCalledWith('Main', {
       screen: 'LedgerSubs',
       params: { screen: 'Profit' },
@@ -219,11 +219,11 @@ describe('타일 탭 ([[ADR-147]] 결정 5)', () => {
   })
 
   // 증상이었던 것: 위젯으로 보스 수익에 간 뒤 ← 를 누르면 today 가 아니라 **가계부가 활성인 채로**
-  // 그룹 행만 열렸다. 타일 탭이 «한 층 내려가는 이동» 인데 바 기록을 안 남겨, ← 가 [[ADR-132]]
+  // 그룹 행만 열렸다. 타일 탭이 «한 층 내려가는 이동» 인데 바 기록을 안 남겨, ← 가
   // 결정 5 의 안전망(«기록이 없으면 페이지는 그대로 두고 그룹 행만 연다»)에 걸린 것이다.
   //
   // 지금은 **적을 기록이 없다.** 이동 자체가 스택 한 단이라 되돌아갈 자리가 구조로 실재하고,
-  // 그 안전망도 함께 사라졌다([[ADR-167]] 결정 4·6). 그래서 이 결함을 막는 것은 위 한 줄이다.
+  // 그 안전망도 함께 사라졌다. 그래서 이 결함을 막는 것은 위 한 줄이다.
 
   it('하위가 없는 그룹으로 보내면 그룹 층 안의 옆걸음이다 — 층이 안 쌓인다', async () => {
     const view = await 격자()

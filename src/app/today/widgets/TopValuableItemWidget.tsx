@@ -1,14 +1,14 @@
 /**
- * 위젯 4 — **이번 주 최고가 아이템**([[ADR-147]] 결정 9 · 정정 5·11·13).
+ * 위젯 4 — **이번 주 최고가 아이템**.
  *
  * ## 「가장 비싼」은 시세가 아니라 **기록된 판매가** 순위다
  *
  * 앱은 아이템 시세표를 갖고 있지 않다 — 금액은 사용자가 입력한 실제 판매가에서만 온다
- * ([[ADR-124]]). 그래서 이 타일의 뜻은 정확히 «이번 주에 기록된 판매가 중 가장 큰 것» 이고,
+ * . 그래서 이 타일의 뜻은 정확히 «이번 주에 기록된 판매가 중 가장 큰 것» 이고,
  * **가격을 아직 안 적은 드롭은 순위에 없다**(뷰모델이 이미 거른다 — 값을 모르는 것을 가장 싼 것으로
  * 단정하는 일이다).
  *
- * ## 미입력 건수를 여기서 말하지 않는다 ([[ADR-147]] 정정 5)
+ * ## 미입력 건수를 여기서 말하지 않는다
  *
  * 이 타일이 «없음» 을 말하는 가장 흔한 이유가 «안 팔았거나 안 적었다» 라서 그 답을 옆 타일(위젯 7)이
  * 들고 있는데, **옆 타일이 들고 있으면 이 타일이 또 들 이유가 없다.** 0건 문구도 한 줄뿐이다.
@@ -36,7 +36,7 @@ import type { WidgetHeight } from '../../../lib/today/widget-layout'
 import type { PricedDropView } from '../view-model'
 import type { WidgetProps } from './types'
 
-/** 「N건이 값을 기다립니다」를 여기 두지 않는다 — 건수는 위젯 7의 몫이다([[ADR-147]] 정정 5). */
+/** 「N건이 값을 기다립니다」를 여기 두지 않는다 — 건수는 위젯 7의 몫이다. */
 const EMPTY_NOTE = '가격이 입력된 아이템이 없습니다'
 
 const TITLE = '이번 주 최고가'
@@ -77,7 +77,7 @@ function Icon(props: { drop: PricedDropView; sizePx: number }): React.JSX.Elemen
   )
 }
 
-/** `12.0억 메소` — 1x1 만 단위를 버린다([[ADR-147]] 정정 11). */
+/** `12.0억 메소` — 1x1 만 단위를 버린다. */
 function Amount(props: { meso: number; sizeClass: string; unit: boolean }): React.JSX.Element {
   return (
     <Text fixed testID="top-item-amount" numberOfLines={1} className="text-text">
@@ -112,7 +112,7 @@ function ItemName(props: { drop: PricedDropView; sizeClass: string }): React.JSX
 /**
  * «2인 분배» — **4x2 에만 선다.**
  *
- * 금액이 분배 후 실수령액이라([[ADR-147]] 정정 21) 사용자가 입력한 총액보다 작다. 그 차이를
+ * 금액이 분배 후 실수령액이라 사용자가 입력한 총액보다 작다. 그 차이를
  * 설명하지 않으면 «숫자가 틀렸다» 로 읽힌다 — 실제로 이 위젯이 두 번 그렇게 신고됐다.
  *
  * 그런데 **2x2 아래로는 이 한 줄을 넣을 폭이 없다**(158px 안에 아이콘 40 + 금액 78 이 이미 들어가
@@ -174,7 +174,7 @@ function RestList(props: { rest: PricedDropView[] }): React.JSX.Element | null {
  *
  * 글자만 남기면 자리가 무너져 «타일이 비었다» 가 아니라 «타일이 고장났다» 로 보인다. 아이콘이
  * 서던 자리에 **같은 크기의 빈 슬롯**을 세우면 값이 들어왔을 때 자리가 안 움직이고, 지금이
- * «들어올 곳이 있는데 아직 없다» 로 읽힌다([[ADR-060]] 의 빈 상태 태도).
+ * «들어올 곳이 있는데 아직 없다» 로 읽힌다(의 빈 상태 태도).
  *
  * 슬롯은 점선이다 — 실선 상자는 «내용이 있는 무엇» 으로 보이고, 점선은 그 자리가 비어 있다는 관례다.
  */
@@ -269,7 +269,7 @@ export function TopValuableItemWidget({ w, h, data }: WidgetProps): React.JSX.El
     return (
       <View testID="widget-top-valuable-item" className="flex-1 justify-center gap-2 p-3">
         <Text fixed className="text-10 font-bold text-text-muted">{TITLE}</Text>
-        {/* 아이콘을 40 으로 줄여 `12.0억 메소` 가 **한 줄**에 들어간다([[ADR-147]] 정정 11). */}
+        {/* 아이콘을 40 으로 줄여 `12.0억 메소` 가 **한 줄**에 들어간다. */}
         <View className="flex-row items-center gap-2">
           <Icon drop={view.top} sizePx={40} />
           <View className="min-w-0 flex-1">

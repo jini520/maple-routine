@@ -44,7 +44,7 @@ describe('SettingsLinkRow', () => {
     expect(openURL).toHaveBeenCalledWith('https://mapleroutine.store/privacy')
   })
 
-  // [[ADR-118]] 결정 4: chevron 은 "다음 화면이 열린다"는 약속이다 — 앱을 떠나는 행이 그것을 쓰면
+  // : chevron 은 "다음 화면이 열린다"는 약속이다 — 앱을 떠나는 행이 그것을 쓰면
   // 같은 약속을 하고 다른 일을 한다.
   it('chevron이 아니라 외부 링크 아이콘을 보여준다', async () => {
     const view = await renderAtom(<SettingsLinkRow label="개인정보 처리방침" href="https://x" />)

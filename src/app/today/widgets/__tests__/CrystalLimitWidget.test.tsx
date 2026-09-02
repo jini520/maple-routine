@@ -1,8 +1,8 @@
-// 주간 결정석 판매 한도 위젯([[ADR-054]] · [[ADR-147]] 결정 6 · 정정 13·15). 이 파일이 지키는 것 넷 —
+// 주간 결정석 판매 한도 위젯. 이 파일이 지키는 것 넷 —
 // ① **분모가 참조 데이터에서 온다**(리터럴이 아니다 — 값을 바꾸면 화면이 따라 바뀐다)
-// ② **월드별 한도를 합치지 않는다**(90은 계정이 아니라 월드마다 각각이다, [[ADR-054]] 결정 1)
+// ② **월드별 한도를 합치지 않는다**(90은 계정이 아니라 월드마다 각각이다)
 // ③ **넘치는 월드는 크기마다 다르게 접힌다**(4x1 은 셋까지 · 2x2 는 «외 N개 월드»)
-// ④ **집계할 것이 없어도 타일은 자기 자리에서 말한다**([[ADR-147]] 결정 5 — 위젯은 사라지지 않는다)
+// ④ **집계할 것이 없어도 타일은 자기 자리에서 말한다**(— 위젯은 사라지지 않는다)
 //
 // **네 크기를 전부 스냅샷으로 찍는다** — v1 배치가 쓰는 것은 2x1 하나뿐이라(정정 13) 나머지 셋은
 // 아무도 안 부르는 렌더 분기이고, 그 분기의 유일한 안전망이 스냅샷이다.
@@ -34,7 +34,7 @@ async function 위젯(
   return renderAtom(<CrystalLimitWidget w={값.w} h={값.h} data={data} />)
 }
 
-describe('분모는 참조 데이터에서 온다 ([[ADR-006]] · [[ADR-054]] 결정 2)', () => {
+describe('분모는 참조 데이터에서 온다', () => {
   it.each(Object.entries(크기))('%s — 링이 `n/한도` 를 그린다', async (_이름, 값) => {
     const { getByText } = await 위젯(값)
 
@@ -61,7 +61,7 @@ describe('분모는 참조 데이터에서 온다 ([[ADR-006]] · [[ADR-054]] �
   })
 })
 
-describe('남은 개수 ([[ADR-054]] 결정 1 — 이월되지 않는다)', () => {
+describe('남은 개수 ( — 이월되지 않는다)', () => {
   it('한도에서 소진량을 뺀 값이다', async () => {
     const { getByTestId } = await 위젯(크기['2x1'])
 
@@ -70,7 +70,7 @@ describe('남은 개수 ([[ADR-054]] 결정 1 — 이월되지 않는다)', () =
     )
   })
 
-  // 추적 밖 캐릭터가 있으면 소진량이 한도를 넘겨 보일 수 있다([[ADR-054]] 알려진 한계 1).
+  // 추적 밖 캐릭터가 있으면 소진량이 한도를 넘겨 보일 수 있다(알려진 한계 1).
   it('한도를 넘겨도 «−n개 남음» 이라고 하지 않는다', async () => {
     const { getByTestId } = await 위젯(
       크기['2x1'],
@@ -81,7 +81,7 @@ describe('남은 개수 ([[ADR-054]] 결정 1 — 이월되지 않는다)', () =
   })
 })
 
-describe('월드별 한도를 합치지 않는다 ([[ADR-054]] 결정 1)', () => {
+describe('월드별 한도를 합치지 않는다', () => {
   it('4x1 은 월드를 나란히 세우고 각자의 분모를 그대로 둔다', async () => {
     const { getAllByTestId, getByText, queryByText } = await 위젯(
       크기['4x1'],
@@ -91,7 +91,7 @@ describe('월드별 한도를 합치지 않는다 ([[ADR-054]] 결정 1)', () =>
     expect(getAllByTestId('crystal-world-cell')).toHaveLength(2)
     expect(getByText('스카니아')).toBeTruthy()
     expect(getByText('루나')).toBeTruthy()
-    // 보스 수익 화면은 좁은 한 줄이라 `n / 180` 으로 합치지만([[ADR-054]] 정정 2) 여기서는 안 합친다.
+    // 보스 수익 화면은 좁은 한 줄이라 `n / 180` 으로 합치지만 여기서는 안 합친다.
     expect(getAllByTestId('crystal-ring-denominator')).toHaveLength(2)
     expect(queryByText(`/${WEEKLY_CRYSTAL_SALE_LIMIT * 2}`)).toBeNull()
   })
@@ -104,7 +104,7 @@ describe('월드별 한도를 합치지 않는다 ([[ADR-054]] 결정 1)', () =>
   })
 })
 
-describe('넘치는 월드 ([[ADR-147]] — 타일 안에서 스크롤하지 않는다)', () => {
+describe('넘치는 월드 ( — 타일 안에서 스크롤하지 않는다)', () => {
   it('4x1 은 셋까지 세운다', async () => {
     const { getAllByTestId, queryByText } = await 위젯(
       크기['4x1'],
@@ -164,7 +164,7 @@ describe('링', () => {
     expect(queryByTestId('progress-ring-fill')).toBeNull()
   })
 
-  it('분자와 분모가 글자보다 낮은 줄 높이로 붙는다 ([[ADR-147]] 정정 15)', async () => {
+  it('분자와 분모가 글자보다 낮은 줄 높이로 붙는다', async () => {
     const { getByTestId } = await 위젯(크기['2x1'])
 
     for (const testID of ['crystal-ring-numerator', 'crystal-ring-denominator']) {
@@ -174,7 +174,7 @@ describe('링', () => {
   })
 })
 
-describe('집계할 것이 없을 때 ([[ADR-147]] 결정 5)', () => {
+describe('집계할 것이 없을 때', () => {
   it.each(Object.entries(크기))('%s — 자기 타일 안에서 그 사실만 말한다', async (_이름, 값) => {
     const { getByTestId, queryByTestId } = await 위젯(값, 빈_뷰모델)
 

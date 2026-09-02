@@ -1,4 +1,4 @@
-// 드롭 획득 히스토리([[ADR-071]]) — 웹판(500줄)의 명세를 읽어 다시 쓴 것.
+// 드롭 획득 히스토리 — 웹판(500줄)의 명세를 읽어 다시 쓴 것.
 //
 // 갈린 것 넷
 // ① **라우터가 없다** — 빈 상태 CTA 는 `goBack` 이 불렸는가로 본다(웹은 location 프로브였다).
@@ -41,12 +41,12 @@ const mockedNavigation = jest.mocked(useScreenNavigation)
 const load = jest.fn()
 const goBack = jest.fn()
 
-// 보스 이름은 게임 레퍼런스 데이터에서 뽑는다([[ADR-006]]).
+// 보스 이름은 게임 레퍼런스 데이터에서 뽑는다.
 const 주간보스 = weeklyBossesData.weekly[0].boss
 const PERIOD = '2026-07-09'
 
 /**
- * 문장에는 줄바꿈 금지용 zero-width 문자가 섞여 있다([[ADR-071]] 결정 8) — 사람이 읽는 문장으로
+ * 문장에는 줄바꿈 금지용 zero-width 문자가 섞여 있다 — 사람이 읽는 문장으로
  * 비교한다. 웹은 `textContent` 한 줄이면 됐지만 RN 트리에는 그런 프로퍼티가 없어 직접 모은다.
  */
 function 문장(node: AtomElement): string {
@@ -145,7 +145,7 @@ describe('DropHistoryScreen — 셸과 조회', () => {
 
     expect(getByTestId('screen-scroll')).toBeTruthy()
     expect(flattenStyle(getByTestId('page-header').props.style).paddingTop).toBe(
-      // [[ADR-139]] — 여백을 더하지 않는다. 이 화면은 공용 셸을 안 쓰고 같은 값을 자기 파일에서
+      // 여백을 더하지 않는다. 이 화면은 공용 셸을 안 쓰고 같은 값을 자기 파일에서
       // 내므로, 공용 셸만 고치고 여기를 빠뜨리면 두 화면의 제목 높이가 갈린다.
       테스트_안전영역.insets.top,
     )
@@ -165,7 +165,7 @@ describe('DropHistoryScreen — 셸과 조회', () => {
     expect(getByTestId('loading-state')).toBeTruthy()
   })
 
-  it('실패하면 빈 상태가 아니라 실패 상태와 다시 시도를 보여준다 ([[ADR-062]])', async () => {
+  it('실패하면 빈 상태가 아니라 실패 상태와 다시 시도를 보여준다', async () => {
     mockStore({ status: 'failed' })
     const { getByTestId, getByText, queryByTestId } = await renderHistory()
 
@@ -199,9 +199,9 @@ describe('DropHistoryScreen — 셸과 조회', () => {
   })
 })
 
-// 사용자 지정 형식([[ADR-071]] 결정 8) — 한 기록이 목록에서 큰 비중을 차지하지 않도록 아이콘·난이도
+// 사용자 지정 형식 — 한 기록이 목록에서 큰 비중을 차지하지 않도록 아이콘·난이도
 // 배지·2단 레이아웃 없이 한 줄 문장으로만 둔다.
-describe('DropHistoryScreen — 기록 한 줄 ([[ADR-071]] 결정 8)', () => {
+describe('DropHistoryScreen — 기록 한 줄', () => {
   it('고가가 아닌 기록은 한 줄 문장으로만 보여준다', async () => {
     mockStore({
       groups: [
@@ -236,7 +236,7 @@ describe('DropHistoryScreen — 기록 한 줄 ([[ADR-071]] 결정 8)', () => {
     expect(inline.color).toBe('#6b4e00')
   })
 
-  // [[ADR-071]] 결정 8 이 **명시적으로 뺀 것** — 줄간격을 좁히면 배경 블록끼리 붙어 서로를 잡아먹는다.
+  //  이 **명시적으로 뺀 것** — 줄간격을 좁히면 배경 블록끼리 붙어 서로를 잡아먹는다.
   it('고가 줄에도 `.valuable-drop-row` 배경은 쓰지 않는다', async () => {
     mockStore({ groups: [{ periodKey: PERIOD, cycle: 'weekly', records: [기록()] }] })
     const { queryByTestId } = await renderHistory()
@@ -289,7 +289,7 @@ describe('DropHistoryScreen — 기록 한 줄 ([[ADR-071]] 결정 8)', () => {
     expect(문장(getByTestId('drop-history-entry'))).toBe(
       `메이플영웅님이 ${주간보스}(하드)에서 홍옥의 보스 반지 상자를 열어 리스트레인트 링 3레벨을 획득하였습니다.`,
     )
-    // 상자명도 아이템과 같은 굵기로 강조한다 — "무엇을 열었는지"가 정보의 절반이다([[ADR-010]]).
+    // 상자명도 아이템과 같은 굵기로 강조한다 — "무엇을 열었는지"가 정보의 절반이다.
     // 단 골드(고가)는 결과에만 붙는다 — 둘 다 골드면 어느 쪽이 값인지 흐려진다.
     expect(flattenStyle(getByText('홍옥의 보스 반지 상자').props.style).fontWeight).toBe('600')
     expect(queryByTestId('valuable-drop-inline')).toBeNull()
@@ -314,7 +314,7 @@ describe('DropHistoryScreen — 기록 한 줄 ([[ADR-071]] 결정 8)', () => {
   })
 })
 
-describe('DropHistoryScreen — 기간 구분 ([[ADR-071]] 결정 5)', () => {
+describe('DropHistoryScreen — 기간 구분', () => {
   it('기간 라벨 아래에 날짜 구간을 작게 붙이고 양옆에 헤어라인을 둔다', async () => {
     mockStore({ groups: [{ periodKey: PERIOD, cycle: 'weekly', records: [기록()] }] })
     const { getByTestId, getAllByTestId } = await renderHistory()
@@ -357,14 +357,14 @@ describe('DropHistoryScreen — 기간 구분 ([[ADR-071]] 결정 5)', () => {
   })
 })
 
-// [[ADR-071]] 결정 4·9 — 제목이 슬픔 단계를 말하고, 아래 줄이 "마지막 에픽 빔! {기간} · {아이템}" 이다.
-describe('DropHistoryScreen — 미획득 요약 ([[ADR-071]] 결정 9)', () => {
+// 제목이 슬픔 단계를 말하고, 아래 줄이 "마지막 에픽 빔! {기간} · {아이템}" 이다.
+describe('DropHistoryScreen — 미획득 요약', () => {
   function 가뭄(weeksSince: number, records = [기록()]) {
     return { periodKey: PERIOD, cycle: 'weekly' as const, weeksSince, records }
   }
 
   /**
-   * 그 단계의 문구 풀 — 단계마다 여럿이고 화면이 마운트당 하나를 무작위로 고른다([[ADR-147]] 정정 6).
+   * 그 단계의 문구 풀 — 단계마다 여럿이고 화면이 마운트당 하나를 무작위로 고른다.
    * 그래서 화면 테스트는 문구를 단정하지 않고 "그 단계의 풀에 있는가"만 본다(단계 자체는 접근성
    * 이름이 말한다).
    */
@@ -389,7 +389,7 @@ describe('DropHistoryScreen — 미획득 요약 ([[ADR-071]] 결정 9)', () => 
   })
 
   // 문구는 사용자 지정(2026-08-01·2026-08-17) — **전 단계가 풀**이라 표는 문구를 담지 않고 풀 소속만
-  // 본다([[ADR-147]] 정정 6). **한 케이스에서 네 번 렌더하지 않는다** — RNTL 14 는 한 케이스에 렌더가
+  // 본다. **한 케이스에서 네 번 렌더하지 않는다** — RNTL 14 는 한 케이스에 렌더가
   // 셋을 넘기면 그 뒤가 빈 화면으로 떨어진다(step 2 가 실측해 적어 둔 함정, 여기서 다시 밟았다).
   it.each([
     [0, '#f7d00d', 0],
@@ -411,7 +411,7 @@ describe('DropHistoryScreen — 미획득 요약 ([[ADR-071]] 결정 9)', () => 
     const leaf = getByTestId('valuable-drought-leaf', { includeHiddenElements: true })
     expect(flattenStyle(leaf.props.style).transform).toEqual([{ rotate: `${rotate}deg` }])
     // 잎 색은 테마 토큰이 아니라 고정 hex 다 — "골드 → 무채색 → 회청색" 한 줄기라 테마마다
-    // 갈리면 의미를 잃는다([[ADR-045]] 와 같은 사정).
+    // 갈리면 의미를 잃는다(와 같은 사정).
     expect(잎색(leaf)).toMatchObject({ payload: processColor(color) })
   })
 
