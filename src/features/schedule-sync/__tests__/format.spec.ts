@@ -145,7 +145,7 @@ describe('formatStaleRosterError', () => {
     }
   })
 
-  // 회귀 가드: 이 문자열은 화면(CharacterTrackingPicker·ContentCharacterStep)에 하드코딩된 값과
+  // 회귀 가드: 이 문자열은 화면(ContentCharacterStep)에 하드코딩된 값과
   // 정확히 같아야 한다. 이 phase가 바꾸는 것은 401뿐임이 이 단언으로 증명된다.
   it('network의 문구는 화면 하드코딩과 한 글자도 다르지 않다', () => {
     expect(formatStaleRosterError({ kind: 'network' }).message).toBe('목록이 최신이 아닙니다')

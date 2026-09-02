@@ -32,7 +32,6 @@
 | 화면 | `app/settings/SettingsAboutScreen.tsx` | 앱 정보. 버전 · 업데이트 확인 |
 | 화면 | `app/settings/SettingsPrivacyScreen.tsx` | 개인정보 처리방침. `WebView` |
 | 화면 | `components/organisms/CharacterManage/` | `CharacterManageBody` · `use-character-manage`. 온보딩과 공유한다 |
-| 화면 | `components/organisms/CharacterTrackingPicker/` | 후보·선택됨 목록 |
 | 행 | `app/settings/SettingsRow.tsx` · `SettingsLinkRow.tsx` | 누르는 행 둘. 아래 [행 규격](#행-규격) |
 | 행 | `app/settings/row-class.ts` | `SETTINGS_ROW_CLASS`. 골격 한 곳 |
 | 모달 | `app/settings/ThemeModal.tsx` · `ThemeSelector.tsx` | 테마 고르기 |

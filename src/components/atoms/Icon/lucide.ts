@@ -104,7 +104,7 @@ export const ArrowDownIcon = withIconInterop(ArrowDown)
 export const ArrowLeftIcon = withIconInterop(ArrowLeft)
 /** 직전 기간 대비 **증가** — 보스 수익 증감 칩([[ADR-087]] 결정 5). */
 export const ArrowUpIcon = withIconInterop(ArrowUp)
-/** 조회 불가 캐릭터 — `CharacterTrackingGrid`. */
+/** 조회 불가 캐릭터 — 보스 수익 `CharacterIssue`(영구 이슈 표식). */
 export const BanIcon = withIconInterop(Ban)
 /** 안내가 하나도 없을 때 — `SettingsFeatureGuideListScreen` 빈 상태([[ADR-060]]). */
 export const BookOpenIcon = withIconInterop(BookOpen)
@@ -205,7 +205,7 @@ export const SignalIcon = withIconInterop(Signal)
 export const SlidersHorizontalIcon = withIconInterop(SlidersHorizontal)
 /** 고가 드롭 반짝임 — `ValuableDropBadge` · 업데이트 완료 안내 `UpdatePromptModal`(updated). */
 export const SparklesIcon = withIconInterop(Sparkles)
-/** 즐겨찾기(추적 중) 표식 — `CharacterTrackingGrid`. */
+/** 대표 캐릭터 표식 — `CharacterRow/RepresentativeStar`([[ADR-144]] 결정 4). */
 export const StarIcon = withIconInterop(Star)
 /** 스토어 업데이트 필요 — `UpdatePromptModal`(store-required). */
 export const StoreIcon = withIconInterop(Store)
