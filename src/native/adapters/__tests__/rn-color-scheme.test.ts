@@ -16,18 +16,17 @@ describe('rnColorSchemePort', () => {
     expect(rnColorSchemePort.get()).toBe(expected)
   })
 
-  // `Appearance.getColorScheme` 은 답을 모를 때 `null` 을 준다(네이티브 Appearance 모듈이 없거나
-  // OS가 판정을 안 준 경우. `Appearance.js:76-91`). 모르는 것을 '다크'로 읽으면 **저장된 테마가 없는
-  // 첫 실행이 통째로 다크로 열린다.** Capacitor 구현이 `matchMedia` 부재에 라이트로 폴백한 것과 같은
-  // 판단이다.
+  // `Appearance.getColorScheme` 은 답을 모를 때 `null` 을 준다. 네이티브 Appearance 모듈이
+  // 없거나 OS 가 판정을 안 준 경우다. 모르는 것을 다크로 읽으면 저장된 테마가 없는 첫 실행이
+  // 통째로 다크로 열린다.
   it.each([[null], [undefined]])('OS 판정을 못 하면(%p) 라이트로 폴백한다', (osValue) => {
     jest.spyOn(Appearance, 'getColorScheme').mockReturnValue(osValue)
 
     expect(rnColorSchemePort.get()).toBe('light')
   })
 
-  // 포트가 동기인 것은 우연이 아니라 계약이다(`ports.ts:29`). 테마 복원이 첫 페인트 전에 끝나야
-  // 라이트 기본값이 한 프레임 새지 않는다.
+  // 포트가 동기인 것은 우연이 아니라 계약이다. 테마 복원이 첫 페인트 전에 끝나야 라이트
+  // 기본값이 한 프레임 새지 않는다.
   it('동기다. Promise 를 돌려주지 않는다', () => {
     jest.spyOn(Appearance, 'getColorScheme').mockReturnValue('dark')
 

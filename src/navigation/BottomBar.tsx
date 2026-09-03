@@ -141,7 +141,7 @@ interface ShadowLayer {
  * 옮기면서 두 값이 번역된다. 그대로 옮기면 다른 그림자가 된다.
  *
  * - 블러는 두 배다. `boxShadow` 의 반경은 CSS 정의이고 RN 의 iOS 구현이 그것을
- *   `shadowRadius = blurRadius / 2` 로 되돌린다(`RCTBoxShadow.mm`). 그래서 여기서 ×2 로 낸다.
+ *   `shadowRadius = blurRadius / 2` 로 되돌린다. 그래서 여기서 ×2 로 낸다.
  * - 알파는 미리 곱한다. iOS 는 `shadowColor` 의 알파와 `shadowOpacity` 를 곱하는데
  *   `boxShadow` 는 색의 알파를 그대로 쓴다. 곱을 여기서 한 번 해 두면 실효값이 안 변한다.
  */

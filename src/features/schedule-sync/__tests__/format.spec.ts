@@ -135,10 +135,7 @@ describe('formatStaleRosterError', () => {
     }
   })
 
-  // 문구를 여기서 못 박는다. 예전에는 화면 둘이 '목록이 최신이 아닙니다'를 하드코딩하고 있어
-  // 아래에 `화면과 한 글자도 다르지 않다`는 별도 가드가 있었는데 로 그 자리가
-  // `CharacterManageBody` 하나가 되면서 화면이 이 함수를 부르게 됐다. 맞출 상대가 없어져
-  // 그 가드를 지웠고, 문구를 지키는 것은 이제 이 단언이다.
+  // 문구를 여기서 못 박는다. 화면이 이 함수를 부르므로 맞출 상대가 따로 없다.
   it('network 계열 3종은 현행 문구 + 다시 시도를 유지한다', () => {
     for (const kind of ['network', 'periodOutOfRange', 'notCollected'] as const) {
       const copy = formatStaleRosterError({ kind })

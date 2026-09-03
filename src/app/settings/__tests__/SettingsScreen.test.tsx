@@ -400,8 +400,8 @@ describe('SettingsScreen: 캐릭터 관리', () => {
     expect(textsIn(rowOf(view, '캐릭터 관리'))).toEqual(['캐릭터 관리', '0', '개'])
   })
 
-  // 모달이 아니라 **화면 push** 다. 그래서 로스터 조회·저장이 이 화면을 떠났다.
-  // 여기 남은 것은 **누르면 그리로 간다** 하나다.
+  // 모달이 아니라 화면 push 다. 로스터 조회·저장은 그 화면이 갖고, 여기 남은 것은 누르면
+  // 그리로 간다 하나다.
   it('행을 누르면 캐릭터 관리 화면을 민다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
 

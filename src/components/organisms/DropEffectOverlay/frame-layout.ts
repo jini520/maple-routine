@@ -1,9 +1,9 @@
 /**
  * 스프라이트 프레임 한 장을 화면 어디에 얼마나 크게 놓을지 내는 계산.
  *
- * CSS `transform` 문자열이 아니라 **레이아웃 값**(`left` · `top` · `width` · `height`)으로 낸다.
- * 퍼센트나 `transformOrigin` 처럼 되는지 확실치 않은 스타일에 기대면 조용히 안 그려지는 사례를
- * 반복해 겪었다. 계산은 곱셈 두 번이고 안 그려질 자리가 없다.
+ * CSS `transform` 문자열이 아니라 레이아웃 값(`left` · `top` · `width` · `height`)으로 낸다.
+ * 퍼센트나 `transformOrigin` 은 되는지 확실치 않아 조용히 안 그려질 수 있다. 계산은 곱셈 두
+ * 번이고 안 그려질 자리가 없다.
  *
  * ```
  * left = -originX * scale,  top = -originY * scale,  size = 비트맵 크기 * scale
@@ -11,8 +11,8 @@
  *
  * 비트맵 크기를 인자로 받는 것은 origin 이 그 프레임 좌표계의 점이라 되밀 거리를 구하려면 크기가
  * 필요해서다. RN 의 `<Image>` 는 명시 크기가 없으면 0 이고, 번들 에셋의 크기는
- * `Image.resolveAssetSource` 가 준다. 그 조회는 컴포넌트가 해서 여기로 넘긴다. 이 파일이 순수해야
- * 검사할 수 있다.
+ * `Image.resolveAssetSource` 가 준다. 그 조회는 컴포넌트가 해서 여기로 넘긴다. 이 파일이
+ * 순수해야 검사할 수 있다.
  */
 
 import { DROP_EFFECT_FRAMES } from './drop-effect-layout'

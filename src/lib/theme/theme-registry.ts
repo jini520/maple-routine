@@ -1,12 +1,10 @@
 /**
  * 테마 레지스트리. 등록된 테마 목록과 CSS 커스텀 프로퍼티 생성.
  *
- * `storage/` 와 `features/` 가 함께 쓰므로 `lib/` 에 둔다(다른 JSON 접근자와 같은 자리).
+ * `storage/` 와 `features/` 가 함께 쓰므로 `lib/` 에 둔다.
  *
- * `src/data/job-themes.json` 이 단일 진실 공급원이다. 테마 이름 목록·라이트/다크 판정·CSS 변수가
- * 모두 이 파일에서 나온다. 전에는 `index.css` 에 테마별 `:root[data-theme]` 블록을 손으로 적고
- * `ThemeName` 유니온·타입 가드·`THEME_OPTIONS` 2곳·`DARK_THEMES` Set 을 따로 동기화해야 했는데,
- * 하나라도 빠뜨리면 조용히 어긋났다. 이제 테마 추가는 **JSON 한 블록**이다.
+ * `src/data/job-themes.json` 이 단일 진실 공급원이다. 테마 이름 목록·라이트/다크 판정·CSS
+ * 변수가 모두 이 파일에서 나온다. 테마 추가는 JSON 한 블록이다.
  */
 
 import jobThemesData from '../../data/job-themes.json'

@@ -8,8 +8,7 @@
  */
 
 /**
- * `@capacitor-community/sqlite` 가 DB 이름 뒤에 붙이는 접미사. 양 플랫폼 공통이다
- * (`CapacitorSQLite.java:346` · `Database.swift:69`).
+ * `@capacitor-community/sqlite` 가 DB 이름 뒤에 붙이는 접미사. 양 플랫폼 공통이다.
  *
  * DB 이름이 `boss_profit` 이므로 파일명은 `boss_profitSQLite.db` 다. `boss_profit.db` 가 아니다.
  */
@@ -20,21 +19,17 @@ export type SqlitePlatform = 'ios' | 'android'
 
 /**
  * 플러그인이 DB 파일을 두는 디렉터리. 값은 네이티브가 알려주므로(op-sqlite 의
- * `ANDROID_DATABASE_PATH`·`IOS_DOCUMENT_PATH` 상수) 이 모듈은 **어느 쪽을 고르는지**만 정한다.
+ * `ANDROID_DATABASE_PATH`·`IOS_DOCUMENT_PATH` 상수) 이 모듈은 어느 쪽을 고르는지만 정한다.
  *
- * | | 디렉터리 | 근거 |
- * |---|---|---|
- * | Android | `<앱 데이터>/databases` | `UtilsFile.java:23`. `context.getDatabasePath(dbName)` |
- * | iOS | `<앱 컨테이너>/Documents` | 아래 주석 |
+ * | | 디렉터리 |
+ * |---|---|
+ * | Android | `<앱 데이터>/databases` |
+ * | iOS | `<앱 컨테이너>/Documents` |
  *
- * ⚠️ **iOS 는 `docs/migration/data.md` 가 적어 둔 `Library/CapacitorDatabase` 가 아니다.**
- * 그 값은 플러그인 README 가 `iosDatabaseLocation` 을 *설정하는 예시*로 든 경로이고,
- * 그 설정이 없다. 설정이 없으면 플러그인은
- * `"Documents"` 를 쓰고(`CapacitorSQLite.swift:98`) `UtilsFile.getFolderURL` 이 그것을
- * `NSDocumentDirectory` 로 푼다(`UtilsFile.swift:161-162`). 즉 `<앱 컨테이너>/Documents` 다.
+ * iOS 는 `Library/CapacitorDatabase` 가 아니다. 그 값은 `iosDatabaseLocation` 을 설정했을 때의
+ * 경로이고 이 앱에는 그 설정이 없다. 설정이 없으면 플러그인이 `"Documents"` 를 쓴다.
  *
- * 근거는 플러그인 소스지만 **실기기 앱 컨테이너를 열어 확인한 것은 아니다**. data.md
- * 미검증 항목 에 남아 있고, 2단계(실기기 검증)에서 반드시 눈으로 확인해야 한다.
+ * 근거는 플러그인 소스지만 실기기 앱 컨테이너를 열어 확인한 것은 아니다.
  */
 export interface CapacitorDatabaseDirectories {
   android: string

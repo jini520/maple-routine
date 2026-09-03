@@ -81,18 +81,15 @@ export const rnLiveUpdatePort: LiveUpdatePort = {
   },
 
   /**
-   * **정당한 no-op 이다**. 이 플랫폼에 그 개념이 없다(`not-implemented.ts` 가 세운 갈림 중
-   * 해야 하는데 아직 안 했다 가 아니라 이 플랫폼에 개념이 없다 쪽).
+   * 정당한 no-op 이다. 이 플랫폼에 그 개념이 없다.
    *
-   * @capgo 는 번들이 스스로 *"나 정상이다"* 라고 말해 줘야 했고, 안 말하면 `appReadyTimeout` 뒤에
-   * 직전 번들로 되돌렸다(→ 가 그 호출 자리를 `AppShell`
-   * 마운트로 옮겼다). `expo-updates` 에는 그 신호를 받는 JS API 가 **없다**. 네이티브
-   * `ErrorRecovery` 가 부팅 크래시를 직접 관찰해 되돌린다(`expo-updates@57.0.13` 전수 확인:
-   * `src/Updates.ts` 의 내보내기에 `notifyAppReady` 가 없다).
+   * `expo-updates` 에는 번들이 스스로 정상이라고 말하는 JS API 가 없다. 네이티브
+   * `ErrorRecovery` 가 부팅 크래시를 직접 관찰해 되돌린다(`expo-updates@57.0.13` 의 내보내기에
+   * `notifyAppReady` 가 없다).
    *
-   * 그래서 가 **지키려던 것**(*"렌더가 던지는 번들이 SUCCESS 로 찍혀 영구히
-   * 박히면 안 된다"*)은 살아 있고, 그것을 지키는 주체가 우리 코드에서 런타임으로 넘어갔다.
-   * 호출부(`AppShell`)는 그대로 두는 것이 맞다. 프로토콜이 또 바뀌면 그 자리가 다시 필요하다.
+   * 지켜야 할 것(렌더가 던지는 번들이 성공으로 찍혀 영구히 박히면 안 된다)은 살아 있고 그것을
+   * 지키는 주체가 런타임으로 넘어갔다. 호출부(`AppShell`)는 그대로 둔다. 프로토콜이 또 바뀌면
+   * 그 자리가 다시 필요하다.
    */
   async notifyAppReady() {},
 
@@ -108,8 +105,7 @@ export const rnLiveUpdatePort: LiveUpdatePort = {
     return appVersion ?? packageJson.version
   },
 
-  // 채널이 하나로 줄었다. 의 빌드 시점 분리는 사이드로딩 베타를
-  // 위한 것이었고 App Store 출시로 용도가 끝났다. 표시값은 남는다(관찰용 UI).
+  // 채널이 하나다. 빌드 시점 분리는 사이드로딩 베타를 위한 것이었다. 표시값은 관찰용 UI 로 남는다.
   getChannel() {
     return Updates.channel ?? 'production'
   },

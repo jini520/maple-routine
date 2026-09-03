@@ -61,8 +61,8 @@ function createDbConnection(database: string, encryption: string): SqliteDbConne
       return await opened().execute(statement)
     },
     // 호출부(`db.ts` 의 `ensureColumn`·`storage/boss-*.ts`)가 `result.values` 를 읽는다.
-    // op-sqlite 는 같은 것을 `rows` 로 주고 행이 없으면 빈 배열이다(`cpp/utils.cpp:191`).
-    // 이 한 줄이 어긋나면 조회가 조용히 빈 결과가 되고, 화면에는 기록이 사라진 것으로 보인다.
+    // op-sqlite 는 같은 것을 `rows` 로 주고 행이 없으면 빈 배열이다. 이 한 줄이 어긋나면
+    // 조회가 조용히 빈 결과가 되고 화면에는 기록이 사라진 것으로 보인다.
     async query(statement, values) {
       const { rows } = await opened().execute(statement, params(values))
       return { values: rows }

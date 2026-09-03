@@ -17,28 +17,24 @@ import {
 import type { LocalNotificationRequest } from '../ports'
 
 /**
- * Capacitor 시절 채널 ID 를 **그대로 쓴다**(`LocalNotificationManager.java:48`
- * `DEFAULT_NOTIFICATION_CHANNEL_ID = "default"`).
+ * Capacitor 시절 채널 ID 를 그대로 쓴다.
  *
- * 새 ID 를 만들면 사용자 알림 설정에 채널이 하나 더 생기고, 옛 채널에 걸려 있는 Capacitor 시절
- * 예약은 그대로 남는다(아래 `rn-notifications.ts` 주석). 같은 ID 를 쓰면 업데이트로 올라온 기기는
- * **이미 있는 채널을 그대로 재사용**한다. Android 는 만들어진 채널의 중요도·소리를 이후
- * `createNotificationChannel` 로 바꾸지 않으므로 옛 동작이 문자 그대로 보존된다.
+ * 새 ID 를 만들면 사용자 알림 설정에 채널이 하나 더 생기고, 옛 채널에 걸려 있는 예약은 그대로
+ * 남는다. 같은 ID 를 쓰면 업데이트로 올라온 기기는 이미 있는 채널을 그대로 재사용한다. Android
+ * 는 만들어진 채널의 중요도·소리를 이후 `createNotificationChannel` 로 바꾸지 않는다.
  */
 export const NOTIFICATION_CHANNEL_ID = 'default'
 
 /**
- * 새로 설치한 기기에서 만들어질 채널. 값은 Capacitor 가 만들던 것과 맞춘다
- * (`LocalNotificationManager.java:103-124`. 이름/설명 `"Default"`, `IMPORTANCE_DEFAULT`).
+ * 새로 설치한 기기에서 만들어질 채널. 이름·설명은 `"Default"`, 중요도는 `IMPORTANCE_DEFAULT` 다.
  *
- * **`sound: 'default'` 가 빠지면 무음 채널이 된다.** Android 의 `NotificationChannel` 은 생성자
- * 기본값이 시스템 기본 알림음이라 Capacitor 는 아무것도 안 해서 소리가 났지만, notifee 는
- * 반대로 *"기본값은 소리 없음, 시스템 기본음은 `'default'`"* 다(`NotificationAndroid.d.ts:101-107`).
- * 같은 "아무것도 안 함"이 두 라이브러리에서 반대 결과를 낸다.
+ * `sound: 'default'` 가 빠지면 무음 채널이 된다. Android 의 `NotificationChannel` 은 생성자
+ * 기본값이 시스템 기본 알림음이지만 notifee 는 기본값이 소리 없음이고 시스템 기본음이
+ * `'default'` 다. 같은 아무것도 안 함 이 두 라이브러리에서 반대 결과를 낸다.
  *
  * 나머지(lights·vibration·visibility)는 notifee 기본값을 그대로 둔다. Android 의
- * `NotificationChannel` 기본값과 정확히 대응시킬 수 없고(`VISIBILITY_NO_OVERRIDE` 는 notifee 에
- * 없다), 업데이트로 올라온 기기에서는 어차피 옛 채널이 이겨서 차이가 나타나지 않는다.
+ * `NotificationChannel` 기본값과 정확히 대응시킬 수 없고, 업데이트로 올라온 기기에서는 어차피
+ * 옛 채널이 이겨서 차이가 나타나지 않는다.
  */
 export const NOTIFICATION_CHANNEL: AndroidChannel = {
   id: NOTIFICATION_CHANNEL_ID,
@@ -74,15 +70,11 @@ export interface TriggerNotificationRequest {
 /**
  * `LocalNotificationRequest` → notifee `createTriggerNotification` 의 두 인자.
  *
- * **지난 시각은 예약하지 않고 던진다.** Capacitor 는 두 플랫폼이 서로 달랐다. iOS 는
- * *"Scheduled time must be \*after\* current time"* 으로 거절했고(`LocalNotificationsPlugin.swift:311-314`),
- * Android 는 지난 시각의 `AlarmManager` 알람이라 **즉시 발화**했다. 즉 보존할 "옛 동작"이 하나로
- * 있지도 않았다. 둘 중 즉시 발화를 고르지 않는 이유는 가 앱 실행 시 재예약을 전제하기
+ * 지난 시각은 예약하지 않고 던진다. 즉시 발화를 고르지 않는 것은 앱 실행 시 재예약을 전제하기
  * 때문이다. 시계가 조금만 어긋나도 재예약 한 번이 알림 무더기가 된다. 호출부의 계산 실수는
  * 사용자에게 알림으로 새어 나가는 대신 여기서 멈춘다.
  *
- * `now` 를 인자로 받는 것은 판정을 실기기 없이 검사하기 위해서다(notifee 도 안에서 같은 검사를
- * 자기 시계로 한 번 더 한다. `validateTrigger.js:38-42`).
+ * `now` 를 인자로 받는 것은 판정을 실기기 없이 검사하기 위해서다.
  */
 export function toTriggerNotification(
   request: LocalNotificationRequest,

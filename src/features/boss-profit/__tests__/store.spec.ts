@@ -2082,11 +2082,10 @@ describe('useBossProfitStore', () => {
       expect(maxInFlight).toBeGreaterThan(1)
     })
 
-    // 2026-07-17 실기기 재현: SQLite 커넥션이 stale하면 isPeriodChecked가 응답 없이 멈추고,
-    // periodKey 라벨만 "지난 주"로 바뀐 채 rows는 "이번 주" 값 그대로 남는(에러도 로딩 표시도 없는)
-    // 증상으로 나타났다. loadPeriod도 refresh와 동일하게 타임아웃 후 "체크 안 됨"으로 간주해
-    // 백필을 진행해야 한다(멈추지 않고 끝까지 진행되는지가 핵심. 고치기 전엔 아래 await promise가
-    // 영원히 끝나지 않았다).
+    // SQLite 커넥션이 stale 하면 isPeriodChecked 가 응답 없이 멈추고, periodKey 라벨만 지난 주로
+    // 바뀐 채 rows 는 이번 주 값 그대로 남는다. 에러도 로딩 표시도 없다. loadPeriod 도 refresh 와
+    // 같이 타임아웃 뒤 체크 안 됨 으로 간주해 백필을 진행해야 한다. 멈추지 않고 끝까지 진행되는
+    // 지가 핵심이다.
     it('goToPreviousPeriod: isPeriodChecked가 응답하지 않아도(hang) 타임아웃 후 백필을 진행해 멈추지 않는다', async () => {
       jest.useFakeTimers()
       try {

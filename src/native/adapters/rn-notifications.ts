@@ -24,9 +24,8 @@ import {
 } from './notification-request'
 
 /**
- * Capacitor 의 판정과 맞춘다. iOS `checkPermissions` 가 `.authorized`·`.ephemeral`·`.provisional`
- * 셋을 모두 `"granted"` 로 접었다(`LocalNotificationsPlugin.swift:138-139`). notifee 에 `ephemeral`
- * 은 없다. Android 는 `AUTHORIZED`/`DENIED` 둘뿐이라 이 함수가 그대로 맞다.
+ * 권한 판정. iOS 는 `.authorized`·`.provisional` 을 허용으로 접는다. notifee 에 `ephemeral` 은
+ * 없다. Android 는 `AUTHORIZED`/`DENIED` 둘뿐이라 이 함수가 그대로 맞다.
  */
 function isGranted(settings: NotificationSettings): boolean {
   return (
@@ -51,9 +50,8 @@ export const rnNotificationsPort: NotificationsPort = {
     await notifee.createChannel(NOTIFICATION_CHANNEL)
     await notifee.createTriggerNotification(notification, trigger)
   },
-  // `cancelTriggerNotification` 이 아니라 `cancelNotification` 이다. Capacitor 의 `cancel` 은
-  // 예약 취소와 **이미 떠 있는 알림 내리기**를 함께 했고(`LocalNotificationManager.java:399-409`)
-  // notifee 에서 그 둘을 함께 하는 것이 이쪽이다.
+  // `cancelTriggerNotification` 이 아니라 `cancelNotification` 이다. 예약 취소와 이미 떠 있는
+  // 알림 내리기를 함께 하는 것이 이쪽이다.
   async cancel(id) {
     await notifee.cancelNotification(toNotificationId(id))
   },

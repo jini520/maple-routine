@@ -158,8 +158,8 @@ describe('광고 단위 ID', () => {
     expect(mockAds[0].adUnitId).toBe(resolveInterstitialAdId(Platform.OS, true, PRODUCTION))
   })
 
-  // 여기가 이 파일에서 가장 중요한 계약이다. 실 ID를 안 넣고 릴리스 빌드를 만들면 광고가
-  // 아예 안 나간다. 예전에는 코드에 박힌 값으로 광고가 나갔다.
+  // 여기가 이 파일에서 가장 중요한 계약이다. 실 ID 를 안 넣고 릴리스 빌드를 만들면 광고가 아예
+  // 안 나간다. 코드에 박힌 값으로 나가지 않는다.
   it('실 ID 환경 변수가 없으면 SDK를 건드리지 않는다', async () => {
     setDevBundle(false)
 

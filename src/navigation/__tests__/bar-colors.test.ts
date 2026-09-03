@@ -37,8 +37,8 @@ describe('떠 있는 바의 색', () => {
     expect(THEMES.length).toBeGreaterThan(0)
   })
 
-  // **페이지와 바를 가르는 것은 색이 아니라 테두리다.** 한때 바탕을 어둡게 밀어 갈랐는데 그러면
-  // 그 위 글자가 안 읽힌다. 분리는 이 선이 지고, 바탕은 밝은 쪽에 남는다.
+  // 페이지와 바를 가르는 것은 색이 아니라 테두리다. 바탕을 어둡게 밀어 가르면 그 위 글자가 안
+  // 읽힌다. 분리는 이 선이 지고 바탕은 밝은 쪽에 남는다.
   it.each(THEMES)('%s: 테두리가 페이지 배경과 갈린다', (_name, theme) => {
     expect(contrast(resolveBarColors(theme).edge, theme.bg)).toBeGreaterThan(1.3)
   })

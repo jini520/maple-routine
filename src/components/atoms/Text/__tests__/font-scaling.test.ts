@@ -5,7 +5,7 @@
 // 만든다**는 구현 선택이 바뀌어도 초록으로 남는데, 그 선택이 곧 계약이다.
 import { FONT_SCALE_MAX, FONT_SCALE_MIN, fontScalingProps } from '../font-scaling'
 
-/** iOS 가 주는 12칸. `RCTUtils.mm:366` 의 하드코딩 표와 같은 값이다(맥락). */
+/** iOS 가 주는 12칸. OS 의 하드코딩 표와 같은 값이다. */
 const iOS_배수 = [
   0.823, 0.882, 0.941, 1.0, 1.118, 1.235, 1.353, 1.786, 2.143, 2.643, 3.143, 3.571,
 ]

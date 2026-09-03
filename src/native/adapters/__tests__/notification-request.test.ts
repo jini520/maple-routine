@@ -1,10 +1,10 @@
 // 순수 규칙. 채널 정의·ID 변환·예약 시각 판정. 셋 다 틀려도 타입 에러가 안 나고 예외도 안 나는
 // 종류라(무음 채널 / 취소 안 되는 알림 / 지난 시각 예약) 막는 것은 이 파일뿐이다.
 //
-// notifee 를 목으로 바꾸는 것은 이 모듈이 열거형 **값**(`AndroidImportance`·`TriggerType`)을 쓰기
-// 때문이다. 패키지 진입점은 import 시점에 네이티브 모듈을 잡아 jest 에서는 그냥 던진다
-// (`NotifeeNativeModule.js:32-38`). 열거형이 든 하위 모듈은 그 부작용이 없으므로 **진짜 정의를
-// 그대로 끌어온다**. 값을 손으로 베끼면 상상한 값을 검사하게 된다.
+// notifee 를 목으로 바꾸는 것은 이 모듈이 열거형 값(`AndroidImportance`·`TriggerType`)을 쓰기
+// 때문이다. 패키지 진입점은 import 시점에 네이티브 모듈을 잡아 jest 에서는 그냥 던진다. 열거형이
+// 든 하위 모듈은 그 부작용이 없으므로 진짜 정의를 그대로 끌어온다. 값을 손으로 베끼면 상상한
+// 값을 검사하게 된다.
 jest.mock('@notifee/react-native', () => ({
   __esModule: true,
   ...jest.requireActual('@notifee/react-native/dist/types/NotificationAndroid'),

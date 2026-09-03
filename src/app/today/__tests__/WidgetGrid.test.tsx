@@ -108,9 +108,9 @@ describe('`h: auto` 타일', () => {
     expect(스타일(카드 as AtomElement).height).toBeUndefined()
   })
 
-  // ⚠️ 한때 `onLayout` 이 **최소 높이를 진 상자**(`Card` 를 감싼 래퍼)에 붙어 있었다. 그러면 재는
-  // 값이 `max(minHeight, 내용)` 이고 그것이 다시 다음 `minHeight` 가 되어 **늘기만 하고 줄지 않는다**.
-  // 아코디언을 한 번 펼쳤다 접으면 접힌 내용 위로 펼쳤을 때의 높이가 그대로 남았다.
+  // `onLayout` 이 최소 높이를 진 상자(`Card` 를 감싼 래퍼)에 붙으면 재는 값이 `max(minHeight,
+  // 내용)` 이고 그것이 다시 다음 `minHeight` 가 되어 늘기만 하고 줄지 않는다. 아코디언을 한 번
+  // 펼쳤다 접으면 접힌 내용 위로 펼쳤을 때의 높이가 그대로 남는다.
   it('실측이 줄면 타일도 줄어든다. 늘기만 하는 래칫이 아니다', async () => {
     const view = await 격자()
     const 측정상자 = () => view.getByTestId('widget-measure-remaining-schedule')

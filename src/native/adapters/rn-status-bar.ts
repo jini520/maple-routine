@@ -23,8 +23,8 @@ import type { StatusBarPort } from '../ports'
  * (다크모드 기기에서 라이트 테마를 쓰면 밝은 배경에 밝은 글자). Capacitor 도 `Style.Default` 를
  * 쓰지 않았다.
  *
- * 플랫폼 가드가 없는 것은 `setBarStyle` 이 iOS·Android 를 자기가 가르기 때문이다
- * (`StatusBar.js:289-297`). app-rn 이 빌드하는 타깃도 그 둘뿐이다.
+ * 플랫폼 가드가 없는 것은 `setBarStyle` 이 iOS·Android 를 자기가 가르기 때문이다. 이 앱이
+ * 빌드하는 타깃도 그 둘뿐이다.
  */
 export const rnStatusBarPort: StatusBarPort = {
   // RN 쪽은 동기 API 다. 포트가 Promise 인 것은 Capacitor 브릿지 사정이었고, 그 차이는 여기서

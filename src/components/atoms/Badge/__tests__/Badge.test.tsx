@@ -247,8 +247,8 @@ describe('높이는 variant 를 안 탄다', () => {
 })
 
 describe('글자 배수', () => {
-  // 높이를 못박지 않는다. 상자에 높이만 박으면 평면 배지는 `<Text>` 하나라
-  // 글자가 위로 쏠린다(today 위젯의 CLEAR 배지에서 났다). 여백이 높이를 만들면 그 일이 없다.
+  // 높이를 못박지 않는다. 상자에 높이만 박으면 평면 배지는 `<Text>` 하나라 글자가 위로 쏠린다.
+  // 여백이 높이를 만들면 그 일이 없다.
   it('어느 크기도 높이를 못박지 않는다', async () => {
     for (const size of ['default', 'mini'] as const) {
       const 평면 = flattenStyle(

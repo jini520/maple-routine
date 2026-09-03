@@ -98,17 +98,14 @@ describe('MapleSweepSpinner', () => {
     expect(first.props.name).not.toEqual(second.props.name)
   })
 
-  // ★ 회귀 가드. **띠가 마스크에 지워지던 결함.**
+  // 회귀 가드. 띠가 마스크에 지워지던 결함.
   //
-  // 이식 당시 마스크는 `maskUnits`·`maskContentUnits` 를 **둘 다 `objectBoundingBox`** 로 두고
-  // 램프를 `<Rect x=0 y=0 width=1 height=1>` 로 적었다. 그런데 `react-native-svg`(15.15.4)는
-  // **`maskContentUnits` 를 렌더 시 읽지 않는다**. 안드로이드 `RenderableView.java` 도 iOS
-  // `RNSVGRenderable.mm` 도 `maskUnits` 만 본다. 그래서 그 램프가 **1×1 픽셀**로 그려지고,
-  // 마스크가 사실상 투명해져 `DST_IN` 이 띠를 통째로 지웠다. 실기기에서 **띠가 한 번도 보인 적이
-  // 없었다**(두 플랫폼 다, 2026-08-18).
+  // `react-native-svg` 는 `maskContentUnits` 를 렌더 시 읽지 않고 `maskUnits` 만 본다. 마스크를
+  // 둘 다 `objectBoundingBox` 로 두고 램프를 `<Rect x=0 y=0 width=1 height=1>` 로 적으면 그
+  // 램프가 1×1 픽셀로 그려지고, 마스크가 사실상 투명해져 `DST_IN` 이 띠를 통째로 지운다.
   //
-  // 그 실패는 **렌더 트리에서 보이지 않는다**(마스크도 램프도 **있다**). 보이는 것은 **좌표의 단위**뿐이라
-  // 여기서 그것을 못 박는다: 램프는 user space 이고 띠와 **같은 크기**여야 한다.
+  // 그 실패는 렌더 트리에서 안 보인다. 마스크도 램프도 있다. 보이는 것은 좌표의 단위뿐이라
+  // 여기서 그것을 못 박는다. 램프는 user space 이고 띠와 같은 크기여야 한다.
   it('마스크 램프는 user space 좌표다. 1×1 이면 라이브러리가 띠를 통째로 지운다', async () => {
     const tree = (await renderAtom(<MapleSweepSpinner />)).toJSON()
 

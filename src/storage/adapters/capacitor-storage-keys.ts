@@ -14,10 +14,9 @@
  */
 
 /**
- * iOS `UserDefaults` 키 접두사. **점(`.`)까지가 접두사다.**
+ * iOS `UserDefaults` 키 접두사. 점(`.`)까지가 접두사다.
  *
- * 원본은 `Preferences.swift` 의 `group + "."` 이고, 그룹 기본값이 `CapacitorStorage` 다
- * (그룹을 바꾼 적이 없다).
+ * 그룹 기본값이 `CapacitorStorage` 이고 그룹을 바꾼 적이 없다.
  */
 export const IOS_KEY_PREFIX = 'CapacitorStorage.'
 

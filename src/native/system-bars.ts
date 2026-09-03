@@ -1,7 +1,7 @@
 import { getSystemBarsPort } from './ports'
 
-// 하단 시스템 내비게이션 바(제스처 핸들/3버튼)의 글리프 명암을 앱 표면 밝기에 맞춘다. 배경색은
-// 앱이 edge-to-edge로 직접 그리므로 여기서 다루지 않는다(SystemBarsPlugin.java 주석 참고).
+// 하단 시스템 내비게이션 바(제스처 핸들·3버튼)의 글리프 명암을 앱 표면 밝기에 맞춘다. 배경색은
+// 앱이 edge-to-edge 로 직접 그리므로 여기서 다루지 않는다.
 export async function setNavigationBarStyle(isDarkTheme: boolean): Promise<void> {
   await getSystemBarsPort().setNavigationBarStyle(isDarkTheme)
 }

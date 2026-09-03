@@ -303,9 +303,8 @@ describe(' 안전영역 페이드', () => {
     expect(bottom[bottom.length - 1]).toBe(0)
   })
 
-  // 마스크 상자는 **스크롤포트와 같은 상자**여야 한다. 마스크가 화면을 덮고 스크롤 뷰가 그 안에
-  // 있어야 페이드 구간이 안전영역과 맞는다(둘이 어긋나면 페이드가 엉뚱한 자리에 뜬다.
-  // `PageHeader` 가 **띠가 엉뚱한 자리에 있다** 로 반려된 그 실패다).
+  // 마스크 상자는 스크롤포트와 같은 상자여야 한다. 마스크가 화면을 덮고 스크롤 뷰가 그 안에
+  // 있어야 페이드 구간이 안전영역과 맞는다. 둘이 어긋나면 페이드가 엉뚱한 자리에 뜬다.
   it('스크롤 뷰가 마스크 **안**에 있다', async () => {
     const { getByTestId } = await renderOverlay(
       <ScreenScroll header={<View testID="header" />}>{목록}</ScreenScroll>,
