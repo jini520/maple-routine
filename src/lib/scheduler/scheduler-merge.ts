@@ -65,7 +65,7 @@ function mergeSection(
 
   // character 범위: stale 여부와 무관하게 항상 항목(이름) 단위로 병합한다(정정).
   // fresh에 있으면 그대로 쓰고, fresh에 없는데 previous에 있으면 진행값을 리셋해 복원한다.
-  // Nexon 응답이 섹션을 통째로 비우는 대신 개별 항목만 누락시키는 경우가 실측으로 확인돼
+  // Nexon 응답이 섹션을 통째로 비우는 대신 개별 항목만 누락시키는 경우가 확인돼
   // (2026-07-23), "섹션이 stale이 아니면 fresh만 신뢰"하던 이전 방식으로는 그 누락을 못 잡았다.
   for (const item of freshItems) {
     if (getShareScope(item.name) === 'character') {

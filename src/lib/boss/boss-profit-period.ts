@@ -12,10 +12,9 @@ const KST_OFFSET_MS = 9 * 60 * 60 * 1000
 export const MIN_SCHEDULER_DATE = '2026-07-01'
 
 /**
- * 스케줄러 API `date` 파라미터가 실제로 받아들이는 롤링 조회 가능 일수(사용자 실측,
- * 2026-07-22. 오늘(2026-07-22) 기준 2026-07-08(오늘-14일)은 조회되지 않고 2026-07-09(오늘-13일)까지만
- * 조회된다). MIN_SCHEDULER_DATE(API 자체가 존재하기 시작한 고정 하한선)와는 별개로, 매일
- * 하루씩 앞으로 밀리는 제약이다.
+ * 스케줄러 API `date` 파라미터가 실제로 받아들이는 롤링 조회 가능 일수. 오늘−14일은 조회되지
+ * 않고 오늘−13일까지만 조회된다. `MIN_SCHEDULER_DATE`(API 자체가 존재하기 시작한 고정
+ * 하한선)와는 별개로, 매일 하루씩 앞으로 밀리는 제약이다.
  */
 const ROLLING_QUERY_WINDOW_DAYS = 13
 
@@ -294,7 +293,7 @@ export function isPeriodQueryable(cycle: BossCycle, periodKey: string, now: Date
  *
  * `outOfRange` 가 여기 있는 이유: 우리가 계산한 조회 구간 안인데도 API가 400 `OPENAPI00004` 로
  * 거부하는 경우가 있다. 그 날짜에 이 캐릭터가 지금 월드에 없었거나(월드 리프) 휴면이었던 경우다
- * (실측, 구분 불가). 날짜만 보면 알 수 없으므로 **응답이 알려준 사실**로
+ * (구분 불가). 날짜만 보면 알 수 없으므로 **응답이 알려준 사실**로
  * 상태를 정한다. 다만 아직 영속하지 않으므로 다음 방문에 한 번 더 호출한다(후속 과제).
  */
 export type PeriodQueryOutcome = 'notCollected' | 'outOfRange' | 'failed'

@@ -60,7 +60,7 @@ function svgTextContent(node: AtomElement): string {
  * `Text` 아래의 `TextPath` 노드. `startOffset`·`href` 는 여기 붙는다.
  *
  * **`textAnchor` 는 여기 없다.** `react-native-svg` 가 그것을 `Text` 의 `font` 객체로 접어 넣는다
- * (실측. `TextPath` 에 주면 조용히 버려진다). 그래서 아래 케이스가 둘을 다른 노드에서 읽는다.
+ * (`TextPath` 에 주면 조용히 버려진다). 그래서 아래 케이스가 둘을 다른 노드에서 읽는다.
  */
 function textPathOf(node: AtomElement): AtomElement {
   const found = node.children.find(

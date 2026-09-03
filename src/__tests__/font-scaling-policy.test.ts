@@ -144,12 +144,12 @@ function localImportTargets(file: string): string[] {
   const source = readFileSync(file, 'utf8')
   const out: string[] = []
   for (const match of source.matchAll(/import\s+([^'";]*?)\s*from\s*'(\.[^']+)'/g)) {
- const target = resolveModule(join(dirname(file), match[2]))
- if (target === null) continue
- if (/index\.tsx?$/.test(target)) out.push(...barrelTargets(target, namedSpecifiers(match[1])))
- else out.push(target)
- }
- return out
+    const target = resolveModule(join(dirname(file), match[2]))
+    if (target === null) continue
+    if (/index\.tsx?$/.test(target)) out.push(...barrelTargets(target, namedSpecifiers(match[1])))
+    else out.push(target)
+  }
+  return out
 }
 
 /**
@@ -159,93 +159,93 @@ function localImportTargets(file: string): string[] {
  * 섞여 있어(`'../Text/Text'`· `'../../atoms'`) 문자열로는 한쪽만 잡힌다.
  */
 function textRenderingComponentFiles(): string[] {
- return sourceFiles(join(SRC, 'components')).filter(
- (file) => !ATOMS.includes(file) && localImportTargets(file).some((t) => ATOMS.includes(t)),
-)
+  return sourceFiles(join(SRC, 'components')).filter(
+    (file) => !ATOMS.includes(file) && localImportTargets(file).some((t) => ATOMS.includes(t)),
+  )
 }
 
 describe('글자는 atom 한 곳에서만 나온다', () => {
- it('훑을 파일이 있다. 스캐너가 빈손이면 아래 단언이 전부 무의미하다', () => {
- expect(FILES.length).toBeGreaterThan(100)
- })
+  it('훑을 파일이 있다. 스캐너가 빈손이면 아래 단언이 전부 무의미하다', () => {
+    expect(FILES.length).toBeGreaterThan(100)
+  })
 
- it('`react-native` 에서 `Text`·`TextInput` 을 직접 가져오는 곳은 atom 뿐이다', () => {
- const offenders = FILES.filter((file) => !ATOMS.includes(file))
-.filter((file) =>
- reactNativeImportNames(readFileSync(file, 'utf8')).some(
- (name) => name === 'Text' || name === 'TextInput',
-),
-)
-.map((file) => relative(SRC, file))
+  it('`react-native` 에서 `Text`·`TextInput` 을 직접 가져오는 곳은 atom 뿐이다', () => {
+    const offenders = FILES.filter((file) => !ATOMS.includes(file))
+      .filter((file) =>
+        reactNativeImportNames(readFileSync(file, 'utf8')).some(
+          (name) => name === 'Text' || name === 'TextInput',
+        ),
+      )
+      .map((file) => relative(SRC, file))
 
- expect(offenders).toEqual([])
- })
+    expect(offenders).toEqual([])
+  })
 
- it('atom 은 원본을 가져온다. 예외가 실제로 그 자리에 있다', () => {
- const imported = ATOMS.flatMap((atom) => reactNativeImportNames(readFileSync(atom, 'utf8')))
+  it('atom 은 원본을 가져온다. 예외가 실제로 그 자리에 있다', () => {
+    const imported = ATOMS.flatMap((atom) => reactNativeImportNames(readFileSync(atom, 'utf8')))
 
- expect(imported).toEqual(expect.arrayContaining(['Text', 'TextInput']))
- })
+    expect(imported).toEqual(expect.arrayContaining(['Text', 'TextInput']))
+  })
 
- /**
+  /**
   * `BottomSheetTextInput` 은 아무 데도 안 쓴다.
-  *
+   *
   * 그 부품은 RN 의 입력이 아니라 `react-native-gesture-handler` 의 것을 감싼 것이고, 그 층이
   * 안드로이드 한글 조합을 깬다. 지금은 아톰이 RN 입력을 그대로 그리고 시트가 보는 값
   * (`animatedKeyboardState.target`)만 직접 채운다.
-  *
+   *
   * 그 길로 들어오면 글자 크기 클램프가 빠지고 한글 조합까지 함께 깨진다. 둘 다 개발
   * 기기에서 안 보이는 회귀다.
-  */
- it('`BottomSheetTextInput` 은 어디에서도 안 쓴다', () => {
- const offenders = FILES.filter((file) =>
- readFileSync(file, 'utf8').includes('BottomSheetTextInput'),
-).map((file) => relative(SRC, file))
+   */
+  it('`BottomSheetTextInput` 은 어디에서도 안 쓴다', () => {
+    const offenders = FILES.filter((file) =>
+      readFileSync(file, 'utf8').includes('BottomSheetTextInput'),
+    ).map((file) => relative(SRC, file))
 
  // `왜 안 쓰는가`를 적는 주석에는 이름이 나온다. 코드가 아니라 글이다. 그 설명은 아톰과,
  // 값을 채우는 훅에 있다. 그 코드는 아톰 밖으로 나갔다.
- const 설명하는_파일 = ['components/atoms/TextInput/TextInput.tsx', 'hooks/useSheetKeyboardTarget.ts']
- expect(offenders.filter((file) => !설명하는_파일.includes(file))).toEqual([])
- })
+    const 설명하는_파일 = ['components/atoms/TextInput/TextInput.tsx', 'hooks/useSheetKeyboardTarget.ts']
+    expect(offenders.filter((file) => !설명하는_파일.includes(file))).toEqual([])
+  })
 })
 
 describe('칸에 묶인 글자는 `fixed` 다', () => {
- it('고정칸 넷의 `<Text>` 는 하나도 빠짐없이 `fixed` 를 단다', () => {
- const missing = fixedBoxFiles().flatMap((file) =>
- openingTextTags(readFileSync(file, 'utf8'))
-.filter((attributes) => !/(^|\s)fixed(\s|$|=)/.test(attributes))
-.map(() => relative(SRC, file)),
-)
+  it('고정칸 넷의 `<Text>` 는 하나도 빠짐없이 `fixed` 를 단다', () => {
+    const missing = fixedBoxFiles().flatMap((file) =>
+      openingTextTags(readFileSync(file, 'utf8'))
+        .filter((attributes) => !/(^|\s)fixed(\s|$|=)/.test(attributes))
+        .map(() => relative(SRC, file)),
+    )
 
- expect(missing).toEqual([])
- })
+    expect(missing).toEqual([])
+  })
 
- it('고정칸이 쓰는 글자 컴포넌트도 고정칸이다. 한 겹 아래에서 새는 자리를 막는다', () => {
+  it('고정칸이 쓰는 글자 컴포넌트도 고정칸이다. 한 겹 아래에서 새는 자리를 막는다', () => {
  // `<Text fixed>` 만 검사하면 자식 컴포넌트가 그리는 글자가 그대로 샌다. 76px 타일 안의 난이도
  // 배지가 자기 `<Text>` 를 갖고 있으면 배수를 그대로 받는다. 그 컴포넌트들은 `fixed` 프롭을 받는
  // 대신 자기 자신이 고정칸이어야 한다. 상자가 `h-5` 처럼 고정이라 어느 호출부에서도 글자를 못
  // 키운다.
- const drawsText = new Set(textRenderingComponentFiles())
- const fixedBoxes = new Set(fixedBoxFiles())
+    const drawsText = new Set(textRenderingComponentFiles())
+    const fixedBoxes = new Set(fixedBoxFiles())
 
- const leaking = fixedBoxFiles().flatMap((file) =>
- localImportTargets(file)
-.filter((target) => drawsText.has(target) && !fixedBoxes.has(target))
-.map((target) => `${relative(SRC, file)} → ${relative(SRC, target)}`),
-)
+    const leaking = fixedBoxFiles().flatMap((file) =>
+      localImportTargets(file)
+        .filter((target) => drawsText.has(target) && !fixedBoxes.has(target))
+        .map((target) => `${relative(SRC, file)} → ${relative(SRC, target)}`),
+    )
 
- expect([...new Set(leaking)]).toEqual([])
- })
+    expect([...new Set(leaking)]).toEqual([])
+  })
 
- it('글자 컴포넌트를 실제로 찾아냈다. 위 단언이 빈 표를 검사하는 것이 아니다', () => {
- expect(textRenderingComponentFiles().length).toBeGreaterThan(5)
- })
+  it('글자 컴포넌트를 실제로 찾아냈다. 위 단언이 빈 표를 검사하는 것이 아니다', () => {
+    expect(textRenderingComponentFiles().length).toBeGreaterThan(5)
+  })
 
- it('위젯에서 실제로 글자를 그리고 있다. 위 단언이 빈 목록을 검사하는 것이 아니다', () => {
- const tags = fixedBoxFiles().flatMap((file) =>
- openingTextTags(readFileSync(file, 'utf8')),
-)
+  it('위젯에서 실제로 글자를 그리고 있다. 위 단언이 빈 목록을 검사하는 것이 아니다', () => {
+    const tags = fixedBoxFiles().flatMap((file) =>
+      openingTextTags(readFileSync(file, 'utf8')),
+    )
 
- expect(tags.length).toBeGreaterThan(50)
- })
+    expect(tags.length).toBeGreaterThan(50)
+  })
 })

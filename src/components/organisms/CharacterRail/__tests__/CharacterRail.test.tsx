@@ -47,7 +47,7 @@ describe('CharacterRail', () => {
     const view = await render([entry(), entry({ ocid: 'ocid-2', characterName: '두번째' })])
 
     // `act` 는 **await 해야 한다**. 안 하면 다음 테스트의 렌더까지 스코프가 섞여 트리가 비어 보인다
-    // (실측: 뒤따르는 케이스 전부가 요소를 못 찾는 상태로 무너졌다).
+    // (뒤따르는 케이스 전부가 요소를 못 찾는 상태로 무너졌다).
     await act(async () => {
       fireEvent.press(view.getAllByTestId('character-portrait')[1])
     })

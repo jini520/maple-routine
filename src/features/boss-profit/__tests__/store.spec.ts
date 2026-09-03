@@ -1443,7 +1443,7 @@ describe('useBossProfitStore', () => {
   })
 
   // 기록은 있는데 응답에 행이 없는 조합의 복원이 동기화 완료 분기에만 있으면, 건너뛴 진입은
-  // 캐시 단계가 곧 최종 화면이라 그 조합이 총 수익에서 통째로 빠진다. 실측 경로는 미접속
+  // 캐시 단계가 곧 최종 화면이라 그 조합이 총 수익에서 통째로 빠진다. 문제가 난 경로는 미접속
   // 캐릭터의 축약 응답이다(월간 보스를 처치한 뒤 1주 이상 미접속 → bossMonthly 가
   // reg=false·comp=false 로만 남음).
   describe('캐시 단계의 기록만 있는 조합 복원', () => {
@@ -1491,7 +1491,7 @@ describe('useBossProfitStore', () => {
       }
     }
 
-    // 월간 탭을 보고 있는 상태에서 시작한다. 실측 경로가 월간 보스라 그 화면이 증상이 나는 자리다.
+    // 월간 탭을 보고 있는 상태에서 시작한다. 문제가 난 경로가 월간 보스라 그 화면이 증상이 나는 자리다.
     // 현재 달은 최신 기간이라 containsInProgressWeek 가 false 이므로 제자리 새로고침 분기로 새지 않는다.
     function seedMonthlyTab(): string {
       const monthKey = getCurrentBossProfitPeriod('monthly', new Date()).periodKey

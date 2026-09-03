@@ -38,7 +38,7 @@ export function mockReducedMotion(next: boolean): void {
  * `withRepeat` 이 불렸는지. 두 스피너에서 모션 줄이기를 **볼 수 있는 창은 이것뿐**이다.
  *
  * SVG 속성 애니메이션은 `useAnimatedProps` 를 거쳐 UI 스레드가 갱신하므로, jest 의 렌더 트리에는
- * 켜 놨을 때나 꺼 놨을 때나 **똑같이** `strokeDashoffset: null` 만 남는다(실측. 두 모드의 트리가
+ * 켜 놨을 때나 꺼 놨을 때나 **똑같이** `strokeDashoffset: null` 만 남는다(두 모드의 트리가
  * 문자 단위로 같다). 그래서 "무엇이 그려졌나"로는 이 계약을 지킬 수 없고, 대신 *"반복 애니메이션을
  * 걸었는가"* 를 본다. 클래스를 렌더 결과에서 읽던 자리를
  * 대신하는 것이라, 구현 세부가 아니라 그 자리의 계약 자체다.

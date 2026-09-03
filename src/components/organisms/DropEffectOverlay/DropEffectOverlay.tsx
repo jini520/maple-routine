@@ -143,7 +143,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
   )
   // 기다리는 것은 버스트(screen)뿐이다. 기둥은 8프레임째(약 356ms 뒤)에나 나오고 장당 작아서
   // 그 사이에 다 실린다. 55장을 다 기다리면 재생이 시작되는 그 순간까지 디코드가 몰려 첫 장이
-  // 늘어졌다가 뒤에서 서두른다(실측: frame 0 이 91ms, frame 2 가 25ms).
+  // 늘어졌다가 뒤에서 서두른다.
   const [warm, setWarm] = useState(false)
   const pendingRef = useRef(screenFrames.length)
   const settleOne = useCallback(() => {

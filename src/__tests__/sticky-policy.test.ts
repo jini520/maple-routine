@@ -54,20 +54,20 @@ function stripComments(source: string): string {
 const FORBIDDEN: Array<{ pattern: RegExp; what: string }> = [
   { pattern: /\bstickyHeaderIndices\b/, what: 'ScrollView/FlatList 의 sticky' },
   { pattern: /position\s*:\s*['"]sticky['"]/, what: "position: 'sticky' (RN 에 없는 값이다)"},
- { pattern: /\bstickyTop\b/, what: ' 의 sticky 오프셋 프롭' },
+  { pattern: /\bstickyTop\b/, what: ' 의 sticky 오프셋 프롭' },
 ]
 
 describe(' 고정되는 영역이 없다. sticky 가 코드에 하나도 없다', () => {
- const files = sourceFiles(SRC)
+  const files = sourceFiles(SRC)
 
- it('검사 대상 파일을 실제로 찾는다', () => {
- // 경로가 틀려 0개를 훑고도 초록이 되는 것이 이 부류 가드의 흔한 실패다.
- expect(files.length).toBeGreaterThan(50)
- })
+  it('검사 대상 파일을 실제로 찾는다', () => {
+    // 경로가 틀려 0개를 훑고도 초록이 되는 것이 이 부류 가드의 흔한 실패다.
+    expect(files.length).toBeGreaterThan(50)
+  })
 
- it.each(FORBIDDEN)('$what 을 쓰지 않는다', ({ pattern }) => {
- const offenders = files.filter((file) => pattern.test(stripComments(readFileSync(file, 'utf8'))))
+  it.each(FORBIDDEN)('$what 을 쓰지 않는다', ({ pattern }) => {
+    const offenders = files.filter((file) => pattern.test(stripComments(readFileSync(file, 'utf8'))))
 
- expect(offenders.map((f) => f.slice(SRC.length + 1))).toEqual([])
- })
+    expect(offenders.map((f) => f.slice(SRC.length + 1))).toEqual([])
+  })
 })

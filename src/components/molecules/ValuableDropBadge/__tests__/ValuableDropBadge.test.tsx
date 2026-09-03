@@ -59,7 +59,7 @@ describe('ValuableDropBadge', () => {
   })
 
   // 골드는 **전 테마 공통 고정색**이다(테마 토큰이 아니다). 토큰으로 바꾸면
-  // 라이트 테마에서 배경에 묻힌다는 것이 그때의 실측 결론이었다.
+  // 라이트 테마에서 배경에 묻힌다는 것이 그때의 결론이었다.
   it('배지 골드는 테마와 무관한 고정 그라디언트다', async () => {
     const 머쉬맘 = await renderAtom(<ValuableDropBadge drops={drops('a')} label="고가 드롭" />)
 

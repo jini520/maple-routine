@@ -283,7 +283,7 @@ describe('formatDropHistoryLine', () => {
     )
   })
 
-  // 브라우저 실측: 괄호는 UAX #14 에서 그 자체가 줄바꿈 지점이라 `word-break: keep-all`
+  // 괄호는 UAX #14 에서 그 자체가 줄바꿈 지점이라 `word-break: keep-all`
   // 로도 "슬라임(카오스)⏎에서" 가 막히지 않는다. 띄어쓰기만 기준이 되게 word joiner 로 묶는다.
   it('난이도 괄호 양옆을 word joiner로 묶어 그 지점의 줄바꿈을 막는다', () => {
     const line = formatDropHistoryLine(

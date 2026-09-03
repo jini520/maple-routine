@@ -229,7 +229,7 @@ export function mergeRecordsIntoRows(
 }
 
 // 현재 기간의 행은 API·캐시가 원천이고 과거 기간의 행은 기록이 원천이라는 비대칭 때문에, API 가
-// 보스를 빼면 이미 저장된 수익이 현재 기간 화면에서 사라진다. 실측된 경로는 미접속 캐릭터의
+// 보스를 빼면 이미 저장된 수익이 현재 기간 화면에서 사라진다. 문제가 난 경로는 미접속 캐릭터의
 // 축약 응답이다. 월간 보스를 처치한 뒤 1주 이상 접속하지 않으면 bossMonthly 가 reg=false ·
 // comp=false 로만 남아 `selectBossProfitBosses` 가 행을 만들지 않는다.
 //

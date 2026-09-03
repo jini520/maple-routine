@@ -10,7 +10,7 @@
 // | 페이드에 `backdrop-filter` 가 없다 | **페이드째 걷어냈다**(아래). 검사할 대상이 없다 |
 // | `below` 는 페이드 뒤, 셸의 마지막 자식 | `below` 가 마지막인 것만 검사한다 |
 //
-// 안전영역은 `renderOverlay` 가 넣는 실측 인셋(상 59)을 쓴다. 이 실측한 표와 같은 값이다.
+// 안전영역은 `renderOverlay` 가 넣는 인셋(상 59)을 쓴다.
 
 import { Text, View } from 'react-native'
 

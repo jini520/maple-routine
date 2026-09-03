@@ -10,7 +10,7 @@
 // ③ `closest('li')` → **항목 텍스트에서 위로 올라가** 그 행을 잡는다.
 // ④ **픽스처 주입 방식. getter 가 안 통한다.** 목이 돌려준 객체에 getter 를
 //    얹어 매 접근마다 픽스처를 갈아 끼웠는데, jest + Babel 조합에서는 **모듈 네임스페이스가 한 번
-//    복사되면서 getter 가 그때 딱 한 번 평가된다**(실측. `__esModule: true` 를 붙여도 같다).
+//    복사되면서 getter 가 그때 딱 한 번 평가된다**(`__esModule: true` 를 붙여도 같다).
 //    그래서 **배열의 정체성을 고정해 두고 내용만 갈아 끼운다**(`mockNotes` 를 비우고 다시 채운다).
 //    화면이 렌더할 때 `.map`/`.length` 를 읽으므로 같은 효과이고, 방식은 오히려 단순해진다.
 import { act, fireEvent } from '@testing-library/react-native'

@@ -38,7 +38,7 @@ export function renderAtom(ui: ReactElement): ReturnType<typeof render> {
  *
  * `initialMetrics` 를 주는 것은 선택이 아니라 필수다. 없으면 실제 측정이 올 때까지 프로바이더가
  * 자식을 아예 렌더하지 않아 테스트가 빈 트리를 본다(react-navigation 의 테스트 권장 방식과 같다).
- * 값은 iPhone 계열의 인셋(상 59· 하 34)이라 이 실측한 표와 같은 자리를 검사한다.
+ * 값은 iPhone 계열의 인셋(상 59· 하 34)이라 실기기에서 흔한 값이라 실제와 같은 자리를 검사한다.
  */
 export const 테스트_안전영역: Metrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },

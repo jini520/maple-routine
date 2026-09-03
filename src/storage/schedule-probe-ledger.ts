@@ -46,7 +46,7 @@ export interface ScheduleProbeLedger {
   dates: Record<string, ScheduleProbeRecord>
 }
 
-// 오늘 … 오늘−13. 이 실측으로 확정한 `date` 실효 구간(오늘−13 ~ 오늘−1)에 오늘을 더한 폭이다.
+// 오늘 … 오늘−13. 확정한 `date` 실효 구간(오늘−13 ~ 오늘−1)에 오늘을 더한 폭이다.
 export const PROBE_WINDOW_DAYS = 14
 
 function parseLedger(value: string | null): ScheduleProbeLedger {

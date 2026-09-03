@@ -45,7 +45,7 @@ describe('resolveImageCropLayout: CSS 배경 크롭 → RN 배치', () => {
     expect(resolveImageCropLayout(CROP, { width: 0, height: 0 })).toEqual({ kind: 'cover' })
   })
 
-// 실측. jest 의 에셋 대역(`{ testUri }`)이 크기 없이 오는데 `undefined <= 0` 은 false 라
+// jest 의 에셋 대역(`{ testUri }`)이 크기 없이 오는데 `undefined <= 0` 은 false 라
   // 가드를 통과했고 `aspectRatio: NaN` 이 나갔다. NaN 은 에러가 아니라 레이아웃이 조용히 무너지는 값이다.
   it.each([
     ['둘 다 없음', { width: undefined, height: undefined }],

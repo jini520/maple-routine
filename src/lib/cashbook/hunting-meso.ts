@@ -55,7 +55,7 @@ export type MissedMobs = (typeof MISSED_MOB_OPTIONS)[number]
  * 셈에는 이 값을 안 쓴다. 곱하는 것은 반올림 전의 분수이고 여기서 자른 값은 화면에만 산다.
  * 표시하려고 자른 숫자가 돈을 세면 라벨이 계산을 끌고 다니게 된다.
  *
- * 이 데이터의 마릿수는 22~40 이라 조각 다섯이 어느 맵에서도 안 겹친다(408개 실측). 겹치면
+ * 이 데이터의 마릿수는 22~40 이라 조각 다섯이 어느 맵에서도 안 겹친다. 겹치면
  * 세그먼트가 어느 조각을 고른 것인지 못 가린다. 그 사실은 `data/__tests__` 가 지킨다.
  */
 export function efficiencyPercentOf(mobs: number, missedMobs: number): number {

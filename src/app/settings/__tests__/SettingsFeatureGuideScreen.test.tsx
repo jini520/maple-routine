@@ -54,7 +54,7 @@ jest.mock('@react-navigation/native', () => ({
 }))
 
 // `scrollTo` 는 **프로토타입에서** 잡는다. RNTL 이 주는 host 요소에는 그 메서드가 없고
-// (`instance.scrollTo === undefined`, 실측) 화면은 셸이 넘긴 ref 를 통해 그것을 부른다.
+// (`instance.scrollTo === undefined`) 화면은 셸이 넘긴 ref 를 통해 그것을 부른다.
 const scrollTo = jest.spyOn(
   ScrollView.prototype as unknown as { scrollTo: (options?: unknown) => void },
   'scrollTo',

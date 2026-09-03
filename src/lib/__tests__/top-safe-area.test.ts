@@ -6,7 +6,7 @@
 
 import { ANDROID_TOP_SAFE_AREA_MIN_PX, resolveTopSafeAreaPx } from '../safe-area'
 
-/** 안드로이드 실기기 실측. 상태바 94px @ density 3.0 (1080×2640). */
+/** 안드로이드 실기기 값. 상태바 94px @ density 3.0 (1080×2640). */
 const 안드로이드_인셋 = 94 / 3
 
 /** iPhone 계열(`render-atom.tsx` 의 테스트 안전영역과 같은 값). */

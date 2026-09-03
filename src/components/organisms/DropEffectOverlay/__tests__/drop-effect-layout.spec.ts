@@ -4,7 +4,7 @@ import { buildPillarFrames, buildScreenFrames } from '../frame-layout'
 const PHASES = ['pre', 'loop', 'end'] as const
 
 describe('DROP_EFFECT_ORIGINS', () => {
-  // 테이블은 에셋 비트맵에서 계측한 값이라 프레임과 인덱스로만 묶여 있다. 에셋을 다시 export 해
+  // 테이블은 에셋 비트맵에서 잰 값이라 프레임과 인덱스로만 묶여 있다. 에셋을 다시 export 해
   // 프레임 수가 바뀌면 기둥이 엉뚱한 위치로 튀므로, 조용히 어긋나지 않게 개수를 고정한다.
   it.each(PHASES)('%s: origin 개수가 실제 프레임 수와 일치한다', (phase) => {
     expect(DROP_EFFECT_ORIGINS[phase]).toHaveLength(DROP_EFFECT_FRAMES[phase].length)

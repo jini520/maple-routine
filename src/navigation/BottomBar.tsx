@@ -317,7 +317,7 @@ function BarItem({
           fixed
           numberOfLines={1}
           // `includeFontPadding` 은 안드로이드에서만 읽히는 값이고, 기본(참)일 때 글자 상자에
-          // 폰트 메트릭 여백을 더해 iOS 보다 큰 상자를 만든다. 실측으로 아이콘→라벨이 27 → 30px
+          // 폰트 메트릭 여백을 더해 iOS 보다 큰 상자를 만든다. 아이콘→라벨이 27 → 30px
           // 이 되고 블록이 5px 자라 아이콘이 3px 위로 밀린다. iOS 는 이 값을 무시한다.
           style={{ color: active ? accent : muted, includeFontPadding: false }}
           className="text-[10.5px] font-normal tracking-[-0.01em]"
@@ -567,7 +567,7 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
             <>
               <GlassView
                 // 알약은 `clear`. 바(`regular`)보다 얇은 재질이라 뒤가 더 비친다. 바에는 쓰지
-                // 않는다. 글자를 얹는 판이라 투과를 올리면 비활성 라벨 대비가 무너진다(실측 1.07).
+                // 않는다. 글자를 얹는 판이라 투과를 올리면 비활성 라벨 대비가 무너진다(1.07 까지 내려간다).
                 glassEffectStyle="clear"
                 colorScheme={definition.mode}
                 tintColor={colors.pillOnGlass}

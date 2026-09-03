@@ -5,11 +5,11 @@
  * `DropEffectOverlay` 는 이 점을 화면의 고정 앵커에 맞춰 프레임을 배치한다.
  *
  * 원본 PNG 시퀀스를 검은 배경 JPEG 로 최적화하면서 origin 메타데이터가 유실됐다. 그래서 값을
- * 추정하지 않고 커밋된 비트맵에서 계측해 복원했다. x 는 loop 평균을 템플릿으로 한 matched
+ * 추정하지 않고 커밋된 비트맵에서 재서 복원했다. x 는 loop 평균을 템플릿으로 한 matched
  * filter 정합(수렴 후 서브픽셀 보간), y 는 전 프레임 비트맵 하단.
  *
- * 프레임 에셋을 다시 export 하면 이 테이블도 함께 다시 계측해야 한다. 프레임 수가 어긋나는
- * 것만 테스트가 잡고 값의 드리프트는 잡지 못한다. 재계측은
+ * 프레임 에셋을 다시 export 하면 이 테이블도 함께 다시 재야 한다. 프레임 수가 어긋나는
+ * 것만 테스트가 잡고 값의 드리프트는 잡지 못한다. 다시 재는 것은
  * `python3 scripts/measure-drop-effect-origins.py` 가 아래 테이블을 그대로 찍어 준다.
  */
 
@@ -27,7 +27,7 @@ export type DropEffectPhase = 'pre' | 'loop' | 'end'
 
 export type DropEffectOrigin = readonly [x: number, y: number]
 
-// 주석의 WxH 는 그 origin 을 계측한 비트맵 크기(최적화본 JPEG 기준).
+// 주석의 WxH 는 그 origin 을 잰 비트맵 크기(최적화본 JPEG 기준).
 export const DROP_EFFECT_ORIGINS: Record<DropEffectPhase, readonly DropEffectOrigin[]> = {
   pre: [
     [58.8, 288], // 0 (125x288)

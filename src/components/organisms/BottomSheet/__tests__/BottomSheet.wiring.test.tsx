@@ -9,7 +9,7 @@
 //      `'BottomSheetModalInternalContext' cannot be null!` 로 죽는다.
 //
 // **시트 내용은 여기서 안 보인다.** 진짜 라이브러리는 레이아웃 측정과 UI 스레드 애니메이션 위에
-// 서 있어 jest 에서 콘텐츠가 마운트되지 않는다(`waitFor` 1초로도 안 나온다, 실측). 그래서 값
+// 서 있어 jest 에서 콘텐츠가 마운트되지 않는다(`waitFor` 1초로도 안 나온다). 그래서 값
 // 계약은 옆 파일이 본다. 실제로 열리는 모습은 실기기 확인 몫이다.
 import { Text } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'

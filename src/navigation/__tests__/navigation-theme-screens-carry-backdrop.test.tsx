@@ -8,7 +8,7 @@
 // 겹침이 그대로 남는다(투명한데 그림). 그래서 **판정 상수를 뒤집어** 두 쪽을 함께 확인한다.
 //
 // 파일을 따로 두는 이유는 `jest.mock` 이 파일 단위로 끌어올려지기 때문이다. 같은 파일에서 두
-// 플랫폼을 오갈 수 없다(동적 `import` 도 이 러너에서는 못 쓴다, 실측).
+// 플랫폼을 오갈 수 없다(동적 `import` 도 이 러너에서는 못 쓴다).
 import { render, renderHook, screen } from '@testing-library/react-native'
 import { Text } from 'react-native'
 

@@ -8,7 +8,7 @@
 // 곳은 없다.
 //
 // 쿼리에 `includeHiddenElements` 를 주는 것 자체가 `aria-hidden` 이 먹었다는 증거다. RNTL 은 숨긴
-// 요소를 기본적으로 못 찾는다(플래그를 빼면 첫 케이스가 "찾을 수 없다"로 떨어진다, 실측).
+// 요소를 기본적으로 못 찾는다(플래그를 빼면 첫 케이스가 "찾을 수 없다"로 떨어진다).
 jest.mock('react-native-reanimated', () =>
   // `jest.mock` 팩토리는 import 위로 끌어올려져 **밖의 값을 참조할 수 없다**. 그래서 `require` 가
   // 선택이 아니라 이 길뿐이다(`reduced-motion.ts` `쓰는 법`).

@@ -140,7 +140,7 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
    * 되는가 를 알려 주는 것이고, 그 값으로 자기 보정량을 정한다.
    *
    * 매니페스트의 `adjustResize` 를 믿으면 안 된다. 이 앱은 edge-to-edge 라
-   * (`android/gradle.properties` 의 `edgeToEdgeEnabled=true`) 그 값이 죽어 있다. 계측(API 36)에서
+   * (`android/gradle.properties` 의 `edgeToEdgeEnabled=true`) 그 값이 죽어 있다. API 36 에서
    * 키보드가 312dp 떠도 `Dimensions.get('window').height` 는 914.29 그대로였고 내용도 안 밀렸다.
    * OS 는 아무것도 안 한다.
    *

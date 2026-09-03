@@ -38,7 +38,7 @@ function submitButton(view: Rendered): AtomElement {
 
 /**
  * `Pressable` 이 접어 넣는 접근성 상태. `disabled`·`aria-busy` 를 프롭으로 직접 읽을 수 없다
- * (호스트 `View` 로 그대로 넘기지 않고 `accessibilityState` 로 접는다. 실측).
+ * (호스트 `View` 로 그대로 넘기지 않고 `accessibilityState` 로 접는다).
  */
 function stateOf(node: AtomElement): { disabled?: boolean; busy?: boolean } {
   return (node.props.accessibilityState ?? {}) as { disabled?: boolean; busy?: boolean }

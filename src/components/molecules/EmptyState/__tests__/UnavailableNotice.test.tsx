@@ -36,7 +36,7 @@ describe('UnavailableNotice', () => {
 
   // `notCollected` 는 넷째 얼굴이다. "영구히 확인할 수 없다"(정보 톤)와 같은
   // 말을 하면 거짓말이 되므로 중립 톤 + Clock 이고, **시각을 암시하는 표현을 쓰지 않는다**
-  // (트레이드오프. 집계 시각은 브래킷만 실측됐다).
+  // (집계 시각을 브래킷으로만 알기 때문이다).
   it('notCollected 는 중립 톤에 "자동으로 채워집니다" 문구다', async () => {
     const { getByText, getByTestId } = await renderAtom(<UnavailableNotice variant="notCollected" />)
 

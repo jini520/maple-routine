@@ -110,7 +110,7 @@ function mockStore(overrides: Partial<Store> = {}): void {
 }
 
 /**
- * **`rerender` 로 프로바이더를 날리지 않으려면 같은 트리를 다시 넘겨야 한다**(실측해 적어
+ * **`rerender` 로 프로바이더를 날리지 않으려면 같은 트리를 다시 넘겨야 한다**(적어
  * 둔 함정). 그래서 `renderOverlay` 대신 트리를 여기서 짜고 `rerenderSame` 을 함께 돌려준다.
  * 마운트당 한 번만 하는 일(무작위 문구 고정)을 확인하는 케이스가 그것을 쓴다.
  */
@@ -123,7 +123,7 @@ async function renderHistory() {
     </SafeAreaProvider>
   )
   // **`render` 의 결과를 먼저 await 한다**. RNTL 14 의 반환값은 thenable 이라, 펼쳐서
-  // (`{...view}`) 돌려주면 `then` 이 사라져 호출부의 `await` 가 아무것도 기다리지 않는다(실측:
+  // (`{...view}`) 돌려주면 `then` 이 사라져 호출부의 `await` 가 아무것도 기다리지 않는다(
   // 마운트 이펙트가 안 돌아 케이스 전체가 빈 화면을 봤다).
   const view = await render(tree)
   return { ...view, rerenderSame: () => view.rerender(tree) }
@@ -138,7 +138,7 @@ beforeEach(() => {
 
 describe('DropHistoryScreen: 셸과 조회', () => {
 // 공용 셸의 `-mt-[var(--sa-top)]` 이 흐름 밖 `fixed`
-  // 헤더를 전제한 보정이라 이 화면의 sticky 헤더와 겹쳤기 때문이다(실기기 계측 31px). RN 에는 그
+  // 헤더를 전제한 보정이라 이 화면의 sticky 헤더와 겹쳤기 때문이다(31px). RN 에는 그
   // 보정 자체가 없고 헤더가 스크롤 뷰의 **형제**라 공용 셸이 곧 맞는 그림이다.
   it('공용 셸을 쓰고 헤더가 상단 안전영역을 먹는다', async () => {
     const { getByTestId } = await renderHistory()
