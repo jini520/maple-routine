@@ -2,10 +2,10 @@ import { NavigationContainer, useNavigationContainerRef } from '@react-navigatio
 
 import { useLiveUpdateStore } from '../features/live-update/store'
 
+import { useRootBackToBackground } from '../hooks/useRootBackToBackground'
 import { UpdatePromptModal } from '../app/UpdatePromptModal'
 import { RootNavigator } from './RootNavigator'
 import { useNavigationTheme } from './navigation-theme'
-import { useRootBackToBackground } from './use-root-back'
 import type { RootStackParamList } from './routes'
 
 /**

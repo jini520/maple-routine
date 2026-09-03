@@ -6,7 +6,7 @@ import { act, render } from '@testing-library/react-native'
 import { BackHandler } from 'react-native'
 import { setBackGesturePort, __resetNativePortsForTest } from '../../native/ports'
 
-import { useRootBackToBackground, type RootBackNavigation } from '../use-root-back'
+import { useRootBackToBackground, type RootBackNavigation } from '../useRootBackToBackground'
 import { resetBarStoreForTests } from '../../components/organisms/BottomBar/bar-store'
 import { rnBackGesturePort } from '../../native/adapters/rn-back-gesture'
 
