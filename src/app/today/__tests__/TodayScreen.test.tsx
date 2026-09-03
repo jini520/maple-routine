@@ -75,7 +75,7 @@ const NOW = new Date('2026-08-17T03:00:00.000Z')
 const WEEK_KEY = '2026-08-13'
 const OCIDS = ['ocid-1', 'ocid-2', 'ocid-3', 'ocid-4']
 
-// ── 스토어 목 ────────────────────────────────────────────────────────────────────────
+// 스토어 목
 //
 // 넷 다 **상태 + 함수** 를 그대로 돌려주면 된다. 이 화면은 셀렉터를 쓰지 않고 상태를 통째로 읽는다.
 
@@ -160,7 +160,7 @@ function setStores(
     ...overrides.dropHistory } as never)
 }
 
-// ── 값 픽스처 ────────────────────────────────────────────────────────────────────────
+// 값 픽스처
 
 function daily(overrides: Partial<DailyContent> = {}): DailyContent {
   return {
@@ -282,7 +282,7 @@ const 캐릭터_넷 = {
       weeksSince: 0,
       records: [dropRecord({ priceState: 'entered', priceMeso: 1_200_000_000 })] } } }
 
-// ── 도우미 ───────────────────────────────────────────────────────────────────────────
+// 도우미
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 

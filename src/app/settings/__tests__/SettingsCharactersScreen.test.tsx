@@ -1,14 +1,14 @@
 // 캐릭터 관리 화면. 옮겨 적을 명세가 없어 이
 // 파일이 보는 것은 그 ADR 의 성공 기준 그대로다: 두 층의 범위· 이동· 별· TTL· 저장 활성 조건.
 //
-// ── 무엇을 목으로 세우는가 ──────────────────────────────────────────────────────────
+// 무엇을 목으로 세우는가
 //
 // 값 규칙(`summarizeAccount`·`buildSelectedCharacterViews`·`resolveRepresentative`)과 문구
 // (`formatRosterError`)는 **실물을 쓴다**. 여기서 베끼면 규칙이 두 벌이 된다(머리
 // **값 규칙의 자리**). 세우는 것은 경계 넷뿐이다: 계정 목록 조회· 후보 목록 조회· 로컬 캐시·
 // 저장 액션.
 //
-// ── 끌기는 여기서 **흉내** 내지 않는다 ────────────────────────────────────────────────
+// 끌기는 여기서 **흉내** 내지 않는다
 //
 // 제스처는 네이티브가 인식하고 jest 는 레이아웃을 계산하지 않아, 끄는 동작 자체를 재현하면 우리가
 // 만든 가짜만 검사하게 된다. 그래서 순서의 계약은 두 자리로 나뉜다. 값 규칙은
@@ -98,7 +98,7 @@ const mockedRoster = mockGetRoster as unknown as jest.MockedFunction<typeof getC
 
 const goBack = jest.fn()
 
-// ── 픽스처 ────────────────────────────────────────────────────────────────────────
+// 픽스처
 function 캐릭터(ocid: string, name: string, world: string, level: number, jobClass: string): MapleCharacter {
   return { ocid, name, world, jobClass, level }
 }

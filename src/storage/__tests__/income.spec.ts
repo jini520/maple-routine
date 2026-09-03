@@ -297,7 +297,7 @@ describe('판매 수수료 칸 둘', () => {
   })
 })
 
-// ── 메소 획득량 칸 ────────────────────────────────────────────────
+// 메소 획득량 칸
 describe('hunt_meso_rate: 그때의 메소 획득량', () => {
   const 계산기입력: HuntingCalculatorDetail = {
     mode: 'calculator',
@@ -399,7 +399,7 @@ describe('hunt_meso_rate: 그때의 메소 획득량', () => {
   })
 })
 
-// ── 수동 입력 칸 ──────────────────────────────────────────────────
+// 수동 입력 칸
 describe('hunt_typed_meso: 수동으로 적힌 사냥', () => {
   const 수동입력: HuntingManualDetail = {
     mode: 'manual',

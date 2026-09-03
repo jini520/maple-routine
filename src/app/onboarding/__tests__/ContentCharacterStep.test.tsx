@@ -5,7 +5,7 @@
 // (`emptyAction` 탈출구· 그리드 토글· 로스터 로딩 분기)은 여기서 검사할 대상이 아니게 됐다.
 // 같은 이름을 남겨 두면 **검사했다** 로 오독된다.
 //
-// ── 그래서 이 파일이 보는 것은 **갈리는 것** 뿐이다 ──────────────────────────────────
+// 그래서 이 파일이 보는 것은 **갈리는 것** 뿐이다
 //
 // 본문(`CharacterManageBody` + `useCharacterManage`)의 계약. 두 층의 범위· 이동· 별· TTL·
 // 드롭다운· 실패 표현. 은 `../../settings/__tests__/SettingsCharactersScreen.test.tsx` 가 이미
@@ -69,7 +69,7 @@ const mockedGetLedger = jest.mocked(getScheduleProbeLedger)
 const mockedContentStore = jest.mocked(useContentSchedulerStore)
 const mockedRoster = mockGetRoster as unknown as jest.MockedFunction<typeof getCharacterPickerRoster>
 
-// ── 픽스처 ────────────────────────────────────────────────────────────────────────
+// 픽스처
 function 캐릭터(ocid: string, name: string, level: number): MapleCharacter {
   return { ocid, name, world: '스카니아', jobClass: '아크메이지(썬, 콜)', level }
 }

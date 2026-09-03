@@ -50,19 +50,19 @@ interface AccountRoster {
 }
 
 export interface CharacterManageController {
-  // ── 아래 층의 머리 ──
+  // 아래 층의 머리
   accounts: AccountSummaryView[]
   portraitByAccountId: Record<string, string | null>
   selectedAccountId: string | null
   isAccountsLoading: boolean
   accountsError: ScheduleSyncError | null
 
-  // ── 위 층 ──
+  // 위 층
   selectedOcids: string[]
   selectedViews: SelectedCharacterView[]
   representativeOcid: string | null
 
-  // ── 아래 층 ──
+  // 아래 층
   /** 이 계정에서 아직 안 고른 후보. 고른 것은 위로 옮겨간다. */
   candidates: CharacterPickerEntry[]
   /** 이 계정에서 고를 수 있는 캐릭터 수. {전체}개 중 {표시}개 표시 의 앞자리. */
@@ -166,7 +166,7 @@ export function useCharacterManage(): CharacterManageController {
       })
   }, [])
 
-  // ── 저장된 대표 ──────────────────────────────────────────────────────────────────
+  // 저장된 대표
   useEffect(() => {
     let cancelled = false
     getRepresentativeCharacter()
@@ -181,7 +181,7 @@ export function useCharacterManage(): CharacterManageController {
     }
   }, [])
 
-  // ── 계정 목록 ────────────────────────────────────────────────────────────────────
+  // 계정 목록
   useEffect(() => {
     let cancelled = false
     void (async () => {
@@ -273,7 +273,7 @@ export function useCharacterManage(): CharacterManageController {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [neededKey])
 
-  // ── 파생 ─────────────────────────────────────────────────────────────────────────
+  // 파생
   /**
    * 위 층과 대표 얼굴이 실제로 읽는 표. 캐시 위에 이미 받은 로스터를 얹는다.
    *
@@ -340,7 +340,7 @@ export function useCharacterManage(): CharacterManageController {
   const isDirty =
     !sameOrder(selectedOcids, trackedOcids ?? []) || representativeOcid !== storedRepresentative
 
-  // ── 동작 ─────────────────────────────────────────────────────────────────────────
+  // 동작
   const editSelection = useCallback(
     (change: (previous: string[]) => string[]): void => {
       setEditedOcids((previous) => change(previous ?? trackedOcids ?? []))

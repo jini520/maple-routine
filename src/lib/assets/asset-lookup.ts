@@ -35,7 +35,7 @@ function bySlug(assets: AssetMap, slug: string | null): ImageAssetRef | null {
   return assets[slug.normalize('NFC')] ?? null
 }
 
-// ── 보스 초상 ────────────────────────────────────────────────────────────────────────
+// 보스 초상
 
 /**
  * 같은 그림이라도 카드 bleed 와 원형 아이콘은 잘 보이는 자리가 달라 크롭 표가 둘이다. 값은
@@ -66,7 +66,7 @@ export function getBossPortraitIconCrop(portraitSlug: string | null): ImageCrop 
   return cropBySlug(BOSS_PORTRAIT_ICON_CROPS, portraitSlug)
 }
 
-// ── 일일·주간 퀘스트 지역 ────────────────────────────────────────────────────────────
+// 일일·주간 퀘스트 지역
 
 export function getDailyQuestBackgroundUrl(backgroundSlug: string | null): ImageAssetRef | null {
   return bySlug(DAILY_QUEST_BACKGROUND_ASSETS, backgroundSlug)
@@ -80,14 +80,14 @@ export function getDailyQuestRegionIconUrl(backgroundSlug: string | null): Image
   return bySlug(DAILY_QUEST_ICON_ASSETS, backgroundSlug)
 }
 
-// ── 테마 배경 ────────────────────────────────────────────────────────────────────────
+// 테마 배경
 
 /** 파일이 없으면 배경만 사라지고 테마는 산다. @see */
 export function getThemeBackgroundUrl(slug: string): ImageAssetRef | null {
   return bySlug(THEME_BACKGROUND_ASSETS, slug)
 }
 
-// ── 월드 엠블럼 ──────────────────────────────────────────────────────────────────────
+// 월드 엠블럼
 
 /** 월드 이름 → 엠블럼 파일의 basename. **여기서는 NFC 를 안 건다.** 표의 키가 소스 리터럴이다. */
 const basenameByWorld = worldEmblemsData as Record<string, string>
@@ -104,7 +104,7 @@ export function isChallengersWorld(world: string): boolean {
   return basenameByWorld[world] === 'challengers'
 }
 
-// ── 포스 ─────────────────────────────────────────────────────────────────────────────
+// 포스
 
 export const FORCE_LABELS: Record<ForceType, string> = {
   arcane: '아케인 포스',
@@ -120,7 +120,7 @@ export function forceIconOf(forceType: ForceType): ImageAssetRef | null {
   return FORCE_ASSETS[FORCE_SLUGS[forceType]] ?? null
 }
 
-// ── 아이템 아이콘 ────────────────────────────────────────────────────────────────────
+// 아이템 아이콘
 
 /** 이름에서 파일명을 계산하지 않고 표에서 찾는다. @see */
 interface ItemIconEntry {
@@ -171,7 +171,7 @@ export function getItemIconUrlByFile(fileName: string): ImageAssetRef | null {
   return ITEM_ASSETS[fileName.normalize('NFC')] ?? null
 }
 
-// ── 지출 타일 ────────────────────────────────────────────────────────────────────────
+// 지출 타일
 
 /**
  * 키가 **타일에 적히는 이름**이다(카탈로그의 `base ?? name`). 카탈로그를 사용자가 고치면 이 표도
