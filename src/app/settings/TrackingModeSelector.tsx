@@ -2,9 +2,8 @@
  * `TrackingModeModal` 안에 들어가는 선택 목록. 모달 자체가 카드 역할을 하므로 여기서는 카드
  * 테두리를 다시 두르지 않는다.
  *
- * 문구와 카드 안쪽 구조 모두 온보딩 `TrackingModeStep` 과 같아야 한다. 공용 카피
- * `features/tracking-mode/copy` 를 함께 쓰므로 한쪽만 고치면 같은 선택지가 두 화면에서 다르게
- * 생긴다. 규격은 `docs/features/settings.md` 의 트래킹 모드 옵션 카드.
+ * 문구는 `features/tracking-mode/copy` 가 갖는다. 여기 손으로 적으면 같은 선택지의 설명이 두
+ * 벌이 된다. 규격은 `docs/features/settings.md` 의 트래킹 모드 옵션 카드.
  */
 import { Pressable, View } from 'react-native'
 
@@ -20,7 +19,8 @@ export interface TrackingModeSelectorProps {
   onSelect: (mode: TrackingMode) => void
 }
 
-// 온보딩 TrackingModeStep과 같은 뜻의 아이콘을 쓴다. 선택 이유는 그쪽 파일 주석.
+// 자동은 게임에서 정한 것을 따른다 는 주어를, 수동은 앱에서 고른다 를 가리킨다. RefreshCw(동기화)는
+// 이 앱에서 새로고침 버튼의 기능 신호라 누를 수 없는 자리에 두면 뜻이 흐려져 기각했다.
 const OPTION_ICONS = { auto: Gamepad2Icon, manual: ListChecksIcon } as const
 
 export function TrackingModeSelector(props: TrackingModeSelectorProps): React.JSX.Element {

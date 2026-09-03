@@ -345,7 +345,7 @@ compact: 카드 안에 중첩될 때. rounded-[10px] bg-surface-2 px-3 py-2.5, �
 ```
 문구 어미는 실패와 같은 `~습니다` 를 쓴다([[ADR-062]] 결정 5). 정보 톤은 **색(info-tint)이 담당하지 어미가 담당하지 않는다**.
 
-**선택 카드 안의 주의 줄은 이 규격의 축소판이되 컴포넌트를 공유하지 않는다** ([[ADR-035]] 결정 22, 2026-08-03). 트래킹 모드 옵션(온보딩 `TrackingModeStep`·설정 `TrackingModeSelector`)이 각 모드의 한계를 고지하는 자리: `rounded-[8px] bg-info-tint px-2.5 py-1.5 text-xs text-info-ink` + `Info h-3.5`. 색·아이콘·"고칠 수 없는 제약이므로 error 가 아니다"는 판단을 그대로 물려받는다. 이 컴포넌트를 재사용하지 않는 이유는 **`UnavailableNotice` 가 문구를 자기 안에 고정으로 갖기 때문**이고(임의 문구를 못 받는다), 어미도 `~습니다` 가 아니라 **같은 카드 안 설명문과 맞춘 `~요`** 다(한 카드 안에서 어미가 갈리면 두 문장이 다른 출처처럼 읽힌다). 규격 전문은 [../features/settings.md](../features/settings.md).
+**선택 카드 안의 주의 줄은 이 규격의 축소판이되 컴포넌트를 공유하지 않는다** ([[ADR-035]] 결정 22, 2026-08-03). 트래킹 모드 옵션(설정 `TrackingModeSelector`)이 각 모드의 한계를 고지하는 자리: `rounded-[8px] bg-info-tint px-2.5 py-1.5 text-xs text-info-ink` + `Info h-3.5`. 색·아이콘·"고칠 수 없는 제약이므로 error 가 아니다"는 판단을 그대로 물려받는다. 이 컴포넌트를 재사용하지 않는 이유는 **`UnavailableNotice` 가 문구를 자기 안에 고정으로 갖기 때문**이고(임의 문구를 못 받는다), 어미도 `~습니다` 가 아니라 **같은 카드 안 설명문과 맞춘 `~요`** 다(한 카드 안에서 어미가 갈리면 두 문장이 다른 출처처럼 읽힌다). 규격 전문은 [../features/settings.md](../features/settings.md).
 
 ### 실패 상태 (`components/ErrorState`): [[ADR-062]]
 로딩·빈 상태·조회 불가에는 공용 컴포넌트가 있는데 실패에만 없어 화면마다 `text-error` 한 줄을 각자 갖고 있던 것을 통일한다. 세 상태(**조회 중 / 확정된 빈 상태 / 확인 불가·실패**)는 항상 구분 가능해야 하므로([error-resilience.md](./error-resilience.md) 원칙 2) 빈 상태와 **디자인을 공유하지 않는다**.

@@ -192,7 +192,20 @@ function textsIn(node: AtomElement): string[] {
 
 const 모든이름 = ['낟낟', '달의아이', '별헤는밤', '밤샘메린']
 
+// 두 층이 **한 격자의 형제**라 상자로는 못 가른다. 층은 행마다 붙은 표식이 말한다.
 function namesIn(view: Rendered, testID: string): string[] {
+  const rowTestID =
+    testID === 'character-manage-selected'
+      ? 'character-manage-selected-row'
+      : testID === 'character-manage-candidates'
+        ? 'character-manage-candidate-row'
+        : testID
+
+  const rows = view.queryAllByTestId(rowTestID)
+  if (rows.length > 0) {
+    return rows.flatMap((row) => textsIn(row).filter((text) => 모든이름.includes(text)))
+  }
+
   const node = view.queryByTestId(testID)
   if (node === null) return []
   return textsIn(node).filter((text) => 모든이름.includes(text))
@@ -351,7 +364,7 @@ describe('콜드 캐시. 캐시가 비어도 위 층이 빈칸으로 남지 않�
     await press(view.getByText('달의아이'))
 
     expect(namesIn(view, 'character-manage-selected')).toEqual(['달의아이'])
-    expect(textsIn(view.getByTestId('character-manage-selected'))).toContain('Lv.260 나이트로드')
+    expect(textsIn(view.getByTestId('character-manage-selected-row'))).toContain('Lv.260 나이트로드')
   })
 
   // 로스터가 못 채우는 자리(지금 열지 않은 계정의 캐릭터)로 **재시도를 막지 않는다** 를
@@ -501,16 +514,22 @@ describe('순서. 놓은 자리가 배열 순서다', () => {
     })
   }
 
+  // **끌 수 있는 것은 위층뿐**이다. 아래층 카드와 구분자가 고정이라 위층 행이 그 아래로
+  // 내려갈 자리가 없다. 층 이동은 누르기와 `✕` 둘뿐이다.
   it('핸들은 위 층 행에만 있다. 아래 층 순서는 사용자 것이 아니다', async () => {
     mockContentStore({ trackedOcids: ['a1'] })
 
     const view = await renderScreen()
 
-    expect(within(view.getByTestId('character-manage-selected')).getAllByTestId('drag-handle')).toHaveLength(1)
-    expect(
-      within(view.getByTestId('character-manage-candidates')).queryAllByTestId('drag-handle'),
-    ).toEqual([])
+    const 위층 = view.getAllByTestId('character-manage-selected-row')
+    const 아래층 = view.getAllByTestId('character-manage-candidate-row')
+    expect(위층).toHaveLength(1)
+    expect(아래층.length).toBeGreaterThan(0)
+    expect(위층.flatMap((row) => within(row).getAllByTestId('drag-handle'))).toHaveLength(1)
+    expect(아래층.flatMap((row) => within(row).queryAllByTestId('drag-handle'))).toEqual([])
+
     expect(view.queryByLabelText('달의아이 순서 변경')).toBeNull()
+    expect(view.getByLabelText('낟낟 순서 변경')).toBeTruthy()
   })
 
   // 끌기와 접근성 액션은 **같은 문**을 쓴다(`moveOcid`). 그래서 기대값을 손으로 적지 않고

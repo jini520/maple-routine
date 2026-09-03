@@ -1,5 +1,5 @@
 /**
- * 온보딩 화면. API 키 → 스케줄 관리 방법 → 캐릭터 선택 세 단계를 `status` 로 갈아 끼우는 셸.
+ * 온보딩 화면. API 키 → 캐릭터 선택 두 단계를 `status` 로 갈아 끼우는 셸.
  *
  * **단계가 라우트가 아니라 `status` switch 다.** 그래서 뒤로 갈 UI 가 없고, 잠기면 출구가 없다는
  * 뜻이라 그 자리에 안내 모달이 얹힌다(배선은 `ContentCharacterStep` 이 갖는다).
@@ -25,10 +25,9 @@ import { MapleSweepSpinner, Text } from '../../components/atoms'
 import { ApiKeyForm } from './ApiKeyForm'
 import { ContentCharacterStep } from './ContentCharacterStep'
 import { OnboardingStep } from './OnboardingStep'
-import { TrackingModeStep } from './TrackingModeStep'
 
 export function OnboardingScreen(): React.JSX.Element {
-  const { status, submitApiKey, selectTrackingMode, submitContentCharacters } = useOnboardingStore()
+  const { status, submitApiKey, submitContentCharacters } = useOnboardingStore()
   // 컨텐츠 캐릭터 저장(setTrackedCharacterOcids)이 끝나 다음 상태로 전이하기 전까지의 짧은
   // 구간 동안 CTA를 스피너로 바꿔 중복 누름을 막는다. 전용 status가 없어 로컬 상태로 다룬다.
   const [isSubmittingContent, setIsSubmittingContent] = useState(false)
@@ -80,15 +79,6 @@ export function OnboardingScreen(): React.JSX.Element {
           </OnboardingStep>
         )
 
-      // 스케줄 관리 방법(자동/수동)을 고르는 단계. 이 앱에서는 키 입력 **다음**
-      // 이다(예열이 없어졌다).
-      case 'selectingTrackingMode':
-        return (
-          <OnboardingStep>
-            <TrackingModeStep onSubmit={selectTrackingMode} />
-          </OnboardingStep>
-        )
-
       // 관리할 캐릭터를 1개 이상 고르는 단계. 계정 드롭다운이 그 안에 있어 여러 메이플 ID 를 넘나든다.
       // 이 case 만 셸을 안 두른다. 단계가 자기 CTA 를 고정 바로 넘기려고 셸을 직접 두르고 끌기
       // 자동 스크롤 배선도 함께 갖는다.
@@ -102,8 +92,8 @@ export function OnboardingScreen(): React.JSX.Element {
           />
         )
 
-      // 수동 모드 시드가 끝날 때까지 스피너를 보여준다(진행률 숫자 없음.
-      // 템플릿 기본값으로 먼저 그리지 않고 최종 값이 확정될 때까지 로딩만 유지).
+      // 시드가 끝날 때까지 스피너를 보여준다(진행률 숫자 없음. 템플릿 기본값으로 먼저 그리지
+      // 않고 최종 값이 확정될 때까지 로딩만 유지).
       case 'seedingTracking':
         return (
           <OnboardingStep center>

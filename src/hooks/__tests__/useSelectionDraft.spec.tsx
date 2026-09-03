@@ -263,3 +263,40 @@ describe('끌기가 그리던 순서와 저장되는 순서가 같다', () => {
     expect(moveOcid(순서목록, from, to)).toEqual(reorderInsert(순서목록, from, to))
   })
 })
+
+// 격자 하나가 두 층을 나눠 쓰는 문. 순서 변경·추가·해제가 전부 이리로 들어온다. 격자에게는
+// 그 셋이 같은 재배열이라 무엇이 남았나 만 오기 때문이다.
+describe('replaceSelection', () => {
+  it('통째로 갈아끼운다', async () => {
+    const view = await 초안(['a1', 'a2', 'a3'])
+
+    await act(async () => {
+      view.result.current.replaceSelection(['a3', 'a1'])
+    })
+
+    expect(view.result.current.selectedOcids).toEqual(['a3', 'a1'])
+  })
+
+  // 마지막 하나를 아래층으로 내린 경우. 비는 것 자체는 막지 않는다. 저장 버튼이 막는다.
+  it('빈 배열도 받는다', async () => {
+    const view = await 초안(['a1'])
+
+    await act(async () => {
+      view.result.current.replaceSelection([])
+    })
+
+    expect(view.result.current.selectedOcids).toEqual([])
+  })
+
+  // 같은 값이면 같은 배열을 돌려준다. 새 배열을 만들면 그것을 읽는 곳이 전부 다시 그려진다.
+  it('같은 값이면 배열 참조가 안 바뀐다', async () => {
+    const view = await 초안(['a1', 'a2'])
+    const before = view.result.current.selectedOcids
+
+    await act(async () => {
+      view.result.current.replaceSelection(['a1', 'a2'])
+    })
+
+    expect(view.result.current.selectedOcids).toBe(before)
+  })
+})

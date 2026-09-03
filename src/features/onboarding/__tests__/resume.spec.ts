@@ -37,17 +37,17 @@ describe('deriveResumeTarget', () => {
 
     await expect(deriveResumeTarget()).resolves.toEqual({ status: 'awaitingApiKey' })
     // 뒤 단계 판정은 읽지도 않는다. 키가 없으면 재개할 것이 없다.
-    expect(getTrackingModeMock).not.toHaveBeenCalled()
     expect(getTrackedCharacterOcidsMock).not.toHaveBeenCalled()
   })
 
-  it('trackingMode를 고르지 않았으면 selectingTrackingMode다. 자동으로 확정하지 않는다', async () => {
+  // 이 게이트가 trackingMode 의 null 과 'auto' 를 구분하던 유일한 자리였다. 단계가 없어지면서
+  // 구분에 소비자가 남지 않으므로 읽지도 쓰지도 않는다.
+  it('trackingMode를 읽지도 쓰지도 않는다', async () => {
     getTrackingModeMock.mockResolvedValue(null)
-    getTrackedCharacterOcidsMock.mockResolvedValue(null)
+    getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
 
-    await expect(deriveResumeTarget()).resolves.toEqual({
-      status: 'selectingTrackingMode',
-    })
+    await expect(deriveResumeTarget()).resolves.toEqual({ status: 'completed' })
+    expect(getTrackingModeMock).not.toHaveBeenCalled()
     expect(setTrackingModeMock).not.toHaveBeenCalled()
   })
 
@@ -74,17 +74,16 @@ describe('deriveResumeTarget', () => {
     expect(setTrackingModeMock).not.toHaveBeenCalled()
   })
 
-  // 마이그레이션(1회): 이전 설치본에서 완주한 사용자는 trackingMode 키가
-  // 없다. 그대로 두면 정상 사용자가 온보딩으로 되돌려진다.
-  it('trackingMode 키가 없는데 추적 목록이 있으면 auto를 1회 기록하고 completed다', async () => {
+  // 옛 설치본 완주자(trackingMode 키 없음 + 추적 목록 있음)를 위한 1회성 기록이 있었다. 그것이
+  // 막던 것은 그들이 새로 생긴 단계로 되돌려지는 일뿐이라, 단계가 없어지며 함께 빠졌다.
+  it('옛 설치본 완주자도 쓰기 없이 completed다', async () => {
     getTrackingModeMock.mockResolvedValue(null)
     getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
 
     await expect(deriveResumeTarget()).resolves.toEqual({
       status: 'completed',
     })
-    expect(setTrackingModeMock).toHaveBeenCalledTimes(1)
-    expect(setTrackingModeMock).toHaveBeenCalledWith('auto')
+    expect(setTrackingModeMock).not.toHaveBeenCalled()
   })
 })
 
@@ -113,14 +112,14 @@ describe('deriveResumeTarget: 계정 범위 all', () => {
     expect(getTrackingModeMock).not.toHaveBeenCalled()
   })
 
-  it('trackingMode를 고르지 않았으면 그대로 selectingTrackingMode다', async () => {
+  it('trackingMode 는 여기서도 안 읽는다', async () => {
     getTrackingModeMock.mockResolvedValue(null)
     getTrackedCharacterOcidsMock.mockResolvedValue(null)
 
     await expect(deriveResumeTarget()).resolves.toEqual({
-      status: 'selectingTrackingMode',
+      status: 'selectingContentCharacters',
     })
-    expect(setTrackingModeMock).not.toHaveBeenCalled()
+    expect(getTrackingModeMock).not.toHaveBeenCalled()
   })
 
   it('추적 캐릭터가 비어 있으면 그대로 selectingContentCharacters다', async () => {
@@ -131,15 +130,14 @@ describe('deriveResumeTarget: 계정 범위 all', () => {
     })
   })
 
-  // 마이그레이션은 계정 축과 무관하다. 범위가 바뀌어도 그대로 돈다.
-  it('trackingMode 키가 없는데 추적 목록이 있으면 auto를 1회 기록하고 completed다', async () => {
+  it('옛 설치본 완주자도 쓰기 없이 completed다', async () => {
     getTrackingModeMock.mockResolvedValue(null)
     getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
 
     await expect(deriveResumeTarget()).resolves.toEqual({
       status: 'completed',
     })
-    expect(setTrackingModeMock).toHaveBeenCalledTimes(1)
+    expect(setTrackingModeMock).not.toHaveBeenCalled()
   })
 
   // 옛 설치본에는 이 값이 남아 있다(지우지 않는다). 읽지 않는 값이라 판정을 바꾸지 않고,

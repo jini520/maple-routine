@@ -6,7 +6,6 @@ import {
   getTrackedCharacterOcids,
   setTrackedCharacterOcids,
 } from '../../storage/character-selection'
-import { type TrackingMode } from '../../storage/tracking-mode'
 import { useToastStore } from '../toast/store'
 import { formatOnboardingError } from './format'
 import { seedManualTrackedContent } from '../tracking-mode/seed'
@@ -23,7 +22,6 @@ import {
 export interface OnboardingStore extends OnboardingState {
   restoreFromStorage(): Promise<void>
   submitApiKey(apiKey: string): Promise<void>
-  selectTrackingMode(mode: TrackingMode): Promise<void>
   submitContentCharacters(ocids: string[]): Promise<void>
   // 저장된 키로 앞으로 갈 수 없게 됐을 때는 여기로만 들어온다. 원인은 무효 키(400 OPENAPI00005 ·
   // 401/403)와 429 둘이고 사슬은 하나이며 문구만 갈린다. 알리기만 하고 이동·삭제는 아래
@@ -111,8 +109,7 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
       // 계정을 고르지 않으므로 대조할 저장된 계정이 없다. 가드의 목적은 그대로다(남의 계정 키로
       // 이전 목록을 쓰게 두지 않는다). 같은 응답으로 추적 ocid 를 대조한다.
       //
-      // 지킬 목록이 없으면 판정 대상 자체가 없다. 여기서 하나도 없다 로 읽으면 처음 키를 넣는
-      // 신규 사용자가 목록이 비었다는 이유로 스케줄 관리 방법 단계를 건너뛴다.
+      // 지킬 목록이 없으면 판정 대상 자체가 없다.
       const trackedOcids = (await getTrackedCharacterOcids()) ?? []
       if (trackedOcids.length === 0) {
         commitResumedStep(target)
@@ -134,17 +131,9 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
       )
     },
 
-    // 온보딩에서 자동·수동 트래킹 모드를 고른 뒤 다음 단계로 넘어간다. setMode 는 시드까지 마친
-    // 뒤 resolve 되므로 그것을 await 한다. 이 시점엔 추적 목록이 아직 비어 있어 시드 대상이
-    // 없지만, 나중에 새 캐릭터를 추가할 때와 같은 경로를 타도록 비동기로 유지한다.
-    async selectTrackingMode(mode: TrackingMode) {
-      await useTrackingModeStore.getState().setMode(mode)
-      set((state) => onboardingReducer(state, { type: 'SELECT_TRACKING_MODE', mode }))
-    },
-
-    // 컨텐츠 추적 캐릭터를 저장하고 온보딩을 마무리한다. 수동 모드면 저장한 캐릭터 전원을
-    // 시드하는 동안 seedingTracking 에 머물며 로딩을 유지하고, 시드가 전부 끝난 뒤에만
-    // 완료된다. 자동 모드는 시드 없이 곧바로 완료.
+    // 컨텐츠 추적 캐릭터를 저장하고 온보딩을 마무리한다. 앱에서 직접 체크하는 모드면 저장한
+    // 캐릭터 전원을 시드하는 동안 seedingTracking 에 머물며 로딩을 유지하고, 시드가 전부 끝난
+    // 뒤에만 완료된다. 게임을 따르는 모드면 시드 없이 곧바로 완료다.
     async submitContentCharacters(ocids: string[]) {
       await setTrackedCharacterOcids(ocids)
 

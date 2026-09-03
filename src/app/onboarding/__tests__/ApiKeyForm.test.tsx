@@ -136,7 +136,7 @@ describe('ApiKeyForm', () => {
     expect(pressableOf(view.getByText('openapi.nexon.com에서 확인'), 'link').props.role).toBe('link')
   })
 
-  // 온보딩 다섯 단계 중 이 화면에만 제목이 없었다. TrackingModeStep 과 같은 블록을 쓴다.
+  // 온보딩 단계 중 이 화면에만 제목이 없었다. `ContentCharacterStep` 과 같은 블록을 쓴다.
   it('제목과 보조문을 보여준다', async () => {
     const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
 

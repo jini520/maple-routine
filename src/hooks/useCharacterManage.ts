@@ -54,6 +54,8 @@ export interface CharacterManageController {
 
   selectAccount: (accountId: string) => void
   addCharacter: (ocid: string) => void
+  /** 격자가 준 순서로 선택 목록을 갈아끼우는 문. 순서 변경·추가·해제가 여기로 들어온다. */
+  replaceSelection: (ocids: string[]) => void
   removeCharacter: (ocid: string) => void
   /** 끌어 놓았을 때·접근성 액션일 때. 둘 다 `moveOcid` 하나를 통과한다. */
   moveCharacter: (fromIndex: number, toIndex: number) => void
@@ -119,6 +121,7 @@ export function useCharacterManage(): CharacterManageController {
     isDirty: draft.isDirty,
     selectAccount: roster.selectAccount,
     addCharacter: draft.addCharacter,
+    replaceSelection: draft.replaceSelection,
     removeCharacter: draft.removeCharacter,
     moveCharacter: draft.moveCharacter,
     setRepresentative: draft.setRepresentative,

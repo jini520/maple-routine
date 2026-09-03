@@ -1,10 +1,8 @@
 import type { MapleAccount } from '../../types'
-import type { TrackingMode } from '../../storage/tracking-mode'
 
 export type OnboardingStatus =
   | 'awaitingApiKey'
   | 'verifyingApiKey'
-  | 'selectingTrackingMode'
   | 'selectingContentCharacters'
   | 'seedingTracking'
   | 'completed'
@@ -50,11 +48,8 @@ export const initialOnboardingState: OnboardingState = {
 }
 
 // 끝내지 않은 온보딩은 그 단계부터 재개한다. 재개 지점은 저장된 값(apiKey ·
-// trackingMode · trackedCharacters)에서 파생하므로 진행 상태 전용 키가 없다.
-export type ResumableOnboardingStatus = Extract<
-  OnboardingStatus,
-  'selectingTrackingMode' | 'selectingContentCharacters'
->
+// trackedCharacters)에서 파생하므로 진행 상태 전용 키가 없다.
+export type ResumableOnboardingStatus = Extract<OnboardingStatus, 'selectingContentCharacters'>
 
 export type OnboardingEvent =
   | { type: 'RESTORE_COMPLETED' }
@@ -62,11 +57,9 @@ export type OnboardingEvent =
   | { type: 'SUBMIT_API_KEY' }
   | { type: 'API_KEY_VERIFIED'; accounts: MapleAccount[] }
   | { type: 'API_KEY_REJECTED'; error: OnboardingError }
-  // 키가 확인되면 자동/수동 트래킹 모드 선택 단계로 넘어간다.
-  | { type: 'SELECT_TRACKING_MODE'; mode: TrackingMode }
-  // 트래킹 모드 선택 후 컨텐츠 추적 캐릭터를 1명 이상 고른다.
+  // 키가 확인되면 곧바로 컨텐츠 추적 캐릭터를 1명 이상 고른다.
   | { type: 'SUBMIT_CONTENT_CHARACTERS' }
-  // 수동 모드일 때 시드가 끝나면(또는 자동 모드는 곧바로) 온보딩이 완료된다.
+  // 시드가 끝나면(시드가 필요 없으면 곧바로) 온보딩이 완료된다.
   | { type: 'ONBOARDING_FINISHED' }
   // 키를 다시 받아야 한다는 것을 알리기만 한다. status 는 그대로 두고 모달만 띄운다. 이동은
   // 사용자가 확인을 눌러 RESET 이 나갈 때 일어난다. 원인(무효 키 · 429)을 싣는다.
@@ -101,11 +94,11 @@ export function onboardingReducer(state: OnboardingState, event: OnboardingEvent
       }
 
     case 'API_KEY_VERIFIED':
-      // 계정을 고르는 단계가 없으므로 키가 확인되면 곧바로 스케줄 관리 방법
-      // 단계다. `accounts` 는 화면이 그리지 않지만, 응답을 받았다는 사실 자체가 키 검증이라
+      // 계정도 스케줄 관리 방법도 고르는 단계가 없으므로 키가 확인되면 곧바로 캐릭터
+      // 선택이다. `accounts` 는 화면이 그리지 않지만, 응답을 받았다는 사실 자체가 키 검증이라
       // 스토어가 재개 판정(같은 응답으로 추적 ocid 대조)에 쓴다.
       return {
-        status: 'selectingTrackingMode',
+        status: 'selectingContentCharacters',
         accounts: event.accounts,
         error: null,
         apiKeyNotice: null,
@@ -118,16 +111,9 @@ export function onboardingReducer(state: OnboardingState, event: OnboardingEvent
         error: event.error,
       }
 
-    case 'SELECT_TRACKING_MODE':
-      // 모드 선택 후 컨텐츠 추적 캐릭터 선택 단계로 넘어간다.
-      return {
-        ...state,
-        status: 'selectingContentCharacters',
-      }
-
     case 'SUBMIT_CONTENT_CHARACTERS':
-      // 수동 모드에서 시드가 끝날 때까지 로딩(스피너)을 유지하는 단계.
-      // 자동 모드는 이 상태를 거치지 않고 곧바로 ONBOARDING_FINISHED로 완료된다(store 참고).
+      // 시드가 필요할 때만 거치는 단계. 끝날 때까지 로딩(스피너)을 유지한다. 필요 없으면
+      // 이 상태를 거치지 않고 곧바로 ONBOARDING_FINISHED 로 완료된다(store 참고).
       return {
         ...state,
         status: 'seedingTracking',

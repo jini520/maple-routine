@@ -126,16 +126,16 @@ describe('useOnboardingStore.restoreFromStorage', () => {
       getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
     })
 
-    it('스케줄 관리 방법을 고르지 않았으면 그 단계부터 재개한다. 자동으로 확정하지 않는다', async () => {
+    it('모드를 안 골랐어도 그것 때문에 멈추지 않는다. 캐릭터 선택으로 간다', async () => {
       getTrackingModeMock.mockResolvedValue(null)
       getTrackedCharacterOcidsMock.mockResolvedValue(null)
 
       await useOnboardingStore.getState().restoreFromStorage()
 
       const state = useOnboardingStore.getState()
-      expect(state.status).toBe('selectingTrackingMode')
+      expect(state.status).toBe('selectingContentCharacters')
       expect(setTrackingModeMock).not.toHaveBeenCalled()
-      // 뒤 단계는 네트워크 없이 재개된다. 예열을 다시 돌리지 않는다.
+      // 재개는 네트워크 없이 된다. 예열을 다시 돌리지 않는다.
       expect(fetchCharacterListMock).not.toHaveBeenCalled()
     })
 
@@ -157,20 +157,20 @@ describe('useOnboardingStore.restoreFromStorage', () => {
       expect(useOnboardingStore.getState().status).toBe('selectingContentCharacters')
     })
 
-    it(' 이전 완주자(trackingMode 키 없음 + 추적 목록 있음)는 auto로 1회 이관하고 완료로 본다', async () => {
+    it('옛 설치본 완주자(trackingMode 키 없음 + 추적 목록 있음)는 쓰기 없이 완료로 본다', async () => {
       getTrackingModeMock.mockResolvedValue(null)
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
 
       await useOnboardingStore.getState().restoreFromStorage()
 
-      expect(setTrackingModeMock).toHaveBeenCalledWith('auto')
+      expect(setTrackingModeMock).not.toHaveBeenCalled()
       expect(useOnboardingStore.getState().status).toBe('completed')
     })
   })
 
 
   // 재개는 **로컬 읽기뿐**이다(계정 선택이 사라진 뒤로는 네트워크가 없다).
-  it('apiKey만 있으면 네트워크 없이 스케줄 관리 방법 단계로 재개한다', async () => {
+  it('apiKey만 있으면 네트워크 없이 캐릭터 선택 단계로 재개한다', async () => {
     getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
     getTrackingModeMock.mockResolvedValue(null)
     getTrackedCharacterOcidsMock.mockResolvedValue(null)
@@ -178,7 +178,7 @@ describe('useOnboardingStore.restoreFromStorage', () => {
     await useOnboardingStore.getState().restoreFromStorage()
 
     const state = useOnboardingStore.getState()
-    expect(state.status).toBe('selectingTrackingMode')
+    expect(state.status).toBe('selectingContentCharacters')
     expect(fetchCharacterListMock).not.toHaveBeenCalled()
   })
 })
@@ -315,7 +315,7 @@ describe('useOnboardingStore.submitApiKey', () => {
       await useOnboardingStore.getState().submitApiKey('key-2')
 
       const state = useOnboardingStore.getState()
-      expect(state.status).toBe('selectingTrackingMode')
+      expect(state.status).toBe('selectingContentCharacters')
     })
 
     it('추적 캐릭터가 비어 있으면 캐릭터 선택 단계로 재개한다', async () => {
@@ -330,7 +330,7 @@ describe('useOnboardingStore.submitApiKey', () => {
     })
 
     // 신규 사용자 회귀: 저장소가 비어 있으면 지킬 목록이 없어 곧바로 첫 단계로 간다.
-    it('추적 목록이 비어 있으면(신규 사용자) 스케줄 관리 방법 단계로 간다', async () => {
+    it('추적 목록이 비어 있으면(신규 사용자) 캐릭터 선택 단계로 간다', async () => {
       getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
       getTrackingModeMock.mockResolvedValue(null)
       getTrackedCharacterOcidsMock.mockResolvedValue(null)
@@ -338,7 +338,7 @@ describe('useOnboardingStore.submitApiKey', () => {
 
       await useOnboardingStore.getState().submitApiKey('key-1')
 
-      expect(useOnboardingStore.getState().status).toBe('selectingTrackingMode')
+      expect(useOnboardingStore.getState().status).toBe('selectingContentCharacters')
     })
 
     // 무효화되면 키만 다시 받고 원래 자리로 돌아온다.
@@ -424,7 +424,7 @@ describe('useOnboardingStore.submitApiKey', () => {
 
       await useOnboardingStore.getState().submitApiKey('key-2')
 
-      expect(useOnboardingStore.getState().status).toBe('selectingTrackingMode')
+      expect(useOnboardingStore.getState().status).toBe('selectingContentCharacters')
     })
 
     it('추적 목록이 빈 배열이어도 같다. 지킬 것이 없다', async () => {
@@ -434,7 +434,7 @@ describe('useOnboardingStore.submitApiKey', () => {
 
       await useOnboardingStore.getState().submitApiKey('key-2')
 
-      expect(useOnboardingStore.getState().status).toBe('selectingTrackingMode')
+      expect(useOnboardingStore.getState().status).toBe('selectingContentCharacters')
     })
 
     // 옛 설치본에는 selectedAccountId 가 남아 있다. 그 값이 새 응답에 없어도 계정 선택으로
@@ -464,45 +464,9 @@ describe('useOnboardingStore.selectAccount', () => {
   // 그대로 두면 계정을 눌렀는데 아무 일도 안 일어난 것처럼 보인다.
 })
 
-describe('useOnboardingStore.selectTrackingMode', () => {
-  function primeSelectingTrackingMode(): void {
-    useOnboardingStore.setState({
-      status: 'selectingTrackingMode',
-      accounts: [account('acc-1')],
-      error: null,
-    })
-  }
-
-  it('선택한 모드로 setMode를 호출하고 selectingContentCharacters로 전이한다', async () => {
-    primeSelectingTrackingMode()
-
-    await useOnboardingStore.getState().selectTrackingMode('manual')
-
-    expect(setModeMock).toHaveBeenCalledWith('manual')
-    expect(useOnboardingStore.getState().status).toBe('selectingContentCharacters')
-  })
-
-  it('setMode가 끝난 뒤에만 selectingContentCharacters로 전이한다', async () => {
-    primeSelectingTrackingMode()
-    let resolveSetMode: () => void = () => {}
-    setModeMock.mockImplementation(
-      () =>
-        new Promise<void>((resolve) => {
-          resolveSetMode = resolve
-        }),
-    )
-
-    const promise = useOnboardingStore.getState().selectTrackingMode('auto')
-    expect(useOnboardingStore.getState().status).toBe('selectingTrackingMode')
-
-    resolveSetMode()
-    await promise
-
-    expect(setModeMock).toHaveBeenCalledWith('auto')
-    expect(useOnboardingStore.getState().status).toBe('selectingContentCharacters')
-  })
-})
-
+// manual 로 이 단계에 들어오는 길은 캐시 데이터(general) 삭제다. trackedCharacters 만 지워지고
+// trackingMode 는 남아, 다음 부팅에 manual 인 채로 여기 도착한다. 분기를 지우면 그 사용자의
+// 체크리스트가 빈 채로 완료된다.
 describe('useOnboardingStore.submitContentCharacters', () => {
   function primeSelectingContentCharacters(): void {
     useOnboardingStore.setState({

@@ -128,7 +128,7 @@ export const FileTextIcon = withIconInterop(FileText)
 export const FlagIcon = withIconInterop(Flag)
 /** 소비 드롭 카테고리. `BossDropSheet` 에서 노란 점 대신 선다. */
 export const FlaskConicalIcon = withIconInterop(FlaskConical)
-/** 자동 트래킹 모드. `TrackingModeStep` 의 "게임에서 정한 것을 따른다". */
+/** 자동 트래킹 모드. `TrackingModeSelector` 의 "게임에서 정한 것을 따른다". */
 export const Gamepad2Icon = withIconInterop(Gamepad2)
 /** 호출 한도 초과. `ApiKeyNoticeModal`(rateLimited). 타이머 계열을 피한 근거는 그 파일에 있다. */
 export const GaugeIcon = withIconInterop(Gauge)
@@ -138,7 +138,7 @@ export const InfoIcon = withIconInterop(Info)
 export const KeyRoundIcon = withIconInterop(KeyRound)
 /** 메이플 유니온 카테고리. `ContentManageScreen` 그룹 헤더·행. */
 export const LayoutGridIcon = withIconInterop(LayoutGrid)
-/** 수동 트래킹 모드. `TrackingModeStep` 의 "앱에서 고른다". */
+/** 수동 트래킹 모드. `TrackingModeSelector` 의 "앱에서 고른다". */
 export const LayoutDashboardIcon = withIconInterop(LayoutDashboard)
 
 export const ListChecksIcon = withIconInterop(ListChecks)

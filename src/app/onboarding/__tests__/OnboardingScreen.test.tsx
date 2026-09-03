@@ -70,7 +70,6 @@ function mockStore(overrides: Partial<StoreState>): void {
     restoreFromStorage: jest.fn(),
     submitApiKey: jest.fn(),
     selectAccount: jest.fn(),
-    selectTrackingMode: jest.fn(),
     submitContentCharacters: jest.fn(),
     noticeApiKeyIssue: jest.fn(),
     confirmApiKeyNotice: jest.fn(),
@@ -123,16 +122,6 @@ describe('OnboardingScreen', () => {
     expect(scroll.props.contentContainerStyle).toMatchObject({ flexGrow: 1 })
   })
 
-  it('status가 selectingTrackingMode이면 TrackingModeStep이 렌더링된다', async () => {
-    mockStore({ status: 'selectingTrackingMode' })
-
-    const view = await renderOverlay(<OnboardingScreen />)
-
-    expect(view.getByText('스케줄러를 어떻게 관리할까요?')).toBeTruthy()
-    expect(view.getByText('자동')).toBeTruthy()
-    expect(view.getByText('수동')).toBeTruthy()
-  })
-
   it('status가 selectingContentCharacters이면 ContentCharacterStep이 렌더링된다', async () => {
     mockStore({ status: 'selectingContentCharacters' })
 
@@ -148,7 +137,7 @@ describe('OnboardingScreen', () => {
 
   // 고정 바는 **CTA 를 넘긴 단계에만** 선다. 셸이 늘 그리면 단계마다 빈 띠가 남는다.
   it('다른 단계에는 고정 액션 바가 없다', async () => {
-    mockStore({ status: 'selectingTrackingMode' })
+    mockStore({ status: 'awaitingApiKey' })
 
     const view = await renderOverlay(<OnboardingScreen />)
 
