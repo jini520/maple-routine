@@ -31,7 +31,7 @@
 | 화면 | `app/settings/SettingsCharactersScreen.tsx` | 캐릭터 관리([[ADR-144]]) |
 | 화면 | `app/settings/SettingsAboutScreen.tsx` | 앱 정보. 버전 · 업데이트 확인 |
 | 화면 | `app/settings/SettingsPrivacyScreen.tsx` | 개인정보 처리방침. `WebView` |
-| 화면 | `components/organisms/CharacterManage/` | `CharacterManageBody` · `SelectedCharacterList`. 온보딩과 공유한다 |
+| 화면 | `components/organisms/CharacterManage/` | `CharacterManageBody` · `CharacterLayerGrid`. 온보딩과 공유한다 |
 | 상태 | `hooks/useCharacterManage.ts` | 조립기. 아래 셋을 부른다([[ADR-208]]) |
 | 상태 | `hooks/useAccountRosters.ts` | 메이플 ID 목록 · 계정별 후보 · TTL |
 | 상태 | `hooks/useSelectionDraft.ts` | 저장 전 목록 순서와 대표 |
@@ -45,7 +45,7 @@
 | 배선 | `app/settings/reload-tab-stores.ts` | 저장 뒤 탭 스토어 셋을 순차로 다시 읽힌다([[ADR-140]] 결정 5) |
 | 상태 | `features/settings` | `changeApiKey`(배선 없음) · `cache-data` |
 | 상태 | `features/onboarding/store.ts` | `noticeApiKeyIssue(kind)` · `RESET` |
-| 상태 | `features/tracking-mode/copy.ts` | 자동·수동 카피. 온보딩과 공유 |
+| 상태 | `features/tracking-mode/copy.ts` | 자동·수동 카피 |
 | 저장 | `storage/api-key.ts` | `clearAuthConfig()` |
 | 저장 | `storage/cache-data.ts` | `clearCacheData()` · `getCacheDataSizes()` |
 | 저장 | `storage/pending-notice.ts` | 리로드를 건너 살아남는 알림 플래그 |
@@ -242,10 +242,11 @@ RN으로 옮기며 `<a target="_blank">` 가 `Pressable` + `Linking.openURL` 이
   부르지 않는다. 순차 실행 · 기다리지 않음 · 실패 삼킴은 캐릭터 저장 뒤 재로드와 같은 정책이고 코드도
   같은 파일(`settings/reload-tab-stores.ts`)을 쓴다.
 
-#### 옵션 카드 안쪽은 온보딩과 공유한다
+#### 옵션 카드 안쪽
 
-[[ADR-035]] 결정 22(2026-08-03)다. 카피(`features/tracking-mode/copy.ts`)와 카드 안쪽 구조를 온보딩
-`TrackingModeStep` 과 공유한다. **한쪽만 고치면 같은 선택지가 두 화면에서 다르게 생긴다.**
+[[ADR-035]] 결정 22(2026-08-03)다. 카피는 화면이 아니라
+`features/tracking-mode/copy.ts` 가 갖는다. **화면에 손으로 적으면 같은 선택지의 설명이 두 벌이
+된다.**
 
 카피는 세 필드다. `title`(자동 · 수동) · `description`(한 문장) · `caution`(그 모드의 한계 한 문장).
 문구 전문과 그 이유는 [[ADR-035]] 결정 22에 있다.
@@ -316,6 +317,9 @@ pop 되면 설정으로 돌아온다.
 
 - **핸들에서만 시작한다.** 행 아무 데서나 끌리면 페이지 세로 스크롤과 충돌한다. 아래 층(후보)에는
   핸들도 끌기도 없다. 그쪽 순서는 사용자 것이 아니라 레벨 내림차순이다.
+- **두 층이 한 격자다**([[ADR-213]]). 카드가 층을 넘는 것이 그 격자 안의 재배열이라, 눌러서
+  옮겨도 카드가 옛 자리에서 새 자리로 미끄러진다. 두 목록으로 가르면 그 움직임이 사라진다.
+  끌어서 층을 넘을 수는 없다. 구분자와 후보 행이 고정이라 위층 행이 내려갈 자리가 없다.
 - **끄는 동안 화면 위아래 가장자리에서 자동으로 스크롤된다.** 고정 영역을 두지 않기로 했으므로
   ([[ADR-131]]) 목록이 화면보다 길면 이것 없이는 끝으로 옮길 수 없다. 스크롤 주체는 화면의
   `ScreenScroll`·`OnboardingStep` 이라, 화면이 `useAnimatedRef` 하나를 만들어 그 셸과 목록 양쪽에

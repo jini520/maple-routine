@@ -37,6 +37,11 @@ function captionText(level: number | null, jobClass: string | undefined): string
 }
 
 export interface CharacterRowProps {
+  /**
+   * 이 행이 어느 층인가. 캐릭터 관리의 두 층이 한 격자의 형제라 상자로는 가를 수 없어, 화면
+   * 밖에서 층을 물을 길이 이것뿐이다.
+   */
+  testID?: string
   name: string
   level: number | null
   jobClass?: string
@@ -115,11 +120,16 @@ export function CharacterRow(props: CharacterRowProps): React.JSX.Element {
 
   // 누를 것이 없으면 버튼이라고 말하지 않는다. 위 층 행은 좌우 컨트롤로만 조작한다.
   return props.onPress === undefined ? (
-    <View testID="character-row" className={ROW_CLASS}>
+    <View testID={props.testID ?? 'character-row'} className={ROW_CLASS}>
       {body}
     </View>
   ) : (
-    <Pressable testID="character-row" role="button" onPress={props.onPress} className={ROW_CLASS}>
+    <Pressable
+      testID={props.testID ?? 'character-row'}
+      role="button"
+      onPress={props.onPress}
+      className={ROW_CLASS}
+    >
       {body}
     </Pressable>
   )

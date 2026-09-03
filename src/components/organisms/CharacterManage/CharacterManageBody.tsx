@@ -28,13 +28,11 @@ import {
 import { useOnboardingStore } from '../../../features/onboarding/store'
 
 import { MapleSweepSpinner, Text } from '../../atoms'
-import { AddMark } from '../../organisms/CharacterRow/AddMark'
-import { CharacterRow } from '../../organisms/CharacterRow/CharacterRow'
+import { CharacterLayerGrid } from './CharacterLayerGrid'
 import { EmptyState } from '../../molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../molecules/ErrorState/ErrorState'
 import { StaleBanner } from '../../molecules/ErrorState/StaleBanner'
 import { AccountSelect } from '../AccountSelect/AccountSelect'
-import { SelectedCharacterList } from './SelectedCharacterList'
 import type { CharacterManageController } from '../../../hooks/useCharacterManage'
 
 export interface CharacterManageBodyProps {
@@ -84,51 +82,36 @@ function Notice(props: { children: React.ReactNode }): React.JSX.Element {
   )
 }
 
-/** 아래 층의 목록 자리. 피커의 `PickerBody` 와 같은 순서로 갈린다. */
-function CandidateArea({
+/**
+ * 후보 행을 격자에 못 넣는 상태에 그리는 것. 배너 · 대기 · 실패 셋이다.
+ *
+ * 행이 있는 정상 경로에서는 배너만 낸다(행은 격자가 그린다). 격자 밖인 이유는 그 자리들이
+ * 카드가 아니라 화면 한 덩어리라, 격자에 넣으면 그것도 끌 수 있는 칸이 되기 때문이다.
+ */
+function CandidateNotice({
   manage,
   place,
 }: {
   manage: CharacterManageController
   place: RosterErrorPlace
-}): React.JSX.Element {
+}): React.JSX.Element | null {
   // 보여줄 후보 풀이 있으면 실패해도 지우지 않는다. 캐시 stub 이 네트워크보다
   // 먼저 오므로 예열이 끝난 정상 경로에서는 이쪽이 기본 분기다.
   if (manage.selectableCount > 0) {
-    const stale = manage.rosterError === null ? null : formatStaleRosterError(manage.rosterError)
-    return (
-      <>
-        {stale !== null && (
-          <StaleBanner
-            message={stale.message}
-            action={
-              stale.action === undefined
-                ? undefined
-                : { label: stale.action.label, onClick: manage.retryRoster }
-            }
-          />
-        )}
-        {manage.candidates.length > 0 ? (
-          <View testID="character-manage-candidates" className="gap-2">
-            {manage.candidates.map((entry) => (
-              <CharacterRow
-                key={entry.ocid}
-                name={entry.name}
-                level={entry.level}
-                jobClass={entry.jobClass}
-                world={entry.world}
-                imageUrl={entry.imageUrl}
-                // 누르는 것은 카드 전체다. `＋` 는 표시일 뿐 버튼이 아니다.
-                onPress={() => manage.addCharacter(entry.ocid)}
-                trailing={<AddMark />}
-              />
-            ))}
-          </View>
-        ) : (
-          <Notice>표시할 캐릭터가 없어요</Notice>
-        )}
-      </>
-    )
+    if (manage.rosterError !== null) {
+      const stale = formatStaleRosterError(manage.rosterError)
+      return (
+        <StaleBanner
+          message={stale.message}
+          action={
+            stale.action === undefined
+              ? undefined
+              : { label: stale.action.label, onClick: manage.retryRoster }
+          }
+        />
+      )
+    }
+    return manage.candidates.length > 0 ? null : <Notice>표시할 캐릭터가 없어요</Notice>
   }
 
   if (manage.isRosterLoading) {
@@ -181,47 +164,52 @@ export function CharacterManageBody({
 
   return (
     <View testID="character-manage-body" className="gap-4">
-      {/* ── 위: 선택됨 (계정 전체) ── */}
-      <View testID="character-manage-selected" className="gap-2">
+      {/* 격자 밖 위에 남는다. 안에 넣으면 첫 칸이 고정 항목이 되어 맨 위로 옮기려는 카드가
+          설 자리를 잃는다. */}
+      <View testID="character-manage-selected">
         <SectionLabel>선택된 캐릭터 {manage.selectedOcids.length}개</SectionLabel>
-        {/* 행들은 별도 컴포넌트다. 끌기·자동 스크롤·접근성 액션이 붙고, 재배열하는 상자에는
-            행만 들어가야 한다(섹션 라벨이 섞이면 그것도 끌린다). */}
-        <SelectedCharacterList
-          views={manage.selectedViews}
-          representativeOcid={manage.representativeOcid}
-          scrollableRef={scrollableRef}
-          onMove={manage.moveCharacter}
-          onRemove={manage.removeCharacter}
-          onSelectRepresentative={manage.setRepresentative}
-        />
       </View>
 
-      <View testID="character-manage-divider" className="h-px bg-border" />
-
-      {/* ── 아래: 고르는 곳 (드롭다운이 고른 계정 하나) ── */}
-      <View className="gap-2">
-        {manage.isAccountsLoading && manage.accounts.length === 0 ? (
-          <Waiting label="메이플 ID 를 불러오고 있어요" />
-        ) : manage.accounts.length === 0 ? (
-          // 계정 목록 자체가 실패했다. 드롭다운도 후보도 세울 수 없어 이 자리 하나로 답한다.
-          <AccountsError manage={manage} place={place} />
-        ) : (
-          <>
-            {manage.selectedAccountId !== null && (
-              <AccountSelect
-                accounts={manage.accounts}
-                selectedAccountId={manage.selectedAccountId}
-                portraitByAccountId={manage.portraitByAccountId}
-                onSelect={manage.selectAccount}
-              />
+      {/* 두 층이 한 격자다. 층을 넘는 것이 재배열이라 그 움직임을 라이브러리가 잇는다. */}
+      <CharacterLayerGrid
+        views={manage.selectedViews}
+        candidates={manage.candidates}
+        representativeOcid={manage.representativeOcid}
+        scrollableRef={scrollableRef}
+        onOrderChange={manage.replaceSelection}
+        onAdd={manage.addCharacter}
+        onRemove={manage.removeCharacter}
+        onSelectRepresentative={manage.setRepresentative}
+        separator={
+          <View testID="character-manage-divider" className="gap-4 pb-2 pt-2">
+            <View className="h-px bg-border" />
+            {manage.isAccountsLoading && manage.accounts.length === 0 ? (
+              <Waiting label="메이플 ID 를 불러오고 있어요" />
+            ) : manage.accounts.length === 0 ? (
+              // 계정 목록 자체가 실패했다. 드롭다운도 후보도 세울 수 없어 이 자리 하나로 답한다.
+              <AccountsError manage={manage} place={place} />
+            ) : (
+              <View className="gap-2">
+                {manage.selectedAccountId !== null && (
+                  <AccountSelect
+                    accounts={manage.accounts}
+                    selectedAccountId={manage.selectedAccountId}
+                    portraitByAccountId={manage.portraitByAccountId}
+                    onSelect={manage.selectAccount}
+                  />
+                )}
+                {/* 라벨 오른쪽의 `{n}개 중 {m}개 표시` 는 두지 않는다. 그 줄이 답하던 질문(왜 12개가
+                    아니라 7개인가)은 이 화면에서 물을 수 없는 질문이다. */}
+                <SectionLabel>캐릭터 추가</SectionLabel>
+              </View>
             )}
-            {/* 라벨 오른쪽의 `{n}개 중 {m}개 표시` 는 두지 않는다. 그 줄이 답하던 질문(왜 12개가
-                아니라 7개인가)은 이 화면에서 물을 수 없는 질문이다. 안 보이는 캐릭터가 왜 안
-                보이는지는 그 숫자로도 알 수 없다. */}
-            <SectionLabel>캐릭터 추가</SectionLabel>
-            <CandidateArea manage={manage} place={place} />
-          </>
-        )}
+          </View>
+        }
+      />
+
+      {/* 후보 행이 없을 때만 무언가 그린다. 행이 있으면 격자가 이미 그렸다. */}
+      <View testID="character-manage-candidates">
+        <CandidateNotice manage={manage} place={place} />
       </View>
     </View>
   )

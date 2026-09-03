@@ -26,6 +26,12 @@ export interface SelectionDraft {
   /** 저장 활성 조건. 집합 ∪ 순서 ∪ 대표 중 하나라도 다르면 참. */
   isDirty: boolean
   addCharacter: (ocid: string) => void
+  /**
+   * 목록을 통째로 갈아끼우는 문. 순서 변경·추가·해제가 전부 여기로 들어온다.
+   *
+   * 격자에게는 그 셋이 같은 재배열이라 **무엇이 남았나** 만 오기 때문이다.
+   */
+  replaceSelection: (ocids: string[]) => void
   removeCharacter: (ocid: string) => void
   /** 끌어 놓았을 때·접근성 액션일 때. 둘 다 `moveOcid` 하나를 통과한다. */
   moveCharacter: (fromIndex: number, toIndex: number) => void
@@ -116,6 +122,14 @@ export function useSelectionDraft(trackedOcids: string[] | null): SelectionDraft
     [editSelection],
   )
 
+  // 값이 같으면 **같은 배열을 돌려준다**. 새 배열은 그것을 읽는 곳을 전부 다시 그리게 한다.
+  const replaceSelection = useCallback(
+    (ocids: string[]): void => {
+      editSelection((previous) => (sameOrder(previous, ocids) ? previous : ocids))
+    },
+    [editSelection],
+  )
+
   const removeCharacter = useCallback(
     (ocid: string): void => {
       editSelection((previous) => previous.filter((candidate) => candidate !== ocid))
@@ -142,6 +156,7 @@ export function useSelectionDraft(trackedOcids: string[] | null): SelectionDraft
     representativeOcid,
     isDirty,
     addCharacter,
+    replaceSelection,
     removeCharacter,
     moveCharacter,
     setRepresentative,
