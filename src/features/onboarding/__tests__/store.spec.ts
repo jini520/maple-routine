@@ -341,7 +341,7 @@ describe('useOnboardingStore.submitApiKey', () => {
       expect(useOnboardingStore.getState().status).toBe('selectingTrackingMode')
     })
 
-    // 이슈 #157 의 요구사항 그 자체. 무효화되면 키만 다시 받고 원래 자리로 돌아온다.
+    // 무효화되면 키만 다시 받고 원래 자리로 돌아온다.
     it('무효화 → 키 재입력 왕복이면 다시 completed이고 저장된 계정이 그대로다', async () => {
       useOnboardingStore.setState({
         status: 'completed',
@@ -437,8 +437,8 @@ describe('useOnboardingStore.submitApiKey', () => {
       expect(useOnboardingStore.getState().status).toBe('selectingTrackingMode')
     })
 
-    // 웹뷰 앱에서 넘어온 설치본에는 selectedAccountId 가 남아 있다. 그 값이 새 응답에 없어도
-    // 'single' 가드처럼 계정 선택으로 되돌리지 않는다. RN 에서 그 값은 읽지 않는다.
+    // 옛 설치본에는 selectedAccountId 가 남아 있다. 그 값이 새 응답에 없어도 계정 선택으로
+    // 되돌리지 않는다. 지금은 그 값을 읽지 않는다.
     it('저장된 selectedAccountId가 응답에 없어도 ocid가 겹치면 재개한다', async () => {
       getAuthConfigMock.mockResolvedValue({ apiKey: 'key-2' })
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-acc-9'])
@@ -571,10 +571,11 @@ describe('useOnboardingStore.submitContentCharacters', () => {
   })
 })
 
-// 저장된 키로 앞으로 갈 수 없게 됐을 때 부르는 진입점은 이것뿐이다.
-// 원인은 둘(무효 키 400 OPENAPI00005·401/403· 429)이고 사슬은 하나다. 처방이 같아 화면도 같다.
-// **알리기만 하고** 이동·삭제는 사용자가 "확인"을 눌러야(confirmApiKeyNotice) 일어난다.
-// 결정 1의 "토스트 + 즉시 이동"은 폐기됐다(이유를 읽기 전에 화면이 바뀌면 원인과 결과가 안 이어진다).
+// 저장된 키로 앞으로 갈 수 없게 됐을 때 부르는 진입점은 이것뿐이다. 원인은 둘(무효 키 400
+// OPENAPI00005·401/403 · 429)이고 사슬은 하나다. 처방이 같아 화면도 같다.
+//
+// 알리기만 하고 이동·삭제는 사용자가 확인을 눌러야(confirmApiKeyNotice) 일어난다. 이유를
+// 읽기 전에 화면이 바뀌면 원인과 결과가 안 이어진다.
 describe('useOnboardingStore.noticeApiKeyIssue', () => {
   function primeCompleted(): void {
     useOnboardingStore.setState({
@@ -585,7 +586,7 @@ describe('useOnboardingStore.noticeApiKeyIssue', () => {
     })
   }
 
-  // 결정 10의 핵심. 뒤에 원래 화면이 남아 있어야 사용자가 무엇을 하다 이렇게 됐는지 보면서 읽는다.
+  // 뒤에 원래 화면이 남아 있어야 사용자가 무엇을 하다 이렇게 됐는지 보면서 읽는다.
   it.each(['invalid', 'rateLimited'] as const)(
     '원인(%s)만 담고 status는 그대로다. 화면을 빼앗지 않는다',
     (kind) => {
@@ -647,9 +648,9 @@ describe('useOnboardingStore.noticeApiKeyIssue', () => {
     },
   )
 
-  // 결정 2가 여는 자리. 옛 가드(`status !== 'completed'`)에서는 전부 no-op이었다.
-  // 이슈 #176의 하드 잠금은 selectingContentCharacters에서 나므로, 여기서 알리지 못하면
-  // 이 phase가 만들려는 출구가 정작 잠긴 사람에게 안 열린다.
+  // 옛 가드(`status !== 'completed'`)에서는 전부 no-op 이었다. 429 로 로스터가 비는 하드
+  // 잠금은 selectingContentCharacters 에서 나므로, 여기서 알리지 못하면 출구가 정작 잠긴
+  // 사람에게 안 열린다.
   it.each(['selectingContentCharacters', 'error'] as const)('온보딩 중간 단계(%s)에서도 알린다. #176의 잠금이 여기서 일어난다', (status) => {
     useOnboardingStore.setState({
       status,
@@ -690,8 +691,8 @@ describe('useOnboardingStore.confirmApiKeyNotice', () => {
     },
   )
 
-  // clearAuthConfig는 selectedAccountId까지 지워 결정 4의 재개를 불가능하게 만든다.
-  // 429도 키를 지운다. 원인별로 갈라 처리하지 않는다.
+  // clearAuthConfig 는 selectedAccountId 까지 지워 재개를 불가능하게 만든다. 429 도 키를
+  // 지운다. 원인별로 갈라 처리하지 않는다.
   it.each(['invalid', 'rateLimited'] as const)(
     '%s. 저장소에서 apiKey만 지운다(연결 해제 경로 clearAuthConfig를 타지 않는다)',
     async (kind) => {
@@ -714,8 +715,8 @@ describe('useOnboardingStore.confirmApiKeyNotice', () => {
     expect(removeApiKeyMock).not.toHaveBeenCalled()
   })
 
-  // 결정 3의 "알려진 열화": 삭제가 실패해도 같은 길을 한 번 더 돌 뿐이라 막다른 길이 아니다.
-  // rethrow하면 호출부가 void 호출이라 미처리 rejection이 된다.
+  // 알려진 열화. 삭제가 실패해도 같은 길을 한 번 더 돌 뿐이라 막다른 길이 아니다. rethrow
+  // 하면 호출부가 void 호출이라 미처리 rejection 이 된다.
   it('저장소 삭제가 실패해도 reject하지 않고 화면 이동은 그대로다', async () => {
     primeNoticed()
     removeApiKeyMock.mockRejectedValue(new Error('disk full'))

@@ -333,8 +333,8 @@ describe('normalizeSchedulerCharacterState: 미접속으로 인한 누락', () =
     expect(result.isMonthlyBossStale).toBe(true)
   })
 
-  // 결정 4로 뒤집힌 판정: bossWeekly가 하나도 없는 응답은 축약된 것이라 남은 bossMonthly도
-  // 신뢰하지 않는다(실측 2026-07-31. 미접속 캐릭터의 당일 응답이 정확히 이 형태다).
+  // bossWeekly 가 하나도 없는 응답은 축약된 것이라 남은 bossMonthly 도 신뢰하지 않는다.
+  // 미접속 캐릭터의 당일 응답이 정확히 이 형태다.
   it('boss_contents에 bossMonthly만 있으면 축약 응답으로 보고 둘 다 stale이다', () => {
     const result = normalizeSchedulerCharacterState({
       ...minimalWire,

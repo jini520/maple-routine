@@ -46,7 +46,7 @@ describe('toOpenOptions', () => {
     expect(location).not.toContain('CapacitorDatabase')
   })
 
-  // 기존 DB 가 평문이라 암호화를 켜면 **읽을 수 없게 된다**(data.md 결정 2).
+  // 기존 DB 가 평문이라 암호화를 켜면 읽을 수 없게 된다.
   it('암호화 키를 붙이지 않는다', () => {
     const options = toOpenOptions('boss_profit', 'no-encryption', 'ios', DIRECTORIES)
 

@@ -936,9 +936,9 @@ describe('줄을 누르면 고칠 수 있다', () => {
   })
 })
 
-// FAB 는 화면 위에 떠 있어 **콘텐츠를 밀어내지 않는다**. 그 몫을 콘텐츠 끝에서 갚지 않으면
-// 스크롤을 끝까지 내렸을 때 마지막 줄이 버튼 뒤로 들어간다(예고한 결함,
-// 사용자 보고 2026-08-25). 값의 출처가 다이얼과 **같은 상수**여야 갈리지 않는다.
+// FAB 는 화면 위에 떠 있어 콘텐츠를 밀어내지 않는다. 그 몫을 콘텐츠 끝에서 갚지 않으면 스크롤을
+// 끝까지 내렸을 때 마지막 줄이 버튼 뒤로 들어간다. 값의 출처가 다이얼과 같은 상수여야 갈리지
+// 않는다.
 describe('떠 있는 ＋ 가 먹는 자리', () => {
   it('콘텐츠 끝에 다이얼 몫만큼 여백을 남긴다', async () => {
     const view = await 그리기()
@@ -1020,7 +1020,7 @@ describe('자동으로 흘러든 줄', () => {
     expect(mockOpenTab).toHaveBeenCalledWith('Profit')
   })
 
-  // ── 정정 1: 결정석 줄은 **그 자리에서 펼친다** ────────────────────────────────
+  // 결정석 줄은 그 자리에서 펼친다.
   it('결정석 줄을 누르면 탭을 안 옮기고 그날 잡은 보스를 편다', async () => {
     const view = await 그리기()
 
@@ -1060,11 +1060,11 @@ describe('자동으로 흘러든 줄', () => {
     expect(flattenStyle(초상.props.style).borderRadius).toBe(8)
   })
 
-  // ── 정정 3: 한 줄에 여섯· 이름 없음 ─────────────────────────────────────────
+  // 한 줄에 여섯 · 이름 없음.
   //
-  // **폭으로 재지 않는다.** 고정 px 면 기기마다 다섯도 일곱도 되고, 퍼센트(`w-1/6` = `16.67%`)면
-  // 여섯이 100.02% 라 하나가 다음 줄로 밀린다(실측. 처음에 그렇게 냈다가 다섯만 섰다).
-  // 그래서 **여섯** 이 레이아웃의 결과가 아니라 **구조**여야 하고, 그 구조를 여기서 본다.
+  // 폭으로 재지 않는다. 고정 px 면 기기마다 다섯도 일곱도 되고, 퍼센트(`w-1/6` = `16.67%`)면
+  // 여섯이 100.02% 라 하나가 다음 줄로 밀린다. 그래서 여섯이 레이아웃의 결과가 아니라
+  // 구조여야 하고, 그 구조를 여기서 본다.
   it('여덟 마리는 여섯 + 둘로 끊긴다', async () => {
     records.loadDayRecords.mockResolvedValue([{ ...결정석줄, count: 8, bosses: 보스여덟 }])
     const view = await 그리기()
@@ -1294,8 +1294,8 @@ describe('기간 합계 세 칸', () => {
     const view = await 그리기()
 
     const 순수익 = view.getByTestId('cashbook-summary-net')
-    // 통째로 못 박는다. `formatMesoCompact(-20000000)` 이 내는 **ASCII `-`** 가 새어 나오면
-    // 문자열이 갈려 이 줄이 깨진다(부호는 U+2212 다). 단위는 정정 7.
+    // 통째로 못 박는다. `formatMesoCompact(-20000000)` 이 내는 ASCII `-` 가 새어 나오면
+    // 문자열이 갈려 이 줄이 깨진다. 부호는 U+2212 다.
     expect(순수익).toHaveTextContent('−2,000만 메소')
     expect(flattenStyle(순수익.props.style).color).toBe(
       flattenStyle(view.getByTestId('cashbook-summary-expense').props.style).color,
@@ -1337,8 +1337,8 @@ describe('기간 합계 세 칸', () => {
     expect(within(재료).getByTestId('cashbook-summary-expense')).toBeTruthy()
     expect(within(재료).queryByTestId('cashbook-summary-net')).toBeNull()
 
-    // 단위는 **큰 숫자에만** 붙는다. 셋이 같은 축이라 한 번이면 된다.
-    // (이 케이스는 기록이 없어 셋 다 0 이다. 0 에는 부호도 안 붙는다. 결정 3.)
+    // 단위는 큰 숫자에만 붙는다. 셋이 같은 축이라 한 번이면 된다. 이 케이스는 기록이 없어
+    // 셋 다 0 이고 0 에는 부호도 안 붙는다.
     expect(view.getByTestId('cashbook-summary-net')).toHaveTextContent('0 메소')
     expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+0')
   })
@@ -1356,11 +1356,10 @@ describe('기간 합계 세 칸', () => {
 })
 
 /**
- * **다시 들어오면 다시 읽는다. 바뀌었을 때만**.
+ * 다시 들어오면 다시 읽는다. 바뀌었을 때만.
  *
- * 이 화면은 탭이라 마운트가 앱 실행당 한 번인데 원천 넷 중 둘은 남의 화면이
- * 쓴다. 사용자 보고: *보스 수익에서 아이템 가격을 입력하고 가계부로 가면 새로고침을
- * 해야 반영돼*.
+ * 이 화면은 탭이라 마운트가 앱 실행당 한 번인데 원천 넷 중 둘은 남의 화면이 쓴다. 보스
+ * 수익에서 아이템 가격을 입력하고 가계부로 오면 새로고침 없이도 반영돼야 한다.
  */
 describe('CashbookScreen: 낡은 숫자', () => {
   it('판이 그대로면 다시 안 읽는다. 탭을 오가는 것은 흔한 일이다', async () => {

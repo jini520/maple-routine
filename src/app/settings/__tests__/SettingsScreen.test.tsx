@@ -1,20 +1,14 @@
 // 이 화면이 지키는 것을 적는다.
 //
-// 갈린 것 넷
-// ① **라우터 프로브가 없다.** 목적지를 세워 이동을 보는 대신 RN 은 라우트
-//    이름으로 미므로 **`navigate` 가 무엇으로 불렸는가**를 본다(실제로 그 화면이 열리는 것은
-//    `RootNavigator` 테스트가 이미 본다. 그쪽이 라우트 표 전체를 훑는다).
-// ② `getAllByRole('button')` 으로 행을 세던 것이 **`SettingsRow` 가 심는 라벨 목록**이 된다.
-//    RN 은 자식 글자를 합쳐 접근성 이름을 만들지 않아 `row.textContent` 같은 축이 없다.
-// ③ **콘텐츠 블록이 상단 안전영역을 직접 갖는다는 것은 옮길 계약이 아니다.** 그 트릭이
-//    필요했던 이유(안쪽 래퍼의 `-mt` 가 콘텐츠를 y=0 으로 끌어올린다)가 RN 에 없다.
-//    `ScreenScroll` 이 헤더 없는 화면에서는 **스크롤포트 상자 자체를** 내린다(그 파일 `상단`절).
-// ④ **하단 버전은 실행 중인 OTA 번들이 아니라 빌드 시점 값이다**.
-//    폴백 경로만 남았다. 그래서 `OTA 번들 버전을 표시한다` 가 그 폴백 케이스로 접힌다.
-// ⑤ **캐릭터 관리 행이 이 화면에 생겼다**. 단
-//    결정 1 이 그것을 모달에서 **하위 페이지**로 바꾸면서, 조회·저장·401/429 배선이 통째로
-//    `SettingsCharactersScreen` 으로 옮겨갔다. 여기 남는 계약은 셋뿐이다. 배지(단위 **개**),
-//    누르면 그 화면을 민다, `openPicker` 로 들어와도 같은 곳으로 민다.
+// ① 라우터 프로브가 없다. 라우트 이름으로 미므로 `navigate` 가 무엇으로 불렸는가 를 본다.
+//    실제로 그 화면이 열리는 것은 `RootNavigator` 테스트가 라우트 표 전체로 본다.
+// ② 행을 세는 축이 `SettingsRow` 가 심는 라벨 목록이다. RN 은 자식 글자를 합쳐 접근성 이름을
+//    만들지 않아 `row.textContent` 같은 축이 없다.
+// ③ 콘텐츠 블록이 상단 안전영역을 직접 갖지 않는다. `ScreenScroll` 이 헤더 없는 화면에서는
+//    스크롤포트 상자 자체를 내린다.
+// ④ 하단 버전은 실행 중인 OTA 번들이 아니라 빌드 시점 값이다.
+// ⑤ 캐릭터 관리 행의 계약은 셋뿐이다. 배지(단위 개), 누르면 그 화면을 민다, `openPicker` 로
+//    들어와도 같은 곳으로 민다. 조회·저장·401/429 배선은 `SettingsCharactersScreen` 이 갖는다.
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { loadCacheDataSizes } from '../../../features/settings/cache-data'
@@ -350,8 +344,7 @@ describe('SettingsScreen', () => {
     expect(view.getByTestId('theme-modal-overlay')).toBeTruthy()
   })
 
-  // 셋 다 `/settings/account-data` 로 내려갔다. 되돌아오면 결정 1 의
-  // "값을 고르는 카드"가 다시 혼종이 된다.
+  // 셋 다 `/settings/account-data` 로 내려갔다. 되돌아오면 값을 고르는 카드가 다시 혼종이 된다.
   it.each(['계정 변경', '연결 해제', '캐시 데이터 삭제', 'API 키 재입력'])(
     '"%s" 행을 본화면에 두지 않는다',
     async (label) => {

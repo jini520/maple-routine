@@ -137,8 +137,8 @@ describe('DropPriceScreen: 기간을 이어받는다', () => {
     expect(load).toHaveBeenCalledWith(PERIOD)
   })
 
-  // 처음엔 주 단위로만 열었는데, 그러면 **월간 보스 드롭에 닿을 길이 없었다**(사용자 보고
-  // 2026-08-10). 그 기록의 `period_key` 는 `YYYY-MM` 이라 어느 주차 조회에도 안 걸린다.
+  // 주 단위로만 열면 월간 보스 드롭에 닿을 길이 없다. 그 기록의 `period_key` 는 `YYYY-MM`
+  // 이라 어느 주차 조회에도 안 걸린다.
   it('월간 탭에서 들어오면 그 달을 연다', async () => {
     mockStores({ tab: 'monthly', periodKey: '2026-08' })
     await renderOverlay(<DropPriceScreen />)

@@ -11,8 +11,8 @@ import {
 const LIGHT_SEED: ThemeSeed = { primary: '#F58B0F', secondary: '#F7D00D', third: '#CA763A', mode: 'light' }
 const DARK_SEED: ThemeSeed = { primary: '#9975B3', secondary: '#D1C093', third: '#D8608F', mode: 'dark' }
 
-// 결정 1의 핵심 요구. "primary는 충분히 어둡다"를 전제하지 않는다. 아주 밝은 파스텔과
-// 아주 어두운 색을 양 극단으로 두고, 두 경우 모두 채움 위 전경이 성립하는지 본다.
+// primary 는 충분히 어둡다 를 전제하지 않는다. 아주 밝은 파스텔과 아주 어두운 색을 양 극단으로
+// 두고, 두 경우 모두 채움 위 전경이 성립하는지 본다.
 const PASTEL_SEED: ThemeSeed = { primary: '#BFE3F5', secondary: '#FBD9E3', third: '#D9F0D1', mode: 'light' }
 const DEEP_SEED: ThemeSeed = { primary: '#2B1454', secondary: '#123C2E', third: '#4A1220', mode: 'dark' }
 
@@ -302,10 +302,9 @@ describe('deriveMediaScope: 카드 위에 직접 놓이는 것만 다시 묶는�
   })
 
   /**
-   * accent 틴트·잉크는 **다시 묶지 않는다**. 틴트 칩은 자기 배경을 갖고 있어서 뒤의 카드 색과
+   * accent 틴트·잉크는 다시 묶지 않는다. 틴트 칩은 자기 배경을 갖고 있어 뒤의 카드 색과
    * 무관하고, 카드 기준으로 다시 계산하면 옅은 칩이 어두운 칩으로 바뀌어 카드에 묻힌다
-   * (머쉬맘 완료 배지가 `#FCF6DD` 옅은 크림에서 `#382C14` 어두운 올리브가 됐던 문제,
-   * 사용자 보고 2026-07-30).
+   * (머쉬맘 완료 배지가 `#FCF6DD` 옅은 크림에서 `#382C14` 어두운 올리브가 됐다).
    */
   it('accent 틴트·잉크는 카드 안에서도 페이지 값을 쓴다', () => {
     const scope = deriveMediaScope(deriveTheme(LIGHT_SEED), 'light') as Record<string, string>

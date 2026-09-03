@@ -789,8 +789,8 @@ describe('useContentSchedulerStore', () => {
     })
   })
 
-  // 결정 1~5: 화면에 들어왔다는 사실만으로는 조회하지 않는다. 게이트는 자동 진입 경로에만
-  // 걸리고, 판정 근거는 캐시 우선 표시 단계가 이미 읽은 syncedAt 이다.
+  // 화면에 들어왔다는 사실만으로는 조회하지 않는다. 게이트는 자동 진입 경로에만 걸리고,
+  // 판정 근거는 캐시 우선 표시 단계가 이미 읽은 syncedAt 이다.
   describe('화면 진입 재조회 게이트', () => {
     function minutesAgo(minutes: number): string {
       return new Date(Date.now() - minutes * 60 * 1000).toISOString()

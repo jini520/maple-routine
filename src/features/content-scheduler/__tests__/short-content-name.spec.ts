@@ -8,8 +8,8 @@ import { CONTENT_TEMPLATE } from '../../../lib/scheduler/scheduler-content-templ
 import { shortDailyContentName, shortWeeklyContentName } from '../short-content-name'
 
 describe('shortWeeklyContentName: 접두어만 뗀다', () => {
-  // 지역 매칭을 걷은 이유가 이 넷이다. 정정 26 이 하던 일이 이것뿐이었고, 그중 둘이 같은 글자로
-  // 접혔다(타락한 세계수 ×2).
+  // 지역 매칭을 걷은 이유가 이 넷이다. 하던 일이 이것뿐이었고 그중 둘이 같은 글자로 접혔다
+  // (타락한 세계수 ×2).
   it.each([
     ['[주간 퀘스트] 크리티아스 주간 임무', '크리티아스 주간 임무'],
     ['[주간 퀘스트] 타락한 세계수 주간 임무', '타락한 세계수 주간 임무'],
@@ -34,8 +34,8 @@ describe('shortWeeklyContentName: 접두어만 뗀다', () => {
     expect(shortWeeklyContentName('[길드] 지하 수로')).toBe('[길드] 지하 수로')
   })
 
-  // 정정 40 이 잡은 결함의 원천. 이제 참조 데이터 안에서는 안 겹친다. 다만 그것은 데이터의
-  // 우연이지 이 함수가 보장하는 성질이 아니라, 호출부의 `key` 는 인덱스를 함께 쓴다.
+  // 이제 참조 데이터 안에서는 안 겹친다. 다만 그것은 데이터의 우연이지 이 함수가 보장하는
+  // 성질이 아니라, 호출부의 `key` 는 인덱스를 함께 쓴다.
   it('지금 참조 데이터에서는 짧은 이름이 겹치지 않는다', () => {
     const 이름들 = CONTENT_TEMPLATE.weekly.map((entry) => shortWeeklyContentName(entry.content_name))
 

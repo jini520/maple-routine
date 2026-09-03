@@ -10,7 +10,7 @@ import {
   resolveBottomBarMetrics,
 } from '../bottom-bar-metrics'
 
-/** 비례 상수를 역산한 기기. 이 폭에서 정정 30 이전의 값이 그대로 나와야 한다. */
+/** 비례 상수를 역산한 기기. 이 폭에서 비율 도입 이전의 값이 그대로 나와야 한다. */
 const 기준기기 = 402
 const 태블릿 = 834
 
@@ -52,8 +52,8 @@ describe('큰 화면에서는 폭이 상한에서 멈춘다', () => {
     expect(resolveBottomBarMetrics(1024).widthPx).toBe(BAR_MAX_WIDTH)
   })
 
-  // **폭의 상한이 높이의 상한을 겸한다.** 값을 따로 적으면 **폭은 멈췄는데 높이만 계속 자라는**
-  // 조합이 만들어지고, 그것은 정정 30 이 세운 비율 자체를 깨는 상태다.
+  // 폭의 상한이 높이의 상한을 겸한다. 값을 따로 적으면 폭은 멈췄는데 높이만 계속 자라는
+  // 조합이 만들어지고, 그것은 비율 자체를 깨는 상태다.
   it('폭이 멈추면 높이도 함께 멈춘다', () => {
     const 태블릿_metrics = resolveBottomBarMetrics(태블릿)
 

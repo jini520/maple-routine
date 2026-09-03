@@ -275,9 +275,8 @@ describe('두 층. 위는 계정을 넘고 아래는 계정 하나다', () => {
     expect(namesIn(view, 'character-manage-selected')).toEqual(['낟낟'])
   })
 
-  // ★ 대기 자리에 **문구가 보인다.** 예전에는 `aria-label` 만 있어 화면에는
-  // 마크 하나뿐이었고, 그 마크가 대로 **움직이지도 않았다**. 사용자 보고가
-  // 그 조합을 **진행중인지 알 수 없다** 로 반려했다.
+  // 대기 자리에 문구가 보인다. `aria-label` 만 있으면 화면에는 마크 하나뿐이고, 그 조합은
+  // 진행중인지 알 수 없다.
   it('대기 문구가 화면에 보인다. 마크만으로는 무엇을 기다리는지 모른다', async () => {
     mockContentStore({ trackedOcids: ['a1'] })
     rosterHangingAccounts.add('account-b')

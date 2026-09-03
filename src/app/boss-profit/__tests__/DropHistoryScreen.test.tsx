@@ -199,8 +199,8 @@ describe('DropHistoryScreen: 셸과 조회', () => {
   })
 })
 
-// 사용자 지정 형식. 한 기록이 목록에서 큰 비중을 차지하지 않도록 아이콘·난이도
-// 배지·2단 레이아웃 없이 한 줄 문장으로만 둔다.
+// 한 기록이 목록에서 큰 비중을 차지하지 않도록 아이콘·난이도 배지·2단 레이아웃 없이 한 줄
+// 문장으로만 둔다.
 describe('DropHistoryScreen: 기록 한 줄', () => {
   it('고가가 아닌 기록은 한 줄 문장으로만 보여준다', async () => {
     mockStore({
@@ -382,15 +382,14 @@ describe('DropHistoryScreen: 미획득 요약', () => {
     const { getByTestId } = await renderHistory()
 
     const summary = 문장(getByTestId('valuable-drought'))
-    // 3주 미획득 = 사용자 지정 4주차 풀
+    // 3주 미획득 = 4주차 풀
     expect(문구풀(3).some((headline) => summary.includes(headline))).toBe(true)
     expect(summary).toContain('마지막 에픽 빔!')
     expect(summary).toContain('루즈 컨트롤 머신 마크')
   })
 
-  // 문구는 사용자 지정. **전 단계가 풀**이라 표는 문구를 담지 않고 풀 소속만
-  // 본다. **한 케이스에서 네 번 렌더하지 않는다**. RNTL 14 는 한 케이스에 렌더가
-  // 셋을 넘기면 그 뒤가 빈 화면으로 떨어진다.
+  // 전 단계가 풀이라 표는 문구를 담지 않고 풀 소속만 본다. 한 케이스에서 네 번 렌더하지
+  // 않는다. RNTL 14 는 한 케이스에 렌더가 셋을 넘기면 그 뒤가 빈 화면으로 떨어진다.
   it.each([
     [0, '#f7d00d', 0],
     [1, '#e0b400', 6],

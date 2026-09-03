@@ -21,12 +21,11 @@ import { join } from 'node:path'
 const SRC = join(__dirname, '..')
 
 /**
- * 온보딩은 **결정 2 그대로 제외**다. 단계에 제목 줄이 없어 그 `marginTop` 은 헤더 여백이 아니라
- * 콘텐츠 여백이라 축이 다르다.
+ * 온보딩은 제외다. 단계에 제목 줄이 없어 그 `marginTop` 은 헤더 여백이 아니라 콘텐츠 여백이라
+ * 축이 다르다.
  *
- * 그 인셋을 실제로 읽는 자리는 로 **단계 셸**(`app/onboarding/OnboardingStep.tsx`)
- * 로 옮겨갔다. 화면 파일이 아니라 이 가드가 훑지 않는다. 예외 자체는 화면에 남겨 둔다(단계가 다시
- * 화면으로 접히면 그 자리가 곧 이 이름이다).
+ * 그 인셋을 실제로 읽는 자리는 단계 셸(`app/onboarding/OnboardingStep.tsx`)이고 화면 파일이
+ * 아니라 이 가드가 훑지 않는다. 예외 자체는 화면에 남겨 둔다.
  */
 const EXEMPT = new Set(['OnboardingScreen.tsx'])
 

@@ -208,8 +208,8 @@ describe('income_records.meso_amount 재작성 (이슈 #265)', () => {
 })
 
 /**
- * 이슈 #265 의 재현 그 자체다. 시트가 넘기는 드래프트는 `IncomeSheet.test.tsx` 가 붙들고 있고
- * (`mesoAmount: null`· `pointAmount: 30000` …), **그 아래가 여기서 처음 진짜 DB 를 만난다.**
+ * 시트가 넘기는 드래프트는 `IncomeSheet.test.tsx` 가 붙들고 있고(`mesoAmount: null` ·
+ * `pointAmount: 30000` …), 그 아래가 여기서 처음 진짜 DB 를 만난다.
  */
 describe('기타를 메포·캐시로 적어도 저장된다 (목이 아닌 SQLite)', () => {
   const base = {

@@ -142,8 +142,8 @@ describe('deriveResumeTarget: 계정 범위 all', () => {
     expect(setTrackingModeMock).toHaveBeenCalledTimes(1)
   })
 
-  // 웹뷰 앱을 쓰다 RN 으로 넘어온 설치본에는 이 값이 남아 있다(지우지 않는다).
-  // 읽지 않는 값이라 판정을 바꾸지 않고, 있으면 있는 그대로 실어 보낸다.
+  // 옛 설치본에는 이 값이 남아 있다(지우지 않는다). 읽지 않는 값이라 판정을 바꾸지 않고,
+  // 있으면 있는 그대로 실어 보낸다.
   it('저장된 selectedAccountId가 있으면 그 값을 그대로 싣는다. 판정은 바뀌지 않는다', async () => {
     getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
 

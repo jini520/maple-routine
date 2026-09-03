@@ -1,12 +1,10 @@
-// 바텀시트. 성공 기준은 *"유일 사용처인
-// `BossDropSheet` 의 테스트 4개가 **수정 없이** 통과할 것"* 으로 삼았기 때문이다(스킨·공개 API 를
-// 안 바꾼다는 결정 2 를 그 자리에서 검사하는 방식). RN 에서는 그 화면이 아직 없으므로 **그때 그
-// 테스트가 지켰을 계약**을 직접 적는다.
+// 바텀시트.
 //
-// **이 파일은 라이브러리를 세워 둔다(`jest.mock`).** 진짜 `@gorhom/bottom-sheet` 은 레이아웃 측정과
-// UI 스레드 애니메이션 위에 서 있어 jest 에서 시트 내용이 아예 마운트되지 않는다(실측. `waitFor`
-// 로 1초를 기다려도 안 나온다). 그래서 여기서 보는 것은 **우리가 무엇을 넘겼는가**이고, 그 값들이
-// 라이브러리가 실제로 받는 프롭인지는 **타입 검사**가 지킨다(컴포넌트가 진짜 타입을 import 한다).
+// 이 파일은 라이브러리를 세워 둔다(`jest.mock`). 진짜 `@gorhom/bottom-sheet` 은 레이아웃 측정과
+// UI 스레드 애니메이션 위에 서 있어 jest 에서 시트 내용이 아예 마운트되지 않는다(`waitFor` 로
+// 1초를 기다려도 안 나온다). 그래서 여기서 보는 것은 우리가 무엇을 넘겼는가 이고, 그 값들이
+// 라이브러리가 실제로 받는 프롭인지는 타입 검사가 지킨다.
+//
 // 라이브러리를 진짜로 세워 마운트되는지는 옆 파일(`BottomSheet.wiring.test.tsx`)이 본다.
 import type { ReactNode } from 'react'
 import { Keyboard, Text, View } from 'react-native'
@@ -94,7 +92,7 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
     expect(getByTestId('boss-drop-sheet')).toBeTruthy()
   })
 
-  // 결정 2 의 스킨. 라이브러리 기본 핸들 색·라운딩이 아니라 이 값들이어야 한다.
+  // 라이브러리 기본 핸들 색·라운딩이 아니라 이 값들이어야 한다.
   it('그랩 핸들·배경·라운딩이 스킨 그대로다', async () => {
     const { getByTestId } = await open()
     const sheet = getByTestId('sheet')

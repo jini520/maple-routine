@@ -217,9 +217,8 @@ describe('BossManageScreen: 공통', () => {
     expect(screen.queryByText(/캐릭터를 먼저 선택해주세요/)).toBeNull()
   })
 
-  // 스케줄러가 한 목록이 되면서 이 화면의 탭도 함께 걷혔다.
-  // 결정 2 와(**승계가 아니라 공유**)가 이 축에서 폐기된 자리다. 공유할 상대가
-  // 사라졌으므로 되살리지 말 것.
+  // 스케줄러가 한 목록이 되면서 이 화면의 탭도 함께 걷혔다. 공유할 상대가 사라졌으므로
+  // 되살리지 말 것.
   it('탭 없이 월간·주간이 한 목록에 서고, 월간이 위다', async () => {
     mockStore({ characters: [character()] })
 
@@ -416,8 +415,7 @@ describe('BossManageScreen: 자동 모드', () => {
     expect(stateOf(screen.getByLabelText('모든 보스 보기')).checked).toBe(true)
   })
 
-  // 등록 보스가 하나도 없으면 토글이 꺼져 있어도 전체로 대체한다(
-  // 결정 4 가 승계했다. 뒤집힌 것은 스위치의 방향과 이름뿐이다).
+  // 등록 보스가 하나도 없으면 토글이 꺼져 있어도 전체로 대체한다.
   it('등록된 보스가 하나도 없으면 토글이 꺼져 있어도 전체 목록이다', async () => {
     mockStore({ characters: [character()] })
 

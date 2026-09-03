@@ -61,7 +61,7 @@ describe('transferPerMember: 수수료를 거쳐도 같아지는 **보낼 금액
   })
 })
 
-// **이 describe 가 결정 2 그 자체다.** 위의 고정값 하나는 표를 베낀 것이고, 아래는 **왜 그 값인가** 다.
+// 위의 고정값 하나는 표를 베낀 것이고, 아래는 왜 그 값인가 다.
 describe('불변식. 여섯이 같아진다', () => {
   const CASES = [
     { salePriceMeso: 1_000_000_000, partySize: 6, saleFeePercent: 3, splitFeePercent: 3 },

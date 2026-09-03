@@ -176,10 +176,8 @@ describe('savePrice · excludePrice', () => {
   })
 })
 
-// 2026-08-10 사용자 보고. "가격 입력하고 보스 수익으로 가면 새로고침해야 반영된다".
-//
 // 두 스토어가 같은 테이블(`boss_drop_records`)을 각자 캐시한다. 보스 수익은 스택 화면 왕복에도
-// 마운트를 유지하므로 여기서 쓴 값을 **알려주지 않으면 옛 스냅샷을 계속 그린다**.
+// 마운트를 유지하므로 여기서 쓴 값을 알려주지 않으면 옛 스냅샷을 계속 그린다.
 describe('보스 수익 스토어 동기화', () => {
   it('저장하면 보스 수익의 dropsByRowKey 도 함께 갱신된다', async () => {
     const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')

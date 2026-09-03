@@ -1442,10 +1442,10 @@ describe('useBossProfitStore', () => {
     })
   })
 
-  // "기록은 있는데 응답에 행이 없는" 조합의 복원이 동기화 완료
-  // 분기에만 있었다. 이후 건너뛴 진입은 캐시 단계가 곧 최종 화면이라 그 조합이 총 수익에서
-  // 통째로 빠진다. 이슈 #160 과 같은 증상(총 수익 미달)의 별개 경로다. 실측 경로는 미접속 캐릭터의
-  // 축약 응답이다(월간 보스를 처치한 뒤 1주 이상 미접속 → bossMonthly 가 reg=false·comp=false 로만 남음).
+  // 기록은 있는데 응답에 행이 없는 조합의 복원이 동기화 완료 분기에만 있으면, 건너뛴 진입은
+  // 캐시 단계가 곧 최종 화면이라 그 조합이 총 수익에서 통째로 빠진다. 실측 경로는 미접속
+  // 캐릭터의 축약 응답이다(월간 보스를 처치한 뒤 1주 이상 미접속 → bossMonthly 가
+  // reg=false·comp=false 로만 남음).
   describe('캐시 단계의 기록만 있는 조합 복원', () => {
     function minutesAgo(minutes: number): string {
       return new Date(Date.now() - minutes * 60 * 1000).toISOString()
@@ -2799,8 +2799,8 @@ describe('useBossProfitStore', () => {
     })
   })
 
-  // 결정 1~6: 화면에 들어왔다는 사실만으로는 조회하지 않는다. 게이트는 자동 진입 경로에만
-  // 걸리고, 판정 근거는 캐시 우선 표시 단계가 이미 읽은 syncedAt 이다.
+  // 화면에 들어왔다는 사실만으로는 조회하지 않는다. 게이트는 자동 진입 경로에만 걸리고,
+  // 판정 근거는 캐시 우선 표시 단계가 이미 읽은 syncedAt 이다.
   describe('화면 진입 재조회 게이트', () => {
     function minutesAgo(minutes: number): string {
       return new Date(Date.now() - minutes * 60 * 1000).toISOString()
@@ -2889,7 +2889,7 @@ describe('useBossProfitStore', () => {
         expect(state.rows[0].payoutMeso).toBe(8080000)
       })
 
-      // 결정 5-①: 이 ADR은 네트워크 정책을 하나도 바꾸지 않는다(~4 무변경).
+      // 네트워크 정책은 하나도 바뀌지 않는다.
       it('자동 기록을 해도 syncSchedules 호출 수는 0 그대로다', async () => {
         markSyncAttemptedThisRun()
         getCachedSchedulerStateMock.mockResolvedValue(cachedEntry(minutesAgo(5)))
@@ -2976,8 +2976,8 @@ describe('useBossProfitStore', () => {
         }
       })
 
-      // 결정 5-④: 조회 실패를 "기록 없음"으로 읽으면 사용자가 저장한 파티원 수가 1로 덮인다
-      // 캐시 단계의 폴백을 [] 에서 null 로 바꾼 것이 이 가드의 선행 조건이다.
+      // 조회 실패를 기록 없음 으로 읽으면 사용자가 저장한 파티원 수가 1 로 덮인다. 캐시
+      // 단계의 폴백이 [] 가 아니라 null 인 것이 이 가드의 선행 조건이다.
       it('캐시 단계의 기록 조회가 실패하면 기록하지 않는다', async () => {
         markSyncAttemptedThisRun()
         getCachedSchedulerStateMock.mockResolvedValue(cachedEntry(minutesAgo(5)))
@@ -3036,9 +3036,9 @@ describe('useBossProfitStore', () => {
         )
       })
 
-      // 결정 5-②: 건너뛰지 않는 진입의 캐시는 낡았을 수 있고 곧 실제 동기화가 온다.
-      // 의 방어가 서 있어야 할 곳은 정확히 거기다. 동기화를 실패시켜 두면
-      // 기록이 남았을 때 그것을 만든 것이 캐시 단계임이 확정된다.
+      // 건너뛰지 않는 진입의 캐시는 낡았을 수 있고 곧 실제 동기화가 온다. 방어가 서 있어야
+      // 할 곳은 정확히 거기다. 동기화를 실패시켜 두면 기록이 남았을 때 그것을 만든 것이
+      // 캐시 단계임이 확정된다.
       it('건너뛰지 않는 진입의 캐시 단계는 여전히 기록하지 않는다', async () => {
         getCachedSchedulerStateMock.mockResolvedValue(cachedEntry(minutesAgo(5)))
         syncSchedulesMock.mockRejectedValue(new Error('network'))

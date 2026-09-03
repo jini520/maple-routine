@@ -907,8 +907,8 @@ describe('useBossSchedulerStore', () => {
     })
   })
 
-  // 결정 2·3: 한도 가드의 본체는 스토어다. UI에서만 막으면 난이도 교체·시드
-  // 같은 다른 호출 경로가 그대로 새어나간다.
+  // 한도 가드의 본체는 스토어다. UI 에서만 막으면 난이도 교체·시드 같은 다른 호출 경로가
+  // 그대로 새어나간다.
   describe(': 수동 주간 보스 12개 한도', () => {
     // weekly-bosses.json 주간 섹션 앞부분 12종. 실재하는 이름이어야 주기·시즌 판정이 통한다.
     const TWELVE_WEEKLY_BOSSES = [
@@ -1186,8 +1186,8 @@ describe('useBossSchedulerStore', () => {
     })
   })
 
-  // 결정 1~5: 화면에 들어왔다는 사실만으로는 조회하지 않는다. 게이트는 자동 진입 경로에만
-  // 걸리고, 판정 근거는 캐시 우선 표시 단계가 이미 읽은 syncedAt 이다.
+  // 화면에 들어왔다는 사실만으로는 조회하지 않는다. 게이트는 자동 진입 경로에만 걸리고,
+  // 판정 근거는 캐시 우선 표시 단계가 이미 읽은 syncedAt 이다.
   describe('화면 진입 재조회 게이트', () => {
     function minutesAgo(minutes: number): string {
       return new Date(Date.now() - minutes * 60 * 1000).toISOString()

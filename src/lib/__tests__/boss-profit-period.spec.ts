@@ -292,9 +292,9 @@ describe('getBackfillQueryDate', () => {
   })
 })
 
-// 결정 2(+정정 1·2): 기간 상태를 여섯 가지로 나눈다. 판정에 필요한 입력을 전부 인자로
-// 받는 순수 함수라 store·화면이 같은 값을 공유할 수 있다(전에는 화면은 isPeriodQueryable,
-// 백필은 target별로 따로 판정해 월간 탭에서 두 문구가 동시에 뜨는 경로가 있었다. 이슈 #78 E).
+// 기간 상태를 여섯 가지로 나눈다. 판정에 필요한 입력을 전부 인자로 받는 순수 함수라 스토어와
+// 화면이 같은 값을 공유할 수 있다. 화면은 `isPeriodQueryable`, 백필은 target 별로 따로
+// 판정하면 월간 탭에서 두 문구가 동시에 뜨는 경로가 생긴다.
 describe('resolvePeriodDataState', () => {
   const base = {
     isCurrentPeriod: false,

@@ -14,8 +14,8 @@ describe('rail 규격은 겹치지 않는다', () => {
     expect(PORTRAIT_RAIL.faceSize / 2).toBeLessThan(ringInnerEdge)
   })
 
-  // 아래 호의 글자는 **안쪽으로** 자란다. 자란 끝이 링에 닿으면 안 된다. 정정 2 로 호가 하나뿐이라
-  // 검사할 관계도 하나다(레벨은 같은 베이스라인에 나란히 앉는다).
+  // 아래 호의 글자는 안쪽으로 자란다. 자란 끝이 링에 닿으면 안 된다. 호가 하나뿐이라 검사할
+  // 관계도 하나다. 레벨은 같은 베이스라인에 나란히 앉는다.
   it('글자가 안쪽으로 자라도 링에 안 닿는다', () => {
     expect(PORTRAIT_RAIL.textR - textCap).toBeGreaterThan(ringOuterEdge)
   })

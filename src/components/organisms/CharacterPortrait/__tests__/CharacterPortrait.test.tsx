@@ -81,8 +81,8 @@ function textStyleOf(node: AtomElement): { fontSize: unknown; fontWeight: unknow
 }
 
 describe('CharacterPortrait · rail 규격의 곡선 글자', () => {
-  // 정정 1·2·4·5: 둘 다 **아래**에 있고, **호 하나**(같은 `Path`)를 나눠 쓰며, 가운데에 맞추는 것은
-  // 줄이 아니라 **둘의 경계**다. 레벨이 6시에서 끝나고 이름이 6시에서 시작한다.
+  // 둘 다 아래에 있고 호 하나(같은 `Path`)를 나눠 쓰며, 가운데에 맞추는 것은 줄이 아니라 둘의
+  // 경계다. 레벨이 6시에서 끝나고 이름이 6시에서 시작한다.
   it('레벨과 이름이 한 호를 쓰고 원 중앙을 경계로 좌·우로 갈린다', async () => {
     const view = await rail()
 

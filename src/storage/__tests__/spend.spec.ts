@@ -262,7 +262,7 @@ describe('updateSpendRecord', () => {
     expect(sql.slice(0, sql.indexOf('WHERE'))).not.toContain('recorded_at')
   })
 
-  // 수정으로 시세 없는 메포 행을 만들 수 있으면 정정 2 ③ 의 방어가 반쪽이 된다.
+  // 수정으로 시세 없는 메포 행을 만들 수 있으면 저장소의 방어가 반쪽이 된다.
   it('시세 없는 메포 행으로는 못 고친다', async () => {
     const { updateSpendRecord } = require('../spend') as typeof import('../spend')
 

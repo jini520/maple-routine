@@ -1,13 +1,12 @@
 /**
- * 시트 안의 입력 칸. **부품은 RN 것 그대로, 시트가 보는 값만 채운다**.
+ * 시트 안의 입력 칸. 부품은 RN 것 그대로, 시트가 보는 값만 채운다.
  *
  * `@gorhom/bottom-sheet` 는 `animatedKeyboardState.target` 이 비어 있으면 키보드 이벤트를 받고도
- * 상태를 **안 올린다**(라이브러리 `useAnimatedKeyboard`). 정정 5 는 그 값을 채우려고 라이브러리의
- * `BottomSheetTextInput` 을 썼는데, 그것은 안쪽이 `react-native-gesture-handler` 의 입력이라
- * **안드로이드 한글 조합이 깨졌다**(자모가 따로 확정된다). 그래서 부품을 되돌리고 값만 채운다.
+ * 상태를 안 올린다. 그 값을 채우려고 라이브러리의 `BottomSheetTextInput` 을 쓰면 안쪽이
+ * `react-native-gesture-handler` 의 입력이라 안드로이드 한글 조합이 깨진다(자모가 따로
+ * 확정된다). 그래서 부품을 되돌리고 값만 채운다.
  *
- * 그 값을 채우는 자리가 아톰에서 여기로 왔다. 아톰은 자기가 시트 안에
- * 있는지 모른다.
+ * 그 값을 채우는 자리가 아톰이 아니라 여기다. 아톰은 자기가 시트 안에 있는지 모른다.
  */
 const mockInsideSheet = jest.fn<unknown, [boolean?]>(() => null)
 

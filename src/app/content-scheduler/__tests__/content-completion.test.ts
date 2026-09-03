@@ -110,8 +110,8 @@ describe('주간 완료 판정', () => {
     expect(weeklyContentCompletion(weekly({ name, questState: 0 }))).toBe('incomplete')
   })
 
-  // 결정 4의 핵심. 끝이 없는 항목은 **미완료** 가 아니라 **세지 않음** 이다. 정정 7 이후 이 자리에
-  // 남은 것은 무릉도장 하나다(층수는 참여 여부로도 못 접는다. 1층도 **했다** 인지는 답이 없다).
+  // 끝이 없는 항목은 미완료가 아니라 세지 않음이다. 이 자리에 남은 것은 무릉도장 하나다.
+  // 층수는 참여 여부로도 못 접는다. 1층도 했다 인지는 답이 없다.
   it('무릉도장은 판정하지 않는다', () => {
     const name = '[주간 퀘스트] 무릉도장'
     expect(weeklyContentCompletion(weekly({ name, nowCount: 50, maxCount: 0 }))).toBe('unmeasurable')
@@ -134,7 +134,7 @@ describe('진행 합계', () => {
   it('끝이 없는 항목은 분모에서 빠진다', () => {
     const contents = [
       weekly({ name: '[주간 퀘스트] 무릉도장', nowCount: 90 }),
-      // 지하 수로는 정정 7로 **분모에 든다**. 점수가 있으니 완료로도 센다.
+      // 지하 수로는 분모에 든다. 점수가 있으니 완료로도 센다.
       weekly({ name: '[길드] 지하 수로', nowCount: 1200 }),
       weekly({ name: '[주간 퀘스트] 크리티아스', questState: 2 }),
     ]

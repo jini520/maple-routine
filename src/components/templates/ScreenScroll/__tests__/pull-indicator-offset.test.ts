@@ -25,8 +25,7 @@ describe('resolvePullIndicatorOffset', () => {
     expect(resolvePullIndicatorOffset({ fadeTopPx: 59, platform: 'ios' })).toBe(59)
   })
 
-  // ★ 이 테스트가 정정 1 자신이다. 정정 전에는 안드로이드도 59(또는 48)를 그대로 받아
-  //   원이 필요보다 24dp 낮은 자리에서 돌았다.
+  // 안드로이드도 59(또는 48)를 그대로 받으면 원이 필요보다 24dp 낮은 자리에서 돈다.
   it('안드로이드는 원이 이미 내려와 있는 24 를 뺀다', () => {
     expect(resolvePullIndicatorOffset({ fadeTopPx: 48, platform: 'android' })).toBe(24)
     expect(ANDROID_CIRCLE_REST_TOP_PX).toBe(24)

@@ -284,8 +284,8 @@ describe('displayedBosses: 수동 모드', () => {
   })
 })
 
-// 탭이 걷히면서 **어느 순서로 서는가** 가 화면의 판단이 아니라 이 모듈의 판단이 된다(
-// 결정 1). 화면이 다시 해석하면 today 가 같은 목록을 다른 순서로 읽을 길이 열린다.
+// 탭이 걷히면서 어느 순서로 서는가 가 화면의 판단이 아니라 이 모듈의 판단이 된다. 화면이 다시
+// 해석하면 today 가 같은 목록을 다른 순서로 읽을 길이 열린다.
 describe('displayedBossSections: 통합 목록의 순서', () => {
   it('월간이 먼저, 그다음 주간이다', () => {
     const weekly = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true })

@@ -11,8 +11,8 @@ import {
 
 describe('monsterLevelRangeOf', () => {
   /**
-   * **지역의 범위는 사냥터에 등장하는 몬스터 레벨이 정한다**(사용자 지정
-   * 2026-08-28). 참조표가 적어 둔 `minLevel`·`maxLevel` 은 **추천 레벨**이라 이것과 다르다.
+   * 지역의 범위는 사냥터에 등장하는 몬스터 레벨이 정한다. 참조표가 적어 둔 `minLevel`·
+   * `maxLevel` 은 추천 레벨이라 이것과 다르다.
    */
   it('그 지역 사냥터의 몬스터 레벨을 훑어 낸다', () => {
     expect(monsterLevelRangeOf(findHuntingRegion('tallahart')!)).toEqual({ min: 290, max: 294 })

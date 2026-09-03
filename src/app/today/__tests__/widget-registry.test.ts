@@ -21,8 +21,8 @@ describe('기본 배치', () => {
     expect(new Set(placedIds).size).toBe(placedIds.length)
   })
 
-  // 배치가 코드 상수인 v1 에서는 **선언만 남고 아무도 안 쓰는 크기**가 생긴다(정정 13. 남기기로
-  // 한 값이다). 그러니 **선언된 크기 = 쓰이는 크기** 로 적으면 안 되고, 반대 방향만 참이다.
+  // 배치가 코드 상수라 선언만 남고 아무도 안 쓰는 크기가 생긴다. 그러니 선언된 크기 = 쓰이는
+  // 크기 로 적으면 안 되고 반대 방향만 참이다.
   it('배치가 쓰는 크기는 전부 그 위젯이 선언한 것이다. 반대는 아니다', () => {
     for (const placement of TILE_LAYOUT) {
       expect(WIDGET_SIZES_BY_ID[placement.id]).toContainEqual({ w: placement.w, h: placement.h })

@@ -29,8 +29,8 @@ describe('select', () => {
     expect(setLastSelectedCharacterMock).toHaveBeenCalledWith('ocid-2')
   })
 
-  // **이 테스트가 이슈 #245 자신이다.** 한 화면에서 고른 값이 다른 화면의 구독에 그대로 보여야
-  // 한다. 스토어가 하나이므로 **전파** 라는 단계가 아예 없다는 것이 결정 1 의 내용이다.
+  // 한 화면에서 고른 값이 다른 화면의 구독에 그대로 보여야 한다. 스토어가 하나이므로 전파라는
+  // 단계가 아예 없다.
   it('고른 값은 구독자 전원이 같은 것을 본다', async () => {
     const 본_값: (string | null)[] = []
     const 구독_해제 = useCharacterSelectionStore.subscribe((state) => 본_값.push(state.selectedOcid))

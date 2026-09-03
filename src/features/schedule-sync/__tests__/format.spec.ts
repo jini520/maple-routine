@@ -7,7 +7,7 @@ describe('formatScheduleSyncError', () => {
     // 토스트는 한 줄이 상한이라 원인만 말하고 처방은 인라인 자리가 준다.
     [{ kind: 'rateLimited' }, '호출 한도를 초과했습니다'],
     [{ kind: 'network' }, '네트워크 오류가 발생했습니다'],
-    // 결정 1로 갈라진 세 종류
+    // 갈라진 세 종류
     [{ kind: 'characterUnavailable' }, '이 캐릭터는 조회할 수 없습니다'],
     [{ kind: 'periodOutOfRange' }, '이 기간은 조회할 수 없습니다'],
     [{ kind: 'notCollected' }, '아직 집계되지 않았습니다'],
@@ -38,7 +38,7 @@ describe('formatRosterError', () => {
     }
   })
 
-  // 결정 3 +: 영구 실패에는 버튼을 주지 않는다.
+  // 영구 실패에는 버튼을 주지 않는다.
   it.each(['picker', 'onboarding'] as const)('%s의 characterUnavailable은 액션이 없다(영구 실패)', (place) => {
     const copy = formatRosterError({ kind: 'characterUnavailable' }, place)
     expect(copy.action).toBeUndefined()
@@ -77,9 +77,8 @@ describe('formatRosterError', () => {
     expect(copy.action).toBeUndefined()
   })
 
-  // 회귀 가드: 온보딩 중에는 무효화 경로가 성립하지 않으므로(status가 completed가 아니다,
-  // 결정 6) 그 실패는 폼 자체의 에러이고 재시도가 실제 처방이다. 이 phase가 이 자리를
-  // 건드리지 않았음이 이 단언으로 증명된다.
+  // 회귀 가드. 온보딩 중에는 무효화 경로가 성립하지 않으므로(status 가 completed 가 아니다)
+  // 그 실패는 폼 자체의 에러이고 재시도가 실제 처방이다.
   it('온보딩의 invalidApiKey는 문구·액션이 그대로다. 재시도가 실제 처방인 자리', () => {
     const copy = formatRosterError({ kind: 'invalidApiKey' }, 'onboarding')
 
@@ -88,8 +87,8 @@ describe('formatRosterError', () => {
     expect(copy.action).toEqual({ kind: 'retry', label: '다시 시도' })
   })
 
-  // 결정 2(일부 폐기): 429의 처방은 재시도가 아니라 키 단계 확인이다.
-  // 처방이 "키를 확인하라"인데 버튼이 "다시 시도"면 화면이 두 말을 한다.
+  // 429 의 처방은 재시도가 아니라 키 단계 확인이다. 처방이 키를 확인하라 인데 버튼이 다시
+  // 시도 면 화면이 두 말을 한다.
   it.each(['picker', 'onboarding'] as const)('%s의 network는 재시도를 주지만 rateLimited는 액션이 없다', (place) => {
     expect(formatRosterError({ kind: 'network' }, place).action?.kind).toBe('retry')
     expect(formatRosterError({ kind: 'rateLimited' }, place).action).toBeUndefined()

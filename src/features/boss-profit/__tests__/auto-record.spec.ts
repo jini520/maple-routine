@@ -104,7 +104,7 @@ describe('autoRecordRows', () => {
     expect(result[0].payoutMeso).toBe(3_333_333)
   })
 
-  // 결정 7 /: "출처가 지금의 사실인가" 하나가 두 작업을 함께 막는다.
+  // 출처가 지금의 사실인가 하나가 두 작업을 함께 막는다.
   it('isSourceCurrent가 false인 행은 기록도 드롭 이관도 하지 않는다', async () => {
     const stale = row({ ocid: 'stale' })
 

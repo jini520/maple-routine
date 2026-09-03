@@ -850,8 +850,8 @@ describe('syncSchedules', () => {
       expect(results[0].state).toEqual(stage1State)
     })
 
-    // 결정 4(=, 이슈 #87 문제 1): 위 14회가 **매 동기화마다 영구 반복**되던
-    // 자리다. 과거 날짜도 0건이라 resolved가 영원히 참이 되지 않고 상태가 변하지 않기 때문이다.
+    // 위 14회가 매 동기화마다 영구 반복되던 자리다. 과거 날짜도 0건이라 resolved 가 영원히
+    // 참이 되지 않고 상태가 변하지 않기 때문이다.
     describe('조회 원장. 같은 날짜를 두 번 조회하지 않는다', () => {
       it('두 번째 동기화는 오늘 응답 1회로 끝난다. 해결하지 못한 13일을 다시 훑지 않는다', async () => {
         const characters = [mockCharacter('ocid-1')]
@@ -1121,8 +1121,8 @@ describe('syncSchedules', () => {
     })
   })
 
-  // 이슈 #139: 갱신 경로가 피커 하나뿐이라 레벨·외형이 "피커를 마지막으로 연 시점"에 굳었다.
-  // 동기화가 실제로 도는 회차에 편승시켜 그 스냅샷을 푼다.
+  // 갱신 경로가 피커 하나뿐이면 레벨·외형이 피커를 마지막으로 연 시점에 굳는다. 동기화가
+  // 실제로 도는 회차에 편승시켜 그 스냅샷을 푼다.
   describe('mockCharacter/basic 편승 갱신', () => {
     it('추적 캐릭터 N명을 동기화하면 mockCharacter/basic을 N회 호출하고 cachedAt과 함께 캐시에 쓴다', async () => {
       const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
@@ -1310,8 +1310,8 @@ describe('syncSchedules', () => {
       expect(getAccountSharedProgressMock).toHaveBeenCalledWith('acc-9')
     })
 
-    // 이 파일의 나머지 케이스가 전부 단일 계정이지만, 그것들은 "결과"만 본다. 이 케이스는
-    // **호출 수와 순서까지** 고정한다. 웹뷰 앱은 이 경로로 계속 배포되므로 여기가 회귀 가드다.
+    // 이 파일의 나머지 케이스가 전부 단일 계정이지만 그것들은 결과만 본다. 이 케이스는 호출
+    // 수와 순서까지 고정한다.
     it('단일 계정 입력에서는 호출 수·순서·원장 키가 지금과 같다 (웹뷰 앱 회귀 가드)', async () => {
       const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2'), mockCharacter('ocid-3')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
@@ -1399,8 +1399,8 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
       expect(getCachedCharacterBasicMock).not.toHaveBeenCalled()
     })
 
-    // 결정 1로 갱신: 예전에는 mockCharacter/list 응답 시점에 캐시 없는 캐릭터까지 전부
-    // 채워 넣었으나(access_flag 미상), 이제는 캐시로 활성이 확인된 캐릭터만 남는다.
+    // 캐시로 활성이 확인된 캐릭터만 남는다. `character/list` 응답 시점에 캐시 없는 캐릭터까지
+    // 채워 넣지 않는다.
     it('mockCharacter/list 응답이 도착해도 캐시로 활성이 확인된 캐릭터만 담긴 목록으로 교체된다', async () => {
       const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
@@ -1563,7 +1563,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
     ])
   })
 
-  // 결정 1로 갱신: 예전에는 imageUrl: null + mockCharacter/list의 이름/레벨로 즉시 넣었다.
+  // 캐시로 활성이 확인된 캐릭터만 남는다.
   it('캐시가 없는 캐릭터는 mockCharacter/basic으로 활성이 확인되기 전까지 어떤 방출에도 포함되지 않는다', async () => {
     const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])

@@ -259,8 +259,8 @@ describe('objectParticle', () => {
   })
 })
 
-// 사용자 지정 형식: "지내우시님이 가디언 엔젤 슬라임(카오스)에서 가디언 엔젤링을
-// 획득하였습니다."아이템만 강조 대상으로 떼어내 반환한다(고가면 화면이 골드 pill로 감싼다).
+// 형식은 `지내우시님이 가디언 엔젤 슬라임(카오스)에서 가디언 엔젤링을 획득하였습니다.` 다.
+// 아이템만 강조 대상으로 떼어내 반환한다. 고가면 화면이 골드 pill 로 감싼다.
 describe('formatDropHistoryLine', () => {
   it('캐릭터·보스·난이도·아이템으로 한 줄 문장을 만든다', () => {
     const line = formatDropHistoryLine(
@@ -378,9 +378,8 @@ function pool(weeksSince: number): string[] {
 }
 
 describe('formatValuableDroughtHeadline', () => {
-  // 문구는 사용자 지정. 구현자가 톤을 다듬지 않는다.
-  // 마지막 단계만 풀이던 것이 전 단계 풀이 됐다. 기존 문구는 각 풀의 **첫 항목**이라
-  // 인덱스를 주지 않은 호출은 예전과 글자 하나 다르지 않다(회귀 가드).
+  // 마지막 단계만 풀이던 것이 전 단계 풀이 됐다. 기존 문구는 각 풀의 첫 항목이라 인덱스를
+  // 주지 않은 호출은 예전과 글자 하나 다르지 않다.
   it('index 0은 단계마다 기존 문구를 그대로 준다', () => {
     expect(formatValuableDroughtHeadline(0, 0)).toBe('와따리! ㅇㄱㄱㄷ')
     expect(formatValuableDroughtHeadline(1, 0)).toBe('그래, 그럴 수 있지')
