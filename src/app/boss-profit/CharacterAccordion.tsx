@@ -58,10 +58,10 @@ import {
   VALUABLE_CARD_RING_WIDTH,
 } from './valuable-card-glow'
 
-// 월간 탭 진행 링의 분모. 리터럴 1이 아니라 참조 데이터에서 파생한다. 월간
-// 보스가 늘면 링 칸 수가 따라 늘어 "데이터는 2종인데 링은 1칸"이 될 수 없다. `boss-matching` 의
-// 두 한도와 나란히 두지 않는 이유는 성격이 달라서다. 그쪽은 게임이 정한 한도이고 이건 "우리가
-// 추적하는 월간 보스 종류 수"라 이 화면만 쓴다.
+// 월간 탭 진행 링의 분모. 리터럴 1 이 아니라 참조 데이터에서 파생한다. 월간 보스가 늘면 링 칸
+// 수가 따라 늘어 데이터는 2종인데 링은 1칸 이 될 수 없다. `boss-matching` 의 두 한도와 나란히
+// 두지 않는 것은 성격이 달라서다. 그쪽은 게임이 정한 한도이고 이건 우리가 추적하는 월간 보스
+// 종류 수라 이 화면만 쓴다.
 const MONTHLY_BOSS_COUNT = weeklyBossesData.monthly.length
 
 /**
@@ -99,10 +99,10 @@ function ValuableCardGlow(props: { isExpanded: boolean }): React.JSX.Element {
 }
 
 /**
- * 골드 테두리. 웹 `::before` 회전 샤인 링의 **degrade 그림**(파일 머리 ①).
+ * 골드 테두리. 회전 샤인 링의 폴백 그림.
  *
- * 반경은 을 그대로 따른다: 펼침 셸은 자식을 **패딩 박스**(반경 13 = 14 − 테두리
- * 1)에서 자르므로 링도 13, 접힘 셸은 테두리가 없어 14 다.
+ * 펼침 셸은 자식을 패딩 박스(반경 13 = 14 − 테두리 1)에서 자르므로 링도 13, 접힘 셸은
+ * 테두리가 없어 14 다.
  */
 function ValuableCardRing(props: { isExpanded: boolean }): React.JSX.Element {
   return (
@@ -126,7 +126,7 @@ function ValuableCardRing(props: { isExpanded: boolean }): React.JSX.Element {
 /**
  * 아이템 칩이 있을 때만 금액을 세로 스택으로 감싼다. 없으면 자식을 그대로 흘려보낸다.
  *
- * **값을 안 매긴 카드는 뷰가 한 겹도 늘지 않는다**.
+ * 값을 안 매긴 카드는 뷰가 한 겹도 늘지 않는다.
  */
 function ItemAwareMoney(props: { wrap: boolean; children: React.ReactNode }): React.JSX.Element {
   if (!props.wrap) return <>{props.children}</>
@@ -146,9 +146,9 @@ export function CharacterAccordion(props: {
     left: ISSUE_POPOVER_EDGE_GAP,
     caretLeft: ISSUE_POPOVER_WIDTH / 2,
   })
-  // 팝오버 가로 위치를 정하려면 **카드와 금액 두 상자**가 필요하다(금액 폭이 자릿수에 따라 변해
-  // 배지의 x 를 고정값으로 알 수 없다). state 가 아니라 ref 인 것은 이 값을 **렌더가 읽지 않기**
-  // 때문이다. 재는 일은 배지를 탭한 뒤에만 일어난다(state 로 두면 카드마다 마운트 렌더가 한 번 는다).
+  // 팝오버 가로 위치를 정하려면 카드와 금액 두 상자가 필요하다. 금액 폭이 자릿수에 따라 변해
+  // 배지의 x 를 고정값으로 알 수 없다. state 가 아니라 ref 인 것은 이 값을 렌더가 읽지 않기
+  // 때문이다. 재는 일은 배지를 탭한 뒤에만 일어난다.
   const cardRef = useRef<View | null>(null)
   const moneyRef = useRef<View | null>(null)
   const {
@@ -171,8 +171,8 @@ export function CharacterAccordion(props: {
     sumDropPayout(groupDrops) +
     group.weeklySubtotals.reduce((sum, subtotal) => sum + sumDropPayout(subtotal.drops), 0)
   const hasItemRevenue = itemTotal > 0
-  // 낱개가 없는 몫은 **주차 한 줄씩** 말한다. 라벨을 `N주차` 로 고정하는 이유는
-  // `formatBossProfitPeriodLabel` 이 최근 두 주만 "이번 주"/"지난 주"로 불러 줄이 어긋나기 때문이다.
+  // 낱개가 없는 몫은 주차 한 줄씩 말한다. 라벨을 `N주차` 로 고정하는 것은
+  // `formatBossProfitPeriodLabel` 이 최근 두 주만 이번 주·지난 주로 불러 줄이 어긋나기 때문이다.
   const weeklyItemLines = group.weeklySubtotals
     .map((subtotal, index) => ({
       periodKey: subtotal.periodKey,
@@ -181,16 +181,16 @@ export function CharacterAccordion(props: {
     }))
     .filter((line) => line.meso > 0)
 
-  // 처치 진행 링은 두 탭 · 모든 기간에 그리고, 무엇을 세는지는 탭이 정한다. 월간 탭은
-  // 주간 처치 수를 끌어오지 않는다. 월간 rows 에 주간 행 자체가 없고, 12는 주 단위로 초기화되는
-  // 한도라 월 단위로 곱한 분모는 게임에 없다.
+  // 처치 진행 링은 두 탭 · 모든 기간에 그리고 무엇을 세는지는 탭이 정한다. 월간 탭은 주간 처치
+  // 수를 끌어오지 않는다. 월간 rows 에 주간 행 자체가 없고, 12 는 주 단위로 초기화되는 한도라
+  // 월 단위로 곱한 분모는 게임에 없다.
   const clearProgress =
     tab === 'weekly'
       ? { cleared: countGroupClearedWeeklyBosses(group), total: WEEKLY_BOSS_CLEAR_LIMIT, cycle: tab }
       : { cleared: countGroupClearedMonthlyBosses(group), total: MONTHLY_BOSS_COUNT, cycle: tab }
 
   /**
-   * 배지를 탭하면 두 상자를 재서 팝오버를 앉힌다(파일 머리 ①).
+   * 배지를 탭하면 두 상자를 재서 팝오버를 앉힌다.
    *
    * 측정이 오기 전에도 팝오버는 뜬다. `resolveIssueAnchor` 의 기본 기하(왼쪽 끝)로 서 있다가
    * 다음 프레임에 제자리를 잡는다.
@@ -213,15 +213,14 @@ export function CharacterAccordion(props: {
   }
 
   return (
-    // 형제 순서가 곧 그리는
-    // 순서이고 `zIndex` 도 부모 안에서만 겨루므로 그 격리가 기본값이다. 새어나갈 곳이 없다.
+    // 형제 순서가 곧 그리는 순서이고 `zIndex` 도 부모 안에서만 겨루므로 그 격리가 기본값이다.
     <View
       ref={cardRef}
       testID="character-accordion"
       className={isIssueOpen ? 'relative z-[9]' : 'relative'}
     >
-      {/* 글로우는 셸 **바깥**이다. 셸은 펼침 상태에서 자식을 잘라내므로 안에 두면
-          밖으로 번지는 그림자가 잘린다(파일 머리 ②). */}
+      {/* 글로우는 셸 바깥이다. 셸은 펼침 상태에서 자식을 잘라내므로 안에 두면 밖으로 번지는
+          그림자가 잘린다. */}
       {hasValuable && <ValuableCardGlow isExpanded={isExpanded} />}
 
       {props.issue !== undefined && isIssueOpen && (
@@ -233,8 +232,7 @@ export function CharacterAccordion(props: {
       )}
 
       {/* 아이템 내역은 별도 네이티브 윈도우로 화면 위에 뜬다. 보스 행이 쓰는 것과 같은
-          컴포넌트다. 카드 셸의 클리핑을 피하는 것이 그 선택의 이유이고, 웹의 포털+`fixed` 와
-          성질이 같다. */}
+          컴포넌트다. 카드 셸의 클리핑을 피하는 것이 그 선택의 이유다. */}
       {isItemPopoverOpen && (
         <ItemRevenuePopover
           drops={groupDrops}
@@ -262,8 +260,8 @@ export function CharacterAccordion(props: {
             : undefined
         }
       >
-        {/* 상하 패딩이 `p-4`(16)가 아니라 `py-3`(12)인 것은 아바타 슬롯이 진행 링 때문에 32 → 40px
-            로 커진 만큼 돌려받은 것이다. 헤더 높이는 링 도입 전과 같은 64px
+        {/* 상하 패딩이 `p-4`(16)가 아니라 `py-3`(12)인 것은 아바타 슬롯이 진행 링 때문에
+            32 → 40px 로 커진 만큼 돌려받은 것이다. 헤더 높이는 링 도입 전과 같은 64px
             (12 + 40 + 12). 좌우는 보스 행(`p-4`)과 맞춰 16px 유지. */}
         <Pressable
           role="button"
@@ -294,13 +292,13 @@ export function CharacterAccordion(props: {
           <Text numberOfLines={1} className="flex-1 text-sm font-semibold text-text">
             {group.characterName}
           </Text>
-          {/* 숫자 표기(n/12)는 보류 상태 그대로다. 헤더 가로폭을 캐릭터명과
-              다투는 문제가 안 풀렸다. 진행률은 아바타 링이 표현한다. */}
+          {/* 숫자 표기(n/12)는 두지 않는다. 헤더 가로폭을 캐릭터명과 다투는 문제가 안 풀렸다.
+              진행률은 아바타 링이 표현한다. */}
 
           <ItemAwareMoney wrap={hasItemRevenue}>
             {/* 실패 배지의 절대배치 기준이자 팝오버 가로 위치의 기준 상자다. 아이템이 섞이면
-                **금액 색이 달라진다**. 새 색을 만들지 않고 보스 행의
-                `아이템 +N` 칩과 같은 `primary-ink` 를 쓴다. */}
+                금액 색이 달라진다. 새 색을 만들지 않고 보스 행의 `아이템 +N` 칩과 같은
+                `primary-ink` 를 쓴다. */}
             <View ref={moneyRef} className="relative flex-row items-center">
               {props.issue !== undefined && (
                 <CharacterIssueBadge issue={props.issue} onToggle={toggleIssue} />

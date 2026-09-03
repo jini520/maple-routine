@@ -65,10 +65,10 @@ function characterTotal(group: DropPriceGroup): number {
 }
 
 /**
- * 상태 pill. 세 상태를 색이 아니라 **형태**로 가른다(채움 / 회색 / 점선).
+ * 상태 pill. 세 상태를 색이 아니라 형태로 가른다(채움 / 회색 / 점선).
  *
- * **미입력 자리에 `0` 을 쓰지 않는다**. `entered` 가 아니면 금액을 아예 그리지 않고
- * `입력`·`기록 안함` 이라는 말이 선다. 값을 모르는 것과 0원인 것은 다른 사실이다.
+ * 미입력 자리에 `0` 을 쓰지 않는다. `entered` 가 아니면 금액을 아예 그리지 않고 `입력`·
+ * `기록 안함` 이라는 말이 선다. 값을 모르는 것과 0원인 것은 다른 사실이다.
  */
 function PriceStatePill(props: { drop: RecordedDrop }): React.JSX.Element {
   const { drop } = props
@@ -103,15 +103,15 @@ function EntryRow(props: {
 }): React.JSX.Element {
   const { drop } = props.entry
   const iconUrl = getItemIconUrl(drop.itemName, drop.slot)
-  // 상자명(`boxOrigin`)은 쓰지 않는다(2026-08-10 사용자 지정). 반지 상자·칠흑 장신구 상자는
-  // 이름이 길어 실제 정보인 아이템명과 보스를 밀어낸다. 무엇을 열었는지는 히스토리가 말한다.
+  // 상자명(`boxOrigin`)은 쓰지 않는다. 반지 상자·칠흑 장신구 상자는 이름이 길어 실제 정보인
+  // 아이템명과 보스를 밀어낸다. 무엇을 열었는지는 히스토리가 말한다.
   //
-  // **인원은 값을 매긴 기록에만 붙는다**. 미입력에 `1인` 이 서면 이미 정해진 값처럼 읽힌다.
+  // 인원은 값을 매긴 기록에만 붙는다. 미입력에 `1인` 이 서면 이미 정해진 값처럼 읽힌다.
   const shareLabel = drop.priceState === 'entered' ? ` · ${drop.priceShare ?? 1}인` : ''
 
   return (
-    // RN 에 `:last-child` 가 없어 목록을 아는 부모가
-    // 알려 준다. 테두리를 아예 빼지 않고 **색만 지우는** 것이 요점이다.
+    // RN 에 `:last-child` 가 없어 목록을 아는 부모가 알려 준다. 테두리를 아예 빼지 않고 색만
+    // 지우는 것이 요점이다.
     <View>
       {isValuableDrop(drop.itemName) && <ValuableRowBackground />}
       {/* 행 전체가 버튼이다. 입력이든 수정이든 같은 자리를 누른다. */}
@@ -162,8 +162,7 @@ export function DropPriceScreen(): React.JSX.Element {
   const { tab, periodKey: profitPeriodKey } = useBossProfitStore()
   const { status, groups, load, savePrice, excludePrice } = useDropPriceStore()
 
-  // 화면이 한 번만 만든 '지금'두 번 부르면 기간 경계를 사이에 두고 갈릴 수 있다
-  // (보스 수익 화면과 같은 규약).
+  // 화면이 한 번만 만든 지금. 두 번 부르면 기간 경계를 사이에 두고 갈릴 수 있다.
   const [now] = useState(() => new Date())
   const [cycle] = useState(tab)
   const [week, setWeek] = useState(profitPeriodKey)
@@ -213,8 +212,8 @@ export function DropPriceScreen(): React.JSX.Element {
         hasTabBar={false}
         header={
           // 히스토리 화면과 같은 헤더 레시피. 공용 `PageHeader` 를 쓰지 않는 이유도 같다
-          // (배경 조각도 하단 페이드도 없는 서브 화면이다). 상단 여백을 안 더하는 것도, 그 안전영역을
-          // `useTopSafeAreaPx()` 로 받는 것도 같다(정정 1).
+          // (배경 조각도 하단 페이드도 없는 서브 화면이다). 상단 여백을 안 더하는 것도, 그
+          // 안전영역을 `useTopSafeAreaPx()` 로 받는 것도 같다.
           <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: topSafeAreaPx }}>
             <PageHeaderTitleRow className="gap-1">
               <Pressable
@@ -230,11 +229,12 @@ export function DropPriceScreen(): React.JSX.Element {
           </View>
         }
       >
-        {/* `screen-<라우트 이름>` 은 자리표시자에게서 그대로 물려받은 계약이다. 내비게이션
-            테스트가 "그 라우트로 밀면 그 화면이 열리는가"를 이 이름으로 묻는다. */}
+        {/* `screen-<라우트 이름>` 은 내비게이션 테스트가 그 라우트로 밀면 그 화면이 열리는가 를
+            묻는 이름이다. */}
         <View testID="screen-DropPrice" className="gap-4 px-4 pb-6">
-          {/* 기간 네비게이터. **보스 수익 화면의 것을 그대로 옮겼다**(같은 h-7 원형 버튼 + 가운데
-              2줄 라벨). 이 화면은 그 화면에서 보던 기간을 이어받아 열리므로 넘기는 손짓도 같아야 한다. */}
+          {/* 기간 네비게이터. 보스 수익 화면의 것을 그대로 옮겼다(같은 h-7 원형 버튼 + 가운데
+              2줄 라벨). 이 화면은 그 화면에서 보던 기간을 이어받아 열리므로 넘기는 손짓도
+              같아야 한다. */}
           <View className="flex-row items-center justify-center gap-4">
             <Pressable
               role="button"
@@ -285,11 +285,10 @@ export function DropPriceScreen(): React.JSX.Element {
             />
           ) : (
             <>
-              {/* 요약은 **카드가 아니라 헤드라인**이다(B안 채택 2026-08-10). 이 보스
-                  수익 총 수익에 내린 판단이 이 화면에도 그대로 성립한다: 아래가 전부 같은 카드
-                  셸이라 요약도 카드면 "흰 카드의 반복"으로 묻힌다.
+              {/* 요약은 카드가 아니라 헤드라인이다. 아래가 전부 같은 카드 셸이라 요약도 카드면
+                  흰 카드의 반복으로 묻힌다.
 
-                  아래 칩 셋은 **목록의 범례**다. 생김새가 행의 상태 pill 과 같아(채움 / 회색 /
+                  아래 칩 셋은 목록의 범례다. 생김새가 행의 상태 pill 과 같아(채움 / 회색 /
                   점선) 칩만 봐도 무엇이 몇 개인지 읽힌다. 0인 상태는 칩을 만들지 않는다. */}
               <View>
                 <View className="h-6 flex-row items-center">
@@ -304,8 +303,8 @@ export function DropPriceScreen(): React.JSX.Element {
                   <View className="h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-tint">
                     <ProfitIcon className="h-[18px] w-[18px] text-primary-ink" strokeWidth={2} aria-hidden />
                   </View>
-                  {/* 단위 앞의 실제 공백은 남긴다. 마진만으로 띄우면 읽는 값이 "N메소"로 붙어
-                      스크린리더가 이어 읽는다(규약). */}
+                  {/* 단위 앞의 실제 공백은 남긴다. 마진만으로 띄우면 읽는 값이 `N메소` 로 붙어
+                      스크린리더가 이어 읽는다. */}
                   <Text
                     className="text-xl font-extrabold leading-none text-primary-ink"
                     style={TABULAR_NUMS}

@@ -1,7 +1,6 @@
 /**
- * 고가 아이템을 획득한 **행의 배경**. 테두리·글로우가 아니라 배경 효과다
- * (사용자 요청). 콘텐츠보다 먼저 그려지므로 자연히 뒤에 깔린다.
- * z-index 다툼이 없다.
+ * 고가 아이템을 획득한 행의 배경. 테두리·글로우가 아니라 배경 효과다. 콘텐츠보다 먼저 그려지므로
+ * 자연히 뒤에 깔리고 z-index 다툼이 없다.
  */
 import { useId } from 'react'
 import { StyleSheet, View } from 'react-native'
@@ -18,8 +17,8 @@ import {
 
 export function ValuableRowBackground(): React.JSX.Element {
   const reduceMotion = useReducedMotion()
-  // 한 문서에 여러 행이 뜨므로 그라디언트 id 가 겹치면 안 된다(`DropEffectOverlay` 와 같은 이유.
-  // `react-native-svg` 의 defs 조회도 id 문자열로 한다).
+  // 한 문서에 여러 행이 뜨므로 그라디언트 id 가 겹치면 안 된다. `react-native-svg` 의 defs
+  // 조회도 id 문자열로 한다.
   const gradientId = `valuable-row-glow-${useId().replace(/[^a-zA-Z0-9]/g, '')}`
 
   return (

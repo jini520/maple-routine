@@ -9,10 +9,10 @@
 export const VALUABLE_ROW_TINT = 'rgba(247, 208, 13, 0.05)'
 
 /**
- * `@keyframes valuable-drop-row-pulse` + `animation: … 2.6s ease-in-out infinite`.
+ * 고가 드롭 행의 맥동. `2.6s ease-in-out infinite`.
  *
- * `from`·`50%`·`to` 세 마디라 첫 값이 두 번 나온다(0.03 → 0.1). `FLOAT_ANIMATION` 과 같은 형태다.
- * 없다(파일 머리).
+ * `from`·`50%`·`to` 세 마디라 첫 값이 두 번 나온다(0.03 → 0.1). `FLOAT_ANIMATION` 과 같은
+ * 형태다.
  */
 export const VALUABLE_ROW_PULSE = {
   animationName: {

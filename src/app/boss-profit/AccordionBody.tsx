@@ -21,10 +21,9 @@ import { useBossProfitContext } from './boss-profit-context'
 import { rowKey } from './character-groups'
 import { ItemRevenuePopover, useAnchoredPopover } from './ItemRevenuePopover'
 
-// **행동이 있는 상태에만 버튼을 준다.** 여섯 상태 중 사용자가 할 수 있는 것은
-// notChecked(조회)와 failed(다시 시도) 둘뿐이고, 나머지는 금액 또는 비활성 배지로 정적이다.
-// **금액을 모르는 상태에 0을 쓰지 않는 것이 핵심이다**. 0은 "0원 벌었다"로 읽힌다(가
-// 드롭 가격에서 지키는 것과 같은 원칙이 기간 상태에도 선다).
+// 행동이 있는 상태에만 버튼을 준다. 여섯 상태 중 사용자가 할 수 있는 것은 notChecked(조회)와
+// failed(다시 시도) 둘뿐이고 나머지는 금액 또는 비활성 배지로 정적이다. 금액을 모르는 상태에
+// 0 을 쓰지 않는 것이 핵심이다. 0 은 0원 벌었다 로 읽힌다.
 export const SUBTOTAL_ACTION_LABEL: Partial<Record<WeeklySubtotalState, string>> = {
   notChecked: '조회',
   failed: '다시 시도',
@@ -137,8 +136,8 @@ export function WeeklySubtotalRow(props: { subtotal: BossProfitWeeklySubtotal })
         (itemMeso === 0 ? (
           amount
         ) : (
-          // 아이템이 섞이면 금액 아래에 칩을 쌓는다. 보스 행·캐릭터 카드와 **같은 규칙·같은 잉크**다
-          // (2026-08-10 사용자 요청). 이 주의 아이템을 낱개로 보려면 여기서 연다.
+          // 아이템이 섞이면 금액 아래에 칩을 쌓는다. 보스 행·캐릭터 카드와 같은 규칙·같은
+          // 잉크다. 이 주의 아이템을 낱개로 보려면 여기서 연다.
           <View className="items-end gap-1">
             {amount}
             <Pressable

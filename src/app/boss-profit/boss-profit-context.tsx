@@ -2,18 +2,15 @@ import { createContext, useContext } from 'react'
 import type { BossProfitStore } from '../../features/boss-profit/store'
 import type { RecordedDrop } from '../../types/drops'
 
-// 보스 수익 화면의 **기간·탭 맥락과 스토어 바인딩**을 자손에게 내리는 컨텍스트(3단계).
+// 보스 수익 화면의 기간·탭 맥락과 스토어 바인딩을 자손에게 내리는 컨텍스트.
 //
-// 왜 컨텍스트인가. 이 값들은 `BossProfitScreen → CharacterAccordion → Weekly/MonthlyAccordionBody
-// → BossProfitBossRow` **4단계**를 타고 내려가며 타입 선언 25곳 + JSX 전달 26곳, 합쳐 **51지점**을
+// 이 값들은 `BossProfitScreen → CharacterAccordion → Weekly/MonthlyAccordionBody →
+// `BossProfitBossRow` 4단계를 타고 내려가며 타입 선언 25곳 + JSX 전달 26곳, 합쳐 51지점을
 // 만들고 있었다. 그중 어느 것도 중간 컴포넌트가 쓰지 않고 그냥 통과시키기만 한다.
 //
-// 아코디언을 헤더/본문 compound 로 가르는 안은 이 문제를 하나도 줄이지 못한다(본문이 여전히
-// 같은 값을 받아야 한다).
-//
-// **여기 담는 것과 담지 않는 것**. "화면 전체가 공유하는 맥락"만 담는다. 특정 캐릭터·특정
-// 보스에 매인 값(`group` `row` `issue` `stickyTop`)은 프롭으로 남는다. 컨텍스트가 그런 것까지
-// 삼키면 "이 컴포넌트가 무엇에 대한 것인지"가 시그니처에서 사라진다.
+// 화면 전체가 공유하는 맥락만 담는다. 특정 캐릭터·특정 보스에 매인 값(`group` `row` `issue`
+// `stickyTop`)은 프롭으로 남는다. 컨텍스트가 그런 것까지 삼키면 이 컴포넌트가 무엇에 대한
+// 것인지가 시그니처에서 사라진다.
 
 export interface BossProfitContextValue {
   /** 주간/월간 탭. */
@@ -21,8 +18,9 @@ export interface BossProfitContextValue {
   /** 보고 있는 기간의 키. */
   periodKey: string
   /**
-   * **지금 그려지고 있는 데이터의 (탭, 기간)**. 카운트업 identity 전용.
-   * 위의 `tab`·`periodKey` 는 데이터보다 먼저 바뀌므로 identity 에 쓰면 "새 키 + 옛 금액" 커밋이
+   * 지금 그려지고 있는 데이터의 (탭, 기간). 카운트업 identity 전용.
+   *
+   * 위의 `tab`·`periodKey` 는 데이터보다 먼저 바뀌므로 identity 에 쓰면 새 키 + 옛 금액 커밋이
    * 기억을 오염시킨다. 라벨·네비게이션은 계속 위의 값을 쓴다.
    */
   loadedTab: BossProfitStore['tab']

@@ -1,9 +1,9 @@
 /**
- * 보스 드롭 기록 시트(→ →).
+ * 보스 드롭 기록 시트.
  *
- * 시트 껍데기는 `components/organisms/BottomSheet` 가 이미 소유한다(3단계). 여기서 다시 만들지
- * 않는다. 이 파일이 갖는 것은 **무엇을 고르게 할 것인가**다: 난이도 필터, 장비·소비 타일, 읽기
- * 전용 고정 드롭, 상자 드릴다운, 그리고 기록 직후의 가격 물음.
+ * 시트 껍데기는 `components/organisms/BottomSheet` 가 이미 소유한다. 이 파일이 갖는 것은
+ * 무엇을 고르게 할 것인가다. 난이도 필터, 장비·소비 타일, 읽기 전용 고정 드롭, 상자 드릴다운,
+ * 그리고 기록 직후의 가격 물음.
  */
 import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
@@ -62,8 +62,8 @@ interface BossDropSheetProps {
   onSave: (drops: RecordedDrop[]) => void
   onClose: () => void
   /**
-   * 이 시트 안에서 가격까지 매길 수 있게 할지(#185). 넘기지 않으면 기록 직후의 확인 줄도 타일의
-   * 수익 배지도 뜨지 않는다. 가격 개념이 없는 호출부에 누를 수 없는 표식을 만들지 않기 위해서다.
+   * 이 시트 안에서 가격까지 매길 수 있게 할지. 넘기지 않으면 기록 직후의 확인 줄도 타일의
+   * 수익 배지도 뜨지 않는다. 가격 개념이 없는 호출부에 누를 수 없는 표식을 만들지 않는다.
    */
   pricing?: { defaultShare: number; maxShare: number; characterName: string }
 }
@@ -86,8 +86,8 @@ function ItemThumb(props: { name: string; slot?: string; level?: number }): Reac
   )
 }
 
-// 고정 드롭 아이콘 하나(일반 아이템 1개 또는 솔 에르다 단위 1개). 읽기 전용 표시라 버튼이 아니다.
-// 수량은 이미지 우측 하단 뱃지('N개')로 표시한다(ItemThumb 레벨 뱃지와 동일 스타일).
+// 고정 드롭 아이콘 하나(일반 아이템 1개 또는 솔 에르다 단위 1개). 읽기 전용 표시라 버튼이
+// 아니다. 수량은 이미지 우측 하단 배지(`N개`)로 표시한다.
 function FixedDropIcon(props: { icon: FixedDropIconSpec }): React.JSX.Element {
   const { icon } = props
   const url = icon.iconFile !== null ? getItemIconUrlByFile(icon.iconFile) : getItemIconUrl(icon.itemName)
@@ -107,9 +107,9 @@ function FixedDropIcon(props: { icon: FixedDropIconSpec }): React.JSX.Element {
   )
 }
 
-// 드롭 연출 토글(+ 정정 4). 활성(ON) = 연출을 표시(고가 드롭을 추가하면 연출이 뜸).
-// 라벨이 긍정형이라 스토어의 positive 모델(enabled)을 반전 없이 그대로 그린다. 부정형 라벨은
-// 토글과 겹쳐 이중 부정이 됐다. 값은 전역 스토어라 시트 밖에서도 공유·영구 저장.
+// 드롭 연출 토글. 활성(ON) = 연출을 표시한다. 라벨이 긍정형이라 스토어의 positive 모델
+// (enabled)을 반전 없이 그대로 그린다. 부정형 라벨은 토글과 겹쳐 이중 부정이 된다. 값은 전역
+// 스토어라 시트 밖에서도 공유·영구 저장된다.
 function EffectToggle(props: { on: boolean; onToggle: () => void }): React.JSX.Element {
   return (
     <Pressable
@@ -135,17 +135,15 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   const [activeBox, setActiveBox] = useState<{ name: string; category: SelectableDropCategory } | null>(null)
   // 고가 아이템을 새로 추가하면 전체화면 연출을 띄운다. 표시 여부는 전역 토글.
   const [effect, setEffect] = useState<{ itemName: string; slot?: string } | null>(null)
-  // 가격을 입력하는 중인 드롭(#185). null 이면 평소의 타일 그리드다.
+  // 가격을 입력하는 중인 드롭. `null` 이면 평소의 타일 그리드다.
   //
-  // **상자 드릴다운과 같은 자리다**. 시트를 닫고 새 시트를 여는 대신 시트 내용을 갈아 끼운다.
-  // 첫 설계(기록 직후 뜨는 확인 바)는 세 가지로 반려됐다(2026-08-10): ① 두 개를 찍으면 마지막
-  // 것의 가격밖에 못 넣고 ② 입력하면 시트가 닫혀 고르던 작업이 끊기고 ③ 어느 타일이 값을 가졌는지
-  // 알 수 없었다.
+  // 상자 드릴다운과 같은 자리다. 시트를 닫고 새 시트를 여는 대신 시트 내용을 갈아 끼운다.
+  // 기록 직후 뜨는 확인 바로 두면 셋이 깨진다. ① 두 개를 찍으면 마지막 것의 가격밖에 못 넣고
+  // ② 입력하면 시트가 닫혀 고르던 작업이 끊기고 ③ 어느 타일이 값을 가졌는지 알 수 없다.
   //
-  // 진입점은 그 뒤 두 번 더 갈렸다(2026-08-10). '선택한 드롭' 목록을 뒀다가 → 금액 뱃지가 타일
-  // 배지와 같은 말을 두 번 해서 뱃지를 떼고 → 목록 자체를 지웠다. 지금은 **기록 직후의 확인 줄**
-  // 하나이고, 셋은 이렇게 갈린다: ① 물음이 그 기록 하나에 붙어 여러 개를 찍어도 섞이지 않고
-  // ② 드릴다운이라 입력 후 시트가 살아서 그리드로 돌아오며 ③ 상태는 타일의 수익 배지가 말한다.
+  // 지금은 기록 직후의 확인 줄 하나이고 셋이 이렇게 갈린다. ① 물음이 그 기록 하나에 붙어
+  // 여러 개를 찍어도 섞이지 않고 ② 드릴다운이라 입력 후 시트가 살아서 그리드로 돌아오며
+  // ③ 상태는 타일의 수익 배지가 말한다.
   const [pricing, setPricing] = useState<RecordedDrop | null>(null)
   // 방금 기록한 드롭. 아래 확인 줄의 대상이다. 새로 기록하면 갈아타고, 그 기록을 취소하면 사라진다.
   const [justAdded, setJustAdded] = useState<RecordedDrop | null>(null)
@@ -249,9 +247,9 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
     <>
       <BottomSheet onClose={props.onClose} testId="boss-drop-sheet">
         {pricing !== null && props.pricing !== undefined ? (
-          // 가격 드릴다운. 시트는 열린 채다. 저장·기록 안함 후 목록으로 돌아와 고르던 작업을 잇는다.
-          // **`onLater`(스킵)는 넘기지 않는다**: 그 버튼은 순차 모드 전용이고(결정 6
-          // 정정) 여기는 방금 기록한 한 건이라, 뒤로 누르는 것이 곧 같은 일이다.
+          // 가격 드릴다운. 시트는 열린 채다. 저장·기록 안함 후 목록으로 돌아와 고르던 작업을
+          // 잇는다. `onLater`(스킵)는 넘기지 않는다. 그 버튼은 순차 모드 전용이고 여기는 방금
+          // 기록한 한 건이라 뒤로 누르는 것이 곧 같은 일이다.
           <DropPricePadContent
             drop={pricing}
             boss={props.boss}
@@ -352,11 +350,10 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                                     <Text className="text-10 text-on-primary">✓</Text>
                                   </View>
                                 )}
-                                {/* 가격이 **입력된** 타일에만 수익 배지가 붙는다(사용자 지정
-                                    2026-08-10). 자리는 좌상단. 우상단은 선택 체크가 이미 쓴다.
-                                    이고 크기·모양을 그 체크와 맞춰 두 배지가 한 쌍으로 읽힌다.
-                                    스킵은 "기록된 가격"이 아니므로 표식이 없다(= 미입력과 같은
-                                    얼굴). 그 구분은 가격 기록 화면이 맡는다. */}
+                                {/* 가격이 입력된 타일에만 수익 배지가 붙는다. 자리는 좌상단.
+                                    우상단은 선택 체크가 이미 쓴다. 크기·모양을 그 체크와 맞춰
+                                    두 배지가 한 쌍으로 읽힌다. 스킵은 기록된 가격이 아니므로
+                                    표식이 없다. 그 구분은 가격 기록 화면이 맡는다. */}
                                 {(boxDrop ?? normalDrop)?.priceState === 'entered' && (
                                   <View
                                     role="img"
@@ -393,9 +390,9 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                       </View>
                       <Text className="text-xs font-bold text-text-muted">고정</Text>
                     </View>
-                    {/* 고정 드롭은 값이 난이도마다 달라 통합하지 않고 난이도별 카드로 읽기 전용 표시
-                        . 텍스트 대신 아이콘 + 수량, 솔 에르다는 단위별로 분해한다.
-                        배치(사용자 지시): 1→1열, 2·4→2열, 3→2열 + 마지막 1개 전폭. */}
+                    {/* 고정 드롭은 값이 난이도마다 달라 통합하지 않고 난이도별 카드로 읽기 전용
+                        표시한다. 텍스트 대신 아이콘 + 수량, 솔 에르다는 단위별로 분해한다.
+                        배치는 1→1열, 2·4→2열, 3→2열 + 마지막 1개 전폭. */}
                     <View className="-mx-1 -mb-2 flex-row flex-wrap">
                       {fixedGroups.map((group, index) => (
                         <View
@@ -429,11 +426,10 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
             )}
 
             <View className="border-t border-border bg-bg px-4 pb-3 pt-3">
-              {/* 기록 직후 **그 아이템 하나에 대해** 값을 매길지 묻는다(사용자 지정 2026-08-10).
-                  흐름은 `기록 → 확인 → (입력 →) 복귀` 이고, 어느 갈래든 타일 그리드로 돌아온다.
-                  **차단하지 않는다**. 일반 아이템은 확인창 없이 탭 즉시 기록된다는 를
-                  지키려는 것이다. 기록은 이미 끝났고 이 줄은 그 옆에 설 뿐이라, 무시하고 다음
-                  아이템을 계속 골라도 된다(그러면 그 아이템의 물음으로 갈아탄다). */}
+              {/* 기록 직후 그 아이템 하나에 대해 값을 매길지 묻는다. 흐름은 기록 → 확인 →
+                  (입력 →) 복귀 이고 어느 갈래든 타일 그리드로 돌아온다. 차단하지 않는다.
+                  일반 아이템은 확인창 없이 탭 즉시 기록된다. 기록은 이미 끝났고 이 줄은 그 옆에
+                  설 뿐이라 무시하고 다음 아이템을 계속 골라도 된다. */}
               {justAdded !== null && props.pricing !== undefined && (
                 <View
                   testID="drop-price-prompt"

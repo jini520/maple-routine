@@ -31,10 +31,9 @@ export interface BossProfitBossRowProps {
   row: BossProfitRow
   drops: RecordedDrop[]
   /**
-   * RN 에 `:last-child` 가 없어 **목록을
-   * 아는 부모가 알려 준다**(`disabled:` 를 JS 조건으로 옮긴 것과 같은 종류의 갈림).
+   * RN 에 `:last-child` 가 없어 목록을 아는 부모가 알려 준다.
    *
-   * 테두리를 아예 빼지 않고 **색만 지우는** 것이 요점이다: 빼면 그 행만 1px 짧아진다.
+   * 테두리를 아예 빼지 않고 색만 지우는 것이 요점이다. 빼면 그 행만 1px 짧아진다.
    */
   isLast?: boolean
 }
@@ -97,14 +96,14 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
   const { row } = props
   const { setPartySize, setBossDrops } = useBossProfitContext()
   const [isDropSheetOpen, setIsDropSheetOpen] = useState(false)
-  // **구조 분해가 필수다**. `popover.toggle` 처럼 프로퍼티로 읽으면 `react-hooks/refs` 가 그
-  // 접근을 "렌더 중 ref 접근"으로 본다(훅이 안에서 `useRef` 를 쓰기 때문. 실측: 에러 14건).
+  // 구조 분해가 필수다. `popover.toggle` 처럼 프로퍼티로 읽으면 `react-hooks/refs` 가 그 접근을
+  // 렌더 중 ref 접근으로 본다. 훅이 안에서 `useRef` 를 쓰기 때문이다.
   const { ref: itemChipRef, isOpen: isItemPopoverOpen, anchor: itemAnchor, toggle: toggleItemPopover, close: closeItemPopover } =
     useAnchoredPopover()
   const dropTotal = sumDropPayout(props.drops)
 
   // 이 보스에서 고가 아이템을 획득했으면 행 배경에 골드 강조를 준다. 캐릭터 카드를 펼쳤을 때
-  // 카드 테두리 효과 대신 실제 획득한 보스 행으로 강조가 이동하는 지점(사용자 요청).
+  // 카드 테두리 효과 대신 실제 획득한 보스 행으로 강조가 이동하는 지점이다.
   const hasValuableDrop = props.drops.some((drop) => isValuableDrop(drop.itemName))
   const isPriceUnknown = row.priceMeso === null
   // 미완료(보스 스케줄러에 등록만 되고 아직 처치 전) placeholder는 파티원 수를 조정해도 의미가
@@ -116,10 +115,9 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
 
   // 금액 마크업은 한 벌이다. 칩이 붙든 안 붙든 같은 `Text` 라 두 갈래가 서로 어긋날 수 없다.
   //
-  //  의 identity 는 **행 자신의 (ocid, 보스, 난이도, 기간)** 이다. 기간이 키에 들어
-  // 있으므로 기간을 옮기면 "값이 변한 것"이 아니라 "다른 값을 보게 된 것"이라 굴러가지 않는다
-  // (정정 1. 기간 이동에 굴러가는 것은 총 수익 헤드라인 하나뿐이다). `row.periodKey` 는 그려지는
-  // 데이터에서 오므로 스토어의 목표 기간보다 먼저 바뀌는 일이 없다.
+  // 카운트업 identity 는 행 자신의 (ocid, 보스, 난이도, 기간)이다. 기간이 키에 들어 있으므로
+  // 기간을 옮기면 값이 변한 것이 아니라 다른 값을 보게 된 것이라 굴러가지 않는다. 기간 이동에
+  // 굴러가는 것은 총 수익 헤드라인 하나뿐이다.
   const amount = (
     <Text
       className={
@@ -139,9 +137,8 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
     </Text>
   )
 
-  // 예외 메시지를 그대로 렌더하던 인라인 문단을 걷어내고 토스트로 알린다. 개발자용
-  // 문구와 SQLite 네이티브 원문이 사용자에게 새는 자리가 여기뿐이었다. 문구는 보스 관리 화면과 같아
-  // 두 경로가 통일된다.
+  // 예외 메시지를 그대로 렌더하지 않고 토스트로 알린다. 개발자용 문구와 SQLite 네이티브 원문이
+  // 사용자에게 새는 자리가 여기다. 문구는 보스 관리 화면과 같아 두 경로가 통일된다.
   async function handleChange(delta: number): Promise<void> {
     const next = clamp(partySize + delta, 1, row.maxPartySize)
     try {
@@ -171,8 +168,8 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           role="button"
           onPress={() => setIsDropSheetOpen(true)}
           aria-label={`${row.boss} ${row.difficulty} 드롭 아이템 관리`}
-          // h-6 고정. 자식(난이도 뱃지 20px · 보스명 20px · 드롭 지시자 24px) 중
-          // 최대값에 높이를 맡기면 지시자 종류가 바뀔 때마다 행 높이가 흔들린다.
+          // h-6 고정. 자식(난이도 배지 20px · 보스명 20px · 드롭 지시자 24px) 중 최대값에
+          // 높이를 맡기면 지시자 종류가 바뀔 때마다 행 높이가 흔들린다.
           className="h-6 w-full flex-row items-center gap-1.5"
         >
           <Badge variant={row.difficulty}>
@@ -215,9 +212,9 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
             </Pressable>
           </View>
 
-          {/* **·: 금액을 모르는 행에 0 을 쓰지 않는다.** 미완료는 아직 안
-              잡은 것이고 가격 미확정은 참조 데이터에 값이 없는 것이라, 둘 다 "0메소 벌었다"가
-              아니다. 그래서 그 자리는 금액이 아니라 배지가 선다. */}
+          {/* 금액을 모르는 행에 0 을 쓰지 않는다. 미완료는 아직 안 잡은 것이고 가격 미확정은
+              참조 데이터에 값이 없는 것이라 둘 다 0메소 벌었다 가 아니다. 그래서 그 자리는
+              금액이 아니라 배지가 선다. */}
           {!row.isComplete ? (
             <Badge variant="muted" className="shrink-0">
               미완료
@@ -227,9 +224,8 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
               가격 미확정
             </Badge>
           ) : // 아이템이 섞이면 **금액 아래에 칩이 선다**. 그 존재가 곧 "이 숫자는 결정석만이
-          // 아니다"라는 표시이고, 동시에 내역을 여는 버튼이다(사용자 지정 2026-08-10). 값을 매긴
-          // 아이템이 없으면 **래퍼조차 만들지 않는다**. 그 행의 트리가 종전과 달라지지 않아야
-          // "보스 행은 건드리지 않았다"가 말뿐이 아니게 된다.
+          // 값을 매긴 아이템이 있다는 표시이고 동시에 내역을 여는 버튼이다. 값을 매긴 아이템이
+          // 없으면 래퍼조차 만들지 않는다. 그 행의 트리가 종전과 달라지지 않아야 한다.
           dropTotal === 0 ? (
             amount
           ) : (
@@ -271,9 +267,8 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           initialDrops={props.drops}
           onSave={(drops) => setBossDrops(row, drops)}
           onClose={() => setIsDropSheetOpen(false)}
-          // 기록한 자리에서 바로 값을 매긴다. 분배 기본값은 **이 행의
-          // 파티원 수**이고, 저장하면 그 값과 독립한다(결정 2). 나중에 파티원 수를 고쳐도
-          // 이미 매긴 금액이 흔들리지 않는다.
+          // 기록한 자리에서 바로 값을 매긴다. 분배 기본값은 이 행의 파티원 수이고, 저장하면 그
+          // 값과 독립한다. 나중에 파티원 수를 고쳐도 이미 매긴 금액이 흔들리지 않는다.
           pricing={{
             defaultShare: partySize,
             maxShare: row.maxPartySize,

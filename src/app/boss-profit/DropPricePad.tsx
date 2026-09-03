@@ -37,19 +37,19 @@ export interface DropPricePadProps {
   /** **기록 안함**. "이 아이템은 값을 매길 만하지 않다"는 결정을 저장한다. */
   onExclude: () => void
   /**
-   * **스킵**. 아직 안 팔렸으니 미입력으로 두고 다음으로. **아무것도 저장하지 않는다**
-   * (사용자 지정 2026-08-10). 순차 모드에서만 준다. 단건 편집은 닫으면 같은 일이 된다.
+   * 스킵. 아직 안 팔렸으니 미입력으로 두고 다음으로. 아무것도 저장하지 않는다. 순차 모드에서만
+   * 준다. 단건 편집은 닫으면 같은 일이 된다.
    */
   onLater?: () => void
 }
 
 /**
- * 키패드 **본문**. 시트 껍데기를 두르지 않는다. 두 자리에서 쓰이기 때문이다.
+ * 키패드 본문. 시트 껍데기를 두르지 않는다. 두 자리에서 쓰이기 때문이다.
  *
  * ① 가격 기록 화면에서는 아래 `DropPricePad` 가 `BottomSheet` 로 감싸 띄우고,
- * ② 드롭 입력 시트 안에서는 **상자 드릴다운(`BoxDrillDown`)과 같은 방식**으로 시트 내용을 갈아
- *    끼운다. 시트를 닫고 새 시트를 여는 대신 드릴다운으로 들어가는 이유는, 가격을 매긴 뒤
- *  **하던 작업(다른 아이템 고르기)을 이어서** 해야 하기 때문이다.
+ * ② 드롭 입력 시트 안에서는 상자 드릴다운(`BoxDrillDown`)과 같은 방식으로 시트 내용을 갈아
+ *    끼운다. 시트를 닫고 새 시트를 여는 대신 드릴다운으로 들어가는 것은 가격을 매긴 뒤 하던
+ *    작업(다른 아이템 고르기)을 이어서 해야 하기 때문이다.
  *
  * `onBack` 이 있으면 드릴다운 모드다. 상단에 뒤로 버튼이 생긴다.
  */
@@ -59,12 +59,12 @@ export function DropPricePadContent(
   const [meso, setMeso] = useState(props.drop.priceMeso ?? 0)
   const [share, setShare] = useState(props.drop.priceShare ?? props.defaultShare)
 
-  // **대상이 바뀌면 값을 그 아이템의 것으로 되돌린다.** 시트 드릴다운과 순차 모드는 컴포넌트를
-  // 언마운트하지 않고 `drop` 만 갈아 끼우므로, 두지 않으면 앞 아이템에 치던 금액과 인원이 그대로
-  // 남아 다음 아이템에 얹힌다. 인원은 **그 행의 파티원 수**(`defaultShare`)로 돌아간다.
+  // 대상이 바뀌면 값을 그 아이템의 것으로 되돌린다. 시트 드릴다운과 순차 모드는 컴포넌트를
+  // 언마운트하지 않고 `drop` 만 갈아 끼우므로, 두지 않으면 앞 아이템에 치던 금액과 인원이
+  // 그대로 남아 다음 아이템에 얹힌다. 인원은 그 행의 파티원 수(`defaultShare`)로 돌아간다.
   //
-  // 렌더 중 setState 는 React 가 권하는 "프롭 변화에 상태 맞추기" 패턴이다. effect 로 하면 옛
-  // 값으로 한 프레임 그려진 뒤 덮인다.
+  // 렌더 중 setState 는 프롭 변화에 상태 맞추기 패턴이다. effect 로 하면 옛 값으로 한 프레임
+  // 그려진 뒤 덮인다.
   const identity = `${props.drop.boxOrigin ?? ''}|${props.drop.itemName}|${props.drop.ringLevel ?? ''}`
   const [lastIdentity, setLastIdentity] = useState(identity)
   if (lastIdentity !== identity) {
@@ -124,10 +124,9 @@ export function DropPricePadContent(
           amountTestID="drop-price-amount"
         />
 
-        {/* 분배 인원. 스테퍼는 파티 인원 모달과 같은 어휘를 축소한 것이다.
-            **`PartySizeStepper` 로 접지 않는다**: 그 molecule 이 정한 두 크기(관리 행 24 · 모달 32)
-            중 어느 쪽도 아닌 22px 이고 `Users` 표식이 없다. 보스 행이 셋째 모양인 것과 같은 사정
-            (`BossProfitBossRow` ②)이라 넷째 모양을 만들지 않고 웹처럼 자체 마크업으로 둔다. */}
+        {/* 분배 인원. 스테퍼는 파티 인원 모달과 같은 어휘를 축소한 것이다. `PartySizeStepper`
+            로 접지 않는다. 그 molecule 이 정한 두 크기(관리 행 24 · 모달 32) 중 어느 쪽도
+            아닌 22px 이고 `Users` 표식이 없다. 넷째 모양을 만들지 않고 자체 마크업으로 둔다. */}
         <View className="mt-4 flex-row items-center justify-between gap-2.5 border-t border-border pt-3.5">
           <Text className="text-xs font-semibold text-text-muted">분배 인원</Text>
           <View className="h-8 flex-row items-center gap-2.5 rounded-full border border-border px-1.5">
@@ -166,10 +165,9 @@ export function DropPricePadContent(
 
       <MesoKeypad onKey={pressKey} />
 
-      {/* **기록 안함**은 "값이 없다"가 아니라 "값을 매기지 않기로 했다"는 결정이라 저장과 같은
-          층에 선다. **스킵**은 그 옆의 글자 버튼이다. 아무것도 저장하지 않고 다음으로만 가므로
-          테두리를 주면 결정처럼 보인다(정정).
-          하단 안전영역은 시트 껍데기가 이미 준다(파일 머리 ②). */}
+      {/* 기록 안함은 값이 없다 가 아니라 값을 매기지 않기로 했다 는 결정이라 저장과 같은 층에
+          선다. 스킵은 그 옆의 글자 버튼이다. 아무것도 저장하지 않고 다음으로만 가므로 테두리를
+          주면 결정처럼 보인다. 하단 안전영역은 시트 껍데기가 이미 준다. */}
       <View className="flex-row items-center gap-2 px-4 pb-5 pt-1.5">
         <Pressable
           role="button"
