@@ -35,11 +35,10 @@ const FEE_PERCENTS = [3, 5] as const satisfies readonly FeePercent[]
 /**
  * 처음 서 있는 값.
  *
- * 파티원 수 **2**(사용자 지정, 2026-08-23). 정원(6)이 아니라 나눌 수 있는 가장 작은 파티 다.
- * 스테퍼가 올리기만 하면 되고, 1 로 내려가면 결과가 사라져 보낼 곳이 없다 를 곧바로 만난다.
+ * 파티원 수 2. 정원(6)이 아니라 나눌 수 있는 가장 작은 파티다. 스테퍼가 올리기만 하면 되고,
+ * 1 로 내려가면 결과가 사라져 보낼 곳이 없다 를 곧바로 만난다.
  *
- * 수수료는 사용자가 첫 번째로 든 상황(*"모든 파티원이 실버등급 이상이 모든 거래를 경매장으로
- * 하는 경우"*)이다.
+ * 수수료는 모든 파티원이 실버등급 이상이고 모든 거래를 경매장으로 하는 경우다.
  */
 const DEFAULT_PARTY_SIZE = 2
 const DEFAULT_FEE_PERCENT: FeePercent = 3
@@ -142,10 +141,10 @@ export function ItemSplitScreen(): React.JSX.Element {
             className="rounded-[10px] border border-border bg-surface-2 px-3 py-2 text-right text-2xl font-extrabold text-text"
             style={TABULAR_NUMS}
           />
-          {/* 치는 동안 자릿수를 눈으로 세지 않게 한다. 확정 금액의 `toLocaleString()` 과 짝이다.
-              **비어 있어도 줄을 그린다**(사용자 지정, 2026-08-23). 조건부로 그리면 첫 글자를
-              치는 순간 이 줄이 생기며 아래 카드가 통째로 밀린다. 빈 문자열은 줄 높이를 못 만들어
-              공백 한 칸을 넣는다. */}
+          {/* 치는 동안 자릿수를 눈으로 세지 않게 한다. 확정 금액의 `toLocaleString()` 과
+              짝이다. 비어 있어도 줄을 그린다. 조건부로 그리면 첫 글자를 치는 순간 이 줄이
+              생기며 아래 카드가 통째로 밀린다. 빈 문자열은 줄 높이를 못 만들어 공백 한 칸을
+              넣는다. */}
           <Text
             testID="item-split-sale-price-units"
             className="text-right text-xs text-text-muted"

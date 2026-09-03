@@ -28,7 +28,7 @@ export function OnboardingStep({
   /** 끌기 자동 스크롤 배선. 캐릭터 선택 단계에서만 온다. */
   scrollRef?: React.Ref<ScrollView>
   onScroll?: React.ComponentProps<typeof ScrollView>['onScroll']
-  /** 하단에 고정되는 액션 바의 내용(파일 머리). 안 주면 바 자체가 없다. */
+  /** 하단에 고정되는 액션 바의 내용. 안 주면 바 자체가 없다. */
   footer?: React.ReactNode
   children: React.ReactNode
 }): React.JSX.Element {
@@ -48,15 +48,15 @@ export function OnboardingStep({
       ref={scrollRef}
       indicatorStyle={indicatorStyle}
       className="flex-1"
-      // 파일 머리 ③. 마진이지 패딩이 아니다. 하단은 홈 인디케이터 자리라 콘텐츠 여백으로 남긴다
-      // (탭바가 없는 화면의 규칙. `ScreenScroll` 의 `bottom-inset.ts` 와 같은 갈래다).
+      // 마진이지 패딩이 아니다. 하단은 홈 인디케이터 자리라 콘텐츠 여백으로 남긴다. 탭바가
+      // 없는 화면의 규칙이고 `ScreenScroll` 의 `bottom-inset.ts` 와 같은 갈래다.
       style={{ marginTop: insets.top }}
       contentContainerClassName={
         center === true ? 'items-center justify-center px-4' : 'px-4 pt-8 pb-4'
       }
       contentContainerStyle={{
         flexGrow: 1,
-        // 바가 있으면 그 바가 안전영역을 먹는다(파일 머리). 비울 것은 잰 바 높이 하나다.
+        // 바가 있으면 그 바가 안전영역을 먹는다. 비울 것은 잰 바 높이 하나다.
         paddingBottom: footer === undefined ? bottomSafeAreaPx : actionBarHeightPx,
       }}
       // 키보드가 떠 있는 동안에도 첫 탭이 버튼에 닿는다. 없으면 그 탭이 키보드를 내리는 데만 쓰인다
@@ -73,7 +73,7 @@ export function OnboardingStep({
     </ScrollView>
   )
 
-  // 바가 없는 단계는 상자를 하나도 더 두르지 않는다. 그 단계들의 렌더 트리는 정정 2 전과 같다.
+  // 바가 없는 단계는 상자를 하나도 더 두르지 않는다.
   if (footer === undefined) return scroller
 
   return (

@@ -46,7 +46,7 @@ const CATEGORY_ICON: Record<string, LucideIcon> = {
   '에픽 던전': CastleIcon,
   '메이플 유니온': LayoutGridIcon,
   몬스터파크: SwordsIcon,
-  // 아케인리버 지역 퀘스트는 그룹화 전 단독 항목이 쓰던 기본 아이콘(Sparkles)을 그대로 유지(사용자 지시)
+  // 아케인리버 지역 퀘스트는 그룹화 전 단독 항목이 쓰던 기본 아이콘(Sparkles)을 그대로 유지한다.
   '아케인리버 지역 퀘스트': SparklesIcon,
   무릉도장: MedalIcon,
   길드: FlagIcon,
@@ -90,7 +90,7 @@ export function ContentManageScreen(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // 파일 머리 ③. 웹 `<Navigate to="/content" replace />` 의 자리.
+  // 알 수 없는 탭이면 첫 탭으로 되돌린다.
   useEffect(() => {
     if (mode !== 'manual') navigation.goBack()
   }, [mode, navigation])
@@ -273,9 +273,9 @@ export function ContentManageScreen(): React.JSX.Element {
                             )}
                           </Pressable>
 
-                          {/* 보스 관리 화면과 같은 규칙. 흐림은 콘텐츠 opacity가 아니라 그 위를
-                              덮는 스크림이다. 이 행은 자체 배경이 없어 페이지 배경색(bg)으로 덮는다.
-                              `backdrop-blur` 는 RN 에 없어 빠진다(파일 머리 ⑤). */}
+                          {/* 보스 관리 화면과 같은 규칙. 흐림은 콘텐츠 opacity 가 아니라 그 위를
+                              덮는 스크림이다. 이 행은 자체 배경이 없어 페이지 배경색(bg)으로
+                              덮는다. `backdrop-blur` 는 RN 에 없어 빠진다. */}
                           {isLocked && (
                             <View
                               pointerEvents="none"

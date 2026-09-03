@@ -1,18 +1,18 @@
 /**
  * 온보딩 마지막 단계. 관리할 캐릭터를 고르는 화면.
  *
- * **본문은 이 파일에 없다.** 설정 하위 페이지(`SettingsCharactersScreen`)와 같은
+ * 본문은 이 파일에 없다. 설정 하위 페이지(`SettingsCharactersScreen`)와 같은
  * `CharacterManageBody` + `useCharacterManage` 를 쓰고, 여기 있는 것은 제목 블록 · `계속하기` ·
  * 최소 1개 게이트 셋이다.
  *
  * 지키는 것 셋.
  *
- * ① **401 을 키 재입력 진입점에 안 넘긴다.** 여기의 401 은 방금 넣은 키가 나쁘다는 뜻이라 폼 자체의
- *    실패로 남아야 `다시 시도` 가 처방이 된다. 넘기는 것은 429 뿐이다. 그쪽은 하드 잠금이라
- *    되돌릴 UI 가 없다(이슈 #176).
- * ② 대표 캐릭터를 목록과 **함께** 넘긴다. 안 실어 보내면 사용자의 선택이 조용히 사라진다.
- * ③ 이 단계가 단계 셸(`OnboardingStep`)을 직접 두른다. 바의 활성 조건이 `useCharacterManage` 안에
- *    있어 그 훅을 부르는 컴포넌트가 스크롤과 바 둘 다의 조상이어야 한다.
+ * ① 401 을 키 재입력 진입점에 안 넘긴다. 여기의 401 은 방금 넣은 키가 나쁘다는 뜻이라 폼 자체의
+ *    실패로 남아야 다시 시도 가 처방이 된다. 넘기는 것은 429 뿐이다. 그쪽은 하드 잠금이라
+ *    되돌릴 UI 가 없다.
+ * ② 대표 캐릭터를 목록과 함께 넘긴다. 안 실어 보내면 사용자의 선택이 조용히 사라진다.
+ * ③ 이 단계가 단계 셸(`OnboardingStep`)을 직접 두른다. 바의 활성 조건이 `useCharacterManage`
+ *    안에 있어 그 훅을 부르는 컴포넌트가 스크롤과 바 둘 다의 조상이어야 한다.
  *
  * @see docs/features/onboarding.md 정책
  */
@@ -28,7 +28,7 @@ import { OnboardingStep } from './OnboardingStep'
 
 export interface ContentCharacterStepProps {
   isSubmitting: boolean
-  /** 목록과 대표를 함께 넘긴다. 저장 순서는 받는 쪽이 지킨다(파일 머리). */
+  /** 목록과 대표를 함께 넘긴다. 저장 순서는 받는 쪽이 지킨다. */
   onSubmit: (ocids: string[], representativeOcid: string | null) => void
 }
 
@@ -36,8 +36,8 @@ export function ContentCharacterStep(props: ContentCharacterStepProps): React.JS
   const manage = useCharacterManage()
   const { scrollRef, onScroll, scroll } = useReorderScroll()
 
-  // 파일 머리. **429 만** 넘긴다. 두 조회가 각각 맞을 수 있어 두 번 부르지만 두 겹은 아니다
-  // (훅은 값 하나를 지켜보고, 멱등은 스토어 가드가 진다).
+  // 429 만 넘긴다. 두 조회가 각각 맞을 수 있어 두 번 부르지만 두 겹은 아니다. 훅은 값 하나를
+  // 지켜보고 멱등은 스토어 가드가 진다.
   useApiKeyNotice(manage.rosterError?.kind === 'rateLimited' ? manage.rosterError : null)
   useApiKeyNotice(manage.accountsError?.kind === 'rateLimited' ? manage.accountsError : null)
 

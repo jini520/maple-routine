@@ -108,13 +108,11 @@ export function AppShell(): React.JSX.Element {
   }, [isCompleted])
 
   // 앱 셸이 처음 렌더된 뒤 네이티브 스플래시를 내린다. 실행부터 이 시점까지 스플래시가 계속 떠
-  // 있어 빈 화면 없이 스플래시만 보인다(`index.ts` 의 `preventAutoHideAsync`). 콘텐츠가 즉시
-  // 준비되면 순식간에 사라지므로, 최소 표시 시간을 보장해 스플래시가 충분히 보이게 한다.
+  // 있어 빈 화면 없이 스플래시만 보인다. 콘텐츠가 즉시 준비되면 순식간에 사라지므로 최소 표시
+  // 시간을 보장해 스플래시가 충분히 보이게 한다.
   //
-  // 클린업이 타이머를 지우는 것도 그대로다.
-  // 그 하나를 취소한다는 것이 계약이고, RN 에는 그 자리를 메우는 것이 둘 있다.
-  // `ErrorBoundary` 가 폴백과 같은 커밋에서 내리고(결정 6), 그래도 안 되면 `index.ts` 의 실패
-  // 안전 타이머가 트리 **밖**에서 내린다(결정 3).
+  // 클린업이 타이머를 지운다. 그래도 못 내리는 경우가 둘 있는데 `ErrorBoundary` 가 폴백과 같은
+  // 커밋에서 내리고, 그래도 안 되면 `index.ts` 의 실패 안전 타이머가 트리 밖에서 내린다.
   useEffect(() => {
     const remaining = MIN_SPLASH_MS - (Date.now() - APP_START_MS)
     const timer = setTimeout(() => {
@@ -126,12 +124,11 @@ export function AppShell(): React.JSX.Element {
     }
   }, [])
 
-  // 7. OTA 부팅 확인. 체크만 한다. 웹 `main.tsx` 가 하던 그 호출이고,
-  //  이 벽 둘을 없애며 이 자리로 돌아왔다(파일 머리 7번).
+  // OTA 부팅 확인. 체크만 한다.
   //
   // `void` 인 것이 요점이다. 확인은 곁가지라 실패해도 앱은 떠야 한다. 스토어가 실패를
-  // `check-error` 로 삼켜 던지지 않지만(그쪽 `check()`), 여기서 await 하지 않는 것으로 **부팅이
-  // 네트워크를 기다리지 않는다** 를 구조로 못박는다.
+  // `check-error` 로 삼켜 던지지 않지만, 여기서 await 하지 않는 것으로 부팅이 네트워크를
+  // 기다리지 않는다 를 구조로 못박는다.
   useEffect(() => {
     void useLiveUpdateStore.getState().checkOnBoot()
   }, [])
@@ -148,7 +145,7 @@ export function AppShell(): React.JSX.Element {
           이동한다. 내비게이터 **밖**이라 어느 화면에서 감지되든 뜬다(웹에서 라우트 밖이던 자리). */}
       <ApiKeyNoticeModal />
       {/* 토스트는 자기가 놓인 자리에 절대 배치로 그린다. 여기가 `ThemeProvider` 의 화면 채움
-          View 직속이라 탭바 위에 뜬다(`ToastStack.tsx` 파일 머리 ①이 셸에 넘긴 결정). */}
+          View 직속이라 탭바 위에 뜬다. */}
       <ToastStack hasTabBar={isCompleted && !isKeyboardVisible} />
     </>
   )

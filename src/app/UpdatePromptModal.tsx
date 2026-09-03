@@ -208,8 +208,8 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
   const isInProgress = status === 'downloading' || status === 'applying'
   const sizeText = state.availableSize !== null ? formatSize(state.availableSize) : ''
 
-  // 받은 뒤의 `자세히 보기`. 여기서는 펼치지 않고 **전부 갖고 있는 화면으로 보낸다**(결정 1).
-  // 닫지 않으면 돌아왔을 때 같은 안내가 그대로 덮여 있다.
+  // 받은 뒤의 `자세히 보기`. 여기서는 펼치지 않고 전부 갖고 있는 화면으로 보낸다. 닫지 않으면
+  // 돌아왔을 때 같은 안내가 그대로 덮여 있다.
   const openReleaseNotes = (): void => {
     actions.dismiss()
     props.onOpenReleaseNotes()

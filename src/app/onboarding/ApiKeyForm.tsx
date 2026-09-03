@@ -115,7 +115,7 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
       </View>
 
       <View className="gap-1">
-        {/* 외부 URL 로 나가는 이동이라 시맨틱은 링크이고 겉모습만 outline 변형을 입는다(파일 머리 ⑤). */}
+        {/* 외부 URL 로 나가는 이동이라 시맨틱은 링크이고 겉모습만 outline 변형을 입는다. */}
         <Button
           variant="outline"
           role="link"

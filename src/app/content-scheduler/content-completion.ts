@@ -32,7 +32,7 @@ import {
   MAPLE_UNION_PREFIX,
 } from './WeeklyContentCards'
 
-/** `'unmeasurable'` = 끝이 없는 항목(파일 머리). 완료도 미완료도 아니라 세지 않는다. */
+/** `'unmeasurable'` = 끝이 없는 항목. 완료도 미완료도 아니라 세지 않는다. */
 export type ContentCompletion = 'complete' | 'incomplete' | 'unmeasurable'
 
 /** 카운트형. `maxCount` 가 0이면 채울 것이 없다 라 완료로 치지 않는다(0/0을 100%로 읽지 않는다). */
@@ -65,9 +65,8 @@ export function dailyContentCompletion(content: DailyContent): ContentCompletion
  * (이름 일치가 접두사 일치보다 앞이다) 재배열하면 판정이 달라진다.
  */
 export function weeklyContentCompletion(content: WeeklyContent): ContentCompletion {
-  // **점수가 0이 아니면 완료다**(사용자 지시). 점수에 상한이 없어 **다 했다** 를
-  // 카운트로는 못 재지만, 그 주에 **참여했는가** 는 잴 수 있고 그것이 링이 물어야 할 것이다.
-  // 카드는 그대로 `n점` 배지다. 얼마나 했는지는 값이 말하고, 링은 했는지만 센다.
+  // 점수가 0 이 아니면 완료다. 점수에 상한이 없어 다 했다 를 카운트로는 못 재지만 그 주에
+  // 참여했는가 는 잴 수 있고 그것이 링이 물어야 할 것이다. 카드는 그대로 `n점` 배지다.
   if (content.name === GUILD_UNDERGROUND_WATERWAY_NAME) return byParticipation(content)
   if (content.name === GUILD_MISSION_POINTS_NAME) return byCount(content)
   if (content.name === GUILD_FLAG_RACE_NAME) return byParticipation(content)

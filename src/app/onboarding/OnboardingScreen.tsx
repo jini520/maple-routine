@@ -57,14 +57,12 @@ export function OnboardingScreen(): React.JSX.Element {
 
   function renderStep(): React.JSX.Element {
     switch (status) {
-      // 두 상태가 같은 화면인 것은 우연이 아니다. 이 앱에서 **키 입력 앞뒤로 갈 수 있는 곳이 그
-      // 자리 하나**다.
+      // 두 상태가 같은 화면인 것은 우연이 아니다. 이 앱에서 키 입력 앞뒤로 갈 수 있는 곳이 그
+      // 자리 하나다.
       //
       // ① `awaitingApiKey`. 첫 화면.
-      // ② `error`. 실패는 스토어가 토스트로 알린다. 계정 목록이라는 것이
-      //  없으므로 그릴 수 있는 것이 폼 하나다. **출구 없는 흰 화면을 만들지
-      //  않는다**. 이 없앤 잠금과 같은 얼굴이고, 그때 통한 처방도 "키를 다시 넣는
-      //    것" 하나였다.
+      // ② `error`. 실패는 스토어가 토스트로 알린다. 계정 목록이라는 것이 없으므로 그릴 수
+      //    있는 것이 폼 하나다. 출구 없는 흰 화면을 만들지 않는다.
       case 'awaitingApiKey':
       case 'error':
         return (

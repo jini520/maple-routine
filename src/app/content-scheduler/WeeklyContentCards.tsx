@@ -1,13 +1,11 @@
 /**
- * **주간** 컨텐츠 카드(화면에서 분리). 에픽 던전·지역 주간 퀘스트·
- * 메이플 유니온·길드 3종.
+ * 주간 컨텐츠 카드. 에픽 던전·지역 주간 퀘스트·메이플 유니온·길드 3종.
  *
  * 카드마다 배경 일러스트와 배지 구성이 다르고, 어느 것을 그릴지는 `renderWeeklyContentCard` 가
  * 이름으로 가른다. 전부 자기 카드 안에서 끝나 화면의 고정 헤더와 무관하다.
  *
- * RN 으로 갈린 것은 일간 카드와 **같은 넷**이라 그쪽 파일 머리에 한 번만 적는다
- * (`DailyContentCards.tsx`). bleed 는 `FadedIllustration`, 껍데기는 `IllustratedCard`, `flex-row` 명시,
- * `<img>`/`<span>`/`text-shadow` 의 짝.
+ * bleed 는 `FadedIllustration`, 껍데기는 `IllustratedCard` 가 든다. 일간 카드와 같은 규약이라
+ * 사유는 `DailyContentCards.tsx` 파일 머리에 한 번만 적는다.
  */
 import { isContentBlocked } from '../../lib/scheduler/required-level'
 import {
@@ -113,8 +111,8 @@ export function WeeklyRegionalContentCard(props: {
   const backgroundUrl = getDailyQuestBackgroundUrl(backgroundSlug)
   const iconUrl = getDailyQuestRegionIconUrl(backgroundSlug)
   const crop = props.crop ?? getDailyQuestRegionCrop(backgroundSlug)
-  // 익스트림 몬스터파커는 다른 6개 지역 콘텐츠와 달리 now_count/max_count가 아니라 실제
-  // quest_state(0/1/2)로 진행 상태를 준다(2026-07-21, 사용자 지시).
+  // 익스트림 몬스터파커는 다른 6개 지역 콘텐츠와 달리 now_count/max_count 가 아니라 실제
+  // quest_state(0/1/2)로 진행 상태를 준다.
   const questState: 0 | 1 | 2 | null =
     backgroundSlug === MONSTER_PARK_BACKGROUND_SLUG
       ? content.questState

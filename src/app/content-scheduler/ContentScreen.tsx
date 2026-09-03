@@ -204,15 +204,13 @@ export function ContentScreen(): React.JSX.Element {
           />
         }
         header={
-          // 제목~탭도 목록과 **함께 스크롤된다**. 헤더는 `ScreenScroll` 의 첫
-          // 자식이다. `fixed` 도 spacer 도 없다. 그 문제가
-          // 구조적으로 없다(`PageHeader` 파일 머리).
+          // 제목~탭도 목록과 함께 스크롤된다. 헤더는 `ScreenScroll` 의 첫 자식이다.
           <PageHeader>
             {/* 동기화 상태가 드롭다운 줄에서 **제목 옆**으로 올라왔다. 오른쪽
                 끝은 관리 버튼 자리 그대로다. 그쪽은 **가는 곳**, 이쪽은 **상태** 라 성질이 다르다. */}
             <PageHeaderTitleRow className="justify-between">
               <View className="shrink flex-row items-center gap-2">
-                {/* 결정 3: 폭을 다투면 시각 텍스트만 줄어든다. 제목은 화면의 이름이다. */}
+                {/* 폭을 다투면 시각 텍스트만 줄어든다. 제목은 화면의 이름이다. */}
                 <Text className="shrink-0 text-lg font-semibold text-text">컨텐츠 스케줄러</Text>
                 <Text className="shrink text-sm text-text-muted" numberOfLines={1}>
                   {status === 'loading' ? '조회 중...' : selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
