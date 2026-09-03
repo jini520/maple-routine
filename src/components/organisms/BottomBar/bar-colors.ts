@@ -20,8 +20,8 @@
  * 테마 이름이 아니라 `mode` 로 분기한다.
  */
 
-import { hexToOklch, mixOklab, oklchToHex, withChroma } from '../lib/color'
-import type { ThemeDefinition } from '../types/theme'
+import { hexToOklch, mixOklab, oklchToHex, withChroma } from '../../../lib/color'
+import type { ThemeDefinition } from '../../../types/theme'
 
 function withAlpha(hex: string, alpha: number): string {
   const value = Math.round(Math.min(1, Math.max(0, alpha)) * 255)

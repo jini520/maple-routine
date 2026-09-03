@@ -7,7 +7,7 @@ import { BackHandler } from 'react-native'
 import { setBackGesturePort, __resetNativePortsForTest } from '../../native/ports'
 
 import { useRootBackToBackground, type RootBackNavigation } from '../use-root-back'
-import { resetBarStoreForTests } from '../bar-store'
+import { resetBarStoreForTests } from '../../components/organisms/BottomBar/bar-store'
 import { rnBackGesturePort } from '../../native/adapters/rn-back-gesture'
 
 // `mock` 접두사는 jest 규칙이다. `jest.mock` 팩토리는 호이스팅돼 모듈 평가보다 먼저 돌기 때문에

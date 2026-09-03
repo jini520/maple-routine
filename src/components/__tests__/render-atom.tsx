@@ -19,7 +19,7 @@ import type { ReactElement } from 'react'
 import { PortalProvider } from '@gorhom/portal'
 import { SafeAreaProvider, type Metrics } from 'react-native-safe-area-context'
 
-import { BottomBarOverlayHost } from '../../navigation/BottomBarOverlay'
+import { BottomBarOverlayHost } from '../organisms/BottomBar/BottomBarOverlay'
 import { ThemeProvider } from '../../theme/ThemeProvider'
 
 /** 테스트가 보는 테마. `appearance-store` 의 초기값(`DEFAULT_THEME`)과 같아야 한다. */

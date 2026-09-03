@@ -26,7 +26,7 @@ import Animated, {
 } from 'react-native-reanimated'
 
 import { FAB_LIFT_PX } from './speed-dial-metrics'
-import { BottomBarOverlay } from '../../../navigation/BottomBarOverlay'
+import { BottomBarOverlay } from '../BottomBar/BottomBarOverlay'
 import { resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
 import { useBottomSafeAreaPx } from '../../../lib/safe-area'
 import { useThemeAppearance } from '../../../theme/context'

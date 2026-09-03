@@ -16,7 +16,7 @@ import type { ThemeDefinition, ThemeName } from '../../types/theme'
 
 import { BAR_MAX_WIDTH, resolveBottomBarMetrics } from '../../lib/bottom-bar-metrics'
 import { __resetThemeAppearanceForTest, setThemeAppearance } from '../../theme/appearance-store'
-import { resetBarStoreForTests } from '../bar-store'
+import { resetBarStoreForTests } from '../../components/organisms/BottomBar/bar-store'
 import { NavigationHarness } from './harness'
 import { installMemoryPreferences } from './memory-preferences'
 

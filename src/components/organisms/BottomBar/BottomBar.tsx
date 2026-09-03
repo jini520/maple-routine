@@ -33,10 +33,10 @@ import {
   Text,
   WalletIcon,
   WrenchIcon,
-} from '../components/atoms'
-import { BAR_LIFT, resolveBottomBarMetrics } from '../lib/bottom-bar-metrics'
-import { useBottomSafeAreaPx } from '../lib/safe-area'
-import { useThemeAppearance } from '../theme/context'
+} from '../../atoms'
+import { BAR_LIFT, resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
+import { useBottomSafeAreaPx } from '../../../lib/safe-area'
+import { useThemeAppearance } from '../../../theme/context'
 import { resolveBarColors } from './bar-colors'
 import {
   BAR_GROUPS,
@@ -52,10 +52,10 @@ import {
   type BarIntent,
   type BarState,
   type GroupId,
-} from './bar-model'
+} from '../../../navigation/bar-model'
 import { setLastSub, useLastSub } from './bar-store'
 import { useKeyboardShown } from './use-keyboard-shown'
-import type { LayerRouteName, TabRouteName } from './routes'
+import type { LayerRouteName, TabRouteName } from '../../../navigation/routes'
 
 /**
  * 바가 아는 이동은 둘뿐이다.

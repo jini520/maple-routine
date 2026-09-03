@@ -30,7 +30,7 @@ const ATOMS = [
  */
 const FIXED_BOX_PATHS = [
   join(SRC, 'app', 'today', 'widgets'),
-  join(SRC, 'navigation', 'BottomBar.tsx'),
+  join(SRC, 'components', 'organisms', 'BottomBar', 'BottomBar.tsx'),
   join(SRC, 'components', 'organisms', 'CharacterPortrait', 'CharacterPortrait.tsx'),
   join(SRC, 'components', 'atoms', 'Badge', 'Badge.tsx'),
 ]

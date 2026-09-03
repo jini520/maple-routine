@@ -10,8 +10,8 @@
 
 import { useSyncExternalStore } from 'react'
 
-import type { LastSub } from './bar-model'
-import { initialBarState } from './bar-model'
+import type { LastSub } from '../../../navigation/bar-model'
+import { initialBarState } from '../../../navigation/bar-model'
 
 function empty(): LastSub {
   // 초기값을 여기서 다시 적지 않는다. 그 값은 `bar-model.ts` 에서만 온다.
