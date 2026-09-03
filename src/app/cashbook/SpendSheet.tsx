@@ -34,14 +34,14 @@ export interface SpendSheetProps {
    */
   characters: ReadonlyArray<{ ocid: string; name: string }>
   /**
-   * 고칠 기록. 있으면 **수정 모드**다. 머리와 버튼 글자가 갈리고 삭제가 선다.
-   * 화면을 따로 만들지 않는 이유는 **입력 규칙이 한 벌이어야** 하기 때문이다.
+   * 고칠 기록. 있으면 수정 모드다. 머리와 버튼 글자가 갈리고 삭제가 선다. 화면을 따로 만들지
+   * 않는 것은 입력 규칙이 한 벌이어야 하기 때문이다.
    */
   editing?: SpendRecord
   onDelete?: () => void | Promise<void>
   /**
-   * 마지막으로 쓴 메소마켓 시세. 필수 칸이 매번 비어 있으면 입력이 막히므로
-   * 기억한다 가 여기서 결정적이다. `null` 이면 아직 한 번도 안 넣었다는 뜻이다.
+   * 마지막으로 쓴 메소마켓 시세. 필수 칸이 매번 비어 있으면 입력이 막히므로 기억한다.
+   * `null` 이면 아직 한 번도 안 넣었다는 뜻이다.
    */
   lastPointRate: number | null
   /** 던지면 **안 닫는다**. 친 것을 잃지 않는다. 실패를 말하는 것은 화면 몫이다(토스트). */
@@ -59,9 +59,9 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
    */
   const [scrollKey, setScrollKey] = useState('')
   /**
-   * **어느 날에 적히나**. 시트를 연 날로 시작하고 머리에서 바꾼다.
+   * 어느 날에 적히나. 시트를 연 날로 시작하고 머리에서 바꾼다.
    *
-   * 갈래 폼은 `key={category}` 로만 다시 심기므로, 날짜를 바꿔도 **친 것이 안 사라진다**.
+   * 갈래 폼은 `key={category}` 로만 다시 심기므로 날짜를 바꿔도 친 것이 안 사라진다.
    */
   const [dateKey, setDateKey] = useState(props.dateKey)
 
@@ -91,8 +91,8 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
       resetScrollKey={`${category}|${scrollKey}`}
     >
       <View className="gap-3 px-4 pb-2">
-        {/* **`key` 가 곧 갈래를 옮기면 값이 사라진다** 다. 갈래가 바뀌면
-            리액트가 폼을 새로 심는다. 지울 것을 손으로 세지 않는다. */}
+        {/* `key` 가 곧 갈래를 옮기면 값이 사라진다 다. 갈래가 바뀌면 리액트가 폼을 새로 심는다.
+            지울 것을 손으로 세지 않는다. */}
         <SpendForm key={category} category={category} formProps={formProps} />
       </View>
     </BottomSheet>

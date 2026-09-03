@@ -1,11 +1,11 @@
 /**
  * 기타 폼. 갈래 넷에 안 드는 지출.
  *
- * **캐시는 여기서만 산다**. 통화도 여기서만 고른다. 그리고 **금액
- * × 수량**이다(라벨은). 세는 것이 몇 회 라 수량은 스테퍼 그대로다.
+ * 캐시는 여기서만 산다. 통화도 여기서만 고른다. 그리고 금액 × 수량이다. 세는 것이 몇 회 라
+ * 수량은 스테퍼 그대로다.
  *
- * **합계는 언제나 메소**다(결정 11). 캐시만 예외인데, 환산을 안 하므로
- * 그 축에 얹을 값이 없고 그대로 원 으로 적는다.
+ * 합계는 언제나 메소다. 캐시만 예외인데 환산을 안 하므로 그 축에 얹을 값이 없고 그대로 원 으로
+ * 적는다.
  */
 import { useState } from 'react'
 
@@ -53,8 +53,8 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
         ? 'point'
         : 'meso',
   )
-  // 마지막으로 쓴 값으로 시작한다. 필수 칸이 매번 비어 있으면 입력이 막힌다.
-  // 고칠 때는 **그 행의 시세**가 먼저다.
+  // 마지막으로 쓴 값으로 시작한다. 필수 칸이 매번 비어 있으면 입력이 막힌다. 고칠 때는 그
+  // 행의 시세가 먼저다.
   const [rateText, setRateText] = useState(() => {
     const rate = props.editing?.pointPer100mMeso ?? props.lastPointRate
     return rate === null || rate === undefined ? '' : String(rate)
@@ -96,8 +96,7 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
         />
       </FieldRow>
 
-      {/* 통화는 **갈래가 아니라 금액의 축**이라 세그먼트다. 칩으로 두면
-          갈래 칩과 한 무리로 읽힌다. */}
+      {/* 통화는 갈래가 아니라 금액의 축이라 세그먼트다. 칩으로 두면 갈래 칩과 한 무리로 읽힌다. */}
       <FieldRow label="통화">
         <Segment
           options={FREE_CURRENCY_LABELS}
@@ -109,8 +108,8 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
       {/* **통화 밑**이다. 무엇으로 내는지를 정한 다음에 얼마인지를 친다. */}
       <FieldRow label="금액">
         <AmountInput testID="spend-sheet-unit-price" value={typedText} onChange={setTypedText} />
-        {/* 통화를 고르는 자리라 숫자만 있으면 무엇으로 낸 것인지 줄에서 사라진다
-            큰 숫자가 이미 하는 일을 이 줄도 한다. */}
+        {/* 통화를 고르는 자리라 숫자만 있으면 무엇으로 낸 것인지 줄에서 사라진다. 큰 숫자가
+            이미 하는 일을 이 줄도 한다. */}
         <Text
           testID="spend-sheet-unit-price-unit"
           className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted"

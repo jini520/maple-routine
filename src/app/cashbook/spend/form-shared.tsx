@@ -36,11 +36,11 @@ export interface SpendFormProps {
 }
 
 /**
- * 머리줄. **지금 어디인지를 말한다**(사용자 지정 2026-08-25).
+ * 머리줄. 지금 어디인지를 말한다.
  *
- * ①에서는 지출 추가다. ②로 들어가면 그 자리가 **고른 것의 이름**으로 바뀌고 왼쪽에 돌아가는
- * 자리가 선다. 제목을 그대로 두고 본문에 돌아가는 줄을 따로 두면 같은 것(지금 무엇을 고르는
- * 중인가)을 말하는 자리가 둘이 되고 시트 위쪽 한 줄이 통째로 낭비된다.
+ * ①에서는 지출 추가다. ②로 들어가면 그 자리가 고른 것의 이름으로 바뀌고 왼쪽에 돌아가는
+ * 자리가 선다. 제목을 그대로 두고 본문에 돌아가는 줄을 따로 두면 같은 것을 말하는 자리가
+ * 둘이 되고 시트 위쪽 한 줄이 통째로 낭비된다.
  *
  * `items-baseline` 이 아니라 `items-center` 다. 화살촉은 글자가 아니라 밑줄이 없다.
  */
@@ -115,18 +115,18 @@ function CategoryChip(props: {
 }
 
 /**
- * 갈래 칩. **고르는 화면에만 선다**.
+ * 갈래 칩. 고르는 화면에만 선다.
  *
- * 둘째 화면에서는 머리의 `‹` 가 이미 되돌아가는 길이다. **수정 모드에도 없다**(결정 15).
- * 갈래를 바꾸면 그 기록은 다른 것 이 되고, 무엇이었는지는 제목이 이미 말한다.
+ * 둘째 화면에서는 머리의 `‹` 가 이미 되돌아가는 길이다. 수정 모드에도 없다. 갈래를 바꾸면
+ * 그 기록은 다른 것이 되고, 무엇이었는지는 제목이 이미 말한다.
  */
 export function CategoryChips(props: {
   selected: SpendCategory
   onSelect: (next: SpendCategory) => void
 }): React.JSX.Element {
   return (
-    // **테스트가 이 줄을 지목할 수 있어야 한다**. `기타`가 갈래 이름이자 `아이템 구매`의
-    // 종류 이름이라 라벨만으로는 둘이 안 갈린다.
+    // 테스트가 이 줄을 지목할 수 있어야 한다. `기타` 가 갈래 이름이자 `아이템 구매` 의 종류
+    // 이름이라 라벨만으로는 둘이 안 갈린다.
     <View testID="spend-sheet-categories" className="flex-row flex-wrap gap-1.5">
       {SPEND_CATEGORIES.map((each) => (
         <CategoryChip
@@ -141,9 +141,9 @@ export function CategoryChips(props: {
 }
 
 /**
- * 캐릭터 줄. **기본은 `선택 안함`**(사용자 지정 2026-08-26).
+ * 캐릭터 줄. 기본은 `선택 안함`.
  *
- * **고를 것을 고르는 화면(타일 격자)에는 안 선다**. 거기엔 아직 적을 기록이 없다.
+ * 고를 것을 고르는 화면(타일 격자)에는 안 선다. 거기엔 아직 적을 기록이 없다.
  */
 export function CharacterRow(props: {
   characters: ReadonlyArray<{ ocid: string; name: string }>
@@ -197,10 +197,10 @@ export function RateRow(props: {
 }
 
 /**
- * 저장 · 삭제 줄. 큰 숫자 **바로 아래**다.
+ * 저장 · 삭제 줄. 큰 숫자 바로 아래다.
  *
- * **타일 격자에는 저장이 없다**. 거기엔 셀 자리 자체가 없다. 그래서 `showSave` 를 받는다.
- * 삭제는 **버튼처럼 안 생겼다**. 이미 두 번 눌러야 여기까지 온다.
+ * 타일 격자에는 저장이 없다. 거기엔 셀 자리 자체가 없다. 그래서 `showSave` 를 받는다.
+ * 삭제는 버튼처럼 안 생겼다. 이미 두 번 눌러야 여기까지 온다.
  */
 export function SaveRow(props: {
   showSave: boolean
@@ -216,8 +216,8 @@ export function SaveRow(props: {
         // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
         <Pressable
           role="button"
-          // **보이는 글자와 같아야 한다**. 화면은 `수정`인데 읽어 주는 것이 `저장`이면
-          // 그 둘은 다른 버튼이 된다.
+          // 보이는 글자와 같아야 한다. 화면은 `수정` 인데 읽어 주는 것이 `저장` 이면 그 둘은
+          // 다른 버튼이 된다.
           aria-label={props.editing ? '수정' : '저장'}
           disabled={!props.canSave || props.saving}
           onPress={props.onSave}
