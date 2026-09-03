@@ -1,6 +1,6 @@
 # 온보딩 (Onboarding)
 
-> **범위**: 앱을 처음 켰을 때 거치는 세 단계. API 키 입력 · 스케줄 관리 방법 선택 · 캐릭터 선택.
+> **범위**: 앱을 처음 켰을 때 거치는 두 단계. API 키 입력 · 캐릭터 선택.
 > 끝내지 않고 앱을 껐을 때 어디서부터 이어가는지도 여기 있다.
 > **여기 없는 것**: 연결 해제와 설정 화면은 [settings.md](./settings.md), 키 무효화 감지와 모달
 > 문구는 [../foundation/error-resilience.md](../foundation/error-resilience.md), 후보 캐릭터 자격
@@ -13,12 +13,12 @@
 
 | 절 | 무엇을 정하나 |
 |---|---|
-| [단계 셋](#단계-셋) | 무엇을 묻고 무엇을 안 묻나 |
+| [단계 둘](#단계-둘) | 무엇을 묻고 무엇을 안 묻나 |
 | [단계 재개](#단계-재개) | 끝내지 않은 온보딩이 어디서부터 이어지나 |
 | [키 재입력 경로](#키-재입력-경로) | 키만 다시 받고 뒤 단계를 건너뛰는 규칙 |
 | [API 키 입력 화면](#api-키-입력-화면) | 갈림길 레이아웃, 표시 토글, 안심 문구 |
-| [스케줄 관리 방법 단계](#스케줄-관리-방법-단계) | 온보딩과 설정이 공유하는 것 |
 | [캐릭터 선택 단계](#캐릭터-선택-단계) | 두 층 구조, 로딩과 실패 |
+| [시드 단계](#시드-단계-seedingtracking) | 언제 거치고 무엇을 보여주나 |
 | [`character/basic` 5분 TTL](#characterbasic-5분-ttl) | 네 호출부를 한 경로로 접는다 |
 | [열린 질문](#열린-질문) · [폐기된 정책](#폐기된-정책-history) | |
 
@@ -29,7 +29,6 @@
 | 화면 | `app/onboarding/OnboardingScreen.tsx` | 단계 switch |
 | 화면 | `app/onboarding/OnboardingStep.tsx` | 단계 셸. 하단 액션 바를 갖는다 |
 | 화면 | `app/onboarding/ApiKeyForm.tsx` | 키 입력 |
-| 화면 | `app/onboarding/TrackingModeStep.tsx` | 자동·수동 고르기 |
 | 화면 | `app/onboarding/ContentCharacterStep.tsx` | 캐릭터 고르기. 본문은 공용 컴포넌트다 |
 | 상태 | `features/onboarding/state.ts` | `OnboardingStatus` · `OnboardingError` |
 | 상태 | `features/onboarding/resume.ts` | 재개 단계 파생. **부팅과 키 재입력이 공유한다** |
@@ -47,13 +46,17 @@
 **폐기됐지만 이 화면이 그 결정 일부를 아직 따르는 것**: 🟡 [[ADR-113]] · ⛔ ADR-016 · ADR-051.
 **각 파일 배너의 🔗 줄에 적힌 것만 살아 있다.**
 
-## 단계 셋
+## 단계 둘
 
 [[ADR-143]]·[[ADR-144]] 다.
 
 ```
-API 키 → 스케줄 관리 방법 → 캐릭터 선택
+API 키 → 캐릭터 선택
 ```
+
+**온보딩이 묻는 것은 이 둘뿐이다.** 스케줄 관리 방법은 설정이 갖는다
+([settings.md](./settings.md)). 앱을 처음 켠 자리에서는 그 선택의 판단 재료가 아직 없고, **동작
+기본값이 자동**이라 안 물어도 앱이 성립한다([[ADR-035]] 결정 2 의 `?? 'auto'` 폴백).
 
 **메이플 ID를 고르는 단계가 없다**([[ADR-143]] 결정 1). 캐릭터 선택 화면이 계정 드롭다운을 갖고
 **여러 계정의 캐릭터를 한 목록으로** 고른다([[ADR-144]]).
@@ -67,8 +70,8 @@ API 키 → 스케줄 관리 방법 → 캐릭터 선택
 | 계정 선택 프로브(`use-account-probes`) | 같은 이유로 없다. 판정은 로스터 조회가 한다 |
 
 **코드에서도 전부 없앴다.** `OnboardingStatus` 는 `awaitingApiKey` · `verifyingApiKey` ·
-`selectingTrackingMode` · `selectingContentCharacters` · `seedingTracking` · `completed` · `error`
-일곱이고, `selectingAccount` 와 `prefetching` 은 남아 있지 않다. `use-account-probes.ts` 파일과
+`selectingContentCharacters` · `seedingTracking` · `completed` · `error` 여섯이고,
+`selectingAccount` 와 `prefetching` 은 남아 있지 않다. `use-account-probes.ts` 파일과
 `accountScope` 플래그도 삭제됐다.
 
 ### 키 입력
@@ -113,7 +116,6 @@ API 키 → 스케줄 관리 방법 → 캐릭터 선택
 | 저장 상태 | 재개 단계 |
 |---|---|
 | `apiKey` 없음 | `awaitingApiKey` |
-| `trackingMode` 미선택 | `selectingTrackingMode` |
 | `trackedCharacters` 가 `null` 또는 `[]` | `selectingContentCharacters` |
 | 그 외 | `completed` |
 
@@ -121,18 +123,14 @@ API 키 → 스케줄 관리 방법 → 캐릭터 선택
 판정은 **함수 하나**(`features/onboarding/resume.ts` 의 `deriveResumeTarget`)이고 두 경로가 그것을 공유한다. 두 벌이 되면 재개
 규칙의 진실이 둘이 되는데, 그것이 [[ADR-086]] 결정 1이 진행 상태 전용 키를 거부한 바로 그 이유다.
 
-- **뒤 두 단계는 네트워크 없이 재개된다.** 모드 선택은 순수 UI 이고, 캐릭터 선택은
-  `getCharacterPickerRoster` 가 자체 조회한다.
+- **캐릭터 선택은 네트워크 없이 재개된다.** `getCharacterPickerRoster` 가 자체 조회한다.
 - **`trackedCharacters === []` 는 완료가 아니다.** 최소 1명 규칙이 있으므로 빈 배열은 미완료와
   같다. 저장 레이어의 `null` 과 `[]` 구분([[ADR-012]])은 그대로 두고, 온보딩 게이트에서만 둘을 같게
   읽는다.
-- **`trackingMode` 미선택을 `'auto'` 로 읽지 않는다.** `getTrackingMode()` 가 `TrackingMode | null` 을
-  돌려주고 소비처가 `?? 'auto'` 로 흡수한다. **동작 기본값은 그대로 자동**([[ADR-035]] 결정 2)이고,
-  바뀌는 것은 "골랐는가"를 구분할 수 있게 된 것뿐이다. 고르지 않은 값을 화면이 "선택됨"으로 표시하는
-  것만 없앤다.
-- **마이그레이션**: `trackingMode` 키가 없는데 비어 있지 않은 `trackedCharacters` 가 이미 있으면
-  ([[ADR-035]] 이전 설치본 완주자) `'auto'` 를 1회 기록한다. 안 하면 정상 사용자가 온보딩으로
-  되돌려진다.
+- **`trackingMode` 는 읽지도 쓰지도 않는다.** 읽는 곳 둘(`features/tracking-mode/store` ·
+  `features/boss-profit/store`)이 `?? 'auto'` 로 흡수하므로 이 게이트가 그 값을 볼 이유가 없다.
+  온보딩이 `'auto'` 를 써 넣지도 않는다. 그러면 **사용자가 고른 값과 한 번도 안 고른 값이
+  저장소에서 같아져**, 설정 화면이 「자동」을 그리는 근거가 폴백에서 기록으로 바뀐다.
 
 ## 키 재입력 경로
 
@@ -196,8 +194,8 @@ API 키 → 스케줄 관리 방법 → 캐릭터 선택
             p text-xs text-text-muted 중앙  "넥슨 오픈 API에서 키를 받는 7단계 안내"
 ```
 
-- **제목을 되찾는다.** 온보딩 단계 중 이 화면에만 제목이 없었다. `TrackingModeStep` 과
-  `ContentCharacterStep` 은 모두 제목과 보조문으로 시작한다.
+- **제목을 되찾는다.** 온보딩 단계 중 이 화면에만 제목이 없었다. `ContentCharacterStep` 은
+  제목과 보조문으로 시작한다.
 - **폼이 먼저다.** 넥슨 바로 가기가 인풋 바로 아래 붙어 "키를 이미 가진 사람"의 동선이 한 덩어리가
   된다. 가이드는 확인 버튼 **아래** 구분선 뒤로 내려가되, 거기서 처음으로 **누를 수 있는
   크기**(pill 버튼)가 된다.
@@ -254,23 +252,21 @@ Preferences(iOS `UserDefaults` · 안드로이드 `SharedPreferences`)에 저장
 
 **액션은 두지 않는다.** 온보딩 중에는 설정 화면이 없고 재시도는 폼에서 한다.
 
-## 스케줄 관리 방법 단계
+## 시드 단계 (`seedingTracking`)
 
-`TrackingModeStep` 이다([[ADR-035]] 결정 13·22). 제목 "스케줄러를 어떻게 관리할까요?" + 보조문
-"나중에 설정에서 언제든 바꿀 수 있어요." + 옵션 2개 + "계속하기"다.
+캐릭터 선택을 마쳤을 때 **시드가 필요한 모드면** 거치는 단계다. 그 모드로 이 자리에 오는 길은
+캐시 데이터(general) 삭제다.
 
-**기본 선택은 없고**(결정 17) 고르기 전까지 CTA가 비활성이다.
+```
+설정에서 캐시 데이터(general)를 지운다
+  → trackedCharacters 는 지워지고 trackingMode 는 보존된다(storage/cache-data.ts 의 KEEP_KEYS)
+  → 다음 부팅에서 selectingContentCharacters 로 들어온다. 이때 모드가 그대로 남아 있다
+```
 
-옵션 카드 안쪽 구조는 [settings.md](./settings.md) 의 "옵션 카드 안쪽은 온보딩과 공유한다"에 한 번만
-적는다. 설정 모달(`TrackingModeSelector`)과 **같은 카피(`features/tracking-mode/copy.ts`)에 같은 카드 내부
-구조**를 쓰기
-때문이다(결정 22). 이 화면에만 해당하는 것은 둘이다.
+거기서 캐릭터를 고르면 시드가 필요하고, 끝날 때까지 스피너를 유지해야 한다. 분기를 지우면 그
+사용자의 체크리스트가 빈 채로 완료된다.
 
-- 바깥 카드 클래스는 `ThemeSelector` 와 공유하는 것을 그대로 쓴다. 결정 22가 폐기한 것은 "신규 스타일
-  금지"이지 이 공유가 아니다. 바뀐 것은 카드 **안쪽**뿐이다.
-- 다른 단계와 달리 네트워크가 필요 없어 재개도 순수 UI 다.
-
-**시드 단계(`seedingTracking`)는 진행률 숫자가 없어 스피너만 쓴다.** `MapleSweepSpinner size={32}
+**진행률 숫자가 없어 스피너만 쓴다.** `MapleSweepSpinner size={32}
 text-primary` 와 "체크리스트를 준비하고 있어요"다. 화면 전체 대기라 셸 승계 카드를 씌우지 않는다
 ([[ADR-061]] 결정 2).
 
@@ -432,10 +428,10 @@ text-primary` 와 "체크리스트를 준비하고 있어요"다. 화면 전체 
 
 ## 폐기된 정책 (history)
 
-### 다섯 단계에서 세 단계로
+### 다섯 단계에서 두 단계로
 
-- ~~온보딩은 `API 키 → 계정 선택 → 예열 → 스케줄 관리 방법 → 관리 캐릭터 선택` 다섯 단계다~~ →
-  **세 단계**이고 계정을 고르지 않는다([[ADR-143]] 결정 1, 2026-08-16). 함께 내려간 것 셋: 계정 선택
+- ~~온보딩은 `API 키 → 계정 선택 → 예열 → 관리 캐릭터 선택` 처럼 여러 단계다~~ →
+  **두 단계**이고 계정을 고르지 않는다([[ADR-143]] 결정 1, 2026-08-16). 함께 내려간 것 셋: 계정 선택
   화면 · 예열(⛔ ADR-016) · 계정 선택 프로브(🟡 [[ADR-113]]).
 
   코드에서도 전부 없앴다. [[ADR-155]] 가 캐패시터 소스를 지우면서 정리 조건이 충족됐다.

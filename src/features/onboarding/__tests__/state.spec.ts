@@ -80,22 +80,6 @@ describe('onboardingReducer', () => {
 
 
 
-  it('SELECT_TRACKING_MODE: selectingContentCharacters로 전이한다', () => {
-    const selecting: OnboardingState = {
-      status: 'selectingTrackingMode',
-      accounts: [account('acc-1')],
-      error: null,
-      apiKeyNotice: null,
-    }
-
-    const result = onboardingReducer(selecting, { type: 'SELECT_TRACKING_MODE', mode: 'manual' })
-
-    expect(result).toEqual<OnboardingState>({
-      ...selecting,
-      status: 'selectingContentCharacters',
-    })
-  })
-
   it('SUBMIT_CONTENT_CHARACTERS: seedingTracking으로 전이한다', () => {
     const selecting: OnboardingState = {
       status: 'selectingContentCharacters',

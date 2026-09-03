@@ -2,7 +2,7 @@
 //
 // 갈린 것 셋
 // ① 옵션을 **제목 글자에서 위로 올라가** 잡는다. RN 은 자식 글자를 합쳐 접근성 이름을 만들지
-//    않는다(온보딩 `TrackingModeStep` 테스트와 같은 헬퍼).
+//    않는다.
 // ② `aria-pressed` → `aria-selected` → `accessibilityState.selected`.
 // ③ 누른 뒤 화면을 보려면 `act` 로 흘려보낸다(`CacheClearConfirm` 테스트).
 import { act, fireEvent } from '@testing-library/react-native'

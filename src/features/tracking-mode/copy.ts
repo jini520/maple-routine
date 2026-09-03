@@ -12,9 +12,9 @@ export interface TrackingModeOptionCopy {
   caution: string
 }
 
-// 온보딩(TrackingModeStep)과 설정(TrackingModeSelector) 두 곳이 같은 문구를 쓴다. 한쪽만 고치면
-// 어긋나므로 카피를 여기 한 곳에 모아 둔다. 어느 쪽도 추천 으로 표기하지 않고, 표기는 화면
-// 이름과 맞춰 컨텐츠 로 통일한다. 세 필드가 각각 무엇·어떻게·한계를 하나씩 맡는다.
+// 고르는 화면(`TrackingModeSelector`)과 그 값을 설명하는 자리가 같은 문구를 쓰도록 카피를 여기
+// 한 곳에 모아 둔다. 어느 쪽도 추천 으로 표기하지 않고, 표기는 화면 이름과 맞춰 컨텐츠 로
+// 통일한다. 세 필드가 각각 무엇·어떻게·한계를 하나씩 맡는다.
 export const TRACKING_MODE_OPTIONS: TrackingModeOptionCopy[] = [
   {
     mode: 'auto',
