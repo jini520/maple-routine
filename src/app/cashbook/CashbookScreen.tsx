@@ -1,48 +1,26 @@
 /**
- * 가계부 — 「수익·지출」 그룹의 둘째 하위 탭([[ADR-169]] 결정 1).
+ * 가계부 화면. 수익·지출 그룹의 둘째 하위 탭.
  *
- * ## 담기는 것이 넷이다
+ * 담기는 것이 넷이고 그중 둘만 여기서 고친다.
  *
  * | 무엇 | 어디서 | 여기서 고치나 |
  * |---|---|---|
- * | 지출 | `spend_records`([[ADR-166]]) | **예** |
- * | 손입력 수익 | `income_records`([[ADR-170]]) | **예** |
- * | 보스 결정석 | `boss_profit_records` 의 `defeated_on`([[ADR-172]]) | **아니오** — 그 자리에서 **펼쳐진다**(정정 1) |
- * | 아이템 판매 | `boss_drop_records` — 날짜는 위에서 **물려받는다** | **아니오** — 보스 수익 탭으로 간다 |
+ * | 지출 | `spend_records` | 예 |
+ * | 손입력 수익 | `income_records` | 예 |
+ * | 보스 결정석 | `boss_profit_records` | 아니오. 그 자리에서 펼쳐진다 |
+ * | 아이템 판매 | `boss_drop_records` | 아니오. 보스 수익 탭으로 간다 |
  *
- * 넷째까지 붙은 것이 #239 이고 **넷이 전부다** — 다섯째로 예정돼 있던 사냥 타이머 자동 수익은
- * 폐기됐다([[ADR-005]] ⛔, 2026-08-30). 사냥 수익은 계산기로 적는다([[ADR-175]]).
+ * 자동으로 흘러든 둘을 여기서 못 고치는 것은 원천이 저쪽이라서다. 두 곳에서 고치면 어느 쪽이
+ * 참인지 사라진다. 시트 상태의 타입(`ManualDayRecord`)이 그것을 컴파일 단계에서 막는다.
  *
- * 자동으로 흘러든 둘을 여기서 못 고치는 이유는 **원천이 저쪽이기 때문**이다 — 두 곳에서 고치면
- * 어느 쪽이 참인지 사라진다([[ADR-170]] 결정 3 · [[ADR-172]] 결정 8). 갈리는 기준은 테이블이고,
- * 시트 상태의 타입(`ManualDayRecord`)이 그것을 **컴파일 단계에서** 막는다.
+ * 축이 둘이다. 월간은 달력 월이고 주가 일요일에 시작하며, 주간은 **게임의 주**라 목요일에 시작해
+ * 보스 수익 탭과 같은 주가 된다. 대가로 월간 격자의 한 줄이 주간의 한 주와 다르고, 격자에 목요일
+ * 경계선을 그어 그것을 드러낸다.
  *
- * ## 이 화면은 앞의 껍데기 둘과 다르다
+ * 상태도 둘로 갈려 있다(`monthKey` · `weekStartKey`). 하나로 합쳐 파생시키면 달을 넘겨도 고른 날은
+ * 안 바뀐다는 계약이 깨져서, 모드를 오갈 때만 한 번씩 맞춘다.
  *
- * 여기 서 있던 사냥 수익·지출은 **개발 진행중** 자리표시자였고 아무것도 안 했다([[ADR-132]]
- * 결정 12). 자리를 예약하던 장치였고, 그 예약이 이 화면으로 이행돼 둘은 삭제됐다.
- *
- * ## 축이 **둘**이다 ([[ADR-170]] 결정 10)
- *
- * | 보기 | 축 | 주가 시작하는 요일 |
- * |---|---|---|
- * | 월간 | 달력 월 | 일요일 — 한국 달력의 관습([[ADR-169]] 결정 8) |
- * | 주간 | **게임의 주** | **목요일** — 보스 수익 탭과 **같은 주**다 |
- *
- * 주간이 게임 축인 덕에 같은 그룹의 두 하위가 「이번 주」로 **같은 숫자**를 말하고, 날짜를 못 캔
- * 보스 기록(`defeated_on IS NULL`)도 자기 `period_key` 그대로 한 주에 든다 — 월간 격자에서만
- * 어느 칸에도 안 선다([[ADR-172]] 결정 4).
- *
- * 대가로 **월간 격자의 한 줄 ≠ 주간의 한 주**다 — 격자에 목요일 경계선을 그어 그것을 드러낸다.
- *
- * ## 상태가 둘로 갈려 있고, 오갈 때만 맞춘다
- *
- * 월간은 `monthKey`, 주간은 `weekStartKey`(목요일)를 든다. 하나로 합쳐 파생시키면 «달을 넘겨도
- * 고른 날은 안 바뀐다» 는 기존 계약이 깨진다([[ADR-169]] 이후 테스트가 붙들고 있다). 대신
- * **모드를 오갈 때 한 번씩 맞춘다**([[ADR-170]] 결정 12 의 함정):
- *
- * - 주간으로 → **고른 날이 든 주**. 화면 아래 상세가 그 날을 말하고 있으므로 격자도 그 주여야 한다.
- * - 월간으로 → **그 주의 목요일이 든 달**. 주가 두 달에 걸쳐도 `weekStartKey` 가 답을 하나로 만든다.
+ * @see docs/features/cashbook.md 정책
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -116,8 +94,7 @@ import {
   type ManualDayRecord,
 } from '../../features/cashbook/records'
 import { loadMesoRate } from '../../features/cashbook/meso-rate'
-// 보스 수익 탭의 행이 초상을 찾는 **그 함수**다([[ADR-172]] 정정 1) — 같은 보스가 두 화면에서
-// 다른 그림이면 안 된다. 화면끼리의 참조는 `app/today/view-model.ts` 가 이미 트고 있는 길이다.
+// 보스 수익 탭의 행이 초상을 찾는 그 함수다. 같은 보스가 두 화면에서 다른 그림이면 안 된다.
 import { findPortraitSlug } from '../boss-profit/character-groups'
 import { usePullRefresh } from '../use-pull-refresh'
 import { useOpenTab } from '../use-open-tab'
@@ -129,7 +106,7 @@ import { SpendSheet, type SpendDraft } from './SpendSheet'
 const NO_AMOUNTS: CalendarAmounts = {}
 
 /**
- * 두 격자가 **함께 덮는** 날짜 범위 — 보이는 칸(주간이면 이레)과 열지도 기준(언제나 그 달)을 다
+ * 두 격자가 **함께 덮는** 날짜 범위. 보이는 칸(주간이면 이레)과 열지도 기준(언제나 그 달)을 다
  * 담아야 한다. 주간이 달을 걸치면 그 이레가 기준 달의 격자 밖으로 나갈 수 있어(예: 7/30 목요일
  * 주는 8/5 까지 가는데 7월 격자는 8/1 에 끝난다) 둘의 **합집합**을 쓴다.
  */
@@ -138,8 +115,7 @@ function coveringRange(...grids: readonly CalendarWeek[][]): { from: string; to:
   return { from: keys.reduce((a, b) => (a < b ? a : b)), to: keys.reduce((a, b) => (a > b ? a : b)) }
 }
 
-/** 「주간 | 월간」 — **보스 수익 탭의 알약 그대로다**(같은 그룹의 두 하위가 같은 어법으로 기간을
- *  가른다). 주간이 먼저인 것도 그쪽 순서다. 고른 값은 **기억하지 않는다** — 그쪽도 화면 상태다. */
+/** 주간 · 월간. 보스 수익 탭의 알약 그대로다. 고른 값은 기억하지 않는다. 그쪽도 화면 상태다. */
 function PeriodTab(props: {
   label: string
   selected: boolean
@@ -166,14 +142,12 @@ function PeriodTab(props: {
 }
 
 /**
- * 기간을 넘기는 화살표 — 보스 수익의 기간 이동과 **같은 치수·같은 죽는 법**이다(같은 그룹에서 두
- * 모양이면 안 된다).
+ * 기간을 넘기는 화살표. 보스 수익의 기간 이동과 같은 치수·같은 죽는 법이다.
  *
- * 흐려지는 것을 **JS 조건**으로 준다. NativeWind 의 `disabled:` 는 웹 CSS 의사 클래스라
- * `Pressable disabled` 와 **이어져 있지 않고**, 남겨 두면 비활성 화살표가 멀쩡한 색으로 보인다
- * (`BossProfitBossRow` 가 이미 밟은 함정이다).
+ * 흐려지는 것을 JS 조건으로 준다. NativeWind 의 `disabled:` 는 웹 CSS 의사 클래스라
+ * `Pressable disabled` 와 이어져 있지 않고, 남겨 두면 비활성 화살표가 멀쩡한 색으로 보인다.
  *
- * `aria-disabled` 를 `disabled` 와 **같이** 준다 — 앞은 손가락을, 뒤는 스크린리더를 막는다.
+ * `aria-disabled` 를 `disabled` 와 같이 준다. 앞은 손가락을, 뒤는 스크린리더를 막는다.
  */
 function MonthArrow(props: {
   label: string
@@ -199,13 +173,13 @@ function MonthArrow(props: {
 }
 
 /**
- * **재료 한 줄**(수익 · 지출) — 답 옆에 각주처럼 쌓인다([[ADR-184]] 정정 6).
+ * 재료 한 줄(수익 · 지출). 답 옆에 각주처럼 쌓인다.
  *
- * 열을 안 세운다. 오른쪽 정렬 상자 안이라 **금액의 오른쪽 끝이 저절로 한 x 에 서고**, 라벨은 자기
- * 금액에 붙는다 — 라벨에 고정 폭을 주면 자릿수가 다른 두 금액 사이에 빈자리가 생긴다.
+ * 열을 안 세운다. 오른쪽 정렬 상자 안이라 금액의 오른쪽 끝이 저절로 한 x 에 서고 라벨은 자기
+ * 금액에 붙는다. 라벨에 고정 폭을 주면 자릿수가 다른 두 금액 사이에 빈자리가 생긴다.
  *
- * 부호를 값에서 뽑지 않고 **받는다**(결정 3). `formatMesoCompact` 는 음수에 ASCII `-` 를 붙이는데
- * 답은 `−`(U+2212)를 쓰므로, 부호를 함수에 맡기면 **한 카드에 두 종류의 빼기 기호**가 선다.
+ * 부호를 값에서 뽑지 않고 받는다. `formatMesoCompact` 는 음수에 ASCII `-` 를 붙이는데 답은
+ * `−`(U+2212)를 쓰므로, 함수에 맡기면 한 카드에 두 종류의 빼기 기호가 선다.
  */
 function SourceRow(props: {
   testID: string
@@ -231,12 +205,12 @@ function SourceRow(props: {
 }
 
 /**
- * **보고 있는 기간의 합계**([[ADR-184]]) — 범위 이동 **아래**, 격자 **위**다(정정 3).
+ * 보고 있는 기간의 합계. 범위 이동 아래, 격자 위다.
  *
- * 값은 화면이 `periodTotals` 로 낸다 — **격자에 넘긴 그 `weeks`·`amounts`** 라 «칸에 적힌 것을 다
- * 더한 값» 이 곧 이 숫자다(따로 읽으면 둘이 서로 다른 순간을 갖는다).
+ * 값은 화면이 `periodTotals` 로 낸다. 격자에 넘긴 그 `weeks`·`amounts` 라 칸에 적힌 것을 다
+ * 더한 값이 곧 이 숫자다. 따로 읽으면 둘이 서로 다른 순간을 갖는다.
  *
- * ## 「저울」 — 답이 헤드라인, 재료가 각주 ([[ADR-184]] 정정 6)
+ * 답이 헤드라인, 재료가 각주다.
  *
  * ```
  * ┌────────────────────────────────────┐
@@ -245,33 +219,23 @@ function SourceRow(props: {
  * └────────────────────────────────────┘
  * ```
  *
- * 앞선 다섯 배치(정정 1~5)는 셋을 **한 표** 안에서 줄 세우려 했고, 그래서 답이 «셋 중 큰 하나» 로만
- * 갈렸다. 여기서는 **답과 재료가 서로 다른 종류의 것**이 된다 — 답은 카드의 헤드라인이고 재료는
- * 그 옆에 붙는 각주다. 표가 아니라 **위계**가 관계를 말한다.
+ * 셋을 한 표 안에서 줄 세우면 답이 셋 중 큰 하나로만 갈린다. 답과 재료를 서로 다른 종류로
+ * 두면 표가 아니라 위계가 관계를 말한다.
  *
- * 바닥을 **`items-end`** 로 맞춘다 — 큰 숫자의 밑선과 「지출」 줄의 밑선이 같은 x 에 서야 두 덩이가
- * 한 카드에 앉은 것으로 읽힌다. 위로 맞추면 큰 숫자가 아래로 삐져나온다.
+ * 바닥을 `items-end` 로 맞춘다. 큰 숫자의 밑선과 지출 줄의 밑선이 같은 x 에 서야 두 덩이가
+ * 한 카드에 앉은 것으로 읽힌다.
  *
- * **막대는 안 그린다**(사용자 지정) — 시안에는 수익 대비 지출 비율을 그리는 5px 막대가 있었지만,
- * 그것은 이 화면이 답하던 질문(«얼마인가»)에 새 질문(«어느 비율인가»)을 더하는 일이다. 더할지는
- * 따로 정한다.
+ * 막대는 안 그린다. 얼마인가 를 묻던 화면에 어느 비율인가 를 더하는 일이라, 더할지는 따로 정한다.
  *
- * 라벨은 **「순 수익」** 이다. 보스 수익 탭은 「{기간} 총 수익」이지만 여기서는 바로 위 줄이 기간을
- * 이미 말하고 있어(「이번 주」 + 날짜) 한 화면에서 같은 말이 두 번 선다.
+ * 라벨은 `순 수익` 이다. 바로 위 줄이 기간을 이미 말하고 있어 한 화면에서 같은 말이 두 번 선다.
  *
- * **단위는 큰 숫자에만 붙인다**(정정 7, 사용자 지정) — 보스 수익 헤드라인과 같은 모양이다
- * ([[ADR-046]]: 작은 글자로 격하 + **진짜 공백**). 재료 둘에도 붙이면 좁은 카드에 「메소」가 셋
- * 서는데, 셋이 같은 단위이므로 헤드라인이 한 번 말하면 카드 전체가 그 축이다.
+ * 단위는 큰 숫자에만 붙인다. 셋이 같은 단위이므로 헤드라인이 한 번 말하면 카드 전체가 그 축이다.
  *
- * 부호와 색은 **칸의 두 줄과 같은 어법**이다([[ADR-169]] 정정 1) — `+`·`rise-ink` 와 `−`·`fall-ink`.
- * 재료는 크기로 약해질 뿐 **색은 안 걷는다**: 그 둘이 이 앱에서 갈래를 말하는 방식이라 여기서만
- * 회색이면 같은 값이 화면마다 다른 옷을 입는다.
+ * 부호와 색은 칸의 두 줄과 같은 어법이다. `+`·`rise-ink` 와 `−`·`fall-ink`. 재료는 크기로
+ * 약해질 뿐 색은 안 걷는다. 순 수익만 부호를 따라 갈린다. 셋을 늘 같은 색으로 칠하면
+ * 이번 달은 적자다 가 숫자를 끝까지 읽어야만 보인다. 0 이면 부호도 색도 없다.
  *
- * 순 수익만 **부호를 따라 갈린다**: 셋을 늘 같은 색으로 칠하면 «이번 달은 적자다» 가 숫자를 끝까지
- * 읽어야만 보인다. 0 이면 부호도 색도 없다 — 없는 방향을 색이 말하면 안 된다.
- *
- * 테두리는 **없다**(정정 5) — 채움만 있으면 «여기까지가 한 자리» 로만 읽혀 격자와 갈리는 데 필요한
- * 만큼만 한다.
+ * 테두리는 없다. 채움만으로 격자와 갈린다.
  */
 function PeriodSummary(props: { incomeMeso: number; expenseMeso: number }): React.JSX.Element {
   const net = props.incomeMeso - props.expenseMeso
@@ -282,8 +246,8 @@ function PeriodSummary(props: { incomeMeso: number; expenseMeso: number }): Reac
     >
       <View className="shrink">
         <Text className="text-10 tracking-wide text-text-muted">순 수익</Text>
-        {/* `leading-none` 이라 큰 글자가 자기 줄 높이로 카드를 밀지 않는다 — 카드가 낮아야 격자가
-            주간 보기에서 스크롤 없이 남는다([[ADR-170]] 정정 2). */}
+        {/* `leading-none` 이라 큰 글자가 자기 줄 높이로 카드를 밀지 않는다. 카드가 낮아야 격자가
+            주간 보기에서 스크롤 없이 남는다. */}
         <Text
           testID="cashbook-summary-net"
           numberOfLines={1}
@@ -294,8 +258,8 @@ function PeriodSummary(props: { incomeMeso: number; expenseMeso: number }): Reac
         >
           {net > 0 ? '+' : net < 0 ? '−' : ''}
           {formatMesoCompact(Math.abs(net))}{' '}
-          {/* 단위는 **작은 글자로 격하하되 사이에 진짜 공백**을 남긴다([[ADR-046]] 과 같은 처방) —
-              마진으로만 띄우면 읽히는 문자열이 「N메소」로 붙어 스크린리더가 이어 읽는다. */}
+          {/* 단위는 작은 글자로 격하하되 사이에 진짜 공백을 남긴다. 마진으로만 띄우면 읽히는
+              문자열이 `N메소`로 붙어 스크린리더가 이어 읽는다. */}
           <Text className="text-11 font-bold text-text-muted">메소</Text>
         </Text>
       </View>
@@ -321,58 +285,40 @@ function PeriodSummary(props: { incomeMeso: number; expenseMeso: number }): Reac
 }
 
 /**
- * 그날 목록의 한 줄([[ADR-171]] 결정 1) — **누를 수 있어 보여야 한다.**
+ * 그날 목록의 한 줄. 누를 수 있어 보여야 한다.
  *
- * 처음에는 글자 둘(이름 · 금액)만 놓았는데 «눌러서 고칠 수 있다» 가 **전혀 안 읽혔다**
- * (사용자 지적 2026-08-25). 줄이 목록이 아니라 **요약**으로 보였기 때문이다 — 바로 위 두 줄
- * (수입/지출 합계)이 정확히 그 모양이라 눈이 같은 것으로 묶는다.
+ * 글자 둘(이름 · 금액)만 놓으면 줄이 목록이 아니라 요약으로 보인다. 바로 위 두 줄
+ * (수입/지출 합계)이 정확히 그 모양이라 눈이 같은 것으로 묶는다. 셋으로 가른다.
  *
- * 셋으로 가른다. **새로 만든 그림은 0개**다.
+ * ① 상자를 준다. 합계는 배경 없는 줄, 기록은 `bg-surface` 카드.
+ * ② 왼쪽에 갈래 표식. 수입은 `ProfitIcon`, 지출은 `ShoppingCartIcon`.
+ * ③ 오른쪽에 화살촉. 눌러서 들어가는 줄에 이 저장소가 쓰는 표식 그대로다.
  *
- * ① **상자를 준다.** 합계는 배경 없는 줄, 기록은 `bg-surface` 카드 — 표면이 갈리면 «만질 수 있는
- *    것» 과 «읽는 것» 이 갈린다.
- * ② **왼쪽에 갈래 표식.** 수입은 `ProfitIcon`, 지출은 `ShoppingCartIcon` — 펼침판이 이미 쓰는
- *    그 둘이다([[ADR-170]] 결정 9). 부호·색만으로 갈래를 말하던 것을 그림이 거든다.
- * ③ **오른쪽에 화살촉.** 이 저장소가 「눌러서 들어가는 줄」에 쓰는 표식 그대로다
- *    (`SettingsFeatureGuideListScreen`) — 새 관용구를 만들지 않는다.
+ * 누를 때 흐려지는 것은 `active:` 로 준다. className 과 함수형 `style` 을 같이 주면
+ * cssInterop 에서 정적 스타일이 통째로 사라진다.
  *
- * 누를 때 흐려지는 것은 `active:` 로 준다. NativeWind 가 `Pressable` 의 눌림 상태를 그 변형에
- * 이어 주므로 **함수형 `style` 을 안 쓴다** — className 과 함수 style 을 같이 주면 cssInterop
- * 에서 정적 스타일이 통째로 사라진다(`SpeedDial` 이 밟은 함정).
+ * 캐시로 낸 지출만 원으로 적는다. 환산을 안 하므로 메소로 적을 값이 없다.
  *
- * 캐시로 낸 지출만 **원**으로 적는다 — 환산을 안 하므로 메소로 적을 값이 없다
- * ([[ADR-166]] 정정 2 ①).
- *
- * ## 자동 줄도 같은 모양이다 ([[ADR-172]] 결정 7·8)
- *
- * 보스 결정석·아이템 판매 줄은 **여기서 못 고치는데도 같은 카드**를 쓴다. 셋 다 «눌러서 무언가가
- * 일어나는 줄» 이기 때문이다. **일어나는 일은 셋으로 갈린다** — 손입력은 시트가 열리고, 결정석은
- * 그 자리에서 펼쳐지며([[ADR-172]] 정정 1), 판매는 보스 수익 탭으로 간다.
- *
- * 그 셋을 **화살촉이 미리 말한다** — `›`(간다) vs `⌄`/`⌃`(편다). 읽어 주는 이름도 함께 갈린다
- * (`고치기` · `펼치기`/`접기` · `보스 수익에서 보기`). 같은 카드가 서로 다르게 반응하는데 표식이
- * 하나면 그 차이가 고장으로 읽힌다.
- *
- * 아이콘도 **새로 안 만든다**([[ADR-170]] 결정 9) — 자동 줄은 둘 다 수익이라 `ProfitIcon` 이다.
- * 결정석과 판매를 가르는 것은 그림이 아니라 이름이고, 그 둘을 다른 그림으로 그리면 «거의 같은데
- * 다른 동전» 이 하나 더 생긴다.
+ * 자동 줄(보스 결정석 · 아이템 판매)도 여기서 못 고치는데 같은 카드를 쓴다. 셋 다 눌러서
+ * 무언가가 일어나는 줄이기 때문이다. 일어나는 일은 화살촉이 미리 말한다. `›`(간다) 대
+ * `⌄`/`⌃`(편다). 읽어 주는 이름도 함께 갈린다(`고치기` · `펼치기`/`접기` · `보스 수익에서 보기`).
+ * 아이콘은 자동 줄 둘 다 수익이라 `ProfitIcon` 이다. 둘을 가르는 것은 그림이 아니라 이름이다.
  */
-/** 타일 한 변 — **칸 폭과 무관하게 고정**이다([[ADR-172]] 정정 3). 칸은 줄을 여섯이 나눠 기기마다 넓다. */
+/** 타일 한 변. **칸 폭과 무관하게 고정**이다. 칸은 줄을 여섯이 나눠 기기마다 넓다. */
 const BOSS_TILE_PX = 44
 
-/** 한 줄에 서는 마리 수([[ADR-172]] 정정 3, 사용자 지정) — 레이아웃의 결과가 아니라 **여기서 정한다.** */
+/** 한 줄에 서는 마리 수. 레이아웃의 결과가 아니라 여기서 정한다. */
 const BOSSES_PER_ROW = 6
 
 /**
- * 칸 폭의 **상한**([[ADR-172]] 정정 4, 사용자 지정) — 타일 사이의 좌우 간격이 여기서 나온다
- * (`상한 − 타일` = 8px, 줄 사이 간격과 같은 값이다).
+ * 칸 폭의 상한. 타일 사이의 좌우 간격이 여기서 나온다(`상한 − 타일` = 8px, 줄 사이 간격과
+ * 같은 값).
  *
- * 상한이 없으면 칸이 줄을 그냥 여섯으로 나누므로 **넓은 기기일수록 타일 사이가 벌어진다**
- * (390dp 에서 12.7px, 430dp 에서 15.5px). 타일 크기는 고정인데 간격만 커지면 격자가 성겨진다.
- * 상한에 걸려 남는 폭은 줄 양끝으로 가고(`justify-center`), 그래서 **간격은 어느 기기에서나 같다.**
+ * 상한이 없으면 칸이 줄을 그냥 여섯으로 나눠 넓은 기기일수록 타일 사이가 벌어진다
+ * (390dp 에서 12.7px, 430dp 에서 15.5px). 남는 폭은 줄 양끝으로 간다(`justify-center`).
  *
- * `flex-1` 을 안 버리고 상한만 얹는 이유는 **좁은 기기 때문**이다 — 320dp 에서는 칸이 상한보다
- * 좁아져야 여섯이 다 들어간다. 고정 폭이면 그 기기에서 넘친다.
+ * `flex-1` 을 안 버리고 상한만 얹는 것은 좁은 기기 때문이다. 320dp 에서는 칸이 상한보다
+ * 좁아져야 여섯이 다 들어간다.
  */
 export const BOSS_SLOT_MAX_PX = BOSS_TILE_PX + 8
 
@@ -385,46 +331,27 @@ function chunkBosses(bosses: readonly DefeatedBoss[]): DefeatedBoss[][] {
 }
 
 /**
- * 펼친 결정석 줄의 **타일 판**([[ADR-172]] 정정 1) — 그날 잡은 보스를 초상으로 편다.
+ * 펼친 결정석 줄의 타일 판. 그날 잡은 보스를 초상으로 편다.
  *
- * **새로 만든 그림이 0개**다([[ADR-170]] 결정 9 와 같은 태도). 초상은 `BossPortrait`, 난이도는
- * `Badge`, 슬러그는 `findPortraitSlug` — 셋 다 보스 수익 탭의 보스 행이 쓰는 그것이다.
+ * 새로 만든 그림이 0개다. 초상은 `BossPortrait`, 난이도는 `Badge`, 슬러그는 `findPortraitSlug`.
+ * 셋 다 보스 수익 탭의 보스 행이 쓰는 그것이다.
  *
- * **마리당 금액을 안 적는다.** 줄 머리가 합계를 이미 들고 있고, 마리당 금액은 파티원 수·정가와
- * 함께 봐야 뜻이 생긴다(그 자리가 보스 수익 탭이다). 여기서 답하는 질문은 «얼마» 가 아니라 «무엇» 이다.
+ * 마리당 금액은 안 적는다. 줄 머리가 합계를 이미 들고 있고, 마리당 금액은 파티원 수·정가와
+ * 함께 봐야 뜻이 생긴다. 여기서 답하는 질문은 얼마 가 아니라 무엇 이다.
  *
- * ## 모양은 **네모**다 ([[ADR-172]] 정정 2)
+ * 모양은 네모(`shape="square"`)다. 원이 격자로 서면 네 귀가 비어 사이가 성겨 보인다.
+ * 난이도는 초상 위 왼쪽 아래에 겹친다. 따로 한 줄로 두면 타일 높이가 배지만큼 늘어 격자가
+ * 세로로 성겨진다. 글자는 한 칸이다(`H`·`EX`). 색이 이미 난이도를 말한다.
  *
- * `shape="square"` 다. 원형은 **줄 안의 표식**을 위한 모양이고(보스 수익 행의 아바타 자리), 여기서는
- * 초상 자체가 타일이라 격자를 이룬다 — 원이 격자로 서면 네 귀가 비어 사이가 성겨 보인다.
+ * 한 줄에 여섯이고 폭으로 재지 않는다. `w-1/6` 은 `16.67%` 로 컴파일돼 여섯이면 100.02% 라
+ * 마지막 하나가 다음 줄로 밀린다. 그래서 여섯씩 끊은 배열을 만들고 한 줄은 `flex-1` 칸
+ * 여섯이다. `flex-1` 은 남는 픽셀까지 Yoga 가 나눠 줘 반올림으로 넘칠 자리가 없다.
  *
- * 난이도는 **초상 위 왼쪽 아래에 겹친다**. 아래에 한 줄로 따로 두면 타일 높이가 배지만큼 늘어
- * 격자가 세로로 성겨지고, 그러면 «타일» 이 아니라 «세로로 쌓인 작은 카드» 가 된다. 겹치는 것은
- * 드롭 아이콘의 `lv` 배지가 이미 쓰는 관용구다(`BossProfitBossRow`).
+ * 초상은 칸 안에 가운데로 44px 고정이다. 넓은 기기에서 칸이 넓어져도 타일은 안 커지고,
+ * 칸 상한(`BOSS_SLOT_MAX_PX`)이 남는 폭을 줄 양끝으로 보내 좌우 간격이 어디서나 8px 다.
  *
- * 글자는 **한 칸**이다(`H`·`EX` …). 44px 위에 「익스트림」 넉 자가 앉으면 초상을 거의 다 덮는데,
- * **색이 이미 난이도를 말하고 있어** 글자는 그것을 확인만 하면 된다. 색은 한 값도 안 갈린다.
- *
- * ## 한 줄에 **여섯**, 이름은 **없다** ([[ADR-172]] 정정 3)
- *
- * **폭으로 재지 않는다.** 고정 px 면 같은 코드가 기기마다 다섯도 되고 일곱도 되고, 퍼센트도
- * 답이 아니다 — `w-1/6` 은 `16.67%` 로 컴파일돼(실측) 여섯이면 **100.02%** 라 마지막 하나가
- * 다음 줄로 밀린다. 1/6 은 유한소수가 아니라 퍼센트로 **표현할 수 없다.**
- *
- * 그래서 **줄 자체를 만든다** — 여섯씩 끊은 배열이고, 한 줄은 `flex-1` 칸 여섯이다. `flex-1`
- * 여섯은 남는 픽셀까지 Yoga 가 나눠 주므로 반올림으로 넘칠 자리가 없다. 이 저장소가 캘린더에서
- * 이미 하는 그 모양이다([[ADR-169]] 결정 7 — 계산이 배열을 만들고 렌더러는 그리기만 한다).
- *
- * 초상은 칸 안에 **가운데로 44px 고정**이다. 넓은 기기에서 칸이 넓어져도 타일은 안 커진다 —
- * 커진 것이 문제였으므로 그것을 폭에 따라 되돌리지 않는다.
- *
- * 대신 **칸에 상한을 준다**([[ADR-172]] 정정 4) — 안 주면 타일은 그대로인데 사이만 벌어져 격자가
- * 성겨진다. 남는 폭은 줄 양끝으로 가고(`justify-center`), 좌우 간격은 어느 기기에서나 8px 로
- * 줄 사이 간격과 같다(`BOSS_SLOT_MAX_PX`).
- *
- * **이름을 뺀 자리는 접근성 이름이 받는다**(「난이도 + 보스」). 타일 높이의 절반이 이름이었고,
- * 캐릭터가 여럿이면 그 판이 화면을 덮어 «그 날» 을 보러 온 목적을 잃었다. 눈으로 읽던 것이
- * 사라졌다고 스크린리더에서도 사라지면 그것은 «간략하게» 가 아니라 «없어짐» 이다.
+ * 이름은 없고 그 자리를 접근성 이름이 받는다(난이도 + 보스). 눈으로 읽던 것이 사라졌다고
+ * 스크린리더에서도 사라지면 그것은 간략하게 가 아니라 없어짐 이다.
  */
 function DefeatedBossTiles(props: { rowKey: string; bosses: readonly DefeatedBoss[] }): React.JSX.Element {
   return (
@@ -448,7 +375,7 @@ function DefeatedBossTiles(props: { rowKey: string; bosses: readonly DefeatedBos
               <View testID={`cashbook-boss-tile-${boss.boss}|${boss.difficulty}`}>
                 <BossPortrait
                   portraitSlug={findPortraitSlug(boss.boss)}
-                  // 이름 줄이 없어졌으므로 **그 정보는 여기서만 말한다**.
+                  // 이름 줄이 없으므로 그 정보는 여기서만 말한다.
                   label={`${boss.difficulty} ${boss.boss}`}
                   size={BOSS_TILE_PX}
                   shape="square"
@@ -461,7 +388,7 @@ function DefeatedBossTiles(props: { rowKey: string; bosses: readonly DefeatedBos
               </View>
             </View>
           ))}
-          {/* 덜 찬 줄을 빈 칸으로 채운다 — 안 채우면 남은 둘이 반반씩 벌어져 앞줄과 격자가 안 맞는다. */}
+          {/* 덜 찬 줄을 빈 칸으로 채운다. 안 채우면 남은 둘이 반반씩 벌어져 앞줄과 격자가 안 맞는다. */}
           {Array.from({ length: BOSSES_PER_ROW - row.length }, (_, index) => (
             <View
               key={`empty-${index}`}
@@ -483,20 +410,20 @@ function DayRecordRow(props: {
 }): React.JSX.Element {
   const { entry, expanded } = props
   const rowKey = rowKeyOf(entry)
-  // **자동 줄은 언제나 수익**이다([[ADR-172]] 결정 7) — 결정석도 판매도 들어오는 돈이다.
+  // 자동 줄은 언제나 수익이다. 결정석도 판매도 들어오는 돈이다.
   const income = entry.kind !== 'spend'
   const cash = recordCashOf(entry)
   const countLabel = recordCountLabelOf(entry)
   const Icon = income ? ProfitIcon : ShoppingCartIcon
   /**
-   * **펼칠 수 있는 줄은 결정석 하나**다([[ADR-172]] 정정 1). 판매 줄은 `bosses` 를 아예 안 갖는
-   * 타입이라(`AutoDayRecord` 가 합집합이다) 이 분기를 잘못 쓰면 컴파일 단계에서 걸린다.
+   * 펼칠 수 있는 줄은 결정석 하나다. 판매 줄은 `bosses` 를 아예 안 갖는 타입이라
+   * (`AutoDayRecord` 가 합집합이다) 이 분기를 잘못 쓰면 컴파일 단계에서 걸린다.
    */
   const bosses = entry.kind === 'bossCrystal' ? entry.bosses : null
   const isOpen = expanded && bosses !== null
   /**
-   * 화살촉이 **무슨 일이 일어날지 미리 말한다.** 같은 카드 두 줄이 서로 다르게 반응하는데
-   * (하나는 펼치고 하나는 탭을 옮긴다) 그림이 같으면 그것이 고장으로 읽힌다.
+   * 무슨 일이 일어날지 미리 말하는 화살촉. 같은 카드 두 줄이 서로 다르게 반응하는데
+   * 그림이 같으면 그것이 고장으로 읽힌다.
    */
   const Chevron = bosses === null ? ChevronRightIcon : isOpen ? ChevronUpIcon : ChevronDownIcon
   const action = isManualRecord(entry)
@@ -512,13 +439,13 @@ function DayRecordRow(props: {
       <Pressable
         role="button"
         testID={`cashbook-row-${rowKey}`}
-        // 자동 줄은 **고치러 가는 것이 아니라 보러 가는 것**이다([[ADR-172]] 결정 8) — 읽어 주는
-        // 이름이 그 사실을 말해야 «눌렀더니 시트가 안 열린다» 가 고장으로 읽히지 않는다.
+        // 자동 줄은 고치러 가는 것이 아니라 보러 가는 것이다. 읽어 주는 이름이 그 사실을 말해야
+        // 눌렀더니 시트가 안 열린다 가 고장으로 읽히지 않는다.
         aria-label={`${recordTitleOf(entry)} ${action}`}
         aria-expanded={bosses === null ? undefined : isOpen}
         onPress={props.onPress}
-        // 펼치면 **한 카드**가 된다 — 아래 판과 테두리를 잇고 그 사이의 선을 지운다. 판이 따로 선
-        // 상자로 보이면 «이 줄이 편 것» 이라는 사실이 끊긴다.
+        // 펼치면 한 카드가 된다. 아래 판과 테두리를 잇고 그 사이의 선을 지운다. 판이 따로 선
+        // 상자로 보이면 이 줄이 편 것 이라는 사실이 끊긴다.
         className={`flex-row items-center gap-2 border border-border bg-surface py-2 pl-2 pr-1.5 active:opacity-60 ${
           isOpen ? 'rounded-t-xl border-b-0' : 'rounded-xl'
         }`}
@@ -540,9 +467,8 @@ function DayRecordRow(props: {
           {recordTitleOf(entry)}
         </Text>
         {countLabel !== null && (
-          // 갈래마다 세는 것이 다르다(`×2` · `12마리` · `3건 · 미입력 2`) — 그 분기는 화면이 아니라
-          // `recordCountLabelOf` 가 든다([[ADR-147]] 결정 8).
-          // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
+          // 갈래마다 세는 것이 다르다(`×2` · `12마리` · `3건 · 미입력 2`). 그 분기는 화면이 아니라
+          // `recordCountLabelOf` 가 든다.
           <Text numberOfLines={1} className="shrink-0 text-11 text-text-muted" style={TABULAR_NUMS}>
             {countLabel}
           </Text>
@@ -555,8 +481,8 @@ function DayRecordRow(props: {
           {income ? '+' : '−'}
           {cash === null ? formatMesoCompact(recordMesoOf(entry)) : `${cash.toLocaleString()}원`}
         </Text>
-        {/* 화살촉이 상자를 하나 쓰는 이유: lucide 아이콘은 `testID` 를 SVG 안으로 흘려보내지 않아
-            «화살촉이 사라졌다» 를 테스트가 못 잡는다. 상자는 `shrink-0` 도 함께 든다. */}
+        {/* 화살촉이 상자를 하나 쓰는 이유는 lucide 아이콘이 `testID` 를 SVG 안으로 안 흘려보내
+            화살촉이 사라졌다 를 테스트가 못 잡기 때문이다. 상자는 `shrink-0` 도 함께 든다. */}
         <View testID={`cashbook-row-chevron-${rowKey}`} className="shrink-0">
           <Chevron className="h-4 w-4 text-text-disabled" strokeWidth={2} aria-hidden />
         </View>
@@ -568,45 +494,37 @@ function DayRecordRow(props: {
 
 export function CashbookScreen(): React.JSX.Element {
   /**
-   * **렌더당 한 번만 만든다** — 보스 수익 화면이 같은 이유로 그렇게 한다. 두 번 부르면 두 시각이
-   * 기간 경계를 사이에 두고 갈려 «오늘» 과 «기간 라벨» 이 서로 다른 기간을 가리킬 수 있다.
+   * 렌더당 한 번만 만드는 지금. 두 번 부르면 두 시각이 기간 경계를 사이에 두고 갈려 오늘 과
+   * 기간 라벨이 서로 다른 기간을 가리킬 수 있다.
    */
   const now = new Date()
   const todayDateKey = getCurrentKstDateKey(now)
   /**
-   * **들어오면 주간이다**([[ADR-170]] 결정 10 정정, 사용자 지정 2026-08-26).
-   *
-   * 고른 값은 여전히 **기억하지 않는다** — 나갔다 들어오면 다시 주간이다(보스 수익 탭도 자기
-   * 탭을 화면 상태로 둔다).
+   * 들어오면 주간이다. 고른 값은 기억하지 않는다. 나갔다 들어오면 다시 주간이다.
    */
   const [isWeekly, setIsWeekly] = useState(true)
   const [monthKey, setMonthKey] = useState(() => getCurrentMonthKey(now))
   const [weekStartKey, setWeekStartKey] = useState(() => resetWeekStartOf(todayDateKey))
   const [selectedDateKey, setSelectedDateKey] = useState(todayDateKey)
   /**
-   * 시트가 무엇을 하고 있나 — 셋이다([[ADR-171]] 결정 2).
+   * 시트가 무엇을 하고 있나. 셋이다.
    *
-   * `'income'`·`'expense'` 는 **새로 적는다**. `ManualDayRecord` 면 **그것을 고친다** — 갈래도 그
-   * 안에 있으므로 «어느 시트를 열까» 와 «무엇을 채울까» 가 한 값에서 나온다.
-   *
-   * **자동 줄은 여기 못 들어온다**([[ADR-172]] 결정 8) — 타입이 그것을 막는다. 그 줄을 누르면
-   * 시트가 아니라 보스 수익 탭이 열린다.
+   * `'income'`·`'expense'` 는 새로 적는다. `ManualDayRecord` 면 그것을 고친다. 갈래도 그 안에
+   * 있으므로 어느 시트를 열까 와 무엇을 채울까 가 한 값에서 나온다. 자동 줄은 타입이 막아
+   * 여기 못 들어온다.
    */
   const [sheet, setSheet] = useState<'income' | 'expense' | ManualDayRecord | null>(null)
   const [dayRecords, setDayRecords] = useState<DayRecord[]>([])
   /**
-   * 펼쳐 둔 결정석 줄([[ADR-172]] 정정 1) — **한 번에 하나**다. 캐릭터가 여럿이면 판 여럿이 한
-   * 화면을 넘긴다.
-   *
-   * 값은 `rowKeyOf` 가 만든 줄의 신원(`bossCrystal:{ocid}`)이다. 그것이 **날짜를 안 들고 있으므로**
-   * (결정 7) 날을 바꿀 때 여기서 지워야 한다 — 안 그러면 다른 날의 줄이 펼쳐진 채로 보인다.
+   * 펼쳐 둔 결정석 줄. 한 번에 하나다. 값은 `rowKeyOf` 가 만든 줄의 신원
+   * (`bossCrystal:{ocid}`)이고, 그것이 날짜를 안 들고 있으므로 날을 바꿀 때 여기서 지워야 한다.
    */
   const [expandedRowKey, setExpandedRowKey] = useState<string | null>(null)
   const [amounts, setAmounts] = useState<CalendarAmounts>(NO_AMOUNTS)
   const [lastPointRate, setLastPointRate] = useState<number | null>(null)
   /**
-   * 시트의 캐릭터 고르개가 쓸 목록([[ADR-166]] 결정 3) — **화면이 읽는다**(시트는 `storage/` 를
-   * 모른다). 들어올 때 한 번이면 된다: 추적 목록이 시트를 여는 사이에 바뀌지 않는다.
+   * 시트의 캐릭터 고르개가 쓸 목록. 화면이 읽는다(시트는 `storage/` 를 모른다).
+   * 들어올 때 한 번이면 된다. 추적 목록이 시트를 여는 사이에 바뀌지 않는다.
    */
   const [characters, setCharacters] = useState<
     Array<{ ocid: string; name: string; level: number | null }>
@@ -616,27 +534,24 @@ export function CashbookScreen(): React.JSX.Element {
 
   const monthWeeks = buildCalendarMonth(monthKey)
   const weeks = isWeekly ? [buildResetWeek(weekStartKey)] : monthWeeks
-  // **기준선은 두 보기가 같다 — 그 달이다**([[ADR-170]] 결정 12). 주간에서 받은 이레로 다시 내면
-  // «7칸 중 하나는 언제나 최대» 가 되어 아무것도 안 한 주도 한 칸이 새까매진다. 걸치는 주는
-  // 목요일이 든 달을 기준으로 삼는다 — 「어느 달로 돌아가나」 와 같은 답이라 둘이 안 갈린다.
+  // 기준선은 두 보기가 같다. 그 달이다. 주간에서 받은 이레로 다시 내면 7칸 중 하나는 언제나
+  // 최대가 되어 아무것도 안 한 주도 한 칸이 새까매진다. 걸치는 주는 목요일이 든 달을 기준으로 삼는다.
   const heatWeeks = isWeekly ? buildCalendarMonth(monthKeyOf(weekStartKey)) : monthWeeks
   const { from, to } = coveringRange(weeks, heatWeeks)
 
   /**
-   * 기간이 바뀌면 다시 읽는다. **범위가 곧 의존성**이라 «달을 넘겼는데 옛 숫자가 남는» 일이 없고,
-   * 저장 뒤에는 이 표를 올려 같은 길로 다시 읽는다(따로 부르는 길을 만들면 두 벌이 된다).
+   * 기간이 바뀌면 다시 읽게 하는 토큰. 범위가 곧 의존성이라 달을 넘겼는데 옛 숫자가 남는 일이 없고,
+   * 저장 뒤에도 이 표를 올려 같은 길로 다시 읽는다.
    *
-   * `useCallback` 으로 감싸지 않는다 — React 컴파일러가 «지킬 수 없는 수동 메모이제이션» 으로
-   * 보고 이 컴포넌트의 최적화를 통째로 건너뛴다(lint 가 막는다).
+   * `useCallback` 으로 안 감싼다. React 컴파일러가 지킬 수 없는 수동 메모이제이션으로 보고
+   * 이 컴포넌트의 최적화를 통째로 건너뛴다(lint 가 막는다).
    *
-   * `alive` 로 늦게 온 응답을 버린다 — 달을 빨리 넘기면 이전 범위의 답이 뒤에 도착해 **지금 보는
-   * 기간에 남의 숫자**를 얹을 수 있다.
+   * `alive` 로 늦게 온 응답을 버린다. 달을 빨리 넘기면 이전 범위의 답이 뒤에 도착한다.
    */
   const [reloadToken, setReloadToken] = useState(0)
 
   /**
-   * **당겨서 새로고침**([[ADR-170]] 정정 8) — 다른 네 화면이 이미 하는 그것이 여기만 빠져 있었다
-   * (사용자 지적 2026-08-27). 동기화 → 날짜 캐기 → 다시 읽기 순서는 `refreshCashbook` 이 든다.
+   * 당겨서 새로고침. 동기화 → 날짜 캐기 → 다시 읽기 순서는 `refreshCashbook` 이 든다.
    */
   const pull = usePullRefresh(async () => {
     await refreshCashbook(new Date())
@@ -645,11 +560,10 @@ export function CashbookScreen(): React.JSX.Element {
 
 
   /**
-   * **마지막으로 읽은 판**([[ADR-189]] 결정 1) — 다시 들어올 때 «내 숫자가 낡았나» 를 재는 기준이다.
+   * 마지막으로 읽은 판. 다시 들어올 때 내 숫자가 낡았나 를 재는 기준이다.
    *
-   * 조회 «전»에 찍는다([[ADR-147]] 정정 17 의 그 규칙) — 읽는 중에 들어온 변경을 본 것으로
-   * 표시하면 영영 놓친다. 반대 방향(읽는 중의 변경을 못 본 것으로 남겨 다음 포커스에 한 번 더
-   * 읽는 것)은 낡은 화면을 안 남기므로 안전하다.
+   * 조회 전에 찍는다. 읽는 중에 들어온 변경을 본 것으로 표시하면 영영 놓친다. 반대 방향은
+   * 다음 포커스에 한 번 더 읽을 뿐이라 안전하다.
    */
   const loadedRevision = useRef(cashbookDataRevision())
 
@@ -665,16 +579,14 @@ export function CashbookScreen(): React.JSX.Element {
   }, [from, to, reloadToken])
 
   /**
-   * **다시 들어오면 다시 읽는다 — 바뀌었을 때만**([[ADR-189]] 결정 1).
+   * 다시 들어오면 바뀌었을 때만 다시 읽는 포커스 효과.
    *
-   * 이 화면은 탭이라 마운트가 앱 실행당 한 번뿐인데([[ADR-167]] 결정 3) 접는 원천 넷 중 둘은
-   * **남의 화면이 쓴다** — 가격 입력 화면이 `boss_drop_records` 를, 보스 수익 동기화가
-   * `boss_profit_records` 를. 그래서 첫 방문의 숫자에 굳고, 당겨서 새로고침만이 탈출구였다
-   * (사용자 보고 2026-08-30).
+   * 이 화면은 탭이라 마운트가 앱 실행당 한 번뿐인데, 접는 원천 넷 중 둘은 남의 화면이 쓴다.
+   * 가격 입력 화면이 `boss_drop_records` 를, 보스 수익 동기화가 `boss_profit_records` 를.
+   * 그래서 첫 방문의 숫자에 굳는다.
    *
-   * 포커스마다 무조건 읽지 않는 이유는 today 와 같다 — 한 번의 조회가 SQLite 넷을 친다.
-   * **여기서는 동기화를 안 튼다**(넥슨 API 는 당김과 보스 수익 탭의 몫이다) — 이미 적힌 것을
-   * 다시 읽을 뿐이다.
+   * 포커스마다 무조건 안 읽는 것은 한 번의 조회가 SQLite 넷을 치기 때문이다. 여기서 동기화는
+   * 안 튼다. 넥슨 API 는 당김과 보스 수익 탭의 몫이다.
    */
   useFocusEffect(
     useCallback(() => {
@@ -684,7 +596,7 @@ export function CashbookScreen(): React.JSX.Element {
     }, []),
   )
 
-  // 그날 목록은 **고른 날**에 매인다 — 격자 범위와 의존성이 달라 효과를 따로 둔다.
+  // 그날 목록은 고른 날에 매인다. 격자 범위와 의존성이 달라 효과를 따로 둔다.
   useEffect(() => {
     let alive = true
     void loadDayRecords(selectedDateKey).then((next) => {
@@ -701,13 +613,10 @@ export function CashbookScreen(): React.JSX.Element {
   }, [])
 
   /**
-   * 들어올 때 **한 번** 처치 날짜를 캔다([[ADR-172]] 결정 9). 캔 것이 있을 때만 다시 읽는다 —
-   * 0 이면 화면에 바뀔 것이 없다.
+   * 들어올 때 한 번 처치 날짜를 캔다. 캔 것이 있을 때만 다시 읽는다.
    *
-   * 기간이 바뀔 때마다 돌리지 않는 이유: 캘 수 있는 범위는 **조회 창이 정하지 보는 달이 정하지
-   * 않는다**([[ADR-172]] 결정 4). 지난 3월로 넘겨도 캘 것이 늘지 않으므로 호출만 낭비된다.
-   *
-   * 그래서 **첫 렌더의 숫자가 나중에 늘 수 있다.** 사라지는 방향은 없다(NULL → 날짜).
+   * 기간마다 안 돌리는 이유는 캘 수 있는 범위를 조회 창이 정하지 보는 달이 정하지 않아서다.
+   * 그래서 첫 렌더의 숫자가 나중에 늘 수 있다. 사라지는 방향은 없다(NULL → 날짜).
    */
   useEffect(() => {
     let alive = true
@@ -720,14 +629,12 @@ export function CashbookScreen(): React.JSX.Element {
   }, [])
 
   /**
-   * 저장 둘 — **던지면 다시 던진다.**
+   * 저장 둘. 던지면 다시 던진다.
    *
-   * 삼키면 시트가 닫히고, 닫힌 뒤에는 친 것이 사라지며 화면에는 «적혔다» 와 구분되지 않는 그림만
-   * 남는다. 실기에서 정확히 그랬다(2026-08-25 — `spend_records.form` 마이그레이션이 빠져 INSERT 가
-   * 매번 던졌는데 시트는 매번 닫혔다). 토스트는 여기서 띄우고(저장소 실패는 화면의 몫이다 —
-   * `DropPriceScreen` 과 같은 자리) 자리를 지키는 일은 시트가 한다.
+   * 삼키면 시트가 닫히고, 닫힌 뒤에는 친 것이 사라져 화면에 적혔다 와 구분되지 않는 그림만
+   * 남는다. 토스트는 여기서 띄우고(저장소 실패는 화면의 몫이다) 자리를 지키는 일은 시트가 한다.
    *
-   * 다시 읽는 것도 **성공했을 때만** 한다 — 실패했으면 읽을 것이 안 바뀌었다.
+   * 다시 읽는 것도 성공했을 때만 한다. 실패했으면 읽을 것이 안 바뀌었다.
    */
   async function saveIncome(draft: IncomeDraft): Promise<void> {
     try {
@@ -746,16 +653,14 @@ export function CashbookScreen(): React.JSX.Element {
       useToastStore.getState().showError('지출을 적지 못했습니다')
       throw error
     }
-    // 시세는 방금 저장한 값이 다음 기본값이다([[ADR-166]] 결정 5) — 다시 읽지 않고 그대로 든다.
+    // 시세는 방금 저장한 값이 다음 기본값이다. 다시 읽지 않고 그대로 든다.
     if (draft.pointPer100mMeso !== null) setLastPointRate(draft.pointPer100mMeso)
     setReloadToken((token) => token + 1)
   }
 
   /**
-   * 고치기 — **`id` 와 `recordedAt` 을 그대로 얹는다**([[ADR-171]] 결정 4).
-   *
-   * 시트는 그 둘을 모른다(초안만 만든다). 여기서 원본과 합쳐야 «고친 시각이 적은 시각을 덮는»
-   * 일이 안 생긴다.
+   * 고치기. `id` 와 `recordedAt` 을 그대로 얹는다. 시트는 그 둘을 모르므로(초안만 만든다)
+   * 여기서 원본과 합쳐야 고친 시각이 적은 시각을 덮지 않는다.
    */
   async function saveEdit(entry: ManualDayRecord, draft: IncomeDraft | SpendDraft): Promise<void> {
     try {
@@ -782,10 +687,10 @@ export function CashbookScreen(): React.JSX.Element {
   }
 
   /**
-   * 줄을 누르면 — **손입력은 시트, 자동은 보스 수익 탭**이다([[ADR-172]] 결정 8 = [[ADR-171]] 결정 5).
+   * 줄을 누르면. 손입력은 시트, 자동은 보스 수익 탭이다.
    *
-   * 자동 줄을 여기서 고치게 하면 두 곳에서 고칠 수 있게 되어 **어느 쪽이 참인지 사라진다**
-   * ([[ADR-170]] 결정 3). 삭제도 없다 — 가계부에서 지워도 원천이 그대로라 다음에 읽으면 되살아난다.
+   * 자동 줄을 여기서 고치게 하면 두 곳에서 고칠 수 있게 되어 어느 쪽이 참인지 사라진다.
+   * 삭제도 없다. 여기서 지워도 원천이 그대로라 다음에 읽으면 되살아난다.
    */
   function openRecord(entry: DayRecord): void {
     if (isManualRecord(entry)) {
@@ -793,36 +698,31 @@ export function CashbookScreen(): React.JSX.Element {
       return
     }
     /**
-     * **결정석 줄은 안 나간다 — 그 자리에서 편다**([[ADR-172]] 정정 1, 사용자 지정 2026-08-26).
-     *
-     * 결정 8 의 근거(«고치면 어느 쪽이 참인지 사라진다»)는 그대로다 — 펼친 타일은 읽기 전용이다.
-     * 사용자가 하려던 것이 고치기가 아니라 «무엇을 잡았지» 였고, 그 답을 이 줄이 이미 들고 있다.
-     * 탭을 옮기면 고른 날과 보던 기간을 함께 잃어 그 날의 다른 줄을 마저 못 본다.
+     * 결정석 줄은 안 나간다. 그 자리에서 편다. 펼친 타일은 읽기 전용이라 두 곳에서 고칠 수
+     * 있게 되지 않는다. 탭을 옮기면 고른 날과 보던 기간을 함께 잃어 그 날의 다른 줄을 못 본다.
      */
     if (entry.kind === 'bossCrystal') {
       const key = rowKeyOf(entry)
       setExpandedRowKey((current) => (current === key ? null : key))
       return
     }
-    // 판매 줄은 그대로 간다 — 「미입력 n」 이 **여기서 못 하는 일**(값 넣기)을 가리킨다.
+    // 판매 줄은 그대로 간다. `미입력 n` 이 **여기서 못 하는 일**(값 넣기)을 가리킨다.
     openTab('Profit')
   }
 
-  // 앞뒤 달로 채운 칸을 누르면 **보는 달도 따라간다** — 아니면 고른 날이 격자 밖에 있게 된다.
+  // 앞뒤 달로 채운 칸을 누르면 **보는 달도 따라간다**. 아니면 고른 날이 격자 밖에 있게 된다.
   // 주간에는 그런 칸이 없으므로(이레가 전부 그 주다) 주는 그대로 둔다.
   function selectDate(dateKey: string): void {
     setSelectedDateKey(dateKey)
-    // 펼친 판은 **그 날의 것**이다 — 줄의 신원이 날짜를 안 들어([[ADR-172]] 결정 7) 여기서 접지
-    // 않으면 다른 날의 줄이 펼쳐진 채로 남는다.
+    // 펼친 판은 그 날의 것이다. 줄의 신원이 날짜를 안 들어 여기서 접지 않으면 다른 날의 줄이
+    // 펼쳐진 채로 남는다.
     setExpandedRowKey(null)
     /**
-     * 달 동기화는 **이번 달까지만**([[ADR-185]] 결정 2). 월간 격자의 꼬리 칸은 다음 달 날짜라
-     * (8월 격자는 9/5 까지 그린다) 그냥 맞추면 **한 번의 탭이 화살표가 막은 곳에 도착한다.**
+     * 달 동기화는 이번 달까지만. 월간 격자의 꼬리 칸은 다음 달 날짜라 그냥 맞추면 한 번의 탭이
+     * 화살표가 막은 곳에 도착한다.
      *
-     * 막는 것은 «보는 기간» 이지 **«고른 날» 이 아니다** — 미래의 날에도 적을 수 있어야 하므로
-     * 고른 날은 그대로 바뀌고, 격자만 남는다. 「달을 넘겨도 고른 날은 안 바뀐다」의 뒤집힌 짝이다.
-     *
-     * `<=` 라 **이번 달은 든다** — 지난 달 격자의 꼬리로 이번 달에 오는 것은 화살표로도 가는 길이다.
+     * 막는 것은 보는 기간이지 고른 날이 아니다. 미래의 날에도 적을 수 있어야 하므로 고른 날은
+     * 그대로 바뀌고 격자만 남는다. `<=` 라 이번 달은 든다.
      */
     if (!isWeekly && monthKeyOf(dateKey) <= getCurrentMonthKey(now)) {
       setMonthKey(monthKeyOf(dateKey))
@@ -840,19 +740,16 @@ export function CashbookScreen(): React.JSX.Element {
   }
 
   /**
-   * 고른 날의 합계 — **그날 읽기에서 나온다**([[ADR-169]] 정정 5).
+   * 고른 날의 합계. 그날 읽기에서 나온다.
    *
-   * 칸 금액 표(`amounts`)를 안 보는 이유는 그 표가 **격자가 덮는 범위** 것이기 때문이다. 고른 날은
-   * 기간을 옮겨도 안 바뀌므로, 표를 보면 그 날이 범위 밖으로 나가는 순간 상세가 사라졌다 —
-   * 머리글은 「8월 25일」인데 아래는 「기록이 없어요」였다(사용자 보고 2026-08-26).
-   *
-   * 그래서 **빈 상태의 판정도 그 날 자신의 기록**이 낸다. `amounts` 는 격자만 쓴다.
+   * 칸 금액 표(`amounts`)를 안 보는 이유는 그것이 격자가 덮는 범위의 값이기 때문이다. 고른 날은
+   * 기간을 옮겨도 안 바뀌므로, 표를 보면 그 날이 범위 밖으로 나가는 순간 상세가 사라진다.
+   * 빈 상태 판정도 같은 이유로 그 날 자신의 기록이 낸다.
    */
   const selectedTotals = dayTotalsOf(dayRecords)
   /**
-   * 격자 위 세 칸이 읽는 **기간 합계**([[ADR-184]] 결정 2) — 격자에 넘기는 **그 `weeks`** 와 **그
-   * `amounts`** 를 접는다. 열지도 기준선용 `heatWeeks` 를 넣으면 주간 보기에서 그것이 그 달 전체라
-   * 주간 자리에 **달 합계**가 선다.
+   * 격자 위 세 칸이 읽는 기간 합계. 격자에 넘기는 그 `weeks`·`amounts` 를 접는다. 열지도
+   * 기준선용 `heatWeeks` 를 넣으면 주간 자리에 달 합계가 선다.
    */
   const periodSums = periodTotals(weeks, amounts)
   const periodLabel = isWeekly
@@ -860,11 +757,10 @@ export function CashbookScreen(): React.JSX.Element {
     : formatBossProfitPeriodLabel('monthly', monthKey, now)
 
   /**
-   * **앞으로 갈 자리가 없다**([[ADR-185]]) — 지금 보는 것이 «이번 주/이번 달» 이면 다음이 미래다.
+   * 앞으로 갈 자리가 없는지. 지금 보는 것이 이번 주·이번 달이면 다음이 미래다.
    *
-   * 판정은 보스 수익 탭이 쓰는 `isLatestPeriod` **그 함수**다. 두 축의 `periodKey` 가 이미 그쪽과
-   * 같은 모양이라(주간은 목요일 날짜, 월간은 `YYYY-MM`) 넘길 것이 그대로 있고, 같은 그룹의 두
-   * 하위가 **한 경계**를 갖게 된다([[ADR-170]] 정정 3 이 라벨에서 한 것과 같은 태도).
+   * 판정은 보스 수익 탭이 쓰는 `isLatestPeriod` 그대로다. 두 축의 `periodKey` 가 이미 그쪽과
+   * 같은 모양이라(주간은 목요일 날짜, 월간은 `YYYY-MM`) 같은 그룹의 두 하위가 한 경계를 갖는다.
    */
   const isLatest = isLatestPeriod(isWeekly ? 'weekly' : 'monthly', isWeekly ? weekStartKey : monthKey, now)
 
@@ -879,7 +775,7 @@ export function CashbookScreen(): React.JSX.Element {
   return (
     <View testID="screen-Cashbook" className="flex-1">
       <ScreenScroll
-        // [[ADR-130]] 결정 1: 색만 테마에서 넘기고 컨트롤은 셸이 그대로 받는다.
+        // 색만 테마에서 넘기고 컨트롤은 셸이 그대로 받는다.
         refreshControl={
           <RefreshControl
             refreshing={pull.refreshing}
@@ -901,15 +797,11 @@ export function CashbookScreen(): React.JSX.Element {
           </PageHeader>
         }
       >
-        {/*
-          바닥 여백이 **떠 있는 ＋ 의 몫**이다([[ADR-170]] 결정 5 의 «딸려 오는 결함»). FAB 는 화면
-          위에 떠 있어 콘텐츠를 밀어내지 않으므로, 여기서 갚지 않으면 스크롤을 끝까지 내렸을 때
-          마지막 줄이 버튼 뒤로 들어간다(사용자 보고 2026-08-25).
+        {/* 바닥 여백이 떠 있는 ＋ 의 몫이다. FAB 는 콘텐츠를 밀어내지 않아 여기서 갚지 않으면
+            끝까지 내렸을 때 마지막 줄이 버튼 뒤로 들어간다.
 
-          `pb-4` 를 **대신한다** — 그 상수가 숨돌림 16 을 이미 품고 있어(`speed-dial-metrics.ts`)
-          함께 주면 바닥 여백이 두 번 붙는다. 하단바의 몫은 여기 없다: `ScreenScroll` 이 이미 콘텐츠
-          끝에 남기고 다이얼은 그 위에 앉는다.
-        */}
+            `pb-4` 를 대신한다. 그 상수가 숨돌림 16 을 이미 품고 있어(`speed-dial-metrics.ts`)
+            함께 주면 바닥 여백이 두 번 붙는다. 하단바의 몫은 `ScreenScroll` 이 이미 남긴다. */}
         <View
           testID="cashbook-content"
           className="gap-4 px-4"
@@ -919,20 +811,15 @@ export function CashbookScreen(): React.JSX.Element {
             testID="cashbook-period-nav"
             className="flex-row items-center justify-center gap-4"
           >
-            {/* 이름이 모드를 따른다 — 스크린리더가 «무엇이 옮겨지는가» 를 듣는다. */}
+            {/* 이름이 모드를 따른다. 스크린리더가 무엇이 옮겨지는가 를 듣는다. */}
             <MonthArrow
               label={isWeekly ? '이전 주' : '이전 달'}
               icon={ChevronLeftIcon}
               onPress={() => movePeriod(-1)}
             />
-            {/*
-              **보스 수익 탭과 같은 모양**이다([[ADR-170]] 정정 3) — 윗줄이 상대 표현
-              (「이번 주」·「지난 달」), 아랫줄이 **언제나 정확한 날짜**다.
-
-              라벨을 새로 만들지 않고 `formatBossProfitPeriodLabel` 을 그대로 부른다. 두 축이 이미
-              같은 `periodKey` 를 쓰므로(주간은 목요일 날짜, 월간은 `YYYY-MM`) 넘길 것이 그대로 있고,
-              같은 그룹의 두 하위가 **한 어법**으로 기간을 말하게 된다([[ADR-170]] 결정 10 의 논지).
-            */}
+            {/* 윗줄이 상대 표현(`이번 주`·`지난 달`), 아랫줄이 언제나 정확한 날짜다. 라벨은
+                `formatBossProfitPeriodLabel` 을 그대로 부른다. 보스 수익 탭과 같은 `periodKey` 를
+                쓰므로 두 하위 탭이 한 어법으로 기간을 말하게 된다. */}
             <View className="items-center">
               <Text
                 testID="cashbook-period-label"
@@ -948,8 +835,8 @@ export function CashbookScreen(): React.JSX.Element {
                 {periodLabel.secondary}
               </Text>
             </View>
-            {/* 앞으로는 못 간다([[ADR-185]]) — 미래의 합계는 언제나 0 이라 «아직 안 적었나» 와
-                «올 수 없는 곳인가» 가 같은 화면으로 말해진다. */}
+            {/* 앞으로는 못 간다. 미래의 합계는 언제나 0 이라 아직 안 적었나 와 올 수 없는 곳인가 가
+                같은 화면으로 말해진다. */}
             <MonthArrow
               label={isWeekly ? '다음 주' : '다음 달'}
               icon={ChevronRightIcon}
@@ -958,8 +845,8 @@ export function CashbookScreen(): React.JSX.Element {
             />
           </View>
 
-          {/* 합계는 **이동 아래 · 격자 위**다([[ADR-184]] 정정 3) — 「어느 기간인가」 를 말한 줄
-              바로 다음이 「그 기간이 얼마인가」 이고, 그 둘이 격자를 받친다. */}
+          {/* 합계는 이동 아래 · 격자 위다. 어느 기간인가 를 말한 줄 다음이 그 기간이 얼마인가 이고,
+              그 둘이 격자를 받친다. */}
           <PeriodSummary
             incomeMeso={periodSums.incomeMeso}
             expenseMeso={periodSums.expenseMeso}
@@ -971,7 +858,7 @@ export function CashbookScreen(): React.JSX.Element {
             todayDateKey={todayDateKey}
             amounts={amounts}
             weekdayLabels={isWeekly ? WEEKDAY_LABELS_RESET : undefined}
-            // 열지도 기준은 **화면이 낸다**([[ADR-170]] 결정 12) — 위 `heatWeeks` 참조.
+            // 열지도 기준은 화면이 낸다(`heatWeeks`).
             incomeMax={monthIncomeMax(heatWeeks, amounts)}
             onSelectDate={selectDate}
           />
@@ -1004,9 +891,8 @@ export function CashbookScreen(): React.JSX.Element {
                 </View>
 
                 {dayRecords.length > 0 && (
-                  // 합계 아래에 **적은 것이 한 줄씩** 선다([[ADR-171]] 결정 1). 접지 않는다 —
-                  // 같은 날 같은 것을 두 번 적은 것은 정상이고, 접으면 어느 쪽을 고치는지 못 고른다.
-                  // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
+                  // 합계 아래에 적은 것이 한 줄씩 선다. 접지 않는다. 같은 날 같은 것을 두 번
+                  // 적은 것은 정상이고, 접으면 어느 쪽을 고치는지 못 고른다.
                   <View className="mt-1.5 gap-1.5 border-t border-border pt-2">
                     {dayRecords.map((entry) => (
                       <DayRecordRow
@@ -1029,16 +915,14 @@ export function CashbookScreen(): React.JSX.Element {
         onSelectExpense={() => setSheet('expense')}
       />
 
-      {/* 시트는 **조건부 마운트**다 — 마운트가 곧 열림이고 `onClose` 로 언마운트한다
-          ([[ADR-039]] 결정 3, `BottomSheet` 가 그 계약을 든다). */}
+      {/* 시트는 조건부 마운트다. 마운트가 곧 열림이고 `onClose` 로 언마운트한다. */}
       {(sheet === 'income' || (typeof sheet === 'object' && sheet?.kind === 'income')) && (
-        // 고치는 것이면 **그 기록의 날짜**로 연다 — 고른 날이 아니다(둘은 지금 같지만, 목록이
+        // 고치는 것이면 그 기록의 날짜로 연다. 고른 날이 아니다(둘은 지금 같지만 목록이
         // 여러 날을 걸치게 되는 날 갈린다).
-        // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
         <IncomeSheet
           characters={characters}
           lastPointRate={lastPointRate}
-          // 캐릭터의 메소 획득량([[ADR-177]]) — 시트는 `nexon/` 도 `storage/` 도 모른다.
+          // 캐릭터의 메소 획득량. 시트는 `nexon/` 도 `storage/` 도 모른다.
           loadMesoRate={loadMesoRate}
           dateKey={typeof sheet === 'object' ? sheet.record.earnedOn : selectedDateKey}
           editing={typeof sheet === 'object' ? sheet.record : undefined}

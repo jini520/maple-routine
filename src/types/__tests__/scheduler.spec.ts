@@ -111,7 +111,7 @@ describe('domain 타입 샘플 객체', () => {
     expect(account.characters).toHaveLength(1)
   })
 
-  it('NexonAuthConfig 는 API 키 하나다 — 계정 선택이 사라졌다([[ADR-143]] 결정 7)', () => {
+  it('NexonAuthConfig 는 API 키 하나다. 계정 선택이 사라졌다', () => {
     const config: NexonAuthConfig = { apiKey: 'test-key' }
     expect(config.apiKey).toBe('test-key')
   })
@@ -188,7 +188,7 @@ describe('wire 타입 샘플 객체 (Nexon API 원본 응답 그대로)', () => 
     expect(sample.character_name).toBe('낟낟')
   })
 
-  it('NexonSchedulerCharacterStateWire은 daily_contents/weekly_contents/boss_contents를 생략할 수 있다 (ADR-030: 미접속 시 응답에 없을 수 있음)', () => {
+  it('NexonSchedulerCharacterStateWire은 daily_contents/weekly_contents/boss_contents를 생략할 수 있다 (: 미접속 시 응답에 없을 수 있음)', () => {
     const sample: NexonSchedulerCharacterStateWire = {
       date: '2026-07-21T00:00+09:00',
       character_name: '낟낟',

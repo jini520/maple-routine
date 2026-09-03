@@ -27,7 +27,7 @@ function profile(overrides: Partial<CharacterBasicProfile> = {}): CharacterBasic
   }
 }
 
-/** `now` 기준으로 `elapsedMs` 만큼 전에 캐시된 엔트리를 심는다. */
+/** `now` 기준으로 `elapsedMs` 만큼 전에 캐시된 엔트리를 심는 도우미. */
 async function seedCache(elapsedMs: number, cached: CharacterBasicProfile): Promise<void> {
   await setCachedCharacterBasic(ACCOUNT, OCID, {
     profile: cached,
@@ -54,7 +54,7 @@ describe('캐시가 없으면 네트워크로 받고 그 결과를 캐시에 쓴
     })
   })
 
-  it('새 엔트리의 cachedAt 은 인자로 받은 now 다 — 함수 안에서 시계를 다시 읽지 않는다', async () => {
+  it('새 엔트리의 cachedAt 은 인자로 받은 now 다. 함수 안에서 시계를 다시 읽지 않는다', async () => {
     fetchCharacterBasicMock.mockResolvedValue(profile())
 
     await fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)
@@ -63,7 +63,7 @@ describe('캐시가 없으면 네트워크로 받고 그 결과를 캐시에 쓴
     expect(entry?.cachedAt).toBe(NOW.toISOString())
   })
 
-  it('캐시 쓰기는 인자로 받은 accountId 로 이뤄진다 — 다른 계정 인덱스를 오염시키지 않는다', async () => {
+  it('캐시 쓰기는 인자로 받은 accountId 로 이뤄진다. 다른 계정 인덱스를 오염시키지 않는다', async () => {
     fetchCharacterBasicMock.mockResolvedValue(profile())
 
     await fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)
@@ -73,7 +73,7 @@ describe('캐시가 없으면 네트워크로 받고 그 결과를 캐시에 쓴
   })
 })
 
-describe('5분 TTL 가드 (ADR-113 결정 1)', () => {
+describe('5분 TTL 가드', () => {
   it('TTL 안이면 네트워크를 부르지 않고 캐시 profile 을 돌려준다', async () => {
     const cached = profile({ name: '캐시값' })
     await seedCache(CHARACTER_BASIC_TTL_MS - 1, cached)
@@ -95,7 +95,7 @@ describe('5분 TTL 가드 (ADR-113 결정 1)', () => {
     })
   })
 
-  it('경계는 배타적이다 — 경과가 정확히 5분이면 만료로 보고 다시 부른다', async () => {
+  it('경계는 배타적이다. 경과가 정확히 5분이면 만료로 보고 다시 부른다', async () => {
     await seedCache(CHARACTER_BASIC_TTL_MS, profile({ name: '캐시값' }))
     fetchCharacterBasicMock.mockResolvedValue(profile({ name: '새로받음' }))
 
@@ -118,7 +118,7 @@ describe('신뢰할 수 없는 cachedAt 은 만료로 취급한다', () => {
     expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(1)
   })
 
-  it('미래 시각(기기 시계 되감기)이면 다시 부른다 — 캐시가 영구히 신선해지지 않는다', async () => {
+  it('미래 시각(기기 시계 되감기)이면 다시 부른다. 캐시가 영구히 신선해지지 않는다', async () => {
     await seedCache(-60_000, profile({ name: '캐시값' }))
     const fresh = profile({ name: '새로받음' })
     fetchCharacterBasicMock.mockResolvedValue(fresh)
@@ -128,9 +128,9 @@ describe('신뢰할 수 없는 cachedAt 은 만료로 취급한다', () => {
   })
 })
 
-// ADR-144 결정 2: 직업은 character/basic 이 아니라 character/list 가 준다. 저장 경로가 이 함수
-// 하나뿐이므로(ADR-113 결정 1) 값을 손에 든 호출부가 여기로 함께 넘긴다.
-describe('jobClass — character/list 가 준 값을 엔트리에 함께 싣는다 (ADR-144 결정 2)', () => {
+// 직업은 character/basic 이 아니라 character/list 가 준다. 저장 경로가 이 함수
+// 하나뿐이므로 값을 손에 든 호출부가 여기로 함께 넘긴다.
+describe('jobClass: character/list 가 준 값을 엔트리에 함께 싣는다', () => {
   it('넘긴 값이 profile 에 실려 캐시에 쓰이고 그대로 반환된다', async () => {
     fetchCharacterBasicMock.mockResolvedValue(profile())
 
@@ -143,7 +143,7 @@ describe('jobClass — character/list 가 준 값을 엔트리에 함께 싣는�
     })
   })
 
-  it('넘기지 않으면 캐시에 있던 값을 유지한다 — 아는 값을 undefined 로 덮으면 화면에서 직업이 사라진다', async () => {
+  it('넘기지 않으면 캐시에 있던 값을 유지한다. 아는 값을 undefined 로 덮으면 화면에서 직업이 사라진다', async () => {
     await seedCache(CHARACTER_BASIC_TTL_MS + 1, profile({ jobClass: '비숍' }))
     fetchCharacterBasicMock.mockResolvedValue(profile({ name: '새로받음' }))
 
@@ -152,7 +152,7 @@ describe('jobClass — character/list 가 준 값을 엔트리에 함께 싣는�
     )
   })
 
-  it('넘긴 값은 캐시된 값을 덮는다 — 전직하면 그 자리에서 바뀐다', async () => {
+  it('넘긴 값은 캐시된 값을 덮는다. 전직하면 그 자리에서 바뀐다', async () => {
     await seedCache(CHARACTER_BASIC_TTL_MS + 1, profile({ jobClass: '비숍' }))
     fetchCharacterBasicMock.mockResolvedValue(profile())
 
@@ -161,7 +161,7 @@ describe('jobClass — character/list 가 준 값을 엔트리에 함께 싣는�
     )
   })
 
-  it('캐시도 없고 넘기지도 않으면 키 자체가 없다 — 없는 값을 지어내지 않는다', async () => {
+  it('캐시도 없고 넘기지도 않으면 키 자체가 없다. 없는 값을 지어내지 않는다', async () => {
     fetchCharacterBasicMock.mockResolvedValue(profile())
 
     const result = await fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)
@@ -171,7 +171,7 @@ describe('jobClass — character/list 가 준 값을 엔트리에 함께 싣는�
 })
 
 describe('실패는 캐시로 폴백하지 않고 그대로 전파한다', () => {
-  it('400 OPENAPI00003(조회 불가)이 그대로 던져진다 — 호출부의 characterUnavailable 분기가 산다', async () => {
+  it('400 OPENAPI00003(조회 불가)이 그대로 던져진다. 호출부의 characterUnavailable 분기가 산다', async () => {
     const error = new NexonBadRequestError('unavailable', 'OPENAPI00003')
     fetchCharacterBasicMock.mockRejectedValue(error)
 
@@ -179,7 +179,7 @@ describe('실패는 캐시로 폴백하지 않고 그대로 전파한다', () =>
     await expect(getCachedCharacterBasic(OCID)).resolves.toBeNull()
   })
 
-  it('429 도 그대로 던져진다 — 전역 실패 분기가 산다', async () => {
+  it('429 도 그대로 던져진다. 전역 실패 분기가 산다', async () => {
     const error = new NexonRateLimitError('rate limited')
     fetchCharacterBasicMock.mockRejectedValue(error)
 
@@ -193,7 +193,7 @@ describe('실패는 캐시로 폴백하지 않고 그대로 전파한다', () =>
     fetchCharacterBasicMock.mockRejectedValue(error)
 
     await expect(fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)).rejects.toBe(error)
-    // 캐시는 실패 전 값 그대로다 — 새로 쓰지 않았다.
+    // 캐시는 실패 전 값 그대로다. 새로 쓰지 않았다.
     const entry = await getCachedCharacterBasic(OCID)
     expect(entry?.profile).toEqual(stale)
     expect(entry?.cachedAt).not.toBe(NOW.toISOString())

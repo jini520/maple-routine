@@ -1,9 +1,9 @@
 import type { FeatureGuide } from '../../../types'
-// 이미지는 `packages/core/src/assets/guide/boss-manage/` 에 두고 여기서 import 한다. 명시적 import 라
-// 파일명이 틀리면 **빌드가 실패한다**([[ADR-125]] 결정 4) — glob 조회처럼 `undefined` 가 되어
+// 이미지는 `src/assets/guide/boss-manage/` 에 두고 여기서 import 한다. 명시적 import 라
+// 파일명이 틀리면 **빌드가 실패한다**. glob 조회처럼 `undefined` 가 되어
 // 이미지만 빠진 채 통과하지 않는다.
 //
-// 모드 관련 셋은 `content-manage/` 것을 그대로 쓴다 — 컨텐츠와 보스가 **같은 설정 모달**을 보므로
+// 모드 관련 셋은 `content-manage/` 것을 그대로 쓴다. 컨텐츠와 보스가 **같은 설정 모달**을 보므로
 // 같은 그림 한 벌이 맞다(사본을 만들면 모달이 바뀔 때 한쪽만 낡는다).
 import autoImage from '../../../assets/guide/content-manage/02-auto.webp'
 import manualImage from '../../../assets/guide/content-manage/03-manual.webp'
@@ -34,8 +34,8 @@ export const bossManageGuide: FeatureGuide = {
       id: 'auto',
       title: '자동 모드',
       blocks: [
-        // TODO(#198): 자동 모드의 **보스 관리 화면**(상단 안내 + 「등록된 보스만 보기」 토글).
-        // 지금 서 있는 것은 설정 모달의 「자동」 카드라 이 마디가 말하는 화면이 아니다.
+        // TODO(#198): 자동 모드의 **보스 관리 화면**(상단 안내 + `등록된 보스만 보기` 토글).
+        // 지금 서 있는 것은 설정 모달의 `자동` 카드라 이 마디가 말하는 화면이 아니다.
         {
           image: {
             src: autoImage,
@@ -46,9 +46,8 @@ export const bossManageGuide: FeatureGuide = {
           text: '자동 모드에서는 보스 관리 화면에 체크가 없습니다. 목록이 게임 등록 기준이라, 여기서 할 수 있는 것은 파티 인원을 정하는 일입니다.',
         },
         {
-          // 토글의 이름과 방향이 앱 버전에 따라 다르다([[ADR-145]] 결정 4 — RN 앱은 「모든 보스
-          // 보기」(기본 꺼짐), 웹뷰 앱은 「등록된 보스만 보기」(기본 켜짐)). **기본 결과는 같으므로**
-          // 결과를 먼저 말하고 토글은 «바꾸면» 으로 묶는다(`character-manage` 와 같은 처리).
+          // 토글의 이름과 방향이 앱 버전에 따라 다르다. 기본 결과는 같으므로 결과를 먼저 말하고
+          // 토글은 바꾸면 으로 묶는다.
           text: '기본으로는 게임에 등록한 보스만 보입니다. 위쪽의 ‘모든 보스 보기’ 토글을 켜면(앱 버전에 따라 ‘등록된 보스만 보기’를 끄면) 등록하지 않은 보스도 함께 보이고, 미리 파티 인원을 정해 둘 수 있습니다.',
         },
       ],
@@ -58,15 +57,14 @@ export const bossManageGuide: FeatureGuide = {
       title: '수동 모드 (자동 모드와 통합 예정)',
       blocks: [
         // TODO(#198): 수동 모드의 **보스 관리 화면**(체크 목록 + 난이도).
-        // 지금 서 있는 것은 설정 모달의 「수동」 카드라 이 마디가 말하는 화면이 아니다.
+        // 지금 서 있는 것은 설정 모달의 `수동` 카드라 이 마디가 말하는 화면이 아니다.
         {
           image: {
             src: manualImage,
             alt: '‘수동’ 선택지 카드. 직접 컨텐츠를 선택하고 관리한다는 설명',
           },
         },
-        // 여는 자리가 앱 버전에 따라 다르다([[ADR-145]] 결정 1 — RN 앱은 스케줄 그룹의 하위 탭,
-        // 웹뷰 앱은 스케줄러 헤더의 버튼). `character-manage` 와 같은 처리다.
+        // 여는 자리가 앱 버전에 따라 다르다. `character-manage` 와 같은 처리다.
         {
           text: '스케줄의 ‘보스 관리’로 들어가 보스와 난이도를 고릅니다. 그 자리가 보이지 않는다면 보스 스케줄러 위쪽의 ‘보스 관리’ 버튼이 같은 화면을 엽니다.',
         },

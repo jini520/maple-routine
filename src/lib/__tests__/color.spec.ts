@@ -50,7 +50,7 @@ describe('relativeLuminance / contrastRatio', () => {
     expect(contrastRatio(parseHex('#9975B3'), parseHex('#9975B3'))).toBeCloseTo(1, 10)
   })
 
-  // 알려진 실패 사례 — 레테 info-tint 사고(ADR-064 배경 ①). 폐기 전 값이 실제로 AA에 한참 못 미쳤음을
+  // 알려진 실패 사례. 레테 info-tint 사고(배경 ①). 폐기 전 값이 실제로 AA에 한참 못 미쳤음을
   // 회귀로 박아둬, 대비 계산이 틀어지면 이 테스트가 먼저 깨지게 한다.
   it('폐기된 레테 info-tint(#C9D6F2) 대 text(#E8DFEC)는 1.2:1 미만이다', () => {
     expect(contrastRatio(parseHex('#C9D6F2'), parseHex('#E8DFEC'))).toBeLessThan(1.2)
@@ -114,8 +114,8 @@ describe('mixOklab', () => {
     expect(mid).toBeLessThan(Math.max(a, b))
   })
 
-  // CSS color-mix(in oklab, X 15%, surface)와 같은 결과여야 한다 — 이 함수가 만드는 값이
-  // 브라우저가 계산하는 값과 어긋나면 대비 검증이 실제 화면과 달라진다(ADR-064 결정 2).
+  // CSS color-mix(in oklab, X 15%, surface)와 같은 결과여야 한다. 이 함수가 만드는 값이
+  // 브라우저가 계산하는 값과 어긋나면 대비 검증이 실제 화면과 달라진다.
   it('15% 틴트는 바탕색 쪽에 훨씬 가깝다', () => {
     const surface = hexToOklch('#FDFCF6').l
     const tint = hexToOklch(mixOklab('#F58B0F', '#FDFCF6', 0.15)).l

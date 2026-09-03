@@ -6,8 +6,8 @@ import {
 } from '../errors'
 import { requestJson } from '../http'
 
-// vitest 의 `vi.stubGlobal` 짝. jest 에는 없어서 여기서 최소한으로 만든다 — 원래 값을 기억해 두고
-// `unstubAllGlobals()` 가 되돌린다 ([[ADR-157]]).
+// 전역을 잠시 갈아 끼우는 도우미. 원래 값을 기억해 두고
+// `unstubAllGlobals` 가 되돌린다.
 const 원래전역: Record<string, unknown> = {}
 
 function stubGlobal(name: string, value: unknown): void {
@@ -21,9 +21,9 @@ function unstubAllGlobals(): void {
   }
 }
 
-// ADR-067 결정 1: 비-2xx 응답 본문의 error.name(넥슨 에러 코드)을 살린다. 전에는 401/403/429만
+// 비-2xx 응답 본문의 error.name(넥슨 에러 코드)을 살린다. 전에는 401/403/429만
 // 갈라내고 나머지를 전부 NexonNetworkError로 뭉갰는데, 400 안에 성질이 전혀 다른 세 실패가
-// 들어 있다 — OPENAPI00003(영구 조회 불가) · OPENAPI00004(그 날짜 조회 불가) ·
+// 들어 있다. OPENAPI00003(영구 조회 불가)· OPENAPI00004(그 날짜 조회 불가)·
 // OPENAPI00009(아직 집계 전, 시간이 지나면 풀린다). 코드가 없으면 이 셋을 구분할 방법이 없다.
 
 function response(status: number, body: unknown): Response {
@@ -41,7 +41,7 @@ afterEach(() => {
   unstubAllGlobals()
 })
 
-describe('requestJson — 에러 코드 보존', () => {
+describe('requestJson: 에러 코드 보존', () => {
   it('400 응답 본문의 error.name을 NexonBadRequestError.code로 살린다', async () => {
     stubGlobal('fetch', jest.fn(async () => response(400, { error: { name: 'OPENAPI00003', message: 'Please input valid id' } })),
     )
@@ -56,7 +56,7 @@ describe('requestJson — 에러 코드 보존', () => {
     await expect(requestJson('/x', 'key')).rejects.toMatchObject({ code })
   })
 
-  it('400인데 본문을 읽을 수 없으면 code는 null이다 — 알 수 없는 실패로 degrade한다', async () => {
+  it('400인데 본문을 읽을 수 없으면 code는 null이다. 알 수 없는 실패로 degrade한다', async () => {
     stubGlobal('fetch', jest.fn(async () => response(400, undefined)))
 
     await expect(requestJson('/x', 'key')).rejects.toMatchObject({ code: null })
@@ -79,7 +79,7 @@ describe('requestJson — 에러 코드 보존', () => {
   })
 })
 
-describe('requestJson — 기존 분기 유지', () => {
+describe('requestJson: 기존 분기 유지', () => {
   it.each([401, 403])('%i 는 NexonAuthError', async (status) => {
     stubGlobal('fetch', jest.fn(async () => response(status, { error: { name: 'OPENAPI00001' } })))
     await expect(requestJson('/x', 'key')).rejects.toBeInstanceOf(NexonAuthError)

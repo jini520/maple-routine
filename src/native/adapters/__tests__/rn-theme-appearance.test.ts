@@ -1,7 +1,7 @@
-// `ThemeAppearancePort` 의 RN 구현 — **값이 어디로 흐르는가**를 지킨다([[ADR-128]] 3단계).
+// `ThemeAppearancePort` 의 RN 구현. 값이 어디로 흐르는가 를 지킨다.
 //
-// 웹뷰 구현은 DOM 을 만지므로 "문서가 이렇게 됐는가"를 봤지만, RN 구현이 하는 일은 값을 한 칸에 놓고
-// 구독자에게 알리는 것이다. 그래서 검사 대상은 셋이다 — 초기값 · 갈아치우기 · 알림.
+// 이 구현이 하는 일은 값을 한 칸에 놓고 구독자에게 알리는 것이다. 그래서 검사 대상은 셋이다.
+// 초기값 · 갈아치우기 · 알림.
 
 import { DEFAULT_THEME, getThemeDefinition } from '../../../lib/theme/theme-registry'
 
@@ -16,8 +16,8 @@ beforeEach(__resetThemeAppearanceForTest)
 afterEach(__resetThemeAppearanceForTest)
 
 describe('rnThemeAppearancePort', () => {
-  // 웹은 첫 페인트를 `index.css` 의 `@theme` 기본 블록(머쉬맘)이 메운다. RN 에는 번들 CSS 가 없어
-  // 그 역할을 이 초기값이 한다 — 비워 두면 `restoreFromStorage()` 전까지 **색이 없는 화면**이 된다
+// 첫 페인트를 메울 번들 CSS 가 없어
+  // 그 역할을 이 초기값이 한다. 비워 두면 `restoreFromStorage` 전까지 **색이 없는 화면**이 된다
   // (변수를 못 찾으면 NativeWind 가 그 스타일 속성을 조용히 뺀다).
   it('아무도 적용하지 않아도 기본 테마가 서 있다', () => {
     expect(getThemeAppearance()).toEqual({
@@ -35,7 +35,7 @@ describe('rnThemeAppearancePort', () => {
     })
   })
 
-  it('구독자에게 알린다(뷰가 리렌더할 유일한 계기다)', () => {
+  it('구독자에게 알린다(뷰가 리렌더할 계기는 이것뿐이다)', () => {
     const listener = jest.fn()
     subscribeThemeAppearance(listener)
 
@@ -54,7 +54,7 @@ describe('rnThemeAppearancePort', () => {
     expect(listener).not.toHaveBeenCalled()
   })
 
-  // `useSyncExternalStore` 는 `getSnapshot` 이 바뀌지 않았을 때 **같은 객체**를 돌려주기를 요구한다 —
+  // `useSyncExternalStore` 는 `getSnapshot` 이 바뀌지 않았을 때 **같은 객체**를 돌려주기를 요구한다.
   // 매번 새로 만들면 React 가 무한 리렌더로 읽는다.
   it('바뀌지 않았으면 같은 스냅샷 객체를 준다', () => {
     expect(getThemeAppearance()).toBe(getThemeAppearance())

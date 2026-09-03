@@ -1,13 +1,13 @@
-// 웹판을 옮긴 것. 갈린 케이스 둘만 적는다.
+// 갈린 케이스 둘만 적는다.
 //
-// · *"일러스트가 있으면 카드와 같은 필터·불투명도로 그린다"* → **step 5 에서 온전히 성립한다.**
+// *"일러스트가 있으면 카드와 같은 필터·불투명도로 그린다"* → **온전히 성립한다.**
 //   3단계는 자리만 만들고 그림을 못 앉혔는데(크롭의 CSS 값을 RN 기하로 옮기는 일이 남아 있었다),
-//   step 4 가 컨텐츠 카드에서 그 변환을 풀어 두어 이제 **보스 카드와 같은 `FadedIllustration`** 를
-//   부른다([[ADR-121]] 결정 7 이 요구하는 "같은 값"이 컴포넌트 공유로 성립한다).
-//   화면 전용 testID(`party-size-modal-art`)는 사라졌다 — 아트와 베일이 둘 다 `absolute inset-0`
+// 컨텐츠 카드에서 그 변환을 풀어 두어 이제 **보스 카드와 같은 `FadedIllustration`** 를
+//  부른다(요구하는 "같은 값"이 컴포넌트 공유로 성립한다).
+//   화면 전용 testID(`party-size-modal-art`)는 사라졌다. 아트와 베일이 둘 다 `absolute inset-0`
 //   이라 감싸는 순간 기준 상자가 바뀌어 그림이 사라진다(컴포넌트 주석).
-// · `aria-pressed` → **`accessibilityState.selected`**(`DifficultySegment` 가 `aria-selected` 를
-//   쓴다 — RN 접근성 상태에 *pressed* 가 없다).
+// `aria-pressed` → **`accessibilityState.selected`**(`DifficultySegment` 가 `aria-selected` 를
+//   쓴다. RN 접근성 상태에 *pressed* 가 없다).
 import { fireEvent } from '@testing-library/react-native'
 
 import { renderOverlay, type AtomElement } from '../../../__tests__/render-atom'
@@ -43,7 +43,7 @@ function stateOf(node: AtomElement): State {
   return (node.props.accessibilityState ?? {}) as State
 }
 
-/** 난이도 칩 — 글자를 담은 `Text` 에서 위로 올라가 `role="button"` 인 첫 조상. */
+/** 난이도 칩. 글자를 담은 `Text` 에서 위로 올라가 `role="button"` 인 첫 조상. */
 function chip(getByText: (text: string) => AtomElement, label: string): AtomElement {
   let node: AtomElement | null = getByText(label)
   while (node !== null && node.props.role !== 'button') node = node.parent
@@ -76,8 +76,8 @@ describe('PartySizeModal', () => {
     expect(p.onSelectDifficulty).toHaveBeenCalledWith('익스트림')
   })
 
-  // 파티 인원은 (보스 + 난이도)에 붙어 있다 — 스우는 하드 6인, 익스트림 2인. 웹은 한 케이스에서
-  // `cleanup()` 뒤 다시 렌더했는데, RNTL 은 케이스마다 자동 정리하므로 둘로 나눈다.
+// 파티 인원은 (보스 + 난이도)에 붙어 있다. 스우는 하드 6인, 익스트림 2인. 한 케이스에서
+  // `cleanup` 뒤 다시 렌더했는데, RNTL 은 케이스마다 자동 정리하므로 둘로 나눈다.
   it.each([
     [{}, '4 / 6'],
     [{ difficulty: '익스트림' as const, partySize: 1, maxPartySize: 2 }, '1 / 2'],
@@ -134,11 +134,11 @@ describe('PartySizeModal', () => {
   it('베일은 카드가 아니라 히어로 정지점을 쓴다', async () => {
     const { getByTestId } = await renderOverlay(<PartySizeModal {...props()} />)
 
-    // 히어로 끝점 42/82 + 네이티브 전용 끝점 1(`design-system.md` 「파티 인원 모달」).
+    // 히어로 끝점 42/82 + 네이티브 전용 끝점 1(`design-system.md` `파티 인원 모달`).
     expect(getByTestId('faded-illustration-veil', HIDDEN).props.locations).toEqual([0, 0.42, 0.82, 1])
   })
 
-  // 반대쪽 — 매핑에 없는 슬러그는 아트를 안 만든다(그림 없는 보스가 타던 분기 그대로).
+  // 반대쪽. 매핑에 없는 슬러그는 아트를 안 만든다(그림 없는 보스가 타던 분기 그대로).
   it('에셋이 없는 슬러그는 일러스트를 그리지 않는다', async () => {
     const { queryByTestId } = await renderOverlay(
       <PartySizeModal {...props({ portraitSlug: '없는보스' })} />,

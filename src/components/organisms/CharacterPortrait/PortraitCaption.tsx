@@ -1,7 +1,7 @@
 /**
  * 얼굴 아래를 도는 곡선 글자. 레벨과 이름이 호 하나를 같은 글자로 나눠 쓴다.
  *
- * @see [[ADR-142]] 결정 2·3·5 · 정정 2·4·5·6. 호가 하나가 된 경위와 둘을 가르는 기준.
+ * @see. 호가 하나가 된 경위와 둘을 가르는 기준.
  */
 import { Defs, Path, TextPath, Text as SvgText } from 'react-native-svg'
 
@@ -33,7 +33,7 @@ export function PortraitCaption(props: PortraitCaptionProps): React.JSX.Element 
           {...FONT_PROPS}
           fill={props.color}
           // `textAnchor` 는 `TextPath` 가 아니라 `Text` 에 붙는다. 자식에 주면 `react-native-svg` 가
-          // 조용히 버린다(실측).
+          // 조용히 버린다.
           textAnchor="end"
         >
           <TextPath href={`#${props.pathId}`} startOffset={portraitTextOffsetPercent('left')}>

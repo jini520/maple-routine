@@ -4,7 +4,7 @@ import App from './App'
 import { installPorts } from './src/boot'
 import { holdSplashUntilAppReady } from './src/boot-splash'
 
-// 포트 주입은 **저장소·네이티브를 건드리는 어떤 코드보다 먼저** 와야 한다([[ADR-128]]) — 웹 쪽
+// 포트 주입은 **저장소·네이티브를 건드리는 어떤 코드보다 먼저** 와야 한다 — 웹 쪽
 // `main.tsx` 가 세터를 파일 맨 위에 둔 것과 같은 이유다. 주입 전 접근은 조용히 넘어가지 않고 던지므로,
 // 순서가 틀리면 무음 실패가 아니라 에러로 드러난다.
 //
@@ -14,7 +14,7 @@ import { holdSplashUntilAppReady } from './src/boot-splash'
 installPorts()
 
 // 스플래시를 **첫 렌더까지 붙들고**, 그 렌더가 끝내 오지 않으면 8초 뒤 트리 밖에서 내린다
-// ([[ADR-025]] · [[ADR-117]] 결정 3 — 근거는 `boot-splash.ts`). 포트 주입 **뒤**여야 한다:
+// ( — 근거는 `boot-splash.ts`). 포트 주입 **뒤**여야 한다:
 // 실패 안전 타이머가 `SplashScreenPort` 를 거친다.
 holdSplashUntilAppReady()
 

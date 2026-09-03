@@ -6,7 +6,7 @@
  *
  * `FadedIllustration` 과 달리 필터·투명도·베일이 없다. 이 그림은 글자 뒤로 안 깔린다.
  *
- * @see [[ADR-018]] 결정 9. 원형 아이콘 전용 크롭 표를 따로 두는 이유가 거기 있다.
+ * @see. 원형 아이콘 전용 크롭 표를 따로 두는 이유가 거기 있다.
  */
 import { Image, View } from 'react-native'
 
@@ -28,7 +28,7 @@ export interface BossPortraitProps {
    * 모서리 모양. 기본 원형은 줄 안의 아바타 자리이고, `'square'` 는 격자에 서는 타일이다.
    * 원이 격자로 서면 네 모서리가 비어 칸 사이가 성겨 보인다.
    *
-   * @see [[ADR-172]] 정정 2. 이 프롭이 거기서 생겼다.
+   * @see. 이 프롭이 거기서 생겼다.
    */
   shape?: 'circle' | 'square'
 }

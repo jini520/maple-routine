@@ -1,12 +1,12 @@
-// **주간** 컨텐츠 카드([[ADR-094]] 결정 7로 화면에서 분리) — 에픽 던전·지역 주간 퀘스트·
-// 메이플 유니온·길드 3종([[ADR-021]]).
-//
-// 카드마다 배경 일러스트와 배지 구성이 다르고, 어느 것을 그릴지는 `renderWeeklyContentCard` 가
-// 이름으로 가른다. 전부 자기 카드 안에서 끝나 화면의 고정 헤더와 무관하다.
-//
-// RN 으로 갈린 것은 일간 카드와 **같은 넷**이라 그쪽 파일 머리에 한 번만 적는다
-// (`DailyContentCards.tsx`) — bleed 는 `FadedIllustration`, 껍데기는 `IllustratedCard`, `flex-row` 명시,
-// `<img>`/`<span>`/`text-shadow` 의 짝.
+/**
+ * 주간 컨텐츠 카드. 에픽 던전·지역 주간 퀘스트·메이플 유니온·길드 3종.
+ *
+ * 카드마다 배경 일러스트와 배지 구성이 다르고, 어느 것을 그릴지는 `renderWeeklyContentCard` 가
+ * 이름으로 가른다. 전부 자기 카드 안에서 끝나 화면의 고정 헤더와 무관하다.
+ *
+ * bleed 는 `FadedIllustration`, 껍데기는 `IllustratedCard` 가 든다. 일간 카드와 같은 규약이라
+ * 사유는 `DailyContentCards.tsx` 에 한 번만 적는다.
+ */
 import { isContentBlocked } from '../../lib/scheduler/required-level'
 import {
   getBossPortraitCrop,
@@ -35,7 +35,7 @@ import {
 import { MONSTER_PARK_BACKGROUND_SLUG } from './DailyContentCards'
 import { IllustratedCard, FadedIllustration } from '../../components/molecules/FadedIllustration/FadedIllustration'
 
-// 주간 탭 카테고리 분류 상수 (ADR-021)
+// 주간 탭 카테고리 분류 상수
 export const EPIC_DUNGEON_PREFIX = '에픽 던전 : '
 export const EPIC_DUNGEON_BACKGROUND_SLUGS: Record<string, string> = {
   하이마운틴: 'ancientGodMitra',
@@ -48,8 +48,8 @@ export const GUILD_FLAG_RACE_NAME = '[길드] 플래그 레이스'
 export const GUILD_UNDERGROUND_WATERWAY_BACKGROUND_SLUG = 'arcanus'
 export const GUILD_MISSION_POINTS_BACKGROUND_SLUG = 'hallOfHeroes'
 export const GUILD_FLAG_RACE_BACKGROUND_SLUG = 'flagRace'
-// 메이플 유니온 주간 드래곤 퇴치 — 실제로 등장하는 드래곤은 매주 바뀌지만 API가 어떤 드래곤인지
-// 알려주지 않아, 에픽 던전 카드와 동일하게 대표 이미지 하나로 고정한다(ADR-021 연장, 2026-07-21).
+// 메이플 유니온 주간 드래곤 퇴치. 실제로 등장하는 드래곤은 매주 바뀌지만 API 가 어떤 드래곤인지
+// 알려주지 않아, 에픽 던전 카드와 같이 대표 이미지 하나로 고정한다.
 export const MAPLE_UNION_PREFIX = '[메이플 유니온] '
 export const MAPLE_UNION_DRAGON_BOSS_SLUG = 'armorDragon'
 // "[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?"는 지역명이 문장 앞이 아니라 대괄호 태그로만
@@ -60,7 +60,7 @@ export const MONSTER_PARK_EXTREME_PREFIX = '[몬스터파크] '
 export function EpicDungeonCard(props: {
   content: WeeklyContent
   crop?: ImageCrop
-  /** 요구 레벨 미달 — 상태 배지를 «진행 불가» 로 대체한다([[ADR-162]] 결정 3). */
+  /** 요구 레벨 미달. 상태 배지를 진행 불가 로 대체한다. */
   isBlocked?: boolean
 }): React.JSX.Element {
   const { content } = props
@@ -84,7 +84,7 @@ export function EpicDungeonCard(props: {
           </Text>
         </View>
 
-        {/* [[ADR-162]] 결정 3 — 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
+        {/* 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
         {props.isBlocked === true ? (
           <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
         ) : (
@@ -100,7 +100,7 @@ export function EpicDungeonCard(props: {
 export function WeeklyRegionalContentCard(props: {
   content: WeeklyContent
   crop?: ImageCrop
-  /** 요구 레벨 미달 — 상태 배지를 «진행 불가» 로 대체한다([[ADR-162]] 결정 3). */
+  /** 요구 레벨 미달. 상태 배지를 진행 불가 로 대체한다. */
   isBlocked?: boolean
 }): React.JSX.Element {
   const { content } = props
@@ -111,8 +111,8 @@ export function WeeklyRegionalContentCard(props: {
   const backgroundUrl = getDailyQuestBackgroundUrl(backgroundSlug)
   const iconUrl = getDailyQuestRegionIconUrl(backgroundSlug)
   const crop = props.crop ?? getDailyQuestRegionCrop(backgroundSlug)
-  // 익스트림 몬스터파커는 다른 6개 지역 콘텐츠와 달리 now_count/max_count가 아니라 실제
-  // quest_state(0/1/2)로 진행 상태를 준다(2026-07-21, 사용자 지시).
+  // 익스트림 몬스터파커는 다른 6개 지역 콘텐츠와 달리 now_count/max_count 가 아니라 실제
+  // quest_state(0/1/2)로 진행 상태를 준다.
   const questState: 0 | 1 | 2 | null =
     backgroundSlug === MONSTER_PARK_BACKGROUND_SLUG
       ? content.questState
@@ -134,7 +134,7 @@ export function WeeklyRegionalContentCard(props: {
           </Text>
         </View>
 
-        {/* [[ADR-162]] 결정 3 — 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
+        {/* 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
         {props.isBlocked === true ? (
           <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
         ) : (
@@ -152,7 +152,7 @@ export function WeeklyRegionalContentCard(props: {
 export function WeeklyQuestCard(props: {
   content: WeeklyContent
   crop?: ImageCrop
-  /** 요구 레벨 미달 — 상태 배지를 «진행 불가» 로 대체한다([[ADR-162]] 결정 3). */
+  /** 요구 레벨 미달. 상태 배지를 진행 불가 로 대체한다. */
   isBlocked?: boolean
 }): React.JSX.Element {
   const { content } = props
@@ -176,7 +176,7 @@ export function WeeklyQuestCard(props: {
           </Text>
         </View>
 
-        {/* [[ADR-162]] 결정 3 — 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
+        {/* 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
         {props.isBlocked === true ? (
           <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
         ) : (
@@ -321,11 +321,11 @@ export function GuildFlagRaceCard(props: {
 
 export function renderWeeklyContentCard(
   content: WeeklyContent,
-  /** 이 카드를 보는 캐릭터의 레벨 — 판정은 `lib/scheduler/required-level` 한 곳이 한다([[ADR-162]] 결정 1). */
+  /** 이 카드를 보는 캐릭터의 레벨. 판정은 `lib/scheduler/required-level` 한 곳이 한다. */
   characterLevel: number | null,
 ): React.JSX.Element {
-  // 길드 셋과 유니온 둘은 참조표에 요구 레벨이 **없다** — 어떤 레벨에서도 진행 가능이라
-  // 그 카드들에는 이 프롭을 넘기지 않는다([[ADR-162]] 「대가」).
+  // 길드 셋과 유니온 둘은 참조표에 요구 레벨이 **없다**. 어떤 레벨에서도 진행 가능이라
+  // 그 카드들에는 이 프롭을 넘기지 않는다(`대가`).
   const isBlocked = isContentBlocked(characterLevel, content.name)
 
   if (content.name === GUILD_UNDERGROUND_WATERWAY_NAME) {

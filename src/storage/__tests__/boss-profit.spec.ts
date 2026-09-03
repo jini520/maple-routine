@@ -124,7 +124,7 @@ describe('getBossProfitRecords', () => {
   })
 })
 
-// ADR-069 결정 1·3: 월드는 기록 시점 스냅샷이다. 파생값(캐시된 character/basic)으로 두면 월드
+// 월드는 기록 시점 스냅샷이다. 파생값(캐시된 character/basic)으로 두면 월드
 // 리프가 모든 과거 주의 귀속을 소급 이동시킨다(분모 90 x 월드 수까지 바뀐다).
 describe('world 스냅샷', () => {
   it('upsert가 world를 함께 쓰고, 아는 값이 없을 때는 기존 스냅샷을 지우지 않는다', async () => {
@@ -134,7 +134,7 @@ describe('world 스냅샷', () => {
 
     const [sql, values] = runMock.mock.calls[0]
     expect(values.at(-1)).toBe('엘리시움')
-    // 파티원 수만 고치는 경로처럼 world를 모르고 upsert하는 경우가 있다 — 그때 null로 덮어쓰면
+    // 파티원 수만 고치는 경로처럼 world를 모르고 upsert하는 경우가 있다. 그때 null로 덮어쓰면
     // 이미 박아둔 스냅샷이 지워진다.
     expect(sql).toContain('world = COALESCE(excluded.world, boss_profit_records.world)')
   })
@@ -163,7 +163,7 @@ describe('world 스냅샷', () => {
     expect(record.world).toBeNull()
   })
 
-  it('fillMissingRecordWorlds는 비어 있는 기록만 채운다 — 멱등이라 리프 후에도 과거를 덮지 않는다', async () => {
+  it('fillMissingRecordWorlds는 비어 있는 기록만 채운다. 멱등이라 리프 후에도 과거를 덮지 않는다', async () => {
     const { fillMissingRecordWorlds } = require('../boss-profit') as typeof import('../boss-profit')
 
     await fillMissingRecordWorlds(new Map([['ocid-1', '엘리시움'], ['ocid-2', '베라']]))
@@ -184,7 +184,7 @@ describe('world 스냅샷', () => {
   })
 })
 
-// ADR-071 결정 6: 히스토리가 "처치 난이도가 확정된 조합"을 알아야 획득 불가 기록을 거를 수 있다.
+// 히스토리가 "처치 난이도가 확정된 조합"을 알아야 획득 불가 기록을 거를 수 있다.
 // 수익 기록 행의 존재가 곧 확정이므로 키만 전 기간 조회한다.
 describe('getAllBossProfitRecordKeys', () => {
   it('ocids가 비면 DB를 호출하지 않고 빈 배열을 반환한다', async () => {
@@ -194,7 +194,7 @@ describe('getAllBossProfitRecordKeys', () => {
     expect(getBossProfitDbMock).not.toHaveBeenCalled()
   })
 
-  it('period_key 조건 없이 키 컬럼만 조회한다 — 전체 행을 읽을 필요가 없다', async () => {
+  it('period_key 조건 없이 키 컬럼만 조회한다. 전체 행을 읽을 필요가 없다', async () => {
     const { getAllBossProfitRecordKeys } = require('../boss-profit') as typeof import('../boss-profit')
 
     await getAllBossProfitRecordKeys(['ocid-1', 'ocid-2'])
@@ -225,10 +225,10 @@ describe('getAllBossProfitRecordKeys', () => {
   })
 })
 
-// [[ADR-172]] — 처치 날짜. `BossProfitRecord` 자체는 안 바뀐다(넣는 자리들이 날짜를 모른다).
+// 처치 날짜. `BossProfitRecord` 자체는 안 바뀐다(넣는 자리들이 날짜를 모른다).
 // 대신 **읽는 질문 둘**과 **채우는 쓰기 하나**가 는다.
-describe('처치 날짜 ([[ADR-172]])', () => {
-  it('upsert 는 defeated_on 을 안 건드린다 — 자동 기록이 캐 놓은 날짜를 지우면 안 된다', async () => {
+describe('처치 날짜', () => {
+  it('upsert 는 defeated_on 을 안 건드린다. 자동 기록이 캐 놓은 날짜를 지우면 안 된다', async () => {
     const { upsertBossProfitRecord } = require('../boss-profit') as typeof import('../boss-profit')
 
     await upsertBossProfitRecord(sampleRecord)
@@ -287,7 +287,7 @@ describe('처치 날짜 ([[ADR-172]])', () => {
     expect(values).toEqual(['ocid-1', '2026-08-20', '2026-08'])
   })
 
-  it('빈 목록에는 조회를 안 던진다 — IN () 은 문법 오류다', async () => {
+  it('빈 목록에는 조회를 안 던진다. IN () 은 문법 오류다', async () => {
     const { getDatedBossProfitRecords, getUndatedBossProfitRecords } =
       require('../boss-profit') as typeof import('../boss-profit')
 
@@ -312,8 +312,8 @@ describe('처치 날짜 ([[ADR-172]])', () => {
 })
 
 /**
- * 표가 바뀐 것을 **읽는 쪽이 물을 수 있어야 한다**([[ADR-189]] 결정 2) — `boss_drop_records` 가
- * 먼저 갖고 있던 그 수([[ADR-147]] 정정 17)를 이 표에도 단다.
+ * 표가 바뀐 것을 **읽는 쪽이 물을 수 있어야 한다**. `boss_drop_records` 가
+ * 먼저 갖고 있던 그 수를 이 표에도 단다.
  */
 describe('getBossProfitRecordsRevision', () => {
   beforeEach(() => {
@@ -345,7 +345,7 @@ describe('getBossProfitRecordsRevision', () => {
     expect(getBossProfitRecordsRevision()).toBe(3)
   })
 
-  it('읽기로는 안 오른다 — 판은 «바뀌었나» 이지 «봤나» 가 아니다', async () => {
+  it('읽기로는 안 오른다. 판은 **바뀌었나** 이지 **봤나** 가 아니다', async () => {
     const { getBossProfitRecordsRevision, getDatedBossProfitRecords } =
       require('../boss-profit') as typeof import('../boss-profit')
 
@@ -354,7 +354,7 @@ describe('getBossProfitRecordsRevision', () => {
     expect(getBossProfitRecordsRevision()).toBe(0)
   })
 
-  it('채울 월드가 없으면 안 오른다 — 그 길은 SQL 을 한 줄도 안 던진다', async () => {
+  it('채울 월드가 없으면 안 오른다. 그 길은 SQL 을 한 줄도 안 던진다', async () => {
     const { fillMissingRecordWorlds, getBossProfitRecordsRevision } =
       require('../boss-profit') as typeof import('../boss-profit')
 
@@ -363,7 +363,7 @@ describe('getBossProfitRecordsRevision', () => {
     expect(getBossProfitRecordsRevision()).toBe(0)
   })
 
-  it('쓰기가 던지면 안 오른다 — 표가 안 바뀌었는데 올리면 읽는 쪽이 헛일한다', async () => {
+  it('쓰기가 던지면 안 오른다. 표가 안 바뀌었는데 올리면 읽는 쪽이 헛일한다', async () => {
     const { getBossProfitRecordsRevision, upsertBossProfitRecord } =
       require('../boss-profit') as typeof import('../boss-profit')
     runMock.mockRejectedValueOnce(new Error('database is locked'))

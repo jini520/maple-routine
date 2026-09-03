@@ -1,14 +1,14 @@
-// 테마 값이 **이름과 값 그대로** 변수 맵에 실리는지 지킨다([[ADR-128]] 3단계).
+// 테마 값이 **이름과 값 그대로** 변수 맵에 실리는지 지킨다(3단계).
 //
-// 값을 손으로 적지 않는다 — 색은 [[ADR-006]] 대상이라 사람이 확인해 `job-themes.json` 에 커밋한
+// 값을 손으로 적지 않는다. 색은 대상이라 사람이 확인해 `job-themes.json` 에 커밋한
 // 것이고, 테스트가 그 값을 베끼면 두 벌이 되어 어느 쪽이 진실인지 알 수 없게 된다. 그래서 기대값은
-// **데이터에서 읽거나 core 의 출력과 대조**한다. 예외는 딱 하나, [[ADR-122]] 가 실기기에서 확정해
+// **데이터에서 읽거나 core 의 출력과 대조**한다. 예외는 딱 하나 가 실기기에서 확정해
 // ADR 본문 표에 적어 둔 세 값이다(그건 데이터가 아니라 **결정**이라 다시 계산해선 안 된다).
 //
 // 이 파일이 지키는 고리 넷:
-//   ① 변수 **이름**이 core 의 `buildThemeCss` 와 같은가 — 다르면 색이 조용히 사라진다
+//   ① 변수 **이름**이 core 의 `buildThemeCss` 와 같은가. 다르면 색이 조용히 사라진다
 //   ② 변수 **값**이 `job-themes.json` 의 값 그대로인가
-//   ③ `.media-scope` 재선언이 빠짐없이 실리는가([[ADR-064]] 결정 5)
+//  ③ `.media-scope` 재선언이 빠짐없이 실리는가
 //   ④ `tailwind.config.js` 가 만든 유틸리티 이름과 변수 이름이 맞물리는가
 
 import { buildThemeCss, THEME_NAMES, getThemeDefinition } from '../../lib/theme/theme-registry'
@@ -26,7 +26,7 @@ import {
   toColorVariableName,
 } from '../theme-vars'
 
-/** `buildThemeCss` 결과에서 한 블록의 `--이름: 값;` 선언을 뽑는다. */
+/** `buildThemeCss` 결과에서 뽑은 한 블록의 `--이름: 값;` 선언. */
 function declarationsIn(css: string, selector: string): Record<string, string> {
   const start = css.indexOf(`${selector} {`)
   const body = css.slice(start, css.indexOf('}', start))
@@ -38,16 +38,16 @@ function declarationsIn(css: string, selector: string): Record<string, string> {
   )
 }
 
-/** 파생 토큰은 core 의 CSS 에 없다 — RN 이 선택자 대신 값으로 푸는 자리다([[ADR-122]]). */
+/** 파생 토큰은 core 의 CSS 에 없다. RN 이 선택자 대신 값으로 푸는 자리다. */
 const PANEL_BORDER_VARIABLE = toColorVariableName(PANEL_BORDER_TOKEN)
 
 /**
- * `--color-*` 만 남긴다 — `:root` 블록에는 배경 이미지(`--theme-bg-*`)도 섞여 있다.
+ * `--color-*` 만 남긴다. `:root` 블록에는 배경 이미지(`--theme-bg-*`)도 섞여 있다.
  *
- * [[ADR-129]] 전에는 RN 에서 배경 슬러그가 **아무것도 해석되지 않아** 그 줄이 애초에 안 나왔고,
- * 그래서 두 맵을 통째로 비교해도 맞았다. 지금은 에셋이 있어 `buildThemeCss` 가 그 줄을 낸다 —
+ *  전에는 RN 에서 배경 슬러그가 **아무것도 해석되지 않아** 그 줄이 애초에 안 나왔고,
+ * 그래서 두 맵을 통째로 비교해도 맞았다. 지금은 에셋이 있어 `buildThemeCss` 가 그 줄을 낸다.
  * 그런데 RN 은 벽지를 CSS 배경이 아니라 `<Image>` 로 그리므로 **값의 형태가 다르고**
- * (`theme-vars.ts` 파일 머리) 변수로 내지 않는 것이 여전히 맞다. 그 «내지 않는다»는 아래에서
+ * (`theme-vars.ts`) 변수로 내지 않는 것이 여전히 맞다. 그 내지 않는다는 아래에서
  * 따로 단언하고, 여기서는 색만 견준다.
  */
 function colorDeclarationsIn(css: string, selector: string): Record<string, string> {
@@ -92,8 +92,8 @@ describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
     expect(tokens).toEqual(colorDeclarationsIn(css, ':root'))
   })
 
-  // **배경 이미지는 변수로 내지 않는다**(`theme-vars.ts` 파일 머리). [[ADR-129]] 이후 core 는 그 줄을
-  // 내고 에셋도 실재하지만, RN 에서 그 값은 URL 문자열이 아니라 에셋 id 라 `url("…")` 이 뜻을 잃는다 —
+  // **배경 이미지는 변수로 내지 않는다**(`theme-vars.ts`). 이후 core 는 그 줄을
+  // 내고 에셋도 실재하지만, RN 에서 그 값은 URL 문자열이 아니라 에셋 id 라 `url("…")` 이 뜻을 잃는다.
   // 벽지를 `<Image>` 로 그리는 것은 뷰 레이어 몫으로 남아 있다. 여기서 새어 나가면 조용히 죽는
   // 스타일이 하나 생기므로 계약으로 막는다.
   it('배경 이미지는 변수 맵에 새어 나오지 않는다', () => {
@@ -124,8 +124,8 @@ describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
   })
 })
 
-describe('스크림 위 패널 테두리 — 모드가 역할을 가른다 ([[ADR-122]])', () => {
-  // ADR-122 결정 2 의 표에 적힌 확정값. 계산해서 만들지 않는다 — 실기기에서 세 번 만에 잡은
+describe('스크림 위 패널 테두리. 모드가 역할을 가른다', () => {
+  // 표에 적힌 확정값. 계산해서 만들지 않는다. 실기기에서 세 번 만에 잡은
   // **결정**이라 우리 구현이 그 값을 내는지가 검사 대상이다.
   it.each([
     ['머쉬맘', '#685B4A'],
@@ -138,7 +138,7 @@ describe('스크림 위 패널 테두리 — 모드가 역할을 가른다 ([[AD
     expect(resolvePanelBorder(definition)).toBe(expected)
   })
 
-  // 다크는 패널과 배경 대비가 1.07~1.18 이라 **테두리가 유일한 경계**다 — 손대면 경계가 사라진다.
+  // 다크는 패널과 배경 대비가 1.07~1.18 이라 **테두리가 유일한 경계**다. 손대면 경계가 사라진다.
   it.each(['혼테일', '레테', '검은마법사'] as const)('다크 %s 는 `border` 를 그대로 쓴다', (name) => {
     const definition = getThemeDefinition(name)
 
@@ -147,7 +147,7 @@ describe('스크림 위 패널 테두리 — 모드가 역할을 가른다 ([[AD
   })
 
   // 분기가 **이름이 아니라 `mode`** 를 본다는 것을 이름은 그대로 두고 모드만 뒤집어 확인한다
-  // ([[ADR-064]] 결정 8 — `DARK_THEMES` 수동 목록 폐기). 이름으로 갈랐다면 이 단언이 실패한다.
+  // (`DARK_THEMES` 수동 목록 폐기). 이름으로 갈랐다면 이 단언이 실패한다.
   it('분기 기준은 테마 이름이 아니라 `mode` 다', () => {
     const 머쉬맘 = getThemeDefinition('머쉬맘')
 
@@ -160,10 +160,10 @@ describe('`tailwind.config.js` 색 스케일', () => {
   const colors = (require('../../../tailwind.config.js') as { theme: { colors: Record<string, string> } })
     .theme.colors
 
-  /** 테마를 안 따라가는 셋 — RN 색 리터럴이라 `var()` 를 거치지 않는다. */
+  /** 테마를 안 따라가는 셋. RN 색 리터럴이라 `var` 를 거치지 않는다. */
   const LITERAL_COLORS = ['transparent', 'white', 'black']
 
-  // 이름 규칙이 CJS(설정)와 TS(변수 생성)에 각각 있다 — CJS 가 TS 를 못 읽어서다. 한쪽만 바뀌면
+  // 이름 규칙이 CJS(설정)와 TS(변수 생성)에 각각 있다. CJS 가 TS 를 못 읽어서다. 한쪽만 바뀌면
   // 유틸리티는 있는데 변수는 없는(또는 반대) 상태가 되고, 그때 색은 **에러 없이 사라진다**.
   it('유틸리티 이름과 변수 이름이 정확히 맞물린다', () => {
     const fromConfig = Object.keys(colors).filter((name) => !LITERAL_COLORS.includes(name))
@@ -189,13 +189,13 @@ describe('`tailwind.config.js` 색 스케일', () => {
 })
 
 /**
- * 시트 스코프 ([[ADR-179]]).
+ * 시트 스코프.
  *
- * 값을 손으로 적지 않는다 — 파일 머리의 규칙 그대로다. 여기서 지키는 것은 **규칙**이다:
- * 다크는 넷을 한 칸 올리고(그 «한 칸» 은 미디어 스코프가 쓰는 폭과 **같은 수**여야 한다),
+ * 값을 손으로 적지 않는다.의 규칙 그대로다. 여기서 지키는 것은 **규칙**이다:
+ * 다크는 넷을 한 칸 올리고(그 한 칸 은 미디어 스코프가 쓰는 폭과 **같은 수**여야 한다),
  * 라이트는 아무것도 안 바꾼다.
  */
-describe('시트 스코프 — 다크에서만 표면 계열을 한 칸 올린다 ([[ADR-179]])', () => {
+describe('시트 스코프. 다크에서만 표면 계열을 한 칸 올린다', () => {
   const SCOPED = ['--color-bg', '--color-surface', '--color-surface-2', '--color-track'] as const
 
   it.each(THEME_NAMES as readonly ThemeName[])('%s 는 넷을 빠짐없이 다시 선언한다', (name) => {
@@ -228,15 +228,15 @@ describe('시트 스코프 — 다크에서만 표면 계열을 한 칸 올린�
       ['--color-track', 'track'],
     ] as const)('%s 가 원래 값보다 한 칸 밝다', (variable, token) => {
       expect(scope[variable]).not.toBe(definition[token])
-      // 자릿수 2 는 hex 양자화 몫이다 — 값이 8비트 채널로 굳었다가 다시 읽히므로 L 이 최대
-      // 0.0014 흔들린다(실측). 재는 폭이 0.09 라 그 흔들림에 가려질 회귀는 없다.
+      // 자릿수 2 는 hex 양자화 몫이다. 값이 8비트 채널로 굳었다가 다시 읽히므로 L 이 최대
+      // 0.0014 흔들린다. 재는 폭이 0.09 라 그 흔들림에 가려질 회귀는 없다.
       expect(hexToOklch(scope[variable]!).l).toBeCloseTo(
         hexToOklch(definition[token]).l + SHEET_LIFT,
         2,
       )
     })
 
-    // 넷을 함께 올리는 이유가 이것이다 — 몸통만 올리면 안쪽 타일이 몸통과 같은 색이 되고,
+    // 넷을 함께 올리는 이유가 이것이다. 몸통만 올리면 안쪽 타일이 몸통과 같은 색이 되고,
     // 몸통을 더 올리면 타일이 몸통보다 어두워진다. 계열째 올려야 위계가 그대로다.
     it('올린 뒤에도 bg < surface < surface-2 순서가 그대로다', () => {
       const lightnessOf = (variable: (typeof SCOPED)[number]): number =>
@@ -246,8 +246,8 @@ describe('시트 스코프 — 다크에서만 표면 계열을 한 칸 올린�
       expect(lightnessOf('--color-surface')).toBeLessThan(lightnessOf('--color-surface-2'))
     })
 
-    // 시트가 «스크림 깔린 배경» 위로 떠오르는 것이 이 결정의 목적이다. 새까만 근처에서 WCAG 비는
-    // 눌리므로([[ADR-179]] 결정 1) 눈에 가까운 OKLCH 명도차로 잰다. 0.10 은 실측 셋(0.133~0.139)
+    // 시트가 **스크림 깔린 배경** 위로 떠오르는 것이 이 결정의 목적이다. 새까만 근처에서 WCAG 비는
+    // 눌리므로 눈에 가까운 OKLCH 명도차로 잰다. 0.10 은 세 값(0.133~0.139)
     // 아래이고 종전 값(0.043~0.050)보다는 확실히 위인 자리다.
     it('스크림 깔린 배경과 ΔL 0.10 이상 벌어진다', () => {
       const alpha = Number.parseInt(definition.scrim.slice(7, 9), 16) / 255
@@ -264,7 +264,7 @@ describe('시트 스코프 — 다크에서만 표면 계열을 한 칸 올린�
     })
   })
 
-  // 「한 칸」이 두 벌이 되면 어느 쪽이 진짜인지 알 수 없게 된다 — 미디어 스코프가 카드 안
+  // `한 칸`이 두 벌이 되면 어느 쪽이 진짜인지 알 수 없게 된다. 미디어 스코프가 카드 안
   // `surface → surface-2` 를 벌릴 때 쓰는 폭과 **같은 수**여야 한다.
   it('한 칸은 미디어 스코프가 쓰는 폭과 같은 수다', () => {
     const definition = getThemeDefinition('레테')

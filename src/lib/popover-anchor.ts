@@ -1,7 +1,7 @@
 export interface PopoverAnchorInput {
   /** 팝오버가 들어갈 컨테이너(카드)의 폭 */
   containerWidth: number
-  /** 트리거 중심의 x — 컨테이너 왼쪽 변 기준 */
+  /** 트리거 중심의 x. 컨테이너 왼쪽 변 기준 */
   anchorCenterX: number
   popoverWidth: number
   /** 컨테이너 좌우로 남길 최소 여백 */
@@ -18,9 +18,9 @@ export interface PopoverAnchorGeometry {
 }
 
 /**
- * 트리거 x에 맞춰 팝오버와 꼬리 위치를 계산한다([[ADR-068]] 결정 3 정정 3).
+ * 트리거 x에 맞춘 팝오버와 꼬리 위치.
  *
- * 트리거가 컨테이너 가장자리 쪽에 있으면 팝오버를 그대로 두면 밖으로 나간다 — 팝오버는 `edgeGap`
+ * 트리거가 컨테이너 가장자리 쪽에 있으면 팝오버를 그대로 두면 밖으로 나간다. 팝오버는 `edgeGap`
  * 안쪽으로 clamp하고 **꼬리만 트리거를 지목**한다. 그래서 clamp된 상황에서도 "어느 것을 눌러서 뜬
  * 설명인지"가 남는다. 꼬리도 팝오버 모서리를 넘지 않게 제한한다(넘으면 둥근 모서리에 잘린다).
  *

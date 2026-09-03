@@ -1,24 +1,5 @@
-// 웹판 넷(`BossScreen.test.tsx` 1,695줄 · `.view-state` · `.cold-start` · `.dom-snapshot`)의
+// 보스 스케줄러 화면이 지키는 것을 적는다.
 // **명세를 읽어 다시 쓴 것**이다.
-//
-// ── 갈린 것 여섯 ─────────────────────────────────────────────────────────────────────
-//
-// ① **라우터 프로브가 없다** — 이동은 `navigation.navigate(…)` 가 불렸는가로 본다. 웹은
-//    `/boss/manage` 에 프로브 요소를 두고 그것이 나타나는지 봤다. **목적지는 [[ADR-145]] 결정 1 로
-//    `'BossManage'`(push) → `('Tabs', { screen: 'BossManage' })`(형제 탭) 이 됐다.**
-// ② **당겨서 새로고침이 `RefreshControl` 이다**([[ADR-130]]). 웹의 제스처 시뮬레이션 넷(임계
-//    넘김/미달 · 배너 위치 · 목록 transform)은 **옮길 계약이 아니다** — 그 값들을 이제 OS 가 갖는다.
-//    남는 계약은 *"당김이 헤더 버튼과 같은 재조회를 부르는가"*([[ADR-072]] 결정 2)와 *"버튼이 그대로
-//    남는가"*(결정 10) 둘이고, 컨텐츠 스케줄러와 **같은 방식으로** 본다(두 탭이 갈리면 회귀다).
-// ③ **고정 헤더 실측·spacer 계약이 사라진다** — `fixed` 도 spacer 도 옮길 자리가 없고
-//    ([[ADR-085]]·[[ADR-112]], `PageHeader` 파일 머리), [[ADR-131]] 뒤로는 헤더가 고정되지도
-//    않는다. 대신 *"헤더가 셸의 `header` 로 들어가고 모달은 셸 바깥"* 을 본다.
-// ④ `getByRole('combobox')`(웹 `<select>`) → **드롭다운 트리거의 캐릭터 이름**으로 기다린다.
-// ⑤ **콜드 스타트 파일이 따로 없다** — 웹은 선하이드레이션 하네스를 세워 프레임 순서를 봤는데,
-//    RN 에서 그 순서를 만드는 것은 `AppShell` 의 `prehydrateTabStores` 이고 그쪽 테스트가 이미
-//    갖고 있다([[ADR-101]] 결정 2). 여기 남는 것은 **[[ADR-101]] 결정 1** — `null` 을 0명으로 읽지
-//    않는가 — 이고 그것은 한 케이스다.
-// ⑥ DOM 스냅샷 둘은 옮기지 않는다(전환 계획서 «잃는 안전망») — 대신 각 가지를 케이스로 적는다.
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import { act, fireEvent, screen, within } from '@testing-library/react-native'
 import { useState } from 'react'
@@ -36,23 +17,23 @@ import { renderOverlay, type AtomElement } from '../../../components/__tests__/r
 import { useScreenNavigation } from '../../use-screen-navigation'
 import { BossScreen } from '../BossScreen'
 
-// 이름이 `mock` 으로 시작해야 한다 — babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데
+// 이름이 `mock` 으로 시작해야 한다. babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데
 // 그 접두사만 예외로 통과시킨다.
 const mockShowError = jest.fn()
 const mockShowInfo = jest.fn()
 const mockNoticeApiKeyIssue = jest.fn()
 const navigate = jest.fn()
-// 층이 스택이 된 뒤로 «그룹 층으로 되돌리기» 는 액션이다([[ADR-167]]) — 화면이 이것도 부른다.
+// 층이 스택이 된 뒤로 **그룹 층으로 되돌리기** 는 액션이다. 화면이 이것도 부른다.
 const dispatch = jest.fn()
 
-// [[ADR-063]]: 동기화 실패·파티원 수 저장 실패는 인라인 문단이 아니라 토스트다.
+// 동기화 실패·파티원 수 저장 실패는 인라인 문단이 아니라 토스트다.
 jest.mock('../../../features/toast/store', () => ({
   useToastStore: {
     getState: () => ({ showError: mockShowError, showSuccess: jest.fn(), showInfo: mockShowInfo }),
   },
 }))
 
-// [[ADR-115]] 결정 7 · [[ADR-116]] 결정 1: 401·429 는 토스트가 아니라 키 재입력 진입점으로 간다.
+// 401·429 는 토스트가 아니라 키 재입력 진입점으로 간다.
 jest.mock('../../../features/onboarding/store', () => ({
   useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
 }))
@@ -64,8 +45,8 @@ jest.mock('../../../features/boss-scheduler/store', () => ({
 
 jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
 
-// **로스터 조회 목도 라우트 목도 여기 없다** — 이 화면은 더 이상 피커를 열지 않고 `openPicker`
-// 파라미터도 받지 않으므로 `schedule-sync` 와 `useRoute` 를 아예 부르지 않는다([[ADR-140]]).
+// **로스터 조회 목도 라우트 목도 여기 없다**. 이 화면은 더 이상 피커를 열지 않고 `openPicker`
+// 파라미터도 받지 않으므로 `schedule-sync` 와 `useRoute` 를 아예 부르지 않는다.
 // 둘 다 설정 화면 테스트로 옮겨갔다.
 
 const mockedStore = jest.mocked(useBossSchedulerStore)
@@ -76,7 +57,7 @@ const mockedNavigation = jest.mocked(useScreenNavigation)
 type Store = BossSchedulerStore
 
 /**
- * 탭과 두 필터가 스토어 소유라([[ADR-096]] 결정 1) 정적 목으로는 전환이 렌더에 반영되지 않는다 —
+ * 탭과 두 필터가 스토어 소유라 정적 목으로는 전환이 렌더에 반영되지 않는다.
  * 모킹된 훅도 렌더 중에 불리므로 여기서 `useState` 로 실물과 같은 "값 + 세터" 쌍을 흉내 낸다.
  */
 function mockStore(overrides: Partial<Store> = {}): Store {
@@ -89,7 +70,7 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     manualTrackedByOcid: {},
     loadTrackedOcids: jest.fn(),
     saveTrackedOcids: jest.fn(),
-    // 실물은 `Promise<void>` 다 — 당김 훅이 회차의 «끝» 을 기다린다([[ADR-160]] 결정 1).
+    // 실물은 `Promise<void>` 다. 당김 훅이 회차의 **끝** 을 기다린다.
     refresh: jest.fn().mockResolvedValue(undefined),
     loadPartySizes: jest.fn(),
     setPartySize: jest.fn(),
@@ -109,9 +90,9 @@ function mockStore(overrides: Partial<Store> = {}): Store {
 }
 
 /**
- * 화면에 **선** 섹션 헤더를 위에서 아래 순서로 — `['monthly', 'weekly']`.
+ * 화면에 **선** 섹션 헤더를 위에서 아래 순서로. `['monthly', 'weekly']`.
  *
- * 무리가 비면 헤더도 안 서므로([[ADR-164]] 결정 6) 이 배열이 곧 «지금 무엇이 보이는가» 다.
+ * 무리가 비면 헤더도 안 서므로 이 배열이 곧 지금 무엇이 보이는가 다.
  */
 function sectionOrder(): string[] {
   return screen
@@ -134,7 +115,7 @@ function character(overrides: Partial<BossCharacterView> = {}): BossCharacterVie
   }
 }
 
-// 보스 이름·난이도는 **참조 데이터에 실재하는 것만** 쓴다([[ADR-006]] — 게임 수치를 지어내지 않는다).
+// 보스 이름·난이도는 **참조 데이터에 실재하는 것만** 쓴다(게임 수치를 지어내지 않는다).
 function boss(overrides: Partial<MatchedBoss> = {}): MatchedBoss {
   return {
     apiName: '자쿰',
@@ -160,7 +141,7 @@ async function press(element: AtomElement): Promise<void> {
   })
 }
 
-/** 글자에서 위로 올라가 실제로 눌리는 조상을 찾는다(웹의 `getByRole('button', { name })`). */
+/** 글자에서 위로 올라가 실제로 눌리는 조상을 찾는 도우미. */
 function button(label: string, index = 0): AtomElement {
   let node: AtomElement | null = screen.getAllByText(label)[index]
   while (node !== null && node.props.role !== 'button') node = node.parent
@@ -168,19 +149,19 @@ function button(label: string, index = 0): AtomElement {
   return node
 }
 
-/** 스크롤 셸에 붙은 당겨서 새로고침 컨트롤([[ADR-130]] 결정 1). */
+/** 스크롤 셸에 붙은 당겨서 새로고침 컨트롤. */
 function refreshControl(): { refreshing: boolean; onRefresh: () => void } {
   return screen.getByTestId('screen-scroll').props.refreshControl.props
 }
 
-/** 두 노드를 **같은 줄**로 묶는 가장 작은 상자([[ADR-141]] — 아래 케이스가 그것으로 자리를 본다). */
+/** 두 노드를 **같은 줄**로 묶는 가장 작은 상자(아래 케이스가 그것으로 자리를 본다). */
 function nearestCommonAncestor(a: AtomElement, b: AtomElement): AtomElement {
   const ancestors = new Set<AtomElement>()
   for (let node: AtomElement | null = a; node !== null; node = node.parent) ancestors.add(node)
   for (let node: AtomElement | null = b; node !== null; node = node.parent) {
     if (ancestors.has(node)) return node
   }
-  throw new Error('공통 조상이 없다 — 두 노드가 같은 트리에 있지 않다')
+  throw new Error('공통 조상이 없다. 두 노드가 같은 트리에 있지 않다')
 }
 
 function contains(ancestor: AtomElement, node: AtomElement): boolean {
@@ -200,13 +181,13 @@ beforeEach(() => {
   useTrackingModeStore.setState({ mode: 'auto' })
 })
 
-// 선택은 이제 화면 스토어가 아니라 `useCharacterSelectionStore` 가 갖는다([[ADR-159]]).
+// 선택은 이제 화면 스토어가 아니라 `useCharacterSelectionStore` 가 갖는다.
 // 실물 스토어라 값이 파일 안에서 넘어가므로 테스트마다 되돌린다.
 beforeEach(() => {
   useCharacterSelectionStore.setState({ selectedOcid: null })
 })
 
-describe('BossScreen — 빈 상태와 마운트', () => {
+describe('BossScreen: 빈 상태와 마운트', () => {
   it('마운트하면 loadTrackedOcids 를 부른다', async () => {
     const store = mockStore()
 
@@ -224,8 +205,8 @@ describe('BossScreen — 빈 상태와 마운트', () => {
     expect(screen.queryByTestId('screen-scroll')).toBeNull()
   })
 
-  // [[ADR-101]] 결정 1 — `null` 은 "0명"이 아니라 "아직 안 읽었다"다. 콜드 스타트 첫 페인트가
-  // 모르는 사실을 단정하면 안 된다(웹은 이 계약에 파일 하나를 썼다 — 파일 머리 ⑤).
+  // `null` 은 "0명"이 아니라 "아직 안 읽었다"다. 콜드 스타트 첫 페인트가
+  // 모르는 사실을 단정하면 안 된다.
   it('추적 목록이 null(미로드)이면 빈 상태가 아니라 로딩을 보여준다', async () => {
     mockStore({ trackedOcids: null, status: 'idle' })
 
@@ -235,15 +216,15 @@ describe('BossScreen — 빈 상태와 마운트', () => {
     expect(screen.getByText('불러오고 있어요')).toBeTruthy()
   })
 
-  // [[ADR-140]] 결정 1·2: 이 화면은 피커를 열지 않는다 — 설정 탭을 **열린 채로** 연다.
-  // 웹의 `?openPicker=1` 을 받던 자리도 그리로 옮겨갔다(`SettingsScreen.test.tsx`).
+  // 이 화면은 피커를 열지 않는다. 설정 탭을 **열린 채로** 연다.
+// 피커를 여는 파라미터를 받던 자리도 그리로 옮겨갔다(`SettingsScreen.test.tsx`).
   it('빈 상태 CTA 를 누르면 설정 탭을 피커가 열린 채로 연다', async () => {
     mockStore({ trackedOcids: [] })
     await renderScreen()
 
     await press(button('캐릭터 선택하기'))
 
-    // 층이 스택이 되면서 이동이 두 단 중첩이 됐다([[ADR-167]] 결정 2) — 설정은 **그룹 층**에
+    // 층이 스택이 되면서 이동이 두 단 중첩이 됐다. 설정은 **그룹 층**에
     // 살고, 파라미터는 가장 안쪽 화면에 붙는다.
     expect(navigate).toHaveBeenCalledWith('Main', {
       screen: 'Groups',
@@ -253,7 +234,7 @@ describe('BossScreen — 빈 상태와 마운트', () => {
   })
 })
 
-describe('BossScreen — 목록 ([[ADR-031]])', () => {
+describe('BossScreen: 목록', () => {
   const withBosses = (): Store =>
     mockStore({
       status: 'loaded',
@@ -281,7 +262,7 @@ describe('BossScreen — 목록 ([[ADR-031]])', () => {
       ],
     })
 
-  // [[ADR-164]] 결정 1·3: 탭이 없다. 한 목록에 월간이 먼저 서고 주간이 뒤따르며, 무리마다
+  // 탭이 없다. 한 목록에 월간이 먼저 서고 주간이 뒤따르며, 무리마다
   // 섹션 헤더가 붙는다.
   it('탭 없이 월간·주간이 한 목록에 서고, 등록된 보스만 보인다', async () => {
     withBosses()
@@ -292,11 +273,11 @@ describe('BossScreen — 목록 ([[ADR-031]])', () => {
     expect(screen.getByText('자쿰')).toBeTruthy()
     expect(screen.getByText('카오스')).toBeTruthy()
     expect(screen.queryByText('매그너스')).toBeNull()
-    // 탭 버튼이 있던 자리는 이제 섹션 헤더다 — 누르는 것이 아니라 읽는 것이다.
+    // 탭 버튼이 있던 자리는 이제 섹션 헤더다. 누르는 것이 아니라 읽는 것이다.
     expect(screen.queryByRole('button', { name: '월간' })).toBeNull()
   })
 
-  // 화면에 그려진 순서를 직접 못 박는다 — «둘 다 보인다» 만으로는 위아래가 안 잡힌다.
+  // 화면에 그려진 순서를 직접 못 박는다. **둘 다 보인다** 만으로는 위아래가 안 잡힌다.
   it('월간 무리가 주간 무리보다 위에 있다', async () => {
     withBosses()
 
@@ -305,9 +286,9 @@ describe('BossScreen — 목록 ([[ADR-031]])', () => {
     expect(sectionOrder()).toEqual(['monthly', 'weekly'])
   })
 
-  // [[ADR-164]] 결정 3: 탭이 사라지며 갈 곳을 잃는 표시가 「주간」 헤더에 붙는다 — 12 는 주간
-  // 한도이므로([[ADR-055]] 결정 8) 그 수치가 어느 무리의 것인지 헤더가 대신 말한다.
-  it('n/12 배지는 「주간」 섹션 헤더에 붙는다', async () => {
+  // 탭이 사라지며 갈 곳을 잃는 표시가 `주간` 헤더에 붙는다. 12 는 주간
+  // 한도이므로 그 수치가 어느 무리의 것인지 헤더가 대신 말한다.
+  it('n/12 배지는 `주간` 섹션 헤더에 붙는다', async () => {
     withBosses()
 
     await renderScreen()
@@ -322,11 +303,11 @@ describe('BossScreen — 목록 ([[ADR-031]])', () => {
 
     await renderScreen()
 
-    // 검마만 완료다(위 fixture) — 자쿰은 미완료라 배지가 하나뿐이다.
+    // 검마만 완료다(위 fixture). 자쿰은 미완료라 배지가 하나뿐이다.
     expect(screen.getAllByText('완료')).toHaveLength(1)
   })
 
-  // [[ADR-031]] 결정 5 — 미등록이어도 완료된 보스는 목록에 남는다(게임에서 지웠어도 잡은 것은 사실).
+  // 미등록이어도 완료된 보스는 목록에 남는다(게임에서 지웠어도 잡은 것은 사실).
   it('미등록이어도 완료된 보스는 카드로 표시된다', async () => {
     mockStore({
       status: 'loaded',
@@ -347,7 +328,7 @@ describe('BossScreen — 목록 ([[ADR-031]])', () => {
     expect(screen.queryByText('매그너스')).toBeNull()
   })
 
-  // [[ADR-016]] — 캐시가 있으면 재검증 중에도 계속 보여준다(셸 승계 카드는 보여줄 게 없을 때만).
+  // 캐시가 있으면 재검증 중에도 계속 보여준다(셸 승계 카드는 보여줄 게 없을 때만).
   it('status 가 loading 이어도 캐시된 목록이 있으면 로딩 대신 목록을 보여준다', async () => {
     mockStore({ status: 'loading', trackedOcids: ['ocid-1'], characters: [character({ weeklyBosses: [boss()] })] })
 
@@ -361,13 +342,13 @@ describe('BossScreen — 목록 ([[ADR-031]])', () => {
     withBosses()
     await renderScreen()
 
-    // **모달이 셸 바깥인지를 묻던 짝은 함께 사라졌다** — 이 화면에 캐릭터 관리 모달이 없다
-    // ([[ADR-140]]). 파티 인원 모달([[ADR-121]])은 아래 절이 따로 본다.
+    // **모달이 셸 바깥인지를 묻던 짝은 함께 사라졌다**. 이 화면에 캐릭터 관리 모달이 없다
+    // 파티 인원 모달은 아래 절이 따로 본다.
     expect(screen.getByTestId('page-header')).toBeTruthy()
     expect(screen.getByTestId('screen-scroll')).toBeTruthy()
   })
 
-  // [[ADR-140]] 결정 1 이 "캐릭터 관리"를 걷었고, [[ADR-145]] 결정 1 이 남은 "보스 관리"마저 걷는다
+  //  이 "캐릭터 관리"를 걷었고 이 남은 "보스 관리"마저 걷는다
   // (그쪽은 하단바의 하위 탭이 됐다). 목록이 있는 화면에서 제목 줄에 남는 것은 상태와 새로고침뿐이다.
   it('헤더에 "캐릭터 관리"도 "보스 관리"도 없다', async () => {
     withBosses()
@@ -378,7 +359,7 @@ describe('BossScreen — 목록 ([[ADR-031]])', () => {
     expect(screen.queryByText('보스 관리')).toBeNull()
   })
 
-  // [[ADR-143]] 결정 3: 스토어는 레벨 내림차순으로 준다([[ADR-017]] 결정 2) — 그 위에 사용자가
+  // 스토어는 레벨 내림차순으로 준다. 그 위에 사용자가
   // 정한 저장 배열 순서를 얹는다. 그래서 **입력 순서와 다른 순서**로 주는 것이 이 케이스의 요점이다.
   it('레일 순서는 스토어 순서가 아니라 trackedOcids 저장 순서다', async () => {
     mockStore({
@@ -395,7 +376,7 @@ describe('BossScreen — 목록 ([[ADR-031]])', () => {
     ])
   })
 
-  // 순서를 정하는 함수가 목록의 크기를 바꾸면 안 된다 — 저장 직후·동기화 중간 커밋에서 두 목록이
+  // 순서를 정하는 함수가 목록의 크기를 바꾸면 안 된다. 저장 직후·동기화 중간 커밋에서 두 목록이
   // 한순간 어긋나는데, 그때 카드가 통째로 사라지는 것이 가장 나쁜 실패다.
   it('저장 목록에 없는 캐릭터도 레일에서 사라지지 않는다', async () => {
     mockStore({
@@ -413,8 +394,8 @@ describe('BossScreen — 목록 ([[ADR-031]])', () => {
   })
 })
 
-// [[ADR-031]] 결정 3 · [[ADR-056]] 결정 2 — 판정은 화면이 아니라 `isChallengersWorld` 가 한다.
-describe('BossScreen — 챌린저스 시즌 보스 배지 ([[ADR-031]])', () => {
+// 판정은 화면이 아니라 `isChallengersWorld` 가 한다.
+describe('BossScreen: 챌린저스 시즌 보스 배지', () => {
   const seasonBoss = (overrides: Partial<MatchedBoss> = {}): MatchedBoss =>
     boss({
       apiName: '시즌 보스 메이린',
@@ -442,17 +423,17 @@ describe('BossScreen — 챌린저스 시즌 보스 배지 ([[ADR-031]])', () =>
     expect(screen.getByText('season 미완료')).toBeTruthy()
   })
 
-  // [[ADR-164]] 결정 6 의 «빈 무리는 헤더도 걷는다» 에 예외가 하나 있다 — **배지를 싣고 있으면
+  // **빈 무리는 헤더도 걷는다** 에 예외가 하나 있다. **배지를 싣고 있으면
   // 남긴다.** 탭 시절 이 배지들은 목록이 비어도 탭 줄에 떠 있었고, 무리가 비었다는 이유로 지우면
-  // «이번 주 몇 마리 잡았나» 를 말할 자리가 아예 없어진다.
-  it('주간 카드가 하나도 안 서도 배지를 실은 「주간」 헤더는 남는다', async () => {
+  // **이번 주 몇 마리 잡았나** 를 말할 자리가 아예 없어진다.
+  it('주간 카드가 하나도 안 서도 배지를 실은 `주간` 헤더는 남는다', async () => {
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
       characters: [
         character({
           world: '챌린저스2',
-          // 미등록·미완료라 카드로는 안 선다([[ADR-031]] 결정 5).
+          // 미등록·미완료라 카드로는 안 선다.
           weeklyBosses: [seasonBoss()],
           monthlyBosses: [
             boss({
@@ -495,7 +476,7 @@ describe('BossScreen — 챌린저스 시즌 보스 배지 ([[ADR-031]])', () =>
     expect(screen.queryByText(/season/)).toBeNull()
   })
 
-  // 월드를 모르는 구버전 캐시는 비-챌린저스로 취급한다 — 관리 페이지의 목록 판정과 같아야 한다.
+  // 월드를 모르는 구버전 캐시는 비-챌린저스로 취급한다. 관리 페이지의 목록 판정과 같아야 한다.
   it('월드를 모르면 배지가 없다', async () => {
     withWorld(undefined, [seasonBoss()])
 
@@ -513,7 +494,7 @@ describe('BossScreen — 챌린저스 시즌 보스 배지 ([[ADR-031]])', () =>
   })
 })
 
-describe('BossScreen — 재조회 ([[ADR-072]] · [[ADR-130]])', () => {
+describe('BossScreen: 재조회', () => {
   const loaded = (status: Store['status'] = 'loaded'): Store =>
     mockStore({ status, trackedOcids: ['ocid-1'], characters: [character({ weeklyBosses: [boss()] })] })
 
@@ -526,7 +507,7 @@ describe('BossScreen — 재조회 ([[ADR-072]] · [[ADR-130]])', () => {
     expect(store.refresh).toHaveBeenCalledWith(['ocid-1'])
   })
 
-  // [[ADR-130]] 결정 1 — 당김과 버튼이 **같은 재조회**를 부른다([[ADR-072]] 결정 2). 컨텐츠
+  // 당김과 버튼이 **같은 재조회**를 부른다. 컨텐츠
   // 스케줄러와 같은 배선이어야 한다.
   it('당겨서 새로고침은 헤더 버튼과 같은 재조회를 부른다', async () => {
     const store = loaded()
@@ -539,7 +520,7 @@ describe('BossScreen — 재조회 ([[ADR-072]] · [[ADR-130]])', () => {
     expect(store.refresh).toHaveBeenCalledWith(['ocid-1'])
   })
 
-  // [[ADR-072]] 결정 10 — 제스처를 붙여도 버튼은 그대로 남는다(추가 수단이지 대체가 아니다).
+  // 제스처를 붙여도 버튼은 그대로 남는다(추가 수단이지 대체가 아니다).
   it('제스처가 붙어도 헤더 버튼은 남는다', async () => {
     loaded()
     await renderScreen()
@@ -548,13 +529,11 @@ describe('BossScreen — 재조회 ([[ADR-072]] · [[ADR-130]])', () => {
     expect(refreshControl()).toBeDefined()
   })
 
-  // ★ 회귀 가드 — **«조회 중» 과 «당겼다» 는 다른 사실이다** ([[ADR-160]] 결정 1).
+  // 회귀 가드. 조회 중 과 당겼다 는 다른 사실이다.
   //
-  // 종전에는 `refreshing = status === 'loading'` 이라, 화면 마운트 하이드레이션만으로 인디케이터가
-  // 프로그램적으로 열렸다. 사용자 보고(2026-08-22) *"페이지 이동 시 새로고침 인디케이터가 저절로
-  // 돌고 상단이 빈 채로 멈춘다"* 가 그 증상이다. «조회 중...» 은 그대로 뜬다 — 그쪽이 조회를
-  // 말하는 자리다.
-  it('조회 중이어도 인디케이터는 안 돈다 — "조회 중..." 만 보여준다', async () => {
+  // `refreshing = status === 'loading'` 으로 두면 화면 마운트 하이드레이션만으로 인디케이터가
+  // 프로그램적으로 열린다. 조회 중… 은 그대로 뜬다. 그쪽이 조회를 말하는 자리다.
+  it('조회 중이어도 인디케이터는 안 돈다. "조회 중..." 만 보여준다', async () => {
     loaded('loading')
     await renderScreen()
 
@@ -562,8 +541,8 @@ describe('BossScreen — 재조회 ([[ADR-072]] · [[ADR-130]])', () => {
     expect(refreshControl().refreshing).toBe(false)
   })
 
-  // [[ADR-141]] 결정 1: 동기화 상태는 드롭다운 줄이 아니라 **제목 줄**에 있다(컨텐츠 스케줄러와
-  // 같은 케이스 — 그 파일이 판정 방법을 적는다).
+  // 동기화 상태는 드롭다운 줄이 아니라 **제목 줄**에 있다(컨텐츠 스케줄러와
+  // 같은 케이스. 그 파일이 판정 방법을 적는다).
   it('새로고침과 동기화 시각이 제목과 같은 줄에 있다', async () => {
     loaded()
     await renderScreen()
@@ -574,14 +553,14 @@ describe('BossScreen — 재조회 ([[ADR-072]] · [[ADR-130]])', () => {
     )
 
     expect(contains(titleRow, screen.getByText('동기화 기록 없음'))).toBe(true)
-    // 아래 줄에 있어야 하는 것은 이제 초상화 레일이다([[ADR-142]]).
+    // 아래 줄에 있어야 하는 것은 이제 초상화 레일이다.
     expect(contains(titleRow, screen.getByTestId('character-rail'))).toBe(false)
-    // **관리 버튼과 겨루던 짝은 사라졌다**([[ADR-145]] 결정 1) — 그 줄에 남은 것이 제목·상태·
+    // **관리 버튼과 겨루던 짝은 사라졌다**. 그 줄에 남은 것이 제목·상태·
     // 새로고침 셋뿐이라, 폭을 다투는 상대가 없다.
   })
 })
 
-describe('BossScreen — 실패의 목적지', () => {
+describe('BossScreen: 실패의 목적지', () => {
   const failWith = (error: Store['error']): Store =>
     mockStore({ status: 'error', error, trackedOcids: ['ocid-1'], characters: [character()] })
 
@@ -594,7 +573,7 @@ describe('BossScreen — 실패의 목적지', () => {
     expect(mockShowError).not.toHaveBeenCalled()
   })
 
-  it('429 도 같은 진입점을 탄다 — 토스트는 아예 없다', async () => {
+  it('429 도 같은 진입점을 탄다. 토스트는 아예 없다', async () => {
     failWith({ kind: 'rateLimited' })
 
     await renderScreen()
@@ -614,7 +593,7 @@ describe('BossScreen — 실패의 목적지', () => {
     expect(store.refresh).toHaveBeenCalledWith(['ocid-1'])
   })
 
-  // [[ADR-083]] 결정 1 — 실패의 대부분은 전역이 아니라 **캐릭터별**로 온다.
+  // 실패의 대부분은 전역이 아니라 **캐릭터별**로 온다.
   it('캐릭터별 실패도 토스트다', async () => {
     mockStore({
       status: 'loaded',
@@ -627,7 +606,7 @@ describe('BossScreen — 실패의 목적지', () => {
     expect(mockShowError).toHaveBeenCalledTimes(1)
   })
 
-  // [[ADR-083]] 결정 2 — 영구 실패라 "다시 시도"는 눌러도 같은 400 이다.
+  // 영구 실패라 "다시 시도"는 눌러도 같은 400 이다.
   it('characterUnavailable 토스트에는 액션이 없다', async () => {
     mockStore({
       status: 'loaded',
@@ -655,14 +634,14 @@ describe('BossScreen — 실패의 목적지', () => {
   })
 })
 
-describe('BossScreen — 솔로/파티 필터 ([[ADR-019]] · [[ADR-096]])', () => {
+describe('BossScreen: 솔로/파티 필터', () => {
   const 스우 = boss({ apiName: '스우', matchedBossName: '스우', difficulty: '하드', portraitSlug: 'lucid' })
 
   const withFilterFixture = (): Store =>
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
-      // 자쿰만 4인 파티 — 나머지는 설정이 없어 솔로로 친다([[ADR-019]] 결정 3).
+      // 자쿰만 4인 파티. 나머지는 설정이 없어 솔로로 친다.
       partySizes: { 'ocid-1:자쿰:카오스': 4 },
       characters: [character({ weeklyBosses: [boss(), 스우] })],
     })
@@ -696,7 +675,7 @@ describe('BossScreen — 솔로/파티 필터 ([[ADR-019]] · [[ADR-096]])', () 
     expect(screen.queryByText('자쿰')).toBeNull()
   })
 
-  // [[ADR-164]] 결정 5([[ADR-019]] 결정 6 정정) — 목록이 하나라 필터도 하나다. 「파티」를 고르면
+  // 목록이 하나라 필터도 하나다. `파티` 를 고르면
   // 두 무리 모두에 걸린다(전에는 주간 필터가 월간 목록을 건드리지 않았다).
   it('필터 하나가 두 무리에 함께 걸린다', async () => {
     mockStore({
@@ -722,17 +701,17 @@ describe('BossScreen — 솔로/파티 필터 ([[ADR-019]] · [[ADR-096]])', () 
 
     await press(button('파티'))
 
-    // 자쿰만 파티 설정(4인)이 있다 — 검마와 스우는 미설정이라 솔로로 취급돼 함께 사라진다.
+    // 자쿰만 파티 설정(4인)이 있다. 검마와 스우는 미설정이라 솔로로 취급돼 함께 사라진다.
     expect(screen.getByText('자쿰')).toBeTruthy()
     expect(screen.queryByText('검은마법사')).toBeNull()
     expect(screen.queryByText('스우')).toBeNull()
-    // 무리가 비면 그 헤더도 함께 사라진다([[ADR-164]] 결정 6).
+    // 무리가 비면 그 헤더도 함께 사라진다.
     expect(sectionOrder()).toEqual(['weekly'])
   })
 
-  // 보스가 0건인 빈 상태와 **다른 문구·다른 CTA** 다([[ADR-060]] 결정 3).
+  // 보스가 0건인 빈 상태와 **다른 문구·다른 CTA** 다.
   it('필터 결과가 0개면 필터 빈 상태를 보여주고 CTA 가 필터를 되돌린다', async () => {
-    // 파티 설정이 하나도 없으므로 "파티" 필터의 결과가 0이다 — 보스 자체는 있다.
+    // 파티 설정이 하나도 없으므로 "파티" 필터의 결과가 0이다. 보스 자체는 있다.
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
@@ -753,19 +732,19 @@ describe('BossScreen — 솔로/파티 필터 ([[ADR-019]] · [[ADR-096]])', () 
   })
 })
 
-describe('BossScreen — 빈 상태 문구 ([[ADR-060]])', () => {
-  it('자동 모드는 게임 등록을 안내하고 CTA 가 없다 — 목적지가 앱 밖이다', async () => {
+describe('BossScreen: 빈 상태 문구', () => {
+  it('자동 모드는 게임 등록을 안내하고 CTA 가 없다. 목적지가 앱 밖이다', async () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
 
     await renderScreen()
 
     expect(screen.getByText('등록된 보스가 없습니다')).toBeTruthy()
-    // 헤더 버튼이 사라졌으므로([[ADR-145]] 결정 1) 이 화면에 "보스 관리"라는 글자는 **하나도 없다** —
+    // 헤더 버튼이 사라졌으므로 이 화면에 "보스 관리"라는 글자는 **하나도 없다**.
     // 자동 모드에는 CTA 도 없다.
     expect(screen.queryByText('보스 관리')).toBeNull()
   })
 
-  // [[ADR-145]] 결정 1: CTA 는 남되 목적지가 하위 페이지가 아니라 **형제 탭**이다. 헤더 버튼이
+  // CTA 는 남되 목적지가 하위 페이지가 아니라 **형제 탭**이다. 헤더 버튼이
   // 사라져 같은 라벨을 다투는 상대도 없어졌다.
   it('수동 모드는 "보스 관리" CTA 를 주고, 누르면 그 탭으로 간다', async () => {
     useTrackingModeStore.setState({ mode: 'manual' })
@@ -775,8 +754,8 @@ describe('BossScreen — 빈 상태 문구 ([[ADR-060]])', () => {
     expect(screen.getByText('추적할 보스가 없습니다')).toBeTruthy()
     await press(button('보스 관리'))
 
-    // 보스 관리는 이 화면과 **같은 스케줄러 단**에 산다 — 층은 안 바뀌고 그 안에서 옆걸음한다
-    // ([[ADR-167]] 결정 3).
+    // 보스 관리는 이 화면과 **같은 스케줄러 단**에 산다. 층은 안 바뀌고 그 안에서 옆걸음한다
+    //
     expect(navigate).toHaveBeenCalledWith('Main', {
       screen: 'ScheduleSubs',
       params: { screen: 'BossManage' },
@@ -792,9 +771,9 @@ describe('BossScreen — 빈 상태 문구 ([[ADR-060]])', () => {
     expect(screen.queryByText('등록된 보스가 없습니다')).toBeNull()
   })
 
-  // [[ADR-035]] 결정 18 의 헤더 진입점이 [[ADR-145]] 결정 1 로 폐기됐다 — 목록이 있는 화면에는
+  // 헤더에 있던 보스 관리 진입점은 폐기됐다. 목록이 있는 화면에는
   // 관리로 가는 자리가 **하나도 없다**(하단바가 진다). 그 부재를 여기서 못 박는다.
-  it('목록이 있으면 "보스 관리"로 가는 자리가 화면에 없다 ([[ADR-145]] 결정 1)', async () => {
+  it('목록이 있으면 "보스 관리"로 가는 자리가 화면에 없다', async () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character({ weeklyBosses: [boss()] })] })
 
     await renderScreen()
@@ -803,7 +782,7 @@ describe('BossScreen — 빈 상태 문구 ([[ADR-060]])', () => {
   })
 })
 
-describe('BossScreen — 카드 탭 → 파티 인원 모달 ([[ADR-121]])', () => {
+describe('BossScreen: 카드 탭 → 파티 인원 모달', () => {
   const opened = async (overrides: Partial<Store> = {}): Promise<Store> => {
     const store = mockStore({
       status: 'loaded',
@@ -823,7 +802,7 @@ describe('BossScreen — 카드 탭 → 파티 인원 모달 ([[ADR-121]])', () 
     expect(screen.getByText('주간 보스')).toBeTruthy()
   })
 
-  // 파티 인원은 완료 여부와 무관한 상시 데이터다([[ADR-019]]).
+  // 파티 인원은 완료 여부와 무관한 상시 데이터다.
   it('완료된 보스도 탭할 수 있다', async () => {
     mockStore({
       status: 'loaded',
@@ -861,8 +840,8 @@ describe('BossScreen — 카드 탭 → 파티 인원 모달 ([[ADR-121]])', () 
     expect(screen.queryByTestId('party-size-modal')).toBeNull()
   })
 
-  // [[ADR-121]] 결정 3 — 자동 모드의 난이도 전환은 멤버십이 아니라 "편집 대상" 전환이다.
-  // 자쿰은 참조표에 카오스 하나뿐이라 세그먼트에 고를 것이 없다 — 셋을 가진 스우로 연다.
+  // 자동 모드의 난이도 전환은 멤버십이 아니라 "편집 대상" 전환이다.
+  // 자쿰은 참조표에 카오스 하나뿐이라 세그먼트에 고를 것이 없다. 셋을 가진 스우로 연다.
   it('자동 모드에서 난이도를 바꿔도 멤버십 API 를 부르지 않고 그 난이도의 인원을 편집한다', async () => {
     const store = mockStore({
       status: 'loaded',
@@ -882,12 +861,12 @@ describe('BossScreen — 카드 탭 → 파티 인원 모달 ([[ADR-121]])', () 
 
     expect(store.setManualBossDifficulty).not.toHaveBeenCalled()
 
-    // 편집 대상이 옮겨졌다는 증거 — 이제 스테퍼가 그 난이도로 저장한다.
+    // 편집 대상이 옮겨졌다는 증거. 이제 스테퍼가 그 난이도로 저장한다.
     await press(screen.getByLabelText('스우 파티원 수 증가'))
     expect(store.setPartySize).toHaveBeenCalledWith('ocid-1', '스우', '익스트림', 2)
   })
 
-  it('수동 모드에서 난이도를 바꾸면 단일 액션으로 멤버십을 교체한다 ([[ADR-121]] 결정 6)', async () => {
+  it('수동 모드에서 난이도를 바꾸면 단일 액션으로 멤버십을 교체한다', async () => {
     useTrackingModeStore.setState({ mode: 'manual' })
     const store = mockStore({
       status: 'loaded',
@@ -906,7 +885,7 @@ describe('BossScreen — 카드 탭 → 파티 인원 모달 ([[ADR-121]])', () 
   })
 })
 
-describe('BossScreen — 수동 모드 ([[ADR-035]])', () => {
+describe('BossScreen: 수동 모드', () => {
   beforeEach(() => {
     useTrackingModeStore.setState({ mode: 'manual' })
   })
@@ -935,19 +914,19 @@ describe('BossScreen — 수동 모드 ([[ADR-035]])', () => {
     })
     await renderScreen()
 
-    // 월간 참조표의 보스라 「월간」 무리에 선다 — 탭을 누를 필요가 없다.
+    // 월간 참조표의 보스라 `월간` 무리에 선다. 탭을 누를 필요가 없다.
     expect(screen.getByText('검은마법사')).toBeTruthy()
     expect(sectionOrder()).toEqual(['monthly'])
   })
 })
 
-// [[ADR-187]] 결정 2 — 주간 12마리를 채우면 남은 미처치 주간 보스는 「완료」 자리에 「마감」을 단다.
+// 주간 12마리를 채우면 남은 미처치 주간 보스는 `완료` 자리에 `마감`을 단다.
 // 완료로 칠하지 않는 것이 핵심이다: 안 잡은 보스를 완료로 두면 그 거짓이 보스 수익의 금액이 된다.
-describe('BossScreen — 주간 한도 마감 배지', () => {
+describe('BossScreen: 주간 한도 마감 배지', () => {
   const WEEKLY_NAMES = (weeklyBossesData.weekly as { boss: string }[]).map((entry) => entry.boss)
   const PENDING = WEEKLY_NAMES[0]
 
-  /** 「끝에서부터」 실제로 처치한 주간 보스들 — `PENDING` 과 겹치지 않게 뒤에서 뽑는다. */
+  /** 끝에서부터 실제로 처치한 주간 보스들. `PENDING` 과 겹치지 않게 뒤에서 뽑는다. */
   function cleared(count: number): MatchedBoss[] {
     return WEEKLY_NAMES.slice(-count).map((name) =>
       boss({
@@ -978,13 +957,13 @@ describe('BossScreen — 주간 한도 마감 배지', () => {
     })
   }
 
-  it('한도를 채우면 미처치 카드가 「마감」 배지를 단다', async () => {
+  it('한도를 채우면 미처치 카드가 `마감` 배지를 단다', async () => {
     withClearCount(WEEKLY_BOSS_CLEAR_LIMIT)
 
     await renderScreen()
 
     expect(screen.getByText('마감')).toBeTruthy()
-    // 처치한 열두 장은 그대로 「완료」다 — 마감이 완료를 대체하지 않는다.
+    // 처치한 열두 장은 그대로 `완료`다. 마감이 완료를 대체하지 않는다.
     expect(screen.getAllByText('완료')).toHaveLength(WEEKLY_BOSS_CLEAR_LIMIT)
   })
 
@@ -996,15 +975,15 @@ describe('BossScreen — 주간 한도 마감 배지', () => {
     expect(screen.queryByText('마감')).toBeNull()
   })
 
-  // 「완료」 자리를 대신하는 배지라 **상자가 같아야** 한다(사용자 지정) — 크기가 다르면 같은 자리에서
+  // `완료` 자리를 대신하는 배지라 **상자가 같아야** 한다. 크기가 다르면 같은 자리에서
   // 배지가 커졌다 작아졌다 하며 카드 오른쪽 끝이 흔들린다. 색만 갈린다.
   it('마감 배지는 완료 배지와 같은 크기다', async () => {
     withClearCount(WEEKLY_BOSS_CLEAR_LIMIT)
 
     await renderScreen()
 
-    // NativeWind 가 `className` 을 스타일로 컴파일하므로 **결과 스타일**을 본다 — 클래스 문자열을
-    // 비교하면 같은 값을 다른 표기로 쓴 것도 «다르다» 가 된다.
+    // NativeWind 가 `className` 을 스타일로 컴파일하므로 **결과 스타일**을 본다. 클래스 문자열을
+    // 비교하면 같은 값을 다른 표기로 쓴 것도 **다르다** 가 된다.
     const boxOf = (label: string): Record<string, unknown> => {
       const { color, backgroundColor, ...box } = screen.getAllByText(label)[0].props.style as Record<
         string,
@@ -1019,19 +998,19 @@ describe('BossScreen — 주간 한도 마감 배지', () => {
   })
 })
 
-// [[ADR-187]] 결정 2 후속(사용자 지정) — 한도를 채웠으면 진행 링도 꽉 찬다. 마감은 «이번 주에 더 할
-// 것이 없다» 이므로 링이 100%에 못 닿으면 링이 거짓을 말한다.
-describe('BossScreen — 한도 마감과 진행 링', () => {
+//  후속. 한도를 채웠으면 진행 링도 꽉 찬다. 마감은 **이번 주에 더 할
+// 것이 없다** 이므로 링이 100%에 못 닿으면 링이 거짓을 말한다.
+describe('BossScreen: 한도 마감과 진행 링', () => {
   const WEEKLY_NAMES = (weeklyBossesData.weekly as { boss: string }[]).map((entry) => entry.boss)
 
-  /** 링의 접근성 이름에 실린 「주간 n/m」 — 링의 유일한 표현이라 계약이 여기 있다([[ADR-142]]). */
+  /** 링의 접근성 이름에 실린 주간 n/m. 링을 나타내는 것이 이것뿐이라 계약이 여기 있다. */
   function ringLabel(): string {
     const label = String(screen.getAllByTestId('character-portrait')[0].props.accessibilityLabel)
     return label.slice(label.indexOf('주간'))
   }
 
   /**
-   * 이 결정이 겨누는 실제 상황 — 열둘을 추적해 두고 **그중 열만** 잡은 뒤 목록 밖 둘로 한도를 채웠다.
+   * 이 결정이 겨누는 실제 상황. 열둘을 추적해 두고 **그중 열만** 잡은 뒤 목록 밖 둘로 한도를 채웠다.
    * 추적 목록은 열두 개 그대로이므로 링의 분모도 12다.
    */
   function withTrackedTwelveAndOutsideKills(): void {
@@ -1061,7 +1040,7 @@ describe('BossScreen — 한도 마감과 진행 링', () => {
             ...tracked.slice(10).map((name) =>
               boss({ apiName: name, matchedBossName: name, difficulty: '하드', isComplete: false }),
             ),
-            // 목록 밖 둘로 한도를 채웠다 — 합이 12 처치다.
+            // 목록 밖 둘로 한도를 채웠다. 합이 12 처치다.
             ...outside.map((name) =>
               boss({
                 apiName: name,
@@ -1080,7 +1059,7 @@ describe('BossScreen — 한도 마감과 진행 링', () => {
     })
   }
 
-  it('한도를 채우면 링이 12/12로 꽉 찬다 — 마감도 «다 한 것» 이다', async () => {
+  it('한도를 채우면 링이 12/12로 꽉 찬다. 마감도 **다 한 것** 이다', async () => {
     withTrackedTwelveAndOutsideKills()
 
     await renderScreen()
@@ -1088,7 +1067,7 @@ describe('BossScreen — 한도 마감과 진행 링', () => {
     expect(ringLabel()).toBe(`주간 ${WEEKLY_BOSS_CLEAR_LIMIT}/${WEEKLY_BOSS_CLEAR_LIMIT}`)
   })
 
-  // 회귀 가드 — 한도 전에는 미처치가 그대로 분자에서 빠진다.
+  // 회귀 가드. 한도 전에는 미처치가 그대로 분자에서 빠진다.
   it('한도 전에는 미처치가 링에서 빠진다', async () => {
     const tracked = WEEKLY_NAMES.slice(0, WEEKLY_BOSS_CLEAR_LIMIT)
     useTrackingModeStore.setState({ mode: 'manual' })

@@ -1,6 +1,5 @@
 /**
  * lucide `settings` 를 한 패스로 다시 그린 톱니. **채우면 가운데가 구멍으로 남는다**
- * ([[ADR-132]] 정정 25 · [[ADR-199]]).
  *
  * lucide 의 `Settings` 는 톱니 패스와 안쪽 원 두 요소라 `fill` 이 둘 다에 상속돼 가운데가 메워진다.
  * 그래서 두 모양을 한 패스의 두 서브패스로 합치고 `fillRule="evenodd"` 를 준다.
@@ -19,7 +18,7 @@ const GEAR =
 /**
  * 가운데 원을 서브패스로 적는다. `evenodd` 가 여기를 구멍으로 만든다.
  *
- * @param radius 구멍 반지름. 상태마다 다르다([[ADR-132]] 정정 25)
+ * @param radius 구멍 반지름. 상태마다 다르다
  */
 function hole(radius: number): string {
   const [x, r2] = [12 + radius, radius * 2]

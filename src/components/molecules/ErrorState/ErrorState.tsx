@@ -10,7 +10,7 @@ export interface ErrorStateProps {
   title: string
   description?: string
   /**
-   * 그 원인을 실제로 푸는 행동만 준다 — 401·429에 "다시 시도"를 주지 말 것. **생략하려면 위 계약대로 그 자리의 진행 경로를 다른 것이 제공해야 한다.**
+   * 그 원인을 실제로 푸는 행동. 401·429에 "다시 시도"를 주지 말 것. **생략하려면 위 계약대로 그 자리의 진행 경로를 다른 것이 제공해야 한다.**
    */
   action?: ErrorStateAction
 }

@@ -17,7 +17,7 @@ it('넣은 값을 그대로 돌려준다', async () => {
   expect(await getLastPointRate()).toBe(1_180)
 })
 
-// 0 이나 NaN 이 기본값으로 들어가면 환산이 나눗셈이라 화면이 깨진다([[ADR-166]] 정정 2 ④).
+// 0 이나 NaN 이 기본값으로 들어가면 환산이 나눗셈이라 화면이 깨진다.
 it('상한 값은 없는 것으로 본다', async () => {
   await prefs.set('lastPointRate', '0')
   expect(await getLastPointRate()).toBeNull()

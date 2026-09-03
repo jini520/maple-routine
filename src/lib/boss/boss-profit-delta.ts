@@ -2,17 +2,17 @@ import type { BossCycle } from '../../types'
 import { getAdjacentPeriodKey, getWeeklyPeriodKeysInMonth } from './boss-profit-period'
 
 /**
- * 보스 수익 "직전 기간 대비 증감" 계산 ([[ADR-087]]).
+ * 보스 수익 직전 기간 대비 증감 계산.
  *
- * **이 모듈에는 "모른다"라는 입력이 없다.** 직전 기간을 조회한 적이 없어도 store 가 기록 합(= 0)을
- * 넘긴다(결정 3, 사용자 결정) — 0메소와 미확인을 같은 표기로 통일했기 때문이다. 그 대가로 증감
- * 표시가 기간 상태 기계([[ADR-067]] 결정 2)에서 완전히 분리되고, 여기서는 두 숫자만 다룬다.
+ * 이 모듈에는 모른다 라는 입력이 없다. 직전 기간을 조회한 적이 없어도 스토어가 기록 합(= 0)을
+ * 넘긴다. 0메소와 미확인을 같은 표기로 통일했기 때문이다. 그 대가로 증감 표시가 기간 상태
+ * 기계에서 완전히 분리되고, 여기서는 두 숫자만 다룬다.
  */
 
 export interface ProfitDelta {
-  /** 'same' 이면 방향 표식을 그리지 않는다 — 표기 "-" 자체가 표식이라 대시 아이콘까지 얹으면 겹친다. */
+  /** 증감 방향. `same` 이면 표식을 안 그린다. 표기 `-` 자체가 표식이라 아이콘까지 얹으면 겹친다. */
   direction: 'up' | 'down' | 'same'
-  /** 직전 기간이 0이면 나눌 수 없어 `null` — 그때는 절대 증감이 표시를 대신한다. 부호를 유지한다. */
+  /** 직전 기간이 0이면 나눌 수 없어 `null`. 그때는 절대 증감이 표시를 대신한다. 부호를 유지한다. */
   percent: number | null
   diffMeso: number
 }
@@ -29,8 +29,8 @@ export function computeProfitDelta(currentMeso: number, previousMeso: number): P
 }
 
 /**
- * 큰 메소를 억/만으로 접는다. 칩 한 칸에 10자리가 그대로 들어가면 금액 자체를 밀어낸다.
- * `withSign` 이 false 인 이유는 호출부가 화살표를 이미 그리기 때문이다 — `↑ +12.8억` 은 두 번 말한다.
+ * 큰 메소를 억/만으로 접은 표기. 칩 한 칸에 10자리가 그대로 들어가면 금액 자체를 밀어낸다.
+ * `withSign` 이 false 인 이유는 호출부가 화살표를 이미 그리기 때문이다. `↑ +12.8억` 은 두 번 말한다.
  */
 export function formatMesoShort(meso: number, withSign = false): string {
   const sign = !withSign ? '' : meso > 0 ? '+' : meso < 0 ? '−' : ''
@@ -40,7 +40,7 @@ export function formatMesoShort(meso: number, withSign = false): string {
   return `${sign}${absolute.toLocaleString()}`
 }
 
-/** 칩 안에 들어가는 글자. 같으면 사용자 지정 "-", 퍼센트가 없으면 절대 증감이 대신한다. */
+/** 칩 안에 들어가는 글자. 같으면 `-`, 퍼센트가 없으면 절대 증감이 대신한다. */
 export function formatProfitDeltaBody(delta: ProfitDelta): string {
   if (delta.direction === 'same') return '-'
   if (delta.percent === null) return formatMesoShort(delta.diffMeso)
@@ -52,7 +52,7 @@ export function formatProfitDeltaBody(delta: ProfitDelta): string {
  * `periodLabel` 은 비교 대상 기간의 이름("지난 주"·"지난 달"·"6월 3주차" 등)이다.
  */
 export function formatProfitDeltaLabel(delta: ProfitDelta, periodLabel: string): string {
-  // "{기간}와 동일"로 쓰지 않는다 — 기간 이름은 "지난 달"(받침 있음)일 수도 "7월 3주차"(없음)일 수도
+  // "{기간}와 동일"로 쓰지 않는다. 기간 이름은 "지난 달"(받침 있음)일 수도 "7월 3주차"(없음)일 수도
   // 있어 와/과가 갈리는데, 그 조사 계산을 위해 여기서 한글 음절을 파고들 이유가 없다. 다른 분기와
   // 같은 "대비" 어법으로 맞추면 조사 문제 자체가 사라진다.
   if (delta.direction === 'same') return `${periodLabel} 대비 변화 없음`
@@ -64,9 +64,9 @@ export function formatProfitDeltaLabel(delta: ProfitDelta, periodLabel: string):
 }
 
 /**
- * 직전 기간의 합계를 구하려면 어떤 periodKey 들을 읽어야 하는지 ([[ADR-087]] 결정 2).
+ * 직전 기간의 합계를 구하려면 어떤 periodKey 들을 읽어야 하는지.
  *
- * **그 화면의 총액 산식과 짝을 맞춘다** — 월간 탭 총액은 `monthly` 보스 행 + 그 달의 주차별 합계라
+ * **그 화면의 총액 산식과 짝을 맞춘다**. 월간 탭 총액은 `monthly` 보스 행 + 그 달의 주차별 합계라
  * (`groupTotalMeso`), 직전 달 합계도 `직전 달 monthly 기록 + 직전 달에 속한 weekly 기록`이다.
  * 주간 탭은 직전 주 하나뿐이다.
  */

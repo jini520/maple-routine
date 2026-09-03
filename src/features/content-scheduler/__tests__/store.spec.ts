@@ -4,7 +4,7 @@ import { useCharacterSelectionStore } from '../../character-selection/store'
 import type { CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
 import type { DailyContent, WeeklyContent } from '../../../types'
 
-// ADR-063: 스토어가 toScheduleSyncError로 원인을 살리므로 그 매핑은 실물을 쓴다(부분 모킹).
+// 스토어가 toScheduleSyncError로 원인을 살리므로 그 매핑은 실물을 쓴다(부분 모킹).
 jest.mock('../../schedule-sync/schedule-sync', () => ({
   ...jest.requireActual<typeof import('../../schedule-sync/schedule-sync')>('../../schedule-sync/schedule-sync'),
   syncSchedules: jest.fn(),
@@ -65,7 +65,7 @@ import {
 } from '../../schedule-sync/sync-run-state'
 
 // 팩토리가 **모듈 평가보다 먼저** 불릴 수 있어(스토어를 import 하는 순간) `var` 로 올리고
-// 읽는 자리에서 채운다([[ADR-157]]).
+// 읽는 자리에서 채운다.
 var mockTrackingModeStateMock: { mode: 'auto' | 'manual' } = { mode: 'auto' }
 
 function dailyContent(name: string): DailyContent {
@@ -168,7 +168,7 @@ describe('useContentSchedulerStore', () => {
         isStale: false,
         syncedAt: '2026-07-11T00:00:00.000Z',
         error: null,
-        // [[ADR-142]] 결정 6: 캐시가 그 캐릭터를 모르면 둘 다 `null` 이다(레일이 레벨 호를 비운다).
+        // 캐시가 그 캐릭터를 모르면 둘 다 `null` 이다(레일이 레벨 호를 비운다).
         level: null,
         imageUrl: null,
       },
@@ -234,7 +234,7 @@ describe('useContentSchedulerStore', () => {
     expect(state.characters).toEqual([])
   })
 
-  it('ADR-016: 캐시된 값이 있으면 재검증 응답을 기다리지 않고 즉시 characters에 반영한다', async () => {
+  it(': 캐시된 값이 있으면 재검증 응답을 기다리지 않고 즉시 characters에 반영한다', async () => {
     getCachedSchedulerStateMock.mockResolvedValue({
       state: {
         asOf: '2026-07-11T00:00+09:00',
@@ -271,7 +271,7 @@ describe('useContentSchedulerStore', () => {
     void promise // 이 테스트는 재검증이 끝나길 기다리지 않는다
   })
 
-  it('ADR-016: 재검증 응답이 도착하면 캐시로 채운 값을 새 값으로 덮어쓴다', async () => {
+  it(': 재검증 응답이 도착하면 캐시로 채운 값을 새 값으로 덮어쓴다', async () => {
     getCachedSchedulerStateMock.mockResolvedValue({
       state: {
         asOf: '2026-07-11T00:00+09:00',
@@ -342,8 +342,8 @@ describe('useContentSchedulerStore', () => {
       expect(useContentSchedulerStore.getState().trackedOcids).toBeNull()
     })
 
-    // [[ADR-101]] 결정 4: 부팅 선하이드레이션과 화면 마운트가 반드시 겹치므로, 동시 호출은
-    // 한 회차로 합친다 — 안 그러면 같은 응답을 두 번 받는다([[ADR-097]] 이 없애려던 낭비).
+    // 부팅 선하이드레이션과 화면 마운트가 반드시 겹치므로, 동시 호출은
+    // 한 회차로 합친다. 안 그러면 같은 응답을 두 번 받는다(없애려던 낭비).
     it('loadTrackedOcids를 동시에 두 번 불러도 한 회차만 돈다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
       syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -356,7 +356,7 @@ describe('useContentSchedulerStore', () => {
       expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
     })
 
-    // "평생 한 번"이 아니라 "동시에 하나만"이다 — 영구 메모면 진입 재조회의 10분 TTL 이 죽는다.
+    // "평생 한 번"이 아니라 "동시에 하나만"이다. 영구 메모면 진입 재조회의 10분 TTL 이 죽는다.
     it('앞 회차가 끝난 뒤에 부르면 다시 돈다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
       syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -402,7 +402,7 @@ describe('useContentSchedulerStore', () => {
     })
   })
 
-  describe('ADR-043: 저장 시 추가된 캐릭터만 동기화', () => {
+  describe(': 저장 시 추가된 캐릭터만 동기화', () => {
     function characterView(ocid: string, characterName: string): ContentCharacterView {
       return {
         ocid,
@@ -460,7 +460,7 @@ describe('useContentSchedulerStore', () => {
 
       expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
       expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-2'], undefined)
-      // 유지 캐릭터는 메모리 뷰를 그대로 재사용한다 — 네트워크는 물론 캐시도 다시 읽지 않는다
+      // 유지 캐릭터는 메모리 뷰를 그대로 재사용한다. 네트워크는 물론 캐시도 다시 읽지 않는다
       expect(getCachedSchedulerStateMock).not.toHaveBeenCalled()
 
       const state = useContentSchedulerStore.getState()
@@ -528,7 +528,7 @@ describe('useContentSchedulerStore', () => {
     })
   })
 
-  describe('ADR-035 결정 14(b): 수동 모드에서 새 추적 캐릭터 개별 시드', () => {
+  describe('(b): 수동 모드에서 새 추적 캐릭터 개별 시드', () => {
     it('수동 모드에서 saveTrackedOcids는 새로 추가된 캐릭터만 refresh 전에 시드한다', async () => {
       mockTrackingModeStateMock.mode = 'manual'
       useContentSchedulerStore.setState({ trackedOcids: ['ocid-1'] })
@@ -539,7 +539,7 @@ describe('useContentSchedulerStore', () => {
 
       expect(seedManualTrackedContentMock).toHaveBeenCalledTimes(1)
       expect(seedManualTrackedContentMock).toHaveBeenCalledWith(['ocid-2'])
-      // 시드가 refresh(syncSchedules)보다 먼저 실행된다 — 저장 진행률 모달이 시드까지 커버(결정 15)
+      // 시드가 refresh(syncSchedules)보다 먼저 실행된다. 저장 진행률 모달이 시드까지 커버
       expect(seedManualTrackedContentMock.mock.invocationCallOrder[0]).toBeLessThan(
         syncSchedulesMock.mock.invocationCallOrder[0],
       )
@@ -567,7 +567,7 @@ describe('useContentSchedulerStore', () => {
     })
   })
 
-  describe('ADR-035: 수동 추적 항목 (manualTrackedContent)', () => {
+  describe(': 수동 추적 항목 (manualTrackedContent)', () => {
     it('수동 모드일 때 refresh는 추적 목록을 읽어 manualTrackedByOcid에 채운다', async () => {
       mockTrackingModeStateMock.mode = 'manual'
       syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1' })])
@@ -614,7 +614,7 @@ describe('useContentSchedulerStore', () => {
       expect(setManualTrackedContentMock).not.toHaveBeenCalled()
     })
 
-    // 가드 테스트용 최소 뷰 — 가드가 보는 건 ocid·guildName뿐이다.
+    // 가드 테스트용 최소 뷰. 가드가 보는 건 ocid·guildName뿐이다.
     function guardView(overrides: Partial<ContentCharacterView>): ContentCharacterView {
       return {
         ocid: 'ocid-1',
@@ -628,7 +628,7 @@ describe('useContentSchedulerStore', () => {
       }
     }
 
-    // ADR-057: 가드의 본체는 스토어다 — UI 사전 차단만으로는 다른 호출 경로가 샌다.
+    // 가드의 본체는 스토어다. UI 사전 차단만으로는 다른 호출 경로가 샌다.
     it('addManualContent는 길드 미가입(guildName: null)이면 길드 콘텐츠를 거부한다', async () => {
       useContentSchedulerStore.setState({
         characters: [guardView({ guildName: null })],
@@ -683,7 +683,7 @@ describe('useContentSchedulerStore', () => {
     })
   })
 
-  describe('ADR-017: 캐릭터 순서 정렬 및 마지막 선택 캐릭터', () => {
+  describe(': 캐릭터 순서 정렬 및 마지막 선택 캐릭터', () => {
     it('실시간 동기화 결과의 캐릭터가 캐시된 레벨 기준 내림차순으로 정렬된다', async () => {
       syncSchedulesMock.mockResolvedValue([
         syncResult({ ocid: 'ocid-1', characterName: '레벨낮음' }),
@@ -746,7 +746,7 @@ describe('useContentSchedulerStore', () => {
       ])
     })
 
-    // [[ADR-159]] 결정 2 — 저장된 선택을 읽는 것은 이 스토어가 아니라 선택 스토어다. 부르는
+    // 저장된 선택을 읽는 것은 이 스토어가 아니라 선택 스토어다. 부르는
     // 자리(진입 경로)는 그대로라 여기서 그 위임을 지킨다.
     it('loadTrackedOcids 는 선택 스토어를 하이드레이션한다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
@@ -759,13 +759,13 @@ describe('useContentSchedulerStore', () => {
       expect(useCharacterSelectionStore.getState().selectedOcid).toBe('ocid-1')
     })
 
-    // `selectCharacter` 테스트는 여기 있었다 — 선택이 이 스토어를 떠나면서
-    // `features/character-selection/__tests__/store.spec.ts` 로 옮겨갔다([[ADR-159]] 결정 1).
+    // `selectCharacter` 테스트는 여기 있었다. 선택이 이 스토어를 떠나면서
+    // `features/character-selection/__tests__/store.spec.ts` 로 옮겨갔다.
   })
 
-  // ADR-096 결정 1: 탭 선택을 화면 로컬 state가 아니라 스토어가 소유한다. 화면이 언마운트돼도
+  // 탭 선택을 화면 로컬 state가 아니라 스토어가 소유한다. 화면이 언마운트돼도
   // 값이 남고, 스케줄러와 관리 페이지가 같은 값을 본다.
-  describe('ADR-096: 탭 선택 상태', () => {
+  describe(': 탭 선택 상태', () => {
     it('초기 탭은 일간이다', () => {
       expect(useContentSchedulerStore.getInitialState().activeTab).toBe('daily')
     })
@@ -789,9 +789,9 @@ describe('useContentSchedulerStore', () => {
     })
   })
 
-  // ADR-097 결정 1~5: 화면에 들어왔다는 사실만으로는 조회하지 않는다. 게이트는 자동 진입 경로에만
-  // 걸리고(결정 4), 판정 근거는 캐시 우선 표시 단계가 이미 읽은 syncedAt 이다.
-  describe('화면 진입 재조회 게이트 (ADR-097)', () => {
+  // 화면에 들어왔다는 사실만으로는 조회하지 않는다. 게이트는 자동 진입 경로에만 걸리고,
+  // 판정 근거는 캐시 우선 표시 단계가 이미 읽은 syncedAt 이다.
+  describe('화면 진입 재조회 게이트', () => {
     function minutesAgo(minutes: number): string {
       return new Date(Date.now() - minutes * 60 * 1000).toISOString()
     }
@@ -822,7 +822,7 @@ describe('useContentSchedulerStore', () => {
       const state = useContentSchedulerStore.getState()
       expect(state.status).toBe('loaded')
       expect(state.error).toBeNull()
-      // 결정 5: 재검증하지 않기로 한 값이라 "오래된 데이터"가 아니다(토스트가 뜨면 안 된다).
+      // 재검증하지 않기로 한 값이라 "오래된 데이터"가 아니다(토스트가 뜨면 안 된다).
       expect(state.characters.every((character) => character.isStale === false)).toBe(true)
     })
 
@@ -875,7 +875,7 @@ describe('useContentSchedulerStore', () => {
       expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
     })
 
-    // 결정 4: 강제가 기본값이다 — 옵션을 넘기지 않는 헤더 버튼·당겨서 새로고침·재시도는 항상 조회한다.
+    // 강제가 기본값이다. 옵션을 넘기지 않는 헤더 버튼·당겨서 새로고침·재시도는 항상 조회한다.
     it('옵션 없는 refresh(명시적 재조회)는 TTL 안이어도 항상 조회한다', async () => {
       markSyncAttemptedThisRun()
       getCachedSchedulerStateMock.mockResolvedValue(cachedSchedulerState(minutesAgo(5)))

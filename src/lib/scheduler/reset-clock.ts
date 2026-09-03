@@ -27,7 +27,7 @@ export function getMostRecentWeeklyResetKst(now: Date): Date {
 }
 
 /**
- * 주어진 시점의 KST 기준 "오늘 날짜"를 YYYY-MM-DD로 반환한다 (ADR-030 — 일간 리셋 버킷 계산용).
+ * 주어진 시점의 KST 기준 "오늘 날짜"를 YYYY-MM-DD로 반환한다 (일간 리셋 버킷 계산용).
  * getMostRecentWeeklyResetKst와 동일하게 기기 로컬 타임존과 무관하게 항상 KST 기준으로 계산한다.
  */
 export function getCurrentKstDateKey(now: Date): string {
@@ -49,7 +49,7 @@ function formatKstDateKey(kstWallClock: Date): string {
 }
 
 /**
- * KST 기준 `daysBack`일 전 날짜를 YYYY-MM-DD로 반환한다([[ADR-086]] 결정 4 — 조회 원장의
+ * KST 기준 `daysBack`일 전 날짜를 YYYY-MM-DD로 반환한다(조회 원장의
  * 윈도우 경계 계산용). `daysBack: 0` 은 [[getCurrentKstDateKey]] 와 같다.
  */
 export function getKstDateKeyDaysAgo(now: Date, daysBack: number): string {
@@ -58,10 +58,10 @@ export function getKstDateKeyDaysAgo(now: Date, daysBack: number): string {
 }
 
 /**
- * [[ADR-034]] 스케줄러 최초 동기화·캐시 유실 대비 항목 선채움용 — Nexon 스케줄러 API에
+ *  스케줄러 최초 동기화·캐시 유실 대비 항목 선채움용. Nexon 스케줄러 API에
  * 하루씩 거슬러 올라가며 넘길 과거 조회 날짜(YYYY-MM-DD) 목록을 최신순으로 반환한다.
  * 평소엔 KST 기준 어제(-1일)부터, KST 00:00~00:10 사이는 자정 직후 API 응답이 불안정하다고
- * 확인돼(사용자 확인, 2026-07-23) 그제(-2일)부터 시작한다. 호출 측은 이 목록을 순서대로
+ * 확인돼(사용자 확인) 그제(-2일)부터 시작한다. 호출 측은 이 목록을 순서대로
  * 조회하다 더 이상 필요 없어지면(그 날짜 응답이 정상이면) 중간에 멈춘다.
  */
 export function getBackfillDateKeys(now: Date, maxDaysBack: number = DEFAULT_MAX_DAYS_BACK): string[] {

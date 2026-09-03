@@ -21,7 +21,7 @@ const EPIC_DUNGEON_PREFIX = /^(에픽 던전)\s*:\s*(.*)$/
 
 // 접두사로 도출되지 않거나(단독 항목), 접두사와 다른 그룹으로 묶어야 하는 항목의 명시적 카테고리.
 // content_name → 카테고리. 게임 도메인 분류라 AI가 추정하지 않고 사용자(도메인 전문가)가 지정한 값만
-// 반영한다(ADR-006 확인 완료, 2026-07-24). 표시명은 접두사 제거 결과를 그대로 쓰고 카테고리만 덮어쓴다.
+// 반영한다(확인 완료). 표시명은 접두사 제거 결과를 그대로 쓰고 카테고리만 덮어쓴다.
 const CATEGORY_OVERRIDE: Record<string, string> = {
   // 일간: 단독이지만 그룹화하고 주간 몬스터파크와 아이콘을 통일한다
   몬스터파크: '몬스터파크',
@@ -37,8 +37,8 @@ const CATEGORY_OVERRIDE: Record<string, string> = {
   무릉도장: '무릉도장',
 }
 
-// 카운트 참고 태그의 도메인 오버라이드 — 리셋/제한 규칙(월드당·ID당 등)이라 사용자 지정값만 반영한다
-// (ADR-006 확인 완료, 2026-07-24). null = 태그 숨김. 아이템(content_name) → 카테고리 → 기본 규칙 순.
+// 카운트 참고 태그의 도메인 오버라이드. 리셋·제한 규칙(월드당·ID당 등)이라 확인된 값만
+// 반영한다. null = 태그 숨김. 아이템(content_name) → 카테고리 → 기본 규칙 순.
 const TAG_BY_CONTENT: Record<string, string | null> = {
   몬스터파크: '월드 당 최대 14회', // 일간
   '[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?': 'ID당 2회', // 주간
@@ -76,8 +76,8 @@ function parse(name: string): { category: string | null; displayName: string } {
 
 export const GUILD_CATEGORY = '길드'
 
-// ADR-057: 길드 가입 여부로 선택을 막을 대상 판정. 항목명을 코드에 나열하는 대신 이미 있는
-// 카테고리 도출(parse)을 재사용한다 — 길드 콘텐츠가 추가돼도 템플릿만 갱신하면 따라온다.
+// 길드 가입 여부로 선택을 막을 대상 판정. 항목명을 코드에 나열하는 대신 이미 있는
+// 카테고리 도출(parse)을 재사용한다. 길드 콘텐츠가 추가돼도 템플릿만 갱신하면 따라온다.
 export function isGuildContent(contentName: string): boolean {
   return parse(contentName).category === GUILD_CATEGORY
 }
@@ -104,7 +104,7 @@ export function categorizeContentEntries(
   for (const entry of entries) {
     const { category, displayName } = parse(entry.content_name)
     if (category === null) {
-      // 단독 항목마다 유니크 키 — 실제 카테고리명은 trim되므로 선행 공백 접두사면 절대 안 겹친다
+      // 단독 항목마다 유니크 키. 실제 카테고리명은 trim되므로 선행 공백 접두사면 절대 안 겹친다
       const key = ` standalone-${standaloneCount++}`
       order.push(key)
       groups.set(key, { label: null, items: [{ entry, displayName }] })

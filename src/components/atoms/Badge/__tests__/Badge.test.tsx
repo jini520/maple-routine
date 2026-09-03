@@ -1,7 +1,7 @@
-// 배지 하나가 열세 가지 모양을 낸다([[ADR-195]] 결정 1·2). 여기서 지키는 것은 **풀린 값**이다 —
+// 배지 하나가 열세 가지 모양을 낸다. 여기서 지키는 것은 **풀린 값**이다.
 // NativeWind 가 렌더 시점에 `className` 을 style 로 바꿔 먹어 트리에 문자열이 안 남는다.
 //
-// 토큰 색 기대값은 손으로 적지 않고 `job-themes.json` 에서 읽는다([[ADR-006]]). 난이도 색은 테마
+// 토큰 색 기대값은 손으로 적지 않고 `job-themes.json` 에서 읽는다. 난이도 색은 테마
 // 토큰이 아니라 게임 안의 색이라 파일에 박힌 값을 그대로 단언한다.
 import { processColor } from 'react-native'
 
@@ -15,7 +15,7 @@ function boxOf(label: AtomElement): AtomElement {
   return parent
 }
 
-describe('평면 variant — 색만 갈리고 상자는 같다', () => {
+describe('평면 variant: 색만 갈리고 상자는 같다', () => {
   it('primary 는 `*-tint` 배경 위 `*-ink` 글자', async () => {
     const { getByText } = await renderAtom(<Badge variant="primary">3</Badge>)
 
@@ -39,7 +39,7 @@ describe('평면 variant — 색만 갈리고 상자는 같다', () => {
     })
   })
 
-  // 완료 배지다. 두께가 기본값과 달라서 variant 가 두께까지 쥔다([[ADR-195]] 결정 3).
+  // 완료 배지다. 두께가 기본값과 달라서 variant 가 두께까지 쥔다.
   it('secondary 는 두께가 bold 다', async () => {
     const { getByText } = await renderAtom(<Badge variant="secondary">완료</Badge>)
 
@@ -50,7 +50,7 @@ describe('평면 variant — 색만 갈리고 상자는 같다', () => {
     })
   })
 
-  // 눌린 회색 둘. 배경은 같고 글자만 갈린다 — 진행 불가·시작 안함이 muted, 진행 중이 neutral 이다.
+  // 눌린 회색 둘. 배경은 같고 글자만 갈린다. 진행 불가·시작 안함이 muted, 진행 중이 neutral 이다.
   it('muted 와 neutral 은 배경이 같고 글자가 다르다', async () => {
     const muted = await renderAtom(<Badge variant="muted">진행 불가</Badge>)
     const neutral = await renderAtom(<Badge variant="neutral">진행 중</Badge>)
@@ -74,7 +74,7 @@ describe('평면 variant — 색만 갈리고 상자는 같다', () => {
     const { getByText } = await renderAtom(<Badge variant={variant}>라벨</Badge>)
 
     const style = flattenStyle(getByText('라벨').props.style)
-    // 같은 색이 글자는 진하게, 배경은 옅게 깔린다. `33` 이 20% 알파다 — 이것이 조용히 사라지면
+    // 같은 색이 글자는 진하게, 배경은 옅게 깔린다. `33` 이 20% 알파다. 이것이 조용히 사라지면
     // 배경이 글자와 같은 진하기가 되어 라벨을 못 읽는다.
     expect(style.color).toBe(`#${hex}`)
     expect(style.backgroundColor).toBe(`#${hex}33`)
@@ -97,13 +97,13 @@ describe('평면 variant — 색만 갈리고 상자는 같다', () => {
   })
 })
 
-describe('난이도 variant — 그라디언트·테두리·그림자', () => {
+describe('난이도 variant: 그라디언트·테두리·그림자', () => {
   it('난이도마다 다른 세로 그라디언트를 깐다', async () => {
     const { getByText } = await renderAtom(<Badge variant="익스트림">익스트림</Badge>)
 
     const box = boxOf(getByText('익스트림'))
     expect(box.props.colors).toEqual(['#3c3c3c', '#1c1414'].map(processColor))
-    // 방향을 기본값에 기대지 않는다 — 뒤집히면 그림이 조용히 달라진다.
+    // 방향을 기본값에 기대지 않는다. 뒤집히면 그림이 조용히 달라진다.
     expect(box.props.startPoint).toEqual([0.5, 0])
     expect(box.props.endPoint).toEqual([0.5, 1])
   })
@@ -143,10 +143,10 @@ describe('난이도 variant — 그라디언트·테두리·그림자', () => {
 })
 
 describe('size 둘', () => {
-  // 난이도 배지도 상태 배지와 같은 상자를 쓴다(사용자 지정 2026-08-31). 그라디언트 배지만
+  // 난이도 배지도 상태 배지와 같은 상자를 쓴다. 그라디언트 배지만
   // 혼자 작으면 같은 줄에 선 배지들과 높이가 어긋난다.
   // 테두리를 여백 안쪽으로 넣는다. Yoga 는 테두리를 패딩처럼 바깥 크기에 더하므로 빼 주지 않으면
-  // 난이도 배지만 평면 배지보다 커진다([[ADR-195]] 정정 2).
+  // 난이도 배지만 평면 배지보다 커진다.
   it('난이도는 테두리 폭만큼 여백을 줄여 바깥 크기를 맞춘다', async () => {
     const 보통 = flattenStyle(
       boxOf((await renderAtom(<Badge variant="노멀">노멀</Badge>)).getByText('노멀')).props.style,
@@ -181,8 +181,8 @@ describe('size 둘', () => {
     }
   })
 
-  // 난이도만 글자가 작다(사용자 지정 2026-09-01). 이름이 최대 넉 자라 12px 로는 배지가 넓어진다.
-  it('난이도는 글자가 10px 다 — 크기의 기본값을 variant 가 덮는다', async () => {
+  // 난이도만 글자가 작다. 이름이 최대 넉 자라 12px 로는 배지가 넓어진다.
+  it('난이도는 글자가 10px 다. 크기의 기본값을 variant 가 덮는다', async () => {
     const 평면 = await renderAtom(<Badge variant="muted">진행 불가</Badge>)
     const 난이도 = await renderAtom(<Badge variant="하드">하드</Badge>)
 
@@ -194,7 +194,7 @@ describe('size 둘', () => {
     expect(flattenStyle(작게.getByText('하드').props.style).fontSize).toBe(9)
   })
 
-  it('mini 는 높이와 글자만 줄인다 — 색은 한 값도 안 갈린다', async () => {
+  it('mini 는 높이와 글자만 줄인다. 색은 한 값도 안 갈린다', async () => {
     const 기본 = await renderAtom(<Badge variant="카오스">카오스</Badge>)
     const 작게 = await renderAtom(<Badge variant="카오스" size="mini">카오스</Badge>)
 
@@ -211,7 +211,7 @@ describe('size 둘', () => {
   })
 })
 
-// 높이가 `h-5`·`h-4` 로 고정인 상자는 글자만 커지면 잘린다([[ADR-152]] 결정 5 · [[ADR-195]] 결정 4).
+// 높이가 `h-5`·`h-4` 로 고정인 상자는 글자만 커지면 잘린다.
 // 배지 높이 = 줄 높이 + 여백 + 테두리. 셋을 합치면 variant 와 무관하게 같아야 한다. 난이도는
 // 글자가 10px 이고 나머지는 12px 인데도 같은 자리에서 어긋나면 안 된다.
 describe('높이는 variant 를 안 탄다', () => {
@@ -247,8 +247,8 @@ describe('높이는 variant 를 안 탄다', () => {
 })
 
 describe('글자 배수', () => {
-  // 높이를 못박지 않는다(사용자 규칙 2026-09-01). 상자에 높이만 박으면 평면 배지는 `<Text>` 하나라
-  // 글자가 위로 쏠린다(today 위젯의 CLEAR 배지에서 났다). 여백이 높이를 만들면 그 일이 없다.
+  // 높이를 못박지 않는다. 상자에 높이만 박으면 평면 배지는 `<Text>` 하나라 글자가 위로 쏠린다.
+  // 여백이 높이를 만들면 그 일이 없다.
   it('어느 크기도 높이를 못박지 않는다', async () => {
     for (const size of ['default', 'mini'] as const) {
       const 평면 = flattenStyle(
@@ -283,8 +283,8 @@ describe('글자 배수', () => {
 })
 
 describe('프롭', () => {
-  // 같은 색을 다른 두께로 쓰는 자리가 있다 — 보스 스케줄러의 마감 배지가 muted 인데 bold 다.
-  // 클래스로는 못 덮는다(NativeWind 가 두께 충돌을 문자열 순서로 안 푼다, [[ADR-195]] 결정 3).
+  // 같은 색을 다른 두께로 쓰는 자리가 있다. 보스 스케줄러의 마감 배지가 muted 인데 bold 다.
+  // 클래스로는 못 덮는다(NativeWind 가 두께 충돌을 문자열 순서로 안 푼다).
   it('weight 가 variant 의 기본 두께를 덮는다', async () => {
     const 기본 = await renderAtom(<Badge variant="muted">마감</Badge>)
     expect(flattenStyle(기본.getByText('마감').props.style).fontWeight).toBe('600')
@@ -293,7 +293,7 @@ describe('프롭', () => {
     expect(flattenStyle(굵게.getByText('마감').props.style).fontWeight).toBe('700')
   })
 
-  it('className 은 코어 뒤에 붙는다 — 레이아웃은 호출부가 소유한다', async () => {
+  it('className 은 코어 뒤에 붙는다. 레이아웃은 호출부가 소유한다', async () => {
     const { getByText } = await renderAtom(
       <Badge variant="primary" className="ml-auto">12</Badge>,
     )

@@ -1,7 +1,7 @@
 /**
- * 라벨–값 줄 모양의 커스텀 드롭다운([[ADR-173]] 결정 14).
+ * 라벨–값 줄 모양의 커스텀 드롭다운.
  *
- * **jest 는 레이아웃을 안 잰다** — `measureInWindow` 도 `onLayout` 도 안 오므로 목록은 늘
+ * **jest 는 레이아웃을 안 잰다**. `measureInWindow` 도 `onLayout` 도 안 오므로 목록은 늘
  * `opacity: 0` 이다(`AccountSelect` 테스트와 같은 사정). 여기서 지키는 것은 **내용과 배선**이고,
  * 어디에 앉는지는 `place-dropdown` 의 순수 함수 테스트가 든다.
  */
@@ -36,7 +36,7 @@ async function 누르기(view: Awaited<ReturnType<typeof renderOverlay>>, testID
 }
 
 describe('SelectField', () => {
-  it('고른 것을 줄에 적는다 — 안 골랐으면 그 라벨이 곧 값이다', async () => {
+  it('고른 것을 줄에 적는다. 안 골랐으면 그 라벨이 곧 값이다', async () => {
     const { view } = await 그리기(null)
 
     expect(view.getByTestId('pick-trigger')).toHaveTextContent('캐릭터선택 안함')
@@ -70,8 +70,8 @@ describe('SelectField', () => {
     expect(view.queryByTestId('pick-list')).toBeNull()
   })
 
-  // `null` 도 키가 되어야 한다 — 목록의 첫 칸이 대개 그것이다.
-  it('«안 고름» 도 고를 수 있다', async () => {
+  // `null` 도 키가 되어야 한다. 목록의 첫 칸이 대개 그것이다.
+  it('**안 고름** 도 고를 수 있다', async () => {
     const { view, onSelect } = await 그리기('ocid-1')
     await 누르기(view, 'pick-trigger')
 
@@ -80,7 +80,7 @@ describe('SelectField', () => {
     expect(onSelect).toHaveBeenCalledWith(null)
   })
 
-  // 스크림이 없다 — 잡기만 한다([[ADR-144]] 결정 6 ①).
+  // 스크림이 없다. 잡기만 한다.
   it('바깥을 누르면 닫힌다', async () => {
     const { view } = await 그리기()
     await 누르기(view, 'pick-trigger')
@@ -90,7 +90,7 @@ describe('SelectField', () => {
     expect(view.queryByTestId('pick-list')).toBeNull()
   })
 
-  // 목록이 갱신되는 순간 고른 값이 사라질 수 있다 — 렌더 중에 던지지 않는다([[ADR-127]]).
+  // 목록이 갱신되는 순간 고른 값이 사라질 수 있다. 렌더 중에 던지지 않는다.
   it('고른 값이 목록에 없어도 안 죽는다', async () => {
     const { view } = await 그리기('사라진-ocid')
 

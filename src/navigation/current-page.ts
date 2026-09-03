@@ -1,13 +1,10 @@
 /**
- * 층 스택의 상태에서 **«지금 페이지»** 를 뽑는다 — [[ADR-167]] 결정 2.
+ * 층 스택의 상태에서 지금 페이지를 뽑는 조회.
  *
- * ## 왜 훑어야 하는가
+ * 바는 층 스택의 `layout` 이 그려서 그 내비게이터의 상태를 인자로 받는다. 그 상태의 각 단은
+ * 다시 탭 내비게이터라 지금 페이지는 두 단 아래에 있다.
  *
- * 바는 층 스택의 `layout` 이 그린다(결정 2) — 그래서 그 내비게이터의 **상태를 인자로 받는다**.
- * 그 상태의 각 단은 다시 탭 내비게이터라, «지금 페이지» 는 두 단 아래에 있다.
- *
- * 사본을 들지 않고 **읽기만** 하는 것이 요점이다 — «페이지의 진실 공급원은 react-navigation
- * 하나» 라는 [[ADR-132]] 의 규칙이 그대로 산다.
+ * 사본을 들지 않고 읽기만 한다. 페이지의 진실 공급원은 react-navigation 하나다.
  */
 
 import { BAR_GROUPS } from './bar-model'
@@ -29,11 +26,11 @@ function isTabRoute(name: unknown): name is TabRouteName {
   return typeof name === 'string' && (TAB_ROUTE_NAMES as readonly string[]).includes(name)
 }
 
-/** 그 층 화면의 첫 페이지 — 상태도 파라미터도 없을 때의 마지막 안전망. 표에서 나온다. */
+/** 그 층 화면의 첫 페이지. 상태도 파라미터도 없을 때의 마지막 안전망. 표에서 나온다. */
 function firstPageOfLayer(layer: string): TabRouteName | undefined {
   const group = BAR_GROUPS.find((candidate) => candidate.layer === layer)
   if (group !== undefined) return group.subs[0].page
-  // 그룹 층 — 하위가 없는 그룹들의 페이지 중 첫째다.
+  // 그룹 층. 하위가 없는 그룹들의 페이지 중 첫째다.
   if (layer === ('Groups' satisfies LayerRouteName)) {
     return BAR_GROUPS.find((candidate) => candidate.page !== null)?.page ?? undefined
   }
@@ -46,14 +43,13 @@ function topRoute(state: NavStateLike | undefined): NavRouteLike | undefined {
 }
 
 /**
- * 층 스택의 상태에서 지금 페이지를 읽는다.
+ * 층 스택의 상태에서 읽는 지금 페이지.
  *
- * 순서는 «가장 안쪽 상태 → 이동에 실어 보낸 `screen` 파라미터 → 그 층의 첫 화면» 이다. 둘째 단이
- * 있는 이유는 중첩 내비게이터가 **첫 프레임에 아직 상태를 안 갖기** 때문이고, 우리가 언제나
- * `params: { screen }` 을 명시해 이동하므로 그 자리에 답이 있다.
+ * 순서는 가장 안쪽 상태 → 이동에 실어 보낸 `screen` 파라미터 → 그 층의 첫 화면이다. 둘째 단이
+ * 있는 것은 중첩 내비게이터가 첫 프레임에 아직 상태를 안 갖기 때문이고, 이동할 때 언제나
+ * `params: { screen }` 을 명시하므로 그 자리에 답이 있다.
  *
- * 알 수 없는 이름이면 첫 화면으로 떨어진다 — 바가 던지면 앱이 통째로 죽는다. 화면 목록이 표와
- * 어긋나는 일은 `bar-model` 표 테스트가 따로 막는다.
+ * 알 수 없는 이름이면 첫 화면으로 떨어진다. 바가 던지면 앱이 통째로 죽는다.
  */
 export function pageFromLayerState(state: NavStateLike | undefined): TabRouteName {
   const layer = topRoute(state)

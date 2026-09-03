@@ -1,7 +1,7 @@
-// 완료 판정의 **출처**를 고정한다([[ADR-142]] 결정 4).
+// 완료 판정의 **출처**를 고정한다.
 //
-// 케이스를 카드 렌더러의 갈래마다 하나씩 둔다 — 이 표가 카드와 갈라지는 순간이 곧 링이 거짓말을
-// 시작하는 순간이라, 여기 없는 갈래는 «아직 안 본 갈래» 가 아니라 **빠뜨린 갈래**다.
+// 케이스를 카드 렌더러의 갈래마다 하나씩 둔다. 이 표가 카드와 갈라지는 순간이 곧 링이 거짓말을
+// 시작하는 순간이라, 여기 없는 갈래는 **아직 안 본 갈래** 가 아니라 **빠뜨린 갈래**다.
 import type { DailyContent, WeeklyContent } from '../../../types'
 
 import {
@@ -48,7 +48,7 @@ describe('일간 완료 판정', () => {
     expect(dailyContentCompletion(daily({ ...monsterPark, nowCount: 2, maxCount: 3 }))).toBe('incomplete')
   })
 
-  // 0/0을 100%로 읽으면 «아직 안 열린 항목» 이 전부 완료로 채워진다.
+  // 0/0을 100%로 읽으면 **아직 안 열린 항목** 이 전부 완료로 채워진다.
   it('maxCount 가 0이면 완료가 아니다', () => {
     expect(dailyContentCompletion(daily({ kind: 'contents', nowCount: 0, maxCount: 0 }))).toBe('incomplete')
   })
@@ -67,8 +67,7 @@ describe('주간 완료 판정', () => {
     expect(weeklyContentCompletion(weekly({ name, nowCount: 0 }))).toBe('incomplete')
   })
 
-  // [[ADR-142]] 정정 7(사용자 지시): 점수에 상한이 없어도 «참여했는가» 는 잴 수 있다 —
-  // `unmeasurable` 이었다가 판정 대상이 됐다.
+  // 점수에 상한이 없어도 참여했는가 는 잴 수 있다. 그래서 판정 대상이다.
   it('길드 지하 수로는 점수가 0이 아니면 완료다', () => {
     const name = '[길드] 지하 수로'
     expect(weeklyContentCompletion(weekly({ name, nowCount: 1 }))).toBe('complete')
@@ -110,8 +109,8 @@ describe('주간 완료 판정', () => {
     expect(weeklyContentCompletion(weekly({ name, questState: 0 }))).toBe('incomplete')
   })
 
-  // 결정 4의 핵심 — 끝이 없는 항목은 «미완료» 가 아니라 «세지 않음» 이다. 정정 7 이후 이 자리에
-  // 남은 것은 무릉도장 하나다(층수는 참여 여부로도 못 접는다 — 1층도 «했다» 인지는 답이 없다).
+  // 끝이 없는 항목은 미완료가 아니라 세지 않음이다. 이 자리에 남은 것은 무릉도장 하나다.
+  // 층수는 참여 여부로도 못 접는다. 1층도 했다 인지는 답이 없다.
   it('무릉도장은 판정하지 않는다', () => {
     const name = '[주간 퀘스트] 무릉도장'
     expect(weeklyContentCompletion(weekly({ name, nowCount: 50, maxCount: 0 }))).toBe('unmeasurable')
@@ -134,7 +133,7 @@ describe('진행 합계', () => {
   it('끝이 없는 항목은 분모에서 빠진다', () => {
     const contents = [
       weekly({ name: '[주간 퀘스트] 무릉도장', nowCount: 90 }),
-      // 지하 수로는 정정 7로 **분모에 든다** — 점수가 있으니 완료로도 센다.
+      // 지하 수로는 분모에 든다. 점수가 있으니 완료로도 센다.
       weekly({ name: '[길드] 지하 수로', nowCount: 1200 }),
       weekly({ name: '[주간 퀘스트] 크리티아스', questState: 2 }),
     ]
@@ -142,8 +141,8 @@ describe('진행 합계', () => {
     expect(weeklyContentProgress(contents, 300)).toEqual({ completed: 2, total: 2 })
   })
 
-  // [[ADR-162]] 결정 1 — 요구 레벨에 못 미치는 항목은 **분모에서도 빠진다.** 남겨 두면 그 캐릭터의
-  // 링이 100%에 절대 도달하지 못하고, 「남은 스케줄」의 숫자도 영원히 안 줄어든다.
+  // 요구 레벨에 못 미치는 항목은 **분모에서도 빠진다.** 남겨 두면 그 캐릭터의
+  // 링이 100%에 절대 도달하지 못하고, `남은 스케줄`의 숫자도 영원히 안 줄어든다.
   it('요구 레벨에 못 미치는 항목은 분모에서 빠진다', () => {
     const contents = [
       daily({ name: '몬스터파크', questState: 0 }),   // 요구 레벨 105
@@ -154,7 +153,7 @@ describe('진행 합계', () => {
     expect(dailyContentProgress(contents, 104)).toEqual({ completed: 1, total: 1 })
   })
 
-  // 레벨을 모르면 단정하지 않는다 — 전부 센다([[ADR-057]] 태도).
+  // 레벨을 모르면 단정하지 않는다. 전부 센다(태도).
   it('레벨을 모르면 아무것도 빼지 않는다', () => {
     const contents = [daily({ name: '몬스터파크', questState: 0 })]
 

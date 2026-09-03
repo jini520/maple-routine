@@ -1,15 +1,15 @@
-// 이 파일이 지키는 것은 **기존 사용자의 데이터가 계속 보이는가** 하나다(`docs/migration/data.md` 결정 1).
+// 이 파일이 지키는 것은 기존 사용자의 데이터가 계속 보이는가 하나다.
 //
-// 여기서 틀리면 예외가 안 난다 — 접두사가 어긋나면 조회가 그냥 `null` 을 돌려주고, 화면에는 "빈
-// 저장소"로 그려진다. 그래서 접두사 문자열 자체를 리터럴로 못박는다: 상수를 참조해 비교하면 상수가
-// 틀렸을 때 테스트도 같이 틀린다.
+// 여기서 틀리면 예외가 안 난다. 접두사가 어긋나면 조회가 그냥 `null` 을 돌려주고 화면에는 빈
+// 저장소로 그려진다. 그래서 접두사 문자열 자체를 리터럴로 못박는다. 상수를 참조해 비교하면
+// 상수가 틀렸을 때 테스트도 같이 틀린다.
 import {
   IOS_KEY_PREFIX,
   toAppKeys,
   toNativeKey,
 } from '../capacitor-storage-keys'
 
-// 실제로 쓰이는 키에서 골랐다(`packages/core/src/storage/keys.ts` · `docs/persistence/preferences.md`).
+// 실제로 쓰이는 키에서 골랐다(`src/storage/keys.ts`· `docs/persistence/preferences.md`).
 // `:` 를 물고 있는 파생 키를 섞은 이유는 접두사 처리가 키 모양을 안 가리는지 함께 보기 위해서다.
 const APP_KEYS = [
   'apiKey',
@@ -37,7 +37,7 @@ describe('iOS 키 접두사', () => {
     ])
   })
 
-  // 읽기와 쓰기가 같은 키를 봐야 한다 — 한쪽만 접두사를 붙이면 앱을 쓸수록 데이터가 갈라진다.
+  // 읽기와 쓰기가 같은 키를 봐야 한다. 한쪽만 접두사를 붙이면 앱을 쓸수록 데이터가 갈라진다.
   it('붙였다 떼면 원래 키 목록과 같다', () => {
     const nativeKeys = APP_KEYS.map((key) => toNativeKey(key, 'ios'))
     expect(toAppKeys(nativeKeys, 'ios')).toEqual(APP_KEYS)

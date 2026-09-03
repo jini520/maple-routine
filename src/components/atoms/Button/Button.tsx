@@ -1,9 +1,8 @@
 /**
- * 버튼 atom. `design-system.md` 의 `기본 컴포넌트` 절이 규정한 버튼 넷을 그린다
- * ([[ADR-094]] 결정 3 · [[ADR-198]]).
+ * 버튼 atom. `design-system.md` 의 기본 컴포넌트 절이 규정한 버튼 넷을 그린다.
  *
- * **외형만 갖고 레이아웃은 호출부에 남긴다.** 폭·정렬·간격은 `className` 으로 준다
- * ([[ADR-198]] 결정 1). 색·여백·글자를 정하는 표는 `variants.ts` 에 있다(결정 3).
+ * 외형만 갖고 레이아웃은 호출부에 남긴다. 폭·정렬·간격은 `className` 으로 준다. 색·여백·글자를
+ * 정하는 표는 `variants.ts` 에 있다.
  */
 import { Children, type ReactNode } from 'react'
 import { Pressable, View, type PressableProps } from 'react-native'
@@ -17,7 +16,7 @@ import {
   type ButtonVariant,
 } from './variants'
 
-/** 라벨 옆이 아니라 라벨 자리에 서므로 크기는 [[ADR-061]] 결정 5 의 16px 그대로다. */
+/** 라벨 옆이 아니라 라벨 자리에 서므로 크기는 라벨 글자와 같은 16px 이다. */
 const BUSY_SPINNER_SIZE = 16
 
 export interface ButtonProps extends Omit<PressableProps, 'children'> {
@@ -28,7 +27,7 @@ export interface ButtonProps extends Omit<PressableProps, 'children'> {
   /** 글자 클래스. 변형 기본값 뒤에 이어 붙어 그것을 덮는다. */
   textClassName?: string
   /**
-   * 대기 중인가. 라벨이 가려지고 그 자리에 스피너가 겹친다([[ADR-061]] 정정 3).
+   * 대기 중인가. 라벨이 가려지고 그 자리에 스피너가 겹친다.
    *
    * 못 누르게 하는 것은 이 프롭이 아니라 `disabled` 다. 대기 중에 누를 수 있는지는 버튼 모양이
    * 아니라 화면의 판단이라 호출부에 남긴다.
@@ -74,7 +73,7 @@ function join(base: string, extra: string | undefined): string {
  * </Button>
  *
  * @example
- * // 대기. 라벨은 그대로 두고 `busy` 만 켠다 — 스피너는 버튼이 그린다
+ * // 대기. 라벨은 그대로 두고 `busy` 만 켠다. 스피너는 버튼이 그린다
  * <Button variant="primary" busy={isSubmitting} disabled={isSubmitting} onPress={handleSubmit}>
  *   확인
  * </Button>
@@ -88,7 +87,7 @@ export function Button({
   ...rest
 }: ButtonProps): React.JSX.Element {
   // 라벨을 지우지 않고 가린다. 자리를 그대로 차지해야 버튼 폭이 안 줄고, `opacity` 는 접근성
-  // 트리를 안 건드려서 스크린리더는 라벨을 그대로 읽는다([[ADR-061]] 정정 3).
+  // 트리를 안 건드려서 스크린리더는 라벨을 그대로 읽는다.
   const label = join(join(BUTTON_VARIANT_TEXT_CLASS[variant], textClassName), busy ? 'opacity-0' : undefined)
 
   return (

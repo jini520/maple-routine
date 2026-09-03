@@ -1,15 +1,15 @@
-// 바 위 슬롯 — [[ADR-180]].
+// 바 위 슬롯.
 //
-// 여기서 묻는 것은 셋이다: **어디에 그리나**(선 자리가 아니라 호스트) · **누가 뒤에 서나**(바보다
-// 뒤여야 백드롭이 바를 덮는다) · **화면이 숨으면 어떻게 되나**(포털로 나간 그림은 저절로 안 숨는다).
+// 여기서 묻는 것은 셋이다: **어디에 그리나**(선 자리가 아니라 호스트)· **누가 뒤에 서나**(바보다
+// 뒤여야 백드롭이 바를 덮는다)· **화면이 숨으면 어떻게 되나**(포털로 나간 그림은 저절로 안 숨는다).
 import { act, render, screen } from '@testing-library/react-native'
 import { View } from 'react-native'
 import { PortalProvider } from '@gorhom/portal'
 import { NavigationContext } from '@react-navigation/native'
 
-import { AboveBar, AboveBarHost } from '../AboveBar'
+import { BottomBarOverlay, BottomBarOverlayHost } from '../BottomBarOverlay'
 
-/** `toJSON()` 트리를 훑어 testID 를 **그리는 순서대로** 낸다 — 뒤에 있는 것이 위에 그려진다. */
+/** `toJSON` 트리를 훑어 그리는 순서대로 낸 testID 목록. 뒤에 있는 것이 위에 그려진다. */
 function 그리는순서(): string[] {
   const order: string[] = []
 
@@ -30,24 +30,24 @@ function 그리는순서(): string[] {
   return order
 }
 
-/** 「바 하나 + 화면 하나」 를 세운 실제 트리의 축소판 — 호스트는 바 **뒤**다. */
+/** 바 하나 + 화면 하나 를 세운 실제 트리의 축소판. 호스트는 바 **뒤**다. */
 async function 그리기(options: { 호스트?: boolean } = {}) {
   const { 호스트 = true } = options
 
   return render(
     <PortalProvider shouldAddRootHost={false}>
       <View testID="화면">
-        <AboveBar>
+        <BottomBarOverlay>
           <View testID="떠있는것" />
-        </AboveBar>
+        </BottomBarOverlay>
       </View>
       <View testID="바" />
-      {호스트 ? <AboveBarHost /> : null}
+      {호스트 ? <BottomBarOverlayHost /> : null}
     </PortalProvider>,
   )
 }
 
-it('선 자리가 아니라 호스트에 그린다 — 그래서 바보다 뒤에 선다', async () => {
+it('선 자리가 아니라 호스트에 그린다. 그래서 바보다 뒤에 선다', async () => {
   await 그리기()
 
   const order = 그리는순서()
@@ -56,7 +56,7 @@ it('선 자리가 아니라 호스트에 그린다 — 그래서 바보다 뒤�
   expect(order.indexOf('떠있는것')).toBeGreaterThan(order.indexOf('바'))
 })
 
-// 호스트가 없으면 **조용히 선 자리에 그리지 않는다** — 그러면 «올라간 줄 알았는데 안 올라간»
+// 호스트가 없으면 **조용히 선 자리에 그리지 않는다**. 그러면 **올라간 줄 알았는데 안 올라간**
 // 상태가 되고, 그것이 바로 이 슬롯이 없애려던 결함이다.
 it('호스트가 없으면 아무 데도 안 그린다', async () => {
   await 그리기({ 호스트: false })
@@ -102,11 +102,11 @@ describe('화면이 초점을 잃으면 안 그린다', () => {
     await render(
       <PortalProvider shouldAddRootHost={false}>
         <NavigationContext.Provider value={가짜.navigation as never}>
-          <AboveBar>
+          <BottomBarOverlay>
             <View testID="떠있는것" />
-          </AboveBar>
+          </BottomBarOverlay>
         </NavigationContext.Provider>
-        <AboveBarHost />
+        <BottomBarOverlayHost />
       </PortalProvider>,
     )
 

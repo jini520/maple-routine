@@ -36,10 +36,10 @@ describe('round-trip', () => {
   })
 })
 
-// ADR-144 결정 2: 캐릭터 카드 2줄이 «레벨 + 직업»이고 위 층은 네트워크 없이 캐시로 그린다.
-// 값의 출처는 character/list이고 **쓰는 쪽이 엔트리에 담아 넘긴다** — 저장 레이어는 그것을 그대로
+// 캐릭터 카드 2줄이 **레벨 + 직업**이고 위 층은 네트워크 없이 캐시로 그린다.
+// 값의 출처는 character/list이고 **쓰는 쪽이 엔트리에 담아 넘긴다**. 저장 레이어는 그것을 그대로
 // 왕복시킬 뿐이라, character/basic 응답이 직업을 준다고 단정하는 자리가 생기지 않는다.
-describe('jobClass (ADR-144 결정 2)', () => {
+describe('jobClass', () => {
   it('호출부가 담아 넘긴 jobClass를 그대로 왕복시킨다', async () => {
     const entry: CachedCharacterBasicEntry = {
       profile: { ...sampleProfile, jobClass: '아크메이지(썬,콜)' },
@@ -85,7 +85,7 @@ describe('쓰기 실패 전파', () => {
   })
 })
 
-describe('getAllCachedCharacterBasicOcids (ADR-017 결정 6)', () => {
+describe('getAllCachedCharacterBasicOcids', () => {
   afterEach(async () => {
     await clearCachedCharacterBasic(ACCOUNT, 'ocid-2')
     await clearCachedCharacterBasic(ACCOUNT, 'ocid-3')
@@ -121,7 +121,7 @@ describe('getAllCachedCharacterBasicOcids (ADR-017 결정 6)', () => {
   })
 })
 
-describe('계정별 인덱스 (ADR-086 결정 9)', () => {
+describe('계정별 인덱스', () => {
   const OTHER = 'account-2'
 
   afterEach(async () => {
@@ -139,7 +139,7 @@ describe('계정별 인덱스 (ADR-086 결정 9)', () => {
     await expect(getAllCachedCharacterBasicOcids(OTHER)).resolves.toEqual(['ocid-9'])
   })
 
-  it('엔트리 자체는 계정과 무관하게 읽힌다 — 되돌아오면 따뜻한 캐시를 재사용한다', async () => {
+  it('엔트리 자체는 계정과 무관하게 읽힌다. 되돌아오면 따뜻한 캐시를 재사용한다', async () => {
     await setCachedCharacterBasic(OTHER, 'ocid-9', sampleEntry)
     await expect(getCachedCharacterBasic('ocid-9')).resolves.toEqual(sampleEntry)
   })
@@ -152,7 +152,7 @@ describe('계정별 인덱스 (ADR-086 결정 9)', () => {
     await expect(prefs.get('characterBasicCache:index')).resolves.toBeNull()
   })
 
-  it('이관은 인자가 아니라 저장된 selectedAccountId를 따른다 — 커밋 전 후보 계정에 흘러들지 않는다', async () => {
+  it('이관은 인자가 아니라 저장된 selectedAccountId를 따른다. 커밋 전 후보 계정에 흘러들지 않는다', async () => {
     await prefs.set('selectedAccountId', ACCOUNT)
     await prefs.set('characterBasicCache:index', JSON.stringify(['ocid-1']))
 

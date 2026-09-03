@@ -10,7 +10,7 @@ interface EmptyStateProps {
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }> | 'leaf'
   title: string
   description?: string
-  /** 문구가 지시하는 목적지가 앱 안에 있을 때만 준다 — 없으면 CTA를 만들지 않는다(ADR-060 결정 3). */
+  /** 문구가 지시하는 목적지가 앱 안에 있을 때만 주는 CTA. 없으면 만들지 않는다. */
   action?: EmptyStateAction
   size?: 'page' | 'inline'
 }
@@ -28,7 +28,7 @@ export function EmptyState(props: EmptyStateProps): React.JSX.Element {
           isPage ? 'h-[84px] w-[84px]' : 'h-14 w-14'
         }`}
       >
-        {/* 마크 색은 primary 계열로 통일 — primary-ink 는 라이트 테마에선 더 또렷하지만 레테(다크)에서
+        {/* 마크 색은 primary 계열로 통일. primary-ink 는 라이트 테마에선 더 또렷하지만 레테(다크)에서
             배지 배경에 묻힌다(그 테마만 primary-ink 가 primary 보다 어둡다). */}
         {Icon === 'leaf' ? (
           <MapleLeaf size={isPage ? 42 : 28} className="text-primary-ink" />

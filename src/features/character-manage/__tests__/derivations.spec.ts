@@ -34,7 +34,7 @@ function cached(overrides: Partial<CharacterBasicProfile> = {}): CharacterBasicP
   }
 }
 
-describe('summarizeAccount — 월드 집계', () => {
+describe('summarizeAccount: 월드 집계', () => {
   it('월드가 셋이면 많은 순으로 둘만 남긴다', () => {
     const summary = summarizeAccount(
       account([
@@ -85,7 +85,7 @@ describe('summarizeAccount — 월드 집계', () => {
     expect(summary?.worldCounts).toEqual([{ world: '베라', count: 2 }])
   })
 
-  it('셋째 월드를 «외 n» 같은 꼬리로 적지 않는다 — 목록이 정확히 둘이다', () => {
+  it('셋째 월드를 **외 n** 같은 꼬리로 적지 않는다. 목록이 정확히 둘이다', () => {
     const summary = summarizeAccount(
       account([
         character({ name: '가', level: 200, world: '스카니아' }),
@@ -100,7 +100,7 @@ describe('summarizeAccount — 월드 집계', () => {
   })
 })
 
-describe('summarizeAccount — 대표', () => {
+describe('summarizeAccount: 대표', () => {
   it('레벨이 가장 높은 캐릭터가 대표다', () => {
     const characters = [
       character({ name: '낮음', level: 100 }),
@@ -135,7 +135,7 @@ describe('summarizeAccount — 대표', () => {
 })
 
 describe('buildSelectedCharacterViews', () => {
-  it('저장 순서를 그대로 지킨다 — 레벨로 다시 정렬하지 않는다', () => {
+  it('저장 순서를 그대로 지킨다. 레벨로 다시 정렬하지 않는다', () => {
     const views = buildSelectedCharacterViews(
       ['ocid-low', 'ocid-high', 'ocid-mid'],
       new Map([
@@ -175,12 +175,12 @@ describe('buildSelectedCharacterViews', () => {
     expect(views[0].jobClass).toBeUndefined()
     expect(views[0].world).toBeUndefined()
     expect(views[0].ocid).toBe('ocid-unknown')
-    // 이름은 타입이 `string` 이라 «없음» 을 담을 자리가 빈 문자열뿐이다. 화면이 채울
-    // 자리표시자(«알 수 없음» 등)를 여기서 만들지 않는다.
+    // 이름은 타입이 `string` 이라 **없음** 을 담을 자리가 빈 문자열뿐이다. 화면이 채울
+    // 자리표시자(**알 수 없음** 등)를 여기서 만들지 않는다.
     expect(views[0].name).toBe('')
   })
 
-  it('캐시 엔트리가 null 로 들어와도 «없음» 과 똑같이 다룬다', () => {
+  it('캐시 엔트리가 null 로 들어와도 **없음** 과 똑같이 다룬다', () => {
     const views = buildSelectedCharacterViews(
       ['ocid-1'],
       new Map([['ocid-1', null]]),
@@ -202,7 +202,7 @@ describe('buildSelectedCharacterViews', () => {
     expect(views[0].jobClass).toBeUndefined()
   })
 
-  it('조회 불가 캐릭터도 목록에 남는다 — 해제할 자리가 여기뿐이다', () => {
+  it('조회 불가 캐릭터도 목록에 남는다. 해제할 자리가 여기뿐이다', () => {
     const views = buildSelectedCharacterViews(
       ['ocid-1', 'ocid-2'],
       new Map([['ocid-1', cached({ name: '멀쩡이' })]]),
@@ -238,7 +238,7 @@ describe('resolveRepresentative', () => {
     expect(resolveRepresentative(['a', 'b'], 'zzz')).toBeNull()
   })
 
-  it('저장값이 없으면 null 이다 — 첫 번째를 임시 대표로 만들지 않는다', () => {
+  it('저장값이 없으면 null 이다. 첫 번째를 임시 대표로 만들지 않는다', () => {
     expect(resolveRepresentative(['a', 'b'], null)).toBeNull()
   })
 
@@ -247,9 +247,9 @@ describe('resolveRepresentative', () => {
   })
 })
 
-// ADR-147 정정 2 — today 의 「대표 캐릭터」 위젯이 ADR-143 결정 4의 «미지정이면 첫 번째» 를 읽는
+// today 의 `대표 캐릭터` 위젯이의 **미지정이면 첫 번째** 를 읽는
 // 첫 화면이다. resolveRepresentative 와 **다른 질문**이라 옆에 하나 더 두었고, 아래 회귀 가드가
-// 그 둘이 합쳐지는 것을 막는다(합치면 ADR-144 결정 4의 «채워진 별이 하나도 없다» 가 깨진다).
+// 그 둘이 합쳐지는 것을 막는다(합치면의 **채워진 별이 하나도 없다** 가 깨진다).
 describe('resolveDisplayRepresentative', () => {
   it('저장된 대표가 목록에 있으면 그것이다', () => {
     expect(resolveDisplayRepresentative(['a', 'b', 'c'], 'b')).toBe('b')
@@ -267,13 +267,13 @@ describe('resolveDisplayRepresentative', () => {
     expect(resolveDisplayRepresentative([], 'a')).toBeNull()
   })
 
-  it('회귀 가드 — 같은 입력에 resolveRepresentative 는 여전히 null 이다', () => {
+  it('회귀 가드. 같은 입력에 resolveRepresentative 는 여전히 null 이다', () => {
     expect(resolveRepresentative(['a', 'b'], null)).toBeNull()
     expect(resolveRepresentative(['a', 'b'], 'zzz')).toBeNull()
   })
 })
 
-// 사용자 지정 2026-08-17 — «더 높은 레벨이 존재하는 ID 가 먼저». 계정 자체에는 «주력» 을 말하는 값이
+// **더 높은 레벨이 존재하는 ID 가 먼저**. 계정 자체에는 **주력** 을 말하는 값이
 // 없고(accountId 는 불투명 문자열·응답 순서는 넥슨이 정한다), 사람이 실제로 쓰는 기준이 최고 레벨이다.
 describe('sortAccountSummaries', () => {
   function summary(accountId: string, level: number, name = `대표-${accountId}`) {
@@ -288,7 +288,7 @@ describe('sortAccountSummaries', () => {
     expect(sorted.map((view) => view.accountId)).toEqual(['b', 'c', 'a'])
   })
 
-  it('동레벨이면 대표 이름순이다 — 응답 순서를 따르면 열 때마다 달라 보인다', () => {
+  it('동레벨이면 대표 이름순이다. 응답 순서를 따르면 열 때마다 달라 보인다', () => {
     const sorted = sortAccountSummaries([summary('a', 200, '나중'), summary('b', 200, '가장')])
 
     expect(sorted.map((view) => view.accountId)).toEqual(['b', 'a'])

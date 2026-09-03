@@ -1,10 +1,10 @@
 /**
- * 달력 격자. **그리기만 한다**([[ADR-169]] 결정 7). 어떤 칸이 서는지는 `lib/calendar` 이 정하고,
- * `weeks` 에 주 하나만 넘기면 그대로 주간 격자다([[ADR-170]] 결정 11).
+ * 달력 격자. **그리기만 한다**. 어떤 칸이 서는지는 `lib/calendar` 이 정하고,
+ * `weeks` 에 주 하나만 넘기면 그대로 주간 격자다.
  *
  * 앞뒤 달 칸도 눌린다. 달을 옮길지는 받는 쪽이 정한다.
  *
- * @see [[ADR-169]] 정정 1·3·4. 칸이 금액 두 줄 + 열지도가 된 경위.
+ * @see. 칸이 금액 두 줄 + 열지도가 된 경위.
  */
 import { Pressable, View } from 'react-native'
 
@@ -29,7 +29,7 @@ export interface CalendarGridProps {
   /** 요일 머리. 기본은 월간의 일~토, 주간은 `WEEKDAY_LABELS_RESET`(목~수)를 넘긴다. */
   readonly weekdayLabels?: readonly string[]
   /**
-   * 열지도 기준선. **기본값을 두지 않는다**([[ADR-170]] 결정 12). 폴백이 있으면 주간 호출부가
+   * 열지도 기준선. **기본값을 두지 않는다**. 폴백이 있으면 주간 호출부가
    * 잊었을 때 받은 이레가 기준이 되는데, 색이 그럴듯해서 화면에서 안 걸린다.
    */
   readonly incomeMax: number
@@ -90,7 +90,7 @@ export function CalendarGrid(props: CalendarGridProps): React.JSX.Element {
                 className="flex-1 items-center py-1"
               >
                 {/* 열지도 바탕. 형제보다 먼저라 글자 뒤에 깔린다. **네 방향으로 같은 만큼** 물러난다
-                    ([[ADR-169]] 정정 4). 좌우로만 물러나면 칠해진 날이 세로로 붙는다. */}
+                    . 좌우로만 물러나면 칠해진 날이 세로로 붙는다. */}
                 <View
                   testID={`calendar-heat-${day.dateKey}`}
                   style={{ opacity: heat }}

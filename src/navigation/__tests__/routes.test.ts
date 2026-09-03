@@ -1,4 +1,4 @@
-// 라우트 표가 계획서 §1 과 어긋나지 않는지 본다. **화면 동작이 아니라 목록의 완전성**이 대상이다 —
+// 라우트 표가 계획서 §1 과 어긋나지 않는지 본다. **화면 동작이 아니라 목록의 완전성**이 대상이다.
 // 실제로 열리는지는 `RootNavigator.test.tsx` 가 본다.
 //
 // 이 파일이 있는 이유는 하나다: 계획서(`docs/migration/parity-inventory.md` §1)와 코드가 두 벌이면
@@ -15,8 +15,8 @@ import {
 /**
  * `docs/migration/parity-inventory.md` §1 의 첫 열, 순서 그대로.
  *
- * `/settings/about/privacy` 만 계획서 표의 `/settings/privacy` 와 다르다 — 계획서 쪽이 낡았고
- * ([[ADR-120]] 결정 11 이 구현 중에 `about` 의 자식으로 정정했다) 이 커밋에서 함께 고쳤다.
+ * `/settings/about/privacy` 만 계획서 표의 `/settings/privacy` 와 다르다. 구현 중에 `about` 의
+ * 자식으로 정정한 것이 맞고, 계획서 쪽이 낡았다.
  */
 const PARITY_PATHS = [
   '/',
@@ -38,9 +38,9 @@ const PARITY_PATHS = [
   '/settings/about/privacy',
 ]
 
-describe('ROUTE_TABLE — 계획서 §1 대조', () => {
-  // **`origin` 으로 갈라 본다**([[ADR-132]] 결정 1). RN 에서 새로 생긴 화면 넷은 웹에 없으므로 이
-  // 대조에 섞이면 안 된다 — 섞으면 «계획서와 같은가» 라는 이 테스트의 질문이 답할 수 없는 것이 된다.
+describe('ROUTE_TABLE: 계획서 §1 대조', () => {
+// **`origin` 으로 갈라 본다**. 새로 생긴 화면 넷은 대조할 짝이 없으므로 이
+  // 대조에 섞이면 안 된다. 섞으면 **계획서와 같은가** 라는 이 테스트의 질문이 답할 수 없는 것이 된다.
   it('웹에서 온 17개 경로를 하나도 빠뜨리지 않고 순서까지 같다', () => {
     expect(ROUTE_TABLE.filter((row) => row.origin === 'web').map((row) => row.path)).toEqual(
       PARITY_PATHS,
@@ -53,12 +53,10 @@ describe('ROUTE_TABLE — 계획서 §1 대조', () => {
     expect(new Set(paths).size).toBe(paths.length)
   })
 
-  // 셋은 [[ADR-132]] 결정 1 의 탭이고, 나머지 둘은 하위 페이지다 — 캐릭터 관리는 [[ADR-144]]
-  // 결정 1(웹뷰 앱에서 같은 일을 하는 것이 **모달**이라 대조할 경로가 없다), 아이템 분배 계산기는
-  // [[ADR-168]] 결정 6(유틸리티의 첫 도구 · 웹에 그런 화면 자체가 없다).
+  // 셋은 탭이고 나머지 둘은 하위 페이지다(캐릭터 관리 · 아이템 분배 계산기).
   //
-  // **탭이 넷에서 셋이 됐다**([[ADR-169]] 결정 1·2) — 사냥 수익·지출 껍데기 둘이 빠지고 가계부
-  // 하나가 들어왔다. 둘은 사라진 것이 아니라 그 화면 안으로 들어간다.
+  // 탭이 넷에서 셋이 됐다. 사냥 수익·지출 껍데기 둘이 빠지고 가계부 하나가 들어왔다. 둘은
+  // 사라진 것이 아니라 그 화면 안으로 들어간다.
   it('RN 에서 새로 생긴 화면은 다섯이고 셋은 탭·둘은 하위 페이지다', () => {
     const rnRows = ROUTE_TABLE.filter((row) => row.origin === 'rn')
 
@@ -71,9 +69,9 @@ describe('ROUTE_TABLE — 계획서 §1 대조', () => {
     ])
   })
 
-  // **`/` 행과 첫 화면이 갈렸다**([[ADR-132]] 결정 7). `/` 행은 *"웹이 그 경로에서 무엇을 보여
+// **`/` 행과 첫 화면이 갈렸다**. `/` 행은 *"그 경로에서 무엇을 보여
   // 줬는가"* 라는 기록이라 그대로 컨텐츠이고, *"이 앱이 어디서 시작하는가"* 는 새 `today` 다.
-  // 한쪽만 고치면 이 테스트가 운다 — 갈린 것 자체가 결정이므로 둘을 함께 고정한다.
+  // 한쪽만 고치면 이 테스트가 운다. 갈린 것 자체가 결정이므로 둘을 함께 고정한다.
   it('`/` 행은 웹 기록이라 컨텐츠 그대로다', () => {
     const root = ROUTE_TABLE.find((row) => row.path === '/')
 
@@ -81,9 +79,9 @@ describe('ROUTE_TABLE — 계획서 §1 대조', () => {
     expect(root?.screen).toBe(ROUTE_TABLE.find((row) => row.path === '/content')?.screen)
   })
 
-  // 위 케이스와 짝이다 — **한 케이스 안에서** 둘을 함께 단언한다. 갈린 것 자체가 결정이라
-  // ([[ADR-132]] 결정 7) *"둘이 지금 이렇게 갈려 있다"* 가 한 자리에 적혀 있어야, `today` 에 내용이
-  // 붙은 뒤 누군가 «불일치» 로 보고 `/` 를 `Today` 로 맞추는 일이 안 생긴다.
+  // 위 케이스와 짝이다. **한 케이스 안에서** 둘을 함께 단언한다. 갈린 것 자체가 결정이라
+  //  *"둘이 지금 이렇게 갈려 있다"* 가 한 자리에 적혀 있어야, `today` 에 내용이
+  // 붙은 뒤 누군가 **불일치** 로 보고 `/` 를 `Today` 로 맞추는 일이 안 생긴다.
   it('첫 화면은 today 이고 `/` 행은 여전히 컨텐츠다', () => {
     expect(INITIAL_TAB_ROUTE).toBe('Today')
     expect(ROUTE_TABLE.find((row) => row.path === '/')?.target).toEqual({
@@ -93,26 +91,26 @@ describe('ROUTE_TABLE — 계획서 §1 대조', () => {
     expect(ROUTE_TABLE.find((row) => row.target.kind === 'tab' && row.target.route === 'Today')).toBeDefined()
   })
 
-  // 라벨은 여기 없다 — 바가 라벨을 두 층에서 쓰므로 `bar-model.ts` 의 `BAR_GROUPS` 가 갖는다
-  // ([[ADR-132]] 결정 1). 그 표와 이 목록이 같은 집합인지는 `bar-model.test.ts` 가 본다.
+  // 라벨은 여기 없다. 바가 라벨을 두 층에서 쓰므로 `bar-model.ts` 의 `BAR_GROUPS` 가 갖는다
+  // 그 표와 이 목록이 같은 집합인지는 `bar-model.test.ts` 가 본다.
   it('탭 화면은 여덟이고 표에서 파생된다', () => {
     expect(TAB_ROUTE_NAMES).toEqual([
       'Content',
       'Boss',
-      // 웹에서는 `/boss` 위로 밀려 올라오던 하위 페이지다([[ADR-145]] 결정 1) — RN 에서만 형제 탭이라
+// 하위 페이지가 아니라 형제 탭이라
       // 이 목록에 웹 경로가 하나 더 든다.
       'BossManage',
       'Profit',
       'Settings',
       'Today',
-      // 사냥 수익·지출 자리에 들어온 하나([[ADR-169]] 결정 1) — 아홉에서 여덟이 됐다.
+      // 사냥 수익·지출 자리에 들어온 하나. 아홉에서 여덟이 됐다.
       'Cashbook',
       'Utility',
     ])
     expect(new Set(TAB_ROUTE_NAMES).size).toBe(TAB_ROUTE_NAMES.length)
   })
 
-  // **웹 경로인데 탭인 행은 이것 하나다**([[ADR-145]] 결정 1). 나머지 `/…/…` 경로는 전부 push 이므로,
+  // **웹 경로인데 탭인 행은 이것 하나다**. 나머지 `/…/…` 경로는 전부 push 이므로,
   // 이 예외가 조용히 늘어나면(= 다른 하위 페이지도 탭이 되면) 여기서 드러난다.
   it('웹의 하위 경로 중 탭이 된 것은 보스 관리 하나다', () => {
     const promoted = ROUTE_TABLE.filter(
@@ -135,9 +133,9 @@ describe('ROUTE_TABLE — 계획서 §1 대조', () => {
       'SettingsAccountData',
       'SettingsAbout',
       'SettingsPrivacy',
-      // 유틸리티의 첫 도구([[ADR-168]] 결정 6) — 웹에 그런 화면 자체가 없다.
+// 유틸리티의 첫 도구.
       'UtilityItemSplit',
-      // 웹에 짝이 없다([[ADR-144]] 결정 1) — 그쪽에서는 설정의 모달이다.
+// 설정의 모달이 아니라 화면이다.
       'SettingsCharacters',
     ])
     expect(new Set(STACK_ROUTE_NAMES).size).toBe(STACK_ROUTE_NAMES.length)
@@ -151,10 +149,10 @@ describe('ROUTE_TABLE — 계획서 §1 대조', () => {
   })
 })
 
-// [[ADR-125]] 결정 3 — 기능 설명 목록에서도, 개발 노트 항목에서도 **같은 상세**가 열린다.
-// 웹에서 경로를 둘로 둔 이유(`resolveStackDirection` 이 형제 이동을 `replace` 로 떨어뜨려 전환이
+// 기능 설명 목록에서도, 개발 노트 항목에서도 **같은 상세**가 열린다.
+// 경로를 둘로 두면(`resolveStackDirection` 이 형제 이동을 `replace` 로 떨어뜨려 전환이
 // 사라진다)는 RN 에 없지만, **화면과 데이터가 한 벌이라는 계약은 그대로**다.
-describe('안내 상세는 두 경로가 같은 화면을 가리킨다 ([[ADR-125]] 결정 3)', () => {
+describe('안내 상세는 두 경로가 같은 화면을 가리킨다', () => {
   const guideRows = ROUTE_TABLE.filter((row) =>
     row.path.endsWith('/:guideId'),
   )
@@ -166,7 +164,7 @@ describe('안내 상세는 두 경로가 같은 화면을 가리킨다 ([[ADR-12
     ])
   })
 
-  it('둘의 `screen` 이 같다 — 사본이 아니라 한 벌이다', () => {
+  it('둘의 `screen` 이 같다. 사본이 아니라 한 벌이다', () => {
     expect(guideRows.map((row) => row.screen)).toEqual([
       'SettingsFeatureGuideScreen',
       'SettingsFeatureGuideScreen',
@@ -174,7 +172,7 @@ describe('안내 상세는 두 경로가 같은 화면을 가리킨다 ([[ADR-12
   })
 
   // 라우트 **이름**은 갈린다(부모가 다르므로 pop 목적지도 다르다). 갈리는 것은 이름뿐이라는 것을
-  // 고정해 둔다 — 나중에 하나로 합치면 어느 목록으로 돌아갈지가 사라진다.
+  // 고정해 둔다. 나중에 하나로 합치면 어느 목록으로 돌아갈지가 사라진다.
   it('라우트 이름은 둘이고 표의 두 행과 일치한다', () => {
     expect(FEATURE_GUIDE_ROUTE_NAMES).toEqual([
       'SettingsFeatureGuide',

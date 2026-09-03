@@ -1,18 +1,18 @@
-// 아토믹 계층의 **의존 방향**을 강제한다([[ADR-094]] 결정 2). `app-capacitor` 의 같은 이름 테스트를
+// 아토믹 계층의 **의존 방향**을 강제한다.
 // RN 쪽으로 옮긴 것이고, 규칙도 같다.
 //
-// 디렉터리를 나눈 실질이 여기 있다 — 규칙이 문서에만 있으면 시간이 지나며 어긋나고, 그때는
+// 디렉터리를 나눈 실질이 여기 있다. 규칙이 문서에만 있으면 시간이 지나며 어긋나고, 그때는
 // 이미 되돌리기 어렵다. 이 테스트가 있으면 "새 컴포넌트를 어디 둘지"가 구조로 정해진다. 전환 중에는
-// 특히 필요하다: 화면(step 4~6)이 붙기 전에 계층이 무너지면 되돌리는 값이 훨씬 비싸다.
+// 특히 필요하다: 화면이 붙기 전에 계층이 무너지면 되돌리는 값이 훨씬 비싸다.
 //
-// ── 웹판과 다른 것 둘 ─────────────────────────────────────────────────────────────
+// 적어 둘 것 둘
 //
 // ① 경로 기준이 `import.meta.url` → `__dirname`. 이 패키지의 테스트는 jest(CJS)라 `import.meta` 가
-//    없다. 뜻은 같다 — **cwd 가 아니라 이 파일** 기준이어야 어디서 돌리든 같은 디렉터리를 본다.
-// ② 웹판은 *"계층 디렉터리 네 개가 모두 존재하고 비어 있지 않다"* 를 단언하지만, 여기서는 계층이
-//    **아래에서부터 차례로** 도착한다(step 3 atoms → 4 molecules → 5 organisms → 6 templates).
+//    없다. 뜻은 같다. **cwd 가 아니라 이 파일** 기준이어야 어디서 돌리든 같은 디렉터리를 본다.
+// ② *"계층 디렉터리 네 개가 모두 존재한다"* 가 아니라, 계층이
+//    **아래에서부터 차례로** 도착한다.
 //    그래서 "네 개"가 아니라 **"있는 것은 아래에서부터 끊기지 않는다"** 로 적는다. 지금 통과시키려고
-//    수를 줄여 적으면 step 6 뒤에 그 숫자를 되돌릴 사람이 필요한데, 이렇게 두면 계층이 하나 늘 때
+//    수를 줄여 적으면 나중에 그 숫자를 되돌릴 사람이 필요한데, 이렇게 두면 계층이 하나 늘 때
 //    **손댈 것이 없다**.
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
@@ -37,7 +37,7 @@ function sourceFilesIn(dir: string): string[] {
   for (const entry of readdirSync(dir)) {
     const path = join(dir, entry)
     if (statSync(path).isDirectory()) {
-      // 테스트는 제외한다 — 픽스처를 만들려고 상위 계층을 참조하는 것은 정상이다.
+      // 테스트는 제외한다. 픽스처를 만들려고 상위 계층을 참조하는 것은 정상이다.
       if (entry !== '__tests__') out.push(...sourceFilesIn(path))
     } else if (entry.endsWith('.ts') || entry.endsWith('.tsx')) {
       out.push(path)
@@ -74,8 +74,8 @@ function findViolations(): Violation[] {
   return violations
 }
 
-describe('컴포넌트 계층 의존 방향 ([[ADR-094]] 결정 2)', () => {
-  it('의존은 아래로만 흐른다 — 상위 계층을 import 하지 않는다', () => {
+describe('컴포넌트 계층 의존 방향', () => {
+  it('의존은 아래로만 흐른다. 상위 계층을 import 하지 않는다', () => {
     const violations = findViolations().map(
       (v) => `${v.file}: ${v.from} → ${v.to} (${v.specifier})`,
     )
@@ -94,7 +94,7 @@ describe('컴포넌트 계층 의존 방향 ([[ADR-094]] 결정 2)', () => {
   })
 
   // 계층 밖에 컴포넌트를 두면 규칙이 적용되지 않는 사각이 생긴다. 예외가 하나 있었으나
-  // ([[ADR-199]] 정정 3) 단풍잎 경로가 `atoms/Icon/maple-leaf.ts` 로 들어가 없어졌다.
+  // 단풍잎 경로가 `atoms/Icon/maple-leaf.ts` 로 들어가 없어졌다.
   it('components 바로 아래에는 계층 디렉터리만 둔다', () => {
     const entries = readdirSync(ROOT).filter((e) => e !== '__tests__')
     const unexpected = entries.filter((e) => !(LAYERS as readonly string[]).includes(e))

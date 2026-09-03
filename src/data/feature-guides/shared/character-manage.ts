@@ -1,10 +1,10 @@
 import type { FeatureGuide } from '../../../types'
-// **`shared/` 에 있는 이유** — 이 안내는 `groups: ['content', 'boss', 'settings']` 로 **세 탭에 선다**
-// (컨텐츠와 보스가 같은 피커를 쓰므로 같은 글 한 벌이어야 한다, [[ADR-125]] 결정 1 정정 · 설정은
-// RN 앱에서 그것을 **여는 자리**다, [[ADR-140]] 결정 6).
+// **`shared/` 에 있는 이유**. 이 안내는 `groups: ['content', 'boss', 'settings']` 로 **세 탭에 선다**
+// (컨텐츠와 보스가 같은 피커를 쓰므로 같은 글 한 벌이어야 한다 정정 · 설정은
+// RN 앱에서 그것을 **여는 자리**다).
 // 그래서 어느 한쪽 폴더에 두면 나머지에서 찾을 수 없다.
 //
-// 이미지는 `packages/core/src/assets/guide/character-manage/` 에 두고 여기서 import 한다.
+// 이미지는 `src/assets/guide/character-manage/` 에 두고 여기서 import 한다.
 import openImage from '../../../assets/guide/character-manage/01-open.webp'
 
 export const characterManageGuide: FeatureGuide = {
@@ -23,8 +23,8 @@ export const characterManageGuide: FeatureGuide = {
           },
         },
         {
-          // 여는 자리가 앱 버전에 따라 다르다([[ADR-140]] — RN 앱은 설정 한 곳, 웹뷰 앱은 스케줄러
-          // 두 화면). 안내는 두 앱이 같은 글 한 벌을 쓰므로 둘 다 맞는 문장이어야 한다.
+          // 여는 자리가 앱 버전에 따라 다르다. 안내는 두 앱이 같은 글 한 벌을 쓰므로 둘 다
+          // 맞는 문장이어야 한다.
           text: '설정 화면의 ‘캐릭터 관리’에서 앱이 추적할 캐릭터를 고릅니다. 그 행이 보이지 않는다면 컨텐츠 스케줄러·보스 스케줄러 위쪽의 ‘캐릭터 관리’ 버튼이 같은 화면을 엽니다.',
         },
         {
@@ -36,7 +36,7 @@ export const characterManageGuide: FeatureGuide = {
       id: 'active-only',
       title: '선택 할 수 있는 캐릭터',
       blocks: [
-        // TODO(#198): 캐릭터 관리 피커 목록 — 아직 스크린샷이 없다
+        // TODO(#198): 캐릭터 관리 피커 목록. 아직 스크린샷이 없다
         {
           text: '조회가 가능한 것으로 확인된 캐릭터만 목록에 나옵니다. 넥슨 API가 아직 응답하지 않은 캐릭터는 확인이 끝난 뒤에 나타납니다.',
         },

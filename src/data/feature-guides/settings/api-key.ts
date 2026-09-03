@@ -1,12 +1,12 @@
 import type { FeatureGuide } from '../../../types'
 
-// 같은 내용의 **긴 판이 사이트에 이미 있다** — `site/api-key.md`(7단계 + 이미지 7장,
+// 같은 내용의 **긴 판이 사이트에 이미 있다**. `site/api-key.md`(7단계 + 이미지 7장,
 // `site/images/api-key/`). 여기는 앱 안에서 읽는 요약이고, 스크린샷이 필요하면 그 이미지를
-// `packages/core/src/assets/guide/api-key/` 로 옮겨 쓰면 된다([[ADR-110]]).
+// `src/assets/guide/api-key/` 로 옮겨 쓰면 된다.
 //
-// **사이트를 앱에 `iframe` 으로 싣지 않는 이유**는 처방침과 다르다 — 처방침은 "어긋난 법적 문서"가
-// 걸려 원본 하나를 봐야 했지만([[ADR-120]] 결정 11), 이 안내는 오프라인에서도 보여야 하고
-// 어긋날 위험이 낮다([[ADR-125]] 결정 4).
+// **사이트를 앱에 `iframe` 으로 싣지 않는 이유**는 처방침과 다르다. 처방침은 "어긋난 법적 문서"가
+// 걸려 원본 하나를 봐야 했지만, 이 안내는 오프라인에서도 보여야 하고
+// 어긋날 위험이 낮다.
 
 export const apiKeyGuide: FeatureGuide = {
   id: 'api-key',

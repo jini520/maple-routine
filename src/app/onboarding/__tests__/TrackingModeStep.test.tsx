@@ -1,14 +1,12 @@
-// 웹판(91줄)의 명세를 읽어 다시 쓴 것. 각 케이스가 지키는 결정은 웹 주석 그대로다.
+// 이 화면이 지키는 것을 적는다.
 //
-// 갈린 것 셋
-// ① 옵션을 **접근 가능한 이름의 앵커**(`/^자동/`)로 찾던 것이 **제목 글자**로 바뀐다 — RN 의
-//    `Pressable` 은 자식 글자를 합쳐 하나의 이름으로 만들지 않아 그 정규식이 성립하지 않는다.
-//    웹에서 앵커가 필요했던 이유(수동 옵션의 주의 문구에 "자동"이 들어간다)는 여기서도 살아 있어,
-//    글자를 정확히 일치로 찾고 위로 올라가 그 카드를 잡는다.
-// ② `aria-pressed` → **`accessibilityState.selected`**(RN 접근성 상태에 *pressed* 가 없다).
-// ③ `toBeVisible()` → 존재 확인. jsdom 과 달리 RN 렌더 트리에는 "보이지 않게 존재하는" 상태가
-//    이 화면에 없다 — 접혀 있으면 아예 렌더되지 않는다. 그래서 결정 22("고르기 전에 비교한다")를
-//    지키는 검사는 존재 여부로 충분하다.
+// ① 옵션을 제목 글자로 찾는다. RN 의 `Pressable` 은 자식 글자를 합쳐 하나의 이름으로 만들지
+//    않아 접근 가능한 이름의 앵커(`/^자동/`)가 성립하지 않는다. 앵커가 필요한 이유(수동 옵션의
+//    주의 문구에 자동 이 들어간다)는 여기서도 살아 있어, 글자를 정확히 일치로 찾고 위로 올라가
+//    그 카드를 잡는다.
+// ② `aria-pressed` 대신 `accessibilityState.selected` 다. RN 접근성 상태에 pressed 가 없다.
+// ③ `toBeVisible` 대신 존재 확인이다. RN 렌더 트리에는 보이지 않게 존재하는 상태가 이 화면에
+//    없다. 접혀 있으면 아예 렌더되지 않아 존재 여부로 충분하다.
 import { fireEvent } from '@testing-library/react-native'
 
 import { TRACKING_MODE_OPTIONS } from '../../../features/tracking-mode/copy'
@@ -38,15 +36,15 @@ function cta(view: Rendered): AtomElement {
 }
 
 describe('TrackingModeStep', () => {
-  it('초기에는 어느 옵션도 선택돼 있지 않다 ([[ADR-035]] 결정 17)', async () => {
+  it('초기에는 어느 옵션도 선택돼 있지 않다', async () => {
     const view = await renderAtom(<TrackingModeStep onSubmit={jest.fn()} />)
 
     expect(isSelected(view, '자동')).toBe(false)
     expect(isSelected(view, '수동')).toBe(false)
   })
 
-  // [[ADR-035]] 결정 22: 고르기 **전에** 둘을 비교하는 화면이라 설명·주의를 선택 시에만 펼치지 않는다.
-  it('설명과 주의 문구가 선택 전에도 두 옵션 모두 보인다 ([[ADR-035]] 결정 22)', async () => {
+  // 고르기 **전에** 둘을 비교하는 화면이라 설명·주의를 선택 시에만 펼치지 않는다.
+  it('설명과 주의 문구가 선택 전에도 두 옵션 모두 보인다', async () => {
     const view = await renderAtom(<TrackingModeStep onSubmit={jest.fn()} />)
 
     for (const option of TRACKING_MODE_OPTIONS) {
@@ -55,7 +53,7 @@ describe('TrackingModeStep', () => {
     }
   })
 
-  it('한 옵션을 골라도 다른 옵션의 설명·주의가 그대로 남는다 ([[ADR-035]] 결정 22)', async () => {
+  it('한 옵션을 골라도 다른 옵션의 설명·주의가 그대로 남는다', async () => {
     const view = await renderAtom(<TrackingModeStep onSubmit={jest.fn()} />)
 
     await fireEvent.press(optionCard(view, '자동'))
@@ -77,7 +75,7 @@ describe('TrackingModeStep', () => {
     expect(onSubmit).not.toHaveBeenCalled()
   })
 
-  it('추천 배지는 표시되지 않는다 ([[ADR-035]] 결정 17)', async () => {
+  it('추천 배지는 표시되지 않는다', async () => {
     const view = await renderAtom(<TrackingModeStep onSubmit={jest.fn()} />)
 
     expect(view.queryByText('추천')).toBeNull()

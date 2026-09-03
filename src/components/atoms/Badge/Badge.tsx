@@ -1,7 +1,7 @@
 /**
- * 앱의 배지는 이것 하나다([[ADR-195]]). 상태·카테고리·난이도가 같은 상자를 쓰고 색만 갈린다.
+ * 앱의 배지는 이것 하나다. 상태·카테고리·난이도가 같은 상자를 쓰고 색만 갈린다.
  *
- * 색·크기·두께를 정하는 표는 `variants.ts` 에 있다([[ADR-198]] 결정 3). 여기 있는 것은 그 표를
+ * 색·크기·두께를 정하는 표는 `variants.ts` 에 있다. 여기 있는 것은 그 표를
  * 상자와 글자로 푸는 코드다.
  */
 import { LinearGradient } from '../../../lib/nativewind-interop'
@@ -18,11 +18,11 @@ import {
 
 export type { BadgeDifficulty, BadgeSize, BadgeVariant, BadgeWeight } from './variants'
 
-/** `TextProps` 를 그대로 물려받는다. 배지가 평면일 때는 실제로 `Text` 하나이기 때문이다. */
+/** `TextProps` 를 그대로 물려받는 프롭. 배지가 평면일 때는 실제로 `Text` 하나이기 때문이다. */
 export interface BadgeProps extends TextProps {
   /** 색. 난이도 배지는 난이도 이름을 그대로 넣는다. */
   variant: BadgeVariant
-  /** 안 적으면 `default`. 고정칸에 놓는 작은 배지만 `mini` 다([[ADR-195]] 정정 3). */
+  /** 안 적으면 `default`. 고정칸에 놓는 작은 배지만 `mini` 다. */
   size?: BadgeSize
   /** variant 의 기본 두께를 덮는다. */
   weight?: BadgeWeight
@@ -32,8 +32,7 @@ export interface BadgeProps extends TextProps {
  * 배지 하나.
  *
  * 레이아웃(`ml-auto`·`shrink-0` 등)은 호출부가 `className` 으로 소유한다. 여백과 색과 두께는 이
- * 컴포넌트가 쥐므로 `className` 으로 덮으려 하지 말 것. 두께는 `weight` 프롭으로 덮는다
- * ([[ADR-195]] 결정 3).
+ * 컴포넌트가 쥐므로 `className` 으로 덮으려 하지 말 것. 두께는 `weight` 프롭으로 덮는다.
  *
  * @example
  * // 상태·카테고리
@@ -66,7 +65,7 @@ export function Badge({
 
   /**
    * 테두리를 여백 안쪽으로 넣는다. Yoga 가 테두리를 패딩처럼 바깥 크기에 더해서, 빼 주지 않으면
-   * 테두리가 있는 배지만 커진다([[ADR-195]] 정정 2).
+   * 테두리가 있는 배지만 커진다.
    */
   const inset = variantStyle.border?.borderWidth ?? variantStyle.borderWidth ?? 0
   const boxStyle = {

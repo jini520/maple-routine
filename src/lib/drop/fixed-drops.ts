@@ -1,10 +1,10 @@
 import type { FixedDropItem } from '../../types/drops'
 
-// 고정 드롭 표시용 로직(순수 함수). URL 해석은 컴포넌트가 item-icons에서 처리한다 — 여기선
+// 고정 드롭 표시용 로직(순수 함수). URL 해석은 컴포넌트가 item-icons에서 처리한다. 여기선
 // "무슨 아이콘을 몇 개로 보여줄지"만 결정한다.
 
-// '솔 에르다의 기운'은 단일 아이콘이 아니라 기운량을 단위별 아이콘으로 분해해 표시한다(사용자 지시).
-// 단위: 1000(솔 에르다) > 500 > 200 > 10. 큰 단위부터 greedy로 나눈다.
+// `솔 에르다의 기운` 은 단일 아이콘이 아니라 기운량을 단위별 아이콘으로 분해해 표시한다.
+// 단위는 1000(솔 에르다) > 500 > 200 > 10 이고 큰 단위부터 greedy 로 나눈다.
 export const SOL_ERDA_ENERGY_NAME = '솔 에르다의 기운'
 export const SOL_ERDA_DENOMINATIONS: ReadonlyArray<{ value: number; iconFile: string }> = [
   { value: 1000, iconFile: 'sole_1000.webp' },

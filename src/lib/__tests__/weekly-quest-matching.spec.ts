@@ -11,7 +11,7 @@ describe('stripWeeklyQuestPrefix', () => {
 })
 
 describe('matchWeeklyQuestRegionSlug', () => {
-  // 2026-07-21 사용자 제공 주간 콘텐츠 목록 (ADR-021 연장)
+  // 실제 주간 콘텐츠 목록
   const cases: Array<[string, string]> = [
     ['성실한 조사에 대한 보답', 'roadOfVanishing'],
     ['크리티아스 주간 임무', 'critias'],

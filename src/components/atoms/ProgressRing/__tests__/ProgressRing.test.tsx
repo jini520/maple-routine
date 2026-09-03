@@ -1,11 +1,11 @@
-// [[ADR-204]] 정정 2. 링을 채우는 셈이 네 자리에서 두 벌로 베껴져 있던 것을 여기로 모았다.
+// 링을 채우는 셈이 네 자리에서 두 벌로 베껴져 있던 것을 여기로 모았다.
 import { processColor } from 'react-native'
 
 import { flattenStyle, renderAtom, type AtomElement } from '../../../__tests__/render-atom'
 import { ProgressRing } from '../ProgressRing'
 
 const 색 = { track: '#111111', fill: '#eeeeee' }
-/** `react-native-svg` 가 색 문자열을 미리 파싱해 `{ type, payload }` 로 바꾼다(실측). */
+/** `react-native-svg` 가 색 문자열을 미리 파싱해 `{ type, payload }` 로 바꾼다. */
 const strokeOf = (node: AtomElement): unknown => (node.props.stroke as { payload: unknown }).payload
 
 describe('ProgressRing · 연속', () => {
@@ -23,7 +23,7 @@ describe('ProgressRing · 연속', () => {
       <ProgressRing size={56} stroke={4} direction="cw" {...색} progress={{ kind: 'continuous', ratio: 0.25 }} />,
     )
 
-    // `react-native-svg` 가 dash 문자열을 **문자열 배열**로 파싱해 들고 있다(실측).
+    // `react-native-svg` 가 dash 문자열을 **문자열 배열**로 파싱해 들고 있다.
     const 둘레 = 2 * Math.PI * 26
     expect(getByTestId('progress-ring-fill').props.strokeDasharray).toEqual([
       String(둘레 * 0.25),
@@ -31,8 +31,8 @@ describe('ProgressRing · 연속', () => {
     ])
   })
 
-  // `strokeLinecap="round"` 가 길이 0 인 호에 점 하나를 찍어 «아직 아무것도 안 했다» 가
-  // «조금 했다» 로 보인다.
+  // `strokeLinecap="round"` 가 길이 0 인 호에 점 하나를 찍어 **아직 아무것도 안 했다** 가
+  // **조금 했다** 로 보인다.
   it('0 이면 채운 호를 아예 안 그린다', async () => {
     const { getByTestId, queryByTestId } = await renderAtom(
       <ProgressRing size={56} stroke={4} direction="cw" {...색} progress={{ kind: 'continuous', ratio: 0 }} />,
@@ -42,7 +42,7 @@ describe('ProgressRing · 연속', () => {
     expect(queryByTestId('progress-ring-fill')).toBeNull()
   })
 
-  it('넘겨받은 색을 그대로 쓴다 — 테마를 안 읽는다', async () => {
+  it('넘겨받은 색을 그대로 쓴다. 테마를 안 읽는다', async () => {
     const { getByTestId } = await renderAtom(
       <ProgressRing size={56} stroke={4} direction="cw" {...색} progress={{ kind: 'continuous', ratio: 1 }} />,
     )
@@ -52,7 +52,7 @@ describe('ProgressRing · 연속', () => {
   })
 
   // SVG 의 `fill` 기본값은 **검정**이다. 이 속성이 빠지면 링 안이 통째로 칠해진다. 이 부품에서
-  // `fill` 프롭은 «찬 자리의 색» 이라 이름이 겹치므로 실제로 덮인 적이 있다.
+  // `fill` 프롭은 **찬 자리의 색** 이라 이름이 겹치므로 실제로 덮인 적이 있다.
   it.each(['progress-ring-track', 'progress-ring-fill'])('%s 은 속을 안 채운다', async (testID) => {
     const { getByTestId } = await renderAtom(
       <ProgressRing size={56} stroke={4} direction="cw" {...색} progress={{ kind: 'continuous', ratio: 0.5 }} />,
@@ -83,7 +83,7 @@ describe('ProgressRing · 쪼갠 것', () => {
     ])
   })
 
-  // [[ADR-054]] 정정 5 — `round` 캡이 칸 양끝을 stroke 의 절반씩 더 그린다. 그만큼 dash 를 미리
+  // `round` 캡이 칸 양끝을 stroke 의 절반씩 더 그린다. 그만큼 dash 를 미리
   // 줄여야 보이는 칸 길이와 간격이 butt 일 때와 같다. 안 빼면 간격이 2.4 에서 0.4 로 뭉개진다.
   it('round 캡이 더 그리는 만큼 dash 를 미리 줄인다', async () => {
     const { getAllByTestId } = await renderAtom(
@@ -120,7 +120,7 @@ describe('ProgressRing · 쪼갠 것', () => {
     expect(offsets).toEqual([0, 1, 2, 3].map((i) => -(i * 칸 + 2.5 / 2)))
   })
 
-  // [[ADR-059]] 정정 1 — 나눌 상대가 없는 링에서 간격은 나눔이 아니라 결손으로 읽힌다. 값을 0 으로
+  // 나눌 상대가 없는 링에서 간격은 나눔이 아니라 결손으로 읽힌다. 값을 0 으로
   // 두는 대신 속성을 통째로 빼는 것은 dash 양끝의 둥근 캡이 정확히 겹쳐 이음매가 비치기 때문이다.
   it('칸도 속을 안 채운다', async () => {
     const { getAllByTestId } = await renderAtom(

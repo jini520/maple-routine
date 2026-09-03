@@ -60,7 +60,7 @@ describe('categorizeContentEntries', () => {
   })
 })
 
-describe('categorizeContentEntries — 도메인 오버라이드 (사용자 지정, ADR-006)', () => {
+describe('categorizeContentEntries: 도메인 오버라이드 (사용자 지정)', () => {
   it('접두사 없는 단독 항목도 오버라이드가 있으면 헤더 있는 그룹이 된다 (몬스터파크·무릉도장)', () => {
     const groups = categorizeContentEntries([entry('몬스터파크'), entry('무릉도장')])
 
@@ -88,7 +88,7 @@ describe('categorizeContentEntries — 도메인 오버라이드 (사용자 지�
   })
 })
 
-describe('categorizeContentEntries — 실제 템플릿 그룹 구성 (사용자 확정 2026-07-24)', () => {
+describe('categorizeContentEntries: 실제 템플릿 그룹 구성 (사용자 확정 2026-07-24)', () => {
   it('일간: 몬스터파크 · 일일 퀘스트 두 그룹 (몬스터파크도 단독 그룹화)', () => {
     const labels = categorizeContentEntries(CONTENT_TEMPLATE.daily).map((g) => g.label)
     expect(labels).toEqual(['몬스터파크', '일일 퀘스트'])
@@ -130,7 +130,7 @@ describe('categorizeContentEntries — 실제 템플릿 그룹 구성 (사용자
   })
 })
 
-describe('contentCountTag — 태그 오버라이드 (사용자 지정, ADR-006)', () => {
+describe('contentCountTag: 태그 오버라이드 (사용자 지정)', () => {
   it('아이템 오버라이드가 카테고리·기본 규칙보다 우선한다', () => {
     // 일간 몬스터파크: "월드 당 최대 14회"
     expect(contentCountTag(entry('몬스터파크', 'contents', 14), '몬스터파크')).toBe('월드 당 최대 14회')
@@ -152,7 +152,7 @@ describe('contentCountTag — 태그 오버라이드 (사용자 지정, ADR-006)
   })
 })
 
-describe('categorizeContentEntries — categoryOrder 재정렬', () => {
+describe('categorizeContentEntries: categoryOrder 재정렬', () => {
   it('목록에 있는 카테고리는 그 순서로 앞세우고, 없는 카테고리는 첫 등장 순서로 뒤에 둔다', () => {
     const groups = categorizeContentEntries(
       [
@@ -168,9 +168,9 @@ describe('categorizeContentEntries — categoryOrder 재정렬', () => {
   })
 })
 
-// ADR-057: 길드 콘텐츠 판정 — 길드 가입 여부로 선택을 막을 대상을 고르는 데 쓴다. 항목명을
+// 길드 콘텐츠 판정. 길드 가입 여부로 선택을 막을 대상을 고르는 데 쓴다. 항목명을
 // 코드에 나열하지 않고 이미 있는 카테고리 도출을 재사용해, 길드 콘텐츠가 추가돼도 따라온다.
-describe('isGuildContent (ADR-057)', () => {
+describe('isGuildContent', () => {
   it('[길드] 접두사 항목은 길드 콘텐츠다', () => {
     expect(isGuildContent('[길드] 주간 미션 포인트')).toBe(true)
     expect(isGuildContent('[길드] 지하 수로')).toBe(true)

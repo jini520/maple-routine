@@ -1,10 +1,10 @@
-// 웹판(290줄)의 명세를 읽어 다시 쓴 것.
+// 이 화면이 지키는 것을 적는다.
 //
 // 갈린 것 셋
-// ① **라우터가 없다** — 뒤로는 `goBack` 이 불렸는가로, 자동 모드 리다이렉트도 같은 것으로 본다
-//    (웹은 `<Navigate to="/content" replace />` 였고 그 프로브를 라우트에 심었다).
+// ① **라우터가 없다**. 뒤로는 `goBack` 이 불렸는가로, 자동 모드 리다이렉트도 같은 것으로 본다
+//
 // ② `aria-pressed` → **`aria-selected` → `accessibilityState.selected`**(RN 접근성 상태에
-//    *pressed* 가 없다 — 설정·온보딩의 선택 카드가 이미 밟은 자리).
+//    *pressed* 가 없다. 설정·온보딩의 선택 카드가 이미 밟은 자리).
 // ③ 잠금 행의 **스크림에서 블러가 빠진다**(`backdrop-filter` 가 RN 에 없다). 검사 대상은 흐림이
 //    아니라 *"눌리지 않고, 사유가 행 위에 뜬다"* 라 그대로 남는다.
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
@@ -38,7 +38,7 @@ jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn()
 const mockedStore = jest.mocked(useContentSchedulerStore)
 const mockedNavigation = jest.mocked(useScreenNavigation)
 
-// `ReturnType<typeof useContentSchedulerStore>` 은 **`unknown` 이 된다** — zustand 의 훅이 오버로드라
+// `ReturnType<typeof useContentSchedulerStore>` 은 **`unknown` 이 된다**. zustand 의 훅이 오버로드라
 // tsc 가 셀렉터 시그니처를 집는다. 스토어가 그 타입을 이미 내보내므로 그것을 그대로 쓴다.
 type Store = ContentSchedulerStore
 
@@ -51,7 +51,7 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     manualTrackedByOcid: {},
     loadTrackedOcids: jest.fn(),
     saveTrackedOcids: jest.fn(),
-    // 실물은 `Promise<void>` 다 — 당김 훅이 회차의 «끝» 을 기다린다([[ADR-160]] 결정 1).
+    // 실물은 `Promise<void>` 다. 당김 훅이 회차의 **끝** 을 기다린다.
     refresh: jest.fn().mockResolvedValue(undefined),
     addManualContent: jest.fn(async () => {}),
     removeManualContent: jest.fn(async () => {}),
@@ -60,7 +60,7 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     ...overrides,
   } as Store
 
-  // 이 화면의 탭은 **로컬**이지만(진입 시점 승계, [[ADR-096]] 결정 2) 스토어 탭이 초기값이므로
+  // 이 화면의 탭은 **로컬**이지만(진입 시점 승계) 스토어 탭이 초기값이므로
   // 목도 같은 모양으로 둔다.
   mockedStore.mockImplementation(() => {
     const [activeTab, setActiveTab] = useState(base.activeTab)
@@ -90,8 +90,8 @@ async function renderScreen(): Promise<void> {
  * 그 이름의 **행**(누를 수 있는 조상). 같은 글자가 그룹 헤더에도 있어(단독 항목 그룹) 매칭이
  * 여럿이므로, 버튼 조상이 있는 쪽을 고른다.
  *
- * 상태는 프롭이 아니라 `accessibilityState` 에서 읽는다 — `Pressable` 이 `aria-selected`·`disabled`
- * 를 호스트 `View` 로 그대로 넘기지 않고 거기에 접어 넣는다(실측).
+ * 상태는 프롭이 아니라 `accessibilityState` 에서 읽는다. `Pressable` 이 `aria-selected`·`disabled`
+ * 를 호스트 `View` 로 그대로 넘기지 않고 거기에 접어 넣는다.
  */
 function row(label: string): AtomElement {
   for (const found of screen.getAllByText(label)) {
@@ -119,14 +119,14 @@ beforeEach(() => {
   useTrackingModeStore.setState({ mode: 'manual' })
 })
 
-// 선택은 이제 화면 스토어가 아니라 `useCharacterSelectionStore` 가 갖는다([[ADR-159]]).
+// 선택은 이제 화면 스토어가 아니라 `useCharacterSelectionStore` 가 갖는다.
 // 실물 스토어라 값이 파일 안에서 넘어가므로 테스트마다 되돌린다.
 beforeEach(() => {
   useCharacterSelectionStore.setState({ selectedOcid: null })
 })
 
 describe('ContentManageScreen', () => {
-  it('마운트하면 loadTrackedOcids 를 부른다 — 직접 진입해도 스토어가 채워진다', async () => {
+  it('마운트하면 loadTrackedOcids 를 부른다. 직접 진입해도 스토어가 채워진다', async () => {
     const store = mockStore({ characters: [character()] })
 
     await renderScreen()
@@ -134,7 +134,7 @@ describe('ContentManageScreen', () => {
     expect(store.loadTrackedOcids).toHaveBeenCalled()
   })
 
-  // 웹의 `<Navigate to="/content" replace />` 자리. RN 에서는 도달할 길이 없지만 계약은 남긴다.
+// 도달할 길이 없지만 계약은 남긴다.
   it('자동 모드면 물러난다', async () => {
     useTrackingModeStore.setState({ mode: 'auto' })
     mockStore({ characters: [character()] })
@@ -165,7 +165,7 @@ describe('ContentManageScreen', () => {
     expect(stateOf(row('몬스터파크')).selected).toBe(true)
   })
 
-  // 접두사를 그룹 헤더로 한 번만 말하고 행에는 알맹이만 남긴다(2026-07-24 리디자인).
+  // 접두사를 그룹 헤더로 한 번만 말하고 행에는 알맹이만 남긴다.
   it('반복 접두사는 그룹 헤더가 되고 행에는 뗀 이름만 남는다', async () => {
     mockStore({ characters: [character()] })
 
@@ -181,7 +181,7 @@ describe('ContentManageScreen', () => {
 
     await press(row('주간'))
 
-    // 「무릉도장」은 그룹 헤더와 행 양쪽에 있다(단독 항목 그룹) — 행이 있다는 것으로 본다.
+    // `무릉도장`은 그룹 헤더와 행 양쪽에 있다(단독 항목 그룹). 행이 있다는 것으로 본다.
     expect(row('무릉도장')).toBeTruthy()
   })
 
@@ -206,7 +206,7 @@ describe('ContentManageScreen', () => {
     expect(store.removeManualContent).toHaveBeenCalledWith('ocid-1', '몬스터파크', 'daily')
   })
 
-  // [[ADR-065]] 결정 4 — 전에는 프로미스를 버려 저장 실패가 무음이었다.
+  // 전에는 프로미스를 버려 저장 실패가 무음이었다.
   it('토글 저장이 실패하면 토스트로 알린다', async () => {
     mockStore({
       characters: [character()],
@@ -221,7 +221,7 @@ describe('ContentManageScreen', () => {
     expect(mockShowError).toHaveBeenCalledWith('추적 목록을 저장하지 못했습니다')
   })
 
-  // [[ADR-061]] 결정 10 — 확정된 빈 상태는 조회가 끝난 뒤에만 말할 수 있다([[ADR-060]]).
+  // 확정된 빈 상태는 조회가 끝난 뒤에만 말할 수 있다.
   it('조회가 끝나기 전에는 빈 상태 문구 대신 로딩 카드를 보여준다', async () => {
     mockStore({ status: 'loading', characters: [] })
 
@@ -240,7 +240,7 @@ describe('ContentManageScreen', () => {
   })
 })
 
-describe('ContentManageScreen — 길드 미가입 잠금 ([[ADR-057]])', () => {
+describe('ContentManageScreen: 길드 미가입 잠금', () => {
   const GUILD_ITEM = '지하 수로'
 
   async function renderWeekly(guildName: string | null | undefined, tracked: string[] = []): Promise<void> {
@@ -281,7 +281,7 @@ describe('ContentManageScreen — 길드 미가입 잠금 ([[ADR-057]])', () => 
     expect(stateOf(row('무릉도장')).disabled).toBeFalsy()
   })
 
-  // 길드를 나가도 해제할 수 있어야 한다([[ADR-057]] 결정 5).
+  // 길드를 나가도 해제할 수 있어야 한다.
   it('이미 추적 중인 길드 콘텐츠는 미가입이어도 활성이다', async () => {
     await renderWeekly(null, ['[길드] 지하 수로'])
 

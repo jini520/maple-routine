@@ -25,14 +25,14 @@ it('캐릭터마다 따로 산다', async () => {
   expect(await getCachedMesoRate('ocid-2')).toBe(46)
 })
 
-// 메획이 0 인 캐릭터는 실제로 있다(잠재에 메획을 안 두른 부캐) — 「없음」과 섞이면 안 된다.
-it('0 은 값이다 — null 로 접히지 않는다', async () => {
+// 메획이 0 인 캐릭터는 실제로 있다(잠재에 메획을 안 두른 부캐). `없음`과 섞이면 안 된다.
+it('0 은 값이다. null 로 접히지 않는다', async () => {
   await setCachedMesoRate('ocid-1', 0)
 
   expect(await getCachedMesoRate('ocid-1')).toBe(0)
 })
 
-it('다시 넣으면 덮어쓴다 — 장비를 갈아입으면 값이 바뀐다', async () => {
+it('다시 넣으면 덮어쓴다. 장비를 갈아입으면 값이 바뀐다', async () => {
   await setCachedMesoRate('ocid-1', 149)
   await setCachedMesoRate('ocid-1', 161)
 

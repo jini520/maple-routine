@@ -6,10 +6,10 @@
 // 이 경계는 우리가 정의한 것이라(`modules/capacitor-storage/index.ts`) 상상한 SDK 를 검증하게 되지 않고,
 // 대신 "실제로 어떤 키가 저장소에 들어가는가"를 그대로 들여다볼 수 있다.
 //
-// jest 의 기본 플랫폼은 ios 다(`jest-expo` 프리셋의 `haste.defaultPlatform`) — 접두사가 붙는 쪽,
+// jest 의 기본 플랫폼은 ios 다(`jest-expo` 프리셋의 `haste.defaultPlatform`). 접두사가 붙는 쪽,
 // 즉 틀리면 데이터가 안 보이는 쪽이 검사된다.
 
-// 이름의 `mock` 접두사는 필수다 — `jest.mock` 팩토리는 호출부보다 위로 끌어올려지므로,
+// 이름의 `mock` 접두사는 필수다. `jest.mock` 팩토리는 호출부보다 위로 끌어올려지므로,
 // babel 이 그 접두사가 붙은 것만 바깥 변수 참조로 허용한다.
 const mockStore = new Map<string, string>()
 
@@ -40,7 +40,7 @@ describe('rnPreferencesPort (iOS)', () => {
     expect([...mockStore.entries()]).toEqual([['CapacitorStorage.apiKey', 'live_abc']])
   })
 
-  // Capacitor 앱이 남기고 간 값을 읽는 경로 — 이 전환에서 가장 중요한 한 줄이다.
+  // Capacitor 앱이 남기고 간 값을 읽는 경로.
   it('Capacitor 가 저장해 둔 값을 그대로 읽는다', async () => {
     mockStore.set('CapacitorStorage.theme', '혼테일')
 
@@ -59,7 +59,7 @@ describe('rnPreferencesPort (iOS)', () => {
     expect(mockStore.size).toBe(0)
   })
 
-  // 이 목록이 곧 캐시 삭제 범위다(ADR-052·ADR-058) — 남의 UserDefaults 키가 섞이면 그것까지 지운다.
+  // 이 목록이 곧 캐시 삭제 범위다. 남의 UserDefaults 키가 섞이면 그것까지 지운다.
   it('keys() 는 앱 키만, 접두사를 뗀 채로 돌려준다', async () => {
     mockStore.set('AppleLanguages', '["ko-KR"]')
     mockStore.set('CapacitorStorage.apiKey', 'live_abc')

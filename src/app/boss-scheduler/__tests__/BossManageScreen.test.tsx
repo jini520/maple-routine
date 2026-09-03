@@ -1,15 +1,4 @@
-// 웹판(`BossManageScreen.test.tsx` 574줄)의 **명세를 읽어 다시 쓴 것**이다.
-//
-// ── 갈린 것 넷 ───────────────────────────────────────────────────────────────────────
-//
-// ① **라우터 프로브가 없다** — 뒤로는 `navigation.goBack()` 이 불렸는가로 봤다(`StackScreen` 이
-//    통째로 사라지고 루트 스택이 그 자리를 맡는다, [[ADR-120]]). **[[ADR-145]] 결정 1 로 그 계약이
-//    없어졌다** — 이 화면은 탭이라 pop 할 스택이 없고, 남은 것은 «화면 안에 ← 가 없다» 하나다.
-// ② `closest('li')` 로 행을 잡던 자리가 **`aria-label` 로 잡는 토글 버튼**이다 — RN 에 DOM 조회가
-//    없고, 웹도 이미 그 버튼에 보스명을 `aria-label` 로 박아 두었다.
-// ③ `aria-pressed` → **`accessibilityState.selected`**(RN 접근성 상태에 *pressed* 가 없다).
-// ④ **보스 목록·난이도·상한은 전부 참조 데이터에서 온다** — 이 파일에도 게임 수치를 손으로 적지
-//    않는다([[ADR-006]]). 12개 한도 케이스의 보스 이름도 `weekly-bosses.json` 에서 뽑아 쓴다.
+// `BossManageScreen.test.tsx` 574줄의 **명세를 읽어 다시 쓴 것**이다.
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import { act, fireEvent, screen, within } from '@testing-library/react-native'
 
@@ -50,13 +39,13 @@ const mockedNavigation = jest.mocked(useScreenNavigation)
 
 type Store = BossSchedulerStore
 
-/** 참조표에서 뽑은 이름 — 손으로 적으면 데이터가 바뀔 때 조용히 어긋난다([[ADR-006]]). */
+/** 참조표에서 뽑은 이름. 손으로 적으면 데이터가 바뀔 때 조용히 어긋난다. */
 const WEEKLY_NAMES = weeklyBossesData.weekly
   .filter((entry) => (entry as { status?: string }).status !== 'unreleased')
   .map((entry) => entry.boss)
 const SEASON_NAME = weeklyBossesData.eventWeekly[0].boss
 const MONTHLY_NAME = weeklyBossesData.monthly[0].boss
-// 미출시 보스는 있을 때도 없을 때도 있다 — 벨로나 출시로 현재는 0개다([[ADR-151]] 결정 4·5).
+// 미출시 보스는 있을 때도 없을 때도 있다. 벨로나 출시로 현재는 0개다.
 // `!` 로 단정하면 표본이 사라진 순간 `undefined` 를 찾는 검증이 되어 조용히 통과한다.
 const UNRELEASED_NAME = (weeklyBossesData.weekly as { boss: string; status?: string }[]).find(
   (entry) => entry.status === 'unreleased',
@@ -72,7 +61,7 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     manualTrackedByOcid: {},
     loadTrackedOcids: jest.fn(),
     saveTrackedOcids: jest.fn(),
-    // 실물은 `Promise<void>` 다 — 당김 훅이 회차의 «끝» 을 기다린다([[ADR-160]] 결정 1).
+    // 실물은 `Promise<void>` 다. 당김 훅이 회차의 **끝** 을 기다린다.
     refresh: jest.fn().mockResolvedValue(undefined),
     loadPartySizes: jest.fn(),
     setPartySize: jest.fn(),
@@ -84,12 +73,12 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     ...overrides,
   } as Store
 
-  // [[ADR-164]] 결정 4: 탭이 걷혔다 — 목이 흉내 낼 탭 상태가 없다.
+  // 탭이 걷혔다. 목이 흉내 낼 탭 상태가 없다.
   mockedStore.mockImplementation(() => base)
   return base
 }
 
-/** 화면에 선 섹션 헤더를 위에서 아래 순서로 — 스케줄러 화면의 같은 이름 헬퍼와 같은 규칙이다. */
+/** 화면에 선 섹션 헤더를 위에서 아래 순서로. 스케줄러 화면의 같은 이름 헬퍼와 같은 규칙이다. */
 function sectionOrder(): string[] {
   return screen
     .queryAllByTestId(/^boss-section-header-/)
@@ -140,7 +129,7 @@ async function press(element: AtomElement): Promise<void> {
   })
 }
 
-/** 수동 모드 행의 추적 토글 — 웹도 이 버튼에 보스명을 `aria-label` 로 박아 두었다. */
+/** 수동 모드 행의 추적 토글. 이 버튼에 보스명이 `aria-label` 로 박혀 있다. */
 function rowToggle(bossName: string): AtomElement {
   return screen.getByLabelText(bossName)
 }
@@ -153,7 +142,7 @@ function stateOf(node: AtomElement): { selected?: boolean; disabled?: boolean; c
   }
 }
 
-/** 글자에서 위로 올라가 실제로 눌리는 조상을 찾는다. */
+/** 글자에서 위로 올라가 실제로 눌리는 조상을 찾는 도우미. */
 function button(label: string, index = 0): AtomElement {
   let node: AtomElement | null = screen.getAllByText(label)[index]
   while (node !== null && node.props.role !== 'button') node = node.parent
@@ -169,18 +158,18 @@ beforeEach(() => {
   useTrackingModeStore.setState({ mode: 'auto' })
 })
 
-// 선택은 이제 화면 스토어가 아니라 `useCharacterSelectionStore` 가 갖는다([[ADR-159]]).
+// 선택은 이제 화면 스토어가 아니라 `useCharacterSelectionStore` 가 갖는다.
 // 실물 스토어라 값이 파일 안에서 넘어가므로 테스트마다 되돌린다.
 beforeEach(() => {
   useCharacterSelectionStore.setState({ selectedOcid: null })
 })
 
-describe('BossManageScreen — 공통', () => {
-  // [[ADR-142]] 정정 8: 제목 줄 우측의 compact 드롭다운이 **초상화 레일**이 됐다. 캐릭터 이름은
-  // 이제 SVG 곡선 글자라 `getByText` 로 안 잡힌다 — 레일이 섰는지로 본다.
+describe('BossManageScreen: 공통', () => {
+  // 제목 줄 우측의 compact 드롭다운이 **초상화 레일**이 됐다. 캐릭터 이름은
+  // 이제 SVG 곡선 글자라 `getByText` 로 안 잡힌다. 레일이 섰는지로 본다.
   //
-  // **뒤로 버튼을 묻던 짝은 사라졌다**([[ADR-145]] 결정 1) — 이 화면은 하위 페이지가 아니라 탭이라
-  // pop 할 스택이 없고, ← 는 하단바가 진다([[ADR-132]] 결정 3).
+  // **뒤로 버튼을 묻던 짝은 사라졌다**. 이 화면은 하위 페이지가 아니라 탭이라
+  // pop 할 스택이 없고, ← 는 하단바가 진다.
   it('제목·캐릭터 레일이 보이고, 화면 안에 뒤로 버튼이 없다', async () => {
     mockStore({ characters: [character()] })
 
@@ -192,7 +181,7 @@ describe('BossManageScreen — 공통', () => {
     expect(goBack).not.toHaveBeenCalled()
   })
 
-  // 정정 8: 이 화면의 일은 캐릭터를 고르는 것이지 진행을 보는 것이 아니다.
+  // 이 화면의 일은 캐릭터를 고르는 것이지 진행을 보는 것이 아니다.
   it('관리 화면의 레일에는 진행 링이 없다', async () => {
     mockStore({ characters: [character()] })
 
@@ -202,7 +191,7 @@ describe('BossManageScreen — 공통', () => {
     expect(screen.queryAllByTestId('portrait-ring-fill')).toHaveLength(0)
   })
 
-  it('마운트하면 loadTrackedOcids 를 부른다 — 스케줄러를 거치지 않고 들어와도 채워진다', async () => {
+  it('마운트하면 loadTrackedOcids 를 부른다. 스케줄러를 거치지 않고 들어와도 채워진다', async () => {
     const store = mockStore({ characters: [character()] })
 
     await renderScreen()
@@ -218,7 +207,7 @@ describe('BossManageScreen — 공통', () => {
     expect(screen.getByText(/캐릭터를 먼저 선택해주세요/)).toBeTruthy()
   })
 
-  // [[ADR-061]] 결정 10 — 조회가 끝나기 전에는 빈 상태 문구로 위장하지 않는다.
+  // 조회가 끝나기 전에는 빈 상태 문구로 위장하지 않는다.
   it('조회가 끝나기 전에는 빈 상태 문구 대신 로딩 카드를 보여준다', async () => {
     mockStore({ status: 'loading', characters: [] })
 
@@ -228,9 +217,8 @@ describe('BossManageScreen — 공통', () => {
     expect(screen.queryByText(/캐릭터를 먼저 선택해주세요/)).toBeNull()
   })
 
-  // [[ADR-164]] 결정 4 — 스케줄러가 한 목록이 되면서 이 화면의 탭도 함께 걷혔다. [[ADR-096]]
-  // 결정 2 와 [[ADR-145]] 결정 2(«승계가 아니라 공유»)가 이 축에서 폐기된 자리다 — 공유할 상대가
-  // 사라졌으므로 되살리지 말 것.
+  // 스케줄러가 한 목록이 되면서 이 화면의 탭도 함께 걷혔다. 공유할 상대가 사라졌으므로
+  // 되살리지 말 것.
   it('탭 없이 월간·주간이 한 목록에 서고, 월간이 위다', async () => {
     mockStore({ characters: [character()] })
 
@@ -242,8 +230,8 @@ describe('BossManageScreen — 공통', () => {
     expect(sectionOrder()).toEqual(['monthly', 'weekly'])
   })
 
-  // [[ADR-096]] 결정 4 — 선택 캐릭터는 스케줄러와 **공유**한다(탭과 달리 양방향).
-  // 정정 8: 드롭다운은 눌러도 안 열렸다 — 레일은 **실제로 바뀐다**. [[ADR-159]] 로 그 «같은 선택»
+  // 선택 캐릭터는 스케줄러와 **공유**한다(탭과 달리 양방향).
+  // 드롭다운은 눌러도 안 열렸다. 레일은 **실제로 바뀐다**. 로 그 **같은 선택**
   // 이 두 스토어의 우연이 아니라 **스토어 하나**가 됐고, 그래서 여기서 보는 값이 컨텐츠 스케줄러가
   // 보는 값과 같은 것이다.
   it('레일에서 다른 초상화를 누르면 고른 캐릭터가 그 ocid 가 된다', async () => {
@@ -258,7 +246,7 @@ describe('BossManageScreen — 공통', () => {
   })
 })
 
-describe('BossManageScreen — 수동 모드', () => {
+describe('BossManageScreen: 수동 모드', () => {
   beforeEach(() => {
     useTrackingModeStore.setState({ mode: 'manual' })
   })
@@ -275,7 +263,7 @@ describe('BossManageScreen — 수동 모드', () => {
     expect(stateOf(rowToggle('매그너스')).selected).toBe(false)
   })
 
-  it('월간 보스가 같은 목록의 「월간」 무리에 선다', async () => {
+  it('월간 보스가 같은 목록의 `월간` 무리에 선다', async () => {
     mockStore({ characters: [character()] })
 
     await renderScreen()
@@ -332,7 +320,7 @@ describe('BossManageScreen — 수동 모드', () => {
     expect(store.removeManualBoss).toHaveBeenCalledWith('ocid-1', '스우', '하드')
   })
 
-  // [[ADR-121]] 결정 6 — remove → add 2단계가 아니라 **쓰기 1회**다.
+  // remove → add 2단계가 아니라 **쓰기 1회**다.
   it('추적 중인 보스의 다른 난이도를 누르면 단일 액션으로 교체한다', async () => {
     const store = mockStore({
       characters: [character()],
@@ -348,7 +336,7 @@ describe('BossManageScreen — 수동 모드', () => {
   })
 
   it('파티 스테퍼는 즉시 저장하고, 상한은 (보스, 난이도)마다 다르다', async () => {
-    // 스우 익스트림의 상한은 2인이다(`boss-crystal-prices.json`) — 화면이 숫자를 정하지 않는다.
+    // 스우 익스트림의 상한은 2인이다(`boss-crystal-prices.json`). 화면이 숫자를 정하지 않는다.
     const store = mockStore({
       characters: [character()],
       manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', '익스트림')] },
@@ -363,7 +351,7 @@ describe('BossManageScreen — 수동 모드', () => {
     expect(store.setPartySize).toHaveBeenCalledWith('ocid-1', '스우', '익스트림', 1)
   })
 
-  // [[ADR-065]] 결정 4 — 저장 실패가 무음이면 체크가 조용히 되돌아가는 것 외에 설명이 없다.
+  // 저장 실패가 무음이면 체크가 조용히 되돌아가는 것 외에 설명이 없다.
   it('추적 저장이 실패하면 토스트로 알린다', async () => {
     mockStore({
       characters: [character()],
@@ -390,8 +378,8 @@ describe('BossManageScreen — 수동 모드', () => {
   })
 })
 
-describe('BossManageScreen — 자동 모드', () => {
-  // [[ADR-145]] 결정 3: 상단 안내 한 줄을 없앤다 — 체크가 없고 스테퍼만 있다는 것을 화면이 이미
+describe('BossManageScreen: 자동 모드', () => {
+  // 상단 안내 한 줄을 없앤다. 체크가 없고 스테퍼만 있다는 것을 화면이 이미
   // 보여 준다. 설명은 기능 안내(`boss-manage` 가이드)가 계속 진다.
   it('안내 문구 없이 등록 보스만 나오고 체크 토글이 없다', async () => {
     mockStore({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
@@ -405,9 +393,9 @@ describe('BossManageScreen — 자동 모드', () => {
     expect(screen.queryByLabelText('자쿰')).toBeNull()
   })
 
-  // [[ADR-145]] 결정 4: 스위치가 뒤집혔다 — 이름은 「모든 보스 보기」이고 **기본이 꺼짐**이다.
+  // 스위치가 뒤집혔다. 이름은 `모든 보스 보기`이고 **기본이 꺼짐**이다.
   // 표시 결과는 그대로라(기본 = 등록된 보스만) 위 케이스가 그 절반을 이미 지킨다.
-  it('토글은 「모든 보스 보기」이고 기본으로 꺼져 있다', async () => {
+  it('토글은 `모든 보스 보기`이고 기본으로 꺼져 있다', async () => {
     mockStore({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
 
     await renderScreen()
@@ -427,8 +415,7 @@ describe('BossManageScreen — 자동 모드', () => {
     expect(stateOf(screen.getByLabelText('모든 보스 보기')).checked).toBe(true)
   })
 
-  // [[ADR-031]] 결정 4 — 등록 보스가 하나도 없으면 토글이 꺼져 있어도 전체로 대체한다([[ADR-145]]
-  // 결정 4 가 승계했다 — 뒤집힌 것은 스위치의 방향과 이름뿐이다).
+  // 등록 보스가 하나도 없으면 토글이 꺼져 있어도 전체로 대체한다.
   it('등록된 보스가 하나도 없으면 토글이 꺼져 있어도 전체 목록이다', async () => {
     mockStore({ characters: [character()] })
 
@@ -454,7 +441,7 @@ describe('BossManageScreen — 자동 모드', () => {
     expect(store.setPartySize).toHaveBeenCalledWith('ocid-1', '스우', '하드', 2)
   })
 
-  // 자동 모드의 난이도 선택은 멤버십이 아니라 "편집 대상" 전환이다([[ADR-121]] 결정 3과 같은 뜻).
+  // 자동 모드의 난이도 선택은 멤버십이 아니라 "편집 대상" 전환이다.
   it('자동 모드에서 난이도를 바꿔도 멤버십 API 를 부르지 않는다', async () => {
     const store = mockStore({
       characters: [
@@ -475,8 +462,8 @@ describe('BossManageScreen — 자동 모드', () => {
   })
 })
 
-describe('BossManageScreen — 주간 12개 한도 ([[ADR-055]])', () => {
-  // 참조표에서 앞에서부터 12마리를 뽑는다 — 이름을 손으로 적지 않는다([[ADR-006]]).
+describe('BossManageScreen: 주간 12개 한도', () => {
+  // 참조표에서 앞에서부터 12마리를 뽑는다. 이름을 손으로 적지 않는다.
   const TWELVE = WEEKLY_NAMES.slice(0, WEEKLY_BOSS_CLEAR_LIMIT)
 
   const atLimit = (extra: Partial<Store> = {}): Store =>
@@ -501,8 +488,8 @@ describe('BossManageScreen — 주간 12개 한도 ([[ADR-055]])', () => {
     expect(screen.getByText(`2/${WEEKLY_BOSS_CLEAR_LIMIT}`)).toBeTruthy()
   })
 
-  // 카운트 규칙은 `countManualWeeklyBosses` 한 곳에만 있다 — 화면이 다시 세면 선택 12/12 인데
-  // 처치 11/12 인 모순이 생긴다([[ADR-055]] 결정 3).
+  // 카운트 규칙은 `countManualWeeklyBosses` 한 곳에만 있다. 화면이 다시 세면 선택 12/12 인데
+  // 처치 11/12 인 모순이 생긴다.
   it('시즌 보스·월간 보스는 카운터에 포함하지 않는다', async () => {
     mockStore({
       characters: [character({ world: '챌린저스' })],
@@ -520,8 +507,8 @@ describe('BossManageScreen — 주간 12개 한도 ([[ADR-055]])', () => {
     expect(screen.getByText(`1/${WEEKLY_BOSS_CLEAR_LIMIT}`)).toBeTruthy()
   })
 
-  // [[ADR-164]] 결정 3: 탭이 없어져 «이 수치는 주간 것» 을 말할 자리가 「주간」 헤더로 옮겨왔다.
-  it('카운터는 「주간」 헤더에만 붙는다 — 12는 주간 한도다', async () => {
+  // 탭이 없어져 **이 수치는 주간 것** 을 말할 자리가 `주간` 헤더로 옮겨왔다.
+  it('카운터는 `주간` 헤더에만 붙는다. 12는 주간 한도다', async () => {
     mockStore({
       characters: [character()],
       manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', '카오스')] },
@@ -536,7 +523,7 @@ describe('BossManageScreen — 주간 12개 한도 ([[ADR-055]])', () => {
     ).toBeNull()
   })
 
-  it('자동 모드에는 카운터를 표시하지 않는다 — 선택 자체가 없다', async () => {
+  it('자동 모드에는 카운터를 표시하지 않는다. 선택 자체가 없다', async () => {
     useTrackingModeStore.setState({ mode: 'auto' })
     mockStore({
       characters: [character()],
@@ -548,7 +535,7 @@ describe('BossManageScreen — 주간 12개 한도 ([[ADR-055]])', () => {
     expect(screen.queryByText(`1/${WEEKLY_BOSS_CLEAR_LIMIT}`)).toBeNull()
   })
 
-  // [[ADR-055]] 정정 3 — 비활성 버튼은 클릭 이벤트가 나지 않아 이유를 알릴 수 없다.
+  // 비활성 버튼은 클릭 이벤트가 나지 않아 이유를 알릴 수 없다.
   it('한도에 도달해도 미선택 보스의 토글을 비활성화하지 않는다', async () => {
     atLimit()
     await renderScreen()
@@ -606,16 +593,16 @@ describe('BossManageScreen — 주간 12개 한도 ([[ADR-055]])', () => {
   })
 })
 
-describe('BossManageScreen — 목록 구성 ([[ADR-056]])', () => {
+describe('BossManageScreen: 목록 구성', () => {
   beforeEach(() => {
     useTrackingModeStore.setState({ mode: 'manual' })
   })
 
-  // 참조표에 미출시 엔트리가 있을 때만 돌린다. 규칙([[ADR-056]] 결정 1)은 표본이 없어도 코드에
-  // 남아 있으므로 테스트도 남기되, 표본이 없으면 건너뛴다([[ADR-151]] 결정 5).
+  // 참조표에 미출시 엔트리가 있을 때만 돌린다. 규칙은 표본이 없어도 코드에
+  // 남아 있으므로 테스트도 남기되, 표본이 없으면 건너뛴다.
   const 미출시표본있음 = UNRELEASED_NAME !== undefined
   ;(미출시표본있음 ? it : it.skip)(
-    '미출시 보스는 목록에 나오지 않는다 — 이름이 아니라 status 로 거른다',
+    '미출시 보스는 목록에 나오지 않는다. 이름이 아니라 status 로 거른다',
     async () => {
       mockStore({ characters: [character()] })
 

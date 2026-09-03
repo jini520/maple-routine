@@ -2,9 +2,9 @@ import { preferences } from './ports'
 import { STORAGE_KEYS } from './keys'
 import { BOSS_PROFIT_TABLE_NAMES, getBossProfitDb } from './sqlite/db'
 
-// 캐시 데이터 삭제 — 인증·사용자 설정만 남기고 나머지 저장 데이터를 지운다.
+// 캐시 데이터 삭제. 인증·사용자 설정만 남기고 나머지 저장 데이터를 지운다.
 // trackingMode·dropEffect는 재조회로 복구되는 캐시가 아니라 사용자가 명시적으로 고른 취향 설정이라
-// theme과 같이 보존한다(ADR-052 결정 1). 어떤 그룹을 골라도 이 5개는 삭제 대상이 아니다.
+// theme과 같이 보존한다. 어떤 그룹을 골라도 이 5개는 삭제 대상이 아니다.
 const KEEP_KEYS = new Set<string>([
   STORAGE_KEYS.apiKey,
   STORAGE_KEYS.theme,
@@ -12,33 +12,33 @@ const KEEP_KEYS = new Set<string>([
   STORAGE_KEYS.dropEffect,
 ])
 
-// ADR-058: 삭제 단위는 2그룹이다. 사용자가 해결하려는 갈등은 "용량은 비우고 싶은데 복구 불가능한
+// 삭제 단위는 2그룹이다. 사용자가 해결하려는 갈등은 "용량은 비우고 싶은데 복구 불가능한
 // 기록은 남기고 싶다" 하나뿐이라, 그 축을 정확히 가르는 최소 분할만 둔다.
 //
-// **그룹 이름이 `bossRecords` 에서 `records` 로 넓어졌다**([[ADR-166]] 결정 9 · [[ADR-170]] 결정 2).
-// 가계부가 손으로 적는 둘(`income_records`·`spend_records`)이 같은 갈등의 같은 편에 서기 때문이다 —
+// **그룹 이름이 `bossRecords` 에서 `records` 로 넓어졌다**.
+// 가계부가 손으로 적는 둘(`income_records`·`spend_records`)이 같은 갈등의 같은 편에 서기 때문이다.
 // 그리고 **보스 기록보다 더 복구 불가능하다**(보스는 API 가 최근 2주치라도 주는데 손입력은 0%다).
-// 3그룹으로 쪼개지 않는 이유는 [[ADR-058]] 결정 2 의 «갈등은 하나뿐이라 최소 분할만 둔다» 그대로다.
+// 3그룹으로 쪼개지 않는 것은 **갈등은 하나뿐이라 최소 분할만 둔다** 는 규칙 그대로다.
 export type CacheDataGroupId = 'general' | 'records'
 
 export type CacheDataSelection = Record<CacheDataGroupId, boolean>
 
 const ALL_GROUPS: CacheDataSelection = { general: true, records: true }
 
-// ADR-058 결정 2 — 명시 목록을 갖는 쪽은 records뿐이고, general은 아래에서 차집합으로
-// 파생된다. 두 그룹을 다 열거하면 어느 그룹에도 안 잡히는 테이블이 생기고, 그건 ADR-052가 없앤
-// "새 테이블이 삭제 목록에서 누락된다"는 결함의 부호만 뒤집힌 형태다(영영 안 지워짐).
+// 명시 목록을 갖는 쪽은 records 뿐이고 general 은 아래에서 차집합으로 파생된다. 두 그룹을 다
+// 열거하면 어느 그룹에도 안 잡히는 테이블이 생겨 영영 안 지워진다.
 //
-// period_checks가 기록과 같은 그룹인 이유(결정 3): 이 표식만 남고 기록이 사라지면 loadPeriod의
-// isPeriodChecked 가드가 백필을 건너뛰어(ADR-023), API가 아직 주는 최근 2주치마저 되살릴 수 없다.
-// 수익과 드롭을 더 쪼개지 않는 이유(결정 5): 수익만 지우고 드롭이 남으면 고아 드롭 행이 되어 같은
-// 보스를 다시 잡을 때 예전 드롭이 되살아나 붙는다(ADR-052).
+// period_checks 가 기록과 같은 그룹인 이유. 이 표식만 남고 기록이 사라지면 loadPeriod 의
+// isPeriodChecked 가드가 백필을 건너뛰어, API 가 아직 주는 최근 2주치마저 되살릴 수 없다.
+//
+// 수익과 드롭을 더 쪼개지 않는 이유. 수익만 지우고 드롭이 남으면 고아 드롭 행이 되어 같은
+// 보스를 다시 잡을 때 예전 드롭이 되살아나 붙는다.
 export const RECORD_TABLE_NAMES: readonly string[] = [
   'boss_profit_records',
   'boss_drop_records',
   'boss_profit_period_checks',
-  // 손입력에서만 오는 값이라 API 로 되살릴 길이 **0%** 다([[ADR-170]] 결정 2). 여기 안 넣으면
-  // 아래 차집합 파생이 이 둘을 «지워도 되는 것» 으로 끌어간다.
+  // 손입력에서만 오는 값이라 API 로 되살릴 길이 **0%** 다. 여기 안 넣으면
+  // 아래 차집합 파생이 이 둘을 **지워도 되는 것** 으로 끌어간다.
   'income_records',
   'spend_records',
 ]
@@ -55,7 +55,7 @@ function tablesFor(selection: CacheDataSelection): readonly string[] {
   ]
 }
 
-// 선택한 그룹만 지운다. 인자를 생략하면 두 그룹 모두 — 선택 삭제 도입 전과 같은 전체 삭제다.
+// 선택한 그룹만 지운다. 인자를 생략하면 두 그룹 모두. 선택 삭제 도입 전과 같은 전체 삭제다.
 export async function clearCacheData(selection: CacheDataSelection = ALL_GROUPS): Promise<void> {
   if (selection.general) {
     const keys = await preferences.keys()
@@ -75,9 +75,9 @@ export async function clearCacheData(selection: CacheDataSelection = ALL_GROUPS)
   }
 }
 
-// 설정 화면의 "캐시 데이터 삭제" 행·확인 모달에 보여줄 근사치(바이트)를 그룹별로 낸다 — 각 값은
+// 설정 화면의 "캐시 데이터 삭제" 행·확인 모달에 보여줄 근사치(바이트)를 그룹별로 낸다. 각 값은
 // 그 그룹이 실제로 지우는 것과 동일한 범위만 합산하므로, 사용자는 "무엇을 포기하면 얼마가
-// 비는지"를 보고 고를 수 있다. 행에 쓰는 총합은 두 값의 합으로 파생한다(ADR-058 결정 8).
+// 비는지"를 보고 고를 수 있다. 행에 쓰는 총합은 두 값의 합으로 파생한다.
 export async function getCacheDataSizes(): Promise<Record<CacheDataGroupId, number>> {
   let general = 0
 

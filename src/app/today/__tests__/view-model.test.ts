@@ -1,9 +1,9 @@
 import weeklyBossesData from '../../../data/weekly-bosses.json'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
-// today 뷰모델의 **조립 규칙**([[ADR-147]] 결정 4·8·9). 위젯이 스토어를 모르므로 화면이 값을 한
+// today 뷰모델의 **조립 규칙**. 위젯이 스토어를 모르므로 화면이 값을 한
 // 번 모으는데, 그 조립을 순수 함수로 두면 **위젯이 한 줄도 없는 지금 로직 전부를 검증할 수 있다.**
 //
-// 여기서 지키는 것의 대부분은 «다시 구현하지 않았는가» 다 — 남은 개수는 `content-completion` ·
+// 여기서 지키는 것의 대부분은 **다시 구현하지 않았는가** 다. 남은 개수는 `content-completion`·
 // `displayedBosses` 가, 수익은 `groupTotalMeso` 가, 한도 분모는 `WEEKLY_CRYSTAL_SALE_LIMIT` 가
 // 판정한다. 판정이 두 벌이 되면 today 와 원래 화면이 **다른 수를 말한다.**
 
@@ -156,7 +156,7 @@ function input(overrides: Partial<TodayViewModelInput> = {}): TodayViewModelInpu
   }
 }
 
-describe('남은 스케줄 — 분류 넷 ([[ADR-147]] 정정 3)', () => {
+describe('남은 스케줄. 분류 넷', () => {
   it('일퀘·주간퀘는 content-completion 의 미완료 수다', () => {
     const model = buildTodayViewModel(
       input({
@@ -174,7 +174,7 @@ describe('남은 스케줄 — 분류 넷 ([[ADR-147]] 정정 3)', () => {
     expect(model.schedule[0].weeklyNames).toHaveLength(1)
   })
 
-  // 무릉도장은 «다 했다» 가 정의되지 않는다 — 세면 링도 위젯도 영원히 안 찬다.
+  // 무릉도장은 **다 했다** 가 정의되지 않는다. 세면 링도 위젯도 영원히 안 찬다.
   it('끝이 없는 항목(무릉도장)은 남은 개수에 들지 않는다', () => {
     const model = buildTodayViewModel(
       input({
@@ -211,7 +211,7 @@ describe('남은 스케줄 — 분류 넷 ([[ADR-147]] 정정 3)', () => {
     expect(model.schedule[0].monthlyBosses).toHaveLength(1)
   })
 
-  // [[ADR-031]] 결정 5 — 미등록이어도 완료했으면 목록에 든다(그리고 완료라 남은 수엔 안 든다).
+  // 미등록이어도 완료했으면 목록에 든다(그리고 완료라 남은 수엔 안 든다).
   // 판정을 여기서 다시 쓰면 이 규칙이 today 에서만 빠진다.
   it('등록되지 않았지만 완료한 보스는 displayedBosses 규칙대로 다뤄진다', () => {
     const model = buildTodayViewModel(
@@ -231,7 +231,7 @@ describe('남은 스케줄 — 분류 넷 ([[ADR-147]] 정정 3)', () => {
     expect(model.schedule[0].weeklyBosses).toHaveLength(0)
   })
 
-  // [[ADR-187]] 결정 3 — 주간 한도를 채우면 남은 미처치 보스는 «남은 일» 이 아니다. 판정은 여기
+  // 주간 한도를 채우면 남은 미처치 보스는 **남은 일** 이 아니다. 판정은 여기
   // 없다(`displayedBosses` 가 실어 보낸 `isWeeklyLimitClosed` 를 거를 뿐이다).
   it('주간 12마리를 채우면 미처치 등록 보스를 남은 것으로 세지 않는다', () => {
     const clearedNames = (weeklyBossesData.weekly as { boss: string }[])
@@ -279,7 +279,7 @@ describe('남은 스케줄 — 분류 넷 ([[ADR-147]] 정정 3)', () => {
     expect(model.schedule[0].weeklyBosses.map((entry) => entry.name)).toEqual(['미처치보스'])
   })
 
-  it('선택된 캐릭터를 전부 담는다 — 「외 N명」 접기가 없다', () => {
+  it('선택된 캐릭터를 전부 담는다. `외 N명` 접기가 없다', () => {
     const ocids = ['a', 'b', 'c', 'd', 'e', 'f']
     const model = buildTodayViewModel(
       input({
@@ -292,16 +292,16 @@ describe('남은 스케줄 — 분류 넷 ([[ADR-147]] 정정 3)', () => {
   })
 })
 
-describe('남은 스케줄 — 순서는 **관리 순서**뿐이다 ([[ADR-181]] 정정 1)', () => {
+describe('남은 스케줄. 순서는 **관리 순서**뿐이다', () => {
   function withRemaining(ocid: string, remaining: number): ContentCharacterView {
     return contentView(ocid, {
       dailyContents: Array.from({ length: remaining }, (_, index) => daily({ name: `${ocid}-${index}` })),
     })
   }
 
-  // 「남은 개수 많은 순」은 **어느 주기의** 개수인지가 정해져야 셀 수 있고, 그 주기는 위젯의 탭이다.
+  // `남은 개수 많은 순`은 **어느 주기의** 개수인지가 정해져야 셀 수 있고, 그 주기는 위젯의 탭이다.
   // 여기서 총합으로 한 번 세워 두면 위젯이 다시 세우게 되고 동수의 기준(관리 순서)이 뭉개진다.
-  it('남은 개수로 다시 세우지 않는다 — 그 정렬은 탭을 아는 위젯의 몫이다', () => {
+  it('남은 개수로 다시 세우지 않는다. 그 정렬은 탭을 아는 위젯의 몫이다', () => {
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a', 'b', 'c'],
@@ -312,7 +312,7 @@ describe('남은 스케줄 — 순서는 **관리 순서**뿐이다 ([[ADR-181]]
     expect(model.schedule.map((row) => row.ocid)).toEqual(['a', 'b', 'c'])
   })
 
-  it('캐릭터 관리 순서를 따른다 — 스토어 순서(레벨 내림차순)가 아니다', () => {
+  it('캐릭터 관리 순서를 따른다. 스토어 순서(레벨 내림차순)가 아니다', () => {
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['c', 'a', 'b'],
@@ -323,8 +323,8 @@ describe('남은 스케줄 — 순서는 **관리 순서**뿐이다 ([[ADR-181]]
     expect(model.schedule.map((row) => row.ocid)).toEqual(['c', 'a', 'b'])
   })
 
-  // 실패를 맨 아래로 내리는 것도 «순서» 라, 정렬을 한 번만 하기로 한 뒤로는 위젯이 함께 판다.
-  it('동기화 실패도 여기서는 안 내린다 — 표식만 얹는다', () => {
+  // 실패를 맨 아래로 내리는 것도 **순서** 라, 정렬을 한 번만 하기로 한 뒤로는 위젯이 함께 판다.
+  it('동기화 실패도 여기서는 안 내린다. 표식만 얹는다', () => {
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a', 'b'],
@@ -338,7 +338,7 @@ describe('남은 스케줄 — 순서는 **관리 순서**뿐이다 ([[ADR-181]]
   })
 })
 
-describe('대표 캐릭터 ([[ADR-147]] 정정 2)', () => {
+describe('대표 캐릭터', () => {
   it('저장된 대표를 쓴다', () => {
     const model = buildTodayViewModel(
       input({
@@ -352,7 +352,7 @@ describe('대표 캐릭터 ([[ADR-147]] 정정 2)', () => {
     expect(model.representative?.name).toBe('나')
   })
 
-  it('미지정이면 목록의 첫 번째가 선다 — «대표 없음» 상태가 없다', () => {
+  it('미지정이면 목록의 첫 번째가 선다. **대표 없음** 상태가 없다', () => {
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a', 'b'],
@@ -368,7 +368,7 @@ describe('대표 캐릭터 ([[ADR-147]] 정정 2)', () => {
     expect(buildTodayViewModel(input()).representative).toBeNull()
   })
 
-  // 이름 없이 카드를 그릴 수 없다 — ocid 는 사용자에게 뜻이 없는 값이라 대신 넣지 않는다.
+  // 이름 없이 카드를 그릴 수 없다. ocid 는 사용자에게 뜻이 없는 값이라 대신 넣지 않는다.
   it('캐시에 프로필이 없으면 null 이다', () => {
     const model = buildTodayViewModel(input({ orderedOcids: ['a'], profilesByOcid: {} }))
     expect(model.representative).toBeNull()
@@ -385,7 +385,7 @@ describe('대표 캐릭터 ([[ADR-147]] 정정 2)', () => {
   })
 })
 
-describe('주간 보스 수익 ([[ADR-147]] 정정 4)', () => {
+describe('주간 보스 수익', () => {
   it('결정석과 아이템 판매가를 함께 더한다', () => {
     const drops = { [`a|스우|노멀|${WEEK_KEY}`]: [{ category: 'equipment' as const, itemName: '반지', quantity: 1, priceState: 'entered' as const, priceMeso: 60, priceShare: 2 }] }
     const model = buildTodayViewModel(
@@ -400,7 +400,7 @@ describe('주간 보스 수익 ([[ADR-147]] 정정 4)', () => {
     expect(model.profit.hasRecords).toBe(true)
   })
 
-  it('기록이 하나도 없으면 0 이고 «미기록» 을 함께 말한다', () => {
+  it('기록이 하나도 없으면 0 이고 **미기록** 을 함께 말한다', () => {
     const model = buildTodayViewModel(input())
 
     expect(model.profit.totalMeso).toBe(0)
@@ -434,7 +434,7 @@ describe('주간 보스 수익 ([[ADR-147]] 정정 4)', () => {
     expect(model.profit.totalMeso).toBe(100)
   })
 
-  // 위젯 3의 스택 바가 읽는 값이다 — 위젯은 스토어를 모르므로 총액만 주면 갈라 그릴 수 없다.
+  // 위젯 3의 스택 바가 읽는 값이다. 위젯은 스토어를 모르므로 총액만 주면 갈라 그릴 수 없다.
   it('총액을 결정석과 아이템으로 가르고, 둘의 합이 총액이다', () => {
     const drops = {
       [`a|스우|노멀|${WEEK_KEY}`]: [
@@ -457,7 +457,7 @@ describe('주간 보스 수익 ([[ADR-147]] 정정 4)', () => {
   })
 })
 
-describe('최고가 아이템 ([[ADR-147]] 결정 9 · 정정 5)', () => {
+describe('최고가 아이템', () => {
   it('기록된 판매가 순위이고 최대 다섯이다', () => {
     const priced = (itemName: string, priceMeso: number): DropHistoryRecord =>
       dropRecord({ itemName, priceState: 'entered', priceMeso })
@@ -480,9 +480,9 @@ describe('최고가 아이템 ([[ADR-147]] 결정 9 · 정정 5)', () => {
     expect(model.topItem?.rest.map((entry) => entry.itemName)).toEqual(['2위', '3위', '4위', '5위'])
   })
 
-  // today 가 답하는 질문은 «내가 얼마를 벌었나» 다 — 총액으로 그리면 같은 화면의 「주간 보스 수익」
-  // (`sumDropPayout` = 분배 후 합)보다 최고가가 큰 화면이 나온다([[ADR-147]] 정정 21).
-  it('분배된 금액을 그린다 — 입력한 총액이 아니다', () => {
+  // today 가 답하는 질문은 **내가 얼마를 벌었나** 다. 총액으로 그리면 같은 화면의 `주간 보스 수익`
+  // (`sumDropPayout` = 분배 후 합)보다 최고가가 큰 화면이 나온다.
+  it('분배된 금액을 그린다. 입력한 총액이 아니다', () => {
     const model = buildTodayViewModel(
       input({
         dropGroups: [
@@ -497,7 +497,7 @@ describe('최고가 아이템 ([[ADR-147]] 결정 9 · 정정 5)', () => {
     expect(model.topItem?.top.shareCount).toBe(3)
   })
 
-  it('순위도 분배 후 기준이다 — 표시와 순위가 갈리면 1위가 더 작은 숫자를 단다', () => {
+  it('순위도 분배 후 기준이다. 표시와 순위가 갈리면 1위가 더 작은 숫자를 단다', () => {
     const model = buildTodayViewModel(
       input({
         dropGroups: [
@@ -514,7 +514,7 @@ describe('최고가 아이템 ([[ADR-147]] 결정 9 · 정정 5)', () => {
     expect(model.topItem?.top.payoutMeso).toBe(600)
   })
 
-  it('분배 인원이 없으면 단독이다 — 나눈 적 없는 기록을 나누지 않는다', () => {
+  it('분배 인원이 없으면 단독이다. 나눈 적 없는 기록을 나누지 않는다', () => {
     const model = buildTodayViewModel(
       input({
         dropGroups: [
@@ -527,7 +527,7 @@ describe('최고가 아이템 ([[ADR-147]] 결정 9 · 정정 5)', () => {
     expect(model.topItem?.top.shareCount).toBe(1)
   })
 
-  // 값을 모르는 것을 «가장 싼 것» 으로 단정하지 않는다.
+  // 값을 모르는 것을 **가장 싼 것** 으로 단정하지 않는다.
   it('가격 미입력 기록은 순위에 들지 않는다', () => {
     const model = buildTodayViewModel(
       input({
@@ -553,7 +553,7 @@ describe('최고가 아이템 ([[ADR-147]] 결정 9 · 정정 5)', () => {
     expect(model.unpricedCount).toBe(2)
   })
 
-  // 'excluded' 는 «값을 매기지 않기로 한» 사용자의 결정이라 기다리는 건이 아니다.
+  // 'excluded' 는 **값을 매기지 않기로 한** 사용자의 결정이라 기다리는 건이 아니다.
   it('기록 안함(excluded)은 미입력으로 세지 않는다', () => {
     const model = buildTodayViewModel(
       input({ dropGroups: [dropGroup([dropRecord({ itemName: 'a', priceState: 'excluded' })])] }),
@@ -578,7 +578,7 @@ describe('최고가 아이템 ([[ADR-147]] 결정 9 · 정정 5)', () => {
     expect(model.unpricedCount).toBe(0)
   })
 
-  // 위젯 4가 «캐릭터 · 보스» 를 그린다. ocid 는 사용자에게 뜻이 없는 값이라 대신 넣지 않는다.
+  // 위젯 4가 **캐릭터· 보스** 를 그린다. ocid 는 사용자에게 뜻이 없는 값이라 대신 넣지 않는다.
   it('캐릭터 이름은 프로필 캐시에 있을 때만 싣는다', () => {
     const 기록 = dropRecord({ itemName: '반지', priceState: 'entered', priceMeso: 10 })
     const 있음 = buildTodayViewModel(
@@ -590,7 +590,7 @@ describe('최고가 아이템 ([[ADR-147]] 결정 9 · 정정 5)', () => {
     expect(없음.topItem?.top.characterName).toBeUndefined()
   })
 
-  // 아이콘 조회(`getItemIconUrl(name, slot)`)가 쓴다 — 빠지면 에러가 아니라 조용한 폴백 원이 된다.
+  // 아이콘 조회(`getItemIconUrl(name, slot)`)가 쓴다. 빠지면 에러가 아니라 조용한 폴백 원이 된다.
   it('아이콘 조회에 필요한 `slot` 을 그대로 나른다', () => {
     const model = buildTodayViewModel(
       input({
@@ -604,7 +604,7 @@ describe('최고가 아이템 ([[ADR-147]] 결정 9 · 정정 5)', () => {
   })
 })
 
-describe('주간 결정석 판매 한도 ([[ADR-054]])', () => {
+describe('주간 결정석 판매 한도', () => {
   it('월드별로 갈리고 분모는 WEEKLY_CRYSTAL_SALE_LIMIT 이다', () => {
     const model = buildTodayViewModel(
       input({
@@ -625,7 +625,7 @@ describe('주간 결정석 판매 한도 ([[ADR-054]])', () => {
   })
 })
 
-describe('아이템 드롭 가뭄 ([[ADR-147]] 정정 6)', () => {
+describe('아이템 드롭 가뭄', () => {
   it('단계와 풀 크기를 함께 실어 화면이 인덱스만 고르게 한다', () => {
     const model = buildTodayViewModel(
       input({
@@ -645,7 +645,7 @@ describe('아이템 드롭 가뭄 ([[ADR-147]] 정정 6)', () => {
 })
 
 describe('초기화 카운트다운', () => {
-  // now 를 고정하면 전부 결정적이다 — 이 파일이 `new Date()` 를 부르지 않는 이유.
+  // now 를 고정하면 전부 결정적이다. 이 파일이 `new Date` 를 부르지 않는 이유.
   it('일간·주간·월간 초기화까지 남은 시간을 KST 기준으로 센다', () => {
     const model = buildTodayViewModel(input())
 
@@ -657,7 +657,7 @@ describe('초기화 카운트다운', () => {
     expect(model.resets.monthly.remainingMs).toBe(348 * HOUR_MS)
   })
 
-  it('다음 초기화 시각도 함께 준다 — 화면이 1초마다 다시 세도 기준이 흔들리지 않는다', () => {
+  it('다음 초기화 시각도 함께 준다. 화면이 1초마다 다시 세도 기준이 흔들리지 않는다', () => {
     const model = buildTodayViewModel(input())
 
     expect(new Date(model.resets.daily.atMs).toISOString()).toBe('2026-08-17T15:00:00.000Z')
@@ -666,9 +666,9 @@ describe('초기화 카운트다운', () => {
   })
 })
 
-// ────────────────────────────────────────────────────────────────────────────
-// 공유 컨텐츠 ([[ADR-147]] 정정 28~31)
-// ────────────────────────────────────────────────────────────────────────────
+//
+// 공유 컨텐츠 (~31)
+//
 
 const MONSTER_PARK = '몬스터파크'
 const EXTREME = '[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?'
@@ -678,7 +678,7 @@ const EPIC_NIGHTMARE = '에픽 던전 : 악몽선경'
 const UNION_WEEKLY = '[메이플 유니온] 주간 드래곤 퇴치'
 const UNION_PC = '[메이플 유니온] PC방 주간 드래곤 퇴치'
 
-/** 카탈로그의 일곱을 전부 등록해 둔 캐릭터 — 값만 덮어 쓰며 쓴다. */
+/** 카탈로그의 일곱을 전부 등록해 둔 캐릭터. 값만 덮어 쓰며 쓴다. */
 function sharedView(ocid: string, overrides: Partial<ContentCharacterView> = {}): ContentCharacterView {
   return contentView(ocid, {
     dailyContents: [daily({ name: MONSTER_PARK, kind: 'contents', maxCount: 14, questState: null })],
@@ -701,8 +701,8 @@ function sharedRows(model: ReturnType<typeof buildTodayViewModel>) {
   ])
 }
 
-describe('공유 컨텐츠 — 계열로 묶는다 ([[ADR-147]] 정정 28)', () => {
-  it('계열 셋을 카탈로그 순서로 낸다 — 월드/계정은 그리지 않는다', () => {
+describe('공유 컨텐츠. 계열로 묶는다', () => {
+  it('계열 셋을 카탈로그 순서로 낸다. 월드/계정은 그리지 않는다', () => {
     const model = buildTodayViewModel(
       input({ orderedOcids: ['a'], contentCharacters: [sharedView('a')] }),
     )
@@ -714,7 +714,7 @@ describe('공유 컨텐츠 — 계열로 묶는다 ([[ADR-147]] 정정 28)', () 
     ])
   })
 
-  it('짧은 이름을 쓴다 — 계열명은 위에 있으므로 항목에서 뺀다', () => {
+  it('짧은 이름을 쓴다. 계열명은 위에 있으므로 항목에서 뺀다', () => {
     const model = buildTodayViewModel(
       input({ orderedOcids: ['a'], contentCharacters: [sharedView('a')] }),
     )
@@ -726,7 +726,7 @@ describe('공유 컨텐츠 — 계열로 묶는다 ([[ADR-147]] 정정 28)', () 
     ])
   })
 
-  it('캐릭터가 넷이어도 항목은 한 줄씩이다 — 이 분리의 이유가 그 중복이다', () => {
+  it('캐릭터가 넷이어도 항목은 한 줄씩이다. 이 분리의 이유가 그 중복이다', () => {
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a', 'b', 'c', 'd'],
@@ -737,7 +737,7 @@ describe('공유 컨텐츠 — 계열로 묶는다 ([[ADR-147]] 정정 28)', () 
     expect(model.sharedContents.flatMap((group) => group.items)).toHaveLength(7)
   })
 
-  it('「남은 스케줄」에서는 일곱이 빠진다', () => {
+  it('`남은 스케줄`에서는 일곱이 빠진다', () => {
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a'],
@@ -752,14 +752,14 @@ describe('공유 컨텐츠 — 계열로 묶는다 ([[ADR-147]] 정정 28)', () 
       }),
     )
 
-    // 캐릭터 줄에는 개인 일퀘 하나만 남는다 — 몬스터파크는 공유 위젯의 몫이다.
+    // 캐릭터 줄에는 개인 일퀘 하나만 남는다. 몬스터파크는 공유 위젯의 몫이다.
     expect(model.schedule[0]?.dailyNames).toEqual(['소멸의 여로'])
     expect(model.schedule[0]?.weeklyNames).toEqual([])
   })
 })
 
-describe('공유 컨텐츠 — 오른쪽 열은 `maxCount > 0` 하나로 갈린다 ([[ADR-147]] 정정 29)', () => {
-  it('몬스터파크는 7/14 — 월드 총합을 그대로 그린다', () => {
+describe('공유 컨텐츠. 오른쪽 열은 `maxCount > 0` 하나로 갈린다', () => {
+  it('몬스터파크는 7/14. 월드 총합을 그대로 그린다', () => {
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a'],
@@ -781,7 +781,7 @@ describe('공유 컨텐츠 — 오른쪽 열은 `maxCount > 0` 하나로 갈린�
     })
   })
 
-  it('에픽 던전은 maxCount 가 0이라 카운트를 안 그린다 — 참여 여부만 안다', () => {
+  it('에픽 던전은 maxCount 가 0이라 카운트를 안 그린다. 참여 여부만 안다', () => {
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a'],
@@ -801,9 +801,9 @@ describe('공유 컨텐츠 — 오른쪽 열은 `maxCount > 0` 하나로 갈린�
     expect(epic?.items[1]).toMatchObject({ shortName: '앵글러컴퍼니', count: null, isComplete: false })
   })
 
-  it('완료하면 카운트를 안 준다 — 화면이 CLEAR 를 그린다 ([[ADR-147]] 정정 33)', () => {
+  it('완료하면 카운트를 안 준다. 화면이 CLEAR 를 그린다', () => {
     // 익스트림 몬스터파커는 `quest_state` 로 완료를 판정하는 항목이라 `now_count` 의 충실도가
-    // 확인된 적이 없다. 완료한 항목의 «몇 번 했나» 는 언제나 max 라 카운트를 줄 이유가 없고,
+    // 확인된 적이 없다. 완료한 항목의 **몇 번 했나** 는 언제나 max 라 카운트를 줄 이유가 없고,
     // 안 주면 **끝낸 퀘스트가 `0/2` 로 보일 위험도 함께 사라진다**.
     const model = buildTodayViewModel(
       input({
@@ -821,7 +821,7 @@ describe('공유 컨텐츠 — 오른쪽 열은 `maxCount > 0` 하나로 갈린�
     expect(extreme).toMatchObject({ count: null, isComplete: true })
   })
 
-  it('카운트형도 다 채우면 카운트를 안 준다 — 「익스트림만 예외」는 이름으로 유추하는 규칙이 된다', () => {
+  it('카운트형도 다 채우면 카운트를 안 준다. `익스트림만 예외`는 이름으로 유추하는 규칙이 된다', () => {
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a'],
@@ -857,7 +857,7 @@ describe('공유 컨텐츠 — 오른쪽 열은 `maxCount > 0` 하나로 갈린�
     expect(extreme?.count).toEqual({ now: 2, max: 2 })
   })
 
-  it('진행은 공유라 캐릭터마다 갈리면 가장 앞선 값을 쓴다 — 늦게 동기화된 캐릭터가 값을 되돌리지 않는다', () => {
+  it('진행은 공유라 캐릭터마다 갈리면 가장 앞선 값을 쓴다. 늦게 동기화된 캐릭터가 값을 되돌리지 않는다', () => {
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a', 'b'],
@@ -899,12 +899,12 @@ describe('공유 컨텐츠 — 오른쪽 열은 `maxCount > 0` 하나로 갈린�
       }),
     )
 
-    // 남은 것 — 악몽선경 · 몬스터파크(0/14) · 익스트림 · PC방
+    // 남은 것. 악몽선경· 몬스터파크(0/14)· 익스트림· PC방
     expect(model.sharedRemaining).toBe(4)
   })
 })
 
-describe('공유 컨텐츠 — 유니온만 조건부다 ([[ADR-147]] 정정 30)', () => {
+describe('공유 컨텐츠. 유니온만 조건부다', () => {
   it('아무 캐릭터의 스케줄러에도 없으면 유니온 계열이 통째로 빠진다', () => {
     const model = buildTodayViewModel(
       input({
@@ -923,7 +923,7 @@ describe('공유 컨텐츠 — 유니온만 조건부다 ([[ADR-147]] 정정 30)
     expect(model.sharedContents.map((group) => group.group)).toEqual(['에픽던전', '몬스터파크'])
   })
 
-  it('둘 중 하나만 있으면 그 한 줄만 남는다 — 계열이 아니라 항목 단위다', () => {
+  it('둘 중 하나만 있으면 그 한 줄만 남는다. 계열이 아니라 항목 단위다', () => {
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a'],
@@ -957,14 +957,14 @@ describe('공유 컨텐츠 — 유니온만 조건부다 ([[ADR-147]] 정정 30)
     ])
   })
 
-  it('캐릭터가 하나도 없어도 다섯 줄이 선다 — 위젯은 사라지지 않는다', () => {
+  it('캐릭터가 하나도 없어도 다섯 줄이 선다. 위젯은 사라지지 않는다', () => {
     const model = buildTodayViewModel(input({}))
 
     expect(model.sharedContents.flatMap((group) => group.items)).toHaveLength(5)
     expect(model.sharedRemaining).toBe(5)
   })
 
-  it('수동 모드에서는 추적 목록 멤버십이 «스케줄러에 있는가» 다', () => {
+  it('수동 모드에서는 추적 목록 멤버십이 **스케줄러에 있는가** 다', () => {
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a'],
@@ -979,14 +979,14 @@ describe('공유 컨텐츠 — 유니온만 조건부다 ([[ADR-147]] 정정 30)
   })
 })
 
-// [[ADR-162]] 결정 1·4 — 요구 레벨에 못 미치는 항목은 «남은 것» 이 아니다. 게임이 등록을 허용해도
+// 요구 레벨에 못 미치는 항목은 **남은 것** 이 아니다. 게임이 등록을 허용해도
 // 이 캐릭터로는 못 하므로, 세면 그 숫자가 **영원히 안 줄어든다.** 스케줄러 카드·진행률·링과 같은
-// 판정 함수를 봐야 [[ADR-147]] 결정 8(«한 글자도 다르면 안 된다»)이 성립한다.
+// 판정 함수를 봐야(**한 글자도 다르면 안 된다**)이 성립한다.
 //
-// 항목을 **캐릭터 단위**로 고른 것이 요점이다 — 몬스터파크(요구 레벨 105)는 월드 공유라 이 목록에
-// 애초에 안 든다([[ADR-147]] 정정 28). 공유 항목으로 재면 레벨과 무관하게 빠져 테스트가 거짓으로
+// 항목을 **캐릭터 단위**로 고른 것이 요점이다. 몬스터파크(요구 레벨 105)는 월드 공유라 이 목록에
+// 애초에 안 든다. 공유 항목으로 재면 레벨과 무관하게 빠져 테스트가 거짓으로
 // 통과한다.
-describe('요구 레벨 미달은 남은 개수에서 빠진다 ([[ADR-162]])', () => {
+describe('요구 레벨 미달은 남은 개수에서 빠진다', () => {
   const 항목 = [
     daily({ name: '[일일 퀘스트] 소멸의 여로 조사' }), // 요구 레벨 200
     daily({ name: '[일일 퀘스트] 츄츄 아일랜드 최고의 요리' }), // 요구 레벨 210
@@ -1012,7 +1012,7 @@ describe('요구 레벨 미달은 남은 개수에서 빠진다 ([[ADR-162]])', 
     expect(남은것(199)).toHaveLength(0)
   })
 
-  // 레벨을 모르면 단정하지 않는다 — 전부 센다([[ADR-057]] 태도).
+  // 레벨을 모르면 단정하지 않는다. 전부 센다(태도).
   it('레벨을 모르면 아무것도 안 뺀다', () => {
     expect(남은것()).toHaveLength(2)
   })

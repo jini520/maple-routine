@@ -1,12 +1,12 @@
-// 컨텐츠 카드 — **어떤 항목이 어떤 카드로 그려지는가**([[ADR-020]]·[[ADR-021]]).
+// 컨텐츠 카드. **어떤 항목이 어떤 카드로 그려지는가**.
 //
-// 웹은 이 계약을 `ContentScreen.test.tsx` 안에서 화면째 렌더해 검사했다. 여기서는 `render*Card`
-// 를 직접 부른다 — 묻는 것이 **분기와 배지**이지 화면 배선이 아니고, 스토어 목 없이 같은 계약을
+// 화면째 렌더하지 않고 `render*Card` 를 직접 부른다. 묻는 것이 **분기와 배지**이지 화면 배선이
+// 아니고, 스토어 목 없이 같은 계약을
 // 그대로 볼 수 있기 때문이다(화면 쪽 계약은 `ContentScreen.test.tsx` 가 따로 본다).
 //
 // **그림은 `testUri` 로 본다.** jest 에서 번들 에셋은 숫자가 아니라 `{ testUri }` 대역이라
-// ([[ADR-129]] 의 `image-asset.native.ts`) *"어느 파일로 해석됐는가"* 를 그 문자열로 묻는다 —
-// 웹이 `src` 속성으로 묻던 것과 같은 질문이다.
+// *"어느 파일로 해석됐는가"* 를 그 문자열로 묻는다.
+// 그림이 실재하는지를 묻는 질문이다.
 import type { DailyContent, WeeklyContent } from '../../../types'
 
 import { findAllOfType, renderAtom, type AtomElement } from '../../../components/__tests__/render-atom'
@@ -39,7 +39,7 @@ function weekly(overrides: Partial<WeeklyContent> = {}): WeeklyContent {
   }
 }
 
-/** 이 카드가 실제로 그린 배경 그림의 파일 경로. 없으면 `null`(웹의 "아트 div 자체가 없음"). */
+/** 이 카드가 실제로 그린 배경 그림의 파일 경로. 없으면 `null`. */
 function artUri(view: Awaited<ReturnType<typeof renderAtom>>): string | null {
   const art = view.queryByTestId('faded-illustration', HIDDEN)
   if (art === null) return null
@@ -50,9 +50,9 @@ function artUri(view: Awaited<ReturnType<typeof renderAtom>>): string | null {
 }
 
 /**
- * 진행률 바가 낸 접근성 값 — **`getByRole('progressbar')` 로는 못 찾는다.** RNTL 14 의 역할 질의는
+ * 진행률 바가 낸 접근성 값. **`getByRole('progressbar')` 로는 못 찾는다.** RNTL 14 의 역할 질의는
  * 접근성 요소로 표시된 노드만 보는데 이 트랙은 `accessible` 없이 `accessibilityRole` 만 달고 있고
- * (`ProgressBar` atom 이 웹의 `role`/`aria-*` 를 그대로 옮긴 모양), 그쪽 테스트도 같은 이유로
+ * 그쪽 테스트도 같은 이유로
  * 트리를 직접 훑는다.
  */
 function progressNow(view: Awaited<ReturnType<typeof renderAtom>>): number | undefined {
@@ -62,7 +62,7 @@ function progressNow(view: Awaited<ReturnType<typeof renderAtom>>): number | und
   return (track?.props.accessibilityValue as { now: number } | undefined)?.now
 }
 
-describe('일간 카드 ([[ADR-020]])', () => {
+describe('일간 카드', () => {
   it('kind: quest 는 접두어를 뗀 이름 + quest_state 배지 + 지역 배경이다', async () => {
     const view = await renderAtom(
       renderDailyContentCard(
@@ -87,7 +87,7 @@ describe('일간 카드 ([[ADR-020]])', () => {
     expect(artUri(view)).toContain('monsterPark')
   })
 
-  it('지역이 안 잡히면 배경 없이 이름만 그린다 — 폴백이 조용하다', async () => {
+  it('지역이 안 잡히면 배경 없이 이름만 그린다. 폴백이 조용하다', async () => {
     const view = await renderAtom(
       renderDailyContentCard(daily({ name: '[일일 퀘스트] 없는지역', kind: 'quest', questState: 0 }), 300),
     )
@@ -103,7 +103,7 @@ describe('일간 카드 ([[ADR-020]])', () => {
   })
 })
 
-describe('주간 카드 ([[ADR-021]])', () => {
+describe('주간 카드', () => {
   it('에픽 던전은 카테고리 배지 + 접두어 뗀 이름이고 now_count 로 완료를 가른다', async () => {
     const done = await renderAtom(renderWeeklyContentCard(weekly({ name: '에픽 던전 : 앵글러 컴퍼니', nowCount: 5 }), 300))
     expect(done.getByText('에픽 던전')).toBeTruthy()
@@ -137,7 +137,7 @@ describe('주간 카드 ([[ADR-021]])', () => {
     expect(artUri(view)).toContain('monsterPark')
   })
 
-  // quest_state 가 아니라 **도달 층수**다 — 배지 종류가 갈리는 자리라 두 방향을 다 본다.
+  // quest_state 가 아니라 **도달 층수**다. 배지 종류가 갈리는 자리라 두 방향을 다 본다.
   it('무릉도장은 now_count 를 "N층"으로 보여주고, 참여 전이면 "시작 안함"이다', async () => {
     const played = await renderAtom(
       renderWeeklyContentCard(weekly({ name: '무릉도장', nowCount: 37, maxCount: 100 }), 300),
@@ -178,7 +178,7 @@ describe('주간 카드 ([[ADR-021]])', () => {
     expect(artUri(view)).toContain('armorDragon')
   })
 
-  // 셋이 **서로 독립**이라는 것이 [[ADR-021]] 정정의 요점이다 — 하나만 등록돼도 나머지에 영향이 없다.
+  // 셋이 **서로 독립**이라는 것이 요점이다. 하나만 등록돼도 나머지에 영향이 없다.
   it('길드 3종은 저마다 다른 카드다', async () => {
     const waterway = await renderAtom(
       renderWeeklyContentCard(weekly({ name: '[길드] 지하 수로', nowCount: 1200 }), 300),
@@ -206,10 +206,10 @@ describe('주간 카드 ([[ADR-021]])', () => {
   })
 })
 
-// [[ADR-162]] 결정 3 — 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). 진행할 수 없는 항목의
-// «완료/n회/n층» 은 뜻이 없다 — 그 값은 게임이 준 스냅샷이지 이 캐릭터가 할 수 있다는 뜻이 아니다.
-describe('진행 불가 배지 ([[ADR-162]] 결정 3)', () => {
-  it('요구 레벨에 못 미치면 상태 배지 자리에 «진행 불가» 가 선다', async () => {
+// 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). 진행할 수 없는 항목의
+// **완료/n회/n층** 은 뜻이 없다. 그 값은 게임이 준 스냅샷이지 이 캐릭터가 할 수 있다는 뜻이 아니다.
+describe('진행 불가 배지', () => {
+  it('요구 레벨에 못 미치면 상태 배지 자리에 **진행 불가** 가 선다', async () => {
     const 미달 = await renderAtom(renderDailyContentCard(daily({ name: '몬스터파크', nowCount: 3, maxCount: 14 }), 104))
 
     expect(미달.queryByText('진행 불가')).not.toBeNull()
@@ -223,7 +223,7 @@ describe('진행 불가 배지 ([[ADR-162]] 결정 3)', () => {
     expect(충족.queryByText('3/14')).not.toBeNull()
   })
 
-  // 주간 컨텐츠 5개(유니온 둘 · 길드 셋)는 참조표에 요구 레벨이 없다 — 어떤 레벨에서도 진행 가능이다.
+  // 주간 컨텐츠 5개(유니온 둘· 길드 셋)는 참조표에 요구 레벨이 없다. 어떤 레벨에서도 진행 가능이다.
   it('요구 레벨이 없는 항목은 낮은 레벨에서도 배지가 안 뜬다', async () => {
     const view = await renderAtom(renderWeeklyContentCard(weekly({ name: '[길드] 지하 수로', nowCount: 1200 }), 1))
 

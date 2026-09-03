@@ -51,7 +51,7 @@ beforeEach(async () => {
 })
 
 /**
- * 마이크로태스크를 충분히 흘린다. 가짜 Preferences 가 전부 마이크로태스크 프로미스라
+ * 마이크로태스크를 충분히 흘리는 도우미. 가짜 Preferences 가 전부 마이크로태스크 프로미스라
  * (`fake-preferences`) 이것만으로 원장 읽기까지 통과하고, 그 시점에 **아직 어떤 날짜 응답도
  * resolve 되지 않았다**는 것이 아래 병렬 단언의 핵심이다.
  */
@@ -61,7 +61,7 @@ async function flushMicrotasks(): Promise<void> {
   }
 }
 
-describe('access_flag는 배제 게이트가 아니라 충분조건이다 (ADR-086 결정 3)', () => {
+describe('access_flag는 배제 게이트가 아니라 충분조건이다', () => {
   it('access_flag: true면 API를 부르지 않고 곧바로 자격 O다', async () => {
     await expect(resolveCharacterEligibility('key', 'ocid-1', true, NOW)).resolves.toBe('eligible')
     expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
@@ -73,8 +73,8 @@ describe('access_flag는 배제 게이트가 아니라 충분조건이다 (ADR-0
   })
 })
 
-describe('과거 날짜 스윕 — 13일을 한꺼번에 태운다 (ADR-148 결정 1)', () => {
-  it('앞 날짜 응답을 기다리지 않는다 — 어떤 응답도 오기 전에 13일이 모두 발사돼 있다', async () => {
+describe('과거 날짜 스윕. 13일을 한꺼번에 태운다', () => {
+  it('앞 날짜 응답을 기다리지 않는다. 어떤 응답도 오기 전에 13일이 모두 발사돼 있다', async () => {
     const pending: Array<(value: SchedulerCharacterState) => void> = []
     fetchSchedulerCharacterStateMock.mockImplementation(
       () => new Promise<SchedulerCharacterState>((resolve) => pending.push(resolve)),
@@ -83,7 +83,7 @@ describe('과거 날짜 스윕 — 13일을 한꺼번에 태운다 (ADR-148 결�
     const promise = resolveCharacterEligibility('key', 'ocid-1', false, NOW)
     await flushMicrotasks()
 
-    // 직렬이던 시절에는 여기서 1이었다 — 첫 응답이 와야 둘째가 나갔다.
+    // 열셋이 한꺼번에 나간다. 직렬이면 첫 응답이 와야 둘째가 나가 1 이 된다.
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(13)
 
     pending.forEach((resolve) => {
@@ -92,7 +92,7 @@ describe('과거 날짜 스윕 — 13일을 한꺼번에 태운다 (ADR-148 결�
     await expect(promise).resolves.toBe('ineligible')
   })
 
-  it('발사 순서는 최신 날짜부터다 — 원장 필터가 날짜를 거른 뒤의 순서를 그대로 쓴다', async () => {
+  it('발사 순서는 최신 날짜부터다. 원장 필터가 날짜를 거른 뒤의 순서를 그대로 쓴다', async () => {
     fetchSchedulerCharacterStateMock.mockResolvedValue(state())
 
     await resolveCharacterEligibility('key', 'ocid-1', false, NOW)
@@ -101,14 +101,14 @@ describe('과거 날짜 스윕 — 13일을 한꺼번에 태운다 (ADR-148 결�
     expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(13, 'key', 'ocid-1', '2026-07-21')
   })
 
-  it('완료를 찾아도 13일이 다 나간다 — 조기 종료를 포기한 대가다 (ADR-148 결정 2)', async () => {
+  it('완료를 찾아도 13일이 다 나간다. 조기 종료를 포기한 대가다', async () => {
     fetchSchedulerCharacterStateMock.mockResolvedValue(COMPLETED)
 
     await expect(resolveCharacterEligibility('key', 'ocid-1', false, NOW)).resolves.toBe('eligible')
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(13)
   })
 
-  it('완료가 가장 오래된 날짜 하나뿐이어도 자격 O다 — 결과는 모아서 판정한다', async () => {
+  it('완료가 가장 오래된 날짜 하나뿐이어도 자격 O다. 결과는 모아서 판정한다', async () => {
     fetchSchedulerCharacterStateMock.mockImplementation(
       async (_apiKey: string, _ocid: string, dateKey: string) =>
         dateKey === '2026-07-21' ? COMPLETED : state(),
@@ -132,8 +132,8 @@ describe('과거 날짜 스윕 — 13일을 한꺼번에 태운다 (ADR-148 결�
   })
 })
 
-describe('같은 날짜를 두 번 조회하지 않는다 (ADR-086 결정 4 = 이슈 #87 문제 1)', () => {
-  it('두 번째 판정은 원장에 없는 날짜만 조회한다 — 스윕 전체가 반복되지 않는다', async () => {
+describe('같은 날짜를 두 번 조회하지 않는다 (= 이슈 #87 문제 1)', () => {
+  it('두 번째 판정은 원장에 없는 날짜만 조회한다. 스윕 전체가 반복되지 않는다', async () => {
     fetchSchedulerCharacterStateMock.mockResolvedValue(state())
     await resolveCharacterEligibility('key', 'ocid-1', false, NOW)
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(13)
@@ -157,8 +157,8 @@ describe('같은 날짜를 두 번 조회하지 않는다 (ADR-086 결정 4 = �
   })
 })
 
-describe('실패 종류별 기록 정책 (ADR-086 결정 4)', () => {
-  it('400 OPENAPI00003이면 조회 불가로 확정한다 — 13일이 이미 나간 뒤라 호출은 안 아낀다', async () => {
+describe('실패 종류별 기록 정책', () => {
+  it('400 OPENAPI00003이면 조회 불가로 확정한다. 13일이 이미 나간 뒤라 호출은 안 아낀다', async () => {
     fetchSchedulerCharacterStateMock.mockRejectedValue(
       new NexonBadRequestError('unavailable', 'OPENAPI00003'),
     )
@@ -168,7 +168,7 @@ describe('실패 종류별 기록 정책 (ADR-086 결정 4)', () => {
     await expect(getScheduleProbeLedger('ocid-1', NOW)).resolves.toMatchObject({ unavailable: true })
   })
 
-  // ADR-148 결정 4: 원장을 읽는 judgeFromLedger 가 unavailable 을 먼저 보므로, 이번 회차의 답도
+  // 원장을 읽는 judgeFromLedger 가 unavailable 을 먼저 보므로, 이번 회차의 답도
   // 같은 순서를 따라야 다음 회차와 갈리지 않는다.
   it('한 날짜라도 OPENAPI00003이면 다른 날짜에 완료가 있어도 unavailable이 이긴다', async () => {
     fetchSchedulerCharacterStateMock.mockImplementation(
@@ -182,7 +182,7 @@ describe('실패 종류별 기록 정책 (ADR-086 결정 4)', () => {
 
     await expect(resolveCharacterEligibility('key', 'ocid-1', false, NOW)).resolves.toBe('unavailable')
 
-    // 다음 회차가 같은 답을 낸다 — 원장이 그렇게 적혔기 때문이다.
+    // 다음 회차가 같은 답을 낸다. 원장이 그렇게 적혔기 때문이다.
     fetchSchedulerCharacterStateMock.mockClear()
     await expect(resolveCharacterEligibility('key', 'ocid-1', false, NOW)).resolves.toBe('unavailable')
     expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
@@ -210,7 +210,7 @@ describe('실패 종류별 기록 정책 (ADR-086 결정 4)', () => {
     expect(ledger.dates['2026-08-02']).toEqual({ kind: 'outOfRange' })
   })
 
-  it('400 OPENAPI00009(집계 전)는 기록하지 않는다 — 나중에 다시 시도한다', async () => {
+  it('400 OPENAPI00009(집계 전)는 기록하지 않는다. 나중에 다시 시도한다', async () => {
     fetchSchedulerCharacterStateMock.mockRejectedValue(
       new NexonBadRequestError('not collected', 'OPENAPI00009'),
     )
@@ -222,7 +222,7 @@ describe('실패 종류별 기록 정책 (ADR-086 결정 4)', () => {
     })
   })
 
-  it('네트워크 실패도 기록하지 않는다 — 모르는 실패를 확정으로 굳히지 않는다', async () => {
+  it('네트워크 실패도 기록하지 않는다. 모르는 실패를 확정으로 굳히지 않는다', async () => {
     fetchSchedulerCharacterStateMock.mockRejectedValue(new NexonNetworkError('offline'))
 
     await expect(resolveCharacterEligibility('key', 'ocid-1', false, NOW)).resolves.toBe('ineligible')

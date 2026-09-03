@@ -23,11 +23,11 @@ const SIZES = {
   },
 } as const
 
-/** 시각 크기(24·32px)와 권장 타깃(44px)의 차이를 사방으로 나눠 채운다. */
+/** 시각 크기(24·32px)와 권장 타깃(44px)의 차이를 사방으로 나눈 몫. */
 const HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 }
 
 export function PartySizeStepper(props: {
-  /** aria-label 접두 — 목록에서 어느 행의 스테퍼인지 구분한다(보스명). */
+  /** aria-label 접두. 목록에서 어느 행의 스테퍼인지 구분한다(보스명). */
   label: string
   value: number
   max: number
@@ -42,7 +42,7 @@ export function PartySizeStepper(props: {
 
   return (
     <View className={size.root}>
-      {/* default 는 라벨 줄에 Users 가 따로 서므로 안에 두지 않는다 — 한 화면에 두 번 나오면 중복이다. */}
+      {/* default 는 라벨 줄에 Users 가 따로 서므로 안에 두지 않는다. 한 화면에 두 번 나오면 중복이다. */}
       {size.marker !== null && (
         <UsersIcon className={`${size.marker} text-text-muted`} strokeWidth={2} aria-hidden />
       )}
@@ -57,8 +57,8 @@ export function PartySizeStepper(props: {
         <MinusIcon className={`${size.icon} text-text`} strokeWidth={2} aria-hidden />
       </Pressable>
 
-      {/* **단위를 안 적는다**([[ADR-173]] 결정 18, 사용자 지정 2026-08-27) — 이 앱의 스테퍼는
-          숫자만 오르내린다. 무엇을 세는지는 곁의 라벨과 `Users` 표식이 말한다. */}
+      {/* 단위를 안 적는다. 이 앱의 스테퍼는 숫자만 오르내린다. 무엇을 세는지는 곁의 라벨과
+          `Users` 표식이 말한다. */}
       <View className={`flex-row items-baseline ${size.valueSlot}`}>
         <Text className={`text-text ${size.value}`} style={TABULAR_NUMS}>
           {props.value}

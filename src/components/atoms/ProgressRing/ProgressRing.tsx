@@ -1,5 +1,5 @@
 /**
- * 진행률 링 atom([[ADR-204]] 정정 2). 링을 채우는 셈이 여기 한 곳에 있다.
+ * 진행률 링 atom. 링을 채우는 셈이 여기 한 곳에 있다.
  *
  * **색을 프롭으로 받는다.** 링 색은 `className` 으로 못 준다. `react-native-svg` 의 도형이
  * `cssInterop` 에 없고, 등록해도 한 `<Svg>` 안에서 한 색만 통한다. 그래서 이 부품은 테마를 안 읽고
@@ -51,7 +51,7 @@ const TRANSFORM = {
 /**
  * 두 갈래가 함께 넘기는 도형 값. 채움 모양만 갈리고 이것들은 같다.
  *
- * **`fill` 을 안 담는다.** 이 부품에서 `fill` 은 «찬 자리의 색» 이라 SVG 의 `fill` 속성과 이름이
+ * **`fill` 을 안 담는다.** 이 부품에서 `fill` 은 찬 자리의 색 이라 SVG 의 `fill` 속성과 이름이
  * 겹친다. 함께 담으면 색 프롭이 그것을 덮어 `<Circle>` 이 `fill` 없이 나가고, SVG 기본값이 검정이라
  * **링 안이 까맣게 칠해진다**. 그래서 `fill="none"` 은 도형마다 직접 적는다.
  */
@@ -145,13 +145,13 @@ function Segments(props: {
 }): React.JSX.Element {
   const { circumference, stroke, progress } = props
   const segment = circumference / progress.total
-  // `round` 캡은 칸 양끝을 stroke 의 절반씩 **더** 그린다([[ADR-054]] 정정 5). 그만큼 dash 를 미리
+  // `round` 캡은 칸 양끝을 stroke 의 절반씩 **더** 그린다. 그만큼 dash 를 미리
   // 줄여야 보이는 칸 길이와 간격이 butt 일 때와 같다. 안 빼면 간격이 2.4 에서 0.4 로 뭉개져 12칸이
   // 한 원처럼 보인다.
   const dash = Math.max(segment - progress.gap - stroke, 0.5)
   // 캡이 시작점 뒤로 절반만큼 튀어나오므로 그만큼 밀어야 칸이 제자리에 앉는다.
   const capOffset = stroke / 2
-  // 칸이 하나뿐이면 dash 를 안 건다([[ADR-059]] 정정 1). 간격은 칸과 칸을 나누는 장치라 나눌 상대가
+  // 칸이 하나뿐이면 dash 를 안 건다. 간격은 칸과 칸을 나누는 장치라 나눌 상대가
   // 없으면 나눔이 아니라 결손으로 읽힌다. 값을 0 으로 두는 대신 속성을 통째로 빼는 것은 dash 양끝의
   // 둥근 캡이 정확히 겹쳐 이음매가 비치는 것을 피하기 위해서다.
   const single = progress.total === 1

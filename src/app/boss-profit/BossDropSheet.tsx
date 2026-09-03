@@ -1,31 +1,10 @@
-// 보스 드롭 기록 시트([[ADR-038]] → [[ADR-039]] → [[ADR-040]]·[[ADR-041]]).
-//
-// 시트 껍데기는 `components/organisms/BottomSheet` 가 이미 소유한다(3단계) — 여기서 다시 만들지
-// 않는다. 이 파일이 갖는 것은 **무엇을 고르게 할 것인가**다: 난이도 필터, 장비·소비 타일, 읽기
-// 전용 고정 드롭, 상자 드릴다운, 그리고 기록 직후의 가격 물음([[ADR-124]] 결정 6).
-//
-// ══ RN 으로 옮기며 갈린 것 여섯 ═══════════════════════════════════════════════════
-//
-// ① **CSS `grid` 가 없다.** `grid-cols-4 gap-2` 는 `flex-row flex-wrap` + 자식 `w-1/4` 로 옮기고,
-//    간격은 **자식 패딩 + 부모 음수 마진**으로 만든다. 퍼센트 폭과 `gap` 을 섞으면 4열의 마지막
-//    칸이 밀려 3열이 되는데(전체 폭 − 간격 합을 퍼센트로 표현할 수 없다), 패딩 방식은 그 계산이
-//    아예 없다. `col-span-2`(고정 드롭 3개의 마지막 칸)는 `w-full` 이다.
-// ② **하단 바가 `sticky` 가 아니다.** 웹은 `sticky bottom-0` 로 스크롤 중에도 「추가 완료」를
-//    붙들었다. RN 에서 그 짝은 `@gorhom/bottom-sheet` 의 `footerComponent` 인데, 그것은 시트
-//    **껍데기**(3단계 organism)의 API 라 여기서 정할 일이 아니다 — 지금은 웹의 DOM 순서 그대로
-//    내용 맨 끝에 흐르게 두고, 실기기에서 "긴 시트에서 버튼이 멀다"가 확인되면 그때 껍데기에
-//    붙인다(육안 대조 목록). 안전영역 하단 패딩은 **껍데기가 이미 준다**(`BottomSheet` 의
-//    `contentContainerStyle`) — 여기서 또 주면 두 겹이 된다.
-// ③ **가격 키패드는 step 8 이 채웠다** — 자리표시자였던 드릴다운에 `DropPricePadContent` 가 들어간다.
-//    흐름(`기록 → 확인 → 입력 → 복귀`)과 상태(`pricing`·`justAdded`)는 step 6 부터 그대로였고,
-//    가르지 않고 자리만 남겨 둔 이유가 [[ADR-124]] 결정 6 의 **"시트가 살아서 하던 작업을 잇는다"**
-//    였다 — 시트를 닫는 형태로 임시 구현했다면 그 계약이 사라졌을 것이다.
-// ④ `transition-colors`/`transition-transform`(연출 토글) → **없다.** 값이 즉시 바뀐다.
-// ⑤ `<button aria-pressed>` → **`aria-selected`**. RN 의 접근성 매핑에 `aria-pressed` 가 없어
-//    그대로 두면 **선택 상태가 조용히 사라진다**(에러 없이 — 이 저장소가 반복해 만난 실패 모양,
-//    실측 확인). `aria-selected` 는 `accessibilityState.selected` 로 접힌다.
-// ⑥ 글자가 상자에서 `Text` 로 내려온다. `line-clamp-2` 는 `numberOfLines={2}` 이고, `text-balance`·
-//    `break-keep` 은 짝이 없어 사라진다(줄바꿈 품질만 달라진다).
+/**
+ * 보스 드롭 기록 시트.
+ *
+ * 시트 껍데기는 `components/organisms/BottomSheet` 가 이미 소유한다. 이 파일이 갖는 것은
+ * 무엇을 고르게 할 것인가다. 난이도 필터, 장비·소비 타일, 읽기 전용 고정 드롭, 상자 드릴다운,
+ * 그리고 기록 직후의 가격 물음.
+ */
 import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
@@ -61,7 +40,7 @@ import { DropEffectOverlay } from '../../components/organisms/DropEffectOverlay/
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { DropPricePadContent } from './DropPricePad'
 
-// 선택 가능한 카테고리(장비·소비)의 라벨과 아이콘([[ADR-040]] 결정 4 — 노란 점 대신 아이콘). 고정은
+// 선택 가능한 카테고리(장비·소비)의 라벨과 아이콘(노란 점 대신 아이콘). 고정은
 // 읽기 전용 별도 섹션이라 여기 없다.
 const CATEGORY_META: Record<
   SelectableDropCategory,
@@ -83,8 +62,8 @@ interface BossDropSheetProps {
   onSave: (drops: RecordedDrop[]) => void
   onClose: () => void
   /**
-   * 이 시트 안에서 가격까지 매길 수 있게 할지(#185). 넘기지 않으면 기록 직후의 확인 줄도 타일의
-   * 수익 배지도 뜨지 않는다 — 가격 개념이 없는 호출부에 누를 수 없는 표식을 만들지 않기 위해서다.
+   * 이 시트 안에서 가격까지 매길 수 있게 할지. 넘기지 않으면 기록 직후의 확인 줄도 타일의
+   * 수익 배지도 뜨지 않는다. 가격 개념이 없는 호출부에 누를 수 없는 표식을 만들지 않는다.
    */
   pricing?: { defaultShare: number; maxShare: number; characterName: string }
 }
@@ -107,8 +86,8 @@ function ItemThumb(props: { name: string; slot?: string; level?: number }): Reac
   )
 }
 
-// 고정 드롭 아이콘 하나(일반 아이템 1개 또는 솔 에르다 단위 1개). 읽기 전용 표시라 버튼이 아니다.
-// 수량은 이미지 우측 하단 뱃지('N개')로 표시한다(ItemThumb 레벨 뱃지와 동일 스타일).
+// 고정 드롭 아이콘 하나(일반 아이템 1개 또는 솔 에르다 단위 1개). 읽기 전용 표시라 버튼이
+// 아니다. 수량은 이미지 우측 하단 배지(`N개`)로 표시한다.
 function FixedDropIcon(props: { icon: FixedDropIconSpec }): React.JSX.Element {
   const { icon } = props
   const url = icon.iconFile !== null ? getItemIconUrlByFile(icon.iconFile) : getItemIconUrl(icon.itemName)
@@ -128,9 +107,9 @@ function FixedDropIcon(props: { icon: FixedDropIconSpec }): React.JSX.Element {
   )
 }
 
-// 드롭 연출 토글([[ADR-040]] 결정 6 + 정정 4). 활성(ON) = 연출을 표시(고가 드롭을 추가하면 연출이 뜸).
-// 라벨이 긍정형이라 스토어의 positive 모델(enabled)을 반전 없이 그대로 그린다 — 부정형 라벨은
-// 토글과 겹쳐 이중 부정이 됐다. 값은 전역 스토어라 시트 밖에서도 공유·영구 저장.
+// 드롭 연출 토글. 활성(ON) = 연출을 표시한다. 라벨이 긍정형이라 스토어의 positive 모델
+// (enabled)을 반전 없이 그대로 그린다. 부정형 라벨은 토글과 겹쳐 이중 부정이 된다. 값은 전역
+// 스토어라 시트 밖에서도 공유·영구 저장된다.
 function EffectToggle(props: { on: boolean; onToggle: () => void }): React.JSX.Element {
   return (
     <Pressable
@@ -154,21 +133,19 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   // 저장 키는 항상 행 난이도(display-only 필터)라 이 값은 표시·필터에만 쓴다.
   const [selectedDifficulty, setSelectedDifficulty] = useState<BossDifficulty>(props.difficulty)
   const [activeBox, setActiveBox] = useState<{ name: string; category: SelectableDropCategory } | null>(null)
-  // 고가 아이템을 새로 추가하면 전체화면 연출을 띄운다([[ADR-038]]). 표시 여부는 전역 토글([[ADR-040]]).
+  // 고가 아이템을 새로 추가하면 전체화면 연출을 띄운다. 표시 여부는 전역 토글.
   const [effect, setEffect] = useState<{ itemName: string; slot?: string } | null>(null)
-  // 가격을 입력하는 중인 드롭(#185). null 이면 평소의 타일 그리드다.
+  // 가격을 입력하는 중인 드롭. `null` 이면 평소의 타일 그리드다.
   //
-  // **상자 드릴다운과 같은 자리다** — 시트를 닫고 새 시트를 여는 대신 시트 내용을 갈아 끼운다.
-  // 첫 설계(기록 직후 뜨는 확인 바)는 세 가지로 반려됐다(2026-08-10): ① 두 개를 찍으면 마지막
-  // 것의 가격밖에 못 넣고 ② 입력하면 시트가 닫혀 고르던 작업이 끊기고 ③ 어느 타일이 값을 가졌는지
-  // 알 수 없었다.
+  // 상자 드릴다운과 같은 자리다. 시트를 닫고 새 시트를 여는 대신 시트 내용을 갈아 끼운다.
+  // 기록 직후 뜨는 확인 바로 두면 셋이 깨진다. ① 두 개를 찍으면 마지막 것의 가격밖에 못 넣고
+  // ② 입력하면 시트가 닫혀 고르던 작업이 끊기고 ③ 어느 타일이 값을 가졌는지 알 수 없다.
   //
-  // 진입점은 그 뒤 두 번 더 갈렸다(2026-08-10). '선택한 드롭' 목록을 뒀다가 → 금액 뱃지가 타일
-  // 배지와 같은 말을 두 번 해서 뱃지를 떼고 → 목록 자체를 지웠다. 지금은 **기록 직후의 확인 줄**
-  // 하나이고, 셋은 이렇게 갈린다: ① 물음이 그 기록 하나에 붙어 여러 개를 찍어도 섞이지 않고
-  // ② 드릴다운이라 입력 후 시트가 살아서 그리드로 돌아오며 ③ 상태는 타일의 수익 배지가 말한다.
+  // 지금은 기록 직후의 확인 줄 하나이고 셋이 이렇게 갈린다. ① 물음이 그 기록 하나에 붙어
+  // 여러 개를 찍어도 섞이지 않고 ② 드릴다운이라 입력 후 시트가 살아서 그리드로 돌아오며
+  // ③ 상태는 타일의 수익 배지가 말한다.
   const [pricing, setPricing] = useState<RecordedDrop | null>(null)
-  // 방금 기록한 드롭 — 아래 확인 줄의 대상이다. 새로 기록하면 갈아타고, 그 기록을 취소하면 사라진다.
+  // 방금 기록한 드롭. 아래 확인 줄의 대상이다. 새로 기록하면 갈아타고, 그 기록을 취소하면 사라진다.
   const [justAdded, setJustAdded] = useState<RecordedDrop | null>(null)
   const effectEnabled = useDropEffectStore((state) => state.enabled)
   const setEffectEnabled = useDropEffectStore((state) => state.setEnabled)
@@ -246,8 +223,8 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   }
 
   /**
-   * 가격 필드만 갈아 끼운다. **객체 정체(===)로 찾는다** — 같은 보스에 같은 아이템을 두 개 먹은
-   * 경우를 기록이 구분하지 않으므로([[ADR-069]] 결정 4) 이름으로 찾으면 둘 다 바뀐다.
+   * 가격 필드만 갈아 끼우는 수정. 객체 정체(===)로 찾는다. 같은 보스에 같은 아이템을 두 개 먹은
+   * 경우를 기록이 구분하지 않으므로 이름으로 찾으면 둘 다 바뀐다.
    */
   function applyPrice(target: RecordedDrop, patch: Partial<RecordedDrop>): void {
     setSelected((prev) => prev.map((drop) => (drop === target ? { ...drop, ...patch } : drop)))
@@ -270,9 +247,9 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
     <>
       <BottomSheet onClose={props.onClose} testId="boss-drop-sheet">
         {pricing !== null && props.pricing !== undefined ? (
-          // 가격 드릴다운 — 시트는 열린 채다. 저장·기록 안함 후 목록으로 돌아와 고르던 작업을 잇는다.
-          // **`onLater`(스킵)는 넘기지 않는다**: 그 버튼은 순차 모드 전용이고([[ADR-124]] 결정 6
-          // 정정) 여기는 방금 기록한 한 건이라, 뒤로 누르는 것이 곧 같은 일이다.
+          // 가격 드릴다운. 시트는 열린 채다. 저장·기록 안함 후 목록으로 돌아와 고르던 작업을
+          // 잇는다. `onLater`(스킵)는 넘기지 않는다. 그 버튼은 순차 모드 전용이고 여기는 방금
+          // 기록한 한 건이라 뒤로 누르는 것이 곧 같은 일이다.
           <DropPricePadContent
             drop={pricing}
             boss={props.boss}
@@ -349,7 +326,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                         </View>
                         <Text className="text-xs font-bold text-text-muted">{label}</Text>
                       </View>
-                      {/* 4열 — 간격은 자식 패딩 + 부모 음수 마진(파일 머리 ①). */}
+                      {/* 4열. 간격은 자식 패딩 + 부모 음수 마진. */}
                       <View className="-mx-1 -mb-2 flex-row flex-wrap">
                         {(byCategory.get(category) ?? []).map((candidate) => {
                           const box = isBoxItem(candidate.name)
@@ -373,11 +350,10 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                                     <Text className="text-10 text-on-primary">✓</Text>
                                   </View>
                                 )}
-                                {/* 가격이 **입력된** 타일에만 수익 배지가 붙는다(사용자 지정
-                                    2026-08-10). 자리는 좌상단 — 우상단은 선택 체크가 이미 쓴다 —
-                                    이고 크기·모양을 그 체크와 맞춰 두 배지가 한 쌍으로 읽힌다.
-                                    스킵은 "기록된 가격"이 아니므로 표식이 없다(= 미입력과 같은
-                                    얼굴). 그 구분은 가격 기록 화면이 맡는다. */}
+                                {/* 가격이 입력된 타일에만 수익 배지가 붙는다. 자리는 좌상단.
+                                    우상단은 선택 체크가 이미 쓴다. 크기·모양을 그 체크와 맞춰
+                                    두 배지가 한 쌍으로 읽힌다. 스킵은 기록된 가격이 아니므로
+                                    표식이 없다. 그 구분은 가격 기록 화면이 맡는다. */}
                                 {(boxDrop ?? normalDrop)?.priceState === 'entered' && (
                                   <View
                                     role="img"
@@ -414,9 +390,9 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                       </View>
                       <Text className="text-xs font-bold text-text-muted">고정</Text>
                     </View>
-                    {/* 고정 드롭은 값이 난이도마다 달라 통합하지 않고 난이도별 카드로 읽기 전용 표시
-                        ([[ADR-040]]). 텍스트 대신 아이콘 + 수량, 솔 에르다는 단위별로 분해한다.
-                        배치(사용자 지시): 1→1열, 2·4→2열, 3→2열 + 마지막 1개 전폭. */}
+                    {/* 고정 드롭은 값이 난이도마다 달라 통합하지 않고 난이도별 카드로 읽기 전용
+                        표시한다. 텍스트 대신 아이콘 + 수량, 솔 에르다는 단위별로 분해한다.
+                        배치는 1→1열, 2·4→2열, 3→2열 + 마지막 1개 전폭. */}
                     <View className="-mx-1 -mb-2 flex-row flex-wrap">
                       {fixedGroups.map((group, index) => (
                         <View
@@ -450,11 +426,10 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
             )}
 
             <View className="border-t border-border bg-bg px-4 pb-3 pt-3">
-              {/* 기록 직후 **그 아이템 하나에 대해** 값을 매길지 묻는다(사용자 지정 2026-08-10).
-                  흐름은 `기록 → 확인 → (입력 →) 복귀` 이고, 어느 갈래든 타일 그리드로 돌아온다.
-                  **차단하지 않는다** — 일반 아이템은 확인창 없이 탭 즉시 기록된다는 [[ADR-040]] 를
-                  지키려는 것이다. 기록은 이미 끝났고 이 줄은 그 옆에 설 뿐이라, 무시하고 다음
-                  아이템을 계속 골라도 된다(그러면 그 아이템의 물음으로 갈아탄다). */}
+              {/* 기록 직후 그 아이템 하나에 대해 값을 매길지 묻는다. 흐름은 기록 → 확인 →
+                  (입력 →) 복귀 이고 어느 갈래든 타일 그리드로 돌아온다. 차단하지 않는다.
+                  일반 아이템은 확인창 없이 탭 즉시 기록된다. 기록은 이미 끝났고 이 줄은 그 옆에
+                  설 뿐이라 무시하고 다음 아이템을 계속 골라도 된다. */}
               {justAdded !== null && props.pricing !== undefined && (
                 <View
                   testID="drop-price-prompt"
@@ -524,8 +499,8 @@ interface BoxDrillDownProps {
   onConfirm: (itemName: string, ringLevel?: number) => void
 }
 
-// 랜덤 상자 결과 선택([[ADR-038]] 결정 2). 반지 상자=등급+반지 2축, 칠흑 장신구=1축. 확률 자동추정 없음.
-// 이미 지정된 상자는 타일 재탭으로 제거하므로([[ADR-040]]) 이 화면은 항상 새 선택 전용 — 제거 버튼 없음.
+// 랜덤 상자 결과 선택. 반지 상자=등급+반지 2축, 칠흑 장신구=1축. 확률 자동추정 없음.
+// 이미 지정된 상자는 타일 재탭으로 제거하므로 이 화면은 항상 새 선택 전용. 제거 버튼 없음.
 function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
   const ring = getRingBoxContents(props.boxName)
   const accessory = ring === null ? getAccessoryBoxContents(props.boxName) : null
@@ -533,7 +508,7 @@ function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
   const [level, setLevel] = useState<number | null>(null)
   const [item, setItem] = useState<string | null>(null)
 
-  // 선택한 반지의 레벨 유무([[ADR-041]]). 연마석(hasLevel=false)은 레벨 선택을 비활성하고 레벨 없이 기록.
+  // 선택한 반지의 레벨 유무. 연마석(hasLevel=false)은 레벨 선택을 비활성하고 레벨 없이 기록.
   const selectedOption = ring?.rings.find((r) => r.name === item) ?? null
   const needsLevel = selectedOption?.hasLevel ?? false
   const levelDisabled = selectedOption !== null && !selectedOption.hasLevel
@@ -549,7 +524,7 @@ function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
         <Text className="text-lg font-bold text-text">{props.boxName}</Text>
       </View>
 
-      {/* 반지 종류 먼저 선택([[ADR-041]]) */}
+      {/* 반지 종류 먼저 선택 */}
       <View className="px-4 pb-3">
         <Text className="mb-2 text-xs font-bold text-text-muted">{ring !== null ? '반지' : '장신구'}</Text>
         <View className="-mx-1 -mb-2 flex-row flex-wrap">
@@ -581,7 +556,7 @@ function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
         </View>
       </View>
 
-      {/* 그다음 레벨(등급) — 항상 보이되 연마석 선택 시에만 비활성([[ADR-041]]) */}
+      {/* 그다음 레벨(등급). 항상 보이되 연마석 선택 시에만 비활성 */}
       {ring !== null && (
         <View className="px-4 pb-3">
           <Text className="mb-2 text-xs font-bold text-text-muted">등급</Text>

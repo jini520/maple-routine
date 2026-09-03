@@ -1,8 +1,8 @@
-// 펼친 카드의 본문 — 주간(보스 행)과 월간(주차 소계 + 월간 보스)이다.
+// 펼친 카드의 본문. 주간(보스 행)과 월간(주차 소계 + 월간 보스)이다.
 //
-// **[[ADR-068]] 결정 2 가 이 파일의 중심이다**: 여섯 상태 중 행동이 있는 둘만 버튼을 갖고,
-// **금액을 모르는 상태에는 0을 쓰지 않는다.** 0을 쓰면 "조회한 적 없다"가 "0원 벌었다"가 된다 —
-// [[ADR-124]] 가 드롭 가격에서 지키는 것과 같은 원칙이다.
+// ** 가 이 파일의 중심이다**: 여섯 상태 중 행동이 있는 둘만 버튼을 갖고,
+// **금액을 모르는 상태에는 0을 쓰지 않는다.** 0을 쓰면 "조회한 적 없다"가 "0원 벌었다"가 된다.
+// 드롭 가격 화면이 지키는 것과 같은 원칙이다.
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
@@ -17,8 +17,8 @@ beforeEach(() => {
 })
 
 describe('WeeklyAccordionBody', () => {
-  // 웹의 `last:border-b-transparent` 짝 — RN 에는 `:last-child` 가 없어 부모가 알려 준다.
-  // 테두리를 **빼지 않고 색만** 지우는 것이 요점이라 두께는 두 행이 같아야 한다([[ADR-049]]).
+// 마지막 행의 아래 테두리를 지우는 짝. RN 에 `:last-child` 가 없어 부모가 알려 준다.
+  // 테두리를 **빼지 않고 색만** 지우는 것이 요점이라 두께는 두 행이 같아야 한다.
   it('보스 행을 순서대로 그리고 마지막 행만 테두리 색을 지운다', async () => {
     const rows = [보스행(), 보스행({ boss: 다른주간보스 })]
     const { getByLabelText, getAllByTestId } = await renderProfit(<WeeklyAccordionBody rows={rows} />)
@@ -58,14 +58,14 @@ describe('WeeklyAccordionBody', () => {
   })
 })
 
-describe('WeeklySubtotalRow — 상태마다 얼굴이 다르다 ([[ADR-068]] 결정 2)', () => {
+describe('WeeklySubtotalRow: 상태마다 얼굴이 다르다', () => {
   const 금액없는상태: { state: WeeklySubtotalState; label: string }[] = [
     { state: 'upcoming', label: '예정' },
     { state: 'outOfRange', label: '조회 불가' },
     { state: 'notCollected', label: '집계 전' },
   ]
 
-  it.each(금액없는상태)('$state 는 금액 대신 「$label」 만 말한다', async ({ state, label }) => {
+  it.each(금액없는상태)('$state 는 금액 대신 `$label` 만 말한다', async ({ state, label }) => {
     const { getByText, queryByText } = await renderProfit(
       <WeeklySubtotalRow subtotal={주차소계({ state, totalMeso: 0 })} />,
     )
@@ -79,7 +79,7 @@ describe('WeeklySubtotalRow — 상태마다 얼굴이 다르다 ([[ADR-068]] �
     { state: 'failed', label: '다시 시도' },
   ]
 
-  it.each(행동있는상태)('$state 에는 「$label」 버튼이 서고 누르면 그 기간을 다시 로드한다', async ({
+  it.each(행동있는상태)('$state 에는 `$label` 버튼이 서고 누르면 그 기간을 다시 로드한다', async ({
     state,
     label,
   }) => {
@@ -104,7 +104,7 @@ describe('WeeklySubtotalRow — 상태마다 얼굴이 다르다 ([[ADR-068]] �
     expect(getByText('1,234,000,000 메소')).toBeTruthy()
   })
 
-  it('조회해서 0건을 확인한 주는 0을 그대로 낸다 — 그건 아는 사실이다', async () => {
+  it('조회해서 0건을 확인한 주는 0을 그대로 낸다. 그건 아는 사실이다', async () => {
     const { getByText } = await renderProfit(
       <WeeklySubtotalRow subtotal={주차소계({ state: 'confirmedEmpty', totalMeso: 0 })} />,
     )
@@ -112,7 +112,7 @@ describe('WeeklySubtotalRow — 상태마다 얼굴이 다르다 ([[ADR-068]] �
     expect(getByText('0 메소')).toBeTruthy()
   })
 
-  it('진행 중인 주에는 「진행 중」 배지가 함께 선다', async () => {
+  it('진행 중인 주에는 `진행 중` 배지가 함께 선다', async () => {
     const { getByText } = await renderProfit(
       <WeeklySubtotalRow subtotal={주차소계({ state: 'inProgress' })} />,
     )
@@ -160,7 +160,7 @@ describe('MonthlyAccordionBody', () => {
     expect(getByText('월간 보스 수익')).toBeTruthy()
   })
 
-  it('월간 보스 행이 없고 조회도 불가하면 그 사실을 고지한다 — 빈 상태로 위장하지 않는다', async () => {
+  it('월간 보스 행이 없고 조회도 불가하면 그 사실을 고지한다. 빈 상태로 위장하지 않는다', async () => {
     const { getByText } = await renderProfit(
       <MonthlyAccordionBody bossRows={[]} weeklySubtotals={[]} />,
       컨텍스트값({ isMonthlyBossQueryable: false }),

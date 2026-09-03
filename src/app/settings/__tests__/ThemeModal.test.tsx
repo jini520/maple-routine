@@ -1,11 +1,11 @@
-// 웹판(97줄)의 명세를 읽어 다시 쓴 것. 검사하는 것은 [[ADR-104]] 결정 7 —
+// 이 화면이 지키는 것을 적는다. 검사하는 것은.
 // **적용은 즉시지만 닫기는 따라오지 않는다.**
 //
 // 갈린 것 둘
 // ① 타일을 `aria-label` 로 잡는다(`ThemeSelector` 테스트와 같은 이유).
-// ② 누른 뒤 화면을 보려면 `act` 로 흘려보낸다(`CacheClearConfirm` 테스트 파일 머리 ③).
+// ② 누른 뒤 화면을 보려면 `act` 로 흘려보낸다(`CacheClearConfirm` 테스트).
 //
-// **테마 이름을 손으로 나열하지 않는다**([[ADR-064]] 결정 10) — 레지스트리에서 둘을 뽑아 쓴다.
+// **테마 이름을 손으로 나열하지 않는다**. 레지스트리에서 둘을 뽑아 쓴다.
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { useThemeStore } from '../../../features/theme/store'
@@ -22,7 +22,7 @@ const mockedStore = jest.mocked(useThemeStore)
 
 const [현재테마, 다른테마, 또다른테마] = THEME_NAMES
 if (현재테마 === undefined || 다른테마 === undefined || 또다른테마 === undefined) {
-  throw new Error('테마가 셋 미만이다 — 이 파일의 케이스가 성립하지 않는다')
+  throw new Error('테마가 셋 미만이다. 이 파일의 케이스가 성립하지 않는다')
 }
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
@@ -66,7 +66,7 @@ describe('ThemeModal', () => {
     for (const name of THEME_NAMES) expect(view.getByLabelText(name)).toBeTruthy()
   })
 
-  // [[ADR-104]] 결정 7: 모달 자신이 선택 테마의 색으로 그려지므로 그 자리에서 갈아입혀 보게 둔다.
+  // 모달 자신이 선택 테마의 색으로 그려지므로 그 자리에서 갈아입혀 보게 둔다.
   it('테마를 선택하면 selectTheme 만 호출하고 모달은 열려 있다', async () => {
     const selectTheme = jest.fn(async () => {})
     const onClose = jest.fn()
@@ -94,7 +94,7 @@ describe('ThemeModal', () => {
     expect(onClose).not.toHaveBeenCalled()
   })
 
-  // 버튼이 "완료" 하나인 이유는 되돌릴 것이 없기 때문이다 — 되돌리려면 원래 테마를 다시 고른다.
+  // 버튼이 "완료" 하나인 이유는 되돌릴 것이 없기 때문이다. 되돌리려면 원래 테마를 다시 고른다.
   it('완료를 누르면 닫힌다', async () => {
     const onClose = jest.fn()
     const view = await renderOverlay(<ThemeModal onClose={onClose} />)

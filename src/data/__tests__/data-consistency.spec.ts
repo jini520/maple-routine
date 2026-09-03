@@ -32,9 +32,9 @@ function findDuplicates(keys: string[]): string[] {
 
 // item-drop-table.json 상단 note에 데이터 없음/의도적 제외로 이미 문서화된 조합.
 // weekly-bosses.json에 새 보스/난이도가 추가되면서 드랍 데이터가 누락된 경우와
-// 구분하기 위한 허용 목록 — 여기 없는 조합이 빠지면 테스트가 실패해야 한다.
+// 구분하기 위한 허용 목록. 여기 없는 조합이 빠지면 테스트가 실패해야 한다.
 // 남은 여섯은 전부 "상세 보상 정보 자체가 제공되지 않은" 구보스다. 벨로나 세 조합은
-// 출시분 반영으로 빠졌다([[ADR-151]]) — 이제 이 목록에 "미출시" 사유는 없다.
+// 출시분 반영으로 빠졌다. 이제 이 목록에 "미출시" 사유는 없다.
 const KNOWN_MISSING_DROP_ENTRIES = new Set([
   key('자쿰', '카오스'),
   key('매그너스', '하드'),
@@ -103,9 +103,9 @@ describe('게임 레퍼런스 데이터 정합성', () => {
     expect(undocumented).toEqual([])
   })
 
-  // ADR-070: 코드가 읽는 카테고리는 DROP_CATEGORIES(fixed·equipment·consumable) 뿐이라 그 밖의
+  // 코드가 읽는 카테고리는 DROP_CATEGORIES(fixed·equipment·consumable) 뿐이라 그 밖의
   // 키는 화면에 나오지 않는 죽은 데이터다. scroll(주문서 교환권 3종)은 consumable로 흡수했고,
-  // misc("태초의 정수")만 미처리로 남았다 — 새 죽은 카테고리가 늘어나면 여기서 걸린다.
+  // misc("태초의 정수")만 미처리로 남았다. 새 죽은 카테고리가 늘어나면 여기서 걸린다.
   it('item-drop-table의 카테고리 키는 코드가 읽는 3종 + 미처리 misc뿐이다', () => {
     const known = new Set([...DROP_CATEGORIES, 'misc'])
     const unknown = [
@@ -115,7 +115,7 @@ describe('게임 레퍼런스 데이터 정합성', () => {
     expect(unknown).toEqual([])
   })
 
-  it('주문서 교환권 3종은 통일된 이름으로만 존재한다 (ADR-070 결정 2)', () => {
+  it('주문서 교환권 3종은 통일된 이름으로만 존재한다', () => {
     const names = new Set(
       itemDropTable.rewards.flatMap((r) =>
         Object.values(r.rewards).flatMap((category) =>
@@ -162,8 +162,8 @@ describe('게임 레퍼런스 데이터 정합성', () => {
     expect(invalid).toEqual([])
   })
 
-  // ADR-054 결정 2: weeklyBossSelectionLimit(캐릭터당 12)과 weeklyCrystalSaleLimit(월드당 90)은
-  // 이름이 비슷해 서로 바꿔 적기 쉽다 — 값의 대소로 뒤바뀜을 잡는다.
+  // weeklyBossSelectionLimit(캐릭터당 12)과 weeklyCrystalSaleLimit(월드당 90)은
+  // 이름이 비슷해 서로 바꿔 적기 쉽다. 값의 대소로 뒤바뀜을 잡는다.
   it('weeklyCrystalSaleLimit이 양의 정수이며 weeklyBossSelectionLimit보다 크다', () => {
     const { weeklyCrystalSaleLimit, weeklyBossSelectionLimit } = weeklyBosses
 
@@ -172,7 +172,7 @@ describe('게임 레퍼런스 데이터 정합성', () => {
     expect(weeklyCrystalSaleLimit).toBeGreaterThan(weeklyBossSelectionLimit)
   })
 
-  // ADR-055 결정 4: requiredLevels는 난이도별 맵이다. 키가 difficulties와 어긋나면 그 난이도는
+  // requiredLevels는 난이도별 맵이다. 키가 difficulties와 어긋나면 그 난이도는
   // 조용히 "요구 레벨 없음"(=잠금 없음)으로 통과해버려 오타가 드러나지 않는다.
   it('requiredLevels의 키는 같은 엔트리 difficulties의 부분집합이다', () => {
     const invalid: string[] = []

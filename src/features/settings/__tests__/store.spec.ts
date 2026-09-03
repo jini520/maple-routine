@@ -1,7 +1,7 @@
 import { useSettingsStore } from '../store'
 
-// 이 스토어에 남은 일은 연결 해제 하나다 — 계정 변경 플로우([[ADR-086]] 결정 6)는 [[ADR-143]]
-// 결정 7 이 폐지했고, 화면이 사라진 뒤에도 남아 있던 액션 넷과 상태 기계를 함께 지웠다.
+// 이 스토어에 남은 일은 연결 해제 하나다. 계정 변경 플로우는 폐지됐고, 화면이 사라진 뒤에도
+// 남아 있던 액션 넷과 상태 기계를 함께 지웠다.
 jest.mock('../../onboarding/store', () => {
   const reset = jest.fn()
   return { useOnboardingStore: { getState: () => ({ reset }) } }

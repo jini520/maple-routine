@@ -48,7 +48,7 @@ describe('빈 원장', () => {
   })
 })
 
-describe('관측 기록 (ADR-086 결정 4)', () => {
+describe('관측 기록', () => {
   it('기록한 날짜를 그대로 되읽는다', async () => {
     await recordScheduleProbe('ocid-1', '2026-08-01', {
       kind: 'observed',

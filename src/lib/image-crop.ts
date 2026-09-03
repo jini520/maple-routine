@@ -1,5 +1,5 @@
 /**
- * 크롭 표 한 줄을 RN 의 절대 배치로 푼다.
+ * 크롭 표 한 줄을 RN 의 절대 배치로 푸는 계산.
  *
  * 크롭 표(`boss-portrait-crops` · `boss-portrait-icon-crops` · `daily-quest-region-crops`)는 CSS
  * `background-size`/`background-position` 문법인데, RN 에는 배경 이미지가 없어 `<Image>` 를 손으로
@@ -8,8 +8,8 @@
  * 조회(`boss-icons` · `daily-quest-backgrounds`)와 그리기(`FadedIllustration` · `BossPortrait`)
  * **양쪽이 쓰기 때문에** `lib/` 에 있다. `components/` 에 두면 조회 쪽이 위 계층을 import 하게 된다.
  *
- * @see [[ADR-018]] 결정 8 · 9. 크롭 표를 둔 이유와 표가 둘로 갈린 이유가 거기 있다.
- * @see [[ADR-135]]. 두 축을 다 이름 부른다.
+ * @see. 크롭 표를 둔 이유와 표가 둘로 갈린 이유가 거기 있다.
+ * @see. 두 축을 다 이름 부른다.
  */
 import type { ImageStyle } from 'react-native'
 
@@ -84,7 +84,7 @@ export function resolveImageCropLayout(
  * **두 갈래 다 두 축의 이름을 부른다.** 안 적은 축에는 그림의 고유 크기가 남아, `sized` 는 종횡비를
  * 잃고 `cover` 는 상자를 안 채운다. 둘 다 에러가 안 난다.
  *
- * @see [[ADR-135]]
+ * @see
  */
 export function imageCropStyle(layout: ImageCropLayout): ImageStyle {
   if (layout.kind === 'cover') {

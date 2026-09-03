@@ -1,11 +1,11 @@
-// 주간 보스 수익 위젯([[ADR-147]] 정정 4·13). 이 파일이 지키는 것 넷 —
-// ① **증감이 없다**(칩도, 퍼센트도, `rise`/`fall` 색도 — 회귀 가드)
-// ② **0 을 그리되 «없다» 로 읽히게 두지 않는다**(큰 `0 메소` + 미기록 한 줄, 이 위젯만의 예외)
+// 주간 보스 수익 위젯. 이 파일이 지키는 것 넷.
+// ① **증감이 없다**(칩도, 퍼센트도, `rise`/`fall` 색도. 회귀 가드)
+// ② **0 을 그리되 없다 로 읽히게 두지 않는다**(큰 `0 메소` + 미기록 한 줄, 이 위젯만의 예외)
 // ③ **스택 바가 총액을 결정석/아이템으로 가른다**(폭이 비율이고 분해 금액이 그 색을 읽는 법을 말한다)
-// ④ **크기가 버리는 것이 정해져 있다**(2x2 는 목록 · 4x2 는 행 내역 · 2x1 은 바까지)
+// ④ **크기가 버리는 것이 정해져 있다**(2x2 는 목록· 4x2 는 행 내역· 2x1 은 바까지)
 //
-// **다섯 크기를 전부 스냅샷으로 찍는다** — v1 배치가 쓰는 것은 `4×auto` 하나뿐이라([[ADR-183]])
-// 나머지 넷은 아무도 안 부르는 렌더 분기이고, 그 분기의 유일한 안전망이 스냅샷이다.
+// **다섯 크기를 전부 스냅샷으로 찍는다**. v1 배치가 쓰는 것은 `4×auto` 하나뿐이라
+// 나머지 넷은 아무도 안 부르는 렌더 분기이고, 그 분기를 지키는 것은 스냅샷뿐이다.
 
 import {
   renderAtom,
@@ -19,7 +19,7 @@ import type { TodayViewModel } from '../../view-model'
 import type { WidgetHeight } from '../../../../lib/today/widget-layout'
 
 const 크기 = {
-  // 기본 배치가 쓰는 크기다([[ADR-183]]) — 그리는 것은 4x3 과 같고 높이만 내용이 정한다.
+  // 기본 배치가 쓰는 크기다. 그리는 것은 4x3 과 같고 높이만 내용이 정한다.
   '4×auto': { w: 4, h: 'auto' },
   '4x3': { w: 4, h: 3 },
   '4x2': { w: 4, h: 2 },
@@ -37,10 +37,10 @@ async function 위젯(
 }
 
 /**
- * 트리 전체의 **글자와 색** — 회귀 가드가 «어디에도 없다» 를 묻는 데 쓴다.
+ * 트리 전체의 **글자와 색**. 회귀 가드가 어디에도 없다 를 묻는 데 쓴다.
  *
  * 스타일이 아니라 글자만 모으는 것이 요점이다: 스택 바의 폭이 `80.00%` 라 트리를 통째로 문자열로
- * 만들면 «퍼센트가 없다» 를 물을 수 없다.
+ * 만들면 퍼센트가 없다 를 물을 수 없다.
  */
 function 모든글자(view: Awaited<ReturnType<typeof renderAtom>>): string {
   return findAllOfType(view.toJSON(), 'Text')
@@ -57,10 +57,10 @@ function 모든색(view: Awaited<ReturnType<typeof renderAtom>>): unknown[] {
   )
 }
 
-describe('높이는 내용이 정한다 ([[ADR-183]])', () => {
-  // 기본 배치가 `4×auto` 로 바뀌었다 — 이 크기가 4x3 과 **같은 것**을 그리지 않으면 화면이 통째로
-  // 다른 밀도로 바뀐다(`variantOf` 가 auto 를 안 알면 4x2 용 «wide» 로 떨어진다).
-  it('`4×auto` 는 4x3 과 같은 것을 그린다 — 기간 머리와 순위 목록이 선다', async () => {
+describe('높이는 내용이 정한다', () => {
+  // 기본 배치가 `4×auto` 로 바뀌었다. 이 크기가 4x3 과 **같은 것**을 그리지 않으면 화면이 통째로
+  // 다른 밀도로 바뀐다(`variantOf` 가 auto 를 안 알면 4x2 용 **wide** 로 떨어진다).
+  it('`4×auto` 는 4x3 과 같은 것을 그린다. 기간 머리와 순위 목록이 선다', async () => {
     const auto = await 위젯(크기['4×auto'])
     const 고정 = await 위젯(크기['4x3'])
 
@@ -69,8 +69,8 @@ describe('높이는 내용이 정한다 ([[ADR-183]])', () => {
     expect(모든글자(auto)).toBe(모든글자(고정))
   })
 
-  // 남는 자리를 채울 높이가 없는데 `flex-1` 을 걸면 그것이 «채운다» 는 거짓 신호로 남는다.
-  it('바깥 상자에 `flex-1` 이 없다 — 늘릴 높이가 없다', async () => {
+  // 남는 자리를 채울 높이가 없는데 `flex-1` 을 걸면 그것이 **채운다** 는 거짓 신호로 남는다.
+  it('바깥 상자에 `flex-1` 이 없다. 늘릴 높이가 없다', async () => {
     const { getByTestId } = await 위젯(크기['4×auto'])
 
     expect(flattenStyle(getByTestId('widget-weekly-boss-profit').props.style).flexGrow).toBeUndefined()
@@ -88,8 +88,8 @@ describe('순위는 `1st · 2nd · 3rd` 다 (사용자 지정)', () => {
     ])
   })
 
-  // 「1st」는 폭이 고정된 글자가 아니다 — 천장으로 두면 줄바꿈되거나 잘린다([[ADR-165]] 와 같은 이유).
-  it('칸은 **바닥**이고 한 줄로 못박는다 — 줄바꿈도 잘림도 없다', async () => {
+  // `1st`는 폭이 고정된 글자가 아니다. 천장으로 두면 줄바꿈되거나 잘린다.
+  it('칸은 **바닥**이고 한 줄로 못박는다. 줄바꿈도 잘림도 없다', async () => {
     const { getAllByTestId } = await 위젯(크기['4×auto'])
 
     for (const node of getAllByTestId('profit-character-rank')) {
@@ -101,10 +101,10 @@ describe('순위는 `1st · 2nd · 3rd` 다 (사용자 지정)', () => {
   })
 })
 
-describe('증감은 어디에도 없다 ([[ADR-147]] 정정 4)', () => {
-  // `rise`/`fall` 은 [[ADR-087]] 이 증감 전용으로 만든 토큰이라, 그 색이 이 타일에 나타나는 것은
+describe('증감은 어디에도 없다', () => {
+  // `rise`/`fall` 은 이 증감 전용으로 만든 토큰이라, 그 색이 이 타일에 나타나는 것은
   // 증감 표기가 되살아났다는 뜻이다. 퍼센트 기호도 같은 신호다.
-  it.each(Object.entries(크기))('%s — 퍼센트도 `rise`/`fall` 색도 안 쓴다', async (_이름, 값) => {
+  it.each(Object.entries(크기))('%s: 퍼센트도 `rise`/`fall` 색도 안 쓴다', async (_이름, 값) => {
     const view = await 위젯(값)
 
     expect(모든글자(view)).not.toContain('%')
@@ -122,8 +122,8 @@ describe('증감은 어디에도 없다 ([[ADR-147]] 정정 4)', () => {
   })
 })
 
-describe('기록이 없으면 0 을 그리고 그 사실을 함께 말한다 ([[ADR-147]] 정정 4)', () => {
-  it.each(Object.entries(크기))('%s — `0 메소` + 미기록 한 줄', async (_이름, 값) => {
+describe('기록이 없으면 0 을 그리고 그 사실을 함께 말한다', () => {
+  it.each(Object.entries(크기))('%s: `0 메소` + 미기록 한 줄', async (_이름, 값) => {
     const { getByText, getByTestId } = await 위젯(값, 빈_뷰모델)
 
     expect(getByText('0')).toBeTruthy()
@@ -131,7 +131,7 @@ describe('기록이 없으면 0 을 그리고 그 사실을 함께 말한다 ([[
     expect(getByTestId('profit-note')).toBeTruthy()
   })
 
-  // 0/0 인 바와 「결정석 0 · 아이템 0」은 분해할 것이 없는데 분해한 척이다.
+  // 0/0 인 바와 `결정석 0· 아이템 0`은 분해할 것이 없는데 분해한 척이다.
   it('스택 바와 분해 금액이 그 자리에서 사라진다', async () => {
     const { queryByTestId } = await 위젯(크기['4x3'], 빈_뷰모델)
 
@@ -151,7 +151,7 @@ describe('스택 바가 총액을 가른다', () => {
   it('두 조각의 폭이 결정석·아이템 비율이다', async () => {
     const { getByTestId } = await 위젯(크기['4x3'])
 
-    // 픽스처 합계: 결정석 32억 · 아이템 8억 → 80% / 20%.
+    // 픽스처 합계: 결정석 32억· 아이템 8억 → 80% / 20%.
     // `0.8 * 100` 이 `80.00000000000001` 이라 끊지 않으면 그 꼴이 그대로 폭이 된다.
     expect(flattenStyle(getByTestId('profit-fill-crystal').props.style).width).toBe('80%')
     expect(flattenStyle(getByTestId('profit-fill-item').props.style).width).toBe('20%')
@@ -159,7 +159,7 @@ describe('스택 바가 총액을 가른다', () => {
 
   // 조각에 높이가 박혀 있으면 트랙만 키웠을 때 **아래쪽이 빈 채로** 남는다(실제로 그렇게 났다).
   // 조각은 자기 높이를 알면 안 되고 트랙을 그대로 채워야 한다.
-  it.each(['4x3', '4x2', '2x2'] as const)('%s — 조각이 트랙 높이를 그대로 채운다', async (size) => {
+  it.each(['4x3', '4x2', '2x2'] as const)('%s: 조각이 트랙 높이를 그대로 채운다', async (size) => {
     const { getByTestId } = await 위젯(크기[size])
 
     for (const key of ['crystal', 'item'] as const) {
@@ -168,7 +168,7 @@ describe('스택 바가 총액을 가른다', () => {
     }
   })
 
-  it('두 조각의 색이 [[ADR-142]] 링과 같은 짝이다 — 결정석 `primary` · 아이템 `third`', async () => {
+  it('두 조각의 색이 링과 같은 짝이다. 결정석 `primary` · 아이템 `third`', async () => {
     const { getByTestId } = await 위젯(크기['4x3'])
 
     expect(flattenStyle(getByTestId('profit-fill-crystal').props.style).backgroundColor).toBe(
@@ -188,7 +188,7 @@ describe('스택 바가 총액을 가른다', () => {
     expect(getByText('8.0억')).toBeTruthy()
   })
 
-  // 가격 미확정 보스만 처치한 주 — 기록은 있는데 금액이 0 이다. 나누면 NaN 폭이 된다.
+  // 가격 미확정 보스만 처치한 주. 기록은 있는데 금액이 0 이다. 나누면 NaN 폭이 된다.
   it('합이 0 이면 나누지 않고 빈 트랙을 남긴다', async () => {
     const { getByTestId, queryByTestId } = await 위젯(
       크기['4x3'],
@@ -209,7 +209,7 @@ describe('스택 바가 총액을 가른다', () => {
   })
 })
 
-describe('크기가 버리는 것 ([[ADR-147]] 정정 13)', () => {
+describe('크기가 버리는 것', () => {
   it('4x3 은 캐릭터 셋을 **내역과 함께** 그린다', async () => {
     const { getAllByTestId, getByText } = await 위젯(크기['4x3'])
 
@@ -241,17 +241,17 @@ describe('크기가 버리는 것 ([[ADR-147]] 정정 13)', () => {
   })
 })
 
-describe('단위는 큰 금액에만 붙는다 ([[ADR-147]] 정정 4)', () => {
+describe('단위는 큰 금액에만 붙는다', () => {
   it('머리는 `40.0억 메소` 이고 목록 행은 금액만이다', async () => {
     const { getByText, getAllByText } = await 위젯(크기['4x3'])
 
     expect(getByText('40.0억')).toBeTruthy()
     expect(getAllByText('메소')).toHaveLength(1)
-    // 「가」의 총액 — 같은 줄에 「메소」가 따라붙지 않는다.
+    // `가`의 총액. 같은 줄에 `메소`가 따라붙지 않는다.
     expect(getByText('25.0억')).toBeTruthy()
   })
 
-  it('금액에 `tabular-nums` 가 걸린다 — 자릿수가 바뀌어도 폭이 안 흔들린다', async () => {
+  it('금액에 `tabular-nums` 가 걸린다. 자릿수가 바뀌어도 폭이 안 흔들린다', async () => {
     const { getByText } = await 위젯(크기['4x3'])
 
     expect(flattenStyle(getByText('40.0억').props.style).fontVariant).toEqual(['tabular-nums'])

@@ -1,16 +1,18 @@
-// 컨텐츠 카드가 공유하는 라벨 표와 상태 판정 ([[ADR-094]] 결정 7 로 화면에서 분리).
-//
-// 배지 자체는 여기 없다. 그리는 것은 `components/atoms/Badge` 하나이고 ([[ADR-195]] 결정 1),
-// 여기 남은 것은 어떤 라벨과 어떤 variant 를 고를지 정하는 도메인 데이터다 ([[ADR-195]] 결정 5).
+/**
+ * 컨텐츠 카드가 공유하는 라벨 표와 상태 판정 (화면에서 분리).
+ *
+ * 배지 자체는 여기 없다. 그리는 것은 `components/atoms/Badge` 하나이고,
+ * 여기 남은 것은 어떤 라벨과 어떤 variant 를 고를지 정하는 도메인 데이터다.
+ */
 
 import type { WeeklyContent } from '../../types'
 
 import { Badge, type BadgeVariant } from '../../components/atoms'
 
-// 무릉도장은 quest_state가 아니라 참여 시 도달한 층수(1~100+)가 now_count에 그대로 기록된다.
-// 성실한 조사에 대한 보답은 quest_state=1일 때 now_count/max_count(0~2)로 완료 횟수를 따로
-// 세므로, quest_state 뱃지 대신 "N회 완료"를 보여주다가 now_count===max_count에서 완료로
-// 전환한다(2026-07-21, 사용자 지시 — 두 항목 모두 weekly-quest-regions.json의 backgroundSlug로 구분).
+// 무릉도장은 quest_state 가 아니라 참여 시 도달한 층수(1~100+)가 now_count 에 그대로 기록된다.
+// 성실한 조사에 대한 보답은 quest_state=1 일 때 now_count/max_count(0~2)로 완료 횟수를 따로
+// 세므로, quest_state 배지 대신 `N회 완료` 를 보여주다가 now_count === max_count 에서 완료로
+// 전환한다. 두 항목 모두 `weekly-quest-regions.json` 의 backgroundSlug 로 구분한다.
 export const MU_LUNG_DOJO_BACKGROUND_SLUG = 'muruengRaid'
 export const FAITHFUL_INVESTIGATION_BACKGROUND_SLUG = 'roadOfVanishing'
 export const GUILD_PREFIX = '[길드] '

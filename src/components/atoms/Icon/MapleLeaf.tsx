@@ -1,12 +1,12 @@
 /**
- * 앱의 브랜드 마크. 채운 단풍잎 하나다([[ADR-199]] 정정 1).
+ * 앱의 브랜드 마크. 채운 단풍잎 하나다.
  *
- * **아이콘처럼 쓰지만 lucide 규격은 아니다.** 호출부가 넘기는 것은 `className`·`fill`·`size` 로
+ * 아이콘처럼 쓰지만 lucide 규격은 아니다. 호출부가 넘기는 것은 `className`·`fill`·`size` 로
  * 아이콘과 같은데, 격자가 127×130 이라 정사각이 아니고 선이 아니라 면으로 그린다. 그래서
- * `IconSvg` 가 아니라 `SvgFrame` 을 잎 격자로 부른다 — lucide 프리셋을 받으면 뿌리의 `stroke` 가
- * 상속돼 2px 윤곽선이 얹힌다.
+ * `IconSvg` 가 아니라 `SvgFrame` 을 잎 격자로 부른다. lucide 프리셋을 받으면 뿌리의 `stroke`
+ * 가 상속돼 2px 윤곽선이 얹힌다.
  *
- * 같은 잎이 움직이는 자리는 `atoms/Spinner` 다(정정 2).
+ * 같은 잎이 움직이는 자리는 `atoms/Spinner` 다.
  */
 import { Path } from 'react-native-svg'
 

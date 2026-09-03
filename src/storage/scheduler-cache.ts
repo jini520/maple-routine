@@ -4,7 +4,7 @@ import { schedulerCacheKey } from './keys'
 
 export interface CachedSchedulerEntry {
   state: SchedulerCharacterState
-  syncedAt: string // ISO 문자열 — 이 state가 성공적으로 동기화된 실제 시각(wire의 date 필드와는 다른, 우리 기기 기준 caching 시각)
+  syncedAt: string // ISO 문자열. 이 state가 성공적으로 동기화된 실제 시각(wire의 date 필드와는 다른, 우리 기기 기준 caching 시각)
 }
 
 export async function getCachedSchedulerState(

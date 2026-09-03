@@ -1,35 +1,16 @@
 /**
- * 이 앱이 쓰는 lucide 아이콘 — **`className` 이 풀리도록 등록한 뒤** 다시 내보낸다
- * (등록의 원리와 매핑 근거는 `lib/nativewind-interop.ts` 의 `withIconInterop`).
+ * 이 앱이 쓰는 lucide 아이콘을 `className` 이 풀리게 등록해 다시 내보내는 목록.
  *
- * ## 왜 `lucide-react-native` 인가
+ * 지키는 것 셋.
  *
- * 웹은 `lucide-react` 로 DOM `<svg>` 를 그린다. RN 판은 같은 아이콘 세트를 `react-native-svg` 로
- * 그리는 공식 포트이고, **버전을 웹과 같은 1.24.0 으로 고정**했다 — 그림이 갈리면 같은 아이콘이
- * 두 앱에서 다르게 보인다(`design-system.md` 「아이콘」· [[ADR-066]] 결정 3 이 lucide 규격을
- * 조건으로 단 것과 같은 이유).
+ * ① **`lucide-react-native` 를 직접 import 하는 곳은 이 파일뿐이다.** 등록을 빼먹으면 에러도 경고도
+ *    없이 클래스만 사라져서(색·크기 없는 아이콘), 흩어 두면 그 실패가 어디서 시작됐는지 못 찾는다.
+ * ② **배럴이 아니라 아이콘별 경로로 가져온다.** 배럴은 아이콘 1,900개를 전부 그래프에 넣고 Metro 는
+ *    트리셰이킹을 안 해서 그대로 번들에 실린다. 같은 8개로 재면 5.5MB 대 3.7MB 다.
+ *    **여기 목록이 늘어도 배럴로 되돌리지 말 것.**
+ * ③ 이름은 lucide 의 정규 이름(kebab-case 파일명)이다.
  *
- * ## 목록을 한 파일에 모아 두는 이유
- *
- * 등록을 빼먹으면 **에러도 경고도 없이 클래스만 사라진다**(색·크기 없는 아이콘). 아이콘을 쓰는
- * 파일마다 등록을 흩어 두면 그 실패가 어디서 시작됐는지 알 수 없으므로, **import 자리를 여기
- * 하나로 좁힌다** — `lucide-react-native` 를 직접 import 하는 곳이 이 파일뿐이면 빠뜨릴 자리도 없다.
- *
- * ## 배럴이 아니라 **아이콘별 경로**로 가져온다 (실측)
- *
- * `import { Users } from 'lucide-react-native'` 는 배럴을 타고 **아이콘 1,900개를 전부** 그래프에
- * 넣는다. Metro 는 기본적으로 트리셰이킹을 하지 않으므로 그대로 번들에 실린다 — 같은 8개를 쓰는
- * 두 방식을 재 보면 이렇다(2026-08-12, `expo export --platform android`).
- *
- *   배럴   3,365 모듈 · 5.5 MB
- *   개별   1,626 모듈 · 3.7 MB   ← **1.8 MB 차이**
- *
- * OTA 로 나가는 앱이라 이 차이가 매 배포의 다운로드 크기가 된다([[ADR-092]]·[[ADR-093]] 이 웹에서
- * 재던 것과 같은 축). **여기 목록이 늘어도 배럴로 되돌리지 말 것.**
- *
- * 이름은 lucide 의 **정규 이름**(kebab-case 파일명)이다 — 웹이 쓰는 `AlertTriangle` 은 옛 별칭이라
- * 런타임 모듈이 없고(`icons/alert-triangle.mjs` 가 없다 — 타입 선언만 있다) 실물은
- * `triangle-alert` 다. 그림은 같고, 이 파일에서 웹과 같은 이름으로 다시 내보낸다.
+ * @see src/lib/nativewind-interop.ts 등록의 원리와 매핑 근거
  */
 
 import ArrowDown from 'lucide-react-native/icons/arrow-down'
@@ -94,132 +75,132 @@ import X from 'lucide-react-native/icons/x'
 
 import { withIconInterop } from '../../../lib/nativewind-interop'
 
-/** 실패 토스트 — `Toast`(error). 웹의 `AlertCircle` 은 옛 별칭이고 실물이 `circle-alert` 다. */
+/** 실패 토스트. `Toast`(error). lucide 실물 이름은 `circle-alert` 다. */
 export const AlertCircleIcon = withIconInterop(CircleAlert)
-/** 실패·경고 — `ErrorState` · `StaleBanner` · `ErrorBoundary`. */
+/** 실패·경고. `ErrorState` · `StaleBanner` · `ErrorBoundary`. */
 export const AlertTriangleIcon = withIconInterop(TriangleAlert)
-/** 직전 기간 대비 **감소** — 보스 수익 증감 칩([[ADR-087]] 결정 5). */
+/** 직전 기간 대비 **감소**. 보스 수익 증감 칩. */
 export const ArrowDownIcon = withIconInterop(ArrowDown)
-/** 하위 페이지의 「뒤로」 — 설정 하위 화면 다섯([[ADR-118]] 결정 2 · [[ADR-120]] 결정 9). */
+/** 하위 페이지의 뒤로. 설정 하위 화면 다섯. */
 export const ArrowLeftIcon = withIconInterop(ArrowLeft)
-/** 직전 기간 대비 **증가** — 보스 수익 증감 칩([[ADR-087]] 결정 5). */
+/** 직전 기간 대비 **증가**. 보스 수익 증감 칩. */
 export const ArrowUpIcon = withIconInterop(ArrowUp)
-/** 조회 불가 캐릭터 — 보스 수익 `CharacterIssue`(영구 이슈 표식). */
+/** 조회 불가 캐릭터. 보스 수익 `CharacterIssue`(영구 이슈 표식). */
 export const BanIcon = withIconInterop(Ban)
-/** 안내가 하나도 없을 때 — `SettingsFeatureGuideListScreen` 빈 상태([[ADR-060]]). */
+/** 안내가 하나도 없을 때. `SettingsFeatureGuideListScreen` 빈 상태. */
 export const BookOpenIcon = withIconInterop(BookOpen)
-/** 에픽 던전 카테고리 — `ContentManageScreen` 그룹 헤더·행([[ADR-035]] 결정 18). */
-/** 유틸리티의 계산기 도구 타일 — 아이템 분배 계산기([[ADR-168]] 결정 6). */
+/** 에픽 던전 카테고리. `ContentManageScreen` 그룹 헤더·행. */
+/** 유틸리티의 계산기 도구 타일. 아이템 분배 계산기. */
 export const CalculatorIcon = withIconInterop(Calculator)
 export const CalendarCheckIcon = withIconInterop(CalendarCheck)
 
 export const CastleIcon = withIconInterop(Castle)
-/** 선택 표식 — `CacheClearConfirm` 체크박스 · `ThemeSelector` 선택 타일. */
+/** 선택 표식. `CacheClearConfirm` 체크박스 · `ThemeSelector` 선택 타일. */
 export const CheckIcon = withIconInterop(Check)
-/** 성공 토스트 — `Toast`(success). 웹의 `CheckCircle2` 실물은 `circle-check-big` 이다. */
+/** 성공 토스트. `Toast`(success). lucide 실물 이름은 `circle-check-big` 다. */
 export const CheckCircle2Icon = withIconInterop(CircleCheckBig)
-/** 드롭다운 화살표 — `CharacterSelectDropdown`. */
+/** 드롭다운 화살표. `CharacterSelectDropdown`. */
 export const ChevronDownIcon = withIconInterop(ChevronDown)
-/** 상자 드릴다운에서 목록으로 — `BossDropSheet`([[ADR-041]]). */
+/** 상자 드릴다운에서 목록으로. `BossDropSheet`. */
 export const ChevronLeftIcon = withIconInterop(ChevronLeft)
-/** "누르면 무언가 열린다" — `SettingsRow` · 안내 목록 행 · 개발 노트 항목([[ADR-118]] 결정 4). */
+/** "누르면 무언가 열린다"`SettingsRow` · 안내 목록 행 · 개발 노트 항목. */
 export const ChevronRightIcon = withIconInterop(ChevronRight)
-/** 월드별 결정석 분해 **펼침** — `CrystalSummaryChip`([[ADR-054]] 결정 9). */
+/** 월드별 결정석 분해 **펼침**. `CrystalSummaryChip`. */
 export const ChevronUpIcon = withIconInterop(ChevronUp)
 
-/** 도움말 여는 자리 — 위젯 9 머리의 `?`([[ADR-147]] 정정 34). */
+/** 도움말 여는 자리. 위젯 9 머리의 `?`. */
 export const CircleQuestionMarkIcon = withIconInterop(CircleQuestionMark)
-/** 아직 집계 전(pending 톤) — `UnavailableNotice`. */
+/** 아직 집계 전(pending 톤). `UnavailableNotice`. */
 export const ClockIcon = withIconInterop(Clock)
-/** 새 업데이트 있음 — `UpdatePromptModal`(update-available). */
+/** 새 업데이트 있음. `UpdatePromptModal`(update-available). */
 export const CloudDownloadIcon = withIconInterop(CloudDownload)
 
 export const CrosshairIcon = withIconInterop(Crosshair)
-/** 앱 밖으로 나가는 이동 — `ApiKeyForm` 의 두 링크([[ADR-110]]). */
+/** 앱 밖으로 나가는 이동. `ApiKeyForm` 의 두 링크. */
 export const ExternalLinkIcon = withIconInterop(ExternalLink)
-/** API 키 표시 토글(가림 상태) — `ApiKeyForm`. */
+/** API 키 표시 토글(가림 상태). `ApiKeyForm`. */
 export const EyeIcon = withIconInterop(Eye)
-/** API 키 표시 토글(표시 상태) — `ApiKeyForm`. */
+/** API 키 표시 토글(표시 상태). `ApiKeyForm`. */
 export const EyeOffIcon = withIconInterop(EyeOff)
-/** 기록된 변경 내역이 없을 때 — `SettingsReleaseNotesScreen` 빈 상태([[ADR-060]]). */
+/** 기록된 변경 내역이 없을 때. `SettingsReleaseNotesScreen` 빈 상태. */
 export const FileTextIcon = withIconInterop(FileText)
-/** 길드 카테고리 — `ContentManageScreen` 그룹 헤더·행. */
+/** 길드 카테고리. `ContentManageScreen` 그룹 헤더·행. */
 export const FlagIcon = withIconInterop(Flag)
-/** 소비 드롭 카테고리 — `BossDropSheet`([[ADR-040]] 결정 4: 노란 점 대신 아이콘). */
+/** 소비 드롭 카테고리. `BossDropSheet` 에서 노란 점 대신 선다. */
 export const FlaskConicalIcon = withIconInterop(FlaskConical)
-/** 자동 트래킹 모드 — `TrackingModeStep`([[ADR-035]] 결정 22: "게임에서 정한 것을 따른다"). */
+/** 자동 트래킹 모드. `TrackingModeStep` 의 "게임에서 정한 것을 따른다". */
 export const Gamepad2Icon = withIconInterop(Gamepad2)
-/** 호출 한도 초과 — `ApiKeyNoticeModal`(rateLimited). 타이머 계열을 피한 근거는 그 파일에 있다. */
+/** 호출 한도 초과. `ApiKeyNoticeModal`(rateLimited). 타이머 계열을 피한 근거는 그 파일에 있다. */
 export const GaugeIcon = withIconInterop(Gauge)
-/** 조회 불가(정보 톤) — `UnavailableNotice` · 정보 토스트 `Toast`(info). */
+/** 조회 불가(정보 톤). `UnavailableNotice` · 정보 토스트 `Toast`(info). */
 export const InfoIcon = withIconInterop(Info)
-/** API 키 무효 — `ApiKeyNoticeModal`(invalid). */
+/** API 키 무효. `ApiKeyNoticeModal`(invalid). */
 export const KeyRoundIcon = withIconInterop(KeyRound)
-/** 메이플 유니온 카테고리 — `ContentManageScreen` 그룹 헤더·행. */
+/** 메이플 유니온 카테고리. `ContentManageScreen` 그룹 헤더·행. */
 export const LayoutGridIcon = withIconInterop(LayoutGrid)
-/** 수동 트래킹 모드 — `TrackingModeStep`([[ADR-035]] 결정 22: "앱에서 고른다"). */
+/** 수동 트래킹 모드. `TrackingModeStep` 의 "앱에서 고른다". */
 export const LayoutDashboardIcon = withIconInterop(LayoutDashboard)
 
 export const ListChecksIcon = withIconInterop(ListChecks)
-/** 일일/주간 퀘스트 카테고리 — `ContentManageScreen` 그룹 헤더·행. */
+/** 일일/주간 퀘스트 카테고리. `ContentManageScreen` 그룹 헤더·행. */
 export const MapPinIcon = withIconInterop(MapPin)
-/** 무릉도장 카테고리 — `ContentManageScreen` 그룹 헤더·행. */
+/** 무릉도장 카테고리. `ContentManageScreen` 그룹 헤더·행. */
 export const MedalIcon = withIconInterop(Medal)
 /**
- * 끌기 핸들 — `CharacterRow/DragHandle`([[ADR-144]] 결정 5). 이름이 «메뉴» 인 글리프지만 여기서
- * 뜻하는 것은 「순서 변경」이다 — 뜻은 자리와 접근성 이름이 진다.
+ * 끌기 핸들. `CharacterRow/DragHandle`. 이름이 메뉴 인 글리프지만 여기서
+ * 뜻하는 것은 순서 변경이다. 뜻은 자리와 접근성 이름이 진다.
  */
 export const MenuIcon = withIconInterop(Menu)
-/** 파티원 수 감소 — `PartySizeStepper`. */
+/** 파티원 수 감소. `PartySizeStepper`. */
 export const MinusIcon = withIconInterop(Minus)
-/** 다크 테마 표식 — `ThemeSelector` 타일([[ADR-104]] 결정 2). */
+/** 다크 테마 표식. `ThemeSelector` 타일. */
 export const MoonIcon = withIconInterop(Moon)
 
 /**
- * 가계부 — **빈 달력**(사용자 지정 2026-08-25).
+ * 가계부. 빈 달력.
  *
- * 스케줄러 그룹이 쓰는 `CalendarCheck`(체크가 든 달력)와 **같은 계열이되 다른 그림**이다. 이 탭이
- * 그리는 것이 실제로 달력이라 그림이 화면과 같은 말을 하고, 체크가 없어 «할 일» 로 안 읽힌다.
+ * 스케줄러 그룹이 쓰는 `CalendarCheck`(체크가 든 달력)와 같은 계열이되 다른 그림이다. 이 탭이
+ * 그리는 것이 실제로 달력이라 그림이 화면과 같은 말을 하고, 체크가 없어 할 일 로 안 읽힌다.
  */
 export const CalendarIcon = withIconInterop(Calendar)
 
-/** 드롭 데이터가 아직 없는 보스 — `BossDropSheet` 빈 상태([[ADR-060]]). */
+/** 드롭 데이터가 아직 없는 보스. `BossDropSheet` 빈 상태. */
 export const PackageOpenIcon = withIconInterop(PackageOpen)
-/** 고정 드롭(읽기 전용) 섹션 — `BossDropSheet`([[ADR-040]] 결정 3). */
+/** 고정 드롭(읽기 전용) 섹션. `BossDropSheet`. */
 export const PinIcon = withIconInterop(Pin)
-/** 파티원 수 증가 — `PartySizeStepper`. */
+/** 파티원 수 증가. `PartySizeStepper`. */
 export const PlusIcon = withIconInterop(Plus)
-/** 토스트 액션의 기본 아이콘('다시 시도' 전제 — [[ADR-063]]) — `Toast`. */
+/** 토스트 액션의 기본 아이콘('다시 시도' 전제). `Toast`. */
 export const RefreshCwIcon = withIconInterop(RefreshCw)
-/** '다시 시작' — `ErrorBoundary` 폴백 · 가격 초기화 `DropPricePad`. */
+/** '다시 시작'`ErrorBoundary` 폴백 · 가격 초기화 `DropPricePad`. */
 export const RotateCcwIcon = withIconInterop(RotateCcw)
-/** 기록된 드롭이 하나도 없을 때 — `DropHistoryScreen` 빈 상태([[ADR-060]] 결정 2 의 컨텍스트 아이콘). */
+/** 기록된 드롭이 하나도 없을 때. `DropHistoryScreen` 빈 상태. */
 export const ScrollTextIcon = withIconInterop(ScrollText)
-/** 토스트 액션이 기본 아이콘을 덮을 수 있음을 지키는 자리 — `Toast` 테스트([[ADR-063]]). */
+/** 토스트 액션이 기본 아이콘을 덮을 수 있음을 지키는 자리. `Toast` 테스트. */
 export const SettingsIcon = withIconInterop(Settings)
 
 export const ShoppingCartIcon = withIconInterop(ShoppingCart)
-/** 모바일 데이터 확인 — `UpdatePromptModal`(confirm-cellular). */
+/** 모바일 데이터 확인. `UpdatePromptModal`(confirm-cellular). */
 export const SignalIcon = withIconInterop(Signal)
-/** 솔로·파티 필터가 가린 빈 상태 — `BossScreen`([[ADR-060]] 결정 2 의 컨텍스트 아이콘). */
+/** 솔로·파티 필터가 가린 빈 상태. `BossScreen`. */
 export const SlidersHorizontalIcon = withIconInterop(SlidersHorizontal)
-/** 고가 드롭 반짝임 — `ValuableDropBadge` · 업데이트 완료 안내 `UpdatePromptModal`(updated). */
+/** 고가 드롭 반짝임. `ValuableDropBadge` · 업데이트 완료 안내 `UpdatePromptModal`(updated). */
 export const SparklesIcon = withIconInterop(Sparkles)
-/** 대표 캐릭터 표식 — `CharacterRow/RepresentativeStar`([[ADR-144]] 결정 4). */
+/** 대표 캐릭터 표식. `CharacterRow/RepresentativeStar`. */
 export const StarIcon = withIconInterop(Star)
-/** 스토어 업데이트 필요 — `UpdatePromptModal`(store-required). */
+/** 스토어 업데이트 필요. `UpdatePromptModal`(store-required). */
 export const StoreIcon = withIconInterop(Store)
-/** 장비 드롭 카테고리 — `BossDropSheet`([[ADR-040]] 결정 4). 보스 스케줄러의 `Swords`(복수)와 다른 그림이다. */
+/** 장비 드롭 카테고리. `BossDropSheet`. 보스 스케줄러의 `Swords`(복수)와 다른 그림이다. */
 export const SwordIcon = withIconInterop(Sword)
-/** 라이트 테마 표식 — `ThemeSelector` 타일([[ADR-104]] 결정 2). */
+/** 라이트 테마 표식. `ThemeSelector` 타일. */
 export const SunIcon = withIconInterop(Sun)
-/** 몬스터파크 카테고리 — `ContentManageScreen` 그룹 헤더·행. */
+/** 몬스터파크 카테고리. `ContentManageScreen` 그룹 헤더·행. */
 export const SwordsIcon = withIconInterop(Swords)
-/** 파티원 표식 — `PartySizeStepper`(compact) · 파티 인원 라벨 `PartySizeModal`. */
+/** 파티원 표식. `PartySizeStepper`(compact) · 파티 인원 라벨 `PartySizeModal`. */
 export const UsersIcon = withIconInterop(Users)
 
 export const WalletIcon = withIconInterop(Wallet)
 
 export const WrenchIcon = withIconInterop(Wrench)
-/** 닫기 — `Toast` · `PartySizeModal`. */
+/** 닫기. `Toast` · `PartySizeModal`. */
 export const XIcon = withIconInterop(X)

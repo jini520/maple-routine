@@ -1,13 +1,13 @@
 /**
- * jest 와 Metro 가 **같은 프리셋으로** 컴파일하는지 지킨다([[ADR-179]] 정정 1).
+ * jest 와 Metro 가 같은 프리셋으로 컴파일하는지 지키는 스위트.
  *
  * NativeWind 는 `NATIVEWIND_OS` 가 없거나 `web` 이면 web 프리셋으로 컴파일한다
  * (`nativewind/dist/tailwind/index.js`). Metro 는 `options.platform` 을 넣지만 jest 는 아무도 안
- * 넣고 있었고, 그래서 테스트가 앱과 **다른 값**을 봤다 — `invisible` 이 `opacity` 가 아니라
+ * 넣고 있었고, 그래서 테스트가 앱과 **다른 값**을 봤다. `invisible` 이 `opacity` 가 아니라
  * `visibility` 로, `shadow` 가 `elevation` 이 아니라 `box-shadow` 로 나왔다.
  *
  * **이 어긋남은 조용하다.** 클래스 이름이 같아 테스트는 초록인데 앱은 다른 그림을 그린다.
- * `nativewind.config.js` 머리가 못박은 «둘이 같은 값으로 컴파일한다» 를 여기서 검사한다.
+ * `nativewind.config.js` 머리가 못박은 둘이 같은 값으로 컴파일한다 를 여기서 검사한다.
  */
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, readFileSync } from 'node:fs'
@@ -16,7 +16,7 @@ import { join } from 'node:path'
 
 const ROOT = join(__dirname, '..', '..')
 
-/** `global.css` 를 그 플랫폼 프리셋으로 컴파일해 돌려준다. */
+/** `global.css` 를 그 플랫폼 프리셋으로 컴파일한 결과. */
 function compile(platform: string): string {
   const out = join(mkdtempSync(join(tmpdir(), 'nw-preset-')), 'out.css')
   const script = `
@@ -41,10 +41,10 @@ function ruleOf(css: string, selector: string): string | null {
   return css.slice(at, css.indexOf('}', at)).replace(/\s+/g, ' ')
 }
 
-// 컴파일이 두 번 도는 무거운 스위트다 — 다른 스위트와 달리 타임아웃을 늘린다.
+// 컴파일이 두 번 도는 무거운 스위트다. 다른 스위트와 달리 타임아웃을 늘린다.
 jest.setTimeout(120_000)
 
-describe('NativeWind 프리셋 ([[ADR-179]] 정정 1)', () => {
+describe('NativeWind 프리셋', () => {
   const ios = compile('ios')
 
   it('jest 가 보는 값이 web 프리셋 산물이 아니다', () => {
@@ -60,7 +60,7 @@ describe('NativeWind 프리셋 ([[ADR-179]] 정정 1)', () => {
    * 안드로이드가 `elevation` 을 더하는 것 말고는 글자까지 같다. jest 는 iOS 로 도므로 이 세 값은
    * 테스트가 렌더로는 못 보고, 그래서 컴파일 결과를 직접 본다.
    */
-  it('안드로이드는 그림자에 elevation 을 더한다 — iOS 에는 없다', () => {
+  it('안드로이드는 그림자에 elevation 을 더한다. iOS 에는 없다', () => {
     const android = compile('android')
 
     expect(ruleOf(android, '.shadow')).toContain('-rn-elevation: 3')
@@ -69,7 +69,7 @@ describe('NativeWind 프리셋 ([[ADR-179]] 정정 1)', () => {
     expect(ruleOf(ios, '.shadow-lg')).not.toContain('-rn-elevation')
   })
 
-  it('그 밖에는 두 플랫폼이 같다 — 갈리는 자리가 늘면 여기서 걸린다', () => {
+  it('그 밖에는 두 플랫폼이 같다. 갈리는 자리가 늘면 여기서 걸린다', () => {
     const android = compile('android')
 
     /** 선택자 → 선언 집합. `elevation` 은 위 케이스가 지키므로 여기서 뺀다. */

@@ -27,8 +27,8 @@ function dedupeByOcid(ocids: string[]): string[] {
   return Array.from(new Set(ocids))
 }
 
-// ADR-042 마이그레이션(1회): 화면별로 갈려 있던 추적 목록을 단일 키로 합친다.
-// content∪boss뿐 아니라 daily/weekly(ADR-013 이전 설치본)까지 흡수하는 이유 — 통합 후에는
+// 마이그레이션(1회): 화면별로 갈려 있던 추적 목록을 단일 키로 합친다.
+// content∪boss뿐 아니라 daily/weekly(이전 설치본)까지 흡수하는 이유. 통합 후에는
 // content 키를 더 이상 쓰지 않아 기존 daily/weekly → content/boss 이관 체인이 끊기므로,
 // 그 시대에서 바로 올라오는 설치본의 목록이 통째로 유실된다.
 async function runUnifyMigration(): Promise<void> {
@@ -87,7 +87,7 @@ export async function getTrackedCharacterOcids(): Promise<string[] | null> {
   return parseOcids(value)
 }
 
-// ADR-143 결정 4: 참조 무결성은 **쓰는 쪽**이 지킨다 — 저장된 대표가 새 목록에 없으면 그 키를
+// 참조 무결성은 **쓰는 쪽**이 지킨다. 저장된 대표가 새 목록에 없으면 그 키를
 // 지운다. 판정을 목록 저장 안에 두는 이유는 대표가 목록을 벗어날 수 있는 순간이 "저장 시점"
 // 하나뿐이라서다. 지우고 나면 규칙대로 첫 번째가 (읽는 쪽에서) 임시 대표가 된다.
 async function pruneDanglingRepresentative(ocids: string[]): Promise<void> {
@@ -107,10 +107,10 @@ export async function clearTrackedCharacterOcids(): Promise<void> {
 }
 
 /**
- * 추적 목록과 대표를 **한 호출로** 저장한다(ADR-143 결정 3·4).
+ * 추적 목록과 대표를 한 호출로 하는 저장.
  *
  * 호출부가 목록과 대표를 따로 저장하면 그 사이에 둘이 어긋난 상태가 실재한다(대표가 목록에 없는
- * 순간). 목록을 먼저 쓰고 — 그래서 목록 저장이 실패하면 대표도 손대지 않은 채 끝난다 — 대표는
+ * 순간). 목록을 먼저 쓰고. 그래서 목록 저장이 실패하면 대표도 손대지 않은 채 끝난다. 대표는
  * 그 목록 기준으로만 확정한다. 대표가 `null`이거나 목록에 없으면 키를 지운다.
  */
 export async function setCharacterSelection(

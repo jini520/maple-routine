@@ -1,11 +1,11 @@
-// 글자 계단은 `typography.cjs` 한 표가 쥔다([[ADR-196]]).
+// 글자 계단은 `typography.cjs` 한 표가 쥔다.
 //
 // Tailwind 기본 계단을 **교체**했기 때문에, 표에 없는 이름을 쓰면 그 클래스가 **조용히 사라진다**
-// (NativeWind 는 못 만든 유틸리티를 그냥 안 낸다 — 에러가 아니다). 화면에서만 드러나는 종류의
+// (NativeWind 는 못 만든 유틸리티를 그냥 안 낸다. 에러가 아니다). 화면에서만 드러나는 종류의
 // 실패라 여기서 막는다.
 //
 // 임의값(`text-[10px]`)도 막는다. 크기는 만들어지지만 **줄 높이가 안 붙어** 플랫폼마다 줄 상자가
-// 갈린다(실측 2026-09-01 — 10px 글자가 iOS 12.0 · 안드로이드 15.2).
+// 갈린다(10px 글자가 iOS 12.0· 안드로이드 15.2).
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -29,7 +29,7 @@ const FILES = sourceFiles(SRC)
 const where = (path: string): string => path.slice(SRC.length + 1)
 
 describe('글자 계단은 표 안에서만 고른다', () => {
-  it('훑을 파일이 있다 — 스캐너가 빈손이면 아래 단언이 무의미하다', () => {
+  it('훑을 파일이 있다. 스캐너가 빈손이면 아래 단언이 무의미하다', () => {
     expect(FILES.length).toBeGreaterThan(100)
   })
 
@@ -48,7 +48,7 @@ describe('글자 계단은 표 안에서만 고른다', () => {
     expect([...new Set(밖)]).toEqual([])
   })
 
-  it('임의 크기(`text-[Npx]`)를 쓰지 않는다 — 줄 높이가 안 붙는다', () => {
+  it('임의 크기(`text-[Npx]`)를 쓰지 않는다. 줄 높이가 안 붙는다', () => {
     const 임의 = FILES.filter((file) => /text-\[\d+px\]/.test(readFileSync(file, 'utf8'))).map(where)
 
     expect(임의).toEqual([])

@@ -1,5 +1,5 @@
 import type { FeatureGuide } from '../../../types'
-// 이미지는 `packages/core/src/assets/guide/drop-item-price/` 에 두고 여기서 import 한다.
+// 이미지는 `src/assets/guide/drop-item-price/` 에 두고 여기서 import 한다.
 import button2Image from '../../../assets/guide/drop-item-price/03-button.webp'
 import buttonImage from '../../../assets/guide/drop-item-price/02-button.webp'
 import padImage from '../../../assets/guide/drop-item-price/04-pad.webp'
@@ -8,7 +8,7 @@ import screenImage from '../../../assets/guide/drop-item-price/01-screen.webp'
 import steperImage from '../../../assets/guide/drop-item-price/05-steper.webp'
 
 //
-// v1.0.4 개발 노트가 **두 마디**를 각각 가리킨다([[ADR-125]] 결정 7) — `where`(판매가 입력)와
+// v1.0.4 개발 노트가 **두 마디**를 각각 가리킨다. `where`(판매가 입력)와
 // `total`(결정석·아이템 갈라 보기). **id 를 바꾸면 그 링크가 깨지고**, 데이터 테스트가 잡는다.
 
 export const dropItemPriceGuide: FeatureGuide = {
@@ -20,7 +20,7 @@ export const dropItemPriceGuide: FeatureGuide = {
       id: 'where',
       title: '가격 기록 화면 열기',
       blocks: [
-        // TODO(#198): 보스 수익 화면 제목 줄의 「아이템 가격」 링크 — 아직 스크린샷이 없다
+        // TODO(#198): 보스 수익 화면 제목 줄의 `아이템 가격` 링크. 아직 스크린샷이 없다
         {
           text: '보스 수익 화면에서 ‘아이템 가격’을 누르면, 그 기간에 기록해 둔 드롭에 실제로 판 금액을 매길 수 있습니다.',
         },

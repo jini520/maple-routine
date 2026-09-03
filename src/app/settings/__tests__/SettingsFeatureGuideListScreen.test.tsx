@@ -1,13 +1,13 @@
-// 웹판(169줄)의 명세를 읽어 다시 쓴 것.
+// 이 화면이 지키는 것을 적는다.
 //
 // 갈린 것 셋
-// ① **라우터 프로브가 없다** — 안내를 누르면 `navigate('SettingsFeatureGuide', { guideId })` 가
-//    불리는지를 본다(웹이 경로를 조립하던 자리 · `routes.ts`).
+// ① **라우터 프로브가 없다**. 안내를 누르면 `navigate('SettingsFeatureGuide', { guideId })` 가
+//    불리는지를 본다.
 // ② `getByRole('tab', { name })` → **탭 글자에서 위로 올라가** 잡고, `aria-selected` 는
-//    `accessibilityState.selected` 로 읽는다(RN 에 `tablist` 컨테이너 역할이 없다 —
-//    `SettingsFeatureGuideListScreen.tsx` 파일 머리 ②).
+//    `accessibilityState.selected` 로 읽는다(RN 에 `tablist` 컨테이너 역할이 없다.
+//    `SettingsFeatureGuideListScreen.tsx`).
 // ③ 픽스처는 **배열 정체성을 고정해 내용만 갈아 끼운다**(`SettingsReleaseNotesScreen` 테스트
-//    파일 머리 ④ 와 같은 이유·같은 처방).
+//    머리와 같은 이유·같은 처방).
 import { act, fireEvent } from '@testing-library/react-native'
 
 import type { FeatureGuide } from '../../../types'
@@ -16,7 +16,7 @@ import { renderOverlay, type AtomElement } from '../../../components/__tests__/r
 import { SettingsFeatureGuideListScreen } from '../SettingsFeatureGuideListScreen'
 import { useSettingsNavigation } from '../use-settings-navigation'
 
-// 안내 데이터는 화면이 아니라 데이터 파일이 소유한다 — 그룹 조합을 훑는 케이스를 위해
+// 안내 데이터는 화면이 아니라 데이터 파일이 소유한다. 그룹 조합을 훑는 케이스를 위해
 // `src/data/feature-guides/` 를 늘리지 않고 여기서 픽스처를 주입한다.
 jest.mock('../../../data/feature-guides', () => ({
   ...jest.requireActual('../../../data/feature-guides'),
@@ -52,7 +52,7 @@ function climbTo(view: Rendered, text: string, role: string): AtomElement {
   return node
 }
 
-/** 서브트리의 글자를 이어 붙인 것 — 웹 테스트의 `node.textContent` 자리다. */
+/** 서브트리의 글자를 이어 붙인 것. 웹 테스트의 `node.textContent` 자리다. */
 function labelOf(node: AtomElement): string {
   let label = ''
   const walk = (current: AtomElement): void => {
@@ -77,7 +77,7 @@ const 수익안내: FeatureGuide = {
   groups: ['profit'],
   sections: [{ id: 'a', title: '마디', blocks: [{ text: '수익 설명' }] }],
 }
-// 「캐릭터 관리」처럼 **두 그룹에 서는** 안내 — 사본이 아니라 같은 글 한 벌이다.
+// `캐릭터 관리`처럼 **두 그룹에 서는** 안내. 사본이 아니라 같은 글 한 벌이다.
 const 공통안내: FeatureGuide = {
   id: 'character-manage',
   title: '캐릭터 관리',
@@ -107,7 +107,7 @@ describe('SettingsFeatureGuideListScreen', () => {
     expect(goBack).toHaveBeenCalledTimes(1)
   })
 
-  // 탭 순서는 데이터가 아니라 FEATURE_GUIDE_GROUP_ORDER 가 정한다 — 안내를 쓰는 사람이 어떤
+  // 탭 순서는 데이터가 아니라 FEATURE_GUIDE_GROUP_ORDER 가 정한다. 안내를 쓰는 사람이 어떤
   // 순서로 적든 화면은 늘 같아야 한다(RELEASE_NOTE_CATEGORY_ORDER 와 같은 규칙).
   it('탭 순서는 데이터 순서가 아니라 정해진 순서다', async () => {
     const view = await renderOverlay(<SettingsFeatureGuideListScreen />)
@@ -115,7 +115,7 @@ describe('SettingsFeatureGuideListScreen', () => {
     expect(view.getAllByTestId('guide-group-tab').map(labelOf)).toEqual(['컨텐츠', '보스', '수익'])
   })
 
-  // `ThemeSelector`·개발 노트의 카테고리 섹션과 같은 규칙 — 거른 결과가 0이면 탭째 감춘다.
+  // `ThemeSelector`·개발 노트의 카테고리 섹션과 같은 규칙. 거른 결과가 0이면 탭째 감춘다.
   // 빈 탭을 열면 아무것도 없는 화면을 만난다.
   it('안내가 없는 그룹은 탭째 그리지 않는다', async () => {
     const view = await renderOverlay(<SettingsFeatureGuideListScreen />)
@@ -125,7 +125,7 @@ describe('SettingsFeatureGuideListScreen', () => {
     expect(view.queryByText('설정')).toBeNull()
   })
 
-  // 한 안내가 여러 그룹에 선다([[ADR-125]] 결정 1 정정) — 「캐릭터 관리」가 컨텐츠·보스 양쪽에
+  // 한 안내가 여러 그룹에 선다. `캐릭터 관리`가 컨텐츠·보스 양쪽에
   // 같은 글로 서야 한다. 사본을 두면 갈라진다.
   it('여러 그룹에 속한 안내는 그 그룹 탭마다 나온다', async () => {
     const view = await renderOverlay(<SettingsFeatureGuideListScreen />)
@@ -175,7 +175,7 @@ describe('SettingsFeatureGuideListScreen', () => {
     expect(view.queryAllByTestId('guide-group-tab')).toHaveLength(0)
   })
 
-  // 그룹이 하나뿐이면 고를 것이 없다 — 탭 줄은 선택지가 둘 이상일 때만 뜻이 있다.
+  // 그룹이 하나뿐이면 고를 것이 없다. 탭 줄은 선택지가 둘 이상일 때만 뜻이 있다.
   it('그룹이 하나뿐이면 탭 줄을 그리지 않는다', async () => {
     setGuides([보스안내])
     const view = await renderOverlay(<SettingsFeatureGuideListScreen />)

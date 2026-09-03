@@ -1,10 +1,10 @@
-// 웹판을 옮긴 것. 사라지거나 형태가 바뀐 케이스만 여기 적는다.
+// 사라지거나 형태가 바뀐 케이스만 여기 적는다.
 //
-// · *"body 직속으로 렌더링한다"* → **`react-native` 의 `Modal` 을 쓴다**로 바뀐다(같은 계약의 RN 판:
+// *"body 직속으로 렌더링한다"* → **`react-native` 의 `Modal` 을 쓴다**로 바뀐다(같은 계약의 RN 판:
 //   부모 레이아웃과 무관하게 화면 전체를 덮는다).
-// · *"뒷 페이지 스크롤을 막는다"* → **사라진다.** 네이티브 윈도우가 구조적으로 한다.
-// · 클래스 문자열을 보던 자리는 **스타일 값**을 본다(`panel-on-scrim` → 실제 테두리 색).
-// · `align` 두 케이스는 `pt-[calc(var(--sa-top)+2rem)]` 대신 실제 `paddingTop` 숫자를 잰다.
+// *"뒷 페이지 스크롤을 막는다"* → **사라진다.** 네이티브 윈도우가 구조적으로 한다.
+// 클래스 문자열을 보던 자리는 **스타일 값**을 본다(`panel-on-scrim` → 실제 테두리 색).
+// `align` 두 케이스는 `pt-[calc(var(--sa-top)+2rem)]` 대신 실제 `paddingTop` 숫자를 잰다.
 import { fireEvent } from '@testing-library/react-native'
 import { Text, View } from 'react-native'
 
@@ -42,8 +42,8 @@ describe('Modal', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
-  // 웹은 `stopPropagation` 이었다. RN 에는 버블링이 없어 **터치를 누가 가져가는지**로 같은 일을
-  // 한다 — 패널이 responder 를 선언하지 않으면 바깥 `Pressable` 이 받아 모달이 닫힌다.
+// RN 에는 버블링이 없어 **터치를 누가 가져가는지**로 같은 일을
+  // 한다. 패널이 responder 를 선언하지 않으면 바깥 `Pressable` 이 받아 모달이 닫힌다.
   it.each([
     ['Modal.Card', <Modal.Card key="card"><Text>내용</Text></Modal.Card>],
     ['Modal.Panel', <Modal.Panel key="panel"><View><Text>내용</Text></View></Modal.Panel>],
@@ -78,7 +78,7 @@ describe('Modal', () => {
     expect(style.padding).toBe(24)
   })
 
-  // [[ADR-065]] 결정 2 — 업데이트 모달의 부 동작 버튼이 작아 아래 여백이 커 보이던 것.
+  // 업데이트 모달의 부 동작 버튼이 작아 아래 여백이 커 보이던 것.
   it('Modal.Card 의 tight 는 하단 패딩만 줄인다', async () => {
     const { getByText } = await renderOverlay(
       <Modal onClose={noop}>
@@ -112,9 +112,9 @@ describe('Modal', () => {
     expect(style.maxWidth).toBe(384)
   })
 
-  // [[ADR-122]]: 라이트에서만 테두리를 배경색 쪽으로 눌러 가라앉힌다. RN 에는 선택자가 없어
+  // 라이트에서만 테두리를 배경색 쪽으로 눌러 가라앉힌다. RN 에는 선택자가 없어
   // 그 결과를 `--color-panel-border` 토큰이 값으로 갖고 있고(`theme/theme-vars.ts`), 이 케이스는
-  // **`Card` atom 의 `border-border` 를 그것이 실제로 덮는지**를 지킨다 — 클래스 순서가 아니라
+  // **`Card` atom 의 `border-border` 를 그것이 실제로 덮는지**를 지킨다. 클래스 순서가 아니라
   // 생성된 스타일시트 순서에 달린 자리라, 조용히 뒤집히면 라이트 모달 테두리가 도드라진다.
   it('Modal.Card 의 테두리는 스크림 위 값으로 덮인다', async () => {
     const { getByText } = await renderOverlay(
@@ -143,7 +143,7 @@ describe('Modal', () => {
     expect(flattenStyle(getByTestId('test-modal').props.style).paddingTop).toBe(59 + 32)
   })
 
-  it('align="center" 면 세로 중앙에 놓는다 — 키보드를 띄우지 않는 모달용', async () => {
+  it('align="center" 면 세로 중앙에 놓는다. 키보드를 띄우지 않는 모달용', async () => {
     const { getByTestId } = await renderOverlay(
       <Modal onClose={noop} align="center" testId="test-modal">
         <Modal.Card>
@@ -157,7 +157,7 @@ describe('Modal', () => {
     expect(style.paddingTop).toBeUndefined()
   })
 
-  // [[ADR-120]] 결정 18 후반 — 하드웨어 뒤로가기는 스택을 pop 하지 않고 이 오버레이만 닫는다.
+  //  후반. 하드웨어 뒤로가기는 스택을 pop 하지 않고 이 오버레이만 닫는다.
   it('안드로이드 뒤로가기(onRequestClose)가 onClose 로 이어진다', async () => {
     const onClose = jest.fn()
     const { getByTestId } = await renderOverlay(

@@ -1,6 +1,6 @@
 import type { FeatureGuide } from '../../../types'
-// 이미지는 `packages/core/src/assets/guide/content-manage/` 에 두고 여기서 import 한다. 명시적 import 라
-// 파일명이 틀리면 **빌드가 실패한다**([[ADR-125]] 결정 4) — glob 조회처럼 `undefined` 가 되어
+// 이미지는 `src/assets/guide/content-manage/` 에 두고 여기서 import 한다. 명시적 import 라
+// 파일명이 틀리면 **빌드가 실패한다**. glob 조회처럼 `undefined` 가 되어
 // 이미지만 빠진 채 통과하지 않는다.
 import autoImage from '../../../assets/guide/content-manage/02-auto.webp'
 import dropdownImage from '../../../assets/guide/content-manage/05-dropdown.webp'

@@ -28,7 +28,7 @@ describe('저장된 값이 없는 경우', () => {
   })
 })
 
-// ADR-115 결정 3: 키 무효화(400 OPENAPI00005 · 401/403)는 apiKey 하나만 지운다.
+// 키 무효화(400 OPENAPI00005· 401/403)는 apiKey 하나만 지운다.
 describe('removeApiKey', () => {
   it('apiKey를 제거한다', async () => {
     await setApiKey('test-api-key')
@@ -48,8 +48,8 @@ describe('removeApiKey', () => {
   })
 })
 
-// ADR-143 결정 7 로 계정 선택이 사라진 뒤 남은 레거시 키. 아무도 읽고 쓰지 않지만, 캐패시터
-// 시절을 거친 설치본에는 값이 남아 있어 연결 해제가 함께 치운다.
+// 계정 선택이 사라진 뒤 남은 레거시 키. 아무도 읽고 쓰지 않지만, 그 시절을 거친 설치본에는
+// 값이 남아 있어 연결 해제가 함께 치운다.
 describe('레거시 selectedAccountId', () => {
   it('clearAuthConfig 가 레거시 키까지 지운다', async () => {
     await prefs.set(STORAGE_KEYS.legacySelectedAccountId, 'account-1')
@@ -59,7 +59,7 @@ describe('레거시 selectedAccountId', () => {
     await expect(prefs.get(STORAGE_KEYS.legacySelectedAccountId)).resolves.toBeNull()
   })
 
-  it('removeApiKey 는 레거시 키를 건드리지 않는다 — 지우는 범위가 다르다', async () => {
+  it('removeApiKey 는 레거시 키를 건드리지 않는다. 지우는 범위가 다르다', async () => {
     await setApiKey('test-api-key')
     await prefs.set(STORAGE_KEYS.legacySelectedAccountId, 'account-1')
 

@@ -18,7 +18,7 @@ function jsonResponse(status: number, body: unknown): Response {
   return { ok: status >= 200 && status < 300, status, json: async () => body } as unknown as Response
 }
 
-/** 실측 캐릭터(렌)를 축약한 것 — 합이 149 다([[ADR-177]]). */
+/** 실제 캐릭터(렌)를 축약한 것. 합이 149 다. */
 const 응답 = {
   '/maplestory/v1/character/item-equipment': {
     item_equipment: [
@@ -36,7 +36,7 @@ const 응답 = {
   '/maplestory/v1/character/skill': { character_skill: [{ skill_name: '무기 숙련' }] },
 } as const
 
-/** 실응답을 그대로 옮긴 설명문(사용자 제공 2026-09-01). */
+/** 실응답을 그대로 옮긴 설명문(사용자 제공). */
 const 챌린저스 = {
   skill_name: '챌린저스',
   skill_description:
@@ -73,7 +73,7 @@ describe('fetchMesoRate', () => {
 
     const 부른경로 = fetchMock.mock.calls.map(([url]) => String(url))
     for (const path of Object.keys(응답)) {
-      // ocid 는 인코딩된다 — 슬래시가 든 ocid 가 경로를 갈라 놓으면 안 된다.
+      // ocid 는 인코딩된다. 슬래시가 든 ocid 가 경로를 갈라 놓으면 안 된다.
       // 스킬만 차수를 함께 싣는다.
       const 기대 = `https://open.api.nexon.com${path}?ocid=oc%20id%2F1`
       expect(부른경로).toContain(
@@ -98,14 +98,14 @@ describe('fetchMesoRate', () => {
     await expect(fetchMesoRate('api-key', 'ocid-1', null)).resolves.toBe(169)
   })
 
-  it('섀도어면 그리드로 20 이 더 붙는다 — 스킬 조회를 안 거친다', async () => {
+  it('섀도어면 그리드로 20 이 더 붙는다. 스킬 조회를 안 거친다', async () => {
     const fetchMock = 정상응답()
     stubGlobal('fetch', fetchMock)
 
     await expect(fetchMesoRate('api-key', 'ocid-1', '섀도어')).resolves.toBe(169)
   })
 
-  it('여섯은 병렬이다 — 앞의 응답을 기다리지 않는다', async () => {
+  it('여섯은 병렬이다. 앞의 응답을 기다리지 않는다', async () => {
     let 동시 = 0
     let 최대동시 = 0
     stubGlobal(
@@ -124,7 +124,7 @@ describe('fetchMesoRate', () => {
     expect(최대동시).toBe(6)
   })
 
-  it('하나라도 실패하면 던진다 — 반쪽짜리 최대치를 내지 않는다', async () => {
+  it('하나라도 실패하면 던진다. 반쪽짜리 최대치를 내지 않는다', async () => {
     stubGlobal(
       'fetch',
       jest.fn(async (url: string) => {
@@ -137,7 +137,7 @@ describe('fetchMesoRate', () => {
     await expect(fetchMesoRate('api-key', 'ocid-1', null)).rejects.toBeInstanceOf(NexonAuthError)
   })
 
-  it('스킬 조회가 실패해도 던진다 — 챌린저스가 빠진 값은 최대치가 아니다', async () => {
+  it('스킬 조회가 실패해도 던진다. 챌린저스가 빠진 값은 최대치가 아니다', async () => {
     stubGlobal(
       'fetch',
       jest.fn(async (url: string) => {

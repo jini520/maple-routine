@@ -1,7 +1,7 @@
-// 웹판의 일곱을 옮겼다. 갈린 것은 두 가지다 — `toBeDisabled()` 대신 **RN 의 접근성 상태**를 보고,
+// 파티 인원 스테퍼. 갈린 것 둘. `toBeDisabled` 대신 **RN 의 접근성 상태**를 보고,
 // `tabular-nums` 클래스 대신 **풀린 `fontVariant`** 를 본다.
 //
-// 여기서 특히 중요한 케이스는 비활성 흐림이다. 웹은 `disabled:opacity-40` 한 클래스였는데 RN 에서
+// 여기서 특히 중요한 케이스는 비활성 흐림이다. CSS 의사 클래스가 없어 RN 에서
 // 그 변형은 `Pressable disabled` 와 이어져 있지 않아 **비활성 버튼이 멀쩡한 색으로 보인다**
 // (에러 없이). 아래 두 케이스가 그 실패를 잡는다.
 import { fireEvent } from '@testing-library/react-native'
@@ -38,7 +38,7 @@ describe('PartySizeStepper', () => {
     expect(atMax.getByLabelText(증가).props.accessibilityState.disabled).toBe(true)
   })
 
-  // 웹의 `disabled:opacity-40` 자리 — RN 에서는 JS 조건이 대신한다(컴포넌트 주석 ①).
+// 비활성 흐림. JS 조건이 그것을 낸다(컴포넌트 주석 ①).
   it('비활성 버튼은 흐리게 그린다', async () => {
     const { getByLabelText } = await renderAtom(
       <PartySizeStepper label="스우" value={1} max={6} onChange={jest.fn()} />,
@@ -59,7 +59,7 @@ describe('PartySizeStepper', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
-  // 상한은 (보스, 난이도)마다 다르다 — 스우는 하드 6인, 익스트림 2인(boss-crystal-prices.json).
+  // 상한은 (보스, 난이도)마다 다르다. 스우는 하드 6인, 익스트림 2인(boss-crystal-prices.json).
   it('상한이 낮아지면 그 값에서 +가 막힌다', async () => {
     const { getByLabelText } = await renderAtom(
       <PartySizeStepper label="스우" value={2} max={2} onChange={jest.fn()} />,
@@ -69,10 +69,10 @@ describe('PartySizeStepper', () => {
   })
 
   /**
-   * **단위를 안 적는다**([[ADR-173]] 결정 18, 사용자 지정 2026-08-27) — 이 앱의 스테퍼는 크기와
+   * **단위를 안 적는다**. 이 앱의 스테퍼는 크기와
    * 무관하게 **숫자만** 오르내린다. 무엇을 세는지는 곁의 라벨과 `Users` 표식이 말한다.
    *
-   * 전에는 기본 크기만 「인」 을 그려서 **한 앱에 스테퍼가 두 모양**이었다.
+   * 전에는 기본 크기만 인 을 그려서 **한 앱에 스테퍼가 두 모양**이었다.
    */
   it.each(['default', 'compact'] as const)('%s 는 단위를 안 그린다', async (size) => {
     const { queryByText } = await renderAtom(
@@ -88,7 +88,7 @@ describe('PartySizeStepper', () => {
     expect(flattenStyle(getByText('6').props.style).fontVariant).toEqual(['tabular-nums'])
   })
 
-  // 히트 영역을 넓히던 웹의 `-m-1 p-1` 자리 — RN 은 레이아웃을 안 건드리는 `hitSlop` 을 쓴다.
+// 히트 영역은 레이아웃을 안 건드리는 `hitSlop` 으로 넓힌다.
   it('시각 크기보다 넓은 히트 영역을 갖는다', async () => {
     const { getByLabelText } = await renderAtom(
       <PartySizeStepper label="스우" value={3} max={6} onChange={jest.fn()} />,

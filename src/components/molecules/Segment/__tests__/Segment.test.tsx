@@ -1,8 +1,8 @@
 /**
- * 값 하나의 **축**을 고르는 붙은 조각([[ADR-173]] 결정 3).
+ * 값 하나의 **축**을 고르는 붙은 조각.
  *
- * 갈래 칩과 **모양이 달라야** 한다는 것이 이 부품의 존재 이유다 — 같은 알약이 세 종류 있어
- * «무엇을 고르는 줄인지» 가 안 읽히던 것이 다시 짠 이유였다.
+ * 갈래 칩과 **모양이 달라야** 한다는 것이 이 부품의 존재 이유다. 같은 알약이 세 종류 있어
+ * 무엇을 고르는 줄인지 가 안 읽히던 것이 다시 짠 이유였다.
  */
 import { fireEvent } from '@testing-library/react-native'
 
@@ -30,7 +30,7 @@ describe('Segment', () => {
     expect(onSelect).toHaveBeenCalledWith('캐시')
   })
 
-  // 이미 고른 것을 다시 눌러도 아무 일이 없어야 한다 — `DifficultySegment` 와 같은 계약이다.
+  // 이미 고른 것을 다시 눌러도 아무 일이 없어야 한다. `DifficultySegment` 와 같은 계약이다.
   it('고른 것을 다시 눌러도 안 부른다', async () => {
     const onSelect = jest.fn()
     const { getByLabelText } = await renderAtom(
@@ -43,7 +43,7 @@ describe('Segment', () => {
   })
 
   // **칩이 아니다.** 조각들이 한 상자 안에 붙어 있고, 고른 것만 그 안에서 칠해진다.
-  it('한 상자 안에 붙어 있다 — 조각마다 테두리를 두르지 않는다', async () => {
+  it('한 상자 안에 붙어 있다. 조각마다 테두리를 두르지 않는다', async () => {
     const view = await renderAtom(
       <Segment options={['메소', '메포']} selected="메소" onSelect={jest.fn()} />,
     )

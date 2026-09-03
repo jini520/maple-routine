@@ -1,5 +1,5 @@
 /**
- * 입력 칸 atom([[ADR-152]] 정정 1). RN 의 `TextInput` 을 그대로 그리고 네 가지를 대신 채운다.
+ * 입력 칸 atom. RN 의 `TextInput` 을 그대로 그리고 네 가지를 대신 채운다.
  *
  * `react-native` 의 `TextInput` 직접 import 는 ESLint 와 `src/__tests__/font-scaling-policy.test.ts`
  * 가 막는다. **이 파일이 그 규칙의 예외 둘 중 하나다**(다른 하나는 `atoms/Text/Text.tsx`).
@@ -17,7 +17,7 @@ import { fontScalingProps, type Clamped } from '../Text/font-scaling'
 /** RN 의 `TextInputProps` 에서 배수 프롭 둘을 빼고 `fixed` 를 더한 것. */
 export type TextInputProps = Clamped<RNTextInputProps>
 
-/** 조합이 안 도는 키보드. 숫자만 나오므로 IME 가 조합 구간을 쥘 일이 없다([[ADR-170]] 정정 12). */
+/** 조합이 안 도는 키보드. 숫자만 나오므로 IME 가 조합 구간을 쥘 일이 없다. */
 const NUMERIC_KEYBOARDS = new Set<RNTextInputProps['keyboardType']>([
   'number-pad',
   'numeric',
@@ -28,13 +28,13 @@ const NUMERIC_KEYBOARDS = new Set<RNTextInputProps['keyboardType']>([
 /**
  * 입력 칸 하나. `value`·`onChangeText` 를 평소처럼 준다. 호출부가 아래 셋을 안 고른다.
  *
- *   ① 시스템 글자 배수를 `[1.0, 1.235]` 로 자른다([[ADR-152]] 결정 4)
- *   ② 조합이 도는 칸은 `value` 대신 `defaultValue` 로 심는다([[ADR-170]] 정정 12)
- *   ③ 자리표시자 색과 상자를 못박아 두 플랫폼을 맞춘다([[ADR-179]] 결정 5 · [[ADR-170]] 정정 13)
+ *  ① 시스템 글자 배수를 `[1.0, 1.235]` 로 자른다
+ *  ② 조합이 도는 칸은 `value` 대신 `defaultValue` 로 심는다
+ *  ③ 자리표시자 색과 상자를 못박아 두 플랫폼을 맞춘다.
  *
  * 치수를 주고 싶으면 `className` 이나 `style` 로 주면 되고, 그쪽이 여기 기본값을 이긴다.
  *
- * **시트 안에서는 `organisms/SheetTextInput` 을 쓸 것**([[ADR-170]] 정정 18). 이 아톰은 자기가
+ * **시트 안에서는 `organisms/SheetTextInput` 을 쓸 것**. 이 아톰은 자기가
  * 어디 담기는지 모른다.
  *
  * @example
@@ -62,18 +62,18 @@ export function TextInput({
 
   /**
    * 숫자 키패드 칸은 되쓰기가 필요하다(`1234` 를 `1,234` 로 갈아 끼운다). 글자 칸은 되쓰면 한글
-   * 조합이 깨진다. 그래서 갈림은 키보드 종류다([[ADR-170]] 정정 12).
+   * 조합이 깨진다. 그래서 갈림은 키보드 종류다.
    */
   const numeric = keyboardType !== undefined && NUMERIC_KEYBOARDS.has(keyboardType)
 
   return (
     <RNTextInput
-      /** `{...rest}` 보다 앞이라 호출부가 직접 주면 그쪽이 이긴다([[ADR-179]] 결정 5). */
+      /** `{...rest}` 보다 앞이라 호출부가 직접 주면 그쪽이 이긴다. */
       placeholderTextColor={definition.textDisabled}
       {...rest}
       keyboardType={keyboardType}
       {...(numeric ? { value } : { defaultValue: value })}
-      /** 플랫폼 기본 상자를 지운다([[ADR-170]] 정정 13). 배열 앞이라 호출부의 치수가 이긴다. */
+      /** 플랫폼 기본 상자를 지우는 값. 배열 앞이라 호출부의 치수가 이긴다. */
       style={[
         { ...BASE_TEXT_STYLE, padding: 0, includeFontPadding: false, textAlignVertical: 'center' },
         rest.style,

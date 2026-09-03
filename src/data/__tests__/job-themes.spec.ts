@@ -1,5 +1,5 @@
 import jobThemesData from '../job-themes.json'
-// `lib/` 은 아직 앱에 있다 — 다음 step 에서 core 로 넘어오면 `../../lib/…` 로 되돌린다([[ADR-128]] 0단계).
+// `lib/` 은 아직 앱에 있다. 다음 step 에서 core 로 넘어오면 `../../lib/…` 로 되돌린다(0단계).
 import { contrastHex, hexToOklch } from '../../lib/color'
 import { THEME_TOKEN_KEYS, measureThemeContrast } from '../../lib/theme/theme-derive'
 import type { JobThemes, ThemeName } from '../../types/theme'
@@ -8,15 +8,15 @@ const JOB_THEMES = jobThemesData as JobThemes
 const NAMES = Object.keys(JOB_THEMES) as ThemeName[]
 
 /**
- * 값을 나열해 비교하던 회귀 테스트를 **스키마 + 파생 규칙** 검증으로 바꿨다([[ADR-064]] 결정 11).
+ * 값을 나열해 비교하던 회귀 테스트를 **스키마 + 파생 규칙** 검증으로 바꿨다.
  * 예전 방식은 4테마 × 17값을 하드코딩해 비교했는데, 테마를 수십 개로 늘리면 테스트가 같은 속도로
  * 늘어난다. 아래 검사들은 테마가 몇 개든 항목 수가 그대로다.
  *
- * 대비비는 **관문이 아니다**([[ADR-064]] 판단 순서) — 전체 색감과 캐릭터의 컬러 컨셉이 최우선이라,
+ * 대비비는 **관문이 아니다**(판단 순서). 전체 색감과 캐릭터의 컬러 컨셉이 최우선이라,
  * 여기서도 특정 대비선을 강제하지 않는다. 다만 "이 색을 글자로 쓸 수 있게 만든 값"인 토큰
  * (`text`·`text-muted`·`*-ink`)은 그 목적을 실제로 달성해야 하므로 그것만 확인한다.
  */
-describe('job-themes.json — 스키마', () => {
+describe('job-themes.json: 스키마', () => {
   it('테마가 하나 이상 있다', () => {
     expect(NAMES.length).toBeGreaterThan(0)
   })
@@ -28,8 +28,8 @@ describe('job-themes.json — 스키마', () => {
     }
   })
 
-  // 색이 아닌 필드는 셋뿐이다 — 필수 `mode`·`category`([[ADR-104]] 결정 1)와 선택
-  // `background`([[ADR-088]] 결정 3).
+  // 색이 아닌 필드는 셋뿐이다. 필수 `mode`·`category`와 선택
+  // `background`.
   it.each(NAMES)('%s: 토큰 외에 mode·category 와 선택 background 만 더 갖는다', (name) => {
     const extra = Object.keys(JOB_THEMES[name]).filter(
       (key) => !(THEME_TOKEN_KEYS as readonly string[]).includes(key),
@@ -41,7 +41,7 @@ describe('job-themes.json — 스키마', () => {
     ).toEqual([])
   })
 
-  // 소속은 게임 도메인이라 사람이 정한다([[ADR-006]]) — 테스트는 값이 셋 중 하나인지만 본다.
+  // 소속은 게임 도메인이라 사람이 정한다. 테스트는 값이 셋 중 하나인지만 본다.
   it.each(NAMES)('%s: category 가 기본·직업·보스 중 하나다', (name) => {
     expect(['기본', '직업', '보스']).toContain(JOB_THEMES[name].category)
   })
@@ -75,7 +75,7 @@ describe('job-themes.json — 스키마', () => {
   })
 })
 
-describe('job-themes.json — 파생 규칙', () => {
+describe('job-themes.json: 파생 규칙', () => {
   const ACCENTS = ['primary', 'secondary', 'third', 'error'] as const
 
   // "이 색을 글자로 쓸 수 있게 만든 값"은 그 목적을 달성해야 한다.
@@ -87,7 +87,7 @@ describe('job-themes.json — 파생 규칙', () => {
     }
   })
 
-  // 잉크는 accent 원색을 지킨다 — 보이는 색은 건드리지 않고, 안 보이는 색만 보정한다.
+  // 잉크는 accent 원색을 지킨다. 보이는 색은 건드리지 않고, 안 보이는 색만 보정한다.
   // 잉크가 놓이는 바탕은 표면과 틴트 배지 **양쪽**이라 둘 다 봐야 한다.
   it.each(NAMES)('%s: 두 바탕에서 다 보이는 accent 는 잉크에서도 원색 그대로다', (name) => {
     const theme = JOB_THEMES[name] as unknown as Record<string, string>
@@ -111,7 +111,7 @@ describe('job-themes.json — 파생 규칙', () => {
     expect(contrastHex(theme.mediaInkMuted, theme.mediaSurface)).toBeGreaterThanOrEqual(4.5)
   })
 
-  // 채움 위 전경은 색감이 정한다 — 대비는 강제하지 않되, 흑백 이지선다로 퇴화하지는 않아야 한다.
+  // 채움 위 전경은 색감이 정한다. 대비는 강제하지 않되, 흑백 이지선다로 퇴화하지는 않아야 한다.
   // 연한 전경은 **테마의 색 하나**이고(브랜드 색상), 그게 사라지는 채움에서만 짙은 색으로 넘어간다.
   it.each(NAMES)('%s: on-* 이 순수 흑/백이 아니다', (name) => {
     const theme = JOB_THEMES[name] as unknown as Record<string, string>
@@ -148,7 +148,7 @@ describe('job-themes.json — 파생 규칙', () => {
   })
 })
 
-describe('job-themes.json — 대비 계측', () => {
+describe('job-themes.json: 대비 계측', () => {
   // 관문이 아니라 기록이다. 기준선 아래 항목이 있어도 실패시키지 않되, 계측 자체는 동작해야 한다.
   it.each(NAMES)('%s: 모든 색 쌍의 대비를 잴 수 있다', (name) => {
     const report = measureThemeContrast(JOB_THEMES[name])

@@ -29,7 +29,7 @@ describe('getItemIconUrl', () => {
     expect(getItemIconUrl('익셉셔널 해머', '얼굴장식')).toBeNull()
   })
 
-  it("'기타'(백옥 밖 저가치 반지 묶음, ADR-041)는 리밋 링 아이콘으로 조회된다", () => {
+  it("'기타'(백옥 밖 저가치 반지 묶음)는 리밋 링 아이콘으로 조회된다", () => {
     const url = getItemIconUrl('기타')
 
     expect(url).not.toBeNull()
@@ -50,13 +50,13 @@ describe('getItemIconUrl', () => {
     expect(assetUri(url)).toContain('whetstone_life')
   })
 
-  it('주문서 교환권 3종은 각자의 아이콘으로 조회된다 (ADR-070)', () => {
+  it('주문서 교환권 3종은 각자의 아이콘으로 조회된다', () => {
     expect(assetUri(getItemIconUrl('프리미엄 악세서리 스크롤 교환권'))).toContain('premium_accessory_scroll_coupon')
     expect(assetUri(getItemIconUrl('프리미엄 펫장비 스크롤 교환권'))).toContain('premium_petequip_scroll_coupon')
     expect(assetUri(getItemIconUrl('매지컬 무기 주문서 교환권'))).toContain('magical_weapon_scroll_coupon')
   })
 
-  it('파풀라투스 마크는 실제 아이콘으로 조회된다 (플레이스홀더 교체, ADR-070)', () => {
+  it('파풀라투스 마크는 실제 아이콘으로 조회된다 (플레이스홀더 교체)', () => {
     expect(assetUri(getItemIconUrl('파풀라투스 마크'))).toContain('papulatus_mark')
   })
 

@@ -19,10 +19,10 @@ function baseState(overrides: Partial<SchedulerCharacterState> = {}): SchedulerC
   }
 }
 
-// 2026-07-21은 화요일 — 가장 최근 주간 리셋은 2026-07-16(목), 오늘 날짜(KST)는 2026-07-21
+// 2026-07-21은 화요일. 가장 최근 주간 리셋은 2026-07-16(목), 오늘 날짜(KST)는 2026-07-21
 const NOW = new Date('2026-07-21T10:00:00+09:00')
 
-describe('mergeSchedulerState — character 범위', () => {
+describe('mergeSchedulerState: character 범위', () => {
   it('fresh 섹션의 character 범위 항목은 그대로 통과한다', () => {
     const item = {
       name: '[일일 퀘스트] 레헬른의 평온한 밤',
@@ -93,7 +93,7 @@ describe('mergeSchedulerState — character 범위', () => {
     expect(result.characterState.dailyContents).toEqual([])
   })
 
-  describe('ADR-034 정정 — stale이 아니어도 항목 단위로 previous의 누락 항목을 복원한다', () => {
+  describe(' 정정. stale이 아니어도 항목 단위로 previous의 누락 항목을 복원한다', () => {
     it('daily가 stale이 아니고(빈 배열 아님) 일부 항목만 왔어도, previous에만 있던 항목은 진행값이 리셋된 채 복원된다', () => {
       const previous = baseState({
         dailyContents: [
@@ -145,7 +145,7 @@ describe('mergeSchedulerState — character 범위', () => {
   })
 })
 
-describe('mergeSchedulerState — world 범위 (몬스터파크)', () => {
+describe('mergeSchedulerState: world 범위 (몬스터파크)', () => {
   it('처음 fresh로 registration_flag: true가 오면 원장이 active: true로 갱신되고 결과에 노출된다', () => {
     const fresh = baseState({
       dailyContents: [
@@ -248,7 +248,7 @@ describe('mergeSchedulerState — world 범위 (몬스터파크)', () => {
   })
 })
 
-describe('mergeSchedulerState — account 범위 (에픽 던전)', () => {
+describe('mergeSchedulerState: account 범위 (에픽 던전)', () => {
   it('처음 fresh로 registration_flag: true가 오면 accountLedgerUpdates가 갱신된다', () => {
     const fresh = baseState({
       weeklyContents: [
@@ -265,7 +265,7 @@ describe('mergeSchedulerState — account 범위 (에픽 던전)', () => {
   })
 })
 
-describe('mergeSchedulerState — maxCountOverride', () => {
+describe('mergeSchedulerState: maxCountOverride', () => {
   it('오버라이드가 등록된 항목은 API 응답의 max_count 대신 오버라이드 값을 쓴다', () => {
     const fresh = baseState({
       weeklyContents: [
@@ -292,7 +292,7 @@ describe('mergeSchedulerState — maxCountOverride', () => {
   })
 })
 
-describe('mergeSchedulerState — 보스 (cycle별 독립 stale)', () => {
+describe('mergeSchedulerState: 보스 (cycle별 독립 stale)', () => {
   it('주간 보스만 stale이면 주간 보스만 리셋되고 월간 보스는 그대로 유지된다', () => {
     const previous = baseState({
       bossContents: [
@@ -337,7 +337,7 @@ describe('mergeSchedulerState — 보스 (cycle별 독립 stale)', () => {
     ])
   })
 
-  it('stale로 리셋될 때 ownComplete도 isComplete와 함께 false로 리셋된다(ADR-032) — 안 그러면 지난 리셋의 완료 여부가 새 주에 그대로 남는다', () => {
+  it('stale로 리셋될 때 ownComplete도 isComplete와 함께 false로 리셋된다. 안 그러면 지난 리셋의 완료 여부가 새 주에 그대로 남는다', () => {
     const previous = baseState({
       bossContents: [
         { name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
@@ -351,7 +351,7 @@ describe('mergeSchedulerState — 보스 (cycle별 독립 stale)', () => {
     expect(result.characterState.bossContents[0].ownComplete).toBe(false)
   })
 
-  it('ADR-034 정정 — 주간 보스가 stale이 아니어도(일부 항목만 왔어도) previous에만 있던 난이도는 항목 단위로 복원된다', () => {
+  it(' 정정. 주간 보스가 stale이 아니어도(일부 항목만 왔어도) previous에만 있던 난이도는 항목 단위로 복원된다', () => {
     const previous = baseState({
       bossContents: [
         { name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
@@ -371,7 +371,7 @@ describe('mergeSchedulerState — 보스 (cycle별 독립 stale)', () => {
     ])
   })
 
-  it('ADR-034 정정 — 같은 보스라도 난이도가 다르면 별개 항목으로 취급해 fresh에 없는 난이도만 복원한다', () => {
+  it(' 정정. 같은 보스라도 난이도가 다르면 별개 항목으로 취급해 fresh에 없는 난이도만 복원한다', () => {
     const previous = baseState({
       bossContents: [
         { name: '카링', difficulty: '이지', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
@@ -392,7 +392,7 @@ describe('mergeSchedulerState — 보스 (cycle별 독립 stale)', () => {
   })
 })
 
-describe('mergeSchedulerState — 그 외 필드', () => {
+describe('mergeSchedulerState: 그 외 필드', () => {
   it('asOf/characterName/world/level/jobClass는 fresh 값을 그대로 반영한다', () => {
     const fresh = baseState({ characterName: '테스트캐릭', level: 100 })
 

@@ -4,8 +4,8 @@
  * 금액은 `props.value` 로 받은 것만 그린다. 한국어 단위로 접어(`8억 5천만`) 단위 글자만 한 단계
  * 작게 얹고, 오른쪽에 통화를 세운다.
  *
- * @see [[ADR-202]] 결정 1·9·10·11·12 · 정정 1 — 못 치는 이유 · 단위 서식 · 크기 · 앞 틈 · 카운트업 제거
- * @see [[ADR-173]] 결정 1·9 — 화면에 하나뿐이고 자기 윗선을 안 긋는다
+ * @see. 못 치는 이유 · 단위 서식 · 크기 · 앞 틈 · 카운트업 제거
+ * @see. 화면에 하나뿐이고 자기 윗선을 안 긋는다
  */
 import { View } from 'react-native'
 
@@ -15,22 +15,22 @@ import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 
 export interface AmountFigureProps {
   value: number
-  /** 숫자 옆에 서는 통화 — `메소` · `메포` · `원`. */
+  /** 숫자 옆에 서는 통화. `메소` · `메포` · `원`. */
   unit: string
   /** 이름의 뿌리. 덩어리는 `${testID}-figure`, 통화는 `${testID}-unit` 이다. */
   testID: string
-  /** 앞에 `≈` 를 붙인다. 0 에는 안 붙는다([[ADR-175]] 결정 3). */
+  /** 앞에 `≈` 를 붙인다. 0 에는 안 붙는다. */
   approximate?: boolean
 }
 
 const OPAQUE_ZERO = { opacity: 0 }
 
-/** 단위 왼쪽 틈(dp). 폭만 있는 `View` 로 낸다 — 방법 넷의 실측은 [[ADR-202]] 결정 11 에 있다. */
+/** 단위 왼쪽 틈(dp). 폭만 있는 `View` 로 낸다. */
 const FIGURE_UNIT_GAP = 2
 
 const GAP_STYLE = { width: FIGURE_UNIT_GAP }
 
-/** 잡는 괄호라 `split` 이 단위 글자도 함께 돌려준다. */
+/** 단위 글자를 가르는 정규식. 잡는 괄호라 `split` 이 단위 글자도 함께 돌려준다. */
 const AMOUNT_UNIT = /([조억만천])/
 
 /**
@@ -39,7 +39,7 @@ const AMOUNT_UNIT = /([조억만천])/
  * 단위 글자에는 `UNIT_STYLE` 이 붙고, 숫자 뒤에 오는 단위 앞에는 **빈 토막**(`text === ''`)이
  * 하나 끼워진다. 그리는 쪽이 그것을 폭만 있는 `View` 로 낸다.
  *
- * 단위끼리 붙은 자리(`5천만`)에는 안 끼운다 — 한 낱말이라 벌리면 `5천 만` 으로 읽힌다.
+ * 단위끼리 붙은 자리(`5천만`)에는 안 끼운다. 한 낱말이라 벌리면 `5천 만` 으로 읽힌다.
  */
 type Piece = { text: string; kind: 'digits' | 'unit' | 'gap' }
 
@@ -52,7 +52,7 @@ function amountPieces(text: string): Piece[] {
       return
     }
     pieces.push({ text: part, kind: 'digits' })
-    // 만 미만 나머지는 뒤에 단위가 없다 — 틈을 만들 자리가 아니다.
+    // 만 미만 나머지는 뒤에 단위가 없다. 틈을 만들 자리가 아니다.
     if (index + 1 < parts.length && AMOUNT_UNIT.test(parts[index + 1])) {
       pieces.push({ text: '', kind: 'gap' })
     }
@@ -69,7 +69,7 @@ export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
 
   return (
     <View testID={`${props.testID}-figure`}>
-      {/* 기준선이 아니라 **같은 줄 상자**로 맞춘다([[ADR-178]] 정정 3). */}
+      {/* 기준선이 아니라 **같은 줄 상자**로 맞춘다. */}
       <View className="flex-row items-start gap-1.5">
         <View className="flex-1">
           <Text testID={props.testID} className={digits} style={TABULAR_NUMS}>

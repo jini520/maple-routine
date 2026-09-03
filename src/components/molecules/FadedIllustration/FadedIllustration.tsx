@@ -1,8 +1,8 @@
 /**
  * 일러스트 카드의 두 부품. 크롭 기하는 `lib/image-crop.ts` 가 갖는다.
  *
- * @see [[ADR-018]] 결정 8. bleed 레시피(38%/76% 페이드 · 블러 없음).
- * @see [[ADR-064]] 결정 5. 카드 안은 색 기준이 `media-scope` 로 갈린다.
+ * @see. bleed 레시피(38%/76% 페이드 · 블러 없음).
+ * @see. 카드 안은 색 기준이 `media-scope` 로 갈린다.
  */
 import type { ImageAssetRef } from '../../../types/image-asset'
 import { Image, View } from 'react-native'
@@ -18,24 +18,22 @@ import { imageCropStyle, resolveImageCropLayout, type ImageCrop } from '../../..
 /**
  * 그림을 눌러 위의 글자가 읽히게 하는 값 둘.
  *
- * 웹은 `filter: saturate(.85) brightness(.8)` + `opacity: .65` 였다. 옮긴 값이 맞는지는 **한 번
- * 확인하고 `docs/foundation/design-system.md` 에 적었다.** 웹 소스가 [[ADR-155]] 로 없어져 더
- * 갈릴 원본이 없으므로 대조용 CSS 사본을 코드에 두지 않는다.
+ * `saturate(.85) brightness(.8)` + `opacity:.65` 를 옮긴 값이 맞는지는 **한 번
+ * 확인하고 `docs/foundation/design-system.md` 에 적었다.** 원본 CSS 가 없어져 더
+ * 갈릴 것이 없으므로 대조용 사본을 코드에 두지 않는다.
  */
 const VEIL_OPACITY = 0.65
 const VEIL_FILTER = [{ saturate: 0.85 }, { brightness: 0.8 }]
 
 /**
- * 베일 그라데이션. 웹 마스크를 **뒤집은** 값이라, 마스크가 1인 구간이 덧칠 0 이다.
+ * 베일 그라데이션. 마스크가 1인 구간이 덧칠 0 이다.
  *
- * RN 에는 마스크가 없다. 대신 카드 표면색을 반대 알파로 덧칠하면 **같은 색이 나온다**(근사가 아니다).
- * 마스크 알파를 m 이라 할 때 `bg(1−0.65m) + art·0.65m` 와 `[bg(1−0.65) + art·0.65]` 위에 알파 `1−m`
- * 로 `bg` 를 얹은 것이 같은 식이다.
+ * RN 에는 마스크가 없다. 대신 카드 표면색을 반대 알파로 덧칠하면 같은 색이 나온다(근사가
+ * 아니다). 마스크 알파를 m 이라 할 때 `bg(1−0.65m) + art·0.65m` 와 `[bg(1−0.65) + art·0.65]`
+ * 위에 알파 `1−m` 로 `bg` 를 얹은 것이 같은 식이다.
  *
- * 마지막 정지점 `1` 은 웹에 없다. `expo-linear-gradient` 가 정지점 **사이만** 보간해서, 안 적으면
+ * 마지막 정지점 `1` 이 필요하다. `expo-linear-gradient` 가 정지점 사이만 보간해서 안 적으면
  * 끝점 뒤가 안 덮인다. 알파는 두 자리가 같고 갈리는 것은 정지점뿐이다.
- *
- * 웹 마스크는 카드 `38%/76%` · 히어로 `42%/82%` 였다([[ADR-018]] 결정 8 · [[ADR-121]] 결정 7).
  */
 const VEIL_ALPHAS = [0, 0, 1, 1]
 const VEIL_LOCATIONS = {
@@ -47,7 +45,7 @@ const VEIL_LOCATIONS = {
 export type IllustrationVariant = keyof typeof VEIL_LOCATIONS
 
 export interface FadedIllustrationProps {
-  /** `null` 이면 아무것도 안 그린다. */
+  /** 그릴 그림. `null` 이면 아무것도 안 그린다. */
   source: ImageAssetRef | null
   crop: ImageCrop
   /** 페이드 끝점. 기본은 카드, 모달 히어로는 `'hero'`. */
@@ -111,7 +109,7 @@ export interface IllustratedCardProps {
 /**
  * 일러스트가 깔릴 카드. `Card` 에 `media-scope` 변수를 얹어 안쪽 색 기준을 바꾼다.
  *
- * `MediaScope` 를 안 쓰는 이유는 그것이 벌거벗은 `View` 라, 여기서 쓰면 [[ADR-094]] 결정 3 이
+ * `MediaScope` 를 안 쓰는 이유는 그것이 벌거벗은 `View` 라, 여기서 쓰면 이
  * `Card` atom 으로 모아 둔 카드 토큰을 다시 적게 되기 때문이다. 변수는 어느 쪽이든
  * `buildMediaScopeVariables` 한 곳에서 온다.
  */

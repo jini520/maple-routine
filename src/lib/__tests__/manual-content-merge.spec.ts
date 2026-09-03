@@ -112,8 +112,8 @@ describe('mergeManualContentList', () => {
     ])
   })
 
-  // ADR-035 결정 20(2026-07-25): 표시 순서는 멤버십(tracked) 삽입 순서가 아니라 template 순서로
-  // 고정한다 — 추가/삭제해도 순서가 흔들리지 않게. (구 계약 "tracked 순서 유지"를 대체)
+  // 표시 순서는 멤버십(tracked) 삽입 순서가 아니라 template 순서로
+  // 고정한다. 추가/삭제해도 순서가 흔들리지 않게. (구 계약 "tracked 순서 유지"를 대체)
   it('반환 순서는 tracked 삽입 순서가 아니라 template 순서를 따른다', () => {
     const tracked = [contentItem('세번째'), contentItem('첫번째'), contentItem('두번째')]
     const template = [

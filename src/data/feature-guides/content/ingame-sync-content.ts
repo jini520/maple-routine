@@ -1,6 +1,6 @@
 import type { FeatureGuide } from '../../../types'
 
-// 이미지를 넣을 때: `packages/core/src/assets/guide/ingame-sync-content/` 에 두고 여기서 import 한다.
+// 이미지를 넣을 때: `src/assets/guide/ingame-sync-content/` 에 두고 여기서 import 한다.
 // import refreshImage from '../../../assets/guide/ingame-sync-content/01-refresh.webp'
 
 export const ingameSyncContentGuide: FeatureGuide = {

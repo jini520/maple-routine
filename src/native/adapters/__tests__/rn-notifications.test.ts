@@ -1,5 +1,5 @@
 // 순수 규칙(`notification-request.test.ts`)이 지키는 것은 "무엇을 넘기는가" 이고, 이 파일이 지키는
-// 것은 **어댑터가 포트 계약을 지키는가** 다. 특히 `cancel` 이 `schedule` 한 그 알림을 지목하는지 —
+// 것은 **어댑터가 포트 계약을 지키는가** 다. 특히 `cancel` 이 `schedule` 한 그 알림을 지목하는지.
 // 두 자리가 어긋나면 사용자가 끈 알림이 계속 뜨는데, 그건 코드를 읽어서는 안 보인다.
 //
 // 목이 흉내 내는 것은 알림 시스템이 아니라 **우리가 부르는 notifee 함수 목록**뿐이다. 열거형은
@@ -42,7 +42,7 @@ beforeEach(() => {
 describe('권한', () => {
   it.each([
     [AuthorizationStatus.AUTHORIZED, true],
-    // iOS 의 조용한 전달. Capacitor 도 granted 로 접었다.
+    // iOS 의 조용한 전달. granted 로 접는다.
     [AuthorizationStatus.PROVISIONAL, true],
     [AuthorizationStatus.DENIED, false],
     [AuthorizationStatus.NOT_DETERMINED, false],
@@ -79,7 +79,7 @@ describe('schedule', () => {
       { id: '7', title: '제목', body: '본문', android: { channelId: 'default' } },
       { type: TriggerType.TIMESTAMP, timestamp: scheduleAt.getTime() },
     )
-    // 채널이 없으면 Android 는 알림을 아예 안 띄운다 — 순서가 뒤집히면 첫 예약을 잃는다.
+    // 채널이 없으면 Android 는 알림을 아예 안 띄운다. 순서가 뒤집히면 첫 예약을 잃는다.
     expect(mocked.createChannel.mock.invocationCallOrder[0]).toBeLessThan(
       mocked.createTriggerNotification.mock.invocationCallOrder[0],
     )
@@ -101,7 +101,7 @@ describe('schedule', () => {
 })
 
 describe('cancel', () => {
-  // 이 포트에서 가장 조용하게 깨지는 자리다 — 어긋나도 예외가 없고, 사용자가 끈 알림만 계속 뜬다.
+  // 이 포트에서 가장 조용하게 깨지는 자리다. 어긋나도 예외가 없고, 사용자가 끈 알림만 계속 뜬다.
   it('예약할 때 쓴 ID 를 그대로 지목한다', async () => {
     await rnNotificationsPort.schedule({
       id: 1234,
@@ -116,7 +116,7 @@ describe('cancel', () => {
     expect(mocked.cancelNotification).toHaveBeenCalledWith(scheduled.id)
   })
 
-  // Capacitor 의 cancel 은 예약 취소와 떠 있는 알림 내리기를 함께 했다.
+  // 예약 취소만으로는 이미 뜬 알림이 남는다.
   it('떠 있는 알림까지 내리는 쪽을 쓴다', async () => {
     await rnNotificationsPort.cancel(1234)
     expect(mocked.cancelNotification).toHaveBeenCalledWith('1234')

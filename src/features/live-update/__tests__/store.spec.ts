@@ -1,6 +1,6 @@
 
-// isNewerVersion 은 실물을 그대로 쓴다 — 완료 안내가 자동 롤백을 거르는 근거가 바로 이 비교라
-// (ADR-126 결정 4), 가짜로 바꾸면 그 규칙을 검사하지 못한다.
+// isNewerVersion 은 실물을 그대로 쓴다. 완료 안내가 자동 롤백을 거르는 근거가 바로 이 비교라
+// 가짜로 바꾸면 그 규칙을 검사하지 못한다.
 jest.mock('../../../native/live-update', () => ({
   ...jest.requireActual<typeof import('../../../native/live-update')>('../../../native/live-update'),
   applyLiveUpdate: jest.fn(),
@@ -55,7 +55,7 @@ beforeEach(() => {
   openStoreForUpdateMock.mockReset()
   showSplashScreenMock.mockReset().mockResolvedValue(undefined)
   hideSplashScreenMock.mockReset().mockResolvedValue(undefined)
-  // 기본은 "적어 둔 적 없음" — 완료 안내가 뜨지 않는 쪽이라 다른 테스트를 오염시키지 않는다.
+  // 기본은 "적어 둔 적 없음"완료 안내가 뜨지 않는 쪽이라 다른 테스트를 오염시키지 않는다.
   getLastRunBundleVersionMock.mockReset().mockResolvedValue(null)
   setLastRunBundleVersionMock.mockReset().mockResolvedValue(undefined)
   useLiveUpdateStore.setState(INITIAL)
@@ -89,8 +89,8 @@ describe('useLiveUpdateStore', () => {
       expect(downloadLiveUpdateMock).not.toHaveBeenCalled()
     })
 
-    // ADR-126 결정 1: 받기 전 모달의 「자세히 보기」가 그리는 유일한 재료다.
-    it('highlights가 오면 담고, 없으면 null이다 — 없으면 모달이 버튼째 안 그린다', async () => {
+    // 받기 전 모달의 `자세히 보기`가 그리는 재료는 이것뿐이다.
+    it('highlights가 오면 담고, 없으면 null이다. 없으면 모달이 버튼째 안 그린다', async () => {
       const highlights = ['보스 카드에서 인원 변경', '아이템 가격 입력']
       checkForLiveUpdateMock.mockResolvedValue({ ...AVAILABLE, highlights })
       await s().check()
@@ -114,7 +114,7 @@ describe('useLiveUpdateStore', () => {
       expect(s().status).toBe('up-to-date')
     })
 
-    // ADR-065 결정 2: 매니페스트 조회 실패는 자동 확인일 수 있어 모달을 띄우지 않는다 —
+    // 매니페스트 조회 실패는 자동 확인일 수 있어 모달을 띄우지 않는다.
     // 다운로드 실패와 종류를 갈라 둔다.
     it('매니페스트 조회 실패는 check-error (모달 대상 아님)', async () => {
       checkForLiveUpdateMock.mockResolvedValue({ kind: 'error' })
@@ -182,7 +182,7 @@ describe('useLiveUpdateStore', () => {
       expect(s().status).toBe('idle')
     })
 
-    // ADR-117 결정 7: 커버가 닫기 뒤로 밀리며 최대 5초 동안 모달이 살아 있게 됐다. 그 구간에
+    // 커버가 닫기 뒤로 밀리며 최대 5초 동안 모달이 살아 있게 됐다. 그 구간에
     // 화면이 "업데이트 준비 완료"라고 말하지 않도록 어댑터를 부르기 **전에** 상태를 옮긴다.
     it('어댑터를 부르기 전에 applying 으로 전환한다', async () => {
       useLiveUpdateStore.setState({ hasDownloadedBundle: true })
@@ -195,11 +195,11 @@ describe('useLiveUpdateStore', () => {
 
       expect(applyLiveUpdateMock).toHaveBeenCalled()
       expect(statusAtCall).toBe('applying')
-      // 성공 경로에서는 set()이 JS 컨텍스트를 파괴하므로 그 뒤 상태를 바꾸지 않는다.
+      // 성공 경로에서는 set이 JS 컨텍스트를 파괴하므로 그 뒤 상태를 바꾸지 않는다.
       expect(s().status).toBe('applying')
     })
 
-    // ADR-117 결정 1: 커버는 어댑터(closeBossProfitDb → showSplashScreen → set)가 붙인다.
+    // 커버는 어댑터(closeBossProfitDb → showSplashScreen → set)가 붙인다.
     // 스토어가 같이 부르면 커버가 두 장 쌓이고 순서 보장이 두 파일로 흩어진다.
     it('스토어는 커버를 직접 붙이지 않는다', async () => {
       useLiveUpdateStore.setState({ hasDownloadedBundle: true })
@@ -227,7 +227,7 @@ describe('useLiveUpdateStore', () => {
       await first
     })
 
-    // ADR-117 결정 1 — 이 phase 의 핵심. 실패해도 화면이 돌아온다.
+    // 이 phase 의 핵심. 실패해도 화면이 돌아온다.
     it('적용이 실패하면 커버를 걷고 apply-error 로 되돌아온다', async () => {
       useLiveUpdateStore.setState({ hasDownloadedBundle: true })
       applyLiveUpdateMock.mockRejectedValue(new Error("Update failed, id doesn't exist"))
@@ -238,7 +238,7 @@ describe('useLiveUpdateStore', () => {
       expect(s().status).toBe('apply-error')
     })
 
-    // 다시 받지 않고 재시도할 수 있어야 한다 — download-error 와 다른 점이다.
+    // 다시 받지 않고 재시도할 수 있어야 한다. download-error 와 다른 점이다.
     it('apply-error 여도 받아둔 번들 id는 남는다', async () => {
       useLiveUpdateStore.setState({ hasDownloadedBundle: true })
       applyLiveUpdateMock.mockRejectedValue(new Error('set failed'))
@@ -328,9 +328,9 @@ describe('useLiveUpdateStore', () => {
     })
   })
 
-  // ADR-126 결정 4·5 — 적용 성공 경로에는 상태 전환 코드가 없으므로(ADR-117 결정 1) "방금
-  // 업데이트했다"는 재시작 뒤에 알아내야 한다. 판정 근거는 「마지막으로 실행된 번들 버전」 하나다.
-  describe("checkOnBoot — 적용 완료 안내('updated')", () => {
+  // 적용 성공 경로에는 상태 전환 코드가 없으므로 "방금
+  // 업데이트했다"는 재시작 뒤에 알아내야 한다. 판정 근거는 `마지막으로 실행된 번들 버전` 하나다.
+  describe("checkOnBoot: 적용 완료 안내('updated')", () => {
     beforeEach(() => {
       getCurrentBundleVersionMock.mockResolvedValue('1.0.4')
       checkForLiveUpdateMock.mockResolvedValue({ kind: 'up-to-date' })
@@ -357,14 +357,14 @@ describe('useLiveUpdateStore', () => {
       expect(s().status).toBe('up-to-date')
     })
 
-    // 되돌아간 것을 "완료"라고 부를 수 없다 — 판정이 "달라졌다"가 아니라 "올라갔다"인 이유다.
+    // 되돌아간 것을 "완료"라고 부를 수 없다. 판정이 "달라졌다"가 아니라 "올라갔다"인 이유다.
     it('자동 롤백으로 버전이 내려갔으면 안내하지 않는다', async () => {
       getLastRunBundleVersionMock.mockResolvedValue('1.0.5')
       await s().checkOnBoot()
       expect(s().status).toBe('up-to-date')
     })
 
-    // 결정 5: 회고와 행동 요구가 겹치면 행동 쪽이 이긴다.
+    // 회고와 행동 요구가 겹치면 행동 쪽이 이긴다.
     it('새 업데이트가 또 있으면 update-available 이 이긴다', async () => {
       getLastRunBundleVersionMock.mockResolvedValue('1.0.3')
       checkForLiveUpdateMock.mockResolvedValue(AVAILABLE)
@@ -381,7 +381,7 @@ describe('useLiveUpdateStore', () => {
       expect(s().status).toBe('updated')
     })
 
-    // 기록은 판정과 같은 자리에서 끝난다 — 확인 결과에 밀려 안내를 못 띄웠어도 다음 부팅에
+    // 기록은 판정과 같은 자리에서 끝난다. 확인 결과에 밀려 안내를 못 띄웠어도 다음 부팅에
     // 되풀이되지 않는다(큐를 만들면 "언젠가 뜨는 안내"라는 지속 상태가 생긴다).
     it('안내를 띄우지 못한 경우에도 기록은 갱신한다', async () => {
       getLastRunBundleVersionMock.mockResolvedValue('1.0.3')
@@ -390,7 +390,7 @@ describe('useLiveUpdateStore', () => {
       expect(setLastRunBundleVersionMock).toHaveBeenCalledWith('1.0.4')
     })
 
-    // 완료 안내는 곁가지다 — 저장소가 실패했다고 업데이트 확인 자체가 죽으면 본말전도다.
+    // 완료 안내는 곁가지다. 저장소가 실패했다고 업데이트 확인 자체가 죽으면 본말전도다.
     it('저장소 조회가 실패해도 확인은 그대로 진행된다', async () => {
       getLastRunBundleVersionMock.mockRejectedValue(new Error('preferences unavailable'))
       await s().checkOnBoot()

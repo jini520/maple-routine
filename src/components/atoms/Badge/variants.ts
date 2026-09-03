@@ -1,8 +1,7 @@
 /**
- * 배지의 **외형 표** 17종과 크기·두께 계단([[ADR-195]] 결정 2). 난이도 색은 게임 안의 값이다
- * ([[ADR-147]] 정정 40).
+ * 배지의 **외형 표** 17종과 크기·두께 계단. 난이도 색은 게임 안의 값이다.
  *
- * `Badge.tsx` 와 파일이 나뉘어 있다. 스타일 표와 컴포넌트 코드를 섞지 않는다([[ADR-198]] 결정 3).
+ * `Badge.tsx` 와 파일이 나뉘어 있다. 스타일 표와 컴포넌트 코드를 섞지 않는다.
  * 표가 한 곳이라 같은 자리에 서는 배지의 크기가 어긋날 수 없다.
  */
 import { type TextStyle, type ViewStyle } from 'react-native'
@@ -21,7 +20,7 @@ export interface BadgeVariantStyle {
   textStyle?: TextStyle
   /** 테두리를 클래스로 그리는 variant 가 여백에서 뺄 폭. 색이 테마 토큰이라 값으로 못 준다. */
   borderWidth?: number
-  /** `default` 의 글자 크기를 덮는다. `mini` 는 안 먹는다([[ADR-195]] 정정 4). */
+  /** `default` 의 글자 크기를 덮는다. `mini` 는 안 먹는다. */
   text?: string
   /** 안 적으면 `semibold` 다. */
   weight?: BadgeWeight
@@ -37,14 +36,14 @@ function dropShadow(color: string): TextStyle {
 }
 
 /**
- * 난이도 다섯은 그라디언트·테두리·그림자를 함께 갖고 글자가 한 단 작다([[ADR-195]] 정정 4).
+ * 난이도 다섯은 그라디언트·테두리·그림자를 함께 갖고 글자가 한 단 작다.
  *
  * 넷 다 위치 인자라 호출부만 보면 무엇이 무엇인지 안 보인다. 그래서 여기 적는다.
  *
  * @param gradient 위에서 아래로 흐르는 두 색. 상자가 `LinearGradient` 가 된다
  * @param borderColor 테두리 색. 그라디언트보다 밝게 둬 상자 경계를 세운다
  * @param textStyle 글자색과 그림자. `dropShadow` 를 펼쳐 넣는다
- * @param borderWidth 테두리 폭(기본 1). 익스트림만 1.5 다. 이 값만큼 여백에서 뺀다(정정 2)
+ * @param borderWidth 테두리 폭(기본 1). 익스트림만 1.5 다. 이 값만큼 여백에서 뺀다
  *
  * @example
  * 노멀: difficulty(['#5cc2dd', '#2b93b0'], '#1f7690', { color: '#ffffff' })
@@ -80,17 +79,17 @@ export const BADGE_VARIANT = {
 } as const satisfies Record<string, BadgeVariantStyle>
 
 /**
- * 높이를 안 못박는다. 여백이 높이를 만든다([[ADR-195]] 정정 3). 여백을 클래스가 아니라 값으로 쥐는
- * 것은 테두리 폭을 빼야 해서다(정정 2). 글자는 칩 계단을 쓴다([[ADR-196]] 결정 4).
+ * 높이를 안 못박는다. 여백이 높이를 만든다. 여백을 클래스가 아니라 값으로 쥐는 것은 테두리
+ * 폭을 빼야 해서다. 글자는 칩 계단을 쓴다.
  *
- * `mini` 는 고정칸에만 놓여서 글자 배수를 안 따른다([[ADR-152]] 결정 5).
+ * `mini` 는 고정칸에만 놓여서 글자 배수를 안 따른다.
  */
 export const BADGE_SIZE = {
   default: { padX: 8, padY: 3, text: 'text-chip', alwaysFixed: false },
   mini: { padX: 6, padY: 2, text: 'text-chip-xs', alwaysFixed: true },
 } as const
 
-/** 클래스로는 못 덮는다. NativeWind 가 두께 충돌을 문자열 순서로 안 푼다([[ADR-195]] 결정 3). */
+/** 클래스로는 못 덮는다. NativeWind 가 두께 충돌을 문자열 순서로 안 푼다. */
 export const BADGE_WEIGHT = {
   semibold: 'font-semibold',
   bold: 'font-bold',
@@ -101,7 +100,7 @@ export const BADGE_WEIGHT = {
 export type BadgeVariant = keyof typeof BADGE_VARIANT
 /** `default` 아니면 `mini`. 높이가 아니라 여백과 글자 크기가 갈린다. */
 export type BadgeSize = keyof typeof BADGE_SIZE
-/** variant 의 기본 두께를 덮을 때 쓴다. */
+/** variant 의 기본 두께를 덮는 값. */
 export type BadgeWeight = keyof typeof BADGE_WEIGHT
 /** `variant` 로 바로 쓸 수 있게 난이도 이름이 그대로 키다. */
 export type BadgeDifficulty = BossDifficulty & BadgeVariant
