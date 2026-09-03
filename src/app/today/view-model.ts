@@ -109,9 +109,8 @@ export interface RemainingBossView {
 /**
  * 캐릭터 한 줄.
  *
- * **개수 대신 이름을 든다**. 접힘의 수치는 이 배열들의 `length` 이고, 펼침의
- * 본문은 같은 배열을 이름으로 그린다. 두 층이 **같은 배열 하나**를 보므로 세는 것 = 보이는 것
- * 이 구조로 성립한다. 개수를 따로 들면 그 둘이 갈릴 자리가 생긴다.
+ * 개수 대신 이름을 든다. 접힘의 수치는 이 배열들의 `length` 이고 펼침의 본문은 같은 배열을
+ * 이름으로 그린다. 두 층이 같은 배열 하나를 보므로 세는 것 = 보이는 것 이 구조로 성립한다.
  */
 export interface ScheduleRowView {
   ocid: string
@@ -121,7 +120,7 @@ export interface ScheduleRowView {
   weeklyNames: readonly string[]
   weeklyBosses: readonly RemainingBossView[]
   monthlyBosses: readonly RemainingBossView[]
-  /**의 캐릭터 단위 실패 표식. 참이면 위젯이 수치 대신 동기화 실패를 그린다. */
+  /** 보스 수익 스토어의 캐릭터 단위 실패 표식. 참이면 위젯이 수치 대신 동기화 실패를 그린다. */
   hasSyncIssue: boolean
 }
 
@@ -137,11 +136,11 @@ export interface SharedContentItemView {
   /** 그리는 이름. 계열명이 위에 있으므로 그것을 뺀 나머지다(카탈로그의 `shortName`). */
   shortName: string
   /**
-   * `null` 이면 화면이 `CLEAR`(완료) 또는 **빈칸**(미완료)을 그린다.
+   * `null` 이면 화면이 `CLEAR`(완료) 또는 빈칸(미완료)을 그린다.
    *
-   * 값이 서는 것은 **미완료이면서 분모가 있는** 항목뿐이다. 완료한 항목의
-   * 몇 번 했나 는 언제나 `max` 라 숫자가 더 말하는 것이 없고, 분모가 없는 항목에 `0/1` 을 붙이려면
-   * **API 에 없는 값**을 앱이 지어내야 한다.
+   * 값이 서는 것은 미완료이면서 분모가 있는 항목뿐이다. 완료한 항목의 몇 번 했나 는 언제나
+   * `max` 라 숫자가 더 말하는 것이 없고, 분모가 없는 항목에 `0/1` 을 붙이려면 API 에 없는
+   * 값을 앱이 지어내야 한다.
    */
   count: { now: number; max: number } | null
   isComplete: boolean
@@ -155,9 +154,9 @@ export interface SharedContentGroupView {
 /**
  * 총액을 가른 둘. 위젯 3의 스택 바와 분해 금액이 읽는 값이다.
  *
- * **위젯이 스토어를 모르므로** 총액만 주면 갈라 그릴 방법이 없다. 그렇다고 여기서
- * 새로 세지도 않는다. 결정석은 `sumPayout`, 아이템은 `sumDropPayout` 이고 둘의 합이 곧
- * `groupTotalMeso` 다(이번 주 계산에는 주차별 소계가 언제나 비어 있다).
+ * 위젯이 스토어를 모르므로 총액만 주면 갈라 그릴 방법이 없다. 그렇다고 여기서 새로 세지도
+ * 않는다. 결정석은 `sumPayout`, 아이템은 `sumDropPayout` 이고 둘의 합이 곧 `groupTotalMeso`
+ * 다(이번 주 계산에는 주차별 소계가 언제나 비어 있다).
  */
 export interface ProfitSplit {
   /** 보스 행의 `payoutMeso` 합(드롭은 여기 안 든다). */
@@ -177,7 +176,7 @@ export interface WeeklyProfitView extends ProfitSplit {
   /** 결정석 + 아이템. 기록이 없으면 0 이다. */
   totalMeso: number
   /**
-   * 이번 주에 **기록이 하나라도 있는가**. `totalMeso` 가 0 인 두 경우(0메소를 벌었다 와 아직
+   * 이번 주에 기록이 하나라도 있는가. `totalMeso` 가 0 인 두 경우(0메소를 벌었다 와 아직
    * 아무것도 없다)를 위젯이 가를 근거가 이것뿐이다. 그 구분이 사라지면 큰 `0` 이 사실을 단정한다.
    */
   hasRecords: boolean
@@ -211,13 +210,13 @@ export interface UnpricedDropView {
 
 export interface PricedDropView extends UnpricedDropView {
   /**
-   * **실수령액**. 입력한 판매 총액을 분배 인원으로 나눈 값(`dropPayoutMeso`).
+   * 실수령액. 입력한 판매 총액을 분배 인원으로 나눈 값(`dropPayoutMeso`).
    *
-   * 총액이 아니라 이 값을 쓰는 이유는 today 가 답하는 질문이 내가 이번 주에 얼마를 벌었나 이기
-   * 때문이다. 같은 화면의 주간 보스 수익이 이미 `sumDropPayout`(= 이 함수의 합)으로 더하므로,
-   * 총액으로 순위를 매기면 **최고가 아이템이 총 수익보다 큰 화면**이 나온다.
+   * 총액이 아니라 이 값을 쓰는 것은 today 가 답하는 질문이 내가 이번 주에 얼마를 벌었나 이기
+   * 때문이다. 같은 화면의 주간 보스 수익이 이미 `sumDropPayout` 으로 더하므로, 총액으로
+   * 순위를 매기면 최고가 아이템이 총 수익보다 큰 화면이 나온다.
    *
-   * **순위 기준도 이 값이다**. 표시와 순위가 갈리면 1위가 2위보다 작은 숫자를 달고 선다.
+   * 순위 기준도 이 값이다. 표시와 순위가 갈리면 1위가 2위보다 작은 숫자를 달고 선다.
    */
   payoutMeso: number
   /** 분배 인원(`priceShare`). `1` 이면 단독이라 화면이 분배 표기를 생략한다. */
@@ -241,16 +240,16 @@ export interface DroughtView {
   /** 잎 색·기울기를 고르는 단계(0 = 이번 주 획득). */
   tier: number
   /**
-   * 그 단계의 문구 개수. **무작위 인덱스는 위젯이 마운트당 한 번** 고른다.
-   * `Math.random()` 이 여기 들어오면 이 파일이 순수 함수가 아니게 된다.
+   * 그 단계의 문구 개수. 무작위 인덱스는 위젯이 마운트당 한 번 고른다. `Math.random()` 이
+   * 여기 들어오면 이 파일이 순수 함수가 아니게 된다.
    */
   headlineCount: number
   periodKey: string
   cycle: BossCycle
   /**
-   * 그 기간의 사람이 읽는 이름(`이번 주` · `7월 3주차`). **위젯이 만들 수 없다**.
+   * 그 기간의 사람이 읽는 이름(`이번 주` · `7월 3주차`). 위젯이 만들 수 없다.
    * `formatBossProfitPeriodLabel` 이 지금이 언제인가 를 받아야 이번 주 를 말할 수 있는데,
-   * 타일마다 시계를 읽으면 같은 화면의 두 타일이 다른 시각을 말한다(위젯 6과 같은 규칙).
+   * 타일마다 시계를 읽으면 같은 화면의 두 타일이 다른 시각을 말한다.
    */
   periodLabel: string
   itemsLabel: string
@@ -262,11 +261,11 @@ export interface ResetCountdown {
   /** `now` 기준 남은 밀리초. */
   remainingMs: number
   /**
-   * 이 주기 **한 바퀴**의 길이(ms). 2x2 타일의 진행 바가 주기의 어디쯤인가 를 그리는 분모다.
+   * 이 주기 한 바퀴의 길이(ms). 2x2 타일의 진행 바가 주기의 어디쯤인가 를 그리는 분모다.
    *
-   * 일간·주간은 상수지만 **월간은 달마다 다르다**(28~31일). 위젯이 그것을 스스로 구하려면 KST 달
-   * 경계를 다시 계산해야 하고, 그 순간 리셋 시각의 진실이 둘이 된다. 그래서 경계를 이미 아는 이
-   * 파일이 함께 낸다(`buildResets` 가 두 경계를 다 갖고 있어 뺄셈 한 번이다).
+   * 일간·주간은 상수지만 월간은 달마다 다르다(28~31일). 위젯이 그것을 스스로 구하려면 KST 달
+   * 경계를 다시 계산해야 하고, 그 순간 리셋 시각의 진실이 둘이 된다. 그래서 경계를 이미 아는
+   * 이 파일이 함께 낸다.
    */
   periodMs: number
 }
@@ -307,7 +306,7 @@ export interface TodayViewModelInput {
   manualBossByOcid: Record<string, ManualTrackedItem[]> | null
   /** 보스 수익 스토어의 캐릭터 단위 실패 표식. 위젯 2·3 이 물려받는다. */
   characterIssues: Readonly<Record<string, 'unavailable' | 'failed'>>
-  /** 보스 수익 스토어. 이번 주가 아닌 기간의 행은 이 파일이 걸러낸다(파일 머리 이번 주). */
+  /** 보스 수익 스토어. 이번 주가 아닌 기간의 행은 이 파일이 걸러낸다. */
   profitRows: readonly BossProfitRow[]
   profitDropsByRowKey: Readonly<Record<string, RecordedDrop[]>>
   /** 드롭 히스토리 스토어(전 기간). */
@@ -328,12 +327,11 @@ export interface TodayViewModel {
   /** 이번 주 가격 미입력 드롭 건수. 위젯 7의 값이라 위젯 4 안에 넣지 않는다. */
   unpricedCount: number
   /**
-   * 그중 앞 몇 건. 2x2 타일이 **이름**을 보여 준다. 값을 적어야지보다 그 연마석 얼마에
-   * 팔았지가 손을 움직이는 문장이라, 건수만으로는 그 문장을 만들 수 없다.
+   * 그중 앞 몇 건. 2x2 타일이 이름을 보여 준다. 값을 적어야지 보다 그 연마석 얼마에 팔았지 가
+   * 손을 움직이는 문장이라, 건수만으로는 그 문장을 만들 수 없다.
    *
-   * 순서는 스토어가 준 순서 그대로다(`period_key DESC, ocid, boss, difficulty, drop_index`).
-   * 여기서 다시 정렬하면 무엇 기준으로 앞 셋인가 라는 주장이 생기는데, 미입력 건에는 비교할
-   * 값이 없다.
+   * 순서는 스토어가 준 순서 그대로다. 여기서 다시 정렬하면 무엇 기준으로 앞 셋인가 라는
+   * 주장이 생기는데, 미입력 건에는 비교할 값이 없다.
    */
   unpricedPreview: UnpricedDropView[]
   crystalLimits: CrystalLimitView[]
@@ -345,8 +343,8 @@ export function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel 
   const weeklyPeriodKey = getCurrentBossProfitPeriod('weekly', input.now).periodKey
   const weeklyDrops = collectWeeklyDrops(input.dropGroups, weeklyPeriodKey)
   const schedule = buildScheduleRows(input)
-  // `값을 기다리는 것`의 정의는 `priceState === undefined` 하나다. `'excluded'`(기록 안 함)는
-  // 사용자가 **값을 매기지 않기로** 정한 것이라 기다리는 건이 아니다(파일 머리 `이번 주` 절).
+  // 값을 기다리는 것 의 정의는 `priceState === undefined` 하나다. `'excluded'`(기록 안 함)는
+  // 사용자가 값을 매기지 않기로 정한 것이라 기다리는 건이 아니다.
   const unpriced = weeklyDrops.filter((record) => record.priceState === undefined)
 
   const sharedContents = buildSharedContents(input)
@@ -408,20 +406,18 @@ function contentsInputOf(
 }
 
 /**
- * 공유 컨텐츠를 **계열별로** 조립한다 (~30).
+ * 공유 컨텐츠를 계열별로 조립한다.
  *
- * ## 값은 가장 앞선 캐릭터 것이다
+ * 값은 가장 앞선 캐릭터 것이다. 진행이 공유되므로 캐릭터마다 같은 값이어야 하는데, 마지막
+ * 동기화 시각이 달라 뒤처진 캐릭터가 낮은 값을 들고 있을 수 있다. 주기 안에서 진행은 줄지
+ * 않으므로 최댓값이 곧 최신값이고, 완료는 하나라도 완료면 완료다.
  *
- * 진행이 공유되므로 캐릭터마다 같은 값이어야 하는데, 마지막 동기화 시각이 달라 **뒤처진 캐릭터가
- * 낮은 값을 들고 있을 수 있다**. 주기 안에서 진행은 줄지 않으므로 최댓값이 곧 최신값이고, 완료는
- * 하나라도 완료면 완료다. 낮은 쪽을 고르면 이미 한 일이 화면에서 되돌아간다.
+ * 값 과 스케줄러에 있는가 는 다른 목록에서 온다.
  *
- * ## 값 과 스케줄러에 있는가 는 다른 목록에서 온다
- *
- * - **값**: 캐릭터의 원본 목록(`dailyContents`/`weeklyContents`). API 는 등록 여부와 무관하게
+ * - 값: 캐릭터의 원본 목록(`dailyContents`/`weeklyContents`). API 는 등록 여부와 무관하게
  *   진행을 준다. 그래서 아무도 등록 안 한 에픽 던전도 값이 있으면 `CLEAR` 로 그려진다.
- * - **있는가**: `displayed*Contents`(자동 모드 = `registration_flag`, 수동 모드 = 추적 목록 멤버십).
- *  `onlyWhenScheduled` 인 항목만 이 판정을 탄다(유니온 둘).
+ * - 있는가: `displayed*Contents`(자동 모드 = `registration_flag`, 수동 모드 = 추적 목록
+ *   멤버십). `onlyWhenScheduled` 인 항목만 이 판정을 탄다.
  *
  * 둘을 한 목록으로 합치면 등록 안 했지만 진행은 있다 를 표현할 방법이 사라진다.
  */
@@ -467,10 +463,10 @@ function buildSharedContents(input: TodayViewModelInput): SharedContentGroupView
           return {
             name: entry.name,
             shortName: entry.shortName,
-            // **완료하면 카운트를 안 준다**. 완료한 항목의 **몇 번 했나** 는
-            // 언제나 `max` 라 `CLEAR` 가 이미 그 말을 하고, 안 주면 카운트로 완료를 재지 않는
-            // 항목(익스트림 몬스터파커는 `quest_state` 로 판정한다)이 **끝냈는데 `0/2` 로 보이는**
-            // 위험도 함께 사라진다. `그 항목만 예외`로 적으면 그것이 이름으로 유추하는 규칙이 된다.
+            // 완료하면 카운트를 안 준다. 완료한 항목의 몇 번 했나 는 언제나 `max` 라 `CLEAR` 가
+            // 이미 그 말을 하고, 안 주면 카운트로 완료를 재지 않는 항목이 끝냈는데 `0/2` 로
+            // 보이는 위험도 함께 사라진다. 그 항목만 예외로 적으면 그것이 이름으로 유추하는
+            // 규칙이 된다.
             count: !isComplete && max > 0 ? { now: Math.min(now, max), max } : null,
             isComplete,
           }
@@ -485,8 +481,8 @@ function buildScheduleRows(input: TodayViewModelInput): ScheduleRowView[] {
   const contentByOcid = new Map(input.contentCharacters.map((view) => [view.ocid, view]))
   const bossByOcid = new Map(input.bossCharacters.map((view) => [view.ocid, view]))
 
-  // 두 스토어의 합집합이다. 한쪽에만 있는 캐릭터를 버리면 카드가 통째로 사라진다(`tracked-order`
-  // 가 **순서를 정하는 함수가 목록의 크기를 바꾸지 않는다** 로 적어 둔 것과 같은 판단).
+  // 두 스토어의 합집합이다. 한쪽에만 있는 캐릭터를 버리면 카드가 통째로 사라진다. 순서를 정하는
+  // 함수가 목록의 크기를 바꾸지 않는다.
   const ocids: string[] = []
   const seen = new Set<string>()
   for (const view of [...input.contentCharacters, ...input.bossCharacters]) {
@@ -499,22 +495,20 @@ function buildScheduleRows(input: TodayViewModelInput): ScheduleRowView[] {
     const content = contentByOcid.get(ocid)
     const boss = bossByOcid.get(ocid)
 
-    // **남은 것** = 셀 수 있는 항목 − 완료한 항목. `unmeasurable`(무릉도장)은 분모에서 이미 빠져
+    // 남은 것 = 셀 수 있는 항목 − 완료한 항목. `unmeasurable`(무릉도장)은 분모에서 이미 빠져
     // 있으므로 여기서 따로 거르지 않는다.
     //
-    // **먼저 표시 대상 으로 거른다.** `content.dailyContents` 는 캐릭터가 등록했든 안 했든 게임에
-    // 있는 항목 전부라, 그냥 세면 모든 캐릭터가 카탈로그 길이(일간 18)로 똑같아진다. 스케줄러 화면과
-    // **같은 함수**를 써야 **세는 것 = 보이는 것** 이 성립한다(보스 쪽 `displayedBosses` 와 같은 짝).
+    // 먼저 표시 대상으로 거른다. `content.dailyContents` 는 캐릭터가 등록했든 안 했든 게임에
+    // 있는 항목 전부라, 그냥 세면 모든 캐릭터가 카탈로그 길이(일간 18)로 똑같아진다. 스케줄러
+    // 화면과 같은 함수를 써야 세는 것 = 보이는 것 이 성립한다.
     //
-    // **공유 항목은 여기 안 든다**. 진행이 공유되므로 캐릭터마다 세면 하루
-    // 한 번 할 일이 캐릭터 수만큼 부푼다. 거르는 자리가 **여기**인 것이 중요하다:
-    // `displayed-contents.ts` 는 컨텐츠 화면과 공유하므로 거기서 빼면 그 화면에서도 사라지는데,
-    // 그 화면은 캐릭터별로 그리는 것이 맞다(진행이 공유될 뿐 **내가 할 수 있는 일** 목록에는 있다).
+    // 공유 항목은 여기 안 든다. 진행이 공유되므로 캐릭터마다 세면 하루 한 번 할 일이 캐릭터
+    // 수만큼 부푼다. 거르는 자리가 여기인 것이 중요하다. `displayed-contents.ts` 는 컨텐츠
+    // 화면과 공유하므로 거기서 빼면 그 화면에서도 사라지는데, 그 화면은 캐릭터별로 그리는
+    // 것이 맞다.
     const contentsInput = contentsInputOf(input, content)
-    // **요구 레벨에 못 미치는 항목은 남은 것 이 아니다**. 게임이 등록을
-    // 허용해도 이 캐릭터로는 못 하므로, 세면 그 숫자가 영원히 안 줄어든다. 스케줄러 카드·진행률·
-    // 링과 **같은 판정 함수**를 본다. 그것이 이 요구하는 **한 글자도 다르지
-    // 않다** 의 조건이다.
+    // 요구 레벨에 못 미치는 항목은 남은 것이 아니다. 게임이 등록을 허용해도 이 캐릭터로는 못
+    // 하므로 세면 그 숫자가 영원히 안 줄어든다. 스케줄러 카드·진행률·링과 같은 판정 함수를 본다.
     const characterLevel = content?.level ?? boss?.level ?? null
     const dailyNames = displayedDailyContents(contentsInput, input.trackingMode)
       .filter((item) => getShareScope(item.name) === 'character')
@@ -541,10 +535,9 @@ function buildScheduleRows(input: TodayViewModelInput): ScheduleRowView[] {
     }
   })
 
-  // **여기서 세우는 것은 관리 순서 하나다**. `남은 개수 많은 순`은 **어느
-  // 주기의** 개수인지가 정해져야 셀 수 있는데 그 주기는 위젯의 탭이라, 그 정렬은 탭을 아는 쪽이
-  // 한다. 뷰모델이 총합으로 한 번 세워 두면 위젯이 그것을 **다시** 세우게 되고 순서의 계약이 두
-  // 벌이 된다(동수의 기준인 관리 순서도 그때 이미 뭉개져 있다).
+  // 여기서 세우는 것은 관리 순서 하나다. 남은 개수 많은 순 은 어느 주기의 개수인지가 정해져야
+  // 셀 수 있는데 그 주기는 위젯의 탭이라, 그 정렬은 탭을 아는 쪽이 한다. 뷰모델이 총합으로 한
+  // 번 세워 두면 위젯이 그것을 다시 세우게 되고 순서의 계약이 두 벌이 된다.
   return orderByTracked(rows, input.orderedOcids)
 }
 
@@ -568,9 +561,8 @@ function remainingBosses(
         !isBossBlocked(characterLevel, matched.matchedBossName ?? matched.apiName, matched.difficulty),
     )
     .filter((matched) => !matched.isComplete)
-    // **주간 한도를 채우면 남은 것이 아니다**. 이번 주엔 더 잡을 수 없다.
-    // 판정은 여기 없다: `displayedBosses` 가 실어 보낸 값을 거를 뿐이라 스케줄러가 `마감` 배지를
-    // 다는 보스와 **정확히 같은 집합**이다.
+    // 주간 한도를 채우면 남은 것이 아니다. 판정은 여기 없다. `displayedBosses` 가 실어 보낸
+    // 값을 거를 뿐이라 스케줄러가 마감 배지를 다는 보스와 정확히 같은 집합이다.
     .filter((matched) => !matched.isWeeklyLimitClosed)
     .map((matched) => ({
       name: matched.matchedBossName ?? matched.apiName,
@@ -664,9 +656,9 @@ function buildTopItem(
   records: DropHistoryRecord[],
   profilesByOcid: Readonly<Record<string, CharacterBasicProfile>>,
 ): TopItemView | null {
-  // 가격을 아직 안 적은 기록은 순위에 넣지 않는다. 값을 모르는 것을 가장 싼
-  // 것으로 단정하는 일이다. 합산(`dropPayoutMeso`)이 미입력을 0으로 접는 것과 **다른 문제**다:
-  // 합산은 **더할 것이 없다** 이지만 순위는 **비교했다** 를 주장한다.
+  // 가격을 아직 안 적은 기록은 순위에 넣지 않는다. 값을 모르는 것을 가장 싼 것으로 단정하는
+  // 일이다. 합산(`dropPayoutMeso`)이 미입력을 0 으로 접는 것과는 다른 문제다. 합산은 더할 것이
+  // 없다 이지만 순위는 비교했다 를 주장한다.
   const priced = records
     .filter((record) => record.priceState === 'entered' && typeof record.priceMeso === 'number')
     .map(

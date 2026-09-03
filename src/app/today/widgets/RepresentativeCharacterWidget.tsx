@@ -63,7 +63,7 @@ function variantOf(w: number, h: WidgetHeight): Variant {
   return h === 2 ? 'large' : 'row'
 }
 
-/** `"80.300%"`. API 가 준 소수 3자리를 그대로 둔다(파일 머리). */
+/** `"80.300%"`. API 가 준 소수 3자리를 그대로 둔다. */
 function formatExpRate(rate: number): string {
   return `${rate.toFixed(3)}%`
 }
@@ -111,8 +111,8 @@ function NameLine(props: {
       >
         {props.view.name}
       </Text>
-      {/* 길드는 **모르는 것**(undefined)과 **미가입**(null)이 둘 다 그릴 것이 없다.
-          이 카드가 가르는 자리는 아니라 둘 다 비운다. */}
+      {/* 길드는 모르는 것(undefined)과 미가입(null)이 둘 다 그릴 것이 없다. 이 카드가 가르는
+          자리는 아니라 둘 다 비운다. */}
       {props.view.guildName !== undefined && props.view.guildName !== null && (
         <Text
           fixed
@@ -155,10 +155,10 @@ function CaptionLine(props: {
 }
 
 /**
- * EXP. 4x1 은 오른쪽 **100px 열**, 나머지는 아래 전폭.
+ * EXP. 4x1 은 오른쪽 100px 열, 나머지는 아래 전폭.
  *
- * 100 은 70 에서 늘린 값이다(사용자 지시). 바가 짧아 진행률이 눈에 안
- * 들어왔다. 늘어난 30px 은 이름 줄에서 가져오고, 그래서 닉네임이 먼저 줄어든다(`NameLine`).
+ * 100 은 70 에서 늘린 값이다. 바가 짧으면 진행률이 눈에 안 들어온다. 늘어난 30px 은 이름
+ * 줄에서 가져오고, 그래서 닉네임이 먼저 줄어든다(`NameLine`).
  *
  * `null` 을 돌려주는 갈래가 곧 EXP 줄 자체가 없다 는 계약이다.
  */
@@ -209,8 +209,8 @@ export function RepresentativeCharacterWidget({ w, h, data }: WidgetProps): Reac
   const variant = variantOf(w, h)
   const view = data.representative
 
-  // 이 자리는 **대표를 안 골랐다** 가 아니라 **추적 캐릭터가 없다** 다. CTA 를 두지 않는 이유는
-  // 위젯이 사라지지도 커지지도 않기 때문이고, 그 안내는 스케줄러·설정이 이미 한다.
+  // 이 자리는 대표를 안 골랐다 가 아니라 추적 캐릭터가 없다 다. CTA 를 두지 않는 것은 위젯이
+  // 사라지지도 커지지도 않기 때문이고, 그 안내는 스케줄러·설정이 이미 한다.
   if (view === null) {
     return (
       <View testID="widget-representative-character" className="flex-1 justify-center p-3">

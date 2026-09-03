@@ -77,7 +77,7 @@ function Amount(props: { meso: number; sizeClass: string; unit: boolean }): Reac
   )
 }
 
-/** 아이템 이름. **한 줄**이다. 두 줄로 접으면 행 높이가 데이터에 따라 흔들린다(정정 5). */
+/** 아이템 이름. 한 줄이다. 두 줄로 접으면 행 높이가 데이터에 따라 흔들린다. */
 function ItemName(props: { drop: PricedDropView; sizeClass: string }): React.JSX.Element {
   return (
     <Text
@@ -98,16 +98,15 @@ function ItemName(props: { drop: PricedDropView; sizeClass: string }): React.JSX
  * 캐릭터 이름은 프로필 캐시에 있을 때만 온다. 없으면 보스만 선다(ocid 를 대신 넣지 않는다).
  */
 /**
- * **2인 분배**. **4x2 에만 선다.**
+ * 2인 분배. 4x2 에만 선다.
  *
- * 금액이 분배 후 실수령액이라 사용자가 입력한 총액보다 작다. 그 차이를
- * 설명하지 않으면 **숫자가 틀렸다** 로 읽힌다. 실제로 이 위젯이 두 번 그렇게 신고됐다.
+ * 금액이 분배 후 실수령액이라 사용자가 입력한 총액보다 작다. 그 차이를 설명하지 않으면
+ * 숫자가 틀렸다 로 읽힌다.
  *
- * 그런데 **2x2 아래로는 이 한 줄을 넣을 폭이 없다**(158px 안에 아이콘 40 + 금액 78 이 이미 들어가
- * 있다). 억지로 넣으면 말줄임에 먹혀 **2인 분...** 이 되어 설명이 아니라 잡음이 된다. 그래서 자리가
- * 실제로 있는 크기에만 두고, 나머지는 금액만 말한다.
+ * 2x2 아래로는 이 한 줄을 넣을 폭이 없다(158px 안에 아이콘 40 + 금액 78 이 이미 들어가 있다).
+ * 억지로 넣으면 말줄임에 먹혀 `2인 분…` 이 되어 설명이 아니라 잡음이 된다.
  *
- * 단독(1인)이면 그리지 않는다. 나눈 적이 없는데 **1인 분배** 라고 적으면 없는 사건을 말하는 것이다.
+ * 단독(1인)이면 그리지 않는다. 나눈 적이 없는데 1인 분배 라고 적으면 없는 사건을 말하는 것이다.
  */
 function ShareNote(props: { drop: PricedDropView }): React.JSX.Element | null {
   if (props.drop.shareCount <= 1) return null
@@ -158,13 +157,14 @@ function RestList(props: { rest: PricedDropView[] }): React.JSX.Element | null {
 }
 
 /**
- * 빈 상태. **채워진 상태의 골격을 그대로 쓴다.**
+ * 빈 상태. 채워진 상태의 골격을 그대로 쓴다.
  *
  * 글자만 남기면 자리가 무너져 타일이 비었다 가 아니라 타일이 고장났다 로 보인다. 아이콘이
- * 서던 자리에 **같은 크기의 빈 슬롯**을 세우면 값이 들어왔을 때 자리가 안 움직이고, 지금이
- * 들어올 곳이 있는데 아직 없다 로 읽힌다.
+ * 서던 자리에 같은 크기의 빈 슬롯을 세우면 값이 들어왔을 때 자리가 안 움직이고, 지금이 들어올
+ * 곳이 있는데 아직 없다 로 읽힌다.
  *
- * 슬롯은 점선이다. 실선 상자는 내용이 있는 무엇 으로 보이고, 점선은 그 자리가 비어 있다는 관례다.
+ * 슬롯은 점선이다. 실선 상자는 내용이 있는 무엇으로 보이고, 점선은 그 자리가 비어 있다는
+ * 관례다.
  */
 function EmptySlot(props: { sizePx: number }): React.JSX.Element {
   return (
@@ -181,8 +181,8 @@ function EmptySlot(props: { sizePx: number }): React.JSX.Element {
 }
 
 function Empty(props: { variant: Variant }): React.JSX.Element {
-  // 1x1 도 **문구를 남긴다.** 슬롯만 세우면 **무엇이 없는지** 를 말하지 못해 타일이 그냥 고장난
-  // 것처럼 보인다. 이 크기의 채워진 상태에는 라벨이 없어서 더 그렇다.
+  // 1x1 도 문구를 남긴다. 슬롯만 세우면 무엇이 없는지를 말하지 못해 타일이 그냥 고장난 것처럼
+  // 보인다. 이 크기의 채워진 상태에는 라벨이 없어서 더 그렇다.
   if (props.variant === 'tiny') {
     return (
       <View testID="widget-top-valuable-item" className="flex-1 items-center justify-center gap-1.5 p-2">

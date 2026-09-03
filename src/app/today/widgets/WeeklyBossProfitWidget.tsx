@@ -32,13 +32,12 @@ const NO_RECORD_NOTE = '아직 이번 주 기록이 없습니다'
 
 const PERIOD_LABEL = '이번 주'
 
-/** 스택 바의 두 조각. 조립하지 않는다. `ProgressBar` 파일 머리 ①과 같은 이유(스캔에 안 잡힌다). */
+/** 스택 바의 두 조각. 조립하지 않는다. `ProgressBar` 와 같은 이유로 스캔에 안 잡힌다. */
 /**
- * 조각에는 **높이를 박지 않는다**. 트랙의 높이를 그대로 채운다(`h-full`).
+ * 조각에는 높이를 박지 않는다. 트랙의 높이를 그대로 채운다(`h-full`).
  *
- * 한때 여기에 `h-1.5` 가 박혀 있었고, 4x3 의 트랙만 키우자 **아래쪽이 빈 채로**
- * 남았다(만든 회귀). 트랙 높이가 한 곳(`StackBar`)에서 갈리는데 조각이
- * 자기 높이를 따로 알면 둘은 반드시 어긋난다.
+ * 조각에 `h-1.5` 를 박으면 트랙만 키웠을 때 아래쪽이 빈 채로 남는다. 트랙 높이가 한 곳
+ * (`StackBar`)에서 갈리는데 조각이 자기 높이를 따로 알면 둘은 반드시 어긋난다.
  */
 const SEGMENT_CLASS = {
   crystal: 'h-full bg-primary',
@@ -53,28 +52,27 @@ const LEGEND_DOT_CLASS = {
 const SEGMENT_LABEL = { crystal: '결정석', item: '아이템' } as const
 
 /**
- * 얼굴 지름. **`남은 스케줄`과 같은 32**.
+ * 얼굴 지름. 남은 스케줄과 같은 32.
  *
- * 26 이던 이유는 고정 3행 안에서 얼굴이 커지면 줄 간격을 먹는다 였는데, 타일 높이가 내용을 따르게
- * 된 뒤로 그 사정이 사라졌다. 같은 캐릭터가 두 타일에서 다른 크기로 서면 그것이 같은 목록의 같은
- * 사람이라는 것을 눈이 한 번 더 확인해야 한다.
+ * 같은 캐릭터가 두 타일에서 다른 크기로 서면 그것이 같은 목록의 같은 사람이라는 것을 눈이
+ * 한 번 더 확인해야 한다.
  */
 const FACE_PX = 32
 
 /**
- * 순위 표기. **`1st · 2nd · 3rd`**(사용자 지정).
+ * 순위 표기. `1st · 2nd · 3rd`.
  *
- * 상한이 셋이라(`TOP_CHARACTER_COUNT`) 표는 셋이면 충분하지만, 상한이 늘 때 **조용히 틀린 글자**가
- * 서는 것보다는 `4th` 로 물러나는 편이 낫다.
+ * 상한이 셋이라(`TOP_CHARACTER_COUNT`) 표는 셋이면 충분하지만, 상한이 늘 때 조용히 틀린
+ * 글자가 서는 것보다는 `4th` 로 물러나는 편이 낫다.
  */
 const RANK_SUFFIX = ['st', 'nd', 'rd'] as const
 
 /**
- * 순위 칸의 **바닥**(천장이 아니다. 와 같은 이유).
+ * 순위 칸의 바닥(천장이 아니다).
  *
- * 1st는 폭이 고정된 글자가 아니다(숫자는 `tabular-nums` 라 고정이지만 `st`·`nd`·`rd` 는 아니다).
- * 천장으로 두면 글자가 **줄바꿈되거나 잘리고**, 바닥으로 두면 세 순위가 같은 x 에서 시작하면서도
- * 넘칠 때 칸이 늘어난다. `numberOfLines={1}` 이 그 짝이다. 폭이 모자라도 두 줄로 안 접힌다.
+ * `1st` 는 폭이 고정된 글자가 아니다(숫자는 `tabular-nums` 라 고정이지만 `st`·`nd`·`rd` 는
+ * 아니다). 천장으로 두면 글자가 줄바꿈되거나 잘리고, 바닥으로 두면 세 순위가 같은 x 에서
+ * 시작하면서도 넘칠 때 칸이 늘어난다. `numberOfLines={1}` 이 그 짝이다.
  */
 const RANK_MIN_WIDTH_PX = 22
 
@@ -234,7 +232,7 @@ function Face(props: { character: WeeklyProfitCharacterView }): React.JSX.Elemen
 function CharacterRow(props: {
   character: WeeklyProfitCharacterView
   withSplit: boolean
-  /** 4x3 만 순위와 얼굴을 단다. 좁은 열에서는 이름과 금액이 먼저다(시안). */
+  /** 4x3 만 순위와 얼굴을 단다. 좁은 열에서는 이름과 금액이 먼저다. */
   rank?: number
 }): React.JSX.Element {
   return (
@@ -302,10 +300,10 @@ function PeriodLabel(): React.JSX.Element {
 }
 
 /**
- * 4x3 전용 머리. 라벨은 왼쪽, **기간 범위는 오른쪽 끝**이다(시안).
+ * 4x3 전용 머리. 라벨은 왼쪽, 기간 범위는 오른쪽 끝이다.
  *
- * 범위를 이 크기에만 두는 이유는 폭이다. 4x2 아래에서는 라벨과 범위가 한 줄에 서면 둘 다 잘리고,
- * 잘린 날짜는 언제인지 모르겠는 숫자 라 없는 것만 못하다.
+ * 범위를 이 크기에만 두는 이유는 폭이다. 4x2 아래에서는 라벨과 범위가 한 줄에 서면 둘 다
+ * 잘리고, 잘린 날짜는 언제인지 모르겠는 숫자라 없는 것만 못하다.
  */
 function PeriodHeader(props: { range: string }): React.JSX.Element {
   return (
@@ -361,8 +359,8 @@ export function WeeklyBossProfitWidget({ w, h, data }: WidgetProps): React.JSX.E
     )
   }
 
-  // **`flex-1` 이 없다**. 이 크기는 `h: 'auto'` 라 상자가 내용만큼만 서고, 늘릴 높이가
-  // 없는데 `flex-1` 을 걸면 그것이 **남은 자리를 채운다** 는 거짓 신호로 남는다.
+  // `flex-1` 이 없다. 이 크기는 `h: 'auto'` 라 상자가 내용만큼만 서고, 늘릴 높이가 없는데
+  // `flex-1` 을 걸면 그것이 남은 자리를 채운다 는 거짓 신호로 남는다.
   return (
     <View testID="widget-weekly-boss-profit" className="gap-2 p-3.5">
       <View className="gap-1">

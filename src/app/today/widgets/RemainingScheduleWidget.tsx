@@ -26,11 +26,11 @@ import type { WidgetProps } from './types'
 const PORTRAIT_PX = 32
 
 /**
- * 숫자 칸의 **바닥**(천장이 아니다).
+ * 숫자 칸의 바닥(천장이 아니다).
  *
- * 14 는 한 자리 수치가 라벨에서 떨어져 보이지 않게 잡은 값이고, 두 자리가
- * 오면 칸이 내용을 따라 늘어난다. **`width` 로 두면 안 된다**. 고정 폭이던 시절 이
- * 글자만 +1px 올리자 두 자리 수치의 마지막 글자가 오른쪽에서 잘렸다(시뮬레이터 3x 실측).
+ * 14 는 한 자리 수치가 라벨에서 떨어져 보이지 않게 잡은 값이고, 두 자리가 오면 칸이 내용을
+ * 따라 늘어난다. `width` 로 두면 안 된다. 고정 폭이면 두 자리 수치의 마지막 글자가 오른쪽에서
+ * 잘린다.
  */
 const VALUE_MIN_WIDTH_PX = 14
 
@@ -39,10 +39,9 @@ const CYCLE_LABELS = ['일간', '주간', '월간'] as const
 type Cycle = (typeof CYCLE_LABELS)[number]
 
 /**
- * 한 주기에 남은 것. **뷰모델의 배열을 고를 뿐 새 판정을 하지 않는다**.
+ * 한 주기에 남은 것. 뷰모델의 배열을 고를 뿐 새 판정을 하지 않는다.
  *
- * 검마라는 이름은 화면에서 사라졌지만 그 전제는 그대로다. 월간 보스가 하나뿐이라 월간 탭이
- * 성립한다. 둘이 되면 그때 다시 정한다(태도).
+ * 월간 보스가 하나뿐이라 월간 탭이 성립한다. 둘이 되면 그때 다시 정한다.
  */
 interface CycleItems {
   quests: readonly string[]
@@ -60,13 +59,13 @@ function itemCount(items: CycleItems): number {
 }
 
 /**
- * 그 탭의 순서. **실패는 맨 아래 · 남은 개수 많은 순 · 동수면 관리 순서**.
+ * 그 탭의 순서. 실패는 맨 아래 · 남은 개수 많은 순 · 동수면 관리 순서.
  *
- * 받은 배열이 이미 관리 순서라(뷰모델) 그 **인덱스가 곧 동수의 기준**이다. 인덱스를 얹어 정렬하는
- * 것은 정렬의 안정성에 기대지 않기 위해서다(뷰모델의 `orderByTracked` 와 같은 태도).
+ * 받은 배열이 이미 관리 순서라 그 인덱스가 곧 동수의 기준이다. 인덱스를 얹어 정렬하는 것은
+ * 정렬의 안정성에 기대지 않기 위해서다.
  *
- * 실패한 캐릭터는 남은 개수를 **모르는** 것이라 개수 비교에 참여시키지 않는다. 위로 올리면
- * 제일 밀린 캐릭터 자리를 모르는 값이 거짓으로 차지한다.
+ * 실패한 캐릭터는 남은 개수를 모르는 것이라 개수 비교에 참여시키지 않는다. 위로 올리면 제일
+ * 밀린 캐릭터 자리를 모르는 값이 거짓으로 차지한다.
  */
 function orderForCycle(rows: readonly ScheduleRowView[], cycle: Cycle): ScheduleRowView[] {
   return rows
@@ -104,9 +103,9 @@ function Amount(props: { label: string; count: number }): React.JSX.Element {
 }
 
 /**
- * **갈래 라벨은 어느 탭에서나 붙는다**(사용자 지정). 일간은 퀘스트 N개, 월간은 보스 N개.
+ * 갈래 라벨은 어느 탭에서나 붙는다. 일간은 퀘스트 N개, 월간은 보스 N개.
  *
- * 탭 이름만으로 뜻이 닫히는 자리에도 라벨을 두는 대신, 규칙이 **하나로 준다**: 값이 있는 갈래가
+ * 탭 이름만으로 뜻이 닫히는 자리에도 라벨을 두는 대신 규칙이 하나로 준다. 값이 있는 갈래가
  * 자기 이름과 함께 선다. 그래서 탭마다 다른 모양을 만들 분기가 없다.
  */
 function Amounts(props: { items: CycleItems }): React.JSX.Element {
@@ -122,8 +121,7 @@ function Amounts(props: { items: CycleItems }): React.JSX.Element {
 
 /** 상태 배지. 톤 둘뿐이라 `Badge` atom(primary/third)이 아니라 여기서 인라인으로 둔다. */
 function StatusBadge(props: { testID: string; tone: 'clear' | 'issue'; label: string }): React.JSX.Element {
-  // 같은 줄에 서는 난이도 배지가 `mini` 라 이것도 `mini` 다(사용자 규칙 2026-09-01.
-  // 같은 곳에 서는 배지는 같은 크기를 쓴다).
+  // 같은 줄에 서는 난이도 배지가 `mini` 라 이것도 `mini` 다. 같은 곳에 서는 배지는 같은 크기를 쓴다.
   return (
     <Badge
       variant={props.tone === 'clear' ? 'secondary' : 'error'}
@@ -174,7 +172,7 @@ function NameChip(props: { name: string }): React.JSX.Element {
 }
 
 /**
- * 보스 한 줄. 난이도는 **공용 `Badge`** 가 그린다(사용자 지정).
+ * 보스 한 줄. 난이도는 공용 `Badge` 가 그린다.
  *
  * 이 화면만의 표기를 새로 만들지 않는 것이 요점이다. 같은 난이도가 보스 스케줄러·수익 화면과
  * 다른 색으로 보이면 그것이 같은 값이라는 것을 사람이 알아볼 수 없다.
@@ -211,10 +209,10 @@ function DetailGroup(props: { label: string | null; children: React.ReactNode })
 }
 
 /**
- * 펼친 본문. **그 탭의 항목을 이름으로 낱개로** 센다.
+ * 펼친 본문. 그 탭의 항목을 이름으로 낱개로 센다.
  *
- * **자르지 않는다.** 일퀘가 여덟이면 여덟을 다 적는다. 외 3개로 접으면 펼친 이유가 사라진다.
- * 늘어난 높이는 `resolveWidgetPositions` 가 아래 타일을 밀어 흡수한다(그것이 `h: 'auto'` 를 둔 이유다).
+ * 자르지 않는다. 일퀘가 여덟이면 여덟을 다 적는다. 외 3개로 접으면 펼친 이유가 사라진다.
+ * 늘어난 높이는 `resolveWidgetPositions` 가 아래 타일을 밀어 흡수한다.
  */
 function ScheduleDetail(props: { items: CycleItems; cycle: Cycle }): React.JSX.Element {
   const { items, cycle } = props
@@ -224,8 +222,8 @@ function ScheduleDetail(props: { items: CycleItems; cycle: Cycle }): React.JSX.E
     <View testID="schedule-detail" className="gap-2 pb-2.5 pl-10 pt-0.5">
       {items.quests.length > 0 && (
         <DetailGroup label={labelled ? '퀘스트' : null}>
-          {/* **키가 이름이면 안 된다**. `[주간 퀘스트] 타락한 세계수 주간 임무` 와 `… 정화에 대한
-              보답` 이 둘 다 `타락한 세계수`로 접혀 같은 키가 둘이 된다. */}
+          {/* 키가 이름이면 안 된다. `[주간 퀘스트] 타락한 세계수 주간 임무` 와 `… 정화에 대한
+              보답` 이 둘 다 `타락한 세계수` 로 접혀 같은 키가 둘이 된다. */}
           {items.quests.map((name, index) => (
             <NameChip key={`${name}-${String(index)}`} name={name} />
           ))}
@@ -297,17 +295,16 @@ function ScheduleRow(props: {
 
 export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Element {
   /**
-   * 보고 있는 주기. **저장소에 안 쓴다**. 앱을 다시 켜면 언제나 일간이고,
-   * **요일에 따라 기본 탭을 바꾸지 않는다**: 첫 화면이 날마다 다른 얼굴로 열리면 어제와 같은
-   * 화면 이 깨지고 그 규칙을 사람이 배워야 한다.
+   * 보고 있는 주기. 저장소에 안 쓴다. 앱을 다시 켜면 언제나 일간이고 요일에 따라 기본 탭을
+   * 바꾸지 않는다. 첫 화면이 날마다 다른 얼굴로 열리면 어제와 같은 화면 이 깨진다.
    */
   const [cycle, setCycle] = useState<Cycle>('일간')
 
   /**
-   * 펼친 행 하나. **`null` 은 전부 접힘**이다.
+   * 펼친 행 하나. `null` 은 전부 접힘이다.
    *
-   * **하나만 연다.** 여섯 명이 다 열리면 이 타일이 1,000px 을 넘고, 타일 안 스크롤은
-   *  이 금지한다. 기억하지도 않는다(화면이 탭이라 앱을 켜 둔 동안은 남는다).
+   * 하나만 연다. 여섯 명이 다 열리면 이 타일이 1,000px 을 넘고, 타일 안 스크롤은 금지다.
+   * 기억하지도 않는다.
    */
   const [expandedOcid, setExpandedOcid] = useState<string | null>(null)
 
@@ -339,8 +336,8 @@ export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
             cycle={cycle}
             first={index === 0}
             expanded={expandedOcid === row.ocid}
-            // 열린 행을 다시 누르면 닫는다(사용자 지정). 닫는 방법이 셰브런뿐이면 **어디를 눌러야
-            // 닫히나** 를 사용자가 배워야 한다.
+            // 열린 행을 다시 누르면 닫는다. 닫는 방법이 셰브런뿐이면 어디를 눌러야 닫히나 를
+            // 사용자가 배워야 한다.
             onToggle={() => setExpandedOcid((current) => (current === row.ocid ? null : row.ocid))}
           />
         ))

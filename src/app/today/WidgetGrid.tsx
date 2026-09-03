@@ -43,12 +43,8 @@ export function WidgetGrid({ data }: WidgetGridProps): React.JSX.Element {
     )
   }
 
-  // 타일 탭은 today(그룹 행)에서 하위 층으로 **한 층 내려가는 이동**이라, 층이 스택이 된 뒤로는
-  // 그냥 그 층을 여는 것으로 끝난다.
-  //
-  // 예전에는 여기서 바 기록을 손으로 맞춰야 했다. 안 맞추면 하위 행의 ← 가 **기록이 없으면 페이지는
-  // 그대로 두고 그룹 행만 연다** 는 안전망에 걸려 **가계부가 활성인 채로** 그룹 행이 열렸다. 되돌아갈
-  // 단이 실재하는 지금은 그 안전망도, 그것을 피하려고 적던 기록도 없다.
+  // 타일 탭은 today(그룹 행)에서 하위 층으로 한 층 내려가는 이동이라, 층이 스택이 된 뒤로는
+  // 그냥 그 층을 여는 것으로 끝난다. 바 기록을 손으로 맞출 일이 없다.
   function open(target: TabRouteName): void {
     openTab(target)
   }
@@ -65,14 +61,13 @@ export function WidgetGrid({ data }: WidgetGridProps): React.JSX.Element {
         // 그 값이라 아무것도 못 재고, 늘어나는 것과 스크롤하는 것은 다르다.
         const box = isAuto ? { minHeight: tile.heightPx } : { height: tile.heightPx }
 
-        // ⚠️ **`onLayout` 은 내용 에 붙는다. 최소 높이를 진 상자에 붙이면 안 된다.**
+        // `onLayout` 은 내용에 붙는다. 최소 높이를 진 상자에 붙이면 안 된다.
         //
-        // 한때 바깥 래퍼(= `minHeight` 를 진 `Card` 를 감싼 상자)를 쟀다. 그러면 재는 값이
-        // `max(minHeight, 내용)` 이고 그 값이 다시 다음 `minHeight` 가 되어 **높이가 늘기만 하고
-        // 줄지 않는다**(래칫). 아코디언을 한 번 펼쳤다 접으면 접힌 내용 위로 펼쳤을 때의 높이가
-        // 그대로 남아 빈 자리가 생긴다. 자기가 크기를 정하는 것을 재고 있었던 것이다.
+        // 바깥 래퍼(= `minHeight` 를 진 `Card` 를 감싼 상자)를 재면 그 값이 `max(minHeight,
+        // 내용)` 이고 그것이 다시 다음 `minHeight` 가 되어 높이가 늘기만 하고 줄지 않는다.
+        // 아코디언을 한 번 펼쳤다 접으면 접힌 내용 위로 펼쳤을 때의 높이가 그대로 남는다.
         //
-        // 안쪽에서 재면 그 고리가 끊긴다: 이 상자에는 최소 높이가 없어 **언제나 내용의 높이**다.
+        // 안쪽에서 재면 그 고리가 끊긴다. 이 상자에는 최소 높이가 없어 언제나 내용의 높이다.
         const widget = <Component w={placement.w} h={placement.h} data={data} />
         const measured = isAuto ? (
           <View

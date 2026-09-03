@@ -23,10 +23,10 @@ import type { WidgetProps } from './types'
 const ITEM_HEIGHT_PX = 16
 
 /**
- * `?` 가 말하는 한 문장 (사용자 지정 문안).
+ * `?` 가 말하는 한 문장.
  *
- *  이 받아들이는 한계 로 적어 둔 사실이다. Open API 는 월드 공유 항목을
- * 마지막 접속 월드 기준으로 돌려주고, 어느 월드 것인지 구분할 신호가 응답에 없다.
+ * Open API 는 월드 공유 항목을 마지막 접속 월드 기준으로 돌려주고, 어느 월드 것인지 구분할
+ * 신호가 응답에 없다.
  */
 const WORLD_NOTE = '계정 및 메이플 ID 공유 컨텐츠는 가장 마지막에 접속한 월드 기준으로 표시됩니다.'
 
@@ -36,11 +36,10 @@ function groupRows(group: SharedContentGroupView): number {
 }
 
 /**
- * 계열을 두 열로 가른다. **순서를 지키면서** 두 열의 줄 수가 가장 고른 지점 하나를 고른다
+ * 계열을 두 열로 가른다. 순서를 지키면서 두 열의 줄 수가 가장 고른 지점 하나를 고른다.
  *
- *
- * 순서를 안 바꾸므로 카탈로그 순서(`sharedGroupOrder`)가 화면에서 그대로 읽히고, 높이 차가 최소라
- * 타일이 가장 낮다. 오른쪽이 빈 배열이면 호출부가 **한 열만** 그린다.
+ * 순서를 안 바꾸므로 카탈로그 순서(`sharedGroupOrder`)가 화면에서 그대로 읽히고, 높이 차가
+ * 최소라 타일이 가장 낮다. 오른쪽이 빈 배열이면 호출부가 한 열만 그린다.
  */
 function splitColumns(
   groups: readonly SharedContentGroupView[],
@@ -65,10 +64,9 @@ function splitColumns(
 /**
  * 읽기 전용 체크박스. `Pressable` 이 아니다.
  *
- * 채운 상자는 **`primary`** 다. 처음에는 앱의 완료 계보(`secondary`)를
- * 따랐는데, 그것은 테마의 **두 번째 시드**라 메인 컬러와 색상(H)이 아예 무관하다. 렌은 빨강
- * 테마에 틸, 엔젤릭버스터는 분홍 테마에 하늘이 앉아 테마 밖의 색 으로 읽혔다(사용자 판정).
- * 앱의 다른 체크박스 셋(설정 캐시 비우기 · 가계부 사냥 입력 · 테마 선택)이 전부 이 색이다.
+ * 채운 상자는 `primary` 다. 완료 계보(`secondary`)는 테마의 두 번째 시드라 메인 컬러와 색상(H)이
+ * 아예 무관해, 빨강 테마에 틸이 앉으면 테마 밖의 색으로 읽힌다. 앱의 다른 체크박스 셋(설정
+ * 캐시 비우기 · 가계부 사냥 입력 · 테마 선택)이 전부 이 색이다.
  */
 function Checkbox(props: { checked: boolean }): React.JSX.Element {
   return (
@@ -128,8 +126,8 @@ function SharedItemRow(props: { item: SharedContentItemView }): React.JSX.Elemen
 }
 
 export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
-  // 기억하지 않는다. 위젯 2 의 아코디언과 같은 태도다(다음에 열었을 때 설명이 떠 있으면 **닫는 법**
-  // 을 다시 찾게 된다).
+  // 기억하지 않는다. 위젯 2 의 아코디언과 같은 태도다. 다음에 열었을 때 설명이 떠 있으면 닫는
+  // 법을 다시 찾게 된다.
   const [noteOpen, setNoteOpen] = useState(false)
 
   return (
@@ -162,8 +160,8 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
       </View>
 
       {noteOpen && (
-        // 카드 **안** 절대 배치라 타일 높이가 안 변한다(파일 머리). 말풍선 자체를 눌러도 닫힌다.
-        // 닫는 방법이 `?` 뿐이면 그 자리를 다시 찾아야 한다.
+        // 카드 안 절대 배치라 타일 높이가 안 변한다. 말풍선 자체를 눌러도 닫힌다. 닫는 방법이
+        // `?` 뿐이면 그 자리를 다시 찾아야 한다.
         <Pressable
           testID="shared-note"
           role="button"

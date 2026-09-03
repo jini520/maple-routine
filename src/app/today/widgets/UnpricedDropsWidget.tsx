@@ -94,14 +94,14 @@ function ItemRow(props: { drop: UnpricedDropView }): React.JSX.Element {
 }
 
 /**
- * 0건. **타일은 남고 내용만 바뀐다**.
+ * 0건. 타일은 남고 내용만 바뀐다.
  *
- * CTA 도 함께 사라진다: 기록할 것이 없는데 기록하기로 보내면 빈 화면에 도착한다.
+ * CTA 도 함께 사라진다. 기록할 것이 없는데 기록하기로 보내면 빈 화면에 도착한다.
  */
 /**
- * 0건 표식. **건수 배지가 서던 자리에 같은 크기의 원**을 세운다.
+ * 0건 표식. 건수 배지가 서던 자리에 같은 크기의 원을 세운다.
  *
- * 그래야 **7 → ✓** 가 자리를 안 옮기고 바뀌어, 값이 사라진 것이 아니라 **끝난 것**으로 읽힌다.
+ * 그래야 `7 → ✓` 가 자리를 안 옮기고 바뀌어, 값이 사라진 것이 아니라 끝난 것으로 읽힌다.
  * 색은 배지의 경고 톤이 아니라 `primary-ink` 다. 남은 일이 아니라 마친 일이다.
  */
 function DoneMark(props: { sizePx: number }): React.JSX.Element {
@@ -123,8 +123,8 @@ function Done(props: { variant: Variant }): React.JSX.Element {
     return (
       <View testID="widget-unpriced-drops" className="flex-1 items-center justify-center gap-1 p-2">
         <DoneMark sizePx={22} />
-        {/* 타일 이름이 아니라 **끝났다는 사실**을 남긴다. 1x1 에는 라벨이 없어서 이 한 줄이
-            **무엇이 0건인가** 를 말하는 자리가 여기뿐이다. */}
+        {/* 타일 이름이 아니라 끝났다는 사실을 남긴다. 1x1 에는 라벨이 없어 이 한 줄이 무엇이
+            0건인가 를 말하는 자리가 여기뿐이다. */}
         <Text
           fixed
           testID="unpriced-done"

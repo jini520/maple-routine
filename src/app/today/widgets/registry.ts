@@ -39,8 +39,8 @@ export const WIDGETS: readonly WidgetDefinition[] = [
     // (유니온은 스케줄러에 있을 때만 그린다).
     id: 'shared-contents',
     sizes: [{ w: 4, h: 'auto' }],
-    // **`target` 이 없다**. 목적지가 열린 질문이라, 갈 데가 정해지기 전에 누를 수 있게 두면
-    // 무반응이 **고장** 으로 읽힌다.
+    // `target` 이 없다. 목적지가 열린 질문이라, 갈 데가 정해지기 전에 누를 수 있게 두면 무반응이
+    // 고장으로 읽힌다.
     Component: SharedContentsWidget,
   },
   {
@@ -48,14 +48,14 @@ export const WIDGETS: readonly WidgetDefinition[] = [
     // `h: 'auto'` 는 가로를 다 쓰는 타일에만 허용된다.
     id: 'remaining-schedule',
     sizes: [{ w: 4, h: 'auto' }],
-    // **`target` 이 없다**. 행이 각자 눌려 아코디언을 여닫으므로 타일 전체를
-    // 감싼 누름 영역이 설 수 없고(중첩 `Pressable`), 컨텐츠 화면으로 보내던 경로도 함께 사라졌다
-    // (사용자 지정. 하단바의 **스케줄 → 컨텐츠** 가 이미 그 길이다).
+    // `target` 이 없다. 행이 각자 눌려 아코디언을 여닫으므로 타일 전체를 감싼 누름 영역이 설 수
+    // 없고(중첩 `Pressable`), 컨텐츠 화면으로 보내던 경로도 함께 사라졌다. 하단바의 스케줄 →
+    // 컨텐츠가 이미 그 길이다.
     Component: RemainingScheduleWidget,
   },
   {
-    // **높이를 내용이 정한다**. 캐릭터가 셋뿐이라(상한 `TOP_CHARACTER_COUNT`) 자랄 수
-    // 있는 폭이 좁고, 고정 3행이면 캐릭터가 하나일 때 아래가 87px 비었다.
+    // 높이를 내용이 정한다. 캐릭터가 셋뿐이라(상한 `TOP_CHARACTER_COUNT`) 자랄 수 있는 폭이
+    // 좁고, 고정 3행이면 캐릭터가 하나일 때 아래가 87px 빈다.
     id: 'weekly-boss-profit',
     sizes: [
       { w: 4, h: 'auto' },
@@ -127,10 +127,10 @@ export const WIDGET_BY_ID: Readonly<Record<WidgetId, WidgetDefinition>> = Object
 ) as Record<WidgetId, WidgetDefinition>
 
 /**
- * 검증이 읽는 선언된 크기 표. **표에서 파생시킨다.**
+ * 검증이 읽는 선언된 크기 표. 표에서 파생시킨다.
  *
- * `validateWidgetLayout` 이 레지스트리를 import 하지 않고 이 값을 인자로 받으므로
- * (검증이 순수 함수로 남는다), 그 인자를 손으로 적으면 같은 목록이 두 벌이 된다.
+ * `validateWidgetLayout` 이 레지스트리를 import 하지 않고 이 값을 인자로 받으므로(검증이
+ * 순수 함수로 남는다), 그 인자를 손으로 적으면 같은 목록이 두 벌이 된다.
  */
 export const WIDGET_SIZES_BY_ID: Readonly<Record<WidgetId, readonly WidgetSize[]>> =
   Object.fromEntries(WIDGETS.map((widget) => [widget.id, widget.sizes])) as Record<

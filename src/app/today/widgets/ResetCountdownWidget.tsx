@@ -32,9 +32,9 @@ const DAY_MS = 24 * HOUR_MS
 const SECOND_MS = 1000
 
 /**
- * 분 미만은 0분 이 아니다. 아직 안 왔다는 사실이 0으로 읽히면 안 된다.
+ * 분 미만은 0분 이 아니다. 아직 안 왔다는 사실이 0 으로 읽히면 안 된다.
  *
- * **초를 그리는 곳에서는 안 쓴다**. `43초` 가 그 말을 직접 한다.
+ * 초를 그리는 곳에서는 안 쓴다. `43초` 가 그 말을 직접 한다.
  */
 const IMMINENT = '1분 미만'
 
@@ -93,13 +93,13 @@ function formatResetRemaining(remainingMs: number, granularity: Granularity): st
 }
 
 /**
- * **1초마다 지금**.
+ * 1초마다 지금.
  *
- * 뷰모델의 `remainingMs` 는 화면이 만들어진 시점의 값이라 그대로 두면 멈춘 시계다. 여기서 지금 을
- * 새로 읽고 `atMs` 에서 빼는 것이 살아 있는 값이다. **틱을 세지 않는 이유**는 파일 머리에 있다.
+ * 뷰모델의 `remainingMs` 는 화면이 만들어진 시점의 값이라 그대로 두면 멈춘 시계다. 여기서
+ * 지금을 새로 읽고 `atMs` 에서 빼는 것이 살아 있는 값이다.
  *
- * 간격을 1초로 두면 표시 초가 최대 1초 늦게 넘어갈 수 있다(경계에 맞춰 정렬하지 않는다). 카운트다운
- * 이 매끄럽게 흐르는 것이 목적이지 초의 경계가 정확한 것이 목적은 아니다.
+ * 간격을 1초로 두면 표시 초가 최대 1초 늦게 넘어갈 수 있다. 카운트다운이 매끄럽게 흐르는
+ * 것이 목적이지 초의 경계가 정확한 것이 목적은 아니다.
  */
 function useNowMs(): number {
   const [nowMs, setNowMs] = useState(() => Date.now())
@@ -139,8 +139,8 @@ function Label(props: { cycle: CycleKey; sizeClass: string }): React.JSX.Element
 /**
  * 남은 시간 글자.
  *
- * **`className` 이 값에 따라 갈리지 않는다**. 임박을 색으로 말하지 않는다는 것이 파일 머리의
- * 결정이고, 그 계약은 두 값에서 같은 클래스가 나오는가 로 검사된다.
+ * `className` 이 값에 따라 갈리지 않는다. 임박을 색으로 말하지 않는 것이 이 타일의 규칙이고,
+ * 그 계약은 두 값에서 같은 클래스가 나오는가 로 검사된다.
  */
 function Value(props: {
   cycle: CycleKey
@@ -189,8 +189,7 @@ function Row(props: {
           <Value
             cycle={props.cycle}
             remainingMs={remainingMs}
-            // **일일만 초까지**. 수십 시간 남은 값에 초를 붙이면 글자만 길어지고
-            // 아무도 안 본다.
+            // 일일만 초까지. 수십 시간 남은 값에 초를 붙이면 글자만 길어지고 아무도 안 본다.
             granularity={props.cycle === 'daily' ? 'second' : 'minute'}
             sizeClass="text-[12.5px]"
           />

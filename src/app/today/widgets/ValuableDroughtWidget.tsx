@@ -50,10 +50,10 @@ function variantOf(w: number, h: WidgetHeight): Variant {
 }
 
 /**
- * 기간 길이. **0주는 **이번 주** 다.**
+ * 기간 길이. 0주는 이번 주다.
  *
- * 0주째는 셈은 맞지만 뜻이 없다(그 주에 먹었다는 것이 0주의 정의다). 히스토리 화면이 0주에서
- * 마지막 에픽 빔!을 떼는 것과 같은 판단이다.
+ * 0주째는 셈은 맞지만 뜻이 없다. 그 주에 먹었다는 것이 0주의 정의다. 히스토리 화면이 0주에서
+ * 마지막 에픽 빔! 을 떼는 것과 같은 판단이다.
  */
 function weeksLabel(weeksSince: number): string {
   return weeksSince === 0 ? '이번 주' : `${weeksSince}주째`
@@ -78,9 +78,8 @@ function lastLine(view: DroughtView): string {
 /**
  * 늙어 가는 단풍잎.
  *
- * **기울기·투명도·글로우는 감싸는 `View` 가 진다**. `<Svg>` 의 `style.filter` 는 SVG 속성
- * (`url(#id)`)으로 해석되어 배열을 주면 던진다(히스토리 화면이 실측으로 적어 둔 함정이다).
- * 높이 비율은 원본 뷰박스(127×130)를 따른다.
+ * 기울기·투명도·글로우는 감싸는 `View` 가 진다. `<Svg>` 의 `style.filter` 는 SVG 속성
+ * (`url(#id)`)으로 해석되어 배열을 주면 던진다. 높이 비율은 원본 뷰박스(127×130)를 따른다.
  */
 function Leaf(props: { tier: number; sizePx: number }): React.JSX.Element {
   const style = DROUGHT_TIER_STYLES[props.tier]
@@ -115,11 +114,11 @@ function WeeksChip(props: { weeksSince: number }): React.JSX.Element {
 }
 
 /**
- * 기록 자체가 없을 때의 잎. **단계 램프를 안 탄다.**
+ * 기록 자체가 없을 때의 잎. 단계 램프를 안 탄다.
  *
  * 단계는 몇 주째 못 먹었나 인데 여기는 셀 기록이 아예 없다. 가장 슬픈 단계의 잎을 빌려 쓰면
- * 오래 못 먹었다 로 읽혀 이 금지한 위장(0주째 로 그리지 않는다)을 색으로 다시
- * 저지르는 셈이다. 그래서 **중립색 하나**로 그리고 기울이지 않는다. 아직 시작하지 않은 잎이다.
+ * 오래 못 먹었다 로 읽혀 0주째로 그리지 않는다 는 규칙을 색으로 다시 저지르는 셈이다. 그래서
+ * 중립색 하나로 그리고 기울이지 않는다. 아직 시작하지 않은 잎이다.
  */
 function BlankLeaf(props: { sizePx: number }): React.JSX.Element {
   return (
@@ -174,7 +173,7 @@ export function ValuableDroughtWidget({ w, h, data }: WidgetProps): React.JSX.El
   const variant = variantOf(w, h)
   const view = data.drought
 
-  // **마운트당 한 번**이라 리렌더에도 문구가 안 바뀐다. 요약이 없어도 훅은 부른다. 조건부 호출은
+  // 마운트당 한 번이라 리렌더에도 문구가 안 바뀐다. 요약이 없어도 훅은 부른다. 조건부 호출은
   // 규칙 위반이고, 그 경우 인덱스는 아무도 안 읽는다.
   const [headlineIndex] = useState(() => Math.floor(Math.random() * (view?.headlineCount ?? 1)))
 
@@ -184,12 +183,11 @@ export function ValuableDroughtWidget({ w, h, data }: WidgetProps): React.JSX.El
   const headline = formatValuableDroughtHeadline(view.weeksSince, headlineIndex)
   // 0단계만 배경으로 축하한다. 나머지는 기본 표면이고 슬픔은 잎이 진다.
   //
-  // **모서리를 함께 둥글린다.** `Card` 는 `rounded-[14px]` 를 갖되 `overflow-hidden` 은 **일부러**
-  // 안 건다(클리핑은 호출부의 일이라고 그 atom 이 적어 뒀다. 미디어 스코프·글로우가 그 자유를
-  // 쓴다). 그래서 타일 전체를 칠하는 배경이 사각이면 **네 모서리에서 카드의 둥근 테두리 안쪽을
-  // 덮어** 테두리가 잘려 보인다. today 에서 타일 전면을 칠하는 위젯은 이것뿐이다.
+  // 모서리를 함께 둥글린다. `Card` 는 `rounded-[14px]` 를 갖되 `overflow-hidden` 은 일부러
+  // 안 건다. 그래서 타일 전체를 칠하는 배경이 사각이면 네 모서리에서 카드의 둥근 테두리
+  // 안쪽을 덮어 테두리가 잘려 보인다.
   //
-  // 반지름이 13인 것은 14가 아니라서다. 배경은 테두리 **안쪽** 상자를 채우므로 바깥 반지름에서
+  // 반지름이 13인 것은 배경이 테두리 안쪽 상자를 채우기 때문이다. 바깥 반지름 14 에서
   // 테두리 1px 을 뺀 값이 정확히 겹친다.
   const surface = view.tier === 0 ? 'rounded-[13px] bg-primary-tint' : ''
 

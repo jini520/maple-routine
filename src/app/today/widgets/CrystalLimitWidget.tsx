@@ -61,14 +61,14 @@ function ratioOf(view: CrystalLimitView): number {
 /**
  * 소진량 링 + 그 안의 분수.
  *
- * 링을 채우는 셈은 `atoms/ProgressRing` 이 든다. 여기 남는 것은 이 타일의
- * 치수와 가운데 분수다. 색은 링·위젯 3 스택 바와 같은 짝이다(`primary` = 결정석).
+ * 링을 채우는 셈은 `atoms/ProgressRing` 이 든다. 여기 남는 것은 이 타일의 치수와 가운데
+ * 분수다. 색은 링·위젯 3 스택 바와 같은 짝이다(`primary` = 결정석).
  */
 function Ring(props: { view: CrystalLimitView; sizePx: number }): React.JSX.Element {
   const { definition } = useThemeAppearance()
 
-  // 링 크기가 변형마다 달라 글자도 함께 따라간다. 비율로 묶어 두면 **42 링의 글자** 를 따로 정하는
-  // 자리가 안 생긴다. 분모는 분자보다 한 단계 작다(같은 값의 두 부분이지 두 값이 아니다).
+  // 링 크기가 변형마다 달라 글자도 함께 따라간다. 비율로 묶어 두면 42 링의 글자를 따로 정하는
+  // 자리가 안 생긴다. 분모는 분자보다 한 단계 작다. 같은 값의 두 부분이지 두 값이 아니다.
   const numeratorPx = Math.round(props.sizePx * 0.27)
   const denominatorPx = Math.round(props.sizePx * 0.2)
 
@@ -92,7 +92,7 @@ function Ring(props: { view: CrystalLimitView; sizePx: number }): React.JSX.Elem
         />
       </View>
 
-      {/* 정정 15. 두 줄이지만 한 값이다. 줄 높이를 글자보다 낮춰 분수로 읽히게 한다. */}
+      {/* 두 줄이지만 한 값이다. 줄 높이를 글자보다 낮춰 분수로 읽히게 한다. */}
       <Text
         fixed
         testID="crystal-ring-numerator"
@@ -140,8 +140,8 @@ function Title(props: { sizeClass: string }): React.JSX.Element {
 /**
  * 2x2 의 나머지 월드 한 줄.
  *
- * 하나면 이름과 잔량을 그대로 말하고, 둘 이상이면 **개수만** 말한다. 158 폭에 이름 둘과 숫자 둘을
- * 밀어 넣으면 전부 잘려서 아무것도 안 읽힌다.
+ * 하나면 이름과 잔량을 그대로 말하고, 둘 이상이면 개수만 말한다. 158 폭에 이름 둘과 숫자
+ * 둘을 밀어 넣으면 전부 잘려서 아무것도 안 읽힌다.
  */
 function RestWorlds(props: { rest: CrystalLimitView[] }): React.JSX.Element | null {
   if (props.rest.length === 0) return null
@@ -174,8 +174,8 @@ export function CrystalLimitWidget({ w, h, data }: WidgetProps): React.JSX.Eleme
 
   const [first, ...rest] = worlds
 
-  // 월드 이름이 사라지는 크기는 이것뿐이다. 월드가 여럿이면 첫 월드만 말하는 셈이라 **월드가 하나인
-  // 사용자에게만 정직하다.** 접근성 이름은 링이 계속 월드를 말한다.
+  // 월드 이름이 사라지는 크기는 이것뿐이다. 월드가 여럿이면 첫 월드만 말하는 셈이라 월드가
+  // 하나인 사용자에게만 정직하다. 접근성 이름은 링이 계속 월드를 말한다.
   if (variant === 'tiny') {
     return (
       <View testID="widget-crystal-limit" className="flex-1 items-center justify-center p-2">
