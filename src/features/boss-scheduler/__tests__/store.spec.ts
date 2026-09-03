@@ -1155,9 +1155,7 @@ describe('useBossSchedulerStore', () => {
     })
   })
 
-  // 탭이 걷히면서 `activeTab` 도 함께 사라지고(
-  //  가 이 축에서 폐기됐다), 목록이 하나가 되면서 필터도 하나가 된다
-  //.
+  // 탭이 걷히면서 `activeTab` 도 함께 사라지고, 목록이 하나가 되면서 필터도 하나가 된다.
   describe(': 필터 상태. 하나다', () => {
     it('초기 필터는 전체다', () => {
       expect(useBossSchedulerStore.getInitialState().partyFilter).toBe('all')

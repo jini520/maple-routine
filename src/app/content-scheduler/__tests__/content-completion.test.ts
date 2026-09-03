@@ -67,7 +67,7 @@ describe('주간 완료 판정', () => {
     expect(weeklyContentCompletion(weekly({ name, nowCount: 0 }))).toBe('incomplete')
   })
 
-  //: 점수에 상한이 없어도 **참여했는가** 는 잴 수 있다.
+  // 점수에 상한이 없어도 참여했는가 는 잴 수 있다.
   // `unmeasurable` 이었다가 판정 대상이 됐다.
   it('길드 지하 수로는 점수가 0이 아니면 완료다', () => {
     const name = '[길드] 지하 수로'

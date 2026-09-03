@@ -1698,8 +1698,7 @@ describe('사냥 폼의 줄 배치 (사용자 지정 2026-09-01)', () => {
     expect(within(한줄).getByTestId('income-sheet-meso-rate')).toBeTruthy()
   })
 
-  // 켜는 칸은 라벨 다섯 글자와 체크박스 둘이 함께 서고 값 칸은 라벨과 숫자 하나뿐이다
-  //.
+  // 켜는 칸은 라벨 다섯 글자와 체크박스 둘이 함께 서고 값 칸은 라벨과 숫자 하나뿐이다.
   it('소비 아이템이 메소 획득량의 **두 배**로 넓다', async () => {
     const view = await 그리기()
     await 사냥열기(view)

@@ -91,8 +91,8 @@ describe('페이드는 콘텐츠가 실제로 지나가는 자리에만 있다',
     expect(fade.bottomPx).toBe(인셋.bottom)
   })
 
-  // 안드로이드 3버튼 내비의 하위 페이지. `bottom-inset.ts` 가 스크롤포트를 인셋 위에서 끝낸다
-  //. 겹치는 것이 없으니 깎을 것도 없다.
+  // 안드로이드 3버튼 내비의 하위 페이지. `bottom-inset.ts` 가 스크롤포트를 인셋 위에서 끝낸다.
+  // 겹치는 것이 없으니 깎을 것도 없다.
   it('스크롤포트가 이미 안전영역 위에서 끝나면 하단은 0이다', () => {
     const fade = resolveSafeAreaFade(화면(false, 'android', 48))
 
