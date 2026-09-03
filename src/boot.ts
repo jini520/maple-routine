@@ -46,7 +46,7 @@ import { rnSqlitePort } from './storage/adapters/rn-sqlite'
  * ## 왜 세터를 한 함수에 모으는가
  *
  * 하나라도 빠지면 **그 기능만** 던지고 나머지는 멀쩡히 돌아 발견이 늦다. 그래서 "전부"를 한
- * 자리에서 보장한다(`installCapacitorNativePorts` 와 같은 판단). 주입 순서는 서로 무관하다.
+ * 자리에서 보장한다. 주입 순서는 서로 무관하다.
  * 포트끼리 참조하지 않는다.
  *
  * ## 이제 열셋이 전부 실구현이다

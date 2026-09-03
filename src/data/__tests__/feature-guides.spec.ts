@@ -16,9 +16,8 @@ import {
 // 안내 하나가 파일 하나다. 그래서 **파일은 만들었는데 `index.ts` 에 안 넣는** 실패가
 // 새로 생긴다. 화면에 안 나오는데 파일은 멀쩡히 있어 눈으로는 알아채기 어렵다.
 describe('안내 파일과 index 가 어긋나지 않는다', () => {
-  // 폴더를 **직접 훑는다**. vitest 시절엔 `import.meta.glob` 이 이 자리였는데 그것은
-  // Vite 의 컴파일 타임 API 라 jest 에는 짝이 없다. 대신 `readdirSync` + `require` 로 같은 일을
-  // 한다(묻는 것은 그대로다: 폴더의 파일과 `index.ts` 가 어긋나지 않는가).
+  // 폴더를 **직접 훑는다**. `readdirSync` + `require` 로 폴더의 파일과 `index.ts` 가
+  // 어긋나지 않는지 본다.
   const guidesDir = join(__dirname, '../feature-guides')
   const modules = Object.fromEntries(
     readdirSync(guidesDir, { withFileTypes: true })
@@ -141,10 +140,8 @@ describe('feature-guides 형식', () => {
         for (const block of section.blocks) {
           if (block.image === undefined) continue
           expect(block.image.alt.trim(), `${guide.id} 에 대체 텍스트 없는 이미지`).not.toBe('')
-          // `src` 의 타입은 이제 **RN 기준**이다(`ImageAssetRef` = 모듈 id 숫자). 웹 프로그램이
-          // 사라지면서 `image-asset.ts`(문자열 URL) 쪽을 보는 tsc 가 없어졌다.
-          // 정작 이 테스트가 도는 vitest 에서는 Vite 가 같은 import 를 URL 문자열로 준다. 어느
-          // 쪽이든 여기서 묻는 것은 **비어 있지 않은가** 하나라 표현을 문자열로 눕혀서 본다.
+          // `src` 의 타입은 **RN 기준**이다(`ImageAssetRef` = 모듈 id 숫자). 어느 표현이든
+          // 여기서 묻는 것은 **비어 있지 않은가** 하나라 문자열로 눕혀서 본다.
           expect(String(block.image.src).trim(), `${guide.id} 에 src 가 빈 이미지`).not.toBe('')
         }
       }

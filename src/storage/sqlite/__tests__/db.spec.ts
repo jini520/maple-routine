@@ -129,8 +129,7 @@ describe('getBossProfitDb', () => {
     expect(createConnectionMock).toHaveBeenCalledTimes(1)
   })
 
-  // 예기치 않은 리로드(탭 링크 기본 동작 누출, WebKit 콘텐츠 프로세스 사망 시
-  // Capacitor의 자동 reload) 뒤에는 stale한 네이티브 커넥션이 남아 첫 호출이 에러 없이 멈출 수
+  // 예기치 않은 리로드 뒤에는 stale 한 네이티브 커넥션이 남아 첫 호출이 에러 없이 멈출 수
   // 있다. reject 경로에만 복구가 있으면 그 죽은 커넥션이 dbPromise에 영구 캐시돼 앱을 재시작할
   // 때까지 모든 조회가 실패한다.
   it('커넥션 열기가 응답하지 않으면 타임아웃으로 실패하고 다음 호출에서 다시 연다', async () => {

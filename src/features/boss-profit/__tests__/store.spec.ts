@@ -98,8 +98,8 @@ import {
   resetSyncRunStateForTests,
 } from '../../schedule-sync/sync-run-state'
 import { useBossProfitStore } from '../store'
-// **Date 만 가짜로 만든다.** vitest 는 `toFake` 로 **가짜로 만들 것** 을 받았는데 jest 는 반대로
-// `doNotFake` 로 **건드리지 말 것** 을 받는다. 그대로 두면 타이머까지 전부 가짜가 되어 실제
+// **Date 만 가짜로 만든다.** jest 는 `doNotFake` 로 **건드리지 말 것** 을 받는다. 그대로 두면
+// 타이머까지 전부 가짜가 되어 실제
 // `setTimeout` 에 기대는 플러시가 영영 안 끝난다.
 const NOT_FAKED = ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'setImmediate', 'clearImmediate', 'nextTick', 'queueMicrotask', 'performance', 'requestAnimationFrame', 'cancelAnimationFrame', 'requestIdleCallback', 'cancelIdleCallback', 'hrtime',
 ] as never

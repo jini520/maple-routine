@@ -67,7 +67,7 @@ describe('rnKeyboardPort', () => {
     unsubscribeSecond()
   })
 
-  // Capacitor 는 `keyboardWillShow`/`keyboardWillHide` 를 썼지만 RN 에서 그 둘은 **iOS 에서만** 온다.
+  // RN 의 `keyboardWillShow`/`keyboardWillHide` 는 **iOS 에서만** 온다.
   // 안드로이드에서 안 오는 이벤트에 매달리면 그 플랫폼에서 탭바가 키보드 위에 남는다. 그래서
   // 양쪽에 다 오는 `did` 쪽을 쓴다. 둘 다 듣는 것도 답이 아니다(iOS 에서 will → did 로 두 번 불린다).
   it('will 계열 이벤트에는 반응하지 않는다', async () => {

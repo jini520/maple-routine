@@ -33,7 +33,7 @@ function request(overrides: Partial<Parameters<typeof toTriggerNotification>[0]>
 }
 
 describe('채널', () => {
-  // 값이 바뀌면 새 채널이 생기고 옛 채널에 걸린 Capacitor 시절 예약과 갈라진다.
+  // 값이 바뀌면 새 채널이 생기고 옛 채널에 걸린 예약과 갈라진다.
   it('Capacitor 의 기본 채널 ID 를 그대로 쓴다', () => {
     expect(NOTIFICATION_CHANNEL_ID).toBe('default')
     expect(NOTIFICATION_CHANNEL.id).toBe('default')
@@ -44,7 +44,6 @@ describe('채널', () => {
   })
 
   // notifee 의 기본값은 "소리 없음"이라 이 값을 빼면 채널이 통째로 무음이 된다.
-  // Capacitor 는 아무것도 안 해서 시스템 기본음이 났으므로 정반대다.
   it('시스템 기본 알림음을 쓴다', () => {
     expect(NOTIFICATION_CHANNEL.sound).toBe('default')
   })

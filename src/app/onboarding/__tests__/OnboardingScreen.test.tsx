@@ -13,8 +13,7 @@
 //
 // `selectingAccount`·`prefetching` 은 이 앱에서 **도달할 수 없는 상태**이고(재개 파생이 그 행을
 // 태우지 않는다), 그래서 그 둘을 보던 옛 케이스는 **어떤 화면이 오는가** 를 물을 대상이 아니다.
-// 갱신이 아니라 **뒤집힌 계약**이라 지우고, 대신 **그 자리에 출구 없는 빈 화면이 서지 않는가** 를
-// 묻는 케이스로 바꿨다.
+// 대신 **그 자리에 출구 없는 빈 화면이 서지 않는가** 를 묻는다.
 import { useOnboardingStore } from '../../../features/onboarding/store'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'

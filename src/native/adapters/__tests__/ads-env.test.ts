@@ -30,8 +30,8 @@ describe('toAdsEnv → shouldUseTestAds', () => {
     expect(usesTestAds({})).toBe(false)
   })
 
-  // `EXPO_PUBLIC_*` 이 Vite 의 `import.meta.env` 자리를 대신한다. 둘 다 빌드 시점에 번들로
-  // 박히는 값이고, 그 성질이 이 게이트가 요구하는 전부다.
+  // `EXPO_PUBLIC_*` 은 빌드 시점에 번들로 박히는 값이고, 그 성질이 이 게이트가 요구하는
+  // 전부다.
   it('EXPO_PUBLIC_ADS_TEST=1 이면 테스트 광고를 쓴다', () => {
     expect(usesTestAds({ adsTest: '1' })).toBe(true)
   })

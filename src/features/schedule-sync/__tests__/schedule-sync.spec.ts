@@ -719,7 +719,7 @@ describe('syncSchedules', () => {
       const promise = syncSchedules(['ocid-1'])
       for (let i = 0; i < 40; i += 1) await Promise.resolve()
 
-      // 직렬이던 시절에는 여기서 1이었다. 오늘 조회 뒤 -1일 하나만 나가 있었다.
+      // 열셋이 한꺼번에 나간다. 직렬이면 오늘 조회 뒤 -1일 하나만 나가 있어 1 이 된다.
       expect(pending).toHaveLength(13)
 
       pending.forEach((resolve) => {

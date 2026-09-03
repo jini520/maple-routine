@@ -7,9 +7,8 @@ import {
 import { CONTENT_TEMPLATE } from '../../../lib/scheduler/scheduler-content-template'
 import type { DailyContent, WeeklyContent } from '../../../types'
 
-// `표시 대상 컨텐츠`는 `ContentScreen.tsx` 지역 함수였다가 today 의 `남은 스케줄`이 같은 수를
-// 세면서 나온 판정이다. 그때 이 필터가 빠져 **모든 캐릭터가 일퀘 18**(= 일간 카탈로그 길이)로
-// 나왔다. 아래 첫 테스트가 그 회귀를 잡는다.
+// `표시 대상 컨텐츠` 판정을 화면이 아니라 여기서 한다. 이 필터가 빠지면 **모든 캐릭터가 일퀘 18**
+// (= 일간 카탈로그 길이)로 나온다. 아래 첫 테스트가 그 회귀를 잡는다.
 
 function daily(name: string, isRegistered: boolean): DailyContent {
   return { name, kind: 'contents', isRegistered, nowCount: 0, maxCount: 1, questState: null }

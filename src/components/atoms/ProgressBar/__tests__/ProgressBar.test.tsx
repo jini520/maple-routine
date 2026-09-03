@@ -96,8 +96,8 @@ describe('ProgressBar', () => {
       expect(track?.props.accessibilityValue).toEqual({ now: 7, min: 0, max: 14 })
     })
 
-    // 호출부는 지금 일곱이 전부 `aria` 를 준다(마지막 하나였던 `UpdatePromptModal` 을 채웠다).
-    // 프롭이 아직 선택이라 이 분기가 남아 있고, 그 분기의 계약을 여기서 고정한다.
+    // 호출부는 지금 일곱이 전부 `aria` 를 준다. 프롭이 아직 선택이라 이 분기가 남아 있고,
+    // 그 분기의 계약을 여기서 고정한다.
     it('aria를 안 주면 역할도 값도 내지 않는다', async () => {
       const { getByTestId } = await renderAtom(<ProgressBar percent={50} fillTestId="fill" />)
 

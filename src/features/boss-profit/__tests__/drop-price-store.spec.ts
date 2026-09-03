@@ -4,8 +4,7 @@ import type { BossDropRecord } from '../../../storage/boss-drops'
 
 var mockModule0: Record<string, unknown>
 jest.mock('../../../storage/boss-drops', () => {
-  // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다. vitest 의
-  // `vi.hoisted` 가 그 경계를 넘어 살아남던 것을 여기서 재현한다.
+  // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다.
   mockModule0 = mockModule0 ?? {
   getBossDropRecords: jest.fn(),
   replaceBossDropRecords: jest.fn(),
@@ -15,16 +14,14 @@ jest.mock('../../../storage/boss-drops', () => {
 const { getBossDropRecords: getBossDropRecordsMock, replaceBossDropRecords: replaceBossDropRecordsMock } = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
 var mockModule1: Record<string, unknown>
 jest.mock('../../../storage/boss-profit', () => {
-  // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다. vitest 의
-  // `vi.hoisted` 가 그 경계를 넘어 살아남던 것을 여기서 재현한다.
+  // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다.
   mockModule1 = mockModule1 ?? { getBossProfitRecords: jest.fn() }
   return mockModule1
 })
 const { getBossProfitRecords: getBossProfitRecordsMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 var mockModule2: Record<string, unknown>
 jest.mock('../../../storage/character-selection', () => {
-  // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다. vitest 의
-  // `vi.hoisted` 가 그 경계를 넘어 살아남던 것을 여기서 재현한다.
+  // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다.
   mockModule2 = mockModule2 ?? {
   getTrackedCharacterOcids: jest.fn(),
 }
@@ -33,8 +30,7 @@ jest.mock('../../../storage/character-selection', () => {
 const { getTrackedCharacterOcids: getTrackedCharacterOcidsMock } = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
 var mockModule3: Record<string, unknown>
 jest.mock('../../../storage/character-basic-cache', () => {
-  // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다. vitest 의
-  // `vi.hoisted` 가 그 경계를 넘어 살아남던 것을 여기서 재현한다.
+  // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다.
   mockModule3 = mockModule3 ?? {
   getCachedCharacterBasic: jest.fn(),
 }

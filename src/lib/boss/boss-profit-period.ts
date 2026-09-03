@@ -341,8 +341,8 @@ export function resolvePeriodDataState(input: PeriodDataStateInput): PeriodDataS
   if (input.hasRecords) {
     return 'recorded'
   }
-  // 확인 기록은 "조회해서 0건을 봤다"만 의미한다. 조회 불가 기간을 checked로
-  // 굳히지 않도록 store를 함께 바꿨다. 그래서 이 분기가 시간이 지나도 outOfRange로 격하되지 않는다.
+  // 확인 기록은 "조회해서 0건을 봤다"만 의미한다. store 가 조회 불가 기간을 checked 로 굳히지
+  // 않으므로, 이 분기는 시간이 지나도 outOfRange 로 격하되지 않는다.
   if (input.isChecked) {
     return 'confirmedEmpty'
   }

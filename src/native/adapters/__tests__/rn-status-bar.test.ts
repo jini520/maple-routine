@@ -5,17 +5,9 @@ import { rnStatusBarPort } from '../rn-status-bar'
 /**
  * 이 파일이 지키는 것은 **명암의 방향** 하나다.
  *
- * `setStyle(isDarkTheme)` 의 인자는 "테마가 어두운가"이고 상태바 글리프는 그 **반대** 명암이어야
- * 읽힌다. Capacitor 구현이 `isDarkTheme ? Style.Dark : Style.Light` 인데 그 enum 의 이름은 글리프가
- * 아니라 **배경**을 가리킨다(`@capacitor/status-bar` 정의 주석 그대로):
- *
- * | Capacitor | 뜻 | RN |
- * |---|---|---|
- * | `Style.Dark` | *"Light text for dark backgrounds"* | `'light-content'` |
- * | `Style.Light` | *"Dark text for light backgrounds"* | `'dark-content'` |
- *
- * 즉 `isDarkTheme === true` → **밝은 글리프**다. 뒤집으면 어두운 배경에 어두운 글자가 되어 상태바가
- * 통째로 안 보이는데, 그것은 실기기에서만 드러난다.
+ * `setStyle(isDarkTheme)` 의 인자는 테마가 어두운가 이고, 상태바 글리프는 그 **반대** 명암이어야
+ * 읽힌다. 즉 `isDarkTheme === true` → **밝은 글리프**다. 뒤집으면 어두운 배경에 어두운 글자가
+ * 되어 상태바가 통째로 안 보이는데, 그것은 실기기에서만 드러난다.
  */
 describe('rnStatusBarPort', () => {
   function spyOnSetBarStyle() {
@@ -26,7 +18,7 @@ describe('rnStatusBarPort', () => {
     jest.restoreAllMocks()
   })
 
-  it('다크 테마면 밝은 글리프(Capacitor Style.Dark 와 같은 방향)', async () => {
+  it('다크 테마면 밝은 글리프', async () => {
     const setBarStyle = spyOnSetBarStyle()
 
     await rnStatusBarPort.setStyle(true)
@@ -43,7 +35,7 @@ describe('rnStatusBarPort', () => {
   })
 
   // `'default'` 는 **OS 다크모드 설정**을 따르는 값이라 앱이 고른 테마와 어긋난다(라이트 테마를 쓰는
-  // 다크모드 기기에서 밝은 배경에 밝은 글자). Capacitor 도 `Style.Default` 를 쓰지 않았다.
+  // 다크모드 기기에서 밝은 배경에 밝은 글자).
   it("OS 설정을 따라가는 'default' 는 쓰지 않는다", async () => {
     const setBarStyle = spyOnSetBarStyle()
 

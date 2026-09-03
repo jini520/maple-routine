@@ -172,7 +172,7 @@ describe('Button: busy', () => {
     expect(queryByTestId('button-busy')).toBeNull()
   })
 
-  // 호출부가 색을 주던 시절 여섯 곳 전부 안 줘서 검정으로 떨어져 있었다.
+  // 호출부가 색을 안 주면 스피너가 검정으로 떨어진다.
   it('스피너 색이 variant 의 라벨 색과 같다', async () => {
     const cases = [
       ['primary', 기본테마.onPrimary],

@@ -26,8 +26,8 @@ export async function removeApiKey(): Promise<void> {
 }
 
 // 연결 해제 전용. 저장된 인증 정보를 통째로 버린다(위 removeApiKey와 목적이 다르다).
-// `selectedAccountId` 는 **레거시 키**다(계정 선택이 사라졌다). 아무도
-// 쓰지 않지만 캐패시터 시절을 거친 설치본에는 값이 남아 있어, 연결 해제에서 함께 치운다.
+// `selectedAccountId` 는 **레거시 키**다(계정 선택이 사라졌다). 아무도 쓰지 않지만 옛 설치본에는
+// 값이 남아 있어, 연결 해제에서 함께 치운다.
 export async function clearAuthConfig(): Promise<void> {
   await preferences.remove(STORAGE_KEYS.apiKey)
   await preferences.remove(STORAGE_KEYS.legacySelectedAccountId)

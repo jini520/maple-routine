@@ -83,7 +83,7 @@ describe('과거 날짜 스윕. 13일을 한꺼번에 태운다', () => {
     const promise = resolveCharacterEligibility('key', 'ocid-1', false, NOW)
     await flushMicrotasks()
 
-    // 직렬이던 시절에는 여기서 1이었다. 첫 응답이 와야 둘째가 나갔다.
+    // 열셋이 한꺼번에 나간다. 직렬이면 첫 응답이 와야 둘째가 나가 1 이 된다.
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(13)
 
     pending.forEach((resolve) => {

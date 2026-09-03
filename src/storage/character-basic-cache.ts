@@ -38,7 +38,7 @@ async function setIndexedOcids(accountId: string, ocids: string[]): Promise<void
 }
 
 // 마이그레이션(1회): 전역 인덱스를 **레거시 `selectedAccountId`** 의 것으로 이관한다.
-// 캐패시터 시절 예열이 채운 계정은 그것 하나뿐이라 이 이관은 정확하다. 그 값이 없으면
+// 예열이 채운 계정은 그것 하나뿐이라 이 이관은 정확하다. 그 값이 없으면
 // (RN 에서 시작한 설치본) 이관할 것도 없으므로 미룬다. 전역 키가 그대로 남아 다음에 다시 시도한다.
 async function runLegacyIndexMigration(): Promise<void> {
   const legacy = await preferences.get(LEGACY_CHARACTER_BASIC_CACHE_INDEX_KEY)

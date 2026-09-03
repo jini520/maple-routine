@@ -407,8 +407,7 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   return db
 }
 
-// 예기치 않은 리로드(탭 링크 기본 동작 누출, WebKit 콘텐츠 프로세스 사망 시 Capacitor iOS의 자동
-// webView.reload()) 뒤에는 위 stale 감지가 복구하지 못하고 첫 호출이 **에러 없이 멈추는** 경우가
+// 예기치 않은 리로드 뒤에는 위 stale 감지가 복구하지 못하고 첫 호출이 **에러 없이 멈추는** 경우가
 // 있다. reject 경로에만 복구가 있으면(아래 catch) 그 죽은 커넥션이 dbPromise에 영구 캐시돼 앱을
 // 재시작할 때까지 모든 조회가 실패한다. 보스 수익 데이터가 안 불러와지는 증상.
 // 타임아웃과 경쟁시켜 "무응답"을 재시도 가능한 실패로 바꾼다. 네이티브 브릿지 큐 자체가 막힌

@@ -8,7 +8,7 @@ import {
   useCountUp,
 } from '../useCountUp'
 
-// vitest 의 `vi.stubGlobal` 짝. jest 에는 없어서 여기서 최소한으로 만든다. 원래 값을 기억해 두고
+// 전역을 잠시 갈아 끼우는 도우미. 원래 값을 기억해 두고
 // `unstubAllGlobals` 가 되돌린다.
 const 원래전역: Record<string, unknown> = {}
 

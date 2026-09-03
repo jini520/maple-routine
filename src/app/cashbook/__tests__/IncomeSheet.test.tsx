@@ -50,7 +50,7 @@ async function 그리기(overrides: Partial<React.ComponentProps<typeof IncomeSh
       dateKey="2026-08-23"
       characters={캐릭터둘}
       lastPointRate={null}
-      // 기본은 **0** 이다. 시절 테스트가 세는 금액을 흔들지 않는다.
+      // 기본은 **0** 이다. 메획이 테스트가 세는 금액을 흔들지 않는다.
       // 메획이 든 계산은 아래 describe 가 값을 직접 준다.
       loadMesoRate={async () => ({ kind: 'read' as const, percent: 0 })}
       onSave={jest.fn()}

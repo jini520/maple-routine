@@ -5,8 +5,8 @@
  * 무엇: 고가 드롭 연출 프레임. `lib/drop-effect-frames.ts`
  * 원본: src/assets/drop-effect/screen/*.{jpg,webp} · src/assets/drop-effect/pre/*.{jpg,webp} · src/assets/drop-effect/loop/*.{jpg,webp} · src/assets/drop-effect/end/*.{jpg,webp}
  *
- * 값의 타입은 번들러가 정한다. 웹(Vite)은 URL 문자열, RN(Metro)은 에셋 id 다. 그 차이를
- * 한 줄로 적어 둔 것이 `ImageAssetRef` 이고, 이 파일은 웹·RN 이 **같은 것을 본다**.
+ * 값의 타입은 번들러가 정한다. Metro 는 에셋 id(숫자)를 준다. 그것을
+ * 한 줄로 적어 둔 것이 `ImageAssetRef` 다.
  *
  * 순서가 곧 재생 순서다. 파일 이름 앞의 숫자로 정렬해 둔다(렉시코 정렬은 10 < 2).
  */

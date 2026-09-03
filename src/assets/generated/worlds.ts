@@ -5,8 +5,8 @@
  * 무엇: 월드 엠블럼. `lib/world-emblem.ts` 가 `world-emblems.json` 의 basename 으로 찾는다
  * 원본: src/assets/worlds/*.{png,webp}
  *
- * 값의 타입은 번들러가 정한다. 웹(Vite)은 URL 문자열, RN(Metro)은 에셋 id 다. 그 차이를
- * 한 줄로 적어 둔 것이 `ImageAssetRef` 이고, 이 파일은 웹·RN 이 **같은 것을 본다**.
+ * 값의 타입은 번들러가 정한다. Metro 는 에셋 id(숫자)를 준다. 그것을
+ * 한 줄로 적어 둔 것이 `ImageAssetRef` 다.
  */
 
 import type { ImageAssetRef } from '../../types/image-asset'

@@ -5,7 +5,7 @@ import { prehydrateTabStores } from '../prehydrate'
 
 // jest 의 목 팩토리는 **`mock` 으로 시작하는 이름만** 밖에서 끌어올 수 있고, 팩토리가 여러 번
 // 불릴 수 있다. 그래서 **같은 목을 돌려주는** 멱등 팩토리로 둔다. 테스트가 그 인스턴스에 직접
-// 단언하기 때문이다(vitest 의 `vi.hoisted` 가 하던 일).
+// 단언하기 때문이다.
 var mockCalls: string[] | undefined
 var mockLoads: Record<string, jest.Mock> | undefined
 

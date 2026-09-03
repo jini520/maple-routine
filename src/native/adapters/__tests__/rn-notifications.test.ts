@@ -42,7 +42,7 @@ beforeEach(() => {
 describe('권한', () => {
   it.each([
     [AuthorizationStatus.AUTHORIZED, true],
-    // iOS 의 조용한 전달. Capacitor 도 granted 로 접었다.
+    // iOS 의 조용한 전달. granted 로 접는다.
     [AuthorizationStatus.PROVISIONAL, true],
     [AuthorizationStatus.DENIED, false],
     [AuthorizationStatus.NOT_DETERMINED, false],
@@ -116,7 +116,7 @@ describe('cancel', () => {
     expect(mocked.cancelNotification).toHaveBeenCalledWith(scheduled.id)
   })
 
-  // Capacitor 의 cancel 은 예약 취소와 떠 있는 알림 내리기를 함께 했다.
+  // 예약 취소만으로는 이미 뜬 알림이 남는다.
   it('떠 있는 알림까지 내리는 쪽을 쓴다', async () => {
     await rnNotificationsPort.cancel(1234)
     expect(mocked.cancelNotification).toHaveBeenCalledWith('1234')

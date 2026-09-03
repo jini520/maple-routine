@@ -39,7 +39,7 @@ describe('UtilityScreen', () => {
     expect(view.getByTestId('screen-Utility')).toBeTruthy()
   })
 
-  // 껍데기였던 자리다. 도구가 들어왔으니 **개발 진행중** 은 사라져야 한다.
+  // 도구가 들어온 자리라 **개발 진행중** 은 사라져야 한다.
   // 남아 있으면 도구 목록 아래에 "아직 없다"가 함께 서는 화면이 된다.
   it('**개발 진행중** 자리표시자가 더는 없다', async () => {
     const view = await renderOverlay(<UtilityScreen />)
