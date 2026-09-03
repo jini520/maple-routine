@@ -31,7 +31,7 @@ export function useOpenTab(): (page: TabRouteName, params?: Record<string, unkno
       if (needsPopToGroupLayer(page)) navigation.dispatch(StackActions.popToTop())
 
       const [name, nested] = tabNavigateArgs(page, params)
-      // 층 이름이 유니온이라 `navigate` 의 파라미터가 하나로 안 좁혀진다(`Main.tsx` 와 같은 대가).
+      // 층 이름이 유니온이라 `navigate` 의 파라미터가 하나로 안 좁혀진다(`LayerStack.tsx` 와 같은 대가).
       ;(navigation.navigate as (route: string, params: TabNavigateParams) => void)(name, nested)
     },
     [navigation],

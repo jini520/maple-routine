@@ -4,7 +4,7 @@
  * 두 스택이 각자 값을 적으면 다른 하위 페이지처럼 열린다 가 두 곳이 같은 값을 갖고 있다는
  * 우연이 되고, 한쪽만 고치면 조용히 갈린다. 한 상수를 함께 쓰면 그것이 구조가 된다.
  *
- * 쓰는 곳 둘. `RootNavigator`(하위 페이지 열하나) · `Main`(그룹 행 ↔ 하위 행의 층).
+ * 쓰는 곳 둘. `RootNavigator`(하위 페이지 열하나) · `LayerStack`(그룹 행 ↔ 하위 행의 층).
  */
 
 import type { NativeStackNavigationOptions } from '@react-navigation/native-stack'

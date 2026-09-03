@@ -4,7 +4,7 @@
 // 가장 안쪽 화면 이름을 뽑는 훑기가 이 파일의 대상이고, 순수 함수라 렌더 없이 못 박는다.
 // 페이지의 진실 공급원은 여전히 react-navigation 하나이고 우리는 읽기만 한다.
 
-import { pageFromLayerState, type NavRouteLike, type NavStateLike } from '../current-page'
+import { pageFromLayerState, type NavRouteLike, type NavStateLike } from '../page-from-layer-state'
 
 /** 층 스택 한 단짜리 상태. */
 function layer(top: NavRouteLike): NavStateLike {

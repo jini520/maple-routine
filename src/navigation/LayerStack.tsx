@@ -15,8 +15,8 @@ import { UtilityScreen } from '../app/utility/UtilityScreen'
 import { BottomBarOverlayHost } from '../components/organisms/BottomBar/BottomBarOverlay'
 import { TAB_LAYER_PROPS } from './tab-layer-props'
 import { BottomBar, type BarNavigation } from '../components/organisms/BottomBar/BottomBar'
-import { pageFromLayerState } from './current-page'
-import { PUSH_SCREEN_OPTIONS } from './stack-presentation'
+import { pageFromLayerState } from './page-from-layer-state'
+import { PUSH_SCREEN_OPTIONS } from './push-screen-options'
 import {
   INITIAL_TAB_ROUTE,
   type GroupLayerParamList,
@@ -80,6 +80,10 @@ const LAYER_SCREENS = {
 /**
  * 탭 레이어를 대신하는 화면 하나. 층 스택 + 그 위에 뜬 바.
  *
+ * 루트 스택에서의 **라우트 이름은 `Main`** 이다. 컴포넌트 이름과 다른 것은 그 문자열이
+ * `navigate('Main', …)` 로 화면들에 퍼져 있는 계약이라서다. 이 파일이 무엇인지는 층 스택이고,
+ * 루트 스택에서 그것이 맡은 자리가 `Main` 이다.
+ *
  * 그룹 행 → 하위 행이 진짜 push 라 `animation`·`gestureEnabled` 가 하위 페이지 열하나와 같은
  * 값을 같은 경로로 받는다. 형제 탭 전환이면 되돌아갈 단이 없어 iOS 가장자리 스와이프가 걸릴
  * 자리 자체가 없다.
@@ -88,10 +92,10 @@ const LAYER_SCREENS = {
  * 하나가 아니다. 그래서 여기 둔 바는 층이 밀려도 안 움직이고, 층 스택의 `state`·`navigation`
  * 을 그대로 받는다.
  *
- * 하위 페이지는 이 `Main` 통째를 밀어내므로 바가 함께 나간다. 바를 앱 층으로 끌어올리면
+ * 하위 페이지는 이 `LayerStack` 통째를 밀어내므로 바가 함께 나간다. 바를 앱 층으로 끌어올리면
  * 하위 페이지에서는 언제 숨기나 라는 판정이 새로 생긴다.
  */
-export function Main(): React.JSX.Element {
+export function LayerStack(): React.JSX.Element {
   return (
     <Layer.Navigator
       // 벽지는 여기가 아니라 탭 쪽이다. 이 스택의 화면은 셋 다 탭 내비게이터이고 그 탭들이
@@ -102,7 +106,7 @@ export function Main(): React.JSX.Element {
           {children}
           <ConnectedBottomBar state={state} navigation={navigation} />
           {/* 바 뒤가 곧 바 위다. 화면이 소유한 오버레이가 여기 뜬다. 같은 상자라 하위 페이지가
-              `Main` 을 밀어낼 때 바와 함께 나간다. */}
+              `LayerStack` 을 밀어낼 때 바와 함께 나간다. */}
           <BottomBarOverlayHost />
         </View>
       )}

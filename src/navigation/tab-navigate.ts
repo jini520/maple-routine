@@ -10,7 +10,7 @@
  * 이 `app/` 을 되읽는다.
  */
 
-import { layerOfPage } from './bar-model'
+import { layerOfPage } from './bar-groups'
 import type { LayerRouteName, TabRouteName } from './routes'
 
 export interface TabNavigateParams {

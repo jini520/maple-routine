@@ -22,7 +22,7 @@ import {
   rememberSub,
   visibleSubs,
   type BarState,
-} from '../bar-model'
+} from '../bar-groups'
 
 /** 테스트 가독성을 위한 조립기. 기본은 앱을 막 켠 상태다. */
 function at(page: BarState['page'], patch: Partial<BarState> = {}): BarState {

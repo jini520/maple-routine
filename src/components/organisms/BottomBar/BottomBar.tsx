@@ -1,5 +1,5 @@
 /**
- * 떠 있는 캡슐 하단바. 층 판정과 기록 규칙은 `bar-model.ts` 가 갖고 여기는 그리기와 배선만 하는 뷰.
+ * 떠 있는 캡슐 하단바. 층 판정과 기록 규칙은 `bar-groups.ts` 가 갖고 여기는 그리기와 배선만 하는 뷰.
  *
  * 지키는 것 셋.
  *
@@ -53,14 +53,14 @@ import {
   type BarIntent,
   type BarState,
   type GroupId,
-} from '../../../navigation/bar-model'
+} from '../../../navigation/bar-groups'
 import { setLastSub, useLastSub } from './bar-store'
 import type { LayerRouteName, TabRouteName } from '../../../navigation/routes'
 
 /**
  * 바가 아는 이동은 둘뿐이다.
  *
- * 층 화면 이름과 중첩 파라미터의 모양은 `Main` 에서 끝난다. 바가 내비게이션 구조를 직접 알면
+ * 층 화면 이름과 중첩 파라미터의 모양은 `LayerStack` 에서 끝난다. 바가 내비게이션 구조를 직접 알면
  * 구조를 바꿀 때마다 바가 함께 움직인다.
  */
 export interface BarNavigation {
@@ -71,7 +71,7 @@ export interface BarNavigation {
 }
 
 export interface BottomBarProps {
-  /** react-navigation 이 알려 주는 지금 화면(`current-page.ts`). 바는 사본을 들지 않는다. */
+  /** react-navigation 이 알려 주는 지금 화면(`page-from-layer-state.ts`). 바는 사본을 들지 않는다. */
   page: TabRouteName
   navigation: BarNavigation
 }

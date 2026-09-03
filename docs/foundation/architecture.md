@@ -21,7 +21,7 @@ src/
 │   ├── boss-profit/        # 주간/월간 탭 + 기간 네비게이터 + 드롭 시트·히스토리·가격 입력
 │   ├── onboarding/  settings/  hunting-profit/  spend/  utility/
 │   ├── AppShell.tsx  prehydrate.ts  UpdatePromptModal.tsx
-├── navigation/             # @react-navigation 배선: RootNavigator · Main(층 스택) · routes · bar-model(페이지→그룹→층 표)
+├── navigation/             # @react-navigation 배선: RootNavigator · LayerStack(층 스택) · routes · bar-groups(페이지→그룹→층 표)
 ├── features/               # 기능별 도메인 로직(UI 상태 + 비즈니스 로직)
 │   ├── onboarding/  content-scheduler/  boss-scheduler/  boss-profit/  schedule-sync/
 │   ├── character-manage/  settings/  tracking-mode/  live-update/  drop-effect/  toast/
@@ -48,16 +48,16 @@ modules/                    # 로컬 Expo 모듈 셋: capacitor-storage · app-b
 ## 화면 구조: **스택 두 겹** + 떠 있는 바 ([[ADR-132]] · [[ADR-145]] · [[ADR-167]])
 
 배선은 `src/navigation/` 이 소유한다. 스택이 **두 겹**이고 둘이 같은 상수로 열린다
-(`stack-presentation.ts`. 그래서 ‘하위 페이지처럼 열린다’가 우연이 아니라 구조다):
+(`push-screen-options.ts`. 그래서 ‘하위 페이지처럼 열린다’가 우연이 아니라 구조다):
 
 ```
 RootNavigator (스택)
-├── Main                          # 탭 레이어 자리
+├── LayerStack                    # 탭 레이어 자리. 루트 스택에서의 라우트 이름은 `Main`
 │   ├── 층 스택 (Groups · ScheduleSubs · LedgerSubs)
 │   │     └── 각 층은 탭 내비게이터: 옆걸음은 안 쌓이고 언마운트도 없다
 │   ├── BottomBar                 # 층 스택의 `layout` 이 그린다 → 층이 밀려도 안 밀린다
 │   └── BottomBarOverlayHost              # 같은 `layout` 의 **바 뒤**: 화면이 소유한 오버레이가 여기 뜬다
-└── 하위 페이지 열하나            # `Main` **통째**를 밀어낸다 → 바도 함께 나간다
+└── 하위 페이지 열하나            # `LayerStack` **통째**를 밀어낸다 → 바도 함께 나간다
 ```
 
 **떠 있는 것의 층은 형제 순서가 정한다**([[ADR-180]]). RN 에는 문서도 전역 z-index 도 없고 `zIndex`

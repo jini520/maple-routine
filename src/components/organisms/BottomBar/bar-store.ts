@@ -10,11 +10,11 @@
 
 import { useSyncExternalStore } from 'react'
 
-import type { LastSub } from '../../../navigation/bar-model'
-import { initialBarState } from '../../../navigation/bar-model'
+import type { LastSub } from '../../../navigation/bar-groups'
+import { initialBarState } from '../../../navigation/bar-groups'
 
 function empty(): LastSub {
-  // 초기값을 여기서 다시 적지 않는다. 그 값은 `bar-model.ts` 에서만 온다.
+  // 초기값을 여기서 다시 적지 않는다. 그 값은 `bar-groups.ts` 에서만 온다.
   return initialBarState().lastSub
 }
 
