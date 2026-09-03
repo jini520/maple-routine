@@ -50,12 +50,12 @@ export function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGro
   const cleared = isWeekly
     ? worlds.reduce((sum, summary) => sum + summary.cleared, 0)
     : countMonthlyCrystals(props.groups)
-  // 각 월드가 각자 90을 가지므로 복수 월드의 분모는 90 × 월드 수다(결정 7).
+  // 각 월드가 각자 90 을 가지므로 복수 월드의 분모는 90 × 월드 수다.
   const limit = WEEKLY_CRYSTAL_SALE_LIMIT * worlds.length
   const isExpandable = worlds.length > 1
   const label = isWeekly ? `주간 결정석 판매 ${cleared} / ${limit}` : `월간 결정석 ${cleared}개`
 
-  // 칩은 화면에 "간단히"만. 월드 수·월드명 같은 부가 표기는 팝오버로 넘긴다(사용자 요청).
+  // 칩은 화면에 간단히만. 월드 수·월드명 같은 부가 표기는 팝오버로 넘긴다.
   const chipContent = (
     <>
       {iconUrl !== null && <Image source={iconUrl} resizeMode="contain" className="h-4 w-4 shrink-0" />}
@@ -91,7 +91,7 @@ export function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGro
 
   return (
     <>
-      {/* 팝오버가 열려 있는 동안 바깥 탭으로 닫는다(파일 머리 ①). */}
+      {/* 팝오버가 열려 있는 동안 바깥 탭으로 닫는다. */}
       {isBreakdownOpen && (
         <Modal visible transparent animationType="none" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setIsBreakdownOpen(false)}>
           <Pressable

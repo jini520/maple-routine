@@ -307,7 +307,7 @@ function PeriodSummary(props: { incomeMeso: number; expenseMeso: number }): Reac
 /** 타일 한 변. **칸 폭과 무관하게 고정**이다. 칸은 줄을 여섯이 나눠 기기마다 넓다. */
 const BOSS_TILE_PX = 44
 
-/** 한 줄에 서는 마리 수(사용자 지정). 레이아웃의 결과가 아니라 **여기서 정한다.** */
+/** 한 줄에 서는 마리 수. 레이아웃의 결과가 아니라 여기서 정한다. */
 const BOSSES_PER_ROW = 6
 
 /**

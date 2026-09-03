@@ -127,7 +127,7 @@ export function layerOfPage(page: TabRouteName): LayerRouteName {
   return groupOfPage(page).layer ?? 'Groups'
 }
 
-/** 지금 그려야 하는 층(결정 2). **토글이 아니라 페이지가 정한다.** 이제 예외가 하나도 없다. */
+/** 지금 그려야 하는 층. 토글이 아니라 페이지가 정한다. 예외가 하나도 없다. */
 export function barLayer(state: BarState): 'group' | 'sub' {
   return groupOfPage(state.page).subs.length > 0 ? 'sub' : 'group'
 }
@@ -173,7 +173,7 @@ export function pressGroup(state: BarState, id: GroupId): BarIntent {
   }
 }
 
-/** 하위를 눌렀을 때. 같은 층의 옆걸음이라 **쌓지 않는다**(결정 4). */
+/** 하위를 눌렀을 때. 같은 층의 옆걸음이라 쌓지 않는다. */
 export function pressSub(state: BarState, page: TabRouteName): BarIntent {
   if (page === state.page) return NONE
   return { kind: 'switchSub', page }
@@ -199,7 +199,7 @@ export function openPage(state: BarState, target: TabRouteName): BarIntent {
   return { kind: 'openSubs', layer: group.layer as LayerRouteName, page: target }
 }
 
-/** ← 를 눌렀을 때(결정 3). 하위 행이 아니면 ← 가 그려지지도 않는다. */
+/** ← 를 눌렀을 때. 하위 행이 아니면 ← 가 그려지지도 않는다. */
 export function pressBack(state: BarState): BarIntent {
   return canGoBack(state) ? { kind: 'back' } : NONE
 }

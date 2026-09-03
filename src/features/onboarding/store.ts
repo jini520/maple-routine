@@ -176,8 +176,8 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
         return
       }
 
-      // status는 그대로다. 뒤에 원래 화면이 남아 있어야 사용자가 무엇을 하다 이렇게 됐는지
-      // 보면서 이유를 읽는다(결정 10). 저장소도 아직 건드리지 않는다.
+      // status 는 그대로다. 뒤에 원래 화면이 남아 있어야 사용자가 무엇을 하다 이렇게 됐는지
+      // 보면서 이유를 읽는다. 저장소도 아직 건드리지 않는다.
       set((state) => onboardingReducer(state, { type: 'API_KEY_NOTICED', kind }))
     },
 

@@ -5,7 +5,7 @@
  * 이름으로 가른다. 전부 자기 카드 안에서 끝나 화면의 고정 헤더와 무관하다.
  *
  * bleed 는 `FadedIllustration`, 껍데기는 `IllustratedCard` 가 든다. 일간 카드와 같은 규약이라
- * 사유는 `DailyContentCards.tsx` 파일 머리에 한 번만 적는다.
+ * 사유는 `DailyContentCards.tsx` 에 한 번만 적는다.
  */
 import { isContentBlocked } from '../../lib/scheduler/required-level'
 import {

@@ -53,7 +53,7 @@ export class NexonBadRequestError extends NexonApiError {
  * `toScheduleSyncError`·`toOnboardingError`·`toSettingsError` 셋이 첫 분기로 쓴다.
  *
  * `401`/`403` 만 보면 실제 무효 키를 못 잡는다. 넥슨은 무효한 키에 400 `OPENAPI00005`
- * (`"The apikey is not valid."`)를 준다. 애초에 존재한 적 없는 키도, 한때 유효했다가 넥슨에서
+ * (`"The apikey is not valid."`)를 준다. 애초에 존재한 적 없는 키도, 유효했다가 넥슨에서
  * 삭제된 키도 같은 응답이다. 그 코드를 모르는 400 으로 두면 `network` 로 degrade 되어, 키가
  * 폐기된 사용자에게 앱이 네트워크 오류가 발생했습니다 만 반복해 말한다.
  *

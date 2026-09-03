@@ -390,8 +390,8 @@ async function buildRowsFromRecords(
   cycle: BossCycle,
   periodKey: string,
   now: Date,
-  // 호출부가 이미 읽어둔 프로필. 여기 있는 ocid는 캐시를 다시 읽지 않는다.
-  // 없는 ocid는 종전대로 직접 읽는다. 이 함수가 호출부의 조회 범위에 묶이지 않게 한다.
+  // 호출부가 이미 읽어둔 프로필. 여기 있는 ocid 는 캐시를 다시 읽지 않고 없는 ocid 는 직접
+  // 읽는다. 이 함수가 호출부의 조회 범위에 묶이지 않게 한다.
   knownProfiles: Map<string, CharacterProfileInfo>,
 ): Promise<BossProfitRow[]> {
   if (ocids.length === 0) {

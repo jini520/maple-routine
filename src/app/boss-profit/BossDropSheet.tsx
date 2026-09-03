@@ -326,7 +326,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                         </View>
                         <Text className="text-xs font-bold text-text-muted">{label}</Text>
                       </View>
-                      {/* 4열. 간격은 자식 패딩 + 부모 음수 마진(파일 머리 ①). */}
+                      {/* 4열. 간격은 자식 패딩 + 부모 음수 마진. */}
                       <View className="-mx-1 -mb-2 flex-row flex-wrap">
                         {(byCategory.get(category) ?? []).map((candidate) => {
                           const box = isBoxItem(candidate.name)

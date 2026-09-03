@@ -170,7 +170,7 @@ async function fillMissingSections(
   let acc = stage1
 
   for (const { response: dayResponse, failure } of fetched) {
-    // 조회 불가는 캐릭터 단위 확정이라 남은 날짜를 접을 이유가 없다(종전 `break` 그대로).
+    // 조회 불가는 캐릭터 단위 확정이라 남은 날짜를 접을 이유가 없다.
     if (failure === 'characterUnavailable') {
       break
     }

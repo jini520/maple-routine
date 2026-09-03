@@ -67,8 +67,8 @@ const MONTHLY_BOSS_COUNT = weeklyBossesData.monthly.length
 /**
  * 카드 강조. 글로우(카드 루트에 붙는 그림자 겹)와 링(셸 위에 얹는 골드 테두리)을 함께 낸다.
  *
- * 둘을 한 컴포넌트로 두지 않고 둘로 나누는 이유는 **붙는 자리가 다르기** 때문이다: 글로우는 밖으로
- * 번져야 해서 잘리지 않는 카드 루트에, 링은 셸 모양을 따라야 해서 셸 안에 붙는다(파일 머리).
+ * 둘을 한 컴포넌트로 두지 않는 것은 붙는 자리가 다르기 때문이다. 글로우는 밖으로 번져야 해서
+ * 잘리지 않는 카드 루트에, 링은 셸 모양을 따라야 해서 셸 안에 붙는다.
  */
 function ValuableCardGlow(props: { isExpanded: boolean }): React.JSX.Element {
   const reduceMotion = useReducedMotion()

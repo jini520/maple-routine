@@ -35,7 +35,6 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
   const [apiKey, setApiKey] = useState('')
   const [isRevealed, setIsRevealed] = useState(false)
 
-  // 웹 `handleSubmit` 그대로. `preventDefault` 만 빠졌다(파일 머리 ①).
   function handleSubmit(): void {
     if (props.isSubmitting) return
     const trimmed = apiKey.trim()

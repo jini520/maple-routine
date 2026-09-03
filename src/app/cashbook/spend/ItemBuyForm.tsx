@@ -58,7 +58,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
     return mesoTextOf(Math.round((total - (props.editing.tariffMeso ?? 0)) / count))
   })
   const [hasTariff, setHasTariff] = useState(props.editing?.tariffMeso != null)
-  /** **`null` 은 정정 1 이전 행이고 장비다**. */
+  /** `null` 은 종류 칸이 생기기 전 행이고 장비다. */
   const [itemKind, setItemKind] = useState<SpendItemKind>(
     props.editing?.itemKind ?? SPEND_ITEM_KINDS[0],
   )
@@ -189,7 +189,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
             // 수량은 **곱할 것이 있을 때만** 실린다. 그 `null` 이 곧 **곱하지 않은 행** 이라는 사실이다.
             quantity: counts ? quantity : null,
             mesoAmount: amount,
-            // 총액과 그 몫을 **둘 다** 박는다(정정 2 ②). 집계는 총액 한 칸만 본다.
+            // 총액과 그 몫을 둘 다 박는다. 집계는 총액 한 칸만 본다.
             tariffMeso: hasTariff ? tariffed.tariffMeso : null,
             pointAmount: null,
             pointPer100mMeso: null,

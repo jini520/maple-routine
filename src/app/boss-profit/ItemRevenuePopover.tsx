@@ -48,7 +48,7 @@ export interface AnchoredPopover {
    * 읽는다. 노드를 훅 안에 가둬 두면 밖으로 나가는 것은 함수와 값뿐이라 그 물음 자체가 사라진다.
    */
   ref: (node: View | null) => void
-  /** 열려 있는가. 위치를 아직 몰라도 `true` 일 수 있다(파일 머리 ①). */
+  /** 열려 있는가. 위치를 아직 몰라도 `true` 일 수 있다. */
   isOpen: boolean
   /** 잰 결과. `null` 이면 아직 모른다. 상자는 그리되 보이지 않는다. */
   anchor: PopoverAnchorRect | null
@@ -102,7 +102,7 @@ export function useAnchoredPopover(): AnchoredPopover {
 
 export function ItemRevenuePopover(props: {
   drops: RecordedDrop[]
-  /** `null` 이면 아직 못 쟀다. 그리되 보이지 않는다(파일 머리 ①). */
+  /** `null` 이면 아직 못 쟀다. 그리되 보이지 않는다. */
   anchor: PopoverAnchorRect | null
   onClose: () => void
   /**

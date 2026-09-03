@@ -155,7 +155,7 @@ function boxShadow(shadowColor: string, { opacity, radius, y }: ShadowLayer): st
   return `0px ${y}px ${radius * 2}px ${base}${alpha}`
 }
 
-/** 바 자신의 그림자. **아주 약하게**(사용자 지시). 층은 알약 쪽에서 만든다. */
+/** 바 자신의 그림자. 아주 약하게. 층은 알약 쪽에서 만든다. */
 const BAR_SHADOW: ShadowLayer = { opacity: 0.22, radius: 14, y: 5 }
 
 /**
@@ -176,10 +176,10 @@ const ROW_SHIFT = 10
 const EASE = Easing.bezier(0.32, 0.72, 0, 1)
 
 /**
- * 아이콘 선 굵기. 사용자가 시안 조절기로 확정한 값이다(2026-08-13).
+ * 아이콘 선 굵기.
  *
- * 크기·간격·라벨은 클래스에 박혀 있는데 이것만 상수인 이유는 `strokeWidth` 가 **className 이 아니라
- * 프롭**이기 때문이다(`lib/nativewind-interop`). 항목 아이콘과 ← 가 같은 값을 써야 해서 이름을 준다.
+ * 크기·간격·라벨은 클래스에 박혀 있는데 이것만 상수인 것은 `strokeWidth` 가 className 이
+ * 아니라 프롭이기 때문이다. 항목 아이콘과 ← 가 같은 값을 써야 해서 이름을 준다.
  */
 const ICON_STROKE = 1.5
 /**

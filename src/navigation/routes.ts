@@ -156,7 +156,7 @@ export interface RouteRow {
   /**
    * 이 행이 어디서 왔는가.
    *
-   * - `web`. 웹 앱에 실제로 있던 경로. 17개로 고정이다.
+   * - `web`. 앞선 앱에 실제로 있던 경로. 17개로 고정이다.
    * - `rn`. 이 앱에서 새로 생긴 화면. `path` 는 대조가 아니라 이름표다.
    */
   readonly origin: 'web' | 'rn'

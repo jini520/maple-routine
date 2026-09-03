@@ -229,7 +229,7 @@ function DropHistoryPeriodSection(props: {
         </View>
         <View testID="drop-history-period-rule" className="h-px flex-1 bg-border" aria-hidden />
       </View>
-      {/* 카드 셸 없음. 배경 위에 문장만 흐른다(사용자 지정 2026-07-31). */}
+      {/* 카드 셸 없음. 배경 위에 문장만 흐른다. */}
       <View>
         {props.group.records.map((record, index) => (
           <DropHistoryEntry
