@@ -6,9 +6,9 @@
  */
 
 import { isInvalidApiKeyError, NexonBadRequestError, NexonRateLimitError } from '../../nexon/errors'
-// 400 하나에 처방이 전혀 다른 세 실패가 들어 있어(nexon-api.md "에러 코드")
-// 종류를 갈라 담는다. 재시도 가능성이 셋 다 다르다. characterUnavailable은 영구,
-// notCollected는 나중에 자동으로 풀리고, periodOutOfRange는 그 날짜에 대해 영구다.
+// 400 하나에 처방이 전혀 다른 세 실패가 들어 있어 종류를 갈라 담는다. 재시도 가능성이 셋 다
+// 다르다. characterUnavailable 은 영구, notCollected 는 나중에 자동으로 풀리고,
+// periodOutOfRange 는 그 날짜에 대해 영구다.
 export type ScheduleSyncError =
   | { kind: 'invalidApiKey' } // 401/403
   | { kind: 'rateLimited' } // 429
@@ -17,8 +17,8 @@ export type ScheduleSyncError =
   | { kind: 'notCollected' } // 400 OPENAPI00009. 아직 집계 전(시간이 지나면 풀린다)
   | { kind: 'network' } // 그 외 네트워크/파싱 실패 + 코드를 모르는 400
 
-// 호출부가 reject를 원인으로 변환할 수 있게 export한다. 피커·온보딩 스텝이
-// getCharacterPickerRoster의 catch에서 이걸 통과시켜 loadError로 내려준다.
+// 호출부가 reject 를 원인으로 변환할 수 있게 export 한다. 피커·온보딩 스텝이
+// `getCharacterPickerRoster` 의 catch 에서 이것을 통과시켜 loadError 로 내려준다.
 export function toScheduleSyncError(error: unknown): ScheduleSyncError {
   // 401/403 만이 아니라 400 OPENAPI00005 도 무효 키다. 판정은 nexon/errors 한 곳.
   // **이 분기가 400 분기보다 앞이어야 한다**. 아래 NexonBadRequestError 검사에 먼저 걸리면

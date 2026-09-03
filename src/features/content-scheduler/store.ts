@@ -34,8 +34,8 @@ function templateMaxCount(contentName: string): number | undefined {
   return entry?.max_count
 }
 
-// 결정 1·2 /: 추가 시도의 결과. 컨텐츠에는 개수 한도가 없어 보스와 달리
-// 'limitReached'가 없고, 대신 길드 콘텐츠 전용 사유 'guildRequired'가 있다.
+// 추가 시도의 결과. 컨텐츠에는 개수 한도가 없어 보스와 달리 limitReached 가 없고, 대신 길드
+// 콘텐츠 전용 사유 guildRequired 가 있다.
 export type ManualContentAddResult = 'added' | 'duplicate' | 'guildRequired'
 
 export interface ContentCharacterView {
@@ -45,8 +45,8 @@ export interface ContentCharacterView {
   // 같은 캐시에서 함께 꺼내는 길드명. null = 미가입(길드 콘텐츠 잠금 근거),
   // undefined = 모름(잠그지 않음).
   guildName?: string | null
-  // 초상화 레일이 쓰는 둘. 같은 캐시에서 정렬과 함께 꺼내므로 조회가 안 는다.
-  // `null` 은 **캐시가 아직 그 캐릭터를 모른다**는 뜻이다. 레일은 그때 레벨 호를 비운다.
+  // 초상화 레일이 쓰는 둘. 같은 캐시에서 정렬과 함께 꺼내므로 조회가 안 는다. `null` 은 캐시가
+  // 아직 그 캐릭터를 모른다는 뜻이다. 레일은 그때 레벨 호를 비운다.
   level?: number | null
   imageUrl?: string | null
   dailyContents: DailyContent[]
@@ -58,15 +58,15 @@ export interface ContentCharacterView {
 
 export type ContentSchedulerStatus = 'idle' | 'loading' | 'loaded' | 'error'
 
-// "강제"가 기본값이고 게이트가 예외다. force 인자를 두면 강제해야 할 호출부를
-// 하나라도 빠뜨리는 순간 그 자리가 조용히 게이트에 걸리므로, 자동 진입 경로인 loadTrackedOcids()만
-// auto: true 를 넘긴다. 화면(헤더 버튼·당겨서 새로고침·재시도)은 인자를 안 넘겨 자동으로 강제 경로다.
+// 강제가 기본값이고 게이트가 예외다. force 인자를 두면 강제해야 할 호출부를 하나라도 빠뜨리는
+// 순간 그 자리가 조용히 게이트에 걸리므로, 자동 진입 경로인 loadTrackedOcids() 만 auto: true 를
+// 넘긴다. 화면은 인자를 안 넘겨 자동으로 강제 경로다.
 export interface RefreshOptions {
   auto?: boolean
 }
 
-// 스케줄러 화면과 관리 페이지가 함께 쓰는 탭 식별자. 전에는 두 화면이 각자
-// 선언해 두 벌이었고, 그 복제가 "각자 판단해도 된다"처럼 보이게 한 원인이었다.
+// 스케줄러 화면과 관리 페이지가 함께 쓰는 탭 식별자. 두 화면이 각자 선언하면 그 복제가 각자
+// 판단해도 된다 처럼 보인다.
 export type ContentTab = 'daily' | 'weekly'
 
 export interface ContentSchedulerState {
@@ -74,12 +74,11 @@ export interface ContentSchedulerState {
   characters: ContentCharacterView[]
   error: ScheduleSyncError | null
   trackedOcids: string[] | null
-  // 수동 모드에서 캐릭터별 추적 항목(멤버십). 값 필드는 여기 두지 않고 표시 시점에
-  // characters의 동기화 값 또는 템플릿에서 조회한다(단일 진실 공급원, 결정 6).
+  // 수동 모드에서 캐릭터별 추적 항목(멤버십). 값 필드는 여기 두지 않고 표시 시점에 characters 의
+  // 동기화 값 또는 템플릿에서 조회한다.
   manualTrackedByOcid: Record<string, ManualTrackedItem[]>
-  // 화면 로컬 state가 아니라 스토어가 소유한다. 화면이 언마운트돼도 살아남고
-  // (탭 이동 후 복귀), 관리 페이지가 같은 값을 읽어 보던 탭 그대로 열린다. 영속화하지 않는다
-  // (결정 3). 앱을 다시 켜면 아래 기본값으로 돌아온다.
+  // 화면 로컬 state 가 아니라 스토어가 소유한다. 화면이 언마운트돼도 살아남고, 관리 페이지가
+  // 같은 값을 읽어 보던 탭 그대로 열린다. 영속화하지 않는다. 앱을 다시 켜면 기본값으로 돌아온다.
   activeTab: ContentTab
 }
 
@@ -93,8 +92,8 @@ export interface ContentSchedulerStore extends ContentSchedulerState {
   ): Promise<void>
   addManualContent(ocid: string, contentName: string, kind: 'daily' | 'weekly'): Promise<ManualContentAddResult>
   removeManualContent(ocid: string, contentName: string, kind: 'daily' | 'weekly'): Promise<void>
-  // 보스 수익의 setTab과 달리 동기다. 그쪽은 탭이 바뀌면 기간을 다시 불러와야
-  // 하지만, 여기 탭은 이미 받아 둔 데이터를 갈라 보여줄 뿐이라 네트워크가 없다.
+  // 보스 수익의 setTab 과 달리 동기다. 그쪽은 탭이 바뀌면 기간을 다시 불러와야 하지만 여기 탭은
+  // 이미 받아 둔 데이터를 갈라 보여줄 뿐이라 네트워크가 없다.
   setActiveTab(tab: ContentTab): void
 }
 
@@ -107,15 +106,12 @@ const initialState: ContentSchedulerState = {
   activeTab: 'daily',
 }
 
-// 캐시 단계(trackedOcids 저장 순서)와 동기화 단계(계정 전체 캐릭터
-// 목록에서 필터링한 순서)가 서로 달라 생기던 불일치를 없애기 위해, character-basic-cache의
-// level을 병합해 레벨 내림차순(동레벨이면 compareByName)으로 통일한다. 레벨 캐시가 없는
-// 캐릭터는 맨 뒤로 보낸다.
-// 길드명은 여기서 함께 꺼내 뷰에 실어 보낸다. 정렬을 위해 이미 읽는 캐시 객체
-// 안에 있으므로 추가 조회가 0이고, 화면이 character-basic-cache를 다시 읽을 이유가 없다.
-// `level`·`imageUrl` 도 **같은 이유로** 함께 실어 보낸다(초상화 레일이 쓴다).
-// 이 함수가 이미 캐릭터마다 캐시를 한 번씩 읽고 있어 조회가 늘지 않는다. 정렬에 쓰던 level 을
-// 버리지 않고 뷰에 남기는 것뿐이다.
+// 캐시 단계(trackedOcids 저장 순서)와 동기화 단계(계정 전체 캐릭터 목록에서 필터링한 순서)가
+// 서로 달라 생기던 불일치를 없애기 위해, character-basic-cache 의 level 을 병합해 레벨
+// 내림차순(동레벨이면 compareByName)으로 통일한다. 레벨 캐시가 없는 캐릭터는 맨 뒤로 보낸다.
+//
+// 길드명·`level`·`imageUrl` 도 여기서 함께 꺼내 뷰에 실어 보낸다. 정렬을 위해 이미 읽는 캐시
+// 객체 안에 있어 추가 조회가 0 이고, 화면이 character-basic-cache 를 다시 읽을 이유가 없다.
 async function sortByCachedLevel(views: ContentCharacterView[]): Promise<ContentCharacterView[]> {
   const withLevel = await Promise.all(
     views.map(async (view) => {
@@ -166,9 +162,9 @@ async function readCachedView(ocid: string): Promise<ContentCharacterView | null
   }
 }
 
-// 부팅 선하이드레이션(`features/prehydrate`)과 화면 마운트가 같은 회차를 부르므로,
-// 진행 중인 회차가 있으면 그 Promise 를 그대로 돌려준다. **"평생 한 번"이 아니라 "동시에 하나만"**
-// 이다. 끝나면 잊는다. 영구 메모로 만들면 진입 재조회의 10분 TTL이 죽는다.
+// 부팅 선하이드레이션과 화면 마운트가 같은 회차를 부르므로, 진행 중인 회차가 있으면 그 Promise 를
+// 그대로 돌려준다. 평생 한 번이 아니라 동시에 하나만이다. 끝나면 잊는다. 영구 메모로 만들면
+// 진입 재조회의 10분 TTL 이 죽는다.
 let hydration: Promise<void> | null = null
 
 export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, get) => ({
@@ -177,8 +173,8 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
   loadTrackedOcids() {
     // 동시 호출은 한 회차로 합친다(위 `hydration` 주석).
     hydration ??= (async () => {
-      // 저장된 선택은 **선택 스토어가 읽는다**. 이 스토어가 읽어 자기
-      // 상태에 넣던 것이 **두 벌** 의 출처였다. 둘을 나란히 태우는 것은 그대로다(왕복 한 번).
+      // 저장된 선택은 선택 스토어가 읽는다. 이 스토어가 읽어 자기 상태에 넣으면 출처가 두 벌이
+      // 된다. 둘을 나란히 태우는 것은 그대로다(왕복 한 번).
       const [ocids] = await Promise.all([
         getTrackedCharacterOcids(),
         useCharacterSelectionStore.getState().hydrate(),
@@ -208,10 +204,9 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
     // 이미 가진 뷰를 그대로 재사용하고, 제거만 했거나 아무것도 안 바뀌었으면 조회 자체를 하지 않는다.
     const added = ocids.filter((ocid) => !previousOcids.includes(ocid))
 
-    // 결정 14(b): 수동 모드에서 새로 추적 목록에 추가된 캐릭터만 개별 시드하고, 그
-    // 멤버십을 화면 상태에도 반영한다(동기화가 added만 훑으므로 refresh처럼 전체를 다시 읽지 않는다).
-    // 동기화보다 먼저 실행. 화면의 저장 진행률 모달이 saveTrackedOcids 전체를 기다리므로
-    // 시드가 끝날 때까지 자연스럽게 로딩이 유지된다(결정 15).
+    // 수동 모드에서 새로 추적 목록에 추가된 캐릭터만 개별 시드하고 그 멤버십을 화면 상태에도
+    // 반영한다. 동기화보다 먼저 실행한다. 화면의 저장 진행률 모달이 saveTrackedOcids 전체를
+    // 기다리므로 시드가 끝날 때까지 자연스럽게 로딩이 유지된다.
     if (added.length > 0 && useTrackingModeStore.getState().mode === 'manual') {
       await seedManualTrackedContent(added)
       const seeded = Object.fromEntries(
@@ -246,9 +241,8 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
       )
       const results = outcome.results
       if (results === null) {
-        // syncSchedules 자체가 던지는 에러(온보딩 미완료 등)는 캐릭터별 에러가 아니라
-        // 전체 조회 자체의 실패다. 원인은 버리지 않고
-        // toScheduleSyncError로 살린다. 전에는 network로 하드코딩해 401/429가 화면에 도달하지 못했다.
+        // syncSchedules 자체가 던지는 에러(온보딩 미완료 등)는 캐릭터별 에러가 아니라 전체 조회
+        // 자체의 실패다. 원인은 버리지 않고 toScheduleSyncError 로 살린다.
         set({ status: 'error', error: toScheduleSyncError(outcome.error), characters: await sortByCachedLevel(keptViews) })
       } else {
         const addedViews: ContentCharacterView[] = results.map((result) => ({
@@ -312,8 +306,8 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
       )
     ).filter((view): view is ContentCharacterView => view !== null)
 
-    // 결정 1~3: 화면 진입 자동 재조회는 데이터가 신선하면 건너뛴다. 판정 근거는 바로 위
-    // 캐시 우선 표시 단계가 이미 읽은 syncedAt 이라 저장소를 다시 읽지 않는다(결정 4).
+    // 화면 진입 자동 재조회는 데이터가 신선하면 건너뛴다. 판정 근거는 바로 위 캐시 우선 표시
+    // 단계가 이미 읽은 syncedAt 이라 저장소를 다시 읽지 않는다.
     if (
       options?.auto === true &&
       hasSyncAttemptedThisRun() &&
@@ -324,8 +318,8 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
       )
     ) {
       // set 을 두 번 하지 않는다. loading 을 거치면 건너뛰는 진입에서 로딩이 한 프레임 번쩍인다.
-      // isStale 은 false 다(결정 5): 재검증이 오지 않기로 결정된 값이라 "오래된 데이터"가 아니고,
-      // 그 표식을 남기면 탭을 옮길 때마다 스탈 토스트가 뜬다. syncedAt 은 캐시 값 그대로 둔다.
+      // isStale 은 false 다. 재검증이 오지 않기로 결정된 값이라 오래된 데이터가 아니고, 그 표식을
+      // 남기면 탭을 옮길 때마다 스탈 토스트가 뜬다. syncedAt 은 캐시 값 그대로 둔다.
       set({
         status: 'loaded',
         characters: await sortByCachedLevel(
@@ -368,10 +362,9 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
     set({ activeTab: tab })
   },
 
-  // 저장소(단일 진실 공급원)에서 현재 배열을 읽어 멤버십만 추가/삭제하고
-  // 다시 저장한 뒤 화면 상태를 갱신한다. 값 필드는 저장하지 않는다(max_count는 템플릿 확정값 복사).
-  // kind('daily'/'weekly')는 호출부(관리 페이지의 현재 탭)가 확정해 넘긴다. 표시 시점 추론 없음.
-  // 선택 불가 항목은 여기서 막는다. UI 사전 차단만으로는 다른 호출 경로가 샌다.
+  // 저장소(단일 진실 공급원)에서 현재 배열을 읽어 멤버십만 추가·삭제하고 다시 저장한 뒤 화면
+  // 상태를 갱신한다. 값 필드는 저장하지 않는다. kind 는 호출부가 확정해 넘긴다. 선택 불가
+  // 항목은 여기서 막는다. UI 사전 차단만으로는 다른 호출 경로가 샌다.
   async addManualContent(ocid, contentName, kind) {
     const view = get().characters.find((character) => character.ocid === ocid)
 

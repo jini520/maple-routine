@@ -62,9 +62,9 @@ function entryId(record: Pick<BossDropRecord, 'ocid' | 'boss' | 'difficulty' | '
 /**
  * 저장 그룹의 키. `replaceBossDropRecords` 의 단위다(`dropIndex` 는 빠진다).
  *
- * `difficulty` 를 `string` 으로 받는 이유: 저장 계층(`BossDropRecord`·`BossProfitRecord`)은
- * 난이도를 좁히지 않은 문자열로 들고 있어(매칭 실패 원문명이 들어올 수 있다) 같은
- * 키 함수를 저장 행과 화면 엔트리 양쪽에 쓰려면 넓은 쪽에 맞춰야 한다.
+ * `difficulty` 를 `string` 으로 받는 것은 저장 계층이 난이도를 좁히지 않은 문자열로 들고
+ * 있어서다(매칭 실패 원문명이 들어올 수 있다). 같은 키 함수를 저장 행과 화면 엔트리 양쪽에
+ * 쓰려면 넓은 쪽에 맞춰야 한다.
  */
 function saveGroupKey(entry: { ocid: string; boss: string; difficulty: string; periodKey: string }): string {
   return `${entry.ocid}|${entry.boss}|${entry.difficulty}|${entry.periodKey}`
@@ -187,9 +187,9 @@ async function writePrice(
     new Date().toISOString(),
   )
 
-  // 보스 수익 화면은 스택 왕복에도 마운트를 유지하므로 자기 스냅샷을 다시 읽지
-  // 않는다. 여기서 알려주지 않으면 값이 "새로고침해야 반영"된다(사용자 보고 2026-08-10).
-  // **쓰기가 성공한 뒤에만** 부른다: 실패한 값이 저쪽 화면에 남으면 저장된 것처럼 보인다.
+  // 보스 수익 화면은 스택 왕복에도 마운트를 유지하므로 자기 스냅샷을 다시 읽지 않는다. 여기서
+  // 알려주지 않으면 값이 새로고침해야 반영된다. 쓰기가 성공한 뒤에만 부른다. 실패한 값이 저쪽
+  // 화면에 남으면 저장된 것처럼 보인다.
   useBossProfitStore
     .getState()
     .applyExternalDropEdit(entry.ocid, entry.boss, entry.difficulty, entry.periodKey, nextDrops)

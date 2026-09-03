@@ -10,13 +10,10 @@ export type ResumeTarget =
   | { status: 'completed' }
 
 /**
- * 저장된 값에서 재개 지점을 파생한다. 부팅(restoreFromStorage)과 키 재입력
- * (submitApiKey) 두 경로가 이 함수 하나를 공유한다. 두 벌이 되면 재개 규칙의
- * 진실이 둘이 되는데, 그것이 결정 1이 진행 상태 전용 키를 거부한 바로 그 이유다.
+ * 저장된 값에서 재개 지점을 파생한다. 부팅(restoreFromStorage)과 키 재입력(submitApiKey) 두
+ * 경로가 이 함수 하나를 공유한다. 두 벌이 되면 재개 규칙의 진실이 둘이 된다.
  *
  * 뒤 두 단계 판정은 로컬 읽기뿐이다. 네트워크를 타지 않는다.
- *
- * 계정 선택 단계가 없으므로 재개 표에서 그 행이 빠졌다.
  */
 export async function deriveResumeTarget(): Promise<ResumeTarget> {
   const authConfig = await getAuthConfig()

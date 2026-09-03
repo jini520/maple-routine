@@ -2,11 +2,11 @@
  * 이 캐릭터가 실제로 챙기는 컨텐츠를 내는 판정. `displayedBosses` 의 짝이다.
  *
  * 화면 밖에 있는 것은 today 의 남은 스케줄이 같은 수를 세기 때문이다. 두 벌로 두면 반드시
- * 갈라진다. 실제로 갈라졌다. today 가 처음 붙었을 때 이 필터 없이 `character.dailyContents` 를
- * 통째로 세서 **모든 캐릭터가 똑같이 일퀘 18** 로 나왔다. 그 배열은 등록 여부와 무관하게 게임에
- * 있는 일간 컨텐츠 전부다.
+ * 갈라진다. 이 필터 없이 `character.dailyContents` 를 통째로 세면 모든 캐릭터가 똑같이 일퀘
+ * 18 로 나온다. 그 배열은 등록 여부와 무관하게 게임에 있는 일간 컨텐츠 전부다.
  *
- * 수동 모드는 사용자가 앱에서 관리하는 멤버십이 목록을 정하고, 자동 모드는 게임 등록 여부가 정한다.
+ * 수동 모드는 사용자가 앱에서 관리하는 멤버십이 목록을 정하고, 자동 모드는 게임 등록 여부가
+ * 정한다.
  */
 
 import { categorizeContentEntries, WEEKLY_CATEGORY_ORDER } from '../../lib/scheduler/content-category'
