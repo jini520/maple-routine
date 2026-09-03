@@ -1,7 +1,6 @@
 /**
  * 보스 관리 화면. 추적 편집(수동)과 파티 인원 설정을 하는 스케줄 그룹의 하위 탭.
  *
- *
  * 행의 원형 `BossPortrait` 에는 프롭을 그대로 넘기기만 하고 계산을 갖지 않는다.
  */
 import { useEffect, useState } from 'react'

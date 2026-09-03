@@ -12,7 +12,7 @@ import { useCountUp } from '../../../hooks/useCountUp'
 
 export interface AnimatedNumberProps {
   /**
-   * 숫자를 구분하는 키. 같으면 이어서 굴리고, 바뀌면 그 키로 마지막에 그렸던 값에서 다시 굴린다
+   * 숫자를 구분하는 키. 같으면 이어서 굴리고, 바뀌면 그 키로 마지막에 그렸던 값에서 다시 굴린다.
    *
    */
   identity: string

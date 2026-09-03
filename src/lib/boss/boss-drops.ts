@@ -190,8 +190,7 @@ function compareStoredDrops(a: StoredDropRecord, b: StoredDropRecord): number {
 }
 
 /**
- * 처치 난이도가 확정됐을 때, 옛 난이도 키에 남은 드롭을 확정 난이도로 어떻게 옮길지 계산한다
- *
+ * 처치 난이도가 확정됐을 때 옛 난이도 키에 남은 드롭을 확정 난이도로 옮기는 계획.
  *
  * 왜 필요한가: 드롭은 `(ocid, boss, difficulty, period_key)` 로 저장된다. 익스트림으로 등록해두고
  * 드롭까지 기록한 뒤 백필이 실제 처치를 **하드**로 확정하면, 그 드롭은 아무 행도 읽지 않는 키에

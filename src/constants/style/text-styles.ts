@@ -19,7 +19,6 @@ export const TABULAR_NUMS: TextStyle = { fontVariant: ['tabular-nums'] }
 /**
  * 일러스트 위 글자의 **가독성 스크림**
  *
- *
  * 테마 토큰이 아니라 검정 고정인 이유는 core 쪽 주석이 갖는다. 무슨 그림이 깔리든 글자가 읽혀야
  * 하므로 `shadow-color`(elevation 용)로 바꾸면 밝은 일러스트 위에서 묻힌다.
  *

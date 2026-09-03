@@ -30,7 +30,7 @@ const NUMERIC_KEYBOARDS = new Set<RNTextInputProps['keyboardType']>([
  *
  *  ① 시스템 글자 배수를 `[1.0, 1.235]` 로 자른다
  *  ② 조합이 도는 칸은 `value` 대신 `defaultValue` 로 심는다
- *  ③ 자리표시자 색과 상자를 못박아 두 플랫폼을 맞춘다
+ *  ③ 자리표시자 색과 상자를 못박아 두 플랫폼을 맞춘다.
  *
  * 치수를 주고 싶으면 `className` 이나 `style` 로 주면 되고, 그쪽이 여기 기본값을 이긴다.
  *

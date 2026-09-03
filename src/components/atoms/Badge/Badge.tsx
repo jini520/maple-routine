@@ -32,8 +32,7 @@ export interface BadgeProps extends TextProps {
  * 배지 하나.
  *
  * 레이아웃(`ml-auto`·`shrink-0` 등)은 호출부가 `className` 으로 소유한다. 여백과 색과 두께는 이
- * 컴포넌트가 쥐므로 `className` 으로 덮으려 하지 말 것. 두께는 `weight` 프롭으로 덮는다
- *
+ * 컴포넌트가 쥐므로 `className` 으로 덮으려 하지 말 것. 두께는 `weight` 프롭으로 덮는다.
  *
  * @example
  * // 상태·카테고리

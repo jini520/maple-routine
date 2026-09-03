@@ -101,8 +101,7 @@ function toSharedEntry(entry: CatalogEntry, scope: 'world' | 'account'): SharedC
 }
 
 /**
- * 공유 컨텐츠를 **계열별로** 묶어 준다. today 의 계정 및 메이플 ID 공유 컨텐츠 위젯이 읽는다
- *
+ * 공유 컨텐츠를 **계열별로** 묶어 준다. today 의 계정 및 메이플 ID 공유 컨텐츠 위젯이 읽는다.
  *
  * ## 월드/계정이 축이 아니다
  *

@@ -1,5 +1,5 @@
 /**
- * 스피너 둘이 공유하는 프롭. 반복 모션 훅은 `hooks/useLoopedValue` 로 나갔다
+ * 스피너 둘이 공유하는 프롭. 반복 모션 훅은 `hooks/useLoopedValue` 로 나갔다.
  *
  */
 
