@@ -23,7 +23,7 @@ import { AlertTriangleIcon, Button, RotateCcwIcon, Text } from '../../atoms'
 
 interface ErrorBoundaryProps {
   children: ReactNode
-  /** 앱을 다시 실행하는 콜백. 기본값을 두지 않는 이유는 파일 머리 참고. */
+  /** 앱을 다시 실행하는 콜백. 기본값을 지어내면 같은 예외로 즉시 되돌아오는 버튼이 된다. */
   onRestart: () => void
 }
 
@@ -43,8 +43,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     // 않으므로 무해하고, 실기기 원격 디버깅에서는 단서가 이것뿐이다.
     console.error('[ErrorBoundary]', error, info.componentStack)
 
-    // 폴백이 뜨는 것과 같은 커밋에서 스플래시를 내린다(위 ⑵).
-    // 실패는 삼킨다. 이 순간 사용자에게 필요한 것은 화면이지 정확한 실패 처리가 아니다.
+    // 폴백이 뜨는 것과 같은 커밋에서 스플래시를 내린다. 실패는 삼킨다. 이 순간 사용자에게
+    // 필요한 것은 화면이지 정확한 실패 처리가 아니다.
     hideSplashScreen().catch(() => {})
   }
 

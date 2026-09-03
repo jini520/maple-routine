@@ -43,10 +43,10 @@ const ITEM_SIZE_PX = 72
 /** DropEff 기둥만 아이템과 무관하게 세로 이동(양수 = 아래로). */
 const DROP_OFFSET_Y_PX = 8
 
-/** 배경 방사 그라디언트. 테마 밖 고정색(파일 머리 ④). */
+/** 배경 방사 그라디언트. 테마 밖 고정색. */
 const BACKDROP_INNER = '#1b0f29'
 const BACKDROP_OUTER = '#05010a'
-/** CSS `farthest-corner` 의 근사(파일 머리 ②). */
+/** CSS `farthest-corner` 의 근사. */
 const BACKDROP_RADIUS = '70.7%'
 
 interface DropEffectOverlayProps {
@@ -56,8 +56,8 @@ interface DropEffectOverlayProps {
 }
 
 /**
- * 프레임 비트맵 크기. 번들 에셋은 스스로 안다(이후). 모르면 `null` 이고, 그때는
- * 아예 안 그린다(`frame-layout.ts`. 크기 없이 그리면 프레임마다 최대 26px 튄다).
+ * 프레임 비트맵 크기. 번들 에셋은 스스로 안다. 모르면 `null` 이고 그때는 아예 안 그린다.
+ * 크기 없이 그리면 프레임마다 최대 26px 튄다.
  */
 function bitmapSizeOf(source: number | { uri?: string }): FrameBitmapSize | null {
   const resolved = Image.resolveAssetSource(source as never)
@@ -67,15 +67,15 @@ function bitmapSizeOf(source: number | { uri?: string }): FrameBitmapSize | null
 }
 
 /**
- * 스프라이트 한 층. **전 프레임을 마운트해 두고 `opacity` 로 한 장만 켠다**(파일 머리 ⑤).
+ * 스프라이트 한 층. 전 프레임을 마운트해 두고 `opacity` 로 한 장만 켠다.
  *
  * `source` 를 갈아끼우지 않는 것이 요점이다. 붙어 있는 `<Image>` 는 자기 비트맵을 쥐고 있어
  * 캐시에서 밀려나도 그릴 수 있다. 갈아끼우는 구조에서는 그 순간 캐시를 다시 뒤지고, 없으면
  * 그 프레임이 통째로 빈다.
  */
 /**
- * 프레임 한 장. **`memo` 인 이유는 tick 마다 55장을 전부 재조정하지 않기 위해서다**. 실제로 바뀌는
- * 것은 **켜지는 하나와 꺼지는 하나** 뿐이다.
+ * 프레임 한 장. `memo` 인 것은 tick 마다 55장을 전부 재조정하지 않기 위해서다. 실제로 바뀌는
+ * 것은 켜지는 하나와 꺼지는 하나뿐이다.
  */
 const SpriteFrameView = memo(function SpriteFrameView(props: {
   frame: SpriteFrame
@@ -135,15 +135,15 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
     [],
   )
 
-  // ── 스프라이트 층: **전 프레임을 마운트해 두고 보이는 것만 켠다**(파일 머리 ⑤).
+  // 스프라이트 층. 전 프레임을 마운트해 두고 보이는 것만 켠다.
   const pillarFrames = useMemo(() => buildPillarFrames(bitmapSizeOf), [])
   const screenFrames = useMemo(
     () => buildScreenFrames(screenEffectScale(viewportW, viewportH), bitmapSizeOf),
     [viewportW, viewportH],
   )
-  // **기다리는 것은 버스트(screen) 뿐이다.** 기둥은 8프레임째(약 356ms 뒤)에나 나오고 장당 작아서
-  // 그 사이에 다 실린다. 55장을 다 기다리면 재생이 시작되는 바로 그 순간까지 디코드가 몰려
-  // **첫 장이 늘어졌다가 뒤에서 서두른다**(2026-08-26 실측: frame 0 이 91ms, frame 2 가 25ms).
+  // 기다리는 것은 버스트(screen)뿐이다. 기둥은 8프레임째(약 356ms 뒤)에나 나오고 장당 작아서
+  // 그 사이에 다 실린다. 55장을 다 기다리면 재생이 시작되는 그 순간까지 디코드가 몰려 첫 장이
+  // 늘어졌다가 뒤에서 서두른다(실측: frame 0 이 91ms, frame 2 가 25ms).
   const [warm, setWarm] = useState(false)
   const pendingRef = useRef(screenFrames.length)
   const settleOne = useCallback(() => {
@@ -153,12 +153,11 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
 
   const [state, setState] = useState(createDropEffectState)
 
-  // 상태를 ref 로도 들고 있는 이유: tick 은 `requestAnimationFrame` 콜백이라 **자기 클로저의 옛
-  // state 를 본다.**
+  // 상태를 ref 로도 들고 있는 것은 tick 이 `requestAnimationFrame` 콜백이라 자기 클로저의 옛
+  // state 를 보기 때문이다.
   //
-  // **ref 가 원본이고 state 는 그림자다**. 렌더 때 `stateRef.current = state` 로 되맞추지 않는다.
-  // 그 방향이면 렌더 중 ref 를 건드리게 되고(React 규칙 위반), 무엇보다 필요가 없다: 값을 바꾸는
-  // 곳이 tick 과 탭 둘뿐이고 둘 다 ref 를 먼저 고친 뒤 `setState` 로 화면에 흘린다.
+  // ref 가 원본이고 state 는 그림자다. 렌더 때 `stateRef.current = state` 로 되맞추지 않는다.
+  // 그 방향이면 렌더 중 ref 를 건드리게 되고, 값을 바꾸는 곳이 tick 과 탭 둘뿐이라 필요도 없다.
   const stateRef = useRef(state)
 
   const onCloseRef = useRef(props.onClose)
@@ -166,11 +165,9 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
     onCloseRef.current = props.onClose
   }, [props.onClose])
 
-  // 재생 루프. **`requestAnimationFrame` 인 이유는 `drop-effect-player.ts` 머리에 적었다**.
-  // 스프라이트 재생은 **몇 번째 그림인가** 를 정하는 일이라 JS 스레드를 벗어날 수 없다.
+  // 재생 루프. 스프라이트 재생은 몇 번째 그림인가 를 정하는 일이라 JS 스레드를 벗어날 수 없다.
   //
-  // **예열이 끝나기 전에는 돌지 않는다**(파일 머리 ⑤). 디코드가 안 끝난 프레임을 넘기면 그 한 장이
-  // 통째로 빈다.
+  // 예열이 끝나기 전에는 돌지 않는다. 디코드가 안 끝난 프레임을 넘기면 그 한 장이 통째로 빈다.
   useEffect(() => {
     if (!warm) return undefined
     let raf = 0
@@ -184,8 +181,8 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
       const prev = stateRef.current
       const next = advanceDropEffect(prev, dt, counts)
       stateRef.current = next
-      // **그림이 그대로면 다시 그리지 않는다**(`rendersDifferently`). 안 그러면 120Hz 기기에서
-      // 초당 120번 트리를 재조정하면서 정작 스프라이트는 22번만 바뀐다.
+      // 그림이 그대로면 다시 그리지 않는다(`rendersDifferently`). 안 그러면 120Hz 기기에서 초당
+      // 120번 트리를 재조정하면서 정작 스프라이트는 22번만 바뀐다.
       if (rendersDifferently(prev, next)) setState(next)
 
       if (next.finished) {
@@ -207,8 +204,8 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
     if (next.finished) onCloseRef.current()
   }, [counts])
 
-  // ── 이번 프레임에 **켤 키**. 그림을 바꾸는 것이 아니라 켜는 것을 바꾼다(파일 머리 ⑤).
-  // 예열이 끝나기 전에는 아무것도 안 켠다. 켜 두면 그 한 장이 예열 내내 **멈춰 서 있다.**
+  // 이번 프레임에 켤 키. 그림을 바꾸는 것이 아니라 켜는 것을 바꾼다. 예열이 끝나기 전에는
+  // 아무것도 안 켠다. 켜 두면 그 한 장이 예열 내내 멈춰 서 있다.
   const activeScreenKey = !warm || state.screenDone ? null : `screen-${state.screenIndex}`
   const activePillarKey =
     !warm || state.pillarPhase === null ? null : `${state.pillarPhase}-${state.pillarIndex}`
@@ -246,11 +243,11 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
         </Svg>
 
 
-        {/* DropEff 기둥. 이 View 의 좌상단이 **기둥의 지면 앵커**이고, 프레임은 자기 origin 이 그
+        {/* DropEff 기둥. 이 View 의 좌상단이 기둥의 지면 앵커이고, 프레임은 자기 origin 이 그
             점에 오도록 음수 좌표로 놓인다(`frame-layout.ts`). 검은 배경 위 가산 합성
-            스프라이트라 `mixBlendMode: 'screen'` 이 필수다. 없으면 검은 사각형이 그대로 보인다.
-            **블렌드는 이 앵커가 진다**(안쪽 View 에 걸면 `zIndex` 가 만든 스태킹 컨텍스트에 갇힌다,
-            파일 머리 ③). 웹에서는 `<img>` 하나가 지던 자리다. */}
+            스프라이트라 `mixBlendMode: 'screen'` 이 필수다. 없으면 검은 사각형이 그대로
+            보인다. 블렌드는 이 앵커가 진다. 안쪽 View 에 걸면 `zIndex` 가 만든 스태킹
+            컨텍스트에 갇힌다. */}
         <View
           testID="drop-effect-pillar"
           pointerEvents="none"
@@ -269,9 +266,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
           />
         </View>
 
-        {/* 중앙 아이템(투명 PNG). 이후 매핑이 있는 아이템은 여기까지 오지만, 그림을
-            앉히는 `<Image>` 는 재생 엔진(파일 머리 ⓑ)과 함께 온다. 팝인 트리거가 8프레임 시점이라
-            엔진 없이는 켤 것이 없다. 매핑이 없는 아이템은 웹과 같은 분기로 그대로 비어 있다. */}
+        {/* 중앙 아이템(투명 PNG). 매핑이 없는 아이템은 그대로 비어 있다. */}
         {itemUrl !== null && state.itemVisible && (
           <View
             testID="drop-effect-item"
@@ -284,9 +279,8 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
               marginTop: -ITEM_SIZE_PX / 2,
             }}
           >
-        {/* 레이어를 셋으로 가른다. 중앙정렬(바깥)·부유(가운데)·
-                팝인(안쪽)이 한 요소에 겹치면 서로의 transform 을 덮어쓴다.
-                모션 줄이기면 둘 다 안 건다(웹의 `prefers-reduced-motion` 짝). */}
+        {/* 레이어를 셋으로 가른다. 중앙정렬(바깥)·부유(가운데)·팝인(안쪽)이 한 요소에 겹치면
+            서로의 transform 을 덮어쓴다. 모션 줄이기면 둘 다 안 건다. */}
             <AnimatedView
               testID="drop-effect-item-float"
               style={reduceMotion ? undefined : FLOAT_ANIMATION}
@@ -307,8 +301,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
           </View>
         )}
 
-        {/* ScreenEff. 전 프레임 동일 배율 + 화면 중앙. 기둥과 같은 이유로
-            가산 합성이다. */}
+        {/* ScreenEff. 전 프레임 동일 배율 + 화면 중앙. 기둥과 같은 이유로 가산 합성이다. */}
         <View
           testID="drop-effect-screen"
           pointerEvents="none"

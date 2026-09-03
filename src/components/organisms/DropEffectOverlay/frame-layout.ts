@@ -44,8 +44,7 @@ function round2(v: number): number {
 /**
  * 앵커(부모의 좌상단)에 origin 점이 오도록 프레임을 놓는다.
  *
- * 크기를 모르면(`null`) **놓지 않는다**. 크기 없이 그리면
- * 표시도 켜지 않던 것과 같은 판단이다. 크기 없이 그리면 프레임마다 최대 26px 씩 튄다.
+ * 크기를 모르면(`null`) 놓지 않는다. 크기 없이 그리면 프레임마다 최대 26px 씩 튄다.
  */
 function placeDropFrame(
   origin: DropEffectOrigin,
@@ -65,10 +64,10 @@ function placeDropFrame(
 }
 
 /**
- * ScreenEff 는 origin 테이블이 없다. 크롭이 이미 버스트 원점 기준 중앙이라 **화면 중앙 정렬**이면
- * 되고, 배율만 전 프레임에 똑같이 걸린다.
+ * ScreenEff 는 origin 테이블이 없다. 크롭이 이미 버스트 원점 기준 중앙이라 화면 중앙 정렬이면
+ * 되고 배율만 전 프레임에 똑같이 걸린다.
  *
- * 가운데 맞춤도 퍼센트가 아니라 음수 마진으로 한다(위 주석).
+ * 가운데 맞춤도 퍼센트가 아니라 음수 마진으로 한다.
  */
 function centerDropFrame(scale: number, bitmap: FrameBitmapSize | null): FramePlacement | null {
   if (bitmap === null) return null
@@ -84,8 +83,8 @@ function centerDropFrame(scale: number, bitmap: FrameBitmapSize | null): FramePl
 /**
  * 스프라이트 한 장. 어느 그림을 어디에 의 최소 단위.
  *
- * 이 목록이 필요한 이유는 이다. 재생이 `source` 를 갈아끼우는 대신 **전 프레임을
- * 마운트해 두고 `opacity` 로 한 장만 켜기** 때문에, 켜기 전에 39+16 장의 자리를 미리 다 알아야 한다.
+ * 재생이 `source` 를 갈아끼우는 대신 전 프레임을 마운트해 두고 `opacity` 로 한 장만 켜므로,
+ * 켜기 전에 39+16 장의 자리를 미리 다 알아야 한다.
  */
 export interface SpriteFrame {
   key: string

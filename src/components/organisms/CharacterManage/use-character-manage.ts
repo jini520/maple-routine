@@ -63,14 +63,14 @@ export interface CharacterManageController {
   representativeOcid: string | null
 
   // ── 아래 층 ──
-  /** 이 계정에서 **아직 안 고른** 후보. 고른 것은 위로 옮겨간다(결정 3). */
+  /** 이 계정에서 아직 안 고른 후보. 고른 것은 위로 옮겨간다. */
   candidates: CharacterPickerEntry[]
   /** 이 계정에서 고를 수 있는 캐릭터 수. {전체}개 중 {표시}개 표시 의 앞자리. */
   selectableCount: number
   isRosterLoading: boolean
   rosterError: ScheduleSyncError | null
 
-  /** 저장 활성 조건. 집합 ∪ 순서 ∪ 대표 중 하나라도 다르면 참(결정 7). */
+  /** 저장 활성 조건. 집합 ∪ 순서 ∪ 대표 중 하나라도 다르면 참. */
   isDirty: boolean
 
   selectAccount: (accountId: string) => void
@@ -101,8 +101,8 @@ export function useCharacterManage(): CharacterManageController {
   const [isRosterLoading, setIsRosterLoading] = useState(false)
   const [rosterError, setRosterError] = useState<ScheduleSyncError | null>(null)
 
-  // **편집하기 전에는 저장된 목록이 그대로 보인다**(`null` = 아직 손대지 않았다). 늦게 도착하는
-  // `trackedOcids` 를 effect 로 **심으면** 그 setState 가 effect 본문에 직접 앉는다. 파생이 답이다.
+  // 편집하기 전에는 저장된 목록이 그대로 보인다(`null` = 아직 손대지 않았다). 늦게 도착하는
+  // `trackedOcids` 를 effect 로 심으면 그 setState 가 effect 본문에 직접 앉는다. 파생이 답이다.
   const [editedOcids, setEditedOcids] = useState<string[] | null>(null)
   // 같은 이유로 **아직 안 골랐다**(`undefined`)와 **없음으로 골랐다**(`null`)를 값으로 가른다.
   const [pickedRepresentative, setPickedRepresentative] = useState<string | null | undefined>(undefined)
@@ -220,12 +220,11 @@ export function useCharacterManage(): CharacterManageController {
     }
   }, [accountsNonce, loadRoster])
 
-  // ── 로컬 프로필·조회 불가 ────────────────────────────────────────────────────────
+  // `선택됨` 층은 네트워크 없이 그린다. 드롭다운 행의 얼굴도 캐시에 있을 때만 쓰므로 같은
+  // 자리에서 함께 읽는다. 얼굴 하나 때문에 프로브를 돌리지 않는다.
   //
-  // `선택됨` 층은 네트워크 없이 그린다(결정 2 표). 드롭다운 행의 얼굴도 **캐시에 있을 때만**
-  // 쓰므로(결정 6) 같은 자리에서 함께 읽는다. 얼굴 하나 때문에 프로브를 돌리지 않는다.
-  // `useMemo` 인 것은 **값이 비싸서** 가 아니라 **아래 두 `useMemo` 의 deps 가 매 렌더 갈리지
-  // 않게** 하기 위해서다(`??` 는 같은 내용이라도 새 배열을 만든다).
+  // `useMemo` 인 것은 값이 비싸서가 아니라 아래 두 `useMemo` 의 deps 가 매 렌더 갈리지 않게
+  // 하기 위해서다(`??` 는 같은 내용이라도 새 배열을 만든다).
   const selectedOcids = useMemo(() => editedOcids ?? trackedOcids ?? [], [editedOcids, trackedOcids])
   const neededKey = [
     ...new Set([...selectedOcids, ...accounts.map((account) => account.representative.ocid)]),
@@ -248,9 +247,9 @@ export function useCharacterManage(): CharacterManageController {
         })),
       )
       if (cancelled) return
-      // **miss 는 적지 않는다**. 적으면 `has(ocid)` 가 참이 되어 위
-      // `missing` 이 그 ocid 를 영영 거르고, **아직 모른다** 가 **그런 것은 없다** 로 굳는다. 온보딩에서
-      // 이 회차는 로스터가 캐시를 **쓰기 전에** 돌므로 대표 캐릭터가 정확히 그 창에서 굳었다.
+      // miss 는 적지 않는다. 적으면 `has(ocid)` 가 참이 되어 위 `missing` 이 그 ocid 를 영영
+      // 거르고, 아직 모른다 가 그런 것은 없다 로 굳는다. 온보딩에서 이 회차는 로스터가 캐시를
+      // 쓰기 전에 돌므로 대표 캐릭터가 정확히 그 창에서 굳는다.
       const found = loaded.filter((item) => item.entry !== null)
       if (found.length > 0) {
         setProfiles((previous) => {
@@ -276,20 +275,17 @@ export function useCharacterManage(): CharacterManageController {
 
   // ── 파생 ─────────────────────────────────────────────────────────────────────────
   /**
-   * 위 층과 대표 얼굴이 실제로 읽는 표. **캐시 위에 이미 받은 로스터를 얹는다**
+   * 위 층과 대표 얼굴이 실제로 읽는 표. 캐시 위에 이미 받은 로스터를 얹는다.
    *
+   * 아래 층은 같은 순간에 이름·레벨·초상화를 이미 들고 있다(`rosters`). 그 값이 위로 흐르지
+   * 않으면 화면 한 장 안에서 같은 캐릭터가 한쪽만 비어 있다. 캐시가 빈 신규 설치에서만 나는
+   * 얼굴이라 온보딩을 통과하는 모든 사용자가 겪는다.
    *
-   * 아래 층은 같은 순간에 이름·레벨·초상화를 **이미 들고 있다**(`rosters`). 그 값이 위로 흐르지 않아
-   * 화면 한 장 안에서 같은 캐릭터가 한쪽만 비어 있었다. 캐시가 빈 신규 설치에서만 나는 얼굴이라
-   * 온보딩을 통과하는 모든 사용자가 겪었다.
+   * 캐시가 있으면 캐시가 이긴다. 로스터의 `character/basic` 이 그 캐시를 쓰는 쪽이라 정상
+   * 경로에서 둘은 같은 값이고, 로스터가 stub 을 먼저 흘리는 구간에서는 캐시 쪽이 덜 비어
+   * 있다. 즉 로스터는 캐시가 모르는 자리만 채운다.
    *
-   * **캐시가 있으면 캐시가 이긴다.** 로스터의 `character/basic` 이 그 캐시를 쓰는 쪽이라 정상 경로에서
-   * 둘은 같은 값이고, 로스터가 stub 을 먼저 흘리는 구간(SWR)에서는 캐시 쪽이 덜 비어
-   * 있다. 즉 로스터는 **캐시가 모르는 자리만** 채운다.
-   *
-   * **요청은 하나도 늘지 않는다**. 결정 2 표의 네트워크 없다 가 금지한 것은 위 층을 그리려고
-   * 요청을 새로 내는 것이고, 여기서는 이미 온 응답을 버리지 않을 뿐이다(결정 6 의 얼굴 하나 때문에
-   * 프로브를 돌리지 않는다 도 그대로다).
+   * 요청은 하나도 늘지 않는다. 이미 온 응답을 버리지 않을 뿐이다.
    */
   const knownProfiles = useMemo(() => {
     const merged = new Map<string, KnownCharacterProfile | null>()
@@ -319,8 +315,8 @@ export function useCharacterManage(): CharacterManageController {
   const representativeOcid = resolveRepresentative(selectedOcids, representativeState)
 
   const roster = selectedAccountId === null ? undefined : rosters[selectedAccountId]
-  // 조회 불가는 아래 층에 서지 않는다. 고를 수 없는 것을 고르라고 두지 않는다.
-  // 그래서 **빼면 어디에도 안 선다**(결정 3)가 필터 하나로 성립한다.
+  // 조회 불가는 아래 층에 서지 않는다. 고를 수 없는 것을 고르라고 두지 않는다. 그래서 빼면
+  // 어디에도 안 선다 가 필터 하나로 성립한다.
   const selectable = useMemo(
     () => (roster?.entries ?? []).filter((entry) => entry.unavailable !== true),
     [roster],
@@ -369,8 +365,8 @@ export function useCharacterManage(): CharacterManageController {
     [editSelection],
   )
 
-  // 놓은 자리가 곧 배열 순서다. **저장 시점에 다시 정렬하지 않는다**.
-  // 레벨 내림차순은 **아직 순서를 정하지 않았을 때의 초기값** 으로 내려갔다.
+  // 놓은 자리가 곧 배열 순서다. 저장 시점에 다시 정렬하지 않는다. 레벨 내림차순은 아직 순서를
+  // 정하지 않았을 때의 초기값이다.
   const moveCharacter = useCallback(
     (fromIndex: number, toIndex: number): void => {
       editSelection((previous) => moveOcid(previous, fromIndex, toIndex))
@@ -386,7 +382,7 @@ export function useCharacterManage(): CharacterManageController {
     [editSelection],
   )
 
-  // 라디오다. 채워진 별을 다시 눌러도 같은 값이라 바뀌는 것이 없다(결정 4: **여럿 고를 수 없다**).
+  // 라디오다. 채워진 별을 다시 눌러도 같은 값이라 바뀌는 것이 없다.
   const setRepresentative = useCallback((ocid: string): void => {
     setPickedRepresentative(ocid)
   }, [])

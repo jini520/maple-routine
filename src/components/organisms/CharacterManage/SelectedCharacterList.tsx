@@ -209,7 +209,7 @@ export function SelectedCharacterList(props: SelectedCharacterListProps): React.
           index={index}
           count={count}
           isRepresentative={props.representativeOcid === view.ocid}
-          // 하나가 채워지면 나머지는 흐려진다. 비활성이 아니라 톤만 낮춘다(결정 4).
+          // 하나가 채워지면 나머지는 흐려진다. 비활성이 아니라 톤만 낮춘다.
           dimmed={props.representativeOcid !== null && props.representativeOcid !== view.ocid}
           dragY={dragY}
           drop={drop}
@@ -259,7 +259,7 @@ function SelectedRow(props: SelectedRowProps): React.JSX.Element {
   const pan = useMemo(
     () =>
       Gesture.Pan()
-        // 위 파일 머리 `제스처 콜백은 JS 스레드에서 돈다`.
+        // 제스처 콜백은 JS 스레드에서 돈다.
         .runOnJS(true)
         // 세로로 움직여야 끌기다. 그 전에는 아래의 `ScrollView` 가 손가락을 갖는다.
         .activeOffsetY([-ACTIVATE_OFFSET_PX, ACTIVATE_OFFSET_PX])
@@ -288,8 +288,8 @@ function SelectedRow(props: SelectedRowProps): React.JSX.Element {
         unavailable={view.unavailable}
         leading={
           <GestureDetector gesture={pan}>
-            {/* 끌기와 같은 결과를 내는 **화면 밖 경로**. 스크린리더가 이
-                핸들에 서면 로터에 `위로/아래로 옮기기`가 뜬다. 두 경로가 `onMove` 하나를 부른다. */}
+            {/* 끌기와 같은 결과를 내는 화면 밖 경로. 스크린리더가 이 핸들에 서면 로터에
+                위로·아래로 옮기기 가 뜬다. 두 경로가 `onMove` 하나를 부른다. */}
             <View
               accessible
               accessibilityLabel={`${view.name} 순서 변경`}

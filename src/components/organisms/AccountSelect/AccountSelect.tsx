@@ -37,8 +37,7 @@ import { ChevronDownIcon, Text } from '../../atoms'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { placeDropdown } from './place-dropdown'
 
-// 얼굴 크롭 표는 `lib/face-crop` 하나뿐이다. 이 파일이 들고 있던 36px 표가 그 자리로 옮겨갔고,
-// 캐릭터 카드(`CharacterRow`)도 같은 것을 쓴다(사용자 지정 2026-08-17).
+// 얼굴 크롭 표는 `lib/face-crop` 하나뿐이다. 캐릭터 카드(`CharacterRow`)도 같은 것을 쓴다.
 
 /** 목록이 화면 가장자리에 붙지 않게 남기는 여백. */
 const EDGE_GAP_PX = 12
@@ -60,8 +59,8 @@ function AccountRow(props: AccountRowProps): React.JSX.Element {
 
   return (
     <View className="flex-row items-center gap-2.5">
-      {/* 초상화 규칙은 `CharacterRow` 와 같다(사용자 지정 2026-08-17). 두 자리가 갈리면 같은 얼굴이
-          화면마다 다르게 없어진다. */}
+      {/* 초상화 규칙은 `CharacterRow` 와 같다. 두 자리가 갈리면 같은 얼굴이 화면마다 다르게
+          없어진다. */}
       <CharacterAvatar
         imageTestID={`account-select-face-${accountId}`}
         imageUrl={props.portraitUrl}
@@ -85,8 +84,7 @@ function AccountRow(props: AccountRowProps): React.JSX.Element {
               <Image
                 accessibilityLabel={representative.world}
                 source={emblem}
-                // 폭은 그림이 정한다. 안 적으면 엠블럼의 고유 폭이 남아 줄 왼쪽이 벌어진다
-                //
+                // 폭은 그림이 정한다. 안 적으면 엠블럼의 고유 폭이 남아 줄 왼쪽이 벌어진다.
                 style={naturalAspectStyle(emblem, { height: 17 })}
                 resizeMode="contain"
               />
@@ -137,7 +135,7 @@ export function AccountSelect(props: AccountSelectProps): React.JSX.Element {
     })
   }
 
-  // 회전하면 잰 좌표가 거짓이 된다(파일 머리 ⓒ).
+  // 회전하면 잰 좌표가 거짓이 된다.
   useEffect(() => {
     if (!isOpen) return
     const subscription = Dimensions.addEventListener('change', close)
@@ -145,7 +143,6 @@ export function AccountSelect(props: AccountSelectProps): React.JSX.Element {
   }, [isOpen, close])
 
   // 고른 계정이 목록에 없을 수 있다(계정 목록이 갱신되는 순간). 렌더 중에 던지지 않는다.
-  // 그것이 이 고친 사고다.
   const selected = props.accounts.find((account) => account.accountId === props.selectedAccountId)
   if (selected === undefined) return <></>
 
@@ -162,8 +159,7 @@ export function AccountSelect(props: AccountSelectProps): React.JSX.Element {
           edgeGap: EDGE_GAP_PX,
         })
 
-  // 좌표와 높이가 둘 다 와야 **뒤집을지** 가 정해진다. 그전에 그리면 한 프레임이 엉뚱한 자리에
-  // 뜬다(파일 머리 ⓑ).
+  // 좌표와 높이가 둘 다 와야 뒤집을지가 정해진다. 그전에 그리면 한 프레임이 엉뚱한 자리에 뜬다.
   const isPlaced = placement !== null && contentHeight !== null
 
   return (
@@ -193,7 +189,7 @@ export function AccountSelect(props: AccountSelectProps): React.JSX.Element {
           navigationBarTranslucent
           onRequestClose={close}
         >
-          {/* **색이 없다**. 잡기만 한다(파일 머리 ①). */}
+          {/* 색이 없다. 잡기만 한다. */}
           <Pressable
             testID="account-select-backdrop"
             accessibilityLabel="메이플 ID 목록 닫기"

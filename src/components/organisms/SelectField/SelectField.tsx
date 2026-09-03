@@ -39,13 +39,13 @@ export interface SelectFieldProps {
   /** 트리거와 목록을 집는 이름의 뿌리. */
   testID: string
   /**
-   * 목록 **한 줄을 그리는 법**. 없으면 종전대로 라벨 한 줄이다.
+   * 목록 한 줄을 그리는 법. 없으면 라벨 한 줄이다.
    *
-   * 사냥터 줄에는 포스 배지·레벨·마릿수가 함께 서야 하는데, 그것을 라벨 문자열에 밀어 넣으면
-   * 배지를 못 그리고 **읽어 주는 이름까지 그 글자가 된다**. 그리는 일만 호출부로 넘기고
-   * 나머지(눌림·고름 표시·닫기·읽어 주는 이름)는 여기 그대로 둔다.
+   * 사냥터 줄에는 포스 배지·레벨·마릿수가 함께 서야 하는데 그것을 라벨 문자열에 밀어 넣으면
+   * 배지를 못 그리고 읽어 주는 이름까지 그 글자가 된다. 그리는 일만 호출부로 넘기고 나머지
+   * (눌림·고름 표시·닫기·읽어 주는 이름)는 여기 그대로 둔다.
    *
-   * **트리거(닫힌 줄)는 안 바뀐다**. 거기까지 넓히면 라벨–값 줄의 모양이 고르개마다 갈린다.
+   * 트리거(닫힌 줄)는 안 바뀐다. 거기까지 넓히면 라벨–값 줄의 모양이 고르개마다 갈린다.
    */
   renderOption?: (option: SelectOption, isSelected: boolean) => React.ReactNode
 }
@@ -87,8 +87,8 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
     return () => subscription.remove()
   }, [isOpen, close])
 
-  // 고른 값이 목록에 없을 수 있다(캐릭터 목록이 갱신되는 순간). **렌더 중에 던지지 않는다**.
-  // 첫 칸(대개 **안 고름**)으로 읽어 준다.
+  // 고른 값이 목록에 없을 수 있다(캐릭터 목록이 갱신되는 순간). 렌더 중에 던지지 않는다.
+  // 첫 칸(대개 안 고름)으로 읽어 준다.
   const selectedLabel =
     props.options.find((option) => option.value === props.selected)?.label ??
     props.options[0]?.label ??

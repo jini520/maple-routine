@@ -16,11 +16,7 @@ export function portraitTextArcPath(): string {
   return `M ${centerX - r} ${centerY} A ${r} ${r} 0 0 0 ${centerX + r} ${centerY}`
 }
 
-/**
- * 레벨과 이름을 6시를 경계로 좌우에 붙이는 오프셋.
- *
- * @see. 줄이 아니라 둘의 경계를 가운데에 맞추는 이유.
- */
+/** 레벨과 이름을 6시를 경계로 좌우에 붙이는 오프셋. */
 export function portraitTextOffsetPercent(side: 'left' | 'right'): string {
   const halfArcLength = Math.PI * PORTRAIT_RAIL.textR
   const delta = (PORTRAIT_RAIL.textGap / 2 / halfArcLength) * 100
@@ -36,10 +32,10 @@ function pointAt(degrees: number): { x: number; y: number } {
 }
 
 /**
- * 링 호 경로. 길이가 0 이면 **빈 문자열**이다.
+ * 링 호 경로. 길이가 0 이면 빈 문자열이다.
  *
- * 길이 0 인 호를 `strokeLinecap="round"` 로 그리면 점 하나가 찍혀 아직 아무것도 안 한 것이 조금
- * 한 것으로 보인다.
+ * 길이 0 인 호를 `strokeLinecap="round"` 로 그리면 점 하나가 찍혀 아직 아무것도 안 한 것이
+ * 조금 한 것으로 보인다.
  */
 export function portraitRingArcPath(from: number, to: number): string {
   if (Math.abs(to - from) < 0.01) return ''

@@ -23,10 +23,8 @@ import { CharacterAvatar } from '../../molecules/CharacterAvatar/CharacterAvatar
 import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { Text } from '../../atoms'
 
-// 얼굴 크롭 표는 `lib/face-crop` 하나뿐이다(사용자 지정 2026-08-17). 이 파일이 들고 있던 표는
-// 56px 그리드 시절의 것(`{x:115, y:120, size:64}` · 40px)이라 **같은 얼굴이 드롭다운 행과 다르게
-// 잘렸다.** 드롭다운 행의 표(48px 크롭 · 36px 아바타)로 통일했고, 그 값은 이 앱의 다른 초상화들
-// (보스 수익 아바타 · 초상화 레일)이 이미 쓰던 것이다.
+// 얼굴 크롭 표는 `lib/face-crop` 하나뿐이다. 이 파일이 자기 표를 들면 같은 얼굴이 드롭다운 행과
+// 다르게 잘린다. 값(48px 크롭 · 36px 아바타)은 이 앱의 다른 초상화들이 이미 쓰던 것이다.
 
 const ROW_CLASS = 'flex-row items-center gap-2 rounded-[14px] border border-border bg-surface px-2.5 py-2'
 
@@ -46,11 +44,11 @@ export interface CharacterRowProps {
   imageUrl: string | null
   /** 조회 불가. 2줄이 조회할 수 없는 캐릭터 로 바뀐다. */
   unavailable?: boolean
-  /** 왼쪽 슬롯: 끌기 핸들(위 층에만. 결정 5). */
+  /** 왼쪽 슬롯. 끌기 핸들(위 층에만). */
   leading?: React.ReactNode
   /** 오른쪽 슬롯: 위 층은 별+✕, 아래 층은 ＋. */
   trailing?: React.ReactNode
-  /** 주면 **카드 전체**가 버튼이 된다(결정 3. `＋` 는 표시일 뿐 버튼이 아니다). */
+  /** 주면 카드 전체가 버튼이 된다. `＋` 는 표시일 뿐 버튼이 아니다. */
   onPress?: () => void
 }
 
@@ -62,9 +60,9 @@ export function CharacterRow(props: CharacterRowProps): React.JSX.Element {
     <>
       {props.leading}
 
-      {/* 이름 첫 글자가 아니라 **테마 주황 원 + `?`** 다(사용자 지정). 첫 글자는 이 캐릭터의 얼굴처럼
-          보여서 **못 가져왔다** 를 말하지 못했다. 글자색은 `on-primary`(그 색 위에 놓는 글자로 이미
-          정의된 토큰이라 테마마다 대비가 보장된다). */}
+      {/* 이름 첫 글자가 아니라 테마 주황 원 + `?` 다. 첫 글자는 이 캐릭터의 얼굴처럼 보여서 못
+          가져왔다 를 말하지 못한다. 글자색은 `on-primary`. 그 색 위에 놓는 글자로 이미 정의된
+          토큰이라 테마마다 대비가 보장된다. */}
       <CharacterAvatar
         imageTestID="character-row-face"
         imageUrl={props.imageUrl}

@@ -8,7 +8,7 @@ import { useToastStore } from '../../../features/toast/store'
 import { useBottomSafeAreaPx } from '../../../lib/safe-area'
 import { Toast } from './Toast'
 
-/** 하단 탭바 높이. 웹 `AppShell` 의 `h-16`(4rem)과 같은 기준(파일 머리 ③). */
+/** 하단 탭바 높이. */
 const TAB_BAR_H = 64
 /** 탭바(또는 안전영역) 위로 띄우는 간격. 웹 `0.75rem`. */
 const GAP = 12

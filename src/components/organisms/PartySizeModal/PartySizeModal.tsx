@@ -1,10 +1,10 @@
 /**
  * 보스 카드를 탭하면 열리는 파티 인원·난이도 모달.
  *
- * **표시 전용이다**. 모드(자동/수동)를 모르고, 난이도 선택이 무엇을 뜻하는지도 모른다. 수동
- * 모드에서는 멤버십 교체이고 자동 모드에서는 "어느 난이도의 파티 인원을 편집할지" 전환인데, 그
- * 차이는 호출부가 핸들러로 정한다(결정 3). 여기에 모드 분기를 두면 나중에 두 모드를 통합할 때
- * 지워야 할 코드가 된다.
+ * 표시 전용이다. 모드(자동·수동)를 모르고 난이도 선택이 무엇을 뜻하는지도 모른다. 수동
+ * 모드에서는 멤버십 교체이고 자동 모드에서는 어느 난이도의 파티 인원을 편집할지 전환인데, 그
+ * 차이는 호출부가 핸들러로 정한다. 여기에 모드 분기를 두면 나중에 두 모드를 통합할 때 지워야
+ * 할 코드가 된다.
  *
  * 파티 인원은 (보스 + 난이도)에 붙어 있어 난이도를 바꾸면 값과 상한이 함께 갈아탄다
  * (스우: 하드 6인 / 익스트림 2인). 라벨 옆 `n / max` 배지가 그 사실을 말한다.
@@ -17,8 +17,7 @@ import type { BossDifficulty } from '../../../types'
 import { withAlpha } from '../../../lib/color'
 import { LinearGradient } from '../../../lib/nativewind-interop'
 import { Badge, Text, UsersIcon, XIcon } from '../../atoms'
-// 히어로 글자의 그림자는 카드 둘과 같은 값을 쓴다. 세 번째 호출부가 생기며 `lib/text-styles.ts`
-// 로 올라갔다. 값·근거는 그 파일이 갖는다.
+// 히어로 글자의 그림자는 카드 둘과 같은 값을 쓴다. 값·근거는 `lib/text-styles.ts` 가 갖는다.
 import { ILLUSTRATION_TEXT_SHADOW_STYLE, TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { useThemeAppearance } from '../../../theme/context'
 import { MediaScope } from '../../../theme/MediaScope'
@@ -40,8 +39,8 @@ export function PartySizeModal(props: {
   onChangePartySize: (next: number) => void
   onClose: () => void
 }): React.JSX.Element {
-  // `MediaScope` 안에서 `--color-surface` 로 재선언되는 그 값이다. 파생
-  // 함수를 다시 부르지 않는다(`deriveMediaScope` 의 입력이 곧 이 토큰이다).
+  // `MediaScope` 안에서 `--color-surface` 로 재선언되는 그 값이다. 파생 함수를 다시 부르지
+  // 않는다(`deriveMediaScope` 의 입력이 곧 이 토큰이다).
   const { definition } = useThemeAppearance()
   const mediaSurface = definition.mediaSurface
 
@@ -54,21 +53,18 @@ export function PartySizeModal(props: {
     // Modal.Panel: 일러스트가 모서리까지 가야 해서 카드 껍데기(p-6)를 쓰지 않고 직접 두른다.
     <Modal onClose={props.onClose} align="center" testId="party-size-modal">
       <Modal.Panel maxWidth="max-w-2xs">
-        {/* 스크림 위 테두리 톤다운을 **이 View 가 직접** 쓴다. RN 에는
-            `.panel-on-scrim-parent > *` 짝이 없다(`Modal.tsx` 의 `ModalPanel` 주석). 안쪽
-            `border-t` 는 표면 위 구분선이라 대상이 아니다. */}
+        {/* 스크림 위 테두리 톤다운을 이 View 가 직접 쓴다. RN 에는 `.panel-on-scrim-parent > *`
+            짝이 없다. 안쪽 `border-t` 는 표면 위 구분선이라 대상이 아니다. */}
         <View className="overflow-hidden rounded-[14px] border border-panel-border bg-surface">
-          {/* 히어로. 카드와 같은 bleed 레시피. `MediaScope` 안이라 `bg-surface`·
-              `text-text` 가 media-* 로 해석된다. */}
+          {/* 히어로. 카드와 같은 bleed 레시피. `MediaScope` 안이라 `bg-surface`·`text-text` 가
+              media-* 로 해석된다. */}
           <MediaScope className="relative h-22 overflow-hidden bg-surface">
-            {/* 일러스트 없는 보스(`portraitSlug: null`)는 히어로를 **비운다**. 폴백 디자인을 따로
-                만들지 않는다(`boss-scheduler.md`). 그 판정은 `FadedIllustration` 가 이미 갖고 있어
-                여기서 다시 `null` 을 검사하지 않는다.
+            {/* 일러스트 없는 보스(`portraitSlug: null`)는 히어로를 비운다. 그 판정은
+                `FadedIllustration` 가 이미 갖고 있어 여기서 다시 `null` 을 검사하지 않는다.
 
-                **감싸지 않는다.** 아트와 베일이 둘 다 `absolute inset-0` 이라 흐름 자식인 래퍼로
+                감싸지 않는다. 아트와 베일이 둘 다 `absolute inset-0` 이라 흐름 자식인 래퍼로
                 감싸면 그 래퍼가 크기 0 인 상자가 되어 기준이 히어로에서 그리로 옮겨간다(그림이
-                사라진다). 그래서 화면 전용 testID(`party-size-modal-art`)도 함께 없어지고,
-                이 자리의 계약은 공용 `faded-illustration` 가 나른다. */}
+                사라진다). 이 자리의 계약은 공용 `faded-illustration` 가 나른다. */}
             <FadedIllustration source={portraitUrl} crop={crop} variant="hero" />
 
             {/* 글자를 앉히는 베일. 하드코딩 rgba 가 아니라 스코프의 표면색을 쓴다. */}

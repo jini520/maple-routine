@@ -90,14 +90,14 @@ export function Toast(props: ToastProps): React.JSX.Element {
       testID="toast"
       role={toast.variant === 'error' ? 'alert' : 'status'}
       aria-live={toast.variant === 'error' ? 'assertive' : 'polite'}
-      // 시작이 아니라 **움직임**에서만 가져간다(파일 머리 ①).
+      // 시작이 아니라 움직임에서만 가져간다.
       onMoveShouldSetResponder={() => true}
       onResponderGrant={handleGrant}
       onResponderMove={handleMove}
       onResponderRelease={handleRelease}
       onResponderTerminate={() => setDragX(null)}
       className={`relative flex-row items-center gap-2 overflow-hidden rounded-[14px] border border-border px-2.5 py-2 ${TONE_CLASSES[toast.variant]} ${enterClasses}`}
-  // 드래그 중에는 트랜지션을 주지 않는다(파일 머리 ③).
+  // 드래그 중에는 트랜지션을 주지 않는다.
       style={
         isDragging
           ? { transform: [{ translateX: dragX }], opacity: dragOpacity }
@@ -139,7 +139,7 @@ export function Toast(props: ToastProps): React.JSX.Element {
 
       {toast.duration !== null && (
         <View testID="toast-timer" className="absolute inset-x-0 bottom-0 h-[2.5px]">
-          {/* 모션 줄이기면 이 안쪽이 통째로 없다. 웹 `motion-reduce:hidden`(파일 머리 ②). */}
+          {/* 모션 줄이기면 이 안쪽이 통째로 없다. */}
           {!reduceMotion && (
             <AnimatedView
               className={`h-full w-full ${TIMER_CLASSES[toast.variant]}`}
@@ -155,8 +155,8 @@ export function Toast(props: ToastProps): React.JSX.Element {
 /**
  * 남은 시간 바의 색.
  *
- * RN 에는 `currentColor` 가 없어
- * (`tailwind.config.js` 가 `current` 를 일부러 뺐다) **배경 토큰을 직접 쓴다.**
+ * RN 에는 `currentColor` 가 없어(`tailwind.config.js` 가 `current` 를 일부러 뺐다) 배경
+ * 토큰을 직접 쓴다.
  */
 const TIMER_CLASSES: Record<ToastVariant, string> = {
   success: 'bg-secondary-ink',

@@ -48,22 +48,20 @@ export interface CharacterManageBodyProps {
    */
   scroll: ReorderScroll
   /**
-   * 실패 문구·액션이 갈리는 자리(파일 머리). 설정 하위 페이지는 `'picker'`, 온보딩 단계는
-   * `'onboarding'`. 기본값을 두지 않는다: 두 호출부뿐이고, 기본값이 있으면 셋째 호출부가
-   * **틀린 자리의 문구를 조용히** 물려받는다.
+   * 실패 문구·액션이 갈리는 자리. 설정 하위 페이지는 `'picker'`, 온보딩 단계는
+   * `'onboarding'`. 기본값을 두지 않는다. 두 호출부뿐이고, 기본값이 있으면 셋째 호출부가
+   * 틀린 자리의 문구를 조용히 물려받는다.
    */
   place: RosterErrorPlace
 }
 
-// 대기 자리. **마크와 문구가 함께 선다**.
+// 대기 자리. 마크와 문구가 함께 선다.
 //
-// 예전에는 `aria-label` 만 있어 화면에는 잎 하나뿐이었다(배정표 2·4 의 **문구 없음**).
-// 그 결정이 서 있던 전제는 **띠가 움직인다** 였는데 그것이 한 번도 참이 아니었고(정정 1), 되살린
-// 뒤에도 이 자리는 콜드 캐시에서 `character/basic` 을 캐릭터 수만큼 부르느라 **대기가 길다**.
-// 그 길이에서는 마크만으로 **무엇을** 기다리는지가 전달되지 않는다(사용자 보고 2026-08-18).
+// 이 자리는 콜드 캐시에서 `character/basic` 을 캐릭터 수만큼 부르느라 대기가 길다. 그 길이에서는
+// 마크만으로 무엇을 기다리는지가 전달되지 않는다.
 //
 // `aria-label` 을 걷고 글자를 그린다. 둘을 함께 두면 스크린리더가 같은 말을 두 번 읽는다.
-// 카드 껍데기는 여전히 안 씌운다(`LoadingState` 를 쓰지 않는 이유).
+// 카드 껍데기는 안 씌운다(`LoadingState` 를 쓰지 않는 이유).
 function Waiting(props: { label: string }): React.JSX.Element {
   return (
     <View role="status" aria-busy className="min-h-[120px] flex-1 items-center justify-center gap-3">
@@ -119,7 +117,7 @@ function CandidateArea({
                 jobClass={entry.jobClass}
                 world={entry.world}
                 imageUrl={entry.imageUrl}
-                // 누르는 것은 **카드 전체**다(결정 3). `＋` 는 표시일 뿐 버튼이 아니다.
+                // 누르는 것은 카드 전체다. `＋` 는 표시일 뿐 버튼이 아니다.
                 onPress={() => manage.addCharacter(entry.ocid)}
                 trailing={<AddMark />}
               />
@@ -169,8 +167,8 @@ export function CharacterManageBody({
           size="page"
           title="조회되는 캐릭터가 없어요"
           description="이 API 키에 연결된 메이플 ID 를 찾지 못했어요"
-          // core 에 **이 키로는 앞으로 갈 수 없다** 를 알리는 진입점이 이것 하나다
-          // 확인을 누르면 키 입력 화면으로 간다.
+          // core 에 이 키로는 앞으로 갈 수 없다 를 알리는 진입점이 이것 하나다. 확인을 누르면
+          // 키 입력 화면으로 간다.
           action={{
             label: 'API 키 다시 입력',
             onClick: () => useOnboardingStore.getState().noticeApiKeyIssue('invalid'),
@@ -185,8 +183,8 @@ export function CharacterManageBody({
       {/* ── 위: 선택됨 (계정 전체) ── */}
       <View testID="character-manage-selected" className="gap-2">
         <SectionLabel>선택된 캐릭터 {manage.selectedOcids.length}개</SectionLabel>
-        {/* 행들은 별도 컴포넌트다. 끌기·자동 스크롤·접근성 액션이 붙고,
-            칸 높이를 재려면 **행만 담은 상자**가 필요하다(라벨이 섞이면 잰 값이 틀린다). */}
+        {/* 행들은 별도 컴포넌트다. 끌기·자동 스크롤·접근성 액션이 붙고, 칸 높이를 재려면 행만
+            담은 상자가 필요하다(라벨이 섞이면 잰 값이 틀린다). */}
         <SelectedCharacterList
           views={manage.selectedViews}
           representativeOcid={manage.representativeOcid}
@@ -216,9 +214,9 @@ export function CharacterManageBody({
                 onSelect={manage.selectAccount}
               />
             )}
-            {/* 라벨 오른쪽의 **{n}개 중 {m}개 표시** 는 뺐다(사용자 지정 2026-08-17). 그 줄이 답하던
-                질문(**왜 12개가 아니라 7개인가**)은 이 화면에서 물을 수 없는 질문이었다. 안 보이는
-                캐릭터가 왜 안 보이는지는 그 숫자로도 알 수 없다. */}
+            {/* 라벨 오른쪽의 `{n}개 중 {m}개 표시` 는 두지 않는다. 그 줄이 답하던 질문(왜 12개가
+                아니라 7개인가)은 이 화면에서 물을 수 없는 질문이다. 안 보이는 캐릭터가 왜 안
+                보이는지는 그 숫자로도 알 수 없다. */}
             <SectionLabel>캐릭터 추가</SectionLabel>
             <CandidateArea manage={manage} place={place} />
           </>
