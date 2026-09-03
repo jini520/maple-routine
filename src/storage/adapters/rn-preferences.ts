@@ -13,12 +13,11 @@ import { toAppKeys, toNativeKey, type PreferencesPlatform } from './capacitor-st
 const platform: PreferencesPlatform = Platform.OS === 'ios' ? 'ios' : 'android'
 
 /**
- * `PreferencesPort` 의 RN 구현(밖으로 나가는 시그니처는 Capacitor 구현과
- * 한 글자도 다르지 않다).
+ * `PreferencesPort` 의 RN 구현.
  *
- * **기존 저장소를 그대로 쓴다**(`docs/migration/data.md` 결정 1). 새 백엔드(MMKV 등)를 도입하지
- * 않는 이유는 성능이 아니라 안전이다. 옮기는 코드는 곧 "한 번에 성공해야 하는 코드"이고 전환
- * 릴리스에는 그것을 고칠 OTA 가 없다. MMKV 이관은 RN 이 안정화된 뒤의 별개 결정이다.
+ * 기존 저장소를 그대로 쓴다. 새 백엔드(MMKV 등)를 도입하지 않는 것은 성능이 아니라 안전
+ * 때문이다. 옮기는 코드는 곧 한 번에 성공해야 하는 코드이고 전환 릴리스에는 그것을 고칠 OTA 가
+ * 없다.
  *
  * 네 연산이 전부 같은 저장소를 본다. `capacitor-storage` 모듈 하나만 부르고, 키는 전부
  * `toNativeKey`/`toAppKeys` 를 거친다.

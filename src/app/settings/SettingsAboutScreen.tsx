@@ -27,8 +27,6 @@ import { useSettingsNavigation } from './use-settings-navigation'
 export function SettingsAboutScreen(): React.JSX.Element {
   const navigation = useSettingsNavigation()
 
-  //  이 예고된 그 한 줄을 놓았다. 상태 열넷이 **전부 도달 가능**해졌고, 위 표의
-  // **도달 불가** 열은 이제 사실이 아니다(그 표는 그 파일 머리에서 함께 걷어냈다).
   const liveUpdate = useLiveUpdateStore()
   const { loadCurrentVersion } = liveUpdate
 

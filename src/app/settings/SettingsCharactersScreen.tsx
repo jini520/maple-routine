@@ -42,10 +42,9 @@ export function SettingsCharactersScreen(): React.JSX.Element {
   const { saveTrackedOcids } = useContentSchedulerStore()
   const navigation = useSettingsNavigation()
   const manage = useCharacterManage()
-  // 끌어서 순서를 바꾸는 동안 화면 가장자리에서 자동으로 굴러간다. 이 화면에는
-  // 고정 영역이 없어 굴릴 것이 페이지 자신뿐이고, 그래서 그 배선은 스크롤 뷰를 가진
-  // **화면**의 것이다. 컨트롤러에 실으면 그 객체가 ref 를 품어 읽는 자리마다 `react-hooks/refs`
-  // 에 걸린다. 온보딩 단계도 같은 두 줄을 갖는다(결정 1. 갈리는 것은 머리와 CTA 다).
+  // 끌어서 순서를 바꾸는 동안 화면 가장자리에서 자동으로 굴러간다. 이 화면에는 고정 영역이
+  // 없어 굴릴 것이 페이지 자신뿐이고, 그래서 그 배선은 스크롤 뷰를 가진 화면의 것이다.
+  // 컨트롤러에 실으면 그 객체가 ref 를 품어 읽는 자리마다 `react-hooks/refs` 에 걸린다.
   const { scrollRef, onScroll, scroll } = useReorderScroll()
   const [saveProgress, setSaveProgress] = useState<{ completed: number; total: number } | null>(null)
   // 하단 액션 바가 안전영역을 먹는다(아래). 그 **안전영역** 은 인셋이 아니라 하한이 깔린 값이다
@@ -117,10 +116,9 @@ export function SettingsCharactersScreen(): React.JSX.Element {
         </View>
       </ScreenScroll>
 
-      {/* 스크롤 뷰의 **형제**이자 절대 배치라 굴러가지 않는다(파일 머리. 의 하단 액션 바
-          예외). 불투명해야 하는 이유는 콘텐츠가 이 아래를 지나가기 때문이고, 색은 카드가 아니라
-          **페이지 바닥** 이라 `bg-bg` 다. 안전영역은 이 바가 먹는다(스크롤포트는 `ScreenScroll` 이
-          이미 자기 몫을 뺐다). */}
+      {/* 스크롤 뷰의 형제이자 절대 배치라 굴러가지 않는다. 불투명해야 하는 것은 콘텐츠가 이
+          아래를 지나가기 때문이고, 색은 카드가 아니라 페이지 바닥이라 `bg-bg` 다. 안전영역은
+          이 바가 먹는다. 스크롤포트는 `ScreenScroll` 이 이미 자기 몫을 뺐다. */}
       <View
         testID="character-manage-action-bar"
         className="absolute inset-x-0 bottom-0 border-t border-border bg-bg px-4 pt-3"

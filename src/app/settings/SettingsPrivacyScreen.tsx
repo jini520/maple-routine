@@ -23,7 +23,7 @@ import { useSettingsNavigation } from './use-settings-navigation'
 
 export const PRIVACY_URL = 'https://mapleroutine.store/privacy'
 
-/** 매달린 요청의 상한. 즉시 실패는 `onError` 가 먼저 잡는다(파일 머리). */
+/** 매달린 요청의 상한. 즉시 실패는 `onError` 가 먼저 잡는다. */
 const LOAD_TIMEOUT_MS = 8000
 
 type LoadStatus = 'loading' | 'loaded' | 'failed'
@@ -51,9 +51,9 @@ export function SettingsPrivacyScreen(): React.JSX.Element {
       className="flex-1"
       style={{ paddingTop: topSafeAreaPx, paddingBottom: bottomSafeAreaPx }}
     >
-      {/* 상단 여백은 없다. 바깥 상자가 안전영역만큼 내려온 자리에서 곧바로 시작한다.
-          그 안전영역은 인셋이 아니라 `useTopSafeAreaPx()` 다(정정 1). 헤더를 쓰는 화면들과 같은
-          값이어야 하위 페이지를 오갈 때 제목이 안 튄다. */}
+      {/* 상단 여백은 없다. 바깥 상자가 안전영역만큼 내려온 자리에서 곧바로 시작한다. 그
+          안전영역은 인셋이 아니라 `useTopSafeAreaPx()` 다. 헤더를 쓰는 화면들과 같은 값이어야
+          하위 페이지를 오갈 때 제목이 안 튄다. */}
       <PageHeaderTitleRow className="gap-2 px-4 pb-2">
         <Pressable
           role="button"

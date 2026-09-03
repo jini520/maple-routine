@@ -29,7 +29,7 @@ export interface HuntingRegion {
   /** 아케인 리버·그란디스. 사용자가 나눈 묶음이다. */
   readonly group: string
   readonly forceType: ForceType
-  /** 지역이 덮는 레벨 범위. **캐릭터 레벨 ±20 과 겹치는지**를 이 둘로 잰다(결정 6). */
+  /** 지역이 덮는 레벨 범위. 캐릭터 레벨 ±20 과 겹치는지를 이 둘로 잰다. */
   readonly minLevel: number
   readonly maxLevel: number
   readonly grounds: readonly HuntingGround[]

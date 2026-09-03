@@ -1,14 +1,13 @@
 /**
- * 시트 안 입력 칸이 초점을 받을 때 시트에게 **누가 초점을 가졌는지** 알려 준다
+ * 시트 안 입력 칸이 초점을 받을 때 시트에게 누가 초점을 가졌는지 알려 준다.
  *
+ * `@gorhom/bottom-sheet` 는 키보드가 올라오면 시트를 그만큼 밀어올리는데,
+ * `animatedKeyboardState` 의 `target` 이 비어 있으면 키보드 이벤트를 받고도 무시한다. 그 값을
+ * 채우지 않으면 시트가 키보드에 가린 채로 남는다.
  *
- * `@gorhom/bottom-sheet` 는 키보드가 올라오면 시트를 그만큼 밀어올리는데, `animatedKeyboardState`
- * 의 `target` 이 비어 있으면 **키보드 이벤트를 받고도 무시한다**(라이브러리 소스에 그렇게 적혀
- * 있다). 그 값을 채우지 않으면 시트가 키보드에 가린 채로 남는다.
- *
- * 라이브러리의 `BottomSheetTextInput` 이 이 일을 하지만 **쓰면 안 된다.** 그것은 안쪽이
- * `react-native-gesture-handler` 의 입력이라 안드로이드에서 한글 조합이 자모로 흩어진다
- * (정정 10). 그래서 부품 대신 값만 채운다.
+ * 라이브러리의 `BottomSheetTextInput` 이 이 일을 하지만 쓰면 안 된다. 그것은 안쪽이
+ * `react-native-gesture-handler` 의 입력이라 안드로이드에서 한글 조합이 자모로 흩어진다.
+ * 그래서 부품 대신 값만 채운다.
  */
 import { useEffect, useRef } from 'react'
 import type { TextInputProps } from 'react-native'

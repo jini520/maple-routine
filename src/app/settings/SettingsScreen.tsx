@@ -101,11 +101,10 @@ export function SettingsScreen(): React.JSX.Element {
                 rightContent={<ValueBadge>{theme}</ValueBadge>}
               />
             </View>
-            {/* `테마` 아래(사용자 지정). 이 카드에 남는 이유는 성질이 같기
-                때문이다. 고르면 그 자리에서 끝난다(화면이 pop 되면 설정으로 돌아온다). 배지는
-                **추적 캐릭터 수**이고, 아직 못 읽었으면(`null`) 그리지 않는다(
-                `null` 은 "0개"가 아니다). 단위가 **명** 이 아니라 **개** 인 것은
-                이 그 표기를 정정했기 때문이다. 캐릭터는 사람이 아니다. */}
+            {/* `테마` 아래. 이 카드에 남는 것은 성질이 같기 때문이다. 고르면 그 자리에서
+                끝난다. 배지는 추적 캐릭터 수이고 아직 못 읽었으면(`null`) 그리지 않는다.
+                `null` 은 0개가 아니다. 단위가 명 이 아니라 개 인 것은 캐릭터가 사람이
+                아니어서다. */}
             <View className={SETTINGS_ROW_DIVIDER_CLASS}>
               <SettingsRow
                 label="캐릭터 관리"
@@ -119,15 +118,14 @@ export function SettingsScreen(): React.JSX.Element {
 
           {/* 화면이 넘어가는 행. 대표값(있으면) + chevron. */}
           <Card className="px-6" testID="settings-card">
-            {/* `기능 설명`이 `개발 노트` 위다(정정). *"이 앱을 어떻게 쓰나"*
-                가 *"무엇이 바뀌었나"* 보다 자주 묻는 질문이고, 설명의 원천도 이쪽이다.
-                대표값을 비우는 것은 개발 노트와 같은 이유다(결정 5). */}
+            {/* `기능 설명` 이 `개발 노트` 위다. 이 앱을 어떻게 쓰나 가 무엇이 바뀌었나 보다
+                자주 묻는 질문이고 설명의 원천도 이쪽이다. */}
             <SettingsRow
               label="기능 설명"
               onPress={() => navigation.navigate('SettingsFeatureGuideList')}
             />
-            {/* 대표값을 비운다(결정 5). "최신 버전"은 아래 `앱 정보` 행과 같은 값이라 중복이고,
-                "n개"는 개수가 늘어난다고 뜻이 생기지 않는다. 없는 대표값을 지어내지 않는다. */}
+            {/* 대표값을 비운다. 최신 버전 은 아래 `앱 정보` 행과 같은 값이라 중복이고, n개 는
+                개수가 늘어난다고 뜻이 생기지 않는다. */}
             <View className={SETTINGS_ROW_DIVIDER_CLASS}>
               <SettingsRow
                 label="개발 노트"

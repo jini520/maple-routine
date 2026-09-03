@@ -31,11 +31,11 @@ export function useThemeAppearance(): ThemeAppearance {
 /**
  * 라이트/다크.
  *
- * **테마 이름으로 분기하지 말고 이 값으로 분기하라.** 이름 목록(`DARK_THEMES`)은 이미 한 번 폐기된
- * 방식이고, 테마가 늘 때마다 목록을 고쳐야 하며 빠뜨리면 조용히 틀린다.
+ * 테마 이름으로 분기하지 말고 이 값으로 분기할 것. 이름 목록(`DARK_THEMES`)은 테마가 늘 때마다
+ * 목록을 고쳐야 하며 빠뜨리면 조용히 틀린다.
  *
- * 자리마다 조건문을 두는 것보다 **파생 토큰**으로 만드는 편이 낫다는 점도 함께 적어 둔다. 스크림 위
- * 패널 테두리가 그 예로, `theme-vars.ts` 가 `--color-panel-border` 를 미리 계산해 두어 호출부는
+ * 자리마다 조건문을 두는 것보다 파생 토큰으로 만드는 편이 낫다. 스크림 위 패널 테두리가 그
+ * 예로, `theme-vars.ts` 가 `--color-panel-border` 를 미리 계산해 두어 호출부는
  * `border-panel-border` 만 쓴다. 이 훅은 그렇게 접히지 않는 자리(플랫폼 프롭 등)를 위한 것이다.
  */
 export function useThemeMode(): ThemeMode {

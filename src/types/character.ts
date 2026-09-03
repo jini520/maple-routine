@@ -25,12 +25,13 @@ export interface CharacterPickerEntry {
    */
   jobClass?: string
   /**
-   * 이 ocid를 **조회할 수 없다**(400 `OPENAPI00003`). `character/list` 는 주는데
-   * `character/basic`·`scheduler` 가 거부하는 상태로, 계정 단위로 전원 그럴 수도 있다(실측 13/13).
+   * 이 ocid 를 조회할 수 없다(400 `OPENAPI00003`). `character/list` 는 주는데
+   * `character/basic`·`scheduler` 가 거부하는 상태로, 계정 단위로 전원 그럴 수도 있다
+   * (실측 13/13).
    *
-   * 이 항목을 **목록에서 빼지 않는 이유**: 빼면 `trackedOcids` 에 남은 그 ocid를
-   * 사용자가 해제할 방법이 없다. 매 동기화마다 실패하는데 피커에는 보이지 않는다(이슈 #78 A-1).
-   * 그래서 별도 섹션에 남기고 **체크 해제만** 허용한다. 이미지는 없다(basic이 실패했다).
+   * 이 항목을 목록에서 빼지 않는 것은 빼면 `trackedOcids` 에 남은 그 ocid 를 사용자가 해제할
+   * 방법이 없기 때문이다. 매 동기화마다 실패하는데 피커에는 보이지 않는다. 그래서 별도 섹션에
+   * 남기고 체크 해제만 허용한다. 이미지는 없다. basic 이 실패했다.
    */
   unavailable?: boolean
 }

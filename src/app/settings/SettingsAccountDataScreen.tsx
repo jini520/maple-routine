@@ -31,7 +31,7 @@ import { SettingsRow } from './SettingsRow'
 import { useSettingsNavigation } from './use-settings-navigation'
 
 export interface SettingsAccountDataScreenProps {
-  /** 테스트 주입용. 기본은 지금 도는 번들의 재실행(파일 머리 ③). */
+  /** 테스트 주입용. 기본은 지금 도는 번들의 재실행. */
   reload?: () => void
 }
 
@@ -120,8 +120,7 @@ export function SettingsAccountDataScreen(
         </View>
       </ScreenScroll>
 
-      {/* 모달은 카드 밖이자 스크롤 상자 밖의 형제다. 카드 안에 두면 구분선이 하나 더 그려진다.
-          웹이 셸의 `overlays` 프롭을 거쳐야 했던 이유는 RN 에 없다(파일 머리 ②). */}
+      {/* 모달은 카드 밖이자 스크롤 상자 밖의 형제다. 카드 안에 두면 구분선이 하나 더 그려진다. */}
       <CacheClearConfirm
         isOpen={isCacheClearOpen}
         isClearing={isClearing}

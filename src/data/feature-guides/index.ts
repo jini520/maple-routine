@@ -11,14 +11,14 @@ import { dropHistoryGuide } from './profit/drop-history'
 import { apiKeyGuide } from './settings/api-key'
 import { characterManageGuide } from './shared/character-manage'
 
-// 기능 사용법 안내의 **진실 원천 한 벌**(정정). 두 곳에서 읽는다.
-// 기능 설명 화면(`/settings/guide`)이 기능 축으로 전체를 나열하고, 개발 노트 항목이
-// `guideId`(+`guideSectionId`)로 그중 한 마디를 가리켜 같은 화면을 연다.
+// 기능 사용법 안내의 진실 원천 한 벌. 두 곳에서 읽는다. 기능 설명 화면(`/settings/guide`)이
+// 기능 축으로 전체를 나열하고, 개발 노트 항목이 `guideId`(+`guideSectionId`)로 그중 한 마디를
+// 가리켜 같은 화면을 연다.
 //
-// **안내 하나가 파일 하나다**(2026-08-11, 사용자 지정). 한 파일에 전부 있으면 안내를 하나 고칠
-// 때마다 수백 줄짜리 파일을 열게 되고, 이미지 import 가 쌓이면서 그 파일이 전부의 의존성이 된다.
-// 폴더는 그룹을 따르되, **여러 그룹에 서는 안내는 `shared/`** 다. `character-manage` 는
-// `groups: ['content', 'boss', 'settings']` 라 어느 한쪽 폴더에 두면 나머지에서 찾을 수 없다.
+// 안내 하나가 파일 하나다. 한 파일에 전부 있으면 안내를 하나 고칠 때마다 수백 줄짜리 파일을
+// 열게 되고, 이미지 import 가 쌓이면서 그 파일이 전부의 의존성이 된다. 폴더는 그룹을 따르되
+// 여러 그룹에 서는 안내는 `shared/` 다. `character-manage` 는 `groups: ['content', 'boss',
+// 'settings']` 라 어느 한쪽 폴더에 두면 나머지에서 찾을 수 없다.
 //
 // ```
 // feature-guides/
@@ -30,17 +30,17 @@ import { characterManageGuide } from './shared/character-manage'
 // └── shared/      두 그룹 이상에 서는 안내
 // ```
 //
-// **이미지는 안내 파일이 직접 import 한다**. `src/assets/guide/<안내 id>/` 에 두고 그 파일
-// 상단에서 `import`. 디렉터리를 통째로 훑는 방식을 쓰지 않는 이유는 파일명이 틀렸을 때 `undefined`
-// 로 조용히 통과하는 대신 **빌드가 실패해야** 하기 때문이다(결정 4). 그래서 `guide/` 는
-//  의 생성 목록에도 들어가지 않는다. 이 폴더는 슬러그로 찾는 곳이 아니다.
+// 이미지는 안내 파일이 직접 import 한다. `src/assets/guide/<안내 id>/` 에 두고 그 파일
+// 상단에서 `import`. 디렉터리를 통째로 훑는 방식을 쓰지 않는 것은 파일명이 틀렸을 때
+// `undefined` 로 조용히 통과하는 대신 빌드가 실패해야 하기 때문이다. 그래서 `guide/` 는 에셋
+// 생성 목록에도 안 들어간다. 이 폴더는 슬러그로 찾는 곳이 아니다.
 //
-// **`release-notes.ts` 와 갈라져 있는 이유는 배포다**(결정 2). 배포 스크립트가 `release-notes.ts` 를
-// **Node 에서 직접 import** 하는데, 이미지 import 를 그 파일에 넣으면 Node 가
-// `.webp` 를 해석하지 못해 그 자리에서 배포가 죽는다.
+// `release-notes.ts` 와 갈라져 있는 이유는 배포다. 배포 스크립트가 `release-notes.ts` 를
+// Node 에서 직접 import 하는데, 이미지 import 를 그 파일에 넣으면 Node 가 `.webp` 를 해석하지
+// 못해 그 자리에서 배포가 죽는다.
 //
-// ⚠️ **본문은 코드·설계 문서를 근거로 쓴 초안이고 아직 사용자 검토를 받지 않았다**(이슈 #198).
-// 이미지는 **한 장도 없다**. 넣을 자리를 각 파일의 `TODO(#198)` 로 표시해 뒀다.
+// 본문은 코드·설계 문서를 근거로 쓴 초안이고 아직 사용자 검토를 받지 않았다. 이미지는 한 장도
+// 없다. 넣을 자리를 각 파일의 `TODO(#198)` 로 표시해 뒀다.
 
 /** 그룹 탭에 서는 이름. 넷은 하단 탭바와 **글자까지 같다**. 사용자가 이미 아는 구획이다. */
 export const FEATURE_GUIDE_GROUP_LABELS: Record<FeatureGuideGroup, string> = {

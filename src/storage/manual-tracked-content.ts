@@ -7,14 +7,14 @@ import type { ManualTrackedItem } from '../types/scheduler'
 // 이 모듈에서 계속 export 하므로 `storage/manual-tracked-content` 를 쓰던 import 는 그대로다.
 export type { ManualTrackedItem }
 
-// 결정 19 이전에는 컨텐츠가 일간/주간 구분 없이 kind: 'content'로 저장됐다.
+// 컨텐츠가 일간·주간 구분 없이 `kind: 'content'` 로 저장되던 시절이 있다.
 type StoredManualTrackedItem = Omit<ManualTrackedItem, 'kind'> & {
   kind: ManualTrackedItem['kind'] | 'content'
 }
 
-// 레거시 'content' 항목은 읽기 시점에 템플릿 조회로 재분류하고, 템플릿에 없으면 제외한다.
-// "템플릿에 없는 콘텐츠는 애초에 추가 대상이 아니다"(결정 11)의 일관 적용이고, 관리 페이지
-// 체크리스트(결정 18)가 템플릿 기반이라 템플릿 밖 항목은 편집 불가능한 고아가 되기 때문.
+// 레거시 `content` 항목은 읽기 시점에 템플릿 조회로 재분류하고 템플릿에 없으면 제외한다.
+// 템플릿에 없는 콘텐츠는 애초에 추가 대상이 아니고, 관리 페이지 체크리스트가 템플릿 기반이라
+// 템플릿 밖 항목은 편집 불가능한 고아가 된다.
 function migrateLegacyKinds(items: StoredManualTrackedItem[]): ManualTrackedItem[] {
   const migrated: ManualTrackedItem[] = []
   for (const item of items) {

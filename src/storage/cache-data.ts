@@ -25,13 +25,13 @@ export type CacheDataSelection = Record<CacheDataGroupId, boolean>
 
 const ALL_GROUPS: CacheDataSelection = { general: true, records: true }
 
-// 명시 목록을 갖는 쪽은 records뿐이고, general은 아래에서 차집합으로
-// 파생된다. 두 그룹을 다 열거하면 어느 그룹에도 안 잡히는 테이블이 생기고, 그건가 없앤
-// "새 테이블이 삭제 목록에서 누락된다"는 결함의 부호만 뒤집힌 형태다(영영 안 지워짐).
+// 명시 목록을 갖는 쪽은 records 뿐이고 general 은 아래에서 차집합으로 파생된다. 두 그룹을 다
+// 열거하면 어느 그룹에도 안 잡히는 테이블이 생겨 영영 안 지워진다.
 //
-// period_checks가 기록과 같은 그룹인 이유(결정 3): 이 표식만 남고 기록이 사라지면 loadPeriod의
-// isPeriodChecked 가드가 백필을 건너뛰어, API가 아직 주는 최근 2주치마저 되살릴 수 없다.
-// 수익과 드롭을 더 쪼개지 않는 이유(결정 5): 수익만 지우고 드롭이 남으면 고아 드롭 행이 되어 같은
+// period_checks 가 기록과 같은 그룹인 이유. 이 표식만 남고 기록이 사라지면 loadPeriod 의
+// isPeriodChecked 가드가 백필을 건너뛰어, API 가 아직 주는 최근 2주치마저 되살릴 수 없다.
+//
+// 수익과 드롭을 더 쪼개지 않는 이유. 수익만 지우고 드롭이 남으면 고아 드롭 행이 되어 같은
 // 보스를 다시 잡을 때 예전 드롭이 되살아나 붙는다.
 export const RECORD_TABLE_NAMES: readonly string[] = [
   'boss_profit_records',

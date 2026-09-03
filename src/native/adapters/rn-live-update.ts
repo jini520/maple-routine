@@ -13,21 +13,14 @@ import appJson from '../../../app.json'
 /**
  * `LiveUpdatePort` 의 `expo-updates` 구현.
  *
- *  이 *"별도 ADR"* 로 미뤄 두고 `not-implemented.ts` 가 던지던 자리다.
+ * 포트가 말하는 다섯 갈래(`unsupported`·`error`·`up-to-date`·`store-required`·
+ * `update-available`)는 프로토콜과 무관한 앱이 무엇을 할 수 있나 다. `expo-updates` 는 그중
+ * 넷을 직접 답하고 `store-required` 하나만 삼킨다. 런타임이 안 맞으면 서버가 204 를 주고
+ * 클라이언트는 그것을 업데이트 없음 으로 읽는다. 그대로 두면 사용자에게 최신 버전입니다 라는
+ * 거짓이 보이므로, 최신으로 떨어졌을 때만 `/latest` 를 한 번 더 물어 그 갈래를 되살린다.
  *
- * ## 이 파일이 번역기 인 이유
- *
- * 포트가 말하는 다섯 갈래(`unsupported`·`error`·`up-to-date`·`store-required`·`update-available`)는
- * **프로토콜과 무관한 **앱이 무엇을 할 수 있나**** 다. `expo-updates` 는 그중 넷을
- * 직접 답하고, **`store-required` 하나만 삼킨다**. 런타임이 안 맞으면 서버가 204 를 주고 클라이언트는
- * 그것을 "업데이트 없음"으로 읽는다. 그대로 두면 사용자에게 *"최신 버전입니다"* 라는 **거짓**이
- * 보이므로, 최신으로 떨어졌을 때만 `/latest` 를 한 번 더 물어 그 갈래를 되살린다(결정 4).
- *
- * ## 여기 없는 것
- *
- * 주소·체크섬·번들 id 가 없다. `fetchUpdateAsync()` 는 **직전 확인이 찾은 것**을 받고
- * `reloadAsync()` 는 **마지막으로 받은 것**을 켠다. 런타임이 자기 안에서 든다. 스토어가 그 값을
- * 안 드는 이유가 그것이고, 그래서 포트 시그니처에서 인자가 사라졌다.
+ * 여기에 주소·체크섬·번들 id 가 없다. `fetchUpdateAsync()` 는 직전 확인이 찾은 것을 받고
+ * `reloadAsync()` 는 마지막으로 받은 것을 켠다. 런타임이 자기 안에서 든다.
  */
 
 /** 매니페스트 URL 의 형제. 같은 Worker 의 다른 경로다. */
@@ -124,7 +117,7 @@ export const rnLiveUpdatePort: LiveUpdatePort = {
   async check(): Promise<LiveUpdateCheckResult> {
     const result = await Updates.checkForUpdateAsync()
     if (!result.isAvailable) {
-      // 프로토콜이 **런타임 불일치** 를 여기로 뭉쳐 넣는다. 갈라서 되살린다(결정 4).
+      // 프로토콜이 런타임 불일치를 여기로 뭉쳐 넣는다. 갈라서 되살린다.
       return (await checkStoreRequired()) ?? { kind: 'up-to-date' }
     }
     const { appVersion, highlights, sizeBytes } = readExtra(result.manifest)

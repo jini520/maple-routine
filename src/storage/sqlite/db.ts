@@ -198,12 +198,11 @@ export const BOSS_PROFIT_TABLE_NAMES: readonly string[] = TABLE_DEFINITIONS.map(
 )
 
 /**
- * 갈래 상점·편의 가 **`이벤트·BM` 으로 이름을 바꿨다**(사용자 지정 2026-08-27
- * 정정 4). `category` 는 이름 그 자체가 값이라, 안 옮기면 기존 기록이 **어느 갈래에도 없는 고아**가
- * 된다. 갈래 칩에도 안 걸리고 `spendGroupsOf` 도 빈손이라 목록 갈래가 직접 입력처럼 보인다.
+ * 갈래 상점·편의 가 `이벤트·BM` 으로 이름을 바꿨다. `category` 는 이름 그 자체가 값이라 안
+ * 옮기면 기존 기록이 어느 갈래에도 없는 고아가 된다. 갈래 칩에도 안 걸리고 `spendGroupsOf`
+ * 도 빈손이라 목록 갈래가 직접 입력처럼 보인다.
  *
- * 이미 옮겨진 뒤에는 `WHERE` 에 걸리는 행이 없어 **매번 실행해도 안전한 no-op** 이다(아래 메이린
- * 마이그레이션과 같은 성질).
+ * 이미 옮겨진 뒤에는 `WHERE` 에 걸리는 행이 없어 매번 실행해도 안전한 no-op 이다.
  */
 const MIGRATE_SHOP_CATEGORY_RENAME = `
   UPDATE spend_records SET category = '이벤트·BM' WHERE category = '상점·편의'
@@ -219,11 +218,11 @@ const MIGRATE_TONIC_BUFF_CATEGORY = `
 `
 
 /**
- * 농장 입장권 둘이 **`… 입장권` 을 뗀 이름**이 됐다(사용자 지정 2026-08-28).
+ * 농장 입장권 둘이 `… 입장권` 을 뗀 이름이 됐다.
  *
- * `item` 은 **이름 그 자체가 값**이라(갈래와 같은 성질) 안 옮기면 옛 기록이 카탈로그에서 사라진
- * 이름을 들고 남는다. `findSpendChoice` 가 못 찾아 **수정 시트가 세부를 못 펴고**, 목록에서도
- * 지금 고를 수 있는 것과 다른 글자로 적힌다.
+ * `item` 은 이름 그 자체가 값이라 안 옮기면 옛 기록이 카탈로그에서 사라진 이름을 들고 남는다.
+ * `findSpendChoice` 가 못 찾아 수정 시트가 세부를 못 펴고, 목록에서도 지금 고를 수 있는 것과
+ * 다른 글자로 적힌다.
  *
  * 이미 옮겨진 뒤에는 `WHERE` 에 걸리는 행이 없어 매번 실행해도 안전한 no-op 이다.
  */
@@ -235,10 +234,10 @@ const MIGRATE_FARM_TICKET_ITEM_RENAME = `
 `
 
 /**
- * 퀵 패스 셋이 **`… 퀵패스` 를 뗀 이름**이 됐다(사용자 지정 2026-08-28).
- * 묶음 이름(퀵 패스)이 그 맥락을 이미 들고 있어 항목마다 되풀이할 이유가 없다.
+ * 퀵 패스 셋이 `… 퀵패스` 를 뗀 이름이 됐다. 묶음 이름(퀵 패스)이 그 맥락을 이미 들고 있어
+ * 항목마다 되풀이할 이유가 없다.
  *
- * 옮기는 이유는 농장 둘과 같다. `item` 은 이름 자체가 값이라, 안 옮기면 옛 기록이 카탈로그에서
+ * 옮기는 이유는 농장 둘과 같다. `item` 은 이름 자체가 값이라 안 옮기면 옛 기록이 카탈로그에서
  * 사라진 이름을 들고 남는다.
  */
 const MIGRATE_QUICK_PASS_ITEM_RENAME = `
@@ -249,8 +248,8 @@ const MIGRATE_QUICK_PASS_ITEM_RENAME = `
 `
 
 /**
- * 미호로이드 교환권 이 **`미호로이드`** 가 됐다(사용자 지정 2026-08-28).
- * 타일에서 교환 / 권 으로 끊기던 이름이고, 무엇을 사는지는 그림과 묶음이 이미 말한다.
+ * 미호로이드 교환권 이 `미호로이드` 가 됐다. 타일에서 교환 / 권 으로 끊기던 이름이고, 무엇을
+ * 사는지는 그림과 묶음이 이미 말한다.
  */
 const MIGRATE_MIHOROID_ITEM_RENAME = `
   UPDATE spend_records SET item = '미호로이드'
@@ -288,25 +287,24 @@ async function ensureColumn(
 const INCOME_RECORDS_REBUILD_TABLE = 'income_records_rebuild'
 
 /**
- * **`income_records.meso_amount` 의 `NOT NULL` 을 뗀다**(이슈 #265).
+ * `income_records.meso_amount` 의 `NOT NULL` 을 뗀다.
  *
- * `ensureColumn` 은 없는 칸을 더하는 길뿐이고 **SQLite 는 `ALTER TABLE` 로 기존 칸의 제약을 못
- * 고친다.** 테이블을 다시 쓰는 수밖에 없다. 새 테이블 → 복사 → DROP → RENAME.
+ * `ensureColumn` 은 없는 칸을 더하는 길뿐이고 SQLite 는 `ALTER TABLE` 로 기존 칸의 제약을 못
+ * 고친다. 테이블을 다시 쓰는 수밖에 없다. 새 테이블 → 복사 → DROP → RENAME.
  *
- * 지키는 것 넷:
+ * 지키는 것 넷.
  *
- * ① **한 트랜잭션이다.** 옛 테이블은 지워졌고 새 이름은 아직 없는 상태가 파일에 남으면 그
- *  기기의 수입 기록이 **전부 사라진다**. 되살릴 API 가 0% 인 데이터다.
- *    던지면 되돌리고 그대로 올려보낸다(삼키면 됐다 는 거짓 위에서 다음 문장들이 돈다).
- * ② **옮길 칸은 옛 테이블이 실제로 가진 칸**이다. `SELECT *` 는 못 쓴다. `ensureColumn` 이 붙인
- *    칸은 **뒤에** 붙어 순서가 지금 DDL 과 다르고, 위치로 짝지으면 값이 **에러 없이 옆 칸으로
- *    옮겨 앉는다**(수수료가 메포가 된다). 지금 스키마의 칸 목록을 박아 두는 것도 못 쓴다.
- *  그 칸이 아직 없는 기기가 실제로 있다.
- * ③ **`ensureColumn` 들보다 먼저** 돈다. 여기서 만드는 테이블은 지금의 DDL 전체라 칸이 이미 다
+ * ① 한 트랜잭션이다. 옛 테이블은 지워졌고 새 이름은 아직 없는 상태가 파일에 남으면 그 기기의
+ *    수입 기록이 전부 사라진다. 되살릴 API 가 0% 인 데이터다. 던지면 되돌리고 그대로
+ *    올려보낸다.
+ * ② 옮길 칸은 옛 테이블이 실제로 가진 칸이다. `SELECT *` 는 못 쓴다. `ensureColumn` 이 붙인
+ *    칸은 뒤에 붙어 순서가 지금 DDL 과 다르고, 위치로 짝지으면 값이 에러 없이 옆 칸으로 옮겨
+ *    앉는다(수수료가 메포가 된다). 지금 스키마의 칸 목록을 박아 두는 것도 못 쓴다. 그 칸이
+ *    아직 없는 기기가 실제로 있다.
+ * ③ `ensureColumn` 들보다 먼저 돈다. 여기서 만드는 테이블은 지금의 DDL 전체라 칸이 이미 다
  *    있고, 뒤의 `ensureColumn` 열하나는 그대로 no-op 이 된다.
- * ④ **판정은 스키마 자신에게 묻는다**(`notnull`). 이미 nullable 이면 **한 문장도 안 나간다**.
- *    메이린 UPDATE 들과 같은 성질이다(매번 열려도 안전한 no-op). 재작성은 행을 통째로 옮기는
- *    비싼 일이라 이 판정이 값싸야 한다.
+ * ④ 판정은 스키마 자신에게 묻는다(`notnull`). 이미 nullable 이면 한 문장도 안 나간다. 재작성은
+ *    행을 통째로 옮기는 비싼 일이라 이 판정이 값싸야 한다.
  */
 async function rebuildIncomeRecords(db: SqliteDbConnection): Promise<void> {
   const { values } = await db.query(`PRAGMA table_info(income_records)`)
@@ -344,10 +342,9 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
     await connection.initWebStore()
   }
 
-  // 웹뷰가 리로드되면(OTA 적용: applyDownloadedLiveUpdate → CapacitorUpdater.set이 JS 컨텍스트를
-  // 파괴하고 재로드) 이전 로드의 네이티브 SQLite 연결이 남는다. dbPromise는 로드마다
-  // 초기화되므로 isConnection이 true라는 건 그 stale 연결이라는 뜻. 그대로 retrieve+open하면 첫
-  // 쿼리가 막히므로, 닫고 새로 만든다.
+  // 리로드되면 이전 로드의 네이티브 SQLite 연결이 남는다. dbPromise 는 로드마다 초기화되므로
+  // isConnection 이 true 라는 건 그 stale 연결이라는 뜻이다. 그대로 retrieve + open 하면 첫
+  // 쿼리가 막히므로 닫고 새로 만든다.
   const alreadyConnected = await connection.isConnection(DB_NAME)
   if (alreadyConnected) {
     await connection.closeConnection(DB_NAME)
@@ -455,14 +452,14 @@ export function getBossProfitDb(): Promise<SqliteDbConnection> {
   return dbPromise
 }
 
-// OTA 적용(CapacitorUpdater.set)처럼 JS 컨텍스트를 파괴하는 리로드 직전에 호출한다. 이 커넥션이
-// 아직 살아있는(멀쩡한) 시점에 정상 종료해두지 않으면, 리로드로 dbPromise만 초기화되고 네이티브
-// 쪽 커넥션은 그대로 남는다. 그 상태에서 새 JS 컨텍스트의 openBossProfitDb가 이 stale 커넥션을
-// "닫고 새로 생성"으로 복구하려 시도하지만, 이마저 실기기에서 실패해 첫 쿼리가 응답 없이 멈추는
-// 사례가 있었다(앱 업데이트 직후 과거 수익 데이터가 안 불러와지는 증상으로 사용자 보고, 2026-07-17).
-// 아직 멀쩡할 때 미리 닫아두면 네이티브 쪽에 아무 것도 안 남으므로 이 문제 자체가 생기지 않는다.
-// 실패해도(네트워크·타임아웃 등) 곧 리로드될 것이므로 조용히 무시한다. openBossProfitDb의 기존
-// stale 감지 로직이 최후의 폴백으로 남아있다.
+// JS 컨텍스트를 파괴하는 리로드 직전에 호출한다. 이 커넥션이 아직 살아 있는 시점에 정상
+// 종료해 두지 않으면 리로드로 dbPromise 만 초기화되고 네이티브 쪽 커넥션은 그대로 남는다.
+// 그 상태에서 새 JS 컨텍스트의 openBossProfitDb 가 닫고 새로 생성 으로 복구하려 시도하지만,
+// 이마저 실기기에서 실패해 첫 쿼리가 응답 없이 멈추는 사례가 있었다. 아직 멀쩡할 때 미리
+// 닫아 두면 네이티브 쪽에 아무것도 안 남으므로 이 문제 자체가 생기지 않는다.
+//
+// 실패해도 곧 리로드될 것이므로 조용히 무시한다. openBossProfitDb 의 stale 감지 로직이
+// 최후의 폴백으로 남아 있다.
 export async function closeBossProfitDb(): Promise<void> {
   if (dbPromise === null) {
     return

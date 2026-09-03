@@ -119,10 +119,9 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
                             <Text aria-hidden className="text-sm text-text-disabled">
                               ·
                             </Text>
-                            {/* **안내가 있는 항목만** 눌린다. 없는 것은 결함이
-                                아니라 정상이므로 비활성 버튼을 두지 않고, 그 항목의 트리는 종전
-                                그대로다. 래퍼도 클래스도 만들지 않는다. chevron 은 설정 행과 같은
-                                약속이다(있으면 누르면 무언가 열린다). */}
+                            {/* 안내가 있는 항목만 눌린다. 없는 것은 결함이 아니라 정상이므로
+                                비활성 버튼을 두지 않는다. chevron 은 설정 행과 같은 약속이다.
+                                있으면 누르면 무언가 열린다. */}
                             {guideId === undefined ? (
                               body
                             ) : (

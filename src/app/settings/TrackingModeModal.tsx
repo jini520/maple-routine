@@ -68,7 +68,7 @@ export function TrackingModeModal(props: TrackingModeModalProps): React.JSX.Elem
           </Button>
           <Button
             variant="primary"
-            // 바뀐 것이 없으면 누를 것도 없다(결정 23). 닫기는 취소·오버레이가 맡는다.
+            // 바뀐 것이 없으면 누를 것도 없다. 닫기는 취소·오버레이가 맡는다.
             disabled={isUnchanged || isApplying}
             busy={isApplying}
             onPress={() => {

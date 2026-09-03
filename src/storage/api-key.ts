@@ -18,9 +18,9 @@ export async function setApiKey(apiKey: string): Promise<void> {
   await preferences.set(STORAGE_KEYS.apiKey, apiKey)
 }
 
-// 키 무효화(400 OPENAPI00005 · 401/403) 전용. apiKey **하나만** 지운다. 아래
-// clearAuthConfig 로 갈아끼우지 마라(그쪽은 연결 해제용이라 지우는 범위가 넓다).
-// 키 재입력 후의 재개(결정 4)는 남아 있는 trackingMode·trackedCharacters 에서 파생된다.
+// 키 무효화(400 OPENAPI00005 · 401/403) 전용. apiKey 하나만 지운다. 아래 `clearAuthConfig` 로
+// 갈아끼우지 말 것. 그쪽은 연결 해제용이라 지우는 범위가 넓다. 키 재입력 후의 재개는 남아
+// 있는 trackingMode·trackedCharacters 에서 파생된다.
 export async function removeApiKey(): Promise<void> {
   await preferences.remove(STORAGE_KEYS.apiKey)
 }

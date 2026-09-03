@@ -71,8 +71,8 @@ export function SettingsFeatureGuideScreen(): React.JSX.Element | null {
     })
   }, [guide, requestedSection, measuredAt])
 
-  // 옛 링크·오타의 착지점이 빈 화면이면 안 된다. 히스토리에 남겨 뒤로가기가 다시 그리로 가게 둘
-  // 이유도 없으므로 push 가 아니라 pop 이다(파일 머리 ④).
+  // 옛 링크·오타의 착지점이 빈 화면이면 안 된다. 히스토리에 남겨 뒤로가기가 다시 그리로 가게
+  // 둘 이유도 없으므로 push 가 아니라 pop 이다.
   useEffect(() => {
     if (guide === undefined) navigation.goBack()
   }, [guide, navigation])
@@ -115,9 +115,9 @@ export function SettingsFeatureGuideScreen(): React.JSX.Element | null {
         {/* 목차. **마디가 둘 이상일 때만** 뜻이 있다. 하나뿐이면 아래 소제목과 같은 말을 두 번
             하는 것이다. 누르면 스택을 건드리지 않고 파라미터만 갈아 끼워 그 자리로 간다. */}
         {guide.sections.length > 1 && (
-          // **카드 껍데기를 두르지 않는다**(사용자 지정, 2026-08-11). 아래가 전부 같은 글이라
-          // 목차만 상자에 담기면 본문이 아니라 위젯으로 읽힌다. 제목 + 번호 목록으로 충분하다.
-          // 묶음 제목의 생김새는 개발 노트의 카테고리 제목과 같다.
+          // 카드 껍데기를 두르지 않는다. 아래가 전부 같은 글이라 목차만 상자에 담기면 본문이
+          // 아니라 위젯으로 읽힌다. 제목 + 번호 목록으로 충분하다. 묶음 제목의 생김새는 개발
+          // 노트의 카테고리 제목과 같다.
           <View className="gap-1.5">
             <Text className="text-xs font-semibold text-text-muted">목차</Text>
             <View className="gap-1">
