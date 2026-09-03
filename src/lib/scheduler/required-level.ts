@@ -31,9 +31,8 @@ const CONTENT_REQUIRED_LEVELS: ReadonlyMap<string, number> = new Map(
 /**
  * 보스 이름 → (난이도 → 요구 레벨).
  *
- * **필드명이 `requiredLevel` 이 아니라 `requiredLevels` 다**. 보스는 같은 이름이라도 난이도마다
- * 요구 레벨이 다르다(자쿰 카오스 90 · 검은 마법사 하드 200 …). 이슈 #243 본문이 이 차이를 놓쳐
- * `requiredLevel` 27곳 이라 적었는데, 그것은 복수형 필드를 부분 문자열로 센 값이다.
+ * 필드명이 `requiredLevel` 이 아니라 `requiredLevels` 다. 보스는 같은 이름이라도 난이도마다
+ * 요구 레벨이 다르다(자쿰 카오스 90 · 검은 마법사 하드 200 …).
  */
 const BOSS_REQUIRED_LEVELS: ReadonlyMap<string, Readonly<Record<string, number>>> = new Map(
   [

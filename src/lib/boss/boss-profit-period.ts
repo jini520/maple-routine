@@ -118,12 +118,13 @@ export function containsInProgressWeek(cycle: BossCycle, periodKey: string, now:
 }
 
 /**
- * 이 기간을 화면에서 **지금 새로고침(실시간 재조회)하는 것이 의미가 있는지**.
- * 헤더 동기화 상태 영역 노출과 당겨서 새로고침 활성 조건이 **이 한 플래그를 공유한다**(
- * 결정 9). 갈라 두면 "버튼은 없는데 당기면 도는" 상태가 생긴다.
+ * 이 기간을 화면에서 지금 새로고침(실시간 재조회)하는 것이 의미가 있는지.
  *
- * 기간 네비게이션 게이트(다음 기간 비활성)는 여전히 isLatestPeriod다. "이 기간이 최신인가"와
- * "지금 재조회하면 숫자가 달라질 수 있는가"는 다른 질문이다.
+ * 헤더 동기화 상태 영역 노출과 당겨서 새로고침 활성 조건이 이 한 플래그를 공유한다. 갈라 두면
+ * 버튼은 없는데 당기면 도는 상태가 생긴다.
+ *
+ * 기간 네비게이션 게이트(다음 기간 비활성)는 여전히 `isLatestPeriod` 다. 이 기간이 최신인가 와
+ * 지금 재조회하면 숫자가 달라질 수 있는가 는 다른 질문이다.
  */
 export function isPeriodRefreshable(cycle: BossCycle, periodKey: string, now: Date): boolean {
   return isLatestPeriod(cycle, periodKey, now) || containsInProgressWeek(cycle, periodKey, now)
@@ -301,16 +302,16 @@ export function isPeriodQueryable(cycle: BossCycle, periodKey: string, now: Date
 export type PeriodQueryOutcome = 'notCollected' | 'outOfRange' | 'failed'
 
 /**
- * 한 (캐릭터, 기간)의 표시 상태(+ 정정 1·2). 표현은.
+ * 한 (캐릭터, 기간)의 표시 상태.
  *
  * | 상태 | 뜻 | 사용자 행동 |
  * |---|---|---|
  * | recorded | 기록이 있다 | — |
  * | confirmedEmpty | 조회해서 0건을 확인했다 | 없음 |
- * | notChecked | 조회 가능한데 아직 조회하지 않았다 | **조회** |
+ * | notChecked | 조회 가능한데 아직 조회하지 않았다 | 조회 |
  * | notCollected | 아직 집계 전(OPENAPI00009) | 없음(나중에 자동) |
  * | outOfRange | 조회 구간 밖(윈도우 밖·월드 이전 이전) | 없음 |
- * | failed | 그 외 실패 | **다시 시도** |
+ * | failed | 그 외 실패 | 다시 시도 |
  */
 export type PeriodDataState =
   | 'recorded'
@@ -331,9 +332,9 @@ export interface PeriodDataStateInput {
 }
 
 /**
- * 판정을 한 곳에 모아 화면과 백필이 **같은 값을 공유**하게 한다. 전에는 화면이
- * `isPeriodQueryable` 하나로, 백필은 target별로 따로 판정해 월간 탭에서 "조회 불가"와
- * "불러오지 못했습니다"가 동시에 뜨는 경로가 있었다(이슈 #78 E).
+ * 판정을 한 곳에 모아 화면과 백필이 같은 값을 공유하게 한다. 화면이 `isPeriodQueryable`
+ * 하나로, 백필은 target 별로 따로 판정하면 월간 탭에서 조회 불가 와 불러오지 못했습니다 가
+ * 동시에 뜨는 경로가 생긴다.
  */
 export function resolvePeriodDataState(input: PeriodDataStateInput): PeriodDataState {
   // 현재 기간은 백필 대상이 아니다. 조회일이 미래라 isQueryable이 false지만 "조회 불가"가 아니라

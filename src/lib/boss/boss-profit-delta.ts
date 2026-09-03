@@ -2,11 +2,11 @@ import type { BossCycle } from '../../types'
 import { getAdjacentPeriodKey, getWeeklyPeriodKeysInMonth } from './boss-profit-period'
 
 /**
- * 보스 수익 "직전 기간 대비 증감" 계산.
+ * 보스 수익 직전 기간 대비 증감 계산.
  *
- * **이 모듈에는 "모른다"라는 입력이 없다.** 직전 기간을 조회한 적이 없어도 store 가 기록 합(= 0)을
- * 넘긴다(결정 3, 사용자 결정). 0메소와 미확인을 같은 표기로 통일했기 때문이다. 그 대가로 증감
- * 표시가 기간 상태 기계에서 완전히 분리되고, 여기서는 두 숫자만 다룬다.
+ * 이 모듈에는 모른다 라는 입력이 없다. 직전 기간을 조회한 적이 없어도 스토어가 기록 합(= 0)을
+ * 넘긴다. 0메소와 미확인을 같은 표기로 통일했기 때문이다. 그 대가로 증감 표시가 기간 상태
+ * 기계에서 완전히 분리되고, 여기서는 두 숫자만 다룬다.
  */
 
 export interface ProfitDelta {
@@ -40,7 +40,7 @@ export function formatMesoShort(meso: number, withSign = false): string {
   return `${sign}${absolute.toLocaleString()}`
 }
 
-/** 칩 안에 들어가는 글자. 같으면 사용자 지정 "-", 퍼센트가 없으면 절대 증감이 대신한다. */
+/** 칩 안에 들어가는 글자. 같으면 `-`, 퍼센트가 없으면 절대 증감이 대신한다. */
 export function formatProfitDeltaBody(delta: ProfitDelta): string {
   if (delta.direction === 'same') return '-'
   if (delta.percent === null) return formatMesoShort(delta.diffMeso)

@@ -31,9 +31,9 @@ const JOB_THEMES = jobThemesData as JobThemes
 export const THEME_CATEGORIES: readonly ThemeCategory[] = ['기본', '직업', '보스']
 
 /**
- * 등록된 테마 이름. **표시 순서는 카테고리 순서 → 그 안에서 JSON 키 순서**다(
- * 예전 규약은 "JSON 키 순서 = 표시 순서"였다). 정렬이 안정적이라 같은 카테고리 안에서는 JSON 에
- * 적은 순서가 그대로 남는다. 새 테마는 자기 카테고리 블록 끝에 붙는다.
+ * 등록된 테마 이름. 표시 순서는 카테고리 순서 → 그 안에서 JSON 키 순서다. 정렬이 안정적이라
+ * 같은 카테고리 안에서는 JSON 에 적은 순서가 그대로 남는다. 새 테마는 자기 카테고리 블록 끝에
+ * 붙는다.
  */
 export const THEME_NAMES = (Object.keys(JOB_THEMES) as ThemeName[])
   .slice()
@@ -116,10 +116,10 @@ function backgroundDeclarations(background: ThemeBackground | undefined): string
 /**
  * 한 테마의 `:root` + `.media-scope` 규칙을 만든다.
  *
- * `.media-scope` 안에서 표면·텍스트를 `media-*` 로 다시 묶고 accent 틴트·잉크도 **다시 선언**한다.
+ * `.media-scope` 안에서 표면·텍스트를 `media-*` 로 다시 묶고 accent 틴트·잉크도 다시 선언한다.
  * 커스텀 프로퍼티는 선언된 요소에서 `var()` 가 해석되므로, 다시 선언하지 않으면 `:root` 의
- * `surface` 기준 값이 그대로 내려온다. 에 미해결로 남아 있던 카드 안 배지
- * AA 미달(레테 3.88:1)이 정확히 그 문제였다.
+ * `surface` 기준 값이 그대로 내려온다. 카드 안 배지가 AA 에 미달하던(레테 3.88:1) 원인이
+ * 그것이다.
  */
 export function buildThemeCss(theme: ThemeDefinition): string {
   // mode 는 색이 아니라 의도라, category 는 분류라, background 는 에셋이라 --color-* 로

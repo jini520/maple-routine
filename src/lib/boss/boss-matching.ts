@@ -81,22 +81,21 @@ export interface BossOrderKey {
 }
 
 /**
- * **앱 전체의 보스 순서**. `weekly-bosses.json` 정규 순서 → 난이도 → 보스명.
+ * 앱 전체의 보스 순서. `weekly-bosses.json` 정규 순서 → 난이도 → 보스명.
  *
- * 키 셋은 이 보스 수익에 정한 그것 **그대로**이고, 이 함수는 그것을 네 소비자가
- * 함께 쓸 수 있게 `REFERENCE_ENTRIES` 의 **소유자**에 둔 것뿐이다:
+ * 네 소비자가 함께 쓴다.
  *
  * - `lib/boss/manual-boss-merge`(수동 목록)
  * - `features/boss-scheduler/displayed-bosses`(스케줄러 카드 · today 남은 스케줄 펼침)
  * - `features/boss-profit/rows`(`sortRowsByOcidOrder` 의 2차 키)
  * - `features/cashbook/records`(펼친 결정석 줄의 보스 타일)
  *
- * 정렬 코드가 네 벌이면 값을 바꿀 때 한 벌만 바뀐다. 가 사설 사본을 흡수한
- * 것과 같은 이유이고, 자동 모드에 넷째 사본을 새로 쓰지 않으려고 이 함수가 생겼다.
+ * 정렬 코드가 네 벌이면 값을 바꿀 때 한 벌만 바뀐다. 그래서 `REFERENCE_ENTRIES` 의 소유자에
+ * 둔다.
  *
- * **완전 결정적이다.** 참조표에 없는 보스(매칭 실패 원문명)는 맨 뒤로 가되 그들끼리도
- * 난이도·이름으로 갈린다. 안정 정렬에 기대면 입력 순서 가 계약이 되는데, 그 입력이 `ORDER BY`
- * 없는 조회나 Map 삽입 순서라는 것이 이 고친 버그였다.
+ * 완전 결정적이다. 참조표에 없는 보스(매칭 실패 원문명)는 맨 뒤로 가되 그들끼리도 난이도·
+ * 이름으로 갈린다. 안정 정렬에 기대면 입력 순서가 계약이 되는데, 그 입력이 `ORDER BY` 없는
+ * 조회나 Map 삽입 순서다.
  */
 export function compareBossOrder(a: BossOrderKey, b: BossOrderKey): number {
   const referenceDiff = getBossReferenceOrder(a.boss) - getBossReferenceOrder(b.boss)

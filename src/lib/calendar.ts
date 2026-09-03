@@ -152,8 +152,8 @@ export function heatLevel(amount: number, monthMax: number): number {
 }
 
 /**
- * 진하기의 기준선. **이번 달 칸만** 센다. 앞뒤 달로 채운 칸(결정 7)이 기준을 정해 버리면 이번
- * 달의 대비가 엉뚱해진다: 지난달에 큰 날이 하나 있으면 이번 달이 통째로 흐려진다.
+ * 진하기의 기준선. 이번 달 칸만 센다. 앞뒤 달로 채운 칸이 기준을 정해 버리면 이번 달의 대비가
+ * 엉뚱해진다. 지난달에 큰 날이 하나 있으면 이번 달이 통째로 흐려진다.
  */
 export function monthIncomeMax(weeks: readonly CalendarWeek[], amounts: CalendarAmounts): number {
   let max = 0
@@ -167,16 +167,16 @@ export function monthIncomeMax(weeks: readonly CalendarWeek[], amounts: Calendar
 }
 
 /**
- * 격자 위에 서는 **기간 합계**. 화면이 `CalendarGrid` 에 넘긴 **그 `weeks`** 와
- * **그 `amounts`** 를 받아 접는다. 그래서 칸에 적힌 것을 다 더한 값 이 곧 이 숫자이고, 따로 읽지
- * 않으므로 칸과 합계가 서로 다른 순간을 가질 수 없다.
+ * 격자 위에 서는 기간 합계. 화면이 `CalendarGrid` 에 넘긴 그 `weeks` 와 그 `amounts` 를 받아
+ * 접는다. 그래서 칸에 적힌 것을 다 더한 값이 곧 이 숫자이고, 따로 읽지 않으므로 칸과 합계가
+ * 서로 다른 순간을 가질 수 없다.
  *
- * 기준이 `monthIncomeMax` 와 **같은 `inPeriod`** 인 것이 계약이다. 월간 격자는 앞뒤 달 날짜로
- * 빈칸을 채우므로(결정 7) 그 칸을 세면 8월 합계에 7월 말과 9월 초가 섞인다. 주간 격자에서는
- * 이레가 전부 `inPeriod` 라 그대로 이레의 합이다.
+ * 기준이 `monthIncomeMax` 와 같은 `inPeriod` 인 것이 계약이다. 월간 격자는 앞뒤 달 날짜로
+ * 빈칸을 채우므로 그 칸을 세면 8월 합계에 7월 말과 9월 초가 섞인다. 주간 격자에서는 이레가
+ * 전부 `inPeriod` 라 그대로 이레의 합이다.
  *
- * **넣는 것은 보이는 격자다.** 열지도 기준선용 `heatWeeks` 는 주간 보기에서 그 달 전체라(결정 12)
- * 그것을 접으면 주간 합계 자리에 **달 합계**가 선다.
+ * 넣는 것은 보이는 격자다. 열지도 기준선용 `heatWeeks` 는 주간 보기에서 그 달 전체라 그것을
+ * 접으면 주간 합계 자리에 달 합계가 선다.
  */
 export function periodTotals(
   weeks: readonly CalendarWeek[],
@@ -206,13 +206,12 @@ export const WEEKDAY_LABELS_RESET: readonly string[] = [
 const THURSDAY = 4
 
 /**
- * 이 날짜가 속한 **게임 주의 시작(목요일)**. `YYYY-MM-DD`.
+ * 이 날짜가 속한 게임 주의 시작(목요일). `YYYY-MM-DD`.
  *
- * `boss-profit-period.ts` 의 `getCurrentBossProfitPeriod('weekly', now).periodKey` 와 **같은 답을
- * 내야 한다**(테스트가 그 일치를 붙든다). 그쪽을 그대로 부르지 않는 이유는 입력이 다르기 때문이다.
- * 저쪽은 `Date`(시각)를 받아 KST 리셋 경계를 재는데, 여기 오는 것은 **이미 KST 달력 날짜**라
- * 다시 시각으로 바꾸면 타임존이 한 번 더 개입한다. 이 파일이 문자열·UTC 필드 산술만 쓰는 이유가
- * 그것이다(파일 머리).
+ * `boss-profit-period.ts` 의 `getCurrentBossProfitPeriod('weekly', now).periodKey` 와 같은
+ * 답을 내야 한다(테스트가 그 일치를 붙든다). 그쪽을 그대로 부르지 않는 것은 입력이 다르기
+ * 때문이다. 저쪽은 `Date`(시각)를 받아 KST 리셋 경계를 재는데, 여기 오는 것은 이미 KST 달력
+ * 날짜라 다시 시각으로 바꾸면 타임존이 한 번 더 개입한다.
  */
 export function resetWeekStartOf(dateKey: string): string {
   const utcMs = Date.parse(`${dateKey}T00:00:00Z`)
@@ -222,10 +221,10 @@ export function resetWeekStartOf(dateKey: string): string {
 }
 
 /**
- * 목요일부터 **딱 이레**(사용자 지정 딱 7일만).
+ * 목요일부터 딱 이레.
  *
  * 월간 격자와 달리 채울 빈칸이 없다. 주는 언제나 이레이므로 격자 높이가 흔들릴 일도 없다.
- * 그래서 **이레가 전부 `inPeriod: true`** 다: 달을 걸치는 주에도 앞뒤 달 이라는 개념이 없다.
+ * 그래서 이레가 전부 `inPeriod: true` 다. 달을 걸치는 주에도 앞뒤 달 이라는 개념이 없다.
  */
 export function buildResetWeek(weekStartDateKey: string): CalendarWeek {
   const startMs = Date.parse(`${weekStartDateKey}T00:00:00Z`)
