@@ -18,7 +18,7 @@ import {
 
 export type { BadgeDifficulty, BadgeSize, BadgeVariant, BadgeWeight } from './variants'
 
-/** `TextProps` 를 그대로 물려받는다. 배지가 평면일 때는 실제로 `Text` 하나이기 때문이다. */
+/** `TextProps` 를 그대로 물려받는 프롭. 배지가 평면일 때는 실제로 `Text` 하나이기 때문이다. */
 export interface BadgeProps extends TextProps {
   /** 색. 난이도 배지는 난이도 이름을 그대로 넣는다. */
   variant: BadgeVariant

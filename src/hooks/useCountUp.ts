@@ -9,7 +9,7 @@ export const COUNT_UP_DURATION_MS = 350
  */
 export const COUNT_UP_MEMORY_LIMIT = 256
 
-/** 시간 진행률을 거리 진행률로 바꾼다. 앞 10% 시간에 절반을 가고 나머지를 천천히 좁힌다. */
+/** 시간 진행률을 거리 진행률로 바꾸는 곡선. 앞 10% 시간에 절반을 가고 나머지를 천천히 좁힌다. */
 export function easeOutExpo(t: number): number {
   return t === 1 ? 1 : 1 - 2 ** (-10 * t)
 }
@@ -18,7 +18,7 @@ export function easeOutExpo(t: number): number {
 const lastDisplayedByIdentity = new Map<string, number>()
 
 /**
- * 표시값을 기억한다. 지웠다 다시 넣어 맨 뒤로 보내므로 Map 앞쪽이 가장 오래 안 쓴 키다. 상한을
+ * 표시값 기억. 지웠다 다시 넣어 맨 뒤로 보내므로 Map 앞쪽이 가장 오래 안 쓴 키다. 상한을
  * 넘으면 그 앞쪽을 버린다. 버려진 키는 다음에 굴러가는 대신 목표에서 그냥 나타난다.
  */
 function remember(identity: string, value: number): void {
@@ -36,7 +36,7 @@ export function clearCountUpMemory(): void {
 }
 
 /**
- * 금액이 바뀌면 목표까지 굴려서 낸다.
+ * 금액이 바뀌면 목표까지 굴려서 내는 훅.
  *
  * 굴러가는 중에 목표가 또 바뀌면 지금 값에서 목표만 갈아 끼운다. 목표가 내려가면 숫자도 내려간다.
  *

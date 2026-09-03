@@ -160,7 +160,7 @@ export interface BossProfitStore extends BossProfitState {
   goToPreviousPeriod(): Promise<void>
   goToNextPeriod(): Promise<void>
   /**
-   * 지금 보고 있는 (tab, periodKey) 를 다시 로드한다. 재시도(`failed`)와 조회(`notChecked`)
+   * 지금 보고 있는 (tab, periodKey) 를 다시 로드. 재시도(`failed`)와 조회(`notChecked`)
    * 두 상태가 주는 행동이 이것뿐이고 둘 다 같은 일을 한다. 그 기간의 미확인 target 을 다시
    * 백필한다. `refresh` 로는 대신할 수 없다. 그쪽은 현재 기간으로 되돌린다.
    */
@@ -438,7 +438,7 @@ async function buildRowsFromRecords(
 
 
 /**
- * 정리 결과를 알린다. 조용히 지우지 않는다.
+ * 정리 결과 안내. 조용히 지우지 않는다.
  *
  * `showInfo`(자동 소멸)다. 실패가 아니라 규칙 안내라서다. 지운 것이 없으면 말할 것도 없다.
  * 멱등한 회차마다 토스트가 뜨면 소음이 된다.

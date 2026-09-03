@@ -20,7 +20,7 @@ import path from 'node:path'
 
 import { act } from '@testing-library/react-native'
 
-/** 관측한 호출을 부른 순서대로 쌓는다. 무엇을 했는지가 아니라 **언제** 했는지가 계약이다. */
+/** 관측한 호출을 부른 순서대로 쌓는 목록. 무엇을 했는지가 아니라 **언제** 했는지가 계약이다. */
 const mockCalls: string[] = []
 
 /** 온보딩 상태만 케이스마다 갈아 끼운다(선하이드레이션 게이트가 이 값 하나로 갈린다). */

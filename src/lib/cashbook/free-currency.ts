@@ -21,7 +21,7 @@ export const FREE_CURRENCIES = [
 
 export type FreeCurrency = (typeof FREE_CURRENCIES)[number]['id']
 
-/** 세그먼트는 **글자**를 고른다. 아이디와 라벨 사이를 여기서 옮긴다. */
+/** 아이디와 라벨 사이를 옮기는 자리. 세그먼트는 글자를 고른다. */
 export const FREE_CURRENCY_LABELS = FREE_CURRENCIES.map((each) => each.label)
 
 export function labelOfCurrency(id: FreeCurrency): string {

@@ -73,7 +73,7 @@ async function 아이디로누르기(view: Rendered, testID: string): Promise<vo
 }
 
 /**
- * 금액 칸의 성질(글자·자리표시자·키보드)을 여기서 본다.
+ * 금액 칸의 성질(글자·자리표시자·키보드)을 보는 시트.
  *
  * 그 갈래가 사냥 이었는데 로 사냥이 **계산기**가 되면서(큰 숫자는 못 치는 합계다)
  * 기타로 옮겼다. 아이템 판매의 큰 숫자도 합계라 못 친다. 직접 치는
@@ -88,7 +88,7 @@ async function 직접치는시트(): Promise<Rendered> {
 }
 
 /**
- * 아이템 판매로 연다. **열자마자 그 갈래인 것이 아니다**.
+ * 아이템 판매로 여는 시트. **열자마자 그 갈래인 것이 아니다**.
  *
  * 기본 갈래는 차례의 첫째(`INCOME_CATEGORIES[0]`)이고 그것이 사냥 으로 바뀌었다. 판매 갈래의
  * 성질을 재는 케이스는 그래서 **칩을 한 번 누르고** 시작한다.
@@ -110,7 +110,7 @@ async function 대금치기(view: Rendered, text: string): Promise<void> {
   })
 }
 
-/** 아이디로 집은 칸에 친다. 큰 숫자가 아닌 폼 안의 입력들이다. */
+/** 아이디로 집은 칸에 치는 도우미. 큰 숫자가 아닌 폼 안의 입력들이다. */
 async function 아이디로치기(view: Rendered, testID: string, text: string): Promise<void> {
   await act(async () => {
     fireEvent.changeText(view.getByTestId(testID), text)
@@ -795,7 +795,7 @@ describe('갈래마다 자기 폼', () => {
 })
 
 describe('사냥 계산기', () => {
-  /** 사냥 갈래를 열고 탈라하트 밤의 길 3(lv.294· 40마리)까지 고른다. */
+  /** 사냥 갈래를 열고 탈라하트 밤의 길 3(lv.294· 40마리)까지 고르는 도우미. */
   async function 밤의길3(view: Rendered): Promise<void> {
     await 누르기(view, '사냥')
     await 아이디로누르기(view, 'income-sheet-region-trigger')

@@ -187,13 +187,13 @@ export function oklchToHex(oklch: Oklch): string {
   return toHex(oklabToRgb(toOklab({ ...oklch, c: low })))
 }
 
-/** 색상(H)·채도(C)는 그대로 두고 명도만 바꾼다. `*-ink` 파생의 기본 연산. */
+/** 색상(H)·채도(C)는 그대로 두고 명도만 바꾼 색. `*-ink` 파생의 기본 연산. */
 export function withLightness(hex: string, lightness: number): string {
   const oklch = hexToOklch(hex)
   return oklchToHex({ ...oklch, l: lightness })
 }
 
-/** 채도만 바꾼다. 명도를 극단으로 밀 때 표현 범위를 벗어나는 것을 완화하는 데 쓴다. */
+/** 채도만 바꾼 색. 명도를 극단으로 밀 때 표현 범위를 벗어나는 것을 완화하는 데 쓴다. */
 export function withChroma(hex: string, chroma: number): string {
   const oklch = hexToOklch(hex)
   return oklchToHex({ ...oklch, c: chroma })

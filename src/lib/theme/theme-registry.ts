@@ -48,7 +48,7 @@ export interface ThemeCategoryGroup {
 }
 
 /**
- * 테마 목록을 카테고리 섹션으로 묶는다.
+ * 테마 목록을 카테고리 섹션으로 묶은 것.
  *
  * **항목이 없는 카테고리는 그룹째 내지 않는다**. 라이트/다크 필터가 걸러낸 뒤 헤더만 남는 것을
  * 막는 책임이 여기 있다. 호출부는 거르고 이 함수에 넘기기만 하면 된다.
@@ -112,7 +112,7 @@ function backgroundDeclarations(background: ThemeBackground | undefined): string
 }
 
 /**
- * 한 테마의 `:root` + `.media-scope` 규칙을 만든다.
+ * 한 테마의 `:root` + `.media-scope` 규칙.
  *
  * `.media-scope` 안에서 표면·텍스트를 `media-*` 로 다시 묶고 accent 틴트·잉크도 다시 선언한다.
  * 커스텀 프로퍼티는 선언된 요소에서 `var()` 가 해석되므로, 다시 선언하지 않으면 `:root` 의

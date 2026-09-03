@@ -1,7 +1,7 @@
 import { setPreferencesPort } from '../../storage/ports'
 
 /**
- * 인메모리 `PreferencesPort` 를 꽂는다.
+ * 인메모리 `PreferencesPort` 를 꽂는 설치.
  *
  * 자리표시자만 있을 때는 화면이 저장소를 안 건드렸는데, 진짜 탭 화면은 마운트하며 추적 목록을
  * 읽는다(빈 상태는 저장소를 읽고 확인한 뒤에만 그린다). 포트가 없으면

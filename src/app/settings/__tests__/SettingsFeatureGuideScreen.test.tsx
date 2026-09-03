@@ -100,7 +100,7 @@ function textsIn(node: AtomElement): string[] {
 }
 
 /**
- * 마디 위치를 알려 준다. jest 는 레이아웃을 계산하지 않으므로 **`onLayout` 을 우리가 쏜다.**
+ * 마디 위치를 알려 주는 도우미. jest 는 레이아웃을 계산하지 않으므로 **`onLayout` 을 우리가 쏜다.**
  * 순서는 화면이 그린 순서 그대로이고, 래퍼(0) 다음에 마디들이 온다.
  */
 async function layout(view: Rendered, ys: number[]): Promise<void> {

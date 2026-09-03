@@ -12,7 +12,7 @@ import type { ThemeMode } from '../types/theme'
 import type { ThemeAppearance } from './appearance-store'
 
 /**
- * `null` 초기값은 *"프로바이더가 없다"* 를 뜻한다. 기본 테마로 조용히 폴백하지 않는다.
+ * 프로바이더가 없다는 뜻의 `null` 초기값. 기본 테마로 조용히 폴백하지 않는다.
  *
  * 폴백을 두면 프로바이더를 빼먹은 화면이 **기본 테마로 잘 도는 것처럼 보이고**, 사용자가 고른 테마가
  * 어느 서브트리에서만 안 먹히는 것을 아무도 못 잡는다. `native/ports.ts` 의 슬롯이 주입 전 접근에

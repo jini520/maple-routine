@@ -277,7 +277,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 ]
 
 /**
- * 그 버전의 노트를 찾는다. 없으면 **던지지 않고 `undefined`** 다.
+ * 그 버전의 노트. 없으면 **던지지 않고 `undefined`** 다.
  * "노트가 없다"의 판정은 호출부가 한다(배포 가드는 중단하고, 화면은 그냥 안 그린다).
  */
 export function findReleaseNote(version: string): ReleaseNote | undefined {

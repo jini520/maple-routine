@@ -11,7 +11,7 @@ import { WORLD_EMBLEM_ASSETS } from '../../assets/generated/worlds'
 import bossCropsData from '../../data/boss-portrait-crops.json'
 import bossIconCropsData from '../../data/boss-portrait-icon-crops.json'
 /**
- * 이름표를 번들 에셋으로 바꾼다. 앱의 그림은 이 길로만 화면에 붙는다.
+ * 이름표를 번들 에셋으로 바꾸는 조회. 앱의 그림은 이 길로만 화면에 붙는다.
  *
  * 전부 같은 모양이다. `키 → (표를 한 번 거쳐) ASSETS[…] ?? null`.
  *
@@ -99,7 +99,7 @@ export function worldEmblemUrl(world: string): ImageAssetRef | null {
   return WORLD_EMBLEM_ASSETS[basename] ?? null
 }
 
-/** 월드를 아는 것은 이 표뿐이라 판정도 여기서 한다. @see */
+/** 월드를 아는 유일한 표라 판정도 여기 있다. @see */
 export function isChallengersWorld(world: string): boolean {
   return basenameByWorld[world] === 'challengers'
 }
@@ -122,7 +122,7 @@ export function forceIconOf(forceType: ForceType): ImageAssetRef | null {
 
 // 아이템 아이콘
 
-/** 이름에서 파일명을 계산하지 않고 표에서 찾는다. @see */
+/** 이름에서 파일명을 계산하지 않고 표에서 찾는 항목. @see */
 interface ItemIconEntry {
   name: string
   iconFile?: string
@@ -166,7 +166,7 @@ export function getItemIconUrl(name: string, slot?: string): ImageAssetRef | nul
   return ITEM_ASSETS[fileName.normalize('NFC')] ?? null
 }
 
-/** 실재 아이템명이 아닌 표시 전용 아이콘(솔 에르다 단위 분해 등)은 파일명으로만 참조된다. */
+/** 파일명으로만 참조되는 표시 전용 아이콘(솔 에르다 단위 분해 등). */
 export function getItemIconUrlByFile(fileName: string): ImageAssetRef | null {
   return ITEM_ASSETS[fileName.normalize('NFC')] ?? null
 }
@@ -207,7 +207,7 @@ const MAP_ICON_BY_LABEL: Record<string, string> = {
 }
 
 /**
- * 그림과 서는 자리를 함께 든다. `beside` 는 이름 바로 옆이고 아니면 타일 왼쪽 끝이다.
+ * 그림과 서는 자리를 함께 든 값. `beside` 는 이름 바로 옆이고 아니면 타일 왼쪽 끝이다.
  *
  * 지역 아이콘이면 이름 옆 이 지금은 우연히 일치하지만 그 둘은 다른 이야기라, 자리를 표가
  * 아니라 이 값이 직접 말한다.

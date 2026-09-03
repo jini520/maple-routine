@@ -22,7 +22,7 @@ const COUNTS: DropEffectFrameCounts = { screen: 16, pre: 8, loop: 24, end: 7 }
 
 const MS = (fps: number, frames: number): number => (1000 / fps) * frames
 
-/** `dt` 를 잘게 나눠 흘려보낸다. 한 번에 큰 값을 주면 `MAX_TICK_MS` 가 잘라낸다(실제 루프와 같다). */
+/** `dt` 를 잘게 나눠 흘려보내는 도우미. 한 번에 큰 값을 주면 `MAX_TICK_MS` 가 잘라낸다(실제 루프와 같다). */
 function run(
   state: ReturnType<typeof createDropEffectState>,
   totalMs: number,

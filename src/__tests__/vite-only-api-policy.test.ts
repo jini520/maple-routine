@@ -43,7 +43,7 @@ function productSourceFiles(dir: string): string[] {
 }
 
 /**
- * 주석을 지운다. **이 정책의 기록 자체가 주석에 산다.**
+ * 주석을 걷어낸 소스. **이 정책의 기록 자체가 주석에 산다.**
  *
  * `UpdatePromptModal.tsx` 머리가 어째서 core 스토어를 값으로 import 하면 안 되는지를 설명하며 이
  * API 이름을 쓴다(그리고 실제로 그것 때문에 이 가드가 한 번 빨개졌다. 대상이 `core/` 에서 `src/`

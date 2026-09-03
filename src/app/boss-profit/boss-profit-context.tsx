@@ -45,7 +45,7 @@ const BossProfitContext = createContext<BossProfitContextValue | null>(null)
 export const BossProfitContextProvider = BossProfitContext.Provider
 
 /**
- * 보스 수익 맥락을 읽는다.
+ * 보스 수익 맥락을 읽는 훅.
  *
  * Provider 밖에서 부르면 **던진다**. 조용히 기본값을 돌려주면 잘못된 기간의 값으로 화면이
  * 그려지고, 그 오류는 "왜 지난주 금액이 보이지"처럼 한참 뒤에야 드러난다.

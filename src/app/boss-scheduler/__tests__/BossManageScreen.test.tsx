@@ -142,7 +142,7 @@ function stateOf(node: AtomElement): { selected?: boolean; disabled?: boolean; c
   }
 }
 
-/** 글자에서 위로 올라가 실제로 눌리는 조상을 찾는다. */
+/** 글자에서 위로 올라가 실제로 눌리는 조상을 찾는 도우미. */
 function button(label: string, index = 0): AtomElement {
   let node: AtomElement | null = screen.getAllByText(label)[index]
   while (node !== null && node.props.role !== 'button') node = node.parent

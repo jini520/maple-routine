@@ -281,7 +281,7 @@ export async function updateIncomeRecord(record: IncomeRecord): Promise<void> {
   ])
 }
 
-/** 한 건만 지운다. 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */
+/** 한 건만 지우는 삭제. 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */
 export async function deleteIncomeRecord(id: string): Promise<void> {
   const db = await getBossProfitDb()
   await db.run(`DELETE FROM income_records WHERE id = ?`, [id])

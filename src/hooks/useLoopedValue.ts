@@ -22,7 +22,7 @@ interface Loop {
 }
 
 /**
- * 한 값을 `from` 에서 `to` 로 무한 반복시킨다. 스피너 둘이 이걸로 SVG 속성을 굴린다.
+ * 한 값을 `from` 에서 `to` 로 무한 반복시키는 훅. 스피너 둘이 이걸로 SVG 속성을 굴린다.
  *
  * **CSS 애니메이션 API 가 아니라 `useAnimatedProps` 를 쓰는 이유**는 대상이 SVG 속성이라서다.
  * Reanimated 의 CSS API 는 SVG 지원을 갖고 있지만 패키지 진입점에서 안 내보내 내부 경로를 직접

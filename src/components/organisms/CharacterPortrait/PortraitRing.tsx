@@ -64,7 +64,7 @@ export function EmptyRing(props: { color: string }): React.JSX.Element {
   )
 }
 
-/** 트랙 위에 찬 만큼을 덧그린다. 구간은 `portraitRingSpan` 이 정한다. */
+/** 트랙 위에 찬 만큼을 덧그리는 호. 구간은 `portraitRingSpan` 이 정한다. */
 export function ProgressArc(props: {
   half: 'left' | 'right' | 'full'
   progress: PortraitRingProgress

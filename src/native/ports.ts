@@ -27,7 +27,7 @@ export interface ColorSchemePort {
 }
 
 /**
- * 고른 테마를 플랫폼 표면에 반영한다.
+ * 고른 테마의 플랫폼 표면 반영.
  *
  * 상태바·내비바 명암은 이 포트가 아니라 호출부(`features/theme/store.ts`)가 맡는다. 그건 이미
  * 자기 포트가 있다.
@@ -49,11 +49,11 @@ export interface AdsPort {
   /** SDK 초기화. 광고를 쓸 수 없는 환경이면 아무것도 하지 않는다. */
   initialize(): Promise<void>
   /**
-   * 다음 전면광고를 미리 받아둔다. **준비됐으면 `true`**. 광고를 쓸 수 없는 환경이면 던지지 않고
+   * 다음 전면광고를 미리 받아두는 예열. **준비됐으면 `true`**. 광고를 쓸 수 없는 환경이면 던지지 않고
    * `false` 다. 플러그인이 "로드됐는지" 묻는 API를 주지 않아 그 상태는 호출부가 들고 있는다.
    */
   prepareInterstitial(): Promise<boolean>
-  /** 준비된 광고를 표시한다. **실제로 떴으면 `true`**(안 떴는데 기록하면 30분간 광고가 죽는다). */
+  /** 준비된 광고 표시. **실제로 떴으면 `true`**(안 떴는데 기록하면 30분간 광고가 죽는다). */
   showInterstitial(): Promise<boolean>
 }
 
@@ -63,9 +63,9 @@ export interface AdsPort {
  * 이 포트가 다루는 것은 화면을 덮는다·되돌린다 이지 플러그인 호출이 아니다.
  */
 export interface SplashScreenPort {
-  /** 덮개를 전부 걷는다. 리로드가 실패해 남은 커버까지 포함해서다. */
+  /** 덮개를 전부 걷는 해제. 리로드가 실패해 남은 커버까지 포함해서다. */
   hide(): Promise<void>
-  /** 리로드 직전에 화면을 덮는다. 덮을 것이 없는 환경이면 아무것도 하지 않는다. */
+  /** 리로드 직전에 화면을 덮는 덮개. 덮을 것이 없는 환경이면 아무것도 하지 않는다. */
   show(): Promise<void>
 }
 
@@ -81,7 +81,7 @@ export interface SystemBarsPort {
 }
 
 export interface KeyboardPort {
-  /** 키보드 표시 여부를 구독하고 해제 함수를 돌려준다. 키보드가 없는 환경이면 no-op 해제 함수. */
+  /** 키보드 표시 여부 구독. 해제 함수를 돌려준다. 키보드가 없는 환경이면 no-op 해제 함수. */
   addVisibilityListener(onChange: (visible: boolean) => void): Promise<() => void>
 }
 
@@ -122,7 +122,7 @@ export interface BackGestureHandlers {
 export interface BackGesturePort {
   setEnabled(enabled: boolean): Promise<void>
   moveToBackground(): Promise<void>
-  /** 리스너를 붙이고 해제 함수를 돌려준다. 시스템 뒤로가기가 없는 환경이면 no-op 해제 함수. */
+  /** 리스너를 붙이는 구독. 해제 함수를 돌려준다. 시스템 뒤로가기가 없는 환경이면 no-op 해제 함수. */
   addListeners(handlers: BackGestureHandlers): Promise<() => void>
 }
 
@@ -189,17 +189,17 @@ export interface LiveUpdatePort {
   getChannel(): string
   /** 확인. 매니페스트 조회·파싱·버전 비교까지 **어댑터가** 끝낸다. */
   check(): Promise<LiveUpdateCheckResult>
-  /** 사용자 동의 후 받는다. 진행률은 0~100 으로 흘린다. */
+  /** 사용자 동의 후의 다운로드. 진행률은 0~100 으로 흘린다. */
   download(onProgress: (percent: number) => void): Promise<void>
   /**
-   * 받아둔 번들로 갈아끼우고 리로드한다. **이후 코드는 실행되지 않는다.**
+   * 받아둔 번들로 갈아끼우는 리로드. **이후 코드는 실행되지 않는다.**
    *
    * 앞뒤 순서(커넥션 닫기 → 커버 → 이 호출)는 여전히 `native/live-update.ts` 한 함수가 통째로
    * 소유한다. 그 순서가 곧 그 결정이라 두 곳으로 나누지 않는다.
    */
   apply(): Promise<void>
   getNetworkType(): Promise<NetworkType>
-  /** 스토어 업데이트가 필요할 때 스토어를 연다. */
+  /** 스토어 업데이트가 필요할 때 여는 스토어. */
   openStore(): void
 }
 

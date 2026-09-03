@@ -46,7 +46,7 @@ const bossKey = (ocid: string, boss: string, periodKey: string): string => `${oc
 const periodKeyOf = (ocid: string, periodKey: string): string => `${ocid}|${periodKey}`
 
 /**
- * 지울 무리를 고른다. 쓰지 않는다. 계획과 실행을 갈라야 이 규칙을 입출력으로 검증할 수 있다.
+ * 지울 무리를 고르는 계획. 쓰지는 않는다. 계획과 실행을 갈라야 이 규칙을 입출력으로 검증할 수 있다.
  *
  * 안전 장치 넷이 행이 없다 가 안 잡았다 를 뜻하지 않는 경우를 전부 막는다.
  *
@@ -102,7 +102,7 @@ export interface OrphanDropSweepInput {
 }
 
 /**
- * 계획대로 지우고 지운 기록 수를 돌려준다. 0 이면 아무것도 안 했다(멱등).
+ * 계획대로 지우는 실행. 지운 기록 수를 돌려준다. 0 이면 아무것도 안 했다(멱등).
  *
  * 빈 배열로 `replaceBossDropRecords` 를 부르는 것이 곧 삭제다(DELETE 뒤 0건 삽입). 실패는
  * 삼킨다. 정리는 화면의 목적이 아니라 뒷정리라, 못 지웠다고 보스 수익이 서지 못하면 안 된다.

@@ -128,7 +128,7 @@ function button(view: Rendered, label: string | RegExp): AtomElement {
   return pressableOf(view.getByText(label))
 }
 
-/** 마운트 직후 계정 조회 → 후보 조회가 연달아 도는 자리라 여러 번 흘려보낸다. */
+/** 단계를 그리는 도우미. 마운트 직후 계정 조회 → 후보 조회가 연달아 돌아 여러 번 흘려보낸다. */
 async function renderStep(
   props: Partial<React.ComponentProps<typeof ContentCharacterStep>> = {},
 ): Promise<{ view: Rendered; onSubmit: jest.Mock }> {

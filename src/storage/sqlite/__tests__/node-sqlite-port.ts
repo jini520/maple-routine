@@ -18,13 +18,13 @@ import { join } from 'node:path'
 import type { SqliteDbConnection, SqlitePort } from '../../ports'
 
 export interface RealSqlite {
-  /** `setSqlitePort` 에 넣는다. */
+  /** `setSqlitePort` 에 넣을 포트. */
   port: SqlitePort
   /** `db.ts` 가 낸 문장 전부(차례대로). 무엇이 안 나갔는가 를 볼 때 쓴다. */
   statements: string[]
   /** 파일을 따로 열어 만진다. 옛 스키마를 심고, 결과를 되짚는다. */
   inspect<T>(read: (db: DatabaseSync) => T): T
-  /** 임시 디렉터리째 지운다. */
+  /** 임시 디렉터리째 지우는 정리. */
   dispose(): void
 }
 

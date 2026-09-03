@@ -61,7 +61,7 @@ const EASE = Easing.bezier(0.32, 0.72, 0, 1)
 /** 닫힘은 가속만. 끝에서 머뭇거리면 접히는 중 이 길어 보인다. */
 const EASE_IN = Easing.bezier(0.4, 0, 1, 1)
 
-/** 0(접힘) ↔ 1(펼침) 하나로 그 요소의 모든 값을 만든다. */
+/** 0(접힘) ↔ 1(펼침) 하나로 그 요소의 모든 값을 내는 진행률. */
 function useDialProgress(step: DialStep, isOpen: boolean, reduceMotion: boolean): SharedValue<number> {
   const progress = useSharedValue(0)
 

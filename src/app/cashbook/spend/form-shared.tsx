@@ -31,7 +31,7 @@ export interface SpendFormProps {
   onClose: () => void
   /** 시트 껍데기의 스크롤을 되돌릴 열쇠. 목록 갈래가 단계를 오갈 때 부른다. */
   onScrollKeyChange: (key: string) => void
-  /** 머리에서 날짜를 바꾼다. 수입 시트와 같은 계약이다. */
+  /** 머리에서 날짜를 바꾸는 콜백. 수입 시트와 같은 계약이다. */
   onDateChange: (next: string) => void
 }
 
@@ -47,7 +47,7 @@ export interface SpendFormProps {
 export function SpendHeader(props: {
   title: string
   dateKey: string
-  /** 머리에서 날짜를 바꾼다. 수입 시트와 **같은 부품**이다. */
+  /** 머리에서 날짜를 바꾸는 줄. 수입 시트와 **같은 부품**이다. */
   onDateChange: (next: string) => void
   /** 제목을 **되돌아가는 누르개**로 만드는 콜백. 수정 모드에는 되돌아갈 곳이 없어 안 준다. */
   onBack?: () => void

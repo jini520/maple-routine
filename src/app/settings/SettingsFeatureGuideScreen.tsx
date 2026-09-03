@@ -26,7 +26,7 @@ import type { RootStackParamList } from '../../navigation/routes'
 import { useSettingsNavigation } from './use-settings-navigation'
 
 /**
- * **두 라우트 이름을 다 받는 타입이어야 한다.** 하나로 좁히면 `route.name` 이 그 리터럴로 굳어,
+ * 두 라우트 이름을 다 받는 타입. 하나로 좁히면 `route.name` 이 그 리터럴로 굳어,
  * 실제로는 다른 이름으로 들어올 수 있다는 사실을 타입이 감춘다. 아래 `screen-${route.name}` 이
  * 정확히 그 사실 위에 선다(같은 화면이 두 이름으로 열린다는 것이 이다).
  */

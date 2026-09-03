@@ -23,7 +23,7 @@ type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
 const SIZES = { general: 1024, records: 512 }
 
-/** 누르고 **다시 그려질 때까지** 기다린다. */
+/** 누르고 다시 그려질 때까지 기다리는 도우미. */
 async function press(element: AtomElement): Promise<void> {
   await act(async () => {
     fireEvent.press(element)

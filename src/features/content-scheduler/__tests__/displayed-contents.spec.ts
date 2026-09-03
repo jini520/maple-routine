@@ -19,7 +19,7 @@ function weekly(name: string, isRegistered: boolean): WeeklyContent {
   return { name, kind: 'contents', isRegistered, nowCount: 0, maxCount: 1, questState: null }
 }
 
-/** 실제 템플릿에서 이름을 빌린다. 지어낸 이름은 템플릿 정렬을 타지 못해 판정이 흐려진다. */
+/** 실제 템플릿에서 빌린 이름. 지어낸 이름은 템플릿 정렬을 타지 못해 판정이 흐려진다. */
 const DAILY_NAMES = CONTENT_TEMPLATE.daily.map((entry) => entry.content_name)
 const WEEKLY_NAMES = CONTENT_TEMPLATE.weekly.map((entry) => entry.content_name)
 

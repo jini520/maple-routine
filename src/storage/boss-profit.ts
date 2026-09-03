@@ -82,7 +82,7 @@ const FILL_MISSING_WORLD_SQL = `
 `
 
 /**
- * `world` 가 비어 있는 기존 기록을 **지금 아는 월드**로 채운다.
+ * `world` 가 비어 있는 기존 기록을 지금 아는 월드로 채우는 보정.
  *
  * 컬럼을 새로 더했으므로 그전 기록에는 월드가 없다. `NULL` 로 두면 안전하지만 기존 사용자의 과거 주
  * 결정석 칩이 통째로 사라지고, 현재 월드로 채우면 **이미 리프한 캐릭터의 과거만** 잘못 고정된다.
@@ -139,7 +139,7 @@ export async function getBossProfitRecords(
 }
 
 /**
- * 이 기간 또는 그보다 과거에 기록이 하나라도 있는지 확인한다.
+ * 이 기간 또는 그보다 과거에 기록이 하나라도 있는가.
  *
  * 이전 기간 게이트(`canReachPreviousPeriod`)가 바로 이전 한 칸만 보면 기록이 없는 기간이 벽이
  * 되어 그 뒤의 기록 전체가 화면에서 사라진다. 키 목록을 열거하는 `getBossProfitRecords` 로는
@@ -182,7 +182,7 @@ export interface BossProfitRecordKey {
 }
 
 /**
- * 이 캐릭터들의 **전 기간** 수익 기록 키만 읽는다.
+ * 이 캐릭터들의 전 기간 수익 기록 키.
  *
  * 드롭 히스토리는 "그 난이도에서 획득 불가한 기록"을 표시 단계에서 거르는데, **처치 난이도가 확정된
  * 조합에만** 걸어야 한다. 확정 전 행에 걸면 익스트림으로 등록해두고 하드를 잡은 경우처럼 나중에
@@ -314,7 +314,7 @@ export async function getUndatedBossProfitRecords(
 }
 
 /**
- * 캐낸 날짜를 박는다. **upsert 를 안 탄다**.
+ * 캐낸 날짜를 박는 쓰기. **upsert 를 안 탄다**.
  *
  * `upsertBossProfitRecord` 는 이 칸을 아예 안 적는다(INSERT 목록에도 `DO UPDATE SET` 에도 없다).
  * 그래서 자동 기록이 몇 번을 다시 돌아도 캐 놓은 날짜를 지우지 못한다. `world` 가 `COALESCE` 로

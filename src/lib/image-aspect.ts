@@ -35,14 +35,14 @@ export function imageNaturalSize(source: ImageAssetRef): ImageNaturalSize | null
   return { width: resolved.width, height: resolved.height }
 }
 
-/** 퍼센트도 받는다. 부모를 재지 않고 그대로 넘긴다(`image-crop.ts` 와 같은 이유). */
+/** 퍼센트도 받는 축 값. 부모를 재지 않고 그대로 넘긴다(`image-crop.ts` 와 같은 이유). */
 type AxisValue = number | `${number}%`
 
 /** 정하는 축 **하나**. 둘을 주면 나머지 축을 그림이 정한다는 말 자체가 성립하지 않는다. */
 export type NaturalAspectAxis = { width: AxisValue } | { height: AxisValue }
 
 /**
- * 준 축을 그대로 두고 **나머지 축을 지운 뒤** 그림의 종횡비를 얹는다.
+ * 준 축을 그대로 두고 나머지 축을 지운 뒤 그림의 종횡비를 얹은 스타일.
  *
  *     naturalAspectStyle(엠블럼, { height: 17 })   → { height: 17, width: undefined, aspectRatio: .92 }
  *     naturalAspectStyle(안내이미지, { width: '100%' }) → { width: '100%', height: undefined, aspectRatio: 2.72 }

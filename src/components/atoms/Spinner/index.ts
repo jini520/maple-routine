@@ -1,5 +1,5 @@
 /**
- * 대기 마크를 한 자리에서 가져간다. 쓰는 쪽은
+ * 대기 마크를 한 자리에서 가져가는 배럴. 쓰는 쪽은
  * `import { MapleSweepSpinner } from 'components/atoms/Spinner'` 다.
  *
  * **크기로 고른다.** 16px 버튼 안은 `MapleSpinner`, 24px 이상은 `MapleSweepSpinner` 다.

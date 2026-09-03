@@ -73,7 +73,7 @@ export function TextInput({
       {...rest}
       keyboardType={keyboardType}
       {...(numeric ? { value } : { defaultValue: value })}
-      /** 플랫폼 기본 상자를 지운다. 배열 앞이라 호출부의 치수가 이긴다. */
+      /** 플랫폼 기본 상자를 지우는 값. 배열 앞이라 호출부의 치수가 이긴다. */
       style={[
         { ...BASE_TEXT_STYLE, padding: 0, includeFontPadding: false, textAlignVertical: 'center' },
         rest.style,

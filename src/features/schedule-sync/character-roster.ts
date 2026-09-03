@@ -55,7 +55,7 @@ export interface TrackedCharacterContext {
 }
 
 /**
- * 추적 ocid 를 전 계정에서 찾아 각자의 계정과 함께 돌려준다.
+ * 추적 ocid 를 전 계정에서 찾아 각자의 계정과 함께 낸 목록.
  *
  * 위 `resolveRegisteredCharacters` 와 묻는 것이 다르다. 그쪽은 이 계정에 누가 사는가 이고
  * 이쪽은 이 ocid 들이 어느 계정에 사는가 다. 추적 목록이 메이플 ID 경계를 넘으면 전자로는 다른
@@ -141,7 +141,7 @@ export async function getCharacterPickerRoster(
   const liveEntries = new Map<string, CharacterPickerEntry>()
 
   /**
-   * 중간 방출은 이 문으로만 나간다.
+   * 중간 방출이 나가는 유일한 문.
    *
    * - 전역 실패가 확정된 뒤에는 흘리지 않는다. 부분 목록이 완성된 결과로 오해된다. 이미 흘린
    *   것은 되돌리지 않고, 호출부가 reject 를 받아 실패 경로를 그린다.

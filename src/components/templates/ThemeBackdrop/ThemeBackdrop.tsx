@@ -25,7 +25,7 @@ function withAlpha(hex: string, alpha: number): string {
 }
 
 /**
- * 배경을 선언한 테마에서만 그린다. 나머지는 `null` 이라 백드롭이
+ * 배경을 선언한 테마에서만 서는 벽지. 나머지는 `null` 이라 백드롭이
  * 아무것도 안 그리던 것과 같다(뷰가 늘지 않는다).
  */
 export function ThemeBackdrop(): React.JSX.Element | null {

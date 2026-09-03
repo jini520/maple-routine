@@ -27,7 +27,7 @@ import appJson from '../../../app.json'
 const LATEST_URL = `${appJson.expo.updates.url.replace(/\/manifest$/, '')}/latest`
 
 /**
- * 매니페스트 `extra` 에서 우리 축의 값을 꺼낸다.
+ * 매니페스트 `extra` 에서 꺼낸 우리 축의 값.
  *
  * **전부 선택 필드로 읽는다.** 가 `highlights` 를 필수 검사에 안 넣은 것과 같은 이유이고,
  * 이번에는 더 세다. 매니페스트를 만든 스크립트와 그것을 읽는 앱이 서로 다른 시점의 것일 수 있다.
@@ -128,7 +128,7 @@ export const rnLiveUpdatePort: LiveUpdatePort = {
   },
 
   /**
-   * 사용자 동의 후 받는다.
+   * 사용자 동의 후의 다운로드.
    *
    * 진행률은 **네이티브 상태 변경 이벤트**로 온다(`downloadProgress` 는 0~1). 의
    * 결정형 진행률이 새 프로토콜에서도 성립한다는 뜻이다. 이벤트가 안 오는 구간이 있어도 완료 시

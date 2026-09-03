@@ -1,5 +1,5 @@
 /**
- * 크롭 표 한 줄을 RN 의 절대 배치로 푼다.
+ * 크롭 표 한 줄을 RN 의 절대 배치로 푸는 계산.
  *
  * 크롭 표(`boss-portrait-crops` · `boss-portrait-icon-crops` · `daily-quest-region-crops`)는 CSS
  * `background-size`/`background-position` 문법인데, RN 에는 배경 이미지가 없어 `<Image>` 를 손으로

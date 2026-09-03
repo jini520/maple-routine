@@ -17,14 +17,14 @@ import type { NativeScrollEvent, NativeSyntheticEvent, ScrollView } from 'react-
 export interface ReorderScroll {
   /** 지금 스크롤 오프셋(px). 끌기 보정이 콘텐츠가 얼마나 흘렀나 를 이 값으로 잰다. */
   offsetPx: () => number
-  /** 그 자리로 즉시 옮긴다. 애니메이션을 걸면 프레임마다 목표가 갈려 서로를 취소한다. */
+  /** 그 자리로 즉시 옮기는 콜백. 애니메이션을 걸면 프레임마다 목표가 갈려 서로를 취소한다. */
   scrollToPx: (yPx: number) => void
 }
 
 interface ReorderScrollWiring {
-  /** `ScreenScroll` 의 `ref` 로 넘긴다. */
+  /** `ScreenScroll` 의 `ref` 로 넘길 값. */
   scrollRef: React.RefObject<ScrollView | null>
-  /** `ScreenScroll` 의 `onScroll` 로 넘긴다. 오프셋은 여기서만 온다. */
+  /** `ScreenScroll` 의 `onScroll` 로 넘길 핸들러. 오프셋은 여기서만 온다. */
   onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => void
   scroll: ReorderScroll
 }

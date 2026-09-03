@@ -281,7 +281,7 @@ export function HuntCalculatorForm(
   }
 
   /**
-   * 캐릭터의 메획을 읽어 온다. 고르는 그 순간이 계기다. 선택 안함 이면 읽을 대상이 없어
+   * 캐릭터의 메획을 읽어 오는 조회. 고르는 그 순간이 계기다. 선택 안함 이면 읽을 대상이 없어
    * 줄이 걷히고 곱이 ×1 로 돌아간다.
    */
   function loadMesoRateFor(next: string | null): void {

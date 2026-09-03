@@ -19,7 +19,7 @@ import { clearCacheDataAndReload } from '../../features/settings/cache-data'
 var mockCallOrder: string[] | undefined
 var mockShared: Record<string, jest.Mock> | undefined
 
-/** 가짜 DB 가 돌려주는 함수들도 **같은 인스턴스**여야 한다. 테스트가 그 위에 단언한다. */
+/** 함수들도 같은 인스턴스로 돌려주는 가짜 DB. 테스트가 그 위에 단언하므로 매번 새로 만들면 안 된다. */
 function mockDb(name: string): jest.Mock {
   const shared = (mockShared = mockShared ?? {})
   shared[name] = shared[name] ?? jest.fn()

@@ -199,7 +199,7 @@ function periodsOf(records: readonly UndatedBossProfitRecord[]): ResolvablePerio
 let inFlight: Promise<number> | null = null
 
 /**
- * 아직 날짜를 모르는 보스 기록을 캐내 `defeated_on` 을 채운다. 채운 건수를 돌려준다. 0 이면
+ * 아직 날짜를 모르는 보스 기록을 캐내 `defeated_on` 을 채우는 회차. 채운 건수를 돌려준다. 0 이면
  * 화면이 다시 읽을 이유가 없다.
  *
  * 한 번도 API 를 안 부르는 길이 넷이다. 캐릭터가 없다 · 캘 수 있는 기간에 미확정 기록이 없다 ·

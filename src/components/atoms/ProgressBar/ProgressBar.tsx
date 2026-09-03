@@ -53,7 +53,7 @@ export interface ProgressBarProps {
    * 자리는 안 준다(`ResetCountdownWidget` 의 경과 바).
    */
   aria?: { now: number; max: number }
-  /** 폭 변화에 트랜지션을 건다. 값이 연속으로 흐르는 `UpdatePromptModal` 의 다운로드만 쓴다. */
+  /** 폭 변화에 트랜지션을 걸지. 값이 연속으로 흐르는 `UpdatePromptModal` 의 다운로드만 쓴다. */
   animated?: boolean
   /** 채움 요소에 붙일 test id. 트랙은 그 부모다. */
   fillTestId?: string

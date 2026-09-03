@@ -93,7 +93,7 @@ export function resolveSafeAreaFade(options: {
 const STOP_COUNT = 9
 
 /**
- * `expo-linear-gradient` 는 둘 이상 을 **튜플**로 요구한다. 개수가 `STOP_COUNT` 에서 나오므로
+ * `expo-linear-gradient` 가 요구하는 둘 이상의 튜플. 개수가 `STOP_COUNT` 에서 나오므로
  * 타입만으로는 그것을 못 보이고, 그래서 아래 값들이 `as` 로 좁혀진다.
  */
 type AtLeastTwo<T> = readonly [T, T, ...T[]]

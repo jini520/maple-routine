@@ -1,5 +1,5 @@
 /**
- * 메소를 **한 단위로 줄여** 적는다. 캘린더 칸처럼 좁은 자리용.
+ * 메소를 한 단위로 줄여 적는 표기. 캘린더 칸처럼 좁은 자리용.
  *
  * `formatMesoUnits`(`lib/drop/drop-price.ts`)와 목적이 다르다. 그쪽은 입력한 값을 **정확히** 되읽어
  * 주는 자리라 1억 2345만 6789처럼 단위를 다 적지만, 여기는 **화면 폭 ÷ 7** 안에 들어가야 하므로
@@ -12,7 +12,7 @@
 const EOK = 100_000_000
 const MAN = 10_000
 
-/** 정수부에만 콤마를 넣는다. `toLocaleString` 에 옵션을 안 주는 것은 Hermes 의 Intl 편차 때문이다. */
+/** 정수부에만 콤마를 넣은 문자열. `toLocaleString` 에 옵션을 안 주는 것은 Hermes 의 Intl 편차 때문이다. */
 function withThousands(fixed: string): string {
   const [integer, fraction] = fixed.split('.')
   const grouped = Number(integer).toLocaleString()

@@ -19,7 +19,7 @@ const TIMER_ANIMATION_BASE = {
   animationFillMode: 'forwards',
 } as const
 
-/** 지속시간을 얹는다. */
+/** 지속시간을 얹은 타이머 애니메이션. */
 export function timerAnimation(durationMs: number) {
   return { ...TIMER_ANIMATION_BASE, animationDuration: `${durationMs}ms` } as const
 }

@@ -37,7 +37,7 @@ const GENERATED: Record<string, Record<string, unknown>> = {
   force: FORCE_ASSETS,
   'drop-effect': DROP_EFFECT_ASSETS }
 
-/** 디렉터리 하나에서 대상 파일 이름을 읽는다(하위 디렉터리는 안 본다. 생성기와 같은 규칙). */
+/** 디렉터리 하나의 대상 파일 이름(하위 디렉터리는 안 본다. 생성기와 같은 규칙). */
 function filesIn(dir: string, extensions: string[]): string[] {
   const full = path.join(ASSETS_DIR, dir)
   return readdirSync(full).filter((name) => {

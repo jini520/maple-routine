@@ -451,7 +451,7 @@ export async function loadDayRecords(dateKey: string): Promise<DayRecord[]> {
   ])
 
   /**
-   * 이름을 한 번에 찾는다. 손입력 줄과 보스 줄이 같은 캐릭터를 가리킬 수 있어, 갈라 부르면
+   * 이름을 한 번에 찾는 조회. 손입력 줄과 보스 줄이 같은 캐릭터를 가리킬 수 있어, 갈라 부르면
    * 같은 `ocid` 를 두 번 읽는다.
    */
   const names = await namesByOcid([
@@ -607,7 +607,7 @@ export function dayTotalsOf(entries: readonly DayRecord[]): CalendarDayAmounts {
 }
 
 /**
- * 캐시로 낸(번) 줄만 값을 준다. 그 줄은 메소가 아니라 원으로 적힌다.
+ * 캐시로 낸(번) 줄만 갖는 값. 그 줄은 메소가 아니라 원으로 적힌다.
  *
  * 수입도 같다. 이벤트 보상이 캐시로 들어오는 자리가 있고, 환산을 안 하는 것도 지출과 같은
  * 이유다.

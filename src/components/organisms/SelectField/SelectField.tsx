@@ -50,7 +50,7 @@ export interface SelectFieldProps {
   renderOption?: (option: SelectOption, isSelected: boolean) => React.ReactNode
 }
 
-/** `null` 도 키가 되어야 한다. 목록의 첫 칸이 대개 그것이다. */
+/** `null` 도 받는 키. 목록의 첫 칸이 대개 그것이다. */
 function keyOf(value: string | null): string {
   return value ?? ''
 }

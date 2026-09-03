@@ -22,7 +22,7 @@ const LOADERS: Record<TabStoreName, () => Promise<void>> = {
 }
 
 /**
- * 넘긴 순서대로 **순차** 재로드한다. 병렬이 아닌 이유는 `prehydrateTabStores` 와 같다.
+ * 넘긴 순서대로 도는 순차 재로드. 병렬이 아닌 이유는 `prehydrateTabStores` 와 같다.
  *  게이트의 신선도는 앞 회차가 캐시를 **다 쓴 뒤에야** 참이 되므로, 동시에 띄우면 전부
  * 옛 `syncedAt` 을 보고 같은 응답을 여러 번 받는다.
  *

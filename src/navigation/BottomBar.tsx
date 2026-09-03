@@ -64,9 +64,9 @@ import type { LayerRouteName, TabRouteName } from './routes'
  * 구조를 바꿀 때마다 바가 함께 움직인다.
  */
 export interface BarNavigation {
-  /** 그 층 화면으로 가며 안쪽 페이지를 지정한다. 스택에 없으면 한 단 쌓이고, 있으면 그리로 돌아간다. */
+  /** 그 층 화면으로 가며 안쪽 페이지를 지정하는 이동. 스택에 없으면 한 단 쌓이고, 있으면 그리로 돌아간다. */
   openLayer(layer: LayerRouteName, page: TabRouteName): void
-  /** 한 단 올라간다. 가장자리 스와이프가 만드는 것과 같은 결과다. */
+  /** 한 단 올라가는 이동. 가장자리 스와이프가 만드는 것과 같은 결과다. */
   goBack(): void
 }
 

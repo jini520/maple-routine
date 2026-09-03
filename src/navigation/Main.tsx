@@ -126,7 +126,7 @@ interface ConnectedBottomBarProps {
 }
 
 /**
- * 층 스택의 `state`·`navigation` 을 바가 아는 두 가지로 옮긴다.
+ * 층 스택의 `state`·`navigation` 을 바가 아는 두 가지로 옮긴 값.
  *
  * 바는 내비게이션을 두 메서드로만 안다(`BarNavigation`). 층 화면 이름과 중첩 파라미터 모양이
  * 여기서 끝나므로 구조를 바꿀 때 바가 함께 움직이지 않는다.
@@ -136,7 +136,7 @@ function ConnectedBottomBar({ state, navigation }: ConnectedBottomBarProps): Rea
 
   const layerNames = state.routes.map((route) => route.name)
   const topLayer = layerNames[state.index ?? layerNames.length - 1]
-  /** 의존성으로 쓸 수 있게 배열을 한 문자열로 접는다. 층 이름은 짧고 개수도 셋뿐이다. */
+  /** 의존성으로 쓸 수 있게 배열을 한 문자열로 접은 키. 층 이름은 짧고 개수도 셋뿐이다. */
   const layerKey = layerNames.join('|')
 
   const barNavigation: BarNavigation = useMemo(

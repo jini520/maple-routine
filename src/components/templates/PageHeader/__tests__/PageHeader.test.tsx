@@ -21,7 +21,7 @@ import { PageHeader } from '../PageHeader'
 beforeEach(__resetThemeAppearanceForTest)
 afterEach(__resetThemeAppearanceForTest)
 
-/** RN 은 벌거벗은 문자열을 View 자식으로 못 그린다. 그 자리를 채우는 도우미. */
+/** 벌거벗은 문자열 자리를 채우는 도우미. RN 은 그것을 View 자식으로 못 그린다. */
 const 내용 = <Text>내용</Text>
 
 /** 페이드는 `aria-hidden` 이라 RNTL 기본 쿼리에서 빠진다. */
@@ -133,7 +133,7 @@ interface TreeNode {
 }
 
 /**
- * `toJSON` 결과에서 `testID` 로 노드를 찾는다.
+ * `toJSON` 결과에서 `testID` 로 노드를 찾는 도우미.
  *
  * RNTL 의 `getByTestId` 를 쓰지 않는 이유는 **자식 목록**을 보기 때문이다. 그쪽이 돌려주는
  * 엘리먼트는 React 트리(내부 컴포넌트 포함)라 자식 수가 호스트 뷰 수와 다르다. 이 파일의 여러

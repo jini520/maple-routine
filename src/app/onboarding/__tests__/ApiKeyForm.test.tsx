@@ -24,7 +24,7 @@ afterEach(() => {
 
 type Rendered = Awaited<ReturnType<typeof renderAtom>>
 
-/** 글자를 담은 `Text` 에서 위로 올라가 그것을 감싼 누름 요소를 찾는다. */
+/** 글자를 담은 `Text` 에서 위로 올라가 그것을 감싼 누름 요소를 찾는 도우미. */
 function pressableOf(node: AtomElement, role: 'button' | 'link'): AtomElement {
   let current: AtomElement | null = node
   while (current !== null && current.props.role !== role) current = current.parent

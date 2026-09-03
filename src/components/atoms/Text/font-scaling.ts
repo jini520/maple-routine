@@ -38,7 +38,7 @@ export interface FontScalingProps {
 }
 
 /**
- * OS 가 준 배수에 맞춰 `Text`/`TextInput` 에 달 프롭 둘을 낸다.
+ * OS 가 준 배수에 맞춰 `Text`/`TextInput` 에 달 프롭 둘.
  *
  * 상한은 프롭이 그대로 받아 주지만(`maxFontSizeMultiplier`), **하한은 프롭이 없어서 끄는 것으로
  * 만든다.** 끄면 배수가 1.0 이 되고 그것이 곧 하한이다.

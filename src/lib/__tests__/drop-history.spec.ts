@@ -16,12 +16,12 @@ import {
   type DropHistoryRecord,
 } from '../drop/drop-history'
 
-/** 보이지 않는 줄바꿈 금지 문자를 걷어내 사람이 읽는 문장으로 되돌린다. */
+/** 보이지 않는 줄바꿈 금지 문자를 걷어내 사람이 읽는 문장으로 되돌린 것. */
 function plain(text: string): string {
   return text.replaceAll(WORD_JOINER, '')
 }
 
-/** 조각을 화면이 그리는 순서대로 이어 완성 문장을 만든다. */
+/** 조각을 화면이 그리는 순서대로 이은 완성 문장. */
 function sentence(line: DropHistoryLine): string {
   const box = line.box === undefined ? '' : `${line.box.name}${line.box.connector}`
   return `${line.prefix}${box}${line.item}${line.particle}${line.suffix}`

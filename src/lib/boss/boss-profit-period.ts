@@ -33,7 +33,7 @@ function toKstWallClock(date: Date): Date {
 }
 
 /**
- * 보스 수익 기록의 unique key(ocid+boss+difficulty+기간)에 쓰이는 기간을 계산한다.
+ * 보스 수익 기록의 unique key(ocid+boss+difficulty+기간)에 쓰이는 기간.
  *
  * - weekly: 가장 최근 주간 리셋(KST 목요일 00:00, lib/scheduler/reset-clock)의 KST 날짜를 periodKey로 쓴다.
  * - monthly: 월간 보스(검은마법사)의 Nexon 서버 리셋 시각은 KST 기준 매월 1일 00:00 이다.
@@ -69,7 +69,7 @@ function formatMonthlyPeriodKey(year: number, month: number): string {
   return `${year}-${pad(month)}`
 }
 
-/** periodKey를 한 칸 이동한다. weekly는 ±7일, monthly는 ±1개월. */
+/** 한 칸 이동한 periodKey. weekly는 ±7일, monthly는 ±1개월. */
 export function getAdjacentPeriodKey(
   cycle: BossCycle,
   periodKey: string,
@@ -91,7 +91,7 @@ export function getAdjacentPeriodKey(
 }
 
 /**
- * periodKey가 now 기준 "현재" 기간(getCurrentBossProfitPeriod의 periodKey)보다 미래가 아닌지 확인한다.
+ * periodKey 가 now 기준 현재 기간보다 미래가 아닌가.
  * true면 이 기간에서 next 방향 네비게이션 버튼을 비활성화해야 한다.
  */
 export function isLatestPeriod(cycle: BossCycle, periodKey: string, now: Date): boolean {
@@ -100,7 +100,7 @@ export function isLatestPeriod(cycle: BossCycle, periodKey: string, now: Date): 
 }
 
 /**
- * 이 기간이 이미 지난 기간인데도 **그 안에 아직 진행 중인 주가 들어 있는지** 확인한다.
+ * 이미 지난 기간인데도 그 안에 아직 진행 중인 주가 들어 있는가.
  *
  * 월간 탭에서 한 주가 달 경계를 걸칠 때만 참이다. 2026년 7월의 마지막 리셋은 7월 30일(목)이라
  * 그 주(7/30~8/5)는 "7월 5주차"이면서 8월 5일까지 이어진다. 8월 1일 00:00에 7월은 지난 달이
@@ -135,7 +135,7 @@ export interface BossProfitPeriodLabel {
 }
 
 /**
- * monthPeriodKey(형식 "YYYY-MM")가 속한 달 안에 리셋(목요일)이 있는 weekly periodKey 목록을 오름차순으로 반환한다.
+ * monthPeriodKey(`YYYY-MM`)가 속한 달 안에 리셋(목요일)이 있는 weekly periodKey 목록. 오름차순이다.
  * "주가 두 달에 걸치면 그 주가 시작하는 목요일이 속한 달 기준"이라는 규칙은 이미 weekly periodKey 정의(리셋 목요일의
  * KST 날짜) 자체에 반영되어 있으므로, 이 함수는 단순히 그 달의 모든 목요일 날짜를 나열하면 된다.
  */
@@ -153,7 +153,7 @@ export function getWeeklyPeriodKeysInMonth(monthPeriodKey: string): string[] {
   return result
 }
 
-/** 기간 라벨을 계산한다. now 기준 최근 2개 기간(이번/지난)만 상대 표현을 쓰고, 그 이전은 절대 표현을 쓴다. */
+/** 기간 라벨. now 기준 최근 2개 기간(이번/지난)만 상대 표현을 쓰고, 그 이전은 절대 표현을 쓴다. */
 export function formatBossProfitPeriodLabel(
   cycle: BossCycle,
   periodKey: string,
@@ -222,7 +222,7 @@ export function getPeriodDateKeys(cycle: BossCycle, periodKey: string): string[]
 }
 
 /**
- * 과거 기간 백필(스케줄러 API의 date 파라미터 조회) 시 사용할 조회 날짜(YYYY-MM-DD)를 계산한다.
+ * 과거 기간 백필에 쓸 조회 날짜(`YYYY-MM-DD`).
  * 그 기간의 완료 현황이 가장 온전히 반영되는 시점. 다음 리셋 직전(그 기간의 마지막 날). 을 쓴다.
  * weekly: periodKey(리셋 목요일) + 6일. monthly: periodKey가 속한 달의 마지막 날.
  */
@@ -239,7 +239,7 @@ export function getBackfillQueryDate(cycle: BossCycle, periodKey: string): strin
 }
 
 /**
- * now(KST) 기준으로 스케줄러 API가 실제로 조회 가능한 최소 날짜(YYYY-MM-DD)를 반환한다.
+ * now(KST) 기준으로 스케줄러 API 가 실제로 조회 가능한 최소 날짜(`YYYY-MM-DD`).
  * ROLLING_QUERY_WINDOW_DAYS만큼 매일 앞으로 밀리는 하한선이다.
  */
 export function getMinQueryableDate(now: Date): string {
@@ -272,7 +272,7 @@ export function getMaxQueryableDate(now: Date): string {
 }
 
 /**
- * 이 기간(cycle, periodKey)을 지금(now) 실제로 **백필로 조회할 수 있는지** 확인한다. 캐시된 기록이
+ * 이 기간(cycle, periodKey)을 지금 백필로 조회할 수 있는가. 캐시된 기록이
  * 이미 있는지와는 무관하게, 순수하게 "지금 API를 호출하면 성공할 수 있는가"만 본다.
  *
  * 하한 둘(API가 존재하기 시작한 고정 하한선 MIN_SCHEDULER_DATE, 매일 밀리는 롤링 하한선
@@ -331,7 +331,7 @@ export interface PeriodDataStateInput {
 }
 
 /**
- * 판정을 한 곳에 모아 화면과 백필이 같은 값을 공유하게 한다. 화면이 `isPeriodQueryable`
+ * 화면과 백필이 같은 값을 공유하게 하는 한 자리 판정. 화면이 `isPeriodQueryable`
  * 하나로, 백필은 target 별로 따로 판정하면 월간 탭에서 조회 불가 와 불러오지 못했습니다 가
  * 동시에 뜨는 경로가 생긴다.
  */
@@ -376,7 +376,7 @@ export function isEarliestNavigablePeriod(cycle: BossCycle, periodKey: string): 
 }
 
 /**
- * 캐릭터별 상태를 화면(기간) 하나의 상태로 접는다. 캐릭터가 여러 명이면 상태가 섞이는데, 그때
+ * 캐릭터별 상태를 화면(기간) 하나로 접은 상태. 캐릭터가 여러 명이면 상태가 섞이는데, 그때
  * **불확실을 확정으로 위장하지 않는다**. `confirmedEmpty`("0건 확정")는 **전원이** 확정했을 때만
  * 말한다. 하나라도 모르는 캐릭터가 있으면 그 사실을 우선한다(error-resilience 원칙 2).
  *

@@ -1,5 +1,5 @@
 /**
- * jest 와 Metro 가 **같은 프리셋으로** 컴파일하는지 지킨다.
+ * jest 와 Metro 가 같은 프리셋으로 컴파일하는지 지키는 스위트.
  *
  * NativeWind 는 `NATIVEWIND_OS` 가 없거나 `web` 이면 web 프리셋으로 컴파일한다
  * (`nativewind/dist/tailwind/index.js`). Metro 는 `options.platform` 을 넣지만 jest 는 아무도 안
@@ -16,7 +16,7 @@ import { join } from 'node:path'
 
 const ROOT = join(__dirname, '..', '..')
 
-/** `global.css` 를 그 플랫폼 프리셋으로 컴파일해 돌려준다. */
+/** `global.css` 를 그 플랫폼 프리셋으로 컴파일한 결과. */
 function compile(platform: string): string {
   const out = join(mkdtempSync(join(tmpdir(), 'nw-preset-')), 'out.css')
   const script = `

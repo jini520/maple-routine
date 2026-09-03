@@ -422,7 +422,7 @@ function DayRecordRow(props: {
   const bosses = entry.kind === 'bossCrystal' ? entry.bosses : null
   const isOpen = expanded && bosses !== null
   /**
-   * 화살촉이 무슨 일이 일어날지 미리 말한다. 같은 카드 두 줄이 서로 다르게 반응하는데
+   * 무슨 일이 일어날지 미리 말하는 화살촉. 같은 카드 두 줄이 서로 다르게 반응하는데
    * 그림이 같으면 그것이 고장으로 읽힌다.
    */
   const Chevron = bosses === null ? ChevronRightIcon : isOpen ? ChevronUpIcon : ChevronDownIcon
@@ -494,7 +494,7 @@ function DayRecordRow(props: {
 
 export function CashbookScreen(): React.JSX.Element {
   /**
-   * 렌더당 한 번만 만든다. 두 번 부르면 두 시각이 기간 경계를 사이에 두고 갈려 오늘 과
+   * 렌더당 한 번만 만드는 지금. 두 번 부르면 두 시각이 기간 경계를 사이에 두고 갈려 오늘 과
    * 기간 라벨이 서로 다른 기간을 가리킬 수 있다.
    */
   const now = new Date()
@@ -540,7 +540,7 @@ export function CashbookScreen(): React.JSX.Element {
   const { from, to } = coveringRange(weeks, heatWeeks)
 
   /**
-   * 기간이 바뀌면 다시 읽는다. 범위가 곧 의존성이라 달을 넘겼는데 옛 숫자가 남는 일이 없고,
+   * 기간이 바뀌면 다시 읽게 하는 토큰. 범위가 곧 의존성이라 달을 넘겼는데 옛 숫자가 남는 일이 없고,
    * 저장 뒤에도 이 표를 올려 같은 길로 다시 읽는다.
    *
    * `useCallback` 으로 안 감싼다. React 컴파일러가 지킬 수 없는 수동 메모이제이션으로 보고
@@ -579,7 +579,7 @@ export function CashbookScreen(): React.JSX.Element {
   }, [from, to, reloadToken])
 
   /**
-   * 다시 들어오면 다시 읽는다. 바뀌었을 때만.
+   * 다시 들어오면 바뀌었을 때만 다시 읽는 포커스 효과.
    *
    * 이 화면은 탭이라 마운트가 앱 실행당 한 번뿐인데, 접는 원천 넷 중 둘은 남의 화면이 쓴다.
    * 가격 입력 화면이 `boss_drop_records` 를, 보스 수익 동기화가 `boss_profit_records` 를.

@@ -9,7 +9,7 @@ import { NavigationContext } from '@react-navigation/native'
 
 import { BottomBarOverlay, BottomBarOverlayHost } from '../BottomBarOverlay'
 
-/** `toJSON` 트리를 훑어 testID 를 **그리는 순서대로** 낸다. 뒤에 있는 것이 위에 그려진다. */
+/** `toJSON` 트리를 훑어 그리는 순서대로 낸 testID 목록. 뒤에 있는 것이 위에 그려진다. */
 function 그리는순서(): string[] {
   const order: string[] = []
 

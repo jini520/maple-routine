@@ -1334,7 +1334,7 @@ describe('타일 그림', () => {
  */
 describe('아이템 구매의 종류', () => {
   /**
-   * 종류는 세그먼트 안에서 고른다. 갈래 칩에도 기타가 있어(`SPEND_CATEGORIES`) 라벨만으로는
+   * 세그먼트 안에서 종류를 고르는 도우미. 갈래 칩에도 기타가 있어(`SPEND_CATEGORIES`) 라벨만으로는
    * 둘이 안 갈린다.
    */
   async function 종류고르기(view: Rendered, 종류: '장비' | '소비' | '기타'): Promise<void> {

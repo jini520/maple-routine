@@ -80,7 +80,7 @@ export function monthKeyOf(dateKey: string): string {
   return dateKey.slice(0, 7)
 }
 
-/** 해를 넘긴다. `Date.UTC` 가 월 인덱스 밖의 값을 정규화한다. */
+/** 해를 넘기는 달 이동. `Date.UTC` 가 월 인덱스 밖의 값을 정규화한다. */
 export function getAdjacentMonthKey(monthKey: string, delta: number): string {
   const { year, month } = parseMonthKey(monthKey)
   const moved = new Date(Date.UTC(year, month - 1 + delta, 1))

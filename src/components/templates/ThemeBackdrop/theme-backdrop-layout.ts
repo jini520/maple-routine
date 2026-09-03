@@ -31,7 +31,7 @@ export interface BackdropPlacement {
 }
 
 /**
- * `"45% bottom"` · `"center"` · `"25% 80%"` 을 0~1 두 축으로 읽는다.
+ * `"45% bottom"` · `"center"` · `"25% 80%"` 을 0~1 두 축으로 읽은 값.
  *
  * 한 값만 오면 CSS 와 같이 **가로에 쓰고 세로는 center** 다. 못 읽는 값은 `0.5`(center)로.
  * 그림이 안 보이는 것보다 가운데라도 보이는 편이 낫다.
@@ -49,7 +49,7 @@ export function parseBackgroundPosition(position: string): { x: number; y: numbe
 }
 
 /**
- * 뷰포트를 덮도록 그림을 배치한다.
+ * 뷰포트를 덮는 그림의 배치.
  *
  * 크기를 모르면 `null`. 그때는 그리지 않는다. 크기 없이 그리면 배율이 정해지지 않아 그림이
  * 상자에 늘어붙고, 그건 벽지가 아니라 왜곡이다(같은 판단이 `frame-layout.ts` 에도 있다).

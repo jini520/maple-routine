@@ -5,7 +5,7 @@ interface NexonErrorBody {
 }
 
 /**
- * 비-2xx 응답 본문에서 넥슨 에러 코드(`error.name`)만 꺼낸다.
+ * 비-2xx 응답 본문에서 꺼낸 넥슨 에러 코드(`error.name`).
  * `message` 는 영문 원문이라 화면에 새면 안 되므로(error-resilience 원칙 4) 여기서 버린다.
  * 본문이 JSON이 아니거나 형태가 다르면 null. 호출 측이 "알 수 없는 실패"로 다룬다.
  */

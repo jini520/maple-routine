@@ -53,7 +53,7 @@ export async function readKnownEligibility(
 type DayOutcome = 'completion' | 'observed' | 'unavailable' | 'skipped'
 
 /**
- * `access_flag` 가 false 인 캐릭터에게 최근 14일 안에 활동한 적이 있는가 를 묻는다.
+ * `access_flag` 가 false 인 캐릭터의 최근 14일 활동 여부.
  *
  * 호출 비용은 조회 원장이 결정한다. 이미 본 날짜는 다시 부르지 않으므로, 예열이 한 번 훑고
  * 나면 그 뒤로는 그날 새로 윈도우에 들어온 날짜 하나만 남는다.

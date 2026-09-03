@@ -66,7 +66,7 @@ export interface BottomBarMetrics {
 }
 
 /**
- * `useWindowDimensions().width` 하나로 바의 치수를 전부 정한다.
+ * `useWindowDimensions().width` 하나로 정하는 바의 치수 전부.
  *
  * **폭의 상한이 높이의 상한을 겸한다**. 높이를 (이미 상한에 걸린) 폭에서 계산하기 때문이다.
  * 상한 값을 따로 적으면 폭은 멈췄는데 높이만 계속 자라는 조합이 만들어지고, 그것은 이 함수가

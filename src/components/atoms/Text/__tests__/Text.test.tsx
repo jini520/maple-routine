@@ -14,7 +14,7 @@ import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
 import { FONT_SCALE_MAX } from '../font-scaling'
 import { Text } from '../Text'
 
-/** 시스템 글자 크기가 `fontScale` 로 설정된 기기를 만든다. */
+/** 시스템 글자 크기가 `fontScale` 로 설정된 기기. */
 function 시스템_글자배수(fontScale: number): void {
   jest.spyOn(Dimensions, 'get').mockReturnValue({ width: 390, height: 844, scale: 3, fontScale })
 }

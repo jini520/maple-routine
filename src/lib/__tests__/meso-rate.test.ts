@@ -36,7 +36,7 @@ const EMPTY_UNION: NexonUnionRaiderResponse = {}
 const EMPTY_ARTIFACT: NexonUnionArtifactResponse = {}
 const EMPTY_SKILL: NexonCharacterSkillResponse = {}
 
-/** 축 하나만 채워 넣고 나머지는 비운다. 합이 곧 그 축의 값이다. */
+/** 축 하나만 채우고 나머지는 비운 소스. 합이 곧 그 축의 값이다. */
 function only(sources: {
   itemEquipment?: NexonItemEquipmentResponse
   ability?: NexonAbilityResponse

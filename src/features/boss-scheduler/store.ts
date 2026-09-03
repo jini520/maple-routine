@@ -94,7 +94,7 @@ export interface BossSchedulerStore extends BossSchedulerState {
   addManualBoss(ocid: string, contentName: string, difficulty: string): Promise<ManualBossAddResult>
   removeManualBoss(ocid: string, contentName: string, difficulty: string): Promise<void>
   /**
-   * 추적 중인 보스의 난이도를 `to` 로 바꾼다.
+   * 추적 중인 보스의 난이도를 `to` 로 바꾸는 명령.
    *
    * `from` 을 받지 않는 것이 의도다. 호출부는 렌더 시점의 난이도를 넘기게 되는데, 칩을 연달아
    * 누르면 낡은 값이 넘어와 매칭 실패로 변경이 **무음 유실**된다. "이 보스의 난이도를 to 로

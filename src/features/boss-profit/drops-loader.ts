@@ -13,7 +13,7 @@ import { dropRowKey, toRecordedDrop } from './rows'
 import { withSqliteFallback } from './sqlite-guards'
 import type { BossProfitRow } from './rows'
 /**
- * 처치 난이도가 확정된 순간, 옛 난이도 키에 남은 드롭을 확정 난이도로 이관한다.
+ * 처치 난이도가 확정된 순간 옛 난이도 키에 남은 드롭을 옮기는 이관.
  * 계산은 `planConfirmedDifficultyDropMigration` 이 하고 여기서는 쓰기만 한다.
  *
  * `dropRecords` 는 호출 측이 이미 읽어둔 것을 그대로 받는다. 행마다 새로 조회하지 않기 위함이다.

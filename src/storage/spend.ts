@@ -117,7 +117,7 @@ const INSERT_SQL = `
 `
 
 /**
- * 메포를 썼으면 시세가 있어야 한다.
+ * 메포를 썼으면 시세가 있어야 한다는 검사.
  *
  * 화면이 막지만 저장소가 한 번 더 막는 것은 실패의 모양이 나쁘기 때문이다. 시세 없이 저장하면
  * 그 행은 영영 메소로 표시할 수 없는 행이 된다. 환율이 행에 박히므로 나중에 채울 수도 없고,
@@ -198,7 +198,7 @@ export async function updateSpendRecord(record: SpendRecord): Promise<void> {
   ])
 }
 
-/** 한 건만 지운다. 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */
+/** 한 건만 지우는 삭제. 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */
 export async function deleteSpendRecord(id: string): Promise<void> {
   const db = await getBossProfitDb()
   await db.run(`DELETE FROM spend_records WHERE id = ?`, [id])

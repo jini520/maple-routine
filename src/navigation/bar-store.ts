@@ -25,7 +25,7 @@ export function getLastSub(): LastSub {
   return lastSub
 }
 
-/** 같은 참조면 알리지 않는다. `rememberSub` 가 바뀐 것이 없으면 그대로 를 지키는 짝이다. */
+/** 같은 참조면 알리지 않는 쓰기. `rememberSub` 가 바뀐 것이 없으면 그대로 를 지키는 짝이다. */
 export function setLastSub(next: LastSub): void {
   if (next === lastSub) return
   lastSub = next

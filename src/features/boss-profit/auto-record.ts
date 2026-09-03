@@ -30,7 +30,7 @@ export interface AutoRecordParams {
 }
 
 /**
- * 기록이 없는 완료 보스는 화면 진입 전에도 즉시 기본 파티원 수로 자동 기록한다. 기본값은
+ * 기록이 없는 완료 보스를 화면 진입 전에 기본 파티원 수로 남기는 자동 기록. 기본값은
  * boss_party_settings 조회 결과, 없으면 1(솔로)이다.
  *
  * `upsertBossProfitRecord` 는 단일 공유 SQLite 커넥션에 자체 트랜잭션을 열므로 `Promise.all`

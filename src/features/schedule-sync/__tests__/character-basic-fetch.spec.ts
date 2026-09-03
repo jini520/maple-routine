@@ -27,7 +27,7 @@ function profile(overrides: Partial<CharacterBasicProfile> = {}): CharacterBasic
   }
 }
 
-/** `now` 기준으로 `elapsedMs` 만큼 전에 캐시된 엔트리를 심는다. */
+/** `now` 기준으로 `elapsedMs` 만큼 전에 캐시된 엔트리를 심는 도우미. */
 async function seedCache(elapsedMs: number, cached: CharacterBasicProfile): Promise<void> {
   await setCachedCharacterBasic(ACCOUNT, OCID, {
     profile: cached,

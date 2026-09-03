@@ -32,7 +32,7 @@ function 그리기(overrides: Partial<React.ComponentProps<typeof CalendarGrid>>
   )
 }
 
-/** 칸 안에서 찾는다. 같은 숫자가 앞뒤 달에도 있어 화면 전체로는 못 집는다(7/26 과 8/26). */
+/** 칸 안에서 찾는 도우미. 같은 숫자가 앞뒤 달에도 있어 화면 전체로는 못 집는다(7/26 과 8/26). */
 function 칸(view: ReturnType<typeof renderAtom> extends Promise<infer T> ? T : never, dateKey: string) {
   return within(view.getByTestId(`calendar-day-${dateKey}`))
 }

@@ -28,7 +28,7 @@ const ITEM_POPOVER_EDGE_GAP = 12
 const ITEM_CARET_SIZE = 8
 /** 트리거 밑변과 상자 윗변 사이. 꼬리(8px의 절반이 삐져나온다)가 닿아 보이는 최소값. */
 const ITEM_POPOVER_GAP = 8
-/** 목록이 길어지면 상자가 화면을 넘긴다. 안에서 스크롤시킨다. */
+/** 목록 상자의 높이 상한. 넘치면 안에서 스크롤한다. */
 const ITEM_LIST_MAX_HEIGHT = 260
 
 /** 트리거의 **윈도우 기준** 사각형. 웹 `DOMRect` 자리. `measureInWindow` 가 주는 네 값 그대로다. */
@@ -57,7 +57,7 @@ export interface AnchoredPopover {
 }
 
 /**
- * 트리거를 재서 팝오버를 여닫는다.
+ * 트리거를 재서 팝오버를 여닫는 훅.
  *
  * 호출부가 셋이라 여기 산다(보스 행 · 주차 소계 행 · 캐릭터 카드). 팝오버 자신의 관심사라
  * 별도 파일로 가르지 않는다.
@@ -115,7 +115,7 @@ export function ItemRevenuePopover(props: {
   crystalMeso: number
   itemMeso: number
   /**
-   * 낱개로 못 펼치는 몫을 주차 한 줄씩 말한다.
+   * 낱개로 못 펼치는 몫. 주차 한 줄씩 선다.
    *
    * 월간 탭의 캐릭터 카드에서만 쓴다. 그 층의 주간 수익은 주차 소계로 뭉쳐 들어와 목록
    * (`drops`)에 낱개가 없다. 아이템까지 보려면 그 주차 행을 열면 된다.

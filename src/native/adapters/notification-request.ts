@@ -17,7 +17,7 @@ import {
 import type { LocalNotificationRequest } from '../ports'
 
 /**
- * Capacitor 시절 채널 ID 를 그대로 쓴다.
+ * 그대로 써야 하는 Capacitor 시절 채널 ID.
  *
  * 새 ID 를 만들면 사용자 알림 설정에 채널이 하나 더 생기고, 옛 채널에 걸려 있는 예약은 그대로
  * 남는다. 같은 ID 를 쓰면 업데이트로 올라온 기기는 이미 있는 채널을 그대로 재사용한다. Android

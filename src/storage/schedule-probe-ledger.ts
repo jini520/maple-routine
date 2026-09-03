@@ -102,7 +102,7 @@ function withLedgerLock(ocid: string, task: () => Promise<void>): Promise<void> 
   return result
 }
 
-/** 윈도우(14일) 밖 날짜는 읽는 시점에 떨어져 나간다. 만료를 위한 별도 트리거를 두지 않는다. */
+/** 윈도우(14일) 밖 날짜가 읽는 시점에 떨어져 나가는 장부. 만료를 위한 별도 트리거를 두지 않는다. */
 export async function getScheduleProbeLedger(ocid: string, now: Date): Promise<ScheduleProbeLedger> {
   return pruneToWindow(await readLedger(ocid), now)
 }

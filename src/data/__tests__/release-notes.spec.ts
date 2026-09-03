@@ -9,7 +9,7 @@ import {
 // 형식이 어긋난 채 커밋되면 배포 시점에야 드러나므로 여기서 형식 자체를 강제한다.
 // 런타임에 정렬·중복 제거를 하지 않는 것도 같은 이유다(잘못 쓴 파일이 조용히 통과한다).
 
-/** `1.0.10 < 1.0.9` 가 되지 않도록 문자열이 아니라 숫자 세 자리로 비교한다. */
+/** 문자열이 아니라 숫자 세 자리로 하는 비교. `1.0.10 < 1.0.9` 가 되지 않게 한다. */
 function compareVersion(a: string, b: string): number {
   const left = a.split('.').map(Number)
   const right = b.split('.').map(Number)

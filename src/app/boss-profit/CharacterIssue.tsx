@@ -99,7 +99,7 @@ export function CharacterIssueBadge(props: {
 }
 
 /**
- * 잰 두 상자를 팝오버 기하로 환산한다.
+ * 잰 두 상자를 팝오버 기하로 옮기는 환산.
  *
  * 금액은 자릿수에 따라 폭이 변해 배지의 x 를 고정값으로 알 수 없다. clamp·꼬리 계산은 순수
  * 함수(`src/lib/popover-anchor`)가 맡고 여기서는 좌표계를 옮기기만 한다.

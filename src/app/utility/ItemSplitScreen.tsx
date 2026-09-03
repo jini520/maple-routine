@@ -43,7 +43,7 @@ const FEE_PERCENTS = [3, 5] as const satisfies readonly FeePercent[]
 const DEFAULT_PARTY_SIZE = 2
 const DEFAULT_FEE_PERCENT: FeePercent = 3
 
-/** 친 글자에서 금액을 읽는다. 숫자가 아닌 것은 흘리고 상한에서 멈춘다. */
+/** 친 글자에서 금액을 읽는 파서. 숫자가 아닌 것은 흘리고 상한에서 멈춘다. */
 function parseMesoInput(text: string): number {
   const digits = text.replace(/[^0-9]/g, '')
   if (digits === '') return 0

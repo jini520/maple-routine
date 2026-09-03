@@ -100,7 +100,7 @@ export const BADGE_WEIGHT = {
 export type BadgeVariant = keyof typeof BADGE_VARIANT
 /** `default` 아니면 `mini`. 높이가 아니라 여백과 글자 크기가 갈린다. */
 export type BadgeSize = keyof typeof BADGE_SIZE
-/** variant 의 기본 두께를 덮을 때 쓴다. */
+/** variant 의 기본 두께를 덮는 값. */
 export type BadgeWeight = keyof typeof BADGE_WEIGHT
 /** `variant` 로 바로 쓸 수 있게 난이도 이름이 그대로 키다. */
 export type BadgeDifficulty = BossDifficulty & BadgeVariant

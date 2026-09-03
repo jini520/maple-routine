@@ -46,7 +46,7 @@ export interface WidgetGridMetrics {
 }
 
 /**
- * `useWindowDimensions().width` 하나로 격자의 치수를 전부 정한다.
+ * `useWindowDimensions().width` 하나로 정하는 격자의 치수 전부.
  *
  * **열 폭을 반올림하지 않는다.** 반올림하면 4칸 타일의 오른쪽이 화면 여백과 최대 3px 어긋난 채로
  * 조용히 살고, 그 어긋남은 칸이 4개 라는 사실 때문에 폭마다 다르게 나타나 재현이 어렵다.

@@ -141,7 +141,7 @@ const 캐시된캐릭터 = new Map([낟낟, 달의아이, 별헤는밤, 밤샘�
 
 /** 계정별 후보 목록. 테스트가 이 표만 갈아 끼운다. */
 let rosterByAccount: Record<string, CharacterPickerEntry[]>
-/** 그 계정의 조회가 실패해야 하면 여기 에러를 둔다. */
+/** 계정별로 심는 조회 실패. */
 let rosterFailureByAccount: Record<string, unknown>
 /** 그 계정의 조회를 손으로 붙잡아 둔다(대기 화면 검사용). */
 let rosterHangingAccounts: Set<string>
@@ -164,7 +164,7 @@ async function press(element: AtomElement): Promise<void> {
   })
 }
 
-/** 마운트 직후 계정 조회 → 후보 조회가 연달아 도는 자리라 여러 번 흘려보낸다. */
+/** 화면을 그리는 도우미. 마운트 직후 계정 조회 → 후보 조회가 연달아 돌아 여러 번 흘려보낸다. */
 async function renderScreen(): Promise<Rendered> {
   const view = await renderOverlay(<SettingsCharactersScreen />)
   for (let i = 0; i < 4; i += 1) await act(async () => {})

@@ -21,7 +21,7 @@ export async function loadCacheDataSizes(): Promise<CacheDataSizes> {
 }
 
 /**
- * 선택한 그룹을 지우고 앱을 다시 띄운다.
+ * 선택한 그룹을 지우고 앱을 다시 띄우는 회차.
  *
  * **항상 리로드한다**. 실패·타임아웃이어도. 지운 데이터가 화면 곳곳에 이미 반영돼 있어,
  * 어중간한 상태로 두는 것이 더 나쁘다.

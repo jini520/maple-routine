@@ -28,7 +28,7 @@ let current: ThemeAppearance = defaultAppearance()
 const listeners = new Set<() => void>()
 
 /**
- * `useSyncExternalStore` 의 `getSnapshot` 이 그대로 쓴다. **바뀌지 않았으면 같은 객체**여야 한다
+ * `useSyncExternalStore` 의 `getSnapshot` 이 그대로 쓰는 값. 바뀌지 않았으면 같은 객체여야 한다
  * (매번 새 객체를 만들면 React 가 무한 리렌더로 읽는다).
  */
 export function getThemeAppearance(): ThemeAppearance {
@@ -43,7 +43,7 @@ export function subscribeThemeAppearance(listener: () => void): () => void {
 }
 
 /**
- * 포트는 여기로만 쓴다.
+ * 포트가 거치는 유일한 쓰기.
  *
  * 같은 값이면 아무에게도 알리지 않는다. `getThemeDefinition` 은 JSON 모듈을 그대로 돌려주므로 같은
  * 테마를 두 번 적용하면 참조까지 같고, 그때 리렌더를 돌릴 이유가 없다. 구독 해제가 콜백 안에서

@@ -29,7 +29,7 @@ export function computeProfitDelta(currentMeso: number, previousMeso: number): P
 }
 
 /**
- * 큰 메소를 억/만으로 접는다. 칩 한 칸에 10자리가 그대로 들어가면 금액 자체를 밀어낸다.
+ * 큰 메소를 억/만으로 접은 표기. 칩 한 칸에 10자리가 그대로 들어가면 금액 자체를 밀어낸다.
  * `withSign` 이 false 인 이유는 호출부가 화살표를 이미 그리기 때문이다. `↑ +12.8억` 은 두 번 말한다.
  */
 export function formatMesoShort(meso: number, withSign = false): string {

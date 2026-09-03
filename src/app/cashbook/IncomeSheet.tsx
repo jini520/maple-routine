@@ -69,7 +69,7 @@ export interface IncomeSheetProps {
    * 계약이라 화면이 한 값을 두 시트에 그대로 넘긴다.
    */
   lastPointRate: number | null
-  /** 캐릭터의 메소 획득량을 읽어 온다. 시트는 `nexon/` 도 `storage/` 도 모른다. 사냥 폼만 쓴다. */
+  /** 캐릭터의 메소 획득량을 읽어 오는 콜백. 시트는 `nexon/` 도 `storage/` 도 모른다. 사냥 폼만 쓴다. */
   loadMesoRate: (ocid: string) => Promise<MesoRateLoad>
   /**
    * 고칠 기록. 있으면 **수정 모드**다. 머리와 버튼 글자가 갈리고 삭제가 선다.

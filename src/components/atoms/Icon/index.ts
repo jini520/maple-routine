@@ -1,5 +1,5 @@
 /**
- * 커스텀 아이콘을 한 자리에서 가져간다. 쓰는 쪽은
+ * 커스텀 아이콘을 한 자리에서 가져가는 배럴. 쓰는 쪽은
  * `import { ProfitIcon } from 'components/atoms/Icon'` 이다.
  *
  * **`icon-base.tsx` 는 안 내보낸다.** `IconSvg` 와 `IconProps` 는 이 디렉터리 안에서 아이콘을 그릴

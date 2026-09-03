@@ -43,7 +43,7 @@ export interface SqliteDbConnection {
 export interface SqlitePort {
   /** 웹 타깃(jeep-sqlite 폴리필)인가. 네이티브 구현은 항상 false. */
   isWebPlatform(): boolean
-  /** `isWebPlatform()` 이 참일 때만 호출된다. */
+  /** `isWebPlatform()` 이 참일 때만 부르는 초기화. */
   initWebStore(): Promise<void>
   /** 이 이름의 커넥션이 이미 열려 있는가(이전 페이지 로드가 남긴 stale 커넥션 감지). */
   isConnection(database: string): Promise<boolean>

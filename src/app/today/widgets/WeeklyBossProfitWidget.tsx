@@ -153,7 +153,7 @@ function StackBar(props: { split: ProfitSplit; thick?: boolean }): React.JSX.Ele
 function Breakdown(props: {
   split: ProfitSplit
   column: boolean
-  /** 4x3 은 바가 폭을 다 쓰므로 두 항을 **바의 양 끝에** 세운다. 어느 조각이 어느 값인지 눈이 잇는다. */
+  /** 두 항을 바의 양 끝에 세울지. 4x3 은 바가 폭을 다 쓴다. 어느 조각이 어느 값인지 눈이 잇는다. */
   spread?: boolean
 }): React.JSX.Element {
   return (

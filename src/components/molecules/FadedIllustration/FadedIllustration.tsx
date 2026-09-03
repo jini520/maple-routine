@@ -45,7 +45,7 @@ const VEIL_LOCATIONS = {
 export type IllustrationVariant = keyof typeof VEIL_LOCATIONS
 
 export interface FadedIllustrationProps {
-  /** `null` 이면 아무것도 안 그린다. */
+  /** 그릴 그림. `null` 이면 아무것도 안 그린다. */
   source: ImageAssetRef | null
   crop: ImageCrop
   /** 페이드 끝점. 기본은 카드, 모달 히어로는 `'hero'`. */

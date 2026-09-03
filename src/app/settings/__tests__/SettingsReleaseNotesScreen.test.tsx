@@ -38,7 +38,7 @@ const mockNotes = jest.requireMock<typeof import('../../../data/release-notes')>
 
 jest.mock('../use-settings-navigation', () => ({ useSettingsNavigation: jest.fn() }))
 
-/** 픽스처를 갈아 끼운다. **배열 정체성은 유지한다**. */
+/** 픽스처를 갈아 끼우는 도우미. **배열 정체성은 유지한다**. */
 function setNotes(notes: ReleaseNote[]): void {
   mockNotes.length = 0
   mockNotes.push(...notes)

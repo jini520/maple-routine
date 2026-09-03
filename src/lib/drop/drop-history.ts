@@ -44,7 +44,7 @@ const KST_OFFSET_MS = 9 * 60 * 60 * 1000
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000
 
 /**
- * `periodKey` 형식이 주기를 말해준다. 주간은 리셋일 `YYYY-MM-DD`(3토막), 월간은 `YYYY-MM`(2토막).
+ * `periodKey` 형식에서 읽는 주기. 주간은 리셋일 `YYYY-MM-DD`(3토막), 월간은 `YYYY-MM`(2토막).
  * 히스토리는 두 주기를 한 목록에 섞으므로 행마다 이 판정이 필요하다(기간 라벨 포맷이 갈린다).
  */
 export function getPeriodCycle(periodKey: string): BossCycle {
@@ -65,7 +65,7 @@ export function getPeriodStartUtcMs(periodKey: string): number {
 }
 
 /**
- * 한국어 목적격 조사(을/를)를 마지막 한글 음절의 종성 유무로 고른다.
+ * 마지막 한글 음절의 종성으로 고르는 목적격 조사(을/를).
  *
  * "을(를)"로 도망가지 않는 이유: 히스토리 한 줄은 게임 로그 같은 완성된 문장이라("…가디언 엔젤링을
  * 획득하였습니다") 괄호 병기가 그 톤을 깬다.
@@ -121,7 +121,7 @@ export interface DropHistoryLine {
 }
 
 /**
- * 기록 한 건을 한 줄 문장으로 만든다.
+ * 기록 한 건의 한 줄 문장.
  * `지내우시님이 가디언 엔젤 슬라임(카오스)에서 가디언 엔젤링을 획득하였습니다.`
  *
  * 아이콘·난이도 배지·2단 레이아웃을 쓰지 않고 문장 하나로 두는 것이 요점이다. 한 기록이
@@ -173,7 +173,7 @@ export function confirmedDropKey(
 }
 
 /**
- * 기록을 기간별로 묶어 **최신 기간이 먼저** 오게 정렬한다.
+ * 기록을 기간별로 묶어 최신 기간이 먼저 오게 정렬한 목록.
  *
  * 같은 기간 안의 순서는 입력 순서를 그대로 보존한다. 조회 SQL(`period_key DESC, ocid, boss,
  * difficulty, drop_index`)이 정한 순서가 표시 순서이고, `Array.prototype.sort` 는 안정 정렬이라

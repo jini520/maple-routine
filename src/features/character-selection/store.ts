@@ -20,14 +20,14 @@ export interface CharacterSelectionStore {
   /** 마지막으로 고른 캐릭터. 하이드레이션 전이거나 한 번도 고른 적이 없으면 `null`. */
   selectedOcid: string | null
   /**
-   * 저장된 선택을 메모리로 올린다. 스케줄러 스토어들의 `loadTrackedOcids()` 가 부른다.
+   * 저장된 선택을 메모리로 올리는 적재. 스케줄러 스토어들의 `loadTrackedOcids()` 가 부른다.
    *
    * **이미 고른 값이 있으면 저장소를 읽지 않는다.** 화면 넷이 각자 진입할 때마다 이 문을 지나는데,
    * 매번 읽어서 덮으면 늦게 도착한 하이드레이션이 방금 고른 값을 되돌린다. 없애려는 두 벌 이
    * 시간축에서 되살아나는 형태다.
    */
   hydrate(): Promise<void>
-  /** 고른다. 메모리와 저장소가 함께 움직인다. */
+  /** 고르는 자리. 메모리와 저장소가 함께 움직인다. */
   select(ocid: string): Promise<void>
 }
 

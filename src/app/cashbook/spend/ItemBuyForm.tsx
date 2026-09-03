@@ -46,7 +46,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
   const [name, setName] = useState(props.editing?.item ?? '')
   const [quantityText, setQuantityText] = useState(mesoTextOf(props.editing?.quantity ?? 1))
   /**
-   * 친 값을 되짚는다. `단가 = (저장된 총액 − 관세분) ÷ 수량`.
+   * 친 값을 되짚는 복원. `단가 = (저장된 총액 − 관세분) ÷ 수량`.
    *
    * 총액을 그대로 친 값으로 삼으면 시트가 그 위에 관세를 또 물린다. 나눗셈은 언제나
    * 나누어떨어진다. 저장된 총액이 `단가 × 수량 (+ 관세분)` 으로 만들어진 값이라서다.
@@ -77,7 +77,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
   const canSave = subtotal > 0
 
   /**
-   * 종류를 바꾼다. 수량은 1 로, 관세는 꺼진다.
+   * 종류를 바꾸는 자리. 수량은 1 로, 관세는 꺼진다.
    *
    * 관세를 안 끄면 화면에 없는 값이 저장된다(소비·기타에는 그 체크가 아예 없다). 친 금액은
    * 남긴다. 수량이 1 이면 장비의 금액과 소비의 단가가 같은 값이라 거짓이 되지 않는다.

@@ -205,7 +205,7 @@ export function pressBack(state: BarState): BarIntent {
 }
 
 /**
- * 다시 들어갈 자리를 적는다.
+ * 다시 들어갈 자리를 적은 것.
  *
  * 그룹 층 페이지는 기억할 것이 없으므로 같은 객체를 그대로 돌려준다. 새 객체를 만들면
  * `useSyncExternalStore` 가 매번 바뀐 것으로 보고 바를 다시 그린다.

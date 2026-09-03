@@ -139,7 +139,7 @@ function ItemTile(props: {
 export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   const editing = props.editing !== undefined
   /**
-   * 한 번만 되짚는다. 이름만 카탈로그를 거친다. 하이마운틴 2단계 는 행에서 한 글자지만
+   * 한 번만 되짚는 복원. 이름만 카탈로그를 거친다. 하이마운틴 2단계 는 행에서 한 글자지만
    * 시트에서는 대표와 단계 둘이다. 못 찾으면 목록이 선다. 시트가 안 열리는 것보다 낫다.
    */
   const [found] = useState(() =>
@@ -181,7 +181,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   const blocked = usesPoint && (rate === null || rate <= 0)
   const canSave = item !== null && !formMissing && !blocked
 
-  /** ① 대표를 고른다. 갈래가 하나뿐이면 **그 자리에서 항목까지 정해진다.** */
+  /** ① 대표를 고르는 단계. 갈래가 하나뿐이면 **그 자리에서 항목까지 정해진다.** */
   function selectChoice(next: SpendCatalogChoice): void {
     setChoice(next)
     setItem(next.items.length === 1 ? next.items[0] : null)
@@ -191,13 +191,13 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
     props.onScrollKeyChange(next.label)
   }
 
-  /** ② 그 안의 단계를 고른다. */
+  /** ② 그 안의 단계를 고르는 단계. */
   function selectItem(next: SpendCatalogItem): void {
     setItem(next)
     setQuantity(1)
   }
 
-  /** 목록으로 돌아간다. */
+  /** 목록으로 돌아가는 초기화. */
   function clearChoice(): void {
     setChoice(null)
     setItem(null)

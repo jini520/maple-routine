@@ -36,7 +36,7 @@ function sourceFiles(dir: string): string[] {
   return out
 }
 
-/** 상대 경로만 푼다. 패키지 의존은 사이클을 만들 수 없다(이후 alias 가 없다). */
+/** 상대 경로만 푸는 해석기. 패키지 의존은 사이클을 만들 수 없다(이후 alias 가 없다). */
 function resolveSpecifier(fromFile: string, specifier: string): string | null {
   if (!specifier.startsWith('.')) return null
   const base = resolve(dirname(fromFile), specifier)
@@ -77,7 +77,7 @@ function runtimeDependencies(file: string): string[] {
   return [...out]
 }
 
-/** 사이클을 **경로 그대로** 돌려준다. 어느 고리를 끊어야 하는지 실패 메시지가 말해야 한다. */
+/** 경로 그대로 돌려주는 사이클 목록. 어느 고리를 끊어야 하는지 실패 메시지가 말해야 한다. */
 function findCycles(graph: Map<string, string[]>): string[][] {
   const cycles: string[][] = []
   const seen = new Set<string>()

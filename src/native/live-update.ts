@@ -16,7 +16,7 @@ import { showSplashScreen } from './splash-screen'
  */
 
 /**
- * `x.y.z` 세 자리를 비교해 후보가 더 새것인가 를 답한다.
+ * `x.y.z` 세 자리를 비교해 후보가 더 새것인가.
  *
  * 세 자리가 아니거나 숫자가 아니면 `false` 다. 네이티브 `versionName` 이 `1.0` 두 자리면 OTA
  * 가 한 번도 작동하지 않는 버그가 실제로 있었다. 파싱 못 하면 새것이 아니다 로 닫아 둔다.
@@ -59,7 +59,7 @@ export function getLiveUpdateChannel(): string {
 }
 
 /**
- * "체크만" 한다. 다운로드는 하지 않는다.
+ * 체크만 하는 조회. 다운로드는 하지 않는다.
  *
  * 지원하지 않는 환경을 **여기서** 거르는 이유는 `isSupported()` 가 동기라서다. 네트워크가 나가기
  * 전에 판정된다.
@@ -75,7 +75,7 @@ export async function checkForLiveUpdate(): Promise<LiveUpdateCheckResult> {
 }
 
 /**
- * 사용자 동의 후 번들을 내려받는다. 진행률(0~100)을 `onProgress` 로 흘린다.
+ * 사용자 동의 후의 번들 다운로드. 진행률(0~100)을 `onProgress` 로 흘린다.
  *
  * **받는 것과 적용하는 것이 갈려 있다는 것이 다**. 받아도 자동으로 적용되지
  * 않고, 적용은 `applyLiveUpdate` 로 사용자가 명시적으로 한다.
@@ -85,7 +85,7 @@ export async function downloadLiveUpdate(onProgress: (percent: number) => void):
 }
 
 /**
- * 내려받아 둔 번들을 즉시 적용한다. 적용은 JS 컨텍스트를 파괴하고 재로드하므로 이후 코드는
+ * 내려받아 둔 번들의 즉시 적용. 적용은 JS 컨텍스트를 파괴하고 재로드하므로 이후 코드는
  * 실행되지 않는다.
  *
  * 순서는 닫기 → 커버 → 적용이다. 커버가 닫기 뒤인 것이 요점이다. 먼저 올리면 닫기가 매달릴 때
@@ -121,7 +121,7 @@ export async function getNetworkType(): Promise<NetworkType> {
   }
 }
 
-/** 스토어 업데이트가 필요할 때 스토어로 보낸다. */
+/** 스토어 업데이트가 필요할 때 스토어로 보내는 이동. */
 export function openStoreForUpdate(): void {
   getLiveUpdatePort().openStore()
 }

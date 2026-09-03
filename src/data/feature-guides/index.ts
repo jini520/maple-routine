@@ -90,7 +90,7 @@ export const FEATURE_GUIDES: FeatureGuide[] = [
 ]
 
 /**
- * 그 id 의 안내를 찾는다. `findReleaseNote` 와 같은 계약이다. 없으면 **던지지 않고 `undefined`**
+ * 그 id 의 안내. `findReleaseNote` 와 같은 계약이다. 없으면 **던지지 않고 `undefined`**
  * 이고, "없다"의 판정은 호출부가 한다(상세 화면은 목록으로 되돌린다).
  */
 export function findFeatureGuide(id: string): FeatureGuide | undefined {

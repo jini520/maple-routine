@@ -48,7 +48,7 @@ export interface CharacterRowProps {
   leading?: React.ReactNode
   /** 오른쪽 슬롯: 위 층은 별+✕, 아래 층은 ＋. */
   trailing?: React.ReactNode
-  /** 주면 카드 전체가 버튼이 된다. `＋` 는 표시일 뿐 버튼이 아니다. */
+  /** 주면 카드 전체를 버튼으로 만드는 콜백. `＋` 는 표시일 뿐 버튼이 아니다. */
   onPress?: () => void
 }
 

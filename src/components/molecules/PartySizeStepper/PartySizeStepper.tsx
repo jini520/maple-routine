@@ -23,7 +23,7 @@ const SIZES = {
   },
 } as const
 
-/** 시각 크기(24·32px)와 권장 타깃(44px)의 차이를 사방으로 나눠 채운다. */
+/** 시각 크기(24·32px)와 권장 타깃(44px)의 차이를 사방으로 나눈 몫. */
 const HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 }
 
 export function PartySizeStepper(props: {

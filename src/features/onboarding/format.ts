@@ -1,5 +1,5 @@
 /**
- * 스토어(features)가 이 함수를 쓰므로 app/ 이 아니라 features/ 에 둔다
+ * 온보딩 실패 문구. 스토어(features)가 이 함수를 쓰므로 app/ 이 아니라 features/ 에 있다
  * (features → app 은 레이어가 거꾸로다). features/schedule-sync/format.ts 와 같은 자리.
  */
 import type { OnboardingError } from './state'

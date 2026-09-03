@@ -97,7 +97,7 @@ export async function initializeAds(): Promise<void> {
 }
 
 /**
- * 다음 광고를 미리 받아둔다. 표시 직전이 아니라 **미리** 부르는 것이 요점이다. 탭을 누른 뒤
+ * 다음 광고를 미리 받아두는 예열. 표시 직전이 아니라 미리 부르는 것이 요점이다. 탭을 누른 뒤
  * 요청하면 왕복 동안 화면이 먼저 바뀌고 그 위를 광고가 덮는다(정책 위반 형태).
  */
 export async function loadInterstitial(): Promise<void> {
@@ -115,7 +115,7 @@ export function isInterstitialLoaded(): boolean {
 }
 
 /**
- * 준비된 광고를 표시한다. 표시 여부를 boolean 으로 돌려주므로, 호출부는 **실제로 떴을 때만**
+ * 준비된 광고 표시. 표시 여부를 boolean 으로 돌려주므로, 호출부는 **실제로 떴을 때만**
  * 마지막 노출 시각을 기록할 수 있다(안 떴는데 기록하면 30분간 광고가 통째로 죽는다).
  */
 export async function showInterstitial(): Promise<boolean> {

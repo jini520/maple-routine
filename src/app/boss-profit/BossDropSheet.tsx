@@ -223,7 +223,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   }
 
   /**
-   * 가격 필드만 갈아 끼운다. **객체 정체(===)로 찾는다**. 같은 보스에 같은 아이템을 두 개 먹은
+   * 가격 필드만 갈아 끼우는 수정. 객체 정체(===)로 찾는다. 같은 보스에 같은 아이템을 두 개 먹은
    * 경우를 기록이 구분하지 않으므로 이름으로 찾으면 둘 다 바뀐다.
    */
   function applyPrice(target: RecordedDrop, patch: Partial<RecordedDrop>): void {

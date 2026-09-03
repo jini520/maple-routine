@@ -20,7 +20,7 @@ import { renderAtom } from '../../../__tests__/render-atom'
 import { FONT_SCALE_MAX } from '../../../atoms/Text/font-scaling'
 import { SheetTextInput } from '../SheetTextInput'
 
-/** 라이브러리의 공유값을 흉내 낸다. 훅이 부르는 것은 `get`/`set` 둘뿐이다. */
+/** 라이브러리의 공유값을 흉내 낸 대역. 훅이 부르는 것은 `get`/`set` 둘뿐이다. */
 function 키보드상태(target?: number) {
   let state = { target, status: 0, height: 0 }
   return {

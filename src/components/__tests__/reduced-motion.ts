@@ -29,7 +29,7 @@
 
 let reduceMotion = false
 
-/** 다음 렌더부터 `useReducedMotion` 이 이 값을 낸다. */
+/** 다음 렌더부터 `useReducedMotion` 이 낼 값을 심는 도우미. */
 export function mockReducedMotion(next: boolean): void {
   reduceMotion = next
 }

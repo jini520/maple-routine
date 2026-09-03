@@ -86,7 +86,7 @@ export interface RepresentativeView {
   name: string
   level: number
   imageUrl: string
-  /** 월드 엠블럼은 위젯이 `worldEmblemUrl` 로 푼다. 뷰모델은 이름만 나른다. */
+  /** 월드 이름. 엠블럼은 위젯이 `worldEmblemUrl` 로 푼다. 뷰모델은 이름만 나른다. */
   world?: string
   jobClass?: string
   /** `null` = 미가입 · `undefined` = 모름. */
@@ -136,7 +136,7 @@ export interface SharedContentItemView {
   /** 그리는 이름. 계열명이 위에 있으므로 그것을 뺀 나머지다(카탈로그의 `shortName`). */
   shortName: string
   /**
-   * `null` 이면 화면이 `CLEAR`(완료) 또는 빈칸(미완료)을 그린다.
+   * 진행 카운트. `null` 이면 화면이 `CLEAR`(완료) 또는 빈칸(미완료)을 그린다.
    *
    * 값이 서는 것은 미완료이면서 분모가 있는 항목뿐이다. 완료한 항목의 몇 번 했나 는 언제나
    * `max` 라 숫자가 더 말하는 것이 없고, 분모가 없는 항목에 `0/1` 을 붙이려면 API 에 없는
@@ -388,7 +388,7 @@ function buildRepresentative(input: TodayViewModelInput): RepresentativeView | n
   }
 }
 
-/** 카탈로그 이름과 응답 이름의 공백 방향이 항목마다 달라(카탈로그 `matchingNote`) 지운 뒤 비교한다. */
+/** 공백을 지운 뒤 비교하는 이름 대조. 카탈로그와 응답의 공백 방향이 항목마다 다르다. */
 function sameContentName(a: string, b: string): boolean {
   return a.replace(/\s+/g, '') === b.replace(/\s+/g, '')
 }
@@ -406,7 +406,7 @@ function contentsInputOf(
 }
 
 /**
- * 공유 컨텐츠를 계열별로 조립한다.
+ * 공유 컨텐츠를 계열별로 묶는 조립.
  *
  * 값은 가장 앞선 캐릭터 것이다. 진행이 공유되므로 캐릭터마다 같은 값이어야 하는데, 마지막
  * 동기화 시각이 달라 뒤처진 캐릭터가 낮은 값을 들고 있을 수 있다. 주기 안에서 진행은 줄지

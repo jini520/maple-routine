@@ -19,14 +19,14 @@ export async function setBackGestureEnabled(enabled: boolean): Promise<void> {
 }
 
 /**
- * 앱을 **종료하지 않고 백그라운드로** 보낸다. 홈 버튼과 같다. 태스크가 살아
+ * 앱을 종료하지 않고 백그라운드로 보내는 이동. 홈 버튼과 같다. 태스크가 살아
  * 있어 다시 열면 보던 화면 그대로다. 완전히 끝내면 다음 실행이 콜드 스타트라 스플래시부터 다시 본다.
  */
 export async function moveAppToBackground(): Promise<void> {
   await getBackGesturePort().moveToBackground()
 }
 
-/** 리스너를 붙이고, 해제 함수를 돌려준다. 시스템 뒤로가기가 없는 플랫폼에서는 아무것도 하지 않는다. */
+/** 리스너를 붙이는 구독. 해제 함수를 돌려준다. 시스템 뒤로가기가 없는 플랫폼에서는 아무것도 하지 않는다. */
 export async function addBackGestureListeners(
   handlers: BackGestureHandlers,
 ): Promise<() => void> {

@@ -28,7 +28,7 @@ import { OnboardingStep } from './OnboardingStep'
 
 export interface ContentCharacterStepProps {
   isSubmitting: boolean
-  /** 목록과 대표를 함께 넘긴다. 저장 순서는 받는 쪽이 지킨다. */
+  /** 목록과 대표를 함께 넘기는 콜백. 저장 순서는 받는 쪽이 지킨다. */
   onSubmit: (ocids: string[], representativeOcid: string | null) => void
 }
 

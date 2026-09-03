@@ -110,7 +110,7 @@ const MEDIA_RAMP = {
 const ERROR_HUE = 27
 const ERROR_RAMP = { light: { l: 0.48, c: 0.19 }, dark: { l: 0.63, c: 0.17 } } as const
 
-/** 정보 톤은 브랜드와 구분되도록 차가운 쪽에 둔다. */
+/** 브랜드와 구분되도록 차가운 쪽에 둔 정보 톤. */
 const INFO_HUE = 235
 
 /**
@@ -130,7 +130,7 @@ const FALL_HUE = 262
 const SIGNAL_RAMP = { light: { l: 0.5, c: 0.2 }, dark: { l: 0.7, c: 0.16 } } as const
 
 /**
- * 스크림·그림자는 반투명이라 8자리 hex(#RRGGBBAA)로 낸다.
+ * 반투명이라 8자리 hex(#RRGGBBAA)로 내는 스크림·그림자.
  * 다크 테마는 이미 배경이 어두워 같은 알파로는 덜 눌리므로 더 어둡고 진하게 잡는다.
  */
 const SCRIM_RAMP = { light: { l: 0.15, c: 0.012 }, dark: { l: 0.06, c: 0.01 } } as const
@@ -156,7 +156,7 @@ function tone(hue: number, ramp: { l: number; c: number }): string {
 const INK_VISIBILITY_FLOOR = 2
 
 /**
- * 바탕색 대비가 `required` 이상이 되도록 명도만 조정한다. 색상(H)·채도(C)는 유지한다.
+ * 바탕색 대비가 `required` 이상이 되도록 명도만 조정한 색. 색상(H)·채도(C)는 유지한다.
  *
  * 원래 색에서 가장 가까운 명도를 고르므로 accent 의 인상이 최대한 남는다. 밝은 바탕이면
  * 어둡게, 어두운 바탕이면 밝게 미는 방향이 자동으로 정해진다.

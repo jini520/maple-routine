@@ -71,7 +71,7 @@ export function EtcForm(
   const rate = /^\d+$/.test(rateText) && Number(rateText) > 0 ? Number(rateText) : null
   /** **언제나 곱한다**. 금액 × 수량. 지출 기타와 같은 식이다. */
   const amount = typed * quantity
-  /** 메포로 적으면 **시세가 있어야** 잰다. */
+  /** 저장할 수 있는 상태인가. 메포로 적으면 시세가 있어야 한다. */
   const canSave = amount > 0 && (!usesPoint || rate !== null)
 
   return (

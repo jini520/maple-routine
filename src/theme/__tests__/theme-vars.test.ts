@@ -26,7 +26,7 @@ import {
   toColorVariableName,
 } from '../theme-vars'
 
-/** `buildThemeCss` 결과에서 한 블록의 `--이름: 값;` 선언을 뽑는다. */
+/** `buildThemeCss` 결과에서 뽑은 한 블록의 `--이름: 값;` 선언. */
 function declarationsIn(css: string, selector: string): Record<string, string> {
   const start = css.indexOf(`${selector} {`)
   const body = css.slice(start, css.indexOf('}', start))

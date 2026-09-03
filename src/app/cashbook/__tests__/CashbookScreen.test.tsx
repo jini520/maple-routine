@@ -37,7 +37,7 @@ const mockOpenTab = jest.fn()
 jest.mock('../../use-open-tab', () => ({ useOpenTab: () => mockOpenTab }))
 
 /**
- * `useFocusEffect` 는 내비게이션 컨텍스트를 요구한다. 이 하네스는 화면 하나만 띄우므로
+ * `useFocusEffect` 가 요구하는 내비게이션 컨텍스트의 대역. 이 하네스는 화면 하나만 띄우므로
  * **포커스를 손으로 튼다**. 마운트가 첫 포커스이고, 그 뒤는 `다시들어오기` 가
  * 등록된 콜백을 다시 부른다(탭을 떠났다 돌아오는 그 순서다).
  */
@@ -124,7 +124,7 @@ async function 그리기(): Promise<Rendered> {
   return view
 }
 
-/** 탭을 떠났다 돌아온다. 실제로는 `useFocusEffect` 가 다시 도는 그 순간이다. */
+/** 탭을 떠났다 돌아오는 도우미. 실제로는 `useFocusEffect` 가 다시 도는 그 순간이다. */
 async function 다시들어오기(): Promise<void> {
   await act(async () => {
     for (const callback of [...mockFocusCallbacks]) callback()
