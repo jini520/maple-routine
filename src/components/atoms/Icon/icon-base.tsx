@@ -1,8 +1,8 @@
 /**
  * 앱이 직접 그리는 SVG 들이 함께 쓰는 프롭과 뿌리 배선.
  *
- * 세 겹이다. `IconProps` 는 호출부가 보는 프롭, `SvgFrame` 은 뿌리 배선과 격자, `IconSvg` 는 그
- * 위에 lucide 칠 프리셋을 얹은 것이다(정정 1). 새 아이콘은 좌표만 갖고 `IconSvg` 를 쓴다.
+ * 세 겹이다. `IconProps` 는 호출부가 보는 프롭, `SvgFrame` 은 뿌리 배선과 격자, `IconSvg` 는
+ * 그 위에 lucide 칠 프리셋을 얹은 것이다. 새 아이콘은 좌표만 갖고 `IconSvg` 를 쓴다.
  */
 import type { ReactNode } from 'react'
 import type { SvgProps } from 'react-native-svg'

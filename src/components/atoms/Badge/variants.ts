@@ -44,7 +44,7 @@ function dropShadow(color: string): TextStyle {
  * @param gradient 위에서 아래로 흐르는 두 색. 상자가 `LinearGradient` 가 된다
  * @param borderColor 테두리 색. 그라디언트보다 밝게 둬 상자 경계를 세운다
  * @param textStyle 글자색과 그림자. `dropShadow` 를 펼쳐 넣는다
- * @param borderWidth 테두리 폭(기본 1). 익스트림만 1.5 다. 이 값만큼 여백에서 뺀다(정정 2)
+ * @param borderWidth 테두리 폭(기본 1). 익스트림만 1.5 다. 이 값만큼 여백에서 뺀다
  *
  * @example
  * 노멀: difficulty(['#5cc2dd', '#2b93b0'], '#1f7690', { color: '#ffffff' })
@@ -80,8 +80,8 @@ export const BADGE_VARIANT = {
 } as const satisfies Record<string, BadgeVariantStyle>
 
 /**
- * 높이를 안 못박는다. 여백이 높이를 만든다. 여백을 클래스가 아니라 값으로 쥐는
- * 것은 테두리 폭을 빼야 해서다(정정 2). 글자는 칩 계단을 쓴다.
+ * 높이를 안 못박는다. 여백이 높이를 만든다. 여백을 클래스가 아니라 값으로 쥐는 것은 테두리
+ * 폭을 빼야 해서다. 글자는 칩 계단을 쓴다.
  *
  * `mini` 는 고정칸에만 놓여서 글자 배수를 안 따른다.
  */

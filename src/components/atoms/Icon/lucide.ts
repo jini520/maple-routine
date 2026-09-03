@@ -157,9 +157,9 @@ export const MinusIcon = withIconInterop(Minus)
 export const MoonIcon = withIconInterop(Moon)
 
 /**
- * 가계부. **빈 달력**(사용자 지정 2026-08-25).
+ * 가계부. 빈 달력.
  *
- * 스케줄러 그룹이 쓰는 `CalendarCheck`(체크가 든 달력)와 **같은 계열이되 다른 그림**이다. 이 탭이
+ * 스케줄러 그룹이 쓰는 `CalendarCheck`(체크가 든 달력)와 같은 계열이되 다른 그림이다. 이 탭이
  * 그리는 것이 실제로 달력이라 그림이 화면과 같은 말을 하고, 체크가 없어 할 일 로 안 읽힌다.
  */
 export const CalendarIcon = withIconInterop(Calendar)

@@ -42,11 +42,11 @@ const WIDTH_TRANSITION = {
 } as const
 
 export interface ProgressBarProps {
-  /** 채움 비율(0~100). 클램프는 호출부가 한다(파일 머리). */
+  /** 채움 비율(0~100). 클램프는 호출부가 한다. */
   percent: number
   /** 채움 색. `third` 는 컨텐츠 스케줄러의 `IllustratedCard` 둘이 위에 선 배지와 맞추려고 쓴다. */
   tone?: keyof typeof FILL_CLASS
-  /** 두께. 기본은 의 `h-1.5` 이고, 세 번째 값은 두지 않는다(정정 4). */
+  /** 두께. 기본은 `h-1.5` 이고 세 번째 값은 두지 않는다. */
   height?: keyof typeof HEIGHT_CLASS
   /**
    * 접근성 값. 주면 `accessibilityRole="progressbar"` 와 함께 낸다. 값이 이미 글자로 읽히는

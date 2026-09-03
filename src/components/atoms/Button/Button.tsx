@@ -1,9 +1,8 @@
 /**
- * 버튼 atom. `design-system.md` 의 `기본 컴포넌트` 절이 규정한 버튼 넷을 그린다
+ * 버튼 atom. `design-system.md` 의 기본 컴포넌트 절이 규정한 버튼 넷을 그린다.
  *
- *
- * **외형만 갖고 레이아웃은 호출부에 남긴다.** 폭·정렬·간격은 `className` 으로 준다
- * 색·여백·글자를 정하는 표는 `variants.ts` 에 있다(결정 3).
+ * 외형만 갖고 레이아웃은 호출부에 남긴다. 폭·정렬·간격은 `className` 으로 준다. 색·여백·글자를
+ * 정하는 표는 `variants.ts` 에 있다.
  */
 import { Children, type ReactNode } from 'react'
 import { Pressable, View, type PressableProps } from 'react-native'
