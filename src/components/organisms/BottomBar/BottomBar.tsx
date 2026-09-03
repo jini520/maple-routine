@@ -34,6 +34,7 @@ import {
   WalletIcon,
   WrenchIcon,
 } from '../../atoms'
+import { useKeyboardShown } from '../../../hooks/useKeyboardShown'
 import { BAR_LIFT, resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
 import { useBottomSafeAreaPx } from '../../../lib/safe-area'
 import { useThemeAppearance } from '../../../theme/context'
@@ -54,7 +55,6 @@ import {
   type GroupId,
 } from '../../../navigation/bar-model'
 import { setLastSub, useLastSub } from './bar-store'
-import { useKeyboardShown } from './use-keyboard-shown'
 import type { LayerRouteName, TabRouteName } from '../../../navigation/routes'
 
 /**
