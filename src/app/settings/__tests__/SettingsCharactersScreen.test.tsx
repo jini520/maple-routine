@@ -39,7 +39,7 @@ import {
   renderOverlay,
   type AtomElement,
 } from '../../../components/__tests__/render-atom'
-import { moveOcid } from '../../../components/organisms/CharacterManage/reorder'
+import { moveOcid } from '../../../hooks/useSelectionDraft'
 import { SettingsCharactersScreen } from '../SettingsCharactersScreen'
 import { useSettingsNavigation } from '../use-settings-navigation'
 
