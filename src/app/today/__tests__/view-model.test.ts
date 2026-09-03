@@ -3,7 +3,7 @@ import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
 // today 뷰모델의 **조립 규칙**. 위젯이 스토어를 모르므로 화면이 값을 한
 // 번 모으는데, 그 조립을 순수 함수로 두면 **위젯이 한 줄도 없는 지금 로직 전부를 검증할 수 있다.**
 //
-// 여기서 지키는 것의 대부분은 **다시 구현하지 않았는가** 다. 남은 개수는 `content-completion` ·
+// 여기서 지키는 것의 대부분은 **다시 구현하지 않았는가** 다. 남은 개수는 `content-completion`·
 // `displayedBosses` 가, 수익은 `groupTotalMeso` 가, 한도 분모는 `WEEKLY_CRYSTAL_SALE_LIMIT` 가
 // 판정한다. 판정이 두 벌이 되면 today 와 원래 화면이 **다른 수를 말한다.**
 
@@ -578,7 +578,7 @@ describe('최고가 아이템', () => {
     expect(model.unpricedCount).toBe(0)
   })
 
-  // 위젯 4가 **캐릭터 · 보스** 를 그린다. ocid 는 사용자에게 뜻이 없는 값이라 대신 넣지 않는다.
+  // 위젯 4가 **캐릭터· 보스** 를 그린다. ocid 는 사용자에게 뜻이 없는 값이라 대신 넣지 않는다.
   it('캐릭터 이름은 프로필 캐시에 있을 때만 싣는다', () => {
     const 기록 = dropRecord({ itemName: '반지', priceState: 'entered', priceMeso: 10 })
     const 있음 = buildTodayViewModel(
@@ -645,7 +645,7 @@ describe('아이템 드롭 가뭄', () => {
 })
 
 describe('초기화 카운트다운', () => {
-  // now 를 고정하면 전부 결정적이다. 이 파일이 `new Date()` 를 부르지 않는 이유.
+  // now 를 고정하면 전부 결정적이다. 이 파일이 `new Date` 를 부르지 않는 이유.
   it('일간·주간·월간 초기화까지 남은 시간을 KST 기준으로 센다', () => {
     const model = buildTodayViewModel(input())
 
@@ -899,7 +899,7 @@ describe('공유 컨텐츠. 오른쪽 열은 `maxCount > 0` 하나로 갈린다'
       }),
     )
 
-    // 남은 것. 악몽선경 · 몬스터파크(0/14) · 익스트림 · PC방
+    // 남은 것. 악몽선경· 몬스터파크(0/14)· 익스트림· PC방
     expect(model.sharedRemaining).toBe(4)
   })
 })

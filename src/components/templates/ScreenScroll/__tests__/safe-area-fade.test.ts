@@ -1,7 +1,7 @@
-// 안전영역 페이드의 **두 값**. 어디를 깎는가(결정 3)와 어떻게 깎는가(결정 2).
+// 안전영역 페이드의 **두 값**. 어디를 깎는가와 어떻게 깎는가.
 //
 // 둘 다 화면을 렌더하지 않고 볼 수 있어서 여기 따로 있다. `bottom-inset.test.ts` 와 같은 이유이고,
-// 실제로 하단 값은 그 판정에서 **파생**되므로(결정 3) 두 파일이 같은 자리를 지킨다.
+// 실제로 하단 값은 그 판정에서 **파생**되므로 두 파일이 같은 자리를 지킨다.
 
 import { resolveBottomSafeAreaPx } from '../../../../lib/safe-area'
 import { resolveScreenBottomInset } from '../bottom-inset'
@@ -10,8 +10,8 @@ import { FADE_MASK_ALPHAS, FADE_MASK_LOCATIONS, resolveSafeAreaFade } from '../s
 /**
  * iPhone 계열(`render-atom.tsx` 의 테스트 안전영역과 같은 값).
  *
- * **위아래 다 인셋이 아니다**. 상단은 `useTopSafeAreaPx()`, 하단은
- * `useBottomSafeAreaPx()` 의 결과가 들어오는 자리다. iOS 는 둘 다 하한
+ * **위아래 다 인셋이 아니다**. 상단은 `useTopSafeAreaPx`, 하단은
+ * `useBottomSafeAreaPx` 의 결과가 들어오는 자리다. iOS 는 둘 다 하한
  * (48·34) 위라 인셋과 같은 값이고, 안드로이드에서만 갈린다. 그 갈림은 `lib/` 의 두 테스트가 보고,
  * 여기서는 **받은 값을 그대로 페이드 길이로 쓰는지**만 본다.
  */
@@ -68,8 +68,8 @@ describe('페이드는 콘텐츠가 실제로 지나가는 자리에만 있다',
     const fade = resolveSafeAreaFade(화면(true, 'ios'))
 
     expect(fade.bottomPx).toBe(인셋.bottom + 바_페이드)
-    // 바 전체(72)까지 올리면 **너무 높다** 였고(정정 3), 안전영역까지만이면 콘텐츠가 선명한 채로
-    // 캡슐 밑에 들어간다(정정 1). 그 사이의 값이라는 것이 이 상수의 전부다.
+    // 바 전체(72)까지 올리면 **너무 높다** 였고, 안전영역까지만이면 콘텐츠가 선명한 채로
+    // 캡슐 밑에 들어간다. 그 사이의 값이라는 것이 이 상수의 전부다.
     expect(fade.bottomPx).toBeGreaterThan(인셋.bottom)
     expect(fade.bottomPx).toBeLessThan(인셋.bottom + 바_몫)
   })
@@ -93,7 +93,7 @@ describe('페이드는 콘텐츠가 실제로 지나가는 자리에만 있다',
   })
 
   // 안드로이드 3버튼 내비의 하위 페이지. `bottom-inset.ts` 가 스크롤포트를 인셋 위에서 끝낸다
-  // (결정 19: 불투명 버튼 사이로 글자가 비치면 안 된다). 겹치는 것이 없으니 깎을 것도 없다.
+  //. 겹치는 것이 없으니 깎을 것도 없다.
   it('스크롤포트가 이미 안전영역 위에서 끝나면 하단은 0이다', () => {
     const fade = resolveSafeAreaFade(화면(false, 'android', 48))
 

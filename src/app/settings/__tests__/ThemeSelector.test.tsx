@@ -20,7 +20,7 @@ import { ThemeSelector } from '../ThemeSelector'
 
 type Rendered = Awaited<ReturnType<typeof renderAtom>>
 
-/** 누르고 다시 그려질 때까지 기다린다(`CacheClearConfirm` 테스트 파일 머리 ③). */
+/** 누르고 다시 그려질 때까지 기다린다(`CacheClearConfirm` 테스트). */
 async function press(element: AtomElement): Promise<void> {
   await act(async () => {
     fireEvent.press(element)
@@ -182,7 +182,7 @@ describe('ThemeSelector: 프리뷰 타일', () => {
 
 // ★ 회귀 가드. **한 줄에 둘**.
 //
-// 원래는 카드에 `w-[calc(50%-5px)]` 를 줬는데 **NativeWind 가 그 `calc()` 를 만들지 않아** 폭이
+// 원래는 카드에 `w-[calc(50%-5px)]` 를 줬는데 **NativeWind 가 그 `calc` 를 만들지 않아** 폭이
 // 통째로 빠졌고, 카드가 글자 길이대로 늘어나 한 줄에 셋이 서기도 했다(2026-08-13 실기기 관측:
 // `엔젤릭버스터`만 넓었다). **에러도 경고도 없다**. 이 저장소가 이번 전환에서 반복해서 밟은
 // **조용히 안 먹는 스타일** 부류다.

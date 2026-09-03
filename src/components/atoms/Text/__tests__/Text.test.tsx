@@ -4,7 +4,7 @@
 //
 // ## 배수는 `Dimensions.get('window')` 를 통해 흘려 넣는다
 //
-// `useWindowDimensions()` 는 초기값을 그 호출에서 얻으므로(`useWindowDimensions.js`), 그 하나만
+// `useWindowDimensions` 는 초기값을 그 호출에서 얻으므로(`useWindowDimensions.js`), 그 하나만
 // 목으로 덮으면 **시스템 글자 크기가 이렇게 설정된 기기** 를 만들 수 있다. 훅 자체를 목으로 덮지
 // 않는 이유는 `react-native` 의 export 가 게터라 `jest.spyOn` 이 안 걸리기 때문이고, 무엇보다
 // 이렇게 두면 **컴포넌트가 무엇을 읽는지** 를 테스트가 안 정해도 된다.

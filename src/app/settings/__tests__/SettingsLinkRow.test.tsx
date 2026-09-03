@@ -5,7 +5,7 @@
 //    같은 처방). 역할은 `role="link"` 로 그대로 남는다.
 // ② **새 컨텍스트로 열고 opener를 넘기지 않는다는 옮길 계약이 아니다**. `rel="noopener"` 가
 //    막던 것은 브라우저 탭 사이의 관계이고, OS 브라우저는 우리 프로세스 밖이라 그 관계가 없다
-//    (`SettingsLinkRow.tsx` 파일 머리 ②).
+//    (`SettingsLinkRow.tsx`).
 // ③ 라벨 타이포 대조는 클래스가 아니라 **컴파일된 스타일**로 한다.
 import { fireEvent } from '@testing-library/react-native'
 import { Linking } from 'react-native'
@@ -54,7 +54,7 @@ describe('SettingsLinkRow', () => {
   })
 
   // 둘을 **한 트리에** 그린다. 렌더를 두 번 하면 앞선 `act` 가 아직 안 닫혀 겹친다(RNTL 14 의
-  // `render` 는 비동기다, `RootNavigator` 테스트 파일 머리).
+  // `render` 는 비동기다, `RootNavigator` 테스트).
   it('label 타이포는 SettingsRow의 비-danger 라벨과 같다', async () => {
     const view = await renderAtom(
       <>

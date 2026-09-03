@@ -31,13 +31,13 @@ describe('spend-catalog.json: 규약', () => {
     expect(items.length).toBeGreaterThan(0)
   })
 
-  // 사용자 확인값(2026-08-23)이고 **항상 고정** 이다. 화면이 이 값을 하드코딩
+  // 사용자 확인값이고 **항상 고정** 이다. 화면이 이 값을 하드코딩
   // 하면 이 막는 자리가 코드에 생긴다.
   it('관세율은 10% 로 고정이다', () => {
     expect(spendCatalog.tariffPercent).toBe(10)
   })
 
-  // 단위를 못 박는 이유: `1억당` 이라 환산이 **곱셈이 아니라 나눗셈**이다(정정 2 ③).
+  // 단위를 못 박는 이유: `1억당` 이라 환산이 **곱셈이 아니라 나눗셈**이다.
   // 이 값이 조용히 바뀌면 모든 메포 지출이 1억 배 어긋난다.
   it('메소마켓 시세의 단위는 **1억 메소당 메포** 다', () => {
     expect(spendCatalog.marketRateUnit).toBe('pointPer100mMeso')

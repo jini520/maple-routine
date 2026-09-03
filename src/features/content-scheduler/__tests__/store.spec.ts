@@ -539,7 +539,7 @@ describe('useContentSchedulerStore', () => {
 
       expect(seedManualTrackedContentMock).toHaveBeenCalledTimes(1)
       expect(seedManualTrackedContentMock).toHaveBeenCalledWith(['ocid-2'])
-      // 시드가 refresh(syncSchedules)보다 먼저 실행된다. 저장 진행률 모달이 시드까지 커버(결정 15)
+      // 시드가 refresh(syncSchedules)보다 먼저 실행된다. 저장 진행률 모달이 시드까지 커버
       expect(seedManualTrackedContentMock.mock.invocationCallOrder[0]).toBeLessThan(
         syncSchedulesMock.mock.invocationCallOrder[0],
       )
@@ -790,7 +790,7 @@ describe('useContentSchedulerStore', () => {
   })
 
   // 결정 1~5: 화면에 들어왔다는 사실만으로는 조회하지 않는다. 게이트는 자동 진입 경로에만
-  // 걸리고(결정 4), 판정 근거는 캐시 우선 표시 단계가 이미 읽은 syncedAt 이다.
+  // 걸리고, 판정 근거는 캐시 우선 표시 단계가 이미 읽은 syncedAt 이다.
   describe('화면 진입 재조회 게이트', () => {
     function minutesAgo(minutes: number): string {
       return new Date(Date.now() - minutes * 60 * 1000).toISOString()
@@ -822,7 +822,7 @@ describe('useContentSchedulerStore', () => {
       const state = useContentSchedulerStore.getState()
       expect(state.status).toBe('loaded')
       expect(state.error).toBeNull()
-      // 결정 5: 재검증하지 않기로 한 값이라 "오래된 데이터"가 아니다(토스트가 뜨면 안 된다).
+      // 재검증하지 않기로 한 값이라 "오래된 데이터"가 아니다(토스트가 뜨면 안 된다).
       expect(state.characters.every((character) => character.isStale === false)).toBe(true)
     })
 
@@ -875,7 +875,7 @@ describe('useContentSchedulerStore', () => {
       expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
     })
 
-    // 결정 4: 강제가 기본값이다. 옵션을 넘기지 않는 헤더 버튼·당겨서 새로고침·재시도는 항상 조회한다.
+    // 강제가 기본값이다. 옵션을 넘기지 않는 헤더 버튼·당겨서 새로고침·재시도는 항상 조회한다.
     it('옵션 없는 refresh(명시적 재조회)는 TTL 안이어도 항상 조회한다', async () => {
       markSyncAttemptedThisRun()
       getCachedSchedulerStateMock.mockResolvedValue(cachedSchedulerState(minutesAgo(5)))

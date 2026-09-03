@@ -98,7 +98,7 @@ describe('insertSpendRecord', () => {
 })
 
 // 시세 없이 저장하면 그 행은 **영영 메소로 표시할 수 없는 행**이 된다
-// (결정 5 가 환율을 행에 박으므로 나중에 채울 수도 없다). 화면이 막더라도 저장소가 한 번 더 막는다.
+//. 화면이 막더라도 저장소가 한 번 더 막는다.
 describe('메포 지출의 시세 요구', () => {
   it('시세가 없으면 저장하지 않고 던진다', async () => {
     const { insertSpendRecord } = require('../spend') as typeof import('../spend')

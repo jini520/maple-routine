@@ -92,7 +92,7 @@ describe('buildThemeCss', () => {
   it.each(NAMES)('%s: 38개 토큰을 전부 커스텀 프로퍼티로 낸다', (name) => {
     const css = buildThemeCss(getThemeDefinition(name))
     const declared = [...css.matchAll(/--color-([a-z0-9-]+):/g)].map((match) => match[1])
-    // :root 와 .media-scope 양쪽에 나오므로 중복을 걷는다.
+    // :root 와.media-scope 양쪽에 나오므로 중복을 걷는다.
     expect(new Set(declared).size).toBeGreaterThanOrEqual(38)
   })
 
@@ -189,7 +189,7 @@ describe('buildThemeCss', () => {
       expect(scope).toContain(`--color-text-muted: ${theme.mediaInkMuted};`)
     })
 
-    // 커스텀 프로퍼티는 선언된 요소에서 var() 가 해석되므로, 스코프 안에서 틴트·잉크를 다시
+    // 커스텀 프로퍼티는 선언된 요소에서 var 가 해석되므로, 스코프 안에서 틴트·잉크를 다시
     // 선언하지 않으면 surface 기준 값이 그대로 상속된다.
     /**
      * 카드 안에서 쓰는 토큰을 스코프가 하나라도 빠뜨리면 **페이지 값이 그대로 내려온다**.

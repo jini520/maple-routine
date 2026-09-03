@@ -47,7 +47,7 @@ describe('mergeManualBossList', () => {
     ])
   })
 
-  // 결정 5(2026-08-10): 정확 일치 행이 없어도 같은 보스명의 다른 난이도가 완료면 완료로
+  // 정확 일치 행이 없어도 같은 보스명의 다른 난이도가 완료면 완료로
   // 승격한다. normalize.ts가 하는 보스 단위 승격(032)을 수동 경로에도 적용하는 누락 보완.
   // 그 전에는 난이도를 바꾸는 순간 완료 배지가 사라졌다.
   it('같은 보스의 다른 난이도가 완료면, 정확 일치 행이 없어도 isComplete로 승격한다', () => {
@@ -145,7 +145,7 @@ describe('mergeManualBossList', () => {
     ])
   })
 
-  // 결정 20(2026-07-25): 표시 순서는 멤버십(tracked) 삽입 순서가 아니라 weekly-bosses.json
+  // 표시 순서는 멤버십(tracked) 삽입 순서가 아니라 weekly-bosses.json
   // 순서(보스 관리 페이지와 동일)로 고정한다. 추가/삭제해도 순서가 흔들리지 않게.
   it('반환 순서는 tracked 삽입 순서가 아니라 weekly-bosses.json 순서를 따른다', () => {
     // weekly-bosses.json: 자쿰(0) … 루시드(10) … 검은마법사(monthly, 맨 뒤)

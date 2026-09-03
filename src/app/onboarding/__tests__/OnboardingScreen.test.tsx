@@ -6,7 +6,7 @@
 //    `flexGrow`** 로 바뀐다. 남는 세로 공간을 RN 스크롤에서는 그것이
 //    만든다(그 공간이 있어야 프로브 대기의 `m-auto`·전체 대기의 `justify-center` 가 작동한다).
 // ② `getByLabelText(/API 키/)` → `getByLabelText('Nexon Open API 키')`.
-// ③ 스토어 목이 **셀렉터를 받는다**. `useOnboardingStore()` 는 전체 상태를 돌려주지만 같은 훅을
+// ③ 스토어 목이 **셀렉터를 받는다**. `useOnboardingStore` 는 전체 상태를 돌려주지만 같은 훅을
 //    `RootNavigator` 등이 셀렉터와 함께 부르므로, 목 하나가 두 쓰임을 다 받아야 한다.
 //
 // ── 단계가 다섯에서 셋이 됐다 ────────────────────────────────
@@ -79,7 +79,7 @@ function mockStore(overrides: Partial<StoreState>): void {
     ...overrides,
   } as unknown as StoreState
 
-  // 셀렉터 없는 호출(`useOnboardingStore()`)과 있는 호출을 한 목이 함께 받는다. zustand 의 오버로드가
+  // 셀렉터 없는 호출(`useOnboardingStore`)과 있는 호출을 한 목이 함께 받는다. zustand 의 오버로드가
   // 타입으로는 갈려 있어 여기서만 넓혀 준다(런타임 계약은 하나다).
   const implementation = (selector?: (state: StoreState) => unknown): unknown =>
     selector === undefined ? state : selector(state)

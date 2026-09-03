@@ -593,7 +593,7 @@ describe('useBossProfitStore', () => {
   })
 
   // `rows` 는 **보고 있는 (탭, 기간)** 이고 today 위젯이 읽는 것은 **지금 기간** 이다.
-  // 사용자 보고(2026-08-19). 이 화면을 월간 탭으로 옮기기만 해도 today 의 주간 보스 수익·주간
+  // 이 화면을 월간 탭으로 옮기기만 해도 today 의 주간 보스 수익·주간
   // 결정석 한도가 함께 비었다. 그 화면은 이 화면의 네비게이션을 모르는 채로 이번 주를 그린다.
   it('월간 탭으로 옮겨도 currentPeriodRows 는 이번 주 행을 그대로 들고 있다', async () => {
     const weekKey = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
@@ -1036,7 +1036,7 @@ describe('useBossProfitStore', () => {
     // 2026-07-17 실기기 재현: 데이터 초기화(리로드) 직후 보스 스케줄러에 캐릭터를 저장하면
     // SQLite 읽기는 되지만(loadPartySizes), 리로드 이후 이 커넥션에 대한 첫 "쓰기" 쿼리
     // (upsertBossProfitRecord)가 stale 네이티브 커넥션 탓에 막혀 보스 수익 화면이
-    // "불러오는 중..."에서 영원히 멈췄다. refresh()가 SQLite 응답을 무한정 기다리지 않고
+    // "불러오는 중..."에서 영원히 멈췄다. refresh가 SQLite 응답을 무한정 기다리지 않고
     // 타임아웃 후 기본값(파티원 1인)으로라도 화면을 완성해야 한다.
     it('upsertBossProfitRecord가 응답하지 않아도(hang) 타임아웃 후 기본 파티원 수로 loaded 상태가 된다', async () => {
       jest.useFakeTimers()
@@ -1058,7 +1058,7 @@ describe('useBossProfitStore', () => {
       }
     })
 
-    // 원래 취지(2026-07-17)는 "조회가 멈춰도 화면이 '불러오는 중'에 영영 갇히지 않는다"이고 그대로
+    // 원래 취지는 "조회가 멈춰도 화면이 '불러오는 중'에 영영 갇히지 않는다"이고 그대로
     // 유효하다. 다만 그때 party_size=1로 자동 기록하던 동작은으로 폐기했다.
     // 조회 실패를 "기록 없음"으로 읽고 사용자가 저장한 값을 덮어쓰는 데이터 손상 경로였다.
     it('getBossProfitRecords가 응답하지 않아도(hang) 타임아웃 후 멈추지 않고, 기본 파티원 수로 덮어쓰지도 않는다', async () => {
@@ -1164,7 +1164,7 @@ describe('useBossProfitStore', () => {
       expect(updated.payoutMeso).toBeNull()
     })
 
-    // 회귀 재현(2026-07-22): setPartySize가 get().rows만 갱신하고 모듈 스코프
+    // 회귀 재현: setPartySize가 get.rows만 갱신하고 모듈 스코프
     // latestSyncSnapshot은 건드리지 않으면, loadPeriod의 "현재 기간" 분기가 이 스냅샷에서
     // 슬라이스할 때 방금 수정한 값이 낡은 값으로 되돌아간다. "파티원 수를 고쳐도 파티관리
     // 기본값으로 계속 돌아간다"로 보고된 증상의 실제 원인이었다. setPartySize가 스냅샷도
@@ -1595,7 +1595,7 @@ describe('useBossProfitStore', () => {
       expect(migratedBosses).not.toContain('스우')
     })
 
-    // 결정 6: 복원은 skipSync 여부와 무관하게 캐시 단계 일반에 적용한다. 두 경로가 서로 다른 화면을
+    // 복원은 skipSync 여부와 무관하게 캐시 단계 일반에 적용한다. 두 경로가 서로 다른 화면을
     // 그리면 그것이 다음 결함이 된다. 동기화를 실패시켜 캐시 단계가 그린 화면만 남긴다.
     it('건너뛰지 않는 진입의 캐시 단계에서도 복원이 일어난다', async () => {
       const monthKey = seedMonthlyTab()
@@ -2084,7 +2084,7 @@ describe('useBossProfitStore', () => {
 
     // 2026-07-17 실기기 재현: SQLite 커넥션이 stale하면 isPeriodChecked가 응답 없이 멈추고,
     // periodKey 라벨만 "지난 주"로 바뀐 채 rows는 "이번 주" 값 그대로 남는(에러도 로딩 표시도 없는)
-    // 증상으로 나타났다. loadPeriod도 refresh()와 동일하게 타임아웃 후 "체크 안 됨"으로 간주해
+    // 증상으로 나타났다. loadPeriod도 refresh와 동일하게 타임아웃 후 "체크 안 됨"으로 간주해
     // 백필을 진행해야 한다(멈추지 않고 끝까지 진행되는지가 핵심. 고치기 전엔 아래 await promise가
     // 영원히 끝나지 않았다).
     it('goToPreviousPeriod: isPeriodChecked가 응답하지 않아도(hang) 타임아웃 후 백필을 진행해 멈추지 않는다', async () => {
@@ -2266,8 +2266,8 @@ describe('useBossProfitStore', () => {
     })
 
     it('goToPreviousPeriod: 통째로 MIN_SCHEDULER_DATE 이전인 달로는 물리적으로 이동할 수 없다(monthly)', async () => {
-      // **날짜를 고정해야 하는 테스트다**(2026-08-01 계측): 이 검증의 전제는 "지난 달이 통째로
-      // MIN_SCHEDULER_DATE(2026-07-01) 이전"이고, 그건 오늘이 2026년 7월일 때만 참이다. 실제 시각에
+      // **날짜를 고정해야 하는 테스트다**: 이 검증의 전제는 "지난 달이 통째로
+      // MIN_SCHEDULER_DATE 이전"이고, 그건 오늘이 2026년 7월일 때만 참이다. 실제 시각에
       // 의존하게 두면 8월부터는 지난 달(7월)이 조회 가능 구간에 들어와 이동이 정상 허용되고, 그러면
       // **코드가 맞는데 테스트만 영구히 실패한다**(실제로 그렇게 깨져 있었다). 옆의 롤링 윈도우
       // 테스트들이 같은 이유로 이미 시각을 고정한다.
@@ -2308,7 +2308,7 @@ describe('useBossProfitStore', () => {
         // 2026-07-16 → 2026-07-09(조회일 2026-07-15, 롤링 윈도우 안. 정상 이동/백필)
         await useBossProfitStore.getState().goToPreviousPeriod()
         expect(useBossProfitStore.getState().periodKey).toBe('2026-07-09')
-        // 2026-07-09의 이전 주(2026-07-02, 조회일 2026-07-08)는 롤링 윈도우 밖 + 기록 없음 →
+        // 2026-07-09의 이전 주는 롤링 윈도우 밖 + 기록 없음 →
         // 더 이상 이동할 수 없다.
         expect(useBossProfitStore.getState().canGoPreviousPeriod).toBe(false)
 
@@ -2388,7 +2388,7 @@ describe('useBossProfitStore', () => {
         syncSchedulesMock.mockResolvedValue([syncResult()])
         await useBossProfitStore.getState().refresh(['ocid-1'])
 
-        // 이번 주(2026-07-16)의 이전 주(2026-07-09, 조회일 2026-07-15)는 롤링 윈도우 안이므로 이동 가능.
+        // 이번 주의 이전 주는 롤링 윈도우 안이므로 이동 가능.
         expect(useBossProfitStore.getState().canGoPreviousPeriod).toBe(true)
       } finally {
         jest.useRealTimers()
@@ -2420,7 +2420,7 @@ describe('useBossProfitStore', () => {
         await useBossProfitStore.getState().refresh(['ocid-1'])
         await useBossProfitStore.getState().setTab('monthly')
 
-        // 조회일 2026-07-08. 롤링 하한(2026-07-09)보다 이전이라 "지금"은 API로 다시 조회할 수
+        // 조회일 2026-07-08. 롤링 하한보다 이전이라 "지금"은 API로 다시 조회할 수
         // 없지만, 이 주가 아직 윈도우 안에 있었을 때 이미 저장해둔 기록이 있다고 가정한다.
         const pastWeekKey = '2026-07-02'
         const cachedRecord: BossProfitRecord = {
@@ -2800,7 +2800,7 @@ describe('useBossProfitStore', () => {
   })
 
   // 결정 1~6: 화면에 들어왔다는 사실만으로는 조회하지 않는다. 게이트는 자동 진입 경로에만
-  // 걸리고(결정 4), 판정 근거는 캐시 우선 표시 단계가 이미 읽은 syncedAt 이다.
+  // 걸리고, 판정 근거는 캐시 우선 표시 단계가 이미 읽은 syncedAt 이다.
   describe('화면 진입 재조회 게이트', () => {
     function minutesAgo(minutes: number): string {
       return new Date(Date.now() - minutes * 60 * 1000).toISOString()
@@ -2836,13 +2836,13 @@ describe('useBossProfitStore', () => {
       const state = useBossProfitStore.getState()
       expect(state.status).toBe('loaded')
       expect(state.error).toBeNull()
-      // 결정 5: 화면에 흔적을 남기지 않는다. 행은 캐시 우선 표시가 그대로 그린다.
+      // 화면에 흔적을 남기지 않는다. 행은 캐시 우선 표시가 그대로 그린다.
       expect(state.rows).toHaveLength(1)
       expect(state.rows[0].boss).toBe('자쿰')
       expect(state.rows[0].characterName).toBe('캐시캐릭터')
     })
 
-    // 결정 5: 이 화면의 lastSyncedAt 은 스토어 메모리에만 있어 건너뛴 진입에서는 null 로 남는다.
+    // 이 화면의 lastSyncedAt 은 스토어 메모리에만 있어 건너뛴 진입에서는 null 로 남는다.
     // 그러면 신선한 데이터를 보여주면서 "동기화 기록 없음"이라고 말하게 된다. 지금 시각으로 채우는
     // 것도 답이 아니다(하지 않은 동기화를 했다고 말하는 것이다).
     it('건너뛴 진입의 lastSyncedAt 은 가장 오래된 캐시 syncedAt 이다(지금 시각이 아니다)', async () => {
@@ -2859,7 +2859,7 @@ describe('useBossProfitStore', () => {
     })
 
     // (폐기): 건너뛴 진입은 이 캐시 단계가 곧 최종 화면이라, 여기서
-    // 기록하지 않으면 수익이 계산되지 않은 채로 뜬다(이슈 #160. 거의 모든 콜드 스타트가 그 경로다).
+    // 기록하지 않으면 수익이 계산되지 않은 채로 뜬다.
     // 건너뛰는 것은 **네트워크 재조회**뿐이고, 안전 가드는 캐시의 나이가 아니라 **기간 동일성**이다.
     describe('건너뛴 진입의 자동 기록', () => {
       it('기록이 없는 완료 행을 upsert 하고 그 금액이 화면 rows 에 함께 반영된다', async () => {
@@ -2881,7 +2881,7 @@ describe('useBossProfitStore', () => {
             payoutMeso: 8080000,
           }),
         )
-        // 기록만 남기고 화면에 안 흘리면 총 수익이 0으로 그려졌다가 점프한다(결정 4). 둘 다 본다.
+        // 기록만 남기고 화면에 안 흘리면 총 수익이 0으로 그려졌다가 점프한다. 둘 다 본다.
         const state = useBossProfitStore.getState()
         expect(state.status).toBe('loaded')
         expect(state.rows).toHaveLength(1)
@@ -2900,7 +2900,7 @@ describe('useBossProfitStore', () => {
         expect(syncSchedulesMock).not.toHaveBeenCalled()
       })
 
-      // 결정 4: 기록을 set 뒤로 미루면 총 수익이 0으로 그려졌다가 점프하고, loading 을 경유해 두 번
+      // 기록을 set 뒤로 미루면 총 수익이 0으로 그려졌다가 점프하고, loading 을 경유해 두 번
       // set 하면 로딩이 한 프레임 번쩍인다. 그래서 set 은 계속 1회다.
       it('건너뛴 진입의 set 은 여전히 1회이고 그 시점에 이미 금액이 채워져 있다', async () => {
         markSyncAttemptedThisRun()
@@ -2919,7 +2919,7 @@ describe('useBossProfitStore', () => {
         expect(payoutsPerCommit).toEqual([8080000])
       })
 
-      // 결정 2: TTL(10분) 안이면서 리셋 경계를 넘는 조합은 리셋 직후 10분 창에서만 성립한다.
+      // TTL(10분) 안이면서 리셋 경계를 넘는 조합은 리셋 직후 10분 창에서만 성립한다.
       // 리셋 시각은 손으로 추측하지 않고 getMostRecentWeeklyResetKst 로 실제 값을 구한다.
       it('캐시가 주간 리셋 경계를 넘었으면 TTL 안이어도 기록하지 않는다', async () => {
         jest.useFakeTimers({ doNotFake: NOT_FAKED })
@@ -2945,12 +2945,12 @@ describe('useBossProfitStore', () => {
         }
       })
 
-      // 결정 2: 판정은 row.cycle 로 갈린다. 주간 리셋(목요일 00:00)과 월간 리셋(1일 00:00)은
+      // 판정은 row.cycle 로 갈린다. 주간 리셋(목요일 00:00)과 월간 리셋(1일 00:00)은
       // 시점이 달라, 한쪽으로 뭉뚱그리면 반대쪽이 조용히 틀린다.
       it('월 경계를 넘은 캐시에서 월간 행만 빠지고 주간 행은 그대로 기록된다', async () => {
         jest.useFakeTimers({ doNotFake: NOT_FAKED })
         try {
-          // 2026-08-01 00:05 KST. 월은 갈렸지만(7월→8월) 주간 리셋(2026-07-30 목)은 그대로다.
+          // 2026-08-01 00:05 KST. 월은 갈렸지만(7월→8월) 주간 리셋은 그대로다.
           jest.setSystemTime(new Date('2026-08-01T00:05:00+09:00'))
 
           markSyncAttemptedThisRun()
@@ -2990,7 +2990,7 @@ describe('useBossProfitStore', () => {
         expect(getBossPartySizeMock).not.toHaveBeenCalled()
       })
 
-      // 결정 1: 드롭 이관은 자동 기록과 같은 순회에 있으므로 함께 딸려온다.
+      // 드롭 이관은 자동 기록과 같은 순회에 있으므로 함께 딸려온다.
       it('완료 행의 드롭 이관도 함께 일어난다', async () => {
         const periodKey = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
         markSyncAttemptedThisRun()
@@ -3090,7 +3090,7 @@ describe('useBossProfitStore', () => {
       expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
     })
 
-    // 결정 4: 강제가 기본값이다. 옵션을 넘기지 않는 헤더 버튼·당겨서 새로고침·재시도는 항상 조회한다.
+    // 강제가 기본값이다. 옵션을 넘기지 않는 헤더 버튼·당겨서 새로고침·재시도는 항상 조회한다.
     it('옵션 없는 refresh(명시적 재조회)는 TTL 안이어도 항상 조회한다', async () => {
       markSyncAttemptedThisRun()
       getCachedSchedulerStateMock.mockResolvedValue(cachedEntry(minutesAgo(5)))
@@ -3145,7 +3145,7 @@ describe('useBossProfitStore', () => {
     })
   })
 
-  // 후단(이슈 #139): syncSchedules 가 도는 회차에 character/basic 도 함께 받아
+  // 후단: syncSchedules 가 도는 회차에 character/basic 도 함께 받아
   // 캐시를 갱신한다(편승 갱신). 이 화면만 프로필을 동기화 **이전에** 읽으므로, 완료 분기에서 다시
   // 읽지 않으면 새 레벨·이미지가 그 회차에 반영되지 않고 다음 진입으로 밀린다.
   describe('동기화 완료 후 프로필 재조회', () => {
@@ -3257,7 +3257,7 @@ describe('잡지 않은 보스의 드롭 정리', () => {
         state: {
           ...syncResult().state,
           bossContents: [
-            // 등록만 되고 미처치. 한도를 채웠으면 행이 서지 않는다(결정 4).
+            // 등록만 되고 미처치. 한도를 채웠으면 행이 서지 않는다.
             bossContent({ name: '자쿰', difficulty: '카오스', isComplete: false, ownComplete: false }),
             ...clearedContents(clearedCount),
           ],

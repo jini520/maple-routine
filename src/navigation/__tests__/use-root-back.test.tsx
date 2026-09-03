@@ -10,7 +10,7 @@ import { useRootBackToBackground, type RootBackNavigation } from '../use-root-ba
 import { resetBarStoreForTests } from '../bar-store'
 import { rnBackGesturePort } from '../../native/adapters/rn-back-gesture'
 
-// `mock` 접두사는 jest 규칙이다. `jest.mock()` 팩토리는 호이스팅돼 모듈 평가보다 먼저 돌기 때문에
+// `mock` 접두사는 jest 규칙이다. `jest.mock` 팩토리는 호이스팅돼 모듈 평가보다 먼저 돌기 때문에
 // 바깥 변수 참조를 막고, 그 접두사만 예외로 둔다.
 const mockMoveToBackground = jest.fn(async () => {})
 
@@ -59,7 +59,7 @@ describe('useRootBackToBackground', () => {
     await render(<Harness navigation={{ isReady: () => true, canGoBack: () => false }} />)
 
     // `true` 를 돌려주는 것이 곧 "기본 동작(액티비티 종료)을 막았다"이다. 이 값이 `false` 로
-    // 바뀌면 앱이 끝나고 다음 실행이 콜드 스타트가 된다(결정 18 이 거부한 바로 그 대가).
+    // 바뀌면 앱이 끝나고 다음 실행이 콜드 스타트가 된다.
     expect(pressBack()).toBe(true)
     expect(mockMoveToBackground).toHaveBeenCalledTimes(1)
   })
@@ -101,11 +101,11 @@ describe('useRootBackToBackground', () => {
 })
 
 //  이 여기에 단을 하나 더 뒀었다. 하단바의 **층** 기록이 react-navigation 이
-// 모르는 우리 것이라 `canGoBack()` 에 안 잡혔고, 그래서 **화면 스택 → 바 기록 → 백그라운드** 3단이
-// 됐다. 이 그 단을 걷었다: 층이 진짜 스택이면 하위 층까지 `canGoBack()` 에
+// 모르는 우리 것이라 `canGoBack` 에 안 잡혔고, 그래서 **화면 스택 → 바 기록 → 백그라운드** 3단이
+// 됐다. 이 그 단을 걷었다: 층이 진짜 스택이면 하위 층까지 `canGoBack` 에
 // 잡히므로 우리가 알려 줄 것이 없다.
 describe('판정은 다시 하나다', () => {
-  // 하위 **층** 에 서 있는 경우다. 예전에는 `canGoBack()` 이 거짓이라 앱이 백그라운드로 갔고,
+  // 하위 **층** 에 서 있는 경우다. 예전에는 `canGoBack` 이 거짓이라 앱이 백그라운드로 갔고,
   // 그것을 막으려고 바가 자기 뒤로가기를 등록했다. 지금은 층이 스택 한 단이라 이 값이 참이고,
   // 우리는 가로채지 않는다. react-navigation 이 pop 한다.
   it('층이 남아 있으면 가로채지 않는다. 백그라운드로 보내지 않는다', async () => {

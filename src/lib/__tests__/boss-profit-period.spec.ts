@@ -159,12 +159,12 @@ describe('isPeriodQueryable', () => {
   })
 
   it('weekly: 롤링 윈도우를 벗어나면(조회일이 2026-07-09 미만) false다. 오늘-14일(2026-07-08)은 조회 불가', () => {
-    // periodKey 2026-07-02의 조회일은 2026-07-08. 오늘(2026-07-22) 기준 정확히 14일 전
+    // periodKey 2026-07-02의 조회일은 2026-07-08. 오늘 기준 정확히 14일 전
     expect(isPeriodQueryable('weekly', '2026-07-02', now)).toBe(false)
   })
 
   it('weekly: MIN_SCHEDULER_DATE 이전이면 롤링 윈도우 안이어도 false다', () => {
-    // MIN_SCHEDULER_DATE(2026-07-01) 이전은 롤링 윈도우와 무관하게 항상 불가
+    // MIN_SCHEDULER_DATE 이전은 롤링 윈도우와 무관하게 항상 불가
     const recentNow = new Date('2026-07-05T12:00:00+09:00') // getMinQueryableDate: 2026-06-22(롤링 윈도우는 더 이르지만)
     expect(isPeriodQueryable('weekly', '2026-06-18', recentNow)).toBe(false) // 조회일 2026-06-24 < MIN_SCHEDULER_DATE
   })
@@ -177,19 +177,19 @@ describe('isPeriodQueryable', () => {
   })
 
   it('monthly: 지난 달은 조회일이 하한·상한 사이라 true다', () => {
-    // now 2026-08-05 → 롤링 하한 2026-07-23 · 상한 2026-08-04. 2026-07의 조회일 2026-07-31은 그 사이다.
-    // (2026-06은 MIN_SCHEDULER_DATE(2026-07-01)에 막히므로 예시로 쓸 수 없다)
+    // now 2026-08-05 → 롤링 하한 2026-07-23· 상한 2026-08-04. 2026-07의 조회일 2026-07-31은 그 사이다.
+    // (2026-06은 MIN_SCHEDULER_DATE에 막히므로 예시로 쓸 수 없다)
     expect(isPeriodQueryable('monthly', '2026-07', new Date('2026-08-05T12:00:00+09:00'))).toBe(true)
   })
 
   it('오늘·미래 조회일은 상한에 막힌다. 실측 400 OPENAPI00004', () => {
-    // now 2026-07-22 → 이번 주(2026-07-16)의 조회일은 2026-07-22 = 오늘
+    // now 2026-07-22 → 이번 주의 조회일은 2026-07-22 = 오늘
     expect(isPeriodQueryable('weekly', '2026-07-16', now)).toBe(false)
     expect(getMaxQueryableDate(now)).toBe('2026-07-21')
   })
 
   it('오늘-1일은 상한 안이다. 새벽엔 OPENAPI00009지만 집계가 끝나면 조회된다(정정 2)', () => {
-    // 조회일이 정확히 오늘-1일(2026-07-21)인 주 = periodKey 2026-07-15? weekly는 목요일이므로
+    // 조회일이 정확히 오늘-1일인 주 = periodKey 2026-07-15? weekly는 목요일이므로
     // 조회일 오늘-1일을 만들려면 periodKey = 2026-07-15 - 6 = 2026-07-15가 아니다. 대신 상한
     // 경계값 자체를 확인한다.
     expect(getMaxQueryableDate(now)).toBe('2026-07-21')

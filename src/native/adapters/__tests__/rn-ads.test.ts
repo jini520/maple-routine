@@ -1,11 +1,11 @@
 /// <reference types="node" />
 // 순수 규칙(`ads-env.test.ts`)이 지키는 것은 "어느 빌드가 실 광고를 쓰는가" 이고, 이 파일이
 // 지키는 것은 둘이다. **어댑터가 그 판정을 스스로 다시 쓰지 않는가**(광고 단위 ID 를 core 에서만
-// 가져오는가)와 **포트 계약을 지키는가**(`showInterstitial()` 이 안 떴는데 `true` 를 주면 호출부가
+// 가져오는가)와 **포트 계약을 지키는가**(`showInterstitial` 이 안 떴는데 `true` 를 주면 호출부가
 // 노출 시각을 기록해 30분간 광고가 통째로 죽는다).
 //
 // 목으로 흉내 내는 것은 AdMob 의 동작이 아니라 **SDK 가 우리에게 주는 모양**뿐이다
-// (`createForAdRequest` 가 받는 ID, `load()` 뒤에 오는 `LOADED`/`ERROR` 이벤트, `show()` 의 Promise).
+// (`createForAdRequest` 가 받는 ID, `load` 뒤에 오는 `LOADED`/`ERROR` 이벤트, `show` 의 Promise).
 // 열거형은 손으로 베끼지 않고 라이브러리의 부작용 없는 하위 모듈에서 진짜 값을 끌어온다.
 // 베끼면 상상한 값을 검사하게 된다.
 //
@@ -51,7 +51,7 @@ jest.mock('react-native-google-mobile-ads', () => ({
             ad.listeners = ad.listeners.filter((it) => it !== entry)
           }
         },
-        // 실제 SDK 는 비동기로 이벤트를 주지만 여기서는 동기로 쏜다. 리스너를 `load()` **뒤에**
+        // 실제 SDK 는 비동기로 이벤트를 주지만 여기서는 동기로 쏜다. 리스너를 `load` **뒤에**
         // 붙이는 구현이면 결과를 놓쳐 곧바로 타임아웃으로 드러난다.
         load: () => {
           ad.loadCount += 1
@@ -89,7 +89,7 @@ const originalPlatform = Platform.OS
 const originalDev = __DEV__
 
 beforeEach(() => {
-  // `jest.requireActual` 인 것은 취향이 아니다. 이 러너에서 동적 `import()` 는 `require` 로 안
+  // `jest.requireActual` 인 것은 취향이 아니다. 이 러너에서 동적 `import` 는 `require` 로 안
   // 내려가고(`--experimental-vm-modules` 필요), 그렇다고 `require` 를 직접 쓰면 lint 가 막는다.
   // 여기서 되살리려는 것은 `../rn-ads` 뿐이고 그 의존(SDK)은 위 `jest.mock` 이 계속 덮는다.
   jest.resetModules()

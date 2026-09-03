@@ -6,7 +6,7 @@
 
 import { ANDROID_BOTTOM_SAFE_AREA_MIN_PX, resolveBottomSafeAreaPx } from '../safe-area'
 
-/** 안드로이드 실기기 실측. `navigationBars` 45px @ density 3.0, 제스처 내비(2026-08-18). */
+/** 안드로이드 실기기 실측. `navigationBars` 45px @ density 3.0, 제스처 내비. */
 const 안드로이드_제스처 = 45 / 3
 
 /** 같은 계열의 3버튼 내비. 하한 위라 이 정정이 안 닿는 쪽. */

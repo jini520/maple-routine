@@ -49,7 +49,7 @@ describe('GearIcon', () => {
   })
 
   // 채운 상태에서 lucide 의 r3 을 그대로 쓰면 구멍이 **덩어리 속 점**으로 보인다. 둘레의 획이
-  // 구멍 안쪽을 더 먹기 때문이다(사용자 판정). 선일 때는 반대로 lucide 와 같아야 한다.
+  // 구멍 안쪽을 더 먹기 때문이다. 선일 때는 반대로 lucide 와 같아야 한다.
   it('구멍은 채웠을 때만 커진다. 선일 때는 lucide 의 r3 그대로다', async () => {
     const pathOf = async (fill?: string): Promise<string> =>
       findAllOfType((await renderAtom(<GearIcon fill={fill} />)).toJSON(), 'RNSVGPath')[0]?.props

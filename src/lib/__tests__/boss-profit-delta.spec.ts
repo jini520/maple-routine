@@ -104,7 +104,7 @@ describe('getComparisonPeriodKeys', () => {
   })
 
   it('월간 탭은 직전 달 + 그 달에 속한 주차 전부다', () => {
-    // 2026-06 의 목요일: 6/4 · 6/11 · 6/18 · 6/25
+    // 2026-06 의 목요일: 6/4· 6/11· 6/18· 6/25
     expect(getComparisonPeriodKeys('monthly', '2026-07')).toEqual([
       '2026-06',
       '2026-06-04',

@@ -8,7 +8,7 @@ jest.mock('../../toast/store', () => {
 })
 const showErrorMock = jest.requireMock('../../toast/store').useToastStore.getState().showError as jest.Mock
 
-// 결정 7 결정 1: 401과 429는 이 훅이 토스트로 알리는 대신 온보딩 스토어의
+// 401과 429는 이 훅이 토스트로 알리는 대신 온보딩 스토어의
 // 키 재입력 진입점에 위임한다.
 jest.mock('../../onboarding/store', () => {
   const noticeApiKeyIssue = jest.fn()
@@ -54,7 +54,7 @@ describe('useScheduleSyncErrorToast', () => {
     expect(noticeApiKeyIssueMock).not.toHaveBeenCalled()
   })
 
-  // 401은 이 훅이 아무 토스트도 띄우지 않는다. 문구는 noticeApiKeyIssue()가
+  // 401은 이 훅이 아무 토스트도 띄우지 않는다. 문구는 noticeApiKeyIssue가
   // 띄우고, 액션은 없다(이동이 이미 일어나 누를 것이 없다). 여기서는 위임만 확인한다.
   it('invalidApiKey는 토스트를 띄우지 않고 키 무효화 경로로 넘긴다', async () => {
     const onRetry = jest.fn()
@@ -65,7 +65,7 @@ describe('useScheduleSyncErrorToast', () => {
     expect(onRetry).not.toHaveBeenCalled()
   })
 
-  // 멱등은 noticeApiKeyIssue() 안의 status 가드가 맡지만, 같은 값으로 재렌더될
+  // 멱등은 noticeApiKeyIssue 안의 status 가드가 맡지만, 같은 값으로 재렌더될
   // 때마다 부르면 그 가드가 없는 것처럼 호출이 쌓인다. dep이 값 자체인 것이 여기서 담보된다.
   it('같은 invalidApiKey 객체로 다시 렌더되면 무효화를 다시 부르지 않는다', async () => {
     const error: ScheduleSyncError = { kind: 'invalidApiKey' }

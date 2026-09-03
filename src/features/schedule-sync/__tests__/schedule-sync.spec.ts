@@ -1026,7 +1026,7 @@ describe('syncSchedules', () => {
       expect(setAccountSharedProgressEntryMock).toHaveBeenCalledWith('acc-1', '에픽 던전 : 악몽선경', accountEntry)
     })
 
-    // 추가 정정(2026-07-25): 콜드 스타트에서 당일 daily가 완전히 비지 않고 월드공유
+    // 추가 정정: 콜드 스타트에서 당일 daily가 완전히 비지 않고 월드공유
     // 항목(몬스터파크)만 남으면 isDailyStale이 false라 백필이 안 걸리던 사각지대. 병합 결과에
     // mockCharacter 범위 항목이 하나도 없으면(=몬스터파크뿐) stale로 보고 과거 조회를 발동한다.
     const monsterParkOnly = {
@@ -1298,7 +1298,7 @@ describe('syncSchedules', () => {
       expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-2', 'ocid-2', expect.anything())
     })
 
-    // 결정 7: RN 은 계정을 고르는 단계가 없어 selectedAccountId 가 영영 null 이다.
+    // RN 은 계정을 고르는 단계가 없어 selectedAccountId 가 영영 null 이다.
     it('selectedAccountId 가 없어도 동기화한다. 계정을 고른 적 없는 설치본', async () => {
       getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
       fetchCharacterListMock.mockResolvedValue([account('acc-9', [mockCharacter('ocid-1')])])
@@ -1431,10 +1431,10 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
   })
 
   // 조회 불가 캐릭터(400 OPENAPI00003)를 목록에서 빼지 않는다. 빼면 trackedOcids에
-  // 남은 그 ocid를 사용자가 해제할 방법이 없다(이슈 #78 A-1: "사용자가 스스로 벗어날 방법이 없다").
+  // 남은 그 ocid를 사용자가 해제할 방법이 없다.
   describe('조회 불가 캐릭터(OPENAPI00003)', () => {
     // 남기는 목적이 **해제 경로 확보**였으므로 추적 중일 때만 남긴다.
-    // 추적 중이 아니면 고를 이유도 해제할 필요도 없어 목록에서 뺀다(정정).
+    // 추적 중이 아니면 고를 이유도 해제할 필요도 없어 목록에서 뺀다.
     async function setTrackedOcids(ocids: string[]): Promise<void> {
       await prefs.set('trackedCharacters', JSON.stringify(ocids))
     }
@@ -1931,7 +1931,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
       const onUpdate = jest.fn()
       const promise = getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
-      // 아직 한 건도 확인하지 못했다. 빈 목록은 흘리지 않는다(결정 2).
+      // 아직 한 건도 확인하지 못했다. 빈 목록은 흘리지 않는다.
       await waitFor(() => expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2))
       expect(onUpdate).not.toHaveBeenCalled()
 

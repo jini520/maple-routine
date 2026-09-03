@@ -259,7 +259,7 @@ describe('objectParticle', () => {
   })
 })
 
-// 사용자 지정 형식(2026-07-31): "지내우시님이 가디언 엔젤 슬라임(카오스)에서 가디언 엔젤링을
+// 사용자 지정 형식: "지내우시님이 가디언 엔젤 슬라임(카오스)에서 가디언 엔젤링을
 // 획득하였습니다."아이템만 강조 대상으로 떼어내 반환한다(고가면 화면이 골드 pill로 감싼다).
 describe('formatDropHistoryLine', () => {
   it('캐릭터·보스·난이도·아이템으로 한 줄 문장을 만든다', () => {
@@ -283,7 +283,7 @@ describe('formatDropHistoryLine', () => {
     )
   })
 
-  // 브라우저 실측(2026-07-31): 괄호는 UAX #14 에서 그 자체가 줄바꿈 지점이라 `word-break: keep-all`
+  // 브라우저 실측: 괄호는 UAX #14 에서 그 자체가 줄바꿈 지점이라 `word-break: keep-all`
   // 로도 "슬라임(카오스)⏎에서" 가 막히지 않는다. 띄어쓰기만 기준이 되게 word joiner 로 묶는다.
   it('난이도 괄호 양옆을 word joiner로 묶어 그 지점의 줄바꿈을 막는다', () => {
     const line = formatDropHistoryLine(
@@ -346,7 +346,7 @@ describe('formatDropHistoryLine', () => {
       '지내우시',
     )
 
-    // 상자명도 강조 대상이라 따로 뗀다(사용자 지정 2026-08-01). 조사는 connector가 들고 있어
+    // 상자명도 강조 대상이라 따로 뗀다. 조사는 connector가 들고 있어
     // 화면이 한국어 문법을 계산하지 않는다.
     expect(plain(line.prefix)).toBe('지내우시님이 스우(하드)에서 ')
     expect(line.box).toEqual({ name: '홍옥의 보스 반지 상자', connector: '를 열어 ' })
@@ -357,7 +357,7 @@ describe('formatDropHistoryLine', () => {
   })
 })
 
-// 후속(사용자 확정 2026-08-01, 시안 W4): 미획득 기간이 길어질수록 요약이 "점점
+// 후속: 미획득 기간이 길어질수록 요약이 "점점
 // 슬퍼진다"단계는 문구와 시각 표현이 함께 쓰고, 문구 쪽만 여기서 검증한다.
 describe('getValuableDroughtTier', () => {
   it('사용자가 말한 "N주차"는 미획득 N-1주다. 1주차(와따리)가 곧 먹은 그 주', () => {
@@ -378,7 +378,7 @@ function pool(weeksSince: number): string[] {
 }
 
 describe('formatValuableDroughtHeadline', () => {
-  // 문구는 사용자 지정(2026-08-01·2026-08-17). 구현자가 톤을 다듬지 않는다.
+  // 문구는 사용자 지정. 구현자가 톤을 다듬지 않는다.
   // 마지막 단계만 풀이던 것이 전 단계 풀이 됐다. 기존 문구는 각 풀의 **첫 항목**이라
   // 인덱스를 주지 않은 호출은 예전과 글자 하나 다르지 않다(회귀 가드).
   it('index 0은 단계마다 기존 문구를 그대로 준다', () => {

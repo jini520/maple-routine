@@ -143,7 +143,7 @@ describe('ValuableDropBadge', () => {
     ])
   })
 
-  // 배치는 호출부가 정한다. 카드 우상단 절대배치 · 헤드라인 인라인 · 히스토리 줄.
+  // 배치는 호출부가 정한다. 카드 우상단 절대배치· 헤드라인 인라인· 히스토리 줄.
   it('className 은 코어 뒤에 이어 붙는다', async () => {
     const { getByTestId } = await renderAtom(
       <ValuableDropBadge drops={drops('a')} label="고가 드롭" className="absolute -right-1.5 -top-2" />,

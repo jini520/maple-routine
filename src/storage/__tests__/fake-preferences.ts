@@ -14,7 +14,7 @@ export interface FakePreferences extends PreferencesPort {
   set: jest.Mock<Promise<void>, [string, string]>
   remove: jest.Mock<Promise<void>, [string]>
   keys: jest.Mock<Promise<string[]>, []>
-  /** 저장된 값 전체를 비운다(플러그인의 `Preferences.clear()` 자리). */
+  /** 저장된 값 전체를 비운다(플러그인의 `Preferences.clear` 자리). */
   clear(): void
 }
 

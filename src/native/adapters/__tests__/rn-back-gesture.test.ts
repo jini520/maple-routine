@@ -5,7 +5,7 @@
 // 하며 지우면 이 조용히 사라진다(앱이 종료되고 다음 실행이 콜드 스타트가
 // 되는데, 그것을 알아채려면 실기기에서 두 번 실행해 봐야 한다).
 
-// 변수 이름이 `mock` 으로 시작하는 것은 취향이 아니다. jest 가 `jest.mock()` 팩토리에서 바깥
+// 변수 이름이 `mock` 으로 시작하는 것은 취향이 아니다. jest 가 `jest.mock` 팩토리에서 바깥
 // 변수를 참조하는 것을 막는데(호이스팅 때문에 초기화 전 접근이 될 수 있다) 그 접두사만 예외로 둔다.
 // 게터로 감싸는 것도 같은 이유다: 팩토리는 모듈 평가보다 먼저 돌므로 값을 그때 읽으면 안 된다.
 let mockNativeModule: { moveToBackground: jest.Mock } | null = null
@@ -63,7 +63,7 @@ describe('나머지 둘은 네이티브 스택이 소유한다', () => {
     await expect(call()).rejects.toThrow(/이 자리에서 할 일이 없습니다/)
   })
 
-  // 동기 `throw` 로 두면 `await` 없이 `.catch()` 만 단 호출부에서 예외가 그대로 터진다
+  // 동기 `throw` 로 두면 `await` 없이 `.catch` 만 단 호출부에서 예외가 그대로 터진다
   // (거부하는 다른 어댑터들과 같은 판단).
   it.each(cases)('%s() 는 동기 throw 가 아니라 거부된 Promise 다', async (_name, call) => {
     let result: unknown

@@ -5,7 +5,7 @@
 //
 // ## 배수는 `Dimensions.get('window')` 를 통해 흘려 넣는다
 //
-// `useWindowDimensions()` 는 초기값을 그 호출에서 얻으므로, 그 하나만 목으로 덮으면 시스템 글자
+// `useWindowDimensions` 는 초기값을 그 호출에서 얻으므로, 그 하나만 목으로 덮으면 시스템 글자
 // 크기가 그렇게 설정된 기기를 만들 수 있다. 훅 자체를 목으로 안 덮는 것은 `react-native` 의
 // export 가 게터라 `jest.spyOn` 이 안 걸리기 때문이다.
 import { Dimensions } from 'react-native'
@@ -121,7 +121,7 @@ describe('TextInput: 플랫폼 기본 상자를 지운다', () => {
  *
  * 안 주면 RN 이 플랫폼 기본값을 쓰는데, `app.json` 이 `userInterfaceStyle: "automatic"` 이라 그
  * 값이 **OS 외관**을 따른다. OS 가 라이트인 채 앱 테마만 다크면 iOS 가 `#1A1A1C`(대비 1.13)를
- * 그려 **안 보인다**(사용자 보고 2026-08-29). 테마와 무관하게 정해지는 값이 테마 위에 앉는 자리라
+ * 그려 **안 보인다**. 테마와 무관하게 정해지는 값이 테마 위에 앉는 자리라
  * 아톰이 못 박는다.
  *
  * **`className` 이 아니라 프롭인 이유**: NativeWind 의 `placeholder:` 변형은 native 프리셋에서만

@@ -56,7 +56,7 @@ describe('UtilityScreen', () => {
   })
 
   // RN 의 `Text` 는 한글을 글자 단위로 끊는다(`판매 분배금 계 / 산기`). 단어마다 `Text` 를 두고
-  // flex 아이템으로 감싸 **아이템 경계에서만** 줄이 바뀌게 한 것이 이 계약이다(사용자 지정).
+  // flex 아이템으로 감싸 **아이템 경계에서만** 줄이 바뀌게 한 것이 이 계약이다.
   it('타일 이름은 단어마다 쪼개져 있다. 줄바꿈이 단어 경계에서만 일어나도록', async () => {
     const view = await renderOverlay(<UtilityScreen />)
 

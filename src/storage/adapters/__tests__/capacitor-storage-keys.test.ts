@@ -9,7 +9,7 @@ import {
   toNativeKey,
 } from '../capacitor-storage-keys'
 
-// 실제로 쓰이는 키에서 골랐다(`src/storage/keys.ts` · `docs/persistence/preferences.md`).
+// 실제로 쓰이는 키에서 골랐다(`src/storage/keys.ts`· `docs/persistence/preferences.md`).
 // `:` 를 물고 있는 파생 키를 섞은 이유는 접두사 처리가 키 모양을 안 가리는지 함께 보기 위해서다.
 const APP_KEYS = [
   'apiKey',

@@ -8,7 +8,7 @@
 // ③ **클래스 문자열로 묻지 않는다**. `bg-`·`border-b` 유무를 보던 자리는 렌더된 스타일 값으로,
 //    `data-valuable`·`data-drought-tier` 는 접근성 이름으로 옮겼다.
 // ④ **골드 pill 이 중첩 `Text` 다**. RN 문장 안에는 상자를 넣을 수 없어 배경색만 남는다
-//    (`DropHistoryScreen` 파일 머리 ④). 그래서 *"pill 클래스가 붙었나"* 는 *"골드 배경이 그 조각에
+//    (`DropHistoryScreen`). 그래서 *"pill 클래스가 붙었나"* 는 *"골드 배경이 그 조각에
 //    깔렸나"* 가 된다.
 import { act, fireEvent, render } from '@testing-library/react-native'
 import { processColor } from 'react-native'
@@ -230,7 +230,7 @@ describe('DropHistoryScreen: 기록 한 줄', () => {
     // RN 에 데이터 속성이 없어 접근성 이름으로 옮겼다.
     expect(getByLabelText('고가 드롭 기록')).toBeTruthy()
 // 배지는 단색 배경만 남는다.
-    // 지켜야 하는 것은 *"골드 위에 골드 잉크"* 라는 사실이다(파일 머리 ④).
+    // 지켜야 하는 것은 *"골드 위에 골드 잉크"* 라는 사실이다.
     const inline = flattenStyle(getByTestId('valuable-drop-inline').props.style)
     expect(inline.backgroundColor).toBe('#f7c400')
     expect(inline.color).toBe('#6b4e00')
@@ -357,7 +357,7 @@ describe('DropHistoryScreen: 기간 구분', () => {
   })
 })
 
-// 제목이 슬픔 단계를 말하고, 아래 줄이 "마지막 에픽 빔! {기간} · {아이템}" 이다.
+// 제목이 슬픔 단계를 말하고, 아래 줄이 "마지막 에픽 빔! {기간}· {아이템}" 이다.
 describe('DropHistoryScreen: 미획득 요약', () => {
   function 가뭄(weeksSince: number, records = [기록()]) {
     return { periodKey: PERIOD, cycle: 'weekly' as const, weeksSince, records }
@@ -388,7 +388,7 @@ describe('DropHistoryScreen: 미획득 요약', () => {
     expect(summary).toContain('루즈 컨트롤 머신 마크')
   })
 
-  // 문구는 사용자 지정(2026-08-01·2026-08-17). **전 단계가 풀**이라 표는 문구를 담지 않고 풀 소속만
+  // 문구는 사용자 지정. **전 단계가 풀**이라 표는 문구를 담지 않고 풀 소속만
   // 본다. **한 케이스에서 네 번 렌더하지 않는다**. RNTL 14 는 한 케이스에 렌더가
   // 셋을 넘기면 그 뒤가 빈 화면으로 떨어진다.
   it.each([

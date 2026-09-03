@@ -1,7 +1,7 @@
 // `ThemeAppearancePort` 의 RN 구현. **값이 어디로 흐르는가**를 지킨다(3단계).
 //
 // 웹뷰 구현은 DOM 을 만지므로 "문서가 이렇게 됐는가"를 봤지만, RN 구현이 하는 일은 값을 한 칸에 놓고
-// 구독자에게 알리는 것이다. 그래서 검사 대상은 셋이다. 초기값 · 갈아치우기 · 알림.
+// 구독자에게 알리는 것이다. 그래서 검사 대상은 셋이다. 초기값· 갈아치우기· 알림.
 
 import { DEFAULT_THEME, getThemeDefinition } from '../../../lib/theme/theme-registry'
 
@@ -17,7 +17,7 @@ afterEach(__resetThemeAppearanceForTest)
 
 describe('rnThemeAppearancePort', () => {
 // 첫 페인트를 메울 번들 CSS 가 없어
-  // 그 역할을 이 초기값이 한다. 비워 두면 `restoreFromStorage()` 전까지 **색이 없는 화면**이 된다
+  // 그 역할을 이 초기값이 한다. 비워 두면 `restoreFromStorage` 전까지 **색이 없는 화면**이 된다
   // (변수를 못 찾으면 NativeWind 가 그 스타일 속성을 조용히 뺀다).
   it('아무도 적용하지 않아도 기본 테마가 서 있다', () => {
     expect(getThemeAppearance()).toEqual({

@@ -21,7 +21,7 @@ const POT = (percent: number) => `메소 획득량 +${percent}%`
 /** 어빌리티·유니온·아티팩트 표기(뒤에 증가가 붙는다). */
 const INC = (percent: number) => `메소 획득량 ${percent}% 증가`
 
-/** 잠재 `pot` 줄 · 에디셔널 `add` 줄을 든 장비 하나. 슬롯은 각각 셋이 상한이다. */
+/** 잠재 `pot` 줄· 에디셔널 `add` 줄을 든 장비 하나. 슬롯은 각각 셋이 상한이다. */
 function item(pot: readonly string[] = [], add: readonly string[] = []) {
   const each: Record<string, string> = {}
   pot.forEach((value, index) => (each[`potential_option_${index + 1}`] = value))
@@ -97,7 +97,7 @@ describe('장비. 잠재 + 에디셔널 합에 100% 캡, 프리셋 단위', () =
   })
 
   it('캡은 프리셋마다 따로 건다. 합산 뒤 캡이 아니다', () => {
-    // P1 = 120(→100) · P2 = 60. 답은 100 이고, 합산 뒤 캡이면 min(180,100)=100 으로 **우연히 같다**.
+    // P1 = 120(→100)· P2 = 60. 답은 100 이고, 합산 뒤 캡이면 min(180,100)=100 으로 **우연히 같다**.
     // 그래서 우연이 안 생기는 짝으로도 잰다(아래 it).
     expect(
       only({

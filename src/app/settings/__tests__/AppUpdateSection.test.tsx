@@ -3,10 +3,10 @@
 // 갈린 것 셋
 // ① **스토어를 목하지 않는다. 값을 프롭으로 받는다.** core 의 `live-update/store` 는 값으로
 //  import 하는 것만으로 죽어(`import.meta.env`) 목을 걸 자리조차 없다(
-//    `AppUpdateSection.tsx` 파일 머리). 그래서 웹 테스트의 `마운트 시 현재 버전을 불러온다`는
+//    `AppUpdateSection.tsx`). 그래서 웹 테스트의 `마운트 시 현재 버전을 불러온다`는
 //    **옮길 계약이 아니다**. 그 호출이 바로 던지는 포트라 컴포넌트에서 사라졌다.
 // ② `getByRole('button', { name })` → 글자에서 위로 올라가 잡는다.
-// ③ `toBeDisabled()` → `accessibilityState.disabled`.
+// ③ `toBeDisabled` → `accessibilityState.disabled`.
 //
 // **표시 상태 열넷을 하나도 빼지 않고 훑는다**. 그 표가 이
 // 정한 계약이고, OTA 가 붙는 날 배선은 한 줄이다. 지금 도달 가능한 것이 `unsupported` 하나뿐인

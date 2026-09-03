@@ -73,7 +73,7 @@ it('캐시 쓰기가 실패해도 읽은 값은 그대로 낸다', async () => {
   await expect(loadMesoRate('ocid-1')).resolves.toEqual({ kind: 'read', percent: 149 })
 })
 
-// `그리드`는 직업이 정하는 값이라 스킬 조회를 안 거친다(사용자 지정 2026-09-01). 직업 이름은
+// `그리드`는 직업이 정하는 값이라 스킬 조회를 안 거친다. 직업 이름은
 // `character/list` 가 캐시에 남겨 둔 것을 그대로 쓴다.
 it('캐시에 든 직업 이름을 함께 넘긴다', async () => {
   getCachedCharacterBasic.mockResolvedValue({ profile: { name: '루디', level: 294, jobClass: '섀도어' } })

@@ -6,7 +6,7 @@
 // 특히 `refreshSafeAreaInsets` 의 빈 본문은 **읽는 사람이 "구현이 빠졌다"로 오해하기 쉬운 모양**이라,
 // 지우거나 던지게 바꾸면 부팅마다 처리되지 않은 거부가 남는다(안전영역은 멀쩡히 도는데도).
 
-// 변수 이름이 `mock` 으로 시작하는 것은 취향이 아니다. jest 가 `jest.mock()` 팩토리에서 바깥 변수를
+// 변수 이름이 `mock` 으로 시작하는 것은 취향이 아니다. jest 가 `jest.mock` 팩토리에서 바깥 변수를
 // 참조하는 것을 막는데 그 접두사만 예외로 둔다(`rn-back-gesture.test.ts` 와 같은 사정).
 let mockNativeModule: { setNavigationBarStyle: jest.Mock } | null = null
 

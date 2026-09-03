@@ -1,4 +1,4 @@
-// 지키던 셋(장식용 숨김 · `size` 반영 · motion-reduce)이 전부 산다. 셋째는 **보는 방법이
+// 지키던 셋(장식용 숨김· `size` 반영· motion-reduce)이 전부 산다. 셋째는 **보는 방법이
 // 바뀌었다**. `motion-reduce:animate-none` 클래스가 RN 에는
 // 없어, *"반복 애니메이션을 걸었는가"* 를 본다(`reduced-motion.ts` 의 `withRepeatSpy` 주석).
 //

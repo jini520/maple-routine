@@ -1,7 +1,7 @@
 // 바 위 슬롯.
 //
-// 여기서 묻는 것은 셋이다: **어디에 그리나**(선 자리가 아니라 호스트) · **누가 뒤에 서나**(바보다
-// 뒤여야 백드롭이 바를 덮는다) · **화면이 숨으면 어떻게 되나**(포털로 나간 그림은 저절로 안 숨는다).
+// 여기서 묻는 것은 셋이다: **어디에 그리나**(선 자리가 아니라 호스트)· **누가 뒤에 서나**(바보다
+// 뒤여야 백드롭이 바를 덮는다)· **화면이 숨으면 어떻게 되나**(포털로 나간 그림은 저절로 안 숨는다).
 import { act, render, screen } from '@testing-library/react-native'
 import { View } from 'react-native'
 import { PortalProvider } from '@gorhom/portal'
@@ -9,7 +9,7 @@ import { NavigationContext } from '@react-navigation/native'
 
 import { BottomBarOverlay, BottomBarOverlayHost } from '../BottomBarOverlay'
 
-/** `toJSON()` 트리를 훑어 testID 를 **그리는 순서대로** 낸다. 뒤에 있는 것이 위에 그려진다. */
+/** `toJSON` 트리를 훑어 testID 를 **그리는 순서대로** 낸다. 뒤에 있는 것이 위에 그려진다. */
 function 그리는순서(): string[] {
   const order: string[] = []
 

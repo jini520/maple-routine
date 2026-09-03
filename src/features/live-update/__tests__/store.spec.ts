@@ -195,7 +195,7 @@ describe('useLiveUpdateStore', () => {
 
       expect(applyLiveUpdateMock).toHaveBeenCalled()
       expect(statusAtCall).toBe('applying')
-      // 성공 경로에서는 set()이 JS 컨텍스트를 파괴하므로 그 뒤 상태를 바꾸지 않는다.
+      // 성공 경로에서는 set이 JS 컨텍스트를 파괴하므로 그 뒤 상태를 바꾸지 않는다.
       expect(s().status).toBe('applying')
     })
 
@@ -364,7 +364,7 @@ describe('useLiveUpdateStore', () => {
       expect(s().status).toBe('up-to-date')
     })
 
-    // 결정 5: 회고와 행동 요구가 겹치면 행동 쪽이 이긴다.
+    // 회고와 행동 요구가 겹치면 행동 쪽이 이긴다.
     it('새 업데이트가 또 있으면 update-available 이 이긴다', async () => {
       getLastRunBundleVersionMock.mockResolvedValue('1.0.3')
       checkForLiveUpdateMock.mockResolvedValue(AVAILABLE)

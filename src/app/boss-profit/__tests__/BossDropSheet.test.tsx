@@ -346,7 +346,7 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
   })
 
   // 드릴다운은 **순차 모드가 아니다**. 방금 기록한 한 건이라 뒤로가 곧 스킵이고, 그래서 그 버튼을
-  // 늘리지 않는다(정정). 저장 버튼 문구도 `다음` 이 아니라 `저장` 이다.
+  // 늘리지 않는다. 저장 버튼 문구도 `다음` 이 아니라 `저장` 이다.
   it('드릴다운에는 스킵이 없고 저장 버튼은 "저장" 이다', async () => {
     const { result } = renderSheet({ pricing: PRICING })
     const { getByLabelText, getByText, queryByText } = await result

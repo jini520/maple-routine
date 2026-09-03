@@ -223,7 +223,7 @@ describe('진행 불가 배지', () => {
     expect(충족.queryByText('3/14')).not.toBeNull()
   })
 
-  // 주간 컨텐츠 5개(유니온 둘 · 길드 셋)는 참조표에 요구 레벨이 없다. 어떤 레벨에서도 진행 가능이다.
+  // 주간 컨텐츠 5개(유니온 둘· 길드 셋)는 참조표에 요구 레벨이 없다. 어떤 레벨에서도 진행 가능이다.
   it('요구 레벨이 없는 항목은 낮은 레벨에서도 배지가 안 뜬다', async () => {
     const view = await renderAtom(renderWeeklyContentCard(weekly({ name: '[길드] 지하 수로', nowCount: 1200 }), 1))
 

@@ -4,7 +4,7 @@
 //
 // `motion-reduce:` 변형이 RN 에는 클래스 문자열로 안 남아서, 두 스피너의
 // 웹 테스트가 *"motion-reduce 클래스를 포함한다"* 로 계약을 지켰다. RN 에는 그 자리가 없다.
-// `useReducedMotion()` 이 낸 boolean 이 **분기**로 소비되므로, 설정이 켜졌을 때의 그림을 보려면 그 훅이
+// `useReducedMotion` 이 낸 boolean 이 **분기**로 소비되므로, 설정이 켜졌을 때의 그림을 보려면 그 훅이
 // 다른 값을 내게 해야 한다. Reanimated 는 그 값을 네이티브 접근성 관리자에서 읽어 테스트에서 바꿀
 // 공개 경로가 없다.
 //
@@ -15,8 +15,8 @@
 // ## 쓰는 법
 //
 // ```ts
-// jest.mock('react-native-reanimated', () =>
-//   require('../../../__tests__/reduced-motion').reanimatedWithReducedMotion(),
+// jest.mock('react-native-reanimated', =>
+//   require('../../../__tests__/reduced-motion').reanimatedWithReducedMotion,
 // )
 // ```
 //
@@ -29,7 +29,7 @@
 
 let reduceMotion = false
 
-/** 다음 렌더부터 `useReducedMotion()` 이 이 값을 낸다. */
+/** 다음 렌더부터 `useReducedMotion` 이 이 값을 낸다. */
 export function mockReducedMotion(next: boolean): void {
   reduceMotion = next
 }

@@ -349,7 +349,7 @@ describe('normalizeSchedulerCharacterState: 미접속으로 인한 누락', () =
 })
 
 // 미접속 캐릭터의 축약 응답을 "신선한 데이터"로 신뢰하지 않는다.
-// 실측(2026-07-31) 형태. 축약이 진행되면 bossWeekly가 먼저 사라지고 bossMonthly만 남는다.
+// 실측 형태. 축약이 진행되면 bossWeekly가 먼저 사라지고 bossMonthly만 남는다.
 describe('축약 응답 판정 (isMonthlyBossStale)', () => {
   function wireWithBosses(
     bosses: { content_name: string; difficulty: string; cycle: string }[],

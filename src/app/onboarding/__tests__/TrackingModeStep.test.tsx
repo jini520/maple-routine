@@ -6,7 +6,7 @@
 //    앵커가 필요한 이유(수동 옵션의 주의 문구에 "자동"이 들어간다)는 여기서도 살아 있어,
 //    글자를 정확히 일치로 찾고 위로 올라가 그 카드를 잡는다.
 // ② `aria-pressed` → **`accessibilityState.selected`**(RN 접근성 상태에 *pressed* 가 없다).
-// ③ `toBeVisible()` → 존재 확인. jsdom 과 달리 RN 렌더 트리에는 "보이지 않게 존재하는" 상태가
+// ③ `toBeVisible` → 존재 확인. jsdom 과 달리 RN 렌더 트리에는 "보이지 않게 존재하는" 상태가
 //    이 화면에 없다. 접혀 있으면 아예 렌더되지 않는다. 그래서 결정 22("고르기 전에 비교한다")를
 //    지키는 검사는 존재 여부로 충분하다.
 import { fireEvent } from '@testing-library/react-native'

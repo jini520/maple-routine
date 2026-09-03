@@ -1,7 +1,7 @@
 // 업데이트 모달. 갈린 것 셋.
 //
 // **스토어를 모킹하지 않는다. 애초에 쓰지 않는다.** RN 판은 값을 프롭으로 받는다(그 이유는
-//   `UpdatePromptModal.tsx` 파일 머리: core 의 live-update 스토어는 `import.meta.env` 때문에
+//   `UpdatePromptModal.tsx`: core 의 live-update 스토어는 `import.meta.env` 때문에
 //   import 하는 것만으로 죽는다).
 // `useNavigate` 대신 `onOpenReleaseNotes` 프롭이 불렸는가를 본다.
 // 진행률 바는 클래스가 아니라 **실제 `width` 스타일**을 잰다(RN 에는 클래스 문자열이 안 남는다).
@@ -219,7 +219,7 @@ describe('UpdatePromptModal', () => {
       expect(view.queryByTestId('update-highlights')).toBeNull()
     })
 
-    // 아래 케이스가 지키는 것은 그림이 아니라 **앱이 멈추지 않는 것**이다(실측 2026-08-12).
+    // 아래 케이스가 지키는 것은 그림이 아니라 **앱이 멈추지 않는 것**이다.
     // 화살표 래퍼의 transform 이 접힘 상태에 없으면, 펼칠 때 NativeWind 가 호스트를
     // `Animated.View` 로 올려야 하는데 리마운트라 포기하고 개발 경고를 찍고. 그 경고가
     // `originalProps`(React 엘리먼트)를 직렬화하다 **힙을 다 쓴다**. 근거와 사슬은
@@ -252,7 +252,7 @@ describe('UpdatePromptModal', () => {
       expect(view.queryByText('자세히 보기')).toBeNull()
     })
 
-    // 결정 7: 받아만 두고 아직 안 도는 번들의 노트는 개발 노트 목록에 **없다**.
+    // 받아만 두고 아직 안 도는 번들의 노트는 개발 노트 목록에 **없다**.
     it('ready-to-apply 에는 붙지 않는다', async () => {
       const { view } = await renderModal({
         status: 'ready-to-apply',

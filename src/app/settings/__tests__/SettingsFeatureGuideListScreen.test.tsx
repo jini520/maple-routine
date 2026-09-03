@@ -5,9 +5,9 @@
 //    불리는지를 본다.
 // ② `getByRole('tab', { name })` → **탭 글자에서 위로 올라가** 잡고, `aria-selected` 는
 //    `accessibilityState.selected` 로 읽는다(RN 에 `tablist` 컨테이너 역할이 없다.
-//    `SettingsFeatureGuideListScreen.tsx` 파일 머리 ②).
+//    `SettingsFeatureGuideListScreen.tsx`).
 // ③ 픽스처는 **배열 정체성을 고정해 내용만 갈아 끼운다**(`SettingsReleaseNotesScreen` 테스트
-//    파일 머리 ④ 와 같은 이유·같은 처방).
+//     와 같은 이유·같은 처방).
 import { act, fireEvent } from '@testing-library/react-native'
 
 import type { FeatureGuide } from '../../../types'
@@ -125,7 +125,7 @@ describe('SettingsFeatureGuideListScreen', () => {
     expect(view.queryByText('설정')).toBeNull()
   })
 
-  // 한 안내가 여러 그룹에 선다(정정). `캐릭터 관리`가 컨텐츠·보스 양쪽에
+  // 한 안내가 여러 그룹에 선다. `캐릭터 관리`가 컨텐츠·보스 양쪽에
   // 같은 글로 서야 한다. 사본을 두면 갈라진다.
   it('여러 그룹에 속한 안내는 그 그룹 탭마다 나온다', async () => {
     const view = await renderOverlay(<SettingsFeatureGuideListScreen />)

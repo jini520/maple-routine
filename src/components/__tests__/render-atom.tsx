@@ -38,7 +38,7 @@ export function renderAtom(ui: ReactElement): ReturnType<typeof render> {
  *
  * `initialMetrics` 를 주는 것은 선택이 아니라 필수다. 없으면 실제 측정이 올 때까지 프로바이더가
  * 자식을 아예 렌더하지 않아 테스트가 빈 트리를 본다(react-navigation 의 테스트 권장 방식과 같다).
- * 값은 iPhone 계열의 인셋(상 59 · 하 34)이라 이 실측한 표와 같은 자리를 검사한다.
+ * 값은 iPhone 계열의 인셋(상 59· 하 34)이라 이 실측한 표와 같은 자리를 검사한다.
  */
 export const 테스트_안전영역: Metrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -85,7 +85,7 @@ export function flattenStyle(style: unknown): Record<string, unknown> {
   return {}
 }
 
-/** `toJSON()` 이 내는 노드. */
+/** `toJSON` 이 내는 노드. */
 export interface TreeNode {
   type: string
   props: Record<string, unknown>
@@ -97,7 +97,7 @@ export interface TreeNode {
  *
  * RNTL 의 쿼리로는 닿지 않는다: `getBy*` 는 testID·역할·글자로 찾고 SVG 내부 도형에는 그중 아무것도
  * 없다. `findAllByType` 같은 react-test-renderer API 도 RNTL 14 의 엘리먼트에는 없다(실측). 그래서
- * `toJSON()` 결과를 직접 훑는다. 프롭이 이미 네이티브 값으로 정리돼 있어 오히려 읽기 쉽다.
+ * `toJSON` 결과를 직접 훑는다. 프롭이 이미 네이티브 값으로 정리돼 있어 오히려 읽기 쉽다.
  */
 export function findAllOfType(node: unknown, type: string): TreeNode[] {
   if (Array.isArray(node)) return node.flatMap((child) => findAllOfType(child, type))

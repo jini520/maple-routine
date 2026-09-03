@@ -3,7 +3,7 @@
 //
 // 갈린 것 둘
 // ① 타일을 `aria-label` 로 잡는다(`ThemeSelector` 테스트와 같은 이유).
-// ② 누른 뒤 화면을 보려면 `act` 로 흘려보낸다(`CacheClearConfirm` 테스트 파일 머리 ③).
+// ② 누른 뒤 화면을 보려면 `act` 로 흘려보낸다(`CacheClearConfirm` 테스트).
 //
 // **테마 이름을 손으로 나열하지 않는다**. 레지스트리에서 둘을 뽑아 쓴다.
 import { act, fireEvent } from '@testing-library/react-native'

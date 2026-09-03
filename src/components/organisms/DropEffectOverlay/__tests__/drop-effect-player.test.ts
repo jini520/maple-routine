@@ -17,7 +17,7 @@ import {
   type DropEffectFrameCounts,
 } from '../drop-effect-player'
 
-/** 웹 원본과 같은 프레임 수(ScreenEff 16 · pre 8 · loop 24 · end 7). */
+/** 웹 원본과 같은 프레임 수(ScreenEff 16· pre 8· loop 24· end 7). */
 const COUNTS: DropEffectFrameCounts = { screen: 16, pre: 8, loop: 24, end: 7 }
 
 const MS = (fps: number, frames: number): number => (1000 / fps) * frames
@@ -116,7 +116,7 @@ describe('닫기. end 를 한 번 재생하고 끝난다', () => {
     expect(s.finished).toBe(true)
   })
 
-// **두 번 탭하면 건너뛴다**(`if (st.closing) finish()`).
+// **두 번 탭하면 건너뛴다**(`if (st.closing) finish`).
   it('닫는 중에 또 요청하면 곧바로 끝낸다', () => {
     const once = requestDropEffectClose(createDropEffectState(), COUNTS)
     const twice = requestDropEffectClose(once, COUNTS)

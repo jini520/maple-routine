@@ -21,7 +21,7 @@ describe('isValuableDrop', () => {
     expect(isValuableDrop('신념의 연마석')).toBe(true)
     expect(isValuableDrop('혼돈의 칠흑 장신구 상자')).toBe(true)
     expect(isValuableDrop('메이린의 칠흑 장신구 상자')).toBe(true)
-    // 익셉셔널 해머는 슬롯별 이름으로 분리(2026-07-27). 5종 모두 고가
+    // 익셉셔널 해머는 슬롯별 이름으로 분리. 5종 모두 고가
     expect(isValuableDrop('익셉셔널 해머(얼굴장식)')).toBe(true)
     expect(isValuableDrop('익셉셔널 해머(눈장식)')).toBe(true)
     expect(isValuableDrop('익셉셔널 해머(훈장)')).toBe(true)

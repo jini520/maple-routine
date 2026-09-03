@@ -221,7 +221,7 @@ describe('resolveWidgetPositions: 좌표를 절대 위치로', () => {
   it('컨테이너 높이는 가장 아래 타일의 끝이다', () => {
     const { containerHeightPx } = resolveWidgetPositions(유효한_배치, metrics, {})
 
-    // 수익 타일: top 3×(행+간격) · 높이 3×행 + 2×간격
+    // 수익 타일: top 3×(행+간격)· 높이 3×행 + 2×간격
     const top = 3 * (GRID_ROW_HEIGHT + GRID_GAP)
     expect(containerHeightPx).toBe(top + GRID_ROW_HEIGHT * 3 + GRID_GAP * 2)
   })

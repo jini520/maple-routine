@@ -55,7 +55,7 @@ describe('NativeWind 배선', () => {
   it('`className` 이 실제 RN 스타일로 풀린다', async () => {
     const { getByTestId, getByText } = await render(<Probe />)
 
-// 1rem = 16px · 0.875rem = 14px · 0.5rem = 8px. **이 값이어야 한다**. NativeWind 기본
+// 1rem = 16px· 0.875rem = 14px· 0.5rem = 8px. **이 값이어야 한다**. NativeWind 기본
     // rem 은 14 라 그대로 두면 16/14/8 이 아니라 14/12.25/7 이 나온다.
     // (`gap` 은 RN 에 없어 `rowGap`/`columnGap` 으로 갈린다. 값이 아니라 이름만 바뀐다.)
     expect(flattenStyle(getByTestId('probe').props.style)).toMatchObject({

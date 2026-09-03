@@ -7,7 +7,7 @@ import {
 import { requestJson } from '../http'
 
 // vitest 의 `vi.stubGlobal` 짝. jest 에는 없어서 여기서 최소한으로 만든다. 원래 값을 기억해 두고
-// `unstubAllGlobals()` 가 되돌린다.
+// `unstubAllGlobals` 가 되돌린다.
 const 원래전역: Record<string, unknown> = {}
 
 function stubGlobal(name: string, value: unknown): void {
@@ -23,7 +23,7 @@ function unstubAllGlobals(): void {
 
 // 비-2xx 응답 본문의 error.name(넥슨 에러 코드)을 살린다. 전에는 401/403/429만
 // 갈라내고 나머지를 전부 NexonNetworkError로 뭉갰는데, 400 안에 성질이 전혀 다른 세 실패가
-// 들어 있다. OPENAPI00003(영구 조회 불가) · OPENAPI00004(그 날짜 조회 불가) ·
+// 들어 있다. OPENAPI00003(영구 조회 불가)· OPENAPI00004(그 날짜 조회 불가)·
 // OPENAPI00009(아직 집계 전, 시간이 지나면 풀린다). 코드가 없으면 이 셋을 구분할 방법이 없다.
 
 function response(status: number, body: unknown): Response {

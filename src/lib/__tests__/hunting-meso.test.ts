@@ -127,7 +127,7 @@ describe('huntingMesoOf', () => {
   })
 
   /**
-   * **재획비만 통 밖이다**(사용자 지정 2026-08-28).
+   * **재획비만 통 밖이다**.
    *
    *   (기본 100% + 템메획 + 유니온의 부 + 어빌/유니온/스킬) × 재획비(1.2배)
    *
@@ -175,7 +175,7 @@ describe('huntingMesoOf', () => {
 
   it('레벨 차이가 벌어지면 그만큼 깎인다', () => {
     const even = huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3, characterLevel: 294 })
-    // 캐릭터 274 · 몬스터 294 → 몬스터가 20 높다 → -30%
+    // 캐릭터 274· 몬스터 294 → 몬스터가 20 높다 → -30%
     const under = huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3, characterLevel: 274 })
     expect(under).toBe(Math.floor(even * 0.7))
   })
@@ -187,7 +187,7 @@ describe('huntingMesoOf', () => {
   })
 
   it('레벨이 둘인 맵은 **레벨마다 재서 평균**낸다. 페널티가 레벨마다 다르기 때문이다', () => {
-    // 캐릭터 221 · 몬스터 200/201 → 차이 21(-25%) 과 20(-20%). 평균 레벨 200.5 로 접으면
+    // 캐릭터 221· 몬스터 200/201 → 차이 21(-25%) 과 20(-20%). 평균 레벨 200.5 로 접으면
     // 차이가 20.5 가 되어 정수 표에 안 들어간다.
     const characterLevel = 221
     const perMinute = TWO_LEVEL_MAP.mobs * 8
@@ -329,7 +329,7 @@ describe('efficiencyPercentOf', () => {
   })
 
   /**
-   * 효율은 **맵마다 다르다**(사용자 지정 2026-08-28). 40마리에서 하나를
+   * 효율은 **맵마다 다르다**. 40마리에서 하나를
    * 놓치는 것과 22마리에서 하나를 놓치는 것은 같은 손해가 아니다.
    */
   it.each([

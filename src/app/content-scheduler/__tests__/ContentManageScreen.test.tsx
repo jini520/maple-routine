@@ -165,7 +165,7 @@ describe('ContentManageScreen', () => {
     expect(stateOf(row('몬스터파크')).selected).toBe(true)
   })
 
-  // 접두사를 그룹 헤더로 한 번만 말하고 행에는 알맹이만 남긴다(2026-07-24 리디자인).
+  // 접두사를 그룹 헤더로 한 번만 말하고 행에는 알맹이만 남긴다.
   it('반복 접두사는 그룹 헤더가 되고 행에는 뗀 이름만 남는다', async () => {
     mockStore({ characters: [character()] })
 

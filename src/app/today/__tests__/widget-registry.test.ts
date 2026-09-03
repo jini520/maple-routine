@@ -32,7 +32,7 @@ describe('기본 배치', () => {
     expect(declaredCount).toBeGreaterThan(TILE_LAYOUT.length)
   })
 
-  // 공유 컨텐츠가 `남은 스케줄` **위**에 선다(사용자 지정). 먼저 치우면
+  // 공유 컨텐츠가 `남은 스케줄` **위**에 선다. 먼저 치우면
   // 아래 목록이 줄어드는 관계라서다. 순서가 뒤집히면 그 근거가 사라지므로 좌표로 못 박는다.
   it('공유 컨텐츠가 남은 스케줄 바로 위다', () => {
     const rowOf = (id: string): number =>

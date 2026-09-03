@@ -273,7 +273,7 @@ describe('resolveDisplayRepresentative', () => {
   })
 })
 
-// 사용자 지정 2026-08-17. **더 높은 레벨이 존재하는 ID 가 먼저**. 계정 자체에는 **주력** 을 말하는 값이
+// **더 높은 레벨이 존재하는 ID 가 먼저**. 계정 자체에는 **주력** 을 말하는 값이
 // 없고(accountId 는 불투명 문자열·응답 순서는 넥슨이 정한다), 사람이 실제로 쓰는 기준이 최고 레벨이다.
 describe('sortAccountSummaries', () => {
   function summary(accountId: string, level: number, name = `대표-${accountId}`) {

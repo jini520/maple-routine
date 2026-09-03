@@ -28,7 +28,7 @@ describe('저장된 값이 없는 경우', () => {
   })
 })
 
-// 키 무효화(400 OPENAPI00005 · 401/403)는 apiKey 하나만 지운다.
+// 키 무효화(400 OPENAPI00005· 401/403)는 apiKey 하나만 지운다.
 describe('removeApiKey', () => {
   it('apiKey를 제거한다', async () => {
     await setApiKey('test-api-key')

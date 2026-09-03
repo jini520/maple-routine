@@ -89,7 +89,7 @@ describe('CharacterPortrait · rail 규격의 곡선 글자', () => {
     expect(svgTextContent(view.getByTestId('portrait-level-text'))).toBe('Lv.285')
     expect(svgTextContent(view.getByTestId('portrait-name-text'))).toBe('내옆에최성일')
 
-    // `호 하나`의 증거. 둘이 **같은 path** 를 가리킨다(정정 2).
+    // `호 하나`의 증거. 둘이 **같은 path** 를 가리킨다.
     const [levelPath, namePath] = [
       textPathOf(view.getByTestId('portrait-level-text')),
       textPathOf(view.getByTestId('portrait-name-text')),
@@ -102,7 +102,7 @@ describe('CharacterPortrait · rail 규격의 곡선 글자', () => {
     expect(Number.parseFloat(namePath.props.startOffset as string)).toBeGreaterThan(50)
   })
 
-  // 정정 6(사용자 지시): 레벨을 부가 정보로 보고 작고 흐리게 뒀던 것을 되돌린다. 요청한 적 없는
+  // 레벨을 부가 정보로 보고 작고 흐리게 뒀던 것을 되돌린다. 요청한 적 없는
   // 차이였고 눈에 띄었다. 이제 둘을 가르는 것은 **자리뿐**이다.
   it('레벨과 이름이 크기·굵기·색까지 같은 글자다', async () => {
     const view = await rail()
@@ -137,7 +137,7 @@ describe('CharacterPortrait · rail 규격의 곡선 글자', () => {
 })
 
 describe('CharacterPortrait · rail 규격의 호 링', () => {
-  // 정정 1: 링 둘을 받으면 **좌·우 반원**이다(컨텐츠 스케줄러).
+  // 링 둘을 받으면 **좌·우 반원**이다(컨텐츠 스케줄러).
   it('링을 둘 받으면 반원 둘을 트랙과 함께 그린다', async () => {
     const view = await rail()
 
@@ -145,7 +145,7 @@ describe('CharacterPortrait · rail 규격의 호 링', () => {
     expect(view.getAllByTestId('portrait-ring-fill')).toHaveLength(2)
   })
 
-  // 정정 1: 하나만 받으면 **온전한 원**이다(보스 스케줄러. 월간은 링에서 뺐다).
+  // 하나만 받으면 **온전한 원**이다(보스 스케줄러. 월간은 링에서 뺐다).
   it('링을 하나만 받으면 온전한 원 하나만 그린다', async () => {
     const view = await rail({ rings: [{ label: '주간', completed: 2, total: 12 }] })
 
@@ -154,7 +154,7 @@ describe('CharacterPortrait · rail 규격의 호 링', () => {
     expect(view.getByTestId('character-portrait').props.accessibilityLabel).toContain('주간 2/12')
   })
 
-  // 정정 8: 관리 화면은 진행을 안 그린다. 링이 통째로 없고 글자만 남는다.
+  // 관리 화면은 진행을 안 그린다. 링이 통째로 없고 글자만 남는다.
   it('링을 안 받으면 호 링을 아예 안 그리고 글자만 남는다', async () => {
     const view = await rail({ rings: [] })
 

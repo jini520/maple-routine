@@ -71,7 +71,7 @@ function reactNativeImportNames(source: string): string[] {
 /**
  * `<Text …>` 여는 태그의 속성 문자열을 전부 모은다.
  *
- * 정규식 하나로 `<Text([^>]*)>` 를 쓸 수 없다. 속성 안의 화살표 함수(`onPress={() => …}`)에 `>`
+ * 정규식 하나로 `<Text([^>]*)>` 를 쓸 수 없다. 속성 안의 화살표 함수(`onPress={ => …}`)에 `>`
  * 가 들어 있어 태그가 거기서 끊긴다. 그래서 중괄호 깊이를 세며 **깊이 0 의 `>`** 까지 걷는다.
  */
 function openingTextTags(source: string): string[] {
@@ -156,7 +156,7 @@ function localImportTargets(file: string): string[] {
  * 글자를 그리는 자체 컴포넌트 파일. 글자 atom 을 import 한다가 곧 그 정의다.
  *
  * 문자열로 경로를 찾지 않고 `localImportTargets` 로 **푼 결과**를 본다. 깊은 경로와 배럴 두 모양이
- * 섞여 있어(`'../Text/Text'` · `'../../atoms'`) 문자열로는 한쪽만 잡힌다.
+ * 섞여 있어(`'../Text/Text'`· `'../../atoms'`) 문자열로는 한쪽만 잡힌다.
  */
 function textRenderingComponentFiles(): string[] {
  return sourceFiles(join(SRC, 'components')).filter(

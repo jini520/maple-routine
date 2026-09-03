@@ -2,7 +2,7 @@
 //
 // 그 전에는 export 된 것이 dropRowKey 하나뿐이라, 89개 스토어 테스트가 전부 스토어를 거쳐
 // 간접 검증했다. 정렬처럼 "입력을 어떻게 주느냐"가 핵심인 로직은 그 방식으로는 경우를
-// 만들기가 번거로워, 실제로 결정적 정렬(#28)에 직접 붙은 테스트가 없었다.
+// 만들기가 번거로워, 실제로 결정적 정렬에 직접 붙은 테스트가 없었다.
 import weeklyBossesData from '../../../data/weekly-bosses.json'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
 import type { ManualTrackedItem } from '../../../storage/manual-tracked-content'
@@ -47,7 +47,7 @@ describe('sortRowsByOcidOrder', () => {
   })
 
   // ocid 로만 정렬하고 stable sort 에 기대면 보스 순서가 데이터 소스 순서를 물려받는다.
-  // 그 소스 순서는 비결정적이라(ORDER BY 없는 조회 · Map 삽입 순서) 로드마다 달라진다.
+  // 그 소스 순서는 비결정적이라(ORDER BY 없는 조회· Map 삽입 순서) 로드마다 달라진다.
   it('같은 캐릭터 안에서는 참조 데이터 순서로 보스를 결정적으로 정렬한다', () => {
     const rows = [row({ boss: '스우' }), row({ boss: '자쿰' }), row({ boss: '루시드' })]
 

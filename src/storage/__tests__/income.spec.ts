@@ -323,7 +323,7 @@ describe('hunt_meso_rate: 그때의 메소 획득량', () => {
 
     const [sql, values] = runMock.mock.calls[0]
     expect(sql).toContain('hunt_meso_rate')
-    // 사냥 칸 일곱이 나란히 간다. 레벨 · 놓침 · 아이템 · 소재 · 조각 · 조각가 · **메획**.
+    // 사냥 칸 일곱이 나란히 간다. 레벨· 놓침· 아이템· 소재· 조각· 조각가· **메획**.
     expect(values).toEqual(expect.arrayContaining([294, 1, 'union,potion', 2, 83, 8_000_000, 149]))
   })
 
@@ -422,7 +422,7 @@ describe('hunt_typed_meso: 수동으로 적힌 사냥', () => {
 
     const [sql, values] = runMock.mock.calls[0]
     expect(sql).toContain('hunt_typed_meso')
-    // 사냥 칸 여덟. 레벨 · 놓침 · 아이템 · 소재 · 조각 · 조각가 · 메획 · **친 메소**.
+    // 사냥 칸 여덟. 레벨· 놓침· 아이템· 소재· 조각· 조각가· 메획· **친 메소**.
     // 계산기 칸 넷이 null 인 것이 **앱이 센 값이 아니다** 를 말한다.
     expect(values.slice(12, 20)).toEqual([
       null,
@@ -601,7 +601,7 @@ describe('quantity: 수입의 수량', () => {
     expect(record.quantity).toBe(3)
   })
 
-  // 이 칸이 없던 시절의 행. 수량 1 로 열리고 총액이 곧 금액이다(결정 4).
+  // 이 칸이 없던 시절의 행. 수량 1 로 열리고 총액이 곧 금액이다.
   it('칸이 비면 null 이다. 0 으로 접지 않는다', async () => {
     queryMock.mockResolvedValue({
       values: [

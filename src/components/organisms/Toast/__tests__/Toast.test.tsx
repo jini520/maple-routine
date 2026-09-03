@@ -3,7 +3,7 @@
 // **액션 아이콘 케이스**: 클래스로 lucide 아이콘을 구분할 수 없다. RN 의 lucide 는
 //   `testID` 를 삼키므로(`nativewind-interop.ts`) 그 아이콘이 실제로 그린 **`Path` 의 `d`** 를
 //   비교한다. 기대값을 손으로 적지 않고 두 아이콘을 나란히 렌더해 서로 다름을 본다.
-//   **한 케이스 안에서 `unmount()` 후 다시 렌더하지 않는다**. RNTL 14 에서 그러면 이후 렌더가
+//   **한 케이스 안에서 `unmount` 후 다시 렌더하지 않는다**. RNTL 14 에서 그러면 이후 렌더가
 //   빈 트리가 되고(실측), 그 트리를 스냅샷으로 굳히면 아무것도 안 지키는 기준선이 남는다.
 // **스와이프**: `fireEvent.pointer` → responder 이벤트. 좌표가 `clientX` → `pageX` 로 바뀔 뿐
 //   임계값 판정은 같은 `shouldDismissFromSwipe` 다.
@@ -179,7 +179,7 @@ describe('Toast: 스와이프로 닫기', () => {
   })
 })
 
-// 모션 줄이기(파일 머리 ②). 줄지 않는 막대를 남기면 "시간이 안 간다"로
+// 모션 줄이기. 줄지 않는 막대를 남기면 "시간이 안 간다"로
 // 읽히므로 통째로 없앤다. **바깥 껍데기(`toast-timer`)는 남는다**. 자리를 차지하지 않는 절대 배치라
 // 있고 없고가 레이아웃을 바꾸지 않고, 그 감춤은 안쪽 바에만 건다.
 describe('Toast: 모션 줄이기', () => {
@@ -198,7 +198,7 @@ describe('Toast: 모션 줄이기', () => {
 
     const [bar] = getByTestId('toast-timer').children as AtomElement[]
     // 지속시간만 런타임 값이라 여기서 본다. 나머지(키프레임·이징·채우기)를 웹 원본과 대조하던
-    // 테스트는 없다(파일 머리).
+    // 테스트는 없다.
     expect(bar.props.jestInlineStyle).toMatchObject({
       animationDuration: '2500ms',
       transformOrigin: 'left' })

@@ -4,7 +4,7 @@
 // ① `getByRole('checkbox', { name })` → **`aria-label` 로 잡는다.** 그 프롭이 RN 에서
 //    `accessibilityLabel` 이 되므로 `getByLabelText` 가 그대로 그 행을 준다.
 //    글자에서 계산되던 것을 여기서는 컴포넌트가 명시로 준다(`CacheClearConfirm.tsx` ②).
-// ② `toBeDisabled()` → `accessibilityState.disabled`.
+// ② `toBeDisabled` → `accessibilityState.disabled`.
 // ③ **누른 뒤 화면을 보려면 `act` 로 한 번 흘려보내야 한다**(실측. 이 파일에서 처음 걸렸다).
 //    RNTL 14 에서 `fireEvent` 는 갱신을 **예약만** 하고, 그 프레임의 렌더는 그 뒤에 온다. 그래서
 //    `fireEvent` 직후의 질의는 **누르기 전 화면**을 본다(단언이 옛 값을 보고도 초록이 될 수 있다).
@@ -23,7 +23,7 @@ type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
 const SIZES = { general: 1024, records: 512 }
 
-/** 누르고 **다시 그려질 때까지** 기다린다(파일 머리 ③). */
+/** 누르고 **다시 그려질 때까지** 기다린다. */
 async function press(element: AtomElement): Promise<void> {
   await act(async () => {
     fireEvent.press(element)

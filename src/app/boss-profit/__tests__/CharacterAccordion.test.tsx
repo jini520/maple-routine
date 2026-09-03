@@ -32,7 +32,7 @@ import {
 } from '../valuable-card-glow'
 import { 다른주간보스, 월간보스, PERIOD, renderProfit, 보스행, 주간보스, 주차소계, 컨텍스트값 } from './harness'
 
-// 모션 줄이기는 분기로만 관측된다(`components/__tests__/reduced-motion.ts` 파일 머리).
+// 모션 줄이기는 분기로만 관측된다(`components/__tests__/reduced-motion.ts`).
 jest.mock('react-native-reanimated', () =>
   // 팩토리는 import 위로 끌어올려져 **밖의 값을 참조할 수 없다**. `require` 로만 된다.
   require('../../../components/__tests__/reduced-motion').reanimatedWithReducedMotion(),

@@ -77,7 +77,7 @@ describe('WidgetGrid: 좌표 배치', () => {
       top: 행,
       width: 2 * metrics.colWidthPx + metrics.gapPx,
     })
-    // (0,2)~(0,4) 4×auto **셋**. 그 아래는 2x1 둘 · 4x1 이 이어 붙는다.
+    // (0,2)~(0,4) 4×auto **셋**. 그 아래는 2x1 둘· 4x1 이 이어 붙는다.
     expect(스타일(타일(view, 'shared-contents'))).toMatchObject({ left: 0, top: 2 * 행 })
     expect(스타일(타일(view, 'remaining-schedule'))).toMatchObject({ left: 0, top: 3 * 행 })
     expect(스타일(타일(view, 'weekly-boss-profit'))).toMatchObject({ left: 0, top: 4 * 행 })

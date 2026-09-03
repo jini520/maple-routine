@@ -79,7 +79,7 @@ describe('buildCalendarMonth: 격자', () => {
     }
   })
 
-  // 결정 7. 빈 View 로 두면 6주째가 통째로 비는 달에서 격자 높이가 달라진다.
+  // 빈 View 로 두면 6주째가 통째로 비는 달에서 격자 높이가 달라진다.
   it('달 경계의 빈칸을 앞뒤 달 날짜로 채운다. 빈 칸이 없다', () => {
     for (const week of buildCalendarMonth('2026-08')) {
       for (const day of week) {

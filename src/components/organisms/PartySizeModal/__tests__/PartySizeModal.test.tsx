@@ -77,7 +77,7 @@ describe('PartySizeModal', () => {
   })
 
 // 파티 인원은 (보스 + 난이도)에 붙어 있다. 스우는 하드 6인, 익스트림 2인. 한 케이스에서
-  // `cleanup()` 뒤 다시 렌더했는데, RNTL 은 케이스마다 자동 정리하므로 둘로 나눈다.
+  // `cleanup` 뒤 다시 렌더했는데, RNTL 은 케이스마다 자동 정리하므로 둘로 나눈다.
   it.each([
     [{}, '4 / 6'],
     [{ difficulty: '익스트림' as const, partySize: 1, maxPartySize: 2 }, '1 / 2'],

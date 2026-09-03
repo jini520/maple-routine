@@ -7,7 +7,7 @@
 // ② `type="password"` → **`secureTextEntry`** 프롭을 본다.
 // ③ `getByRole('link', …)` + `href` → **`Linking.openURL` 이 무엇으로 불렸는가**. RN 에 `href` 가
 //  없으므로 링크의 계약은 "그 주소로 나간다" 하나뿐이고 이 지키려는 것도 그것이다.
-// ④ `toBeDisabled()`·`aria-busy` 속성 대신 **`accessibilityState`** 를 본다. `Pressable` 이
+// ④ `toBeDisabled`·`aria-busy` 속성 대신 **`accessibilityState`** 를 본다. `Pressable` 이
 //    `disabled`·`aria-busy` 를 호스트 뷰에 그대로 넘기지 않고 그 객체로 접는다(실측).
 // ⑤ Enter 제출 → `await fireEvent(input, 'submitEditing')`.
 import { fireEvent } from '@testing-library/react-native'
@@ -108,7 +108,7 @@ describe('ApiKeyForm', () => {
     expect(onSubmit).toHaveBeenCalledWith('test-api-key-123')
   })
 
-  //  후속(이슈 #61): 발급 절차는 안내 사이트가 담당하고 앱은 링크만 준다. 처음 쓰는
+  //  후속: 발급 절차는 안내 사이트가 담당하고 앱은 링크만 준다. 처음 쓰는
   // 사용자를 넥슨 첫 화면에 떨궈 놓지 않도록 가이드가 1차 경로다.
   it('API 키 발급 가이드를 1차 경로로 제공한다', async () => {
     const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)

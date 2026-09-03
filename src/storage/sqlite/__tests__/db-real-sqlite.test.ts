@@ -1,6 +1,6 @@
 /// <reference types="node" />
 /**
- * **목이 아닌 진짜 SQLite 로 한 번 태우는 자리**(이슈 #265).
+ * **목이 아닌 진짜 SQLite 로 한 번 태우는 자리**.
  *
  * 옆의 `db.spec.ts` 는 가짜 포트로 어떤 문장이 나가는가 를 보고, `adapters/__tests__/rn-sqlite.test.ts`
  * 는 op-sqlite 의 모양 을 본다. 여기서 보는 것은 **그 문장이 진짜 엔진에서 통하는가** 다.
@@ -209,7 +209,7 @@ describe('income_records.meso_amount 재작성 (이슈 #265)', () => {
 
 /**
  * 이슈 #265 의 재현 그 자체다. 시트가 넘기는 드래프트는 `IncomeSheet.test.tsx` 가 붙들고 있고
- * (`mesoAmount: null` · `pointAmount: 30000` …), **그 아래가 여기서 처음 진짜 DB 를 만난다.**
+ * (`mesoAmount: null`· `pointAmount: 30000` …), **그 아래가 여기서 처음 진짜 DB 를 만난다.**
  */
 describe('기타를 메포·캐시로 적어도 저장된다 (목이 아닌 SQLite)', () => {
   const base = {

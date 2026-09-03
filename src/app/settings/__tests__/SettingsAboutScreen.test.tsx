@@ -2,7 +2,7 @@
 //
 // 갈린 것 셋
 // ① **라우터 프로브가 없다**. 뒤로·이동은 `goBack`/`navigate` 가 무엇으로 불렸는가로 본다
-//    (`SettingsScreen` 테스트 파일 머리 ①).
+//    (`SettingsScreen` 테스트).
 // ② `getByRole('heading')` 이 없다. RN 에 heading 역할이 없어 **제목 글자**로 본다.
 //    `제목이 하나뿐` 케이스도 그래서 `업데이트 카드가 자기 제목을 그리지 않는다`로만 남는다.
 // ③ **OTA 상태를 이제 목으로 만들 수 있다**. 예전에는 스토어를 값으로 import 하는
@@ -21,7 +21,7 @@ import { SettingsAboutScreen } from '../SettingsAboutScreen'
 import { useSettingsNavigation } from '../use-settings-navigation'
 
 /**
- * 이 화면이 마운트에서 `loadCurrentVersion()` 을 부르므로 포트가 있어야 한다(배선).
+ * 이 화면이 마운트에서 `loadCurrentVersion` 을 부르므로 포트가 있어야 한다(배선).
  *
  * `isSupported` 를 케이스별로 갈라 지원되지 않는 환경 과 도는 번들이 있는 환경 을 둘 다
  * 만든다. 그 갈림이 곧 카드가 확인 버튼을 그리는지의 근거다.

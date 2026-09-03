@@ -4,7 +4,7 @@
  *
  * 목은 자기가 흉내 내라고 배운 것만 흉내 내서 제약 위반을 못 잡는다(`income_records.meso_amount`
  * 가 `NOT NULL` 인 채 `null` 을 받는 INSERT 를 한 스위트도 못 봤다). `node:sqlite` 는 노드 내장이라
- * 새 의존성이 없고, 쓰는 표면(`exec`·`prepare().all()`·`prepare().run()`·`PRAGMA`)이 op-sqlite 와
+ * 새 의존성이 없고, 쓰는 표면(`exec`·`prepare.all`·`prepare.run`·`PRAGMA`)이 op-sqlite 와
  * 같은 SQLite 다.
  *
  * `:memory:` 가 아니라 파일로 여는 이유는 닫았다 다시 여는 경로를 봐야 해서다(두 번째 부팅에서는
@@ -18,7 +18,7 @@ import { join } from 'node:path'
 import type { SqliteDbConnection, SqlitePort } from '../../ports'
 
 export interface RealSqlite {
-  /** `setSqlitePort()` 에 넣는다. */
+  /** `setSqlitePort` 에 넣는다. */
   port: SqlitePort
   /** `db.ts` 가 낸 문장 전부(차례대로). 무엇이 안 나갔는가 를 볼 때 쓴다. */
   statements: string[]

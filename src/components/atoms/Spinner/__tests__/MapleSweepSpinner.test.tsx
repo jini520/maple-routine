@@ -1,4 +1,4 @@
-// 지키는 것 다섯(숨김 · `size` · clipPath 자식은 도형뿐 · id 충돌 없음 · motion-reduce).
+// 지키는 것 다섯(숨김· `size`· clipPath 자식은 도형뿐· id 충돌 없음· motion-reduce).
 // 다섯째는 **보는 방법이 바뀌었다**. 클래스 문자열이 없어 *"반복 애니메이션을 걸었는가"* 를 본다
 // (`reduced-motion.ts` 의 `withRepeatSpy` 주석). 이동 거리·지속시간·이징을 웹 원본과 대조하던
 // `keyframes-parity.test.ts` 는 웹 소스와 함께 지워져 지금 그 셋을 보는

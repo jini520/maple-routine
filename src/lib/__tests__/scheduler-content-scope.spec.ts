@@ -31,7 +31,7 @@ describe('getShareScope', () => {
     expect(getShareScope('[메이플유니온] 주간 드래곤 퇴치')).toBe('world')
   })
 
-  // 정정 1(2026-08-03, 실측): 접두·수식이 붙은 변형은 **별도 항목**이다.
+  // 접두·수식이 붙은 변형은 **별도 항목**이다.
   // 매칭이 완전 일치라 '몬스터파크'가 아래 항목을 잡아주지 않는다. 이 사각 때문에 월드 공유
   // 진행이 캐릭터 활동으로 읽혀 미접속 캐릭터가 후보 목록에 남았다(게터, 실기기 계측).
   describe('접두·수식이 붙은 변형', () => {
@@ -117,7 +117,7 @@ describe('getContentCatalogEntries', () => {
 
 describe('getSharedContentGroups', () => {
   it('계열은 카탈로그가 적어 둔 순서다. 배열을 읽은 첫 등장 순서가 아니다', () => {
-    // worldShared → accountShared 로 읽으면 첫 등장 순서가 `몬스터파크 · 메이플 유니온 ·
+    // worldShared → accountShared 로 읽으면 첫 등장 순서가 `몬스터파크· 메이플 유니온·
     // 에픽던전`이라 사용자가 지정한 순서와 다르다. 그래서 `sharedGroupOrder` 가 따로 있다.
     expect(getSharedContentGroups().map((group) => group.group)).toEqual([
       '에픽던전',
@@ -186,7 +186,7 @@ describe('getSharedContentGroups', () => {
 describe('getMaxCountOverride: 익스트림 몬스터파커', () => {
   it('템플릿의 5가 아니라 사용자 확정값 2를 준다', () => {
     // `scheduler-content-template.json` 은 이 항목에 `max_count: 5` 를 들고 있다. 게임 규칙은
-    // 주 2회라 오버라이드가 이긴다(사용자 확정 2026-08-18).
+    // 주 2회라 오버라이드가 이긴다.
     expect(getMaxCountOverride('[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?')).toBe(2)
   })
 })

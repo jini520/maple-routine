@@ -2,10 +2,10 @@
 //
 // 갈린 것 둘
 // ① **뒷 페이지 스크롤을 막고 복원한다는 옮길 계약이 아니다**. `useBodyScrollLock` 이 하던 일을
-//    네이티브 윈도우가 구조적으로 한다(`DisconnectConfirm.tsx` 파일 머리 ②). 대체가 아니라 필요
+//    네이티브 윈도우가 구조적으로 한다(`DisconnectConfirm.tsx`). 대체가 아니라 필요
 //    자체가 없어진 것이라 짝을 만들지 않는다.
 // ② `오버레이 바깥 클릭`은 `Modal` 의 `testId` 로 잡아 누른다. 카드가 responder 를 선언해
-//    안쪽 터치는 오버레이로 흘러가지 않는다(`Modal.tsx` 파일 머리 ③).
+//    안쪽 터치는 오버레이로 흘러가지 않는다(`Modal.tsx`).
 import { fireEvent } from '@testing-library/react-native'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'

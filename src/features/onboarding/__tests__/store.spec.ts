@@ -184,7 +184,7 @@ describe('useOnboardingStore.restoreFromStorage', () => {
 })
 
 describe('useOnboardingStore.submitApiKey: 무효 키(400 OPENAPI00005)', () => {
-  // 넥슨은 무효 키에 401 이 아니라 400 OPENAPI00005 를 준다(실측 2026-08-08).
+  // 넥슨은 무효 키에 401 이 아니라 400 OPENAPI00005 를 준다.
   // 전에는 이 경로가 "모르는 400"이라 network 로 degrade 돼, 키를 잘못 입력한 사용자에게
   // 화면이 "네트워크 오류가 발생했습니다"라고 말했다. 원인이 키인데 네트워크를 가리켰다.
   it('400 OPENAPI00005 면 invalidApiKey 로 알린다(network 가 아니다)', async () => {
@@ -438,7 +438,7 @@ describe('useOnboardingStore.submitApiKey', () => {
     })
 
     // 웹뷰 앱에서 넘어온 설치본에는 selectedAccountId 가 남아 있다. 그 값이 새 응답에 없어도
-    // 'single' 가드처럼 계정 선택으로 되돌리지 않는다. RN 에서 그 값은 읽지 않는다(결정 7).
+    // 'single' 가드처럼 계정 선택으로 되돌리지 않는다. RN 에서 그 값은 읽지 않는다.
     it('저장된 selectedAccountId가 응답에 없어도 ocid가 겹치면 재개한다', async () => {
       getAuthConfigMock.mockResolvedValue({ apiKey: 'key-2' })
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-acc-9'])
@@ -571,8 +571,8 @@ describe('useOnboardingStore.submitContentCharacters', () => {
   })
 })
 
-// 결정 10 결정 1: 저장된 키로 앞으로 갈 수 없게 됐을 때 부르는 진입점은 이것뿐이다.
-// 원인은 둘(무효 키 400 OPENAPI00005·401/403 · 429)이고 사슬은 하나다. 처방이 같아 화면도 같다.
+// 저장된 키로 앞으로 갈 수 없게 됐을 때 부르는 진입점은 이것뿐이다.
+// 원인은 둘(무효 키 400 OPENAPI00005·401/403· 429)이고 사슬은 하나다. 처방이 같아 화면도 같다.
 // **알리기만 하고** 이동·삭제는 사용자가 "확인"을 눌러야(confirmApiKeyNotice) 일어난다.
 // 결정 1의 "토스트 + 즉시 이동"은 폐기됐다(이유를 읽기 전에 화면이 바뀌면 원인과 결과가 안 이어진다).
 describe('useOnboardingStore.noticeApiKeyIssue', () => {
@@ -678,7 +678,7 @@ describe('useOnboardingStore.confirmApiKeyNotice', () => {
     })
   }
 
-  // 결정 2: 상태를 뒤집는 것이 곧 이동이다. App.tsx의 isCompleted 가드가 라우터로 보낸다.
+  // 상태를 뒤집는 것이 곧 이동이다. App.tsx의 isCompleted 가드가 라우터로 보낸다.
   it.each(['invalid', 'rateLimited'] as const)(
     '%s. completed를 awaitingApiKey로 되돌린다(알림도 함께 꺼진다)',
     async (kind) => {

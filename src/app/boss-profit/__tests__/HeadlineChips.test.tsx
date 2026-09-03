@@ -51,7 +51,7 @@ describe('DeltaChip', () => {
     expect(getByText('-')).toBeTruthy()
   })
 
-  // 결정 3. 조회한 적 없는 직전 기간도 0으로 들어온다. 퍼센트가 정의되지 않으므로 절대 증감이다.
+  // 조회한 적 없는 직전 기간도 0으로 들어온다. 퍼센트가 정의되지 않으므로 절대 증감이다.
   it('직전 기간이 0이면 퍼센트 대신 절대 증감을 보여준다', async () => {
     const { getByLabelText, getByText } = await renderDelta(500_000_000, 0)
 
@@ -98,7 +98,7 @@ describe('CrystalSummaryChip', () => {
     expect(queryByLabelText('월드별 결정석 판매 현황 닫기')).toBeNull()
   })
 
-  // 결정 7. 각 월드가 각자 한도를 가지므로 분모가 월드 수만큼 는다.
+  // 각 월드가 각자 한도를 가지므로 분모가 월드 수만큼 는다.
   it('월드가 둘이면 분모가 두 배이고 눌러 분해를 펼칠 수 있다', async () => {
     const groups = [
       group([보스행({ world: '스카니아' })]),

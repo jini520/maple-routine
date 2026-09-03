@@ -91,7 +91,7 @@ describe('SettingsPrivacyScreen', () => {
   })
 
 // 교차 출처 `iframe` 은 실패에 `error` 를 신뢰성 있게 발화하지 않아
-  // 타임아웃이 유일한 신호였는데, `WebView` 는 발화한다(`SettingsPrivacyScreen.tsx` 파일 머리).
+  // 타임아웃이 유일한 신호였는데, `WebView` 는 발화한다(`SettingsPrivacyScreen.tsx`).
   it('로드에 실패하면 곧바로 실패 화면으로 간다. 8초를 기다리지 않는다', async () => {
     const view = await renderOverlay(<SettingsPrivacyScreen />)
 

@@ -33,7 +33,7 @@ function screenFiles(dir: string): string[] {
   return out
 }
 
-/** 주석은 대상이 아니다. 이 정책의 기록이 여러 파일 머리에 산다(sticky 가드와 같은 사정). */
+/** 주석은 대상이 아니다. 이 정책의 기록이 여러에 산다(sticky 가드와 같은 사정). */
 function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
 }

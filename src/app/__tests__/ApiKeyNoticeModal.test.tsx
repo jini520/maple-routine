@@ -68,7 +68,7 @@ describe('ApiKeyNoticeModal', () => {
     })
 
     // 닫을 수 없어야 한다: 저장된 키로는 앞으로 갈 수 없으므로 닫아서 돌아갈 곳이 없다.
-    // 429 도 마찬가지다(사용자 확정).
+    // 429 도 마찬가지다.
     it('오버레이를 눌러도 닫히지 않는다', async () => {
       const { getByText, getByTestId } = await renderOverlay(<ApiKeyNoticeModal />)
 

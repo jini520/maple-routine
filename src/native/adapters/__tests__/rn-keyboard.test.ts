@@ -4,7 +4,7 @@ import { rnKeyboardPort } from '../rn-keyboard'
 
 /**
  * 진짜 `Keyboard` 에 붙여서 진짜로 emit 한다. `addListener` 를 목으로 가로채면 "**해제 함수가
- * 리스너를 실제로 떼는가**"를 못 본다(목은 `remove()` 가 불렸다는 것까지만 말한다). 이 파일이
+ * 리스너를 실제로 떼는가**"를 못 본다(목은 `remove` 가 불렸다는 것까지만 말한다). 이 파일이
  * 지키려는 것이 바로 그 자리다: 안 떼면 화면 전환마다 리스너가 쌓인다.
  *
  * 그러려면 내부 `_emitter` 를 거쳐야 한다. RN 0.86 의 `KeyboardImpl` 은 `emit` 을 밖에 내주지

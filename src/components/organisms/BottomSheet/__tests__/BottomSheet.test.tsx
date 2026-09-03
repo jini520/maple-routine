@@ -57,7 +57,7 @@ beforeEach(() => {
 describe('BottomSheet: 가 정한 값을 넘긴다', () => {
   /**
    * 키보드 이벤트는 네이티브에서 오므로 **등록된 손잡이를 직접 잡아 흔든다**. 등록 순서가
-   * 계약이다(뜨는 것 · 내리는 것).
+   * 계약이다(뜨는 것· 내리는 것).
    */
   const 키보드손잡이: Array<() => void> = []
 
@@ -99,7 +99,7 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
     const { getByTestId } = await open()
     const sheet = getByTestId('sheet')
 
-    // 핸들은 **시트 첫 자식으로 우리가 그린다.** 라이브러리 슬롯(`handleIndicatorStyle` ·
+    // 핸들은 **시트 첫 자식으로 우리가 그린다.** 라이브러리 슬롯(`handleIndicatorStyle`·
     // `handleComponent`)에 넘긴 것이 기기에서 두 번 다 안 그려졌기 때문이다(컴포넌트 주석).
     // 그래서 `handleComponent` 는 명시적으로 `null` 이고, 알약은 렌더 트리에서 직접 찾는다.
     expect(sheet.props.handleComponent).toBeNull()
@@ -117,7 +117,7 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
 
   // **위 테두리는 가 걷었다.** 그 선은 면이 경계를 못 만들던 시절의 대타였고
   // 다크에서 몸통이 한 칸 올라간 지금은 밝아진
-  // 면 위에 뜬 줄 하나로 남는다(사용자 지정 2026-08-29).
+  // 면 위에 뜬 줄 하나로 남는다.
   it('위 테두리를 그리지 않는다', async () => {
     const { getByTestId } = await open()
     const style = flattenStyle(getByTestId('sheet').props.backgroundStyle)
@@ -207,7 +207,7 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
   // 스크림은 테마 토큰이고, **라이브러리 백드롭이 아니라 우리가 직접 그린다.**
   //
   // ⚠️ 이 테스트는 **스크림이 실제로 보이는가**·**제때 사라지는가** 를 답하지 못한다. 이 파일이
-  // 라이브러리를 목으로 갈아 끼우기 때문이다(파일 머리). 그 자리에서 두 번 틀렸다(2026-08-13):
+  // 라이브러리를 목으로 갈아 끼우기 때문이다. 그 자리에서 두 번 틀렸다:
   // 라이브러리 백드롭은 **아예 안 보였고**(스냅 포인트가 하나라 불투명도 보간이 퇴화 구간),
   // 그걸 애니메이션 없는 단색으로 바꾸자 이번엔 **닫히는 동안 늦게까지 남았다.**
   // 지금은 `SheetScrim` 이 인덱스를 직접 보간한다. 여기서 지킬 수 있는 것은 **색과 닫힘 배선**
@@ -230,7 +230,7 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
     expect(typeof backdrop.props.onPress).toBe('function')
   })
 
-  // 결정 3: 마운트가 곧 열림이고, 닫힘은 이탈 애니메이션이 끝난 뒤
+  // 마운트가 곧 열림이고, 닫힘은 이탈 애니메이션이 끝난 뒤
   // (`onDismiss`) 부모에 알려 언마운트를 맡긴다.
   it('마운트하면 열고, 닫힘은 이탈 애니메이션이 끝난 뒤 부모에 통보한다', async () => {
     const onClose = jest.fn()

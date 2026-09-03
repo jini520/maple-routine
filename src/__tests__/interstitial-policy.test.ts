@@ -74,7 +74,7 @@ describe(' app-rn 에 전면광고가 없다', () => {
     expect(offenders.map((f) => f.slice(SRC.length + 1))).toEqual([])
   })
 
-  // 결정 2. **어댑터는 남는다.** 위 목록이 넓어져 이것까지 걷어내면 인라인 광고가 처음부터
+  // **어댑터는 남는다.** 위 목록이 넓어져 이것까지 걷어내면 인라인 광고가 처음부터
   // 배선을 다시 세워야 한다(앱 ID·`app-ads.txt`·테스트 광고 강제가 전부 그 배선에 딸려 있다).
   it('어댑터 배선은 그대로 있다. 걷은 것은 포맷이지 SDK 가 아니다', () => {
     const adapter = readFileSync(join(SRC, 'native/adapters/rn-ads.ts'), 'utf8')

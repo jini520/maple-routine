@@ -2,7 +2,7 @@
 //
 // **화면 상단은 `insets.top` 을 직접 읽지 않는다.** 안드로이드 하한이 값 하나에서 나오는 것이 이
 // 정정의 전부인데, 그 **하나** 는 코드로는 강제되지 않는다. 새 화면을 만드는 사람은 옆 화면을
-// 복붙하고, 하필 `useSafeAreaInsets().top` 을 쓰는 옛 줄을 복붙하면 **그 화면만 안드로이드에서
+// 복붙하고, 하필 `useSafeAreaInsets.top` 을 쓰는 옛 줄을 복붙하면 **그 화면만 안드로이드에서
 // 16.7px 위**에 서고, 그 어긋남은 안드로이드 실기기에서 탭을 오갈 때만 보인다.
 //
 // `page-header-title-row-policy.test.ts` 와 같은 방식이다. 결정을 문서가 아니라 실패하는
@@ -22,7 +22,7 @@ const SRC = join(__dirname, '..')
 
 /**
  * 온보딩은 **결정 2 그대로 제외**다. 단계에 제목 줄이 없어 그 `marginTop` 은 헤더 여백이 아니라
- * 콘텐츠 여백이라 축이 다르다(정정 1 에서도 그대로 유지).
+ * 콘텐츠 여백이라 축이 다르다.
  *
  * 그 인셋을 실제로 읽는 자리는 로 **단계 셸**(`app/onboarding/OnboardingStep.tsx`)
  * 로 옮겨갔다. 화면 파일이 아니라 이 가드가 훑지 않는다. 예외 자체는 화면에 남겨 둔다(단계가 다시
@@ -49,7 +49,7 @@ function screenFiles(dir: string): string[] {
   return out
 }
 
-/** 주석은 대상이 아니다. 이 정책의 기록이 여러 파일 머리에 산다(제목 줄 가드와 같은 사정). */
+/** 주석은 대상이 아니다. 이 정책의 기록이 여러에 산다(제목 줄 가드와 같은 사정). */
 function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
 }

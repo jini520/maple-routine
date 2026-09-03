@@ -47,7 +47,7 @@ const PANEL_BORDER_VARIABLE = toColorVariableName(PANEL_BORDER_TOKEN)
  *  전에는 RN 에서 배경 슬러그가 **아무것도 해석되지 않아** 그 줄이 애초에 안 나왔고,
  * 그래서 두 맵을 통째로 비교해도 맞았다. 지금은 에셋이 있어 `buildThemeCss` 가 그 줄을 낸다.
  * 그런데 RN 은 벽지를 CSS 배경이 아니라 `<Image>` 로 그리므로 **값의 형태가 다르고**
- * (`theme-vars.ts` 파일 머리) 변수로 내지 않는 것이 여전히 맞다. 그 내지 않는다는 아래에서
+ * (`theme-vars.ts`) 변수로 내지 않는 것이 여전히 맞다. 그 내지 않는다는 아래에서
  * 따로 단언하고, 여기서는 색만 견준다.
  */
 function colorDeclarationsIn(css: string, selector: string): Record<string, string> {
@@ -92,7 +92,7 @@ describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
     expect(tokens).toEqual(colorDeclarationsIn(css, ':root'))
   })
 
-  // **배경 이미지는 변수로 내지 않는다**(`theme-vars.ts` 파일 머리). 이후 core 는 그 줄을
+  // **배경 이미지는 변수로 내지 않는다**(`theme-vars.ts`). 이후 core 는 그 줄을
   // 내고 에셋도 실재하지만, RN 에서 그 값은 URL 문자열이 아니라 에셋 id 라 `url("…")` 이 뜻을 잃는다.
   // 벽지를 `<Image>` 로 그리는 것은 뷰 레이어 몫으로 남아 있다. 여기서 새어 나가면 조용히 죽는
   // 스타일이 하나 생기므로 계약으로 막는다.
@@ -160,7 +160,7 @@ describe('`tailwind.config.js` 색 스케일', () => {
   const colors = (require('../../../tailwind.config.js') as { theme: { colors: Record<string, string> } })
     .theme.colors
 
-  /** 테마를 안 따라가는 셋. RN 색 리터럴이라 `var()` 를 거치지 않는다. */
+  /** 테마를 안 따라가는 셋. RN 색 리터럴이라 `var` 를 거치지 않는다. */
   const LITERAL_COLORS = ['transparent', 'white', 'black']
 
   // 이름 규칙이 CJS(설정)와 TS(변수 생성)에 각각 있다. CJS 가 TS 를 못 읽어서다. 한쪽만 바뀌면
@@ -191,7 +191,7 @@ describe('`tailwind.config.js` 색 스케일', () => {
 /**
  * 시트 스코프.
  *
- * 값을 손으로 적지 않는다. 파일 머리의 규칙 그대로다. 여기서 지키는 것은 **규칙**이다:
+ * 값을 손으로 적지 않는다.의 규칙 그대로다. 여기서 지키는 것은 **규칙**이다:
  * 다크는 넷을 한 칸 올리고(그 한 칸 은 미디어 스코프가 쓰는 폭과 **같은 수**여야 한다),
  * 라이트는 아무것도 안 바꾼다.
  */

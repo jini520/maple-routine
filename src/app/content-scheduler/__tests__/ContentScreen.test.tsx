@@ -27,7 +27,7 @@ jest.mock('../../../features/toast/store', () => ({
   useToastStore: { getState: () => ({ showError: mockShowError, showSuccess: jest.fn(), showInfo: jest.fn() }) },
 }))
 
-// 결정 7 결정 1: 401·429 는 토스트가 아니라 키 재입력 진입점으로 간다.
+// 401·429 는 토스트가 아니라 키 재입력 진입점으로 간다.
 jest.mock('../../../features/onboarding/store', () => ({
   useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
 }))
@@ -305,7 +305,7 @@ describe('ContentScreen: 목록', () => {
     expect(useCharacterSelectionStore.getState().selectedOcid).toBe('ocid-2')
   })
 
-  // 결정 4: 링이 세는 것과 카드 목록이 **같은 함수**에서 나온다. 등록 안 된 항목은 둘 다에서 빠진다.
+  // 링이 세는 것과 카드 목록이 **같은 함수**에서 나온다. 등록 안 된 항목은 둘 다에서 빠진다.
   it('레일의 링은 표시 목록과 같은 것을 센다', async () => {
     mockStore({
       status: 'loaded',
@@ -399,7 +399,7 @@ describe('ContentScreen: 재조회', () => {
   // ★ 회귀 가드. **조회 중 과 당겼다 는 다른 사실이다**.
   //
   // 종전에는 `refreshing = status === 'loading'` 이라, 화면 마운트 하이드레이션만으로 인디케이터가
-  // 프로그램적으로 열렸다. 사용자 보고(2026-08-22) *"페이지 이동 시 새로고침 인디케이터가 저절로
+  // 프로그램적으로 열렸다. 사용자 보고 *"페이지 이동 시 새로고침 인디케이터가 저절로
   // 돌고 상단이 빈 채로 멈춘다"* 가 그 증상이다. **조회 중...** 은 그대로 뜬다. 그쪽이 조회를
   // 말하는 자리다.
   it('조회 중이어도 인디케이터는 안 돈다. "조회 중..." 만 보여준다', async () => {

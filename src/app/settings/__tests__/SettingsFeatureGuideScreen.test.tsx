@@ -9,7 +9,7 @@
 // ③ **스크롤 검사가 `scrollIntoView` 스파이에서 `scrollTo` 스파이 + `onLayout` 주입으로** 바뀐다.
 //    RN 에는 문서도 id 도 없어 마디가 자기 y 를 알려 줘야 하고(그 배선이 곧 이 화면의 계약이다),
 //    jest 는 레이아웃을 계산하지 않으므로 **테스트가 그 y 를 넣어 준다.**
-// ④ 없는 안내의 되돌리기는 `<Navigate replace>` → `goBack()`. 뜻(히스토리를 남기지 않는다)은 같다.
+// ④ 없는 안내의 되돌리기는 `<Navigate replace>` → `goBack`. 뜻(히스토리를 남기지 않는다)은 같다.
 //    `push 가 아니라 replace 다` 케이스는 **스택을 우리가 미는 여기서 성립하지 않는다.**
 // ⑤ `getByAltText` → `getByLabelText`(`alt` 의 짝은 `accessibilityLabel`), `src` → `source`.
 //  그리고 그 값은 URL 문자열이 아니라 **번들 에셋 참조**다.
@@ -164,7 +164,7 @@ describe('SettingsFeatureGuideScreen', () => {
   })
 
   // 같은 화면이 두 라우트에 걸린다. **어디서 왔든 그리로 돌아간다**. RN 은
-  // 스택이 그것을 알고 있어 계산이 사라지고 `goBack()` 하나만 남는다.
+  // 스택이 그것을 알고 있어 계산이 사라지고 `goBack` 하나만 남는다.
   it.each(['SettingsFeatureGuide', 'SettingsReleaseNoteGuide'])(
     '%s 로 들어와도 뒤로는 그냥 pop 이다',
     async (name) => {
@@ -198,7 +198,7 @@ describe('SettingsFeatureGuideScreen', () => {
   })
 
   // 번호는 **버튼 밖**이라 누를 수 있는 이름이 제목 그대로 남는다. 개발 노트가 가리키는 이름과
-  // 어긋나면 안 된다(2026-08-11 사용자 지정).
+  // 어긋나면 안 된다.
   it('목차는 `목차` 제목 + 번호 목록이고 번호는 버튼 밖이다', async () => {
     const view = await renderOverlay(<SettingsFeatureGuideScreen />)
 

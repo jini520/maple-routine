@@ -24,7 +24,7 @@ import { useSettingsNavigation } from '../use-settings-navigation'
 
 // 노트 데이터는 **화면이 아니라 데이터 파일이 소유한다**. 여러 건이 필요한
 // 케이스(순서·항목 단위 표식)를 위해 `src/data/release-notes.ts` 를 늘리지 않고 여기서 픽스처를
-// 주입한다. 아무것도 안 넣으면 `beforeEach` 가 진짜 데이터를 되돌려 놓는다(파일 머리 ④).
+// 주입한다. 아무것도 안 넣으면 `beforeEach` 가 진짜 데이터를 되돌려 놓는다.
 // **배열은 팩토리가 만든다.** 바깥에 `const` 로 두면 팩토리가 먼저 돌아(테스트 파일의 import 시점)
 // 아직 초기화되지 않은 값을 실어 보낸다. 화면이 `undefined.length` 에서 죽는다(실측).
 jest.mock('../../../data/release-notes', () => ({
@@ -38,7 +38,7 @@ const mockNotes = jest.requireMock<typeof import('../../../data/release-notes')>
 
 jest.mock('../use-settings-navigation', () => ({ useSettingsNavigation: jest.fn() }))
 
-/** 픽스처를 갈아 끼운다. **배열 정체성은 유지한다**(파일 머리 ④). */
+/** 픽스처를 갈아 끼운다. **배열 정체성은 유지한다**. */
 function setNotes(notes: ReleaseNote[]): void {
   mockNotes.length = 0
   mockNotes.push(...notes)
@@ -191,7 +191,7 @@ describe('SettingsReleaseNotesScreen', () => {
     expect(view.queryByText('개선')).toBeNull()
   })
 
-  // 배지의 기준이 **빌드 시점 버전**이다(파일 머리 ②).
+  // 배지의 기준이 **빌드 시점 버전**이다.
   it('지금 실행 중인 버전에만 "사용 중" 배지를 붙인다', async () => {
     setNotes([
       { version: packageJson.version, date: '2026-08-09', items: [{ category: 'feature', text: 'A' }] },

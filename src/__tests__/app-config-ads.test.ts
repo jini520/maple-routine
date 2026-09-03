@@ -7,7 +7,7 @@
 //
 // `runtimeVersion` 정책이 `fingerprint` 이고 app.json 은 파일이 아니라 해석된 설정으로 지문에
 // 들어간다. 그래서 **여기서 나온 값이 곧 지문**이다. 환경 변수를 제대로 채우면 지문이 예전과
-// 같고(2026-08-31 측정: `72740141…` 동일), 안 채우면 달라진다.
+// 같고, 안 채우면 달라진다.
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 

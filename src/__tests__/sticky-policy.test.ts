@@ -43,7 +43,7 @@ function sourceFiles(dir: string): string[] {
 /**
  * 주석을 지운다. **이 정책의 기록 자체가 주석에 산다.**
  *
- * `BossProfitScreen.contract.md` 와 여러 파일 머리가 *"중첩 sticky 는 안 옮긴다"* 를 설명하며
+ * `BossProfitScreen.contract.md` 와 여러가 *"중첩 sticky 는 안 옮긴다"* 를 설명하며
  * 그 단어를 쓴다. 설명을 금지어로 잡으면 가드가 **기록을 지우라고 요구하는** 꼴이 되고, 그러면
  * 다음 사람이 왜 없는지를 알 길이 없어진다. 잡을 것은 **코드**다.
  */

@@ -6,7 +6,7 @@
 // 곧 하한이라 직접 읽든 함수를 거치든 결과가 같다).
 //
 // 하단은 상단보다 어긋났을 때의 값이 크다. 상단은 제목과 페이드 끝선이 갈리는 것으로 끝나지만,
-// 하단은 **바가 뜨는 높이 · 콘텐츠가 남기는 몫 · 페이드 · 토스트가 서로 물려** 있어서 한 자리만
+// 하단은 **바가 뜨는 높이· 콘텐츠가 남기는 몫· 페이드· 토스트가 서로 물려** 있어서 한 자리만
 // 옛 줄로 남으면 콘텐츠가 캡슐 뒤로 들어가거나 토스트가 캡슐 위에 겹친다.
 //
 // ## 경계는 **화면 하단인가** 다
@@ -27,7 +27,7 @@ const SRC = join(__dirname, '..')
  * 높이에서 출발해야 하고, 여기만 인셋으로 남으면 안드로이드에서 토스트가 캡슐 위에 겹친다
  * (실제로 그렇게 된다. 바가 34 에 뜨는데 토스트는 15 + 바 높이에 서면 7px 이 캡슐 안이다).
  *
- * `OnboardingStep` 은 가 넣었다. 온보딩의 하단(콘텐츠 몫 · 고정 액션 바)을
+ * `OnboardingStep` 은 가 넣었다. 온보딩의 하단(콘텐츠 몫· 고정 액션 바)을
  * 그 셸이 갖는데 `*Screen.tsx` 가 아니라, 안 적으면 이 가드의 **사각**이 된다.
  */
 const SHELLS = [
@@ -58,7 +58,7 @@ function screenFiles(dir: string): string[] {
   return out
 }
 
-/** 주석은 대상이 아니다. 이 정책의 기록이 여러 파일 머리에 산다(상단 가드와 같은 사정). */
+/** 주석은 대상이 아니다. 이 정책의 기록이 여러에 산다(상단 가드와 같은 사정). */
 function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
 }
@@ -85,7 +85,7 @@ describe('하단 안전영역은 한 자리에서 나온다', () => {
     // 경로가 틀려 0개를 훑고도 초록이 되는 것이 이 부류 가드의 흔한 실패다.
     expect(files.length).toBeGreaterThan(15)
     // 셸 셋(온보딩 단계 셸이 여기 든다) + 자기 `paddingBottom` 을 직접 주는
-    // 화면 둘(처리방침 · 캐릭터 관리).
+    // 화면 둘(처리방침· 캐릭터 관리).
     expect(
       files.filter((file) => file.source.includes('useBottomSafeAreaPx')).length,
     ).toBeGreaterThanOrEqual(SHELLS.length + 2)

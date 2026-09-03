@@ -44,7 +44,7 @@ jest.mock('../../../features/settings/cache-data', () => ({ loadCacheDataSizes: 
 jest.mock('../use-settings-navigation', () => ({ useSettingsNavigation: jest.fn() }))
 
 // 저장은 컨텐츠 스케줄러 스토어의 액션을 그대로 부른다(세 번째 사본 금지).
-// 훅으로도(배지·저장) `getState()` 로도(결정 5 정정의 모드 전환 재로드) 만지므로 둘 다 세운다.
+// 훅으로도(배지·저장) `getState` 로도 만지므로 둘 다 세운다.
 jest.mock('../../../features/content-scheduler/store', () => {
   const hook = jest.fn()
   return {
@@ -53,7 +53,7 @@ jest.mock('../../../features/content-scheduler/store', () => {
     }),
   }
 })
-// 결정 5: 저장 뒤 다시 읽히는 나머지 둘. 화면은 `getState()` 로만 만진다(구독하지 않는다).
+// 저장 뒤 다시 읽히는 나머지 둘. 화면은 `getState` 로만 만진다(구독하지 않는다).
 jest.mock('../../../features/boss-scheduler/store', () => ({
   useBossSchedulerStore: { getState: () => ({ loadTrackedOcids: mockLoadBossTracked }) },
 }))
@@ -126,7 +126,7 @@ function hasChevron(node: AtomElement): boolean {
 const ROW_LABELS = [
   '스케줄 관리 방법',
   '테마',
-  // `테마` **아래**(사용자 지정). 이 자리가 계약이다.
+  // `테마` **아래**. 이 자리가 계약이다.
   '캐릭터 관리',
   '기능 설명',
   '개발 노트',
@@ -196,7 +196,7 @@ describe('SettingsScreen', () => {
     expect(view.getByTestId('screen-scroll')).toBeTruthy()
   })
 
-  // 본화면은 카드 둘. **행은 5 → 6이 됐다**(정정):
+  // 본화면은 카드 둘. **행은 5 → 6이 됐다**:
   // 사용법 설명의 원천이 기능 카탈로그로 옮겨오면서 그 입구가 필요해졌다. `기능 설명`이
   // `개발 노트` **위**인 것은 *"이 앱을 어떻게 쓰나"* 가 더 자주 묻는 질문이기 때문이다.
   it('행이 정확히 7개이고 순서가 값 카드 → 이동 카드다', async () => {
@@ -206,7 +206,7 @@ describe('SettingsScreen', () => {
     expect(view.getAllByTestId('settings-row-chevron')).toHaveLength(ROW_LABELS.length)
   })
 
-  // **이 개편의 핵심.** 두 무리를 가르는 것은 카드 경계뿐이다(결정 1). 한 카드에 다 넣는 시안은
+  // **이 개편의 핵심.** 두 무리를 가르는 것은 카드 경계뿐이다. 한 카드에 다 넣는 시안은
   // "성격이 다른 것이 한 덩어리로 읽힌다"는 문제를 그대로 둔다.
   it('값을 고르는 세 행과 화면이 넘어가는 네 행이 서로 다른 카드에 있다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
@@ -285,7 +285,7 @@ describe('SettingsScreen', () => {
     expect(view.getAllByText(packageJson.version).length).toBeGreaterThan(0)
   })
 
-  // 결정 5: 후보가 전부 틀린 말을 한다. "최신 버전"은 아래 `앱 정보` 행과 중복이고 "n개"는
+  // 후보가 전부 틀린 말을 한다. "최신 버전"은 아래 `앱 정보` 행과 중복이고 "n개"는
   // 뜻이 없다. 없는 대표값을 지어내지 않는다.
   it('"기능 설명"·"개발 노트" 행에는 대표값을 두지 않는다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
@@ -306,7 +306,7 @@ describe('SettingsScreen', () => {
 
   //  정정: 모드 전환은 세 스토어를 **모두** 낡게 만든다(저장 경로에서 컨텐츠가
   // 빠진 것은 그쪽이 저장의 주체여서일 뿐이다). 이것이 없으면 자동 → 수동 직후 보스 탭이
-  // "추적할 주간 보스가 없습니다"로 뜨고 새로고침해야 목록이 나온다(2026-08-16 사용자 관측).
+  // "추적할 주간 보스가 없습니다"로 뜨고 새로고침해야 목록이 나온다.
   it('스케줄 관리 방법을 바꾸면 컨텐츠·보스·수익 스토어를 순차로 다시 읽힌다', async () => {
     const order: string[] = []
     let resolveContent: () => void = () => {}
@@ -381,7 +381,7 @@ describe('SettingsScreen', () => {
 })
 
 describe('SettingsScreen: 캐릭터 관리', () => {
-  // 결정 3: 파생·추정값이 아니라 저장된 목록의 길이다. **단위가 명 이 아니라 개** 인 것은
+  // 파생·추정값이 아니라 저장된 목록의 길이다. **단위가 명 이 아니라 개** 인 것은
   //  이 그 표기를 정정했기 때문이다. 캐릭터는 사람이 아니다.
   it('행 오른쪽에 추적 캐릭터 수 배지와 chevron 이 함께 있다', async () => {
     mockContentStore({ trackedOcids: ['a', 'b', 'c'] })
@@ -426,7 +426,7 @@ describe('SettingsScreen: 캐릭터 관리', () => {
     expect(mockedRoster).not.toHaveBeenCalled()
   })
 
-  // 결정 2: 보스 수익·두 스케줄러의 빈 상태가 캐릭터 관리를 **열어 둔 채로** 보낸다. 목적지가
+  // 보스 수익·두 스케줄러의 빈 상태가 캐릭터 관리를 **열어 둔 채로** 보낸다. 목적지가
   // 모달에서 화면으로 바뀌어도 계약은 그대로다.
   it('openPicker 파라미터로 진입하면 캐릭터 관리 화면을 밀고 파라미터를 지운다', async () => {
     mockRouteParams = { openPicker: true }

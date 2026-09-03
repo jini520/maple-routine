@@ -1,7 +1,7 @@
 // 아이템 분배 계산기 화면.
 //
 // 계산 자체의 불변식은 `lib/__tests__/item-split.test.ts` 가 진다. 여기서 보는 것은 **배선**이다.
-// 어느 입력이 어느 인자로 가는가, 그리고 결과가 없는 두 자리(1인 파티 · 판매가 0)에서 화면이
+// 어느 입력이 어느 인자로 가는가, 그리고 결과가 없는 두 자리(1인 파티· 판매가 0)에서 화면이
 // 숫자 대신 무엇을 말하는가.
 
 import { act, fireEvent } from '@testing-library/react-native'
@@ -67,7 +67,7 @@ describe('ItemSplitScreen: 골격', () => {
 })
 
 describe('ItemSplitScreen: 결과', () => {
-  // 기본값은 **2인** · 판매 3% · 분배 3% 다(사용자 지정). ⌊97,000,000,000 / 197⌋.
+  // 기본값은 **2인**· 판매 3%· 분배 3% 다. ⌊97,000,000,000 / 197⌋.
   //  표의 6인 예시는 `lib/__tests__/item-split.test.ts` 가 고정한다.
   it('판매가 10억을 넣으면 492,385,786 을 보내라고 한다', async () => {
     const view = await renderOverlay(<ItemSplitScreen />)
@@ -104,7 +104,7 @@ describe('ItemSplitScreen: 결과', () => {
 
     await press(view.getByLabelText('분배 파티원 수 증가'))
 
-    // 3인 · 판매 3% · 분배 3%: ⌊97,000,000,000 / 297⌋
+    // 3인· 판매 3%· 분배 3%: ⌊97,000,000,000 / 297⌋
     expect(transferText(view)).toBe('326,599,326')
   })
 })
@@ -140,7 +140,7 @@ describe('ItemSplitScreen: 금액 입력', () => {
     expect(view.getByLabelText('판매가').props.value).toBe('200,000,000')
   })
 
-  // 조건부로 그리면 첫 글자를 치는 순간 줄이 생겨 아래 카드가 통째로 밀린다(사용자 지정).
+  // 조건부로 그리면 첫 글자를 치는 순간 줄이 생겨 아래 카드가 통째로 밀린다.
   it('단위 줄은 금액이 비어 있어도 자리를 지킨다', async () => {
     const view = await renderOverlay(<ItemSplitScreen />)
 

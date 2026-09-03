@@ -72,7 +72,7 @@ describe('getBossProfitDb', () => {
   })
 
   // 메이린 카드 표시명을 API content_name('시즌 보스 메이린')과 통일하며 boss 식별 키를 바꿨다
-  // (2026-07-22). 기존에 저장된 파티 설정·수익 기록이 새 키를 못 찾는 고아 데이터가 되지
+  //. 기존에 저장된 파티 설정·수익 기록이 새 키를 못 찾는 고아 데이터가 되지
   // 않도록, 열 때마다 옛 키를 새 키로 옮겨준다(이미 옮겨졌으면 WHERE절에 걸리는 행이 없어
   // no-op).
   it('boss_party_settings/boss_profit_records의 옛 boss 키(메이린)를 새 키(시즌 보스 메이린)로 마이그레이션한다', async () => {
@@ -217,7 +217,7 @@ describe('closeBossProfitDb', () => {
     await expect(closeBossProfitDb()).resolves.toBeUndefined()
   })
 
-  // closeConnection이 아직 끝나지 않은 도중 다른 곳에서 getBossProfitDb()를 동시에 호출해도,
+  // closeConnection이 아직 끝나지 않은 도중 다른 곳에서 getBossProfitDb를 동시에 호출해도,
   // 새 openBossProfitDb(→createConnection)를 시작하지 말고 기존(닫히는 중인) 커넥션을 그대로
   // 반환해야 한다. 안 그러면 이 함수의 closeConnection과 그 동시 호출의 createConnection이
   // 뒤엉켜 네이티브에서 "Connection boss_profit already exists"가 날 수 있다.
@@ -249,9 +249,9 @@ describe('closeBossProfitDb', () => {
 
   // 여는 쪽에는 타임아웃이 있는데(withOpenTimeout, 10초) 닫는 쪽은 맨몸이었다.
   // 네이티브 closeConnection이 응답하지 않으면 이 함수가 영원히 resolve하지 않고, 이 뒤에 오는
-  // 리로드(라이브 업데이트 set · 페이지 리로드)가 실행되지 못한다. 그것이 곧 "주황
+  // 리로드(라이브 업데이트 set· 페이지 리로드)가 실행되지 못한다. 그것이 곧 "주황
   // 스플래시 무한" 증상이다. 실기기에서 SQLite 네이티브 호출이 응답 없이 멈춘 사례가 둘 있다
-  // (2026-07-17 정정).
+  //.
   //
   // 가짜 타이머는 케이스 안에서만 켠다. 파일 전역으로 켜면 위 레이스 케이스가 의존하는
   // 마이크로태스크 순서가 흔들린다.

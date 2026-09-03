@@ -267,7 +267,7 @@ export function 공유계열(group: string, items: SharedContentItemView[]): Sha
   return { group, items }
 }
 
-/** 카탈로그 일곱을 다 그린 상태. 남은 것 넷(악몽선경 · 일간 · 익스트림 · PC방). */
+/** 카탈로그 일곱을 다 그린 상태. 남은 것 넷(악몽선경· 일간· 익스트림· PC방). */
 export function 공유컨텐츠(): SharedContentGroupView[] {
   return [
     공유계열('에픽던전', [

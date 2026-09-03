@@ -1,11 +1,11 @@
 // 캐릭터 관리 화면. 옮겨 적을 명세가 없어 이
-// 파일이 보는 것은 그 ADR 의 성공 기준 그대로다: 두 층의 범위 · 이동 · 별 · TTL · 저장 활성 조건.
+// 파일이 보는 것은 그 ADR 의 성공 기준 그대로다: 두 층의 범위· 이동· 별· TTL· 저장 활성 조건.
 //
 // ── 무엇을 목으로 세우는가 ──────────────────────────────────────────────────────────
 //
 // 값 규칙(`summarizeAccount`·`buildSelectedCharacterViews`·`resolveRepresentative`)과 문구
 // (`formatRosterError`)는 **실물을 쓴다**. 여기서 베끼면 규칙이 두 벌이 된다(머리
-// **값 규칙의 자리**). 세우는 것은 경계 넷뿐이다: 계정 목록 조회 · 후보 목록 조회 · 로컬 캐시 ·
+// **값 규칙의 자리**). 세우는 것은 경계 넷뿐이다: 계정 목록 조회· 후보 목록 조회· 로컬 캐시·
 // 저장 액션.
 //
 // ── 끌기는 여기서 **흉내** 내지 않는다 ────────────────────────────────────────────────
@@ -73,7 +73,7 @@ jest.mock('../../../features/content-scheduler/store', () => {
   const hook = jest.fn()
   return { useContentSchedulerStore: hook }
 })
-// 저장 뒤 다시 읽히는 둘. 화면은 `getState()` 로만 만진다.
+// 저장 뒤 다시 읽히는 둘. 화면은 `getState` 로만 만진다.
 jest.mock('../../../features/boss-scheduler/store', () => ({
   useBossSchedulerStore: { getState: () => ({ loadTrackedOcids: mockLoadBossTracked }) },
 }))
@@ -277,7 +277,7 @@ describe('두 층. 위는 계정을 넘고 아래는 계정 하나다', () => {
 
   // ★ 대기 자리에 **문구가 보인다.** 예전에는 `aria-label` 만 있어 화면에는
   // 마크 하나뿐이었고, 그 마크가 대로 **움직이지도 않았다**. 사용자 보고가
-  // 그 조합을 **진행중인지 알 수 없다** 로 반려했다(2026-08-18).
+  // 그 조합을 **진행중인지 알 수 없다** 로 반려했다.
   it('대기 문구가 화면에 보인다. 마크만으로는 무엇을 기다리는지 모른다', async () => {
     mockContentStore({ trackedOcids: ['a1'] })
     rosterHangingAccounts.add('account-b')
@@ -355,7 +355,7 @@ describe('콜드 캐시. 캐시가 비어도 위 층이 빈칸으로 남지 않�
     expect(textsIn(view.getByTestId('character-manage-selected'))).toContain('Lv.260 나이트로드')
   })
 
-  // 결정 1-1. 로스터가 못 채우는 자리(지금 열지 않은 계정의 캐릭터)로 **재시도를 막지 않는다** 를
+  // 로스터가 못 채우는 자리(지금 열지 않은 계정의 캐릭터)로 **재시도를 막지 않는다** 를
   // 따로 본다. 캐시가 **나중에** 차면 그때 그려져야 한다.
   it('캐시가 나중에 차면 그때 채워진다. miss 를 **없음** 으로 굳히지 않는다', async () => {
     mockContentStore({ trackedOcids: ['b1'] })
@@ -581,7 +581,7 @@ describe('순서. 놓은 자리가 배열 순서다', () => {
     await press(node as AtomElement)
     await act(async () => {})
 
-    // 레벨(294 · 260 · 250)로 되돌리지 않는다.
+    // 레벨(294· 260· 250)로 되돌리지 않는다.
     expect(saveTrackedOcids).toHaveBeenCalledWith(['a2', 'a1', 'a3'], expect.any(Function))
   })
 })
@@ -638,7 +638,7 @@ describe('계정 전환 TTL', () => {
     }
   })
 
-  // 결정 6: **방금 확인함** 류의 표시를 두지 않는다. 사용자가 아니라 구현의 사정이다.
+  // **방금 확인함** 류의 표시를 두지 않는다. 사용자가 아니라 구현의 사정이다.
   it('TTL 을 알리는 표시가 화면에 없다', async () => {
     const view = await renderScreen()
 
@@ -679,7 +679,7 @@ describe('못 고르는 계정', () => {
     const view = await renderScreen()
 
     expect(view.getByText('표시할 캐릭터가 없어요')).toBeTruthy()
-    // 라벨 오른쪽의 **n개 중 m개 표시** 는 뺐다(사용자 지정 2026-08-17).
+    // 라벨 오른쪽의 **n개 중 m개 표시** 는 뺐다.
     expect(view.queryByText(/개 중 .*개 표시/)).toBeNull()
   })
 })
@@ -840,7 +840,7 @@ describe('저장', () => {
     })
   })
 
-  // 사용자 지정 2026-08-17. 뒤로가기가 둘(헤더 `←` · OS)인 화면에서 셋째 출구는 중복이다.
+  // 뒤로가기가 둘(헤더 `←`· OS)인 화면에서 셋째 출구는 중복이다.
   it('`닫기` 버튼은 없다. 출구는 뒤로가기다', async () => {
     const view = await renderScreen()
 
@@ -856,11 +856,11 @@ describe('화면 골격', () => {
     expect(view.getByTestId('screen-scroll')).toBeTruthy()
     expect(view.getByTestId('screen-SettingsCharacters')).toBeTruthy()
     expect(view.getByText('캐릭터 관리')).toBeTruthy()
-    // 저장 바는 반대로 스크롤 뷰 **밖**이라야 어디까지 굴렸든 눌린다(사용자 지정 2026-08-17).
+    // 저장 바는 반대로 스크롤 뷰 **밖**이라야 어디까지 굴렸든 눌린다.
     expect(view.getByTestId('character-manage-action-bar')).toBeTruthy()
   })
 
-  // 사용자 지정 2026-08-17. `더 높은 레벨이 존재하는 ID 가 먼저`. 응답 순서(넥슨이 정한다)를
+  // `더 높은 레벨이 존재하는 ID 가 먼저`. 응답 순서(넥슨이 정한다)를
   // 그대로 쓰면 주력 ID 가 뒤에 설 수 있고, 화면은 목록의 첫 항목을 연다.
   it('메이플 ID 차례는 대표 레벨 내림차순이다. 응답 순서를 따르지 않는다', async () => {
     // 응답을 뒤집어 준다: 계정B(대표 275) 가 먼저, 계정A(대표 294) 가 나중.

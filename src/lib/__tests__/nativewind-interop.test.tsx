@@ -3,7 +3,7 @@
 // 전에는 아무도 모른다. 그래서 atom 별 테스트와 별개로 배선 자체를 여기서 못박는다.
 //
 // (`jest.setup.js` 가 컴파일된 `global.css` 를 주입하고 `ThemeProvider` 가 변수를 내려보내는 것까지가
-//  전제다. 그 고리들은 `src/__tests__/nativewind-wiring.test.tsx` · `src/theme/__tests__` 가 지킨다.)
+//  전제다. 그 고리들은 `src/__tests__/nativewind-wiring.test.tsx`· `src/theme/__tests__` 가 지킨다.)
 import { render } from '@testing-library/react-native'
 import { getThemeDefinition } from '../theme/theme-registry'
 import { Path } from 'react-native-svg'
