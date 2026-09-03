@@ -14,8 +14,8 @@ import { SettingsPrivacyScreen } from '../app/settings/SettingsPrivacyScreen'
 import { SettingsReleaseNotesScreen } from '../app/settings/SettingsReleaseNotesScreen'
 import { ItemSplitScreen } from '../app/utility/ItemSplitScreen'
 import { ScreenBackdrop } from '../components/templates/ThemeBackdrop/ScreenBackdrop'
-import { Main } from './Main'
-import { PUSH_SCREEN_OPTIONS } from './stack-presentation'
+import { LayerStack } from './LayerStack'
+import { PUSH_SCREEN_OPTIONS } from './push-screen-options'
 import { STACK_ROUTE_NAMES, type RootStackParamList, type StackRouteName } from './routes'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
@@ -60,12 +60,12 @@ function screenFor(name: StackRouteName): React.ComponentType<Record<string, nev
 }
 
 /**
- * 루트 스택. `Main` 하나 + 그 위에 쌓이는 하위 페이지 열둘.
+ * 루트 스택. `LayerStack` 하나 + 그 위에 쌓이는 하위 페이지 열둘.
  *
- * 하위 페이지가 `Main` 안이 아니라 위인 것은 밀려나는 덩어리가 `Main` 전체이기 때문이다. 층
+ * 하위 페이지가 `LayerStack` 안이 아니라 위인 것은 밀려나는 덩어리가 `LayerStack` 전체이기 때문이다. 층
  * 스택과 바가 그 안에 함께 살아, 이 스택에 쌓으면 밀려나는 것이 층 화면 + 바가 된다.
  *
- * 층(그룹 행 ↔ 하위 행)은 `Main` 안쪽 스택이 진다. 두 스택이 같은 `animation`·`gestureEnabled`
+ * 층(그룹 행 ↔ 하위 행)은 `LayerStack` 안쪽 스택이 진다. 두 스택이 같은 `animation`·`gestureEnabled`
  * 를 쓰므로 **하위 페이지처럼 열린다** 가 값이 아니라 구조로 성립한다.
  *
  * 온보딩은 리다이렉트가 아니라 화면 목록 자체가 갈린다. 딥링크가 없어 주소로 들어올 경로가
@@ -86,7 +86,7 @@ export function RootNavigator(): React.JSX.Element {
     >
       {isCompleted ? (
         <Stack.Group>
-          <Stack.Screen name="Main" component={Main} />
+          <Stack.Screen name="Main" component={LayerStack} />
           {STACK_ROUTE_NAMES.map((name) => (
             <Stack.Screen key={name} name={name} component={screenFor(name)} />
           ))}

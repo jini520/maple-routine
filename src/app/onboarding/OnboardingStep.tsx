@@ -20,14 +20,18 @@ import { useScrollIndicatorStyle } from '../../theme/context'
 export function OnboardingStep({
   center,
   scrollRef,
-  onScroll,
+  tracksScrollOffset = false,
   footer,
   children,
 }: {
   center?: boolean
-  /** 끌기 자동 스크롤 배선. 캐릭터 선택 단계에서만 온다. */
+  /** 끌기 자동 스크롤이 굴릴 스크롤 뷰. 캐릭터 선택 단계에서만 온다. */
   scrollRef?: React.Ref<ScrollView>
-  onScroll?: React.ComponentProps<typeof ScrollView>['onScroll']
+  /**
+   * 스크롤 이벤트를 매 프레임 흘릴 것인가. 위 `scrollRef` 의 짝이고 `ScreenScroll` 과 같은 규칙이다.
+   * ⚠️ 안 켜면 iOS 는 스크롤이 멈출 때 한 번만 보내서 끌기 중 오프셋이 낡는다.
+   */
+  tracksScrollOffset?: boolean
   /** 하단에 고정되는 액션 바의 내용. 안 주면 바 자체가 없다. */
   footer?: React.ReactNode
   children: React.ReactNode
@@ -65,9 +69,8 @@ export function OnboardingStep({
       // iOS 는 키보드가 떠도 스크롤 뷰 크기가 그대로라 확인 버튼이 가려질 수 있다(안드로이드는 창이
       // `adjustResize` 로 줄어 저절로 해결된다). 그 인셋을 OS 가 넣게 한다. 안드로이드에서는 no-op.
       automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
-      // 조건부 전개다. 안 쓰는 단계의 스크롤 뷰 프롭을 한 개도 바꾸지 않는다(`ScreenScroll` 과
-      // 같은 처리: `onScroll={undefined}` 로 넘기면 iOS 가 기본 주기로 이벤트를 흘린다).
-      {...(onScroll === undefined ? null : { onScroll, scrollEventThrottle: 16 })}
+      // 조건부 전개다. 안 켠 단계의 스크롤 뷰 프롭을 한 개도 바꾸지 않는다.
+      {...(tracksScrollOffset ? { scrollEventThrottle: 16 } : null)}
     >
       {children}
     </ScrollView>

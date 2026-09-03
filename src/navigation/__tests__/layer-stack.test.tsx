@@ -11,8 +11,8 @@ import { createNavigationContainerRef, StackActions } from '@react-navigation/na
 
 import { useOnboardingStore } from '../../features/onboarding/store'
 import { __resetThemeAppearanceForTest } from '../../theme/appearance-store'
-import { resetBarStoreForTests } from '../bar-store'
-import { PUSH_SCREEN_OPTIONS } from '../stack-presentation'
+import { resetBarStoreForTests } from '../../components/organisms/BottomBar/bar-store'
+import { PUSH_SCREEN_OPTIONS } from '../push-screen-options'
 import { needsPopToGroupLayer, tabNavigateArgs } from '../tab-navigate'
 import { NavigationHarness } from './harness'
 import { installMemoryPreferences } from './memory-preferences'

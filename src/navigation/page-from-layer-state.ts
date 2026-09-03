@@ -7,7 +7,7 @@
  * 사본을 들지 않고 읽기만 한다. 페이지의 진실 공급원은 react-navigation 하나다.
  */
 
-import { BAR_GROUPS } from './bar-model'
+import { BAR_GROUPS } from './bar-groups'
 import { INITIAL_TAB_ROUTE, TAB_ROUTE_NAMES, type LayerRouteName, type TabRouteName } from './routes'
 
 /** react-navigation 이 주는 라우트/상태의 **읽는 데 필요한 만큼**. 라이브러리 타입을 좁혀 받는다. */

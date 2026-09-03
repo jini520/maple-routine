@@ -17,6 +17,8 @@
  *    (`키 입력 화면으로 이동합니다`)를 쓰면 거짓인 데다 액션까지 없어 하드 잠금이 된다.
  */
 import { View } from 'react-native'
+import type { ScrollView } from 'react-native'
+import type { AnimatedRef } from 'react-native-reanimated'
 
 import {
   formatRosterError,
@@ -33,20 +35,19 @@ import { ErrorState } from '../../molecules/ErrorState/ErrorState'
 import { StaleBanner } from '../../molecules/ErrorState/StaleBanner'
 import { AccountSelect } from '../AccountSelect/AccountSelect'
 import { SelectedCharacterList } from './SelectedCharacterList'
-import type { CharacterManageController } from './use-character-manage'
-import type { ReorderScroll } from './use-reorder-scroll'
+import type { CharacterManageController } from '../../../hooks/useCharacterManage'
 
 export interface CharacterManageBodyProps {
   manage: CharacterManageController
   /**
-   * 끌기 중 자동 스크롤이 만질 스크롤 뷰. **화면이 소유한다.**
+   * 끌기 중 자동 스크롤이 굴릴 스크롤 뷰. **화면이 소유한다.**
    *
    * 컨트롤러에 실어 내려보내지 않는 이유는 그 안에 `ref` 가 들어가기 때문이다: 컨트롤러 객체가
    * ref 를 품는 순간 렌더 중에 ref 를 만졌다 가 되어(`react-hooks/refs`) 그 객체를 읽는 자리가
-   * 전부 걸린다. 스크롤 뷰는 어차피 화면(`ScreenScroll`)의 것이라, 그 짝인 `scrollRef`·`onScroll`
-   * 도 화면에 남는 편이 자리에 맞는다.
+   * 전부 걸린다. 스크롤 뷰는 어차피 화면(`ScreenScroll`)의 것이라 그 ref 도 화면에 남는 편이
+   * 자리에 맞는다.
    */
-  scroll: ReorderScroll
+  scrollableRef: AnimatedRef<ScrollView>
   /**
    * 실패 문구·액션이 갈리는 자리. 설정 하위 페이지는 `'picker'`, 온보딩 단계는
    * `'onboarding'`. 기본값을 두지 않는다. 두 호출부뿐이고, 기본값이 있으면 셋째 호출부가
@@ -155,7 +156,7 @@ function CandidateArea({
 
 export function CharacterManageBody({
   manage,
-  scroll,
+  scrollableRef,
   place,
 }: CharacterManageBodyProps): React.JSX.Element {
   // 계정을 하나도 못 고르면 본문 전체가 이 화면이다(넷째 줄).
@@ -183,12 +184,12 @@ export function CharacterManageBody({
       {/* ── 위: 선택됨 (계정 전체) ── */}
       <View testID="character-manage-selected" className="gap-2">
         <SectionLabel>선택된 캐릭터 {manage.selectedOcids.length}개</SectionLabel>
-        {/* 행들은 별도 컴포넌트다. 끌기·자동 스크롤·접근성 액션이 붙고, 칸 높이를 재려면 행만
-            담은 상자가 필요하다(라벨이 섞이면 잰 값이 틀린다). */}
+        {/* 행들은 별도 컴포넌트다. 끌기·자동 스크롤·접근성 액션이 붙고, 재배열하는 상자에는
+            행만 들어가야 한다(섹션 라벨이 섞이면 그것도 끌린다). */}
         <SelectedCharacterList
           views={manage.selectedViews}
           representativeOcid={manage.representativeOcid}
-          scroll={scroll}
+          scrollableRef={scrollableRef}
           onMove={manage.moveCharacter}
           onRemove={manage.removeCharacter}
           onSelectRepresentative={manage.setRepresentative}

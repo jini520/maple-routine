@@ -17,7 +17,8 @@
  * 추가분만 동기화 · 진행률 보고가 들어 있다.
  */
 import { useState } from 'react'
-import { Pressable, View } from 'react-native'
+import { Pressable, View, type ScrollView } from 'react-native'
+import { useAnimatedRef } from 'react-native-reanimated'
 
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
 import { useApiKeyNotice } from '../../features/onboarding/use-api-key-notice'
@@ -28,8 +29,7 @@ import {
 
 import { ArrowLeftIcon, Button, Text } from '../../components/atoms'
 import { CharacterManageBody } from '../../components/organisms/CharacterManage/CharacterManageBody'
-import { useCharacterManage } from '../../components/organisms/CharacterManage/use-character-manage'
-import { useReorderScroll } from '../../components/organisms/CharacterManage/use-reorder-scroll'
+import { useCharacterManage } from '../../hooks/useCharacterManage'
 import { ProgressModal } from '../../components/organisms/ProgressModal/ProgressModal'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
@@ -43,9 +43,9 @@ export function SettingsCharactersScreen(): React.JSX.Element {
   const navigation = useSettingsNavigation()
   const manage = useCharacterManage()
   // 끌어서 순서를 바꾸는 동안 화면 가장자리에서 자동으로 굴러간다. 이 화면에는 고정 영역이
-  // 없어 굴릴 것이 페이지 자신뿐이고, 그래서 그 배선은 스크롤 뷰를 가진 화면의 것이다.
+  // 없어 굴릴 것이 페이지 자신뿐이고, 그래서 그 ref 는 스크롤 뷰를 가진 화면의 것이다.
   // 컨트롤러에 실으면 그 객체가 ref 를 품어 읽는 자리마다 `react-hooks/refs` 에 걸린다.
-  const { scrollRef, onScroll, scroll } = useReorderScroll()
+  const scrollableRef = useAnimatedRef<ScrollView>()
   const [saveProgress, setSaveProgress] = useState<{ completed: number; total: number } | null>(null)
   // 하단 액션 바가 안전영역을 먹는다(아래). 그 **안전영역** 은 인셋이 아니라 하한이 깔린 값이다
   // 이 화면만 인셋으로 두면 하위 페이지들과 바닥 여백이 갈린다.
@@ -85,8 +85,8 @@ export function SettingsCharactersScreen(): React.JSX.Element {
     <View className="flex-1">
       <ScreenScroll
         hasTabBar={false}
-        ref={scrollRef}
-        onScroll={onScroll}
+        ref={scrollableRef}
+        tracksScrollOffset
         header={
           <PageHeader>
             <PageHeaderTitleRow className="gap-2">
@@ -112,7 +112,7 @@ export function SettingsCharactersScreen(): React.JSX.Element {
         >
           {/* 이 자리의 401·429 는 곧 키 입력 화면으로 옮겨간다(위 `useApiKeyNotice`). 그래서
               실패 문구도 그렇게 말하는 피커 어휘다. */}
-          <CharacterManageBody manage={manage} scroll={scroll} place="picker" />
+          <CharacterManageBody manage={manage} scrollableRef={scrollableRef} place="picker" />
         </View>
       </ScreenScroll>
 

@@ -31,7 +31,11 @@
 | 화면 | `app/settings/SettingsCharactersScreen.tsx` | 캐릭터 관리([[ADR-144]]) |
 | 화면 | `app/settings/SettingsAboutScreen.tsx` | 앱 정보. 버전 · 업데이트 확인 |
 | 화면 | `app/settings/SettingsPrivacyScreen.tsx` | 개인정보 처리방침. `WebView` |
-| 화면 | `components/organisms/CharacterManage/` | `CharacterManageBody` · `use-character-manage`. 온보딩과 공유한다 |
+| 화면 | `components/organisms/CharacterManage/` | `CharacterManageBody` · `SelectedCharacterList`. 온보딩과 공유한다 |
+| 상태 | `hooks/useCharacterManage.ts` | 조립기. 아래 셋을 부른다([[ADR-208]]) |
+| 상태 | `hooks/useAccountRosters.ts` | 메이플 ID 목록 · 계정별 후보 · TTL |
+| 상태 | `hooks/useSelectionDraft.ts` | 저장 전 목록 순서와 대표 |
+| 상태 | `hooks/useKnownProfiles.ts` | 이름·레벨·얼굴 표 |
 | 행 | `app/settings/SettingsRow.tsx` · `SettingsLinkRow.tsx` | 누르는 행 둘. 아래 [행 규격](#행-규격) |
 | 행 | `app/settings/row-class.ts` | `SETTINGS_ROW_CLASS`. 골격 한 곳 |
 | 모달 | `app/settings/ThemeModal.tsx` · `ThemeSelector.tsx` | 테마 고르기 |
@@ -307,19 +311,23 @@ pop 되면 설정으로 돌아온다.
 #### 순서는 핸들을 끌어서 바꾼다
 
 [[ADR-144]] 결정 5(구현 완료 2026-08-17)다. 놓은 자리가 곧 배열 순서이고, 그 배열이 저장 순서이자
-표시 순서다([[ADR-143]] 결정 3).
+표시 순서다([[ADR-143]] 결정 3). **끌기 자체는 `react-native-sortables` 가 한다**([[ADR-207]],
+2026-09-03. 그 전에는 손으로 만든 것이었다).
 
 - **핸들에서만 시작한다.** 행 아무 데서나 끌리면 페이지 세로 스크롤과 충돌한다. 아래 층(후보)에는
   핸들도 끌기도 없다. 그쪽 순서는 사용자 것이 아니라 레벨 내림차순이다.
 - **끄는 동안 화면 위아래 가장자리에서 자동으로 스크롤된다.** 고정 영역을 두지 않기로 했으므로
   ([[ADR-131]]) 목록이 화면보다 길면 이것 없이는 끝으로 옮길 수 없다. 스크롤 주체는 화면의
-  `ScreenScroll` 이라 그 셸이 `onScroll` 을 받고(그 프롭을 쓰는 화면은 지금 이 화면 하나뿐이다)
-  컨트롤러가 `scrollRef` 와 오프셋을 갖는다. 콘텐츠가 흐른 만큼을 끌기 좌표에 되더해야 행이 손가락
-  밑에 남는다.
+  `ScreenScroll`·`OnboardingStep` 이라, 화면이 `useAnimatedRef` 하나를 만들어 그 셸과 목록 양쪽에
+  넘긴다. 셸에는 `tracksScrollOffset` 을 함께 켠다 — 안 켜면 iOS 가 스크롤이 멈출 때 한 번만
+  이벤트를 보내 끌기 중 오프셋이 낡는다([[ADR-207]] 결정 4).
 - **접근성 액션 ‘위로 옮기기’·‘아래로 옮기기’가 같은 결과를 낸다.** 끌기는 스크린리더로 조작할 수
-  없다. 액션은 핸들에 붙고(그 자리의 이름이 ‘{이름} 순서 변경’이다) **할 수 있는 것만 준다**(첫 행에
-  ‘위로’가 없다). 두 경로가 같은 순수 함수 `moveOcid` 하나를 부른다. 순서 계산이 제스처 코드 안에
-  있으면 jest가 한 줄도 검증하지 못한다.
+  없고 **라이브러리에는 접근성이 한 줄도 없다**. 액션은 핸들에 붙고(그 자리의 이름이 ‘{이름} 순서
+  변경’이다) **할 수 있는 것만 준다**(첫 행에 ‘위로’가 없다). 두 경로가 같은 순수 함수 `moveOcid`
+  하나를 부른다. 그 함수가 남아 있는 이유가 이것이다.
+- **끌기가 그리던 순서와 저장되는 순서가 같은지 테스트가 맞대 본다.** 화면에 그려지는 순서는
+  라이브러리가 만들고 저장되는 배열은 `moveOcid` 가 만든다. 갈리면 손을 떼는 순간 목록이 눈에
+  보이던 것과 다르게 튄다([[ADR-207]] 결정 3).
 - **저장할 때 정렬을 다시 계산하지 않는다.** 레벨 내림차순은 ‘아직 순서를 정하지 않았을 때의
   초기값’으로 내려갔다([[ADR-143]] 결정 3).
 

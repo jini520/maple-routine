@@ -82,9 +82,10 @@ export interface ScreenScrollProps {
    */
   header?: React.ReactNode
   /**
- * 스크롤 뷰 자체의 ref.
+   * 스크롤 뷰 자체의 ref.
    * RN 에서는 **당김 판정에 쓰이지 않는다**(스크롤 컨테이너가 제스처를 소유한다).
-   * 프로그램적 스크롤이 필요한 화면(보스 수익의 최상단 이동)이 쓸 자리로 남겨 둔다.
+   * 프로그램적 스크롤이 필요한 화면(보스 수익의 최상단 이동)과, 오프셋을 워클릿에서 읽는 화면
+   * (캐릭터 관리의 끌기 자동 스크롤)이 쓴다.
    */
   ref?: React.Ref<ScrollViewType>
   /**
@@ -96,16 +97,16 @@ export interface ScreenScrollProps {
    */
   refreshControl?: React.ComponentProps<typeof ScrollView>['refreshControl']
   /**
-   * 스크롤 오프셋 통보. **끌어서 순서 바꾸기의 자동 스크롤만** 쓴다.
+   * 스크롤 이벤트를 매 프레임 흘릴 것인가. **끌어서 순서 바꾸기의 자동 스크롤만** 켠다.
    *
-   * 그 화면은 목록이 화면보다 길 때 페이지째 굴려야 하는데(고정 영역이 없다) 굴린
-   * 만큼을 끌기 좌표에 되더해야 행이 손가락 밑에 남는다. 즉 필요한 것은 **지금 오프셋**이고, 그것을
-   * 아는 길이 이 이벤트뿐이다.
+   * 그 화면은 목록이 화면보다 길 때 페이지째 굴려야 하는데(고정 영역이 없다) 굴린 만큼을 끌기
+   * 좌표에 되더해야 행이 손가락 밑에 남는다. 오프셋을 읽는 것은 `ref` 를 받은 워클릿이고, 이
+   * 프롭은 그 워클릿이 읽을 값이 얼마나 자주 갱신되는가를 정한다.
    *
-   * **안 주면 프롭 자체를 안 넘긴다**(`scrollEventThrottle` 도 함께). 이 셸은 화면 열여섯 곳이
-   * 쓰므로, 안 쓰는 화면까지 매 프레임 이벤트를 보내게 두지 않는다.
+   * ⚠️ 안 켜면 **iOS 는 스크롤이 멈출 때 한 번만** 보낸다(안드로이드는 프레임마다 보낸다).
+   * 그래도 기본이 꺼짐인 것은 이 셸을 화면 열여섯 곳이 쓰기 때문이다.
    */
-  onScroll?: React.ComponentProps<typeof ScrollView>['onScroll']
+  tracksScrollOffset?: boolean
   /**
    * 아래에 탭바가 있는가. 하단 인셋 처리만 가른다(`bottom-inset.ts`).
    *
@@ -124,7 +125,7 @@ export function ScreenScroll({
   header,
   ref,
   refreshControl,
-  onScroll,
+  tracksScrollOffset = false,
   hasTabBar = true,
 }: ScreenScrollProps): React.JSX.Element {
   const insets = useSafeAreaInsets()
@@ -186,9 +187,8 @@ export function ScreenScroll({
           ? refreshControl
           : cloneElement(refreshControl, { progressViewOffset: indicatorOffsetPx })
       }
-      // 조건부 전개다. `onScroll={undefined}` 로 넘기면 iOS 가 기본 주기(스크롤이 멈출 때 1회)로
-      // 이벤트를 켜고, 안 쓰는 화면의 렌더 트리에도 프롭이 남는다.
-      {...(onScroll === undefined ? null : { onScroll, scrollEventThrottle: 16 })}
+      // 조건부 전개다. 안 켠 화면의 스크롤 뷰 프롭을 한 개도 바꾸지 않는다.
+      {...(tracksScrollOffset ? { scrollEventThrottle: 16 } : null)}
       className="flex-1"
       style={port}
       // 웹 안쪽 래퍼의 `space-y-4` 짝. RN 에 `space-y-*` 가 없어 `gap-*` 이고, 그래서 래퍼 뷰가

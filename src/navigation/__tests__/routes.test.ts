@@ -91,8 +91,8 @@ describe('ROUTE_TABLE: 계획서 §1 대조', () => {
     expect(ROUTE_TABLE.find((row) => row.target.kind === 'tab' && row.target.route === 'Today')).toBeDefined()
   })
 
-  // 라벨은 여기 없다. 바가 라벨을 두 층에서 쓰므로 `bar-model.ts` 의 `BAR_GROUPS` 가 갖는다
-  // 그 표와 이 목록이 같은 집합인지는 `bar-model.test.ts` 가 본다.
+  // 라벨은 여기 없다. 바가 라벨을 두 층에서 쓰므로 `bar-groups.ts` 의 `BAR_GROUPS` 가 갖는다
+  // 그 표와 이 목록이 같은 집합인지는 `bar-groups.test.ts` 가 본다.
   it('탭 화면은 여덟이고 표에서 파생된다', () => {
     expect(TAB_ROUTE_NAMES).toEqual([
       'Content',

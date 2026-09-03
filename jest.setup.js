@@ -105,6 +105,20 @@ expect.extend({
   },
 })
 
+// Reanimated 가 «애니메이션 ref 에 네이티브 태그가 없다» 고 내는 경고를 걷는다.
+//
+// 캐릭터 관리 화면이 끌기 자동 스크롤을 위해 `useAnimatedRef` 를 스크롤 뷰에 붙이고, 라이브러리가
+// 그 ref 로 `useScrollOffset` 을 건다. 테스트 렌더러에는 네이티브 뷰가 없어 태그가 늘 없으므로,
+// 이 경고는 **배선이 맞든 틀리든 매 렌더마다 뜬다** — jest 에서는 아무것도 알려 주지 않는 줄이다.
+// 그래서 이 문장 하나만 걷고 나머지 경고는 그대로 흘린다.
+const REANIMATED_NO_TAG = 'animatedRef is not initialized'
+const baseWarn = console.warn
+
+console.warn = (...args) => {
+  if (typeof args[0] === 'string' && args[0].includes(REANIMATED_NO_TAG)) return
+  baseWarn(...args)
+}
+
 // 떠 있는 토스트의 **자동 소멸 타이머**를 매 케이스 뒤에 걷는다([[ADR-157]]).
 //
 // 그 타이머는 토스트 스토어의 모듈 스코프에 살아서, 토스트를 띄운 채 끝난 케이스가 2~2.5초짜리

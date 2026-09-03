@@ -3,9 +3,9 @@
 // 이 파일이 커진 것은 색을 세 판 고쳐 돌았기 때문이다. 배경과 안 갈려서 어둡게 했더니 글자가 안
 // 읽혔고, 글자를 살리려 밝게 했더니 다시 안 갈렸다. 하나를 고칠 때 나머지가 깨지는 것을 눈으로
 // 잡을 수 없어서, 네 관계를 전부 수치로 못 박는다.
-import jobThemes from '../../data/job-themes.json'
-import { hexToOklch, parseHex, relativeLuminance } from '../../lib/color'
-import type { ThemeDefinition } from '../../types/theme'
+import jobThemes from '../../../../data/job-themes.json'
+import { hexToOklch, parseHex, relativeLuminance } from '../../../../lib/color'
+import type { ThemeDefinition } from '../../../../types/theme'
 
 import { resolveBarColors } from '../bar-colors'
 

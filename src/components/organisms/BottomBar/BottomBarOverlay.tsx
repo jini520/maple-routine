@@ -1,10 +1,10 @@
 /**
  * 화면이 소유한 오버레이를 하단바 위에 그리는 포털 슬롯. 지금 쓰는 곳은 `SpeedDial`(가계부 ＋) 하나.
  *
- * `zIndex` 는 같은 부모 안에서만 겨루는데 하단바는 `Main` 의 `layout` 이 화면들 뒤에 그린다. 그래서
+ * `zIndex` 는 같은 부모 안에서만 겨루는데 하단바는 `LayerStack` 의 `layout` 이 화면들 뒤에 그린다. 그래서
  * 화면 안에서 그린 오버레이는 어떤 값을 줘도 바 아래다. 그림을 포털로 화면 밖에 내보내 푼다.
  *
- * @see src/navigation/Main.tsx 호스트를 바 뒤에 꽂는 자리
+ * @see src/navigation/LayerStack.tsx 호스트를 바 뒤에 꽂는 자리
  */
 import { useCallback, useContext, useSyncExternalStore, type ReactNode } from 'react'
 import { Portal, PortalHost } from '@gorhom/portal'
@@ -45,7 +45,7 @@ function useScreenFocused(): boolean {
 /**
  * 슬롯이 그려질 자리를 여는 호스트.
  *
- * `Main` 의 `layout` 안, 하단바 **바로 뒤**에 하나만 둘 것. 앱 셸에 두면 하위 페이지가 `Main` 을
+ * `LayerStack` 의 `layout` 안, 하단바 **바로 뒤**에 하나만 둘 것. 앱 셸에 두면 하위 페이지가 `LayerStack` 을
  * 밀어낼 때 바만 나가고 이 그림이 남는다.
  *
  * @example

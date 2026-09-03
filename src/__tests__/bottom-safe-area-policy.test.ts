@@ -31,7 +31,7 @@ const SRC = join(__dirname, '..')
  * 그 셸이 갖기 때문이다. `*Screen.tsx` 가 아니라서, 안 적으면 이 가드의 **사각**이 된다.
  */
 const SHELLS = [
-  join(SRC, 'navigation', 'BottomBar.tsx'),
+  join(SRC, 'components', 'organisms', 'BottomBar', 'BottomBar.tsx'),
   join(SRC, 'components', 'organisms', 'Toast', 'ToastStack.tsx'),
   join(SRC, 'app', 'onboarding', 'OnboardingStep.tsx'),
 ]

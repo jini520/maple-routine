@@ -17,7 +17,7 @@ import type { NavigatorScreenParams } from '@react-navigation/native'
  * 탭 내비게이터의 화면 아홉. 그룹이 아니라 페이지다.
  *
  * 바에 보이는 그룹(스케줄·가계부…)은 내비게이션 구조가 아니라 바의 표현이라 여기 없다. 그
- * 묶음은 `bar-model.ts` 의 표가 갖는다. 중첩 내비게이터를 두지 않은 이유도 같다. 하위
+ * 묶음은 `bar-groups.ts` 의 표가 갖는다. 중첩 내비게이터를 두지 않은 이유도 같다. 하위
  * 페이지들은 서로 형제이고 전환에 스택도 애니메이션도 없다.
  *
  * 순서는 그룹 순서 → 그룹 안 순서다. 표 둘이 같은 순서를 가지면 대조하기 쉽다.
@@ -56,8 +56,8 @@ export type TabParamList = {
  * 이 이름들이 곧 층이다. 그룹 행에 서 있으면 `Groups` 한 단이고, 하위로 내려가면 그 그룹의
  * 화면이 그 위에 push 된다. 그래서 전환 애니메이션과 가장자리 스와이프가 공짜로 붙는다.
  *
- * 어느 그룹이 어느 층 화면을 갖는지는 `bar-model.ts` 의 `BAR_GROUPS` 가 든다. 여기 두면 두
- * 벌이 된다. 이름만 여기 있는 것은 `bar-model` 이 `routes` 를 읽지 그 반대가 아니어서다.
+ * 어느 그룹이 어느 층 화면을 갖는지는 `bar-groups.ts` 의 `BAR_GROUPS` 가 든다. 여기 두면 두
+ * 벌이 된다. 이름만 여기 있는 것은 `bar-groups` 가 `routes` 를 읽지 그 반대가 아니어서다.
  */
 export type LayerRouteName = 'Groups' | 'ScheduleSubs' | 'LedgerSubs'
 
@@ -85,7 +85,7 @@ export type LayerParamList = {
   LedgerSubs: NavigatorScreenParams<LedgerSubsParamList> | undefined
 }
 
-/** 층 화면 셋. `Main` 이 이 목록으로 `<Stack.Screen>` 을 그린다. */
+/** 층 화면 셋. `LayerStack` 이 이 목록으로 `<Stack.Screen>` 을 그린다. */
 export const LAYER_ROUTE_NAMES: readonly LayerRouteName[] = ['Groups', 'ScheduleSubs', 'LedgerSubs']
 
 /**
@@ -263,7 +263,7 @@ export const FEATURE_GUIDE_ROUTE_NAMES = [
 /**
  * 탭 내비게이터가 그리는 화면 이름 아홉. 표에서 파생한다.
  *
- * 라벨은 여기 없다. 라벨은 그룹과 함께 `bar-model.ts` 의 `BAR_GROUPS` 가 갖는다. 바가 라벨을
+ * 라벨은 여기 없다. 라벨은 그룹과 함께 `bar-groups.ts` 의 `BAR_GROUPS` 가 갖는다. 바가 라벨을
  * 두 층(그룹 이름 · 하위 이름)으로 쓰기 때문에 여기에도 두면 같은 문구가 두 벌이 된다.
  */
 export const TAB_ROUTE_NAMES: readonly TabRouteName[] = ROUTE_TABLE.flatMap((row) =>

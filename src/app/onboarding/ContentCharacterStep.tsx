@@ -16,14 +16,14 @@
  *
  * @see docs/features/onboarding.md 정책
  */
-import { View } from 'react-native'
+import { View, type ScrollView } from 'react-native'
+import { useAnimatedRef } from 'react-native-reanimated'
 
 import { useApiKeyNotice } from '../../features/onboarding/use-api-key-notice'
 
 import { Button, Text } from '../../components/atoms'
 import { CharacterManageBody } from '../../components/organisms/CharacterManage/CharacterManageBody'
-import { useCharacterManage } from '../../components/organisms/CharacterManage/use-character-manage'
-import { useReorderScroll } from '../../components/organisms/CharacterManage/use-reorder-scroll'
+import { useCharacterManage } from '../../hooks/useCharacterManage'
 import { OnboardingStep } from './OnboardingStep'
 
 export interface ContentCharacterStepProps {
@@ -34,7 +34,8 @@ export interface ContentCharacterStepProps {
 
 export function ContentCharacterStep(props: ContentCharacterStepProps): React.JSX.Element {
   const manage = useCharacterManage()
-  const { scrollRef, onScroll, scroll } = useReorderScroll()
+  // 끌어서 순서를 바꾸는 동안 굴릴 스크롤 뷰. 단계 셸이 그것을 소유한다.
+  const scrollableRef = useAnimatedRef<ScrollView>()
 
   // 429 만 넘긴다. 두 조회가 각각 맞을 수 있어 두 번 부르지만 두 겹은 아니다. 훅은 값 하나를
   // 지켜보고 멱등은 스토어 가드가 진다.
@@ -47,8 +48,8 @@ export function ContentCharacterStep(props: ContentCharacterStepProps): React.JS
 
   return (
     <OnboardingStep
-      scrollRef={scrollRef}
-      onScroll={onScroll}
+      scrollRef={scrollableRef}
+      tracksScrollOffset
       footer={
         <Button
           variant="primary"
@@ -74,7 +75,7 @@ export function ContentCharacterStep(props: ContentCharacterStepProps): React.JS
 
         {/* 401 을 넘기지 않으므로 화면이 안 옮겨간다. 문구도 그 사실에 맞아야 하고, 그래서 이
             자리에서만 401 에 `다시 시도`가 남는다(`formatRosterError` 의 `'onboarding'`). */}
-        <CharacterManageBody manage={manage} scroll={scroll} place="onboarding" />
+        <CharacterManageBody manage={manage} scrollableRef={scrollableRef} place="onboarding" />
       </View>
     </OnboardingStep>
   )

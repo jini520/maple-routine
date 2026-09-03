@@ -21,7 +21,7 @@ src/
 │   ├── boss-profit/        # 주간/월간 탭 + 기간 네비게이터 + 드롭 시트·히스토리·가격 입력
 │   ├── onboarding/  settings/  hunting-profit/  spend/  utility/
 │   ├── AppShell.tsx  prehydrate.ts  UpdatePromptModal.tsx
-├── navigation/             # @react-navigation 배선: RootNavigator · Main(층 스택) · BottomBar
+├── navigation/             # @react-navigation 배선: RootNavigator · LayerStack(층 스택) · routes · bar-groups(페이지→그룹→층 표)
 ├── features/               # 기능별 도메인 로직(UI 상태 + 비즈니스 로직)
 │   ├── onboarding/  content-scheduler/  boss-scheduler/  boss-profit/  schedule-sync/
 │   ├── character-manage/  settings/  tracking-mode/  live-update/  drop-effect/  toast/
@@ -37,6 +37,7 @@ src/
 ├── theme/                  # ThemeProvider · theme-vars(NativeWind vars) · appearance-store
 ├── components/             # 아토믹 4계층([[ADR-094]]): atoms/ molecules/ organisms/ templates/
 │                           #   molecules 는 잎, organisms 는 조합([[ADR-205]] 결정 1)
+│                           #   organisms/BottomBar/ 가 하단바의 뷰다([[ADR-209]] 결정 1)
 ├── assets/                 # items/(+rings/) · bosses/ · maps/ · worlds/ · themes/ · generated/
 ├── lib/                    # 범용 유틸(reset-clock, item-icons, boss-icons, boss-matching,
 │                           #   scheduler-merge, boss-profit-period, widget-layout, drop-history …)
@@ -47,23 +48,23 @@ modules/                    # 로컬 Expo 모듈 셋: capacitor-storage · app-b
 ## 화면 구조: **스택 두 겹** + 떠 있는 바 ([[ADR-132]] · [[ADR-145]] · [[ADR-167]])
 
 배선은 `src/navigation/` 이 소유한다. 스택이 **두 겹**이고 둘이 같은 상수로 열린다
-(`stack-presentation.ts`. 그래서 ‘하위 페이지처럼 열린다’가 우연이 아니라 구조다):
+(`push-screen-options.ts`. 그래서 ‘하위 페이지처럼 열린다’가 우연이 아니라 구조다):
 
 ```
 RootNavigator (스택)
-├── Main                          # 탭 레이어 자리
+├── LayerStack                    # 탭 레이어 자리. 루트 스택에서의 라우트 이름은 `Main`
 │   ├── 층 스택 (Groups · ScheduleSubs · LedgerSubs)
 │   │     └── 각 층은 탭 내비게이터: 옆걸음은 안 쌓이고 언마운트도 없다
 │   ├── BottomBar                 # 층 스택의 `layout` 이 그린다 → 층이 밀려도 안 밀린다
 │   └── BottomBarOverlayHost              # 같은 `layout` 의 **바 뒤**: 화면이 소유한 오버레이가 여기 뜬다
-└── 하위 페이지 열하나            # `Main` **통째**를 밀어낸다 → 바도 함께 나간다
+└── 하위 페이지 열하나            # `LayerStack` **통째**를 밀어낸다 → 바도 함께 나간다
 ```
 
 **떠 있는 것의 층은 형제 순서가 정한다**([[ADR-180]]). RN 에는 문서도 전역 z-index 도 없고 `zIndex`
 는 같은 부모 안에서만 겨루므로, ‘누가 위인가’는 이 트리에서 누가 **뒤에** 서는가와 같은 말이다. 아래에서 위로: 벽지 → 화면 → **바** → 바 위 슬롯(펼침판) → API 키 안내 → 토스트 → **시트**.
 시트가 맨 위인 것은 `PortalProvider` 가 `{children}` 뒤에 루트 호스트를 붙이기 때문이고, 바 위 슬롯은
 그 기구(`@gorhom/portal`)를 한 번 더 쓴 것이다. 슬롯에 그린 것은 화면이 숨어도 안 숨으므로
-**슬롯이 초점을 판정한다**(`navigation/BottomBarOverlay`).
+**슬롯이 초점을 판정한다**(`components/organisms/BottomBar/BottomBarOverlay`).
 
 **그룹 행 → 하위 행이 스택 한 단**이라는 것이 [[ADR-167]] 이다. 전환 애니메이션과 iOS 가장자리
 스와이프가 ‘만드는 것’이 아니라 ‘단이 있으면 OS 가 주는 것’이라, 그 단이 없던 동안은 안드로이드
