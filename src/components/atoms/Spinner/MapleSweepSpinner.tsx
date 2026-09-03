@@ -43,7 +43,7 @@ const AnimatedRect = Animated.createAnimatedComponent(Rect)
  * 훑고 지나가는 단풍잎 하나.
  *
  * 색은 `className` 이 정한다. **띠의 페이드는 색이 아니라 마스크로 만든다**. `react-native-svg` 의
- * 그라디언트 정지점은 `currentColor` 를 못 받아서 색을 넣으면 그라디언트가 통째로 빈다(실측).
+ * 그라디언트 정지점은 `currentColor` 를 못 받아서 색을 넣으면 그라디언트가 통째로 빈다.
  * 그래서 색은 `fill="currentColor"` 가, 모양은 흰색 알파 램프 마스크가 맡는다.
  *
  * @example

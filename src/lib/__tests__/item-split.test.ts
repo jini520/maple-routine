@@ -27,7 +27,7 @@ describe('netProceedsMeso: 판매 수수료를 뗀다', () => {
 })
 
 describe('transferPerMember: 수수료를 거쳐도 같아지는 **보낼 금액**', () => {
-  //  의 표를 그대로 고정한다.
+  // 분배 규칙의 표를 그대로 고정한다.
   it('판매가 10억 · 6인 · 판매 3% · 분배 3% 이면 162,479,061 을 보낸다', () => {
     expect(
       transferPerMember({ salePriceMeso: 1_000_000_000, partySize: 6, saleFeePercent: 3, splitFeePercent: 3 }),

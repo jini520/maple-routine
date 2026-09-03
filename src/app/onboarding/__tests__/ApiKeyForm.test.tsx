@@ -8,7 +8,7 @@
 // ③ `getByRole('link', …)` + `href` → **`Linking.openURL` 이 무엇으로 불렸는가**. RN 에 `href` 가
 //  없으므로 링크의 계약은 "그 주소로 나간다" 하나뿐이고 이 지키려는 것도 그것이다.
 // ④ `toBeDisabled`·`aria-busy` 속성 대신 **`accessibilityState`** 를 본다. `Pressable` 이
-//    `disabled`·`aria-busy` 를 호스트 뷰에 그대로 넘기지 않고 그 객체로 접는다(실측).
+//    `disabled`·`aria-busy` 를 호스트 뷰에 그대로 넘기지 않고 그 객체로 접는다.
 // ⑤ Enter 제출 → `await fireEvent(input, 'submitEditing')`.
 import { fireEvent } from '@testing-library/react-native'
 import { Linking } from 'react-native'

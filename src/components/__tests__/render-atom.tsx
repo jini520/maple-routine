@@ -96,7 +96,7 @@ export interface TreeNode {
  * 렌더 트리에서 특정 호스트 노드를 전부 찾는 도우미. SVG 안쪽(`RNSVGClipPath`·`RNSVGMask` …)을 볼 때 쓴다.
  *
  * RNTL 의 쿼리로는 닿지 않는다: `getBy*` 는 testID·역할·글자로 찾고 SVG 내부 도형에는 그중 아무것도
- * 없다. `findAllByType` 같은 react-test-renderer API 도 RNTL 14 의 엘리먼트에는 없다(실측). 그래서
+ * 없다. `findAllByType` 같은 react-test-renderer API 도 RNTL 14 의 엘리먼트에는 없다. 그래서
  * `toJSON` 결과를 직접 훑는다. 프롭이 이미 네이티브 값으로 정리돼 있어 오히려 읽기 쉽다.
  */
 export function findAllOfType(node: unknown, type: string): TreeNode[] {

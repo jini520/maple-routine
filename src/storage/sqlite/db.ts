@@ -198,7 +198,7 @@ export const BOSS_PROFIT_TABLE_NAMES: readonly string[] = TABLE_DEFINITIONS.map(
 )
 
 /**
- * 갈래 상점·편의 가 `이벤트·BM` 으로 이름을 바꿨다. `category` 는 이름 그 자체가 값이라 안
+ * 갈래 상점·편의 가 이벤트·BM 으로 이름을 바꿨다. `category` 는 이름 그 자체가 값이라 안
  * 옮기면 기존 기록이 어느 갈래에도 없는 고아가 된다. 갈래 칩에도 안 걸리고 `spendGroupsOf`
  * 도 빈손이라 목록 갈래가 직접 입력처럼 보인다.
  *

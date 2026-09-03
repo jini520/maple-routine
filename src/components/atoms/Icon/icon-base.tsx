@@ -71,7 +71,7 @@ interface SvgFrameProps extends IconProps {
  * `lib/nativewind-interop` 이 배선한 `color` 로 잇는다.
  *
  * 칠을 기본값으로 안 두는 이유는 `stroke` 가 **상속 속성**이라서다. 뿌리에 두면 자식이 전부 받아,
- * 채운 그림(`MapleLeaf`·스윕 스피너)에 2px 윤곽선이 생긴다(실측).
+ * 채운 그림(`MapleLeaf`·스윕 스피너)에 2px 윤곽선이 생긴다.
  *
  * @example
  * // 잎 격자로 부른다. 칠은 자식이 정한다

@@ -89,8 +89,8 @@ export function AppShell(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // 여기서 의 `startAds()`(SDK 초기화 + 첫 광고 사전 로드)를 불렀다. 이
-  // 전면광고를 걷으며 지웠다. 표시만 막고 사전 로드를 남기면 매 실행 **뜨지 않을 광고** 를 요청해
+  // 여기서 광고 SDK 초기화와 첫 광고 사전 로드를 불렀다. 전면광고를 걷으며 지웠다. 표시만 막고
+  // 사전 로드를 남기면 매 실행 **뜨지 않을 광고** 를 요청해
   // 임프레션 없는 요청으로 쌓인다. **인라인 광고를 붙일 때 SDK 초기화를 부를 자리가 여기다**
   // (`rnAdsPort.initialize()` 는 어댑터에 그대로 있다).
 

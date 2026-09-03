@@ -258,7 +258,7 @@ describe('openPage: 바를 거치지 않은 이동', () => {
   })
 
   // `pressGroup` 과 달리 **목적지를 지목한다**. `lastSub` 를 보지 않는다. 위젯은 **보스 수익** 처럼
-  // 특정 페이지를 가리키기 때문이다(대가 의 CTA 와 같은 성질).
+  // 특정 페이지를 가리키기 때문이다.
   it('기억된 하위가 있어도 지목한 페이지로 간다', () => {
     const remembered = at('Today', { lastSub: { ledger: 'Cashbook' } })
 

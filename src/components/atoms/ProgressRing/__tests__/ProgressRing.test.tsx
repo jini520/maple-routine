@@ -5,7 +5,7 @@ import { flattenStyle, renderAtom, type AtomElement } from '../../../__tests__/r
 import { ProgressRing } from '../ProgressRing'
 
 const 색 = { track: '#111111', fill: '#eeeeee' }
-/** `react-native-svg` 가 색 문자열을 미리 파싱해 `{ type, payload }` 로 바꾼다(실측). */
+/** `react-native-svg` 가 색 문자열을 미리 파싱해 `{ type, payload }` 로 바꾼다. */
 const strokeOf = (node: AtomElement): unknown => (node.props.stroke as { payload: unknown }).payload
 
 describe('ProgressRing · 연속', () => {
@@ -23,7 +23,7 @@ describe('ProgressRing · 연속', () => {
       <ProgressRing size={56} stroke={4} direction="cw" {...색} progress={{ kind: 'continuous', ratio: 0.25 }} />,
     )
 
-    // `react-native-svg` 가 dash 문자열을 **문자열 배열**로 파싱해 들고 있다(실측).
+    // `react-native-svg` 가 dash 문자열을 **문자열 배열**로 파싱해 들고 있다.
     const 둘레 = 2 * Math.PI * 26
     expect(getByTestId('progress-ring-fill').props.strokeDasharray).toEqual([
       String(둘레 * 0.25),

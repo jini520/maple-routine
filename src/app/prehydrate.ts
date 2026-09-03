@@ -1,7 +1,7 @@
 /**
  * 탭 스토어 선하이드레이션을 부르는 한 자리. 동적 `import()` 를 여기 가둔 모듈.
  *
- * **정적 import 로 되돌리지 말 것.** 이 패키지의 Metro 설정이 `inlineRequires: false` 라(실측),
+ * **정적 import 로 되돌리지 말 것.** 이 패키지의 Metro 설정이 `inlineRequires: false` 라,
  * 정적이면 세 탭 스토어와 그들이 끌고 오는 `data/*.json` 이 첫 렌더 **전**에 평가된다. 그 평가가
  * 무해하다는 근거가 없다.
  *

@@ -91,7 +91,7 @@ async function renderScreen(): Promise<void> {
  * 여럿이므로, 버튼 조상이 있는 쪽을 고른다.
  *
  * 상태는 프롭이 아니라 `accessibilityState` 에서 읽는다. `Pressable` 이 `aria-selected`·`disabled`
- * 를 호스트 `View` 로 그대로 넘기지 않고 거기에 접어 넣는다(실측).
+ * 를 호스트 `View` 로 그대로 넘기지 않고 거기에 접어 넣는다.
  */
 function row(label: string): AtomElement {
   for (const found of screen.getAllByText(label)) {

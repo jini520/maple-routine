@@ -25,7 +25,7 @@ export interface AmountFigureProps {
 
 const OPAQUE_ZERO = { opacity: 0 }
 
-/** 단위 왼쪽 틈(dp). 폭만 있는 `View` 로 낸다. 방법 넷의 실측은 에 있다. */
+/** 단위 왼쪽 틈(dp). 폭만 있는 `View` 로 낸다. */
 const FIGURE_UNIT_GAP = 2
 
 const GAP_STYLE = { width: FIGURE_UNIT_GAP }

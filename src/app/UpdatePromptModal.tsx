@@ -153,13 +153,13 @@ function HighlightsDisclosure({ highlights }: { highlights: string[] }): React.J
         textClassName={GHOST_TEXT}
       >
         자세히 보기
-        {/* **회전은 아이콘이 아니라 감싸는 `View` 가 받는다**(실측). NativeWind 의
+        {/* **회전은 아이콘이 아니라 감싸는 `View` 가 받는다**. NativeWind 의
             `rotate-180` 은 transform 일곱 항목을 **한 벌로** 내는데(`translateX: 0` ·
             `skewX: 0` …) 그중 `skewX`·`skewY` 가 **숫자 0** 이라, 그 style 이 SVG 로 가면
             `react-native-svg` 가 각도를 문자열로 읽다 `angle.endsWith is not a function` 으로
             **죽는다**. 다른 SVG 함정들과 같은 가족이되 이쪽은 조용하지 않다.
 
-            접힌 쪽이 빈 문자열이 아니라 `rotate-0` 인 것도 값이 아니라 계약이다(실측).
+            접힌 쪽이 빈 문자열이 아니라 `rotate-0` 인 것도 값이 아니라 계약이다.
             transform 이 첫 렌더에 없다가 나중에 생기면 NativeWind 는 호스트를 `Animated.View` 로
             올려야 하는데 그러면 리마운트라, 대신 올리기를 포기하고 개발 경고를 찍는다. 그 경고가
             원인 파악을 돕겠다고 `originalProps` 를 직렬화하는데, 그 프롭에 든 것이 React

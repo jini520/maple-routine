@@ -51,7 +51,7 @@ function readExtra(manifest: unknown): { appVersion: string | null; highlights?:
  *
  * 실패는 **삼킨다.** 여기서 실패했다는 것은 "스토어 업데이트가 필요한지 모른다"는 뜻이지 "확인이
  * 실패했다"가 아니다. 앞의 확인은 이미 성공했고, 곁가지 때문에 그 결과를 오류로 뒤집으면
- *  가 가른 **사용자가 시작하지 않은 실패는 조용히**를 어긴다.
+ * **사용자가 시작하지 않은 실패는 조용히** 라는 규칙을 어긴다.
  */
 async function checkStoreRequired(): Promise<LiveUpdateCheckResult | null> {
   try {

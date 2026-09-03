@@ -3,7 +3,7 @@
  * 진짜 SQLite 위에서 `db.ts` 를 돌리는 테스트 포트.
  *
  * 목은 자기가 흉내 내라고 배운 것만 흉내 내서 제약 위반을 못 잡는다(`income_records.meso_amount`
- * 가 `NOT NULL` 인 채 `null` 을 받는 INSERT 를 한 스위트도 못 봤다). `node:sqlite` 는 노드 내장이라
+ * 가 `NOT NULL` 인 채 `null` 을 받는 INSERT 를 한 스위트도 못 봤다. `node:sqlite` 는 노드 내장이라
  * 새 의존성이 없고, 쓰는 표면(`exec`·`prepare.all`·`prepare.run`·`PRAGMA`)이 op-sqlite 와
  * 같은 SQLite 다.
  *

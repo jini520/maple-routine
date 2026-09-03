@@ -26,7 +26,7 @@ interface Loop {
  *
  * **CSS 애니메이션 API 가 아니라 `useAnimatedProps` 를 쓰는 이유**는 대상이 SVG 속성이라서다.
  * Reanimated 의 CSS API 는 SVG 지원을 갖고 있지만 패키지 진입점에서 안 내보내 내부 경로를 직접
- * 파고들어야 닿는다(실측). 사설 경로에 기대는 대신 문서화된 훅을 쓴다. 그래서 이 저장소의 모션은
+ * 파고들어야 닿는다. 사설 경로에 기대는 대신 문서화된 훅을 쓴다. 그래서 이 저장소의 모션은
  * 두 갈래다. View 스타일은 CSS API, SVG 속성은 `useAnimatedProps`.
  *
  * 모션 줄이기(`useReducedMotion`)면 애니메이션을 아예 안 건다. 값이 `from` 에 머물러

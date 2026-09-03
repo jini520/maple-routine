@@ -48,8 +48,8 @@ describe('removeApiKey', () => {
   })
 })
 
-// 로 계정 선택이 사라진 뒤 남은 레거시 키. 아무도 읽고 쓰지 않지만, 캐패시터
-// 시절을 거친 설치본에는 값이 남아 있어 연결 해제가 함께 치운다.
+// 계정 선택이 사라진 뒤 남은 레거시 키. 아무도 읽고 쓰지 않지만, 그 시절을 거친 설치본에는
+// 값이 남아 있어 연결 해제가 함께 치운다.
 describe('레거시 selectedAccountId', () => {
   it('clearAuthConfig 가 레거시 키까지 지운다', async () => {
     await prefs.set(STORAGE_KEYS.legacySelectedAccountId, 'account-1')

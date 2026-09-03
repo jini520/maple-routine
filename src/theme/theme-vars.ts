@@ -33,15 +33,15 @@ export function toColorVariableName(token: string): string {
  */
 export const PANEL_BORDER_TOKEN = 'panel-border'
 
-/** 라이트에서 `border` 를 `text` 쪽으로 미는 비중. 가 실기기에서 세 번 만에 잡은 값. */
+/** 라이트에서 `border` 를 `text` 쪽으로 미는 비중. 실기기에서 세 번 만에 잡은 값. */
 const PANEL_BORDER_RATIO = 0.4
 
 /**
  * `color-mix(in srgb, base <ratio>%, other)` 와 같은 계산.
  *
- * core 의 `mixOklab` 을 쓰지 않는 이유는 가 **`in srgb`** 로 값을 잡았기 때문이다
- * (틴트 파생은 `in oklab` 이라 색 공간이 다르다). 색 공간을 바꾸면 그 ADR 이
- * 실기기에서 확정한 세 값이 전부 달라진다.
+ * core 의 `mixOklab` 을 쓰지 않는 것은 이 값들을 **`in srgb`** 로 잡았기 때문이다
+ * (틴트 파생은 `in oklab` 이라 색 공간이 다르다). 색 공간을 바꾸면 실기기에서 확정한
+ * 세 값이 전부 달라진다.
  */
 function mixSrgb(base: string, other: string, ratio: number): string {
   const a = parseHex(base)
@@ -122,7 +122,7 @@ export function buildSheetScopeVariables(definition: ThemeDefinition): Record<st
  * 일러스트 카드 안은 바탕이 `surface` 가 아니라 `mediaSurface` 라 표면·텍스트·완료 배지를 **다시
  * 선언**해야 한다. 커스텀 프로퍼티는 선언된 요소에서 `var()` 가
  * 해석된다")가 RN 에서도 **그대로 성립한다**. `vars()` 는 렌더 트리를 따라 상속되고 하위에서 같은
- * 이름을 다시 선언하면 그 서브트리만 새 기준을 쓴다(실측).
+ * 이름을 다시 선언하면 그 서브트리만 새 기준을 쓴다.
  */
 export function buildMediaScopeVariables(definition: ThemeDefinition): Record<string, string> {
   const scope = deriveMediaScope(definition, definition.mode)

@@ -126,7 +126,7 @@ describe('TextInput: 플랫폼 기본 상자를 지운다', () => {
  *
  * **`className` 이 아니라 프롭인 이유**: NativeWind 의 `placeholder:` 변형은 native 프리셋에서만
  * `placeholderTextColor` 로 컴파일되는데, jest 의 `globalSetup` 은 `NATIVEWIND_OS` 를 안 세워 web
- * 프리셋으로 돈다. 앱에서는 되지만 **여기서는 못 본다**(실측). 프롭이면 두 경로가 같다.
+ * 프리셋으로 돈다. 앱에서는 되지만 **여기서는 못 본다**. 프롭이면 두 경로가 같다.
  *
  * 색을 손으로 적지 않는다. `job-themes.json` 에서 읽는다.
  */

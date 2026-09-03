@@ -32,7 +32,7 @@ const FILL_CLASS = {
  * `animated` 가 채움에 얹는 폭 트랜지션. 값 셋은 Tailwind 의 `transition-[width]` 와 같다.
  *
  * **그 클래스로는 못 쓴다.** CSS 로 컴파일은 되는데 NativeWind 가 RN 스타일로 안 옮겨 **스타일에
- * 아무것도 안 남는다**(실측). 에러 없이 그냥 안 움직인다. `as const` 인 이유는
+ * 아무것도 안 남는다**. 에러 없이 그냥 안 움직인다. `as const` 인 이유는
  * `float-animation.ts` 와 같다.
  */
 const WIDTH_TRANSITION = {

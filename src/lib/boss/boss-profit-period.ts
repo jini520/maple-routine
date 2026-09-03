@@ -223,7 +223,7 @@ export function getPeriodDateKeys(cycle: BossCycle, periodKey: string): string[]
 
 /**
  * 과거 기간 백필에 쓸 조회 날짜(`YYYY-MM-DD`).
- * 그 기간의 완료 현황이 가장 온전히 반영되는 시점. 다음 리셋 직전(그 기간의 마지막 날). 을 쓴다.
+ * 그 기간의 완료 현황이 가장 온전히 반영되는 시점, 곧 다음 리셋 직전(그 기간의 마지막 날)을 쓴다.
  * weekly: periodKey(리셋 목요일) + 6일. monthly: periodKey가 속한 달의 마지막 날.
  */
 export function getBackfillQueryDate(cycle: BossCycle, periodKey: string): string {
@@ -253,8 +253,7 @@ export function getMinQueryableDate(now: Date): string {
 }
 
 /**
- * now(KST) 기준으로 스케줄러 API가 받아들이는 **최대** 날짜(YYYY-MM-DD). 오늘−1일이다
- * (실측).
+ * now(KST) 기준으로 스케줄러 API가 받아들이는 최대 날짜(YYYY-MM-DD). 오늘−1일이다.
  *
  * `date=오늘` 과 미래 날짜는 400 `OPENAPI00004` 다. `오늘−1일` 은 **집계가 끝나기 전(KST 새벽)엔
  * 400 `OPENAPI00009`** 지만 그 뒤에는 정상 조회된다. 그래서 상한을 오늘−2일로 낮추지 않는다.
@@ -331,9 +330,8 @@ export interface PeriodDataStateInput {
 }
 
 /**
- * 화면과 백필이 같은 값을 공유하게 하는 한 자리 판정. 화면이 `isPeriodQueryable`
- * 하나로, 백필은 target 별로 따로 판정하면 월간 탭에서 조회 불가 와 불러오지 못했습니다 가
- * 동시에 뜨는 경로가 생긴다.
+ * 화면과 백필이 같은 값을 공유하게 하는 한 자리 판정. 화면은 `isPeriodQueryable` 하나로 보고
+ * 백필은 target 별로 따로 판정하면, 월간 탭에서 조회 불가 와 불러오지 못했습니다 가 동시에 뜬다.
  */
 export function resolvePeriodDataState(input: PeriodDataStateInput): PeriodDataState {
   // 현재 기간은 백필 대상이 아니다. 조회일이 미래라 isQueryable이 false지만 "조회 불가"가 아니라

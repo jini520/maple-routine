@@ -42,7 +42,7 @@ export function resolveScreenBottomInset(options: {
    */
   insetBottomPx: number
   /**
-   * `useBottomSafeAreaPx()`. **인셋이 아니다**(: 안드로이드는 하한 34).
+   * `useBottomSafeAreaPx()`. **인셋이 아니다**. 안드로이드는 하한 34 다.
    *
    * 이름이 위 `insetBottomPx` 와 갈리는 것이 일부러다. 이 값은 떠 있는 바가 뜨는 높이와 **같은
    * 함수**에서 와야 하고(콘텐츠 끝 = 바의 윗변), 인셋을 그대로 넣으면 안드로이드 제스처 기기에서

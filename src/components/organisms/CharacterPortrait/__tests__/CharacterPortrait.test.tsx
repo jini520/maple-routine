@@ -43,7 +43,7 @@ async function rail(
 
 /**
  * SVG 글자의 내용은 **글자 노드가 아니라 `RNSVGTSpan` 의 프롭**으로 들어간다. `getByText` 로는
- * 안 잡힌다(실측). 곡선 글자를 쓰는 대가이고, 그래서 여기서 직접 판다.
+ * 안 잡힌다. 곡선 글자를 쓰는 대가이고, 그래서 여기서 직접 판다.
  */
 function svgTextContent(node: AtomElement): string {
   const parts: string[] = []
@@ -128,7 +128,7 @@ describe('CharacterPortrait · rail 규격의 곡선 글자', () => {
   })
 
   // 호의 id 가 화면 안에서 겹치면 둘 중 하나가 엉뚱한 호를 따라간다. 레일에 여러 벌이 뜬다.
-  // `react-native-svg` 가 `#` 을 떼고 이름만 들고 있다(실측).
+  // `react-native-svg` 가 `#` 을 떼고 이름만 들고 있다.
   it('호의 id 에 ocid 가 들어간다', async () => {
     const view = await rail({ ocid: 'ocid-9' })
 
@@ -284,7 +284,7 @@ describe('CharacterPortrait · rail 규격의 얼굴과 선택', () => {
   })
 })
 
-//  로 보스 수익의 아바타가 이 부품으로 들어왔다. 아래는 그 화면의 계약이고,
+// 보스 수익의 아바타도 이 부품을 쓴다. 아래는 그 화면의 계약이고,
 // 진행률을 나타내는 것이 링뿐이라(`n/12` 글자 보류) 접근성 이름이 곧 그
 // 정보다.
 describe('CharacterPortrait · compact 규격', () => {

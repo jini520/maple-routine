@@ -6,7 +6,7 @@
 //      `.native.*` 변형을 물어 jest 에서 즉시 터지던 것을 `jest.resolver.js` 가 막는다.
 //   ② `BottomSheet.tsx` `배선 전제`가 실제 전제다. `GestureHandlerRootView` +
 //      `BottomSheetModalProvider` 아래에서만 선다. 그 둘을 빼면
-//      `'BottomSheetModalInternalContext' cannot be null!` 로 죽는다(실측).
+//      `'BottomSheetModalInternalContext' cannot be null!` 로 죽는다.
 //
 // **시트 내용은 여기서 안 보인다.** 진짜 라이브러리는 레이아웃 측정과 UI 스레드 애니메이션 위에
 // 서 있어 jest 에서 콘텐츠가 마운트되지 않는다(`waitFor` 1초로도 안 나온다, 실측). 그래서 값

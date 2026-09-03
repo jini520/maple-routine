@@ -1,7 +1,7 @@
 // 컨텐츠 카드. **어떤 항목이 어떤 카드로 그려지는가**.
 //
-// 화면째 렌더하지 않고 `render*Card`
-// 를 직접 부른다. 묻는 것이 **분기와 배지**이지 화면 배선이 아니고, 스토어 목 없이 같은 계약을
+// 화면째 렌더하지 않고 `render*Card` 를 직접 부른다. 묻는 것이 **분기와 배지**이지 화면 배선이
+// 아니고, 스토어 목 없이 같은 계약을
 // 그대로 볼 수 있기 때문이다(화면 쪽 계약은 `ContentScreen.test.tsx` 가 따로 본다).
 //
 // **그림은 `testUri` 로 본다.** jest 에서 번들 에셋은 숫자가 아니라 `{ testUri }` 대역이라
@@ -178,7 +178,7 @@ describe('주간 카드', () => {
     expect(artUri(view)).toContain('armorDragon')
   })
 
-  // 셋이 **서로 독립**이라는 것이 정정의 요점이다. 하나만 등록돼도 나머지에 영향이 없다.
+  // 셋이 **서로 독립**이라는 것이 요점이다. 하나만 등록돼도 나머지에 영향이 없다.
   it('길드 3종은 저마다 다른 카드다', async () => {
     const waterway = await renderAtom(
       renderWeeklyContentCard(weekly({ name: '[길드] 지하 수로', nowCount: 1200 }), 300),

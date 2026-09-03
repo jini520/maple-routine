@@ -65,7 +65,7 @@ function 문장(node: AtomElement): string {
 /**
  * 잎의 색. `<Path fill>` 이라 글자가 아니라 트리에서 집는다. 두 가지가 갈린다.
  *
- * ① RNTL 14 의 요소에는 `findAll` 이 없어(실측) `children` 을 직접 훑는다. 잎 경로는 `d` 를 가진
+ * ① RNTL 14 의 요소에는 `findAll` 이 없어 `children` 을 직접 훑는다. 잎 경로는 `d` 를 가진
  *    유일한 노드라 그것으로 찾는다. `fill` 로 찾으면 그 위의 그룹이 먼저 걸린다(기본 검정).
  * ② `react-native-svg` 가 색을 **정규화한다**. `#f7d00d` 가 `{ payload, type }` 으로 온다.
  *    그래서 기대값도 `processColor` 를 통과시켜 같은 형태로 만든다.

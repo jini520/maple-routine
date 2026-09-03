@@ -406,7 +406,7 @@ describe('이동. 선택은 **표시** 가 아니라 **이동** 이다', () => {
     expect(namesIn(view, 'character-manage-candidates')).toEqual(['달의아이', '별헤는밤'])
   })
 
-  //  가 원한 결말. 뺄 수 있으면 됐고, 다시 고를 수 있어야 할 이유는 없다.
+  // 뺄 수 있으면 됐고, 다시 고를 수 있어야 할 이유는 없다.
   it('조회 불가 캐릭터는 위에 남아 해제되고, 빼면 어디에도 서지 않는다', async () => {
     mockContentStore({ trackedOcids: ['a2'] })
     rosterByAccount['account-a'] = [후보(낟낟), 후보(달의아이, { unavailable: true })]
@@ -547,7 +547,7 @@ describe('순서. 놓은 자리가 배열 순서다', () => {
     expect(actionLabels(handle(view, '낟낟'))).toEqual([])
   })
 
-  //  의 **멤버십으로만 판정하라** 가 뒤집힌 자리. 집합은
+  // **멤버십으로만 판정하라** 가 뒤집힌 자리. 집합은
   // 그대로이고 순서만 달라진다.
   it('순서만 바꿔도 저장이 활성이 된다', async () => {
     mockContentStore({ trackedOcids: ['a1', 'a2'] })
@@ -749,7 +749,7 @@ describe('저장', () => {
     expect(isSaveDisabled(view)).toBe(false)
   })
 
-  //  의 **멤버십으로만 판정하라** 가 뒤집히는 자리다. 순서가 사용자 것이 되면서
+  // **멤버십으로만 판정하라** 가 뒤집히는 자리다. 순서가 사용자 것이 되면서
   // 그 근거(그리드 토글이 배열 끝에 append 해 순서가 의미 없이 흔들린다)가 사라졌다.
   it('집합이 같아도 순서가 달라지면 활성이다', async () => {
     mockContentStore({ trackedOcids: ['a1', 'a2'] })

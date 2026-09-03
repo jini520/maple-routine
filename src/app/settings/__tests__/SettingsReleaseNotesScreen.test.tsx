@@ -4,8 +4,8 @@
 // ① **라우터 프로브가 없다**. 항목을 누르면 `navigate('SettingsReleaseNoteGuide', {…})` 가
 //  불리는지를 본다. 마디는 `section` 파라미터다(`routes.ts`).
 // ② **`사용 중` 배지의 기준이 빌드 시점 버전으로 좁혀졌다**. `currentVersion`
-//    을 물을 수 없어 폴백 경로만 남았다. 그래서
-//    두 케이스가 하나로 접히고, **매니페스트를 조회하지 않는다는 검사할 스토어가 없어 사라진다**
+//    을 물을 수 없어 폴백 경로만 남았다. 그래서 두 케이스가 하나로 접히고,
+//    **매니페스트를 조회하지 않는다는 검사할 스토어가 없어 사라진다**
 //    (그 계약은 이제 구조가 지킨다. 이 화면은 live-update 를 import 조차 하지 않는다).
 // ③ `closest('li')` → **항목 텍스트에서 위로 올라가** 그 행을 잡는다.
 // ④ **픽스처 주입 방식. getter 가 안 통한다.** 목이 돌려준 객체에 getter 를
@@ -26,7 +26,7 @@ import { useSettingsNavigation } from '../use-settings-navigation'
 // 케이스(순서·항목 단위 표식)를 위해 `src/data/release-notes.ts` 를 늘리지 않고 여기서 픽스처를
 // 주입한다. 아무것도 안 넣으면 `beforeEach` 가 진짜 데이터를 되돌려 놓는다.
 // **배열은 팩토리가 만든다.** 바깥에 `const` 로 두면 팩토리가 먼저 돌아(테스트 파일의 import 시점)
-// 아직 초기화되지 않은 값을 실어 보낸다. 화면이 `undefined.length` 에서 죽는다(실측).
+// 아직 초기화되지 않은 값을 실어 보낸다. 화면이 `undefined.length` 에서 죽는다.
 jest.mock('../../../data/release-notes', () => ({
   ...jest.requireActual('../../../data/release-notes'),
   RELEASE_NOTES: [],

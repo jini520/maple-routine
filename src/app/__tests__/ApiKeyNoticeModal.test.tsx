@@ -14,7 +14,7 @@ import type { ApiKeyNoticeKind } from '../../features/onboarding/state'
 import { renderOverlay } from '../../components/__tests__/render-atom'
 import { ApiKeyNoticeModal } from '../ApiKeyNoticeModal'
 
-// 의 문구 표를 그대로 옮긴 것이다. 이 배열이 계약이다.
+// 모달이 띄우는 문구 표를 그대로 옮긴 것이다. 이 배열이 계약이고, 같은 문자열을 화면도
 // 단언한다. 두 원인이 같은 문구로 합쳐지면 여기서 먼저 깨진다.
 const CASES: ReadonlyArray<{ kind: ApiKeyNoticeKind; title: string; body: string }> = [
   {

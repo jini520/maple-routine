@@ -6,7 +6,7 @@
  *
  * 그래서 나머지 축에 **명시적 `undefined`** 를 적는다. 안 적는 것과 다르다. RN 의 스타일 병합이
  * 그것을 앞의 값을 지우는 값으로 읽어서, 지워진 축이 auto 가 되고 그제야 `aspectRatio` 가 그 자리를
- * 채운다. NativeWind 도 그 키를 보존한다(실측).
+ * 채운다. NativeWind 도 그 키를 보존한다.
  *
  * @see src/lib/image-crop.ts 크롭 표의 퍼센트 기하를 풀 때 `imageNaturalSize` 를 그대로 쓴다
  */

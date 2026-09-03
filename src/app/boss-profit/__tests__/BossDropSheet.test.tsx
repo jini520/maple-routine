@@ -24,7 +24,7 @@ jest.mock('../../../components/organisms/DropEffectOverlay/DropEffectOverlay', (
   return {
     __esModule: true,
     // `accessibilityLabel` 은 안 붙인다. 아이템 이름을 그대로 쓰면 같은 이름의 타일과 충돌해
-    // `getByLabelText` 가 둘을 찾는다(실측).
+    // `getByLabelText` 가 둘을 찾는다.
     DropEffectOverlay: () => React.createElement(View, { testID: 'drop-effect-overlay-modal' }),
   }
 })
@@ -429,7 +429,7 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
     expect(getByLabelText('가격 입력됨')).toBeTruthy()
   })
 
-  // 스킵은 "기록된 가격"이 아니므로 표식이 없다(= 미입력과 같은 얼굴). 의 세 상태 중
+  // 스킵은 "기록된 가격"이 아니므로 표식이 없다(= 미입력과 같은 얼굴). 가격의 세 상태 중
   // 이 화면이 가르는 것은 `entered` 하나뿐이고, 나머지 구분은 가격 기록 화면이 맡는다.
   it('스킵한 기록에는 수익 배지가 붙지 않는다', async () => {
     const { result } = renderSheet({

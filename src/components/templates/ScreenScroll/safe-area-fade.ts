@@ -55,7 +55,7 @@ export function resolveSafeAreaFade(options: {
   /** 아래에 떠 있는 바가 있는가. 페이드가 안전영역 위로 얼마나 올라가는지가 갈린다. */
   hasTabBar: boolean
   /**
-   * `useTopSafeAreaPx()`. **인셋이 아니다**(: 안드로이드는 하한 48).
+   * `useTopSafeAreaPx()`. **인셋이 아니다**. 안드로이드는 하한 48 이다.
    *
    * 이름이 아래 `insetBottomPx` 와 갈리는 것이 일부러다. 이 값은 헤더 패딩과 **같은 함수**에서
    * 와야 하고(제목 윗변 = 이 페이드의 끝선), 인셋을 그대로 넣으면 안드로이드에서 페이드가 제목보다

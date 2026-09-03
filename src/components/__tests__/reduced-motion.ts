@@ -51,7 +51,7 @@ export const withRepeatSpy = jest.fn()
  * `default` 를 손으로 다시 얹는 이유. Reanimated 의 진입점은 그것을 **열거되지 않는 getter** 로
  * 정의해서 전개(`...`)가 데려오지 못한다. 빠뜨리면 `import Animated from 'react-native-reanimated'`
  * 가 `undefined` 가 되고, `nativewind-interop` 의 `cssInterop(Animated.View, …)` 가
- * *"Cannot read properties of undefined (reading 'displayName')"* 로 죽는다(실측).
+ * *"Cannot read properties of undefined (reading 'displayName')"* 로 죽는다.
  */
 export function reanimatedWithReducedMotion(): unknown {
   const actual = jest.requireActual('react-native-reanimated') as {

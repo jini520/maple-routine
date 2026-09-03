@@ -423,7 +423,7 @@ describe('BossScreen: 챌린저스 시즌 보스 배지', () => {
     expect(screen.getByText('season 미완료')).toBeTruthy()
   })
 
-  //  의 **빈 무리는 헤더도 걷는다** 에 예외가 하나 있다. **배지를 싣고 있으면
+  // **빈 무리는 헤더도 걷는다** 에 예외가 하나 있다. **배지를 싣고 있으면
   // 남긴다.** 탭 시절 이 배지들은 목록이 비어도 탭 줄에 떠 있었고, 무리가 비었다는 이유로 지우면
   // **이번 주 몇 마리 잡았나** 를 말할 자리가 아예 없어진다.
   it('주간 카드가 하나도 안 서도 배지를 실은 `주간` 헤더는 남는다', async () => {
@@ -771,7 +771,7 @@ describe('BossScreen: 빈 상태 문구', () => {
     expect(screen.queryByText('등록된 보스가 없습니다')).toBeNull()
   })
 
-  //  의 헤더 진입점이 로 폐기됐다. 목록이 있는 화면에는
+  // 헤더에 있던 보스 관리 진입점은 폐기됐다. 목록이 있는 화면에는
   // 관리로 가는 자리가 **하나도 없다**(하단바가 진다). 그 부재를 여기서 못 박는다.
   it('목록이 있으면 "보스 관리"로 가는 자리가 화면에 없다', async () => {
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character({ weeklyBosses: [boss()] })] })

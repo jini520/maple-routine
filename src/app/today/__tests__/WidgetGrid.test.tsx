@@ -98,7 +98,7 @@ describe('WidgetGrid: 좌표 배치', () => {
 
 describe('`h: auto` 타일', () => {
   // 선언한 `h` 는 **최소 높이**다. 실측이 오기 전에도 그 값으로 자리를 잡아야 격자가 첫 프레임부터
-  // 맞는다(측정을 기다리면 한 프레임 접혀 있다. 과 같은 이유).
+  // 맞는다(측정을 기다리면 한 프레임 접혀 있다).
   it('측정 전에는 nominal 최소 높이로 그린다', async () => {
     const view = await 격자()
     const 카드 = within(타일(view, 'remaining-schedule')).getByTestId('widget-remaining-schedule')

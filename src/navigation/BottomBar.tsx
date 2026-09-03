@@ -528,7 +528,7 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
         <GlassView
           testID="bar-glass"
           // 바는 `clear` 로 두지 않는다. 유리 느낌은 세지지만 바쁜 콘텐츠 위에서 비활성 라벨
-          // 대비가 1.07 까지 떨어진다(실측). 바는 글자를 얹는 판이고 층은 알약 쪽에서 만든다.
+          // 대비가 1.07 까지 떨어진다. 바는 글자를 얹는 판이고 층은 알약 쪽에서 만든다.
           glassEffectStyle="regular"
           // OS 외형이 아니라 앱 테마를 따른다. 기본값 `auto` 는 시스템 외형을 보는데 이 앱은
           // 자체 테마를 쓴다. 라이트 OS 에서 다크 테마를 켜면 새까만 페이지 위에 밝은 유리판이 뜬다.

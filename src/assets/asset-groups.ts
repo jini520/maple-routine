@@ -16,7 +16,7 @@
 export type AssetKeyRule =
   /** 확장자를 뗀 이름. 데이터가 슬러그로 가리키는 에셋(보스·지역·테마·월드) */
   | 'slug'
-  /** 확장자까지 포함한 파일 이름. 의 `iconFile` 이 그렇게 적혀 있다 */
+  /** 확장자까지 포함한 파일 이름. 참조표의 `iconFile` 이 그렇게 적혀 있다 */
   | 'fileName'
 
 export interface AssetGroup {

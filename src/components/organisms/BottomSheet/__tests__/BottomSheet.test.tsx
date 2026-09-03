@@ -113,9 +113,8 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
     })
   })
 
-  // **위 테두리는 가 걷었다.** 그 선은 면이 경계를 못 만들던 시절의 대타였고
-  // 다크에서 몸통이 한 칸 올라간 지금은 밝아진
-  // 면 위에 뜬 줄 하나로 남는다.
+  // **위 테두리는 걷었다.** 그 선은 면이 경계를 못 만들던 시절의 대타였고, 다크에서 몸통이
+  // 한 칸 올라간 지금은 밝아진 면 위에 뜬 줄 하나로 남는다.
   it('위 테두리를 그리지 않는다', async () => {
     const { getByTestId } = await open()
     const style = flattenStyle(getByTestId('sheet').props.backgroundStyle)

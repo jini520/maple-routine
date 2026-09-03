@@ -24,7 +24,7 @@ describe('DifficultySegment', () => {
       <DifficultySegment difficulties={['노멀', '하드']} selected="하드" onSelect={jest.fn()} />,
     )
 
-// RN 이 `aria-selected` 를 `accessibilityState.selected` 로 정규화한다(실측).
+// RN 이 `aria-selected` 를 `accessibilityState.selected` 로 정규화한다.
     // `aria-pressed` 가 담던 사실이 그대로 여기 들어온다.
     const [normal, hard] = getAllByRole('button')
     expect(normal.props.accessibilityState.selected).toBe(false)
@@ -37,7 +37,7 @@ describe('DifficultySegment', () => {
       <DifficultySegment difficulties={['노멀', '하드']} selected="하드" onSelect={jest.fn()} />,
     )
 
-    // `toBeCloseTo` 인 이유는 값이 float32 를 거쳐 0.4000000059604645 로 돌아오기 때문이다(실측).
+    // `toBeCloseTo` 인 이유는 값이 float32 를 거쳐 0.4000000059604645 로 돌아오기 때문이다.
     const [normal, hard] = getAllByRole('button')
     expect(flattenStyle(normal.props.style).opacity as number).toBeCloseTo(0.4, 5)
     expect(flattenStyle(hard.props.style).opacity).toBeUndefined()

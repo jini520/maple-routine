@@ -47,7 +47,7 @@ describe('안드로이드 상단 안전영역에는 하한이 있다', () => {
   })
 
   // 안전영역이 0인 기기(안드로이드 태블릿·에뮬레이터)에서도 헤더는 하한만큼 자리를 갖는다.
-  // 이 경우가 와 만난다. 상단 페이드가 0이 아니게 되어 마스크가 걸린다.
+  // 이 경우가 상단 페이드와 만난다. 페이드가 0이 아니게 되어 마스크가 걸린다.
   it('인셋이 0이어도 안드로이드는 하한만큼 갖는다', () => {
     expect(resolveTopSafeAreaPx({ insetTopPx: 0, platform: 'android' })).toBe(48)
     expect(resolveTopSafeAreaPx({ insetTopPx: 0, platform: 'ios' })).toBe(0)

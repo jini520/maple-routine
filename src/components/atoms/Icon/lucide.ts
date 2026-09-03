@@ -6,7 +6,7 @@
  * ① **`lucide-react-native` 를 직접 import 하는 곳은 이 파일뿐이다.** 등록을 빼먹으면 에러도 경고도
  *    없이 클래스만 사라져서(색·크기 없는 아이콘), 흩어 두면 그 실패가 어디서 시작됐는지 못 찾는다.
  * ② **배럴이 아니라 아이콘별 경로로 가져온다.** 배럴은 아이콘 1,900개를 전부 그래프에 넣고 Metro 는
- *    트리셰이킹을 안 해서 그대로 번들에 실린다. 같은 8개로 재면 5.5MB 대 3.7MB 다(실측).
+ *    트리셰이킹을 안 해서 그대로 번들에 실린다. 같은 8개로 재면 5.5MB 대 3.7MB 다.
  *    **여기 목록이 늘어도 배럴로 되돌리지 말 것.**
  * ③ 이름은 lucide 의 정규 이름(kebab-case 파일명)이다.
  *
@@ -126,9 +126,9 @@ export const EyeOffIcon = withIconInterop(EyeOff)
 export const FileTextIcon = withIconInterop(FileText)
 /** 길드 카테고리. `ContentManageScreen` 그룹 헤더·행. */
 export const FlagIcon = withIconInterop(Flag)
-/** 소비 드롭 카테고리. `BossDropSheet`(: 노란 점 대신 아이콘). */
+/** 소비 드롭 카테고리. `BossDropSheet` 에서 노란 점 대신 선다. */
 export const FlaskConicalIcon = withIconInterop(FlaskConical)
-/** 자동 트래킹 모드. `TrackingModeStep`(: "게임에서 정한 것을 따른다"). */
+/** 자동 트래킹 모드. `TrackingModeStep` 의 "게임에서 정한 것을 따른다". */
 export const Gamepad2Icon = withIconInterop(Gamepad2)
 /** 호출 한도 초과. `ApiKeyNoticeModal`(rateLimited). 타이머 계열을 피한 근거는 그 파일에 있다. */
 export const GaugeIcon = withIconInterop(Gauge)
@@ -138,7 +138,7 @@ export const InfoIcon = withIconInterop(Info)
 export const KeyRoundIcon = withIconInterop(KeyRound)
 /** 메이플 유니온 카테고리. `ContentManageScreen` 그룹 헤더·행. */
 export const LayoutGridIcon = withIconInterop(LayoutGrid)
-/** 수동 트래킹 모드. `TrackingModeStep`(: "앱에서 고른다"). */
+/** 수동 트래킹 모드. `TrackingModeStep` 의 "앱에서 고른다". */
 export const LayoutDashboardIcon = withIconInterop(LayoutDashboard)
 
 export const ListChecksIcon = withIconInterop(ListChecks)

@@ -85,8 +85,8 @@ describe('toTriggerNotification', () => {
     expect(trigger).toEqual({ type: TriggerType.TIMESTAMP, timestamp: NOW + 60_000 })
   })
 
-  // Capacitor 는 iOS 가 거절하고 Android 가 즉시 발화해 플랫폼끼리 달랐다. 여기서는 둘 다 던진다.
-  //  가 앱 실행마다 재예약을 전제하므로 즉시 발화를 고르면 시계가 조금 어긋난 재예약
+  // 플랫폼끼리 거동이 갈리던 자리다. 여기서는 둘 다 던진다. 앱 실행마다 재예약하는 구조라
+  // 즉시 발화를 고르면 시계가 조금 어긋난 재예약
   // 한 번이 알림 무더기가 된다.
   it('지난 시각은 던진다', () => {
     expect(() => toTriggerNotification(request({ scheduleAt: new Date(NOW - 1) }), NOW)).toThrow(

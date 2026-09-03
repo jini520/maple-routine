@@ -19,8 +19,8 @@ import { imageCropStyle, resolveImageCropLayout, type ImageCrop } from '../../..
  * 그림을 눌러 위의 글자가 읽히게 하는 값 둘.
  *
  * `saturate(.85) brightness(.8)` + `opacity:.65` 를 옮긴 값이 맞는지는 **한 번
- * 확인하고 `docs/foundation/design-system.md` 에 적었다.** 웹 소스가 로 없어져 더
- * 갈릴 원본이 없으므로 대조용 CSS 사본을 코드에 두지 않는다.
+ * 확인하고 `docs/foundation/design-system.md` 에 적었다.** 원본 CSS 가 없어져 더
+ * 갈릴 것이 없으므로 대조용 사본을 코드에 두지 않는다.
  */
 const VEIL_OPACITY = 0.65
 const VEIL_FILTER = [{ saturate: 0.85 }, { brightness: 0.8 }]

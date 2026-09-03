@@ -16,7 +16,7 @@ import {
   type ButtonVariant,
 } from './variants'
 
-/** 라벨 옆이 아니라 라벨 자리에 서므로 크기는 의 16px 그대로다. */
+/** 라벨 옆이 아니라 라벨 자리에 서므로 크기는 라벨 글자와 같은 16px 이다. */
 const BUSY_SPINNER_SIZE = 16
 
 export interface ButtonProps extends Omit<PressableProps, 'children'> {

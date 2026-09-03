@@ -5,10 +5,8 @@ import { showSplashScreen } from './splash-screen'
 /**
  * OTA 의 **정책** 층.
  *
- * 여기 있던 것 중 프로토콜에 속한 것. 매니페스트 URL·`parseLiveUpdateManifest`·조회·비교.
- * 은 전부 **어댑터로 갔다**.
- * `expo-updates` 것은 `app-rn/native/adapters/rn-live-update.ts`). 지우는 것이 아니라 **옮긴 것**이라
- * capacitor 앱은 계속 돈다. 전환이 끝날 때까지 스토어에 있는 것은 아직 그 앱이다.
+ * 프로토콜에 속한 것은 전부 어댑터에 있다. 매니페스트 URL·`parseLiveUpdateManifest`·조회·비교가
+ * 그것이고, `expo-updates` 를 쓰는 구현은 `native/adapters/rn-live-update.ts` 다.
  *
  * 남은 것은 프로토콜을 안 타는 둘뿐이다:
  * - `isNewerVersion`. 순수 버전 비교. 스토어의 완료 안내 판정이 쓴다.

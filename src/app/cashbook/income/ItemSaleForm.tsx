@@ -54,7 +54,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
   const { saving, submit, remove } = useSheetSubmit(props)
 
   const gross = mesoValueOf(grossText)
-  /** 의 계산을 **그대로 부른다**. 수수료 쪽을 내림한다(= 손에 남는 쪽이 커진다). */
+  /** 분배 계산기의 계산을 **그대로 부른다**. 수수료 쪽을 내림한다(= 손에 남는 쪽이 커진다). */
   const net = feePercent === null ? gross : netProceedsMeso(gross, feePercent)
   const canSave = gross > 0
 

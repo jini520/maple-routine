@@ -222,8 +222,8 @@ export function BossManageScreen(): React.JSX.Element {
     }
   }
 
-  // 에 묻는다.
-  // 콤팩트 스테퍼. 상한은 (보스, 난이도)마다 다르다. 화면이 숫자를 정하지 않고 `getMaxPartySize`
+  // 콤팩트 스테퍼. 상한은 (보스, 난이도)마다 다르다. 화면이 숫자를 정하지 않고
+  // `getMaxPartySize` 에 묻는다.
   function renderPartyStepper(bossName: string, difficulty: BossDifficulty): React.JSX.Element {
     const ocid = selected?.ocid ?? ''
     const value = partySizes[partySizeKey(ocid, bossName, difficulty)] ?? 1

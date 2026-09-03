@@ -230,8 +230,8 @@ describe('ContentCharacterStep: `계속하기`는 하단에 고정된다', () =>
     const { view } = await renderStep()
 
     expect(within(view.getByTestId('onboarding-action-bar')).getByText('계속하기')).toBeTruthy()
-    // 스크롤 뷰 안에 남아 있으면 **어디까지 굴렸든 지금 누른다** 가 깨진다. 그것이 이 정정이
-    // 옮긴 자리다.
+    // 스크롤 뷰 안에 남아 있으면 **어디까지 굴렸든 지금 누른다** 가 깨진다. 그래서 액션 바로
+    // 옮겼다.
     expect(within(view.getByTestId('onboarding-scroll')).queryByText('계속하기')).toBeNull()
   })
 

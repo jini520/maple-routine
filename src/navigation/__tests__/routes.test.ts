@@ -15,8 +15,8 @@ import {
 /**
  * `docs/migration/parity-inventory.md` §1 의 첫 열, 순서 그대로.
  *
- * `/settings/about/privacy` 만 계획서 표의 `/settings/privacy` 와 다르다. 계획서 쪽이 낡았고
- * (구현 중에 `about` 의 자식으로 정정했다) 이 커밋에서 함께 고쳤다.
+ * `/settings/about/privacy` 만 계획서 표의 `/settings/privacy` 와 다르다. 구현 중에 `about` 의
+ * 자식으로 정정한 것이 맞고, 계획서 쪽이 낡았다.
  */
 const PARITY_PATHS = [
   '/',

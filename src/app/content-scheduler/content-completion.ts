@@ -66,7 +66,7 @@ export function dailyContentCompletion(content: DailyContent): ContentCompletion
  */
 export function weeklyContentCompletion(content: WeeklyContent): ContentCompletion {
   // 점수가 0 이 아니면 완료다. 점수에 상한이 없어 다 했다 를 카운트로는 못 재지만 그 주에
-  // 참여했는가 는 잴 수 있고 그것이 링이 물어야 할 것이다. 카드는 그대로 `n점` 배지다.
+  // 참여했는가 는 잴 수 있고, 그것이 링이 물어야 할 것이다. 카드는 그대로 `n점` 배지다.
   if (content.name === GUILD_UNDERGROUND_WATERWAY_NAME) return byParticipation(content)
   if (content.name === GUILD_MISSION_POINTS_NAME) return byCount(content)
   if (content.name === GUILD_FLAG_RACE_NAME) return byParticipation(content)

@@ -2,7 +2,7 @@
 //
 // ** 가 이 파일의 중심이다**: 여섯 상태 중 행동이 있는 둘만 버튼을 갖고,
 // **금액을 모르는 상태에는 0을 쓰지 않는다.** 0을 쓰면 "조회한 적 없다"가 "0원 벌었다"가 된다.
-//  가 드롭 가격에서 지키는 것과 같은 원칙이다.
+// 드롭 가격 화면이 지키는 것과 같은 원칙이다.
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { clearCountUpMemory } from '../../../hooks/useCountUp'

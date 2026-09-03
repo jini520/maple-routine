@@ -50,8 +50,8 @@ type Store = ContentSchedulerStore
 
 /**
  * 탭이 스토어 소유라 정적 목으로는 전환이 렌더에 반영되지 않는다.
- * `setActiveTab` 을 불러도 다시 그릴 이유가 없다. 모킹된 훅도 렌더 중에 불리므로 여기서 `useState`
- * 로 실물과 같은 "값 + 세터" 쌍을 흉내 낸다.
+ * `setActiveTab` 을 불러도 다시 그릴 이유가 없다. 모킹된 훅도 렌더 중에 불리므로 여기서
+ * `useState` 로 실물과 같은 "값 + 세터" 쌍을 흉내 낸다.
  */
 function mockStore(overrides: Partial<Store> = {}): Store {
   const base = {

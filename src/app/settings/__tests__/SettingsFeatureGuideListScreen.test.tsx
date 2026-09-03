@@ -7,7 +7,7 @@
 //    `accessibilityState.selected` 로 읽는다(RN 에 `tablist` 컨테이너 역할이 없다.
 //    `SettingsFeatureGuideListScreen.tsx`).
 // ③ 픽스처는 **배열 정체성을 고정해 내용만 갈아 끼운다**(`SettingsReleaseNotesScreen` 테스트
-//     와 같은 이유·같은 처방).
+//    머리와 같은 이유·같은 처방).
 import { act, fireEvent } from '@testing-library/react-native'
 
 import type { FeatureGuide } from '../../../types'

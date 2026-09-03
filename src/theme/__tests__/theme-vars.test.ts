@@ -125,7 +125,7 @@ describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
 })
 
 describe('스크림 위 패널 테두리. 모드가 역할을 가른다', () => {
-  // 의 표에 적힌 확정값. 계산해서 만들지 않는다. 실기기에서 세 번 만에 잡은
+  // 표에 적힌 확정값. 계산해서 만들지 않는다. 실기기에서 세 번 만에 잡은
   // **결정**이라 우리 구현이 그 값을 내는지가 검사 대상이다.
   it.each([
     ['머쉬맘', '#685B4A'],
@@ -229,7 +229,7 @@ describe('시트 스코프. 다크에서만 표면 계열을 한 칸 올린다',
     ] as const)('%s 가 원래 값보다 한 칸 밝다', (variable, token) => {
       expect(scope[variable]).not.toBe(definition[token])
       // 자릿수 2 는 hex 양자화 몫이다. 값이 8비트 채널로 굳었다가 다시 읽히므로 L 이 최대
-      // 0.0014 흔들린다(실측). 재는 폭이 0.09 라 그 흔들림에 가려질 회귀는 없다.
+      // 0.0014 흔들린다. 재는 폭이 0.09 라 그 흔들림에 가려질 회귀는 없다.
       expect(hexToOklch(scope[variable]!).l).toBeCloseTo(
         hexToOklch(definition[token]).l + SHEET_LIFT,
         2,

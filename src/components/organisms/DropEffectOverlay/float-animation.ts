@@ -6,7 +6,7 @@
  * 깨지기 때문이다.
  *
  * **`as const` 를 타입 주석으로 바꾸지 말 것.** `CSSAnimationProperties` 로 주석을 달면 그 타입의
- * `animationDelay` 가 `Animated.View` 의 `style` 과 안 맞물려 타입이 깨진다(실측).
+ * `animationDelay` 가 `Animated.View` 의 `style` 과 안 맞물려 타입이 깨진다.
  */
 
 import { cubicBezier } from 'react-native-reanimated'
