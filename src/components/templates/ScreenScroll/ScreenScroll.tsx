@@ -4,8 +4,7 @@
  * React 가 서브트리를 언마운트해 자식이 `mChildren` 에서 빠지고 `getChildAt(0)` 이 **null** 이
  * 된다. 화면은 아직 밀려 나가는 중이라 Android 는 그 자식들을 **disappearing child** 로 계속
  * 그린다. `INVISIBLE` 플래그도 무시하고. 마스크를 못 알아보니 아래 불투명 판이 평범한 그림으로
- * 깔려 **전환 내내 화면이 검었다**(실기기 2026-08-15. 판 색을 `#f00` 으로 바꾸면 화면이 빨개지는
- * 것으로 확정). 패치는 마스크를 **참조로** 기억하고 `drawChild` 에서 막는다.
+ * 깔려 전환 내내 화면이 검어진다. 패치는 마스크를 참조로 기억하고 `drawChild` 에서 막는다.
  */
 import MaskedView from '@react-native-masked-view/masked-view'
 import { cloneElement } from 'react'
@@ -175,7 +174,7 @@ export function ScreenScroll({
       ref={ref}
       testID="screen-scroll"
       // 우리가 그리지 않는 크롬의 색은 **알려 줘야** 한다. 안 걸면
-      // 때 라이트 테마에 흰 인디케이터가 나왔고(실기기 2026-08-06), RN 의 기본값 `'default'` 도
+      // 때 라이트 테마에 흰 인디케이터가 나왔고(실기기), RN 의 기본값 `'default'` 도
       // 같은 종류의 실패다: 그 값은 OS 설정을 따라가지 우리 테마를 따라가지 않는다.
       indicatorStyle={indicatorStyle}
       // 인디케이터는 아래 마스크 안에 있다. iOS 는 스크롤 뷰의 서브뷰이고 안드로이드는

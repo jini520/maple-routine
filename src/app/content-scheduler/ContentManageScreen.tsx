@@ -60,7 +60,7 @@ function categoryIcon(label: string | null): LucideIcon {
 // 보여주고 추적 중인 항목만 선택 상태로 그린다. 추가·삭제가 행 탭(토글) 하나로 통일되고,
 // 토글은 즉시 저장한다(로컬 Preferences 쓰기뿐이고 비파괴적이라 확인 버튼 없음). 대상 캐릭터는
 // 컨텐츠 스케줄러에서 선택된 캐릭터를 승계한다. 수동 모드 전용.
-// 리디자인(2026-07-24, 와이어프레임 리뷰): content_name에 이미 있는 접두사(lib/scheduler/content-category)로
+// 리디자인(와이어프레임 리뷰): content_name에 이미 있는 접두사(lib/scheduler/content-category)로
 // 카테고리 그룹핑. 반복되는 "[일일 퀘스트] …"를 헤더로 한 번만 묶고 행에는 알맹이만 표시한다.
 export function ContentManageScreen(): React.JSX.Element {
   const {

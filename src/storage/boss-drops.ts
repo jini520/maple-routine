@@ -49,7 +49,7 @@ const INSERT_SQL = `
  *
  * 이 테이블에는 캐시가 **셋**이다. `boss-profit/store`(`dropsByRowKey`) · `drop-price-store` ·
  * `drop-history-store`(전 기간 집계). 앞의 둘은 서로를 직접 부르는 것으로 맞춘다
- * (`applyExternalDropEdit`, 2026-08-10 새로고침해야 반영된다 보고의 처방). 그 방식은 **쓰는 쪽이
+ * (`applyExternalDropEdit`, 새로고침해야 반영된다 보고의 처방). 그 방식은 **쓰는 쪽이
  * 읽는 쪽을 전부 알아야** 해서, 캐시가 하나 늘 때마다 세 호출부를 다시 훑어야 한다. 실제로
  * `drop-history-store` 가 그렇게 빠졌다.
  *

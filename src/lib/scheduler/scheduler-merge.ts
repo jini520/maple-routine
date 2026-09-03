@@ -146,7 +146,7 @@ function mergeSection(
   return { items, worldUpdates, accountUpdates }
 }
 
-// 보스는 전부 character 범위(2026-07-21 확인)라 world/account 원장 단계가 필요 없다. cycle 내에서
+// 보스는 전부 character 범위(확인)라 world/account 원장 단계가 필요 없다. cycle 내에서
 // 항목(이름+난이도) 단위로 병합한다(정정): fresh에 있으면 그대로 쓰고, fresh에 없는데
 // previous에 있으면 isComplete·ownComplete를 false로 리셋해 복원한다. ownComplete도 함께 리셋해야
 // 한다. 안 그러면 지난 리셋에서의 완료 여부가 그대로 남아있어 보스 수익 계산기

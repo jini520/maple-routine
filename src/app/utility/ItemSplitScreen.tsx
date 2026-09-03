@@ -180,7 +180,7 @@ export function ItemSplitScreen(): React.JSX.Element {
 
         <Card className="gap-3 px-4 py-4">
           <Text className="text-xs font-semibold text-text-muted">경매장 수수료</Text>
-          {/* MVP 실버 등급 이상이면 5% → 3%(사용자 확인 2026-08-23). 판매와 분배를
+          {/* MVP 실버 등급 이상이면 5% → 3%(사용자 확인). 판매와 분배를
               각각 고르는 것이 결정이다. 세 대표 상황 밖의 조합도 나온다. */}
           <FeeToggle label="판매" value={saleFeePercent} onChange={setSaleFeePercent} />
           <FeeToggle label="분배" value={splitFeePercent} onChange={setSplitFeePercent} />

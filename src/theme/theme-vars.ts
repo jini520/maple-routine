@@ -122,7 +122,7 @@ export function buildSheetScopeVariables(definition: ThemeDefinition): Record<st
  * 일러스트 카드 안은 바탕이 `surface` 가 아니라 `mediaSurface` 라 표면·텍스트·완료 배지를 **다시
  * 선언**해야 한다. 커스텀 프로퍼티는 선언된 요소에서 `var()` 가
  * 해석된다")가 RN 에서도 **그대로 성립한다**. `vars()` 는 렌더 트리를 따라 상속되고 하위에서 같은
- * 이름을 다시 선언하면 그 서브트리만 새 기준을 쓴다(실측 2026-08-11).
+ * 이름을 다시 선언하면 그 서브트리만 새 기준을 쓴다(실측).
  */
 export function buildMediaScopeVariables(definition: ThemeDefinition): Record<string, string> {
   const scope = deriveMediaScope(definition, definition.mode)

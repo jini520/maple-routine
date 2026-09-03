@@ -33,7 +33,7 @@ export interface SpendCatalogItem {
   readonly forms?: readonly string[]
   readonly limit?: string
   /**
-   * 기록 **한 건**의 수량 상한. `limit` 문장에서 **사용자가 고른 숫자**다(2026-08-25).
+   * 기록 한 건의 수량 상한. `limit` 문장에서 사용자가 고른 숫자다.
    *
    * 문장을 파싱해 뽑지 않는다. 몬스터 파크의 문장은 축이 셋(월드당 14 · 캐릭터당 7 · 무료 2)이라
    * 어느 것이 한 건의 상한인지 **글에는 안 적혀 있다**. 앱이 고르면 그 고름이 추정이 된다

@@ -32,7 +32,6 @@ describe('DifficultySegment', () => {
   })
 
   // 미선택도 풀컬러 뱃지 그대로 두고 흐림만 건다. 색이 안 죽는다.
-  // 고스트 칩(색 없는 아웃라인)으로 대체했던 2026-07-24 결정을 되돌린 것이다.
   it('미선택 난이도는 같은 뱃지에 opacity-40 만 걸어 그린다', async () => {
     const { getAllByRole } = await renderAtom(
       <DifficultySegment difficulties={['노멀', '하드']} selected="하드" onSelect={jest.fn()} />,

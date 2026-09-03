@@ -24,7 +24,7 @@ import { requestJson } from '../http'
 const withOcid = (path: string, ocid: string): string => `${path}?ocid=${encodeURIComponent(ocid)}`
 
 /**
- * 챌린저스가 사는 차수. **0차**다(사용자 확인 2026-09-01).
+ * 챌린저스가 사는 차수. **0차**다(사용자 확인).
  *
  * `character/skill` 은 차수가 필수 파라미터라 전부 훑기 가 없다. 다른 차수를 함께 부르지 않는
  * 이유는 여기서 읽는 스킬이 챌린저스 하나뿐이기 때문이다.

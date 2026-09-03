@@ -11,7 +11,7 @@ describe('stripDailyQuestPrefix', () => {
 })
 
 describe('matchDailyQuestRegionSlug', () => {
-  // 2026-07-14 사용자 제공 실제 API 응답의 daily_contents 17개 전체
+  // 실제 API 응답의 daily_contents 17개 전체
   const cases: Array<[string, string]> = [
     ['소멸의 여로 조사', 'roadOfVanishing'],
     ['츄츄 아일랜드 최고의 요리', 'chewChew'],

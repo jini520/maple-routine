@@ -1033,7 +1033,7 @@ describe('useBossProfitStore', () => {
       expect(row.payoutMeso).toBeNull()
     })
 
-    // 2026-07-17 실기기 재현: 데이터 초기화(리로드) 직후 보스 스케줄러에 캐릭터를 저장하면
+    // 데이터 초기화(리로드) 직후 보스 스케줄러에 캐릭터를 저장하면
     // SQLite 읽기는 되지만(loadPartySizes), 리로드 이후 이 커넥션에 대한 첫 "쓰기" 쿼리
     // (upsertBossProfitRecord)가 stale 네이티브 커넥션 탓에 막혀 보스 수익 화면이
     // "불러오는 중..."에서 영원히 멈췄다. refresh가 SQLite 응답을 무한정 기다리지 않고

@@ -818,7 +818,7 @@ describe('사냥 계산기', () => {
 
     expect(view.getByTestId('income-sheet-region-option-tallahart')).toBeTruthy()
     expect(view.queryByTestId('income-sheet-region-option-chewChew')).toBeNull()
-    // **적힌 범위로 재지 않는다**(사용자 지적 2026-08-28). 소멸의 여로는 200-290 이라 겹침으로
+    // **적힌 범위로 재지 않는다**(사용자 지적). 소멸의 여로는 200-290 이라 겹침으로
     // 재면 떴는데, 거기 몬스터는 200-209 라 lv.294 가 골라도 0 이 나온다.
     expect(view.queryByTestId('income-sheet-region-option-roadOfVanishing')).toBeNull()
   })
@@ -1069,7 +1069,7 @@ describe('사냥 계산기', () => {
   })
 
   /**
-   * **조각은 스테퍼가 아니라 치는 칸이다**(사용자 지적 2026-08-28). 30분에 10개 내외라
+   * **조각은 스테퍼가 아니라 치는 칸이다**(사용자 지적). 30분에 10개 내외라
    * 8소재면 80개가 넘는데, 스테퍼로는 여든 번을 눌러야 한다.
    */
   it('조각을 한 번에 친다. 스테퍼 버튼이 없다', async () => {

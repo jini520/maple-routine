@@ -92,7 +92,7 @@ describe('ValuableDropBadge', () => {
   //
   // 이 컴포넌트는 `getItemIconUrl` 을 **아예 부르지 않아** 아이콘 자리가 늘 폴백 원이었다(에셋
   // 레이어가 값을 대는 데까지였고 그림 붙이기는 화면 작업 몫이었다). 어두운 테마에서 그 원이
-  // 까맣게 보여 **아이템 이미지가 안 나온다** 로 보고됐다(사용자, 2026-08-14).
+  // 까맣게 보여 **아이템 이미지가 안 나온다** 로 보고됐다(사용자).
   it('매핑이 있는 아이템은 그림을 그린다. 폴백 원이 아니다', async () => {
     const { getAllByTestId } = await renderAtom(
       <ValuableDropBadge drops={drops('홍옥의 보스 반지 상자')} label="고가 드롭" />,

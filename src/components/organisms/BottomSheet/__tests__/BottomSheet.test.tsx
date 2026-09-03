@@ -140,10 +140,10 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
    * 라이브러리는 창 모드를 **자기가 안 바꾼다**. 이 프롭은 키보드가 뜰 때 창이 실제로 어떻게
    * 되는가 를 알려 주는 것이고, 그 값으로 자기 보정량을 정한다.
    *
-   * **매니페스트의 `adjustResize` 를 믿으면 안 된다**. 이 앱은 edge-to-edge 라
-   * (`android/gradle.properties` 의 `edgeToEdgeEnabled=true`) 그 값이 죽어 있다. 계측(API 36,
-   * 2026-08-27): 키보드가 312dp 떠도 `Dimensions.get('window').height` 는 914.29 그대로였고
-   * 내용도 안 밀렸다. **OS 는 아무것도 안 한다.**
+   * 매니페스트의 `adjustResize` 를 믿으면 안 된다. 이 앱은 edge-to-edge 라
+   * (`android/gradle.properties` 의 `edgeToEdgeEnabled=true`) 그 값이 죽어 있다. 계측(API 36)에서
+   * 키보드가 312dp 떠도 `Dimensions.get('window').height` 는 914.29 그대로였고 내용도 안 밀렸다.
+   * OS 는 아무것도 안 한다.
    *
    * 그런데 `adjustResize` 를 넘기면 라이브러리는 OS 가 이미 했겠지 라며 자기 보정을 0 으로
    * 둔다(소스: `heightWithinContainer = 0` 후 early return). 그래서 시트가 키보드에 그대로
@@ -174,7 +174,7 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
    *
    * 홈 인디케이터 몫(`insets.bottom`)은 화면 맨 아래가 손가락에 닿는 자리라 비워 둔다 는 값인데,
    * 키보드가 그 자리를 이미 덮고 있으면 **아무것도 아닌 빈 띠**가 된다. 실기에서 빠른 칩과
-   * 키보드 사이가 50pt 벌어졌다(사용자 스크린샷 2026-08-26).
+   * 키보드 사이가 50pt 벌어졌다(사용자 스크린샷).
    */
   it('키보드가 뜨면 아래 인셋을 걷는다', async () => {
     const { getByTestId } = await open()

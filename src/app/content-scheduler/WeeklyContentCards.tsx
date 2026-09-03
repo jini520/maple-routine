@@ -48,8 +48,8 @@ export const GUILD_FLAG_RACE_NAME = '[길드] 플래그 레이스'
 export const GUILD_UNDERGROUND_WATERWAY_BACKGROUND_SLUG = 'arcanus'
 export const GUILD_MISSION_POINTS_BACKGROUND_SLUG = 'hallOfHeroes'
 export const GUILD_FLAG_RACE_BACKGROUND_SLUG = 'flagRace'
-// 메이플 유니온 주간 드래곤 퇴치. 실제로 등장하는 드래곤은 매주 바뀌지만 API가 어떤 드래곤인지
-// 알려주지 않아, 에픽 던전 카드와 동일하게 대표 이미지 하나로 고정한다(연장, 2026-07-21).
+// 메이플 유니온 주간 드래곤 퇴치. 실제로 등장하는 드래곤은 매주 바뀌지만 API 가 어떤 드래곤인지
+// 알려주지 않아, 에픽 던전 카드와 같이 대표 이미지 하나로 고정한다.
 export const MAPLE_UNION_PREFIX = '[메이플 유니온] '
 export const MAPLE_UNION_DRAGON_BOSS_SLUG = 'armorDragon'
 // "[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?"는 지역명이 문장 앞이 아니라 대괄호 태그로만

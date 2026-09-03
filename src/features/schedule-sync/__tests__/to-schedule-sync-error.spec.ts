@@ -38,7 +38,7 @@ describe('toScheduleSyncError', () => {
     })
   })
 
-  // 무효 키의 실제 응답이 이것이다(401/403 이 아니다, 실측 2026-08-08).
+  // 무효 키의 실제 응답이 이것이다(401/403 이 아니다, 실측).
   // 이 케이스가 없으면 키가 폐기된 사용자에게 앱이 "네트워크 오류"만 반복해 말한다.
   it('OPENAPI00005 → invalidApiKey: 무효 키는 400으로 온다', () => {
     expect(toScheduleSyncError(new NexonBadRequestError('x', 'OPENAPI00005'))).toEqual({

@@ -4,7 +4,7 @@
  * ## `tabular-nums`
  *
  * `tabular-nums` 한 클래스로 숫자 폭을 고정한다(`font-variant-numeric`). NativeWind 는 그
- * 클래스를 **아무 스타일도 없이 통과시킨다**(실측 2026-08-12. 렌더 트리에 `fontVariant` 가 없다).
+ * 클래스를 **아무 스타일도 없이 통과시킨다**(실측. 렌더 트리에 `fontVariant` 가 없다).
  * RN 에는 짝이 되는 스타일(`fontVariant`)이 있으므로 없는 기능이 아니라 **매핑이 없는 것**이고,
  * 그래서 클래스를 지우는 대신 여기서 값으로 준다.
  *

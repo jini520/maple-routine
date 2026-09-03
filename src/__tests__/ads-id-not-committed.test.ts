@@ -9,8 +9,8 @@
 //
 // **앱 ID(`~` 가 들어간 값)는 여기서 안 본다.** 그쪽은 `app.json` 에 있어야 한다. `app.json` 은
 // OTA 지문에 **해석된 설정** 으로 들어가는데, 값을 환경 변수로 빼면 빌드 환경에 따라 지문이
-// 달라져서 스토어 바이너리가 받던 OTA가 끊긴다(2026-08-31 `expo-updates fingerprint:generate`
-// 로 확인. `app.json` 은 파일 소스가 아니라 `expoConfig` contents 소스다).
+// 달라져서 스토어 바이너리가 받던 OTA 가 끊긴다. `app.json` 은 파일 소스가 아니라 `expoConfig`
+// contents 소스다.
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 

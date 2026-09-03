@@ -12,7 +12,7 @@
 //    못 본다. `index.ts` 를 소스로 읽어 순서만 본다.
 // ③ **OTA 가 아직 아무 데도 안 이어져 있는가**. 이 프로토콜 재설계를 별도 ADR
 //    로 미뤄 뒀다. `LiveUpdatePort` 는 던지고, 그보다 앞서 core 의 live-update 스토어는 **import
-//    하는 것만으로** 죽는다(`import.meta.env`. 실측 2026-08-12). 그래서 계약이 "부르지 않는다"가
+//    하는 것만으로** 죽는다(`import.meta.env`. 실측). 그래서 계약이 "부르지 않는다"가
 //    아니라 **"값으로 가져오지도 않는다"** 이고, 그건 호출 관측으로는 못 지킨다. 값 import 가
 //    하나 생기면 그 순간 앱도 테스트도 안 뜨므로 **그 전에** 여기가 빨개져야 한다.
 import { readFileSync, readdirSync, statSync } from 'node:fs'

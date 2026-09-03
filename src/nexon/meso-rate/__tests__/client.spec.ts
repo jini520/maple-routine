@@ -36,7 +36,7 @@ const 응답 = {
   '/maplestory/v1/character/skill': { character_skill: [{ skill_name: '무기 숙련' }] },
 } as const
 
-/** 실응답을 그대로 옮긴 설명문(사용자 제공 2026-09-01). */
+/** 실응답을 그대로 옮긴 설명문(사용자 제공). */
 const 챌린저스 = {
   skill_name: '챌린저스',
   skill_description:

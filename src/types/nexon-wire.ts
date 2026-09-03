@@ -21,10 +21,10 @@ export interface NexonCharacterBasicResponse {
   character_level: number
   character_image: string
   access_flag: 'true' | 'false'
-  // 가입한 길드명(사용자 확인 2026-07-29). 미가입이면 null 또는 빈 문자열로 오고,
+  // 가입한 길드명(사용자 확인). 미가입이면 null 또는 빈 문자열로 오고,
   // 응답 자체에 필드가 없을 수 있으므로 옵셔널이다. 그 둘의 구분은 normalizeCharacterBasic이 한다.
   character_guild_name?: string | null
-  // 누적 경험치 절대값(사용자 확인 2026-08-17). 도메인으로는 나르지 않는다.
+  // 누적 경험치 절대값(사용자 확인). 도메인으로는 나르지 않는다.
   // 레벨이 오를수록 커지는 값이라 "얼마나 남았나"를 말하지 못한다.
   character_exp?: number
   // 현재 레벨 진행률(%). **number가 아니라 string이다**. `"80.300"` 처럼 소수 3자리 문자열로 온다
@@ -182,7 +182,7 @@ export interface NexonUnionArtifactResponse {
 
 /**
  * 스킬 하나. **`skill_effect` 로는 못 가른다**. 챌린저스는 그 칸이 빈 문자열이고 레벨도 늘 1 이라
- * 설명문만이 티어를 말한다(사용자 확인 2026-09-01).
+ * 설명문만이 티어를 말한다(사용자 확인).
  */
 export interface NexonCharacterSkill {
   skill_name?: string | null
@@ -191,7 +191,7 @@ export interface NexonCharacterSkill {
 
 /**
  * 스킬 목록(`character/skill`). **차수를 지정해서 부른다**. 챌린저스는 0차에 있다
- * (사용자 확인 2026-09-01).
+ * (사용자 확인).
  *
  * 메획을 읽는 다섯과 달리 이 응답에서 보는 것은 **이름과 설명 두 칸**뿐이다.
  */

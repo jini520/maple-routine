@@ -78,7 +78,7 @@ export function normalizeSchedulerCharacterState(
   // bossDaily는 이 앱이 다루지 않는 대상이라 완료 승격 판정에서도 제외해야 한다.
   // 그렇지 않으면 같은 content_name이 bossDaily·bossWeekly에 함께 오는 보스(힐라 하드·핑크빈
   // 카오스 등)에서, 전혀 무관한 bossDaily 완료가 등록된 bossWeekly 항목을 잘못 완료로
-  // 승격시킨다(사용자 재현 확인, 2026-07-22).
+  // 승격시킨다(사용자 재현 확인).
   const completedBossNames = new Set(
     bossContentsWire
       .filter((boss) => boss.cycle !== 'bossDaily' && boss.complete_flag === 'true')
@@ -102,7 +102,7 @@ export function normalizeSchedulerCharacterState(
     isWeeklyStale: weeklyContentsWire.length === 0,
     isWeeklyBossStale: !hasWeeklyBoss,
     // "그 cycle 항목이 있는가"만 보면 **축약 응답을 신선한 데이터로 신뢰**한다.
-    // 실측(2026-07-31): 미접속 캐릭터의 당일 응답은 단계적으로 줄어들어 결국 bossMonthly 2건
+    // 미접속 캐릭터의 당일 응답은 단계적으로 줄어들어 결국 bossMonthly 2건
     // (검은마법사 하드·익스트림, 둘 다 reg=false·comp=false)만 남는다. 그 응답을 신뢰하면 그 달에
     // 처치한 월간 보스의 완료가 "신선한 false"로 덮어써져 사라진다(재현: 6.65억 기록 보유
     // 상태에서 "이번 달 총 수익 0메소").

@@ -20,7 +20,7 @@
 /**
  * 수수료율(%). MVP 실버 등급 이상이면 경매장 수수료가 5% → 3% 로 내려간다.
  *
- * ** 대상이다**(사용자 확인, 2026-08-23). 넥슨이 요율을 바꾸면 여기가 스탈이 된다.
+ * ** 대상이다**(사용자 확인). 넥슨이 요율을 바꾸면 여기가 스탈이 된다.
  * 앱이 추정해 채운 값이 아니다.
  */
 export type FeePercent = 3 | 5
@@ -36,7 +36,7 @@ export const MAX_SALE_PRICE_MESO = 9_999_999_999_999
 
 /**
  * 파티원 수 상한. `src/data/boss-crystal-prices.json` 의
- * `partySizeScaling.defaultMaxPartySize`(사용자 확인값, 2026-07-09)를 따른다.
+ * `partySizeScaling.defaultMaxPartySize`(사용자 확인값)를 따른다.
  */
 export const MAX_PARTY_SIZE = 6
 

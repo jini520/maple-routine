@@ -367,7 +367,7 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   // **테이블을 세운 커밋과 이 컬럼을 더한 커밋이 갈렸다.** `spend_records` 는 `form` 없이 만들어졌고
   // (`177c195b`) `지출 항목 고르기를 두 단계로`(`89e806fa`)가 그 컬럼을 **CREATE 문에만** 더했다.
   // 그 사이에 앱을 켠 기기는 `form` 없는 테이블을 들고 있고, INSERT 는 모든 칸을 적으므로
-  // **지출이 하나도 안 적힌다**(실기 재현 2026-08-25). 위 둘과 같은 사정이다.
+  // **지출이 하나도 안 적힌다**(실기 재현). 위 둘과 같은 사정이다.
   await ensureColumn(db, 'spend_records', 'form', 'TEXT')
   // 종류도 `form` 이 겪은 그 사정이다(INSERT 는 모든 칸을 적는다).
   await ensureColumn(db, 'spend_records', 'item_kind', 'TEXT')

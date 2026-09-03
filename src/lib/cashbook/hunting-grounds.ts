@@ -30,7 +30,7 @@ export const HUNTING_LEVEL_BELOW = 20
  *
  * 참조표의 `minLevel`·`maxLevel` 은 **추천 캐릭터 레벨**이라 이것과 다르다. 리버스 시티는
  * 205-209 로 적혀 있지만 몬스터는 **213 까지** 있고, 그래서 213 짜리 캐릭터에게 효율이 가장 좋다
- * (사용자 지적 2026-08-28). 목록을 거르는 근거는 추천 레벨이 아니라 이쪽이다.
+ * (사용자 지적). 목록을 거르는 근거는 추천 레벨이 아니라 이쪽이다.
  */
 export function monsterLevelRangeOf(region: HuntingRegion): { min: number; max: number } {
   const levels = region.grounds.flatMap((ground) => ground.levels)

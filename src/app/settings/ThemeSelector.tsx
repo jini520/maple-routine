@@ -77,7 +77,7 @@ export function ThemeSelector(props: ThemeSelectorProps): React.JSX.Element {
           {/* CSS Grid 가 없어 `grid-cols-2` 를 **셀 패딩 + 줄 음수 마진**으로 만든다.
               **`w-[calc(50%-5px)]` + `gap` 으로 두면 안 된다**. NativeWind 가 그 `calc()` 를
               만들지 않아 폭이 통째로 빠지고, 카드가 **글자 길이대로** 늘어나 한 줄에 셋이 서기도
-              한다(2026-08-13 실기기 관측: `엔젤릭버스터`만 넓었다). 에러도 경고도 없다.
+              한다(실기기 관측: `엔젤릭버스터`만 넓었다). 에러도 경고도 없다.
               간격 10px 은 셀 패딩 5px 두 개가 만들고, 바깥으로 삐져나온 5px 은 줄의 `-m` 이 뺀다. */}
           <View className="-m-[5px] flex-row flex-wrap">
             {group.themes.map((name) => (

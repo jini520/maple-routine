@@ -1,7 +1,7 @@
 // 격자는 **그리기만** 한다. 어떤 칸이 서는가는 `lib/calendar` 이 정하고
 // 그쪽 테스트가 못 박는다. 여기서 보는 것은 **받은 것을 어떻게 보이느냐** 다.
 //
-// **칸이 표식 둘에서 금액 두 줄로 바뀌었다**(사용자 레퍼런스 2026-08-23).
+// **칸이 표식 둘에서 금액 두 줄로 바뀌었다**(사용자 레퍼런스).
 import { fireEvent, within } from '@testing-library/react-native'
 
 import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'

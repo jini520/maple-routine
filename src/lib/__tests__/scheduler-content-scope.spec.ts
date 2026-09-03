@@ -39,7 +39,7 @@ describe('getShareScope', () => {
       expect(getShareScope('[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?')).toBe('world')
     })
 
-    // 같은 계열이라도 공유 단위가 다르다(사용자 확인 2026-08-03). 이름으로 유추하면 틀린다.
+    // 같은 계열이라도 공유 단위가 다르다(사용자 확인). 이름으로 유추하면 틀린다.
     it('PC방 주간 드래곤 퇴치는 account다. 접두 없는 쪽(world)과 공유 단위가 다르다', () => {
       expect(getShareScope('[메이플 유니온] 주간 드래곤 퇴치')).toBe('world')
       expect(getShareScope('[메이플 유니온] PC방 주간 드래곤 퇴치')).toBe('account')

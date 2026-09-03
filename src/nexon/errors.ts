@@ -29,8 +29,8 @@ export class NexonNetworkError extends NexonApiError {
 /**
  * 400 Bad Request. **넥슨 에러 코드를 살려 담는다**.
  *
- * 400 하나에 성질이 전혀 다른 세 실패가 들어 있어서(실측 2026-07-31, foundation/nexon-api.md
- * "에러 코드") status만으로는 처방을 정할 수 없다:
+ * 400 하나에 성질이 전혀 다른 세 실패가 들어 있어(`foundation/nexon-api.md` 의 에러 코드)
+ * status 만으로는 처방을 정할 수 없다.
  *   OPENAPI00003  조회할 수 없는 ocid. 영구. 재시도 무의미
  *   OPENAPI00004  그 ocid로 그 날짜를 조회할 수 없다. 원인은 호출 측이 날짜로 판정한다
  *   OPENAPI00009  아직 집계 전. 시간이 지나면 스스로 풀린다.

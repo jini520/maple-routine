@@ -153,19 +153,18 @@ function HighlightsDisclosure({ highlights }: { highlights: string[] }): React.J
         textClassName={GHOST_TEXT}
       >
         자세히 보기
-        {/* **회전은 아이콘이 아니라 감싸는 `View` 가 받는다**(실측 2026-08-12). NativeWind 의
+        {/* **회전은 아이콘이 아니라 감싸는 `View` 가 받는다**(실측). NativeWind 의
             `rotate-180` 은 transform 일곱 항목을 **한 벌로** 내는데(`translateX: 0` ·
             `skewX: 0` …) 그중 `skewX`·`skewY` 가 **숫자 0** 이라, 그 style 이 SVG 로 가면
             `react-native-svg` 가 각도를 문자열로 읽다 `angle.endsWith is not a function` 으로
             **죽는다**. 다른 SVG 함정들과 같은 가족이되 이쪽은 조용하지 않다.
 
-            **접힌 쪽이 빈 문자열이 아니라 `rotate-0` 인 것도 값이 아니라 계약이다**(실측
-            2026-08-12. 이 자리가 실제로 앱을 멈춰 세웠다). transform 이 **첫 렌더에 없다가
-            나중에 생기면** NativeWind 는 호스트를 `Animated.View` 로 올려야 하는데 그러면
-            리마운트라, 대신 **올리기를 포기하고 개발 경고를 찍는다**. 그 경고가 원인 파악을
-            돕겠다고 `originalProps` 를 직렬화하는데(`render-component.js` 의 `stringify`)
-            그 프롭에 든 것이 React 엘리먼트라 순환 가드가 **경로 단위**뿐인 그 함수가 파이버
-            그래프를 헤매다 **힙을 다 쓴다**(jest 는 OOM 으로 죽고, dev 번들도 같은 코드다).
+            접힌 쪽이 빈 문자열이 아니라 `rotate-0` 인 것도 값이 아니라 계약이다(실측).
+            transform 이 첫 렌더에 없다가 나중에 생기면 NativeWind 는 호스트를 `Animated.View` 로
+            올려야 하는데 그러면 리마운트라, 대신 올리기를 포기하고 개발 경고를 찍는다. 그 경고가
+            원인 파악을 돕겠다고 `originalProps` 를 직렬화하는데, 그 프롭에 든 것이 React
+            엘리먼트라 순환 가드가 경로 단위뿐인 그 함수가 파이버 그래프를 헤매다 힙을 다 쓴다
+            (jest 는 OOM 으로 죽고 dev 번들도 같은 코드다).
             두 상태 모두 transform 을 갖고 있으면 첫 렌더에 올라가 이 사슬의 첫 고리가 없다.
             라이브러리 경고문이 말하는 *"기본 스타일을 두라"* 가 정확히 이것이다. */}
         <View testID="update-highlights-chevron" className={isOpen ? 'rotate-180' : 'rotate-0'}>

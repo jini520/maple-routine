@@ -260,7 +260,7 @@ export function selectDisplayBosses(bosses: MatchedBoss[]): MatchedBoss[] {
 // 달리 "실제로 처치했는가"(ownComplete, 승격 없는 원본 완료 여부)를 우선한다. 등록한 난이도와
 // 실제로 처치한 난이도가 다를 수 있어, 수익 계산은 반드시 진짜 처치한 난이도의
 // 가격을 써야 한다. 같은 content_name·같은 cycle(weekly/monthly) 안에서는 게임 룰상 한
-// 캐릭터가 여러 난이도를 동시에 완료할 수 없으므로(사용자 확인, 2026-07-22) ownComplete: true인
+// 캐릭터가 여러 난이도를 동시에 완료할 수 없으므로(사용자 확인) ownComplete: true인
 // 항목은 그룹당 최대 1개다. 그 이상이면(예: 서로 다른 cycle 그룹이 우연히 같은 content_name을
 // 쓰는 경우) 전부 실제 완료이므로 데이터를 숨기지 않고 그대로 보여준다.
 export function selectBossProfitBosses(bosses: MatchedBoss[]): MatchedBoss[] {

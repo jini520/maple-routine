@@ -79,7 +79,7 @@ export function SettingsScreen(): React.JSX.Element {
       <ScreenScroll>
         {/* `screen-Settings` 는 나머지 세 탭 화면과 같은 관례다(`screen-Content`·`-Boss`·`-Profit`).
             이것이 없어서 내비게이션 테스트가 **자리표시자의 같은 testID 를 보고 초록**이었고,
-            설정 탭이 통째로 빠진 것을 아무도 못 잡았다(2026-08-13 실기기 관측). */}
+            설정 탭이 통째로 빠진 것을 아무도 못 잡았다(실기기 관측). */}
         <View className="gap-4 px-4 pb-4" testID="screen-Settings">
           {/* 이 화면에는 `PageHeader` 가 없지만 제목 줄은 다른 탭과 **같은
               프리미티브**다. 셸이 달라도 제목이 서는 선은 같아야 한다. */}
