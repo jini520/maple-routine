@@ -400,7 +400,7 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
 | 6 | `reset-countdown` | 일일/주간/월간 초기화까지 남은 시간(**일일은 초까지 · 1초 갱신**) | **2x1** · 2x2 · 4x1 · 1x1 | — | `lib/scheduler/reset-clock.ts` |
 | 7 | `unpriced-drops` | 가격 미입력 드롭 N건 | **2x1** · 2x2 · 1x1 | Profit | `drop-history` |
 | 8 | `valuable-drought` | ‘N주째 아이템 드롭 없음’ | **4x1** · 2x2 · 2x1 | Profit | `summarizeValuableDrought` |
-| 9 | `shared-contents` | **계정 및 메이플 ID 공유 컨텐츠**. 계열별(에픽던전 · 몬스터파크 · 메이플 유니온) | **`4×auto`** | 없음 | 컨텐츠 스토어 + `scheduler-content-catalog.json` |
+| 9 | `shared-contents` | **계정 및 메이플 ID 공유 컨텐츠**. 계열별(몬스터파크 · 메이플 유니온 · 에픽던전) | **`4×auto`** | 없음 | 컨텐츠 스토어 + `scheduler-content-catalog.json` |
 
 **기본 크기가 여섯 바뀌었다**([[ADR-147]] 정정 13). 대표 4x2 → **4x1**, 수익 4x2 → **4x3**,
 최고가 2x2 → **2x1**, 결정석 2x2 → **2x1**. 배치가 코드 상수인 v1 에서는 **선언만 남고 아무도 안 쓰는
@@ -776,13 +776,13 @@ formatValuableDroughtHeadline(weeksSince, lateIndex)  →  (weeksSince, index)
 ```
 계정 및 메이플 ID 공유 컨텐츠  ?
 ──────────────────────────────────────────────────
-에픽던전                      몬스터파크
-☑ ~~하이마운틴~~              ☐ 일간               7/14
-☑ ~~앵글러컴퍼니~~            ☑ ~~익스트림 몬스터파커~~
-☐ 악몽선경                    ─────────────────
-                              메이플 유니온
-                              ☑ ~~주간 드래곤 퇴치~~
-                              ☐ PC방 주간 드래곤 퇴치
+몬스터파크                    에픽던전
+☐ 일간               7/14     ☑ ~~하이마운틴~~
+☑ ~~익스트림 몬스터파커~~      ☑ ~~앵글러컴퍼니~~
+─────────────────             ☐ 악몽선경
+메이플 유니온
+☑ ~~주간 드래곤 퇴치~~
+☐ PC방 주간 드래곤 퇴치
 ```
 
 **월드/계정이 아니라 계열이 축이다**(사용자 지정). Open API 는 월드 공유 항목을 **마지막 접속 월드
@@ -794,7 +794,7 @@ formatValuableDroughtHeadline(weeksSince, lateIndex)  →  (weeksSince, index)
 |---|---|
 | 대상 판정 | `getShareScope(name) !== 'character'`. 분류를 새로 만들지 않는다 |
 | 계열·짧은 이름 | `scheduler-content-catalog.json` 의 `group`·`shortName`(사람이 적는다, 정정 31) |
-| 순서 | 계열은 `sharedGroupOrder`(손으로 적는다) · 계열 ‘안’은 `worldShared` → `accountShared` 를 이어 읽은 순서 |
+| 순서 | 계열은 `sharedGroupOrder`(손으로 적는다. **몬스터파크 · 메이플 유니온 · 에픽던전**, 정정 46) · 계열 ‘안’은 `worldShared` → `accountShared` 를 이어 읽은 순서 |
 | 열 | **둘**([[ADR-182]] 결정 1). 폭 반반(`flex-1` + 사이 12). 계열은 자기 열 안에서 세로로 쌓이고, **오른쪽 열이 비면 한 열로** 그린다 |
 | 열 가르기 | **순서를 지키면서 두 열의 ‘줄 수’(제목 1 + 항목 수)가 가장 고른 지점**에서 자른다. 지그재그(홀짝)로 나누면 타일이 한 줄 높아진다 |
 | 완료 표식 | **읽기 전용 체크박스 + 취소선**([[ADR-182]] 결정 3 · 정정 1). 체크된 상자는 `bg-primary`+`border-primary` · 체크는 `text-on-primary` · 안 한 것은 테두리만(`border-border-strong`) |
@@ -804,6 +804,12 @@ formatValuableDroughtHeadline(weeksSince, lateIndex)  →  (weeksSince, index)
 | 머리의 수 | **없다**(정정 45, 사용자 지시). 남은 줄은 아래 체크박스가 세어 볼 수 있게 이미 그린다 |
 | 머리의 `?` | 계열별 표시 기준 두 줄을 팝오버로(정정 34 · 45) |
 
+- **계열 순서는 몬스터파크 · 메이플 유니온 · 에픽던전이다**([[ADR-147]] 정정 46, 사용자 지시).
+  이 순서에서 균형 규칙이 내는 답이 왼쪽 둘 · 오른쪽 하나라 에픽던전이 오른쪽 열로 간다. 가르는
+  자리를 못박은 것이 아니라 순서만 바꿨으므로 줄 수가 달라지면 가르는 자리도 따라 움직인다.
+  `sharedGroupOrder` 는 그대로 둔다. 새 순서가 배열을 이어 읽은 첫 등장 순서와 우연히 같아졌지만,
+  걷어서 배열에 맡기면 화면 순서가 `worldShared`·`accountShared` 라는 **공유 단위**를 타게 되어
+  계정 공유 컨텐츠 하나가 붙는 날 조용히 바뀐다.
 - **머리의 수를 걷었다**([[ADR-147]] 정정 45, 사용자 지시). `4개` 가 오른쪽 끝에 서 있었다. 남은
   줄은 아래 체크박스가 세어 볼 수 있게 이미 그리므로 같은 말이 둘이고, 위젯 2 의 `남은 스케줄`
   수와 나란히 읽혀 두 수의 관계를 사용자가 짐작하게 된다. `TodayViewModel.sharedRemaining` 도

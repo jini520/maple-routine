@@ -708,9 +708,9 @@ describe('공유 컨텐츠. 계열로 묶는다', () => {
     )
 
     expect(model.sharedContents.map((group) => group.group)).toEqual([
-      '에픽던전',
       '몬스터파크',
       '메이플 유니온',
+      '에픽던전',
     ])
   })
 
@@ -719,7 +719,9 @@ describe('공유 컨텐츠. 계열로 묶는다', () => {
       input({ orderedOcids: ['a'], contentCharacters: [sharedView('a')] }),
     )
 
-    expect(model.sharedContents[0]?.items.map((item) => item.shortName)).toEqual([
+    const epic = model.sharedContents.find((group) => group.group === '에픽던전')
+
+    expect(epic?.items.map((item) => item.shortName)).toEqual([
       '하이마운틴',
       '앵글러컴퍼니',
       '악몽선경',
@@ -897,7 +899,7 @@ describe('공유 컨텐츠. 유니온만 조건부다', () => {
       }),
     )
 
-    expect(model.sharedContents.map((group) => group.group)).toEqual(['에픽던전', '몬스터파크'])
+    expect(model.sharedContents.map((group) => group.group)).toEqual(['몬스터파크', '에픽던전'])
   })
 
   it('둘 중 하나만 있으면 그 한 줄만 남는다. 계열이 아니라 항목 단위다', () => {
@@ -922,6 +924,7 @@ describe('공유 컨텐츠. 유니온만 조건부다', () => {
     )
 
     expect(sharedRows(model)).toEqual([
+      ['몬스터파크', [['일간', null, false], ['익스트림 몬스터파커', null, false]]],
       [
         '에픽던전',
         [
@@ -930,7 +933,6 @@ describe('공유 컨텐츠. 유니온만 조건부다', () => {
           ['악몽선경', null, false],
         ],
       ],
-      ['몬스터파크', [['일간', null, false], ['익스트림 몬스터파커', null, false]]],
     ])
   })
 
