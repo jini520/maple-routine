@@ -182,12 +182,6 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
               사용자가 그 색을 무언가의 상태로 읽는다. */}
           <CircleQuestionMarkIcon className="h-3 w-3 text-text-disabled" strokeWidth={2.5} aria-hidden />
         </Pressable>
-        <Text fixed className="ml-auto text-xs text-text-muted">
-          <Text fixed testID="shared-total" style={TABULAR_NUMS} className="text-xs font-extrabold text-text">
-            {data.sharedRemaining}
-          </Text>
-          개
-        </Text>
       </View>
 
       {noteOpen && (

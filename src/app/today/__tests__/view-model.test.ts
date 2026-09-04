@@ -879,28 +879,6 @@ describe('공유 컨텐츠. 오른쪽 열은 `maxCount > 0` 하나로 갈린다'
     expect(park?.items[0]?.count).toEqual({ now: 9, max: 14 })
   })
 
-  it('머리의 수는 완료가 아닌 줄의 수다', () => {
-    const model = buildTodayViewModel(
-      input({
-        orderedOcids: ['a'],
-        contentCharacters: [
-          sharedView('a', {
-            weeklyContents: [
-              weekly({ name: EPIC_HIGH, kind: 'contents', nowCount: 1, maxCount: 0, questState: null }),
-              weekly({ name: EPIC_ANGLER, kind: 'contents', nowCount: 1, maxCount: 0, questState: null }),
-              weekly({ name: EPIC_NIGHTMARE, kind: 'contents', maxCount: 0, questState: null }),
-              weekly({ name: UNION_WEEKLY, questState: 2 }),
-              weekly({ name: UNION_PC }),
-              weekly({ name: EXTREME, nowCount: 1, maxCount: 2 }),
-            ],
-          }),
-        ],
-      }),
-    )
-
-    // 남은 것. 악몽선경· 몬스터파크(0/14)· 익스트림· PC방
-    expect(model.sharedRemaining).toBe(4)
-  })
 })
 
 describe('공유 컨텐츠. 유니온만 조건부다', () => {
@@ -960,7 +938,6 @@ describe('공유 컨텐츠. 유니온만 조건부다', () => {
     const model = buildTodayViewModel(input({}))
 
     expect(model.sharedContents.flatMap((group) => group.items)).toHaveLength(5)
-    expect(model.sharedRemaining).toBe(5)
   })
 
   it('수동 모드에서는 추적 목록 멤버십이 **스케줄러에 있는가** 다', () => {

@@ -1,6 +1,6 @@
 // 공유 컨텐츠 위젯(~31). 이 파일이 지키는 것 넷.
 // ① **계열이 축이다**(월드·계정 라벨이 화면에 한 번도 안 나온다)
-// ② **오른쪽 열은 카운트 있음 → n/max· 그 밖 → 빈칸**(CLEAR 는 걷었다)
+// ② **오른쪽 열은 카운트 있음 → n/max· 그 밖 → 빈칸**(CLEAR 는 걷었다. 머리의 수도 걷었다)
 // ③ **머리의 `?` 가 계열마다 다른 표시 기준을 말하되 타일 높이를 안 바꾼다**
 // ④ **타일을 눌러 가는 곳이 없다**(`target` 이 없는 타일이다)
 // ⑤ **계열이 두 열로 선다**(순서를 지키면서 높이가 가장 고른 지점에서 가른다)
@@ -16,13 +16,8 @@ import type { SharedContentGroupView } from '../../view-model'
 
 async function 위젯(
   sharedContents: SharedContentGroupView[],
-  sharedRemaining = sharedContents
-    .flatMap((group) => group.items)
-    .filter((item) => !item.isComplete).length,
 ): Promise<ReturnType<typeof renderAtom>> {
-  return renderAtom(
-    <SharedContentsWidget w={4} h="auto" data={뷰모델({ sharedContents, sharedRemaining })} />,
-  )
+  return renderAtom(<SharedContentsWidget w={4} h="auto" data={뷰모델({ sharedContents })} />)
 }
 
 /** 테스트 하네스의 창 폭. 팝오버는 별도 창이라 좌표가 화면 기준이다. */
@@ -65,11 +60,14 @@ describe('계열이 축이다', () => {
     expect(queryByText(/스카니아/)).toBeNull()
   })
 
-  it('머리에 남은 줄 수를 단다. 캐릭터 수와 무관하다', async () => {
-    const { getByTestId } = await 위젯(공유컨텐츠())
+  // **머리에 수를 안 단다**(사용자 지시). 남은 줄은 아래 체크박스가 이미 세어 볼 수 있게 그린다.
+  // 그 수를 머리에 또 쓰면 같은 말이 둘이고, 위젯 2 의 「남은 스케줄」 수와 나란히 읽혀 두 수의
+  // 관계를 사용자가 짐작하게 된다.
+  it('머리에 수를 안 단다', async () => {
+    const { queryByTestId, queryByText } = await 위젯(공유컨텐츠())
 
-    // 악몽선경· 일간· 익스트림· PC방
-    expect(getByTestId('shared-total').props.children).toBe(4)
+    expect(queryByTestId('shared-total')).toBeNull()
+    expect(queryByText(/개$/)).toBeNull()
   })
 })
 
@@ -236,7 +234,7 @@ describe('완료는 체크와 취소선이 말한다', () => {
 
 describe('빈 상태와 이동', () => {
   it('계열이 하나도 없어도 타일은 선다. 위젯은 사라지지 않는다', async () => {
-    const { getByTestId, queryAllByTestId } = await 위젯([], 0)
+    const { getByTestId, queryAllByTestId } = await 위젯([])
 
     expect(getByTestId('widget-shared-contents')).toBeTruthy()
     expect(queryAllByTestId('shared-group-name')).toHaveLength(0)
