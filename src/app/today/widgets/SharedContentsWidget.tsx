@@ -5,14 +5,15 @@
  *
  * ① 계열은 두 열로 서고 두 열의 줄 수가 가장 고른 지점에서 가른다. 오른쪽이 비면 한 열이다.
  * ② 체크박스를 누를 수 없다. 값이 게임에서 오므로 앱이 못 뒤집는다.
- * ③ 말풍선은 카드 **안**에 절대 배치한다. 인라인으로 펼치면 `h: 'auto'` 가 다시 재서 아래 타일이
- *    전부 밀린다.
+ * ③ 말풍선은 **별도 창**이다. 인라인으로 펼치면 `h: 'auto'` 가 다시 재서 아래 타일이 전부
+ *    밀린다. 앱의 다른 팝오버 둘과 같은 구조이고, 바깥을 누르면 닫힌다.
  *
  * @see docs/features/today.md 위젯 정책
  */
 
-import { useState } from 'react'
-import { Pressable, View } from 'react-native'
+import { Modal, Pressable, View, useWindowDimensions } from 'react-native'
+
+import { useAnchoredPopover } from '../../../hooks/useAnchoredPopover'
 
 import { CheckIcon, CircleQuestionMarkIcon, Text } from '../../../components/atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
@@ -23,12 +24,20 @@ import type { WidgetProps } from './types'
 const ITEM_HEIGHT_PX = 16
 
 /**
- * `?` 가 말하는 한 문장.
+ * `?` 가 말하는 두 줄. **계열마다 기준이 다르다**(사용자 확인).
  *
- * Open API 는 월드 공유 항목을 마지막 접속 월드 기준으로 돌려주고, 어느 월드 것인지 구분할
- * 신호가 응답에 없다.
+ * 한 문장으로 뭉뚱그리면 어느 쪽도 안 맞는다. Open API 는 몬스터파크 계열을 마지막 접속 캐릭터
+ * 기준으로 돌려주고, 그 캐릭터가 누구인지 구분할 신호가 응답에 없다.
  */
-const WORLD_NOTE = '계정 및 메이플 ID 공유 컨텐츠는 가장 마지막에 접속한 월드 기준으로 표시됩니다.'
+const SCOPE_NOTES = [
+  '에픽 던전과 메이플 유니온은 메이플 ID 기준입니다.',
+  '몬스터파크와 익스트림 몬스터파커는 마지막에 접속한 캐릭터 기준입니다.',
+] as const
+
+/** `?` 밑변과 상자 윗변 사이. 다른 팝오버 둘과 같은 값이다. */
+const NOTE_GAP = 8
+/** 상자 좌우 변과 화면 끝 사이에 남길 최소 여백. */
+const NOTE_EDGE_GAP = 12
 
 /** 계열이 차지하는 **줄 수**. 제목 한 줄 + 항목들. 두 열의 높이를 견주는 자다. */
 function groupRows(group: SharedContentGroupView): number {
@@ -128,13 +137,18 @@ function SharedItemRow(props: { item: SharedContentItemView }): React.JSX.Elemen
 export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
   // 기억하지 않는다. 위젯 2 의 아코디언과 같은 태도다. 다음에 열었을 때 설명이 떠 있으면 닫는
   // 법을 다시 찾게 된다.
-  const [noteOpen, setNoteOpen] = useState(false)
+  //
+  // 구조 분해가 필수다. `popover.toggle` 처럼 프로퍼티로 읽으면 `react-hooks/refs` 가 그 접근을
+  // 렌더 중 ref 접근으로 본다.
+  const { ref: toggleRef, isOpen: noteOpen, anchor, toggle: toggleNote, close: closeNote } = useAnchoredPopover()
+  const { width: windowWidth } = useWindowDimensions()
 
   return (
     <View testID="widget-shared-contents" className="p-3">
       <View className="flex-row items-center border-b border-border-strong pb-2">
         <Text fixed className="text-11 font-bold text-text-muted">계정 및 메이플 ID 공유 컨텐츠</Text>
         <Pressable
+          ref={toggleRef}
           testID="shared-note-toggle"
           role="button"
           aria-label="표시 기준 설명"
@@ -143,13 +157,11 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
           // 자리만** 넓힌다.
           hitSlop={10}
           className="ml-1"
-          onPress={() => setNoteOpen((open) => !open)}
+          onPress={toggleNote}
         >
-          <CircleQuestionMarkIcon
-            className={`h-3 w-3 ${noteOpen ? 'text-text' : 'text-text-disabled'}`}
-            strokeWidth={2.5}
-            aria-hidden
-          />
+          {/* 열려도 색이 안 변한다. 상태를 가진 버튼이 아니라 팁을 띄우는 버튼이라, 켜짐을 그리면
+              사용자가 그 색을 무언가의 상태로 읽는다. */}
+          <CircleQuestionMarkIcon className="h-3 w-3 text-text-disabled" strokeWidth={2.5} aria-hidden />
         </Pressable>
         <Text fixed className="ml-auto text-xs text-text-muted">
           <Text fixed testID="shared-total" style={TABULAR_NUMS} className="text-xs font-extrabold text-text">
@@ -160,16 +172,46 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
       </View>
 
       {noteOpen && (
-        // 카드 안 절대 배치라 타일 높이가 안 변한다. 말풍선 자체를 눌러도 닫힌다. 닫는 방법이
-        // `?` 뿐이면 그 자리를 다시 찾아야 한다.
-        <Pressable
-          testID="shared-note"
-          role="button"
-          className="absolute left-3 right-3 top-9 z-10 rounded-lg border border-border bg-surface-2 px-3 py-2"
-          onPress={() => setNoteOpen(false)}
+        /*
+          닫는 층과 내용이 **같은 창에** 있어야 한다. RN 의 `Modal` 은 앱 루트 뷰와 다른 네이티브
+          창이라 항상 그 위이고, `zIndex` 는 같은 트리의 형제끼리만 순서를 정한다. 닫기 층만 창에
+          넣고 내용을 트리에 두면 투명한 닫기 층이 상자 위에 깔린다.
+
+          별도 창이라 흐름에 아예 없어서, 카드 안 절대 배치이던 시절처럼 타일 높이가 안 변한다.
+        */
+        <Modal
+          visible
+          transparent
+          animationType="none"
+          statusBarTranslucent
+          navigationBarTranslucent
+          onRequestClose={closeNote}
         >
-          <Text fixed className="text-[11.5px] leading-snug text-text-muted">{WORLD_NOTE}</Text>
-        </Pressable>
+          {/* 바깥 탭으로 닫는다. **스크림이 없다**. 뒤를 덮으면 설명이 가리키는 목록이 함께 어두워진다. */}
+          <Pressable aria-label="표시 기준 설명 닫기" onPress={closeNote} className="flex-1" />
+          <View
+            testID="shared-note"
+            role="dialog"
+            aria-label="표시 기준 설명"
+            style={{
+              // `?` 왼쪽 끝에 맞추면 두 줄짜리 상자가 오른쪽으로 화면을 넘는다. 좌우 여백만 두고
+              // 폭을 화면에 맡긴다.
+              left: NOTE_EDGE_GAP,
+              top: anchor === null ? 0 : anchor.top + anchor.height + NOTE_GAP,
+              width: windowWidth - NOTE_EDGE_GAP * 2,
+            }}
+            // 아직 못 쟀으면 그리되 안 보인다. 0,0 에 한 프레임 번쩍이는 것을 막는다.
+            className={`absolute gap-1 rounded-[12px] border border-border bg-surface px-3 py-2 shadow-lg${
+              anchor === null ? ' opacity-0' : ''
+            }`}
+          >
+            {SCOPE_NOTES.map((note) => (
+              <Text key={note} fixed className="text-[11.5px] leading-snug text-text-muted">
+                {note}
+              </Text>
+            ))}
+          </View>
+        </Modal>
       )}
 
       {data.sharedContents.length > 0 && (

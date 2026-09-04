@@ -1,7 +1,7 @@
 // 공유 컨텐츠 위젯(~31). 이 파일이 지키는 것 넷.
 // ① **계열이 축이다**(월드·계정 라벨이 화면에 한 번도 안 나온다)
 // ② **오른쪽 열은 카운트 있음 → n/max· 그 밖 → 빈칸**(CLEAR 는 걷었다)
-// ③ **머리의 `?` 가 월드 한계를 말하되 타일 높이를 안 바꾼다**
+// ③ **머리의 `?` 가 계열마다 다른 표시 기준을 말하되 타일 높이를 안 바꾼다**
 // ④ **타일을 눌러 가는 곳이 없다**(`target` 이 없는 타일이다)
 // ⑤ **계열이 두 열로 선다**(순서를 지키면서 높이가 가장 고른 지점에서 가른다)
 // ⑥ **완료는 읽기 전용 체크박스 + 취소선이 말한다**
@@ -22,6 +22,14 @@ async function 위젯(
   return renderAtom(
     <SharedContentsWidget w={4} h="auto" data={뷰모델({ sharedContents, sharedRemaining })} />,
   )
+}
+
+/**
+ * `?` 아이콘의 색. lucide 아이콘은 색을 `style` 이 아니라 `stroke` 로 받는다. `testID` 를 달아도
+ * 못 잡아서(`data-testid` 로 내려간다) 토글의 첫 자식을 그냥 집는다.
+ */
+function 물음표색(toggle: { children: unknown[] }): string | undefined {
+  return (toggle.children[0] as { props: { stroke?: string } }).props.stroke
 }
 
 /** RN 의 상태 갱신은 `act` 안에서 흘려야 다음 렌더가 보인다(위젯 2 의 아코디언 테스트와 같다). */
@@ -233,60 +241,88 @@ describe('빈 상태와 이동', () => {
   // 타일 자체에는 `target` 이 없다(레지스트리). 여기서 누를 수 있는 것은 **설명 토글 하나뿐**이고
   // 그것은 화면을 옮기지 않는다. 계열 머리도 항목 줄도 누를 수 없다(위젯 2 의 아코디언과 다르다).
   it('누를 수 있는 것은 설명 토글 하나뿐이다. 가는 곳은 없다', async () => {
-    const { queryAllByRole, getByTestId } = await 위젯(공유컨텐츠())
+    const { queryAllByRole } = await 위젯(공유컨텐츠())
 
     const 누름자리 = queryAllByRole('button')
     expect(누름자리).toHaveLength(1)
     expect(누름자리[0]?.props.testID).toBe('shared-note-toggle')
-
-    // 말풍선을 열면 그것도 누를 수 있다. 닫는 자리라서다.
-    await 누름(getByTestId('shared-note-toggle'))
-    expect(queryAllByRole('button').map((node) => node.props.testID)).toEqual([
-      'shared-note-toggle',
-      'shared-note',
-    ])
   })
 })
 
-describe('머리의 `?`. 월드 한계를 말한다', () => {
-  const 문장 = '계정 및 메이플 ID 공유 컨텐츠는 가장 마지막에 접속한 월드 기준으로 표시됩니다.'
+describe('머리의 `?`. 계열마다 다른 표시 기준을 말한다', () => {
+  const 아이디줄 = '에픽 던전과 메이플 유니온은 메이플 ID 기준입니다.'
+  const 캐릭터줄 = '몬스터파크와 익스트림 몬스터파커는 마지막에 접속한 캐릭터 기준입니다.'
 
   it('평소에는 안 보인다. 늘 떠 있는 각주는 격자에서 잡음이다', async () => {
     const { queryByTestId, queryByText } = await 위젯(공유컨텐츠())
 
     expect(queryByTestId('shared-note')).toBeNull()
-    expect(queryByText(문장)).toBeNull()
+    expect(queryByText(아이디줄)).toBeNull()
   })
 
-  it('`?` 를 누르면 한 문장이 뜬다', async () => {
+  // 계열마다 기준이 다르다(사용자 확인). 한 문장으로 뭉뚱그리면 어느 쪽도 안 맞는다.
+  it('`?` 를 누르면 두 기준이 갈려 뜬다', async () => {
     const { getByTestId, getByText } = await 위젯(공유컨텐츠())
 
     await 누름(getByTestId('shared-note-toggle'))
 
-    expect(getByText(문장)).toBeTruthy()
+    expect(getByText(아이디줄)).toBeTruthy()
+    expect(getByText(캐릭터줄)).toBeTruthy()
   })
 
-  it('같은 `?` 를 다시 눌러도, 말풍선을 눌러도 닫힌다', async () => {
+  // **바깥을 누르면 닫힌다**(사용자 지시). 닫는 길이 `?` 뿐이면 12px 아이콘을 정확히 눌러야
+  // 닫히고, 빗나가면 안 닫힌다. 앱의 다른 팝오버 둘이 이미 이렇게 닫는다.
+  it('바깥을 누르면 닫힌다', async () => {
+    const { getByTestId, getByLabelText, queryByTestId } = await 위젯(공유컨텐츠())
+
+    await 누름(getByTestId('shared-note-toggle'))
+    await 누름(getByLabelText('표시 기준 설명 닫기'))
+
+    expect(queryByTestId('shared-note')).toBeNull()
+  })
+
+  it('같은 `?` 를 다시 눌러도 닫힌다', async () => {
     const { getByTestId, queryByTestId } = await 위젯(공유컨텐츠())
 
     await 누름(getByTestId('shared-note-toggle'))
     await 누름(getByTestId('shared-note-toggle'))
-    expect(queryByTestId('shared-note')).toBeNull()
 
-    await 누름(getByTestId('shared-note-toggle'))
-    await 누름(getByTestId('shared-note'))
     expect(queryByTestId('shared-note')).toBeNull()
   })
 
-  // 인라인으로 펼치면 `h: 'auto'` 가 다시 재서 아래 타일이 전부 밀린다. 절대 배치라 흐름에서
-  // 빠지고, 카드 안이라 잘릴 자리도 없다.
-  it('말풍선은 절대 배치라 타일 높이를 안 바꾼다', async () => {
+  // 닫는 층과 내용이 **같은 창**에 있어야 한다. 닫기 층만 창에 넣고 내용을 트리에 두면 투명한
+  // 닫기 층이 상자 위에 깔려 상자 안을 누르는 것이 전부 닫기로 먹힌다.
+  it('상자와 닫는 층이 같은 창에 있다', async () => {
+    const { getByTestId } = await 위젯(공유컨텐츠())
+
+    await 누름(getByTestId('shared-note-toggle'))
+
+    const 창 = getByTestId('shared-note').parent
+    expect(창).not.toBeNull()
+    expect(within(창!).getByLabelText('표시 기준 설명 닫기')).toBeTruthy()
+  })
+
+  // **`?` 는 상태를 가진 버튼이 아니다**(사용자 지시). 팁을 띄우는 버튼일 뿐이라 켜짐을 색으로
+  // 그리면 사용자가 그 색을 무언가의 상태로 읽는다.
+  it('열어도 `?` 색이 변하지 않는다', async () => {
+    const { getByTestId } = await 위젯(공유컨텐츠())
+
+    const 닫힘 = 물음표색(getByTestId('shared-note-toggle'))
+    await 누름(getByTestId('shared-note-toggle'))
+
+    expect(물음표색(getByTestId('shared-note-toggle'))).toBe(닫힘)
+  })
+
+  // 앱의 팝오버 셋이 같은 상자를 쓴다(`ItemRevenuePopover` · 월드별 분해 · 여기).
+  it('상자는 다른 팝오버와 같은 표면색이다', async () => {
     const { getByTestId } = await 위젯(공유컨텐츠())
 
     await 누름(getByTestId('shared-note-toggle'))
 
     expect(flattenStyle(getByTestId('shared-note').props.style)).toMatchObject({
       position: 'absolute',
+      backgroundColor: 기본테마.surface,
+      borderRadius: 12,
     })
   })
 })
