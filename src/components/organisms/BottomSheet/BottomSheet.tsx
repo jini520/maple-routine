@@ -9,7 +9,7 @@
  * 전제로 앱 셸에 `BottomSheetModalProvider` 와 `GestureHandlerRootView` 가 있어야 뜬다.
  *
  * @example
- * {열림 ? <BottomSheet onClose={() => setState(null)}>{내용}</BottomSheet> : null}
+ * {열림 ? <BottomSheet label="수입 기록" onClose={() => setState(null)}>{내용}</BottomSheet> : null}
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Keyboard, Platform, Pressable, View } from 'react-native'
@@ -65,6 +65,13 @@ function SheetScrim(props: {
 interface BottomSheetProps {
   onClose: () => void
   children: ReactNode
+  /**
+   * 스크린리더가 읽는 시트 이름. 화면에는 안 나온다.
+   *
+   * 기본값이 없다. 주면 다음 시트가 그것을 물려받아, 껍데기가 이름을 하나로 갖고 있던 자리로
+   * 돌아온다. 시트 넷이 전부 `드롭 아이템 기록` 으로 읽히던 상태였다.
+   */
+  label: string
   testId?: string
   /**
    * 바뀌면 스크롤을 맨 위로 되돌리는 키. 시트 안에서 내용이 통째로 갈리는 자리에 쓴다(지출 시트의
@@ -141,8 +148,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       keyboardBlurBehavior="restore"
       maxDynamicContentSize={frame.height * MAX_HEIGHT_RATIO}
       backdropComponent={renderBackdrop}
-      // 화면에는 안 보이고 스크린리더만 읽는다.
-      accessibilityLabel="드롭 아이템 기록"
+      accessibilityLabel={props.label}
       style={{ maxWidth: MAX_WIDTH, width: '100%', alignSelf: 'center' }}
       backgroundStyle={{
         backgroundColor: sheetSurface,

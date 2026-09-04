@@ -73,7 +73,7 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
 
   async function open(): Promise<ReturnType<typeof renderOverlay>> {
     return renderOverlay(
-      <BottomSheet onClose={noop} testId="boss-drop-sheet">
+      <BottomSheet onClose={noop} testId="boss-drop-sheet" label="드롭 아이템 기록">
         <Text>시트 내용</Text>
       </BottomSheet>,
     )
@@ -93,6 +93,18 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
   })
 
   // 라이브러리 기본 핸들 색·라운딩이 아니라 이 값들이어야 한다.
+  // 껍데기가 이름을 하나로 갖고 있으면 시트 넷이 전부 그 이름으로 읽힌다. 실제로 그랬다:
+  // 수입·지출·판매가 키패드까지 `드롭 아이템 기록` 이었다. 프롭이고, 기본값이 없다.
+  it('스크린리더가 읽는 이름은 호출부가 준다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <BottomSheet onClose={noop} testId="income-sheet" label="수입 기록">
+        <Text>시트 내용</Text>
+      </BottomSheet>,
+    )
+
+    expect(getByTestId('sheet').props.accessibilityLabel).toBe('수입 기록')
+  })
+
   it('그랩 핸들·배경·라운딩이 스킨 그대로다', async () => {
     const { getByTestId } = await open()
     const sheet = getByTestId('sheet')
@@ -232,7 +244,7 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
   it('마운트하면 열고, 닫힘은 이탈 애니메이션이 끝난 뒤 부모에 통보한다', async () => {
     const onClose = jest.fn()
     const { getByTestId } = await renderOverlay(
-      <BottomSheet onClose={onClose}>
+      <BottomSheet onClose={onClose} label="드롭 아이템 기록">
         <Text>시트 내용</Text>
       </BottomSheet>,
     )
@@ -263,7 +275,7 @@ describe('BottomSheet: 다크에서 표면 계열을 한 칸 올린다', () => {
 
   async function 다크시트(): Promise<ReturnType<typeof renderOverlay>> {
     const rendered = await renderOverlay(
-      <BottomSheet onClose={noop}>
+      <BottomSheet onClose={noop} label="드롭 아이템 기록">
         <View testID="시트안-카드" className="bg-surface" />
         <View testID="시트안-바닥" className="bg-bg" />
       </BottomSheet>,
@@ -298,7 +310,7 @@ describe('BottomSheet: 다크에서 표면 계열을 한 칸 올린다', () => {
   // 라이트는 대비가 4.18~4.29 로 멀쩡하다. 여기서 한 칸 더 올리면 `#FFFFFF` 에 부딪혀 눌린다.
   it('라이트에서는 아무것도 안 올린다', async () => {
     const { getByTestId } = await renderOverlay(
-      <BottomSheet onClose={noop}>
+      <BottomSheet onClose={noop} label="드롭 아이템 기록">
         <View testID="시트안-카드" className="bg-surface" />
       </BottomSheet>,
     )
