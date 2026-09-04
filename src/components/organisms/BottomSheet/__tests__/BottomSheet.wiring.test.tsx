@@ -23,7 +23,7 @@ describe('BottomSheet: 배선', () => {
     const { toJSON } = await renderOverlay(
       <GestureHandlerRootView>
         <BottomSheetModalProvider>
-          <BottomSheet onClose={() => {}}>
+          <BottomSheet onClose={() => {}} label="드롭 아이템 기록">
             <Text>시트 내용</Text>
           </BottomSheet>
         </BottomSheetModalProvider>

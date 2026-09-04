@@ -201,7 +201,7 @@ export function DropPricePadContent(
 /** 가격 기록 화면에서 띄우는 단독 시트. 드롭 입력 시트 안에서는 위 본문을 드릴다운으로 쓴다. */
 export function DropPricePad(props: DropPricePadProps & { onClose: () => void }): React.JSX.Element {
   return (
-    <BottomSheet onClose={props.onClose} testId="drop-price-pad">
+    <BottomSheet onClose={props.onClose} testId="drop-price-pad" label="드롭 판매가 입력">
       <DropPricePadContent {...props} />
     </BottomSheet>
   )

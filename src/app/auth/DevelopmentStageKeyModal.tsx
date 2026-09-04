@@ -11,14 +11,39 @@
  *
  * **왜 못 쓰는지는 안 적는다.** 사용자가 할 일은 다른 키를 받는 것 하나이고, 호출 한도 같은
  * 사정은 그 일을 바꾸지 않는다.
+ *
+ * 배치는 `organisms/NoticeModal` 이 갖는다. 이 파일이 정하는 것은 아이콘 · 톤 · 문구와 아래
+ * 단계 표뿐이다.
  */
-import { Linking, Pressable, View } from 'react-native'
+import { Linking, View } from 'react-native'
 
 import { useAuthStore } from '../../features/auth/store'
 
-import { Button, ExternalLinkIcon, KeyRoundIcon, Text } from '../../components/atoms'
-import { Modal } from '../../components/organisms/Modal/Modal'
+import { KeyRoundIcon, Text } from '../../components/atoms'
+import { NoticeModal } from '../../components/organisms/NoticeModal/NoticeModal'
 import { GUIDE_URL } from './api-key-links'
+
+/**
+ * 넣은 키와 필요한 키를 마주 세우는 두 줄 표.
+ *
+ * **두 줄이 붙어 있어야** 두 낱말이 같은 축의 두 값으로 읽힌다. 떼어 놓으면 각각이 따로 선
+ * 사실이 되어, 고를 수 있었던 것이라는 관계가 사라진다.
+ */
+function KeyStageTable(): React.JSX.Element {
+  return (
+    <View className="overflow-hidden rounded-[10px] border border-border">
+      <View className="flex-row items-center justify-between gap-2.5 px-3 py-2">
+        <Text className="text-xs text-text-muted">넣으신 키</Text>
+        <Text className="text-sm font-semibold text-text-muted">개발 단계</Text>
+      </View>
+      <View className="h-px bg-border" />
+      <View className="flex-row items-center justify-between gap-2.5 bg-primary-tint px-3 py-2">
+        <Text className="text-xs text-text-muted">필요한 키</Text>
+        <Text className="text-sm font-semibold text-primary-ink">서비스 단계</Text>
+      </View>
+    </View>
+  )
+}
 
 export function DevelopmentStageKeyModal(): React.JSX.Element | null {
   const blocked = useAuthStore((state) => state.developmentStageBlocked)
@@ -31,72 +56,28 @@ export function DevelopmentStageKeyModal(): React.JSX.Element | null {
   }
 
   return (
-    // 입력이 없어 키보드를 안 띄우므로 중앙 정렬이다(`ApiKeyNoticeModal` 과 같은 판단).
-    <Modal onClose={acknowledge} testId="development-stage-key-overlay" align="center">
-      <Modal.Card maxWidth="max-w-xs">
-        <View className="gap-5">
-          {/* 머리는 가운데 정렬이다. `ApiKeyNoticeModal` 과 같은 골격이라 두 모달이 한 앱에서
-              온 것으로 읽힌다. 아래 표만 좌우로 벌어지는데, 그것은 표가 원래 그런 물건이다. */}
-          <View className="items-center gap-3">
-            {/* 열쇠이되 **붉은 원이 아니다**. 이 자리는 무언가 실패한 곳이 아니라 종류가 다른
-                것을 넣은 곳이고, 앱의 빨강은 조회 실패와 삭제가 이미 쓰고 있다. 원이 아니라
-                네모인 것은 아래 표와 모서리를 맞춰 둘이 한 덩어리로 읽히게 하려는 것이다. */}
-            <View className="h-14 w-14 items-center justify-center rounded-[16px] bg-primary-tint">
-              <KeyRoundIcon className="h-7 w-7 text-primary-ink" strokeWidth={1.7} aria-hidden />
-            </View>
-            <Text
-              testID="development-stage-key-title"
-              className="text-center text-base font-semibold leading-snug text-text"
-            >
-              이 키로는 연결할 수 없습니다
-            </Text>
-          </View>
-
-          {/* 두 줄이 붙어 있어야 두 낱말이 **같은 축의 두 값**으로 읽힌다. 떼어 놓으면 각각이
-              따로 선 사실이 되어, 고를 수 있었던 것이라는 관계가 사라진다. */}
-          <View className="overflow-hidden rounded-[10px] border border-border">
-            <View className="flex-row items-center justify-between gap-2.5 px-3 py-2">
-              <Text className="text-xs text-text-muted">넣으신 키</Text>
-              <Text className="text-sm font-semibold text-text-muted">개발 단계</Text>
-            </View>
-            <View className="h-px bg-border" />
-            <View className="flex-row items-center justify-between gap-2.5 bg-primary-tint px-3 py-2">
-              <Text className="text-xs text-text-muted">필요한 키</Text>
-              <Text className="text-sm font-semibold text-primary-ink">서비스 단계</Text>
-            </View>
-          </View>
-
-          <Text className="text-center text-xs text-text-muted">
-            넥슨 오픈 API에서 단계를 ‘서비스 단계’로 골라 키를 새로 발급받은 뒤 입력해주세요.
-          </Text>
-
-          {/* **주 동작은 되돌아가는 것이다.** 이 모달은 길을 막고 서 있어 사용자가 바로 할 일이
-              폼으로 돌아가는 것이라, 가장 큰 버튼이 앱 밖으로 내보내면 안 된다. 발급 안내는
-              도움말이라 폼이 이미 쓰는 인라인 링크와 같은 모양으로 내린다(그 버튼은 모달을 닫으면
-              폼 아래에도 그대로 있다).
-              
-              **링크는 알약 아래여야 한다.** 위 설명 문장 바로 밑에 두면 12px 글자 둘이 한 문단으로
-              뭉쳐 누를 수 있는 것으로 안 보인다. 알약이 사이에 서서 그 둘을 갈라 준다. */}
-          <View className="items-center gap-3">
-            <Button
-              variant="primary"
-              onPress={acknowledge}
-              className="w-full items-center"
-              textClassName="text-sm"
-            >
-              다시 입력하기
-            </Button>
-            <Pressable
-              role="link"
-              onPress={() => void Linking.openURL(GUIDE_URL)}
-              className="flex-row items-center gap-1"
-            >
-              <Text className="text-xs text-primary-ink">발급 방법 자세히 보기</Text>
-              <ExternalLinkIcon className="h-3 w-3 text-primary-ink" aria-hidden />
-            </Pressable>
-          </View>
-        </View>
-      </Modal.Card>
-    </Modal>
+    // 열쇠이되 **붉은 원이 아니다**. 이 자리는 무언가 실패한 곳이 아니라 종류가 다른 것을 넣은
+    // 곳이고, 앱의 빨강은 조회 실패와 삭제가 이미 쓰고 있다. 원이 아니라 네모인 것은 바로 아래
+    // 표와 모서리를 맞춰 둘이 한 덩어리로 읽히게 하려는 것이다.
+    //
+    // **주 동작은 되돌아가는 것이다.** 이 모달은 길을 막고 서 있어 사용자가 바로 할 일이 폼으로
+    // 돌아가는 것이라, 가장 큰 버튼이 앱 밖으로 내보내면 안 된다. 발급 안내는 도움말이라 링크로
+    // 내린다. 그 버튼은 모달을 닫으면 폼 아래에도 그대로 있다.
+    <NoticeModal
+      icon={KeyRoundIcon}
+      tone="primary"
+      badgeShape="square"
+      title="이 키로는 연결할 수 없습니다"
+      titleTestId="development-stage-key-title"
+      content={<KeyStageTable />}
+      description="넥슨 오픈 API에서 단계를 ‘서비스 단계’로 골라 키를 새로 발급받은 뒤 입력해주세요."
+      action={{ label: '다시 입력하기', onPress: acknowledge }}
+      link={{
+        label: '발급 방법 자세히 보기',
+        onPress: () => void Linking.openURL(GUIDE_URL),
+      }}
+      onClose={acknowledge}
+      testId="development-stage-key-overlay"
+    />
   )
 }

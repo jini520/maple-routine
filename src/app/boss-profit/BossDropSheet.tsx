@@ -245,7 +245,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
 
   return (
     <>
-      <BottomSheet onClose={props.onClose} testId="boss-drop-sheet">
+      <BottomSheet onClose={props.onClose} testId="boss-drop-sheet" label="드롭 아이템 기록">
         {pricing !== null && props.pricing !== undefined ? (
           // 가격 드릴다운. 시트는 열린 채다. 저장·기록 안함 후 목록으로 돌아와 고르던 작업을
           // 잇는다. `onLater`(스킵)는 넘기지 않는다. 그 버튼은 순차 모드 전용이고 여기는 방금

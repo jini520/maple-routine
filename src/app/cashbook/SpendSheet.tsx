@@ -87,6 +87,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   return (
     <BottomSheet
       testId="spend-sheet"
+      label="지출 기록"
       onClose={props.onClose}
       resetScrollKey={`${category}|${scrollKey}`}
     >

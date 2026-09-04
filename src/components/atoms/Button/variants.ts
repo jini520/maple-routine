@@ -18,6 +18,13 @@ export const BUTTON_VARIANT_CLASS = {
   outline: 'rounded-full border border-border px-5 py-2.5',
   text: 'rounded-full px-5 py-2.5',
   danger: 'rounded-full border border-error px-5 py-2.5',
+  /**
+   * 되돌릴 수 없는 동작을 **작게** 내리는 자리. 상자는 `text` 와 같고 글자색만 갈린다.
+   *
+   * 테두리를 두르면 그것대로 눈길을 끌어 안전한 기본값(취소)과 비중이 붙는다. 파괴 동작이 취소보다
+   * 커 보이면 안 되고, 위험하다는 신호는 색 하나로 충분하다.
+   */
+  dangerText: 'rounded-full px-5 py-2.5',
 } as const
 
 /**
@@ -31,6 +38,7 @@ export const BUTTON_VARIANT_TEXT_CLASS = {
   outline: 'text-sm font-semibold text-text',
   text: 'text-sm font-medium text-text-muted',
   danger: 'text-sm font-semibold text-error-ink',
+  dangerText: 'text-sm font-medium text-error-ink',
 } as const
 
 /**
@@ -44,7 +52,8 @@ export const BUTTON_VARIANT_SPINNER_CLASS = {
   outline: 'text-text',
   text: 'text-text-muted',
   danger: 'text-error-ink',
+  dangerText: 'text-error-ink',
 } as const
 
-/** 버튼 변형 넷. 상자 표의 키가 곧 이 타입이다. */
+/** 버튼 변형 다섯. 상자 표의 키가 곧 이 타입이다. */
 export type ButtonVariant = keyof typeof BUTTON_VARIANT_CLASS

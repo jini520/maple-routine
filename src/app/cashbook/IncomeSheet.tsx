@@ -108,7 +108,7 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
   }
 
   return (
-    <BottomSheet testId="income-sheet" onClose={props.onClose}>
+    <BottomSheet testId="income-sheet" onClose={props.onClose} label="수입 기록">
       <View className="gap-3 px-4 pb-2">
         <View className="flex-row items-baseline justify-between gap-2">
           <Text
