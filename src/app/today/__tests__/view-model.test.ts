@@ -802,15 +802,14 @@ describe('공유 컨텐츠. 오른쪽 열은 `maxCount > 0` 하나로 갈린다'
   })
 
   it('완료하면 카운트를 안 준다. 화면이 CLEAR 를 그린다', () => {
-    // 익스트림 몬스터파커는 `quest_state` 로 완료를 판정하는 항목이라 `now_count` 의 충실도가
-    // 확인된 적이 없다. 완료한 항목의 **몇 번 했나** 는 언제나 max 라 카운트를 줄 이유가 없고,
-    // 안 주면 **끝낸 퀘스트가 `0/2` 로 보일 위험도 함께 사라진다**.
+    // 완료한 항목의 **몇 번 했나** 는 언제나 max 라 카운트를 줄 이유가 없다. 익스트림 몬스터파커의
+    // `now_count` 는 이번 주 일간 몬스터파크 횟수로 진짜지만, 그 사실이 이 규칙을 바꾸지 않는다.
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a'],
         contentCharacters: [
           sharedView('a', {
-            weeklyContents: [weekly({ name: EXTREME, nowCount: 0, maxCount: 2, questState: 2 })],
+            weeklyContents: [weekly({ name: EXTREME, nowCount: 0, maxCount: 5, questState: 2 })],
           }),
         ],
       }),
@@ -845,7 +844,7 @@ describe('공유 컨텐츠. 오른쪽 열은 `maxCount > 0` 하나로 갈린다'
         orderedOcids: ['a'],
         contentCharacters: [
           sharedView('a', {
-            weeklyContents: [weekly({ name: EXTREME, nowCount: 5, maxCount: 2, questState: 0 })],
+            weeklyContents: [weekly({ name: EXTREME, nowCount: 7, maxCount: 5, questState: 0 })],
           }),
         ],
       }),
@@ -854,7 +853,7 @@ describe('공유 컨텐츠. 오른쪽 열은 `maxCount > 0` 하나로 갈린다'
       .flatMap((group) => group.items)
       .find((item) => item.shortName === '익스트림 몬스터파커')
 
-    expect(extreme?.count).toEqual({ now: 2, max: 2 })
+    expect(extreme?.count).toEqual({ now: 5, max: 5 })
   })
 
   it('진행은 공유라 캐릭터마다 갈리면 가장 앞선 값을 쓴다. 늦게 동기화된 캐릭터가 값을 되돌리지 않는다', () => {

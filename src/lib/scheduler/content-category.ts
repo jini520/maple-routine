@@ -41,7 +41,8 @@ const CATEGORY_OVERRIDE: Record<string, string> = {
 // 반영한다. null = 태그 숨김. 아이템(content_name) → 카테고리 → 기본 규칙 순.
 const TAG_BY_CONTENT: Record<string, string | null> = {
   몬스터파크: '월드 당 최대 14회', // 일간
-  '[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?': 'ID당 2회', // 주간
+  // 수행 제한이지 완료 조건이 아니다. 완료는 일간 몬스터파크 5회이고 그것이 max_count 다.
+  '[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?': '월드 당 2회', // 주간
 }
 const TAG_BY_CATEGORY: Record<string, string | null> = {
   '에픽 던전': 'ID당 1회',
