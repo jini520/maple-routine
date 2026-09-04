@@ -140,6 +140,24 @@ const TABLE_DEFINITIONS = [
     PRIMARY KEY (ocid, boss, difficulty, period_key, drop_index)
 )`,
   },
+  // 캐릭터 이름·초상의 스냅샷. 캐릭터당 한 행이고 기록에 이름과 얼굴을 붙이는 데만 쓴다.
+  // `character-basic-cache` 와 값이 같고 수명이 다르다. 그쪽은 5분 TTL 캐시이고 캐시 비우기의
+  // `일반` 그룹이 통째로 지운다. 이름이 사라지면 기록에서 행을 만드는 자리가 그 ocid 를 건너뛰어
+  // 기록이 있어도 화면에서 사라지므로, 이 표는 `RECORD_TABLE_NAMES` 에 **직접 적혀 있어야 한다**
+  // (아래 차집합 파생은 새 테이블을 `general` 로 끌어간다).
+  {
+    name: 'character_profiles',
+    createSql: `CREATE TABLE IF NOT EXISTS character_profiles (
+    ocid TEXT NOT NULL,
+    name TEXT NOT NULL,
+    image_url TEXT NOT NULL,
+    -- 모르면 NULL. 0 이나 빈 문자열로 채우면 '모름' 이 값으로 둔갑한다.
+    world TEXT,
+    level INTEGER,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (ocid)
+)`,
+  },
   // 가계부가 **손으로 적는** 둘. 앞의 넷과 갈리는 성질이 셋이다:
   //  ① **대리키다.** 앞의 넷은 자연키 복합 PK 인데 손입력은 **같은 날 같은 것을 두 번** 이 정상이라
   //     자연키가 성립하지 않는다.

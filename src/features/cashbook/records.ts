@@ -19,6 +19,8 @@ import { pointToMeso } from '../../lib/cashbook/spend-catalog'
 import { getBossDropRecords, getBossDropRecordsRevision } from '../../storage/boss-drops'
 import { getBossProfitRecordsRevision, getDatedBossProfitRecords } from '../../storage/boss-profit'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
+import { getRecordedCharacterOcids } from '../../storage/boss-profit'
+import { resolveDisplayProfiles } from '../character-profile/resolve'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { resolveDefeatDates } from '../boss-profit/defeat-dates'
 import { useBossProfitStore } from '../boss-profit/store'
@@ -145,12 +147,29 @@ function bossRowKey(record: {
  * 없다. 후자에서 드롭 조회를 건너뛰는 것이 중요하다. 드롭은 자기 날짜가 없어서 보스 행이
  * 없으면 어차피 어느 칸에도 못 선다.
  */
+/**
+ * 그날 줄을 그릴 캐릭터. 추적 목록 ∪ 기록을 남긴 캐릭터다.
+ *
+ * 추적 목록만 보면 캐릭터를 관리 목록에서 뺀 순간 과거 날짜의 결정석·판매 줄이 통째로 사라진다.
+ * 기록은 원래부터 안 지워졌고 조회 범위만 추적 목록이었다. 같은 화면의 손입력 줄은 날짜로만
+ * 골라 이미 남아 있었으므로, 한 목록 안에서 줄의 출처에 따라 다르게 살아남고 있었다.
+ *
+ * 던지지 않는다. 한쪽을 못 읽으면 아는 만큼으로 그린다.
+ */
+async function resolveDisplayOcids(): Promise<string[]> {
+  const [tracked, recorded] = await Promise.all([
+    getTrackedCharacterOcids().catch(() => null),
+    getRecordedCharacterOcids().catch(() => []),
+  ])
+  return [...new Set([...(tracked ?? []), ...recorded])]
+}
+
 async function loadBossDaySummaries(
   fromDateKey: string,
   toDateKey: string,
 ): Promise<BossDaySummary[]> {
-  const ocids = await getTrackedCharacterOcids().catch(() => null)
-  if (ocids === null || ocids.length === 0) {
+  const ocids = await resolveDisplayOcids()
+  if (ocids.length === 0) {
     return []
   }
 
@@ -481,18 +500,15 @@ export async function loadDayRecords(dateKey: string): Promise<DayRecord[]> {
  * 자동 줄(보스)과 손입력 줄이 같은 표를 쓴다. 갈라 두면 같은 캐릭터가 한 목록 안에서 다르게
  * 불릴 수 있다.
  *
- * 못 찾으면 빈 문자열이다. `ocid` 는 사용자에게 아무 뜻도 없는 문자열이라 그것을 적을 바에
- * 이름을 안 적는다.
+ * 출처는 지워지지 않는 스냅샷이다. 5분 TTL 캐시에서 읽으면 설정의 캐시 비우기 한 번에 과거
+ * 줄의 이름이 통째로 사라진다.
+ *
+ * 못 찾은 `ocid` 는 표에 안 든다. 부르는 쪽이 그때 빈 문자열을 쓴다. `ocid` 는 사용자에게 아무
+ * 뜻도 없는 문자열이라 그것을 적을 바에 이름을 안 적는다.
  */
 async function namesByOcid(ocids: readonly string[]): Promise<Map<string, string>> {
-  return new Map(
-    await Promise.all(
-      [...new Set(ocids)].map(
-        async (ocid) =>
-          [ocid, (await getCachedCharacterBasic(ocid).catch(() => null))?.profile.name ?? ''] as const,
-      ),
-    ),
-  )
+  const profiles = await resolveDisplayProfiles(ocids).catch(() => new Map())
+  return new Map([...profiles].map(([ocid, profile]) => [ocid, profile.name]))
 }
 
 /** 요약을 줄로. 이름은 부르는 쪽이 이미 찾아 둔 표에서 온다(캘린더 칸은 이름이 필요 없다). */

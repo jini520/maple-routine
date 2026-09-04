@@ -1,5 +1,6 @@
 import { fetchCharacterBasic } from '../../nexon/character'
 import { getCachedCharacterBasic, setCachedCharacterBasic } from '../../storage/character-basic-cache'
+import { saveCharacterProfile } from '../../storage/character-profiles'
 import type { CharacterBasicProfile } from '../../types'
 
 /**
@@ -86,5 +87,22 @@ export async function fetchCharacterBasicCached(
   // cachedAt 은 호출부가 이미 잡아둔 `now` 다(여기서 시계를 다시 읽지 않는다). 판정이 결정적이고,
   // 오차는 항상 TTL 이 짧아지는 보수적인 방향으로만 난다.
   await setCachedCharacterBasic(accountId, ocid, { profile, cachedAt: now.toISOString() })
+
+  // 지워지지 않는 스냅샷에도 같은 값을 남긴다. 위 캐시는 5분 TTL 이고 설정의 캐시 비우기가
+  // 통째로 지우는데, 이름이 사라지면 기록에서 행을 만드는 자리가 그 ocid 를 건너뛰어 지운 적
+  // 없는 과거 수익이 화면에서 사라진다. 이 함수가 앱 전체의 basic 통과 지점이라 여기 한 줄이면
+  // 한 번이라도 조회된 캐릭터는 추적을 해제해도 이름과 얼굴을 갖는다.
+  //
+  // 실패는 삼킨다. 이 저장은 호출부가 기다리는 값이 아니라 뒷정리라, 못 썼다고 조회가 실패하면
+  // 안 된다.
+  await saveCharacterProfile({
+    ocid,
+    name: profile.name,
+    imageUrl: profile.imageUrl,
+    world: profile.world ?? null,
+    level: profile.level,
+    updatedAt: now.toISOString(),
+  }).catch(() => undefined)
+
   return profile
 }

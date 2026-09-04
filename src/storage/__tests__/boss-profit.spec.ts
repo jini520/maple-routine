@@ -373,3 +373,27 @@ describe('getBossProfitRecordsRevision', () => {
     expect(getBossProfitRecordsRevision()).toBe(0)
   })
 })
+
+// 추적 목록이 아니라 기록 자신이 `누구의 것을 그릴까` 를 정하게 하는 값이다. 캐릭터를 관리
+// 목록에서 빼도 그 캐릭터가 남긴 기록은 화면에 계속 서야 한다.
+describe('getRecordedCharacterOcids', () => {
+  it('수익과 드롭 두 표를 한 번에 훑는다', async () => {
+    const { getRecordedCharacterOcids } = require('../boss-profit') as typeof import('../boss-profit')
+    queryMock.mockResolvedValue({ values: [{ ocid: 'ocid-1' }, { ocid: 'ocid-2' }] })
+
+    await expect(getRecordedCharacterOcids()).resolves.toEqual(['ocid-1', 'ocid-2'])
+
+    expect(queryMock).toHaveBeenCalledTimes(1)
+    const [sql] = queryMock.mock.calls[0]
+    expect(sql).toContain('boss_profit_records')
+    expect(sql).toContain('boss_drop_records')
+    expect(sql).toContain('UNION')
+  })
+
+  it('기록이 없으면 빈 배열이다', async () => {
+    const { getRecordedCharacterOcids } = require('../boss-profit') as typeof import('../boss-profit')
+    queryMock.mockResolvedValue({ values: [] })
+
+    await expect(getRecordedCharacterOcids()).resolves.toEqual([])
+  })
+})

@@ -14,9 +14,9 @@ import {
   getBossDropRecordsRevision,
   type BossDropRecord,
 } from '../../storage/boss-drops'
-import { getAllBossProfitRecordKeys } from '../../storage/boss-profit'
-import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
+import { getAllBossProfitRecordKeys, getRecordedCharacterOcids } from '../../storage/boss-profit'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
+import { resolveDisplayProfiles } from '../character-profile/resolve'
 
 // 드롭 획득 히스토리(전 기간) 상태. 읽기 전용이다. 삭제·수정은 드롭 입력 시트만 하고 여기서는
 // DB 에 쓰지 않는다.
@@ -86,8 +86,12 @@ export const useDropHistoryStore = create<DropHistoryState>((set) => ({
     // 것으로 표시해 영영 놓친다.
     const revision = getBossDropRecordsRevision()
 
-    const ocids = await getTrackedCharacterOcids()
-    if (ocids === null || ocids.length === 0) {
+    // 추적 목록으로 범위를 정하면 캐릭터를 관리 목록에서 뺀 순간 그 캐릭터가 먹은 것이 전부
+    // 사라진다. 기록을 남긴 캐릭터를 함께 든다.
+    const tracked = (await getTrackedCharacterOcids()) ?? []
+    const recorded = await getRecordedCharacterOcids().catch(() => [])
+    const ocids = [...new Set([...tracked, ...recorded])]
+    if (ocids.length === 0) {
       set({ status: 'ready', groups: [], drought: null, charactersByOcid: {}, loadedRevision: revision })
       return
     }
@@ -105,17 +109,12 @@ export const useDropHistoryStore = create<DropHistoryState>((set) => ({
       )
       const records = filterUnobtainableConfirmedDrops(dropRecords.map(toHistoryRecord), confirmedKeys)
 
-      // 캐릭터명·아바타는 character-basic-cache 가 출처다. 이름이 없으면 ocid 를 대신 쓰지
+      // 캐릭터명·아바타는 지워지지 않는 스냅샷이 출처다. 이름이 없으면 ocid 를 대신 쓰지
       // 않는다. 화면이 부재를 판단하도록 항목을 만들지 않는다.
+      const profiles = await resolveDisplayProfiles(records.map((record) => record.ocid))
       const charactersByOcid: Record<string, DropHistoryCharacter> = {}
-      for (const ocid of new Set(records.map((record) => record.ocid))) {
-        const cached = await getCachedCharacterBasic(ocid)
-        if (cached === null) continue
-        charactersByOcid[ocid] = {
-          ocid,
-          characterName: cached.profile.name,
-          imageUrl: cached.profile.imageUrl ?? null,
-        }
+      for (const [ocid, profile] of profiles) {
+        charactersByOcid[ocid] = { ocid, characterName: profile.name, imageUrl: profile.imageUrl }
       }
 
       set({
