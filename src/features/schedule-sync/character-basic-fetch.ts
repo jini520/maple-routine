@@ -43,6 +43,17 @@ function isFresh(cachedAt: string, now: Date): boolean {
 }
 
 /**
+ * 호출 하나의 예외.
+ *
+ * `force` 는 TTL 을 건너뛰고 무조건 받는다. 여는 자리는 today 의 대표 캐릭터 하나뿐이다. 그
+ * 화면이 EXP 를 그리는 캐릭터가 그것이라, 5분 안이면 새로고침을 눌러도 숫자가 안 움직였다.
+ * 전원에 켜면 추적 45명 계정에서 새로고침 한 번이 45건이 된다.
+ */
+export interface FetchCharacterBasicOptions {
+  force?: boolean
+}
+
+/**
  * `jobClass` 는 `character/basic` 이 아니라 `character/list` 가 주는 값이다. 저장 경로가 이
  * 함수 하나뿐이라, 그 값을 손에 든 호출부가 여기로 함께 넘겨 엔트리에 실린다.
  * `normalizeCharacterBasic` 은 채우지 않는다.
@@ -56,9 +67,10 @@ export async function fetchCharacterBasicCached(
   ocid: string,
   now: Date,
   jobClass?: string,
+  options?: FetchCharacterBasicOptions,
 ): Promise<CharacterBasicProfile> {
   const cached = await getCachedCharacterBasic(ocid)
-  if (cached !== null && isFresh(cached.cachedAt, now)) {
+  if (cached !== null && options?.force !== true && isFresh(cached.cachedAt, now)) {
     return cached.profile
   }
 

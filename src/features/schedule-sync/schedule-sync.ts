@@ -27,6 +27,8 @@ import { fetchCharacterBasicCached } from './character-basic-fetch'
 import { resolveTrackedCharacterContext } from './character-roster'
 import type { TrackedCharacterContext } from './character-roster'
 import { markSyncAttemptedThisRun } from './sync-run-state'
+import { resolveDisplayRepresentative } from '../character-manage/derivations'
+import { getRepresentativeCharacter } from '../../storage/character-selection'
 // 공개 API 는 그대로 둔다. 옮긴 것은 구현 위치이지 호출부가 알 바가 아니다.
 export { toScheduleSyncError } from './errors'
 export type { ScheduleSyncError } from './errors'
@@ -219,6 +221,10 @@ async function fillMissingSections(
 // 네 호출부가 공유하는 5분 TTL 가드를 통과한다. 동기화가 실제로 도는 회차인데 basic 만 그
 // 가드에 걸려 건너뛰는 구간이 최대 5분 생기고, 다음 동기화가 받는다(가드 5분 < 동기화 TTL 10분).
 //
+// 예외가 하나 있다. `forcedOcid` 는 그 가드를 건너뛴다. today 의 대표 위젯이 그 캐릭터의 EXP 를
+// 그리는데 가드에 걸리면 새로고침을 눌러도 숫자가 안 움직인다. 전원에 켜지 않는 것은 추적 45명
+// 계정에서 새로고침 한 번이 45건이 되기 때문이다.
+//
 // 절대 throw 하지 않는다. 실패는 그 캐릭터의 기존 캐시를 그대로 두는 것으로 끝나고 사용자에게
 // 알리지도 않는다. `syncOneCharacter` 의 try 안이 아니라 별도 경로인 이유도 같다. 거기 넣으면
 // basic 실패가 catch 로 떨어져 스케줄 조회는 성공했는데도 그 캐릭터가 isStale: true 가 된다.
@@ -228,6 +234,7 @@ async function fillMissingSections(
 async function refreshCharacterBasics(
   apiKey: string,
   targets: TrackedCharacterContext[],
+  forcedOcid: string | null,
 ): Promise<void> {
   // 라운드 하나가 기준 시각 하나를 공유한다. 캐릭터마다 새로 읽으면 같은 라운드 안에서 TTL
   // 판정 기준이 흔들린다.
@@ -238,7 +245,9 @@ async function refreshCharacterBasics(
       try {
         // accountId 는 그 캐릭터가 사는 계정이다. 캐시 인덱스가 계정별이라 틀리면 다른 계정
         // 인덱스를 오염시킨다. jobClass 는 character/list 가 준 값을 그대로 실어 보낸다.
-        await fetchCharacterBasicCached(apiKey, accountId, character.ocid, now, character.jobClass)
+        await fetchCharacterBasicCached(apiKey, accountId, character.ocid, now, character.jobClass, {
+          force: character.ocid === forcedOcid,
+        })
       } catch {
         // best-effort. 기존 캐시를 그대로 둔다.
       }
@@ -349,6 +358,11 @@ async function runSyncRound(
   // character/basic 편승 갱신을 스케줄 병렬 구간과 같은 `Promise.all` 로 묶어 동시에 내보낸다.
   // 체감 대기 시간이 안 는다. 자리는 isGlobalFailure 를 걸러 낸 뒤여야 한다. 401/429 인데
   // 캐릭터 수만큼 호출을 낭비하지 않는다. 대상은 targets 전체다.
+  // 대표 하나는 5분 가드를 건너뛴다. today 의 대표 위젯이 그 캐릭터의 EXP 를 그리는데, 가드에
+  // 걸리면 사용자가 새로고침을 눌러도 그 숫자가 안 움직인다. 화면이 대표 자리에 세우는 캐릭터와
+  // 같은 함수로 고른다. 둘이 갈리면 보이는 캐릭터가 아닌 쪽을 다시 받는다.
+  const forcedOcid = resolveDisplayRepresentative(ocids, await getRepresentativeCharacter())
+
   const [restResults] = await Promise.all([
     Promise.all(
       rest.map(async ({ character, accountId }) => {
@@ -358,7 +372,7 @@ async function runSyncRound(
         return result
       }),
     ),
-    refreshCharacterBasics(apiKey, targets),
+    refreshCharacterBasics(apiKey, targets, forcedOcid),
   ])
 
   return [firstResult, ...restResults]

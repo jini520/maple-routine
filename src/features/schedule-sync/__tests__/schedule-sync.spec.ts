@@ -62,6 +62,7 @@ import {
   syncSchedules,
 } from '../schedule-sync'
 import { hasSyncAttemptedThisRun, resetSyncRunStateForTests } from '../sync-run-state'
+import { setRepresentativeCharacter } from '../../../storage/character-selection'
 
 function mockCharacter(ocid: string): MapleCharacter {
   return {
@@ -1206,7 +1207,8 @@ describe('syncSchedules', () => {
     // 이 편승 갱신도 공유 TTL 가드를 통과한다.~4 의 호출 조건은
     // 그대로 서고(동기화 자체는 돈다) basic 만 5분 가드에 걸려 건너뛴다.
     it('5분 TTL 안에 캐시된 캐릭터는 편승 갱신에서 mockCharacter/basic 을 부르지 않는다', async () => {
-      const characters = [mockCharacter('ocid-1')]
+      // 대표(`ocid-1`)는 가드를 건너뛰므로, 가드가 서는 것을 보려면 대표가 **아닌** 캐릭터를 봐야 한다.
+      const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
       getCachedCharacterBasicMock.mockResolvedValue({
@@ -1214,13 +1216,69 @@ describe('syncSchedules', () => {
         cachedAt: NOW,
       })
 
-      const results = await syncSchedules(['ocid-1'])
+      const results = await syncSchedules(['ocid-1', 'ocid-2'])
 
-      expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
-      expect(setCachedCharacterBasicMock).not.toHaveBeenCalled()
+      expect(fetchCharacterBasicMock).not.toHaveBeenCalledWith('key-1', 'ocid-2')
+      expect(setCachedCharacterBasicMock).not.toHaveBeenCalledWith(
+        'acc-1',
+        'ocid-2',
+        expect.anything(),
+      )
       // 스케줄 동기화 자체는 그대로 돈다. 건너뛴 것은 basic 하나뿐이다.
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-1')
-      expect(results[0].isStale).toBe(false)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-2')
+      expect(results[1].isStale).toBe(false)
+    })
+
+    // today 의 대표 위젯이 EXP 를 그리는 캐릭터다. 이 하나만 가드를 건너뛴다. 5분 안이면 새로고침을
+    // 눌러도 그 숫자가 안 움직이던 것을 여기서 푼다.
+    describe('대표 캐릭터 하나는 TTL 안이어도 다시 받는다', () => {
+      beforeEach(() => {
+        getCachedCharacterBasicMock.mockResolvedValue({
+          profile: basicProfile({ name: '방금받음', level: 293 }),
+          cachedAt: NOW,
+        })
+      })
+
+      it('저장된 대표만 부르고 나머지는 가드에 걸린다', async () => {
+        await setRepresentativeCharacter('ocid-2')
+        fetchCharacterListMock.mockResolvedValue([
+          account('acc-1', [mockCharacter('ocid-1'), mockCharacter('ocid-2')]),
+        ])
+        fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
+        fetchCharacterBasicMock.mockResolvedValue(basicProfile({ name: '갱신됨', level: 294 }))
+
+        await syncSchedules(['ocid-1', 'ocid-2'])
+
+        expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(1)
+        expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-2')
+      })
+
+      // 대표 미지정은 today 에서 목록의 첫 번째가 그 자리에 선다(`resolveDisplayRepresentative`).
+      // 화면이 그리는 캐릭터와 다시 받는 캐릭터가 갈리면 안 된다.
+      it('대표를 안 골랐으면 목록의 첫 번째를 부른다', async () => {
+        fetchCharacterListMock.mockResolvedValue([
+          account('acc-1', [mockCharacter('ocid-1'), mockCharacter('ocid-2')]),
+        ])
+        fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
+        fetchCharacterBasicMock.mockResolvedValue(basicProfile({ name: '갱신됨', level: 294 }))
+
+        await syncSchedules(['ocid-1', 'ocid-2'])
+
+        expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(1)
+        expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-1')
+      })
+
+      // 강제는 예외지 특권이 아니다. best-effort 계약은 그대로라 실패해도 스케줄 결과를 안 흔든다.
+      it('대표의 basic 이 실패해도 그 캐릭터는 isStale: false 다', async () => {
+        fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1')])])
+        fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
+        fetchCharacterBasicMock.mockRejectedValue(new NexonNetworkError('basic 조회 실패'))
+
+        const results = await syncSchedules(['ocid-1'])
+
+        expect(results[0].isStale).toBe(false)
+        expect(setCachedCharacterBasicMock).not.toHaveBeenCalled()
+      })
     })
   })
 

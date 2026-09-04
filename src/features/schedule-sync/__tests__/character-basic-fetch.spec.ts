@@ -105,6 +105,48 @@ describe('5분 TTL 가드', () => {
   })
 })
 
+// today 의 대표 캐릭터만 이 문을 연다. 그 화면이 EXP 를 그리는 캐릭터가 하나뿐이라, 5분 안에
+// 새로고침을 눌러도 숫자가 안 움직이는 것을 여기서 푼다.
+describe('force: 대표 캐릭터가 TTL 을 건너뛰는 문', () => {
+  it('TTL 안이어도 다시 부르고 캐시를 갱신한다', async () => {
+    await seedCache(CHARACTER_BASIC_TTL_MS - 1, profile({ name: '캐시값', level: 293 }))
+    const fresh = profile({ name: '새로받음', level: 294 })
+    fetchCharacterBasicMock.mockResolvedValue(fresh)
+
+    await expect(
+      fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW, undefined, { force: true }),
+    ).resolves.toEqual(fresh)
+    expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(1)
+    await expect(getCachedCharacterBasic(OCID)).resolves.toEqual({
+      profile: fresh,
+      cachedAt: NOW.toISOString(),
+    })
+  })
+
+  // 문을 여는 것은 `force` 뿐이다. 안 주면 지금까지의 규칙 그대로다.
+  it('force 가 없으면 TTL 안의 캐시를 그대로 돌려준다', async () => {
+    const cached = profile({ name: '캐시값' })
+    await seedCache(CHARACTER_BASIC_TTL_MS - 1, cached)
+
+    await expect(
+      fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW, undefined, {}),
+    ).resolves.toEqual(cached)
+    expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
+  })
+
+  // 강제해도 jobClass 규칙은 안 바뀐다. 모르면 안 넘기고, 그때는 캐시에 있던 값을 유지한다.
+  it('강제로 받아도 캐시에 있던 jobClass 를 잃지 않는다', async () => {
+    await seedCache(0, profile({ name: '캐시값', jobClass: '렌' }))
+    fetchCharacterBasicMock.mockResolvedValue(profile({ name: '새로받음', level: 294 }))
+
+    const result = await fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW, undefined, {
+      force: true,
+    })
+
+    expect(result.jobClass).toBe('렌')
+  })
+})
+
 describe('신뢰할 수 없는 cachedAt 은 만료로 취급한다', () => {
   it('파싱 불가 문자열이면 다시 부른다', async () => {
     await setCachedCharacterBasic(ACCOUNT, OCID, {
