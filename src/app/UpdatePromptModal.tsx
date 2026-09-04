@@ -27,6 +27,7 @@ import {
   Text,
 } from '../components/atoms'
 import { Modal } from '../components/organisms/Modal/Modal'
+import { NoticeModal } from '../components/organisms/NoticeModal/NoticeModal'
 
 const MODAL_STATUSES: ReadonlySet<LiveUpdateStatus> = new Set([
   'update-available',
@@ -77,44 +78,11 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)}MB`
 }
 
-const PRIMARY_BOX = 'w-full items-center'
-const PRIMARY_TEXT = 'text-sm'
-// 부 동작이 주 동작과 같은 크기(px-5 py-2.5 text-sm)라 비중이 너무 컸다.
-// 이 상수를 네 분기가 공유하므로 줄이면 모달 전체에 함께 적용된다. 한 모달 안에서 부 동작
-// 크기가 갈리지 않게 하려는 의도다.
+// 아래 `HighlightsDisclosure` 의 `자세히 보기` 만 쓴다. 부 동작 버튼(`나중에`·`취소`)은
+// `NoticeModal` 이 그리고 **같은 값을 갖는다**. 한 모달 안에서 두 고스트 버튼의 크기가 갈리면
+// 안 되므로 한쪽을 고칠 때 다른 쪽도 함께 본다.
 const GHOST_BOX = 'w-full items-center px-4 py-1.5'
 const GHOST_TEXT = 'text-xs'
-
-type IconTone = 'primary' | 'secondary' | 'third' | 'error'
-const TONE_CLASS: Record<IconTone, string> = {
-  primary: 'bg-primary-tint',
-  secondary: 'bg-secondary-tint',
-  third: 'bg-third-tint',
-  error: 'bg-error-tint',
-}
-// 아이콘 색이 상속되지 않아 배경과 글자색을 갈라 둔다(`Svg` 의 `color` 프롭으로 내려간다).
-const TONE_INK_CLASS: Record<IconTone, string> = {
-  primary: 'text-primary-ink',
-  secondary: 'text-secondary-ink',
-  third: 'text-third-ink',
-  error: 'text-error-ink',
-}
-
-function IconBadge({
-  icon: Icon,
-  tone,
-}: {
-  icon: typeof CloudDownloadIcon
-  tone: IconTone
-}): React.JSX.Element {
-  return (
-    <View
-      className={`mx-auto h-14 w-14 items-center justify-center rounded-full ${TONE_CLASS[tone]}`}
-    >
-      <Icon className={`h-7 w-7 ${TONE_INK_CLASS[tone]}`} strokeWidth={1.75} aria-hidden />
-    </View>
-  )
-}
 
 function VersionBadge({ version }: { version: string | null }): React.JSX.Element {
   return (
@@ -185,12 +153,11 @@ function HighlightsDisclosure({ highlights }: { highlights: string[] }): React.J
   )
 }
 
+/** 진행 상태 둘이 쓰는 제목. `NoticeModal` 의 제목과 **같은 값이어야 한다**. */
 function Title({ children }: { children: string }): React.JSX.Element {
-  return <Text className="text-center text-base font-semibold text-text">{children}</Text>
-}
-
-function Body({ children }: { children: React.ReactNode }): React.JSX.Element {
-  return <Text className="text-center text-sm text-text-muted">{children}</Text>
+  return (
+    <Text className="text-center text-base font-semibold leading-snug text-text">{children}</Text>
+  )
 }
 
 function Note({ children }: { children: React.ReactNode }): React.JSX.Element {
@@ -203,8 +170,6 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
 
   if (!MODAL_STATUSES.has(status)) return null
 
-  // 다운로드·적용이 도는 동안은 되돌릴 수 없거나 되돌리면 안 되는 구간이다.
-  const isInProgress = status === 'downloading' || status === 'applying'
   const sizeText = state.availableSize !== null ? formatSize(state.availableSize) : ''
 
   // 받은 뒤의 `자세히 보기`. 여기서는 펼치지 않고 전부 갖고 있는 화면으로 보낸다. 닫지 않으면
@@ -214,274 +179,196 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
     props.onOpenReleaseNotes()
   }
 
+  /**
+   * 일곱 상태가 쓰는 공통값. `나중에` 는 이 모달의 기본 부 동작이다. 상태마다 주 동작만 갈리고
+   * 물러나는 길은 같다. `confirm-cellular` 와 `updated` 만 이것을 덮는다.
+   */
+  const 물러나기 = { label: '나중에', onPress: actions.dismiss }
+  const 공통 = { onClose: actions.dismiss, testId: 'update-prompt-overlay' } as const
+
+  // ── 진행 상태 둘. **배지도 버튼도 없어 알림 틀이 아니다.**
+  //
+  // 되돌릴 수 없거나 되돌리면 안 되는 구간이라 배경 탭으로도 안 닫힌다. 제목 아래 묶는 폭도
+  // 12(`gap-3`)로 다르다. 진행률·스피너가 글이 아니라 그림이라 글자끼리의 8 보다 숨이 필요하다.
+  if (status === 'downloading') {
+    return (
+      <Modal onClose={() => {}} testId="update-prompt-overlay" align="center">
+        <Modal.Card maxWidth="max-w-xs" tight>
+          <View className="gap-3">
+            <Title>다운로드 중</Title>
+            {/* 결정형 진행률은 예외 없이 h-1.5 프리미티브 하나.
+                `animated` 를 쓰는 곳도 여기뿐이다. 여기만 값이 연속으로 흐른다. */}
+            <ProgressBar
+              percent={state.downloadProgress}
+              animated
+              aria={{ now: state.downloadProgress, max: 100 }}
+              fillTestId="update-progress-bar"
+            />
+            <Text className="text-center text-xs font-medium text-text-muted tabular-nums">
+              {state.downloadProgress}%
+            </Text>
+          </View>
+        </Modal.Card>
+      </Modal>
+    )
+  }
+
+  // 커버가 닫기 뒤로 밀린 구간(최대 5초). 적용은 퍼센트가 나오지 않아 결정형 진행률을 쓰지 않고
+  // (가짜로 채우면 거짓 정보다) 모달 안 대기의 규격대로 스윕 스피너 + 문구만 둔다.
+  if (status === 'applying') {
+    return (
+      <Modal onClose={() => {}} testId="update-prompt-overlay" align="center">
+        <Modal.Card maxWidth="max-w-xs" tight>
+          <View className="gap-3" accessibilityRole="progressbar" aria-busy>
+            <MapleSweepSpinner size={32} className="mx-auto text-primary" />
+            <View className="gap-2">
+              <Title>적용하고 있어요</Title>
+              <Note>잠시 뒤 앱이 다시 시작돼요.</Note>
+            </View>
+          </View>
+        </Modal.Card>
+      </Modal>
+    )
+  }
+
+  // ── 나머지 일곱. 배지 · 제목 · 내용 · 설명 · 옵션 · 버튼 둘로 나뉜다.
+
+  if (status === 'update-available') {
+    return (
+      <NoticeModal
+        {...공통}
+        icon={CloudDownloadIcon}
+        tone="primary"
+        title="새 업데이트가 있어요"
+        content={
+          <BadgeRow>
+            {state.channel === 'beta' && <Badge variant="primary">beta</Badge>}
+            <VersionBadge version={state.availableVersion} />
+          </BadgeRow>
+        }
+        description={`다운로드 크기 ${sizeText}`}
+        // 없으면 **버튼째 그리지 않는다.** 옛 매니페스트에는 이 필드가 없고 그것은 오류가 아니라
+        // 안 실려 온 것이라, 액션 없는 비활성 버튼을 두지 않는다.
+        option={
+          state.availableHighlights !== null ? (
+            <HighlightsDisclosure highlights={state.availableHighlights} />
+          ) : undefined
+        }
+        action={{ label: '다운로드', onPress: () => void actions.startDownload() }}
+        secondaryAction={물러나기}
+      />
+    )
+  }
+
+  if (status === 'confirm-cellular') {
+    return (
+      <NoticeModal
+        {...공통}
+        icon={SignalIcon}
+        tone="secondary"
+        title="모바일 데이터를 사용해요"
+        description="Wi-Fi가 아니에요. 데이터로 받으면 요금이 나올 수 있어요."
+        option={<InfoNote>다운로드 크기 {sizeText}</InfoNote>}
+        action={{ label: '계속', onPress: () => void actions.confirmCellularDownload() }}
+        // 여기서만 `취소` 다. 아직 아무것도 안 받았고 무르는 것이 곧 안 받는 것이다.
+        secondaryAction={{ label: '취소', onPress: actions.dismiss }}
+      />
+    )
+  }
+
+  if (status === 'ready-to-apply') {
+    return (
+      <NoticeModal
+        {...공통}
+        icon={CheckCircle2Icon}
+        tone="secondary"
+        title="업데이트 준비 완료"
+        content={
+          <BadgeRow>
+            <VersionBadge version={state.availableVersion} />
+          </BadgeRow>
+        }
+        description="지금 적용하려면 앱을 재시작해요."
+        action={{ label: '지금 적용 (재시작)', onPress: () => void actions.apply() }}
+        secondaryAction={물러나기}
+      />
+    )
+  }
+
+  // 적용 성공 경로에는 상태 전환 코드가 없으므로 이 안내는 **재시작 뒤 부팅에서** 뜬다.
+  // 여기서만 `자세히 보기` 가 화면을 옮긴다.
+  if (status === 'updated') {
+    return (
+      <NoticeModal
+        {...공통}
+        icon={SparklesIcon}
+        tone="primary"
+        title="업데이트를 마쳤어요"
+        content={
+          <BadgeRow>
+            <VersionBadge version={state.currentVersion} />
+          </BadgeRow>
+        }
+        description="새 버전으로 다시 시작했어요."
+        action={{ label: '확인', onPress: actions.dismiss }}
+        secondaryAction={{ label: '자세히 보기', onPress: openReleaseNotes }}
+      />
+    )
+  }
+
+  if (status === 'store-required') {
+    return (
+      <NoticeModal
+        {...공통}
+        icon={StoreIcon}
+        tone="third"
+        title="스토어 업데이트가 필요해요"
+        content={
+          <BadgeRow>
+            <VersionBadge version={state.availableVersion} />
+          </BadgeRow>
+        }
+        description="이 업데이트는 앱 스토어에서 업데이트해야 받을 수 있어요."
+        option={
+          state.minNativeVersion !== null ? (
+            <InfoNote>
+              최소 앱 버전{' '}
+              <Text className="font-semibold tabular-nums">{state.minNativeVersion}</Text> 이상 필요
+            </InfoNote>
+          ) : undefined
+        }
+        action={{ label: '스토어로 이동', onPress: actions.openStore }}
+        secondaryAction={물러나기}
+      />
+    )
+  }
+
+  if (status === 'download-error') {
+    return (
+      <NoticeModal
+        {...공통}
+        icon={AlertTriangleIcon}
+        tone="error"
+        title="업데이트를 받지 못했습니다"
+        description="네트워크 연결을 확인한 뒤 다시 시도해주세요."
+        action={{ label: '다시 시도', onPress: () => void actions.startDownload() }}
+        secondaryAction={물러나기}
+      />
+    )
+  }
+
+  // 적용이 실패·타임아웃해도 화면은 돌아온다. `download-error` 와 같은 골격이되 주 동작이 다르다.
+  // 받아둔 번들이 그대로 살아 있어 다시 받지 않고 `apply()` 만 다시 부른다(스토어가
+  // `downloadedBundleId` 를 비우지 않는다).
   return (
-    // 진행 중에는 배경 탭으로 닫히지 않게 한다(진행 중 취소 방지). 폭은 살짝 좁게(max-w-xs).
-    // 입력이 없어 키보드를 띄우지 않으므로 중앙에 그대로 둔다. 다른 모달은 상단 정렬이 기본이다.
-    <Modal
-      onClose={isInProgress ? () => {} : actions.dismiss}
-      testId="update-prompt-overlay"
-      align="center"
-    >
-      <Modal.Card maxWidth="max-w-xs" tight>
-        <View className="gap-5">
-          {status === 'update-available' && (
-            <>
-              <IconBadge icon={CloudDownloadIcon} tone="primary" />
-              <View className="gap-2">
-                <Title>새 업데이트가 있어요</Title>
-                <BadgeRow>
-                  {state.channel === 'beta' && <Badge variant="primary">beta</Badge>}
-                  <VersionBadge version={state.availableVersion} />
-                </BadgeRow>
-                <Note>다운로드 크기 {sizeText}</Note>
-              </View>
-              {/* 없으면 **버튼째 그리지 않는다.** 옛 매니페스트에는 이 필드가 없고
-                  그것은 오류가 아니라 안 실려 온 것이라, 액션 없는 비활성 버튼을 두지 않는다. */}
-              {state.availableHighlights !== null && (
-                <HighlightsDisclosure highlights={state.availableHighlights} />
-              )}
-              <View className="gap-1">
-                <Button
-                  variant="primary"
-                  onPress={() => void actions.startDownload()}
-                  className={PRIMARY_BOX}
-                  textClassName={PRIMARY_TEXT}
-                >
-                  다운로드
-                </Button>
-                <Button
-                  variant="text"
-                  onPress={actions.dismiss}
-                  className={GHOST_BOX}
-                  textClassName={GHOST_TEXT}
-                >
-                  나중에
-                </Button>
-              </View>
-            </>
-          )}
-
-          {status === 'confirm-cellular' && (
-            <>
-              <IconBadge icon={SignalIcon} tone="secondary" />
-              <View className="gap-2">
-                <Title>모바일 데이터를 사용해요</Title>
-                <Body>Wi-Fi가 아니에요. 데이터로 받으면 요금이 나올 수 있어요.</Body>
-                <InfoNote>다운로드 크기 {sizeText}</InfoNote>
-              </View>
-              <View className="gap-1">
-                <Button
-                  variant="primary"
-                  onPress={() => void actions.confirmCellularDownload()}
-                  className={PRIMARY_BOX}
-                  textClassName={PRIMARY_TEXT}
-                >
-                  계속
-                </Button>
-                <Button
-                  variant="text"
-                  onPress={actions.dismiss}
-                  className={GHOST_BOX}
-                  textClassName={GHOST_TEXT}
-                >
-                  취소
-                </Button>
-              </View>
-            </>
-          )}
-
-          {status === 'downloading' && (
-            <View className="gap-3">
-              <Title>다운로드 중</Title>
-              {/* 결정형 진행률은 예외 없이 h-1.5 프리미티브 하나.
-                  `animated` 를 쓰는 곳도 여기뿐이다. 여기만 값이 연속으로 흐른다. */}
-              <ProgressBar
-                percent={state.downloadProgress}
-                animated
-                aria={{ now: state.downloadProgress, max: 100 }}
-                fillTestId="update-progress-bar"
-              />
-              <Text className="text-center text-xs font-medium text-text-muted tabular-nums">
-                {state.downloadProgress}%
-              </Text>
-            </View>
-          )}
-
-          {/* 커버가 닫기 뒤로 밀린 구간(최대 5초). 적용은 퍼센트가 나오지 않아
-              결정형 진행률을 쓰지 않고(가짜로 채우면 거짓 정보다) 모달 안 대기의 규격대로
-              스윕 스피너 + 문구만 둔다. 버튼은 두지 않는다. */}
-          {status === 'applying' && (
-            <View className="gap-3" accessibilityRole="progressbar" aria-busy>
-              <MapleSweepSpinner size={32} className="mx-auto text-primary" />
-              <View className="gap-2">
-                <Title>적용하고 있어요</Title>
-                <Note>잠시 뒤 앱이 다시 시작돼요.</Note>
-              </View>
-            </View>
-          )}
-
-          {status === 'ready-to-apply' && (
-            <>
-              <IconBadge icon={CheckCircle2Icon} tone="secondary" />
-              <View className="gap-2">
-                <Title>업데이트 준비 완료</Title>
-                <BadgeRow>
-                  <VersionBadge version={state.availableVersion} />
-                </BadgeRow>
-                <Note>지금 적용하려면 앱을 재시작해요.</Note>
-              </View>
-              <View className="gap-1">
-                <Button
-                  variant="primary"
-                  onPress={() => void actions.apply()}
-                  className={PRIMARY_BOX}
-                  textClassName={PRIMARY_TEXT}
-                >
-                  지금 적용 (재시작)
-                </Button>
-                <Button
-                  variant="text"
-                  onPress={actions.dismiss}
-                  className={GHOST_BOX}
-                  textClassName={GHOST_TEXT}
-                >
-                  나중에
-                </Button>
-              </View>
-            </>
-          )}
-
-          {/* 적용 성공 경로에는 상태 전환 코드가 없으므로 이 안내는
-              **재시작 뒤 부팅에서** 뜬다. 여기서만 `자세히 보기`가 화면을 옮긴다. */}
-          {status === 'updated' && (
-            <>
-              <IconBadge icon={SparklesIcon} tone="primary" />
-              <View className="gap-2">
-                <Title>업데이트를 마쳤어요</Title>
-                <BadgeRow>
-                  <VersionBadge version={state.currentVersion} />
-                </BadgeRow>
-                <Note>새 버전으로 다시 시작했어요.</Note>
-              </View>
-              <View className="gap-1">
-                <Button
-                  variant="primary"
-                  onPress={actions.dismiss}
-                  className={PRIMARY_BOX}
-                  textClassName={PRIMARY_TEXT}
-                >
-                  확인
-                </Button>
-                <Button
-                  variant="text"
-                  onPress={openReleaseNotes}
-                  className={GHOST_BOX}
-                  textClassName={GHOST_TEXT}
-                >
-                  자세히 보기
-                </Button>
-              </View>
-            </>
-          )}
-
-          {status === 'store-required' && (
-            <>
-              <IconBadge icon={StoreIcon} tone="third" />
-              <View className="gap-2">
-                <Title>스토어 업데이트가 필요해요</Title>
-                <BadgeRow>
-                  <VersionBadge version={state.availableVersion} />
-                </BadgeRow>
-                <Body>이 업데이트는 앱 스토어에서 업데이트해야 받을 수 있어요.</Body>
-                {state.minNativeVersion !== null && (
-                  <InfoNote>
-                    최소 앱 버전{' '}
-                    <Text className="font-semibold tabular-nums">{state.minNativeVersion}</Text> 이상
-                    필요
-                  </InfoNote>
-                )}
-              </View>
-              <View className="gap-1">
-                <Button
-                  variant="primary"
-                  onPress={actions.openStore}
-                  className={PRIMARY_BOX}
-                  textClassName={PRIMARY_TEXT}
-                >
-                  스토어로 이동
-                </Button>
-                <Button
-                  variant="text"
-                  onPress={actions.dismiss}
-                  className={GHOST_BOX}
-                  textClassName={GHOST_TEXT}
-                >
-                  나중에
-                </Button>
-              </View>
-            </>
-          )}
-
-          {status === 'download-error' && (
-            <>
-              <IconBadge icon={AlertTriangleIcon} tone="error" />
-              <View className="gap-2">
-                <Title>업데이트를 받지 못했습니다</Title>
-                <Body>네트워크 연결을 확인한 뒤 다시 시도해주세요.</Body>
-              </View>
-              <View className="gap-1">
-                <Button
-                  variant="primary"
-                  onPress={() => void actions.startDownload()}
-                  className={PRIMARY_BOX}
-                  textClassName={PRIMARY_TEXT}
-                >
-                  다시 시도
-                </Button>
-                <Button
-                  variant="text"
-                  onPress={actions.dismiss}
-                  className={GHOST_BOX}
-                  textClassName={GHOST_TEXT}
-                >
-                  나중에
-                </Button>
-              </View>
-            </>
-          )}
-
-          {/* 적용이 실패·타임아웃해도 화면은 돌아온다. download-error 와 같은
-              골격이되 주 동작이 다르다. 받아둔 번들이 그대로 살아 있어 다시 받지 않고 apply()
-              만 다시 부른다(스토어가 downloadedBundleId 를 비우지 않는다). */}
-          {status === 'apply-error' && (
-            <>
-              <IconBadge icon={AlertTriangleIcon} tone="error" />
-              <View className="gap-2">
-                <Title>업데이트를 적용하지 못했습니다</Title>
-                <Body>받아둔 파일은 그대로 있습니다. 다시 받지 않고 적용만 다시 시도합니다.</Body>
-              </View>
-              <View className="gap-1">
-                <Button
-                  variant="primary"
-                  onPress={() => void actions.apply()}
-                  className={PRIMARY_BOX}
-                  textClassName={PRIMARY_TEXT}
-                >
-                  다시 시도
-                </Button>
-                <Button
-                  variant="text"
-                  onPress={actions.dismiss}
-                  className={GHOST_BOX}
-                  textClassName={GHOST_TEXT}
-                >
-                  나중에
-                </Button>
-              </View>
-            </>
-          )}
-        </View>
-      </Modal.Card>
-    </Modal>
+    <NoticeModal
+      {...공통}
+      icon={AlertTriangleIcon}
+      tone="error"
+      title="업데이트를 적용하지 못했습니다"
+      description="받아둔 파일은 그대로 있습니다. 다시 받지 않고 적용만 다시 시도합니다."
+      action={{ label: '다시 시도', onPress: () => void actions.apply() }}
+      secondaryAction={물러나기}
+    />
   )
 }
