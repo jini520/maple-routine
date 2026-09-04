@@ -92,6 +92,33 @@ Text(라이트): text-[#8A7362] hover:text-[#5B4636]   Text(다크): text-neutra
 - **클래스가 둘이다**: `.panel-on-scrim` 은 **테두리를 가진 패널 자신**(`Modal.Card`·자체 오버레이 패널), `.panel-on-scrim-parent` 는 **직계 자식이 패널**일 때(`Modal.Panel`). 합치면 `Modal.Card` **안쪽** 요소(테마 타일 보더 등)까지 바뀌는데 그것들은 표면 위라 대상이 아니다.
 - 새 컴포넌트를 스크림 위에 올릴 때 **둘 중 맞는 것을 붙일 것.** 모드 신호는 `data-mode`(테마 스토어가 세운다). 테마 **이름**으로 분기하지 말 것([[ADR-064]] 결정 8).
 
+### 알림 모달 (`components/organisms/NoticeModal`): [[ADR-217]] (2026-09-04)
+
+**막고 알리는 모달의 골격은 이 파일 하나가 갖는다.** 슬롯 여섯이고 호출부는 무엇을 넣을지만
+정한다. [[ADR-214]] 가 두 모달이 한 앱에서 온 것으로 읽힌다 를 문장으로 못박았는데, 그 골격이
+코드에 없어 값이 이미 갈리고 있었다(아이콘 굵기 1.7 대 1.75 · 설명 `text-xs` 대 `text-sm`).
+
+```
+배지     h-14 w-14 · 아이콘 h-7 w-7 strokeWidth 1.75
+제목     text-base font-semibold leading-snug text-text · 가운데
+content  자유 영역 (선택). 제목과 설명 사이
+설명     text-sm text-text-muted · 가운데 (선택)
+주 버튼  variant="primary" · 전폭
+링크     text-xs text-primary-ink + ExternalLinkIcon h-3 w-3 (선택)
+바깥 묶음 gap-5 · 배지와 제목은 한 묶음(items-center gap-3)
+```
+
+- **`tone` 하나가 색과 모양을 함께 정한다.** `error` 는 원(`rounded-full` · `error-tint` /
+  `error-ink`), `primary` 는 네모(`rounded-[16px]` · `primary-tint` / `primary-ink`). 둘을 따로
+  받으면 붉은 네모 같은 조합이 만들어지는데, 원과 네모를 가른 근거가 색과 같다([[ADR-214]]).
+  실패인가, 종류가 다른 것을 넣었는가.
+- **`content` 는 `ReactNode` 다.** 개발 단계 키 모달의 두 줄 표가 이 자리에 든다. 표 자체를 틀에
+  넣지 않는 것은 그것이 그 모달 하나의 물건이기 때문이다. 틀은 그것이 어디에 서는지만 정한다.
+- **닫을 수 있는가는 틀이 안 본다.** `onClose` 가 정한다. `ApiKeyNoticeModal` 은 no-op 을 넘겨 못
+  닫는 채로 남고([[ADR-116]] 결정 10), `DevelopmentStageKeyModal` 은 확인과 같은 핸들러를 넘긴다.
+- **버튼이 둘인 확인 대화상자는 이 틀이 아니다.** `DisconnectConfirm` · `CacheClearConfirm` 은
+  아이콘 배지가 없고 제목이 왼쪽 정렬이며 취소가 있다. `Modal.Card` 를 직접 쓴다.
+
 ### 진행률 링 (`components/atoms/ProgressRing`): [[ADR-204]] 정정 2 (2026-09-02)
 
 원형 진행률은 **전부 이 아톰이 채운다**. `atoms/ProgressBar` 의 원형 짝이다.
@@ -186,6 +213,10 @@ L 0.13~0.15 라 **스크림을 완전 불투명 검정으로 만들어도 1.07 �
   `bg` 를 **값으로** 넘긴다.
 - 대비는 1.19~1.25 로 오르지만 **수치보다 ΔL(0.133~0.139)이 눈에 가깝다**. 새까만 근처에서 WCAG
   비는 분모의 `+0.05` 항이 지배해 눌린다([[ADR-064]] 가 대비를 ‘관문이 아니라 참고 수치’로 둔 자리).
+
+**시트는 자기가 무엇인지 모른다.** 스크린리더가 읽는 이름은 `label` 프롭이고 **필수**다
+([[ADR-217]] 결정 1). 기본값을 안 준다. 주면 다음 시트가 그것을 물려받아, 껍데기가 이름을 하나로
+갖고 있던 자리로 돌아온다(시트 넷을 전부 `드롭 아이템 기록` 으로 읽던 상태였다).
 
 ### 파티 인원 모달: `PartySizeModal`, [[ADR-121]] (2026-08-10)
 보스 스케줄러 카드를 탭하면 열린다. 난이도 + 파티 인원을 함께 다룬다. 정책은 [../features/boss-scheduler.md](../features/boss-scheduler.md) '파티 인원 모달'.
