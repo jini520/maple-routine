@@ -3,7 +3,7 @@
  *
  * 호출부는 무엇을 넣을지만 정한다. 골격이 문장으로만 있고 코드에 없던 동안 값이 이미 갈렸다
  * (아이콘 굵기 1.7 대 1.75 · 설명 `text-xs` 대 `text-sm`). 두 모달이 한 앱에서 온 것으로 읽히려면
- * 그 값이 한곳에 있어야 한다.
+ * 그 값이 한곳에 있어야 한다. 모은 값은 굵기 1.75 · 설명 `text-xs` 다.
  *
  * **닫을 수 있는가는 이 파일이 안 본다.** `onClose` 가 정한다. 뒤 화면이 이미 제 기능을 못 하는
  * 모달은 no-op 을 넘겨 못 닫는 채로 남고, 뒤에 폼이 서 있는 모달은 확인과 같은 핸들러를 넘긴다.
@@ -103,7 +103,7 @@ export function NoticeModal(props: NoticeModalProps): React.JSX.Element {
           {props.content !== undefined && <View testID={`${testId}-content`}>{props.content}</View>}
 
           {props.description !== undefined && (
-            <Text testID={`${testId}-description`} className="text-center text-sm text-text-muted">
+            <Text testID={`${testId}-description`} className="text-center text-xs text-text-muted">
               {props.description}
             </Text>
           )}

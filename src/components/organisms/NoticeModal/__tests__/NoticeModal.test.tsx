@@ -39,12 +39,19 @@ describe('NoticeModal: 슬롯', () => {
     expect(queryByTestId('notice-link')).toBeNull()
   })
 
-  it('설명을 주면 그린다', async () => {
-    const { getByText } = await renderOverlay(
+  // 설명은 제목보다 작다(사용자 지정). 제목이 할 말을 이미 했고 설명은 그 아래 안내라, 둘이
+  // 같은 무게로 서면 제목이 눌린다. 두 호출부가 각자 크기를 정하던 자리라 여기서 못박는다.
+  it('설명을 주면 제목보다 작게 그린다', async () => {
+    const { getByTestId, getByText } = await renderOverlay(
       <NoticeModal {...기본프롭()} description="키 입력 화면으로 이동합니다." />,
     )
 
     expect(getByText('키 입력 화면으로 이동합니다.')).toBeTruthy()
+
+    const 설명 = flattenStyle(getByTestId('notice-description').props.style).fontSize
+    const 제목 = flattenStyle(getByText('이 키로는 연결할 수 없습니다').props.style).fontSize
+    expect(설명).toBe(12)
+    expect(제목).toBeGreaterThan(설명 as number)
   })
 
   // 자유 영역이다. 개발 단계 키 모달의 두 줄 표가 여기 든다. 틀은 그것이 어디에 서는지만 정하고

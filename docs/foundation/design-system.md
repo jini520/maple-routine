@@ -102,7 +102,7 @@ Text(라이트): text-[#8A7362] hover:text-[#5B4636]   Text(다크): text-neutra
 배지     h-14 w-14 · 아이콘 h-7 w-7 strokeWidth 1.75
 제목     text-base font-semibold leading-snug text-text · 가운데
 content  자유 영역 (선택). 제목과 설명 사이
-설명     text-sm text-text-muted · 가운데 (선택)
+설명     text-xs text-text-muted · 가운데 (선택)
 주 버튼  variant="primary" · 전폭
 링크     text-xs text-primary-ink + ExternalLinkIcon h-3 w-3 (선택)
 바깥 묶음 gap-5 · 배지와 제목은 한 묶음(items-center gap-3)
