@@ -29,10 +29,15 @@ const ITEM_HEIGHT_PX = 16
  *
  * 한 문장으로 뭉뚱그리면 어느 쪽도 안 맞는다. Open API 는 몬스터파크 계열을 마지막 접속 캐릭터
  * 기준으로 돌려주고, 그 캐릭터가 누구인지 구분할 신호가 응답에 없다.
+ *
+ * **끊는 자리를 손으로 정한다.** 한 문장이 두 줄에 걸치는데 RN 에는 `text-wrap: balance` 가 없어,
+ * 그냥 두면 첫 줄이 `... 메이플` / `ID 기준입니다.` 로 갈려 둘째 줄에 두 낱말만 남는다. 어느
+ * 계열인가 와 무엇 기준인가 사이에서 끊으면 두 줄이 고르고, 끊기는 자리가 글꼴 폭에 안 달린다.
+ * 글자는 `fixed` 라 시스템 배수로도 안 흔들린다.
  */
 const SCOPE_NOTES = [
-  '에픽 던전과 메이플 유니온은 메이플 ID 기준입니다.',
-  '몬스터파크와 익스트림 몬스터파커는 마지막에 접속한 캐릭터 기준입니다.',
+  ['에픽 던전과 메이플 유니온은', '메이플 ID 기준입니다.'],
+  ['몬스터파크와 익스트림 몬스터파커는', '마지막에 접속한 캐릭터 기준입니다.'],
 ] as const
 
 /** `?` 밑변과 상자 윗변 사이. 다른 팝오버 둘과 같은 값이다. */
@@ -215,9 +220,9 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
               anchor === null ? ' opacity-0' : ''
             }`}
           >
-            {SCOPE_NOTES.map((note) => (
-              <Text key={note} fixed className="text-[11.5px] leading-snug text-text-muted">
-                {note}
+            {SCOPE_NOTES.map(([subject, rule]) => (
+              <Text key={subject} fixed className="text-[11.5px] leading-snug text-text-muted">
+                {`${subject}\n${rule}`}
               </Text>
             ))}
           </View>
