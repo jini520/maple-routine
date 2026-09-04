@@ -21,7 +21,8 @@ import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { BossDropSheet } from './BossDropSheet'
 import { useBossProfitContext } from './boss-profit-context'
 import { clamp, findPortraitSlug } from './character-groups'
-import { ItemRevenuePopover, useAnchoredPopover } from './ItemRevenuePopover'
+import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
+import { ItemRevenuePopover } from './ItemRevenuePopover'
 import { ValuableRowBackground } from './ValuableRowBackground'
 
 // BossPortrait의 size prop 기본값(40px, 기존 h-10 관례)과 동일하게 시작값을 맞춘다.

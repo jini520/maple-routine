@@ -318,8 +318,6 @@ export interface TodayViewModel {
   representative: RepresentativeView | null
   /** 계열별로 묶인 공유 컨텐츠. 위젯 9. */
   sharedContents: SharedContentGroupView[]
-  /** 그중 완료가 아닌 **줄**의 수. 캐릭터 수와 무관하다. 그게 이 분리의 이유다. */
-  sharedRemaining: number
   /** **캐릭터 관리 순서**의 목록. 남은 개수 많은 순은 탭을 아는 위젯이 세운다. */
   schedule: ScheduleRowView[]
   profit: WeeklyProfitView
@@ -352,9 +350,6 @@ export function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel 
   return {
     representative: buildRepresentative(input),
     sharedContents,
-    sharedRemaining: sharedContents
-      .flatMap((group) => group.items)
-      .filter((item) => !item.isComplete).length,
     schedule,
     ...buildProfit(input, weeklyPeriodKey),
     topItem: buildTopItem(weeklyDrops, input.profilesByOcid),

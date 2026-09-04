@@ -46,7 +46,8 @@ import {
   groupTotalMeso,
   type CharacterGroup,
 } from './character-groups'
-import { ItemRevenuePopover, useAnchoredPopover, type PopoverAnchorRect } from './ItemRevenuePopover'
+import { useAnchoredPopover, type PopoverAnchorRect } from '../../hooks/useAnchoredPopover'
+import { ItemRevenuePopover } from './ItemRevenuePopover'
 import {
   VALUABLE_CARD_GLOW_HIGH,
   VALUABLE_CARD_GLOW_HIGH_FADE,

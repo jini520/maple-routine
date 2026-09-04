@@ -30,7 +30,6 @@ const DAY_MS = 24 * HOUR_MS
 export const 빈_뷰모델: TodayViewModel = {
   representative: null,
   sharedContents: [],
-  sharedRemaining: 0,
   schedule: [],
   profit: {
     totalMeso: 0,

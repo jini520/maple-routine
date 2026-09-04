@@ -1,7 +1,7 @@
 // 공유 컨텐츠 위젯(~31). 이 파일이 지키는 것 넷.
 // ① **계열이 축이다**(월드·계정 라벨이 화면에 한 번도 안 나온다)
-// ② **오른쪽 열은 카운트 있음 → n/max· 그 밖 → 빈칸**(CLEAR 는 걷었다)
-// ③ **머리의 `?` 가 월드 한계를 말하되 타일 높이를 안 바꾼다**
+// ② **오른쪽 열은 카운트 있음 → n/max· 그 밖 → 빈칸**(CLEAR 는 걷었다. 머리의 수도 걷었다)
+// ③ **머리의 `?` 가 계열마다 다른 표시 기준을 말하되 타일 높이를 안 바꾼다**
 // ④ **타일을 눌러 가는 곳이 없다**(`target` 이 없는 타일이다)
 // ⑤ **계열이 두 열로 선다**(순서를 지키면서 높이가 가장 고른 지점에서 가른다)
 // ⑥ **완료는 읽기 전용 체크박스 + 취소선이 말한다**
@@ -9,19 +9,26 @@
 import { act, fireEvent, within } from '@testing-library/react-native'
 
 import { flattenStyle, renderAtom, 기본테마 } from '../../../../components/__tests__/render-atom'
+import { GRID_SIDE_PADDING } from '../../../../lib/today/widget-grid-metrics'
 import { SharedContentsWidget } from '../SharedContentsWidget'
 import { 공유계열, 공유항목, 공유컨텐츠, 뷰모델 } from './widget-fixture'
 import type { SharedContentGroupView } from '../../view-model'
 
 async function 위젯(
   sharedContents: SharedContentGroupView[],
-  sharedRemaining = sharedContents
-    .flatMap((group) => group.items)
-    .filter((item) => !item.isComplete).length,
 ): Promise<ReturnType<typeof renderAtom>> {
-  return renderAtom(
-    <SharedContentsWidget w={4} h="auto" data={뷰모델({ sharedContents, sharedRemaining })} />,
-  )
+  return renderAtom(<SharedContentsWidget w={4} h="auto" data={뷰모델({ sharedContents })} />)
+}
+
+/** 테스트 하네스의 창 폭. 팝오버는 별도 창이라 좌표가 화면 기준이다. */
+const 창폭 = 750
+
+/**
+ * `?` 아이콘의 색. lucide 아이콘은 색을 `style` 이 아니라 `stroke` 로 받는다. `testID` 를 달아도
+ * 못 잡아서(`data-testid` 로 내려간다) 토글의 첫 자식을 그냥 집는다.
+ */
+function 물음표색(toggle: { children: unknown[] }): string | undefined {
+  return (toggle.children[0] as { props: { stroke?: string } }).props.stroke
 }
 
 /** RN 의 상태 갱신은 `act` 안에서 흘려야 다음 렌더가 보인다(위젯 2 의 아코디언 테스트와 같다). */
@@ -53,11 +60,14 @@ describe('계열이 축이다', () => {
     expect(queryByText(/스카니아/)).toBeNull()
   })
 
-  it('머리에 남은 줄 수를 단다. 캐릭터 수와 무관하다', async () => {
-    const { getByTestId } = await 위젯(공유컨텐츠())
+  // **머리에 수를 안 단다**(사용자 지시). 남은 줄은 아래 체크박스가 이미 세어 볼 수 있게 그린다.
+  // 그 수를 머리에 또 쓰면 같은 말이 둘이고, 위젯 2 의 「남은 스케줄」 수와 나란히 읽혀 두 수의
+  // 관계를 사용자가 짐작하게 된다.
+  it('머리에 수를 안 단다', async () => {
+    const { queryByTestId, queryByText } = await 위젯(공유컨텐츠())
 
-    // 악몽선경· 일간· 익스트림· PC방
-    expect(getByTestId('shared-total').props.children).toBe(4)
+    expect(queryByTestId('shared-total')).toBeNull()
+    expect(queryByText(/개$/)).toBeNull()
   })
 })
 
@@ -224,7 +234,7 @@ describe('완료는 체크와 취소선이 말한다', () => {
 
 describe('빈 상태와 이동', () => {
   it('계열이 하나도 없어도 타일은 선다. 위젯은 사라지지 않는다', async () => {
-    const { getByTestId, queryAllByTestId } = await 위젯([], 0)
+    const { getByTestId, queryAllByTestId } = await 위젯([])
 
     expect(getByTestId('widget-shared-contents')).toBeTruthy()
     expect(queryAllByTestId('shared-group-name')).toHaveLength(0)
@@ -233,60 +243,128 @@ describe('빈 상태와 이동', () => {
   // 타일 자체에는 `target` 이 없다(레지스트리). 여기서 누를 수 있는 것은 **설명 토글 하나뿐**이고
   // 그것은 화면을 옮기지 않는다. 계열 머리도 항목 줄도 누를 수 없다(위젯 2 의 아코디언과 다르다).
   it('누를 수 있는 것은 설명 토글 하나뿐이다. 가는 곳은 없다', async () => {
-    const { queryAllByRole, getByTestId } = await 위젯(공유컨텐츠())
+    const { queryAllByRole } = await 위젯(공유컨텐츠())
 
     const 누름자리 = queryAllByRole('button')
     expect(누름자리).toHaveLength(1)
     expect(누름자리[0]?.props.testID).toBe('shared-note-toggle')
-
-    // 말풍선을 열면 그것도 누를 수 있다. 닫는 자리라서다.
-    await 누름(getByTestId('shared-note-toggle'))
-    expect(queryAllByRole('button').map((node) => node.props.testID)).toEqual([
-      'shared-note-toggle',
-      'shared-note',
-    ])
   })
 })
 
-describe('머리의 `?`. 월드 한계를 말한다', () => {
-  const 문장 = '계정 및 메이플 ID 공유 컨텐츠는 가장 마지막에 접속한 월드 기준으로 표시됩니다.'
+describe('머리의 `?`. 계열마다 다른 표시 기준을 말한다', () => {
+  // 기본 매처는 공백을 정규화해 줄바꿈을 공백 하나로 뭉갠다. 그러면 이 단언이 끊는 자리를 못 본다.
+  const 그대로 = { normalizer: (text: string) => text }
+
+  // 줄바꿈이 문구에 들어 있다. RN 에는 `text-wrap: balance` 가 없어 그대로 두면 첫 줄이
+  // `... 메이플` / `ID 기준입니다.` 로 갈려 둘째 줄에 두 낱말만 남는다. 주어와 규칙 사이에서
+  // 끊으면 두 줄이 고르고, 어디서 끊길지가 글꼴 폭에 안 달린다.
+  const 아이디줄 = '에픽 던전과 메이플 유니온은\n메이플 ID 기준입니다.'
+  const 캐릭터줄 = '몬스터파크와 익스트림 몬스터파커는\n마지막에 접속한 캐릭터 기준입니다.'
 
   it('평소에는 안 보인다. 늘 떠 있는 각주는 격자에서 잡음이다', async () => {
     const { queryByTestId, queryByText } = await 위젯(공유컨텐츠())
 
     expect(queryByTestId('shared-note')).toBeNull()
-    expect(queryByText(문장)).toBeNull()
+    expect(queryByText(아이디줄)).toBeNull()
   })
 
-  it('`?` 를 누르면 한 문장이 뜬다', async () => {
+  // 계열마다 기준이 다르다(사용자 확인). 한 문장으로 뭉뚱그리면 어느 쪽도 안 맞는다.
+  it('`?` 를 누르면 두 기준이 갈려 뜬다', async () => {
     const { getByTestId, getByText } = await 위젯(공유컨텐츠())
 
     await 누름(getByTestId('shared-note-toggle'))
 
-    expect(getByText(문장)).toBeTruthy()
+    expect(getByText(아이디줄, 그대로)).toBeTruthy()
+    expect(getByText(캐릭터줄, 그대로)).toBeTruthy()
   })
 
-  it('같은 `?` 를 다시 눌러도, 말풍선을 눌러도 닫힌다', async () => {
+  // **바깥을 누르면 닫힌다**(사용자 지시). 닫는 길이 `?` 뿐이면 12px 아이콘을 정확히 눌러야
+  // 닫히고, 빗나가면 안 닫힌다. 앱의 다른 팝오버 둘이 이미 이렇게 닫는다.
+  it('바깥을 누르면 닫힌다', async () => {
+    const { getByTestId, getByLabelText, queryByTestId } = await 위젯(공유컨텐츠())
+
+    await 누름(getByTestId('shared-note-toggle'))
+    await 누름(getByLabelText('표시 기준 설명 닫기'))
+
+    expect(queryByTestId('shared-note')).toBeNull()
+  })
+
+  it('같은 `?` 를 다시 눌러도 닫힌다', async () => {
     const { getByTestId, queryByTestId } = await 위젯(공유컨텐츠())
 
     await 누름(getByTestId('shared-note-toggle'))
     await 누름(getByTestId('shared-note-toggle'))
-    expect(queryByTestId('shared-note')).toBeNull()
 
-    await 누름(getByTestId('shared-note-toggle'))
-    await 누름(getByTestId('shared-note'))
     expect(queryByTestId('shared-note')).toBeNull()
   })
 
-  // 인라인으로 펼치면 `h: 'auto'` 가 다시 재서 아래 타일이 전부 밀린다. 절대 배치라 흐름에서
-  // 빠지고, 카드 안이라 잘릴 자리도 없다.
-  it('말풍선은 절대 배치라 타일 높이를 안 바꾼다', async () => {
+  // 닫는 층과 내용이 **같은 창**에 있어야 한다. 닫기 층만 창에 넣고 내용을 트리에 두면 투명한
+  // 닫기 층이 상자 위에 깔려 상자 안을 누르는 것이 전부 닫기로 먹힌다.
+  it('상자와 닫는 층이 같은 창에 있다', async () => {
+    const { getByTestId } = await 위젯(공유컨텐츠())
+
+    await 누름(getByTestId('shared-note-toggle'))
+
+    const 창 = getByTestId('shared-note').parent
+    expect(창).not.toBeNull()
+    expect(within(창!).getByLabelText('표시 기준 설명 닫기')).toBeTruthy()
+  })
+
+  // **`?` 는 상태를 가진 버튼이 아니다**(사용자 지시). 팁을 띄우는 버튼일 뿐이라 켜짐을 색으로
+  // 그리면 사용자가 그 색을 무언가의 상태로 읽는다.
+  it('열어도 `?` 색이 변하지 않는다', async () => {
+    const { getByTestId } = await 위젯(공유컨텐츠())
+
+    const 닫힘 = 물음표색(getByTestId('shared-note-toggle'))
+    await 누름(getByTestId('shared-note-toggle'))
+
+    expect(물음표색(getByTestId('shared-note-toggle'))).toBe(닫힘)
+  })
+
+  // **폭을 못박지 않는다**(사용자 지시). 폭을 주면 가장 긴 줄보다 넓은 만큼이 오른쪽에 죽은
+  // 여백으로 남아 글 덩어리가 왼쪽으로 쏠린다. 상한만 주고 폭은 레이아웃 엔진이 가장 긴 줄에
+  // 맞춰 줄인다. 손으로 잰 값을 박으면 그 추정이 틀렸을 때 줄바꿈이 다시 깨진다.
+  it('폭을 못박지 않는다. 상한만 주고 글줄에 맞춰 줄어든다', async () => {
+    const { getByTestId } = await 위젯(공유컨텐츠())
+
+    await 누름(getByTestId('shared-note-toggle'))
+
+    const style = flattenStyle(getByTestId('shared-note').props.style) as {
+      width?: number
+      maxWidth: number
+    }
+    expect(style.width).toBeUndefined()
+    expect(style.maxWidth).toBe(248)
+  })
+
+  // **부모 타일을 안 벗어난다**(사용자 지시). 창은 별도라 좌표가 화면 기준인데, 화면 여백을
+  // 그대로 쓰면 타일보다 왼쪽에 선다(격자 여백 16 · 화면 여백 12). 이 타일은 크기 선언이
+  // `4×auto` 하나뿐이라 창 좌우 여백이 곧 타일의 변이다.
+  //
+  // 실제 폭은 상한 이하라, 상한으로 재면 그보다 넉넉한 경계를 본 것이다.
+  it('상자가 타일 좌우 변을 안 넘는다', async () => {
+    const { getByTestId } = await 위젯(공유컨텐츠())
+
+    await 누름(getByTestId('shared-note-toggle'))
+
+    const { left, maxWidth } = flattenStyle(getByTestId('shared-note').props.style) as {
+      left: number
+      maxWidth: number
+    }
+    expect(left).toBe(GRID_SIDE_PADDING)
+    expect(left + maxWidth).toBeLessThanOrEqual(창폭 - GRID_SIDE_PADDING)
+  })
+
+  // 앱의 팝오버 셋이 같은 상자를 쓴다(`ItemRevenuePopover` · 월드별 분해 · 여기).
+  it('상자는 다른 팝오버와 같은 표면색이다', async () => {
     const { getByTestId } = await 위젯(공유컨텐츠())
 
     await 누름(getByTestId('shared-note-toggle'))
 
     expect(flattenStyle(getByTestId('shared-note').props.style)).toMatchObject({
       position: 'absolute',
+      backgroundColor: 기본테마.surface,
+      borderRadius: 12,
     })
   })
 })

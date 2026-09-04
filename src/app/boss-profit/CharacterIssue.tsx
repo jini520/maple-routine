@@ -15,7 +15,7 @@ import type { PopoverAnchorGeometry } from '../../lib/popover-anchor'
 
 import { AlertTriangleIcon, BanIcon, Text } from '../../components/atoms'
 import { useThemeAppearance } from '../../theme/context'
-import type { PopoverAnchorRect } from './ItemRevenuePopover'
+import type { PopoverAnchorRect } from '../../hooks/useAnchoredPopover'
 
 // 동기화가 실패한 캐릭터를 카드에서 식별한다. 토스트는 인원 수만 알려 어느 카드인지 알 수 없다.
 //
