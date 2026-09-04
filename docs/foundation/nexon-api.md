@@ -114,7 +114,7 @@ HTTP 400
 | 살아남는 것 | 우리 판정 | 결과 |
 |---|---|---|
 | daily 1건 = `몬스터파크`(world 공유) | `isDailySectionMissing`(character 범위 항목 유무, [[ADR-034]]) | **잡힌다** ✓ |
-| weekly 6건: 그중 `[메이플 유니온] PC방 주간 드래곤 퇴치`·`[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?` 가 **character 범위로 잡히던 것** | `isWeeklySectionMissing` | **해소** ✓ (2026-08-03). 두 항목을 카탈로그에 등록해 공유로 분류했다([[ADR-086]] 정정 1). 앞은 월드, 뒤는 **계정** 공유다(사용자 확인) |
+| weekly 6건: 그중 `[메이플 유니온] PC방 주간 드래곤 퇴치`·`[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?` 가 **character 범위로 잡히던 것** | `isWeeklySectionMissing` | **해소** ✓ (2026-08-03). 두 항목을 카탈로그에 등록해 공유로 분류했다([[ADR-086]] 정정 1). `PC방 주간 드래곤 퇴치` 는 **계정**, `익스트림 몬스터파커` 는 **월드** 공유다(사용자 확인. 2026-09-05 에 다시 확인했다 - 이 줄이 앞뒤를 바꿔 적고 있었고 카탈로그가 맞다) |
 | `bossMonthly` 2건(`reg=false`·`comp=false`) | `isMonthlyBossStale = !some(bossMonthly)` | **못 잡는다** ✗: 축약 응답을 신선한 데이터로 신뢰한다 |
 | `bossWeekly` 0건 | `isWeeklyBossStale` | 잡힌다 ✓ |
 
