@@ -187,6 +187,44 @@ describe('NoticeModal: 배선', () => {
     expect(onPress).not.toHaveBeenCalled()
   })
 
+  // **되돌릴 수 없는 확인에서는 주 버튼이 취소다.** 파괴 동작은 부 버튼에 `danger` 로 내린다.
+  // 크기는 `나중에` 와 **같고 글자색만** 갈린다(사용자 지정). 되돌릴 수 없는 것이 취소보다 커
+  // 보이면 안 되고, 위험하다는 신호는 색 하나로 충분하다.
+  it('danger 부 버튼은 크기가 그대로고 글자색만 error 다', async () => {
+    const 위험 = await renderOverlay(
+      <NoticeModal
+        {...기본프롭()}
+        action={{ label: '취소', onPress: noop }}
+        secondaryAction={{ label: '삭제', onPress: noop, danger: true }}
+      />,
+    )
+    const 평범 = await renderOverlay(
+      <NoticeModal {...기본프롭()} secondaryAction={{ label: '나중에', onPress: noop }} />,
+    )
+
+    const 삭제 = flattenStyle(위험.getByText('삭제').props.style)
+    const 나중에 = flattenStyle(평범.getByText('나중에').props.style)
+    expect(삭제.color).toBe(기본테마.errorInk)
+    expect(나중에.color).not.toBe(기본테마.errorInk)
+    expect(삭제.fontSize).toBe(나중에.fontSize)
+  })
+
+  it('두 버튼 다 대기와 비활성을 받는다', async () => {
+    const { getByText } = await renderOverlay(
+      <NoticeModal
+        {...기본프롭()}
+        action={{ label: '취소', onPress: noop, disabled: true }}
+        secondaryAction={{ label: '삭제', onPress: noop, danger: true, busy: true, disabled: true }}
+      />,
+    )
+
+    expect(getByText('취소').parent?.props.accessibilityState).toMatchObject({ disabled: true })
+    expect(getByText('삭제').parent?.props.accessibilityState).toMatchObject({
+      disabled: true,
+      busy: true,
+    })
+  })
+
   // 닫을 수 있는가는 틀이 안 본다. `onClose` 가 정한다. 못 닫는 모달은 no-op 을 넘긴다.
   it('오버레이를 누르면 onClose 로 간다', async () => {
     const onClose = jest.fn()

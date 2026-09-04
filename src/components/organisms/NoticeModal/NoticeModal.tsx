@@ -12,9 +12,9 @@
  *   ↕ 20
  * [옵션]        머리 밖의 자유 블록. 콜아웃 · 펼침판
  *   ↕ 20
- * [주 버튼]     전폭
+ * [주 버튼]     전폭. **되돌릴 수 없는 확인에서는 이 자리가 `취소` 다**
  *   ↕ 4        부 버튼일 때. 링크는 12
- * [부 버튼 또는 링크]
+ * [부 버튼 또는 링크]   `danger` 는 크기가 같고 글자색만 error
  * ```
  *
  * 호출부는 무엇을 넣을지만 정하고 자리와 간격은 못 바꾼다. 골격이 문장으로만 있고 코드에 없던
@@ -74,6 +74,14 @@ const SHAPE = {
   square: 'rounded-[16px]',
 } as const
 
+/** 버튼 하나. `busy` 는 라벨을 가리고 스피너를 겹쳐 그린다. 못 누르게 하는 것은 `disabled` 다. */
+interface NoticeAction {
+  label: string
+  onPress: () => void
+  busy?: boolean
+  disabled?: boolean
+}
+
 export interface NoticeModalProps {
   icon: NoticeIcon
   tone: keyof typeof TONE
@@ -85,10 +93,21 @@ export interface NoticeModalProps {
   description?: string
   /** 머리 묶음 **밖**, 버튼 **위**의 자유 블록. 콜아웃 · 펼침판. */
   option?: ReactNode
-  /** 전폭 주 버튼. 이 틀에는 반드시 하나 있다. */
-  action: { label: string; onPress: () => void }
-  /** 주 버튼 아래 고스트 버튼. `나중에` · `취소` 자리. */
-  secondaryAction?: { label: string; onPress: () => void }
+  /**
+   * 전폭 주 버튼. 이 틀에는 반드시 하나 있다.
+   *
+   * **되돌릴 수 없는 확인에서는 이 자리가 `취소` 다.** 안전한 기본값이 무르는 쪽이고 채운 알약이
+   * 그것을 가리켜야 한다. 파괴 동작은 아래 `secondaryAction` 에 `danger` 로 내린다.
+   */
+  action: NoticeAction
+  /**
+   * 주 버튼 아래 두 번째 버튼. `나중에` · `취소` · 파괴 동작 자리.
+   *
+   * `danger` 는 **크기를 안 바꾸고 글자색만** `error` 로 만든다(사용자 지정). 되돌릴 수 없는
+   * 동작이 주 버튼보다 커 보이면 안 되고, 위험하다는 신호는 색 하나로 충분하다. 테두리를 두르면
+   * 그것대로 눈길을 끌어 취소와 비중이 붙는다.
+   */
+  secondaryAction?: NoticeAction & { danger?: boolean }
   /** 주 버튼 아래 인라인 링크. 앱 밖으로 나가는 도움말이 여기 선다. */
   link?: { label: string; onPress: () => void }
   onClose: () => void
@@ -156,16 +175,25 @@ export function NoticeModal(props: NoticeModalProps): React.JSX.Element {
             <Button
               variant="primary"
               onPress={props.action.onPress}
-              className="w-full items-center"
+              busy={props.action.busy}
+              disabled={props.action.disabled}
+              className={`w-full items-center${props.action.disabled === true ? ' opacity-50' : ''}`}
               textClassName="text-sm"
             >
               {props.action.label}
             </Button>
+            {/* 파괴 동작의 색은 `textClassName` 이 아니라 **변형**으로 준다. 클래스 순서로는 변형의
+                색을 못 덮는다. 같은 특이도라 생성된 CSS 순서가 이기는데, 크기(`text-xs`)는 덮이고
+                색(`text-error-ink`)은 안 덮여 실측으로 갈렸다. 변형이면 대기 스피너 색도 함께 온다. */}
             {props.secondaryAction !== undefined && (
               <Button
-                variant="text"
+                variant={props.secondaryAction.danger === true ? 'dangerText' : 'text'}
                 onPress={props.secondaryAction.onPress}
-                className="w-full items-center px-4 py-1.5"
+                busy={props.secondaryAction.busy}
+                disabled={props.secondaryAction.disabled}
+                className={`w-full items-center px-4 py-1.5${
+                  props.secondaryAction.disabled === true ? ' opacity-50' : ''
+                }`}
                 textClassName="text-xs"
               >
                 {props.secondaryAction.label}
