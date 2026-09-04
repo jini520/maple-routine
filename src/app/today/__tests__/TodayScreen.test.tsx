@@ -24,7 +24,7 @@ import type { MatchedBoss } from '../../../lib/boss/boss-matching'
 import type { DropHistoryPeriodGroup, DropHistoryRecord } from '../../../lib/drop/drop-history'
 import { getCachedCharacterBasic } from '../../../storage/character-basic-cache'
 import { getRepresentativeCharacter } from '../../../storage/character-selection'
-import type { DailyContent, WeeklyContent } from '../../../types'
+import type { CharacterBasicProfile, DailyContent, WeeklyContent } from '../../../types'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
@@ -301,6 +301,19 @@ async function press(element: AtomElement): Promise<void> {
   })
 }
 
+/** `character-basic-cache` 가 돌려주는 엔트리 한 벌. 대표 위젯이 이 값에서 EXP 를 꺼낸다. */
+function cachedBasic(expRate: number): { profile: CharacterBasicProfile; cachedAt: string } {
+  return {
+    profile: {
+      name: '캐릭터1',
+      level: 293,
+      imageUrl: 'https://example.com/1.png',
+      accessFlag: true,
+      world: '스카니아',
+      expRate },
+    cachedAt: NOW.toISOString() }
+}
+
 /** 스크롤 셸에 붙은 당겨서 새로고침 컨트롤. 스케줄러 테스트와 같은 자리다. */
 function refreshControl(): { refreshing: boolean; onRefresh: () => void } {
   return screen.getByTestId('screen-scroll').props.refreshControl.props
@@ -486,6 +499,80 @@ describe('TodayScreen: 명시적 재조회', () => {
     expect(mocks.boss.refresh).toHaveBeenCalledWith(OCIDS)
     expect(mocks.profit.refresh).toHaveBeenCalledWith(OCIDS)
     expect(mocks.dropHistory.load).toHaveBeenCalledTimes(2)
+  })
+
+  // 대표 캐릭터의 EXP·레벨은 스토어가 아니라 `character-basic-cache` 에서 온다. 그 캐시를 읽는
+  // 이펙트는 추적 목록이 바뀔 때만 도는데 재조회는 목록을 안 건드린다. 재조회 끝에 다시 읽지
+  // 않으면 동기화가 받아 온 EXP 가 앱을 다시 켤 때까지 화면에 못 닿는다.
+  it('재조회가 끝나면 대표 캐릭터의 프로필을 캐시에서 다시 읽는다', async () => {
+    setStores(캐릭터_넷)
+    mockedGetCachedCharacterBasic.mockResolvedValue(cachedBasic(80.3))
+
+    await renderScreen()
+    expect(screen.getByText('80.300%')).toBeTruthy()
+
+    mockedGetCachedCharacterBasic.mockResolvedValue(cachedBasic(5.125))
+    await act(async () => {
+      refreshControl().onRefresh()
+    })
+
+    expect(screen.getByText('5.125%')).toBeTruthy()
+  })
+
+  // **대표 하나만 읽는다.** 저장소 읽기 하나가 네이티브 호출 하나라 추적 45명이면 당길 때마다
+  // 45번이 된다. 나머지 항목에서 이 화면이 꺼내는 것은 드롭 위젯의 캐릭터 이름 하나뿐이고, 그
+  // 값은 개명 말고는 안 바뀌므로 다음 진입에서 읽어도 늦지 않다.
+  it('그때 읽는 것은 대표 하나뿐이다', async () => {
+    setStores(캐릭터_넷)
+    mockedGetCachedCharacterBasic.mockResolvedValue(cachedBasic(80.3))
+
+    // 이 파일은 목의 호출 기록을 테스트마다 안 비운다. 세는 테스트만 자기 앞에서 비운다.
+    mockedGetCachedCharacterBasic.mockClear()
+    await renderScreen()
+
+    // 마운트는 넷을 다 읽는다. 맵이 비어 있어 거기서는 전부 읽어야 한다.
+    expect(mockedGetCachedCharacterBasic).toHaveBeenCalledTimes(OCIDS.length)
+    mockedGetCachedCharacterBasic.mockClear()
+
+    await act(async () => {
+      refreshControl().onRefresh()
+    })
+
+    expect(mockedGetCachedCharacterBasic).toHaveBeenCalledTimes(1)
+    // 대표를 안 골랐으면 목록의 첫 번째다(`resolveDisplayRepresentative`).
+    expect(mockedGetCachedCharacterBasic).toHaveBeenCalledWith(OCIDS[0])
+  })
+
+  // 대표를 바꾸는 것은 캐릭터 관리 화면인데 그것이 추적 목록을 안 건드린다. 표식을 다시 읽지
+  // 않으면 별을 옮기고 today 로 돌아와 당겨도 옛 캐릭터가 그 자리에 남는다.
+  it('대표 표식이 바뀌면 그 캐릭터를 읽는다', async () => {
+    setStores(캐릭터_넷)
+    mockedGetCachedCharacterBasic.mockResolvedValue(cachedBasic(80.3))
+
+    await renderScreen()
+    mockedGetCachedCharacterBasic.mockClear()
+    mockedGetRepresentative.mockResolvedValue(OCIDS[2])
+
+    await act(async () => {
+      refreshControl().onRefresh()
+    })
+
+    expect(mockedGetCachedCharacterBasic).toHaveBeenCalledTimes(1)
+    expect(mockedGetCachedCharacterBasic).toHaveBeenCalledWith(OCIDS[2])
+  })
+
+  // 헤더 버튼도 같은 자리를 지난다. 둘이 같은 함수를 부르는 것은 위에서 봤고, 여기서는 그 함수의
+  // **끝**에 붙은 다시 읽기가 버튼 경로에도 있는지를 본다.
+  it('헤더 버튼도 같은 다시 읽기를 거친다', async () => {
+    setStores(캐릭터_넷)
+    mockedGetCachedCharacterBasic.mockResolvedValue(cachedBasic(80.3))
+
+    await renderScreen()
+
+    mockedGetCachedCharacterBasic.mockResolvedValue(cachedBasic(5.125))
+    await press(buttonOf(screen.getByLabelText('새로고침')))
+
+    expect(screen.getByText('5.125%')).toBeTruthy()
   })
 
   it('제스처가 붙어도 헤더 버튼은 남는다', async () => {

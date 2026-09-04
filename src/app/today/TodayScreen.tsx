@@ -1,8 +1,8 @@
 /**
  * 첫 화면. 위젯 격자를 그리는 탭.
  *
- * 하는 일이 셋뿐이다. 스토어 넷과 캐시를 **한 번** 읽어 `TodayViewModel` 하나를 만들고, 그것을
- * `WidgetGrid` 에 넘기고, 진입·당김·헤더 버튼의 조회를 건다. 조립은 `view-model.ts` 의 순수 함수가
+ * 하는 일이 셋뿐이다. 스토어 넷과 캐시를 **렌더당 한 번** 읽어 `TodayViewModel` 하나를 만들고,
+ * 그것을 `WidgetGrid` 에 넘기고, 진입·당김·헤더 버튼의 조회를 건다. 조립은 `view-model.ts` 의 순수 함수가
  * 하고 여기 남는 것은 배선뿐이라 판정이 한 줄도 없다.
  *
  * **위젯은 스토어를 모른다.** 각자 구독하면 트리거가 위젯 수만큼 늘고, 같은 드롭 기록을 보는 셋이
@@ -10,6 +10,9 @@
  *
  * 진입 조회는 `loadTrackedOcids` 하나로만 들어간다. `refresh()` 를 부르면 10분 TTL 을 통째로
  * 우회해 예열이 방금 받은 응답을 한 번 더 받는다.
+ *
+ * 대표 캐릭터의 EXP·레벨은 스토어가 아니라 `character-basic-cache` 에서 온다. 그 캐시를 읽는
+ * 이펙트는 추적 목록이 바뀔 때만 돌므로, 재조회가 끝나는 자리에서 한 번 더 읽는다.
  *
  * 대가를 적어 둔다. 이 화면에 오래 머물러 TTL 이 만료되면 컨텐츠 쪽만 다시 동기화되고 보스·수익
  * 위젯은 그 탭에 들어갈 때까지 옛 스냅샷을 그린다. 당김과 헤더 버튼은 셋을 모두 새로 읽는다.
@@ -32,6 +35,7 @@ import { formatSyncedAt } from '../../features/schedule-sync/format'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getRepresentativeCharacter } from '../../storage/character-selection'
+import { resolveDisplayRepresentative } from '../../features/character-manage/derivations'
 import type { CharacterBasicProfile } from '../../types'
 
 import { RefreshCwIcon, Text } from '../../components/atoms'
@@ -43,6 +47,59 @@ import { AnimatedView } from '../../lib/nativewind-interop'
 import { useThemeAppearance } from '../../theme/context'
 import { buildTodayViewModel } from './view-model'
 import { WidgetGrid } from './WidgetGrid'
+
+/**
+ * 대표 표식과 프로필 맵을 저장소에서 한 번에 읽는 함수. 마운트가 쓴다. 네트워크는 없다.
+ *
+ * 캐시에 없는 캐릭터는 **항목을 만들지 않는다**. 이름 없이 카드를 그릴 수 없고, ocid 는
+ * 사용자에게 뜻이 없는 값이라 대신 넣지 않는다(`drop-history-store` 와 같은 규칙).
+ */
+async function readCharacterProfiles(ocids: string[]): Promise<{
+  representative: string | null
+  profiles: Readonly<Record<string, CharacterBasicProfile>>
+}> {
+  const [representative, entries] = await Promise.all([
+    getRepresentativeCharacter().catch(() => null),
+    Promise.all(
+      ocids.map(async (ocid) => [ocid, await getCachedCharacterBasic(ocid).catch(() => null)] as const),
+    ),
+  ])
+
+  return {
+    representative,
+    profiles: Object.fromEntries(
+      entries.flatMap(([ocid, entry]) => (entry === null ? [] : [[ocid, entry.profile] as const])),
+    ),
+  }
+}
+
+/**
+ * 대표 표식과 **대표 하나**의 프로필을 다시 읽는 함수. 재조회 끝이 쓴다.
+ *
+ * 전원을 다시 읽지 않는다. 저장소 읽기 하나가 네이티브 호출 하나라 추적 45명이면 당길 때마다
+ * 45번이 되는데, 이 화면이 나머지 항목에서 꺼내는 것은 드롭 위젯의 캐릭터 **이름** 하나뿐이라
+ * 개명이 아니면 값이 안 바뀐다. 그 이름은 다음 마운트가 읽어도 늦지 않다.
+ *
+ * 표식도 함께 읽는 것은 대표를 바꾸는 캐릭터 관리 화면이 **추적 목록을 안 건드려서**다. 표식만
+ * 옛 값으로 두면 별을 옮기고 돌아와 당겨도 옛 캐릭터가 그 자리에 남는다.
+ */
+async function readRepresentativeProfile(ocids: string[]): Promise<{
+  representative: string | null
+  displayed: { ocid: string; profile: CharacterBasicProfile } | null
+}> {
+  const representative = await getRepresentativeCharacter().catch(() => null)
+  // 화면이 대표 자리에 세우는 캐릭터를 그대로 고른다. 미지정이면 목록의 첫 번째다.
+  const ocid = resolveDisplayRepresentative(ocids, representative)
+  if (ocid === null) {
+    return { representative, displayed: null }
+  }
+
+  const entry = await getCachedCharacterBasic(ocid).catch(() => null)
+  return {
+    representative,
+    displayed: entry === null ? null : { ocid, profile: entry.profile },
+  }
+}
 
 export function TodayScreen(): React.JSX.Element {
   const content = useContentSchedulerStore()
@@ -102,27 +159,17 @@ export function TodayScreen(): React.JSX.Element {
   // 배열 자체는 매 렌더 새 참조라 deps 로 쓸 수 없다. 목록이 실제로 바뀌었을 때만 다시 읽는다.
   const orderedOcidsKey = orderedOcids.join(',')
 
+  // 이 이펙트는 **목록이 바뀔 때만** 돈다. 재조회로 캐시가 갱신되는 경로는 아래 `refreshAll` 이
+  // 끝에서 직접 다시 읽는다. 여기 트리거를 더 붙이면 언제 도는지가 화면 어디에도 안 적힌다.
   useEffect(() => {
     let cancelled = false
 
     void (async () => {
-      const ocids = orderedOcidsKey === '' ? [] : orderedOcidsKey.split(',')
-      const [representative, entries] = await Promise.all([
-        getRepresentativeCharacter().catch(() => null),
-        Promise.all(
-          ocids.map(async (ocid) => [ocid, await getCachedCharacterBasic(ocid).catch(() => null)] as const),
-        ),
-      ])
+      const read = await readCharacterProfiles(orderedOcidsKey === '' ? [] : orderedOcidsKey.split(','))
       if (cancelled) return
 
-      setRepresentativeOcid(representative)
-      // 캐시에 없는 캐릭터는 **항목을 만들지 않는다**. 이름 없이 카드를 그릴 수 없고, ocid 는
-      // 사용자에게 뜻이 없는 값이라 대신 넣지 않는다(`drop-history-store` 와 같은 규칙).
-      setProfilesByOcid(
-        Object.fromEntries(
-          entries.flatMap(([ocid, entry]) => (entry === null ? [] : [[ocid, entry.profile] as const])),
-        ),
-      )
+      setRepresentativeOcid(read.representative)
+      setProfilesByOcid(read.profiles)
     })()
 
     return () => {
@@ -170,6 +217,16 @@ export function TodayScreen(): React.JSX.Element {
       profit.refresh(profit.trackedOcids ?? []),
       dropHistory.load(),
     ])
+
+    // 방금 끝난 동기화가 대표 캐릭터의 `character/basic` 을 5분 가드를 건너뛰고 다시 받아 캐시를
+    // 갱신했다. 여기서 다시 읽지 않으면 그 EXP·레벨이 앱을 다시 켤 때까지 화면에 못 닿는다. 위
+    // 이펙트는 추적 목록이 바뀔 때만 도는데 재조회는 그 목록을 안 건드리기 때문이다.
+    const read = await readRepresentativeProfile(content.trackedOcids ?? [])
+    setRepresentativeOcid(read.representative)
+    if (read.displayed !== null) {
+      const { ocid, profile } = read.displayed
+      setProfilesByOcid((previous) => ({ ...previous, [ocid]: profile }))
+    }
   }
 
   // 당김이 시작한 회차에만 인디케이터가 돈다. `isSyncing` 은 제목 옆 조회 중… 과 헤더 버튼의
