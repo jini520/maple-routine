@@ -4,8 +4,7 @@
  * 결정석 판매 한도 요약(월드별로 집계한다)과 직전 기간 대비 증감(상승 빨강·하락 파랑, 방향이
  * 없으면 테마 색). 둘 다 자기 상자 안에서 끝난다.
  */
-import { useState } from 'react'
-import { Image, Modal, Pressable, View } from 'react-native'
+import { Image, Modal, Pressable, View, useWindowDimensions } from 'react-native'
 
 import { getItemIconUrlByFile, worldEmblemUrl } from '../../lib/assets/asset-lookup'
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss/boss-matching'
@@ -23,6 +22,12 @@ import {
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { countMonthlyCrystals, summarizeWorldCrystals } from './character-groups'
 import type { CharacterGroup } from './character-groups'
+import { useAnchoredPopover } from './ItemRevenuePopover'
+
+/** 칩 밑변과 상자 윗변 사이. 흐름 안에 있던 시절의 `mt-1.5` 를 그대로 옮긴 값. */
+const BREAKDOWN_GAP = 6
+/** 상자 오른쪽 변과 화면 끝 사이에 남길 최소 여백. */
+const BREAKDOWN_EDGE_GAP = 12
 
 // 결정석 아이콘(주간/월간). 드랍 테이블 항목이 아니라 UI 표시 전용이라 `item-icons.json` 에
 // 등록하지 않고 파일명으로 직접 조회한다. 파일이 없으면 null. 아이콘만 생략하고 숫자는 그대로 둔다.
@@ -36,9 +41,18 @@ export const MONTHLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crys
 // 라벨행(h-6 = 24px)을 넘으면 라벨행이 튄다. 그것이 고가 드롭 배지(24px)를 절대배치로 빼낸
 // 이유이고, 그 배지가 우측 끝을 쓰므로 칩은 좌측(라벨 옆)에 붙는다.
 //
-// 월드별 분해는 흐름이 아니라 절대배치 팝오버로 띄운다. 펼쳐도 헤더 높이가 변하지 않는다.
+// 월드별 분해는 흐름이 아니라 별도 네이티브 창의 팝오버로 띄운다. 펼쳐도 헤더 높이가 변하지 않는다.
 export function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGroup[] }): React.JSX.Element | null {
-  const [isBreakdownOpen, setIsBreakdownOpen] = useState(false)
+  // 구조 분해가 필수다. `popover.toggle` 처럼 프로퍼티로 읽으면 `react-hooks/refs` 가 그 접근을
+  // 렌더 중 ref 접근으로 본다. 훅이 안에서 `useRef` 를 쓴다.
+  const {
+    ref: chipRef,
+    isOpen: isBreakdownOpen,
+    anchor,
+    toggle: toggleBreakdown,
+    close: closeBreakdown,
+  } = useAnchoredPopover()
+  const { width: windowWidth } = useWindowDimensions()
 
   const isWeekly = props.tab === 'weekly'
   const worlds = isWeekly ? summarizeWorldCrystals(props.groups) : []
@@ -91,19 +105,10 @@ export function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGro
 
   return (
     <>
-      {/* 팝오버가 열려 있는 동안 바깥 탭으로 닫는다. */}
-      {isBreakdownOpen && (
-        <Modal visible transparent animationType="none" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setIsBreakdownOpen(false)}>
-          <Pressable
-            aria-label="월드별 결정석 판매 현황 닫기"
-            onPress={() => setIsBreakdownOpen(false)}
-            className="flex-1"
-          />
-        </Modal>
-      )}
       <Pressable
+        ref={chipRef}
         role="button"
-        onPress={() => setIsBreakdownOpen((prev) => !prev)}
+        onPress={toggleBreakdown}
         aria-label={label}
         aria-expanded={isBreakdownOpen}
         className={`z-20 ${chipClassName}`}
@@ -116,30 +121,59 @@ export function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGro
         )}
       </Pressable>
       {isBreakdownOpen && (
-        // 흐름 밖(절대배치)이라 헤더 높이에 영향이 없다. 월드가 늘어도 헤더 영역은 그대로다.
-        // 기준 박스는 라벨행이고 칩이 좌측에 있으므로 `left-0` 에 맞춘다. 우측은 고가 드롭
-        // 배지 자리다.
-        <View
-          testID="world-crystal-breakdown"
-          style={{ top: '100%' }}
-          className="absolute left-0 z-20 mt-1.5 min-w-[168px] rounded-[12px] border border-border bg-surface p-2 shadow-lg"
+        /*
+          닫는 층과 내용이 **같은 창에** 있어야 한다. RN 의 `Modal` 은 앱 루트 뷰와 다른 네이티브
+          창이라 항상 그 위이고, `zIndex` 는 같은 트리의 형제끼리만 순서를 정한다. 닫기 층만
+          여기 넣고 내용을 트리에 두면 내용에 `z-20` 을 줘도 투명한 닫기 층이 그 위에 깔린다.
+          그러면 상자 안을 누르는 것이 전부 닫기로 먹힌다.
+
+          펼쳐도 헤더 높이가 안 변하는 것은 그대로다. 별도 창이라 흐름에 아예 없다.
+        */
+        <Modal
+          visible
+          transparent
+          animationType="none"
+          statusBarTranslucent
+          navigationBarTranslucent
+          onRequestClose={closeBreakdown}
         >
-          <Text className="px-1 pb-1.5 text-11 font-bold tracking-wide text-text-muted">월드별 판매 현황</Text>
-          <View className="gap-1">
-            {worlds.map((summary) => {
-              const emblemUrl = worldEmblemUrl(summary.world)
-              return (
-                <View key={summary.world} className="flex-row items-center gap-1.5 px-1">
-                  {emblemUrl !== null && <Image source={emblemUrl} className="h-4 w-4 shrink-0" resizeMode="contain" />}
-                  <Text className="text-xs text-text-muted">{summary.world}</Text>
-                  <Text className="ml-auto pl-3 text-xs font-semibold text-text" style={TABULAR_NUMS}>
-                    {summary.cleared} / {WEEKLY_CRYSTAL_SALE_LIMIT}
-                  </Text>
-                </View>
-              )
-            })}
+          {/* 바깥 탭으로 닫는다. **스크림이 없다**. 뒤를 덮으면 비교 대상인 헤드라인이 함께 어두워진다. */}
+          <Pressable
+            aria-label="월드별 결정석 판매 현황 닫기"
+            onPress={closeBreakdown}
+            className="flex-1"
+          />
+          <View
+            testID="world-crystal-breakdown"
+            style={{
+              left: anchor?.left ?? 0,
+              top: anchor === null ? 0 : anchor.top + anchor.height + BREAKDOWN_GAP,
+              // 폭은 내용이 정하므로(`min-w-[168px]`) 상한만 준다. 월드 이름이 길어도 화면 밖으로
+              // 안 나간다.
+              maxWidth: windowWidth - (anchor?.left ?? 0) - BREAKDOWN_EDGE_GAP,
+            }}
+            // 아직 못 쟀으면 그리되 안 보인다. 0,0 에 한 프레임 번쩍이는 것을 막는다.
+            className={`absolute min-w-[168px] rounded-[12px] border border-border bg-surface p-2 shadow-lg${
+              anchor === null ? ' opacity-0' : ''
+            }`}
+          >
+            <Text className="px-1 pb-1.5 text-11 font-bold tracking-wide text-text-muted">월드별 판매 현황</Text>
+            <View className="gap-1">
+              {worlds.map((summary) => {
+                const emblemUrl = worldEmblemUrl(summary.world)
+                return (
+                  <View key={summary.world} className="flex-row items-center gap-1.5 px-1">
+                    {emblemUrl !== null && <Image source={emblemUrl} className="h-4 w-4 shrink-0" resizeMode="contain" />}
+                    <Text className="text-xs text-text-muted">{summary.world}</Text>
+                    <Text className="ml-auto pl-3 text-xs font-semibold text-text" style={TABULAR_NUMS}>
+                      {summary.cleared} / {WEEKLY_CRYSTAL_SALE_LIMIT}
+                    </Text>
+                  </View>
+                )
+              })}
+            </View>
           </View>
-        </View>
+        </Modal>
       )}
     </>
   )

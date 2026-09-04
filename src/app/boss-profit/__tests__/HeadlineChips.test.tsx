@@ -2,7 +2,7 @@
 //
 // `DeltaChip` 은 화면에서 떼어냈지만(총 수익에서는 뜻이 퇴색한다) 컴포넌트와 계약은 그대로 둔다.
 // 되살릴 때 계약이 서 있어야 하므로 다섯을 그대로 적는다.
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss/boss-matching'
 import type { BossProfitRow } from '../../../features/boss-profit/store'
@@ -117,6 +117,30 @@ describe('CrystalSummaryChip', () => {
     expect(getByTestId('world-crystal-breakdown')).toBeTruthy()
     // 바깥 탭으로 닫는 판이 함께 뜬다.
     expect(getByLabelText('월드별 결정석 판매 현황 닫기')).toBeTruthy()
+  })
+
+
+  // 닫는 층과 내용이 **같은 창**에 있어야 한다. RN 의 `Modal` 은 앱 루트 뷰와 다른 네이티브 창이라
+  // 항상 그 위이고 `zIndex` 로는 못 이긴다. 닫기 층만 창에 넣고 내용을 트리에 두면 투명한 닫기
+  // 층이 상자 위에 깔려, 상자 안을 누르는 것이 전부 닫기로 먹힌다.
+  //
+  // 그래서 부모를 한 번 타고 올라가 **그 안에서** 닫기 층을 찾는다. 둘이 갈려 있으면 여기서 못 찾는다.
+  it('팝오버 내용이 닫는 층과 같은 창에 있다', async () => {
+    const groups = [
+      group([보스행({ world: '스카니아' })]),
+      group([보스행({ ocid: 'ocid-2', boss: 다른주간보스, world: '루나' })]),
+    ]
+    const { getByLabelText, getByTestId } = await renderOverlay(
+      <CrystalSummaryChip tab="weekly" groups={groups} />,
+    )
+
+    await act(async () => {
+      fireEvent.press(getByLabelText(/주간 결정석 판매/))
+    })
+
+    const 창 = getByTestId('world-crystal-breakdown').parent
+    expect(창).not.toBeNull()
+    expect(within(창!).getByLabelText('월드별 결정석 판매 현황 닫기')).toBeTruthy()
   })
 
   it('월드는 아는데 처치가 0이면 0 / 90 을 그대로 보여준다', async () => {
