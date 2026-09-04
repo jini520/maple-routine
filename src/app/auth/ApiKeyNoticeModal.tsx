@@ -13,11 +13,11 @@
  */
 import { View } from 'react-native'
 
-import { useOnboardingStore } from '../features/onboarding/store'
-import type { ApiKeyNoticeKind } from '../features/onboarding/state'
+import { useAuthStore } from '../../features/auth/store'
+import type { ApiKeyNoticeKind } from '../../features/auth/state'
 
-import { Button, GaugeIcon, KeyRoundIcon, Text } from '../components/atoms'
-import { Modal } from '../components/organisms/Modal/Modal'
+import { Button, GaugeIcon, KeyRoundIcon, Text } from '../../components/atoms'
+import { Modal } from '../../components/organisms/Modal/Modal'
 
 interface NoticeCopy {
   icon: typeof KeyRoundIcon
@@ -44,8 +44,8 @@ const NOTICE_COPY: Record<ApiKeyNoticeKind, NoticeCopy> = {
 }
 
 export function ApiKeyNoticeModal(): React.JSX.Element | null {
-  const apiKeyNotice = useOnboardingStore((state) => state.apiKeyNotice)
-  const confirmApiKeyNotice = useOnboardingStore((state) => state.confirmApiKeyNotice)
+  const apiKeyNotice = useAuthStore((state) => state.apiKeyNotice)
+  const confirmApiKeyNotice = useAuthStore((state) => state.confirmApiKeyNotice)
 
   // falsy 검사인 것이 의도다. `=== null` 이면 스토어를 부분 모킹한 테스트에서 `undefined` 가 와
   // **모든 화면 위에 닫을 수 없는 모달이 떠버린다**. 차단 UI 는

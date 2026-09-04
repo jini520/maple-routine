@@ -21,7 +21,7 @@ import { Pressable, View, type ScrollView } from 'react-native'
 import { useAnimatedRef } from 'react-native-reanimated'
 
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
-import { useApiKeyNotice } from '../../features/onboarding/use-api-key-notice'
+import { useApiKeyNotice } from '../../features/auth/use-api-key-notice'
 import {
   clearRepresentativeCharacter,
   setRepresentativeCharacter,

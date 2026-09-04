@@ -1,10 +1,11 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
-import { useOnboardingStore } from '../features/onboarding/store'
+import { useAppEntryStore } from '../features/app-entry/store'
 
 import { DropHistoryScreen } from '../app/boss-profit/DropHistoryScreen'
 import { DropPriceScreen } from '../app/boss-profit/DropPriceScreen'
 import { ContentManageScreen } from '../app/content-scheduler/ContentManageScreen'
-import { OnboardingScreen } from '../app/onboarding/OnboardingScreen'
+import { SignInScreen } from '../app/auth/SignInScreen'
+import { CharacterSetupScreen } from '../app/character-setup/CharacterSetupScreen'
 import { SettingsAboutScreen } from '../app/settings/SettingsAboutScreen'
 import { SettingsAccountDataScreen } from '../app/settings/SettingsAccountDataScreen'
 import { SettingsCharactersScreen } from '../app/settings/SettingsCharactersScreen'
@@ -68,13 +69,16 @@ function screenFor(name: StackRouteName): React.ComponentType<Record<string, nev
  * 층(그룹 행 ↔ 하위 행)은 `LayerStack` 안쪽 스택이 진다. 두 스택이 같은 `animation`·`gestureEnabled`
  * 를 쓰므로 **하위 페이지처럼 열린다** 가 값이 아니라 구조로 성립한다.
  *
- * 온보딩은 리다이렉트가 아니라 화면 목록 자체가 갈린다. 딥링크가 없어 주소로 들어올 경로가
- * 없으므로 라우트마다 문을 잠글 이유가 없다. 미완료면 스택에 온보딩 하나뿐이고 완료되면 탭과
- * 하위 페이지로 통째로 바뀐다. 도달할 화면이 존재하지 않으므로 되돌아갈 히스토리도 없다.
+ * 진입 게이트는 리다이렉트가 아니라 화면 목록 자체가 갈린다. 딥링크가 없어 주소로 들어올 경로가
+ * 없으므로 라우트마다 문을 잠글 이유가 없다. 앱을 아직 못 열면 스택에 그 화면 **하나뿐**이고
+ * 열리면 탭과 하위 페이지로 통째로 바뀐다. 도달할 화면이 존재하지 않으므로 되돌아갈 히스토리도
+ * 없다.
+ *
+ * 로그인과 캐릭터 설정을 함께 등록하지 않는 것도 같은 이유다. 둘을 나란히 두면 그 사이에 뒤로
+ * 가기가 생기는데 되돌아갈 곳이 없다.
  */
 export function RootNavigator(): React.JSX.Element {
-  const status = useOnboardingStore((state) => state.status)
-  const isCompleted = status === 'completed'
+  const stage = useAppEntryStore((state) => state.stage)
 
   return (
     <Stack.Navigator
@@ -84,16 +88,18 @@ export function RootNavigator(): React.JSX.Element {
       screenLayout={({ children }) => <ScreenBackdrop>{children}</ScreenBackdrop>}
       screenOptions={PUSH_SCREEN_OPTIONS}
     >
-      {isCompleted ? (
+      {stage === 'ready' ? (
         <Stack.Group>
           <Stack.Screen name="Main" component={LayerStack} />
           {STACK_ROUTE_NAMES.map((name) => (
             <Stack.Screen key={name} name={name} component={screenFor(name)} />
           ))}
         </Stack.Group>
+      ) : stage === 'signIn' ? (
+        // 분기 테스트가 쓰는 `screen-<라우트 이름>` testID 는 각 화면의 루트가 든다.
+        <Stack.Screen name="SignIn" component={SignInScreen} />
       ) : (
-        // 온보딩 분기 테스트가 쓰는 `screen-Onboarding` testID 는 `OnboardingScreen` 루트가 든다.
-        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+        <Stack.Screen name="CharacterSetup" component={CharacterSetupScreen} />
       )}
     </Stack.Navigator>
   )

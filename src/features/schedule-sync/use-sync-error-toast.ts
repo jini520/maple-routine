@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useToastStore } from '../toast/store'
-import { useApiKeyNotice } from '../onboarding/use-api-key-notice'
+import { useApiKeyNotice } from '../auth/use-api-key-notice'
 import { formatScheduleSyncError } from './format'
 import type { ScheduleSyncError } from './schedule-sync'
 

@@ -1,7 +1,7 @@
 // 루트 스택. **골격이 실제로 도는가**를 본다. 화면 내용은 자리표시자라 볼 것이 없다(4단계 몫).
 //
 // 검사하는 것 넷:
-//   ① 온보딩 분기가 **양방향**으로 도는가 (미완료 → 온보딩만 / 완료 → 탭 + 하위 페이지)
+//   ① 진입 분기가 **양방향**으로 도는가 (미완료 → 그 화면만 / 열림 → 탭 + 하위 페이지)
 //  ② 하위 페이지 열둘이 **하나도 빠짐없이 열리는가**(계획서 §1 의 열하나 + 의 하나)
 //  ③ 같은 상세를 두 경로가 가리키는가
 //  ④ 하위 페이지가 열려도 아래 탭 화면이 **언마운트되지 않는가**
@@ -17,7 +17,7 @@
 import { act, render, screen } from '@testing-library/react-native'
 import { createNavigationContainerRef } from '@react-navigation/native'
 import { FEATURE_GUIDES } from '../../data/feature-guides'
-import { useOnboardingStore } from '../../features/onboarding/store'
+import { useAppEntryStore } from '../../features/app-entry/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { setLiveUpdatePort } from '../../native/ports'
 
@@ -25,7 +25,7 @@ import { NavigationHarness } from './harness'
 import { installMemoryPreferences } from './memory-preferences'
 import { FEATURE_GUIDE_ROUTE_NAMES, STACK_ROUTE_NAMES, type RootStackParamList } from '../routes'
 
-type Status = 'awaitingApiKey' | 'completed'
+type Stage = 'signIn' | 'characterSetup' | 'ready'
 
 /**
  * 안내 상세를 여는 데 쓰는 표본. **카탈로그에서 뽑는다**. 문자열을 손으로 적으면 안내가 개명될
@@ -52,51 +52,62 @@ beforeEach(() => {
     apply: async () => {},
     getNetworkType: async () => 'unknown',
     openStore: () => {} })
-  useOnboardingStore.setState({ status: 'awaitingApiKey' })
+  useAppEntryStore.setState({ stage: 'signIn' })
   // `ContentManage` 는 **수동 모드 전용**이라 자동 모드로 두면 열리자마자
   // 물러난다. 그러면 이 파일의 **열둘이 전부 열린다** 가 배선이 아니라 모드 때문에 빨개진다.
   useTrackingModeStore.setState({ mode: 'manual' })
 })
 
-describe('온보딩 분기', () => {
-  it('미완료면 온보딩만 있고 탭은 그려지지 않는다', async () => {
-    useOnboardingStore.setState({ status: 'awaitingApiKey' })
+describe('진입 분기', () => {
+  it('로그인 전이면 그 화면만 있고 탭은 그려지지 않는다', async () => {
+    useAppEntryStore.setState({ stage: 'signIn' })
 
     await render(<NavigationHarness />)
 
-    expect(screen.getByTestId('screen-Onboarding')).toBeTruthy()
+    expect(screen.getByTestId('screen-SignIn')).toBeTruthy()
     expect(screen.queryByTestId('screen-Today', { includeHiddenElements: true })).toBeNull()
   })
 
-  it('완료면 탭이 그려지고 온보딩은 사라진다', async () => {
-    useOnboardingStore.setState({ status: 'completed' })
+  // 로그인과 캐릭터 설정이 **함께 서지 않는다**. 나란히 두면 그 사이에 뒤로 가기가 생기는데
+  // 되돌아갈 곳이 없다.
+  it('캐릭터 설정 단계면 그 화면만 서고 로그인도 탭도 없다', async () => {
+    useAppEntryStore.setState({ stage: 'characterSetup' })
+
+    await render(<NavigationHarness />)
+
+    expect(screen.getByTestId('screen-CharacterSetup')).toBeTruthy()
+    expect(screen.queryByTestId('screen-SignIn', { includeHiddenElements: true })).toBeNull()
+    expect(screen.queryByTestId('screen-Today', { includeHiddenElements: true })).toBeNull()
+  })
+
+  it('열리면 탭이 그려지고 진입 화면은 사라진다', async () => {
+    useAppEntryStore.setState({ stage: 'ready' })
 
     await render(<NavigationHarness />)
 
     expect(screen.getByTestId('screen-Today')).toBeTruthy()
-    expect(screen.queryByTestId('screen-Onboarding', { includeHiddenElements: true })).toBeNull()
+    expect(screen.queryByTestId('screen-SignIn', { includeHiddenElements: true })).toBeNull()
   })
 
-// **양방향이 요점이다.** 한 방향만 보면 "처음부터 완료였다"와 구분되지 않는다.
-  // `<Navigate replace>` 를 걸어 이 전환을 만들었고, RN 은 화면 목록 자체를 갈아 끼운다
-  // (`RootNavigator` 주석). 계약은 같으므로 여기서 같은 것을 묻는다.
-  it('미완료 → 완료 → 미완료 로 오갈 때 화면이 따라 바뀐다', async () => {
-    useOnboardingStore.setState({ status: 'awaitingApiKey' })
+// **양방향이 요점이다.** 한 방향만 보면 "처음부터 열려 있었다"와 구분되지 않는다.
+  // RN 은 화면 목록 자체를 갈아 끼운다(`RootNavigator` 주석).
+  it('로그인 → 열림 → 로그인 으로 오갈 때 화면이 따라 바뀐다', async () => {
+    useAppEntryStore.setState({ stage: 'signIn' })
     await render(<NavigationHarness />)
-    expect(screen.getByTestId('screen-Onboarding')).toBeTruthy()
+    expect(screen.getByTestId('screen-SignIn')).toBeTruthy()
 
-    const setStatus = async (status: Status): Promise<void> => {
+    const setStage = async (stage: Stage): Promise<void> => {
       await act(async () => {
-        useOnboardingStore.setState({ status })
+        useAppEntryStore.setState({ stage })
       })
     }
 
-    await setStatus('completed')
+    await setStage('ready')
     expect(screen.getByTestId('screen-Today')).toBeTruthy()
-    expect(screen.queryByTestId('screen-Onboarding', { includeHiddenElements: true })).toBeNull()
+    expect(screen.queryByTestId('screen-SignIn', { includeHiddenElements: true })).toBeNull()
 
-    await setStatus('awaitingApiKey')
-    expect(screen.getByTestId('screen-Onboarding')).toBeTruthy()
+    await setStage('signIn')
+    expect(screen.getByTestId('screen-SignIn')).toBeTruthy()
     expect(screen.queryByTestId('screen-Today', { includeHiddenElements: true })).toBeNull()
   })
 })
@@ -110,7 +121,7 @@ describe('하위 페이지. 열둘', () => {
     SettingsReleaseNoteGuide: { guideId: GUIDE_ID } }
 
   it.each(STACK_ROUTE_NAMES)('%s 로 push 하면 그 화면이 열린다', async (name) => {
-    useOnboardingStore.setState({ status: 'completed' })
+    useAppEntryStore.setState({ stage: 'ready' })
     const navigationRef = createNavigationContainerRef<RootStackParamList>()
 
     await render(<NavigationHarness navigationRef={navigationRef} />)
@@ -131,7 +142,7 @@ describe('하위 페이지. 열둘', () => {
   // `includeHiddenElements` 가 필요한 것이 오히려 증거다. 아래 화면은 **접근성에서만 가려졌고**
   // 트리에는 그대로 있다(언마운트됐다면 이 옵션으로도 안 나온다).
   it('하위 페이지가 열려도 아래 탭 화면이 남아 있다', async () => {
-    useOnboardingStore.setState({ status: 'completed' })
+    useAppEntryStore.setState({ stage: 'ready' })
     const navigationRef = createNavigationContainerRef<RootStackParamList>()
 
     await render(<NavigationHarness navigationRef={navigationRef} />)
@@ -144,7 +155,7 @@ describe('하위 페이지. 열둘', () => {
   })
 
   it('뒤로 가면 하위 페이지만 사라진다', async () => {
-    useOnboardingStore.setState({ status: 'completed' })
+    useAppEntryStore.setState({ stage: 'ready' })
     const navigationRef = createNavigationContainerRef<RootStackParamList>()
 
     await render(<NavigationHarness navigationRef={navigationRef} />)
@@ -168,7 +179,7 @@ describe('하위 페이지. 열둘', () => {
 // (그 자리로 스크롤)은 레이아웃이 있어야 관측되므로 화면 자신의 테스트가 본다.
 describe('안내 상세는 두 경로가 같은 화면을 그린다', () => {
   it.each(FEATURE_GUIDE_ROUTE_NAMES)('%s 로 열어도 같은 안내가 그려진다', async (routeName) => {
-    useOnboardingStore.setState({ status: 'completed' })
+    useAppEntryStore.setState({ stage: 'ready' })
     const navigationRef = createNavigationContainerRef<RootStackParamList>()
 
     await render(<NavigationHarness navigationRef={navigationRef} />)

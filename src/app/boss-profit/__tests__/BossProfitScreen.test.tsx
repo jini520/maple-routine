@@ -51,8 +51,8 @@ jest.mock('../../../features/toast/store', () => ({
 
 // 401 은 토스트가 아니라 키 무효화 진입점으로 간다(이 화면에는 로스터 조회가
 // 없어 동기화 경로 하나뿐이다).
-jest.mock('../../../features/onboarding/store', () => ({
-  useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) } }))
+jest.mock('../../../features/auth/store', () => ({
+  useAuthStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) } }))
 
 // 좁은 범위로만 목한다. `dropRowKey` 는 본문(`AccordionBody`)이 쓰는 순수 함수라 실물과
 // 같은 문자열을 낸다.

@@ -57,10 +57,11 @@ describe('ROUTE_TABLE: 계획서 §1 대조', () => {
   //
   // 탭이 넷에서 셋이 됐다. 사냥 수익·지출 껍데기 둘이 빠지고 가계부 하나가 들어왔다. 둘은
   // 사라진 것이 아니라 그 화면 안으로 들어간다.
-  it('RN 에서 새로 생긴 화면은 다섯이고 셋은 탭·둘은 하위 페이지다', () => {
+  it('RN 에서 새로 생긴 화면은 여섯이고 셋은 탭·둘은 하위 페이지·하나는 루트 화면이다', () => {
     const rnRows = ROUTE_TABLE.filter((row) => row.origin === 'rn')
 
     expect(rnRows.map((row) => row.target)).toEqual([
+      { kind: 'root', route: 'CharacterSetup' },
       { kind: 'tab', route: 'Today' },
       { kind: 'tab', route: 'Cashbook' },
       { kind: 'tab', route: 'Utility' },
@@ -141,11 +142,14 @@ describe('ROUTE_TABLE: 계획서 §1 대조', () => {
     expect(new Set(STACK_ROUTE_NAMES).size).toBe(STACK_ROUTE_NAMES.length)
   })
 
-  it('온보딩은 탭도 하위 페이지도 아닌 루트 화면이다', () => {
-    const onboarding = ROUTE_TABLE.filter((row) => row.target.kind === 'root')
+  // 앱을 열기 전 화면 둘. 탭과 배타로 그려지고 한 번에 하나만 스택에 선다.
+  it('로그인과 캐릭터 설정은 탭도 하위 페이지도 아닌 루트 화면이다', () => {
+    const rootRows = ROUTE_TABLE.filter((row) => row.target.kind === 'root')
 
-    expect(onboarding).toHaveLength(1)
-    expect(onboarding[0]?.path).toBe('/onboarding')
+    expect(rootRows.map((row) => [row.path, row.screen])).toEqual([
+      ['/onboarding', 'SignInScreen'],
+      ['/character-setup', 'CharacterSetupScreen'],
+    ])
   })
 })
 

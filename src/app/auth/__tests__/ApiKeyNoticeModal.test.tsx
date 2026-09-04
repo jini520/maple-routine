@@ -8,10 +8,10 @@
 //   확인이 안 불리고 화면이 그대로다).
 import { fireEvent } from '@testing-library/react-native'
 
-import { useOnboardingStore } from '../../features/onboarding/store'
-import type { ApiKeyNoticeKind } from '../../features/onboarding/state'
+import { useAuthStore } from '../../../features/auth/store'
+import type { ApiKeyNoticeKind } from '../../../features/auth/state'
 
-import { renderOverlay } from '../../components/__tests__/render-atom'
+import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { ApiKeyNoticeModal } from '../ApiKeyNoticeModal'
 
 // 모달이 띄우는 문구 표를 그대로 옮긴 것이다. 이 배열이 계약이고, 같은 문자열을 화면도
@@ -33,7 +33,7 @@ let confirmApiKeyNotice: jest.Mock
 
 beforeEach(() => {
   confirmApiKeyNotice = jest.fn(async () => {})
-  useOnboardingStore.setState({ apiKeyNotice: null, confirmApiKeyNotice })
+  useAuthStore.setState({ apiKeyNotice: null, confirmApiKeyNotice })
 })
 
 describe('ApiKeyNoticeModal', () => {
@@ -45,7 +45,7 @@ describe('ApiKeyNoticeModal', () => {
 
   describe.each(CASES)('$kind', ({ kind, title, body }) => {
     beforeEach(() => {
-      useOnboardingStore.setState({ apiKeyNotice: kind })
+      useAuthStore.setState({ apiKeyNotice: kind })
     })
 
     // 원인마다 다른 말을 해야 한다. 무효 키는 "다음에 무슨 일이 일어나는가"를, 429 는 처방을

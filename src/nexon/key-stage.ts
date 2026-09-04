@@ -7,7 +7,7 @@
  * `character/list` 인 것은 선택이 아니다. ocid 없이 API 키만으로 부를 수 있는 엔드포인트가 그것
  * 하나이고, 이 프로브가 도는 시점에는 아직 ocid 가 없다.
  *
- * @see docs/features/onboarding.md 이 판정으로 무엇을 막는지
+ * @see docs/features/auth.md 이 판정으로 무엇을 막는지
  */
 import { CHARACTER_LIST_PATH } from './character/client'
 import { NexonRateLimitError } from './errors'

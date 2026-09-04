@@ -5,9 +5,9 @@ import type { ApiKeyNoticeKind } from '../state'
 
 jest.mock('../store', () => {
   const noticeApiKeyIssue = jest.fn()
-  return { useOnboardingStore: { getState: () => ({ noticeApiKeyIssue }) } }
+  return { useAuthStore: { getState: () => ({ noticeApiKeyIssue }) } }
 })
-const noticeApiKeyIssueMock = jest.requireMock('../store').useOnboardingStore.getState().noticeApiKeyIssue as jest.Mock
+const noticeApiKeyIssueMock = jest.requireMock('../store').useAuthStore.getState().noticeApiKeyIssue as jest.Mock
 
 const { useApiKeyNotice } = require('../use-api-key-notice') as typeof import('../use-api-key-notice')
 

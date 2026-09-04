@@ -81,8 +81,8 @@ jest.mock('../../../features/boss-profit/store', () => ({
   useBossProfitStore: { getState: () => ({ loadTrackedOcids: mockLoadProfitTracked }) },
 }))
 // 401·429 는 키 재입력 진입점으로 간다.
-jest.mock('../../../features/onboarding/store', () => ({
-  useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
+jest.mock('../../../features/auth/store', () => ({
+  useAuthStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
 }))
 
 const mockedUseSettingsNavigation = jest.mocked(useSettingsNavigation)

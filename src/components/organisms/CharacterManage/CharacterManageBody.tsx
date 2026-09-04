@@ -13,7 +13,7 @@
  * ① 두 층이 **같은 카드**(`CharacterRow`)다. 갈리는 것은 섹션 라벨 · 구분선 · 왼쪽 핸들 · 오른쪽
  *    컨트롤 넷뿐이다. 모양을 갈라 두면 카드가 층을 옮길 때 다른 물건으로 보인다.
  * ② 대기·실패는 **아래 자리에만** 그린다. 위 층은 로컬 캐시로 그려서 계정을 바꿔도 안 건드린다.
- * ③ 401 문구가 `place` 로 갈린다. 온보딩에서는 화면이 키 입력으로 안 옮겨가므로 피커 문구
+ * ③ 401 문구가 `place` 로 갈린다. 캐릭터 설정 화면은 키 입력으로 안 옮겨가므로 피커 문구
  *    (`키 입력 화면으로 이동합니다`)를 쓰면 거짓인 데다 액션까지 없어 하드 잠금이 된다.
  */
 import { View } from 'react-native'
@@ -25,7 +25,7 @@ import {
   formatStaleRosterError,
   type RosterErrorPlace,
 } from '../../../features/schedule-sync/format'
-import { useOnboardingStore } from '../../../features/onboarding/store'
+import { useAuthStore } from '../../../features/auth/store'
 
 import { MapleSweepSpinner, Text } from '../../atoms'
 import { CharacterLayerGrid } from './CharacterLayerGrid'
@@ -47,8 +47,8 @@ export interface CharacterManageBodyProps {
    */
   scrollableRef: AnimatedRef<ScrollView>
   /**
-   * 실패 문구·액션이 갈리는 자리. 설정 하위 페이지는 `'picker'`, 온보딩 단계는
-   * `'onboarding'`. 기본값을 두지 않는다. 두 호출부뿐이고, 기본값이 있으면 셋째 호출부가
+   * 실패 문구·액션이 갈리는 자리. 설정 하위 페이지는 `'picker'`, 첫 설정 화면은
+   * `'characterSetup'`. 기본값을 두지 않는다. 두 호출부뿐이고, 기본값이 있으면 셋째 호출부가
    * 틀린 자리의 문구를 조용히 물려받는다.
    */
   place: RosterErrorPlace
@@ -155,7 +155,7 @@ export function CharacterManageBody({
           // 키 입력 화면으로 간다.
           action={{
             label: 'API 키 다시 입력',
-            onClick: () => useOnboardingStore.getState().noticeApiKeyIssue('invalid'),
+            onClick: () => useAuthStore.getState().noticeApiKeyIssue('invalid'),
           }}
         />
       </View>

@@ -1,6 +1,6 @@
-// 온보딩 캐릭터 선택 단계.
+// 캐릭터 설정 화면. 앱이 관리할 캐릭터를 고른다.
 //
-// **옛 파일을 갱신하지 않고 다시 썼다**. 계약이 뒤집혔다. 이 단계는 더 이상 **고른 계정 하나의
+// **옛 파일을 갱신하지 않고 다시 썼다**. 계약이 뒤집혔다. 이 화면은 더 이상 **고른 계정 하나의
 // 3열 그리드** 가 아니라 설정 하위 페이지와 **같은 두 층 본문**이고, 그래서 옛 케이스가 보던 것
 // (`emptyAction` 탈출구· 그리드 토글· 로스터 로딩 분기)은 여기서 검사할 대상이 아니게 됐다.
 // 같은 이름을 남겨 두면 **검사했다** 로 오독된다.
@@ -10,8 +10,8 @@
 // 본문(`CharacterManageBody` + `useCharacterManage`)의 계약. 두 층의 범위· 이동· 별· TTL·
 // 드롭다운· 실패 표현. 은 `../../settings/__tests__/SettingsCharactersScreen.test.tsx` 가 이미
 // 본다. 같은 컴포넌트를 두 곳에서 다시 검사하면 이 **머리와 CTA 만 갈린다** 로
-// 묶어 둔 것이 테스트에서 두 벌이 된다. 여기서 보는 것은 제목· CTA 게이트· 제출 payload·
-// **429 만 넘기는 배선** 넷이다.
+// 묶어 둔 것이 테스트에서 두 벌이 된다. 여기서 보는 것은 제목· CTA 게이트· 저장 배선· 대기 두 단·
+// **429 만 넘기는 배선** 다섯이다.
 import { act, fireEvent, within } from '@testing-library/react-native'
 import { StyleSheet } from 'react-native'
 
@@ -20,18 +20,23 @@ import { fetchCharacterList } from '../../../nexon/character'
 import { NexonAuthError, NexonRateLimitError } from '../../../nexon/errors'
 import { getAuthConfig } from '../../../storage/api-key'
 import { getCachedCharacterBasic } from '../../../storage/character-basic-cache'
-import { getRepresentativeCharacter } from '../../../storage/character-selection'
+import {
+  clearRepresentativeCharacter,
+  getRepresentativeCharacter,
+  setRepresentativeCharacter,
+} from '../../../storage/character-selection'
 import { getScheduleProbeLedger } from '../../../storage/schedule-probe-ledger'
 import { useContentSchedulerStore, type ContentSchedulerStore } from '../../../features/content-scheduler/store'
 import type { CachedCharacterBasicEntry } from '../../../storage/character-basic-cache'
 import type { CharacterPickerEntry, MapleAccount, MapleCharacter } from '../../../types'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
-import { ContentCharacterStep } from '../ContentCharacterStep'
+import { CharacterSetupScreen } from '../CharacterSetupScreen'
 
 // 팩토리 밖 변수를 참조하려면 이름이 `mock` 으로 시작해야 한다(babel-jest 규칙).
 const mockGetRoster = jest.fn()
 const mockNoticeApiKeyIssue = jest.fn()
+const mockCompleteCharacterSetup = jest.fn()
 
 jest.mock('../../../nexon/character', () => ({ fetchCharacterList: jest.fn() }))
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
@@ -57,14 +62,23 @@ jest.mock('../../../features/content-scheduler/store', () => ({ useContentSchedu
 // 429 는 키 재입력 진입점으로 간다.
 // **`useApiKeyNotice` 는 실물을 쓴다**. 이 파일이 보려는 것이 "무엇을 그 훅에 넘기는가"라,
 // 훅을 목으로 세우면 검사 대상이 사라진다. 그래서 그 끝인 스토어만 세운다.
-jest.mock('../../../features/onboarding/store', () => ({
-  useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
+jest.mock('../../../features/auth/store', () => ({
+  useAuthStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
+}))
+
+// 진입 게이트는 저장의 끝이다. 이 파일이 보는 것은 **무엇을 넘기는가** 라 그 함수만 세운다
+// (저장·시드·단계 전이의 계약은 `features/app-entry/__tests__/store.spec.ts` 가 본다).
+jest.mock('../../../features/app-entry/store', () => ({
+  useAppEntryStore: (selector: (state: unknown) => unknown) =>
+    selector({ completeCharacterSetup: mockCompleteCharacterSetup }),
 }))
 
 const mockedFetchCharacterList = jest.mocked(fetchCharacterList)
 const mockedGetAuthConfig = jest.mocked(getAuthConfig)
 const mockedGetCachedBasic = jest.mocked(getCachedCharacterBasic)
 const mockedGetRepresentative = jest.mocked(getRepresentativeCharacter)
+const mockedSetRepresentative = jest.mocked(setRepresentativeCharacter)
+const mockedClearRepresentative = jest.mocked(clearRepresentativeCharacter)
 const mockedGetLedger = jest.mocked(getScheduleProbeLedger)
 const mockedContentStore = jest.mocked(useContentSchedulerStore)
 const mockedRoster = mockGetRoster as unknown as jest.MockedFunction<typeof getCharacterPickerRoster>
@@ -128,19 +142,11 @@ function button(view: Rendered, label: string | RegExp): AtomElement {
   return pressableOf(view.getByText(label))
 }
 
-/** 단계를 그리는 도우미. 마운트 직후 계정 조회 → 후보 조회가 연달아 돌아 여러 번 흘려보낸다. */
-async function renderStep(
-  props: Partial<React.ComponentProps<typeof ContentCharacterStep>> = {},
-): Promise<{ view: Rendered; onSubmit: jest.Mock }> {
-  const onSubmit = props.onSubmit ?? jest.fn()
-  const view = await renderOverlay(
-    <ContentCharacterStep
-      isSubmitting={props.isSubmitting ?? false}
-      onSubmit={onSubmit as (ocids: string[], representativeOcid: string | null) => void}
-    />,
-  )
+/** 화면을 그리는 도우미. 마운트 직후 계정 조회 → 후보 조회가 연달아 돌아 여러 번 흘려보낸다. */
+async function renderStep(): Promise<{ view: Rendered }> {
+  const view = await renderOverlay(<CharacterSetupScreen />)
   for (let i = 0; i < 4; i += 1) await act(async () => {})
-  return { view, onSubmit: onSubmit as jest.Mock }
+  return { view }
 }
 
 let rosterFailure: unknown
@@ -157,6 +163,9 @@ beforeEach(() => {
   })
   mockedGetCachedBasic.mockImplementation(async (ocid: string) => 캐시된캐릭터.get(ocid) ?? null)
   mockedGetRepresentative.mockResolvedValue(null)
+  mockedSetRepresentative.mockResolvedValue(undefined)
+  mockedClearRepresentative.mockResolvedValue(undefined)
+  mockCompleteCharacterSetup.mockResolvedValue(undefined)
   mockedGetLedger.mockResolvedValue({ unavailable: false, dates: {} })
   mockedRoster.mockImplementation(async (onUpdate) => {
     if (rosterFailure !== undefined) throw rosterFailure
@@ -172,7 +181,7 @@ afterEach(() => {
   jest.clearAllMocks()
 })
 
-describe('ContentCharacterStep: 머리와 CTA', () => {
+describe('CharacterSetupScreen: 머리와 CTA', () => {
   it('제목 블록과 `계속하기`를 그린다', async () => {
     const { view } = await renderStep()
 
@@ -214,25 +223,70 @@ describe('ContentCharacterStep: 머리와 CTA', () => {
     expect(stateOf(button(view, '계속하기')).disabled).toBe(false)
   })
 
+  // 대기의 첫 단. 저장이 도는 동안에는 CTA 만 스피너다.
   it('저장 중에는 `계속하기`에 스피너가 겹치고 비활성이 된다', async () => {
-    const { view } = await renderStep({ isSubmitting: true })
+    let release: () => void = () => {}
+    mockCompleteCharacterSetup.mockImplementation(
+      async () =>
+        await new Promise<void>((resolve) => {
+          release = resolve
+        }),
+    )
+    const { view } = await renderStep()
+    await press(pressableOf(view.getByText('낟낟')))
+
+    await press(button(view, '계속하기'))
 
     const cta = button(view, '계속하기')
     expect(stateOf(cta).disabled).toBe(true)
     expect(stateOf(cta).busy).toBe(true)
+
+    await act(async () => {
+      release()
+    })
+  })
+
+  // 대기의 둘째 단. 시드는 고른 캐릭터 수만큼 걸려서 CTA 스피너로는 멈춘 것처럼 보인다.
+  it('시드가 시작되면 화면 전체가 대기로 바뀐다', async () => {
+    let startSeed: () => void = () => {}
+    let release: () => void = () => {}
+    mockCompleteCharacterSetup.mockImplementation(
+      async (_ocids: string[], onSeedStart: () => void) => {
+        startSeed = onSeedStart
+        await new Promise<void>((resolve) => {
+          release = resolve
+        })
+      },
+    )
+    const { view } = await renderStep()
+    await press(pressableOf(view.getByText('낟낟')))
+    await press(button(view, '계속하기'))
+
+    await act(async () => {
+      startSeed()
+    })
+
+    expect(view.getByText('체크리스트를 준비하고 있어요')).toBeTruthy()
+    // 24px 이상 자리는 스윕 스피너.
+    expect(view.getByTestId('maple-sweep-spinner', { includeHiddenElements: true })).toBeTruthy()
+    expect(view.queryByText('계속하기')).toBeNull()
+
+    await act(async () => {
+      release()
+    })
   })
 })
 
 // 설정 하위 페이지의 `저장` 과 같은 액션 바다.
 // 본문이 그 화면과 같은 두 층이라 캐릭터가 많으면 본문 끝의 CTA 는 화면 밖에 있게 된다.
-describe('ContentCharacterStep: `계속하기`는 하단에 고정된다', () => {
+describe('CharacterSetupScreen: `계속하기`는 하단에 고정된다', () => {
   it('CTA 는 스크롤 뷰 **밖**의 고정 바 안에 선다', async () => {
     const { view } = await renderStep()
 
-    expect(within(view.getByTestId('onboarding-action-bar')).getByText('계속하기')).toBeTruthy()
+    expect(within(view.getByTestId('entry-action-bar')).getByText('계속하기')).toBeTruthy()
     // 스크롤 뷰 안에 남아 있으면 **어디까지 굴렸든 지금 누른다** 가 깨진다. 그래서 액션 바로
     // 옮겼다.
-    expect(within(view.getByTestId('onboarding-scroll')).queryByText('계속하기')).toBeNull()
+    expect(within(view.getByTestId('entry-scroll')).queryByText('계속하기')).toBeNull()
   })
 
   // 바 높이를 상수로 적지 않는다. 잰 값만큼 비워야 글자 크기·안전영역이 다른 기기에서도
@@ -241,12 +295,12 @@ describe('ContentCharacterStep: `계속하기`는 하단에 고정된다', () =>
     const { view } = await renderStep()
 
     await act(async () => {
-      fireEvent(view.getByTestId('onboarding-action-bar'), 'layout', {
+      fireEvent(view.getByTestId('entry-action-bar'), 'layout', {
         nativeEvent: { layout: { height: 96 } },
       })
     })
 
-    expect(view.getByTestId('onboarding-scroll').props.contentContainerStyle).toMatchObject({
+    expect(view.getByTestId('entry-scroll').props.contentContainerStyle).toMatchObject({
       paddingBottom: 96,
     })
   })
@@ -254,41 +308,68 @@ describe('ContentCharacterStep: `계속하기`는 하단에 고정된다', () =>
   it('CTA 는 그 바 안에서 폭을 다 쓴다', async () => {
     const { view } = await renderStep()
 
-    const cta = within(view.getByTestId('onboarding-action-bar')).getByRole('button')
+    const cta = within(view.getByTestId('entry-action-bar')).getByRole('button')
     // 클래스 문자열은 NativeWind 가 스타일로 바꿔 사라지므로 flatten 한 값에서 읽는다.
     expect(StyleSheet.flatten(cta.props.style).width).toBe('100%')
   })
 })
 
-describe('ContentCharacterStep: 제출 payload', () => {
+describe('CharacterSetupScreen: 저장 배선', () => {
   // 고른 순서가 곧 저장 순서다. 새로 고른 것은 배열 끝에 붙는다.
   it('고른 순서 그대로 ocid 를 넘긴다', async () => {
-    const { view, onSubmit } = await renderStep()
+    const { view } = await renderStep()
 
     await press(pressableOf(view.getByText('달의아이')))
     await press(pressableOf(view.getByText('낟낟')))
     await press(button(view, '계속하기'))
 
-    expect(onSubmit).toHaveBeenCalledWith(['a2', 'a1'], null)
+    expect(mockCompleteCharacterSetup).toHaveBeenCalledWith(['a2', 'a1'], expect.any(Function))
   })
 
-  // 본문이 별을 그리므로 이 단계에서도 대표를 고를 수 있다. 안 실어 보내면 그 선택이
-  // 조용히 사라진다.
-  it('고른 대표 캐릭터를 목록과 함께 넘긴다', async () => {
-    const { view, onSubmit } = await renderStep()
+  // 본문이 별을 그리므로 이 화면에서도 대표를 고를 수 있다. 안 쓰면 그 선택이 조용히 사라진다.
+  //
+  // **목록 저장 뒤여야 한다.** 순서가 뒤집히면 목록 저장의 참조 무결성이 아직 목록에 없는
+  // 대표를 지운다.
+  it('고른 대표 캐릭터를 목록 저장 뒤에 쓴다', async () => {
+    const { view } = await renderStep()
 
     await press(pressableOf(view.getByText('낟낟')))
     await press(pressableOf(view.getByText('달의아이')))
     await press(view.getByLabelText('달의아이 대표 캐릭터'))
     await press(button(view, '계속하기'))
 
-    expect(onSubmit).toHaveBeenCalledWith(['a1', 'a2'], 'a2')
+    expect(mockedSetRepresentative).toHaveBeenCalledWith('a2')
+    expect(mockCompleteCharacterSetup.mock.invocationCallOrder[0]).toBeLessThan(
+      mockedSetRepresentative.mock.invocationCallOrder[0],
+    )
+  })
+
+  it('대표를 안 고르면 저장된 대표를 지운다', async () => {
+    const { view } = await renderStep()
+
+    await press(pressableOf(view.getByText('낟낟')))
+    await press(button(view, '계속하기'))
+
+    expect(mockedClearRepresentative).toHaveBeenCalled()
+    expect(mockedSetRepresentative).not.toHaveBeenCalled()
+  })
+
+  // 여기 도달했다는 것은 목록이 이미 저장돼 설정이 끝났다는 뜻이다. 대표는 표식뿐이라 없어도
+  // 화면이 성립하고, 되던지면 호출부가 void 라 미처리 rejection 이 된다.
+  it('대표 쓰기가 실패해도 던지지 않는다', async () => {
+    mockedSetRepresentative.mockRejectedValue(new Error('disk full'))
+    const { view } = await renderStep()
+
+    await press(pressableOf(view.getByText('낟낟')))
+    await press(view.getByLabelText('낟낟 대표 캐릭터'))
+
+    await expect(press(button(view, '계속하기'))).resolves.toBeUndefined()
   })
 })
 
-describe('ContentCharacterStep: 키 재입력 진입점은 429 만 탄다', () => {
-  // 로스터가 429 로 비면 출구가 전부 막힌다(CTA 영구 비활성· 재시도는 같은
-  // 키로 또 429· 단계는 라우트가 아니라 status switch). 그 자리를 여는 것이 이 배선이다.
+describe('CharacterSetupScreen: 키 재입력 진입점은 429 만 탄다', () => {
+  // 로스터가 429 로 비면 출구가 전부 막힌다(CTA 영구 비활성· 재시도는 같은 키로 또 429·
+  // 이 화면에서 뒤로 갈 곳이 없다). 그 자리를 여는 것이 이 배선이다.
   it('후보 조회 429 는 키 재입력 진입점으로 넘어간다', async () => {
     rosterFailure = new NexonRateLimitError('429')
     await renderStep()

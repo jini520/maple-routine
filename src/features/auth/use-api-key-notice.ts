@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import type { ApiKeyNoticeKind } from './state'
 import type { ScheduleSyncError } from '../schedule-sync/schedule-sync'
-import { useOnboardingStore } from './store'
+import { useAuthStore } from './store'
 
 /**
  * 스케줄 동기화·로스터 조회가 저장된 키로는 앞으로 갈 수 없는 실패로 끝나면 키 재입력 경로로
@@ -16,11 +16,11 @@ import { useOnboardingStore } from './store'
  * 여기서 하는 일은 알리는 것뿐이다. 모달을 띄우고, 이동·삭제는 확인을 누를 때 일어난다.
  * 중복 호출은 `noticeApiKeyIssue()` 안의 멱등 가드가 막는다.
  *
- * `features/onboarding` 에 사는 것은 이 훅이 다루는 것이 동기화가 아니라 온보딩 상태이기
+ * `features/auth` 에 사는 것은 이 훅이 다루는 것이 동기화가 아니라 인증 상태이기
  * 때문이다. `ScheduleSyncError` 는 감지 쪽 어휘라 타입으로만 받는다.
  *
  * 아래 `routedErrors` 는 그 멱등 가드와 다른 것을 막는다. 동기화 스토어의 `error` 는 화면이
- * 언마운트돼도 살아남으므로(모듈 스코프 zustand), 키를 다시 넣어 completed 로 돌아오면 화면이
+ * 언마운트돼도 살아남으므로(모듈 스코프 zustand), 키를 다시 넣어 앱이 다시 열리면 화면이
  * 다시 마운트되면서 이미 처리한 그 객체가 새 effect 로 들어온다. 그때는 알림이 이미 꺼져 있어
  * 멱등 가드를 통과해 방금 저장한 유효한 키가 지워진다. 그래서 이미 넘긴 객체를 기억한다. 훅
  * 인스턴스의 ref 로는 안 된다. 그 수명이 화면과 같아 재마운트를 넘지 못한다.
@@ -42,6 +42,6 @@ export function useApiKeyNotice(error: ScheduleSyncError | null): void {
       return
     }
     routedErrors.add(error)
-    useOnboardingStore.getState().noticeApiKeyIssue(kind)
+    useAuthStore.getState().noticeApiKeyIssue(kind)
   }, [error])
 }

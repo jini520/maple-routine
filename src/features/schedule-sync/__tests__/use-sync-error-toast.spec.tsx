@@ -10,11 +10,11 @@ const showErrorMock = jest.requireMock('../../toast/store').useToastStore.getSta
 
 // 401과 429는 이 훅이 토스트로 알리는 대신 온보딩 스토어의
 // 키 재입력 진입점에 위임한다.
-jest.mock('../../onboarding/store', () => {
+jest.mock('../../auth/store', () => {
   const noticeApiKeyIssue = jest.fn()
-  return { useOnboardingStore: { getState: () => ({ noticeApiKeyIssue }) } }
+  return { useAuthStore: { getState: () => ({ noticeApiKeyIssue }) } }
 })
-const noticeApiKeyIssueMock = jest.requireMock('../../onboarding/store').useOnboardingStore.getState().noticeApiKeyIssue as jest.Mock
+const noticeApiKeyIssueMock = jest.requireMock('../../auth/store').useAuthStore.getState().noticeApiKeyIssue as jest.Mock
 
 import { useScheduleSyncErrorToast } from '../use-sync-error-toast'
 

@@ -14,15 +14,15 @@
  */
 import { Linking, Pressable, View } from 'react-native'
 
-import { useOnboardingStore } from '../../features/onboarding/store'
+import { useAuthStore } from '../../features/auth/store'
 
 import { Button, ExternalLinkIcon, KeyRoundIcon, Text } from '../../components/atoms'
 import { Modal } from '../../components/organisms/Modal/Modal'
 import { GUIDE_URL } from './api-key-links'
 
 export function DevelopmentStageKeyModal(): React.JSX.Element | null {
-  const blocked = useOnboardingStore((state) => state.developmentStageBlocked)
-  const acknowledge = useOnboardingStore((state) => state.acknowledgeDevelopmentStageKey)
+  const blocked = useAuthStore((state) => state.developmentStageBlocked)
+  const acknowledge = useAuthStore((state) => state.acknowledgeDevelopmentStageKey)
 
   // falsy 검사인 것이 의도다. 스토어를 부분 모킹한 테스트에서 `undefined` 가 오면 `=== false` 는
   // 모달을 띄운다. 차단 UI 는 켜라고 명시했을 때만 켜지는 쪽이 안전하다.

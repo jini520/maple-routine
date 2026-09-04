@@ -9,7 +9,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native'
 import { createNavigationContainerRef, StackActions } from '@react-navigation/native'
 
-import { useOnboardingStore } from '../../features/onboarding/store'
+import { useAppEntryStore } from '../../features/app-entry/store'
 import { __resetThemeAppearanceForTest } from '../../theme/appearance-store'
 import { resetBarStoreForTests } from '../../components/organisms/BottomBar/bar-store'
 import { PUSH_SCREEN_OPTIONS } from '../push-screen-options'
@@ -25,12 +25,12 @@ let navigationRef: ContainerRef
 beforeEach(() => {
   installMemoryPreferences()
   resetBarStoreForTests()
-  useOnboardingStore.setState({ status: 'completed' })
+  useAppEntryStore.setState({ stage: 'ready' })
   navigationRef = createNavigationContainerRef<RootStackParamList>() as ContainerRef
 })
 
 afterEach(() => {
-  useOnboardingStore.setState({ status: 'awaitingApiKey' })
+  useAppEntryStore.setState({ stage: 'signIn' })
   __resetThemeAppearanceForTest()
 })
 
