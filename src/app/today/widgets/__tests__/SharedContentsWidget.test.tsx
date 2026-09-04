@@ -323,31 +323,38 @@ describe('머리의 `?`. 계열마다 다른 표시 기준을 말한다', () => 
     expect(물음표색(getByTestId('shared-note-toggle'))).toBe(닫힘)
   })
 
-  // **폭에 상한이 있다**(사용자 지시). 화면 폭을 그대로 쓰면 넓은 기기에서 두 문장이 한 줄로
-  // 늘어져 상자가 화면을 가로지른다. 상한은 `ItemRevenuePopover` 와 같은 248 이다.
-  it('상자 폭에 상한이 있다. 넓은 화면에서 가로지르지 않는다', async () => {
+  // **폭을 못박지 않는다**(사용자 지시). 폭을 주면 가장 긴 줄보다 넓은 만큼이 오른쪽에 죽은
+  // 여백으로 남아 글 덩어리가 왼쪽으로 쏠린다. 상한만 주고 폭은 레이아웃 엔진이 가장 긴 줄에
+  // 맞춰 줄인다. 손으로 잰 값을 박으면 그 추정이 틀렸을 때 줄바꿈이 다시 깨진다.
+  it('폭을 못박지 않는다. 상한만 주고 글줄에 맞춰 줄어든다', async () => {
     const { getByTestId } = await 위젯(공유컨텐츠())
 
     await 누름(getByTestId('shared-note-toggle'))
 
-    const { width } = flattenStyle(getByTestId('shared-note').props.style) as { width: number }
-    expect(width).toBe(248)
+    const style = flattenStyle(getByTestId('shared-note').props.style) as {
+      width?: number
+      maxWidth: number
+    }
+    expect(style.width).toBeUndefined()
+    expect(style.maxWidth).toBe(248)
   })
 
   // **부모 타일을 안 벗어난다**(사용자 지시). 창은 별도라 좌표가 화면 기준인데, 화면 여백을
   // 그대로 쓰면 타일보다 왼쪽에 선다(격자 여백 16 · 화면 여백 12). 이 타일은 크기 선언이
   // `4×auto` 하나뿐이라 창 좌우 여백이 곧 타일의 변이다.
+  //
+  // 실제 폭은 상한 이하라, 상한으로 재면 그보다 넉넉한 경계를 본 것이다.
   it('상자가 타일 좌우 변을 안 넘는다', async () => {
     const { getByTestId } = await 위젯(공유컨텐츠())
 
     await 누름(getByTestId('shared-note-toggle'))
 
-    const { left, width } = flattenStyle(getByTestId('shared-note').props.style) as {
+    const { left, maxWidth } = flattenStyle(getByTestId('shared-note').props.style) as {
       left: number
-      width: number
+      maxWidth: number
     }
     expect(left).toBe(GRID_SIDE_PADDING)
-    expect(left + width).toBeLessThanOrEqual(창폭 - GRID_SIDE_PADDING)
+    expect(left + maxWidth).toBeLessThanOrEqual(창폭 - GRID_SIDE_PADDING)
   })
 
   // 앱의 팝오버 셋이 같은 상자를 쓴다(`ItemRevenuePopover` · 월드별 분해 · 여기).

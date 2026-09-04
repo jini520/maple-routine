@@ -43,9 +43,15 @@ const SCOPE_NOTES = [
 /** `?` 밑변과 상자 윗변 사이. 다른 팝오버 둘과 같은 값이다. */
 const NOTE_GAP = 8
 /**
- * 상자 폭 상한. `ItemRevenuePopover` 와 같은 값이라 앱의 팝오버 셋이 한 폭으로 선다.
+ * 상자 폭 **상한**. 못박는 값이 아니다.
  *
- * 상한이 없으면 넓은 기기에서 두 문장이 한 줄씩으로 늘어져 상자가 화면을 가로지른다.
+ * 폭을 주면 가장 긴 줄보다 넓은 만큼이 오른쪽에 죽은 여백으로 남아 글 덩어리가 왼쪽으로 쏠린다.
+ * 상한만 주고 실제 폭은 레이아웃 엔진이 가장 긴 줄에 맞춘다. 재서 못박지 않는 것은 그 값이
+ * 글꼴 실측이라, 손으로 어림한 값이 틀리면 줄바꿈이 다시 깨지기 때문이다.
+ *
+ * 값은 `ItemRevenuePopover` 의 폭과 같다. 그쪽은 목록이라 폭을 못박아야 줄이 안 흔들리고,
+ * 여기는 문구 둘이라 줄어드는 쪽이 맞다. 상한이 없으면 넓은 기기에서 두 문장이 한 줄씩으로
+ * 늘어져 상자가 화면을 가로지른다.
  */
 const NOTE_MAX_WIDTH = 248
 
@@ -212,8 +218,9 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
               // 움직여서, 변에 붙여도 `?` 는 상자 위에 남는다.
               left: GRID_SIDE_PADDING,
               top: anchor === null ? 0 : anchor.top + anchor.height + NOTE_GAP,
-              // 좁은 기기에서는 상한보다 타일이 먼저 좁다.
-              width: Math.min(NOTE_MAX_WIDTH, tileWidth),
+              // 폭이 아니라 상한이다. 실제 폭은 가장 긴 줄이 정한다. 좁은 기기에서는 상한보다
+              // 타일이 먼저 좁다.
+              maxWidth: Math.min(NOTE_MAX_WIDTH, tileWidth),
             }}
             // 아직 못 쟀으면 그리되 안 보인다. 0,0 에 한 프레임 번쩍이는 것을 막는다.
             className={`absolute gap-1 rounded-[12px] border border-border bg-surface px-3 py-2 shadow-lg${
