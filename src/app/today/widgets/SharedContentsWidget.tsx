@@ -14,6 +14,7 @@
 import { Modal, Pressable, View, useWindowDimensions } from 'react-native'
 
 import { useAnchoredPopover } from '../../../hooks/useAnchoredPopover'
+import { GRID_SIDE_PADDING } from '../../../lib/today/widget-grid-metrics'
 
 import { CheckIcon, CircleQuestionMarkIcon, Text } from '../../../components/atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
@@ -36,8 +37,6 @@ const SCOPE_NOTES = [
 
 /** `?` 밑변과 상자 윗변 사이. 다른 팝오버 둘과 같은 값이다. */
 const NOTE_GAP = 8
-/** 상자 좌우 변과 화면 끝 사이에 남길 최소 여백. */
-const NOTE_EDGE_GAP = 12
 /**
  * 상자 폭 상한. `ItemRevenuePopover` 와 같은 값이라 앱의 팝오버 셋이 한 폭으로 선다.
  *
@@ -147,7 +146,10 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
   // 구조 분해가 필수다. `popover.toggle` 처럼 프로퍼티로 읽으면 `react-hooks/refs` 가 그 접근을
   // 렌더 중 ref 접근으로 본다.
   const { ref: toggleRef, isOpen: noteOpen, anchor, toggle: toggleNote, close: closeNote } = useAnchoredPopover()
+  // 팝오버가 별도 창이라 좌표가 **화면 기준**이다. 부모 타일을 안 넘으려면 그 변을 알아야 하는데,
+  // 이 위젯은 크기 선언이 `4×auto` 하나뿐이라(레지스트리) 창 좌우 여백이 곧 타일의 변이다.
   const { width: windowWidth } = useWindowDimensions()
+  const tileWidth = windowWidth - GRID_SIDE_PADDING * 2
 
   return (
     <View testID="widget-shared-contents" className="p-3">
@@ -200,12 +202,13 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
             role="dialog"
             aria-label="표시 기준 설명"
             style={{
-              // `?` 왼쪽 끝에 맞추면 상자가 오른쪽으로 화면을 넘는다. 카드 왼쪽에 붙이면 상한을
-              // 줘도 `?` 가 상자 위에 남는다(제목이 고정 문구라 그 자리가 안 움직인다).
-              left: NOTE_EDGE_GAP,
+              // 타일 왼쪽 변에 붙인다. `?` 왼쪽 끝에 맞추면 상자가 오른쪽으로 타일을 넘고, 화면
+              // 여백(12)을 쓰면 타일(16)보다 왼쪽에 선다. 제목이 고정 문구라 `?` 자리가 안
+              // 움직여서, 변에 붙여도 `?` 는 상자 위에 남는다.
+              left: GRID_SIDE_PADDING,
               top: anchor === null ? 0 : anchor.top + anchor.height + NOTE_GAP,
-              // 좁은 기기에서는 상한보다 화면이 먼저 좁다.
-              width: Math.min(NOTE_MAX_WIDTH, windowWidth - NOTE_EDGE_GAP * 2),
+              // 좁은 기기에서는 상한보다 타일이 먼저 좁다.
+              width: Math.min(NOTE_MAX_WIDTH, tileWidth),
             }}
             // 아직 못 쟀으면 그리되 안 보인다. 0,0 에 한 프레임 번쩍이는 것을 막는다.
             className={`absolute gap-1 rounded-[12px] border border-border bg-surface px-3 py-2 shadow-lg${

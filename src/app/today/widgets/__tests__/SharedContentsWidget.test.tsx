@@ -9,6 +9,7 @@
 import { act, fireEvent, within } from '@testing-library/react-native'
 
 import { flattenStyle, renderAtom, 기본테마 } from '../../../../components/__tests__/render-atom'
+import { GRID_SIDE_PADDING } from '../../../../lib/today/widget-grid-metrics'
 import { SharedContentsWidget } from '../SharedContentsWidget'
 import { 공유계열, 공유항목, 공유컨텐츠, 뷰모델 } from './widget-fixture'
 import type { SharedContentGroupView } from '../../view-model'
@@ -23,6 +24,9 @@ async function 위젯(
     <SharedContentsWidget w={4} h="auto" data={뷰모델({ sharedContents, sharedRemaining })} />,
   )
 }
+
+/** 테스트 하네스의 창 폭. 팝오버는 별도 창이라 좌표가 화면 기준이다. */
+const 창폭 = 750
 
 /**
  * `?` 아이콘의 색. lucide 아이콘은 색을 `style` 이 아니라 `stroke` 로 받는다. `testID` 를 달아도
@@ -322,6 +326,22 @@ describe('머리의 `?`. 계열마다 다른 표시 기준을 말한다', () => 
 
     const { width } = flattenStyle(getByTestId('shared-note').props.style) as { width: number }
     expect(width).toBe(248)
+  })
+
+  // **부모 타일을 안 벗어난다**(사용자 지시). 창은 별도라 좌표가 화면 기준인데, 화면 여백을
+  // 그대로 쓰면 타일보다 왼쪽에 선다(격자 여백 16 · 화면 여백 12). 이 타일은 크기 선언이
+  // `4×auto` 하나뿐이라 창 좌우 여백이 곧 타일의 변이다.
+  it('상자가 타일 좌우 변을 안 넘는다', async () => {
+    const { getByTestId } = await 위젯(공유컨텐츠())
+
+    await 누름(getByTestId('shared-note-toggle'))
+
+    const { left, width } = flattenStyle(getByTestId('shared-note').props.style) as {
+      left: number
+      width: number
+    }
+    expect(left).toBe(GRID_SIDE_PADDING)
+    expect(left + width).toBeLessThanOrEqual(창폭 - GRID_SIDE_PADDING)
   })
 
   // 앱의 팝오버 셋이 같은 상자를 쓴다(`ItemRevenuePopover` · 월드별 분해 · 여기).
