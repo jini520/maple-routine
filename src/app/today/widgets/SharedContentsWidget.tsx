@@ -38,6 +38,12 @@ const SCOPE_NOTES = [
 const NOTE_GAP = 8
 /** 상자 좌우 변과 화면 끝 사이에 남길 최소 여백. */
 const NOTE_EDGE_GAP = 12
+/**
+ * 상자 폭 상한. `ItemRevenuePopover` 와 같은 값이라 앱의 팝오버 셋이 한 폭으로 선다.
+ *
+ * 상한이 없으면 넓은 기기에서 두 문장이 한 줄씩으로 늘어져 상자가 화면을 가로지른다.
+ */
+const NOTE_MAX_WIDTH = 248
 
 /** 계열이 차지하는 **줄 수**. 제목 한 줄 + 항목들. 두 열의 높이를 견주는 자다. */
 function groupRows(group: SharedContentGroupView): number {
@@ -194,11 +200,12 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
             role="dialog"
             aria-label="표시 기준 설명"
             style={{
-              // `?` 왼쪽 끝에 맞추면 두 줄짜리 상자가 오른쪽으로 화면을 넘는다. 좌우 여백만 두고
-              // 폭을 화면에 맡긴다.
+              // `?` 왼쪽 끝에 맞추면 상자가 오른쪽으로 화면을 넘는다. 카드 왼쪽에 붙이면 상한을
+              // 줘도 `?` 가 상자 위에 남는다(제목이 고정 문구라 그 자리가 안 움직인다).
               left: NOTE_EDGE_GAP,
               top: anchor === null ? 0 : anchor.top + anchor.height + NOTE_GAP,
-              width: windowWidth - NOTE_EDGE_GAP * 2,
+              // 좁은 기기에서는 상한보다 화면이 먼저 좁다.
+              width: Math.min(NOTE_MAX_WIDTH, windowWidth - NOTE_EDGE_GAP * 2),
             }}
             // 아직 못 쟀으면 그리되 안 보인다. 0,0 에 한 프레임 번쩍이는 것을 막는다.
             className={`absolute gap-1 rounded-[12px] border border-border bg-surface px-3 py-2 shadow-lg${

@@ -313,6 +313,17 @@ describe('머리의 `?`. 계열마다 다른 표시 기준을 말한다', () => 
     expect(물음표색(getByTestId('shared-note-toggle'))).toBe(닫힘)
   })
 
+  // **폭에 상한이 있다**(사용자 지시). 화면 폭을 그대로 쓰면 넓은 기기에서 두 문장이 한 줄로
+  // 늘어져 상자가 화면을 가로지른다. 상한은 `ItemRevenuePopover` 와 같은 248 이다.
+  it('상자 폭에 상한이 있다. 넓은 화면에서 가로지르지 않는다', async () => {
+    const { getByTestId } = await 위젯(공유컨텐츠())
+
+    await 누름(getByTestId('shared-note-toggle'))
+
+    const { width } = flattenStyle(getByTestId('shared-note').props.style) as { width: number }
+    expect(width).toBe(248)
+  })
+
   // 앱의 팝오버 셋이 같은 상자를 쓴다(`ItemRevenuePopover` · 월드별 분해 · 여기).
   it('상자는 다른 팝오버와 같은 표면색이다', async () => {
     const { getByTestId } = await 위젯(공유컨텐츠())
