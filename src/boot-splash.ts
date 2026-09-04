@@ -3,18 +3,26 @@ import * as SplashScreen from 'expo-splash-screen'
 import { hideSplashScreen } from './native/splash-screen'
 
 /**
- * 스플래시를 React 트리 밖에서 다루는 두 가지. 붙들기와 실패 안전 타이머.
+ * 스플래시를 React 트리 밖에서 다루는 셋. 붙들기, 퇴장 길이, 실패 안전 타이머.
  *
  * 진입점(`index.ts`)이 `registerRootComponent` 앞에서 이 함수 하나를 부른다.
  *
  * ① 붙들기. `preventAutoHideAsync()` 는 전역 스코프여야 한다. `expo-splash-screen` 문서가
  * React 컴포넌트·훅 안이 아니라 전역 스코프에서 부르라고 명시한다. 늦으면 이미 내려간 뒤다.
  * 안 부르면 스플래시가 첫 렌더 전에 스스로 사라져 테마 복원 전 화면이 깜빡인다. 내리는 것은
- * `AppShell` 이다(최소 표시 시간 뒤).
+ * `BootSplash` 다. 그 층이 그려졌다는 사실이 신호다.
  *
- * ② 실패 안전 타이머. 스플래시를 내리는 정상 경로는 `AppShell` 의 이펙트 타이머 하나뿐이고
- * 그 타이머는 언마운트 클린업이 취소한다. 부팅 렌더가 던지면 내릴 주체가 사라져 브랜드색
- * 화면에 갇힌다. 그래서 이 타이머만 트리 밖에 둔다. 트리가 죽어도 사는 자리가 이 저장소에서는
+ * ② 퇴장 페이드 끄기. 안드로이드는 스플래시가 사라질 때 alpha 페이드를 **항상** 건다
+ * (`SplashScreenManager.kt` 의 `setOnExitAnimationListener`). 기본값이 400ms 이고, 그동안 1겹이
+ * 화면에 남아 있는다. 그 400ms 는 2겹이 이미 그려진 채로 가려져 있는 시간이라 통째로 낭비다.
+ * 계측에서 1겹 노출 0.91초 중 0.49초가 이것이었다. iOS 는 `fade` 가 꺼져 있어 안 쓰이지만
+ * 켜질 때를 대비해 같은 값을 준다.
+ *
+ * 붙들기보다 **뒤**여야 한다. 안 붙든 스플래시는 이미 사라진 뒤라 설정할 대상이 없다.
+ *
+ * ③ 실패 안전 타이머. 스플래시를 내리는 정상 경로는 `BootSplash` 의 `onLayout` 하나뿐이라,
+ * 부팅 렌더가 던지면 그 층이 아예 안 그려져 내릴 주체가 사라진다. 그러면 브랜드색 화면에
+ * 갇힌다. 그래서 이 타이머만 트리 밖에 둔다. 트리가 죽어도 사는 자리가 이 저장소에서는
  * 진입점이다.
  *
  * 지키는 것 셋.
@@ -33,6 +41,8 @@ export function holdSplashUntilAppReady(): void {
   // 붙들기 실패는 삼킨다. 실패했다면 스플래시가 일찍 사라질 뿐이고, 여기서 던지면 그 대가로
   // 앱이 아예 안 뜬다.
   void SplashScreen.preventAutoHideAsync().catch(() => {})
+
+  SplashScreen.setOptions({ duration: 0, fade: false })
 
   setTimeout(() => {
     void hideSplashScreen().catch(() => {})

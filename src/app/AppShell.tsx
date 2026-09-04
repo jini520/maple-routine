@@ -6,18 +6,14 @@ import { useAuthStore } from '../features/auth/store'
 import { useLiveUpdateStore } from '../features/live-update/store'
 import { useThemeStore } from '../features/theme/store'
 import { useTrackingModeStore } from '../features/tracking-mode/store'
-import { hideSplashScreen } from '../native/splash-screen'
 
 import { ToastStack } from '../components/organisms/Toast/ToastStack'
 import { AppNavigation } from '../navigation/AppNavigation'
+import { BootSplash } from './BootSplash'
 import { ThemeBackdrop } from '../components/templates/ThemeBackdrop/ThemeBackdrop'
 import { ApiKeyNoticeModal } from './auth/ApiKeyNoticeModal'
 import { prehydrateTabStores } from './prehydrate'
 import { useKeyboardVisible } from '../hooks/useKeyboardVisible'
-
-// 네이티브 스플래시가 순식간에 지나가 깜빡이지 않도록, 번들 평가 시점부터 최소 이 시간만큼은 유지한다.
-const APP_START_MS = Date.now()
-const MIN_SPLASH_MS = 1000
 
 /**
  * 앱 셸. 웹 `AppShell`(573줄)의 짝. 화면이 아니라 **부팅 순서**가 이 파일의 실질이다.
@@ -34,7 +30,8 @@ const MIN_SPLASH_MS = 1000
  *    각자 자기 이펙트를 갖는다. 하나가 던져도 나머지가 돈다.
  * 4. **광고 SDK 초기화**. 실패해도 던지지 않아 부팅을 막지 않는다.
  * 5. **탭 스토어 선하이드레이션**. 앱이 열린 뒤에만.
- * 6. **스플래시 내리기**. 최소 표시 시간을 채운 뒤.
+ * 6. **스플래시 내리기**. 이 파일이 아니다. `BootSplash` 가 자기가 그려졌을 때 내린다. 시계로
+ *    내리면 화면에 무엇이 그려졌는지 모르는 채로 걷게 되고, 그 사이가 빈다.
  *
  * ## 7. **OTA 부팅 확인**. 이 되살린 자리
  *
@@ -117,23 +114,6 @@ export function AppShell(): React.JSX.Element {
     void prehydrateTabStores()
   }, [isReady])
 
-  // 앱 셸이 처음 렌더된 뒤 네이티브 스플래시를 내린다. 실행부터 이 시점까지 스플래시가 계속 떠
-  // 있어 빈 화면 없이 스플래시만 보인다. 콘텐츠가 즉시 준비되면 순식간에 사라지므로 최소 표시
-  // 시간을 보장해 스플래시가 충분히 보이게 한다.
-  //
-  // 클린업이 타이머를 지운다. 그래도 못 내리는 경우가 둘 있는데 `ErrorBoundary` 가 폴백과 같은
-  // 커밋에서 내리고, 그래도 안 되면 `index.ts` 의 실패 안전 타이머가 트리 밖에서 내린다.
-  useEffect(() => {
-    const remaining = MIN_SPLASH_MS - (Date.now() - APP_START_MS)
-    const timer = setTimeout(() => {
-      void hideSplashScreen()
-    }, Math.max(0, remaining))
-
-    return () => {
-      clearTimeout(timer)
-    }
-  }, [])
-
   // OTA 부팅 확인. 체크만 한다.
   //
   // `void` 인 것이 요점이다. 확인은 곁가지라 실패해도 앱은 떠야 한다. 스토어가 실패를
@@ -157,6 +137,9 @@ export function AppShell(): React.JSX.Element {
       {/* 토스트는 자기가 놓인 자리에 절대 배치로 그린다. 여기가 `ThemeProvider` 의 화면 채움
           View 직속이라 탭바 위에 뜬다. */}
       <ToastStack hasTabBar={isReady && !isKeyboardVisible} />
+      {/* 스플래시의 두 번째 겹. **형제 중 마지막이라 맨 위에 그려진다.** 이 층이 그려졌다는
+          사실이 네이티브 스플래시를 내리는 신호라, 순서가 뒤집히면 그 사이가 빈다. */}
+      <BootSplash />
     </>
   )
 }
