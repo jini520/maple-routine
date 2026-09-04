@@ -38,6 +38,16 @@ export interface OnboardingState {
    * 입력 화면으로 이동한다. 상태를 먼저 뒤집으면 화면이 이미 바뀐 뒤에 이유를 설명하게 된다.
    */
   apiKeyNotice: ApiKeyNoticeKind | null
+  /**
+   * 넣은 키가 개발 단계라 안 받았다는 것을 알리는 모달이 떠 있는가.
+   *
+   * **`error` 와 따로 두는 것이 의도다.** 그쪽 값은 곧 토스트 문구라(`formatOnboardingError`)
+   * 거기 실으면 같은 말이 토스트로도 나간다. 이 실패는 모달 하나로만 알린다.
+   *
+   * 위 `apiKeyNotice` 와도 다르다. 저쪽은 **저장된 키가 죽은** 것이라 확인이 키를 지우지만,
+   * 이쪽은 **새 키를 안 받은** 것이라 저장소를 건드리지 않는다.
+   */
+  developmentStageBlocked: boolean
 }
 
 export const initialOnboardingState: OnboardingState = {
@@ -45,6 +55,7 @@ export const initialOnboardingState: OnboardingState = {
   accounts: [],
   error: null,
   apiKeyNotice: null,
+  developmentStageBlocked: false,
 }
 
 // 끝내지 않은 온보딩은 그 단계부터 재개한다. 재개 지점은 저장된 값(apiKey ·
@@ -64,6 +75,9 @@ export type OnboardingEvent =
   // 키를 다시 받아야 한다는 것을 알리기만 한다. status 는 그대로 두고 모달만 띄운다. 이동은
   // 사용자가 확인을 눌러 RESET 이 나갈 때 일어난다. 원인(무효 키 · 429)을 싣는다.
   | { type: 'API_KEY_NOTICED'; kind: ApiKeyNoticeKind }
+  // 넣은 키가 개발 단계였다. 폼으로 되돌리고 그 위에 모달을 덮는다.
+  | { type: 'DEVELOPMENT_STAGE_KEY_BLOCKED' }
+  | { type: 'DEVELOPMENT_STAGE_KEY_ACKNOWLEDGED' }
   | { type: 'RESET' }
 
 export function onboardingReducer(state: OnboardingState, event: OnboardingEvent): OnboardingState {
@@ -74,6 +88,7 @@ export function onboardingReducer(state: OnboardingState, event: OnboardingEvent
         accounts: [],
         error: null,
         apiKeyNotice: null,
+        developmentStageBlocked: false,
       }
 
     // 뒤 두 단계는 네트워크 없이 재개된다. 모드 선택은 순수 UI이고 캐릭터
@@ -84,6 +99,7 @@ export function onboardingReducer(state: OnboardingState, event: OnboardingEvent
         accounts: [],
         error: null,
         apiKeyNotice: null,
+        developmentStageBlocked: false,
       }
 
     case 'SUBMIT_API_KEY':
@@ -102,6 +118,7 @@ export function onboardingReducer(state: OnboardingState, event: OnboardingEvent
         accounts: event.accounts,
         error: null,
         apiKeyNotice: null,
+        developmentStageBlocked: false,
       }
 
     case 'API_KEY_REJECTED':
@@ -137,6 +154,24 @@ export function onboardingReducer(state: OnboardingState, event: OnboardingEvent
       return {
         ...state,
         apiKeyNotice: event.kind,
+      }
+
+    // 폼이 선 상태로 되돌린다. `verifyingApiKey` 로 남으면 모달을 닫았을 때 제출 버튼이
+    // 스피너로 굳어 다시 입력할 수 없다.
+    case 'DEVELOPMENT_STAGE_KEY_BLOCKED':
+      return {
+        ...state,
+        status: 'awaitingApiKey',
+        error: null,
+        developmentStageBlocked: true,
+      }
+
+    // 모달만 닫는다. 뒤에 있던 폼이 그대로 드러나고 넣었던 값도 남아 있어 어디를 고쳐야 하는지
+    // 보인다.
+    case 'DEVELOPMENT_STAGE_KEY_ACKNOWLEDGED':
+      return {
+        ...state,
+        developmentStageBlocked: false,
       }
 
     case 'RESET':

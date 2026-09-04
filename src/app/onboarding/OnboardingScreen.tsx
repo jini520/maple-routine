@@ -24,6 +24,7 @@ import {
 import { MapleSweepSpinner, Text } from '../../components/atoms'
 import { ApiKeyForm } from './ApiKeyForm'
 import { ContentCharacterStep } from './ContentCharacterStep'
+import { DevelopmentStageKeyModal } from './DevelopmentStageKeyModal'
 import { OnboardingStep } from './OnboardingStep'
 
 export function OnboardingScreen(): React.JSX.Element {
@@ -120,6 +121,8 @@ export function OnboardingScreen(): React.JSX.Element {
   return (
     <View testID="screen-Onboarding" className="flex-1">
       {renderStep()}
+      {/* 단계와 직교한다. 스스로 떠 있을 때만 그리므로 여기 한 줄로 어느 단계 위에든 덮인다. */}
+      <DevelopmentStageKeyModal />
     </View>
   )
 }

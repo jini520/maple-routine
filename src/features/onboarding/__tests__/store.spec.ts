@@ -14,6 +14,11 @@ jest.mock('../../../nexon/character', () => ({
 }))
 const { fetchCharacterList: fetchCharacterListMock } = jest.requireMock('../../../nexon/character') as Record<string, jest.Mock>
 
+jest.mock('../../../nexon/key-stage', () => ({
+  probeApiKeyStage: jest.fn(),
+}))
+const { probeApiKeyStage: probeApiKeyStageMock } = jest.requireMock('../../../nexon/key-stage') as Record<string, jest.Mock>
+
 jest.mock('../../../storage/api-key', () => ({
   getAuthConfig: jest.fn(),
   setApiKey: jest.fn(),
@@ -88,6 +93,8 @@ beforeEach(() => {
   setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
   seedManualTrackedContentMock.mockResolvedValue(undefined)
   mockTrackingModeRef.current = 'auto'
+  // 판정이 안 서는 것이 통상 경로다. 서는 경우만 그 테스트가 직접 세운다.
+  probeApiKeyStageMock.mockResolvedValue('undetermined')
   getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
   // 재개 판정의 기본값 = 온보딩을 끝까지 마친 상태
   getTrackingModeMock.mockResolvedValue('auto')
@@ -716,5 +723,108 @@ describe('useOnboardingStore.reset', () => {
     expect(state.status).toBe('awaitingApiKey')
     expect(state.accounts).toEqual([])
     expect(state.error).toBeNull()
+  })
+})
+
+describe('useOnboardingStore.submitApiKey: 개발 단계 키를 문 앞에서 막는다', () => {
+  it('프로브가 개발 단계로 판정하면 키를 저장하지 않는다', async () => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1')])
+    probeApiKeyStageMock.mockResolvedValue('developmentStage')
+
+    await useOnboardingStore.getState().submitApiKey('dev-key')
+
+    expect(useOnboardingStore.getState().developmentStageBlocked).toBe(true)
+    expect(setApiKeyMock).not.toHaveBeenCalled()
+    expect(showSuccessMock).not.toHaveBeenCalled()
+  })
+
+  // 알리는 것은 모달 하나다. 토스트는 스스로 사라져서 처방(서비스 단계 키를 새로 받는 것)이 함께
+  // 사라지고, `error` 로 두면 그 값이 곧 토스트 문구라 같은 말이 두 번 나간다.
+  it('토스트를 안 띄우고 `error` 도 안 세운다', async () => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1')])
+    probeApiKeyStageMock.mockResolvedValue('developmentStage')
+
+    await useOnboardingStore.getState().submitApiKey('dev-key')
+
+    expect(showErrorMock).not.toHaveBeenCalled()
+    expect(useOnboardingStore.getState().error).toBeNull()
+  })
+
+  // 모달 뒤에 폼이 살아 있어야 확인을 누르는 순간 바로 다시 입력할 수 있다. `verifyingApiKey` 로
+  // 남으면 그 폼의 제출 버튼이 스피너로 굳는다.
+  it('폼이 선 상태로 되돌아간다', async () => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1')])
+    probeApiKeyStageMock.mockResolvedValue('developmentStage')
+
+    await useOnboardingStore.getState().submitApiKey('dev-key')
+
+    expect(useOnboardingStore.getState().status).toBe('awaitingApiKey')
+  })
+
+  it('확인을 누르면 모달만 닫힌다', async () => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1')])
+    probeApiKeyStageMock.mockResolvedValue('developmentStage')
+    await useOnboardingStore.getState().submitApiKey('dev-key')
+
+    useOnboardingStore.getState().acknowledgeDevelopmentStageKey()
+
+    const state = useOnboardingStore.getState()
+    expect(state.developmentStageBlocked).toBe(false)
+    expect(state.status).toBe('awaitingApiKey')
+  })
+
+  // 저장된 키를 지우지 않는다. 이 실패는 저장된 키가 죽은 것이 아니라 **새로 넣은 키를 안 받은**
+  // 것이라, 쓰던 키가 있으면 그것이 살아 있어야 한다.
+  it('저장소를 건드리지 않는다', async () => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1')])
+    probeApiKeyStageMock.mockResolvedValue('developmentStage')
+
+    await useOnboardingStore.getState().submitApiKey('dev-key')
+    useOnboardingStore.getState().acknowledgeDevelopmentStageKey()
+
+    expect(removeApiKeyMock).not.toHaveBeenCalled()
+    expect(clearAuthConfigMock).not.toHaveBeenCalled()
+  })
+
+  // 저장한 뒤 지우는 순서로 두면 그 사이에 앱이 죽었을 때 개발 단계 키가 살아남고, 다음 부팅의
+  // 재개 파생이 그 키로 앞 단계를 건너뛴다.
+  it('프로브가 `setApiKey` 보다 먼저 돈다', async () => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1')])
+
+    await useOnboardingStore.getState().submitApiKey('key-1')
+
+    expect(setApiKeyMock).toHaveBeenCalled()
+    expect(probeApiKeyStageMock.mock.invocationCallOrder[0]).toBeLessThan(
+      setApiKeyMock.mock.invocationCallOrder[0],
+    )
+  })
+
+  // 키 오타는 흔한 실패다. 그때마다 열 건을 태우면 개발 단계 키 하루 예산이 오타 몇 번에 녹는다.
+  it('검증이 실패하면 프로브를 안 돌린다', async () => {
+    fetchCharacterListMock.mockRejectedValue(new NexonBadRequestError('x', 'OPENAPI00005'))
+
+    await useOnboardingStore.getState().submitApiKey('bad-key')
+
+    expect(probeApiKeyStageMock).not.toHaveBeenCalled()
+  })
+
+  it('검증에 쓴 키를 그대로 잰다', async () => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1')])
+
+    await useOnboardingStore.getState().submitApiKey('key-2')
+
+    expect(probeApiKeyStageMock).toHaveBeenCalledWith('key-2')
+  })
+
+  // 판정이 안 서는 자리가 있다(안드로이드의 동시 5건 천장 · 느린 망 · 리미터의 버스트 허용).
+  // 그때 벌어지는 일은 이 문이 서기 전과 같아야 한다.
+  it('판정이 안 서면 그대로 통과시킨다', async () => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1')])
+    probeApiKeyStageMock.mockResolvedValue('undetermined')
+
+    await useOnboardingStore.getState().submitApiKey('key-1')
+
+    expect(setApiKeyMock).toHaveBeenCalledWith('key-1')
+    expect(useOnboardingStore.getState().status).not.toBe('error')
   })
 })

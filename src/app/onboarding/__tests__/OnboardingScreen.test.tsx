@@ -67,7 +67,9 @@ function mockStore(overrides: Partial<StoreState>): void {
     error: null,
     prefetchProgress: null,
     apiKeyNotice: null,
+    developmentStageBlocked: false,
     restoreFromStorage: jest.fn(),
+    acknowledgeDevelopmentStageKey: jest.fn(),
     submitApiKey: jest.fn(),
     selectAccount: jest.fn(),
     submitContentCharacters: jest.fn(),
@@ -120,6 +122,51 @@ describe('OnboardingScreen', () => {
 
     const scroll = view.getByTestId('onboarding-scroll')
     expect(scroll.props.contentContainerStyle).toMatchObject({ flexGrow: 1 })
+  })
+
+  // 막기만 하고 길을 안 주면 이슈 #176 의 하드 잠금이 된다. 모달 뒤에 폼이 그대로 남아 닫는
+  // 것이 곧 다시 넣는 것이다.
+  it('개발 단계 키로 막히면 모달이 덮이고 폼은 뒤에 남는다', async () => {
+    mockStore({ status: 'awaitingApiKey', developmentStageBlocked: true })
+
+    const view = await renderOverlay(<OnboardingScreen />)
+
+    expect(view.getByTestId('development-stage-key-title')).toBeTruthy()
+    expect(view.getByLabelText('Nexon Open API 키')).toBeTruthy()
+  })
+
+  // 제목이 낱말을 안 쓰는 것이 이 모달의 요점이다. 넣은 키가 개발 단계라는 것은 그 아래 표가
+  // 말하고, 제목은 **못 쓴다**만 말한다. 이 사람은 개발 단계가 무엇인지 모르고 그것을 골랐다.
+  it('제목은 단계 낱말이 아니라 못 쓴다는 사실을 말한다', async () => {
+    mockStore({ status: 'awaitingApiKey', developmentStageBlocked: true })
+
+    const view = await renderOverlay(<OnboardingScreen />)
+
+    expect(view.getByTestId('development-stage-key-title')).toHaveTextContent(
+      '이 키로는 연결할 수 없습니다',
+    )
+  })
+
+  // 두 값이 함께 서야 그 자리에 다른 값이 있었다는 것이 읽힌다. 한쪽만 남으면 낱말을 모르는
+  // 사람에게는 그냥 모르는 말 하나가 된다.
+  it('넣은 단계와 필요한 단계를 함께 세운다', async () => {
+    mockStore({ status: 'awaitingApiKey', developmentStageBlocked: true })
+
+    const view = await renderOverlay(<OnboardingScreen />)
+
+    expect(view.getByText('개발 단계')).toBeTruthy()
+    expect(view.getByText('서비스 단계')).toBeTruthy()
+  })
+
+  // 429 는 단계를 판정하지 못한 실패다. 그 자리에 단계를 단정하는 모달을 세우면 서비스 단계
+  // 사용자가 개발 단계 키라는 말을 듣는다.
+  it('다른 실패에는 그 모달이 서지 않는다', async () => {
+    mockStore({ status: 'error', error: { kind: 'rateLimited' } })
+
+    const view = await renderOverlay(<OnboardingScreen />)
+
+    expect(view.queryByTestId('development-stage-key-title')).toBeNull()
+    expect(view.getByLabelText('Nexon Open API 키')).toBeTruthy()
   })
 
   it('status가 selectingContentCharacters이면 ContentCharacterStep이 렌더링된다', async () => {
