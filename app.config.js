@@ -25,17 +25,43 @@ const TEST_APP_IDS = {
 
 const ADS_PLUGIN = 'react-native-google-mobile-ads'
 
-module.exports = ({ config }) => ({
-  ...config,
-  plugins: config.plugins.map((plugin) => {
-    if (!Array.isArray(plugin) || plugin[0] !== ADS_PLUGIN) return plugin
-    return [
-      ADS_PLUGIN,
-      {
-        ...plugin[1],
-        androidAppId: process.env.EXPO_PUBLIC_ADS_APP_ID_ANDROID || TEST_APP_IDS.android,
-        iosAppId: process.env.EXPO_PUBLIC_ADS_APP_ID_IOS || TEST_APP_IDS.ios,
-      },
-    ]
-  }),
-})
+const { AndroidConfig, withAndroidStyles } = require('expo/config-plugins')
+
+/**
+ * `AppTheme` 의 창 배경을 스플래시와 같은 색으로 준다.
+ *
+ * 안드로이드는 스플래시를 앱에 넘기는 데 제한 시간을 두고, 못 받으면 시스템이 걷어 간다
+ * (logcat 의 `transferring splash screen timeout`). 그때 드러나는 것이 앱 창의 배경인데 지정이
+ * 없으면 검정이다. 느린 기기·큰 번들에서만 보이는 종류라 안전망으로 깔아 둔다.
+ *
+ * `values/styles.xml` 은 `expo prebuild` 산출물이라 손으로 고치면 다음 prebuild 가 지운다.
+ * 그래서 플러그인이다.
+ *
+ * `parent` 를 적는 것은 선택이 아니다. 안 적으면 이름이 같은 다른 스타일 그룹에도 붙는다.
+ */
+const withSplashWindowBackground = (config) =>
+  withAndroidStyles(config, (androidConfig) => {
+    androidConfig.modResults = AndroidConfig.Styles.assignStylesValue(androidConfig.modResults, {
+      add: true,
+      name: 'android:windowBackground',
+      value: '@color/splashscreen_background',
+      parent: { name: 'AppTheme', parent: 'Theme.AppCompat.DayNight.NoActionBar' },
+    })
+    return androidConfig
+  })
+
+module.exports = ({ config }) =>
+  withSplashWindowBackground({
+    ...config,
+    plugins: config.plugins.map((plugin) => {
+      if (!Array.isArray(plugin) || plugin[0] !== ADS_PLUGIN) return plugin
+      return [
+        ADS_PLUGIN,
+        {
+          ...plugin[1],
+          androidAppId: process.env.EXPO_PUBLIC_ADS_APP_ID_ANDROID || TEST_APP_IDS.android,
+          iosAppId: process.env.EXPO_PUBLIC_ADS_APP_ID_IOS || TEST_APP_IDS.ios,
+        },
+      ]
+    }),
+  })
