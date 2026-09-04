@@ -16,15 +16,19 @@
 | 포트 | `src/native/live-update.ts` | 계약 |
 | 어댑터 | `src/native/adapters/rn-live-update.ts` | `expo-updates` |
 | 상태 | `src/features/live-update/store.ts` | 확인 · 다운로드 · 적용 |
-| 화면 | `src/app/UpdatePromptModal.tsx` | 동의 모달 |
+| 화면 | `src/app/UpdatePromptModal.tsx` | 동의 모달. 배치는 `components/organisms/NoticeModal` 이 갖는다 |
 | 화면 | `src/app/settings/AppUpdateSection.tsx` | 설정의 업데이트 섹션 |
 | 저장 | `src/storage/last-run-bundle-version.ts` | 적용 직후 안내를 띄울지 판정 |
 | 서버 | `workers/ota-manifest/` | 매니페스트 Worker |
 | 배포 | `scripts/publish-rn-ota.mjs` | 발행. 산출물은 GitHub Releases `live-update-rn` |
 | 설정 | `app.json` 의 `expo.updates` | 런타임 버전과 매니페스트 URL |
 
+**아홉 상태 중 일곱이 `NoticeModal` 을 쓴다**([[ADR-217]] 정정 3). 이 파일이 정하는 것은 상태마다
+아이콘 · 톤 · 문구 · 버튼 둘이고, 배지 크기부터 묶는 폭까지는 틀이 갖는다. 남는 둘
+(`downloading` · `applying`)은 **배지도 버튼도 없어** 틀에 안 들어오고 이 파일이 직접 그린다.
+
 **관련 ADR**: [[ADR-137]](현행 프로토콜) · [[ADR-154]](캐패시터 종료) ·
-[[ADR-119]]·[[ADR-126]](릴리스 노트) · [[ADR-026]](관찰용 UI)
+[[ADR-119]]·[[ADR-126]](릴리스 노트) · [[ADR-026]](관찰용 UI) · [[ADR-217]](모달 골격)
 
 **폐기됐지만 이 문서가 그 결정 일부를 아직 따르는 것**: ⛔ ADR-027 결정 1·4·7 · ADR-117 결정
 1·2·5·7·8 · ADR-022 결정 6 · ADR-024(버전 형식). **각 파일 배너의 🔗 줄에 적힌 것만 살아 있다.**

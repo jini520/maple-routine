@@ -92,32 +92,49 @@ Text(라이트): text-[#8A7362] hover:text-[#5B4636]   Text(다크): text-neutra
 - **클래스가 둘이다**: `.panel-on-scrim` 은 **테두리를 가진 패널 자신**(`Modal.Card`·자체 오버레이 패널), `.panel-on-scrim-parent` 는 **직계 자식이 패널**일 때(`Modal.Panel`). 합치면 `Modal.Card` **안쪽** 요소(테마 타일 보더 등)까지 바뀌는데 그것들은 표면 위라 대상이 아니다.
 - 새 컴포넌트를 스크림 위에 올릴 때 **둘 중 맞는 것을 붙일 것.** 모드 신호는 `data-mode`(테마 스토어가 세운다). 테마 **이름**으로 분기하지 말 것([[ADR-064]] 결정 8).
 
-### 알림 모달 (`components/organisms/NoticeModal`): [[ADR-217]] (2026-09-04)
+### 배지 모달 (`components/organisms/NoticeModal`): [[ADR-217]] (2026-09-04)
 
-**막고 알리는 모달의 골격은 이 파일 하나가 갖는다.** 슬롯 여섯이고 호출부는 무엇을 넣을지만
-정한다. [[ADR-214]] 가 두 모달이 한 앱에서 온 것으로 읽힌다 를 문장으로 못박았는데, 그 골격이
-코드에 없어 값이 이미 갈리고 있었다(아이콘 굵기 1.7 대 1.75 · 설명 `text-xs` 대 `text-sm`).
+**배지를 이고 서는 모달의 골격은 이 파일 하나가 갖는다.** 영역 여섯이고 호출부는 무엇을 넣을지만
+정한다. 자리와 간격은 못 바꾼다. [[ADR-214]] 가 `두 모달이 한 앱에서 온 것으로 읽힌다` 를 문장으로
+못박았는데, 그 골격이 코드에 없어 값이 이미 갈리고 있었다(아이콘 굵기 1.7 대 1.75 · 설명 `text-xs`
+대 `text-sm` · 묶는 폭 8 대 20).
 
 ```
-배지     h-14 w-14 · 아이콘 h-7 w-7 strokeWidth 1.75
-제목     text-base font-semibold leading-snug text-text · 가운데
-content  자유 영역 (선택). 제목과 설명 사이
-설명     text-xs text-text-muted · 가운데 (선택)
-주 버튼  variant="primary" · 전폭
-링크     text-xs text-primary-ink + ExternalLinkIcon h-3 w-3 (선택)
-바깥 묶음 gap-5 · 배지와 제목은 한 묶음(items-center gap-3)
+[배지]        h-14 w-14 · 아이콘 h-7 w-7 · strokeWidth 1.75
+  ↕ 12
+제목          text-base font-semibold leading-snug · 가운데
+  ↕ 8        여기부터 셋이 한 덩어리
+내용          자유 영역 (선택). 버전 배지 줄 · 단계 표
+  ↕ 8
+설명          text-xs text-text-muted · 가운데 (선택)
+  ↕ 20
+[옵션]        머리 밖의 자유 블록 (선택). 콜아웃 · 펼침판
+  ↕ 20
+[주 버튼]     variant="primary" · 전폭
+  ↕ 4        부 버튼일 때. 링크는 12
+[부 버튼 또는 링크]
 ```
 
-- **`tone` 하나가 색과 모양을 함께 정한다.** `error` 는 원(`rounded-full` · `error-tint` /
-  `error-ink`), `primary` 는 네모(`rounded-[16px]` · `primary-tint` / `primary-ink`). 둘을 따로
-  받으면 붉은 네모 같은 조합이 만들어지는데, 원과 네모를 가른 근거가 색과 같다([[ADR-214]]).
-  실패인가, 종류가 다른 것을 넣었는가.
-- **`content` 는 `ReactNode` 다.** 개발 단계 키 모달의 두 줄 표가 이 자리에 든다. 표 자체를 틀에
-  넣지 않는 것은 그것이 그 모달 하나의 물건이기 때문이다. 틀은 그것이 어디에 서는지만 정한다.
+- **제목 · 내용 · 설명이 한 덩어리인 것이 요점이다.** 내용은 제목에 딸린 값이라(버전 · 단계) 떼어
+  놓으면 따로 선 사실이 되어 무엇에 대한 값인지가 사라진다. 8 로 정한 것은 사용자 지정이고, 업데이트
+  모달 일곱 상태와 원래의 `ApiKeyNoticeModal` 이 이미 쓰던 폭이다.
+- **`tone` 은 색만 정한다**(`primary` · `secondary` · `third` · `error`). 모양은 `badgeShape` 로
+  따로 받는다(기본 `circle`). 가르는 것이 톤이 아니라 **바로 아래 무엇이 오는가**라서다. 네모는
+  아래 `content` 가 표일 때 모서리를 맞추려는 것이다([[ADR-214]] · [[ADR-217]] 정정 1).
 - **닫을 수 있는가는 틀이 안 본다.** `onClose` 가 정한다. `ApiKeyNoticeModal` 은 no-op 을 넘겨 못
-  닫는 채로 남고([[ADR-116]] 결정 10), `DevelopmentStageKeyModal` 은 확인과 같은 핸들러를 넘긴다.
-- **버튼이 둘인 확인 대화상자는 이 틀이 아니다.** `DisconnectConfirm` · `CacheClearConfirm` 은
-  아이콘 배지가 없고 제목이 왼쪽 정렬이며 취소가 있다. `Modal.Card` 를 직접 쓴다.
+  닫는 채로 남고([[ADR-116]] 결정 10), 나머지는 부 동작과 같은 핸들러를 넘긴다.
+- **부 버튼이 있으면 카드 아래 패딩을 줄인다**(`Modal.Card` 의 `tight`). 그 버튼이 주 버튼보다
+  작아(`py-1.5`) 아래 여백이 상대적으로 커 보인다. 틀이 자동으로 판단하므로 프롭이 아니다.
+- 쓰는 곳 셋: `ApiKeyNoticeModal` · `DevelopmentStageKeyModal` · `UpdatePromptModal`(아홉 상태 중
+  일곱).
+
+**이 틀이 아닌 것 둘.**
+
+- **배지도 버튼도 없는 상태.** 업데이트 모달의 `downloading` · `applying` 이다. `action` 이 필수라
+  애초에 못 들어온다. 제목 아래 묶는 폭도 12 로 다르다. 진행률 바와 스피너가 글이 아니라 그림이라
+  글자끼리의 8 보다 숨이 필요하다.
+- **버튼이 둘인 확인 대화상자.** `DisconnectConfirm` · `CacheClearConfirm` 은 아이콘 배지가 없고
+  제목이 왼쪽 정렬이다. `Modal.Card` 를 직접 쓴다. 버튼 수는 이유가 아니다([[ADR-217]] 정정 3).
 
 ### 진행률 링 (`components/atoms/ProgressRing`): [[ADR-204]] 정정 2 (2026-09-02)
 
