@@ -10,14 +10,14 @@
  *
  * 닫을 수 없다. `onClose` 가 no-op 이라 오버레이를 눌러도 닫히지 않고 취소 버튼도 없다. 두
  * 원인 모두 그 상태에서는 어느 화면도 제 기능을 못 하므로 닫아서 돌아갈 곳이 없다.
+ *
+ * 배치는 `organisms/NoticeModal` 이 갖는다. 이 파일이 정하는 것은 아이콘 · 톤 · 문구뿐이다.
  */
-import { View } from 'react-native'
-
 import { useAuthStore } from '../../features/auth/store'
 import type { ApiKeyNoticeKind } from '../../features/auth/state'
 
-import { Button, GaugeIcon, KeyRoundIcon, Text } from '../../components/atoms'
-import { Modal } from '../../components/organisms/Modal/Modal'
+import { GaugeIcon, KeyRoundIcon } from '../../components/atoms'
+import { NoticeModal } from '../../components/organisms/NoticeModal/NoticeModal'
 
 interface NoticeCopy {
   icon: typeof KeyRoundIcon
@@ -54,34 +54,22 @@ export function ApiKeyNoticeModal(): React.JSX.Element | null {
     return null
   }
 
-  const { icon: Icon, title, body } = NOTICE_COPY[apiKeyNotice]
+  const { icon, title, body } = NOTICE_COPY[apiKeyNotice]
 
   return (
-    // 입력이 없어 키보드를 띄우지 않으므로 중앙 정렬이다(UpdatePromptModal 과 같은 판단).
-    <Modal onClose={() => {}} testId="api-key-notice-overlay" align="center">
-      <Modal.Card maxWidth="max-w-xs">
-        <View className="gap-5">
-          {/* 톤은 두 원인 모두 `error` 다. 429 도 어미 규칙상 실패(`~습니다`)이고
-              error-resilience.md 의 실패 표에 함께 서 있다. 아이콘만 원인을 가리킨다:
-              무효 키는 `KeyRound`, 한도 초과는 계기판(`Gauge`). 시간이 지나면 풀린다는 뜻이
-              읽히는 타이머 계열은 처방(키 단계 확인)과 어긋나 고르지 않았다. */}
-          <View className="mx-auto h-14 w-14 items-center justify-center rounded-full bg-error-tint">
-            <Icon className="h-7 w-7 text-error-ink" strokeWidth={1.75} aria-hidden />
-          </View>
-          <View className="gap-2">
-            <Text className="text-center text-base font-semibold text-text">{title}</Text>
-            <Text className="text-center text-sm text-text-muted">{body}</Text>
-          </View>
-          <Button
-            variant="primary"
-            onPress={() => void confirmApiKeyNotice()}
-            className="w-full items-center"
-            textClassName="text-sm"
-          >
-            확인
-          </Button>
-        </View>
-      </Modal.Card>
-    </Modal>
+    // 톤은 두 원인 모두 `error` 다. 429 도 어미 규칙상 실패(`~습니다`)이고 error-resilience.md 의
+    // 실패 표에 함께 서 있다. 아이콘만 원인을 가리킨다: 무효 키는 `KeyRound`, 한도 초과는
+    // 계기판(`Gauge`). 시간이 지나면 풀린다는 뜻이 읽히는 타이머 계열은 처방(키 단계 확인)과
+    // 어긋나 고르지 않았다.
+    <NoticeModal
+      icon={icon}
+      tone="error"
+      title={title}
+      description={body}
+      action={{ label: '확인', onPress: () => void confirmApiKeyNotice() }}
+      // 닫을 수 없다. 뒤에 있는 화면이 이미 제 기능을 못 해 닫아서 돌아갈 곳이 없다.
+      onClose={() => {}}
+      testId="api-key-notice-overlay"
+    />
   )
 }
