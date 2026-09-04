@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { fetchCharacterList } from '../../nexon/character'
+import { probeApiKeyStage } from '../../nexon/key-stage'
 import { isInvalidApiKeyError, NexonRateLimitError } from '../../nexon/errors'
 import { clearAuthConfig, removeApiKey, setApiKey } from '../../storage/api-key'
 import {
@@ -26,6 +27,9 @@ export interface OnboardingStore extends OnboardingState {
   // 저장된 키로 앞으로 갈 수 없게 됐을 때는 여기로만 들어온다. 원인은 무효 키(400 OPENAPI00005 ·
   // 401/403)와 429 둘이고 사슬은 하나이며 문구만 갈린다. 알리기만 하고 이동·삭제는 아래
   // confirmApiKeyNotice 가 한다.
+  // 개발 단계 키 모달의 확인. 모달만 닫고 저장소는 건드리지 않는다. 아래 confirmApiKeyNotice 와
+  // 갈리는 자리다. 저쪽은 저장된 키가 죽은 것이라 지우지만, 이쪽은 새 키를 안 받은 것뿐이다.
+  acknowledgeDevelopmentStageKey(): void
   noticeApiKeyIssue(kind: ApiKeyNoticeKind): void
   // 그 모달의 "확인"키 입력 화면으로 이동하고 저장된 apiKey 를 지운다(원인과 무관하게 같다).
   confirmApiKeyNotice(): Promise<void>
@@ -82,6 +86,19 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
         const onboardingError = toOnboardingError(error)
         useToastStore.getState().showError(formatOnboardingError(onboardingError))
         set((state) => onboardingReducer(state, { type: 'API_KEY_REJECTED', error: onboardingError }))
+        return
+      }
+
+      // 검증이 성공한 뒤에만 잰다. 키 오타는 흔한 실패인데 그때마다 열 건을 태우면 개발 단계
+      // 키의 하루 예산이 오타 몇 번에 녹는다.
+      //
+      // **저장보다 먼저**여야 한다. 저장한 뒤 지우는 순서면 그 사이에 앱이 죽었을 때 개발 단계
+      // 키가 살아남고, 다음 부팅의 재개 파생이 그 키로 앞 단계를 건너뛴다.
+      //
+      // 알리는 것은 모달 하나다. 토스트를 함께 띄우지 않는 것은 그것이 스스로 사라져 처방(서비스
+      // 단계 키를 새로 받는 것)까지 데려가기 때문이다.
+      if ((await probeApiKeyStage(apiKey)) === 'developmentStage') {
+        set((state) => onboardingReducer(state, { type: 'DEVELOPMENT_STAGE_KEY_BLOCKED' }))
         return
       }
 
@@ -143,6 +160,10 @@ export const useOnboardingStore = create<OnboardingStore>()((set, get) => {
       }
 
       set((state) => onboardingReducer(state, { type: 'ONBOARDING_FINISHED' }))
+    },
+
+    acknowledgeDevelopmentStageKey() {
+      set((state) => onboardingReducer(state, { type: 'DEVELOPMENT_STAGE_KEY_ACKNOWLEDGED' }))
     },
 
     // 저장된 키로 앞으로 갈 수 없게 되면 알리기만 한다. 화면을 빼앗지 않는다. 이동이 먼저

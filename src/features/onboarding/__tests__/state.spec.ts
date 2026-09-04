@@ -31,6 +31,7 @@ describe('onboardingReducer', () => {
       accounts: [],
       error: null,
       apiKeyNotice: null,
+      developmentStageBlocked: false,
     })
   })
 
@@ -40,6 +41,7 @@ describe('onboardingReducer', () => {
       accounts: [],
       error: { kind: 'network' },
       apiKeyNotice: null,
+      developmentStageBlocked: false,
     }
 
     const result = onboardingReducer(errored, { type: 'SUBMIT_API_KEY' })
@@ -49,6 +51,7 @@ describe('onboardingReducer', () => {
       accounts: [],
       error: null,
       apiKeyNotice: null,
+      developmentStageBlocked: false,
     })
   })
 
@@ -61,6 +64,7 @@ describe('onboardingReducer', () => {
       accounts: [],
       error: null,
       apiKeyNotice: null,
+      developmentStageBlocked: false,
     }
 
     const result = onboardingReducer(verifying, {
@@ -73,6 +77,7 @@ describe('onboardingReducer', () => {
       accounts: [],
       error: { kind: 'invalidApiKey' },
       apiKeyNotice: null,
+      developmentStageBlocked: false,
     })
   })
 
@@ -86,6 +91,7 @@ describe('onboardingReducer', () => {
       accounts: [account('acc-1')],
       error: null,
       apiKeyNotice: null,
+      developmentStageBlocked: false,
     }
 
     const result = onboardingReducer(selecting, { type: 'SUBMIT_CONTENT_CHARACTERS' })
@@ -102,6 +108,7 @@ describe('onboardingReducer', () => {
       accounts: [account('acc-1')],
       error: null,
       apiKeyNotice: null,
+      developmentStageBlocked: false,
     }
 
     const result = onboardingReducer(seeding, { type: 'ONBOARDING_FINISHED' })
@@ -123,6 +130,7 @@ describe('onboardingReducer', () => {
         accounts: [account('acc-1')],
         error: null,
         apiKeyNotice: null,
+        developmentStageBlocked: false,
       }
 
       const result = onboardingReducer(completed, { type: 'API_KEY_NOTICED', kind })
@@ -139,6 +147,7 @@ describe('onboardingReducer', () => {
       accounts: [account('acc-1')],
       error: null,
       apiKeyNotice: 'invalid',
+      developmentStageBlocked: false,
     }
 
     const result = onboardingReducer(noticed, { type: 'API_KEY_NOTICED', kind: 'rateLimited' })
@@ -153,6 +162,7 @@ describe('onboardingReducer', () => {
       accounts: [account('acc-1')],
       error: null,
       apiKeyNotice: 'rateLimited',
+      developmentStageBlocked: false,
     }
 
     expect(onboardingReducer(noticed, { type: 'RESET' }).apiKeyNotice).toBeNull()
@@ -164,6 +174,7 @@ describe('onboardingReducer', () => {
       accounts: [account('acc-1')],
       error: null,
       apiKeyNotice: null,
+      developmentStageBlocked: false,
     }
 
     const result = onboardingReducer(completed, { type: 'RESET' })

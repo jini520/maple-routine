@@ -21,10 +21,7 @@ import {
   TextInput,
 } from '../../components/atoms'
 
-/** 1차 경로. 처음 쓰는 사용자를 넥슨 첫 화면에 떨궈 놓지 않는다. */
-const GUIDE_URL = 'https://mapleroutine.store/api-key'
-/** 이미 키를 발급받은 사용자의 동선. 7단계 안내를 경유시키지 않는다. */
-const NEXON_OPEN_API_URL = 'https://openapi.nexon.com'
+import { GUIDE_URL, NEXON_OPEN_API_URL } from './api-key-links'
 
 export interface ApiKeyFormProps {
   isSubmitting: boolean
