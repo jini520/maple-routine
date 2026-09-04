@@ -1,4 +1,10 @@
-import type { MapleCharacter } from '../../types'
+/**
+ * 캐릭터를 세우는 순서 하나와, 그 순서의 첫째를 뽑는 함수.
+ *
+ * 기능 다섯(`content-scheduler` · `boss-scheduler` · `boss-profit` · `schedule-sync` ·
+ * `character-manage`)이 같은 순서를 쓴다. 어느 한 기능의 것이 아니라 `lib/` 에 있다.
+ */
+import type { MapleCharacter } from '../types'
 
 type NameGroup = 0 | 1 | 2 | 3 // 한글 > 알파벳 > 숫자 > 그 외
 

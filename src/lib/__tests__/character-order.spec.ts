@@ -1,5 +1,5 @@
-import type { MapleCharacter } from '../../../types'
-import { pickRepresentativeCharacter } from '../representative-character'
+import type { MapleCharacter } from '../../types'
+import { pickRepresentativeCharacter } from '../character-order'
 
 function character(overrides: Partial<MapleCharacter> & { name: string; level: number }): MapleCharacter {
   return {

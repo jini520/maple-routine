@@ -6,7 +6,7 @@ import { getTrackedCharacterOcids, setTrackedCharacterOcids } from '../../storag
 import { useCharacterSelectionStore } from '../character-selection/store'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getCachedSchedulerState } from '../../storage/scheduler-cache'
-import { compareByName } from '../onboarding/representative-character'
+import { compareByName } from '../../lib/character-order'
 import { useToastStore } from '../toast/store'
 import { seedManualTrackedContent } from '../tracking-mode/seed'
 import { useTrackingModeStore } from '../tracking-mode/store'

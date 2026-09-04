@@ -1,5 +1,5 @@
 import type { CharacterBasicProfile, MapleAccount, MapleCharacter } from '../../../types'
-import { pickRepresentativeCharacter } from '../../onboarding/representative-character'
+import { pickRepresentativeCharacter } from '../../../lib/character-order'
 import {
   buildSelectedCharacterViews,
   resolveDisplayRepresentative,
