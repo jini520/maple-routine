@@ -36,7 +36,7 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { useBottomSafeAreaPx } from '../../lib/safe-area'
 import { reloadTabStores } from './reload-tab-stores'
-import { useSettingsNavigation } from './use-settings-navigation'
+import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 
 export function SettingsCharactersScreen(): React.JSX.Element {
   const { saveTrackedOcids } = useContentSchedulerStore()

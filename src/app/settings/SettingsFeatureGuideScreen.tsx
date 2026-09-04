@@ -23,7 +23,7 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { naturalAspectStyle } from '../../lib/image-aspect'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import type { RootStackParamList } from '../../navigation/routes'
-import { useSettingsNavigation } from './use-settings-navigation'
+import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 
 /**
  * 두 라우트 이름을 다 받는 타입. 하나로 좁히면 `route.name` 이 그 리터럴로 굳어,

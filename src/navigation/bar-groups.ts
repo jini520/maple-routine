@@ -121,7 +121,7 @@ export function groupOfPage(page: TabRouteName): BarGroup {
  * 그 페이지가 어느 층 화면 안에 사는가.
  *
  * 화면이 저 탭으로 가고 싶다 고 말할 때 그것을 중첩 이동으로 옮기는 표는 이것뿐이다
- * (`use-open-tab.ts`). 화면이 층 구조를 직접 알면 구조를 바꿀 때마다 화면들이 함께 움직인다.
+ * (`hooks/useOpenTab.ts`). 화면이 층 구조를 직접 알면 구조를 바꿀 때마다 화면들이 함께 움직인다.
  */
 export function layerOfPage(page: TabRouteName): LayerRouteName {
   return groupOfPage(page).layer ?? 'Groups'

@@ -46,7 +46,7 @@ import type { ImageAssetRef } from '../../../types/image-asset'
 import type { HuntingGround, HuntingRegion } from '../../../types/hunting-grounds'
 import { CheckBox, FieldRow, QuantityStepper } from '../sheet-fields'
 import { CharacterField, FragmentFields, SaveRow, type IncomeFormProps } from './form-shared'
-import { useSheetSubmit } from './use-sheet-submit'
+import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
 /** lv.294·lv.200-201. 원 자료의 표기를 그대로 되돌린다. */

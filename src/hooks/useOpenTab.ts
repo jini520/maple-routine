@@ -1,7 +1,7 @@
 /**
  * 화면이 **저 탭으로 가고 싶다** 고 말하는 자리.
  *
- * `use-screen-navigation.ts` 와 나란히 있는 이유는 같은 종류의 통로이기 때문이다. 그쪽이
+ * `useScreenNavigation.ts` 와 나란히 있는 이유는 같은 종류의 통로이기 때문이다. 그쪽이
  * **하위 페이지를 민다** 를 맡고, 이쪽이 **저 탭을 연다** 를 맡는다. 층 이름과 중첩 파라미터의
  * 모양은 `navigation/tab-navigate.ts` 가 알고, 화면은 **페이지 이름만** 안다.
  *
@@ -18,7 +18,7 @@ import {
   type TabNavigateParams,
 } from '../navigation/tab-navigate'
 import type { TabRouteName } from '../navigation/routes'
-import { useScreenNavigation } from './use-screen-navigation'
+import { useScreenNavigation } from './useScreenNavigation'
 
 export function useOpenTab(): (page: TabRouteName, params?: Record<string, unknown>) => void {
   const navigation = useScreenNavigation()

@@ -28,7 +28,7 @@ import { CacheClearConfirm } from './CacheClearConfirm'
 import { DisconnectConfirm } from './DisconnectConfirm'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
 import { SettingsRow } from './SettingsRow'
-import { useSettingsNavigation } from './use-settings-navigation'
+import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 
 export interface SettingsAccountDataScreenProps {
   /** 테스트 주입용. 기본은 지금 도는 번들의 재실행. */

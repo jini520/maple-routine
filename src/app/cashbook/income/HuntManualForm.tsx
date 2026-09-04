@@ -17,7 +17,7 @@ import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { AmountInput, FieldRow } from '../sheet-fields'
 import { CharacterField, FragmentFields, SaveRow, type IncomeFormProps } from './form-shared'
-import { useSheetSubmit } from './use-sheet-submit'
+import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 
 export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
   const editing = props.editing !== undefined

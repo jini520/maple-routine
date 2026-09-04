@@ -20,14 +20,14 @@ import { useSettingsStore } from '../../../features/settings/store'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { SettingsAccountDataScreen } from '../SettingsAccountDataScreen'
-import { useSettingsNavigation } from '../use-settings-navigation'
+import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 
 jest.mock('../../../features/settings/store', () => ({ useSettingsStore: jest.fn() }))
 jest.mock('../../../features/settings/cache-data', () => ({
   loadCacheDataSizes: jest.fn(),
   clearCacheDataAndReload: jest.fn(async () => {}),
 }))
-jest.mock('../use-settings-navigation', () => ({ useSettingsNavigation: jest.fn() }))
+jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation: jest.fn() }))
 const mockedStore = jest.mocked(useSettingsStore)
 const mockedLoadSizes = jest.mocked(loadCacheDataSizes)
 const mockedClearAndReload = jest.mocked(clearCacheDataAndReload)

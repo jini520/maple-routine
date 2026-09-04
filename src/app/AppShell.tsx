@@ -13,7 +13,7 @@ import { AppNavigation } from '../navigation/AppNavigation'
 import { ThemeBackdrop } from '../components/templates/ThemeBackdrop/ThemeBackdrop'
 import { ApiKeyNoticeModal } from './auth/ApiKeyNoticeModal'
 import { prehydrateTabStores } from './prehydrate'
-import { useKeyboardVisible } from './use-keyboard-visible'
+import { useKeyboardVisible } from '../hooks/useKeyboardVisible'
 
 // 네이티브 스플래시가 순식간에 지나가 깜빡이지 않도록, 번들 평가 시점부터 최소 이 시간만큼은 유지한다.
 const APP_START_MS = Date.now()

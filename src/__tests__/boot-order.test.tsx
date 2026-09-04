@@ -104,7 +104,7 @@ jest.mock('../features/live-update/store', () => ({
   },
 }))
 
-// 키보드 구독은 포트를 거친다(`app/use-keyboard-visible.ts`). 주입 없이 렌더하면 슬롯이 던지고,
+// 키보드 구독은 포트를 거친다(`hooks/useKeyboardVisible.ts`). 주입 없이 렌더하면 슬롯이 던지고,
 // 그 던짐이 이 파일에서는 배선 문제가 아니라 **관측 대상이 아닌 것**이다(어댑터는 자기 테스트가 있다).
 jest.mock('../native/keyboard', () => ({
   __esModule: true,

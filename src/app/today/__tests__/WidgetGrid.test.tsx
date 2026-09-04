@@ -15,11 +15,11 @@ import {
   type AtomElement,
 } from '../../../components/__tests__/render-atom'
 import { resolveWidgetGridMetrics } from '../../../lib/today/widget-grid-metrics'
-import { useScreenNavigation } from '../../use-screen-navigation'
+import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { 빈_뷰모델 } from '../widgets/__tests__/widget-fixture'
 import { WidgetGrid } from '../WidgetGrid'
 
-jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
+jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 
 const navigate = jest.fn()
 // 층이 스택이 된 뒤로 **그룹 층으로 되돌리기** 는 액션이다. 화면이 이것도 부른다.

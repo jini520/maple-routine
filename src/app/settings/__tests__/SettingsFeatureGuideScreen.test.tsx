@@ -3,7 +3,7 @@
 // 갈린 것 다섯
 // ① **부모를 계산하지 않는다.** 돌아갈 곳을 경로에서 깎지 않는다. 그래서
 //    `기능 설명에서 들어오면 기능 설명으로`·`개발 노트에서 들어오면 개발 노트로` 두 케이스가
-//    있었다. RN 의 pop 은 스택이 이미 알고 있어 **한 케이스로 접힌다**(`use-settings-navigation.ts`).
+//    있었다. RN 의 pop 은 스택이 이미 알고 있어 **한 케이스로 접힌다**(`hooks/useSettingsNavigation.ts`).
 // ② **마디는 쿼리가 아니라 파라미터**다. 목차를 누르면 `setParams` 다.
 //  `replace` 와 같은 뜻(스택을 안 건드린다)이다.
 // ③ **스크롤 검사가 `scrollIntoView` 스파이에서 `scrollTo` 스파이 + `onLayout` 주입으로** 바뀐다.
@@ -20,7 +20,7 @@ import type { FeatureGuide } from '../../../types'
 
 import { flattenStyle, renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { SettingsFeatureGuideScreen } from '../SettingsFeatureGuideScreen'
-import { useSettingsNavigation } from '../use-settings-navigation'
+import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 
 // 안내 데이터는 화면이 아니라 데이터 파일이 소유한다. 블록 조합을 훑는 케이스를 위해
 // `src/data/feature-guides/` 를 늘리지 않고 여기서 픽스처를 주입한다.
@@ -33,7 +33,7 @@ jest.mock('../../../data/feature-guides', () => {
       guides.find((guide) => (guide as { id: string }).id === id),
   }
 })
-jest.mock('../use-settings-navigation', () => ({ useSettingsNavigation: jest.fn() }))
+jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation: jest.fn() }))
 
 const mockGuides = jest.requireMock<typeof import('../../../data/feature-guides')>(
   '../../../data/feature-guides',

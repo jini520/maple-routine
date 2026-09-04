@@ -133,7 +133,7 @@ describe('같은 층의 옆걸음은 쌓이지 않는다', () => {
     expect(층_단들()).toHaveLength(2)
 
     // `openTab('Settings')` 가 하는 그대로다. 그룹 층은 스택 **바닥**이라 되돌리기가 곧
-    // `popToTop` 이고, 그 뒤에 안쪽 탭을 지정한다(`use-open-tab.ts`).
+    // `popToTop` 이고, 그 뒤에 안쪽 탭을 지정한다(`hooks/useOpenTab.ts`).
     expect(needsPopToGroupLayer('Settings')).toBe(true)
     const [name, nested] = tabNavigateArgs('Settings')
     await act(async () => {

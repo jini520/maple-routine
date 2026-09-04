@@ -6,7 +6,7 @@
  * 그래서 번역을 여기 하나로 모으고 화면은 페이지 이름만 안다.
  *
  * 훅이 아니라 순수 함수인 것은 이 모듈이 층 표를 읽는 `navigation/` 것이기 때문이다. 화면에
- * 내비게이션 객체를 물리는 일은 `app/use-screen-navigation.ts` 가 한다. 둘을 합치면 `navigation/`
+ * 내비게이션 객체를 물리는 일은 `hooks/useScreenNavigation.ts` 가 한다. 둘을 합치면 `navigation/`
  * 이 `app/` 을 되읽는다.
  */
 

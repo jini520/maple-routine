@@ -29,7 +29,7 @@ import {
   SpendHeader,
   type SpendFormProps,
 } from './form-shared'
-import { useSpendSubmit } from './use-spend-submit'
+import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
 /**

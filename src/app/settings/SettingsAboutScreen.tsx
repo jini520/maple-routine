@@ -22,7 +22,7 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { AppUpdateSection } from './AppUpdateSection'
 import { SettingsRow } from './SettingsRow'
-import { useSettingsNavigation } from './use-settings-navigation'
+import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 
 export function SettingsAboutScreen(): React.JSX.Element {
   const navigation = useSettingsNavigation()

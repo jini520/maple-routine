@@ -19,7 +19,7 @@ import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { useBottomSafeAreaPx, useTopSafeAreaPx } from '../../lib/safe-area'
-import { useSettingsNavigation } from './use-settings-navigation'
+import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 
 export const PRIVACY_URL = 'https://mapleroutine.store/privacy'
 

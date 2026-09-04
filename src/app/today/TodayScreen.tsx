@@ -17,7 +17,7 @@
  * @see docs/features/today.md 정책
  */
 
-import { usePullRefresh } from '../use-pull-refresh'
+import { usePullRefresh } from '../../hooks/usePullRefresh'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Pressable, RefreshControl, View } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'

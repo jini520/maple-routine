@@ -33,7 +33,7 @@ import type { RecordedDrop } from '../../../types/drops'
 
 import { 테스트_안전영역 } from '../../../components/__tests__/render-atom'
 import { ThemeProvider } from '../../../theme/ThemeProvider'
-import { useScreenNavigation } from '../../use-screen-navigation'
+import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { BossProfitScreen } from '../BossProfitScreen'
 
 // 이름이 `mock` 으로 시작해야 한다. babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데 그
@@ -61,7 +61,7 @@ jest.mock('../../../features/boss-profit/store', () => ({
   dropRowKey: (ocid: string, boss: string, difficulty: string, periodKey: string) =>
     `${ocid}|${boss}|${difficulty}|${periodKey}` }))
 
-jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
+jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 
 const mockedStore = jest.mocked(useBossProfitStore)
 const mockedNavigation = jest.mocked(useScreenNavigation)

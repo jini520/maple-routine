@@ -20,7 +20,7 @@ import type { ReleaseNote } from '../../../types'
 import packageJson from '../../../../package.json'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { SettingsReleaseNotesScreen } from '../SettingsReleaseNotesScreen'
-import { useSettingsNavigation } from '../use-settings-navigation'
+import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 
 // 노트 데이터는 **화면이 아니라 데이터 파일이 소유한다**. 여러 건이 필요한
 // 케이스(순서·항목 단위 표식)를 위해 `src/data/release-notes.ts` 를 늘리지 않고 여기서 픽스처를
@@ -36,7 +36,7 @@ const mockNotes = jest.requireMock<typeof import('../../../data/release-notes')>
   '../../../data/release-notes',
 ).RELEASE_NOTES as ReleaseNote[]
 
-jest.mock('../use-settings-navigation', () => ({ useSettingsNavigation: jest.fn() }))
+jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation: jest.fn() }))
 
 /** 픽스처를 갈아 끼우는 도우미. **배열 정체성은 유지한다**. */
 function setNotes(notes: ReleaseNote[]): void {

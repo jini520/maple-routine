@@ -34,7 +34,7 @@ import {
   SpendHeader,
   type SpendFormProps,
 } from './form-shared'
-import { useSpendSubmit } from './use-spend-submit'
+import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
 
 /**
  * 타일에 적는 값. 단위를 붙이고, 단계가 여럿이면 나란히 적는다.

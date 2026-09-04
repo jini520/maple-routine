@@ -6,7 +6,7 @@
 
 import { act, renderHook, waitFor } from '@testing-library/react-native'
 
-import { usePullRefresh } from '../use-pull-refresh'
+import { usePullRefresh } from '../usePullRefresh'
 
 describe('usePullRefresh', () => {
   it('당기기 전에는 돌지 않는다', async () => {

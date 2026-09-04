@@ -16,7 +16,7 @@ import { Segment } from '../../../components/molecules/Segment/Segment'
 import { netProceedsMeso, type FeePercent } from '../../../lib/cashbook/item-split'
 import { AmountInput, FieldRow } from '../sheet-fields'
 import { CharacterField, SaveRow, type IncomeFormProps } from './form-shared'
-import { useSheetSubmit } from './use-sheet-submit'
+import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
 /**

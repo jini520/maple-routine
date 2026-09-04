@@ -36,7 +36,7 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
-import { useScreenNavigation } from '../use-screen-navigation'
+import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 
 // 카테고리 → 아이콘은 표현 계층 결정이라 여기 둔다(카테고리 자체는 lib/content-category가 데이터에서 도출).
 // 매핑에 없는 카테고리·접두사 없는 단독 항목은 Sparkles로 폴백한다.

@@ -27,7 +27,7 @@ import {
 } from '../../lib/cashbook/item-split'
 import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
-import { useScreenNavigation } from '../use-screen-navigation'
+import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { ITEM_SPLIT_TOOL_NAME } from './tool-names'
 
 const FEE_PERCENTS = [3, 5] as const satisfies readonly FeePercent[]

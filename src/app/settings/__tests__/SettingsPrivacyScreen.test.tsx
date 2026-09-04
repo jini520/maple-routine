@@ -6,9 +6,9 @@ import { Linking } from 'react-native'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { PRIVACY_URL, SettingsPrivacyScreen } from '../SettingsPrivacyScreen'
-import { useSettingsNavigation } from '../use-settings-navigation'
+import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 
-jest.mock('../use-settings-navigation', () => ({ useSettingsNavigation: jest.fn() }))
+jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation: jest.fn() }))
 
 const mockedUseSettingsNavigation = jest.mocked(useSettingsNavigation)
 const goBack = jest.fn()

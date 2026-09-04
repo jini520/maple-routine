@@ -27,7 +27,7 @@ import { getRepresentativeCharacter } from '../../../storage/character-selection
 import type { DailyContent, WeeklyContent } from '../../../types'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
-import { useScreenNavigation } from '../../use-screen-navigation'
+import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { TodayScreen } from '../TodayScreen'
 
 // **훅만 갈아끼우고 나머지는 실물을 남긴다.** 스토어 모듈은 훅 말고도 순수 헬퍼를 내보내는데
@@ -59,7 +59,7 @@ jest.mock('../../../storage/character-basic-cache', () => ({
 jest.mock('../../../storage/character-selection', () => ({
   ...jest.requireActual('../../../storage/character-selection'),
   getRepresentativeCharacter: jest.fn() }))
-jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
+jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 
 const mockedContent = jest.mocked(useContentSchedulerStore)
 const mockedBoss = jest.mocked(useBossSchedulerStore)
