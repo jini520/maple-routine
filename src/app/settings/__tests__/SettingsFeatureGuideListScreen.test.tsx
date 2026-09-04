@@ -14,7 +14,7 @@ import type { FeatureGuide } from '../../../types'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { SettingsFeatureGuideListScreen } from '../SettingsFeatureGuideListScreen'
-import { useSettingsNavigation } from '../use-settings-navigation'
+import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 
 // 안내 데이터는 화면이 아니라 데이터 파일이 소유한다. 그룹 조합을 훑는 케이스를 위해
 // `src/data/feature-guides/` 를 늘리지 않고 여기서 픽스처를 주입한다.
@@ -22,7 +22,7 @@ jest.mock('../../../data/feature-guides', () => ({
   ...jest.requireActual('../../../data/feature-guides'),
   FEATURE_GUIDES: [],
 }))
-jest.mock('../use-settings-navigation', () => ({ useSettingsNavigation: jest.fn() }))
+jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation: jest.fn() }))
 
 const mockGuides = jest.requireMock<typeof import('../../../data/feature-guides')>(
   '../../../data/feature-guides',

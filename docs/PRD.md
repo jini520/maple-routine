@@ -7,7 +7,8 @@
 | 옛 섹션 | 새 위치 |
 |---|---|
 | 목표·사용자·플랫폼·MVP 제외·전역 미해결 질문 | [foundation/product.md](./foundation/product.md) |
-| 온보딩 흐름 | [features/onboarding.md](./features/onboarding.md) |
+| 로그인 흐름 | [features/auth.md](./features/auth.md) |
+| 앱 진입 흐름(캐릭터 설정까지) | [features/app-entry.md](./features/app-entry.md) |
 | 핵심 기능 1 — 컨텐츠 스케줄러 | [features/content-scheduler.md](./features/content-scheduler.md) |
 | 핵심 기능 2 — 보스 스케줄러(파티 관리) | [features/boss-scheduler.md](./features/boss-scheduler.md) |
 | 핵심 기능 3 — 보스 수익 | [features/boss-profit.md](./features/boss-profit.md) |

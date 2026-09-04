@@ -10,10 +10,13 @@
 //
 // ## 경계는 **화면인가** 다
 //
-// 같은 글자 스타일을 모달(`ThemeModal`·`TrackingModeModal`·`DisconnectConfirm`)과 온보딩 단계
-// (`ApiKeyForm`·`ContentCharacterStep`)도 쓰는데, **그 제목은 페이지 헤더가
-// 아니다**. 모달은 자기 판의 머리이고 온보딩 단계에는 헤더 줄 자체가 없다(범위표의
-// `제외`와 같은 경계다). 파일 이름(`*Screen.tsx`)이 그 경계와 정확히 겹쳐서 그것으로 가른다.
+// 같은 글자 스타일을 모달(`ThemeModal`·`TrackingModeModal`·`DisconnectConfirm`)과 진입 화면
+// (`ApiKeyForm`·`CharacterSetupScreen`)도 쓰는데, **그 제목은 페이지 헤더가
+// 아니다**. 모달은 자기 판의 머리이고 진입 화면에는 헤더 줄 자체가 없다(범위표의
+// `제외`와 같은 경계다).
+//
+// 파일 이름(`*Screen.tsx`)이 그 경계와 거의 겹쳐서 그것으로 가르되, 진입 화면 둘만 이름과
+// 경계가 어긋나 아래 목록으로 뺀다.
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -41,10 +44,21 @@ function stripComments(source: string): string {
 /** 화면 제목의 글자. `text-lg font-semibold text-text`(`design-system.md` 타이포). */
 const TITLE_CLASS = /text-lg font-semibold text-text/
 
-const files = screenFiles(APP).map((path) => ({
-  name: path.slice(APP.length + 1),
-  source: stripComments(readFileSync(path, 'utf8')),
-}))
+/**
+ * 앱을 열기 전 화면 둘. 탭바도 뒤로 가기도 없는 자리라 **페이지 헤더 줄 자체가 없고**, 제목은
+ * 본문의 첫 줄이다. 이름이 `*Screen.tsx` 인 것은 라우트 이름을 따른 것뿐이다.
+ */
+const ENTRY_SCREENS = new Set([
+  join('auth', 'SignInScreen.tsx'),
+  join('character-setup', 'CharacterSetupScreen.tsx'),
+])
+
+const files = screenFiles(APP)
+  .map((path) => ({
+    name: path.slice(APP.length + 1),
+    source: stripComments(readFileSync(path, 'utf8')),
+  }))
+  .filter((file) => !ENTRY_SCREENS.has(file.name))
 
 describe('제목 줄은 프리미티브 하나로 그린다', () => {
   it('검사 대상 화면을 실제로 찾는다', () => {

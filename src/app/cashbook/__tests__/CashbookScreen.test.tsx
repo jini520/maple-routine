@@ -34,7 +34,7 @@ jest.mock('../../../features/cashbook/records', () => {
 // 자동 줄은 **보스 수익 탭으로 간다**. 그 이동을 목으로 받아 **어디로 갔나** 를 본다.
 // 이름이 `mock` 으로 시작해야 팩토리 안에서 참조할 수 있다(jest 의 호이스팅 가드).
 const mockOpenTab = jest.fn()
-jest.mock('../../use-open-tab', () => ({ useOpenTab: () => mockOpenTab }))
+jest.mock('../../../hooks/useOpenTab', () => ({ useOpenTab: () => mockOpenTab }))
 
 /**
  * `useFocusEffect` 가 요구하는 내비게이션 컨텍스트의 대역. 이 하네스는 화면 하나만 띄우므로

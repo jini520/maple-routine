@@ -12,7 +12,7 @@ import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { ContentScreen } from '../ContentScreen'
-import { useScreenNavigation } from '../../use-screen-navigation'
+import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 
 // 이름이 `mock` 으로 시작해야 한다. babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데
 // 그 접두사만 예외로 통과시킨다(안 지키면 트랜스폼 단계에서 죽는다).
@@ -28,8 +28,8 @@ jest.mock('../../../features/toast/store', () => ({
 }))
 
 // 401·429 는 토스트가 아니라 키 재입력 진입점으로 간다.
-jest.mock('../../../features/onboarding/store', () => ({
-  useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
+jest.mock('../../../features/auth/store', () => ({
+  useAuthStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
 }))
 
 jest.mock('../../../features/content-scheduler/store', () => ({
@@ -39,7 +39,7 @@ jest.mock('../../../features/content-scheduler/store', () => ({
 // **로스터 조회 목은 여기 없다**. 이 화면은 더 이상 피커를 열지 않으므로 `schedule-sync` 를
 // 아예 부르지 않는다. 그 목은 설정 화면 테스트로 옮겨갔다.
 
-jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
+jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 
 const mockedStore = jest.mocked(useContentSchedulerStore)
 const mockedNavigation = jest.mocked(useScreenNavigation)

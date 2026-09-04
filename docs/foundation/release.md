@@ -207,7 +207,7 @@ keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release
 | **비공개 테스트 12명 × 14일 연속** | ❌ | 2023-11 이후 **개인** 계정의 프로덕션 출시 전제조건. 조직 계정은 면제. **전체 일정을 지배하는 항목** |
 | 개인정보 처리방침 URL | ✅ | `https://mapleroutine.store/privacy`. 게시 확인 완료(2026-08-04) |
 | 개인정보 처리방침 **앱 내 링크** | ✅ | 설정 footer 맨 위(2026-08-04). Play 사용자 데이터 정책은 스토어 등록정보 **와 앱 안** 양쪽을 요구한다([features/settings.md](../features/settings.md)) |
-| **앱 액세스 권한** | ❌ | 온보딩이 넥슨 API 키 하드 게이트라([features/onboarding.md](../features/onboarding.md)) **심사자용 테스트 키 + 캐릭터 있는 계정 + 입력 절차**를 적어주지 않으면 리뷰어가 앱을 실행조차 못 한다 |
+| **앱 액세스 권한** | ❌ | 로그인이 넥슨 API 키 하드 게이트라([features/auth.md](../features/auth.md)) **심사자용 테스트 키 + 캐릭터 있는 계정 + 입력 절차**를 적어주지 않으면 리뷰어가 앱을 실행조차 못 한다 |
 | 데이터 안전 | ❌ | `AD_ID` 권한을 선언했으므로 **광고 ID 수집 신고 필수**. 넥슨 API 키의 취급 분류도 함께. **알림을 넣는 릴리스부터 한 항목 더**. FCM 등록 토큰은 앱이 서버로 안 보내도(토픽 방식, [[ADR-146]] 결정 2) **Firebase 가 갖는 기기 식별자**라 신고 대상이다 |
 | **개인정보 처리방침 갱신 (푸시)** | ❌ | [[ADR-146]] 을 구현하는 릴리스 전에 `PRIVACY.md`(→ `mapleroutine.store/privacy`)에 푸시 알림·Firebase 데이터 처리를 추가해야 한다. **바이너리가 아니라 문서 쪽 준비물이라 잊기 쉽다** |
 | "광고 포함" 선언 | ❌ | ADR-090 |

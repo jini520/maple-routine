@@ -26,7 +26,7 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
-import { useSettingsNavigation } from './use-settings-navigation'
+import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 
 // 탭 토글은 `design-system.md` `탭 토글`절 그대로다. **새 스타일을 만들지 않는다.**
 const ACTIVE_TAB_CLASS = 'rounded-full bg-primary-tint px-3 py-[5px]'

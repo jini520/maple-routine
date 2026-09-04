@@ -52,8 +52,8 @@ import { ILLUSTRATION_TEXT_SHADOW_STYLE } from '../../constants/style/text-style
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import { useThemeAppearance } from '../../theme/context'
-import { useOpenTab } from '../use-open-tab'
-import { usePullRefresh } from '../use-pull-refresh'
+import { useOpenTab } from '../../hooks/useOpenTab'
+import { usePullRefresh } from '../../hooks/usePullRefresh'
 
 const PARTY_FILTER_LABELS: Record<PartyFilter, string> = {
   all: '전체',

@@ -1,7 +1,8 @@
 import { useEffect } from 'react'
 
 import { useDropEffectStore } from '../features/drop-effect/store'
-import { useOnboardingStore } from '../features/onboarding/store'
+import { useAppEntryStore } from '../features/app-entry/store'
+import { useAuthStore } from '../features/auth/store'
 import { useLiveUpdateStore } from '../features/live-update/store'
 import { useThemeStore } from '../features/theme/store'
 import { useTrackingModeStore } from '../features/tracking-mode/store'
@@ -10,9 +11,9 @@ import { hideSplashScreen } from '../native/splash-screen'
 import { ToastStack } from '../components/organisms/Toast/ToastStack'
 import { AppNavigation } from '../navigation/AppNavigation'
 import { ThemeBackdrop } from '../components/templates/ThemeBackdrop/ThemeBackdrop'
-import { ApiKeyNoticeModal } from './ApiKeyNoticeModal'
+import { ApiKeyNoticeModal } from './auth/ApiKeyNoticeModal'
 import { prehydrateTabStores } from './prehydrate'
-import { useKeyboardVisible } from './use-keyboard-visible'
+import { useKeyboardVisible } from '../hooks/useKeyboardVisible'
 
 // 네이티브 스플래시가 순식간에 지나가 깜빡이지 않도록, 번들 평가 시점부터 최소 이 시간만큼은 유지한다.
 const APP_START_MS = Date.now()
@@ -29,10 +30,10 @@ const MIN_SPLASH_MS = 1000
  * 1. **포트 주입**. 이 파일 밖이다(`index.ts` → `boot.ts`, 1단계). 아래 어느 것보다 먼저다.
  * 2. **스플래시 붙들기**. 이것도 이 파일 밖이다(`index.ts` → `boot-splash.ts`). 전역 스코프여야
  *    한다(`expo-splash-screen` 이 명시).
- * 3. **저장소 복원 넷**(온보딩·테마·트래킹 모드·드롭 연출). 서로 독립이라 순서가 없다. 각자
+ * 3. **저장소 복원 다섯**(인증·진입 단계·테마·트래킹 모드·드롭 연출). 서로 독립이라 순서가 없다. 각자
  *    각자 자기 이펙트를 갖는다. 하나가 던져도 나머지가 돈다.
  * 4. **광고 SDK 초기화**. 실패해도 던지지 않아 부팅을 막지 않는다.
- * 5. **탭 스토어 선하이드레이션**. 온보딩이 완료된 뒤에만.
+ * 5. **탭 스토어 선하이드레이션**. 앱이 열린 뒤에만.
  * 6. **스플래시 내리기**. 최소 표시 시간을 채운 뒤.
  *
  * ## 7. **OTA 부팅 확인**. 이 되살린 자리
@@ -57,20 +58,29 @@ const MIN_SPLASH_MS = 1000
  * **바깥**이어야 한다. 다만 RN 에서는 그 바깥이 프로바이더보다 **안**이다(그쪽 근거는 `App.tsx`).
  */
 export function AppShell(): React.JSX.Element {
-  const status = useOnboardingStore((state) => state.status)
-  const restoreOnboarding = useOnboardingStore((state) => state.restoreFromStorage)
+  const stage = useAppEntryStore((state) => state.stage)
+  const resolveEntryStage = useAppEntryStore((state) => state.resolveFromStorage)
+  const restoreAuth = useAuthStore((state) => state.restoreFromStorage)
   const restoreTheme = useThemeStore((state) => state.restoreFromStorage)
   const restoreTrackingMode = useTrackingModeStore((state) => state.restoreFromStorage)
   const restoreDropEffect = useDropEffectStore((state) => state.restoreFromStorage)
   const isKeyboardVisible = useKeyboardVisible()
 
-  const isCompleted = status === 'completed'
+  const isReady = stage === 'ready'
 
-  // 넷을 한 이펙트에 모으지 않는다. 스토어마다 독립이고, 합치면 앞의 하나가
+  // 다섯을 한 이펙트에 모으지 않는다. 스토어마다 독립이고, 합치면 앞의 하나가
   // 던졌을 때 뒤가 통째로 안 돈다. deps 를 비운 것은 "마운트당 한 번"이 계약이라서다
   // (세터는 zustand 가 참조를 고정하지만, 그 사실에 기대지 않는다).
+  //
+  // 인증과 진입 단계가 각각 저장소를 읽는다. 둘 다 apiKey 를 보지만 묻는 것이 달라서
+  // (로그인했는가 · 어느 화면이 서는가) 한쪽이 다른 쪽에서 파생되지 않는다.
   useEffect(() => {
-    void restoreOnboarding()
+    void restoreAuth()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    void resolveEntryStage()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -95,17 +105,17 @@ export function AppShell(): React.JSX.Element {
   // (`rnAdsPort.initialize()` 는 어댑터에 그대로 있다).
 
   // 탭 스토어를 스플래시가 떠 있는 동안 미리 하이드레이션해, 첫 탭 진입이
-  // 저장소 읽기를 사용자가 보는 앞에서 치르지 않게 한다. **온보딩 완료 상태에서만 돈다**.
-  // `syncSchedules` 는 API 키·계정이 없으면 던지므로, 온보딩 중에 돌리면 스토어가 error 로
-  // 시작하고 토스트까지 울린다.
+  // 저장소 읽기를 사용자가 보는 앞에서 치르지 않게 한다. **앱이 열린 뒤에만 돈다**.
+  // `syncSchedules` 는 API 키·계정이 없으면 던지므로, 로그인·캐릭터 설정 중에 돌리면 스토어가
+  // error 로 시작하고 토스트까지 울린다.
   //
   // **동적 import 를 그대로 뒀고**, 그 한 줄은 `./prehydrate` 안에 있다. 왜 그대로 두는지와 왜
   // 셸 밖으로 뺐는지는 그 파일에 적혀 있다(요약: 시점을 안 바꾸려고 유지, 셸 안에 두면 jest 에서
   // 마운트가 죽어 아래 게이트를 붙들 수 없다).
   useEffect(() => {
-    if (!isCompleted) return
+    if (!isReady) return
     void prehydrateTabStores()
-  }, [isCompleted])
+  }, [isReady])
 
   // 앱 셸이 처음 렌더된 뒤 네이티브 스플래시를 내린다. 실행부터 이 시점까지 스플래시가 계속 떠
   // 있어 빈 화면 없이 스플래시만 보인다. 콘텐츠가 즉시 준비되면 순식간에 사라지므로 최소 표시
@@ -146,7 +156,7 @@ export function AppShell(): React.JSX.Element {
       <ApiKeyNoticeModal />
       {/* 토스트는 자기가 놓인 자리에 절대 배치로 그린다. 여기가 `ThemeProvider` 의 화면 채움
           View 직속이라 탭바 위에 뜬다. */}
-      <ToastStack hasTabBar={isCompleted && !isKeyboardVisible} />
+      <ToastStack hasTabBar={isReady && !isKeyboardVisible} />
     </>
   )
 }

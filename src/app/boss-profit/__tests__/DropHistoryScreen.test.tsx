@@ -30,11 +30,11 @@ import {
   type AtomElement,
 } from '../../../components/__tests__/render-atom'
 import { ThemeProvider } from '../../../theme/ThemeProvider'
-import { useScreenNavigation } from '../../use-screen-navigation'
+import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { DropHistoryScreen } from '../DropHistoryScreen'
 
 jest.mock('../../../features/boss-profit/drop-history-store', () => ({ useDropHistoryStore: jest.fn() }))
-jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
+jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 
 const mockedStore = jest.mocked(useDropHistoryStore)
 const mockedNavigation = jest.mocked(useScreenNavigation)

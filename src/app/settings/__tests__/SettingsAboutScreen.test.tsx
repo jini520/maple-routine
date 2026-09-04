@@ -13,7 +13,7 @@ import { setLiveUpdatePort, type LiveUpdatePort } from '../../../native/ports'
 import packageJson from '../../../../package.json'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { SettingsAboutScreen } from '../SettingsAboutScreen'
-import { useSettingsNavigation } from '../use-settings-navigation'
+import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 
 /**
  * 이 화면이 마운트에서 `loadCurrentVersion` 을 부르므로 포트가 있어야 한다(배선).
@@ -36,7 +36,7 @@ function installLiveUpdatePort(overrides: Partial<LiveUpdatePort> = {}): void {
   })
 }
 
-jest.mock('../use-settings-navigation', () => ({ useSettingsNavigation: jest.fn() }))
+jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation: jest.fn() }))
 
 const mockedUseSettingsNavigation = jest.mocked(useSettingsNavigation)
 const navigate = jest.fn()

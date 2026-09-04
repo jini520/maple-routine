@@ -41,7 +41,7 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { DROUGHT_GLOW_FILTER, DROUGHT_TIER_STYLES } from '../../constants/style/drought-tier-styles'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
-import { useScreenNavigation } from '../use-screen-navigation'
+import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 
 /**
  * 고가 드롭 배지의 골드. 여기서는 단색으로 내려앉는다.

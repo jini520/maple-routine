@@ -54,7 +54,7 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
-import { useScreenNavigation } from '../use-screen-navigation'
+import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { CharacterAvatar } from '../../components/molecules/CharacterAvatar/CharacterAvatar'
 import { PORTRAIT_COMPACT } from '../../components/organisms/CharacterPortrait/portrait-metrics'
 import { DropPricePad } from './DropPricePad'

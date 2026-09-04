@@ -14,7 +14,7 @@ import type { MatchedBoss } from '../../../lib/boss/boss-matching'
 import type { ManualTrackedItem } from '../../../types'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
-import { useScreenNavigation } from '../../use-screen-navigation'
+import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { BossManageScreen } from '../BossManageScreen'
 
 const mockShowError = jest.fn()
@@ -32,7 +32,7 @@ jest.mock('../../../features/boss-scheduler/store', () => ({
   partySizeKey: (ocid: string, boss: string, difficulty: string) => `${ocid}:${boss}:${difficulty}`,
 }))
 
-jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
+jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 
 const mockedStore = jest.mocked(useBossSchedulerStore)
 const mockedNavigation = jest.mocked(useScreenNavigation)

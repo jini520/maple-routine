@@ -21,7 +21,7 @@ import { Pressable, View, type ScrollView } from 'react-native'
 import { useAnimatedRef } from 'react-native-reanimated'
 
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
-import { useApiKeyNotice } from '../../features/onboarding/use-api-key-notice'
+import { useApiKeyNotice } from '../../features/auth/use-api-key-notice'
 import {
   clearRepresentativeCharacter,
   setRepresentativeCharacter,
@@ -36,7 +36,7 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { useBottomSafeAreaPx } from '../../lib/safe-area'
 import { reloadTabStores } from './reload-tab-stores'
-import { useSettingsNavigation } from './use-settings-navigation'
+import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 
 export function SettingsCharactersScreen(): React.JSX.Element {
   const { saveTrackedOcids } = useContentSchedulerStore()

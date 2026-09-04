@@ -40,7 +40,7 @@ import { useBossProfitStore } from '../../../features/boss-profit/store'
 import type { RecordedDrop } from '../../../types/drops'
 
 import { flattenStyle, renderOverlay, 테스트_안전영역 } from '../../../components/__tests__/render-atom'
-import { useScreenNavigation } from '../../use-screen-navigation'
+import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { DropPriceScreen } from '../DropPriceScreen'
 
 const mockShowError = jest.fn()
@@ -51,7 +51,7 @@ jest.mock('../../../features/toast/store', () => ({
 }))
 jest.mock('../../../features/boss-profit/store', () => ({ useBossProfitStore: jest.fn() }))
 jest.mock('../../../features/boss-profit/drop-price-store', () => ({ useDropPriceStore: jest.fn() }))
-jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
+jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 
 const mockedProfitStore = jest.mocked(useBossProfitStore)
 const mockedPriceStore = jest.mocked(useDropPriceStore)

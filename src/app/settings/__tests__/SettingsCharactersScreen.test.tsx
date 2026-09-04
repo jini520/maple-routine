@@ -41,7 +41,7 @@ import {
 } from '../../../components/__tests__/render-atom'
 import { moveOcid } from '../../../hooks/useSelectionDraft'
 import { SettingsCharactersScreen } from '../SettingsCharactersScreen'
-import { useSettingsNavigation } from '../use-settings-navigation'
+import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 
 // 팩토리 밖 변수를 참조하려면 이름이 `mock` 으로 시작해야 한다(babel-jest 규칙).
 const mockGetRoster = jest.fn()
@@ -49,7 +49,7 @@ const mockNoticeApiKeyIssue = jest.fn()
 const mockLoadBossTracked = jest.fn()
 const mockLoadProfitTracked = jest.fn()
 
-jest.mock('../use-settings-navigation', () => ({ useSettingsNavigation: jest.fn() }))
+jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation: jest.fn() }))
 jest.mock('../../../nexon/character', () => ({ fetchCharacterList: jest.fn() }))
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
 jest.mock('../../../storage/character-basic-cache', () => ({ getCachedCharacterBasic: jest.fn() }))
@@ -81,8 +81,8 @@ jest.mock('../../../features/boss-profit/store', () => ({
   useBossProfitStore: { getState: () => ({ loadTrackedOcids: mockLoadProfitTracked }) },
 }))
 // 401·429 는 키 재입력 진입점으로 간다.
-jest.mock('../../../features/onboarding/store', () => ({
-  useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
+jest.mock('../../../features/auth/store', () => ({
+  useAuthStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
 }))
 
 const mockedUseSettingsNavigation = jest.mocked(useSettingsNavigation)

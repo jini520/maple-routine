@@ -24,10 +24,10 @@ const SRC = join(__dirname, '..')
  * 온보딩은 제외다. 단계에 제목 줄이 없어 그 `marginTop` 은 헤더 여백이 아니라 콘텐츠 여백이라
  * 축이 다르다.
  *
- * 그 인셋을 실제로 읽는 자리는 단계 셸(`app/onboarding/OnboardingStep.tsx`)이고 화면 파일이
+ * 그 인셋을 실제로 읽는 자리는 진입 셸(`components/templates/EntryScroll/EntryScroll.tsx`)이고 화면 파일이
  * 아니라 이 가드가 훑지 않는다. 예외 자체는 화면에 남겨 둔다.
  */
-const EXEMPT = new Set(['OnboardingScreen.tsx'])
+const EXEMPT = new Set(['SignInScreen.tsx', 'CharacterSetupScreen.tsx'])
 
 /** 상단 안전영역을 **소유**하는 셸 둘. 화면 파일은 아니지만 같은 값을 봐야 한다. */
 const SHELLS = [

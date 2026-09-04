@@ -35,14 +35,14 @@ export function formatScheduleSyncError(error: ScheduleSyncError): string {
 //
 // 같은 원인이라도 자리에 따라 줄 수 있는 행동이 다르다. 401 이 그렇다. 피커에서는 액션이 없다.
 // 그 401 은 곧 키 무효화라 화면이 스스로 키 입력으로 이동하므로 누를 것이 없고, 이 문구는 이동
-// 직전 한 프레임이자 안전망이다. 온보딩에서는 재시도다. 그때는 무효화 경로가 아예 성립하지
+// 직전 한 프레임이자 안전망이다. 캐릭터 설정 화면에서는 재시도다. 그때는 무효화 경로가 아예 성립하지
 // 않고, 그 실패는 방금 넣은 키에 대한 폼 자체의 에러라 재시도가 실제 처방이다. 그래서 place 를
 // 받는다.
 //
 // 401 에 다시 시도를 주지 않는 것(피커)이 핵심이다. 눌러도 실패하는 버튼이기 때문이다.
 //
 // 문구 어미는 에러 규칙에 따라 ~습니다 · ~주세요 다.
-export type RosterErrorPlace = 'picker' | 'onboarding'
+export type RosterErrorPlace = 'picker' | 'characterSetup'
 
 export interface RosterErrorCopy {
   title: string

@@ -22,7 +22,7 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { AppUpdateSection } from './AppUpdateSection'
 import { SettingsRow } from './SettingsRow'
-import { useSettingsNavigation } from './use-settings-navigation'
+import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 
 export function SettingsAboutScreen(): React.JSX.Element {
   const navigation = useSettingsNavigation()
@@ -55,7 +55,7 @@ export function SettingsAboutScreen(): React.JSX.Element {
       }
     >
       {/* `screen-<라우트 이름>` 은 자리표시자에게서 그대로 물려받은 계약이다. 내비게이션 테스트가
-          "그 라우트로 밀면 그 화면이 열리는가"를 이 이름으로 묻는다(step 2 가 `screen-Onboarding`
+          "그 라우트로 밀면 그 화면이 열리는가"를 이 이름으로 묻는다(step 2 가 `screen-SignIn`
           에서 같은 판단을 했다). 진짜 화면이 들어와도 그 질문은 그대로 유효하다. */}
       <View className="gap-4 px-4 pb-4" testID="screen-SettingsAbout">
         <AppUpdateSection

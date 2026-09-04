@@ -101,7 +101,7 @@ describe('그룹 표', () => {
 })
 
 // 어느 페이지가 어느 층 화면 안에 사는가. 화면이 **탭으로 가고 싶다** 고 말할 때 그것을 중첩
-// 이동으로 옮기는 표는 이것뿐이다(`use-open-tab.ts`).
+// 이동으로 옮기는 표는 이것뿐이다(`hooks/useOpenTab.ts`).
 describe('layerOfPage: 페이지가 사는 층 화면', () => {
   it('하위가 없는 그룹의 페이지는 그룹 층에 산다', () => {
     expect(layerOfPage('Today')).toBe('Groups')

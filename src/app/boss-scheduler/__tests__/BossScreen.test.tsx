@@ -14,7 +14,7 @@ import weeklyBossesData from '../../../data/weekly-bosses.json'
 import { WEEKLY_BOSS_CLEAR_LIMIT, type MatchedBoss } from '../../../lib/boss/boss-matching'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
-import { useScreenNavigation } from '../../use-screen-navigation'
+import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { BossScreen } from '../BossScreen'
 
 // 이름이 `mock` 으로 시작해야 한다. babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데
@@ -34,8 +34,8 @@ jest.mock('../../../features/toast/store', () => ({
 }))
 
 // 401·429 는 토스트가 아니라 키 재입력 진입점으로 간다.
-jest.mock('../../../features/onboarding/store', () => ({
-  useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
+jest.mock('../../../features/auth/store', () => ({
+  useAuthStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
 }))
 
 jest.mock('../../../features/boss-scheduler/store', () => ({
@@ -43,7 +43,7 @@ jest.mock('../../../features/boss-scheduler/store', () => ({
   partySizeKey: (ocid: string, boss: string, difficulty: string) => `${ocid}:${boss}:${difficulty}`,
 }))
 
-jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
+jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 
 // **로스터 조회 목도 라우트 목도 여기 없다**. 이 화면은 더 이상 피커를 열지 않고 `openPicker`
 // 파라미터도 받지 않으므로 `schedule-sync` 와 `useRoute` 를 아예 부르지 않는다.

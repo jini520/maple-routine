@@ -9,7 +9,7 @@
  */
 
 import type { MapleAccount, MapleCharacter } from '../../types'
-import { compareByName, pickRepresentativeCharacter } from '../onboarding/representative-character'
+import { compareByName, pickRepresentativeCharacter } from '../../lib/character-order'
 
 /** 월드는 **많은 순으로 둘까지**만 적는다. 셋째부터는 적지 않는다. */
 const MAX_LISTED_WORLDS = 2

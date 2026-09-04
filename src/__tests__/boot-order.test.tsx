@@ -23,16 +23,28 @@ import { act } from '@testing-library/react-native'
 /** 관측한 호출을 부른 순서대로 쌓는 목록. 무엇을 했는지가 아니라 **언제** 했는지가 계약이다. */
 const mockCalls: string[] = []
 
-/** 온보딩 상태만 케이스마다 갈아 끼운다(선하이드레이션 게이트가 이 값 하나로 갈린다). */
-const mockOnboarding = { status: 'completed' }
+/** 진입 단계만 케이스마다 갈아 끼운다(선하이드레이션 게이트가 이 값 하나로 갈린다). */
+const mockEntry = { stage: 'ready' }
 
-jest.mock('../features/onboarding/store', () => ({
+jest.mock('../features/app-entry/store', () => ({
   __esModule: true,
-  useOnboardingStore: (selector: (state: unknown) => unknown) =>
+  useAppEntryStore: (selector: (state: unknown) => unknown) =>
     selector({
-      status: mockOnboarding.status,
+      stage: mockEntry.stage,
+      resolveFromStorage: async () => {
+        mockCalls.push('resolve:entry')
+      },
+    }),
+}))
+
+// 인증과 진입 단계가 **각각** 저장소를 읽는다. 둘 다 apiKey 를 보지만 묻는 것이 달라서
+// (로그인했는가 · 어느 화면이 서는가) 한쪽이 다른 쪽에서 파생되지 않는다.
+jest.mock('../features/auth/store', () => ({
+  __esModule: true,
+  useAuthStore: (selector: (state: unknown) => unknown) =>
+    selector({
       restoreFromStorage: async () => {
-        mockCalls.push('restore:onboarding')
+        mockCalls.push('restore:auth')
       },
       // `ApiKeyNoticeModal` 이 읽는 둘. 이 파일의 관심사가 아니라 꺼진 상태로 둔다.
       apiKeyNotice: null,
@@ -92,7 +104,7 @@ jest.mock('../features/live-update/store', () => ({
   },
 }))
 
-// 키보드 구독은 포트를 거친다(`app/use-keyboard-visible.ts`). 주입 없이 렌더하면 슬롯이 던지고,
+// 키보드 구독은 포트를 거친다(`hooks/useKeyboardVisible.ts`). 주입 없이 렌더하면 슬롯이 던지고,
 // 그 던짐이 이 파일에서는 배선 문제가 아니라 **관측 대상이 아닌 것**이다(어댑터는 자기 테스트가 있다).
 jest.mock('../native/keyboard', () => ({
   __esModule: true,
@@ -125,7 +137,7 @@ const RN_ROOT = path.resolve(__dirname, '../..')
 describe('① 셸이 무엇을 언제 하는가', () => {
   beforeEach(() => {
     mockCalls.length = 0
-    mockOnboarding.status = 'completed'
+    mockEntry.stage = 'ready'
     jest.useFakeTimers()
   })
 
@@ -135,20 +147,21 @@ describe('① 셸이 무엇을 언제 하는가', () => {
 
   async function mountShell(): Promise<void> {
     await renderOverlay(<AppShell />)
-    // 복원 넷·예열은 마이크로태스크(그리고 예열은 동적 import)라 이펙트 뒤 한 번 흘려보내야 관측된다.
+    // 복원 다섯·예열은 마이크로태스크(그리고 예열은 동적 import)라 이펙트 뒤 한 번 흘려보내야 관측된다.
     await act(async () => {})
   }
 
   // 여기에 `startAds`(광고 SDK 초기화 + 사전 로드)가 다섯 번째 항목으로 있었다. 이
   // 전면광고를 걷으며 셸에서 사라졌다.
-  it('복원 넷이 첫 렌더에 전부 시작된다', async () => {
+  it('복원 다섯이 첫 렌더에 전부 시작된다', async () => {
     await mountShell()
 
-    // 넷 사이에는 순서가 없다. 서로 독립이고, 각자 자기 이펙트를 갖는다(하나가 던져도
+    // 다섯 사이에는 순서가 없다. 서로 독립이고, 각자 자기 이펙트를 갖는다(하나가 던져도
     // 나머지가 돈다). 그래서 "전부 있었다"까지만 본다.
     expect(mockCalls).toEqual(
       expect.arrayContaining([
-        'restore:onboarding',
+        'restore:auth',
+        'resolve:entry',
         'restore:theme',
         'restore:trackingMode',
         'restore:dropEffect',
@@ -156,14 +169,14 @@ describe('① 셸이 무엇을 언제 하는가', () => {
     )
   })
 
-  // **완료 상태에서만** 도는 것이 계약이다. `syncSchedules` 는 API 키·계정이
-  // 없으면 던지므로, 온보딩 중에 돌리면 스토어가 error 로 시작하고 토스트까지 울린다.
-  it('탭 스토어 선하이드레이션은 온보딩이 완료됐을 때만 돈다', async () => {
+  // **앱이 열린 뒤에만** 도는 것이 계약이다. `syncSchedules` 는 API 키·계정이
+  // 없으면 던지므로, 로그인·캐릭터 설정 중에 돌리면 스토어가 error 로 시작하고 토스트까지 울린다.
+  it('탭 스토어 선하이드레이션은 앱이 열렸을 때만 돈다', async () => {
     await mountShell()
     expect(mockCalls).toContain('prehydrate')
 
     mockCalls.length = 0
-    mockOnboarding.status = 'awaitingApiKey'
+    mockEntry.stage = 'signIn'
     await mountShell()
 
     expect(mockCalls).not.toContain('prehydrate')

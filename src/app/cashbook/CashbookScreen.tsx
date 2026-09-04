@@ -96,8 +96,8 @@ import {
 import { loadMesoRate } from '../../features/cashbook/meso-rate'
 // 보스 수익 탭의 행이 초상을 찾는 그 함수다. 같은 보스가 두 화면에서 다른 그림이면 안 된다.
 import { findPortraitSlug } from '../boss-profit/character-groups'
-import { usePullRefresh } from '../use-pull-refresh'
-import { useOpenTab } from '../use-open-tab'
+import { usePullRefresh } from '../../hooks/usePullRefresh'
+import { useOpenTab } from '../../hooks/useOpenTab'
 import { useThemeAppearance } from '../../theme/context'
 import { useToastStore } from '../../features/toast/store'
 import { IncomeSheet, type IncomeDraft } from './IncomeSheet'

@@ -24,7 +24,7 @@ import {
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { AmountInput, FieldRow, QuantityStepper } from '../sheet-fields'
 import { CharacterField, SaveRow, type IncomeFormProps } from './form-shared'
-import { useSheetSubmit } from './use-sheet-submit'
+import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
 export function EtcForm(

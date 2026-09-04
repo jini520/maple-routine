@@ -50,7 +50,7 @@ export class NexonBadRequestError extends NexonApiError {
 
 /**
  * 무효한 API 키인가. 이 판정은 여기 한 곳뿐이고
- * `toScheduleSyncError`·`toOnboardingError`·`toSettingsError` 셋이 첫 분기로 쓴다.
+ * `toScheduleSyncError`·`toAuthError`·`toSettingsError` 셋이 첫 분기로 쓴다.
  *
  * `401`/`403` 만 보면 실제 무효 키를 못 잡는다. 넥슨은 무효한 키에 400 `OPENAPI00005`
  * (`"The apikey is not valid."`)를 준다. 애초에 존재한 적 없는 키도, 유효했다가 넥슨에서

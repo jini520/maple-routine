@@ -27,7 +27,7 @@ import { getManualTrackedContent, type ManualTrackedItem } from '../../storage/m
 import { getCachedSchedulerState } from '../../storage/scheduler-cache'
 import { getTrackingMode } from '../../storage/tracking-mode'
 import { type BossCycle } from '../../types'
-import { compareByName } from '../onboarding/representative-character'
+import { compareByName } from '../../lib/character-order'
 import { syncSchedules, toScheduleSyncError, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
 import { hasSyncAttemptedThisRun } from '../schedule-sync/sync-run-state'
 import { isSyncFresh } from '../../lib/scheduler/sync-freshness'

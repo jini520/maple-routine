@@ -30,7 +30,7 @@ describe('formatRosterError', () => {
     ]
 
     for (const error of kinds) {
-      for (const place of ['picker', 'onboarding'] as const) {
+      for (const place of ['picker', 'characterSetup'] as const) {
         const copy = formatRosterError(error, place)
         expect(copy.title.length).toBeGreaterThan(0)
         expect(copy.description.length).toBeGreaterThan(0)
@@ -39,13 +39,13 @@ describe('formatRosterError', () => {
   })
 
   // 영구 실패에는 버튼을 주지 않는다.
-  it.each(['picker', 'onboarding'] as const)('%s의 characterUnavailable은 액션이 없다(영구 실패)', (place) => {
+  it.each(['picker', 'characterSetup'] as const)('%s의 characterUnavailable은 액션이 없다(영구 실패)', (place) => {
     const copy = formatRosterError({ kind: 'characterUnavailable' }, place)
     expect(copy.action).toBeUndefined()
     expect(copy.description).toContain('계정')
   })
 
-  it.each(['picker', 'onboarding'] as const)('%s의 network 계열은 액션이 있다', (place) => {
+  it.each(['picker', 'characterSetup'] as const)('%s의 network 계열은 액션이 있다', (place) => {
     for (const kind of ['network', 'periodOutOfRange', 'notCollected'] as const) {
       expect(formatRosterError({ kind }, place).action).toBeDefined()
     }
@@ -58,7 +58,7 @@ describe('formatRosterError', () => {
     const kinds: ScheduleSyncError[] = [{ kind: 'invalidApiKey' }, { kind: 'rateLimited' }, { kind: 'network' }]
 
     for (const error of kinds) {
-      for (const place of ['picker', 'onboarding'] as const) {
+      for (const place of ['picker', 'characterSetup'] as const) {
         const copy = formatRosterError(error, place)
         expect(copy.title).toMatch(/(습니다|주세요)$/)
         expect(copy.description).toMatch(/(습니다|합니다|주세요)$/)
@@ -80,7 +80,7 @@ describe('formatRosterError', () => {
   // 회귀 가드. 온보딩 중에는 무효화 경로가 성립하지 않으므로(status 가 completed 가 아니다)
   // 그 실패는 폼 자체의 에러이고 재시도가 실제 처방이다.
   it('온보딩의 invalidApiKey는 문구·액션이 그대로다. 재시도가 실제 처방인 자리', () => {
-    const copy = formatRosterError({ kind: 'invalidApiKey' }, 'onboarding')
+    const copy = formatRosterError({ kind: 'invalidApiKey' }, 'characterSetup')
 
     expect(copy.title).toBe('API 키가 유효하지 않습니다')
     expect(copy.description).toBe('API 키를 다시 확인해주세요')
@@ -89,13 +89,13 @@ describe('formatRosterError', () => {
 
   // 429 의 처방은 재시도가 아니라 키 단계 확인이다. 처방이 키를 확인하라 인데 버튼이 다시
   // 시도 면 화면이 두 말을 한다.
-  it.each(['picker', 'onboarding'] as const)('%s의 network는 재시도를 주지만 rateLimited는 액션이 없다', (place) => {
+  it.each(['picker', 'characterSetup'] as const)('%s의 network는 재시도를 주지만 rateLimited는 액션이 없다', (place) => {
     expect(formatRosterError({ kind: 'network' }, place).action?.kind).toBe('retry')
     expect(formatRosterError({ kind: 'rateLimited' }, place).action).toBeUndefined()
   })
 
   // 문구는 확정값이다. 단계를 판정하지 않고 안내만 한다.
-  it.each(['picker', 'onboarding'] as const)('%s의 rateLimited는 키 단계 확인을 처방한다', (place) => {
+  it.each(['picker', 'characterSetup'] as const)('%s의 rateLimited는 키 단계 확인을 처방한다', (place) => {
     const copy = formatRosterError({ kind: 'rateLimited' }, place)
 
     expect(copy.title).toBe('호출 한도를 초과했습니다')

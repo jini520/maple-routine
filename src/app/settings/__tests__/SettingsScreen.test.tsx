@@ -21,7 +21,7 @@ import { THEME_NAMES } from '../../../lib/theme/theme-registry'
 import packageJson from '../../../../package.json'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { SettingsScreen } from '../SettingsScreen'
-import { useSettingsNavigation } from '../use-settings-navigation'
+import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 
 // 이름이 `mock` 으로 시작해야 한다. babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데
 // 그 접두사만 예외로 통과시킨다(스케줄러 화면 테스트와 같은 규칙).
@@ -35,7 +35,7 @@ jest.mock('../../../features/tracking-mode/store', () => ({ useTrackingModeStore
 // 본화면이 대표값으로 캐시 총 용량을 읽는다. 화면은 `features/` 를 거치고
 // 저장소·SQLite 는 그 아래가 맡는다(CLAUDE.md CRITICAL).
 jest.mock('../../../features/settings/cache-data', () => ({ loadCacheDataSizes: jest.fn() }))
-jest.mock('../use-settings-navigation', () => ({ useSettingsNavigation: jest.fn() }))
+jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation: jest.fn() }))
 
 // 저장은 컨텐츠 스케줄러 스토어의 액션을 그대로 부른다(세 번째 사본 금지).
 // 훅으로도(배지·저장) `getState` 로도 만지므로 둘 다 세운다.

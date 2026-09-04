@@ -4,15 +4,19 @@
 
 ## 부팅 시 하이드레이션
 
-앱을 완전히 종료했다 다시 열면 Zustand 스토어는 비어 있는 상태로 시작한다. `AppShell`(`src/App.tsx`)이 마운트되며 **딱 세 가지만** 즉시 복원한다.
+앱을 완전히 종료했다 다시 열면 Zustand 스토어는 비어 있는 상태로 시작한다. `AppShell`(`src/App.tsx`)이 마운트되며 **몇 가지만** 즉시 복원한다.
+
+인증과 진입 단계가 **각각** 저장소를 읽는다. 둘 다 `apiKey` 를 보지만 묻는 것이 달라서(로그인했는가 · 어느 화면이 서는가) 한쪽이 다른 쪽에서 파생되지 않는다([[ADR-215]] 결정 2).
 
 ```mermaid
 flowchart LR
     Start([앱 실행]) --> Shell[AppShell 마운트]
-    Shell --> A["useOnboardingStore().restoreFromStorage()"]
+    Shell --> A["useAuthStore().restoreFromStorage()"]
+    Shell --> E["useAppEntryStore().resolveFromStorage()"]
     Shell --> B["useThemeStore().restoreFromStorage()"]
     Shell --> C["useTrackingModeStore().restoreFromStorage()"]
-    A --> P1[("apiKey / selectedAccountId")]
+    A --> P1[("apiKey")]
+    E --> P4[("apiKey / trackedCharacters")]
     B --> P2[("theme")]
     C --> P3[("trackingMode")]
     Shell -.-> Lazy["나머지(스케줄러 캐시·추적 목록·\n보스 수익 기록 등)는 하이드레이션 없음"]

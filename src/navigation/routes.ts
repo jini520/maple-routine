@@ -99,7 +99,15 @@ export interface FeatureGuideParams {
 }
 
 export type RootStackParamList = {
-  Onboarding: undefined
+  /**
+   * 앱을 열기 전 화면 둘. 탭과 배타로 그려지고 **한 번에 하나만** 스택에 선다.
+   *
+   * 둘을 함께 등록하지 않는 것이 계약이다. 함께 두면 둘 사이에 뒤로 가기와 가장자리 스와이프가
+   * 생기는데, 로그인에서 캐릭터 설정으로 간 뒤 되돌아갈 곳은 없다. 어느 것이 설지는
+   * `features/app-entry` 의 `EntryStage` 가 정한다.
+   */
+  SignIn: undefined
+  CharacterSetup: undefined
   /**
    * 탭 레이어를 대신하는 화면 하나. 안에 층 스택과 바가 형제로 산다.
    *
@@ -131,19 +139,22 @@ export type RootStackParamList = {
   SettingsCharacters: undefined
 }
 
-export type StackRouteName = Exclude<keyof RootStackParamList, 'Onboarding' | 'Main'>
+export type StackRouteName = Exclude<
+  keyof RootStackParamList,
+  'SignIn' | 'CharacterSetup' | 'Main'
+>
 
 /**
  * 한 경로가 RN 의 어느 자리로 갔는가.
  *
  * - `initial`. 처음 서 있는 탭.
- * - `root`. 루트 스택의 화면이되 탭이 아닌 것(온보딩). 탭과 배타로 그려진다.
+ * - `root`. 루트 스택의 화면이되 탭이 아닌 것(로그인 · 캐릭터 설정). 탭과 배타로 그려진다.
  * - `tab`. 탭 아홉.
  * - `push`. 탭 위로 밀려 들어오는 하위 페이지. 루트 스택에 쌓인다.
  */
 export type RouteTarget =
   | { readonly kind: 'initial'; readonly route: TabRouteName }
-  | { readonly kind: 'root'; readonly route: 'Onboarding' }
+  | { readonly kind: 'root'; readonly route: 'SignIn' | 'CharacterSetup' }
   | { readonly kind: 'tab'; readonly route: TabRouteName }
   | { readonly kind: 'push'; readonly route: StackRouteName }
 
@@ -163,7 +174,7 @@ export interface RouteRow {
 }
 
 /**
- * 웹 17행 + RN 5행. 행 수와 내용을 테스트가 고정한다. 화면이 늘면 여기도 함께 움직인다.
+ * 웹 17행 + RN 6행. 행 수와 내용을 테스트가 고정한다. 화면이 늘면 여기도 함께 움직인다.
  *
  * `/settings/about/privacy` 는 `about` 의 자식이다. `/settings/privacy` 로 두면 about 이 즉시
  * 사라진 자리에 개인정보 처리방침이 밀려 들어와 밀려 나가는 화면 없이 배경만 바뀌는 프레임이
@@ -171,7 +182,16 @@ export interface RouteRow {
  */
 export const ROUTE_TABLE: readonly RouteRow[] = [
   { path: '/', screen: 'ContentScreen', target: { kind: 'initial', route: 'Content' }, origin: 'web' },
-  { path: '/onboarding', screen: 'OnboardingScreen', target: { kind: 'root', route: 'Onboarding' }, origin: 'web' },
+  // `path` 는 웹 시절의 기록이라 안 바꾼다(위 17행 대조판이 이 문자열을 든다). 그 경로가 실제로
+  // 하던 일이 키 입력이라 지금 가리키는 화면이 로그인이다.
+  { path: '/onboarding', screen: 'SignInScreen', target: { kind: 'root', route: 'SignIn' }, origin: 'web' },
+  // 짝인 루트 화면. 웹에는 없던 자리라 `origin: 'rn'` 이고 `path` 는 이름표다.
+  {
+    path: '/character-setup',
+    screen: 'CharacterSetupScreen',
+    target: { kind: 'root', route: 'CharacterSetup' },
+    origin: 'rn',
+  },
 
   { path: '/content', screen: 'ContentScreen', target: { kind: 'tab', route: 'Content' }, origin: 'web' },
   {

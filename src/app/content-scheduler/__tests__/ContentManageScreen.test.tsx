@@ -20,7 +20,7 @@ import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { ContentManageScreen } from '../ContentManageScreen'
-import { useScreenNavigation } from '../../use-screen-navigation'
+import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 
 const mockShowError = jest.fn()
 const goBack = jest.fn()
@@ -33,7 +33,7 @@ jest.mock('../../../features/content-scheduler/store', () => ({
   useContentSchedulerStore: jest.fn(),
 }))
 
-jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
+jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 
 const mockedStore = jest.mocked(useContentSchedulerStore)
 const mockedNavigation = jest.mocked(useScreenNavigation)

@@ -27,13 +27,13 @@ const SRC = join(__dirname, '..')
  * 높이에서 출발해야 하고, 여기만 인셋으로 남으면 안드로이드에서 토스트가 캡슐 위에 겹친다
  * (실제로 그렇게 된다. 바가 34 에 뜨는데 토스트는 15 + 바 높이에 서면 7px 이 캡슐 안이다).
  *
- * `OnboardingStep` 이 여기 있는 것은 온보딩의 하단(콘텐츠 몫· 고정 액션 바)을
+ * `EntryScroll` 이 여기 있는 것은 진입 화면들의 하단(콘텐츠 몫· 고정 액션 바)을
  * 그 셸이 갖기 때문이다. `*Screen.tsx` 가 아니라서, 안 적으면 이 가드의 **사각**이 된다.
  */
 const SHELLS = [
   join(SRC, 'components', 'organisms', 'BottomBar', 'BottomBar.tsx'),
   join(SRC, 'components', 'organisms', 'Toast', 'ToastStack.tsx'),
-  join(SRC, 'app', 'onboarding', 'OnboardingStep.tsx'),
+  join(SRC, 'components', 'templates', 'EntryScroll', 'EntryScroll.tsx'),
 ]
 
 /**

@@ -9,7 +9,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native'
 import { createNavigationContainerRef, StackActions } from '@react-navigation/native'
 
-import { useOnboardingStore } from '../../features/onboarding/store'
+import { useAppEntryStore } from '../../features/app-entry/store'
 import { __resetThemeAppearanceForTest } from '../../theme/appearance-store'
 import { resetBarStoreForTests } from '../../components/organisms/BottomBar/bar-store'
 import { PUSH_SCREEN_OPTIONS } from '../push-screen-options'
@@ -25,12 +25,12 @@ let navigationRef: ContainerRef
 beforeEach(() => {
   installMemoryPreferences()
   resetBarStoreForTests()
-  useOnboardingStore.setState({ status: 'completed' })
+  useAppEntryStore.setState({ stage: 'ready' })
   navigationRef = createNavigationContainerRef<RootStackParamList>() as ContainerRef
 })
 
 afterEach(() => {
-  useOnboardingStore.setState({ status: 'awaitingApiKey' })
+  useAppEntryStore.setState({ stage: 'signIn' })
   __resetThemeAppearanceForTest()
 })
 
@@ -133,7 +133,7 @@ describe('같은 층의 옆걸음은 쌓이지 않는다', () => {
     expect(층_단들()).toHaveLength(2)
 
     // `openTab('Settings')` 가 하는 그대로다. 그룹 층은 스택 **바닥**이라 되돌리기가 곧
-    // `popToTop` 이고, 그 뒤에 안쪽 탭을 지정한다(`use-open-tab.ts`).
+    // `popToTop` 이고, 그 뒤에 안쪽 탭을 지정한다(`hooks/useOpenTab.ts`).
     expect(needsPopToGroupLayer('Settings')).toBe(true)
     const [name, nested] = tabNavigateArgs('Settings')
     await act(async () => {

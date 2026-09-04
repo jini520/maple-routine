@@ -33,7 +33,7 @@ import type { RecordedDrop } from '../../../types/drops'
 
 import { 테스트_안전영역 } from '../../../components/__tests__/render-atom'
 import { ThemeProvider } from '../../../theme/ThemeProvider'
-import { useScreenNavigation } from '../../use-screen-navigation'
+import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { BossProfitScreen } from '../BossProfitScreen'
 
 // 이름이 `mock` 으로 시작해야 한다. babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데 그
@@ -51,8 +51,8 @@ jest.mock('../../../features/toast/store', () => ({
 
 // 401 은 토스트가 아니라 키 무효화 진입점으로 간다(이 화면에는 로스터 조회가
 // 없어 동기화 경로 하나뿐이다).
-jest.mock('../../../features/onboarding/store', () => ({
-  useOnboardingStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) } }))
+jest.mock('../../../features/auth/store', () => ({
+  useAuthStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) } }))
 
 // 좁은 범위로만 목한다. `dropRowKey` 는 본문(`AccordionBody`)이 쓰는 순수 함수라 실물과
 // 같은 문자열을 낸다.
@@ -61,7 +61,7 @@ jest.mock('../../../features/boss-profit/store', () => ({
   dropRowKey: (ocid: string, boss: string, difficulty: string, periodKey: string) =>
     `${ocid}|${boss}|${difficulty}|${periodKey}` }))
 
-jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
+jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 
 const mockedStore = jest.mocked(useBossProfitStore)
 const mockedNavigation = jest.mocked(useScreenNavigation)

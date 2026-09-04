@@ -7,11 +7,11 @@
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
-import { useScreenNavigation } from '../../use-screen-navigation'
+import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { ItemSplitScreen } from '../ItemSplitScreen'
 import { ITEM_SPLIT_TOOL_NAME } from '../tool-names'
 
-jest.mock('../../use-screen-navigation', () => ({ useScreenNavigation: jest.fn() }))
+jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 
 const mockedUseScreenNavigation = jest.mocked(useScreenNavigation)
 const goBack = jest.fn()
