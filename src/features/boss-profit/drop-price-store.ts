@@ -15,8 +15,8 @@ import { toRecordedDrop } from './rows'
 import { useBossProfitStore } from './store'
 import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
 import type { BossDropRecord } from '../../storage/boss-drops'
-import { getBossProfitRecords } from '../../storage/boss-profit'
-import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
+import { getBossProfitRecords, getRecordedCharacterOcids } from '../../storage/boss-profit'
+import { resolveDisplayProfiles } from '../character-profile/resolve'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import type { BossDifficulty } from '../../types'
 import type { RecordedDrop } from '../../types/drops'
@@ -113,8 +113,12 @@ export const useDropPriceStore = create<DropPriceState>((set, get) => ({
   async load(periodKey) {
     set({ status: 'loading', periodKey })
 
-    const ocids = await getTrackedCharacterOcids()
-    if (ocids === null || ocids.length === 0) {
+    // 추적 목록으로 범위를 정하면 캐릭터를 관리 목록에서 뺀 순간 그 캐릭터의 미입력 드롭을
+    // 여기서 못 고친다. 그런데 보스 수익과 가계부는 그 건수를 계속 `미입력 n` 으로 센다.
+    const tracked = (await getTrackedCharacterOcids()) ?? []
+    const recorded = await getRecordedCharacterOcids().catch(() => [])
+    const ocids = [...new Set([...tracked, ...recorded])]
+    if (ocids.length === 0) {
       set({ status: 'ready', groups: [] })
       return
     }
@@ -130,11 +134,10 @@ export const useDropPriceStore = create<DropPriceState>((set, get) => ({
         profitRecords.map((record) => [saveGroupKey(record), record.partySize] as const),
       )
 
+      const profiles = await resolveDisplayProfiles(dropRecords.map((record) => record.ocid))
       const characters = new Map<string, { characterName: string; imageUrl: string | null }>()
-      for (const ocid of new Set(dropRecords.map((record) => record.ocid))) {
-        const cached = await getCachedCharacterBasic(ocid)
-        if (cached === null) continue
-        characters.set(ocid, { characterName: cached.profile.name, imageUrl: cached.profile.imageUrl ?? null })
+      for (const [ocid, profile] of profiles) {
+        characters.set(ocid, { characterName: profile.name, imageUrl: profile.imageUrl })
       }
 
       set({ status: 'ready', groups: buildGroups(dropRecords, characters, partySizes) })

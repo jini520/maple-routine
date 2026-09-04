@@ -15,10 +15,11 @@ jest.mock('../../../storage/boss-profit', () => {
   // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다.
   mockModule1 = mockModule1 ?? {
   getAllBossProfitRecordKeys: jest.fn(),
+  getRecordedCharacterOcids: jest.fn(),
 }
   return mockModule1
 })
-const { getAllBossProfitRecordKeys: getAllBossProfitRecordKeysMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
+const { getAllBossProfitRecordKeys: getAllBossProfitRecordKeysMock, getRecordedCharacterOcids: getRecordedCharacterOcidsMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 var mockModule2: Record<string, unknown>
 jest.mock('../../../storage/character-selection', () => {
   // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다.
@@ -29,14 +30,14 @@ jest.mock('../../../storage/character-selection', () => {
 })
 const { getTrackedCharacterOcids: getTrackedCharacterOcidsMock } = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
 var mockModule3: Record<string, unknown>
-jest.mock('../../../storage/character-basic-cache', () => {
+jest.mock('../../character-profile/resolve', () => {
   // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다.
   mockModule3 = mockModule3 ?? {
-  getCachedCharacterBasic: jest.fn(),
+  resolveDisplayProfiles: jest.fn(),
 }
   return mockModule3
 })
-const { getCachedCharacterBasic: getCachedCharacterBasicMock } = jest.requireMock('../../../storage/character-basic-cache') as Record<string, jest.Mock>
+const { resolveDisplayProfiles: resolveDisplayProfilesMock } = jest.requireMock('../../character-profile/resolve') as Record<string, jest.Mock>
 
 function dropRecord(overrides: Partial<BossDropRecord>): BossDropRecord {
   return {
@@ -78,9 +79,17 @@ beforeEach(() => {
   getAllBossProfitRecordKeysMock.mockReset().mockResolvedValue([])
   getTrackedCharacterOcidsMock.mockReset().mockResolvedValue(['ocid-1'])
   getBossDropRecordsRevisionMock.mockReset().mockReturnValue(0)
-  getCachedCharacterBasicMock
+  getRecordedCharacterOcidsMock.mockReset().mockResolvedValue([])
+  resolveDisplayProfilesMock
     .mockReset()
-    .mockResolvedValue({ profile: { name: '메이플영웅', level: 290, imageUrl: 'https://img/1.png' } })
+    .mockImplementation(async (ocids: readonly string[]) =>
+      new Map(
+        [...new Set(ocids)].map((ocid) => [
+          ocid,
+          { name: '메이플영웅', imageUrl: 'https://img/1.png', world: null, level: 290 },
+        ]),
+      ),
+    )
 })
 
 describe('useDropHistoryStore.load', () => {
@@ -196,7 +205,7 @@ describe('useDropHistoryStore.load', () => {
     expect(store.getState().drought).toBeNull()
   })
 
-  it('추적 캐릭터가 없으면 DB를 조회하지 않고 빈 목록으로 끝낸다', async () => {
+  it('추적 캐릭터도 기록도 없으면 DB를 조회하지 않고 빈 목록으로 끝낸다', async () => {
     getTrackedCharacterOcidsMock.mockResolvedValue(null)
     const store = await loadStore()
 
@@ -205,6 +214,28 @@ describe('useDropHistoryStore.load', () => {
     expect(getAllBossDropRecordsMock).not.toHaveBeenCalled()
     expect(store.getState().status).toBe('ready')
     expect(store.getState().groups).toEqual([])
+  })
+
+  // 캐릭터를 관리 목록에서 빼도 그 캐릭터가 먹은 것은 히스토리에 남아야 한다. 기록은 원래부터
+  // 안 지워졌고 조회 범위만 추적 목록이었다.
+  it('추적에서 빠진 캐릭터도 기록이 있으면 조회 범위에 든다', async () => {
+    getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
+    getRecordedCharacterOcidsMock.mockResolvedValue(['ocid-1', 'ocid-해제'])
+    const store = await loadStore()
+
+    await store.getState().load()
+
+    expect(getAllBossDropRecordsMock).toHaveBeenCalledWith(['ocid-1', 'ocid-해제'])
+  })
+
+  it('추적 목록이 비어도 기록이 있으면 조회한다', async () => {
+    getTrackedCharacterOcidsMock.mockResolvedValue(null)
+    getRecordedCharacterOcidsMock.mockResolvedValue(['ocid-해제'])
+    const store = await loadStore()
+
+    await store.getState().load()
+
+    expect(getAllBossDropRecordsMock).toHaveBeenCalledWith(['ocid-해제'])
   })
 
   // 이 화면이 push 페이지일 때는 열 때마다 새로 마운트돼 늘 최신을 읽었다. `today` 가 **탭**으로

@@ -119,6 +119,27 @@ function rowToRecord(row: Record<string, unknown>): BossProfitRecord {
   }
 }
 
+/**
+ * 기록을 하나라도 남긴 캐릭터. **추적 목록과 무관하다.**
+ *
+ * 화면이 `누구의 것을 그릴까` 를 추적 목록에 물으면, 캐릭터를 관리 목록에서 빼는 순간 지운 적
+ * 없는 과거 수익이 통째로 사라진다. 기록 자신이 그 답을 갖는다.
+ *
+ * **드롭 표까지 훑는다.** 결정석 가격을 모르는 보스는 수익 행이 안 남고 드롭만 남아, 수익 표만
+ * 보면 그 캐릭터가 드롭 히스토리에서 사라진다.
+ *
+ * 기간으로 안 자른다. 자르면 부르는 자리마다 어느 기간 키를 넣을지를 다시 정해야 하고(월간 탭은
+ * 그 달의 주차 키까지), 안 잘라도 행은 어차피 기록이 있는 기간에만 선다.
+ */
+export async function getRecordedCharacterOcids(): Promise<string[]> {
+  const db = await getBossProfitDb()
+  const { values } = await db.query(
+    `SELECT ocid FROM boss_profit_records UNION SELECT ocid FROM boss_drop_records`,
+  )
+
+  return (values ?? []).map((row) => row.ocid as string)
+}
+
 export async function getBossProfitRecords(
   ocids: string[],
   periodKeys: string[],

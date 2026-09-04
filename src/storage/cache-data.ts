@@ -41,6 +41,10 @@ export const RECORD_TABLE_NAMES: readonly string[] = [
   // 아래 차집합 파생이 이 둘을 **지워도 되는 것** 으로 끌어간다.
   'income_records',
   'spend_records',
+  // 이름이 없으면 기록에서 행을 못 만든다(ocid 는 사용자에게 아무 뜻도 없어 대신 안 적는다).
+  // 이 표를 `general` 로 두면 기록을 남긴 사용자가 이름 없는 기록을 받아, 지운 적 없는 과거
+  // 수익이 화면에서 통째로 사라진다. 지우는 무게가 기록과 같아서 같은 그룹이다.
+  'character_profiles',
 ]
 
 // db.ts에 테이블이 추가되면 자동으로 여기 들어와 계속 삭제 대상으로 남는다.

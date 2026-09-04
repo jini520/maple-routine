@@ -21,8 +21,9 @@ import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-d
 import { sumDropPayout } from '../../lib/drop/drop-price'
 import type { RecordedDrop } from '../../types/drops'
 import { isPeriodChecked } from '../../storage/boss-profit-period-checks'
-import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
+import { getRecordedCharacterOcids } from '../../storage/boss-profit'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
+import { resolveDisplayProfiles } from '../character-profile/resolve'
 import { getManualTrackedContent, type ManualTrackedItem } from '../../storage/manual-tracked-content'
 import { getCachedSchedulerState } from '../../storage/scheduler-cache'
 import { getTrackingMode } from '../../storage/tracking-mode'
@@ -205,32 +206,42 @@ let requestGeneration = 0
 
 
 
+// 화면에 그릴 캐릭터. 추적 목록 ∪ 기록을 남긴 캐릭터다.
+//
+// 추적 목록만 보면 캐릭터를 관리 목록에서 뺀 순간 지운 적 없는 과거 수익이 통째로 사라진다.
+// 기록은 원래부터 안 지워졌고 조회 범위만 추적 목록이었다.
+//
+// **이 배열을 동기화·백필·고아 드롭 정리에 넘기면 안 된다.** 백필은 Nexon API 를 부르고, 고아
+// 정리의 안전 장치 하나가 `믿을 수 있는 캐릭터`(동기화가 성공한 캐릭터)라 해제한 캐릭터를
+// 넣으면 술어가 그들의 드롭을 고아로 읽는다.
+async function resolveDisplayOcids(trackedOcids: string[]): Promise<string[]> {
+  const recorded = await withSqliteFallback(getRecordedCharacterOcids(), [])
+  return [...new Set([...trackedOcids, ...recorded])]
+}
+
 // 캐시 단계(trackedOcids 저장 순서)와 동기화 단계(Nexon character/list 응답 순서)가 서로 달라
 // 캐릭터 목록 위치가 API 응답 이후 갑자기 바뀌어 보인다. 레벨 내림차순(동레벨이면 이름순)으로
 // 항상 같은 순서를 계산해 캐시 우선 표시부터 과거 기간 조회까지 전부 이 순서를 따르게 한다.
 //
-// character-basic-cache 를 이미 조회하는 김에 아바타용 imageUrl 과 월드도 함께 반환한다. 같은
-// profile 객체에 있어 추가 조회 비용이 0 이다. 캐릭터명은 반환하지 않는다. rows 의
-// characterName 은 character/list·스케줄러 캐시가 출처이고 이 캐시의 이름은 갱신 시점이 달라
-// 신뢰도가 낮다. world 는 정렬에 참여하지 않는다.
+// 프로필의 출처는 지워지지 않는 스냅샷이다. 5분 TTL 캐시에서 읽으면 설정의 캐시 비우기 한 번에
+// 과거 행이 이름을 잃고 통째로 사라진다. 조회는 ocid 마다가 아니라 한 번이다. 캐시는 ocid
+// 하나가 네이티브 호출 하나라 해제한 캐릭터까지 세면 목록이 길어질수록 왕복이 그만큼 늘었다.
+// world 는 정렬에 참여하지 않는다.
 async function getSortedCharacterInfo(ocids: string[]): Promise<SortedCharacterInfo[]> {
-  const withProfile = await Promise.all(
-    ocids.map(async (ocid) => {
-      const cached = await getCachedCharacterBasic(ocid)
-      return {
-        ocid,
-        level: cached?.profile.level ?? null,
-        // 정렬용 이름은 캐시가 없을 때 ''로 떨어뜨린다(compareByName이 문자열을 요구한다). 바깥으로
-        // 내보내는 characterName은 아래에서 null로 갈라 "캐시 없음"을 보존한다.
-        name: cached?.profile.name ?? '',
-        characterName: cached?.profile.name ?? null,
-        imageUrl: cached?.profile.imageUrl ?? null,
-        // profile.world는 옵셔널(string | undefined)이라 imageUrl과 같은 규약으로 null 정규화한다.
-        // 화면이 부재를 두 가지 형태로 구분할 이유가 없다.
-        world: cached?.profile.world ?? null,
-      }
-    }),
-  )
+  const profiles = await resolveDisplayProfiles(ocids)
+  const withProfile = ocids.map((ocid) => {
+    const profile = profiles.get(ocid)
+    return {
+      ocid,
+      level: profile?.level ?? null,
+      // 정렬용 이름은 모를 때 ''로 떨어뜨린다(compareByName이 문자열을 요구한다). 바깥으로
+      // 내보내는 characterName은 아래에서 null로 갈라 "모름"을 보존한다.
+      name: profile?.name ?? '',
+      characterName: profile?.name ?? null,
+      imageUrl: profile?.imageUrl ?? null,
+      world: profile?.world ?? null,
+    }
+  })
 
   return withProfile
     .sort((a, b) => {
@@ -317,11 +328,15 @@ async function buildWeeklySubtotalsForMonth(
 
   const subtotals: BossProfitWeeklySubtotal[] = []
 
+  // 호출부가 안 넘긴 ocid 만 한 번에 찾는다.
+  const missing = ocids.filter((ocid) => !knownProfiles.has(ocid))
+  const looked = await resolveDisplayProfiles(missing)
+
   for (const ocid of ocids) {
     const known = knownProfiles.get(ocid)
-    const cachedProfile = known === undefined ? (await getCachedCharacterBasic(ocid))?.profile : undefined
-    const characterName = known?.characterName ?? cachedProfile?.name ?? null
-    const imageUrl = known?.imageUrl ?? cachedProfile?.imageUrl ?? null
+    const fallback = looked.get(ocid)
+    const characterName = known?.characterName ?? fallback?.name ?? null
+    const imageUrl = known?.imageUrl ?? fallback?.imageUrl ?? null
     if (characterName === null) {
       continue
     }
@@ -406,22 +421,20 @@ async function buildRowsFromRecords(
   }
 
   const profileCache = new Map<string, CharacterProfileInfo | null>(knownProfiles)
-  const rows: BossProfitRow[] = []
+  // 호출부가 안 넘긴 ocid 만 한 번에 찾는다. 기록마다 읽으면 캐릭터 수만큼 왕복이 는다.
+  const looked = await resolveDisplayProfiles(
+    records.filter((record) => !profileCache.has(record.ocid)).map((record) => record.ocid),
+  )
+  for (const [ocid, profile] of looked) {
+    profileCache.set(ocid, {
+      characterName: profile.name,
+      imageUrl: profile.imageUrl,
+      world: profile.world,
+    })
+  }
 
+  const rows: BossProfitRow[] = []
   for (const record of records) {
-    if (!profileCache.has(record.ocid)) {
-      const cached = await getCachedCharacterBasic(record.ocid)
-      profileCache.set(
-        record.ocid,
-        cached === null
-          ? null
-          : {
-              characterName: cached.profile.name,
-              imageUrl: cached.profile.imageUrl,
-              world: cached.profile.world ?? null,
-            },
-      )
-    }
     const profile = profileCache.get(record.ocid) ?? null
     if (profile === null) {
       continue
@@ -478,17 +491,43 @@ async function loadPeriod(
   generation: number,
 ): Promise<void> {
   const currentPeriodKey = getCurrentBossProfitPeriod(tab, now).periodKey
+  // `ocids` 는 동기화 대상이고 이쪽은 표시 대상이다. 기록을 남긴 캐릭터가 함께 든다. 백필과
+  // 고아 드롭 정리에는 계속 `ocids` 를 넘긴다(그 둘이 왜 넓히면 안 되는지는 위 함수 주석).
+  const displayOcids = await resolveDisplayOcids(ocids)
   // buildWeeklySubtotalsForMonth의 캐릭터별 행 순서를 항상 동일하게 유지하기 위해 여기서도
   // 같은 정렬 규칙을 적용한다(refresh()와 동일한 이유. API 응답 순서에 좌우되지 않도록).
-  const sortedCharacterInfo = await getSortedCharacterInfo(ocids)
+  const sortedCharacterInfo = await getSortedCharacterInfo(displayOcids)
   const sortedOcids = sortedCharacterInfo.map((info) => info.ocid)
-  // 위 조회가 이미 캐릭터당 한 번씩 프로필을 읽었다. 그 결과를 아래 두 함수에
-  // 넘겨 같은 캐시를 다시 읽지 않게 한다(캐릭터 6명 기준 18회 → 6회).
+  // 위 조회가 이미 프로필을 한 번에 읽었다. 그 결과를 아래 두 함수에 넘겨 같은 표를 다시 읽지
+  // 않게 한다.
   const profileSnapshot = toProfileSnapshot(sortedCharacterInfo)
 
   if (periodKey === currentPeriodKey) {
-    const rows =
+    const syncedRows =
       latestSyncSnapshot === null ? [] : filterRowsForTab(latestSyncSnapshot.rows, tab, periodKey)
+    // 동기화 스냅샷이 한 줄도 안 그린 캐릭터는 기록에서 만든다. 추적을 해제해도 이번 주에 이미
+    // 잡은 것이 사라지면 안 된다.
+    //
+    // 이미 그린 캐릭터는 건너뛰므로 `refresh` 가 앞서 되살린 행과 겹치지 않는다. 그 회차가
+    // 도는 길과 이 함수가 도는 길이 갈려 있어(제자리 새로고침이 아니면 저쪽이 직접 그린다)
+    // 어느 쪽이 먼저 와도 같은 화면이 돼야 한다.
+    //
+    // 미완료 자리는 여기서 안 선다. 그 행은 스케줄 캐시와 동기화 결과에서만 나오고, 동기화를
+    // 안 하는 캐릭터에서는 `등록은 됐는데 아직 안 잡았다`가 거짓이 된다.
+    const drawnOcids = new Set(syncedRows.map((row) => row.ocid))
+    const rows = sortRowsByOcidOrder(
+      [
+        ...syncedRows,
+        ...(await buildRowsFromRecords(
+          displayOcids.filter((ocid) => !drawnOcids.has(ocid)),
+          tab,
+          periodKey,
+          now,
+          profileSnapshot,
+        )),
+      ],
+      sortedOcids,
+    )
     const weeklySubtotals =
       tab === 'monthly'
         ? await buildWeeklySubtotalsForMonth(
@@ -502,9 +541,9 @@ async function loadPeriod(
     // 서로 독립인 SQLite 조회라 병렬로 던진다. 직렬로 두면 조회 하나가 지연될 때마다
     // withSqliteFallback 의 5초 타임아웃이 줄줄이 더해진다.
     const [canGoPreviousPeriod, dropsByRowKey, previousPeriodTotalMeso] = await Promise.all([
-      canReachPreviousPeriod(tab, periodKey, ocids, now),
-      loadDropsByRowKey(ocids, withCurrentPeriodRows(rows), now),
-      loadPreviousPeriodTotal(ocids, tab, periodKey),
+      canReachPreviousPeriod(tab, periodKey, displayOcids, now),
+      loadDropsByRowKey(displayOcids, withCurrentPeriodRows(rows), now),
+      loadPreviousPeriodTotal(displayOcids, tab, periodKey),
     ])
     if (generation !== requestGeneration) return
     // loadPeriod 는 항상 로컬 데이터로만 뷰를 정착시키고 실시간 동기화를 하지 않는다. 또한 이
@@ -569,7 +608,7 @@ async function loadPeriod(
   }
 
   const rows = sortRowsByOcidOrder(
-    await buildRowsFromRecords(ocids, tab, periodKey, now, profileSnapshot),
+    await buildRowsFromRecords(displayOcids, tab, periodKey, now, profileSnapshot),
     sortedOcids,
   )
   const weeklySubtotals =
@@ -583,7 +622,9 @@ async function loadPeriod(
   // `loadDropsByRowKey` 보다 앞이어야 하지만, 앞줄에 세워 직렬로 두면 기간을 옮길 때마다
   // 왕복이 하나 더 얹힌다. 그래서 그 갈래 안에서만 이어 붙인다.
   const [canGoPreviousPeriod, dropsByRowKey, previousPeriodTotalMeso] = await Promise.all([
-    canReachPreviousPeriod(tab, periodKey, ocids, now),
+    canReachPreviousPeriod(tab, periodKey, displayOcids, now),
+    // 정리에는 **동기화 대상만** 넘긴다. 해제한 캐릭터는 동기화를 안 해 영원히 `믿을 수 있는
+    // 캐릭터`가 못 되고, 넣는 순간 술어가 그들의 드롭을 고아로 읽는다.
     sweepOrphanDrops({
       ocids,
       rows,
@@ -594,9 +635,9 @@ async function loadPeriod(
       now,
     }).then((removedDrops) => {
       notifyOrphanDropCleanup(removedDrops)
-      return loadDropsByRowKey(ocids, withCurrentPeriodRows(rows), now)
+      return loadDropsByRowKey(displayOcids, withCurrentPeriodRows(rows), now)
     }),
-    loadPreviousPeriodTotal(ocids, tab, periodKey),
+    loadPreviousPeriodTotal(displayOcids, tab, periodKey),
   ])
 
   // target별 상태 → 이 화면의 상태. 기록 유무는 방금 읽은 rows에서 본다(같은 조회를 두 번 하지 않는다).
@@ -701,14 +742,24 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     const viewedPeriodKey = get().periodKey
     const refreshInPlace = containsInProgressWeek(tab, viewedPeriodKey, now)
 
+    // `ocids` 는 동기화 대상이다. 그리는 것은 그보다 넓다. 기록을 남긴 캐릭터가 함께 든다.
+    const displayOcids = await resolveDisplayOcids(ocids)
+
     // 직전 기간 합계는 이 새로고침이 바꾸지 않는 값이다. 자동 기록은 현재 기간에만 쓴다. 그래서
     // 한 번만 읽고 두 단계(캐시·동기화 완료)가 나눠 쓴다. 여기서 미리 던져 다른 조회와 겹치게
     // 한다. 단계 사이에 끼워 넣으면 SQLite 지연 시 withSqliteFallback 의 5초 창이 하나 더 붙는다.
-    const previousPeriodTotalPromise = loadPreviousPeriodTotal(ocids, tab, currentPeriodKey)
+    const previousPeriodTotalPromise = loadPreviousPeriodTotal(displayOcids, tab, currentPeriodKey)
 
     if (ocids.length === 0) {
       latestSyncSnapshot = { ocids: [], rows: [], characterProfiles: new Map() }
       if (myGeneration !== requestGeneration) return
+      // 추적은 비었는데 기록이 있으면 화면은 여전히 그것을 그려야 한다. 동기화할 것이 없을 뿐
+      // 이라, 화면 반영은 기록을 원천으로 아는 `loadPeriod` 에 넘긴다.
+      if (displayOcids.length > 0) {
+        set({ error: null, staleCharacterNames: [], characterIssues: {} })
+        await loadPeriod(set, tab, currentPeriodKey, ocids, now, myGeneration)
+        return
+      }
       set({
         status: 'loaded',
         periodKey: currentPeriodKey,
@@ -731,7 +782,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // 이름순)를 쓰도록 미리 계산해둔다. trackedOcids 저장 순서와 Nexon character/list 응답
     // 순서가 달라 API 응답 이후 캐릭터 목록 위치가 바뀌어 보이던 문제를 없앤다. 아바타 이미지도
     // 이 조회에 함께 실려 온다(character-basic-cache의 character_image).
-    const sortedCharacterInfo = await getSortedCharacterInfo(ocids)
+    const sortedCharacterInfo = await getSortedCharacterInfo(displayOcids)
     const sortedOcids = sortedCharacterInfo.map((info) => info.ocid)
     const imageUrlByOcid = new Map(sortedCharacterInfo.map((info) => [info.ocid, info.imageUrl]))
     // 월드도 같은 조회 결과에서 그대로 꺼내 행까지 흘린다.
@@ -748,7 +799,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // refresh 는 항상 현재 기간을 보여주므로 한 칸 더 과거로 갈 수 있는지도 함께 계산해 이전
     // 버튼 게이트를 세운다. refresh 는 이전 기간의 기록을 안 건드리므로 아래 캐시·라이브 두
     // set() 이 같은 값을 쓴다.
-    const canGoPreviousPeriod = await canReachPreviousPeriod(tab, currentPeriodKey, ocids, now)
+    const canGoPreviousPeriod = await canReachPreviousPeriod(tab, currentPeriodKey, displayOcids, now)
 
     // 수동 모드에서는 게임 등록·처치가 아니라 사용자 멤버십(manualTrackedContent)이 표시 목록을
     // 정하므로 캐시·라이브 양쪽에서 참조할 수동 목록을 미리 조회해 둔다. 자동 모드는 이 조회를
@@ -808,9 +859,13 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     const cachedRows = cachedByOcid.flatMap((entry) => entry.rows)
 
     // 프로필 맵은 행이 아니라 캐시 엔트리에서 만든다. 행에서 만들면 축약 응답으로 행이 0인
-    // 캐릭터는 프로필이 없고 `appendRecordOnlyRows` 가 그 캐릭터를 통째로 건너뛴다. 캐시 엔트리
-    // 자체가 없는 ocid 는 여전히 제외한다. 이름을 모르면 행을 만들 수 없다.
-    const cachedCharacterProfiles = new Map<string, CharacterProfileInfo>()
+    // 캐릭터는 프로필이 없고 `appendRecordOnlyRows` 가 그 캐릭터를 통째로 건너뛴다.
+    //
+    // 바탕은 지워지지 않는 스냅샷이다(해제한 캐릭터는 스케줄 캐시가 애초에 없다). 그 위를 스케줄
+    // 캐시의 이름이 덮는다. 이름의 출처가 갈리면 같은 캐릭터가 화면에서 다르게 불린다.
+    const cachedCharacterProfiles = new Map<string, CharacterProfileInfo>(
+      toProfileSnapshot(sortedCharacterInfo),
+    )
     ocids.forEach((ocid, index) => {
       const profile = cachedByOcid[index].profile
       if (profile !== null) cachedCharacterProfiles.set(ocid, profile)
@@ -845,7 +900,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // 없음 으로 읽으면 사용자가 저장한 파티원 수가 1 로 덮인다. 캐시 행이 0 인 진입에서도
     // 조회한다. 그 진입이 정확히 아래 복원이 겨누는 시나리오라 행 개수로 막으면 재료가 사라진다.
     const cachedRecords = await withSqliteFallback<BossProfitRecord[] | null>(
-      getBossProfitRecords(ocids, cachedPeriodKeys),
+      getBossProfitRecords(displayOcids, cachedPeriodKeys),
       null,
     )
     const cachedMergedRows = mergeRecordsIntoRows(cachedRows, cachedRecords ?? [])
@@ -943,7 +998,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       // 헤드라인이 있다. 건너뛰는 진입에는 이 값을 다시 채울 동기화 완료 단계가 없어, 행이
       // 하나도 없어도 직전 기간 합계를 읽어야 증감 칩이 0 으로 굳지 않는다.
       const [cachedDropsByRowKey, previousPeriodTotalMeso] = await Promise.all([
-        loadDropsByRowKey(ocids, cachedSortedRows, now),
+        loadDropsByRowKey(displayOcids, cachedSortedRows, now),
         cachedSortedRows.length > 0 || skipSync ? previousPeriodTotalPromise : Promise.resolve(0),
       ])
 
@@ -990,7 +1045,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // 를 갱신했다. 이 화면만 프로필을 동기화 이전에 읽으므로(캐시 우선 표시가 즉시 그리려면
     // 그래야 한다) 여기서 다시 읽지 않으면 갱신된 레벨·이미지가 다음 진입으로 밀린다. 로컬
     // 조회라 네트워크는 0회다. 레벨이 바뀌어 캐릭터 순서가 바뀌는 것은 의도된 결과다.
-    const syncedCharacterInfo = await getSortedCharacterInfo(ocids)
+    const syncedCharacterInfo = await getSortedCharacterInfo(displayOcids)
     const syncedOcids = syncedCharacterInfo.map((info) => info.ocid)
     const syncedImageUrlByOcid = new Map(syncedCharacterInfo.map((info) => [info.ocid, info.imageUrl]))
     const syncedWorldByOcid = new Map(syncedCharacterInfo.map((info) => [info.ocid, info.world]))
@@ -1001,7 +1056,10 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // 동기화가 실패한 캐릭터. `buildFallbackResult` 가 마지막 캐시 상태를 그대로 돌려주므로 그
     // state 의 완료 여부는 지금의 사실이 아니다. 자동 기록에서 제외한다.
     const staleOcids = new Set<string>()
-    const characterProfiles = new Map<string, CharacterProfileInfo>()
+    // 캐시 단계와 같은 이유로 스냅샷이 바탕이다. 동기화 결과가 그 위를 덮는다.
+    const characterProfiles = new Map<string, CharacterProfileInfo>(
+      toProfileSnapshot(syncedCharacterInfo),
+    )
 
     for (const result of results) {
       const profile: CharacterProfileInfo = {
@@ -1044,7 +1102,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // 폴백을 [] 가 아니라 null 로 둬 조회 실패 와 기록 없음 을 구분한다. 실패를 없음 으로 읽으면
     // 아래 자동 기록이 사용자가 저장한 파티원 수를 1 로 덮어쓴다.
     const records = await withSqliteFallback<BossProfitRecord[] | null>(
-      getBossProfitRecords(ocids, periodKeys),
+      getBossProfitRecords(displayOcids, periodKeys),
       null,
     )
     const mergedRows = mergeRecordsIntoRows(rows, records ?? [])
@@ -1079,6 +1137,8 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // `records === null` 이면 건너뛴다. 기록 조회 자체가 실패한 것이라 행이 없다 가 아무것도
     // 뜻하지 않는다.
     if (records !== null) {
+      // 여기에 넘기는 것은 **동기화 대상**이다. 해제한 캐릭터를 넣으면 아래 `trustedOcids` 가
+      // 영원히 그들을 못 담아 술어가 그들의 드롭을 고아로 읽는다.
       const removedDrops = await sweepOrphanDrops({
         ocids,
         rows: sortedRows,
@@ -1122,7 +1182,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         : []
 
     const [liveDropsByRowKey, livePreviousPeriodTotalMeso] = await Promise.all([
-      loadDropsByRowKey(ocids, sortedRows, now),
+      loadDropsByRowKey(displayOcids, sortedRows, now),
       previousPeriodTotalPromise,
     ])
 

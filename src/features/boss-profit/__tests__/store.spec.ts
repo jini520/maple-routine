@@ -24,8 +24,10 @@ jest.mock('../../../storage/boss-profit', () => ({
   hasBossProfitRecordsAtOrBefore: jest.fn(),
   fillMissingRecordWorlds: jest.fn(),
   upsertBossProfitRecord: jest.fn(),
+  // 추적 목록 밖에서 기록을 남긴 캐릭터. 화면이 그릴 범위가 여기서 넓어진다.
+  getRecordedCharacterOcids: jest.fn(),
 }))
-const { getBossProfitRecords: getBossProfitRecordsMock, hasBossProfitRecordsAtOrBefore: hasBossProfitRecordsAtOrBeforeMock, fillMissingRecordWorlds: fillMissingRecordWorldsMock, upsertBossProfitRecord: upsertBossProfitRecordMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
+const { getBossProfitRecords: getBossProfitRecordsMock, hasBossProfitRecordsAtOrBefore: hasBossProfitRecordsAtOrBeforeMock, fillMissingRecordWorlds: fillMissingRecordWorldsMock, upsertBossProfitRecord: upsertBossProfitRecordMock, getRecordedCharacterOcids: getRecordedCharacterOcidsMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 
 // 처치 날짜 캐기는 **동기화가 끝난 뒤 기다리지 않고** 튼다. 이 화면은
 // `defeated_on` 을 안 쓰므로 결과를 기다릴 이유가 없다. 목으로 **떴는가** 만 본다.
@@ -46,6 +48,11 @@ jest.mock('../../../storage/character-basic-cache', () => ({
   getCachedCharacterBasic: jest.fn(),
 }))
 const { getCachedCharacterBasic: getCachedCharacterBasicMock } = jest.requireMock('../../../storage/character-basic-cache') as Record<string, jest.Mock>
+
+// 프로필의 출처는 이제 지워지지 않는 스냅샷이다. 이 스위트는 캐시에 값을 심어 화면을 재므로,
+// 목이 그 캐시를 그대로 읽어 같은 모양으로 돌려준다(실물도 표에 없으면 캐시를 본다).
+jest.mock('../../character-profile/resolve', () => ({ resolveDisplayProfiles: jest.fn() }))
+const { resolveDisplayProfiles: resolveDisplayProfilesMock } = jest.requireMock('../../character-profile/resolve') as Record<string, jest.Mock>
 
 jest.mock('../../../storage/boss-profit-period-checks', () => ({
   isPeriodChecked: jest.fn(),
@@ -180,6 +187,21 @@ beforeEach(() => {
     profile: { name: `캐릭터-${ocid}`, level: 200, imageUrl: 'x', accessFlag: true },
     cachedAt: '2026-07-01T00:00:00.000Z',
   }))
+  getRecordedCharacterOcidsMock.mockReset().mockResolvedValue([])
+  resolveDisplayProfilesMock.mockReset().mockImplementation(async (ocids: readonly string[]) => {
+    const profiles = new Map()
+    for (const ocid of new Set(ocids)) {
+      const cached = await getCachedCharacterBasicMock(ocid)
+      if (cached === null || cached === undefined) continue
+      profiles.set(ocid, {
+        name: cached.profile.name,
+        imageUrl: cached.profile.imageUrl ?? null,
+        world: cached.profile.world ?? null,
+        level: cached.profile.level ?? null,
+      })
+    }
+    return profiles
+  })
   isPeriodCheckedMock.mockResolvedValue(false)
   markPeriodCheckedMock.mockResolvedValue(undefined)
   getAuthConfigMock.mockResolvedValue({ apiKey: 'test-key', selectedAccountId: 'acc-1' })
@@ -3348,6 +3370,121 @@ describe('잡지 않은 보스의 드롭 정리', () => {
     isPeriodCheckedMock.mockResolvedValue(true)
     getBossProfitRecordsMock.mockResolvedValue([])
     getBossDropRecordsMock.mockResolvedValue([{ ...zakumDrop(), periodKey: previousPeriodKey }])
+
+    await useBossProfitStore.getState().goToPreviousPeriod()
+
+    expect(replaceBossDropRecordsMock).not.toHaveBeenCalled()
+  })
+})
+
+
+// 추적 목록에서 뺀 캐릭터의 기록은 원래부터 안 지워졌다. 조회 범위가 추적 목록이라 화면에서만
+// 사라졌다. 동기화 대상과 표시 대상을 가른다.
+describe('추적에서 빠진 캐릭터의 기록', () => {
+  function 해제기록(periodKey: string, boss = '자쿰'): BossProfitRecord {
+    return {
+      ocid: 'ocid-해제',
+      boss,
+      difficulty: '카오스',
+      cycle: 'weekly',
+      periodKey,
+      partySize: 1,
+      priceMeso: 8_080_000,
+      payoutMeso: 8_080_000,
+      recordedAt: '2026-06-01T00:00:00.000Z',
+      world: null,
+    }
+  }
+
+  it('과거 기간에서 행이 선다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    const previousPeriodKey = getAdjacentPeriodKey(
+      'weekly',
+      useBossProfitStore.getState().periodKey,
+      'prev',
+    )
+
+    isPeriodCheckedMock.mockResolvedValue(true)
+    getRecordedCharacterOcidsMock.mockResolvedValue(['ocid-1', 'ocid-해제'])
+    getBossProfitRecordsMock.mockResolvedValue([해제기록(previousPeriodKey)])
+
+    getBossProfitRecordsMock.mockClear()
+    await useBossProfitStore.getState().goToPreviousPeriod()
+
+    // 조회 범위 자체가 넓어져야 한다. 이 배열이 추적 목록이면 그 캐릭터의 기록은 애초에 안 온다.
+    expect(getBossProfitRecordsMock).toHaveBeenCalledWith(['ocid-1', 'ocid-해제'], [previousPeriodKey])
+    const rows = useBossProfitStore.getState().rows
+    expect(rows.map((row) => row.ocid)).toEqual(['ocid-해제'])
+    expect(rows[0].characterName).toBe('캐릭터-ocid-해제')
+  })
+
+  // 이번 주 중간에 해제해도 그 주의 앞부분 수익이 사라지면 안 된다.
+  it('현재 기간에서도 행이 선다', async () => {
+    const currentPeriodKey = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    getRecordedCharacterOcidsMock.mockResolvedValue(['ocid-1', 'ocid-해제'])
+    getBossProfitRecordsMock.mockResolvedValue([해제기록(currentPeriodKey)])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    // 동기화에는 추적 목록만 간다. 넓어지는 것은 기록 조회 쪽이다.
+    expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1'])
+    expect(getBossProfitRecordsMock.mock.calls.every((call) => call[0].includes('ocid-해제'))).toBe(true)
+    expect(useBossProfitStore.getState().rows.map((row) => row.ocid)).toContain('ocid-해제')
+  })
+
+  // 동기화를 안 하는 캐릭터라 `등록은 됐는데 아직 안 잡았다`를 말할 근거가 없다. 기록에서
+  // 되살아나는 행만 선다.
+  it('미완료 자리는 안 세운다. 기록이 있는 것만 선다', async () => {
+    const currentPeriodKey = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    getRecordedCharacterOcidsMock.mockResolvedValue(['ocid-1', 'ocid-해제'])
+    getBossProfitRecordsMock.mockResolvedValue([해제기록(currentPeriodKey)])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    const 해제행 = useBossProfitStore.getState().rows.filter((row) => row.ocid === 'ocid-해제')
+    expect(해제행).toHaveLength(1)
+    expect(해제행[0].isComplete).toBe(true)
+  })
+
+  // 고아 드롭 정리의 안전 장치 하나가 `믿을 수 있는 캐릭터`(동기화가 성공한 캐릭터)다. 해제한
+  // 캐릭터는 영원히 그것이 못 되므로 넣는 순간 술어가 그들의 드롭을 고아로 읽는다.
+  it('고아 드롭 정리에는 동기화 대상만 넘긴다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    const previousPeriodKey = getAdjacentPeriodKey(
+      'weekly',
+      useBossProfitStore.getState().periodKey,
+      'prev',
+    )
+
+    isPeriodCheckedMock.mockResolvedValue(true)
+    getRecordedCharacterOcidsMock.mockResolvedValue(['ocid-1', 'ocid-해제'])
+    // 자쿰에는 수익 기록이 있고 스우에는 드롭만 있다. 그 기간에 행이 하나라도 있으므로 안전
+    // 장치 둘을 통과하고, `믿을 수 있는 캐릭터` 하나만 이 드롭을 살린다.
+    getBossProfitRecordsMock.mockResolvedValue([해제기록(previousPeriodKey)])
+    getBossDropRecordsMock.mockResolvedValue([
+      {
+        ocid: 'ocid-해제',
+        boss: '스우',
+        difficulty: '하드',
+        periodKey: previousPeriodKey,
+        dropIndex: 0,
+        category: 'equipment',
+        itemName: '루즈 컨트롤 머신 마크',
+        slot: '얼굴장식',
+        boxOrigin: null,
+        ringLevel: null,
+        quantity: 1,
+        recordedAt: '2026-06-01T00:00:00.000Z',
+        priceState: null,
+        priceMeso: null,
+        priceShare: null,
+      },
+    ])
+    replaceBossDropRecordsMock.mockClear()
 
     await useBossProfitStore.getState().goToPreviousPeriod()
 
