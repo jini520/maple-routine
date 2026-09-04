@@ -127,7 +127,7 @@ describe('주간 카드', () => {
   it('익스트림 몬스터파커는 접두어를 떼고 quest_state 를 그대로 쓴다', async () => {
     const view = await renderAtom(
       renderWeeklyContentCard(
-        weekly({ name: '[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?', questState: 1, nowCount: 0, maxCount: 2 }),
+        weekly({ name: '[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?', questState: 1, nowCount: 0, maxCount: 5 }),
         300,
       ),
     )

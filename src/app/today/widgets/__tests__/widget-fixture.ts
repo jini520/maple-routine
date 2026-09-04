@@ -277,7 +277,7 @@ export function 공유컨텐츠(): SharedContentGroupView[] {
     ]),
     공유계열('몬스터파크', [
       공유항목('일간', { count: { now: 7, max: 14 } }),
-      공유항목('익스트림 몬스터파커', { count: { now: 1, max: 2 } }),
+      공유항목('익스트림 몬스터파커', { count: { now: 1, max: 5 } }),
     ]),
     공유계열('메이플 유니온', [
       공유항목('주간 드래곤 퇴치', { isComplete: true }),

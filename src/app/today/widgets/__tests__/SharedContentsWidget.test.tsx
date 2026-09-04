@@ -114,7 +114,7 @@ describe('오른쪽 열은 `count` 유무 하나로 갈린다', () => {
     const { getByText } = await 위젯([
       공유계열('몬스터파크', [
         공유항목('일간', { count: { now: 7, max: 14 } }),
-        공유항목('익스트림 몬스터파커', { count: { now: 1, max: 2 } }),
+        공유항목('익스트림 몬스터파커', { count: { now: 1, max: 5 } }),
       ]),
     ])
 

@@ -184,9 +184,16 @@ describe('getSharedContentGroups', () => {
 })
 
 describe('getMaxCountOverride: 익스트림 몬스터파커', () => {
-  it('템플릿의 5가 아니라 사용자 확정값 2를 준다', () => {
-    // `scheduler-content-template.json` 은 이 항목에 `max_count: 5` 를 들고 있다. 게임 규칙은
-    // 주 2회라 오버라이드가 이긴다.
-    expect(getMaxCountOverride('[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?')).toBe(2)
+  // 이 분모는 한 번 뒤집혔다. 2026-08-18 에 템플릿의 5 를 2 로 덮었다가 2026-09-05 에 되돌렸다.
+  // 완료 조건이 일간 몬스터파크 5회라 API 의 5 가 맞고, 주 2회는 수행 제한이라 다른 축이다.
+  // 그 축은 `contentCountTag` 의 참고 태그(`월드 당 2회`)가 말한다.
+  it('오버라이드가 없다. API 와 템플릿의 5 가 그대로 흐른다', () => {
+    expect(getMaxCountOverride('[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?')).toBeNull()
+  })
+
+  // 오버라이드 표 자체는 죽지 않았다. 길드 미션 포인트는 API 가 가끔 0 을 주는 오류 보정이라
+  // 성격이 다르고 그대로 선다.
+  it('길드 주간 미션 포인트는 그대로 10 이다', () => {
+    expect(getMaxCountOverride('[길드] 주간 미션 포인트')).toBe(10)
   })
 })
