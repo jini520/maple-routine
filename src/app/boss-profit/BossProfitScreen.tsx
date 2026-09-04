@@ -74,7 +74,8 @@ import {
 // `DeltaChip` 은 증감 표시를 통계 기능으로 옮길 때까지 쓰이지 않는다. 컴포넌트와 테스트는
 // 그대로 두고 여기서 부르지만 않는다.
 import { CrystalSummaryChip } from './HeadlineChips'
-import { ItemRevenuePopover, useAnchoredPopover } from './ItemRevenuePopover'
+import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
+import { ItemRevenuePopover } from './ItemRevenuePopover'
 
 export function BossProfitScreen(): React.JSX.Element {
   const {

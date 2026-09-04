@@ -22,7 +22,7 @@ import {
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { countMonthlyCrystals, summarizeWorldCrystals } from './character-groups'
 import type { CharacterGroup } from './character-groups'
-import { useAnchoredPopover } from './ItemRevenuePopover'
+import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 
 /** 칩 밑변과 상자 윗변 사이. 흐름 안에 있던 시절의 `mt-1.5` 를 그대로 옮긴 값. */
 const BREAKDOWN_GAP = 6
