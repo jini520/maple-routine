@@ -1,8 +1,10 @@
-// 막고 알리는 모달의 골격.
+// 배지를 이고 서는 모달의 골격.
 //
-// 이 파일이 지키는 것은 **슬롯의 유무와 `tone` 이 정하는 값**이다. 문구는 호출부 몫이라 여기서
-// 안 본다. 두 호출부(`ApiKeyNoticeModal`·`DevelopmentStageKeyModal`)가 각자 그 문구를 단언한다.
-import { fireEvent } from '@testing-library/react-native'
+// 이 파일이 지키는 것은 **영역 여섯의 유무와 그 사이 간격**이다. 문구는 호출부 몫이라 여기서
+// 안 본다. 세 호출부(`ApiKeyNoticeModal`·`DevelopmentStageKeyModal`·`UpdatePromptModal`)가
+// 각자 그 문구를 단언한다.
+import { fireEvent, within } from '@testing-library/react-native'
+import { Text as RNText } from 'react-native'
 
 import { flattenStyle, renderOverlay, 기본테마 } from '../../../__tests__/render-atom'
 import { KeyRoundIcon } from '../../../atoms'
@@ -21,7 +23,7 @@ function 기본프롭(): React.ComponentProps<typeof NoticeModal> {
   }
 }
 
-describe('NoticeModal: 슬롯', () => {
+describe('NoticeModal: 영역', () => {
   it('제목과 주 버튼은 언제나 있다', async () => {
     const { getByText } = await renderOverlay(<NoticeModal {...기본프롭()} />)
 
@@ -29,24 +31,34 @@ describe('NoticeModal: 슬롯', () => {
     expect(getByText('다시 입력하기')).toBeTruthy()
   })
 
-  // 설명 · 내용 · 링크 셋은 선택이다. 안 주면 그 자리가 아예 없어야 한다. 빈 `View` 로 남으면
-  // 위아래 `gap-5` 가 두 번 먹어 머리와 버튼 사이가 벌어진다.
-  it('설명·내용·링크를 안 주면 그 자리가 없다', async () => {
-    const { queryByTestId } = await renderOverlay(<NoticeModal {...기본프롭()} />)
+  // 나머지 다섯은 선택이다. 안 주면 그 자리가 아예 없어야 한다. 빈 `View` 로 남으면 위아래
+  // 간격이 두 번 먹어 덩어리 사이가 벌어진다.
+  it('나머지 영역은 안 주면 자리가 없다', async () => {
+    const { queryByTestId, queryByText } = await renderOverlay(<NoticeModal {...기본프롭()} />)
 
-    expect(queryByTestId('notice-description')).toBeNull()
     expect(queryByTestId('notice-content')).toBeNull()
+    expect(queryByTestId('notice-description')).toBeNull()
+    expect(queryByTestId('notice-option')).toBeNull()
     expect(queryByTestId('notice-link')).toBeNull()
+    expect(queryByText('나중에')).toBeNull()
   })
 
-  // 설명은 제목보다 작다(사용자 지정). 제목이 할 말을 이미 했고 설명은 그 아래 안내라, 둘이
-  // 같은 무게로 서면 제목이 눌린다. 두 호출부가 각자 크기를 정하던 자리라 여기서 못박는다.
+  // 자유 영역이다. 개발 단계 키 모달의 두 줄 표, 업데이트 모달의 버전 배지 줄이 여기 든다.
+  // 틀은 그것이 어디에 서는지만 정하고 무엇인지는 안 본다.
+  it('내용은 넘긴 것을 그대로 그린다', async () => {
+    const { getByText } = await renderOverlay(
+      <NoticeModal {...기본프롭()} content={<RNText>v1.0.7</RNText>} />,
+    )
+
+    expect(getByText('v1.0.7')).toBeTruthy()
+  })
+
+  // 설명은 제목보다 작다. 제목이 할 말을 이미 했고 설명은 그 아래 안내라, 둘이 같은 무게로 서면
+  // 제목이 눌린다. 세 호출부가 각자 크기를 정하던 자리라 여기서 못박는다.
   it('설명을 주면 제목보다 작게 그린다', async () => {
     const { getByTestId, getByText } = await renderOverlay(
       <NoticeModal {...기본프롭()} description="키 입력 화면으로 이동합니다." />,
     )
-
-    expect(getByText('키 입력 화면으로 이동합니다.')).toBeTruthy()
 
     const 설명 = flattenStyle(getByTestId('notice-description').props.style).fontSize
     const 제목 = flattenStyle(getByText('이 키로는 연결할 수 없습니다').props.style).fontSize
@@ -54,14 +66,23 @@ describe('NoticeModal: 슬롯', () => {
     expect(제목).toBeGreaterThan(설명 as number)
   })
 
-  // 자유 영역이다. 개발 단계 키 모달의 두 줄 표가 여기 든다. 틀은 그것이 어디에 서는지만 정하고
-  // 무엇인지는 안 본다.
-  it('내용은 넘긴 것을 그대로 그린다', async () => {
-    const { getByText } = await renderOverlay(
-      <NoticeModal {...기본프롭()} content={<KeyRoundIcon aria-hidden />} description="설명" />,
+  // **제목·내용·설명이 한 덩어리다**(사용자 지정, 2026-09-04). 내용은 제목에 딸린 값이라
+  // (버전·단계) 떼어 놓으면 따로 선 사실이 되어 무엇에 대한 값인지가 사라진다. 옵션은 그 밖이다.
+  it('제목·내용·설명은 8 로 붙고 옵션은 그 덩어리 밖이다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <NoticeModal
+        {...기본프롭()}
+        content={<RNText>v1.0.7</RNText>}
+        description="설명"
+        option={<RNText>펼침판</RNText>}
+      />,
     )
 
-    expect(getByText('설명')).toBeTruthy()
+    const 덩어리 = getByTestId('notice-body')
+    expect(flattenStyle(덩어리.props.style).rowGap).toBe(8)
+    expect(within(덩어리).getByText('v1.0.7')).toBeTruthy()
+    expect(within(덩어리).getByText('설명')).toBeTruthy()
+    expect(within(덩어리).queryByText('펼침판')).toBeNull()
   })
 
   it('제목에 손잡이를 달 수 있다. 화면 테스트가 이것으로 모달을 집는다', async () => {
@@ -75,43 +96,46 @@ describe('NoticeModal: 슬롯', () => {
   })
 })
 
-describe('NoticeModal: tone 이 배지의 색과 모양을 함께 정한다', () => {
+describe('NoticeModal: 배지', () => {
   /**
    * 배지 안의 아이콘. `testID` 를 달아도 못 잡는다. lucide 아이콘은 그것을 `data-testid` 로
    * 내려보내고 쿼리는 `testID` 를 본다. 그래서 배지의 첫 자식을 그냥 집는다.
    *
    * 색은 `style` 이 아니라 `stroke` 로 온다. 선으로 그리는 그림이다.
    */
-  function 배지아이콘(badge: { children: unknown[] }): { props: { stroke?: string } } {
+  function 아이콘(badge: { children: unknown[] }): { props: { stroke?: string } } {
     return badge.children[0] as { props: { stroke?: string } }
   }
 
-  // 둘을 따로 받으면 붉은 네모 같은 조합이 만들어진다. 원과 네모를 가른 근거가 색과 같다.
-  // 실패한 곳인가, 종류가 다른 것을 넣은 곳인가.
-  it('error 는 붉은 원이다', async () => {
-    const { getByTestId } = await renderOverlay(<NoticeModal {...기본프롭()} tone="error" />)
+  const 톤 = [
+    { tone: 'primary', tint: 기본테마.primaryTint, ink: 기본테마.primaryInk },
+    { tone: 'secondary', tint: 기본테마.secondaryTint, ink: 기본테마.secondaryInk },
+    { tone: 'third', tint: 기본테마.thirdTint, ink: 기본테마.thirdInk },
+    { tone: 'error', tint: 기본테마.errorTint, ink: 기본테마.errorInk },
+  ] as const
 
-    const badge = flattenStyle(getByTestId('notice-badge').props.style)
-    expect(badge.backgroundColor).toBe(기본테마.errorTint)
-    // `rounded-full`. 56 짜리 상자라 반지름이 넘치면 원이다.
-    expect(badge.borderRadius).toBe(9999)
+  it.each(톤)('$tone 은 바탕과 아이콘이 같은 계열에서 나온다', async ({ tone, tint, ink }) => {
+    const { getByTestId } = await renderOverlay(<NoticeModal {...기본프롭()} tone={tone} />)
+
+    const badge = getByTestId('notice-badge')
+    expect(flattenStyle(badge.props.style).backgroundColor).toBe(tint)
+    expect(아이콘(badge).props.stroke).toBe(ink)
   })
 
-  // 네모인 것은 아래 `content` 가 표일 때 모서리를 맞추기 위해서다.
-  it('primary 는 모서리를 깎은 네모다', async () => {
+  // 모양은 **색과 따로 받는다.** 가르는 것이 톤이 아니라 바로 아래 무엇이 오는가라서다.
+  it('기본은 원이다', async () => {
     const { getByTestId } = await renderOverlay(<NoticeModal {...기본프롭()} />)
 
-    const badge = flattenStyle(getByTestId('notice-badge').props.style)
-    expect(badge.backgroundColor).toBe(기본테마.primaryTint)
-    expect(badge.borderRadius).toBe(16)
+    expect(flattenStyle(getByTestId('notice-badge').props.style).borderRadius).toBe(9999)
   })
 
-  it('아이콘 색은 배지와 같은 계열에서 나온다', async () => {
-    const 붉은쪽 = await renderOverlay(<NoticeModal {...기본프롭()} tone="error" />)
-    const 테마쪽 = await renderOverlay(<NoticeModal {...기본프롭()} />)
+  // 표가 바로 아래 오는 자리만 네모다. 모서리를 맞춰 둘이 한 덩어리로 읽히게 한다.
+  it('표가 붙는 자리는 네모로 바꾼다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <NoticeModal {...기본프롭()} badgeShape="square" />,
+    )
 
-    expect(배지아이콘(붉은쪽.getByTestId('notice-badge')).props.stroke).toBe(기본테마.errorInk)
-    expect(배지아이콘(테마쪽.getByTestId('notice-badge')).props.stroke).toBe(기본테마.primaryInk)
+    expect(flattenStyle(getByTestId('notice-badge').props.style).borderRadius).toBe(16)
   })
 })
 
@@ -129,20 +153,37 @@ describe('NoticeModal: 배선', () => {
     expect(onClose).not.toHaveBeenCalled()
   })
 
+  it('부 버튼을 누르면 그 핸들러만 불린다', async () => {
+    const onPress = jest.fn()
+    const 부동작 = jest.fn()
+    const { getByText } = await renderOverlay(
+      <NoticeModal
+        {...기본프롭()}
+        action={{ label: '다운로드', onPress }}
+        secondaryAction={{ label: '나중에', onPress: 부동작 }}
+      />,
+    )
+
+    await fireEvent.press(getByText('나중에'))
+
+    expect(부동작).toHaveBeenCalledTimes(1)
+    expect(onPress).not.toHaveBeenCalled()
+  })
+
   it('링크를 누르면 그 핸들러만 불린다', async () => {
     const onPress = jest.fn()
-    const linkPress = jest.fn()
+    const 링크 = jest.fn()
     const { getByText } = await renderOverlay(
       <NoticeModal
         {...기본프롭()}
         action={{ label: '확인', onPress }}
-        link={{ label: '발급 방법 자세히 보기', onPress: linkPress }}
+        link={{ label: '발급 방법 자세히 보기', onPress: 링크 }}
       />,
     )
 
     await fireEvent.press(getByText('발급 방법 자세히 보기'))
 
-    expect(linkPress).toHaveBeenCalledTimes(1)
+    expect(링크).toHaveBeenCalledTimes(1)
     expect(onPress).not.toHaveBeenCalled()
   })
 

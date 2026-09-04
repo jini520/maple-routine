@@ -56,8 +56,9 @@ export function DevelopmentStageKeyModal(): React.JSX.Element | null {
   }
 
   return (
-    // 열쇠이되 **붉은 원이 아니다**(`tone="primary"`). 이 자리는 무언가 실패한 곳이 아니라 종류가
-    // 다른 것을 넣은 곳이고, 앱의 빨강은 조회 실패와 삭제가 이미 쓰고 있다.
+    // 열쇠이되 **붉은 원이 아니다**. 이 자리는 무언가 실패한 곳이 아니라 종류가 다른 것을 넣은
+    // 곳이고, 앱의 빨강은 조회 실패와 삭제가 이미 쓰고 있다. 원이 아니라 네모인 것은 바로 아래
+    // 표와 모서리를 맞춰 둘이 한 덩어리로 읽히게 하려는 것이다.
     //
     // **주 동작은 되돌아가는 것이다.** 이 모달은 길을 막고 서 있어 사용자가 바로 할 일이 폼으로
     // 돌아가는 것이라, 가장 큰 버튼이 앱 밖으로 내보내면 안 된다. 발급 안내는 도움말이라 링크로
@@ -65,6 +66,7 @@ export function DevelopmentStageKeyModal(): React.JSX.Element | null {
     <NoticeModal
       icon={KeyRoundIcon}
       tone="primary"
+      badgeShape="square"
       title="이 키로는 연결할 수 없습니다"
       titleTestId="development-stage-key-title"
       content={<KeyStageTable />}
