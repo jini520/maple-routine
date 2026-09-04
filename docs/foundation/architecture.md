@@ -99,7 +99,8 @@ Feature 단위 구조. 각 `features/*` 폴더가 그 기능의 상태·로직�
 ## 시스템 데이터 흐름 (cross-cutting)
 기능별 상세 흐름은 각 `features/*.md`. 여기서는 여러 기능이 공유하는 골격만 정리한다.
 
-**[온보딩: 최초 1회, [[ADR-007]]]** → 상세 [features/onboarding.md](../features/onboarding.md)
+**[앱 진입: 최초 1회, [[ADR-007]]]** → 상세 [features/auth.md](../features/auth.md)(로그인) ·
+[features/app-entry.md](../features/app-entry.md)(그 뒤)
 1. 설정에서 개인 API 키 입력 → `storage/` 보안 영역 저장
 2. `nexon/character` 가 `character/list` 호출 → `account_list` 가 2개↑면 계정 선택 UI
 3. `storage/` 에는 `apiKey` 와 선택된 `accountId` 만 저장(캐릭터 목록은 캐싱하지 않고 매번 재조회한다. 개명·전직·레벨업을 반영해야 하기 때문이다)

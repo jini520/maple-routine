@@ -13,5 +13,6 @@
 | 아코디언·보스 수익 탭+기간 네비게이터·고가 드롭 강조 | [features/boss-profit.md](./features/boss-profit.md) |
 | 보스 카드·난이도 뱃지·솔로/파티 필터·파티 관리·보스 관리 페이지 | [features/boss-scheduler.md](./features/boss-scheduler.md) |
 | 일일퀘스트/몬스터파크/주간 콘텐츠 카드·컨텐츠 관리 페이지·수동 트래킹 | [features/content-scheduler.md](./features/content-scheduler.md) |
-| 온보딩 예열 진행률·API 키 검증 스피너·계정 선택 목록 | [features/onboarding.md](./features/onboarding.md) |
+| API 키 입력 폼·검증 스피너·개발 단계 키 모달 | [features/auth.md](./features/auth.md) |
+| 캐릭터 설정 화면·시드 대기 | [features/app-entry.md](./features/app-entry.md) |
 | 설정 리스트 행 + 모달 | [features/settings.md](./features/settings.md) |

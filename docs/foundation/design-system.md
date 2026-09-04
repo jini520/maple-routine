@@ -60,7 +60,7 @@ Primary(테마 공통): rounded-full bg-primary text-on-primary font-semibold ho
 Outline:            rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-text hover:bg-primary-tint
 Text(라이트): text-[#8A7362] hover:text-[#5B4636]   Text(다크): text-neutral-500 hover:text-neutral-300
 ```
-`Outline` 은 **주 CTA 옆/아래에 서는 부 동작**용이다(2026-08-08, 온보딩 API 키 화면의 "API 키 발급 방법 보기"가 첫 사용처: [features/onboarding.md](../features/onboarding.md)). `danger` 와 같은 테두리 pill 형태이되 색이 중립(`border`/`text`)이라 파괴적 동작과 헷갈리지 않고, hover 는 새 색을 만들지 않고 `primary-tint` 를 쓴다(선택 카드 hover 와 같은 값). 
+`Outline` 은 **주 CTA 옆/아래에 서는 부 동작**용이다(2026-08-08, 로그인 화면의 "API 키 발급 방법 보기"가 첫 사용처: [features/auth.md](../features/auth.md)). `danger` 와 같은 테두리 pill 형태이되 색이 중립(`border`/`text`)이라 파괴적 동작과 헷갈리지 않고, hover 는 새 색을 만들지 않고 `primary-tint` 를 쓴다(선택 카드 hover 와 같은 값). 
 **RN 에서 이 규정은 두 벌로 갈린다**([[ADR-198]] 결정 2). 상자 클래스는 `BUTTON_VARIANT_CLASS`, 글자 클래스는 `BUTTON_VARIANT_TEXT_CLASS` 이고 둘 다 `components/atoms/Button/variants.ts` 에 있다(결정 3). RN 은 글자 스타일이 상자에서 자식 `Text` 로 상속되지 않아서, 한 벌로 두면 라벨이 색도 굵기도 없이 그려진다. 에러는 안 난다.
 
 호출부가 알아야 할 것도 그래서 갈린다.
@@ -275,7 +275,7 @@ default  pill 40 · 버튼 32 · 아이콘 16 · 값 19 · 단위 "인" 12    �
 항목 0건: text-sm text-text-muted "표시할 캐릭터가 없어요"
 ```
 **본문 자리 높이는 카드 3줄로 못 박는다**. `ROSTER_BODY_MIN_H`(`min-h-[385px]`, `CharacterTrackingGrid`에서 export). 실측 385px = 카드 123px × 3 + `gap-2` 8px × 2. 슬롯은 `flex flex-col`이고 중앙 정렬 분기(스피너·실패·빈 상태)는 `flex-1`로 그 높이를 채운다(그리드는 위쪽 정렬). **모달에서는 이 최소 높이를 클램프한다**. `min-h-[min(385px,calc(100dvh-var(--sa-top)-var(--sa-bottom)-15rem))]`. CSS 에서 `min-height` 는 `max-height` 를 이기므로 385px 를 그대로 두면 위 카드 상한이 짧은 기기에서 무효가 된다(ADR-107 결정 2: 클램프는 385px 가 애초에 안 들어가는 기기에서만 발동한다). 온보딩은 페이지라 클램프 없이 `ROSTER_BODY_MIN_H` 그대로다. 이 고정이 없으면 상태마다 높이가 달라 아래 CTA(온보딩 "계속하기", 모달 "닫기·저장")가 위아래로 움직이고, 실패 상태의 액션 버튼이 CTA에 붙어 보인다(사용자 보고 2026-07-30). [[ADR-054]] 정정 4에서 라벨행을 `h-6`으로 명시 고정한 것과 같은 처방이다.
-실패는 원인(`loadError: ScheduleSyncError | null`)을 받아 원인별 문구·액션을 그린다. 자세한 것은 아래 "실패 상태" 절([[ADR-062]]). **보여줄 항목이 있는 채로 실패하면** 목록을 지우지 않고 그 위에 스탈 배너를 얹는다. 온보딩 캐릭터 선택 단계(`ContentCharacterStep`)는 같은 분기를 페이지에서 직접 그리며 액션만 다르다(온보딩 중에는 설정 화면이 없다, [onboarding.md](../features/onboarding.md)).
+실패는 원인(`loadError: ScheduleSyncError | null`)을 받아 원인별 문구·액션을 그린다. 자세한 것은 아래 "실패 상태" 절([[ADR-062]]). **보여줄 항목이 있는 채로 실패하면** 목록을 지우지 않고 그 위에 스탈 배너를 얹는다. 캐릭터 설정 화면(`CharacterSetupScreen`)은 같은 분기를 페이지에서 직접 그리며 액션만 다르다(그 화면에서는 설정으로 갈 길이 없다, [app-entry.md](../features/app-entry.md)).
 
 ### 빈 상태 (`components/EmptyState`): [[ADR-060]], 구현 완료 2026-07-29
 "비어있음"을 표시하는 11곳이 이 컴포넌트 하나를 쓴다. `size` 두 변형만 다르고 구조는 동일: **원형 배지(컨텍스트 아이콘) + 제목 + 설명 + CTA**, 중앙 정렬.

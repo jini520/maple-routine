@@ -20,7 +20,7 @@
  * ④ **대기 표시가 두 단이다.** 저장 중에는 CTA 만 스피너이고, 시드가 시작되면 화면 전체가
  *    스피너다. 시드는 고른 캐릭터 수만큼 걸려서 CTA 스피너로는 멈춘 것처럼 보인다.
  *
- * @see docs/features/character-setup.md 정책
+ * @see docs/features/app-entry.md 정책
  */
 import { useState } from 'react'
 import { View, type ScrollView } from 'react-native'

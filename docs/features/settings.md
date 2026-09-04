@@ -44,7 +44,7 @@
 | 카드 | `app/settings/AppUpdateSection.tsx` | 앱 정보 안의 버전·상태·업데이트 확인 |
 | 배선 | `app/settings/reload-tab-stores.ts` | 저장 뒤 탭 스토어 셋을 순차로 다시 읽힌다([[ADR-140]] 결정 5) |
 | 상태 | `features/settings` | `changeApiKey`(배선 없음) · `cache-data` |
-| 상태 | `features/onboarding/store.ts` | `noticeApiKeyIssue(kind)` · `RESET` |
+| 상태 | `features/auth/store.ts` | `noticeApiKeyIssue(kind)` · `signOut()` |
 | 상태 | `features/tracking-mode/copy.ts` | 자동·수동 카피 |
 | 저장 | `storage/api-key.ts` | `clearAuthConfig()` |
 | 저장 | `storage/cache-data.ts` | `clearCacheData()` · `getCacheDataSizes()` |
@@ -322,7 +322,7 @@ pop 되면 설정으로 돌아온다.
   끌어서 층을 넘을 수는 없다. 구분자와 후보 행이 고정이라 위층 행이 내려갈 자리가 없다.
 - **끄는 동안 화면 위아래 가장자리에서 자동으로 스크롤된다.** 고정 영역을 두지 않기로 했으므로
   ([[ADR-131]]) 목록이 화면보다 길면 이것 없이는 끝으로 옮길 수 없다. 스크롤 주체는 화면의
-  `ScreenScroll`·`OnboardingStep` 이라, 화면이 `useAnimatedRef` 하나를 만들어 그 셸과 목록 양쪽에
+  `ScreenScroll`·`EntryScroll` 이라, 화면이 `useAnimatedRef` 하나를 만들어 그 셸과 목록 양쪽에
   넘긴다. 셸에는 `tracksScrollOffset` 을 함께 켠다 — 안 켜면 iOS 가 스크롤이 멈출 때 한 번만
   이벤트를 보내 끌기 중 오프셋이 낡는다([[ADR-207]] 결정 4).
 - **접근성 액션 ‘위로 옮기기’·‘아래로 옮기기’가 같은 결과를 낸다.** 끌기는 스크린리더로 조작할 수
@@ -545,7 +545,7 @@ Maple Routine is not associated with NEXON Korea
 닫을 수 없는 안내 모달 → `확인` → 키 입력 화면 + 저장된 apiKey 삭제 → 뒤 단계는 저장된 값으로 재개
 ```
 
-진입점은 `features/onboarding/store.ts` 의 `noticeApiKeyIssue(kind)` 이고, `useApiKeyNotice` 훅이
+진입점은 `features/auth/store.ts` 의 `noticeApiKeyIssue(kind)` 이고, `useApiKeyNotice` 훅이
 동기화 에러를 보고 부른다. 중복 호출은 그 안의 멱등 가드가 막는다.
 
 문구만 원인에 따라 갈린다. `호출 한도를 초과했습니다` · `서비스 단계 키로 다시 입력해주세요.`
