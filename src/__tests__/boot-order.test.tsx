@@ -182,21 +182,29 @@ describe('① 셸이 무엇을 언제 하는가', () => {
     expect(mockCalls).not.toContain('prehydrate')
   })
 
-  // 네이티브 스플래시가 순식간에 지나가 깜빡이지 않게 최소 표시 시간을 채운다.
-  // **첫 렌더에 곧바로 내리지 않는 것**이 그 결정이고, 이걸 잃으면 화면으로는 안 보인다
-  // (콘텐츠가 빨리 준비될수록 스플래시가 번쩍이고 끝난다).
-  it('스플래시는 최소 표시 시간을 채운 뒤에, 그리고 복원·예열보다 뒤에 내려간다', async () => {
+  // **셸은 이제 스플래시를 안 내린다.** 시계로 내리면 화면에 무엇이 그려졌는지 모르는 채로 걷게
+  // 되고 그 사이가 빈다. 내리는 것은 `BootSplash` 가 자기가 그려졌을 때 한다.
+  //
+  // 여기서 보는 것은 그 자리가 셸로 되돌아오지 않는 것이다. 되돌아오면 시간이 흐르는 것만으로
+  // 스플래시가 걷혀 두 겹의 계약이 깨진다.
+  it('셸은 시간이 흘러도 스플래시를 내리지 않는다', async () => {
     await mountShell()
     expect(mockCalls).not.toContain('hideSplash')
 
     await act(async () => {
-      jest.advanceTimersByTime(1000)
+      jest.advanceTimersByTime(10_000)
     })
 
-    expect(mockCalls).toContain('hideSplash')
-    expect(mockCalls.indexOf('hideSplash')).toBeGreaterThan(mockCalls.indexOf('restore:theme'))
-    expect(mockCalls.indexOf('hideSplash')).toBeGreaterThan(mockCalls.indexOf('prehydrate'))
+    expect(mockCalls).not.toContain('hideSplash')
   })
+
+  // 2겹이 트리에 없으면 내릴 주체가 사라져 실패 안전 타이머(8초)까지 스플래시가 남는다.
+  it('2겹이 셸의 트리에 있다', async () => {
+    const view = await renderOverlay(<AppShell />)
+
+    expect(view.getByTestId('boot-splash')).toBeTruthy()
+  })
+
 })
 
 describe('② 진입점이 무엇을 먼저 하는가', () => {
