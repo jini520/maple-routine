@@ -269,11 +269,6 @@ export function 공유계열(group: string, items: SharedContentItemView[]): Sha
 /** 카탈로그 일곱을 다 그린 상태. 남은 것 넷(악몽선경· 일간· 익스트림· PC방). */
 export function 공유컨텐츠(): SharedContentGroupView[] {
   return [
-    공유계열('에픽던전', [
-      공유항목('하이마운틴', { isComplete: true }),
-      공유항목('앵글러컴퍼니', { isComplete: true }),
-      공유항목('악몽선경'),
-    ]),
     공유계열('몬스터파크', [
       공유항목('일간', { count: { now: 7, max: 14 } }),
       공유항목('익스트림 몬스터파커', { count: { now: 1, max: 5 } }),
@@ -281,6 +276,11 @@ export function 공유컨텐츠(): SharedContentGroupView[] {
     공유계열('메이플 유니온', [
       공유항목('주간 드래곤 퇴치', { isComplete: true }),
       공유항목('PC방 주간 드래곤 퇴치'),
+    ]),
+    공유계열('에픽던전', [
+      공유항목('하이마운틴', { isComplete: true }),
+      공유항목('앵글러컴퍼니', { isComplete: true }),
+      공유항목('악몽선경'),
     ]),
   ]
 }

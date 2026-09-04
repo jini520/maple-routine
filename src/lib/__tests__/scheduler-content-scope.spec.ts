@@ -117,12 +117,12 @@ describe('getContentCatalogEntries', () => {
 
 describe('getSharedContentGroups', () => {
   it('계열은 카탈로그가 적어 둔 순서다. 배열을 읽은 첫 등장 순서가 아니다', () => {
-    // worldShared → accountShared 로 읽으면 첫 등장 순서가 `몬스터파크· 메이플 유니온·
-    // 에픽던전`이라 사용자가 지정한 순서와 다르다. 그래서 `sharedGroupOrder` 가 따로 있다.
+    // 지금은 두 순서가 같다. 그래도 배열에 맡기지 않는 것은, 배열이 순서가 아니라 공유 단위로
+    // 갈려 있어 계정 공유 컨텐츠 하나가 붙는 날 화면 순서가 조용히 바뀌기 때문이다.
     expect(getSharedContentGroups().map((group) => group.group)).toEqual([
-      '에픽던전',
       '몬스터파크',
       '메이플 유니온',
+      '에픽던전',
     ])
   })
 
@@ -147,7 +147,7 @@ describe('getSharedContentGroups', () => {
   })
 
   it('원문 이름·section·scope 를 함께 나른다. 호출부가 응답에서 항목을 다시 찾는다', () => {
-    const [epic] = getSharedContentGroups()
+    const epic = getSharedContentGroups().find((group) => group.group === '에픽던전')
 
     expect(epic?.entries[0]).toEqual({
       name: '에픽 던전 : 하이마운틴',
