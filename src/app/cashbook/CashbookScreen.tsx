@@ -96,6 +96,7 @@ import {
 import { loadMesoRate } from '../../features/cashbook/meso-rate'
 // 보스 수익 탭의 행이 초상을 찾는 그 함수다. 같은 보스가 두 화면에서 다른 그림이면 안 된다.
 import { findPortraitSlug } from '../boss-profit/character-groups'
+import { syncTrackedScheduleWindow } from '../../features/schedule-window/sync'
 import { usePullRefresh } from '../../hooks/usePullRefresh'
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { useThemeAppearance } from '../../theme/context'
@@ -553,8 +554,16 @@ export function CashbookScreen(): React.JSX.Element {
   /**
    * 당겨서 새로고침. 동기화 → 날짜 캐기 → 다시 읽기 순서는 `refreshCashbook` 이 든다.
    */
+  /**
+   * 당김은 이 화면에서도 **넥슨을 부른다**. 창의 미조회 날짜를 받고 오늘을 강제로 새로 받는다.
+   *
+   * 전에는 당김이 저장소만 다시 읽었다. 그래서 이 화면의 보스 수익 칸은 사용자가 **보스 수익
+   * 탭에 다녀와야** 채워졌다.
+   */
   const pull = usePullRefresh(async () => {
-    await refreshCashbook(new Date())
+    const now = new Date()
+    await syncTrackedScheduleWindow(now)
+    await refreshCashbook(now)
     setReloadToken((token) => token + 1)
   })
 
@@ -579,19 +588,32 @@ export function CashbookScreen(): React.JSX.Element {
   }, [from, to, reloadToken])
 
   /**
-   * 다시 들어오면 바뀌었을 때만 다시 읽는 포커스 효과.
+   * 다시 들어오면 바뀌었을 때만 다시 읽는 포커스 효과. **창도 여기서 채운다.**
    *
    * 이 화면은 탭이라 마운트가 앱 실행당 한 번뿐인데, 접는 원천 넷 중 둘은 남의 화면이 쓴다.
    * 가격 입력 화면이 `boss_drop_records` 를, 보스 수익 동기화가 `boss_profit_records` 를.
    * 그래서 첫 방문의 숫자에 굳는다.
    *
-   * 포커스마다 무조건 안 읽는 것은 한 번의 조회가 SQLite 넷을 치기 때문이다. 여기서 동기화는
-   * 안 튼다. 넥슨 API 는 당김과 보스 수익 탭의 몫이다.
+   * 포커스마다 무조건 안 읽는 것은 한 번의 조회가 SQLite 넷을 치기 때문이다.
+   *
+   * **창을 기다렸다가 한 번 더 재는 이유**는 그것이 화면을 안 막으려고 뒤에서 돌기 때문이다.
+   * 이 화면이 먼저 읽고 그 뒤에 창이 과거 기록을 만들면, 다시 읽을 계기가 없어 화면이 읽은
+   * 순간에 굳는다. 실기기 계측에서 3초 차이로 그랬다. 이미 도는 중이면 같은 회차를 나눠 쓰므로
+   * 조회가 안 늘고, 끝난 뒤에도 **바뀐 것이 없으면 안 읽는다**.
    */
   useFocusEffect(
     useCallback(() => {
-      if (loadedRevision.current !== cashbookDataRevision()) {
+      let alive = true
+      const reloadIfChanged = (): void => {
+        if (!alive || loadedRevision.current === cashbookDataRevision()) return
         setReloadToken((token) => token + 1)
+      }
+
+      reloadIfChanged()
+      void syncTrackedScheduleWindow(new Date()).then(reloadIfChanged)
+
+      return () => {
+        alive = false
       }
     }, []),
   )

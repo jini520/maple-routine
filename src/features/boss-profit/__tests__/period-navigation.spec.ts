@@ -24,7 +24,7 @@ describe('loadPreviousPeriodTotal: 결정석만 (정정)', () => {
     getBossDropRecordsMock.mockResolvedValue([
       { priceState: 'entered', priceMeso: 15_000_000_000, priceShare: 3 },
     ])
-    const { loadPreviousPeriodTotal } = require('../backfill') as typeof import('../backfill')
+    const { loadPreviousPeriodTotal } = require('../period-navigation') as typeof import('../period-navigation')
 
     await expect(loadPreviousPeriodTotal(['ocid-1'], 'weekly', '2026-08-13')).resolves.toBe(
       6_800_000_000,
@@ -33,7 +33,7 @@ describe('loadPreviousPeriodTotal: 결정석만 (정정)', () => {
 
   it('드롭 테이블을 아예 읽지 않는다. 쓰지 않을 값을 조회하지 않는다', async () => {
     getBossProfitRecordsMock.mockResolvedValue([{ payoutMeso: 1 }])
-    const { loadPreviousPeriodTotal } = require('../backfill') as typeof import('../backfill')
+    const { loadPreviousPeriodTotal } = require('../period-navigation') as typeof import('../period-navigation')
 
     await loadPreviousPeriodTotal(['ocid-1'], 'weekly', '2026-08-13')
 
@@ -41,7 +41,7 @@ describe('loadPreviousPeriodTotal: 결정석만 (정정)', () => {
   })
 
   it('ocid 가 없으면 조회하지 않는다', async () => {
-    const { loadPreviousPeriodTotal } = require('../backfill') as typeof import('../backfill')
+    const { loadPreviousPeriodTotal } = require('../period-navigation') as typeof import('../period-navigation')
 
     await expect(loadPreviousPeriodTotal([], 'weekly', '2026-08-13')).resolves.toBe(0)
     expect(getBossProfitRecordsMock).not.toHaveBeenCalled()

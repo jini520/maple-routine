@@ -77,7 +77,6 @@ describe('WeeklySubtotalRow: 상태마다 얼굴이 다르다', () => {
   })
 
   const 행동있는상태: { state: WeeklySubtotalState; label: string }[] = [
-    { state: 'notChecked', label: '조회' },
     { state: 'failed', label: '다시 시도' },
   ]
 

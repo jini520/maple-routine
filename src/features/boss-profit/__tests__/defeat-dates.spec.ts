@@ -204,6 +204,79 @@ describe('resolveDefeatedOn: 창 하한 앞은 건너뛴다 (정정 6)', () => {
   })
 })
 
+// 창 밖이라 뒤집힘을 못 본 기록에 **조회 가능한 가장 빠른 날**을 준다(사용자 지정).
+//
+// `그 날이거나 그 앞` 을 `그 날` 로 단정하는 것이다. 그 대가를 지는 이유는 창을 매일 채우면 이
+// 경우가 앱이 알기 전에 지나간 기록에만 남고, 그 금액이 화면에서 통째로 사라지는 것보다 낫기
+// 때문이다.
+describe('resolveDefeatedOn: 못 캐면 가장 빠른 조회 가능일', () => {
+  it('건너뛴 뒤 첫 관측에 이미 완료면 그 날을 처치일로 쓴다', () => {
+    expect(
+      resolveDefeatedOn({
+        periodDays: WEEK,
+        observed: observed({ '2026-08-23': ['스우|하드'] }),
+        todayDateKey: '2026-09-05',
+        bossKey: '스우|하드',
+        queryFloorDateKey: '2026-08-23',
+        fallbackToEarliestQueryable: true,
+      }),
+    ).toBe('2026-08-23')
+  })
+
+  it('뒤집힘을 봤으면 그쪽이 이긴다. 폴백은 못 봤을 때만이다', () => {
+    expect(
+      resolveDefeatedOn({
+        periodDays: WEEK,
+        observed: observed({ '2026-08-23': [], '2026-08-24': [], '2026-08-25': ['스우|하드'] }),
+        todayDateKey: '2026-09-05',
+        bossKey: '스우|하드',
+        queryFloorDateKey: '2026-08-23',
+        fallbackToEarliestQueryable: true,
+      }),
+    ).toBe('2026-08-25')
+  })
+
+  // 그 기간에 조회 가능한 날이 하나도 없으면 줄 날짜가 없다.
+  it('기간 전체가 창 밖이면 그대로 null 이다', () => {
+    expect(
+      resolveDefeatedOn({
+        periodDays: WEEK,
+        observed: new Map(),
+        todayDateKey: '2026-09-20',
+        bossKey: '스우|하드',
+        queryFloorDateKey: '2026-09-07',
+        fallbackToEarliestQueryable: true,
+      }),
+    ).toBeNull()
+  })
+
+  // 창 안인데 조회가 실패한 구멍은 폴백이 안 메운다. 그 날짜는 다음에 다시 부른다.
+  it('창 안의 구멍은 폴백이 메우지 않는다', () => {
+    expect(
+      resolveDefeatedOn({
+        periodDays: WEEK,
+        observed: observed({ '2026-08-24': ['스우|하드'] }),
+        todayDateKey: '2026-09-05',
+        bossKey: '스우|하드',
+        queryFloorDateKey: '2026-08-23',
+        fallbackToEarliestQueryable: true,
+      }),
+    ).toBeNull()
+  })
+
+  it('끄면 전과 같이 null 이다', () => {
+    expect(
+      resolveDefeatedOn({
+        periodDays: WEEK,
+        observed: observed({ '2026-08-23': ['스우|하드'] }),
+        todayDateKey: '2026-09-05',
+        bossKey: '스우|하드',
+        queryFloorDateKey: '2026-08-23',
+      }),
+    ).toBeNull()
+  })
+})
+
 describe('resolveDefeatedOn: 오늘은 소거법 (결정 3)', () => {
   it('어제까지 전부 미완료인데 기록이 있으면 오늘이다', () => {
     expect(

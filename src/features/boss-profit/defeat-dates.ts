@@ -54,6 +54,14 @@ export interface DefeatDateInput {
    * 안 주면 아무 날도 안 가린다. 그쪽이 `null` 이 더 나오는 쪽이라 기본값으로 안전하다.
    */
   readonly queryFloorDateKey?: string
+  /**
+   * 뒤집힘을 못 봤을 때 **조회 가능한 가장 빠른 날**을 처치일로 쓸 것인가.
+   *
+   * 켜면 이 함수가 `그 날이거나 그 앞` 을 `그 날` 로 단정한다. 그 대가를 지는 이유는 창을 매일
+   * 채우면 이 경우가 **앱이 알기 전에 지나간 기록**에만 남고, 그 금액이 화면에서 통째로
+   * 사라지는 것보다 낫기 때문이다(사용자 지정).
+   */
+  readonly fallbackToEarliestQueryable?: boolean
 }
 
 /**
@@ -95,7 +103,9 @@ export function resolveDefeatedOn(input: DefeatDateInput): string | null {
       return day === input.todayDateKey && !blind ? day : null
     }
     if (seen.has(input.bossKey)) {
-      return blind ? null : day
+      // 앞이 창 밖이라 며칟날인지는 못 캔다. 그 날이거나 그 앞이므로 **상한**은 안다.
+      if (!blind) return day
+      return input.fallbackToEarliestQueryable === true ? day : null
     }
     blind = false
   }
@@ -206,6 +216,7 @@ function resolveFor(
     todayDateKey,
     bossKey: bossCompletionKey(record.boss, record.difficulty),
     queryFloorDateKey: floorDateKey,
+    fallbackToEarliestQueryable: true,
   })
 }
 

@@ -2,7 +2,6 @@ import {
   containsInProgressWeek,
   formatBossProfitPeriodLabel,
   getAdjacentPeriodKey,
-  isPeriodRefreshable,
   getBackfillQueryDate,
   getCurrentBossProfitPeriod,
   getMinQueryableDate,
@@ -93,7 +92,7 @@ describe('isLatestPeriod', () => {
   })
 })
 
-describe('containsInProgressWeek / isPeriodRefreshable', () => {
+describe('containsInProgressWeek', () => {
   // 2026-07-30(목)이 7월의 마지막 리셋이라 7월 5주차는 8/5까지 이어진다. 8/1에 7월은 지난 달이
   // 되지만 그 주는 여전히 진행 중이다.
   const inWindow = new Date('2026-08-02T12:00:00+09:00') // 이번 주 2026-07-30, 이번 달 2026-08
@@ -114,13 +113,6 @@ describe('containsInProgressWeek / isPeriodRefreshable', () => {
   it('weekly 탭에서는 항상 false다. 지난 주는 언제나 완전히 닫혀 있다', () => {
     expect(containsInProgressWeek('weekly', '2026-07-30', inWindow)).toBe(false)
     expect(containsInProgressWeek('weekly', '2026-07-23', inWindow)).toBe(false)
-  })
-
-  it('isPeriodRefreshable: 최신 기간이거나 진행 중인 주를 품은 기간이면 true다', () => {
-    expect(isPeriodRefreshable('monthly', '2026-08', inWindow)).toBe(true) // 최신 기간
-    expect(isPeriodRefreshable('monthly', '2026-07', inWindow)).toBe(true) // 5주차가 진행 중
-    expect(isPeriodRefreshable('monthly', '2026-07', afterWindow)).toBe(false) // 완전히 닫힘
-    expect(isPeriodRefreshable('weekly', '2026-07-23', inWindow)).toBe(false)
   })
 })
 
@@ -299,7 +291,7 @@ describe('resolvePeriodDataState', () => {
   const base = {
     isCurrentPeriod: false,
     hasRecords: false,
-    isChecked: false,
+    isObserved: false,
     isQueryable: true,
     lastOutcome: null,
   } as const
@@ -309,10 +301,10 @@ describe('resolvePeriodDataState', () => {
     expect(resolvePeriodDataState({ ...base, hasRecords: true, isQueryable: false })).toBe('recorded')
   })
 
-  it('확인 기록이 있고 기록이 없으면 confirmedEmpty: 시간이 지나도 격하되지 않는다(결정 3)', () => {
-    expect(resolvePeriodDataState({ ...base, isChecked: true })).toBe('confirmedEmpty')
+  it('관측이 있고 기록이 없으면 confirmedEmpty: 시간이 지나도 격하되지 않는다(결정 3)', () => {
+    expect(resolvePeriodDataState({ ...base, isObserved: true })).toBe('confirmedEmpty')
     // 롤링 윈도우를 벗어난 뒤에도 "0건 확정"이 유지된다. 전에는 여기서 조회 불가로 바뀌었다
-    expect(resolvePeriodDataState({ ...base, isChecked: true, isQueryable: false })).toBe('confirmedEmpty')
+    expect(resolvePeriodDataState({ ...base, isObserved: true, isQueryable: false })).toBe('confirmedEmpty')
   })
 
   it('조회 구간 밖이면 outOfRange', () => {
@@ -327,8 +319,10 @@ describe('resolvePeriodDataState', () => {
     expect(resolvePeriodDataState({ ...base, lastOutcome: 'failed' })).toBe('failed')
   })
 
-  it('조회 가능한데 확인도 시도도 없으면 notChecked: 조회 버튼을 주는 상태(정정 1)', () => {
-    expect(resolvePeriodDataState(base)).toBe('notChecked')
+  // 사용자가 조회를 트는 개념은 없어졌다. 창이 진입할 때 채우므로 아직 못 받았다는 것은
+  // 이번 회차가 실패했다는 뜻이고, 남은 행동은 당겨서 새로고침 하나다.
+  it('조회 가능한데 관측도 시도도 없으면 failed', () => {
+    expect(resolvePeriodDataState(base)).toBe('failed')
   })
 
   it('현재 기간은 실시간 동기화가 원천이라 recorded/confirmedEmpty뿐이다', () => {
@@ -348,9 +342,8 @@ describe('resolvePagePeriodState', () => {
     expect(resolvePagePeriodState(['outOfRange', 'recorded', 'failed'])).toBe('recorded')
   })
 
-  it('행동이 있는 상태(failed·notChecked)가 없는 상태보다 앞선다', () => {
+  it('행동이 있는 상태(failed)가 없는 상태보다 앞선다', () => {
     expect(resolvePagePeriodState(['outOfRange', 'failed'])).toBe('failed')
-    expect(resolvePagePeriodState(['confirmedEmpty', 'notChecked'])).toBe('notChecked')
     expect(resolvePagePeriodState(['notCollected', 'failed'])).toBe('failed')
   })
 

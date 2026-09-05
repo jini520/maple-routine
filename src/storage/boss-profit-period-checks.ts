@@ -1,3 +1,9 @@
+/**
+ * ⚠️ **아무도 안 읽는다.** 창 동기화가 이 표의 답을 조회 원장으로 대체했다.
+ *
+ * 남겨 둔 이유는 하나다. 표를 지우면 되돌릴 수 없어, 새 경로가 실기기에서 한 릴리스를 버틴 뒤에
+ * 지운다. 그때까지 이 파일과 `boss_profit_period_checks` 표는 **읽지도 쓰지도 않는다**.
+ */
 import { getBossProfitDb } from './sqlite/db'
 import type { BossCycle } from '../types/scheduler'
 

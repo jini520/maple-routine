@@ -31,6 +31,10 @@ jest.mock('../../../features/cashbook/records', () => {
   }
 })
 
+jest.mock('../../../features/schedule-window/sync', () => ({
+  syncTrackedScheduleWindow: jest.fn(),
+}))
+
 // 자동 줄은 **보스 수익 탭으로 간다**. 그 이동을 목으로 받아 **어디로 갔나** 를 본다.
 // 이름이 `mock` 으로 시작해야 팩토리 안에서 참조할 수 있다(jest 의 호이스팅 가드).
 const mockOpenTab = jest.fn()
@@ -88,6 +92,9 @@ import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import { BOSS_SLOT_MAX_PX, CashbookScreen } from '../CashbookScreen'
 
 const records = jest.requireMock('../../../features/cashbook/records') as Record<string, jest.Mock>
+const { syncTrackedScheduleWindow: syncWindowMock } = jest.requireMock(
+  '../../../features/schedule-window/sync',
+) as Record<string, jest.Mock>
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
@@ -107,6 +114,7 @@ beforeEach(() => {
   records.loadDayRecords.mockReset().mockResolvedValue([])
   records.resolveTrackedDefeatDates.mockReset().mockResolvedValue(0)
   records.cashbookDataRevision.mockReset().mockReturnValue(0)
+  syncWindowMock.mockReset().mockResolvedValue(undefined)
   mockOpenTab.mockReset()
   records.editIncome.mockReset().mockResolvedValue(undefined)
   records.editSpend.mockReset().mockResolvedValue(undefined)
@@ -1420,5 +1428,48 @@ describe('CashbookScreen: 낡은 숫자', () => {
     await 다시들어오기()
 
     expect(records.refreshCashbook).not.toHaveBeenCalled()
+  })
+})
+
+// ⚠️ 사용자 보고 · 실기기 계측으로 잡은 경합.
+//
+//   16:42:02  가계부가 읽는다        dated=41   (이번 주 것뿐)
+//   16:42:05  창이 과거 기록을 만든다  +185건
+//
+// 가계부는 포커스 때 한 번 재는 것이 전부라, 그 뒤 3초에 들어온 것을 받을 길이 없었다.
+// 화면이 읽은 순간에 굳는다.
+describe('창이 뒤늦게 채운 것을 받는다', () => {
+  it('들어오면 창을 채운다. 그 화면도 같은 창의 소비자다', async () => {
+    await 그리기()
+
+    expect(syncWindowMock).toHaveBeenCalled()
+  })
+
+  it('창이 끝난 뒤 기록이 바뀌었으면 다시 읽는다', async () => {
+    let 창끝내기!: () => void
+    syncWindowMock.mockReturnValue(
+      new Promise<void>((resolve) => {
+        창끝내기 = resolve
+      }),
+    )
+    await 그리기()
+    const 읽은횟수 = records.loadCalendarAmounts.mock.calls.length
+
+    // 창이 도는 동안 기록이 늘었다.
+    records.cashbookDataRevision.mockReturnValue(1)
+    await act(async () => {
+      창끝내기()
+    })
+
+    expect(records.loadCalendarAmounts.mock.calls.length).toBeGreaterThan(읽은횟수)
+  })
+
+  it('창이 끝나도 안 바뀌었으면 다시 안 읽는다. 조회를 늘리지 않는다', async () => {
+    await 그리기()
+    const 읽은횟수 = records.loadCalendarAmounts.mock.calls.length
+
+    await act(async () => {})
+
+    expect(records.loadCalendarAmounts.mock.calls.length).toBe(읽은횟수)
   })
 })

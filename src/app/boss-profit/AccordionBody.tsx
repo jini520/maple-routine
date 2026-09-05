@@ -24,11 +24,13 @@ import { rowKey } from './character-groups'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 import { ItemRevenuePopover } from './ItemRevenuePopover'
 
-// 행동이 있는 상태에만 버튼을 준다. 여섯 상태 중 사용자가 할 수 있는 것은 notChecked(조회)와
-// failed(다시 시도) 둘뿐이고 나머지는 금액 또는 비활성 배지로 정적이다. 금액을 모르는 상태에
-// 0 을 쓰지 않는 것이 핵심이다. 0 은 0원 벌었다 로 읽힌다.
+// 행동이 있는 상태에만 버튼을 준다. 남은 것은 failed(다시 시도) 하나이고 나머지는 금액 또는
+// 비활성 배지로 정적이다. 금액을 모르는 상태에 0 을 쓰지 않는 것이 핵심이다. 0 은 0원 벌었다
+// 로 읽힌다.
+//
+// `조회` 버튼이 사라진 것은 사용자가 조회를 트는 개념이 없어졌기 때문이다. 창이 진입할 때
+// 창 안 기간을 다 채우므로 누를 자리가 없다.
 export const SUBTOTAL_ACTION_LABEL: Partial<Record<WeeklySubtotalState, string>> = {
-  notChecked: '조회',
   failed: '다시 시도',
 }
 

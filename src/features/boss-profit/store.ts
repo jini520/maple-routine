@@ -21,7 +21,6 @@ import {
 import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
 import { sumDropPayout } from '../../lib/drop/drop-price'
 import type { RecordedDrop } from '../../types/drops'
-import { isPeriodChecked } from '../../storage/boss-profit-period-checks'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { getManualTrackedContent, type ManualTrackedItem } from '../../storage/manual-tracked-content'
@@ -54,12 +53,17 @@ export type { BossProfitRow } from './rows'
 export { dropRowKey } from './rows'
 import { withSqliteFallback } from './sqlite-guards'
 import { autoRecordRows } from './auto-record'
-import { resolveDefeatDates } from './defeat-dates'
+import {
+  loadObservedPeriodKeys,
+  periodStateKey,
+  toPeriodOutcomes,
+} from '../schedule-window/records'
+import { syncScheduleWindow } from '../schedule-window/sync'
+import { getLastWindowFailures } from '../schedule-window/window'
 import { loadDropsByRowKey } from './drops-loader'
 import { sweepOrphanDrops } from './orphan-drops'
 import { useToastStore } from '../toast/store'
-import { backfillTarget, buildBackfillTargets, canReachPreviousPeriod, loadPreviousPeriodTotal } from './backfill'
-import type { BackfillTarget } from './backfill'
+import { canReachPreviousPeriod, loadPreviousPeriodTotal } from './period-navigation'
 
 
 /**
@@ -95,6 +99,14 @@ export type BossProfitStatus = 'idle' | 'loading' | 'loaded' | 'error'
 // 넘긴다. 화면(헤더 버튼·당겨서 새로고침·재시도)은 인자를 안 넘겨 자동으로 강제 경로다.
 export interface RefreshOptions {
   auto?: boolean
+  /**
+   * **보던 기간에 남는가.** 당겨서 새로고침이 참으로 준다(사용자 지정).
+   *
+   * 안 주면 현재 기간으로 되돌린다. `refresh` 는 기간 경계를 넘은 화면을 새 기간으로 데려오는
+   * 일도 겸하기 때문이다. 둘을 `보던 기간 !== 현재 기간` 하나로는 못 가른다. 경계를 막 넘어
+   * 낡아진 기간과 사용자가 직접 옮겨 간 기간이 같은 모양이다.
+   */
+  inPlace?: boolean
 }
 
 export interface BossProfitState {
@@ -127,7 +139,7 @@ export interface BossProfitState {
   currentPeriodRows: BossProfitRow[]
   dropsByRowKey: Record<string, RecordedDrop[]> // 보스 행별 기록된 드롭. 키는 dropRowKey(ocid|boss|difficulty|periodKey). rows와 독립 상태라 탭 전환 시 loadPeriod가 DB에서 재로드
   weeklySubtotals: BossProfitWeeklySubtotal[] // monthly 탭에서만 채워짐(주차별 합계). weekly 탭에서는 항상 []
-  isPeriodLoading: boolean // periodKey 이동 후 백필(과거 기간 재조회) 진행 중
+  isPeriodLoading: boolean // periodKey 이동이 도는 중인 창 동기화를 기다리는 중
   // 이 기간을 화면이 어떻게 말해야 하는지. boolean 하나로 두면 집계 전 과 그 외 실패를 같은
   // 문구로 말하게 된다.
   periodState: PeriodDataState
@@ -313,18 +325,9 @@ async function buildWeeklySubtotalsForMonth(
         }),
     )
 
-  // 지난 주의 상태를 6상태로 판정하려면 확인 기록이 필요하다. 기록이 없는 주가 조회해서 0건을
-  // 확인한 주인지 조회한 적 없는 주인지는 그것만이 갈라 준다.
-  const checkedKeys = new Set<string>()
-  await Promise.all(
-    ocids.flatMap((ocid) =>
-      pastWeekKeys.map(async (weekKey) => {
-        if (await withSqliteFallback(isPeriodChecked(ocid, 'weekly', weekKey), false)) {
-          checkedKeys.add(`${ocid}|${weekKey}`)
-        }
-      }),
-    ),
-  )
+  // 지난 주의 상태를 판정하려면 관측 여부가 필요하다. 기록이 없는 주가 조회해서 0건을 본
+  // 주인지 아직 못 받은 주인지는 그것만이 갈라 준다.
+  const observedKeys = await loadObservedPeriodKeys(ocids, now)
 
   // 아이템 수익도 소계에 넣는다. 안 넣으면 주간 탭과 월간 탭의 같은 주가 다른 숫자가 된다
   // (주간 탭은 보스 행에 더해 보여준다). 주차 전체를 한 번에 읽어 접는다.
@@ -401,9 +404,9 @@ async function buildWeeklySubtotalsForMonth(
       const state = resolvePeriodDataState({
         isCurrentPeriod: false,
         hasRecords: matchingRecords.length > 0,
-        isChecked: checkedKeys.has(`${ocid}|${weekKey}`),
+        isObserved: observedKeys.has(periodStateKey(ocid, 'weekly', weekKey)),
         isQueryable: isPeriodQueryable('weekly', weekKey, now),
-        lastOutcome: outcomes?.get(`${ocid}|weekly|${weekKey}`) ?? null,
+        lastOutcome: outcomes?.get(periodStateKey(ocid, 'weekly', weekKey)) ?? null,
       })
       const drops = dropsByOcidWeek.get(`${ocid}|${weekKey}`) ?? []
       subtotals.push({
@@ -586,7 +589,7 @@ async function loadPeriod(
       periodState: resolvePeriodDataState({
         isCurrentPeriod: true,
         hasRecords: rows.length > 0,
-        isChecked: false,
+        isObserved: false,
         isQueryable: false,
         lastOutcome: null,
       }),
@@ -596,40 +599,32 @@ async function loadPeriod(
     return
   }
 
-  // 각 target(캐릭터×기간)의 상태를 모아 이 화면의 상태를 정한다. 조회 불가(구간 밖) target 은
-  // 호출하지도, checked 로 굳히지도 않는다. 날짜만 보면 언제든 다시 판정할 수 있고, 굳히면
-  // 0건 확정 과 구분이 사라진다.
+  // **여기서 조회하지 않는다.** 창이 진입할 때 이미 채웠다. 이 함수는 읽어서 그릴 뿐이다.
   //
-  // target 별 조회는 서로 독립이라 병렬로 던진다. 직렬 await 이면 월간 탭에서 캐릭터 수 ×
-  // (1 + 그 달의 주차 수) 만큼 네이티브 왕복이 줄줄이 늘어서고, 그동안 화면은 옛 기간 행 +
-  // 새 기간 라벨에 머문다.
-  const targets = buildBackfillTargets(tab, periodKey, ocids, now)
-  const checkedFlags = await Promise.all(
-    targets.map((target) =>
-      withSqliteFallback(isPeriodChecked(target.ocid, target.cycle, target.periodKey), false),
-    ),
-  )
-  const checkedByTarget = new Map<BackfillTarget, boolean>()
-  const uncheckedTargets: BackfillTarget[] = []
-  // 순회는 targets 순서 그대로다. 뒤따르는 백필 루프가 순차 실행이라(호출 절약)
-  // 이 순서가 곧 화면이 채워지는 순서다.
-  targets.forEach((target, index) => {
-    const checked = checkedFlags[index]
-    checkedByTarget.set(target, checked)
-    if (!checked && isPeriodQueryable(target.cycle, target.periodKey, now)) {
-      uncheckedTargets.push(target)
-    }
-  })
+  // 전에는 사용자가 그 기간으로 이동해야 백필이 돌았다. 그래서 이동 안 한 기간은 영영 비었고,
+  // 기록을 지우면 주간 탭에서 월간 보스가 안 돌아왔다.
+  //
+  let observedKeys = await loadObservedPeriodKeys(ocids, now)
 
-  const outcomeByTarget = new Map<BackfillTarget, PeriodQueryOutcome | null>()
-
-  if (uncheckedTargets.length > 0) {
+  // **관측이 하나도 없는데 조회는 가능한 기간이면 여기서 채우고 기다린다.**
+  //
+  // 창은 화면을 안 막으려고 뒤에서 돈다. 그 사이에 이 기간을 열면 기록이 아직 없는데, 그것을
+  // 그대로 그리면 오는 중인 데이터에 `불러오지 못했습니다` 가 붙는다. 도는 중인지만 보면
+  // 부족하다. 캐시를 지우고 진입하자마자 이동하면 창이 **시작조차 안 한** 순간이 있다.
+  //
+  // 겹쳐 불러도 같은 회차를 나눠 쓴다. 관측이 이미 있으면 이 갈래에 안 온다.
+  if (
+    isPeriodQueryable(tab, periodKey, now) &&
+    !ocids.some((ocid) => observedKeys.has(periodStateKey(ocid, tab, periodKey)))
+  ) {
     if (generation !== requestGeneration) return
     set({ isPeriodLoading: true })
-    for (const target of uncheckedTargets) {
-      outcomeByTarget.set(target, await backfillTarget(target, now))
-    }
+    await syncScheduleWindow(ocids, now)
+    if (generation !== requestGeneration) return
+    observedKeys = await loadObservedPeriodKeys(ocids, now)
   }
+
+  const outcomes = toPeriodOutcomes(getLastWindowFailures())
 
   const rows = sortRowsByOcidOrder(
     await buildRowsFromRecords(ocids, tab, periodKey, now, profileSnapshot),
@@ -637,7 +632,7 @@ async function loadPeriod(
   )
   const weeklySubtotals =
     tab === 'monthly'
-      ? await buildWeeklySubtotalsForMonth(sortedOcids, periodKey, [], profileSnapshot, now)
+      ? await buildWeeklySubtotalsForMonth(sortedOcids, periodKey, [], profileSnapshot, now, outcomes)
       : []
   // 지난 기간의 고아 드롭을 지운다. 과거 기간은 기록이 곧 사실이라 동기화 신선도를 따질 것이
   // 없다. 백필된 적 없는 주는 행이 통째로 비어 안전 장치가 알아서 막는다.
@@ -662,16 +657,17 @@ async function loadPeriod(
     loadPreviousPeriodTotal(ocids, tab, periodKey),
   ])
 
-  // target별 상태 → 이 화면의 상태. 기록 유무는 방금 읽은 rows에서 본다(같은 조회를 두 번 하지 않는다).
+  // 캐릭터별 상태 → 이 화면의 상태. 기록 유무는 방금 읽은 rows 에서 본다(같은 조회를 두 번
+  // 하지 않는다).
   const recordedOcids = new Set(rows.map((row) => row.ocid))
   const periodState = resolvePagePeriodState(
-    targets.map((target) =>
+    ocids.map((ocid) =>
       resolvePeriodDataState({
         isCurrentPeriod: false,
-        hasRecords: recordedOcids.has(target.ocid),
-        isChecked: checkedByTarget.get(target) ?? false,
-        isQueryable: isPeriodQueryable(target.cycle, target.periodKey, now),
-        lastOutcome: outcomeByTarget.get(target) ?? null,
+        hasRecords: recordedOcids.has(ocid),
+        isObserved: observedKeys.has(periodStateKey(ocid, tab, periodKey)),
+        isQueryable: isPeriodQueryable(tab, periodKey, now),
+        lastOutcome: outcomes.get(periodStateKey(ocid, tab, periodKey)) ?? null,
       }),
     ),
   )
@@ -758,11 +754,14 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     const now = new Date()
     const currentPeriodKey = getCurrentBossProfitPeriod(tab, now).periodKey
 
-    // 보고 있는 기간이 진행 중인 주를 품은 지난 달(7월 5주차 = 7/30~8/5)이면 그 화면에서
-    // 새로고침할 수 있고, 그때는 보던 기간을 유지한다. 동기화·자동 기록·스냅샷 갱신은 그대로
-    // 하고 화면 반영만 loadPeriod 에 넘긴다.
+    // 보던 기간을 유지할 것인가. 동기화·자동 기록·스냅샷 갱신은 그대로 하고 화면 반영만
+    // loadPeriod 에 넘긴다.
+    //
+    // 참이 되는 길이 둘이다. 당김이 그렇게 시켰거나(어느 기간에서도 당길 수 있고 당김은 보던
+    // 기간을 안 떠난다), 진행 중인 주를 품은 지난 달(7월 5주차 = 7/30~8/5)이거나.
     const viewedPeriodKey = get().periodKey
-    const refreshInPlace = containsInProgressWeek(tab, viewedPeriodKey, now)
+    const refreshInPlace =
+      options?.inPlace === true || containsInProgressWeek(tab, viewedPeriodKey, now)
 
     // 직전 기간 합계는 이 새로고침이 바꾸지 않는 값이다. 자동 기록은 현재 기간에만 쓴다. 그래서
     // 한 번만 읽고 두 단계(캐시·동기화 완료)가 나눠 쓴다. 여기서 미리 던져 다른 조회와 겹치게
@@ -1038,7 +1037,15 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         characterIssues: {},
         ...(skipSync ? { lastSyncedAt: oldestCachedSyncedAt } : {}),
       })
-      if (skipSync) return
+      if (skipSync) {
+        // **라이브 동기화만 건너뛴다. 창은 안 건너뛴다.**
+        //
+        // 둘은 다른 일이다. 라이브는 오늘이라 10분 TTL 이 타당하고, 창은 과거 13일이라 중복을
+        // TTL 이 아니라 조회 원장이 막는다. 여기서 빠뜨리면 탭을 다시 열 때마다 이 갈래로
+        // 빠져 과거 기간이 영영 안 채워진다(사용자 보고).
+        void syncScheduleWindow(ocids, now).catch(() => undefined)
+        return
+      }
     }
 
     let results: Awaited<ReturnType<typeof syncSchedules>>
@@ -1167,12 +1174,11 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // 않으면 신선한 데이터를 보여주면서 동기화 기록 없음 이라 표시되는 불일치가 생긴다.
     set({ lastSyncedAt: new Date().toISOString() })
 
-    // 처치 날짜를 캔다. 자동 기록이 방금 만든 행까지 대상에 든다.
+    // 창을 채우고 그 결과를 기록·날짜로 반영한다. 탭도 기간도 안 본다.
     //
-    // 기다리지 않는다. 이 화면은 `defeated_on` 을 안 쓰므로(쓰는 곳은 가계부 캘린더 하나다)
-    // 결과가 화면을 바꾸지 않고, 기다리면 캘 것이 있는 첫 회차마다 동기화가 조회 수만큼
-    // 길어진다. 실패해도 삼킨다. 못 캔 것은 칸이 덜 채워진다 이지 이 동기화의 실패가 아니다.
-    void resolveDefeatDates(ocids, now).catch(() => undefined)
+    // 기다리지 않는다. 화면은 캐시와 방금 끝난 라이브 동기화로 이미 서 있고, 창이 채우는 것은
+    // **과거 기간**이라 지금 보는 화면을 안 바꾼다. 기다리면 첫 진입이 조회 수만큼 길어진다.
+    void syncScheduleWindow(ocids, now).catch(() => undefined)
 
     // 동기화·자동 기록은 위에서 다 끝났다. 보던 기간(지난 달)의 화면 반영은 loadPeriod 에
     // 넘긴다. 그 함수가 이미 과거 기간은 기록이 원천 을 알고 있어 새 렌더 경로를 만들 이유가 없다.
@@ -1237,7 +1243,12 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     const now = new Date()
     const newPeriodKey = getAdjacentPeriodKey(tab, periodKey, 'prev')
     const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
-    set({ periodKey: newPeriodKey })
+    // **한 칸 더 갈 수 있는지는 이 로드가 끝나야 안다. 그때까지 닫아 둔다.**
+    //
+    // 이 플래그는 직전 로드가 남긴 값이라 지금 기간에 대해서는 아직 아무 말도 안 한다. 열어
+    // 두면 연타가 그 낡은 참을 계속 읽어 조회할 수 없는 기간까지 넘어간다(사용자 보고).
+    // 두 set 은 한 갈래에 있어야 한다. 사이에 await 이 끼면 그 틈으로 다음 탭이 들어온다.
+    set({ periodKey: newPeriodKey, canGoPreviousPeriod: false })
     await loadPeriod(set, tab, newPeriodKey, ocids, now, myGeneration)
   },
 

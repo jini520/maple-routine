@@ -32,7 +32,6 @@ import {
   formatBossProfitPeriodLabel,
   isLatestPeriod,
   isPeriodQueryable,
-  isPeriodRefreshable,
 } from '../../lib/boss/boss-profit-period'
 import { canPreviewNextWeek } from '../../lib/boss/monthly-boss-week'
 import { sumDropPayout } from '../../lib/drop/drop-price'
@@ -108,7 +107,13 @@ export function BossProfitScreen(): React.JSX.Element {
   // 당김이 시작한 회차에만 인디케이터가 돈다. 헤더 버튼·자동 조회는 같은 재조회를 부르지만
   // 인디케이터는 안 연다. 버튼은 자기 스피너와 조회 중… 을 이미 갖고 있고 자동 조회는 원래
   // 조용해야 하는 것이다.
-  const pull = usePullRefresh(() => refresh(trackedOcids ?? []))
+  /**
+   * 당김은 **어느 기간에서도** 되고 **보던 기간을 안 떠난다**(사용자 지정).
+   *
+   * 전에는 최신 기간에서만 달렸다. 그때는 지난 기간의 값이 백필로 한 번 굳으면 다시 불러도
+   * 안 바뀌었기 때문이다. 이제는 창이 못 받은 날짜가 남아 있을 수 있어 당기면 실제로 채워진다.
+   */
+  const pull = usePullRefresh(() => refresh(trackedOcids ?? [], { inPlace: true }))
 
   const navigation = useScreenNavigation()
   const openTab = useOpenTab()
@@ -137,10 +142,6 @@ export function BossProfitScreen(): React.JSX.Element {
   const isCurrentPeriod = isLatestPeriod(tab, periodKey, now)
   // 앞으로 갈 수 있나. 보통은 지금 기간이면 끝인데, 달 경계를 걸친 주에만 한 칸 더 열린다.
   const canGoNext = !isCurrentPeriod || (tab === 'weekly' && canPreviewNextWeek(periodKey, now))
-  // 동기화 상태 영역·당겨서 새로고침의 공통 게이트. 이 기간이 최신인가 가 아니라 지금
-  // 재조회하면 이 화면의 숫자가 달라질 수 있는가 다. 갈라 두면 버튼은 없는데 당기면 도는
-  // 상태가 생긴다.
-  const canRefreshPeriod = isPeriodRefreshable(tab, periodKey, now)
 
   // 최상단 이동이 쓰는 스크롤 주체.
   const scrollRef = useRef<ScrollView | null>(null)
@@ -289,10 +290,9 @@ export function BossProfitScreen(): React.JSX.Element {
             </Text>
           </Pressable>
 
-          {/* 동기화 상태 영역은 새로고침이 의미 있는 기간에서만 노출한다. 완전히 닫힌 과거
-              기간은 조회 중… 도 재조회 버튼도 뜻이 없다. 제목 줄이 아니라 탭과 같은 줄이다. */}
-          {canRefreshPeriod && (
-            <View className="ml-auto shrink-0 flex-row items-center gap-2">
+          {/* 동기화 상태 영역은 어느 기간에서도 선다. 당김이 어느 기간에서도 돌기 때문이다.
+              갈라 두면 버튼은 없는데 당기면 도는 상태가 생긴다. 제목 줄이 아니라 탭과 같은 줄이다. */}
+          <View className="ml-auto shrink-0 flex-row items-center gap-2">
               <Text className="text-sm text-text-muted">
                 {status === 'loading' ? '조회 중...' : formatSyncedAt(lastSyncedAt)}
               </Text>
@@ -301,7 +301,7 @@ export function BossProfitScreen(): React.JSX.Element {
               <Pressable
                 role="button"
                 aria-label="새로고침"
-                onPress={() => refresh(trackedOcids ?? [])}
+                onPress={() => refresh(trackedOcids ?? [], { inPlace: true })}
                 className="h-[30px] w-[30px] items-center justify-center"
               >
                 <AnimatedView
@@ -311,8 +311,7 @@ export function BossProfitScreen(): React.JSX.Element {
                   <RefreshCwIcon className="h-4 w-4 text-primary-ink" strokeWidth={2} aria-hidden />
                 </AnimatedView>
               </Pressable>
-            </View>
-          )}
+          </View>
         </View>
 
         <View className="flex-row items-center justify-center gap-4">
@@ -445,17 +444,15 @@ export function BossProfitScreen(): React.JSX.Element {
           ref={scrollRef}
           header={header}
           // 당김은 헤더 버튼과 같은 재조회를 부르고 색만 테마에서 넘긴다. 빈 상태는 이 가지에
-          // 오지 않고, 새로고침이 의미 없는 기간에서는 컨트롤 자체를 달지 않는다.
+          // 오지 않는다.
           refreshControl={
-            canRefreshPeriod ? (
-              <RefreshControl
-                refreshing={pull.refreshing}
-                onRefresh={pull.onRefresh}
-                tintColor={definition.primaryInk}
-                colors={[definition.primaryInk]}
-                progressBackgroundColor={definition.surface}
-              />
-            ) : undefined
+            <RefreshControl
+              refreshing={pull.refreshing}
+              onRefresh={pull.onRefresh}
+              tintColor={definition.primaryInk}
+              colors={[definition.primaryInk]}
+              progressBackgroundColor={definition.surface}
+            />
           }
         >
           <View testID="pull-content" className="gap-2 px-4 pb-4">
