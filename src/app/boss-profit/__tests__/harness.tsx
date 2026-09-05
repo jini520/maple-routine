@@ -43,6 +43,7 @@ export function 보스행(overrides: Partial<BossProfitRow> = {}): BossProfitRow
     partySize: 3,
     payoutMeso: 6_800_000_000,
     isComplete: true,
+    defeatedOn: null,
     ...overrides,
   }
 }

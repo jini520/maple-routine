@@ -113,7 +113,8 @@ describe('getBossProfitRecords', () => {
       ),
       ['ocid-1', 'ocid-2', '2026-07'],
     )
-    expect(result).toEqual([sampleRecord])
+    // 읽으면 언제나 `defeatedOn` 이 붙는다. 쓸 때만 없다(`upsert` 가 그 칸을 안 건드린다).
+    expect(result).toEqual([{ ...sampleRecord, defeatedOn: null }])
   })
 
   it('조회 결과가 없으면 빈 배열을 반환한다', async () => {

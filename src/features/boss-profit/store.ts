@@ -14,6 +14,7 @@ import {
 import {
   fillMissingRecordWorlds,
   getBossProfitRecords,
+  getWeeklyPeriodKeysWithRecords,
   upsertBossProfitRecord,
   type BossProfitRecord,
 } from '../../storage/boss-profit'
@@ -31,6 +32,7 @@ import { compareByName } from '../../lib/character-order'
 import { syncSchedules, toScheduleSyncError, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
 import { hasSyncAttemptedThisRun } from '../schedule-sync/sync-run-state'
 import { isSyncFresh } from '../../lib/scheduler/sync-freshness'
+import { canPreviewNextWeek, isMonthlyRowInWeek } from '../../lib/boss/monthly-boss-week'
 import {
   appendRecordOnlyRows,
   buildBossProfitRow,
@@ -243,17 +245,15 @@ async function getSortedCharacterInfo(ocids: string[]): Promise<SortedCharacterI
     .map(({ ocid, imageUrl, world, characterName }) => ({ ocid, imageUrl, world, characterName }))
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * 그 달에서 **주간 기록이 있는 주차**들. 날짜를 모르는 월간 보스가 설 주를 이것이 고른다.
+ *
+ * 기록이 없는 주는 이전 기간 게이트에 막혀 열리지 않으므로 거기 세우면 금액이 갇힌다.
+ * 조회가 안 되면 빈 배열이고, 그때는 `resolveUndatedWeek` 의 폴백이 받는다.
+ */
+async function loadWeeksWithRecords(ocids: string[], monthKey: string): Promise<string[]> {
+  return withSqliteFallback(getWeeklyPeriodKeysWithRecords(ocids, monthKey), [])
+}
 
 // tab 이 monthly 일 때 그 달에 포함된 weekly periodKey 들을 주차별로 합산한다. 지난 주는 로컬
 // 기록을 조회하고, 미래 주는 0/upcoming 으로 채우며, 진행 중인 주는 liveRows 에서 합산한다.
@@ -288,8 +288,30 @@ async function buildWeeklySubtotalsForMonth(
     !hasLiveSource && weekKeys.includes(currentWeeklyPeriodKey)
       ? [...pastWeekKeys, currentWeeklyPeriodKey]
       : pastWeekKeys
-  const records =
-    recordWeekKeys.length > 0 ? await withSqliteFallback(getBossProfitRecords(ocids, recordWeekKeys), []) : []
+  // 월간 보스 수익도 그 보스가 선 주의 소계에 든다(사용자 지정). 그 기록의 `period_key` 는
+  // 달이라 주 키로는 안 걸리므로 달 키를 함께 넣는다. 안 넣으면 월간 탭의 카드 금액과 그 아래
+  // 줄들의 합이 안 맞는다.
+  const recordKeys = [...recordWeekKeys, monthPeriodKey]
+  const [records, weeksWithRecords] = await Promise.all([
+    withSqliteFallback(getBossProfitRecords(ocids, recordKeys), []),
+    loadWeeksWithRecords(ocids, monthPeriodKey),
+  ])
+
+  /** 이 (캐릭터, 주)에 서는 월간 보스 기록. 결정석과 드롭이 함께 그 주로 간다. */
+  const monthlyRecordsInWeek = (ocid: string, weekKey: string): BossProfitRecord[] =>
+    records.filter(
+      (record) =>
+        record.ocid === ocid &&
+        record.cycle === 'monthly' &&
+        isMonthlyRowInWeek({
+          weeklyPeriodKey: weekKey,
+          monthlyPeriodKey: record.periodKey,
+          isComplete: true,
+          defeatedOn: record.defeatedOn ?? null,
+          now,
+          weeksWithRecords,
+        }),
+    )
 
   // 지난 주의 상태를 6상태로 판정하려면 확인 기록이 필요하다. 기록이 없는 주가 조회해서 0건을
   // 확인한 주인지 조회한 적 없는 주인지는 그것만이 갈라 준다.
@@ -306,10 +328,17 @@ async function buildWeeklySubtotalsForMonth(
 
   // 아이템 수익도 소계에 넣는다. 안 넣으면 주간 탭과 월간 탭의 같은 주가 다른 숫자가 된다
   // (주간 탭은 보스 행에 더해 보여준다). 주차 전체를 한 번에 읽어 접는다.
-  const weekDrops = await withSqliteFallback(getBossDropRecords(ocids, weekKeys), [])
+  const weekDrops = await withSqliteFallback(getBossDropRecords(ocids, [...weekKeys, monthPeriodKey]), [])
   const dropsByOcidWeek = new Map<string, RecordedDrop[]>()
   for (const record of weekDrops) {
-    const key = `${record.ocid}|${record.periodKey}`
+    // 월간 보스의 드롭은 `period_key` 가 달이라 그대로 접으면 어느 주에도 안 든다. 그 보스가
+    // 선 주로 옮겨 담는다.
+    const weekKey =
+      record.periodKey === monthPeriodKey
+        ? weekKeys.find((key) => monthlyRecordsInWeek(record.ocid, key).length > 0)
+        : record.periodKey
+    if (weekKey === undefined) continue
+    const key = `${record.ocid}|${weekKey}`
     const list = dropsByOcidWeek.get(key) ?? []
     list.push(toRecordedDrop(record))
     dropsByOcidWeek.set(key, list)
@@ -332,9 +361,12 @@ async function buildWeeklySubtotalsForMonth(
         continue
       }
 
-      const matchingRecords = records.filter(
-        (record) => record.ocid === ocid && record.cycle === 'weekly' && record.periodKey === weekKey,
-      )
+      const matchingRecords = [
+        ...records.filter(
+          (record) => record.ocid === ocid && record.cycle === 'weekly' && record.periodKey === weekKey,
+        ),
+        ...monthlyRecordsInWeek(ocid, weekKey),
+      ]
       const recordedMeso = matchingRecords.reduce((sum, record) => sum + record.payoutMeso, 0)
 
       if (weekKey === currentWeeklyPeriodKey) {
@@ -342,7 +374,13 @@ async function buildWeeklySubtotalsForMonth(
         // 담는다), 없으면 이미 쌓인 기록에서 읽는다(달 경계를 걸친 주).
         const crystalMeso = hasLiveSource
           ? sumRowsPayout(
-              liveRows.filter((row) => row.ocid === ocid && row.cycle === 'weekly' && row.periodKey === weekKey),
+              filterRowsForTab(
+                liveRows.filter((row) => row.ocid === ocid),
+                'weekly',
+                weekKey,
+                now,
+                weeksWithRecords,
+              ),
             )
           : recordedMeso
         const drops = dropsByOcidWeek.get(`${ocid}|${weekKey}`) ?? []
@@ -398,8 +436,27 @@ async function buildRowsFromRecords(
     return []
   }
 
-  const records = (await withSqliteFallback(getBossProfitRecords(ocids, [periodKey]), [])).filter(
-    (record) => record.cycle === cycle,
+  // 주간 기간을 그릴 때는 **그 주가 속한 달의 월간 기록**도 함께 읽는다. 월간 보스가 이 목록
+  // 맨 위에 서고, 그 기록의 `period_key` 는 주가 아니라 달이라 이 키로는 안 걸린다.
+  const monthKey = cycle === 'weekly' ? periodKey.slice(0, 7) : null
+  const periodKeys = monthKey === null ? [periodKey] : [periodKey, monthKey]
+  const [allRecords, weeksWithRecords] = await Promise.all([
+    withSqliteFallback(getBossProfitRecords(ocids, periodKeys), []),
+    monthKey === null ? Promise.resolve<string[]>([]) : loadWeeksWithRecords(ocids, monthKey),
+  ])
+  const records = allRecords.filter(
+    (record) =>
+      record.cycle === cycle ||
+      (cycle === 'weekly' &&
+        record.cycle === 'monthly' &&
+        isMonthlyRowInWeek({
+          weeklyPeriodKey: periodKey,
+          monthlyPeriodKey: record.periodKey,
+          isComplete: true,
+          defeatedOn: record.defeatedOn ?? null,
+          now,
+          weeksWithRecords,
+        })),
   )
   if (records.length === 0) {
     return []
@@ -486,9 +543,15 @@ async function loadPeriod(
   // 넘겨 같은 캐시를 다시 읽지 않게 한다(캐릭터 6명 기준 18회 → 6회).
   const profileSnapshot = toProfileSnapshot(sortedCharacterInfo)
 
+  // 날짜 모르는 월간 보스가 어느 주에 서는지를 이 목록이 정한다. 월간 탭은 안 쓴다.
+  const weeksWithRecords =
+    tab === 'weekly' ? await loadWeeksWithRecords(sortedOcids, periodKey.slice(0, 7)) : []
+
   if (periodKey === currentPeriodKey) {
     const rows =
-      latestSyncSnapshot === null ? [] : filterRowsForTab(latestSyncSnapshot.rows, tab, periodKey)
+      latestSyncSnapshot === null
+        ? []
+        : filterRowsForTab(latestSyncSnapshot.rows, tab, periodKey, now, weeksWithRecords)
     const weeklySubtotals =
       tab === 'monthly'
         ? await buildWeeklySubtotalsForMonth(
@@ -942,10 +1005,14 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       // 판정은 복원까지 끝낸 최종 행으로 한다. 캐시 행이 0 이어도 기록에서 되살아난 행이 있으면
       // 헤드라인이 있다. 건너뛰는 진입에는 이 값을 다시 채울 동기화 완료 단계가 없어, 행이
       // 하나도 없어도 직전 기간 합계를 읽어야 증감 칩이 0 으로 굳지 않는다.
-      const [cachedDropsByRowKey, previousPeriodTotalMeso] = await Promise.all([
-        loadDropsByRowKey(ocids, cachedSortedRows, now),
-        cachedSortedRows.length > 0 || skipSync ? previousPeriodTotalPromise : Promise.resolve(0),
-      ])
+      const [cachedDropsByRowKey, previousPeriodTotalMeso, cachedWeeksWithRecords] =
+        await Promise.all([
+          loadDropsByRowKey(ocids, cachedSortedRows, now),
+          cachedSortedRows.length > 0 || skipSync ? previousPeriodTotalPromise : Promise.resolve(0),
+          tab === 'weekly'
+            ? loadWeeksWithRecords(sortedOcids, currentPeriodKey.slice(0, 7))
+            : Promise.resolve<string[]>([]),
+        ])
 
       // 이 호출보다 나중에 시작된 refresh/setTab/goToXPeriod가 이미 있다면(연타 등) 이 시점의
       // 캐시 우선 표시조차 화면에 반영하지 않는다. 더 최신 액션이 이미 진행 중이므로 그 결과가
@@ -957,7 +1024,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         // 로딩이 한 프레임 번쩍인다. 이 분기가 이미 화면에 필요한 값을 전부 채운다.
         status: skipSync ? 'loaded' : 'loading',
         periodKey: currentPeriodKey,
-        rows: filterRowsForTab(cachedSortedRows, tab, currentPeriodKey),
+        rows: filterRowsForTab(cachedSortedRows, tab, currentPeriodKey, now, cachedWeeksWithRecords),
         loadedTab: tab,
         loadedPeriodKey: currentPeriodKey,
         dropsByRowKey: cachedDropsByRowKey,
@@ -1121,9 +1188,12 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         ? await buildWeeklySubtotalsForMonth(syncedOcids, currentPeriodKey, sortedRows, characterProfiles, now)
         : []
 
-    const [liveDropsByRowKey, livePreviousPeriodTotalMeso] = await Promise.all([
+    const [liveDropsByRowKey, livePreviousPeriodTotalMeso, liveWeeksWithRecords] = await Promise.all([
       loadDropsByRowKey(ocids, sortedRows, now),
       previousPeriodTotalPromise,
+      tab === 'weekly'
+        ? loadWeeksWithRecords(syncedOcids, currentPeriodKey.slice(0, 7))
+        : Promise.resolve<string[]>([]),
     ])
 
     if (myGeneration !== requestGeneration) return
@@ -1131,7 +1201,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     set({
       status: 'loaded',
       periodKey: currentPeriodKey,
-      rows: filterRowsForTab(sortedRows, tab, currentPeriodKey),
+      rows: filterRowsForTab(sortedRows, tab, currentPeriodKey, now, liveWeeksWithRecords),
       loadedTab: tab,
       loadedPeriodKey: currentPeriodKey,
       dropsByRowKey: liveDropsByRowKey,
@@ -1174,7 +1244,9 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
   async goToNextPeriod() {
     const { tab, periodKey } = get()
     const now = new Date()
-    if (isLatestPeriod(tab, periodKey, now)) {
+    // 달 경계를 걸친 주에는 한 칸 앞을 미리 본다. 그 이틀 동안 이 달의 월간 보스가 화면
+    // 어디에도 없기 때문이다.
+    if (isLatestPeriod(tab, periodKey, now) && !(tab === 'weekly' && canPreviewNextWeek(periodKey, now))) {
       return
     }
     const myGeneration = ++requestGeneration

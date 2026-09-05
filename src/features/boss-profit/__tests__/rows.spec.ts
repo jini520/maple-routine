@@ -10,6 +10,7 @@ import type { BossContent } from '../../../types'
 import {
   filterRowsForTab,
   matchesRowKey,
+  mergeRecordsIntoRows,
   selectProfitDisplayBosses,
   sortRowsByOcidOrder,
   sumRowsPayout,
@@ -33,6 +34,7 @@ function row(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     partySize: 2,
     payoutMeso: 5_000_000,
     isComplete: true,
+    defeatedOn: null,
     ...overrides,
   }
 }
@@ -77,6 +79,21 @@ describe('sortRowsByOcidOrder', () => {
 })
 
 describe('filterRowsForTab', () => {
+  // 실제 데이터 회귀. 8월 월간 기록 6건이 날짜가 없었고 주간 기록은 08-20·08-27 에만 있었다.
+  // 마지막 주차 규칙은 그것을 08-27 에 세웠는데, 원장은 네 캐릭터가 8/23 에 이미 완료였다고
+  // 말한다. 8/23 은 08-20 주 안이라 08-27 에 잡았을 수가 없다.
+  it('날짜 모르는 월간 행은 기록이 있는 가장 빠른 주차에 선다', () => {
+    const 월간 = row({ cycle: 'monthly', periodKey: '2026-08', defeatedOn: null })
+    const 있는주차 = ['2026-08-20', '2026-08-27']
+    const 지금 = new Date('2026-09-05T12:00:00+09:00')
+
+    const 스무날주 = filterRowsForTab([월간], 'weekly', '2026-08-20', 지금, 있는주차)
+    const 스무이레주 = filterRowsForTab([월간], 'weekly', '2026-08-27', 지금, 있는주차)
+
+    expect(스무날주).toHaveLength(1)
+    expect(스무이레주).toHaveLength(0)
+  })
+
   it('탭(cycle)과 기간이 모두 맞는 행만 남긴다', () => {
     const rows = [
       row({ cycle: 'weekly', periodKey: '2026-07-09' }),
@@ -84,7 +101,7 @@ describe('filterRowsForTab', () => {
       row({ cycle: 'weekly', periodKey: '2026-07-02' }),
     ]
 
-    const kept = filterRowsForTab(rows, 'weekly', '2026-07-09')
+    const kept = filterRowsForTab(rows, 'weekly', '2026-07-09', new Date('2026-07-11T12:00:00+09:00'), [])
 
     expect(kept).toHaveLength(1)
     expect(kept[0].cycle).toBe('weekly')
@@ -243,4 +260,26 @@ describe('selectProfitDisplayBosses: 주간 한도 마감', () => {
 
     expect(names(selectProfitDisplayBosses(contents, 'auto', []))).toContain('검은마법사')
   })
+})
+
+// 동기화가 만든 행은 날짜를 모른다(`buildBossProfitRow` 가 `null` 을 박는다). 기록이 아는 날짜를
+// 여기서 안 실으면, 이번 주에 잡은 월간 보스가 **이번 주 목록에서 사라지고** 그 달 첫 주차로
+// 옮겨간다. `isMonthlyRowInWeek` 이 날짜 모름을 첫 주차로 읽기 때문이다.
+it('mergeRecordsIntoRows 는 기록의 처치 날짜도 행에 싣는다', () => {
+  const target = row({ cycle: 'monthly', periodKey: '2026-09', defeatedOn: null })
+  const record = {
+    ocid: target.ocid,
+    boss: target.boss,
+    difficulty: target.difficulty,
+    cycle: 'monthly' as const,
+    periodKey: '2026-09',
+    partySize: 2,
+    priceMeso: 100,
+    payoutMeso: 50,
+    recordedAt: '2026-09-20T00:00:00.000Z',
+    world: null,
+    defeatedOn: '2026-09-19',
+  }
+
+  expect(mergeRecordsIntoRows([target], [record])[0].defeatedOn).toBe('2026-09-19')
 })

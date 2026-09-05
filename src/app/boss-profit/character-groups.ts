@@ -109,12 +109,20 @@ export function groupTotalMeso(
   group: CharacterGroup,
   dropsByRowKey: Record<string, RecordedDrop[]>,
 ): number {
+  // 월간 탭은 금액의 원천이 **주차 소계 하나**다. 월간 보스 수익은 그 보스가 선 주의 소계 안에
+  // 이미 들어 있고, 행은 아바타 진행 링을 위해서만 그룹에 실려 온다. 함께 더하면 두 번 센다.
+  //
+  // 소계가 있는가로 가르는 것은 그것이 곧 월간 탭이기 때문이다. 주간 탭은 소계를 안 만든다.
+  if (group.weeklySubtotals.length > 0) {
+    return sumSubtotals(group.weeklySubtotals)
+  }
+
   const drops = group.bossRows.reduce(
     (sum, row) =>
       sum + sumDropPayout(dropsByRowKey[dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)] ?? []),
     0,
   )
-  return sumPayout(group.bossRows) + sumSubtotals(group.weeklySubtotals) + drops
+  return sumPayout(group.bossRows) + drops
 }
 
 // 이 캐릭터가 현재 기간에 기록한 고가 아이템 드롭 목록. 드롭은 `dropRowKey`(ocid, boss,

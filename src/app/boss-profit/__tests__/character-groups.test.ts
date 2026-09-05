@@ -9,7 +9,7 @@ import type { RecordedDrop } from '../../../types/drops'
 
 import { groupTotalMeso, sumPayout } from '../character-groups'
 import type { CharacterGroup } from '../character-groups'
-import { 다른주간보스, PERIOD, 보스행, 주간보스 } from './harness'
+import { 다른주간보스, PERIOD, 월간보스, 보스행, 주간보스, 주차소계 } from './harness'
 
 function group(rows: BossProfitRow[]): CharacterGroup {
   return { ocid: 'ocid-1', characterName: '지내우시', imageUrl: null, bossRows: rows, weeklySubtotals: [] }
@@ -71,5 +71,29 @@ describe('sumPayout: 금액을 모르는 행', () => {
     const rows = [보스행(), 보스행({ boss: 다른주간보스, payoutMeso: null })]
 
     expect(sumPayout(rows)).toBe(6_800_000_000)
+  })
+})
+
+// 월간 탭은 금액의 원천이 주차 소계 하나다. 월간 보스 수익은 그 보스가 선 주의 소계 안에 이미
+// 들어 있고, 행은 아바타 진행 링을 위해서만 그룹에 실려 온다. 함께 더하면 두 번 센다.
+describe('월간 탭의 금액은 주차 소계가 전부다', () => {
+  it('주차 소계가 있으면 보스 행을 안 더한다', () => {
+    const 월간행 = 보스행({ boss: 월간보스, cycle: 'monthly', periodKey: '2026-08', payoutMeso: 9_000_000_000 })
+    const 소계 = 주차소계({ totalMeso: 20_000_000_000 })
+
+    expect(groupTotalMeso({ ...group([월간행]), weeklySubtotals: [소계] }, {})).toBe(20_000_000_000)
+  })
+
+  it('그 행에 붙은 드롭도 안 더한다', () => {
+    const 월간행 = 보스행({ boss: 월간보스, cycle: 'monthly', periodKey: '2026-08', payoutMeso: 0 })
+    const drops = {
+      [dropRowKey(월간행.ocid, 월간행.boss, 월간행.difficulty, 월간행.periodKey)]: [
+        { category: 'equipment' as const, itemName: '반지', quantity: 1, priceState: 'entered' as const, priceMeso: 5_000_000_000, priceShare: 1 },
+      ],
+    }
+
+    expect(
+      groupTotalMeso({ ...group([월간행]), weeklySubtotals: [주차소계({ totalMeso: 1_000 })] }, drops),
+    ).toBe(1_000)
   })
 })

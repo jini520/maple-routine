@@ -42,6 +42,9 @@ jest.mock('../../../storage/manual-tracked-content', () => ({
 const { setManualTrackedContent: setManualTrackedContentMock } = jest.requireMock('../../../storage/manual-tracked-content') as Record<string, jest.Mock>
 jest.mock('../../../storage/character-selection', () => ({
   getTrackedCharacterOcids: jest.fn(),
+  // 동기화 회차가 대표 하나의 5분 가드를 건너뛰려고 읽는다. 이 스위트의 주제는 아니지만
+  // 없으면 회차 자체가 못 돈다.
+  getRepresentativeCharacter: jest.fn().mockResolvedValue(null),
 }))
 const { getTrackedCharacterOcids: getTrackedCharacterOcidsMock } = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
 jest.mock('../../../storage/tracking-mode', () => ({

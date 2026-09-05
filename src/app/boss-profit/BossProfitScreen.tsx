@@ -34,6 +34,7 @@ import {
   isPeriodQueryable,
   isPeriodRefreshable,
 } from '../../lib/boss/boss-profit-period'
+import { canPreviewNextWeek } from '../../lib/boss/monthly-boss-week'
 import { sumDropPayout } from '../../lib/drop/drop-price'
 
 import {
@@ -134,6 +135,8 @@ export function BossProfitScreen(): React.JSX.Element {
   // "현재 기간 판정"과 "기간 라벨"이 서로 다른 기간을 가리킬 수 있다.
   const now = new Date()
   const isCurrentPeriod = isLatestPeriod(tab, periodKey, now)
+  // 앞으로 갈 수 있나. 보통은 지금 기간이면 끝인데, 달 경계를 걸친 주에만 한 칸 더 열린다.
+  const canGoNext = !isCurrentPeriod || (tab === 'weekly' && canPreviewNextWeek(periodKey, now))
   // 동기화 상태 영역·당겨서 새로고침의 공통 게이트. 이 기간이 최신인가 가 아니라 지금
   // 재조회하면 이 화면의 숫자가 달라질 수 있는가 다. 갈라 두면 버튼은 없는데 당기면 도는
   // 상태가 생긴다.
@@ -339,11 +342,11 @@ export function BossProfitScreen(): React.JSX.Element {
           <Pressable
             role="button"
             aria-label="다음 기간"
-            aria-disabled={isCurrentPeriod}
-            disabled={isCurrentPeriod}
+            aria-disabled={!canGoNext}
+            disabled={!canGoNext}
             onPress={() => goToNextPeriod()}
             className={
-              isCurrentPeriod
+              !canGoNext
                 ? 'h-7 w-7 items-center justify-center rounded-full border border-border opacity-30'
                 : 'h-7 w-7 items-center justify-center rounded-full border border-border'
             }

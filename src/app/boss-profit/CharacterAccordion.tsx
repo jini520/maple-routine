@@ -17,7 +17,6 @@ import { useRef, useState } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 
-import { formatMesoShort } from '../../lib/boss/boss-profit-delta'
 import { sumDropPayout } from '../../lib/drop/drop-price'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss/boss-matching'
 import type { PopoverAnchorGeometry } from '../../lib/popover-anchor'
@@ -28,6 +27,7 @@ import { ValuableDropBadge } from '../../components/molecules/ValuableDropBadge/
 import { AnimatedView } from '../../lib/nativewind-interop'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { MonthlyAccordionBody, WeeklyAccordionBody } from './AccordionBody'
+import { ItemRevenueTrigger } from './ItemRevenueTrigger'
 import { useBossProfitContext } from './boss-profit-context'
 import { CharacterPortrait } from '../../components/organisms/CharacterPortrait/CharacterPortrait'
 import {
@@ -129,9 +129,36 @@ function ValuableCardRing(props: { isExpanded: boolean }): React.JSX.Element {
  *
  * 값을 안 매긴 카드는 뷰가 한 겹도 늘지 않는다.
  */
-function ItemAwareMoney(props: { wrap: boolean; children: React.ReactNode }): React.JSX.Element {
+/**
+ * 머리의 금액 상자. 아이템이 섞였을 때만 **금액 자체가 내역을 여는 버튼**이 된다.
+ *
+ * 감싸는 갈래가 따로 있는 것은 실패 배지의 절대배치 기준(`moneyRef`)이 안쪽 상자여야 하기
+ * 때문이다. 아이템이 없으면 래퍼를 아예 안 만들어 그 행의 트리가 안 달라진다.
+ */
+function MoneyBox({
+  // 구조 분해가 필수다. `props.triggerRef` 로 읽으면 `react-hooks/refs` 가 그 접근을 렌더 중
+  // ref 접근으로 본다(보스 행이 훅을 구조 분해하는 것과 같은 이유).
+  triggerRef,
+  ...props
+}: {
+  wrap: boolean
+  label: string
+  isOpen: boolean
+  onPress: () => void
+  triggerRef: (node: View | null) => void
+  children: React.ReactNode
+}): React.JSX.Element {
   if (!props.wrap) return <>{props.children}</>
-  return <View className="items-end gap-1">{props.children}</View>
+  return (
+    <ItemRevenueTrigger
+      ref={triggerRef}
+      label={props.label}
+      isOpen={props.isOpen}
+      onPress={props.onPress}
+    >
+      {props.children}
+    </ItemRevenueTrigger>
+  )
 }
 
 export function CharacterAccordion(props: {
@@ -296,10 +323,15 @@ export function CharacterAccordion(props: {
           {/* 숫자 표기(n/12)는 두지 않는다. 헤더 가로폭을 캐릭터명과 다투는 문제가 안 풀렸다.
               진행률은 아바타 링이 표현한다. */}
 
-          <ItemAwareMoney wrap={hasItemRevenue}>
+          <MoneyBox
+            wrap={hasItemRevenue}
+            label={`${group.characterName} 아이템 수익 확인`}
+            isOpen={isItemPopoverOpen}
+            onPress={toggleItemPopover}
+            triggerRef={itemChipRef}
+          >
             {/* 실패 배지의 절대배치 기준이자 팝오버 가로 위치의 기준 상자다. 아이템이 섞이면
-                금액 색이 달라진다. 새 색을 만들지 않고 보스 행의 `아이템 +N` 칩과 같은
-                `primary-ink` 를 쓴다. */}
+                금액 색이 달라진다. 새 색을 만들지 않고 보스 행과 같은 `primary-ink` 를 쓴다. */}
             <View ref={moneyRef} className="relative flex-row items-center">
               {props.issue !== undefined && (
                 <CharacterIssueBadge issue={props.issue} onToggle={toggleIssue} />
@@ -316,24 +348,7 @@ export function CharacterAccordion(props: {
               </Text>
             </View>
 
-            {hasItemRevenue && (
-              <Pressable
-                ref={itemChipRef}
-                role="button"
-                aria-label={`${group.characterName} 아이템 수익 확인`}
-                aria-expanded={isItemPopoverOpen}
-                onPress={toggleItemPopover}
-                className="h-5 shrink-0 flex-row items-center rounded-full bg-primary-tint px-2"
-              >
-                <Text
-                  className="text-11 font-bold leading-none text-primary-ink"
-                  style={TABULAR_NUMS}
-                >
-                  아이템 +{formatMesoShort(itemTotal)}
-                </Text>
-              </Pressable>
-            )}
-          </ItemAwareMoney>
+          </MoneyBox>
 
           {isExpanded ? (
             <ChevronUpIcon className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden />

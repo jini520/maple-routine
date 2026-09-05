@@ -8,8 +8,10 @@ import { act, fireEvent } from '@testing-library/react-native'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import type { WeeklySubtotalState } from '../../../features/boss-profit/store'
 
-import { flattenStyle } from '../../../components/__tests__/render-atom'
+import { flattenStyle, 기본테마 } from '../../../components/__tests__/render-atom'
+import { resolveCardBody } from '../../../theme/theme-vars'
 import { MonthlyAccordionBody, WeeklyAccordionBody, WeeklySubtotalRow } from '../AccordionBody'
+import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
 import { 다른주간보스, 월간보스, 보스행, 주차소계, 컨텍스트값, renderProfit } from './harness'
 
 beforeEach(() => {
@@ -36,7 +38,7 @@ describe('WeeklyAccordionBody', () => {
   it('행의 드롭은 (ocid, 보스, 난이도, 기간) 키로 찾아 넘긴다', async () => {
     const row = 보스행()
     const key = `${row.ocid}|${row.boss}|${row.difficulty}|${row.periodKey}`
-    const { getByText } = await renderProfit(
+    const { getByTestId } = await renderProfit(
       <WeeklyAccordionBody rows={[row]} />,
       컨텍스트값({
         dropsByRowKey: {
@@ -54,7 +56,7 @@ describe('WeeklyAccordionBody', () => {
       }),
     )
 
-    expect(getByText('아이템 +30.0억')).toBeTruthy()
+    expect(getByTestId('item-revenue-underline')).toBeTruthy()
   })
 })
 
@@ -120,8 +122,8 @@ describe('WeeklySubtotalRow: 상태마다 얼굴이 다르다', () => {
     expect(getByText('진행 중')).toBeTruthy()
   })
 
-  it('그 주에 아이템이 섞이면 칩이 서고 눌러 내역을 연다', async () => {
-    const { getByText, getByTestId } = await renderProfit(
+  it('그 주에 아이템이 섞이면 금액이 버튼이 되고 눌러 내역을 연다', async () => {
+    const { getByLabelText, getByTestId } = await renderProfit(
       <WeeklySubtotalRow
         subtotal={주차소계({
           totalMeso: 4_000_000_000,
@@ -140,7 +142,7 @@ describe('WeeklySubtotalRow: 상태마다 얼굴이 다르다', () => {
     )
 
     await act(async () => {
-      fireEvent.press(getByText('아이템 +10.0억'))
+      fireEvent.press(getByLabelText('이번 주 아이템 수익 확인'))
     })
 
     expect(getByTestId('item-revenue-popover')).toBeTruthy()
@@ -148,25 +150,25 @@ describe('WeeklySubtotalRow: 상태마다 얼굴이 다르다', () => {
 })
 
 describe('MonthlyAccordionBody', () => {
-  it('주차 소계와 월간 보스를 각각 제목과 함께 그린다', async () => {
-    const { getByText } = await renderProfit(
+  it('주차별 합계만 그린다. 월간 보스 상세는 주간 탭으로 갔다', async () => {
+    const { getByText, queryByTestId } = await renderProfit(
       <MonthlyAccordionBody
         bossRows={[보스행({ boss: 월간보스, cycle: 'monthly' })]}
         weeklySubtotals={[주차소계()]}
       />,
     )
 
-    expect(getByText('주간 보스 수익 · 주차별 합계')).toBeTruthy()
-    expect(getByText('월간 보스 수익')).toBeTruthy()
+    expect(getByText('주차별 합계')).toBeTruthy()
+    // 행은 그룹에 실려 온다(아바타 진행 링이 센다). 그리지만 않는다.
+    expect(queryByTestId('boss-profit-boss-row')).toBeNull()
   })
 
-  it('월간 보스 행이 없고 조회도 불가하면 그 사실을 고지한다. 빈 상태로 위장하지 않는다', async () => {
+  it('주차 소계가 없고 조회도 불가하면 그 사실을 고지한다. 빈 상태로 위장하지 않는다', async () => {
     const { getByText } = await renderProfit(
       <MonthlyAccordionBody bossRows={[]} weeklySubtotals={[]} />,
       컨텍스트값({ isMonthlyBossQueryable: false }),
     )
 
-    expect(getByText('월간 보스 수익')).toBeTruthy()
     expect(getByText('이 기간은 조회할 수 없습니다')).toBeTruthy()
   })
 
@@ -176,5 +178,75 @@ describe('MonthlyAccordionBody', () => {
     )
 
     expect(queryByText('월간 보스 수익')).toBeNull()
+  })
+})
+
+
+// 펼친 카드의 머리와 본문이 둘 다 흰 바탕이고 사이가 `border` 1px 하나라, 캐릭터 머리가 보스
+// 목록의 첫 줄처럼 읽혔다. 본문이 자기 바탕을 갖는다.
+describe('본문은 자기 바탕을 갖는다', () => {
+  // 색은 38토큰에 없어 모드에서 파생한다. `surface-2` 는 라이트에서 칙칙하고 `bg` 를 쓰면
+  // 본문이 페이지에 녹는다.
+  it('주간 본문 바탕이 파생 토큰이다', async () => {
+    const { getByTestId } = await renderProfit(<WeeklyAccordionBody rows={[보스행()]} />)
+
+    expect(flattenStyle(getByTestId('accordion-body').props.style)).toMatchObject({
+      backgroundColor: resolveCardBody(기본테마),
+    })
+  })
+
+  it('월간 본문 바탕도 같다', async () => {
+    const { getByTestId } = await renderProfit(
+      <MonthlyAccordionBody bossRows={[보스행()]} weeklySubtotals={[주차소계()]} />,
+    )
+
+    expect(flattenStyle(getByTestId('accordion-body').props.style)).toMatchObject({
+      backgroundColor: resolveCardBody(기본테마),
+    })
+  })
+
+  // 머리(카드)와 페이지 둘 다와 갈려야 이 바탕이 값을 한다.
+  it('카드와도 페이지와도 다른 색이다', async () => {
+    expect(resolveCardBody(기본테마)).not.toBe(기본테마.surface)
+    expect(resolveCardBody(기본테마)).not.toBe(기본테마.bg)
+  })
+})
+
+
+// 월간 보스가 월간 탭에서 빠져 주간 목록 맨 위로 왔다(사용자 지정). 두 무리를 띠가 가른다.
+describe('주간 본문의 띠 둘', () => {
+  const 월간행 = () => 보스행({ boss: 월간보스, cycle: 'monthly', periodKey: '2026-08' })
+
+  it('월간 띠는 월간 행이 있을 때만 선다', async () => {
+    const 있음 = await renderProfit(<WeeklyAccordionBody rows={[월간행(), 보스행()]} />)
+    expect(있음.getByText('월간')).toBeTruthy()
+
+    const 없음 = await renderProfit(<WeeklyAccordionBody rows={[보스행()]} />)
+    expect(없음.queryByText('월간')).toBeNull()
+  })
+
+  // 그 오른쪽 수가 주간 한도를 숫자로 말하는 유일한 자리다. 아바타 링은 그림으로만 말한다.
+  it('주간 띠는 늘 선다. 오른쪽에 처치 수와 한도를 적는다', async () => {
+    const { getByText, getByTestId } = await renderProfit(
+      <WeeklyAccordionBody rows={[보스행(), 보스행({ boss: 다른주간보스, isComplete: false })]} />,
+    )
+
+    expect(getByText('주간')).toBeTruthy()
+    expect(getByTestId('accordion-band-count').props.children).toBe(`1 / ${WEEKLY_BOSS_CLEAR_LIMIT}`)
+  })
+
+  // 월간 보스는 12 한도 밖이다. 그 줄이 분자에 섞이면 링과 이 수가 갈린다.
+  it('월간 행은 그 수에 안 든다', async () => {
+    const { getByTestId } = await renderProfit(<WeeklyAccordionBody rows={[월간행(), 보스행()]} />)
+
+    expect(getByTestId('accordion-band-count').props.children).toBe(`1 / ${WEEKLY_BOSS_CLEAR_LIMIT}`)
+  })
+
+  // 오른쪽에 아무것도 안 적는다(사용자 지정). 그 줄이 한도 밖이라는 것은 띠가 갈라 놓은 것으로
+  // 충분하고, 그 이상은 화면이 규칙을 설명하려 드는 것이다.
+  it('월간 띠 오른쪽에는 수를 안 적는다', async () => {
+    const { getAllByTestId } = await renderProfit(<WeeklyAccordionBody rows={[월간행(), 보스행()]} />)
+
+    expect(getAllByTestId('accordion-band-count')).toHaveLength(1)
   })
 })

@@ -24,8 +24,10 @@ jest.mock('../../../storage/boss-profit', () => ({
   hasBossProfitRecordsAtOrBefore: jest.fn(),
   fillMissingRecordWorlds: jest.fn(),
   upsertBossProfitRecord: jest.fn(),
+  // 날짜 모르는 월간 보스가 설 주를 이 목록이 고른다.
+  getWeeklyPeriodKeysWithRecords: jest.fn(),
 }))
-const { getBossProfitRecords: getBossProfitRecordsMock, hasBossProfitRecordsAtOrBefore: hasBossProfitRecordsAtOrBeforeMock, fillMissingRecordWorlds: fillMissingRecordWorldsMock, upsertBossProfitRecord: upsertBossProfitRecordMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
+const { getBossProfitRecords: getBossProfitRecordsMock, hasBossProfitRecordsAtOrBefore: hasBossProfitRecordsAtOrBeforeMock, fillMissingRecordWorlds: fillMissingRecordWorldsMock, upsertBossProfitRecord: upsertBossProfitRecordMock, getWeeklyPeriodKeysWithRecords: getWeeklyPeriodKeysWithRecordsMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 
 // 처치 날짜 캐기는 **동기화가 끝난 뒤 기다리지 않고** 튼다. 이 화면은
 // `defeated_on` 을 안 쓰므로 결과를 기다릴 이유가 없다. 목으로 **떴는가** 만 본다.
@@ -170,6 +172,7 @@ beforeEach(() => {
   })
   getBossProfitRecordsMock.mockResolvedValue([])
   hasBossProfitRecordsAtOrBeforeMock.mockResolvedValue(false)
+  getWeeklyPeriodKeysWithRecordsMock.mockResolvedValue([])
   fillMissingRecordWorldsMock.mockResolvedValue(undefined)
   getBossDropRecordsMock.mockResolvedValue([])
   replaceBossDropRecordsMock.mockResolvedValue(undefined)
@@ -208,6 +211,7 @@ describe('setBossDrops', () => {
     partySize: 1,
     payoutMeso: 1000,
     isComplete: true,
+    defeatedOn: null,
   }
 
   it('드롭을 replaceBossDropRecords로 통째 교체하고 dropsByRowKey를 갱신한다', async () => {
@@ -564,7 +568,9 @@ describe('useBossProfitStore', () => {
     expect(rows[0].priceMeso).toBe(35_600_000)
   })
 
-  it('weekly 탭에서는 weekly cycle 보스만, monthly 탭으로 전환하면 monthly cycle 보스만 rows에 노출된다', async () => {
+  // 월간 보스가 월간 탭에서 빠져 주간 목록 **맨 위**로 왔다(사용자 지정). 월간 탭 데이터에는
+  // 그대로 남아 있고(아바타 진행 링이 그것을 센다) 본문만 안 그린다.
+  it('주간 탭이 월간 보스를 맨 위에 함께 낸다. 월간 탭은 그대로 자기 주기만 낸다', async () => {
     syncSchedulesMock.mockResolvedValue([
       syncResult({
         state: {
@@ -580,8 +586,8 @@ describe('useBossProfitStore', () => {
     await useBossProfitStore.getState().refresh(['ocid-1'])
 
     const weeklyRows = useBossProfitStore.getState().rows
-    expect(weeklyRows.map((row) => row.boss)).toEqual(['자쿰'])
-    expect(weeklyRows[0].cycle).toBe('weekly')
+    expect(weeklyRows.map((row) => row.boss)).toEqual(['검은마법사', '자쿰'])
+    expect(weeklyRows[0].cycle).toBe('monthly')
 
     await useBossProfitStore.getState().setTab('monthly')
 
@@ -2441,6 +2447,44 @@ describe('useBossProfitStore', () => {
         const subtotal = useBossProfitStore.getState().weeklySubtotals.find((s) => s.periodKey === pastWeekKey)
         expect(subtotal?.state).toBe('recorded')
         expect(subtotal?.totalMeso).toBe(4_040_000)
+      } finally {
+        jest.useRealTimers()
+      }
+    })
+
+    // 월간 탭은 `주간 기록의 총합` 이다(사용자 지정). 월간 보스 수익이 어느 주차에도 안 들면
+    // 카드 금액과 그 아래 줄들의 합이 안 맞는다.
+    it('월간 탭 주차별 합계: 월간 보스 수익이 그 보스가 선 주차에 든다', async () => {
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00'))
+
+      try {
+        syncSchedulesMock.mockResolvedValue([syncResult()])
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+
+        // 날짜를 아는 월간 기록. 7/09 주(7/9~7/15)에 잡았다.
+        getBossProfitRecordsMock.mockResolvedValue([
+          {
+            ocid: 'ocid-1',
+            boss: '검은마법사',
+            difficulty: '익스트림',
+            cycle: 'monthly',
+            periodKey: '2026-07',
+            partySize: 1,
+            priceMeso: 15_000_000_000,
+            payoutMeso: 15_000_000_000,
+            recordedAt: '2026-07-12T00:00:00.000Z',
+            world: null,
+            defeatedOn: '2026-07-12',
+          } satisfies BossProfitRecord,
+        ])
+
+        await useBossProfitStore.getState().setTab('monthly')
+
+        const subtotals = useBossProfitStore.getState().weeklySubtotals
+        expect(subtotals.find((s) => s.periodKey === '2026-07-09')?.totalMeso).toBe(15_000_000_000)
+        // 다른 주차는 그 금액을 안 센다. 한 달에 딱 한 주다.
+        expect(subtotals.find((s) => s.periodKey === '2026-07-02')?.totalMeso).toBe(0)
       } finally {
         jest.useRealTimers()
       }

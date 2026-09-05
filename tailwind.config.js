@@ -49,6 +49,8 @@ const colors = {
   // 38토큰에 없고 **모드에서 파생되는** 토큰 — 스크림 위 패널 테두리([[ADR-122]]). 웹은 선택자로
   // 풀지만 RN 에는 선택자가 없어 값으로 만든다(`src/theme/theme-vars.ts`).
   'panel-border': 'var(--color-panel-border)',
+  // 같은 방식으로 파생되는 둘째 토큰 — 펼친 캐릭터 카드의 본문 바탕([[ADR-220]]).
+  'card-body': 'var(--color-card-body)',
 }
 
 

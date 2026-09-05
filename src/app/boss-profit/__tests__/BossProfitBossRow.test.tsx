@@ -3,13 +3,14 @@
 // ** 의 "모르는 금액에 0을 쓰지 않는다"가 이 파일의 중심이다.** 미완료와
 // 가격 미확정은 둘 다 `payoutMeso === null` 인데, 그 자리에 `0 메소` 를 그리면 "안 잡았다"와
 // "0원 벌었다"가 같은 화면이 된다.
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 
 import valuableDropsData from '../../../data/valuable-drops.json'
 import { isValuableDrop } from '../../../lib/drop/valuable-drops'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import type { RecordedDrop } from '../../../types/drops'
 
+import { flattenStyle } from '../../../components/__tests__/render-atom'
 import { BossProfitBossRow } from '../BossProfitBossRow'
 import { 보스행, 컨텍스트값, renderProfit, 주간보스 } from './harness'
 
@@ -66,15 +67,28 @@ describe('BossProfitBossRow: 금액과 아이템 칩', () => {
     expect(queryByLabelText(`${주간보스} 아이템 수익 확인`)).toBeNull()
   })
 
-  it('값을 매긴 드롭이 있으면 금액에 더하고 칩을 세운다', async () => {
-    const { getByText, getByLabelText } = await renderProfit(
+  // 칩을 걷고 **금액 자체가 버튼**이 됐다(사용자 지시). 숫자만 남으면 눌린다는 것이 안 보이므로
+  // 점선 밑줄이 그것을 말한다.
+  it('값을 매긴 드롭이 있으면 금액에 더하고 금액이 버튼이 된다', async () => {
+    const { getByText, getByLabelText, getByTestId, queryByText } = await renderProfit(
       <BossProfitBossRow row={보스행()} drops={값매긴드롭} />,
     )
 
     // 결정석 68억 + 아이템 30억/3인 = 10억
     expect(getByText('7,800,000,000 메소')).toBeTruthy()
     expect(getByLabelText(`${주간보스} 아이템 수익 확인`)).toBeTruthy()
-    expect(getByText('아이템 +10.0억')).toBeTruthy()
+    expect(getByTestId('item-revenue-underline')).toBeTruthy()
+    expect(queryByText(/^아이템 \+/)).toBeNull()
+  })
+
+  // 결정석뿐인 줄은 열어도 볼 것이 없다. 어포던스가 붙으면 거짓말이다.
+  it('아이템이 없으면 밑줄도 버튼도 없다', async () => {
+    const { queryByTestId, queryByLabelText } = await renderProfit(
+      <BossProfitBossRow row={보스행()} drops={[]} />,
+    )
+
+    expect(queryByTestId('item-revenue-underline')).toBeNull()
+    expect(queryByLabelText(`${주간보스} 아이템 수익 확인`)).toBeNull()
   })
 
   // 값이 안 매겨진 드롭은 금액을 바꾸지 않는다. 칩도 서지 않는다.
@@ -125,28 +139,73 @@ describe('BossProfitBossRow: 드롭 지시자', () => {
   })
 })
 
-describe('BossProfitBossRow: 고가 드롭 강조', () => {
-  // 판정은 `isValuableDrop` 한 곳이 하고 이 테스트는 그 판정을 베끼지 않는다.
-  // 목록에서 실제로 하나 뽑고, 없는 이름 하나를 반대편으로 쓴다.
+// 고가 드롭 행의 숨쉬는 배경을 걷었다(사용자 지시, 다시 디자인할 예정). 같은 효과가 가격 기록
+// 화면에는 그대로 남아 있어 컴포넌트 자체는 산다.
+describe('BossProfitBossRow: 고가 드롭 배경이 없다', () => {
   const 고가아이템 = valuableDropsData.items[0]
 
-  it('고가 목록 밖 아이템에는 골드 배경이 없다', async () => {
-    const { queryByTestId } = await renderProfit(<BossProfitBossRow row={보스행()} drops={값매긴드롭} />)
-
-    expect(isValuableDrop(값매긴드롭[0].itemName)).toBe(false)
-    expect(queryByTestId('valuable-drop-row-tint')).toBeNull()
-  })
-
-  it('고가 목록에 든 아이템이면 틴트와 글로우가 함께 선다', async () => {
-    const { getByTestId } = await renderProfit(
+  it('고가 목록에 든 아이템이어도 배경을 안 깐다', async () => {
+    const { queryByTestId } = await renderProfit(
       <BossProfitBossRow
         row={보스행()}
         drops={[{ category: 'equipment', itemName: 고가아이템, quantity: 1 }]}
       />,
     )
 
-    expect(getByTestId('valuable-drop-row-tint')).toBeTruthy()
-    expect(getByTestId('valuable-drop-row-glow')).toBeTruthy()
+    expect(isValuableDrop(고가아이템)).toBe(true)
+    expect(queryByTestId('valuable-drop-row-tint')).toBeNull()
+    expect(queryByTestId('valuable-drop-row-glow')).toBeNull()
+  })
+})
+
+// 아이콘 스택은 셋만 보여준다. 이 순서가 곧 무엇이 보이는가라, 그 판의 사건이 `+N` 뒤에 숨으면
+// 안 된다. 규칙 자체는 `lib/drop/drop-order` 가 갖고 여기서는 **화면이 그것을 쓰는가**만 본다.
+// 차례는 팝오버 목록에서 읽는다. 스택은 그림뿐이라 이름을 안 든다.
+describe('BossProfitBossRow: 아이템 차례', () => {
+  const 고가아이템 = valuableDropsData.items[0]
+
+  /** 팝오버를 열고 목록에 선 이름을 **선 차례대로** 읽는다. */
+  async function 목록(drops: RecordedDrop[]): Promise<string[]> {
+    const { getByLabelText, getByTestId } = await renderProfit(
+      <BossProfitBossRow row={보스행()} drops={drops} />,
+    )
+    await act(async () => {
+      fireEvent.press(getByLabelText(`${주간보스} 아이템 수익 확인`))
+    })
+
+    // 이름 줄의 자식은 `[이름, 레벨 배지 또는 false]` 라 통째로 문자열로 만들면 안 된다.
+    const 이름 = new RegExp(`^(${drops.map((drop) => drop.itemName).join('|')})$`)
+    return within(getByTestId('item-revenue-popover'))
+      .getAllByText(이름)
+      .map((node) => {
+        const children = node.props.children as unknown
+        return String(Array.isArray(children) ? children[0] : children)
+      })
+  }
+
+  it('연출이 나는 아이템이 값을 매긴 것보다 앞이다', async () => {
+    const 이름들 = await 목록([
+      {
+        category: 'equipment',
+        itemName: '평범한 것',
+        quantity: 1,
+        priceState: 'entered',
+        priceMeso: 9_000_000_000,
+        priceShare: 1,
+      },
+      { category: 'equipment', itemName: 고가아이템, quantity: 1 },
+    ])
+
+    expect(이름들.indexOf(고가아이템)).toBeLessThan(이름들.indexOf('평범한 것'))
+  })
+
+  it('연출이 없는 것끼리는 비싼 순이다', async () => {
+    const 이름들 = await 목록([
+      { category: 'equipment', itemName: '싼 것', quantity: 1, priceState: 'entered', priceMeso: 100, priceShare: 1 },
+      { category: 'equipment', itemName: '비싼 것', quantity: 1, priceState: 'entered', priceMeso: 900, priceShare: 1 },
+    ])
+
+    expect(이름들.indexOf('비싼 것')).toBeLessThan(이름들.indexOf('싼 것'))
   })
 })
 
@@ -176,5 +235,14 @@ describe('BossProfitBossRow: 파티원 수', () => {
     expect(atMin.getByLabelText(`지내우시 ${주간보스} 하드 파티원 수 감소`).props.accessibilityState.disabled).toBe(
       true,
     )
+  })
+})
+
+// 오른쪽이 두 줄(이름 줄 + 파티·금액 줄)이라 위쪽 정렬이면 초상만 위로 붙는다.
+it('보스 초상은 행 전체의 세로 가운데에 선다', async () => {
+  const { getByTestId } = await renderProfit(<BossProfitBossRow row={보스행()} drops={[]} />)
+
+  expect(flattenStyle(getByTestId('boss-profit-boss-row').props.style)).toMatchObject({
+    alignItems: 'center',
   })
 })

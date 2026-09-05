@@ -20,6 +20,16 @@ export interface BossProfitRecord {
    * 사실(사용자 확인)과 정면으로 어긋나므로 기록에 박아 고정한다.
    */
   world: string | null
+  /**
+   * 며칟날 잡았나(KST `YYYY-MM-DD`). 모르면 `null`.
+   *
+   * 가계부의 월간 칸이 첫 소비자였고, 이제 **월간 보스를 어느 주에 세울지**도 이 값이 정한다
+   * (`lib/boss/monthly-boss-week`). 월간 기록의 `period_key` 는 달이라 그 자체로는 주를 못 든다.
+   *
+   * **읽을 때는 언제나 있고 쓸 때는 없다.** `upsertBossProfitRecord` 는 이 칸을 안 건드린다.
+   * 날짜는 나중에 `setBossProfitDefeatedOn` 이 따로 채운다. 그래서 옵셔널이다.
+   */
+  defeatedOn?: string | null
 }
 
 const UPSERT_SQL = `
@@ -116,6 +126,7 @@ function rowToRecord(row: Record<string, unknown>): BossProfitRecord {
     recordedAt: row.recorded_at as string,
     // 컬럼을 더하기 전 기록에는 없다. undefined도 null로 정규화해 호출부가 한 형태만 다루게 한다.
     world: (row.world as string | null | undefined) ?? null,
+    defeatedOn: (row.defeated_on as string | null | undefined) ?? null,
   }
 }
 
@@ -136,6 +147,34 @@ export async function getBossProfitRecords(
   )
 
   return (values ?? []).map(rowToRecord)
+}
+
+/**
+ * 그 달에서 **주간 기록이 있는 주차**들. 오름차순이다.
+ *
+ * 날짜를 모르는 월간 보스를 어느 주에 세울지를 이것이 고른다(`resolveUndatedWeek`). 기록이 없는
+ * 주는 이전 기간 게이트에 막혀 열리지 않으므로, 거기에 세우면 금액이 못 가는 자리에 갇힌다.
+ *
+ * @param monthKey `YYYY-MM`. 주간 `period_key` 는 `YYYY-MM-DD` 라 앞 7자가 그 달이다
+ */
+export async function getWeeklyPeriodKeysWithRecords(
+  ocids: string[],
+  monthKey: string,
+): Promise<string[]> {
+  if (ocids.length === 0) {
+    return []
+  }
+
+  const db = await getBossProfitDb()
+  const placeholders = ocids.map(() => '?').join(', ')
+  const { values } = await db.query(
+    `SELECT DISTINCT period_key FROM boss_profit_records
+     WHERE ocid IN (${placeholders}) AND cycle = 'weekly' AND substr(period_key, 1, 7) = ?
+     ORDER BY period_key`,
+    [...ocids, monthKey],
+  )
+
+  return (values ?? []).map((row) => row.period_key as string)
 }
 
 /**

@@ -31,8 +31,13 @@ export function buildBackfillTargets(tab: BossCycle, periodKey: string, ocids: s
   const targets: BackfillTarget[] = []
 
   if (tab === 'weekly') {
+    // 월간 보스는 이 목록 맨 위에 선다. 그 기록의 `period_key` 는 달이라 주 키로는 안 걸리므로
+    // 달을 함께 조회한다. 안 넣으면 기록을 지운 기기에서 지난 달 월간 보스가 영영 안 돌아온다.
+    // 이번 달은 조회일이 미래라 호출부의 `isPeriodQueryable` 가 걸러 준다(라이브 동기화가 든다).
+    const monthKey = periodKey.slice(0, 7)
     for (const ocid of ocids) {
       targets.push({ ocid, cycle: 'weekly', periodKey })
+      targets.push({ ocid, cycle: 'monthly', periodKey: monthKey })
     }
     return targets
   }
