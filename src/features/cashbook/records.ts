@@ -34,6 +34,7 @@ import { getEventWorldNames } from '../../storage/event-world-names'
 import { loadEnhancementHistory, loadObservedItemLevels } from '../../storage/enhancement-history'
 import {
   toEnhancementSpending,
+  type EnhancementCategory,
   type EnhancementSpendingRow,
 } from '../enhancement-history/spending'
 import { datesBetween } from '../../lib/calendar'
@@ -434,16 +435,21 @@ export interface DropSaleDayRecord extends AutoDayRecordBase {
 }
 
 /**
- * 강화 사용 내역 줄. 큐브·스타포스·잠재를 캐릭터 하나로 접는다.
+ * 강화 사용 내역 줄. **캐릭터 하나 × 갈래 하나**다.
+ *
+ * 넷을 안 묶는다(사용자 지정). 큐브·스타포스·잠재능력·에디셔널 잠재능력은 비용이 서는 방식이
+ * 아예 달라, 묶으면 그날 무엇에 썼는지가 한 숫자에 가려진다.
  *
  * **자동 줄인데 지출이다.** 앞의 둘과 갈리는 자리가 이것뿐이고, `dayTotalsOf` 와 화면의 아이콘이
  * 그 하나를 안다.
  *
- * `ocid` 가 없다. 계정 단위 API 라 이름만 온다. 그래서 초상이 안 붙고 줄의 신원도 이름이다.
+ * `ocid` 가 없다. 계정 단위 API 라 이름만 온다. 그래서 초상이 안 붙는다.
  */
 export interface EnhancementDayRecord {
   kind: 'enhancement'
-  /** 이름뿐이다. 이 줄의 신원이기도 하다 */
+  /** 이름과 함께 이 줄의 신원이다 */
+  category: EnhancementCategory
+  /** 이름뿐이다 */
   characterName: string
   /** 그날 쓴 메소. **값을 못 매긴 건은 안 들어 있다** */
   payoutMeso: number
@@ -491,9 +497,9 @@ export function isManualRecord(entry: DayRecord): entry is ManualDayRecord {
  */
 export function rowKeyOf(entry: DayRecord): string {
   if (isManualRecord(entry)) return entry.record.id
-  // 강화 줄은 `ocid` 가 없다. 하루에 캐릭터 하나당 하나뿐이라 이름이 곧 신원이다.
+  // 강화 줄은 `ocid` 가 없다. 하루에 캐릭터 하나가 갈래마다 한 줄이라 그 둘이 신원이다.
   return entry.kind === 'enhancement'
-    ? `${entry.kind}:${entry.characterName}`
+    ? `${entry.kind}:${entry.category}:${entry.characterName}`
     : `${entry.kind}:${entry.ocid}`
 }
 
@@ -550,13 +556,18 @@ export async function loadDayRecords(dateKey: string): Promise<DayRecord[]> {
 function toEnhancementRecords(
   rows: readonly EnhancementSpendingRow[],
 ): EnhancementDayRecord[] {
-  const byName = new Map<string, { record: EnhancementDayRecord; items: Map<string, EnhancedItem> }>()
+  const groups = new Map<
+    string,
+    { record: EnhancementDayRecord; items: Map<string, EnhancedItem> }
+  >()
   for (const row of rows) {
-    let entry = byName.get(row.characterName)
-    if (entry === undefined) {
-      entry = {
+    const key = `${row.category}|${row.characterName}`
+    let group = groups.get(key)
+    if (group === undefined) {
+      group = {
         record: {
           kind: 'enhancement',
+          category: row.category,
           characterName: row.characterName,
           payoutMeso: 0,
           count: 0,
@@ -565,13 +576,13 @@ function toEnhancementRecords(
         },
         items: new Map(),
       }
-      byName.set(row.characterName, entry)
+      groups.set(key, group)
     }
-    entry.record.count += 1
-    if (row.costMeso === null) entry.record.unpricedCount += 1
-    else entry.record.payoutMeso += row.costMeso
+    group.record.count += 1
+    if (row.costMeso === null) group.record.unpricedCount += 1
+    else group.record.payoutMeso += row.costMeso
 
-    const item = entry.items.get(row.targetItem) ?? {
+    const item = group.items.get(row.targetItem) ?? {
       targetItem: row.targetItem,
       count: 0,
       costMeso: 0,
@@ -580,14 +591,14 @@ function toEnhancementRecords(
     item.count += 1
     if (row.costMeso === null) item.unpricedCount += 1
     else item.costMeso += row.costMeso
-    entry.items.set(row.targetItem, item)
+    group.items.set(row.targetItem, item)
   }
 
-  return [...byName.values()]
+  return [...groups.values()]
     .map(({ record, items }) => ({
       ...record,
       // 큰 금액이 위다. 펼쳐서 보는 이유가 **어디에 썼나** 라서 이름순이면 그 답이 안 보인다.
-      // 값이 같으면 건수로 가른다. 둘 다 같으면 이름으로 가른다(순서가 흔들리면 안 된다).
+      // 값이 같으면 건수로, 그것도 같으면 이름으로 가른다(순서가 흔들리면 안 된다).
       items: [...items.values()].sort(
         (left, right) =>
           right.costMeso - left.costMeso ||
@@ -595,7 +606,14 @@ function toEnhancementRecords(
           left.targetItem.localeCompare(right.targetItem),
       ),
     }))
-    .sort((left, right) => left.characterName.localeCompare(right.characterName))
+    // 캐릭터로 먼저 모으고 그 안에서 큰 금액이 위다. 갈래를 고정 순서로 두면 그날 제일 많이 쓴
+    // 것이 목록 가운데에 숨는다.
+    .sort(
+      (left, right) =>
+        left.characterName.localeCompare(right.characterName) ||
+        right.payoutMeso - left.payoutMeso ||
+        left.category.localeCompare(right.category),
+    )
 }
 
 /**
@@ -663,8 +681,7 @@ function toAutoRecords(
 const AUTO_LABELS: Record<AutoDayRecord['kind'], string> = {
   bossCrystal: '보스 결정석',
   dropSale: '아이템 판매',
-  // 큐브·스타포스·잠재를 안 가른다. 셋을 갈라 적으면 캐릭터 하나가 하루에 세 줄이 되는데,
-  // 사용자가 보는 것은 그날 강화에 얼마 썼나 지 어느 강화였나 가 아니다.
+  // 강화 줄은 이 표를 안 쓴다. 갈래 이름이 곧 라벨이다(`recordTitleOf`).
   enhancement: '강화',
 }
 
@@ -690,7 +707,11 @@ function manualLabelOf(entry: ManualDayRecord): string {
 }
 
 export function recordTitleOf(entry: DayRecord): string {
-  const label = isManualRecord(entry) ? manualLabelOf(entry) : AUTO_LABELS[entry.kind]
+  const label = isManualRecord(entry)
+    ? manualLabelOf(entry)
+    : entry.kind === 'enhancement'
+      ? entry.category
+      : AUTO_LABELS[entry.kind]
   // 캐릭터가 붙어 있으면 이름이 앞에 선다. 보스 줄이 이미 쓰던 어법 그대로다. 손입력만 다르게
   // 적으면 한 목록 안에 두 어법이 생긴다.
   return entry.characterName === '' ? label : `${entry.characterName} · ${label}`

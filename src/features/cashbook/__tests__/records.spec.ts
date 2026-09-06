@@ -925,6 +925,18 @@ describe('강화 줄', () => {
     ...over,
   })
 
+  const 잠재 = (type: string, over: Record<string, unknown> = {}) =>
+    강화({
+      kind: 'potential' as const,
+      itemLevel: 200,
+      payload: {
+        potential_type: type,
+        potential_option_grade: '유니크',
+        additional_potential_option_grade: '유니크',
+      },
+      ...over,
+    })
+
   async function 줄들(rows: ReturnType<typeof 강화>[]) {
     enhancement.loadEnhancementHistory.mockResolvedValue(rows)
     const { loadDayRecords } = require('../records') as typeof import('../records')
@@ -932,10 +944,30 @@ describe('강화 줄', () => {
   }
 
   // 하루 수백 건이라 안 접으면 목록이 그것만으로 찬다.
-  it('캐릭터 하나에 한 줄로 접는다', async () => {
+  it('캐릭터 하나에 갈래마다 한 줄로 접는다', async () => {
     const rows = await 줄들([강화(), 강화({ id: 'e2' }), 강화({ id: 'e3', characterName: '풉품' })])
 
     expect(rows.filter((row) => row.kind === 'enhancement')).toHaveLength(2)
+  })
+
+  // 넷을 안 묶는다. 비용이 서는 방식이 아예 달라 묶으면 무엇에 썼는지가 한 숫자에 가려진다.
+  it('큐브·스타포스·잠재능력·에디셔널을 따로 센다', async () => {
+    const rows = await 줄들([
+      강화(),
+      강화({ id: 'e2', kind: 'starforce', itemLevel: null, payload: { before_starforce_count: 5, upgrade_item: '' } }),
+      잠재('잠재능력 재설정', { id: 'e3' }),
+      잠재('에디셔널 잠재능력 재설정', { id: 'e4' }),
+    ])
+
+    expect(
+      rows.flatMap((row) => (row.kind === 'enhancement' ? [row.category] : [])).sort(),
+    ).toEqual(['스타포스', '에디셔널 잠재능력', '잠재능력', '큐브'])
+  })
+
+  it('잠재는 종류가 응답에서 온다', async () => {
+    const rows = await 줄들([잠재('에디셔널 잠재능력 재설정')])
+
+    expect(rows[0]).toMatchObject({ category: '에디셔널 잠재능력', payoutMeso: 74_800_000 })
   })
 
   it('금액과 횟수를 모은다', async () => {
@@ -943,6 +975,7 @@ describe('강화 줄', () => {
 
     expect(row).toMatchObject({
       kind: 'enhancement',
+      category: '큐브',
       characterName: '낟낟',
       payoutMeso: 900_000,
       count: 2,
@@ -957,11 +990,27 @@ describe('강화 줄', () => {
     expect(row).toMatchObject({ payoutMeso: 450_000, count: 2, unpricedCount: 1 })
   })
 
-  it('줄의 신원이 이름이다. ocid 가 안 온다', async () => {
+  it('줄의 신원이 갈래와 이름이다. ocid 가 안 온다', async () => {
     const { rowKeyOf } = require('../records') as typeof import('../records')
     const [row] = await 줄들([강화()])
 
-    expect(rowKeyOf(row)).toBe('enhancement:낟낟')
+    expect(rowKeyOf(row)).toBe('enhancement:큐브:낟낟')
+  })
+
+  // 캐릭터로 먼저 모으고 그 안에서 큰 금액이 위다. 갈래를 고정 순서로 두면 그날 제일 많이 쓴
+  // 것이 목록 가운데에 숨는다.
+  it('캐릭터로 모으고 그 안에서 큰 금액이 위다', async () => {
+    const rows = await 줄들([
+      강화(),
+      잠재('잠재능력 재설정', { id: 'e2' }),
+      강화({ id: 'e3', characterName: '가가' }),
+    ])
+
+    expect(
+      rows.flatMap((row) =>
+        row.kind === 'enhancement' ? [`${row.characterName}/${row.category}`] : [],
+      ),
+    ).toEqual(['가가/큐브', '낟낟/잠재능력', '낟낟/큐브'])
   })
 
   it('건수 라벨이 값모름을 말한다', async () => {
@@ -1013,9 +1062,11 @@ describe('강화 줄', () => {
 
   it('제목에 이름과 갈래가 든다', async () => {
     const { recordTitleOf } = require('../records') as typeof import('../records')
-    const [row] = await 줄들([강화()])
+    const [큐브줄] = await 줄들([강화()])
+    const [잠재줄] = await 줄들([잠재('에디셔널 잠재능력 재설정')])
 
-    expect(recordTitleOf(row)).toBe('낟낟 · 강화')
+    expect(recordTitleOf(큐브줄)).toBe('낟낟 · 큐브')
+    expect(recordTitleOf(잠재줄)).toBe('낟낟 · 에디셔널 잠재능력')
   })
 
   // 여기가 핵심이다. 자동 줄이라고 수익으로 세면 그날 합계가 두 배로 어긋난다.
@@ -1030,7 +1081,11 @@ describe('강화 줄', () => {
   it('칸 금액과 상세 합계가 같은 수를 낸다', async () => {
     const { loadCalendarAmounts, loadDayRecords, dayTotalsOf } =
       require('../records') as typeof import('../records')
-    enhancement.loadEnhancementHistory.mockResolvedValue([강화(), 강화({ id: 'e2', itemLevel: 200 })])
+    enhancement.loadEnhancementHistory.mockResolvedValue([
+      강화(),
+      잠재('잠재능력 재설정', { id: 'e2' }),
+      강화({ id: 'e3', itemLevel: 200 }),
+    ])
 
     const cell = (await loadCalendarAmounts('2026-08-23', '2026-08-23'))['2026-08-23']
     const detail = dayTotalsOf(await loadDayRecords('2026-08-23'))

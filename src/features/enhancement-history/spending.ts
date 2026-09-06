@@ -19,6 +19,29 @@ import type { EnhancementHistoryEntry } from '../../storage/enhancement-history'
 export interface EnhancementSpendingRow extends EnhancementHistoryEntry {
   /** 모르면 `null`. 화면은 그 줄을 금액 없이 건수만 센다 */
   costMeso: number | null
+  /** 화면이 가르는 단위. `kind` 와 달리 잠재를 본·에디셔널로 나눈다 */
+  category: EnhancementCategory
+}
+
+/**
+ * 지출을 가르는 단위. **`kind` 보다 하나 잘다.**
+ *
+ * `kind` 는 API 엔드포인트라 잠재 둘이 한 통에 온다. 그런데 본 잠재와 에디셔널은 비용 표가
+ * 아예 다르고(에디셔널이 두 배 넘는다) 사용자가 따로 센다.
+ */
+export type EnhancementCategory =
+  | '큐브'
+  | '스타포스'
+  | '잠재능력'
+  | '에디셔널 잠재능력'
+
+function categoryOf(entry: EnhancementHistoryEntry): EnhancementCategory {
+  if (entry.kind === 'cube') return '큐브'
+  if (entry.kind === 'starforce') return '스타포스'
+  // 응답이 `에디셔널 잠재능력 재설정` 이라고 말한다. 그 값이 아니면 본 잠재다.
+  return text(entry.payload, 'potential_type') === '에디셔널 잠재능력 재설정'
+    ? '에디셔널 잠재능력'
+    : '잠재능력'
 }
 
 function field(payload: unknown, key: string): unknown {
@@ -105,7 +128,7 @@ export function toEnhancementSpending(
   const rows: EnhancementSpendingRow[] = []
   for (const entry of entries) {
     if (isSpendingRecord(worldOf(entry), entry.characterName, eventNames) !== true) continue
-    rows.push({ ...entry, costMeso: costOf(entry, observedLevels) })
+    rows.push({ ...entry, costMeso: costOf(entry, observedLevels), category: categoryOf(entry) })
   }
   return rows
 }
