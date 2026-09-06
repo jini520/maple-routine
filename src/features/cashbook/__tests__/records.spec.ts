@@ -1060,6 +1060,33 @@ describe('강화 줄', () => {
     ])
   })
 
+  // 120 이하 장비의 큐브는 감정비용이 없고 강화권을 쓴 스타포스도 메소가 안 든다.
+  // `낟넘 · 큐브 9회 −0` 같은 줄은 읽을 것이 없다(사용자 지정).
+  it('한 푼도 안 쓴 줄은 안 세운다', async () => {
+    const rows = await 줄들([강화({ itemLevel: 100 }), 강화({ id: 'e2', itemLevel: 120 })])
+
+    expect(rows).toEqual([])
+  })
+
+  // 그때의 0 은 안 썼다가 아니라 모른다다. 숨기면 합계가 적어 보이는 것이 고장으로 읽힌다.
+  it('값을 못 매긴 건이 있으면 안 숨긴다', async () => {
+    const rows = await 줄들([강화({ itemLevel: null })])
+
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toMatchObject({ payoutMeso: 0, unpricedCount: 1 })
+  })
+
+  it('섞여 있으면 안 쓴 장비만 펼침에서 빠진다', async () => {
+    const [row] = await 줄들([
+      강화({ targetItem: '아케인셰이드 클로', itemLevel: 200 }),
+      강화({ id: 'e2', targetItem: '초보자의 장갑', itemLevel: 100 }),
+    ])
+
+    expect(row.kind === 'enhancement' && row.items.map((item) => item.targetItem)).toEqual([
+      '아케인셰이드 클로',
+    ])
+  })
+
   it('제목에 이름과 갈래가 든다', async () => {
     const { recordTitleOf } = require('../records') as typeof import('../records')
     const [큐브줄] = await 줄들([강화()])
@@ -1091,5 +1118,30 @@ describe('강화 줄', () => {
     const detail = dayTotalsOf(await loadDayRecords('2026-08-23'))
 
     expect(detail.expenseMeso).toBe(cell.expenseMeso)
+  })
+})
+
+// 캐시로만 적은 지출은 메소가 0 이지만 원이 있다. 그것까지 숨기면 적은 기록이 사라진다.
+describe('손입력 지출의 0', () => {
+  async function 줄들(records: unknown[]) {
+    spend.getSpendRecordsBetween.mockResolvedValue(records)
+    const { loadDayRecords } = require('../records') as typeof import('../records')
+    return await loadDayRecords('2026-08-23')
+  }
+
+  it('메소도 원도 0 이면 안 세운다', async () => {
+    const rows = await 줄들([
+      { ...메포지출, id: 'x', recordedAt: '', mesoAmount: 0, pointAmount: null, pointPer100mMeso: null, cashAmount: null },
+    ])
+
+    expect(rows).toEqual([])
+  })
+
+  it('원이 있으면 세운다', async () => {
+    const rows = await 줄들([
+      { ...메포지출, id: 'x', recordedAt: '', mesoAmount: 0, pointAmount: null, pointPer100mMeso: null, cashAmount: 6_900 },
+    ])
+
+    expect(rows).toHaveLength(1)
   })
 })

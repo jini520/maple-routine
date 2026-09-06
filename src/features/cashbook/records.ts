@@ -542,7 +542,32 @@ export async function loadDayRecords(dateKey: string): Promise<DayRecord[]> {
 
   // 자동 줄이 위다. 그날의 큰 금액이고 손이 닿지 않는 줄이라, 손으로 적은 것 사이에 섞이면
   // 왜 이건 안 눌리지 가 된다.
-  return [...toAutoRecords(bossSummaries, names), ...toEnhancementRecords(enhancements), ...manual]
+  return [
+    ...toAutoRecords(bossSummaries, names),
+    ...toEnhancementRecords(enhancements),
+    ...manual,
+  ].filter((entry) => !isEmptySpend(entry))
+}
+
+/**
+ * 한 푼도 안 쓴 지출 줄인가. **그런 줄은 목록에 안 세운다**(사용자 지정).
+ *
+ * 실제로 생긴다. 120 이하 장비의 큐브는 감정비용이 없고(통찰력 100 가정) 강화권을 쓴 스타포스도
+ * 메소가 안 든다. 그런 날은 `낟넘 · 큐브 9회 −0` 같은 줄이 서는데 읽을 것이 없다.
+ *
+ * **값을 못 매긴 건이 있으면 안 숨긴다.** 그때의 0 은 안 썼다가 아니라 모른다이고, 그 사실을
+ * 줄이 말해야 합계가 적어 보이는 것이 고장으로 안 읽힌다.
+ *
+ * 수익 줄은 안 본다. 결정석 0 원이어도 그날 무엇을 잡았는지가 그 줄에 있다.
+ */
+function isEmptySpend(entry: DayRecord): boolean {
+  if (entry.kind === 'enhancement') {
+    return entry.payoutMeso === 0 && entry.unpricedCount === 0
+  }
+  if (entry.kind === 'spend') {
+    return spendMesoOf(entry.record) === 0 && (entry.record.cashAmount ?? 0) === 0
+  }
+  return false
 }
 
 /**
@@ -599,12 +624,15 @@ function toEnhancementRecords(
       ...record,
       // 큰 금액이 위다. 펼쳐서 보는 이유가 **어디에 썼나** 라서 이름순이면 그 답이 안 보인다.
       // 값이 같으면 건수로, 그것도 같으면 이름으로 가른다(순서가 흔들리면 안 된다).
-      items: [...items.values()].sort(
+      // 펼친 줄도 같다. 한 푼도 안 쓴 장비는 안 세운다.
+      items: [...items.values()]
+        .filter((item) => item.costMeso > 0 || item.unpricedCount > 0)
+        .sort(
         (left, right) =>
           right.costMeso - left.costMeso ||
           right.count - left.count ||
           left.targetItem.localeCompare(right.targetItem),
-      ),
+        ),
     }))
     // 캐릭터로 먼저 모으고 그 안에서 큰 금액이 위다. 갈래를 고정 순서로 두면 그날 제일 많이 쓴
     // 것이 목록 가운데에 숨는다.
