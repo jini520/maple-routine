@@ -11,12 +11,16 @@ jest.mock('../../boss-profit/store', () => ({
 }))
 const mockRefresh = jest.fn()
 jest.mock('../../../storage/character-selection', () => ({ getTrackedCharacterOcids: jest.fn() }))
+jest.mock('../../enhancement-history/collect', () => ({ collectEnhancementHistory: jest.fn() }))
 
 import { LedgerDataProvider, useLedgerData } from '../useLedgerData'
 
 const { syncScheduleWindow: syncMock } = jest.requireMock('../../schedule-window/sync') as Record<string, jest.Mock>
 const { getTrackedCharacterOcids: trackedMock } = jest.requireMock(
   '../../../storage/character-selection',
+) as Record<string, jest.Mock>
+const { collectEnhancementHistory: collectMock } = jest.requireMock(
+  '../../enhancement-history/collect',
 ) as Record<string, jest.Mock>
 
 function Probe(): React.JSX.Element {
@@ -42,6 +46,7 @@ beforeEach(() => {
   syncMock.mockReset().mockResolvedValue(undefined)
   mockRefresh.mockReset().mockResolvedValue(undefined)
   trackedMock.mockReset().mockResolvedValue(['o1', 'o2'])
+  collectMock.mockReset().mockResolvedValue(undefined)
 })
 
 // 마운트는 **과거(창)만** 받는다. 오늘은 보스 수익 스토어의 진입 경로가 10분 TTL 로 이미
@@ -117,4 +122,69 @@ it('프로바이더 밖에서는 idle 이다', async () => {
   const view = await render(<Probe />)
 
   expect(view.getByTestId('probe')).toHaveTextContent('idle:0')
+})
+
+// 강화 사용 내역도 이 층이 소유한다. 창과 **함께** 돌아야 진행 바가 도는 중에 안 흔들린다.
+describe('강화 사용 내역', () => {
+  function RangeProbe(props: { from: string; to: string }): React.JSX.Element {
+    const { requestDateRange } = useLedgerData()
+    return (
+      <Text testID="range" onPress={() => requestDateRange({ from: props.from, to: props.to })}>
+        범위
+      </Text>
+    )
+  }
+
+  it('마운트에서 창과 함께 돈다', async () => {
+    await 그리기()
+
+    await waitFor(() => expect(collectMock).toHaveBeenCalledTimes(1))
+    expect(syncMock).toHaveBeenCalledTimes(1)
+  })
+
+  // 화면이 자기 범위를 알려 주기를 기다리면 창이 먼저 분모를 잡고 뒤늦게 히스토리가 자기 몫을
+  // 더해 바가 뒤로 간다. 그래서 층이 기본 범위를 안다.
+  it('화면이 말하기 전에도 날짜를 안다', async () => {
+    await 그리기()
+
+    await waitFor(() => expect(collectMock).toHaveBeenCalled())
+    expect((collectMock.mock.calls[0][0] as string[]).length).toBeGreaterThan(27)
+  })
+
+  it('범위가 바뀌면 새 회차가 돈다', async () => {
+    const view = await render(
+      <LedgerDataProvider>
+        <RangeProbe from="2026-01-01" to="2026-01-03" />
+      </LedgerDataProvider>,
+    )
+    await waitFor(() => expect(collectMock).toHaveBeenCalled())
+    collectMock.mockClear()
+
+    await act(async () => {
+      fireEvent.press(view.getByTestId('range'))
+    })
+
+    await waitFor(() => expect(collectMock).toHaveBeenCalledTimes(1))
+    expect(collectMock.mock.calls[0][0]).toEqual(['2026-01-01', '2026-01-02', '2026-01-03'])
+  })
+
+  // 화면이 다시 그릴 때마다 부른다. 같은 값이면 아무 일도 안 나야 한다.
+  it('같은 범위를 다시 말하면 안 돈다', async () => {
+    const view = await render(
+      <LedgerDataProvider>
+        <RangeProbe from="2026-01-01" to="2026-01-03" />
+      </LedgerDataProvider>,
+    )
+    await waitFor(() => expect(collectMock).toHaveBeenCalled())
+
+    await act(async () => {
+      fireEvent.press(view.getByTestId('range'))
+    })
+    collectMock.mockClear()
+    await act(async () => {
+      fireEvent.press(view.getByTestId('range'))
+    })
+
+    expect(collectMock).not.toHaveBeenCalled()
+  })
 })

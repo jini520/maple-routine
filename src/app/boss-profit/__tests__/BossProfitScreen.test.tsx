@@ -47,7 +47,12 @@ const dispatch = jest.fn()
 // 동기화 실패·기간 로드 실패는 인라인 문단이 아니라 토스트다.
 const mockLedgerReload = jest.fn()
 jest.mock('../../../features/ledger/useLedgerData', () => ({
-  useLedgerData: () => ({ status: 'ready', revision: 1, reload: mockLedgerReload }),
+  useLedgerData: () => ({
+    status: 'ready',
+    revision: 1,
+    reload: mockLedgerReload,
+    requestDateRange: jest.fn(),
+  }),
 }))
 
 jest.mock('../../../features/toast/store', () => ({

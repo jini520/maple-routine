@@ -55,7 +55,6 @@ import {
 import {
   WEEKDAY_LABELS_RESET,
   buildCalendarMonth,
-  type CalendarWeek,
   buildResetWeek,
   formatDayLabel,
   getAdjacentMonthKey,
@@ -66,6 +65,7 @@ import {
   resetWeekStartOf,
   type CalendarAmounts,
 } from '../../lib/calendar'
+import { coveringRange } from '../../features/cashbook/range'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
@@ -104,16 +104,6 @@ import { IncomeSheet, type IncomeDraft } from './IncomeSheet'
 import { SpendSheet, type SpendDraft } from './SpendSheet'
 
 const NO_AMOUNTS: CalendarAmounts = {}
-
-/**
- * 두 격자가 **함께 덮는** 날짜 범위. 보이는 칸(주간이면 이레)과 열지도 기준(언제나 그 달)을 다
- * 담아야 한다. 주간이 달을 걸치면 그 이레가 기준 달의 격자 밖으로 나갈 수 있어(예: 7/30 목요일
- * 주는 8/5 까지 가는데 7월 격자는 8/1 에 끝난다) 둘의 **합집합**을 쓴다.
- */
-function coveringRange(...grids: readonly CalendarWeek[][]): { from: string; to: string } {
-  const keys = grids.flat().flatMap((week) => week.map((day) => day.dateKey))
-  return { from: keys.reduce((a, b) => (a < b ? a : b)), to: keys.reduce((a, b) => (a > b ? a : b)) }
-}
 
 /** 주간 · 월간. 보스 수익 탭의 알약 그대로다. 고른 값은 기억하지 않는다. 그쪽도 화면 상태다. */
 function PeriodTab(props: {
@@ -559,6 +549,18 @@ export function CashbookScreen(): React.JSX.Element {
   const ledger = useLedgerData()
 
   const pull = usePullRefresh(() => ledger.reload())
+
+  /**
+   * 그리는 범위를 층에 알린다. 그 범위의 강화 사용 내역을 층이 받는다.
+   *
+   * 층이 마운트에서 쓰는 기본값은 주간 보기라 첫 진입에서는 같은 값이고 아무 일도 안 난다.
+   * 사용자가 달을 옮길 때만 새 회차가 돈다.
+   */
+  const { requestDateRange } = ledger
+  useEffect(() => {
+    requestDateRange({ from, to })
+  }, [from, to, requestDateRange])
+
 
 
   /**

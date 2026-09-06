@@ -5,6 +5,7 @@ import {
   HEAT_LEVELS,
   WEEKDAY_LABELS,
   buildCalendarMonth,
+  datesBetween,
   formatDayLabel,
   shiftDateKey,
   getAdjacentMonthKey,
@@ -352,5 +353,27 @@ describe('periodTotals: 격자가 그린 칸을 그대로 접는다', () => {
       incomeMeso: 0,
       expenseMeso: 0,
     })
+  })
+})
+
+describe('datesBetween', () => {
+  it('양끝을 다 담는다', () => {
+    expect(datesBetween('2026-09-04', '2026-09-06')).toEqual([
+      '2026-09-04',
+      '2026-09-05',
+      '2026-09-06',
+    ])
+  })
+
+  it('하루면 하나다', () => {
+    expect(datesBetween('2026-09-04', '2026-09-04')).toEqual(['2026-09-04'])
+  })
+
+  it('달을 넘어간다', () => {
+    expect(datesBetween('2026-08-31', '2026-09-01')).toEqual(['2026-08-31', '2026-09-01'])
+  })
+
+  it('거꾸로면 빈 목록이다. 던지지 않는다', () => {
+    expect(datesBetween('2026-09-06', '2026-09-04')).toEqual([])
   })
 })

@@ -36,12 +36,19 @@ jest.mock('../../../features/cashbook/records', () => {
 // 객체만 바꾸고 `rerender` 를 부르면 하네스의 프로바이더가 벗겨진다.
 const mockWindow = { status: 'ready' as 'idle' | 'filling' | 'ready', revision: 1, reload: jest.fn() }
 let mockSetWindowRevision: ((value: number) => void) | null = null
+const mockRequestDateRange = jest.fn()
+
 jest.mock('../../../features/ledger/useLedgerData', () => ({
   useLedgerData: () => {
     const react = require('react') as typeof import('react')
     const [revision, setRevision] = react.useState(mockWindow.revision)
     mockSetWindowRevision = setRevision
-    return { status: mockWindow.status, revision, reload: mockWindow.reload }
+    return {
+      status: mockWindow.status,
+      revision,
+      reload: mockWindow.reload,
+      requestDateRange: mockRequestDateRange,
+    }
   },
 }))
 

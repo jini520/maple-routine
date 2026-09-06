@@ -20,6 +20,9 @@ import {
 
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { useBossProfitStore } from '../boss-profit/store'
+import { defaultCashbookRange, type CashbookRange } from '../cashbook/range'
+import { collectEnhancementHistory } from '../enhancement-history/collect'
+import { datesBetween } from '../../lib/calendar'
 import { useLedgerProgress } from './progress'
 import { syncScheduleWindow } from '../schedule-window/sync'
 
@@ -35,12 +38,20 @@ export interface LedgerDataState {
    * 무엇을 부르는지가 화면마다 갈린다.
    */
   reload: () => Promise<void>
+  /**
+   * 가계부가 **그리는 날짜 범위**를 층에 알린다. 그 범위의 강화 사용 내역을 층이 받는다.
+   *
+   * 층은 마운트에서 주간 보기의 기본 범위를 쓴다. 사용자가 달을 옮기면 화면이 이것으로 새 범위를
+   * 말하고 층이 그 회차를 돈다. 같은 범위를 두 번 말해도 안 돈다.
+   */
+  requestDateRange: (range: CashbookRange) => void
 }
 
 const IDLE: LedgerDataState = {
   status: 'idle',
   revision: 0,
   reload: () => Promise.resolve(),
+  requestDateRange: () => undefined,
 }
 
 // 프로바이더 밖에서도 터지지 않는다. 층이 없는 것이지 잘못 쓴 것이 아니다(테스트 하네스·
@@ -70,46 +81,79 @@ export function LedgerDataProvider(props: {
 
   /**
    * @param live 오늘(라이브 동기화 · 자동 기록)까지 받을 것인가
+   * @param range 강화 사용 내역을 받을 날짜 범위
    *
-   * 마운트에서는 거짓이다. 오늘은 보스 수익 스토어의 진입 경로(`loadTrackedOcids`)가 10분 TTL
-   * 로 이미 맡고 있어, 여기서 또 부르면 진입마다 조회가 두 번 나간다.
+   * 마운트에서 `live` 가 거짓이다. 오늘은 보스 수익 스토어의 진입 경로(`loadTrackedOcids`)가
+   * 10분 TTL 로 이미 맡고 있어, 여기서 또 부르면 진입마다 조회가 두 번 나간다.
+   *
+   * **창과 히스토리를 함께 돌린다.** 둘 다 콜 없이 원장만 읽어 자기 분모를 알리므로, 진행 바가
+   * 도는 중에 뒤로 가지 않는다.
    */
-  const run = useCallback(async (live: boolean) => {
+  const run = useCallback(async (live: boolean, range: CashbookRange) => {
     const progress = useLedgerProgress.getState()
     progress.reset()
 
     const ocids = await getTrackedCharacterOcids().catch(() => null)
-    if (ocids !== null && ocids.length > 0) {
-      if (live) {
-        await useBossProfitStore
-          .getState()
-          .refresh(ocids, { inPlace: true })
-          .catch(() => undefined)
-      }
-      // 칸은 창이 자기 분모를 알리는 순간 잡힌다. 그 전까지 분모가 0 이라 바가 안 그려진다.
+    if (live && ocids !== null && ocids.length > 0) {
+      await useBossProfitStore
+        .getState()
+        .refresh(ocids, { inPlace: true })
+        .catch(() => undefined)
+    }
+
+    // 칸은 각자 자기 분모를 알리는 순간 잡힌다. 그 전까지 분모가 0 이라 바가 안 그려진다.
+    const slotOf = (): ((done: number, total: number) => void) => {
       let slot: number | null = null
-      await syncScheduleWindow(ocids, new Date(), (done, total) => {
+      return (done, total) => {
         if (slot === null) slot = useLedgerProgress.getState().start(total)
         useLedgerProgress.getState().advance(slot, done)
-      }).catch(() => undefined)
+      }
     }
+
+    await Promise.all([
+      ocids !== null && ocids.length > 0
+        ? syncScheduleWindow(ocids, new Date(), slotOf()).catch(() => undefined)
+        : Promise.resolve(),
+      collectEnhancementHistory(datesBetween(range.from, range.to), new Date(), slotOf()).catch(
+        () => undefined,
+      ),
+    ])
+
     if (!alive.current) return
     progress.reset()
     setStatus('ready')
     setRevision((value) => value + 1)
   }, [])
 
+  // 지금 회차가 도는 범위. 화면이 알려 주기 전에는 주간 보기의 기본값이다. 렌더에 안 쓰므로
+  // state 가 아니다. state 로 두면 범위가 바뀔 때마다 층이 통째로 다시 그려진다.
+  const range = useRef<CashbookRange>(defaultCashbookRange(new Date()))
+
   /** 당김이 부르는 자리라 여기서 `filling` 을 세워도 연쇄 렌더가 아니다. */
   const reload = useCallback(async () => {
     setStatus('filling')
-    await run(true)
+    await run(true, range.current)
   }, [run])
+
+  const requestDateRange = useCallback(
+    (next: CashbookRange) => {
+      // 같은 범위를 두 번 말하는 것이 정상이다. 화면이 다시 그릴 때마다 부른다.
+      if (next.from === range.current.from && next.to === range.current.to) return
+      range.current = next
+      setStatus('filling')
+      void run(false, next)
+    },
+    [run],
+  )
 
   useEffect(() => {
-    void run(false)
+    void run(false, range.current)
   }, [run])
 
-  const value = useMemo(() => ({ status, revision, reload }), [status, revision, reload])
+  const value = useMemo(
+    () => ({ status, revision, reload, requestDateRange }),
+    [status, revision, reload, requestDateRange],
+  )
 
   return <LedgerDataContext.Provider value={value}>{props.children}</LedgerDataContext.Provider>
 }
