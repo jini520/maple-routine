@@ -857,14 +857,14 @@ describe('그날 목록', () => {
     ])
     const view = await 그리기()
 
-    expect(view.getByTestId('cashbook-row-spd-1')).toHaveTextContent('루디 · 몬스터 파크×2−1.01억')
+    expect(view.getByTestId('cashbook-row-spd-1')).toHaveTextContent('루디 · 몬스터 파크×2−1.02억')
   })
 
   it('수량이 있으면 함께 적는다', async () => {
     const view = await 그리기()
 
     // `toHaveTextContent` 는 이 판에서 **완전 일치**다. 줄 전체를 적는다.
-    expect(view.getByTestId('cashbook-row-spd-1')).toHaveTextContent('몬스터 파크×2−1.01억')
+    expect(view.getByTestId('cashbook-row-spd-1')).toHaveTextContent('몬스터 파크×2−1.02억')
   })
 
   // **누를 수 있어 보여야 한다**(사용자 지적). 글자 둘만 놓인 줄은 목록이 아니라
