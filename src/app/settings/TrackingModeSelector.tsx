@@ -47,7 +47,7 @@ export function TrackingModeSelector(props: TrackingModeSelectorProps): React.JS
                 <Text className="mt-0.5 text-sm text-text-muted">{option.description}</Text>
               </View>
             </View>
-            {/* 고칠 수 없는 알려진 제약이라 실패(error)가 아니라 고지다. `UnavailableNotice` 와
+            {/* 고칠 수 없는 알려진 제약이라 실패(error)가 아니라 고지다. 조회 불가 고지와
                 같은 정보 톤을 카드 안 크기로 승계한다. */}
             <View className="mt-2 flex-row items-start gap-1.5 rounded-[8px] bg-info-tint px-2.5 py-1.5">
               <InfoIcon

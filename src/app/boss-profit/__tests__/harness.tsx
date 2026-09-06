@@ -71,7 +71,6 @@ export function 컨텍스트값(overrides: Partial<BossProfitContextValue> = {})
     dropsByRowKey: {},
     setPartySize: jest.fn().mockResolvedValue(undefined),
     setBossDrops: jest.fn().mockResolvedValue(undefined),
-    isMonthlyBossQueryable: true,
     onRetryPeriod: jest.fn(),
     ...overrides,
   }

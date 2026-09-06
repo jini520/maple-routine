@@ -110,7 +110,7 @@ export const ChevronUpIcon = withIconInterop(ChevronUp)
 
 /** 도움말 여는 자리. 위젯 9 머리의 `?`. */
 export const CircleQuestionMarkIcon = withIconInterop(CircleQuestionMark)
-/** 아직 집계 전(pending 톤). `UnavailableNotice`. */
+/** 아직 집계 전(pending 톤). 지금 쓰는 화면 없음. */
 export const ClockIcon = withIconInterop(Clock)
 /** 새 업데이트 있음. `UpdatePromptModal`(update-available). */
 export const CloudDownloadIcon = withIconInterop(CloudDownload)
@@ -132,7 +132,7 @@ export const FlaskConicalIcon = withIconInterop(FlaskConical)
 export const Gamepad2Icon = withIconInterop(Gamepad2)
 /** 호출 한도 초과. `ApiKeyNoticeModal`(rateLimited). 타이머 계열을 피한 근거는 그 파일에 있다. */
 export const GaugeIcon = withIconInterop(Gauge)
-/** 조회 불가(정보 톤). `UnavailableNotice` · 정보 토스트 `Toast`(info). */
+/** 정보 톤. 업데이트 모달 · 추적 방식 고르개 · 정보 토스트 `Toast`(info). */
 export const InfoIcon = withIconInterop(Info)
 /** API 키 무효. `ApiKeyNoticeModal`(invalid). */
 export const KeyRoundIcon = withIconInterop(KeyRound)

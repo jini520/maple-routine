@@ -199,38 +199,52 @@ export async function getWeeklyPeriodKeysWithRecords(
 }
 
 /**
- * 이 기간 또는 그보다 과거에 기록이 하나라도 있는가.
+ * 기록이 있는 **가장 가까운 기간**. 없으면 `null`.
  *
- * 이전 기간 게이트(`canReachPreviousPeriod`)가 바로 이전 한 칸만 보면 기록이 없는 기간이 벽이
- * 되어 그 뒤의 기록 전체가 화면에서 사라진다. 키 목록을 열거하는 `getBossProfitRecords` 로는
- * 답할 수 없어(그 목록이 무한히 길어진다) 부등호 비교를 SQL 에 맡긴다.
+ * 화살표가 한 칸씩 걸으면 오래 쉬었다 돌아온 사용자가 예전 기록에 닿는 데 수십 번이 든다.
+ * 그 사이는 전부 조회 불가라 같은 화면이다. 여기서 착지할 곳을 바로 낸다.
  *
- * `tab` 이 기준을 정한다. 주간 탭은 weekly 기록만 보고, 월간 탭은 그 달의 monthly 기록과 그
- * 달에 속한 weekly 기록을 함께 본다. weekly `period_key` 는 `YYYY-MM-DD` 라 앞 7자가 그 달이다.
+ * **부등호를 SQL 에 맡긴다.** 키를 열거해 훑으면 목록이 몇 백 개가 되고, `MAX`/`MIN` 하나면
+ * 끝난다.
+ *
+ * `tab` 이 기준을 정한다. 주간 탭은 weekly 기록만 보고, 월간 탭은 monthly 기록과 그 달에 속한
+ * weekly 기록을 함께 본다. weekly `period_key` 는 `YYYY-MM-DD` 라 앞 7자가 그 달이다.
+ *
+ * @param direction `prev` 는 이 키보다 앞선 것 중 가장 큰 것, `next` 는 뒤선 것 중 가장 작은 것
  */
-export async function hasBossProfitRecordsAtOrBefore(
+export async function findAdjacentPeriodKeyWithRecords(
   ocids: string[],
   tab: BossCycle,
   periodKey: string,
-): Promise<boolean> {
+  direction: 'prev' | 'next',
+): Promise<string | null> {
   if (ocids.length === 0) {
-    return false
+    return null
   }
 
   const db = await getBossProfitDb()
   const ocidPlaceholders = ocids.map(() => '?').join(', ')
+  const pick = direction === 'prev' ? 'MAX' : 'MIN'
+  const compare = direction === 'prev' ? '<' : '>'
+  // 월간은 두 축의 키가 모양이 달라 weekly 를 달로 접은 뒤 비교한다. 그래야 `MAX` 가 한 축에서만
+  // 답을 고르지 않는다.
+  const expression =
+    tab === 'monthly' ? `${pick}(substr(period_key, 1, 7))` : `${pick}(period_key)`
   const condition =
     tab === 'monthly'
-      ? `((cycle = 'monthly' AND period_key <= ?) OR (cycle = 'weekly' AND substr(period_key, 1, 7) <= ?))`
-      : `(cycle = 'weekly' AND period_key <= ?)`
+      ? `((cycle = 'monthly' AND period_key ${compare} ?) OR (cycle = 'weekly' AND substr(period_key, 1, 7) ${compare} ?))`
+      : `(cycle = 'weekly' AND period_key ${compare} ?)`
   const parameters = tab === 'monthly' ? [...ocids, periodKey, periodKey] : [...ocids, periodKey]
 
   const { values } = await db.query(
-    `SELECT 1 FROM boss_profit_records WHERE ocid IN (${ocidPlaceholders}) AND ${condition} LIMIT 1`,
+    `SELECT ${expression} AS period_key FROM boss_profit_records
+      WHERE ocid IN (${ocidPlaceholders}) AND ${condition}`,
     parameters,
   )
 
-  return (values?.length ?? 0) > 0
+  // 행이 없어도 집계 함수는 한 줄을 주고 그 값이 NULL 이다.
+  const found = values?.[0]?.period_key
+  return typeof found === 'string' ? found : null
 }
 
 /** `boss_profit_records` 한 행을 식별하는 키(금액·파티원 수 없음). */

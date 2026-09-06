@@ -31,7 +31,6 @@ import {
 import {
   formatBossProfitPeriodLabel,
   isLatestPeriod,
-  isPeriodQueryable,
 } from '../../lib/boss/boss-profit-period'
 import { canPreviewNextWeek } from '../../lib/boss/monthly-boss-week'
 import { sumDropPayout } from '../../lib/drop/drop-price'
@@ -41,7 +40,6 @@ import {
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  ClockIcon,
   ProfitIcon,
   RefreshCwIcon,
   Text,
@@ -49,7 +47,6 @@ import {
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
-import { UnavailableNotice } from '../../components/molecules/EmptyState/UnavailableNotice'
 import { ValuableDropBadge } from '../../components/molecules/ValuableDropBadge/ValuableDropBadge'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -89,6 +86,7 @@ export function BossProfitScreen(): React.JSX.Element {
     weeklySubtotals,
     isPeriodLoading,
     periodState,
+    periodPendingAggregation,
     canGoPreviousPeriod,
     error,
     staleCharacterNames,
@@ -218,9 +216,6 @@ export function BossProfitScreen(): React.JSX.Element {
   // 이전 이동 가능 여부는 스토어가 매 기간 로드 시 계산해 둔 값으로 판단한다. 조회 불가능하고
   // 캐시 기록도 없는 기간에 착지하지 않도록 막는다.
   const isPrevDisabled = !canGoPreviousPeriod
-  // 현재 기간은 백필 가능성을 묻지 않는다. 조회일이 미래라 `isPeriodQueryable` 이 false 지만
-  // 그건 조회 불가가 아니라 실시간 동기화가 원천이라는 뜻이다.
-  const periodQueryable = isCurrentPeriod || isPeriodQueryable(tab, periodKey, now)
   // 이 기간의 아이템 몫. 월간 탭은 주간 수익이 소계로만 들어오므로 그쪽 몫도 더해야 결정석과
   // 정확히 갈린다.
   const periodItemMeso = characterGroups.reduce(
@@ -245,7 +240,6 @@ export function BossProfitScreen(): React.JSX.Element {
     dropsByRowKey,
     setPartySize,
     setBossDrops,
-    isMonthlyBossQueryable: periodQueryable,
     onRetryPeriod: () => void retryPeriod(),
   }
 
@@ -359,26 +353,12 @@ export function BossProfitScreen(): React.JSX.Element {
           </Pressable>
         </View>
 
-        {/* 보여줄 데이터가 아예 없을 때만 셸 승계 카드를 그린다. */}
-        {!isPeriodLoading &&
-          (status === 'idle' || status === 'loading') &&
-          characterGroups.length === 0 && <LoadingState size="page" message="불러오고 있어요" />}
-
-        {/* 상태마다 얼굴이 다르다. 기록이 있으면 아무것도 띄우지 않는다. 목요일 새벽처럼 백필만
-            막힌 경우 기록은 정확하고 사용자가 할 일도 없다. `failed` 는 액션이 필요해 토스트로
-            옮겼다. */}
-        {!isPeriodLoading && characterGroups.length > 0 && periodState === 'notCollected' && (
-          <View className="flex-row items-center gap-1.5">
-            <ClockIcon className="h-4 w-4 shrink-0 text-text-muted" strokeWidth={1.75} aria-hidden />
-            <Text className="text-sm text-text-muted">
-              아직 집계되지 않았습니다. 준비되면 자동으로 채워집니다
-            </Text>
-          </View>
-        )}
-
         {/* 총 수익 요약은 **카드가 아니라 헤드라인**이다. 아래 캐릭터 카드가 전부 같은
-            카드 셸이라 요약도 카드면 "동일한 흰 카드의 반복"으로 묻힌다. */}
-        {!isPeriodLoading && characterGroups.length > 0 && (
+            카드 셸이라 요약도 카드면 "동일한 흰 카드의 반복"으로 묻힌다.
+
+            **아직 집계 안 된 날이 있으면 기록이 없어도 그린다**(사용자 지정). 그때의 0 메소는
+            확정이 아니라 아직 덜 온 것이라, 빈 상태로 갈아치우면 `없다` 로 읽힌다. */}
+        {!isPeriodLoading && (characterGroups.length > 0 || periodPendingAggregation) && (
           <View>
             {/* 라벨행 높이를 `h-6`(24px)으로 명시 고정한다. 라벨(16px)이 우연히 정하는 값이면
                 그보다 큰 요소를 흐름에 넣는 순간 줄이 커진다. 그것이 24px 고가 드롭 배지를
@@ -468,26 +448,28 @@ export function BossProfitScreen(): React.JSX.Element {
             )}
 
             {/* 확정된 빈 상태와 확인 자체를 못 함은 디자인을 공유하지 않는다. 어느 쪽인지는
-                스토어가 계산한 `periodState` 가 답한다. 화면이 따로 판정하면 백필과 어긋난다. */}
+                스토어가 계산한 `periodState` 가 답한다. 화면이 따로 판정하면 백필과 어긋난다.
+
+                **조회 불가 고지는 여기 없다.** 기간 이동이 기록이 있는 기간으로만 착지하고,
+                비-현재 기간의 행은 기록에서만 나오므로 이 자리는 그때 아예 안 그려진다. 남는
+                갈래는 달 경계 미리보기(아직 오지 않은 주)뿐이고, 거기서 조회 가능한 기간을
+                지났다 는 거짓이다. 그 주에는 아직 안 잡은 것이 맞다. */}
             {!isPeriodLoading &&
               status === 'loaded' &&
               characterGroups.length === 0 &&
-              (periodState === 'confirmedEmpty' ? (
-                <EmptyState
-                  icon={ProfitIcon}
-                  title="아직 처치한 보스가 없습니다"
-                  description="보스를 처치하면 수익이 자동으로 집계됩니다"
-                />
-              ) : periodState === 'notCollected' ? (
-                <UnavailableNotice variant="notCollected" />
-              ) : periodState === 'failed' ? (
+              !periodPendingAggregation &&
+              (periodState === 'failed' ? (
                 <ErrorState
                   title="이 기간을 불러오지 못했습니다"
                   description="네트워크 상태를 확인해주세요"
                   action={{ label: '다시 시도', onClick: () => void retryPeriod() }}
                 />
               ) : (
-                <UnavailableNotice />
+                <EmptyState
+                  icon={ProfitIcon}
+                  title="아직 처치한 보스가 없습니다"
+                  description="보스를 처치하면 수익이 자동으로 집계됩니다"
+                />
               ))}
 
             {!isPeriodLoading &&

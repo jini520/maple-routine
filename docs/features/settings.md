@@ -260,7 +260,7 @@ RN으로 옮기며 `<a target="_blank">` 가 `Pressable` + `Linking.openURL` 이
             + Info h-3.5 w-3.5 flex-none (strokeWidth 1.75), 아이콘 행 아래 카드 폭 전체
 ```
 
-- **주의 줄이 `error` 가 아니라 정보 톤인 이유**는 `UnavailableNotice` 와 같다. 사용자가 고칠 수 없는
+- **주의 줄이 `error` 가 아니라 정보 톤인 이유**는 옛 조회 불가 고지와 같다. 사용자가 고칠 수 없는
   알려진 제약이라 error 색은 과하다([[ADR-060]] 결정 5). 규격도 그 컴포넌트의 compact 변형을 카드 안
   크기로 줄여 승계했다. **컴포넌트 자체를 재사용하지 않는 것은** `UnavailableNotice` 가 문구를 자기
   안에 고정으로 갖기 때문이다. 임의 문구를 못 받는다.

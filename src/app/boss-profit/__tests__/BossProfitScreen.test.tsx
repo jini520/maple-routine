@@ -96,6 +96,7 @@ function mockStore(overrides: Partial<BossProfitStore> = {}): void {
     weeklySubtotals: [],
     isPeriodLoading: false,
     periodState: 'confirmedEmpty',
+    periodPendingAggregation: false,
     previousPeriodTotalMeso: 0,
     canGoPreviousPeriod: true,
     error: null,
@@ -376,19 +377,26 @@ describe('기간 상태별 표현', () => {
     expect(getByText('아직 처치한 보스가 없습니다')).toBeTruthy()
   })
 
-  it('`notCollected` 는 "아직" 이라 말하고 재시도를 주지 않는다', async () => {
+  // `notCollected` 로 접히려면 어느 캐릭터의 결과가 그것이어야 하고, 그러면
+  // `periodPendingAggregation` 이 참이라 이 블록 자체가 안 그려진다. 고지가 설 자리가 없다.
+  // 그 자리를 대신할 안내는 따로 디자인한다(사용자 지정).
+  it('`notCollected` 에 고지를 안 세운다', async () => {
     mockStore({ status: 'loaded', periodState: 'notCollected' })
-    const { getByText, queryByText } = await renderScreen()
+    const { queryByText } = await renderScreen()
 
-    expect(getByText('아직 집계되지 않았습니다')).toBeTruthy()
+    expect(queryByText('아직 집계되지 않았습니다')).toBeNull()
     expect(queryByText('다시 시도')).toBeNull()
   })
 
-  it('`outOfRange` 는 조회 불가 고지다', async () => {
+  // 기간 이동이 기록이 있는 기간으로만 착지하고 비-현재 기간의 행은 기록에서만 나오므로,
+  // 이 자리에 `outOfRange` 로 서는 길이 사라졌다. 남는 갈래는 달 경계 미리보기(아직 오지 않은
+  // 주)뿐이고 거기서 `조회 가능한 기간을 지났다` 는 거짓이다.
+  it('`outOfRange` 에 조회 불가 고지를 안 세운다. 아직 안 잡은 것이다', async () => {
     mockStore({ status: 'loaded', periodState: 'outOfRange' })
-    const { getByText } = await renderScreen()
+    const { getByText, queryByText } = await renderScreen()
 
-    expect(getByText('이 기간은 조회할 수 없습니다')).toBeTruthy()
+    expect(queryByText('이 기간은 조회할 수 없습니다')).toBeNull()
+    expect(getByText('아직 처치한 보스가 없습니다')).toBeTruthy()
   })
 
   it('카드가 없는 `failed` 는 실패 상태 + 재시도다', async () => {
@@ -420,19 +428,41 @@ describe('기간 상태별 표현', () => {
   })
 })
 
-describe('로딩', () => {
-  it('보여줄 데이터가 없을 때만 셸 승계 카드를 그린다', async () => {
-    mockStore({ status: 'loading' })
+// 목요일 새벽에는 지난주 수요일만 집계 전이라, 그 주가 화요일 스냅샷으로 굳는다. 수요일에만
+// 잡았으면 0 메소가 되는데 그것은 확정이 아니다. 빈 상태로 갈아치우면 `없다` 로 읽힌다
+// (사용자 지정). 안내 문구는 따로 디자인한다.
+describe('아직 집계 안 된 날이 있을 때', () => {
+  it('기록이 없어도 요약을 그린다. 빈 상태로 안 갈아친다', async () => {
+    mockStore({ status: 'loaded', periodPendingAggregation: true })
+    const { getByText, queryByText } = await renderScreen()
+
+    expect(getByText(/총 수익$/)).toBeTruthy()
+    expect(queryByText('아직 처치한 보스가 없습니다')).toBeNull()
+  })
+
+  // 집계를 기다리는 것이 아니면 예전대로다.
+  it('아니면 빈 상태를 그린다', async () => {
+    mockStore({ status: 'loaded', periodPendingAggregation: false })
     const { getByText } = await renderScreen()
 
-    expect(getByText('불러오고 있어요')).toBeTruthy()
+    expect(getByText('아직 처치한 보스가 없습니다')).toBeTruthy()
+  })
+})
+
+describe('로딩', () => {
+  // 불러오는 중은 **층이 말한다**(`LedgerLoadingModal`). 화면이 자기 카드를 또 세우면 같은
+  // 사실이 두 번 서고, 그 카드는 층 모달 밑에 깔려 문턱 전 400ms 만 보인다.
+  it('페이지 로딩 카드를 안 그린다. 그 말은 층이 한다', async () => {
+    mockStore({ status: 'loading' })
+    const { queryByText } = await renderScreen()
+
+    expect(queryByText('불러오고 있어요')).toBeNull()
   })
 
   it('캐시된 행이 있으면 재조회 중에도 목록을 계속 보여준다', async () => {
     mockStore({ status: 'loading', rows: [보스행()] })
-    const { queryByText, getByText } = await renderScreen()
+    const { getByText } = await renderScreen()
 
-    expect(queryByText('불러오고 있어요')).toBeNull()
     expect(getByText('지내우시')).toBeTruthy()
   })
 

@@ -15,6 +15,7 @@ import {
   sortRowsByOcidOrder,
   sumRowsPayout,
   toRecordedDrop,
+  toUpcomingWeekRows,
 } from '../rows'
 import type { BossProfitRow } from '../store'
 
@@ -282,4 +283,65 @@ it('mergeRecordsIntoRows 는 기록의 처치 날짜도 행에 싣는다', () =>
   }
 
   expect(mergeRecordsIntoRows([target], [record])[0].defeatedOn).toBe('2026-09-19')
+})
+
+// 아직 시작하지 않은 주(달 경계 미리보기)는 기록이 없어 `buildRowsFromRecords` 로는 아무도 안
+// 선다. 그러면 잡아 둔 월간 보스 한 줄만 딸랑 남는다(사용자 지적). 이번 주의 등록 목록을 옮겨
+// 관리 캐릭터와 주간 보스가 다 보이게 한다.
+describe('toUpcomingWeekRows', () => {
+  const NOW = new Date('2026-09-07T12:00:00+09:00')
+
+  const 이번주행 = (over: Partial<BossProfitRow> = {}): BossProfitRow => ({
+    ocid: 'o1',
+    characterName: '낟낟',
+    imageUrl: null,
+    world: '엘리시움',
+    boss: '스우',
+    difficulty: '하드',
+    cycle: 'weekly',
+    periodKey: '2026-09-03',
+    periodLabel: '이번 주',
+    priceMeso: 1_000_000,
+    maxPartySize: 6,
+    partySize: 2,
+    payoutMeso: 500_000,
+    isComplete: true,
+    defeatedOn: '2026-09-05',
+    ...over,
+  })
+
+  it('주간 행을 다음 주 키로 옮기고 처치를 지운다', () => {
+    const [row] = toUpcomingWeekRows([이번주행()], '2026-09-10', NOW)
+
+    expect(row.periodKey).toBe('2026-09-10')
+    expect(row.isComplete).toBe(false)
+    expect(row.payoutMeso).toBe(0)
+    expect(row.defeatedOn).toBeNull()
+  })
+
+  // 그 둘은 설정이지 그 주의 결과가 아니다.
+  it('파티원 수와 시세는 그대로 든다', () => {
+    const [row] = toUpcomingWeekRows([이번주행()], '2026-09-10', NOW)
+
+    expect(row.partySize).toBe(2)
+    expect(row.priceMeso).toBe(1_000_000)
+  })
+
+  // 월간 보스는 기록이 자기 주를 정한다(`isMonthlyRowInWeek`). 여기서 옮기면 두 번 선다.
+  it('월간 행은 안 옮긴다', () => {
+    const rows = toUpcomingWeekRows(
+      [이번주행(), 이번주행({ boss: '검은마법사', cycle: 'monthly', periodKey: '2026-09' })],
+      '2026-09-10',
+      NOW,
+    )
+
+    expect(rows).toHaveLength(1)
+    expect(rows[0].boss).toBe('스우')
+  })
+
+  it('기간 라벨도 그 주의 것으로 바꾼다', () => {
+    const [row] = toUpcomingWeekRows([이번주행()], '2026-09-10', NOW)
+
+    expect(row.periodLabel).not.toBe('이번 주')
+  })
 })

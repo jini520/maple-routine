@@ -162,13 +162,14 @@ describe('MonthlyAccordionBody', () => {
     expect(queryByTestId('boss-profit-boss-row')).toBeNull()
   })
 
-  it('주차 소계가 없고 조회도 불가하면 그 사실을 고지한다. 빈 상태로 위장하지 않는다', async () => {
-    const { getByText } = await renderProfit(
+  // 기간 이동이 기록이 있는 기간으로만 착지하면서 이 고지가 서던 자리가 사라졌다(사용자 지정).
+  it('주차 소계가 없고 조회도 불가하면 아무것도 안 그린다', async () => {
+    const { queryByText, queryByTestId } = await renderProfit(
       <MonthlyAccordionBody bossRows={[]} weeklySubtotals={[]} />,
-      컨텍스트값({ isMonthlyBossQueryable: false }),
     )
 
-    expect(getByText('이 기간은 조회할 수 없습니다')).toBeTruthy()
+    expect(queryByText('이 기간은 조회할 수 없습니다')).toBeNull()
+    expect(queryByTestId('unavailable-notice')).toBeNull()
   })
 
   it('조회는 가능한데 행이 없으면 월간 보스 구획 자체를 만들지 않는다', async () => {

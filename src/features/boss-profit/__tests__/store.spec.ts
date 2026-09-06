@@ -20,8 +20,8 @@ const { getTrackedCharacterOcids: getTrackedCharacterOcidsMock } = jest.requireM
 
 jest.mock('../../../storage/boss-profit', () => ({
   getBossProfitRecords: jest.fn(),
-  // 이전 게이트가 "이 기간 또는 더 과거에 기록이 있는가"를 SQL 부등호로 묻는다.
-  hasBossProfitRecordsAtOrBefore: jest.fn(),
+  // 기간 이동이 "기록이 있는 가장 가까운 기간"을 SQL 부등호로 묻는다.
+  findAdjacentPeriodKeyWithRecords: jest.fn(),
   fillMissingRecordWorlds: jest.fn(),
   upsertBossProfitRecord: jest.fn(),
   // 날짜 모르는 월간 보스가 설 주를 이 목록이 고른다.
@@ -29,12 +29,16 @@ jest.mock('../../../storage/boss-profit', () => ({
   // 추적 목록 밖에서 기록을 남긴 캐릭터. 화면이 그릴 범위가 여기서 넓어진다.
   getRecordedCharacterOcids: jest.fn(),
 }))
-const { getBossProfitRecords: getBossProfitRecordsMock, hasBossProfitRecordsAtOrBefore: hasBossProfitRecordsAtOrBeforeMock, fillMissingRecordWorlds: fillMissingRecordWorldsMock, upsertBossProfitRecord: upsertBossProfitRecordMock, getWeeklyPeriodKeysWithRecords: getWeeklyPeriodKeysWithRecordsMock, getRecordedCharacterOcids: getRecordedCharacterOcidsMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
+const { getBossProfitRecords: getBossProfitRecordsMock, findAdjacentPeriodKeyWithRecords: findAdjacentMock, fillMissingRecordWorlds: fillMissingRecordWorldsMock, upsertBossProfitRecord: upsertBossProfitRecordMock, getWeeklyPeriodKeysWithRecords: getWeeklyPeriodKeysWithRecordsMock, getRecordedCharacterOcids: getRecordedCharacterOcidsMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 
 // 처치 날짜 캐기는 **동기화가 끝난 뒤 기다리지 않고** 튼다. 이 화면은
 // `defeated_on` 을 안 쓰므로 결과를 기다릴 이유가 없다. 목으로 **떴는가** 만 본다.
 jest.mock('../../schedule-window/sync', () => ({ syncScheduleWindow: jest.fn() }))
 const { syncScheduleWindow: syncWindowMock } = jest.requireMock('../../schedule-window/sync') as Record<string, jest.Mock>
+
+// 창이 못 채운 날짜들. `아직 집계 전인 날이 있나` 가 여기서 나온다.
+jest.mock('../../schedule-window/window', () => ({ getLastWindowFailures: jest.fn(() => []) }))
+const { getLastWindowFailures: windowFailuresMock } = jest.requireMock('../../schedule-window/window') as Record<string, jest.Mock>
 
 jest.mock('../../../storage/boss-party-settings', () => ({
   getBossPartySize: jest.fn(),
@@ -90,10 +94,8 @@ jest.mock('../../toast/store', () => ({
 
 import {
   getAdjacentPeriodKey,
-  getBackfillQueryDate,
   getCurrentBossProfitPeriod,
   getWeeklyPeriodKeysInMonth,
-  MIN_SCHEDULER_DATE,
 } from '../../../lib/boss/boss-profit-period'
 import { getMostRecentWeeklyResetKst } from '../../../lib/scheduler/reset-clock'
 import {
@@ -172,7 +174,12 @@ beforeEach(() => {
     lastSyncedAt: null,
   })
   getBossProfitRecordsMock.mockResolvedValue([])
-  hasBossProfitRecordsAtOrBeforeMock.mockResolvedValue(false)
+  // 기본값은 **바로 옆 칸에 기록이 있다**. 건너뛰기를 안 보는 테스트들이 예전처럼 한 칸씩 움직인다.
+  windowFailuresMock.mockReturnValue([])
+  findAdjacentMock.mockImplementation(
+    async (_ocids: string[], tab: 'weekly' | 'monthly', key: string, direction: 'prev' | 'next') =>
+      getAdjacentPeriodKey(tab, key, direction),
+  )
   getWeeklyPeriodKeysWithRecordsMock.mockResolvedValue([])
   fillMissingRecordWorldsMock.mockResolvedValue(undefined)
   getBossDropRecordsMock.mockResolvedValue([])
@@ -2129,93 +2136,65 @@ describe('useBossProfitStore', () => {
       expect(useBossProfitStore.getState().periodState).toBe('failed')
     })
 
-    it('goToPreviousPeriod: MIN_SCHEDULER_DATE 이전 주는 물리적으로 이동할 수 없다(weekly)', async () => {
+    // 이동의 기준이 **기록**으로 바뀌었다. 스케줄러 하한은 더 이상 게이트가 아니다 - 그 아래에는
+    // 애초에 기록이 안 생기므로 `더 과거에 기록이 없다` 가 같은 자리를 막는다.
+    it('goToPreviousPeriod: 더 과거에 기록이 없으면 한 칸도 안 간다(weekly)', async () => {
       syncSchedulesMock.mockResolvedValue([syncResult()])
       await useBossProfitStore.getState().refresh(['ocid-1'])
 
+      findAdjacentMock.mockResolvedValue(null)
       getBossProfitRecordsMock.mockResolvedValue([])
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
-
-      // MIN_SCHEDULER_DATE 이전으로 넘어가기 바로 전 주(더 갈 수 있는 마지막 주)까지 이동한다.
-      for (let i = 0; i < 10; i += 1) {
-        const before = useBossProfitStore.getState().periodKey
-        const next = getAdjacentPeriodKey('weekly', before, 'prev')
-        if (getBackfillQueryDate('weekly', next) < MIN_SCHEDULER_DATE) {
-          break
-        }
-        await useBossProfitStore.getState().goToPreviousPeriod()
-      }
-
-      const boundaryPeriodKey = useBossProfitStore.getState().periodKey
+      const before = useBossProfitStore.getState().periodKey
       fetchSchedulerCharacterStateMock.mockClear()
 
-      // 여기서 한 번 더 이전으로 가려고 하면 아무 것도 하지 않아야 한다(API 호출도, periodKey
-      // 변경도 없음). MIN_SCHEDULER_DATE 이전 기간은 애초에 도달 불가능하다.
       await useBossProfitStore.getState().goToPreviousPeriod()
 
-      expect(useBossProfitStore.getState().periodKey).toBe(boundaryPeriodKey)
+      expect(useBossProfitStore.getState().periodKey).toBe(before)
       expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
     })
 
-    it('goToPreviousPeriod: 통째로 MIN_SCHEDULER_DATE 이전인 달로는 물리적으로 이동할 수 없다(monthly)', async () => {
-      // **날짜를 고정해야 하는 테스트다**: 이 검증의 전제는 "지난 달이 통째로
-      // MIN_SCHEDULER_DATE 이전"이고, 그건 오늘이 2026년 7월일 때만 참이다. 실제 시각에
-      // 의존하게 두면 8월부터는 지난 달(7월)이 조회 가능 구간에 들어와 이동이 정상 허용되고, 그러면
-      // **코드가 맞는데 테스트만 영구히 실패한다**(실제로 그렇게 깨져 있었다). 옆의 롤링 윈도우
-      // 테스트들이 같은 이유로 이미 시각을 고정한다.
-      jest.useFakeTimers({ doNotFake: NOT_FAKED })
-      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 달 2026-07 → 지난 달 2026-06(조회일 2026-06-30, MIN 이전)
+    it('goToPreviousPeriod: 더 과거에 기록이 없으면 한 칸도 안 간다(monthly)', async () => {
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+      await useBossProfitStore.getState().setTab('monthly')
 
-      try {
-        syncSchedulesMock.mockResolvedValue([syncResult()])
-        await useBossProfitStore.getState().refresh(['ocid-1'])
-        await useBossProfitStore.getState().setTab('monthly')
+      findAdjacentMock.mockResolvedValue(null)
+      const monthBefore = useBossProfitStore.getState().periodKey
+      fetchSchedulerCharacterStateMock.mockClear()
 
-        const monthBefore = useBossProfitStore.getState().periodKey
-        fetchSchedulerCharacterStateMock.mockClear()
+      await useBossProfitStore.getState().goToPreviousPeriod()
 
-        // "이번 달"에서 "지난 달"로 가려고 하면, 그 달이 통째로 MIN_SCHEDULER_DATE 이전이면
-        // 아무 것도 하지 않아야 한다(periodKey 변경도, API 호출도 없음).
-        await useBossProfitStore.getState().goToPreviousPeriod()
-
-        expect(useBossProfitStore.getState().periodKey).toBe(monthBefore)
-        expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
-      } finally {
-        jest.useRealTimers()
-      }
+      expect(useBossProfitStore.getState().periodKey).toBe(monthBefore)
+      expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
     })
 
-    it('goToPreviousPeriod: 롤링 조회 윈도우(오늘-13일)를 벗어났고 캐시 기록도 없는 이전 주로는 이동하지 않는다(#29)', async () => {
+    // **조회 가능한 구간 안이어도 기록이 없으면 안 간다**(사용자 선택). 찾는 것은 기록이지 0 이
+    // 아니다. 대가로 조회해서 0건을 확인한 주를 화살표로는 못 본다.
+    it('goToPreviousPeriod: 조회 가능한 구간 안이어도 기록이 없으면 안 간다', async () => {
       jest.useFakeTimers({ doNotFake: NOT_FAKED })
-      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 periodKey: 2026-07-16, 롤링 하한: 2026-07-09
+      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 2026-07-16, 롤링 하한 2026-07-09
 
       try {
         syncSchedulesMock.mockResolvedValue([syncResult()])
+        // 2026-07-09 는 조회 가능한 구간 안이지만 어느 주에도 기록이 없다. 화살표 상태가 회차
+        // 안에서 정해지므로 회차 **전에** 세운다.
+        findAdjacentMock.mockResolvedValue(null)
+        getBossProfitRecordsMock.mockResolvedValue([])
         await useBossProfitStore.getState().refresh(['ocid-1'])
+        fetchSchedulerCharacterStateMock.mockClear()
 
-        getBossProfitRecordsMock.mockResolvedValue([]) // 어느 주에도 캐시 기록 없음
-        fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
-
-        // 2026-07-16 → 2026-07-09(조회일 2026-07-15, 롤링 윈도우 안. 정상 이동/백필)
-        await useBossProfitStore.getState().goToPreviousPeriod()
-        expect(useBossProfitStore.getState().periodKey).toBe('2026-07-09')
-        // 2026-07-09의 이전 주는 롤링 윈도우 밖 + 기록 없음 →
-        // 더 이상 이동할 수 없다.
         expect(useBossProfitStore.getState().canGoPreviousPeriod).toBe(false)
-
-        fetchSchedulerCharacterStateMock.mockClear()
-
-        // 이전 이동을 시도해도 "조회 불가" 기간에 착지하지 않고 아무 것도 하지 않는다.
         await useBossProfitStore.getState().goToPreviousPeriod()
 
-        expect(useBossProfitStore.getState().periodKey).toBe('2026-07-09') // 그대로
+        expect(useBossProfitStore.getState().periodKey).toBe('2026-07-16')
         expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
       } finally {
         jest.useRealTimers()
       }
     })
 
-    it('goToPreviousPeriod: 롤링 윈도우 밖이어도 이미 저장된 기록이 있으면 그 이전 주로 이동해 캐시 기록을 보여준다(#29, 캐시 존중)', async () => {
+    it('goToPreviousPeriod: 기록이 있는 가장 가까운 기간으로 **건너뛴다**. 사이의 빈 주를 안 밟는다', async () => {
       jest.useFakeTimers({ doNotFake: NOT_FAKED })
       jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 periodKey: 2026-07-16, 롤링 하한: 2026-07-09
 
@@ -2239,25 +2218,20 @@ describe('useBossProfitStore', () => {
         getBossProfitRecordsMock.mockImplementation(async (_ocids: string[], periodKeys: string[]) =>
           periodKeys.includes('2026-07-02') ? [cachedRecord] : [],
         )
-        // 게이트는 "이 기간 또는 더 과거에 기록이 있는가"를 SQL로 묻는다.
-        // 2026-07-02에 기록이 있으므로 그 키 이상이면 true다.
-        hasBossProfitRecordsAtOrBeforeMock.mockImplementation(
-          async (_ocids: string[], _tab: string, periodKey: string) => periodKey >= '2026-07-02',
+        // 기록이 있는 가장 가까운 기간은 2026-07-02 다. 그 사이의 2026-07-09 에는 기록이 없다.
+        findAdjacentMock.mockImplementation(
+          async (_ocids: string[], _tab: string, key: string, direction: string) =>
+            direction === 'prev' && key > '2026-07-02' ? '2026-07-02' : null,
         )
         fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
-
-        // 2026-07-16 → 2026-07-09
-        await useBossProfitStore.getState().goToPreviousPeriod()
-        expect(useBossProfitStore.getState().periodKey).toBe('2026-07-09')
-        // 2026-07-02는 조회 불가지만 기록이 있으므로 이동 가능해야 한다.
-        expect(useBossProfitStore.getState().canGoPreviousPeriod).toBe(true)
-
         fetchSchedulerCharacterStateMock.mockClear()
 
-        // 2026-07-09 → 2026-07-02: 캐시 기록으로 채워진다(API 재조회 없음).
+        // 2026-07-16 → **2026-07-02**. 한 칸씩이면 2026-07-09 를 밟았을 자리다.
         await useBossProfitStore.getState().goToPreviousPeriod()
 
         expect(useBossProfitStore.getState().periodKey).toBe('2026-07-02')
+        // 더 과거에는 기록이 없다.
+        expect(useBossProfitStore.getState().canGoPreviousPeriod).toBe(false)
         expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
         const rows = useBossProfitStore.getState().rows
         expect(rows).toHaveLength(1)
@@ -2268,7 +2242,7 @@ describe('useBossProfitStore', () => {
       }
     })
 
-    it('goToPreviousPeriod: 현재 기간에서는 (이전 주가 롤링 윈도우 안이라) canGoPreviousPeriod가 true다(#29)', async () => {
+    it('goToPreviousPeriod: 더 과거에 기록이 있으면 canGoPreviousPeriod 가 true 다', async () => {
       jest.useFakeTimers({ doNotFake: NOT_FAKED })
       jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00'))
 
@@ -2276,20 +2250,21 @@ describe('useBossProfitStore', () => {
         syncSchedulesMock.mockResolvedValue([syncResult()])
         await useBossProfitStore.getState().refresh(['ocid-1'])
 
-        // 이번 주의 이전 주는 롤링 윈도우 안이므로 이동 가능.
+        // 조회 가능성이 아니라 **기록**이 판정한다.
         expect(useBossProfitStore.getState().canGoPreviousPeriod).toBe(true)
       } finally {
         jest.useRealTimers()
       }
     })
 
-    it('setTab: 이전 달 전체가 MIN_SCHEDULER_DATE 이전이면 canGoPreviousPeriod가 false다(monthly, #29)', async () => {
+    it('setTab: 더 과거에 기록이 없으면 canGoPreviousPeriod 가 false 다(monthly)', async () => {
       jest.useFakeTimers({ doNotFake: NOT_FAKED })
-      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 달 2026-07, 지난 달 2026-06은 통째로 MIN 이전
+      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00'))
 
       try {
         syncSchedulesMock.mockResolvedValue([syncResult()])
         await useBossProfitStore.getState().refresh(['ocid-1'])
+        findAdjacentMock.mockResolvedValue(null)
         await useBossProfitStore.getState().setTab('monthly')
 
         expect(useBossProfitStore.getState().periodKey).toBe('2026-07')
@@ -3354,5 +3329,39 @@ describe('추적에서 빠진 캐릭터의 기록', () => {
     await useBossProfitStore.getState().goToPreviousPeriod()
 
     expect(replaceBossDropRecordsMock).not.toHaveBeenCalled()
+  })
+})
+
+// 목요일 새벽에는 지난주 목~화가 관측되고 수요일만 `OPENAPI00009` 다. 그러면 그 주가 화요일
+// 스냅샷으로 굳는데, `periodState` 는 관측이 있으므로 `confirmedEmpty` 에서 끝나 그 사실이
+// 묻힌다. 화면이 `기록이 없어도 요약을 그린다` 를 판단할 근거를 따로 든다(사용자 지정).
+describe('periodPendingAggregation', () => {
+  it('그 기간에 집계 전인 날이 있으면 참이다', async () => {
+    jest.useFakeTimers({ doNotFake: NOT_FAKED })
+    jest.setSystemTime(new Date('2026-07-23T02:00:00+09:00')) // 목요일 새벽, 지난 주 2026-07-16
+    try {
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+      // 2026-07-22(수)가 오늘−1 이라 집계 전이다.
+      windowFailuresMock.mockReturnValue([
+        { ocid: 'ocid-1', dateKey: '2026-07-22', outcome: 'notCollected' },
+      ])
+      findAdjacentMock.mockResolvedValue('2026-07-16')
+
+      await useBossProfitStore.getState().goToPreviousPeriod()
+
+      expect(useBossProfitStore.getState().periodKey).toBe('2026-07-16')
+      expect(useBossProfitStore.getState().periodPendingAggregation).toBe(true)
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  // 현재 기간은 실시간 동기화가 원천이라 집계를 기다리는 자리가 아니다.
+  it('현재 기간에서는 거짓이다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    expect(useBossProfitStore.getState().periodPendingAggregation).toBe(false)
   })
 })
