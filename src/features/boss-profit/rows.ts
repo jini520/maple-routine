@@ -325,6 +325,38 @@ export function filterRowsForTab(
   })
 }
 
+/**
+ * 아직 시작하지 않은 주의 행. 이번 주의 **등록 목록을 그대로 옮기고 처치는 지운다.**
+ *
+ * 그 주는 기록이 없어 `buildRowsFromRecords` 로는 아무도 안 선다. 그러면 화면에 잡아 둔 월간
+ * 보스 한 줄만 딸랑 남는다(사용자 지적). 관리 캐릭터와 주간 보스가 다 보여야 이번 주에 아무것도
+ * 안 잡은 화면과 같은 그림이 된다.
+ *
+ * **주간 행만 옮긴다.** 월간 보스는 기록이 자기 주를 정하므로(`isMonthlyRowInWeek`) 여기서
+ * 옮기면 두 번 선다.
+ *
+ * 파티원 수와 시세는 그대로 든다. 그 둘은 설정이지 그 주의 결과가 아니다. 처치 관련 값
+ * (`payoutMeso`·`isComplete`·`defeatedOn`)만 미완료로 되돌린다.
+ */
+export function toUpcomingWeekRows(
+  rows: readonly BossProfitRow[],
+  weeklyPeriodKey: string,
+  now: Date,
+): BossProfitRow[] {
+  const periodLabel = formatBossProfitPeriodLabel('weekly', weeklyPeriodKey, now).primary
+  return rows
+    .filter((row) => row.cycle === 'weekly')
+    .map((row) => ({
+      ...row,
+      periodKey: weeklyPeriodKey,
+      periodLabel,
+      // 미완료 자리는 항상 0메소다(`buildBossProfitRow` 와 같은 규약).
+      payoutMeso: 0,
+      isComplete: false,
+      defeatedOn: null,
+    }))
+}
+
 export function sumRowsPayout(rows: BossProfitRow[]): number {
   return rows.reduce((sum, row) => sum + (row.payoutMeso ?? 0), 0)
 }

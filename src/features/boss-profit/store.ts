@@ -44,6 +44,7 @@ import {
   selectProfitDisplayBosses,
   sortRowsByOcidOrder,
   sumRowsPayout,
+  toUpcomingWeekRows,
   toProfileSnapshot,
   toRecordedDrop,
   } from './rows'
@@ -684,8 +685,18 @@ async function loadPeriod(
 
   const outcomes = toPeriodOutcomes(getLastWindowFailures())
 
+  // 아직 시작하지 않은 주(달 경계 미리보기)는 기록이 없다. 이번 주의 등록 목록을 옮겨 와야
+  // 관리 캐릭터와 주간 보스가 다 보인다. 안 그러면 잡아 둔 월간 보스 한 줄만 남는다.
+  const upcomingRows =
+    tab === 'weekly' && periodKey > currentPeriodKey
+      ? toUpcomingWeekRows(latestSyncSnapshot?.rows ?? [], periodKey, now)
+      : []
+  // 기록 행이 앞이다. 월간 보스가 캐릭터 목록 맨 위에 서야 하고 그 행은 기록에서 나온다.
   const rows = sortRowsByOcidOrder(
-    await buildRowsFromRecords(displayOcids, tab, periodKey, now, profileSnapshot),
+    [
+      ...(await buildRowsFromRecords(displayOcids, tab, periodKey, now, profileSnapshot)),
+      ...upcomingRows,
+    ],
     sortedOcids,
   )
   const weeklySubtotals =
