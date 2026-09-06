@@ -42,6 +42,7 @@ const mockWindow = {
 }
 let mockSetWindowRevision: ((value: number) => void) | null = null
 const mockRequestDateRange = jest.fn()
+const mockMarkPeriodMoved = jest.fn()
 
 jest.mock('../../../features/ledger/useLedgerData', () => ({
   useLedgerData: () => {
@@ -54,6 +55,7 @@ jest.mock('../../../features/ledger/useLedgerData', () => ({
       revision,
       reload: mockWindow.reload,
       requestDateRange: mockRequestDateRange,
+      markPeriodMoved: mockMarkPeriodMoved,
     }
   },
 }))
@@ -1638,6 +1640,16 @@ describe('확정 전 숫자', () => {
     const view = await 그리기()
 
     expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+76억')
+  })
+
+  // 달 안에서 주만 옮기면 조회가 안 나간다. 그때만 자리표시가 안 서면 같은 몸짓이 어떤 때는
+  // 번쩍이고 어떤 때는 안 움직여 화면이 튄 것으로 보인다(사용자 보고).
+  it('기간을 옮기면 받을 것이 없어도 층에 알린다', async () => {
+    const view = await 그리기()
+
+    await 이름으로누르기(view, '이전 주')
+
+    expect(mockMarkPeriodMoved).toHaveBeenCalled()
   })
 
   it('다 받으면 숫자가 선다', async () => {

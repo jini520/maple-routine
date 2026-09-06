@@ -251,7 +251,9 @@ function PeriodSummary(props: {
           // 아직 안 받은 지출을 0 으로 그리면 값이 들어올 때마다 큰 숫자가 몇 번씩 바뀌어,
           // 앱이 틀렸다가 고쳐지는 것으로 읽힌다(사용자 보고).
           <View testID="cashbook-summary-net-pending" className="mt-1">
-            <Skeleton width={140} height={24} radius={6} colorMode={definition.mode} />
+            {/* 실제로 설 글자(`+605.3억 메소`)의 폭·높이다. 자리표시가 더 크면 값이 들어올 때
+                카드가 움찔한다. */}
+            <Skeleton width={120} height={20} radius={5} colorMode={definition.mode} />
           </View>
         ) : (
           <Text
@@ -282,12 +284,8 @@ function PeriodSummary(props: {
         {props.pending ? (
           <View className="flex-row items-center gap-1.5">
             <Text className="text-11 text-text-muted">지출</Text>
-            <Skeleton
-              width={64}
-              height={13}
-              radius={4}
-              colorMode={definition.mode}
-            />
+            {/* 실제로 설 글자(`−73.85억`)의 폭·높이다. */}
+            <Skeleton width={62} height={12} radius={3} colorMode={definition.mode} />
           </View>
         ) : (
           <SourceRow
@@ -854,6 +852,9 @@ export function CashbookScreen(): React.JSX.Element {
   const isLatest = isLatestPeriod(isWeekly ? 'weekly' : 'monthly', isWeekly ? weekStartKey : monthKey, now)
 
   function movePeriod(delta: -1 | 1): void {
+    // 누르는 순간 자리표시가 선다. 범위가 바뀌는 이동이면 `requestDateRange` 가 이어받고, 달
+    // 안에서 주만 옮기면 여기서 세운 최소 노출만큼만 섰다가 걷힌다.
+    ledger.markPeriodMoved()
     if (isWeekly) {
       setWeekStartKey(getAdjacentPeriodKey('weekly', weekStartKey, delta < 0 ? 'prev' : 'next'))
       return

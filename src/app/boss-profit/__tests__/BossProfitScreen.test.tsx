@@ -49,9 +49,11 @@ const mockLedgerReload = jest.fn()
 jest.mock('../../../features/ledger/useLedgerData', () => ({
   useLedgerData: () => ({
     status: 'ready',
+    collecting: false,
     revision: 1,
     reload: mockLedgerReload,
     requestDateRange: jest.fn(),
+    markPeriodMoved: jest.fn(),
   }),
 }))
 

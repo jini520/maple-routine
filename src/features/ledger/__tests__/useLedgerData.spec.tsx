@@ -240,3 +240,72 @@ describe('들어오는 대로 반영한다', () => {
     })
   })
 })
+
+// 굳은 달은 회차가 200ms 에 끝난다. 자리표시가 번쩍이고 사라지면 화면이 튄 것으로 보인다.
+describe('자리표시 최소 노출', () => {
+  function Probe2(props: { from: string; to: string }): React.JSX.Element {
+    const { collecting, requestDateRange } = useLedgerData()
+    return (
+      <>
+        <Text testID="collecting">{String(collecting)}</Text>
+        <Text testID="go" onPress={() => requestDateRange({ from: props.from, to: props.to })}>
+          이동
+        </Text>
+      </>
+    )
+  }
+
+  const 그리기2 = async () =>
+    await render(
+      <LedgerDataProvider>
+        <Probe2 from="2026-01-01" to="2026-01-03" />
+      </LedgerDataProvider>,
+    )
+
+  it('누르는 순간 자리표시가 선다', async () => {
+    const view = await 그리기2()
+    await waitFor(() => expect(view.getByTestId('collecting')).toHaveTextContent('false'))
+
+    await act(async () => {
+      fireEvent.press(view.getByTestId('go'))
+    })
+
+    expect(view.getByTestId('collecting')).toHaveTextContent('true')
+  })
+
+  it('회차가 일찍 끝나도 1200ms 은 서 있는다', async () => {
+    const view = await 그리기2()
+    await waitFor(() => expect(view.getByTestId('collecting')).toHaveTextContent('false'))
+
+    await act(async () => {
+      fireEvent.press(view.getByTestId('go'))
+    })
+    // 회차는 곧장 끝난다(수집기가 즉시 resolve 한다). 그래도 아직 서 있어야 한다.
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(view.getByTestId('collecting')).toHaveTextContent('true')
+
+    await waitFor(() => expect(view.getByTestId('collecting')).toHaveTextContent('false'), {
+      timeout: 3000,
+    })
+  })
+
+  // 값과 회차 표는 제때 올려야 화면이 늦게 읽지 않는다. 늦추는 것은 자리표시뿐이다.
+  it('회차 표는 안 늦춘다', async () => {
+    const view = await render(
+      <LedgerDataProvider>
+        <Probe2 from="2026-01-01" to="2026-01-03" />
+        <Probe />
+      </LedgerDataProvider>,
+    )
+    await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('ready:1'))
+
+    await act(async () => {
+      fireEvent.press(view.getByTestId('go'))
+    })
+
+    await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('ready:2'))
+    expect(view.getByTestId('collecting')).toHaveTextContent('true')
+  })
+})

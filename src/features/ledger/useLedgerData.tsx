@@ -52,6 +52,12 @@ export interface LedgerDataState {
    * 말하고 층이 그 회차를 돈다. 같은 범위를 두 번 말해도 안 돈다.
    */
   requestDateRange: (range: CashbookRange) => void
+  /**
+   * 기간을 옮겼다고 알린다. **누르는 순간 부를 것.**
+   *
+   * 범위가 안 바뀌는 이동(달 안에서 주 옮기기)에도 자리표시가 서야 몸짓이 안 갈린다.
+   */
+  markPeriodMoved: () => void
 }
 
 /**
@@ -62,12 +68,23 @@ export interface LedgerDataState {
  */
 const REVISION_FLUSH_MS = 600
 
+/**
+ * 기간을 옮겼을 때 자리표시가 **적어도 이만큼**은 서 있는다.
+ *
+ * 굳은 달은 회차가 200ms 에 끝난다. 그 사이 자리표시가 번쩍이고 사라지면 무엇이 지나갔는지
+ * 읽을 시간이 없어 화면이 튄 것으로 보인다. 안 굳은 달(2초)과도 몸짓이 갈린다.
+ *
+ * 마운트와 당김에는 안 건다. 거기는 모달이 그 시간을 말한다.
+ */
+const MIN_SKELETON_MS = 1200
+
 const IDLE: LedgerDataState = {
   status: 'idle',
   collecting: false,
   revision: 0,
   reload: () => Promise.resolve(),
   requestDateRange: () => undefined,
+  markPeriodMoved: () => undefined,
 }
 
 // 프로바이더 밖에서도 터지지 않는다. 층이 없는 것이지 잘못 쓴 것이 아니다(테스트 하네스·
@@ -90,6 +107,8 @@ export function LedgerDataProvider(props: {
   // 회차가 겹칠 수 있다(기간을 연타하면 앞 회차가 아직 돈다). 세어야 뒤 회차가 도는 중에 앞
   // 회차가 끝나며 `collecting` 을 꺼 버리지 않는다.
   const running = useRef(0)
+  // 자리표시를 걷어도 되는 가장 이른 시각. 기간 이동에서만 선다.
+  const skeletonUntil = useRef(0)
   // 언마운트 뒤 setState 를 막는 문지기. 창 한 회차가 화면보다 오래 살 수 있다(84건).
   const alive = useRef(true)
 
@@ -110,6 +129,22 @@ export function LedgerDataProvider(props: {
    * **창과 히스토리를 함께 돌린다.** 둘 다 콜 없이 원장만 읽어 자기 분모를 알리므로, 진행 바가
    * 도는 중에 뒤로 가지 않는다.
    */
+  /**
+   * 자리표시를 걷는다. **최소 노출을 채운 뒤에만** 걷는다.
+   *
+   * 도는 회차가 남아 있으면 안 걷는다. 기간을 연타하면 앞 회차가 끝나며 뒤 회차의 자리표시를
+   * 꺼 버린다.
+   */
+  const releaseSkeleton = useCallback(async () => {
+    if (running.current > 0) return
+    const remain = skeletonUntil.current - Date.now()
+    if (remain > 0) {
+      await new Promise((resolve) => setTimeout(resolve, remain))
+      if (!alive.current || running.current > 0) return
+    }
+    setCollecting(false)
+  }, [])
+
   const run = useCallback(async (live: boolean, range: CashbookRange) => {
     running.current += 1
     const progress = useLedgerProgress.getState()
@@ -162,10 +197,12 @@ export function LedgerDataProvider(props: {
     running.current -= 1
     if (!alive.current) return
     progress.reset()
-    if (running.current === 0) setCollecting(false)
     setStatus('ready')
     setRevision((value) => value + 1)
-  }, [])
+
+    // 자리표시만 늦게 걷는다. 값과 회차 표는 제때 올려야 화면이 늦게 읽지 않는다.
+    await releaseSkeleton()
+  }, [releaseSkeleton])
 
   // 지금 회차가 도는 범위. 화면이 알려 주기 전에는 주간 보기의 기본값이다. 렌더에 안 쓰므로
   // state 가 아니다. state 로 두면 범위가 바뀔 때마다 층이 통째로 다시 그려진다.
@@ -189,19 +226,34 @@ export function LedgerDataProvider(props: {
       // 같은 범위를 두 번 말하는 것이 정상이다. 화면이 다시 그릴 때마다 부른다.
       if (next.from === range.current.from && next.to === range.current.to) return
       range.current = next
+      skeletonUntil.current = Date.now() + MIN_SKELETON_MS
       setCollecting(true)
       void run(false, next)
     },
     [run],
   )
 
+  /**
+   * 기간을 옮겼다. **받을 것이 없어도 자리표시가 선다.**
+   *
+   * 달 안에서 주를 옮기면 조회가 안 나간다(범위가 그대로다). 그때만 자리표시가 안 서면 같은
+   * 몸짓이 어떤 때는 번쩍이고 어떤 때는 안 움직여 화면이 튄 것으로 보인다(사용자 보고).
+   *
+   * 범위가 바뀌는 이동은 `requestDateRange` 가 이어받는다. 여기서는 시각만 세운다.
+   */
+  const markPeriodMoved = useCallback(() => {
+    skeletonUntil.current = Date.now() + MIN_SKELETON_MS
+    setCollecting(true)
+    void releaseSkeleton()
+  }, [releaseSkeleton])
+
   useEffect(() => {
     void run(false, range.current)
   }, [run])
 
   const value = useMemo(
-    () => ({ status, collecting, revision, reload, requestDateRange }),
-    [status, collecting, revision, reload, requestDateRange],
+    () => ({ status, collecting, revision, reload, requestDateRange, markPeriodMoved }),
+    [status, collecting, revision, reload, requestDateRange, markPeriodMoved],
   )
 
   return <LedgerDataContext.Provider value={value}>{props.children}</LedgerDataContext.Provider>
