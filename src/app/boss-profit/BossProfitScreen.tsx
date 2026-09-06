@@ -61,6 +61,7 @@ import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import { useThemeAppearance } from '../../theme/context'
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
+import { useLedgerData } from '../../features/ledger/useLedgerData'
 import { usePullRefresh } from '../../hooks/usePullRefresh'
 import type { BossProfitContextValue } from './boss-profit-context'
 import { BossProfitContextProvider } from './boss-profit-context'
@@ -107,13 +108,17 @@ export function BossProfitScreen(): React.JSX.Element {
   // 당김이 시작한 회차에만 인디케이터가 돈다. 헤더 버튼·자동 조회는 같은 재조회를 부르지만
   // 인디케이터는 안 연다. 버튼은 자기 스피너와 조회 중… 을 이미 갖고 있고 자동 조회는 원래
   // 조용해야 하는 것이다.
+  const ledger = useLedgerData()
+
   /**
    * 당김은 **어느 기간에서도** 되고 **보던 기간을 안 떠난다**(사용자 지정).
    *
    * 전에는 최신 기간에서만 달렸다. 그때는 지난 기간의 값이 백필로 한 번 굳으면 다시 불러도
    * 안 바뀌었기 때문이다. 이제는 창이 못 받은 날짜가 남아 있을 수 있어 당기면 실제로 채워진다.
+   *
+   * **무엇을 다시 부를지는 부모 층이 정한다.** 이 화면은 부탁만 한다.
    */
-  const pull = usePullRefresh(() => refresh(trackedOcids ?? [], { inPlace: true }))
+  const pull = usePullRefresh(() => ledger.reload())
 
   const navigation = useScreenNavigation()
   const openTab = useOpenTab()

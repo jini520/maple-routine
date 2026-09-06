@@ -612,7 +612,9 @@ async function loadPeriod(
   // 그대로 그리면 오는 중인 데이터에 `불러오지 못했습니다` 가 붙는다. 도는 중인지만 보면
   // 부족하다. 캐시를 지우고 진입하자마자 이동하면 창이 **시작조차 안 한** 순간이 있다.
   //
-  // 겹쳐 불러도 같은 회차를 나눠 쓴다. 관측이 이미 있으면 이 갈래에 안 온다.
+  // 창의 소유자는 부모 층(`ScheduleWindowProvider`)이다. 여기서 부르는 것은 **이 기간이 아직
+  // 안 채워졌을 때뿐**이고, 부모의 회차가 돌고 있으면 그것을 나눠 쓴다. 관측이 이미 있으면
+  // 이 갈래에 안 온다.
   if (
     isPeriodQueryable(tab, periodKey, now) &&
     !ocids.some((ocid) => observedKeys.has(periodStateKey(ocid, tab, periodKey)))
@@ -1037,15 +1039,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         characterIssues: {},
         ...(skipSync ? { lastSyncedAt: oldestCachedSyncedAt } : {}),
       })
-      if (skipSync) {
-        // **라이브 동기화만 건너뛴다. 창은 안 건너뛴다.**
-        //
-        // 둘은 다른 일이다. 라이브는 오늘이라 10분 TTL 이 타당하고, 창은 과거 13일이라 중복을
-        // TTL 이 아니라 조회 원장이 막는다. 여기서 빠뜨리면 탭을 다시 열 때마다 이 갈래로
-        // 빠져 과거 기간이 영영 안 채워진다(사용자 보고).
-        void syncScheduleWindow(ocids, now).catch(() => undefined)
-        return
-      }
+      if (skipSync) return
     }
 
     let results: Awaited<ReturnType<typeof syncSchedules>>
@@ -1173,12 +1167,6 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // latestSyncSnapshot 은 이미 신선한 데이터로 갱신되므로, lastSyncedAt 이 함께 갱신되지
     // 않으면 신선한 데이터를 보여주면서 동기화 기록 없음 이라 표시되는 불일치가 생긴다.
     set({ lastSyncedAt: new Date().toISOString() })
-
-    // 창을 채우고 그 결과를 기록·날짜로 반영한다. 탭도 기간도 안 본다.
-    //
-    // 기다리지 않는다. 화면은 캐시와 방금 끝난 라이브 동기화로 이미 서 있고, 창이 채우는 것은
-    // **과거 기간**이라 지금 보는 화면을 안 바꾼다. 기다리면 첫 진입이 조회 수만큼 길어진다.
-    void syncScheduleWindow(ocids, now).catch(() => undefined)
 
     // 동기화·자동 기록은 위에서 다 끝났다. 보던 기간(지난 달)의 화면 반영은 loadPeriod 에
     // 넘긴다. 그 함수가 이미 과거 기간은 기록이 원천 을 알고 있어 새 렌더 경로를 만들 이유가 없다.

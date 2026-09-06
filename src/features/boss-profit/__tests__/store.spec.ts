@@ -407,31 +407,6 @@ describe('useBossProfitStore', () => {
     expect(state.staleCharacterNames).toEqual([])
   })
 
-  // 동기화가 끝나면 창을 채운다. 자동 기록이 **방금 만든 행까지** 대상에 들어야 하므로 기록
-  // 뒤여야 하고, 창이 채우는 것은 과거 기간이라 지금 화면을 안 바꾸므로 기다리면 안 된다.
-  it('동기화가 끝나면 창 동기화를 튼다', async () => {
-    syncSchedulesMock.mockResolvedValue([syncResult()])
-
-    await useBossProfitStore.getState().refresh(['ocid-1'])
-
-    expect(syncWindowMock).toHaveBeenCalledWith(['ocid-1'], expect.any(Date))
-  })
-
-  it('캐릭터가 없으면 창도 안 채운다', async () => {
-    await useBossProfitStore.getState().refresh([])
-
-    expect(syncWindowMock).not.toHaveBeenCalled()
-  })
-
-  it('창 동기화가 던져도 동기화는 성공으로 끝난다', async () => {
-    syncSchedulesMock.mockResolvedValue([syncResult()])
-    syncWindowMock.mockRejectedValue(new Error('network'))
-
-    await useBossProfitStore.getState().refresh(['ocid-1'])
-
-    expect(useBossProfitStore.getState().status).toBe('loaded')
-  })
-
   it('등록되지 않고 미처치인 보스는 rows에서 제외된다', async () => {
     syncSchedulesMock.mockResolvedValue([
       syncResult({
@@ -1459,21 +1434,6 @@ describe('useBossProfitStore', () => {
       useBossProfitStore.setState({ tab: 'monthly', periodKey: monthKey })
       return monthKey
     }
-
-    // ⚠️ 사용자 보고. 탭을 다시 열면(신선해서 라이브 동기화를 건너뛰는 회차) 과거 기간이
-    // 영영 안 채워졌다. `skipSync` 갈래가 창 동기화보다 훨씬 앞에서 return 하기 때문이다.
-    //
-    // 둘은 다른 일이다. 라이브는 오늘이라 10분 TTL 이 타당하고, 창은 과거 13일이라 중복을
-    // TTL 이 아니라 **조회 원장**이 막는다. 건너뛸 이유가 없다.
-    it('라이브 동기화를 건너뛰어도 창은 채운다', async () => {
-      markSyncAttemptedThisRun()
-      getCachedSchedulerStateMock.mockResolvedValue(cachedEntry('캐시캐릭터', minutesAgo(5)))
-
-      await useBossProfitStore.getState().refresh(['ocid-1'], { auto: true })
-
-      expect(syncSchedulesMock).not.toHaveBeenCalled()
-      expect(syncWindowMock).toHaveBeenCalledWith(['ocid-1'], expect.any(Date))
-    })
 
     it('캐시에 행이 없고 기록만 있는 조합이 캐시 단계에서 행으로 복원돼 금액이 그대로 실린다', async () => {
       const monthKey = seedMonthlyTab()

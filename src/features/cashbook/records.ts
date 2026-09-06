@@ -21,7 +21,6 @@ import { getBossProfitRecordsRevision, getDatedBossProfitRecords } from '../../s
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { resolveDefeatDates } from '../boss-profit/defeat-dates'
-import { useBossProfitStore } from '../boss-profit/store'
 import {
   deleteIncomeRecord,
   getIncomeRecordsBetween,
@@ -300,31 +299,6 @@ export async function loadTrackedCharacters(): Promise<
   return named.filter((each) => each.name !== '')
 }
 
-/**
- * 가계부의 당겨서 새로고침. 셋을 차례로 한다.
- *
- * ① 동기화. 새 처치를 가져온다. 이것이 없으면 오늘 잡은 보스는 기록 자체가 없어 날짜를 캘
- *    것도 없다.
- * ② 날짜 캐기. 그 기록에 `defeated_on` 을 채운다.
- * ③ 다시 읽기는 화면의 몫이다. 이 함수가 끝나면 화면이 표를 올린다.
- *
- * 차례가 계약이다. ②가 먼저면 그 순간 없는 기록을 캐려 들고, 새로 온 것은 다음 번까지 안 뜬다.
- *
- * 보스 수익 탭의 당김과 같은 재조회를 부른다. 두 하위 탭이 같은 원천을 보므로 어느 탭에서
- * 당겼나 로 결과가 달라지면 안 된다.
- *
- * 던지지 않는다. 실패를 말하는 것은 그 스토어의 `error` 와 토스트다.
- */
-export async function refreshCashbook(now: Date): Promise<void> {
-  const ocids = await getTrackedCharacterOcids().catch(() => null)
-  if (ocids !== null && ocids.length > 0) {
-    await useBossProfitStore
-      .getState()
-      .refresh(ocids)
-      .catch(() => undefined)
-  }
-  await resolveTrackedDefeatDates(now)
-}
 
 /**
  * 화면이 내 숫자가 낡았는지 묻는 값. 이 화면이 읽는 두 표의 판을 하나로 접는다. 화면은 다시

@@ -2,14 +2,12 @@
 jest.mock('../window', () => ({ fillScheduleWindow: jest.fn() }))
 jest.mock('../records', () => ({ recordBossProfitFromWindow: jest.fn() }))
 jest.mock('../../boss-profit/defeat-dates', () => ({ resolveDefeatDates: jest.fn() }))
-jest.mock('../../../storage/character-selection', () => ({ getTrackedCharacterOcids: jest.fn() }))
 
-import { syncScheduleWindow, syncTrackedScheduleWindow } from '../sync'
+import { syncScheduleWindow } from '../sync'
 
 const { fillScheduleWindow: fillMock } = jest.requireMock('../window') as Record<string, jest.Mock>
 const { recordBossProfitFromWindow: recordMock } = jest.requireMock('../records') as Record<string, jest.Mock>
 const { resolveDefeatDates: datesMock } = jest.requireMock('../../boss-profit/defeat-dates') as Record<string, jest.Mock>
-const { getTrackedCharacterOcids: trackedMock } = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
 
 const NOW = new Date('2026-09-05T03:00:00.000Z')
 
@@ -17,7 +15,6 @@ beforeEach(() => {
   fillMock.mockReset().mockResolvedValue(undefined)
   recordMock.mockReset().mockResolvedValue(undefined)
   datesMock.mockReset().mockResolvedValue(0)
-  trackedMock.mockReset().mockResolvedValue(['o1'])
 })
 
 it('채우고 · 굳히고 · 캔다. 이 순서다', async () => {
@@ -59,21 +56,7 @@ it('굳히기가 던져도 캐기는 돈다', async () => {
   expect(datesMock).toHaveBeenCalledWith(['o1'], NOW)
 })
 
-it('관리 캐릭터가 없으면 아무것도 안 한다', async () => {
-  trackedMock.mockResolvedValue([])
 
-  await syncTrackedScheduleWindow(NOW)
-
-  expect(fillMock).not.toHaveBeenCalled()
-})
-
-it('목록을 스스로 읽어 넘긴다', async () => {
-  trackedMock.mockResolvedValue(['a', 'b'])
-
-  await syncTrackedScheduleWindow(NOW)
-
-  expect(fillMock).toHaveBeenCalledWith(['a', 'b'], NOW)
-})
 
 // 두 화면이 같은 순간에 부를 수 있다. 그때 같은 날짜가 두 번 나가면 안 된다.
 it('겹친 호출은 같은 회차를 나눠 쓴다', async () => {

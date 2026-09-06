@@ -22,7 +22,6 @@ jest.mock('../../../features/cashbook/records', () => {
     loadDayRecords: jest.fn(),
     loadLastPointRate: jest.fn(),
     loadTrackedCharacters: jest.fn(),
-    refreshCashbook: jest.fn(),
     recordIncome: jest.fn(),
     recordSpend: jest.fn(),
     editIncome: jest.fn(),
@@ -31,8 +30,19 @@ jest.mock('../../../features/cashbook/records', () => {
   }
 })
 
-jest.mock('../../../features/schedule-window/sync', () => ({
-  syncTrackedScheduleWindow: jest.fn(),
+// 창의 소유자는 부모 층이다. 이 화면은 상태를 구독하고 다시 채워 달라고 부탁만 한다.
+//
+// 회차 수를 **진짜 state 로** 들고 있어야 테스트가 그것을 올려 실제 리렌더를 낼 수 있다.
+// 객체만 바꾸고 `rerender` 를 부르면 하네스의 프로바이더가 벗겨진다.
+const mockWindow = { status: 'ready' as 'idle' | 'filling' | 'ready', revision: 1, reload: jest.fn() }
+let mockSetWindowRevision: ((value: number) => void) | null = null
+jest.mock('../../../features/ledger/useLedgerData', () => ({
+  useLedgerData: () => {
+    const react = require('react') as typeof import('react')
+    const [revision, setRevision] = react.useState(mockWindow.revision)
+    mockSetWindowRevision = setRevision
+    return { status: mockWindow.status, revision, reload: mockWindow.reload }
+  },
 }))
 
 // 자동 줄은 **보스 수익 탭으로 간다**. 그 이동을 목으로 받아 **어디로 갔나** 를 본다.
@@ -92,9 +102,7 @@ import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import { BOSS_SLOT_MAX_PX, CashbookScreen } from '../CashbookScreen'
 
 const records = jest.requireMock('../../../features/cashbook/records') as Record<string, jest.Mock>
-const { syncTrackedScheduleWindow: syncWindowMock } = jest.requireMock(
-  '../../../features/schedule-window/sync',
-) as Record<string, jest.Mock>
+
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
@@ -108,13 +116,14 @@ beforeEach(() => {
   records.loadCalendarAmounts.mockReset().mockResolvedValue({})
   records.loadLastPointRate.mockReset().mockResolvedValue(null)
   records.loadTrackedCharacters.mockReset().mockResolvedValue([])
-  records.refreshCashbook.mockReset().mockResolvedValue(undefined)
   records.recordIncome.mockReset().mockResolvedValue(undefined)
   records.recordSpend.mockReset().mockResolvedValue(undefined)
   records.loadDayRecords.mockReset().mockResolvedValue([])
   records.resolveTrackedDefeatDates.mockReset().mockResolvedValue(0)
   records.cashbookDataRevision.mockReset().mockReturnValue(0)
-  syncWindowMock.mockReset().mockResolvedValue(undefined)
+  mockWindow.status = 'ready'
+  mockWindow.revision = 1
+  mockWindow.reload.mockReset().mockResolvedValue(undefined)
   mockOpenTab.mockReset()
   records.editIncome.mockReset().mockResolvedValue(undefined)
   records.editSpend.mockReset().mockResolvedValue(undefined)
@@ -1185,7 +1194,7 @@ describe('자동으로 흘러든 줄', () => {
  * **당겨서 새로고침**(사용자 지적).
  *
  * 다른 네 화면이 이미 하는 그것이 여기만 빠져 있었다. 당겨도 아무 일이 없었다.
- * 순서(동기화 → 날짜 캐기)는 `refreshCashbook` 이 들고, 화면은 그것이 끝난 뒤 **다시 읽는다.**
+ * 무엇을 다시 부를지는 **부모 층**이 정하고, 화면은 그 회차가 끝난 뒤 **다시 읽는다.**
  */
 describe('당겨서 새로고침', () => {
   function 당김(view: Rendered): { refreshing: boolean; onRefresh: () => void } {
@@ -1198,16 +1207,16 @@ describe('당겨서 새로고침', () => {
     expect(당김(view).refreshing).toBe(false)
   })
 
-  it('당기면 새로고침하고 다시 읽는다', async () => {
+  // 당김은 **부모에게 부탁만** 한다. 무엇을 다시 부를지(오늘·과거)는 그쪽이 정하고, 끝나면
+  // 회차 수가 올라 화면이 다시 읽는다. 전에는 이 화면이 자기만의 조합을 들고 있었다.
+  it('당기면 부모의 다시 불러오기를 부른다', async () => {
     const view = await 그리기()
-    const 읽은횟수 = records.loadCalendarAmounts.mock.calls.length
 
     await act(async () => {
       당김(view).onRefresh()
     })
 
-    expect(records.refreshCashbook).toHaveBeenCalledTimes(1)
-    expect(records.loadCalendarAmounts.mock.calls.length).toBeGreaterThan(읽은횟수)
+    expect(mockWindow.reload).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -1421,13 +1430,13 @@ describe('CashbookScreen: 낡은 숫자', () => {
     expect(records.loadDayRecords).not.toHaveBeenCalled()
   })
 
-  it('포커스는 다시 읽기만 한다. 동기화(넥슨 API)는 안 튼다', async () => {
+  it('포커스는 다시 읽기만 한다. 부모의 다시 불러오기는 안 튼다', async () => {
     await 그리기()
     records.cashbookDataRevision.mockReturnValue(2)
 
     await 다시들어오기()
 
-    expect(records.refreshCashbook).not.toHaveBeenCalled()
+    expect(mockWindow.reload).not.toHaveBeenCalled()
   })
 })
 
@@ -1437,39 +1446,29 @@ describe('CashbookScreen: 낡은 숫자', () => {
 //   16:42:05  창이 과거 기록을 만든다  +185건
 //
 // 가계부는 포커스 때 한 번 재는 것이 전부라, 그 뒤 3초에 들어온 것을 받을 길이 없었다.
-// 화면이 읽은 순간에 굳는다.
+// 이제 창의 회차가 끝날 때(`revision` 이 오를 때) 다시 잰다.
 describe('창이 뒤늦게 채운 것을 받는다', () => {
-  it('들어오면 창을 채운다. 그 화면도 같은 창의 소비자다', async () => {
-    await 그리기()
-
-    expect(syncWindowMock).toHaveBeenCalled()
-  })
-
-  it('창이 끝난 뒤 기록이 바뀌었으면 다시 읽는다', async () => {
-    let 창끝내기!: () => void
-    syncWindowMock.mockReturnValue(
-      new Promise<void>((resolve) => {
-        창끝내기 = resolve
-      }),
-    )
+  it('회차가 끝나면 다시 읽는다', async () => {
     await 그리기()
     const 읽은횟수 = records.loadCalendarAmounts.mock.calls.length
 
-    // 창이 도는 동안 기록이 늘었다.
-    records.cashbookDataRevision.mockReturnValue(1)
     await act(async () => {
-      창끝내기()
+      mockSetWindowRevision?.(2)
     })
 
     expect(records.loadCalendarAmounts.mock.calls.length).toBeGreaterThan(읽은횟수)
   })
 
-  it('창이 끝나도 안 바뀌었으면 다시 안 읽는다. 조회를 늘리지 않는다', async () => {
+  // 당김도 이 길로 온다. 바뀐 것이 없을 때 건너뛰면 사용자가 당겨도 아무 일도 안 일어난다.
+  it('안 바뀌었어도 회차가 끝나면 다시 읽는다. 당김이 이 길로 온다', async () => {
     await 그리기()
     const 읽은횟수 = records.loadCalendarAmounts.mock.calls.length
 
-    await act(async () => {})
+    await act(async () => {
+      mockSetWindowRevision?.(2)
+    })
 
-    expect(records.loadCalendarAmounts.mock.calls.length).toBe(읽은횟수)
+    expect(records.loadCalendarAmounts.mock.calls.length).toBeGreaterThan(읽은횟수)
   })
 })
+

@@ -45,6 +45,11 @@ const navigate = jest.fn()
 const dispatch = jest.fn()
 
 // 동기화 실패·기간 로드 실패는 인라인 문단이 아니라 토스트다.
+const mockLedgerReload = jest.fn()
+jest.mock('../../../features/ledger/useLedgerData', () => ({
+  useLedgerData: () => ({ status: 'ready', revision: 1, reload: mockLedgerReload }),
+}))
+
 jest.mock('../../../features/toast/store', () => ({
   useToastStore: {
     getState: () => ({ showError: mockShowError, showSuccess: jest.fn(), showInfo: jest.fn() }) } }))
@@ -152,6 +157,7 @@ function renderScreen(): ReturnType<typeof render> {
 
 beforeEach(() => {
   jest.clearAllMocks()
+  mockLedgerReload.mockResolvedValue(undefined)
   // 카운트업의 '직전 표시값' 기억은 모듈 수준이라 언마운트를 건너 산다.
   // 테스트 하나가 곧 세션 하나다.
   clearCountUpMemory()
@@ -320,9 +326,10 @@ describe('동기화 상태 영역', () => {
 })
 
 describe('당겨서 새로고침', () => {
-  it('당김이 헤더 버튼과 **같은 재조회**를 부른다', async () => {
-    const refresh = jest.fn().mockResolvedValue(undefined)
-    mockStore({ refresh, trackedOcids: ['ocid-1'] })
+  // 당김은 **부모에게 부탁만** 한다. 무엇을 다시 부를지(오늘·과거)는 그쪽이 정한다.
+  // 헤더 버튼은 이 화면의 재조회(라이브)를 그대로 부른다. 둘의 뜻이 다르다.
+  it('당김이 부모의 다시 불러오기를 부른다', async () => {
+    mockStore({ trackedOcids: ['ocid-1'] })
     const { getByTestId } = await renderScreen()
 
     const control = getByTestId('screen-scroll').props.refreshControl
@@ -330,7 +337,7 @@ describe('당겨서 새로고침', () => {
       control.props.onRefresh()
     })
 
-    expect(refresh).toHaveBeenCalledWith(['ocid-1'], { inPlace: true })
+    expect(mockLedgerReload).toHaveBeenCalledTimes(1)
   })
 
   // 어느 기간에서도 당길 수 있다(사용자 지정). 당김은 창이 못 받은 날짜를 다시 부르는 일이라

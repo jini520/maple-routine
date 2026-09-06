@@ -13,6 +13,8 @@ import { SettingsScreen } from '../app/settings/SettingsScreen'
 import { TodayScreen } from '../app/today/TodayScreen'
 import { UtilityScreen } from '../app/utility/UtilityScreen'
 import { BottomBarOverlayHost } from '../components/organisms/BottomBar/BottomBarOverlay'
+import { LedgerDataProvider } from '../features/ledger/useLedgerData'
+import { LedgerLoadingModal } from './LedgerLoadingModal'
 import { TAB_LAYER_PROPS } from './tab-layer-props'
 import { BottomBar, type BarNavigation } from '../components/organisms/BottomBar/BottomBar'
 import { pageFromLayerState } from './page-from-layer-state'
@@ -61,13 +63,24 @@ function ScheduleLayer(): React.JSX.Element {
   )
 }
 
+/**
+ * 두 하위가 **같은 데이터**를 본다. 그래서 그 소유자를 여기 둔다.
+ *
+ * 자식마다 조립하던 때 결함이 셋 났고 전부 같은 물음에서 났다. 누가 부르나 · 언제 끝나나 ·
+ * 누가 결과를 받나. 이 층은 두 하위가 떠 있는 동안 마운트를 유지하므로 그 답을 한 자리에
+ * 둘 수 있다. 당겨서 새로고침도 여기 하나가 뜻을 정한다.
+ */
 function LedgerLayer(): React.JSX.Element {
   return (
-    <LedgerTabs.Navigator {...TAB_LAYER_PROPS}>
-      <LedgerTabs.Screen name="Profit" component={BossProfitScreen} />
-      {/* 껍데기 둘(사냥 수익·지출)이 있던 자리. 가계부 하나로 합쳐졌다. */}
-      <LedgerTabs.Screen name="Cashbook" component={CashbookScreen} />
-    </LedgerTabs.Navigator>
+    <LedgerDataProvider>
+      <LedgerTabs.Navigator {...TAB_LAYER_PROPS}>
+        <LedgerTabs.Screen name="Profit" component={BossProfitScreen} />
+        {/* 껍데기 둘(사냥 수익·지출)이 있던 자리. 가계부 하나로 합쳐졌다. */}
+        <LedgerTabs.Screen name="Cashbook" component={CashbookScreen} />
+      </LedgerTabs.Navigator>
+      {/* 불러오는 중도 층이 말한다. 하위 화면은 자기 스피너를 갖지 않는다. */}
+      <LedgerLoadingModal />
+    </LedgerDataProvider>
   )
 }
 

@@ -7,7 +7,6 @@
  * 지출 기록용 호출은 나중에 이 안에 수집기 하나를 더 붙이는 일이 된다. 창을 도는 규칙
  * (원장·게이트·중복 방지)은 `fillScheduleWindow` 가 이미 들고 있다.
  */
-import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { resolveDefeatDates } from '../boss-profit/defeat-dates'
 import { recordBossProfitFromWindow } from './records'
 import { fillScheduleWindow } from './window'
@@ -51,13 +50,4 @@ async function runSyncScheduleWindow(ocids: readonly string[], now: Date): Promi
   await fillScheduleWindow(ocids, now).catch(() => undefined)
   await recordBossProfitFromWindow(ocids, now).catch(() => undefined)
   await resolveDefeatDates(ocids, now).catch(() => undefined)
-}
-
-/** 관리 캐릭터 목록을 스스로 읽는 판. 목록을 들고 있지 않은 화면(가계부)이 쓴다. */
-export async function syncTrackedScheduleWindow(now: Date): Promise<void> {
-  const ocids = await getTrackedCharacterOcids().catch(() => null)
-  if (ocids === null || ocids.length === 0) {
-    return
-  }
-  await syncScheduleWindow(ocids, now)
 }
