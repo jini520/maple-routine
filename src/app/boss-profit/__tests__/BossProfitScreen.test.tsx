@@ -31,7 +31,7 @@ import { getCurrentBossProfitPeriod } from '../../../lib/boss/boss-profit-period
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import type { RecordedDrop } from '../../../types/drops'
 
-import { 테스트_안전영역 } from '../../../components/__tests__/render-atom'
+import { flattenStyle, 테스트_안전영역 } from '../../../components/__tests__/render-atom'
 import { ThemeProvider } from '../../../theme/ThemeProvider'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { BossProfitScreen } from '../BossProfitScreen'
@@ -292,6 +292,27 @@ describe('탭과 기간 네비게이터', () => {
     const { getByLabelText } = await renderScreen()
 
     expect(getByLabelText('이전 기간')).toBeDisabled()
+  })
+
+  // 같은 이유로 탭 알약도 폭을 못박는다. 알약은 받아올 아랫줄이 없어 자기 폭을 직접 갖는다.
+  it('탭 알약은 폭이 못박혀 있다. 글자 폭을 그대로 쓰지 않는다', async () => {
+    const { getByText } = await renderScreen()
+
+    for (const label of ['주간', '월간']) {
+      const style = flattenStyle(getByText(label).props.style)
+      expect(style.width).toBe(56)
+      expect(style.textAlign).toBe('center')
+    }
+  })
+
+  // 상자가 자기 글자 폭과 같으면 안드로이드가 그릴 때 마지막 낱말을 다음 줄로 넘기고, 그 줄은
+  // 한 줄 높이에 가려 사라진다(`지난 달` 이 `지난` 으로 보였다). 늘려 두면 아랫줄의 폭을 받는다.
+  it('기간 라벨 상자는 자기 글자 폭이 아니라 아랫줄의 폭이다', async () => {
+    const { getByText } = await renderScreen()
+
+    const style = flattenStyle(getByText('이번 주').props.style)
+    expect(style.alignSelf).toBe('stretch')
+    expect(style.textAlign).toBe('center')
   })
 })
 

@@ -54,7 +54,7 @@ function difficulty(
   textStyle: TextStyle,
   borderWidth = 1,
 ): BadgeVariantStyle {
-  return { gradient, border: { borderWidth, borderColor }, textStyle, weight: 'extrabold', text: 'text-chip-sm' }
+  return { gradient, border: { borderWidth, borderColor }, textStyle, weight: 'bold', text: 'text-chip-sm' }
 }
 
 /** 색·테두리·그림자 17종. 난이도 이름이 그대로 키라 `variant={boss.difficulty}` 로 쓴다. */
@@ -93,7 +93,6 @@ export const BADGE_SIZE = {
 export const BADGE_WEIGHT = {
   semibold: 'font-semibold',
   bold: 'font-bold',
-  extrabold: 'font-extrabold',
 } as const
 
 /** 색 이름. 난이도는 `이지`·`노멀`·`하드`·`카오스`·`익스트림` 이 그대로 키다. */

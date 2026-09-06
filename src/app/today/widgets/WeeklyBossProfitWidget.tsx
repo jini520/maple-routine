@@ -111,7 +111,7 @@ function percentWidth(meso: number, sum: number): DimensionValue {
 function Amount(props: { meso: number; sizeClass: string }): React.JSX.Element {
   return (
     <Text fixed testID="profit-amount" numberOfLines={1} className="text-text">
-      <Text fixed style={TABULAR_NUMS} className={`font-extrabold text-text ${props.sizeClass}`}>
+      <Text fixed style={TABULAR_NUMS} className={`font-bold text-text ${props.sizeClass}`}>
         {formatMesoShort(props.meso)}
       </Text>
       {/* 숫자와 단위 사이는 마진이 아니라 **실제 공백 문자**다(트레이드오프). */}

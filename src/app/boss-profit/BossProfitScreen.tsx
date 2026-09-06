@@ -265,13 +265,16 @@ export function BossProfitScreen(): React.JSX.Element {
           </View>
         </PageHeaderTitleRow>
 
+        {/* 탭 알약의 `w-14` 를 빼지 말 것. 빼면 상자가 자기 글자 폭과 정확히 같아지고, 안드로이드가
+            그릴 때 뒷 음절이 다음 줄로 넘어가 한 줄 높이에 가려 사라진다(`주간` 이 `주` 로 보였다).
+            못박아 두면 두 음절(24dp)에 56dp 라 남고, 탭을 오갈 때 알약 폭도 안 흔들린다. */}
         <View className="flex-row items-center gap-4">
           <Pressable role="button" aria-selected={tab === 'weekly'} onPress={() => setTab('weekly')}>
             <Text
               className={
                 tab === 'weekly'
-                  ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
-                  : 'px-3 text-sm font-medium text-text-muted'
+                  ? 'w-14 rounded-full bg-primary-tint py-[5px] text-center text-sm font-semibold text-primary-ink'
+                  : 'w-14 text-center text-sm font-medium text-text-muted'
               }
             >
               주간
@@ -281,8 +284,8 @@ export function BossProfitScreen(): React.JSX.Element {
             <Text
               className={
                 tab === 'monthly'
-                  ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
-                  : 'px-3 text-sm font-medium text-text-muted'
+                  ? 'w-14 rounded-full bg-primary-tint py-[5px] text-center text-sm font-semibold text-primary-ink'
+                  : 'w-14 text-center text-sm font-medium text-text-muted'
               }
             >
               월간
@@ -329,8 +332,13 @@ export function BossProfitScreen(): React.JSX.Element {
             <ChevronLeftIcon className="h-4 w-4 text-text" strokeWidth={2} aria-hidden />
           </Pressable>
 
+          {/* 윗줄의 `self-stretch` 를 빼지 말 것. 빼면 상자가 자기 글자 폭과 정확히 같아지고,
+              안드로이드가 그릴 때 마지막 낱말이 다음 줄로 넘어가 한 줄 높이에 가려 사라진다
+              (`지난 달` 이 `지난` 으로 보였다). 늘려 두면 상자가 아랫줄(날짜)의 폭이라 20dp 남는다. */}
           <View className="items-center">
-            <Text className="text-sm font-semibold text-text">{periodLabel.primary}</Text>
+            <Text className="self-stretch text-center text-sm font-semibold text-text">
+              {periodLabel.primary}
+            </Text>
             <Text className="mt-0.5 text-xs text-text-muted" style={TABULAR_NUMS}>
               {periodLabel.secondary}
             </Text>
@@ -386,7 +394,7 @@ export function BossProfitScreen(): React.JSX.Element {
               {/* 단위는 별도 `Text` 로 격하하되 숫자와 사이에 **실제 공백 문자**를 남긴다. 마진만
                   으로 띄우면 읽는 문자열이 "N메소"로 붙어 스크린리더가 이어 읽는다. */}
               <Text
-                className="text-xl font-extrabold leading-none text-primary-ink"
+                className="text-xl font-bold leading-snug text-primary-ink"
                 style={TABULAR_NUMS}
               >
                 {/* 이 키에만 기간이 없다. 기간이 바뀌어도 같은 자리의 같은 뜻을 가진 하나의

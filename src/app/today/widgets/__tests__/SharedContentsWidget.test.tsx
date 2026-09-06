@@ -103,7 +103,7 @@ describe('오른쪽 열은 `count` 유무 하나로 갈린다', () => {
     // 벌어지면 두 값, 붙으면 분수로 읽힌다. 한 `Text` 안에서 이어져야 **7/14** 로 읽힌다.
     expect(getByText('7/14')).toBeTruthy()
     // 분자만 굵다(강조는 굵기 하나뿐. 위젯 2 와 같은 규칙).
-    expect(String(getByText('7').props.style.fontWeight)).toBe('800')
+    expect(String(getByText('7').props.style.fontWeight)).toBe('700')
   })
 
   // 뷰모델이 완료한 항목에 카운트를 안 준다. 완료한 항목의

@@ -69,7 +69,7 @@ function Icon(props: { drop: PricedDropView; sizePx: number }): React.JSX.Elemen
 function Amount(props: { meso: number; sizeClass: string; unit: boolean }): React.JSX.Element {
   return (
     <Text fixed testID="top-item-amount" numberOfLines={1} className="text-text">
-      <Text fixed style={TABULAR_NUMS} className={`font-extrabold text-text ${props.sizeClass}`}>
+      <Text fixed style={TABULAR_NUMS} className={`font-bold text-text ${props.sizeClass}`}>
         {formatMesoShort(props.meso)}
       </Text>
       {props.unit && <Text fixed className="text-11 font-semibold text-text-muted"> 메소</Text>}

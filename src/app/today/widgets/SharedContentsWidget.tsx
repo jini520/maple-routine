@@ -117,7 +117,7 @@ function Checkbox(props: { checked: boolean }): React.JSX.Element {
 function CountValue(props: { count: { now: number; max: number } }): React.JSX.Element {
   return (
     <Text fixed testID="shared-count" style={TABULAR_NUMS} className="shrink-0 text-[11.5px] text-text-muted">
-      <Text fixed style={TABULAR_NUMS} className="text-[11.5px] font-extrabold text-text">
+      <Text fixed style={TABULAR_NUMS} className="text-[11.5px] font-bold text-text">
         {String(props.count.now)}
       </Text>
       {`/${String(props.count.max)}`}

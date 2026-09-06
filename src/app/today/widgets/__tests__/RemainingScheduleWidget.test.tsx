@@ -116,7 +116,7 @@ describe('수치는 `갈래 N개`다', () => {
     const 단위 = flattenStyle(view.getByText('개').props.style)
 
     expect(숫자.fontSize).toBe(단위.fontSize)
-    expect(String(숫자.fontWeight)).toBe('800')
+    expect(String(숫자.fontWeight)).toBe('700')
     expect(숫자.fontWeight).not.toBe(단위.fontWeight)
   })
 

@@ -82,7 +82,7 @@ function orderForCycle(rows: readonly ScheduleRowView[], cycle: Cycle): Schedule
     .map((entry) => entry.row)
 }
 
-const VALUE_CLASS = 'text-right text-[11.5px] font-extrabold leading-tight text-text'
+const VALUE_CLASS = 'text-right text-[11.5px] font-bold leading-tight text-text'
 const LABEL_CLASS = 'text-[11.5px] leading-tight text-text-muted'
 
 /** 수치 한 덩이. 퀘스트 3개·보스 1개. */
