@@ -158,6 +158,50 @@ const TABLE_DEFINITIONS = [
     PRIMARY KEY (ocid)
 )`,
   },
+  // 계정 단위 강화 사용 내역. 큐브·스타포스·잠재 재설정에 무엇을 썼나.
+  //
+  // **`payload` 를 통째로 남기는 이유**: 비용 표가 아직 없어 지금은 메소를 못 매기는데, 어제
+  // 이전 날짜는 다시 안 부르므로 지금 안 남기면 표가 들어와도 셀 수가 없다. 나중에 `cost_meso`
+  // 를 채우는 일이 조회가 아니라 **계산**이어야 한다.
+  //
+  // `id` 는 응답 줄마다 붙는 계정 전체 유일값이라 그대로 PK 다. 같은 줄을 두 번 받아도 한 행이다.
+  {
+    name: 'enhancement_history',
+    createSql: `CREATE TABLE IF NOT EXISTS enhancement_history (
+    id TEXT NOT NULL,
+    -- 'cube' | 'starforce' | 'potential'
+    kind TEXT NOT NULL,
+    -- KST YYYY-MM-DD. 가계부 칸이 이 값으로 선다.
+    date_key TEXT NOT NULL,
+    -- date_create 원본(타임존 포함).
+    created_at TEXT NOT NULL,
+    -- **이름만이다.** ocid 를 얻으려면 캐릭터마다 한 콜이라 안 받는다.
+    character_name TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    -- 쓴 메소. 비용 표가 오기 전까지 NULL 이고, NULL 은 0 이 아니라 **모름** 이다.
+    cost_meso INTEGER,
+    PRIMARY KEY (id)
+)`,
+  },
+  // 날짜별 조회 원장. 계정 단위라 ocid 축이 없어 하루가 3콜이다.
+  //
+  // 조회 원장(`schedule-probe-ledger`, preferences)과 갈리는 이유는 **창이 없기 때문**이다.
+  // 그쪽은 14일 뒤 스스로 떨어지지만 이쪽은 날짜가 영구히 쌓여, preferences 에 두면 JSON 하나가
+  // 무한히 자란다.
+  {
+    name: 'enhancement_history_checks',
+    createSql: `CREATE TABLE IF NOT EXISTS enhancement_history_checks (
+    kind TEXT NOT NULL,
+    date_key TEXT NOT NULL,
+    -- **1쪽의 커서.** 다시 불렀을 때 같으면 새 데이터가 없다는 뜻이라 나머지를 안 부른다.
+    -- 그 날에 아무것도 안 했으면 응답에 커서가 없어 NULL 이다.
+    next_cursor TEXT,
+    -- 어제 이전이면 1. **아예 안 부른다** - 그 날짜의 데이터는 변할 수 없다.
+    settled INTEGER NOT NULL DEFAULT 0,
+    checked_at TEXT NOT NULL,
+    PRIMARY KEY (kind, date_key)
+)`,
+  },
   // 가계부가 **손으로 적는** 둘. 앞의 넷과 갈리는 성질이 셋이다:
   //  ① **대리키다.** 앞의 넷은 자연키 복합 PK 인데 손입력은 **같은 날 같은 것을 두 번** 이 정상이라
   //     자연키가 성립하지 않는다.

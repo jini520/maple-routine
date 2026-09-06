@@ -37,6 +37,10 @@ export const RECORD_TABLE_NAMES: readonly string[] = [
   'boss_profit_records',
   'boss_drop_records',
   'boss_profit_period_checks',
+  // 강화 사용 내역이 기록 그룹인 이유. **어제 이전 날짜는 다시 안 부른다.** 지우면 그 날짜의
+  // 지출을 되살릴 길이 0% 다. 원장도 같은 그룹이어야 표식만 남고 내역이 사라지는 상태가 안 생긴다.
+  'enhancement_history',
+  'enhancement_history_checks',
   // 손입력에서만 오는 값이라 API 로 되살릴 길이 **0%** 다. 여기 안 넣으면
   // 아래 차집합 파생이 이 둘을 **지워도 되는 것** 으로 끌어간다.
   'income_records',
