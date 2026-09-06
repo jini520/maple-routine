@@ -973,6 +973,44 @@ describe('강화 줄', () => {
     expect(recordCountLabelOf(b)).toBe('1회')
   })
 
+  // 펼쳐서 보는 이유가 **어디에 썼나** 라서 이름순이면 그 답이 안 보인다.
+  it('만진 장비를 큰 금액부터 담는다', async () => {
+    const [row] = await 줄들([
+      강화({ targetItem: '데아 시두스 이어링', itemLevel: 130 }),
+      강화({ id: 'e2', targetItem: '아케인셰이드 클로', itemLevel: 200 }),
+      강화({ id: 'e3', targetItem: '아케인셰이드 클로', itemLevel: 200 }),
+    ])
+
+    expect(row.kind === 'enhancement' && row.items).toEqual([
+      { targetItem: '아케인셰이드 클로', count: 2, costMeso: 1_600_000, unpricedCount: 0 },
+      { targetItem: '데아 시두스 이어링', count: 1, costMeso: 338_000, unpricedCount: 0 },
+    ])
+  })
+
+  it('장비별로도 값 모름을 센다', async () => {
+    const [row] = await 줄들([
+      강화({ targetItem: '왕푸', itemLevel: null }),
+      강화({ id: 'e2', targetItem: '왕푸', itemLevel: null }),
+    ])
+
+    expect(row.kind === 'enhancement' && row.items).toEqual([
+      { targetItem: '왕푸', count: 2, costMeso: 0, unpricedCount: 2 },
+    ])
+  })
+
+  // 금액이 같으면 순서가 흔들리면 안 된다. 다시 그릴 때마다 줄이 자리를 바꾼다.
+  it('금액이 같으면 건수로, 그것도 같으면 이름으로 가른다', async () => {
+    const [row] = await 줄들([
+      강화({ targetItem: '나', itemLevel: 150 }),
+      강화({ id: 'e2', targetItem: '가', itemLevel: 150 }),
+    ])
+
+    expect(row.kind === 'enhancement' && row.items.map((item) => item.targetItem)).toEqual([
+      '가',
+      '나',
+    ])
+  })
+
   it('제목에 이름과 갈래가 든다', async () => {
     const { recordTitleOf } = require('../records') as typeof import('../records')
     const [row] = await 줄들([강화()])

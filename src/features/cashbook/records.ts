@@ -451,6 +451,18 @@ export interface EnhancementDayRecord {
   count: number
   /** 값을 못 매긴 건수. 장비 레벨을 몰라 금액에서 빠졌다 */
   unpricedCount: number
+  /** 무엇을 강화했나. **비어 있지 않다.** 이 줄이 서는 조건이다 */
+  items: readonly EnhancedItem[]
+}
+
+/** 펼친 강화 줄의 한 칸. 장비 하나가 그날 먹은 메소다. */
+export interface EnhancedItem {
+  /** API 가 준 이름 그대로. 띄어쓰기가 살아 있다 */
+  targetItem: string
+  count: number
+  /** 값을 못 매긴 건은 안 들어 있다 */
+  costMeso: number
+  unpricedCount: number
 }
 
 /**
@@ -538,26 +550,52 @@ export async function loadDayRecords(dateKey: string): Promise<DayRecord[]> {
 function toEnhancementRecords(
   rows: readonly EnhancementSpendingRow[],
 ): EnhancementDayRecord[] {
-  const byName = new Map<string, EnhancementDayRecord>()
+  const byName = new Map<string, { record: EnhancementDayRecord; items: Map<string, EnhancedItem> }>()
   for (const row of rows) {
-    let record = byName.get(row.characterName)
-    if (record === undefined) {
-      record = {
-        kind: 'enhancement',
-        characterName: row.characterName,
-        payoutMeso: 0,
-        count: 0,
-        unpricedCount: 0,
+    let entry = byName.get(row.characterName)
+    if (entry === undefined) {
+      entry = {
+        record: {
+          kind: 'enhancement',
+          characterName: row.characterName,
+          payoutMeso: 0,
+          count: 0,
+          unpricedCount: 0,
+          items: [],
+        },
+        items: new Map(),
       }
-      byName.set(row.characterName, record)
+      byName.set(row.characterName, entry)
     }
-    record.count += 1
-    if (row.costMeso === null) record.unpricedCount += 1
-    else record.payoutMeso += row.costMeso
+    entry.record.count += 1
+    if (row.costMeso === null) entry.record.unpricedCount += 1
+    else entry.record.payoutMeso += row.costMeso
+
+    const item = entry.items.get(row.targetItem) ?? {
+      targetItem: row.targetItem,
+      count: 0,
+      costMeso: 0,
+      unpricedCount: 0,
+    }
+    item.count += 1
+    if (row.costMeso === null) item.unpricedCount += 1
+    else item.costMeso += row.costMeso
+    entry.items.set(row.targetItem, item)
   }
-  return [...byName.values()].sort((left, right) =>
-    left.characterName.localeCompare(right.characterName),
-  )
+
+  return [...byName.values()]
+    .map(({ record, items }) => ({
+      ...record,
+      // 큰 금액이 위다. 펼쳐서 보는 이유가 **어디에 썼나** 라서 이름순이면 그 답이 안 보인다.
+      // 값이 같으면 건수로 가른다. 둘 다 같으면 이름으로 가른다(순서가 흔들리면 안 된다).
+      items: [...items.values()].sort(
+        (left, right) =>
+          right.costMeso - left.costMeso ||
+          right.count - left.count ||
+          left.targetItem.localeCompare(right.targetItem),
+      ),
+    }))
+    .sort((left, right) => left.characterName.localeCompare(right.characterName))
 }
 
 /**

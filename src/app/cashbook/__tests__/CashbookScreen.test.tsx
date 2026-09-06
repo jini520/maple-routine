@@ -1480,7 +1480,7 @@ describe('창이 뒤늦게 채운 것을 받는다', () => {
 })
 
 
-// 강화 줄은 앞의 둘과 셋이 갈린다. **나가는 돈**이고, 갈 곳이 없고, 초상이 안 붙는다.
+// 강화 줄은 앞의 둘과 둘이 갈린다. **나가는 돈**이고, 초상이 없다. 펼치는 것은 결정석과 같다.
 describe('강화 줄', () => {
   const 강화줄 = {
     kind: 'enhancement' as const,
@@ -1488,6 +1488,10 @@ describe('강화 줄', () => {
     payoutMeso: 1_200_000_000,
     count: 47,
     unpricedCount: 0,
+    items: [
+      { targetItem: '아케인셰이드 클로', count: 32, costMeso: 980_000_000, unpricedCount: 0 },
+      { targetItem: '데아 시두스 이어링', count: 15, costMeso: 220_000_000, unpricedCount: 0 },
+    ],
   }
 
   beforeEach(() => {
@@ -1514,19 +1518,55 @@ describe('강화 줄', () => {
     )
   })
 
-  // 누를 데가 없는데 화살촉이 있으면 갈 곳이 있는 것으로 읽힌다.
-  it('화살촉이 안 선다', async () => {
+  it('처음에는 접혀 있다', async () => {
     const view = await 그리기()
 
-    expect(view.getByTestId('cashbook-row-chevron-enhancement:낟낟')).toBeEmptyElement()
+    expect(view.queryByTestId('cashbook-row-items-enhancement:낟낟')).toBeNull()
   })
 
-  it('눌러도 시트가 안 열리고 탭도 안 옮긴다', async () => {
+  // 원천이 넥슨 API 라 갈 곳이 없다. 펼치는 것이 여기서 할 수 있는 전부다.
+  it('누르면 그 자리에서 펼쳐진다. 탭을 안 옮긴다', async () => {
     const view = await 그리기()
 
-    fireEvent.press(view.getByTestId('cashbook-row-enhancement:낟낟'))
+    await 이름으로누르기(view, '낟낟 · 강화 펼치기')
 
-    expect(view.queryByTestId('cashbook-spend-sheet')).toBeNull()
+    expect(view.getByTestId('cashbook-row-items-enhancement:낟낟')).toBeTruthy()
     expect(mockOpenTab).not.toHaveBeenCalled()
+    expect(view.queryByTestId('cashbook-spend-sheet')).toBeNull()
+  })
+
+  it('무엇을 강화했는지 큰 금액부터 적는다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '낟낟 · 강화 펼치기')
+
+    expect(view.getByTestId('cashbook-item-row-아케인셰이드 클로')).toHaveTextContent(
+      '아케인셰이드 클로32회−9.8억',
+    )
+    expect(view.getByTestId('cashbook-item-row-데아 시두스 이어링')).toHaveTextContent(
+      '데아 시두스 이어링15회−2.2억',
+    )
+  })
+
+  // 0 을 적으면 공짜로 강화한 것이 된다.
+  it('그 장비를 통째로 모르면 금액 자리가 값 모름 이다', async () => {
+    records.loadDayRecords.mockResolvedValue([
+      {
+        ...강화줄,
+        items: [{ targetItem: '왕푸', count: 8, costMeso: 0, unpricedCount: 8 }],
+      },
+    ])
+    const view = await 그리기()
+    await 이름으로누르기(view, '낟낟 · 강화 펼치기')
+
+    expect(view.getByTestId('cashbook-item-row-왕푸')).toHaveTextContent('왕푸8회값 모름')
+  })
+
+  it('다시 누르면 접힌다', async () => {
+    const view = await 그리기()
+
+    await 이름으로누르기(view, '낟낟 · 강화 펼치기')
+    await 이름으로누르기(view, '낟낟 · 강화 접기')
+
+    expect(view.queryByTestId('cashbook-row-items-enhancement:낟낟')).toBeNull()
   })
 })

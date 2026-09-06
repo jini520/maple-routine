@@ -90,6 +90,7 @@ import {
   rowKeyOf,
   type DayRecord,
   type DefeatedBoss,
+  type EnhancedItem,
   type ManualDayRecord,
 } from '../../features/cashbook/records'
 import { loadMesoRate } from '../../features/cashbook/meso-rate'
@@ -393,6 +394,47 @@ function DefeatedBossTiles(props: { rowKey: string; bosses: readonly DefeatedBos
   )
 }
 
+/**
+ * 펼친 강화 줄. 그날 만진 장비가 **큰 금액부터** 선다.
+ *
+ * 결정석처럼 타일을 안 쓴다. 장비에는 초상이 없고 사용자가 여기서 보려는 것이 **어디에 썼나**
+ * 라서, 이름과 금액이 한 줄에 나란히 서는 쪽이 답을 바로 준다.
+ *
+ * 값을 못 매긴 건은 금액에 안 들어 있다. 그 장비만 통째로 모를 수 있어(레벨을 모르는 장비)
+ * 그때는 금액 자리에 `값 모름` 이 선다. `0` 을 적으면 공짜로 강화한 것이 된다.
+ */
+function EnhancedItemRows(props: {
+  rowKey: string
+  items: readonly EnhancedItem[]
+}): React.JSX.Element {
+  return (
+    <View
+      testID={`cashbook-row-items-${props.rowKey}`}
+      className="gap-y-1.5 rounded-b-xl border border-t-0 border-border bg-surface px-2.5 pb-2.5 pt-1.5"
+    >
+      {props.items.map((item) => (
+        <View
+          key={item.targetItem}
+          testID={`cashbook-item-row-${item.targetItem}`}
+          className="flex-row items-center gap-2"
+        >
+          <Text numberOfLines={1} className="shrink text-11 text-text-muted">
+            {item.targetItem}
+          </Text>
+          <Text numberOfLines={1} className="shrink-0 text-10 text-text-disabled" style={TABULAR_NUMS}>
+            {item.unpricedCount > 0 && item.count > item.unpricedCount
+              ? `${item.count}회 · 값모름 ${item.unpricedCount}`
+              : `${item.count}회`}
+          </Text>
+          <Text className="ml-auto shrink-0 text-11 font-medium text-fall-ink" style={TABULAR_NUMS}>
+            {item.count === item.unpricedCount ? '값 모름' : `−${formatMesoCompact(item.costMeso)}`}
+          </Text>
+        </View>
+      ))}
+    </View>
+  )
+}
+
 function DayRecordRow(props: {
   entry: DayRecord
   expanded: boolean
@@ -406,27 +448,26 @@ function DayRecordRow(props: {
   const countLabel = recordCountLabelOf(entry)
   const Icon = income ? ProfitIcon : ShoppingCartIcon
   /**
-   * 펼칠 수 있는 줄은 결정석 하나다. 판매 줄은 `bosses` 를 아예 안 갖는 타입이라
-   * (`AutoDayRecord` 가 합집합이다) 이 분기를 잘못 쓰면 컴파일 단계에서 걸린다.
+   * 펼칠 수 있는 줄은 둘이다. 결정석은 잡은 보스를, 강화는 만진 장비를 편다. 판매 줄은 둘 중
+   * 어느 칸도 안 갖는 타입이라(`AutoDayRecord` 가 합집합이다) 분기를 잘못 쓰면 컴파일 단계에서
+   * 걸린다.
    */
   const bosses = entry.kind === 'bossCrystal' ? entry.bosses : null
-  const isOpen = expanded && bosses !== null
+  const items = entry.kind === 'enhancement' ? entry.items : null
+  const expandable = bosses !== null || items !== null
+  const isOpen = expanded && expandable
   /**
    * 무슨 일이 일어날지 미리 말하는 화살촉. 같은 카드 두 줄이 서로 다르게 반응하는데
    * 그림이 같으면 그것이 고장으로 읽힌다.
    */
-  const Chevron = bosses === null ? ChevronRightIcon : isOpen ? ChevronUpIcon : ChevronDownIcon
-  // 강화 줄은 갈 곳이 없다. 원천이 넥슨 API 라 앱 안에 그 줄을 더 보여 줄 화면이 없다.
-  const inert = entry.kind === 'enhancement'
+  const Chevron = !expandable ? ChevronRightIcon : isOpen ? ChevronUpIcon : ChevronDownIcon
   const action = isManualRecord(entry)
     ? '고치기'
-    : inert
-      ? ''
-      : bosses === null
-        ? '보스 수익에서 보기'
-        : isOpen
-          ? '접기'
-          : '펼치기'
+    : !expandable
+      ? '보스 수익에서 보기'
+      : isOpen
+        ? '접기'
+        : '펼치기'
 
   return (
     <View>
@@ -435,8 +476,8 @@ function DayRecordRow(props: {
         testID={`cashbook-row-${rowKey}`}
         // 자동 줄은 고치러 가는 것이 아니라 보러 가는 것이다. 읽어 주는 이름이 그 사실을 말해야
         // 눌렀더니 시트가 안 열린다 가 고장으로 읽히지 않는다.
-        aria-label={action === '' ? recordTitleOf(entry) : `${recordTitleOf(entry)} ${action}`}
-        aria-expanded={bosses === null ? undefined : isOpen}
+        aria-label={`${recordTitleOf(entry)} ${action}`}
+        aria-expanded={expandable ? isOpen : undefined}
         onPress={props.onPress}
         // 펼치면 한 카드가 된다. 아래 판과 테두리를 잇고 그 사이의 선을 지운다. 판이 따로 선
         // 상자로 보이면 이 줄이 편 것 이라는 사실이 끊긴다.
@@ -478,13 +519,13 @@ function DayRecordRow(props: {
         {/* 화살촉이 상자를 하나 쓰는 이유는 lucide 아이콘이 `testID` 를 SVG 안으로 안 흘려보내
             화살촉이 사라졌다 를 테스트가 못 잡기 때문이다. 상자는 `shrink-0` 도 함께 든다.
 
-            강화 줄에는 안 세운다. 누를 데가 없는데 화살촉이 있으면 갈 곳이 있는 것으로 읽힌다.
-            자리는 그대로 비워 둬야 금액의 오른쪽 끝이 다른 줄과 어긋나지 않는다. */}
-        <View testID={`cashbook-row-chevron-${rowKey}`} className="h-4 w-4 shrink-0">
-          {!inert && <Chevron className="h-4 w-4 text-text-disabled" strokeWidth={2} aria-hidden />}
+*/}
+        <View testID={`cashbook-row-chevron-${rowKey}`} className="shrink-0">
+          <Chevron className="h-4 w-4 text-text-disabled" strokeWidth={2} aria-hidden />
         </View>
       </Pressable>
-      {isOpen && <DefeatedBossTiles rowKey={rowKey} bosses={bosses} />}
+      {isOpen && bosses !== null && <DefeatedBossTiles rowKey={rowKey} bosses={bosses} />}
+      {isOpen && items !== null && <EnhancedItemRows rowKey={rowKey} items={items} />}
     </View>
   )
 }
@@ -715,16 +756,17 @@ export function CashbookScreen(): React.JSX.Element {
       return
     }
     /**
-     * 결정석 줄은 안 나간다. 그 자리에서 편다. 펼친 타일은 읽기 전용이라 두 곳에서 고칠 수
+     * 결정석과 강화 줄은 안 나간다. 그 자리에서 편다. 펼친 판은 읽기 전용이라 두 곳에서 고칠 수
      * 있게 되지 않는다. 탭을 옮기면 고른 날과 보던 기간을 함께 잃어 그 날의 다른 줄을 못 본다.
+     *
+     * 강화는 갈 곳이 아예 없다. 원천이 넥슨 API 라 앱 안에 그 줄을 더 보여 줄 화면이 없어,
+     * 펼치는 것이 여기서 할 수 있는 전부다.
      */
-    if (entry.kind === 'bossCrystal') {
+    if (entry.kind === 'bossCrystal' || entry.kind === 'enhancement') {
       const key = rowKeyOf(entry)
       setExpandedRowKey((current) => (current === key ? null : key))
       return
     }
-    // 강화 줄은 아무 데도 안 간다. 원천이 넥슨 API 라 더 보여 줄 화면이 없다.
-    if (entry.kind === 'enhancement') return
     // 판매 줄은 그대로 간다. `미입력 n` 이 **여기서 못 하는 일**(값 넣기)을 가리킨다.
     openTab('Profit')
   }
