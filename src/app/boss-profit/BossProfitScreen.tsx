@@ -31,7 +31,6 @@ import {
 import {
   formatBossProfitPeriodLabel,
   isLatestPeriod,
-  isPeriodQueryable,
 } from '../../lib/boss/boss-profit-period'
 import { canPreviewNextWeek } from '../../lib/boss/monthly-boss-week'
 import { sumDropPayout } from '../../lib/drop/drop-price'
@@ -89,6 +88,7 @@ export function BossProfitScreen(): React.JSX.Element {
     weeklySubtotals,
     isPeriodLoading,
     periodState,
+    periodPendingAggregation,
     canGoPreviousPeriod,
     error,
     staleCharacterNames,
@@ -218,9 +218,6 @@ export function BossProfitScreen(): React.JSX.Element {
   // 이전 이동 가능 여부는 스토어가 매 기간 로드 시 계산해 둔 값으로 판단한다. 조회 불가능하고
   // 캐시 기록도 없는 기간에 착지하지 않도록 막는다.
   const isPrevDisabled = !canGoPreviousPeriod
-  // 현재 기간은 백필 가능성을 묻지 않는다. 조회일이 미래라 `isPeriodQueryable` 이 false 지만
-  // 그건 조회 불가가 아니라 실시간 동기화가 원천이라는 뜻이다.
-  const periodQueryable = isCurrentPeriod || isPeriodQueryable(tab, periodKey, now)
   // 이 기간의 아이템 몫. 월간 탭은 주간 수익이 소계로만 들어오므로 그쪽 몫도 더해야 결정석과
   // 정확히 갈린다.
   const periodItemMeso = characterGroups.reduce(
@@ -245,7 +242,6 @@ export function BossProfitScreen(): React.JSX.Element {
     dropsByRowKey,
     setPartySize,
     setBossDrops,
-    isMonthlyBossQueryable: periodQueryable,
     onRetryPeriod: () => void retryPeriod(),
   }
 
@@ -372,8 +368,11 @@ export function BossProfitScreen(): React.JSX.Element {
         )}
 
         {/* 총 수익 요약은 **카드가 아니라 헤드라인**이다. 아래 캐릭터 카드가 전부 같은
-            카드 셸이라 요약도 카드면 "동일한 흰 카드의 반복"으로 묻힌다. */}
-        {!isPeriodLoading && characterGroups.length > 0 && (
+            카드 셸이라 요약도 카드면 "동일한 흰 카드의 반복"으로 묻힌다.
+
+            **아직 집계 안 된 날이 있으면 기록이 없어도 그린다**(사용자 지정). 그때의 0 메소는
+            확정이 아니라 아직 덜 온 것이라, 빈 상태로 갈아치우면 `없다` 로 읽힌다. */}
+        {!isPeriodLoading && (characterGroups.length > 0 || periodPendingAggregation) && (
           <View>
             {/* 라벨행 높이를 `h-6`(24px)으로 명시 고정한다. 라벨(16px)이 우연히 정하는 값이면
                 그보다 큰 요소를 흐름에 넣는 순간 줄이 커진다. 그것이 24px 고가 드롭 배지를
@@ -472,8 +471,9 @@ export function BossProfitScreen(): React.JSX.Element {
             {!isPeriodLoading &&
               status === 'loaded' &&
               characterGroups.length === 0 &&
+              !periodPendingAggregation &&
               (periodState === 'notCollected' ? (
-                <UnavailableNotice variant="notCollected" />
+                <UnavailableNotice />
               ) : periodState === 'failed' ? (
                 <ErrorState
                   title="이 기간을 불러오지 못했습니다"

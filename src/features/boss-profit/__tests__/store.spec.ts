@@ -36,6 +36,10 @@ const { getBossProfitRecords: getBossProfitRecordsMock, findAdjacentPeriodKeyWit
 jest.mock('../../schedule-window/sync', () => ({ syncScheduleWindow: jest.fn() }))
 const { syncScheduleWindow: syncWindowMock } = jest.requireMock('../../schedule-window/sync') as Record<string, jest.Mock>
 
+// 창이 못 채운 날짜들. `아직 집계 전인 날이 있나` 가 여기서 나온다.
+jest.mock('../../schedule-window/window', () => ({ getLastWindowFailures: jest.fn(() => []) }))
+const { getLastWindowFailures: windowFailuresMock } = jest.requireMock('../../schedule-window/window') as Record<string, jest.Mock>
+
 jest.mock('../../../storage/boss-party-settings', () => ({
   getBossPartySize: jest.fn(),
 }))
@@ -171,6 +175,7 @@ beforeEach(() => {
   })
   getBossProfitRecordsMock.mockResolvedValue([])
   // 기본값은 **바로 옆 칸에 기록이 있다**. 건너뛰기를 안 보는 테스트들이 예전처럼 한 칸씩 움직인다.
+  windowFailuresMock.mockReturnValue([])
   findAdjacentMock.mockImplementation(
     async (_ocids: string[], tab: 'weekly' | 'monthly', key: string, direction: 'prev' | 'next') =>
       getAdjacentPeriodKey(tab, key, direction),
@@ -3324,5 +3329,39 @@ describe('추적에서 빠진 캐릭터의 기록', () => {
     await useBossProfitStore.getState().goToPreviousPeriod()
 
     expect(replaceBossDropRecordsMock).not.toHaveBeenCalled()
+  })
+})
+
+// 목요일 새벽에는 지난주 목~화가 관측되고 수요일만 `OPENAPI00009` 다. 그러면 그 주가 화요일
+// 스냅샷으로 굳는데, `periodState` 는 관측이 있으므로 `confirmedEmpty` 에서 끝나 그 사실이
+// 묻힌다. 화면이 `기록이 없어도 요약을 그린다` 를 판단할 근거를 따로 든다(사용자 지정).
+describe('periodPendingAggregation', () => {
+  it('그 기간에 집계 전인 날이 있으면 참이다', async () => {
+    jest.useFakeTimers({ doNotFake: NOT_FAKED })
+    jest.setSystemTime(new Date('2026-07-23T02:00:00+09:00')) // 목요일 새벽, 지난 주 2026-07-16
+    try {
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+      // 2026-07-22(수)가 오늘−1 이라 집계 전이다.
+      windowFailuresMock.mockReturnValue([
+        { ocid: 'ocid-1', dateKey: '2026-07-22', outcome: 'notCollected' },
+      ])
+      findAdjacentMock.mockResolvedValue('2026-07-16')
+
+      await useBossProfitStore.getState().goToPreviousPeriod()
+
+      expect(useBossProfitStore.getState().periodKey).toBe('2026-07-16')
+      expect(useBossProfitStore.getState().periodPendingAggregation).toBe(true)
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  // 현재 기간은 실시간 동기화가 원천이라 집계를 기다리는 자리가 아니다.
+  it('현재 기간에서는 거짓이다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    expect(useBossProfitStore.getState().periodPendingAggregation).toBe(false)
   })
 })

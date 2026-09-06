@@ -15,7 +15,6 @@ import { sumDropPayout } from '../../lib/drop/drop-price'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss/boss-matching'
 
 import { AnimatedNumber, Badge, RefreshCwIcon, Text } from '../../components/atoms'
-import { UnavailableNotice } from '../../components/molecules/EmptyState/UnavailableNotice'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { BossProfitBossRow } from './BossProfitBossRow'
 import { ItemRevenueTrigger } from './ItemRevenueTrigger'
@@ -249,7 +248,6 @@ export function MonthlyAccordionBody(props: {
   bossRows: BossProfitRow[]
   weeklySubtotals: BossProfitWeeklySubtotal[]
 }): React.JSX.Element {
-  const { isMonthlyBossQueryable } = useBossProfitContext()
 
   return (
     <View testID="accordion-body" className={ACCORDION_BODY_CLASS}>
@@ -262,7 +260,6 @@ export function MonthlyAccordionBody(props: {
         </>
       )}
 
-      {props.weeklySubtotals.length === 0 && !isMonthlyBossQueryable && <UnavailableNotice compact />}
     </View>
   )
 }

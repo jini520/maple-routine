@@ -1,56 +1,30 @@
-import { ClockIcon, InfoIcon, Text } from '../../atoms'
+import { ClockIcon, Text } from '../../atoms'
 
 import { View } from 'react-native'
 
-/** 기간 조회 하한은 실제로는 13일이지만 넥슨 한도 자체는 14일이라 **문구는 14일**이다. */
-const COPY = {
-  outOfRange: {
-    icon: InfoIcon,
-    title: '이 기간은 조회할 수 없습니다',
-    description: '조회 가능한 기간(최근 14일)을 지나 확인할 수 없습니다. 처치 기록이 없다는 뜻은 아닙니다',
-    box: 'border border-border bg-info-tint',
-    iconColor: 'text-info-ink',
-  },
-  notCollected: {
-    icon: ClockIcon,
-    title: '아직 집계되지 않았습니다',
-    description: '이 기간 기록이 준비되면 자동으로 채워집니다',
-    box: 'border border-border bg-surface-2',
-    iconColor: 'text-text-muted',
-  },
-} as const
-
-export type UnavailableNoticeVariant = keyof typeof COPY
-
-interface UnavailableNoticeProps {
-  /** 기본값은 `outOfRange`. 기존 호출부(롤링 윈도우 밖)의 의미를 그대로 유지한다. */
-  variant?: UnavailableNoticeVariant
-  /** 캐릭터 카드 안처럼 이미 카드에 중첩될 때. 한 단계 축소하고 설명을 생략한다. */
-  compact?: boolean
-}
-
-export function UnavailableNotice(props: UnavailableNoticeProps): React.JSX.Element {
-  const copy = COPY[props.variant ?? 'outOfRange']
-  const Icon = copy.icon
-
-  if (props.compact === true) {
-    return (
-      <View testID="unavailable-notice" className="mx-4 my-3 rounded-[10px] bg-surface-2 px-3 py-2.5">
-        <View className="flex-row items-center gap-2">
-          <Icon className="h-4 w-4 shrink-0 text-text-muted" strokeWidth={1.75} aria-hidden />
-          <Text className="text-xs text-text-muted">{copy.title}</Text>
-        </View>
-      </View>
-    )
-  }
-
+/**
+ * **아직 집계 전**(`OPENAPI00009`)을 말하는 고지.
+ *
+ * 빈 상태와 디자인을 안 나눈다. 확인해서 없는 것과 아직 확인 못 한 것은 다른 사실이다.
+ * 중립 톤 + `Clock` 이고 **시각을 암시하는 표현을 안 쓴다** - 집계 시각은 넥슨이 정하고 우리는
+ * 브래킷으로만 안다.
+ *
+ * 액션이 없다. 고칠 수 있는 실패가 아니라 기다리면 풀리는 것이다.
+ *
+ * 전에는 `조회할 수 없습니다`(롤링 윈도우 밖) 문구를 함께 들었다. 기간 이동이 기록이 있는
+ * 기간으로만 착지하게 되면서 그 자리가 사라져 걷었다.
+ */
+export function UnavailableNotice(): React.JSX.Element {
   return (
-    <View testID="unavailable-notice" className={`flex-row items-start gap-3 rounded-[14px] p-4 ${copy.box}`}>
-      <Icon className={`h-5 w-5 shrink-0 ${copy.iconColor}`} strokeWidth={1.75} aria-hidden />
+    <View
+      testID="unavailable-notice"
+      className="flex-row items-start gap-3 rounded-[14px] border border-border bg-surface-2 p-4"
+    >
+      <ClockIcon className="h-5 w-5 shrink-0 text-text-muted" strokeWidth={1.75} aria-hidden />
       <View className="gap-0.5">
-        <Text className="text-sm font-semibold text-text">{copy.title}</Text>
+        <Text className="text-sm font-semibold text-text">아직 집계되지 않았습니다</Text>
         <Text testID="unavailable-notice-description" className="text-xs text-text-muted">
-          {copy.description}
+          이 기간 기록이 준비되면 자동으로 채워집니다
         </Text>
       </View>
     </View>

@@ -96,6 +96,7 @@ function mockStore(overrides: Partial<BossProfitStore> = {}): void {
     weeklySubtotals: [],
     isPeriodLoading: false,
     periodState: 'confirmedEmpty',
+    periodPendingAggregation: false,
     previousPeriodTotalMeso: 0,
     canGoPreviousPeriod: true,
     error: null,
@@ -421,6 +422,27 @@ describe('기간 상태별 표현', () => {
 
     expect(queryByText('아직 집계되지 않았습니다')).toBeNull()
     expect(queryByText('아직 처치한 보스가 없습니다')).toBeNull()
+  })
+})
+
+// 목요일 새벽에는 지난주 수요일만 집계 전이라, 그 주가 화요일 스냅샷으로 굳는다. 수요일에만
+// 잡았으면 0 메소가 되는데 그것은 확정이 아니다. 빈 상태로 갈아치우면 `없다` 로 읽힌다
+// (사용자 지정). 안내 문구는 따로 디자인한다.
+describe('아직 집계 안 된 날이 있을 때', () => {
+  it('기록이 없어도 요약을 그린다. 빈 상태로 안 갈아친다', async () => {
+    mockStore({ status: 'loaded', periodPendingAggregation: true })
+    const { getByText, queryByText } = await renderScreen()
+
+    expect(getByText(/총 수익$/)).toBeTruthy()
+    expect(queryByText('아직 처치한 보스가 없습니다')).toBeNull()
+  })
+
+  // 집계를 기다리는 것이 아니면 예전대로다.
+  it('아니면 빈 상태를 그린다', async () => {
+    mockStore({ status: 'loaded', periodPendingAggregation: false })
+    const { getByText } = await renderScreen()
+
+    expect(getByText('아직 처치한 보스가 없습니다')).toBeTruthy()
   })
 })
 

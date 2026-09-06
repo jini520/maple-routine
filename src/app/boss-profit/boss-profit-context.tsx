@@ -34,8 +34,6 @@ export interface BossProfitContextValue {
   dropsByRowKey: Record<string, RecordedDrop[]>
   setPartySize: BossProfitStore['setPartySize']
   setBossDrops: BossProfitStore['setBossDrops']
-  /** 월간 탭에서 이 기간을 실제로 조회할 수 있는지. */
-  isMonthlyBossQueryable: boolean
   /** 주차 행의 조회·다시 시도. 이 기간을 다시 로드한다(store.retryPeriod). */
   onRetryPeriod: () => void
 }

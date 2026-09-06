@@ -150,6 +150,16 @@ export interface BossProfitState {
   // 문구로 말하게 된다.
   periodState: PeriodDataState
   /**
+   * 이 기간에 **아직 집계 안 된 날**이 있나(`OPENAPI00009`).
+   *
+   * `periodState` 와 갈라 든다. 그 값은 우선순위가 있어 관측이 하나라도 있으면 `confirmedEmpty`
+   * 에서 끝나고 이 사실이 묻힌다. 목요일 새벽이 정확히 그 자리다 - 지난주 목~화는 관측되는데
+   * 수요일만 집계 전이라, 그 주가 화요일 스냅샷으로 굳는다.
+   *
+   * 화면이 이것으로 **기록이 없어도 요약을 그린다**. 0 메소가 확정이 아니라 아직 덜 왔다는 뜻이다.
+   */
+  periodPendingAggregation: boolean
+  /**
    * 직전 기간의 총 수익. 증감 칩의 비교 기준.
    *
    * 기록 합만 담는다. 조회한 적 없는 기간도 0 이라 이 값은 기간 상태 기계(`periodState`)와
@@ -629,6 +639,8 @@ async function loadPeriod(
       dropsByRowKey,
       weeklySubtotals,
       isPeriodLoading: false,
+      // 현재 기간은 실시간 동기화가 원천이라 집계를 기다리는 자리가 아니다.
+      periodPendingAggregation: false,
       // 현재 기간은 실시간 동기화가 원천이라 recorded/confirmedEmpty뿐이다.
       periodState: resolvePeriodDataState({
         isCurrentPeriod: true,
@@ -720,11 +732,18 @@ async function loadPeriod(
     ),
   )
 
+  // 우선순위가 있는 `periodState` 와 달리 **묻히지 않게** 따로 든다. 관측이 하나라도 있으면
+  // 그 값은 `confirmedEmpty` 에서 끝나는데, 그때도 수요일이 안 왔을 수 있다.
+  const periodPendingAggregation = ocids.some(
+    (ocid) => outcomes.get(periodStateKey(ocid, tab, periodKey)) === 'notCollected',
+  )
+
   if (generation !== requestGeneration) return
   // status 를 loaded 로 확정한다. 위 현재 기간 분기와 같은 이유다(중단된 refresh 의 loading 이
   // 세대 가드로 갇히는 것을 막는다).
   set({
     status: 'loaded',
+    periodPendingAggregation,
     rows,
     loadedTab: tab,
     loadedPeriodKey: periodKey,
@@ -750,6 +769,7 @@ const initialState: BossProfitState = {
   weeklySubtotals: [],
   isPeriodLoading: false,
   periodState: 'confirmedEmpty',
+  periodPendingAggregation: false,
   canGoPreviousPeriod: false,
   error: null,
   staleCharacterNames: [],
@@ -839,6 +859,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         weeklySubtotals: [],
         isPeriodLoading: false,
         periodState: 'confirmedEmpty',
+        periodPendingAggregation: false,
         canGoPreviousPeriod: false,
         error: null,
         staleCharacterNames: [],
@@ -1092,6 +1113,8 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         weeklySubtotals: cachedWeeklySubtotals,
         isPeriodLoading: false,
         periodState: cachedSortedRows.length > 0 ? 'recorded' : 'confirmedEmpty',
+        // 현재 기간은 실시간 동기화가 원천이라 집계를 기다리는 자리가 아니다.
+        periodPendingAggregation: false,
         canGoPreviousPeriod,
         previousPeriodTotalMeso,
         error: null,
