@@ -398,3 +398,74 @@ describe('getRecordedCharacterOcids', () => {
     await expect(getRecordedCharacterOcids()).resolves.toEqual([])
   })
 })
+
+// 스케줄러 API 가 최근 14일만 주므로 오래 쉬었다 돌아오면 그 사이가 전부 조회 불가다. 화살표가
+// 한 칸씩 걸으면 2월 기록에 닿는 데 서른 번이 든다. 기록이 있는 가장 가까운 기간을 SQL 이 낸다.
+describe('findAdjacentPeriodKeyWithRecords', () => {
+  it('ocids 가 비면 DB 를 안 부르고 null 이다', async () => {
+    const { findAdjacentPeriodKeyWithRecords } =
+      require('../boss-profit') as typeof import('../boss-profit')
+
+    expect(await findAdjacentPeriodKeyWithRecords([], 'weekly', '2026-09-03', 'prev')).toBeNull()
+    expect(queryMock).not.toHaveBeenCalled()
+  })
+
+  // 키를 열거해 훑으면 목록이 몇 백 개가 된다. 부등호를 SQL 에 맡긴다.
+  it('주간은 그보다 앞선 키 중 가장 큰 것을 고른다', async () => {
+    queryMock.mockResolvedValue({ values: [{ period_key: '2026-02-12' }] })
+    const { findAdjacentPeriodKeyWithRecords } =
+      require('../boss-profit') as typeof import('../boss-profit')
+
+    const found = await findAdjacentPeriodKeyWithRecords(
+      ['o1'],
+      'weekly',
+      '2026-09-03',
+      'prev',
+    )
+
+    expect(found).toBe('2026-02-12')
+    const [sql, parameters] = queryMock.mock.calls[0] as [string, unknown[]]
+    expect(sql).toContain('MAX(period_key)')
+    expect(sql).toContain("cycle = 'weekly'")
+    expect(sql).toContain('period_key < ?')
+    expect(parameters).toEqual(['o1', '2026-09-03'])
+  })
+
+  it('다음 방향은 가장 작은 것을 고른다', async () => {
+    queryMock.mockResolvedValue({ values: [{ period_key: '2026-05-14' }] })
+    const { findAdjacentPeriodKeyWithRecords } =
+      require('../boss-profit') as typeof import('../boss-profit')
+
+    expect(await findAdjacentPeriodKeyWithRecords(['o1'], 'weekly', '2026-02-12', 'next')).toBe(
+      '2026-05-14',
+    )
+    const [sql] = queryMock.mock.calls[0] as [string]
+    expect(sql).toContain('MIN(period_key)')
+    expect(sql).toContain('period_key > ?')
+  })
+
+  // 월간 기록은 `YYYY-MM`, 주간 기록은 `YYYY-MM-DD` 라 앞 7자가 그 달이다. 둘 중 큰 쪽이 답이다.
+  it('월간은 두 축을 함께 보고 달 키로 돌려준다', async () => {
+    queryMock.mockResolvedValue({ values: [{ period_key: '2026-02' }] })
+    const { findAdjacentPeriodKeyWithRecords } =
+      require('../boss-profit') as typeof import('../boss-profit')
+
+    expect(await findAdjacentPeriodKeyWithRecords(['o1'], 'monthly', '2026-09', 'prev')).toBe(
+      '2026-02',
+    )
+    const [sql] = queryMock.mock.calls[0] as [string]
+    expect(sql).toContain("cycle = 'monthly'")
+    expect(sql).toContain('substr(period_key, 1, 7)')
+  })
+
+  // 갈 곳이 없으면 화살표가 죽어야 한다. SQL 의 MAX 는 행이 없으면 NULL 을 준다.
+  it('기록이 없으면 null 이다', async () => {
+    queryMock.mockResolvedValue({ values: [{ period_key: null }] })
+    const { findAdjacentPeriodKeyWithRecords } =
+      require('../boss-profit') as typeof import('../boss-profit')
+
+    expect(
+      await findAdjacentPeriodKeyWithRecords(['o1'], 'weekly', '2026-09-03', 'prev'),
+    ).toBeNull()
+  })
+})

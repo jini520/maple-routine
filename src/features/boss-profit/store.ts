@@ -64,7 +64,12 @@ import { getLastWindowFailures } from '../schedule-window/window'
 import { loadDropsByRowKey } from './drops-loader'
 import { sweepOrphanDrops } from './orphan-drops'
 import { useToastStore } from '../toast/store'
-import { canReachPreviousPeriod, loadPreviousPeriodTotal } from './period-navigation'
+import {
+  canReachPreviousPeriod,
+  loadPreviousPeriodTotal,
+  resolveNextPeriodKey,
+  resolvePreviousPeriodKey,
+} from './period-navigation'
 
 
 /**
@@ -607,7 +612,7 @@ async function loadPeriod(
     // 서로 독립인 SQLite 조회라 병렬로 던진다. 직렬로 두면 조회 하나가 지연될 때마다
     // withSqliteFallback 의 5초 타임아웃이 줄줄이 더해진다.
     const [canGoPreviousPeriod, dropsByRowKey, previousPeriodTotalMeso] = await Promise.all([
-      canReachPreviousPeriod(tab, periodKey, displayOcids, now),
+      canReachPreviousPeriod(tab, periodKey, displayOcids),
       loadDropsByRowKey(displayOcids, withCurrentPeriodRows(rows), now),
       loadPreviousPeriodTotal(displayOcids, tab, periodKey),
     ])
@@ -682,7 +687,7 @@ async function loadPeriod(
   // `loadDropsByRowKey` 보다 앞이어야 하지만, 앞줄에 세워 직렬로 두면 기간을 옮길 때마다
   // 왕복이 하나 더 얹힌다. 그래서 그 갈래 안에서만 이어 붙인다.
   const [canGoPreviousPeriod, dropsByRowKey, previousPeriodTotalMeso] = await Promise.all([
-    canReachPreviousPeriod(tab, periodKey, displayOcids, now),
+    canReachPreviousPeriod(tab, periodKey, displayOcids),
     // 정리에는 **동기화 대상만** 넘긴다. 해제한 캐릭터는 동기화를 안 해 영원히 `믿을 수 있는
     // 캐릭터`가 못 되고, 넣는 순간 술어가 그들의 드롭을 고아로 읽는다.
     sweepOrphanDrops({
@@ -863,7 +868,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // refresh 는 항상 현재 기간을 보여주므로 한 칸 더 과거로 갈 수 있는지도 함께 계산해 이전
     // 버튼 게이트를 세운다. refresh 는 이전 기간의 기록을 안 건드리므로 아래 캐시·라이브 두
     // set() 이 같은 값을 쓴다.
-    const canGoPreviousPeriod = await canReachPreviousPeriod(tab, currentPeriodKey, displayOcids, now)
+    const canGoPreviousPeriod = await canReachPreviousPeriod(tab, currentPeriodKey, displayOcids)
 
     // 수동 모드에서는 게임 등록·처치가 아니라 사용자 멤버십(manualTrackedContent)이 표시 목록을
     // 정하므로 캐시·라이브 양쪽에서 참조할 수동 목록을 미리 조회해 둔다. 자동 모드는 이 조회를
@@ -1282,22 +1287,30 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
 
   async goToPreviousPeriod() {
     const { tab, periodKey, canGoPreviousPeriod } = get()
-    // 화면 이전 버튼과 같은 플래그로 게이트한다. 착지할 이전 기간이 조회 불가능하고 캐시 기록도
-    // 없으면 이동하지 않는다. 매 기간 로드 시 canReachPreviousPeriod 로 계산해 저장한 값이다.
+    // 화면 이전 버튼과 같은 플래그로 게이트한다. 더 과거에 기록이 없으면 이동하지 않는다.
+    // 매 기간 로드 시 canReachPreviousPeriod 로 계산해 저장한 값이다.
     if (!canGoPreviousPeriod) {
       return
     }
-    const myGeneration = ++requestGeneration
-    const now = new Date()
-    const newPeriodKey = getAdjacentPeriodKey(tab, periodKey, 'prev')
     const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
+    // **한 칸이 아니라 기록이 있는 가장 가까운 기간이다.** 오래 쉬었다 돌아오면 그 사이가 전부
+    // 조회 불가라, 한 칸씩 걸으면 예전 기록에 닿는 데 수십 번이 든다.
+    const newPeriodKey = await resolvePreviousPeriodKey(tab, periodKey, ocids)
+    if (newPeriodKey === null) {
+      return
+    }
+    // 찾는 사이에 다른 이동이 들어왔으면 이 답은 다른 기간의 것이다.
+    if (get().tab !== tab || get().periodKey !== periodKey) {
+      return
+    }
+    const myGeneration = ++requestGeneration
     // **한 칸 더 갈 수 있는지는 이 로드가 끝나야 안다. 그때까지 닫아 둔다.**
     //
     // 이 플래그는 직전 로드가 남긴 값이라 지금 기간에 대해서는 아직 아무 말도 안 한다. 열어
-    // 두면 연타가 그 낡은 참을 계속 읽어 조회할 수 없는 기간까지 넘어간다(사용자 보고).
+    // 두면 연타가 그 낡은 참을 계속 읽어 갈 곳이 없는 기간까지 넘어간다(사용자 보고).
     // 두 set 은 한 갈래에 있어야 한다. 사이에 await 이 끼면 그 틈으로 다음 탭이 들어온다.
     set({ periodKey: newPeriodKey, canGoPreviousPeriod: false })
-    await loadPeriod(set, tab, newPeriodKey, ocids, now, myGeneration)
+    await loadPeriod(set, tab, newPeriodKey, ocids, new Date(), myGeneration)
   },
 
   async goToNextPeriod() {
@@ -1305,12 +1318,23 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     const now = new Date()
     // 달 경계를 걸친 주에는 한 칸 앞을 미리 본다. 그 이틀 동안 이 달의 월간 보스가 화면
     // 어디에도 없기 때문이다.
-    if (isLatestPeriod(tab, periodKey, now) && !(tab === 'weekly' && canPreviewNextWeek(periodKey, now))) {
+    const previewing = tab === 'weekly' && canPreviewNextWeek(periodKey, now)
+    if (isLatestPeriod(tab, periodKey, now) && !previewing) {
+      return
+    }
+    const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
+    // 미리보기는 **다음 한 칸 자체가 목적**이라 건너뛰지 않는다. 그 주에는 기록이 없는 것이
+    // 정상이다.
+    const newPeriodKey = previewing
+      ? getAdjacentPeriodKey(tab, periodKey, 'next')
+      : await resolveNextPeriodKey(tab, periodKey, ocids, now)
+    if (newPeriodKey === null) {
+      return
+    }
+    if (get().tab !== tab || get().periodKey !== periodKey) {
       return
     }
     const myGeneration = ++requestGeneration
-    const newPeriodKey = getAdjacentPeriodKey(tab, periodKey, 'next')
-    const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
     set({ periodKey: newPeriodKey })
     await loadPeriod(set, tab, newPeriodKey, ocids, now, myGeneration)
   },

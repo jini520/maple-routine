@@ -6,18 +6,11 @@
  */
 
 import { getComparisonPeriodKeys } from '../../lib/boss/boss-profit-delta'
-import { getAdjacentPeriodKey, isEarliestNavigablePeriod, isPeriodQueryable } from '../../lib/boss/boss-profit-period'
-import { getBossProfitRecords, hasBossProfitRecordsAtOrBefore } from '../../storage/boss-profit'
+import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
+import { findAdjacentPeriodKeyWithRecords, getBossProfitRecords } from '../../storage/boss-profit'
 import type { BossCycle } from '../../types'
 import { withSqliteFallback } from './sqlite-guards'
 
-// 현재 기간에서 한 칸 더 과거로 이동해도 되는지 판단한다. 이전 버튼 게이트와 조회 불가 경계가
-// 서로 다른 하한을 쓰지 않게 한다. 착지할 이전 기간이 실제로 데이터를 보여줄 수 있을 때만
-// 이동을 허용한다.
-//  1) MIN_SCHEDULER_DATE 이전(스케줄러 API 존재 이전)은 어떤 경우에도 데이터가 없다 → 불가.
-//  2) 지금 API 로 조회 가능하면(롤링 윈도우 안) 도달 시 백필로 채울 수 있다 → 가능.
-//  3) 롤링 윈도우 밖이라 지금은 조회 불가지만 저장해 둔 기록이 있으면 보여줄 수 있다 → 가능.
-// 이 캐시 존중이 롤링 하한을 그대로 이전 게이트로 쓰지 않는 이유다.
 /**
  * 직전 기간 총 수익. SQLite 한 번이면 끝난다.
  *
@@ -44,21 +37,58 @@ export async function loadPreviousPeriodTotal(
   return records.reduce((sum, record) => sum + record.payoutMeso, 0)
 }
 
-export async function canReachPreviousPeriod(
+/**
+ * 이전 기간. **기록이 있는 가장 가까운 기간**이고 없으면 `null`(안 움직인다).
+ *
+ * 한 칸씩 걸으면 오래 쉬었다 돌아온 사용자가 예전 기록에 닿는 데 수십 번이 든다. 그 사이는
+ * 전부 조회 불가라 같은 화면이다.
+ *
+ * **조회 가능성을 안 본다.** 창 안의 0건도 건너뛴다(사용자 선택). 찾는 것은 기록이지 0 이 아니다.
+ * 대가로 조회해서 0건을 확인한 주를 화살표로는 못 본다. 월간 탭의 주차 소계 행에는 남는다.
+ *
+ * 스케줄러 하한(`MIN_SCHEDULER_DATE`)도 안 본다. **기록이 있다는 것이 곧 보여줄 수 있다는 뜻**
+ * 이고, 그 아래에는 애초에 기록이 안 생긴다.
+ */
+export async function resolvePreviousPeriodKey(
+  tab: BossCycle,
+  periodKey: string,
+  ocids: string[],
+): Promise<string | null> {
+  return withSqliteFallback(findAdjacentPeriodKeyWithRecords(ocids, tab, periodKey, 'prev'), null)
+}
+
+/**
+ * 다음 기간. **기록이 있는 가장 가까운 기간**이고, 앞에 없으면 **지금 기간**이다.
+ *
+ * 지금은 기록이 없어도 갈 수 있어야 하는 자리다. 이번 주에 아직 안 잡았다고 돌아올 길이
+ * 막히면 안 된다. 이미 지금 기간이면 `null` 이다(그보다 뒤는 미래다).
+ */
+export async function resolveNextPeriodKey(
   tab: BossCycle,
   periodKey: string,
   ocids: string[],
   now: Date,
+): Promise<string | null> {
+  const current = getCurrentBossProfitPeriod(tab, now).periodKey
+  if (periodKey >= current) {
+    return null
+  }
+  const found = await withSqliteFallback(
+    findAdjacentPeriodKeyWithRecords(ocids, tab, periodKey, 'next'),
+    null,
+  )
+  // 찾은 것이 지금보다 뒤일 수는 없지만, 값이 그렇게 오더라도 지금에서 멈춘다.
+  return found === null || found > current ? current : found
+}
+
+/**
+ * 이전 화살표가 사는가. `resolvePreviousPeriodKey` 와 **같은 판정**이라 눌렀는데 안 움직이는
+ * 일이 없다.
+ */
+export async function canReachPreviousPeriod(
+  tab: BossCycle,
+  periodKey: string,
+  ocids: string[],
 ): Promise<boolean> {
-  if (isEarliestNavigablePeriod(tab, periodKey)) {
-    return false
-  }
-  const prevPeriodKey = getAdjacentPeriodKey(tab, periodKey, 'prev')
-  if (isPeriodQueryable(tab, prevPeriodKey, now)) {
-    return true
-  }
-  // 그 기간 또는 더 과거에 기록이 있으면 통과시킨다. 바로 이전 한 칸의 기록만 보면 접속하지
-  // 않은 주가 벽이 되어 그 뒤의 기록 전체에 도달할 수 없다. 빈 기간은 한 칸씩 지나가야 하지만
-  // 벽은 사라진다.
-  return hasBossProfitRecordsAtOrBefore(ocids, tab, prevPeriodKey)
+  return (await resolvePreviousPeriodKey(tab, periodKey, ocids)) !== null
 }
