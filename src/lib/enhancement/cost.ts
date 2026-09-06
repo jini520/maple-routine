@@ -49,6 +49,9 @@ export function potentialResetCost(
 /**
  * 스타포스 1회 비용. 성수가 표를 벗어나면 `null`.
  *
+ * 파괴한 줄도 시도 비용만 센다. 복구비용은 안 센다. 응답이 장비를 이름으로만 가리켜서
+ * 파괴 뒤 12성 재개가 복구인지 이름만 같은 다른 개체인지 가릴 수가 없다.
+ *
  * @param fromStar 시도 **전** 성수(`before_starforce_count`)
  * @param discountRate 백분율. 반올림 **뒤**에 깎는 것이라 순서를 바꾸면 값이 어긋난다.
  */
