@@ -6,6 +6,9 @@
  *
  * 오버레이 탭으로 안 닫는 것은 `ProgressModal` 과 같은 이유다. 닫아 봐야 조회는 계속 도는데
  * 화면은 다 왔다 로 보인다.
+ *
+ * **지금 무엇을 받는지는 안 적는다**(사용자 지정). 수집기가 늘어도 문구가 안 바뀌고, 사용자가
+ * 기다리는 것은 무엇을 받는지가 아니라 얼마나 남았는지다.
  */
 import { View } from 'react-native'
 
@@ -15,8 +18,6 @@ import { Modal } from '../Modal/Modal'
 
 export interface LoadingModalProps {
   title: string
-  /** 왜 오래 걸리는지. 없으면 안 그린다 */
-  detail?: string
   /** 끝난 작업 수 */
   done?: number
   /**
@@ -38,12 +39,7 @@ export function LoadingModal(props: LoadingModalProps): React.JSX.Element {
       <Modal.Card maxWidth="max-w-xs">
         <View className="items-center gap-3.5">
           <MapleSweepSpinner size={36} className="text-primary" />
-          <View className="items-center gap-1">
-            <Text className="text-center text-15 font-semibold text-text">{props.title}</Text>
-            {props.detail !== undefined && (
-              <Text className="text-center text-xs text-text-muted">{props.detail}</Text>
-            )}
-          </View>
+          <Text className="text-center text-15 font-semibold text-text">{props.title}</Text>
           {total > 0 && (
             <View testID="loading-modal-progress" className="w-full gap-1.5">
               <ProgressBar percent={percent} aria={{ now: done, max: total }} />

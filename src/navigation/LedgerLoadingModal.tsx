@@ -39,11 +39,6 @@ export function LedgerLoadingModal(): React.JSX.Element | null {
 
   if (status !== 'filling' || !slow) return null
   return (
-    <LoadingModal
-      title="보스 수익을 불러오고 있어요"
-      detail={total > 0 ? '지난 13일치를 받는 중이에요' : undefined}
-      done={done}
-      total={total}
-    />
+    <LoadingModal title="기록을 불러오고 있어요" done={done} total={total} />
   )
 }

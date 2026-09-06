@@ -50,7 +50,7 @@ it('오래 걸리는 회차에는 뜬다', async () => {
   await waitFor(() => {
     expect(view.getByTestId('loading-modal')).toBeTruthy()
   })
-  expect(view.getByText('보스 수익을 불러오고 있어요')).toBeTruthy()
+  expect(view.getByText('기록을 불러오고 있어요')).toBeTruthy()
 })
 
 // **십수 초를 견디게 하는 것은 남은 양이 보이는 것**이다.
@@ -73,11 +73,11 @@ describe('진행', () => {
     expect(view.getByText('32 / 84')).toBeTruthy()
   })
 
-  // 분모가 아직 안 정해진 순간(원장 읽는 몇십 밀리초)에는 바도 이유도 안 그린다.
+  // 분모가 아직 안 정해진 순간(원장 읽는 몇십 밀리초)에는 바를 안 그린다.
   it('분모가 없으면 바를 안 그린다', async () => {
     const view = await 오래끄는화면()
 
     expect(view.queryByTestId('loading-modal-progress')).toBeNull()
-    expect(view.getByText('보스 수익을 불러오고 있어요')).toBeTruthy()
+    expect(view.getByText('기록을 불러오고 있어요')).toBeTruthy()
   })
 })
