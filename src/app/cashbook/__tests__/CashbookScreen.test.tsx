@@ -1479,3 +1479,54 @@ describe('창이 뒤늦게 채운 것을 받는다', () => {
   })
 })
 
+
+// 강화 줄은 앞의 둘과 셋이 갈린다. **나가는 돈**이고, 갈 곳이 없고, 초상이 안 붙는다.
+describe('강화 줄', () => {
+  const 강화줄 = {
+    kind: 'enhancement' as const,
+    characterName: '낟낟',
+    payoutMeso: 1_200_000_000,
+    count: 47,
+    unpricedCount: 0,
+  }
+
+  beforeEach(() => {
+    records.loadCalendarAmounts.mockResolvedValue({
+      '2026-08-23': { incomeMeso: 0, expenseMeso: 1_200_000_000 },
+    })
+    records.loadDayRecords.mockResolvedValue([강화줄])
+  })
+
+  it('나가는 돈으로 적힌다', async () => {
+    const view = await 그리기()
+
+    expect(view.getByTestId('cashbook-row-enhancement:낟낟')).toHaveTextContent(
+      '낟낟 · 강화47회−12억',
+    )
+  })
+
+  it('값모름이 있으면 건수 옆에 선다', async () => {
+    records.loadDayRecords.mockResolvedValue([{ ...강화줄, unpricedCount: 3 }])
+    const view = await 그리기()
+
+    expect(view.getByTestId('cashbook-row-enhancement:낟낟')).toHaveTextContent(
+      '낟낟 · 강화47회 · 값모름 3−12억',
+    )
+  })
+
+  // 누를 데가 없는데 화살촉이 있으면 갈 곳이 있는 것으로 읽힌다.
+  it('화살촉이 안 선다', async () => {
+    const view = await 그리기()
+
+    expect(view.getByTestId('cashbook-row-chevron-enhancement:낟낟')).toBeEmptyElement()
+  })
+
+  it('눌러도 시트가 안 열리고 탭도 안 옮긴다', async () => {
+    const view = await 그리기()
+
+    fireEvent.press(view.getByTestId('cashbook-row-enhancement:낟낟'))
+
+    expect(view.queryByTestId('cashbook-spend-sheet')).toBeNull()
+    expect(mockOpenTab).not.toHaveBeenCalled()
+  })
+})

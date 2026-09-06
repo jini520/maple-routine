@@ -32,7 +32,10 @@ import {
 } from '../../storage/income'
 import { getEventWorldNames } from '../../storage/event-world-names'
 import { loadEnhancementHistory, loadObservedItemLevels } from '../../storage/enhancement-history'
-import { toEnhancementSpending } from '../enhancement-history/spending'
+import {
+  toEnhancementSpending,
+  type EnhancementSpendingRow,
+} from '../enhancement-history/spending'
 import { datesBetween } from '../../lib/calendar'
 import { getLastPointRate, setLastPointRate } from '../../storage/last-point-rate'
 import {
@@ -260,7 +263,7 @@ async function loadBossDaySummaries(
 async function loadEnhancementSpending(
   fromDateKey: string,
   toDateKey: string,
-): Promise<ReturnType<typeof toEnhancementSpending>> {
+): Promise<EnhancementSpendingRow[]> {
   const [entries, levels, eventNames] = await Promise.all([
     withSqliteFallback(loadEnhancementHistory(datesBetween(fromDateKey, toDateKey)), []),
     withSqliteFallback(loadObservedItemLevels(), new Map<string, number>()),
@@ -431,13 +434,33 @@ export interface DropSaleDayRecord extends AutoDayRecordBase {
 }
 
 /**
- * 그날 목록의 자동 줄. 보스 수익 탭이 원천이라 여기서 못 고친다.
+ * 강화 사용 내역 줄. 큐브·스타포스·잠재를 캐릭터 하나로 접는다.
  *
- * 캐릭터당 둘이다. 갈라 두는 것은 출처 테이블이 다르기 때문이고(`boss_profit_records` ·
- * `boss_drop_records`) 합치면 미입력 n 을 걸 자리가 없어진다. 갈라 둔 덕에 누르면 하는 일도
- * 갈린다. 결정석은 펼치고 판매는 저쪽으로 간다.
+ * **자동 줄인데 지출이다.** 앞의 둘과 갈리는 자리가 이것뿐이고, `dayTotalsOf` 와 화면의 아이콘이
+ * 그 하나를 안다.
+ *
+ * `ocid` 가 없다. 계정 단위 API 라 이름만 온다. 그래서 초상이 안 붙고 줄의 신원도 이름이다.
  */
-export type AutoDayRecord = BossCrystalDayRecord | DropSaleDayRecord
+export interface EnhancementDayRecord {
+  kind: 'enhancement'
+  /** 이름뿐이다. 이 줄의 신원이기도 하다 */
+  characterName: string
+  /** 그날 쓴 메소. **값을 못 매긴 건은 안 들어 있다** */
+  payoutMeso: number
+  /** 강화 횟수. 값을 못 매긴 것도 센다 */
+  count: number
+  /** 값을 못 매긴 건수. 장비 레벨을 몰라 금액에서 빠졌다 */
+  unpricedCount: number
+}
+
+/**
+ * 그날 목록의 자동 줄. 원천이 밖에 있어 여기서 못 고친다.
+ *
+ * 갈라 두는 것은 출처가 다르기 때문이고(`boss_profit_records` · `boss_drop_records` ·
+ * `enhancement_history`) 합치면 미입력 n 을 걸 자리가 없어진다. 갈라 둔 덕에 누르면 하는 일도
+ * 갈린다. 결정석은 펼치고 판매는 저쪽으로 가고 강화는 아무 데도 안 간다.
+ */
+export type AutoDayRecord = BossCrystalDayRecord | DropSaleDayRecord | EnhancementDayRecord
 
 /**
  * 그날 목록의 한 줄. 갈리는 기준은 테이블이다. `income_records`·`spend_records` 에서 온 줄이면
@@ -455,7 +478,11 @@ export function isManualRecord(entry: DayRecord): entry is ManualDayRecord {
  * 하루에 그 조합이 하나뿐이라 그것이 곧 신원이다.
  */
 export function rowKeyOf(entry: DayRecord): string {
-  return isManualRecord(entry) ? entry.record.id : `${entry.kind}:${entry.ocid}`
+  if (isManualRecord(entry)) return entry.record.id
+  // 강화 줄은 `ocid` 가 없다. 하루에 캐릭터 하나당 하나뿐이라 이름이 곧 신원이다.
+  return entry.kind === 'enhancement'
+    ? `${entry.kind}:${entry.characterName}`
+    : `${entry.kind}:${entry.ocid}`
 }
 
 /**
@@ -468,10 +495,11 @@ export function rowKeyOf(entry: DayRecord): string {
  * 한쪽만 실패하면 다른 쪽은 보인다.
  */
 export async function loadDayRecords(dateKey: string): Promise<DayRecord[]> {
-  const [incomes, spends, bossSummaries] = await Promise.all([
+  const [incomes, spends, bossSummaries, enhancements] = await Promise.all([
     withSqliteFallback(getIncomeRecordsBetween(dateKey, dateKey), []),
     withSqliteFallback(getSpendRecordsBetween(dateKey, dateKey), []),
     loadBossDaySummaries(dateKey, dateKey),
+    loadEnhancementSpending(dateKey, dateKey),
   ])
 
   /**
@@ -496,7 +524,40 @@ export async function loadDayRecords(dateKey: string): Promise<DayRecord[]> {
 
   // 자동 줄이 위다. 그날의 큰 금액이고 손이 닿지 않는 줄이라, 손으로 적은 것 사이에 섞이면
   // 왜 이건 안 눌리지 가 된다.
-  return [...toAutoRecords(bossSummaries, names), ...manual]
+  return [...toAutoRecords(bossSummaries, names), ...toEnhancementRecords(enhancements), ...manual]
+}
+
+/**
+ * 강화 줄을 **캐릭터 하나에 하나**로 접는다. 이름순.
+ *
+ * 종류를 안 가른다. 사용자가 보는 것은 그날 강화에 얼마 썼나 지 어느 강화였나 가 아니다.
+ * 하루 수백 건이라 안 접으면 목록이 그것만으로 찬다.
+ *
+ * 값을 못 매긴 줄은 **금액에서 빼고 건수만 센다**. 0 으로 세우면 합계가 조용히 거짓이 된다.
+ */
+function toEnhancementRecords(
+  rows: readonly EnhancementSpendingRow[],
+): EnhancementDayRecord[] {
+  const byName = new Map<string, EnhancementDayRecord>()
+  for (const row of rows) {
+    let record = byName.get(row.characterName)
+    if (record === undefined) {
+      record = {
+        kind: 'enhancement',
+        characterName: row.characterName,
+        payoutMeso: 0,
+        count: 0,
+        unpricedCount: 0,
+      }
+      byName.set(row.characterName, record)
+    }
+    record.count += 1
+    if (row.costMeso === null) record.unpricedCount += 1
+    else record.payoutMeso += row.costMeso
+  }
+  return [...byName.values()].sort((left, right) =>
+    left.characterName.localeCompare(right.characterName),
+  )
 }
 
 /**
@@ -564,6 +625,9 @@ function toAutoRecords(
 const AUTO_LABELS: Record<AutoDayRecord['kind'], string> = {
   bossCrystal: '보스 결정석',
   dropSale: '아이템 판매',
+  // 큐브·스타포스·잠재를 안 가른다. 셋을 갈라 적으면 캐릭터 하나가 하루에 세 줄이 되는데,
+  // 사용자가 보는 것은 그날 강화에 얼마 썼나 지 어느 강화였나 가 아니다.
+  enhancement: '강화',
 }
 
 /**
@@ -617,8 +681,8 @@ export function dayTotalsOf(entries: readonly DayRecord[]): CalendarDayAmounts {
   let incomeMeso = 0
   let expenseMeso = 0
   for (const entry of entries) {
-    // 자동 줄은 언제나 수익이다. 갈리는 것은 지출뿐이다.
-    if (entry.kind === 'spend') {
+    // 지출은 둘이다. 손입력과 강화 사용 내역. 나머지 자동 줄은 언제나 수익이다.
+    if (entry.kind === 'spend' || entry.kind === 'enhancement') {
       expenseMeso += recordMesoOf(entry)
       continue
     }
@@ -654,6 +718,13 @@ export function recordCountLabelOf(entry: DayRecord): string | null {
   }
   if (entry.kind === 'dropSale') {
     return entry.unpricedCount > 0 ? `${entry.count}건 · 미입력 ${entry.unpricedCount}` : `${entry.count}건`
+  }
+  if (entry.kind === 'enhancement') {
+    // 값을 못 매긴 건은 금액에 안 들어 있다. 그 사실을 줄이 말해야 합계가 적어 보이는 것이
+    // 고장으로 안 읽힌다.
+    return entry.unpricedCount > 0
+      ? `${entry.count}회 · 값모름 ${entry.unpricedCount}`
+      : `${entry.count}회`
   }
   /**
    * 사냥은 몇 재획을 돌았나 다. 보스 줄의 n마리와 같은 자리·같은 모양이라 화면은 아무것도

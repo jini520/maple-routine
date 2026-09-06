@@ -400,8 +400,8 @@ function DayRecordRow(props: {
 }): React.JSX.Element {
   const { entry, expanded } = props
   const rowKey = rowKeyOf(entry)
-  // 자동 줄은 언제나 수익이다. 결정석도 판매도 들어오는 돈이다.
-  const income = entry.kind !== 'spend'
+  // 나가는 돈은 둘이다. 손으로 적은 지출과 강화 사용 내역. 결정석·판매는 들어오는 돈이다.
+  const income = entry.kind !== 'spend' && entry.kind !== 'enhancement'
   const cash = recordCashOf(entry)
   const countLabel = recordCountLabelOf(entry)
   const Icon = income ? ProfitIcon : ShoppingCartIcon
@@ -416,13 +416,17 @@ function DayRecordRow(props: {
    * 그림이 같으면 그것이 고장으로 읽힌다.
    */
   const Chevron = bosses === null ? ChevronRightIcon : isOpen ? ChevronUpIcon : ChevronDownIcon
+  // 강화 줄은 갈 곳이 없다. 원천이 넥슨 API 라 앱 안에 그 줄을 더 보여 줄 화면이 없다.
+  const inert = entry.kind === 'enhancement'
   const action = isManualRecord(entry)
     ? '고치기'
-    : bosses === null
-      ? '보스 수익에서 보기'
-      : isOpen
-        ? '접기'
-        : '펼치기'
+    : inert
+      ? ''
+      : bosses === null
+        ? '보스 수익에서 보기'
+        : isOpen
+          ? '접기'
+          : '펼치기'
 
   return (
     <View>
@@ -431,7 +435,7 @@ function DayRecordRow(props: {
         testID={`cashbook-row-${rowKey}`}
         // 자동 줄은 고치러 가는 것이 아니라 보러 가는 것이다. 읽어 주는 이름이 그 사실을 말해야
         // 눌렀더니 시트가 안 열린다 가 고장으로 읽히지 않는다.
-        aria-label={`${recordTitleOf(entry)} ${action}`}
+        aria-label={action === '' ? recordTitleOf(entry) : `${recordTitleOf(entry)} ${action}`}
         aria-expanded={bosses === null ? undefined : isOpen}
         onPress={props.onPress}
         // 펼치면 한 카드가 된다. 아래 판과 테두리를 잇고 그 사이의 선을 지운다. 판이 따로 선
@@ -472,9 +476,12 @@ function DayRecordRow(props: {
           {cash === null ? formatMesoCompact(recordMesoOf(entry)) : `${cash.toLocaleString()}원`}
         </Text>
         {/* 화살촉이 상자를 하나 쓰는 이유는 lucide 아이콘이 `testID` 를 SVG 안으로 안 흘려보내
-            화살촉이 사라졌다 를 테스트가 못 잡기 때문이다. 상자는 `shrink-0` 도 함께 든다. */}
-        <View testID={`cashbook-row-chevron-${rowKey}`} className="shrink-0">
-          <Chevron className="h-4 w-4 text-text-disabled" strokeWidth={2} aria-hidden />
+            화살촉이 사라졌다 를 테스트가 못 잡기 때문이다. 상자는 `shrink-0` 도 함께 든다.
+
+            강화 줄에는 안 세운다. 누를 데가 없는데 화살촉이 있으면 갈 곳이 있는 것으로 읽힌다.
+            자리는 그대로 비워 둬야 금액의 오른쪽 끝이 다른 줄과 어긋나지 않는다. */}
+        <View testID={`cashbook-row-chevron-${rowKey}`} className="h-4 w-4 shrink-0">
+          {!inert && <Chevron className="h-4 w-4 text-text-disabled" strokeWidth={2} aria-hidden />}
         </View>
       </Pressable>
       {isOpen && <DefeatedBossTiles rowKey={rowKey} bosses={bosses} />}
@@ -716,6 +723,8 @@ export function CashbookScreen(): React.JSX.Element {
       setExpandedRowKey((current) => (current === key ? null : key))
       return
     }
+    // 강화 줄은 아무 데도 안 간다. 원천이 넥슨 API 라 더 보여 줄 화면이 없다.
+    if (entry.kind === 'enhancement') return
     // 판매 줄은 그대로 간다. `미입력 n` 이 **여기서 못 하는 일**(값 넣기)을 가리킨다.
     openTab('Profit')
   }

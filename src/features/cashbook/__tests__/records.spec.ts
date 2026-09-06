@@ -910,3 +910,93 @@ describe('강화 지출이 칸에 든다', () => {
     ])
   })
 })
+
+// 자동 줄인데 지출이다. 앞의 둘(결정석·판매)과 갈리는 자리가 이것뿐이다.
+describe('강화 줄', () => {
+  const 강화 = (over: Record<string, unknown> = {}) => ({
+    id: 'e1',
+    kind: 'cube' as const,
+    dateKey: '2026-08-23',
+    createdAt: '2026-08-23T10:00:00.000+09:00',
+    characterName: '낟낟',
+    targetItem: '아케인셰이드 클로',
+    itemLevel: 150,
+    payload: {},
+    ...over,
+  })
+
+  async function 줄들(rows: ReturnType<typeof 강화>[]) {
+    enhancement.loadEnhancementHistory.mockResolvedValue(rows)
+    const { loadDayRecords } = require('../records') as typeof import('../records')
+    return await loadDayRecords('2026-08-23')
+  }
+
+  // 하루 수백 건이라 안 접으면 목록이 그것만으로 찬다.
+  it('캐릭터 하나에 한 줄로 접는다', async () => {
+    const rows = await 줄들([강화(), 강화({ id: 'e2' }), 강화({ id: 'e3', characterName: '풉품' })])
+
+    expect(rows.filter((row) => row.kind === 'enhancement')).toHaveLength(2)
+  })
+
+  it('금액과 횟수를 모은다', async () => {
+    const [row] = await 줄들([강화(), 강화({ id: 'e2' })])
+
+    expect(row).toMatchObject({
+      kind: 'enhancement',
+      characterName: '낟낟',
+      payoutMeso: 900_000,
+      count: 2,
+      unpricedCount: 0,
+    })
+  })
+
+  // 값을 못 매긴 건은 금액에 안 들어 있다. 그 사실을 줄이 말해야 한다.
+  it('값을 못 매긴 건은 건수만 센다', async () => {
+    const [row] = await 줄들([강화(), 강화({ id: 'e2', itemLevel: null })])
+
+    expect(row).toMatchObject({ payoutMeso: 450_000, count: 2, unpricedCount: 1 })
+  })
+
+  it('줄의 신원이 이름이다. ocid 가 안 온다', async () => {
+    const { rowKeyOf } = require('../records') as typeof import('../records')
+    const [row] = await 줄들([강화()])
+
+    expect(rowKeyOf(row)).toBe('enhancement:낟낟')
+  })
+
+  it('건수 라벨이 값모름을 말한다', async () => {
+    const { recordCountLabelOf } = require('../records') as typeof import('../records')
+    const [a] = await 줄들([강화(), 강화({ id: 'e2', itemLevel: null })])
+    const [b] = await 줄들([강화()])
+
+    expect(recordCountLabelOf(a)).toBe('2회 · 값모름 1')
+    expect(recordCountLabelOf(b)).toBe('1회')
+  })
+
+  it('제목에 이름과 갈래가 든다', async () => {
+    const { recordTitleOf } = require('../records') as typeof import('../records')
+    const [row] = await 줄들([강화()])
+
+    expect(recordTitleOf(row)).toBe('낟낟 · 강화')
+  })
+
+  // 여기가 핵심이다. 자동 줄이라고 수익으로 세면 그날 합계가 두 배로 어긋난다.
+  it('합계에서 지출로 센다', async () => {
+    const { dayTotalsOf } = require('../records') as typeof import('../records')
+    const rows = await 줄들([강화()])
+
+    expect(dayTotalsOf(rows)).toEqual({ incomeMeso: 0, expenseMeso: 450_000 })
+  })
+
+  // 칸에 적힌 수와 그 칸을 눌러 나온 수가 갈리면 안 된다.
+  it('칸 금액과 상세 합계가 같은 수를 낸다', async () => {
+    const { loadCalendarAmounts, loadDayRecords, dayTotalsOf } =
+      require('../records') as typeof import('../records')
+    enhancement.loadEnhancementHistory.mockResolvedValue([강화(), 강화({ id: 'e2', itemLevel: 200 })])
+
+    const cell = (await loadCalendarAmounts('2026-08-23', '2026-08-23'))['2026-08-23']
+    const detail = dayTotalsOf(await loadDayRecords('2026-08-23'))
+
+    expect(detail.expenseMeso).toBe(cell.expenseMeso)
+  })
+})
