@@ -54,8 +54,17 @@ erDiagram
         INTEGER price_meso
         INTEGER price_share
     }
+    character_profiles {
+        TEXT ocid PK
+        TEXT name
+        TEXT image_url
+        TEXT world
+        INTEGER level
+        TEXT updated_at
+    }
     boss_party_settings ||--o{ boss_profit_records : "파티원 수 기본값 시드"
     boss_profit_records ||--o{ boss_drop_records : "같은 (ocid, boss, difficulty, period_key)"
+    character_profiles ||--o{ boss_profit_records : "같은 ocid. 행에 이름·얼굴을 붙인다"
 ```
 
 > FOREIGN KEY 제약은 실제로 걸려 있지 않다 — 위 관계는 앱 코드가 `(ocid, boss, difficulty)`(파티 설정) / `(ocid, boss, difficulty, period_key)`(드롭 기록)로 논리적으로 조인하는 것뿐이다(`features/boss-profit/store.ts`가 완료 감지 시 `boss_party_settings`를 먼저 조회해 `boss_profit_records`의 기본 파티원 수로 쓴다). 제약이 없으므로 **한쪽만 지우면 고아 행이 남는다** — 캐시 삭제가 네 테이블을 함께 비워야 하는 이유다([[ADR-052]]).
@@ -93,9 +102,31 @@ PK: `(ocid, boss, difficulty, period_key, drop_index)`. [[ADR-038]]에서 도입
 - **날짜 컬럼이 없다 — 짝인 수익 행의 `defeated_on` 을 물려받는다**([[ADR-172]] 결정 6). «먹은 날» 이 맞는 축이고([[ADR-170]] 결정 4 ④), 두 벌로 박으면 갈라질 수 있는 값이 하나 는다. 수익 행이 없는 드롭(결정석 가격을 모르는 보스)은 물려받을 것이 없어 NULL 이다.
 - **`boss_profit_records`와 짝을 이룬다**(같은 `(ocid, boss, difficulty, period_key)`). FK가 없으므로 수익 기록만 지우고 이걸 남기면 고아 행이 되고, 같은 보스를 같은 기간에 다시 처치하면 예전 드롭이 되살아나 붙는다([[ADR-052]]).
 
+### `character_profiles` — 캐릭터 이름·초상 스냅샷
+
+PK: `ocid`. 캐릭터 하나당 한 행. **기록에 이름과 얼굴을 붙이기 위해서만** 있다([[ADR-219]] 결정 1).
+
+- **`character-basic-cache` 와 값이 같고 수명이 다르다.** 그쪽은 5분 TTL 캐시이고 설정의 캐시
+  비우기 `일반` 그룹이 통째로 지운다. 이 표는 `RECORD_TABLE_NAMES` 에 들어 `기록` 그룹에서만
+  지워진다. 이름이 사라지면 `buildRowsFromRecords` 가 그 `ocid` 를 건너뛰어 **기록이 있어도 행이
+  안 선다**. 그래서 이 표를 지우는 것은 기록을 지우는 것과 같은 무게다.
+- **쓰는 자리는 `fetchCharacterBasicCached` 하나다.** 앱 전체의 `character/basic` 통과 지점이라,
+  한 번이라도 조회된 캐릭터는 추적을 해제해도 이름과 얼굴을 갖는다.
+- **읽을 때 자가 치유한다.** 이 표가 생기기 전 설치본은 표가 비어 있고 캐시만 차 있다.
+  `resolveDisplayProfiles` 가 표에 없는 `ocid` 만 캐시에서 읽어 표에 심는다([[ADR-219]] 결정 3).
+  별도 이관 단계를 두면 그때 이미 해제한 캐릭터는 훑을 목록에 없어 영영 안 옮겨진다.
+- **`image_url` 은 URL 만이다**([[ADR-219]] 결정 2, 사용자 지정). 이미지 파일은 안 내려받는다.
+  캐릭터 삭제 후 그 정적 주소가 사는지는 확인된 바 없고, 죽으면 얼굴만 이니셜 폴백이 된다.
+- **이름은 마지막으로 안 이름이다.** 추적 중이면 동기화가 덮으므로 어긋남은 해제한 캐릭터에만
+  생긴다.
+
 ## 새 테이블을 추가할 때
 
-**`storage/sqlite/db.ts`의 테이블 정의 배열(`[{ name, createSql }]`)에만 넣으면 스키마 생성·캐시 삭제 범위·용량 계산에 자동 반영된다** — 삭제 목록을 따로 관리하는 곳은 없다([[ADR-052]] 결정 2). `openBossProfitDb()`의 `CREATE TABLE` 실행과 `storage/cache-data.ts`의 `DELETE FROM`/용량 합산이 모두 이 배열 하나를 본다. 자세한 삭제 범위는 [lifecycle.md](./lifecycle.md)의 "삭제 범위: 연결 해제 vs 캐시 데이터 삭제" 참고.
+**`storage/sqlite/db.ts`의 테이블 정의 배열(`[{ name, createSql }]`)에만 넣으면 스키마 생성·캐시 삭제 범위·용량 계산에 자동 반영된다** — 삭제 목록을 따로 관리하는 곳은 없다([[ADR-052]] 결정 2).
+
+> **새 테이블은 기본적으로 `general` 그룹이다.** 그 그룹이 차집합으로 파생되기 때문이다. 지우면
+> 되살릴 길이 없는 표라면 `cache-data.ts` 의 `RECORD_TABLE_NAMES` 에 **직접 적어야** 한다
+> (`character_profiles` 가 그렇다). `openBossProfitDb()`의 `CREATE TABLE` 실행과 `storage/cache-data.ts`의 `DELETE FROM`/용량 합산이 모두 이 배열 하나를 본다. 자세한 삭제 범위는 [lifecycle.md](./lifecycle.md)의 "삭제 범위: 연결 해제 vs 캐시 데이터 삭제" 참고.
 
 > 이 규칙이 생기기 전에는 `cache-data.ts`가 테이블 이름을 하드코딩한 별도 목록을 들고 있어, 나중에 추가된 `boss_drop_records`가 거기 빠진 채로 남았다(이 문서에도 같은 누락이 있었다).
 

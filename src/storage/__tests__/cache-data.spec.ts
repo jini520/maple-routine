@@ -123,6 +123,13 @@ describe('그룹 ↔ 테이블 분할', () => {
     expect(GENERAL_TABLE_NAMES).not.toContain('income_records')
     expect(GENERAL_TABLE_NAMES).not.toContain('spend_records')
   })
+
+  // 이름이 없으면 기록에서 행을 못 만든다(ocid 는 사용자에게 아무 뜻도 없어 대신 안 적는다).
+  // `일반` 만 지운 사용자가 지운 적 없는 과거 수익을 통째로 잃는다.
+  it('캐릭터 프로필 스냅샷도 `기록` 그룹이다. 이름이 없으면 기록이 화면에서 사라진다', () => {
+    expect(RECORD_TABLE_NAMES).toContain('character_profiles')
+    expect(GENERAL_TABLE_NAMES).not.toContain('character_profiles')
+  })
 })
 
 describe('clearCacheData', () => {

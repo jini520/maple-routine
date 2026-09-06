@@ -15,10 +15,10 @@ const { getBossDropRecords: getBossDropRecordsMock, replaceBossDropRecords: repl
 var mockModule1: Record<string, unknown>
 jest.mock('../../../storage/boss-profit', () => {
   // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다.
-  mockModule1 = mockModule1 ?? { getBossProfitRecords: jest.fn() }
+  mockModule1 = mockModule1 ?? { getBossProfitRecords: jest.fn(), getRecordedCharacterOcids: jest.fn() }
   return mockModule1
 })
-const { getBossProfitRecords: getBossProfitRecordsMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
+const { getBossProfitRecords: getBossProfitRecordsMock, getRecordedCharacterOcids: getRecordedCharacterOcidsMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 var mockModule2: Record<string, unknown>
 jest.mock('../../../storage/character-selection', () => {
   // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다.
@@ -29,14 +29,14 @@ jest.mock('../../../storage/character-selection', () => {
 })
 const { getTrackedCharacterOcids: getTrackedCharacterOcidsMock } = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
 var mockModule3: Record<string, unknown>
-jest.mock('../../../storage/character-basic-cache', () => {
+jest.mock('../../character-profile/resolve', () => {
   // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다.
   mockModule3 = mockModule3 ?? {
-  getCachedCharacterBasic: jest.fn(),
+  resolveDisplayProfiles: jest.fn(),
 }
   return mockModule3
 })
-const { getCachedCharacterBasic: getCachedCharacterBasicMock } = jest.requireMock('../../../storage/character-basic-cache') as Record<string, jest.Mock>
+const { resolveDisplayProfiles: resolveDisplayProfilesMock } = jest.requireMock('../../character-profile/resolve') as Record<string, jest.Mock>
 
 const PERIOD = '2026-08-06'
 
@@ -67,9 +67,17 @@ beforeEach(async () => {
   replaceBossDropRecordsMock.mockReset().mockResolvedValue(undefined)
   getBossProfitRecordsMock.mockReset().mockResolvedValue([])
   getTrackedCharacterOcidsMock.mockReset().mockResolvedValue(['ocid-1'])
-  getCachedCharacterBasicMock
+  getRecordedCharacterOcidsMock.mockReset().mockResolvedValue([])
+  resolveDisplayProfilesMock
     .mockReset()
-    .mockResolvedValue({ profile: { name: '지내우시', imageUrl: null } })
+    .mockImplementation(async (ocids: readonly string[]) =>
+      new Map(
+        [...new Set(ocids)].map((ocid) => [
+          ocid,
+          { name: '지내우시', imageUrl: null, world: null, level: null },
+        ]),
+      ),
+    )
 })
 
 describe('load', () => {
@@ -86,6 +94,16 @@ describe('load', () => {
     expect(groups[0].entries[0].boss).toBe('스우')
   })
 
+  // 여기서 못 고치면 보스 수익과 가계부가 그 건수를 계속 `미입력 n` 으로 세는데 고칠 길이 없다.
+  it('추적에서 빠진 캐릭터의 미입력 드롭도 조회 범위에 든다', async () => {
+    getRecordedCharacterOcidsMock.mockResolvedValue(['ocid-1', 'ocid-해제'])
+    const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
+
+    await useDropPriceStore.getState().load(PERIOD)
+
+    expect(getBossDropRecordsMock).toHaveBeenCalledWith(['ocid-1', 'ocid-해제'], [PERIOD])
+  })
+
   it('분배 인원 기본값은 그 행의 파티원 수다. 기록이 없으면 1인', async () => {
     getBossProfitRecordsMock.mockResolvedValue([
       { ocid: 'ocid-1', boss: '스우', difficulty: '하드', periodKey: PERIOD, partySize: 3 },
@@ -98,7 +116,7 @@ describe('load', () => {
   })
 
   it('이름을 모르는 캐릭터는 그룹을 만들지 않는다. ocid 를 이름 대신 쓰지 않는다', async () => {
-    getCachedCharacterBasicMock.mockResolvedValue(null)
+    resolveDisplayProfilesMock.mockResolvedValue(new Map())
     const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
 
     await useDropPriceStore.getState().load(PERIOD)

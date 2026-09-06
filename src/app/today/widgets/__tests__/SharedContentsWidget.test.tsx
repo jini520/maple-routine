@@ -43,9 +43,9 @@ describe('계열이 축이다', () => {
     const { getAllByTestId, getByText } = await 위젯(공유컨텐츠())
 
     expect(getAllByTestId('shared-group-name').map((node) => node.props.children)).toEqual([
-      '에픽던전',
       '몬스터파크',
       '메이플 유니온',
+      '에픽던전',
     ])
     expect(getByText('하이마운틴')).toBeTruthy()
     expect(getByText('익스트림 몬스터파커')).toBeTruthy()
@@ -138,22 +138,23 @@ describe('두 열로 선다', () => {
   const 열이름 = (열: ReturnType<typeof within>): unknown[] =>
     열.queryAllByTestId('shared-group-name').map((node) => node.props.children)
 
-  // 지그재그(홀짝)로 나누면 왼쪽이 **에픽던전 + 유니온**(7줄)이 되어 타일이 한 줄 더 높다.
+  // 6 대 4 로 가른다. 지그재그(홀짝)로 나누면 왼쪽이 **몬스터파크 + 에픽던전**(7줄)이 되어
+  // 타일이 한 줄 더 높다.
   it('계열 셋을 순서를 지키며 가른다. 높이가 가장 고른 지점에서', async () => {
     const { getAllByTestId } = await 위젯(공유컨텐츠())
 
     const 열들 = getAllByTestId('shared-column')
     expect(열들).toHaveLength(2)
-    expect(열이름(within(열들[0] as never))).toEqual(['에픽던전'])
-    expect(열이름(within(열들[1] as never))).toEqual(['몬스터파크', '메이플 유니온'])
+    expect(열이름(within(열들[0] as never))).toEqual(['몬스터파크', '메이플 유니온'])
+    expect(열이름(within(열들[1] as never))).toEqual(['에픽던전'])
   })
 
   it('계열이 둘이면 한 열에 하나씩이다', async () => {
     const { getAllByTestId } = await 위젯(공유컨텐츠().slice(0, 2))
 
     const 열들 = getAllByTestId('shared-column')
-    expect(열이름(within(열들[0] as never))).toEqual(['에픽던전'])
-    expect(열이름(within(열들[1] as never))).toEqual(['몬스터파크'])
+    expect(열이름(within(열들[0] as never))).toEqual(['몬스터파크'])
+    expect(열이름(within(열들[1] as never))).toEqual(['메이플 유니온'])
   })
 
   it('계열이 하나뿐이면 한 열로 그린다. 반폭만 쓰면 그 자체가 여백이다', async () => {

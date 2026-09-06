@@ -13,6 +13,11 @@ jest.mock('../../../nexon/character', () => ({
 }))
 const { fetchCharacterBasic: fetchCharacterBasicMock } = jest.requireMock('../../../nexon/character') as Record<string, jest.Mock>
 
+jest.mock('../../../storage/character-profiles', () => ({
+  saveCharacterProfile: jest.fn().mockResolvedValue(undefined),
+}))
+const { saveCharacterProfile: saveCharacterProfileMock } = jest.requireMock('../../../storage/character-profiles') as Record<string, jest.Mock>
+
 const NOW = new Date('2026-08-08T05:00:00.000Z')
 const ACCOUNT = 'account-1'
 const OCID = 'ocid-1'
@@ -38,6 +43,57 @@ async function seedCache(elapsedMs: number, cached: CharacterBasicProfile): Prom
 beforeEach(async () => {
   installFakePreferences()
   fetchCharacterBasicMock.mockReset()
+  saveCharacterProfileMock.mockClear()
+})
+
+// 이 함수가 앱 전체의 `character/basic` 통과 지점이라, 여기 한 줄이면 한 번이라도 조회된
+// 캐릭터는 추적을 해제해도 이름과 얼굴을 갖는다. 캐시는 5분 TTL 이고 캐시 비우기가 지운다.
+describe('받은 프로필은 지워지지 않는 스냅샷에도 함께 쓴다', () => {
+  it('네트워크로 받으면 스냅샷을 쓴다', async () => {
+    fetchCharacterBasicMock.mockResolvedValue(
+      profile({ name: '낟낟', level: 293, imageUrl: 'https://example.com/1.png', world: '스카니아' }),
+    )
+
+    await fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)
+
+    expect(saveCharacterProfileMock).toHaveBeenCalledTimes(1)
+    expect(saveCharacterProfileMock).toHaveBeenCalledWith({
+      ocid: OCID,
+      name: '낟낟',
+      imageUrl: 'https://example.com/1.png',
+      world: '스카니아',
+      level: 293,
+      updatedAt: NOW.toISOString(),
+    })
+  })
+
+  // 월드는 옛 응답에 없을 수 있다. undefined 를 그대로 넘기면 SQLite 바인딩이 갈라진다.
+  it('월드를 모르면 null 로 넘긴다', async () => {
+    fetchCharacterBasicMock.mockResolvedValue(profile({ world: undefined }))
+
+    await fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)
+
+    expect(saveCharacterProfileMock.mock.calls[0][0].world).toBeNull()
+  })
+
+  // 스냅샷 쓰기가 실패해도 프로필은 돌려줘야 한다. 이 저장은 화면의 목적이 아니라 뒷정리다.
+  it('스냅샷 쓰기가 실패해도 프로필을 돌려준다', async () => {
+    const fresh = profile()
+    fetchCharacterBasicMock.mockResolvedValue(fresh)
+    saveCharacterProfileMock.mockRejectedValueOnce(new Error('sqlite down'))
+
+    await expect(fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)).resolves.toEqual(fresh)
+  })
+
+  // TTL 안이면 네트워크를 안 타므로 새로 알게 된 것이 없다. 같은 값을 다시 쓸 이유가 없다.
+  it('캐시가 신선하면 스냅샷도 안 쓴다', async () => {
+    const cached = profile({ name: '캐시' })
+    await seedCache(60_000, cached)
+
+    await fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)
+
+    expect(saveCharacterProfileMock).not.toHaveBeenCalled()
+  })
 })
 
 describe('캐시가 없으면 네트워크로 받고 그 결과를 캐시에 쓴다', () => {

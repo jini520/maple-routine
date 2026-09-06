@@ -17,6 +17,7 @@ jest.mock('../../../storage/last-point-rate', () => ({ setLastPointRate: jest.fn
 jest.mock('../../../storage/boss-profit', () => ({
   getDatedBossProfitRecords: jest.fn(),
   getBossProfitRecordsRevision: jest.fn(),
+  getRecordedCharacterOcids: jest.fn(),
 }))
 jest.mock('../../../storage/boss-drops', () => ({
   getBossDropRecords: jest.fn(),
@@ -24,6 +25,7 @@ jest.mock('../../../storage/boss-drops', () => ({
 }))
 jest.mock('../../../storage/character-selection', () => ({ getTrackedCharacterOcids: jest.fn() }))
 jest.mock('../../../storage/character-basic-cache', () => ({ getCachedCharacterBasic: jest.fn() }))
+jest.mock('../../character-profile/resolve', () => ({ resolveDisplayProfiles: jest.fn() }))
 
 const income = jest.requireMock('../../../storage/income') as Record<string, jest.Mock>
 const spend = jest.requireMock('../../../storage/spend') as Record<string, jest.Mock>
@@ -32,6 +34,7 @@ const bossProfit = jest.requireMock('../../../storage/boss-profit') as Record<st
 const bossDrops = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
 const selection = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
 const basicCache = jest.requireMock('../../../storage/character-basic-cache') as Record<string, jest.Mock>
+const profileLookup = jest.requireMock('../../character-profile/resolve') as Record<string, jest.Mock>
 
 const 지금 = new Date('2026-08-23T05:00:00.000Z')
 
@@ -44,7 +47,17 @@ beforeEach(() => {
   bossDrops.getBossDropRecords.mockResolvedValue([])
   bossDrops.getBossDropRecordsRevision.mockReturnValue(0)
   selection.getTrackedCharacterOcids.mockResolvedValue(['ocid-1'])
+  bossProfit.getRecordedCharacterOcids.mockResolvedValue([])
   basicCache.getCachedCharacterBasic.mockResolvedValue({ profile: { name: '루디' } })
+  profileLookup.resolveDisplayProfiles.mockImplementation(
+    async (ocids: readonly string[]) =>
+      new Map(
+        [...new Set(ocids)].map((ocid) => [
+          ocid,
+          { name: '루디', imageUrl: 'https://img/1.png', world: null, level: 285 },
+        ]),
+      ),
+  )
 })
 
 const 수입: IncomeDraft = {
@@ -515,7 +528,7 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
 
     expect(rows.map(recordTitleOf)).toEqual(['루디 · 엘리시움', '리우'])
     // 같은 `ocid` 를 두 번 읽지 않는다. 표를 한 번에 찾는다.
-    expect(basicCache.getCachedCharacterBasic).toHaveBeenCalledTimes(1)
+    expect(profileLookup.resolveDisplayProfiles).toHaveBeenCalledTimes(1)
   })
 
   it('보스 줄이 손입력보다 위에 선다', async () => {
@@ -530,12 +543,43 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
     expect(rows.map(isManualRecord)).toEqual([false, true])
   })
 
-  it('이름을 모르면 ocid 대신 `알 수 없음` 을 안 적는다. 캐시가 비면 빈 이름 대신 갈래만 적는다', async () => {
+  it('이름을 모르면 ocid 대신 `알 수 없음` 을 안 적는다. 표에도 캐시에도 없으면 갈래만 적는다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
-    basicCache.getCachedCharacterBasic.mockResolvedValue(null)
+    profileLookup.resolveDisplayProfiles.mockResolvedValue(new Map())
     const { loadDayRecords, recordTitleOf } = require('../records') as typeof import('../records')
 
     expect((await loadDayRecords('2026-08-21')).map(recordTitleOf)).toEqual(['보스 결정석'])
+  })
+
+  // 캐릭터를 관리 목록에서 빼도 그날의 결정석·판매 줄은 남아야 한다. 같은 화면의 손입력 줄은
+  // 날짜로만 골라 이미 남아 있었으므로, 전에는 한 목록 안에서 줄의 출처에 따라 다르게
+  // 살아남고 있었다.
+  it('추적에서 빠진 캐릭터의 보스 줄도 조회 범위에 든다', async () => {
+    selection.getTrackedCharacterOcids.mockResolvedValue(['ocid-1'])
+    bossProfit.getRecordedCharacterOcids.mockResolvedValue(['ocid-1', 'ocid-해제'])
+    const { loadDayRecords } = require('../records') as typeof import('../records')
+
+    await loadDayRecords('2026-08-21')
+
+    expect(bossProfit.getDatedBossProfitRecords).toHaveBeenCalledWith(
+      ['ocid-1', 'ocid-해제'],
+      '2026-08-21',
+      '2026-08-21',
+    )
+  })
+
+  it('추적 목록이 비어도 기록이 있으면 보스 줄을 읽는다', async () => {
+    selection.getTrackedCharacterOcids.mockResolvedValue(null)
+    bossProfit.getRecordedCharacterOcids.mockResolvedValue(['ocid-해제'])
+    const { loadDayRecords } = require('../records') as typeof import('../records')
+
+    await loadDayRecords('2026-08-21')
+
+    expect(bossProfit.getDatedBossProfitRecords).toHaveBeenCalledWith(
+      ['ocid-해제'],
+      '2026-08-21',
+      '2026-08-21',
+    )
   })
 
   // 줄을 펼치면 뜰 것. 그날 잡은 보스다. **새로 읽는 것이 없다**:
