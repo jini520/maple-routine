@@ -105,11 +105,17 @@ export function CalendarGrid(props: CalendarGridProps): React.JSX.Element {
                   </Text>
                 </View>
 
-                {/* 빈 값이 `''` 가 아니라 **공백 한 칸**이다. 빈 문자열은 `Text` 높이를 0 으로 만든다. */}
+                {/* 금액 두 줄은 **오른쪽 끝에 맞춘다**(사용자 지정). 가운데로 두면 자릿수가
+                    다른 위아래 두 수의 끝이 어긋나 한 칸 안에서 계단처럼 보인다.
+
+                    `w-full` 이 있어야 한다. 부모가 `items-center` 라 글자 폭만큼만 차지하면
+                    `text-right` 가 걸릴 자리가 없다.
+
+                    빈 값이 `''` 가 아니라 **공백 한 칸**이다. 빈 문자열은 `Text` 높이를 0 으로 만든다. */}
                 <Text
                   testID={`calendar-income-${day.dateKey}`}
                   numberOfLines={1}
-                  className="text-9 leading-3 text-rise-ink"
+                  className="w-full pr-1.5 text-right text-9 leading-3 text-rise-ink"
                   style={TABULAR_NUMS}
                 >
                   {amounts.incomeMeso > 0 ? `+${formatMesoCompact(amounts.incomeMeso)}` : ' '}
@@ -117,7 +123,7 @@ export function CalendarGrid(props: CalendarGridProps): React.JSX.Element {
                 <Text
                   testID={`calendar-expense-${day.dateKey}`}
                   numberOfLines={1}
-                  className="text-9 leading-3 text-fall-ink"
+                  className="w-full pr-1.5 text-right text-9 leading-3 text-fall-ink"
                   style={TABULAR_NUMS}
                 >
                   {amounts.expenseMeso > 0 ? `−${formatMesoCompact(amounts.expenseMeso)}` : ' '}

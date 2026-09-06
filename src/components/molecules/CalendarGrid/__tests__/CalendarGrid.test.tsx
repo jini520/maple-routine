@@ -345,3 +345,17 @@ describe('주간 격자', () => {
     expect(heat.opacity).toBeGreaterThan(0.4)
   })
 })
+
+// 가운데로 두면 자릿수가 다른 위아래 두 수의 끝이 어긋나 한 칸 안에서 계단처럼 보인다.
+it('금액 두 줄은 오른쪽 끝에 맞춘다', async () => {
+  const view = await 그리기({
+    amounts: { '2026-08-11': { incomeMeso: 5_474_000_000, expenseMeso: 39_080_000 } },
+  })
+
+  for (const testID of ['calendar-income-2026-08-11', 'calendar-expense-2026-08-11']) {
+    const style = flattenStyle(칸(view, '2026-08-11').getByTestId(testID).props.style)
+    expect(style.textAlign).toBe('right')
+    // 부모가 `items-center` 라 폭을 안 채우면 `text-right` 가 걸릴 자리가 없다.
+    expect(style.width).toBe('100%')
+  }
+})
