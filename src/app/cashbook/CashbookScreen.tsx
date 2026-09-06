@@ -246,13 +246,10 @@ function PeriodSummary(props: {
     >
       <View className="shrink">
         <Text className="text-10 tracking-wide text-text-muted">순 수익</Text>
-        {/* 줄 높이를 `leading-none`(1.0em)로 조이면 안 된다. 안드로이드 글꼴의 자연 줄 상자가
-            1.448em 이라 RN 이 모자란 만큼의 절반을 descent 에서 깎고, 그러면 **쉼표 꼬리가
-            잘린다**. 1.30em 이 하한이고 `leading-snug`(1.375em)이 그 위다. */}
         <Text
           testID="cashbook-summary-net"
           numberOfLines={1}
-          className={`mt-1 text-xl font-bold leading-snug ${
+          className={`mt-1 text-xl font-bold ${
             net > 0 ? 'text-rise-ink' : net < 0 ? 'text-fall-ink' : 'text-text'
           }`}
           style={TABULAR_NUMS}

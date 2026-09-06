@@ -31,7 +31,7 @@ class MainApplication : Application(), ReactApplication {
   override fun onCreate() {
     super.onCreate()
     // @generated begin xml-fonts-init - expo prebuild (DO NOT MODIFY) sync-99ab81495dc2b574e4020773e2fdb72f72e32286
-    ReactFontManager.getInstance().addCustomFont(this, "Noto Sans KR", R.font.xml_noto_sans_kr)
+    ReactFontManager.getInstance().addCustomFont(this, "Pretendard", R.font.xml_pretendard)
     // @generated end xml-fonts-init
     DefaultNewArchitectureEntryPoint.releaseLevel = try {
       ReleaseLevel.valueOf(BuildConfig.REACT_NATIVE_RELEASE_LEVEL.uppercase())

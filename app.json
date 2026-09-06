@@ -60,25 +60,25 @@
           "android": {
             "fonts": [
               {
-                "fontFamily": "Noto Sans KR",
+                "fontFamily": "Pretendard",
                 "fontDefinitions": [
                   {
-                    "path": "./assets/fonts/NotoSansKR-Regular.ttf",
+                    "path": "./assets/fonts/Pretendard-Regular.ttf",
                     "weight": 400,
                     "style": "normal"
                   },
                   {
-                    "path": "./assets/fonts/NotoSansKR-Medium.ttf",
+                    "path": "./assets/fonts/Pretendard-Medium.ttf",
                     "weight": 500,
                     "style": "normal"
                   },
                   {
-                    "path": "./assets/fonts/NotoSansKR-SemiBold.ttf",
+                    "path": "./assets/fonts/Pretendard-SemiBold.ttf",
                     "weight": 600,
                     "style": "normal"
                   },
                   {
-                    "path": "./assets/fonts/NotoSansKR-Bold.ttf",
+                    "path": "./assets/fonts/Pretendard-Bold.ttf",
                     "weight": 700,
                     "style": "normal"
                   }

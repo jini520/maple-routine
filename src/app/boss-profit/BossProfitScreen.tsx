@@ -394,7 +394,7 @@ export function BossProfitScreen(): React.JSX.Element {
               {/* 단위는 별도 `Text` 로 격하하되 숫자와 사이에 **실제 공백 문자**를 남긴다. 마진만
                   으로 띄우면 읽는 문자열이 "N메소"로 붙어 스크린리더가 이어 읽는다. */}
               <Text
-                className="text-xl font-bold leading-snug text-primary-ink"
+                className="text-xl font-bold text-primary-ink"
                 style={TABULAR_NUMS}
               >
                 {/* 이 키에만 기간이 없다. 기간이 바뀌어도 같은 자리의 같은 뜻을 가진 하나의
