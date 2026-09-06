@@ -40,7 +40,6 @@ import {
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  ClockIcon,
   ProfitIcon,
   RefreshCwIcon,
   Text,
@@ -48,7 +47,6 @@ import {
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
-import { UnavailableNotice } from '../../components/molecules/EmptyState/UnavailableNotice'
 import { ValuableDropBadge } from '../../components/molecules/ValuableDropBadge/ValuableDropBadge'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -355,18 +353,6 @@ export function BossProfitScreen(): React.JSX.Element {
           </Pressable>
         </View>
 
-        {/* 상태마다 얼굴이 다르다. 기록이 있으면 아무것도 띄우지 않는다. 목요일 새벽처럼 백필만
-            막힌 경우 기록은 정확하고 사용자가 할 일도 없다. `failed` 는 액션이 필요해 토스트로
-            옮겼다. */}
-        {!isPeriodLoading && characterGroups.length > 0 && periodState === 'notCollected' && (
-          <View className="flex-row items-center gap-1.5">
-            <ClockIcon className="h-4 w-4 shrink-0 text-text-muted" strokeWidth={1.75} aria-hidden />
-            <Text className="text-sm text-text-muted">
-              아직 집계되지 않았습니다. 준비되면 자동으로 채워집니다
-            </Text>
-          </View>
-        )}
-
         {/* 총 수익 요약은 **카드가 아니라 헤드라인**이다. 아래 캐릭터 카드가 전부 같은
             카드 셸이라 요약도 카드면 "동일한 흰 카드의 반복"으로 묻힌다.
 
@@ -472,9 +458,7 @@ export function BossProfitScreen(): React.JSX.Element {
               status === 'loaded' &&
               characterGroups.length === 0 &&
               !periodPendingAggregation &&
-              (periodState === 'notCollected' ? (
-                <UnavailableNotice />
-              ) : periodState === 'failed' ? (
+              (periodState === 'failed' ? (
                 <ErrorState
                   title="이 기간을 불러오지 못했습니다"
                   description="네트워크 상태를 확인해주세요"

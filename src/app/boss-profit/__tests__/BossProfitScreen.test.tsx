@@ -377,11 +377,14 @@ describe('기간 상태별 표현', () => {
     expect(getByText('아직 처치한 보스가 없습니다')).toBeTruthy()
   })
 
-  it('`notCollected` 는 "아직" 이라 말하고 재시도를 주지 않는다', async () => {
+  // `notCollected` 로 접히려면 어느 캐릭터의 결과가 그것이어야 하고, 그러면
+  // `periodPendingAggregation` 이 참이라 이 블록 자체가 안 그려진다. 고지가 설 자리가 없다.
+  // 그 자리를 대신할 안내는 따로 디자인한다(사용자 지정).
+  it('`notCollected` 에 고지를 안 세운다', async () => {
     mockStore({ status: 'loaded', periodState: 'notCollected' })
-    const { getByText, queryByText } = await renderScreen()
+    const { queryByText } = await renderScreen()
 
-    expect(getByText('아직 집계되지 않았습니다')).toBeTruthy()
+    expect(queryByText('아직 집계되지 않았습니다')).toBeNull()
     expect(queryByText('다시 시도')).toBeNull()
   })
 
