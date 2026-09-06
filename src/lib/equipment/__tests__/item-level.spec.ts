@@ -22,6 +22,12 @@ describe('이름으로 찾는다', () => {
     expect(equipmentItemLevel('파프니르 체인')).toBe(150)
   })
 
+  it('보스 장신구·칠흑·광휘도 값을 갖는다', () => {
+    expect(equipmentItemLevel('파풀라투스 마크')).toBe(145)
+    expect(equipmentItemLevel('루즈 컨트롤 머신 마크')).toBe(160)
+    expect(equipmentItemLevel('오만의 원죄')).toBe(250)
+  })
+
   it('사용자가 준 보조무기 레벨도 든다', () => {
     expect(equipmentItemLevel('데이모스 세이지 실드')).toBe(130)
   })
@@ -29,10 +35,6 @@ describe('이름으로 찾는다', () => {
 
 // **모름은 0 이 아니다.** 0 을 주면 레벨 0 짜리 장비가 생겨 비용이 조용히 틀린다.
 describe('모르면 null', () => {
-  it('레벨을 아직 안 받은 장비는 null 이다', () => {
-    expect(equipmentItemLevel('스칼렛 링')).toBeNull()
-  })
-
   it('표에 없는 이름도 null 이다', () => {
     expect(equipmentItemLevel('없는 장비 이름')).toBeNull()
   })

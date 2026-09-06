@@ -1,7 +1,7 @@
 {
   "updatedAt": "2026-09-06",
-  "source": "아이템 이름은 사용자 제공(2026-09-06). 보조무기·방패 22종의 레벨도 사용자 제공(나무위키 보조무기 문서 덤프의 착용 레벨). 그 밖의 레벨은 넥슨 히스토리 API 가 준 값을 그대로 옮긴 것이다 — 큐브·잠재 응답의 item_level 이고, 2025-09-06~2026-09-05 27,187건에서 한 이름에 두 레벨이 붙은 적이 없다. 앱솔랩스 160 · 데스티니 250 · 파프니르 150 도 사용자 제공(2026-09-06). AI 가 지어낸 값은 한 건도 없다.",
-  "note": "조회는 **공백을 지운 이름**으로 한다. API 는 「아케인셰이드 나이트햇」 처럼 띄어 주고 이 표는 붙여 쓴다. 1년치 실제 장비 132종에서 공백을 지웠을 때 겹치는 이름이 한 건도 없다. level 이 null 이면 **모른다**는 뜻이지 0 이 아니다 — 그 아이템의 스타포스 비용은 안 매기고 건수만 센다. 강화가 불가능한 장비는 이 표에 **안 담는다**(도전자의 45종 · 칠요 2종을 그래서 걷었다, 사용자 지정). 이 표에 없는 아이템은 enhancement_history 가 스스로 쌓는 표(같은 이름의 큐브·잠재 기록)가 받는다.",
+  "source": "아이템 이름은 사용자 제공(2026-09-06). 보조무기·방패 22종의 레벨도 사용자 제공(나무위키 보조무기 문서 덤프의 착용 레벨). 그 밖의 레벨은 넥슨 히스토리 API 가 준 값을 그대로 옮긴 것이다 — 큐브·잠재 응답의 item_level 이고, 2025-09-06~2026-09-05 27,187건에서 한 이름에 두 레벨이 붙은 적이 없다. 앱솔랩스 160 · 데스티니 250 · 파프니르 150 과 보스 장신구·칠흑·광휘·럭키 계열 23종의 레벨도 사용자 제공(2026-09-06). AI 가 지어낸 값은 한 건도 없다.",
+  "note": "조회는 **공백을 지운 이름**으로 한다. API 는 「아케인셰이드 나이트햇」 처럼 띄어 주고 이 표는 붙여 쓴다. 1년치 실제 장비 132종에서 공백을 지웠을 때 겹치는 이름이 한 건도 없다. 강화가 불가능한 장비는 이 표에 **안 담는다**(도전자의 45종 · 칠요 2종 · 영생의돌 등 9종을 그래서 걷었다, 사용자 지정). level 이 null 이면 **모른다**는 뜻이지 0 이 아니다 — 그 아이템의 스타포스 비용은 안 매기고 건수만 센다. ⚠️ 세트 레벨을 채울 때 **영문 키의 접두사로 세트를 판정하지 말 것**. `royal_black_metal_shoulder`(로얄블랙메탈숄더)가 하이네스 세트(`royal_*`)로, `genesis_badge`(창세의뱃지)가 제네시스 무기 세트로 잘못 채워진 적이 있다(사용자 지적). 세트를 가르는 것은 **한글 이름**이다. 이 표에 없는 아이템은 enhancement_history 가 스스로 쌓는 표(같은 이름의 큐브·잠재 기록)가 받는다.",
   "items": [
     {
       "key": "meister_ear_ring",
@@ -1363,7 +1363,7 @@
       "key": "papulatus_mark",
       "name": "파풀라투스마크",
       "group": "equipment",
-      "level": null
+      "level": 145
     },
     {
       "key": "dea_sidus_earring",
@@ -1375,7 +1375,7 @@
       "key": "will_o_the_wisps",
       "name": "지옥의불꽃",
       "group": "equipment",
-      "level": null
+      "level": 130
     },
     {
       "key": "silver_blossom_ring",
@@ -1387,7 +1387,7 @@
       "key": "noble_ifias_ring",
       "name": "고귀한이피아의반지",
       "group": "equipment",
-      "level": null
+      "level": 120
     },
     {
       "key": "guardian_angel_ring",
@@ -1399,13 +1399,13 @@
       "key": "horntail_necklace",
       "name": "혼테일의목걸이",
       "group": "equipment",
-      "level": null
+      "level": 120
     },
     {
       "key": "chaos_horntail_necklace",
       "name": "카오스혼테일의목걸이",
       "group": "equipment",
-      "level": null
+      "level": 120
     },
     {
       "key": "mechanator_pendant",
@@ -1417,7 +1417,7 @@
       "key": "dominator_pendant",
       "name": "도미네이터펜던트",
       "group": "equipment",
-      "level": null
+      "level": 140
     },
     {
       "key": "golden_clover_belt",
@@ -1434,24 +1434,6 @@
     {
       "key": "royal_black_metal_shoulder",
       "name": "로얄블랙메탈숄더",
-      "group": "equipment",
-      "level": 150
-    },
-    {
-      "key": "stone_of_eternal_life",
-      "name": "영생의돌",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "pink_holy_cup",
-      "name": "핑크빛성배",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "crystal_ventus_badge",
-      "name": "크리스탈웬투스뱃지",
       "group": "equipment",
       "level": null
     },
@@ -1483,7 +1465,7 @@
       "key": "berserked",
       "name": "루즈컨트롤머신마크",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "magic_eyepatch",
@@ -1492,16 +1474,10 @@
       "level": 160
     },
     {
-      "key": "black_heart",
-      "name": "블랙하트",
-      "group": "equipment",
-      "level": null
-    },
-    {
       "key": "total_control",
       "name": "컴플리트언더컨트롤",
       "group": "equipment",
-      "level": null
+      "level": 200
     },
     {
       "key": "dreamy_belt",
@@ -1519,43 +1495,19 @@
       "key": "genesis_badge",
       "name": "창세의뱃지",
       "group": "equipment",
-      "level": 200
+      "level": null
     },
     {
       "key": "commanding_force_earring",
       "name": "커맨더포스이어링",
       "group": "equipment",
-      "level": null
+      "level": 200
     },
     {
       "key": "endless_terror",
       "name": "거대한공포",
       "group": "equipment",
       "level": 200
-    },
-    {
-      "key": "cursed_red_spellbook",
-      "name": "저주받은적의마도서",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "cursed_blue_spellbook",
-      "name": "저주받은청의마도서",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "cursed_green_spellbook",
-      "name": "저주받은녹의마도서",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "cursed_yellow_spellbook",
-      "name": "저주받은황의마도서",
-      "group": "equipment",
-      "level": null
     },
     {
       "key": "mitras_rage_warrior",
@@ -1573,79 +1525,73 @@
       "key": "mitras_rage_bowman",
       "name": "미트라의분노:궁수",
       "group": "equipment",
-      "level": null
+      "level": 200
     },
     {
       "key": "mitras_rage_thief",
       "name": "미트라의분노:도적",
       "group": "equipment",
-      "level": null
+      "level": 200
     },
     {
       "key": "mitras_rage_pirate",
       "name": "미트라의분노:해적",
       "group": "equipment",
-      "level": null
+      "level": 200
     },
     {
       "key": "whisper_of_the_source",
       "name": "근원의속삭임",
       "group": "equipment",
-      "level": null
+      "level": 250
     },
     {
       "key": "oath_of_death",
       "name": "죽음의맹세",
       "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "immortal_legacy",
-      "name": "불멸의유산",
-      "group": "equipment",
-      "level": null
+      "level": 250
     },
     {
       "key": "entrancing_nightmare",
       "name": "황홀한악몽",
       "group": "equipment",
-      "level": null
+      "level": 250
     },
     {
       "key": "original_sin_of_pride",
       "name": "오만의원죄",
       "group": "equipment",
-      "level": null
+      "level": 250
     },
     {
       "key": "hungering_bloody_spirit",
       "name": "굶주리는핏빛원혼",
       "group": "equipment",
-      "level": null
+      "level": 250
     },
     {
       "key": "chaos_velum_helm",
       "name": "카오스벨룸의헬름",
       "group": "lucky",
-      "level": null
+      "level": 140
     },
     {
       "key": "scarlet_ring",
       "name": "스칼렛링",
       "group": "lucky",
-      "level": null
+      "level": 135
     },
     {
       "key": "scarlet_earring",
       "name": "스칼렛이어링",
       "group": "lucky",
-      "level": null
+      "level": 135
     },
     {
       "key": "scarlet_shoulder",
       "name": "스칼렛숄더",
       "group": "lucky",
-      "level": null
+      "level": 135
     },
     {
       "key": "genesis_saber",
@@ -2128,24 +2074,6 @@
       "level": 250
     },
     {
-      "key": "mystic_shield",
-      "name": "미스틱실드",
-      "group": "secondary",
-      "level": 22
-    },
-    {
-      "key": "aster_shield",
-      "name": "에스터실드",
-      "group": "secondary",
-      "level": 33
-    },
-    {
-      "key": "maple_magician_shield",
-      "name": "메이플매지션실드",
-      "group": "secondary",
-      "level": 64
-    },
-    {
       "key": "timeless_prelude",
       "name": "타임리스프렐류드",
       "group": "secondary",
@@ -2162,30 +2090,6 @@
       "name": "데이모스세이지실드",
       "group": "secondary",
       "level": 130
-    },
-    {
-      "key": "nimble_wristband",
-      "name": "님블리스트",
-      "group": "secondary",
-      "level": 22
-    },
-    {
-      "key": "zurgen_wristband",
-      "name": "주르건리스트",
-      "group": "secondary",
-      "level": 22
-    },
-    {
-      "key": "seclusion_wristband",
-      "name": "시클루전리스트",
-      "group": "secondary",
-      "level": 22
-    },
-    {
-      "key": "maple_thieves_shield",
-      "name": "메이플시브즈실드",
-      "group": "secondary",
-      "level": 64
     },
     {
       "key": "timeless_wristband",
