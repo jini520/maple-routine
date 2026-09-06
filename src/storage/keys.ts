@@ -22,6 +22,15 @@ export const STORAGE_KEYS = {
   // `KEEP_KEYS` 에는 안 넣는다. 지워져도 다음 입력이 다시 채우고, 그때 생기는 것은 거짓 값이
   // 아니라 한 번 더 물어보기다. 지난 기록의 시세는 이미 그 행에 박혀 있어 영향이 없다.
   lastPointRate: 'lastPointRate',
+  // 이벤트 월드(스페셜) 캐릭터 이름. 수집기가 `character/list` 에서 받아 남기고, 지출을 읽는
+  // 쪽이 그대로 쓴다.
+  //
+  // 읽을 때마다 계정 목록을 부를 수는 없다(칸 하나 그릴 때마다 한 콜). 큐브·잠재 응답에는
+  // `world_name` 이 없어서 이 이름 집합이 스페셜을 가리는 **유일한 단서**다.
+  //
+  // 값이 없는 것과 빈 집합은 다르다. 앞은 아직 못 받았다는 뜻이고 뒤는 스페셜 캐릭터가 없는
+  // 계정이다. 앞을 뒤로 읽으면 스페셜 지출이 그대로 샌다.
+  eventWorldNames: 'eventWorldNames',
 } as const
 
 export function schedulerCacheKey(ocid: string): string {

@@ -26,6 +26,11 @@ jest.mock('../../../storage/boss-drops', () => ({
 jest.mock('../../../storage/character-selection', () => ({ getTrackedCharacterOcids: jest.fn() }))
 jest.mock('../../../storage/character-basic-cache', () => ({ getCachedCharacterBasic: jest.fn() }))
 jest.mock('../../character-profile/resolve', () => ({ resolveDisplayProfiles: jest.fn() }))
+jest.mock('../../../storage/enhancement-history', () => ({
+  loadEnhancementHistory: jest.fn(),
+  loadObservedItemLevels: jest.fn(),
+}))
+jest.mock('../../../storage/event-world-names', () => ({ getEventWorldNames: jest.fn() }))
 
 const income = jest.requireMock('../../../storage/income') as Record<string, jest.Mock>
 const spend = jest.requireMock('../../../storage/spend') as Record<string, jest.Mock>
@@ -35,6 +40,8 @@ const bossDrops = jest.requireMock('../../../storage/boss-drops') as Record<stri
 const selection = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
 const basicCache = jest.requireMock('../../../storage/character-basic-cache') as Record<string, jest.Mock>
 const profileLookup = jest.requireMock('../../character-profile/resolve') as Record<string, jest.Mock>
+const enhancement = jest.requireMock('../../../storage/enhancement-history') as Record<string, jest.Mock>
+const worldNames = jest.requireMock('../../../storage/event-world-names') as Record<string, jest.Mock>
 
 const 지금 = new Date('2026-08-23T05:00:00.000Z')
 
@@ -49,6 +56,9 @@ beforeEach(() => {
   selection.getTrackedCharacterOcids.mockResolvedValue(['ocid-1'])
   bossProfit.getRecordedCharacterOcids.mockResolvedValue([])
   basicCache.getCachedCharacterBasic.mockResolvedValue({ profile: { name: '루디' } })
+  enhancement.loadEnhancementHistory.mockResolvedValue([])
+  enhancement.loadObservedItemLevels.mockResolvedValue(new Map())
+  worldNames.getEventWorldNames.mockResolvedValue(new Set())
   profileLookup.resolveDisplayProfiles.mockImplementation(
     async (ocids: readonly string[]) =>
       new Map(
@@ -828,5 +838,75 @@ describe('cashbookDataRevision', () => {
 
     bossProfit.getBossProfitRecordsRevision.mockReturnValue(4)
     expect(cashbookDataRevision()).toBe(5)
+  })
+})
+
+// 강화 사용 내역은 넷째 원천이다. 손입력 둘·보스 둘과 달리 **금액을 여기서 센다**.
+describe('강화 지출이 칸에 든다', () => {
+  const 큐브 = (over: Record<string, unknown> = {}) => ({
+    id: 'e1',
+    kind: 'cube' as const,
+    dateKey: '2026-08-23',
+    createdAt: '2026-08-23T10:00:00.000+09:00',
+    characterName: '낟낟',
+    targetItem: '아케인셰이드 클로',
+    itemLevel: 150,
+    payload: {},
+    ...over,
+  })
+
+  it('감정비용이 지출로 더해진다', async () => {
+    enhancement.loadEnhancementHistory.mockResolvedValue([큐브()])
+    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
+
+    expect((await loadCalendarAmounts('2026-08-01', '2026-08-31'))['2026-08-23']).toEqual({
+      incomeMeso: 0,
+      expenseMeso: 450_000,
+    })
+  })
+
+  it('손입력 지출과 한 칸에서 합쳐진다', async () => {
+    spend.getSpendRecordsBetween.mockResolvedValue([{ ...메포지출, id: 'c', recordedAt: '' }])
+    enhancement.loadEnhancementHistory.mockResolvedValue([큐브()])
+    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
+
+    expect((await loadCalendarAmounts('2026-08-01', '2026-08-31'))['2026-08-23'].expenseMeso)
+      .toBe(2_542_372_881 + 450_000)
+  })
+
+  // 값을 못 매긴 줄을 0 으로 세우면 합계가 조용히 거짓이 된다.
+  it('레벨을 모르는 줄은 안 더한다', async () => {
+    enhancement.loadEnhancementHistory.mockResolvedValue([큐브({ itemLevel: null })])
+    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
+
+    expect(await loadCalendarAmounts('2026-08-01', '2026-08-31')).toEqual({})
+  })
+
+  it('스페셜 월드 캐릭터의 줄은 빠진다', async () => {
+    worldNames.getEventWorldNames.mockResolvedValue(new Set(['머리맨들맨둘']))
+    enhancement.loadEnhancementHistory.mockResolvedValue([큐브({ characterName: '머리맨들맨둘' })])
+    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
+
+    expect(await loadCalendarAmounts('2026-08-01', '2026-08-31')).toEqual({})
+  })
+
+  // 이름 집합을 아직 못 받았으면 월드를 가릴 수가 없다. 세우면 지출이 두 배로 부푼다.
+  it('이름 집합을 못 받았으면 아무것도 안 더한다', async () => {
+    worldNames.getEventWorldNames.mockResolvedValue(null)
+    enhancement.loadEnhancementHistory.mockResolvedValue([큐브()])
+    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
+
+    expect(await loadCalendarAmounts('2026-08-01', '2026-08-31')).toEqual({})
+  })
+
+  it('날짜 목록을 펴서 넘긴다', async () => {
+    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
+    await loadCalendarAmounts('2026-08-23', '2026-08-25')
+
+    expect(enhancement.loadEnhancementHistory).toHaveBeenCalledWith([
+      '2026-08-23',
+      '2026-08-24',
+      '2026-08-25',
+    ])
   })
 })

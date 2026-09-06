@@ -11,6 +11,7 @@ import { fetchCharacterList } from '../../nexon/character'
 import type { EnhancementHistoryRow, EnhancementKind } from '../../nexon/history/client'
 import { fetchEnhancementHistory } from '../../nexon/history/client'
 import { getAuthConfig } from '../../storage/api-key'
+import { saveEventWorldNames } from '../../storage/event-world-names'
 import {
   checkKey,
   loadEnhancementChecks,
@@ -119,7 +120,12 @@ export async function collectEnhancementHistory(
 
   // 목록을 못 받은 것과 스페셜 캐릭터가 없는 것은 다르다. 앞은 null, 뒤는 빈 집합이다.
   const eventNames = await fetchCharacterList(authConfig.apiKey)
-    .then((accounts) => eventWorldCharacterNames(accounts))
+    .then(async (accounts) => {
+      const names = eventWorldCharacterNames(accounts)
+      // 읽는 쪽이 이것을 쓴다. 칸 하나 그릴 때마다 계정 목록을 부를 수는 없다.
+      await saveEventWorldNames(names).catch(() => undefined)
+      return names
+    })
     .catch(() => null)
 
   const checkedAt = now.toISOString()

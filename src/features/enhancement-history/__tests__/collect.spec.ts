@@ -3,6 +3,7 @@ import { collectEnhancementHistory, planEnhancementHistory } from '../collect'
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
 jest.mock('../../../nexon/history/client', () => ({ fetchEnhancementHistory: jest.fn() }))
 jest.mock('../../../nexon/character', () => ({ fetchCharacterList: jest.fn() }))
+jest.mock('../../../storage/event-world-names', () => ({ saveEventWorldNames: jest.fn() }))
 jest.mock('../../../storage/enhancement-history', () => ({
   checkKey: (kind: string, dateKey: string) => `${kind}|${dateKey}`,
   loadEnhancementChecks: jest.fn(),
@@ -15,6 +16,7 @@ const { getAuthConfig } = jest.requireMock('../../../storage/api-key') as Record
 const { fetchEnhancementHistory } = jest.requireMock('../../../nexon/history/client') as Record<string, jest.Mock>
 const { fetchCharacterList } = jest.requireMock('../../../nexon/character') as Record<string, jest.Mock>
 const store = jest.requireMock('../../../storage/enhancement-history') as Record<string, jest.Mock>
+const { saveEventWorldNames } = jest.requireMock('../../../storage/event-world-names') as Record<string, jest.Mock>
 
 const NOW = new Date('2026-09-06T12:00:00+09:00')
 const KINDS = ['cube', 'starforce', 'potential']
@@ -42,6 +44,7 @@ beforeEach(() => {
   store.loadKnownHistoryIds.mockReset().mockResolvedValue(new Set())
   store.markEnhancementChecked.mockReset().mockResolvedValue(undefined)
   store.saveEnhancementHistory.mockReset().mockResolvedValue(undefined)
+  saveEventWorldNames.mockReset().mockResolvedValue(undefined)
 })
 
 describe('계획', () => {
@@ -147,6 +150,13 @@ describe('수집', () => {
     expect(store.markEnhancementChecked).toHaveBeenCalledWith(
       'cube', '2026-09-06', null, false, expect.any(String),
     )
+  })
+
+  // 읽는 쪽이 이것을 쓴다. 칸 하나 그릴 때마다 계정 목록을 부를 수는 없다.
+  it('받은 스페셜 이름을 남긴다', async () => {
+    await collectEnhancementHistory(['2026-09-05'], NOW)
+
+    expect(saveEventWorldNames).toHaveBeenCalledWith(new Set(['머리맨들맨둘']))
   })
 
   // 정정 4. 목록을 못 받으면 큐브·잠재의 스페셜을 가릴 수가 없다.

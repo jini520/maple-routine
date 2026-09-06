@@ -30,6 +30,10 @@ import {
   updateIncomeRecord,
   type IncomeRecord,
 } from '../../storage/income'
+import { getEventWorldNames } from '../../storage/event-world-names'
+import { loadEnhancementHistory, loadObservedItemLevels } from '../../storage/enhancement-history'
+import { toEnhancementSpending } from '../enhancement-history/spending'
+import { datesBetween } from '../../lib/calendar'
 import { getLastPointRate, setLastPointRate } from '../../storage/last-point-rate'
 import {
   deleteSpendRecord,
@@ -245,16 +249,37 @@ async function loadBossDaySummaries(
  * 날짜를 모르는 보스 기록은 안 든다. 어느 칸에 얹으면 그것이 거짓 날짜가 된다. 그런 기록은
  * 주간 보기에서 `period_key` 로 제자리에 서므로 잃는 것은 월간 칸뿐이다.
  */
+/**
+ * 그 범위의 강화 사용 내역을 **금액이 붙은 줄**로.
+ *
+ * 이벤트 월드(스페셜) 줄은 여기서 걷힌다. 이름 집합을 아직 못 받았으면 월드를 모르는 줄을 전부
+ * 뺀다. 가릴 수 없는 것을 세우면 지출이 두 배로 부푼다.
+ *
+ * 읽기가 실패하면 빈 목록이다. 칸이 지출을 빼고 보이지만 화면은 산다.
+ */
+async function loadEnhancementSpending(
+  fromDateKey: string,
+  toDateKey: string,
+): Promise<ReturnType<typeof toEnhancementSpending>> {
+  const [entries, levels, eventNames] = await Promise.all([
+    withSqliteFallback(loadEnhancementHistory(datesBetween(fromDateKey, toDateKey)), []),
+    withSqliteFallback(loadObservedItemLevels(), new Map<string, number>()),
+    getEventWorldNames().catch(() => null),
+  ])
+  return toEnhancementSpending(entries, eventNames, levels)
+}
+
 export async function loadCalendarAmounts(
   fromDateKey: string,
   toDateKey: string,
 ): Promise<CalendarAmounts> {
   // 읽기가 실패해도 화면이 죽지 않는다. 커넥션이 stale 하거나 응답이 없으면 빈 값으로 진행하고
   // 다음 방문에서 다시 읽는다. 대가는 칸이 0 으로 보인다 는 것이다.
-  const [incomes, spends, bossSummaries] = await Promise.all([
+  const [incomes, spends, bossSummaries, enhancements] = await Promise.all([
     withSqliteFallback(getIncomeRecordsBetween(fromDateKey, toDateKey), []),
     withSqliteFallback(getSpendRecordsBetween(fromDateKey, toDateKey), []),
     loadBossDaySummaries(fromDateKey, toDateKey),
+    loadEnhancementSpending(fromDateKey, toDateKey),
   ])
 
   const amounts: Record<string, CalendarDayAmounts> = {}
@@ -266,6 +291,10 @@ export async function loadCalendarAmounts(
   }
   for (const summary of bossSummaries) {
     addTo(amounts, summary.dateKey, { incomeMeso: summary.crystalMeso + summary.dropMeso })
+  }
+  for (const row of enhancements) {
+    // 값을 못 매긴 줄은 **안 더한다**. 0 으로 세우면 합계가 조용히 거짓이 된다.
+    if (row.costMeso !== null) addTo(amounts, row.dateKey, { expenseMeso: row.costMeso })
   }
   return amounts
 }
