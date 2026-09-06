@@ -34,7 +34,12 @@ jest.mock('../../../features/cashbook/records', () => {
 //
 // 회차 수를 **진짜 state 로** 들고 있어야 테스트가 그것을 올려 실제 리렌더를 낼 수 있다.
 // 객체만 바꾸고 `rerender` 를 부르면 하네스의 프로바이더가 벗겨진다.
-const mockWindow = { status: 'ready' as 'idle' | 'filling' | 'ready', revision: 1, reload: jest.fn() }
+const mockWindow = {
+  status: 'ready' as 'idle' | 'filling' | 'ready',
+  collecting: false,
+  revision: 1,
+  reload: jest.fn(),
+}
 let mockSetWindowRevision: ((value: number) => void) | null = null
 const mockRequestDateRange = jest.fn()
 
@@ -45,6 +50,7 @@ jest.mock('../../../features/ledger/useLedgerData', () => ({
     mockSetWindowRevision = setRevision
     return {
       status: mockWindow.status,
+      collecting: mockWindow.collecting,
       revision,
       reload: mockWindow.reload,
       requestDateRange: mockRequestDateRange,
@@ -129,6 +135,7 @@ beforeEach(() => {
   records.resolveTrackedDefeatDates.mockReset().mockResolvedValue(0)
   records.cashbookDataRevision.mockReset().mockReturnValue(0)
   mockWindow.status = 'ready'
+  mockWindow.collecting = false
   mockWindow.revision = 1
   mockWindow.reload.mockReset().mockResolvedValue(undefined)
   mockOpenTab.mockReset()
@@ -1598,5 +1605,46 @@ describe('강화 줄', () => {
     await 이름으로누르기(view, '낟낟 · 스타포스 접기')
 
     expect(view.queryByTestId('cashbook-row-items-enhancement:스타포스:낟낟')).toBeNull()
+  })
+})
+
+// 아직 안 받은 지출을 0 으로 그리면 값이 들어올 때마다 숫자가 몇 번씩 바뀌어, 앱이 틀렸다가
+// 고쳐지는 것으로 읽힌다(사용자 보고). 수익은 로컬 기록이라 이미 참이므로 그대로 선다.
+describe('확정 전 숫자', () => {
+  beforeEach(() => {
+    records.loadCalendarAmounts.mockResolvedValue({
+      '2026-08-23': { incomeMeso: 7_600_000_000, expenseMeso: 1_200_000_000 },
+    })
+  })
+
+  it('받는 중이면 순 수익 자리에 스켈레톤이 선다', async () => {
+    mockWindow.collecting = true
+    const view = await 그리기()
+
+    expect(view.getByTestId('cashbook-summary-net-pending')).toBeTruthy()
+    expect(view.queryByTestId('cashbook-summary-net')).toBeNull()
+  })
+
+  it('받는 중이면 지출 금액도 안 적는다', async () => {
+    mockWindow.collecting = true
+    const view = await 그리기()
+
+    expect(view.queryByTestId('cashbook-summary-expense')).toBeNull()
+  })
+
+  // 수익은 로컬 기록에서 와 이미 참이다. 가리면 모르는 값으로 읽힌다.
+  it('수익은 받는 중에도 그대로 선다', async () => {
+    mockWindow.collecting = true
+    const view = await 그리기()
+
+    expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+76억')
+  })
+
+  it('다 받으면 숫자가 선다', async () => {
+    const view = await 그리기()
+
+    expect(view.queryByTestId('cashbook-summary-net-pending')).toBeNull()
+    expect(view.getByTestId('cashbook-summary-net')).toHaveTextContent('+64억 메소')
+    expect(view.getByTestId('cashbook-summary-expense')).toHaveTextContent('−12억')
   })
 })

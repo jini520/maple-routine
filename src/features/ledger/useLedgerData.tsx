@@ -27,8 +27,15 @@ import { useLedgerProgress } from './progress'
 import { syncScheduleWindow } from '../schedule-window/sync'
 
 export interface LedgerDataState {
-  /** `filling` 인 동안 자식이 불러오는 중 을 그린다. */
+  /** `filling` 인 동안 모달이 뜬다. **마운트와 당김에만** 선다. */
   status: 'idle' | 'filling' | 'ready'
+  /**
+   * 지금 회차가 도는 중인가. `status` 와 갈리는 자리가 **기간 이동**이다. 거기는 모달을 안 띄우고
+   * 값이 들어오는 대로 칸에 붙이므로, 화면이 **확정 전 숫자**를 흐리게 그릴 근거가 이것이다.
+   *
+   * 없으면 아직 안 받은 지출이 `0` 으로 단정된 채 진하게 서고, 값이 들어오며 네 번 바뀐다.
+   */
+  collecting: boolean
   /** 회차가 끝날 때마다 오른다. 자식이 **다시 읽을 계기**로 쓰는 유일한 신호다. */
   revision: number
   /**
@@ -57,6 +64,7 @@ const REVISION_FLUSH_MS = 600
 
 const IDLE: LedgerDataState = {
   status: 'idle',
+  collecting: false,
   revision: 0,
   reload: () => Promise.resolve(),
   requestDateRange: () => undefined,
@@ -76,7 +84,12 @@ export function LedgerDataProvider(props: {
   // 마운트하면 반드시 채우므로 시작이 곧 `filling` 이다. 효과 안에서 이 값을 세우면 렌더가
   // 한 번 더 돈다(연쇄 렌더).
   const [status, setStatus] = useState<LedgerDataState['status']>('filling')
+  // 마운트하면 반드시 채우므로 시작이 곧 참이다. 효과 안에서 세우면 렌더가 한 번 더 돈다.
+  const [collecting, setCollecting] = useState(true)
   const [revision, setRevision] = useState(0)
+  // 회차가 겹칠 수 있다(기간을 연타하면 앞 회차가 아직 돈다). 세어야 뒤 회차가 도는 중에 앞
+  // 회차가 끝나며 `collecting` 을 꺼 버리지 않는다.
+  const running = useRef(0)
   // 언마운트 뒤 setState 를 막는 문지기. 창 한 회차가 화면보다 오래 살 수 있다(84건).
   const alive = useRef(true)
 
@@ -98,6 +111,7 @@ export function LedgerDataProvider(props: {
    * 도는 중에 뒤로 가지 않는다.
    */
   const run = useCallback(async (live: boolean, range: CashbookRange) => {
+    running.current += 1
     const progress = useLedgerProgress.getState()
     progress.reset()
 
@@ -145,8 +159,10 @@ export function LedgerDataProvider(props: {
       ).catch(() => undefined),
     ])
 
+    running.current -= 1
     if (!alive.current) return
     progress.reset()
+    if (running.current === 0) setCollecting(false)
     setStatus('ready')
     setRevision((value) => value + 1)
   }, [])
@@ -158,6 +174,7 @@ export function LedgerDataProvider(props: {
   /** 당김이 부르는 자리라 여기서 `filling` 을 세워도 연쇄 렌더가 아니다. */
   const reload = useCallback(async () => {
     setStatus('filling')
+    setCollecting(true)
     await run(true, range.current)
   }, [run])
 
@@ -172,6 +189,7 @@ export function LedgerDataProvider(props: {
       // 같은 범위를 두 번 말하는 것이 정상이다. 화면이 다시 그릴 때마다 부른다.
       if (next.from === range.current.from && next.to === range.current.to) return
       range.current = next
+      setCollecting(true)
       void run(false, next)
     },
     [run],
@@ -182,8 +200,8 @@ export function LedgerDataProvider(props: {
   }, [run])
 
   const value = useMemo(
-    () => ({ status, revision, reload, requestDateRange }),
-    [status, revision, reload, requestDateRange],
+    () => ({ status, collecting, revision, reload, requestDateRange }),
+    [status, collecting, revision, reload, requestDateRange],
   )
 
   return <LedgerDataContext.Provider value={value}>{props.children}</LedgerDataContext.Provider>

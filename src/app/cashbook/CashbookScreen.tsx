@@ -38,6 +38,8 @@ import {
   ShoppingCartIcon,
   Text,
 } from '../../components/atoms'
+import { Skeleton } from 'moti/skeleton'
+
 import { CalendarGrid } from '../../components/molecules/CalendarGrid/CalendarGrid'
 import { DIFFICULTY_SHORT } from '../../constants/domain/boss-difficulty'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
@@ -228,8 +230,14 @@ function SourceRow(props: {
  *
  * 테두리는 없다. 채움만으로 격자와 갈린다.
  */
-function PeriodSummary(props: { incomeMeso: number; expenseMeso: number }): React.JSX.Element {
+function PeriodSummary(props: {
+  incomeMeso: number
+  expenseMeso: number
+  /** 지출을 아직 다 못 받았다. 숫자 자리에 스켈레톤이 선다 */
+  pending: boolean
+}): React.JSX.Element {
   const net = props.incomeMeso - props.expenseMeso
+  const { definition } = useThemeAppearance()
   return (
     <View
       testID="cashbook-period-summary"
@@ -239,20 +247,28 @@ function PeriodSummary(props: { incomeMeso: number; expenseMeso: number }): Reac
         <Text className="text-10 tracking-wide text-text-muted">순 수익</Text>
         {/* `leading-none` 이라 큰 글자가 자기 줄 높이로 카드를 밀지 않는다. 카드가 낮아야 격자가
             주간 보기에서 스크롤 없이 남는다. */}
-        <Text
-          testID="cashbook-summary-net"
-          numberOfLines={1}
-          className={`mt-1 text-xl font-extrabold leading-none ${
-            net > 0 ? 'text-rise-ink' : net < 0 ? 'text-fall-ink' : 'text-text'
-          }`}
-          style={TABULAR_NUMS}
-        >
-          {net > 0 ? '+' : net < 0 ? '−' : ''}
-          {formatMesoCompact(Math.abs(net))}{' '}
-          {/* 단위는 작은 글자로 격하하되 사이에 진짜 공백을 남긴다. 마진으로만 띄우면 읽히는
-              문자열이 `N메소`로 붙어 스크린리더가 이어 읽는다. */}
-          <Text className="text-11 font-bold text-text-muted">메소</Text>
-        </Text>
+        {props.pending ? (
+          // 아직 안 받은 지출을 0 으로 그리면 값이 들어올 때마다 큰 숫자가 몇 번씩 바뀌어,
+          // 앱이 틀렸다가 고쳐지는 것으로 읽힌다(사용자 보고).
+          <View testID="cashbook-summary-net-pending" className="mt-1">
+            <Skeleton width={140} height={24} radius={6} colorMode={definition.mode} />
+          </View>
+        ) : (
+          <Text
+            testID="cashbook-summary-net"
+            numberOfLines={1}
+            className={`mt-1 text-xl font-extrabold leading-none ${
+              net > 0 ? 'text-rise-ink' : net < 0 ? 'text-fall-ink' : 'text-text'
+            }`}
+            style={TABULAR_NUMS}
+          >
+            {net > 0 ? '+' : net < 0 ? '−' : ''}
+            {formatMesoCompact(Math.abs(net))}{' '}
+            {/* 단위는 작은 글자로 격하하되 사이에 진짜 공백을 남긴다. 마진으로만 띄우면 읽히는
+                문자열이 `N메소`로 붙어 스크린리더가 이어 읽는다. */}
+            <Text className="text-11 font-bold text-text-muted">메소</Text>
+          </Text>
+        )}
       </View>
 
       <View testID="cashbook-summary-sources" className="shrink-0 items-end gap-1">
@@ -263,13 +279,25 @@ function PeriodSummary(props: { incomeMeso: number; expenseMeso: number }): Reac
           amount={props.incomeMeso}
           tone="text-rise-ink"
         />
-        <SourceRow
-          testID="cashbook-summary-expense"
-          label="지출"
-          sign="−"
-          amount={props.expenseMeso}
-          tone="text-fall-ink"
-        />
+        {props.pending ? (
+          <View className="flex-row items-center gap-1.5">
+            <Text className="text-11 text-text-muted">지출</Text>
+            <Skeleton
+              width={64}
+              height={13}
+              radius={4}
+              colorMode={definition.mode}
+            />
+          </View>
+        ) : (
+          <SourceRow
+            testID="cashbook-summary-expense"
+            label="지출"
+            sign="−"
+            amount={props.expenseMeso}
+            tone="text-fall-ink"
+          />
+        )}
       </View>
     </View>
   )
@@ -911,6 +939,7 @@ export function CashbookScreen(): React.JSX.Element {
           <PeriodSummary
             incomeMeso={periodSums.incomeMeso}
             expenseMeso={periodSums.expenseMeso}
+            pending={ledger.collecting}
           />
 
           <CalendarGrid
