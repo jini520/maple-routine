@@ -11,10 +11,15 @@ describe('이름으로 찾는다', () => {
     expect(equipmentItemLevel('아케인셰이드나이트햇')).toBe(200)
   })
 
-  // 세트 레벨이 개별 항목을 덮는다. 그래야 세트 한 줄로 수십 종이 채워진다.
-  it('개별 레벨이 없어도 세트 레벨을 쓴다', () => {
-    // 아케인셰이드 68종 중 관측된 것은 23종이고 나머지도 같은 세트다.
+  // 관측이 23종뿐인데 68종이 다 채워져 있다. 세트가 한 레벨이라는 사실을 표에 굳혀 둔 결과다.
+  it('관측에 없던 같은 세트 장비도 값을 갖는다', () => {
     expect(equipmentItemLevel('아케인셰이드 시즈건')).toBe(200)
+  })
+
+  it('사용자가 준 세트 레벨이 들어 있다', () => {
+    expect(equipmentItemLevel('앱솔랩스 나이트헬름')).toBe(160)
+    expect(equipmentItemLevel('데스티니 세이버')).toBe(250)
+    expect(equipmentItemLevel('파프니르 체인')).toBe(150)
   })
 
   it('사용자가 준 보조무기 레벨도 든다', () => {
@@ -24,8 +29,8 @@ describe('이름으로 찾는다', () => {
 
 // **모름은 0 이 아니다.** 0 을 주면 레벨 0 짜리 장비가 생겨 비용이 조용히 틀린다.
 describe('모르면 null', () => {
-  it('레벨을 아직 안 받은 세트는 null 이다', () => {
-    expect(equipmentItemLevel('앱솔랩스 나이트헬름')).toBeNull()
+  it('레벨을 아직 안 받은 장비는 null 이다', () => {
+    expect(equipmentItemLevel('스칼렛 링')).toBeNull()
   })
 
   it('표에 없는 이름도 null 이다', () => {
@@ -35,4 +40,11 @@ describe('모르면 null', () => {
   it('빈 이름도 던지지 않는다', () => {
     expect(equipmentItemLevel('')).toBeNull()
   })
+})
+
+// 강화가 불가능한 장비는 표에 안 담는다(사용자 지정). 담아 두면 다음 세션이 그 자리를 빈
+// 레벨로 보고 채우려 든다.
+it('강화 불가 장비는 표에 없다', () => {
+  expect(equipmentItemLevel('도전자의 모자')).toBeNull()
+  expect(equipmentItemLevel('칠요의 뱃지')).toBeNull()
 })

@@ -1,7 +1,7 @@
 {
   "updatedAt": "2026-09-06",
-  "source": "아이템 이름은 사용자 제공(2026-09-06). 보조무기·방패 22종의 레벨도 사용자 제공(나무위키 보조무기 문서 덤프의 착용 레벨). 그 밖의 레벨은 넥슨 히스토리 API 가 준 값을 그대로 옮긴 것이다 — 큐브·잠재 응답의 item_level 이고, 2025-09-06~2026-09-05 27,187건에서 한 이름에 두 레벨이 붙은 적이 없다. AI 가 지어낸 값은 한 건도 없다.",
-  "note": "조회는 **공백을 지운 이름**으로 한다. API 는 「아케인셰이드 나이트햇」 처럼 띄어 주고 이 표는 붙여 쓴다. 1년치 실제 장비 132종에서 공백을 지웠을 때 겹치는 이름이 한 건도 없다. level 이 null 이면 **모른다**는 뜻이지 0 이 아니다 — 그 아이템의 스타포스 비용은 안 매기고 건수만 센다. 이 표에 없는 아이템은 enhancement_history 가 스스로 쌓는 표(같은 이름의 큐브·잠재 기록)가 받는다.",
+  "source": "아이템 이름은 사용자 제공(2026-09-06). 보조무기·방패 22종의 레벨도 사용자 제공(나무위키 보조무기 문서 덤프의 착용 레벨). 그 밖의 레벨은 넥슨 히스토리 API 가 준 값을 그대로 옮긴 것이다 — 큐브·잠재 응답의 item_level 이고, 2025-09-06~2026-09-05 27,187건에서 한 이름에 두 레벨이 붙은 적이 없다. 앱솔랩스 160 · 데스티니 250 · 파프니르 150 도 사용자 제공(2026-09-06). AI 가 지어낸 값은 한 건도 없다.",
+  "note": "조회는 **공백을 지운 이름**으로 한다. API 는 「아케인셰이드 나이트햇」 처럼 띄어 주고 이 표는 붙여 쓴다. 1년치 실제 장비 132종에서 공백을 지웠을 때 겹치는 이름이 한 건도 없다. level 이 null 이면 **모른다**는 뜻이지 0 이 아니다 — 그 아이템의 스타포스 비용은 안 매기고 건수만 센다. 강화가 불가능한 장비는 이 표에 **안 담는다**(도전자의 45종 · 칠요 2종을 그래서 걷었다, 사용자 지정). 이 표에 없는 아이템은 enhancement_history 가 스스로 쌓는 표(같은 이름의 큐브·잠재 기록)가 받는다.",
   "items": [
     {
       "key": "meister_ear_ring",
@@ -20,18 +20,6 @@
       "name": "마이스터숄더",
       "group": "equipment",
       "level": 140
-    },
-    {
-      "key": "seven_day_monster_parker",
-      "name": "칠요의몬스터파커",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "seven_day_badge",
-      "name": "칠요의뱃지",
-      "group": "equipment",
-      "level": null
     },
     {
       "key": "royal_warrior_helm",
@@ -55,73 +43,73 @@
       "key": "fafnir_mistilteinn",
       "name": "파프니르미스틸테인",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_twin_cleaver",
       "name": "파프니르트윈클리버",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_guardian_hammer",
       "name": "파프니르골디언해머",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_penitent_tears",
       "name": "파프니르페니텐시아",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_battle_cleaver",
       "name": "파프니르배틀클리버",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_lightning_striker",
       "name": "파프니르라이트닝어",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_brionak",
       "name": "파프니르브류나크",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_moon_glaive",
       "name": "파프니르문글레이브",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_death_bringer",
       "name": "파프니르데스브링어",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_big_mountain",
       "name": "파프니르빅마운틴",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_mercy",
       "name": "파프니르포기브니스",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_soaring_sword",
       "name": "파프니르용천검",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "royal_dunwitch_hat",
@@ -145,31 +133,31 @@
       "key": "fafnir_mana_taker",
       "name": "파프니르마나테이커",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_mana_crown",
       "name": "파프니르마나크라운",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_mana_cradle",
       "name": "파프니르마나크래들",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_psy_limiter",
       "name": "파프니르ESP리미터",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_lucent_gauntlet",
       "name": "파프니르매직건틀렛",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "royal_ranger_beret",
@@ -193,31 +181,31 @@
       "key": "fafnir_wind_chaser",
       "name": "파프니르윈드체이서",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_windwing_shooter",
       "name": "파프니르윈드윙슈터",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_dual_windwing",
       "name": "파프니르듀얼윈드윙",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_ancient_bow",
       "name": "파프니르에인션트보우",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_nightchaser",
       "name": "파프니르나이트체이서",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "royal_assassin_hood",
@@ -241,49 +229,49 @@
       "key": "fafnir_damascus",
       "name": "파프니르다마스커스",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_risk_holder",
       "name": "파프니르리스크홀더",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_ciel_claire",
       "name": "파프니르클레르시엘",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_split_edge",
       "name": "파프니르스플릿엣지",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_chain",
       "name": "파프니르체인",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_dragon_ritual_fan",
       "name": "파프니르용선",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_chakram",
       "name": "파프니르차크람",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_rapid_edge",
       "name": "파프니르래피드엣지",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "royal_wanderer_hat",
@@ -307,433 +295,433 @@
       "key": "fafnir_zeliska",
       "name": "파프니르첼리스카",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_perry_talon",
       "name": "파프니르펜리르탈론",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_lost_cannon",
       "name": "파프니르러스터캐논",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "fafnir_angelic_shooter",
       "name": "파프니르엔젤릭슈터",
       "group": "equipment",
-      "level": null
+      "level": 150
     },
     {
       "key": "absolab_knight_helm",
       "name": "앱솔랩스나이트헬름",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_knight_suit",
       "name": "앱솔랩스나이트슈트",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_knight_shoes",
       "name": "앱솔랩스나이트슈즈",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_knight_gloves",
       "name": "앱솔랩스나이트글러브",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_knight_cape",
       "name": "앱솔랩스나이트케이프",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_knight_shoulder",
       "name": "앱솔랩스나이트숄더",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_bladecaster",
       "name": "앱솔랩스블레이드캐스터",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_furious_sword",
       "name": "앱솔랩스퓨리어스소드",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_desperado",
       "name": "앱솔랩스데스페라도",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_saber",
       "name": "앱솔랩스세이버",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_axe",
       "name": "앱솔랩스엑스",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_bit_hammer",
       "name": "앱솔랩스비트해머",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_broad_saber",
       "name": "앱솔랩스브로드세이버",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_broad_axe",
       "name": "앱솔랩스브로드엑스",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_broad_hammer",
       "name": "앱솔랩스브로드해머",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_piercing_spear",
       "name": "앱솔랩스피어싱스피어",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_hellslayer",
       "name": "앱솔랩스헬슬레이어",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_katana",
       "name": "앱솔랩스카타나",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_pile_god",
       "name": "앱솔랩스파일갓",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_mage_crown",
       "name": "앱솔랩스메이지크라운",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_mage_suit",
       "name": "앱솔랩스메이지슈트",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_mage_shoes",
       "name": "앱솔랩스메이지슈즈",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_mage_gloves",
       "name": "앱솔랩스메이지글러브",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_mage_cape",
       "name": "앱솔랩스메이지케이프",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_mage_shoulder",
       "name": "앱솔랩스메이지숄더",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_spellsong_wand",
       "name": "앱솔랩스스펠링완드",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_spellsong_staff",
       "name": "앱솔랩스스펠링스태프",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_shining_rod",
       "name": "앱솔랩스샤이닝로드",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_memorial_staff",
       "name": "앱솔랩스메모리얼스태프",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_celestial_light",
       "name": "앱솔랩스셀레스티얼라이트",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_spirit_walker_fan",
       "name": "앱솔랩스스피릿워커팬",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_psy_limiter",
       "name": "앱솔랩스ESP리미터",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_lucent_gauntlet",
       "name": "앱솔랩스매직건틀렛",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_archer_hood",
       "name": "앱솔랩스아처후드",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_archer_suit",
       "name": "앱솔랩스아처슈트",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_archer_shoes",
       "name": "앱솔랩스아처슈즈",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_archer_gloves",
       "name": "앱솔랩스아처글러브",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_archer_cape",
       "name": "앱솔랩스아처케이프",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_archer_shoulder",
       "name": "앱솔랩스아처숄더",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_sureshot_bow",
       "name": "앱솔랩스슈팅보우",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_crossbow",
       "name": "앱솔랩스크로스보우",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_dual_bowguns",
       "name": "앱솔랩스듀얼보우건",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_ancient_bow",
       "name": "앱솔랩스에인션트보우",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_whispershot",
       "name": "앱솔랩스브레스슈터",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_bandit_cap",
       "name": "앱솔랩스시프캡",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_bandit_suit",
       "name": "앱솔랩스시프슈트",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_bandit_shoes",
       "name": "앱솔랩스시프슈즈",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_bandit_gloves",
       "name": "앱솔랩스시프글러브",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_bandit_cape",
       "name": "앱솔랩스시프케이프",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_bandit_shoulder",
       "name": "앱솔랩스시프숄더",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_blade_lord",
       "name": "앱솔랩스슬래셔",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_revenge_guard",
       "name": "앱솔랩스리벤지가즈",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_forked_cane",
       "name": "앱솔랩스포크드케인",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_whip_blade",
       "name": "앱솔랩스스플릿엣지",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_chain",
       "name": "앱솔랩스체인",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_monster_ritual_fan",
       "name": "앱솔랩스몬스터리추얼팬",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_chakram",
       "name": "앱솔랩스차크람",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_pirate_fedora",
       "name": "앱솔랩스파이렛페도라",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_pirate_suit",
       "name": "앱솔랩스파이렛슈트",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_pirate_shoes",
       "name": "앱솔랩스파이렛슈즈",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_pirate_gloves",
       "name": "앱솔랩스파이렛글러브",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_pirate_cape",
       "name": "앱솔랩스파이렛케이프",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_pirate_shoulder",
       "name": "앱솔랩스파이렛숄더",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_point_gun",
       "name": "앱솔랩스포인팅건",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_blast_knuckle",
       "name": "앱솔랩스블로우너클",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_soul_shooter",
       "name": "앱솔랩스엔젤릭슈터",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_martial_brace",
       "name": "앱솔랩스마샬브레이스",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "absolab_blast_cannon",
       "name": "앱솔랩스블래스트캐논",
       "group": "equipment",
-      "level": null
+      "level": 160
     },
     {
       "key": "arcane_umbra_knight_hat",
@@ -1354,276 +1342,6 @@
       "level": 250
     },
     {
-      "key": "challenger_hat",
-      "name": "도전자의모자",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challenger_top",
-      "name": "도전자의상의",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challenger_pants",
-      "name": "도전자의하의",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challenger_shoes",
-      "name": "도전자의신발",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challenger_gloves",
-      "name": "도전자의장갑",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challenger_cape",
-      "name": "도전자의망토",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challenger_shoulder_accessory",
-      "name": "도전자의어깨장식",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_bladecaster",
-      "name": "도전자의블레이드캐스터",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_furious_sword",
-      "name": "도전자의폭검",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_desperado",
-      "name": "도전자의데스페라도",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_saber",
-      "name": "도전자의세이버",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_axe",
-      "name": "도전자의엑스",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_bit_hammer",
-      "name": "도전자의비트해머",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_broad_saber",
-      "name": "도전자의브로드세이버",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_broad_axe",
-      "name": "도전자의브로드엑스",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_broad_hammer",
-      "name": "도전자의브로드해머",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_piercing_spear",
-      "name": "도전자의피어싱스피어",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_hellslayer",
-      "name": "도전자의헬슬레이어",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_katana",
-      "name": "도전자의카타나",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_pile_god",
-      "name": "도전자의파일갓",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_shining_rod",
-      "name": "도전자의샤이닝로드",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_memorial_staff",
-      "name": "도전자의메모리얼스태프",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challenger_celestial_light",
-      "name": "도전자의셀레스티얼라이트",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challenger_spirit_walker_fan",
-      "name": "도전자의스피릿워커팬",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_psy_limiter",
-      "name": "도전자의ESP리미터",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_lucent_gauntlet",
-      "name": "도전자의매직건틀렛",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_spellsong_wand",
-      "name": "도전자의스펠링완드",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_spellsong_staff",
-      "name": "도전자의스펠링스태프",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_whispershot",
-      "name": "도전자의브레스슈터",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_sureshot_bow",
-      "name": "도전자의슈팅보우",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_crossbow",
-      "name": "도전자의크로스보우",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_dual_bowguns",
-      "name": "도전자의듀얼보우건",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_ancient_bow",
-      "name": "도전자의에인션트보우",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_whip_blade",
-      "name": "도전자의스플릿엣지",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_chain",
-      "name": "도전자의체인",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_monster_ritual_fan",
-      "name": "도전자의몬스터리추얼팬",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_blade_lord",
-      "name": "도전자의슬래셔",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_forked_cane",
-      "name": "도전자의포크드케인",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_chakram",
-      "name": "도전자의차크람",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_revenge_guard",
-      "name": "도전자의리벤지가즈",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_soul_shooter",
-      "name": "도전자의엔젤릭슈터",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_martial_brace",
-      "name": "도전자의마샬브레이스",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_blast_knuckle",
-      "name": "도전자의블로우너클",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_point_gun",
-      "name": "도전자의포인팅건",
-      "group": "equipment",
-      "level": null
-    },
-    {
-      "key": "challengers_blast_cannon",
-      "name": "도전자의블래스트캐논",
-      "group": "equipment",
-      "level": null
-    },
-    {
       "key": "condensed_power_crystal",
       "name": "응축된힘의결정석",
       "group": "equipment",
@@ -2173,241 +1891,241 @@
       "key": "destiny_saber",
       "name": "데스티니세이버",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_two_handed_sword",
       "name": "데스티니투핸드소드",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_hammer",
       "name": "데스티니해머",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_two_handed_hammer",
       "name": "데스티니투핸드해머",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_axe",
       "name": "데스티니엑스",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_two_handed_axe",
       "name": "데스티니투핸드엑스",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_spear",
       "name": "데스티니스피어",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_polearm",
       "name": "데스티니폴암",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_desperado",
       "name": "데스티니데스페라도",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_ellaha",
       "name": "데스티니엘라하",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_lazuli",
       "name": "데스티니라즐리",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_lapis",
       "name": "데스티니라피스",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_tuner",
       "name": "데스티니튜너",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_ultra_sword",
       "name": "데스티니초극검",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_katana",
       "name": "데스티니카타나",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_wand",
       "name": "데스티니완드",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_staff",
       "name": "데스티니스태프",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_shining_rod",
       "name": "데스티니샤이닝로드",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_esp_limiter",
       "name": "데스티니ESP리미터",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_magic_gauntlet",
       "name": "데스티니매직건틀렛",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_yinyang_fan",
       "name": "데스티니음양선",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_memorial_staff",
       "name": "데스티니메모리얼스태프",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_celestial_light",
       "name": "데스티니셀레스티얼라이트",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_bow",
       "name": "데스티니보우",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_crossbow",
       "name": "데스티니크로스보우",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_dual_bowgun",
       "name": "데스티니듀얼보우건",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_ancient_bow",
       "name": "데스티니에인션트보우",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_breath_shooter",
       "name": "데스티니브레스슈터",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_dagger",
       "name": "데스티니대거",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_guard",
       "name": "데스티니가즈",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_cane",
       "name": "데스티니케인",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_chain",
       "name": "데스티니체인",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_transcendent_fan",
       "name": "데스티니초월선",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_chakram",
       "name": "데스티니차크람",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_energy_chain",
       "name": "데스티니에너지체인",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_pistol",
       "name": "데스티니피스톨",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_knuckle",
       "name": "데스티니클로",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_blast_cannon",
       "name": "데스티니블래스트캐논",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_soul_shooter",
       "name": "데스티니소울슈터",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "destiny_mukwon",
       "name": "데스티니무권",
       "group": "lucky",
-      "level": null
+      "level": 250
     },
     {
       "key": "mystic_shield",
