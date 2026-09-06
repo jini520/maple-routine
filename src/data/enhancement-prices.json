@@ -1,0 +1,237 @@
+{
+  "updatedAt": "2026-09-06",
+  "source": "큐브 감정비용 공식(20·L²) · 잠재 재설정 비용 표 · 스타포스 공식과 할인 적용 순서는 전부 사용자 제공(2026-09-06). 축(큐브 16종 · 잠재 2종 · 아이템 레벨 30~250 · 등급 5종)은 2025-09-06~2026-09-05 27,187건 실측에서 뽑았다. AI 가 지어낸 값은 한 건도 없다.",
+  "note": "큐브의 메소 비용은 **감정비용 하나**다. 큐브 자체는 캐시·이벤트로 얻으므로 종류가 값을 안 가른다. 잠재 재설정은 **레벨 구간 × 등급**이고, 어느 등급 칸을 보는지는 종류가 정한다. `노멀` 등급은 표에 없다. 재설정할 수 없는 등급이라 걸릴 자리가 없다. 1년치에서 `노멀` 이 나온 109건은 전부 본 잠재를 재설정한 엠블렘이고, 그 값은 에디셔널 칸이 비었다는 뜻이었다. **장비 레벨을 모르면 지출에 안 세운다**(사용자 지정). 금액을 못 매기는 것을 0 으로 세우면 합계가 거짓이 된다.",
+  "cubeAppraisal": {
+    "note": "큐브 1회당 드는 감정비용. **장비 레벨만 본다**. 큐브 종류는 안 가린다. 120 이하는 통찰력 90 이상이면 무료인데, 이 앱은 **모든 캐릭터의 통찰력을 100 으로 본다**(사용자 지정). 표로 받았던 여섯 값(130·140·150·160·200·250)이 이 식과 마지막 자리까지 맞는다.",
+    "freeAtOrBelowLevel": 120,
+    "formula": "20 * L^2"
+  },
+  "potentialReset": {
+    "note": "레벨 구간 × 등급. `잠재능력 재설정` 은 `potential_option_grade` 를, `에디셔널 잠재능력 재설정` 은 `additional_potential_option_grade` 를 본다. 재설정은 등급을 안 바꾸므로 응답의 그 값이 곧 재설정 당시의 등급이다. `minLevel` 은 **내림차순**이라 위에서부터 처음 걸리는 줄이 그 레벨의 줄이다.",
+    "byType": {
+      "잠재능력 재설정": [
+        {
+          "minLevel": 250,
+          "레어": 5000000,
+          "에픽": 20000000,
+          "유니크": 42500000,
+          "레전드리": 50000000
+        },
+        {
+          "minLevel": 200,
+          "레어": 4500000,
+          "에픽": 18000000,
+          "유니크": 38250000,
+          "레전드리": 45000000
+        },
+        {
+          "minLevel": 160,
+          "레어": 4250000,
+          "에픽": 17000000,
+          "유니크": 36125000,
+          "레전드리": 42500000
+        },
+        {
+          "minLevel": 1,
+          "레어": 4000000,
+          "에픽": 16000000,
+          "유니크": 34000000,
+          "레전드리": 40000000
+        }
+      ],
+      "에디셔널 잠재능력 재설정": [
+        {
+          "minLevel": 250,
+          "레어": 12250000,
+          "에픽": 34300000,
+          "유니크": 83300000,
+          "레전드리": 98000000
+        },
+        {
+          "minLevel": 200,
+          "레어": 11000000,
+          "에픽": 30800000,
+          "유니크": 74800000,
+          "레전드리": 88000000
+        },
+        {
+          "minLevel": 160,
+          "레어": 10375000,
+          "에픽": 29050000,
+          "유니크": 70550000,
+          "레전드리": 83000000
+        },
+        {
+          "minLevel": 1,
+          "레어": 9750000,
+          "에픽": 27300000,
+          "유니크": 66300000,
+          "레전드리": 78000000
+        }
+      ]
+    }
+  },
+  "starforce": {
+    "note": "한 번 시도할 때 드는 메소. `L` 은 장비 레벨, `S` 는 **현재 성수**(`before_starforce_count`)다. `upgrade_item` 이 빈 문자열이 아니면 강화권이라 **메소가 안 든다**(1년치 3,220건 중 9건). `steps` 는 `fromStar` 로 찾는다. 파괴 줄도 **시도 비용만** 센다. 복구비용은 안 센다. 응답이 복구를 줄로 안 남기고 장비를 이름으로만 가리켜서, 파괴 뒤 12성 재개가 복구인지 이름만 같은 다른 개체인지 가릴 수가 없다.",
+    "formula": "round100(1000 + L^3 * (S + 1)^exponent / divisor)",
+    "rounding": "십의 자리에서 반올림(사용자 지정). 194 → 200",
+    "steps": [
+      {
+        "fromStar": 0,
+        "exponent": 1,
+        "divisor": 36
+      },
+      {
+        "fromStar": 1,
+        "exponent": 1,
+        "divisor": 36
+      },
+      {
+        "fromStar": 2,
+        "exponent": 1,
+        "divisor": 36
+      },
+      {
+        "fromStar": 3,
+        "exponent": 1,
+        "divisor": 36
+      },
+      {
+        "fromStar": 4,
+        "exponent": 1,
+        "divisor": 36
+      },
+      {
+        "fromStar": 5,
+        "exponent": 1,
+        "divisor": 36
+      },
+      {
+        "fromStar": 6,
+        "exponent": 1,
+        "divisor": 36
+      },
+      {
+        "fromStar": 7,
+        "exponent": 1,
+        "divisor": 36
+      },
+      {
+        "fromStar": 8,
+        "exponent": 1,
+        "divisor": 36
+      },
+      {
+        "fromStar": 9,
+        "exponent": 1,
+        "divisor": 36
+      },
+      {
+        "fromStar": 10,
+        "exponent": 2.7,
+        "divisor": 571
+      },
+      {
+        "fromStar": 11,
+        "exponent": 2.7,
+        "divisor": 314
+      },
+      {
+        "fromStar": 12,
+        "exponent": 2.7,
+        "divisor": 214
+      },
+      {
+        "fromStar": 13,
+        "exponent": 2.7,
+        "divisor": 157
+      },
+      {
+        "fromStar": 14,
+        "exponent": 2.7,
+        "divisor": 107
+      },
+      {
+        "fromStar": 15,
+        "exponent": 2.7,
+        "divisor": 200
+      },
+      {
+        "fromStar": 16,
+        "exponent": 2.7,
+        "divisor": 200
+      },
+      {
+        "fromStar": 17,
+        "exponent": 2.7,
+        "divisor": 150
+      },
+      {
+        "fromStar": 18,
+        "exponent": 2.7,
+        "divisor": 70
+      },
+      {
+        "fromStar": 19,
+        "exponent": 2.7,
+        "divisor": 45
+      },
+      {
+        "fromStar": 20,
+        "exponent": 2.7,
+        "divisor": 200
+      },
+      {
+        "fromStar": 21,
+        "exponent": 2.7,
+        "divisor": 125
+      },
+      {
+        "fromStar": 22,
+        "exponent": 2.7,
+        "divisor": 200
+      },
+      {
+        "fromStar": 23,
+        "exponent": 2.7,
+        "divisor": 200
+      },
+      {
+        "fromStar": 24,
+        "exponent": 2.7,
+        "divisor": 200
+      },
+      {
+        "fromStar": 25,
+        "exponent": 2.7,
+        "divisor": 200
+      },
+      {
+        "fromStar": 26,
+        "exponent": 2.7,
+        "divisor": 200
+      },
+      {
+        "fromStar": 27,
+        "exponent": 2.7,
+        "divisor": 200
+      },
+      {
+        "fromStar": 28,
+        "exponent": 2.7,
+        "divisor": 200
+      },
+      {
+        "fromStar": 29,
+        "exponent": 2.7,
+        "divisor": 200
+      }
+    ],
+    "discount": {
+      "note": "할인은 **반올림 뒤**에 적용한다(사용자 지정). 실측 확인: 160 레벨 18→19 는 raw 165,920,194.45305828 → 반올림 165,920,200 → 30% 할인 116,144,140. 할인율은 응답의 `starforce_event_list` 가 준다. `cost_discount_rate` 만 비용을 깎고, `destroy_decrease_rate` 는 파괴 확률이라 비용과 무관하다.",
+      "order": "round100 → discount",
+      "field": "cost_discount_rate"
+    }
+  }
+}

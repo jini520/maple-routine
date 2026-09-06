@@ -111,6 +111,22 @@ export function shiftDateKey(dateKey: string, delta: number): string {
  * 몇 주 × 7칸. 달 경계의 빈칸을 **앞뒤 달 날짜로 채운다**. 빈 칸으로 두면
  * 6주째가 통째로 비는 달에서 격자 높이가 달마다 달라지고, 달을 넘길 때 아래 내용이 튄다.
  */
+/**
+ * `from` 부터 `to` 까지의 날짜 키. 양끝을 다 담는다.
+ *
+ * 강화 사용 내역이 **하루 단위**라 이 목록이 그대로 조회 단위가 된다.
+ *
+ * @example datesBetween('2026-09-04', '2026-09-06') // ['2026-09-04', '2026-09-05', '2026-09-06']
+ */
+export function datesBetween(from: string, to: string): string[] {
+  if (from > to) return []
+  const days: string[] = []
+  for (let dateKey = from; dateKey <= to; dateKey = shiftDateKey(dateKey, 1)) {
+    days.push(dateKey)
+  }
+  return days
+}
+
 export function buildCalendarMonth(monthKey: string): CalendarWeek[] {
   const { year, month } = parseMonthKey(monthKey)
   const firstOfMonthMs = Date.UTC(year, month - 1, 1)

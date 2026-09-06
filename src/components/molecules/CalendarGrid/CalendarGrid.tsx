@@ -87,7 +87,7 @@ export function CalendarGrid(props: CalendarGridProps): React.JSX.Element {
                 aria-label={isToday ? `${formatDayLabel(day.dateKey)} 오늘` : formatDayLabel(day.dateKey)}
                 aria-selected={isSelected}
                 onPress={() => props.onSelectDate(day.dateKey)}
-                className="flex-1 items-center py-1"
+                className="flex-1 items-center pb-1.5 pt-1"
               >
                 {/* 열지도 바탕. 형제보다 먼저라 글자 뒤에 깔린다. **네 방향으로 같은 만큼** 물러난다
                     . 좌우로만 물러나면 칠해진 날이 세로로 붙는다. */}
@@ -105,11 +105,19 @@ export function CalendarGrid(props: CalendarGridProps): React.JSX.Element {
                   </Text>
                 </View>
 
-                {/* 빈 값이 `''` 가 아니라 **공백 한 칸**이다. 빈 문자열은 `Text` 높이를 0 으로 만든다. */}
+                {/* 금액 두 줄은 **오른쪽 끝에 맞춘다**(사용자 지정). 가운데로 두면 자릿수가
+                    다른 위아래 두 수의 끝이 어긋나 한 칸 안에서 계단처럼 보인다.
+
+                    `w-full` 이 있어야 한다. 부모가 `items-center` 라 글자 폭만큼만 차지하면
+                    `text-right` 가 걸릴 자리가 없다.
+
+                    빈 값이 `''` 가 아니라 **공백 한 칸**이다. 빈 문자열은 `Text` 높이를 0 으로 만든다. */}
                 <Text
                   testID={`calendar-income-${day.dateKey}`}
                   numberOfLines={1}
-                  className="text-9 leading-3 text-rise-ink"
+                  // 날짜 원이 24px 인데 그 안의 숫자는 12px 이라 아래로 빈 자리가 남는다.
+                  // 그만큼 당기되 다 없애지는 않는다. 붙여 버리면 날짜와 금액이 한 줄로 뭉친다.
+                  className="-mt-0.5 w-full pr-2 text-right text-9 leading-3 text-rise-ink"
                   style={TABULAR_NUMS}
                 >
                   {amounts.incomeMeso > 0 ? `+${formatMesoCompact(amounts.incomeMeso)}` : ' '}
@@ -117,7 +125,7 @@ export function CalendarGrid(props: CalendarGridProps): React.JSX.Element {
                 <Text
                   testID={`calendar-expense-${day.dateKey}`}
                   numberOfLines={1}
-                  className="text-9 leading-3 text-fall-ink"
+                  className="w-full pr-2 text-right text-9 leading-3 text-fall-ink"
                   style={TABULAR_NUMS}
                 >
                   {amounts.expenseMeso > 0 ? `−${formatMesoCompact(amounts.expenseMeso)}` : ' '}

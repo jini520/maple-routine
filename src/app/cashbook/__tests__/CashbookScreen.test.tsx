@@ -34,14 +34,27 @@ jest.mock('../../../features/cashbook/records', () => {
 //
 // 회차 수를 **진짜 state 로** 들고 있어야 테스트가 그것을 올려 실제 리렌더를 낼 수 있다.
 // 객체만 바꾸고 `rerender` 를 부르면 하네스의 프로바이더가 벗겨진다.
-const mockWindow = { status: 'ready' as 'idle' | 'filling' | 'ready', revision: 1, reload: jest.fn() }
+const mockWindow = {
+  status: 'ready' as 'idle' | 'filling' | 'ready',
+  collecting: false,
+  revision: 1,
+  reload: jest.fn(),
+}
 let mockSetWindowRevision: ((value: number) => void) | null = null
+const mockRequestDateRange = jest.fn()
+
 jest.mock('../../../features/ledger/useLedgerData', () => ({
   useLedgerData: () => {
     const react = require('react') as typeof import('react')
     const [revision, setRevision] = react.useState(mockWindow.revision)
     mockSetWindowRevision = setRevision
-    return { status: mockWindow.status, revision, reload: mockWindow.reload }
+    return {
+      status: mockWindow.status,
+      collecting: mockWindow.collecting,
+      revision,
+      reload: mockWindow.reload,
+      requestDateRange: mockRequestDateRange,
+    }
   },
 }))
 
@@ -122,6 +135,7 @@ beforeEach(() => {
   records.resolveTrackedDefeatDates.mockReset().mockResolvedValue(0)
   records.cashbookDataRevision.mockReset().mockReturnValue(0)
   mockWindow.status = 'ready'
+  mockWindow.collecting = false
   mockWindow.revision = 1
   mockWindow.reload.mockReset().mockResolvedValue(undefined)
   mockOpenTab.mockReset()
@@ -843,14 +857,14 @@ describe('그날 목록', () => {
     ])
     const view = await 그리기()
 
-    expect(view.getByTestId('cashbook-row-spd-1')).toHaveTextContent('루디 · 몬스터 파크×2−1.017억')
+    expect(view.getByTestId('cashbook-row-spd-1')).toHaveTextContent('루디 · 몬스터 파크×2−1.02억')
   })
 
   it('수량이 있으면 함께 적는다', async () => {
     const view = await 그리기()
 
     // `toHaveTextContent` 는 이 판에서 **완전 일치**다. 줄 전체를 적는다.
-    expect(view.getByTestId('cashbook-row-spd-1')).toHaveTextContent('몬스터 파크×2−1.017억')
+    expect(view.getByTestId('cashbook-row-spd-1')).toHaveTextContent('몬스터 파크×2−1.02억')
   })
 
   // **누를 수 있어 보여야 한다**(사용자 지적). 글자 둘만 놓인 줄은 목록이 아니라
@@ -1472,3 +1486,198 @@ describe('창이 뒤늦게 채운 것을 받는다', () => {
   })
 })
 
+
+// 강화 줄은 앞의 둘과 둘이 갈린다. **나가는 돈**이고, 초상이 없다. 펼치는 것은 결정석과 같다.
+describe('강화 줄', () => {
+  const 스타포스줄 = {
+    kind: 'enhancement' as const,
+    category: '스타포스' as const,
+    characterName: '낟낟',
+    payoutMeso: 1_200_000_000,
+    count: 47,
+    unpricedCount: 0,
+    items: [
+      { targetItem: '아케인셰이드 클로', count: 32, costMeso: 980_000_000, unpricedCount: 0 },
+      { targetItem: '데아 시두스 이어링', count: 15, costMeso: 220_000_000, unpricedCount: 0 },
+    ],
+  }
+  const 에디셔널줄 = {
+    kind: 'enhancement' as const,
+    category: '에디셔널 잠재능력' as const,
+    characterName: '낟낟',
+    payoutMeso: 740_000_000,
+    count: 10,
+    unpricedCount: 0,
+    items: [{ targetItem: '아케인셰이드 클로', count: 10, costMeso: 740_000_000, unpricedCount: 0 }],
+  }
+
+  beforeEach(() => {
+    records.loadCalendarAmounts.mockResolvedValue({
+      '2026-08-23': { incomeMeso: 0, expenseMeso: 1_940_000_000 },
+    })
+    records.loadDayRecords.mockResolvedValue([스타포스줄, 에디셔널줄])
+  })
+
+  it('나가는 돈으로 적힌다', async () => {
+    const view = await 그리기()
+
+    expect(view.getByTestId('cashbook-row-enhancement:스타포스:낟낟')).toHaveTextContent(
+      '낟낟 · 스타포스47회−12억',
+    )
+  })
+
+  // 넷을 안 묶는다. 비용이 서는 방식이 아예 달라 묶으면 무엇에 썼는지가 한 숫자에 가려진다.
+  it('갈래마다 줄이 따로 선다', async () => {
+    const view = await 그리기()
+
+    expect(view.getByTestId('cashbook-row-enhancement:에디셔널 잠재능력:낟낟')).toHaveTextContent(
+      '낟낟 · 에디셔널 잠재능력10회−7.4억',
+    )
+  })
+
+  it('값모름이 있으면 건수 옆에 선다', async () => {
+    records.loadDayRecords.mockResolvedValue([{ ...스타포스줄, unpricedCount: 3 }])
+    const view = await 그리기()
+
+    expect(view.getByTestId('cashbook-row-enhancement:스타포스:낟낟')).toHaveTextContent(
+      '낟낟 · 스타포스47회 · 값모름 3−12억',
+    )
+  })
+
+  it('처음에는 접혀 있다', async () => {
+    const view = await 그리기()
+
+    expect(view.queryByTestId('cashbook-row-items-enhancement:스타포스:낟낟')).toBeNull()
+  })
+
+  // 원천이 넥슨 API 라 갈 곳이 없다. 펼치는 것이 여기서 할 수 있는 전부다.
+  it('누르면 그 자리에서 펼쳐진다. 탭을 안 옮긴다', async () => {
+    const view = await 그리기()
+
+    await 이름으로누르기(view, '낟낟 · 스타포스 펼치기')
+
+    expect(view.getByTestId('cashbook-row-items-enhancement:스타포스:낟낟')).toBeTruthy()
+    expect(mockOpenTab).not.toHaveBeenCalled()
+    expect(view.queryByTestId('cashbook-spend-sheet')).toBeNull()
+  })
+
+  it('무엇을 강화했는지 큰 금액부터 적는다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '낟낟 · 스타포스 펼치기')
+
+    expect(view.getByTestId('cashbook-item-row-아케인셰이드 클로')).toHaveTextContent(
+      '아케인셰이드 클로32회−9.8억',
+    )
+    expect(view.getByTestId('cashbook-item-row-데아 시두스 이어링')).toHaveTextContent(
+      '데아 시두스 이어링15회−2.2억',
+    )
+  })
+
+  // 한 번에 하나만 펼친다. 둘이 같은 장비를 만졌으면 판이 둘 서서 신원이 겹친다.
+  it('다른 갈래를 펼치면 앞의 것이 접힌다', async () => {
+    const view = await 그리기()
+
+    await 이름으로누르기(view, '낟낟 · 스타포스 펼치기')
+    await 이름으로누르기(view, '낟낟 · 에디셔널 잠재능력 펼치기')
+
+    expect(view.queryByTestId('cashbook-row-items-enhancement:스타포스:낟낟')).toBeNull()
+    expect(view.getByTestId('cashbook-row-items-enhancement:에디셔널 잠재능력:낟낟')).toBeTruthy()
+  })
+
+  // 0 을 적으면 공짜로 강화한 것이 된다.
+  it('그 장비를 통째로 모르면 금액 자리가 값 모름 이다', async () => {
+    records.loadDayRecords.mockResolvedValue([
+      {
+        ...스타포스줄,
+        items: [{ targetItem: '왕푸', count: 8, costMeso: 0, unpricedCount: 8 }],
+      },
+    ])
+    const view = await 그리기()
+    await 이름으로누르기(view, '낟낟 · 스타포스 펼치기')
+
+    expect(view.getByTestId('cashbook-item-row-왕푸')).toHaveTextContent('왕푸8회값 모름')
+  })
+
+  it('다시 누르면 접힌다', async () => {
+    const view = await 그리기()
+
+    await 이름으로누르기(view, '낟낟 · 스타포스 펼치기')
+    await 이름으로누르기(view, '낟낟 · 스타포스 접기')
+
+    expect(view.queryByTestId('cashbook-row-items-enhancement:스타포스:낟낟')).toBeNull()
+  })
+})
+
+// 회차가 도는 동안 읽으면 그 시점의 DB 가 아직 자라는 중이라, 한 셀의 값이 종류가 도착할
+// 때마다 커진다(큐브 → 스타포스 → 잠재). 다 합산될 때까지 안 그린다(사용자 지정).
+describe('확정 전에는 안 그린다', () => {
+  beforeEach(() => {
+    records.loadCalendarAmounts.mockResolvedValue({
+      '2026-08-23': { incomeMeso: 7_600_000_000, expenseMeso: 1_200_000_000 },
+    })
+  })
+
+  it('받는 중에는 다시 읽지도 않는다', async () => {
+    mockWindow.collecting = true
+    records.loadCalendarAmounts.mockClear()
+    await 그리기()
+
+    expect(records.loadCalendarAmounts).not.toHaveBeenCalled()
+  })
+
+  // 자리는 남는다(칸 높이가 흔들리면 격자가 출렁인다). 비는 것은 숫자다.
+  it('받는 중이면 달력 칸의 숫자가 빈다', async () => {
+    const view = await 그리기()
+    expect(view.getByTestId('calendar-income-2026-08-23')).toHaveTextContent('+76억')
+
+    mockWindow.collecting = true
+    const 받는중 = await 그리기()
+
+    expect(받는중.getByTestId('calendar-income-2026-08-23')).not.toHaveTextContent('억')
+    expect(받는중.getByTestId('calendar-expense-2026-08-23')).not.toHaveTextContent('억')
+  })
+
+  // 오른쪽 정렬만으로는 금액의 오른쪽 끝만 한 x 에 서고, 자릿수가 달라지면 줄의 왼쪽 끝이
+  // 밀린다. 값이 들어올 때마다 두 줄이 흔들렸다(사용자 보고).
+  it('금액 칸이 고정 폭이라 자릿수가 달라도 안 밀린다', async () => {
+    const view = await 그리기()
+    const 짧다 = flattenStyle(view.getByTestId('cashbook-summary-income').props.style).width
+
+    records.loadCalendarAmounts.mockResolvedValue({
+      '2026-08-23': { incomeMeso: 1_234_500_000_000, expenseMeso: 900_000 },
+    })
+    const 길다 = await 그리기()
+
+    expect(짧다).toBe(64)
+    expect(flattenStyle(길다.getByTestId('cashbook-summary-income').props.style).width).toBe(64)
+    expect(flattenStyle(길다.getByTestId('cashbook-summary-expense').props.style).width).toBe(64)
+  })
+
+  // 회차가 끝난 순간부터 새 읽기가 도착하기까지 몇 밀리초가 있다. 그 사이에 이전 달의 값이
+  // 그려졌다. 격자가 앞뒤 달의 날을 함께 그리므로 겹치는 날만 값이 있고 나머지는 비어, 있던
+  // 것만 먼저 뜬 것처럼 보였다(사용자 보고).
+  it('읽은 범위가 지금 범위와 다르면 안 그린다', async () => {
+    const view = await 그리기()
+    expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+76억')
+
+    let resolve: ((value: Record<string, unknown>) => void) | null = null
+    records.loadCalendarAmounts.mockImplementation(
+      () => new Promise((done) => (resolve = done as never)),
+    )
+    await 이름으로누르기(view, '이전 주')
+
+    expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+0')
+
+    await act(async () => {
+      resolve?.({})
+    })
+  })
+
+  it('다 받으면 숫자가 선다', async () => {
+    const view = await 그리기()
+
+    expect(view.getByTestId('cashbook-summary-net')).toHaveTextContent('+64억 메소')
+    expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+76억')
+    expect(view.getByTestId('cashbook-summary-expense')).toHaveTextContent('−12억')
+  })
+})

@@ -26,6 +26,11 @@ jest.mock('../../../storage/boss-drops', () => ({
 jest.mock('../../../storage/character-selection', () => ({ getTrackedCharacterOcids: jest.fn() }))
 jest.mock('../../../storage/character-basic-cache', () => ({ getCachedCharacterBasic: jest.fn() }))
 jest.mock('../../character-profile/resolve', () => ({ resolveDisplayProfiles: jest.fn() }))
+jest.mock('../../../storage/enhancement-history', () => ({
+  loadEnhancementHistory: jest.fn(),
+  loadObservedItemLevels: jest.fn(),
+}))
+jest.mock('../../../storage/event-world-names', () => ({ getEventWorldNames: jest.fn() }))
 
 const income = jest.requireMock('../../../storage/income') as Record<string, jest.Mock>
 const spend = jest.requireMock('../../../storage/spend') as Record<string, jest.Mock>
@@ -35,6 +40,8 @@ const bossDrops = jest.requireMock('../../../storage/boss-drops') as Record<stri
 const selection = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
 const basicCache = jest.requireMock('../../../storage/character-basic-cache') as Record<string, jest.Mock>
 const profileLookup = jest.requireMock('../../character-profile/resolve') as Record<string, jest.Mock>
+const enhancement = jest.requireMock('../../../storage/enhancement-history') as Record<string, jest.Mock>
+const worldNames = jest.requireMock('../../../storage/event-world-names') as Record<string, jest.Mock>
 
 const 지금 = new Date('2026-08-23T05:00:00.000Z')
 
@@ -49,6 +56,9 @@ beforeEach(() => {
   selection.getTrackedCharacterOcids.mockResolvedValue(['ocid-1'])
   bossProfit.getRecordedCharacterOcids.mockResolvedValue([])
   basicCache.getCachedCharacterBasic.mockResolvedValue({ profile: { name: '루디' } })
+  enhancement.loadEnhancementHistory.mockResolvedValue([])
+  enhancement.loadObservedItemLevels.mockResolvedValue(new Map())
+  worldNames.getEventWorldNames.mockResolvedValue(new Set())
   profileLookup.resolveDisplayProfiles.mockImplementation(
     async (ocids: readonly string[]) =>
       new Map(
@@ -828,5 +838,310 @@ describe('cashbookDataRevision', () => {
 
     bossProfit.getBossProfitRecordsRevision.mockReturnValue(4)
     expect(cashbookDataRevision()).toBe(5)
+  })
+})
+
+// 강화 사용 내역은 넷째 원천이다. 손입력 둘·보스 둘과 달리 **금액을 여기서 센다**.
+describe('강화 지출이 칸에 든다', () => {
+  const 큐브 = (over: Record<string, unknown> = {}) => ({
+    id: 'e1',
+    kind: 'cube' as const,
+    dateKey: '2026-08-23',
+    createdAt: '2026-08-23T10:00:00.000+09:00',
+    characterName: '낟낟',
+    targetItem: '아케인셰이드 클로',
+    itemLevel: 150,
+    payload: {},
+    ...over,
+  })
+
+  it('감정비용이 지출로 더해진다', async () => {
+    enhancement.loadEnhancementHistory.mockResolvedValue([큐브()])
+    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
+
+    expect((await loadCalendarAmounts('2026-08-01', '2026-08-31'))['2026-08-23']).toEqual({
+      incomeMeso: 0,
+      expenseMeso: 450_000,
+    })
+  })
+
+  it('손입력 지출과 한 칸에서 합쳐진다', async () => {
+    spend.getSpendRecordsBetween.mockResolvedValue([{ ...메포지출, id: 'c', recordedAt: '' }])
+    enhancement.loadEnhancementHistory.mockResolvedValue([큐브()])
+    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
+
+    expect((await loadCalendarAmounts('2026-08-01', '2026-08-31'))['2026-08-23'].expenseMeso)
+      .toBe(2_542_372_881 + 450_000)
+  })
+
+  // 값을 못 매긴 줄을 0 으로 세우면 합계가 조용히 거짓이 된다.
+  it('레벨을 모르는 줄은 안 더한다', async () => {
+    enhancement.loadEnhancementHistory.mockResolvedValue([큐브({ itemLevel: null })])
+    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
+
+    expect(await loadCalendarAmounts('2026-08-01', '2026-08-31')).toEqual({})
+  })
+
+  it('스페셜 월드 캐릭터의 줄은 빠진다', async () => {
+    worldNames.getEventWorldNames.mockResolvedValue(new Set(['머리맨들맨둘']))
+    enhancement.loadEnhancementHistory.mockResolvedValue([큐브({ characterName: '머리맨들맨둘' })])
+    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
+
+    expect(await loadCalendarAmounts('2026-08-01', '2026-08-31')).toEqual({})
+  })
+
+  // 이름 집합을 아직 못 받았으면 월드를 가릴 수가 없다. 세우면 지출이 두 배로 부푼다.
+  it('이름 집합을 못 받았으면 아무것도 안 더한다', async () => {
+    worldNames.getEventWorldNames.mockResolvedValue(null)
+    enhancement.loadEnhancementHistory.mockResolvedValue([큐브()])
+    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
+
+    expect(await loadCalendarAmounts('2026-08-01', '2026-08-31')).toEqual({})
+  })
+
+  it('날짜 목록을 펴서 넘긴다', async () => {
+    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
+    await loadCalendarAmounts('2026-08-23', '2026-08-25')
+
+    expect(enhancement.loadEnhancementHistory).toHaveBeenCalledWith([
+      '2026-08-23',
+      '2026-08-24',
+      '2026-08-25',
+    ])
+  })
+})
+
+// 자동 줄인데 지출이다. 앞의 둘(결정석·판매)과 갈리는 자리가 이것뿐이다.
+describe('강화 줄', () => {
+  const 강화 = (over: Record<string, unknown> = {}) => ({
+    id: 'e1',
+    kind: 'cube' as const,
+    dateKey: '2026-08-23',
+    createdAt: '2026-08-23T10:00:00.000+09:00',
+    characterName: '낟낟',
+    targetItem: '아케인셰이드 클로',
+    itemLevel: 150,
+    payload: {},
+    ...over,
+  })
+
+  const 잠재 = (type: string, over: Record<string, unknown> = {}) =>
+    강화({
+      kind: 'potential' as const,
+      itemLevel: 200,
+      payload: {
+        potential_type: type,
+        potential_option_grade: '유니크',
+        additional_potential_option_grade: '유니크',
+      },
+      ...over,
+    })
+
+  async function 줄들(rows: ReturnType<typeof 강화>[]) {
+    enhancement.loadEnhancementHistory.mockResolvedValue(rows)
+    const { loadDayRecords } = require('../records') as typeof import('../records')
+    return await loadDayRecords('2026-08-23')
+  }
+
+  // 하루 수백 건이라 안 접으면 목록이 그것만으로 찬다.
+  it('캐릭터 하나에 갈래마다 한 줄로 접는다', async () => {
+    const rows = await 줄들([강화(), 강화({ id: 'e2' }), 강화({ id: 'e3', characterName: '풉품' })])
+
+    expect(rows.filter((row) => row.kind === 'enhancement')).toHaveLength(2)
+  })
+
+  // 넷을 안 묶는다. 비용이 서는 방식이 아예 달라 묶으면 무엇에 썼는지가 한 숫자에 가려진다.
+  it('큐브·스타포스·잠재능력·에디셔널을 따로 센다', async () => {
+    const rows = await 줄들([
+      강화(),
+      강화({ id: 'e2', kind: 'starforce', itemLevel: null, payload: { before_starforce_count: 5, upgrade_item: '' } }),
+      잠재('잠재능력 재설정', { id: 'e3' }),
+      잠재('에디셔널 잠재능력 재설정', { id: 'e4' }),
+    ])
+
+    expect(
+      rows.flatMap((row) => (row.kind === 'enhancement' ? [row.category] : [])).sort(),
+    ).toEqual(['스타포스', '에디셔널 잠재능력', '잠재능력', '큐브'])
+  })
+
+  it('잠재는 종류가 응답에서 온다', async () => {
+    const rows = await 줄들([잠재('에디셔널 잠재능력 재설정')])
+
+    expect(rows[0]).toMatchObject({ category: '에디셔널 잠재능력', payoutMeso: 74_800_000 })
+  })
+
+  it('금액과 횟수를 모은다', async () => {
+    const [row] = await 줄들([강화(), 강화({ id: 'e2' })])
+
+    expect(row).toMatchObject({
+      kind: 'enhancement',
+      category: '큐브',
+      characterName: '낟낟',
+      payoutMeso: 900_000,
+      count: 2,
+      unpricedCount: 0,
+    })
+  })
+
+  // 값을 못 매긴 건은 금액에 안 들어 있다. 그 사실을 줄이 말해야 한다.
+  it('값을 못 매긴 건은 건수만 센다', async () => {
+    const [row] = await 줄들([강화(), 강화({ id: 'e2', itemLevel: null })])
+
+    expect(row).toMatchObject({ payoutMeso: 450_000, count: 2, unpricedCount: 1 })
+  })
+
+  it('줄의 신원이 갈래와 이름이다. ocid 가 안 온다', async () => {
+    const { rowKeyOf } = require('../records') as typeof import('../records')
+    const [row] = await 줄들([강화()])
+
+    expect(rowKeyOf(row)).toBe('enhancement:큐브:낟낟')
+  })
+
+  // 캐릭터로 먼저 모으고 그 안에서 큰 금액이 위다. 갈래를 고정 순서로 두면 그날 제일 많이 쓴
+  // 것이 목록 가운데에 숨는다.
+  it('캐릭터로 모으고 그 안에서 큰 금액이 위다', async () => {
+    const rows = await 줄들([
+      강화(),
+      잠재('잠재능력 재설정', { id: 'e2' }),
+      강화({ id: 'e3', characterName: '가가' }),
+    ])
+
+    expect(
+      rows.flatMap((row) =>
+        row.kind === 'enhancement' ? [`${row.characterName}/${row.category}`] : [],
+      ),
+    ).toEqual(['가가/큐브', '낟낟/잠재능력', '낟낟/큐브'])
+  })
+
+  it('건수 라벨이 값모름을 말한다', async () => {
+    const { recordCountLabelOf } = require('../records') as typeof import('../records')
+    const [a] = await 줄들([강화(), 강화({ id: 'e2', itemLevel: null })])
+    const [b] = await 줄들([강화()])
+
+    expect(recordCountLabelOf(a)).toBe('2회 · 값모름 1')
+    expect(recordCountLabelOf(b)).toBe('1회')
+  })
+
+  // 펼쳐서 보는 이유가 **어디에 썼나** 라서 이름순이면 그 답이 안 보인다.
+  it('만진 장비를 큰 금액부터 담는다', async () => {
+    const [row] = await 줄들([
+      강화({ targetItem: '데아 시두스 이어링', itemLevel: 130 }),
+      강화({ id: 'e2', targetItem: '아케인셰이드 클로', itemLevel: 200 }),
+      강화({ id: 'e3', targetItem: '아케인셰이드 클로', itemLevel: 200 }),
+    ])
+
+    expect(row.kind === 'enhancement' && row.items).toEqual([
+      { targetItem: '아케인셰이드 클로', count: 2, costMeso: 1_600_000, unpricedCount: 0 },
+      { targetItem: '데아 시두스 이어링', count: 1, costMeso: 338_000, unpricedCount: 0 },
+    ])
+  })
+
+  it('장비별로도 값 모름을 센다', async () => {
+    const [row] = await 줄들([
+      강화({ targetItem: '왕푸', itemLevel: null }),
+      강화({ id: 'e2', targetItem: '왕푸', itemLevel: null }),
+    ])
+
+    expect(row.kind === 'enhancement' && row.items).toEqual([
+      { targetItem: '왕푸', count: 2, costMeso: 0, unpricedCount: 2 },
+    ])
+  })
+
+  // 금액이 같으면 순서가 흔들리면 안 된다. 다시 그릴 때마다 줄이 자리를 바꾼다.
+  it('금액이 같으면 건수로, 그것도 같으면 이름으로 가른다', async () => {
+    const [row] = await 줄들([
+      강화({ targetItem: '나', itemLevel: 150 }),
+      강화({ id: 'e2', targetItem: '가', itemLevel: 150 }),
+    ])
+
+    expect(row.kind === 'enhancement' && row.items.map((item) => item.targetItem)).toEqual([
+      '가',
+      '나',
+    ])
+  })
+
+  // 120 이하 장비의 큐브는 감정비용이 없고 강화권을 쓴 스타포스도 메소가 안 든다.
+  // `낟넘 · 큐브 9회 −0` 같은 줄은 읽을 것이 없다(사용자 지정).
+  it('한 푼도 안 쓴 줄은 안 세운다', async () => {
+    const rows = await 줄들([강화({ itemLevel: 100 }), 강화({ id: 'e2', itemLevel: 120 })])
+
+    expect(rows).toEqual([])
+  })
+
+  // 그때의 0 은 안 썼다가 아니라 모른다다. 숨기면 합계가 적어 보이는 것이 고장으로 읽힌다.
+  it('값을 못 매긴 건이 있으면 안 숨긴다', async () => {
+    const rows = await 줄들([강화({ itemLevel: null })])
+
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toMatchObject({ payoutMeso: 0, unpricedCount: 1 })
+  })
+
+  it('섞여 있으면 안 쓴 장비만 펼침에서 빠진다', async () => {
+    const [row] = await 줄들([
+      강화({ targetItem: '아케인셰이드 클로', itemLevel: 200 }),
+      강화({ id: 'e2', targetItem: '초보자의 장갑', itemLevel: 100 }),
+    ])
+
+    expect(row.kind === 'enhancement' && row.items.map((item) => item.targetItem)).toEqual([
+      '아케인셰이드 클로',
+    ])
+  })
+
+  it('제목에 이름과 갈래가 든다', async () => {
+    const { recordTitleOf } = require('../records') as typeof import('../records')
+    const [큐브줄] = await 줄들([강화()])
+    const [잠재줄] = await 줄들([잠재('에디셔널 잠재능력 재설정')])
+
+    expect(recordTitleOf(큐브줄)).toBe('낟낟 · 큐브')
+    expect(recordTitleOf(잠재줄)).toBe('낟낟 · 에디셔널 잠재능력')
+  })
+
+  // 여기가 핵심이다. 자동 줄이라고 수익으로 세면 그날 합계가 두 배로 어긋난다.
+  it('합계에서 지출로 센다', async () => {
+    const { dayTotalsOf } = require('../records') as typeof import('../records')
+    const rows = await 줄들([강화()])
+
+    expect(dayTotalsOf(rows)).toEqual({ incomeMeso: 0, expenseMeso: 450_000 })
+  })
+
+  // 칸에 적힌 수와 그 칸을 눌러 나온 수가 갈리면 안 된다.
+  it('칸 금액과 상세 합계가 같은 수를 낸다', async () => {
+    const { loadCalendarAmounts, loadDayRecords, dayTotalsOf } =
+      require('../records') as typeof import('../records')
+    enhancement.loadEnhancementHistory.mockResolvedValue([
+      강화(),
+      잠재('잠재능력 재설정', { id: 'e2' }),
+      강화({ id: 'e3', itemLevel: 200 }),
+    ])
+
+    const cell = (await loadCalendarAmounts('2026-08-23', '2026-08-23'))['2026-08-23']
+    const detail = dayTotalsOf(await loadDayRecords('2026-08-23'))
+
+    expect(detail.expenseMeso).toBe(cell.expenseMeso)
+  })
+})
+
+// 캐시로만 적은 지출은 메소가 0 이지만 원이 있다. 그것까지 숨기면 적은 기록이 사라진다.
+describe('손입력 지출의 0', () => {
+  async function 줄들(records: unknown[]) {
+    spend.getSpendRecordsBetween.mockResolvedValue(records)
+    const { loadDayRecords } = require('../records') as typeof import('../records')
+    return await loadDayRecords('2026-08-23')
+  }
+
+  it('메소도 원도 0 이면 안 세운다', async () => {
+    const rows = await 줄들([
+      { ...메포지출, id: 'x', recordedAt: '', mesoAmount: 0, pointAmount: null, pointPer100mMeso: null, cashAmount: null },
+    ])
+
+    expect(rows).toEqual([])
+  })
+
+  it('원이 있으면 세운다', async () => {
+    const rows = await 줄들([
+      { ...메포지출, id: 'x', recordedAt: '', mesoAmount: 0, pointAmount: null, pointPer100mMeso: null, cashAmount: 6_900 },
+    ])
+
+    expect(rows).toHaveLength(1)
   })
 })

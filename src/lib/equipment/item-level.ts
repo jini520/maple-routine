@@ -32,7 +32,7 @@ for (const item of equipmentItems.items as EquipmentItem[]) {
   }
 }
 
-/** 모르면 `null`. 그 아이템의 스타포스 비용은 안 매기고 건수만 센다. */
+/** 모르면 `null`. 그 아이템의 스타포스는 지출에 안 세운다(건수만 센다). */
 export function equipmentItemLevel(targetItem: string): number | null {
   return LEVEL_BY_NAME.get(normalize(targetItem)) ?? null
 }

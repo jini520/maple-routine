@@ -1,6 +1,6 @@
 {
   "updatedAt": "2026-09-06",
-  "source": "아이템 이름은 사용자 제공(2026-09-06). 보조무기·방패 22종의 레벨도 사용자 제공(나무위키 보조무기 문서 덤프의 착용 레벨). 그 밖의 레벨은 넥슨 히스토리 API 가 준 값을 그대로 옮긴 것이다 — 큐브·잠재 응답의 item_level 이고, 2025-09-06~2026-09-05 27,187건에서 한 이름에 두 레벨이 붙은 적이 없다. 앱솔랩스 160 · 데스티니 250 · 파프니르 150 과 보스 장신구·칠흑·광휘·럭키 계열 23종의 레벨도 사용자 제공(2026-09-06). 마이스터 심볼 10종 · 길드 펜던트 16종 · 귀고리와 반지 29종의 이름과 레벨도 사용자 제공(2026-09-06) — 그 29종은 관측과 여덟 자리에서 겹쳤고 일곱이 일치했다(코스모스링만 갈려 사용자가 120 으로 확정). 이 55종의 영문 키는 GMS 표기가 아니라 **한글 이름을 옮긴 것**이다. 로얄블랙메탈숄더 120 도 사용자 제공(2026-09-06). AI 가 지어낸 레벨은 한 건도 없다.",
+  "source": "아이템 이름은 사용자 제공(2026-09-06). 보조무기·방패 22종의 레벨도 사용자 제공(나무위키 보조무기 문서 덤프의 착용 레벨). 그 밖의 레벨은 넥슨 히스토리 API 가 준 값을 그대로 옮긴 것이다 — 큐브·잠재 응답의 item_level 이고, 2025-09-06~2026-09-05 27,187건에서 한 이름에 두 레벨이 붙은 적이 없다. 앱솔랩스 160 · 데스티니 250 · 파프니르 150 과 보스 장신구·칠흑·광휘·럭키 계열 23종의 레벨도 사용자 제공(2026-09-06). 마이스터 심볼 10종 · 길드 펜던트 16종 · 귀고리와 반지 29종의 이름과 레벨도 사용자 제공(2026-09-06) — 그 29종은 관측과 여덟 자리에서 겹쳤고 일곱이 일치했다(코스모스링만 갈려 사용자가 120 으로 확정). 이 55종의 영문 키는 GMS 표기가 아니라 **한글 이름을 옮긴 것**이다. 로얄블랙메탈숄더 120 도 사용자 제공(2026-09-06). AI 가 지어낸 레벨은 한 건도 없다. 아스트라 보조무기 47종의 이름과 레벨 200 도 사용자 제공(2026-09-06, 나무위키 보조무기 문서 덤프의 REQ LEV). `arcane_umbra_soul_shooter` 의 이름이 아케인셰이드엔젤릭슈터로 들어와 있던 것을 아케인셰이드소울슈터로 고쳤다(사용자 지정) — 키는 soul_shooter 인데 이름이 달라 API 가 준 이름에 안 붙고 있었다. 엔젤릭슈터는 1년치 어디에도 안 나온다. 제네시스카르타(레테 직업 무기)의 레벨 200 은 API 가 준 item_level 이다(큐브 164건 전부 200). 하트 3종(플라즈마 130 · 페어리 100 · 리튬 30)의 레벨도 사용자 제공(2026-09-06). 플라즈마·리튬은 큐브 기록의 item_level 과 같고 페어리도 같다. 메탈실버이어링 70 도 사용자 제공(2026-09-06).",
   "note": "조회는 **공백을 지운 이름**으로 한다. API 는 「아케인셰이드 나이트햇」 처럼 띄어 주고 이 표는 붙여 쓴다. 1년치 실제 장비 132종에서 공백을 지웠을 때 겹치는 이름이 한 건도 없다. 강화가 불가능한 장비는 이 표에 **안 담는다**(도전자의 45종 · 칠요 2종 · 영생의돌 등 9종 · 창세의뱃지를 그래서 걷었다, 사용자 지정). level 이 null 이면 **모른다**는 뜻이지 0 이 아니다 — 그 아이템의 스타포스 비용은 안 매기고 건수만 센다. ⚠️ 세트 레벨을 채울 때 **영문 키의 접두사로 세트를 판정하지 말 것**. `royal_black_metal_shoulder`(로얄블랙메탈숄더)가 하이네스 세트(`royal_*`)로, `genesis_badge`(창세의뱃지)가 제네시스 무기 세트로 잘못 채워진 적이 있다(사용자 지적. 창세의뱃지는 그 뒤 강화 불가로 걷혔다). 세트를 가르는 것은 **한글 이름**이다. 이 표에 없는 아이템은 enhancement_history 가 스스로 쌓는 표(같은 이름의 큐브·잠재 기록)가 받는다.",
   "items": [
     {
@@ -743,7 +743,7 @@
     },
     {
       "key": "arcane_umbra_soul_shooter",
-      "name": "아케인셰이드엔젤릭슈터",
+      "name": "아케인셰이드소울슈터",
       "group": "equipment",
       "level": 200
     },
@@ -2486,6 +2486,318 @@
       "name": "울프스레드펜던트",
       "group": "equipment",
       "level": 110
+    },
+    {
+      "key": "astra_medal",
+      "name": "아스트라메달",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_sacred_aegis",
+      "name": "아스트라세이크리드이지스",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_rosario",
+      "name": "아스트라로자리오",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_chain",
+      "name": "아스트라체인",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_topaz_aegis",
+      "name": "아스트라토파즈이지스",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_topaz",
+      "name": "아스트라토파즈",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_soul_shield",
+      "name": "아스트라소울실드",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_baekhochu",
+      "name": "아스트라백호추",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_explosive_pill",
+      "name": "아스트라익스플로시브필",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_force_shield",
+      "name": "아스트라포스실드",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_nova_essence",
+      "name": "아스트라노바의정수",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_hourglass",
+      "name": "아스트라아워글라스",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_bracelet",
+      "name": "아스트라브레이슬릿",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_yeouiboju",
+      "name": "아스트라여의보주",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_arcane_shield",
+      "name": "아스트라아케인실드",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_ruby_shield",
+      "name": "아스트라루비실드",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_prominent_shield",
+      "name": "아스트라프로미넌트실드",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_orb",
+      "name": "아스트라오브",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_umbral_shield",
+      "name": "아스트라엄브럴실드",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_chesspiece_the_king",
+      "name": "아스트라체스피스디킹",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_magic_wing",
+      "name": "아스트라매직윙",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_saok_norigae",
+      "name": "아스트라사옥노리개",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_magic_quill",
+      "name": "아스트라마법깃펜",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_feather",
+      "name": "아스트라페더",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_bullseye",
+      "name": "아스트라불스아이",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_relic",
+      "name": "아스트라렐릭",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_emerald",
+      "name": "아스트라에메랄드",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_magic_arrow",
+      "name": "아스트라마법화살",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_wild_tusk",
+      "name": "아스트라와일드터스크",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_weapon_belt",
+      "name": "아스트라웨폰벨트",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_talisman",
+      "name": "아스트라탈리스만",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_vane_shield",
+      "name": "아스트라베인실드",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_blade",
+      "name": "아스트라블레이드",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_obsidian",
+      "name": "아스트라옵시디언",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_karte",
+      "name": "아스트라카르트",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_transmitter",
+      "name": "아스트라트랜스미터",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_hexseeker",
+      "name": "아스트라헥스시커",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_diamond_seonchu",
+      "name": "아스트라금강석선추",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_wrist_band",
+      "name": "아스트라리스트밴드",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_raven_eye",
+      "name": "아스트라레이븐아이",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_rimless",
+      "name": "아스트라림리스",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_sapphire",
+      "name": "아스트라사파이어",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_fox_marble",
+      "name": "아스트라여우구슬",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_magnum",
+      "name": "아스트라매그넘",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_soul_ring",
+      "name": "아스트라소울링",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_pass",
+      "name": "아스트라패스",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "astra_decacore_controller",
+      "name": "아스트라데카코어컨트롤러",
+      "group": "secondary",
+      "level": 200
+    },
+    {
+      "key": "genesis_karta",
+      "name": "제네시스카르타",
+      "group": "equipment",
+      "level": 200
+    },
+    {
+      "key": "plasma_heart",
+      "name": "플라즈마하트",
+      "group": "secondary",
+      "level": 130
+    },
+    {
+      "key": "fairy_heart",
+      "name": "페어리하트",
+      "group": "secondary",
+      "level": 100
+    },
+    {
+      "key": "lithium_heart",
+      "name": "리튬하트",
+      "group": "secondary",
+      "level": 30
+    },
+    {
+      "key": "metal_silver_earrings",
+      "name": "메탈실버이어링",
+      "group": "equipment",
+      "level": 70
     }
   ]
 }

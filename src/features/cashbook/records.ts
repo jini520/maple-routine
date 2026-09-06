@@ -30,6 +30,14 @@ import {
   updateIncomeRecord,
   type IncomeRecord,
 } from '../../storage/income'
+import { getEventWorldNames } from '../../storage/event-world-names'
+import { loadEnhancementHistory, loadObservedItemLevels } from '../../storage/enhancement-history'
+import {
+  toEnhancementSpending,
+  type EnhancementCategory,
+  type EnhancementSpendingRow,
+} from '../enhancement-history/spending'
+import { datesBetween } from '../../lib/calendar'
 import { getLastPointRate, setLastPointRate } from '../../storage/last-point-rate'
 import {
   deleteSpendRecord,
@@ -245,16 +253,37 @@ async function loadBossDaySummaries(
  * 날짜를 모르는 보스 기록은 안 든다. 어느 칸에 얹으면 그것이 거짓 날짜가 된다. 그런 기록은
  * 주간 보기에서 `period_key` 로 제자리에 서므로 잃는 것은 월간 칸뿐이다.
  */
+/**
+ * 그 범위의 강화 사용 내역을 **금액이 붙은 줄**로.
+ *
+ * 이벤트 월드(스페셜) 줄은 여기서 걷힌다. 이름 집합을 아직 못 받았으면 월드를 모르는 줄을 전부
+ * 뺀다. 가릴 수 없는 것을 세우면 지출이 두 배로 부푼다.
+ *
+ * 읽기가 실패하면 빈 목록이다. 칸이 지출을 빼고 보이지만 화면은 산다.
+ */
+async function loadEnhancementSpending(
+  fromDateKey: string,
+  toDateKey: string,
+): Promise<EnhancementSpendingRow[]> {
+  const [entries, levels, eventNames] = await Promise.all([
+    withSqliteFallback(loadEnhancementHistory(datesBetween(fromDateKey, toDateKey)), []),
+    withSqliteFallback(loadObservedItemLevels(), new Map<string, number>()),
+    getEventWorldNames().catch(() => null),
+  ])
+  return toEnhancementSpending(entries, eventNames, levels)
+}
+
 export async function loadCalendarAmounts(
   fromDateKey: string,
   toDateKey: string,
 ): Promise<CalendarAmounts> {
   // 읽기가 실패해도 화면이 죽지 않는다. 커넥션이 stale 하거나 응답이 없으면 빈 값으로 진행하고
   // 다음 방문에서 다시 읽는다. 대가는 칸이 0 으로 보인다 는 것이다.
-  const [incomes, spends, bossSummaries] = await Promise.all([
+  const [incomes, spends, bossSummaries, enhancements] = await Promise.all([
     withSqliteFallback(getIncomeRecordsBetween(fromDateKey, toDateKey), []),
     withSqliteFallback(getSpendRecordsBetween(fromDateKey, toDateKey), []),
     loadBossDaySummaries(fromDateKey, toDateKey),
+    loadEnhancementSpending(fromDateKey, toDateKey),
   ])
 
   const amounts: Record<string, CalendarDayAmounts> = {}
@@ -266,6 +295,10 @@ export async function loadCalendarAmounts(
   }
   for (const summary of bossSummaries) {
     addTo(amounts, summary.dateKey, { incomeMeso: summary.crystalMeso + summary.dropMeso })
+  }
+  for (const row of enhancements) {
+    // 값을 못 매긴 줄은 **안 더한다**. 0 으로 세우면 합계가 조용히 거짓이 된다.
+    if (row.costMeso !== null) addTo(amounts, row.dateKey, { expenseMeso: row.costMeso })
   }
   return amounts
 }
@@ -402,13 +435,50 @@ export interface DropSaleDayRecord extends AutoDayRecordBase {
 }
 
 /**
- * 그날 목록의 자동 줄. 보스 수익 탭이 원천이라 여기서 못 고친다.
+ * 강화 사용 내역 줄. **캐릭터 하나 × 갈래 하나**다.
  *
- * 캐릭터당 둘이다. 갈라 두는 것은 출처 테이블이 다르기 때문이고(`boss_profit_records` ·
- * `boss_drop_records`) 합치면 미입력 n 을 걸 자리가 없어진다. 갈라 둔 덕에 누르면 하는 일도
- * 갈린다. 결정석은 펼치고 판매는 저쪽으로 간다.
+ * 넷을 안 묶는다(사용자 지정). 큐브·스타포스·잠재능력·에디셔널 잠재능력은 비용이 서는 방식이
+ * 아예 달라, 묶으면 그날 무엇에 썼는지가 한 숫자에 가려진다.
+ *
+ * **자동 줄인데 지출이다.** 앞의 둘과 갈리는 자리가 이것뿐이고, `dayTotalsOf` 와 화면의 아이콘이
+ * 그 하나를 안다.
+ *
+ * `ocid` 가 없다. 계정 단위 API 라 이름만 온다. 그래서 초상이 안 붙는다.
  */
-export type AutoDayRecord = BossCrystalDayRecord | DropSaleDayRecord
+export interface EnhancementDayRecord {
+  kind: 'enhancement'
+  /** 이름과 함께 이 줄의 신원이다 */
+  category: EnhancementCategory
+  /** 이름뿐이다 */
+  characterName: string
+  /** 그날 쓴 메소. **값을 못 매긴 건은 안 들어 있다** */
+  payoutMeso: number
+  /** 강화 횟수. 값을 못 매긴 것도 센다 */
+  count: number
+  /** 값을 못 매긴 건수. 장비 레벨을 몰라 금액에서 빠졌다 */
+  unpricedCount: number
+  /** 무엇을 강화했나. **비어 있지 않다.** 이 줄이 서는 조건이다 */
+  items: readonly EnhancedItem[]
+}
+
+/** 펼친 강화 줄의 한 칸. 장비 하나가 그날 먹은 메소다. */
+export interface EnhancedItem {
+  /** API 가 준 이름 그대로. 띄어쓰기가 살아 있다 */
+  targetItem: string
+  count: number
+  /** 값을 못 매긴 건은 안 들어 있다 */
+  costMeso: number
+  unpricedCount: number
+}
+
+/**
+ * 그날 목록의 자동 줄. 원천이 밖에 있어 여기서 못 고친다.
+ *
+ * 갈라 두는 것은 출처가 다르기 때문이고(`boss_profit_records` · `boss_drop_records` ·
+ * `enhancement_history`) 합치면 미입력 n 을 걸 자리가 없어진다. 갈라 둔 덕에 누르면 하는 일도
+ * 갈린다. 결정석은 펼치고 판매는 저쪽으로 가고 강화는 아무 데도 안 간다.
+ */
+export type AutoDayRecord = BossCrystalDayRecord | DropSaleDayRecord | EnhancementDayRecord
 
 /**
  * 그날 목록의 한 줄. 갈리는 기준은 테이블이다. `income_records`·`spend_records` 에서 온 줄이면
@@ -426,7 +496,11 @@ export function isManualRecord(entry: DayRecord): entry is ManualDayRecord {
  * 하루에 그 조합이 하나뿐이라 그것이 곧 신원이다.
  */
 export function rowKeyOf(entry: DayRecord): string {
-  return isManualRecord(entry) ? entry.record.id : `${entry.kind}:${entry.ocid}`
+  if (isManualRecord(entry)) return entry.record.id
+  // 강화 줄은 `ocid` 가 없다. 하루에 캐릭터 하나가 갈래마다 한 줄이라 그 둘이 신원이다.
+  return entry.kind === 'enhancement'
+    ? `${entry.kind}:${entry.category}:${entry.characterName}`
+    : `${entry.kind}:${entry.ocid}`
 }
 
 /**
@@ -439,10 +513,11 @@ export function rowKeyOf(entry: DayRecord): string {
  * 한쪽만 실패하면 다른 쪽은 보인다.
  */
 export async function loadDayRecords(dateKey: string): Promise<DayRecord[]> {
-  const [incomes, spends, bossSummaries] = await Promise.all([
+  const [incomes, spends, bossSummaries, enhancements] = await Promise.all([
     withSqliteFallback(getIncomeRecordsBetween(dateKey, dateKey), []),
     withSqliteFallback(getSpendRecordsBetween(dateKey, dateKey), []),
     loadBossDaySummaries(dateKey, dateKey),
+    loadEnhancementSpending(dateKey, dateKey),
   ])
 
   /**
@@ -467,7 +542,106 @@ export async function loadDayRecords(dateKey: string): Promise<DayRecord[]> {
 
   // 자동 줄이 위다. 그날의 큰 금액이고 손이 닿지 않는 줄이라, 손으로 적은 것 사이에 섞이면
   // 왜 이건 안 눌리지 가 된다.
-  return [...toAutoRecords(bossSummaries, names), ...manual]
+  return [
+    ...toAutoRecords(bossSummaries, names),
+    ...toEnhancementRecords(enhancements),
+    ...manual,
+  ].filter((entry) => !isEmptySpend(entry))
+}
+
+/**
+ * 한 푼도 안 쓴 지출 줄인가. **그런 줄은 목록에 안 세운다**(사용자 지정).
+ *
+ * 실제로 생긴다. 120 이하 장비의 큐브는 감정비용이 없고(통찰력 100 가정) 강화권을 쓴 스타포스도
+ * 메소가 안 든다. 그런 날은 `낟넘 · 큐브 9회 −0` 같은 줄이 서는데 읽을 것이 없다.
+ *
+ * **값을 못 매긴 건이 있으면 안 숨긴다.** 그때의 0 은 안 썼다가 아니라 모른다이고, 그 사실을
+ * 줄이 말해야 합계가 적어 보이는 것이 고장으로 안 읽힌다.
+ *
+ * 수익 줄은 안 본다. 결정석 0 원이어도 그날 무엇을 잡았는지가 그 줄에 있다.
+ */
+function isEmptySpend(entry: DayRecord): boolean {
+  if (entry.kind === 'enhancement') {
+    return entry.payoutMeso === 0 && entry.unpricedCount === 0
+  }
+  if (entry.kind === 'spend') {
+    return spendMesoOf(entry.record) === 0 && (entry.record.cashAmount ?? 0) === 0
+  }
+  return false
+}
+
+/**
+ * 강화 줄을 **캐릭터 하나에 하나**로 접는다. 이름순.
+ *
+ * 종류를 안 가른다. 사용자가 보는 것은 그날 강화에 얼마 썼나 지 어느 강화였나 가 아니다.
+ * 하루 수백 건이라 안 접으면 목록이 그것만으로 찬다.
+ *
+ * 값을 못 매긴 줄은 **금액에서 빼고 건수만 센다**. 0 으로 세우면 합계가 조용히 거짓이 된다.
+ */
+function toEnhancementRecords(
+  rows: readonly EnhancementSpendingRow[],
+): EnhancementDayRecord[] {
+  const groups = new Map<
+    string,
+    { record: EnhancementDayRecord; items: Map<string, EnhancedItem> }
+  >()
+  for (const row of rows) {
+    const key = `${row.category}|${row.characterName}`
+    let group = groups.get(key)
+    if (group === undefined) {
+      group = {
+        record: {
+          kind: 'enhancement',
+          category: row.category,
+          characterName: row.characterName,
+          payoutMeso: 0,
+          count: 0,
+          unpricedCount: 0,
+          items: [],
+        },
+        items: new Map(),
+      }
+      groups.set(key, group)
+    }
+    group.record.count += 1
+    if (row.costMeso === null) group.record.unpricedCount += 1
+    else group.record.payoutMeso += row.costMeso
+
+    const item = group.items.get(row.targetItem) ?? {
+      targetItem: row.targetItem,
+      count: 0,
+      costMeso: 0,
+      unpricedCount: 0,
+    }
+    item.count += 1
+    if (row.costMeso === null) item.unpricedCount += 1
+    else item.costMeso += row.costMeso
+    group.items.set(row.targetItem, item)
+  }
+
+  return [...groups.values()]
+    .map(({ record, items }) => ({
+      ...record,
+      // 큰 금액이 위다. 펼쳐서 보는 이유가 **어디에 썼나** 라서 이름순이면 그 답이 안 보인다.
+      // 값이 같으면 건수로, 그것도 같으면 이름으로 가른다(순서가 흔들리면 안 된다).
+      // 펼친 줄도 같다. 한 푼도 안 쓴 장비는 안 세운다.
+      items: [...items.values()]
+        .filter((item) => item.costMeso > 0 || item.unpricedCount > 0)
+        .sort(
+        (left, right) =>
+          right.costMeso - left.costMeso ||
+          right.count - left.count ||
+          left.targetItem.localeCompare(right.targetItem),
+        ),
+    }))
+    // 캐릭터로 먼저 모으고 그 안에서 큰 금액이 위다. 갈래를 고정 순서로 두면 그날 제일 많이 쓴
+    // 것이 목록 가운데에 숨는다.
+    .sort(
+      (left, right) =>
+        left.characterName.localeCompare(right.characterName) ||
+        right.payoutMeso - left.payoutMeso ||
+        left.category.localeCompare(right.category),
+    )
 }
 
 /**
@@ -535,6 +709,8 @@ function toAutoRecords(
 const AUTO_LABELS: Record<AutoDayRecord['kind'], string> = {
   bossCrystal: '보스 결정석',
   dropSale: '아이템 판매',
+  // 강화 줄은 이 표를 안 쓴다. 갈래 이름이 곧 라벨이다(`recordTitleOf`).
+  enhancement: '강화',
 }
 
 /**
@@ -559,7 +735,11 @@ function manualLabelOf(entry: ManualDayRecord): string {
 }
 
 export function recordTitleOf(entry: DayRecord): string {
-  const label = isManualRecord(entry) ? manualLabelOf(entry) : AUTO_LABELS[entry.kind]
+  const label = isManualRecord(entry)
+    ? manualLabelOf(entry)
+    : entry.kind === 'enhancement'
+      ? entry.category
+      : AUTO_LABELS[entry.kind]
   // 캐릭터가 붙어 있으면 이름이 앞에 선다. 보스 줄이 이미 쓰던 어법 그대로다. 손입력만 다르게
   // 적으면 한 목록 안에 두 어법이 생긴다.
   return entry.characterName === '' ? label : `${entry.characterName} · ${label}`
@@ -588,8 +768,8 @@ export function dayTotalsOf(entries: readonly DayRecord[]): CalendarDayAmounts {
   let incomeMeso = 0
   let expenseMeso = 0
   for (const entry of entries) {
-    // 자동 줄은 언제나 수익이다. 갈리는 것은 지출뿐이다.
-    if (entry.kind === 'spend') {
+    // 지출은 둘이다. 손입력과 강화 사용 내역. 나머지 자동 줄은 언제나 수익이다.
+    if (entry.kind === 'spend' || entry.kind === 'enhancement') {
       expenseMeso += recordMesoOf(entry)
       continue
     }
@@ -625,6 +805,13 @@ export function recordCountLabelOf(entry: DayRecord): string | null {
   }
   if (entry.kind === 'dropSale') {
     return entry.unpricedCount > 0 ? `${entry.count}건 · 미입력 ${entry.unpricedCount}` : `${entry.count}건`
+  }
+  if (entry.kind === 'enhancement') {
+    // 값을 못 매긴 건은 금액에 안 들어 있다. 그 사실을 줄이 말해야 합계가 적어 보이는 것이
+    // 고장으로 안 읽힌다.
+    return entry.unpricedCount > 0
+      ? `${entry.count}회 · 값모름 ${entry.unpricedCount}`
+      : `${entry.count}회`
   }
   /**
    * 사냥은 몇 재획을 돌았나 다. 보스 줄의 n마리와 같은 자리·같은 모양이라 화면은 아무것도

@@ -55,7 +55,6 @@ import {
 import {
   WEEKDAY_LABELS_RESET,
   buildCalendarMonth,
-  type CalendarWeek,
   buildResetWeek,
   formatDayLabel,
   getAdjacentMonthKey,
@@ -66,6 +65,7 @@ import {
   resetWeekStartOf,
   type CalendarAmounts,
 } from '../../lib/calendar'
+import { coveringRange } from '../../features/cashbook/range'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
@@ -90,6 +90,7 @@ import {
   rowKeyOf,
   type DayRecord,
   type DefeatedBoss,
+  type EnhancedItem,
   type ManualDayRecord,
 } from '../../features/cashbook/records'
 import { loadMesoRate } from '../../features/cashbook/meso-rate'
@@ -104,16 +105,7 @@ import { IncomeSheet, type IncomeDraft } from './IncomeSheet'
 import { SpendSheet, type SpendDraft } from './SpendSheet'
 
 const NO_AMOUNTS: CalendarAmounts = {}
-
-/**
- * 두 격자가 **함께 덮는** 날짜 범위. 보이는 칸(주간이면 이레)과 열지도 기준(언제나 그 달)을 다
- * 담아야 한다. 주간이 달을 걸치면 그 이레가 기준 달의 격자 밖으로 나갈 수 있어(예: 7/30 목요일
- * 주는 8/5 까지 가는데 7월 격자는 8/1 에 끝난다) 둘의 **합집합**을 쓴다.
- */
-function coveringRange(...grids: readonly CalendarWeek[][]): { from: string; to: string } {
-  const keys = grids.flat().flatMap((week) => week.map((day) => day.dateKey))
-  return { from: keys.reduce((a, b) => (a < b ? a : b)), to: keys.reduce((a, b) => (a > b ? a : b)) }
-}
+const NO_RECORDS: DayRecord[] = []
 
 /** 주간 · 월간. 보스 수익 탭의 알약 그대로다. 고른 값은 기억하지 않는다. 그쪽도 화면 상태다. */
 function PeriodTab(props: {
@@ -175,8 +167,11 @@ function MonthArrow(props: {
 /**
  * 재료 한 줄(수익 · 지출). 답 옆에 각주처럼 쌓인다.
  *
- * 열을 안 세운다. 오른쪽 정렬 상자 안이라 금액의 오른쪽 끝이 저절로 한 x 에 서고 라벨은 자기
- * 금액에 붙는다. 라벨에 고정 폭을 주면 자릿수가 다른 두 금액 사이에 빈자리가 생긴다.
+ * **금액 칸이 고정 폭이다.** 오른쪽 정렬만으로는 금액의 오른쪽 끝만 한 x 에 서고, 자릿수가
+ * 달라지면 줄의 왼쪽 끝(라벨)이 밀린다. 값이 들어올 때마다 두 줄이 흔들렸다(사용자 보고).
+ *
+ * `w-16`(64px)은 `−12,345억`(9글자, 약 52px)까지 든다. `formatMesoCompact` 가 유효숫자 넷으로
+ * 자르므로 그보다 길어지려면 수십조 메소여야 한다.
  *
  * 부호를 값에서 뽑지 않고 받는다. `formatMesoCompact` 는 음수에 ASCII `-` 를 붙이는데 답은
  * `−`(U+2212)를 쓰므로, 함수에 맡기면 한 카드에 두 종류의 빼기 기호가 선다.
@@ -194,7 +189,7 @@ function SourceRow(props: {
       <Text
         testID={props.testID}
         numberOfLines={1}
-        className={`text-11 font-medium ${props.tone}`}
+        className={`w-16 text-right text-11 font-medium ${props.tone}`}
         style={TABULAR_NUMS}
       >
         {props.sign}
@@ -237,7 +232,10 @@ function SourceRow(props: {
  *
  * 테두리는 없다. 채움만으로 격자와 갈린다.
  */
-function PeriodSummary(props: { incomeMeso: number; expenseMeso: number }): React.JSX.Element {
+function PeriodSummary(props: {
+  incomeMeso: number
+  expenseMeso: number
+}): React.JSX.Element {
   const net = props.incomeMeso - props.expenseMeso
   return (
     <View
@@ -403,6 +401,47 @@ function DefeatedBossTiles(props: { rowKey: string; bosses: readonly DefeatedBos
   )
 }
 
+/**
+ * 펼친 강화 줄. 그날 만진 장비가 **큰 금액부터** 선다.
+ *
+ * 결정석처럼 타일을 안 쓴다. 장비에는 초상이 없고 사용자가 여기서 보려는 것이 **어디에 썼나**
+ * 라서, 이름과 금액이 한 줄에 나란히 서는 쪽이 답을 바로 준다.
+ *
+ * 값을 못 매긴 건은 금액에 안 들어 있다. 그 장비만 통째로 모를 수 있어(레벨을 모르는 장비)
+ * 그때는 금액 자리에 `값 모름` 이 선다. `0` 을 적으면 공짜로 강화한 것이 된다.
+ */
+function EnhancedItemRows(props: {
+  rowKey: string
+  items: readonly EnhancedItem[]
+}): React.JSX.Element {
+  return (
+    <View
+      testID={`cashbook-row-items-${props.rowKey}`}
+      className="gap-y-1.5 rounded-b-xl border border-t-0 border-border bg-surface px-2.5 pb-2.5 pt-1.5"
+    >
+      {props.items.map((item) => (
+        <View
+          key={item.targetItem}
+          testID={`cashbook-item-row-${item.targetItem}`}
+          className="flex-row items-center gap-2"
+        >
+          <Text numberOfLines={1} className="shrink text-11 text-text-muted">
+            {item.targetItem}
+          </Text>
+          <Text numberOfLines={1} className="shrink-0 text-10 text-text-disabled" style={TABULAR_NUMS}>
+            {item.unpricedCount > 0 && item.count > item.unpricedCount
+              ? `${item.count}회 · 값모름 ${item.unpricedCount}`
+              : `${item.count}회`}
+          </Text>
+          <Text className="ml-auto shrink-0 text-11 font-medium text-fall-ink" style={TABULAR_NUMS}>
+            {item.count === item.unpricedCount ? '값 모름' : `−${formatMesoCompact(item.costMeso)}`}
+          </Text>
+        </View>
+      ))}
+    </View>
+  )
+}
+
 function DayRecordRow(props: {
   entry: DayRecord
   expanded: boolean
@@ -410,25 +449,28 @@ function DayRecordRow(props: {
 }): React.JSX.Element {
   const { entry, expanded } = props
   const rowKey = rowKeyOf(entry)
-  // 자동 줄은 언제나 수익이다. 결정석도 판매도 들어오는 돈이다.
-  const income = entry.kind !== 'spend'
+  // 나가는 돈은 둘이다. 손으로 적은 지출과 강화 사용 내역. 결정석·판매는 들어오는 돈이다.
+  const income = entry.kind !== 'spend' && entry.kind !== 'enhancement'
   const cash = recordCashOf(entry)
   const countLabel = recordCountLabelOf(entry)
   const Icon = income ? ProfitIcon : ShoppingCartIcon
   /**
-   * 펼칠 수 있는 줄은 결정석 하나다. 판매 줄은 `bosses` 를 아예 안 갖는 타입이라
-   * (`AutoDayRecord` 가 합집합이다) 이 분기를 잘못 쓰면 컴파일 단계에서 걸린다.
+   * 펼칠 수 있는 줄은 둘이다. 결정석은 잡은 보스를, 강화는 만진 장비를 편다. 판매 줄은 둘 중
+   * 어느 칸도 안 갖는 타입이라(`AutoDayRecord` 가 합집합이다) 분기를 잘못 쓰면 컴파일 단계에서
+   * 걸린다.
    */
   const bosses = entry.kind === 'bossCrystal' ? entry.bosses : null
-  const isOpen = expanded && bosses !== null
+  const items = entry.kind === 'enhancement' ? entry.items : null
+  const expandable = bosses !== null || items !== null
+  const isOpen = expanded && expandable
   /**
    * 무슨 일이 일어날지 미리 말하는 화살촉. 같은 카드 두 줄이 서로 다르게 반응하는데
    * 그림이 같으면 그것이 고장으로 읽힌다.
    */
-  const Chevron = bosses === null ? ChevronRightIcon : isOpen ? ChevronUpIcon : ChevronDownIcon
+  const Chevron = !expandable ? ChevronRightIcon : isOpen ? ChevronUpIcon : ChevronDownIcon
   const action = isManualRecord(entry)
     ? '고치기'
-    : bosses === null
+    : !expandable
       ? '보스 수익에서 보기'
       : isOpen
         ? '접기'
@@ -442,7 +484,7 @@ function DayRecordRow(props: {
         // 자동 줄은 고치러 가는 것이 아니라 보러 가는 것이다. 읽어 주는 이름이 그 사실을 말해야
         // 눌렀더니 시트가 안 열린다 가 고장으로 읽히지 않는다.
         aria-label={`${recordTitleOf(entry)} ${action}`}
-        aria-expanded={bosses === null ? undefined : isOpen}
+        aria-expanded={expandable ? isOpen : undefined}
         onPress={props.onPress}
         // 펼치면 한 카드가 된다. 아래 판과 테두리를 잇고 그 사이의 선을 지운다. 판이 따로 선
         // 상자로 보이면 이 줄이 편 것 이라는 사실이 끊긴다.
@@ -482,12 +524,15 @@ function DayRecordRow(props: {
           {cash === null ? formatMesoCompact(recordMesoOf(entry)) : `${cash.toLocaleString()}원`}
         </Text>
         {/* 화살촉이 상자를 하나 쓰는 이유는 lucide 아이콘이 `testID` 를 SVG 안으로 안 흘려보내
-            화살촉이 사라졌다 를 테스트가 못 잡기 때문이다. 상자는 `shrink-0` 도 함께 든다. */}
+            화살촉이 사라졌다 를 테스트가 못 잡기 때문이다. 상자는 `shrink-0` 도 함께 든다.
+
+*/}
         <View testID={`cashbook-row-chevron-${rowKey}`} className="shrink-0">
           <Chevron className="h-4 w-4 text-text-disabled" strokeWidth={2} aria-hidden />
         </View>
       </Pressable>
-      {isOpen && <DefeatedBossTiles rowKey={rowKey} bosses={bosses} />}
+      {isOpen && bosses !== null && <DefeatedBossTiles rowKey={rowKey} bosses={bosses} />}
+      {isOpen && items !== null && <EnhancedItemRows rowKey={rowKey} items={items} />}
     </View>
   )
 }
@@ -514,13 +559,27 @@ export function CashbookScreen(): React.JSX.Element {
    * 여기 못 들어온다.
    */
   const [sheet, setSheet] = useState<'income' | 'expense' | ManualDayRecord | null>(null)
-  const [dayRecords, setDayRecords] = useState<DayRecord[]>([])
+  /** 그날 목록과 **그것이 어느 날의 것인지**. 칸 금액과 같은 이유로 날짜를 함께 든다. */
+  const [loadedDay, setLoadedDay] = useState<{ dateKey: string; records: DayRecord[] }>({
+    dateKey: '',
+    records: [],
+  })
   /**
    * 펼쳐 둔 결정석 줄. 한 번에 하나다. 값은 `rowKeyOf` 가 만든 줄의 신원
    * (`bossCrystal:{ocid}`)이고, 그것이 날짜를 안 들고 있으므로 날을 바꿀 때 여기서 지워야 한다.
    */
   const [expandedRowKey, setExpandedRowKey] = useState<string | null>(null)
-  const [amounts, setAmounts] = useState<CalendarAmounts>(NO_AMOUNTS)
+  /**
+   * 칸 금액과 **그것이 어느 범위의 것인지**.
+   *
+   * 범위를 함께 안 들면 달을 옮긴 직후 **이전 달의 값이 그대로 그려진다**. 격자는 앞뒤 달의
+   * 날을 함께 그리므로 겹치는 날만 값이 있고 나머지는 비어, 있던 것만 먼저 뜬 것처럼 보인다
+   * (사용자 보고).
+   */
+  const [loaded, setLoaded] = useState<{ range: string; amounts: CalendarAmounts }>({
+    range: '',
+    amounts: NO_AMOUNTS,
+  })
   const [lastPointRate, setLastPointRate] = useState<number | null>(null)
   /**
    * 시트의 캐릭터 고르개가 쓸 목록. 화면이 읽는다(시트는 `storage/` 를 모른다).
@@ -560,6 +619,18 @@ export function CashbookScreen(): React.JSX.Element {
 
   const pull = usePullRefresh(() => ledger.reload())
 
+  /**
+   * 그리는 범위를 층에 알린다. 그 범위의 강화 사용 내역을 층이 받는다.
+   *
+   * 층이 마운트에서 쓰는 기본값은 주간 보기라 첫 진입에서는 같은 값이고 아무 일도 안 난다.
+   * 사용자가 달을 옮길 때만 새 회차가 돈다.
+   */
+  const { requestDateRange } = ledger
+  useEffect(() => {
+    requestDateRange({ from, to })
+  }, [from, to, requestDateRange])
+
+
 
   /**
    * 마지막으로 읽은 판. 다시 들어올 때 내 숫자가 낡았나 를 재는 기준이다.
@@ -577,15 +648,19 @@ export function CashbookScreen(): React.JSX.Element {
    * 당김도 그 회차로 오므로 이 의존 하나가 둘을 함께 받는다.
    */
   useEffect(() => {
+    // **다 합산될 때까지 아무 값도 안 그린다**(사용자 지정). 회차가 도는 동안 읽으면 그 시점의
+    // DB 가 아직 자라는 중이라, 한 셀의 값이 종류가 도착할 때마다 커진다(큐브 → 스타포스 →
+    // 잠재). 합산 자체는 언제나 완전하지만 재료가 덜 찼다.
+    if (ledger.collecting) return
     let alive = true
     loadedRevision.current = cashbookDataRevision()
     void loadCalendarAmounts(from, to).then((next) => {
-      if (alive) setAmounts(next)
+      if (alive) setLoaded({ range: `${from}|${to}`, amounts: next })
     })
     return () => {
       alive = false
     }
-  }, [from, to, reloadToken, ledger.revision])
+  }, [from, to, reloadToken, ledger.revision, ledger.collecting])
 
   /**
    * 다시 들어오면 바뀌었을 때만 다시 읽는 포커스 효과.
@@ -606,14 +681,15 @@ export function CashbookScreen(): React.JSX.Element {
 
   // 그날 목록은 고른 날에 매인다. 격자 범위와 의존성이 달라 효과를 따로 둔다.
   useEffect(() => {
+    if (ledger.collecting) return
     let alive = true
     void loadDayRecords(selectedDateKey).then((next) => {
-      if (alive) setDayRecords(next)
+      if (alive) setLoadedDay({ dateKey: selectedDateKey, records: next })
     })
     return () => {
       alive = false
     }
-  }, [selectedDateKey, reloadToken, ledger.revision])
+  }, [selectedDateKey, reloadToken, ledger.revision, ledger.collecting])
 
   useEffect(() => {
     void loadLastPointRate().then(setLastPointRate)
@@ -706,10 +782,13 @@ export function CashbookScreen(): React.JSX.Element {
       return
     }
     /**
-     * 결정석 줄은 안 나간다. 그 자리에서 편다. 펼친 타일은 읽기 전용이라 두 곳에서 고칠 수
+     * 결정석과 강화 줄은 안 나간다. 그 자리에서 편다. 펼친 판은 읽기 전용이라 두 곳에서 고칠 수
      * 있게 되지 않는다. 탭을 옮기면 고른 날과 보던 기간을 함께 잃어 그 날의 다른 줄을 못 본다.
+     *
+     * 강화는 갈 곳이 아예 없다. 원천이 넥슨 API 라 앱 안에 그 줄을 더 보여 줄 화면이 없어,
+     * 펼치는 것이 여기서 할 수 있는 전부다.
      */
-    if (entry.kind === 'bossCrystal') {
+    if (entry.kind === 'bossCrystal' || entry.kind === 'enhancement') {
       const key = rowKeyOf(entry)
       setExpandedRowKey((current) => (current === key ? null : key))
       return
@@ -754,12 +833,29 @@ export function CashbookScreen(): React.JSX.Element {
    * 기간을 옮겨도 안 바뀌므로, 표를 보면 그 날이 범위 밖으로 나가는 순간 상세가 사라진다.
    * 빈 상태 판정도 같은 이유로 그 날 자신의 기록이 낸다.
    */
+  /** 그릴 그날 목록. 칸 금액과 같은 규칙이다. 회차가 돌거나 날짜가 안 맞으면 비운다. */
+  const dayRecords =
+    !ledger.collecting && loadedDay.dateKey === selectedDateKey ? loadedDay.records : NO_RECORDS
   const selectedTotals = dayTotalsOf(dayRecords)
   /**
    * 격자 위 세 칸이 읽는 기간 합계. 격자에 넘기는 그 `weeks`·`amounts` 를 접는다. 열지도
    * 기준선용 `heatWeeks` 를 넣으면 주간 자리에 달 합계가 선다.
    */
-  const periodSums = periodTotals(weeks, amounts)
+  /**
+   * 그릴 값. **회차가 도는 동안은 비운다**(사용자 지정).
+   *
+   * 회차 도중에 읽으면 그 시점의 DB 가 아직 자라는 중이라, 한 셀의 값이 종류가 도착할 때마다
+   * 커진다(큐브 → 스타포스 → 잠재). 합산 자체는 언제나 완전하지만 재료가 덜 찼다.
+   *
+   * **범위까지 맞아야 그린다.** 회차가 끝난 순간부터 새 읽기가 도착하기까지 몇 밀리초가 있는데,
+   * 그 사이에 이전 달의 값이 그려진다. 격자가 앞뒤 달의 날을 함께 그리므로 겹치는 날만 값이
+   * 있고 나머지는 비어, 있던 것만 먼저 뜬 것처럼 보인다.
+   *
+   * 상태를 지우지 않고 **그릴 때만** 가린다. 효과에서 지우면 렌더가 한 번 더 돈다.
+   */
+  const shownAmounts =
+    !ledger.collecting && loaded.range === `${from}|${to}` ? loaded.amounts : NO_AMOUNTS
+  const periodSums = periodTotals(weeks, shownAmounts)
   const periodLabel = isWeekly
     ? formatBossProfitPeriodLabel('weekly', weekStartKey, now)
     : formatBossProfitPeriodLabel('monthly', monthKey, now)
@@ -864,10 +960,10 @@ export function CashbookScreen(): React.JSX.Element {
             weeks={weeks}
             selectedDateKey={selectedDateKey}
             todayDateKey={todayDateKey}
-            amounts={amounts}
+            amounts={shownAmounts}
             weekdayLabels={isWeekly ? WEEKDAY_LABELS_RESET : undefined}
             // 열지도 기준은 화면이 낸다(`heatWeeks`).
-            incomeMax={monthIncomeMax(heatWeeks, amounts)}
+            incomeMax={monthIncomeMax(heatWeeks, shownAmounts)}
             onSelectDate={selectDate}
           />
 

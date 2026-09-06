@@ -30,7 +30,21 @@ describe('이름으로 찾는다', () => {
 
   it('사용자가 준 보조무기 레벨도 든다', () => {
     expect(equipmentItemLevel('데이모스 세이지 실드')).toBe(130)
+    expect(equipmentItemLevel('아스트라 여의보주')).toBe(200)
+    expect(equipmentItemLevel('아스트라 데카코어 컨트롤러')).toBe(200)
   })
+
+  it('제네시스 카르타는 카타나와 다른 무기다', () => {
+    expect(equipmentItemLevel('제네시스 카르타')).toBe(200)
+    expect(equipmentItemLevel('제네시스 카타나')).toBe(200)
+  })
+})
+
+// 키는 `arcane_umbra_soul_shooter` 인데 이름이 아케인셰이드엔젤릭슈터로 들어와 있었다. API 가
+// 주는 이름과 안 맞아 11건이 조용히 빠졌다. 키의 영문을 이름으로 옮겨 적을 때 나는 종류다.
+it('키와 이름이 어긋나 안 붙던 자리를 지킨다', () => {
+  expect(equipmentItemLevel('아케인셰이드 소울슈터')).toBe(200)
+  expect(equipmentItemLevel('아케인셰이드 엔젤릭슈터')).toBeNull()
 })
 
 // **모름은 0 이 아니다.** 0 을 주면 레벨 0 짜리 장비가 생겨 비용이 조용히 틀린다.
