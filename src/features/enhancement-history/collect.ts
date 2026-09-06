@@ -20,6 +20,7 @@ import {
   saveEnhancementHistory,
 } from '../../storage/enhancement-history'
 import { eventWorldCharacterNames } from '../../lib/enhancement/world'
+import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { mapWithLimit } from '../schedule-window/gate'
 
 /** 세 종류. 순서가 진행 표시에 보이지 않으므로 아무래도 된다. */
@@ -68,6 +69,40 @@ export async function planEnhancementHistory(
   return jobs
 }
 
+/** 회차를 시작하기 전에 원장만 읽어 낸 크기. **콜이 한 건도 안 나간다.** */
+export interface HistoryPlanSize {
+  /** 이 회차의 작업 수. 그대로 **진행 바의 분모**가 된다 */
+  total: number
+  /**
+   * 오늘이 아닌 날의 작업이 있나. 모달을 띄울지의 근거다.
+   *
+   * **오늘은 빼고 센다.** 오늘 칸은 굳을 수 없어 어느 회차에나 들고, 세면 이미 받아 둔 달로
+   * 돌아올 때도 참이 된다. 오늘 셋만 받는 회차는 3콜이라 눈에 안 띈다.
+   */
+  hasPast: boolean
+}
+
+/**
+ * 기간을 옮기기 전에 이 범위의 회차가 얼마짜리인지 잰다. SQLite 한 번이다.
+ *
+ * 두 가지에 쓴다. **모달을 띄울지**(`hasPast`)와 **진행 바의 분모**(`total`)다. 분모를 여기서
+ * 넘겨받지 않으면 바가 모달보다 늦게 뜬다 - 회차 안에서 분모가 정해지는데 그 앞에 저장소 왕복이
+ * 셋 있어서, 모달은 이미 서 있는데 카드가 짧게 떴다가 자란다.
+ *
+ * @param now 오늘이 어느 날인지 KST 로 잰다
+ */
+export async function measureEnhancementHistory(
+  dateKeys: readonly string[],
+  now: Date,
+): Promise<HistoryPlanSize> {
+  const todayDateKey = getCurrentKstDateKey(now)
+  const jobs = await planEnhancementHistory(dateKeys, todayDateKey)
+  return {
+    total: jobs.length,
+    hasPast: jobs.some((job) => job.dateKey !== todayDateKey),
+  }
+}
+
 /**
  * 한 칸을 받는다. 받은 줄 수가 아니라 **끝까지 읽었나**를 돌려준다.
  *
@@ -112,7 +147,7 @@ export async function collectEnhancementHistory(
     return
   }
 
-  const todayDateKey = new Date(now.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
+  const todayDateKey = getCurrentKstDateKey(now)
   const jobs = await planEnhancementHistory(dateKeys, todayDateKey)
 
   // 분모가 여기서 확정된다. 부를 것이 없어도 한 번은 알린다(화면이 바를 안 그리게).

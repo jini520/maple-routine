@@ -9,7 +9,7 @@
  * 남는다. 호출부가 그 관계를 깰 수 없다.
  */
 import type { ReactNode } from 'react'
-import { Modal as RNModal, Pressable, View } from 'react-native'
+import { Dimensions, Modal as RNModal, Platform, Pressable, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Card } from '../../atoms'
@@ -91,6 +91,24 @@ function ModalPanel(props: ModalPanelProps): React.JSX.Element {
   )
 }
 
+/**
+ * 안드로이드에서 스크림이 **하단 내비 영역을 한 박자 늦게 덮는 것**을 막는 최소 높이.
+ *
+ * RN 모달의 크기는 안드로이드가 잰 값이 state 로 건너와 정해진다
+ * (`DialogRootViewGroup.onSizeChanged` → `updateState({screenHeight})`). 그 값이 두 번 온다.
+ * 창이 붙기 전 높이가 먼저 오고, `enableEdgeToEdge()` 의 인셋이 자리잡은 뒤 전체 높이가 온다.
+ * `flex-1` 은 그것을 그대로 따라가므로 첫 프레임의 스크림에 내비 바 띠만 빠진다.
+ *
+ * 표시 높이는 늦게 안 온다. 그것으로 바닥을 깔면 첫 프레임부터 끝까지 덮는다. 창보다 크면
+ * 창이 잘라내므로 넘치는 쪽은 안 보인다.
+ *
+ * iOS 는 모달이 전체 화면 뷰라 이 문제가 없다.
+ */
+function scrimMinHeight(): number | undefined {
+  if (Platform.OS !== 'android') return undefined
+  return Dimensions.get('screen').height
+}
+
 export function Modal(props: ModalProps): React.JSX.Element {
   const insets = useSafeAreaInsets()
   const align = props.align ?? 'top'
@@ -111,7 +129,10 @@ export function Modal(props: ModalProps): React.JSX.Element {
         onPress={props.onClose}
         className={`flex-1 items-center bg-scrim px-4 ${align === 'center' ? 'justify-center' : ''}`}
         // 상단 정렬은 안전영역(상태바·노치)만큼 내린 뒤 여백을 더 둬 화면 끝에 붙지 않게 한다.
-        style={align === 'center' ? undefined : { paddingTop: insets.top + 32 }}
+        style={{
+          ...(align === 'center' ? null : { paddingTop: insets.top + 32 }),
+          minHeight: scrimMinHeight(),
+        }}
       >
         {props.children}
       </Pressable>

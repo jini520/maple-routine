@@ -11,15 +11,19 @@ jest.mock('../../boss-profit/store', () => ({
 }))
 const mockRefresh = jest.fn()
 jest.mock('../../../storage/character-selection', () => ({ getTrackedCharacterOcids: jest.fn() }))
-jest.mock('../../enhancement-history/collect', () => ({ collectEnhancementHistory: jest.fn() }))
+jest.mock('../../enhancement-history/collect', () => ({
+  collectEnhancementHistory: jest.fn(),
+  measureEnhancementHistory: jest.fn(),
+}))
 
+import { useLedgerProgress } from '../progress'
 import { LedgerDataProvider, useLedgerData } from '../useLedgerData'
 
 const { syncScheduleWindow: syncMock } = jest.requireMock('../../schedule-window/sync') as Record<string, jest.Mock>
 const { getTrackedCharacterOcids: trackedMock } = jest.requireMock(
   '../../../storage/character-selection',
 ) as Record<string, jest.Mock>
-const { collectEnhancementHistory: collectMock } = jest.requireMock(
+const { collectEnhancementHistory: collectMock, measureEnhancementHistory: sizeMock } = jest.requireMock(
   '../../enhancement-history/collect',
 ) as Record<string, jest.Mock>
 
@@ -47,6 +51,7 @@ beforeEach(() => {
   mockRefresh.mockReset().mockResolvedValue(undefined)
   trackedMock.mockReset().mockResolvedValue(['o1', 'o2'])
   collectMock.mockReset().mockResolvedValue(undefined)
+  sizeMock.mockReset().mockResolvedValue({ total: 0, hasPast: false })
 })
 
 // 마운트는 **과거(창)만** 받는다. 오늘은 보스 수익 스토어의 진입 경로가 10분 TTL 로 이미
@@ -206,5 +211,118 @@ describe('회차 도중에는 안 알린다', () => {
       resolve()
     })
     await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('ready:1'))
+  })
+})
+
+// 회차가 도는 동안 화면은 아무 값도 안 그린다. 한 번도 안 받아 본 범위면 그것이
+// 몇 초라 빈 격자가 서 있으므로, 그 자리를 층의 모달이 든다(사용자 지정).
+describe('기록이 없는 기간으로 이동', () => {
+  function MoveProbe(): React.JSX.Element {
+    const { status, knownLong, requestDateRange } = useLedgerData()
+    return (
+      <>
+        <Text testID="probe">{`${status}:${knownLong ? '잼' : '안잼'}`}</Text>
+        <Text
+          testID="move"
+          onPress={() => requestDateRange({ from: '2026-01-01', to: '2026-01-03' })}
+        >
+          이동
+        </Text>
+        <Text
+          testID="move2"
+          onPress={() => requestDateRange({ from: '2026-02-01', to: '2026-02-03' })}
+        >
+          또 이동
+        </Text>
+      </>
+    )
+  }
+
+  /** 마운트 회차를 끝낸 뒤, **끝나지 않는 회차**로 기간을 옮긴다. 도는 중을 볼 수 있게. */
+  async function 이동중() {
+    const view = await render(
+      <LedgerDataProvider>
+        <MoveProbe />
+      </LedgerDataProvider>,
+    )
+    await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('ready:안잼'))
+
+    let 끝내기 = (): void => undefined
+    collectMock.mockImplementation(() => new Promise<void>((done) => (끝내기 = () => done())))
+    await act(async () => {
+      fireEvent.press(view.getByTestId('move'))
+    })
+    return { view, 끝내기: () => 끝내기() }
+  }
+
+  it('안 받은 지난 날이 있으면 모달을 띄운다', async () => {
+    sizeMock.mockResolvedValue({ total: 105, hasPast: true })
+
+    const { view, 끝내기 } = await 이동중()
+
+    // 시작 전에 쟀으므로 모달이 400ms 를 안 끈다.
+    await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('filling:잼'))
+    await act(async () => {
+      끝내기()
+    })
+    expect(view.getByTestId('probe')).toHaveTextContent('ready:안잼')
+  })
+
+  // 이미 받아 둔 달은 조회가 0건이라 회차가 몇십 밀리초에 끝난다. 그 위에 모달을 세우면
+  // 화면이 한 번 번쩍일 뿐이다.
+  it('받아 둔 범위면 안 띄운다', async () => {
+    sizeMock.mockResolvedValue({ total: 3, hasPast: false })
+
+    const { view } = await 이동중()
+
+    expect(view.getByTestId('probe')).toHaveTextContent('ready:안잼')
+  })
+
+  // 안 뜨는 모달보다 안 걷히는 모달이 나쁘다.
+  it('원장을 못 읽으면 안 띄운다', async () => {
+    sizeMock.mockRejectedValue(new Error('boom'))
+
+    const { view } = await 이동중()
+
+    expect(view.getByTestId('probe')).toHaveTextContent('ready:안잼')
+  })
+
+  // 문턱을 걷으니 모달이 분모보다 먼저 뜨게 됐다. 카드가 짧게 떴다가 바가 붙으며 자란다
+  // (실기기 2026-09-07). 미리 잰 분모를 넘겨 첫 순간부터 바가 서게 한다.
+  it('미리 잰 분모로 바가 첫 순간부터 선다', async () => {
+    sizeMock.mockResolvedValue({ total: 105, hasPast: true })
+    useLedgerProgress.getState().reset()
+
+    const { view, 끝내기 } = await 이동중()
+
+    await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('filling:잼'))
+    expect(useLedgerProgress.getState().total).toBe(105)
+    await act(async () => {
+      끝내기()
+    })
+  })
+
+  // 기간을 연타하면 회차가 겹친다. 앞 회차가 끝나며 뒤 회차의 모달을 꺼 버리면 안 된다.
+  it('회차가 겹치면 뒤 회차가 끝날 때까지 선다', async () => {
+    sizeMock.mockResolvedValue({ total: 105, hasPast: true })
+
+    const { view, 끝내기: 앞회차끝내기 } = await 이동중()
+    await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('filling:잼'))
+
+    let 뒤회차끝내기 = (): void => undefined
+    collectMock.mockImplementation(() => new Promise<void>((done) => (뒤회차끝내기 = () => done())))
+    await act(async () => {
+      fireEvent.press(view.getByTestId('move2'))
+    })
+
+    await act(async () => {
+      앞회차끝내기()
+    })
+    expect(view.getByTestId('probe')).toHaveTextContent('filling:잼')
+
+    await act(async () => {
+      뒤회차끝내기()
+    })
+    expect(view.getByTestId('probe')).toHaveTextContent('ready:안잼')
   })
 })

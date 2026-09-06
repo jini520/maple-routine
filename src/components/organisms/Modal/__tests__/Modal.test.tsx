@@ -6,7 +6,7 @@
 // 클래스 문자열을 보던 자리는 **스타일 값**을 본다(`panel-on-scrim` → 실제 테두리 색).
 // `align` 두 케이스는 `pt-[calc(var(--sa-top)+2rem)]` 대신 실제 `paddingTop` 숫자를 잰다.
 import { fireEvent } from '@testing-library/react-native'
-import { Text, View } from 'react-native'
+import { Dimensions, Platform, Text, View } from 'react-native'
 
 import { flattenStyle, renderOverlay, 기본테마 } from '../../../__tests__/render-atom'
 import { resolvePanelBorder } from '../../../../theme/theme-vars'
@@ -155,6 +155,49 @@ describe('Modal', () => {
     const style = flattenStyle(getByTestId('test-modal').props.style)
     expect(style.justifyContent).toBe('center')
     expect(style.paddingTop).toBeUndefined()
+  })
+
+  // 안드로이드에서 스크림이 하단 내비 영역을 **한 박자 늦게** 덮었다(실기기 보고).
+  // 모달의 크기는 안드로이드가 잰 값이 state 로 건너와 정해지는데, 창이 붙기 전 높이가 먼저
+  // 오고 인셋이 자리잡은 뒤 전체 높이가 온다. `flex-1` 은 그것을 그대로 따라간다.
+  // 늦게 안 오는 값(표시 높이)으로 바닥을 깔아 첫 프레임부터 덮게 한다.
+  describe('스크림 바닥', () => {
+    afterEach(() => {
+      Platform.OS = 'ios'
+    })
+
+    it('안드로이드에서는 표시 높이를 최소 높이로 깐다', async () => {
+      Platform.OS = 'android'
+      jest.spyOn(Dimensions, 'get').mockReturnValue({
+        width: 412,
+        height: 915,
+        scale: 2.625,
+        fontScale: 1,
+      })
+
+      const { getByTestId } = await renderOverlay(
+        <Modal onClose={noop} testId="test-modal">
+          <Modal.Card>
+            <Text>내용</Text>
+          </Modal.Card>
+        </Modal>,
+      )
+
+      expect(flattenStyle(getByTestId('test-modal').props.style).minHeight).toBe(915)
+    })
+
+    // iOS 는 모달이 전체 화면 뷰라 이 문제가 없다. 깔면 회전·분할 화면에서 되레 어긋난다.
+    it('iOS 에서는 안 깐다', async () => {
+      const { getByTestId } = await renderOverlay(
+        <Modal onClose={noop} testId="test-modal">
+          <Modal.Card>
+            <Text>내용</Text>
+          </Modal.Card>
+        </Modal>,
+      )
+
+      expect(flattenStyle(getByTestId('test-modal').props.style).minHeight).toBeUndefined()
+    })
   })
 
   //  후반. 하드웨어 뒤로가기는 스택을 pop 하지 않고 이 오버레이만 닫는다.

@@ -87,6 +87,15 @@ Text(라이트): text-[#8A7362] hover:text-[#5B4636]   Text(다크): text-neutra
 ### 모달 (`components/Modal`): 2026-07-13
 `CharacterTrackingPicker`(2026-09-03 삭제, [[ADR-144]] 정정 3)/`DisconnectConfirm` 에서 반복되던 오버레이(`fixed inset-0 flex items-center justify-center bg-scrim`, 안쪽 카드 `onClick` `stopPropagation`)를 공용화. 스크림은 `bg-bg/70` 이 아니라 전용 `scrim` 토큰이다([[ADR-064]] 결정 6). 배경색을 반투명하게 깐 것은 밝은 테마에서 스크림이 약해진다. 기본은 카드(`rounded-[14px] border border-border bg-surface p-6`)를 제공하되, `card={false}` 면 위치 고정 래퍼만 남기고 카드 스타일 생략(자식이 자체 카드를 둘 때 카드-안-카드 방지). 설정의 계정 변경 모달·계정 선택 목록이 `card={false}` 로 재사용.
 
+**안드로이드에서 스크림의 최소 높이를 표시 높이로 깐다** (2026-09-07, 실기기 보고). 스크림이
+하단 내비 영역을 **한 박자 늦게** 덮었다. RN 모달의 크기는 안드로이드가 잰 값이 state 로 건너와
+정해지는데(`DialogRootViewGroup.onSizeChanged` → `updateState({screenHeight})`), 그 값이 두 번
+온다. 창이 붙기 전 높이가 먼저 오고 `enableEdgeToEdge()`(= `navigationBarTranslucent`)의 인셋이
+자리잡은 뒤 전체 높이가 온다. `flex-1` 은 그것을 그대로 따라가므로 첫 프레임에 내비 바 띠만
+빠진다. `Dimensions.get('screen').height` 는 늦게 안 오므로 그것으로 바닥을 깐다. 창보다 크면
+창이 잘라낸다. **iOS 에는 안 깐다** - 모달이 전체 화면 뷰라 이 문제가 없고, 깔면 분할 화면에서
+`align="center"` 의 중앙이 어긋난다.
+
 **스크림 위 패널의 바깥 테두리는 라이트 테마에서 배경보다 어둡게 눌러 가라앉힌다** (ADR-122, 2026-08-10). 테두리가 하는 일이 모드마다 반대이기 때문이다. 라이트는 배경 vs 표면 대비가 **18.8~19.7** 이라 가장자리가 이미 압도적이고 테두리는 **링**으로만 읽히는 반면, 다크는 **1.07~1.18** 이라 **테두리가 유일한 경계**다.
 ```
 :root[data-mode='light'] .panel-on-scrim,
