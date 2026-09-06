@@ -359,11 +359,6 @@ export function BossProfitScreen(): React.JSX.Element {
           </Pressable>
         </View>
 
-        {/* 보여줄 데이터가 아예 없을 때만 셸 승계 카드를 그린다. */}
-        {!isPeriodLoading &&
-          (status === 'idle' || status === 'loading') &&
-          characterGroups.length === 0 && <LoadingState size="page" message="불러오고 있어요" />}
-
         {/* 상태마다 얼굴이 다르다. 기록이 있으면 아무것도 띄우지 않는다. 목요일 새벽처럼 백필만
             막힌 경우 기록은 정확하고 사용자가 할 일도 없다. `failed` 는 액션이 필요해 토스트로
             옮겼다. */}

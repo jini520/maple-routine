@@ -1388,6 +1388,11 @@ a11y: 화살표는 `aria-hidden` 이고, 색은 의미를 못 전하므로 칩 �
 [error-resilience.md](../foundation/error-resilience.md) 제품 원칙 2, 남는 로딩 프레임을 치우는 부팅
 선하이드레이션은 [architecture.md](../foundation/architecture.md) 의 "상태 관리"에 있다.
 
+**페이지 로딩 카드는 없다**([[ADR-222]] 정정 9). 불러오는 중은 층이 말하고(`LedgerLoadingModal`)
+하위 화면은 자기 스피너를 갖지 않는다. 전에는 캐릭터가 0명일 때 `size="page"` 카드를 세웠는데,
+그 조건이 서는 자리는 층도 `filling` 이라 모달이 그 위를 덮었다. 남는 자리는 모달 전 400ms
+하나였고 거기서 같은 단풍잎이 두 겹으로 겹쳤다.
+
 **기간 기록이 없어 자동 재조회할 때의 스피너**는 공용 셸을 승계한 카드 `LoadingState size="inline"`
 이다([[ADR-061]] 결정 2·3·4). `MapleSweepSpinner size={24}` 와 "5월 2주차 기록을 불러오고 있어요"를
 같이 그린다. 백필이 끝나면 같은 자리에 같은 셸

@@ -425,18 +425,19 @@ describe('기간 상태별 표현', () => {
 })
 
 describe('로딩', () => {
-  it('보여줄 데이터가 없을 때만 셸 승계 카드를 그린다', async () => {
+  // 불러오는 중은 **층이 말한다**(`LedgerLoadingModal`). 화면이 자기 카드를 또 세우면 같은
+  // 사실이 두 번 서고, 그 카드는 층 모달 밑에 깔려 문턱 전 400ms 만 보인다.
+  it('페이지 로딩 카드를 안 그린다. 그 말은 층이 한다', async () => {
     mockStore({ status: 'loading' })
-    const { getByText } = await renderScreen()
+    const { queryByText } = await renderScreen()
 
-    expect(getByText('불러오고 있어요')).toBeTruthy()
+    expect(queryByText('불러오고 있어요')).toBeNull()
   })
 
   it('캐시된 행이 있으면 재조회 중에도 목록을 계속 보여준다', async () => {
     mockStore({ status: 'loading', rows: [보스행()] })
-    const { queryByText, getByText } = await renderScreen()
+    const { getByText } = await renderScreen()
 
-    expect(queryByText('불러오고 있어요')).toBeNull()
     expect(getByText('지내우시')).toBeTruthy()
   })
 
