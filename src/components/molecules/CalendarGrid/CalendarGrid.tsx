@@ -115,7 +115,9 @@ export function CalendarGrid(props: CalendarGridProps): React.JSX.Element {
                 <Text
                   testID={`calendar-income-${day.dateKey}`}
                   numberOfLines={1}
-                  className="w-full pr-1.5 text-right text-9 leading-3 text-rise-ink"
+                  // 날짜 원이 24px 인데 그 안의 숫자는 12px 이라 아래로 빈 자리가 남는다.
+                  // 그만큼 끌어올려야 날짜와 금액이 한 덩이로 읽힌다.
+                  className="-mt-1 w-full pr-2 text-right text-9 leading-3 text-rise-ink"
                   style={TABULAR_NUMS}
                 >
                   {amounts.incomeMeso > 0 ? `+${formatMesoCompact(amounts.incomeMeso)}` : ' '}
@@ -123,7 +125,7 @@ export function CalendarGrid(props: CalendarGridProps): React.JSX.Element {
                 <Text
                   testID={`calendar-expense-${day.dateKey}`}
                   numberOfLines={1}
-                  className="w-full pr-1.5 text-right text-9 leading-3 text-fall-ink"
+                  className="w-full pr-2 text-right text-9 leading-3 text-fall-ink"
                   style={TABULAR_NUMS}
                 >
                   {amounts.expenseMeso > 0 ? `−${formatMesoCompact(amounts.expenseMeso)}` : ' '}
