@@ -9,7 +9,14 @@ import { fetchEnhancementHistory } from '../client'
 const { requestJson: requestJsonMock } = jest.requireMock('../../http') as Record<string, jest.Mock>
 
 function row(id: string, at: string) {
-  return { id, character_name: '루디', date_create: at, cube_type: '수상한 큐브' }
+  return {
+    id,
+    character_name: '루디',
+    date_create: at,
+    cube_type: '수상한 큐브',
+    target_item: '아케인셰이드 클로',
+    item_level: 200,
+  }
 }
 
 beforeEach(() => {
@@ -105,4 +112,40 @@ describe('응답 정규화', () => {
 
     expect(page).toEqual({ rows: [], nextCursor: null })
   })
+})
+
+// 스타포스 응답에는 `item_level` 이 없다(1년치 3,220건 실측). 그 자리를 0 으로 채우면
+// **모름이 값으로 둔갑**해 레벨 0 짜리 장비가 생긴다.
+it('스타포스처럼 레벨이 없는 응답은 null 로 든다', async () => {
+  requestJsonMock.mockResolvedValue({
+    count: 1,
+    next_cursor: null,
+    starforce_history: [
+      {
+        id: 'a',
+        character_name: '루디',
+        date_create: '2026-09-04T07:00:55+09:00',
+        target_item: '아케인셰이드 클로',
+        before_starforce_count: 17,
+        after_starforce_count: 18,
+      },
+    ],
+  })
+
+  const page = await fetchEnhancementHistory('key', 'starforce', { dateKey: '2026-09-04' })
+
+  expect(page.rows[0]).toMatchObject({ targetItem: '아케인셰이드 클로', itemLevel: null })
+})
+
+// 큐브·잠재가 주는 레벨이 곧 표다. 그 표를 스타포스가 **읽을 때** 쓴다.
+it('큐브 응답의 레벨을 그대로 싣는다. 이것이 표의 재료다', async () => {
+  requestJsonMock.mockResolvedValue({
+    count: 1,
+    next_cursor: null,
+    cube_history: [row('a', '2026-09-04T07:04:33+09:00')],
+  })
+
+  const page = await fetchEnhancementHistory('key', 'cube', { dateKey: '2026-09-04' })
+
+  expect(page.rows[0]).toMatchObject({ targetItem: '아케인셰이드 클로', itemLevel: 200 })
 })

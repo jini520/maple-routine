@@ -138,6 +138,8 @@ describe('db.ts 와 맞물리는가', () => {
     expect(executed.filter((statement) => statement.startsWith('ALTER TABLE'))).toEqual([
       'ALTER TABLE boss_profit_records ADD COLUMN world TEXT',
       'ALTER TABLE boss_profit_records ADD COLUMN defeated_on TEXT',
+      "ALTER TABLE enhancement_history ADD COLUMN target_item TEXT NOT NULL DEFAULT ''",
+      'ALTER TABLE enhancement_history ADD COLUMN item_level INTEGER',
       'ALTER TABLE boss_drop_records ADD COLUMN price_state TEXT',
       'ALTER TABLE boss_drop_records ADD COLUMN price_meso INTEGER',
       'ALTER TABLE boss_drop_records ADD COLUMN price_share INTEGER',
@@ -171,6 +173,8 @@ describe('db.ts 와 맞물리는가', () => {
         ? [
             { name: 'world' },
             { name: 'defeated_on' },
+            { name: 'target_item' },
+            { name: 'item_level' },
             { name: 'price_state' },
             { name: 'price_meso' },
             { name: 'price_share' },

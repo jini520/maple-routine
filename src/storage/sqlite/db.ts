@@ -177,6 +177,15 @@ const TABLE_DEFINITIONS = [
     created_at TEXT NOT NULL,
     -- **이름만이다.** ocid 를 얻으려면 캐릭터마다 한 콜이라 안 받는다.
     character_name TEXT NOT NULL,
+    -- 강화한 장비 이름. 셋 다 준다.
+    target_item TEXT NOT NULL,
+    -- 그 장비의 레벨. **스타포스 응답에는 없어서** 거기서는 NULL 이다.
+    --
+    -- 큐브·잠재는 이 값을 주고, 한 이름에 두 레벨이 붙은 적이 없다(1년치 27,187건 실측). 그래서
+    -- 이 칸이 곧 장비 이름에서 레벨로 가는 표이고, 스타포스는 **읽을 때** 같은 이름의 행을 찾는다.
+    -- 쓸 때 채우지 않는 이유는 레벨이 그 사건의 속성이 아니라 파생값이기 때문이다. 표가 자라면
+    -- 예전에 넣은 스타포스 행도 함께 값을 얻는다.
+    item_level INTEGER,
     payload TEXT NOT NULL,
     -- 쓴 메소. 비용 표가 오기 전까지 NULL 이고, NULL 은 0 이 아니라 **모름** 이다.
     cost_meso INTEGER,
@@ -422,6 +431,10 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'boss_profit_records', 'world', 'TEXT')
   // `world` 와 같은 사정이다. 이미 보스를 기록해 둔 기기에는 CREATE 가 안 붙인다.
   await ensureColumn(db, 'boss_profit_records', 'defeated_on', 'TEXT')
+  // 이 브랜치에서 표를 세우는 동안 붙인 칸 둘. 아직 배포된 적이 없어 이관할 데이터도 없지만,
+  // DDL 과 여기가 함께 가야 재작성이 만드는 표와 어긋나지 않는다.
+  await ensureColumn(db, 'enhancement_history', 'target_item', 'TEXT NOT NULL DEFAULT \'\'')
+  await ensureColumn(db, 'enhancement_history', 'item_level', 'INTEGER')
   // 이미 만들어진 DB에는 위 CREATE 가 컬럼을 더해주지 않는다.
   await ensureColumn(db, 'boss_drop_records', 'price_state', 'TEXT')
   await ensureColumn(db, 'boss_drop_records', 'price_meso', 'INTEGER')

@@ -25,6 +25,15 @@ export interface EnhancementHistoryRow {
   createdAt: string
   /** KST `YYYY-MM-DD`. 가계부 칸이 이 값으로 선다 */
   dateKey: string
+  /** 강화한 장비 이름. 셋 다 준다 */
+  targetItem: string
+  /**
+   * 그 장비의 레벨. **스타포스 응답에는 없어서** 거기서는 `null` 이다.
+   *
+   * 큐브·잠재가 주는 이 값이 곧 장비 이름에서 레벨로 가는 표가 된다. 1년치 27,187건에서 한
+   * 이름에 두 레벨이 붙은 적이 없다.
+   */
+  itemLevel: number | null
   /** 줄 원본. **버리지 않는다.** 비용 표가 오면 여기서 계산한다 */
   payload: unknown
 }
@@ -86,6 +95,8 @@ export async function fetchEnhancementHistory(
         characterName: String(record.character_name ?? ''),
         createdAt,
         dateKey: dateKeyOf(createdAt),
+        targetItem: String(record.target_item ?? ''),
+        itemLevel: typeof record.item_level === 'number' ? record.item_level : null,
         payload: entry,
       }
     }),

@@ -137,9 +137,22 @@ PK: `ocid`. 캐릭터 하나당 한 행. **기록에 이름과 얼굴을 붙이�
 | `kind` | `cube` · `starforce` · `potential` |
 | `date_key` | KST `YYYY-MM-DD`. `date_create` 에서 뽑는다. 가계부 칸이 이 값으로 선다 |
 | `created_at` | `date_create` 원본(타임존 포함) |
-| `character_name` | 이름만이다. **ocid 가 없다** — 얻으려면 캐릭터마다 한 콜이라 안 받는다 |
+| `character_name` | 이름만이다. **ocid 가 없다.** 얻으려면 캐릭터마다 한 콜이라 안 받는다 |
+| `target_item` | 강화한 장비 이름. 셋 다 준다 |
+| `item_level` | 그 장비의 레벨. **스타포스 응답에는 없어서** 거기서는 NULL |
 | `payload` | 응답 줄 원본 JSON |
 | `cost_meso` | 쓴 메소. **표가 오기 전까지 NULL** |
+
+**장비 레벨 표는 이 표의 투영이다**([[ADR-223]] 결정 3.7). 스타포스 응답에 `item_level` 이 없는데
+큐브·잠재는 주고 셋이 `target_item` 을 같은 이름 체계로 쓴다. 1년치 27,187건에서 한 이름에 두
+레벨이 붙은 적이 없어, 별도 표 없이 이렇게 찾는다.
+
+```sql
+SELECT DISTINCT target_item, item_level FROM enhancement_history WHERE item_level IS NOT NULL
+```
+
+**읽을 때 찾는다.** 쓸 때 채우면 그 시점에 표에 없던 장비가 영영 NULL 로 남는다. 표가 자라면
+예전에 넣은 행도 함께 값을 얻어야 한다.
 
 ### `enhancement_history_checks` — 날짜별 조회 원장 ([[ADR-223]] 결정 1)
 
