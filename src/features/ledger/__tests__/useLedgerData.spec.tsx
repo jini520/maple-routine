@@ -189,55 +189,23 @@ describe('강화 사용 내역', () => {
   })
 })
 
-// 끝에서 한 번만 올리면 지난 달로 옮긴 사용자가 105콜이 다 끝날 때까지 빈 달력을 본다.
-describe('들어오는 대로 반영한다', () => {
-  function RangeProbe(props: { from: string; to: string }): React.JSX.Element {
-    const { revision, requestDateRange } = useLedgerData()
-    return (
-      <>
-        <Text testID="rev">{String(revision)}</Text>
-        <Text testID="range" onPress={() => requestDateRange({ from: props.from, to: props.to })}>
-          범위
-        </Text>
-      </>
-    )
-  }
-
-  it('회차 도중에도 회차 표가 오른다', async () => {
-    // 수집기가 한 칸을 끝낼 때마다 부르는 통로. 흘린 시각이 멀면 그때마다 오른다.
-    collectMock.mockImplementation(
-      async (_days: string[], _now: Date, _progress: unknown, landed: () => void) => {
-        landed()
-        await new Promise((resolve) => setTimeout(resolve, 700))
-        landed()
-      },
-    )
-    const view = await 그리기()
-
-    // 도중 둘 + 끝 하나. 끝에서만 올렸다면 `ready:1` 이다.
-    await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('ready:3'))
-  })
-
-  // 달력을 보려고 옮긴 것인데 그 위를 모달이 덮으면 아무것도 못 본다.
-  it('기간을 옮겨도 모달을 안 띄운다', async () => {
-    const view = await render(
-      <LedgerDataProvider>
-        <RangeProbe from="2026-01-01" to="2026-01-03" />
-        <Probe />
-      </LedgerDataProvider>,
-    )
-    await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('ready:1'))
-
+// 회차가 도는 동안 화면이 읽으면 그 시점의 DB 가 아직 자라는 중이라 한 셀의 값이 종류가
+// 도착할 때마다 커진다. 다 합산될 때까지 안 그린다(사용자 지정).
+describe('회차 도중에는 안 알린다', () => {
+  it('회차 표는 끝에 한 번만 오른다', async () => {
     let resolve = (): void => undefined
     collectMock.mockImplementation(() => new Promise<void>((done) => (resolve = () => done())))
-    await act(async () => {
-      fireEvent.press(view.getByTestId('range'))
-    })
+    const view = await 그리기()
 
-    expect(view.getByTestId('probe')).toHaveTextContent('ready:1')
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(view.getByTestId('probe')).toHaveTextContent('filling:0')
+
     await act(async () => {
       resolve()
     })
+    await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('ready:1'))
   })
 })
 
@@ -273,7 +241,7 @@ describe('자리표시 최소 노출', () => {
     expect(view.getByTestId('collecting')).toHaveTextContent('true')
   })
 
-  it('회차가 일찍 끝나도 800ms 은 서 있는다', async () => {
+  it('회차가 일찍 끝나도 300ms 은 서 있는다', async () => {
     const view = await 그리기2()
     await waitFor(() => expect(view.getByTestId('collecting')).toHaveTextContent('false'))
 

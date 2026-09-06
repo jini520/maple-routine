@@ -1649,6 +1649,65 @@ describe('확정 전 숫자', () => {
     expect(mockMarkPeriodMoved).toHaveBeenCalled()
   })
 
+  // 오른쪽 정렬만으로는 금액의 오른쪽 끝만 한 x 에 서고, 자릿수가 달라지면 줄의 왼쪽 끝이
+  // 밀린다. 값이 들어올 때마다 두 줄이 흔들렸다(사용자 보고).
+  it('금액 칸이 고정 폭이라 자릿수가 달라도 안 밀린다', async () => {
+    const view = await 그리기()
+    const 짧다 = flattenStyle(view.getByTestId('cashbook-summary-income').props.style).width
+
+    records.loadCalendarAmounts.mockResolvedValue({
+      '2026-08-23': { incomeMeso: 1_234_500_000_000, expenseMeso: 900_000 },
+    })
+    const 길다 = await 그리기()
+
+    expect(짧다).toBe(64)
+    expect(flattenStyle(길다.getByTestId('cashbook-summary-income').props.style).width).toBe(64)
+    expect(flattenStyle(길다.getByTestId('cashbook-summary-expense').props.style).width).toBe(64)
+  })
+
+  // 회차 도중에 읽으면 그 시점의 DB 가 아직 자라는 중이라 한 셀의 값이 종류가 도착할 때마다
+  // 커진다(큐브 → 스타포스 → 잠재). 다 합산될 때까지 안 그린다(사용자 지정).
+  // 자리는 남는다(칸 높이가 흔들리면 격자가 출렁인다). 비는 것은 숫자다.
+  it('받는 중이면 달력 칸의 숫자가 빈다', async () => {
+    const view = await 그리기()
+    expect(view.getByTestId('calendar-income-2026-08-23')).toHaveTextContent('+76억')
+
+    mockWindow.collecting = true
+    const 받는중 = await 그리기()
+
+    expect(받는중.getByTestId('calendar-income-2026-08-23')).not.toHaveTextContent('억')
+    expect(받는중.getByTestId('calendar-expense-2026-08-23')).not.toHaveTextContent('억')
+  })
+
+  it('받는 중에는 다시 읽지도 않는다', async () => {
+    mockWindow.collecting = true
+    records.loadCalendarAmounts.mockClear()
+    await 그리기()
+
+    expect(records.loadCalendarAmounts).not.toHaveBeenCalled()
+  })
+
+  // 회차가 끝난 순간부터 새 읽기가 도착하기까지 몇 밀리초가 있다. 그 사이에 이전 달의 값이
+  // 그려졌다. 격자가 앞뒤 달의 날을 함께 그리므로 겹치는 날만 값이 있고 나머지는 비어, 있던
+  // 것만 먼저 뜬 것처럼 보였다(사용자 보고).
+  it('읽은 범위가 지금 범위와 다르면 안 그린다', async () => {
+    const view = await 그리기()
+    expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+76억')
+
+    // 기간을 옮기면 새 읽기가 시작된다. 그것이 끝나기 전까지는 이전 값이 남아 있으면 안 된다.
+    let resolve: ((value: Record<string, unknown>) => void) | null = null
+    records.loadCalendarAmounts.mockImplementation(
+      () => new Promise((done) => (resolve = done as never)),
+    )
+    await 이름으로누르기(view, '이전 주')
+
+    expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+0')
+
+    await act(async () => {
+      resolve?.({})
+    })
+  })
+
   it('다 받으면 숫자가 선다', async () => {
     const view = await 그리기()
 

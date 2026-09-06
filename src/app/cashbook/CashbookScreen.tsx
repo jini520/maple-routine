@@ -107,6 +107,7 @@ import { IncomeSheet, type IncomeDraft } from './IncomeSheet'
 import { SpendSheet, type SpendDraft } from './SpendSheet'
 
 const NO_AMOUNTS: CalendarAmounts = {}
+const NO_RECORDS: DayRecord[] = []
 
 /** 주간 · 월간. 보스 수익 탭의 알약 그대로다. 고른 값은 기억하지 않는다. 그쪽도 화면 상태다. */
 function PeriodTab(props: {
@@ -168,8 +169,11 @@ function MonthArrow(props: {
 /**
  * 재료 한 줄(수익 · 지출). 답 옆에 각주처럼 쌓인다.
  *
- * 열을 안 세운다. 오른쪽 정렬 상자 안이라 금액의 오른쪽 끝이 저절로 한 x 에 서고 라벨은 자기
- * 금액에 붙는다. 라벨에 고정 폭을 주면 자릿수가 다른 두 금액 사이에 빈자리가 생긴다.
+ * **금액 칸이 고정 폭이다.** 오른쪽 정렬만으로는 금액의 오른쪽 끝만 한 x 에 서고, 자릿수가
+ * 달라지면 줄의 왼쪽 끝(라벨)이 밀린다. 값이 들어올 때마다 두 줄이 흔들렸다(사용자 보고).
+ *
+ * `w-16`(64px)은 `−12,345억`(9글자, 약 52px)까지 든다. `formatMesoCompact` 가 유효숫자 넷으로
+ * 자르므로 그보다 길어지려면 수십조 메소여야 한다.
  *
  * 부호를 값에서 뽑지 않고 받는다. `formatMesoCompact` 는 음수에 ASCII `-` 를 붙이는데 답은
  * `−`(U+2212)를 쓰므로, 함수에 맡기면 한 카드에 두 종류의 빼기 기호가 선다.
@@ -187,7 +191,7 @@ function SourceRow(props: {
       <Text
         testID={props.testID}
         numberOfLines={1}
-        className={`text-11 font-medium ${props.tone}`}
+        className={`w-16 text-right text-11 font-medium ${props.tone}`}
         style={TABULAR_NUMS}
       >
         {props.sign}
@@ -230,17 +234,65 @@ function SourceRow(props: {
  *
  * 테두리는 없다. 채움만으로 격자와 갈린다.
  */
-/** 확정 전 재료 한 줄. 자리표시의 폭·높이는 그 자리에 설 글자(`−73.85억`)에 맞춘다. */
+/**
+ * 확정 전 재료 한 줄. **`SourceRow` 와 같은 폭**이라 값이 들어와도 라벨이 안 움직인다.
+ *
+ * 자리표시는 그 칸을 다 안 채운다. 실제로 설 글자(`+238.9억`)를 잰 46px 이고, 칸 안에서
+ * 오른쪽에 붙는다. 칸을 다 채우면 값보다 길어 보인다(사용자 보고).
+ */
 function PendingSourceRow(props: {
   label: string
-  mode: 'light' | 'dark'
+  colors: string[]
 }): React.JSX.Element {
   return (
     <View testID={`cashbook-summary-pending-${props.label}`} className="flex-row items-center gap-1.5">
       <Text className="text-11 text-text-muted">{props.label}</Text>
-      <Skeleton width={62} height={12} radius={3} colorMode={props.mode} />
+      <View className="w-16 items-end">
+        <Skeleton
+          width={46}
+          height={12}
+          radius={3}
+          colors={props.colors}
+          transition={SKELETON_SHIMMER}
+          backgroundSize={SKELETON_SWEEP}
+        />
+      </View>
     </View>
   )
+}
+
+/**
+ * 흐르는 빛의 주기. **`moti` 기본값(`delay 200` · `duration 3000`)으로는 안 보인다.**
+ *
+ * 자리표시가 최소 300ms 만 서 있어서, 기본값이면 지연 200ms 를 빼고 3000ms 중 3% 만 흐르다
+ * 사라진다. 사용자에게는 정지한 회색 막대로 보인다.
+ */
+const SKELETON_SHIMMER = {
+  translateX: { type: 'timing', loop: true, delay: 0, duration: 900 },
+} as const
+
+/**
+ * 그라디언트가 막대의 몇 배로 늘어나나. **기본 6 은 이 크기에서 안 보인다.**
+ *
+ * 46px 막대에 6배면 그라디언트가 276px 이라, 보이는 46px 창에는 거의 평평한 색 하나만 든다
+ * (실측: 480ms 떨어진 프레임들이 전부 똑같았다). 2 로 좁히면 한 주기에 빛이 막대를 온전히
+ * 한 번 지나간다.
+ */
+const SKELETON_SWEEP = 2
+
+/**
+ * 자리표시의 색. **테마 토큰에서 온다.**
+ *
+ * `moti` 기본색은 `rgb(250,250,250)`·`rgb(205,205,205)` 고정이라 이 앱의 테마 위에서 묻힌다
+ * (분홍 테마의 카드에서 아예 안 보였다).
+ *
+ * 바탕이 `border`, 흐르는 빛이 `surface` 다. `track`(=`surface2`)과 `border` 는 L 이 0.06 밖에
+ * 안 갈려 그라디언트가 평평했다(실측: 220ms 떨어진 두 프레임이 똑같았다). `border`→`surface` 는
+ * 그 두 배라 빛이 지나가는 것이 보인다. 카드가 `surface` 라 빛이 지날 때 막대가 잠깐 카드에
+ * 녹는데, 그것이 흐른다는 신호다.
+ */
+function skeletonColors(definition: { border: string; surface: string }): string[] {
+  return [definition.border, definition.surface, definition.border]
 }
 
 function PeriodSummary(props: {
@@ -251,6 +303,7 @@ function PeriodSummary(props: {
 }): React.JSX.Element {
   const net = props.incomeMeso - props.expenseMeso
   const { definition } = useThemeAppearance()
+  const colors = skeletonColors(definition)
   return (
     <View
       testID="cashbook-period-summary"
@@ -266,7 +319,14 @@ function PeriodSummary(props: {
           <View testID="cashbook-summary-net-pending" className="mt-1">
             {/* 실제로 설 글자(`+605.3억 메소`)의 폭·높이다. 자리표시가 더 크면 값이 들어올 때
                 카드가 움찔한다. */}
-            <Skeleton width={120} height={20} radius={5} colorMode={definition.mode} />
+            <Skeleton
+              width={120}
+              height={20}
+              radius={5}
+              colors={colors}
+              transition={SKELETON_SHIMMER}
+              backgroundSize={SKELETON_SWEEP}
+            />
           </View>
         ) : (
           <Text
@@ -291,8 +351,8 @@ function PeriodSummary(props: {
           <>
             {/* 수익은 로컬 기록이라 이미 참인데 함께 가린다. 한 카드 안에서 한 줄만 숫자가 서면
                 그 줄만 다르게 읽히고, 지출이 들어올 때 두 줄의 몸짓이 갈린다(사용자 지정). */}
-            <PendingSourceRow label="수익" mode={definition.mode} />
-            <PendingSourceRow label="지출" mode={definition.mode} />
+            <PendingSourceRow label="수익" colors={colors} />
+            <PendingSourceRow label="지출" colors={colors} />
           </>
         ) : (
           <>
@@ -594,13 +654,27 @@ export function CashbookScreen(): React.JSX.Element {
    * 여기 못 들어온다.
    */
   const [sheet, setSheet] = useState<'income' | 'expense' | ManualDayRecord | null>(null)
-  const [dayRecords, setDayRecords] = useState<DayRecord[]>([])
+  /** 그날 목록과 **그것이 어느 날의 것인지**. 칸 금액과 같은 이유로 날짜를 함께 든다. */
+  const [loadedDay, setLoadedDay] = useState<{ dateKey: string; records: DayRecord[] }>({
+    dateKey: '',
+    records: [],
+  })
   /**
    * 펼쳐 둔 결정석 줄. 한 번에 하나다. 값은 `rowKeyOf` 가 만든 줄의 신원
    * (`bossCrystal:{ocid}`)이고, 그것이 날짜를 안 들고 있으므로 날을 바꿀 때 여기서 지워야 한다.
    */
   const [expandedRowKey, setExpandedRowKey] = useState<string | null>(null)
-  const [amounts, setAmounts] = useState<CalendarAmounts>(NO_AMOUNTS)
+  /**
+   * 칸 금액과 **그것이 어느 범위의 것인지**.
+   *
+   * 범위를 함께 안 들면 달을 옮긴 직후 **이전 달의 값이 그대로 그려진다**. 격자는 앞뒤 달의
+   * 날을 함께 그리므로 겹치는 날만 값이 있고 나머지는 비어, 있던 것만 먼저 뜬 것처럼 보인다
+   * (사용자 보고).
+   */
+  const [loaded, setLoaded] = useState<{ range: string; amounts: CalendarAmounts }>({
+    range: '',
+    amounts: NO_AMOUNTS,
+  })
   const [lastPointRate, setLastPointRate] = useState<number | null>(null)
   /**
    * 시트의 캐릭터 고르개가 쓸 목록. 화면이 읽는다(시트는 `storage/` 를 모른다).
@@ -669,15 +743,19 @@ export function CashbookScreen(): React.JSX.Element {
    * 당김도 그 회차로 오므로 이 의존 하나가 둘을 함께 받는다.
    */
   useEffect(() => {
+    // **다 합산될 때까지 아무 값도 안 그린다**(사용자 지정). 회차가 도는 동안 읽으면 그 시점의
+    // DB 가 아직 자라는 중이라, 한 셀의 값이 종류가 도착할 때마다 커진다(큐브 → 스타포스 →
+    // 잠재). 합산 자체는 언제나 완전하지만 재료가 덜 찼다.
+    if (ledger.collecting) return
     let alive = true
     loadedRevision.current = cashbookDataRevision()
     void loadCalendarAmounts(from, to).then((next) => {
-      if (alive) setAmounts(next)
+      if (alive) setLoaded({ range: `${from}|${to}`, amounts: next })
     })
     return () => {
       alive = false
     }
-  }, [from, to, reloadToken, ledger.revision])
+  }, [from, to, reloadToken, ledger.revision, ledger.collecting])
 
   /**
    * 다시 들어오면 바뀌었을 때만 다시 읽는 포커스 효과.
@@ -698,14 +776,15 @@ export function CashbookScreen(): React.JSX.Element {
 
   // 그날 목록은 고른 날에 매인다. 격자 범위와 의존성이 달라 효과를 따로 둔다.
   useEffect(() => {
+    if (ledger.collecting) return
     let alive = true
     void loadDayRecords(selectedDateKey).then((next) => {
-      if (alive) setDayRecords(next)
+      if (alive) setLoadedDay({ dateKey: selectedDateKey, records: next })
     })
     return () => {
       alive = false
     }
-  }, [selectedDateKey, reloadToken, ledger.revision])
+  }, [selectedDateKey, reloadToken, ledger.revision, ledger.collecting])
 
   useEffect(() => {
     void loadLastPointRate().then(setLastPointRate)
@@ -849,12 +928,29 @@ export function CashbookScreen(): React.JSX.Element {
    * 기간을 옮겨도 안 바뀌므로, 표를 보면 그 날이 범위 밖으로 나가는 순간 상세가 사라진다.
    * 빈 상태 판정도 같은 이유로 그 날 자신의 기록이 낸다.
    */
+  /** 그릴 그날 목록. 칸 금액과 같은 규칙이다. 회차가 돌거나 날짜가 안 맞으면 비운다. */
+  const dayRecords =
+    !ledger.collecting && loadedDay.dateKey === selectedDateKey ? loadedDay.records : NO_RECORDS
   const selectedTotals = dayTotalsOf(dayRecords)
   /**
    * 격자 위 세 칸이 읽는 기간 합계. 격자에 넘기는 그 `weeks`·`amounts` 를 접는다. 열지도
    * 기준선용 `heatWeeks` 를 넣으면 주간 자리에 달 합계가 선다.
    */
-  const periodSums = periodTotals(weeks, amounts)
+  /**
+   * 그릴 값. **회차가 도는 동안은 비운다**(사용자 지정).
+   *
+   * 회차 도중에 읽으면 그 시점의 DB 가 아직 자라는 중이라, 한 셀의 값이 종류가 도착할 때마다
+   * 커진다(큐브 → 스타포스 → 잠재). 합산 자체는 언제나 완전하지만 재료가 덜 찼다.
+   *
+   * **범위까지 맞아야 그린다.** 회차가 끝난 순간부터 새 읽기가 도착하기까지 몇 밀리초가 있는데,
+   * 그 사이에 이전 달의 값이 그려진다. 격자가 앞뒤 달의 날을 함께 그리므로 겹치는 날만 값이
+   * 있고 나머지는 비어, 있던 것만 먼저 뜬 것처럼 보인다.
+   *
+   * 상태를 지우지 않고 **그릴 때만** 가린다. 효과에서 지우면 렌더가 한 번 더 돈다.
+   */
+  const shownAmounts =
+    !ledger.collecting && loaded.range === `${from}|${to}` ? loaded.amounts : NO_AMOUNTS
+  const periodSums = periodTotals(weeks, shownAmounts)
   const periodLabel = isWeekly
     ? formatBossProfitPeriodLabel('weekly', weekStartKey, now)
     : formatBossProfitPeriodLabel('monthly', monthKey, now)
@@ -963,10 +1059,10 @@ export function CashbookScreen(): React.JSX.Element {
             weeks={weeks}
             selectedDateKey={selectedDateKey}
             todayDateKey={todayDateKey}
-            amounts={amounts}
+            amounts={shownAmounts}
             weekdayLabels={isWeekly ? WEEKDAY_LABELS_RESET : undefined}
             // 열지도 기준은 화면이 낸다(`heatWeeks`).
-            incomeMax={monthIncomeMax(heatWeeks, amounts)}
+            incomeMax={monthIncomeMax(heatWeeks, shownAmounts)}
             onSelectDate={selectDate}
           />
 

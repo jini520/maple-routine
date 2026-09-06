@@ -61,24 +61,16 @@ export interface LedgerDataState {
 }
 
 /**
- * 회차 도중에 화면을 다시 읽히는 간격.
- *
- * `revision` 이 컨텍스트 값이라 오를 때마다 층이 통째로 다시 그려진다. 칸마다 올리면 105번이고,
- * 아예 안 올리면 회차가 끝날 때까지 빈 달력이다. 그 사이를 이 값이 잡는다.
- */
-const REVISION_FLUSH_MS = 600
-
-/**
  * 기간을 옮겼을 때 자리표시가 **적어도 이만큼**은 서 있는다.
  *
  * 굳은 달은 회차가 200ms 에 끝난다. 그 사이 자리표시가 번쩍이고 사라지면 무엇이 지나갔는지
  * 읽을 시간이 없어 화면이 튄 것으로 보인다. 안 굳은 달(2초)과도 몸짓이 갈린다.
  *
- * 1200 에서 내렸다(사용자 지정). 그만큼은 기다린다는 느낌이 됐다.
+ * 1200 → 800 → 300 으로 내렸다(사용자 지정). 그보다 길면 기다린다는 느낌이 된다.
  *
  * 마운트와 당김에는 안 건다. 거기는 모달이 그 시간을 말한다.
  */
-const MIN_SKELETON_MS = 800
+const MIN_SKELETON_MS = 300
 
 const IDLE: LedgerDataState = {
   status: 'idle',
@@ -152,21 +144,6 @@ export function LedgerDataProvider(props: {
     const progress = useLedgerProgress.getState()
     progress.reset()
 
-    /**
-     * 들어온 것을 **회차 도중에** 화면에 흘린다. 끝에서 한 번만 올리면 지난 달로 옮긴 사용자가
-     * 105콜이 다 끝날 때까지 빈 달력을 본다.
-     *
-     * 묶어서 올리는 이유는 `revision` 이 컨텍스트 값이라 오를 때마다 층이 통째로 다시 그려지기
-     * 때문이다. 칸마다 올리면 105번이다.
-     */
-    let lastFlushedAt = 0
-    const flush = (): void => {
-      const now = Date.now()
-      if (now - lastFlushedAt < REVISION_FLUSH_MS) return
-      lastFlushedAt = now
-      if (alive.current) setRevision((value) => value + 1)
-    }
-
     const ocids = await getTrackedCharacterOcids().catch(() => null)
     if (live && ocids !== null && ocids.length > 0) {
       await useBossProfitStore
@@ -188,12 +165,9 @@ export function LedgerDataProvider(props: {
       ocids !== null && ocids.length > 0
         ? syncScheduleWindow(ocids, new Date(), slotOf()).catch(() => undefined)
         : Promise.resolve(),
-      collectEnhancementHistory(
-        datesBetween(range.from, range.to),
-        new Date(),
-        slotOf(),
-        flush,
-      ).catch(() => undefined),
+      collectEnhancementHistory(datesBetween(range.from, range.to), new Date(), slotOf()).catch(
+        () => undefined,
+      ),
     ])
 
     running.current -= 1
