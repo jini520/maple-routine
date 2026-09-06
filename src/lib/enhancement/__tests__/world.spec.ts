@@ -50,12 +50,27 @@ describe('지출로 세나', () => {
     expect(isSpendingRecord(null, '낟낟', names)).toBe(true)
   })
 
-  // 삭제·이전으로 목록에서 사라진 캐릭터가 실제로 다섯 있었다.
-  it('목록에 없는 이름은 일반 캐릭터로 센다', () => {
+  // 삭제·이전으로 목록에서 사라진 캐릭터가 실제로 다섯 있었다. 이 이름들은 **앞으로도 영영**
+  // 목록에 안 나온다. 판정 불가로 두면 그 날짜를 영원히 다시 부른다.
+  it('목록을 받았는데 없는 이름은 일반 캐릭터로 센다', () => {
     expect(isSpendingRecord(null, '살름', names)).toBe(true)
   })
+})
 
-  it('목록을 못 받아도 월드를 아는 줄은 막힌다', () => {
-    expect(isSpendingRecord('스페셜', '머리맨들맨둘', new Set())).toBe(false)
+// **목록을 못 받은 것과 목록에 없는 것은 다르다.** 앞은 회복되고 뒤는 안 된다.
+describe('목록을 못 받았을 때', () => {
+  it('월드를 모르는 줄은 판정 불가다', () => {
+    expect(isSpendingRecord(null, '머리맨들맨둘', null)).toBeNull()
+    expect(isSpendingRecord(null, '낟낟', null)).toBeNull()
+  })
+
+  // 스타포스는 줄이 월드를 들고 있어 목록이 없어도 답이 난다.
+  it('월드를 아는 줄은 목록 없이도 판정된다', () => {
+    expect(isSpendingRecord('스페셜', '머리맨들맨둘', null)).toBe(false)
+    expect(isSpendingRecord('엘리시움', '낟낟', null)).toBe(true)
+  })
+
+  it('빈 목록은 못 받은 것이 아니다. 스페셜 캐릭터가 없는 계정이다', () => {
+    expect(isSpendingRecord(null, '낟낟', new Set())).toBe(true)
   })
 })
