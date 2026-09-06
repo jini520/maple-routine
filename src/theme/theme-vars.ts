@@ -9,7 +9,7 @@
  * NativeWind 는 못 찾은 변수를 버린다.
  */
 
-import { hexToOklch, parseHex, toHex, withLightness } from '../lib/color'
+import { hexToOklch, oklchToHex, parseHex, toHex, withLightness } from '../lib/color'
 import { THEME_TOKEN_KEYS, deriveMediaScope } from '../lib/theme/theme-derive'
 import type { ThemeDefinition } from '../types/theme'
 
@@ -62,6 +62,52 @@ export function resolvePanelBorder(definition: ThemeDefinition): string {
 }
 
 /**
+ * 펼친 캐릭터 카드의 **본문 바탕**. 보스 목록이 앉는 면이다.
+ *
+ * 38토큰에는 이 자리에 맞는 색이 없다. 카드(`surface`)와도 페이지(`bg`)와도 갈려야 하는데
+ * `surface-2` 는 그 조건은 만족하지만 라이트에서 칙칙한 청회색이고, `bg` 를 쓰면 본문이 페이지에
+ * 녹는다. 그래서 `panel-border` 와 같은 방식으로 모드에서 파생해 만든다.
+ *
+ * 두 모드가 하는 일이 다르다(사용자 지정).
+ *
+ * - **라이트**: 배경보다 **연한 파스텔**. 밝기를 페이지와 카드 사이에 앉히고 메인 컬러의
+ *   색상만 아주 옅게 얹는다. 테마를 따라가므로 어느 테마에서도 그 테마의 색이 된다.
+ * - **다크**: 배경보다 **조금 밝은 톤온톤**. 밝기만 한 단 올리고 색상·채도는 카드에서 가져와
+ *   같은 계열로 남긴다.
+ */
+export const CARD_BODY_TOKEN = 'card-body'
+
+/** 라이트에서 페이지→카드 사이 어디에 앉힐지. 0.5 면 한가운데다. */
+const CARD_BODY_LIGHT_RATIO = 0.4
+/**
+ * 라이트에서 **페이지까지 합친** 채도의 상한. 이보다 높으면 색면이 된다.
+ *
+ * 패널의 채도를 상수로 두면 안 된다. 페이지가 이미 물든 테마(엔젤릭버스터의 `#F9E9F1`)에서
+ * 분홍 위에 분홍이 되어 진해진다. 페이지가 낸 만큼을 빼고 **모자란 만큼만** 얹는다.
+ */
+const CARD_BODY_LIGHT_CHROMA = 0.03
+/** 페이지가 이미 상한만큼 물들어 있어도 패널이 흰색과는 갈려야 한다. */
+const CARD_BODY_LIGHT_CHROMA_FLOOR = 0.008
+/** 다크에서 배경보다 올리는 밝기. 카드와도 최소 0.02 는 갈리는 값이다(테마 여섯 실측). */
+const CARD_BODY_DARK_STEP = 0.04
+
+export function resolveCardBody(definition: ThemeDefinition): string {
+  const bg = hexToOklch(definition.bg)
+  const surface = hexToOklch(definition.surface)
+
+  if (definition.mode === 'light') {
+    return oklchToHex({
+      // 카드가 페이지보다 어두운 테마가 와도 **배경보다 연한** 것은 지켜야 하므로 폭을 절댓값으로 쓴다.
+      l: bg.l + Math.abs(surface.l - bg.l) * CARD_BODY_LIGHT_RATIO,
+      c: Math.max(CARD_BODY_LIGHT_CHROMA - bg.c, CARD_BODY_LIGHT_CHROMA_FLOOR),
+      h: hexToOklch(definition.primary).h,
+    })
+  }
+
+  return oklchToHex({ l: bg.l + CARD_BODY_DARK_STEP, c: surface.c, h: surface.h })
+}
+
+/**
  * `:root` 에 해당하는 변수 맵. 38토큰 + 모드에서 파생되는 `--color-panel-border`.
  *
  * 배경 이미지(`--theme-bg-*`)는 내지 않는다. RN 은 벽지를 CSS 배경이 아니라 `<Image>` 로 그리므로
@@ -75,6 +121,7 @@ export function buildThemeVariables(definition: ThemeDefinition): Record<string,
     variables[toColorVariableName(token)] = definition[token]
   }
   variables[toColorVariableName(PANEL_BORDER_TOKEN)] = resolvePanelBorder(definition)
+  variables[toColorVariableName(CARD_BODY_TOKEN)] = resolveCardBody(definition)
   return variables
 }
 

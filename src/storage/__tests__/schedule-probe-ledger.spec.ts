@@ -2,6 +2,7 @@ import { installFakePreferences } from './fake-preferences'
 import {
   clearScheduleProbeLedger,
   getScheduleProbeLedger,
+  isSettledProbe,
   markScheduleProbeUnavailable,
   recordScheduleProbe,
   type ProbeSectionPresence,
@@ -164,5 +165,50 @@ describe('삭제', () => {
       unavailable: false,
       dates: {},
     })
+  })
+})
+
+// `date=오늘` 은 400 이라 오늘 상태는 라이브 응답에서만 온다. 그 관측은 **그날의 최종 상태가
+// 아니다.** 오후에 본 뒤로도 그날 안에 더 잡을 수 있다. 그래서 잠정으로 적고, 날이 바뀌면
+// `date` 로 물을 수 있으므로 미조회로 되돌린다.
+describe('isSettledProbe: 잠정 관측', () => {
+  const observed = (provisional?: true) => ({
+    kind: 'observed' as const,
+    hasCompletion: true,
+    sections: ALL_PRESENT,
+    bosses: ['스우|하드'],
+    ...(provisional === undefined ? {} : { provisional }),
+  })
+
+  it('안 본 날짜는 확정이 아니다', () => {
+    expect(isSettledProbe(undefined, '2026-08-03', '2026-08-03')).toBe(false)
+  })
+
+  it('date 로 받은 관측은 확정이다', () => {
+    expect(isSettledProbe(observed(), '2026-08-02', '2026-08-03')).toBe(true)
+  })
+
+  it('오늘의 잠정 관측은 오늘 동안만 쓴다', () => {
+    expect(isSettledProbe(observed(true), '2026-08-03', '2026-08-03')).toBe(true)
+  })
+
+  it('날이 바뀌면 잠정 관측은 미조회로 돌아간다', () => {
+    expect(isSettledProbe(observed(true), '2026-08-03', '2026-08-04')).toBe(false)
+  })
+
+  // 400 OPENAPI00004. 그 날짜에 대해 영구라 다시 부를 이유가 없다.
+  it('outOfRange 는 언제나 확정이다', () => {
+    expect(isSettledProbe({ kind: 'outOfRange' }, '2026-07-20', '2026-08-03')).toBe(true)
+  })
+
+  // `bosses` 가 없는 옛 관측은 보스를 안 본 관측이라 처치일을 캘 수 없다.
+  it('bosses 가 없는 옛 관측은 미조회로 친다', () => {
+    expect(
+      isSettledProbe(
+        { kind: 'observed', hasCompletion: false, sections: NONE_PRESENT },
+        '2026-08-02',
+        '2026-08-03',
+      ),
+    ).toBe(false)
   })
 })

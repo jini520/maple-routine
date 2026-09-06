@@ -14,14 +14,16 @@
 import { buildThemeCss, THEME_NAMES, getThemeDefinition } from '../../lib/theme/theme-registry'
 import { THEME_TOKEN_KEYS } from '../../lib/theme/theme-derive'
 import { hexToOklch } from '../../lib/color'
-import type { ThemeName } from '../../types/theme'
+import type { ThemeDefinition, ThemeName } from '../../types/theme'
 
 import {
+  CARD_BODY_TOKEN,
   PANEL_BORDER_TOKEN,
   SHEET_LIFT,
   buildMediaScopeVariables,
   buildSheetScopeVariables,
   buildThemeVariables,
+  resolveCardBody,
   resolvePanelBorder,
   toColorVariableName,
 } from '../theme-vars'
@@ -84,11 +86,16 @@ describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
   const definition = getThemeDefinition(name)
   const css = buildThemeCss(definition)
 
-  it('`:root` 변수가 core 의 출력과 이름·값 모두 같다(파생 토큰 하나만 더 낸다)', () => {
+  it('`:root` 변수가 core 의 출력과 이름·값 모두 같다(파생 토큰 둘만 더 낸다)', () => {
     const variables = buildThemeVariables(definition)
-    const { [PANEL_BORDER_VARIABLE]: panelBorder, ...tokens } = variables
+    const {
+      [PANEL_BORDER_VARIABLE]: panelBorder,
+      [toColorVariableName(CARD_BODY_TOKEN)]: cardBody,
+      ...tokens
+    } = variables
 
     expect(panelBorder).toBe(resolvePanelBorder(definition))
+    expect(cardBody).toBe(resolveCardBody(definition))
     expect(tokens).toEqual(colorDeclarationsIn(css, ':root'))
   })
 
@@ -274,5 +281,84 @@ describe('시트 스코프. 다크에서만 표면 계열을 한 칸 올린다',
       hexToOklch(media['--color-surface']!).l + SHEET_LIFT,
       2,
     )
+  })
+})
+
+
+// 펼친 캐릭터 카드의 본문 바탕. 38토큰에 이 자리에 맞는 색이 없어 모드에서 파생한다.
+// 두 모드가 하는 일이 다르다(사용자 지정).
+describe('resolveCardBody', () => {
+  const 테마들 = THEME_NAMES.map((name) => getThemeDefinition(name))
+
+  // 라이트: 배경보다 연한 파스텔. 페이지에 녹지 않으려면 배경보다 밝아야 한다.
+  it('라이트에서 배경보다 밝다', () => {
+    for (const definition of 테마들.filter((theme) => theme.mode === 'light')) {
+      expect(hexToOklch(resolveCardBody(definition)).l).toBeGreaterThan(hexToOklch(definition.bg).l)
+    }
+  })
+
+  // 카드보다는 어두워야 머리와 본문이 갈린다.
+  it('라이트에서 카드보다 어둡다', () => {
+    for (const definition of 테마들.filter((theme) => theme.mode === 'light')) {
+      expect(hexToOklch(resolveCardBody(definition)).l).toBeLessThan(hexToOklch(definition.surface).l)
+    }
+  })
+
+  // 파스텔이라는 것은 색이 있다는 뜻이다. 채도가 0 이면 그냥 회색이고 그것이 걷어낸 안이다.
+  it('라이트에서 메인 컬러의 색상을 옅게 얹는다', () => {
+    for (const definition of 테마들.filter((theme) => theme.mode === 'light')) {
+      const body = hexToOklch(resolveCardBody(definition))
+      expect(body.c).toBeGreaterThan(0)
+      expect(body.c).toBeLessThan(0.04)
+      // `oklchToHex` → `hexToOklch` 왕복의 반올림이 몇 도를 흔든다. 같은 색상인지만 본다.
+      expect(Math.abs(body.h - hexToOklch(definition.primary).h)).toBeLessThan(4)
+    }
+  })
+
+
+  // 페이지가 이미 물든 테마에서 패널이 그 위에 또 물들면 진해진다(사용자 보고, 엔젤릭버스터).
+  // 페이지가 낸 만큼을 빼고 모자란 만큼만 얹는다.
+  //
+  // 실제 테마 여섯으로는 못 잰다. 라이트 테마의 페이지가 전부 거의 흰색이라 요청한 채도가
+  // sRGB 밖으로 나가 잘리고, 잘린 값끼리 견주면 규칙이 안 보인다. 그래서 색역이 넉넉한
+  // 밝기에서 **페이지만 다른** 두 테마를 지어 잰다.
+  it('페이지가 물든 테마일수록 패널의 채도가 낮다', () => {
+    const 바탕: ThemeDefinition = { ...테마들[0], mode: 'light', surface: '#E6E6E6' }
+    const 옅은페이지: ThemeDefinition = { ...바탕, bg: '#D9D9D9' }
+    const 짙은페이지: ThemeDefinition = { ...바탕, bg: '#E3C8D6' }
+
+    expect(hexToOklch(resolveCardBody(짙은페이지)).c).toBeLessThan(
+      hexToOklch(resolveCardBody(옅은페이지)).c,
+    )
+  })
+
+  // 페이지가 상한만큼 물들어 있어도 패널이 흰색과는 갈려야 한다.
+  it('채도에 바닥이 있다', () => {
+    const 진한페이지: ThemeDefinition = { ...테마들[0], mode: 'light', bg: '#FF0000' }
+
+    expect(hexToOklch(resolveCardBody(진한페이지)).c).toBeGreaterThan(0.005)
+  })
+
+  // 다크: 배경보다 조금 밝은 톤온톤. 색상·채도는 카드에서 온다.
+  it('다크에서 배경보다 밝고 색상은 카드와 같다', () => {
+    for (const definition of 테마들.filter((theme) => theme.mode === 'dark')) {
+      const body = hexToOklch(resolveCardBody(definition))
+      expect(body.l).toBeGreaterThan(hexToOklch(definition.bg).l)
+      expect(Math.abs(body.h - hexToOklch(definition.surface).h)).toBeLessThan(4)
+    }
+  })
+
+  // 어느 모드든 머리(카드)와 갈려야 이 토큰이 값을 한다.
+  it('어느 테마에서도 카드와 밝기가 갈린다', () => {
+    for (const definition of 테마들) {
+      const gap = Math.abs(hexToOklch(resolveCardBody(definition)).l - hexToOklch(definition.surface).l)
+      expect(gap).toBeGreaterThan(0.01)
+    }
+  })
+
+  it('변수 맵에 실린다', () => {
+    const definition = getThemeDefinition(THEME_NAMES[0])
+
+    expect(buildThemeVariables(definition)['--color-card-body']).toBe(resolveCardBody(definition))
   })
 })

@@ -45,6 +45,7 @@ function row(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     partySize: 1,
     payoutMeso: 10_000_000,
     isComplete: true,
+    defeatedOn: null,
     ...overrides,
   }
 }

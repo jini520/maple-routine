@@ -17,6 +17,7 @@ import {
 } from '../../lib/boss/boss-matching'
 import type { MatchedBoss } from '../../lib/boss/boss-matching'
 import { formatBossProfitPeriodLabel, getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
+import { isMonthlyRowInWeek } from '../../lib/boss/monthly-boss-week'
 import { mergeManualBossList } from '../../lib/boss/manual-boss-merge'
 import type { BossDropRecord } from '../../storage/boss-drops'
 import type { BossProfitRecord, getBossProfitRecords } from '../../storage/boss-profit'
@@ -40,6 +41,13 @@ export interface BossProfitRow {
   partySize: number | null // 사용자가 아직 입력 안 했으면 null
   payoutMeso: number | null // partySize가 null이거나 priceMeso가 null이면 null
   isComplete: boolean // false면 보스 스케줄러에 등록만 되고 아직 처치 전(미완료 placeholder). payoutMeso는 항상 0이고 DB에 기록되지 않는다
+  /**
+   * 며칟날 잡았나. 기록에서 나온 행만 값을 갖고 그 밖은 `null` 이다.
+   *
+   * **월간 보스를 어느 주에 세울지**가 이 값으로 갈린다(`filterRowsForTab`). 주간 보스는 안
+   * 쓴다. 그쪽은 `periodKey` 가 이미 주라서 물을 것이 없다.
+   */
+  defeatedOn: string | null
 }
 
 export type BossProfitRowKey = Pick<BossProfitRow, 'ocid' | 'boss' | 'difficulty' | 'cycle' | 'periodKey'>
@@ -92,6 +100,11 @@ export function sortRowsByOcidOrder(rows: BossProfitRow[], sortedOcids: string[]
     if (rankDiff !== 0) return rankDiff
     // 순위가 같은데 ocid가 다르면(둘 다 sortedOcids 밖인 예외) 캐릭터끼리 섞이지 않게 ocid로 묶는다.
     if (a.ocid !== b.ocid) return a.ocid < b.ocid ? -1 : 1
+    // 월간 보스가 그 캐릭터의 맨 위다(사용자 지정). `weekly-bosses.json` 정규 순서에서는 월간이
+    // 맨 뒤라, 이 화면만 그 앞으로 끌어올린다. 무리 **안** 의 순서는 아래 공용 비교자 그대로다.
+    if ((a.cycle === 'monthly') !== (b.cycle === 'monthly')) {
+      return a.cycle === 'monthly' ? -1 : 1
+    }
     // 2차 키 셋은 `boss-matching` 이 든다. 스케줄러·today·가계부가 같은 함수를 부른다.
     return compareBossOrder(a, b)
   })
@@ -129,6 +142,8 @@ export function buildBossProfitRow(
     // `selectBossProfitBosses` 가 골라 준 것이라 실제 처치 난이도 아니면 미완료 placeholder 뿐이다.
     payoutMeso: boss.ownComplete ? null : 0,
     isComplete: boss.ownComplete,
+    // 동기화·캐시에서 나온 행은 날짜를 모른다. 기록으로 되살아난 행만 값을 갖는다.
+    defeatedOn: null,
   }
 }
 
@@ -204,6 +219,7 @@ export function buildRowFromRecord(
     partySize: record.partySize,
     payoutMeso: record.payoutMeso,
     isComplete: true, // 기록은 항상 완료된 보스만 남는다(backfillTarget/자동 기록이 완료 보스만 upsert)
+    defeatedOn: record.defeatedOn ?? null,
   }
 }
 
@@ -224,7 +240,17 @@ export function mergeRecordsIntoRows(
     }
     // priceMeso도 기록값으로 덮어쓴다. 그렇지 않으면 과거 기록을 다시 보여줄 때
     // 라이브 시세로 조용히 재계산되는 데이터 무결성 버그가 생긴다.
-    return { ...row, priceMeso: record.priceMeso, partySize: record.partySize, payoutMeso: record.payoutMeso }
+    //
+    // 처치 날짜도 여기서 싣는다. 동기화가 만든 행은 그 값을 모르는데(`buildBossProfitRow` 가
+    // `null` 을 박는다), 안 실으면 **이번 주에 잡은 월간 보스가 이번 주 목록에서 사라진다**.
+    // `isMonthlyRowInWeek` 이 날짜 모름을 그 달 첫 주차로 읽기 때문이다.
+    return {
+      ...row,
+      priceMeso: record.priceMeso,
+      partySize: record.partySize,
+      payoutMeso: record.payoutMeso,
+      defeatedOn: record.defeatedOn ?? row.defeatedOn,
+    }
   })
 }
 
@@ -272,8 +298,31 @@ export function matchesRowKey(row: BossProfitRow, key: BossProfitRowKey): boolea
   )
 }
 
-export function filterRowsForTab(rows: BossProfitRow[], tab: BossCycle, periodKey: string): BossProfitRow[] {
-  return rows.filter((row) => row.cycle === tab && row.periodKey === periodKey)
+/**
+ * 이 (탭, 기간)이 그리는 행.
+ *
+ * 주간 탭은 **월간 보스도 들인다**. 그 보스는 월간 탭에서 빠져 각 캐릭터의 주간 목록 맨 위로
+ * 왔고, 어느 주에 서는지는 `isMonthlyRowInWeek` 이 정한다. 월간 탭은 자기 주기만 그대로 본다.
+ */
+export function filterRowsForTab(
+  rows: BossProfitRow[],
+  tab: BossCycle,
+  periodKey: string,
+  now: Date,
+  weeksWithRecords: readonly string[],
+): BossProfitRow[] {
+  return rows.filter((row) => {
+    if (row.cycle === tab) return row.periodKey === periodKey
+    if (tab !== 'weekly' || row.cycle !== 'monthly') return false
+    return isMonthlyRowInWeek({
+      weeklyPeriodKey: periodKey,
+      monthlyPeriodKey: row.periodKey,
+      isComplete: row.isComplete,
+      defeatedOn: row.defeatedOn,
+      weeksWithRecords,
+      now,
+    })
+  })
 }
 
 export function sumRowsPayout(rows: BossProfitRow[]): number {

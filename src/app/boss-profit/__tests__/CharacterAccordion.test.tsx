@@ -19,7 +19,6 @@ import weeklyBossesData from '../../../data/weekly-bosses.json'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import valuableDropsData from '../../../data/valuable-drops.json'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
-import { formatMesoShort } from '../../../lib/boss/boss-profit-delta'
 import { dropRowKey } from '../../../features/boss-profit/store'
 import type { RecordedDrop } from '../../../types/drops'
 
@@ -84,16 +83,18 @@ describe('펼침 (#27)', () => {
     expect(queryByText(주간보스)).toBeNull()
   })
 
-  it('월간 탭은 주차별 합계와 월간 보스 두 서브섹션을 그린다', async () => {
+  // 월간 보스 상세는 주간 탭의 그 캐릭터 목록 맨 위로 갔다(사용자 지정). 이 탭에는 주차별
+  // 합계만 남는다. 행은 그룹에 실려 오지만(아바타 진행 링이 센다) 그리지 않는다.
+  it('월간 탭은 주차별 합계만 그린다', async () => {
     const group = 그룹([보스행({ boss: 월간보스, cycle: 'monthly' })], [주차소계()])
-    const { getByText, getByRole } = await renderProfit(<CharacterAccordion group={group} />, 컨텍스트값({ tab: 'monthly' }))
+    const { getByText, queryByTestId, getByRole } = await renderProfit(<CharacterAccordion group={group} />, 컨텍스트값({ tab: 'monthly' }))
 
     await act(async () => {
       fireEvent.press(getByRole('button', { expanded: false }))
     })
 
-    expect(getByText('주간 보스 수익 · 주차별 합계')).toBeTruthy()
-    expect(getByText('월간 보스 수익')).toBeTruthy()
+    expect(getByText('주차별 합계')).toBeTruthy()
+    expect(queryByTestId('boss-profit-boss-row')).toBeNull()
   })
 })
 
@@ -197,14 +198,15 @@ describe('아이템 수익', () => {
     ],
   }
 
-  it('값을 매긴 아이템이 있으면 칩이 붙고 금액 잉크가 갈린다', async () => {
-    const { getByLabelText, getByText } = await renderProfit(
+  it('값을 매긴 아이템이 있으면 금액이 버튼이 되고 잉크가 갈린다', async () => {
+    const { getByLabelText, getByTestId, queryByText } = await renderProfit(
       <CharacterAccordion group={그룹()} />,
       컨텍스트값({ dropsByRowKey: 값매긴드롭 }),
     )
 
     expect(getByLabelText('지내우시 아이템 수익 확인')).toBeTruthy()
-    expect(getByText(`아이템 +${formatMesoShort(1_000_000_000)}`)).toBeTruthy()
+    expect(getByTestId('item-revenue-underline')).toBeTruthy()
+    expect(queryByText(/^아이템 \+/)).toBeNull()
   })
 
   it('값을 안 매긴 드롭만 있으면 칩이 없다. 미입력은 0원이 아니다', async () => {

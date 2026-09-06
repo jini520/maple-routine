@@ -48,37 +48,66 @@ export interface DefeatDateInput {
   readonly todayDateKey: string
   /** `bossCompletionKey(boss, difficulty)`. 기록의 키와 같은 이름·같은 난이도여야 한다. */
   readonly bossKey: string
+  /**
+   * 조회 창 하한(`YYYY-MM-DD`). 이보다 앞선 날은 **영영 못 본다**.
+   *
+   * 안 주면 아무 날도 안 가린다. 그쪽이 `null` 이 더 나오는 쪽이라 기본값으로 안전하다.
+   */
+  readonly queryFloorDateKey?: string
+  /**
+   * 뒤집힘을 못 봤을 때 **조회 가능한 가장 빠른 날**을 처치일로 쓸 것인가.
+   *
+   * 켜면 이 함수가 `그 날이거나 그 앞` 을 `그 날` 로 단정한다. 그 대가를 지는 이유는 창을 매일
+   * 채우면 이 경우가 **앱이 알기 전에 지나간 기록**에만 남고, 그 금액이 화면에서 통째로
+   * 사라지는 것보다 낫기 때문이다(사용자 지정).
+   */
+  readonly fallbackToEarliestQueryable?: boolean
 }
 
 /**
  * 이 보스를 **며칟날 잡았나**. 모르면 `null` 이다.
  *
- * 시작일부터 훑는다. 셋 중 하나로 끝난다:
+ * 시작일부터 훑는다. 만나는 것마다:
  *
  * | 만나는 것 | 답 |
  * |---|---|
- * | 그날 완료로 관측됐다 | **그날이다**. 그 앞은 전부 미완료로 봤다 |
+ * | 창 하한보다 앞선 날 | **건너뛴다**. 못 봤다는 것이 굳어 있어 그 뒤의 첫 완료를 못 믿는다 |
+ * | 그날 완료로 관측됐다 | 앞에 못 본 날이 없으면 **그날이다** |
  * | 못 본 날인데 그날이 **오늘**이다 | **오늘이다**(소거법. 어제까지 미완료인데 기록이 있다) |
  * | 못 본 날인데 오늘이 아니다 | **`null`**. 구멍이라 그 뒤의 완료를 못 믿는다 |
+ *
+ * **미완료를 한 번 보면 그 앞의 못 본 날들이 무효가 된다.** 그때 이 보스는 아직 안 잡혀 있었고,
+ * 다음 완료가 곧 처치일이라 그 앞이 무엇이었는지는 답을 안 바꾼다.
  *
  * 소거법이 (a)앱이 기록한 날 과 다른 점: **어제가 미완료였다는 관측**이 있어야만 오늘이라고
  * 말한다. 하루 뒤에 열었다면 어제가 완료로 관측되어 어제로 적힌다. 이 함수는 **틀린 날짜를 만들
  * 수 없고**, 만들 수 있는 것은 `null` 뿐이다.
  */
 export function resolveDefeatedOn(input: DefeatDateInput): string | null {
+  const floorDateKey = input.queryFloorDateKey ?? ''
+  // 앞에 **못 본 날이 있는가**. 참이면 그 뒤의 첫 완료가 그날이라고 말할 수 없다.
+  let blind = false
+
   for (const day of input.periodDays) {
     // 아직 오지 않은 날에 잡을 수는 없다. 기간은 오늘 뒤로도 이어질 수 있다(진행 중인 주).
     if (day > input.todayDateKey) {
       return null
     }
+    if (day < floorDateKey) {
+      blind = true
+      continue
+    }
 
     const seen = input.observed.get(day)
     if (seen === undefined) {
-      return day === input.todayDateKey ? day : null
+      return day === input.todayDateKey && !blind ? day : null
     }
     if (seen.has(input.bossKey)) {
-      return day
+      // 앞이 창 밖이라 며칟날인지는 못 캔다. 그 날이거나 그 앞이므로 **상한**은 안다.
+      if (!blind) return day
+      return input.fallbackToEarliestQueryable === true ? day : null
     }
+    blind = false
   }
   return null
 }
@@ -89,19 +118,23 @@ interface ResolvablePeriod {
 }
 
 /**
- * 지금 **캐낼 수 있는** 기간들. 기간의 **첫 날**이 조회 창 안이어야 한다.
+ * 지금 **캐낼 수 있는** 기간들. 조회 창에 **하루라도 걸치면** 담는다.
  *
- * 첫 날을 못 보면 그 앞엔 없었다 를 말할 수 없어 어떤 조회도 답을 못 낸다. 그래서 그 기간은
- * 캐는 대상이 아니라 **부르지도 않는 대상**이다.
+ * 첫 날이 창 밖이어도 창 안에서 미완료가 완료로 뒤집히는 것을 보면 그 보스는 확정이다. 답이
+ * 안 나오는 것은 그런 보스가 아니라 **관측 가능한 첫 날에 이미 완료인** 보스 쪽이고, 그 판단은
+ * `resolveDefeatedOn` 이 보스마다 한다.
  *
- * 그래서 월간(달 1일)은 **달의 앞 2주 안에서만** 캘 수 있다. 그 뒤에 잡은 검은마법사는 영영 NULL 이다.
+ * 월간(달 1일)은 담기지만 대개 NULL 로 남는다. 검은마법사는 달의 앞쪽에 잡혀 있기 마련이라
+ * 창 하한 뒤 첫 관측에서 이미 완료로 보인다.
  */
 function resolvablePeriods(now: Date, floorDateKey: string): ResolvablePeriod[] {
   const periods: ResolvablePeriod[] = []
   for (const cycle of BOSS_CYCLES) {
     let periodKey = getCurrentBossProfitPeriod(cycle, now).periodKey
-    // 한 칸씩 과거로 가며 첫 날이 창 안인 동안만 담는다. 첫 날은 단조 감소라 반드시 끝난다.
-    while (getPeriodDateKeys(cycle, periodKey)[0] >= floorDateKey) {
+    // 한 칸씩 과거로 간다. 마지막 날이 단조 감소라 반드시 끝난다.
+    for (;;) {
+      const days = getPeriodDateKeys(cycle, periodKey)
+      if (days[days.length - 1] < floorDateKey) break
       periods.push({ cycle, periodKey })
       periodKey = getAdjacentPeriodKey(cycle, periodKey, 'prev')
     }
@@ -175,12 +208,15 @@ function resolveFor(
   record: UndatedBossProfitRecord,
   observed: ReadonlyMap<string, ReadonlySet<string>>,
   todayDateKey: string,
+  floorDateKey: string,
 ): string | null {
   return resolveDefeatedOn({
     periodDays: getPeriodDateKeys(record.cycle, record.periodKey),
     observed,
     todayDateKey,
     bossKey: bossCompletionKey(record.boss, record.difficulty),
+    queryFloorDateKey: floorDateKey,
+    fallbackToEarliestQueryable: true,
   })
 }
 
@@ -276,7 +312,7 @@ async function runResolveDefeatDates(ocids: readonly string[], now: Date): Promi
       // **가진 것으로 먼저 풀어 본다.** 원장이 이미 답을 들고 있으면(다른 경로가 훑어 둔 날짜들)
       // 호출이 0회다. 그러지 않으면 **이미 아는 것** 을 확인하려고 그 주를 다시 훑게 된다.
       const unresolved = records.filter(
-        (record) => resolveFor(record, observed, todayDateKey) === null,
+        (record) => resolveFor(record, observed, todayDateKey, floorDateKey) === null,
       )
       // 키가 없으면 **부를 수가 없다**. 가진 것으로 푼 만큼만 채우고 나머지는 NULL 로 둔다.
       if (unresolved.length > 0 && authConfig !== null) {
@@ -296,6 +332,7 @@ async function runResolveDefeatDates(ocids: readonly string[], now: Date): Promi
       candidate,
       observedFor.get(candidate.ocid) ?? EMPTY_OBSERVED,
       todayDateKey,
+      floorDateKey,
     )
     if (defeatedOn === null) continue
 

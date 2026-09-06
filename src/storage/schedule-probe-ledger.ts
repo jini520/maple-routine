@@ -36,9 +36,46 @@ export type ScheduleProbeRecord =
        * 안 잡았다 로 오독해 처치일을 그 뒤 어느 날로 밀어 버린다. 그래서 미조회로 취급해 다시 부른다.
        */
       bosses?: readonly string[]
+      /**
+       * 라이브 응답에서 온 **오늘** 관측인가. `date=오늘` 은 400 이라 오늘 상태는 그 길로만 온다.
+       *
+       * **그날의 최종 상태가 아니다.** 오후에 본 뒤로도 그날 안에 더 잡을 수 있다. 날이 바뀌면
+       * `date` 로 물을 수 있으므로 `isSettledProbe` 가 미조회로 되돌린다.
+       */
+      provisional?: true
     }
   // 400 OPENAPI00004. 그 날짜에 대해 영구. 윈도우 밖·월드 이전 이전.
   | { kind: 'outOfRange' }
+
+/**
+ * 이 관측을 **그대로 써도 되는가**. 거짓이면 그 날짜를 다시 부른다.
+ *
+ * | 원장이 든 것 | 확정 |
+ * |---|---|
+ * | 없음 | 아니다 |
+ * | `outOfRange` | **그렇다**. 그 날짜에 대해 영구다 |
+ * | `bosses` 없는 옛 관측 | 아니다. 보스를 안 본 관측이라 처치일을 못 캔다 |
+ * | 잠정(오늘 라이브) | **오늘 동안만**. 날이 바뀌면 `date` 로 다시 받는다 |
+ * | 그 밖 | 그렇다 |
+ *
+ * @param todayDateKey KST 오늘(`YYYY-MM-DD`). 잠정이 만료되는 경계다
+ */
+export function isSettledProbe(
+  record: ScheduleProbeRecord | undefined,
+  dateKey: string,
+  todayDateKey: string,
+): boolean {
+  if (record === undefined) {
+    return false
+  }
+  if (record.kind === 'outOfRange') {
+    return true
+  }
+  if (record.bosses === undefined) {
+    return false
+  }
+  return record.provisional === true ? dateKey === todayDateKey : true
+}
 
 export interface ScheduleProbeLedger {
   /** 400 `OPENAPI00003`. 이 ocid 는 어느 날짜로도 조회할 수 없다(영구). */

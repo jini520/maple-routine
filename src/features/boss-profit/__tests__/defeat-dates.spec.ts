@@ -3,7 +3,8 @@
 // ① **뒤집힌 날**이 처치일이다. 완료로 보이는 첫 날이고, 리셋 당일이면 그날이다.
 // ② **구멍이 있으면 확정하지 않는다**. 시작일부터 끊김 없이 봐야 **그 앞엔 없었다** 를 말한다.
 // ③ **오늘은 소거법**이다. `date=오늘` 은 400 이라 조회로는 영영 못 본다.
-// ④ **캘 수 없으면 부르지 않는다**. 기간 시작일이 조회 창 밖이면 호출이 0회다.
+// ④ **캘 수 없는 날만 건너뛴다**. 창에 하루라도 걸치는 기간은 부르고, 창 하한보다
+//    앞선 날만 안 본다(정정 6). 건너뛴 뒤 첫 관측이 이미 완료면 그때만 포기한다.
 
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
 jest.mock('../../../storage/boss-profit', () => ({
@@ -139,6 +140,143 @@ describe('resolveDefeatedOn: 구멍 (결정 2)', () => {
   })
 })
 
+describe('resolveDefeatedOn: 창 하한 앞은 건너뛴다 (정정 6)', () => {
+  // 8/20 주인데 창이 8/22 부터인 상황. 실제 데이터가 그랬다(9/4 백필, 창 하한 8/22).
+  it('창 안에서 뒤집혔으면 앞에 못 본 날이 있어도 확정한다', () => {
+    expect(
+      resolveDefeatedOn({
+        periodDays: WEEK,
+        observed: observed({ '2026-08-22': [], '2026-08-23': ['스우|하드'] }),
+        todayDateKey: '2026-09-04',
+        bossKey: '스우|하드',
+        queryFloorDateKey: '2026-08-22',
+      }),
+    ).toBe('2026-08-23')
+  })
+
+  it('건너뛴 뒤 첫 관측에 이미 완료면 확정하지 않는다. 그 앞이 답일 수 있다', () => {
+    expect(
+      resolveDefeatedOn({
+        periodDays: WEEK,
+        observed: observed({ '2026-08-22': ['스우|하드'], '2026-08-23': ['스우|하드'] }),
+        todayDateKey: '2026-09-04',
+        bossKey: '스우|하드',
+        queryFloorDateKey: '2026-08-22',
+      }),
+    ).toBeNull()
+  })
+
+  it('창 안의 구멍은 그대로 구멍이다. 건너뛰는 것은 하한 앞뿐', () => {
+    expect(
+      resolveDefeatedOn({
+        periodDays: WEEK,
+        observed: observed({ '2026-08-22': [], '2026-08-24': ['스우|하드'] }),
+        todayDateKey: '2026-09-04',
+        bossKey: '스우|하드',
+        queryFloorDateKey: '2026-08-22',
+      }),
+    ).toBeNull()
+  })
+
+  // 하한 앞을 못 본 채로 오늘을 만나면 소거법이 안 선다. 그 못 본 날에 잡았을 수 있다.
+  it('하한 앞을 건너뛴 채 오늘에 닿으면 소거법을 쓰지 않는다', () => {
+    expect(
+      resolveDefeatedOn({
+        periodDays: WEEK,
+        observed: new Map(),
+        todayDateKey: '2026-08-22',
+        bossKey: '스우|하드',
+        queryFloorDateKey: '2026-08-22',
+      }),
+    ).toBeNull()
+  })
+
+  it('미완료를 본 뒤라면 소거법이 다시 선다. 앞의 구멍이 무효가 됐다', () => {
+    expect(
+      resolveDefeatedOn({
+        periodDays: WEEK,
+        observed: observed({ '2026-08-22': [], '2026-08-23': [] }),
+        todayDateKey: '2026-08-24',
+        bossKey: '스우|하드',
+        queryFloorDateKey: '2026-08-22',
+      }),
+    ).toBe('2026-08-24')
+  })
+})
+
+// 창 밖이라 뒤집힘을 못 본 기록에 **조회 가능한 가장 빠른 날**을 준다(사용자 지정).
+//
+// `그 날이거나 그 앞` 을 `그 날` 로 단정하는 것이다. 그 대가를 지는 이유는 창을 매일 채우면 이
+// 경우가 앱이 알기 전에 지나간 기록에만 남고, 그 금액이 화면에서 통째로 사라지는 것보다 낫기
+// 때문이다.
+describe('resolveDefeatedOn: 못 캐면 가장 빠른 조회 가능일', () => {
+  it('건너뛴 뒤 첫 관측에 이미 완료면 그 날을 처치일로 쓴다', () => {
+    expect(
+      resolveDefeatedOn({
+        periodDays: WEEK,
+        observed: observed({ '2026-08-23': ['스우|하드'] }),
+        todayDateKey: '2026-09-05',
+        bossKey: '스우|하드',
+        queryFloorDateKey: '2026-08-23',
+        fallbackToEarliestQueryable: true,
+      }),
+    ).toBe('2026-08-23')
+  })
+
+  it('뒤집힘을 봤으면 그쪽이 이긴다. 폴백은 못 봤을 때만이다', () => {
+    expect(
+      resolveDefeatedOn({
+        periodDays: WEEK,
+        observed: observed({ '2026-08-23': [], '2026-08-24': [], '2026-08-25': ['스우|하드'] }),
+        todayDateKey: '2026-09-05',
+        bossKey: '스우|하드',
+        queryFloorDateKey: '2026-08-23',
+        fallbackToEarliestQueryable: true,
+      }),
+    ).toBe('2026-08-25')
+  })
+
+  // 그 기간에 조회 가능한 날이 하나도 없으면 줄 날짜가 없다.
+  it('기간 전체가 창 밖이면 그대로 null 이다', () => {
+    expect(
+      resolveDefeatedOn({
+        periodDays: WEEK,
+        observed: new Map(),
+        todayDateKey: '2026-09-20',
+        bossKey: '스우|하드',
+        queryFloorDateKey: '2026-09-07',
+        fallbackToEarliestQueryable: true,
+      }),
+    ).toBeNull()
+  })
+
+  // 창 안인데 조회가 실패한 구멍은 폴백이 안 메운다. 그 날짜는 다음에 다시 부른다.
+  it('창 안의 구멍은 폴백이 메우지 않는다', () => {
+    expect(
+      resolveDefeatedOn({
+        periodDays: WEEK,
+        observed: observed({ '2026-08-24': ['스우|하드'] }),
+        todayDateKey: '2026-09-05',
+        bossKey: '스우|하드',
+        queryFloorDateKey: '2026-08-23',
+        fallbackToEarliestQueryable: true,
+      }),
+    ).toBeNull()
+  })
+
+  it('끄면 전과 같이 null 이다', () => {
+    expect(
+      resolveDefeatedOn({
+        periodDays: WEEK,
+        observed: observed({ '2026-08-23': ['스우|하드'] }),
+        todayDateKey: '2026-09-05',
+        bossKey: '스우|하드',
+        queryFloorDateKey: '2026-08-23',
+      }),
+    ).toBeNull()
+  })
+})
+
 describe('resolveDefeatedOn: 오늘은 소거법 (결정 3)', () => {
   it('어제까지 전부 미완료인데 기록이 있으면 오늘이다', () => {
     expect(
@@ -251,16 +389,18 @@ describe('resolveDefeatDates: 안 부르는 길 (결정 4)', () => {
     expect(fetchStateMock).not.toHaveBeenCalled()
   })
 
-  it('기간 시작일이 조회 창 밖이면 그 기간을 아예 안 묻는다', async () => {
+  it('창에 하루라도 걸치는 기간은 묻는다 (정정 6)', async () => {
     await resolveDefeatDates(['ocid-1'], NOW)
 
     const [, periodKeys] = getUndatedMock.mock.calls[0]
-    // 8/20(이번 주)·8/13(지난 주)은 창 안, 8/6 은 밖이다(창 하한 8/11).
+    // 창은 8/11~8/23. 8/6 주는 시작일이 밖이지만 8/11~8/12 가 창 안이라 답이 나올 수 있다.
     expect(periodKeys).toContain('2026-08-20')
     expect(periodKeys).toContain('2026-08-13')
-    expect(periodKeys).not.toContain('2026-08-06')
-    // 8월 1일은 창 밖이라 이번 달도 못 캔다.
-    expect(periodKeys).not.toContain('2026-08')
+    expect(periodKeys).toContain('2026-08-06')
+    // 이번 달도 8/11 부터는 볼 수 있다. 달의 앞쪽에 잡은 건은 그대로 NULL 로 남는다.
+    expect(periodKeys).toContain('2026-08')
+    // 7/30 주는 마지막 날이 8/5 라 창에 한 뼘도 안 걸린다.
+    expect(periodKeys).not.toContain('2026-07-30')
   })
 })
 
@@ -328,6 +468,21 @@ describe('resolveDefeatDates: 캐낸 값을 박는다', () => {
     expect(asked).toEqual(['2026-08-20', '2026-08-21', '2026-08-22', '2026-08-23'])
     expect(setDefeatedOnMock).toHaveBeenCalledWith(미확정_스우, '2026-08-22')
     expect(recordProbeMock).toHaveBeenCalledTimes(4)
+  })
+
+  // 창에 걸친 경계 주. 창 하한 앞(8/6~8/10)은 안 묻고 8/11~8/12 만 물어 답을 낸다.
+  it('시작일이 창 밖인 주도 걸친 날들만 물어 날짜를 낸다 (정정 6)', async () => {
+    const 경계주_스우 = { ...미확정_스우, periodKey: '2026-08-06' }
+    getUndatedMock.mockResolvedValue([경계주_스우])
+    fetchStateMock.mockImplementation(async (_key: string, _ocid: string, dateKey: string) =>
+      dateKey >= '2026-08-12' ? schedulerState([{ name: '스우', difficulty: '하드' }]) : schedulerState([]),
+    )
+
+    await expect(resolveDefeatDates(['ocid-1'], NOW)).resolves.toBe(1)
+
+    const asked = fetchStateMock.mock.calls.map(([, , dateKey]) => dateKey).sort()
+    expect(asked).toEqual(['2026-08-11', '2026-08-12'])
+    expect(setDefeatedOnMock).toHaveBeenCalledWith(경계주_스우, '2026-08-12')
   })
 
   it('창 안이 전부 미완료면 오늘로 박는다. 소거법 (결정 3)', async () => {

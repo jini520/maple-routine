@@ -45,6 +45,11 @@ const navigate = jest.fn()
 const dispatch = jest.fn()
 
 // 동기화 실패·기간 로드 실패는 인라인 문단이 아니라 토스트다.
+const mockLedgerReload = jest.fn()
+jest.mock('../../../features/ledger/useLedgerData', () => ({
+  useLedgerData: () => ({ status: 'ready', revision: 1, reload: mockLedgerReload }),
+}))
+
 jest.mock('../../../features/toast/store', () => ({
   useToastStore: {
     getState: () => ({ showError: mockShowError, showSuccess: jest.fn(), showInfo: jest.fn() }) } }))
@@ -120,6 +125,7 @@ function 보스행(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     partySize: 2,
     payoutMeso: 5_000_000,
     isComplete: true,
+    defeatedOn: null,
     ...overrides }
 }
 
@@ -151,6 +157,7 @@ function renderScreen(): ReturnType<typeof render> {
 
 beforeEach(() => {
   jest.clearAllMocks()
+  mockLedgerReload.mockResolvedValue(undefined)
   // 카운트업의 '직전 표시값' 기억은 모듈 수준이라 언마운트를 건너 산다.
   // 테스트 하나가 곧 세션 하나다.
   clearCountUpMemory()
@@ -282,7 +289,7 @@ describe('탭과 기간 네비게이터', () => {
 })
 
 describe('동기화 상태 영역', () => {
-  it('현재 기간에서 새로고침을 누르면 추적 목록으로 재조회한다', async () => {
+  it('새로고침을 누르면 추적 목록으로 재조회한다. 보던 기간에 남는다', async () => {
     const refresh = jest.fn()
     mockStore({ refresh, trackedOcids: ['ocid-1', 'ocid-2'] })
     const { getByLabelText } = await renderScreen()
@@ -291,22 +298,17 @@ describe('동기화 상태 영역', () => {
       fireEvent.press(getByLabelText('새로고침'))
     })
 
-    expect(refresh).toHaveBeenCalledWith(['ocid-1', 'ocid-2'])
+    expect(refresh).toHaveBeenCalledWith(['ocid-1', 'ocid-2'], { inPlace: true })
   })
 
-  it('닫힌 과거 기간에서는 버튼도 동기화 시각도 없다(#30)', async () => {
-    mockStore({ periodKey: '2026-07-09', lastSyncedAt: '2026-07-09T10:00:00+09:00' })
-    const { queryByLabelText, queryByText } = await renderScreen()
+  // 창이 못 받은 날짜가 남아 있을 수 있어 지난 기간에서도 재조회에 뜻이 있다. 전에는 백필로
+  // 한 번 굳으면 다시 불러도 안 바뀌어서 이 영역을 아예 안 세웠다.
+  it('지난 기간에서도 버튼과 동기화 시각이 선다', async () => {
+    mockStore({ periodKey: '2026-07-09', lastSyncedAt: null })
+    const { getByLabelText, getByText } = await renderScreen()
 
-    expect(queryByLabelText('새로고침')).toBeNull()
-    expect(queryByText('동기화 기록 없음')).toBeNull()
-  })
-
-  it('과거 기간에서는 `status` 가 loading 이어도 "조회 중..." 을 쓰지 않는다', async () => {
-    mockStore({ periodKey: '2026-07-09', status: 'loading' })
-    const { queryByText } = await renderScreen()
-
-    expect(queryByText('조회 중...')).toBeNull()
+    expect(getByLabelText('새로고침')).toBeTruthy()
+    expect(getByText('동기화 기록 없음')).toBeTruthy()
   })
 
   it('현재 기간에서 재조회 중이면 "조회 중..." 이다', async () => {
@@ -324,9 +326,10 @@ describe('동기화 상태 영역', () => {
 })
 
 describe('당겨서 새로고침', () => {
-  it('현재 기간에서는 당김이 헤더 버튼과 **같은 재조회**를 부른다', async () => {
-    const refresh = jest.fn().mockResolvedValue(undefined)
-    mockStore({ refresh, trackedOcids: ['ocid-1'] })
+  // 당김은 **부모에게 부탁만** 한다. 무엇을 다시 부를지(오늘·과거)는 그쪽이 정한다.
+  // 헤더 버튼은 이 화면의 재조회(라이브)를 그대로 부른다. 둘의 뜻이 다르다.
+  it('당김이 부모의 다시 불러오기를 부른다', async () => {
+    mockStore({ trackedOcids: ['ocid-1'] })
     const { getByTestId } = await renderScreen()
 
     const control = getByTestId('screen-scroll').props.refreshControl
@@ -334,15 +337,17 @@ describe('당겨서 새로고침', () => {
       control.props.onRefresh()
     })
 
-    expect(refresh).toHaveBeenCalledWith(['ocid-1'])
+    expect(mockLedgerReload).toHaveBeenCalledTimes(1)
   })
 
-  it('새로고침이 의미 없는 기간에서는 컨트롤 자체를 달지 않는다. 헤더 버튼과 같은 플래그다', async () => {
+  // 어느 기간에서도 당길 수 있다(사용자 지정). 당김은 창이 못 받은 날짜를 다시 부르는 일이라
+  // 지난 기간에서도 실제로 값이 채워진다.
+  it('지난 기간에서도 컨트롤을 단다', async () => {
     mockStore({ periodKey: '2026-07-09' })
-    const { getByTestId, queryByLabelText } = await renderScreen()
+    const { getByTestId, getByLabelText } = await renderScreen()
 
-    expect(getByTestId('screen-scroll').props.refreshControl).toBeUndefined()
-    expect(queryByLabelText('새로고침')).toBeNull()
+    expect(getByTestId('screen-scroll').props.refreshControl).toBeDefined()
+    expect(getByLabelText('새로고침')).toBeTruthy()
   })
 
   // 회귀 가드. 조회 중 과 당겼다 는 다른 사실이다.

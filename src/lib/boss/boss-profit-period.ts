@@ -115,18 +115,7 @@ export function containsInProgressWeek(cycle: BossCycle, periodKey: string, now:
   return getWeeklyPeriodKeysInMonth(periodKey).includes(getCurrentBossProfitPeriod('weekly', now).periodKey)
 }
 
-/**
- * 이 기간을 화면에서 지금 새로고침(실시간 재조회)하는 것이 의미가 있는지.
- *
- * 헤더 동기화 상태 영역 노출과 당겨서 새로고침 활성 조건이 이 한 플래그를 공유한다. 갈라 두면
- * 버튼은 없는데 당기면 도는 상태가 생긴다.
- *
- * 기간 네비게이션 게이트(다음 기간 비활성)는 여전히 `isLatestPeriod` 다. 이 기간이 최신인가 와
- * 지금 재조회하면 숫자가 달라질 수 있는가 는 다른 질문이다.
- */
-export function isPeriodRefreshable(cycle: BossCycle, periodKey: string, now: Date): boolean {
-  return isLatestPeriod(cycle, periodKey, now) || containsInProgressWeek(cycle, periodKey, now)
-}
+
 
 export interface BossProfitPeriodLabel {
   primary: string // "이번 주" | "지난 주" | "이번 달" | "지난 달" | "{M}월 {N}주차" | "{YYYY}년 {M}월"
@@ -305,7 +294,6 @@ export type PeriodQueryOutcome = 'notCollected' | 'outOfRange' | 'failed'
  * |---|---|---|
  * | recorded | 기록이 있다 | — |
  * | confirmedEmpty | 조회해서 0건을 확인했다 | 없음 |
- * | notChecked | 조회 가능한데 아직 조회하지 않았다 | 조회 |
  * | notCollected | 아직 집계 전(OPENAPI00009) | 없음(나중에 자동) |
  * | outOfRange | 조회 구간 밖(윈도우 밖·월드 이전 이전) | 없음 |
  * | failed | 그 외 실패 | 다시 시도 |
@@ -313,7 +301,6 @@ export type PeriodQueryOutcome = 'notCollected' | 'outOfRange' | 'failed'
 export type PeriodDataState =
   | 'recorded'
   | 'confirmedEmpty'
-  | 'notChecked'
   | 'notCollected'
   | 'outOfRange'
   | 'failed'
@@ -322,8 +309,11 @@ export interface PeriodDataStateInput {
   /** 그 tab의 "지금" 기간인가. 실시간 동기화가 원천이라 백필 조회 가능성을 보지 않는다. */
   isCurrentPeriod: boolean
   hasRecords: boolean
-  /** boss_profit_period_checks에 확인 기록이 있는가 = **조회해서 확인했다**(조회 불가로 굳힌 것이 아니다). */
-  isChecked: boolean
+  /**
+   * 창이 그 기간의 어느 날을 **확정 관측했는가**. 조회해서 봤다는 뜻이지 조회 불가로 굳힌 것이
+   * 아니다. 전에는 `boss_profit_period_checks` 표가 이 답을 들었고 지금은 조회 원장이 든다.
+   */
+  isObserved: boolean
   isQueryable: boolean
   lastOutcome: PeriodQueryOutcome | null
 }
@@ -341,9 +331,9 @@ export function resolvePeriodDataState(input: PeriodDataStateInput): PeriodDataS
   if (input.hasRecords) {
     return 'recorded'
   }
-  // 확인 기록은 "조회해서 0건을 봤다"만 의미한다. store 가 조회 불가 기간을 checked 로 굳히지
-  // 않으므로, 이 분기는 시간이 지나도 outOfRange 로 격하되지 않는다.
-  if (input.isChecked) {
+  // 관측은 "조회해서 0건을 봤다"만 의미한다. 조회 불가 날짜는 관측으로 안 남으므로 이 분기는
+  // 시간이 지나도 outOfRange 로 격하되지 않는다.
+  if (input.isObserved) {
     return 'confirmedEmpty'
   }
   // 조회 자체가 불가능한 기간의 시도 결과는 신뢰하지 않는다(애초에 호출하지 않으므로 outcome이 남지 않는다).
@@ -353,7 +343,9 @@ export function resolvePeriodDataState(input: PeriodDataStateInput): PeriodDataS
   if (input.lastOutcome !== null) {
     return input.lastOutcome
   }
-  return 'notChecked'
+  // 창이 아직 이 기간을 못 받았다. 사용자가 조회를 트는 개념은 없어졌고(창이 진입할 때 채운다)
+  // 남은 행동은 당겨서 새로고침 하나다.
+  return 'failed'
 }
 
 /**
@@ -377,10 +369,10 @@ export function isEarliestNavigablePeriod(cycle: BossCycle, periodKey: string): 
  * **불확실을 확정으로 위장하지 않는다**. `confirmedEmpty`("0건 확정")는 **전원이** 확정했을 때만
  * 말한다. 하나라도 모르는 캐릭터가 있으면 그 사실을 우선한다(error-resilience 원칙 2).
  *
- * 우선순위: recorded > failed > notCollected > notChecked > outOfRange > confirmedEmpty
+ * 우선순위: recorded > failed > notCollected > outOfRange > confirmedEmpty
  * - recorded가 최상위인 이유: 보여줄 기록이 있으면 그것이 화면의 주인이고, 나머지 캐릭터의
  *  미확인은 목록 안 표식으로 다룬다.
- * - failed·notChecked가 앞에 오는 이유: **사용자가 할 수 있는 행동이 있는 상태**라 묻히면 안 된다.
+ * - failed가 앞에 오는 이유: **사용자가 할 수 있는 행동이 있는 상태**라 묻히면 안 된다.
  */
 export function resolvePagePeriodState(states: PeriodDataState[]): PeriodDataState {
   if (states.length === 0) {
@@ -390,7 +382,6 @@ export function resolvePagePeriodState(states: PeriodDataState[]): PeriodDataSta
     'recorded',
     'failed',
     'notCollected',
-    'notChecked',
     'outOfRange',
     'confirmedEmpty',
   ]

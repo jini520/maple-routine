@@ -9,21 +9,20 @@ import { Image, Pressable, View } from 'react-native'
 
 import type { BossProfitRow } from '../../features/boss-profit/store'
 import { useToastStore } from '../../features/toast/store'
-import { formatMesoShort } from '../../lib/boss/boss-profit-delta'
 import { sumDropPayout } from '../../lib/drop/drop-price'
+import { sortDropsForDisplay } from '../../lib/drop/drop-order'
 import { getItemIconUrl } from '../../lib/assets/asset-lookup'
-import { isValuableDrop } from '../../lib/drop/valuable-drops'
 import type { RecordedDrop } from '../../types/drops'
 
 import { AnimatedNumber, Badge, MinusIcon, PlusIcon, Text } from '../../components/atoms'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { BossDropSheet } from './BossDropSheet'
+import { ItemRevenueTrigger } from './ItemRevenueTrigger'
 import { useBossProfitContext } from './boss-profit-context'
 import { clamp, findPortraitSlug } from './character-groups'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 import { ItemRevenuePopover } from './ItemRevenuePopover'
-import { ValuableRowBackground } from './ValuableRowBackground'
 
 // BossPortrait의 size prop 기본값(40px, 기존 h-10 관례)과 동일하게 시작값을 맞춘다.
 export const BOSS_PORTRAIT_SIZE = 40
@@ -68,7 +67,7 @@ export function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Eleme
             {url !== null ? (
               <Image source={url} resizeMode="contain" className="h-6 w-6" />
             ) : (
-              <View className="h-6 w-6 rounded-md border-[1.5px] border-surface bg-surface-2" />
+              <View className="h-6 w-6 rounded-md border-[1.5px] border-card-body bg-surface-2" />
             )}
             {/* 특수 스킬 반지(반지 상자 드릴다운 결과)만 등급이 기록된다. 드롭 시트
                 ItemThumb의 lv 뱃지와 같은 규칙. 절대배치라 이름 줄의 h-6 고정에는
@@ -83,7 +82,8 @@ export function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Eleme
       })}
       {extra > 0 && (
         <View
-          className="h-6 w-6 items-center justify-center rounded-md border-[1.5px] border-surface bg-surface-2"
+          testID="drop-stack-more"
+          className="h-6 w-6 items-center justify-center rounded-md border-[1.5px] border-card-body bg-surface-2"
           style={{ marginLeft: -2, zIndex: 0 }}
         >
           <Text className="text-10 font-bold text-text-muted">+{extra}</Text>
@@ -102,10 +102,9 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
   const { ref: itemChipRef, isOpen: isItemPopoverOpen, anchor: itemAnchor, toggle: toggleItemPopover, close: closeItemPopover } =
     useAnchoredPopover()
   const dropTotal = sumDropPayout(props.drops)
-
-  // 이 보스에서 고가 아이템을 획득했으면 행 배경에 골드 강조를 준다. 캐릭터 카드를 펼쳤을 때
-  // 카드 테두리 효과 대신 실제 획득한 보스 행으로 강조가 이동하는 지점이다.
-  const hasValuableDrop = props.drops.some((drop) => isValuableDrop(drop.itemName))
+  // 아이콘 스택은 셋만 보여주므로 이 순서가 곧 무엇이 보이는가다. 팝오버도 같은 배열을 받아
+  // 스택과 목록이 같은 차례로 선다.
+  const drops = sortDropsForDisplay(props.drops)
   const isPriceUnknown = row.priceMeso === null
   // 미완료(보스 스케줄러에 등록만 되고 아직 처치 전) placeholder는 파티원 수를 조정해도 의미가
   // 없다. 계산은 항상 0메소로 고정된다. "가격 미확정"과 동일한 비활성 처리를 재사용한다.
@@ -155,12 +154,12 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
     // 마지막 행도 테두리 "박스"는 남기고 색만 지운다.
     <View
       testID="boss-profit-boss-row"
-      className={`flex-row items-start gap-3 border-b p-4 ${
+      // 초상은 이름 줄이 아니라 **행 전체**의 세로 가운데다. `items-start` 면 오른쪽이 두 줄인
+      // 행에서 초상만 위로 붙는다.
+      className={`flex-row items-center gap-3 border-b p-4 ${
         props.isLast === true ? 'border-b-transparent' : 'border-border'
       }`}
     >
-      {hasValuableDrop && <ValuableRowBackground />}
-
       <BossPortrait portraitSlug={findPortraitSlug(row.boss)} label={row.boss} size={BOSS_PORTRAIT_SIZE} />
 
       <View className="min-w-0 flex-1">
@@ -179,7 +178,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           <Text numberOfLines={1} className="shrink text-sm font-semibold text-text">
             {row.boss}
           </Text>
-          <DropIndicator drops={props.drops} />
+          <DropIndicator drops={drops} />
         </Pressable>
 
         <View className="mt-2 flex-row items-center justify-between gap-2">
@@ -224,35 +223,26 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
             <Badge variant="primary" className="shrink-0">
               가격 미확정
             </Badge>
-          ) : // 아이템이 섞이면 **금액 아래에 칩이 선다**. 그 존재가 곧 "이 숫자는 결정석만이
-          // 값을 매긴 아이템이 있다는 표시이고 동시에 내역을 여는 버튼이다. 없으면 래퍼조차
-          // 만들지 않는다. 그 행의 트리가 달라지지 않아야 한다.
+          ) : // 아이템이 섞이면 **금액 자체가 내역을 여는 버튼**이 된다. 없으면 래퍼조차 만들지
+          // 않는다. 그 행의 트리가 달라지지 않아야 한다.
           dropTotal === 0 ? (
             amount
           ) : (
-            // 순서는 앱 관례대로 주값(금액)이 위, 부가값(칩)이 아래다.
-            <View className="items-end gap-1">
+            <ItemRevenueTrigger
+              ref={itemChipRef}
+              label={`${row.boss} 아이템 수익 확인`}
+              isOpen={isItemPopoverOpen}
+              onPress={toggleItemPopover}
+            >
               {amount}
-              <Pressable
-                ref={itemChipRef}
-                role="button"
-                onPress={toggleItemPopover}
-                aria-label={`${row.boss} 아이템 수익 확인`}
-                aria-expanded={isItemPopoverOpen}
-                className="h-5 shrink-0 flex-row items-center rounded-full bg-primary-tint px-2"
-              >
-                <Text className="text-11 font-bold leading-none text-primary-ink" style={TABULAR_NUMS}>
-                  아이템 +{formatMesoShort(dropTotal)}
-                </Text>
-              </Pressable>
-            </View>
+            </ItemRevenueTrigger>
           )}
         </View>
       </View>
 
       {isItemPopoverOpen && (
         <ItemRevenuePopover
-          drops={props.drops}
+          drops={drops}
           crystalMeso={row.payoutMeso ?? 0}
           itemMeso={dropTotal}
           anchor={itemAnchor}
@@ -265,6 +255,8 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           boss={row.boss}
           difficulty={row.difficulty}
           isComplete={row.isComplete}
+          // 시트에는 **기록된 순서**를 넘긴다. 저장이 replace-all 이라 정렬한 배열을 넘기면
+          // 그 순서가 `drop_index` 로 굳어, 보여 주려던 차례가 저장 계층까지 내려간다.
           initialDrops={props.drops}
           onSave={(drops) => setBossDrops(row, drops)}
           onClose={() => setIsDropSheetOpen(false)}

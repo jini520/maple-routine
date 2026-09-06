@@ -23,7 +23,6 @@ import { getRecordedCharacterOcids } from '../../storage/boss-profit'
 import { resolveDisplayProfiles } from '../character-profile/resolve'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { resolveDefeatDates } from '../boss-profit/defeat-dates'
-import { useBossProfitStore } from '../boss-profit/store'
 import {
   deleteIncomeRecord,
   getIncomeRecordsBetween,
@@ -139,9 +138,11 @@ function bossRowKey(record: {
 }
 
 /**
- * 이 범위(두 끝 포함)에 잡은 것으로 밝혀진 보스 수익. 날짜를 모르는 기록은 안 든다. 어느 칸에
- * 얹으면 그 순간 거짓 날짜가 되고, 주간 보기에서는 `period_key` 로 제자리에 서므로 잃는 것은
- * 월간 칸뿐이다.
+ * 이 범위(두 끝 포함)에 잡은 것으로 밝혀진 보스 수익. **날짜를 모르는 기록은 안 든다.** 어느
+ * 칸에 얹으면 그 순간 거짓 날짜가 된다.
+ *
+ * 이 화면은 주간 보기도 일간 칸을 접은 값이라 그 기록은 **어느 보기에도 안 뜬다**. 날짜 없이도
+ * 제자리에 서는 곳은 보스 수익 탭이다(거기는 `period_key` 가 곧 그 주다).
  *
  * 아무것도 안 읽고 끝나는 길이 둘이다. 추적 캐릭터가 없다 · 그 범위에 날짜 붙은 보스 기록이
  * 없다. 후자에서 드롭 조회를 건너뛰는 것이 중요하다. 드롭은 자기 날짜가 없어서 보스 행이
@@ -317,31 +318,6 @@ export async function loadTrackedCharacters(): Promise<
   return named.filter((each) => each.name !== '')
 }
 
-/**
- * 가계부의 당겨서 새로고침. 셋을 차례로 한다.
- *
- * ① 동기화. 새 처치를 가져온다. 이것이 없으면 오늘 잡은 보스는 기록 자체가 없어 날짜를 캘
- *    것도 없다.
- * ② 날짜 캐기. 그 기록에 `defeated_on` 을 채운다.
- * ③ 다시 읽기는 화면의 몫이다. 이 함수가 끝나면 화면이 표를 올린다.
- *
- * 차례가 계약이다. ②가 먼저면 그 순간 없는 기록을 캐려 들고, 새로 온 것은 다음 번까지 안 뜬다.
- *
- * 보스 수익 탭의 당김과 같은 재조회를 부른다. 두 하위 탭이 같은 원천을 보므로 어느 탭에서
- * 당겼나 로 결과가 달라지면 안 된다.
- *
- * 던지지 않는다. 실패를 말하는 것은 그 스토어의 `error` 와 토스트다.
- */
-export async function refreshCashbook(now: Date): Promise<void> {
-  const ocids = await getTrackedCharacterOcids().catch(() => null)
-  if (ocids !== null && ocids.length > 0) {
-    await useBossProfitStore
-      .getState()
-      .refresh(ocids)
-      .catch(() => undefined)
-  }
-  await resolveTrackedDefeatDates(now)
-}
 
 /**
  * 화면이 내 숫자가 낡았는지 묻는 값. 이 화면이 읽는 두 표의 판을 하나로 접는다. 화면은 다시

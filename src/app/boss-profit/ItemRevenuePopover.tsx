@@ -16,6 +16,7 @@ import { Image, Modal, Pressable, ScrollView, useWindowDimensions, View } from '
 import { type PopoverAnchorRect } from '../../hooks/useAnchoredPopover'
 
 import { formatMesoShort } from '../../lib/boss/boss-profit-delta'
+import { sortDropsForDisplay } from '../../lib/drop/drop-order'
 import { dropPayoutMeso } from '../../lib/drop/drop-price'
 import type { RecordedDrop } from '../../types/drops'
 import { getItemIconUrl } from '../../lib/assets/asset-lookup'
@@ -68,12 +69,9 @@ export function ItemRevenuePopover(props: {
   // 스킵은 싣지 않는다. 값을 매기지 않기로 한 것이라 수익 내역에서 할 말이 없다. 미입력은
   // 남긴다. 그 줄이 곧 여기 값이 비었다 는 신호다.
   //
-  // 값이 큰 것부터 낸다. 맨 위가 그 기간의 최대 수확이고 미입력(0)은 자연히 바닥으로 간다.
-  // `sort` 는 안정 정렬이라 같은 값끼리는 기록 순서가 유지된다.
-  const listed = props.drops
-    .filter((drop) => drop.priceState !== 'excluded')
-    .slice()
-    .sort((a, b) => dropPayoutMeso(b) - dropPayoutMeso(a))
+  // 차례는 보스 행의 아이콘 스택과 **같은 함수**가 정한다. 갈라 두면 스택 맨 앞의 그림과 목록
+  // 맨 위의 줄이 서로 다른 아이템이 된다.
+  const listed = sortDropsForDisplay(props.drops.filter((drop) => drop.priceState !== 'excluded'))
 
   return (
     <Modal visible transparent animationType="none" statusBarTranslucent navigationBarTranslucent onRequestClose={props.onClose}>
