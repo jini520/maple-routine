@@ -582,7 +582,7 @@ syncScheduleWindow(ocids, now)
 | `recorded` | 기록이 있다 | | | 금액 |
 | `confirmedEmpty` | 조회해서 **0건을 확인**했다 | 그 기간의 어느 날을 관측함 | 없음 | `EmptyState` · `0 메소` |
 | `notCollected` | 아직 집계 전(`OPENAPI00009`) | **안 적는다** | 없음(나중에 자동) | 대기 톤 고지 · `— 메소` |
-| `outOfRange` | 조회 구간 밖. 윈도우 밖이거나 월드 이전 전 | `outOfRange`(영구) | 없음 | `UnavailableNotice` · `— 메소` |
+| `outOfRange` | 조회 구간 밖. 윈도우 밖이거나 월드 이전 전 | `outOfRange`(영구) | 없음 | 금액은 `— 메소`. **페이지 고지는 없다**([[ADR-224]] 결정 5) |
 | `failed` | 창이 아직 못 받았다(네트워크·타임아웃 등) | 안 적는다 | **다시 시도** | `ErrorState` · 재시도 버튼 |
 
 `notChecked` 는 없어졌다. 사용자가 조회를 트는 개념이 사라졌기 때문이다. 창이 진입할 때 창 안
@@ -1359,7 +1359,9 @@ a11y: 화살표는 `aria-hidden` 이고, 색은 의미를 못 전하므로 칩 �
 - **처치 기록이 0건이면** 공용 `EmptyState`(inline)를 쓴다. 아이콘은 `ProfitIcon` 으로 탭바·헤드라인과
   같고([[ADR-066]]), 문구는 "아직 처치한 보스가 없습니다"이며 **CTA는 없다.** 앱 안에서 할 수 있는
   일이 없기 때문이다.
-- **롤링 조회 윈도우 밖**([[ADR-032]])은 빈 상태가 아니라 `UnavailableNotice`(정보 톤)다.
+- ~~**롤링 조회 윈도우 밖**([[ADR-032]])은 빈 상태가 아니라 `UnavailableNotice`(정보 톤)다.~~
+  → **페이지에서 걷었다**([[ADR-224]] 결정 5). 기간 이동이 기록이 있는 기간으로만 착지해 그
+  자리에 설 길이 사라졌다. 캐릭터 카드 안의 축약 고지는 그대로다.
 - 기간 목록에는 기본형을, 캐릭터 카드 안에는 `compact` 를 쓴다. 레시피는
   [design-system.md](../foundation/design-system.md) 에 있다.
 

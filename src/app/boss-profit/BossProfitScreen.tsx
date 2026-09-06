@@ -468,17 +468,16 @@ export function BossProfitScreen(): React.JSX.Element {
             )}
 
             {/* 확정된 빈 상태와 확인 자체를 못 함은 디자인을 공유하지 않는다. 어느 쪽인지는
-                스토어가 계산한 `periodState` 가 답한다. 화면이 따로 판정하면 백필과 어긋난다. */}
+                스토어가 계산한 `periodState` 가 답한다. 화면이 따로 판정하면 백필과 어긋난다.
+
+                **조회 불가 고지는 여기 없다.** 기간 이동이 기록이 있는 기간으로만 착지하고,
+                비-현재 기간의 행은 기록에서만 나오므로 이 자리는 그때 아예 안 그려진다. 남는
+                갈래는 달 경계 미리보기(아직 오지 않은 주)뿐이고, 거기서 조회 가능한 기간을
+                지났다 는 거짓이다. 그 주에는 아직 안 잡은 것이 맞다. */}
             {!isPeriodLoading &&
               status === 'loaded' &&
               characterGroups.length === 0 &&
-              (periodState === 'confirmedEmpty' ? (
-                <EmptyState
-                  icon={ProfitIcon}
-                  title="아직 처치한 보스가 없습니다"
-                  description="보스를 처치하면 수익이 자동으로 집계됩니다"
-                />
-              ) : periodState === 'notCollected' ? (
+              (periodState === 'notCollected' ? (
                 <UnavailableNotice variant="notCollected" />
               ) : periodState === 'failed' ? (
                 <ErrorState
@@ -487,7 +486,11 @@ export function BossProfitScreen(): React.JSX.Element {
                   action={{ label: '다시 시도', onClick: () => void retryPeriod() }}
                 />
               ) : (
-                <UnavailableNotice />
+                <EmptyState
+                  icon={ProfitIcon}
+                  title="아직 처치한 보스가 없습니다"
+                  description="보스를 처치하면 수익이 자동으로 집계됩니다"
+                />
               ))}
 
             {!isPeriodLoading &&

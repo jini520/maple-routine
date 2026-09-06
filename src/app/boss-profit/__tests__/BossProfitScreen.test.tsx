@@ -384,11 +384,15 @@ describe('기간 상태별 표현', () => {
     expect(queryByText('다시 시도')).toBeNull()
   })
 
-  it('`outOfRange` 는 조회 불가 고지다', async () => {
+  // 기간 이동이 기록이 있는 기간으로만 착지하고 비-현재 기간의 행은 기록에서만 나오므로,
+  // 이 자리에 `outOfRange` 로 서는 길이 사라졌다. 남는 갈래는 달 경계 미리보기(아직 오지 않은
+  // 주)뿐이고 거기서 `조회 가능한 기간을 지났다` 는 거짓이다.
+  it('`outOfRange` 에 조회 불가 고지를 안 세운다. 아직 안 잡은 것이다', async () => {
     mockStore({ status: 'loaded', periodState: 'outOfRange' })
-    const { getByText } = await renderScreen()
+    const { getByText, queryByText } = await renderScreen()
 
-    expect(getByText('이 기간은 조회할 수 없습니다')).toBeTruthy()
+    expect(queryByText('이 기간은 조회할 수 없습니다')).toBeNull()
+    expect(getByText('아직 처치한 보스가 없습니다')).toBeTruthy()
   })
 
   it('카드가 없는 `failed` 는 실패 상태 + 재시도다', async () => {
