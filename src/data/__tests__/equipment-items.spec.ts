@@ -59,7 +59,10 @@ it('영문 키가 가리키는 세트와 한글 이름이 어긋나지 않는다
     })
     .filter((entry): entry is string => entry !== null)
 
-  expect(mismatched).toEqual(['royal_black_metal_shoulder → 로얄블랙메탈숄더', 'genesis_badge → 창세의뱃지'])
+  // 순서에 안 맨다. 표는 키 순으로 정렬돼 있고 항목이 늘면 자리가 바뀐다.
+  expect(mismatched.sort()).toEqual(
+    ['genesis_badge → 창세의뱃지', 'royal_black_metal_shoulder → 로얄블랙메탈숄더'].sort(),
+  )
 })
 
 it('출처와 note 를 비워 두지 않는다. 다음 세션이 값의 근거를 여기서 읽는다', () => {
