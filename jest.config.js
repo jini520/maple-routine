@@ -35,7 +35,7 @@
 const expoPreset = require('jest-expo/jest-preset')
 
 /** `react-native` 조건에서 ESM 만 내보내는 의존성 — jest 가 트랜스폼해야 한다. */
-const ESM_ONLY_DEPS = ['lucide-react-native', 'moti']
+const ESM_ONLY_DEPS = ['lucide-react-native']
 
 const NEGATIVE_LOOKAHEAD = '(?!('
 

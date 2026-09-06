@@ -53,7 +53,6 @@ jest.mock('../../../features/ledger/useLedgerData', () => ({
     revision: 1,
     reload: mockLedgerReload,
     requestDateRange: jest.fn(),
-    markPeriodMoved: jest.fn(),
   }),
 }))
 

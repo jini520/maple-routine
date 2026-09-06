@@ -42,7 +42,6 @@ const mockWindow = {
 }
 let mockSetWindowRevision: ((value: number) => void) | null = null
 const mockRequestDateRange = jest.fn()
-const mockMarkPeriodMoved = jest.fn()
 
 jest.mock('../../../features/ledger/useLedgerData', () => ({
   useLedgerData: () => {
@@ -55,7 +54,6 @@ jest.mock('../../../features/ledger/useLedgerData', () => ({
       revision,
       reload: mockWindow.reload,
       requestDateRange: mockRequestDateRange,
-      markPeriodMoved: mockMarkPeriodMoved,
     }
   },
 }))
@@ -1610,43 +1608,33 @@ describe('강화 줄', () => {
   })
 })
 
-// 아직 안 받은 지출을 0 으로 그리면 값이 들어올 때마다 숫자가 몇 번씩 바뀌어, 앱이 틀렸다가
-// 고쳐지는 것으로 읽힌다(사용자 보고). 수익은 로컬 기록이라 이미 참이므로 그대로 선다.
-describe('확정 전 숫자', () => {
+// 회차가 도는 동안 읽으면 그 시점의 DB 가 아직 자라는 중이라, 한 셀의 값이 종류가 도착할
+// 때마다 커진다(큐브 → 스타포스 → 잠재). 다 합산될 때까지 안 그린다(사용자 지정).
+describe('확정 전에는 안 그린다', () => {
   beforeEach(() => {
     records.loadCalendarAmounts.mockResolvedValue({
       '2026-08-23': { incomeMeso: 7_600_000_000, expenseMeso: 1_200_000_000 },
     })
   })
 
-  it('받는 중이면 순 수익 자리에 스켈레톤이 선다', async () => {
+  it('받는 중에는 다시 읽지도 않는다', async () => {
     mockWindow.collecting = true
-    const view = await 그리기()
+    records.loadCalendarAmounts.mockClear()
+    await 그리기()
 
-    expect(view.getByTestId('cashbook-summary-net-pending')).toBeTruthy()
-    expect(view.queryByTestId('cashbook-summary-net')).toBeNull()
+    expect(records.loadCalendarAmounts).not.toHaveBeenCalled()
   })
 
-  // 한 카드 안에서 한 줄만 숫자가 서면 그 줄만 다르게 읽히고, 지출이 들어올 때 두 줄의 몸짓이
-  // 갈린다. 수익이 이미 참이어도 함께 가린다(사용자 지정).
-  it('받는 중이면 수익과 지출을 함께 가린다', async () => {
+  // 자리는 남는다(칸 높이가 흔들리면 격자가 출렁인다). 비는 것은 숫자다.
+  it('받는 중이면 달력 칸의 숫자가 빈다', async () => {
+    const view = await 그리기()
+    expect(view.getByTestId('calendar-income-2026-08-23')).toHaveTextContent('+76억')
+
     mockWindow.collecting = true
-    const view = await 그리기()
+    const 받는중 = await 그리기()
 
-    expect(view.getByTestId('cashbook-summary-pending-수익')).toBeTruthy()
-    expect(view.getByTestId('cashbook-summary-pending-지출')).toBeTruthy()
-    expect(view.queryByTestId('cashbook-summary-income')).toBeNull()
-    expect(view.queryByTestId('cashbook-summary-expense')).toBeNull()
-  })
-
-  // 달 안에서 주만 옮기면 조회가 안 나간다. 그때만 자리표시가 안 서면 같은 몸짓이 어떤 때는
-  // 번쩍이고 어떤 때는 안 움직여 화면이 튄 것으로 보인다(사용자 보고).
-  it('기간을 옮기면 받을 것이 없어도 층에 알린다', async () => {
-    const view = await 그리기()
-
-    await 이름으로누르기(view, '이전 주')
-
-    expect(mockMarkPeriodMoved).toHaveBeenCalled()
+    expect(받는중.getByTestId('calendar-income-2026-08-23')).not.toHaveTextContent('억')
+    expect(받는중.getByTestId('calendar-expense-2026-08-23')).not.toHaveTextContent('억')
   })
 
   // 오른쪽 정렬만으로는 금액의 오른쪽 끝만 한 x 에 서고, 자릿수가 달라지면 줄의 왼쪽 끝이
@@ -1665,28 +1653,6 @@ describe('확정 전 숫자', () => {
     expect(flattenStyle(길다.getByTestId('cashbook-summary-expense').props.style).width).toBe(64)
   })
 
-  // 회차 도중에 읽으면 그 시점의 DB 가 아직 자라는 중이라 한 셀의 값이 종류가 도착할 때마다
-  // 커진다(큐브 → 스타포스 → 잠재). 다 합산될 때까지 안 그린다(사용자 지정).
-  // 자리는 남는다(칸 높이가 흔들리면 격자가 출렁인다). 비는 것은 숫자다.
-  it('받는 중이면 달력 칸의 숫자가 빈다', async () => {
-    const view = await 그리기()
-    expect(view.getByTestId('calendar-income-2026-08-23')).toHaveTextContent('+76억')
-
-    mockWindow.collecting = true
-    const 받는중 = await 그리기()
-
-    expect(받는중.getByTestId('calendar-income-2026-08-23')).not.toHaveTextContent('억')
-    expect(받는중.getByTestId('calendar-expense-2026-08-23')).not.toHaveTextContent('억')
-  })
-
-  it('받는 중에는 다시 읽지도 않는다', async () => {
-    mockWindow.collecting = true
-    records.loadCalendarAmounts.mockClear()
-    await 그리기()
-
-    expect(records.loadCalendarAmounts).not.toHaveBeenCalled()
-  })
-
   // 회차가 끝난 순간부터 새 읽기가 도착하기까지 몇 밀리초가 있다. 그 사이에 이전 달의 값이
   // 그려졌다. 격자가 앞뒤 달의 날을 함께 그리므로 겹치는 날만 값이 있고 나머지는 비어, 있던
   // 것만 먼저 뜬 것처럼 보였다(사용자 보고).
@@ -1694,7 +1660,6 @@ describe('확정 전 숫자', () => {
     const view = await 그리기()
     expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+76억')
 
-    // 기간을 옮기면 새 읽기가 시작된다. 그것이 끝나기 전까지는 이전 값이 남아 있으면 안 된다.
     let resolve: ((value: Record<string, unknown>) => void) | null = null
     records.loadCalendarAmounts.mockImplementation(
       () => new Promise((done) => (resolve = done as never)),
@@ -1711,8 +1676,6 @@ describe('확정 전 숫자', () => {
   it('다 받으면 숫자가 선다', async () => {
     const view = await 그리기()
 
-    expect(view.queryByTestId('cashbook-summary-net-pending')).toBeNull()
-    expect(view.queryByTestId('cashbook-summary-pending-수익')).toBeNull()
     expect(view.getByTestId('cashbook-summary-net')).toHaveTextContent('+64억 메소')
     expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+76억')
     expect(view.getByTestId('cashbook-summary-expense')).toHaveTextContent('−12억')
