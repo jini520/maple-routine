@@ -74,9 +74,11 @@ const REVISION_FLUSH_MS = 600
  * 굳은 달은 회차가 200ms 에 끝난다. 그 사이 자리표시가 번쩍이고 사라지면 무엇이 지나갔는지
  * 읽을 시간이 없어 화면이 튄 것으로 보인다. 안 굳은 달(2초)과도 몸짓이 갈린다.
  *
+ * 1200 에서 내렸다(사용자 지정). 그만큼은 기다린다는 느낌이 됐다.
+ *
  * 마운트와 당김에는 안 건다. 거기는 모달이 그 시간을 말한다.
  */
-const MIN_SKELETON_MS = 1200
+const MIN_SKELETON_MS = 800
 
 const IDLE: LedgerDataState = {
   status: 'idle',

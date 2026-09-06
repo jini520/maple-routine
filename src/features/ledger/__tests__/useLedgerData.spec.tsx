@@ -273,7 +273,7 @@ describe('자리표시 최소 노출', () => {
     expect(view.getByTestId('collecting')).toHaveTextContent('true')
   })
 
-  it('회차가 일찍 끝나도 1200ms 은 서 있는다', async () => {
+  it('회차가 일찍 끝나도 800ms 은 서 있는다', async () => {
     const view = await 그리기2()
     await waitFor(() => expect(view.getByTestId('collecting')).toHaveTextContent('false'))
 

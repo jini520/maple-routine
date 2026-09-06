@@ -230,6 +230,19 @@ function SourceRow(props: {
  *
  * 테두리는 없다. 채움만으로 격자와 갈린다.
  */
+/** 확정 전 재료 한 줄. 자리표시의 폭·높이는 그 자리에 설 글자(`−73.85억`)에 맞춘다. */
+function PendingSourceRow(props: {
+  label: string
+  mode: 'light' | 'dark'
+}): React.JSX.Element {
+  return (
+    <View testID={`cashbook-summary-pending-${props.label}`} className="flex-row items-center gap-1.5">
+      <Text className="text-11 text-text-muted">{props.label}</Text>
+      <Skeleton width={62} height={12} radius={3} colorMode={props.mode} />
+    </View>
+  )
+}
+
 function PeriodSummary(props: {
   incomeMeso: number
   expenseMeso: number
@@ -274,27 +287,30 @@ function PeriodSummary(props: {
       </View>
 
       <View testID="cashbook-summary-sources" className="shrink-0 items-end gap-1">
-        <SourceRow
-          testID="cashbook-summary-income"
-          label="수익"
-          sign="+"
-          amount={props.incomeMeso}
-          tone="text-rise-ink"
-        />
         {props.pending ? (
-          <View className="flex-row items-center gap-1.5">
-            <Text className="text-11 text-text-muted">지출</Text>
-            {/* 실제로 설 글자(`−73.85억`)의 폭·높이다. */}
-            <Skeleton width={62} height={12} radius={3} colorMode={definition.mode} />
-          </View>
+          <>
+            {/* 수익은 로컬 기록이라 이미 참인데 함께 가린다. 한 카드 안에서 한 줄만 숫자가 서면
+                그 줄만 다르게 읽히고, 지출이 들어올 때 두 줄의 몸짓이 갈린다(사용자 지정). */}
+            <PendingSourceRow label="수익" mode={definition.mode} />
+            <PendingSourceRow label="지출" mode={definition.mode} />
+          </>
         ) : (
-          <SourceRow
-            testID="cashbook-summary-expense"
-            label="지출"
-            sign="−"
-            amount={props.expenseMeso}
-            tone="text-fall-ink"
-          />
+          <>
+            <SourceRow
+              testID="cashbook-summary-income"
+              label="수익"
+              sign="+"
+              amount={props.incomeMeso}
+              tone="text-rise-ink"
+            />
+            <SourceRow
+              testID="cashbook-summary-expense"
+              label="지출"
+              sign="−"
+              amount={props.expenseMeso}
+              tone="text-fall-ink"
+            />
+          </>
         )}
       </View>
     </View>

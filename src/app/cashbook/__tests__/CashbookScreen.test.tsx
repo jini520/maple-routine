@@ -1627,19 +1627,16 @@ describe('확정 전 숫자', () => {
     expect(view.queryByTestId('cashbook-summary-net')).toBeNull()
   })
 
-  it('받는 중이면 지출 금액도 안 적는다', async () => {
+  // 한 카드 안에서 한 줄만 숫자가 서면 그 줄만 다르게 읽히고, 지출이 들어올 때 두 줄의 몸짓이
+  // 갈린다. 수익이 이미 참이어도 함께 가린다(사용자 지정).
+  it('받는 중이면 수익과 지출을 함께 가린다', async () => {
     mockWindow.collecting = true
     const view = await 그리기()
 
+    expect(view.getByTestId('cashbook-summary-pending-수익')).toBeTruthy()
+    expect(view.getByTestId('cashbook-summary-pending-지출')).toBeTruthy()
+    expect(view.queryByTestId('cashbook-summary-income')).toBeNull()
     expect(view.queryByTestId('cashbook-summary-expense')).toBeNull()
-  })
-
-  // 수익은 로컬 기록에서 와 이미 참이다. 가리면 모르는 값으로 읽힌다.
-  it('수익은 받는 중에도 그대로 선다', async () => {
-    mockWindow.collecting = true
-    const view = await 그리기()
-
-    expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+76억')
   })
 
   // 달 안에서 주만 옮기면 조회가 안 나간다. 그때만 자리표시가 안 서면 같은 몸짓이 어떤 때는
@@ -1656,7 +1653,9 @@ describe('확정 전 숫자', () => {
     const view = await 그리기()
 
     expect(view.queryByTestId('cashbook-summary-net-pending')).toBeNull()
+    expect(view.queryByTestId('cashbook-summary-pending-수익')).toBeNull()
     expect(view.getByTestId('cashbook-summary-net')).toHaveTextContent('+64억 메소')
+    expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+76억')
     expect(view.getByTestId('cashbook-summary-expense')).toHaveTextContent('−12억')
   })
 })
