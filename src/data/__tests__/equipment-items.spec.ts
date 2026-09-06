@@ -35,7 +35,7 @@ it('레벨은 양수이거나 null 이다', () => {
 //
 // `royal_black_metal_shoulder`(로얄블랙메탈숄더)가 하이네스 세트(`royal_*`)로, `genesis_badge`
 // (창세의뱃지)가 제네시스 무기 세트로 잘못 채워졌었다. 키는 GMS 표기라 세트를 안 가른다.
-// 세트를 가르는 것은 **한글 이름**이다.
+// 세트를 가르는 것은 **한글 이름**이다. 창세의뱃지는 그 뒤 강화 불가로 표에서 걷혔다.
 const SET_LABEL_BY_KEY_PREFIX: [string, string][] = [
   ['meister', '마이스터'],
   ['royal', '하이네스'],
@@ -59,10 +59,12 @@ it('영문 키가 가리키는 세트와 한글 이름이 어긋나지 않는다
     })
     .filter((entry): entry is string => entry !== null)
 
-  // 순서에 안 맨다. 표는 키 순으로 정렬돼 있고 항목이 늘면 자리가 바뀐다.
-  expect(mismatched.sort()).toEqual(
-    ['genesis_badge → 창세의뱃지', 'royal_black_metal_shoulder → 로얄블랙메탈숄더'].sort(),
-  )
+  expect(mismatched).toEqual(['royal_black_metal_shoulder → 로얄블랙메탈숄더'])
+})
+
+// 이 값이 0 이 아니게 되는 날은 요청할 것이 생겼다는 뜻이다.
+it('레벨을 모르는 장비가 없다', () => {
+  expect(items.filter((item) => item.level === null).map((item) => item.name)).toEqual([])
 })
 
 it('출처와 note 를 비워 두지 않는다. 다음 세션이 값의 근거를 여기서 읽는다', () => {
