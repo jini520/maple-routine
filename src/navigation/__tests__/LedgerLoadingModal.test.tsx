@@ -106,11 +106,13 @@ describe('진행', () => {
     expect(view.getByText('32 / 84')).toBeTruthy()
   })
 
-  // 분모가 아직 안 정해진 순간(원장 읽는 몇십 밀리초)에는 바를 안 그린다.
-  it('분모가 없으면 바를 안 그린다', async () => {
+  // 분모가 아직 안 정해진 순간(원장 읽는 몇십 밀리초)에도 **바는 모달과 함께 선다**.
+  // 빼 두면 카드가 짧게 떴다가 자란다(사용자 보고).
+  it('분모가 없어도 바는 선다. 숫자만 `-` 다', async () => {
     const view = await 오래끄는화면()
 
-    expect(view.queryByTestId('loading-modal-progress')).toBeNull()
+    expect(view.getByTestId('loading-modal-progress')).toBeTruthy()
+    expect(view.getByText('- / -')).toBeTruthy()
     expect(view.getByText('기록을 불러오고 있어요')).toBeTruthy()
   })
 })

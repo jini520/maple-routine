@@ -21,10 +21,11 @@ export interface LoadingModalProps {
   /** 끝난 작업 수 */
   done?: number
   /**
-   * 해야 할 작업 수. **0 이면 바를 안 그린다.**
+   * 해야 할 작업 수. **0 이면 아직 안 정해진 것**이고 숫자 자리에 `-` 가 선다.
    *
    * 분모가 정해지기 전(원장 읽는 몇십 밀리초)이 있다. 그때 `0 / 0` 을 그리면 다 끝난 것처럼
-   * 보이고 나눗셈도 성립하지 않는다.
+   * 보이고 나눗셈도 성립하지 않는다. 그렇다고 바를 안 그리면 **모달이 먼저 뜨고 바가 나중에
+   * 붙어 카드가 자란다**(사용자 보고). 자리는 처음부터 잡아 두고 숫자만 비운다.
    */
   total?: number
 }
@@ -32,7 +33,9 @@ export interface LoadingModalProps {
 export function LoadingModal(props: LoadingModalProps): React.JSX.Element {
   const total = props.total ?? 0
   const done = props.done ?? 0
-  const percent = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0
+  /** 분모가 왔나. 오기 전에도 바는 서 있고 숫자만 `-` 다. */
+  const known = total > 0
+  const percent = known ? Math.min(100, Math.round((done / total) * 100)) : 0
 
   return (
     <Modal onClose={() => {}} align="center" testId="loading-modal">
@@ -40,15 +43,15 @@ export function LoadingModal(props: LoadingModalProps): React.JSX.Element {
         <View className="items-center gap-3.5">
           <MapleSweepSpinner size={36} className="text-primary" />
           <Text className="text-center text-15 font-semibold text-text">{props.title}</Text>
-          {total > 0 && (
-            <View testID="loading-modal-progress" className="w-full gap-1.5">
-              <ProgressBar percent={percent} aria={{ now: done, max: total }} />
-              <View className="flex-row justify-between">
-                <Text className="text-11 text-text-muted">{`${done} / ${total}`}</Text>
-                <Text className="text-11 text-text-muted">{`${percent}%`}</Text>
-              </View>
+          {/* 분모를 몰라도 그린다. 조건부로 두면 모달과 바가 다른 프레임에 뜬다. */}
+          <View testID="loading-modal-progress" className="w-full gap-1.5">
+            {/* 분모를 모르는 동안 `now`·`max` 를 안 준다. 0 을 주면 스크린리더가 0% 라고 읽는다. */}
+            <ProgressBar percent={percent} aria={known ? { now: done, max: total } : undefined} />
+            <View className="flex-row justify-between">
+              <Text className="text-11 text-text-muted">{known ? `${done} / ${total}` : '- / -'}</Text>
+              <Text className="text-11 text-text-muted">{known ? `${percent}%` : '-'}</Text>
             </View>
-          )}
+          </View>
         </View>
       </Modal.Card>
     </Modal>
