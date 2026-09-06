@@ -97,7 +97,7 @@ function Ring(props: { view: CrystalLimitView; sizePx: number }): React.JSX.Elem
         fixed
         testID="crystal-ring-numerator"
         style={{ fontSize: numeratorPx, lineHeight: numeratorPx * 0.92, ...TABULAR_NUMS }}
-        className="font-extrabold text-text"
+        className="font-bold text-text"
       >
         {props.view.cleared}
       </Text>

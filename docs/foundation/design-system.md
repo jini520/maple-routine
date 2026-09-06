@@ -510,11 +510,17 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 드롭다운·탭·카운트 배지를 **별도 카드로 묶지 않는다**(배경 위에 바로).
 ```
 탭 행: flex items-center gap-4
-활성 탭: rounded-full bg-primary-tint text-primary-ink px-3 py-[5px] text-sm font-semibold (배지 pill 재사용, 새 스타일 금지)
-비활성 탭: 배경 없음, text-sm font-medium text-text-muted, 좌우 패딩 활성과 동일(px-3)
+활성 탭: w-14 rounded-full bg-primary-tint text-primary-ink py-[5px] text-center text-sm font-semibold (배지 pill 재사용, 새 스타일 금지)
+비활성 탭: w-14 배경 없음, text-center text-sm font-medium text-text-muted (폭이 활성과 같다)
+필터 칩 변형(text-xs, 예 전체/솔로/파티): w-12 · py-1 · text-center, 나머지는 위와 같다
 카운트 배지(있는 화면만, 예 n/12): 같은 줄 justify-between 오른쪽 끝, rounded-full bg-primary-tint text-primary-ink text-xs font-semibold px-2.5 py-1
 ```
 활성/비활성 색 차이만으로는 저채도 팔레트에서 약해 배경 pill 필수(굵기 차이만으로 대체 금지). 기능 전용 변형(솔로/파티 필터·보스 수익 네비게이터)은 각 feature 문서.
+
+**폭을 값으로 못박는 것이 규칙이다**(좌우 `px-3` 이 아니라). 안드로이드는 상자가 글자 폭과 정확히
+같으면 그릴 때 뒷 음절을 다음 줄로 넘기고, 그 줄은 한 줄 높이에 가려 사라진다(`주간` 이 `주` 로
+보였다). 두 음절이 `text-sm` 에서 24.2dp 라 `w-14`(56dp)면 남는다. 덤으로 탭을 오갈 때 알약 폭이
+안 흔들린다. 라벨을 세 음절 이상으로 바꾸면 폭도 함께 볼 것([[ADR-225]] 결정 2).
 
 ### 스크롤 영역: 화면이 스크롤을 소유하고, **고정되는 영역은 없다** ([[ADR-099]] · [[ADR-131]])
 

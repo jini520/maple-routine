@@ -242,6 +242,19 @@ describe('주간 본문의 띠 둘', () => {
     expect(getByTestId('accordion-band-count').props.children).toBe(`1 / ${WEEKLY_BOSS_CLEAR_LIMIT}`)
   })
 
+  // 알약이 글자 폭에 딱 붙으면 안드로이드가 그릴 때 뒷 음절을 다음 줄로 넘기고, 그 줄은 알약
+  // 높이에 가려 사라진다(`주간` 이 `주` 로 보였다. 실측: 여유 1.3px 면 잘리고 3.3px 면 안 잘린다).
+  // 폭이 값이라 안전한 것은 **안쪽 글자가 `fixed`** 라 OS 글자 배수를 안 따르기 때문이다. 둘은 같이 산다.
+  it('띠 알약은 폭이 못박혀 있고 글자는 배수를 안 따른다', async () => {
+    const { getByText } = await renderProfit(<WeeklyAccordionBody rows={[보스행()]} />)
+
+    const 라벨 = getByText('주간')
+    expect(라벨.props.allowFontScaling).toBe(false)
+    expect(flattenStyle(라벨.parent?.props.style)).toMatchObject({ width: 36 })
+    // 가운데 정렬은 글자 쪽이 한다. 알약에 `items-center` 를 주면 여유가 도로 사라진다.
+    expect(flattenStyle(라벨.props.style).textAlign).toBe('center')
+  })
+
   // 오른쪽에 아무것도 안 적는다(사용자 지정). 그 줄이 한도 밖이라는 것은 띠가 갈라 놓은 것으로
   // 충분하고, 그 이상은 화면이 규칙을 설명하려 드는 것이다.
   it('월간 띠 오른쪽에는 수를 안 적는다', async () => {

@@ -18,7 +18,13 @@
     "ios": {
       "bundleIdentifier": "com.mapleroutine.app",
       "buildNumber": "13",
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "CFBundleDevelopmentRegion": "ko",
+        "CFBundleLocalizations": [
+          "ko"
+        ]
+      }
     },
     "android": {
       "package": "com.mapleroutine.app",
@@ -54,31 +60,26 @@
           "android": {
             "fonts": [
               {
-                "fontFamily": "Pretendard",
+                "fontFamily": "Noto Sans KR",
                 "fontDefinitions": [
                   {
-                    "path": "./assets/fonts/Pretendard-Regular.ttf",
+                    "path": "./assets/fonts/NotoSansKR-Regular.ttf",
                     "weight": 400,
                     "style": "normal"
                   },
                   {
-                    "path": "./assets/fonts/Pretendard-Medium.ttf",
+                    "path": "./assets/fonts/NotoSansKR-Medium.ttf",
                     "weight": 500,
                     "style": "normal"
                   },
                   {
-                    "path": "./assets/fonts/Pretendard-SemiBold.ttf",
+                    "path": "./assets/fonts/NotoSansKR-SemiBold.ttf",
                     "weight": 600,
                     "style": "normal"
                   },
                   {
-                    "path": "./assets/fonts/Pretendard-Bold.ttf",
+                    "path": "./assets/fonts/NotoSansKR-Bold.ttf",
                     "weight": 700,
-                    "style": "normal"
-                  },
-                  {
-                    "path": "./assets/fonts/Pretendard-ExtraBold.ttf",
-                    "weight": 800,
                     "style": "normal"
                   }
                 ]

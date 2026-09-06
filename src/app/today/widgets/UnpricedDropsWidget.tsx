@@ -55,7 +55,7 @@ function CountBadge(props: { count: number; sizePx: number; textPx: number }): R
       <Text
         fixed
         style={[TABULAR_NUMS, { fontSize: props.textPx }]}
-        className="font-extrabold text-text"
+        className="font-bold text-text"
         // 세 자리가 넘어도 배지 크기는 안 바뀐다. 원이 커지면 옆 글자가 밀린다.
         numberOfLines={1}
         adjustsFontSizeToFit
@@ -176,7 +176,7 @@ export function UnpricedDropsWidget({ w, h, data }: WidgetProps): React.JSX.Elem
   if (variant === 'tiny') {
     return (
       <View testID="widget-unpriced-drops" className="flex-1 items-center justify-center gap-1 p-2">
-        <Text fixed style={TABULAR_NUMS} className="text-lg font-extrabold text-text">
+        <Text fixed style={TABULAR_NUMS} className="text-lg font-bold text-text">
           {count}
         </Text>
         <Text fixed numberOfLines={1} className="text-[9.5px] text-text-muted">

@@ -94,7 +94,7 @@ export function PartySizeModal(props: {
                 {props.cycleLabel}
               </Text>
               <Text
-                className="text-xl font-extrabold tracking-[-.02em] text-text"
+                className="text-xl font-bold tracking-[-.02em] text-text"
                 style={ILLUSTRATION_TEXT_SHADOW_STYLE}
               >
                 {props.bossName}

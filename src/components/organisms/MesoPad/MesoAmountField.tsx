@@ -49,7 +49,7 @@ export function MesoAmountField(props: {
   unitPicker?: React.ReactNode
 }): React.JSX.Element {
   const mesoHelpers = props.mesoHelpers ?? true
-  const amountClass = `text-32 font-bold leading-none tracking-[-.03em] ${
+  const amountClass = `text-32 font-bold leading-snug tracking-[-.03em] ${
     props.meso === 0 ? 'text-text-disabled' : 'text-text'
   }`
   return (

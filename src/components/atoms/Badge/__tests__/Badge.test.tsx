@@ -135,10 +135,11 @@ describe('난이도 variant: 그라디언트·테두리·그림자', () => {
     expect(flattenStyle(chaos.getByText('카오스').props.style).textShadowColor).toBeUndefined()
   })
 
-  it('난이도는 두께가 extrabold 다', async () => {
+  // 800 은 안 쓴다. 안드로이드가 그 굵기에서 잰 폭보다 넓게 그려 뒷 음절을 잃는다.
+  it('난이도는 두께가 bold 다. 앱이 쓰는 최대 굵기다', async () => {
     const { getByText } = await renderAtom(<Badge variant="하드">하드</Badge>)
 
-    expect(flattenStyle(getByText('하드').props.style).fontWeight).toBe('800')
+    expect(flattenStyle(getByText('하드').props.style).fontWeight).toBe('700')
   })
 })
 

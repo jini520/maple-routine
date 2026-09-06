@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 이 앱이 지원하는 언어는 한국어 하나다. 선언해 두지 않으면 기기 언어가 영어일 때
+     안드로이드가 앱의 로케일을 기본(영어)으로 잡고, 앱 안의 시스템 문구까지 영어로 그린다
+     (입력칸 길게 눌렀을 때 나오는 `잘라내기 · 복사 · 붙여넣기`). -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+  <locale android:name="ko"/>
+</locale-config>
