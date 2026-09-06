@@ -12,27 +12,23 @@ import equipmentItems from '../../data/equipment-items.json'
 
 interface EquipmentItem {
   name: string
-  set: string | null
   level: number | null
 }
 
-/** API 는 `아케인셰이드 나이트햇` 처럼 띄어 주고 표는 붙여 쓴다. 그대로 맞추면 한 건도 안 걸린다. */
+/**
+ * API 는 `아케인셰이드 나이트햇` 처럼 띄어 주고 표는 붙여 쓴다. 들어오는 쪽의 공백을 지워 맞춘다.
+ *
+ * 1년치 실제 장비 132종에서 공백을 지웠을 때 겹치는 이름이 **한 건도 없다.** 그래서 이 정규화가
+ * 두 아이템을 하나로 뭉개지 않는다.
+ */
 function normalize(name: string): string {
   return name.replace(/\s/g, '')
 }
 
-const SET_LEVEL = new Map<string, number>(
-  (equipmentItems.sets as { name: string; level: number | null }[])
-    .filter((entry): entry is { name: string; level: number } => entry.level !== null)
-    .map((entry) => [entry.name, entry.level]),
-)
-
-// 개별 레벨이 없으면 세트 레벨이 받는다. 세트 한 줄로 수십 종이 채워진다.
 const LEVEL_BY_NAME = new Map<string, number>()
 for (const item of equipmentItems.items as EquipmentItem[]) {
-  const level = item.level ?? (item.set === null ? null : (SET_LEVEL.get(item.set) ?? null))
-  if (level !== null) {
-    LEVEL_BY_NAME.set(item.name, level)
+  if (item.level !== null) {
+    LEVEL_BY_NAME.set(item.name, item.level)
   }
 }
 
