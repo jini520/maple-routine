@@ -1,4 +1,4 @@
-import { collectEnhancementHistory, planEnhancementHistory } from '../collect'
+import { collectEnhancementHistory, measureEnhancementHistory, planEnhancementHistory } from '../collect'
 
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
 jest.mock('../../../nexon/history/client', () => ({ fetchEnhancementHistory: jest.fn() }))
@@ -73,6 +73,65 @@ describe('계획', () => {
 
   it('내일 이후는 안 센다', async () => {
     expect(await planEnhancementHistory(['2026-09-07'], '2026-09-06')).toHaveLength(0)
+  })
+})
+
+// 층이 이것으로 두 가지를 정한다. 모달을 띄울지(`hasPast`)와 **진행 바의 분모**(`total`)다.
+// 분모를 회차 안에서 다시 세면 바가 모달보다 늦게 뜬다.
+describe('회차 크기 미리 재기', () => {
+  const 굳음 = (dateKeys: string[]) =>
+    new Map(
+      dateKeys.flatMap((dateKey) =>
+        KINDS.map((kind) => [`${kind}|${dateKey}`, { nextCursor: null, settled: true }] as const),
+      ),
+    )
+
+  it('원장이 비어 있으면 전부 할 일이다', async () => {
+    expect(await measureEnhancementHistory(['2026-09-04', '2026-09-05'], NOW)).toEqual({
+      total: 6,
+      hasPast: true,
+    })
+    expect(fetchEnhancementHistory).not.toHaveBeenCalled()
+  })
+
+  it('지난 날이 전부 굳었으면 안 띄운다', async () => {
+    store.loadEnhancementChecks.mockResolvedValue(굳음(['2026-09-04', '2026-09-05']))
+
+    expect(await measureEnhancementHistory(['2026-09-04', '2026-09-05'], NOW)).toEqual({
+      total: 0,
+      hasPast: false,
+    })
+  })
+
+  // 오늘은 굳을 수 없어 어느 회차에나 든다. 세면 이미 받아 둔 달로 돌아올 때도 참이 된다.
+  // 다만 **분모에는 든다**. 그 셋도 실제로 부르는 일이다.
+  it('오늘만 남으면 분모는 있고 모달은 없다', async () => {
+    store.loadEnhancementChecks.mockResolvedValue(굳음(['2026-09-05']))
+
+    expect(await measureEnhancementHistory(['2026-09-05', '2026-09-06'], NOW)).toEqual({
+      total: 3,
+      hasPast: false,
+    })
+  })
+
+  // 월간 격자는 앞뒤 달의 날을 함께 그린다. 지난 달에서 한 칸 더 물러나면 꼬리에 **이미 받아 둔
+  // 다음 달**의 며칠이 들어오는데, 굳은 칸이 하나라도 있나 로 물으면 처음 여는 달에서 모달이 영영
+  // 안 뜬다(실기기 2026-09-07).
+  it('이웃 달의 굳은 칸이 꼬리에 섞여 있어도 띄운다', async () => {
+    store.loadEnhancementChecks.mockResolvedValue(굳음(['2026-09-01', '2026-09-02']))
+
+    const grid = ['2026-08-30', '2026-08-31', '2026-09-01', '2026-09-02']
+    expect(await measureEnhancementHistory(grid, NOW)).toEqual({ total: 6, hasPast: true })
+  })
+
+  // 격자 꼬리의 미래 날짜는 계획이 이미 뺀다. 분모에도 안 든다.
+  it('아직 오지 않은 날은 안 센다', async () => {
+    store.loadEnhancementChecks.mockResolvedValue(굳음(['2026-09-05']))
+
+    expect(await measureEnhancementHistory(['2026-09-05', '2026-09-07', '2026-09-08'], NOW)).toEqual({
+      total: 0,
+      hasPast: false,
+    })
   })
 })
 

@@ -1,7 +1,12 @@
 // 불러오는 중은 **층이 말한다**. 하위 화면은 자기 스피너를 갖지 않는다.
 import { act, waitFor } from '@testing-library/react-native'
 
-const mockLedger = { status: 'ready' as 'idle' | 'filling' | 'ready', revision: 1, reload: jest.fn() }
+const mockLedger = {
+  status: 'ready' as 'idle' | 'filling' | 'ready',
+  knownLong: false,
+  revision: 1,
+  reload: jest.fn(),
+}
 jest.mock('../../features/ledger/useLedgerData', () => ({
   useLedgerData: () => mockLedger,
 }))
@@ -13,6 +18,7 @@ import { LedgerLoadingModal } from '../LedgerLoadingModal'
 beforeEach(() => {
   jest.useFakeTimers()
   mockLedger.status = 'ready'
+  mockLedger.knownLong = false
   useLedgerProgress.getState().reset()
 })
 
@@ -51,6 +57,33 @@ it('오래 걸리는 회차에는 뜬다', async () => {
     expect(view.getByTestId('loading-modal')).toBeTruthy()
   })
   expect(view.getByText('기록을 불러오고 있어요')).toBeTruthy()
+})
+
+// 층이 시작 전에 원장을 읽어 오래 걸릴 것을 이미 안 회차다. 답을 아는데 문턱을 더 걸면
+// 사용자가 빈 격자를 반 초 더 본다(사용자 보고).
+describe('미리 잰 회차', () => {
+  it('문턱을 안 끌고 곧장 뜬다', async () => {
+    mockLedger.status = 'filling'
+    mockLedger.knownLong = true
+
+    const view = await renderOverlay(<LedgerLoadingModal />)
+
+    expect(view.getByTestId('loading-modal')).toBeTruthy()
+  })
+
+  it('회차가 끝나면 걷힌다', async () => {
+    mockLedger.status = 'filling'
+    mockLedger.knownLong = true
+    const view = await renderOverlay(<LedgerLoadingModal />)
+
+    mockLedger.status = 'ready'
+    mockLedger.knownLong = false
+    await act(async () => {
+      view.rerender(<LedgerLoadingModal />)
+    })
+
+    expect(view.queryByTestId('loading-modal')).toBeNull()
+  })
 })
 
 // **십수 초를 견디게 하는 것은 남은 양이 보이는 것**이다.
