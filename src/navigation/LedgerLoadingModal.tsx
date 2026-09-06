@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react'
 
 import { LoadingModal } from '../components/organisms/LoadingModal/LoadingModal'
 import { useLedgerData } from '../features/ledger/useLedgerData'
+import { useLedgerProgress } from '../features/ledger/progress'
 
 /**
  * 이만큼 끌고 나서야 띄운다.
@@ -19,6 +20,10 @@ const SHOW_AFTER_MS = 400
 
 export function LedgerLoadingModal(): React.JSX.Element | null {
   const { status } = useLedgerData()
+  // 진행은 **별도 스토어**다. 층 프로바이더의 state 에 두면 작업 하나가 끝날 때마다 탭
+  // 내비게이터가 통째로 다시 그려진다(첫 진입이면 84번).
+  const done = useLedgerProgress((state) => state.done)
+  const total = useLedgerProgress((state) => state.total)
   const [slow, setSlow] = useState(false)
 
   useEffect(() => {
@@ -33,5 +38,12 @@ export function LedgerLoadingModal(): React.JSX.Element | null {
   }, [status])
 
   if (status !== 'filling' || !slow) return null
-  return <LoadingModal message="보스 수익을 불러오고 있어요" />
+  return (
+    <LoadingModal
+      title="보스 수익을 불러오고 있어요"
+      detail={total > 0 ? '지난 13일치를 받는 중이에요' : undefined}
+      done={done}
+      total={total}
+    />
+  )
 }

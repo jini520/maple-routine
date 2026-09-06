@@ -82,18 +82,32 @@ export function __resetWindowFailuresForTest(): void {
 }
 
 /**
+ * 진행을 알리는 통로. **분모는 한 콜도 나가기 전에 확정**되고 도는 중에 안 늘어난다.
+ *
+ * @param done 끝난 날짜 수. 실패도 센다
+ * @param total 부를 날짜 수
+ */
+export type WindowProgress = (done: number, total: number) => void
+
+/**
  * 창을 채운다. **오늘은 안 부른다** (`date=오늘` 이 400 이라 라이브 동기화가 맡는다).
  *
  * 던지지 않는다. 못 채운 날짜는 원장에 안 남아 다음 회차가 다시 온다.
  */
-export async function fillScheduleWindow(ocids: readonly string[], now: Date): Promise<void> {
+export async function fillScheduleWindow(
+  ocids: readonly string[],
+  now: Date,
+  onProgress?: WindowProgress,
+): Promise<void> {
   if (ocids.length === 0) {
     lastFailures = []
+    onProgress?.(0, 0)
     return
   }
 
   const authConfig = await getAuthConfig()
   if (authConfig === null) {
+    onProgress?.(0, 0)
     return
   }
 
@@ -112,6 +126,9 @@ export async function fillScheduleWindow(ocids: readonly string[], now: Date): P
       jobs.push({ ocid, dateKey })
     }
   }
+
+  // 분모가 여기서 확정된다. 부를 것이 없어도 한 번은 알린다(화면이 바를 안 그리게).
+  onProgress?.(0, jobs.length)
 
   // 이 회차에 못 부르게 된 캐릭터. 400 OPENAPI00003 은 영구라 남은 날짜를 부를 이유가 없다.
   const unavailable = new Set<string>()
@@ -141,7 +158,7 @@ export async function fillScheduleWindow(ocids: readonly string[], now: Date): P
     }
 
     await recordScheduleProbe(ocid, dateKey, { kind: 'observed', ...toProbeObservation(state) })
-  })
+  }, (done) => onProgress?.(done, jobs.length))
 
   lastFailures = failures
 }

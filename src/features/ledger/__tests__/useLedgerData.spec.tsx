@@ -50,7 +50,7 @@ it('부모가 마운트되면 창만 채운다. 라이브는 안 부른다', asy
   const view = await 그리기()
 
   await waitFor(() => {
-    expect(syncMock).toHaveBeenCalledWith(['o1', 'o2'], expect.any(Date))
+    expect(syncMock).toHaveBeenCalledWith(['o1', 'o2'], expect.any(Date), expect.any(Function))
   })
   await waitFor(() => {
     expect(view.getByTestId('probe')).toHaveTextContent('ready:1')

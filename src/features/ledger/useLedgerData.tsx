@@ -20,6 +20,7 @@ import {
 
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { useBossProfitStore } from '../boss-profit/store'
+import { useLedgerProgress } from './progress'
 import { syncScheduleWindow } from '../schedule-window/sync'
 
 export interface LedgerDataState {
@@ -74,6 +75,9 @@ export function LedgerDataProvider(props: {
    * 로 이미 맡고 있어, 여기서 또 부르면 진입마다 조회가 두 번 나간다.
    */
   const run = useCallback(async (live: boolean) => {
+    const progress = useLedgerProgress.getState()
+    progress.reset()
+
     const ocids = await getTrackedCharacterOcids().catch(() => null)
     if (ocids !== null && ocids.length > 0) {
       if (live) {
@@ -82,9 +86,15 @@ export function LedgerDataProvider(props: {
           .refresh(ocids, { inPlace: true })
           .catch(() => undefined)
       }
-      await syncScheduleWindow(ocids, new Date()).catch(() => undefined)
+      // 칸은 창이 자기 분모를 알리는 순간 잡힌다. 그 전까지 분모가 0 이라 바가 안 그려진다.
+      let slot: number | null = null
+      await syncScheduleWindow(ocids, new Date(), (done, total) => {
+        if (slot === null) slot = useLedgerProgress.getState().start(total)
+        useLedgerProgress.getState().advance(slot, done)
+      }).catch(() => undefined)
     }
     if (!alive.current) return
+    progress.reset()
     setStatus('ready')
     setRevision((value) => value + 1)
   }, [])

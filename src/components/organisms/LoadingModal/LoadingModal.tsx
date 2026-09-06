@@ -9,21 +9,50 @@
  */
 import { View } from 'react-native'
 
-import { Text } from '../../atoms'
+import { ProgressBar, Text } from '../../atoms'
 import { MapleSweepSpinner } from '../../atoms/Spinner/MapleSweepSpinner'
 import { Modal } from '../Modal/Modal'
 
 export interface LoadingModalProps {
-  message: string
+  title: string
+  /** 왜 오래 걸리는지. 없으면 안 그린다 */
+  detail?: string
+  /** 끝난 작업 수 */
+  done?: number
+  /**
+   * 해야 할 작업 수. **0 이면 바를 안 그린다.**
+   *
+   * 분모가 정해지기 전(원장 읽는 몇십 밀리초)이 있다. 그때 `0 / 0` 을 그리면 다 끝난 것처럼
+   * 보이고 나눗셈도 성립하지 않는다.
+   */
+  total?: number
 }
 
 export function LoadingModal(props: LoadingModalProps): React.JSX.Element {
+  const total = props.total ?? 0
+  const done = props.done ?? 0
+  const percent = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0
+
   return (
     <Modal onClose={() => {}} align="center" testId="loading-modal">
       <Modal.Card maxWidth="max-w-xs">
-        <View className="items-center gap-3 py-2">
-          <MapleSweepSpinner size={32} className="text-primary" />
-          <Text className="text-center text-sm text-text-muted">{props.message}</Text>
+        <View className="items-center gap-3.5">
+          <MapleSweepSpinner size={36} className="text-primary" />
+          <View className="items-center gap-1">
+            <Text className="text-center text-15 font-semibold text-text">{props.title}</Text>
+            {props.detail !== undefined && (
+              <Text className="text-center text-xs text-text-muted">{props.detail}</Text>
+            )}
+          </View>
+          {total > 0 && (
+            <View testID="loading-modal-progress" className="w-full gap-1.5">
+              <ProgressBar percent={percent} aria={{ now: done, max: total }} />
+              <View className="flex-row justify-between">
+                <Text className="text-11 text-text-muted">{`${done} / ${total}`}</Text>
+                <Text className="text-11 text-text-muted">{`${percent}%`}</Text>
+              </View>
+            </View>
+          )}
         </View>
       </Modal.Card>
     </Modal>

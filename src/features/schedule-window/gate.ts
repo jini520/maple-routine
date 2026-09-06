@@ -15,15 +15,18 @@
  * 멈추면 안 되기 때문이다.
  *
  * @param limit 1 이상. 배열 길이보다 커도 된다
+ * @param onDone 작업 하나가 끝날 때마다 **끝난 수**를 받는다. 진행률의 분자이고 실패도 센다
  * @example const seen = await mapWithLimit(days, 6, (day) => probe(day))
  */
 export async function mapWithLimit<T, R>(
   items: readonly T[],
   limit: number,
   task: (item: T, index: number) => Promise<R>,
+  onDone?: (done: number) => void,
 ): Promise<(R | undefined)[]> {
   const results: (R | undefined)[] = new Array(items.length)
   let next = 0
+  let done = 0
 
   async function worker(): Promise<void> {
     for (;;) {
@@ -35,6 +38,8 @@ export async function mapWithLimit<T, R>(
       } catch {
         results[index] = undefined
       }
+      done += 1
+      onDone?.(done)
     }
   }
 

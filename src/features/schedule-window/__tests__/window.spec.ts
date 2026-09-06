@@ -166,3 +166,26 @@ describe('실패를 가른다', () => {
     expect(recordProbeMock).not.toHaveBeenCalled()
   })
 })
+
+// 진행률의 재료. 분모는 **한 콜도 나가기 전에** 확정되고 도는 중에 안 늘어난다.
+describe('진행을 알린다', () => {
+  it('부를 날짜 수를 먼저 알리고, 하나씩 끝날 때마다 올린다', async () => {
+    const seen: { done: number; total: number }[] = []
+
+    await fillScheduleWindow(['o1'], NOW, (done, total) => seen.push({ done, total }))
+
+    expect(seen[0]).toEqual({ done: 0, total: 13 })
+    expect(seen.at(-1)).toEqual({ done: 13, total: 13 })
+    // 분모는 처음부터 끝까지 같다.
+    expect(new Set(seen.map((entry) => entry.total))).toEqual(new Set([13]))
+  })
+
+  it('부를 것이 없으면 0 으로 알린다', async () => {
+    getLedgerMock.mockResolvedValue({ unavailable: true, dates: {} })
+    const seen: { done: number; total: number }[] = []
+
+    await fillScheduleWindow(['o1'], NOW, (done, total) => seen.push({ done, total }))
+
+    expect(seen).toEqual([{ done: 0, total: 0 }])
+  })
+})

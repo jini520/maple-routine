@@ -39,6 +39,19 @@ describe('mapWithLimit', () => {
     expect(task).not.toHaveBeenCalled()
   })
 
+  // 진행률의 분자다. **실패도 센다.** 사용자가 기다리는 것은 `시도가 몇 개 남았나` 이고,
+  // 실패한 것은 다음 회차의 분모로 간다.
+  it('작업이 끝날 때마다 끝난 수를 알린다', async () => {
+    const seen: number[] = []
+
+    await mapWithLimit([1, 2, 3], 2, async (n) => {
+      if (n === 2) throw new Error('boom')
+      return n
+    }, (done) => seen.push(done))
+
+    expect(seen).toEqual([1, 2, 3])
+  })
+
   // 한 날짜가 실패해도 나머지 날짜는 계속 나가야 한다. 실패는 부르는 쪽이 값으로 받는다.
   it('하나가 던져도 나머지를 멈추지 않는다', async () => {
     const out = await mapWithLimit([1, 2, 3], 2, async (n) => {

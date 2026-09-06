@@ -9,7 +9,7 @@
  */
 import { resolveDefeatDates } from '../boss-profit/defeat-dates'
 import { recordBossProfitFromWindow } from './records'
-import { fillScheduleWindow } from './window'
+import { fillScheduleWindow, type WindowProgress } from './window'
 
 /**
  * 지금 도는 회차. 겹쳐 부르는 쪽이 이것을 나눠 쓴다.
@@ -28,11 +28,15 @@ let inFlight: Promise<void> | null = null
  * 겹쳐 부르면 **같은 회차를 나눠 쓴다.** 두 화면이 같은 순간에 부를 수 있고, 그때 같은 날짜가 두
  * 번 나가면 안 된다.
  */
-export async function syncScheduleWindow(ocids: readonly string[], now: Date): Promise<void> {
+export async function syncScheduleWindow(
+  ocids: readonly string[],
+  now: Date,
+  onProgress?: WindowProgress,
+): Promise<void> {
   if (inFlight !== null) {
     return inFlight
   }
-  inFlight = runSyncScheduleWindow(ocids, now).finally(() => {
+  inFlight = runSyncScheduleWindow(ocids, now, onProgress).finally(() => {
     inFlight = null
   })
   return inFlight
@@ -46,8 +50,12 @@ export async function syncScheduleWindow(ocids: readonly string[], now: Date): P
  * 뿐 서로의 성공을 필요로 하지 않는다. 채우기가 실패해도 **이미 원장에 있는 것으로** 기록을
  * 굳힐 수 있다.
  */
-async function runSyncScheduleWindow(ocids: readonly string[], now: Date): Promise<void> {
-  await fillScheduleWindow(ocids, now).catch(() => undefined)
+async function runSyncScheduleWindow(
+  ocids: readonly string[],
+  now: Date,
+  onProgress?: WindowProgress,
+): Promise<void> {
+  await fillScheduleWindow(ocids, now, onProgress).catch(() => undefined)
   await recordBossProfitFromWindow(ocids, now).catch(() => undefined)
   await resolveDefeatDates(ocids, now).catch(() => undefined)
 }
