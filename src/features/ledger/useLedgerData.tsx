@@ -47,6 +47,14 @@ export interface LedgerDataState {
   requestDateRange: (range: CashbookRange) => void
 }
 
+/**
+ * 회차 도중에 화면을 다시 읽히는 간격.
+ *
+ * `revision` 이 컨텍스트 값이라 오를 때마다 층이 통째로 다시 그려진다. 칸마다 올리면 105번이고,
+ * 아예 안 올리면 회차가 끝날 때까지 빈 달력이다. 그 사이를 이 값이 잡는다.
+ */
+const REVISION_FLUSH_MS = 600
+
 const IDLE: LedgerDataState = {
   status: 'idle',
   revision: 0,
@@ -93,6 +101,21 @@ export function LedgerDataProvider(props: {
     const progress = useLedgerProgress.getState()
     progress.reset()
 
+    /**
+     * 들어온 것을 **회차 도중에** 화면에 흘린다. 끝에서 한 번만 올리면 지난 달로 옮긴 사용자가
+     * 105콜이 다 끝날 때까지 빈 달력을 본다.
+     *
+     * 묶어서 올리는 이유는 `revision` 이 컨텍스트 값이라 오를 때마다 층이 통째로 다시 그려지기
+     * 때문이다. 칸마다 올리면 105번이다.
+     */
+    let lastFlushedAt = 0
+    const flush = (): void => {
+      const now = Date.now()
+      if (now - lastFlushedAt < REVISION_FLUSH_MS) return
+      lastFlushedAt = now
+      if (alive.current) setRevision((value) => value + 1)
+    }
+
     const ocids = await getTrackedCharacterOcids().catch(() => null)
     if (live && ocids !== null && ocids.length > 0) {
       await useBossProfitStore
@@ -114,9 +137,12 @@ export function LedgerDataProvider(props: {
       ocids !== null && ocids.length > 0
         ? syncScheduleWindow(ocids, new Date(), slotOf()).catch(() => undefined)
         : Promise.resolve(),
-      collectEnhancementHistory(datesBetween(range.from, range.to), new Date(), slotOf()).catch(
-        () => undefined,
-      ),
+      collectEnhancementHistory(
+        datesBetween(range.from, range.to),
+        new Date(),
+        slotOf(),
+        flush,
+      ).catch(() => undefined),
     ])
 
     if (!alive.current) return
@@ -135,12 +161,17 @@ export function LedgerDataProvider(props: {
     await run(true, range.current)
   }, [run])
 
+  /**
+   * 기간을 옮겼다. **모달을 안 띄운다.**
+   *
+   * 사용자가 달력을 보려고 옮긴 것인데 그 위를 모달이 덮으면 105콜이 끝날 때까지 아무것도 못
+   * 본다. 값은 들어오는 대로 `revision` 을 타고 칸에 붙으므로, 채워지는 것 자체가 진행 표시다.
+   */
   const requestDateRange = useCallback(
     (next: CashbookRange) => {
       // 같은 범위를 두 번 말하는 것이 정상이다. 화면이 다시 그릴 때마다 부른다.
       if (next.from === range.current.from && next.to === range.current.to) return
       range.current = next
-      setStatus('filling')
       void run(false, next)
     },
     [run],

@@ -188,3 +188,55 @@ describe('강화 사용 내역', () => {
     expect(collectMock).not.toHaveBeenCalled()
   })
 })
+
+// 끝에서 한 번만 올리면 지난 달로 옮긴 사용자가 105콜이 다 끝날 때까지 빈 달력을 본다.
+describe('들어오는 대로 반영한다', () => {
+  function RangeProbe(props: { from: string; to: string }): React.JSX.Element {
+    const { revision, requestDateRange } = useLedgerData()
+    return (
+      <>
+        <Text testID="rev">{String(revision)}</Text>
+        <Text testID="range" onPress={() => requestDateRange({ from: props.from, to: props.to })}>
+          범위
+        </Text>
+      </>
+    )
+  }
+
+  it('회차 도중에도 회차 표가 오른다', async () => {
+    // 수집기가 한 칸을 끝낼 때마다 부르는 통로. 흘린 시각이 멀면 그때마다 오른다.
+    collectMock.mockImplementation(
+      async (_days: string[], _now: Date, _progress: unknown, landed: () => void) => {
+        landed()
+        await new Promise((resolve) => setTimeout(resolve, 700))
+        landed()
+      },
+    )
+    const view = await 그리기()
+
+    // 도중 둘 + 끝 하나. 끝에서만 올렸다면 `ready:1` 이다.
+    await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('ready:3'))
+  })
+
+  // 달력을 보려고 옮긴 것인데 그 위를 모달이 덮으면 아무것도 못 본다.
+  it('기간을 옮겨도 모달을 안 띄운다', async () => {
+    const view = await render(
+      <LedgerDataProvider>
+        <RangeProbe from="2026-01-01" to="2026-01-03" />
+        <Probe />
+      </LedgerDataProvider>,
+    )
+    await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('ready:1'))
+
+    let resolve = (): void => undefined
+    collectMock.mockImplementation(() => new Promise<void>((done) => (resolve = () => done())))
+    await act(async () => {
+      fireEvent.press(view.getByTestId('range'))
+    })
+
+    expect(view.getByTestId('probe')).toHaveTextContent('ready:1')
+    await act(async () => {
+      resolve()
+    })
+  })
+})

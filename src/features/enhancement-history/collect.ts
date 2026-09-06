@@ -42,6 +42,13 @@ export interface EnhancementHistoryJob {
 export type HistoryProgress = (done: number, total: number) => void
 
 /**
+ * 한 칸이 DB 에 들어갔다. 화면이 **회차가 끝나기 전에** 그것을 읽게 하는 통로다.
+ *
+ * 끝날 때 한 번만 알리면 지난 달로 옮긴 사용자가 105콜이 다 끝날 때까지 빈 달력을 본다.
+ */
+export type HistoryLanded = () => void
+
+/**
  * 부를 `(종류, 날짜)` 를 센다. **콜이 한 건도 안 나간다.**
  *
  * 굳은 칸은 뺀다. 그래서 지난 달 두 번째 방문이 0콜이다. 오늘은 굳을 수 없어 언제나 든다.
@@ -104,6 +111,7 @@ export async function collectEnhancementHistory(
   dateKeys: readonly string[],
   now: Date,
   onProgress?: HistoryProgress,
+  onLanded?: HistoryLanded,
 ): Promise<void> {
   const authConfig = await getAuthConfig()
   if (authConfig === null) {
@@ -136,6 +144,7 @@ export async function collectEnhancementHistory(
       const firstCursor = await collectOne(authConfig.apiKey, job)
       const settled = job.dateKey < todayDateKey && eventNames !== null
       await markEnhancementChecked(job.kind, job.dateKey, firstCursor, settled, checkedAt)
+      onLanded?.()
     },
     (done) => onProgress?.(done, jobs.length),
   )
