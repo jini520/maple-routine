@@ -43,7 +43,7 @@ export function NoticeBanner(): React.JSX.Element | null {
   const Chevron = expanded ? ChevronUpIcon : ChevronDownIcon
 
   return (
-    <View testID="today-notice-banner" className="border-y border-border bg-surface px-4 py-3">
+    <View testID="today-notice-banner" className="bg-surface px-4 py-3">
       <Pressable
         role="button"
         aria-label={notice.title}
