@@ -21,6 +21,7 @@ import {
   WEEKLY_BOSS_CLEAR_LIMIT,
 } from '../../lib/boss/boss-matching'
 import { isChallengersWorld } from '../../lib/assets/asset-lookup'
+import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import type { BossDifficulty } from '../../types'
 
 import { Badge, Text } from '../../components/atoms'
@@ -71,7 +72,8 @@ const MONTHLY_BOSSES = toListEntries(weeklyBossesData.monthly as BossReferenceEn
 export function BossManageScreen(): React.JSX.Element {
   const {
     status,
-    characters,
+    characters: storeCharacters,
+    trackedOcids,
     partySizes,
     manualTrackedByOcid,
     loadTrackedOcids,
@@ -97,7 +99,12 @@ export function BossManageScreen(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // 스토어가 내는 것은 기준 순서(레벨 내림차순)이고 화면 순서는 캐릭터 관리에서 정한 배열이다.
+  // 스케줄러 화면과 같은 함수를 통과시켜야 두 화면의 레일이 같은 차례로 선다.
+  const characters = orderByTracked(storeCharacters, trackedOcids ?? [])
+
   // 화면 넷이 **같은 규칙**으로 고른다. 폴백을 화면마다 두면 공유했는데 화면마다 다른 캐릭터가 된다.
+  // 넘기는 목록이 화면 순서여야 한다. 폴백이 그 첫 번째다.
   const selected = resolveSelectedCharacter(selectedOcid, characters)
 
   // 링 없는 초상화 레일. 이름과 레벨만 싣는다(`rings: []`).
