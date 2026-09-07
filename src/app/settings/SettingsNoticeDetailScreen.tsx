@@ -5,7 +5,9 @@
  * 알림에서 온 경로와 목록에서 온 경로가 같은 것을 그리게 하는 방법이 그것뿐이다. 본문을
  * 파라미터로 넘기면 두 경로가 서로 다른 내용을 그릴 수 있다.
  *
- * 그래서 서버가 죽어도 이 화면은 열린다.
+ * 그래서 서버가 죽어도 이 화면은 열린다. **서버는 그 위에 얹는다** - 푸시는 4KB 상한 때문에
+ * 본문이 잘려 올 수 있고, 조회가 그 자리를 온전한 것으로 덮는다. 조회가 실패하면 잘린 채로
+ * 보이지 빈 화면이 되지 않는다.
  */
 import { useEffect, useState } from 'react'
 import { Linking, Pressable, View } from 'react-native'
@@ -22,7 +24,8 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
-import { getNotices } from '../../storage/notices'
+import { fetchNotice } from '../../server/notices'
+import { getNotices, mergeNotices } from '../../storage/notices'
 import type { Notice } from '../../types/notice'
 
 function formatDate(publishedAt: string): string {
@@ -41,11 +44,28 @@ export function SettingsNoticeDetailScreen(props: {
   const [notice, setNotice] = useState<Notice | null | undefined>(undefined)
 
   useEffect(() => {
+    let alive = true
+
     // `noticeId` 가 없어도 같은 비동기 경로로 답한다. 여기서 곧장 `setNotice(null)` 하면
     // 렌더 도중에 상태가 바뀌어 한 번 더 그린다.
-    void getNotices().then((all) => {
-      setNotice(noticeId === undefined ? null : (all.find((n) => n.id === noticeId) ?? null))
-    })
+    void getNotices()
+      .then((all) => {
+        const local = noticeId === undefined ? null : (all.find((n) => n.id === noticeId) ?? null)
+        if (alive) setNotice(local)
+        // 로컬에 없어도 조회한다. 알림을 안 탭해 안 쌓인 공지를 목록에서 열 수 있다.
+        return noticeId === undefined ? null : fetchNotice(noticeId)
+      })
+      .then(async (remote) => {
+        if (remote === null) return
+        // 받은 김에 기기에도 남긴다. 다음에는 서버 없이 열린다.
+        await mergeNotices([remote])
+        if (alive) setNotice(remote)
+      })
+      .catch(() => undefined)
+
+    return () => {
+      alive = false
+    }
   }, [noticeId])
 
   return (

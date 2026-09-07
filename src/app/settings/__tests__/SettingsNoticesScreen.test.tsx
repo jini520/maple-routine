@@ -4,22 +4,30 @@
 // ② 목록은 저장소가 준 것을 그대로 그린다. 화면이 다시 정렬하지 않는다.
 // ③ 행을 누르면 상세로 밀되 **`noticeId` 만** 넘긴다. 본문을 넘기면 알림에서 온 경로와
 //    목록에서 온 경로가 서로 다른 내용을 그릴 수 있다.
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, waitFor } from '@testing-library/react-native'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { useNoticeStore } from '../../../features/notice/store'
-import { getNotices } from '../../../storage/notices'
+import { fetchNotices } from '../../../server/notices'
+import { getNotices, mergeNotices } from '../../../storage/notices'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 import { SettingsNoticesScreen } from '../SettingsNoticesScreen'
 import type { Notice } from '../../../types/notice'
 
-jest.mock('../../../storage/notices', () => ({ __esModule: true, getNotices: jest.fn() }))
+jest.mock('../../../storage/notices', () => ({
+  __esModule: true,
+  getNotices: jest.fn(),
+  mergeNotices: jest.fn(async () => {}),
+}))
+jest.mock('../../../server/notices', () => ({ __esModule: true, fetchNotices: jest.fn(async () => []) }))
 jest.mock('../../../hooks/useSettingsNavigation', () => ({
   __esModule: true,
   useSettingsNavigation: jest.fn(),
 }))
 
 const notices = jest.mocked(getNotices)
+const remote = jest.mocked(fetchNotices)
+const merge = jest.mocked(mergeNotices)
 const navigate = jest.fn()
 const goBack = jest.fn()
 
@@ -30,6 +38,8 @@ function notice(id: string, title: string, publishedAt: string): Notice {
 beforeEach(() => {
   jest.clearAllMocks()
   notices.mockResolvedValue([])
+  remote.mockResolvedValue([])
+  merge.mockResolvedValue(undefined)
   jest.mocked(useSettingsNavigation).mockReturnValue({ navigate, goBack } as never)
   useNoticeStore.setState({
     subscribed: false,
@@ -115,5 +125,37 @@ describe('권한이 없어 막혔을 때', () => {
 
     expect(view.getByLabelText('알림 권한 설정 열기')).toBeTruthy()
     expect(view.getByText('기기에서 알림이 꺼져 있어요')).toBeTruthy()
+  })
+})
+
+describe('서버 보강', () => {
+  // 푸시는 배경에서 도착만 한 공지를 못 쌓는다. 그 구멍을 이 조회가 메운다.
+  it('서버 것을 받아 기기에 합친다', async () => {
+    const 서버것 = notice('server-1', '서버에서 온 공지', '2026-09-09T00:00:00Z')
+    remote.mockResolvedValue([서버것])
+    notices.mockResolvedValueOnce([]).mockResolvedValue([서버것])
+
+    const view = await renderOverlay(<SettingsNoticesScreen />)
+
+    await waitFor(() => expect(merge).toHaveBeenCalledWith([서버것]))
+    await waitFor(() => expect(view.getByText('서버에서 온 공지')).toBeTruthy())
+  })
+
+  // 조회 실패가 화면 전체의 실패가 되면 안 된다. 로컬 것은 그대로 보여야 한다.
+  it('조회가 실패해도 로컬 것을 그린다', async () => {
+    remote.mockRejectedValue(new Error('offline'))
+    notices.mockResolvedValue([notice('local-1', '기기에 있던 공지', '2026-09-01T00:00:00Z')])
+
+    const view = await renderOverlay(<SettingsNoticesScreen />)
+
+    expect(view.getByText('기기에 있던 공지')).toBeTruthy()
+  })
+
+  it('서버가 빈손이면 합치지 않는다', async () => {
+    remote.mockResolvedValue([])
+
+    await renderOverlay(<SettingsNoticesScreen />)
+
+    expect(merge).not.toHaveBeenCalled()
   })
 })
