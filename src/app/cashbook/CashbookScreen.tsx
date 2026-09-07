@@ -120,13 +120,11 @@ function PeriodTab(props: {
       aria-selected={props.selected}
       onPress={props.onPress}
     >
-      {/* `w-14` 를 빼지 말 것. 빼면 상자가 자기 글자 폭과 정확히 같아지고, 안드로이드가 그릴 때
-          뒷 음절이 다음 줄로 넘어가 한 줄 높이에 가려 사라진다(`주간` 이 `주` 로 보였다). */}
       <Text
         className={
           props.selected
-            ? 'w-14 rounded-full bg-primary-tint py-[5px] text-center text-sm font-semibold text-primary-ink'
-            : 'w-14 text-center text-sm font-medium text-text-muted'
+            ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
+            : 'px-3 text-sm font-medium text-text-muted'
         }
       >
         {props.label}
@@ -923,15 +921,12 @@ export function CashbookScreen(): React.JSX.Element {
             />
             {/* 윗줄이 상대 표현(`이번 주`·`지난 달`), 아랫줄이 언제나 정확한 날짜다. 라벨은
                 `formatBossProfitPeriodLabel` 을 그대로 부른다. 보스 수익 탭과 같은 `periodKey` 를
-                쓰므로 두 하위 탭이 한 어법으로 기간을 말하게 된다.
+                쓰므로 두 하위 탭이 한 어법으로 기간을 말하게 된다. */}
 
-                윗줄의 `self-stretch` 를 빼지 말 것. 빼면 상자가 자기 글자 폭과 정확히 같아지고,
-                안드로이드가 그릴 때 마지막 낱말이 다음 줄로 넘어가 한 줄 높이에 가려 사라진다
-                (`지난 달` 이 `지난` 으로 보였다). 늘려 두면 상자가 아랫줄(날짜)의 폭이라 20dp 남는다. */}
             <View className="items-center">
               <Text
                 testID="cashbook-period-label"
-                className="self-stretch text-center text-sm font-semibold text-text"
+                className="text-sm font-semibold text-text"
               >
                 {periodLabel.primary}
               </Text>

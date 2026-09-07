@@ -68,17 +68,10 @@ function SectionBand(props: { label: string; count?: string; monthly?: boolean }
         monthly ? 'bg-primary-tint' : 'bg-surface-2'
       }`}
     >
-      {/* `w-9` 를 빼지 말 것. 빼면 알약이 글자 폭에 딱 붙고, 안드로이드가 그릴 때 뒷 음절이 다음
-          줄로 넘어가 알약 높이에 가려 사라진다(`주간` 이 `주` 로 보였다. 실측: 여유 1.3px 면 잘리고
-          3.3px 면 안 잘린다). 두 음절이 17.3dp 라 36dp 면 12px 남는다. 안쪽 글자가 `fixed` 라
-          OS 글자 배수를 안 따르므로 폭을 값으로 못박아도 넘치지 않는다.
-
-          가운데 정렬은 글자 쪽 `text-center` 로 한다. 여기에 `items-center` 를 주면 글자 상자가
-          다시 글자 폭으로 줄어 방금 만든 여유가 사라진다. */}
-      <View className="h-[18px] w-9 justify-center rounded-full bg-surface px-[7px]">
+      <View className="h-[18px] justify-center rounded-full bg-surface px-[7px]">
         <Text
           fixed
-          className={`text-center text-chip-sm font-bold ${
+          className={`text-chip-sm font-bold ${
             monthly ? 'text-primary-ink' : 'text-text-muted'
           }`}
         >
