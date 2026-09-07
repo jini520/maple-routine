@@ -63,6 +63,9 @@ export function installNoopNativePorts(): void {
   setPushPort({
     subscribe: async () => {},
     unsubscribe: async () => {},
+    addMessageListener: () => () => {},
+    addOpenedListener: () => () => {},
+    getInitialNotification: async () => null,
   })
 
   setBackGesturePort({

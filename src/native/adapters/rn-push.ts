@@ -15,9 +15,16 @@
  * 네이티브 모듈을 잡아, 포트 주입보다 먼저 평가되는 자리에서 던진다.
  */
 
-import { getMessaging, subscribeToTopic, unsubscribeFromTopic } from '@react-native-firebase/messaging'
+import {
+  getInitialNotification,
+  getMessaging,
+  onMessage,
+  onNotificationOpenedApp,
+  subscribeToTopic,
+  unsubscribeFromTopic,
+} from '@react-native-firebase/messaging'
 
-import type { PushPort } from '../ports'
+import type { PushData, PushPort } from '../ports'
 
 export const rnPushPort: PushPort = {
   async subscribe(topic) {
@@ -26,4 +33,28 @@ export const rnPushPort: PushPort = {
   async unsubscribe(topic) {
     await unsubscribeFromTopic(getMessaging(), topic)
   },
+  addMessageListener(handler) {
+    return onMessage(getMessaging(), (message) => handler(toData(message.data)))
+  },
+  addOpenedListener(handler) {
+    return onNotificationOpenedApp(getMessaging(), (message) => handler(toData(message.data)))
+  },
+  async getInitialNotification() {
+    const message = await getInitialNotification(getMessaging())
+    return message === null ? null : toData(message.data)
+  },
+}
+
+/**
+ * `data` 를 문자열 지도로 좁힌다.
+ *
+ * 타입은 `{ [key: string]: string | number | object }` 인데 FCM 이 실제로 싣는 것은 문자열뿐이다.
+ * 그래도 좁히는 이유는 서버가 실수로 다른 것을 실었을 때 화면까지 흘러가지 않게 하려는 것이다.
+ */
+function toData(data: Record<string, unknown> | undefined): PushData {
+  const out: PushData = {}
+  for (const [key, value] of Object.entries(data ?? {})) {
+    if (typeof value === 'string') out[key] = value
+  }
+  return out
 }

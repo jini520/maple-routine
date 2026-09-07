@@ -113,7 +113,26 @@ export interface NotificationsPort {
 export interface PushPort {
   subscribe(topic: string): Promise<void>
   unsubscribe(topic: string): Promise<void>
+  /**
+   * 앱이 **앞에 있을 때** 도착한 메시지. 해제 함수를 돌려준다.
+   *
+   * 이 자리가 따로 있는 이유. FCM 은 포그라운드에서 알림을 OS 에 안 넘기고 JS 로만 준다.
+   * 여기서 안 받으면 앱을 켜 둔 채로 온 공지가 통째로 사라진다.
+   */
+  addMessageListener(handler: (data: PushData) => void): () => void
+  /** 알림을 **탭해서** 앱이 앞으로 나왔을 때. 해제 함수를 돌려준다. */
+  addOpenedListener(handler: (data: PushData) => void): () => void
+  /**
+   * **죽어 있던 앱**을 알림 탭으로 연 경우 그 알림. 아니면 `null`.
+   *
+   * 한 번만 답한다. 이미 소비한 뒤에는 `null` 이다. 그래서 부팅 흐름에서 딱 한 번 읽어야 하고,
+   * 두 곳에서 읽으면 뒤에 읽는 쪽이 빈손이 된다.
+   */
+  getInitialNotification(): Promise<PushData | null>
 }
+
+/** 푸시가 실어 오는 `data`. FCM 이 값을 전부 문자열로만 받는다. */
+export type PushData = Record<string, string>
 
 export interface BackProgressEvent {
   /** 0~1. 시스템이 계산한 제스처 진행률. */

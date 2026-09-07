@@ -3,6 +3,7 @@ import { getMessaging, setBackgroundMessageHandler } from '@react-native-firebas
 
 import App from './App'
 import { installPorts } from './src/boot'
+import { receiveNotice } from './src/features/notice/receive'
 import { holdSplashUntilAppReady } from './src/boot-splash'
 
 // 포트 주입은 **저장소·네이티브를 건드리는 어떤 코드보다 먼저** 와야 한다 — 웹 쪽
@@ -23,9 +24,18 @@ holdSplashUntilAppReady()
 // 나중에 더할 수 없다 - 그때는 OS 가 이 앱에 그런 진입점이 있다는 것을 모른다. 그래서 스토어에
 // 나가는 바이너리에 자리부터 박아 두고, 무엇을 할지는 JS 가 나중에 채운다.
 //
-// 지금 몸통이 빈 이유: 공지는 `notification` 페이로드로 오고 그것은 OS 가 직접 그린다. JS 가
-// 깨지 않아도 알림이 뜬다. 몸통이 필요해지는 것은 data-only 를 보내기 시작할 때다.
-setBackgroundMessageHandler(getMessaging(), async () => {})
+// 몸통은 받은 것을 기기에 쌓는 일 하나다. 화면은 안 민다. 사용자가 앱을 안 보고 있다.
+//
+// **지금은 거의 안 불린다.** 공지가 `notification` 페이로드로 오고 그런 메시지는 OS 가 직접
+// 그리며 JS 를 안 깨우기 때문이다. 그래도 등록해 두는 이유는 자리가 네이티브 요건이라 나중에
+// 못 더하기 때문이고, data-only 를 섞어 보내기 시작하면 그날부터 이 몸통이 일한다.
+setBackgroundMessageHandler(getMessaging(), async (message) => {
+  const data: Record<string, string> = {}
+  for (const [key, value] of Object.entries(message.data ?? {})) {
+    if (typeof value === 'string') data[key] = value
+  }
+  await receiveNotice(data).catch(() => undefined)
+})
 
 // registerRootComponent 이 AppRegistry.registerComponent('main', () => App) 를 대신한다.
 registerRootComponent(App)
