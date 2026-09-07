@@ -100,6 +100,21 @@ export interface NotificationsPort {
   getPendingCount(): Promise<number>
 }
 
+/**
+ * 원격 푸시의 토픽 구독. **여기 있는 것이 둘뿐인 것이 이 포트의 설계다.**
+ *
+ * 무엇을 언제 왜 보낼지는 서버가 정하고 앱은 어느 토픽을 듣는지만 안다. 등록 토큰은 다루지
+ * 않는다. 토큰을 서버에 올리는 순간 사용자 식별자 저장소가 생기고 만료 정리와 개인정보 분류가
+ * 따라오는데, 지금 보내려는 알림 중 사람을 가려 보내야 하는 것이 없다.
+ *
+ * 권한은 여기 없다. `NotificationsPort.requestPermission` 이 든다. OS 가 보는 알림 권한이 로컬과
+ * 원격을 안 가리는 하나라, 두 자리에서 물으면 같은 팝업이 두 번 뜬다.
+ */
+export interface PushPort {
+  subscribe(topic: string): Promise<void>
+  unsubscribe(topic: string): Promise<void>
+}
+
 export interface BackProgressEvent {
   /** 0~1. 시스템이 계산한 제스처 진행률. */
   progress: number
@@ -239,6 +254,7 @@ const statusBarSlot = createPortSlot<StatusBarPort>('StatusBarPort')
 const systemBarsSlot = createPortSlot<SystemBarsPort>('SystemBarsPort')
 const keyboardSlot = createPortSlot<KeyboardPort>('KeyboardPort')
 const notificationsSlot = createPortSlot<NotificationsPort>('NotificationsPort')
+const pushSlot = createPortSlot<PushPort>('PushPort')
 const backGestureSlot = createPortSlot<BackGesturePort>('BackGesturePort')
 const liveUpdateSlot = createPortSlot<LiveUpdatePort>('LiveUpdatePort')
 
@@ -266,6 +282,9 @@ export const getKeyboardPort = keyboardSlot.get
 export const setNotificationsPort = notificationsSlot.set
 export const getNotificationsPort = notificationsSlot.get
 
+export const setPushPort = pushSlot.set
+export const getPushPort = pushSlot.get
+
 export const setBackGesturePort = backGestureSlot.set
 export const getBackGesturePort = backGestureSlot.get
 
@@ -283,6 +302,7 @@ export function __resetNativePortsForTest(): void {
     systemBarsSlot,
     keyboardSlot,
     notificationsSlot,
+    pushSlot,
     backGestureSlot,
     liveUpdateSlot,
   ]) {

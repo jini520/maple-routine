@@ -8,24 +8,33 @@
 > [../persistence/preferences.md](../persistence/preferences.md) · [settings.md](./settings.md) ·
 > [live-update.md](./live-update.md)
 
-> **현재 상태 (2026-08-17): 설계 완료, 구현 전.**
+> **현재 상태 (2026-09-07): 푸시 능력을 싣는 중. 알림 종류는 여전히 0개.**
 >
-> 지금 저장소에 있는 것은 `NotificationsPort` 와 두 어댑터뿐이고 **그 포트를 부르는 `features/`
-> 코드는 없다.** 이 문서는 **만들 것을 적은 것이지 있는 것을 적은 것이 아니다.**
+> `PushPort` 와 `rn-push.ts` 가 들어왔다. 능력만 싣는 것이라 **무엇을 언제 왜 띄우는가는 아직
+> 한 줄도 없다.** 그 판정은 [[ADR-146]] 결정 1 대로 JS 에 살고 OTA 로 온다.
+>
+> **아직 검증되지 않은 것이 배달이다.** 발송기가 FCM 인증과 페이로드 검증까지는 통과했지만
+> (2026-09-07), 구독한 기기가 없어 실제로 배달되는지는 확인 전이다. 실기기에서 한 번 받아 보는
+> 것이 이 기능의 진짜 검증점이다.
 
 ## 관련 소스 (만들 것 포함)
 
 | 구분 | 파일 | 상태 |
 |---|---|---|
 | 포트 | `src/native/ports.ts` 의 `NotificationsPort` | 있다 |
-| 포트 | 같은 파일의 `PushPort` · `BackgroundTaskPort` | **신설 예정** |
-| 포트 | `src/native/notifications.ts` · `push.ts` · `background-task.ts` | 앞의 하나만 있다 |
+| 포트 | 같은 파일의 `PushPort` | **있다**(구독·해제 둘뿐) |
+| 포트 | 같은 파일의 `BackgroundTaskPort` | **신설 예정** |
+| 포트 | `src/native/notifications.ts` · `push.ts` | 둘 다 있다 |
+| 포트 | `src/native/background-task.ts` | **신설 예정** |
 | 상태 | `src/features/notifications/` | **신설 예정.** 레지스트리 · 계획 · 재조정 · store |
 | 저장 | `src/storage/notification-settings.ts` · `notification-ledger.ts` | **신설 예정** |
 | 어댑터 | `src/native/adapters/rn-notifications.ts` | 있다 |
-| 어댑터 | 같은 폴더의 `rn-push.ts` · `rn-background-task.ts` | **신설 예정** |
-| 진입점 | `index.ts` | 모듈 최상위 핸들러 셋을 여기 둔다 |
-| 서버 | 자체 호스팅(별도 저장소) | **`workers/notice-push/` 는 안 만든다**([[ADR-227]] 결정 5). 발송은 집 미니 PC 가 한다 |
+| 어댑터 | 같은 폴더의 `rn-push.ts` | **있다** |
+| 어댑터 | 같은 폴더의 `rn-background-task.ts` | **신설 예정** |
+| 진입점 | `index.ts` | 백그라운드 메시지 핸들러 **있다**. 나머지 둘은 신설 예정 |
+| 설정 | `app.json` 의 `@react-native-firebase/app` 플러그인 | **있다** |
+| 설정 | `android/app/google-services.json` · `ios/GoogleService-Info.plist` | **있다** |
+| 서버 | 자체 호스팅(별도 저장소) | **`workers/notice-push/` 는 안 만든다**([[ADR-227]] 결정 5). 발송은 집 미니 PC 가 한다. **아직 없다** |
 
 **관련 ADR**: [[ADR-146]] · [[ADR-227]](발송자가 Cloudflare Worker 에서 자체 호스팅 서버로) ·
 [[ADR-004]] · [[ADR-008]] · [[ADR-003]] · [[ADR-128]] · [[ADR-137]]

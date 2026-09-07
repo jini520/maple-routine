@@ -35,6 +35,13 @@ jest.mock('@notifee/react-native', () => ({
   ...jest.requireActual('@notifee/react-native/dist/types/Trigger'),
 }))
 
+jest.mock('@react-native-firebase/messaging', () => ({
+  __esModule: true,
+  getMessaging: () => ({}),
+  subscribeToTopic: async () => {},
+  unsubscribeFromTopic: async () => {},
+}))
+
 jest.mock('react-native-google-mobile-ads', () => ({
   __esModule: true,
   default: () => ({ initialize: async () => {} }),
@@ -55,6 +62,7 @@ import { rnNotificationsPort } from '../native/adapters/rn-notifications'
 import { rnSplashScreenPort } from '../native/adapters/rn-splash-screen'
 import { rnStatusBarPort } from '../native/adapters/rn-status-bar'
 import { rnSystemBarsPort } from '../native/adapters/rn-system-bars'
+import { rnPushPort } from '../native/adapters/rn-push'
 import { rnThemeAppearancePort } from '../native/adapters/rn-theme-appearance'
 import { rnPreferencesPort } from '../storage/adapters/rn-preferences'
 import { rnSqlitePort } from '../storage/adapters/rn-sqlite'
@@ -67,6 +75,7 @@ const WIRED: [string, () => unknown, unknown][] = [
   ['getColorSchemePort', nativePorts.getColorSchemePort, rnColorSchemePort],
   ['getKeyboardPort', nativePorts.getKeyboardPort, rnKeyboardPort],
   ['getNotificationsPort', nativePorts.getNotificationsPort, rnNotificationsPort],
+  ['getPushPort', nativePorts.getPushPort, rnPushPort],
   ['getSplashScreenPort', nativePorts.getSplashScreenPort, rnSplashScreenPort],
   ['getStatusBarPort', nativePorts.getStatusBarPort, rnStatusBarPort],
   ['getSystemBarsPort', nativePorts.getSystemBarsPort, rnSystemBarsPort],
@@ -93,7 +102,7 @@ describe('installPorts()', () => {
       /^get[A-Za-z]+Port$/.test(key),
     )
 
-    expect(declared.length).toBe(12)
+    expect(declared.length).toBe(13)
     expect([...declared].sort()).toEqual(WIRED.map(([name]) => name).sort())
   })
 

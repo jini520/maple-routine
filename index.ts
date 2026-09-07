@@ -1,4 +1,5 @@
 import { registerRootComponent } from 'expo'
+import { getMessaging, setBackgroundMessageHandler } from '@react-native-firebase/messaging'
 
 import App from './App'
 import { installPorts } from './src/boot'
@@ -17,6 +18,14 @@ installPorts()
 // ( — 근거는 `boot-splash.ts`). 포트 주입 **뒤**여야 한다:
 // 실패 안전 타이머가 `SplashScreenPort` 를 거친다.
 holdSplashUntilAppReady()
+
+// **이 등록은 위치가 요건이다.** 모듈 최상위에 있어야 OS 가 죽은 앱을 깨울 때 핸들러를 찾는다.
+// 나중에 더할 수 없다 - 그때는 OS 가 이 앱에 그런 진입점이 있다는 것을 모른다. 그래서 스토어에
+// 나가는 바이너리에 자리부터 박아 두고, 무엇을 할지는 JS 가 나중에 채운다.
+//
+// 지금 몸통이 빈 이유: 공지는 `notification` 페이로드로 오고 그것은 OS 가 직접 그린다. JS 가
+// 깨지 않아도 알림이 뜬다. 몸통이 필요해지는 것은 data-only 를 보내기 시작할 때다.
+setBackgroundMessageHandler(getMessaging(), async () => {})
 
 // registerRootComponent 이 AppRegistry.registerComponent('main', () => App) 를 대신한다.
 registerRootComponent(App)

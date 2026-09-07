@@ -10,7 +10,7 @@
  * 지우지도 못한다. 남아 있으면 중복·유령 알림이 난다. 그 1회성 정리는 여기가 아니라 부팅 흐름의
  * 일이다.
  *
- * @see docs/features/notifications.md 서버 푸시 없이 로컬 알림만 쓰는 정책
+ * @see docs/features/notifications.md 로컬 알림과 원격 푸시가 갈라지는 자리
  */
 
 import notifee, { AuthorizationStatus, type NotificationSettings } from '@notifee/react-native'
