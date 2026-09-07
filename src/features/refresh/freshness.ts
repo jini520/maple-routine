@@ -1,43 +1,41 @@
 /**
- * 페이지가 마지막으로 데이터를 부른 시각. 헤더 아래 한 줄이 이 값을 그린다.
+ * 화면 머리 아래 한 줄이 읽는 값. **실시간 데이터를 마지막으로 받은 시각 하나**다.
  *
- * **페이지 단위인 것이 요점이다.** 스케줄러 둘은 고른 캐릭터의 `syncedAt` 을 적고 있었는데 그
- * 값은 캐릭터를 바꾸면 뛴다. today 는 스토어 넷을 읽으면서 그중 하나의 시각만 적고 있었다.
- * 페이지가 언제 갱신됐나 를 묻는 줄이라 답도 페이지 것이어야 한다.
+ * 페이지마다 따로 재지 않는다. 화면 다섯이 같은 실시간 원천(스케줄러 회차 · 오늘 강화)을
+ * 공유하므로, 페이지마다 재면 같은 한 번의 조회로 그린 데이터인데 값이 갈린다.
  *
- * **적는 자리는 화면이다.** 화면이 데이터를 부르는 함수가 끝나는 곳에서 적는다. 진입 조회가
- * 게이트에 막혀 실제로 안 나간 회차에도 적히므로 이 값은 **최대 그 게이트만큼 낙관적**이다
- * (10분). 정확히 재려면 스토어 넷이 실제로 나갔는가 를 같은 모양으로 내야 한다.
+ * **적는 자리는 둘뿐이다.** `syncSchedules` 의 회차 하나(스케줄러 + `character/basic`)와,
+ * 오늘이 든 범위의 강화 내역 조회. 기기 DB 읽기와 과거 기간 조회는 여기 안 닿는다.
  */
 import { create } from 'zustand'
 
-import {
-  getDataFetchedAt,
-  setDataFetchedAt,
-  type FreshnessMap,
-  type FreshnessPage,
-} from '../../storage/data-freshness'
-
-export type { FreshnessPage } from '../../storage/data-freshness'
+import { getRealtimeFetchedAt, setRealtimeFetchedAt } from '../../storage/data-freshness'
 
 interface DataFreshnessState {
-  fetchedAt: FreshnessMap
-  /** 저장된 맵을 상태에 올린다. 부팅이 한 번 부른다. */
+  /** ISO 8601. 받은 적이 없으면 `null` 이고 그때는 그 줄을 안 그린다. */
+  fetchedAt: string | null
+  /** 저장된 값을 상태에 올린다. 부팅이 한 번 부른다. */
   restore: () => Promise<void>
-  /** 지금을 그 페이지의 시각으로 적는다. */
-  markFetched: (page: FreshnessPage) => Promise<void>
+  /** 실시간 조회가 끝났다고 알린다. */
+  markRealtimeFetch: (fetchedAt: string) => Promise<void>
 }
 
-export const useDataFreshness = create<DataFreshnessState>()((set) => ({
-  fetchedAt: {},
+export const useDataFreshness = create<DataFreshnessState>()((set, get) => ({
+  fetchedAt: null,
   async restore() {
     // 실패해도 던지지 않는다. 줄 하나가 안 그려질 뿐이고 부팅을 막을 일이 아니다.
-    set({ fetchedAt: await getDataFetchedAt().catch(() => ({})) })
+    set({ fetchedAt: await getRealtimeFetchedAt().catch(() => null) })
   },
-  async markFetched(page) {
-    const now = new Date().toISOString()
-    // 화면이 먼저 바뀐다. 저장이 늦거나 실패해도 방금 받은 것은 방금 받은 것이다.
-    set((state) => ({ fetchedAt: { ...state.fetchedAt, [page]: now } }))
-    await setDataFetchedAt(page, now).catch(() => undefined)
+  async markRealtimeFetch(fetchedAt) {
+    const at = new Date(fetchedAt).getTime()
+    if (Number.isNaN(at)) return
+
+    // **뒤로 안 간다.** 회차에 합류한 호출이 같은 결과를 들고 한 번 더 알리고, 실패한 캐릭터는
+    // 캐시의 옛 `syncedAt` 을 들고 온다. 큰 쪽만 남긴다.
+    const current = get().fetchedAt
+    if (current !== null && new Date(current).getTime() >= at) return
+
+    set({ fetchedAt })
+    await setRealtimeFetchedAt(fetchedAt).catch(() => undefined)
   },
 }))

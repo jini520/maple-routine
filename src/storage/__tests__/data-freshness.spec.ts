@@ -1,5 +1,5 @@
 import { installFakePreferences } from './fake-preferences'
-import { getDataFetchedAt, setDataFetchedAt } from '../data-freshness'
+import { getRealtimeFetchedAt, setRealtimeFetchedAt } from '../data-freshness'
 
 let prefs = installFakePreferences()
 
@@ -8,34 +8,28 @@ beforeEach(async () => {
   await prefs.remove('dataFetchedAt')
 })
 
-describe('페이지별 데이터 호출 시각', () => {
-  it('적은 적이 없으면 빈 맵', async () => {
-    await expect(getDataFetchedAt()).resolves.toEqual({})
+describe('실시간 데이터를 마지막으로 받은 시각', () => {
+  it('적은 적이 없으면 null', async () => {
+    await expect(getRealtimeFetchedAt()).resolves.toBeNull()
   })
 
   it('적은 것을 읽는다', async () => {
-    await setDataFetchedAt('cashbook', '2026-09-08T05:03:22.000Z')
+    await setRealtimeFetchedAt('2026-09-08T05:03:22.000Z')
 
-    await expect(getDataFetchedAt()).resolves.toEqual({ cashbook: '2026-09-08T05:03:22.000Z' })
+    await expect(getRealtimeFetchedAt()).resolves.toBe('2026-09-08T05:03:22.000Z')
   })
 
-  it('같은 페이지를 다시 적으면 덮는다', async () => {
-    await setDataFetchedAt('cashbook', '2026-09-08T05:00:00.000Z')
-    await setDataFetchedAt('cashbook', '2026-09-08T07:00:00.000Z')
+  it('다시 적으면 덮는다', async () => {
+    await setRealtimeFetchedAt('2026-09-08T05:00:00.000Z')
+    await setRealtimeFetchedAt('2026-09-08T07:00:00.000Z')
 
-    await expect(getDataFetchedAt()).resolves.toEqual({ cashbook: '2026-09-08T07:00:00.000Z' })
+    await expect(getRealtimeFetchedAt()).resolves.toBe('2026-09-08T07:00:00.000Z')
   })
 
-  it('깨진 값이면 빈 맵', async () => {
-    await prefs.set('dataFetchedAt', '{정상적인 JSON 이 아니다')
+  // 깨진 값 때문에 화면이 서지 않느니 줄 하나를 안 그리는 편이 낫다.
+  it('못 읽는 값이면 null', async () => {
+    await prefs.set('dataFetchedAt', '시각이 아니다')
 
-    await expect(getDataFetchedAt()).resolves.toEqual({})
-  })
-
-  // 페이지 목록이 줄어든 뒤에도 옛 키가 남아 있을 수 있다.
-  it('모르는 페이지와 문자열 아닌 값은 버린다', async () => {
-    await prefs.set('dataFetchedAt', JSON.stringify({ cashbook: '2026-09-08T05:00:00.000Z', 없는페이지: 'x', boss: 7 }))
-
-    await expect(getDataFetchedAt()).resolves.toEqual({ cashbook: '2026-09-08T05:00:00.000Z' })
+    await expect(getRealtimeFetchedAt()).resolves.toBeNull()
   })
 })

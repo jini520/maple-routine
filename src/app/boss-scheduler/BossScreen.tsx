@@ -22,6 +22,7 @@ import { resolveSelectedCharacter } from '../../features/character-selection/sel
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useScheduleSyncErrorToast } from '../../features/schedule-sync/use-sync-error-toast'
 import { useToastStore } from '../../features/toast/store'
+import { useDataFreshness } from '../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { getBossPortraitCrop, getBossPortraitUrl, isChallengersWorld } from '../../lib/assets/asset-lookup'
 import type { ImageCrop } from '../../lib/image-crop'
@@ -45,7 +46,6 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { ILLUSTRATION_TEXT_SHADOW_STYLE } from '../../constants/style/text-styles'
-import { latestSyncedAt } from '../../lib/data-freshness'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import { useOpenTab } from '../../hooks/useOpenTab'
@@ -168,13 +168,13 @@ export function BossScreen(): React.JSX.Element {
   const characters = orderByTracked(storeCharacters, trackedOcids ?? [])
 
   /**
-   * 헤더 아래 한 줄이 읽는 값. **적는 것이 아니라 그리는 데이터에서 읽는다.**
+   * 머리 아래 한 줄이 읽는 값. **실시간 데이터를 마지막으로 받은 시각 하나**다.
    *
-   * 화면이 자기 시계로 지금 을 적으면 조회가 10분 TTL 에 막혀 한 번도 안 나간 진입에도 시각이
-   * 갱신되고, 같은 한 번의 조회로 그린 데이터인데 페이지마다 값이 갈린다. `syncedAt` 은
-   * 회차가 **실제로 돈 자리**에서만 적히고 스케줄러 캐시에 영속된다.
+   * 페이지마다 따로 재지 않는다. 화면 다섯이 같은 실시간 원천을 공유하므로, 따로 재면 같은 한
+   * 번의 조회로 그린 데이터인데 값이 갈린다. 적는 자리는 `syncSchedules` 회차와 오늘이 든 강화
+   * 조회 둘뿐이고, 기기 DB 읽기와 과거 기간 조회는 거기 안 닿는다.
    */
-  const fetchedAt = latestSyncedAt(characters.map((character) => character.syncedAt))
+  const fetchedAt = useDataFreshness((state) => state.fetchedAt)
 
   // 화면 넷이 **같은 규칙**으로 고른다. 폴백을 화면마다 두면 공유했는데 화면마다 다른 캐릭터가 된다.
   const selected = resolveSelectedCharacter(selectedOcid, characters)

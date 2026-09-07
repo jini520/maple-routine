@@ -25,6 +25,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { View } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
 
+import { useDataFreshness } from '../../features/refresh/freshness'
 import { useNoticeBannerStore } from '../../features/notice/banner-store'
 import { useDropHistoryStore } from '../../features/boss-profit/drop-history-store'
 import { getBossDropRecordsRevision } from '../../storage/boss-drops'
@@ -42,7 +43,6 @@ import { DataFreshness } from '../../components/molecules/DataFreshness/DataFres
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { latestSyncedAt } from '../../lib/data-freshness'
 import { NoticeBanner } from './NoticeBanner'
 import { buildTodayViewModel } from './view-model'
 import { WidgetGrid } from './WidgetGrid'
@@ -189,17 +189,13 @@ export function TodayScreen(): React.JSX.Element {
   }, [orderedOcidsKey])
 
   /**
-   * 헤더 아래 한 줄이 읽는 값. **이 화면이 읽는 원천들 중 가장 최근 것**이다.
+   * 머리 아래 한 줄이 읽는 값. **실시간 데이터를 마지막으로 받은 시각 하나**다.
    *
-   * 그전에는 보스 수익 스토어의 `lastSyncedAt` 하나만 적어서 나머지가 언제 갱신됐는지가 화면
-   * 어디에도 없었다. 화면이 자기 시계로 지금 을 적는 길도 안 쓴다. 조회가 TTL 에 막혀 한 번도
-   * 안 나간 진입에도 시각이 갱신되고, 같은 조회로 그린 데이터인데 페이지마다 값이 갈린다.
+   * 페이지마다 따로 재지 않는다. 화면 다섯이 같은 실시간 원천을 공유하므로, 따로 재면 같은 한
+   * 번의 조회로 그린 데이터인데 값이 갈린다. 적는 자리는 `syncSchedules` 회차와 오늘이 든 강화
+   * 조회 둘뿐이고, 기기 DB 읽기와 과거 기간 조회는 거기 안 닿는다.
    */
-  const fetchedAt = latestSyncedAt([
-    ...content.characters.map((character) => character.syncedAt),
-    ...boss.characters.map((character) => character.syncedAt),
-    profit.lastSyncedAt,
-  ])
+  const fetchedAt = useDataFreshness((state) => state.fetchedAt)
 
   const viewModel = buildTodayViewModel({
     // 렌더당 한 번만 만든다. 두 번 부르면 두 시각이 기간 경계를 사이에 두고 갈려 카운트다운과

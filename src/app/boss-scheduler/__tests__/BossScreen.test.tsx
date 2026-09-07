@@ -9,6 +9,7 @@ import {
   type BossCharacterView,
   type BossSchedulerStore,
 } from '../../../features/boss-scheduler/store'
+import { useDataFreshness } from '../../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import weeklyBossesData from '../../../data/weekly-bosses.json'
 import { WEEKLY_BOSS_CLEAR_LIMIT, type MatchedBoss } from '../../../lib/boss/boss-matching'
@@ -176,6 +177,7 @@ beforeEach(() => {
 // 실물 스토어라 값이 파일 안에서 넘어가므로 테스트마다 되돌린다.
 beforeEach(() => {
   useCharacterSelectionStore.setState({ selectedOcid: null })
+  useDataFreshness.setState({ fetchedAt: null })
 })
 
 describe('BossScreen: 빈 상태와 마운트', () => {
@@ -523,24 +525,29 @@ describe('BossScreen: 재조회', () => {
 })
 
 describe('BossScreen: 갱신 시각', () => {
-  const withSyncedAt = (syncedAt: string | null): void => {
+  // **화면이 재지 않는다.** 실시간 조회(`syncSchedules` 회차 · 오늘이 든 강화)가 끝난 자리에서
+  // 적히는 값 하나를 다섯 화면이 함께 읽는다. 화면마다 재면 같은 한 번의 조회로 그린 데이터인데
+  // 값이 갈리고, 기기 DB 를 읽기만 한 진입에도 시각이 갱신된다.
+  it('실시간 조회 시각을 읽는다', async () => {
+    useDataFreshness.setState({ fetchedAt: '2026-09-08T05:03:22.000Z' })
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
-      characters: [{ ...character({ weeklyBosses: [boss()] }), syncedAt }],
+      characters: [character({ weeklyBosses: [boss()] })],
     })
-  }
-
-  // **적는 것이 아니라 그리는 데이터에서 읽는다**(컨텐츠 스케줄러와 같은 케이스).
-  it('캐릭터의 syncedAt 을 그대로 읽는다', async () => {
-    withSyncedAt('2026-09-08T05:03:22.000Z')
     await renderScreen()
 
     expect(screen.getByTestId('data-freshness')).toBeTruthy()
   })
 
+  // 제목에 딸린 작은 글씨다. 제목 **줄 안**에 있으면 폭을 다투고, 그때 줄어드는 것은 제목이다.
   it('제목 줄이 아니라 그 아래에 선다', async () => {
-    withSyncedAt('2026-09-08T05:03:22.000Z')
+    useDataFreshness.setState({ fetchedAt: '2026-09-08T05:03:22.000Z' })
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [character({ weeklyBosses: [boss()] })],
+    })
     await renderScreen()
 
     const line = screen.getByTestId('data-freshness')
@@ -548,8 +555,14 @@ describe('BossScreen: 갱신 시각', () => {
     expect(contains(screen.getByTestId('page-header'), line)).toBe(true)
   })
 
-  it('한 번도 동기화 안 했으면 줄 자체가 없다', async () => {
-    withSyncedAt(null)
+  // 빈 줄을 두면 제목 아래가 이유 없이 벌어진다.
+  it('받은 적이 없으면 줄 자체가 없다', async () => {
+    useDataFreshness.setState({ fetchedAt: null })
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [character({ weeklyBosses: [boss()] })],
+    })
     await renderScreen()
 
     expect(screen.queryByTestId('data-freshness')).toBeNull()

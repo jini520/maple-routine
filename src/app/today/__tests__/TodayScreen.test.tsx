@@ -18,6 +18,7 @@ import { useBossSchedulerStore, type BossCharacterView } from '../../../features
 import {
   useContentSchedulerStore,
   type ContentCharacterView } from '../../../features/content-scheduler/store'
+import { useDataFreshness } from '../../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import { formatMesoShort } from '../../../lib/boss/boss-profit-delta'
 import type { MatchedBoss } from '../../../lib/boss/boss-matching'
@@ -338,6 +339,7 @@ beforeEach(() => {
   mockedGetCachedCharacterBasic.mockResolvedValue(null)
   mockedNavigation.mockReturnValue({ navigate: jest.fn(), goBack: jest.fn() } as never)
   useTrackingModeStore.setState({ mode: 'auto' })
+  useDataFreshness.setState({ fetchedAt: null })
   setStores()
 })
 
@@ -545,12 +547,11 @@ describe('TodayScreen: 명시적 재조회', () => {
 })
 
 describe('TodayScreen: 갱신 시각', () => {
-  // 이 화면은 스토어 넷을 읽는다. 그전에는 그중 하나(보스 수익)의 `lastSyncedAt` 만 적어서
-  // 나머지가 언제 갱신됐는지가 화면 어디에도 없었다. 이제 **원천들 중 가장 최근 것**을 읽는다.
-  //
-  // 적는 것이 아니라 읽는 것이 요점이다. 화면이 자기 시계로 지금 을 적으면 조회가 TTL 에 막혀
-  // 한 번도 안 나간 진입에도 시각이 갱신되고, 같은 조회로 그린 데이터인데 페이지마다 값이 갈린다.
-  it('원천들의 syncedAt 을 읽는다', async () => {
+  // **화면이 재지 않는다.** 실시간 조회(`syncSchedules` 회차 · 오늘이 든 강화)가 끝난 자리에서
+  // 적히는 값 하나를 다섯 화면이 함께 읽는다. 이 화면은 스토어 넷을 읽는데, 그전에는 그중
+  // 하나(보스 수익)의 `lastSyncedAt` 만 적어 나머지가 언제 갱신됐는지가 화면에 없었다.
+  it('실시간 조회 시각을 읽는다', async () => {
+    useDataFreshness.setState({ fetchedAt: '2026-09-08T05:03:22.000Z' })
     setStores(캐릭터_넷)
 
     await renderScreen()
@@ -560,6 +561,7 @@ describe('TodayScreen: 갱신 시각', () => {
 
   // 제목에 딸린 작은 글씨다. 제목 **줄 안**에 있으면 폭을 다투고, 그때 줄어드는 것은 제목이다.
   it('제목 줄이 아니라 그 아래에 선다', async () => {
+    useDataFreshness.setState({ fetchedAt: '2026-09-08T05:03:22.000Z' })
     setStores(캐릭터_넷)
 
     await renderScreen()
@@ -570,7 +572,9 @@ describe('TodayScreen: 갱신 시각', () => {
   })
 
   // 빈 줄을 두면 제목 아래가 이유 없이 벌어진다.
-  it('한 번도 동기화 안 했으면 줄 자체가 없다', async () => {
+  it('받은 적이 없으면 줄 자체가 없다', async () => {
+    useDataFreshness.setState({ fetchedAt: null })
+
     await renderScreen()
 
     expect(screen.queryByTestId('data-freshness')).toBeNull()

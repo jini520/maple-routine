@@ -1,11 +1,13 @@
 /**
- * 마지막 데이터 호출 시각. **여기 적는 페이지는 자기 데이터에 시각이 없는 것뿐이다.**
+ * 넥슨 Open API 에서 **실시간 데이터**를 마지막으로 받은 시각.
  *
- * 스케줄러 캐시의 `syncedAt` 은 조회가 **실제로 돈 회차**에만 적히고 영속된다. 그 값을 가진
- * 페이지는 여기 안 적고 그것을 읽는다. 화면이 자기 시계로 지금 을 적으면 TTL 에 막혀 한 번도
- * 안 나간 진입에도 시각이 갱신되어, 같은 조회로 그린 데이터인데 페이지마다 값이 갈린다.
+ * 실시간인 것 셋만 이 값을 움직인다(사용자 지정). 스케줄러 데이터 · 오늘 날짜의 강화 데이터 ·
+ * `character/basic`. 앞의 둘은 조회가 실제로 돈 자리에서만 적히고 basic 은 스케줄러 회차가
+ * 함께 받는다.
  *
- * 남는 것이 가계부 하나다. 그 화면의 데이터는 원장 층에서 오는데 그 층이 조회 시각을 안 든다.
+ * **안 움직이는 것.** 기기 DB 에서 꺼낸 값 · 보스 수익과 가계부의 **과거 기간**. 과거 기간은
+ * Open API 를 부르더라도 이미 확정된 기록이라 실시간이 아니다. 그것으로 시각을 갱신하면
+ * 지난 달을 넘겨보기만 해도 방금 받은 데이터처럼 보인다.
  *
  * **영속한다.** 앱을 다시 켜도 화면이 그리는 것은 캐시에 있던 그 데이터인데, 시각만 비우면
  * 그 데이터가 언제 것인지 말할 방법이 사라진다.
@@ -13,37 +15,15 @@
 import { STORAGE_KEYS } from './keys'
 import { preferences } from './ports'
 
-/** 여기 적는 페이지. 자기 데이터에 시각이 없는 것만 든다. */
-export const FRESHNESS_PAGES = ['cashbook'] as const
-
-export type FreshnessPage = (typeof FRESHNESS_PAGES)[number]
-
-export type FreshnessMap = Readonly<Partial<Record<FreshnessPage, string>>>
-
-const PAGES: readonly string[] = FRESHNESS_PAGES
-
-/** 저장된 것이 없거나 깨졌으면 빈 맵. 모르는 키와 문자열 아닌 값은 버린다. */
-export async function getDataFetchedAt(): Promise<FreshnessMap> {
+/** 적은 적이 없거나 못 읽는 값이면 `null`. */
+export async function getRealtimeFetchedAt(): Promise<string | null> {
   const raw = await preferences.get(STORAGE_KEYS.dataFetchedAt)
-  if (raw === null) return {}
+  if (raw === null) return null
 
-  try {
-    const parsed: unknown = JSON.parse(raw)
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return {}
-
-    return Object.fromEntries(
-      Object.entries(parsed as Record<string, unknown>).filter(
-        ([page, at]) => PAGES.includes(page) && typeof at === 'string',
-      ),
-    ) as FreshnessMap
-  } catch {
-    // 깨진 값 때문에 화면이 서지 않느니 줄 하나를 안 그리는 편이 낫다.
-    return {}
-  }
+  // 깨진 값 때문에 화면이 서지 않느니 줄 하나를 안 그리는 편이 낫다.
+  return Number.isNaN(new Date(raw).getTime()) ? null : raw
 }
 
-/** 한 페이지의 시각을 적는다. 나머지 페이지는 그대로 둔다. */
-export async function setDataFetchedAt(page: FreshnessPage, fetchedAt: string): Promise<void> {
-  const next = { ...(await getDataFetchedAt()), [page]: fetchedAt }
-  await preferences.set(STORAGE_KEYS.dataFetchedAt, JSON.stringify(next))
+export async function setRealtimeFetchedAt(fetchedAt: string): Promise<void> {
+  await preferences.set(STORAGE_KEYS.dataFetchedAt, fetchedAt)
 }

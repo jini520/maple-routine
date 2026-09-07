@@ -51,6 +51,7 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
+import { useDataFreshness } from '../../features/refresh/freshness'
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { useLedgerData } from '../../features/ledger/useLedgerData'
@@ -88,7 +89,6 @@ export function BossProfitScreen(): React.JSX.Element {
     trackedOcids,
     loadTrackedOcids,
     refresh,
-    lastSyncedAt,
     setTab,
     goToPreviousPeriod,
     goToNextPeriod,
@@ -116,12 +116,13 @@ export function BossProfitScreen(): React.JSX.Element {
   const navigation = useScreenNavigation()
   const openTab = useOpenTab()
   /**
-   * 헤더 아래 한 줄이 읽는 값. **스토어가 이미 진짜 시각을 든다.**
+   * 머리 아래 한 줄이 읽는 값. **실시간 데이터를 마지막으로 받은 시각 하나**다.
    *
-   * 동기화를 건너뛴 회차에서는 `oldestCachedSyncedAt` 이 들어가므로, TTL 에 막힌 진입에서도
-   * 지금 이 아니라 **그 데이터가 실제로 받아진 시각**이 남는다.
+   * 페이지마다 따로 재지 않는다. 화면 다섯이 같은 실시간 원천을 공유하므로, 따로 재면 같은 한
+   * 번의 조회로 그린 데이터인데 값이 갈린다. 적는 자리는 `syncSchedules` 회차와 오늘이 든 강화
+   * 조회 둘뿐이고, 기기 DB 읽기와 과거 기간 조회는 거기 안 닿는다.
    */
-  const fetchedAt = lastSyncedAt
+  const fetchedAt = useDataFreshness((state) => state.fetchedAt)
   const topSafeAreaPx = useTopSafeAreaPx()
 
   // 동기화 전체 실패는 토스트로 알린다. 기간 라벨·"n분 전" 표기가 남아 맥락은 화면에 있다.

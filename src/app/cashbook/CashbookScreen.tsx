@@ -613,22 +613,14 @@ export function CashbookScreen(): React.JSX.Element {
    * 다시 읽는다.
    */
   const ledger = useLedgerData()
-  const fetchedAt = useDataFreshness((state) => state.fetchedAt.cashbook)
-  const markFetched = useDataFreshness((state) => state.markFetched)
-
   /**
-   * 갱신 시각. **원장 회차가 끝날 때마다** 적는다.
+   * 머리 아래 한 줄이 읽는 값. **실시간 데이터를 마지막으로 받은 시각 하나**다.
    *
-   * 이 화면은 자기 조회를 안 갖는다. 데이터가 원장 층에서 오므로 그 층이 한 회차를 끝낸 것이
-   * 곧 이 페이지가 데이터를 받은 것이다. 마운트 회차와 당김이 같은 신호를 지나 당김에서만
-   * 적는 배선보다 새는 자리가 없다.
-   *
-   * `revision` 0 은 **아직 한 회차도 안 끝난 상태**다. 그때 적으면 안 받은 것을 받았다고 말한다.
+   * 페이지마다 따로 재지 않는다. 화면 다섯이 같은 실시간 원천을 공유하므로, 따로 재면 같은 한
+   * 번의 조회로 그린 데이터인데 값이 갈린다. 적는 자리는 `syncSchedules` 회차와 오늘이 든 강화
+   * 조회 둘뿐이고, 기기 DB 읽기와 과거 기간 조회는 거기 안 닿는다.
    */
-  useEffect(() => {
-    if (ledger.revision === 0) return
-    void markFetched('cashbook')
-  }, [ledger.revision, markFetched])
+  const fetchedAt = useDataFreshness((state) => state.fetchedAt)
 
   // **강화 사용 내역을 받는 유일한 당김**이다. 이 화면만 그 값을 그린다.
 
