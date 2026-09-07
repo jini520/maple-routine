@@ -1,5 +1,6 @@
 package com.mapleroutine.app
 import com.facebook.react.common.assets.ReactFontManager
+import com.facebook.react.internal.featureflags.ReactNativeFeatureFlags
 
 import android.app.Application
 import android.content.res.Configuration
@@ -39,6 +40,9 @@ class MainApplication : Application(), ReactApplication {
       ReleaseLevel.STABLE
     }
     loadReactNative(this)
+    // 글자를 두 번 계산하지 않게 한다. 릴리스 등급 오버라이드가 loadReactNative 안에서 걸리므로
+    // 그 뒤에 덮어야 한다.
+    ReactNativeFeatureFlags.dangerouslyForceOverride(PreparedTextFlags())
     ApplicationLifecycleDispatcher.onApplicationCreate(this)
   }
 
