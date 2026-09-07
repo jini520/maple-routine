@@ -54,7 +54,7 @@ export const useNoticeBannerStore = create<NoticeBannerState>()((set, get) => ({
     if (notice === null) return
 
     await dismissNotice(notice.id)
-    // 다시 고른다. 안 읽은 것이 또 있으면 그것이 올라온다.
+    // 다시 고른다. 후보가 최신 하나뿐이라 이 자리는 비고, 옛 공지가 올라오지 않는다.
     await get().load()
   },
 }))

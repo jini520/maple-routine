@@ -109,14 +109,25 @@ describe('dismiss', () => {
     await expect(getDismissedNoticeIds()).resolves.toEqual(['a'])
   })
 
-  // 안 읽은 것이 여럿이면 하나를 닫았을 때 그다음이 올라온다.
-  it('닫으면 그다음 공지가 올라온다', async () => {
+  // 후보가 최신 하나뿐이라 닫으면 배너가 없다. 옛 공지가 그 자리에 안 올라온다.
+  it('닫으면 옛 공지가 그 자리에 안 올라온다', async () => {
     await mergeNotices([notice('old', '2026-09-01T00:00:00Z'), notice('new', '2026-09-05T00:00:00Z')])
     await useNoticeBannerStore.getState().load()
 
     await useNoticeBannerStore.getState().dismiss()
 
-    expect(useNoticeBannerStore.getState().notice?.id).toBe('old')
+    expect(useNoticeBannerStore.getState().notice).toBeNull()
+  })
+
+  it('닫은 뒤 더 최근 공지가 도착하면 다시 선다', async () => {
+    await mergeNotices([notice('new', '2026-09-05T00:00:00Z')])
+    await useNoticeBannerStore.getState().load()
+    await useNoticeBannerStore.getState().dismiss()
+
+    await mergeNotices([notice('newer', '2026-09-09T00:00:00Z')])
+    await useNoticeBannerStore.getState().load()
+
+    expect(useNoticeBannerStore.getState().notice?.id).toBe('newer')
   })
 
   it('세워진 배너가 없으면 아무것도 안 적는다', async () => {

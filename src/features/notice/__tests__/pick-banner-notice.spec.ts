@@ -30,22 +30,48 @@ describe('배너가 세우는 공지 고르기', () => {
     expect(picked?.id).toBe('new')
   })
 
-  it('닫은 것은 안 고른다', () => {
+  it('가장 최근 것을 닫았으면 null', () => {
     const picked = pickBannerNotice(
       [notice('old', '2026-09-01T00:00:00Z'), notice('new', '2026-09-05T00:00:00Z')],
       ['new'],
     )
 
-    expect(picked?.id).toBe('old')
+    expect(picked).toBeNull()
   })
 
-  it('전부 닫았으면 null', () => {
+  // `다시 보지 않기` 는 이 배너를 치워라이지 다음 것을 보여 달라가 아니다. 누른 자리에 다른 글이
+  // 즉시 서면 안 없어진 것으로 보인다.
+  it('닫힌 자리에 옛 공지를 올리지 않는다', () => {
     const picked = pickBannerNotice(
-      [notice('a', '2026-09-01T00:00:00Z'), notice('b', '2026-09-05T00:00:00Z')],
-      ['a', 'b'],
+      [
+        notice('older', '2026-08-20T00:00:00Z'),
+        notice('old', '2026-09-01T00:00:00Z'),
+        notice('new', '2026-09-05T00:00:00Z'),
+      ],
+      ['new'],
     )
 
     expect(picked).toBeNull()
+  })
+
+  // 옛 것을 닫아 둬도 후보는 최신 하나라 그 하나가 그대로 선다.
+  it('옛 공지를 닫은 것은 최신에 영향이 없다', () => {
+    const picked = pickBannerNotice(
+      [notice('old', '2026-09-01T00:00:00Z'), notice('new', '2026-09-05T00:00:00Z')],
+      ['old'],
+    )
+
+    expect(picked?.id).toBe('new')
+  })
+
+  // 닫아 둔 뒤 새 공지가 오면 그것이 최신이 되어 다시 선다.
+  it('닫은 뒤 더 최근 공지가 오면 그것이 선다', () => {
+    const picked = pickBannerNotice(
+      [notice('new', '2026-09-05T00:00:00Z'), notice('newer', '2026-09-09T00:00:00Z')],
+      ['new'],
+    )
+
+    expect(picked?.id).toBe('newer')
   })
 
   // 서버가 이상한 값을 보내도 배너가 죽지 않아야 한다. 못 읽는 날짜는 맨 뒤로 민다.
