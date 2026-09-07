@@ -16,17 +16,20 @@
 | `site/app-ads.txt` | AdMob 판매 권한 선언 |
 | `PRIVACY.md` | **개인정보 처리방침 원본.** 저장소 루트에 있다 |
 | `scripts/build-site.mjs` | 빌드(`npm run build:site` → `dist-site/`) |
-| `.github/workflows/pages.yml` | 배포. **[[ADR-229]] 가 이 자리를 Oracle 로 옮긴다** |
+| `scripts/deploy-site.sh` | 배포(`npm run deploy:site`). Oracle 로 `rsync` ([[ADR-229]] 정정 1) |
 
 **관련 ADR**: ⛔ ADR-090(광고 도입. 이 사이트가 필요해진 이유) · [[ADR-110]](API 키 발급 가이드) ·
 [[ADR-229]](**호스팅이 GitHub Pages 에서 Oracle 로 옮겨 간다**)
 
-> **이 사이트가 어디서 도는지가 바뀐다**([[ADR-229]], 2026-09-08 결정 · 미구현). 원본과 빌드는
-> 그대로이고 배포처만 바뀐다. **정적 파일은 Oracle 이 직접 서빙한다** - 집 미니 PC 를 안 거친다.
-> 여기 있는 넷 중 셋(`/privacy`·`/support`·`/app-ads.txt`)이 앱 기능이 아니라 **스토어
-> 컴플라이언스와 광고 승인**이라, 정전이 그것을 끊게 두면 안 된다.
+> **GitHub Pages 를 떠났다**(2026-09-08, [[ADR-229]]). 원본과 빌드는 그대로이고 배포처만 바뀌었다.
+> **정적 파일은 Oracle 의 nginx 가 직접 서빙한다** - 집 미니 PC 를 안 거친다. 여기 있는 넷 중
+> 셋(`/privacy`·`/support`·`/app-ads.txt`)이 앱 기능이 아니라 **스토어 컴플라이언스와 광고
+> 승인**이라, 정전이 그것을 끊게 두면 안 된다.
 >
-> 옮길 때 **확인이 DNS 보다 먼저다.** 순서를 틀리면 등록된 처방침 URL 이 죽는다.
+> 배포는 `npm run deploy:site` 다. CI 가 아닌 이유는 [[ADR-229]] 정정 1 에 있다 - 열쇠가 서버
+> 전체를 여는데 이 사이트는 1년에 몇 번 바뀐다.
+>
+> `CNAME` 과 `.nojekyll` 은 이제 안 만든다([[ADR-229]] 정정 2). 둘 다 Pages 에게 하던 말이다.
 
 ## 왜 있는가
 

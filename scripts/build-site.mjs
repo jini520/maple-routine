@@ -96,11 +96,9 @@ async function build() {
     console.log(`  ${name}`)
   }
 
-  // GitHub Pages 커스텀 도메인. 이 파일이 없으면 배포 때마다 도메인 설정이 풀린다.
-  await writeFile(join(OUT, 'CNAME'), `${DOMAIN}\n`, 'utf8')
-
-  // Jekyll 처리를 끈다 — 밑줄로 시작하는 경로를 삼키는 등 정적 산출물을 건드리지 않게 한다.
-  await writeFile(join(OUT, '.nojekyll'), '', 'utf8')
+  // CNAME 과 .nojekyll 은 **더 이상 안 만든다.** 둘 다 GitHub Pages 에게 하는 말이었고,
+  // 이 사이트는 Oracle 의 nginx 가 서빙한다. nginx 는 도메인을 vhost 로 알고 Jekyll 을 안 돈다.
+  // 남겨 두면 https://mapleroutine.store/CNAME 으로 열려서, 아무 뜻도 없는 파일이 공개된다.
 
   console.log(`\n사이트 빌드 완료 → dist-site/ (https://${DOMAIN})`)
 }
