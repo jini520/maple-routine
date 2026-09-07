@@ -18,7 +18,6 @@ import { useBossSchedulerStore, type BossCharacterView } from '../../../features
 import {
   useContentSchedulerStore,
   type ContentCharacterView } from '../../../features/content-scheduler/store'
-import { useDataFreshness } from '../../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import { formatMesoShort } from '../../../lib/boss/boss-profit-delta'
 import type { MatchedBoss } from '../../../lib/boss/boss-matching'
@@ -339,8 +338,6 @@ beforeEach(() => {
   mockedGetCachedCharacterBasic.mockResolvedValue(null)
   mockedNavigation.mockReturnValue({ navigate: jest.fn(), goBack: jest.fn() } as never)
   useTrackingModeStore.setState({ mode: 'auto' })
-  // 실물 스토어라 값이 파일 안에서 넘어간다. 되돌리지 않으면 앞 케이스가 적은 시각이 남는다.
-  useDataFreshness.setState({ fetchedAt: {} })
   setStores()
 })
 
@@ -548,23 +545,20 @@ describe('TodayScreen: 명시적 재조회', () => {
 })
 
 describe('TodayScreen: 갱신 시각', () => {
-  // 이 화면은 스토어 넷을 읽는다. 그중 하나(보스 수익)의 `lastSyncedAt` 만 적던 자리를
-  // **페이지 자신의 시각**으로 바꿨다. 나머지 셋이 언제 갱신됐는지가 화면 어디에도 없었다.
-  it('당김이 끝나면 그 페이지의 갱신 시각을 적는다', async () => {
+  // 이 화면은 스토어 넷을 읽는다. 그전에는 그중 하나(보스 수익)의 `lastSyncedAt` 만 적어서
+  // 나머지가 언제 갱신됐는지가 화면 어디에도 없었다. 이제 **원천들 중 가장 최근 것**을 읽는다.
+  //
+  // 적는 것이 아니라 읽는 것이 요점이다. 화면이 자기 시계로 지금 을 적으면 조회가 TTL 에 막혀
+  // 한 번도 안 나간 진입에도 시각이 갱신되고, 같은 조회로 그린 데이터인데 페이지마다 값이 갈린다.
+  it('원천들의 syncedAt 을 읽는다', async () => {
     setStores(캐릭터_넷)
+
     await renderScreen()
 
-    await act(async () => {
-      refreshControl().onRefresh()
-    })
-
-    expect(useDataFreshness.getState().fetchedAt.today).toBeDefined()
+    expect(screen.getByTestId('data-freshness')).toBeTruthy()
   })
 
   // 제목에 딸린 작은 글씨다. 제목 **줄 안**에 있으면 폭을 다투고, 그때 줄어드는 것은 제목이다.
-  //
-  // 값을 미리 심지 않는다. 마운트의 진입 조회가 그 자리에서 시각을 적으므로 심어 둔 값이 덮인다.
-  // 없을 때 줄이 안 그려지는 것은 `DataFreshness.test.tsx` 가 본다.
   it('제목 줄이 아니라 그 아래에 선다', async () => {
     setStores(캐릭터_넷)
 
@@ -575,14 +569,11 @@ describe('TodayScreen: 갱신 시각', () => {
     expect(within(screen.getByTestId('page-header')).getByTestId('data-freshness')).toBe(line)
   })
 
-  // 진입 조회도 데이터를 부르는 자리다. 당김만 적으면 앱을 켜고 한 번도 안 당긴 사용자에게
-  // 그 줄이 영영 안 뜬다.
-  it('진입 조회가 끝나도 적는다', async () => {
-    setStores(캐릭터_넷)
-
+  // 빈 줄을 두면 제목 아래가 이유 없이 벌어진다.
+  it('한 번도 동기화 안 했으면 줄 자체가 없다', async () => {
     await renderScreen()
 
-    expect(useDataFreshness.getState().fetchedAt.today).toBeDefined()
+    expect(screen.queryByTestId('data-freshness')).toBeNull()
   })
 })
 

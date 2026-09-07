@@ -51,7 +51,6 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
-import { useDataFreshness } from '../../features/refresh/freshness'
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { useLedgerData } from '../../features/ledger/useLedgerData'
@@ -89,6 +88,7 @@ export function BossProfitScreen(): React.JSX.Element {
     trackedOcids,
     loadTrackedOcids,
     refresh,
+    lastSyncedAt,
     setTab,
     goToPreviousPeriod,
     goToNextPeriod,
@@ -115,8 +115,13 @@ export function BossProfitScreen(): React.JSX.Element {
 
   const navigation = useScreenNavigation()
   const openTab = useOpenTab()
-  const fetchedAt = useDataFreshness((state) => state.fetchedAt.profit)
-  const markFetched = useDataFreshness((state) => state.markFetched)
+  /**
+   * 헤더 아래 한 줄이 읽는 값. **스토어가 이미 진짜 시각을 든다.**
+   *
+   * 동기화를 건너뛴 회차에서는 `oldestCachedSyncedAt` 이 들어가므로, TTL 에 막힌 진입에서도
+   * 지금 이 아니라 **그 데이터가 실제로 받아진 시각**이 남는다.
+   */
+  const fetchedAt = lastSyncedAt
   const topSafeAreaPx = useTopSafeAreaPx()
 
   // 동기화 전체 실패는 토스트로 알린다. 기간 라벨·"n분 전" 표기가 남아 맥락은 화면에 있다.
@@ -126,12 +131,7 @@ export function BossProfitScreen(): React.JSX.Element {
   useStaleCharactersToast(staleCharacterNames, () => refresh(trackedOcids ?? []))
 
   useEffect(() => {
-    // 끝에서 갱신 시각을 적는다. 당김에서만 적으면 앱을 켜고 한 번도 안 당긴 사용자에게는
-    // 그 줄이 영영 안 뜬다. 던지면 안 적는다. 데이터가 안 왔으니 적을 것이 없다.
-    void (async () => {
-      await loadTrackedOcids()
-      await markFetched('profit')
-    })().catch(() => undefined)
+    loadTrackedOcids()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -415,11 +415,7 @@ export function BossProfitScreen(): React.JSX.Element {
           header={header}
           // 당김은 헤더 버튼과 같은 재조회를 부르고 색만 테마에서 넘긴다. 빈 상태는 이 가지에
           // 오지 않는다.
-          onRefresh={async () => {
-            await ledger.reload(['live', 'window'])
-            // 헤더 아래 한 줄이 읽는 값. 당김이 실제로 부른 조회가 끝난 자리다.
-            await markFetched('profit')
-          }}
+          onRefresh={() => ledger.reload(['live', 'window'])}
         >
           <View testID="pull-content" className="gap-2 px-4 pb-4">
             {/* 점선 박스(빈 상태의 어법)와 비-브랜드 링을 쓰지 않고 셸 승계 카드를 쓴다. 백필이

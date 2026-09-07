@@ -33,7 +33,6 @@ import type { RecordedDrop } from '../../../types/drops'
 
 import { 테스트_안전영역 } from '../../../components/__tests__/render-atom'
 import { ThemeProvider } from '../../../theme/ThemeProvider'
-import { useDataFreshness } from '../../../features/refresh/freshness'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { BossProfitScreen } from '../BossProfitScreen'
 
@@ -169,8 +168,6 @@ beforeEach(() => {
   // 카운트업의 '직전 표시값' 기억은 모듈 수준이라 언마운트를 건너 산다.
   // 테스트 하나가 곧 세션 하나다.
   clearCountUpMemory()
-  // 실물 스토어라 값이 파일 안에서 넘어간다. 되돌리지 않으면 앞 케이스가 적은 시각이 남는다.
-  useDataFreshness.setState({ fetchedAt: {} })
   dispatch.mockClear()
   mockedNavigation.mockReturnValue({ navigate, dispatch } as unknown as ReturnType<
     typeof useScreenNavigation
@@ -308,10 +305,18 @@ describe('갱신 시각', () => {
     expect(queryByLabelText('새로고침')).toBeNull()
   })
 
+  // **적는 것이 아니라 스토어가 든 진짜 시각을 읽는다.** 동기화를 건너뛴 회차에서는 캐시의
+  // `syncedAt` 이 들어가므로, TTL 에 막힌 진입에서도 지금 이 아니라 그 데이터의 시각이 남는다.
+  it('스토어의 lastSyncedAt 을 그대로 읽는다', async () => {
+    mockStore({ lastSyncedAt: '2026-09-08T05:03:22.000Z' })
+    const { getByTestId } = await renderScreen()
+
+    expect(getByTestId('data-freshness')).toBeTruthy()
+  })
+
   // 제목에 딸린 작은 글씨다. 기간 탭 줄에 있던 것을 제목 아래로 옮겼다.
-  //
-  // 값을 미리 심지 않는다. 마운트의 진입 조회가 그 자리에서 적으므로 심어 둔 값이 덮인다.
   it('기간 탭 줄이 아니라 제목 줄 아래에 선다', async () => {
+    mockStore({ lastSyncedAt: '2026-09-08T05:03:22.000Z' })
     const { getByTestId } = await renderScreen()
 
     const line = getByTestId('data-freshness')
@@ -319,17 +324,17 @@ describe('갱신 시각', () => {
     expect(within(getByTestId('page-header')).getByTestId('data-freshness')).toBe(line)
   })
 
-  // 진입 조회도 데이터를 부르는 자리다. 당김만 적으면 앱을 켜고 한 번도 안 당긴 사용자에게
-  // 그 줄이 영영 안 뜬다.
-  it('진입 조회가 끝나도 적는다', async () => {
-    await renderScreen()
+  // 빈 줄을 두면 제목 아래가 이유 없이 벌어진다.
+  it('한 번도 동기화 안 했으면 줄 자체가 없다', async () => {
+    mockStore({ lastSyncedAt: null })
+    const { queryByTestId } = await renderScreen()
 
-    expect(useDataFreshness.getState().fetchedAt.profit).toBeDefined()
+    expect(queryByTestId('data-freshness')).toBeNull()
   })
 
   // 지난 기간에서도 당길 수 있으니 그 줄도 함께 선다.
   it('지난 기간에서도 선다', async () => {
-    mockStore({ periodKey: '2026-07-09' })
+    mockStore({ periodKey: '2026-07-09', lastSyncedAt: '2026-09-08T05:03:22.000Z' })
     const { getByTestId } = await renderScreen()
 
     expect(getByTestId('data-freshness')).toBeTruthy()
@@ -361,16 +366,7 @@ describe('당겨서 새로고침', () => {
     expect(getByTestId('screen-scroll').props.refreshControl).toBeDefined()
   })
 
-  it('당김이 끝나면 그 페이지의 갱신 시각을 적는다', async () => {
-    mockStore({ trackedOcids: ['ocid-1'] })
-    const { getByTestId } = await renderScreen()
 
-    await act(async () => {
-      getByTestId('screen-scroll').props.refreshControl.props.onRefresh()
-    })
-
-    expect(useDataFreshness.getState().fetchedAt.profit).toBeDefined()
-  })
 
   // 회귀 가드. 조회 중 과 당겼다 는 다른 사실이다.
   //

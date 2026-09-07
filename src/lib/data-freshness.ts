@@ -27,3 +27,27 @@ export function formatFetchedAt(fetchedAt: string | null | undefined): string {
 
   return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())} 기준`
 }
+
+/**
+ * 여럿 중 가장 최근 것. 전부 비었으면 `null`.
+ *
+ * **화면이 그리는 데이터의 시각을 그대로 읽는 자리다.** 화면이 자기 시계로 지금 을 적으면
+ * 조회가 TTL 에 막혀 한 번도 안 나간 진입에도 시각이 갱신되고, 같은 한 번의 조회로 그린
+ * 데이터인데 페이지마다 값이 갈린다(실사용에서 1초 차이로 드러났다).
+ *
+ * 못 읽는 값은 버린다. 서버나 캐시가 이상한 값을 줘도 나머지로 답한다.
+ */
+export function latestSyncedAt(values: readonly (string | null | undefined)[]): string | null {
+  let best: string | null = null
+  let bestMs = Number.NEGATIVE_INFINITY
+
+  for (const value of values) {
+    if (value === null || value === undefined) continue
+    const ms = new Date(value).getTime()
+    if (Number.isNaN(ms) || ms <= bestMs) continue
+    best = value
+    bestMs = ms
+  }
+
+  return best
+}

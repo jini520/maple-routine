@@ -1,16 +1,20 @@
 /**
- * 페이지별 마지막 데이터 호출 시각.
+ * 마지막 데이터 호출 시각. **여기 적는 페이지는 자기 데이터에 시각이 없는 것뿐이다.**
+ *
+ * 스케줄러 캐시의 `syncedAt` 은 조회가 **실제로 돈 회차**에만 적히고 영속된다. 그 값을 가진
+ * 페이지는 여기 안 적고 그것을 읽는다. 화면이 자기 시계로 지금 을 적으면 TTL 에 막혀 한 번도
+ * 안 나간 진입에도 시각이 갱신되어, 같은 조회로 그린 데이터인데 페이지마다 값이 갈린다.
+ *
+ * 남는 것이 가계부 하나다. 그 화면의 데이터는 원장 층에서 오는데 그 층이 조회 시각을 안 든다.
  *
  * **영속한다.** 앱을 다시 켜도 화면이 그리는 것은 캐시에 있던 그 데이터인데, 시각만 비우면
  * 그 데이터가 언제 것인지 말할 방법이 사라진다.
- *
- * 한 칸에 맵으로 적는다. 읽는 쪽이 언제나 다섯을 한 번에 필요로 한다.
  */
 import { STORAGE_KEYS } from './keys'
 import { preferences } from './ports'
 
-/** 당김을 가진 화면 다섯. 늘어나면 여기부터 늘린다. */
-export const FRESHNESS_PAGES = ['today', 'content', 'boss', 'profit', 'cashbook'] as const
+/** 여기 적는 페이지. 자기 데이터에 시각이 없는 것만 든다. */
+export const FRESHNESS_PAGES = ['cashbook'] as const
 
 export type FreshnessPage = (typeof FRESHNESS_PAGES)[number]
 

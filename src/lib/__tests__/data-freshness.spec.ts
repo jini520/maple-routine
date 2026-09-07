@@ -1,4 +1,4 @@
-import { formatFetchedAt } from '../data-freshness'
+import { formatFetchedAt, latestSyncedAt } from '../data-freshness'
 
 describe('갱신 시각 표기', () => {
   it('시·분·초와 `기준`', () => {
@@ -22,5 +22,32 @@ describe('갱신 시각 표기', () => {
 
   it('못 읽는 값도 빈 문자열', () => {
     expect(formatFetchedAt('시각이 아니다')).toBe('')
+  })
+})
+
+describe('가장 최근 동기화 시각 고르기', () => {
+  it('여럿 중 가장 늦은 것', () => {
+    expect(latestSyncedAt(['2026-09-08T05:00:00.000Z', '2026-09-08T07:00:00.000Z'])).toBe(
+      '2026-09-08T07:00:00.000Z',
+    )
+  })
+
+  it('빈 값은 건너뛴다', () => {
+    expect(latestSyncedAt([null, undefined, '2026-09-08T05:00:00.000Z'])).toBe(
+      '2026-09-08T05:00:00.000Z',
+    )
+  })
+
+  it('전부 비었으면 null', () => {
+    expect(latestSyncedAt([])).toBeNull()
+    expect(latestSyncedAt([null, undefined])).toBeNull()
+  })
+
+  // 캐시가 이상한 값을 줘도 나머지로 답한다.
+  it('못 읽는 값은 버린다', () => {
+    expect(latestSyncedAt(['시각이 아니다', '2026-09-08T05:00:00.000Z'])).toBe(
+      '2026-09-08T05:00:00.000Z',
+    )
+    expect(latestSyncedAt(['시각이 아니다'])).toBeNull()
   })
 })

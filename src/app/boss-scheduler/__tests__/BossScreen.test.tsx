@@ -9,7 +9,6 @@ import {
   type BossCharacterView,
   type BossSchedulerStore,
 } from '../../../features/boss-scheduler/store'
-import { useDataFreshness } from '../../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import weeklyBossesData from '../../../data/weekly-bosses.json'
 import { WEEKLY_BOSS_CLEAR_LIMIT, type MatchedBoss } from '../../../lib/boss/boss-matching'
@@ -177,8 +176,6 @@ beforeEach(() => {
 // 실물 스토어라 값이 파일 안에서 넘어가므로 테스트마다 되돌린다.
 beforeEach(() => {
   useCharacterSelectionStore.setState({ selectedOcid: null })
-  // 실물 스토어라 값이 파일 안에서 넘어간다. 되돌리지 않으면 앞 케이스가 적은 시각이 남는다.
-  useDataFreshness.setState({ fetchedAt: {} })
 })
 
 describe('BossScreen: 빈 상태와 마운트', () => {
@@ -523,22 +520,27 @@ describe('BossScreen: 재조회', () => {
     expect(refreshControl().refreshing).toBe(false)
   })
 
-  it('당김이 끝나면 그 페이지의 갱신 시각을 적는다', async () => {
-    loaded()
-    await renderScreen()
-
-    await act(async () => {
-      refreshControl().onRefresh()
-    })
-
-    expect(useDataFreshness.getState().fetchedAt.boss).toBeDefined()
-  })
 })
 
 describe('BossScreen: 갱신 시각', () => {
-  // 제목에 딸린 작은 글씨다(컨텐츠 스케줄러와 같은 케이스. 그 파일이 판정 방법을 적는다).
+  const withSyncedAt = (syncedAt: string | null): void => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [{ ...character({ weeklyBosses: [boss()] }), syncedAt }],
+    })
+  }
+
+  // **적는 것이 아니라 그리는 데이터에서 읽는다**(컨텐츠 스케줄러와 같은 케이스).
+  it('캐릭터의 syncedAt 을 그대로 읽는다', async () => {
+    withSyncedAt('2026-09-08T05:03:22.000Z')
+    await renderScreen()
+
+    expect(screen.getByTestId('data-freshness')).toBeTruthy()
+  })
+
   it('제목 줄이 아니라 그 아래에 선다', async () => {
-    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character({ weeklyBosses: [boss()] })] })
+    withSyncedAt('2026-09-08T05:03:22.000Z')
     await renderScreen()
 
     const line = screen.getByTestId('data-freshness')
@@ -546,12 +548,11 @@ describe('BossScreen: 갱신 시각', () => {
     expect(contains(screen.getByTestId('page-header'), line)).toBe(true)
   })
 
-  it('진입 조회가 끝나도 적는다', async () => {
-    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character({ weeklyBosses: [boss()] })] })
-
+  it('한 번도 동기화 안 했으면 줄 자체가 없다', async () => {
+    withSyncedAt(null)
     await renderScreen()
 
-    expect(useDataFreshness.getState().fetchedAt.boss).toBeDefined()
+    expect(screen.queryByTestId('data-freshness')).toBeNull()
   })
 })
 

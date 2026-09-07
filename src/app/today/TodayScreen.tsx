@@ -25,7 +25,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { View } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
 
-import { useDataFreshness } from '../../features/refresh/freshness'
 import { useNoticeBannerStore } from '../../features/notice/banner-store'
 import { useDropHistoryStore } from '../../features/boss-profit/drop-history-store'
 import { getBossDropRecordsRevision } from '../../storage/boss-drops'
@@ -43,6 +42,7 @@ import { DataFreshness } from '../../components/molecules/DataFreshness/DataFres
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
+import { latestSyncedAt } from '../../lib/data-freshness'
 import { NoticeBanner } from './NoticeBanner'
 import { buildTodayViewModel } from './view-model'
 import { WidgetGrid } from './WidgetGrid'
@@ -106,8 +106,6 @@ export function TodayScreen(): React.JSX.Element {
   const profit = useBossProfitStore()
   const dropHistory = useDropHistoryStore()
   const { mode } = useTrackingModeStore()
-  const fetchedAt = useDataFreshness((state) => state.fetchedAt.today)
-  const markFetched = useDataFreshness((state) => state.markFetched)
   const loadNoticeBanner = useNoticeBannerStore((state) => state.load)
   const refreshNoticeBanner = useNoticeBannerStore((state) => state.refresh)
 
@@ -120,13 +118,7 @@ export function TodayScreen(): React.JSX.Element {
 
   useEffect(() => {
     // 진입 자동 조회. 게이트가 있는 문 하나. 드롭 기록은 아래 포커스 훅이 맡는다.
-    //
-    // 끝에서 갱신 시각을 적는다. 당김에서만 적으면 앱을 켜고 한 번도 안 당긴 사용자에게는
-    // 그 줄이 영영 안 뜬다. 던지면 안 적는다. 데이터가 안 왔으니 적을 것이 없다.
-    void (async () => {
-      await content.loadTrackedOcids()
-      await markFetched('today')
-    })().catch(() => undefined)
+    void content.loadTrackedOcids()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -196,6 +188,19 @@ export function TodayScreen(): React.JSX.Element {
     }
   }, [orderedOcidsKey])
 
+  /**
+   * 헤더 아래 한 줄이 읽는 값. **이 화면이 읽는 원천들 중 가장 최근 것**이다.
+   *
+   * 그전에는 보스 수익 스토어의 `lastSyncedAt` 하나만 적어서 나머지가 언제 갱신됐는지가 화면
+   * 어디에도 없었다. 화면이 자기 시계로 지금 을 적는 길도 안 쓴다. 조회가 TTL 에 막혀 한 번도
+   * 안 나간 진입에도 시각이 갱신되고, 같은 조회로 그린 데이터인데 페이지마다 값이 갈린다.
+   */
+  const fetchedAt = latestSyncedAt([
+    ...content.characters.map((character) => character.syncedAt),
+    ...boss.characters.map((character) => character.syncedAt),
+    profit.lastSyncedAt,
+  ])
+
   const viewModel = buildTodayViewModel({
     // 렌더당 한 번만 만든다. 두 번 부르면 두 시각이 기간 경계를 사이에 두고 갈려 카운트다운과
     // 기간 판정이 서로 다른 기간을 가리킬 수 있다(`BossProfitScreen` 과 같은 규칙).
@@ -246,8 +251,6 @@ export function TodayScreen(): React.JSX.Element {
       setProfilesByOcid((previous) => ({ ...previous, [ocid]: profile }))
     }
 
-    // 헤더 아래 한 줄이 읽는 값. 넷이 다 끝난 뒤에 적어야 그 줄이 페이지 전체를 말한다.
-    await markFetched('today')
   }
 
   // 당김이 시작한 회차에만 인디케이터가 돈다. `isSyncing` 은 제목 옆 조회 중… 과 헤더 버튼의

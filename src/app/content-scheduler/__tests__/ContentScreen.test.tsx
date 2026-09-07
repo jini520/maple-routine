@@ -8,7 +8,6 @@ import {
   type ContentCharacterView,
   type ContentSchedulerStore,
 } from '../../../features/content-scheduler/store'
-import { useDataFreshness } from '../../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
@@ -134,9 +133,6 @@ beforeEach(() => {
   dispatch.mockClear()
   mockedNavigation.mockReturnValue({ navigate, dispatch, goBack: jest.fn() } as never)
   useTrackingModeStore.setState({ mode: 'auto' })
-  // 실물 스토어라 값이 파일 안에서 넘어간다. 갱신 시각 줄은 값이 없으면 안 그려지므로
-  // 되돌리지 않으면 앞 케이스가 적은 시각이 뒤 케이스의 트리에 남는다.
-  useDataFreshness.setState({ fetchedAt: {} })
 })
 
 // 선택은 이제 화면 스토어가 아니라 `useCharacterSelectionStore` 가 갖는다.
@@ -415,25 +411,30 @@ describe('ContentScreen: 재조회', () => {
     expect(refreshControl().refreshing).toBe(false)
   })
 
-  it('당김이 끝나면 그 페이지의 갱신 시각을 적는다', async () => {
-    loaded()
-    await renderScreen()
-
-    await act(async () => {
-      refreshControl().onRefresh()
-    })
-
-    expect(useDataFreshness.getState().fetchedAt.content).toBeDefined()
-  })
 })
 
 describe('ContentScreen: 갱신 시각', () => {
+  // **적는 것이 아니라 그리는 데이터에서 읽는다.** 화면이 자기 시계로 지금 을 적으면 조회가
+  // TTL 에 막혀 한 번도 안 나간 진입에도 시각이 갱신되고, 같은 조회로 그린 데이터인데
+  // 페이지마다 값이 갈린다.
+  it('캐릭터의 syncedAt 을 그대로 읽는다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [{ ...character(), syncedAt: '2026-09-08T05:03:22.000Z' }],
+    })
+    await renderScreen()
+
+    expect(screen.getByTestId('data-freshness')).toBeTruthy()
+  })
+
   // 제목에 딸린 작은 글씨다. 제목 **줄 안**에 있으면 폭을 다투고, 그때 줄어드는 것은 제목이다.
-  //
-  // 값을 미리 심지 않는다. 마운트의 진입 조회가 그 자리에서 시각을 적으므로 심어 둔 값이 덮인다.
-  // 없을 때 줄이 안 그려지는 것은 `DataFreshness.test.tsx` 가 본다.
   it('제목 줄이 아니라 그 아래에 선다', async () => {
-    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [{ ...character(), syncedAt: '2026-09-08T05:03:22.000Z' }],
+    })
     await renderScreen()
 
     const line = screen.getByTestId('data-freshness')
@@ -441,13 +442,16 @@ describe('ContentScreen: 갱신 시각', () => {
     expect(contains(screen.getByTestId('page-header'), line)).toBe(true)
   })
 
-  // 진입 조회도 데이터를 부르는 자리다. 당김만 적으면 앱을 켜자마자 받은 것이 화면에 안 적힌다.
-  it('진입 조회가 끝나도 적는다', async () => {
-    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
-
+  // 빈 줄을 두면 제목 아래가 이유 없이 벌어진다.
+  it('한 번도 동기화 안 했으면 줄 자체가 없다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [{ ...character(), syncedAt: null }],
+    })
     await renderScreen()
 
-    expect(useDataFreshness.getState().fetchedAt.content).toBeDefined()
+    expect(screen.queryByTestId('data-freshness')).toBeNull()
   })
 })
 

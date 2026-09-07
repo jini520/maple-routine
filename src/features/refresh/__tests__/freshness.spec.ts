@@ -12,11 +12,11 @@ beforeEach(async () => {
 
 describe('restore', () => {
   it('저장된 맵을 올린다', async () => {
-    await prefs.set('dataFetchedAt', JSON.stringify({ today: '2026-09-08T05:00:00.000Z' }))
+    await prefs.set('dataFetchedAt', JSON.stringify({ cashbook: '2026-09-08T05:00:00.000Z' }))
 
     await useDataFreshness.getState().restore()
 
-    expect(useDataFreshness.getState().fetchedAt).toEqual({ today: '2026-09-08T05:00:00.000Z' })
+    expect(useDataFreshness.getState().fetchedAt).toEqual({ cashbook: '2026-09-08T05:00:00.000Z' })
   })
 
   // 줄 하나가 안 그려질 뿐이다. 부팅을 막을 일이 아니다.
@@ -32,28 +32,18 @@ describe('markFetched', () => {
   it('그 페이지의 시각을 지금으로 적고 저장한다', async () => {
     jest.useFakeTimers().setSystemTime(new Date('2026-09-08T05:03:22.000Z'))
 
-    await useDataFreshness.getState().markFetched('today')
-
-    expect(useDataFreshness.getState().fetchedAt.today).toBe('2026-09-08T05:03:22.000Z')
-    await expect(getDataFetchedAt()).resolves.toEqual({ today: '2026-09-08T05:03:22.000Z' })
-    jest.useRealTimers()
-  })
-
-  it('다른 페이지는 안 건드린다', async () => {
-    await useDataFreshness.getState().markFetched('today')
-    const today = useDataFreshness.getState().fetchedAt.today
-
     await useDataFreshness.getState().markFetched('cashbook')
 
-    expect(useDataFreshness.getState().fetchedAt.today).toBe(today)
-    expect(useDataFreshness.getState().fetchedAt.cashbook).toBeDefined()
+    expect(useDataFreshness.getState().fetchedAt.cashbook).toBe('2026-09-08T05:03:22.000Z')
+    await expect(getDataFetchedAt()).resolves.toEqual({ cashbook: '2026-09-08T05:03:22.000Z' })
+    jest.useRealTimers()
   })
 
   // 방금 받은 것은 방금 받은 것이다. 저장 실패가 그 사실을 못 바꾼다.
   it('저장이 실패해도 화면 값은 남는다', async () => {
     prefs.set.mockRejectedValue(new Error('저장소 고장'))
 
-    await expect(useDataFreshness.getState().markFetched('boss')).resolves.toBeUndefined()
-    expect(useDataFreshness.getState().fetchedAt.boss).toBeDefined()
+    await expect(useDataFreshness.getState().markFetched('cashbook')).resolves.toBeUndefined()
+    expect(useDataFreshness.getState().fetchedAt.cashbook).toBeDefined()
   })
 })

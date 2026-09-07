@@ -22,7 +22,6 @@ import { resolveSelectedCharacter } from '../../features/character-selection/sel
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useScheduleSyncErrorToast } from '../../features/schedule-sync/use-sync-error-toast'
 import { useToastStore } from '../../features/toast/store'
-import { useDataFreshness } from '../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { getBossPortraitCrop, getBossPortraitUrl, isChallengersWorld } from '../../lib/assets/asset-lookup'
 import type { ImageCrop } from '../../lib/image-crop'
@@ -46,6 +45,7 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { ILLUSTRATION_TEXT_SHADOW_STYLE } from '../../constants/style/text-styles'
+import { latestSyncedAt } from '../../lib/data-freshness'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import { useOpenTab } from '../../hooks/useOpenTab'
@@ -148,8 +148,6 @@ export function BossScreen(): React.JSX.Element {
   const { mode } = useTrackingModeStore()
   const openTab = useOpenTab()
   const topSafeAreaPx = useTopSafeAreaPx()
-  const fetchedAt = useDataFreshness((state) => state.fetchedAt.boss)
-  const markFetched = useDataFreshness((state) => state.markFetched)
   // 카드 탭으로 여는 파티 인원 모달. 편집 중인 난이도를 함께 든다.
   const [partyModal, setPartyModal] = useState<{ boss: MatchedBoss; difficulty: BossDifficulty } | null>(null)
   // 동기화 전체 실패는 토스트로 알린다. 지속 상태는 새로고침 옆 표기가 이미 진다.
@@ -158,19 +156,9 @@ export function BossScreen(): React.JSX.Element {
   useEffect(() => {
     // 진입 조회도 적는다. 게이트에 막혀 실제로 안 나간 회차에도 적히므로 이 값은
     // 최대 그 게이트만큼 낙관적이다. 정확히 재려면 스토어 안쪽을 화면까지 끌어올려야 한다.
-    // 조회가 던지면 시각을 안 적는다. 데이터가 안 왔으니 적을 것이 없다.
-    void (async () => {
-      await loadTrackedOcids()
-      await markFetched('boss')
-    })().catch(() => undefined)
+    loadTrackedOcids()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  /** 당김이 부르는 재조회. 끝에서 갱신 시각을 적는다. 헤더 아래 한 줄이 그 값을 읽는다. */
-  async function refreshPage(): Promise<void> {
-    await refresh(trackedOcids ?? [])
-    await markFetched('boss')
-  }
 
   // `null` 은 0명이 아니라 **저장소를 아직 안 읽었다** 다. `||` 로 묶으면 첫 페인트가 모르는
   // 빈 상태는 읽고 0명임을 **확인한 뒤에만** 그린다.
@@ -178,6 +166,15 @@ export function BossScreen(): React.JSX.Element {
 
   // 스토어가 내는 것은 기준 순서(레벨 내림차순)이고 화면 순서는 캐릭터 관리에서 정한 배열이다.
   const characters = orderByTracked(storeCharacters, trackedOcids ?? [])
+
+  /**
+   * 헤더 아래 한 줄이 읽는 값. **적는 것이 아니라 그리는 데이터에서 읽는다.**
+   *
+   * 화면이 자기 시계로 지금 을 적으면 조회가 10분 TTL 에 막혀 한 번도 안 나간 진입에도 시각이
+   * 갱신되고, 같은 한 번의 조회로 그린 데이터인데 페이지마다 값이 갈린다. `syncedAt` 은
+   * 회차가 **실제로 돈 자리**에서만 적히고 스케줄러 캐시에 영속된다.
+   */
+  const fetchedAt = latestSyncedAt(characters.map((character) => character.syncedAt))
 
   // 화면 넷이 **같은 규칙**으로 고른다. 폴백을 화면마다 두면 공유했는데 화면마다 다른 캐릭터가 된다.
   const selected = resolveSelectedCharacter(selectedOcid, characters)
@@ -403,7 +400,7 @@ export function BossScreen(): React.JSX.Element {
     <View testID="screen-Boss" className="flex-1">
       <ScreenScroll
         // 당김은 헤더 버튼과 **같은 재조회**를 부른다. 컨텐츠 스케줄러와 배선이 같아야 한다.
-        onRefresh={refreshPage}
+        onRefresh={() => refresh(trackedOcids ?? [])}
         header={
           // `fixed` 도 spacer 도 없다.
           // 제목과 필터도 목록과 **함께 스크롤된다.** 헤더가 `ScreenScroll` 의 첫 자식이라
