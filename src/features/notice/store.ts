@@ -6,9 +6,17 @@
  */
 import { create } from 'zustand'
 
-import { hasNotificationPermission } from '../../native/notifications'
+import {
+  hasNotificationPermission,
+  requestNotificationPermission,
+} from '../../native/notifications'
 import { subscribeToPushTopic, unsubscribeFromPushTopic } from '../../native/push'
-import { getNoticeSubscribed, setNoticeSubscribed } from '../../storage/notice-settings'
+import {
+  getNoticeSubscribed,
+  getNotificationPermissionAsked,
+  setNoticeSubscribed,
+  setNotificationPermissionAsked,
+} from '../../storage/notice-settings'
 
 /**
  * 구독할 토픽 이름. **JS 에 두는 것이 요건이다.** 네이티브에 박으면 OTA 로 못 바꾼다.
@@ -31,6 +39,24 @@ interface NoticeState {
   setSubscribed: (subscribed: boolean) => Promise<void>
 }
 
+/**
+ * 권한이 없을 때 한 번 더 시도한다. 받아 냈으면 참.
+ *
+ * **한 번도 안 물었으면 여기서 묻는다.** iOS 는 앱이 한 번도 안 물으면 설정에 그 앱의 알림
+ * 항목을 아예 안 만든다. 그래서 그 상태로 설정에 보내면 갈 곳이 없는 막다른 길이 된다.
+ * 스위치를 켜는 것도 사용자가 알림을 원한다고 말한 자리이므로 묻기에 맞다.
+ *
+ * **이미 물었으면 다시 안 묻는다.** 그때는 OS 가 팝업을 안 띄워서 부르나 마나이고, 설정으로
+ * 보내는 것 말고 할 수 있는 일이 없다.
+ */
+async function ensurePermission(): Promise<boolean> {
+  if (await getNotificationPermissionAsked()) return false
+
+  // 묻기 전에 적는다. 팝업은 뜨는 순간 소모된다.
+  await setNotificationPermissionAsked()
+  return requestNotificationPermission().catch(() => false)
+}
+
 export const useNoticeStore = create<NoticeState>()((set) => ({
   subscribed: false,
   blockedByPermission: false,
@@ -41,7 +67,7 @@ export const useNoticeStore = create<NoticeState>()((set) => ({
     if (subscribed) {
       // **켤 때만 권한을 본다.** 끄는 길은 권한과 무관하고, 거기서 막으면 권한 없는 사용자가
       // 구독을 해제할 방법이 없어진다.
-      if (!(await hasNotificationPermission())) {
+      if (!(await hasNotificationPermission()) && !(await ensurePermission())) {
         set({ blockedByPermission: true })
         return
       }
