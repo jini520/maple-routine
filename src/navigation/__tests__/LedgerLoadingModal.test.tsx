@@ -12,14 +12,14 @@ jest.mock('../../features/ledger/useLedgerData', () => ({
 }))
 
 import { renderOverlay } from '../../components/__tests__/render-atom'
-import { useLedgerProgress } from '../../features/ledger/progress'
+import { useRefreshProgress } from '../../features/refresh/progress'
 import { LedgerLoadingModal } from '../LedgerLoadingModal'
 
 beforeEach(() => {
   jest.useFakeTimers()
   mockLedger.status = 'ready'
   mockLedger.knownLong = false
-  useLedgerProgress.getState().reset()
+  useRefreshProgress.getState().resetForTests()
 })
 
 afterEach(() => {
@@ -98,8 +98,8 @@ describe('진행', () => {
   }
 
   it('창이 알린 수를 그대로 그린다', async () => {
-    const slot = useLedgerProgress.getState().start(84)
-    useLedgerProgress.getState().advance(slot, 32)
+    const slot = useRefreshProgress.getState().start(84)
+    useRefreshProgress.getState().advance(slot, 32)
 
     const view = await 오래끄는화면()
 

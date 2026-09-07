@@ -20,9 +20,9 @@
  * @see docs/features/today.md 정책
  */
 
-import { usePullRefresh } from '../../hooks/usePullRefresh'
+import { TodayLoadingModal } from './TodayLoadingModal'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Pressable, RefreshControl, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 import { useFocusEffect } from '@react-navigation/native'
 
@@ -44,7 +44,6 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { SPIN_ANIMATION } from '../../constants/style/animation'
 import { AnimatedView } from '../../lib/nativewind-interop'
-import { useThemeAppearance } from '../../theme/context'
 import { buildTodayViewModel } from './view-model'
 import { WidgetGrid } from './WidgetGrid'
 
@@ -107,7 +106,6 @@ export function TodayScreen(): React.JSX.Element {
   const profit = useBossProfitStore()
   const dropHistory = useDropHistoryStore()
   const { mode } = useTrackingModeStore()
-  const { definition } = useThemeAppearance()
   const reduceMotion = useReducedMotion()
 
   // 프로필과 대표 표식은 스토어가 아니라 저장소에서 온다(둘 다 이 화면이 처음 읽는 자리는 아니고,
@@ -231,20 +229,14 @@ export function TodayScreen(): React.JSX.Element {
 
   // 당김이 시작한 회차에만 인디케이터가 돈다. `isSyncing` 은 제목 옆 조회 중… 과 헤더 버튼의
   // 스피너가 쓴다. 그쪽은 자동 조회도 말해야 하는 자리다.
-  const pull = usePullRefresh(refreshAll)
 
   return (
     <View testID="screen-Today" className="flex-1">
+      {/* 불러오는 중은 모달이 말한다. 위젯은 자기 스피너를 갖지 않는다. 서는 자리는 캐릭터
+          설정을 마치고 처음 들어오는 회차 하나다. */}
+      <TodayLoadingModal />
       <ScreenScroll
-        refreshControl={
-          <RefreshControl
-            refreshing={pull.refreshing}
-            onRefresh={pull.onRefresh}
-            tintColor={definition.primaryInk}
-            colors={[definition.primaryInk]}
-            progressBackgroundColor={definition.surface}
-          />
-        }
+        onRefresh={refreshAll}
         header={
           <PageHeader>
             {/* 제목 옆이 이 화면이 얼마나 최신인가 의 자리다. 오른쪽에 가는 곳이 없어

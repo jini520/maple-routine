@@ -3270,7 +3270,7 @@ describe('추적에서 빠진 캐릭터의 기록', () => {
     await useBossProfitStore.getState().refresh(['ocid-1'])
 
     // 동기화에는 추적 목록만 간다. 넓어지는 것은 기록 조회 쪽이다.
-    expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1'])
+    expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1'], undefined)
     expect(getBossProfitRecordsMock.mock.calls.every((call) => call[0].includes('ocid-해제'))).toBe(true)
     expect(useBossProfitStore.getState().rows.map((row) => row.ocid)).toContain('ocid-해제')
   })

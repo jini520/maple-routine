@@ -90,26 +90,33 @@ export function __resetWindowFailuresForTest(): void {
 export type WindowProgress = (done: number, total: number) => void
 
 /**
- * 창을 채운다. **오늘은 안 부른다** (`date=오늘` 이 400 이라 라이브 동기화가 맡는다).
+ * 이 회차에 부를 (캐릭터, 날짜). **콜이 한 번도 안 나간다**(원장만 읽는다).
  *
- * 던지지 않는다. 못 채운 날짜는 원장에 안 남아 다음 회차가 다시 온다.
+ * 실행에서 갈라 둔 것은 **분모를 먼저 알아야** 하기 때문이다. 수집기가 자기 차례에 분모를
+ * 등록하면 앞 수집기가 이미 100% 를 찍은 뒤라 바가 뒤로 간다.
  */
-export async function fillScheduleWindow(
+export interface ScheduleWindowPlan {
+  /** 없으면 부를 수 없다. 로그인 전이거나 키가 없다 */
+  readonly apiKey: string | null
+  readonly jobs: readonly { readonly ocid: string; readonly dateKey: string }[]
+}
+
+/** 부를 것이 없는 계획. 세울 것도 없을 때 이 값을 쓴다. */
+const EMPTY_PLAN: ScheduleWindowPlan = { apiKey: null, jobs: [] }
+
+/**
+ * 창의 계획을 세운다. **콜 없이 원장만 읽는다.**
+ *
+ * 던지지 않는다. 못 읽으면 부를 것이 없는 계획이다.
+ */
+export async function planScheduleWindow(
   ocids: readonly string[],
   now: Date,
-  onProgress?: WindowProgress,
-): Promise<void> {
-  if (ocids.length === 0) {
-    lastFailures = []
-    onProgress?.(0, 0)
-    return
-  }
+): Promise<ScheduleWindowPlan> {
+  if (ocids.length === 0) return EMPTY_PLAN
 
-  const authConfig = await getAuthConfig()
-  if (authConfig === null) {
-    onProgress?.(0, 0)
-    return
-  }
+  const authConfig = await getAuthConfig().catch(() => null)
+  if (authConfig === null) return EMPTY_PLAN
 
   const rollingFloor = getMinQueryableDate(now)
   const floorDateKey = rollingFloor > MIN_SCHEDULER_DATE ? rollingFloor : MIN_SCHEDULER_DATE
@@ -126,6 +133,36 @@ export async function fillScheduleWindow(
       jobs.push({ ocid, dateKey })
     }
   }
+
+  return { apiKey: authConfig.apiKey, jobs }
+}
+
+/**
+ * 창을 채운다. **오늘은 안 부른다** (`date=오늘` 이 400 이라 라이브 동기화가 맡는다).
+ *
+ * 던지지 않는다. 못 채운 날짜는 원장에 안 남아 다음 회차가 다시 온다.
+ *
+ * @param plan 이미 세워 둔 계획. 안 주면 여기서 세운다. 주는 쪽은 **분모를 미리 알아야 하는**
+ *   호출부다(진행 바가 여러 수집기의 총합을 첫 순간부터 들어야 한다)
+ */
+export async function fillScheduleWindow(
+  ocids: readonly string[],
+  now: Date,
+  onProgress?: WindowProgress,
+  plan?: ScheduleWindowPlan,
+): Promise<void> {
+  if (ocids.length === 0) {
+    lastFailures = []
+    onProgress?.(0, 0)
+    return
+  }
+
+  const { apiKey, jobs } = plan ?? (await planScheduleWindow(ocids, now))
+  if (apiKey === null) {
+    onProgress?.(0, 0)
+    return
+  }
+  const authConfig = { apiKey }
 
   // 분모가 여기서 확정된다. 부를 것이 없어도 한 번은 알린다(화면이 바를 안 그리게).
   onProgress?.(0, jobs.length)

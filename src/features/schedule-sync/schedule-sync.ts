@@ -23,6 +23,7 @@ import type { MapleCharacter, SchedulerCharacterState, SharedProgressEntry } fro
 
 import { toScheduleSyncError } from './errors'
 import type { ScheduleSyncError } from './errors'
+import { useRefreshProgress } from '../refresh/progress'
 import { fetchCharacterBasicCached } from './character-basic-fetch'
 import { resolveTrackedCharacterContext } from './character-roster'
 import type { TrackedCharacterContext } from './character-roster'
@@ -420,7 +421,27 @@ export async function syncSchedules(
     await current.promise.catch(() => undefined)
   }
 
-  const round = runSyncRound(ocids, onProgress)
+  // 진행률은 **호출부가 안 맡을 때만 이 함수가 낸다.**
+  //
+  // 맡는 쪽이 있다(`onProgress`). 그 호출부는 수집기 여럿의 분모를 **미리 다 더해** 칸을
+  // 열어 둔 상태다. 여기서 칸을 하나 더 열면 그 총합이 도중에 늘어 바가 뒤로 간다.
+  //
+  // 안 맡으면 여기가 낸다. 그 자리가 today 와 스케줄러 두 화면이고, 거기서는 이 회차가 곧
+  // 회차 전부라 분모가 도중에 안 바뀐다.
+  //
+  // 칸은 첫 보고에서 연다. 분모가 **자격을 지난 캐릭터 수**라 그 전에는 모른다.
+  const owned = onProgress === undefined
+  const endRound = owned ? useRefreshProgress.getState().beginRound() : () => undefined
+  let slot: number | null = null
+  const report = (completed: number, total: number): void => {
+    if (owned) {
+      if (slot === null) slot = useRefreshProgress.getState().start(total)
+      useRefreshProgress.getState().advance(slot, completed)
+    }
+    onProgress?.(completed, total)
+  }
+
+  const round = runSyncRound(ocids, report)
   inFlightRound = { ocids: new Set(ocids), promise: round }
   try {
     return pickRequested(await round, ocids)
@@ -428,6 +449,7 @@ export async function syncSchedules(
     // 성공·실패와 무관하게 정산되면 즉시 비운다. 실패한 회차를 들고 있으면 네트워크가 돌아와도
     // 다음 진입이 그 실패를 다시 받는다.
     inFlightRound = null
+    endRound()
   }
 }
 

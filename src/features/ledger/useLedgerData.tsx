@@ -23,8 +23,18 @@ import { useBossProfitStore } from '../boss-profit/store'
 import { defaultCashbookRange, type CashbookRange } from '../cashbook/range'
 import { collectEnhancementHistory, measureEnhancementHistory } from '../enhancement-history/collect'
 import { datesBetween } from '../../lib/calendar'
-import { useLedgerProgress } from './progress'
+import { useRefreshProgress } from '../refresh/progress'
 import { syncScheduleWindow } from '../schedule-window/sync'
+import { planScheduleWindow } from '../schedule-window/window'
+
+/**
+ * 한 회차가 받을 것. **화면이 고르고 층이 어떻게 받을지를 안다.**
+ *
+ * - `live` 오늘. 라이브 동기화와 자동 기록
+ * - `window` 지난 날의 창. 두 화면 다 받는다. 가계부의 보스 결정석 줄이 그 기록에서 온다
+ * - `enhancement` 강화 사용 내역. **가계부만** 받는다. 보스 수익은 그 값을 안 그린다
+ */
+export type LedgerReloadPart = 'live' | 'window' | 'enhancement'
 
 export interface LedgerDataState {
   /**
@@ -49,12 +59,14 @@ export interface LedgerDataState {
   /** 회차가 끝날 때마다 오른다. 자식이 **다시 읽을 계기**로 쓰는 유일한 신호다. */
   revision: number
   /**
-   * 전부 다시 불러온다. **두 하위 화면의 당김이 이것만 부른다.**
+   * 다시 불러온다. **두 하위 화면의 당김이 이것만 부른다.**
    *
-   * 오늘(라이브 동기화 · 자동 기록)과 과거(창)를 함께 받는다. 둘을 자식이 조합하면 어느 쪽이
-   * 무엇을 부르는지가 화면마다 갈린다.
+   * 받을 조각을 화면이 고른다. 보스 수익은 `['live', 'window']`, 가계부는 거기에
+   * `'enhancement'` 를 더한다. 조각을 고를 뿐 도는 법(순서·겹침·진행률)은 층이 진다.
+   *
+   * @param parts 이 회차가 받을 것
    */
-  reload: () => Promise<void>
+  reload: (parts: readonly LedgerReloadPart[]) => Promise<void>
   /**
    * 가계부가 **그리는 날짜 범위**를 층에 알린다. 그 범위의 강화 사용 내역을 층이 받는다.
    *
@@ -106,83 +118,124 @@ export function LedgerDataProvider(props: {
   }, [])
 
   /**
-   * @param live 오늘(라이브 동기화 · 자동 기록)까지 받을 것인가
+   * @param parts 이 회차가 받을 것
    * @param range 강화 사용 내역을 받을 날짜 범위
    *
-   * 마운트에서 `live` 가 거짓이다. 오늘은 보스 수익 스토어의 진입 경로(`loadTrackedOcids`)가
+   * 마운트에는 `live` 가 없다. 오늘은 보스 수익 스토어의 진입 경로(`loadTrackedOcids`)가
    * 10분 TTL 로 이미 맡고 있어, 여기서 또 부르면 진입마다 조회가 두 번 나간다.
    *
-   * **창과 히스토리를 함께 돌린다.** 둘 다 콜 없이 원장만 읽어 자기 분모를 알리므로, 진행 바가
-   * 도는 중에 뒤로 가지 않는다.
+   * **계획을 먼저 다 세우고 그 다음에 돌린다.** 셋 다 콜 없이 원장만 읽어 자기 할 일을 셀 수
+   * 있어서, 총합을 첫 순간에 잡을 수 있다. 실행하며 각자 등록하면 바가 뒤로 간다.
    *
-   * @param historyTotal 기간 이동이 **미리 재 둔** 히스토리의 작업 수. 주면 바가 회차 첫 순간부터
-   *   분모를 갖는다. 안 주면 수집기가 저장소 왕복 셋을 지나 스스로 알린다
+   * 회차를 열고 `finally` 에서 닫는다. 그래야 한 갈래가 끝나며 그 칸만 사라져 바가 중간에
+   * 꺼지는 일이 없다.
+   *
+   * @param historyTotal 기간 이동이 **미리 재 둔** 히스토리의 작업 수. 안 주면 여기서 잰다
    */
-  const run = useCallback(async (live: boolean, range: CashbookRange, historyTotal?: number) => {
-    running.current += 1
-    const progress = useLedgerProgress.getState()
-    progress.reset()
+  const run = useCallback(
+    async (parts: readonly LedgerReloadPart[], range: CashbookRange, historyTotal?: number) => {
+      running.current += 1
+      const endRound = useRefreshProgress.getState().beginRound()
 
-    const ocids = await getTrackedCharacterOcids().catch(() => null)
-    if (live && ocids !== null && ocids.length > 0) {
-      await useBossProfitStore
-        .getState()
-        .refresh(ocids, { inPlace: true })
-        .catch(() => undefined)
-    }
+      try {
+        const read = await getTrackedCharacterOcids().catch(() => null)
+        // 좁힌 값을 따로 든다. 아래 갈래가 async 라 `hasOcids` 로 좁힌 것이 그 안까지 안 간다.
+        const ocids: string[] = read ?? []
+        const hasOcids = ocids.length > 0
+        const now = new Date()
+        const wantsLive = parts.includes('live') && hasOcids
+        const wantsWindow = parts.includes('window') && hasOcids
+        const wantsHistory = parts.includes('enhancement')
+        const dates = datesBetween(range.from, range.to)
 
-    /**
-     * 칸은 각자 자기 분모를 알리는 순간 잡힌다. 그 전까지 분모가 0 이라 바가 안 그려진다.
-     *
-     * @param knownTotal 이미 재 둔 분모. 주면 칸을 **여기서 연다**. 수집기가 나중에 같은 값을
-     *   알려도 칸이 이미 있어 두 번 안 열린다
-     */
-    const slotOf = (knownTotal?: number): ((done: number, total: number) => void) => {
-      let slot: number | null =
-        knownTotal === undefined ? null : useLedgerProgress.getState().start(knownTotal)
-      return (done, total) => {
-        if (slot === null) slot = useLedgerProgress.getState().start(total)
-        useLedgerProgress.getState().advance(slot, done)
+        // ## 계획을 먼저 다 세운다
+        //
+        // 셋 다 **콜 없이 원장만 읽어** 자기 할 일을 셀 수 있다. 실행하며 각자 자기 차례에 분모를
+        // 등록하면 앞 수집기가 이미 100% 를 찍은 뒤라 **바가 뒤로 간다**(사용자 보고
+        // `가계부는 왜 로딩이 두번돼`). 총합을 먼저 잡고 그 다음에 실행한다.
+        const [windowPlan, historyPlanned] = await Promise.all([
+          wantsWindow ? planScheduleWindow(ocids, now) : Promise.resolve(null),
+          wantsHistory && historyTotal === undefined
+            ? measureEnhancementHistory(dates, now)
+                .then((size) => size.total)
+                .catch(() => 0)
+            : Promise.resolve(historyTotal ?? 0),
+        ])
+
+        /**
+         * 칸을 **여기서 연다**. 수집기가 나중에 같은 값을 알려도 칸이 이미 있어 두 번 안 열린다.
+         *
+         * @param planned 계획이 센 작업 수
+         */
+        const slotOf = (planned: number): ((done: number, total: number) => void) => {
+          const slot = useRefreshProgress.getState().start(planned)
+          // 실제로 해 보니 다른 분모가 오면 고친다. 라이브가 그 자리다. 계획은 추적 목록의
+          // 캐릭터 수인데 실제로 도는 것은 자격을 지난 수다.
+          return (done, total) => {
+            useRefreshProgress.getState().advance(slot, done, total)
+          }
+        }
+
+        const reportLive = wantsLive ? slotOf(ocids.length) : null
+        const reportWindow = windowPlan === null ? null : slotOf(windowPlan.jobs.length)
+        const reportHistory = wantsHistory ? slotOf(historyPlanned) : null
+
+        // ## 두 갈래가 **함께** 돈다
+        //
+        // 스케줄 갈래 안에서만 순서가 계약이다. 오늘을 받아야 지난 날의 기록이 오늘 것을 안
+        // 빠뜨린다. 강화는 다른 API·다른 표라 그 순서와 무관하다.
+        await Promise.all([
+          (async () => {
+            if (reportLive !== null) {
+              await useBossProfitStore
+                .getState()
+                .refresh(ocids, { inPlace: true }, reportLive)
+                .catch(() => undefined)
+            }
+            if (reportWindow !== null && windowPlan !== null) {
+              await syncScheduleWindow(ocids, new Date(), reportWindow, windowPlan).catch(
+                () => undefined,
+              )
+            }
+          })(),
+          reportHistory === null
+            ? Promise.resolve()
+            : collectEnhancementHistory(dates, new Date(), reportHistory).catch(() => undefined),
+        ])
+      } finally {
+        running.current -= 1
+        endRound()
       }
-    }
 
-    await Promise.all([
-      ocids !== null && ocids.length > 0
-        ? syncScheduleWindow(ocids, new Date(), slotOf()).catch(() => undefined)
-        : Promise.resolve(),
-      collectEnhancementHistory(
-        datesBetween(range.from, range.to),
-        new Date(),
-        slotOf(historyTotal),
-      ).catch(() => undefined),
-    ])
+      if (!alive.current) return
+      setRevision((value) => value + 1)
 
-    running.current -= 1
-    if (!alive.current) return
-    progress.reset()
-    setRevision((value) => value + 1)
-
-    // 도는 회차가 남아 있으면 안 걷는다. 기간을 연타하면 앞 회차가 끝나며 뒤 회차의 표시를
-    // 꺼 버린다. 모달도 같은 계수 뒤에 둔다.
-    if (running.current === 0) {
-      setStatus('ready')
-      setKnownLong(false)
-      setCollecting(false)
-    }
-  }, [])
+      // 도는 회차가 남아 있으면 안 걷는다. 기간을 연타하면 앞 회차가 끝나며 뒤 회차의 표시를
+      // 꺼 버린다. 모달도 같은 계수 뒤에 둔다.
+      if (running.current === 0) {
+        setStatus('ready')
+        setKnownLong(false)
+        setCollecting(false)
+      }
+    },
+    [],
+  )
 
   // 지금 회차가 도는 범위. 화면이 알려 주기 전에는 주간 보기의 기본값이다. 렌더에 안 쓰므로
   // state 가 아니다. state 로 두면 범위가 바뀔 때마다 층이 통째로 다시 그려진다.
   const range = useRef<CashbookRange>(defaultCashbookRange(new Date()))
 
   /** 당김이 부르는 자리라 여기서 `filling` 을 세워도 연쇄 렌더가 아니다. */
-  const reload = useCallback(async () => {
-    // 당김은 안 재고 시작한다. 오늘까지 받는 회차라 원장만 봐서는 길이를 모른다.
-    setKnownLong(false)
-    setStatus('filling')
-    setCollecting(true)
-    await run(true, range.current)
-  }, [run])
+  const reload = useCallback(
+    async (parts: readonly LedgerReloadPart[]) => {
+      // 당김은 안 재고 시작한다. 오늘까지 받는 회차라 원장만 봐서는 길이를 모른다.
+      setKnownLong(false)
+      setStatus('filling')
+      setCollecting(true)
+      await run(parts, range.current)
+    },
+    [run],
+  )
 
   /**
    * 기간을 옮겼다. **아직 안 받은 지난 날이 있는 범위에서만 모달을 띄운다**(사용자 지정).
@@ -213,14 +266,16 @@ export function LedgerDataProvider(props: {
           setStatus('filling')
         }
         // 잰 값을 넘긴다. 안 넘기면 바가 모달보다 늦게 뜬다.
-        await run(false, next, size?.total)
+        await run(['window', 'enhancement'], next, size?.total)
       })()
     },
     [run],
   )
 
+  // 마운트는 **창과 강화**를 받는다. 강화를 여기서 빼면 가계부를 처음 누르는 순간 한 달치
+  // 수집이 시작돼 없던 자리에 모달이 하나 더 선다(사용자 지정 `보스 수익의 당김에서만 빼자`).
   useEffect(() => {
-    void run(false, range.current)
+    void run(['window', 'enhancement'], range.current)
   }, [run])
 
   const value = useMemo(

@@ -9,7 +9,7 @@
  */
 import { resolveDefeatDates } from '../boss-profit/defeat-dates'
 import { recordBossProfitFromWindow } from './records'
-import { fillScheduleWindow, type WindowProgress } from './window'
+import { fillScheduleWindow, type ScheduleWindowPlan, type WindowProgress } from './window'
 
 /**
  * 지금 도는 회차. 겹쳐 부르는 쪽이 이것을 나눠 쓴다.
@@ -32,11 +32,12 @@ export async function syncScheduleWindow(
   ocids: readonly string[],
   now: Date,
   onProgress?: WindowProgress,
+  plan?: ScheduleWindowPlan,
 ): Promise<void> {
   if (inFlight !== null) {
     return inFlight
   }
-  inFlight = runSyncScheduleWindow(ocids, now, onProgress).finally(() => {
+  inFlight = runSyncScheduleWindow(ocids, now, onProgress, plan).finally(() => {
     inFlight = null
   })
   return inFlight
@@ -54,8 +55,9 @@ async function runSyncScheduleWindow(
   ocids: readonly string[],
   now: Date,
   onProgress?: WindowProgress,
+  plan?: ScheduleWindowPlan,
 ): Promise<void> {
-  await fillScheduleWindow(ocids, now, onProgress).catch(() => undefined)
+  await fillScheduleWindow(ocids, now, onProgress, plan).catch(() => undefined)
   await recordBossProfitFromWindow(ocids, now).catch(() => undefined)
   await resolveDefeatDates(ocids, now).catch(() => undefined)
 }

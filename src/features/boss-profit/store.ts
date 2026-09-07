@@ -186,7 +186,15 @@ export interface BossProfitState {
 
 export interface BossProfitStore extends BossProfitState {
   loadTrackedOcids(): Promise<void>
-  refresh(ocids: string[], options?: RefreshOptions): Promise<void>
+  /**
+   * @param onProgress 진행을 **호출부가 맡을 때** 준다. 주면 `syncSchedules` 가 자기 칸을 안 열고
+   *   이 콜백으로만 알린다. 수집기 여럿의 분모를 미리 더해 둔 회차(수익·지출 층)가 그 자리다
+   */
+  refresh(
+    ocids: string[],
+    options?: RefreshOptions,
+    onProgress?: (completed: number, total: number) => void,
+  ): Promise<void>
   setTab(tab: BossCycle): Promise<void>
   goToPreviousPeriod(): Promise<void>
   goToNextPeriod(): Promise<void>
@@ -827,7 +835,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     return hydration
   },
 
-  async refresh(ocids, options) {
+  async refresh(ocids, options, onProgress) {
     const myGeneration = ++requestGeneration
     const tab = get().tab
     const now = new Date()
@@ -1138,7 +1146,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
 
     let results: Awaited<ReturnType<typeof syncSchedules>>
     try {
-      results = await syncSchedules(ocids)
+      results = await syncSchedules(ocids, onProgress)
     } catch (error) {
       // syncSchedules 자체가 던지는 에러(온보딩 미완료 등)는 캐릭터별 에러가 아니라 전체 조회
       // 자체의 실패다. 원인은 toScheduleSyncError 로 살린다.

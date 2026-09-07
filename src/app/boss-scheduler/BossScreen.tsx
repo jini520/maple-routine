@@ -5,7 +5,7 @@
  */
 import { isBossBlocked } from '../../lib/scheduler/required-level'
 import { useEffect, useState } from 'react'
-import { Pressable, RefreshControl, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 
 import type { BossDifficulty } from '../../types'
@@ -51,9 +51,7 @@ import { AnimatedView } from '../../lib/nativewind-interop'
 import { ILLUSTRATION_TEXT_SHADOW_STYLE } from '../../constants/style/text-styles'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
-import { useThemeAppearance } from '../../theme/context'
 import { useOpenTab } from '../../hooks/useOpenTab'
-import { usePullRefresh } from '../../hooks/usePullRefresh'
 
 const PARTY_FILTER_LABELS: Record<PartyFilter, string> = {
   all: '전체',
@@ -150,11 +148,9 @@ export function BossScreen(): React.JSX.Element {
   // 선택한 캐릭터는 앱 전체가 한 벌로 든다.
   const { selectedOcid, select } = useCharacterSelectionStore()
   // **당김이 시작한 회차에만** 인디케이터가 돈다. 헤더 버튼과 자동 조회는 안 연다.
-  const pull = usePullRefresh(() => refresh(trackedOcids ?? []))
   const { mode } = useTrackingModeStore()
   const openTab = useOpenTab()
   const topSafeAreaPx = useTopSafeAreaPx()
-  const { definition } = useThemeAppearance()
   const reduceMotion = useReducedMotion()
   // 카드 탭으로 여는 파티 인원 모달. 편집 중인 난이도를 함께 든다.
   const [partyModal, setPartyModal] = useState<{ boss: MatchedBoss; difficulty: BossDifficulty } | null>(null)
@@ -397,15 +393,7 @@ export function BossScreen(): React.JSX.Element {
     <View testID="screen-Boss" className="flex-1">
       <ScreenScroll
         // 당김은 헤더 버튼과 **같은 재조회**를 부른다. 컨텐츠 스케줄러와 배선이 같아야 한다.
-        refreshControl={
-          <RefreshControl
-            refreshing={pull.refreshing}
-            onRefresh={pull.onRefresh}
-            tintColor={definition.primaryInk}
-            colors={[definition.primaryInk]}
-            progressBackgroundColor={definition.surface}
-          />
-        }
+        onRefresh={() => refresh(trackedOcids ?? [])}
         header={
           // `fixed` 도 spacer 도 없다.
           // 제목과 필터도 목록과 **함께 스크롤된다.** 헤더가 `ScreenScroll` 의 첫 자식이라

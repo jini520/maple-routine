@@ -25,7 +25,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useFocusEffect } from '@react-navigation/native'
-import { Pressable, RefreshControl, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import {
   Badge,
@@ -97,9 +97,7 @@ import { loadMesoRate } from '../../features/cashbook/meso-rate'
 // 보스 수익 탭의 행이 초상을 찾는 그 함수다. 같은 보스가 두 화면에서 다른 그림이면 안 된다.
 import { findPortraitSlug } from '../boss-profit/character-groups'
 import { useLedgerData } from '../../features/ledger/useLedgerData'
-import { usePullRefresh } from '../../hooks/usePullRefresh'
 import { useOpenTab } from '../../hooks/useOpenTab'
-import { useThemeAppearance } from '../../theme/context'
 import { useToastStore } from '../../features/toast/store'
 import { IncomeSheet, type IncomeDraft } from './IncomeSheet'
 import { SpendSheet, type SpendDraft } from './SpendSheet'
@@ -587,7 +585,6 @@ export function CashbookScreen(): React.JSX.Element {
     Array<{ ocid: string; name: string; level: number | null }>
   >([])
   const openTab = useOpenTab()
-  const { definition } = useThemeAppearance()
 
   const monthWeeks = buildCalendarMonth(monthKey)
   const weeks = isWeekly ? [buildResetWeek(weekStartKey)] : monthWeeks
@@ -615,7 +612,7 @@ export function CashbookScreen(): React.JSX.Element {
    */
   const ledger = useLedgerData()
 
-  const pull = usePullRefresh(() => ledger.reload())
+  // **강화 사용 내역을 받는 유일한 당김**이다. 이 화면만 그 값을 그린다.
 
   /**
    * 그리는 범위를 층에 알린다. 그 범위의 강화 사용 내역을 층이 받는다.
@@ -878,15 +875,7 @@ export function CashbookScreen(): React.JSX.Element {
     <View testID="screen-Cashbook" className="flex-1">
       <ScreenScroll
         // 색만 테마에서 넘기고 컨트롤은 셸이 그대로 받는다.
-        refreshControl={
-          <RefreshControl
-            refreshing={pull.refreshing}
-            onRefresh={pull.onRefresh}
-            tintColor={definition.primaryInk}
-            colors={[definition.primaryInk]}
-            progressBackgroundColor={definition.surface}
-          />
-        }
+        onRefresh={() => ledger.reload(['live', 'window', 'enhancement'])}
         header={
           <PageHeader>
             <PageHeaderTitleRow className="justify-between">
