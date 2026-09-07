@@ -6,7 +6,7 @@
  * `docs/migration/parity-inventory.md` §2.3.
  */
 import { useEffect } from 'react'
-import { Pressable, RefreshControl, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 
 import type { DailyContent, WeeklyContent } from '../../types'
@@ -35,10 +35,8 @@ import { SPIN_ANIMATION } from '../../constants/style/animation'
 import { AnimatedView } from '../../lib/nativewind-interop'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
-import { useThemeAppearance } from '../../theme/context'
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
-import { usePullRefresh } from '../../hooks/usePullRefresh'
 import { renderDailyContentCard } from './DailyContentCards'
 import { renderWeeklyContentCard } from './WeeklyContentCards'
 
@@ -61,12 +59,10 @@ export function ContentScreen(): React.JSX.Element {
   // **당김이 시작한 회차에만** 인디케이터가 돈다. 헤더 버튼·자동 조회는 같은
   // 재조회를 부르지만 인디케이터는 안 연다. 버튼은 자기 스피너와 **조회 중...** 을 이미 갖고 있고
   // 자동 조회는 원래 조용해야 하는 것이다.
-  const pull = usePullRefresh(() => refresh(trackedOcids ?? []))
   const { mode } = useTrackingModeStore()
   const navigation = useScreenNavigation()
   const openTab = useOpenTab()
   const topSafeAreaPx = useTopSafeAreaPx()
-  const { definition } = useThemeAppearance()
   const reduceMotion = useReducedMotion()
   // 동기화 전체 실패는 인라인 문단이 아니라 토스트로 알린다. 지속 상태("n분 전")는
   // 새로고침 옆 표기가 이미 담당하고, 토스트에는 원인을 푸는 액션을 붙일 수 있다.
@@ -194,15 +190,7 @@ export function ContentScreen(): React.JSX.Element {
         // 당김은 헤더 버튼과 **같은 재조회**를 부르고, 색만
         // 테마에서 넘긴다. `refreshing` 이 `status` 라서 헤더 버튼으로 시작한 재조회에도 플랫폼
         // 인디케이터가 뜬다. 그 대가는 ADR 이 적는다.
-        refreshControl={
-          <RefreshControl
-            refreshing={pull.refreshing}
-            onRefresh={pull.onRefresh}
-            tintColor={definition.primaryInk}
-            colors={[definition.primaryInk]}
-            progressBackgroundColor={definition.surface}
-          />
-        }
+        onRefresh={() => refresh(trackedOcids ?? [])}
         header={
           // 제목~탭도 목록과 함께 스크롤된다. 헤더는 `ScreenScroll` 의 첫 자식이다.
           <PageHeader>

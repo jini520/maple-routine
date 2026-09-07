@@ -11,14 +11,14 @@
  * - 헤더가 흐름 안이라 뺄 자리가 없어 spacer 도 실측도 없다.
  * - `ScrollView` 가 기본값이라 문서 스크롤을 옮길 일이 없다.
  * - 헤더가 `ScreenScroll` 의 `header` 다.
- * - 당겨서 새로고침은 `RefreshControl` 이 진다.
+ * - 당겨서 새로고침은 `ScreenScroll` 이 진다. 이 화면은 부를 함수만 준다.
  * - 하위 페이지가 덮어 아래 화면의 당김에 손가락이 안 닿는다.
  *
  * @see docs/features/boss-profit.md 정책
  */
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { ScrollView } from 'react-native'
-import { Pressable, RefreshControl, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 
 import { useBossProfitStore } from '../../features/boss-profit/store'
@@ -55,11 +55,9 @@ import { AnimatedView } from '../../lib/nativewind-interop'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
-import { useThemeAppearance } from '../../theme/context'
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { useLedgerData } from '../../features/ledger/useLedgerData'
-import { usePullRefresh } from '../../hooks/usePullRefresh'
 import type { BossProfitContextValue } from './boss-profit-context'
 import { BossProfitContextProvider } from './boss-profit-context'
 import { CharacterAccordion } from './CharacterAccordion'
@@ -116,12 +114,12 @@ export function BossProfitScreen(): React.JSX.Element {
    *
    * **무엇을 다시 부를지는 부모 층이 정한다.** 이 화면은 부탁만 한다.
    */
-  const pull = usePullRefresh(() => ledger.reload())
+  // 조각 둘만 고른다. 강화 사용 내역은 이 화면이 안 그리므로 안 받는다. 그것을 받는 것은
+  // 가계부의 당김과 층 마운트다.
 
   const navigation = useScreenNavigation()
   const openTab = useOpenTab()
   const topSafeAreaPx = useTopSafeAreaPx()
-  const { definition } = useThemeAppearance()
   const reduceMotion = useReducedMotion()
 
   // 동기화 전체 실패는 토스트로 알린다. 기간 라벨·"n분 전" 표기가 남아 맥락은 화면에 있다.
@@ -432,15 +430,7 @@ export function BossProfitScreen(): React.JSX.Element {
           header={header}
           // 당김은 헤더 버튼과 같은 재조회를 부르고 색만 테마에서 넘긴다. 빈 상태는 이 가지에
           // 오지 않는다.
-          refreshControl={
-            <RefreshControl
-              refreshing={pull.refreshing}
-              onRefresh={pull.onRefresh}
-              tintColor={definition.primaryInk}
-              colors={[definition.primaryInk]}
-              progressBackgroundColor={definition.surface}
-            />
-          }
+          onRefresh={() => ledger.reload(['live', 'window'])}
         >
           <View testID="pull-content" className="gap-2 px-4 pb-4">
             {/* 점선 박스(빈 상태의 어법)와 비-브랜드 링을 쓰지 않고 셸 승계 카드를 쓴다. 백필이

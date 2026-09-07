@@ -15,8 +15,8 @@
 // 그 구분이 곧 이 실기기에서 잡은 회귀다.
 
 import { getThemeDefinition } from '../../../../lib/theme/theme-registry'
-import { within } from '@testing-library/react-native'
-import { Dimensions, RefreshControl, Text, View } from 'react-native'
+import { act, within } from '@testing-library/react-native'
+import { Dimensions, Text, View } from 'react-native'
 import type { Metrics } from 'react-native-safe-area-context'
 
 import { flattenStyle, renderOverlay, 테스트_안전영역 } from '../../../__tests__/render-atom'
@@ -167,11 +167,11 @@ describe(' 헤더도 함께 스크롤된다', () => {
 // 안 보이고, 자동 조회로 열렸을 때는 **상단에 빈 띠** 로 보인다. 페이드
 // 높이만큼 내려 구간 밖에서 돌게 한다.
 describe(' 당김 인디케이터는 페이드 구간 아래에서 돈다', () => {
-  const 당김 = <RefreshControl refreshing={false} onRefresh={() => undefined} />
+  const 재조회 = () => Promise.resolve()
 
   it('상단을 깎는 화면에서는 그 높이만큼 내린다', async () => {
     const { getByTestId } = await renderOverlay(
-      <ScreenScroll header={<View testID="header" />} refreshControl={당김}>
+      <ScreenScroll header={<View testID="header" />} onRefresh={재조회}>
         {목록}
       </ScreenScroll>,
     )
@@ -185,26 +185,62 @@ describe(' 당김 인디케이터는 페이드 구간 아래에서 돈다', () =
   // 인디케이터가 가려질 일도 없고, 그래도 내리면 그만큼 엉뚱하게 낮은 자리에서 돈다.
   it('상단을 안 깎는 화면에서는 안 내린다', async () => {
     const { getByTestId } = await renderOverlay(
-      <ScreenScroll refreshControl={당김}>{목록}</ScreenScroll>,
+      <ScreenScroll onRefresh={재조회}>{목록}</ScreenScroll>,
     )
 
     expect(getByTestId('screen-scroll').props.refreshControl.props.progressViewOffset).toBeUndefined()
   })
+})
 
-  // 이 셸은 `refreshControl` 을 **그대로 넘기기만 한다**. 오프셋 하나를 얹느라
-  // 화면이 정한 값(색·`refreshing`·`onRefresh`)이 바뀌면 그 계약이 깨진다.
-  it('화면이 정한 값은 그대로 둔다', async () => {
+// ★ 당김 배선은 **셸이 갖는다**. 화면은 자기 재조회 함수만 준다.
+//
+// 화면마다 조립하면 같은 여덟 줄이 다섯 벌이 되고, 그중 하나가 테마 색을 빠뜨려도 아무도 모른다.
+// 내비게이터로 올릴 수는 없다. `RefreshControl` 은 컴포넌트가 아니라 `ScrollView` 의 프롭이라
+// 스크롤 컨테이너가 있는 자리에만 산다.
+describe('당김 배선', () => {
+  it('함수를 주면 셸이 인디케이터를 만든다', async () => {
+    const 테마 = getThemeDefinition('혼테일')
+    rnThemeAppearancePort.apply('혼테일', 테마)
     const { getByTestId } = await renderOverlay(
-      <ScreenScroll header={<View testID="header" />} refreshControl={
-        <RefreshControl refreshing onRefresh={() => undefined} tintColor="#abcdef" />
-      }>
-        {목록}
-      </ScreenScroll>,
+      <ScreenScroll onRefresh={() => Promise.resolve()}>{목록}</ScreenScroll>,
     )
 
     const control = getByTestId('screen-scroll').props.refreshControl
-    expect(control.props.refreshing).toBe(true)
-    expect(control.props.tintColor).toBe('#abcdef')
+    expect(control).toBeTruthy()
+    // 색은 테마에서 온다. 화면이 넘기지 않는다.
+    expect(control.props.tintColor).toBe(테마.primaryInk)
+    expect(control.props.progressBackgroundColor).toBe(테마.surface)
+  })
+
+  // 안 주면 당김이 없는 화면이다(설정 계열·하위 페이지). 그 화면의 스크롤 뷰 프롭을 한 개도
+  // 바꾸지 않는다.
+  it('안 주면 인디케이터 자체가 없다', async () => {
+    const { getByTestId } = await renderOverlay(<ScreenScroll>{목록}</ScreenScroll>)
+
+    expect(getByTestId('screen-scroll').props.refreshControl).toBeUndefined()
+  })
+
+  // **당긴 회차에만** 돈다. 그 판정은 `usePullRefresh` 가 들고 셸이 그것을 부른다. 화면이
+  // 직접 부르면 다섯 곳이 같은 실수를 할 수 있는 자리가 다섯 개 남는다.
+  it('처음에는 안 돈다. 당겨야 돈다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <ScreenScroll onRefresh={() => Promise.resolve()}>{목록}</ScreenScroll>,
+    )
+
+    expect(getByTestId('screen-scroll').props.refreshControl.props.refreshing).toBe(false)
+  })
+
+  it('당기면 준 함수를 부른다', async () => {
+    const 재조회 = jest.fn().mockResolvedValue(undefined)
+    const { getByTestId } = await renderOverlay(
+      <ScreenScroll onRefresh={재조회}>{목록}</ScreenScroll>,
+    )
+
+    await act(async () => {
+      getByTestId('screen-scroll').props.refreshControl.props.onRefresh()
+    })
+
+    expect(재조회).toHaveBeenCalledTimes(1)
   })
 })
 

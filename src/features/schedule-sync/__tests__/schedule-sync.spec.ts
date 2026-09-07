@@ -62,6 +62,7 @@ import {
   syncSchedules,
 } from '../schedule-sync'
 import { hasSyncAttemptedThisRun, resetSyncRunStateForTests } from '../sync-run-state'
+import { useRefreshProgress } from '../../refresh/progress'
 import { setRepresentativeCharacter } from '../../../storage/character-selection'
 
 function mockCharacter(ocid: string): MapleCharacter {
@@ -131,6 +132,7 @@ beforeEach(async () => {
   // 같은 이유로 진행 중인 회차도 비운다. 끝내지 않은 회차를 남기면 다음 테스트가 거기에
   // 합류해 영영 안 끝난다.
   resetSyncSingleFlightForTests()
+  useRefreshProgress.getState().resetForTests()
   prefs = installFakePreferences()
   getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
   getCachedSchedulerStateMock.mockResolvedValue(null)
@@ -272,6 +274,64 @@ describe('syncSchedules', () => {
     expect(onProgress).toHaveBeenCalledTimes(3)
     expect(onProgress).toHaveBeenNthCalledWith(1, 0, 2)
     expect(onProgress).toHaveBeenLastCalledWith(2, 2)
+  })
+
+  // 진행률을 **이 함수가 직접 낸다**. 스토어 셋에 인자를 심어 나르지 않는 것은 이 함수가 단일
+  // 비행의 주인이라 분모를 이미 손에 들고 있어서다. 그래서 보스 수익 스토어처럼 `onProgress`
+  // 자리가 없는 호출부도 바에 잡힌다.
+  describe('진행률을 스토어에 낸다', () => {
+    async function 캐릭터둘(): Promise<void> {
+      const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      fetchSchedulerCharacterStateMock
+        .mockResolvedValueOnce(schedulerState('캐릭터1'))
+        .mockResolvedValueOnce(schedulerState('캐릭터2'))
+    }
+
+    it('회차가 도는 동안 분모가 선다', async () => {
+      await 캐릭터둘()
+      // 바깥 회차를 열어 둔다. 안 열면 이 회차가 끝나며 칸이 걷혀 검사할 것이 없다.
+      const 끝내기 = useRefreshProgress.getState().beginRound()
+
+      await syncSchedules(['ocid-1', 'ocid-2'])
+
+      expect(useRefreshProgress.getState()).toMatchObject({ done: 2, total: 2 })
+      끝내기()
+    })
+
+    it('회차가 끝나면 걷힌다', async () => {
+      await 캐릭터둘()
+
+      await syncSchedules(['ocid-1', 'ocid-2'])
+
+      expect(useRefreshProgress.getState()).toMatchObject({ done: 0, total: 0 })
+    })
+
+    // 분모는 **자격을 지난 캐릭터 수**다. 요청한 ocid 수가 아니다. 계정 목록에 없는 ocid 가
+    // 섞이면 둘이 갈리고, 요청 수로 열면 바가 끝까지 안 찬다.
+    it('분모는 요청 수가 아니라 실제 대상 수다', async () => {
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1')])])
+      fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
+      const 끝내기 = useRefreshProgress.getState().beginRound()
+
+      await syncSchedules(['ocid-1', '없는-ocid'])
+
+      expect(useRefreshProgress.getState().total).toBe(1)
+      끝내기()
+    })
+
+    // 콜백은 회차를 소유한 호출만 받는다. 스토어는 그 제한이 없어 **합류한 호출도 같은 값을 본다**.
+    it('합류한 호출도 같은 진행을 본다', async () => {
+      await 캐릭터둘()
+      const 끝내기 = useRefreshProgress.getState().beginRound()
+
+      const 주인 = syncSchedules(['ocid-1', 'ocid-2'])
+      const 합류 = syncSchedules(['ocid-1', 'ocid-2'])
+      await Promise.all([주인, 합류])
+
+      expect(useRefreshProgress.getState()).toMatchObject({ done: 2, total: 2 })
+      끝내기()
+    })
   })
 
   it('첫 캐릭터(프리플라이트)를 먼저 호출해 응답을 기다린 뒤, 나머지 캐릭터는 병렬로 호출한다', async () => {

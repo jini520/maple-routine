@@ -69,7 +69,7 @@
 | 글자→값 | `components/organisms/MesoPad/meso-pad.ts` 의 `parseMesoText` | OS 키보드가 넣은 글자에서 숫자만 남긴다. `MesoAmountField`·`MesoKeypad` 는 **드롭 판매가 전용**으로 남는다([[ADR-124]] 결정 5) |
 | 보스 타일 | `components/molecules/BossPortrait/`(`shape`) · `components/atoms/Badge/`(난이도 variant + `DIFFICULTY_SHORT`) + `app/boss-profit/character-groups.ts` 의 `findPortraitSlug` | 펼친 결정석 줄이 그리는 네모 타일([[ADR-172]] 정정 1·2). **셋 다 보스 수익 탭이 쓰는 그것**이고, 프롭 둘이 ‘네모’와 ‘한 글자 표기’만 더한다 |
 | 캐릭터 고르개 | `components/organisms/SelectField/` + `app/cashbook/character-options.ts` | 라벨–값 줄 모양의 커스텀 드롭다운. 세로 배치는 `AccountSelect/place-dropdown` 을 그대로 쓴다 |
-| 당겨서 새로고침 | `features/cashbook/records.ts` 의 `refreshCashbook` + `hooks/usePullRefresh.ts` | **동기화 → 날짜 캐기 → 다시 읽기** 차례([[ADR-170]] 정정 8). 보스 수익 탭의 당김과 같은 재조회를 부른다 |
+| 당겨서 새로고침 | `features/ledger/useLedgerData.tsx` 의 `reload` | **동기화 → 날짜 캐기 → 다시 읽기** 차례([[ADR-170]] 정정 8). 층이 회차를 소유하고 이 화면은 조각을 골라 부탁한다 — `reload(['live', 'window', 'enhancement'])`([[ADR-226]] 결정 2). **강화 사용 내역을 받는 유일한 당김**이다. 보스 수익 탭은 그 값을 안 그려서 `enhancement` 를 안 넣는다. 배선은 `ScreenScroll` 의 `onRefresh` 가 진다 |
 | 낡은 숫자 묻기 | `features/cashbook/records.ts` 의 `cashbookDataRevision` + 화면의 `useFocusEffect` | 다시 들어올 때 **‘내가 읽은 판 ≠ 지금 판’** 이면만 다시 읽는다([[ADR-189]]). 판은 저장 계층이 관리한다. `storage/boss-drops`·`storage/boss-profit` 둘 |
 | 화면 | `app/cashbook/CashbookScreen.tsx` | 주간/월간 전환 + 기간 이동 + **기간 합계 세 칸** + 격자 + 고른 날의 상세 + **결정석 줄 펼치기** |
 

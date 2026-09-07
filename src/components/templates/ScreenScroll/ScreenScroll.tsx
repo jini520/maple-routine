@@ -7,10 +7,12 @@
  * 깔려 전환 내내 화면이 검어진다. 패치는 마스크를 참조로 기억하고 `drawChild` 에서 막는다.
  */
 import MaskedView from '@react-native-masked-view/masked-view'
-import { cloneElement } from 'react'
 import type { ScrollView as ScrollViewType } from 'react-native'
-import { Platform, ScrollView, useWindowDimensions, View } from 'react-native'
+import { Platform, RefreshControl, ScrollView, useWindowDimensions, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+
+import { usePullRefresh } from '../../../hooks/usePullRefresh'
+import { useThemeAppearance } from '../../../theme/context'
 
 import { resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
 import { useBottomSafeAreaPx, useTopSafeAreaPx } from '../../../lib/safe-area'
@@ -66,10 +68,19 @@ import {
 // 움직이고 글로우만 그린다) 커스텀 마크를 고르면 그 플랫폼에서는 제스처 계층을 처음부터 새로
 // 만들어야 한다.
 //
-// 손대는 것은 한 프롭뿐이다. `progressViewOffset`. 인디케이터가 바로 위 안전영역 페이드에
-// 함께 깎이기 때문이고(두 플랫폼 다 마스크 안이다. iOS 는 스크롤 뷰의 서브뷰, 안드로이드는
-// `ScrollView` 를 감싸는 `AndroidSwipeRefreshLayout`), 그 높이를 아는 것이 화면이 아니라 이
-// 셸이라 여기서 얹는다. 값은 플랫폼마다 다르고 그 계산은 `pull-indicator-offset.ts` 가 갖는다.
+// 배선은 **셸이 갖는다**. 화면은 `onRefresh` 로 자기 재조회 함수만 준다. 화면마다 조립하면
+// 같은 여덟 줄이 다섯 벌이 되고, 그중 하나가 테마 색을 빠뜨려도 아무도 모른다.
+//
+// 내비게이터로는 못 올린다. `RefreshControl` 은 컴포넌트가 아니라 `ScrollView` 의 프롭이라
+// 제스처도 인디케이터도 스크롤 컨테이너 안에 산다. 층 스택에는 그 컨테이너가 없다.
+//
+// 층에 레지스트리를 두고 화면이 등록하는 방식도 안 된다. 층 안의 화면은 탭이고 형제가 서로
+// 언마운트하지 않아, 셋이 한 슬롯에 등록하면 마지막 등록자가 이기고 `refreshing` 하나를 나눠
+// 써 한쪽의 당김이 다른 쪽 인디케이터를 연다. 프롭으로 받으면 그 상태가 인스턴스마다 하나다.
+//
+// `progressViewOffset` 은 인디케이터가 바로 위 안전영역 페이드에 함께 깎이기 때문에 얹는다
+// (두 플랫폼 다 마스크 안이다. iOS 는 스크롤 뷰의 서브뷰, 안드로이드는 `ScrollView` 를 감싸는
+// `AndroidSwipeRefreshLayout`). 값은 플랫폼마다 다르고 계산은 `pull-indicator-offset.ts` 가 갖는다.
 
 export interface ScreenScrollProps {
   children: React.ReactNode
@@ -89,13 +100,12 @@ export interface ScreenScrollProps {
    */
   ref?: React.Ref<ScrollViewType>
   /**
-   * 당겨서 새로고침. `<RefreshControl … />` 을 그대로 넘긴다.
+   * 당겨서 새로고침이 부르는 재조회. **헤더 새로고침 버튼과 같은 것**이어야 한다.
    *
-   * 셸이 **만들지 않고 받는** 이유는 `refreshing` 이 각 화면 스토어의 상태이고 `onRefresh` 가 그
-   * 화면의 재조회이기 때문이다(당김과 헤더 버튼은 같은 재조회를 부른다).
-   * 안 주면 당김이 없는 화면이다(설정 계열·하위 페이지).
+   * 셸이 받는 것은 함수 하나뿐이다. 인디케이터를 만들고 색을 입히고 당긴 회차만 돌게 하는 일은
+   * 셸이 진다. 안 주면 당김이 없는 화면이다(설정 계열·하위 페이지).
    */
-  refreshControl?: React.ComponentProps<typeof ScrollView>['refreshControl']
+  onRefresh?: () => Promise<void>
   /**
    * 스크롤 이벤트를 매 프레임 흘릴 것인가. **끌어서 순서 바꾸기의 자동 스크롤만** 켠다.
    *
@@ -124,11 +134,14 @@ export function ScreenScroll({
   children,
   header,
   ref,
-  refreshControl,
+  onRefresh,
   tracksScrollOffset = false,
   hasTabBar = true,
 }: ScreenScrollProps): React.JSX.Element {
   const insets = useSafeAreaInsets()
+  const { definition } = useThemeAppearance()
+  // 훅이라 조건부로 못 부른다. 당김이 없는 화면에서는 아무도 이 값을 안 읽는다.
+  const pull = usePullRefresh(onRefresh ?? (() => Promise.resolve()))
   // 위아래 **둘 다 인셋이 아니라 하한이 깔린 값**이다.
   // 위는 헤더(`PageHeader`)와 페이드가 같은 값을 봐야 제목 윗변과 페이드 끝선이 한 선에 있고,
   // 아래는 떠 있는 바(`BottomBar`)와 같은 값을 봐야 마지막 카드가 캡슐 뒤로 안 들어간다.
@@ -183,9 +196,17 @@ export function ScreenScroll({
       // 상단 페이드 구간은 알파가 0 에서 시작하므로 그대로 두면 당김 자리에 열리는 것이
       // 인디케이터가 아니라 빈 띠다. 얼마나 내릴지는 옆 파일이 갖는다.
       refreshControl={
-        refreshControl === undefined || indicatorOffsetPx === 0
-          ? refreshControl
-          : cloneElement(refreshControl, { progressViewOffset: indicatorOffsetPx })
+        onRefresh === undefined ? undefined : (
+          <RefreshControl
+            refreshing={pull.refreshing}
+            onRefresh={pull.onRefresh}
+            // 0 이면 안 준다. 그 화면의 스크롤 뷰 프롭을 한 개도 바꾸지 않기 위해서다.
+            progressViewOffset={indicatorOffsetPx === 0 ? undefined : indicatorOffsetPx}
+            tintColor={definition.primaryInk}
+            colors={[definition.primaryInk]}
+            progressBackgroundColor={definition.surface}
+          />
+        )
       }
       // 조건부 전개다. 안 켠 화면의 스크롤 뷰 프롭을 한 개도 바꾸지 않는다.
       {...(tracksScrollOffset ? { scrollEventThrottle: 16 } : null)}
