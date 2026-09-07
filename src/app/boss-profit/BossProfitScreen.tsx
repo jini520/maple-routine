@@ -19,11 +19,9 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { ScrollView } from 'react-native'
 import { Pressable, View } from 'react-native'
-import { useReducedMotion } from 'react-native-reanimated'
 
 import { useBossProfitStore } from '../../features/boss-profit/store'
 import { usePeriodLoadErrorToast } from '../../features/boss-profit/use-period-error-toast'
-import { formatSyncedAt } from '../../features/schedule-sync/format'
 import {
   useScheduleSyncErrorToast,
   useStaleCharactersToast,
@@ -41,20 +39,19 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ProfitIcon,
-  RefreshCwIcon,
   Text,
 } from '../../components/atoms'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { ValuableDropBadge } from '../../components/molecules/ValuableDropBadge/ValuableDropBadge'
+import { DataFreshness } from '../../components/molecules/DataFreshness/DataFreshness'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { SPIN_ANIMATION } from '../../constants/style/animation'
-import { AnimatedView } from '../../lib/nativewind-interop'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
+import { useDataFreshness } from '../../features/refresh/freshness'
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { useLedgerData } from '../../features/ledger/useLedgerData'
@@ -90,7 +87,6 @@ export function BossProfitScreen(): React.JSX.Element {
     staleCharacterNames,
     characterIssues,
     trackedOcids,
-    lastSyncedAt,
     loadTrackedOcids,
     refresh,
     setTab,
@@ -119,8 +115,9 @@ export function BossProfitScreen(): React.JSX.Element {
 
   const navigation = useScreenNavigation()
   const openTab = useOpenTab()
+  const fetchedAt = useDataFreshness((state) => state.fetchedAt.profit)
+  const markFetched = useDataFreshness((state) => state.markFetched)
   const topSafeAreaPx = useTopSafeAreaPx()
-  const reduceMotion = useReducedMotion()
 
   // 동기화 전체 실패는 토스트로 알린다. 기간 라벨·"n분 전" 표기가 남아 맥락은 화면에 있다.
   useScheduleSyncErrorToast(error, { onRetry: () => refresh(trackedOcids ?? []) })
@@ -251,17 +248,22 @@ export function BossProfitScreen(): React.JSX.Element {
         {/* 히스토리 진입점은 탭 줄이 아니라 제목 줄 우측이고 아이콘이 아니라 글자다. 진입점
             둘은 같은 어휘를 쓰고 `아이템 가격`(쓰기)이 `히스토리`(읽기) 왼쪽이다. 값을 매기는
             쪽이 주마다 들르는 자리다. */}
-        <PageHeaderTitleRow className="justify-between">
-          <Text className="text-lg font-semibold text-text">보스 수익</Text>
-          <View className="flex-row items-center gap-3">
-            <Pressable role="button" onPress={() => navigation.navigate('DropPrice')}>
-              <Text className="text-sm font-medium text-text-muted">아이템 가격</Text>
-            </Pressable>
-            <Pressable role="button" onPress={() => navigation.navigate('DropHistory')}>
-              <Text className="text-sm font-medium text-text-muted">히스토리</Text>
-            </Pressable>
-          </View>
-        </PageHeaderTitleRow>
+        {/* 제목과 갱신 시각이 **한 덩어리**다. 따로 넣으면 이 헤더의 `gap-4` 가 둘 사이에
+            들어가 제목에 딸린 글씨로 안 읽힌다. */}
+        <View className="gap-1">
+          <PageHeaderTitleRow className="justify-between">
+            <Text className="text-lg font-semibold text-text">보스 수익</Text>
+            <View className="flex-row items-center gap-3">
+              <Pressable role="button" onPress={() => navigation.navigate('DropPrice')}>
+                <Text className="text-sm font-medium text-text-muted">아이템 가격</Text>
+              </Pressable>
+              <Pressable role="button" onPress={() => navigation.navigate('DropHistory')}>
+                <Text className="text-sm font-medium text-text-muted">히스토리</Text>
+              </Pressable>
+            </View>
+          </PageHeaderTitleRow>
+          <DataFreshness fetchedAt={fetchedAt} />
+        </View>
 
         <View className="flex-row items-center gap-4">
           <Pressable role="button" aria-selected={tab === 'weekly'} onPress={() => setTab('weekly')}>
@@ -287,28 +289,6 @@ export function BossProfitScreen(): React.JSX.Element {
             </Text>
           </Pressable>
 
-          {/* 동기화 상태 영역은 어느 기간에서도 선다. 당김이 어느 기간에서도 돌기 때문이다.
-              갈라 두면 버튼은 없는데 당기면 도는 상태가 생긴다. 제목 줄이 아니라 탭과 같은 줄이다. */}
-          <View className="ml-auto shrink-0 flex-row items-center gap-2">
-              <Text className="text-sm text-text-muted">
-                {status === 'loading' ? '조회 중...' : formatSyncedAt(lastSyncedAt)}
-              </Text>
-              {/* 이 줄의 높이는 활성 탭 pill(30px)이 정한다. 기본 `p-2`(32px)면 새로고침이 없는
-                  과거 기간과 2px 어긋난다. */}
-              <Pressable
-                role="button"
-                aria-label="새로고침"
-                onPress={() => refresh(trackedOcids ?? [], { inPlace: true })}
-                className="h-[30px] w-[30px] items-center justify-center"
-              >
-                <AnimatedView
-                  testID="refresh-icon"
-                  style={status === 'loading' && !reduceMotion ? SPIN_ANIMATION : undefined}
-                >
-                  <RefreshCwIcon className="h-4 w-4 text-primary-ink" strokeWidth={2} aria-hidden />
-                </AnimatedView>
-              </Pressable>
-          </View>
         </View>
 
         <View className="flex-row items-center justify-center gap-4">
@@ -430,7 +410,11 @@ export function BossProfitScreen(): React.JSX.Element {
           header={header}
           // 당김은 헤더 버튼과 같은 재조회를 부르고 색만 테마에서 넘긴다. 빈 상태는 이 가지에
           // 오지 않는다.
-          onRefresh={() => ledger.reload(['live', 'window'])}
+          onRefresh={async () => {
+            await ledger.reload(['live', 'window'])
+            // 헤더 아래 한 줄이 읽는 값. 당김이 실제로 부른 조회가 끝난 자리다.
+            await markFetched('profit')
+          }}
         >
           <View testID="pull-content" className="gap-2 px-4 pb-4">
             {/* 점선 박스(빈 상태의 어법)와 비-브랜드 링을 쓰지 않고 셸 승계 카드를 쓴다. 백필이

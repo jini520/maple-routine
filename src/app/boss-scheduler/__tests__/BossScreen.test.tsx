@@ -9,6 +9,7 @@ import {
   type BossCharacterView,
   type BossSchedulerStore,
 } from '../../../features/boss-scheduler/store'
+import { useDataFreshness } from '../../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import weeklyBossesData from '../../../data/weekly-bosses.json'
 import { WEEKLY_BOSS_CLEAR_LIMIT, type MatchedBoss } from '../../../lib/boss/boss-matching'
@@ -155,15 +156,6 @@ function refreshControl(): { refreshing: boolean; onRefresh: () => void } {
 }
 
 /** 두 노드를 **같은 줄**로 묶는 가장 작은 상자(아래 케이스가 그것으로 자리를 본다). */
-function nearestCommonAncestor(a: AtomElement, b: AtomElement): AtomElement {
-  const ancestors = new Set<AtomElement>()
-  for (let node: AtomElement | null = a; node !== null; node = node.parent) ancestors.add(node)
-  for (let node: AtomElement | null = b; node !== null; node = node.parent) {
-    if (ancestors.has(node)) return node
-  }
-  throw new Error('공통 조상이 없다. 두 노드가 같은 트리에 있지 않다')
-}
-
 function contains(ancestor: AtomElement, node: AtomElement): boolean {
   for (let current: AtomElement | null = node; current !== null; current = current.parent) {
     if (current === ancestor) return true
@@ -185,6 +177,8 @@ beforeEach(() => {
 // 실물 스토어라 값이 파일 안에서 넘어가므로 테스트마다 되돌린다.
 beforeEach(() => {
   useCharacterSelectionStore.setState({ selectedOcid: null })
+  // 실물 스토어라 값이 파일 안에서 넘어간다. 되돌리지 않으면 앞 케이스가 적은 시각이 남는다.
+  useDataFreshness.setState({ fetchedAt: {} })
 })
 
 describe('BossScreen: 빈 상태와 마운트', () => {
@@ -498,18 +492,16 @@ describe('BossScreen: 재조회', () => {
   const loaded = (status: Store['status'] = 'loaded'): Store =>
     mockStore({ status, trackedOcids: ['ocid-1'], characters: [character({ weeklyBosses: [boss()] })] })
 
-  it('헤더 새로고침 버튼을 누르면 refresh 를 부른다', async () => {
-    const store = loaded()
+  // **문이 하나다.** 헤더 버튼을 걷고 당김만 남겼다.
+  it('헤더에 새로고침 버튼이 없다', async () => {
+    loaded()
     await renderScreen()
 
-    await press(screen.getByLabelText('새로고침'))
-
-    expect(store.refresh).toHaveBeenCalledWith(['ocid-1'])
+    expect(screen.queryByLabelText('새로고침')).toBeNull()
+    expect(refreshControl()).toBeDefined()
   })
 
-  // 당김과 버튼이 **같은 재조회**를 부른다. 컨텐츠
-  // 스케줄러와 같은 배선이어야 한다.
-  it('당겨서 새로고침은 헤더 버튼과 같은 재조회를 부른다', async () => {
+  it('당겨서 새로고침이 추적 목록으로 재조회한다', async () => {
     const store = loaded()
     await renderScreen()
 
@@ -520,43 +512,46 @@ describe('BossScreen: 재조회', () => {
     expect(store.refresh).toHaveBeenCalledWith(['ocid-1'])
   })
 
-  // 제스처를 붙여도 버튼은 그대로 남는다(추가 수단이지 대체가 아니다).
-  it('제스처가 붙어도 헤더 버튼은 남는다', async () => {
-    loaded()
-    await renderScreen()
-
-    expect(screen.getByLabelText('새로고침')).toBeTruthy()
-    expect(refreshControl()).toBeDefined()
-  })
-
   // 회귀 가드. 조회 중 과 당겼다 는 다른 사실이다.
   //
   // `refreshing = status === 'loading'` 으로 두면 화면 마운트 하이드레이션만으로 인디케이터가
-  // 프로그램적으로 열린다. 조회 중… 은 그대로 뜬다. 그쪽이 조회를 말하는 자리다.
-  it('조회 중이어도 인디케이터는 안 돈다. "조회 중..." 만 보여준다', async () => {
+  // 프로그램적으로 열린다.
+  it('조회 중이어도 인디케이터는 안 돈다', async () => {
     loaded('loading')
     await renderScreen()
 
-    expect(screen.getByText('조회 중...')).toBeTruthy()
     expect(refreshControl().refreshing).toBe(false)
   })
 
-  // 동기화 상태는 드롭다운 줄이 아니라 **제목 줄**에 있다(컨텐츠 스케줄러와
-  // 같은 케이스. 그 파일이 판정 방법을 적는다).
-  it('새로고침과 동기화 시각이 제목과 같은 줄에 있다', async () => {
+  it('당김이 끝나면 그 페이지의 갱신 시각을 적는다', async () => {
     loaded()
     await renderScreen()
 
-    const titleRow = nearestCommonAncestor(
-      screen.getByText('보스 스케줄러'),
-      screen.getByLabelText('새로고침'),
-    )
+    await act(async () => {
+      refreshControl().onRefresh()
+    })
 
-    expect(contains(titleRow, screen.getByText('동기화 기록 없음'))).toBe(true)
-    // 아래 줄에 있어야 하는 것은 이제 초상화 레일이다.
-    expect(contains(titleRow, screen.getByTestId('character-rail'))).toBe(false)
-    // **관리 버튼과 겨루던 짝은 사라졌다**. 그 줄에 남은 것이 제목·상태·
-    // 새로고침 셋뿐이라, 폭을 다투는 상대가 없다.
+    expect(useDataFreshness.getState().fetchedAt.boss).toBeDefined()
+  })
+})
+
+describe('BossScreen: 갱신 시각', () => {
+  // 제목에 딸린 작은 글씨다(컨텐츠 스케줄러와 같은 케이스. 그 파일이 판정 방법을 적는다).
+  it('제목 줄이 아니라 그 아래에 선다', async () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character({ weeklyBosses: [boss()] })] })
+    await renderScreen()
+
+    const line = screen.getByTestId('data-freshness')
+    expect(contains(screen.getByTestId('page-header-title-row'), line)).toBe(false)
+    expect(contains(screen.getByTestId('page-header'), line)).toBe(true)
+  })
+
+  it('진입 조회가 끝나도 적는다', async () => {
+    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character({ weeklyBosses: [boss()] })] })
+
+    await renderScreen()
+
+    expect(useDataFreshness.getState().fetchedAt.boss).toBeDefined()
   })
 })
 

@@ -33,6 +33,7 @@ import type { RecordedDrop } from '../../../types/drops'
 
 import { 테스트_안전영역 } from '../../../components/__tests__/render-atom'
 import { ThemeProvider } from '../../../theme/ThemeProvider'
+import { useDataFreshness } from '../../../features/refresh/freshness'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { BossProfitScreen } from '../BossProfitScreen'
 
@@ -168,6 +169,8 @@ beforeEach(() => {
   // 카운트업의 '직전 표시값' 기억은 모듈 수준이라 언마운트를 건너 산다.
   // 테스트 하나가 곧 세션 하나다.
   clearCountUpMemory()
+  // 실물 스토어라 값이 파일 안에서 넘어간다. 되돌리지 않으면 앞 케이스가 적은 시각이 남는다.
+  useDataFreshness.setState({ fetchedAt: {} })
   dispatch.mockClear()
   mockedNavigation.mockReturnValue({ navigate, dispatch } as unknown as ReturnType<
     typeof useScreenNavigation
@@ -296,46 +299,45 @@ describe('탭과 기간 네비게이터', () => {
 
 })
 
-describe('동기화 상태 영역', () => {
-  it('새로고침을 누르면 추적 목록으로 재조회한다. 보던 기간에 남는다', async () => {
-    const refresh = jest.fn()
-    mockStore({ refresh, trackedOcids: ['ocid-1', 'ocid-2'] })
-    const { getByLabelText } = await renderScreen()
+describe('갱신 시각', () => {
+  // **문이 하나다.** 헤더 버튼을 걷고 당김만 남겼다. 이 화면의 버튼은 기간 탭 줄에 있었다.
+  it('새로고침 버튼이 없다', async () => {
+    mockStore({ trackedOcids: ['ocid-1'] })
+    const { queryByLabelText } = await renderScreen()
 
-    await act(async () => {
-      fireEvent.press(getByLabelText('새로고침'))
-    })
-
-    expect(refresh).toHaveBeenCalledWith(['ocid-1', 'ocid-2'], { inPlace: true })
+    expect(queryByLabelText('새로고침')).toBeNull()
   })
 
-  // 창이 못 받은 날짜가 남아 있을 수 있어 지난 기간에서도 재조회에 뜻이 있다. 전에는 백필로
-  // 한 번 굳으면 다시 불러도 안 바뀌어서 이 영역을 아예 안 세웠다.
-  it('지난 기간에서도 버튼과 동기화 시각이 선다', async () => {
-    mockStore({ periodKey: '2026-07-09', lastSyncedAt: null })
-    const { getByLabelText, getByText } = await renderScreen()
+  // 제목에 딸린 작은 글씨다. 기간 탭 줄에 있던 것을 제목 아래로 옮겼다.
+  it('기간 탭 줄이 아니라 제목 줄 아래에 선다', async () => {
+    useDataFreshness.setState({ fetchedAt: { profit: new Date(2026, 8, 8, 14, 3, 22).toISOString() } })
+    const { getByTestId } = await renderScreen()
 
-    expect(getByLabelText('새로고침')).toBeTruthy()
-    expect(getByText('동기화 기록 없음')).toBeTruthy()
+    expect(within(getByTestId('page-header-title-row')).queryByText('14:03:22 기준')).toBeNull()
+    expect(within(getByTestId('page-header')).getByText('14:03:22 기준')).toBeTruthy()
   })
 
-  it('현재 기간에서 재조회 중이면 "조회 중..." 이다', async () => {
-    mockStore({ status: 'loading' })
+  // 빈 줄을 두면 제목 아래가 이유 없이 벌어진다. 이 화면은 진입에서 안 적으므로 그대로 비어 있다.
+  it('한 번도 안 받았으면 줄 자체가 없다', async () => {
+    const { queryByTestId } = await renderScreen()
+
+    expect(queryByTestId('data-freshness')).toBeNull()
+  })
+
+  // 지난 기간에서도 당길 수 있으니 그 줄도 함께 선다.
+  it('지난 기간에서도 선다', async () => {
+    useDataFreshness.setState({ fetchedAt: { profit: new Date(2026, 8, 8, 14, 3, 22).toISOString() } })
+    mockStore({ periodKey: '2026-07-09' })
     const { getByText } = await renderScreen()
 
-    expect(getByText('조회 중...')).toBeTruthy()
-  })
-
-  it('한 번도 동기화하지 않았으면 그렇게 말한다', async () => {
-    const { getByText } = await renderScreen()
-
-    expect(getByText('동기화 기록 없음')).toBeTruthy()
+    expect(getByText('14:03:22 기준')).toBeTruthy()
   })
 })
 
 describe('당겨서 새로고침', () => {
   // 당김은 **부모에게 부탁만** 한다. 무엇을 다시 부를지(오늘·과거)는 그쪽이 정한다.
-  // 헤더 버튼은 이 화면의 재조회(라이브)를 그대로 부른다. 둘의 뜻이 다르다.
+  // 걷어 낸 헤더 버튼은 이 화면의 재조회(라이브)를 불렀다. 그 둘의 뜻이 달랐고, 남은 것은
+  // 넓은 쪽(창까지 다시 부르는 당김)이다. 스토어의 `refresh` 는 토스트의 다시 시도가 계속 쓴다.
   it('당김이 부모의 다시 불러오기를 부른다', async () => {
     mockStore({ trackedOcids: ['ocid-1'] })
     const { getByTestId } = await renderScreen()
@@ -352,10 +354,20 @@ describe('당겨서 새로고침', () => {
   // 지난 기간에서도 실제로 값이 채워진다.
   it('지난 기간에서도 컨트롤을 단다', async () => {
     mockStore({ periodKey: '2026-07-09' })
-    const { getByTestId, getByLabelText } = await renderScreen()
+    const { getByTestId } = await renderScreen()
 
     expect(getByTestId('screen-scroll').props.refreshControl).toBeDefined()
-    expect(getByLabelText('새로고침')).toBeTruthy()
+  })
+
+  it('당김이 끝나면 그 페이지의 갱신 시각을 적는다', async () => {
+    mockStore({ trackedOcids: ['ocid-1'] })
+    const { getByTestId } = await renderScreen()
+
+    await act(async () => {
+      getByTestId('screen-scroll').props.refreshControl.props.onRefresh()
+    })
+
+    expect(useDataFreshness.getState().fetchedAt.profit).toBeDefined()
   })
 
   // 회귀 가드. 조회 중 과 당겼다 는 다른 사실이다.

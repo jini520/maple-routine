@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 
 import { useDropEffectStore } from '../features/drop-effect/store'
+import { useDataFreshness } from '../features/refresh/freshness'
 import { useNoticeStore } from '../features/notice/store'
 import { useAppEntryStore } from '../features/app-entry/store'
 import { useAuthStore } from '../features/auth/store'
@@ -63,6 +64,7 @@ export function AppShell(): React.JSX.Element {
   const restoreTrackingMode = useTrackingModeStore((state) => state.restoreFromStorage)
   const restoreDropEffect = useDropEffectStore((state) => state.restoreFromStorage)
   const restoreNotice = useNoticeStore((state) => state.restore)
+  const restoreFreshness = useDataFreshness((state) => state.restore)
   const isKeyboardVisible = useKeyboardVisible()
 
   const isReady = stage === 'ready'
@@ -102,6 +104,13 @@ export function AppShell(): React.JSX.Element {
   // 읽는 것이고, 부팅마다 구독을 걸면 껐다는 사실을 부팅이 덮는다.
   useEffect(() => {
     void restoreNotice()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // 페이지별 갱신 시각. 앱을 다시 켜도 화면이 그리는 것은 캐시에 있던 그 데이터라, 시각만
+  // 비우면 그 데이터가 언제 것인지 말할 방법이 사라진다.
+  useEffect(() => {
+    void restoreFreshness()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

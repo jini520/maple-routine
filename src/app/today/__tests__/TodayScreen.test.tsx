@@ -10,7 +10,7 @@
 // ② **당김과 헤더 버튼이 같은 재조회인가**.
 // ③ **스토어가 비어도 서는가**. 콜드 스타트에 위젯 여덟이 전부 빈 상태로 선다.
 // ④ **캐릭터 넷의 기본 배치**(스냅샷). 헤더 + 격자가 실제 값 위에서 함께 그려지는 것은 여기뿐이다.
-import { act, fireEvent, screen } from '@testing-library/react-native'
+import { act, fireEvent, screen, within } from '@testing-library/react-native'
 
 import { useDropHistoryStore } from '../../../features/boss-profit/drop-history-store'
 import { useBossProfitStore, type BossProfitRow } from '../../../features/boss-profit/store'
@@ -18,6 +18,7 @@ import { useBossSchedulerStore, type BossCharacterView } from '../../../features
 import {
   useContentSchedulerStore,
   type ContentCharacterView } from '../../../features/content-scheduler/store'
+import { useDataFreshness } from '../../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import { formatMesoShort } from '../../../lib/boss/boss-profit-delta'
 import type { MatchedBoss } from '../../../lib/boss/boss-matching'
@@ -26,7 +27,7 @@ import { getCachedCharacterBasic } from '../../../storage/character-basic-cache'
 import { getRepresentativeCharacter } from '../../../storage/character-selection'
 import type { CharacterBasicProfile, DailyContent, WeeklyContent } from '../../../types'
 
-import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
+import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { TodayScreen } from '../TodayScreen'
 
@@ -301,12 +302,6 @@ async function renderScreen(): Promise<Rendered> {
   return view
 }
 
-async function press(element: AtomElement): Promise<void> {
-  await act(async () => {
-    fireEvent.press(element)
-  })
-}
-
 /** `character-basic-cache` 가 돌려주는 엔트리 한 벌. 대표 위젯이 이 값에서 EXP 를 꺼낸다. */
 function cachedBasic(expRate: number): { profile: CharacterBasicProfile; cachedAt: string } {
   return {
@@ -323,26 +318,6 @@ function cachedBasic(expRate: number): { profile: CharacterBasicProfile; cachedA
 /** 스크롤 셸에 붙은 당겨서 새로고침 컨트롤. 스케줄러 테스트와 같은 자리다. */
 function refreshControl(): { refreshing: boolean; onRefresh: () => void } {
   return screen.getByTestId('screen-scroll').props.refreshControl.props
-}
-
-function buttonOf(node: AtomElement): AtomElement {
-  let current: AtomElement | null = node
-  while (current !== null && current.props.role !== 'button') current = current.parent
-  if (current === null) throw new Error('버튼을 찾지 못했다')
-  return current
-}
-
-/**
- * 지금까지 쌓인 재조회 호출을 떠서 돌려주고 목을 비우는 도우미.
- *
- * 두 경로(버튼·당김)가 **같은 재조회인가** 를 보려면 각각이 남긴 자국을 통째로 견줘야 한다
- * 어느 스토어를 어떤 인자로 몇 번 불렀는지가 전부 같아야 같은 이다.
- */
-function 재조회_기록(): unknown {
-  const 목 = [mocks.content.refresh, mocks.boss.refresh, mocks.profit.refresh, mocks.dropHistory.load]
-  const 기록 = JSON.parse(JSON.stringify(목.map((fn) => fn.mock.calls))) as unknown
-  for (const fn of 목) fn.mockClear()
-  return 기록
 }
 
 beforeAll(() => {
@@ -364,6 +339,8 @@ beforeEach(() => {
   mockedGetCachedCharacterBasic.mockResolvedValue(null)
   mockedNavigation.mockReturnValue({ navigate: jest.fn(), goBack: jest.fn() } as never)
   useTrackingModeStore.setState({ mode: 'auto' })
+  // 실물 스토어라 값이 파일 안에서 넘어간다. 되돌리지 않으면 앞 케이스가 적은 시각이 남는다.
+  useDataFreshness.setState({ fetchedAt: {} })
   setStores()
 })
 
@@ -471,23 +448,13 @@ describe('TodayScreen: 수동 멤버십을 어느 스토어에서 읽는가', ()
 })
 
 describe('TodayScreen: 명시적 재조회', () => {
-  // 당김과 헤더 버튼은 **같은 재조회**다.
-  it('당김이 헤더 버튼과 같은 재조회를 부른다', async () => {
+  // **문이 하나다.** 헤더 버튼을 걷고 당김만 남겼다.
+  it('헤더에 새로고침 버튼이 없다', async () => {
     setStores(캐릭터_넷)
     await renderScreen()
 
-    재조회_기록() // 마운트가 남긴 것(드롭 히스토리 1회)을 걷어내고 시작한다.
-
-    await press(buttonOf(screen.getByLabelText('새로고침')))
-    const 버튼 = 재조회_기록()
-    // 둘 다 **아무것도 안 불렀다** 여도 같으므로, 견주기 전에 자국이 남았는지부터 본다.
-    expect(버튼).not.toEqual([[], [], [], []])
-
-    await act(async () => {
-      refreshControl().onRefresh()
-    })
-
-    expect(재조회_기록()).toEqual(버튼)
+    expect(screen.queryByLabelText('새로고침')).toBeNull()
+    expect(refreshControl()).toBeDefined()
   })
 
   // 명시적 재조회는 TTL 을 무시하고 **이 화면이 그리는 스토어 셋을 모두** 읽는다
@@ -567,48 +534,53 @@ describe('TodayScreen: 명시적 재조회', () => {
     expect(mockedGetCachedCharacterBasic).toHaveBeenCalledWith(OCIDS[2])
   })
 
-  // 헤더 버튼도 같은 자리를 지난다. 둘이 같은 함수를 부르는 것은 위에서 봤고, 여기서는 그 함수의
-  // **끝**에 붙은 다시 읽기가 버튼 경로에도 있는지를 본다.
-  it('헤더 버튼도 같은 다시 읽기를 거친다', async () => {
-    setStores(캐릭터_넷)
-    mockedGetCachedCharacterBasic.mockResolvedValue(cachedBasic(80.3))
-
-    await renderScreen()
-
-    mockedGetCachedCharacterBasic.mockResolvedValue(cachedBasic(5.125))
-    await press(buttonOf(screen.getByLabelText('새로고침')))
-
-    expect(screen.getByText('5.125%')).toBeTruthy()
-  })
-
-  it('제스처가 붙어도 헤더 버튼은 남는다', async () => {
-    await renderScreen()
-
-    expect(screen.getByLabelText('새로고침')).toBeTruthy()
-    expect(refreshControl()).toBeDefined()
-  })
-
   // 회귀 가드. 조회 중 과 당겼다 는 다른 사실이다.
   //
   // `refreshing = status === 'loading'` 으로 두면 화면 마운트 하이드레이션만으로 인디케이터가
-  // 프로그램적으로 열린다. 조회 중… 은 그대로 뜬다. 그쪽이 조회를 말하는 자리다.
-  it('조회 중이어도 인디케이터는 안 돈다. "조회 중..." 만 보여준다', async () => {
+  // 프로그램적으로 열린다.
+  it('조회 중이어도 인디케이터는 안 돈다', async () => {
     setStores({ ...캐릭터_넷, boss: { ...캐릭터_넷.boss, status: 'loading' } })
 
     await renderScreen()
 
-    expect(screen.getByText('조회 중...')).toBeTruthy()
     expect(refreshControl().refreshing).toBe(false)
   })
+})
 
-  // 이 화면에는 **선택된 캐릭터** 가 없어 스케줄러 두 화면의 출처(선택된 캐릭터의 `syncedAt`)를 쓸 수
-  // 없다. 페이지 전체 기준 값인 보스 수익 스토어의 `lastSyncedAt` 이 그 자리다.
-  it('동기화 시각은 페이지 전체 기준 값에서 온다', async () => {
+describe('TodayScreen: 갱신 시각', () => {
+  // 이 화면은 스토어 넷을 읽는다. 그중 하나(보스 수익)의 `lastSyncedAt` 만 적던 자리를
+  // **페이지 자신의 시각**으로 바꿨다. 나머지 셋이 언제 갱신됐는지가 화면 어디에도 없었다.
+  it('당김이 끝나면 그 페이지의 갱신 시각을 적는다', async () => {
+    setStores(캐릭터_넷)
+    await renderScreen()
+
+    await act(async () => {
+      refreshControl().onRefresh()
+    })
+
+    expect(useDataFreshness.getState().fetchedAt.today).toBeDefined()
+  })
+
+  // 제목에 딸린 작은 글씨다. 제목 **줄 안**에 있으면 폭을 다투고, 그때 줄어드는 것은 제목이다.
+  it('제목 줄이 아니라 그 아래에 선다', async () => {
+    useDataFreshness.setState({ fetchedAt: { today: new Date(2026, 8, 8, 14, 3, 22).toISOString() } })
     setStores(캐릭터_넷)
 
     await renderScreen()
 
-    expect(screen.getByText('5분 전')).toBeTruthy()
+    const line = screen.getByText('14:03:22 기준')
+    expect(within(screen.getByTestId('page-header-title-row')).queryByText('14:03:22 기준')).toBeNull()
+    expect(within(screen.getByTestId('page-header')).getByText('14:03:22 기준')).toBeTruthy()
+    expect(line).toBeTruthy()
+  })
+
+  // 빈 줄을 두면 제목 아래가 이유 없이 벌어진다. 이 화면은 진입에서 안 적는다.
+  it('한 번도 안 받았으면 줄 자체가 없다', async () => {
+    setStores(캐릭터_넷)
+
+    await renderScreen()
+
+    expect(screen.queryByTestId('data-freshness')).toBeNull()
   })
 })
 

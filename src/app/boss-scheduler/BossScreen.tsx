@@ -6,7 +6,6 @@
 import { isBossBlocked } from '../../lib/scheduler/required-level'
 import { useEffect, useState } from 'react'
 import { Pressable, View } from 'react-native'
-import { useReducedMotion } from 'react-native-reanimated'
 
 import type { BossDifficulty } from '../../types'
 import {
@@ -21,9 +20,9 @@ import {
 } from '../../features/boss-scheduler/displayed-bosses'
 import { resolveSelectedCharacter } from '../../features/character-selection/selected-character'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
-import { formatSyncedAt } from '../../features/schedule-sync/format'
 import { useScheduleSyncErrorToast } from '../../features/schedule-sync/use-sync-error-toast'
 import { useToastStore } from '../../features/toast/store'
+import { useDataFreshness } from '../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { getBossPortraitCrop, getBossPortraitUrl, isChallengersWorld } from '../../lib/assets/asset-lookup'
 import type { ImageCrop } from '../../lib/image-crop'
@@ -32,7 +31,6 @@ import { getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
 
 import {
   Badge,
-  RefreshCwIcon,
   SlidersHorizontalIcon,
   SwordsIcon,
   Text,
@@ -43,11 +41,10 @@ import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { IllustratedCard, FadedIllustration } from '../../components/molecules/FadedIllustration/FadedIllustration'
 import { PartySizeModal } from '../../components/organisms/PartySizeModal/PartySizeModal'
+import { DataFreshness } from '../../components/molecules/DataFreshness/DataFreshness'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { SPIN_ANIMATION } from '../../constants/style/animation'
-import { AnimatedView } from '../../lib/nativewind-interop'
 import { ILLUSTRATION_TEXT_SHADOW_STYLE } from '../../constants/style/text-styles'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
@@ -151,16 +148,29 @@ export function BossScreen(): React.JSX.Element {
   const { mode } = useTrackingModeStore()
   const openTab = useOpenTab()
   const topSafeAreaPx = useTopSafeAreaPx()
-  const reduceMotion = useReducedMotion()
+  const fetchedAt = useDataFreshness((state) => state.fetchedAt.boss)
+  const markFetched = useDataFreshness((state) => state.markFetched)
   // 카드 탭으로 여는 파티 인원 모달. 편집 중인 난이도를 함께 든다.
   const [partyModal, setPartyModal] = useState<{ boss: MatchedBoss; difficulty: BossDifficulty } | null>(null)
   // 동기화 전체 실패는 토스트로 알린다. 지속 상태는 새로고침 옆 표기가 이미 진다.
   useScheduleSyncErrorToast(error, { onRetry: () => refresh(trackedOcids ?? []) })
 
   useEffect(() => {
-    loadTrackedOcids()
+    // 진입 조회도 적는다. 게이트에 막혀 실제로 안 나간 회차에도 적히므로 이 값은
+    // 최대 그 게이트만큼 낙관적이다. 정확히 재려면 스토어 안쪽을 화면까지 끌어올려야 한다.
+    // 조회가 던지면 시각을 안 적는다. 데이터가 안 왔으니 적을 것이 없다.
+    void (async () => {
+      await loadTrackedOcids()
+      await markFetched('boss')
+    })().catch(() => undefined)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  /** 당김이 부르는 재조회. 끝에서 갱신 시각을 적는다. 헤더 아래 한 줄이 그 값을 읽는다. */
+  async function refreshPage(): Promise<void> {
+    await refresh(trackedOcids ?? [])
+    await markFetched('boss')
+  }
 
   // `null` 은 0명이 아니라 **저장소를 아직 안 읽었다** 다. `||` 로 묶으면 첫 페인트가 모르는
   // 빈 상태는 읽고 0명임을 **확인한 뒤에만** 그린다.
@@ -393,32 +403,19 @@ export function BossScreen(): React.JSX.Element {
     <View testID="screen-Boss" className="flex-1">
       <ScreenScroll
         // 당김은 헤더 버튼과 **같은 재조회**를 부른다. 컨텐츠 스케줄러와 배선이 같아야 한다.
-        onRefresh={() => refresh(trackedOcids ?? [])}
+        onRefresh={refreshPage}
         header={
           // `fixed` 도 spacer 도 없다.
           // 제목과 필터도 목록과 **함께 스크롤된다.** 헤더가 `ScreenScroll` 의 첫 자식이라
           <PageHeader>
-            {/* 폭을 다투면 시각 텍스트만 줄어든다(제목·새로고침은 `shrink-0`). 줄에 가를
-                상대가 없어 `justify-between` 은 두지 않는다. */}
-            <PageHeaderTitleRow className="gap-2">
-              <Text className="shrink-0 text-lg font-semibold text-text">보스 스케줄러</Text>
-              <Text className="shrink text-sm text-text-muted" numberOfLines={1}>
-                {status === 'loading' ? '조회 중...' : selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
-              </Text>
-              <Pressable
-                role="button"
-                aria-label="새로고침"
-                onPress={() => refresh(trackedOcids ?? [])}
-                className="shrink-0 p-2"
-              >
-                <AnimatedView
-                  testID="refresh-icon"
-                  style={status === 'loading' && !reduceMotion ? SPIN_ANIMATION : undefined}
-                >
-                  <RefreshCwIcon className="h-4 w-4 text-primary-ink" strokeWidth={2} aria-hidden />
-                </AnimatedView>
-              </Pressable>
-            </PageHeaderTitleRow>
+            {/* 제목과 갱신 시각이 **한 덩어리**다. 따로 넣으면 `PageHeader` 의 `gap-4` 가
+                둘 사이에 들어가 제목에 딸린 글씨로 안 읽힌다. */}
+            <View className="gap-1">
+              <PageHeaderTitleRow>
+                <Text className="shrink text-lg font-semibold text-text">보스 스케줄러</Text>
+              </PageHeaderTitleRow>
+              <DataFreshness fetchedAt={fetchedAt} />
+            </View>
 
             {/* 조건이 **줄 밖**에 있다. 안에 두면 캐릭터가 없는 동안 빈 줄이 `gap-4` 를 두 번
                 먹는다. */}

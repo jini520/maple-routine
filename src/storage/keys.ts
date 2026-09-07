@@ -51,6 +51,14 @@ export const STORAGE_KEYS = {
   // `KEEP_KEYS` 에 넣는다. `notices` 는 지워도 서버가 다시 주지만 **닫았다는 사실은 기기에만
   // 있어** 아무도 복원해 주지 않는다. 지워지면 이미 닫은 공지가 첫 화면에 되살아난다.
   dismissedNotices: 'dismissedNotices',
+  // 페이지별 마지막 데이터 호출 시각. `{ today: ISO, content: ISO, … }` 한 칸이다.
+  //
+  // 키를 다섯으로 쪼개지 않는 것은 읽는 쪽이 언제나 다섯을 한 번에 필요로 해서다(부팅 때 한 번
+  // 읽어 스토어에 올린다).
+  //
+  // `KEEP_KEYS` 에 **안 넣는다**. 이 값은 캐시가 언제 것인가 라서 캐시와 함께 지워지는 것이
+  // 맞다. 캐시를 비웠는데 시각만 남으면 새로 받은 데이터에 옛 시각이 붙는다.
+  dataFetchedAt: 'dataFetchedAt',
 } as const
 
 export function schedulerCacheKey(ocid: string): string {

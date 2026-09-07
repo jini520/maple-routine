@@ -7,14 +7,13 @@
  */
 import { useEffect } from 'react'
 import { Pressable, View } from 'react-native'
-import { useReducedMotion } from 'react-native-reanimated'
 
 import type { DailyContent, WeeklyContent } from '../../types'
 import { useContentSchedulerStore, type ContentCharacterView } from '../../features/content-scheduler/store'
 import { resolveSelectedCharacter } from '../../features/character-selection/selected-character'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
+import { useDataFreshness } from '../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
-import { formatSyncedAt } from '../../features/schedule-sync/format'
 import { useScheduleSyncErrorToast } from '../../features/schedule-sync/use-sync-error-toast'
 import {
   displayedDailyContents,
@@ -22,17 +21,16 @@ import {
   type DisplayedContentsInput,
 } from '../../features/content-scheduler/displayed-contents'
 
-import { ListChecksIcon, RefreshCwIcon, Text } from '../../components/atoms'
+import { ListChecksIcon, Text } from '../../components/atoms'
 import { dailyContentProgress, weeklyContentProgress } from './content-completion'
 
 import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
+import { DataFreshness } from '../../components/molecules/DataFreshness/DataFreshness'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { SPIN_ANIMATION } from '../../constants/style/animation'
-import { AnimatedView } from '../../lib/nativewind-interop'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import { useOpenTab } from '../../hooks/useOpenTab'
@@ -63,15 +61,28 @@ export function ContentScreen(): React.JSX.Element {
   const navigation = useScreenNavigation()
   const openTab = useOpenTab()
   const topSafeAreaPx = useTopSafeAreaPx()
-  const reduceMotion = useReducedMotion()
+  const fetchedAt = useDataFreshness((state) => state.fetchedAt.content)
+  const markFetched = useDataFreshness((state) => state.markFetched)
   // 동기화 전체 실패는 인라인 문단이 아니라 토스트로 알린다. 지속 상태("n분 전")는
   // 새로고침 옆 표기가 이미 담당하고, 토스트에는 원인을 푸는 액션을 붙일 수 있다.
   useScheduleSyncErrorToast(error, { onRetry: () => refresh(trackedOcids ?? []) })
 
   useEffect(() => {
-    loadTrackedOcids()
+    // 진입 조회도 적는다. 게이트에 막혀 실제로 안 나간 회차에도 적히므로 이 값은
+    // 최대 그 게이트만큼 낙관적이다. 정확히 재려면 스토어 안쪽을 화면까지 끌어올려야 한다.
+    // 조회가 던지면 시각을 안 적는다. 데이터가 안 왔으니 적을 것이 없다.
+    void (async () => {
+      await loadTrackedOcids()
+      await markFetched('content')
+    })().catch(() => undefined)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  /** 당김이 부르는 재조회. 끝에서 갱신 시각을 적는다. 헤더 아래 한 줄이 그 값을 읽는다. */
+  async function refreshPage(): Promise<void> {
+    await refresh(trackedOcids ?? [])
+    await markFetched('content')
+  }
 
   // `null` 은 "0명"이 아니라 **"저장소를 아직 안 읽었다"** 다. 둘을 `||` 로 묶으면
   // 콜드 스타트 첫 페인트가 아직 모르는 사실을 단정한다. 빈 상태는 읽고 확인한 뒤에만 그린다.
@@ -190,35 +201,21 @@ export function ContentScreen(): React.JSX.Element {
         // 당김은 헤더 버튼과 **같은 재조회**를 부르고, 색만
         // 테마에서 넘긴다. `refreshing` 이 `status` 라서 헤더 버튼으로 시작한 재조회에도 플랫폼
         // 인디케이터가 뜬다. 그 대가는 ADR 이 적는다.
-        onRefresh={() => refresh(trackedOcids ?? [])}
+        onRefresh={refreshPage}
         header={
           // 제목~탭도 목록과 함께 스크롤된다. 헤더는 `ScreenScroll` 의 첫 자식이다.
           <PageHeader>
             {/* 동기화 상태가 드롭다운 줄에서 **제목 옆**으로 올라왔다. 오른쪽
                 끝은 관리 버튼 자리 그대로다. 그쪽은 **가는 곳**, 이쪽은 **상태** 라 성질이 다르다. */}
-            <PageHeaderTitleRow className="justify-between">
-              <View className="shrink flex-row items-center gap-2">
-                {/* 폭을 다투면 시각 텍스트만 줄어든다. 제목은 화면의 이름이다. */}
-                <Text className="shrink-0 text-lg font-semibold text-text">컨텐츠 스케줄러</Text>
-                <Text className="shrink text-sm text-text-muted" numberOfLines={1}>
-                  {status === 'loading' ? '조회 중...' : selected !== null ? formatSyncedAt(selected.syncedAt) : ''}
-                </Text>
-                <Pressable
-                  role="button"
-                  aria-label="새로고침"
-                  onPress={() => refresh(trackedOcids ?? [])}
-                  className="shrink-0 p-2"
-                >
-                  <AnimatedView
-                    testID="refresh-icon"
-                    style={status === 'loading' && !reduceMotion ? SPIN_ANIMATION : undefined}
-                  >
-                    <RefreshCwIcon className="h-4 w-4 text-primary-ink" strokeWidth={2} aria-hidden />
-                  </AnimatedView>
-                </Pressable>
-              </View>
-              {manualManageButton}
-            </PageHeaderTitleRow>
+            {/* 제목과 갱신 시각이 **한 덩어리**다. 따로 넣으면 `PageHeader` 의 `gap-4` 가
+                둘 사이에 들어가 제목에 딸린 글씨로 안 읽힌다. */}
+            <View className="gap-1">
+              <PageHeaderTitleRow className="justify-between">
+                <Text className="shrink text-lg font-semibold text-text">컨텐츠 스케줄러</Text>
+                {manualManageButton}
+              </PageHeaderTitleRow>
+              <DataFreshness fetchedAt={fetchedAt} />
+            </View>
 
             {/* 조건이 **줄 밖**에 있다. 안에 두면 캐릭터가 없는 동안(첫 조회) 빈 줄이 남아
                 `PageHeader` 의 `gap-4` 를 두 번 먹는다(딸림 변경). */}
