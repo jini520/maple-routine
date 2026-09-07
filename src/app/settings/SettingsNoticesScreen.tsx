@@ -4,8 +4,12 @@
  * 스위치가 설정 본화면이 아니라 여기 있는 이유는, 이 페이지의 주된 내용이 스위치가 아니라
  * **목록**이기 때문이다. 사용자가 무엇을 켜는지 옆에 두고 본다.
  *
- * **목록은 기기에 쌓인 것을 그린다.** 푸시로 받은 것과 서버에서 받은 것이 이미 합쳐져 있어서
- * 이 화면은 출처를 안 가린다. 서버가 죽어도 받은 공지는 열린다.
+ * **로컬을 먼저 그리고 서버를 그 위에 얹는다.** 서버 조회가 실패하면 로컬 것만 보인다.
+ * 빈 화면도 에러 화면도 아니다. 조회 실패를 화면 전체의 실패로 만들지 않는다.
+ *
+ * 서버가 필요한 이유가 있다. 푸시는 **배경에서 도착만 하고 안 탭한 것을 못 쌓는다**
+ * (`notification` 페이로드가 OS 에서 그려지고 JS 를 안 깨운다). 그래서 알림은 떴는데 목록에는
+ * 없는 공지가 생기고, 그 구멍을 이 조회가 메운다.
  */
 import { useEffect, useState } from 'react'
 import { Linking, Pressable, View } from 'react-native'
@@ -17,7 +21,8 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { useNoticeStore } from '../../features/notice/store'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
-import { getNotices } from '../../storage/notices'
+import { fetchNotices } from '../../server/notices'
+import { getNotices, mergeNotices } from '../../storage/notices'
 import type { Notice } from '../../types/notice'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
 
@@ -62,7 +67,26 @@ export function SettingsNoticesScreen(): React.JSX.Element {
   const [notices, setNotices] = useState<Notice[]>([])
 
   useEffect(() => {
-    void getNotices().then(setNotices)
+    let alive = true
+
+    // 로컬이 먼저다. 네트워크를 기다리는 동안 빈 화면을 보여 주지 않는다.
+    void getNotices()
+      .then((local) => {
+        if (alive) setNotices(local)
+        // 서버 것을 받아 기기에 합친다. 같은 id 는 서버가 이긴다(발송 뒤 오타를 고칠 수 있다).
+        return fetchNotices()
+      })
+      .then(async (remote) => {
+        if (remote.length === 0) return
+        await mergeNotices(remote)
+        const merged = await getNotices()
+        if (alive) setNotices(merged)
+      })
+      .catch(() => undefined)
+
+    return () => {
+      alive = false
+    }
   }, [])
 
   return (
