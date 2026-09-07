@@ -325,12 +325,13 @@ describe('갱신 시각', () => {
     expect(within(getByTestId('page-header')).getByTestId('data-freshness')).toBe(line)
   })
 
-  // 빈 줄을 두면 제목 아래가 이유 없이 벌어진다.
-  it('받은 적이 없으면 줄 자체가 없다', async () => {
+  // **자리는 지킨다.** 값이 들어오는 순간 줄이 생기면 헤더가 16 만큼 내려앉고 그 아래 화면
+  // 전체가 한 번 밀린다. 콜드 스타트 첫 진입에서 실제로 일어난다.
+  it('받은 적이 없으면 글자만 빈다', async () => {
     useDataFreshness.setState({ fetchedAt: null })
-    const { queryByTestId } = await renderScreen()
+    const { getByTestId } = await renderScreen()
 
-    expect(queryByTestId('data-freshness')).toBeNull()
+    expect(getByTestId('data-freshness')).toHaveTextContent('')
   })
 
   // **과거 기간을 봐도 시각이 안 움직인다.** 확정된 기록이라 실시간이 아니다.

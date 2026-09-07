@@ -404,7 +404,7 @@ export function BossScreen(): React.JSX.Element {
         header={
           // `fixed` 도 spacer 도 없다.
           // 제목과 필터도 목록과 **함께 스크롤된다.** 헤더가 `ScreenScroll` 의 첫 자식이라
-          <PageHeader>
+          <PageHeader ownsFreshnessLine>
             {/* 제목과 갱신 시각이 **한 덩어리**다. 따로 넣으면 `PageHeader` 의 `gap-4` 가
                 둘 사이에 들어가 제목에 딸린 글씨로 안 읽힌다. 여기에 `gap-*` 을 안 주는 것은
                 `PageHeaderTitleRow` 의 `min-h-8` 이 제목 아래에 이미 여백을 남기기 때문이다. */}

@@ -201,7 +201,7 @@ export function ContentScreen(): React.JSX.Element {
         onRefresh={() => refresh(trackedOcids ?? [])}
         header={
           // 제목~탭도 목록과 함께 스크롤된다. 헤더는 `ScreenScroll` 의 첫 자식이다.
-          <PageHeader>
+          <PageHeader ownsFreshnessLine>
             {/* 동기화 상태가 드롭다운 줄에서 **제목 옆**으로 올라왔다. 오른쪽
                 끝은 관리 버튼 자리 그대로다. 그쪽은 **가는 곳**, 이쪽은 **상태** 라 성질이 다르다. */}
             {/* 제목과 갱신 시각이 **한 덩어리**다. 따로 넣으면 `PageHeader` 의 `gap-4` 가

@@ -438,13 +438,14 @@ describe('ContentScreen: 갱신 시각', () => {
     expect(contains(screen.getByTestId('page-header'), line)).toBe(true)
   })
 
-  // 빈 줄을 두면 제목 아래가 이유 없이 벌어진다.
-  it('받은 적이 없으면 줄 자체가 없다', async () => {
+  // **자리는 지킨다.** 값이 들어오는 순간 줄이 생기면 헤더가 16 만큼 내려앉고 그 아래 화면
+  // 전체가 한 번 밀린다. 콜드 스타트 첫 진입에서 실제로 일어난다.
+  it('받은 적이 없으면 글자만 빈다', async () => {
     useDataFreshness.setState({ fetchedAt: null })
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
     await renderScreen()
 
-    expect(screen.queryByTestId('data-freshness')).toBeNull()
+    expect(screen.getByTestId('data-freshness')).toHaveTextContent('')
   })
 })
 
