@@ -2,7 +2,7 @@
 
 > **범위**: 디렉토리 구조·레이어 패턴·시스템 데이터 흐름·상태 관리·네이티브 연동 개요·테스트 전략. 기능별 흐름 세부는 각 `features/*.md`, 에러 처리는 [error-resilience.md](./error-resilience.md), API는 [nexon-api.md](./nexon-api.md).
 > **관련 소스**: `src/` 전체 레이어(`app/` `features/` `storage/` `native/` `nexon/` `components/` `lib/` `types/` `data/`).
-> **관련 ADR**: ADR-001 [[ADR-003]] [[ADR-005]] [[ADR-007]] [[ADR-013]] ADR-092 [[ADR-097]] [[ADR-101]]. **관련 문서**: [nexon-api.md](./nexon-api.md), [error-resilience.md](./error-resilience.md), [../persistence/README.md](../persistence/README.md).
+> **관련 ADR**: ADR-001 [[ADR-003]] [[ADR-005]] [[ADR-007]] [[ADR-013]] ADR-092 [[ADR-097]] [[ADR-101]] [[ADR-227]]. **관련 문서**: [nexon-api.md](./nexon-api.md), [error-resilience.md](./error-resilience.md), [../persistence/README.md](../persistence/README.md).
 
 ## 핵심 규칙 (CRITICAL)
 - `features/*` 코드는 로컬 저장소·네이티브 API에 **직접 접근하지 않는다**. 반드시 `storage/`·`native/` 어댑터를 거친다([[ADR-003]], [[ADR-005]]).
@@ -83,7 +83,7 @@ RootNavigator (스택)
   `components/templates/ScreenScroll` 이다.
 
 ## 레이어 패턴
-Feature 단위 구조. 각 `features/*` 폴더가 그 기능의 상태·로직을 소유하고, `storage/`·`native/`·`nexon/` 은 외부 의존성(로컬 저장소·네이티브 API·Nexon API)을 격리하는 공용 어댑터다. 덕분에 (1) feature 코드가 네이티브 SDK·Nexon 응답 형식을 직접 몰라도 되고, (2) [[ADR-003]]이 바뀌거나 API 스펙이 바뀌어도 어댑터 내부만 교체하면 된다.
+Feature 단위 구조. 각 `features/*` 폴더가 그 기능의 상태·로직을 소유하고, `storage/`·`native/`·`nexon/` 은 외부 의존성(로컬 저장소·네이티브 API·Nexon API)을 격리하는 공용 어댑터다. 덕분에 (1) feature 코드가 네이티브 SDK·Nexon 응답 형식을 직접 몰라도 되고, (2) [[ADR-003]]이 바뀌거나 API 스펙이 바뀌어도 어댑터 내부만 교체하면 된다. **(2)가 실제로 일어났다** - [[ADR-227]] 이 자체 호스팅 서버를 들이면서 [[ADR-003]] 의 `백엔드 없음` 이 끝났고, 그때 이 경계가 지켜야 하는 것은 **서버가 죽어도 기록·조회가 기기에서 계속 도는 것**이다. 올라가는 것이 계정 백업이 아니라 식별자를 뗀 2차 가공 데이터라 못 보내도 사용자가 잃는 것이 없다. 서버 접근은 `nexon/` 이 Nexon API 를 격리하는 것과 같은 모양으로 자기 어댑터를 갖는다. `features/*` 가 서버를 직접 부르면 안 된다.
 
 - `content-scheduler`·`boss-scheduler` 는 로컬 쓰기 상태를 직접 소유하지 않고, `nexon/schedule` 이 반환하는 동기화 캐시를 **읽기 전용**으로 구독한다. `boss-scheduler` 는 캐시의 `bossContents` 를 `cycle`(weekly/monthly)로 갈라 화면 탭에 전달한다.
 - `boss-profit`·`item-drop` 은 **혼합 패턴**. 보스 목록은 동기화 캐시를 읽기 전용 구독하고([[ADR-007]], [[ADR-011]]), 그 위 사용자 기록(파티원 수·아이템 획득·수익)은 `storage/` 에 직접 쓴다. "무엇을 기록할 수 있는지"는 동기화 데이터가 결정하고, "실제로 기록한 값"은 로컬 소유.
