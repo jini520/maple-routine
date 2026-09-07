@@ -1,5 +1,6 @@
 package com.mapleroutine.app
 import com.facebook.react.common.assets.ReactFontManager
+import com.facebook.react.internal.featureflags.ReactNativeFeatureFlags
 
 import android.app.Application
 import android.content.res.Configuration
@@ -31,7 +32,7 @@ class MainApplication : Application(), ReactApplication {
   override fun onCreate() {
     super.onCreate()
     // @generated begin xml-fonts-init - expo prebuild (DO NOT MODIFY) sync-99ab81495dc2b574e4020773e2fdb72f72e32286
-    ReactFontManager.getInstance().addCustomFont(this, "Noto Sans KR", R.font.xml_noto_sans_kr)
+    ReactFontManager.getInstance().addCustomFont(this, "Pretendard", R.font.xml_pretendard)
     // @generated end xml-fonts-init
     DefaultNewArchitectureEntryPoint.releaseLevel = try {
       ReleaseLevel.valueOf(BuildConfig.REACT_NATIVE_RELEASE_LEVEL.uppercase())
@@ -39,6 +40,9 @@ class MainApplication : Application(), ReactApplication {
       ReleaseLevel.STABLE
     }
     loadReactNative(this)
+    // 글자를 두 번 계산하지 않게 한다. 릴리스 등급 오버라이드가 loadReactNative 안에서 걸리므로
+    // 그 뒤에 덮어야 한다.
+    ReactNativeFeatureFlags.dangerouslyForceOverride(PreparedTextFlags())
     ApplicationLifecycleDispatcher.onApplicationCreate(this)
   }
 

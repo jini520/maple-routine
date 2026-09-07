@@ -464,8 +464,8 @@ export function BossScreen(): React.JSX.Element {
                     <Text
                       className={
                         partyFilter === filter
-                          ? 'w-12 rounded-full bg-primary-tint py-1 text-center text-xs font-semibold text-primary-ink'
-                          : 'w-12 text-center text-xs font-medium text-text-muted'
+                          ? 'rounded-full bg-primary-tint px-3 py-1 text-xs font-semibold text-primary-ink'
+                          : 'px-3 text-xs font-medium text-text-muted'
                       }
                     >
                       {PARTY_FILTER_LABELS[filter]}

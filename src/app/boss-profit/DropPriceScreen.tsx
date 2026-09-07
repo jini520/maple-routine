@@ -306,7 +306,7 @@ export function DropPriceScreen(): React.JSX.Element {
                   {/* 단위 앞의 실제 공백은 남긴다. 마진만으로 띄우면 읽는 값이 `N메소` 로 붙어
                       스크린리더가 이어 읽는다. */}
                   <Text
-                    className="text-xl font-bold leading-snug text-primary-ink"
+                    className="text-xl font-bold text-primary-ink"
                     style={TABULAR_NUMS}
                   >
                     {total.toLocaleString()}{' '}

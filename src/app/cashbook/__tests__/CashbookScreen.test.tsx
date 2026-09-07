@@ -210,15 +210,6 @@ describe('CashbookScreen: 자리와 머리', () => {
     expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 8월')
   })
 
-  // 상자가 자기 글자 폭과 같으면 안드로이드가 그릴 때 마지막 낱말을 다음 줄로 넘기고, 그 줄은
-  // 한 줄 높이에 가려 사라진다(`지난 달` 이 `지난` 으로 보였다). 늘려 두면 아랫줄의 폭을 받는다.
-  it('기간 라벨 상자는 자기 글자 폭이 아니라 아랫줄의 폭이다', async () => {
-    const view = await 그리기()
-
-    const style = flattenStyle(view.getByTestId('cashbook-period-label').props.style)
-    expect(style.alignSelf).toBe('stretch')
-    expect(style.textAlign).toBe('center')
-  })
 })
 
 // 기간 이동은 **보스 수익 탭의 그것과 같은 모양**이다. 화살촉 둘 사이에

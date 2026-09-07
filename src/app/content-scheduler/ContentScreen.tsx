@@ -256,8 +256,8 @@ export function ContentScreen(): React.JSX.Element {
                   <Text
                     className={
                       activeTab === 'daily'
-                        ? 'w-14 rounded-full bg-primary-tint py-[5px] text-center text-sm font-semibold text-primary-ink'
-                        : 'w-14 text-center text-sm font-medium text-text-muted'
+                        ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
+                        : 'px-3 text-sm font-medium text-text-muted'
                     }
                   >
                     일간
@@ -267,8 +267,8 @@ export function ContentScreen(): React.JSX.Element {
                   <Text
                     className={
                       activeTab === 'weekly'
-                        ? 'w-14 rounded-full bg-primary-tint py-[5px] text-center text-sm font-semibold text-primary-ink'
-                        : 'w-14 text-center text-sm font-medium text-text-muted'
+                        ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
+                        : 'px-3 text-sm font-medium text-text-muted'
                     }
                   >
                     주간
