@@ -14,7 +14,8 @@
     "test": "jest",
     "typecheck": "tsc --noEmit",
     "assets:gen": "node scripts/generate-asset-manifest.mjs",
-    "build:site": "node scripts/build-site.mjs"
+    "build:site": "node scripts/build-site.mjs",
+    "deploy:site": "bash scripts/deploy-site.sh"
   },
   "dependencies": {
     "@gorhom/bottom-sheet": "^5.2.14",
