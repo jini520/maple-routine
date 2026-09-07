@@ -52,6 +52,7 @@
 | 저장 | `src/storage/notice-banner.ts` | **있다.** 배너에서 닫은 공지 id |
 | 수신 | `src/features/notice/receive.ts` | **있다.** 페이로드를 공지로 읽어 쌓는다 |
 | 수신 | `src/features/notice/use-notice-delivery.ts` | **있다.** 진입점 셋을 한 자리에서 |
+| 이동 | `src/navigation/AppNavigation.tsx` | **있다.** 스택이 상세를 든 뒤에 민다([[ADR-228]] 정정 3) |
 | 권한 | `src/features/notice/permission-gate.ts` | **있다.** 캐릭터를 고른 직후 한 번만 |
 | 서버 | `src/server/notices.ts` | **있다.** `nexon/` 과 같은 자리의 어댑터 |
 | 진입점 | `index.ts` | 백그라운드 메시지 핸들러 **있다**. 나머지 둘은 신설 예정 |
