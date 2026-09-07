@@ -1,5 +1,5 @@
 /**
- * 설정 본화면. 카드 둘 · 7행(정정).
+ * 설정 본화면. 카드 둘 · 8행.
  *
  * **위 카드는 값을 고르는 행**(모달이 뜨고, 고르면 그 자리에서 끝난다), **아래 카드는 화면이
  * 넘어가는 행**(하위 페이지로 이동한다). 두 무리를 가르는 것은 카드 경계뿐이고 섹션 제목은 달지
@@ -124,6 +124,15 @@ export function SettingsScreen(): React.JSX.Element {
               label="기능 설명"
               onPress={() => navigation.navigate('SettingsFeatureGuideList')}
             />
+            {/* `공지사항` 이 `기능 설명` 아래다. 운영자가 보내는 소식이라 이 앱을 어떻게 쓰나
+                보다 뒤이고, 무엇이 바뀌었나(개발 노트)보다는 앞이다. 알림 스위치도 이 안에
+                산다 - 그 페이지의 주된 내용이 스위치가 아니라 목록이라 화면이 빈말을 안 한다. */}
+            <View className={SETTINGS_ROW_DIVIDER_CLASS}>
+              <SettingsRow
+                label="공지사항"
+                onPress={() => navigation.navigate('SettingsNotices')}
+              />
+            </View>
             {/* 대표값을 비운다. 최신 버전 은 아래 `앱 정보` 행과 같은 값이라 중복이고, n개 는
                 개수가 늘어난다고 뜻이 생기지 않는다. */}
             <View className={SETTINGS_ROW_DIVIDER_CLASS}>

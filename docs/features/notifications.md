@@ -16,9 +16,10 @@
 > **배달을 한 번 확인했다**(2026-09-07, 안드로이드 에뮬레이터). 발송기에서 FCM 을 거쳐 토픽으로
 > 실제 알림이 떴다. iOS 는 빌드까지 통과했고 실기기 배달은 아직이다.
 >
-> **그 파이프를 쓰는 코드가 없다.** 지금 아무도 `subscribeToPushTopic` 을 안 부른다. 무엇을 붙일지는
-> [[ADR-228]] 이 계약으로 정해 뒀다 - 설정 토글 · 캐릭터 선택 직후의 권한 요청 · 공지 목록과 상세
-> 화면 · 서버 조회 둘.
+> **파이프를 쓰는 쪽이 절반 섰다**(2026-09-08). 구독 스위치 · 공지 목록 · 공지 상세가 들어왔고
+> 저장소 셋이 그 아래 있다. **아직 없는 것 둘**: 캐릭터 선택 직후의 권한 요청과, 푸시를 받아
+> 로컬에 쌓는 수신부. 그래서 지금은 스위치를 켜도 **알림이 와도 목록에 안 쌓인다.**
+> 서버 조회도 아직이다.
 
 ## 관련 소스 (만들 것 포함)
 
@@ -34,6 +35,11 @@
 | 어댑터 | `src/native/adapters/rn-notifications.ts` | 있다 |
 | 어댑터 | 같은 폴더의 `rn-push.ts` | **있다** |
 | 어댑터 | 같은 폴더의 `rn-background-task.ts` | **신설 예정** |
+| 상태 | `src/features/notice/store.ts` | **있다.** 구독 스위치. 저장보다 구독이 먼저다 |
+| 저장 | `src/storage/notice-settings.ts` · `notices.ts` | **둘 다 있다** |
+| 타입 | `src/types/notice.ts` | **있다.** 푸시 `data` 와 서버 응답의 공통 모양 |
+| 화면 | `src/app/settings/SettingsNoticesScreen.tsx` | **있다.** 목록 + 구독 스위치 |
+| 화면 | `src/app/settings/SettingsNoticeDetailScreen.tsx` | **있다.** 상세 |
 | 진입점 | `index.ts` | 백그라운드 메시지 핸들러 **있다**. 나머지 둘은 신설 예정 |
 | 설정 | `app.json` 의 `@react-native-firebase/app` 플러그인 | **있다** |
 | 설정 | `android/app/google-services.json` · `ios/GoogleService-Info.plist` | **있다** |

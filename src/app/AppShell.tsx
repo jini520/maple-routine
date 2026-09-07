@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 
 import { useDropEffectStore } from '../features/drop-effect/store'
+import { useNoticeStore } from '../features/notice/store'
 import { useAppEntryStore } from '../features/app-entry/store'
 import { useAuthStore } from '../features/auth/store'
 import { useLiveUpdateStore } from '../features/live-update/store'
@@ -61,11 +62,12 @@ export function AppShell(): React.JSX.Element {
   const restoreTheme = useThemeStore((state) => state.restoreFromStorage)
   const restoreTrackingMode = useTrackingModeStore((state) => state.restoreFromStorage)
   const restoreDropEffect = useDropEffectStore((state) => state.restoreFromStorage)
+  const restoreNotice = useNoticeStore((state) => state.restore)
   const isKeyboardVisible = useKeyboardVisible()
 
   const isReady = stage === 'ready'
 
-  // 다섯을 한 이펙트에 모으지 않는다. 스토어마다 독립이고, 합치면 앞의 하나가
+  // 여섯을 한 이펙트에 모으지 않는다. 스토어마다 독립이고, 합치면 앞의 하나가
   // 던졌을 때 뒤가 통째로 안 돈다. deps 를 비운 것은 "마운트당 한 번"이 계약이라서다
   // (세터는 zustand 가 참조를 고정하지만, 그 사실에 기대지 않는다).
   //
@@ -93,6 +95,13 @@ export function AppShell(): React.JSX.Element {
 
   useEffect(() => {
     void restoreDropEffect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // 구독 스위치가 저장된 값을 그린다. **여기서 토픽을 다시 구독하지 않는다** - 복원은 사실을
+  // 읽는 것이고, 부팅마다 구독을 걸면 껐다는 사실을 부팅이 덮는다.
+  useEffect(() => {
+    void restoreNotice()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

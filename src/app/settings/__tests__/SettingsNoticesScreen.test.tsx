@@ -1,0 +1,98 @@
+// 이 화면이 지키는 것.
+//
+// ① 스위치가 설정 본화면이 아니라 여기 있다. 목록과 함께 서야 사용자가 무엇을 켜는지 안다.
+// ② 목록은 저장소가 준 것을 그대로 그린다. 화면이 다시 정렬하지 않는다.
+// ③ 행을 누르면 상세로 밀되 **`noticeId` 만** 넘긴다. 본문을 넘기면 알림에서 온 경로와
+//    목록에서 온 경로가 서로 다른 내용을 그릴 수 있다.
+import { act, fireEvent } from '@testing-library/react-native'
+
+import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { useNoticeStore } from '../../../features/notice/store'
+import { getNotices } from '../../../storage/notices'
+import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
+import { SettingsNoticesScreen } from '../SettingsNoticesScreen'
+import type { Notice } from '../../../types/notice'
+
+jest.mock('../../../storage/notices', () => ({ __esModule: true, getNotices: jest.fn() }))
+jest.mock('../../../hooks/useSettingsNavigation', () => ({
+  __esModule: true,
+  useSettingsNavigation: jest.fn(),
+}))
+
+const notices = jest.mocked(getNotices)
+const navigate = jest.fn()
+const goBack = jest.fn()
+
+function notice(id: string, title: string, publishedAt: string): Notice {
+  return { id, title, body: `${id} 본문`, publishedAt }
+}
+
+beforeEach(() => {
+  jest.clearAllMocks()
+  notices.mockResolvedValue([])
+  jest.mocked(useSettingsNavigation).mockReturnValue({ navigate, goBack } as never)
+  useNoticeStore.setState({ subscribed: false, setSubscribed: jest.fn().mockResolvedValue(undefined) })
+})
+
+describe('구독 스위치', () => {
+  it('이 화면 안에 있다', async () => {
+    const view = await renderOverlay(<SettingsNoticesScreen />)
+
+    expect(view.getByLabelText('공지 알림')).toBeTruthy()
+  })
+
+  it('꺼져 있으면 켜는 쪽으로 부른다', async () => {
+    const setSubscribed = jest.fn().mockResolvedValue(undefined)
+    useNoticeStore.setState({ subscribed: false, setSubscribed })
+    const view = await renderOverlay(<SettingsNoticesScreen />)
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('공지 알림'))
+    })
+
+    expect(setSubscribed).toHaveBeenCalledWith(true)
+  })
+
+  it('켜져 있으면 끄는 쪽으로 부른다', async () => {
+    const setSubscribed = jest.fn().mockResolvedValue(undefined)
+    useNoticeStore.setState({ subscribed: true, setSubscribed })
+    const view = await renderOverlay(<SettingsNoticesScreen />)
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('공지 알림'))
+    })
+
+    expect(setSubscribed).toHaveBeenCalledWith(false)
+  })
+})
+
+describe('목록', () => {
+  it('받은 것이 없으면 빈 상태를 말한다', async () => {
+    const view = await renderOverlay(<SettingsNoticesScreen />)
+
+    expect(view.getByText('아직 받은 공지가 없습니다')).toBeTruthy()
+  })
+
+  it('저장소가 준 순서를 그대로 그린다', async () => {
+    notices.mockResolvedValue([
+      notice('b', '나중 공지', '2026-09-05T00:00:00Z'),
+      notice('a', '먼저 공지', '2026-09-01T00:00:00Z'),
+    ])
+    const view = await renderOverlay(<SettingsNoticesScreen />)
+
+    const rows = view.getAllByTestId('notice-row')
+    expect(rows).toHaveLength(2)
+    expect(view.getByText('나중 공지')).toBeTruthy()
+  })
+
+  it('누르면 noticeId 만 넘겨 상세로 민다', async () => {
+    notices.mockResolvedValue([notice('a', '점검 안내', '2026-09-01T00:00:00Z')])
+    const view = await renderOverlay(<SettingsNoticesScreen />)
+
+    await act(async () => {
+      fireEvent.press(view.getByTestId('notice-row'))
+    })
+
+    expect(navigate).toHaveBeenCalledWith('SettingsNoticeDetail', { noticeId: 'a' })
+  })
+})
