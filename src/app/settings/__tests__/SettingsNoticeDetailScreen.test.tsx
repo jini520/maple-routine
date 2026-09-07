@@ -4,19 +4,28 @@
 //    것을 그려야 해서다. 그래서 서버가 죽어도 열린다.
 // ② 못 찾는 경우가 정상 경로다. 50건 상한에 잘렸거나 다른 기기에서 온 알림일 수 있다.
 // ③ 찾는 중과 없음을 가른다. 합치면 여는 순간 못 찾았다는 문구가 한 프레임 스친다.
+import { waitFor } from '@testing-library/react-native'
+
 import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { fetchNotice } from '../../../server/notices'
 import { getNotices } from '../../../storage/notices'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 import { SettingsNoticeDetailScreen } from '../SettingsNoticeDetailScreen'
 import type { Notice } from '../../../types/notice'
 
-jest.mock('../../../storage/notices', () => ({ __esModule: true, getNotices: jest.fn() }))
+jest.mock('../../../storage/notices', () => ({
+  __esModule: true,
+  getNotices: jest.fn(),
+  mergeNotices: jest.fn(async () => {}),
+}))
+jest.mock('../../../server/notices', () => ({ __esModule: true, fetchNotice: jest.fn(async () => null) }))
 jest.mock('../../../hooks/useSettingsNavigation', () => ({
   __esModule: true,
   useSettingsNavigation: jest.fn(),
 }))
 
 const notices = jest.mocked(getNotices)
+const remote = jest.mocked(fetchNotice)
 
 const 점검: Notice = {
   id: 'a',
@@ -28,6 +37,7 @@ const 점검: Notice = {
 beforeEach(() => {
   jest.clearAllMocks()
   notices.mockResolvedValue([점검])
+  remote.mockResolvedValue(null)
   jest.mocked(useSettingsNavigation).mockReturnValue({ navigate: jest.fn(), goBack: jest.fn() } as never)
 })
 
@@ -72,5 +82,41 @@ describe('링크', () => {
     )
 
     expect(view.getByLabelText('자세히 보기')).toBeTruthy()
+  })
+})
+
+describe('서버 보강', () => {
+  // 푸시는 4KB 상한 때문에 본문이 잘려 올 수 있다. 조회가 그 자리를 덮는다.
+  it('서버가 준 본문이 로컬 것을 덮는다', async () => {
+    notices.mockResolvedValue([{ ...점검, body: '잘린 본문…' }])
+    remote.mockResolvedValue({ ...점검, body: '온전한 본문 전부' })
+
+    const view = await renderOverlay(
+      <SettingsNoticeDetailScreen route={{ params: { noticeId: 'a' } }} />,
+    )
+
+    await waitFor(() => expect(view.getByTestId('notice-body')).toHaveTextContent('온전한 본문 전부'))
+  })
+
+  // 알림을 안 탭해 기기에 없는 공지를 목록에서 열 수 있어야 한다.
+  it('로컬에 없어도 서버에서 가져온다', async () => {
+    notices.mockResolvedValue([])
+    remote.mockResolvedValue(점검)
+
+    const view = await renderOverlay(
+      <SettingsNoticeDetailScreen route={{ params: { noticeId: 'a' } }} />,
+    )
+
+    await waitFor(() => expect(view.getByTestId('notice-title')).toHaveTextContent('점검 안내'))
+  })
+
+  it('조회가 실패해도 로컬 것을 그린다', async () => {
+    remote.mockRejectedValue(new Error('offline'))
+
+    const view = await renderOverlay(
+      <SettingsNoticeDetailScreen route={{ params: { noticeId: 'a' } }} />,
+    )
+
+    expect(view.getByTestId('notice-title')).toHaveTextContent('점검 안내')
   })
 })
