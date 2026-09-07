@@ -277,14 +277,19 @@ export function BossManageScreen(): React.JSX.Element {
                   스테퍼만 있다). 설명은 기능 안내가 진다. */}
               {/* `n/12` 카운터는 `주간` 섹션 헤더가 싣는다. */}
 
+              {/* 글자가 스위치 안이라 글자를 눌러도 토글된다. 스위치만 표적이면 44x24 하나뿐이다.
+                  오른쪽으로 미는 것은 `ml-auto` 가 아니라 `self-end` 다. 부모가 `PageHeader` 의
+                  세로 상자라 가로가 교차축이고, 거기서 `ml-auto` 는 stretch 와 얽힌다. */}
               {mode === 'auto' && (
-                <View className="flex-row items-center justify-between gap-3">
+                <Pressable
+                  role="switch"
+                  aria-checked={showAllBosses}
+                  aria-label="모든 보스 보기"
+                  onPress={() => setShowAllBosses((prev) => !prev)}
+                  className="self-end shrink-0 flex-row items-center gap-1.5"
+                >
                   <Text className="text-xs font-medium text-text-muted">모든 보스 보기</Text>
-                  <Pressable
-                    role="switch"
-                    aria-checked={showAllBosses}
-                    aria-label="모든 보스 보기"
-                    onPress={() => setShowAllBosses((prev) => !prev)}
+                  <View
                     className={`relative h-6 w-11 shrink-0 rounded-full ${
                       showAllBosses ? 'bg-primary' : 'bg-surface-2'
                     }`}
@@ -294,8 +299,8 @@ export function BossManageScreen(): React.JSX.Element {
                         showAllBosses ? 'translate-x-5' : 'translate-x-0'
                       }`}
                     />
-                  </Pressable>
-                </View>
+                  </View>
+                </Pressable>
               )}
             </>
           )}

@@ -13,7 +13,7 @@ import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
 import type { MatchedBoss } from '../../../lib/boss/boss-matching'
 import type { ManualTrackedItem } from '../../../types'
 
-import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { BossManageScreen } from '../BossManageScreen'
 
@@ -469,6 +469,31 @@ describe('BossManageScreen: 자동 모드', () => {
 
     expect(screen.getByText('매그너스')).toBeTruthy()
     expect(stateOf(screen.getByLabelText('모든 보스 보기')).checked).toBe(true)
+  })
+
+  // 글자가 스위치 밖 줄 왼쪽 끝에 있었다. 자리를 붙인 것만이 아니라 **누를 수 있는 표적이
+  // 넓어진 것**이 요점이라, 담김이 아니라 눌러서 켜지는 것으로 본다.
+  it('`모든 보스 보기` 글자가 스위치 안에 있어 글자를 눌러도 켜진다', async () => {
+    mockStore({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
+    await renderScreen()
+    const 스위치 = screen.getByLabelText('모든 보스 보기')
+
+    await press(within(스위치).getByText('모든 보스 보기'))
+
+    expect(stateOf(스위치).checked).toBe(true)
+  })
+
+  // 부모가 `PageHeader` 의 세로 상자라 가로가 교차축이다. 붙인 쌍을 오른쪽 끝으로 보내는 것이
+  // `self-end` 이고, 빠지면 줄 전체로 늘어나 글자가 다시 왼쪽 끝에 선다.
+  it('글자와 스위치가 한 쌍으로 줄 오른쪽 끝에 선다', async () => {
+    mockStore({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
+
+    await renderScreen()
+
+    expect(flattenStyle(screen.getByLabelText('모든 보스 보기').props.style)).toMatchObject({
+      alignSelf: 'flex-end',
+      flexDirection: 'row',
+    })
   })
 
   // 등록 보스가 하나도 없으면 토글이 꺼져 있어도 전체로 대체한다.
