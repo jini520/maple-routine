@@ -45,6 +45,12 @@ export const STORAGE_KEYS = {
   notificationPermissionAsked: 'notificationPermissionAsked',
   // 받은 공지. 최근 50건의 JSON 배열이다. 서버가 죽어도 받은 것은 열려야 해서 남긴다.
   notices: 'notices',
+  // today 배너에서 닫은 공지 id. 최근 50건의 JSON 배열이다. 닫은 것은 배너이지 공지가 아니라
+  // 설정의 목록·상세에는 그대로 보인다.
+  //
+  // `KEEP_KEYS` 에 넣는다. `notices` 는 지워도 서버가 다시 주지만 **닫았다는 사실은 기기에만
+  // 있어** 아무도 복원해 주지 않는다. 지워지면 이미 닫은 공지가 첫 화면에 되살아난다.
+  dismissedNotices: 'dismissedNotices',
 } as const
 
 export function schedulerCacheKey(ocid: string): string {

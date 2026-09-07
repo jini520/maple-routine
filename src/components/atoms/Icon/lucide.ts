@@ -47,6 +47,7 @@ import LayoutGrid from 'lucide-react-native/icons/layout-grid'
 import LayoutDashboard from 'lucide-react-native/icons/layout-dashboard'
 import ListChecks from 'lucide-react-native/icons/list-checks'
 import MapPin from 'lucide-react-native/icons/map-pin'
+import Megaphone from 'lucide-react-native/icons/megaphone'
 import Medal from 'lucide-react-native/icons/medal'
 import Menu from 'lucide-react-native/icons/menu'
 import Minus from 'lucide-react-native/icons/minus'
@@ -144,6 +145,8 @@ export const LayoutDashboardIcon = withIconInterop(LayoutDashboard)
 export const ListChecksIcon = withIconInterop(ListChecks)
 /** 일일/주간 퀘스트 카테고리. `ContentManageScreen` 그룹 헤더·행. */
 export const MapPinIcon = withIconInterop(MapPin)
+/** 운영자 공지. today 배너의 배지. 두루마리는 읽을 것 이라 목록 쪽이고 이쪽은 알린다 이다. */
+export const MegaphoneIcon = withIconInterop(Megaphone)
 /** 무릉도장 카테고리. `ContentManageScreen` 그룹 헤더·행. */
 export const MedalIcon = withIconInterop(Medal)
 /**
