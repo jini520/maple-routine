@@ -8,7 +8,7 @@
  * 이 화면은 출처를 안 가린다. 서버가 죽어도 받은 공지는 열린다.
  */
 import { useEffect, useState } from 'react'
-import { Pressable, View } from 'react-native'
+import { Linking, Pressable, View } from 'react-native'
 
 import { ArrowLeftIcon, Card, ChevronRightIcon, ScrollTextIcon, Text } from '../../components/atoms'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
@@ -58,6 +58,7 @@ export function SettingsNoticesScreen(): React.JSX.Element {
   const navigation = useSettingsNavigation()
   const subscribed = useNoticeStore((state) => state.subscribed)
   const setSubscribed = useNoticeStore((state) => state.setSubscribed)
+  const blockedByPermission = useNoticeStore((state) => state.blockedByPermission)
   const [notices, setNotices] = useState<Notice[]>([])
 
   useEffect(() => {
@@ -101,6 +102,27 @@ export function SettingsNoticesScreen(): React.JSX.Element {
               }}
             />
           </View>
+
+          {/* 켜려 했는데 권한이 없을 때만 뜬다. iOS 는 여기서 팝업을 다시 못 띄우므로
+              OS 설정으로 보내는 것 말고 할 수 있는 일이 없다. 조용히 두면 사용자는
+              스위치가 안 켜지는 것을 고장으로 읽는다. */}
+          {blockedByPermission && (
+            <View className={SETTINGS_ROW_DIVIDER_CLASS}>
+              <Pressable
+                role="button"
+                aria-label="알림 권한 설정 열기"
+                onPress={() => {
+                  void Linking.openSettings().catch(() => undefined)
+                }}
+                className="py-4"
+              >
+                <Text className="text-sm text-error-ink">기기에서 알림이 꺼져 있어요</Text>
+                <Text className="text-xs text-text-disabled">
+                  눌러서 설정을 열고 이 앱의 알림을 켜 주세요
+                </Text>
+              </Pressable>
+            </View>
+          )}
         </Card>
 
         {notices.length === 0 ? (

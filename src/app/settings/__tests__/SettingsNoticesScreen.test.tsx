@@ -31,7 +31,11 @@ beforeEach(() => {
   jest.clearAllMocks()
   notices.mockResolvedValue([])
   jest.mocked(useSettingsNavigation).mockReturnValue({ navigate, goBack } as never)
-  useNoticeStore.setState({ subscribed: false, setSubscribed: jest.fn().mockResolvedValue(undefined) })
+  useNoticeStore.setState({
+    subscribed: false,
+    blockedByPermission: false,
+    setSubscribed: jest.fn().mockResolvedValue(undefined),
+  })
 })
 
 describe('구독 스위치', () => {
@@ -94,5 +98,22 @@ describe('목록', () => {
     })
 
     expect(navigate).toHaveBeenCalledWith('SettingsNoticeDetail', { noticeId: 'a' })
+  })
+})
+
+describe('권한이 없어 막혔을 때', () => {
+  it('평소에는 안내가 없다', async () => {
+    const view = await renderOverlay(<SettingsNoticesScreen />)
+
+    expect(view.queryByLabelText('알림 권한 설정 열기')).toBeNull()
+  })
+
+  // 조용히 두면 사용자는 스위치가 안 켜지는 것을 고장으로 읽는다.
+  it('막히면 설정으로 가는 길을 준다', async () => {
+    useNoticeStore.setState({ blockedByPermission: true })
+    const view = await renderOverlay(<SettingsNoticesScreen />)
+
+    expect(view.getByLabelText('알림 권한 설정 열기')).toBeTruthy()
+    expect(view.getByText('기기에서 알림이 꺼져 있어요')).toBeTruthy()
   })
 })

@@ -6,6 +6,7 @@
  */
 import { create } from 'zustand'
 
+import { hasNotificationPermission } from '../../native/notifications'
 import { subscribeToPushTopic, unsubscribeFromPushTopic } from '../../native/push'
 import { getNoticeSubscribed, setNoticeSubscribed } from '../../storage/notice-settings'
 
@@ -18,6 +19,13 @@ export const NOTICE_TOPIC = 'notice'
 
 interface NoticeState {
   subscribed: boolean
+  /**
+   * 켜려 했는데 알림 권한이 없어 막혔다.
+   *
+   * 조용히 구독만 하면 스위치는 켜져 있고 알림은 안 오는데, 사용자는 그것을 고장으로 읽는다.
+   * iOS 는 여기서 팝업을 다시 못 띄우므로 말해 주는 것 말고 할 수 있는 일이 없다.
+   */
+  blockedByPermission: boolean
   /** 저장된 값을 상태에 올린다. 토픽을 다시 구독하지 않는다. */
   restore: () => Promise<void>
   setSubscribed: (subscribed: boolean) => Promise<void>
@@ -25,18 +33,24 @@ interface NoticeState {
 
 export const useNoticeStore = create<NoticeState>()((set) => ({
   subscribed: false,
+  blockedByPermission: false,
   async restore() {
     set({ subscribed: await getNoticeSubscribed() })
   },
   async setSubscribed(subscribed) {
-    // 구독이 먼저다. 실패하면 여기서 던지고 저장도 상태도 안 바뀐다.
     if (subscribed) {
+      // **켤 때만 권한을 본다.** 끄는 길은 권한과 무관하고, 거기서 막으면 권한 없는 사용자가
+      // 구독을 해제할 방법이 없어진다.
+      if (!(await hasNotificationPermission())) {
+        set({ blockedByPermission: true })
+        return
+      }
       await subscribeToPushTopic(NOTICE_TOPIC)
     } else {
       await unsubscribeFromPushTopic(NOTICE_TOPIC)
     }
 
     await setNoticeSubscribed(subscribed)
-    set({ subscribed })
+    set({ subscribed, blockedByPermission: false })
   },
 }))
