@@ -31,6 +31,20 @@ export const STORAGE_KEYS = {
   // 값이 없는 것과 빈 집합은 다르다. 앞은 아직 못 받았다는 뜻이고 뒤는 스페셜 캐릭터가 없는
   // 계정이다. 앞을 뒤로 읽으면 스페셜 지출이 그대로 샌다.
   eventWorldNames: 'eventWorldNames',
+  // 공지 토픽 구독 여부. 켠 사람만 받는다. 기본은 꺼짐이고, 알림 권한을 허용하는 순간 켜진다.
+  //
+  // `KEEP_KEYS` 에 넣는다. 지워지면 구독은 FCM 쪽에 남아 있는데 앱은 껐다고 믿어, 스위치가
+  // 꺼져 있는데 알림이 오는 상태가 된다.
+  noticeSubscribed: 'noticeSubscribed',
+  // 알림 권한을 **물어본 적 있는가**. OS 에 물어서는 이 값을 알 수 없다. 안드로이드의 `denied` 는
+  // 거부했다와 아직 안 물었다를 구분해 주지 않는 상태가 있고, 그것을 안 물었다로 읽으면 거부한
+  // 사용자에게 팝업이 계속 뜬다.
+  //
+  // `KEEP_KEYS` 에 넣는다. 지워지면 iOS 에서 다시 묻게 되는데, 그 시스템 팝업은 이미 답한
+  // 사용자에게 두 번째로는 아예 안 뜬다. 그래서 사용자는 아무 일도 안 일어난 것을 본다.
+  notificationPermissionAsked: 'notificationPermissionAsked',
+  // 받은 공지. 최근 50건의 JSON 배열이다. 서버가 죽어도 받은 것은 열려야 해서 남긴다.
+  notices: 'notices',
 } as const
 
 export function schedulerCacheKey(ocid: string): string {

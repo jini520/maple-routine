@@ -10,6 +10,12 @@ const KEEP_KEYS = new Set<string>([
   STORAGE_KEYS.theme,
   STORAGE_KEYS.trackingMode,
   STORAGE_KEYS.dropEffect,
+  // 공지 구독. 지워지면 구독은 FCM 쪽에 남아 있는데 앱은 껐다고 믿어, 스위치가 꺼져 있는데
+  // 알림이 오는 상태가 된다.
+  STORAGE_KEYS.noticeSubscribed,
+  // 권한을 물었다는 사실. 지워지면 iOS 에서 다시 묻게 되는데, 그 시스템 팝업은 이미 답한
+  // 사용자에게 두 번째로는 아예 안 뜬다. 그래서 사용자는 아무 일도 안 일어난 것을 본다.
+  STORAGE_KEYS.notificationPermissionAsked,
 ])
 
 // 삭제 단위는 2그룹이다. 사용자가 해결하려는 갈등은 "용량은 비우고 싶은데 복구 불가능한
