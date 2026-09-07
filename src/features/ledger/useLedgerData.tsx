@@ -23,7 +23,9 @@ import { useBossProfitStore } from '../boss-profit/store'
 import { defaultCashbookRange, type CashbookRange } from '../cashbook/range'
 import { collectEnhancementHistory, measureEnhancementHistory } from '../enhancement-history/collect'
 import { datesBetween } from '../../lib/calendar'
+import { useDataFreshness } from '../refresh/freshness'
 import { useRefreshProgress } from '../refresh/progress'
+import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { syncScheduleWindow } from '../schedule-window/sync'
 import { planScheduleWindow } from '../schedule-window/window'
 
@@ -147,6 +149,14 @@ export function LedgerDataProvider(props: {
         const wantsWindow = parts.includes('window') && hasOcids
         const wantsHistory = parts.includes('enhancement')
         const dates = datesBetween(range.from, range.to)
+        /*
+         * 화면 머리 아래 `hh:mm:ss 기준` 이 읽는 값의 출처 둘 중 하나(나머지는 `syncSchedules`).
+         *
+         * **오늘이 든 범위만 실시간이다.** 지난 달의 강화 내역은 Open API 를 부르더라도 이미
+         * 확정된 기록이라, 그것으로 시각을 갱신하면 달을 넘겨보기만 해도 방금 받은 데이터처럼
+         * 보인다(사용자 지정).
+         */
+        const wantsToday = wantsHistory && dates.includes(getCurrentKstDateKey(now))
 
         // ## 계획을 먼저 다 세운다
         //
@@ -200,7 +210,12 @@ export function LedgerDataProvider(props: {
           })(),
           reportHistory === null
             ? Promise.resolve()
-            : collectEnhancementHistory(dates, new Date(), reportHistory).catch(() => undefined),
+            : collectEnhancementHistory(dates, new Date(), reportHistory)
+                .then(() => {
+                  // 오늘이 든 범위만 실시간이다. 지난 달은 확정된 기록이라 시각을 안 움직인다.
+                  if (wantsToday) void useDataFreshness.getState().markRealtimeFetch(new Date().toISOString())
+                })
+                .catch(() => undefined),
         ])
       } finally {
         running.current -= 1

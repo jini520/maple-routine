@@ -44,6 +44,7 @@ import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortra
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { SpeedDial } from '../../components/organisms/SpeedDial/SpeedDial'
 import { SPEED_DIAL_SPACE_PX } from '../../components/organisms/SpeedDial/speed-dial-metrics'
+import { DataFreshness } from '../../components/molecules/DataFreshness/DataFreshness'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -96,6 +97,7 @@ import {
 import { loadMesoRate } from '../../features/cashbook/meso-rate'
 // 보스 수익 탭의 행이 초상을 찾는 그 함수다. 같은 보스가 두 화면에서 다른 그림이면 안 된다.
 import { findPortraitSlug } from '../boss-profit/character-groups'
+import { useDataFreshness } from '../../features/refresh/freshness'
 import { useLedgerData } from '../../features/ledger/useLedgerData'
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { useToastStore } from '../../features/toast/store'
@@ -611,6 +613,14 @@ export function CashbookScreen(): React.JSX.Element {
    * 다시 읽는다.
    */
   const ledger = useLedgerData()
+  /**
+   * 머리 아래 한 줄이 읽는 값. **실시간 데이터를 마지막으로 받은 시각 하나**다.
+   *
+   * 페이지마다 따로 재지 않는다. 화면 다섯이 같은 실시간 원천을 공유하므로, 따로 재면 같은 한
+   * 번의 조회로 그린 데이터인데 값이 갈린다. 적는 자리는 `syncSchedules` 회차와 오늘이 든 강화
+   * 조회 둘뿐이고, 기기 DB 읽기와 과거 기간 조회는 거기 안 닿는다.
+   */
+  const fetchedAt = useDataFreshness((state) => state.fetchedAt)
 
   // **강화 사용 내역을 받는 유일한 당김**이다. 이 화면만 그 값을 그린다.
 
@@ -877,14 +887,20 @@ export function CashbookScreen(): React.JSX.Element {
         // 색만 테마에서 넘기고 컨트롤은 셸이 그대로 받는다.
         onRefresh={() => ledger.reload(['live', 'window', 'enhancement'])}
         header={
-          <PageHeader>
-            <PageHeaderTitleRow className="justify-between">
-              <Text className="text-lg font-semibold text-text">가계부</Text>
-              <View className="flex-row items-center gap-1">
-                <PeriodTab label="주간" selected={isWeekly} onPress={showWeekly} />
-                <PeriodTab label="월간" selected={!isWeekly} onPress={showMonthly} />
-              </View>
-            </PageHeaderTitleRow>
+          <PageHeader ownsFreshnessLine>
+            {/* 제목과 갱신 시각이 **한 덩어리**다. 따로 넣으면 `PageHeader` 의 `gap-4` 가
+                둘 사이에 들어가 제목에 딸린 글씨로 안 읽힌다. 여기에 `gap-*` 을 안 주는 것은
+                `PageHeaderTitleRow` 의 `min-h-8` 이 제목 아래에 이미 여백을 남기기 때문이다. */}
+            <View>
+              <PageHeaderTitleRow className="justify-between">
+                <Text className="text-lg font-semibold text-text">가계부</Text>
+                <View className="flex-row items-center gap-1">
+                  <PeriodTab label="주간" selected={isWeekly} onPress={showWeekly} />
+                  <PeriodTab label="월간" selected={!isWeekly} onPress={showMonthly} />
+                </View>
+              </PageHeaderTitleRow>
+              <DataFreshness fetchedAt={fetchedAt} />
+            </View>
           </PageHeader>
         }
       >

@@ -22,29 +22,27 @@
 
 import { TodayLoadingModal } from './TodayLoadingModal'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Pressable, View } from 'react-native'
-import { useReducedMotion } from 'react-native-reanimated'
+import { View } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
 
+import { useDataFreshness } from '../../features/refresh/freshness'
 import { useNoticeBannerStore } from '../../features/notice/banner-store'
 import { useDropHistoryStore } from '../../features/boss-profit/drop-history-store'
 import { getBossDropRecordsRevision } from '../../storage/boss-drops'
 import { useBossProfitStore } from '../../features/boss-profit/store'
 import { useBossSchedulerStore } from '../../features/boss-scheduler/store'
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
-import { formatSyncedAt } from '../../features/schedule-sync/format'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getRepresentativeCharacter } from '../../storage/character-selection'
 import { resolveDisplayRepresentative } from '../../features/character-manage/derivations'
 import type { CharacterBasicProfile } from '../../types'
 
-import { RefreshCwIcon, Text } from '../../components/atoms'
+import { Text } from '../../components/atoms'
+import { DataFreshness } from '../../components/molecules/DataFreshness/DataFreshness'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { SPIN_ANIMATION } from '../../constants/style/animation'
-import { AnimatedView } from '../../lib/nativewind-interop'
 import { NoticeBanner } from './NoticeBanner'
 import { buildTodayViewModel } from './view-model'
 import { WidgetGrid } from './WidgetGrid'
@@ -110,7 +108,6 @@ export function TodayScreen(): React.JSX.Element {
   const { mode } = useTrackingModeStore()
   const loadNoticeBanner = useNoticeBannerStore((state) => state.load)
   const refreshNoticeBanner = useNoticeBannerStore((state) => state.refresh)
-  const reduceMotion = useReducedMotion()
 
   // 프로필과 대표 표식은 스토어가 아니라 저장소에서 온다(둘 다 이 화면이 처음 읽는 자리는 아니고,
   // `character-basic-cache` 는 보스 수익·히스토리가 이미 같은 방식으로 읽는다).
@@ -191,6 +188,15 @@ export function TodayScreen(): React.JSX.Element {
     }
   }, [orderedOcidsKey])
 
+  /**
+   * 머리 아래 한 줄이 읽는 값. **실시간 데이터를 마지막으로 받은 시각 하나**다.
+   *
+   * 페이지마다 따로 재지 않는다. 화면 다섯이 같은 실시간 원천을 공유하므로, 따로 재면 같은 한
+   * 번의 조회로 그린 데이터인데 값이 갈린다. 적는 자리는 `syncSchedules` 회차와 오늘이 든 강화
+   * 조회 둘뿐이고, 기기 DB 읽기와 과거 기간 조회는 거기 안 닿는다.
+   */
+  const fetchedAt = useDataFreshness((state) => state.fetchedAt)
+
   const viewModel = buildTodayViewModel({
     // 렌더당 한 번만 만든다. 두 번 부르면 두 시각이 기간 경계를 사이에 두고 갈려 카운트다운과
     // 기간 판정이 서로 다른 기간을 가리킬 수 있다(`BossProfitScreen` 과 같은 규칙).
@@ -214,9 +220,6 @@ export function TodayScreen(): React.JSX.Element {
     dropGroups: dropHistory.groups,
     drought: dropHistory.drought,
   })
-
-  const isSyncing =
-    content.status === 'loading' || boss.status === 'loading' || profit.status === 'loading'
 
   /**
    * 헤더 버튼과 당김이 같은 함수를 부른다.
@@ -243,6 +246,7 @@ export function TodayScreen(): React.JSX.Element {
       const { ocid, profile } = read.displayed
       setProfilesByOcid((previous) => ({ ...previous, [ocid]: profile }))
     }
+
   }
 
   // 당김이 시작한 회차에만 인디케이터가 돈다. `isSyncing` 은 제목 옆 조회 중… 과 헤더 버튼의
@@ -256,35 +260,16 @@ export function TodayScreen(): React.JSX.Element {
       <ScreenScroll
         onRefresh={refreshAll}
         header={
-          <PageHeader>
-            {/* 제목 옆이 이 화면이 얼마나 최신인가 의 자리다. 오른쪽에 가는 곳이 없어
-                `justify-between` 만 빠진다. */}
-            <PageHeaderTitleRow>
-              <View className="shrink flex-row items-center gap-2">
+          <PageHeader ownsFreshnessLine>
+            {/* 제목과 갱신 시각이 **한 덩어리**다. 따로 넣으면 `PageHeader` 의 `gap-4` 가
+                둘 사이에 들어가 제목에 딸린 글씨로 안 읽힌다. 여기에 `gap-*` 을 안 주는 것은
+                `PageHeaderTitleRow` 의 `min-h-8` 이 제목 아래에 이미 여백을 남기기 때문이다. */}
+            <View>
+              <PageHeaderTitleRow>
                 <Text className="shrink-0 text-lg font-semibold text-text">today</Text>
-                <Text className="shrink text-15 text-text-muted" numberOfLines={1}>
-                  {/* 스케줄러 두 화면이 선택된 캐릭터의 `syncedAt` 을 쓰는 자리다. 이 화면에는
-                      선택이 없으므로 페이지 전체 기준 값을 쓴다. 보스 수익 스토어의
-                      `lastSyncedAt` 이 이미 그 뜻이고, 건너뛴 진입에서도 갱신된다. */}
-                  {isSyncing ? '조회 중...' : formatSyncedAt(profit.lastSyncedAt)}
-                </Text>
-                <Pressable
-                  role="button"
-                  aria-label="새로고침"
-                  onPress={() => {
-                    void refreshAll()
-                  }}
-                  className="shrink-0 p-2"
-                >
-                  <AnimatedView
-                    testID="refresh-icon"
-                    style={isSyncing && !reduceMotion ? SPIN_ANIMATION : undefined}
-                  >
-                    <RefreshCwIcon className="h-4 w-4 text-primary-ink" strokeWidth={2} aria-hidden />
-                  </AnimatedView>
-                </Pressable>
-              </View>
-            </PageHeaderTitleRow>
+              </PageHeaderTitleRow>
+              <DataFreshness fetchedAt={fetchedAt} />
+            </View>
           </PageHeader>
         }
       >
