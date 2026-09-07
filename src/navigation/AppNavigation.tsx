@@ -1,5 +1,7 @@
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native'
 
+import { useNoticeDelivery } from '../features/notice/use-notice-delivery'
+
 import { useLiveUpdateStore } from '../features/live-update/store'
 
 import { useRootBackToBackground } from '../hooks/useRootBackToBackground'
@@ -30,6 +32,9 @@ export function AppNavigation(): React.JSX.Element {
   const theme = useNavigationTheme()
 
   useRootBackToBackground(navigationRef)
+  // 알림 탭이 상세를 민다. 이 자리인 이유는 `UpdatePromptModal` 과 같다 - 어느 화면에 있든
+  // 열려야 하니 화면 안은 안 되고, 컨테이너 밖이면 내비게이션을 못 잡는다.
+  useNoticeDelivery((noticeId) => navigationRef.navigate('SettingsNoticeDetail', { noticeId }))
 
   return (
     <NavigationContainer ref={navigationRef} theme={theme}>

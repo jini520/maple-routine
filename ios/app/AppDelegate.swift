@@ -1,4 +1,5 @@
 internal import Expo
+import FirebaseCore
 import React
 import ReactAppDependencyProvider
 
@@ -22,6 +23,9 @@ class AppDelegate: ExpoAppDelegate {
 
 #if os(iOS) || os(tvOS)
     window = UIWindow(frame: UIScreen.main.bounds)
+    // FCM. 이 호출 전에는 Firebase API 가 전부 던진다. prebuild 가 넣어 주지만 이 저장소는
+    // 산출물을 통째로 받지 않아(PrivacyInfo·Pods 참조를 지운다) 손으로 유지한다.
+    FirebaseApp.configure()
     factory.startReactNative(
       withModuleName: "main",
       in: window,

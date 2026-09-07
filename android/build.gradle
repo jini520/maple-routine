@@ -6,6 +6,10 @@ buildscript {
     mavenCentral()
   }
   dependencies {
+    // FCM. `google-services.json` 을 읽어 리소스로 굽는 플러그인이다.
+    // prebuild 가 넣어 주지만 이 저장소는 prebuild 산출물을 통째로 받지 않는다(손으로 쓴
+    // 네이티브 파일을 지운다). 그래서 이 줄은 손으로 유지한다.
+    classpath('com.google.gms:google-services:4.4.4')
     classpath('com.android.tools.build:gradle')
     classpath('com.facebook.react:react-native-gradle-plugin')
     classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')

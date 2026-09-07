@@ -47,6 +47,17 @@ android/.kotlin/
 # 다시 만들면서 손으로 넣은 줄을 지운다(실제로 한 번 지워졌다). 이 파일은 prebuild 가 안 건드린다.
 android/keystore.properties
 
+# FCM 발송 자격증명. **이 파일 하나로 전 사용자에게 푸시를 쏠 수 있다.**
+# 이 저장소는 public 이라 한 번 커밋되면 히스토리에서 지워도 이미 나간 것이다.
+# 발송은 서버(별도 저장소)가 하고 키는 그 기기에만 둔다. 여기 받아 두지 말 것.
+*-firebase-adminsdk-*.json
+firebase-service-account*.json
+service-account*.json
+
+# APNs 인증 키. Firebase 콘솔에 올리는 물건이고 저장소에 둘 이유가 없다.
+# 애플이 **한 번만 내려받게** 해 주므로 잃으면 키를 새로 만들어야 한다.
+*.p8
+
 # macOS
 .DS_Store
 

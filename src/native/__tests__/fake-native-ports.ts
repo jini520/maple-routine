@@ -5,6 +5,7 @@ import {
   setKeyboardPort,
   setLiveUpdatePort,
   setNotificationsPort,
+  setPushPort,
   setSplashScreenPort,
   setStatusBarPort,
   setSystemBarsPort,
@@ -57,6 +58,14 @@ export function installNoopNativePorts(): void {
     schedule: async () => {},
     cancel: async () => {},
     getPendingCount: async () => 0,
+  })
+
+  setPushPort({
+    subscribe: async () => {},
+    unsubscribe: async () => {},
+    addMessageListener: () => () => {},
+    addOpenedListener: () => () => {},
+    getInitialNotification: async () => null,
   })
 
   setBackGesturePort({

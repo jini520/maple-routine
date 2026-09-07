@@ -100,6 +100,40 @@ export interface NotificationsPort {
   getPendingCount(): Promise<number>
 }
 
+/**
+ * 원격 푸시의 토픽 구독. **여기 있는 것이 둘뿐인 것이 이 포트의 설계다.**
+ *
+ * 무엇을 언제 왜 보낼지는 서버가 정하고 앱은 어느 토픽을 듣는지만 안다. 등록 토큰은 다루지
+ * 않는다. 토큰을 서버에 올리는 순간 사용자 식별자 저장소가 생기고 만료 정리와 개인정보 분류가
+ * 따라오는데, 지금 보내려는 알림 중 사람을 가려 보내야 하는 것이 없다.
+ *
+ * 권한은 여기 없다. `NotificationsPort.requestPermission` 이 든다. OS 가 보는 알림 권한이 로컬과
+ * 원격을 안 가리는 하나라, 두 자리에서 물으면 같은 팝업이 두 번 뜬다.
+ */
+export interface PushPort {
+  subscribe(topic: string): Promise<void>
+  unsubscribe(topic: string): Promise<void>
+  /**
+   * 앱이 **앞에 있을 때** 도착한 메시지. 해제 함수를 돌려준다.
+   *
+   * 이 자리가 따로 있는 이유. FCM 은 포그라운드에서 알림을 OS 에 안 넘기고 JS 로만 준다.
+   * 여기서 안 받으면 앱을 켜 둔 채로 온 공지가 통째로 사라진다.
+   */
+  addMessageListener(handler: (data: PushData) => void): () => void
+  /** 알림을 **탭해서** 앱이 앞으로 나왔을 때. 해제 함수를 돌려준다. */
+  addOpenedListener(handler: (data: PushData) => void): () => void
+  /**
+   * **죽어 있던 앱**을 알림 탭으로 연 경우 그 알림. 아니면 `null`.
+   *
+   * 한 번만 답한다. 이미 소비한 뒤에는 `null` 이다. 그래서 부팅 흐름에서 딱 한 번 읽어야 하고,
+   * 두 곳에서 읽으면 뒤에 읽는 쪽이 빈손이 된다.
+   */
+  getInitialNotification(): Promise<PushData | null>
+}
+
+/** 푸시가 실어 오는 `data`. FCM 이 값을 전부 문자열로만 받는다. */
+export type PushData = Record<string, string>
+
 export interface BackProgressEvent {
   /** 0~1. 시스템이 계산한 제스처 진행률. */
   progress: number
@@ -239,6 +273,7 @@ const statusBarSlot = createPortSlot<StatusBarPort>('StatusBarPort')
 const systemBarsSlot = createPortSlot<SystemBarsPort>('SystemBarsPort')
 const keyboardSlot = createPortSlot<KeyboardPort>('KeyboardPort')
 const notificationsSlot = createPortSlot<NotificationsPort>('NotificationsPort')
+const pushSlot = createPortSlot<PushPort>('PushPort')
 const backGestureSlot = createPortSlot<BackGesturePort>('BackGesturePort')
 const liveUpdateSlot = createPortSlot<LiveUpdatePort>('LiveUpdatePort')
 
@@ -266,6 +301,9 @@ export const getKeyboardPort = keyboardSlot.get
 export const setNotificationsPort = notificationsSlot.set
 export const getNotificationsPort = notificationsSlot.get
 
+export const setPushPort = pushSlot.set
+export const getPushPort = pushSlot.get
+
 export const setBackGesturePort = backGestureSlot.set
 export const getBackGesturePort = backGestureSlot.get
 
@@ -283,6 +321,7 @@ export function __resetNativePortsForTest(): void {
     systemBarsSlot,
     keyboardSlot,
     notificationsSlot,
+    pushSlot,
     backGestureSlot,
     liveUpdateSlot,
   ]) {

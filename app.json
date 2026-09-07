@@ -24,7 +24,8 @@
         "CFBundleLocalizations": [
           "ko"
         ]
-      }
+      },
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "package": "com.mapleroutine.app",
@@ -32,7 +33,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#E6DECF"
-      }
+      },
+      "googleServicesFile": "./google-services.json"
     },
     "experiments": {
       "tsconfigPaths": true
@@ -92,7 +94,8 @@
             ]
           }
         }
-      ]
+      ],
+      "@react-native-firebase/app"
     ]
   }
 }

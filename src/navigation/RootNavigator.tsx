@@ -11,6 +11,8 @@ import { SettingsAccountDataScreen } from '../app/settings/SettingsAccountDataSc
 import { SettingsCharactersScreen } from '../app/settings/SettingsCharactersScreen'
 import { SettingsFeatureGuideListScreen } from '../app/settings/SettingsFeatureGuideListScreen'
 import { SettingsFeatureGuideScreen } from '../app/settings/SettingsFeatureGuideScreen'
+import { SettingsNoticeDetailScreen } from '../app/settings/SettingsNoticeDetailScreen'
+import { SettingsNoticesScreen } from '../app/settings/SettingsNoticesScreen'
 import { SettingsPrivacyScreen } from '../app/settings/SettingsPrivacyScreen'
 import { SettingsReleaseNotesScreen } from '../app/settings/SettingsReleaseNotesScreen'
 import { ItemSplitScreen } from '../app/utility/ItemSplitScreen'
@@ -22,9 +24,9 @@ import { STACK_ROUTE_NAMES, type RootStackParamList, type StackRouteName } from 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 
 /**
- * 하위 페이지 열둘.
+ * 하위 페이지 열넷.
  *
- * 표가 `Partial` 이 아니라 `Record<StackRouteName, …>` 인 것이 계약이다. 열둘을 다 적지 않으면
+ * 표가 `Partial` 이 아니라 `Record<StackRouteName, …>` 인 것이 계약이다. 열넷을 다 적지 않으면
  * 컴파일이 안 된다. 자리표시자로 조용히 떨어지는 길이 실제로 설정 탭을 통째로 삼킨 적이 있다.
  *
  * 안내 상세 둘이 같은 컴포넌트를 가리키는 것도 계약이다. 기능 설명 목록에서도 개발 노트
@@ -42,6 +44,8 @@ const STACK_SCREENS = {
   SettingsAbout: SettingsAboutScreen,
   SettingsPrivacy: SettingsPrivacyScreen,
   SettingsCharacters: SettingsCharactersScreen,
+  SettingsNotices: SettingsNoticesScreen,
+  SettingsNoticeDetail: SettingsNoticeDetailScreen,
   UtilityItemSplit: ItemSplitScreen,
 } as const satisfies Record<StackRouteName, React.ComponentType>
 
@@ -49,19 +53,20 @@ const STACK_SCREENS = {
  * 라우트 이름 → 화면. 자리표시자 폴백이 없다.
  *
  * `Partial` + 폴백은 화면 하나를 빠뜨려도 타입도 테스트도 통과한 채 그 탭만 자리표시자로 뜬다.
- * `Record<StackRouteName, …>` 는 열둘을 다 적지 않으면 컴파일이 안 된다.
+ * `Record<StackRouteName, …>` 는 열넷을 다 적지 않으면 컴파일이 안 된다.
  *
  * 반환 타입을 넓게 두는 것은 화면 목록을 데이터에서 돌리기 위한 대가다. `<Stack.Screen>` 의
  * `component` 타입은 그 자리의 `name` 리터럴에 묶이는데 여기서는 이름이 유니온이라 하나로
  * 안 좁혀진다. 열둘을 손으로 적으면 타입은 맞지만 화면 목록이 두 벌이 된다. 진짜 화면이 받는
- * 프롭은 `route`·`navigation` 뿐이고 그것들은 훅으로 읽는다.
+ * 프롭은 `route`·`navigation` 뿐이고 그것들은 훅으로 읽는다. 공지 상세만 예외로 `route` 를
+ * 프롭으로 받는다(`noticeId` 하나).
  */
 function screenFor(name: StackRouteName): React.ComponentType<Record<string, never>> {
   return STACK_SCREENS[name] as React.ComponentType<Record<string, never>>
 }
 
 /**
- * 루트 스택. `LayerStack` 하나 + 그 위에 쌓이는 하위 페이지 열둘.
+ * 루트 스택. `LayerStack` 하나 + 그 위에 쌓이는 하위 페이지 열넷.
  *
  * 하위 페이지가 `LayerStack` 안이 아니라 위인 것은 밀려나는 덩어리가 `LayerStack` 전체이기 때문이다. 층
  * 스택과 바가 그 안에 함께 살아, 이 스택에 쌓으면 밀려나는 것이 층 화면 + 바가 된다.

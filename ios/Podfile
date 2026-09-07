@@ -22,6 +22,12 @@ ENV['EXPO_USE_PRECOMPILED_MODULES'] = '0' if podfile_properties['EXPO_USE_PRECOM
 ENV['EXPO_USE_PRECOMPILED_MODULES'] ||= '1'
 platform :ios, podfile_properties['ios.deploymentTarget'] || '16.4'
 
+# react-native-firebase 가 firebase-ios-sdk 를 SPM 으로 끌어오면 pod 마다 자기 사본을 품는데,
+# 이 앱은 use_frameworks! 를 안 불러 정적 링크라 그 사본들이 링크 때 중복 심볼로 부딪힌다.
+# 링크 방식을 dynamic 으로 바꾸는 길도 있지만, 그러면 이미 출시된 앱의 pod 전부가 영향을 받는다.
+# 여기서는 SPM 만 끄고 CocoaPods 로 받게 한다. 반드시 target 블록보다 앞이어야 한다.
+$RNFirebaseDisableSPM = true
+
 prepare_react_native_project!
 
 target 'app' do
@@ -44,6 +50,11 @@ target 'app' do
   end
 
   config = use_native_modules!(config_command)
+
+  # Firebase 의 Swift pod 이 GoogleUtilities 를 import 하는데 그쪽이 모듈 맵을 안 낸다.
+  # 정적 라이브러리로 묶을 때만 걸리는 문제다. use_modular_headers! 를 전역으로 켜면 다른 pod 도
+  # 전부 영향을 받으므로 이 하나에만 건다.
+  pod 'GoogleUtilities', :modular_headers => true
 
   use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
   use_frameworks! :linkage => ENV['USE_FRAMEWORKS'].to_sym if ENV['USE_FRAMEWORKS']

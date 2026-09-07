@@ -98,6 +98,16 @@ export interface FeatureGuideParams {
   section?: string
 }
 
+/**
+ * 공지 상세가 받는 파라미터.
+ *
+ * `noticeId` 하나다. 알림 탭이 이 값을 그대로 넘긴다. 본문은 안 넘긴다. 넘기면 알림에서 온
+ * 경로와 목록에서 온 경로가 서로 다른 내용을 그릴 수 있다.
+ */
+export interface NoticeDetailParams {
+  noticeId: string
+}
+
 export type RootStackParamList = {
   /**
    * 앱을 열기 전 화면 둘. 탭과 배타로 그려지고 **한 번에 하나만** 스택에 선다.
@@ -137,6 +147,10 @@ export type RootStackParamList = {
    * 캐릭터 관리. 두 층 + 드롭다운 + 순서 + 대표가 385px 모달 본문에 안 들어가 하위 페이지가 됐다.
    */
   SettingsCharacters: undefined
+  /** 공지사항. 받은 공지 목록과 구독 스위치가 한 화면에 산다. */
+  SettingsNotices: undefined
+  /** 공지 상세. 알림 탭이 곧장 여는 자리이고 목록에서도 들어간다. */
+  SettingsNoticeDetail: NoticeDetailParams
 }
 
 export type StackRouteName = Exclude<
@@ -265,6 +279,18 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
     path: '/settings/characters',
     screen: 'SettingsCharactersScreen',
     target: { kind: 'push', route: 'SettingsCharacters' },
+    origin: 'rn',
+  },
+  {
+    path: '/settings/notices',
+    screen: 'SettingsNoticesScreen',
+    target: { kind: 'push', route: 'SettingsNotices' },
+    origin: 'rn',
+  },
+  {
+    path: '/settings/notices/detail',
+    screen: 'SettingsNoticeDetailScreen',
+    target: { kind: 'push', route: 'SettingsNoticeDetail' },
     origin: 'rn',
   },
 ]

@@ -5,6 +5,7 @@ import {
   setKeyboardPort,
   setLiveUpdatePort,
   setNotificationsPort,
+  setPushPort,
   setSplashScreenPort,
   setStatusBarPort,
   setSystemBarsPort,
@@ -17,6 +18,7 @@ import { rnBackGesturePort } from './native/adapters/rn-back-gesture'
 import { rnColorSchemePort } from './native/adapters/rn-color-scheme'
 import { rnKeyboardPort } from './native/adapters/rn-keyboard'
 import { rnNotificationsPort } from './native/adapters/rn-notifications'
+import { rnPushPort } from './native/adapters/rn-push'
 import { rnSplashScreenPort } from './native/adapters/rn-splash-screen'
 import { rnStatusBarPort } from './native/adapters/rn-status-bar'
 import { rnSystemBarsPort } from './native/adapters/rn-system-bars'
@@ -26,7 +28,7 @@ import { rnPreferencesPort } from './storage/adapters/rn-preferences'
 import { rnSqlitePort } from './storage/adapters/rn-sqlite'
 
 /**
- * 포트 13종을 한 번에 주입한다(인터페이스와 구현이
+ * 포트 14종을 한 번에 주입한다(인터페이스와 구현이
  * 앱이 넣는다).
  *
  * (아래 `setThemeAppearancePort` 가 값을 놓는 자리는 `src/theme/appearance-store.ts` 이고 그것을
@@ -49,11 +51,14 @@ import { rnSqlitePort } from './storage/adapters/rn-sqlite'
  * 자리에서 보장한다. 주입 순서는 서로 무관하다.
  * 포트끼리 참조하지 않는다.
  *
- * ## 이제 열셋이 전부 실구현이다
+ * ## 열넷이 전부 실구현이다
  *
  * 마지막까지 던지던 `LiveUpdatePort` 가 로 채워졌다(`rn-live-update.ts`). 그 하나가
  * 아직 안 만들었다로 남아 있던 이유는 다른 열둘과 달리 **프로토콜 자체가 바뀌기** 때문이었고
  * 그래서 `not-implemented.ts` 는 이제 비었다.
+ *
+ * 열넷째가 `PushPort` 다(`rn-push.ts`). 구독·해제 둘뿐인 것이 그 포트의 설계이고, 알림 권한은
+ * 여기 없이 `NotificationsPort` 가 든다. OS 권한이 로컬과 원격을 안 가리는 하나라서다.
  *
  * 그 목록을 먼저 떠난 것이 셋이다:
  * - `ThemeAppearancePort`. `rn-theme-appearance.ts` 가 자리를 채웠다.
@@ -76,6 +81,7 @@ export function installPorts(): void {
   setColorSchemePort(rnColorSchemePort)
   setKeyboardPort(rnKeyboardPort)
   setNotificationsPort(rnNotificationsPort)
+  setPushPort(rnPushPort)
   setSplashScreenPort(rnSplashScreenPort)
   setStatusBarPort(rnStatusBarPort)
   setSystemBarsPort(rnSystemBarsPort)

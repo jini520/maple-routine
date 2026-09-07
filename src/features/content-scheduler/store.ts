@@ -19,6 +19,7 @@ import { isGuildContent } from '../../lib/scheduler/content-category'
 import type { SchedulerContentTemplateEntry } from '../../lib/scheduler/manual-content-merge'
 import schedulerContentTemplate from '../../data/scheduler-content-template.json'
 import type { DailyContent, WeeklyContent } from '../../types'
+import { askNotificationPermissionOnce } from '../notice/permission-gate'
 
 const contentTemplate = schedulerContentTemplate as {
   daily: SchedulerContentTemplateEntry[]
@@ -199,6 +200,11 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
       return
     }
     set({ trackedOcids: ocids })
+
+    // 캐릭터를 고른 직후가 알림 권한을 묻는 단 한 번의 자리다. 두 번째부터는 스스로 물러난다.
+    // `await` 하지 않는 이유는 이 흐름이 캐릭터 저장이고 알림은 곁가지라서다. 팝업을 기다리느라
+    // 아래 조회가 멈추면 사용자는 저장이 느린 것으로 읽는다.
+    void askNotificationPermissionOnce()
 
     // 저장 시점에는 새로 추가된 캐릭터만 조회한다. 유지되는 캐릭터는
     // 이미 가진 뷰를 그대로 재사용하고, 제거만 했거나 아무것도 안 바뀌었으면 조회 자체를 하지 않는다.

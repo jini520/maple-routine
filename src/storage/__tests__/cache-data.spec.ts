@@ -60,7 +60,14 @@ const mockShowSplashMock = mockOnce('splash', 'cover')
 const callOrder = (mockCallOrder = mockCallOrder ?? [])
 
 
-const KEEP_KEY_NAMES = ['apiKey', 'theme', 'trackingMode', 'dropEffect']
+const KEEP_KEY_NAMES = [
+  'apiKey',
+  'theme',
+  'trackingMode',
+  'dropEffect',
+  'noticeSubscribed',
+  'notificationPermissionAsked',
+]
 
 function deleteCalls(): string[] {
   return mockDbExecuteMock.mock.calls.map(([statement]) => statement)
@@ -74,6 +81,8 @@ beforeEach(async () => {
   await prefs.set('theme', '렌')
   await prefs.set('trackingMode', 'manual')
   await prefs.set('dropEffect', 'off')
+  await prefs.set('noticeSubscribed', 'on')
+  await prefs.set('notificationPermissionAsked', 'yes')
   await prefs.set('schedulerCache:ocid-1', '{}')
   await prefs.set('characterBasicCache:index', '[]')
   await prefs.set('trackedCharacters', '[]')
@@ -135,7 +144,7 @@ describe('그룹 ↔ 테이블 분할', () => {
 describe('clearCacheData', () => {
   // trackingMode·dropEffect는 재조회로 복구되는 캐시가 아니라 사용자가 고른
   // 취향 설정이라, theme과 같이 캐시 삭제에도 보존한다.
-  it('apiKey·theme·trackingMode·dropEffect는 남긴다', async () => {
+  it('보존 키 여섯은 남긴다', async () => {
     await clearCacheData()
 
     expect(await prefs.get('apiKey')).toBe('test-key')
