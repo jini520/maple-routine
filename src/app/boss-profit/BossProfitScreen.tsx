@@ -126,7 +126,12 @@ export function BossProfitScreen(): React.JSX.Element {
   useStaleCharactersToast(staleCharacterNames, () => refresh(trackedOcids ?? []))
 
   useEffect(() => {
-    loadTrackedOcids()
+    // 끝에서 갱신 시각을 적는다. 당김에서만 적으면 앱을 켜고 한 번도 안 당긴 사용자에게는
+    // 그 줄이 영영 안 뜬다. 던지면 안 적는다. 데이터가 안 왔으니 적을 것이 없다.
+    void (async () => {
+      await loadTrackedOcids()
+      await markFetched('profit')
+    })().catch(() => undefined)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

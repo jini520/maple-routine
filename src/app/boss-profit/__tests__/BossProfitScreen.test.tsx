@@ -309,28 +309,30 @@ describe('갱신 시각', () => {
   })
 
   // 제목에 딸린 작은 글씨다. 기간 탭 줄에 있던 것을 제목 아래로 옮겼다.
+  //
+  // 값을 미리 심지 않는다. 마운트의 진입 조회가 그 자리에서 적으므로 심어 둔 값이 덮인다.
   it('기간 탭 줄이 아니라 제목 줄 아래에 선다', async () => {
-    useDataFreshness.setState({ fetchedAt: { profit: new Date(2026, 8, 8, 14, 3, 22).toISOString() } })
     const { getByTestId } = await renderScreen()
 
-    expect(within(getByTestId('page-header-title-row')).queryByText('14:03:22 기준')).toBeNull()
-    expect(within(getByTestId('page-header')).getByText('14:03:22 기준')).toBeTruthy()
+    const line = getByTestId('data-freshness')
+    expect(within(getByTestId('page-header-title-row')).queryByTestId('data-freshness')).toBeNull()
+    expect(within(getByTestId('page-header')).getByTestId('data-freshness')).toBe(line)
   })
 
-  // 빈 줄을 두면 제목 아래가 이유 없이 벌어진다. 이 화면은 진입에서 안 적으므로 그대로 비어 있다.
-  it('한 번도 안 받았으면 줄 자체가 없다', async () => {
-    const { queryByTestId } = await renderScreen()
+  // 진입 조회도 데이터를 부르는 자리다. 당김만 적으면 앱을 켜고 한 번도 안 당긴 사용자에게
+  // 그 줄이 영영 안 뜬다.
+  it('진입 조회가 끝나도 적는다', async () => {
+    await renderScreen()
 
-    expect(queryByTestId('data-freshness')).toBeNull()
+    expect(useDataFreshness.getState().fetchedAt.profit).toBeDefined()
   })
 
   // 지난 기간에서도 당길 수 있으니 그 줄도 함께 선다.
   it('지난 기간에서도 선다', async () => {
-    useDataFreshness.setState({ fetchedAt: { profit: new Date(2026, 8, 8, 14, 3, 22).toISOString() } })
     mockStore({ periodKey: '2026-07-09' })
-    const { getByText } = await renderScreen()
+    const { getByTestId } = await renderScreen()
 
-    expect(getByText('14:03:22 기준')).toBeTruthy()
+    expect(getByTestId('data-freshness')).toBeTruthy()
   })
 })
 

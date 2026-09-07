@@ -562,25 +562,27 @@ describe('TodayScreen: 갱신 시각', () => {
   })
 
   // 제목에 딸린 작은 글씨다. 제목 **줄 안**에 있으면 폭을 다투고, 그때 줄어드는 것은 제목이다.
+  //
+  // 값을 미리 심지 않는다. 마운트의 진입 조회가 그 자리에서 시각을 적으므로 심어 둔 값이 덮인다.
+  // 없을 때 줄이 안 그려지는 것은 `DataFreshness.test.tsx` 가 본다.
   it('제목 줄이 아니라 그 아래에 선다', async () => {
-    useDataFreshness.setState({ fetchedAt: { today: new Date(2026, 8, 8, 14, 3, 22).toISOString() } })
     setStores(캐릭터_넷)
 
     await renderScreen()
 
-    const line = screen.getByText('14:03:22 기준')
-    expect(within(screen.getByTestId('page-header-title-row')).queryByText('14:03:22 기준')).toBeNull()
-    expect(within(screen.getByTestId('page-header')).getByText('14:03:22 기준')).toBeTruthy()
-    expect(line).toBeTruthy()
+    const line = screen.getByTestId('data-freshness')
+    expect(within(screen.getByTestId('page-header-title-row')).queryByTestId('data-freshness')).toBeNull()
+    expect(within(screen.getByTestId('page-header')).getByTestId('data-freshness')).toBe(line)
   })
 
-  // 빈 줄을 두면 제목 아래가 이유 없이 벌어진다. 이 화면은 진입에서 안 적는다.
-  it('한 번도 안 받았으면 줄 자체가 없다', async () => {
+  // 진입 조회도 데이터를 부르는 자리다. 당김만 적으면 앱을 켜고 한 번도 안 당긴 사용자에게
+  // 그 줄이 영영 안 뜬다.
+  it('진입 조회가 끝나도 적는다', async () => {
     setStores(캐릭터_넷)
 
     await renderScreen()
 
-    expect(screen.queryByTestId('data-freshness')).toBeNull()
+    expect(useDataFreshness.getState().fetchedAt.today).toBeDefined()
   })
 })
 

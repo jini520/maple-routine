@@ -616,6 +616,20 @@ export function CashbookScreen(): React.JSX.Element {
   const fetchedAt = useDataFreshness((state) => state.fetchedAt.cashbook)
   const markFetched = useDataFreshness((state) => state.markFetched)
 
+  /**
+   * 갱신 시각. **원장 회차가 끝날 때마다** 적는다.
+   *
+   * 이 화면은 자기 조회를 안 갖는다. 데이터가 원장 층에서 오므로 그 층이 한 회차를 끝낸 것이
+   * 곧 이 페이지가 데이터를 받은 것이다. 마운트 회차와 당김이 같은 신호를 지나 당김에서만
+   * 적는 배선보다 새는 자리가 없다.
+   *
+   * `revision` 0 은 **아직 한 회차도 안 끝난 상태**다. 그때 적으면 안 받은 것을 받았다고 말한다.
+   */
+  useEffect(() => {
+    if (ledger.revision === 0) return
+    void markFetched('cashbook')
+  }, [ledger.revision, markFetched])
+
   // **강화 사용 내역을 받는 유일한 당김**이다. 이 화면만 그 값을 그린다.
 
   /**
@@ -879,11 +893,7 @@ export function CashbookScreen(): React.JSX.Element {
     <View testID="screen-Cashbook" className="flex-1">
       <ScreenScroll
         // 색만 테마에서 넘기고 컨트롤은 셸이 그대로 받는다.
-        onRefresh={async () => {
-          await ledger.reload(['live', 'window', 'enhancement'])
-          // 헤더 아래 한 줄이 읽는 값. 당김이 실제로 부른 조회가 끝난 자리다.
-          await markFetched('cashbook')
-        }}
+        onRefresh={() => ledger.reload(['live', 'window', 'enhancement'])}
         header={
           <PageHeader>
             {/* 제목과 갱신 시각이 **한 덩어리**다. 따로 넣으면 `PageHeader` 의 `gap-4` 가
