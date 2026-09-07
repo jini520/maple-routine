@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "186406022574",
+    "project_id": "maple-routine",
+    "storage_bucket": "maple-routine.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:186406022574:android:7ca8a22637a20c246aac3f",
+        "android_client_info": {
+          "package_name": "com.mapleroutine.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7qwhBToOEi1oFXzoqpOcNHt-KeRnh9lk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

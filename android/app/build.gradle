@@ -201,3 +201,6 @@ dependencies {
         implementation jscFlavor
     }
 }
+
+// FCM. 위 classpath 와 짝이고, `google-services.json` 이 있어야 한다.
+apply plugin: 'com.google.gms.google-services'
