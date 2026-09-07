@@ -23,16 +23,11 @@ import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
+import { formatNoticeDate } from '../../features/notice/format'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { fetchNotice } from '../../server/notices'
 import { getNotices, mergeNotices } from '../../storage/notices'
 import type { Notice } from '../../types/notice'
-
-function formatDate(publishedAt: string): string {
-  const date = new Date(publishedAt)
-  if (Number.isNaN(date.getTime())) return ''
-  return `${date.getFullYear()}. ${date.getMonth() + 1}. ${date.getDate()}.`
-}
 
 export function SettingsNoticeDetailScreen(props: {
   route?: { params?: { noticeId?: string } }
@@ -97,7 +92,7 @@ export function SettingsNoticeDetailScreen(props: {
               <Text testID="notice-title" className="text-base font-semibold text-text">
                 {notice.title}
               </Text>
-              <Text className="text-xs text-text-disabled">{formatDate(notice.publishedAt)}</Text>
+              <Text className="text-xs text-text-disabled">{formatNoticeDate(notice.publishedAt)}</Text>
             </View>
 
             <Text testID="notice-body" className="text-sm leading-5 text-text">

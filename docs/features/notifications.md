@@ -47,6 +47,9 @@
 | 타입 | `src/types/notice.ts` | **있다.** 푸시 `data` 와 서버 응답의 공통 모양 |
 | 화면 | `src/app/settings/SettingsNoticesScreen.tsx` | **있다.** 목록 + 구독 스위치 |
 | 화면 | `src/app/settings/SettingsNoticeDetailScreen.tsx` | **있다.** 상세 |
+| 화면 | `src/app/today/NoticeBanner.tsx` | **있다.** today 전폭 배너([[ADR-230]]) |
+| 상태 | `src/features/notice/banner-store.ts` | **있다.** 배너가 세우는 공지 하나 |
+| 저장 | `src/storage/notice-banner.ts` | **있다.** 배너에서 닫은 공지 id |
 | 수신 | `src/features/notice/receive.ts` | **있다.** 페이로드를 공지로 읽어 쌓는다 |
 | 수신 | `src/features/notice/use-notice-delivery.ts` | **있다.** 진입점 셋을 한 자리에서 |
 | 권한 | `src/features/notice/permission-gate.ts` | **있다.** 캐릭터를 고른 직후 한 번만 |
@@ -57,6 +60,7 @@
 | 서버 | 자체 호스팅(별도 저장소) | **`workers/notice-push/` 는 안 만든다**([[ADR-227]] 결정 5). 발송은 집 미니 PC 가 한다. **아직 없다** |
 
 **관련 ADR**: [[ADR-146]] · [[ADR-227]](발송자가 Cloudflare Worker 에서 자체 호스팅 서버로) ·
+[[ADR-230]](today 배너) ·
 [[ADR-004]] · [[ADR-008]] · [[ADR-003]] · [[ADR-128]] · [[ADR-137]]
 
 ## 이 기능이 지키려는 한 문장
@@ -278,6 +282,14 @@ iOS 는 한 번 거부하면 **다시 못 묻는다**. 시스템 팝업이 두 �
 **그 구멍을 서버 조회가 메운다.** 목록 화면이 `server/notices.ts` 로 최근 것을 받아 기기에
 합치므로, 알림을 안 탭해 안 쌓인 공지도 목록에는 나온다. 실제로 그 상태를 한 번 봤다
 (2026-09-08 · 서버에 셋인데 폰에 하나).
+
+**today 의 당김도 같은 조회를 탄다**([[ADR-230]] 결정 5). 그전에는 설정 하위 페이지를 열어야만
+메워졌는데, 그 페이지를 여는 사용자가 애초에 이 구멍의 피해자가 아니다. 첫 화면을 당기는 것이
+훨씬 흔한 동작이라 구멍이 실제로 닫히는 자리는 그쪽이다.
+
+**앞에 있을 때 도착한 것은 또 다른 구멍이다.** 그 경로는 `onMessage` 로 오고 OS 가 안 그리므로,
+기기에 쌓기만 하고 끝나면 화면에는 아무 일도 안 일어난다. today 배너 스토어를 그 자리에서
+흔드는 것이 처방이다.
 
 ### 로컬이 먼저이고 서버는 그 위에 얹는다
 

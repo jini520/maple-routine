@@ -19,19 +19,13 @@ import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
+import { formatNoticeDate } from '../../features/notice/format'
 import { useNoticeStore } from '../../features/notice/store'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { fetchNotices } from '../../server/notices'
 import { getNotices, mergeNotices } from '../../storage/notices'
 import type { Notice } from '../../types/notice'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
-
-/** 발행일. 목록과 상세가 같은 모양으로 읽는다. */
-function formatDate(publishedAt: string): string {
-  const date = new Date(publishedAt)
-  if (Number.isNaN(date.getTime())) return ''
-  return `${date.getFullYear()}. ${date.getMonth() + 1}. ${date.getDate()}.`
-}
 
 /**
  * 구독 스위치. `BossDropSheet` 의 `EffectToggle` 과 같은 모양이다.
@@ -167,7 +161,7 @@ export function SettingsNoticesScreen(): React.JSX.Element {
                   <View className="shrink">
                     <Text className="text-sm text-text">{notice.title}</Text>
                     <Text className="text-xs text-text-disabled">
-                      {formatDate(notice.publishedAt)}
+                      {formatNoticeDate(notice.publishedAt)}
                     </Text>
                   </View>
                   <ChevronRightIcon

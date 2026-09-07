@@ -60,6 +60,12 @@ jest.mock('../../../storage/character-selection', () => ({
   ...jest.requireActual('../../../storage/character-selection'),
   getRepresentativeCharacter: jest.fn() }))
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
+// 새로고침이 공지 배너의 서버 조회를 함께 탄다. 안 막으면 이 스위트가 실제 망으로 나간다.
+// 배너 자체의 동작은 `NoticeBanner.test.tsx` 와 `banner-store.spec.ts` 가 본다.
+jest.mock('../../../server/notices', () => ({
+  __esModule: true,
+  fetchNotices: jest.fn(async () => []),
+  fetchNotice: jest.fn(async () => null) }))
 
 const mockedContent = jest.mocked(useContentSchedulerStore)
 const mockedBoss = jest.mocked(useBossSchedulerStore)

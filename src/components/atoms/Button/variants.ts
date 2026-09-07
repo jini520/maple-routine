@@ -1,5 +1,5 @@
 /**
- * 버튼 변형 넷의 **외형 표**. `design-system.md` 의 `기본 컴포넌트` 절이 규정한 것을 코드로 옮긴
+ * 버튼 변형 여섯의 **외형 표**. `design-system.md` 의 `기본 컴포넌트` 절이 규정한 것을 코드로 옮긴
  * 것이다.
  *
  * `Button.tsx` 와 파일이 나뉘어 있다. 스타일 표와 컴포넌트 코드를 섞지 않는다.
@@ -17,6 +17,13 @@ export const BUTTON_VARIANT_CLASS = {
   /** 주 CTA 옆이나 아래에 서는 부 동작. `danger` 와 같은 테두리 pill 이되 색이 중립이다. */
   outline: 'rounded-full border border-border px-5 py-2.5',
   text: 'rounded-full px-5 py-2.5',
+  /**
+   * 주 동작이되 채운 알약보다 한 단 약한 자리. `outline` 과 같은 자리에 서되 테두리 대신 옅은 면이다.
+   *
+   * 글자색이 `primary-ink` 가 아닌 것이 이 변형의 핵심이다. 옅은 틴트 위에 같은 계열 잉크를 얹으면
+   * 테마에 따라 명도 대비가 1.6 까지 떨어져 글자가 안 읽힌다(머쉬맘 실측).
+   */
+  tint: 'rounded-full bg-primary-tint px-5 py-2.5',
   danger: 'rounded-full border border-error px-5 py-2.5',
   /**
    * 되돌릴 수 없는 동작을 **작게** 내리는 자리. 상자는 `text` 와 같고 글자색만 갈린다.
@@ -37,6 +44,7 @@ export const BUTTON_VARIANT_TEXT_CLASS = {
   primary: 'text-base font-semibold text-on-primary',
   outline: 'text-sm font-semibold text-text',
   text: 'text-sm font-medium text-text-muted',
+  tint: 'text-sm font-semibold text-text',
   danger: 'text-sm font-semibold text-error-ink',
   dangerText: 'text-sm font-medium text-error-ink',
 } as const
@@ -51,9 +59,10 @@ export const BUTTON_VARIANT_SPINNER_CLASS = {
   primary: 'text-on-primary',
   outline: 'text-text',
   text: 'text-text-muted',
+  tint: 'text-text',
   danger: 'text-error-ink',
   dangerText: 'text-error-ink',
 } as const
 
-/** 버튼 변형 다섯. 상자 표의 키가 곧 이 타입이다. */
+/** 버튼 변형 여섯. 상자 표의 키가 곧 이 타입이다. */
 export type ButtonVariant = keyof typeof BUTTON_VARIANT_CLASS

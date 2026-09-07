@@ -21,6 +21,7 @@ import {
   getInitialPushNotification,
   type PushData,
 } from '../../native/push'
+import { useNoticeBannerStore } from './banner-store'
 import { parseNotice, receiveNotice } from './receive'
 
 export function useNoticeDelivery(
@@ -40,8 +41,13 @@ export function useNoticeDelivery(
     }
 
     // 앞에 있을 때는 쌓기만 한다. 보던 화면을 밀어내면 사용자가 하던 일을 잃는다.
+    //
+    // 다만 쌓고 끝내면 **화면에 아무 일도 안 일어난다** - 이 경로는 OS 가 알림을 안 그린다.
+    // today 배너를 다시 고르게 해서 그 자리에 세운다. 기기만 읽는 문이라 네트워크가 없다.
     const offMessage = addPushMessageListener((data) => {
-      void receiveNotice(data).catch(() => undefined)
+      void receiveNotice(data)
+        .then(() => useNoticeBannerStore.getState().load())
+        .catch(() => undefined)
     })
     const offOpened = addPushOpenedListener(opened)
 

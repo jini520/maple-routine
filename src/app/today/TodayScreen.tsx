@@ -26,6 +26,7 @@ import { Pressable, View } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 import { useFocusEffect } from '@react-navigation/native'
 
+import { useNoticeBannerStore } from '../../features/notice/banner-store'
 import { useDropHistoryStore } from '../../features/boss-profit/drop-history-store'
 import { getBossDropRecordsRevision } from '../../storage/boss-drops'
 import { useBossProfitStore } from '../../features/boss-profit/store'
@@ -44,6 +45,7 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { SPIN_ANIMATION } from '../../constants/style/animation'
 import { AnimatedView } from '../../lib/nativewind-interop'
+import { NoticeBanner } from './NoticeBanner'
 import { buildTodayViewModel } from './view-model'
 import { WidgetGrid } from './WidgetGrid'
 
@@ -106,6 +108,8 @@ export function TodayScreen(): React.JSX.Element {
   const profit = useBossProfitStore()
   const dropHistory = useDropHistoryStore()
   const { mode } = useTrackingModeStore()
+  const loadNoticeBanner = useNoticeBannerStore((state) => state.load)
+  const refreshNoticeBanner = useNoticeBannerStore((state) => state.refresh)
   const reduceMotion = useReducedMotion()
 
   // 프로필과 대표 표식은 스토어가 아니라 저장소에서 온다(둘 다 이 화면이 처음 읽는 자리는 아니고,
@@ -150,6 +154,18 @@ export function TodayScreen(): React.JSX.Element {
         void store.load()
       }
     }, []),
+  )
+
+  /**
+   * 공지 배너. 포커스마다 기기를 다시 읽는다. 네트워크가 없어 싸다.
+   *
+   * 드롭 기록과 이펙트를 합치지 않는다. 저쪽은 리비전을 물어 실제로 바뀌었을 때만 도는데 이쪽은
+   * 그 조건이 없고, 합치면 한쪽 조건이 다른 쪽을 막는다. 서버까지 가는 것은 당김뿐이다.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      void loadNoticeBanner()
+    }, [loadNoticeBanner]),
   )
 
   // 화면 순서는 사용자가 캐릭터 관리에서 정한 저장 배열 순서다.
@@ -214,6 +230,8 @@ export function TodayScreen(): React.JSX.Element {
       boss.refresh(boss.trackedOcids ?? []),
       profit.refresh(profit.trackedOcids ?? []),
       dropHistory.load(),
+      // 배경에서 도착만 하고 안 탭한 공지는 기기에 없다. 그것이 첫 화면에 닿는 유일한 길이다.
+      refreshNoticeBanner(),
     ])
 
     // 방금 끝난 동기화가 대표 캐릭터의 `character/basic` 을 5분 가드를 건너뛰고 다시 받아 캐시를
@@ -270,6 +288,9 @@ export function TodayScreen(): React.JSX.Element {
           </PageHeader>
         }
       >
+        {/* 배너는 이 래퍼 **밖**이다. 전폭이라 좌우 여백을 자기가 쥔다. 안에 넣고 음수 마진으로
+            밀어내면 아래 열 폭 계산이 깨진다. 세울 공지가 없으면 아무것도 안 그린다. */}
+        <NoticeBanner />
         {/* 좌우 16 은 앱 공통 `px-4` 라 화면의 래퍼가 준다. 격자가 또 주면 두 겹이 되는데,
             열 폭 계산은 `창폭 − 32` 를 전제로 서 있다. */}
         <View className="px-4 pb-4">
