@@ -109,3 +109,71 @@ describe('갱신 시각 줄은 제목 줄 프리미티브가 그린다', () => {
     expect(offenders).toEqual([])
   })
 })
+
+// 헤더의 경계 가드.
+//
+// 헤더에 담는 것은 셋뿐이다 - 제목 · 기준 시각 · 다른 페이지로 가는 것(뒤로 · 이동 링크).
+// 가르는 기준은 **여기를 떠나는가** 다. 떠나면 헤더, 여기 머무르며 보는 것을 바꾸면 콘텐츠다.
+//
+// 이 정책이 문서에만 있으면 다음 화면에서 조용히 어긋난다. 새 화면을 만드는 사람은 옆 화면을
+// 복붙하는데, 그때 복붙되는 것이 하필 레일을 헤더에 넣은 화면일 수 있다.
+describe('헤더에 담는 것은 제목 줄뿐이다', () => {
+  /** `<PageHeader …>` 부터 짝이 되는 `</PageHeader>` 까지. 없으면 빈 배열. */
+  function headerBlocks(source: string): string[] {
+    const out: string[] = []
+    let from = 0
+    for (;;) {
+      const open = source.indexOf('<PageHeader', from)
+      if (open === -1) return out
+      // `<PageHeaderTitleRow` 는 다른 태그다.
+      if (/^<PageHeader[A-Za-z]/.test(source.slice(open))) {
+        from = open + 1
+        continue
+      }
+      const close = source.indexOf('</PageHeader>', open)
+      if (close === -1) return out
+      out.push(source.slice(open, close))
+      from = close + 1
+    }
+  }
+
+  /** 헤더 안에 서면 안 되는 것들. **이 화면에서 무엇을 보는가**를 고르는 장치다. */
+  const CONTENT_IN_HEADER = [
+    '<CharacterRail',
+    '<LoadingState',
+    '<PeriodTab',
+    '<ValuableDrought',
+  ]
+
+  it('검사 대상 헤더를 실제로 찾는다', () => {
+    const blocks = files.flatMap((file) => headerBlocks(file.source))
+
+    expect(blocks.length).toBeGreaterThan(10)
+  })
+
+  it('헤더 안에 콘텐츠 장치가 없다', () => {
+    const offenders = files.flatMap((file) =>
+      headerBlocks(file.source)
+        .flatMap((block) => CONTENT_IN_HEADER.filter((tag) => block.includes(tag)))
+        .map((tag) => `${file.name}: ${tag}`),
+    )
+
+    expect(offenders).toEqual([])
+  })
+
+  // 탭·필터·토글은 태그 이름이 제각각이라 이름으로 못 잡는다. 대신 **제목 줄 밖의 `Pressable`**
+  // 로 잡는다. 뒤로와 페이지 이동 링크는 제목 줄 **안**에 있으므로 여기 안 걸린다.
+  it('제목 줄 밖에 누를 것을 두지 않는다', () => {
+    const offenders = files
+      .flatMap((file) =>
+        headerBlocks(file.source).map((block) => ({
+          name: file.name,
+          outside: block.replace(/<PageHeaderTitleRow[\s\S]*<\/PageHeaderTitleRow>/, ''),
+        })),
+      )
+      .filter((entry) => /<Pressable|role="switch"|role="button"/.test(entry.outside))
+      .map((entry) => entry.name)
+
+    expect([...new Set(offenders)]).toEqual([])
+  })
+})

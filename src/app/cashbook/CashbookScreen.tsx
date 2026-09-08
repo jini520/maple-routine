@@ -886,13 +886,11 @@ export function CashbookScreen(): React.JSX.Element {
         // 색만 테마에서 넘기고 컨트롤은 셸이 그대로 받는다.
         onRefresh={() => ledger.reload(['live', 'window', 'enhancement'])}
         header={
+          // 헤더는 제목 줄 하나다. 주간/월간은 **이 화면에서 무엇을 보는가**를 고르는 장치라
+          // 콘텐츠로 내려갔다. 헤더에 담는 것은 제목 · 기준 시각 · 다른 페이지로 가는 것뿐이다.
           <PageHeader>
-            <PageHeaderTitleRow className="justify-between" fetchedAt={fetchedAt}>
+            <PageHeaderTitleRow fetchedAt={fetchedAt}>
               <Text className="text-lg font-semibold text-text">가계부</Text>
-              <View className="flex-row items-center gap-1">
-                <PeriodTab label="주간" selected={isWeekly} onPress={showWeekly} />
-                <PeriodTab label="월간" selected={!isWeekly} onPress={showMonthly} />
-              </View>
             </PageHeaderTitleRow>
           </PageHeader>
         }
@@ -907,6 +905,14 @@ export function CashbookScreen(): React.JSX.Element {
           className="gap-4 px-4"
           style={{ paddingBottom: SPEED_DIAL_SPACE_PX }}
         >
+          {/* 기간의 **단위**를 고른다. 바로 아래 기간 이동과 한 덩어리로 읽히도록 붙여 둔다.
+              왼쪽 정렬인 것은 형제 탭인 보스 수익의 같은 자리와 맞추기 위해서다. 두 화면이 같은
+              `periodKey` 로 기간을 말하는데 컨트롤이 좌우로 갈리면 다른 것으로 읽힌다. */}
+          <View className="flex-row items-center gap-1">
+            <PeriodTab label="주간" selected={isWeekly} onPress={showWeekly} />
+            <PeriodTab label="월간" selected={!isWeekly} onPress={showMonthly} />
+          </View>
+
           <View
             testID="cashbook-period-nav"
             className="flex-row items-center justify-center gap-4"

@@ -3,10 +3,12 @@
  *
  * 레일에는 열고 닫을 것이 없어 항목이 곧 목록이다. 누르면 그 자리에서 바뀐다.
  *
- * 레일은 `PageHeader` 안에 있고 그 셸은 `px-4` 다. 그대로 두면 스크롤이 16px 안쪽에서 잘려
- * 더 있다 가 안 보이고, 굴러 들어오는 칸이 여백 앞에서 사라지는 것처럼 보인다. 그래서 좌우
- * 패딩을 음수 마진으로 뚫고 같은 값을 스크롤 콘텐츠의 패딩으로 되돌린다. 첫 칸과 마지막 칸은
- * 제자리에 서고 스크롤만 화면 끝까지 간다.
+ * 레일은 **콘텐츠의 직계 자식**이라 좌우 여백이 없는 자리에 선다. 안쪽 스크롤만 좌우 16 을
+ * 들고 있어서, 첫 칸과 마지막 칸은 제자리에 서고 스크롤은 화면 끝까지 간다. 굴러 들어오는 칸이
+ * 여백 앞에서 사라지지 않는 것이 요점이다.
+ *
+ * 좌우에 패딩을 가진 상자 안에 넣지 말 것. 그러면 스크롤이 그 여백 안쪽에서 잘려 더 있다 가
+ * 안 보인다.
  */
 import { ScrollView, View } from 'react-native'
 
@@ -29,12 +31,12 @@ export interface CharacterRailProps {
   onSelect: (ocid: string) => void
 }
 
-/** `PageHeader` 의 좌우 패딩(px). 위 음수 마진 절이 뚫었다 되돌리는 값이다. */
-const HEADER_PADDING = 16
+/** 첫 칸과 마지막 칸이 서는 자리(px). 화면 좌우 여백과 같은 값이어야 옆 블록과 줄이 맞는다. */
+const RAIL_EDGE_PADDING = 16
 
 export function CharacterRail(props: CharacterRailProps): React.JSX.Element {
   return (
-    <View testID="character-rail" style={{ marginHorizontal: -HEADER_PADDING }}>
+    <View testID="character-rail">
       <ScrollView
         testID="character-rail-scroll"
         horizontal
@@ -42,7 +44,7 @@ export function CharacterRail(props: CharacterRailProps): React.JSX.Element {
         showsHorizontalScrollIndicator={false}
         // 간격은 칸이 아니라 레일이 준다. 값은 칸의 치수 표에서 온다. 숫자를 여기 적으면 표와
         // 레일이 서로 다른 값을 믿는다.
-        contentContainerStyle={{ paddingHorizontal: HEADER_PADDING, gap: PORTRAIT_RAIL.gap }}
+        contentContainerStyle={{ paddingHorizontal: RAIL_EDGE_PADDING, gap: PORTRAIT_RAIL.gap }}
       >
         {props.entries.map((entry) => (
           <CharacterPortrait

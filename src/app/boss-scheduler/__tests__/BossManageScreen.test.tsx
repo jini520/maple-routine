@@ -483,17 +483,16 @@ describe('BossManageScreen: 자동 모드', () => {
     expect(stateOf(스위치).checked).toBe(true)
   })
 
-  // 부모가 `PageHeader` 의 세로 상자라 가로가 교차축이다. 붙인 쌍을 오른쪽 끝으로 보내는 것이
-  // `self-end` 이고, 빠지면 줄 전체로 늘어나 글자가 다시 왼쪽 끝에 선다.
+  // 붙인 쌍이 줄 오른쪽 끝에 선다. 감싼 줄이 `items-end` 로 밀고, 빠지면 줄 전체로 늘어나
+  // 글자가 다시 왼쪽 끝에 선다.
   it('글자와 스위치가 한 쌍으로 줄 오른쪽 끝에 선다', async () => {
     mockStore({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
 
     await renderScreen()
 
-    expect(flattenStyle(screen.getByLabelText('모든 보스 보기').props.style)).toMatchObject({
-      alignSelf: 'flex-end',
-      flexDirection: 'row',
-    })
+    const 스위치 = screen.getByLabelText('모든 보스 보기')
+    expect(flattenStyle(스위치.props.style).flexDirection).toBe('row')
+    expect(flattenStyle(스위치.parent?.props.style).alignItems).toBe('flex-end')
   })
 
   // 등록 보스가 하나도 없으면 토글이 꺼져 있어도 전체로 대체한다.

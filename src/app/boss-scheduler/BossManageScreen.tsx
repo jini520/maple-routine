@@ -21,6 +21,7 @@ import {
   WEEKLY_BOSS_CLEAR_LIMIT,
 } from '../../lib/boss/boss-matching'
 import { isChallengersWorld } from '../../lib/assets/asset-lookup'
+import { useDataFreshness } from '../../features/refresh/freshness'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import type { BossDifficulty } from '../../types'
 
@@ -102,6 +103,9 @@ export function BossManageScreen(): React.JSX.Element {
   // 스토어가 내는 것은 기준 순서(레벨 내림차순)이고 화면 순서는 캐릭터 관리에서 정한 배열이다.
   // 스케줄러 화면과 같은 함수를 통과시켜야 두 화면의 레일이 같은 차례로 선다.
   const characters = orderByTracked(storeCharacters, trackedOcids ?? [])
+
+  // 스케줄러와 같은 실시간 원천을 그린다. 값도 같아야 한다.
+  const fetchedAt = useDataFreshness((state) => state.fetchedAt)
 
   // 화면 넷이 **같은 규칙**으로 고른다. 폴백을 화면마다 두면 공유했는데 화면마다 다른 캐릭터가 된다.
   // 넘기는 목록이 화면 순서여야 한다. 폴백이 그 첫 번째다.
@@ -248,65 +252,61 @@ export function BossManageScreen(): React.JSX.Element {
   return (
     <ScreenScroll
       header={
-        // 제목과 토글도 목록과 **함께 스크롤된다.** 헤더가 `ScreenScroll` 의 첫 자식이다.
+        // 헤더는 제목 줄 하나다. 레일도 토글도 콘텐츠로 내려갔다. 헤더에 담는 것은 제목 ·
+        // 기준 시각 · 다른 페이지로 가는 것 셋뿐이다.
         <PageHeader>
           {/* **← 가 없다.** 하위 페이지가 아니라 스케줄 그룹의 하위 탭이라 pop 할 스택이 없고,
-              뒤로 가는 일은 하단바가 진다.
-
-              줄이 제목 하나뿐이어도 `PageHeaderTitleRow` 를 쓴다. 그 최소 높이가 곧 옆 탭과
-              같은 선이고, 빼면 보스 스케줄러와 2px 어긋난다. */}
-          <PageHeaderTitleRow>
+              뒤로 가는 일은 하단바가 진다. */}
+          <PageHeaderTitleRow fetchedAt={fetchedAt}>
             <Text className="text-lg font-semibold text-text">보스 관리</Text>
           </PageHeaderTitleRow>
-
-          {/* 제목 줄 우측이 초상화 레일이다. **여기에는 진행 링이 없다**(`rings: []`).
-              이 화면의 일은 캐릭터를 고르는 것이지 진행을 보는 것이 아니다. */}
-          {selected !== null && (
-            <CharacterRail
-              entries={railEntries}
-              selectedOcid={selected.ocid}
-              onSelect={(ocid) => {
-                void select(ocid)
-              }}
-            />
-          )}
-
-          {selected !== null && (
-            <>
-              {/* 자동 모드 안내 문구는 두지 않는다. 화면이 이미 그것을 보여 준다(체크가 없고
-                  스테퍼만 있다). 설명은 기능 안내가 진다. */}
-              {/* `n/12` 카운터는 `주간` 섹션 헤더가 싣는다. */}
-
-              {/* 글자가 스위치 안이라 글자를 눌러도 토글된다. 스위치만 표적이면 44x24 하나뿐이다.
-                  오른쪽으로 미는 것은 `ml-auto` 가 아니라 `self-end` 다. 부모가 `PageHeader` 의
-                  세로 상자라 가로가 교차축이고, 거기서 `ml-auto` 는 stretch 와 얽힌다. */}
-              {mode === 'auto' && (
-                <Pressable
-                  role="switch"
-                  aria-checked={showAllBosses}
-                  aria-label="모든 보스 보기"
-                  onPress={() => setShowAllBosses((prev) => !prev)}
-                  className="self-end shrink-0 flex-row items-center gap-1.5"
-                >
-                  <Text className="text-xs font-medium text-text-muted">모든 보스 보기</Text>
-                  <View
-                    className={`relative h-6 w-11 shrink-0 rounded-full ${
-                      showAllBosses ? 'bg-primary' : 'bg-surface-2'
-                    }`}
-                  >
-                    <View
-                      className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-surface ${
-                        showAllBosses ? 'translate-x-5' : 'translate-x-0'
-                      }`}
-                    />
-                  </View>
-                </Pressable>
-              )}
-            </>
-          )}
         </PageHeader>
       }
     >
+      {/* 캐릭터를 고르는 장치라 콘텐츠다. **여기에는 진행 링이 없다**(`rings: []`) - 이 화면의
+          일은 캐릭터를 고르는 것이지 진행을 보는 것이 아니다.
+
+          좌우 여백을 주지 않는다. 레일이 자기 안쪽 스크롤로 그 16 을 든다. */}
+      {selected !== null && (
+        <CharacterRail
+          entries={railEntries}
+          selectedOcid={selected.ocid}
+          onSelect={(ocid) => {
+            void select(ocid)
+          }}
+        />
+      )}
+
+      {/* 목록에서 무엇을 보는가를 고르는 장치라 콘텐츠다.
+
+          글자가 스위치 안이라 글자를 눌러도 토글된다. 스위치만 표적이면 44x24 하나뿐이다.
+          `자동 모드 안내 문구`는 두지 않는다. 화면이 이미 그것을 보여 준다(체크가 없고 스테퍼만
+          있다). `n/12` 카운터는 `주간` 섹션 헤더가 싣는다. */}
+      {selected !== null && mode === 'auto' && (
+        <View className="items-end px-4">
+          <Pressable
+            role="switch"
+            aria-checked={showAllBosses}
+            aria-label="모든 보스 보기"
+            onPress={() => setShowAllBosses((prev) => !prev)}
+            className="shrink-0 flex-row items-center gap-1.5"
+          >
+            <Text className="text-xs font-medium text-text-muted">모든 보스 보기</Text>
+            <View
+              className={`relative h-6 w-11 shrink-0 rounded-full ${
+                showAllBosses ? 'bg-primary' : 'bg-surface-2'
+              }`}
+            >
+              <View
+                className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-surface ${
+                  showAllBosses ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </View>
+          </Pressable>
+        </View>
+      )}
+
       <View testID="screen-BossManage">
         {/* 조회가 끝나기 전(idle·loading)에는 빈 상태 문구로 위장하지 않는다. */}
         {selected === null && (status === 'idle' || status === 'loading') ? (
