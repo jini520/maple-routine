@@ -367,8 +367,20 @@ async function buildWeeklySubtotalsForMonth(
   // 아이템 수익도 소계에 넣는다. 안 넣으면 주간 탭과 월간 탭의 같은 주가 다른 숫자가 된다
   // (주간 탭은 보스 행에 더해 보여준다). 주차 전체를 한 번에 읽어 접는다.
   const weekDrops = await withSqliteFallback(getBossDropRecords(ocids, [...weekKeys, monthPeriodKey]), [])
+  // 미완료 보스의 드롭은 돈으로 안 센다. 주간 탭이 같은 규칙이라 안 맞추면 같은 주가 두 탭에서
+  // 다른 숫자가 된다.
+  //
+  // 판정할 수 있는 것은 **행이 살아 있는 진행 중인 주**뿐이다. 지난 주의 행은 기록에서 오고
+  // 기록은 완료된 보스만 남기므로 미완료라는 것이 존재하지 않는다. 그 주에 남은 드롭은 고아
+  // 정리가 걷는다.
+  const unpaidRowKeys = new Set(
+    liveRows
+      .filter((row) => !row.isComplete)
+      .map((row) => dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)),
+  )
   const dropsByOcidWeek = new Map<string, RecordedDrop[]>()
   for (const record of weekDrops) {
+    if (unpaidRowKeys.has(dropRowKey(record.ocid, record.boss, record.difficulty, record.periodKey))) continue
     // 월간 보스의 드롭은 `period_key` 가 달이라 그대로 접으면 어느 주에도 안 든다. 그 보스가
     // 선 주로 옮겨 담는다.
     const weekKey =

@@ -83,6 +83,7 @@ const mockedNavigation = jest.mocked(useScreenNavigation)
 const CURRENT_WEEKLY = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
 const CURRENT_MONTHLY = getCurrentBossProfitPeriod('monthly', new Date()).periodKey
 const 주간보스 = weeklyBossesData.weekly[0].boss
+const 다른주간보스 = weeklyBossesData.weekly[1].boss
 const 고가아이템 = valuableDropsData.items[0]
 
 function mockStore(overrides: Partial<BossProfitStore> = {}): void {
@@ -575,6 +576,38 @@ describe('총 수익 헤드라인', () => {
     expect(getAllByText(/^5,000,000 /)).toHaveLength(2)
   })
 
+  // 사용자 보고. 미완료 행은 금액 자리에 `미완료` 배지를 세워 돈을 아예 안 그리는데 합계만
+  // 그것을 더하고 있었다. 카드 어디에도 없는 돈이 총액에 섰다.
+  it('미완료 보스에 매긴 가격은 총액에 안 든다', async () => {
+    mockStore({
+      status: 'loaded',
+      periodState: 'recorded',
+      rows: [보스행(), 보스행({ boss: 다른주간보스, isComplete: false, payoutMeso: null })],
+      dropsByRowKey: {
+        [`ocid-1|${다른주간보스}|하드|${CURRENT_WEEKLY}`]: [
+          드롭({ priceState: 'entered', priceMeso: 2_000_000, priceShare: 1 }),
+        ] } })
+    const { getAllByText, queryByText } = await renderScreen()
+
+    // 완료된 행의 결정석만 선다. 헤드라인과 캐릭터 카드가 같은 값을 말한다.
+    expect(getAllByText(/^5,000,000 /)).toHaveLength(2)
+    expect(queryByText(/^7,000,000 /)).toBeNull()
+  })
+
+  it('그 보스가 완료로 바뀌면 같은 기록이 그대로 총액에 들어온다', async () => {
+    mockStore({
+      status: 'loaded',
+      periodState: 'recorded',
+      rows: [보스행({ boss: 다른주간보스 })],
+      dropsByRowKey: {
+        [`ocid-1|${다른주간보스}|하드|${CURRENT_WEEKLY}`]: [
+          드롭({ priceState: 'entered', priceMeso: 2_000_000, priceShare: 1 }),
+        ] } })
+    const { getAllByText } = await renderScreen()
+
+    expect(getAllByText(/^7,000,000 /)).toHaveLength(2)
+  })
+
   it('자세히 보기를 누르면 결정석·아이템·합계가 갈려 나온다', async () => {
     mockStore({ status: 'loaded', periodState: 'recorded', rows: [보스행()] })
     const { getByLabelText, getByTestId, getByText } = await renderScreen()
@@ -606,6 +639,18 @@ describe('총 수익 헤드라인', () => {
     const { getByLabelText } = await renderScreen()
 
     expect(getByLabelText('이 기간 고가 드롭')).toBeTruthy()
+  })
+
+  it('미완료 보스의 고가 드롭은 헤드라인 뱃지를 못 만든다', async () => {
+    mockStore({
+      status: 'loaded',
+      periodState: 'recorded',
+      rows: [보스행({ isComplete: false, payoutMeso: null })],
+      dropsByRowKey: {
+        [`ocid-1|${주간보스}|하드|${CURRENT_WEEKLY}`]: [드롭({ itemName: 고가아이템 })] } })
+    const { queryByTestId } = await renderScreen()
+
+    expect(queryByTestId('valuable-drop-badge')).toBeNull()
   })
 
   it('고가 드롭이 없으면 헤드라인 뱃지를 렌더하지 않는다', async () => {

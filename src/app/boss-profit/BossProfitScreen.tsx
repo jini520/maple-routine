@@ -60,7 +60,7 @@ import { CharacterAccordion } from './CharacterAccordion'
 import {
   buildCharacterGroups,
   collectAllValuableDrops,
-  collectGroupDrops,
+  collectPayableDrops,
   groupTotalMeso,
 } from './character-groups'
 // `DeltaChip` 은 증감 표시를 통계 기능으로 옮길 때까지 쓰이지 않는다. 컴포넌트와 테스트는
@@ -221,7 +221,7 @@ export function BossProfitScreen(): React.JSX.Element {
   const periodItemMeso = characterGroups.reduce(
     (sum, group) =>
       sum +
-      sumDropPayout(collectGroupDrops(group, dropsByRowKey)) +
+      sumDropPayout(collectPayableDrops(group, dropsByRowKey)) +
       group.weeklySubtotals.reduce((weekSum, subtotal) => weekSum + sumDropPayout(subtotal.drops), 0),
     0,
   )
@@ -467,7 +467,7 @@ export function BossProfitScreen(): React.JSX.Element {
             윈도우라 트리 위치가 겹침에 영향을 주지 않기 때문이다. */}
         {isPeriodPopoverOpen && (
           <ItemRevenuePopover
-            drops={characterGroups.flatMap((group) => collectGroupDrops(group, dropsByRowKey))}
+            drops={characterGroups.flatMap((group) => collectPayableDrops(group, dropsByRowKey))}
             crystalMeso={crystalTotalMeso}
             itemMeso={periodItemMeso}
             anchor={periodAnchor}

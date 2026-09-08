@@ -141,6 +141,20 @@ describe('고가 드롭 강조', () => {
     expect(queryByLabelText('고가 드롭')).toBeNull()
   })
 
+  // 카드 겉면은 그 안에 무엇이 있는지에 대한 주장이다. 미완료 행은 금액 자리에 `미완료` 를
+  // 세우므로, 같은 드롭이 카드를 두르면 펼쳐 봐도 없는 것을 겉면에서 주장하게 된다.
+  it('미완료 행의 고가 드롭이면 링·글로우·배지가 하나도 안 붙는다', async () => {
+    const { queryByTestId, queryByLabelText } = await renderProfit(
+      <CharacterAccordion group={그룹([보스행({ isComplete: false, payoutMeso: null })])} />,
+      컨텍스트값({ dropsByRowKey: 고가드롭 }),
+    )
+
+    expect(queryByTestId('valuable-drop-card-ring')).toBeNull()
+    expect(queryByTestId('valuable-drop-card-glow-low')).toBeNull()
+    expect(queryByTestId('valuable-drop-card-glow-high')).toBeNull()
+    expect(queryByLabelText('고가 드롭')).toBeNull()
+  })
+
   it('링 색과 두께는 웹의 degrade 폴백 그대로다. 반경만 펼침에서 13으로 줄어든다', async () => {
     const { getByTestId, getByRole } = await renderProfit(
       <CharacterAccordion group={그룹()} />,

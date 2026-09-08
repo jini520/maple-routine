@@ -630,6 +630,52 @@ describe('useBossProfitStore', () => {
     expect(useBossProfitStore.getState().dropsByRowKey[`ocid-1|자쿰|카오스|${weekKey}`]).toHaveLength(1)
   })
 
+  // 미완료 행에도 드롭과 가격을 적을 수 있는데, 그 행은 금액 자리에 `미완료` 배지를 세워 돈을
+  // 아예 안 그린다. 주간 탭은 `collectPayableDrops` 가 가르고 월간 탭은 소계가 원천이라 여기서
+  // 가른다. 안 맞추면 같은 주가 두 탭에서 다른 숫자가 된다.
+  it('월간 탭 주차 소계가 미완료 보스의 드롭 값을 안 더한다', async () => {
+    const weekKey = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
+    const 값매긴드롭 = (boss: string, difficulty: string) => ({
+      ocid: 'ocid-1',
+      boss,
+      difficulty,
+      periodKey: weekKey,
+      dropIndex: 0,
+      category: 'fixed' as const,
+      itemName: '테스트 드롭',
+      slot: null,
+      boxOrigin: null,
+      ringLevel: null,
+      quantity: 1,
+      recordedAt: '2026-09-09T00:00:00.000Z',
+      priceState: 'entered' as const,
+      priceMeso: 900_000_000,
+      priceShare: 1,
+    })
+
+    getBossDropRecordsMock.mockImplementation(async (_ocids: string[], periodKeys: string[]) =>
+      periodKeys.includes(weekKey) ? [값매긴드롭('스우', '노멀')] : [],
+    )
+    syncSchedulesMock.mockResolvedValue([
+      syncResult({
+        state: {
+          ...syncResult().state!,
+          // 등록만 되고 아직 안 잡은 보스. 미완료 placeholder 행이 선다.
+          bossContents: [bossContent({ name: '스우', difficulty: '노멀', isComplete: false })],
+        },
+      }),
+    ])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    await useBossProfitStore.getState().setTab('monthly')
+
+    const subtotal = useBossProfitStore
+      .getState()
+      .weeklySubtotals.find((entry) => entry.periodKey === weekKey)
+    expect(subtotal?.totalMeso).toBe(0)
+    expect(subtotal?.drops).toEqual([])
+  })
+
   it('시세표에 없는 보스는 priceMeso가 null이고 payoutMeso도 항상 null이다', async () => {
     syncSchedulesMock.mockResolvedValue([
       syncResult({
