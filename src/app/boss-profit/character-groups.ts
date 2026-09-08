@@ -104,6 +104,8 @@ export function buildCharacterGroups(
  *
  * 값을 안 매긴 드롭은 여기서도 0 이다. `sumDropPayout` 이 `priceState !== 'entered'` 를 통째로
  * 거른다. 합산에서 스킵과 미입력이 같은 것은 의도이고, 둘을 가르는 일은 표시 층이 한다.
+ *
+ * 미완료 행의 드롭도 0 이다(`payableDropsOf`).
  */
 export function groupTotalMeso(
   group: CharacterGroup,
@@ -117,33 +119,65 @@ export function groupTotalMeso(
     return sumSubtotals(group.weeklySubtotals)
   }
 
-  const drops = group.bossRows.reduce(
-    (sum, row) =>
-      sum + sumDropPayout(dropsByRowKey[dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)] ?? []),
-    0,
-  )
+  const drops = group.bossRows.reduce((sum, row) => sum + sumDropPayout(confirmedDropsOf(row, dropsByRowKey)), 0)
   return sumPayout(group.bossRows) + drops
 }
 
-// 이 캐릭터가 현재 기간에 기록한 고가 아이템 드롭 목록. 드롭은 `dropRowKey`(ocid, boss,
-// difficulty, periodKey)로 저장되므로 그룹의 보스 행마다 조회해 `isValuableDrop` 로 거른다.
-// weekly 탭 기준이며 monthly 탭에서는 월간 보스 행의 드롭만 집계된다.
+/**
+ * **처치가 확정된** 행의 드롭. 미완료 행은 빈 배열이다.
+ *
+ * 미완료 행에도 드롭과 가격을 적을 수 있다. 처치 직후 `complete_flag` 가 갱신되기 전에 적으라고
+ * 열어 둔 자리라 막으면 실제로 잡은 보스의 드롭을 못 적는 시간이 생긴다. 그런데 그 행은 금액
+ * 자리에 `미완료` 배지를 세워 돈을 아예 안 그린다.
+ *
+ * 그래서 규칙이 하나다. **완료 전에는 그 보스가 카드 겉면에 아무것도 못 만든다.** 총액도 골드
+ * 링·글로우·고가 배지도 그 행을 못 본다. 안 그러면 카드가 펼쳐 봐도 찾을 수 없는 것을 겉면에서
+ * 주장한다. 완료로 바뀌면 같은 기록이 그대로 돌아온다.
+ *
+ * 행 **안**은 이 규칙 밖이다. 드롭 지시자와 드롭 시트는 적은 것을 그대로 보여준다.
+ */
+function confirmedDropsOf(
+  row: CharacterGroup['bossRows'][number],
+  dropsByRowKey: Record<string, RecordedDrop[]>,
+): RecordedDrop[] {
+  if (!row.isComplete) return []
+  return dropsByRowKey[dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)] ?? []
+}
+
+/**
+ * 이 캐릭터가 이 기간에 **번** 드롭. 미완료 행의 것은 빠진다.
+ *
+ * `collectGroupDrops` 와 갈라 두는 것은 두 물음이 다르기 때문이다. 이쪽은 얼마를 벌었나 이고
+ * 그쪽은 기록한 것이 있나 다. 금액을 그리는 자리는 전부 이 함수를 쓴다.
+ *
+ * @see collectGroupDrops 기록 전부. today 의 `hasRecords` 가 그쪽이다
+ */
+export function collectPayableDrops(
+  group: CharacterGroup,
+  dropsByRowKey: Record<string, RecordedDrop[]>,
+): RecordedDrop[] {
+  return group.bossRows.flatMap((row) => confirmedDropsOf(row, dropsByRowKey))
+}
+
+// 이 캐릭터가 현재 기간에 먹은 고가 아이템 드롭 목록. 카드의 골드 링·글로우·우상단 배지가
+// 이것을 본다. weekly 탭 기준이며 monthly 탭에서는 월간 보스 행의 드롭만 집계된다.
+//
+// 미완료 행은 안 든다(`confirmedDropsOf`). 카드 겉면이라 총액과 같은 규칙을 따른다.
 export function collectGroupValuableDrops(
   group: CharacterGroup,
   dropsByRowKey: Record<string, RecordedDrop[]>,
 ): RecordedDrop[] {
   const valuable: RecordedDrop[] = []
   for (const row of group.bossRows) {
-    const drops = dropsByRowKey[dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)] ?? []
-    for (const drop of drops) {
+    for (const drop of confirmedDropsOf(row, dropsByRowKey)) {
       if (isValuableDrop(drop.itemName)) valuable.push(drop)
     }
   }
   return valuable
 }
 
-// 이 캐릭터가 이 기간에 기록한 드롭 전체. 고가로 거르지 않는다.
-// 캐릭터 카드 내역 팝오버가 이것을 아이템 단위로 접어 보여준다.
+// 이 캐릭터가 이 기간에 기록한 드롭 전체. 고가로도 완료 여부로도 거르지 않는다.
+// 기록한 것이 있나 를 묻는 자리가 쓴다. 금액을 그리는 자리는 `collectPayableDrops` 다.
 export function collectGroupDrops(
   group: CharacterGroup,
   dropsByRowKey: Record<string, RecordedDrop[]>,

@@ -83,6 +83,7 @@ const mockedNavigation = jest.mocked(useScreenNavigation)
 const CURRENT_WEEKLY = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
 const CURRENT_MONTHLY = getCurrentBossProfitPeriod('monthly', new Date()).periodKey
 const 주간보스 = weeklyBossesData.weekly[0].boss
+const 다른주간보스 = weeklyBossesData.weekly[1].boss
 const 고가아이템 = valuableDropsData.items[0]
 
 function mockStore(overrides: Partial<BossProfitStore> = {}): void {
@@ -194,12 +195,11 @@ describe('빈 상태', () => {
     expect(getByText('보스 수익')).toBeTruthy()
   })
 
-  it('빈 배열이면 빈 상태만 보인다. 진입점 둘은 두지 않는다', async () => {
+  it('빈 배열이면 빈 상태만 보인다. 진입점은 두지 않는다', async () => {
     mockStore({ trackedOcids: [] })
     const { getByText, queryByText } = await renderScreen()
 
     expect(getByText('추적 중인 캐릭터가 없습니다')).toBeTruthy()
-    expect(queryByText('히스토리')).toBeNull()
     expect(queryByText('아이템 가격')).toBeNull()
   })
 
@@ -223,26 +223,32 @@ describe('빈 상태', () => {
 })
 
 describe('제목 줄 진입점', () => {
-  it('가격이 히스토리 **왼쪽**이다. 값을 매기는 쪽이 주마다 들르는 자리다', async () => {
-    const { getByTestId } = await renderScreen()
-
-    // 둘은 같은 부모의 형제라 **렌더 순서가 곧 화면 순서**다(`flex-row`).
-    const header = JSON.stringify(getByTestId('page-header').toJSON())
-    expect(header.indexOf('아이템 가격')).toBeLessThan(header.indexOf('히스토리'))
-  })
-
-  it('히스토리·가격은 하위 페이지로 push 한다', async () => {
+  it('아이템 가격은 하위 페이지로 push 한다', async () => {
     const { getByText } = await renderScreen()
-
-    await act(async () => {
-      fireEvent.press(getByText('히스토리'))
-    })
-    expect(navigate).toHaveBeenCalledWith('DropHistory')
 
     await act(async () => {
       fireEvent.press(getByText('아이템 가격'))
     })
     expect(navigate).toHaveBeenCalledWith('DropPrice')
+  })
+
+  // 화면·라우트는 살아 있고 링크만 걷었다. 자리를 다시 정하면 되돌린다.
+  it('히스토리 링크는 없다. 임시로 걷었다', async () => {
+    const { queryByText } = await renderScreen()
+
+    expect(queryByText('히스토리')).toBeNull()
+  })
+
+  it('월간 탭에서는 아이템 가격 링크가 서지 않는다', async () => {
+    mockStore({
+      tab: 'monthly',
+      loadedTab: 'monthly',
+      periodKey: CURRENT_MONTHLY,
+      loadedPeriodKey: CURRENT_MONTHLY,
+    })
+    const { queryByText } = await renderScreen()
+
+    expect(queryByText('아이템 가격')).toBeNull()
   })
 })
 
@@ -570,6 +576,38 @@ describe('총 수익 헤드라인', () => {
     expect(getAllByText(/^5,000,000 /)).toHaveLength(2)
   })
 
+  // 사용자 보고. 미완료 행은 금액 자리에 `미완료` 배지를 세워 돈을 아예 안 그리는데 합계만
+  // 그것을 더하고 있었다. 카드 어디에도 없는 돈이 총액에 섰다.
+  it('미완료 보스에 매긴 가격은 총액에 안 든다', async () => {
+    mockStore({
+      status: 'loaded',
+      periodState: 'recorded',
+      rows: [보스행(), 보스행({ boss: 다른주간보스, isComplete: false, payoutMeso: null })],
+      dropsByRowKey: {
+        [`ocid-1|${다른주간보스}|하드|${CURRENT_WEEKLY}`]: [
+          드롭({ priceState: 'entered', priceMeso: 2_000_000, priceShare: 1 }),
+        ] } })
+    const { getAllByText, queryByText } = await renderScreen()
+
+    // 완료된 행의 결정석만 선다. 헤드라인과 캐릭터 카드가 같은 값을 말한다.
+    expect(getAllByText(/^5,000,000 /)).toHaveLength(2)
+    expect(queryByText(/^7,000,000 /)).toBeNull()
+  })
+
+  it('그 보스가 완료로 바뀌면 같은 기록이 그대로 총액에 들어온다', async () => {
+    mockStore({
+      status: 'loaded',
+      periodState: 'recorded',
+      rows: [보스행({ boss: 다른주간보스 })],
+      dropsByRowKey: {
+        [`ocid-1|${다른주간보스}|하드|${CURRENT_WEEKLY}`]: [
+          드롭({ priceState: 'entered', priceMeso: 2_000_000, priceShare: 1 }),
+        ] } })
+    const { getAllByText } = await renderScreen()
+
+    expect(getAllByText(/^7,000,000 /)).toHaveLength(2)
+  })
+
   it('자세히 보기를 누르면 결정석·아이템·합계가 갈려 나온다', async () => {
     mockStore({ status: 'loaded', periodState: 'recorded', rows: [보스행()] })
     const { getByLabelText, getByTestId, getByText } = await renderScreen()
@@ -601,6 +639,18 @@ describe('총 수익 헤드라인', () => {
     const { getByLabelText } = await renderScreen()
 
     expect(getByLabelText('이 기간 고가 드롭')).toBeTruthy()
+  })
+
+  it('미완료 보스의 고가 드롭은 헤드라인 뱃지를 못 만든다', async () => {
+    mockStore({
+      status: 'loaded',
+      periodState: 'recorded',
+      rows: [보스행({ isComplete: false, payoutMeso: null })],
+      dropsByRowKey: {
+        [`ocid-1|${주간보스}|하드|${CURRENT_WEEKLY}`]: [드롭({ itemName: 고가아이템 })] } })
+    const { queryByTestId } = await renderScreen()
+
+    expect(queryByTestId('valuable-drop-badge')).toBeNull()
   })
 
   it('고가 드롭이 없으면 헤드라인 뱃지를 렌더하지 않는다', async () => {

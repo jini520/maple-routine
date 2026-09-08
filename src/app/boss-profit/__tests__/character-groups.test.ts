@@ -7,7 +7,16 @@ import { dropRowKey } from '../../../features/boss-profit/store'
 import type { BossProfitRow } from '../../../features/boss-profit/store'
 import type { RecordedDrop } from '../../../types/drops'
 
-import { groupTotalMeso, sumPayout } from '../character-groups'
+import valuableDropsData from '../../../data/valuable-drops.json'
+
+import {
+  collectAllValuableDrops,
+  collectGroupDrops,
+  collectGroupValuableDrops,
+  collectPayableDrops,
+  groupTotalMeso,
+  sumPayout,
+} from '../character-groups'
 import type { CharacterGroup } from '../character-groups'
 import { 다른주간보스, PERIOD, 월간보스, 보스행, 주간보스, 주차소계 } from './harness'
 
@@ -52,6 +61,63 @@ describe('groupTotalMeso: 아이템 수익 합산', () => {
     }
 
     expect(groupTotalMeso(group([보스행()]), drops)).toBe(6_800_000_000)
+  })
+})
+
+// 미완료 행에도 드롭을 적을 수 있다(처치 직후 `complete_flag` 갱신 전에 적으라고 열어 둔 자리다).
+// 그런데 그 행은 금액 자리에 `미완료` 배지를 세워 돈을 아예 안 그린다. 합만 그것을 더하면 **카드
+// 어디에도 없는 돈이 총액에 선다**(사용자 보고).
+const 고가드롭: RecordedDrop = {
+  category: 'equipment',
+  itemName: valuableDropsData.items[0],
+  quantity: 1,
+}
+
+describe('미완료 행의 드롭은 돈으로 안 센다', () => {
+  const 미완료 = 보스행({ isComplete: false, payoutMeso: null, defeatedOn: null })
+  const 미완료드롭 = { [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: priced }
+
+  it('미완료 행의 드롭은 합에 안 든다', () => {
+    expect(groupTotalMeso(group([미완료]), 미완료드롭)).toBe(0)
+  })
+
+  it('완료로 바뀌면 같은 기록이 그대로 금액에 들어온다', () => {
+    expect(groupTotalMeso(group([보스행()]), 미완료드롭)).toBe(6_800_000_000 + 5_000_000_000)
+  })
+
+  it('한 그룹에 섞여 있으면 완료된 행의 것만 더한다', () => {
+    const drops = {
+      [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: priced,
+      [dropRowKey('ocid-1', 다른주간보스, '카오스', PERIOD)]: priced,
+    }
+    const 완료 = 보스행({ boss: 다른주간보스, difficulty: '카오스', payoutMeso: 1_000_000_000 })
+
+    expect(groupTotalMeso(group([미완료, 완료]), drops)).toBe(1_000_000_000 + 5_000_000_000)
+  })
+
+  it('`collectPayableDrops` 는 미완료 행의 드롭을 빼고 모은다', () => {
+    expect(collectPayableDrops(group([미완료]), 미완료드롭)).toEqual([])
+    expect(collectPayableDrops(group([보스행()]), 미완료드롭)).toEqual(priced)
+  })
+
+  // 기록이 있는가 를 묻는 자리(today 의 `hasRecords`)가 이것을 쓴다. 적은 것을 못 찾게 되면 안 된다.
+  it('`collectGroupDrops` 는 안 가른다. 기록 전부를 그대로 낸다', () => {
+    expect(collectGroupDrops(group([미완료]), 미완료드롭)).toEqual(priced)
+  })
+
+  // 카드 겉면(골드 링·글로우·우상단 배지)이 이것을 본다. 미완료 행이 금액 자리에 `미완료` 를
+  // 세우는데 같은 드롭이 카드를 두르면, 카드가 펼쳐 봐도 없는 것을 겉면에서 주장한다.
+  it('미완료 행의 고가 드롭은 카드 겉면을 못 만든다', () => {
+    const 고가 = { [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: [고가드롭] }
+
+    expect(collectGroupValuableDrops(group([미완료]), 고가)).toEqual([])
+    expect(collectAllValuableDrops([group([미완료])], 고가)).toEqual([])
+  })
+
+  it('완료된 행의 고가 드롭은 그대로 선다', () => {
+    const 고가 = { [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: [고가드롭] }
+
+    expect(collectGroupValuableDrops(group([보스행()]), 고가)).toEqual([고가드롭])
   })
 })
 

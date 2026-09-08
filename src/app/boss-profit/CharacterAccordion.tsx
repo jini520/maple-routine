@@ -39,7 +39,7 @@ import {
   type CharacterIssue,
 } from './CharacterIssue'
 import {
-  collectGroupDrops,
+  collectPayableDrops,
   collectGroupValuableDrops,
   countGroupClearedMonthlyBosses,
   countGroupClearedWeeklyBosses,
@@ -192,7 +192,9 @@ export function CharacterAccordion(props: {
   // 이 기간에 고가 아이템을 먹었을 때: 카드에 골드 링 + 글로우 + 우상단 획득 아이템 배지.
   const valuableDrops = collectGroupValuableDrops(group, dropsByRowKey)
   const hasValuable = valuableDrops.length > 0
-  const groupDrops = collectGroupDrops(group, dropsByRowKey)
+  // 금액을 그리는 자리라 **완료된 행의 것만** 든다. 미완료 행에도 드롭을 적을 수 있는데 그 행은
+  // 금액 대신 `미완료` 배지를 세우므로, 여기서 더하면 카드 안 어디에도 없는 돈이 머리에 선다.
+  const groupDrops = collectPayableDrops(group, dropsByRowKey)
   // 월간 탭에서는 주간 보스 수익이 **주차 소계로 뭉쳐** 들어오므로 그 안의 아이템분도 더해야 카드
   // 합계와 맞는다. 낱개로는 못 꺼내지만 합은 안다.
   const itemTotal =

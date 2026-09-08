@@ -53,6 +53,7 @@ import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import {
   buildCharacterGroups,
   collectGroupDrops,
+  collectPayableDrops,
   groupTotalMeso,
   sumPayout,
   summarizeWorldCrystals,
@@ -586,9 +587,12 @@ function buildProfit(
     // 소계는 이번 주 계산에서 언제나 비어 있으므로(`buildCharacterGroups(rows, [])`) 둘의 합이
     // 그대로 `totalMeso` 가 된다. 그래서 여기서 나오는 두 값은 총액과 어긋날 수 없다.
     crystalMeso: sumPayout(group.bossRows),
-    itemMeso: sumDropPayout(collectGroupDrops(group, dropsByRowKey)),
+    // 금액이라 완료된 행의 것만 든다. 바로 아래 `hasRecords` 가 안 가르는 것과 짝이다.
+    itemMeso: sumDropPayout(collectPayableDrops(group, dropsByRowKey)),
   }))
 
+  // 여기는 **기록이 있나** 를 묻는다. 미완료 보스에 드롭을 적은 주를 아무것도 없는 주로 그리면
+  // 적은 사람이 그 기록을 찾을 자리가 없다. 그래서 금액과 달리 완료 여부로 안 가른다.
   const hasRecords =
     rows.some((row) => row.isComplete) ||
     groups.some((group) => collectGroupDrops(group, dropsByRowKey).length > 0)

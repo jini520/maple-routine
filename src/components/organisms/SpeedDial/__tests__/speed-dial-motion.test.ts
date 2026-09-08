@@ -1,6 +1,6 @@
 // 펼침판의 **움직임 값**.
 //
-// 값을 컴포넌트 밖에 두는 이유는 `ValuableRowBackground` 가 `valuable-row-glow.ts` 를 둔 이유와
+// 값을 컴포넌트 밖에 두는 이유는 `CharacterAccordion` 이 `valuable-card-glow.ts` 를 둔 이유와
 // 같다. **애니메이션을 띄우지 않고도 규칙을 검증**할 수 있어야 한다. 여기서 보는 것은 **계단이
 // 어느 방향으로 서는가** 이고, 그것이 이 판이 말하려는 것의 전부다.
 import {

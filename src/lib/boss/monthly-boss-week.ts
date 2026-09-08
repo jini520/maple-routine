@@ -22,7 +22,7 @@ import {
 } from './boss-profit-period'
 
 /** 주간 기간 키(`YYYY-MM-DD`, 목요일)가 속한 달. */
-function monthOfWeek(weeklyPeriodKey: string): string {
+export function monthOfWeek(weeklyPeriodKey: string): string {
   return weeklyPeriodKey.slice(0, 7)
 }
 
