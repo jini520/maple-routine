@@ -961,7 +961,7 @@ describe('강화 줄', () => {
 
     expect(
       rows.flatMap((row) => (row.kind === 'enhancement' ? [row.category] : [])).sort(),
-    ).toEqual(['스타포스', '에디셔널 잠재능력', '잠재능력', '큐브'])
+    ).toEqual(['스타포스', '에디셔널 잠재능력', '잠재능력', '큐브 재설정'])
   })
 
   it('잠재는 종류가 응답에서 온다', async () => {
@@ -975,7 +975,7 @@ describe('강화 줄', () => {
 
     expect(row).toMatchObject({
       kind: 'enhancement',
-      category: '큐브',
+      category: '큐브 재설정',
       characterName: '낟낟',
       payoutMeso: 900_000,
       count: 2,
@@ -994,7 +994,7 @@ describe('강화 줄', () => {
     const { rowKeyOf } = require('../records') as typeof import('../records')
     const [row] = await 줄들([강화()])
 
-    expect(rowKeyOf(row)).toBe('enhancement:큐브:낟낟')
+    expect(rowKeyOf(row)).toBe('enhancement:큐브 재설정:낟낟')
   })
 
   // 캐릭터로 먼저 모으고 그 안에서 큰 금액이 위다. 갈래를 고정 순서로 두면 그날 제일 많이 쓴
@@ -1010,7 +1010,7 @@ describe('강화 줄', () => {
       rows.flatMap((row) =>
         row.kind === 'enhancement' ? [`${row.characterName}/${row.category}`] : [],
       ),
-    ).toEqual(['가가/큐브', '낟낟/잠재능력', '낟낟/큐브'])
+    ).toEqual(['가가/큐브 재설정', '낟낟/잠재능력', '낟낟/큐브 재설정'])
   })
 
   it('건수 라벨이 값모름을 말한다', async () => {
@@ -1061,7 +1061,7 @@ describe('강화 줄', () => {
   })
 
   // 120 이하 장비의 큐브는 감정비용이 없고 강화권을 쓴 스타포스도 메소가 안 든다.
-  // `낟넘 · 큐브 9회 −0` 같은 줄은 읽을 것이 없다(사용자 지정).
+  // `낟넘 · 큐브 재설정 9회 −0` 같은 줄은 읽을 것이 없다(사용자 지정).
   it('한 푼도 안 쓴 줄은 안 세운다', async () => {
     const rows = await 줄들([강화({ itemLevel: 100 }), 강화({ id: 'e2', itemLevel: 120 })])
 
@@ -1092,7 +1092,7 @@ describe('강화 줄', () => {
     const [큐브줄] = await 줄들([강화()])
     const [잠재줄] = await 줄들([잠재('에디셔널 잠재능력 재설정')])
 
-    expect(recordTitleOf(큐브줄)).toBe('낟낟 · 큐브')
+    expect(recordTitleOf(큐브줄)).toBe('낟낟 · 큐브 재설정')
     expect(recordTitleOf(잠재줄)).toBe('낟낟 · 에디셔널 잠재능력')
   })
 

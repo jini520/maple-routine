@@ -31,6 +31,24 @@ describe('큐브', () => {
   })
 })
 
+// 큐브는 본잠·에디를 **안 가른다**. 한 번 갈라 봤고 되돌렸다(사용자 지정 2026-09-08).
+// 갈라도 값이 안 바뀌는데 줄만 둘로 늘었다. 이 테스트가 그 되돌림을 지킨다.
+describe('큐브 갈래', () => {
+  const categoryOf = (cubeType: string) =>
+    toEnhancementSpending([entry({ payload: { cube_type: cubeType } })], NO_EVENT)[0].category
+
+  it.each(['수상한 큐브', '레드 큐브', '블랙 큐브', '에디셔널 큐브', '화이트 에디셔널 큐브'])(
+    '%s 는 종류와 무관하게 큐브 재설정 줄이다',
+    (cubeType) => {
+      expect(categoryOf(cubeType)).toBe('큐브 재설정')
+    },
+  )
+
+  it('종류를 못 읽어도 줄은 선다', () => {
+    expect(toEnhancementSpending([entry({ payload: {} })], NO_EVENT)[0].category).toBe('큐브 재설정')
+  })
+})
+
 describe('잠재 재설정', () => {
   const potential = (type: string, grade: string, additional: string) =>
     entry({
