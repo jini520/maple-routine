@@ -1,5 +1,5 @@
 /**
- * 가격 기록 화면. 한 기간의 드롭에 판매가를 매기는 하위 스택 화면.
+ * 아이템 가격 입력 화면. 한 기간의 드롭에 판매가를 매기는 하위 스택 화면.
  *
  * 드롭 히스토리와 형제이고 같은 셸을 쓴다. 축이 다르다. 히스토리는 전 기간을 한 목록에 펼치는 읽기
  * 전용이고 여기는 한 기간을 놓고 값을 매기는 쓰기 화면이다.
@@ -35,7 +35,6 @@ import {
 } from '../../lib/boss/boss-profit-period'
 import { dropPayoutMeso } from '../../lib/drop/drop-price'
 import { getItemIconUrl } from '../../lib/assets/asset-lookup'
-import { isValuableDrop } from '../../lib/drop/valuable-drops'
 import type { RecordedDrop } from '../../types/drops'
 
 import {
@@ -58,7 +57,6 @@ import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { CharacterAvatar } from '../../components/molecules/CharacterAvatar/CharacterAvatar'
 import { PORTRAIT_COMPACT } from '../../components/organisms/CharacterPortrait/portrait-metrics'
 import { DropPricePad } from './DropPricePad'
-import { ValuableRowBackground } from './ValuableRowBackground'
 
 function characterTotal(group: DropPriceGroup): number {
   return group.entries.reduce((sum, entry) => sum + dropPayoutMeso(entry.drop), 0)
@@ -113,7 +111,6 @@ function EntryRow(props: {
     // RN 에 `:last-child` 가 없어 목록을 아는 부모가 알려 준다. 테두리를 아예 빼지 않고 색만
     // 지우는 것이 요점이다.
     <View>
-      {isValuableDrop(drop.itemName) && <ValuableRowBackground />}
       {/* 행 전체가 버튼이다. 입력이든 수정이든 같은 자리를 누른다. */}
       <Pressable
         role="button"
@@ -224,7 +221,7 @@ export function DropPriceScreen(): React.JSX.Element {
               >
                 <ArrowLeftIcon className="h-5 w-5 text-text" strokeWidth={2} aria-hidden />
               </Pressable>
-              <Text className="text-lg font-semibold text-text">가격 기록</Text>
+              <Text className="text-lg font-semibold text-text">아이템 가격 입력</Text>
             </PageHeaderTitleRow>
           </View>
         }
@@ -286,17 +283,16 @@ export function DropPriceScreen(): React.JSX.Element {
           ) : (
             <>
               {/* 요약은 카드가 아니라 헤드라인이다. 아래가 전부 같은 카드 셸이라 요약도 카드면
-                  흰 카드의 반복으로 묻힌다.
-
-                  아래 칩 셋은 목록의 범례다. 생김새가 행의 상태 pill 과 같아(채움 / 회색 /
-                  점선) 칩만 봐도 무엇이 몇 개인지 읽힌다. 0인 상태는 칩을 만들지 않는다. */}
+                  흰 카드의 반복으로 묻힌다. */}
               <View>
                 <View className="h-6 flex-row items-center">
                   <Text className="text-xs font-semibold tracking-wide text-text-muted">
                     {cycle === 'weekly' ? '이 주' : '이 달'} 아이템 수익
                   </Text>
+                  {/* 가격을 **입력한** 것만 센다. 기록 안함은 값을 매기지 않기로 한 결정이고,
+                      스킵은 아무것도 저장하지 않아 미입력에 머무른다. */}
                   <Text className="ml-auto text-xs text-text-muted" style={TABULAR_NUMS}>
-                    {entered + excluded} / {allEntries.length} 정함
+                    {entered}건
                   </Text>
                 </View>
                 <View className="mt-1.5 flex-row items-center gap-2.5">
@@ -312,28 +308,6 @@ export function DropPriceScreen(): React.JSX.Element {
                     {total.toLocaleString()}{' '}
                     <Text className="text-xs font-bold text-text-muted">메소</Text>
                   </Text>
-                </View>
-                <View className="mt-2.5 flex-row flex-wrap items-center gap-1.5">
-                  {entered > 0 && (
-                    <Badge variant="primary" weight="bold" style={TABULAR_NUMS}>
-                      입력 {entered}
-                    </Badge>
-                  )}
-                  {excluded > 0 && (
-                    <Badge variant="disabled" style={TABULAR_NUMS}>
-                      기록 안함 {excluded}
-                    </Badge>
-                  )}
-                  {unpriced > 0 && (
-                    <Badge variant="dashed" style={TABULAR_NUMS}>
-                      미입력 {unpriced}
-                    </Badge>
-                  )}
-                  {unpriced === 0 && (
-                    <Text className="text-xs font-semibold text-text-muted">
-                      {cycle === 'weekly' ? '이 주는' : '이 달은'} 다 정했습니다
-                    </Text>
-                  )}
                 </View>
                 <View className="mt-3 h-px bg-border" aria-hidden />
               </View>

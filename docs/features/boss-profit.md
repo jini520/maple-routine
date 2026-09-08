@@ -30,8 +30,8 @@
 | 구분 | 파일 | 하는 일 |
 |---|---|---|
 | 화면 | `app/boss-profit/BossProfitScreen.tsx` | 화면 전체. 아코디언·헤드라인·네비게이터 |
-| 화면 | `app/boss-profit/DropHistoryScreen.tsx` | 전 기간 드롭 기록(`/profit/drops`). 정책은 [item-drop.md](./item-drop.md) |
-| 화면 | `app/boss-profit/DropPriceScreen.tsx` | 드롭 가격 입력(`/profit/prices`) |
+| 화면 | `app/boss-profit/DropHistoryScreen.tsx` | 전 기간 드롭 기록(`/profit/drops`). **진입점이 임시로 걷혀 앱 안에 가는 길이 없다**([[ADR-236]] 결정 1). 정책은 [item-drop.md](./item-drop.md) |
+| 화면 | `app/boss-profit/DropPriceScreen.tsx` | 아이템 가격 입력(`/profit/prices`) |
 | 상태 | `features/boss-profit/store.ts` | 기간 로드, 동기화, 화면이 읽는 모든 값 |
 | 상태 | `features/boss-profit/auto-record.ts` | 처치를 DB에 쓰는 루프. 동기화 경로와 캐시 경로가 함께 부른다([[ADR-111]]) |
 | 상태 | `features/boss-profit/orphan-drops.ts` | 잡지 않은 보스에 남은 드롭 정리([[ADR-187]]) |
@@ -51,7 +51,7 @@
 | 참조 | `src/data/weekly-bosses.json` | 보스 목록과 정규 순서 |
 | 참조 | `src/data/boss-portrait-icon-crops.json` | 보스 초상화 크롭 |
 | UI | `components/molecules/ValuableDropBadge/` | 고가 드롭 배지 |
-| UI | `app/boss-profit/valuable-card-glow.ts` · `valuable-row-glow.ts` | 고가 드롭 연출 값 |
+| UI | `app/boss-profit/valuable-card-glow.ts` | 고가 드롭 연출 값(카드). 행 배경 쪽은 삭제([[ADR-236]] 결정 5) |
 
 **관련 ADR** (유효): [[ADR-010]] [[ADR-014]] [[ADR-017]] [[ADR-019]] [[ADR-023]] [[ADR-032]]
 [[ADR-033]] [[ADR-036]] [[ADR-037]] [[ADR-045]] [[ADR-054]] [[ADR-059]] [[ADR-067]] [[ADR-068]]
@@ -875,8 +875,10 @@ today 화면은 언제나 이번 주를 그리므로 이 화면의 네비게이�
   사용자 판단이다. 통계 기능이 생기면 옮긴다. `DeltaChip` 과 `previousPeriodTotalMeso` 는 남아 있고
   화면이 부르지 않을 뿐이며, 그 계약은 `HeadlineChips.test.tsx` 가 지킨다.
 - **고가 드롭 행의 배경을 걷었다**([[ADR-220]] 결정 7, 사용자 지시, 다시 디자인 예정).
-  `ValuableRowBackground` 자체는 산다. 가격 기록 화면이 같은 효과를 쓰고, 캐릭터 카드의
-  글로우·골드 링·배지는 배경이 아니라 카드 강조라 그대로다.
+  캐릭터 카드의 글로우·골드 링·배지는 배경이 아니라 카드 강조라 그대로다.
+  `ValuableRowBackground` 와 `valuable-row-glow` 는 **파일째 지웠다**([[ADR-236]] 결정 5,
+  사용자 지시). 남겨 둔 이유가 아이템 가격 입력 화면이 같은 효과를 쓴다는 것이었는데 그 호출부도
+  걷히면서 부르는 곳이 하나도 없었다. 되살리려면 새 디자인이 먼저다.
 - **아이템 차례는 연출 먼저, 그다음 비싼 순이다**([[ADR-220]] 결정 8, 사용자 지정).
   아이콘 스택이 셋만 보여주므로 이 순서가 곧 무엇이 보이는가다. 견주는 값은 판매 총액이 아니라
   **내가 받은 몫**(`dropPayoutMeso`)이라 화면이 세는 값과 같다. 규칙은
@@ -1368,18 +1370,22 @@ a11y: 화살표는 `aria-hidden` 이고, 색은 의미를 못 전하므로 칩 �
 
 최신 기간에서는 다음 버튼이 `disabled` 다.
 
-#### 히스토리 진입점은 제목 줄 우측이다
+#### 제목 줄 진입점은 `아이템 가격` 하나다
 
-탭 줄이 아니다([[ADR-071]] 결정 7, 이슈 #54, 2026-08-01 확정). 보스·컨텐츠 스케줄러의 "캐릭터 관리",
-"보스 관리"와 같은 패턴이다(`justify-between` 제목 줄 +
-`text-sm font-medium text-text-muted hover:text-text`).
+탭 줄이 아니라 제목 줄이다([[ADR-071]] 결정 7, 이슈 #54, 2026-08-01 확정). 보스·컨텐츠 스케줄러의
+"캐릭터 관리", "보스 관리"와 같은 패턴이다(`justify-between` 제목 줄 +
+`text-sm font-medium text-text-muted`). 아이콘이 아니라 글자다. 아이콘만으로는 목적지를 알 수
+없었다. 캐릭터 미선택 빈 상태에는 넣지 않는다.
 
-아이콘이 아니라 글자 `히스토리` 다. 아이콘만으로는 목적지를 알 수 없었다. 제목 줄에 있으므로 탭 줄의
-30px 규칙이나 동기화 영역의 `ml-auto` 와 다투지 않는다. 캐릭터 미선택 빈 상태에는 넣지 않는다.
+**`아이템 가격` 은 주간 탭에만 선다**([[ADR-236]] 결정 2, 사용자 지정). 월간 탭에서는 그리지 않는다.
+목적지는 `/profit/prices`(`DropPriceScreen`)이고 정책은 [item-drop.md](./item-drop.md) 의
+"아이템 가격 입력 화면"에 있다.
 
-목적지는 `/profit/drops`(`DropHistoryScreen`)이고 **전 기간 드롭 기록을 DB에서 직접 읽는다.** 이
-화면의 기간 집계(아래 고가 드롭 강조)가 지금 보고 있는 기간에 갇혀 있는 것을 푸는 것이 그 화면의
-존재 이유다. 정책은 [item-drop.md](./item-drop.md) 의 "획득 히스토리 (전 기간)"에 있다.
+~~`히스토리` 링크가 그 오른쪽에 있었다~~ → **임시로 걷었다**([[ADR-236]] 결정 1, 사용자 지시
+2026-09-08). `DropHistoryScreen` 과 `/profit/drops` 는 그대로 살아 있고 **앱 안에 그리로 가는 길이
+지금은 없다.** 자리를 다시 정하면 `Pressable` 하나를 되돌린다. 그 화면의 존재 이유는 이 화면의 기간
+집계(아래 고가 드롭 강조)가 지금 보고 있는 기간에 갇혀 있는 것을 푸는 것이고, 정책은
+[item-drop.md](./item-drop.md) 의 "획득 히스토리 (전 기간)"에 있다.
 
 **히스토리로 가도 이 화면은 언마운트되지 않는다**(⛔ ADR-077의 🔗 계약, 2026-08-02). 아코디언
 펼침(`isExpanded`, 컴포넌트 로컬 state)과 보고 있던 기간, 스크롤 위치를 잃지 않기 위해서다. 다시
@@ -1458,15 +1464,15 @@ a11y: 화살표는 `aria-hidden` 이고, 색은 의미를 못 전하므로 칩 �
 
 [[ADR-045]] 다. 그 주차에 고가 아이템(`isValuableDrop`)을 먹은 항목을 네온 골드(`#f7d00d`)로 강조한다.
 
-값은 `app/boss-profit/valuable-card-glow.ts` 와 `valuable-row-glow.ts` 에 있다. 컴포넌트에서 export
-하면 fast refresh가 깨지기 때문에 파일을 나눴다. 그리는 것은 `CharacterAccordion` 과
-`ValuableRowBackground` 다.
+값은 `app/boss-profit/valuable-card-glow.ts` 에 있다. 컴포넌트에서 export 하면 fast refresh 가
+깨지기 때문에 파일을 나눴다. 그리는 것은 `CharacterAccordion` 하나다. 행 배경을 그리던
+`ValuableRowBackground` 와 그 값 파일은 삭제했다([[ADR-236]] 결정 5).
 
 | 어디에 | 연출 |
 |---|---|
 | 접힘 캐릭터 카드 | 회전하는 골드 링(샤인 테두리) + 글로우 맥동. 우상단에 획득 아이템 배지(`Sparkles` + 아이템 아이콘) |
 | 펼침 캐릭터 카드 | 글로우 맥동만 멈추고 회전 샤인은 유지. 링은 카드 안에서 `zIndex` 가 위고(⛔ ADR-047 결정 4) **반경을 13px 로 낮춘다**(⛔ ADR-049 결정 3). 셸이 패딩 박스(반경 13px)에서 잘라내므로 14px 면 모서리 바깥이 깎인다 |
-| 펼침 상태의 고가 획득 보스 행 | 테두리나 글로우가 아니라 **배경**이다. 아이템 쪽으로 치우친 골드 글로우와 미세 틴트 맥동(`ValuableRowBackground`). 가격 기록 화면의 행이 같은 값을 공유한다 |
+| ~~펼침 상태의 고가 획득 보스 행~~ | **없앴다.** 골드 글로우와 미세 틴트 맥동이 보스 행([[ADR-220]] 결정 7)에 이어 아이템 가격 입력 화면의 행([[ADR-236]] 결정 5)에서도 사라졌고, `ValuableRowBackground` 와 `valuable-row-glow` 는 파일째 지웠다. 다시 디자인 예정 |
 | 총 수익 헤드라인 | 같은 배지를 기간 전체 집계로 재사용해 라벨행 우측에 둔다([[ADR-046]]) |
 
 **RN은 그림자 속성을 보간하지 못한다.** 그래서 끝점 둘을 가진 겹을 반대 방향 `opacity` 로

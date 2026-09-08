@@ -251,19 +251,16 @@ export function BossProfitScreen(): React.JSX.Element {
     // 헤더는 제목 줄 하나다. 주간/월간 · 기간 이동 · 총 수익 요약은 **이 화면에서 무엇을
     // 보는가**에 딸린 것이라 콘텐츠로 내려갔다.
     <View testID="page-header" className="z-10 px-4" style={{ paddingTop: topSafeAreaPx }}>
-      {/* 진입점 둘은 다른 페이지로 가는 것이라 헤더에 남는다. 같은 어휘를 쓰고
-          `아이템 가격`(쓰기)이 `히스토리`(읽기) 왼쪽이다. 값을 매기는 쪽이 주마다 들르는
-          자리다. */}
+      {/* 다른 페이지로 가는 것이라 헤더에 남는 진입점. 주간 탭에만 세운다(사용자 지정).
+          `히스토리` 링크가 그 오른쪽에 있었고 임시로 걷었다. 화면과 라우트는 그대로 살아
+          있으므로 자리를 다시 정하면 이 자리에 `Pressable` 하나를 되돌린다. */}
       <PageHeaderTitleRow className="justify-between" fetchedAt={fetchedAt}>
         <Text className="text-lg font-semibold text-text">보스 수익</Text>
-        <View className="flex-row items-center gap-3">
+        {tab === 'weekly' && (
           <Pressable role="button" onPress={() => navigation.navigate('DropPrice')}>
             <Text className="text-sm font-medium text-text-muted">아이템 가격</Text>
           </Pressable>
-          <Pressable role="button" onPress={() => navigation.navigate('DropHistory')}>
-            <Text className="text-sm font-medium text-text-muted">히스토리</Text>
-          </Pressable>
-        </View>
+        )}
       </PageHeaderTitleRow>
     </View>
   )

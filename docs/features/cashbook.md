@@ -355,7 +355,7 @@
   [[ADR-169]] 결정 2 가 지운 탭이 쓰던 `ShoppingCartIcon`. **lucide `coins` 는 쓰면 안 된다**.
   `ProfitIcon` 과 ‘거의 같은데 다른 동전’이 된다.
 - 움직임의 값은 `components/organisms/SpeedDial/speed-dial-motion.ts` 가 가진다. **애니메이션을 띄우지
-  않고도** 계단의 방향을 검증하기 위해서다(`valuable-row-glow.ts` 와 같은 구조).
+  않고도** 계단의 방향을 검증하기 위해서다(`valuable-card-glow.ts` 와 같은 구조).
 - **종류가 통화를 정하는 방식이 셋으로 나뉜다**. ‘기타’는 **사용자가 고르고**(캐시가 사는 유일한
   자리다), ‘아이템 구매’는 언제나 메소이며(관세를 메소로 재므로 메포 칸이 없다), 목록 셋은
   **항목이 안다**(`spend-catalog.json` 의 `currency`. ‘버프’는 그 안에서도 갈린다).

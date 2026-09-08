@@ -194,12 +194,11 @@ describe('빈 상태', () => {
     expect(getByText('보스 수익')).toBeTruthy()
   })
 
-  it('빈 배열이면 빈 상태만 보인다. 진입점 둘은 두지 않는다', async () => {
+  it('빈 배열이면 빈 상태만 보인다. 진입점은 두지 않는다', async () => {
     mockStore({ trackedOcids: [] })
     const { getByText, queryByText } = await renderScreen()
 
     expect(getByText('추적 중인 캐릭터가 없습니다')).toBeTruthy()
-    expect(queryByText('히스토리')).toBeNull()
     expect(queryByText('아이템 가격')).toBeNull()
   })
 
@@ -223,26 +222,32 @@ describe('빈 상태', () => {
 })
 
 describe('제목 줄 진입점', () => {
-  it('가격이 히스토리 **왼쪽**이다. 값을 매기는 쪽이 주마다 들르는 자리다', async () => {
-    const { getByTestId } = await renderScreen()
-
-    // 둘은 같은 부모의 형제라 **렌더 순서가 곧 화면 순서**다(`flex-row`).
-    const header = JSON.stringify(getByTestId('page-header').toJSON())
-    expect(header.indexOf('아이템 가격')).toBeLessThan(header.indexOf('히스토리'))
-  })
-
-  it('히스토리·가격은 하위 페이지로 push 한다', async () => {
+  it('아이템 가격은 하위 페이지로 push 한다', async () => {
     const { getByText } = await renderScreen()
-
-    await act(async () => {
-      fireEvent.press(getByText('히스토리'))
-    })
-    expect(navigate).toHaveBeenCalledWith('DropHistory')
 
     await act(async () => {
       fireEvent.press(getByText('아이템 가격'))
     })
     expect(navigate).toHaveBeenCalledWith('DropPrice')
+  })
+
+  // 화면·라우트는 살아 있고 링크만 걷었다. 자리를 다시 정하면 되돌린다.
+  it('히스토리 링크는 없다. 임시로 걷었다', async () => {
+    const { queryByText } = await renderScreen()
+
+    expect(queryByText('히스토리')).toBeNull()
+  })
+
+  it('월간 탭에서는 아이템 가격 링크가 서지 않는다', async () => {
+    mockStore({
+      tab: 'monthly',
+      loadedTab: 'monthly',
+      periodKey: CURRENT_MONTHLY,
+      loadedPeriodKey: CURRENT_MONTHLY,
+    })
+    const { queryByText } = await renderScreen()
+
+    expect(queryByText('아이템 가격')).toBeNull()
   })
 })
 

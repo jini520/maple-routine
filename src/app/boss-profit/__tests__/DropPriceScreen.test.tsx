@@ -1,4 +1,4 @@
-// 가격 기록 화면. 이 화면이 지키는 것을 적는다.
+// 아이템 가격 입력 화면. 이 화면이 지키는 것을 적는다.
 //
 // 갈린 것 셋
 // ① **라우터가 없다**. 뒤로는 `goBack` 이 불렸는가로 본다.
@@ -121,6 +121,15 @@ beforeEach(() => {
 // 낸다(드랍 히스토리·보스 수익과 같은 사정). 공용 셸만 고치고 여기를 빠뜨리면 히스토리·가격 두
 // 하위 페이지의 제목 높이가 16px 갈리는데, 두 화면은 같은 진입점 줄에서 나란히 열린다.
 describe('DropPriceScreen: 셸', () => {
+  // 들어오는 문의 이름이 `아이템 가격` 이라 도착한 화면도 같은 말로 자기를 말한다.
+  it('제목은 `아이템 가격 입력` 이다', async () => {
+    mockStores()
+    const { getByText, queryByText } = await renderOverlay(<DropPriceScreen />)
+
+    expect(getByText('아이템 가격 입력')).toBeTruthy()
+    expect(queryByText('가격 기록')).toBeNull()
+  })
+
   it('헤더가 상단 안전영역만큼만 먹는다. 여백을 더하지 않는다', async () => {
     const { getByTestId } = await renderOverlay(<DropPriceScreen />)
 
@@ -292,9 +301,10 @@ describe('DropPriceScreen: 미입력 ≠ 0원', () => {
     const { getByText } = await renderOverlay(<DropPriceScreen />)
 
     expect(getByText('기록 안함')).toBeTruthy()
-    expect(getByText('기록 안함 1')).toBeTruthy()
-    expect(getByText('미입력 1')).toBeTruthy()
-    expect(getByText('1 / 2 정함')).toBeTruthy()
+    // 기록 안함은 **가격을 입력한 것이 아니다**. 요약의 `n건` 에서 빠진다.
+    expect(getByText('0건')).toBeTruthy()
+    // 미입력 카운트에서도 빠진다. 그 수를 말하는 자리는 이제 CTA 하나다.
+    expect(getByText('미입력 1건 이어서 입력')).toBeTruthy()
   })
 
   it('값을 매긴 행만 인원을 말한다. 미입력에 "1인" 이 서면 정해진 값처럼 읽힌다', async () => {
@@ -313,15 +323,47 @@ describe('DropPriceScreen: 미입력 ≠ 0원', () => {
     expect(queryByText(/1인$/)).toBeNull()
   })
 
-  it('다 매기면 미입력 칩 대신 한 줄 문구가 선다', async () => {
+  it('요약 오른쪽은 가격을 입력한 개수 하나다', async () => {
+    mockStores({
+      price: {
+        groups: 그룹([
+          항목({ drop: 드롭({ priceState: 'entered', priceMeso: 100, priceShare: 1 }) }),
+          항목({ id: 'second', dropIndex: 1, drop: 드롭({ itemName: '가디언 엔젤 링' }) }),
+        ]),
+      },
+    })
+    const { getByText } = await renderOverlay(<DropPriceScreen />)
+
+    expect(getByText('1건')).toBeTruthy()
+  })
+
+  // 요약 한 줄이 같은 것을 세 번 말하고 있었다. 미입력 수는 CTA 가, 건별 상태는 행의 pill 이 말한다.
+  it('가격 아래 상태 배지 줄이 없다', async () => {
+    mockStores({
+      price: {
+        groups: 그룹([
+          항목({ drop: 드롭({ priceState: 'entered', priceMeso: 100, priceShare: 1 }) }),
+          항목({ id: 'second', dropIndex: 1, drop: 드롭({ itemName: '가디언 엔젤 링' }) }),
+          항목({ id: 'third', dropIndex: 2, drop: 드롭({ itemName: '루즈 컨트롤 머신 마크', priceState: 'excluded' }) }),
+        ]),
+      },
+    })
+    const { queryByText } = await renderOverlay(<DropPriceScreen />)
+
+    expect(queryByText('입력 1')).toBeNull()
+    expect(queryByText('기록 안함 1')).toBeNull()
+    expect(queryByText('미입력 1')).toBeNull()
+  })
+
+  it('다 매겨도 그 자리에 문구를 세우지 않는다', async () => {
     mockStores({
       price: {
         groups: 그룹([항목({ drop: 드롭({ priceState: 'entered', priceMeso: 100, priceShare: 1 }) })]),
       },
     })
-    const { getByText, queryByText } = await renderOverlay(<DropPriceScreen />)
+    const { queryByText } = await renderOverlay(<DropPriceScreen />)
 
-    expect(getByText('이 주는 다 정했습니다')).toBeTruthy()
+    expect(queryByText('이 주는 다 정했습니다')).toBeNull()
     expect(queryByText(/미입력/)).toBeNull()
   })
 })
@@ -349,23 +391,6 @@ describe('DropPriceScreen: 표시 규칙 정정 (2026-08-10)', () => {
 
     expect(queryByText(/홍옥의 보스 반지 상자/)).toBeNull()
     expect(getByText('리스트레인트 링 3레벨')).toBeTruthy()
-  })
-
-  it('고가 아이템 행에는 골드 배경이 깔린다. 보스 행과 같은 표현이다', async () => {
-    const 고가 = weeklyBossesData.weekly[0].boss
-    mockStores({
-      price: { groups: 그룹([항목({ boss: 고가, drop: 드롭({ itemName: '루즈 컨트롤 머신 마크' }) })]) },
-    })
-    const { queryByTestId } = await renderOverlay(<DropPriceScreen />)
-
-    expect(queryByTestId('valuable-drop-row-tint')).toBeTruthy()
-  })
-
-  it('고가가 아닌 행에는 그 배경을 만들지 않는다', async () => {
-    mockStores({ price: { groups: 그룹([항목({ drop: 드롭({ itemName: '주문의 흔적' }) })]) } })
-    const { queryByTestId } = await renderOverlay(<DropPriceScreen />)
-
-    expect(queryByTestId('valuable-drop-row-tint')).toBeNull()
   })
 })
 
