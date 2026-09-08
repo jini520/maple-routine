@@ -7,6 +7,10 @@
  * **왜 원본 레코드를 들고 있나**. 저장이 `replaceBossDropRecords`(그룹 통째 교체)라, 한 건의
  * 가격만 고치려 해도 **같은 (ocid, boss, difficulty, periodKey) 의 나머지 드롭을 함께 넘겨야**
  * 한다. 넘기지 않으면 그 그룹의 다른 기록이 사라진다.
+ *
+ * **읽는 기간 키가 둘이다.** 월간 보스 드롭의 `period_key` 는 달이라 주간 키 조회에 안 걸린다.
+ * 보스 수익이 그 보스를 주간 탭의 그 주에 세우므로(`filterRowsForTab`) 값을 매기는 자리도 같은
+ * 주에 세운다. 어느 주인가는 `isMonthlyRowInWeek` 한 함수가 정한다.
  */
 
 import { withSqliteTimeout } from './sqlite-guards'
@@ -15,7 +19,12 @@ import { toRecordedDrop } from './rows'
 import { useBossProfitStore } from './store'
 import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
 import type { BossDropRecord } from '../../storage/boss-drops'
-import { getBossProfitRecords, getRecordedCharacterOcids } from '../../storage/boss-profit'
+import {
+  getBossProfitRecords,
+  getRecordedCharacterOcids,
+  getWeeklyPeriodKeysWithRecords,
+} from '../../storage/boss-profit'
+import { isMonthlyRowInWeek, monthOfWeek } from '../../lib/boss/monthly-boss-week'
 import { resolveDisplayProfiles } from '../character-profile/resolve'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import type { BossDifficulty } from '../../types'
@@ -123,16 +132,33 @@ export const useDropPriceStore = create<DropPriceState>((set, get) => ({
       return
     }
 
+    // 주간 키로 열었으면 그 주가 속한 달도 함께 읽는다. 그 달의 월간 보스가 이 주에 설 수 있다.
+    const monthKey = isMonthlyPeriodKey(periodKey) ? null : monthOfWeek(periodKey)
+    const periodKeys = monthKey === null ? [periodKey] : [periodKey, monthKey]
+
     try {
-      // 드롭과 수익 기록을 함께 읽는다. 후자는 **분배 인원 기본값(파티원 수)** 에만 쓴다.
-      const [dropRecords, profitRecords] = await Promise.all([
-        withSqliteTimeout(getBossDropRecords(ocids, [periodKey])),
-        withSqliteTimeout(getBossProfitRecords(ocids, [periodKey])),
+      // 드롭과 수익 기록을 함께 읽는다. 후자는 **분배 인원 기본값(파티원 수)** 과, 월간 보스가
+      // 어느 주에 서는지를 정하는 처치 여부·처치일에 쓴다.
+      const [allDropRecords, profitRecords, weeksWithRecords] = await Promise.all([
+        withSqliteTimeout(getBossDropRecords(ocids, periodKeys)),
+        withSqliteTimeout(getBossProfitRecords(ocids, periodKeys)),
+        monthKey === null
+          ? Promise.resolve<string[]>([])
+          : withSqliteTimeout(getWeeklyPeriodKeysWithRecords(ocids, monthKey)),
       ])
 
       const partySizes = new Map(
         profitRecords.map((record) => [saveGroupKey(record), record.partySize] as const),
       )
+
+      const dropRecords =
+        monthKey === null
+          ? allDropRecords
+          : allDropRecords.filter(
+              (record) =>
+                record.periodKey === periodKey ||
+                standsInWeek(record, periodKey, profitRecords, weeksWithRecords),
+            )
 
       const profiles = await resolveDisplayProfiles(dropRecords.map((record) => record.ocid))
       const characters = new Map<string, { characterName: string; imageUrl: string | null }>()
@@ -158,6 +184,37 @@ export const useDropPriceStore = create<DropPriceState>((set, get) => ({
     })
   },
 }))
+
+/** `YYYY-MM` 인가. 주간 키는 `YYYY-MM-DD` 라 길이로 갈린다(스토어가 쓰는 것과 같은 판정). */
+function isMonthlyPeriodKey(periodKey: string): boolean {
+  return periodKey.length === 'YYYY-MM'.length
+}
+
+/**
+ * 달 키로 읽힌 이 드롭이 **보고 있는 주에 서는가**.
+ *
+ * 판정은 보스 수익이 쓰는 `isMonthlyRowInWeek` 하나에 맡긴다. 여기서 규칙을 새로 쓰면 저쪽에는
+ * 보이는데 값은 못 매기는 주가 생긴다.
+ *
+ * `isComplete` 는 **그 달의 수익 기록이 있는가**다. 기록은 완료된 보스만 남으므로 그것이 곧 처치
+ * 여부이고, 아직 안 잡은 월간 보스는 이번 주에 선다.
+ */
+function standsInWeek(
+  record: BossDropRecord,
+  weeklyPeriodKey: string,
+  profitRecords: readonly { ocid: string; boss: string; difficulty: string; periodKey: string; defeatedOn?: string | null }[],
+  weeksWithRecords: readonly string[],
+): boolean {
+  const profit = profitRecords.find((candidate) => saveGroupKey(candidate) === saveGroupKey(record))
+  return isMonthlyRowInWeek({
+    weeklyPeriodKey,
+    monthlyPeriodKey: record.periodKey,
+    isComplete: profit !== undefined,
+    defeatedOn: profit?.defeatedOn ?? null,
+    weeksWithRecords,
+    now: new Date(),
+  })
+}
 
 /**
  * 한 건의 가격을 고치고 그룹 전체를 다시 쓰는 저장.

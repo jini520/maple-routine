@@ -1,5 +1,6 @@
 // 가격 기록 화면의 상태. 한 주를 놓고 값을 매기는 **쓰기** 화면이라,
 // 히스토리(읽기 전용)와 달리 저장 경로가 함께 검증돼야 한다.
+import { getCurrentBossProfitPeriod, getPeriodDateKeys } from '../../../lib/boss/boss-profit-period'
 import type { BossDropRecord } from '../../../storage/boss-drops'
 
 var mockModule0: Record<string, unknown>
@@ -15,10 +16,18 @@ const { getBossDropRecords: getBossDropRecordsMock, replaceBossDropRecords: repl
 var mockModule1: Record<string, unknown>
 jest.mock('../../../storage/boss-profit', () => {
   // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다.
-  mockModule1 = mockModule1 ?? { getBossProfitRecords: jest.fn(), getRecordedCharacterOcids: jest.fn() }
+  mockModule1 = mockModule1 ?? {
+    getBossProfitRecords: jest.fn(),
+    getRecordedCharacterOcids: jest.fn(),
+    getWeeklyPeriodKeysWithRecords: jest.fn(),
+  }
   return mockModule1
 })
-const { getBossProfitRecords: getBossProfitRecordsMock, getRecordedCharacterOcids: getRecordedCharacterOcidsMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
+const {
+  getBossProfitRecords: getBossProfitRecordsMock,
+  getRecordedCharacterOcids: getRecordedCharacterOcidsMock,
+  getWeeklyPeriodKeysWithRecords: getWeeklyPeriodKeysWithRecordsMock,
+} = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 var mockModule2: Record<string, unknown>
 jest.mock('../../../storage/character-selection', () => {
   // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다.
@@ -39,6 +48,9 @@ jest.mock('../../character-profile/resolve', () => {
 const { resolveDisplayProfiles: resolveDisplayProfilesMock } = jest.requireMock('../../character-profile/resolve') as Record<string, jest.Mock>
 
 const PERIOD = '2026-08-06'
+const MONTH = '2026-08'
+/** 그 주에 실제로 든 날. 주차 경계를 테스트가 베끼지 않게 표에서 뽑는다. */
+const 그주의날 = getPeriodDateKeys('weekly', PERIOD)[2]
 
 function record(overrides: Partial<BossDropRecord> = {}): BossDropRecord {
   return {
@@ -66,6 +78,7 @@ beforeEach(async () => {
   getBossDropRecordsMock.mockReset().mockResolvedValue([record()])
   replaceBossDropRecordsMock.mockReset().mockResolvedValue(undefined)
   getBossProfitRecordsMock.mockReset().mockResolvedValue([])
+  getWeeklyPeriodKeysWithRecordsMock.mockReset().mockResolvedValue([])
   getTrackedCharacterOcidsMock.mockReset().mockResolvedValue(['ocid-1'])
   getRecordedCharacterOcidsMock.mockReset().mockResolvedValue([])
   resolveDisplayProfilesMock
@@ -88,7 +101,8 @@ describe('load', () => {
 
     const { status, groups } = useDropPriceStore.getState()
     expect(status).toBe('ready')
-    expect(getBossDropRecordsMock).toHaveBeenCalledWith(['ocid-1'], [PERIOD])
+    // 그 주가 속한 달도 함께 읽는다. 그 달의 월간 보스가 이 주에 설 수 있다.
+    expect(getBossDropRecordsMock).toHaveBeenCalledWith(['ocid-1'], [PERIOD, MONTH])
     expect(groups).toHaveLength(1)
     expect(groups[0].characterName).toBe('지내우시')
     expect(groups[0].entries[0].boss).toBe('스우')
@@ -101,7 +115,7 @@ describe('load', () => {
 
     await useDropPriceStore.getState().load(PERIOD)
 
-    expect(getBossDropRecordsMock).toHaveBeenCalledWith(['ocid-1', 'ocid-해제'], [PERIOD])
+    expect(getBossDropRecordsMock).toHaveBeenCalledWith(['ocid-1', 'ocid-해제'], [PERIOD, MONTH])
   })
 
   it('분배 인원 기본값은 그 행의 파티원 수다. 기록이 없으면 1인', async () => {
@@ -131,6 +145,80 @@ describe('load', () => {
     await useDropPriceStore.getState().load(PERIOD)
 
     expect(useDropPriceStore.getState().status).toBe('failed')
+  })
+})
+
+// 월간 보스(검은마법사) 드롭의 `period_key` 는 **달**이라 주간 키 조회에 안 걸린다. 보스 수익은
+// 이미 그 보스를 주간 탭의 그 주에 세우므로(`filterRowsForTab`), 값을 매기는 자리도 같은 주에
+// 세워야 한다. 안 그러면 그 드롭에 닿을 길이 앱 안에 없다.
+describe('load: 그 주에 서는 월간 보스', () => {
+  const 월간드롭 = (overrides: Partial<BossDropRecord> = {}): BossDropRecord =>
+    record({ boss: '검은 마법사', difficulty: '하드', periodKey: MONTH, ...overrides })
+
+  const 월간수익기록 = (defeatedOn: string | null) => ({
+    ocid: 'ocid-1',
+    boss: '검은 마법사',
+    difficulty: '하드',
+    periodKey: MONTH,
+    cycle: 'monthly' as const,
+    partySize: 1,
+    payoutMeso: 0,
+    defeatedOn,
+  })
+
+  it('주간 키로 열면 그 주가 속한 달의 키도 함께 읽는다', async () => {
+    const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
+
+    await useDropPriceStore.getState().load(PERIOD)
+
+    expect(getBossDropRecordsMock).toHaveBeenCalledWith(['ocid-1'], [PERIOD, MONTH])
+  })
+
+  it('그 주에 잡은 월간 보스의 드롭이 목록에 든다', async () => {
+    getBossDropRecordsMock.mockResolvedValue([월간드롭()])
+    getBossProfitRecordsMock.mockResolvedValue([월간수익기록(그주의날)])
+    const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
+
+    await useDropPriceStore.getState().load(PERIOD)
+
+    const entries = useDropPriceStore.getState().groups.flatMap((group) => group.entries)
+    expect(entries.map((entry) => entry.boss)).toEqual(['검은 마법사'])
+    expect(entries[0].periodKey).toBe(MONTH)
+  })
+
+  // 한 달에 한 주에만 선다. 안 거르면 같은 드롭이 그 달 네댓 주에 모두 뜬다.
+  it('다른 주에 잡은 월간 보스의 드롭은 안 든다', async () => {
+    const 다른주의날 = getPeriodDateKeys('weekly', '2026-08-20')[2]
+    getBossDropRecordsMock.mockResolvedValue([월간드롭()])
+    getBossProfitRecordsMock.mockResolvedValue([월간수익기록(다른주의날)])
+    const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
+
+    await useDropPriceStore.getState().load(PERIOD)
+
+    expect(useDropPriceStore.getState().groups).toEqual([])
+  })
+
+  // 값은 매길 수 있고 돈으로는 안 센다. 둘이 어긋나지 않는다.
+  it('아직 안 잡은 월간 보스의 드롭은 이번 주에 선다', async () => {
+    const 이번주 = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
+    const 이번달 = 이번주.slice(0, 7)
+    getBossDropRecordsMock.mockResolvedValue([월간드롭({ periodKey: 이번달 })])
+    getBossProfitRecordsMock.mockResolvedValue([])
+    const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
+
+    await useDropPriceStore.getState().load(이번주)
+
+    expect(useDropPriceStore.getState().groups.flatMap((group) => group.entries)).toHaveLength(1)
+  })
+
+  it('달 키로 열면 그 달 하나만 읽는다. 주기를 이어받는 길은 그대로다', async () => {
+    getBossDropRecordsMock.mockResolvedValue([월간드롭()])
+    const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
+
+    await useDropPriceStore.getState().load(MONTH)
+
+    expect(getBossDropRecordsMock).toHaveBeenCalledWith(['ocid-1'], [MONTH])
+    expect(useDropPriceStore.getState().groups.flatMap((group) => group.entries)).toHaveLength(1)
   })
 })
 
