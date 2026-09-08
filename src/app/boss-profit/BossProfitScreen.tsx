@@ -45,7 +45,6 @@ import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { ValuableDropBadge } from '../../components/molecules/ValuableDropBadge/ValuableDropBadge'
-import { DataFreshness } from '../../components/molecules/DataFreshness/DataFreshness'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
@@ -254,23 +253,17 @@ export function BossProfitScreen(): React.JSX.Element {
         {/* 히스토리 진입점은 탭 줄이 아니라 제목 줄 우측이고 아이콘이 아니라 글자다. 진입점
             둘은 같은 어휘를 쓰고 `아이템 가격`(쓰기)이 `히스토리`(읽기) 왼쪽이다. 값을 매기는
             쪽이 주마다 들르는 자리다. */}
-        {/* 제목과 갱신 시각이 **한 덩어리**다. 따로 넣으면 이 헤더의 `gap-4` 가 둘 사이에
-            들어가 제목에 딸린 글씨로 안 읽힌다. 여기에 `gap-*` 을 안 주는 것은
-            `PageHeaderTitleRow` 의 `min-h-8` 이 제목 아래에 이미 여백을 남기기 때문이다. */}
-        <View>
-          <PageHeaderTitleRow className="justify-between">
-            <Text className="text-lg font-semibold text-text">보스 수익</Text>
-            <View className="flex-row items-center gap-3">
-              <Pressable role="button" onPress={() => navigation.navigate('DropPrice')}>
-                <Text className="text-sm font-medium text-text-muted">아이템 가격</Text>
-              </Pressable>
-              <Pressable role="button" onPress={() => navigation.navigate('DropHistory')}>
-                <Text className="text-sm font-medium text-text-muted">히스토리</Text>
-              </Pressable>
-            </View>
-          </PageHeaderTitleRow>
-          <DataFreshness fetchedAt={fetchedAt} />
-        </View>
+        <PageHeaderTitleRow className="justify-between" fetchedAt={fetchedAt}>
+          <Text className="text-lg font-semibold text-text">보스 수익</Text>
+          <View className="flex-row items-center gap-3">
+            <Pressable role="button" onPress={() => navigation.navigate('DropPrice')}>
+              <Text className="text-sm font-medium text-text-muted">아이템 가격</Text>
+            </Pressable>
+            <Pressable role="button" onPress={() => navigation.navigate('DropHistory')}>
+              <Text className="text-sm font-medium text-text-muted">히스토리</Text>
+            </Pressable>
+          </View>
+        </PageHeaderTitleRow>
 
         <View className="flex-row items-center gap-4">
           <Pressable role="button" aria-selected={tab === 'weekly'} onPress={() => setTab('weekly')}>

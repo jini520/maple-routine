@@ -6,6 +6,10 @@
  * 헤더 여백과 `safe-area-fade.ts` 의 페이드 길이가 같은 값을 본다.
  *
  * 경계 페이드와 상수 여백은 두지 않는다. 헤더가 함께 스크롤돼 덮어 줄 경계가 없다.
+ *
+ * 갱신 시각 줄은 이 셸의 몫이 아니다. `PageHeaderTitleRow` 가 제목 바로 아래에 그린다. 여기서
+ * 바닥에 비우면 총 높이만 맞고 그 사이 내용이 16 위로 끌려 올라가고, 이 셸을 안 쓰는 헤더는
+ * 그 자리를 아예 못 받는다.
  */
 import { View } from 'react-native'
 
@@ -19,22 +23,7 @@ export interface PageHeaderProps {
    * `children` 에 섞으면 `gap-4` 흐름 자식이 되어 위치가 달라진다.
    */
   below?: React.ReactNode
-  /**
-   * 갱신 시각 줄을 화면이 **자기 자리에** 그리는가. 안 적으면 거짓.
-   *
-   * 거짓이면 이 셸이 그 줄 높이(16)만큼을 바닥에 비워 둔다. 그래야 탭을 오갈 때 제목이 안 뛴다.
-   * 그 줄을 가진 화면은 제목 바로 밑에 그리므로 여기서 또 비우면 32 가 된다.
-   */
-  ownsFreshnessLine?: boolean
 }
-
-/**
- * `DataFreshness` 한 줄의 높이. `text-11` 의 줄 높이와 **같은 값이어야 한다**.
- *
- * 클래스 문자열에는 보간을 못 하므로(NativeWind 는 빌드 때 읽는다) 같은 수를 두 곳에 적는다.
- * 갈리면 갱신 시각이 있는 헤더와 없는 헤더의 높이가 어긋난다.
- */
-const FRESHNESS_LINE_HEIGHT_CLASS = 'h-4'
 
 export function PageHeader(props: PageHeaderProps): React.JSX.Element {
   const topSafeAreaPx = useTopSafeAreaPx()
@@ -43,11 +32,6 @@ export function PageHeader(props: PageHeaderProps): React.JSX.Element {
     <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: topSafeAreaPx }}>
 
       <View className="gap-4">{props.children}</View>
-
-      {/* 갱신 시각 줄이 없는 화면의 몫. 바깥 상자에 `gap` 이 없어 위 블록에 딱 붙는다. */}
-      {props.ownsFreshnessLine === true ? null : (
-        <View testID="page-header-freshness-reserve" className={FRESHNESS_LINE_HEIGHT_CLASS} />
-      )}
 
       {props.below}
     </View>

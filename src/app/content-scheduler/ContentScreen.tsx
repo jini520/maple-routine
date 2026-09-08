@@ -27,7 +27,6 @@ import { dailyContentProgress, weeklyContentProgress } from './content-completio
 import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
-import { DataFreshness } from '../../components/molecules/DataFreshness/DataFreshness'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -201,19 +200,13 @@ export function ContentScreen(): React.JSX.Element {
         onRefresh={() => refresh(trackedOcids ?? [])}
         header={
           // 제목~탭도 목록과 함께 스크롤된다. 헤더는 `ScreenScroll` 의 첫 자식이다.
-          <PageHeader ownsFreshnessLine>
+          <PageHeader>
             {/* 동기화 상태가 드롭다운 줄에서 **제목 옆**으로 올라왔다. 오른쪽
                 끝은 관리 버튼 자리 그대로다. 그쪽은 **가는 곳**, 이쪽은 **상태** 라 성질이 다르다. */}
-            {/* 제목과 갱신 시각이 **한 덩어리**다. 따로 넣으면 `PageHeader` 의 `gap-4` 가
-                둘 사이에 들어가 제목에 딸린 글씨로 안 읽힌다. 여기에 `gap-*` 을 안 주는 것은
-                `PageHeaderTitleRow` 의 `min-h-8` 이 제목 아래에 이미 여백을 남기기 때문이다. */}
-            <View>
-              <PageHeaderTitleRow className="justify-between">
-                <Text className="shrink text-lg font-semibold text-text">컨텐츠 스케줄러</Text>
-                {manualManageButton}
-              </PageHeaderTitleRow>
-              <DataFreshness fetchedAt={fetchedAt} />
-            </View>
+            <PageHeaderTitleRow className="justify-between" fetchedAt={fetchedAt}>
+              <Text className="shrink text-lg font-semibold text-text">컨텐츠 스케줄러</Text>
+              {manualManageButton}
+            </PageHeaderTitleRow>
 
             {/* 조건이 **줄 밖**에 있다. 안에 두면 캐릭터가 없는 동안(첫 조회) 빈 줄이 남아
                 `PageHeader` 의 `gap-4` 를 두 번 먹는다(딸림 변경). */}

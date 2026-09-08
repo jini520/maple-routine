@@ -54,17 +54,21 @@ export function SettingsPrivacyScreen(): React.JSX.Element {
       {/* 상단 여백은 없다. 바깥 상자가 안전영역만큼 내려온 자리에서 곧바로 시작한다. 그
           안전영역은 인셋이 아니라 `useTopSafeAreaPx()` 다. 헤더를 쓰는 화면들과 같은 값이어야
           하위 페이지를 오갈 때 제목이 안 튄다. */}
-      <PageHeaderTitleRow className="gap-2 px-4 pb-2">
-        <Pressable
-          role="button"
-          aria-label="뒤로"
-          onPress={() => navigation.goBack()}
-          className="-ml-1 p-1"
-        >
-          <ArrowLeftIcon className="h-5 w-5 text-text-muted" strokeWidth={2} aria-hidden />
-        </Pressable>
-        <Text className="text-lg font-semibold text-text">개인정보 처리방침</Text>
-      </PageHeaderTitleRow>
+      {/* 좌우 여백과 아래 여백은 덩어리 **밖**이다. 안쪽 제목 줄에 주면 그 아래 갱신 시각
+          줄만 여백 없이 화면 끝에 붙는다. */}
+      <View className="px-4 pb-2">
+        <PageHeaderTitleRow className="gap-2">
+          <Pressable
+            role="button"
+            aria-label="뒤로"
+            onPress={() => navigation.goBack()}
+            className="-ml-1 p-1"
+          >
+            <ArrowLeftIcon className="h-5 w-5 text-text-muted" strokeWidth={2} aria-hidden />
+          </Pressable>
+          <Text className="text-lg font-semibold text-text">개인정보 처리방침</Text>
+        </PageHeaderTitleRow>
+      </View>
 
       <View className="flex-1">
         {status === 'failed' ? (

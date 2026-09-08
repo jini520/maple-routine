@@ -91,3 +91,21 @@ describe('제목 줄은 프리미티브 하나로 그린다', () => {
     expect(mismatched).toEqual([])
   })
 })
+
+// 갱신 시각 줄의 **자리**를 화면이 고르면 화면마다 다른 자리를 고른다. 실제로 그랬다.
+// 예비 칸이 `PageHeader` 바닥에 있어 총 높이만 맞고 그 사이 내용이 16 위로 끌려 올라갔고,
+// 셸을 안 쓰는 헤더 넷과 빈 상태 가지 셋은 그 자리를 아예 못 받았다. 이제 프리미티브가 그린다.
+describe('갱신 시각 줄은 제목 줄 프리미티브가 그린다', () => {
+  it('화면이 `DataFreshness` 를 직접 그리지 않는다', () => {
+    const offenders = files.filter((file) => file.source.includes('<DataFreshness')).map((f) => f.name)
+
+    expect(offenders).toEqual([])
+  })
+
+  // 프롭이 걷혔다. 남아 있으면 그 화면만 줄을 두 번 그리거나 타입이 깨진다.
+  it('`ownsFreshnessLine` 을 아무도 안 쓴다', () => {
+    const offenders = files.filter((file) => file.source.includes('ownsFreshnessLine')).map((f) => f.name)
+
+    expect(offenders).toEqual([])
+  })
+})

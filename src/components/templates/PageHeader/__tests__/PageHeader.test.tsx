@@ -63,7 +63,7 @@ describe('PageHeader', () => {
   // 지금 구조에서는 헤더가 흐름 안에 있어 맞출 대상이 없다. 그 사실을 **자식 수**로 고정한다.
   // spacer 를 넣으면 여기가 빨개진다.
   it('spacer 를 두지 않는다. 헤더가 흐름 안에 있어 맞출 대상이 없다', async () => {
-    const { toJSON } = await renderOverlay(<PageHeader ownsFreshnessLine>{내용}</PageHeader>)
+    const { toJSON } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
 
     const header = findByTestID(toJSON(), 'page-header')
     // 내용 래퍼 **하나**뿐이다(배경 조각은 이 테마에서 안 나오고, 경계 페이드는 걷어냈다).
@@ -71,16 +71,10 @@ describe('PageHeader', () => {
     expect(header?.children).toHaveLength(1)
   })
 
-  // 갱신 시각 줄이 있는 헤더와 없는 헤더의 높이를 맞춘다. 안 맞추면 탭을 오갈 때 제목이 뛴다.
-  it('그 줄을 안 그리는 화면에는 같은 높이를 바닥에 비운다', async () => {
-    const { getByTestId } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
-
-    expect(getByTestId('page-header-freshness-reserve')).toBeTruthy()
-  })
-
-  // 제목 바로 밑에 자기가 그리는 화면. 여기서 또 비우면 32 가 된다.
-  it('화면이 그 줄을 그리면 안 비운다', async () => {
-    const { queryByTestId } = await renderOverlay(<PageHeader ownsFreshnessLine>{내용}</PageHeader>)
+  // 갱신 시각 줄의 자리는 `PageHeaderTitleRow` 가 갖는다. 여기서 바닥에 비우면 총 높이만 맞고
+  // 그 사이 내용이 16 위로 끌려 올라간다. 되살리지 말 것.
+  it('갱신 시각 자리를 바닥에 비우지 않는다', async () => {
+    const { queryByTestId } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
 
     expect(queryByTestId('page-header-freshness-reserve')).toBeNull()
   })
