@@ -107,7 +107,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
           value={name}
           onChangeText={setName}
           placeholder="아이템 명"
-          className="flex-1 text-right text-sm text-text"
+          className="h-5 flex-1 text-right text-sm text-text"
         />
       </FieldRow>
 

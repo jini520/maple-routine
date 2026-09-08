@@ -461,7 +461,7 @@ export function HuntCalculatorForm(
                   onChangeText={(text) => setMesoRateText(text.replace(/[^\d]/g, ''))}
                   keyboardType="number-pad"
                   placeholder="0"
-                  className="flex-1 text-right text-sm font-semibold text-text"
+                  className="h-5 flex-1 text-right text-sm font-semibold text-text"
                   style={TABULAR_NUMS}
                 />
                 <Text className="ml-1.5 shrink-0 text-xs text-text-muted">%</Text>

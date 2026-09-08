@@ -83,7 +83,7 @@ export function EtcForm(
           value={name}
           onChangeText={setName}
           placeholder="내용"
-          className="flex-1 text-right text-sm text-text"
+          className="h-5 flex-1 text-right text-sm text-text"
         />
       </FieldRow>
 
@@ -137,7 +137,7 @@ export function EtcForm(
               onChangeText={setRateText}
               keyboardType="number-pad"
               placeholder="메소마켓 시세"
-              className={`flex-1 text-right text-sm font-semibold ${
+              className={`h-5 flex-1 text-right text-sm font-semibold ${
                 rate !== null ? 'text-text' : 'text-error-ink'
               }`}
               style={TABULAR_NUMS}
