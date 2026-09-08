@@ -118,7 +118,7 @@ export function AmountInput(props: {
       onBlur={() => props.onChange(settleMesoText(props.value))}
       keyboardType="number-pad"
       placeholder="0"
-      className="flex-1 text-right text-sm font-semibold text-text"
+      className="h-5 flex-1 text-right text-sm font-semibold text-text"
       style={TABULAR_NUMS}
     />
   )

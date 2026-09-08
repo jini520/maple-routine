@@ -186,7 +186,7 @@ export function RateRow(props: {
         onChangeText={props.onChange}
         keyboardType="number-pad"
         placeholder="메소마켓 시세"
-        className={`flex-1 text-right text-sm font-semibold ${
+        className={`h-5 flex-1 text-right text-sm font-semibold ${
           props.valid ? 'text-text' : 'text-error-ink'
         }`}
         style={TABULAR_NUMS}

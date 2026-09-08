@@ -881,9 +881,12 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
   아니라 힌트**라서다. **`className`(`placeholder:…`)으로 쓰지 말 것**. 그 변형은 native 프리셋에서만
   `placeholderTextColor` 로 컴파일된다(jest 도 이제 native 프리셋으로 돈다 — [[ADR-179]] 정정 1)
   (앱에서는 되고 테스트로는 못 보는 자리가 된다).
-- **글자를 치는 줄에는 최소 높이를 준다**(`min-h-7`). iOS 는 칸이 **내용의 글자 종류대로** 자기 키를
-  잰다(한글 20 · 영문 14). 줄을 안 못 박으면 타건마다 줄이, 시트가 크는 구조에서는 **시트 전체가**
+- **치는 칸은 자기 높이를 갖는다**([[ADR-239]]). iOS 는 칸이 **내용의 글자 종류대로** 자기 키를
+  잰다(한글 20 · 영문 14). 안 못 박으면 타건마다 칸이, 시트가 크는 구조에서는 **시트 전체가**
   들썩인다. `leading-*` 로는 안 잡힌다. iOS 는 `lineHeight` 를 측정에 안 쓴다(실측).
+  값은 그 칸의 **줄 높이와 같은 수**다(`text-sm` 칸은 `h-5`). 패딩을 지는 칸은 세로 패딩을 걷고
+  그만큼을 높이에 넣는다. 줄에 거는 `min-h-*` 는 **바닥**이라 자라는 것을 못 막는다.
+  `src/__tests__/text-input-height-policy.test.ts` 가 칸마다 높이가 있는지 검사한다.
 - **키보드 배선은 넷이 한 벌이다**(`BottomSheet` 조직체가 쥔다). 초점 채우기 ·
   `android_keyboardInputMode="adjustPan"` · `keyboardBlurBehavior="restore"` ·
   **키보드가 뜨면 아래 인셋을 걷기**(홈 인디케이터 몫은 키보드가 이미 덮고 있어 빈 띠가 된다).

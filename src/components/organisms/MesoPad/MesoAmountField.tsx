@@ -89,7 +89,7 @@ export function MesoAmountField(props: {
             placeholder="0"
             // `flex-1 text-right` 로 **오른쪽 끝을 글자판과 같은 자리에** 둔다. RN 의 `TextInput`
             // 은 내용에 맞춰 줄지 않아, 안 주면 폭이 제멋대로가 되고 단위(`메소`)가 밀린다.
-            className={`flex-1 text-right ${amountClass}`}
+            className={`h-[38px] flex-1 text-right ${amountClass}`}
             style={TABULAR_NUMS}
           />
         ) : (

@@ -138,7 +138,7 @@ export function ItemSplitScreen(): React.JSX.Element {
             onChangeText={(text) => setSalePriceMeso(parseMesoInput(text))}
             keyboardType="number-pad"
             placeholder="0"
-            className="rounded-[10px] border border-border bg-surface-2 px-3 py-2 text-right text-2xl font-bold text-text"
+            className="h-12 rounded-[10px] border border-border bg-surface-2 px-3 text-right text-2xl font-bold text-text"
             style={TABULAR_NUMS}
           />
           {/* 치는 동안 자릿수를 눈으로 세지 않게 한다. 확정 금액의 `toLocaleString()` 과

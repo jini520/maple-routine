@@ -66,7 +66,7 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
             autoCapitalize="none"
             autoCorrect={false}
             spellCheck={false}
-            className="w-full rounded-[10px] border border-border bg-surface px-4 py-3 pr-11 text-text"
+            className="h-12 w-full rounded-[10px] border border-border bg-surface px-4 pr-11 text-base text-text"
           />
           <Pressable
             role="button"
