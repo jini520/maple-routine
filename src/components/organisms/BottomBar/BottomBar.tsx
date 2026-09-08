@@ -35,6 +35,9 @@ import {
   WrenchIcon,
 } from '../../atoms'
 import { useKeyboardShown } from '../../../hooks/useKeyboardShown'
+import { tapFeedback } from '../../../native/haptics'
+import { scrollPageToTop } from '../../../navigation/scroll-to-top'
+import { isSecondTap, type TapRecord } from './double-tap'
 import { BAR_LIFT, resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
 import { useBottomSafeAreaPx } from '../../../lib/safe-area'
 import { useThemeAppearance } from '../../../theme/context'
@@ -494,6 +497,39 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
     applyRef.current = apply
   })
 
+  /** 마지막 누름. 짝을 이루거나 이동이 일어나면 비운다. */
+  const lastTap = useRef<TapRecord | null>(null)
+
+  /**
+   * 항목 하나를 눌렀을 때.
+   *
+   * 활성 항목은 갈 곳이 없다(`pressGroup`·`pressSub` 가 `none` 을 낸다). 그 빈 자리가 **두 번
+   * 두드렸는가** 를 묻는 자리이고, 손끝은 화면이 실제로 바뀔 때만 답한다.
+   */
+  const pressItem = useCallback(
+    (key: string, active: boolean, toIntent: (bar: BarState) => BarIntent) => {
+      if (active) {
+        const now = Date.now()
+        if (isSecondTap(lastTap.current, key, now)) {
+          // 짝을 이뤘으면 지운다. 안 지우면 빠르게 세 번 두드릴 때 2·3 번째가 또 한 쌍이 된다.
+          lastTap.current = null
+          scrollPageToTop(barRef.current.page)
+          return
+        }
+
+        lastTap.current = { key, at: now }
+        return
+      }
+
+      // 이동한 누름은 짝의 앞이 될 수 없다. 남겨 두면 유틸리티에서 today 로 건너온 직후 today 를
+      // 한 번 누르는 것이 더블 터치가 된다.
+      lastTap.current = null
+      tapFeedback()
+      applyRef.current(toIntent(barRef.current))
+    },
+    [],
+  )
+
   if (isKeyboardShown) return null
 
   return (
@@ -629,7 +665,7 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
               height={pillHeight}
               testID={`bar-group-${item.key}`}
               onPress={() => {
-                applyRef.current(pressGroup(barRef.current, item.key))
+                pressItem(item.key, item.active, (bar) => pressGroup(bar, item.key))
               }}
             />
           ))}
@@ -662,7 +698,7 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
               height={pillHeight}
               testID={`bar-sub-${item.key}`}
               onPress={() => {
-                applyRef.current(pressSub(barRef.current, item.key))
+                pressItem(item.key, item.active, (bar) => pressSub(bar, item.key))
               }}
             />
           ))}
@@ -735,6 +771,10 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
           accessibilityLabel="뒤로 가기"
           disabled={!hasBack}
           onPress={() => {
+            // ← 도 화면이 바뀌는 이동이라 항목 누름과 **같은 값**으로 답한다. 뒤로 가기라고
+            // 다른 촉감을 주면 바 안에서 두 가지 언어가 생긴다. 짝의 기록도 함께 비운다.
+            lastTap.current = null
+            tapFeedback()
             applyRef.current(pressBack(barRef.current))
           }}
           // 누르는 자리는 **한 칸 전체**로 남긴다. 메뉴 항목과 같은 크기의 과녁이라야 손이 같은

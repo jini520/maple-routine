@@ -80,6 +80,21 @@ export interface SystemBarsPort {
   refreshSafeAreaInsets(): Promise<void>
 }
 
+/**
+ * 손끝에 내는 짧은 두드림 하나.
+ *
+ * 부르는 쪽이 아는 것은 **가벼운 두드림**이고, 그것을 어느 API 로 내는지는 어댑터가 든다.
+ * 두 플랫폼이 서로 다른 자리를 쓰는데(안드로이드의 `impactAsync` 는 `Vibrator` 로 흉내 낸
+ * 것이라 시스템 촉각 설정을 무시한다) 그 갈림이 호출부로 새어 나오면 화면마다 다시 갈린다.
+ *
+ * 세기를 고르는 인자가 없다. 지금 두드리는 자리가 탭 이동 하나뿐이라, 고를 수 있게 두면
+ * 자리마다 다른 세기가 붙어 앱 전체의 촉감이 갈린다. 필요해지는 날 추가한다.
+ */
+export interface HapticsPort {
+  /** 가벼운 두드림 한 번. 진동 장치가 없거나 시스템이 껐으면 거절한다(호출부가 삼킨다). */
+  tap(): Promise<void>
+}
+
 export interface KeyboardPort {
   /** 키보드 표시 여부 구독. 해제 함수를 돌려준다. 키보드가 없는 환경이면 no-op 해제 함수. */
   addVisibilityListener(onChange: (visible: boolean) => void): Promise<() => void>
@@ -271,6 +286,7 @@ const adsSlot = createPortSlot<AdsPort>('AdsPort')
 const splashScreenSlot = createPortSlot<SplashScreenPort>('SplashScreenPort')
 const statusBarSlot = createPortSlot<StatusBarPort>('StatusBarPort')
 const systemBarsSlot = createPortSlot<SystemBarsPort>('SystemBarsPort')
+const hapticsSlot = createPortSlot<HapticsPort>('HapticsPort')
 const keyboardSlot = createPortSlot<KeyboardPort>('KeyboardPort')
 const notificationsSlot = createPortSlot<NotificationsPort>('NotificationsPort')
 const pushSlot = createPortSlot<PushPort>('PushPort')
@@ -294,6 +310,9 @@ export const getStatusBarPort = statusBarSlot.get
 
 export const setSystemBarsPort = systemBarsSlot.set
 export const getSystemBarsPort = systemBarsSlot.get
+
+export const setHapticsPort = hapticsSlot.set
+export const getHapticsPort = hapticsSlot.get
 
 export const setKeyboardPort = keyboardSlot.set
 export const getKeyboardPort = keyboardSlot.get
@@ -319,6 +338,7 @@ export function __resetNativePortsForTest(): void {
     splashScreenSlot,
     statusBarSlot,
     systemBarsSlot,
+    hapticsSlot,
     keyboardSlot,
     notificationsSlot,
     pushSlot,

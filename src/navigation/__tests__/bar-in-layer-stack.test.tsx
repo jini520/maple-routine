@@ -17,6 +17,8 @@ import type { ThemeDefinition, ThemeName } from '../../types/theme'
 import { BAR_MAX_WIDTH, resolveBottomBarMetrics } from '../../lib/bottom-bar-metrics'
 import { __resetThemeAppearanceForTest, setThemeAppearance } from '../../theme/appearance-store'
 import { resetBarStoreForTests } from '../../components/organisms/BottomBar/bar-store'
+import { setHapticsPort } from '../../native/ports'
+import { __resetScrollToTopForTest, registerScrollToTop } from '../scroll-to-top'
 import { NavigationHarness } from './harness'
 import { installMemoryPreferences } from './memory-preferences'
 
@@ -36,6 +38,7 @@ const isLiquidGlassAvailableMock = isLiquidGlassAvailable as jest.MockedFunction
 beforeEach(() => {
   installMemoryPreferences()
   resetBarStoreForTests()
+  __resetScrollToTopForTest()
   isLiquidGlassAvailableMock.mockReturnValue(true)
   useAppEntryStore.setState({ stage: 'ready' })
 })
@@ -379,5 +382,124 @@ describe('재질이 없는 쪽은 흉내 내지 않는다', () => {
 
     expect(screen.getByTestId('bar-glass')).toBeTruthy()
     expect(bar.backgroundColor).toBe('transparent')
+  })
+})
+// 활성 탭을 두 번 두드리면 그 화면이 맨 위로 간다.
+//
+// 창 판정 자체는 `double-tap.test.ts` 가 순수 함수로 고정한다. 여기서 물을 것은 **그 판정이
+// 실제 과녁에 닿는가** 다. 바가 부르는 이름이 지금 페이지와 같은가, 짝을 이룬 뒤 기록을
+// 지우는가.
+describe('활성 탭 더블 터치가 최상단으로 되돌린다', () => {
+  it('그룹 행. 두 번 두드리면 그 화면이 맨 위로 간다', async () => {
+    await render(<NavigationHarness />)
+    // 화면 셸이 이미 등록해 둔 자리를 덮는다. 나중 등록이 이기므로 이것이 과녁이 된다.
+    const 최상단으로 = jest.fn()
+    registerScrollToTop('Today', 최상단으로)
+
+    await press('bar-group-today')
+    await press('bar-group-today')
+
+    expect(최상단으로).toHaveBeenCalledTimes(1)
+  })
+
+  it('하위 행. 지금 보는 하위의 이름으로 부른다', async () => {
+    await render(<NavigationHarness />)
+    await press('bar-group-schedule')
+    const content = jest.fn()
+    const today = jest.fn()
+    registerScrollToTop('Content', content)
+    registerScrollToTop('Today', today)
+
+    await press('bar-sub-Content')
+    await press('bar-sub-Content')
+
+    expect(content).toHaveBeenCalledTimes(1)
+    expect(today).not.toHaveBeenCalled()
+  })
+
+  it('한 번만 누르면 아무 일도 안 난다', async () => {
+    await render(<NavigationHarness />)
+    const 최상단으로 = jest.fn()
+    registerScrollToTop('Today', 최상단으로)
+
+    await press('bar-group-today')
+
+    expect(최상단으로).not.toHaveBeenCalled()
+  })
+
+  // 짝을 이룬 뒤 기록을 안 지우면 2·3 번째가 또 한 쌍이 되어 두 번 돈다.
+  it('세 번 두드려도 한 번만 돈다. 셋째는 다시 첫 누름이다', async () => {
+    await render(<NavigationHarness />)
+    const 최상단으로 = jest.fn()
+    registerScrollToTop('Today', 최상단으로)
+
+    await press('bar-group-today')
+    await press('bar-group-today')
+    await press('bar-group-today')
+
+    expect(최상단으로).toHaveBeenCalledTimes(1)
+  })
+
+  // 이동이 일어난 누름은 짝의 앞이 될 수 없다. 안 그러면 유틸리티에서 today 로 온 직후
+  // today 를 한 번 누르는 것이 더블 터치가 된다.
+  it('다른 탭에서 건너온 직후의 한 번 누름은 짝이 아니다', async () => {
+    await render(<NavigationHarness />)
+    const 최상단으로 = jest.fn()
+    registerScrollToTop('Utility', 최상단으로)
+
+    await press('bar-group-utility')
+    await press('bar-group-utility')
+
+    expect(최상단으로).not.toHaveBeenCalled()
+  })
+})
+
+// 손끝이 말하는 것은 **화면이 바뀌었다** 하나다. 안 바뀌는 누름에 주면 신호가 거짓이 된다.
+describe('탭 이동에만 햅틱이 난다', () => {
+  const tap = jest.fn(async () => undefined)
+
+  beforeEach(() => {
+    tap.mockClear()
+    setHapticsPort({ tap })
+  })
+
+  it('비활성 탭을 누르면 한 번 난다', async () => {
+    await render(<NavigationHarness />)
+
+    await press('bar-group-schedule')
+
+    expect(tap).toHaveBeenCalledTimes(1)
+  })
+
+  it('하위 사이의 옆걸음도 이동이다', async () => {
+    await render(<NavigationHarness />)
+    await press('bar-group-ledger')
+    tap.mockClear()
+
+    await press('bar-sub-Cashbook')
+
+    expect(tap).toHaveBeenCalledTimes(1)
+  })
+
+  it('활성 탭 재누름과 최상단 이동에는 안 난다', async () => {
+    await render(<NavigationHarness />)
+    registerScrollToTop('Today', jest.fn())
+
+    await press('bar-group-today')
+    await press('bar-group-today')
+
+    expect(tap).not.toHaveBeenCalled()
+  })
+
+  // 가르는 기준은 탭인가 가 아니라 **화면이 바뀌는가** 다. ← 도 한 단 올라가는 이동이다.
+  it('← 도 이동이라 난다', async () => {
+    await render(<NavigationHarness />)
+    await press('bar-group-schedule')
+    tap.mockClear()
+
+    await press('bar-back')
+
+    expect(screen.getByTestId('screen-Today')).toBeTruthy()
+    expect(tap).toHaveBeenCalledTimes(1)
   })
 })

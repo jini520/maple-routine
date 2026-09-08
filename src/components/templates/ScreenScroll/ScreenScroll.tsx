@@ -21,8 +21,10 @@ import type { ScrollView as ScrollViewType } from 'react-native'
 import { resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
 import { resolvePullIndicatorOffset } from './pull-indicator-offset'
 import { resolveScreenBottomInset } from './bottom-inset'
+import { useCallback, useRef } from 'react'
 import { usePullRefresh } from '../../../hooks/usePullRefresh'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useScrollToTopTarget } from '../../../hooks/useScrollToTop'
 import { useScrollIndicatorStyle } from '../../../theme/context'
 import { useThemeAppearance } from '../../../theme/context'
 
@@ -139,6 +141,18 @@ export function ScreenScroll({
 }: ScreenScrollProps): React.JSX.Element {
   const insets = useSafeAreaInsets()
   const { definition } = useThemeAppearance()
+  // 셸도 스크롤 뷰를 잡는다(최상단 이동). 화면이 준 `ref` 는 그대로 살아야 하므로 덮지 않고
+  // 둘 다에 넣는다. 보스 수익의 기간 이동이 그 참조로 스크롤을 되돌린다.
+  const scrollerRef = useRef<ScrollViewType | null>(null)
+  const holdScroller = useCallback(
+    (node: ScrollViewType | null) => {
+      scrollerRef.current = node
+      if (typeof ref === 'function') ref(node)
+      else if (ref !== undefined && ref !== null) ref.current = node
+    },
+    [ref],
+  )
+  useScrollToTopTarget(scrollerRef)
   // 훅이라 조건부로 못 부른다. 당김이 없는 화면에서는 아무도 이 값을 안 읽는다.
   const pull = usePullRefresh(onRefresh ?? (() => Promise.resolve()))
   // 위아래 **둘 다 인셋이 아니라 하한이 깔린 값**이다.
@@ -184,7 +198,7 @@ export function ScreenScroll({
 
   const scroller = (
     <ScrollView
-      ref={ref}
+      ref={holdScroller}
       testID="screen-scroll"
       // 우리가 그리지 않는 크롬의 색은 **알려 줘야** 한다. 안 걸면
       // 때 라이트 테마에 흰 인디케이터가 나왔고(실기기), RN 의 기본값 `'default'` 도
