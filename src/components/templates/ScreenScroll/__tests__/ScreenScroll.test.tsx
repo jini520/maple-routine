@@ -17,7 +17,15 @@
 import { getThemeDefinition } from '../../../../lib/theme/theme-registry'
 import { act, within } from '@testing-library/react-native'
 import { Dimensions, Text, View } from 'react-native'
+import { NavigationRouteContext } from '@react-navigation/native'
+import { createRef } from 'react'
+import type { ScrollView as ScrollViewType } from 'react-native'
 import type { Metrics } from 'react-native-safe-area-context'
+
+import {
+  __resetScrollToTopForTest,
+  scrollPageToTop,
+} from '../../../../navigation/scroll-to-top'
 
 import { flattenStyle, renderOverlay, 테스트_안전영역 } from '../../../__tests__/render-atom'
 import { rnThemeAppearancePort } from '../../../../native/adapters/rn-theme-appearance'
@@ -351,5 +359,41 @@ describe(' 안전영역 페이드', () => {
     )
 
     expect(within(getByTestId('screen-fade')).getByTestId('screen-scroll')).toBeTruthy()
+  })
+})
+
+// 최상단 이동의 과녁을 등록하는 자리가 이 셸 하나다. 탭 화면 여덟이 전부 이것을 쓰므로
+// 화면마다 배선하면 같은 다섯 줄이 여덟 벌이 되고, 그중 하나가 빠져도 그 탭에서만 조용히
+// 안 먹는다.
+//
+// 화면이 준 `ref` 도 함께 산다. 셸이 자기 참조를 하나 더 들면서 화면 것을 덮으면, 보스 수익의
+// 기간 이동이 스크롤을 못 되돌린다.
+describe('최상단 이동 과녁', () => {
+  beforeEach(__resetScrollToTopForTest)
+
+  it('라우트 안에서 렌더하면 그 이름으로 등록한다. 화면이 준 ref 도 산다', async () => {
+    const ref = createRef<ScrollViewType>()
+    await renderOverlay(
+      <NavigationRouteContext.Provider value={{ key: 'Today-1', name: 'Today' }}>
+        <ScreenScroll ref={ref}>{목록}</ScreenScroll>
+      </NavigationRouteContext.Provider>,
+    )
+    const scroller = ref.current
+    if (scroller === null) throw new Error('화면이 준 ref 가 스크롤 뷰에 닿지 않았다')
+    const scrollTo = jest.spyOn(scroller, 'scrollTo').mockImplementation(() => undefined)
+
+    scrollPageToTop('Today')
+
+    expect(scrollTo).toHaveBeenCalledWith({ y: 0, animated: true })
+  })
+
+  // 내비게이터 없이 렌더하는 테스트가 이 파일에만 열이 넘는다. 라우트를 못 읽는다고 던지면
+  // 그 전부가 빨개진다.
+  it('내비게이터 밖에서는 아무것도 등록하지 않는다', async () => {
+    await renderOverlay(<ScreenScroll>{목록}</ScreenScroll>)
+
+    expect(() => {
+      scrollPageToTop('Today')
+    }).not.toThrow()
   })
 })

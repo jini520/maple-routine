@@ -50,6 +50,9 @@ let mockRoute: { name: string; params: { guideId: string; section?: string } } =
   params: { guideId: '파티-모달' },
 }
 jest.mock('@react-navigation/native', () => ({
+  // 통째로 갈아 끼우면 이 패키지가 내보내는 **컨텍스트까지** 사라진다. 셸이 라우트 이름을
+  // 그것으로 읽으므로(최상단 이동 등록) 실물을 깔고 필요한 것만 덮는다.
+  ...jest.requireActual('@react-navigation/native'),
   useRoute: () => mockRoute,
 }))
 

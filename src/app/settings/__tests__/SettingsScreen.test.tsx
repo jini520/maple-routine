@@ -68,6 +68,9 @@ jest.mock('../../../features/schedule-sync/schedule-sync', () => ({
 // 라우트 파라미터(`openPicker`)는 케이스마다 갈리므로 변수를 통해 준다.
 let mockRouteParams: { openPicker?: boolean } | undefined
 jest.mock('@react-navigation/native', () => ({
+  // 통째로 갈아 끼우면 이 패키지가 내보내는 **컨텍스트까지** 사라진다. 셸이 라우트 이름을
+  // 그것으로 읽으므로(최상단 이동 등록) 실물을 깔고 필요한 것만 덮는다.
+  ...jest.requireActual('@react-navigation/native'),
   useRoute: () => ({ params: mockRouteParams }),
 }))
 
