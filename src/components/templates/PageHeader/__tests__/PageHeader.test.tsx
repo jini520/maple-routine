@@ -71,6 +71,15 @@ describe('PageHeader', () => {
     expect(header?.children).toHaveLength(1)
   })
 
+  // 헤더는 아래 여백을 안 갖는다. 헤더와 콘텐츠 사이는 `ScreenScroll` 의 `gap-4` 하나가 낸다.
+  // 헤더가 자기 몫을 더하면 그 화면만 24 가 되어, 헤더 셸을 안 쓰는 화면(16)과 어긋난다.
+  it('아래 여백을 갖지 않는다', async () => {
+    const { getByTestId } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
+
+    const style = flattenStyle(getByTestId('page-header').props.style)
+    expect(style.paddingBottom ?? 0).toBe(0)
+  })
+
   // 갱신 시각 줄의 자리는 `PageHeaderTitleRow` 가 갖는다. 여기서 바닥에 비우면 총 높이만 맞고
   // 그 사이 내용이 16 위로 끌려 올라간다. 되살리지 말 것.
   it('갱신 시각 자리를 바닥에 비우지 않는다', async () => {

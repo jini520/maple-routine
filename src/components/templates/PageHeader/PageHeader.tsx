@@ -7,6 +7,9 @@
  *
  * 경계 페이드와 상수 여백은 두지 않는다. 헤더가 함께 스크롤돼 덮어 줄 경계가 없다.
  *
+ * 아래 여백을 안 갖는다. 헤더와 콘텐츠 사이는 `ScreenScroll` 의 `gap-4` 하나가 낸다. 헤더가
+ * 자기 몫을 더하면 그 화면만 24 가 되어, 헤더 셸을 안 쓰는 화면(16)과 어긋난다.
+ *
  * 갱신 시각 줄은 이 셸의 몫이 아니다. `PageHeaderTitleRow` 가 제목 바로 아래에 그린다. 여기서
  * 바닥에 비우면 총 높이만 맞고 그 사이 내용이 16 위로 끌려 올라가고, 이 셸을 안 쓰는 헤더는
  * 그 자리를 아예 못 받는다.
@@ -29,7 +32,7 @@ export function PageHeader(props: PageHeaderProps): React.JSX.Element {
   const topSafeAreaPx = useTopSafeAreaPx()
 
   return (
-    <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: topSafeAreaPx }}>
+    <View testID="page-header" className="z-10 px-4" style={{ paddingTop: topSafeAreaPx }}>
 
       <View className="gap-4">{props.children}</View>
 

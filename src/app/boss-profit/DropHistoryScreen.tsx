@@ -263,7 +263,7 @@ export function DropHistoryScreen(): React.JSX.Element {
         // 공용 `PageHeader` 를 쓰지 않는다. 이 화면에는 배경 조각도 하단 페이드도 없다. 상단
         // 안전영역을 헤더가 먹는다는 계약은 그대로다. 여백은 더하지 않는다. 공용 셸과 같은 값
         // 이어야 가격 화면과 나란히 열릴 때 제목 높이가 안 갈린다. 그 값이 `useTopSafeAreaPx()` 다.
-        <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: topSafeAreaPx }}>
+        <View testID="page-header" className="z-10 px-4" style={{ paddingTop: topSafeAreaPx }}>
           <View className="gap-3">
             <PageHeaderTitleRow className="gap-1">
               <Pressable
