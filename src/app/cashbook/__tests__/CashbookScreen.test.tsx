@@ -687,6 +687,8 @@ describe('펼침판이 시트를 연다', () => {
     await 누르기(view, 'calendar-day-2026-08-25')
 
     await 고르기(view, '수입 추가')
+    // 날짜는 2차 시트의 머리에 산다. 1차는 갈래만 묻는다.
+    await 누르기(view, 'income-sheet-category-사냥')
 
     expect(view.getByTestId('income-sheet-date')).toHaveTextContent('8월 25일 (화)')
   })

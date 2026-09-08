@@ -17,9 +17,11 @@ import { Keyboard, Platform, Pressable, View } from 'react-native'
 import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated'
 import { useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
+  BottomSheetFooter,
   BottomSheetModal,
   BottomSheetScrollView,
   type BottomSheetBackdropProps,
+  type BottomSheetFooterProps,
 } from '@gorhom/bottom-sheet'
 
 import { vars } from 'nativewind'
@@ -33,6 +35,8 @@ const MAX_HEIGHT_RATIO = 0.82
 const MAX_WIDTH = 448
 /** 그랩 핸들이 차지하는 높이. 스크롤 내용의 `paddingTop` 이 이 값을 되돌려 준다. */
 const HANDLE_HEIGHT = 24
+/** 머리와 바닥을 안 잰 동안 쓰는 값. 실제 높이는 `onLayout` 이 덮는다. */
+const UNMEASURED = 0
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
 
@@ -79,11 +83,34 @@ interface BottomSheetProps {
    * 갈래 전환). 안 넘기면 아무 일도 안 한다.
    */
   resetScrollKey?: string | number
+  /**
+   * 스크롤을 안 타고 위에 고정되는 줄. 제목과 날짜가 여기 산다.
+   *
+   * 형제로 두지 않고 흐름 밖에 그린다. 라이브러리가 **스크롤 내용만 재서** 시트 높이를 정하므로
+   * 형제의 높이는 그 계산에서 빠진다. 뺀 몫은 내용의 `paddingTop` 이 되돌려 준다(핸들과 같다).
+   */
+  header?: ReactNode
+  /**
+   * 스크롤을 안 타고 바닥에 고정되는 줄. 저장 버튼이 여기 산다.
+   *
+   * 라이브러리의 `footerComponent` 로 넘긴다. 그쪽 `BottomSheetFooter` 가 **키보드가 떠 있으면
+   * 아래 인셋을 안 뺀다**. 그 규칙을 두 벌로 만들지 않는다.
+   */
+  footer?: ReactNode
+  /**
+   * 열자마자 스크롤을 맨 아래로 보낸다. 치는 칸이 아래에 몰린 시트가 그렇다.
+   *
+   * 키보드를 부르는 칸이 아래에 있으면 잘려야 할 것은 언제나 위쪽이다.
+   */
+  startAtBottom?: boolean
 }
 
 export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
   const ref = useRef<BottomSheetModal>(null)
-  const scrollRef = useRef<{ scrollTo?: (options: { y: number; animated: boolean }) => void }>(null)
+  const scrollRef = useRef<{
+    scrollTo?: (options: { y: number; animated: boolean }) => void
+    scrollToEnd?: (options: { animated: boolean }) => void
+  }>(null)
   const insets = useSafeAreaInsets()
   const frame = useSafeAreaFrame()
   const { definition } = useThemeAppearance()
@@ -109,6 +136,10 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
    * 라이브러리의 키보드 상태는 시트 안에서만 살아서 RN 이벤트를 직접 듣는다. iOS 는 `will`,
    * 안드로이드는 `did`(`will` 이 없다).
    */
+  /** 머리와 바닥이 실제로 차지한 높이. 내용의 위아래 여백이 이 값을 되돌려 준다. */
+  const [headerHeight, setHeaderHeight] = useState(UNMEASURED)
+  const [footerHeight, setFooterHeight] = useState(UNMEASURED)
+
   const [keyboardHeight, setKeyboardHeight] = useState(0)
   useEffect(() => {
     const show = Keyboard.addListener(
@@ -124,6 +155,34 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       hide.remove()
     }
   }, [])
+
+  /**
+   * 아래에서 시작하는 시트. 내용이 자란 뒤에 한 번 더 보내야 실제로 끝에 닿는다.
+   *
+   * 키보드가 떠서 뷰포트가 줄어드는 것도 내용이 자라는 것과 같은 일이라 그 값도 계기로 둔다.
+   */
+  useEffect(() => {
+    if (props.startAtBottom !== true) return
+    scrollRef.current?.scrollToEnd?.({ animated: false })
+  }, [props.startAtBottom, keyboardHeight, footerHeight])
+
+  /**
+   * `useCallback` 으로 안 감싼다. React 컴파일러가 지킬 수 없는 수동 메모이제이션으로 보고
+   * 이 컴포넌트의 최적화를 통째로 건너뛴다(lint 가 막는다).
+   */
+  function renderFooter(footerProps: BottomSheetFooterProps): React.JSX.Element {
+    return (
+      <BottomSheetFooter {...footerProps}>
+        <View
+          testID="bottom-sheet-footer"
+          onLayout={(event) => setFooterHeight(event.nativeEvent.layout.height)}
+          style={{ backgroundColor: sheetSurface, paddingHorizontal: 16, paddingBottom: 16 }}
+        >
+          {props.footer}
+        </View>
+      </BottomSheetFooter>
+    )
+  }
 
   const renderBackdrop = useCallback(
     (backdropProps: BottomSheetBackdropProps) => (
@@ -157,6 +216,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       */
       maxDynamicContentSize={frame.height * MAX_HEIGHT_RATIO - keyboardHeight}
       backdropComponent={renderBackdrop}
+      footerComponent={props.footer === undefined ? undefined : renderFooter}
       accessibilityLabel={props.label}
       style={{ maxWidth: MAX_WIDTH, width: '100%', alignSelf: 'center' }}
       backgroundStyle={{
@@ -192,13 +252,36 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
         />
       </View>
 
+      {/*
+        고정 머리. 핸들과 같은 방식으로 흐름 밖에 그린다. 바탕을 칠하는 것은 스크롤 내용이
+        이 아래로 지나가기 때문이다.
+      */}
+      {props.header !== undefined && (
+        <View
+          testID="bottom-sheet-header"
+          onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
+          style={{
+            position: 'absolute',
+            top: HANDLE_HEIGHT,
+            left: 0,
+            right: 0,
+            zIndex: 1,
+            backgroundColor: sheetSurface,
+            paddingHorizontal: 16,
+          }}
+        >
+          <View style={vars(sheetScope)}>{props.header}</View>
+        </View>
+      )}
+
       <BottomSheetScrollView
         ref={scrollRef as never}
         testID={props.testId}
         contentContainerStyle={{
-          paddingTop: HANDLE_HEIGHT + 8,
-          // 키보드가 떠 있으면 인셋만 걷고 숨돌림 16 은 남긴다.
-          paddingBottom: (keyboardHeight > 0 ? 0 : insets.bottom) + 16,
+          paddingTop: HANDLE_HEIGHT + 8 + headerHeight,
+          // 키보드가 떠 있으면 인셋만 걷고 숨돌림 16 은 남긴다. 바닥이 있으면 그것이 가리는
+          // 만큼도 함께 되돌려 준다(그쪽은 자기 인셋을 스스로 진다).
+          paddingBottom: (keyboardHeight > 0 ? 0 : insets.bottom) + 16 + footerHeight,
         }}
       >
         {/*

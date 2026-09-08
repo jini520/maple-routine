@@ -8,10 +8,12 @@
 // 라이브러리를 진짜로 세워 마운트되는지는 옆 파일(`BottomSheet.wiring.test.tsx`)이 본다.
 import type { ReactNode } from 'react'
 import { Keyboard, Text, View } from 'react-native'
-import { act } from '@testing-library/react-native'
+import { act, fireEvent } from '@testing-library/react-native'
 
 // `jest.mock` 팩토리는 호이스팅돼 스코프 밖 변수를 못 읽는다. **`mock` 접두 이름만** 예외다.
 const mockPresent = jest.fn()
+const mockScrollToEnd = jest.fn()
+const mockScrollTo = jest.fn()
 
 jest.mock('@gorhom/bottom-sheet', () => {
   const ReactNative = jest.requireActual<typeof import('react-native')>('react-native')
@@ -22,10 +24,29 @@ jest.mock('@gorhom/bottom-sheet', () => {
       React.createElement(ReactNative.View, { testID: 'sheet-backdrop', ...props }),
     BottomSheetModal: React.forwardRef((props: Record<string, unknown>, ref: unknown) => {
       React.useImperativeHandle(ref as never, () => ({ present: mockPresent, dismiss: jest.fn() }))
-      return React.createElement(ReactNative.View, { testID: 'sheet', ...props })
+      // 라이브러리는 `footerComponent` 를 시트 안에 그린다. 목도 그려야 바닥 슬롯을 볼 수 있다.
+      // 인자 이름을 `mock` 으로 시작하게 둔다. `jest.mock` 팩토리 안에서는 타입 자리의
+      // 식별자도 스코프 밖 변수로 잡혀서 그 접두사만 허용된다.
+      const footer = props.footerComponent as
+        | ((mockProps: Record<string, unknown>) => React.ReactNode)
+        | undefined
+      return React.createElement(
+        ReactNative.View,
+        { testID: 'sheet', ...props },
+        props.children as React.ReactNode,
+        footer === undefined ? null : footer({ animatedFooterPosition: { value: 0 } }),
+      )
     }),
-    BottomSheetScrollView: (props: Record<string, unknown>) =>
-      React.createElement(ReactNative.View, props),
+    BottomSheetFooter: (props: Record<string, unknown>) =>
+      React.createElement(ReactNative.View, { testID: 'sheet-footer', ...props }),
+    // 스크롤 손잡이를 들려 준다. 시트가 그것을 불러 위치를 옮기는지 봐야 한다.
+    BottomSheetScrollView: React.forwardRef((props: Record<string, unknown>, ref: unknown) => {
+      React.useImperativeHandle(ref as never, () => ({
+        scrollTo: mockScrollTo,
+        scrollToEnd: mockScrollToEnd,
+      }))
+      return React.createElement(ReactNative.View, props)
+    }),
     // 시트 밖과 같게 둔다. 아톰이 이 값으로 **시트 안인가** 를 묻는다.
     // 목이 시트를 평범한 `View` 로 바꾸므로 여기서도 문맥이 없는 것이 사실이고, 그래서
     // 아래 입력은 안 그려진다. 그래도 **있어야 한다**: `lib/nativewind-interop` 이 모듈을
@@ -53,6 +74,8 @@ type 손잡이 = (event: { endCoordinates: { height: number } }) => void
 
 beforeEach(() => {
   mockPresent.mockClear()
+  mockScrollToEnd.mockClear()
+  mockScrollTo.mockClear()
 })
 
 describe('BottomSheet: 가 정한 값을 넘긴다', () => {
@@ -224,6 +247,114 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
 
     await 키보드(false)
     expect(여백()).toBe(34 + 16)
+  })
+
+  /**
+   * 시트는 세 구역이다. 머리와 저장은 고정이고 그 사이가 스크롤이다.
+   *
+   * 머리를 스크롤 밖 형제로 두면 안 된다. 라이브러리는 **스크롤 내용만 재서** 시트 높이를
+   * 정하므로 형제의 높이가 계산에서 빠진다. 핸들과 같은 방식으로 흐름에서 빼고 그만큼을
+   * 내용의 `paddingTop` 이 되돌려 준다.
+   */
+  it('머리는 흐름 밖 핸들 아래에 서고, 잰 높이가 내용 위 여백으로 돈다', async () => {
+    const { getByTestId, getByText } = await renderOverlay(
+      <BottomSheet
+        onClose={noop}
+        testId="income-sheet"
+        label="수입 기록"
+        header={<Text>사냥</Text>}
+      >
+        <Text>내용</Text>
+      </BottomSheet>,
+    )
+
+    expect(getByText('사냥')).toBeTruthy()
+    // 핸들(24) 아래다. 핸들이 머리 위에 선다.
+    expect(flattenStyle(getByTestId('bottom-sheet-header').props.style)).toMatchObject({
+      position: 'absolute',
+      top: 24,
+    })
+
+    const 위여백 = (): number =>
+      (getByTestId('income-sheet').props.contentContainerStyle as { paddingTop: number }).paddingTop
+    // 재기 전에는 핸들 24 + 숨돌림 8 뿐이다.
+    expect(위여백()).toBe(24 + 8)
+
+    await act(async () => {
+      fireEvent(getByTestId('bottom-sheet-header'), 'layout', {
+        nativeEvent: { layout: { height: 23 } },
+      })
+    })
+    expect(위여백()).toBe(24 + 8 + 23)
+  })
+
+  /**
+   * **저장은 언제나 키보드 바로 위다.** 라이브러리의 `BottomSheetFooter` 가
+   * `키보드가 떠 있으면 아래 인셋을 안 뺀다` 를 이미 한다. 그 규칙을 두 벌로 만들지 않는다.
+   */
+  it('바닥은 라이브러리 footer 슬롯으로 가고, 잰 높이가 내용 아래 여백으로 돈다', async () => {
+    const { getByTestId, getByText } = await renderOverlay(
+      <BottomSheet onClose={noop} testId="income-sheet" label="수입 기록" footer={<Text>저장</Text>}>
+        <Text>내용</Text>
+      </BottomSheet>,
+    )
+
+    expect(getByTestId('sheet').props.footerComponent).toBeDefined()
+    expect(getByText('저장')).toBeTruthy()
+
+    const 아래여백 = (): number =>
+      (getByTestId('income-sheet').props.contentContainerStyle as { paddingBottom: number })
+        .paddingBottom
+    // 테스트 인셋의 아래는 34, 숨돌림 16.
+    expect(아래여백()).toBe(34 + 16)
+
+    await act(async () => {
+      fireEvent(getByTestId('bottom-sheet-footer'), 'layout', {
+        nativeEvent: { layout: { height: 60 } },
+      })
+    })
+    expect(아래여백()).toBe(34 + 16 + 60)
+  })
+
+  /**
+   * 치는 칸이 아래에 몰린 시트는 아래에서 시작한다. 키보드를 부르는 칸이 거기 있으므로
+   * 잘려야 할 것은 언제나 위쪽이다.
+   */
+  it('`startAtBottom` 이면 스크롤을 끝으로 보낸다', async () => {
+    await renderOverlay(
+      <BottomSheet onClose={noop} testId="income-sheet" label="수입 기록" startAtBottom>
+        <Text>내용</Text>
+      </BottomSheet>,
+    )
+
+    expect(mockScrollToEnd).toHaveBeenCalledWith({ animated: false })
+  })
+
+  it('안 주면 끝으로 안 보낸다. 종전 시트는 위에서 시작한다', async () => {
+    await open()
+
+    expect(mockScrollToEnd).not.toHaveBeenCalled()
+  })
+
+  /** 키보드가 떠서 뷰포트가 줄어드는 것도 내용이 자라는 것과 같은 일이라 다시 보낸다. */
+  it('키보드가 뜨면 다시 끝으로 보낸다', async () => {
+    await renderOverlay(
+      <BottomSheet onClose={noop} testId="income-sheet" label="수입 기록" startAtBottom>
+        <Text>내용</Text>
+      </BottomSheet>,
+    )
+    mockScrollToEnd.mockClear()
+
+    await 키보드(true, 291)
+
+    expect(mockScrollToEnd).toHaveBeenCalledWith({ animated: false })
+  })
+
+  it('머리도 바닥도 안 주면 종전 그대로다. 슬롯은 선택이다', async () => {
+    const { queryByTestId, getByTestId } = await open()
+
+    expect(queryByTestId('bottom-sheet-header')).toBeNull()
+    expect(getByTestId('sheet').props.footerComponent).toBeUndefined()
   })
 
   it('폭은 max-w-md(448) 중앙 정렬이다. 라이브러리 기본은 전폭이다', async () => {

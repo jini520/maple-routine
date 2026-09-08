@@ -18,10 +18,7 @@ import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
-import {
-  SelectField,
-  type SelectOption,
-} from '../../../components/organisms/SelectField/SelectField'
+import type { SelectOption } from '../../../components/organisms/SelectField/SelectField'
 import type { MesoRateLoad } from '../../../features/cashbook/meso-rate'
 import { FORCE_LABELS, forceIconOf, getItemIconUrlByFile } from '../../../lib/assets/asset-lookup'
 import {
@@ -45,7 +42,9 @@ import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { ImageAssetRef } from '../../../types/image-asset'
 import type { HuntingGround, HuntingRegion } from '../../../types/hunting-grounds'
 import { CheckBox, FieldRow, QuantityStepper } from '../sheet-fields'
-import { CharacterField, FragmentFields, SaveRow, type IncomeFormProps } from './form-shared'
+import { ChainSelect } from '../../../components/organisms/ChainSelect/ChainSelect'
+import { characterOptions } from '../character-options'
+import { FragmentFields, SaveRow, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
@@ -60,7 +59,7 @@ function levelLabelOf(ground: HuntingGround): string {
  * 그림이 없으면 글자만으로 선다(`아케인 700`). 비슷한 그림을 갖다 붙이면 틀린 것을 그리는
  * 셈이다. 읽어 주는 이름은 언제나 온전한 말이라 그림이 있든 없든 어센틱 포스 700 으로 들린다.
  */
-function ForceBadge(props: { region: HuntingRegion; force: number }): React.JSX.Element {
+function ForceBadge(props: { region: HuntingRegion; force: number | null }): React.JSX.Element {
   const icon = forceIconOf(props.region.forceType)
   const label = FORCE_LABELS[props.region.forceType]
   return (
@@ -74,8 +73,11 @@ function ForceBadge(props: { region: HuntingRegion; force: number }): React.JSX.
       ) : (
         <Image source={icon} className="h-3.5 w-3.5" resizeMode="contain" aria-hidden />
       )}
-      <Text className="text-11 font-semibold text-text-muted" style={TABULAR_NUMS}>
-        {props.force}
+      <Text
+        className={`text-11 font-semibold ${props.force === null ? 'text-text-disabled' : 'text-text-muted'}`}
+        style={TABULAR_NUMS}
+      >
+        {props.force ?? '-'}
       </Text>
     </View>
   )
@@ -322,77 +324,86 @@ export function HuntCalculatorForm(
 
   return (
     <>
-      <CharacterField characters={props.characters} selected={ocid} onSelect={selectCharacter} />
+      {/*
+        캐릭터·지역·사냥터가 한 줄을 나눠 쓴다. 고른 것은 알약이 되어 왼쪽에 쌓이고 자리표시자는
+        남은 것만 읽는다. 값마다 줄을 쓰면 세 줄 84 에 갭 24 인데 이 구조는 28 한 줄이다.
+      */}
+      <ChainSelect
+        testID="income-sheet-chain"
+        steps={[
+          {
+            name: '캐릭터',
+            options: characterOptions(props.characters),
+            selected: ocid,
+            onSelect: selectCharacter,
+          },
+          {
+            name: '지역',
+            options: [
+              { value: null, label: '선택 안함' },
+              ...huntRegions.map((region) => ({ value: region.slug, label: region.name })),
+            ],
+            selected: regionSlug,
+            onSelect: selectRegion,
+          },
+          {
+            name: '사냥터',
+            options:
+              huntRegion === null
+                ? [{ value: null, label: '지역을 먼저 고르세요' }]
+                : [
+                    { value: null, label: '선택 안함' },
+                    ...huntGrounds.map((ground) => ({ value: ground.name, label: ground.name })),
+                  ],
+            selected: groundName,
+            onSelect: setGroundName,
+            // 목록 한 줄에 포스 배지·레벨·마릿수가 함께 선다.
+            renderOption: (option: SelectOption, isSelected: boolean) => {
+              const ground =
+                huntRegion === null || option.value === null
+                  ? null
+                  : (huntRegion.grounds.find((each) => each.name === option.value) ?? null)
+              return ground === null || huntRegion === null ? (
+                <Text
+                  numberOfLines={1}
+                  className={`text-sm ${isSelected ? 'font-semibold text-primary-ink' : 'text-text'}`}
+                >
+                  {option.label}
+                </Text>
+              ) : (
+                <GroundOptionRow region={huntRegion} ground={ground} isSelected={isSelected} />
+              )
+            },
+          },
+        ]}
+      />
 
       {/*
-        지역과 사냥터는 각각 자기 줄이다. 한 줄에 나란히 세우면 이름이 길어 둘 다 잘린다.
-        지역은 `츄츄 아일랜드`, 사냥터는 `풍화된 기쁨과 분노의 땅` 까지 간다. 시트가 한 줄
-        길어지는 대신 고른 것이 온전히 읽힌다.
+        심볼·레벨·마리수. 안 골라도 자리를 지킨다. 안 세우면 사냥터를 고르는 순간 줄이 생겨
+        아래가 통째로 밀린다. 심볼 그림은 지역이 정하고 수치·레벨·마리수는 사냥터가 정한다.
       */}
-      <SelectField
-        label="지역"
-        options={[
-          { value: null, label: '선택 안함' },
-          ...huntRegions.map((region) => ({ value: region.slug, label: region.name })),
-        ]}
-        selected={regionSlug}
-        onSelect={selectRegion}
-        testID="income-sheet-region"
-      />
-      <SelectField
-        label="사냥터"
-        options={
-          huntRegion === null
-            ? [{ value: null, label: '지역을 먼저 고르세요' }]
-            : [
-                { value: null, label: '선택 안함' },
-                ...huntGrounds.map((ground) => ({ value: ground.name, label: ground.name })),
-              ]
-        }
-        selected={groundName}
-        onSelect={setGroundName}
-        testID="income-sheet-ground"
-        // 목록 한 줄에 포스 배지·레벨·마릿수가 함께 선다.
-        renderOption={(option: SelectOption, isSelected: boolean) => {
-          const ground =
-            huntRegion === null || option.value === null
-              ? null
-              : (huntRegion.grounds.find((each) => each.name === option.value) ?? null)
-          return ground === null || huntRegion === null ? (
-            <Text
-              numberOfLines={1}
-              className={`text-sm ${isSelected ? 'font-semibold text-primary-ink' : 'text-text'}`}
-            >
-              {option.label}
-            </Text>
-          ) : (
-            <GroundOptionRow region={huntRegion} ground={ground} isSelected={isSelected} />
-          )
-        }}
-      />
-
-      {huntGround !== null && huntRegion !== null && (
-        // 고른 사냥터의 값이 자기 줄로 선다. 닫힌 고르개는 이름만 그리므로 여기가 없으면
-        // 무엇을 골랐는지의 근거가 화면에서 사라진다.
-        <View
-          testID="income-sheet-ground-detail"
-          className="flex-row items-center justify-end gap-2 pb-1"
+      <View
+        testID="income-sheet-ground-detail"
+        className="flex-row items-center justify-end gap-2 pb-1"
+      >
+        {huntRegion === null ? (
+          <View className="flex-row items-center gap-1 rounded-full bg-surface-2 px-1.5 py-0.5">
+            <Text className="text-11 font-semibold text-text-disabled">-</Text>
+          </View>
+        ) : (
+          <ForceBadge region={huntRegion} force={huntGround?.force ?? null} />
+        )}
+        <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>
+          {huntGround === null ? 'lv.-' : levelLabelOf(huntGround)}
+        </Text>
+        <Text
+          testID="income-sheet-killed-mobs"
+          className="text-11 text-text-muted"
+          style={TABULAR_NUMS}
         >
-          <ForceBadge region={huntRegion} force={huntGround.force} />
-          <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>
-            {levelLabelOf(huntGround)}
-          </Text>
-          {/* 감소한 마릿수를 적는다. 사냥터 목록은 맵의 제원(40마리)을 적지만 이 줄은 실제로
-              잡는 수다. 그것이 곧 계산에 드는 값이다. */}
-          <Text
-            testID="income-sheet-killed-mobs"
-            className="text-11 text-text-muted"
-            style={TABULAR_NUMS}
-          >
-            {killedMobsOf(huntGround.mobs, missedMobs)}마리
-          </Text>
-        </View>
-      )}
+          {huntGround === null ? '-마리' : `${killedMobsOf(huntGround.mobs, missedMobs)}마리`}
+        </Text>
+      </View>
 
       {huntGround !== null && (
         // 효율 조각은 맵이 정한다. 40마리의 −1 은 98%, 22마리의 −1 은 95% 다. 그래서 사냥터를
