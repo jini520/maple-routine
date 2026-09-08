@@ -770,10 +770,14 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
   여기 머무르며 보는 것을 바꾸면 콘텐츠다. 캐릭터 레일 · 기간 이동 · 주간/월간 · 일간/주간 ·
   솔로/파티 · 모든 보스 보기가 콘텐츠다. `page-header-title-row-policy` 가드가 지킨다.
 - **헤더 아래 여백: 없다** ([[ADR-232]], 2026-09-08 사용자 지시). 헤더와 콘텐츠 사이는
-  `ScreenScroll` 의 `gap-4`(16) 하나가 낸다. 헤더 상자가 `pb-2` 로 8 을 더하고 있어서 그 화면만
-  24 였고, 헤더 셸을 안 쓰는 화면(설정 계열)은 `gap-4` 하나만 받아 16 이었다. 간격을 한 자리가
-  내면 값이 하나다. 공용 `PageHeader` 와 그 상자를 베낀 셋(`BossProfitScreen` ·
-  `DropHistoryScreen` · `DropPriceScreen`)이 같은 값을 쓴다.
+  `ScreenScroll` 의 콘텐츠 간격 하나가 낸다. 헤더 상자가 `pb-2` 로 8 을 더하고 있어서 그 화면만
+  더 벌어졌고, 헤더 셸을 안 쓰는 화면(설정 계열)은 그 간격만 받았다. 간격을 한 자리가 내면 값이
+  하나다. 공용 `PageHeader` 와 그 상자를 베낀 셋(`BossProfitScreen` · `DropHistoryScreen` ·
+  `DropPriceScreen`)이 같은 값을 쓴다.
+- **그 콘텐츠 간격은 `gap-2`(8)다** ([[ADR-232]] 정정 1, 2026-09-08 사용자 지정). `ScreenScroll`
+  의 `contentContainerClassName` 한 곳이다. 헤더와 첫 블록 사이뿐 아니라 **콘텐츠 블록끼리의
+  간격**도 이 값이다. NativeWind 가 이 클래스를 자식 뷰가 아니라 `contentContainerStyle` 프롭으로
+  컴파일해 명시 스타일과 합치므로, 렌더 트리를 훑으면 안 보인다. 값을 의심할 땐 그 프롭을 볼 것.
 - **헤더 상단 여백: RN 은 ‘안전영역에 붙인다’** ([[ADR-139]], 2026-08-16). 웹 헤더의 `pt-[calc(1rem+var(--sa-top))]` 에서 **상수 몫 1rem 을 뺀다**. RN 헤더의 `paddingTop` 은 `insets.top` 그대로다. 웹에서 그 16 이 하던 일 둘이 여기서는 다 없어졌다: 불투명 헤더 판의 안쪽 여백(RN 헤더는 자기 배경을 안 칠한다 [[ADR-133]]) · 고정 헤더와 상태바의 시각적 분리(RN 헤더는 고정이 아니다 [[ADR-131]]). ~~**웹(`app-capacitor`)에서는 옛 값이 그대로 유효하다**~~ → 그 앱은 사라졌다([[ADR-155]]). 이제 유효한 것은 RN 쪽 하나뿐이다.
   ```
   범위    헤더가 있는 열아홉 화면 전부. 헤더가 없는 설정 계열은 ScreenScroll 이 상자를 내리고

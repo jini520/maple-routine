@@ -427,11 +427,11 @@ export function BossScreen(): React.JSX.Element {
         {/* 캐시된 `characters` 가 있으면 재검증 중에도 계속 보여준다. 셸 승계 카드는
             보여줄 데이터가 아예 없을 때만 그린다. */}
         {(status === 'idle' || status === 'loading') && characters.length === 0 && (
-        )}
           <View className="px-4">
             <LoadingState size="page" message="불러오고 있어요" />
           </View>
-
+        )}
+          
         {/* 목록에서 무엇을 보는가를 고르는 장치라 콘텐츠다. `n/12`·`season` 배지는 `주간` 섹션
             헤더가 싣는다. 그 수치가 어느 무리의 것인지 그쪽이 말한다. */}
         {characters.length > 0 && selected !== null && (

@@ -71,8 +71,8 @@ describe('PageHeader', () => {
     expect(header?.children).toHaveLength(1)
   })
 
-  // 헤더는 아래 여백을 안 갖는다. 헤더와 콘텐츠 사이는 `ScreenScroll` 의 `gap-4` 하나가 낸다.
-  // 헤더가 자기 몫을 더하면 그 화면만 24 가 되어, 헤더 셸을 안 쓰는 화면(16)과 어긋난다.
+  // 헤더는 아래 여백을 안 갖는다. 헤더와 콘텐츠 사이는 `ScreenScroll` 의 콘텐츠 간격 하나가
+  // 낸다. 헤더가 자기 몫을 더하면 그 화면만 더 벌어져, 헤더 셸을 안 쓰는 화면과 어긋난다.
   it('아래 여백을 갖지 않는다', async () => {
     const { getByTestId } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
 

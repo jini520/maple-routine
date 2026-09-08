@@ -212,7 +212,7 @@ export function ContentScreen(): React.JSX.Element {
         }
       >
         {/* 캐릭터를 고르는 장치라 콘텐츠다. 조건이 **줄 밖**에 있다. 안에 두면 캐릭터가 없는
-            동안(첫 조회) 빈 줄이 남아 `gap-4` 를 두 번 먹는다.
+            동안(첫 조회) 빈 줄이 남아 콘텐츠 간격을 두 번 먹는다.
 
             좌우 여백을 주지 않는다. 레일이 자기 안쪽 스크롤로 그 16 을 든다. */}
         {characters.length > 0 && selected !== null && (

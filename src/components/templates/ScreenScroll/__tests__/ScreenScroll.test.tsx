@@ -48,12 +48,16 @@ describe('ScreenScroll', () => {
     })
   })
 
-  it('콘텐츠 간격을 gap-4 로 준다 (웹 안쪽 래퍼의 `space-y-4` 짝)', async () => {
+  // 헤더와 콘텐츠 사이, 그리고 콘텐츠 블록끼리의 간격을 **이 한 값**이 낸다(사용자 지정 8).
+  //
+  // NativeWind 는 `contentContainerClassName` 을 자식 뷰가 아니라 `contentContainerStyle`
+  // 프롭으로 컴파일해 명시 스타일과 합친다. 그래서 렌더 트리를 훑으면 이 값이 안 보인다.
+  it('콘텐츠 간격을 gap-2 로 준다', async () => {
     const { getByTestId } = await renderOverlay(<ScreenScroll>{목록}</ScreenScroll>)
 
     expect(flattenStyle(getByTestId('screen-scroll').props.contentContainerStyle)).toMatchObject({
-      columnGap: 16,
-      rowGap: 16,
+      columnGap: 8,
+      rowGap: 8,
     })
   })
 

@@ -1,3 +1,13 @@
+import {
+  FADE_MASK_LOCATIONS,
+  FADE_MASK_OPAQUE,
+  fadeMaskColors,
+  resolveSafeAreaFade,
+} from './safe-area-fade'
+import { Platform, RefreshControl, ScrollView, View, useWindowDimensions } from 'react-native'
+import { useBottomSafeAreaPx, useTopSafeAreaPx } from '../../../lib/safe-area'
+
+import { LinearGradient } from '../../../lib/nativewind-interop'
 /**
  * **이 라이브러리는 패치해서 쓴다**(`patches/` + 루트 `postinstall`).
  * 안드로이드 구현은 마스크를 `getChildAt(0)` 으로 찾는데, 하위 페이지에서 **뒤로가기**를 하면
@@ -8,24 +18,13 @@
  */
 import MaskedView from '@react-native-masked-view/masked-view'
 import type { ScrollView as ScrollViewType } from 'react-native'
-import { Platform, RefreshControl, ScrollView, useWindowDimensions, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-
-import { usePullRefresh } from '../../../hooks/usePullRefresh'
-import { useThemeAppearance } from '../../../theme/context'
-
 import { resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
-import { useBottomSafeAreaPx, useTopSafeAreaPx } from '../../../lib/safe-area'
-import { LinearGradient } from '../../../lib/nativewind-interop'
-import { useScrollIndicatorStyle } from '../../../theme/context'
-import { resolveScreenBottomInset } from './bottom-inset'
 import { resolvePullIndicatorOffset } from './pull-indicator-offset'
-import {
-  FADE_MASK_LOCATIONS,
-  FADE_MASK_OPAQUE,
-  fadeMaskColors,
-  resolveSafeAreaFade,
-} from './safe-area-fade'
+import { resolveScreenBottomInset } from './bottom-inset'
+import { usePullRefresh } from '../../../hooks/usePullRefresh'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useScrollIndicatorStyle } from '../../../theme/context'
+import { useThemeAppearance } from '../../../theme/context'
 
 // 화면 스크롤 셸. 스크롤의 소유자는 문서가 아니라 화면이다.
 //
@@ -212,9 +211,12 @@ export function ScreenScroll({
       {...(tracksScrollOffset ? { scrollEventThrottle: 16 } : null)}
       className="flex-1"
       style={port}
-      // 웹 안쪽 래퍼의 `space-y-4` 짝. RN 에 `space-y-*` 가 없어 `gap-*` 이고, 그래서 래퍼 뷰가
-      // 따로 필요 없다. 콘텐츠 컨테이너가 그 역할을 겸한다.
-      contentContainerClassName="gap-4"
+      // 헤더와 콘텐츠 사이, 그리고 콘텐츠 블록끼리의 간격을 **이 한 값**이 낸다. 래퍼 뷰가 따로
+      // 필요 없이 콘텐츠 컨테이너가 그 역할을 겸한다.
+      //
+      // NativeWind 는 이 클래스를 자식 뷰가 아니라 `contentContainerStyle` 프롭으로 컴파일해
+      // 아래 명시 스타일과 합친다. 렌더 트리를 훑어도 안 보이니 값을 의심할 땐 그 프롭을 볼 것.
+      contentContainerClassName="gap-2"
       contentContainerStyle={{ paddingBottom: bottom.contentBottomPx }}
     >
       {/* 헤더가 스크롤 뷰 안에 있다. 첫 자식이라 목록과 함께 흘러 올라간다.
