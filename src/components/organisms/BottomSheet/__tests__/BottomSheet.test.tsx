@@ -48,6 +48,9 @@ import { BottomSheet } from '../BottomSheet'
 
 const noop = (): void => {}
 
+/** 키보드 이벤트 손잡이. 내리는 쪽은 인자를 안 본다. */
+type 손잡이 = (event: { endCoordinates: { height: number } }) => void
+
 beforeEach(() => {
   mockPresent.mockClear()
 })
@@ -57,11 +60,11 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
    * 키보드 이벤트는 네이티브에서 오므로 **등록된 손잡이를 직접 잡아 흔든다**. 등록 순서가
    * 계약이다(뜨는 것· 내리는 것).
    */
-  const 키보드손잡이: Array<() => void> = []
+  const 키보드손잡이: 손잡이[] = []
 
   beforeEach(() => {
     키보드손잡이.length = 0
-    jest.spyOn(Keyboard, 'addListener').mockImplementation(((_event: string, handler: () => void) => {
+    jest.spyOn(Keyboard, 'addListener').mockImplementation(((_event: string, handler: 손잡이) => {
       키보드손잡이.push(handler)
       return { remove: jest.fn() }
     }) as never)
@@ -79,9 +82,10 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
     )
   }
 
-  async function 키보드(뜬다: boolean): Promise<void> {
+  /** 뜨는 손잡이는 높이를 실은 이벤트를 받는다. 내리는 쪽은 안 본다. */
+  async function 키보드(뜬다: boolean, 높이 = 336): Promise<void> {
     await act(async () => {
-      키보드손잡이[뜬다 ? 0 : 1]()
+      키보드손잡이[뜬다 ? 0 : 1]({ endCoordinates: { height: 높이 } })
     })
   }
 
@@ -145,6 +149,24 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
     expect(sheet.props.enableDynamicSizing).toBe(true)
     // 테스트 프레임 높이 844 × 0.82
     expect(sheet.props.maxDynamicContentSize).toBeCloseTo(844 * 0.82)
+  })
+
+  /**
+   * 이 앱은 edge-to-edge 라 키보드가 떠도 **창이 안 줄어든다**. 시트를 올리는 것은 OS 가 아니라
+   * 라이브러리이고, 올리는 방식이 시트를 통째로 키보드 높이만큼 미는 것이다. 그래서 상한을
+   * 그대로 두면 윗변이 82% 선보다 **키보드 높이만큼 더** 올라간다.
+   *
+   * 상한에서 그만큼을 빼면 윗변이 키보드가 있든 없든 같은 선에 선다.
+   */
+  it('키보드가 뜨면 상한에서 그 높이를 뺀다. 시트 + 키보드가 82% 다', async () => {
+    const { getByTestId } = await open()
+    const 상한 = (): number => getByTestId('sheet').props.maxDynamicContentSize as number
+
+    await 키보드(true, 336)
+    expect(상한()).toBeCloseTo(844 * 0.82 - 336)
+
+    await 키보드(false)
+    expect(상한()).toBeCloseTo(844 * 0.82)
   })
 
   /**

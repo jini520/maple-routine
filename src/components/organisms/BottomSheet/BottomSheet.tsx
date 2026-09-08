@@ -4,7 +4,8 @@
  * 여는 법은 조건부 마운트. 마운트하면 열리고 `onClose` 를 받아 언마운트하면 닫힌다. `onClose` 는
  * 이탈 애니메이션이 끝난 뒤에 온다. 스크림을 누르거나 아래로 끌어도 닫힌다.
  *
- * 높이는 내용이 정하고 화면의 82% 가 상한. 폭은 448 중앙 정렬. 스크롤은 이 껍데기가 갖는다.
+ * 높이는 내용이 정하고 화면의 82% 가 상한. 키보드가 뜨면 그 높이만큼 상한이 준다(시트와 키보드를
+ * 합쳐 82% 다). 폭은 448 중앙 정렬. 스크롤은 이 껍데기가 갖는다.
  *
  * 전제로 앱 셸에 `BottomSheetModalProvider` 와 `GestureHandlerRootView` 가 있어야 뜬다.
  *
@@ -100,20 +101,23 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
   }, [])
 
   /**
-   * 키보드가 떠 있는지. 아래 `paddingBottom` 이 인셋을 걷을지 정하는 값.
+   * 떠 있는 키보드의 높이. 0 이면 안 떠 있다.
+   *
+   * 두 곳이 쓴다. 상한에서 이만큼을 빼고(윗변이 한 선에 선다) 아래 `paddingBottom` 이 인셋을
+   * 걷을지 정한다. 떴나와 얼마나가 같은 이벤트에서 오는 같은 사실이라 상태를 하나로 둔다.
    *
    * 라이브러리의 키보드 상태는 시트 안에서만 살아서 RN 이벤트를 직접 듣는다. iOS 는 `will`,
    * 안드로이드는 `did`(`will` 이 없다).
    */
-  const [keyboardShown, setKeyboardShown] = useState(false)
+  const [keyboardHeight, setKeyboardHeight] = useState(0)
   useEffect(() => {
     const show = Keyboard.addListener(
       Platform.select({ ios: 'keyboardWillShow', default: 'keyboardDidShow' }),
-      () => setKeyboardShown(true),
+      (event) => setKeyboardHeight(event.endCoordinates.height),
     )
     const hide = Keyboard.addListener(
       Platform.select({ ios: 'keyboardWillHide', default: 'keyboardDidHide' }),
-      () => setKeyboardShown(false),
+      () => setKeyboardHeight(0),
     )
     return () => {
       show.remove()
@@ -146,7 +150,12 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       // 기본값 `none` 이면 키보드 닫힘에서 라이브러리가 위치를 다시 안 재서 시트가 올라간 자리에
       // 남는다.
       keyboardBlurBehavior="restore"
-      maxDynamicContentSize={frame.height * MAX_HEIGHT_RATIO}
+      /*
+        상한에서 키보드 높이를 뺀다. 이 앱은 edge-to-edge 라 키보드가 떠도 창이 안 줄어들고,
+        시트를 올리는 것은 OS 가 아니라 라이브러리다. 올리는 방식이 시트를 통째로 미는 것이라
+        상한을 그대로 두면 윗변이 82% 선보다 키보드 높이만큼 더 올라간다.
+      */
+      maxDynamicContentSize={frame.height * MAX_HEIGHT_RATIO - keyboardHeight}
       backdropComponent={renderBackdrop}
       accessibilityLabel={props.label}
       style={{ maxWidth: MAX_WIDTH, width: '100%', alignSelf: 'center' }}
@@ -189,7 +198,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
         contentContainerStyle={{
           paddingTop: HANDLE_HEIGHT + 8,
           // 키보드가 떠 있으면 인셋만 걷고 숨돌림 16 은 남긴다.
-          paddingBottom: (keyboardShown ? 0 : insets.bottom) + 16,
+          paddingBottom: (keyboardHeight > 0 ? 0 : insets.bottom) + 16,
         }}
       >
         {/*
