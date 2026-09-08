@@ -878,6 +878,17 @@ describe('그날 목록', () => {
     expect(view.getByTestId('cashbook-row-chevron-spd-1')).toBeTruthy()
   })
 
+  // 그림이 붙는 갈래는 배지 안이 아이콘이 아니라 그림이다. 조회표는 `item-icons.spec.ts` 가
+  // 따로 검사하므로 여기서 물을 것은 **배선** 하나다. 표에 없는 갈래는 아이콘 그대로여야 한다.
+  // 표에 없는 갈래는 아이콘 그대로여야 한다. 폴백 그림을 두면 틀린 것을 그린다.
+  it('그림을 안 붙인 갈래는 배지 안이 아이콘 그대로다', async () => {
+    const view = await 그리기()
+
+    // 지출은 `컨텐츠`, 수입은 `아이템 판매` 다. 둘 다 표에 없다.
+    expect(view.queryByTestId('cashbook-row-image-spd-1', { includeHiddenElements: true })).toBeNull()
+    expect(view.queryByTestId('cashbook-row-image-inc-1', { includeHiddenElements: true })).toBeNull()
+  })
+
   it('날을 바꾸면 그 날 것을 읽는다', async () => {
     const view = await 그리기()
 
@@ -1020,6 +1031,34 @@ describe('자동으로 흘러든 줄', () => {
       '2026-08-23': { incomeMeso: 7_600_000_000, expenseMeso: 0 },
     })
     records.loadDayRecords.mockResolvedValue([결정석줄, 판매줄])
+  })
+
+  // 결정석 줄만 그림을 갖는다. 조회표는 `item-icons.spec.ts` 가 따로 검사하므로 여기서 물을
+  // 것은 **배선** 하나다.
+  //
+  // `includeHiddenElements` 를 켜는 것은 표식이 `aria-hidden` 이기 때문이다. 줄 이름이 이미
+  // 무엇인지 말하므로 그림은 스크린리더에서 숨는 것이 맞고, 그러면 기본 쿼리에 안 잡힌다.
+  const 숨은것까지 = { includeHiddenElements: true }
+
+  it('결정석 줄은 배지 안이 그림이고 판매 줄은 아이콘 그대로다', async () => {
+    const view = await 그리기()
+
+    expect(view.getByTestId('cashbook-row-image-bossCrystal:ocid-1', 숨은것까지)).toBeTruthy()
+    expect(view.queryByTestId('cashbook-row-image-dropSale:ocid-1', 숨은것까지)).toBeNull()
+  })
+
+  // 그림 뒤에는 바탕을 안 깐다(사용자 지정). 자리는 그대로 24 다.
+  it('그림이 선 배지는 바탕색이 없다', async () => {
+    const view = await 그리기()
+
+    const 그림줄 = view.getByTestId('cashbook-row-icon-bossCrystal:ocid-1')
+    const 아이콘줄 = view.getByTestId('cashbook-row-icon-dropSale:ocid-1')
+    const 바탕 = (node: { props: { style?: unknown } }): unknown =>
+      (Object.assign({}, ...[node.props.style].flat(2)) as { backgroundColor?: unknown })
+        .backgroundColor
+
+    expect(바탕(그림줄)).toBeUndefined()
+    expect(바탕(아이콘줄)).toEqual(expect.any(String))
   })
 
   it('캐릭터당 두 줄이 선다. 결정석과 판매를 가른다', async () => {

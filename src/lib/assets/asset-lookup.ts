@@ -217,6 +217,32 @@ export interface SpendIcon {
   readonly beside: boolean
 }
 
+/**
+ * 가계부 하루 상세 줄의 표식. 열쇠는 `features/cashbook/row-icon.ts` 가 만든다.
+ *
+ * 여기 없는 갈래는 `null` 이고 화면이 지금 아이콘을 그대로 쓴다. 비슷한 그림을 갖다 붙이면
+ * 틀린 것을 그리는 셈이다.
+ *
+ * 결정석은 **주간** 것이다. 그림 둘의 픽셀을 재서 골랐다(weekly 가 보라 · monthly 는 금색).
+ */
+const CASHBOOK_ROW_ICON_BY_KEY: Record<string, string> = {
+  '보스 결정석': 'intense_power_crystal_weekly.webp',
+  // 큐브는 본잠·에디를 안 가르므로 그림도 하나다(사용자 지정).
+  '큐브 재설정': 'cube_gold.png',
+  '스타포스': 'equipment_enhancement_scroll.png',
+  '잠재능력': 'potential_reset.png',
+  '에디셔널 잠재능력': 'additional_potential_reset.png',
+  // 손입력 갈래 둘. 수익의 `사냥` 과 지출의 `버프` 는 이름이 겹치지 않는다.
+  '사냥': 'wealth_acquisition_potion_small.webp',
+  '버프': 'seiram_elixir.webp',
+}
+
+export function cashbookRowIconOf(key: string): ImageAssetRef | null {
+  const file = CASHBOOK_ROW_ICON_BY_KEY[key]
+  if (file === undefined) return null
+  return ITEM_ASSETS[file.normalize('NFC')] ?? null
+}
+
 export function spendIconOf(label: string): SpendIcon | null {
   const file = ITEM_ICON_BY_LABEL[label]
   if (file !== undefined) {

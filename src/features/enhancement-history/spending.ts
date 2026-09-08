@@ -28,15 +28,18 @@ export interface EnhancementSpendingRow extends EnhancementHistoryEntry {
  *
  * `kind` 는 API 엔드포인트라 잠재 둘이 한 통에 온다. 그런데 본 잠재와 에디셔널은 비용 표가
  * 아예 다르고(에디셔널이 두 배 넘는다) 사용자가 따로 센다.
+ *
+ * **큐브는 안 가른다.** 한 번 본잠·에디로 갈라 봤고 되돌렸다(사용자 지정 2026-09-08). 갈라도
+ * 값이 안 바뀌는데(감정비용은 장비 레벨 하나로 나온다) 줄만 둘로 늘었다.
  */
 export type EnhancementCategory =
-  | '큐브'
+  | '큐브 재설정'
   | '스타포스'
   | '잠재능력'
   | '에디셔널 잠재능력'
 
 function categoryOf(entry: EnhancementHistoryEntry): EnhancementCategory {
-  if (entry.kind === 'cube') return '큐브'
+  if (entry.kind === 'cube') return '큐브 재설정'
   if (entry.kind === 'starforce') return '스타포스'
   // 응답이 `에디셔널 잠재능력 재설정` 이라고 말한다. 그 값이 아니면 본 잠재다.
   return text(entry.payload, 'potential_type') === '에디셔널 잠재능력 재설정'

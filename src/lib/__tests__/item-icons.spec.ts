@@ -1,6 +1,6 @@
 
 import { assetUri } from '../../assets/__tests__/asset-uri'
-import { getItemIconUrl, getItemIconUrlByFile } from '../assets/asset-lookup'
+import { cashbookRowIconOf, getItemIconUrl, getItemIconUrlByFile } from '../assets/asset-lookup'
 
 describe('getItemIconUrl', () => {
   it('item-icons.json에 매핑된 일반 아이템은 URL을 반환한다 (홍옥의 보스 반지 상자 -> boss_ring_box_red.png)', () => {
@@ -80,4 +80,30 @@ describe('getItemIconUrlByFile', () => {
   it('없는 파일은 null을 반환한다', () => {
     expect(getItemIconUrlByFile('nope.png')).toBeNull()
   })
+})
+
+// 가계부 줄 표식이 실제 파일에 닿는가.
+//
+// 표에 파일 이름을 손으로 적으므로 오타 한 글자면 그 줄만 조용히 아이콘으로 남는다. 화면에서는
+// **아직 안 바꿨나** 로 보여 고장으로 안 읽힌다.
+describe('가계부 줄 표식', () => {
+  it.each([
+    '보스 결정석',
+    '큐브 재설정',
+    '스타포스',
+    '잠재능력',
+    '에디셔널 잠재능력',
+    '사냥',
+    '버프',
+  ])('%s 줄이 그림을 찾는다', (key) => {
+    expect(cashbookRowIconOf(key)).not.toBeNull()
+  })
+
+  // 표에 없는 갈래는 `null` 이어야 화면이 아이콘으로 떨어진다. 폴백 그림을 두면 틀린 것을 그린다.
+  it.each(['아이템 판매', '컨텐츠', '이벤트·BM', '아이템 구매', '기타'])(
+    '%s 줄은 그림이 없다',
+    (key) => {
+      expect(cashbookRowIconOf(key)).toBeNull()
+    },
+  )
 })
