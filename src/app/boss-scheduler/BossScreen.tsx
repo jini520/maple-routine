@@ -41,7 +41,6 @@ import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { IllustratedCard, FadedIllustration } from '../../components/molecules/FadedIllustration/FadedIllustration'
 import { PartySizeModal } from '../../components/organisms/PartySizeModal/PartySizeModal'
-import { DataFreshness } from '../../components/molecules/DataFreshness/DataFreshness'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -402,64 +401,62 @@ export function BossScreen(): React.JSX.Element {
         // 당김은 헤더 버튼과 **같은 재조회**를 부른다. 컨텐츠 스케줄러와 배선이 같아야 한다.
         onRefresh={() => refresh(trackedOcids ?? [])}
         header={
-          // `fixed` 도 spacer 도 없다.
-          // 제목과 필터도 목록과 **함께 스크롤된다.** 헤더가 `ScreenScroll` 의 첫 자식이라
-          <PageHeader ownsFreshnessLine>
-            {/* 제목과 갱신 시각이 **한 덩어리**다. 따로 넣으면 `PageHeader` 의 `gap-4` 가
-                둘 사이에 들어가 제목에 딸린 글씨로 안 읽힌다. 여기에 `gap-*` 을 안 주는 것은
-                `PageHeaderTitleRow` 의 `min-h-8` 이 제목 아래에 이미 여백을 남기기 때문이다. */}
-            <View>
-              <PageHeaderTitleRow>
-                <Text className="shrink text-lg font-semibold text-text">보스 스케줄러</Text>
-              </PageHeaderTitleRow>
-              <DataFreshness fetchedAt={fetchedAt} />
-            </View>
-
-            {/* 조건이 **줄 밖**에 있다. 안에 두면 캐릭터가 없는 동안 빈 줄이 `gap-4` 를 두 번
-                먹는다. */}
-            {characters.length > 0 && selected !== null && (
-              <CharacterRail
-                entries={railEntries}
-                selectedOcid={selected.ocid}
-                onSelect={(ocid) => {
-                  void select(ocid)
-                }}
-              />
-            )}
-
-            {/* 캐시된 `characters` 가 있으면 재검증 중에도 계속 보여준다. 셸 승계 카드는
-                보여줄 데이터가 아예 없을 때만 그린다. */}
-            {(status === 'idle' || status === 'loading') && characters.length === 0 && (
-              <LoadingState size="page" message="불러오고 있어요" />
-            )}
-
-            {/* `n/12`·`season` 배지는 `주간` 섹션 헤더가 싣는다. 그 수치가 어느 무리의
-                것인지 헤더가 말한다. 이 줄에 남는 것은 필터 하나뿐이다. */}
-            {characters.length > 0 && selected !== null && (
-              <View className="flex-row items-center gap-2">
-                {(['all', 'solo', 'party'] as const).map((filter) => (
-                  <Pressable
-                    key={filter}
-                    role="button"
-                    aria-selected={partyFilter === filter}
-                    onPress={() => setPartyFilter(filter)}
-                  >
-                    <Text
-                      className={
-                        partyFilter === filter
-                          ? 'rounded-full bg-primary-tint px-3 py-1 text-xs font-semibold text-primary-ink'
-                          : 'px-3 text-xs font-medium text-text-muted'
-                      }
-                    >
-                      {PARTY_FILTER_LABELS[filter]}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            )}
+          // 헤더는 제목 줄 하나다. 레일도 필터도 로딩 카드도 콘텐츠로 내려갔다. 헤더에 담는
+          // 것은 제목 · 기준 시각 · 다른 페이지로 가는 것 셋뿐이다.
+          <PageHeader>
+            <PageHeaderTitleRow fetchedAt={fetchedAt}>
+              <Text className="shrink text-lg font-semibold text-text">보스 스케줄러</Text>
+            </PageHeaderTitleRow>
           </PageHeader>
         }
       >
+        {/* 캐릭터를 고르는 장치라 콘텐츠다. 조건이 **줄 밖**에 있다. 안에 두면 캐릭터가 없는
+            동안 빈 줄이 `gap-4` 를 두 번 먹는다.
+
+            좌우 여백을 주지 않는다. 레일이 자기 안쪽 스크롤로 그 16 을 든다. */}
+        {characters.length > 0 && selected !== null && (
+          <CharacterRail
+            entries={railEntries}
+            selectedOcid={selected.ocid}
+            onSelect={(ocid) => {
+              void select(ocid)
+            }}
+          />
+        )}
+
+        {/* 캐시된 `characters` 가 있으면 재검증 중에도 계속 보여준다. 셸 승계 카드는
+            보여줄 데이터가 아예 없을 때만 그린다. */}
+        {(status === 'idle' || status === 'loading') && characters.length === 0 && (
+          <View className="px-4">
+            <LoadingState size="page" message="불러오고 있어요" />
+          </View>
+        )}
+          
+        {/* 목록에서 무엇을 보는가를 고르는 장치라 콘텐츠다. `n/12`·`season` 배지는 `주간` 섹션
+            헤더가 싣는다. 그 수치가 어느 무리의 것인지 그쪽이 말한다. */}
+        {characters.length > 0 && selected !== null && (
+          <View className="flex-row items-center gap-2 px-4">
+            {(['all', 'solo', 'party'] as const).map((filter) => (
+              <Pressable
+                key={filter}
+                role="button"
+                aria-selected={partyFilter === filter}
+                onPress={() => setPartyFilter(filter)}
+              >
+                <Text
+                  className={
+                    partyFilter === filter
+                      ? 'rounded-full bg-primary-tint px-3 py-1 text-xs font-semibold text-primary-ink'
+                      : 'px-3 text-xs font-medium text-text-muted'
+                  }
+                >
+                  {PARTY_FILTER_LABELS[filter]}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+
         {characters.length > 0 && selected !== null && (
           <View testID="pull-content" className="gap-4 px-4 pb-4">
             {/* 빈 상태 둘은 **목록 하나**를 보고 판정한다. 무리별로 물으면 검마를 안 잡는

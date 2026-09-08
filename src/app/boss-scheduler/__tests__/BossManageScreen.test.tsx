@@ -13,7 +13,7 @@ import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
 import type { MatchedBoss } from '../../../lib/boss/boss-matching'
 import type { ManualTrackedItem } from '../../../types'
 
-import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { BossManageScreen } from '../BossManageScreen'
 
@@ -244,6 +244,62 @@ describe('BossManageScreen: 공통', () => {
 
     expect(useCharacterSelectionStore.getState().selectedOcid).toBe('ocid-2')
   })
+
+  // 스토어가 내는 것은 레벨 내림차순이고, 그 위에 캐릭터 관리에서 정한 저장 배열 순서를 얹는다.
+  // 그래서 **입력과 다른 순서**로 주는 것이 이 케이스의 요점이다. 스케줄러 화면의 같은 이름 케이스와
+  // 짝이다. 두 화면이 다른 차례로 서면 같은 캐릭터를 오갈 때마다 다시 찾아야 한다.
+  it('레일 순서는 스토어 순서가 아니라 trackedOcids 저장 순서다', async () => {
+    mockStore({
+      trackedOcids: ['ocid-2', 'ocid-1'],
+      characters: [
+        character({ characterName: '캐릭터1' }),
+        character({ ocid: 'ocid-2', characterName: '캐릭터2' }),
+      ],
+    })
+
+    await renderScreen()
+
+    expect(
+      screen.getAllByTestId('character-portrait').map((node) => node.props.accessibilityLabel),
+    ).toEqual([expect.stringContaining('캐릭터2'), expect.stringContaining('캐릭터1')])
+  })
+
+  // 순서를 정하는 함수가 목록의 크기를 바꾸면 안 된다. 저장 직후와 동기화의 중간 커밋에서 두 목록이
+  // 한순간 어긋나는데, 그때 초상화가 통째로 사라지는 것이 가장 나쁜 실패다.
+  it('저장 목록에 없는 캐릭터도 레일에서 사라지지 않는다', async () => {
+    mockStore({
+      trackedOcids: ['ocid-2'],
+      characters: [
+        character({ characterName: '캐릭터1' }),
+        character({ ocid: 'ocid-2', characterName: '캐릭터2' }),
+      ],
+    })
+
+    await renderScreen()
+
+    expect(
+      screen.getAllByTestId('character-portrait').map((node) => node.props.accessibilityLabel),
+    ).toEqual([expect.stringContaining('캐릭터2'), expect.stringContaining('캐릭터1')])
+  })
+
+  // 폴백도 같은 순서를 봐야 한다. `resolveSelectedCharacter` 는 목록의 첫 번째를 고르므로, 스토어
+  // 순서를 넘기면 아직 아무것도 안 고른 사용자에게 스케줄러와 다른 캐릭터가 열린다.
+  it('아직 안 골랐으면 저장 순서의 첫 캐릭터가 열린다', async () => {
+    mockStore({
+      trackedOcids: ['ocid-2', 'ocid-1'],
+      characters: [
+        character({ characterName: '캐릭터1' }),
+        character({ ocid: 'ocid-2', characterName: '캐릭터2' }),
+      ],
+    })
+
+    await renderScreen()
+
+    const 고른칸 = screen
+      .getAllByTestId('character-portrait')
+      .find((node) => stateOf(node).selected === true)
+    expect(고른칸?.props.accessibilityLabel).toEqual(expect.stringContaining('캐릭터2'))
+  })
 })
 
 describe('BossManageScreen: 수동 모드', () => {
@@ -413,6 +469,30 @@ describe('BossManageScreen: 자동 모드', () => {
 
     expect(screen.getByText('매그너스')).toBeTruthy()
     expect(stateOf(screen.getByLabelText('모든 보스 보기')).checked).toBe(true)
+  })
+
+  // 글자가 스위치 밖 줄 왼쪽 끝에 있었다. 자리를 붙인 것만이 아니라 **누를 수 있는 표적이
+  // 넓어진 것**이 요점이라, 담김이 아니라 눌러서 켜지는 것으로 본다.
+  it('`모든 보스 보기` 글자가 스위치 안에 있어 글자를 눌러도 켜진다', async () => {
+    mockStore({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
+    await renderScreen()
+    const 스위치 = screen.getByLabelText('모든 보스 보기')
+
+    await press(within(스위치).getByText('모든 보스 보기'))
+
+    expect(stateOf(스위치).checked).toBe(true)
+  })
+
+  // 붙인 쌍이 줄 오른쪽 끝에 선다. 감싼 줄이 `items-end` 로 밀고, 빠지면 줄 전체로 늘어나
+  // 글자가 다시 왼쪽 끝에 선다.
+  it('글자와 스위치가 한 쌍으로 줄 오른쪽 끝에 선다', async () => {
+    mockStore({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
+
+    await renderScreen()
+
+    const 스위치 = screen.getByLabelText('모든 보스 보기')
+    expect(flattenStyle(스위치.props.style).flexDirection).toBe('row')
+    expect(flattenStyle(스위치.parent?.props.style).alignItems).toBe('flex-end')
   })
 
   // 등록 보스가 하나도 없으면 토글이 꺼져 있어도 전체로 대체한다.

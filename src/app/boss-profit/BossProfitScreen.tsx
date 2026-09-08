@@ -45,7 +45,6 @@ import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { ValuableDropBadge } from '../../components/molecules/ValuableDropBadge/ValuableDropBadge'
-import { DataFreshness } from '../../components/molecules/DataFreshness/DataFreshness'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
@@ -248,30 +247,31 @@ export function BossProfitScreen(): React.JSX.Element {
     // 공용 `PageHeader` 를 쓰지 않는다. 그 셸의 하단 페이드를 이 화면은 금지한다. 나머지 값은
     // 그 컴포넌트와 같고 상단 여백을 더하지 않는 것도 함께다. 그 안전영역은 `useTopSafeAreaPx()`
     // 다. 셸을 복제한 화면이 인셋을 직접 읽으면 이 화면만 안드로이드에서 16.7px 위에 선다.
-    <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: topSafeAreaPx }}>
-
-      <View className="gap-4">
-        {/* 히스토리 진입점은 탭 줄이 아니라 제목 줄 우측이고 아이콘이 아니라 글자다. 진입점
-            둘은 같은 어휘를 쓰고 `아이템 가격`(쓰기)이 `히스토리`(읽기) 왼쪽이다. 값을 매기는
-            쪽이 주마다 들르는 자리다. */}
-        {/* 제목과 갱신 시각이 **한 덩어리**다. 따로 넣으면 이 헤더의 `gap-4` 가 둘 사이에
-            들어가 제목에 딸린 글씨로 안 읽힌다. 여기에 `gap-*` 을 안 주는 것은
-            `PageHeaderTitleRow` 의 `min-h-8` 이 제목 아래에 이미 여백을 남기기 때문이다. */}
-        <View>
-          <PageHeaderTitleRow className="justify-between">
-            <Text className="text-lg font-semibold text-text">보스 수익</Text>
-            <View className="flex-row items-center gap-3">
-              <Pressable role="button" onPress={() => navigation.navigate('DropPrice')}>
-                <Text className="text-sm font-medium text-text-muted">아이템 가격</Text>
-              </Pressable>
-              <Pressable role="button" onPress={() => navigation.navigate('DropHistory')}>
-                <Text className="text-sm font-medium text-text-muted">히스토리</Text>
-              </Pressable>
-            </View>
-          </PageHeaderTitleRow>
-          <DataFreshness fetchedAt={fetchedAt} />
+    //
+    // 헤더는 제목 줄 하나다. 주간/월간 · 기간 이동 · 총 수익 요약은 **이 화면에서 무엇을
+    // 보는가**에 딸린 것이라 콘텐츠로 내려갔다.
+    <View testID="page-header" className="z-10 px-4" style={{ paddingTop: topSafeAreaPx }}>
+      {/* 진입점 둘은 다른 페이지로 가는 것이라 헤더에 남는다. 같은 어휘를 쓰고
+          `아이템 가격`(쓰기)이 `히스토리`(읽기) 왼쪽이다. 값을 매기는 쪽이 주마다 들르는
+          자리다. */}
+      <PageHeaderTitleRow className="justify-between" fetchedAt={fetchedAt}>
+        <Text className="text-lg font-semibold text-text">보스 수익</Text>
+        <View className="flex-row items-center gap-3">
+          <Pressable role="button" onPress={() => navigation.navigate('DropPrice')}>
+            <Text className="text-sm font-medium text-text-muted">아이템 가격</Text>
+          </Pressable>
+          <Pressable role="button" onPress={() => navigation.navigate('DropHistory')}>
+            <Text className="text-sm font-medium text-text-muted">히스토리</Text>
+          </Pressable>
         </View>
+      </PageHeaderTitleRow>
+    </View>
+  )
 
+  // 기간을 고르고 그 기간의 총 수익을 말하는 덩어리. 헤더가 아니라 콘텐츠의 첫 블록이다.
+  // 안쪽 `gap-4` 는 옛 헤더가 쓰던 값 그대로라 보이는 간격이 안 바뀐다.
+  const periodSection = (
+    <View className="gap-4 px-4">
         <View className="flex-row items-center gap-4">
           <Pressable role="button" aria-selected={tab === 'weekly'} onPress={() => setTab('weekly')}>
             <Text
@@ -405,7 +405,6 @@ export function BossProfitScreen(): React.JSX.Element {
             <View className="mt-3 h-px bg-border" aria-hidden />
           </View>
         )}
-      </View>
     </View>
   )
 
@@ -419,6 +418,8 @@ export function BossProfitScreen(): React.JSX.Element {
           // 오지 않는다.
           onRefresh={() => ledger.reload(['live', 'window'])}
         >
+          {periodSection}
+
           <View testID="pull-content" className="gap-2 px-4 pb-4">
             {/* 점선 박스(빈 상태의 어법)와 비-브랜드 링을 쓰지 않고 셸 승계 카드를 쓴다. 백필이
                 끝나면 같은 자리·같은 껍데기에 캐릭터 카드가 들어온다. */}

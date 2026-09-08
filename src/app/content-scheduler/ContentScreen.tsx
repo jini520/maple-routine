@@ -27,7 +27,6 @@ import { dailyContentProgress, weeklyContentProgress } from './content-completio
 import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
-import { DataFreshness } from '../../components/molecules/DataFreshness/DataFreshness'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -200,68 +199,68 @@ export function ContentScreen(): React.JSX.Element {
         // 인디케이터가 뜬다. 그 대가는 ADR 이 적는다.
         onRefresh={() => refresh(trackedOcids ?? [])}
         header={
-          // 제목~탭도 목록과 함께 스크롤된다. 헤더는 `ScreenScroll` 의 첫 자식이다.
-          <PageHeader ownsFreshnessLine>
+          // 헤더는 제목 줄 하나다. 레일도 탭도 로딩 카드도 콘텐츠로 내려갔다. `관리` 만
+          // 남는 것은 그것이 **다른 페이지로 가는 것**이기 때문이다.
+          <PageHeader>
             {/* 동기화 상태가 드롭다운 줄에서 **제목 옆**으로 올라왔다. 오른쪽
                 끝은 관리 버튼 자리 그대로다. 그쪽은 **가는 곳**, 이쪽은 **상태** 라 성질이 다르다. */}
-            {/* 제목과 갱신 시각이 **한 덩어리**다. 따로 넣으면 `PageHeader` 의 `gap-4` 가
-                둘 사이에 들어가 제목에 딸린 글씨로 안 읽힌다. 여기에 `gap-*` 을 안 주는 것은
-                `PageHeaderTitleRow` 의 `min-h-8` 이 제목 아래에 이미 여백을 남기기 때문이다. */}
-            <View>
-              <PageHeaderTitleRow className="justify-between">
-                <Text className="shrink text-lg font-semibold text-text">컨텐츠 스케줄러</Text>
-                {manualManageButton}
-              </PageHeaderTitleRow>
-              <DataFreshness fetchedAt={fetchedAt} />
-            </View>
-
-            {/* 조건이 **줄 밖**에 있다. 안에 두면 캐릭터가 없는 동안(첫 조회) 빈 줄이 남아
-                `PageHeader` 의 `gap-4` 를 두 번 먹는다(딸림 변경). */}
-            {characters.length > 0 && selected !== null && (
-              <CharacterRail
-                entries={railEntries}
-                selectedOcid={selected.ocid}
-                onSelect={(ocid) => {
-                  void select(ocid)
-                }}
-              />
-            )}
-
-            {/* 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다.
-                셸 승계 카드는 보여줄 데이터가 아예 없을 때만 그린다. */}
-            {(status === 'idle' || status === 'loading') && characters.length === 0 && (
-              <LoadingState size="page" message="불러오고 있어요" />
-            )}
-
-            {characters.length > 0 && selected !== null && (
-              <View className="flex-row items-center gap-4">
-                <Pressable role="button" aria-selected={activeTab === 'daily'} onPress={() => setActiveTab('daily')}>
-                  <Text
-                    className={
-                      activeTab === 'daily'
-                        ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
-                        : 'px-3 text-sm font-medium text-text-muted'
-                    }
-                  >
-                    일간
-                  </Text>
-                </Pressable>
-                <Pressable role="button" aria-selected={activeTab === 'weekly'} onPress={() => setActiveTab('weekly')}>
-                  <Text
-                    className={
-                      activeTab === 'weekly'
-                        ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
-                        : 'px-3 text-sm font-medium text-text-muted'
-                    }
-                  >
-                    주간
-                  </Text>
-                </Pressable>
-              </View>
-            )}
+            <PageHeaderTitleRow className="justify-between" fetchedAt={fetchedAt}>
+              <Text className="shrink text-lg font-semibold text-text">컨텐츠 스케줄러</Text>
+              {manualManageButton}
+            </PageHeaderTitleRow>
           </PageHeader>
         }
       >
+        {/* 캐릭터를 고르는 장치라 콘텐츠다. 조건이 **줄 밖**에 있다. 안에 두면 캐릭터가 없는
+            동안(첫 조회) 빈 줄이 남아 콘텐츠 간격을 두 번 먹는다.
+
+            좌우 여백을 주지 않는다. 레일이 자기 안쪽 스크롤로 그 16 을 든다. */}
+        {characters.length > 0 && selected !== null && (
+          <CharacterRail
+            entries={railEntries}
+            selectedOcid={selected.ocid}
+            onSelect={(ocid) => {
+              void select(ocid)
+            }}
+          />
+        )}
+
+        {/* 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다.
+            셸 승계 카드는 보여줄 데이터가 아예 없을 때만 그린다. */}
+        {(status === 'idle' || status === 'loading') && characters.length === 0 && (
+          <View className="px-4">
+            <LoadingState size="page" message="불러오고 있어요" />
+          </View>
+        )}
+
+        {/* 목록에서 무엇을 보는가를 고르는 장치라 콘텐츠다. */}
+        {characters.length > 0 && selected !== null && (
+          <View className="flex-row items-center gap-4 px-4">
+            <Pressable role="button" aria-selected={activeTab === 'daily'} onPress={() => setActiveTab('daily')}>
+              <Text
+                className={
+                  activeTab === 'daily'
+                    ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
+                    : 'px-3 text-sm font-medium text-text-muted'
+                }
+              >
+                일간
+              </Text>
+            </Pressable>
+            <Pressable role="button" aria-selected={activeTab === 'weekly'} onPress={() => setActiveTab('weekly')}>
+              <Text
+                className={
+                  activeTab === 'weekly'
+                    ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
+                    : 'px-3 text-sm font-medium text-text-muted'
+                }
+              >
+                주간
+              </Text>
+            </Pressable>
+          </View>
+        )}
+
         {characters.length > 0 && selected !== null && (
           <View testID="pull-content" className="gap-4 px-4 pb-4">
             {activeTab === 'daily' && (

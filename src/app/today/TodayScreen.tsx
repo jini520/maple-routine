@@ -39,7 +39,6 @@ import { resolveDisplayRepresentative } from '../../features/character-manage/de
 import type { CharacterBasicProfile } from '../../types'
 
 import { Text } from '../../components/atoms'
-import { DataFreshness } from '../../components/molecules/DataFreshness/DataFreshness'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -260,16 +259,10 @@ export function TodayScreen(): React.JSX.Element {
       <ScreenScroll
         onRefresh={refreshAll}
         header={
-          <PageHeader ownsFreshnessLine>
-            {/* 제목과 갱신 시각이 **한 덩어리**다. 따로 넣으면 `PageHeader` 의 `gap-4` 가
-                둘 사이에 들어가 제목에 딸린 글씨로 안 읽힌다. 여기에 `gap-*` 을 안 주는 것은
-                `PageHeaderTitleRow` 의 `min-h-8` 이 제목 아래에 이미 여백을 남기기 때문이다. */}
-            <View>
-              <PageHeaderTitleRow>
-                <Text className="shrink-0 text-lg font-semibold text-text">today</Text>
-              </PageHeaderTitleRow>
-              <DataFreshness fetchedAt={fetchedAt} />
-            </View>
+          <PageHeader>
+            <PageHeaderTitleRow fetchedAt={fetchedAt}>
+              <Text className="shrink-0 text-lg font-semibold text-text">today</Text>
+            </PageHeaderTitleRow>
           </PageHeader>
         }
       >

@@ -263,25 +263,29 @@ export function DropHistoryScreen(): React.JSX.Element {
         // 공용 `PageHeader` 를 쓰지 않는다. 이 화면에는 배경 조각도 하단 페이드도 없다. 상단
         // 안전영역을 헤더가 먹는다는 계약은 그대로다. 여백은 더하지 않는다. 공용 셸과 같은 값
         // 이어야 가격 화면과 나란히 열릴 때 제목 높이가 안 갈린다. 그 값이 `useTopSafeAreaPx()` 다.
-        <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: topSafeAreaPx }}>
-          <View className="gap-3">
-            <PageHeaderTitleRow className="gap-1">
-              <Pressable
-                role="button"
-                onPress={() => navigation.goBack()}
-                aria-label="뒤로"
-                className="-ml-2 h-9 w-9 items-center justify-center"
-              >
-                <ArrowLeftIcon className="h-5 w-5 text-text" strokeWidth={2} aria-hidden />
-              </Pressable>
-              <Text className="text-lg font-semibold text-text">히스토리</Text>
-            </PageHeaderTitleRow>
-
-            {drought !== null && <ValuableDrought summary={drought} now={now} />}
-          </View>
+        <View testID="page-header" className="z-10 px-4" style={{ paddingTop: topSafeAreaPx }}>
+          <PageHeaderTitleRow className="gap-1">
+            <Pressable
+              role="button"
+              onPress={() => navigation.goBack()}
+              aria-label="뒤로"
+              className="-ml-2 h-9 w-9 items-center justify-center"
+            >
+              <ArrowLeftIcon className="h-5 w-5 text-text" strokeWidth={2} aria-hidden />
+            </Pressable>
+            <Text className="text-lg font-semibold text-text">히스토리</Text>
+          </PageHeaderTitleRow>
         </View>
       }
     >
+      {/* 가뭄 요약은 이 화면이 말하는 내용이라 콘텐츠다. 헤더에 담는 것은 제목 · 기준 시각 ·
+          다른 페이지로 가는 것 셋뿐이다. */}
+      {drought !== null && (
+        <View className="px-4">
+          <ValuableDrought summary={drought} now={now} />
+        </View>
+      )}
+
       {/* 하단 안전영역은 `ScreenScroll` 이 넣는다. 여기 남는 것은 상수 몫뿐이다.
 
           `screen-<라우트 이름>` 은 내비게이션 테스트가 그 라우트로 밀면 그 화면이 열리는가 를

@@ -214,7 +214,7 @@ export function DropPriceScreen(): React.JSX.Element {
           // 히스토리 화면과 같은 헤더 레시피. 공용 `PageHeader` 를 쓰지 않는 이유도 같다
           // (배경 조각도 하단 페이드도 없는 서브 화면이다). 상단 여백을 안 더하는 것도, 그
           // 안전영역을 `useTopSafeAreaPx()` 로 받는 것도 같다.
-          <View testID="page-header" className="z-10 px-4 pb-2" style={{ paddingTop: topSafeAreaPx }}>
+          <View testID="page-header" className="z-10 px-4" style={{ paddingTop: topSafeAreaPx }}>
             <PageHeaderTitleRow className="gap-1">
               <Pressable
                 role="button"
