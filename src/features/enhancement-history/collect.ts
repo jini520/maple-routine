@@ -16,9 +16,11 @@ import {
   checkKey,
   loadEnhancementChecks,
   loadKnownHistoryIds,
+  loadObservedItemLevels,
   markEnhancementChecked,
   saveEnhancementHistory,
 } from '../../storage/enhancement-history'
+import { enhancementCostOf } from './spending'
 import { eventWorldCharacterNames } from '../../lib/enhancement/world'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { mapWithLimit } from '../schedule-window/gate'
@@ -109,7 +111,30 @@ export async function measureEnhancementHistory(
  * 아는 id 를 만나면 멈춘다. 그 아래는 이미 들어 있다. 안 그러면 하루가 1000줄을 넘길 때마다
  * 그 날의 모든 쪽을 매번 다시 받는다.
  */
-async function collectOne(apiKey: string, job: EnhancementHistoryJob): Promise<string | null> {
+/**
+ * 값을 매길 수 있는 줄만 남긴다. **못 매기는 줄은 버린다**(사용자 지정 2026-09-10).
+ *
+ * 전에는 다 저장하고 읽을 때 `costMeso: null` 로 두어, 화면이 그 줄을 `값 모름` 으로 세웠다.
+ * 금액을 못 적는 줄은 목록에서 자리만 차지하고 합계에도 안 들어간다.
+ *
+ * 실제로 걸리는 것은 **장비 레벨을 못 푸는 스타포스**뿐이다(응답에 `item_level` 이 없다).
+ * 큐브·잠재는 응답이 레벨을 주므로 안 버려진다.
+ *
+ * @param observedLevels 회차가 시작할 때 한 번 읽은 표. 이 회차에 새로 들어온 레벨은 안 든다
+ */
+function pricedRows(
+  kind: EnhancementKind,
+  rows: readonly EnhancementHistoryRow[],
+  observedLevels: ReadonlyMap<string, number>,
+): EnhancementHistoryRow[] {
+  return rows.filter((row) => enhancementCostOf({ ...row, kind }, observedLevels) !== null)
+}
+
+async function collectOne(
+  apiKey: string,
+  job: EnhancementHistoryJob,
+  observedLevels: ReadonlyMap<string, number>,
+): Promise<string | null> {
   const known = await loadKnownHistoryIds(job.kind, job.dateKey)
   let cursor: string | null = null
   let firstCursor: string | null = null
@@ -119,8 +144,12 @@ async function collectOne(apiKey: string, job: EnhancementHistoryJob): Promise<s
     const page = await fetchEnhancementHistory(apiKey, job.kind, query)
     if (pageIndex === 0) firstCursor = page.nextCursor
 
-    await saveEnhancementHistory(job.kind, page.rows)
+    await saveEnhancementHistory(job.kind, pricedRows(job.kind, page.rows, observedLevels))
 
+    /**
+     * **버린 줄도 아는 줄이다.** 커서를 멈추는 판정은 받은 쪽 전체로 한다. 저장된 것만 보면
+     * 버려진 줄만 있는 쪽에서 영영 안 멈춰 쪽수를 끝까지 따라간다.
+     */
     const reachedKnown = page.rows.some((row: EnhancementHistoryRow) => known.has(row.id))
     if (page.nextCursor === null || reachedKnown) break
     cursor = page.nextCursor
@@ -164,12 +193,21 @@ export async function collectEnhancementHistory(
     })
     .catch(() => null)
 
+  /**
+   * 이름에서 레벨로. **회차마다 한 번**만 읽는다. 값을 못 매기는 줄을 버리는 판정이 이 표를
+   * 본다. 작업마다 읽으면 같은 집계를 수십 번 돌린다.
+   *
+   * 이 회차에 새로 들어온 레벨은 안 든다. 그래서 처음 켠 사람의 스타포스 줄 중 정적 표
+   * (`equipment-items.json`)에도 없는 장비는 버려질 수 있다.
+   */
+  const observedLevels = await loadObservedItemLevels().catch(() => new Map<string, number>())
+
   const checkedAt = now.toISOString()
   await mapWithLimit(
     jobs,
     HISTORY_CALL_LIMIT,
     async (job) => {
-      const firstCursor = await collectOne(authConfig.apiKey, job)
+      const firstCursor = await collectOne(authConfig.apiKey, job, observedLevels)
       const settled = job.dateKey < todayDateKey && eventNames !== null
       await markEnhancementChecked(job.kind, job.dateKey, firstCursor, settled, checkedAt)
     },

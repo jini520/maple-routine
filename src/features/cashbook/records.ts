@@ -17,7 +17,10 @@ import type { CalendarAmounts, CalendarDayAmounts } from '../../lib/calendar'
 import { dropPayoutMeso } from '../../lib/drop/drop-price'
 import { pointToMeso } from '../../lib/cashbook/spend-catalog'
 import { getBossDropRecords, getBossDropRecordsRevision } from '../../storage/boss-drops'
-import { getBossProfitRecordsRevision, getDatedBossProfitRecords } from '../../storage/boss-profit'
+import {
+  getBossProfitRecordsRevision,
+  getDatedBossProfitRecords,
+} from '../../storage/boss-profit'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getRecordedCharacterOcids } from '../../storage/boss-profit'
 import { resolveDisplayProfiles } from '../character-profile/resolve'
@@ -31,7 +34,10 @@ import {
   type IncomeRecord,
 } from '../../storage/income'
 import { getEventWorldNames } from '../../storage/event-world-names'
-import { loadEnhancementHistory, loadObservedItemLevels } from '../../storage/enhancement-history'
+import {
+  loadEnhancementHistory,
+  loadObservedItemLevels,
+} from '../../storage/enhancement-history'
 import {
   toEnhancementSpending,
   type EnhancementCategory,
@@ -102,17 +108,6 @@ export function spendMesoOf(record: SpendRecord): number {
   return meso + pointToMeso(record.pointAmount, record.pointPer100mMeso)
 }
 
-function addTo(
-  amounts: Record<string, CalendarDayAmounts>,
-  dateKey: string,
-  delta: Partial<CalendarDayAmounts>,
-): void {
-  const current = amounts[dateKey] ?? { incomeMeso: 0, expenseMeso: 0 }
-  amounts[dateKey] = {
-    incomeMeso: current.incomeMeso + (delta.incomeMeso ?? 0),
-    expenseMeso: current.expenseMeso + (delta.expenseMeso ?? 0),
-  }
-}
 
 /**
  * 자동으로 흘러든 하루치. 캐릭터 하나 × 하루.
@@ -255,15 +250,6 @@ async function loadBossDaySummaries(
 }
 
 /**
- * 날짜 범위의 칸 금액. 두 끝을 포함한다.
- *
- * 접는 원천이 넷이다. 손입력 둘(`income_records`·`spend_records`)과 보스 둘(결정석 · 아이템
- * 판매). 넷이 전부다.
- *
- * 날짜를 모르는 보스 기록은 안 든다. 어느 칸에 얹으면 그것이 거짓 날짜가 된다. 그런 기록은
- * 주간 보기에서 `period_key` 로 제자리에 서므로 잃는 것은 월간 칸뿐이다.
- */
-/**
  * 그 범위의 강화 사용 내역을 **금액이 붙은 줄**로.
  *
  * 이벤트 월드(스페셜) 줄은 여기서 걷힌다. 이름 집합을 아직 못 받았으면 월드를 모르는 줄을 전부
@@ -283,12 +269,26 @@ async function loadEnhancementSpending(
   return toEnhancementSpending(entries, eventNames, levels)
 }
 
-export async function loadCalendarAmounts(
+/**
+ * 날짜 범위의 **그날 줄들**. 두 끝을 포함하고 날짜를 키로 접는다.
+ *
+ * 접는 원천이 넷이다. 손입력 둘(`income_records`·`spend_records`)과 보스 둘(결정석 · 아이템
+ * 판매). 넷이 전부다.
+ *
+ * **격자와 상세가 이 한 읽기에서 함께 나온다.** 전에는 칸 금액과 그날 목록이 조회를 따로
+ * 가졌는데, 같은 네 원천을 같은 범위로 읽고 한쪽은 합계만 남기고 행을 버렸다. 그래서 날을
+ * 고를 때마다 이미 읽은 것을 다시 읽었고, 두 경로가 같은 수를 낸다 를 테스트로 지켜야 했다.
+ * 이제 칸 금액은 `amountsOfDays` 가 이 결과를 접어 낸다.
+ *
+ * 날짜를 모르는 보스 기록은 안 든다. 어느 칸에 얹으면 그것이 거짓 날짜가 된다. 그런 기록은
+ * 주간 보기에서 `period_key` 로 제자리에 서므로 잃는 것은 월간 칸뿐이다.
+ *
+ * 읽기 실패는 **빈 값으로 진행한다**. 한쪽만 실패하면 다른 쪽은 보인다.
+ */
+export async function loadMonthDays(
   fromDateKey: string,
   toDateKey: string,
-): Promise<CalendarAmounts> {
-  // 읽기가 실패해도 화면이 죽지 않는다. 커넥션이 stale 하거나 응답이 없으면 빈 값으로 진행하고
-  // 다음 방문에서 다시 읽는다. 대가는 칸이 0 으로 보인다 는 것이다.
+): Promise<Record<string, DayRecord[]>> {
   const [incomes, spends, bossSummaries, enhancements] = await Promise.all([
     withSqliteFallback(getIncomeRecordsBetween(fromDateKey, toDateKey), []),
     withSqliteFallback(getSpendRecordsBetween(fromDateKey, toDateKey), []),
@@ -296,22 +296,87 @@ export async function loadCalendarAmounts(
     loadEnhancementSpending(fromDateKey, toDateKey),
   ])
 
-  const amounts: Record<string, CalendarDayAmounts> = {}
-  for (const income of incomes) {
-    addTo(amounts, income.earnedOn, { incomeMeso: incomeMesoOf(income) })
+  /**
+   * 이름을 한 번에 찾는 조회. 손입력 줄과 보스 줄이 같은 캐릭터를 가리킬 수 있어, 갈라 부르면
+   * 같은 `ocid` 를 두 번 읽는다. 범위로 한 번이라 날짜 수만큼 안 곱해진다.
+   */
+  const names = await namesByOcid([
+    ...incomes.flatMap((record) => (record.ocid === null ? [] : [record.ocid])),
+    ...spends.flatMap((record) => (record.ocid === null ? [] : [record.ocid])),
+    ...bossSummaries.map((summary) => summary.ocid),
+  ])
+  const nameOf = (ocid: string | null): string => (ocid === null ? '' : (names.get(ocid) ?? ''))
+
+  /** 자동 줄이 위, 손입력이 아래. 손입력끼리는 적은 순이다. */
+  const days: Record<string, { auto: DayRecord[]; manual: ManualDayRecord[] }> = {}
+  const bucketOf = (dateKey: string): { auto: DayRecord[]; manual: ManualDayRecord[] } => {
+    const existing = days[dateKey]
+    if (existing !== undefined) return existing
+    const created = { auto: [] as DayRecord[], manual: [] as ManualDayRecord[] }
+    days[dateKey] = created
+    return created
   }
-  for (const spend of spends) {
-    addTo(amounts, spend.spentOn, { expenseMeso: spendMesoOf(spend) })
-  }
+
   for (const summary of bossSummaries) {
-    addTo(amounts, summary.dateKey, { incomeMeso: summary.crystalMeso + summary.dropMeso })
+    bucketOf(summary.dateKey).auto.push(...toAutoRecords([summary], names))
   }
-  for (const row of enhancements) {
-    // 값을 못 매긴 줄은 **안 더한다**. 0 으로 세우면 합계가 조용히 거짓이 된다.
-    if (row.costMeso !== null) addTo(amounts, row.dateKey, { expenseMeso: row.costMeso })
+  for (const [dateKey, rows] of groupByDate(enhancements)) {
+    bucketOf(dateKey).auto.push(...toEnhancementRecords(rows))
+  }
+  for (const record of incomes) {
+    bucketOf(record.earnedOn).manual.push({
+      kind: 'income',
+      record,
+      characterName: nameOf(record.ocid),
+    })
+  }
+  for (const record of spends) {
+    bucketOf(record.spentOn).manual.push({
+      kind: 'spend',
+      record,
+      characterName: nameOf(record.ocid),
+    })
+  }
+
+  const byDate: Record<string, DayRecord[]> = {}
+  for (const [dateKey, bucket] of Object.entries(days)) {
+    const rows = [
+      ...bucket.auto,
+      ...bucket.manual.sort((left, right) =>
+        left.record.recordedAt.localeCompare(right.record.recordedAt),
+      ),
+    ].filter((entry) => !isEmptySpend(entry))
+    if (rows.length > 0) byDate[dateKey] = rows
+  }
+  return byDate
+}
+
+function groupByDate(
+  rows: readonly EnhancementSpendingRow[],
+): Map<string, EnhancementSpendingRow[]> {
+  const byDate = new Map<string, EnhancementSpendingRow[]>()
+  for (const row of rows) {
+    const bucket = byDate.get(row.dateKey)
+    if (bucket === undefined) byDate.set(row.dateKey, [row])
+    else bucket.push(row)
+  }
+  return byDate
+}
+
+/**
+ * 그날 줄들을 **칸 금액으로** 접는다. 격자가 읽는 표다.
+ *
+ * 칸에 적힌 수와 그 칸을 눌러 나온 수가 **한 계산에서** 나온다. 전에는 조회 둘이 각자 세고
+ * 같기를 테스트가 지켰다.
+ */
+export function amountsOfDays(byDate: Readonly<Record<string, DayRecord[]>>): CalendarAmounts {
+  const amounts: Record<string, CalendarDayAmounts> = {}
+  for (const [dateKey, rows] of Object.entries(byDate)) {
+    amounts[dateKey] = dayTotalsOf(rows)
   }
   return amounts
 }
+
 
 /**
  * 가계부가 트는 처치 날짜 캐기. 캔 건수를 돌려준다. 0 이면 다시 읽을 이유가 없다.
@@ -519,49 +584,13 @@ export function rowKeyOf(entry: DayRecord): string {
 }
 
 /**
- * 그날 적은 것. **적은 순**이다.
+ * 하루치 줄들. **창 밖의 날**을 고를 때 쓰는 길이다.
  *
- * 금액순으로 정렬하지 않는 이유는 방금 적은 것 이 목록 어디로 튈지 모르기 때문이다. 방금 적은
- * 것이 맨 아래에 있으면 눈이 거기부터 간다.
- *
- * 읽기 실패는 **빈 값으로 진행한다**. 캘린더 칸과 같은 처방이다(`loadCalendarAmounts` 참조).
- * 한쪽만 실패하면 다른 쪽은 보인다.
+ * 화면은 보통 달 읽기(`loadMonthDays`)가 든 표에서 꺼낸다. 그 표가 안 덮는 날은 월간 격자의
+ * 다음 달 칸처럼 드물게 있고, 그때만 이 조회가 돈다.
  */
 export async function loadDayRecords(dateKey: string): Promise<DayRecord[]> {
-  const [incomes, spends, bossSummaries, enhancements] = await Promise.all([
-    withSqliteFallback(getIncomeRecordsBetween(dateKey, dateKey), []),
-    withSqliteFallback(getSpendRecordsBetween(dateKey, dateKey), []),
-    loadBossDaySummaries(dateKey, dateKey),
-    loadEnhancementSpending(dateKey, dateKey),
-  ])
-
-  /**
-   * 이름을 한 번에 찾는 조회. 손입력 줄과 보스 줄이 같은 캐릭터를 가리킬 수 있어, 갈라 부르면
-   * 같은 `ocid` 를 두 번 읽는다.
-   */
-  const names = await namesByOcid([
-    ...incomes.flatMap((record) => (record.ocid === null ? [] : [record.ocid])),
-    ...spends.flatMap((record) => (record.ocid === null ? [] : [record.ocid])),
-    ...bossSummaries.map((summary) => summary.ocid),
-  ])
-  const nameOf = (ocid: string | null): string => (ocid === null ? '' : (names.get(ocid) ?? ''))
-
-  const manual: ManualDayRecord[] = [
-    ...incomes.map(
-      (record): ManualDayRecord => ({ kind: 'income', record, characterName: nameOf(record.ocid) }),
-    ),
-    ...spends.map(
-      (record): ManualDayRecord => ({ kind: 'spend', record, characterName: nameOf(record.ocid) }),
-    ),
-  ].sort((left, right) => left.record.recordedAt.localeCompare(right.record.recordedAt))
-
-  // 자동 줄이 위다. 그날의 큰 금액이고 손이 닿지 않는 줄이라, 손으로 적은 것 사이에 섞이면
-  // 왜 이건 안 눌리지 가 된다.
-  return [
-    ...toAutoRecords(bossSummaries, names),
-    ...toEnhancementRecords(enhancements),
-    ...manual,
-  ].filter((entry) => !isEmptySpend(entry))
+  return (await loadMonthDays(dateKey, dateKey))[dateKey] ?? []
 }
 
 /**

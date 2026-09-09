@@ -105,7 +105,16 @@ function potentialMeso(entry: EnhancementHistoryEntry): number | null {
   return potentialResetCost(type as PotentialResetType, entry.itemLevel, grade)
 }
 
-function costOf(
+/**
+ * 이 줄이 얼마인가. **모르면 `null`. 0 이 아니다.** 못 매긴 것을 0 으로 세우면 합계가 조용히
+ * 거짓이 된다.
+ *
+ * 수집기도 이 함수를 부른다. 값을 못 매기는 줄은 **저장하지 않고 버리기** 때문이다
+ * (사용자 지정). 읽는 쪽과 버리는 쪽이 같은 함수를 봐야 화면에 없는 줄이 DB 에만 남지 않는다.
+ *
+ * @param observedLevels 이름에서 레벨로. 스타포스 응답에 `item_level` 이 없어 이 표가 받는다
+ */
+export function enhancementCostOf(
   entry: EnhancementHistoryEntry,
   observedLevels: ReadonlyMap<string, number>,
 ): number | null {
@@ -131,7 +140,7 @@ export function toEnhancementSpending(
   const rows: EnhancementSpendingRow[] = []
   for (const entry of entries) {
     if (isSpendingRecord(worldOf(entry), entry.characterName, eventNames) !== true) continue
-    rows.push({ ...entry, costMeso: costOf(entry, observedLevels), category: categoryOf(entry) })
+    rows.push({ ...entry, costMeso: enhancementCostOf(entry, observedLevels), category: categoryOf(entry) })
   }
   return rows
 }

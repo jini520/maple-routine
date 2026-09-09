@@ -17,8 +17,9 @@
  * 보스 수익 탭과 같은 주가 된다. 대가로 월간 격자의 한 줄이 주간의 한 주와 다르고, 격자에 목요일
  * 경계선을 그어 그것을 드러낸다.
  *
- * 상태도 둘로 갈려 있다(`monthKey` · `weekStartKey`). 하나로 합쳐 파생시키면 달을 넘겨도 고른 날은
- * 안 바뀐다는 계약이 깨져서, 모드를 오갈 때만 한 번씩 맞춘다.
+ * 상태도 둘로 갈려 있다(`monthKey` · `weekStartKey`). 하나로 합쳐 파생시키면 두 축의 이동 단위가
+ * 하나가 되어 어느 화살표를 눌러도 같은 거리를 움직인다. 모드를 오갈 때만 한 번씩 맞춘다.
+ * 화살표는 보는 기간과 **고른 날을 함께** 옮긴다(주간은 그 주의 목요일, 월간은 그 달 1일).
  *
  * @see docs/features/cashbook.md 정책
  */
@@ -63,9 +64,13 @@ import {
   monthKeyOf,
   periodTotals,
   resetWeekStartOf,
-  type CalendarAmounts,
 } from '../../lib/calendar'
-import { coveringRange } from '../../features/cashbook/range'
+import {
+  apiWindowRange,
+  floorMonthKey,
+  floorWeekStartKey,
+  monthWindow,
+} from '../../features/cashbook/range'
 import { recordIconKeyOf } from '../../features/cashbook/row-icon'
 import { cashbookRowIconOf } from '../../lib/assets/asset-lookup'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
@@ -74,7 +79,6 @@ import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import {
   cashbookDataRevision,
   dayTotalsOf,
-  loadCalendarAmounts,
   loadLastPointRate,
   loadLastHuntSelection,
   loadTrackedCharacters,
@@ -106,8 +110,8 @@ import { useOpenTab } from '../../hooks/useOpenTab'
 import { useToastStore } from '../../features/toast/store'
 import { IncomeSheet, type IncomeDraft } from './IncomeSheet'
 import { SpendSheet, type SpendDraft } from './SpendSheet'
+import { useMonthDays } from './useMonthDays'
 
-const NO_AMOUNTS: CalendarAmounts = {}
 const NO_RECORDS: DayRecord[] = []
 
 /** 주간 · 월간. 보스 수익 탭의 알약 그대로다. 고른 값은 기억하지 않는다. 그쪽도 화면 상태다. */
@@ -588,17 +592,6 @@ export function CashbookScreen(): React.JSX.Element {
    * (`bossCrystal:{ocid}`)이고, 그것이 날짜를 안 들고 있으므로 날을 바꿀 때 여기서 지워야 한다.
    */
   const [expandedRowKey, setExpandedRowKey] = useState<string | null>(null)
-  /**
-   * 칸 금액과 **그것이 어느 범위의 것인지**.
-   *
-   * 범위를 함께 안 들면 달을 옮긴 직후 **이전 달의 값이 그대로 그려진다**. 격자는 앞뒤 달의
-   * 날을 함께 그리므로 겹치는 날만 값이 있고 나머지는 비어, 있던 것만 먼저 뜬 것처럼 보인다
-   * (사용자 보고).
-   */
-  const [loaded, setLoaded] = useState<{ range: string; amounts: CalendarAmounts }>({
-    range: '',
-    amounts: NO_AMOUNTS,
-  })
   const [lastPointRate, setLastPointRate] = useState<number | null>(null)
   /** 마지막에 적은 사냥 자리. 사냥 계산기의 `사냥터 자동 입력` 이 되살린다. */
   const [lastHuntSelection, setLastHuntSelection] = useState<LastHuntSelection | null>(null)
@@ -615,8 +608,13 @@ export function CashbookScreen(): React.JSX.Element {
   const weeks = isWeekly ? [buildResetWeek(weekStartKey)] : monthWeeks
   // 기준선은 두 보기가 같다. 그 달이다. 주간에서 받은 이레로 다시 내면 7칸 중 하나는 언제나
   // 최대가 되어 아무것도 안 한 주도 한 칸이 새까매진다. 걸치는 주는 목요일이 든 달을 기준으로 삼는다.
-  const heatWeeks = isWeekly ? buildCalendarMonth(monthKeyOf(weekStartKey)) : monthWeeks
-  const { from, to } = coveringRange(weeks, heatWeeks)
+  /**
+   * 열지도 기준이자 **미리 읽는 창의 한가운데**인 달. 두 보기가 같은 달을 본다. 걸치는 주는
+   * 목요일이 든 달을 기준으로 삼는다.
+   */
+  const heatMonthKey = isWeekly ? monthKeyOf(weekStartKey) : monthKey
+  const heatWeeks = isWeekly ? buildCalendarMonth(heatMonthKey) : monthWeeks
+  const todayMonthKey = getCurrentMonthKey(now)
 
   /**
    * 기간이 바뀌면 다시 읽게 하는 토큰. 범위가 곧 의존성이라 달을 넘겼는데 옛 숫자가 남는 일이 없고,
@@ -648,15 +646,22 @@ export function CashbookScreen(): React.JSX.Element {
   // **강화 사용 내역을 받는 유일한 당김**이다. 이 화면만 그 값을 그린다.
 
   /**
-   * 그리는 범위를 층에 알린다. 그 범위의 강화 사용 내역을 층이 받는다.
+   * **창 전체**를 층에 알린다. 그 범위의 강화 사용 내역을 층이 Open API 에서 받는다.
    *
-   * 층이 마운트에서 쓰는 기본값은 주간 보기라 첫 진입에서는 같은 값이고 아무 일도 안 난다.
-   * 사용자가 달을 옮길 때만 새 회차가 돈다.
+   * 보이는 격자만 알리면 이웃 달이 기기 DB 에 없는 채로 남아, 옮겼을 때 그릴 것이 없다. 창을
+   * 통째로 넘겨 **창 안은 언제나 받아 둔 상태**로 만든다(사용자 지시). 이미 받아 둔 날은 조회
+   * 원장이 걸러 내므로 두 번 받지 않고, 그래서 두 번째부터는 회차가 거의 비어 있다.
+   *
+   * 범위가 **달 단위라 주간 이동이 달을 안 넘으면 회차가 아예 안 돈다**(층이 같은 범위를
+   * 걸러 낸다). 층이 마운트에서 쓰는 기본값도 같은 창이라 첫 진입에서 회차가 하나다.
+   *
+   * **한도 아래로는 안 내려간다**(`apiWindowRange`). 넥슨은 2년까지 주지만 앱은 1년 6개월로
+   * 끊는다. 기기 DB 읽기(`useMonthDays`)는 그 한도를 안 봐서, 이미 받아 둔 옛 달은 그대로 그려진다.
    */
   const { requestDateRange } = ledger
   useEffect(() => {
-    requestDateRange({ from, to })
-  }, [from, to, requestDateRange])
+    requestDateRange(apiWindowRange(heatMonthKey, todayDateKey))
+  }, [heatMonthKey, todayDateKey, requestDateRange])
 
 
 
@@ -669,26 +674,29 @@ export function CashbookScreen(): React.JSX.Element {
   const loadedRevision = useRef(cashbookDataRevision())
 
   /**
-   * 칸 금액. `ledger.revision` 에 매인 것은 **뒤늦게 채워진 것을 받기 위해서**다.
+   * 칸 금액. **달 단위로 다섯 달을 들고 있는다**(보는 달 ± 2). 옮기자마자 그려지도록.
    *
-   * 부모의 회차는 화면을 안 막으려고 뒤에서 돈다. 이 화면이 먼저 읽고 그 뒤에 과거 기록이
-   * 만들어지면, 다시 읽을 계기가 없어 화면이 읽은 순간에 굳는다(실기기에서 3초 차이로 그랬다).
-   * 당김도 그 회차로 오므로 이 의존 하나가 둘을 함께 받는다.
+   * `stamp` 가 이 표의 신원이다. 기록이 바뀌거나(`reloadToken`) 층이 한 회차를 끝내면
+   * (`ledger.revision`) 값이 달라지고 표를 통째로 다시 읽는다. 뒤엣것에 매인 이유는 **뒤늦게
+   * 채워진 것을 받기 위해서**다. 부모의 회차는 화면을 안 막으려고 뒤에서 도는데, 다시 읽을
+   * 계기가 없으면 화면이 처음 읽은 순간에 굳는다(실기기에서 3초 차이로 그랬다).
+   */
+  const dataStamp = `${reloadToken}|${ledger.revision}`
+
+  /**
+   * 다시 읽기 시작한 판을 찍는다. **읽기 전에** 찍는 것이 계약이다. 읽는 중에 들어온 변경을
+   * 본 것으로 표시하면 영영 놓친다. 아래 훅의 효과보다 먼저 돌도록 여기 둔다.
    */
   useEffect(() => {
-    // **다 합산될 때까지 아무 값도 안 그린다**(사용자 지정). 회차가 도는 동안 읽으면 그 시점의
-    // DB 가 아직 자라는 중이라, 한 셀의 값이 종류가 도착할 때마다 커진다(큐브 → 스타포스 →
-    // 잠재). 합산 자체는 언제나 완전하지만 재료가 덜 찼다.
-    if (ledger.collecting) return
-    let alive = true
     loadedRevision.current = cashbookDataRevision()
-    void loadCalendarAmounts(from, to).then((next) => {
-      if (alive) setLoaded({ range: `${from}|${to}`, amounts: next })
-    })
-    return () => {
-      alive = false
-    }
-  }, [from, to, reloadToken, ledger.revision, ledger.collecting])
+  }, [dataStamp])
+
+  const monthDays = useMonthDays({
+    viewMonthKey: heatMonthKey,
+    todayMonthKey,
+    stamp: dataStamp,
+    paused: ledger.collecting,
+  })
 
   /**
    * 다시 들어오면 바뀌었을 때만 다시 읽는 포커스 효과.
@@ -707,9 +715,18 @@ export function CashbookScreen(): React.JSX.Element {
     }, []),
   )
 
-  // 그날 목록은 고른 날에 매인다. 격자 범위와 의존성이 달라 효과를 따로 둔다.
+  /**
+   * 고른 날이 **창 안인가**. 창 안이면 달 읽기가 답을 내므로 기다리기만 한다.
+   *
+   * 창 밖은 드물다. 이번 달 격자의 다음 달 칸이 그 자리다(고른 날은 미래로 가도 격자는 안
+   * 넘어간다). 아직 안 온 것과 영영 안 올 것을 안 가르면, 첫 렌더에서 달 읽기가 도착하기 전에
+   * 하루 조회가 한 번 더 돈다.
+   */
+  const selectedInWindow = monthWindow(heatMonthKey, todayMonthKey).includes(
+    monthKeyOf(selectedDateKey),
+  )
   useEffect(() => {
-    if (ledger.collecting) return
+    if (ledger.collecting || selectedInWindow) return
     let alive = true
     void loadDayRecords(selectedDateKey).then((next) => {
       if (alive) setLoadedDay({ dateKey: selectedDateKey, records: next })
@@ -717,13 +734,14 @@ export function CashbookScreen(): React.JSX.Element {
     return () => {
       alive = false
     }
-  }, [selectedDateKey, reloadToken, ledger.revision, ledger.collecting])
+  }, [selectedDateKey, selectedInWindow, reloadToken, ledger.revision, ledger.collecting])
 
   useEffect(() => {
     void loadLastPointRate().then(setLastPointRate)
     void loadLastHuntSelection().then(setLastHuntSelection)
     void loadTrackedCharacters().then(setCharacters)
   }, [])
+
 
   /**
    * 들어올 때 한 번 처치 날짜를 캔다. 캔 것이 있을 때만 다시 읽는다.
@@ -844,8 +862,17 @@ export function CashbookScreen(): React.JSX.Element {
      * 막는 것은 보는 기간이지 고른 날이 아니다. 미래의 날에도 적을 수 있어야 하므로 고른 날은
      * 그대로 바뀌고 격자만 남는다. `<=` 라 이번 달은 든다.
      */
-    if (!isWeekly && monthKeyOf(dateKey) <= getCurrentMonthKey(now)) {
-      setMonthKey(monthKeyOf(dateKey))
+    /**
+     * 양쪽에 천장과 바닥이 있다. 격자는 앞뒤 달 날짜로 빈칸을 채우므로, 안 막으면 **한 번의
+     * 탭이 화살표가 막은 곳에 도착한다**(3월 격자의 앞 칸은 2월 날짜다).
+     */
+    const nextMonthOfDay = monthKeyOf(dateKey)
+    if (
+      !isWeekly &&
+      nextMonthOfDay <= getCurrentMonthKey(now) &&
+      nextMonthOfDay >= floorMonthKey(todayMonthKey)
+    ) {
+      setMonthKey(nextMonthOfDay)
     }
   }
 
@@ -860,15 +887,26 @@ export function CashbookScreen(): React.JSX.Element {
   }
 
   /**
-   * 고른 날의 합계. 그날 읽기에서 나온다.
+   * 그날 줄이 아직 안 왔나. **아직 안 읽었다** 와 **읽었더니 없더라** 는 다른 사실이라
+   * 화면이 갈라 말해야 한다. 안 가르면 들어오자마자 빈 상태가 한 번 번쩍인다.
    *
-   * 칸 금액 표(`amounts`)를 안 보는 이유는 그것이 격자가 덮는 범위의 값이기 때문이다. 고른 날은
-   * 기간을 옮겨도 안 바뀌므로, 표를 보면 그 날이 범위 밖으로 나가는 순간 상세가 사라진다.
-   * 빈 상태 판정도 같은 이유로 그 날 자신의 기록이 낸다.
+   * 창 안의 날은 여기 안 걸린다. 달 읽기가 든 표가 곧 답이라 기다릴 것이 없다.
    */
-  /** 그릴 그날 목록. 칸 금액과 같은 규칙이다. 회차가 돌거나 날짜가 안 맞으면 비운다. */
-  const dayRecords =
-    !ledger.collecting && loadedDay.dateKey === selectedDateKey ? loadedDay.records : NO_RECORDS
+  const cachedDayRecords = monthDays.recordsOn(selectedDateKey)
+  /** 창 밖의 날을 따로 읽은 것. 날짜가 맞을 때만 든다. */
+  const outsideDayRecords =
+    !selectedInWindow && !ledger.collecting && loadedDay.dateKey === selectedDateKey
+      ? loadedDay.records
+      : null
+  const dayLoading = cachedDayRecords === null && outsideDayRecords === null
+  /** 그릴 그날 목록. 창 안이면 달 읽기에서, 밖이면 따로 읽은 것에서 나온다. */
+  const dayRecords = cachedDayRecords ?? outsideDayRecords ?? NO_RECORDS
+  /**
+   * 고른 날의 합계와 빈 상태 판정. 둘 다 그날 읽기에서 나온다.
+   *
+   * 칸 금액 표(`amounts`)를 안 보는 이유는 그것이 격자가 덮는 범위의 값이기 때문이다. 격자에서
+   * 다음 달 칸을 고르면 고른 날이 그 범위 밖에 놓여, 표를 보고 서 있으면 상세가 사라진다.
+   */
   const selectedTotals = dayTotalsOf(dayRecords)
   /**
    * 격자 위 세 칸이 읽는 기간 합계. 격자에 넘기는 그 `weeks`·`amounts` 를 접는다. 열지도
@@ -886,8 +924,13 @@ export function CashbookScreen(): React.JSX.Element {
    *
    * 상태를 지우지 않고 **그릴 때만** 가린다. 효과에서 지우면 렌더가 한 번 더 돈다.
    */
-  const shownAmounts =
-    !ledger.collecting && loaded.range === `${from}|${to}` ? loaded.amounts : NO_AMOUNTS
+  /**
+   * 그릴 값. **읽어 둔 달을 다 합친 표**다.
+   *
+   * 범위를 대조하던 옛 규칙이 사라졌다. 표가 달로 끊겨 있어 다른 달의 값이 섞일 자리가 없고,
+   * 앞뒤 달로 채운 칸은 어차피 금액을 안 그린다(`CalendarGrid` 가 `inPeriod` 로 거른다).
+   */
+  const shownAmounts = monthDays.amounts
   const periodSums = periodTotals(weeks, shownAmounts)
   const periodLabel = isWeekly
     ? formatBossProfitPeriodLabel('weekly', weekStartKey, now)
@@ -901,12 +944,56 @@ export function CashbookScreen(): React.JSX.Element {
    */
   const isLatest = isLatestPeriod(isWeekly ? 'weekly' : 'monthly', isWeekly ? weekStartKey : monthKey, now)
 
+  /**
+   * 뒤로 갈 자리가 없는지. **조회 한도**가 바닥이다(사용자 지정).
+   *
+   * 그 아래에 기기 DB 의 기록이 남아 있어도 안 간다. 한도 아래는 새로 받을 길이 없어 반쪽만
+   * 채워진 달이 되고, 화면이 그것을 그 달의 전부처럼 말하게 된다.
+   *
+   * **주간이 월간보다 며칠 더 간다.** 월간의 바닥이 3월이어도 주간은 2월 27일에 시작하는 그 한
+   * 주까지 간다. 그 주가 3월 1일을 들고 있어서다.
+   */
+  const isEarliest = isWeekly
+    ? weekStartKey <= floorWeekStartKey(todayMonthKey)
+    : monthKey <= floorMonthKey(todayMonthKey)
+
+  /**
+   * 기간 위에 작게 서는 연도. **올해가 아닐 때만**이고 **주간에만** 뜬다.
+   *
+   * 주간 라벨은 두 줄이 다 연도를 안 든다(`8월 1주차` · `8월 6일 ~ 8월 12일`). 해를 넘겨
+   * 거슬러 올라가면 어느 해의 8월인지가 화면에서 사라진다. 월간은 두 줄이 이미 `2025년 12월`
+   * 이라 여기서 또 적으면 같은 말이 두 번 선다.
+   *
+   * 걸치는 주는 **시작일(목요일)의 해**다. `12월 30일 ~ 1월 5일` 위에 `2025` 가 선다.
+   */
+  const periodYear =
+    isWeekly && weekStartKey.slice(0, 4) !== todayDateKey.slice(0, 4)
+      ? weekStartKey.slice(0, 4)
+      : null
+
+  /**
+   * 화살표. **보는 기간과 고른 날을 함께** 옮긴다.
+   *
+   * 고른 날을 두고 오면 격자는 6월인데 아래 상세는 8월 23일이 서서, 한 화면의 두 구역이 서로
+   * 다른 때를 말한다.
+   *
+   * **진행을 안 세운다.** 창의 다섯 달을 미리 들고 있어 옮기면 곧장 그려진다. 아직 안 받아 둔
+   * 달로 갈 때만 층의 진짜 진행이 선다.
+   */
   function movePeriod(delta: -1 | 1): void {
+    // 펼침의 신원이 날짜를 안 들고 있어(`bossCrystal:{ocid}`) 여기서 안 접으면 다른 날의 줄이
+    // 펼쳐진 채로 남는다.
+    setExpandedRowKey(null)
     if (isWeekly) {
-      setWeekStartKey(getAdjacentPeriodKey('weekly', weekStartKey, delta < 0 ? 'prev' : 'next'))
+      const nextWeekStart = getAdjacentPeriodKey('weekly', weekStartKey, delta < 0 ? 'prev' : 'next')
+      setWeekStartKey(nextWeekStart)
+      // 리셋 주의 시작일이 곧 그 주의 목요일이라 요일을 따로 안 센다.
+      setSelectedDateKey(nextWeekStart)
       return
     }
-    setMonthKey(getAdjacentMonthKey(monthKey, delta))
+    const nextMonthKey = getAdjacentMonthKey(monthKey, delta)
+    setMonthKey(nextMonthKey)
+    setSelectedDateKey(`${nextMonthKey}-01`)
   }
 
   return (
@@ -950,6 +1037,7 @@ export function CashbookScreen(): React.JSX.Element {
             <MonthArrow
               label={isWeekly ? '이전 주' : '이전 달'}
               icon={ChevronLeftIcon}
+              disabled={isEarliest}
               onPress={() => movePeriod(-1)}
             />
             {/* 윗줄이 상대 표현(`이번 주`·`지난 달`), 아랫줄이 언제나 정확한 날짜다. 라벨은
@@ -957,6 +1045,18 @@ export function CashbookScreen(): React.JSX.Element {
                 쓰므로 두 하위 탭이 한 어법으로 기간을 말하게 된다. */}
 
             <View className="items-center">
+              {/* **자리를 안 밀어낸다**(사용자 지정). 줄로 끼우면 이 덩이가 한 줄만큼 커져
+                  격자와 그 아래가 통째로 내려간다. 흐름 밖에 두고 위 여백(`gap-4`)에 얹는다.
+                  가로 위치는 좌우를 안 주면 부모의 `items-center` 를 따른다. */}
+              {periodYear !== null && (
+                <Text
+                  testID="cashbook-period-year"
+                  className="absolute -top-3 text-10 text-text-muted"
+                  style={TABULAR_NUMS}
+                >
+                  {periodYear}
+                </Text>
+              )}
               <Text
                 testID="cashbook-period-label"
                 className="text-sm font-semibold text-text"
@@ -1003,7 +1103,7 @@ export function CashbookScreen(): React.JSX.Element {
             <Text testID="cashbook-selected-day" className="text-sm font-semibold text-text">
               {formatDayLabel(selectedDateKey)}
             </Text>
-            {dayRecords.length === 0 ? (
+            {dayLoading ? null : dayRecords.length === 0 ? (
               <View testID="cashbook-empty">
                 <EmptyState
                   icon={CalendarIcon}
@@ -1083,6 +1183,7 @@ export function CashbookScreen(): React.JSX.Element {
           onClose={() => setSheet(null)}
         />
       )}
+
     </View>
   )
 }

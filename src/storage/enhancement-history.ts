@@ -88,6 +88,7 @@ function parsePayload(raw: unknown): unknown {
   }
 }
 
+
 export async function loadEnhancementHistory(
   dateKeys: readonly string[],
 ): Promise<EnhancementHistoryEntry[]> {

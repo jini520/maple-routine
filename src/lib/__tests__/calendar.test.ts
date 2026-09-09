@@ -7,12 +7,13 @@ import {
   buildCalendarMonth,
   datesBetween,
   formatDayLabel,
-  shiftDateKey,
   getAdjacentMonthKey,
   getCurrentMonthKey,
   heatLevel,
+  monthBounds,
   monthKeyOf,
   periodTotals,
+  shiftDateKey,
 } from '../calendar'
 
 describe('getCurrentMonthKey: KST 기준', () => {
@@ -375,5 +376,26 @@ describe('datesBetween', () => {
 
   it('거꾸로면 빈 목록이다. 던지지 않는다', () => {
     expect(datesBetween('2026-09-06', '2026-09-04')).toEqual([])
+  })
+})
+
+/**
+ * 칸 금액을 **달 단위로** 읽는 자리가 쓴다. 격자 범위와 다른 것은 격자가 앞뒤 달 날짜로 빈칸을
+ * 채우고 그 칸은 금액을 안 그리기 때문이다.
+ */
+describe('monthBounds', () => {
+  it('첫날과 말일을 두 끝 포함으로 준다', () => {
+    expect(monthBounds('2026-08')).toEqual({ from: '2026-08-01', to: '2026-08-31' })
+    expect(monthBounds('2026-09')).toEqual({ from: '2026-09-01', to: '2026-09-30' })
+  })
+
+  it('2월은 해마다 다르다', () => {
+    expect(monthBounds('2026-02').to).toBe('2026-02-28')
+    // 2028년은 윤년이다.
+    expect(monthBounds('2028-02').to).toBe('2028-02-29')
+  })
+
+  it('12월도 해를 안 넘긴다', () => {
+    expect(monthBounds('2026-12')).toEqual({ from: '2026-12-01', to: '2026-12-31' })
   })
 })

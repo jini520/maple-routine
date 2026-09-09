@@ -306,6 +306,7 @@ export interface DatedBossProfitRecord {
  * 거짓 날짜가 되기 때문이다. 주간 보기에서는 `period_key` 로 제자리에 서므로
  * 잃는 것은 월간 칸뿐이다.
  */
+
 export async function getDatedBossProfitRecords(
   ocids: string[],
   fromDateKey: string,
