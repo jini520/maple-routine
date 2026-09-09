@@ -20,7 +20,8 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Keyboard, Platform, Pressable, View } from 'react-native'
 import Animated, {
   Easing,
-  useAnimatedReaction,
+  runOnJS,
+  useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -30,15 +31,18 @@ import { useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-cont
 import {
   BottomSheetModal,
   BottomSheetScrollView,
-  useBottomSheetInternal,
   useBottomSheetTimingConfigs,
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet'
 
 import { vars } from 'nativewind'
+import { BlurView } from 'expo-blur'
 
 import { useThemeAppearance } from '../../../theme/context'
 import { buildSheetScopeVariables } from '../../../theme/theme-vars'
+
+import { nextScrimOpacity } from './scrim-opacity'
+import { useStepDissolve } from './step-dissolve'
 
 /** 시트 최대 높이의 비율. 화면 높이 × 이 값. */
 const MAX_HEIGHT_RATIO = 0.82
@@ -57,13 +61,21 @@ const MAX_SCROLL = 99999
 /** 키보드가 다 뜨고 시트가 다 줄기까지. 그동안 스크롤을 끝에 붙여 둔다. 잰 값은 270ms 다. */
 const KEYBOARD_SETTLE_MS = 400
 /**
- * 시트가 자리를 옮기는 데 걸리는 시간. **iOS 키보드가 뜨는 시간과 같은 값이다.**
+ * 키보드 때문에 자리를 옮기는 시간. **iOS 키보드가 뜨는 시간과 같은 값이다.**
  *
  * 라이브러리의 iOS 기본값은 과감쇠 스프링이라 다 앉는 데 530ms 가 걸렸다(시뮬레이터 계측).
  * 그동안 키보드는 265ms 만에 다 올라와, 시트의 아랫변이 아직 낮은 상태로 키보드에 덮인다.
  * 거기 붙어 있는 저장 줄이 200ms 넘게 사라졌다가 뒤늦게 나타났다.
  */
 const MOVE_MS = 250
+/**
+ * 단계가 갈려 자리를 옮기는 시간. 키보드와 달리 **맞출 상대가 없다**.
+ *
+ * 키보드의 250ms 를 그대로 쓰면 시트가 휙 바뀐다(사용자 지적). 흐림이 560ms 에 걸쳐 걷히는데
+ * 그 밑에서 상자만 먼저 자리를 잡으면 둘이 따로 논다. 곡선도 `exp` 가 아니라 `cubic` 이다.
+ * `exp` 는 진행도를 앞쪽에 몰아 툭 하고 끝난다.
+ */
+const STEP_MOVE_MS = 460
 /**
  * 겹치는 층 셋의 순서. 같은 자리에 포개져 서므로 이 수가 무엇이 위인지를 정한다.
  *
@@ -72,6 +84,30 @@ const MOVE_MS = 250
 const HEADER_LAYER = 1
 const FOOTER_LAYER = 2
 const HANDLE_LAYER = 3
+/** 갈아 드는 흐림. 머리도 바닥 줄도 함께 흐려져야 하므로 셋보다 위다. */
+const VEIL_LAYER = 4
+
+/**
+ * 머리·바닥 줄이 **재기 전에 잡아 두는 키**. 첫 프레임에 0 으로 두면 안 된다.
+ *
+ * 라이브러리는 시트의 키를 스크롤 **내용**에서 재는데, 그 내용의 여백이 이 값들에서 나온다.
+ * 0 으로 시작하면 시트가 **두 번 움직인다**. 먼저 그만큼 작아졌다가, 잰 값이 도착하면 다시
+ * 커진다. 화면에서는 내용과 버튼이 따로 노는 것으로 보인다(사용자 지적, 60fps 프레임에서 확인).
+ *
+ * 잰 값이 오면 그것으로 갈아탄다. 여기 값은 **첫 프레임 한 번만** 쓰인다.
+ */
+const HEADER_GUESS = HANDLE_HEIGHT + 8 + 28
+const FOOTER_GUESS = 12 + 44 + 16
+
+/** 가장 짙을 때의 흐림. `BlurView` 의 세기는 1~100 이다. */
+const STEP_BLUR = 72
+/**
+ * 얹힌 흐림이 걷히는 데 걸리는 시간.
+ *
+ * 시트가 자리를 옮기는 250ms 보다 훨씬 길다(사용자 지정). 흐림은 움직임이 아니라 되찾는
+ * 초점이라, 짧으면 깜빡인 것으로만 읽히고 무엇이 흐려졌었는지가 안 남는다.
+ */
+const STEP_MS = 560
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
 /**
@@ -82,67 +118,58 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
  * 상자가 통째로 안 그려지는 것으로 보인다.
  */
 const AnimatedBox = Animated.createAnimatedComponent(View)
+const AnimatedVeil = Animated.createAnimatedComponent(BlurView)
 
 /**
  * 바닥 줄이 서는 층. 저장 버튼이 여기 산다.
  *
- * 자리는 **시트 자신의 키**에서 잰다(`animatedSheetHeight`). 시트가 미끄러지는 동안 이 값은
- * 안 바뀌므로 줄이 시트에 붙어 함께 움직인다. 열 때도, 손으로 끌어내릴 때도 같다.
+ * **상자에 붙는다. 좇지 않는다.** 이 층은 라이브러리의 내용 상자 안에 있고 그 상자의 키가 곧
+ * 시트의 키다. 그래서 `bottom` 으로 그 바닥에 앉히면 시트가 어떻게 움직이든 줄이 함께 간다.
+ * 시트가 열릴 때 닫기 버튼이 딱 붙어 올라오는 그 성질이다.
  *
- * 흐름에 얹으면 안 된다. 라이브러리가 내용 상자의 키를 0 에서 키우며 여는데, 그 애니메이션이
- * 시트가 미끄러지는 곡선보다 느려서 상자 바닥에 선 줄이 위로 뛰었다가 가라앉는다. 상자 키는
- * 매 프레임 다시 시작되는 지수 접근이고(`animatedPaddingBottom` 이 시트가 선 자리를 읽는다)
- * 밖에서 손댈 수 없다.
+ * 종전에는 시트의 키를 읽어 **따로 애니메이션**했다(`animatedSheetHeight` → `withTiming`).
+ * 상자와 줄이 두 애니메이션이 되어, 높이가 크게 바뀌는 단계일수록 도착 시각이 어긋났다
+ * (사용자 지적). 지금은 좇을 것이 없다.
  *
- * 값이 바뀔 때는 시트와 같은 시간으로 따라간다. 그러지 않으면 키보드가 뜰 때 이 줄만 먼저 튄다.
- * 첫 값은 애니메이션 없이 앉힌다. 열자마자 제자리에 있어야 상자가 커지며 드러난다.
+ * 비켜서는 것은 **키보드가 깔아 둔 몫** 하나뿐이다. 라이브러리가 키보드가 뜨면 상자 바닥에 그만큼
+ * 패딩을 깔므로, 그 값만큼 올라앉아야 줄이 키보드 위에 선다. 그 값이 움직일 때는 시트와 같은
+ * 시간·곡선으로 따라간다.
  *
- * 공유값은 **지역 상수로 꺼내 쓸 것**. `internal.animatedSheetHeight.get()` 처럼 객체를 타고
- * 들어가면 리애니메이티드가 클로저에서 그 공유값을 못 찾아 구독을 안 건다.
+ * **흐름에 얹으면 안 된다.** 라이브러리가 내용 상자의 키를 0 에서 키우며 여는데, 그 애니메이션이
+ * 시트가 미끄러지는 곡선보다 느려서 상자 바닥에 선 줄이 위로 뛰었다가 가라앉는다.
  */
 function SheetFooterLayer(props: {
   /** 잰 높이를 위로 올린다. 스크롤이 그만큼을 자리로 비워야 시트가 그만큼 자란다. */
   onHeight: (height: number) => void
+  /** 키보드가 상자 바닥에 깔아 둔 몫. 그만큼 올라앉는다. */
+  keyboardPad: number
+  /** 시트가 지금 쓰는 이동 시간과 곡선. 그 몫이 움직일 때만 쓴다. */
+  moveMs: number
+  moveEasing: (t: number) => number
   children: ReactNode
 }): React.JSX.Element {
-  const internal = useBottomSheetInternal(true)
-  const sheetHeight = internal?.animatedSheetHeight
-  const layout = internal?.animatedLayoutState
-  const ownHeight = useSharedValue(0)
-  /** 줄의 아랫변이 설 자리. 시트 위끝에서 잰다. */
-  const bottom = useSharedValue(0)
+  const pad = useSharedValue(props.keyboardPad)
+  const { keyboardPad, moveMs, moveEasing } = props
 
-  useAnimatedReaction(
-    () => {
-      if (sheetHeight === undefined || layout === undefined) return 0
-      return sheetHeight.get() - Math.max(0, layout.get().handleHeight)
-    },
-    (next, previous) => {
-      if (next <= 0) return
-      if (previous === null || previous <= 0) {
-        bottom.set(next)
-        return
-      }
-      bottom.set(withTiming(next, { duration: MOVE_MS, easing: Easing.out(Easing.exp) }))
-    },
-  )
+  useEffect(() => {
+    pad.set(withTiming(keyboardPad, { duration: moveMs, easing: moveEasing }))
+  }, [keyboardPad, moveMs, moveEasing, pad])
 
-  const placement = useAnimatedStyle(() => ({
-    transform: [{ translateY: Math.max(0, bottom.get() - ownHeight.get()) }],
-  }))
+  const placement = useAnimatedStyle(() => ({ bottom: pad.get() }))
 
   return (
     <AnimatedBox
-      onLayout={(event) => {
-        ownHeight.set(event.nativeEvent.layout.height)
-        props.onHeight(event.nativeEvent.layout.height)
-      }}
-      style={[
-        { position: 'absolute', top: 0, left: 0, right: 0, zIndex: FOOTER_LAYER },
-        placement,
-      ]}
+      // 층이 줄만큼만 크지만, 닿는 것은 줄뿐이어야 한다.
+      pointerEvents="box-none"
+      style={[{ position: 'absolute', left: 0, right: 0, zIndex: FOOTER_LAYER }, placement]}
     >
-      {props.children}
+      {/* 재는 것은 **줄의 키**다. 줄이 없는 단계에는 0 이 올라간다. */}
+      <View
+        testID="bottom-sheet-footer-layer"
+        onLayout={(event) => props.onHeight(event.nativeEvent.layout.height)}
+      >
+        {props.children}
+      </View>
     </AnimatedBox>
   )
 }
@@ -153,16 +180,33 @@ function SheetFooterLayer(props: {
  * 라이브러리 `BottomSheetBackdrop` 을 안 쓴다. 스냅 포인트가 하나뿐인 이 배치에서는 그쪽 보간
  * 구간이 퇴화해 불투명도가 0 으로 굳는다. 인덱스가 -1(닫힘)과 0(열림) 둘뿐이라 `index + 1` 을
  * 0~1 로 자르면 같은 그림이 나온다.
+ *
+ * 다만 그 인덱스를 **그대로 받지는 않는다**. 짙기는 `scrim-opacity` 의 규칙을 거친다.
  */
 function SheetScrim(props: {
   animatedIndex: SharedValue<number>
+  animatedPosition: SharedValue<number>
   style: BottomSheetBackdropProps['style']
   color: string
   onPress: () => void
 }): React.JSX.Element {
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: Math.min(Math.max(props.animatedIndex.value + 1, 0), 1),
-  }))
+  /** 지금 그리고 있는 짙기. 다음 프레임이 이것과 견줘 옅어질지 정한다. */
+  const shown = useSharedValue(0)
+  /** 직전 프레임의 시트 자리. 시트가 내려갔나를 이것으로 본다. */
+  const lastPosition = useSharedValue(Number.POSITIVE_INFINITY)
+
+  const animatedStyle = useAnimatedStyle(() => {
+    const position = props.animatedPosition.get()
+    const opacity = nextScrimOpacity(
+      props.animatedIndex.get(),
+      position,
+      shown.get(),
+      lastPosition.get(),
+    )
+    shown.set(opacity)
+    lastPosition.set(position)
+    return { opacity }
+  })
 
   return (
     <AnimatedPressable
@@ -208,11 +252,92 @@ interface BottomSheetProps {
    * 치는 칸이 중간에 있는 시트에서 켜면 반대로 그 칸이 위로 밀려 나간다.
    */
   scrollToEndOnKeyboard?: boolean
+  /**
+   * 지금 어느 단계인가. 이 값이 바뀌면 **시트 전체가 흐려졌다 돌아온다**.
+   *
+   * 머리·내용·바닥 줄이 한꺼번에 갈리므로 내용만 갈아 드는 것으로는 제목이 튄다. 안 주면
+   * 아무 일도 안 한다.
+   */
+  stepKey?: string
+}
+
+/**
+ * 갈아 드는 흐림 한 겹.
+ *
+ * **흐림이 짙어진 뒤에 마운트된다.** 리애니메이티드는 `useAnimatedProps` 를 처음 부른 그 순간의
+ * 값을 첫 프레임에 쓰고(`initial.value`), 그 값이 인라인 프롭보다 세다. 그래서 이 훅이 시트에
+ * 살면 흐림 층이 붙는 첫 프레임이 세기 0 으로 그려져 **새 화면이 또렷하게 한 장 번쩍인다**
+ * (60fps 녹화에서 확인). 층과 훅을 함께 여기 두면 훅의 첫 호출이 곧 마운트라, 그때 이미 1 인
+ * 값을 첫 프레임이 받는다.
+ */
+function StepVeil(props: { onDone: () => void }): React.JSX.Element {
+  /**
+   * 1 로 시작해 0 으로 걷힌다.
+   *
+   * **여기서 만드는 것이 계약이다.** 리애니메이티드는 `useAnimatedProps` 를 처음 부른 그 순간의
+   * 값을 첫 프레임에 쓰고(`initial.value`), 그 값이 인라인 프롭보다 세다. 값이 시트에 살면 흐림
+   * 층이 붙는 첫 프레임을 세기 0 으로 그려 **새 화면이 또렷하게 한 장 번쩍인다**(60fps 녹화에서
+   * 확인). 값과 층이 함께 여기 있으면 그 첫 프레임이 이미 1 이다.
+   */
+  const progress = useSharedValue(1)
+  const veil = useAnimatedProps(() => ({ intensity: STEP_BLUR * progress.get() }))
+
+  const { onDone } = props
+  useEffect(() => {
+    progress.set(
+      withTiming(0, { duration: STEP_MS, easing: Easing.out(Easing.cubic) }, (finished) => {
+        // 중간에 갈아탔으면 층이 통째로 새로 서므로 여기서 걷었다고 말하지 않는다.
+        if (finished === true) runOnJS(onDone)()
+      }),
+    )
+  }, [progress, onDone])
+
+  return (
+    <View
+      testID="bottom-sheet-veil"
+      pointerEvents="none"
+      aria-hidden
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      /*
+        **시트와 같은 모서리로 자른다.** 흐림 층은 네모라 그냥 얹으면 둥근 위 모서리 자리에
+        각진 모서리가 생겼다 사라진다(사용자 지적). 자르는 것은 바깥 상자가 한다.
+        `BlurView` 자신에게 반경을 주면 iOS 의 시각 효과 뷰가 그것을 안 따른다.
+      */
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: VEIL_LAYER,
+        borderTopLeftRadius: SHEET_RADIUS,
+        borderTopRightRadius: SHEET_RADIUS,
+        overflow: 'hidden',
+      }}
+    >
+      <AnimatedVeil
+        animatedProps={veil}
+        // 색을 안 얹는다. 시트 표면 위라 얹으면 바탕이 함께 물든다.
+        tint="default"
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+      />
+    </View>
+  )
 }
 
 export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
   const ref = useRef<BottomSheetModal>(null)
-  const move = useBottomSheetTimingConfigs({ duration: MOVE_MS, easing: Easing.out(Easing.exp) })
+  const step = useStepDissolve(props.stepKey)
+  /**
+   * 지금 옮기는 이유가 **키보드인가**. 키보드는 자기 속도가 있어 시트가 거기 맞춰야 하고,
+   * 그 밖의 이유(단계·내용)는 맞출 상대가 없어 여유롭게 간다.
+   */
+  const [byKeyboard, setByKeyboard] = useState(false)
+  const moveMs = byKeyboard ? MOVE_MS : STEP_MOVE_MS
+  /** 상자와 바닥 줄이 **같은 곡선**을 타야 줄이 상자에 붙어 있다. 한 자리에서 낸다. */
+  const moveCurve = byKeyboard ? Easing.out(Easing.exp) : Easing.out(Easing.cubic)
+  const move = useBottomSheetTimingConfigs({ duration: moveMs, easing: moveCurve })
   const scrollRef = useRef<{ scrollTo?: (options: { y: number; animated: boolean }) => void }>(null)
   const insets = useSafeAreaInsets()
   const frame = useSafeAreaFrame()
@@ -248,17 +373,42 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
   useEffect(() => {
     const show = Keyboard.addListener(
       Platform.select({ ios: 'keyboardWillShow', default: 'keyboardDidShow' }),
-      (event) => setKeyboardHeight(event.endCoordinates.height),
+      (event) => {
+        setByKeyboard(true)
+        setKeyboardHeight(event.endCoordinates.height)
+      },
     )
     const hide = Keyboard.addListener(
       Platform.select({ ios: 'keyboardWillHide', default: 'keyboardDidHide' }),
-      () => setKeyboardHeight(0),
+      () => {
+        setByKeyboard(true)
+        setKeyboardHeight(0)
+      },
     )
     return () => {
       show.remove()
       hide.remove()
     }
   }, [])
+
+  // 키보드가 다 움직이면 그 속도를 놓는다. 다음 이동은 다시 여유로운 쪽이다.
+  useEffect(() => {
+    if (!byKeyboard) return
+    const id = setTimeout(() => setByKeyboard(false), MOVE_MS + 80)
+    return () => clearTimeout(id)
+  }, [byKeyboard, keyboardHeight])
+
+  /**
+   * 바닥 줄을 **떼어 붙일 때인가**. 키보드가 떠 있을 때뿐이다(사용자 지정).
+   *
+   * 키보드가 없으면 줄은 그냥 **내용의 마지막 줄**이다. 내용과 버튼이 한 상자에 있으니 따로
+   * 움직일 것이 없고, 맞출 것이 없으니 어긋날 수도 없다. 떼어 두면 상자의 키를 재고, 그 자리를
+   * 비우고, 둘을 맞추는 일이 줄줄이 따라온다.
+   *
+   * 키보드가 뜨면 이야기가 다르다. 줄이 흐름에 있으면 키보드에 덮여 밀려 나간다. 그때만
+   * 떼어서 키보드 위에 세운다.
+   */
+  const pinFooter = props.footer !== undefined && keyboardHeight > 0
 
   const scrollToEndOnKeyboard = props.scrollToEndOnKeyboard === true
   useEffect(() => {
@@ -284,6 +434,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
     (backdropProps: BottomSheetBackdropProps) => (
       <SheetScrim
         animatedIndex={backdropProps.animatedIndex}
+        animatedPosition={backdropProps.animatedPosition}
         style={backdropProps.style}
         color={definition.scrim}
         onPress={() => ref.current?.dismiss()}
@@ -395,16 +546,26 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
         testID={props.testId}
         contentContainerStyle={{
           // 잰 머리 높이에 핸들 몫과 아래 여백이 이미 들어 있다. 두 번 더하지 않는다.
-          paddingTop: props.header === undefined ? HANDLE_HEIGHT + 8 : headerHeight,
+          paddingTop:
+            props.header === undefined
+              ? HANDLE_HEIGHT + 8
+              : headerHeight > 0
+                ? headerHeight
+                : HEADER_GUESS,
           /*
             바닥 줄이 있으면 그 높이만큼을 자리로 비운다. 라이브러리가 시트 키를 스크롤 **내용**
             높이로 정하므로, 이 여백이 곧 바닥 줄이 설 자리다. 상한에 닿아 있으면 대신 스크롤이
             그만큼 줄어든다. 인셋은 바닥 줄이 자기 안에서 진다.
           */
-          paddingBottom:
-            props.footer === undefined
-              ? (keyboardHeight > 0 ? 0 : insets.bottom) + 16
-              : footerHeight,
+          /*
+            떼어 붙일 때만 그 자리를 비운다. 흐름에 있을 때는 줄이 스스로 자리를 차지하므로
+            비울 것이 없다.
+          */
+          paddingBottom: pinFooter
+            ? footerHeight > 0
+              ? footerHeight
+              : FOOTER_GUESS
+            : (keyboardHeight > 0 ? 0 : insets.bottom) + 16,
         }}
       >
         {/*
@@ -412,11 +573,23 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
           그 안인 것은 `vars()` 가 css-interop 이 아는 요소여야 닿기 때문이다.
         */}
         <View style={vars(sheetScope)}>{props.children}</View>
+
+        {props.footer !== undefined && !pinFooter && (
+          // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
+          <View testID="bottom-sheet-footer" style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+            <View style={vars(sheetScope)}>{props.footer}</View>
+          </View>
+        )}
       </BottomSheetScrollView>
 
-      {props.footer !== undefined && (
-        // 겹칠 자리는 스크롤 내용의 `paddingBottom` 이 비워 둔다.
-        <SheetFooterLayer onHeight={setFooterHeight}>
+      {/* 떼어 붙일 때만 선다. 겹칠 자리는 스크롤 내용의 `paddingBottom` 이 비워 둔다. */}
+      <SheetFooterLayer
+        onHeight={setFooterHeight}
+        keyboardPad={keyboardHeight}
+        moveMs={moveMs}
+        moveEasing={moveCurve}
+      >
+        {pinFooter ? (
           <View
             testID="bottom-sheet-footer"
             style={{
@@ -429,8 +602,11 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
           >
             <View style={vars(sheetScope)}>{props.footer}</View>
           </View>
-        </SheetFooterLayer>
-      )}
+        ) : null}
+      </SheetFooterLayer>
+
+      {/* 갈아 드는 흐림. 머리·내용·바닥 줄을 통째로 덮으므로 층 셋보다 위다. */}
+      {step.busy && <StepVeil key={step.turn} onDone={step.done} />}
     </BottomSheetModal>
   )
 }

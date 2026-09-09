@@ -23,10 +23,9 @@ import { SPEND_TARIFF_PERCENT, withTariffMeso } from '../../../lib/cashbook/spen
 import { SPEND_ITEM_KINDS, countsQuantity, type SpendItemKind } from '../../../storage/spend'
 import { AmountInput, FieldRow } from '../sheet-fields'
 import {
-  CategoryChips,
   CharacterRow,
-  SaveRow,
   SpendHeader,
+  useSaveSlot,
   type SpendFormProps,
 } from './form-shared'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
@@ -88,17 +87,42 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
     setHasTariff(false)
   }
 
+  useSaveSlot(props.setSave, {
+    showSave: true,
+    editing,
+    canSave,
+    saving,
+    onSave: () =>
+      void submit({
+        ocid,
+        spentOn: props.dateKey,
+        category: '아이템 구매',
+        item: name.trim() === '' ? null : name.trim(),
+        form: null,
+        itemKind,
+        // 수량은 **곱할 것이 있을 때만** 실린다. 그 `null` 이 곧 **곱하지 않은 행** 이라는 사실이다.
+        quantity: counts ? quantity : null,
+        mesoAmount: amount,
+        // 총액과 그 몫을 둘 다 박는다. 집계는 총액 한 칸만 본다.
+        tariffMeso: hasTariff ? tariffed.tariffMeso : null,
+        pointAmount: null,
+        pointPer100mMeso: null,
+        cashAmount: null,
+        memo: null,
+      }),
+    onDelete: props.onDelete === undefined ? undefined : () => void remove(),
+  })
+
   return (
     <>
       <SpendHeader
-        title={editing ? '아이템 구매' : '지출 추가'}
+        title={props.category}
         dateKey={props.dateKey}
         todayDateKey={props.todayDateKey}
         onDateChange={props.onDateChange}
+        // 수정 모드에는 되돌아갈 곳이 없다(고른 것을 못 바꾼다). 화살촉도 없다.
+        onBack={editing ? undefined : props.onBack}
       />
-      {!editing && (
-        <CategoryChips selected={props.category} onSelect={props.onSelectCategory} />
-      )}
 
       <CharacterRow characters={props.characters} selected={ocid} onSelect={setOcid} />
 
@@ -174,32 +198,6 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
         testID="spend-sheet-amount"
       />
 
-      <SaveRow
-        showSave
-        editing={editing}
-        canSave={canSave}
-        saving={saving}
-        onSave={() =>
-          void submit({
-            ocid,
-            spentOn: props.dateKey,
-            category: '아이템 구매',
-            item: name.trim() === '' ? null : name.trim(),
-            form: null,
-            itemKind,
-            // 수량은 **곱할 것이 있을 때만** 실린다. 그 `null` 이 곧 **곱하지 않은 행** 이라는 사실이다.
-            quantity: counts ? quantity : null,
-            mesoAmount: amount,
-            // 총액과 그 몫을 둘 다 박는다. 집계는 총액 한 칸만 본다.
-            tariffMeso: hasTariff ? tariffed.tariffMeso : null,
-            pointAmount: null,
-            pointPer100mMeso: null,
-            cashAmount: null,
-            memo: null,
-          })
-        }
-        onDelete={props.onDelete === undefined ? undefined : () => void remove()}
-      />
     </>
   )
 }

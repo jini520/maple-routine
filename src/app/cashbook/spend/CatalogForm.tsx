@@ -27,13 +27,13 @@ import {
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { FieldRow, QuantityStepper } from '../sheet-fields'
 import {
-  CategoryChips,
   CharacterRow,
   RateRow,
-  SaveRow,
   SpendHeader,
+  useSaveSlot,
   type SpendFormProps,
 } from './form-shared'
+import { rowsOfGroups } from './tile-rows'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
 
 /**
@@ -77,8 +77,8 @@ function ItemTile(props: {
       aria-label={props.label}
       aria-selected={props.selected}
       disabled={props.disabled}
-      onPress={props.onPress}
       className={`w-1/3 p-1 ${props.disabled === true ? 'opacity-40' : ''}`}
+      onPress={props.onPress}
     >
       {/*
         `h-full` 을 안 쓴다. 부모(`Pressable`)의 높이가 내용에서 나오는데 거기에 백분율 높이를
@@ -133,6 +133,23 @@ function ItemTile(props: {
         </View>
       </View>
     </Pressable>
+  )
+}
+
+/**
+ * 묶음 이름. 안 열린 묶음은 지우지 않고 흐리게 둔다. 기간제 이벤트는 열릴 때만 있는 것이라
+ * 숨기면 그런 것이 있었지 를 기억할 자리가 사라진다. 자리는 남기고 못 고르게 한다.
+ */
+function GroupLabel(props: { group: string; active: boolean }): React.JSX.Element {
+  return (
+    <View className="flex-row items-center gap-1.5">
+      <Text className="text-11 text-text-disabled">{props.group}</Text>
+      {!props.active && (
+        <Text testID={`spend-sheet-closed-${props.group}`} className="text-11 text-text-disabled">
+          · 이벤트 기간이 아닙니다
+        </Text>
+      )}
+    </View>
   )
 }
 
@@ -207,14 +224,40 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   }
 
   /**
-   * 수정 모드의 머리. 고른 것을 적는다. 카탈로그가 그 항목을 못 찾으면 기록에 적힌 이름을
-   * 그대로 쓴다.
+   * 머리가 지금 어디인지를 적는다. 항목 격자에서는 갈래 이름이고 항목을 고르면 그 이름이다.
+   *
+   * 수정 모드는 고른 것을 적되, 카탈로그가 그 항목을 못 찾으면 기록에 적힌 이름을 그대로 쓴다.
    */
   const title = editing
     ? (choice?.label ?? props.editing?.item ?? props.category)
-    : choice === null
-      ? '지출 추가'
-      : choice.label
+    : (choice?.label ?? props.category)
+
+  // **타일 격자에만 저장이 없다**. 거기엔 셀 자리 자체가 없어 시트가 바닥 줄을 안 세운다.
+  useSaveSlot(props.setSave, {
+    showSave: choice !== null || editing,
+    editing,
+    canSave,
+    saving,
+    onSave: () =>
+      void submit({
+        ocid,
+        spentOn: props.dateKey,
+        category: props.category,
+        item: item?.name ?? null,
+        form,
+        // 종류는 아이템 구매의 것이다. 여기서는 `null` 이라 장비를 산 컨텐츠 지출 같은
+        // 행이 생기지 않는다.
+        itemKind: null,
+        quantity,
+        mesoAmount: currency === 'meso' ? amount : null,
+        tariffMeso: null,
+        pointAmount: currency === 'point' ? amount : null,
+        pointPer100mMeso: currency === 'point' ? rate : null,
+        cashAmount: null,
+        memo: null,
+      }),
+    onDelete: props.onDelete === undefined ? undefined : () => void remove(),
+  })
 
   return (
     <>
@@ -223,48 +266,50 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
         dateKey={props.dateKey}
         todayDateKey={props.todayDateKey}
         onDateChange={props.onDateChange}
-        // 수정 모드에는 되돌아갈 곳이 없다(고른 것을 못 바꾼다). 화살촉도 없다.
-        onBack={choice === null || editing ? undefined : clearChoice}
+        /*
+         * 한 걸음씩 되돌아간다. 항목을 골랐으면 격자로, 격자에서는 1차로.
+         *
+         * 수정 모드에는 되돌아갈 곳이 없다(고른 것을 못 바꾼다). 화살촉도 없다.
+         */
+        onBack={editing ? undefined : choice === null ? props.onBack : clearChoice}
       />
-      {!editing && choice === null && (
-        <CategoryChips selected={props.category} onSelect={props.onSelectCategory} />
-      )}
 
       {choice === null && !editing ? (
         // 여기에 스크롤을 두지 않는다. 시트 껍데기가 이미 `BottomSheetScrollView` 이고 높이도
         // 내용만큼, 82% 를 상한으로 다. 안쪽에 또 두면 중첩 스크롤이 되어 손가락이 어느 쪽을
         // 미는지 갈리고, 무엇보다 목록이 상한선에서 잘려 더 있는지가 안 보인다.
-        <View className="gap-1">
-          {groups.map((group) => (
-            <View key={group.group} className="gap-1 pb-2">
+        // 묶음 사이 간격은 **부모가 낸다**. 묶음마다 아래 여백을 달면 마지막 묶음 뒤에도 붙어
+        // 격자 바닥에 빈 띠가 남는다. 타일 줄의 `-mb-1` 이 빠지는 4 를 메운다.
+        <View className="gap-4">
+          {rowsOfGroups(groups).map((row) => (
+            <View key={row[0]!.group} className="gap-1">
               {/*
-                안 열린 묶음은 지우지 않고 흐리게 둔다. 기간제 이벤트는 열릴 때만 있는 것이라
-                숨기면 그런 것이 있었지 를 기억할 자리가 사라진다. 자리는 남기고 못 고르게 한다.
+                이름과 타일이 **같은 칸 폭**을 쓴다. 짝지은 줄에서는 이름 둘이 타일 둘 바로
+                위에 각각 서고, 타일은 3열 격자의 1열·2열 자리 그대로다(폭도 간격도 같다).
               */}
-              <View className="flex-row items-center gap-1.5">
-                <Text className="text-11 text-text-disabled">{group.group}</Text>
-                {!group.active && (
-                  <Text
-                    testID={`spend-sheet-closed-${group.group}`}
-                    className="text-11 text-text-disabled"
-                  >
-                    · 이벤트 기간이 아닙니다
-                  </Text>
-                )}
-              </View>
-              {/* 퍼센트 폭과 `gap` 을 섞으면 마지막 칸이 밀린다. 간격은 자식 패딩이 만든다. */}
-              <View className="-mx-1 flex-row flex-wrap">
-                {group.choices.map((each) => (
-                  <ItemTile
-                    key={each.label}
-                    label={each.label}
-                    // 단계가 여럿이면 **나란히** 적는다. `7,500 | 30,000 메포`.
-                    price={tilePriceLabel(each.items)}
-                    selected={false}
-                    disabled={!group.active}
-                    onPress={() => selectChoice(each)}
-                  />
+              <View className="-mx-1 flex-row">
+                {row.map((group) => (
+                  <View key={group.group} className={row.length === 2 ? 'w-1/3 px-1' : 'px-1'}>
+                    <GroupLabel group={group.group} active={group.active} />
+                  </View>
                 ))}
+              </View>
+              {/* 퍼센트 폭과 `gap` 을 섞으면 마지막 칸이 밀린다. 간격은 자식 패딩이 만들고
+                  바깥의 음수 마진이 그 둘레 몫을 되돌린다. */}
+              <View className="-mx-1 -mb-1 flex-row flex-wrap">
+                {row.flatMap((group) =>
+                  group.choices.map((each) => (
+                    <ItemTile
+                      key={each.label}
+                      label={each.label}
+                      // 단계가 여럿이면 **나란히** 적는다. `7,500 | 30,000 메포`.
+                      price={tilePriceLabel(each.items)}
+                      selected={false}
+                      disabled={!group.active}
+                      onPress={() => selectChoice(each)}
+                    />
+                  )),
+                )}
               </View>
             </View>
           ))}
@@ -338,34 +383,6 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
           )}
         </>
       )}
-
-      {/* **타일 격자에만 저장이 없다**. 거기엔 셀 자리 자체가 없다. */}
-      <SaveRow
-        showSave={choice !== null || editing}
-        editing={editing}
-        canSave={canSave}
-        saving={saving}
-        onSave={() =>
-          void submit({
-            ocid,
-            spentOn: props.dateKey,
-            category: props.category,
-            item: item?.name ?? null,
-            form,
-            // 종류는 아이템 구매의 것이다. 여기서는 `null` 이라 장비를 산 컨텐츠 지출 같은
-            // 행이 생기지 않는다.
-            itemKind: null,
-            quantity,
-            mesoAmount: currency === 'meso' ? amount : null,
-            tariffMeso: null,
-            pointAmount: currency === 'point' ? amount : null,
-            pointPer100mMeso: currency === 'point' ? rate : null,
-            cashAmount: null,
-            memo: null,
-          })
-        }
-        onDelete={props.onDelete === undefined ? undefined : () => void remove()}
-      />
     </>
   )
 }

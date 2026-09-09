@@ -46,8 +46,17 @@ const 캐릭터둘 = [
   { ocid: 'ocid-2', name: '아델' },
 ]
 
-async function 그리기(overrides: Partial<React.ComponentProps<typeof SpendSheet>> = {}) {
-  return renderOverlay(
+/**
+ * 시트를 열고 갈래까지 고른다. 시트는 1차에서 갈래를 먼저 묻는다.
+ *
+ * `null` 을 주면 1차에 선 채로 둔다. 카드와 닫기를 재는 케이스가 쓴다. 수정으로 열면 기록이
+ * 갈래를 정했으므로 1차가 아예 안 선다. 그때도 안 고른다.
+ */
+async function 그리기(
+  overrides: Partial<React.ComponentProps<typeof SpendSheet>> = {},
+  갈래: 갈래이름 | null = '컨텐츠',
+) {
+  const view = await renderOverlay(
     <SpendSheet
       dateKey="2026-08-23"
       // 오늘. 이 날 뒤로는 못 옮긴다. 앞뒤 이동을 재는 케이스가 있으므로 이틀 뒤로 둔다.
@@ -59,6 +68,8 @@ async function 그리기(overrides: Partial<React.ComponentProps<typeof SpendShe
       {...overrides}
     />,
   )
+  if (overrides.editing === undefined && 갈래 !== null) await 갈래고르기(view, 갈래)
+  return view
 }
 
 async function 누르기(view: Rendered, label: string): Promise<void> {
@@ -67,14 +78,28 @@ async function 누르기(view: Rendered, label: string): Promise<void> {
   })
 }
 
+type 갈래이름 = '컨텐츠' | '이벤트·BM' | '버프' | '아이템 구매' | '기타'
+
 /**
- * **갈래 칩은 컨테이너 안에서 집는다**. 기타가 갈래 이름이자 아이템 구매의 종류
- * 이름이라 라벨만으로는 둘이 안 갈린다. 그 줄에 `testID` 가 있는 이유다.
+ * 1차의 카드를 누른다. **이름이 아니라 `testID` 로 집는다**. 기타가 갈래 이름이자
+ * 아이템 구매의 종류 이름이라 라벨만으로는 둘이 안 갈린다.
  */
-async function 갈래누르기(view: Rendered, label: string): Promise<void> {
+async function 갈래고르기(view: Rendered, label: 갈래이름): Promise<void> {
   await act(async () => {
-    fireEvent.press(within(view.getByTestId('spend-sheet-categories')).getByLabelText(label))
+    fireEvent.press(view.getByTestId(`spend-sheet-category-${label}`))
   })
+}
+
+/**
+ * 갈래를 바꾼다. 1차로 되돌아가 다른 카드를 고른다.
+ *
+ * 되돌아가는 누르개가 겹칠 수 있다. 목록 갈래의 폼에서는 항목 격자를 한 번 거쳐 1차에 닿는다.
+ */
+async function 갈래바꾸기(view: Rendered, label: 갈래이름): Promise<void> {
+  while (view.queryByLabelText('다시 고르기') !== null) {
+    await 누르기(view, '다시 고르기')
+  }
+  await 갈래고르기(view, label)
 }
 
 /**
@@ -101,45 +126,89 @@ describe('머리', () => {
   })
 })
 
-describe('갈래 칩', () => {
+describe('갈래', () => {
   // 갈래 다섯. 목록 셋과 직접 입력 둘.
-  it('다섯이 다 선다', async () => {
-    const view = await 그리기()
+  it('1차 시트가 갈래 다섯을 카드로 세운다', async () => {
+    const view = await 그리기({}, null)
 
     for (const label of ['컨텐츠', '이벤트·BM', '버프', '아이템 구매', '기타']) {
-      expect(view.getByLabelText(label)).toBeTruthy()
+      expect(view.getByTestId(`spend-sheet-category-${label}`)).toBeTruthy()
+    }
+    // 고르기 전에는 목록도 폼도 없다. 무엇을 적을지가 아직 안 정해졌다.
+    expect(view.queryByText('에픽던전 추가 리워드')).toBeNull()
+  })
+
+  /**
+   * 그림은 파일명으로 찾는다. 목록(`assets/generated/items`)은 커밋 시점에 생성되므로, 파일을
+   * 더하고 `npm run assets:gen` 을 안 돌리면 다섯 중 하나가 조용히 빈 자리가 된다.
+   */
+  it('카드 다섯이 저마다 게임 그림을 든다. 빈 자리가 없다', async () => {
+    const view = await 그리기({}, null)
+
+    // 그림은 `aria-hidden` 이라 기본 조회에서 빠진다. 낭독기는 카드 이름만 읽으면 된다.
+    const 숨은것 = { includeHiddenElements: true }
+    for (const label of ['컨텐츠', '이벤트·BM', '버프', '아이템 구매', '기타']) {
+      expect(view.getByTestId(`spend-sheet-category-icon-${label}`, 숨은것)).toBeTruthy()
     }
   })
 
-  it('첫 갈래로 시작한다', async () => {
-    const view = await 그리기()
+  /** 닫기는 2차의 저장이 서는 자리다. 상자가 같고 칠만 다르다. */
+  it('1차 시트에 닫기가 선다. 누르면 시트를 닫는다', async () => {
+    const onClose = jest.fn()
+    const view = await 그리기({ onClose }, null)
 
-    expect(view.getByLabelText('컨텐츠').props.accessibilityState?.selected).toBe(true)
+    const 닫기 = view.getByTestId('spend-sheet-close')
+    expect(닫기).toHaveTextContent('닫기')
+
+    await act(async () => {
+      fireEvent.press(닫기)
+    })
+
+    expect(onClose).toHaveBeenCalled()
   })
 
-  it('갈래를 바꾸면 그 묶음들이 선다', async () => {
+  it('2차에는 닫기가 없다', async () => {
     const view = await 그리기()
 
-    await 누르기(view, '버프')
+    expect(view.queryByTestId('spend-sheet-close')).toBeNull()
+  })
 
+  it('고르면 그 갈래의 목록이 서고 제목이 갈래 이름을 든다', async () => {
+    const view = await 그리기({}, '버프')
+
+    expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('버프')
     expect(view.getByText('버프 물약')).toBeTruthy()
     expect(view.queryByText('에픽던전 추가 리워드')).toBeNull()
   })
 
   /**
-   * **칩은 고르는 화면에만 선다**.
-   *
-   * 둘째 화면에서는 머리의 `‹` 가 되돌아가는 길이다. 칩까지 두면 길이 둘이 되고, 그 화면이
-   * 답하는 질문(얼마인가)에 무엇을 이 섞인다.
+   * **칩이 없다.** 갈래를 바꾸는 길은 머리의 `‹` 로 1차에 돌아가는 것 하나다. 목록 갈래에서도
+   * 직접 입력에서도 같다.
    */
-  it('고른 뒤에는 칩이 안 보인다. 되돌아가는 길은 머리 하나다', async () => {
+  it('2차에는 갈래를 옮기는 자리가 없다', async () => {
+    const 목록 = await 그리기()
+    expect(목록.queryByTestId('spend-sheet-category-버프')).toBeNull()
+    expect(목록.queryByTestId('spend-sheet-categories')).toBeNull()
+
+    const 직접입력 = await 그리기({}, '기타')
+    expect(직접입력.queryByTestId('spend-sheet-category-컨텐츠')).toBeNull()
+  })
+
+  it('항목 격자에서 되돌아가면 1차다', async () => {
     const view = await 그리기()
 
-    await 에픽던전(view, '하이마운틴', '경험치', '2단계')
+    await 누르기(view, '다시 고르기')
 
-    expect(view.queryByLabelText('버프')).toBeNull()
-    expect(view.queryByLabelText('기타')).toBeNull()
-    expect(view.getByLabelText('다시 고르기')).toBeTruthy()
+    expect(view.getByTestId('spend-sheet-category-버프')).toBeTruthy()
+  })
+
+  // 직접 입력에는 항목 격자가 없다. 되돌아가는 한 걸음이 곧 1차다.
+  it('직접 입력에서도 되돌아가면 1차다', async () => {
+    const view = await 그리기({}, '기타')
+
+    await 누르기(view, '다시 고르기')
+
+    expect(view.getByTestId('spend-sheet-category-컨텐츠')).toBeTruthy()
   })
 
   // 고르던 항목이 남아 있으면 **컨텐츠를 골랐는데 버프 항목이 저장되는** 일이 생긴다.
@@ -147,22 +216,12 @@ describe('갈래 칩', () => {
     const view = await 그리기()
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
-    await 누르기(view, '다시 고르기')
-    await 누르기(view, '버프')
+    await 갈래바꾸기(view, '버프')
 
     // 고를 것을 고르는 화면에는 **저장이 아예 없다**. 셀 것이 없다.
     expect(view.queryByLabelText('저장')).toBeNull()
     // `버프` 의 묶음이 섰다. 고르던 컨텐츠 항목은 풀렸다.
     expect(view.getAllByText('버프 물약').length).toBeGreaterThan(0)
-  })
-
-  // 직접 입력은 고를 목록이 없어 칩이 그대로 선다.
-  it('직접 입력에는 칩이 남는다', async () => {
-    const view = await 그리기()
-
-    await 누르기(view, '기타')
-
-    expect(view.getByLabelText('컨텐츠')).toBeTruthy()
   })
 })
 
@@ -198,7 +257,7 @@ describe('항목. 고르면 채워진다', () => {
 
   it('메소 항목은 단위가 `메소`이고 줄여 적는다. 좁은 칸이다', async () => {
     const view = await 그리기()
-    await 누르기(view, '버프')
+    await 갈래바꾸기(view, '버프')
 
     // 세이람·알레리아가 둘 다 200만이라 같은 글자가 두 번 선다. 그것 자체가 맞는 표기다.
     expect(view.getAllByText('200만 메소')).toHaveLength(2)
@@ -212,12 +271,10 @@ describe('항목. 고르면 채워진다', () => {
    * 두 갈래를 나란히 본다.
    */
   it('타일이 자기 통화를 적는다', async () => {
-    const 버프 = await 그리기()
-    await 누르기(버프, '버프')
+    const 버프 = await 그리기({}, '버프')
     expect(버프.getByText('500만 메소')).toBeTruthy()
 
-    const 이벤트 = await 그리기()
-    await 누르기(이벤트, '이벤트·BM')
+    const 이벤트 = await 그리기({}, '이벤트·BM')
     expect(이벤트.getByText('9,900 메포')).toBeTruthy()
   })
 
@@ -285,7 +342,7 @@ describe('수량. 곱셈은 앱이 한다', () => {
    */
   it('단위를 안 적는다. 숫자만 오르내린다', async () => {
     const view = await 그리기()
-    await 누르기(view, '이벤트·BM')
+    await 갈래바꾸기(view, '이벤트·BM')
 
     await 누르기(view, '보약 버프 추가 구매')
 
@@ -344,16 +401,15 @@ describe('수량. 곱셈은 앱이 한다', () => {
 
   // 머리줄이 지금 어디인지를 말한다. ②로 들어가면 제목이 고른 것의 이름이 되고 그 왼쪽이
   // 돌아가는 자리다. 목록에서는 돌아갈 데가 없으니 서 있으면 안 된다.
-  it('②에서는 머리줄이 고른 것의 이름과 뒤로 가는 자리가 된다', async () => {
+  // 머리는 **한 걸음씩** 되돌아간다. 격자에서는 갈래 이름이고 항목을 고르면 그 이름이다.
+  it('②에서는 머리줄이 고른 것의 이름이 된다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
-    expect(view.queryByTestId('spend-sheet-back')).toBeNull()
-    expect(view.getByText('지출 추가')).toBeTruthy()
+    expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('컨텐츠')
 
     await 누르기(view, '하이마운틴')
 
     expect(view.getByTestId('spend-sheet-back')).toBeTruthy()
-    expect(view.getByTestId('spend-sheet-choice')).toHaveTextContent('하이마운틴')
-    expect(view.queryByText('지출 추가')).toBeNull()
+    expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('하이마운틴')
   })
 
   // 사용자가 준 한도를 **화면이 들고 있어야** 한다. 데이터에만 있고 안 보이면 받은 뜻이 없다
@@ -395,7 +451,7 @@ describe('수량. 곱셈은 앱이 한다', () => {
   // **조절할 수 있다** 는 거짓말이다. 막힌 채로 세워 두던 것을 걷었다.
   it('상한이 1이면 수량 줄이 아예 없다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
-    await 누르기(view, '이벤트·BM')
+    await 갈래바꾸기(view, '이벤트·BM')
     await 누르기(view, '미호로이드')
 
     expect(view.queryByTestId('spend-sheet-quantity')).toBeNull()
@@ -434,7 +490,7 @@ describe('메소마켓 시세', () => {
 
   it('메소 항목에는 안 선다. 물어볼 이유가 없다', async () => {
     const view = await 그리기()
-    await 누르기(view, '버프')
+    await 갈래바꾸기(view, '버프')
 
     await 누르기(view, '세이람의 영약')
 
@@ -487,13 +543,78 @@ describe('메소마켓 시세', () => {
 
   it('메소 항목은 시세가 없어도 저장된다', async () => {
     const view = await 그리기({ lastPointRate: null })
-    await 누르기(view, '버프')
+    await 갈래바꾸기(view, '버프')
 
     await 누르기(view, '세이람의 영약')
 
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(false)
   })
 })
+
+describe('저장 줄은 시트 바닥이다', () => {
+  /**
+   * **키보드가 없으면 저장은 내용의 마지막 줄**이다(사용자 지정). 떼어 두면 상자의 키를 재고
+   * 그 자리를 비우고 둘을 맞추는 일이 따라오는데, 붙여 두면 맞출 것 자체가 없다.
+   *
+   * 떼는 것은 키보드가 떠 있을 때뿐이다. 그때는 흐름에 있으면 덮여 밀려 나간다.
+   */
+  it('저장은 바닥 줄에 하나만 선다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180 })
+    await 누르기(view, '몬스터 파크')
+
+    expect(within(view.getByTestId('bottom-sheet-footer')).getAllByLabelText('저장')).toHaveLength(
+      1,
+    )
+  })
+
+  it('직접 입력에서도 바닥이다', async () => {
+    const view = await 그리기({}, '기타')
+
+    expect(within(view.getByTestId('bottom-sheet-footer')).getByLabelText('저장')).toBeTruthy()
+  })
+
+  /**
+   * 격자에는 셀 자리가 없지만 **바닥 영역은 그대로 잡는다**(사용자 지시). 영역째 걷으면
+   * 단계를 오갈 때 시트의 아랫부분이 그 높이만큼 늘었다 줄었다 한다.
+   */
+  it('항목 격자는 버튼 없이 자리만 잡는다', async () => {
+    const view = await 그리기()
+
+    const 바닥 = view.getByTestId('bottom-sheet-footer')
+    expect(within(바닥).queryByLabelText('저장')).toBeNull()
+    // 버튼이 서던 상자만 남는다. 높이가 같아야 바닥의 기하가 안 바뀐다.
+    expect(flattenStyle(view.getByTestId('spend-sheet-save-placeholder').props.style).height).toBe(
+      44,
+    )
+  })
+
+  it('수정 모드는 삭제까지 바닥에 든다', async () => {
+    const view = await 그리기({ editing: 악몽선경2, onDelete: jest.fn() })
+
+    const 바닥 = view.getByTestId('bottom-sheet-footer')
+    expect(within(바닥).getByLabelText('수정')).toBeTruthy()
+    expect(within(바닥).getByTestId('spend-sheet-delete')).toBeTruthy()
+  })
+})
+
+/** 위 케이스가 쓰는 수정 기록. 같은 값이 아래 describe 안에도 있어 이름만 갈라 둔다. */
+const 악몽선경2 = {
+  id: 'spd-9',
+  ocid: null,
+  spentOn: '2026-08-23',
+  category: '컨텐츠' as const,
+  item: '악몽선경 2단계',
+  form: '경험치',
+  itemKind: null,
+  quantity: 1,
+  mesoAmount: null,
+  tariffMeso: null,
+  pointAmount: 50_000,
+  pointPer100mMeso: 1_180,
+  cashAmount: null,
+  memo: null,
+  recordedAt: '2026-08-23T01:00:00.000Z',
+}
 
 describe('저장', () => {
   it('메포 항목은 원금과 시세를 함께 박는다. 메소 칸은 비운다', async () => {
@@ -525,7 +646,7 @@ describe('저장', () => {
   it('메소 항목은 메소 칸만 채운다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 누르기(view, '버프')
+    await 갈래바꾸기(view, '버프')
 
     await 누르기(view, '콜렉터의 영약')
     await 누르기(view, '저장')
@@ -562,16 +683,6 @@ async function 금액치기(view: Rendered, text: string): Promise<void> {
 }
 
 /**
- * 갈래 칩을 누른다. **`기타`가 갈래 이름이자 `아이템 구매`의 종류 이름**이라
- *  아이템 구매 화면에서는 라벨만으로 둘이 안 갈린다. 줄을 지목해 가른다.
- */
-async function 갈래고르기(view: Rendered, label: string): Promise<void> {
-  await act(async () => {
-    fireEvent.press(within(view.getByTestId('spend-sheet-categories')).getByLabelText(label))
-  })
-}
-
-/**
  * 관세를 켠다. **라벨–값 줄의 세그먼트**다. 없음 은 수입 시트의
  * 수수료 조각과 이름이 같으므로 줄을 지목한다.
  */
@@ -597,7 +708,7 @@ describe('아이템 구매', () => {
   it('고를 목록이 없고 금액을 친다', async () => {
     const view = await 그리기()
 
-    await 누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '아이템 구매')
 
     expect(view.queryByText('에픽던전 추가 리워드')).toBeNull()
     expect(view.getByTestId('spend-sheet-amount')).toBeTruthy()
@@ -610,7 +721,7 @@ describe('아이템 구매', () => {
   it('앱 키패드를 안 그리고 숫자 키보드를 부른다', async () => {
     const view = await 그리기()
 
-    await 누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '아이템 구매')
 
     expect(view.queryByLabelText('한 자리 지우기')).toBeNull()
     expect(view.getByTestId('spend-sheet-unit-price').props.keyboardType).toBe('number-pad')
@@ -624,21 +735,21 @@ describe('아이템 구매', () => {
    */
   it('갈래를 옮기면 금액이 0 에서 시작한다', async () => {
     const view = await 그리기()
-    await 누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '아이템 구매')
     await 치기(view, '1200000000')
 
-    await 갈래고르기(view, '기타')
+    await 갈래바꾸기(view, '기타')
 
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('0')
   })
 
   it('갔다 돌아와도 0 이다. 기억에서 되살아나지 않는다', async () => {
     const view = await 그리기()
-    await 누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '아이템 구매')
     await 치기(view, '1200000000')
 
-    await 갈래고르기(view, '기타')
-    await 누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '기타')
+    await 갈래바꾸기(view, '아이템 구매')
 
     expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('')
   })
@@ -646,7 +757,7 @@ describe('아이템 구매', () => {
   it('금액이 0 이면 저장할 수 없다', async () => {
     const view = await 그리기()
 
-    await 누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '아이템 구매')
 
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
@@ -659,7 +770,7 @@ describe('아이템 구매', () => {
    */
   it('관세를 켜도 친 구입가가 자기 칸에 남는다', async () => {
     const view = await 그리기()
-    await 누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '아이템 구매')
     await 치기(view, '850000000')
 
     await 관세고르기(view, '10%')
@@ -672,7 +783,7 @@ describe('아이템 구매', () => {
   it('껐다 켜도 부풀지 않는다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '아이템 구매')
     await 치기(view, '850000000')
 
     await 관세고르기(view, '10%')
@@ -689,7 +800,7 @@ describe('아이템 구매', () => {
   // 관세 줄에서 **더해지는 금액을 안 적는다**. 큰 숫자가 그만큼 올라가는 것이 그 말이다.
   it('관세 줄은 `관세 10%` 뿐이다', async () => {
     const view = await 그리기()
-    await 누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '아이템 구매')
     await 치기(view, '850000000')
 
     await 관세고르기(view, '10%')
@@ -702,7 +813,7 @@ describe('아이템 구매', () => {
   it('총액과 관세분을 함께 저장한다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '아이템 구매')
     await 치기(view, '850000000')
     await 관세고르기(view, '10%')
 
@@ -724,7 +835,7 @@ describe('아이템 구매', () => {
   it('관세를 안 켜면 관세분이 없다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '아이템 구매')
     await 치기(view, '100')
 
     await 누르기(view, '저장')
@@ -736,7 +847,7 @@ describe('아이템 구매', () => {
   it('시세를 안 묻는다', async () => {
     const view = await 그리기({ lastPointRate: null })
 
-    await 누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '아이템 구매')
 
     expect(view.queryByTestId('spend-sheet-rate')).toBeNull()
   })
@@ -746,7 +857,7 @@ describe('기타. 캐시는 여기서만 산다', () => {
   it('통화 셋을 고른다', async () => {
     const view = await 그리기()
 
-    await 누르기(view, '기타')
+    await 갈래바꾸기(view, '기타')
 
     expect(view.getByLabelText('메소')).toBeTruthy()
     expect(view.getByLabelText('메포')).toBeTruthy()
@@ -760,7 +871,7 @@ describe('기타. 캐시는 여기서만 산다', () => {
   it('통화는 칩이 아니라 세그먼트다', async () => {
     const view = await 그리기()
 
-    await 누르기(view, '기타')
+    await 갈래바꾸기(view, '기타')
 
     const 세그먼트 = within(view.getByTestId('segment'))
     expect(세그먼트.getByLabelText('메소')).toBeTruthy()
@@ -771,7 +882,7 @@ describe('기타. 캐시는 여기서만 산다', () => {
   it('메소로 시작한다', async () => {
     const view = await 그리기()
 
-    await 누르기(view, '기타')
+    await 갈래바꾸기(view, '기타')
 
     expect(view.getByLabelText('메소').props.accessibilityState?.selected).toBe(true)
   })
@@ -779,14 +890,14 @@ describe('기타. 캐시는 여기서만 산다', () => {
   it('관세는 아이템 구매에만 있다', async () => {
     const view = await 그리기()
 
-    await 누르기(view, '기타')
+    await 갈래바꾸기(view, '기타')
 
     expect(view.queryByTestId('spend-sheet-tariff')).toBeNull()
   })
 
   it('메포를 고르면 시세를 묻는다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
-    await 누르기(view, '기타')
+    await 갈래바꾸기(view, '기타')
 
     await 누르기(view, '메포')
 
@@ -797,7 +908,7 @@ describe('기타. 캐시는 여기서만 산다', () => {
   // 성립하는 경로가 운영정책 위반 거래라, 앱이 그 숫자를 적으면 그 경로에 값을 매기는 것처럼 읽힌다.
   it('캐시는 시세를 안 묻는다. 환산 자체를 안 한다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
-    await 누르기(view, '기타')
+    await 갈래바꾸기(view, '기타')
 
     await 누르기(view, '캐시')
 
@@ -807,7 +918,7 @@ describe('기타. 캐시는 여기서만 산다', () => {
   it('캐시는 원 단위로 적고 캐시 칸에 담긴다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 갈래누르기(view, '기타')
+    await 갈래바꾸기(view, '기타')
     await 누르기(view, '캐시')
     await 금액치기(view, '6900')
 
@@ -823,7 +934,7 @@ describe('기타. 캐시는 여기서만 산다', () => {
 
   it('캐시 금액에는 메소 빠른 칩이 안 뜬다. 1만원짜리에 +100억은 없다', async () => {
     const view = await 그리기()
-    await 누르기(view, '기타')
+    await 갈래바꾸기(view, '기타')
 
     await 누르기(view, '캐시')
 
@@ -833,7 +944,7 @@ describe('기타. 캐시는 여기서만 산다', () => {
   it('메포로 적으면 원금과 시세가 함께 박힌다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave, lastPointRate: 1_180 })
-    await 누르기(view, '기타')
+    await 갈래바꾸기(view, '기타')
     await 누르기(view, '메포')
     await 금액치기(view, '30000')
 
@@ -848,7 +959,7 @@ describe('기타. 캐시는 여기서만 산다', () => {
 
   it('통화를 바꿔도 친 금액은 남는다. 단위만 갈린다', async () => {
     const view = await 그리기()
-    await 누르기(view, '기타')
+    await 갈래바꾸기(view, '기타')
     await 금액치기(view, '123')
 
     await 누르기(view, '캐시')
@@ -906,7 +1017,7 @@ describe('시세가 비어 있을 때', () => {
 
   it('메소 항목에는 시세 칸도 별표도 없다. 물어본 적이 없다', async () => {
     const view = await 그리기({ lastPointRate: null })
-    await 누르기(view, '버프')
+    await 갈래바꾸기(view, '버프')
 
     await 누르기(view, '세이람의 영약')
 
@@ -930,7 +1041,7 @@ describe('캐릭터 귀속', () => {
 
   it('기본이 `선택 안함` 이다', async () => {
     const view = await 그리기()
-    await 누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '아이템 구매')
 
     expect(view.getByTestId('spend-sheet-character-trigger')).toHaveTextContent('캐릭터선택 안함')
   })
@@ -953,7 +1064,7 @@ describe('캐릭터 귀속', () => {
   it('고르면 그 캐릭터로 저장한다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '아이템 구매')
     await 치기(view, '1200000000')
 
     await 아이디로누르기(view, 'spend-sheet-character-trigger')
@@ -966,7 +1077,7 @@ describe('캐릭터 귀속', () => {
   it('안 고르면 계정 단위로 저장한다. `ocid` 가 `null` 이다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '아이템 구매')
     await 치기(view, '1200000000')
 
     await 누르기(view, '저장')
@@ -994,7 +1105,7 @@ describe('캐릭터 귀속', () => {
 describe('기타. 금액 × 수량', () => {
   async function 기타(overrides: Partial<React.ComponentProps<typeof SpendSheet>> = {}) {
     const view = await 그리기({ lastPointRate: 1_180, ...overrides })
-    await 누르기(view, '기타')
+    await 갈래바꾸기(view, '기타')
     return view
   }
 
@@ -1049,7 +1160,7 @@ describe('기타. 금액 × 수량', () => {
   // 없으므로 라벨이 `단가` 가 아니라 `구매 비용` 이다. 기본 종류라 고르는 절차가 없다.
   it('아이템 구매(장비)는 `구매 비용` 칸에서 받는다', async () => {
     const view = await 그리기()
-    await 누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '아이템 구매')
 
     expect(view.getByText('구매 비용')).toBeTruthy()
     expect(view.queryByText('단가')).toBeNull()
@@ -1095,11 +1206,13 @@ describe('수정 모드', () => {
     expect(view.queryByText('지출 수정')).toBeNull()
   })
 
-  it('갈래를 못 바꾼다. 칩이 아예 없다', async () => {
+  /** 기록이 갈래를 정했다. 고르는 단계를 건너뛴다. */
+  it('갈래를 못 바꾼다. 1차를 건너뛴다', async () => {
     const view = await 고치기()
 
-    expect(view.queryByLabelText('아이템 구매')).toBeNull()
-    expect(view.queryByLabelText('컨텐츠')).toBeNull()
+    expect(view.queryByTestId('spend-sheet-category-아이템 구매')).toBeNull()
+    expect(view.queryByTestId('spend-sheet-category-컨텐츠')).toBeNull()
+    expect(view.queryByTestId('spend-sheet-close')).toBeNull()
   })
 
   // 제목이 이미 말하므로 갈래 줄도 항목 줄도 안 세운다. 같은 사실을 두 번 적는 일이다.
@@ -1176,7 +1289,7 @@ describe('안 열린 묶음', () => {
   it('메이플 포인트 샵은 이벤트 기간이 아닙니다 라고 적는다', async () => {
     const view = await 그리기()
 
-    await 누르기(view, '이벤트·BM')
+    await 갈래바꾸기(view, '이벤트·BM')
 
     expect(view.getByTestId('spend-sheet-closed-메이플 포인트 샵')).toHaveTextContent('· 이벤트 기간이 아닙니다')
   })
@@ -1184,17 +1297,17 @@ describe('안 열린 묶음', () => {
   it('그 묶음의 타일은 안 눌린다', async () => {
     const view = await 그리기()
 
-    await 누르기(view, '이벤트·BM')
+    await 갈래바꾸기(view, '이벤트·BM')
     await 누르기(view, '솔 에르다')
 
-    // 안 골라졌으므로 여전히 목록이다. 고른 뒤라면 되돌아가는 머리가 섰을 것이다.
-    expect(view.queryByTestId('spend-sheet-back')).toBeNull()
+    // 안 골라졌으므로 여전히 목록이다. 고른 뒤라면 머리가 그 이름을 들었을 것이다.
+    expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('이벤트·BM')
   })
 
   it('열린 묶음은 그대로 눌린다', async () => {
     const view = await 그리기()
 
-    await 누르기(view, '이벤트·BM')
+    await 갈래바꾸기(view, '이벤트·BM')
     await 누르기(view, 'VIP 사우나')
 
     expect(view.getByTestId('spend-sheet-back')).toBeTruthy()
@@ -1209,7 +1322,7 @@ describe('직접 입력의 이름 칸', () => {
   it('아이템 구매는 구매 아이템이다', async () => {
     const view = await 그리기()
 
-    await 누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '아이템 구매')
 
     expect(view.getByTestId('spend-sheet-name-label')).toHaveTextContent('구매 아이템')
   })
@@ -1217,7 +1330,7 @@ describe('직접 입력의 이름 칸', () => {
   it('기타는 `내용` 이다. 수입 `기타`와 같은 낱말이다', async () => {
     const view = await 그리기()
 
-    await 누르기(view, '기타')
+    await 갈래바꾸기(view, '기타')
 
     expect(view.getByTestId('spend-sheet-name-label')).toHaveTextContent('내용')
   })
@@ -1231,7 +1344,7 @@ describe('금액 줄의 단위', () => {
   it('고른 통화를 그대로 적는다', async () => {
     const view = await 그리기()
 
-    await 누르기(view, '기타')
+    await 갈래바꾸기(view, '기타')
 
     expect(view.getByTestId('spend-sheet-unit-price-unit')).toHaveTextContent('메소')
 
@@ -1258,7 +1371,7 @@ describe('타일 그림', () => {
   it('버프 물약 넷은 다 붙는다', async () => {
     const view = await 그리기()
 
-    await 누르기(view, '버프')
+    await 갈래바꾸기(view, '버프')
 
     for (const label of ['세이람의 영약', '알레리아의 영약', '콜렉터의 영약', '명예의 영약']) {
       expect(view.getByTestId(`spend-tile-icon-${label}`)).toBeTruthy()
@@ -1268,7 +1381,7 @@ describe('타일 그림', () => {
   it('그림이 없는 것에는 안 붙는다. 지어내지 않는다', async () => {
     const view = await 그리기()
 
-    await 누르기(view, '이벤트·BM')
+    await 갈래바꾸기(view, '이벤트·BM')
 
     // 아직 그림을 안 받은 셋. `이벤트` 묶음이 통째로 그렇다.
     expect(view.queryByTestId('spend-tile-icon-출석 이벤트 패스')).toBeNull()
@@ -1280,7 +1393,7 @@ describe('타일 그림', () => {
   it('농장 둘은 이름이 바뀐 뒤에도 그림이 붙는다', async () => {
     const view = await 그리기()
 
-    await 누르기(view, '이벤트·BM')
+    await 갈래바꾸기(view, '이벤트·BM')
 
     expect(view.getByTestId('spend-tile-icon-메카베리 농장')).toBeTruthy()
     expect(view.getByTestId('spend-tile-icon-블루베리 농장')).toBeTruthy()
@@ -1291,7 +1404,7 @@ describe('타일 그림', () => {
   it('솔 에르다에는 사용자가 지정한 그림이 붙는다', async () => {
     const view = await 그리기()
 
-    await 누르기(view, '이벤트·BM')
+    await 갈래바꾸기(view, '이벤트·BM')
 
     expect(view.getByTestId('spend-tile-icon-솔 에르다')).toBeTruthy()
   })
@@ -1322,7 +1435,7 @@ describe('타일 그림', () => {
   it('그림이 없는 타일은 이름이 줄 전체를 쓴다', async () => {
     const view = await 그리기()
 
-    await 누르기(view, '이벤트·BM')
+    await 갈래바꾸기(view, '이벤트·BM')
 
     expect(view.queryByTestId('spend-tile-icon-slot-블랙 서큘레이터')).toBeNull()
     expect(view.queryByTestId('spend-tile-icon-slot-하이마운틴')).toBeNull()
@@ -1351,7 +1464,7 @@ describe('아이템 구매의 종류', () => {
 
   async function 구매(종류?: '소비' | '기타') {
     const view = await 그리기()
-    await 누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '아이템 구매')
     if (종류 !== undefined) await 종류고르기(view, 종류)
     return view
   }
@@ -1421,7 +1534,7 @@ describe('아이템 구매의 종류', () => {
   it('소비를 저장하면 합계·수량·종류가 함께 실린다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '아이템 구매')
     await 종류고르기(view, '소비')
     await 단가치기(view, '12000')
     await 수량치기(view, '300')
@@ -1444,7 +1557,7 @@ describe('아이템 구매의 종류', () => {
   it('장비를 저장하면 수량이 null 이고 관세가 실린다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '아이템 구매')
     await 치기(view, '850000000')
     await 관세고르기(view, '10%')
     await 누르기(view, '저장')
@@ -1464,7 +1577,7 @@ describe('아이템 구매의 종류', () => {
   it('종류를 바꾸면 관세가 꺼지고 수량이 1 로 돌아간다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '아이템 구매')
     await 치기(view, '12000')
     await 관세고르기(view, '10%')
 
@@ -1655,7 +1768,7 @@ describe('되짚어 여는 식', () => {
 describe('관세 줄의 모양', () => {
   async function 장비() {
     const view = await 그리기()
-    await 누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '아이템 구매')
     return view
   }
 
@@ -1726,12 +1839,12 @@ describe('갈래마다 자기 폼', () => {
 
   it('`아이템 구매`의 종류가 갈래를 안 넘어간다', async () => {
     const view = await 그리기()
-    await 갈래누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '아이템 구매')
     await 누르기(view, '소비')
     expect(view.getByLabelText('소비').props.accessibilityState?.selected).toBe(true)
 
-    await 갈래누르기(view, '기타')
-    await 갈래누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '기타')
+    await 갈래바꾸기(view, '아이템 구매')
 
     // 기본값(장비)으로 돌아온다. 종류가 수량과 관세를 정하므로 남으면 화면이 딴 모양으로 열린다.
     expect(view.getByLabelText('장비').props.accessibilityState?.selected).toBe(true)
@@ -1739,23 +1852,23 @@ describe('갈래마다 자기 폼', () => {
 
   it('`기타`의 통화가 갈래를 안 넘어간다', async () => {
     const view = await 그리기()
-    await 누르기(view, '기타')
+    await 갈래바꾸기(view, '기타')
     await 누르기(view, '캐시')
     expect(view.getByLabelText('캐시').props.accessibilityState?.selected).toBe(true)
 
-    await 갈래누르기(view, '아이템 구매')
-    await 갈래누르기(view, '기타')
+    await 갈래바꾸기(view, '아이템 구매')
+    await 갈래바꾸기(view, '기타')
 
     expect(view.getByLabelText('메소').props.accessibilityState?.selected).toBe(true)
   })
 
   it('친 금액도 갈래를 안 넘어간다', async () => {
     const view = await 그리기()
-    await 갈래누르기(view, '기타')
+    await 갈래바꾸기(view, '기타')
     await 아이디로치기(view, 'spend-sheet-unit-price', '30000')
 
-    await 갈래누르기(view, '아이템 구매')
-    await 갈래누르기(view, '기타')
+    await 갈래바꾸기(view, '아이템 구매')
+    await 갈래바꾸기(view, '기타')
 
     expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('')
   })
@@ -1764,15 +1877,15 @@ describe('갈래마다 자기 폼', () => {
     const view = await 그리기()
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
     // 둘째 화면이다. 머리가 되돌아가는 누르개가 된다.
-    expect(view.getByTestId('spend-sheet-choice')).toHaveTextContent('하이마운틴')
+    expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('하이마운틴')
 
     await 누르기(view, '다시 고르기')
-    await 갈래누르기(view, '아이템 구매')
-    await 갈래누르기(view, '컨텐츠')
+    await 갈래바꾸기(view, '아이템 구매')
+    await 갈래바꾸기(view, '컨텐츠')
 
     // 목록으로 돌아와 있다. 고른 것이 남아 있으면 둘째 화면이 그대로 섰을 것이다.
-    expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('지출 추가')
-    expect(view.queryByTestId('spend-sheet-choice')).toBeNull()
+    expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('컨텐츠')
+    expect(view.queryByText('하이마운틴 2단계')).toBeNull()
   })
 })
 
@@ -1821,7 +1934,7 @@ describe('수정으로 열 때의 큰 숫자', () => {
 describe('아이템 구매의 수량 단위', () => {
   it('소비·기타를 고르면 수량 옆에 개가 선다', async () => {
     const view = await 그리기()
-    await 갈래누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '아이템 구매')
     await 누르기(view, '소비')
 
     expect(view.getByTestId('spend-sheet-quantity-unit')).toHaveTextContent('개')
@@ -1829,7 +1942,7 @@ describe('아이템 구매의 수량 단위', () => {
 
   it('장비에는 수량 줄 자체가 없다. 단위도 없다', async () => {
     const view = await 그리기()
-    await 갈래누르기(view, '아이템 구매')
+    await 갈래바꾸기(view, '아이템 구매')
 
     // 기본이 장비다. 하나를 사므로 곱할 것이 없다.
     expect(view.queryByTestId('spend-sheet-quantity')).toBeNull()
@@ -1838,7 +1951,7 @@ describe('아이템 구매의 수량 단위', () => {
 
   it('`기타` 갈래의 수량에는 여전히 단위가 없다. 무엇을 세는지 모른다', async () => {
     const view = await 그리기()
-    await 갈래누르기(view, '기타')
+    await 갈래바꾸기(view, '기타')
 
     expect(view.getByTestId('spend-sheet-quantity')).toBeTruthy()
     expect(view.queryByTestId('spend-sheet-quantity-unit')).toBeNull()
@@ -1887,7 +2000,7 @@ describe('날짜 바꾸기', () => {
   it('바꾼 날짜로 저장된다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 갈래누르기(view, '기타')
+    await 갈래바꾸기(view, '기타')
     await 금액치기(view, '30000')
     await 아이디로누르기(view, 'spend-sheet-date-prev')
     await 누르기(view, '저장')
@@ -1898,7 +2011,7 @@ describe('날짜 바꾸기', () => {
   // 갈래 폼은 `key={category}` 로만 다시 심긴다. 날짜는 그 열쇠가 아니다.
   it('날짜를 바꿔도 **친 것이 안 사라진다**', async () => {
     const view = await 그리기()
-    await 갈래누르기(view, '기타')
+    await 갈래바꾸기(view, '기타')
     await 금액치기(view, '30000')
 
     await 아이디로누르기(view, 'spend-sheet-date-prev')
@@ -1914,6 +2027,6 @@ describe('날짜 바꾸기', () => {
 
     // 되돌아가는 누르개가 선 그 줄에서 날짜도 함께 산다.
     expect(view.getByTestId('spend-sheet-date')).toHaveTextContent('8월 22일 (토)')
-    expect(view.getByTestId('spend-sheet-choice')).toHaveTextContent('하이마운틴')
+    expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('하이마운틴')
   })
 })
