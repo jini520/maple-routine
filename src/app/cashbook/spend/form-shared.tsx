@@ -1,9 +1,10 @@
 /**
  * 지출 시트의 **갈래별 폼이 함께 쓰는 것**.
  *
- * 머리줄 · 갈래 칩 · 캐릭터 줄 · 시세 줄 · 저장·삭제 줄은 갈래가 안 바꾼다. 세 벌로 갈리면 한쪽만
+ * 머리줄 · 캐릭터 줄 · 시세 줄 · 저장·삭제 줄은 갈래가 안 바꾼다. 세 벌로 갈리면 한쪽만
  * 고쳐지는 자리가 생기므로 한 벌만 둔다.
  */
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { Pressable, View } from 'react-native'
 
 import { ChevronLeftIcon, Text } from '../../../components/atoms'
@@ -11,19 +12,33 @@ import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { SelectField } from '../../../components/organisms/SelectField/SelectField'
 import { characterOptions } from '../character-options'
 import { DateStepper } from '../sheet-fields'
-import { SPEND_CATEGORIES, type SpendCategory, type SpendRecord } from '../../../storage/spend'
+import { type SpendCategory, type SpendRecord } from '../../../storage/spend'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
 /** 저장할 값에서 **어댑터가 아니라 화면이 정하는 것 둘**(`id`·`recordedAt`)을 뺀 나머지. */
 export type SpendDraft = Omit<SpendRecord, 'id' | 'recordedAt'>
 
+/** 저장 줄이 그리는 값과 누를 때 부를 것. 시트가 이것을 받아 바닥에 세운다. */
+export interface SpendSaveSlot {
+  /** 셀 자리가 있나. 항목 격자에서는 거짓이고 그때 시트는 바닥 줄을 아예 안 세운다. */
+  showSave: boolean
+  editing: boolean
+  canSave: boolean
+  saving: boolean
+  onSave: () => void
+  onDelete?: () => void
+}
+
 /** 갈래별 폼이 **전부 받는 것**. */
 export interface SpendFormProps {
+  /** 저장 줄을 시트 바닥으로 올리는 손잡이. 폼이 값을 정하고 자리는 시트가 준다. */
+  setSave: (slot: SpendSaveSlot) => void
   dateKey: string
   characters: ReadonlyArray<{ ocid: string; name: string }>
-  /** 갈래 칩이 쓰는 값. 칩은 폼이 그린다(갈래마다 서는 자리가 달라서다). */
+  /** 머리의 제목이 쓰는 값. 1차에서 고른 갈래다. */
   category: SpendCategory
-  onSelectCategory: (next: SpendCategory) => void
+  /** 1차로 되돌아간다. 머리의 화살촉이 부른다. 수정 모드에서는 폼이 안 붙인다. */
+  onBack: () => void
   editing?: SpendRecord
   onDelete?: () => void | Promise<void>
   lastPointRate: number | null
@@ -40,9 +55,9 @@ export interface SpendFormProps {
 /**
  * 머리줄. 지금 어디인지를 말한다.
  *
- * ①에서는 지출 추가다. ②로 들어가면 그 자리가 고른 것의 이름으로 바뀌고 왼쪽에 돌아가는
- * 자리가 선다. 제목을 그대로 두고 본문에 돌아가는 줄을 따로 두면 같은 것을 말하는 자리가
- * 둘이 되고 시트 위쪽 한 줄이 통째로 낭비된다.
+ * 항목 격자에서는 갈래 이름이고 폼으로 들어가면 고른 항목의 이름이다. 왼쪽에는 한 걸음
+ * 되돌아가는 자리가 선다. 제목을 그대로 두고 본문에 돌아가는 줄을 따로 두면 같은 것을 말하는
+ * 자리가 둘이 되고 시트 위쪽 한 줄이 통째로 낭비된다.
  *
  * `items-baseline` 이 아니라 `items-center` 다. 화살촉은 글자가 아니라 밑줄이 없다.
  */
@@ -77,7 +92,7 @@ export function SpendHeader(props: {
         >
           <ChevronLeftIcon className="h-5 w-5 text-text" strokeWidth={2} aria-hidden />
           <Text
-            testID="spend-sheet-choice"
+            testID="spend-sheet-title"
             numberOfLines={1}
             className="shrink text-base font-bold text-text"
           >
@@ -91,56 +106,6 @@ export function SpendHeader(props: {
         onChange={props.onDateChange}
         testID="spend-sheet-date"
       />
-    </View>
-  )
-}
-
-function CategoryChip(props: {
-  label: string
-  selected: boolean
-  onPress: () => void
-}): React.JSX.Element {
-  return (
-    <Pressable
-      role="button"
-      aria-label={props.label}
-      aria-selected={props.selected}
-      onPress={props.onPress}
-      className={`rounded-full border px-3 py-1.5 ${
-        props.selected ? 'border-transparent bg-primary' : 'border-border'
-      }`}
-    >
-      <Text
-        className={`text-xs font-semibold ${props.selected ? 'text-on-primary' : 'text-text-muted'}`}
-      >
-        {props.label}
-      </Text>
-    </Pressable>
-  )
-}
-
-/**
- * 갈래 칩. 고르는 화면에만 선다.
- *
- * 둘째 화면에서는 머리의 `‹` 가 이미 되돌아가는 길이다. 수정 모드에도 없다. 갈래를 바꾸면
- * 그 기록은 다른 것이 되고, 무엇이었는지는 제목이 이미 말한다.
- */
-export function CategoryChips(props: {
-  selected: SpendCategory
-  onSelect: (next: SpendCategory) => void
-}): React.JSX.Element {
-  return (
-    // 테스트가 이 줄을 지목할 수 있어야 한다. `기타` 가 갈래 이름이자 `아이템 구매` 의 종류
-    // 이름이라 라벨만으로는 둘이 안 갈린다.
-    <View testID="spend-sheet-categories" className="flex-row flex-wrap gap-1.5">
-      {SPEND_CATEGORIES.map((each) => (
-        <CategoryChip
-          key={each}
-          label={each}
-          selected={each === props.selected}
-          onPress={() => props.onSelect(each)}
-        />
-      ))}
     </View>
   )
 }
@@ -202,12 +167,46 @@ export function RateRow(props: {
 }
 
 /**
- * 저장 · 삭제 줄. 큰 숫자 바로 아래다.
+ * 저장 줄의 값을 시트로 올리는 훅. 수입 시트와 **같은 계약**이다.
  *
- * 타일 격자에는 저장이 없다. 거기엔 셀 자리 자체가 없다. 그래서 `showSave` 를 받는다.
+ * 콜백은 **최신 것을 ref 로 부른다**. 값째로 의존성에 넣으면 렌더마다 새 함수라 매번 다시
+ * 올라가고, 그때마다 바닥 줄이 새로 그려진다.
+ */
+export function useSaveSlot(setSave: (slot: SpendSaveSlot) => void, slot: SpendSaveSlot): void {
+  const latest = useRef(slot)
+  useEffect(() => {
+    latest.current = slot
+  })
+
+  const hasDelete = slot.onDelete !== undefined
+  /*
+    **그리기 전에 올린다.** 평범한 `useEffect` 로 올리면 시트가 한 프레임 동안 바닥 줄 없이
+    그려진다. 그 프레임에는 줄이 설 자리도 안 비어 있어, 단계를 옮기는 순간 시트 아래쪽이
+    통째로 빈 칸으로 보인다(사용자 보고).
+  */
+  useLayoutEffect(() => {
+    setSave({
+      showSave: slot.showSave,
+      editing: slot.editing,
+      canSave: slot.canSave,
+      saving: slot.saving,
+      onSave: () => latest.current.onSave(),
+      onDelete: hasDelete ? () => latest.current.onDelete?.() : undefined,
+    })
+  }, [setSave, slot.showSave, slot.editing, slot.canSave, slot.saving, hasDelete])
+}
+
+/**
+ * 저장 · 삭제 줄. **시트 바닥에 고정**되어 키보드가 떠도 보인다.
+ *
+ * **항목 격자에서는 버튼 없이 자리만 잡는다**(사용자 지시). 거기엔 셀 자리가 없지만, 바닥
+ * 영역을 통째로 걷으면 단계를 오갈 때 시트의 아랫부분이 그 높이만큼 늘었다 줄었다 한다.
+ * 자리를 그대로 두면 바닥의 기하가 안 바뀌므로 옮겨도 아래가 안 흔들린다.
+ *
  * 삭제는 버튼처럼 안 생겼다. 이미 두 번 눌러야 여기까지 온다.
  */
 export function SaveRow(props: {
+  /** 셀 자리가 있나. 없으면 같은 높이의 빈 자리만 남는다. */
   showSave: boolean
   editing: boolean
   canSave: boolean
@@ -215,28 +214,30 @@ export function SaveRow(props: {
   onSave: () => void
   onDelete?: () => void
 }): React.JSX.Element {
+  if (!props.showSave) {
+    // 버튼이 서던 자리. 상자만 남고 아무것도 안 그린다(전폭 · 44).
+    return <View testID="spend-sheet-save-placeholder" className="h-11" />
+  }
+
   return (
     <>
-      {props.showSave && (
-        // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
-        <Pressable
-          role="button"
-          // 보이는 글자와 같아야 한다. 화면은 `수정` 인데 읽어 주는 것이 `저장` 이면 그 둘은
-          // 다른 버튼이 된다.
-          aria-label={props.editing ? '수정' : '저장'}
-          disabled={!props.canSave || props.saving}
-          onPress={props.onSave}
-          className={`items-center rounded-xl py-3 ${props.canSave ? 'bg-primary' : 'bg-surface-2'}`}
+      <Pressable
+        role="button"
+        // 보이는 글자와 같아야 한다. 화면은 `수정` 인데 읽어 주는 것이 `저장` 이면 그 둘은
+        // 다른 버튼이 된다.
+        aria-label={props.editing ? '수정' : '저장'}
+        disabled={!props.canSave || props.saving}
+        onPress={props.onSave}
+        className={`items-center rounded-xl py-3 ${props.canSave ? 'bg-primary' : 'bg-surface-2'}`}
+      >
+        <Text
+          className={`text-sm font-bold ${
+            props.canSave ? 'text-on-primary' : 'text-text-disabled'
+          }`}
         >
-          <Text
-            className={`text-sm font-bold ${
-              props.canSave ? 'text-on-primary' : 'text-text-disabled'
-            }`}
-          >
-            {props.editing ? '수정' : '저장'}
-          </Text>
-        </Pressable>
-      )}
+          {props.editing ? '수정' : '저장'}
+        </Text>
+      </Pressable>
 
       {props.editing && props.onDelete !== undefined && (
         <Pressable

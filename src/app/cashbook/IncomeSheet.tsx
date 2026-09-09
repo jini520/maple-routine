@@ -19,11 +19,12 @@ import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import type { MesoRateLoad } from '../../features/cashbook/meso-rate'
 import type { LastHuntSelection } from '../../storage/last-hunt-selection'
 import {
+  INCOME_CATEGORIES,
   type HuntInputMode,
   type IncomeCategory,
   type IncomeRecord,
 } from '../../storage/income'
-import { CategoryPicker } from './income/CategoryPicker'
+import { CategoryPicker } from './CategoryPicker'
 import { CheckBox, DateStepper } from './sheet-fields'
 import { EtcForm } from './income/EtcForm'
 import { HuntCalculatorForm } from './income/HuntCalculatorForm'
@@ -67,6 +68,16 @@ export interface IncomeSheetProps {
   /** 던지면 **안 닫는다**. 친 것을 잃지 않는다. 실패를 말하는 것은 화면 몫이다(토스트). */
   onSave: IncomeFormProps['onSave']
   onClose: () => void
+}
+
+/**
+ * 갈래마다 그림 하나. 재획비와 메소는 드랍이 아니라 **표시 전용**이라 이름표가 아니라
+ * 파일명으로 찾는다.
+ */
+const CATEGORY_ICON_FILES: Record<IncomeCategory, string> = {
+  사냥: 'wealth_acquisition_potion_small.webp',
+  '아이템 판매': 'dark_boss_pendant.png',
+  기타: 'meso.webp',
 }
 
 export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
@@ -114,38 +125,6 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
     onClose: props.onClose,
   }
 
-  if (category === null) {
-    return (
-      <BottomSheet
-        testId="income-sheet"
-        onClose={props.onClose}
-        label="수입 기록"
-      >
-        {/*
-          닫기의 자리와 상자는 다른 시트의 저장과 같다(전폭 · radius 12 · 44). 칠은 테마의
-          `primary` 라 테마를 바꾸면 함께 바뀐다. 저장의 `rise-ink` 와 갈리는 것은 여기가 돈을
-          적는 자리가 아니어서다.
-
-          위 여백이 타일과의 간격보다 넓다. 고르는 것과 물러나는 것을 갈라 놓아야 손이 닫기로
-          잘못 가지 않는다.
-        */}
-        <View className="gap-2 px-4 pb-2">
-          <Text className="text-base font-bold text-text">수입 추가</Text>
-          <CategoryPicker onSelect={setCategory} />
-          <Pressable
-            role="button"
-            aria-label="닫기"
-            testID="income-sheet-close"
-            onPress={props.onClose}
-            className="mt-7 items-center rounded-xl bg-primary py-3 active:opacity-60"
-          >
-            <Text className="text-sm font-bold text-on-primary">닫기</Text>
-          </Pressable>
-        </View>
-      </BottomSheet>
-    )
-  }
-
   return (
     <BottomSheet
       testId="income-sheet"
@@ -153,7 +132,10 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
       label="수입 기록"
       // 치는 칸이 맨 아래에 모여 있다. 조각 개수와 조각 가격.
       scrollToEndOnKeyboard
+      // 단계가 갈리면 시트 전체가 흐려졌다 돌아온다.
+      stepKey={category ?? '갈래'}
       header={
+        category === null ? undefined : (
         <View className="flex-row items-center justify-between gap-2">
           {/*
             제목이 곧 되돌아가는 누르개다. 갈래를 바꾸는 일이 1차 시트로 돌아가는 일이므로
@@ -187,10 +169,22 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
             testID="income-sheet-date"
           />
         </View>
+        )
       }
-      footer={<SaveRow {...save} />}
+      footer={category === null ? undefined : <SaveRow {...save} />}
     >
-      <View className="gap-3 px-4 pb-2">
+      {category === null ? (
+        <CategoryPicker
+          title="수입 추가"
+          categories={INCOME_CATEGORIES}
+          iconFiles={CATEGORY_ICON_FILES}
+          testIdPrefix="income-sheet"
+          onSelect={setCategory}
+          onClose={props.onClose}
+        />
+        ) : (
+      // 아래 여백을 안 붙인다. 바닥의 숨돌림은 껍데기가 한 값으로 낸다.
+      <View className="gap-3 px-4">
         {/* 사냥만 갖는 줄. 계산기로 셀지, 획득 메소를 직접 적을지 고른다. */}
         {!editing && category === '사냥' && (
           // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
@@ -216,8 +210,8 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
           {...props}
           formProps={formProps}
         />
-
       </View>
+      )}
     </BottomSheet>
   )
 }

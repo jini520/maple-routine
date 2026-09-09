@@ -6,8 +6,8 @@
 // 라이브러리가 실제로 받는 프롭인지는 타입 검사가 지킨다.
 //
 // 라이브러리를 진짜로 세워 마운트되는지는 옆 파일(`BottomSheet.wiring.test.tsx`)이 본다.
-import type { ReactNode } from 'react'
-import { Keyboard, Text, View } from 'react-native'
+import { useState, type ReactNode } from 'react'
+import { Keyboard, Pressable, Text, View } from 'react-native'
 import { act, fireEvent, within } from '@testing-library/react-native'
 
 // `jest.mock` 팩토리는 호이스팅돼 스코프 밖 변수를 못 읽는다. **`mock` 접두 이름만** 예외다.
@@ -234,12 +234,23 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
   })
 
   /**
-   * 라이브러리 iOS 기본값은 과감쇠 스프링이라 다 앉는 데 530ms 가 걸렸다(시뮬레이터 계측).
-   * 그동안 키보드는 265ms 만에 다 올라와, 시트의 아랫변이 아직 낮은 채로 키보드에 덮인다.
-   * 거기 붙어 있는 저장 줄이 200ms 넘게 사라졌다가 뒤늦게 나타났다.
+   * 옮기는 이유가 둘이고 **맞출 상대가 다르다**.
+   *
+   * 키보드는 자기 속도가 있다. 라이브러리 iOS 기본값은 과감쇠 스프링이라 다 앉는 데 530ms 가
+   * 걸렸는데(시뮬레이터 계측) 키보드는 265ms 만에 다 올라와, 시트의 아랫변이 아직 낮은 채로
+   * 덮였다. 거기 붙은 저장 줄이 200ms 넘게 사라졌다가 뒤늦게 나타났다.
+   *
+   * 단계가 갈려 옮길 때는 맞출 상대가 없다. 키보드의 250ms 를 그대로 쓰면 휙 바뀐다(사용자 지적).
    */
-  it('시트가 옮겨 앉는 시간은 키보드가 뜨는 시간과 같다', async () => {
+  it('키보드가 움직이면 그 시간에 맞춘다', async () => {
     const { getByTestId } = await open()
+
+    // 기본은 여유로운 쪽이다.
+    expect(getByTestId('sheet').props.animationConfigs).toMatchObject({ duration: 460 })
+
+    await act(async () => {
+      키보드손잡이[0]?.({ endCoordinates: { height: 336 } })
+    })
 
     expect(getByTestId('sheet').props.animationConfigs).toMatchObject({ duration: 250 })
   })
@@ -306,10 +317,15 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
  * 서는지는 라이브러리가 컨테이너 좌표로 계산하는 일이라 이 목 위에서는 안 보인다. 그건 기기가
  * 답한다.
  */
-/** 바닥 줄이 앉는 층. 높이를 재는 것도 자리를 잡는 것도 이 상자다. */
+/** 줄의 키를 재는 상자. 줄이 없는 단계에도 서 있어서 0 을 올린다. */
 type 요소 = ReturnType<Awaited<ReturnType<typeof renderOverlay>>['getByTestId']>
 function 바닥층(getByTestId: (id: string) => 요소): 요소 {
-  return getByTestId('bottom-sheet-footer').parent as 요소
+  return getByTestId('bottom-sheet-footer-layer')
+}
+
+/** 그 상자를 담은 층. 시트만큼 크고 흐름 밖이며 줄을 자기 바닥에 붙인다. */
+function 바닥상자(getByTestId: (id: string) => 요소): 요소 {
+  return 바닥층(getByTestId).parent as 요소
 }
 
 describe('BottomSheet: 머리와 바닥을 스크롤 밖에 고정한다', () => {
@@ -327,7 +343,14 @@ describe('BottomSheet: 머리와 바닥을 스크롤 밖에 고정한다', () =>
     jest.restoreAllMocks()
   })
 
-  async function 고정시트(): Promise<ReturnType<typeof renderOverlay>> {
+  /** 키보드를 올린다. 바닥 줄이 떼어져 붙는 것은 그때뿐이다. */
+async function 키보드올리기(height = 336): Promise<void> {
+  await act(async () => {
+    키보드손잡이[0]?.({ endCoordinates: { height } })
+  })
+}
+
+async function 고정시트(): Promise<ReturnType<typeof renderOverlay>> {
     return renderOverlay(
       <BottomSheet
         onClose={noop}
@@ -384,8 +407,101 @@ describe('BottomSheet: 머리와 바닥을 스크롤 밖에 고정한다', () =>
    * 없으면 설 자리가 시트에 없어 잘린다. 여백만큼 시트가 자라고, 상한에 닿아 있으면 대신
    * 스크롤이 그만큼 줄어든다. 바닥 줄은 그 여백 위에 겹쳐 서므로 빈 칸이 남지 않는다.
    */
+  /**
+   * **이것이 고친 결함이다**(사용자 보고). 단계가 갈릴 때마다 층을 새로 심으면, 자리를 아직
+   * 못 잰 첫 프레임에 줄이 시트 **맨 위**에 그려진다(`translateY` 가 0 이다). 화면에서는
+   * 저장이 머리 위를 덮고 내용이 통째로 아래로 밀렸다가 제자리를 찾는 것으로 보인다.
+   *
+   * 그래서 층은 시트가 사는 동안 **늘 서 있고** 안이 비었다 찼다 한다. 자리는 이미 잡혀 있다.
+   */
+  /**
+   * 단계를 오가는 시트. 바닥 줄이 있다 없다 하는 것이 곧 단계 이동이다(지출 시트의 항목 격자
+   * ↔ 폼). 껍데기를 통째로 다시 그리면 안전영역 문맥까지 날아가므로 상태로 갈아 끼운다.
+   */
+  function StepSheet(): React.JSX.Element {
+    const [바닥있음, set바닥있음] = useState(true)
+    return (
+      <>
+        <Pressable role="button" aria-label="단계 바꾸기" onPress={() => set바닥있음(false)} />
+        <BottomSheet
+          onClose={noop}
+          testId="income-sheet"
+          label="수입 기록"
+          header={<Text>사냥</Text>}
+          footer={바닥있음 ? <Text>저장</Text> : undefined}
+        >
+          <Text>시트 내용</Text>
+        </BottomSheet>
+      </>
+    )
+  }
+
+  it('바닥 줄이 없는 단계에서도 층은 서 있다. 자리를 잃지 않는다', async () => {
+    const view = await renderOverlay(<StepSheet />)
+    expect(view.queryByTestId('bottom-sheet-footer')).toBeTruthy()
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('단계 바꾸기'))
+    })
+
+    // 줄은 사라졌지만 **층은 그대로**다. 자리를 들고 있으므로 다음 단계에서 처음부터 제자리다.
+    expect(view.queryByTestId('bottom-sheet-footer')).toBeNull()
+    expect(바닥층(view.getByTestId)).toBeTruthy()
+  })
+
+  // 줄이 없는 단계에서는 비워 둘 것도 없다. 홈 인디케이터 몫(34)과 숨돌림(16)만 남는다.
+  it('바닥 줄이 없으면 아래 여백이 인셋 + 16 으로 돌아온다', async () => {
+    const view = await renderOverlay(<StepSheet />)
+    await act(async () => {
+      fireEvent(바닥층(view.getByTestId), 'layout', { nativeEvent: { layout: { height: 106 } } })
+    })
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('단계 바꾸기'))
+    })
+
+    expect(
+      (view.getByTestId('income-sheet').props.contentContainerStyle as { paddingBottom: number })
+        .paddingBottom,
+    ).toBe(50)
+  })
+
+  /**
+   * **재기 전에도 자리를 잡아 둔다.** 라이브러리는 시트의 키를 스크롤 **내용**에서 재는데 그
+   * 내용의 여백이 이 값에서 나온다. 0 으로 시작하면 시트가 **두 번 움직인다**. 먼저 그만큼
+   * 작아졌다가 잰 값이 도착하면 다시 커진다. 화면에서는 내용과 버튼이 따로 노는 것으로
+   * 보인다(사용자 지적, 60fps 프레임에서 그 한 번 더 작아지는 구간을 확인했다).
+   */
+  it('머리와 바닥은 재기 전에도 자리를 비워 둔다. 0 이 아니다', async () => {
+    const { getByTestId } = await 고정시트()
+    await 키보드올리기()
+    const 여백 = getByTestId('income-sheet').props.contentContainerStyle as {
+      paddingTop: number
+      paddingBottom: number
+    }
+
+    // `layout` 을 한 번도 안 흘렸는데도 둘 다 잡혀 있다.
+    expect(여백.paddingTop).toBeGreaterThan(24)
+    expect(여백.paddingBottom).toBeGreaterThan(44)
+  })
+
+  it('잰 값이 오면 그것으로 갈아탄다', async () => {
+    const { getByTestId } = await 고정시트()
+    await 키보드올리기()
+
+    await act(async () => {
+      fireEvent(바닥층(getByTestId), 'layout', { nativeEvent: { layout: { height: 137 } } })
+    })
+
+    expect(
+      (getByTestId('income-sheet').props.contentContainerStyle as { paddingBottom: number })
+        .paddingBottom,
+    ).toBe(137)
+  })
+
   it('바닥 줄의 높이를 스크롤 내용이 자리로 비워 둔다', async () => {
     const { getByTestId } = await 고정시트()
+    await 키보드올리기()
     const 아래여백 = (): number =>
       (getByTestId('income-sheet').props.contentContainerStyle as { paddingBottom: number })
         .paddingBottom
@@ -395,28 +511,46 @@ describe('BottomSheet: 머리와 바닥을 스크롤 밖에 고정한다', () =>
     })
 
     expect(아래여백()).toBe(106)
-    // 흐름 밖이다. 스크롤이 시트를 가득 채우고 그 위에 겹쳐 선다.
-    expect(flattenStyle(바닥층(getByTestId).props.style).position).toBe('absolute')
+    // 층이 흐름 밖이다. 스크롤이 시트를 가득 채우고 그 위에 겹쳐 선다.
+    const 층 = flattenStyle(바닥상자(getByTestId).props.style)
+    expect(층.position).toBe('absolute')
+    /*
+      **상자에 붙는다. 좇지 않는다.** 이 층은 라이브러리의 내용 상자 안이고 그 상자의 키가 곧
+      시트의 키다. `bottom` 으로 앉히므로 시트가 어떻게 움직이든 줄이 함께 간다. 시트의 키를
+      읽어 따로 애니메이션하면 상자와 줄이 두 애니메이션이 되어 도착 시각이 어긋난다.
+    */
+    expect(층.top).toBeUndefined()
+    expect(층.bottom).toBeDefined()
   })
 
-  it('바닥 줄은 스크롤 밖이다', async () => {
+  /**
+   * **떼는 것은 키보드가 떠 있을 때뿐이다**(사용자 지정). 키보드가 없으면 줄은 그냥 내용의
+   * 마지막 줄이라, 내용과 버튼이 한 상자에 있어 따로 움직일 것이 없다.
+   */
+  it('키보드가 없으면 바닥 줄은 스크롤 **안**이다', async () => {
+    const { getByTestId } = await 고정시트()
+
+    expect(within(getByTestId('income-sheet')).queryByText('저장')).toBeTruthy()
+  })
+
+  it('키보드가 뜨면 스크롤 밖으로 떼어 세운다', async () => {
     const { getByTestId, queryByText } = await 고정시트()
+
+    await 키보드올리기()
 
     expect(within(getByTestId('income-sheet')).queryByText('저장')).toBeNull()
     expect(queryByText('저장')).toBeTruthy()
   })
 
-  it('키보드가 뜨면 바닥 줄도 아래 인셋을 걷는다', async () => {
+  // 키보드가 덮고 있으면 홈 인디케이터 몫은 빈 띠가 된다.
+  it('떼어 세운 줄은 아래 인셋을 안 남긴다', async () => {
     const { getByTestId } = await 고정시트()
-    const 아래여백 = (): number =>
-      flattenStyle(getByTestId('bottom-sheet-footer').props.style).paddingBottom as number
 
-    expect(아래여백()).toBe(34 + 16)
+    await 키보드올리기()
 
-    await act(async () => {
-      키보드손잡이[0]({ endCoordinates: { height: 336 } })
-    })
-    expect(아래여백()).toBe(16)
+    expect(
+      flattenStyle(getByTestId('bottom-sheet-footer').props.style).paddingBottom,
+    ).toBe(16)
   })
 
   /**
@@ -451,6 +585,7 @@ describe('BottomSheet: 머리와 바닥을 스크롤 밖에 고정한다', () =>
    */
   it('비워 두는 몫이 바닥 줄 높이를 그대로 따라간다', async () => {
     const { getByTestId } = await 고정시트()
+    await 키보드올리기()
     const 아래여백 = (): number =>
       (getByTestId('income-sheet').props.contentContainerStyle as { paddingBottom: number })
         .paddingBottom

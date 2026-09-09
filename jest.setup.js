@@ -135,3 +135,11 @@ afterEach(() => {
     // 이 스위트가 스토어를 아예 안 쓰는 경우 — 걷을 것도 없다.
   }
 })
+
+// `expo-blur` 는 네이티브 뷰다. 리애니메이티드가 그 위에 세기를 몰면 jest 의 JS 폴백이
+// `setAttribute` 를 찾다가 죽는다. 평범한 `View` 로 갈아 끼워 **무엇이 어디에 섰는가**만 본다.
+// 흐림이 실제로 그려지는지는 기기가 답한다.
+jest.mock('expo-blur', () => {
+  const { View } = require('react-native')
+  return { BlurView: View }
+})

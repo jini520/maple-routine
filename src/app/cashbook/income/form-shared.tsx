@@ -4,7 +4,7 @@
  * 갈래마다 폼이 따로 서지만 캐릭터를 고르는 줄과 저장·삭제 줄은 전부 똑같다. 여러 벌로 갈리면
  * 한쪽만 고쳐지는 자리가 생기므로 한 벌만 둔다. 조각 두 줄도 사냥 폼 둘이 나눠 쓴다.
  */
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { Pressable } from 'react-native'
 
 import { Text } from '../../../components/atoms'
@@ -126,7 +126,12 @@ export function useSaveSlot(setSave: (slot: SaveSlot) => void, slot: SaveSlot): 
   })
 
   const hasDelete = slot.onDelete !== undefined
-  useEffect(() => {
+  /*
+    **그리기 전에 올린다.** 평범한 `useEffect` 로 올리면 시트가 한 프레임 동안 바닥 줄 없이
+    그려진다. 그 프레임에는 줄이 설 자리도 안 비어 있어, 단계를 옮기는 순간 시트 아래쪽이
+    통째로 빈 칸으로 보인다(사용자 보고).
+  */
+  useLayoutEffect(() => {
     setSave({
       editing: slot.editing,
       canSave: slot.canSave,

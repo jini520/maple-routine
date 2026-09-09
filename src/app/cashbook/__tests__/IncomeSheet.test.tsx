@@ -511,9 +511,11 @@ describe('판매 수수료', () => {
   it('저장이 고정된 바닥 줄에 선다. 하나뿐이다', async () => {
     const view = await 그리기({}, '사냥')
 
-    // 스크롤 밖이라야 키보드가 떠도 안 밀린다. 스크롤 안(`income-sheet`)에 있으면 안 된다.
+    /*
+      바닥 줄에 하나뿐이다. **떼어 세우는 것은 키보드가 떠 있을 때뿐**이라(사용자 지정) 여기서는
+      그 줄이 내용의 마지막 줄이고, 그래도 자리는 하나다.
+    */
     expect(within(view.getByTestId('bottom-sheet-footer')).getAllByLabelText('저장')).toHaveLength(1)
-    expect(within(view.getByTestId('income-sheet')).queryByLabelText('저장')).toBeNull()
   })
 
   it('저장을 누르면 폼의 손잡이가 돈다. ref 로 넘긴 최신 것이다', async () => {
