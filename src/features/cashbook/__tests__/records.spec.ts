@@ -1,17 +1,20 @@
 // 가계부의 오케스트레이션.
 import type { IncomeDraft, SpendDraft } from '../records'
 
+
 jest.mock('../../../storage/income', () => ({
   insertIncomeRecord: jest.fn(),
   updateIncomeRecord: jest.fn(),
   deleteIncomeRecord: jest.fn(),
   getIncomeRecordsBetween: jest.fn(),
+  getIncomeMonthRows: jest.fn(),
 }))
 jest.mock('../../../storage/spend', () => ({
   insertSpendRecord: jest.fn(),
   updateSpendRecord: jest.fn(),
   deleteSpendRecord: jest.fn(),
   getSpendRecordsBetween: jest.fn(),
+  getSpendMonthRows: jest.fn(),
 }))
 jest.mock('../../../storage/last-point-rate', () => ({ setLastPointRate: jest.fn() }))
 jest.mock('../../../storage/last-hunt-selection', () => ({
@@ -22,6 +25,7 @@ jest.mock('../../../storage/boss-profit', () => ({
   getDatedBossProfitRecords: jest.fn(),
   getBossProfitRecordsRevision: jest.fn(),
   getRecordedCharacterOcids: jest.fn(),
+  getBossProfitMonthRows: jest.fn(),
 }))
 jest.mock('../../../storage/boss-drops', () => ({
   getBossDropRecords: jest.fn(),
@@ -33,6 +37,7 @@ jest.mock('../../character-profile/resolve', () => ({ resolveDisplayProfiles: je
 jest.mock('../../../storage/enhancement-history', () => ({
   loadEnhancementHistory: jest.fn(),
   loadObservedItemLevels: jest.fn(),
+  getEnhancementMonthRows: jest.fn(),
 }))
 jest.mock('../../../storage/event-world-names', () => ({ getEventWorldNames: jest.fn() }))
 
@@ -64,6 +69,10 @@ beforeEach(() => {
   enhancement.loadEnhancementHistory.mockResolvedValue([])
   enhancement.loadObservedItemLevels.mockResolvedValue(new Map())
   worldNames.getEventWorldNames.mockResolvedValue(new Set())
+  income.getIncomeMonthRows.mockResolvedValue([])
+  spend.getSpendMonthRows.mockResolvedValue([])
+  bossProfit.getBossProfitMonthRows.mockResolvedValue([])
+  enhancement.getEnhancementMonthRows.mockResolvedValue([])
   profileLookup.resolveDisplayProfiles.mockImplementation(
     async (ocids: readonly string[]) =>
       new Map(
@@ -106,6 +115,17 @@ const 메포지출: SpendDraft = {
   pointPer100mMeso: 1_180,
   cashAmount: null,
   memo: null,
+}
+
+/**
+ * 칸 금액. **달 읽기 하나를 접어서** 낸다.
+ *
+ * 전에는 `loadCalendarAmounts` 라는 조회가 따로 있었다. 그날 목록과 같은 네 원천을 같은 범위로
+ * 읽고 합계만 남기고 행을 버려서, 두 경로가 같은 수를 낸다 를 테스트가 지켜야 했다.
+ */
+async function 칸금액(from: string, to: string) {
+  const { amountsOfDays, loadMonthDays } = require('../records') as typeof import('../records')
+  return amountsOfDays(await loadMonthDays(from, to))
 }
 
 describe('행의 신원은 여기서 만든다', () => {
@@ -229,16 +249,15 @@ describe('spendMesoOf: 메소 축으로 접는다', () => {
   })
 })
 
-describe('loadCalendarAmounts', () => {
+describe('칸 금액', () => {
   it('두 원천을 날짜별로 접는다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([
       { ...수입, id: 'a', recordedAt: '' },
       { ...수입, id: 'b', recordedAt: '', mesoAmount: 543_000_000 },
     ])
     spend.getSpendRecordsBetween.mockResolvedValue([{ ...메포지출, id: 'c', recordedAt: '' }])
-    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
 
-    const amounts = await loadCalendarAmounts('2026-08-01', '2026-08-31')
+    const amounts = await 칸금액('2026-08-01', '2026-08-31')
 
     expect(amounts['2026-08-23']).toEqual({
       incomeMeso: 1_743_000_000,
@@ -247,15 +266,13 @@ describe('loadCalendarAmounts', () => {
   })
 
   it('기록이 없는 날은 아예 없다. 0 을 채워 넣지 않는다', async () => {
-    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
 
-    expect(await loadCalendarAmounts('2026-08-01', '2026-08-31')).toEqual({})
+    expect(await 칸금액('2026-08-01', '2026-08-31')).toEqual({})
   })
 
   it('범위를 두 어댑터에 그대로 넘긴다', async () => {
-    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
 
-    await loadCalendarAmounts('2026-08-20', '2026-08-26')
+    await 칸금액('2026-08-20', '2026-08-26')
 
     expect(income.getIncomeRecordsBetween).toHaveBeenCalledWith('2026-08-20', '2026-08-26')
     expect(spend.getSpendRecordsBetween).toHaveBeenCalledWith('2026-08-20', '2026-08-26')
@@ -462,13 +479,12 @@ function 드롭(overrides: Record<string, unknown> = {}): Record<string, unknown
   }
 }
 
-describe('loadCalendarAmounts: 보스가 칸에 든다', () => {
+describe('칸 금액: 보스가 칸에 든다', () => {
   it('결정석과 아이템 판매를 그 날의 수익에 더한다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     bossDrops.getBossDropRecords.mockResolvedValue([드롭()])
-    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
 
-    const amounts = await loadCalendarAmounts('2026-08-01', '2026-08-31')
+    const amounts = await 칸금액('2026-08-01', '2026-08-31')
 
     // 결정석 21억 + 판매 120억/3 = 40억 → 61억
     expect(amounts['2026-08-21']).toEqual({ incomeMeso: 6_100_000_000, expenseMeso: 0 })
@@ -477,9 +493,8 @@ describe('loadCalendarAmounts: 보스가 칸에 든다', () => {
   it('드롭은 자기 날짜가 없다. 짝인 보스 행의 날짜에 선다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([{ ...스우기록, defeatedOn: '2026-08-22' }])
     bossDrops.getBossDropRecords.mockResolvedValue([드롭()])
-    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
 
-    const amounts = await loadCalendarAmounts('2026-08-01', '2026-08-31')
+    const amounts = await 칸금액('2026-08-01', '2026-08-31')
 
     expect(amounts['2026-08-22']?.incomeMeso).toBe(6_100_000_000)
     expect(amounts['2026-08-21']).toBeUndefined()
@@ -488,26 +503,23 @@ describe('loadCalendarAmounts: 보스가 칸에 든다', () => {
   it('짝인 보스 행이 없는 드롭은 어느 칸에도 안 든다. 물려받을 날짜가 없다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     bossDrops.getBossDropRecords.mockResolvedValue([드롭({ boss: '가디언 엔젤 슬라임' })])
-    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
 
-    const amounts = await loadCalendarAmounts('2026-08-01', '2026-08-31')
+    const amounts = await 칸금액('2026-08-01', '2026-08-31')
 
     expect(amounts['2026-08-21']?.incomeMeso).toBe(2_100_000_000)
   })
 
   it('추적 캐릭터가 없으면 보스 테이블을 안 읽는다', async () => {
     selection.getTrackedCharacterOcids.mockResolvedValue(null)
-    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
 
-    await loadCalendarAmounts('2026-08-01', '2026-08-31')
+    await 칸금액('2026-08-01', '2026-08-31')
 
     expect(bossProfit.getDatedBossProfitRecords).not.toHaveBeenCalled()
   })
 
   it('보스 기록이 없으면 드롭도 안 읽는다. 물려받을 날짜가 없다', async () => {
-    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
 
-    await loadCalendarAmounts('2026-08-01', '2026-08-31')
+    await 칸금액('2026-08-01', '2026-08-31')
 
     expect(bossDrops.getBossDropRecords).not.toHaveBeenCalled()
   })
@@ -713,12 +725,11 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
         pointPer100mMeso: 1_180, cashAmount: null, memo: null, recordedAt: 'b',
       },
     ])
-    const { loadDayRecords, loadCalendarAmounts, dayTotalsOf } =
-      require('../records') as typeof import('../records')
+    const { loadDayRecords, dayTotalsOf } = require('../records') as typeof import('../records')
 
     const [rows, amounts] = await Promise.all([
       loadDayRecords('2026-08-21'),
-      loadCalendarAmounts('2026-08-21', '2026-08-21'),
+      칸금액('2026-08-21', '2026-08-21'),
     ])
 
     expect(dayTotalsOf(rows)).toEqual(amounts['2026-08-21'])
@@ -906,9 +917,8 @@ describe('강화 지출이 칸에 든다', () => {
 
   it('감정비용이 지출로 더해진다', async () => {
     enhancement.loadEnhancementHistory.mockResolvedValue([큐브()])
-    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
 
-    expect((await loadCalendarAmounts('2026-08-01', '2026-08-31'))['2026-08-23']).toEqual({
+    expect((await 칸금액('2026-08-01', '2026-08-31'))['2026-08-23']).toEqual({
       incomeMeso: 0,
       expenseMeso: 450_000,
     })
@@ -917,40 +927,43 @@ describe('강화 지출이 칸에 든다', () => {
   it('손입력 지출과 한 칸에서 합쳐진다', async () => {
     spend.getSpendRecordsBetween.mockResolvedValue([{ ...메포지출, id: 'c', recordedAt: '' }])
     enhancement.loadEnhancementHistory.mockResolvedValue([큐브()])
-    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
 
-    expect((await loadCalendarAmounts('2026-08-01', '2026-08-31'))['2026-08-23'].expenseMeso)
+    expect((await 칸금액('2026-08-01', '2026-08-31'))['2026-08-23'].expenseMeso)
       .toBe(2_542_372_881 + 450_000)
   })
 
-  // 값을 못 매긴 줄을 0 으로 세우면 합계가 조용히 거짓이 된다.
+  /**
+   * 값을 못 매긴 줄을 0 으로 세우면 합계가 조용히 거짓이 된다.
+   *
+   * 그 줄은 **저장 단계에서 버려지므로** 새 기록에는 없다. 옛 행이 남아 있을 수 있어 읽는
+   * 쪽도 계속 막는다. 그 날에 줄은 있으므로 칸은 서되 금액이 0 이다.
+   */
   it('레벨을 모르는 줄은 안 더한다', async () => {
     enhancement.loadEnhancementHistory.mockResolvedValue([큐브({ itemLevel: null })])
-    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
 
-    expect(await loadCalendarAmounts('2026-08-01', '2026-08-31')).toEqual({})
+    expect((await 칸금액('2026-08-01', '2026-08-31'))['2026-08-23']).toEqual({
+      incomeMeso: 0,
+      expenseMeso: 0,
+    })
   })
 
   it('스페셜 월드 캐릭터의 줄은 빠진다', async () => {
     worldNames.getEventWorldNames.mockResolvedValue(new Set(['머리맨들맨둘']))
     enhancement.loadEnhancementHistory.mockResolvedValue([큐브({ characterName: '머리맨들맨둘' })])
-    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
 
-    expect(await loadCalendarAmounts('2026-08-01', '2026-08-31')).toEqual({})
+    expect(await 칸금액('2026-08-01', '2026-08-31')).toEqual({})
   })
 
   // 이름 집합을 아직 못 받았으면 월드를 가릴 수가 없다. 세우면 지출이 두 배로 부푼다.
   it('이름 집합을 못 받았으면 아무것도 안 더한다', async () => {
     worldNames.getEventWorldNames.mockResolvedValue(null)
     enhancement.loadEnhancementHistory.mockResolvedValue([큐브()])
-    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
 
-    expect(await loadCalendarAmounts('2026-08-01', '2026-08-31')).toEqual({})
+    expect(await 칸금액('2026-08-01', '2026-08-31')).toEqual({})
   })
 
   it('날짜 목록을 펴서 넘긴다', async () => {
-    const { loadCalendarAmounts } = require('../records') as typeof import('../records')
-    await loadCalendarAmounts('2026-08-23', '2026-08-25')
+    await 칸금액('2026-08-23', '2026-08-25')
 
     expect(enhancement.loadEnhancementHistory).toHaveBeenCalledWith([
       '2026-08-23',
@@ -1155,15 +1168,14 @@ describe('강화 줄', () => {
 
   // 칸에 적힌 수와 그 칸을 눌러 나온 수가 갈리면 안 된다.
   it('칸 금액과 상세 합계가 같은 수를 낸다', async () => {
-    const { loadCalendarAmounts, loadDayRecords, dayTotalsOf } =
-      require('../records') as typeof import('../records')
+    const { loadDayRecords, dayTotalsOf } = require('../records') as typeof import('../records')
     enhancement.loadEnhancementHistory.mockResolvedValue([
       강화(),
       잠재('잠재능력 재설정', { id: 'e2' }),
       강화({ id: 'e3', itemLevel: 200 }),
     ])
 
-    const cell = (await loadCalendarAmounts('2026-08-23', '2026-08-23'))['2026-08-23']
+    const cell = (await 칸금액('2026-08-23', '2026-08-23'))['2026-08-23']
     const detail = dayTotalsOf(await loadDayRecords('2026-08-23'))
 
     expect(detail.expenseMeso).toBe(cell.expenseMeso)

@@ -87,6 +87,20 @@ export function getAdjacentMonthKey(monthKey: string, delta: number): string {
   return `${moved.getUTCFullYear()}-${pad(moved.getUTCMonth() + 1)}`
 }
 
+/**
+ * 그 달의 첫날과 마지막 날. **두 끝을 포함**한다.
+ *
+ * 칸 금액을 달 단위로 읽는 자리가 쓴다. 격자 범위(`coveringRange`)와 다른 것은 격자가 앞뒤 달
+ * 날짜로 빈칸을 채우기 때문이다. 그 칸은 금액을 안 그리므로(`CalendarGrid` 가 `inPeriod` 로
+ * 거른다) 읽어 봐야 버린다.
+ *
+ * 마지막 날은 다음 달 0일 이다. `Date.UTC` 가 그것을 그 달의 말일로 정규화한다.
+ */
+export function monthBounds(monthKey: string): { from: string; to: string } {
+  const { year, month } = parseMonthKey(monthKey)
+  return { from: `${monthKey}-01`, to: dateKeyOf(Date.UTC(year, month, 0)) }
+}
+
 /** 8월 23일 (일). 고른 날의 상세 머리글. */
 export function formatDayLabel(dateKey: string): string {
   const utcMs = Date.parse(`${dateKey}T00:00:00Z`)

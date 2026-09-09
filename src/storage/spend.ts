@@ -229,6 +229,7 @@ function rowToRecord(row: Record<string, unknown>): SpendRecord {
 }
 
 /** 날짜 범위의 기록. **두 끝을 포함**한다. `ocid` 로 거르지 않는 이유는 `income.ts` 와 같다. */
+
 export async function getSpendRecordsBetween(
   fromDateKey: string,
   toDateKey: string,

@@ -315,6 +315,7 @@ function rowToRecord(row: Record<string, unknown>): IncomeRecord {
  * **`ocid` 로 거르지 않는다.** 가계부는 내가 번 돈 이지 이 캐릭터가 번 돈 이 아니라
  *  계정 단위 행과 캐릭터 행이 한 날에 함께 서야 한다.
  */
+
 export async function getIncomeRecordsBetween(
   fromDateKey: string,
   toDateKey: string,

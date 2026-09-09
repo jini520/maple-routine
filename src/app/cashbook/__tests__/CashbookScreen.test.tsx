@@ -18,7 +18,8 @@ jest.mock('../../../features/cashbook/records', () => {
     rowKeyOf: actual.rowKeyOf,
     resolveTrackedDefeatDates: jest.fn(),
     cashbookDataRevision: jest.fn(),
-    loadCalendarAmounts: jest.fn(),
+    amountsOfDays: actual.amountsOfDays,
+    loadMonthDays: jest.fn(),
     loadDayRecords: jest.fn(),
     loadLastPointRate: jest.fn(),
     loadLastHuntSelection: jest.fn(),
@@ -119,17 +120,18 @@ import { BOSS_SLOT_MAX_PX, CashbookScreen } from '../CashbookScreen'
 
 const records = jest.requireMock('../../../features/cashbook/records') as Record<string, jest.Mock>
 
-
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
 // KST 2026-08-23(일) 14:00. UTC 로는 05:00 이라 날짜가 안 넘어간다.
 const 지금 = Date.parse('2026-08-23T05:00:00Z')
+/** 들어오면 오늘이 고른 날이다. 그날 줄을 넣는 자리가 이 날짜를 쓴다. */
+const 고른날 = '2026-08-23'
 
 beforeEach(() => {
   // 시트의 큰 숫자는 카운트업을 타고, 그 기억은 **모듈 수준**이라 케이스 사이로 샌다.
   clearCountUpMemory()
   jest.useFakeTimers({ now: 지금 })
-  records.loadCalendarAmounts.mockReset().mockResolvedValue({})
+  records.loadMonthDays.mockReset().mockResolvedValue({})
   records.loadLastPointRate.mockReset().mockResolvedValue(null)
   records.loadLastHuntSelection.mockReset().mockResolvedValue(null)
   records.loadTrackedCharacters.mockReset().mockResolvedValue([])
@@ -151,6 +153,51 @@ beforeEach(() => {
 afterEach(() => {
   jest.useRealTimers()
 })
+
+/**
+ * 칸 금액 모양을 **그날 줄로 바꿔** 목에 넣는다.
+ *
+ * 달 읽기 하나가 격자와 그날 목록을 함께 내므로 목이 돌려주는 것도 그날 줄이다. 칸 금액은
+ * 진짜 `amountsOfDays` 가 그것을 접어 낸다. 케이스는 여전히 **이 날 얼마** 로만 말한다.
+ */
+function 칸금액을(amounts: Record<string, { incomeMeso: number; expenseMeso: number }>): void {
+  const byDate: Record<string, unknown[]> = {}
+  for (const [dateKey, amount] of Object.entries(amounts)) {
+    byDate[dateKey] = [
+      {
+        kind: 'income',
+        characterName: '',
+        record: { ...그날수입, id: `i-${dateKey}`, earnedOn: dateKey, mesoAmount: amount.incomeMeso },
+      },
+      {
+        kind: 'spend',
+        characterName: '',
+        record: {
+          id: `s-${dateKey}`, spentOn: dateKey, category: '기타', item: null, form: null,
+          itemKind: null, quantity: null, mesoAmount: amount.expenseMeso, tariffMeso: null,
+          pointAmount: null, pointPer100mMeso: null, cashAmount: null, memo: null,
+          recordedAt: dateKey,
+        },
+      },
+    ]
+  }
+  records.loadMonthDays.mockResolvedValue(byDate)
+}
+
+/**
+ * 그날 줄을 목에 넣는다. **달 읽기가 그것을 든다.**
+ *
+ * 화면은 창 안의 날을 달 읽기가 든 표에서 꺼낸다. 하루 조회(`loadDayRecords`)는 창 밖의 날에만
+ * 쓰이므로, 여기 넣지 않으면 케이스가 그 길을 안 지난다.
+ */
+function 그날줄을(dateKey: string, rows: unknown[]): void {
+  records.loadMonthDays.mockResolvedValue({ [dateKey]: rows })
+}
+
+/** `loadMonthDays` 가 어느 달을 읽었나. 부른 순서 그대로. */
+function 읽은달(): string[] {
+  return records.loadMonthDays.mock.calls.map((call: string[]) => call[0].slice(0, 7))
+}
 
 async function 그리기(): Promise<Rendered> {
   const view = await renderOverlay(<CashbookScreen />)
@@ -218,6 +265,53 @@ describe('CashbookScreen: 자리와 머리', () => {
 
 // 기간 이동은 **보스 수익 탭의 그것과 같은 모양**이다. 화살촉 둘 사이에
 // 두 줄(**이번 주** + 그 이레의 날짜)이 선다. 라벨은 `formatBossProfitPeriodLabel` 이 만든다.
+/**
+ * **올해가 아니면 기간 위에 작게 연도가 선다**(사용자 지시). 주간 라벨은 두 줄이 다 연도를
+ * 안 들어(`8월 1주차` · `8월 6일 ~ 8월 12일`) 해를 넘기면 어느 해인지가 화면에서 사라진다.
+ */
+describe('CashbookScreen: 연도 표시', () => {
+  it('올해면 안 뜬다', async () => {
+    const view = await 그리기()
+
+    expect(view.queryByTestId('cashbook-period-year')).toBeNull()
+  })
+
+  it('해를 넘겨 거슬러 가면 뜬다', async () => {
+    const view = await 그리기()
+    // 2026-08-20 에서 뒤로 서른넷이면 2025-12-25 다.
+    for (let count = 0; count < 34; count += 1) await 이름으로누르기(view, '이전 주')
+
+    expect(view.getByTestId('cashbook-period-year')).toHaveTextContent('2025')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('12월 25일 ~ 12월 31일')
+  })
+
+  // 월간은 두 줄이 이미 `2025년 12월` 이라 여기서 또 적으면 같은 말이 두 번 선다.
+  it('월간에는 안 뜬다. 라벨이 이미 연도를 든다', async () => {
+    const view = await 그리기()
+    await 월간으로(view)
+    for (let count = 0; count < 8; count += 1) await 이름으로누르기(view, '이전 달')
+
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('2025년 12월')
+    expect(view.queryByTestId('cashbook-period-year')).toBeNull()
+  })
+
+  /**
+   * **자리를 안 밀어낸다**(사용자 지정). 줄로 끼우면 이 덩이가 한 줄만큼 커져 격자와 그 아래가
+   * 통째로 내려간다. 흐름 밖(`position: absolute`)에 둔다.
+   */
+  it('흐름 밖에 서서 아래를 안 민다', async () => {
+    const view = await 그리기()
+    for (let count = 0; count < 34; count += 1) await 이름으로누르기(view, '이전 주')
+
+    const style = flattenStyle(view.getByTestId('cashbook-period-year').props.style)
+
+    expect(style.position).toBe('absolute')
+    // 위 여백(`gap-4` = 16px) 안에 든다. 그보다 크면 위 알약 줄을 침범한다.
+    expect(style.top).toBeLessThan(0)
+    expect(style.top).toBeGreaterThanOrEqual(-16)
+  })
+})
+
 describe('CashbookScreen: 기간 라벨', () => {
   it('가까운 기간은 상대 표현이고, 아랫줄이 그 날짜를 든다', async () => {
     const view = await 그리기()
@@ -275,14 +369,15 @@ describe('CashbookScreen: 달 이동', () => {
     expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2025년 12월')
   })
 
-  // 달을 옮겨도 고른 날은 그대로다. 옮긴 것은 **보는 달** 이지 **고른 날** 이 아니다.
-  it('달을 옮겨도 고른 날은 안 바뀐다', async () => {
+  // 달을 옮기면 **고른 날도 그 달 1일로 간다**. 전에는 격자만 옮겨 격자는 7월인데 상세는
+  // 8월 23일이 서 있었다.
+  it('달을 옮기면 고른 날이 그 달 1일이 된다', async () => {
     const view = await 그리기()
     await 월간으로(view)
 
     await 이름으로누르기(view, '이전 달')
 
-    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('8월 23일 (일)')
+    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('7월 1일 (수)')
   })
 })
 
@@ -360,13 +455,71 @@ describe('앞으로는 못 간다', () => {
     expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 8월')
   })
 
-  it('`이전` 은 어느 기간에서도 안 죽는다', async () => {
+  it('`이전` 은 한도에 닿기 전까지 안 죽는다', async () => {
     const view = await 그리기()
 
     expect(view.getByLabelText('이전 주').props.accessibilityState?.disabled).toBeFalsy()
     await 월간으로(view)
     expect(view.getByLabelText('이전 달').props.accessibilityState?.disabled).toBeFalsy()
   })
+})
+
+/**
+ * **뒤로도 못 가는 곳이 있다**(사용자 지정 2026-09-10). 조회 한도(1년 6개월)가 바닥이다.
+ * 그 아래에 기기 DB 의 기록이 남아 있어도 안 간다 - 새로 받을 길이 없어 반쪽만 채워진 달이
+ * 되고, 화면이 그것을 그 달의 전부처럼 말하게 된다.
+ *
+ * 오늘이 2026-08-23 이라 월간의 바닥은 **2025년 2월**, 주간의 바닥은 그 달 1일(토)이 든
+ * 리셋 주의 목요일 **2025-01-30** 이다.
+ */
+describe('뒤로는 조회 한도까지만', () => {
+  /** 월간으로 바닥 달까지 간다. 2026-08 에서 2025-02 까지 열여덟이다. */
+  async function 바닥달로(view: Rendered): Promise<Rendered> {
+    await 월간으로(view)
+    for (let count = 0; count < 18; count += 1) await 이름으로누르기(view, '이전 달')
+    return view
+  }
+
+  it('월간은 한도인 달에서 `이전 달` 이 죽는다', async () => {
+    const view = await 바닥달로(await 그리기())
+
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2025년 2월')
+    expect(view.getByLabelText('이전 달').props.accessibilityState?.disabled).toBe(true)
+
+    await 이름으로누르기(view, '이전 달')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2025년 2월')
+  }, 20_000)
+
+  /**
+   * **주간이 며칠 더 간다.** 월간의 바닥이 2월이어도 주간은 1월 30일에 시작하는 그 한 주까지
+   * 간다. 그 주가 2월 1일을 들고 있어서다.
+   *
+   * 주를 여든세 번 누르는 대신 월간으로 바닥까지 간 뒤 주간을 누른다. 그러면 고른 날(2월 1일)이
+   * 든 주가 열리고 그것이 곧 바닥 주다.
+   */
+  it('주간은 그 달 1일이 든 주까지 간다. 앞 달에서 시작해도', async () => {
+    const view = await 바닥달로(await 그리기())
+
+    await 이름으로누르기(view, '주간')
+
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('1월 30일 ~ 2월 5일')
+    expect(view.getByLabelText('이전 주').props.accessibilityState?.disabled).toBe(true)
+  }, 20_000)
+
+  /**
+   * **화살표만 막으면 구멍이 남는다.** 격자는 앞뒤 달 날짜로 빈칸을 채우므로 2025년 2월 격자의
+   * 앞 칸은 1월 날짜다. 그것을 누르면 한 번의 탭이 화살표가 막은 곳에 도착한다.
+   */
+  it('격자의 앞 달 칸을 눌러도 한도 아래로 안 간다', async () => {
+    const view = await 바닥달로(await 그리기())
+
+    // 2025년 2월 격자는 1/26(일)에 시작한다.
+    await 누르기(view, 'calendar-day-2025-01-26')
+
+    // 고른 날은 바뀐다. 막는 것은 **보는 기간** 이다.
+    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('1월 26일 (일)')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2025년 2월')
+  }, 20_000)
 })
 
 describe('CashbookScreen: 날짜 선택', () => {
@@ -569,39 +722,144 @@ describe('목요일 경계선', () => {
   })
 })
 
-// ══ 기록이 붙었다 ═══════════════════════════════════════
+/**
+ * **기간을 옮기면 고른 날도 따라간다**. 주간은 그 주의 목요일(리셋 주의 시작일이라 `weekStartKey`
+ * 그대로), 월간은 그 달 1일이다. 전에는 격자만 옮겨 두 구역이 서로 다른 때를 말했다.
+ */
+describe('기간 이동이 고른 날을 옮긴다', () => {
+  it('주를 옮기면 그 주의 목요일이 고른 날이 된다', async () => {
+    const view = await 그리기()
 
-describe('칸에 숫자가 든다', () => {
-  it('보이는 칸과 열지도 기준을 **함께 덮는** 범위를 읽는다', async () => {
-    await 그리기()
+    await 이름으로누르기(view, '이전 주')
 
-    // 2026-08 격자는 7/26(일) ~ 9/5(토)다.
-    expect(records.loadCalendarAmounts).toHaveBeenCalledWith('2026-07-26', '2026-09-05')
+    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('8월 13일 (목)')
   })
 
-  it('기간을 옮기면 그 범위로 다시 읽는다. 옛 숫자가 안 남는다', async () => {
+  it('달을 옮기면 그 달 1일이 고른 날이 된다', async () => {
     const view = await 그리기()
     await 월간으로(view)
 
-    // **뒤로** 옮긴다. 앞은 이번 달에서 막힌다. 7월 격자는 6/28 에 시작해 8/1 에 끝난다.
+    await 이름으로누르기(view, '이전 달')
+
+    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('7월 1일 (수)')
+  })
+
+  /**
+   * 덤으로 **월간에서 주간으로 돌아올 때 보던 달을 지킨다**. `showWeekly` 는 고른 날이 든 주를
+   * 여는데, 고른 날이 안 따라오던 때는 6월을 보다 주간을 눌러도 이번 주로 튀었다.
+   */
+  it('달을 옮긴 뒤 주간으로 가면 그 달의 주다', async () => {
+    const view = await 그리기()
+    await 월간으로(view)
+    await 이름으로누르기(view, '이전 달')
+
+    await 이름으로누르기(view, '주간')
+
+    // 7/1(수)이 든 목요일 주는 6/25 – 7/1 이다.
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('6월 25일 ~ 7월 1일')
+  })
+
+  // 알약은 기간을 옮기는 장치가 아니라 **같은 때를 다른 단위로 보는** 장치다.
+  it('주간·월간 알약은 고른 날을 안 건드린다', async () => {
+    const view = await 그리기()
+
+    await 월간으로(view)
+    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('8월 23일 (일)')
+
+    await 이름으로누르기(view, '주간')
+    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('8월 23일 (일)')
+  })
+})
+
+
+// ══ 기록이 붙었다 ═══════════════════════════════════════
+
+describe('칸에 숫자가 든다', () => {
+  /**
+   * 읽는 단위가 **달력 월**이다. 격자 범위가 아니다. 격자는 앞뒤 달 날짜로 빈칸을 채우지만
+   * 그 칸은 금액을 안 그리므로 읽어 봐야 버린다.
+   */
+  it('보는 달을 먼저 읽는다. 달 단위다', async () => {
+    await 그리기()
+
+    expect(records.loadMonthDays).toHaveBeenNthCalledWith(1, '2026-08-01', '2026-08-31')
+  })
+
+  /**
+   * **보는 달 앞뒤 둘까지 미리 읽는다.** 옮기자마자 그려지도록.
+   *
+   * 앞으로는 이번 달까지만이다. 그 뒤로는 화살표가 죽어 있어 갈 수 없고 읽어 봐야 빈 표다.
+   * 오늘이 2026-08-23 이라 창은 8월·7월·6월 셋이다.
+   */
+  it('앞뒤 둘까지 미리 읽는다. 앞으로는 이번 달까지만', async () => {
+    await 그리기()
+
+    expect(읽은달()).toEqual(['2026-08', '2026-07', '2026-06'])
+  })
+
+  it('달을 옮기면 새로 창에 든 달만 더 읽는다', async () => {
+    const view = await 그리기()
+    await 월간으로(view)
+    records.loadMonthDays.mockClear()
+
+    // 7월로 가면 창이 7·6·8·5 다. 앞의 셋은 이미 들고 있으므로 5월만 새로 읽는다.
     await 이름으로누르기(view, '이전 달')
     await act(async () => {})
 
-    expect(records.loadCalendarAmounts).toHaveBeenLastCalledWith('2026-06-28', '2026-08-01')
+    expect(읽은달()).toEqual(['2026-05'])
   })
 
-  // 주간이 달을 걸치면 그 이레가 기준 달의 격자 밖으로 나갈 수 있다. 합집합을 쓰는 이유다.
-  it('주간에서도 그 달 전체를 함께 읽는다. 열지도 기준이 그 달이다', async () => {
+  /**
+   * **층에는 창 전체를 알린다**(사용자 지시). 보이는 격자만 알리면 이웃 달이 기기 DB 에 없는
+   * 채로 남아, 옮겼을 때 그릴 것이 없다. 창 안은 언제나 받아 둔 상태여야 한다.
+   */
+  it('층에는 창 전체 범위를 알린다. 격자 범위가 아니라', async () => {
+    await 그리기()
+
+    // 오늘이 2026-08-23 이라 창은 6·7·8 월이다. 8월 격자(7/26 ~ 9/5)가 아니다.
+    expect(mockRequestDateRange).toHaveBeenLastCalledWith({
+      from: '2026-06-01',
+      to: '2026-08-31',
+    })
+  })
+
+  it('달을 옮기면 창도 함께 옮겨 알린다', async () => {
     const view = await 그리기()
+    await 월간으로(view)
+
+    await 이름으로누르기(view, '이전 달')
+
+    // 7월이 한가운데면 5월 ~ 8월이다(앞으로는 이번 달까지).
+    expect(mockRequestDateRange).toHaveBeenLastCalledWith({
+      from: '2026-05-01',
+      to: '2026-08-31',
+    })
+  })
+
+  // 범위가 달 단위라 같은 달 안의 주 이동은 층에 **같은 값**을 알린다. 층이 그것을 걸러 낸다.
+  it('같은 달 안의 주 이동은 범위를 안 바꾼다', async () => {
+    const view = await 그리기()
+    mockRequestDateRange.mockClear()
+
+    // 8/20 → 8/13. 둘 다 8월이다.
+    await 이름으로누르기(view, '이전 주')
+
+    expect(mockRequestDateRange.mock.calls).toEqual([])
+  })
+
+  it('주간도 같은 달을 본다. 열지도 기준이 그 달이다', async () => {
+    const view = await 그리기()
+    records.loadMonthDays.mockClear()
 
     await 이름으로누르기(view, '주간')
     await act(async () => {})
 
-    expect(records.loadCalendarAmounts).toHaveBeenLastCalledWith('2026-07-26', '2026-09-05')
+    // 이미 셋을 들고 있어 더 읽을 것이 없다.
+    expect(읽은달()).toEqual([])
   })
 
   it('읽은 금액이 칸에 선다', async () => {
-    records.loadCalendarAmounts.mockResolvedValue({
+    칸금액을({
       '2026-08-23': { incomeMeso: 1_743_000_000, expenseMeso: 2_542_372_881 },
     })
 
@@ -614,7 +872,7 @@ describe('칸에 숫자가 든다', () => {
   // **상세는 그날 읽기에서 나온다**. 칸 금액 표가 아니다. 그래서 그 표를
   // 아무리 채워도 그날 기록이 없으면 빈 상태이고, 반대도 같다.
   it('고른 날에 기록이 있으면 합계가 서고 빈 상태가 사라진다', async () => {
-    records.loadDayRecords.mockResolvedValue([{ kind: 'income', record: 그날수입, characterName: '' }])
+    그날줄을(고른날, [{ kind: 'income', record: 그날수입, characterName: '' }])
 
     const view = await 그리기()
 
@@ -630,36 +888,58 @@ describe('칸에 숫자가 든다', () => {
   })
 
   /**
-   * 기간을 옮겨도 **고른 날은 안 바뀐다**(이후의 계약). 그런데 상세가 격자가 덮는
-   * 범위로 읽어 온 칸 금액 표 를 보고 서 있으면, 그 날이 범위 밖으로 나가는 순간 상세가 통째로
-   * 사라졌다. 머리글은 8월 25일인데 아래는 기록이 없어요.
+   * **달 읽기 하나가 격자와 상세를 함께 낸다.** 옮긴 달의 1일에 든 줄이 조회 없이 곧장 선다.
    *
-   * 목은 **범위를 실제로 지킨다**. 그러지 않으면(어느 범위로 불러도 같은 표를 돌려주면) 이
-   * 회귀가 목 안에서 사라져 테스트가 통과해 버린다.
+   * 전에는 상세가 조회를 따로 가졌고, 그 답이 오기 전까지 이 자리가 비었다.
    */
-  it('기간을 옮겨도 고른 날의 상세가 남는다', async () => {
-    records.loadCalendarAmounts.mockImplementation(async (from: string, to: string) =>
-      from <= '2026-08-25' && '2026-08-25' <= to
-        ? { '2026-08-25': { incomeMeso: 1_200_000_000, expenseMeso: 0 } }
-        : {},
-    )
-    records.loadDayRecords.mockResolvedValue([
-      { kind: 'income', record: { ...그날수입, earnedOn: '2026-08-25' }, characterName: '' },
+  it('옮긴 달의 상세가 달 읽기에서 곧장 나온다', async () => {
+    그날줄을('2026-07-01', [
+      { kind: 'income', record: { ...그날수입, earnedOn: '2026-07-01' }, characterName: '' },
     ])
 
     const view = await 그리기()
     await 월간으로(view)
-    await 누르기(view, 'calendar-day-2026-08-25')
-    await act(async () => {})
-    expect(view.getByTestId('cashbook-day-total')).toBeTruthy()
-
     await 이름으로누르기(view, '이전 달')
-    await act(async () => {})
 
-    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('8월 25일 (화)')
+    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('7월 1일 (수)')
     expect(view.getByTestId('cashbook-day-total')).toBeTruthy()
-    expect(view.queryByTestId('cashbook-empty')).toBeNull()
     expect(view.getByText('앱솔랩스 케이프')).toBeTruthy()
+    // 하루 조회는 안 돈다. 창 안의 날이다.
+    expect(records.loadDayRecords).not.toHaveBeenCalled()
+  })
+
+  /**
+   * **아직 안 읽었다** 와 **읽었더니 없더라** 는 다른 사실이다. 답이 오기 전의
+   * `loadedDay.dateKey` 는 빈 문자열이라 목록이 빈 배열인데, 그것을 0건으로 읽어 탭에
+   * 들어오자마자 빈 상태가 번쩍였다(사용자 지적).
+   */
+  it('읽는 동안은 빈 상태도 합계도 안 그린다', async () => {
+    // 영영 안 끝나는 읽기. 그 사이의 화면을 본다.
+    records.loadMonthDays.mockReturnValue(new Promise(() => {}))
+
+    const view = await 그리기()
+
+    expect(view.queryByTestId('cashbook-empty')).toBeNull()
+    expect(view.queryByTestId('cashbook-day-total')).toBeNull()
+    // 머리글은 고른 날에서 곧장 나오므로 읽기를 안 기다린다.
+    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('8월 23일 (일)')
+  })
+
+  /**
+   * **창 밖의 날**은 아직 하루 조회로 간다. 그 답이 오기 전에도 빈 상태를 안 그린다.
+   *
+   * 창 밖은 이번 달 격자의 다음 달 칸이 그 자리다. 오늘이 2026-08-23 이라 창의 천장이 8월이고
+   * 9/1 은 밖이다.
+   */
+  it('창 밖의 날을 고르면 읽는 동안 빈 상태가 안 뜬다', async () => {
+    const view = await 그리기()
+    await 월간으로(view)
+    expect(view.getByTestId('cashbook-empty')).toBeTruthy()
+
+    records.loadDayRecords.mockReturnValue(new Promise(() => {}))
+    await 누르기(view, 'calendar-day-2026-09-01')
+
+    expect(view.queryByTestId('cashbook-empty')).toBeNull()
   })
 })
 
@@ -723,8 +1003,9 @@ describe('펼침판이 시트를 연다', () => {
       earnedOn: '2026-08-23',
       mesoAmount: 1,
     })
-    // 처음 읽기 + 저장 뒤 다시 읽기.
-    expect(records.loadCalendarAmounts).toHaveBeenCalledTimes(2)
+    // 저장이 판을 바꿨으므로 보는 달을 다시 읽는다.
+    expect(records.loadMonthDays).toHaveBeenCalledWith('2026-08-01', '2026-08-31')
+    expect(읽은달().filter((month) => month === '2026-08')).toHaveLength(2)
   })
 
   it('저장하면 시트가 닫힌다', async () => {
@@ -791,10 +1072,11 @@ describe('저장이 실패하면', () => {
 
     await 누르기(view, 'spend-sheet-category-컨텐츠')
     await 이름으로누르기(view, '몬스터 파크')
+    records.loadMonthDays.mockClear()
     await 이름으로누르기(view, '저장')
     await act(async () => {})
 
-    expect(records.loadCalendarAmounts).toHaveBeenCalledTimes(1)
+    expect(읽은달()).toEqual([])
   })
 })
 
@@ -836,10 +1118,10 @@ const 그날지출 = {
 
 describe('그날 목록', () => {
   beforeEach(() => {
-    records.loadCalendarAmounts.mockResolvedValue({
+    칸금액을({
       '2026-08-23': { incomeMeso: 1_200_000_000, expenseMeso: 101_694_915 },
     })
-    records.loadDayRecords.mockResolvedValue([
+    그날줄을(고른날, [
       { kind: 'income', record: 그날수입, characterName: '' },
       { kind: 'spend', record: 그날지출, characterName: '' },
     ])
@@ -860,7 +1142,7 @@ describe('그날 목록', () => {
    * 보스 줄이 이미 쓰던 어법이라 한 목록 안에서 어법이 하나로 유지된다.
    */
   it('캐릭터가 붙어 있으면 이름이 앞에 선다', async () => {
-    records.loadDayRecords.mockResolvedValue([
+    그날줄을(고른날, [
       { kind: 'spend', record: 그날지출, characterName: '루디' },
     ])
     const view = await 그리기()
@@ -896,21 +1178,34 @@ describe('그날 목록', () => {
     expect(view.queryByTestId('cashbook-row-image-inc-1', { includeHiddenElements: true })).toBeNull()
   })
 
-  it('날을 바꾸면 그 날 것을 읽는다', async () => {
+  // **창 안의 날은 조회 없이** 달 읽기가 든 표에서 꺼낸다.
+  it('날을 바꿔도 새 조회가 안 돈다', async () => {
+    그날줄을('2026-08-25', [{ kind: 'income', record: 그날수입, characterName: '' }])
     const view = await 그리기()
 
     await 누르기(view, 'calendar-day-2026-08-25')
 
-    expect(records.loadDayRecords).toHaveBeenLastCalledWith('2026-08-25')
+    expect(view.getByTestId('cashbook-day-total')).toBeTruthy()
+    expect(records.loadDayRecords).not.toHaveBeenCalled()
+  })
+
+  // 창 밖의 날만 하루 조회로 간다.
+  it('창 밖의 날은 따로 읽는다', async () => {
+    const view = await 그리기()
+    await 월간으로(view)
+
+    await 누르기(view, 'calendar-day-2026-09-01')
+
+    expect(records.loadDayRecords).toHaveBeenLastCalledWith('2026-09-01')
   })
 })
 
 describe('줄을 누르면 고칠 수 있다', () => {
   beforeEach(() => {
-    records.loadCalendarAmounts.mockResolvedValue({
+    칸금액을({
       '2026-08-23': { incomeMeso: 1_200_000_000, expenseMeso: 101_694_915 },
     })
-    records.loadDayRecords.mockResolvedValue([
+    그날줄을(고른날, [
       { kind: 'income', record: 그날수입, characterName: '' },
       { kind: 'spend', record: 그날지출, characterName: '' },
     ])
@@ -1034,10 +1329,10 @@ describe('자동으로 흘러든 줄', () => {
   }
 
   beforeEach(() => {
-    records.loadCalendarAmounts.mockResolvedValue({
+    칸금액을({
       '2026-08-23': { incomeMeso: 7_600_000_000, expenseMeso: 0 },
     })
-    records.loadDayRecords.mockResolvedValue([결정석줄, 판매줄])
+    그날줄을(고른날, [결정석줄, 판매줄])
   })
 
   // 결정석 줄만 그림을 갖는다. 조회표는 `item-icons.spec.ts` 가 따로 검사하므로 여기서 물을
@@ -1143,7 +1438,7 @@ describe('자동으로 흘러든 줄', () => {
   // 여섯이 100.02% 라 하나가 다음 줄로 밀린다. 그래서 여섯이 레이아웃의 결과가 아니라
   // 구조여야 하고, 그 구조를 여기서 본다.
   it('여덟 마리는 여섯 + 둘로 끊긴다', async () => {
-    records.loadDayRecords.mockResolvedValue([{ ...결정석줄, count: 8, bosses: 보스여덟 }])
+    그날줄을(고른날, [{ ...결정석줄, count: 8, bosses: 보스여덟 }])
     const view = await 그리기()
     await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
 
@@ -1155,7 +1450,7 @@ describe('자동으로 흘러든 줄', () => {
 
   // 안 채우면 둘이 반반씩 벌어져 앞줄과 격자가 안 맞는다.
   it('덜 찬 마지막 줄은 빈 칸으로 채운다', async () => {
-    records.loadDayRecords.mockResolvedValue([{ ...결정석줄, count: 8, bosses: 보스여덟 }])
+    그날줄을(고른날, [{ ...결정석줄, count: 8, bosses: 보스여덟 }])
     const view = await 그리기()
     await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
 
@@ -1238,7 +1533,8 @@ describe('자동으로 흘러든 줄', () => {
     await act(async () => {})
 
     expect(records.resolveTrackedDefeatDates).toHaveBeenCalledTimes(1)
-    expect(records.loadDayRecords).toHaveBeenCalledTimes(2)
+    // 판이 바뀌어 **보는 달을 다시 읽는다**. 그 뒤 창의 나머지가 이어진다.
+    expect(읽은달().filter((month) => month === '2026-08')).toHaveLength(2)
     expect(view.getByTestId('cashbook-row-bossCrystal:ocid-1')).toBeTruthy()
   })
 
@@ -1246,7 +1542,8 @@ describe('자동으로 흘러든 줄', () => {
     const view = await 그리기()
     await act(async () => {})
 
-    expect(records.loadDayRecords).toHaveBeenCalledTimes(1)
+    // 창의 셋을 한 번씩. 다시 읽은 달이 없다.
+    expect(읽은달()).toEqual(['2026-08', '2026-07', '2026-06'])
     expect(view.getByTestId('cashbook-row-dropSale:ocid-1')).toBeTruthy()
   })
 })
@@ -1329,7 +1626,7 @@ describe('기간 합계 세 칸', () => {
   })
 
   it('주간은 **이레만** 접는다', async () => {
-    records.loadCalendarAmounts.mockResolvedValue(금액)
+    칸금액을(금액)
     const view = await 그리기()
 
     // 8/21 + 8/23 = 6000만 수익· 2500만 지출. 8/15 는 이 주가 아니다.
@@ -1339,7 +1636,7 @@ describe('기간 합계 세 칸', () => {
   })
 
   it('월간은 그 달 칸만 접는다. 앞뒤 달로 채운 칸은 안 든다', async () => {
-    records.loadCalendarAmounts.mockResolvedValue(금액)
+    칸금액을(금액)
     const view = await 그리기()
     await 월간으로(view)
 
@@ -1350,7 +1647,7 @@ describe('기간 합계 세 칸', () => {
   })
 
   it('기간을 옮기면 따라간다', async () => {
-    records.loadCalendarAmounts.mockResolvedValue(금액)
+    칸금액을(금액)
     const view = await 그리기()
     await 이름으로누르기(view, '이전 주')
 
@@ -1365,7 +1662,7 @@ describe('기간 합계 세 칸', () => {
    * 테마가 바뀌어도 순 수익이 지출과 같은 색이다 는 그대로여야 하는 계약이기 때문이다.
    */
   it('순 수익이 음수면 지출과 같은 색이고 `−` 절댓값이다', async () => {
-    records.loadCalendarAmounts.mockResolvedValue({
+    칸금액을({
       '2026-08-21': { incomeMeso: 10_000_000, expenseMeso: 30_000_000 },
     })
     const view = await 그리기()
@@ -1421,7 +1718,7 @@ describe('기간 합계 세 칸', () => {
   })
 
   it('순 수익이 양수면 수익과 같은 색이다', async () => {
-    records.loadCalendarAmounts.mockResolvedValue({
+    칸금액을({
       '2026-08-21': { incomeMeso: 30_000_000, expenseMeso: 10_000_000 },
     })
     const view = await 그리기()
@@ -1441,35 +1738,37 @@ describe('기간 합계 세 칸', () => {
 describe('CashbookScreen: 낡은 숫자', () => {
   it('판이 그대로면 다시 안 읽는다. 탭을 오가는 것은 흔한 일이다', async () => {
     await 그리기()
-    records.loadCalendarAmounts.mockClear()
+    records.loadMonthDays.mockClear()
     records.loadDayRecords.mockClear()
 
     await 다시들어오기()
 
-    expect(records.loadCalendarAmounts).not.toHaveBeenCalled()
+    expect(records.loadMonthDays).not.toHaveBeenCalled()
     expect(records.loadDayRecords).not.toHaveBeenCalled()
   })
 
   it('남의 화면이 원천을 바꿨으면 들어올 때 다시 읽는다. 당기지 않아도', async () => {
     await 그리기()
-    records.loadCalendarAmounts.mockClear()
+    records.loadMonthDays.mockClear()
     records.loadDayRecords.mockClear()
     // 가격 입력 화면이 `boss_drop_records` 를 적고 왔다.
     records.cashbookDataRevision.mockReturnValue(1)
 
     await 다시들어오기()
+    await act(async () => {})
 
-    expect(records.loadCalendarAmounts).toHaveBeenCalledTimes(1)
-    expect(records.loadDayRecords).toHaveBeenCalledTimes(1)
+    // 판이 바뀌었으므로 창의 셋을 다시 읽는다. 그날 줄도 그 안에 들어 있다.
+    expect(읽은달()).toEqual(['2026-08', '2026-07', '2026-06'])
+    expect(records.loadDayRecords).not.toHaveBeenCalled()
   })
 
   it('다시 읽은 숫자가 그대로 합계에 선다. 증상이 사라지는 지점이다', async () => {
-    records.loadCalendarAmounts.mockResolvedValue({})
+    칸금액을({})
     const view = await 그리기()
     expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+0')
 
     // 보스 수익 탭에서 아이템 가격을 적고 돌아왔다.
-    records.loadCalendarAmounts.mockResolvedValue({
+    칸금액을({
       '2026-08-21': { incomeMeso: 60_000_000, expenseMeso: 0 },
     })
     records.cashbookDataRevision.mockReturnValue(1)
@@ -1482,12 +1781,12 @@ describe('CashbookScreen: 낡은 숫자', () => {
     await 그리기()
     records.cashbookDataRevision.mockReturnValue(1)
     await 다시들어오기()
-    records.loadCalendarAmounts.mockClear()
+    records.loadMonthDays.mockClear()
     records.loadDayRecords.mockClear()
 
     await 다시들어오기()
 
-    expect(records.loadCalendarAmounts).not.toHaveBeenCalled()
+    expect(records.loadMonthDays).not.toHaveBeenCalled()
     expect(records.loadDayRecords).not.toHaveBeenCalled()
   })
 
@@ -1511,25 +1810,25 @@ describe('CashbookScreen: 낡은 숫자', () => {
 describe('창이 뒤늦게 채운 것을 받는다', () => {
   it('회차가 끝나면 다시 읽는다', async () => {
     await 그리기()
-    const 읽은횟수 = records.loadCalendarAmounts.mock.calls.length
+    const 읽은횟수 = records.loadMonthDays.mock.calls.length
 
     await act(async () => {
       mockSetWindowRevision?.(2)
     })
 
-    expect(records.loadCalendarAmounts.mock.calls.length).toBeGreaterThan(읽은횟수)
+    expect(records.loadMonthDays.mock.calls.length).toBeGreaterThan(읽은횟수)
   })
 
   // 당김도 이 길로 온다. 바뀐 것이 없을 때 건너뛰면 사용자가 당겨도 아무 일도 안 일어난다.
   it('안 바뀌었어도 회차가 끝나면 다시 읽는다. 당김이 이 길로 온다', async () => {
     await 그리기()
-    const 읽은횟수 = records.loadCalendarAmounts.mock.calls.length
+    const 읽은횟수 = records.loadMonthDays.mock.calls.length
 
     await act(async () => {
       mockSetWindowRevision?.(2)
     })
 
-    expect(records.loadCalendarAmounts.mock.calls.length).toBeGreaterThan(읽은횟수)
+    expect(records.loadMonthDays.mock.calls.length).toBeGreaterThan(읽은횟수)
   })
 })
 
@@ -1559,10 +1858,10 @@ describe('강화 줄', () => {
   }
 
   beforeEach(() => {
-    records.loadCalendarAmounts.mockResolvedValue({
+    칸금액을({
       '2026-08-23': { incomeMeso: 0, expenseMeso: 1_940_000_000 },
     })
-    records.loadDayRecords.mockResolvedValue([스타포스줄, 에디셔널줄])
+    그날줄을(고른날, [스타포스줄, 에디셔널줄])
   })
 
   it('나가는 돈으로 적힌다', async () => {
@@ -1583,7 +1882,7 @@ describe('강화 줄', () => {
   })
 
   it('값모름이 있으면 건수 옆에 선다', async () => {
-    records.loadDayRecords.mockResolvedValue([{ ...스타포스줄, unpricedCount: 3 }])
+    그날줄을(고른날, [{ ...스타포스줄, unpricedCount: 3 }])
     const view = await 그리기()
 
     expect(view.getByTestId('cashbook-row-enhancement:스타포스:낟낟')).toHaveTextContent(
@@ -1633,7 +1932,7 @@ describe('강화 줄', () => {
 
   // 0 을 적으면 공짜로 강화한 것이 된다.
   it('그 장비를 통째로 모르면 금액 자리가 값 모름 이다', async () => {
-    records.loadDayRecords.mockResolvedValue([
+    그날줄을(고른날, [
       {
         ...스타포스줄,
         items: [{ targetItem: '왕푸', count: 8, costMeso: 0, unpricedCount: 8 }],
@@ -1659,17 +1958,17 @@ describe('강화 줄', () => {
 // 때마다 커진다(큐브 → 스타포스 → 잠재). 다 합산될 때까지 안 그린다(사용자 지정).
 describe('확정 전에는 안 그린다', () => {
   beforeEach(() => {
-    records.loadCalendarAmounts.mockResolvedValue({
+    칸금액을({
       '2026-08-23': { incomeMeso: 7_600_000_000, expenseMeso: 1_200_000_000 },
     })
   })
 
   it('받는 중에는 다시 읽지도 않는다', async () => {
     mockWindow.collecting = true
-    records.loadCalendarAmounts.mockClear()
+    records.loadMonthDays.mockClear()
     await 그리기()
 
-    expect(records.loadCalendarAmounts).not.toHaveBeenCalled()
+    expect(records.loadMonthDays).not.toHaveBeenCalled()
   })
 
   // 자리는 남는다(칸 높이가 흔들리면 격자가 출렁인다). 비는 것은 숫자다.
@@ -1690,7 +1989,7 @@ describe('확정 전에는 안 그린다', () => {
     const view = await 그리기()
     const 짧다 = flattenStyle(view.getByTestId('cashbook-summary-income').props.style).width
 
-    records.loadCalendarAmounts.mockResolvedValue({
+    칸금액을({
       '2026-08-23': { incomeMeso: 1_234_500_000_000, expenseMeso: 900_000 },
     })
     const 길다 = await 그리기()
@@ -1708,7 +2007,7 @@ describe('확정 전에는 안 그린다', () => {
     expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+76억')
 
     let resolve: ((value: Record<string, unknown>) => void) | null = null
-    records.loadCalendarAmounts.mockImplementation(
+    records.loadMonthDays.mockImplementation(
       () => new Promise((done) => (resolve = done as never)),
     )
     await 이름으로누르기(view, '이전 주')
