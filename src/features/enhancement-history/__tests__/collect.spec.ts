@@ -8,6 +8,7 @@ jest.mock('../../../storage/enhancement-history', () => ({
   checkKey: (kind: string, dateKey: string) => `${kind}|${dateKey}`,
   loadEnhancementChecks: jest.fn(),
   loadKnownHistoryIds: jest.fn(),
+  loadObservedItemLevels: jest.fn(),
   markEnhancementChecked: jest.fn(),
   saveEnhancementHistory: jest.fn(),
 }))
@@ -44,6 +45,7 @@ beforeEach(() => {
   store.loadKnownHistoryIds.mockReset().mockResolvedValue(new Set())
   store.markEnhancementChecked.mockReset().mockResolvedValue(undefined)
   store.saveEnhancementHistory.mockReset().mockResolvedValue(undefined)
+  store.loadObservedItemLevels.mockReset().mockResolvedValue(new Map())
   saveEventWorldNames.mockReset().mockResolvedValue(undefined)
 })
 
@@ -158,6 +160,56 @@ describe('수집', () => {
     expect(store.saveEnhancementHistory).toHaveBeenCalledWith('cube', expect.arrayContaining([
       expect.objectContaining({ id: 'a' }),
     ]))
+  })
+
+  /**
+   * **값을 못 매기는 줄은 버린다**(사용자 지정). 금액을 못 적는 줄은 목록에서 자리만 차지하고
+   * 합계에도 안 들어간다. 실제로 걸리는 것은 장비 레벨을 못 푸는 스타포스뿐이다.
+   */
+  it('값을 못 매기는 줄은 저장하지 않는다', async () => {
+    fetchEnhancementHistory.mockImplementation((_key: string, kind: string) =>
+      Promise.resolve(kind === 'starforce' ? page(['sf']) : page([])),
+    )
+
+    await collectEnhancementHistory(['2026-09-05'], NOW)
+
+    // 스타포스 줄은 `before_starforce_count` 가 없어 값이 안 나온다.
+    expect(store.saveEnhancementHistory).toHaveBeenCalledWith('starforce', [])
+  })
+
+  // **0 은 모르는 것이 아니다.** 강화권은 메소가 안 드는 것이지 값을 못 매기는 것이 아니다.
+  it('값이 0 인 줄은 저장한다', async () => {
+    fetchEnhancementHistory.mockImplementation((_key: string, kind: string) =>
+      Promise.resolve(
+        kind === 'starforce'
+          ? { rows: [{ ...page(['sf']).rows[0], payload: { upgrade_item: '주문의 흔적' } }], nextCursor: null }
+          : page([]),
+      ),
+    )
+
+    await collectEnhancementHistory(['2026-09-05'], NOW)
+
+    expect(store.saveEnhancementHistory).toHaveBeenCalledWith('starforce', [
+      expect.objectContaining({ id: 'sf' }),
+    ])
+  })
+
+  /**
+   * **버린 줄도 아는 줄이다.** 커서를 멈추는 판정은 받은 쪽 전체로 한다. 저장된 것만 보면
+   * 버려진 줄만 있는 쪽에서 영영 안 멈춰 쪽수를 끝까지 따라간다.
+   */
+  it('버린 줄만 있어도 아는 id 를 만나면 멈춘다', async () => {
+    store.loadKnownHistoryIds.mockResolvedValue(new Set(['sf']))
+    fetchEnhancementHistory.mockImplementation((_key: string, kind: string) =>
+      Promise.resolve(kind === 'starforce' ? page(['sf'], 'c1') : page([])),
+    )
+
+    await collectEnhancementHistory(['2026-09-05'], NOW)
+
+    const starforceCalls = fetchEnhancementHistory.mock.calls.filter(
+      (call: unknown[]) => call[1] === 'starforce',
+    )
+    expect(starforceCalls).toHaveLength(1)
   })
 
   it('커서가 있으면 이어 받는다', async () => {
