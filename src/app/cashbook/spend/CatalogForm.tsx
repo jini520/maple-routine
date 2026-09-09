@@ -221,6 +221,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
       <SpendHeader
         title={title}
         dateKey={props.dateKey}
+        todayDateKey={props.todayDateKey}
         onDateChange={props.onDateChange}
         // 수정 모드에는 되돌아갈 곳이 없다(고른 것을 못 바꾼다). 화살촉도 없다.
         onBack={choice === null || editing ? undefined : clearChoice}

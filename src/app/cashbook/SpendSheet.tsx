@@ -28,6 +28,8 @@ export type { SpendDraft } from './spend/form-shared'
 export interface SpendSheetProps {
   /** 어느 날에 적히나. 캘린더에서 고른 날이다. */
   dateKey: string
+  /** 오늘. 머리의 날짜를 이 날 뒤로 못 옮긴다. 화면이 읽어서 넘긴다. */
+  todayDateKey: string
   /**
    * 고를 수 있는 캐릭터. 화면이 읽어서 넘긴다(시트는 `storage/` 를 모른다).
    * 비어 있으면 고르개에 선택 안함 하나만 선다.
@@ -82,6 +84,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
     onClose: props.onClose,
     onScrollKeyChange: setScrollKey,
     onDateChange: setDateKey,
+    todayDateKey: props.todayDateKey,
   }
 
   return (

@@ -48,6 +48,13 @@ export interface SelectFieldProps {
    * 트리거(닫힌 줄)는 안 바뀐다. 거기까지 넓히면 라벨–값 줄의 모양이 고르개마다 갈린다.
    */
   renderOption?: (option: SelectOption, isSelected: boolean) => React.ReactNode
+  /**
+   * 닫힌 줄을 통째로 다시 그리는 법. 없으면 라벨–값 한 줄이다.
+   *
+   * 배지 사슬처럼 한 줄이 값 여럿을 지는 자리가 쓴다. 목록은 이 트리거에 붙으므로 줄 전체를
+   * 넘기면 목록도 줄 폭으로 선다. 여는 일은 받은 손잡이를 부르는 쪽이 정한다.
+   */
+  renderTrigger?: (open: () => void) => React.ReactNode
 }
 
 /** `null` 도 받는 키. 목록의 첫 칸이 대개 그것이다. */
@@ -76,10 +83,18 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
 
   function open(): void {
     setIsOpen(true)
+  }
+
+  /**
+   * 열린 뒤에 잰다. 여는 손잡이가 `ref` 를 안 읽어야 트리거를 **렌더 중에 그리는** 배지 사슬로
+   * 넘길 수 있다(React 컴파일러가 렌더 중 ref 접근으로 잡는다).
+   */
+  useEffect(() => {
+    if (!isOpen) return
     triggerRef.current?.measureInWindow((x, y, width, height) => {
       setAnchor({ left: x, top: y, width, height })
     })
-  }
+  }, [isOpen])
 
   useEffect(() => {
     if (!isOpen) return
@@ -110,21 +125,27 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
 
   return (
     <>
-      <Pressable
-        ref={triggerRef}
-        testID={`${props.testID}-trigger`}
-        role="button"
-        aria-label={props.label}
-        aria-expanded={isOpen}
-        onPress={open}
-        className="flex-row items-center gap-3 border-b border-border pb-2 active:opacity-60"
-      >
-        <Text className="shrink-0 text-xs text-text-muted">{props.label}</Text>
-        <Text numberOfLines={1} className="ml-auto shrink text-sm text-text">
-          {selectedLabel}
-        </Text>
-        <ChevronDownIcon className="h-4 w-4 shrink-0 text-text-disabled" strokeWidth={2} aria-hidden />
-      </Pressable>
+      {props.renderTrigger === undefined ? (
+        <Pressable
+          ref={triggerRef}
+          testID={`${props.testID}-trigger`}
+          role="button"
+          aria-label={props.label}
+          aria-expanded={isOpen}
+          onPress={open}
+          className="flex-row items-center gap-3 border-b border-border pb-2 active:opacity-60"
+        >
+          <Text className="shrink-0 text-xs text-text-muted">{props.label}</Text>
+          <Text numberOfLines={1} className="ml-auto shrink text-sm text-text">
+            {selectedLabel}
+          </Text>
+          <ChevronDownIcon className="h-4 w-4 shrink-0 text-text-disabled" strokeWidth={2} aria-hidden />
+        </Pressable>
+      ) : (
+        <View ref={triggerRef} testID={`${props.testID}-trigger`}>
+          {props.renderTrigger(open)}
+        </View>
+      )}
 
       {isOpen && (
         // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)

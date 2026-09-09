@@ -887,6 +887,20 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
   값은 그 칸의 **줄 높이와 같은 수**다(`text-sm` 칸은 `h-5`). 패딩을 지는 칸은 세로 패딩을 걷고
   그만큼을 높이에 넣는다. 줄에 거는 `min-h-*` 는 **바닥**이라 자라는 것을 못 막는다.
   `src/__tests__/text-input-height-policy.test.ts` 가 칸마다 높이가 있는지 검사한다.
+- **머리와 바닥은 스크롤 밖에 세운다**([[ADR-241]] 정정 1). 라이브러리는 시트 키를 **스크롤 내용**
+  높이 하나로 정하므로, 흐름 밖에 세운 둘의 높이만큼을 스크롤 내용의 `paddingTop`·`paddingBottom`
+  이 비워 줘야 자리가 생긴다. 그래서 저장을 고정하면 시트가 그 높이만큼 짧아진다. 머리의 위
+  모서리는 시트와 같은 20 이다. 다르면 시트 위에 덧댄 판으로 보인다.
+- **바닥 줄의 자리는 `animatedSheetHeight` 에서 잰다**([[ADR-241]] 정정 3). 시트가 미끄러지는
+  동안 그 값은 안 바뀌므로 줄이 시트에 붙어 함께 움직인다. 컨테이너 기준으로 재면 키보드가
+  뜰 때 그 줄만 먼저 튀고 시트를 끌어내릴 때 그 줄만 제자리에 남는다. 내용 상자(흐름)에
+  얹어도 안 된다. 그 상자는 시트보다 느리게 자라서 열 때 줄이 위로 떴다가 내려앉는다.
+- **시트가 옮겨 앉는 시간은 250ms** 다(`animationConfigs`). 라이브러리 iOS 기본값은 과감쇠
+  스프링이라 530ms 가 걸리는데, 키보드는 265ms 만에 다 올라와 시트 아랫변이 낮은 채로 덮인다.
+- **움직이는 상자는 `Animated.createAnimatedComponent(View)` 로 만들 것.** `Animated.View` 를
+  그대로 쓰면 리애니메이티드 스타일이 안 붙는다. `lib/nativewind-interop` 이 그 컴포넌트를
+  NativeWind 에 등록해 둬서 `style` 이 그쪽 처리를 한 번 거치기 때문이다. 증상은 상자가 통째로
+  안 그려지는 것이라 자리 계산을 의심하게 된다([[ADR-241]] 정정 1 에서 반나절을 썼다).
 - **키보드 배선은 다섯이 한 벌이다**(`BottomSheet` 조직체가 쥔다). 초점 채우기 ·
   `android_keyboardInputMode="adjustPan"` · `keyboardBlurBehavior="restore"` ·
   **키보드가 뜨면 아래 인셋을 걷기**(홈 인디케이터 몫은 키보드가 이미 덮고 있어 빈 띠가 된다) ·

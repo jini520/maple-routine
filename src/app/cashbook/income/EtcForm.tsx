@@ -23,7 +23,7 @@ import {
 } from '../../../lib/cashbook/free-currency'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { AmountInput, FieldRow, QuantityStepper } from '../sheet-fields'
-import { CharacterField, SaveRow, type IncomeFormProps } from './form-shared'
+import { CharacterField, useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
@@ -73,6 +73,31 @@ export function EtcForm(
   const amount = typed * quantity
   /** 저장할 수 있는 상태인가. 메포로 적으면 시세가 있어야 한다. */
   const canSave = amount > 0 && (!usesPoint || rate !== null)
+
+  useSaveSlot(props.setSave, {
+    editing,
+    canSave,
+    saving,
+    onSave: () =>
+      void submit({
+        ocid,
+        earnedOn: props.dateKey,
+        category: '기타',
+        item: name.trim() === '' ? null : name.trim(),
+        // 통화가 갈리는 갈래에서는 **고른 통화의 칸에만** 담는다.
+        mesoAmount: currency === 'meso' ? amount : null,
+        saleFeePercent: null,
+        saleFeeMeso: null,
+        pointAmount: currency === 'point' ? amount : null,
+        pointPer100mMeso: currency === 'point' ? rate : null,
+        cashAmount: currency === 'cash' ? amount : null,
+        // 곱한 총액만 남기면 수정으로 다시 열 때 되짚을 길이 없다.
+        quantity,
+        hunt: null,
+        memo: null,
+      }),
+    onDelete: props.onDelete === undefined ? undefined : () => void remove(),
+  })
 
   return (
     <>
@@ -162,31 +187,6 @@ export function EtcForm(
          */
       />
 
-      <SaveRow
-        editing={editing}
-        canSave={canSave}
-        saving={saving}
-        onSave={() =>
-          void submit({
-            ocid,
-            earnedOn: props.dateKey,
-            category: '기타',
-            item: name.trim() === '' ? null : name.trim(),
-            // 통화가 갈리는 갈래에서는 **고른 통화의 칸에만** 담는다.
-            mesoAmount: currency === 'meso' ? amount : null,
-            saleFeePercent: null,
-            saleFeeMeso: null,
-            pointAmount: currency === 'point' ? amount : null,
-            pointPer100mMeso: currency === 'point' ? rate : null,
-            cashAmount: currency === 'cash' ? amount : null,
-            // 곱한 총액만 남기면 수정으로 다시 열 때 되짚을 길이 없다.
-            quantity,
-            hunt: null,
-            memo: null,
-          })
-        }
-        onDelete={props.onDelete === undefined ? undefined : () => void remove()}
-      />
     </>
   )
 }

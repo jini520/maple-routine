@@ -116,27 +116,28 @@ import a101 from '../items/magical_weapon_scroll_coupon.png'
 import a102 from '../items/maleficstar_shard.webp'
 import a103 from '../items/maleficstar_shard_piece.webp'
 import a104 from '../items/mechaberry_farm_ticket.webp'
-import a105 from '../items/meso_pouch.webp'
-import a106 from '../items/mihoroid.webp'
-import a107 from '../items/monster_park_ticket.webp'
-import a108 from '../items/npc_mr_newname.webp'
-import a109 from '../items/papulatus_mark.png'
-import a110 from '../items/potential_reset.png'
-import a111 from '../items/premium_accessory_scroll_coupon.png'
-import a112 from '../items/premium_petequip_scroll_coupon.png'
-import a113 from '../items/seiram_elixir.webp'
-import a114 from '../items/sol_erda_fragment.webp'
-import a115 from '../items/sole_10.png'
-import a116 from '../items/sole_1000.webp'
-import a117 from '../items/sole_200.png'
-import a118 from '../items/sole_500.webp'
-import a119 from '../items/spell_trace.webp'
-import a120 from '../items/union_wealth.webp'
-import a121 from '../items/vip_sauna_ticket.webp'
-import a122 from '../items/wealth_acquisition_potion.webp'
-import a123 from '../items/wealth_acquisition_potion_small.webp'
-import a124 from '../items/whetstone_faith.png'
-import a125 from '../items/whetstone_life.png'
+import a105 from '../items/meso.webp'
+import a106 from '../items/meso_pouch.webp'
+import a107 from '../items/mihoroid.webp'
+import a108 from '../items/monster_park_ticket.webp'
+import a109 from '../items/npc_mr_newname.webp'
+import a110 from '../items/papulatus_mark.png'
+import a111 from '../items/potential_reset.png'
+import a112 from '../items/premium_accessory_scroll_coupon.png'
+import a113 from '../items/premium_petequip_scroll_coupon.png'
+import a114 from '../items/seiram_elixir.webp'
+import a115 from '../items/sol_erda_fragment.webp'
+import a116 from '../items/sole_10.png'
+import a117 from '../items/sole_1000.webp'
+import a118 from '../items/sole_200.png'
+import a119 from '../items/sole_500.webp'
+import a120 from '../items/spell_trace.webp'
+import a121 from '../items/union_wealth.webp'
+import a122 from '../items/vip_sauna_ticket.webp'
+import a123 from '../items/wealth_acquisition_potion.webp'
+import a124 from '../items/wealth_acquisition_potion_small.webp'
+import a125 from '../items/whetstone_faith.png'
+import a126 from '../items/whetstone_life.png'
 
 export const ITEM_ASSETS: Record<string, ImageAssetRef> = {
   "Berserker_Ring.png": a0,
@@ -244,25 +245,26 @@ export const ITEM_ASSETS: Record<string, ImageAssetRef> = {
   "maleficstar_shard.webp": a102,
   "maleficstar_shard_piece.webp": a103,
   "mechaberry_farm_ticket.webp": a104,
-  "meso_pouch.webp": a105,
-  "mihoroid.webp": a106,
-  "monster_park_ticket.webp": a107,
-  "npc_mr_newname.webp": a108,
-  "papulatus_mark.png": a109,
-  "potential_reset.png": a110,
-  "premium_accessory_scroll_coupon.png": a111,
-  "premium_petequip_scroll_coupon.png": a112,
-  "seiram_elixir.webp": a113,
-  "sol_erda_fragment.webp": a114,
-  "sole_10.png": a115,
-  "sole_1000.webp": a116,
-  "sole_200.png": a117,
-  "sole_500.webp": a118,
-  "spell_trace.webp": a119,
-  "union_wealth.webp": a120,
-  "vip_sauna_ticket.webp": a121,
-  "wealth_acquisition_potion.webp": a122,
-  "wealth_acquisition_potion_small.webp": a123,
-  "whetstone_faith.png": a124,
-  "whetstone_life.png": a125,
+  "meso.webp": a105,
+  "meso_pouch.webp": a106,
+  "mihoroid.webp": a107,
+  "monster_park_ticket.webp": a108,
+  "npc_mr_newname.webp": a109,
+  "papulatus_mark.png": a110,
+  "potential_reset.png": a111,
+  "premium_accessory_scroll_coupon.png": a112,
+  "premium_petequip_scroll_coupon.png": a113,
+  "seiram_elixir.webp": a114,
+  "sol_erda_fragment.webp": a115,
+  "sole_10.png": a116,
+  "sole_1000.webp": a117,
+  "sole_200.png": a118,
+  "sole_500.webp": a119,
+  "spell_trace.webp": a120,
+  "union_wealth.webp": a121,
+  "vip_sauna_ticket.webp": a122,
+  "wealth_acquisition_potion.webp": a123,
+  "wealth_acquisition_potion_small.webp": a124,
+  "whetstone_faith.png": a125,
+  "whetstone_life.png": a126,
 }

@@ -33,6 +33,8 @@ export interface SpendFormProps {
   onScrollKeyChange: (key: string) => void
   /** 머리에서 날짜를 바꾸는 콜백. 수입 시트와 같은 계약이다. */
   onDateChange: (next: string) => void
+  /** 오늘. 머리의 날짜를 이 날 뒤로 못 옮긴다. */
+  todayDateKey: string
 }
 
 /**
@@ -47,6 +49,8 @@ export interface SpendFormProps {
 export function SpendHeader(props: {
   title: string
   dateKey: string
+  /** 오늘. 머리의 날짜를 이 날 뒤로 못 옮긴다. */
+  todayDateKey: string
   /** 머리에서 날짜를 바꾸는 줄. 수입 시트와 **같은 부품**이다. */
   onDateChange: (next: string) => void
   /** 제목을 **되돌아가는 누르개**로 만드는 콜백. 수정 모드에는 되돌아갈 곳이 없어 안 준다. */
@@ -83,6 +87,7 @@ export function SpendHeader(props: {
       )}
       <DateStepper
         dateKey={props.dateKey}
+        latest={props.todayDateKey}
         onChange={props.onDateChange}
         testID="spend-sheet-date"
       />

@@ -25,13 +25,15 @@ jest.mock('@gorhom/bottom-sheet', () => {
     // 아래 입력은 안 그려진다. 그래도 **있어야 한다**: `lib/nativewind-interop` 이 모듈을
     // 읽는 순간 이것을 등록하므로, 없으면 스위트가 뜨기도 전에 죽는다.
     useBottomSheetInternal: () => null,
+    // 넘긴 것을 그대로 돌려준다. 시트가 무엇을 넘겼는지는 프롭에서 본다.
+    useBottomSheetTimingConfigs: (config: unknown) => config,
     BottomSheetTextInput: (props: Record<string, unknown>) =>
       React.createElement(ReactNative.TextInput, props),
     BottomSheetModalProvider: (props: { children: ReactNode }) => props.children,
   }
 })
 
-import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { SpendSheet } from '../SpendSheet'
 
 // 큰 숫자의 카운트업 기억은 **모듈 수준**이라 케이스 사이로 샌다.
@@ -47,7 +49,10 @@ const 캐릭터둘 = [
 async function 그리기(overrides: Partial<React.ComponentProps<typeof SpendSheet>> = {}) {
   return renderOverlay(
     <SpendSheet
-      dateKey="2026-08-23" characters={캐릭터둘}
+      dateKey="2026-08-23"
+      // 오늘. 이 날 뒤로는 못 옮긴다. 앞뒤 이동을 재는 케이스가 있으므로 이틀 뒤로 둔다.
+      todayDateKey="2026-08-25"
+      characters={캐릭터둘}
       lastPointRate={null}
       onSave={jest.fn()}
       onClose={jest.fn()}
@@ -1863,6 +1868,20 @@ describe('날짜 바꾸기', () => {
     await 아이디로누르기(view, 'spend-sheet-date-next')
     await 아이디로누르기(view, 'spend-sheet-date-next')
     expect(view.getByTestId('spend-sheet-date')).toHaveTextContent('8월 24일 (월)')
+  })
+
+  /** 내일 쓴 메소는 없다. 뒤로 가는 길이 오늘에서 끊긴다. */
+  it('오늘 뒤로는 못 간다', async () => {
+    const view = await 그리기({ dateKey: '2026-08-25' })
+    expect(view.getByTestId('spend-sheet-date')).toHaveTextContent('8월 25일 (화)')
+
+    await 아이디로누르기(view, 'spend-sheet-date-next')
+
+    expect(view.getByTestId('spend-sheet-date')).toHaveTextContent('8월 25일 (화)')
+    const 화살촉 = view.getByTestId('spend-sheet-date-next')
+    expect(화살촉.props.accessibilityState.disabled).toBe(true)
+    // 못 누른다는 것이 눈에도 보여야 한다.
+    expect(flattenStyle(화살촉.props.style).opacity).toBeCloseTo(0.4)
   })
 
   it('바꾼 날짜로 저장된다', async () => {

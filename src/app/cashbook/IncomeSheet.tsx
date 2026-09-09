@@ -14,45 +14,23 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { Text } from '../../components/atoms'
+import { ChevronLeftIcon, Text } from '../../components/atoms'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import type { MesoRateLoad } from '../../features/cashbook/meso-rate'
 import {
-  INCOME_CATEGORIES,
   type HuntInputMode,
   type IncomeCategory,
   type IncomeRecord,
 } from '../../storage/income'
+import { CategoryPicker } from './income/CategoryPicker'
 import { CheckBox, DateStepper } from './sheet-fields'
 import { EtcForm } from './income/EtcForm'
 import { HuntCalculatorForm } from './income/HuntCalculatorForm'
 import { ItemSaleForm } from './income/ItemSaleForm'
 import { HuntManualForm } from './income/HuntManualForm'
-import type { IncomeFormProps, SheetCharacter } from './income/form-shared'
+import { SaveRow, type IncomeFormProps, type SaveSlot, type SheetCharacter } from './income/form-shared'
 
 export type { IncomeDraft } from './income/form-shared'
-
-function CategoryChip(props: {
-  label: string
-  selected: boolean
-  onPress: () => void
-}): React.JSX.Element {
-  return (
-    <Pressable
-      role="button"
-      aria-label={props.label}
-      aria-selected={props.selected}
-      onPress={props.onPress}
-      className={`rounded-full border px-3 py-1.5 ${
-        props.selected ? 'border-transparent bg-rise-ink' : 'border-border'
-      }`}
-    >
-      <Text className={`text-xs font-semibold ${props.selected ? 'text-bg' : 'text-text-muted'}`}>
-        {props.label}
-      </Text>
-    </Pressable>
-  )
-}
 
 export interface IncomeSheetProps {
   dateKey: string
@@ -69,6 +47,8 @@ export interface IncomeSheetProps {
    * 계약이라 화면이 한 값을 두 시트에 그대로 넘긴다.
    */
   lastPointRate: number | null
+  /** 오늘. 머리의 날짜를 이 날 뒤로 못 옮긴다. 화면이 읽어서 넘긴다. */
+  todayDateKey: string
   /** 캐릭터의 메소 획득량을 읽어 오는 콜백. 시트는 `nexon/` 도 `storage/` 도 모른다. 사냥 폼만 쓴다. */
   loadMesoRate: (ocid: string) => Promise<MesoRateLoad>
   /**
@@ -83,9 +63,13 @@ export interface IncomeSheetProps {
 
 export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
   const editing = props.editing !== undefined
-  const [category, setCategory] = useState<IncomeCategory>(
-    props.editing?.category ?? INCOME_CATEGORIES[0],
-  )
+  /**
+   * 무엇을 적나. `null` 이면 **아직 안 골랐다**이고 그때 이 시트는 갈래 고르개다.
+   *
+   * 수정으로 열면 기록이 정하므로 고르는 단계를 건너뛴다. 갈래를 바꾸면 그 기록은 다른 것이
+   * 되고, 무엇이었는지는 제목이 이미 말한다.
+   */
+  const [category, setCategory] = useState<IncomeCategory | null>(props.editing?.category ?? null)
   /**
    * 어느 날에 적히나. 시트를 연 날로 시작하고 머리에서 바꾼다.
    *
@@ -97,8 +81,23 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
    * 합계가 사람이 친 값으로 둔갑한다.
    */
   const [huntMode, setHuntMode] = useState<HuntInputMode>(huntModeOf(props.editing))
+  /**
+   * 시트 바닥에 서는 저장 줄의 값. 폼이 마운트 뒤에 올린다.
+   *
+   * **처음부터 줄이 서 있어야 한다.** 폼이 올릴 때까지 비워 두면 시트가 열리는 도중에 바닥 줄이
+   * 생기고, 그만큼 시트 키가 바뀌어 열리는 애니메이션 위에 크기 변화가 한 번 더 얹힌다. 그래서
+   * 못 누르는 줄로 시작한다. 상자 크기는 손잡이가 붙기 전과 같다.
+   */
+  const [save, setSave] = useState<SaveSlot>({
+    editing,
+    canSave: false,
+    saving: false,
+    onSave: () => {},
+    onDelete: props.onDelete === undefined ? undefined : () => {},
+  })
 
   const formProps: IncomeFormProps = {
+    setSave,
     dateKey,
     characters: props.characters,
     editing: props.editing,
@@ -107,55 +106,101 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
     onClose: props.onClose,
   }
 
-  return (
-    <BottomSheet testId="income-sheet" onClose={props.onClose} label="수입 기록">
-      <View className="gap-3 px-4 pb-2">
-        <View className="flex-row items-baseline justify-between gap-2">
-          <Text
-            testID="income-sheet-title"
-            numberOfLines={1}
-            className="shrink text-base font-bold text-text"
+  if (category === null) {
+    return (
+      <BottomSheet
+        testId="income-sheet"
+        onClose={props.onClose}
+        label="수입 기록"
+      >
+        {/*
+          닫기의 자리와 상자는 다른 시트의 저장과 같다(전폭 · radius 12 · 44). 칠은 테마의
+          `primary` 라 테마를 바꾸면 함께 바뀐다. 저장의 `rise-ink` 와 갈리는 것은 여기가 돈을
+          적는 자리가 아니어서다.
+
+          위 여백이 타일과의 간격보다 넓다. 고르는 것과 물러나는 것을 갈라 놓아야 손이 닫기로
+          잘못 가지 않는다.
+        */}
+        <View className="gap-2 px-4 pb-2">
+          <Text className="text-base font-bold text-text">수입 추가</Text>
+          <CategoryPicker onSelect={setCategory} />
+          <Pressable
+            role="button"
+            aria-label="닫기"
+            testID="income-sheet-close"
+            onPress={props.onClose}
+            className="mt-7 items-center rounded-xl bg-primary py-3 active:opacity-60"
           >
-            {editing ? category : '수입 추가'}
-          </Text>
-          <DateStepper dateKey={dateKey} onChange={setDateKey} testID="income-sheet-date" />
+            <Text className="text-sm font-bold text-on-primary">닫기</Text>
+          </Pressable>
         </View>
+      </BottomSheet>
+    )
+  }
 
-        {/* 수정 모드에는 칩이 없다. 갈래를 바꾸면 그 기록은 다른 것이 되고, 무엇이었는지는
-            제목이 이미 말한다. */}
-        {!editing && (
-          <View className="flex-row flex-wrap gap-1.5">
-            {INCOME_CATEGORIES.map((each) => (
-              <CategoryChip
-                key={each}
-                label={each}
-                selected={each === category}
-                onPress={() => setCategory(each)}
-              />
-            ))}
-          </View>
-        )}
+  return (
+    <BottomSheet
+      testId="income-sheet"
+      onClose={props.onClose}
+      label="수입 기록"
+      // 치는 칸이 맨 아래에 모여 있다. 조각 개수와 조각 가격.
+      scrollToEndOnKeyboard
+      header={
+        <View className="flex-row items-center justify-between gap-2">
+          {/*
+            제목이 곧 되돌아가는 누르개다. 갈래를 바꾸는 일이 1차 시트로 돌아가는 일이므로
+            그 길이 제목에 붙는다(지출 시트의 둘째 화면과 같은 모양).
 
-        {/* 새로 적을 때만 선다. 수정 모드에서는 기록이 이미 정했다. 사냥 갈래에만 있는 줄이라
-            다른 갈래에서는 안 그린다. */}
+            수정 모드에는 안 붙는다. 그 기록의 갈래는 이미 정해졌고 바꾸면 다른 기록이 된다.
+          */}
+          {editing ? (
+            <Text testID="income-sheet-title" numberOfLines={1} className="shrink text-base font-bold text-text">
+              {category}
+            </Text>
+          ) : (
+            <Pressable
+              role="button"
+              aria-label="갈래 다시 고르기"
+              testID="income-sheet-back"
+              onPress={() => setCategory(null)}
+              hitSlop={8}
+              className="-ml-1 shrink flex-row items-center gap-1 active:opacity-60"
+            >
+              <ChevronLeftIcon className="h-5 w-5 shrink-0 text-text" strokeWidth={2} aria-hidden />
+              <Text testID="income-sheet-title" numberOfLines={1} className="shrink text-base font-bold text-text">
+                {category}
+              </Text>
+            </Pressable>
+          )}
+          <DateStepper
+            dateKey={dateKey}
+            latest={props.todayDateKey}
+            onChange={setDateKey}
+            testID="income-sheet-date"
+          />
+        </View>
+      }
+      footer={<SaveRow {...save} />}
+    >
+      <View className="gap-3 px-4 pb-2">
+        {/* 사냥만 갖는 줄. 계산기로 셀지, 획득 메소를 직접 적을지 고른다. */}
         {!editing && category === '사냥' && (
           // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
           <Pressable
             role="checkbox"
-            aria-label="직접 입력"
+            aria-label="획득 메소 직접 입력"
             aria-checked={huntMode === 'manual'}
             onPress={() => setHuntMode(huntMode === 'manual' ? 'calculator' : 'manual')}
             hitSlop={8}
-            className="flex-row items-center gap-2"
+            // `self-start` 가 없으면 세로 스택의 자식이라 줄 끝까지 늘어난다. 빈 자리를 눌러도
+            // 체크가 켜졌다(사용자 지적).
+            className="flex-row items-center gap-2 self-start"
           >
             <CheckBox checked={huntMode === 'manual'} />
-            <Text className="text-xs font-semibold text-text-muted">직접 입력</Text>
+            <Text className="text-xs font-semibold text-text-muted">획득 메소 직접 입력</Text>
           </Pressable>
         )}
 
-        {/* `key` 가 곧 갈래를 옮기면 값이 사라진다 다. 갈래가 바뀌면 리액트가 폼을 새로 심는다.
-            지울 것을 손으로 세지 않는다. 사냥의 두 모드도 같은 열쇠에 들어간다. 모드를 옮기는
-            것도 다른 것을 적기 시작하는 일이다. */}
         <IncomeForm
           key={`${category}:${huntMode}`}
           category={category}
@@ -163,6 +208,7 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
           {...props}
           formProps={formProps}
         />
+
       </View>
     </BottomSheet>
   )

@@ -57,11 +57,15 @@ export function monsterLevelRangeOf(region: HuntingRegion): { min: number; max: 
  *
  * 레벨을 모르면(`null`) 전부 선다. 캐릭터 고르개의 기본이 선택 안함이라 그 상태가 정상이고,
  * 그때는 페널티도 0 이다.
+ *
+ * 차례는 참조표의 **역순**이다. 창의 천장이 갈 수 있는 데까지 라 목록 끝이 곧 지금 캐릭터가
+ * 갈 만한 곳인데, 참조표 차례로 세우면 그것이 맨 아래에 묻힌다.
  */
 export function huntingRegionsForLevel(characterLevel: number | null): HuntingRegion[] {
-  if (characterLevel === null) return [...HUNTING_REGIONS]
+  const 높은데부터 = [...HUNTING_REGIONS].reverse()
+  if (characterLevel === null) return 높은데부터
 
-  return HUNTING_REGIONS.filter((region) => {
+  return 높은데부터.filter((region) => {
     const { min, max } = monsterLevelRangeOf(region)
     return min <= characterLevel && max >= characterLevel - HUNTING_LEVEL_BELOW
   })

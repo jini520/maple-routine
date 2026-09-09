@@ -79,13 +79,17 @@ describe('huntingRegionsForLevel', () => {
   it('lv.213 은 리버스 시티에서 가장 잘 잡는다. 그 지역이 목록에 선다', () => {
     // 사용자가 든 예시다: 추천 레벨은 205-209 지만 몬스터가 213 까지라
     // 213 짜리 캐릭터에게 효율이 가장 좋다.
-    expect(이름들(213)).toEqual(['소멸의 여로', '리버스 시티', '츄츄 아일랜드'])
+    expect(이름들(213)).toEqual(['츄츄 아일랜드', '리버스 시티', '소멸의 여로'])
   })
 
-  it('차례는 참조표에 적힌 그대로다. 이름순으로 정렬하지 않는다', () => {
-    const 순서 = HUNTING_REGIONS.map((each) => each.name)
+  /**
+   * **높은 데가 먼저다**(2026-09-20 사용자 지시). 창의 천장이 갈 수 있는 데까지 라 목록 끝이
+   * 곧 지금 캐릭터가 갈 만한 곳인데, 참조표 차례로 세우면 그것이 맨 아래에 묻힌다.
+   */
+  it('차례는 참조표의 **역순**이다. 이름순으로 정렬하지 않는다', () => {
+    const 역순 = [...HUNTING_REGIONS].reverse().map((each) => each.name)
     const 골라낸것 = 이름들(260)
-    expect(골라낸것).toEqual(순서.filter((name) => 골라낸것.includes(name)))
+    expect(골라낸것).toEqual(역순.filter((name) => 골라낸것.includes(name)))
   })
 
   it('레벨이 아주 낮으면 갈 수 있는 데가 없어 빈 목록이다', () => {
