@@ -50,6 +50,20 @@ describe('ChainSelect: 고른 것은 배지로, 남은 것은 자리표시자로
     expect(queryByTestId('hunt-chain-badge-지역')).toBeNull()
   })
 
+  /**
+   * 방금 고른 값이 **어디에서 와서 어디에 놓였는지**를 눈이 따라가야 한다. 그래서 새 배지는
+   * 고르는 자리인 오른쪽 끝에서 나와 제자리까지 미끄러진다.
+   *
+   * 여기서 잴 수 있는 것은 그 애니메이션을 배지에 걸었는가 뿐이다. 실제로 오른쪽에서 오는지는
+   * 리애니메이티드가 UI 스레드에서 하는 일이라 사람이 본다.
+   */
+  it('새 배지는 오른쪽에서 미끄러져 들어온다', async () => {
+    const { getByTestId } = await renderOverlay(사슬({ character: 'ocid-1', region: null }))
+    const 배지 = getByTestId('hunt-chain-badge-캐릭터').parent
+
+    expect(typeof 배지?.props.entering).toBe('function')
+  })
+
   it('다 골랐으면 자리표시자가 사라진다', async () => {
     const { queryByTestId, getByText } = await renderOverlay(
       <ChainSelect
