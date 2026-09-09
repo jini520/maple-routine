@@ -75,6 +75,8 @@ async function 시트열기(overrides: Partial<React.ComponentProps<typeof Incom
       // 기본은 **0** 이다. 메획이 테스트가 세는 금액을 흔들지 않는다.
       // 메획이 든 계산은 아래 describe 가 값을 직접 준다.
       loadMesoRate={async () => ({ kind: 'read' as const, percent: 0 })}
+      // 기억이 없는 상태가 기본이다. 자동 입력을 보는 케이스만 값을 준다.
+      lastHuntSelection={null}
       onSave={jest.fn()}
       onClose={jest.fn()}
       {...overrides}
@@ -157,13 +159,6 @@ const 옛사냥행 = {
  * 안 고르면 뒤에 못 가므로 차례대로 부를 것. 이미 고른 값을 바꾸려면 그 알약을 누른다.
  */
 async function 사슬고르기(view: Rendered, value: string): Promise<void> {
-  // 사슬은 사냥 폼만 쓴다. 나머지 갈래는 종전 캐릭터 고르개 그대로다.
-  if (view.queryByTestId('income-sheet-character-trigger') !== null) {
-    await 아이디로누르기(view, 'income-sheet-character-trigger')
-    await 아이디로누르기(view, `income-sheet-character-option-${value}`)
-    return
-  }
-
   const 보기 = `income-sheet-chain-option-${value}`
 
   if (view.queryByTestId('income-sheet-chain-placeholder-trigger') !== null) {
@@ -600,6 +595,26 @@ describe('캐릭터 귀속', () => {
     expect(view.queryByTestId('income-sheet-chain-badge-캐릭터')).toBeNull()
   })
 
+  /**
+   * **갈래 셋이 같은 모양으로 캐릭터를 묻는다**(사용자 지시). 아이템 판매와 기타는 사슬의
+   * 단계가 캐릭터 하나뿐이라 자리표시자가 `캐릭터 선택` 이다.
+   */
+  it.each(['아이템 판매', '기타'] as const)('%s 의 캐릭터 줄도 배지 사슬이다', async (갈래) => {
+    const view = await 그리기({}, 갈래)
+
+    expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent('캐릭터 선택')
+    expect(view.queryByTestId('income-sheet-character-trigger')).toBeNull()
+  })
+
+  it('고르면 알약이 서고 자리표시자가 사라진다', async () => {
+    const view = await 판매시트()
+
+    await 사슬고르기(view, 'ocid-1')
+
+    expect(view.getByTestId('income-sheet-chain-badge-캐릭터')).toHaveTextContent('루디')
+    expect(view.queryByTestId('income-sheet-chain-placeholder')).toBeNull()
+  })
+
   it('고르면 그 캐릭터로 저장한다', async () => {
     const onSave = jest.fn()
     const view = await 판매시트({ onSave })
@@ -659,7 +674,7 @@ describe('수정 모드', () => {
 
     expect(view.getByTestId('income-sheet-name-label')).toHaveTextContent('판매 아이템')
     expect(view.getByTestId('income-sheet-gross').props.value).toBe('1200000000')
-    expect(view.getByTestId('income-sheet-character-trigger')).toBeTruthy()
+    expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent('캐릭터 선택')
   })
 
   /**
@@ -716,6 +731,59 @@ describe('통화', () => {
       pointPer100mMeso: 1_180,
       cashAmount: null,
     })
+  })
+
+  /**
+   * **큰 숫자는 메소 축이다**(2026-09-09 사용자 보고). 종전에는 메포를 고르면 친 메포가 그대로
+   * 서서, 같은 기록이 시트에서는 `3,000 메포` · 가계부 칸에서는 `3억` 으로 보였다. 집계
+   * (`incomeMesoOf`)는 처음부터 환산해 세고 있었다.
+   *
+   * 시세 1,000 은 1억 메소당 1,000 메포다. 3,000 메포면 3억.
+   */
+  it('메포는 큰 숫자에서 메소로 환산돼 선다', async () => {
+    const view = await 그리기({ lastPointRate: 1_000 }, '기타')
+    await 이름으로누르기(view, '메포')
+    await 치기(view, '3000')
+
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('3억')
+    expect(within(view.getByTestId('income-sheet-amount-unit')).getByText('메소')).toBeTruthy()
+  })
+
+  /** 곱한 **다음에** 환산한다. 1,500 메포 × 2 = 3,000 메포 = 3억. */
+  it('수량까지 곱한 값을 환산한다', async () => {
+    const view = await 그리기({ lastPointRate: 1_000 }, '기타')
+    await 이름으로누르기(view, '메포')
+    await 치기(view, '1500')
+
+    await 이름으로누르기(view, '수량 늘리기')
+
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('3억')
+  })
+
+  /** 저장은 안 바뀐다. 환산값을 넣으면 시세가 기록에서 사라져 되짚을 수 없다. */
+  it('환산은 그리는 것뿐이다. 저장은 친 메포와 시세 그대로다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave, lastPointRate: 1_000 }, '기타')
+    await 이름으로누르기(view, '메포')
+    await 치기(view, '3000')
+
+    await 이름으로누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      mesoAmount: null,
+      pointAmount: 3_000,
+      pointPer100mMeso: 1_000,
+    })
+  })
+
+  /** 캐시는 환산하지 않으므로 친 값 그대로 `원` 이다. */
+  it('캐시는 환산하지 않고 원 으로 선다', async () => {
+    const view = await 그리기({}, '기타')
+    await 이름으로누르기(view, '캐시')
+    await 치기(view, '15000')
+
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('1만 5000')
+    expect(within(view.getByTestId('income-sheet-amount-unit')).getByText('원')).toBeTruthy()
   })
 
   it('캐시는 캐시 칸에 담기고 **환산하지 않는다** 고 말한다', async () => {
@@ -1066,7 +1134,9 @@ describe('사냥 계산기', () => {
     const view = await 그리기()
     await 밤의길3(view)
 
-    expect(view.getByTestId('income-sheet-ground-detail')).toHaveTextContent('700lv.29440마리')
+    // 줄 왼쪽에는 자동 입력 누르개가 선다. 여기서 보는 것은 **값 셋이 그 줄에 함께 선다** 는
+    // 것이라 줄 끝만 본다.
+    expect(view.getByTestId('income-sheet-ground-detail')).toHaveTextContent(/700lv\.29440마리$/)
     // 배지의 읽어 주는 이름은 그림이 있든 없든 온전한 말이다.
     expect(view.getAllByLabelText('어센틱 포스 700').length).toBeGreaterThan(0)
   })
@@ -1400,6 +1470,107 @@ describe('사냥 계산기', () => {
  * 계산기는 사냥터 하나에 머무는 것을 전제하고 그 사냥터가 참조표 안에 있어야 한다. 그 밖의 사냥은
  * 획득 메소를 사람이 친다.
  */
+/**
+ * 사냥은 **같은 자리를 반복해서 적는다**(사용자 지시). 사슬이 셋을 한 줄에 담아 세로 자리는
+ * 아꼈지만 누르는 횟수는 그대로였다. 목록을 세 번 열고 세 번 고른다.
+ *
+ * 버튼 하나가 캐릭터·지역·사냥터를 되살린다. 기억한 것을 그대로 세우면 안 되는 자리가 있어
+ * (고르개 목록에 없는 값은 배지도 자리표시자도 안 세운다) 세우기 전에 거른다.
+ */
+describe('사냥터 자동 입력', () => {
+  const 기억 = { ocid: 'ocid-1', ground: '밤의 길 3' }
+
+  async function 자동입력(view: Rendered): Promise<void> {
+    await 아이디로누르기(view, 'income-sheet-autofill')
+  }
+
+  it('기억한 셋을 한 번에 세운다', async () => {
+    const view = await 그리기({ lastHuntSelection: 기억 }, '사냥')
+
+    await 자동입력(view)
+
+    expect(view.getByTestId('income-sheet-chain-badge-캐릭터')).toHaveTextContent('루디')
+    expect(view.getByTestId('income-sheet-chain-badge-지역')).toHaveTextContent('탈라하트')
+    expect(view.getByTestId('income-sheet-chain-badge-사냥터')).toHaveTextContent('밤의 길 3')
+  })
+
+  /** 지역은 안 적어 뒀다. 사냥터 이름이 전역 유일이라 참조표가 지역을 돌려준다. */
+  it('되살린 사냥터로 금액까지 선다', async () => {
+    const view = await 그리기({ lastHuntSelection: 기억 }, '사냥')
+
+    await 자동입력(view)
+
+    expect(view.getByTestId('income-sheet-hunt-meso')).not.toHaveTextContent('0')
+  })
+
+  /**
+   * 기억한 캐릭터가 추적 목록에서 빠졌을 수 있다. 그 ocid 를 세우면 고르개가 목록에 없는 값을
+   * 들어 배지가 안 서고 자리표시자에서도 빠진다.
+   */
+  it('기억한 캐릭터가 목록에 없으면 지역·사냥터만 채운다', async () => {
+    const view = await 그리기({ lastHuntSelection: { ocid: 'ocid-없음', ground: '밤의 길 3' } }, '사냥')
+
+    await 자동입력(view)
+
+    expect(view.queryByTestId('income-sheet-chain-badge-캐릭터')).toBeNull()
+    expect(view.getByTestId('income-sheet-chain-badge-사냥터')).toHaveTextContent('밤의 길 3')
+    expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent('캐릭터 선택')
+  })
+
+  /**
+   * 창의 바닥이 몬스터 레벨 −20 이라 20 이상 레벨업하면 지난 지역이 목록에서 빠진다.
+   * 아델은 210 이고 탈라하트(290-294)는 그 창 밖이다.
+   */
+  it('그 캐릭터 레벨로 못 가는 지역이면 캐릭터를 안 세운다', async () => {
+    const view = await 그리기({ lastHuntSelection: { ocid: 'ocid-2', ground: '밤의 길 3' } }, '사냥')
+
+    await 자동입력(view)
+
+    expect(view.queryByTestId('income-sheet-chain-badge-캐릭터')).toBeNull()
+    expect(view.getByTestId('income-sheet-chain-badge-지역')).toHaveTextContent('탈라하트')
+    expect(view.getByTestId('income-sheet-chain-badge-사냥터')).toHaveTextContent('밤의 길 3')
+  })
+
+  it('참조표에서 사라진 사냥터면 버튼이 꺼진다', async () => {
+    const view = await 그리기(
+      { lastHuntSelection: { ocid: 'ocid-1', ground: '없어진 사냥터' } },
+      '사냥',
+    )
+
+    expect(view.getByTestId('income-sheet-autofill').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  /**
+   * **꺼진 버튼도 눌린다**(사용자 지정). `disabled` 로 두면 눌러도 아무 일이 없어, 처음 쓰는
+   * 사람은 이 버튼이 무엇인지도 왜 꺼졌는지도 못 듣는다.
+   */
+  it('한 번도 안 적었으면 꺼져 있고, 누르면 왜 꺼졌는지를 말한다', async () => {
+    const view = await 그리기({ lastHuntSelection: null }, '사냥')
+    expect(view.getByTestId('income-sheet-autofill').props.accessibilityState?.disabled).toBe(true)
+    expect(view.queryByTestId('income-sheet-autofill-tip')).toBeNull()
+
+    await 자동입력(view)
+
+    expect(view.getByTestId('income-sheet-autofill-tip')).toHaveTextContent(
+      '마지막에 입력된 사냥터 정보로 자동 입력됩니다. 최소 1회 선택 입력 시 활성화 됩니다.',
+    )
+  })
+
+  it('켜진 버튼은 안내를 안 띄운다. 채우는 것이 그 답이다', async () => {
+    const view = await 그리기({ lastHuntSelection: 기억 }, '사냥')
+
+    await 자동입력(view)
+
+    expect(view.queryByTestId('income-sheet-autofill-tip')).toBeNull()
+  })
+
+  it('다른 갈래에는 그 버튼이 없다', async () => {
+    const view = await 그리기({ lastHuntSelection: 기억 }, '아이템 판매')
+
+    expect(view.queryByTestId('income-sheet-autofill')).toBeNull()
+  })
+})
+
 describe('사냥 수동 입력', () => {
   async function 직접입력켜기(view: Rendered): Promise<void> {
     await 이름으로누르기(view, '획득 메소 직접 입력')

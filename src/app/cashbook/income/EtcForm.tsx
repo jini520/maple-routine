@@ -5,7 +5,7 @@
  * 아는 것을 다시 묻지 않는다. 이벤트 보상이 메포·캐시로도 들어오므로 이 갈래만 축이 갈린다.
  *
  * 금액 × 수량이다. 줄 차례가 지출 기타와 같아서 한쪽을 고칠 때 다른 쪽이 눈에 들어온다. 큰
- * 숫자는 그 곱이고 못 친다.
+ * 숫자는 그 곱을 **메소 축으로 옮긴 값**이고 못 친다. 캐시만 환산 밖이다.
  */
 import { useState } from 'react'
 import { View } from 'react-native'
@@ -21,6 +21,7 @@ import {
   unitOfCurrency,
   type FreeCurrency,
 } from '../../../lib/cashbook/free-currency'
+import { pointToMeso } from '../../../lib/cashbook/spend-catalog'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { AmountInput, FieldRow, QuantityStepper } from '../sheet-fields'
 import { CharacterField, useSaveSlot, type IncomeFormProps } from './form-shared'
@@ -71,6 +72,15 @@ export function EtcForm(
   const rate = /^\d+$/.test(rateText) && Number(rateText) > 0 ? Number(rateText) : null
   /** **언제나 곱한다**. 금액 × 수량. 지출 기타와 같은 식이다. */
   const amount = typed * quantity
+  /**
+   * 큰 숫자에 서는 값. **메소 축**이다. 메포는 시세로 환산하고 메소는 그대로다.
+   *
+   * 캐시는 여기 안 든다. 환산하지 않으므로 친 값이 그대로 서고 단위도 `원` 이다.
+   *
+   * 집계(`incomeMesoOf`)가 처음부터 같은 식으로 세고 있었다. 시트만 친 메포를 그대로 그려서
+   * 같은 기록이 두 자리에서 다른 수로 보였다.
+   */
+  const totalMeso = usesPoint ? pointToMeso(amount, rate ?? 0) : amount
   /** 저장할 수 있는 상태인가. 메포로 적으면 시세가 있어야 한다. */
   const canSave = amount > 0 && (!usesPoint || rate !== null)
 
@@ -174,17 +184,10 @@ export function EtcForm(
 
       <AmountFigure
         // **합계이고 못 친다**. 사람이 치는 것은 금액 한 개 값이지 합계가 아니다.
-        value={amount}
-        /*
-         * 단위는 고른 통화다. 캐시는 `원` 이다. 실제로 받는 돈이 원이라 지출 시트가 그렇게
-         * 적고, 같은 값을 두 시트가 다르게 적을 이유가 없다.
-         */
-        unit={unitOfCurrency(currency)}
+        value={currency === 'cash' ? amount : totalMeso}
+        // 환산한 값이 서므로 단위도 메소다. 캐시만 환산 밖이라 친 값과 `원` 이 그대로 남는다.
+        unit={currency === 'cash' ? unitOfCurrency(currency) : '메소'}
         testID="income-sheet-amount"
-        /*
-         * 힌트가 말하는 것도 통화를 따른다. 메소는 억/만, 메포는 메소로 얼마인가(그 값이
-         * 합계에 드는 값이다), 캐시는 안 든다는 사실 자체다.
-         */
       />
 
     </>

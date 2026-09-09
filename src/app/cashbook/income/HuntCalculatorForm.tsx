@@ -42,8 +42,10 @@ import {
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { ImageAssetRef } from '../../../types/image-asset'
 import type { HuntingGround, HuntingRegion } from '../../../types/hunting-grounds'
+import type { LastHuntSelection } from '../../../storage/last-hunt-selection'
 import { CheckBox, FieldRow, QuantityStepper } from '../sheet-fields'
 import { ChainSelect } from '../../../components/organisms/ChainSelect/ChainSelect'
+import { HuntAutoFillButton } from './HuntAutoFillButton'
 import { characterOptions } from '../character-options'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
@@ -175,6 +177,8 @@ export function HuntCalculatorForm(
   props: IncomeFormProps & {
   /** 캐릭터의 메소 획득량을 읽어 오는 함수. 폼은 `nexon/` 도 `storage/` 도 모른다. */
     loadMesoRate: (ocid: string) => Promise<MesoRateLoad>
+    /** 마지막에 적은 사냥 자리. 화면이 읽어서 넘긴다. 없으면 자동 입력이 꺼진다. */
+    lastHuntSelection: LastHuntSelection | null
   },
 ): React.JSX.Element {
   const editing = props.editing !== undefined
@@ -331,6 +335,40 @@ export function HuntCalculatorForm(
     )
   }
 
+  /**
+   * 되살릴 사냥터. 참조표에서 사라졌으면 `null` 이고 그때 자동 입력이 꺼진다.
+   *
+   * 참조표는 갱신되는 데이터라 어제 적은 이름이 오늘 없을 수 있다. 없는 이름을 고르개에 세우면
+   * 배지도 자리표시자도 안 서는 줄이 된다.
+   */
+  const remembered =
+    props.lastHuntSelection === null ? null : findHuntingGround(props.lastHuntSelection.ground)
+
+  /**
+   * 기억한 자리를 한 번에 세운다.
+   *
+   * **캐릭터는 조건이 맞을 때만 선다.** 추적 목록에서 빠졌거나 그 레벨로 그 지역에 못 가면
+   * 안 세운다. 레벨이 없으면 지역 목록이 전부 서므로(`huntingRegionsForLevel(null)`) 지역과
+   * 사냥터는 그대로 성립한다.
+   */
+  function autoFill(): void {
+    if (remembered === null || props.lastHuntSelection === null) return
+    const character =
+      props.characters.find((each) => each.ocid === props.lastHuntSelection?.ocid) ?? null
+    const 갈수있다 =
+      character !== null &&
+      huntingRegionsForLevel(character.level).some(
+        (each) => each.slug === remembered.region.slug,
+      )
+    const nextOcid = 갈수있다 && character !== null ? character.ocid : null
+
+    setOcid(nextOcid)
+    setHuntLevel(nextOcid === null ? null : (character?.level ?? null))
+    setRegionSlug(remembered.region.slug)
+    setGroundName(remembered.ground.name)
+    loadMesoRateFor(nextOcid)
+  }
+
   /** 지역을 옮기면 **사냥터가 풀린다**. 그 지역에 없는 맵이 남으면 계산이 남의 맵으로 돈다. */
   function selectRegion(next: string | null): void {
     setRegionSlug(next)
@@ -445,6 +483,14 @@ export function HuntCalculatorForm(
         testID="income-sheet-ground-detail"
         className="flex-row items-center justify-end gap-2 pb-1"
       >
+        {/*
+          자동 입력이 이 줄의 왼쪽에 선다. 이 줄이 **사냥터가 정해지면 채워지는 자리**라
+          누르개와 그 결과가 한 줄에 서고, 안 골라도 서 있는 줄이라 버튼이 나타났다 사라지지
+          않는다.
+        */}
+        <View className="mr-auto">
+          <HuntAutoFillButton enabled={remembered !== null} onFill={autoFill} />
+        </View>
         <ForceBadge region={huntRegion} force={huntGround?.force ?? null} />
         {/*
           `-` 는 글자 하나라 붙여 놓으면 `lv.` 과 `마리` 에 끼어 안 읽힌다. 값 자리의 최소 폭을

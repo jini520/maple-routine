@@ -40,6 +40,11 @@ import {
 import { datesBetween } from '../../lib/calendar'
 import { getLastPointRate, setLastPointRate } from '../../storage/last-point-rate'
 import {
+  getLastHuntSelection,
+  setLastHuntSelection,
+  type LastHuntSelection,
+} from '../../storage/last-hunt-selection'
+import {
   deleteSpendRecord,
   getSpendRecordsBetween,
   insertSpendRecord,
@@ -62,6 +67,11 @@ function newRecordId(now: Date): string {
 
 export async function recordIncome(draft: IncomeDraft, now: Date): Promise<void> {
   await insertIncomeRecord({ ...draft, id: newRecordId(now), recordedAt: now.toISOString() })
+  // 저장이 성공한 뒤에만 기억한다. 사냥의 `item` 은 사냥터 이름이고, 그것이 없는 행은
+  // 수동으로 적은 것이라 되살릴 자리가 없다.
+  if (draft.category === '사냥' && draft.item !== null) {
+    await setLastHuntSelection({ ocid: draft.ocid, ground: draft.item })
+  }
 }
 
 export async function recordSpend(draft: SpendDraft, now: Date): Promise<void> {
@@ -372,6 +382,11 @@ export function cashbookDataRevision(): number {
 /** 다음 입력의 시세 기본값. 화면이 `storage/` 를 직접 안 부르게 한 번 감싼다. */
 export async function loadLastPointRate(): Promise<number | null> {
   return getLastPointRate().catch(() => null)
+}
+
+/** `사냥터 자동 입력` 이 되살릴 자리. 그 사냥터가 참조표에 아직 있는지는 시트가 판정한다. */
+export async function loadLastHuntSelection(): Promise<LastHuntSelection | null> {
+  return getLastHuntSelection().catch(() => null)
 }
 
 

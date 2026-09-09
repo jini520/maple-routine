@@ -4,10 +4,10 @@
 // 그 두 규칙과, 알약을 눌러 그 단계를 다시 여는 길이다. 목록 자체의 동작은 `SelectField` 가
 // 이미 본다.
 import { useState } from 'react'
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 
 import { ChainSelect } from '../ChainSelect'
-import { renderOverlay } from '../../../__tests__/render-atom'
+import { 기본테마, flattenStyle, renderOverlay } from '../../../__tests__/render-atom'
 
 const 캐릭터 = [
   { value: null, label: '선택 안함' },
@@ -16,6 +16,10 @@ const 캐릭터 = [
 const 지역 = [
   { value: null, label: '선택 안함' },
   { value: 'cernium', label: '세르니움' },
+]
+const 사냥터 = [
+  { value: null, label: '선택 안함' },
+  { value: 'yumyum', label: '얌얌 아일랜드' },
 ]
 
 function 사슬(selected: { character: string | null; region: string | null }, onSelect = jest.fn()) {
@@ -116,6 +120,126 @@ describe('ChainSelect: 고른 것은 배지로, 남은 것은 자리표시자로
     })
 
     expect(onSelect).toHaveBeenCalledWith(null)
+  })
+
+  /**
+   * 단계가 하나면 이어 붙일 이름도 하나다. 아이템 판매·기타의 캐릭터 줄이 그 모양이다.
+   */
+  it('단계가 하나면 자리표시자는 그 이름 하나로 선다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <ChainSelect
+        testID="one-chain"
+        steps={[{ name: '캐릭터', options: 캐릭터, selected: null, onSelect: jest.fn() }]}
+      />,
+    )
+
+    expect(getByTestId('one-chain-placeholder').props.children).toBe('캐릭터 선택')
+  })
+
+  /**
+   * **단계마다 다른 브랜드 색**이다(사용자 지시). 셋 다 회색이면 무슨 값인지가 글자에만 있다.
+   *
+   * 기대값은 테마 정의에서 읽는다. 테스트가 hex 를 베끼면 색이 두 벌이 된다.
+   */
+  it('알약 색은 단계 차례가 정한다. 캐릭터·지역·사냥터가 브랜드 색 셋이다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <ChainSelect
+        testID="hunt-chain"
+        steps={[
+          { name: '캐릭터', options: 캐릭터, selected: 'ocid-1', onSelect: jest.fn() },
+          { name: '지역', options: 지역, selected: 'cernium', onSelect: jest.fn() },
+          { name: '사냥터', options: 사냥터, selected: 'yumyum', onSelect: jest.fn() },
+        ]}
+      />,
+    )
+    const 상자 = (이름: string): Record<string, unknown> =>
+      flattenStyle(getByTestId(`hunt-chain-badge-${이름}`).props.style)
+
+    expect(상자('캐릭터').backgroundColor).toBe(기본테마.primaryTint)
+    expect(상자('지역').backgroundColor).toBe(기본테마.secondaryTint)
+    expect(상자('사냥터').backgroundColor).toBe(기본테마.thirdTint)
+  })
+
+  /** 글자는 상자에서 색을 물려받지 않는다. 클래스를 따로 얹었는지 본다. */
+  it('알약 글자도 그 계열 색이다', async () => {
+    const { getByText } = await renderOverlay(사슬({ character: 'ocid-1', region: 'cernium' }))
+
+    expect(flattenStyle(getByText('아이샤').props.style).color).toBe(기본테마.primaryInk)
+    expect(flattenStyle(getByText('세르니움').props.style).color).toBe(기본테마.secondaryInk)
+  })
+
+  /**
+   * **마지막으로 고른 것은 그 자리에 선다**(사용자 지시). 앞 단계들만 왼쪽에 쌓이고 마지막
+   * 알약은 자리표시자가 섰던 오른쪽 끝에 앉는다. 종전에는 셋째를 고르는 순간 그것이 왼쪽으로
+   * 건너뛰고 오른쪽이 통째로 비었다.
+   *
+   * 자리에 남았는지는 **누구의 자식인가**로 잰다. 왼쪽에 쌓이는 알약들은 슬라이드 상자 안이고
+   * 마지막 것은 여는 누르개 안이다.
+   */
+  it('마지막 알약은 왼쪽으로 안 가고 여는 누르개 안에 선다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <ChainSelect
+        testID="hunt-chain"
+        steps={[
+          { name: '캐릭터', options: 캐릭터, selected: 'ocid-1', onSelect: jest.fn() },
+          { name: '지역', options: 지역, selected: 'cernium', onSelect: jest.fn() },
+          { name: '사냥터', options: 사냥터, selected: 'yumyum', onSelect: jest.fn() },
+        ]}
+      />,
+    )
+    const 누르개 = getByTestId('hunt-chain-last-trigger')
+
+    expect(within(누르개).getByTestId('hunt-chain-badge-사냥터')).toBeTruthy()
+    // 앞 둘은 그대로 왼쪽에 쌓인다.
+    expect(within(누르개).queryByTestId('hunt-chain-badge-캐릭터')).toBeNull()
+  })
+
+  /** 단계가 하나면 그 하나가 곧 마지막이다. 아이템 판매·기타의 캐릭터 줄이 그 모양이다. */
+  it('단계가 하나면 그 알약이 곧 마지막 알약이다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <ChainSelect
+        testID="one-chain"
+        steps={[{ name: '캐릭터', options: 캐릭터, selected: 'ocid-1', onSelect: jest.fn() }]}
+      />,
+    )
+
+    expect(
+      within(getByTestId('one-chain-last-trigger')).getByTestId('one-chain-badge-캐릭터'),
+    ).toBeTruthy()
+  })
+
+  /**
+   * **다 골라도 그 자리는 열린다**(사용자 지시). 여는 것이 안 고른 첫 단계가 아니라 마지막
+   * 단계일 뿐이다. 종전에는 알약 글자 너비만 눌렸다.
+   */
+  it('다 골랐으면 남은 폭이 마지막 단계를 여는 누르개다', async () => {
+    const { getByTestId, getByLabelText } = await renderOverlay(
+      <ChainSelect
+        testID="hunt-chain"
+        steps={[
+          { name: '캐릭터', options: 캐릭터, selected: 'ocid-1', onSelect: jest.fn() },
+          { name: '사냥터', options: 사냥터, selected: 'yumyum', onSelect: jest.fn() },
+        ]}
+      />,
+    )
+    const 누르개 = getByTestId('hunt-chain-last-trigger')
+
+    expect(flattenStyle(누르개.props.style).flexGrow).toBe(1)
+
+    await act(async () => {
+      fireEvent.press(누르개)
+    })
+    expect(getByLabelText('얌얌 아일랜드')).toBeTruthy()
+  })
+
+  /**
+   * **여는 자리는 알약 오른쪽부터 줄 끝까지다.** 종전에는 자리표시자 글자만 눌렸고 글자는
+   * 오른쪽에 붙어 있어서, 줄을 눌렀는데 아무 일도 안 일어나는 폭이 넓었다(사용자 지적).
+   */
+  it('여는 누르개가 남은 폭을 전부 가진다', async () => {
+    const { getByTestId } = await renderOverlay(사슬({ character: 'ocid-1', region: null }))
+
+    expect(flattenStyle(getByTestId('hunt-chain-placeholder-trigger').props.style).flexGrow).toBe(1)
   })
 
   it('다 골랐으면 자리표시자가 사라진다', async () => {

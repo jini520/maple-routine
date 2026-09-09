@@ -14,6 +14,10 @@ jest.mock('../../../storage/spend', () => ({
   getSpendRecordsBetween: jest.fn(),
 }))
 jest.mock('../../../storage/last-point-rate', () => ({ setLastPointRate: jest.fn() }))
+jest.mock('../../../storage/last-hunt-selection', () => ({
+  setLastHuntSelection: jest.fn(),
+  getLastHuntSelection: jest.fn(),
+}))
 jest.mock('../../../storage/boss-profit', () => ({
   getDatedBossProfitRecords: jest.fn(),
   getBossProfitRecordsRevision: jest.fn(),
@@ -35,6 +39,7 @@ jest.mock('../../../storage/event-world-names', () => ({ getEventWorldNames: jes
 const income = jest.requireMock('../../../storage/income') as Record<string, jest.Mock>
 const spend = jest.requireMock('../../../storage/spend') as Record<string, jest.Mock>
 const rate = jest.requireMock('../../../storage/last-point-rate') as Record<string, jest.Mock>
+const huntSelection = jest.requireMock('../../../storage/last-hunt-selection') as Record<string, jest.Mock>
 const bossProfit = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 const bossDrops = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
 const selection = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
@@ -151,6 +156,50 @@ describe('시세를 기억한다', () => {
     await expect(recordSpend(메포지출, 지금)).rejects.toThrow()
 
     expect(rate.setLastPointRate).not.toHaveBeenCalled()
+  })
+})
+
+/**
+ * 사냥은 같은 자리를 반복해서 적는다. `사냥터 자동 입력` 이 되살릴 값을 저장이 성공한 뒤에
+ * 남긴다. 시세를 기억하는 것과 같은 규칙이다.
+ */
+describe('마지막 사냥 자리를 기억한다', () => {
+  it('사냥터가 적힌 사냥 행을 저장하면 그 자리를 남긴다', async () => {
+    const { recordIncome } = require('../records') as typeof import('../records')
+
+    await recordIncome({ ...수입, ocid: 'ocid-1' }, 지금)
+
+    expect(huntSelection.setLastHuntSelection).toHaveBeenCalledWith({
+      ocid: 'ocid-1',
+      ground: '엘리시움',
+    })
+  })
+
+  // 수동 폼은 사냥터를 안 고른다. 되살릴 자리가 없는 행이다.
+  it('사냥터가 없는 사냥 행은 안 남긴다', async () => {
+    const { recordIncome } = require('../records') as typeof import('../records')
+
+    await recordIncome({ ...수입, item: null }, 지금)
+
+    expect(huntSelection.setLastHuntSelection).not.toHaveBeenCalled()
+  })
+
+  it('다른 갈래는 안 남긴다. 그 칸의 글자는 사냥터가 아니다', async () => {
+    const { recordIncome } = require('../records') as typeof import('../records')
+
+    await recordIncome({ ...수입, category: '아이템 판매', item: '엘리시움' }, 지금)
+
+    expect(huntSelection.setLastHuntSelection).not.toHaveBeenCalled()
+  })
+
+  // 던진 입력의 사냥터를 다음 기본값으로 남기면 안 된다. 시세와 같은 규칙이다.
+  it('저장이 실패하면 기억하지 않는다', async () => {
+    income.insertIncomeRecord.mockRejectedValue(new Error('사냥터'))
+    const { recordIncome } = require('../records') as typeof import('../records')
+
+    await expect(recordIncome(수입, 지금)).rejects.toThrow()
+
+    expect(huntSelection.setLastHuntSelection).not.toHaveBeenCalled()
   })
 })
 

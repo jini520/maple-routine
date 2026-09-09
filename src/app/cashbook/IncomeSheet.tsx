@@ -17,6 +17,7 @@ import { Pressable, View } from 'react-native'
 import { ChevronLeftIcon, Text } from '../../components/atoms'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import type { MesoRateLoad } from '../../features/cashbook/meso-rate'
+import type { LastHuntSelection } from '../../storage/last-hunt-selection'
 import {
   type HuntInputMode,
   type IncomeCategory,
@@ -51,6 +52,13 @@ export interface IncomeSheetProps {
   todayDateKey: string
   /** 캐릭터의 메소 획득량을 읽어 오는 콜백. 시트는 `nexon/` 도 `storage/` 도 모른다. 사냥 폼만 쓴다. */
   loadMesoRate: (ocid: string) => Promise<MesoRateLoad>
+  /**
+   * 마지막에 적은 사냥 자리(캐릭터 + 사냥터 이름). 사냥 계산기의 `사냥터 자동 입력` 이 쓴다.
+   *
+   * `null` 이면 한 번도 안 적었다는 뜻이라 그 버튼이 꺼진다. 시트는 `storage/` 를 모르므로
+   * 화면이 읽어서 넘긴다.
+   */
+  lastHuntSelection: LastHuntSelection | null
   /**
    * 고칠 기록. 있으면 **수정 모드**다. 머리와 버튼 글자가 갈리고 삭제가 선다.
    */
@@ -240,6 +248,10 @@ function IncomeForm(
   return props.huntMode === 'manual' ? (
     <HuntManualForm {...props.formProps} />
   ) : (
-    <HuntCalculatorForm {...props.formProps} loadMesoRate={props.loadMesoRate} />
+    <HuntCalculatorForm
+      {...props.formProps}
+      loadMesoRate={props.loadMesoRate}
+      lastHuntSelection={props.lastHuntSelection}
+    />
   )
 }
