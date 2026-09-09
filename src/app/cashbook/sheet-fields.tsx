@@ -32,13 +32,19 @@ import { TABULAR_NUMS } from '../../constants/style/text-styles'
  *
  * 하루씩 옮긴다. 실제로 필요한 것은 어제 것을 오늘 칸에서 적고 있었다 같은 한두 칸이고, 멀리
  * 뛰는 것은 캘린더가 이미 한다.
+ *
+ * **뒤로는 오늘까지다.** 내일 쓴 메소는 없다.
  */
 export function DateStepper(props: {
   dateKey: string
   onChange: (next: string) => void
+  /** 갈 수 있는 마지막 날. 오늘이다. 화면이 읽어서 넘긴다(부품은 시계를 안 본다). */
+  latest: string
   /** `{testID}` · `{testID}-prev` · `{testID}-next`. 두 시트가 자기 이름을 준다. */
   testID: string
 }): React.JSX.Element {
+  // 열쇠가 `YYYY-MM-DD` 라 글자 비교가 곧 날짜 비교다.
+  const 끝 = props.dateKey >= props.latest
   return (
     <View className="shrink-0 flex-row items-center gap-1">
       <Pressable
@@ -57,10 +63,15 @@ export function DateStepper(props: {
         role="button"
         aria-label="하루 뒤로"
         testID={`${props.testID}-next`}
+        disabled={끝}
         onPress={() => props.onChange(shiftDateKey(props.dateKey, 1))}
         hitSlop={8}
       >
-        <ChevronRightIcon className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden />
+        <ChevronRightIcon
+          className={`h-4 w-4 ${끝 ? 'text-text-disabled' : 'text-text-muted'}`}
+          strokeWidth={2}
+          aria-hidden
+        />
       </Pressable>
     </View>
   )

@@ -78,6 +78,7 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
       <SpendHeader
         title={editing ? '기타' : '지출 추가'}
         dateKey={props.dateKey}
+        todayDateKey={props.todayDateKey}
         onDateChange={props.onDateChange}
       />
       {!editing && (

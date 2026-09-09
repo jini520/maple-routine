@@ -1052,6 +1052,7 @@ export function CashbookScreen(): React.JSX.Element {
           // 캐릭터의 메소 획득량. 시트는 `nexon/` 도 `storage/` 도 모른다.
           loadMesoRate={loadMesoRate}
           dateKey={typeof sheet === 'object' ? sheet.record.earnedOn : selectedDateKey}
+          todayDateKey={todayDateKey}
           editing={typeof sheet === 'object' ? sheet.record : undefined}
           onSave={
             typeof sheet === 'object' ? (draft) => saveEdit(sheet, draft) : saveIncome
@@ -1064,6 +1065,7 @@ export function CashbookScreen(): React.JSX.Element {
         <SpendSheet
           characters={characters}
           dateKey={typeof sheet === 'object' ? sheet.record.spentOn : selectedDateKey}
+          todayDateKey={todayDateKey}
           lastPointRate={lastPointRate}
           editing={typeof sheet === 'object' ? sheet.record : undefined}
           onSave={typeof sheet === 'object' ? (draft) => saveEdit(sheet, draft) : saveSpend}

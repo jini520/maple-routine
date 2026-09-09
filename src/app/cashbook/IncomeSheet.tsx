@@ -47,6 +47,8 @@ export interface IncomeSheetProps {
    * 계약이라 화면이 한 값을 두 시트에 그대로 넘긴다.
    */
   lastPointRate: number | null
+  /** 오늘. 머리의 날짜를 이 날 뒤로 못 옮긴다. 화면이 읽어서 넘긴다. */
+  todayDateKey: string
   /** 캐릭터의 메소 획득량을 읽어 오는 콜백. 시트는 `nexon/` 도 `storage/` 도 모른다. 사냥 폼만 쓴다. */
   loadMesoRate: (ocid: string) => Promise<MesoRateLoad>
   /**
@@ -170,7 +172,12 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
               </Text>
             </Pressable>
           )}
-          <DateStepper dateKey={dateKey} onChange={setDateKey} testID="income-sheet-date" />
+          <DateStepper
+            dateKey={dateKey}
+            latest={props.todayDateKey}
+            onChange={setDateKey}
+            testID="income-sheet-date"
+          />
         </View>
       }
       footer={<SaveRow {...save} />}

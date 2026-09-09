@@ -68,6 +68,8 @@ async function 시트열기(overrides: Partial<React.ComponentProps<typeof Incom
   return renderOverlay(
     <IncomeSheet
       dateKey="2026-08-23"
+      // 오늘. 이 날 뒤로는 못 옮긴다. 앞뒤 이동을 재는 케이스가 있으므로 이틀 뒤로 둔다.
+      todayDateKey="2026-08-25"
       characters={캐릭터둘}
       lastPointRate={null}
       // 기본은 **0** 이다. 메획이 테스트가 세는 금액을 흔들지 않는다.
@@ -1826,6 +1828,17 @@ describe('날짜 바꾸기', () => {
     await 아이디로누르기(view, 'income-sheet-date-next')
     await 아이디로누르기(view, 'income-sheet-date-next')
     expect(view.getByTestId('income-sheet-date')).toHaveTextContent('8월 24일 (월)')
+  })
+
+  /** 내일 번 메소는 없다. 뒤로 가는 길이 오늘에서 끊긴다. */
+  it('오늘 뒤로는 못 간다', async () => {
+    const view = await 그리기({ dateKey: '2026-08-25' })
+    expect(view.getByTestId('income-sheet-date')).toHaveTextContent('8월 25일 (화)')
+
+    await 아이디로누르기(view, 'income-sheet-date-next')
+
+    expect(view.getByTestId('income-sheet-date')).toHaveTextContent('8월 25일 (화)')
+    expect(view.getByTestId('income-sheet-date-next').props.accessibilityState.disabled).toBe(true)
   })
 
   it('바꾼 날짜로 저장된다', async () => {

@@ -93,6 +93,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
       <SpendHeader
         title={editing ? '아이템 구매' : '지출 추가'}
         dateKey={props.dateKey}
+        todayDateKey={props.todayDateKey}
         onDateChange={props.onDateChange}
       />
       {!editing && (
