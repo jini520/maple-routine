@@ -157,13 +157,6 @@ const 옛사냥행 = {
  * 안 고르면 뒤에 못 가므로 차례대로 부를 것. 이미 고른 값을 바꾸려면 그 알약을 누른다.
  */
 async function 사슬고르기(view: Rendered, value: string): Promise<void> {
-  // 사슬은 사냥 폼만 쓴다. 나머지 갈래는 종전 캐릭터 고르개 그대로다.
-  if (view.queryByTestId('income-sheet-character-trigger') !== null) {
-    await 아이디로누르기(view, 'income-sheet-character-trigger')
-    await 아이디로누르기(view, `income-sheet-character-option-${value}`)
-    return
-  }
-
   const 보기 = `income-sheet-chain-option-${value}`
 
   if (view.queryByTestId('income-sheet-chain-placeholder-trigger') !== null) {
@@ -600,6 +593,26 @@ describe('캐릭터 귀속', () => {
     expect(view.queryByTestId('income-sheet-chain-badge-캐릭터')).toBeNull()
   })
 
+  /**
+   * **갈래 셋이 같은 모양으로 캐릭터를 묻는다**(사용자 지시). 아이템 판매와 기타는 사슬의
+   * 단계가 캐릭터 하나뿐이라 자리표시자가 `캐릭터 선택` 이다.
+   */
+  it.each(['아이템 판매', '기타'] as const)('%s 의 캐릭터 줄도 배지 사슬이다', async (갈래) => {
+    const view = await 그리기({}, 갈래)
+
+    expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent('캐릭터 선택')
+    expect(view.queryByTestId('income-sheet-character-trigger')).toBeNull()
+  })
+
+  it('고르면 알약이 서고 자리표시자가 사라진다', async () => {
+    const view = await 판매시트()
+
+    await 사슬고르기(view, 'ocid-1')
+
+    expect(view.getByTestId('income-sheet-chain-badge-캐릭터')).toHaveTextContent('루디')
+    expect(view.queryByTestId('income-sheet-chain-placeholder')).toBeNull()
+  })
+
   it('고르면 그 캐릭터로 저장한다', async () => {
     const onSave = jest.fn()
     const view = await 판매시트({ onSave })
@@ -659,7 +672,7 @@ describe('수정 모드', () => {
 
     expect(view.getByTestId('income-sheet-name-label')).toHaveTextContent('판매 아이템')
     expect(view.getByTestId('income-sheet-gross').props.value).toBe('1200000000')
-    expect(view.getByTestId('income-sheet-character-trigger')).toBeTruthy()
+    expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent('캐릭터 선택')
   })
 
   /**

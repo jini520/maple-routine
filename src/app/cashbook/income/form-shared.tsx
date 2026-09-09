@@ -8,7 +8,7 @@ import { useEffect, useRef } from 'react'
 import { Pressable } from 'react-native'
 
 import { Text } from '../../../components/atoms'
-import { SelectField } from '../../../components/organisms/SelectField/SelectField'
+import { ChainSelect } from '../../../components/organisms/ChainSelect/ChainSelect'
 import { characterOptions } from '../character-options'
 import { AmountInput, FieldRow } from '../sheet-fields'
 import type { IncomeRecord } from '../../../storage/income'
@@ -46,7 +46,11 @@ export interface IncomeFormProps {
 }
 
 /**
- * 캐릭터 줄. 기본은 `선택 안함`.
+ * 캐릭터 줄. 고르기 전에는 `캐릭터 선택`, 고르면 그 이름이 알약으로 선다.
+ *
+ * 사냥 폼의 캐릭터·지역·사냥터와 **같은 부품**이다. 여기서는 단계가 캐릭터 하나뿐이라 줄
+ * 수가 줄지는 않는다. 같은 모양인 것이 값이다. 한 시트의 갈래 셋이 첫 줄에서 저마다 다른
+ * 모양으로 캐릭터를 물으면 갈래를 옮길 때마다 다른 화면으로 읽힌다.
  *
  * 폼 안에 사는 것은 갈래를 옮기면 폼이 언마운트되어 고른 것이 함께 사라지기 때문이다.
  * 껍데기에 두면 그것만 남아 **갈래를 옮겼는데 캐릭터는 그대로** 가 된다.
@@ -57,12 +61,16 @@ export function CharacterField(props: {
   onSelect: (next: string | null) => void
 }): React.JSX.Element {
   return (
-    <SelectField
-      label="캐릭터"
-      options={characterOptions(props.characters)}
-      selected={props.selected}
-      onSelect={props.onSelect}
-      testID="income-sheet-character"
+    <ChainSelect
+      testID="income-sheet-chain"
+      steps={[
+        {
+          name: '캐릭터',
+          options: characterOptions(props.characters),
+          selected: props.selected,
+          onSelect: props.onSelect,
+        },
+      ]}
     />
   )
 }

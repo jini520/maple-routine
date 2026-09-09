@@ -49,12 +49,45 @@ export interface ChainStep {
  */
 const AnimatedBox = Animated.createAnimatedComponent(View)
 
+/**
+ * 알약 상자의 배치. **클래스로 못 준다.**
+ *
+ * `lib/nativewind-interop` 이 등록한 것은 `Animated.View` 하나이고 `createAnimatedComponent` 가
+ * 만든 이 컴포넌트는 그것과 다른 참조라 `className` 이 스타일로 안 풀린다(조용히 무시된다).
+ */
+const BADGE_ROW = { flexDirection: 'row', alignItems: 'center', columnGap: 6 } as const
+/** 알약은 안 줄어든다. 이름이 잘리면 무엇을 골랐는지 사라진다. */
+const BADGE_KEEP = { flexShrink: 0 } as const
+
 /** 알약이 자리표시자에서 제자리까지 미끄러지는 시간. */
 const SLIDE_MS = 260
+
+/**
+ * 단계마다 다른 브랜드 색. 캐릭터·지역·사냥터가 글자만이 아니라 **색으로도** 갈린다.
+ *
+ * `Badge` 아톰의 `primary`·`secondary`·`third` 와 같은 짝이다(`atoms/Badge/variants.ts`).
+ * 새 색을 만들지 않아야 앱의 배지가 한 색 언어를 쓴다.
+ *
+ * 상자와 글자를 따로 드는 것은 RN 이 글자 스타일을 상자에서 자식 `Text` 로 안 물려주기
+ * 때문이다. 한 벌로 두면 글자가 색 없이 그려지고 에러는 안 난다.
+ *
+ * 색을 정하는 것은 **단계 차례**이고 부르는 쪽이 못 고른다. 값 셋이 색으로 갈려 있다는 것이
+ * 이 줄의 성질이라, 호출부가 고르게 두면 시트마다 캐릭터 색이 달라진다.
+ */
+const BADGE_TONES = [
+  { box: 'bg-primary-tint', ink: 'text-primary-ink' },
+  { box: 'bg-secondary-tint', ink: 'text-secondary-ink' },
+  { box: 'bg-third-tint', ink: 'text-third-ink' },
+] as const
 
 /** 고른 값의 이름. 목록에 없으면 빈 글자라 알약이 안 선다. */
 function labelOf(step: ChainStep): string {
   return step.options.find((option) => option.value === step.selected)?.label ?? ''
+}
+
+/** 그 단계가 입을 색. 색이 셋뿐이라 넷째 단계부터는 처음으로 돌아간다. */
+function toneOf(index: number): (typeof BADGE_TONES)[number] {
+  return BADGE_TONES[index % BADGE_TONES.length]!
 }
 
 export function ChainSelect(props: {
@@ -118,6 +151,15 @@ export function ChainSelect(props: {
   const placeholder = 남은.length === 0 ? null : `${남은.map((step) => step.name).join(' · ')} 선택`
   const 첫빈칸 = props.steps.findIndex((step) => !isChosen(step))
   const active = props.steps[activeIndex] ?? props.steps[0]
+  /**
+   * 다 골랐나. 그러면 **마지막 알약이 자리표시자가 섰던 자리에 그대로 선다**.
+   *
+   * 왼쪽에 쌓는 것은 앞 단계들이다. 쌓이는 차례가 곧 고른 차례라서 그것들은 실제로 왼쪽으로
+   * 옮겨 간다. 마지막 것까지 옮기면 방금 고른 값이 눈이 보고 있던 자리에서 사라지고 오른쪽이
+   * 통째로 빈다(사용자 지적). 단계가 하나뿐인 줄은 그 하나가 곧 마지막이다.
+   */
+  const 전부고름 = placeholder === null
+  const 마지막 = props.steps.length - 1
 
   return (
     <SelectField
@@ -136,17 +178,17 @@ export function ChainSelect(props: {
             새 알약은 오른쪽 끝에서 미끄러져 들어오고, 이미 선 알약들은 `LinearTransition` 이
             잇는다. 값이 어디에서 와서 어디에 놓였는지를 눈이 따라간다.
           */}
-          <AnimatedBox
-            layout={LinearTransition.duration(SLIDE_MS)}
-            className="flex-row items-center gap-1.5"
-          >
+          <AnimatedBox layout={LinearTransition.duration(SLIDE_MS)} style={BADGE_ROW}>
             {props.steps.map((step, index) =>
-              !isChosen(step) || labelOf(step) === '' ? null : (
+              // 다 골랐으면 마지막 것은 여기 안 든다. 오른쪽 누르개 안에서 제자리를 지킨다.
+              !isChosen(step) ||
+              labelOf(step) === '' ||
+              (전부고름 && index === 마지막) ? null : (
                 <AnimatedBox
                   key={step.name}
                   entering={알약이온다}
                   layout={LinearTransition.duration(SLIDE_MS)}
-                  className="shrink-0"
+                  style={BADGE_KEEP}
                 >
                   <Pressable
                     role="button"
@@ -156,17 +198,57 @@ export function ChainSelect(props: {
                       setActiveIndex(index)
                       open()
                     }}
-                    className="h-5 justify-center rounded-full bg-surface-2 px-2 active:opacity-60"
+                    className={`h-5 justify-center rounded-full px-2 active:opacity-60 ${
+                      toneOf(index).box
+                    }`}
                   >
-                    <Text className="text-chip font-semibold text-text">{labelOf(step)}</Text>
+                    <Text className={`text-chip font-semibold ${toneOf(index).ink}`}>
+                      {labelOf(step)}
+                    </Text>
                   </Pressable>
                 </AnimatedBox>
               ),
             )}
           </AnimatedBox>
 
-          {placeholder !== null && (
-            // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
+          {/*
+            여는 자리는 **알약 오른쪽부터 줄 끝까지**다. 남은 폭을 누르개 하나가 전부 가지고
+            화살촉이 그 안에 든다. 글자만 누르개였을 때는 그 왼쪽 빈 자리를 눌러도 아무 일이
+            없었다(사용자 지적).
+
+            무엇이 그 안에 서는지는 다 골랐는가가 정한다. 남은 단계가 있으면 자리표시자,
+            없으면 **마지막 알약**이다. 두 경우 다 오른쪽 정렬이라 보이는 자리가 같다.
+          */}
+          {전부고름 ? (
+            <Pressable
+              role="button"
+              aria-label={`${props.steps[마지막]!.name} 다시 고르기`}
+              testID={`${props.testID}-last-trigger`}
+              onPress={() => {
+                setActiveIndex(마지막)
+                open()
+              }}
+              className="min-w-0 flex-1 flex-row items-center justify-end gap-2 active:opacity-60"
+            >
+              {/*
+                알약이 자기 누르개를 안 갖는다. 겹쳐 두면 읽어 주는 이름이 같은 버튼이 둘이
+                되고, 둘 다 같은 목록을 여는데 하나는 좁고 하나는 넓다.
+              */}
+              <View
+                testID={`${props.testID}-badge-${props.steps[마지막]!.name}`}
+                className={`h-5 shrink-0 justify-center rounded-full px-2 ${toneOf(마지막).box}`}
+              >
+                <Text className={`text-chip font-semibold ${toneOf(마지막).ink}`}>
+                  {labelOf(props.steps[마지막]!)}
+                </Text>
+              </View>
+              <ChevronDownIcon
+                className="h-4 w-4 shrink-0 text-text-disabled"
+                strokeWidth={2}
+                aria-hidden
+              />
+            </Pressable>
+          ) : (
             <Pressable
               role="button"
               aria-label={placeholder}
@@ -175,23 +257,22 @@ export function ChainSelect(props: {
                 setActiveIndex(첫빈칸)
                 open()
               }}
-              className="ml-auto min-w-0 shrink active:opacity-60"
+              className="min-w-0 flex-1 flex-row items-center gap-2 active:opacity-60"
             >
               <Text
                 testID={`${props.testID}-placeholder`}
                 numberOfLines={1}
-                className="text-right text-sm text-text-disabled"
+                className="flex-1 text-right text-sm text-text-disabled"
               >
                 {placeholder}
               </Text>
+              <ChevronDownIcon
+                className="h-4 w-4 shrink-0 text-text-disabled"
+                strokeWidth={2}
+                aria-hidden
+              />
             </Pressable>
           )}
-
-          <ChevronDownIcon
-            className={`h-4 w-4 shrink-0 text-text-disabled${placeholder === null ? ' ml-auto' : ''}`}
-            strokeWidth={2}
-            aria-hidden
-          />
         </View>
       )}
     />

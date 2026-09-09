@@ -69,7 +69,7 @@
 | 축 고르개 | `components/molecules/Segment/` | 통화·형태·단계. **종류 칩과 모양이 다르다**([[ADR-173]] 결정 3). 같은 알약 세 종류가 안 읽히던 것이 다시 짠 이유였다 |
 | 글자→값 | `components/organisms/MesoPad/meso-pad.ts` 의 `parseMesoText` | OS 키보드가 넣은 글자에서 숫자만 남긴다. `MesoAmountField`·`MesoKeypad` 는 **드롭 판매가 전용**으로 남는다([[ADR-124]] 결정 5) |
 | 보스 타일 | `components/molecules/BossPortrait/`(`shape`) · `components/atoms/Badge/`(난이도 variant + `DIFFICULTY_SHORT`) + `app/boss-profit/character-groups.ts` 의 `findPortraitSlug` | 펼친 결정석 줄이 그리는 네모 타일([[ADR-172]] 정정 1·2). **셋 다 보스 수익 탭이 쓰는 그것**이고, 프롭 둘이 ‘네모’와 ‘한 글자 표기’만 더한다 |
-| 캐릭터 고르개 | `components/organisms/SelectField/` + `app/cashbook/character-options.ts` | 라벨–값 줄 모양의 커스텀 드롭다운. 세로 배치는 `AccountSelect/place-dropdown` 을 그대로 쓴다 |
+| 캐릭터 고르개 | `components/organisms/ChainSelect/`(수입 시트) · `components/organisms/SelectField/`(지출 시트) + `app/cashbook/character-options.ts` | 목록과 그 자리잡기는 `SelectField` 한 벌이다(세로 배치는 `AccountSelect/place-dropdown`). **닫힌 줄만 갈린다**. 수입은 배지 사슬([[ADR-241]] 결정 2 · 정정 3), 지출은 라벨–값 줄 |
 | 당겨서 새로고침 | `features/ledger/useLedgerData.tsx` 의 `reload` | **동기화 → 날짜 캐기 → 다시 읽기** 차례([[ADR-170]] 정정 8). 층이 회차를 소유하고 이 화면은 조각을 골라 부탁한다 — `reload(['live', 'window', 'enhancement'])`([[ADR-226]] 결정 2). **강화 사용 내역을 받는 유일한 당김**이다. 보스 수익 탭은 그 값을 안 그려서 `enhancement` 를 안 넣는다. 배선은 `ScreenScroll` 의 `onRefresh` 가 진다 |
 | 낡은 숫자 묻기 | `features/cashbook/records.ts` 의 `cashbookDataRevision` + 화면의 `useFocusEffect` | 다시 들어올 때 **‘내가 읽은 판 ≠ 지금 판’** 이면만 다시 읽는다([[ADR-189]]). 판은 저장 계층이 관리한다. `storage/boss-drops`·`storage/boss-profit` 둘 |
 | 화면 | `app/cashbook/CashbookScreen.tsx` | 주간/월간 전환 + 기간 이동 + **기간 합계 세 칸** + 격자 + 고른 날의 상세 + **결정석 줄 펼치기** |
@@ -314,6 +314,22 @@
   무엇을 세는지는 곁의 라벨이 말하고, 앱의 스테퍼 둘이 같은 모양이 된다(`PartySizeStepper` 포함).
 - **캐릭터 고르개가 한 줄 놓인다**([[ADR-173]] 결정 14). 커스텀 드롭다운이고 **기본은 ‘선택 안함’**
   (`ocid = null` = 계정 단위). 이름을 모르는 캐릭터는 목록에 없고, 타일 격자에는 이 줄이 없다.
+- **수입 시트 셋은 그 줄을 배지 사슬로 세운다**([[ADR-241]] 정정 3, 사용자 지시). 아이템 판매와
+  기타는 단계가 캐릭터 하나뿐이라 자리표시자가 ‘캐릭터 선택’ 이다. 줄 수를 줄이려는 것이 아니라
+  **갈래 셋이 같은 자리에서 같은 모양으로** 캐릭터를 묻게 하려는 것이다. 지출 시트는 아직
+  라벨–값 줄이다.
+- **마지막으로 고른 것은 그 자리에 선다**([[ADR-241]] 정정 5 결정 1). 앞 단계들만 왼쪽에 쌓이고
+  마지막 알약은 자리표시자가 섰던 오른쪽 끝에 앉는다. 방금 고른 값이 눈이 보고 있던 자리에
+  남고, 미끄러지는 움직임도 없다. 아이템 판매·기타는 단계가 하나라 그 하나가 곧 마지막이고
+  왼쪽에 쌓일 것이 없다(정정 3 결정 1 이 이 규칙의 특수한 경우다).
+- **알약 색은 단계마다 다르다**([[ADR-241]] 정정 4, 사용자 지시). 캐릭터 `primary` · 지역
+  `secondary` · 사냥터 `third` 이고 짝은 `Badge` 아톰과 같다(틴트 바탕에 같은 계열 글자).
+  색을 정하는 것은 **단계 차례**라 호출부가 못 고른다. 그래서 아이템 판매·기타의 캐릭터도
+  사냥의 캐릭터와 같은 `primary` 다.
+- **사슬을 여는 자리는 알약 오른쪽부터 줄 끝까지**다([[ADR-241]] 정정 3 결정 2 · 정정 5 결정 2).
+  화살촉까지 그 누르개 안이다. 종전에는 자리표시자 글자만, 다 고른 뒤에는 알약 글자 너비만
+  눌렸다(사용자 지적). **다 골라도 그 자리는 열린다.** 여는 것이 안 고른 첫 단계가 아니라
+  마지막 단계일 뿐이고, 그때 마지막 알약은 그 누르개 안에 든다.
 - **빠른 금액 칩은 없다**(결정 4 폐기, 사용자 지정). 폼 안·키보드 위 어디에 두어도 안 나아졌다.
   대가로 OS 키보드엔 `00` 이 없어 억 단위를 치려면 0 을 여덟 번 눌러야 한다.
 - **두 단계는 목록형 종류에만**(결정 8). **둘째 화면에는 종류 칩이 없다**. 머리의 `‹` 가 되돌아가는
