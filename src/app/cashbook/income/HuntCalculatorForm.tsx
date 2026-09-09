@@ -404,8 +404,6 @@ export function HuntCalculatorForm(
             ],
             selected: regionSlug,
             onSelect: selectRegion,
-            // `선택 안함` 은 목록만 닫는다. 그것으로 되돌리면 사냥터까지 함께 걷힌다.
-            clearable: false,
           },
           {
             name: '사냥터',
@@ -418,8 +416,6 @@ export function HuntCalculatorForm(
                   ],
             selected: groundName,
             onSelect: setGroundName,
-            // `선택 안함` 도 `지역을 먼저 고르세요` 도 목록만 닫는다. 둘 다 값이 `null` 이다.
-            clearable: false,
             // 목록 한 줄에 포스 배지·레벨·마릿수가 함께 선다.
             renderOption: (option: SelectOption, isSelected: boolean) => {
               const ground =

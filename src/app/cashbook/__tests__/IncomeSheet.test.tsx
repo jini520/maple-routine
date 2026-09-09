@@ -153,9 +153,8 @@ const 옛사냥행 = {
 /**
  * 사슬 고르개에서 값 하나를 고른다.
  *
- * 사슬은 자리표시자를 누르면 **안 고른 첫 단계**를 열고, 알약을 누르면 그 단계를 연다. 원하는
- * 보기가 안 보이면 그 단계를 `선택 안함` 으로 넘기고 다시 연다. 다 골라 자리표시자가 없으면
- * 알약을 차례로 눌러 찾는다.
+ * 사슬은 자리표시자를 누르면 **안 고른 첫 단계**를 열고, 알약을 누르면 그 단계를 연다. 앞을
+ * 안 고르면 뒤에 못 가므로 차례대로 부를 것. 이미 고른 값을 바꾸려면 그 알약을 누른다.
  */
 async function 사슬고르기(view: Rendered, value: string): Promise<void> {
   // 사슬은 사냥 폼만 쓴다. 나머지 갈래는 종전 캐릭터 고르개 그대로다.
@@ -167,14 +166,13 @@ async function 사슬고르기(view: Rendered, value: string): Promise<void> {
 
   const 보기 = `income-sheet-chain-option-${value}`
 
-  for (let 걸음 = 0; 걸음 < 3; 걸음 += 1) {
-    if (view.queryByTestId('income-sheet-chain-placeholder-trigger') === null) break
+  if (view.queryByTestId('income-sheet-chain-placeholder-trigger') !== null) {
     await 아이디로누르기(view, 'income-sheet-chain-placeholder-trigger')
     if (view.queryByTestId(보기) !== null) {
       await 아이디로누르기(view, 보기)
       return
     }
-    await 아이디로누르기(view, 'income-sheet-chain-option-')
+    await 아이디로누르기(view, 'income-sheet-chain-backdrop')
   }
 
   for (const 이름 of ['캐릭터', '지역', '사냥터']) {
@@ -895,7 +893,9 @@ describe('갈래마다 자기 폼', () => {
 
 describe('사냥 계산기', () => {
   /** 사냥 갈래를 열고 탈라하트 밤의 길 3(lv.294· 40마리)까지 고르는 도우미. */
+  /** 캐릭터 → 지역 → 사냥터. 앞을 안 고르면 뒤에 못 간다. 루디는 294 로 밤의 길 3 과 같다. */
   async function 밤의길3(view: Rendered): Promise<void> {
+    await 사슬고르기(view, 'ocid-1')
     await 사슬고르기(view, 'tallahart')
     await 사슬고르기(view, '밤의 길 3')
   }
@@ -932,14 +932,19 @@ describe('사냥 계산기', () => {
     expect(보기들[1]).toBe('income-sheet-chain-option-tallahart')
   })
 
-  it('캐릭터를 안 고르면 지역이 **전부** 선다 (결정 6)', async () => {
+  /**
+   * **캐릭터를 고르기 전에는 지역에 못 간다**(2026-09-20 사용자 지시). 자리표시자는 안 고른 첫
+   * 단계를 열고 `선택 안함` 은 고른 것이 아니라, 캐릭터 목록에서 벗어날 길이 없다.
+   */
+  it('캐릭터를 안 고르면 지역 목록에 못 간다', async () => {
     const view = await 그리기({}, '사냥')
-    // 캐릭터를 `선택 안함` 으로 넘기면 사슬이 지역 단계를 연다.
-    await 사슬고르기(view, '')
+    // `선택 안함` 을 눌러도 걷을 것이 없어 그 자리에 머문다.
+    await 아이디로누르기(view, 'income-sheet-chain-placeholder-trigger')
+    await 아이디로누르기(view, 'income-sheet-chain-option-')
     await 아이디로누르기(view, 'income-sheet-chain-placeholder-trigger')
 
-    expect(view.getByTestId('income-sheet-chain-option-tallahart')).toBeTruthy()
-    expect(view.getByTestId('income-sheet-chain-option-chewChew')).toBeTruthy()
+    expect(view.getByTestId('income-sheet-chain-option-ocid-1')).toBeTruthy()
+    expect(view.queryByTestId('income-sheet-chain-option-tallahart')).toBeNull()
   })
 
   /**
@@ -977,59 +982,62 @@ describe('사냥 계산기', () => {
    * 안 걷으면 그대로 남는다. 레벨을 모를 때 지역 목록이 **전부** 서기 때문에(결정 6) 지금 지역이
    * 언제나 그 목록 안에 들어 통과해 버린다.
    */
-  it('캐릭터를 `선택 안함` 으로 되돌려도 지역과 사냥터가 풀린다', async () => {
+  it('캐릭터를 `선택 안함` 으로 되돌리면 셋이 다 풀린다', async () => {
     const view = await 그리기()
-    await 루디고르기(view)
     await 밤의길3(view)
     expect(view.getByTestId('income-sheet-chain-badge-사냥터')).toHaveTextContent('밤의 길 3')
 
-    await 사슬고르기(view, '')
+    await 아이디로누르기(view, 'income-sheet-chain-badge-캐릭터')
+    await 아이디로누르기(view, 'income-sheet-chain-option-')
 
+    expect(view.queryByTestId('income-sheet-chain-badge-캐릭터')).toBeNull()
     expect(view.queryByTestId('income-sheet-chain-badge-지역')).toBeNull()
     expect(view.queryByTestId('income-sheet-chain-badge-사냥터')).toBeNull()
-    expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent('지역 · 사냥터 선택')
+    expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent(
+      '캐릭터 · 지역 · 사냥터 선택',
+    )
   })
 
   /**
-   * 지역과 사냥터의 `선택 안함` 은 **고르는 것이 아니다**(2026-09-20 사용자 지시). 잘못 누른
-   * 한 번이 고른 것 둘을 지운다. 목록만 닫힌다.
+   * 고른 단계의 `선택 안함` 은 **되돌리기**다(2026-09-20 사용자 지시). 그 단계와 뒤 단계가
+   * 걷히고 자리표시자가 그 이름을 되찾아 다시 고를 수 있게 된다.
    */
-  it('지역을 `선택 안함` 으로 눌러도 아무 일이 없다', async () => {
+  it('지역을 `선택 안함` 으로 되돌리면 지역과 사냥터만 풀린다', async () => {
     const view = await 그리기()
     await 밤의길3(view)
 
     await 아이디로누르기(view, 'income-sheet-chain-badge-지역')
     await 아이디로누르기(view, 'income-sheet-chain-option-')
 
-    expect(view.getByTestId('income-sheet-chain-badge-지역')).toHaveTextContent('탈라하트')
-    expect(view.getByTestId('income-sheet-chain-badge-사냥터')).toHaveTextContent('밤의 길 3')
+    expect(view.getByTestId('income-sheet-chain-badge-캐릭터')).toHaveTextContent('루디')
+    expect(view.queryByTestId('income-sheet-chain-badge-지역')).toBeNull()
+    expect(view.queryByTestId('income-sheet-chain-badge-사냥터')).toBeNull()
+    expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent('지역 · 사냥터 선택')
   })
 
-  it('사냥터를 `선택 안함` 으로 눌러도 아무 일이 없다', async () => {
+  it('사냥터를 `선택 안함` 으로 되돌리면 사냥터만 풀린다', async () => {
     const view = await 그리기()
     await 밤의길3(view)
 
     await 아이디로누르기(view, 'income-sheet-chain-badge-사냥터')
     await 아이디로누르기(view, 'income-sheet-chain-option-')
 
-    expect(view.getByTestId('income-sheet-chain-badge-사냥터')).toHaveTextContent('밤의 길 3')
+    expect(view.getByTestId('income-sheet-chain-badge-지역')).toHaveTextContent('탈라하트')
+    expect(view.queryByTestId('income-sheet-chain-badge-사냥터')).toBeNull()
+    expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent('사냥터 선택')
   })
 
   /**
-   * 아직 아무것도 안 고른 자리에서도 같다. 종전에는 그 한 번으로 지역이 만진 것이 되어
-   * 자리표시자에서 이름만 사라졌다. 알약도 안 서므로 고른 것이 없는데 고를 것도 없어졌다.
-   *
-   * 사냥터의 `지역을 먼저 고르세요` 도 값이 `null` 이라 같은 길로 걷힌다. 지역을 못 비우게
-   * 된 지금은 그 자리에 닿을 수 없다.
+   * 안 고른 단계에서는 걷을 것이 없다. 종전에는 그 한 번으로 단계가 만진 것이 되어, 알약도
+   * 안 서면서 자리표시자에서 이름만 사라졌다.
    */
-  it('아무것도 안 고른 자리에서 `선택 안함` 을 눌러도 이름이 안 사라진다', async () => {
+  it('안 고른 단계에서 `선택 안함` 을 눌러도 이름이 안 사라진다', async () => {
     const view = await 그리기()
-    await 사슬고르기(view, '')
+    await 루디고르기(view)
 
     await 아이디로누르기(view, 'income-sheet-chain-placeholder-trigger')
     await 아이디로누르기(view, 'income-sheet-chain-option-')
 
-    // 지역이 안 만져진 채로 남아 자리표시자가 그 이름을 계속 읽는다.
     expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent('지역 · 사냥터 선택')
   })
 
@@ -1037,7 +1045,8 @@ describe('사냥 계산기', () => {
     const view = await 그리기()
     await 밤의길3(view)
 
-    await 사슬고르기(view, 'geardrak')
+    // 오디움은 루디(294)의 바닥(274)에 걸쳐 목록에 남는다.
+    await 사슬고르기(view, 'odium')
 
     // 걷힌 것이 자리표시자로 되돌아오는 것이 곧 알림이다. 알약이 사라진다.
     expect(view.queryByTestId('income-sheet-chain-badge-사냥터')).toBeNull()
@@ -1094,12 +1103,12 @@ describe('사냥 계산기', () => {
     await 밤의길3(view)
     await 누르기(view, '95%') // 40마리에서 둘을 놓친다
 
-    // `풍화된 기쁨의 땅` 은 22마리(이 데이터의 최솟값). 둘을 놓치면 20/22 = 91% 다.
-    await 사슬고르기(view, 'roadOfVanishing')
-    await 사슬고르기(view, '풍화된 기쁨의 땅')
+    // `성문으로 가는 길 1` 은 34마리. 둘을 놓치면 32/34 = 94% 다.
+    await 사슬고르기(view, 'odium')
+    await 사슬고르기(view, '성문으로 가는 길 1')
 
-    expect(view.getByLabelText('91%').props.accessibilityState?.selected).toBe(true)
-    expect(view.getByTestId('income-sheet-killed-mobs')).toHaveTextContent('20')
+    expect(view.getByLabelText('94%').props.accessibilityState?.selected).toBe(true)
+    expect(view.getByTestId('income-sheet-killed-mobs')).toHaveTextContent('32')
   })
 
   it('놓친 만큼 덜 잡는다. 요약 줄의 마릿수가 준다 (사용자 지정)', async () => {
@@ -1199,16 +1208,13 @@ describe('사냥 계산기', () => {
 
   it('레벨 차이가 벌어지면 깎인다 (결정 4)', async () => {
     const view = await 그리기({}, '사냥')
-    await 사슬고르기(view, 'odium')
-    await 사슬고르기(view, '성문으로 가는 길 1')
-
-    // 캐릭터를 안 골랐으면 페널티가 0 이다: 270 × 7.5 × 34 × 8 × 30 = 16,524,000
-    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 16,524,000')
-
     // 루디는 294. 몬스터가 24 낮으니 20% 에 5·6·7·8 을 더해 −46% 다. 오디움은 루디의 바닥
     // (274)에 걸쳐 있어 목록에 남는다. 남으면서 가장 많이 깎이는 자리다.
     await 루디고르기(view)
+    await 사슬고르기(view, 'odium')
+    await 사슬고르기(view, '성문으로 가는 길 1')
 
+    // 페널티가 없으면 270 × 7.5 × 34 × 8 × 30 = 16,524,000 이고, 거기에 54% 가 걸린다.
     expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 8,922,960')
   })
 
@@ -1528,7 +1534,9 @@ describe('사냥 수동 입력', () => {
  * 덮어쓰면 어느 쪽이 참인지 사라진다.
  */
 describe('메소 획득량', () => {
+  /** 캐릭터 → 지역 → 사냥터. 앞을 안 고르면 뒤에 못 간다. 루디는 294 로 밤의 길 3 과 같다. */
   async function 밤의길3(view: Rendered): Promise<void> {
+    await 사슬고르기(view, 'ocid-1')
     await 사슬고르기(view, 'tallahart')
     await 사슬고르기(view, '밤의 길 3')
   }
@@ -2002,6 +2010,7 @@ describe('날짜 바꾸기', () => {
 describe('어림값 표식', () => {
   it('획득 메소와 합계 둘 다 `≈` 를 든다', async () => {
     const view = await 그리기({}, '사냥')
+    await 사슬고르기(view, 'ocid-1')
     await 사슬고르기(view, 'tallahart')
     await 사슬고르기(view, '밤의 길 3')
 

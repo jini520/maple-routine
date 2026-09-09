@@ -39,13 +39,6 @@ export interface ChainStep {
   onSelect: (value: string | null) => void
   /** 목록 한 줄을 그리는 법. `SelectField` 로 그대로 넘어간다. */
   renderOption?: (option: SelectOption, isSelected: boolean) => React.ReactNode
-  /**
-   * 값이 `null` 인 보기(`선택 안함` · 안내 문구)를 **고르는 것으로 볼지**. 안 주면 본다.
-   *
-   * 끄면 그 보기는 목록을 닫는 일만 한다. 뒤 단계가 매여 있는 자리에 쓴다. 지역을 `선택 안함`
-   * 으로 되돌리면 사냥터까지 함께 걷혀, 잘못 누른 한 번이 고른 것 둘을 지운다(사용자 지시).
-   */
-  clearable?: boolean
 }
 
 /**
@@ -73,20 +66,17 @@ export function ChainSelect(props: {
    * 단계**다. 열기 전에 정해 두므로 목록이 뜰 때는 이미 그 단계의 보기가 들어 있다.
    */
   const [activeIndex, setActiveIndex] = useState(0)
-  /**
-   * 사용자가 만진 단계. `선택 안함` 도 고른 것이라 값은 `null` 인데 자리표시자에서는 빠져야 한다.
-   * 값만 보면 그 둘이 같아지므로 만졌다는 사실을 여기서 든다.
-   *
-   * 앞 단계를 다시 고르면 뒤 단계는 만진 적 없는 상태로 돌아간다. 뒤가 앞에 매여 있어서
-   * (사냥터는 지역에 매인다) 앞이 바뀌면 뒤는 고른 것이 아니게 된다.
-   */
-  const [touched, setTouched] = useState<readonly number[]>([])
 
+  /**
+   * 값이 `null` 인 보기(`선택 안함` · 안내 문구)를 고르면 **되돌리기**다.
+   *
+   * 이미 고른 단계였으면 그 값을 걷는다. 알약이 사라지고 뒤 단계도 함께 걷히므로(그 규칙은
+   * 부르는 쪽에 있다) 자리표시자가 그 단계로 되돌아온다. 안 고른 단계였으면 걷을 것이 없어
+   * 목록만 닫는다(`SelectField` 가 닫는다).
+   */
   function pick(index: number, value: string | null): void {
     const step = props.steps[index]
-    // 고르는 것이 아닌 보기다. 목록은 `SelectField` 가 알아서 닫는다.
-    if (value === null && step.clearable === false) return
-    setTouched((current) => [...current.filter((each) => each < index), index])
+    if (value === null && step.selected === null) return
     step.onSelect(value)
   }
 
@@ -116,12 +106,17 @@ export function ChainSelect(props: {
     }
   }
 
-  const isChosen = (step: ChainStep, index: number): boolean =>
-    step.selected !== null || touched.includes(index)
+  /**
+   * 값이 있으면 고른 것이다. `선택 안함` 은 고른 것이 아니라 되돌린 것이라 여기 안 든다.
+   *
+   * 그래서 앞 단계를 안 고르면 뒤 단계에 닿을 수 없다. 자리표시자는 **안 고른 첫 단계**를 열고,
+   * 알약은 고른 단계에만 서기 때문이다(사냥터를 고르려면 지역을, 지역을 고르려면 캐릭터를).
+   */
+  const isChosen = (step: ChainStep): boolean => step.selected !== null
 
-  const 남은 = props.steps.filter((step, index) => !isChosen(step, index))
+  const 남은 = props.steps.filter((step) => !isChosen(step))
   const placeholder = 남은.length === 0 ? null : `${남은.map((step) => step.name).join(' · ')} 선택`
-  const 첫빈칸 = props.steps.findIndex((step, index) => !isChosen(step, index))
+  const 첫빈칸 = props.steps.findIndex((step) => !isChosen(step))
   const active = props.steps[activeIndex] ?? props.steps[0]
 
   return (
@@ -146,7 +141,7 @@ export function ChainSelect(props: {
             className="flex-row items-center gap-1.5"
           >
             {props.steps.map((step, index) =>
-              !isChosen(step, index) || labelOf(step) === '' ? null : (
+              !isChosen(step) || labelOf(step) === '' ? null : (
                 <AnimatedBox
                   key={step.name}
                   entering={알약이온다}

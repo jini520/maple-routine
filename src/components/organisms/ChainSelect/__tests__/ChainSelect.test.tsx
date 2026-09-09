@@ -3,6 +3,7 @@
 // 고른 것은 알약이 되어 왼쪽에 쌓이고, 자리표시자는 **남은 것만** 읽는다. 여기서 보는 것은
 // 그 두 규칙과, 알약을 눌러 그 단계를 다시 여는 길이다. 목록 자체의 동작은 `SelectField` 가
 // 이미 본다.
+import { useState } from 'react'
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { ChainSelect } from '../ChainSelect'
@@ -65,16 +66,16 @@ describe('ChainSelect: 고른 것은 배지로, 남은 것은 자리표시자로
   })
 
   /**
-   * 뒤 단계가 매여 있는 자리에서는 `선택 안함` 이 고르는 것이 아니다. 잘못 누른 한 번이 고른 것
-   * 둘을 지운다(사용자 지시). 목록은 `SelectField` 가 알아서 닫는다.
+   * 안 고른 단계에서 `선택 안함` 은 걷을 것이 없다. 목록만 닫힌다(`SelectField` 가 닫는다).
+   * 종전에는 그 한 번으로 단계가 만진 것이 되어, 알약도 안 서면서 자리표시자에서 이름만 빠졌다.
    */
-  it('`clearable: false` 면 값이 `null` 인 보기가 아무 일도 안 한다', async () => {
+  it('안 고른 단계의 `선택 안함` 은 아무 일도 안 한다', async () => {
     const onSelect = jest.fn()
     const { getByTestId } = await renderOverlay(
       <ChainSelect
         testID="hunt-chain"
         steps={[
-          { name: '지역', options: 지역, selected: null, onSelect, clearable: false },
+          { name: '지역', options: 지역, selected: null, onSelect },
           { name: '사냥터', options: [], selected: null, onSelect: jest.fn() },
         ]}
       />,
@@ -88,8 +89,33 @@ describe('ChainSelect: 고른 것은 배지로, 남은 것은 자리표시자로
     })
 
     expect(onSelect).not.toHaveBeenCalled()
-    // 만진 적 없는 상태 그대로다. 이름이 자리표시자에서 안 빠진다.
     expect(getByTestId('hunt-chain-placeholder').props.children).toBe('지역 · 사냥터 선택')
+  })
+
+  /**
+   * 고른 단계의 `선택 안함` 은 **되돌리기**다. 알약이 사라지고 자리표시자가 그 이름을 되찾아
+   * 그 단계를 다시 고를 수 있게 된다(사용자 지시).
+   */
+  it('고른 단계의 `선택 안함` 은 그 값을 걷는다', async () => {
+    const onSelect = jest.fn()
+    const { getByTestId } = await renderOverlay(
+      <ChainSelect
+        testID="hunt-chain"
+        steps={[
+          { name: '지역', options: 지역, selected: 'cernium', onSelect },
+          { name: '사냥터', options: [], selected: null, onSelect: jest.fn() },
+        ]}
+      />,
+    )
+
+    await act(async () => {
+      fireEvent.press(getByTestId('hunt-chain-badge-지역'))
+    })
+    await act(async () => {
+      fireEvent.press(getByTestId('hunt-chain-option-'))
+    })
+
+    expect(onSelect).toHaveBeenCalledWith(null)
   })
 
   it('다 골랐으면 자리표시자가 사라진다', async () => {
@@ -154,12 +180,12 @@ describe('ChainSelect: 고른 것은 배지로, 남은 것은 자리표시자로
 })
 
 /**
- * `선택 안함` 도 고른 것이다. 값은 `null` 이라 안 고른 것과 같아 보이므로 사슬이 **만졌다는
- * 사실**을 따로 든다. 안 그러면 그 단계에서 다음으로 못 넘어간다.
+ * **앞을 안 고르면 뒤에 못 간다.** `선택 안함` 은 고른 것이 아니라 되돌린 것이라, 값이 빈 단계는
+ * 언제나 자리표시자가 먼저 여는 자리다(사용자 지시).
  */
-describe('ChainSelect: 선택 안함도 고른 것이다', () => {
-  it('선택 안함을 고르면 그 이름이 자리표시자에서 빠진다', async () => {
-    const { getByTestId, getByText } = await renderOverlay(
+describe('ChainSelect: 앞 단계를 안 고르면 뒤에 못 간다', () => {
+  it('안 고른 단계의 `선택 안함` 을 눌러도 그 자리에 머문다', async () => {
+    const { getByTestId, getByLabelText } = await renderOverlay(
       사슬({ character: null, region: null }),
     )
 
@@ -169,34 +195,43 @@ describe('ChainSelect: 선택 안함도 고른 것이다', () => {
     await act(async () => {
       fireEvent.press(getByTestId('hunt-chain-option-'))
     })
+    expect(getByTestId('hunt-chain-placeholder').props.children).toBe('캐릭터 · 지역 · 사냥터 선택')
 
-    expect(getByTestId('hunt-chain-placeholder').props.children).toBe('지역 · 사냥터 선택')
-    expect(getByText('선택 안함')).toBeTruthy()
+    // 다시 열어도 같은 단계다. 캐릭터를 고르기 전에는 지역 목록에 닿을 수 없다.
+    await act(async () => {
+      fireEvent.press(getByTestId('hunt-chain-placeholder-trigger'))
+    })
+    expect(getByLabelText('아이샤')).toBeTruthy()
   })
 
-  /** 뒤 단계가 앞에 매여 있어서, 앞을 다시 고르면 뒤는 고른 적 없는 상태로 돌아간다. */
-  it('앞 단계를 다시 고르면 뒤 단계가 자리표시자로 돌아온다', async () => {
-    const { getByTestId } = await renderOverlay(사슬({ character: null, region: null }))
-
-    // 캐릭터와 지역을 차례로 `선택 안함` 으로 넘긴다.
-    for (let 단계 = 0; 단계 < 2; 단계 += 1) {
-      await act(async () => {
-        fireEvent.press(getByTestId('hunt-chain-placeholder-trigger'))
-      })
-      await act(async () => {
-        fireEvent.press(getByTestId('hunt-chain-option-'))
-      })
+  /**
+   * 되돌린 단계는 알약이 사라지고 자리표시자가 그 이름을 되찾는다. 값은 부르는 쪽이 드니
+   * 여기서는 그 값을 든 껍데기를 세워 본다.
+   */
+  it('고른 단계를 되돌리면 알약이 사라지고 자리표시자가 그 이름을 되찾는다', async () => {
+    function 껍데기(): React.JSX.Element {
+      const [region, setRegion] = useState<string | null>('cernium')
+      return (
+        <ChainSelect
+          testID="hunt-chain"
+          steps={[
+            { name: '캐릭터', options: 캐릭터, selected: 'ocid-1', onSelect: jest.fn() },
+            { name: '지역', options: 지역, selected: region, onSelect: setRegion },
+          ]}
+        />
+      )
     }
-    expect(getByTestId('hunt-chain-placeholder').props.children).toBe('사냥터 선택')
+    const { getByTestId, queryByTestId } = await renderOverlay(<껍데기 />)
+    expect(queryByTestId('hunt-chain-placeholder')).toBeNull()
 
-    // 캐릭터 배지를 눌러 다시 고른다.
     await act(async () => {
-      fireEvent.press(getByTestId('hunt-chain-badge-캐릭터'))
+      fireEvent.press(getByTestId('hunt-chain-badge-지역'))
     })
     await act(async () => {
-      fireEvent.press(getByTestId('hunt-chain-option-ocid-1'))
+      fireEvent.press(getByTestId('hunt-chain-option-'))
     })
 
-    expect(getByTestId('hunt-chain-placeholder').props.children).toBe('지역 · 사냥터 선택')
+    expect(queryByTestId('hunt-chain-badge-지역')).toBeNull()
+    expect(getByTestId('hunt-chain-placeholder').props.children).toBe('지역 선택')
   })
 })
