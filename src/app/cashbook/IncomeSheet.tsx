@@ -80,11 +80,19 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
    */
   const [huntMode, setHuntMode] = useState<HuntInputMode>(huntModeOf(props.editing))
   /**
-   * 시트 바닥에 서는 저장 줄의 값. 폼이 올린다.
+   * 시트 바닥에 서는 저장 줄의 값. 폼이 마운트 뒤에 올린다.
    *
-   * 갈래를 고르기 전에는 없다. 그때 바닥에 서는 것은 닫기다.
+   * **처음부터 줄이 서 있어야 한다.** 폼이 올릴 때까지 비워 두면 시트가 열리는 도중에 바닥 줄이
+   * 생기고, 그만큼 시트 키가 바뀌어 열리는 애니메이션 위에 크기 변화가 한 번 더 얹힌다. 그래서
+   * 못 누르는 줄로 시작한다. 상자 크기는 손잡이가 붙기 전과 같다.
    */
-  const [save, setSave] = useState<SaveSlot | null>(null)
+  const [save, setSave] = useState<SaveSlot>({
+    editing,
+    canSave: false,
+    saving: false,
+    onSave: () => {},
+    onDelete: props.onDelete === undefined ? undefined : () => {},
+  })
 
   const formProps: IncomeFormProps = {
     setSave,
@@ -165,7 +173,7 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
           <DateStepper dateKey={dateKey} onChange={setDateKey} testID="income-sheet-date" />
         </View>
       }
-      footer={save === null ? undefined : <SaveRow {...save} />}
+      footer={<SaveRow {...save} />}
     >
       <View className="gap-3 px-4 pb-2">
         {/* 사냥만 갖는 줄. 계산기로 셀지, 획득 메소를 직접 적을지 고른다. */}

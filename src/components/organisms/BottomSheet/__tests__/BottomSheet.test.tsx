@@ -35,6 +35,8 @@ jest.mock('@gorhom/bottom-sheet', () => {
     // 아래 입력은 안 그려진다. 그래도 **있어야 한다**: `lib/nativewind-interop` 이 모듈을
     // 읽는 순간 이것을 등록하므로, 없으면 스위트가 뜨기도 전에 죽는다.
     useBottomSheetInternal: () => null,
+    // 넘긴 것을 그대로 돌려준다. 시트가 무엇을 넘겼는지는 프롭에서 본다.
+    useBottomSheetTimingConfigs: (config: unknown) => config,
     BottomSheetTextInput: (props: Record<string, unknown>) =>
       React.createElement(ReactNative.TextInput, props),
     BottomSheetModalProvider: (props: { children: ReactNode }) => props.children,
@@ -231,6 +233,17 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
     expect(여백()).toBe(34 + 16)
   })
 
+  /**
+   * 라이브러리 iOS 기본값은 과감쇠 스프링이라 다 앉는 데 530ms 가 걸렸다(시뮬레이터 계측).
+   * 그동안 키보드는 265ms 만에 다 올라와, 시트의 아랫변이 아직 낮은 채로 키보드에 덮인다.
+   * 거기 붙어 있는 저장 줄이 200ms 넘게 사라졌다가 뒤늦게 나타났다.
+   */
+  it('시트가 옮겨 앉는 시간은 키보드가 뜨는 시간과 같다', async () => {
+    const { getByTestId } = await open()
+
+    expect(getByTestId('sheet').props.animationConfigs).toMatchObject({ duration: 250 })
+  })
+
   it('폭은 max-w-md(448) 중앙 정렬이다. 라이브러리 기본은 전폭이다', async () => {
     const { getByTestId } = await open()
 
@@ -372,12 +385,14 @@ describe('BottomSheet: 머리와 바닥을 스크롤 밖에 고정한다', () =>
         .paddingBottom
 
     await act(async () => {
-      fireEvent(getByTestId('bottom-sheet-footer').parent!, 'layout', {
+      fireEvent(getByTestId('bottom-sheet-footer'), 'layout', {
         nativeEvent: { layout: { height: 106 } },
       })
     })
 
     expect(아래여백()).toBe(106)
+    // 흐름에서 차지하는 자리는 0 이다. 스크롤이 시트를 가득 채우고 그 위에 겹쳐 선다.
+    expect(flattenStyle(getByTestId('bottom-sheet-footer').props.style).marginTop).toBe(-106)
   })
 
   it('바닥 줄은 스크롤 밖이다', async () => {
@@ -424,6 +439,36 @@ describe('BottomSheet: 머리와 바닥을 스크롤 밖에 고정한다', () =>
     })
 
     expect(mockScrollTo).toHaveBeenCalledWith(expect.objectContaining({ y: 99999 }))
+  })
+
+  /**
+   * 자리로 비우는 몫이 키보드를 타면 시트 키가 키보드를 따라 한 번 더 바뀐다. 열고 닫는
+   * 움직임 위에 그 크기 변화가 얹혀 끊긴다. 그래서 걷은 인셋을 되돌려 늘 같은 수로 둔다.
+   */
+  it('비워 두는 몫은 키보드가 떠도 안 바뀐다', async () => {
+    const { getByTestId } = await 고정시트()
+    const 아래여백 = (): number =>
+      (getByTestId('income-sheet').props.contentContainerStyle as { paddingBottom: number })
+        .paddingBottom
+
+    await act(async () => {
+      fireEvent(getByTestId('bottom-sheet-footer'), 'layout', {
+        nativeEvent: { layout: { height: 106 } },
+      })
+    })
+    expect(아래여백()).toBe(106)
+
+    // 키보드가 뜨면 바닥 줄이 인셋 34 만큼 짧아진다. 비우는 몫은 그대로여야 한다.
+    await act(async () => {
+      키보드손잡이[0]({ endCoordinates: { height: 336 } })
+    })
+    await act(async () => {
+      fireEvent(getByTestId('bottom-sheet-footer'), 'layout', {
+        nativeEvent: { layout: { height: 106 - 34 } },
+      })
+    })
+
+    expect(아래여백()).toBe(106)
   })
 
   it('안 켜면 안 보낸다. 치는 칸이 중간에 있는 시트가 위로 밀리지 않는다', async () => {

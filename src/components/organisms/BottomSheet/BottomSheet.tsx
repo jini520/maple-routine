@@ -18,16 +18,12 @@
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Keyboard, Platform, Pressable, View } from 'react-native'
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  type SharedValue,
-} from 'react-native-reanimated'
+import Animated, { Easing, useAnimatedStyle, type SharedValue } from 'react-native-reanimated'
 import { useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
   BottomSheetModal,
   BottomSheetScrollView,
-  useBottomSheetInternal,
+  useBottomSheetTimingConfigs,
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet'
 
@@ -50,8 +46,18 @@ const SHEET_RADIUS = 20
  * `scrollToEnd` 를 안 쓰는 것은 `BottomSheetScrollView` 의 ref 에 그 메서드가 없어서다.
  */
 const MAX_SCROLL = 99999
+/** 키보드가 다 뜨고 시트가 다 줄기까지. 그동안 스크롤을 끝에 붙여 둔다. 잰 값은 270ms 다. */
+const KEYBOARD_SETTLE_MS = 400
 /**
- * 겹치는 층 셋의 순서. 넷 다 같은 상자 안에 절대 배치로 서므로 이 수가 무엇이 위인지를 정한다.
+ * 시트가 자리를 옮기는 데 걸리는 시간. **iOS 키보드가 뜨는 시간과 같은 값이다.**
+ *
+ * 라이브러리의 iOS 기본값은 과감쇠 스프링이라 다 앉는 데 530ms 가 걸렸다(시뮬레이터 계측).
+ * 그동안 키보드는 265ms 만에 다 올라와, 시트의 아랫변이 아직 낮은 상태로 키보드에 덮인다.
+ * 거기 붙어 있는 저장 줄이 200ms 넘게 사라졌다가 뒤늦게 나타났다.
+ */
+const MOVE_MS = 250
+/**
+ * 겹치는 층 셋의 순서. 같은 자리에 포개져 서므로 이 수가 무엇이 위인지를 정한다.
  *
  * 핸들이 맨 위다. 머리가 핸들 자리를 덮는 데다 뒤에 그려져서, 층이 같으면 핸들이 안 보인다.
  */
@@ -60,62 +66,6 @@ const FOOTER_LAYER = 2
 const HANDLE_LAYER = 3
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
-/**
- * 애니메이션이 붙는 상자. `Animated.View` 를 그대로 쓰면 안 된다.
- *
- * 앱이 `lib/nativewind-interop` 에서 `Animated.View` 를 NativeWind 에 등록해 두는데, 그러면
- * `style` 이 그쪽 처리를 한 번 거치면서 리애니메이티드가 넘긴 스타일이 붙지 않는다. 화면에서는
- * 상자가 통째로 안 그려지는 것으로 보인다.
- */
-const AnimatedBox = Animated.createAnimatedComponent(View)
-
-/**
- * 스크롤 위에 겹쳐 서는 바닥 층. 저장 버튼이 여기 산다.
- *
- * 자리는 **시트 컨테이너 기준**으로 위에서부터 잰다. 시트 안에서 `bottom: 0` 을 잡으면 안 된다.
- * 라이브러리가 시트 아래에 끌어내림 저항용 여유와 키보드 몫을 패딩으로 깔아 두는데, 그 패딩
- * 바깥이 기준이 되어 화면 밖으로 내려간다.
- *
- * 공유값은 **지역 상수로 꺼내 쓸 것**. `internal.animatedPosition.get()` 처럼 객체를 타고
- * 들어가면 리애니메이티드가 클로저에서 그 공유값을 못 찾아 구독을 안 건다. 그러면 첫 값으로
- * 굳어 바닥 줄이 화면 밖에 머문다(2026-09-09 시뮬레이터에서 확인).
- */
-function SheetFooterLayer(props: {
-  /** 떠 있는 키보드 높이. 이만큼 위로 올라선다. */
-  keyboardHeight: number
-  /** 잰 높이를 위로 올린다. 스크롤이 그만큼을 자리로 비워야 시트가 그만큼 자란다. */
-  onHeight: (height: number) => void
-  children: ReactNode
-}): React.JSX.Element {
-  const internal = useBottomSheetInternal(true)
-  const layout = internal?.animatedLayoutState
-  const position = internal?.animatedPosition
-  const ownHeight = useSharedValue(0)
-  const keyboardHeight = props.keyboardHeight
-
-  const placement = useAnimatedStyle(() => {
-    if (layout === undefined || position === undefined) return { transform: [{ translateY: 0 }] }
-    const { containerHeight, handleHeight } = layout.get()
-    const bottom = Math.max(0, containerHeight - position.get()) - keyboardHeight
-    return {
-      transform: [
-        { translateY: Math.max(0, bottom - ownHeight.get() - Math.max(0, handleHeight)) },
-      ],
-    }
-  })
-
-  return (
-    <AnimatedBox
-      onLayout={(event) => {
-        ownHeight.set(event.nativeEvent.layout.height)
-        props.onHeight(event.nativeEvent.layout.height)
-      }}
-      style={[{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: FOOTER_LAYER }, placement]}
-    >
-      {props.children}
-    </AnimatedBox>
-  )
-}
 
 /**
  * 시트 뒤를 덮고 누르면 닫는 스크림. 페이드까지 직접 보간하는 부품.
@@ -182,6 +132,7 @@ interface BottomSheetProps {
 
 export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
   const ref = useRef<BottomSheetModal>(null)
+  const move = useBottomSheetTimingConfigs({ duration: MOVE_MS, easing: Easing.out(Easing.exp) })
   const scrollRef = useRef<{ scrollTo?: (options: { y: number; animated: boolean }) => void }>(null)
   const insets = useSafeAreaInsets()
   const frame = useSafeAreaFrame()
@@ -192,7 +143,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
 
   /** 고정된 머리가 차지한 높이. 흐름 밖이라 스크롤 내용의 `paddingTop` 이 이만큼을 되돌려 준다. */
   const [headerHeight, setHeaderHeight] = useState(0)
-  /** 고정된 바닥 줄의 높이. 스크롤 내용의 `paddingBottom` 이 이만큼을 자리로 비운다. */
+  /** 고정된 바닥 줄의 높이. 이만큼을 음수 마진으로 되돌려 흐름에서 차지하는 자리를 0 으로 만든다. */
   const [footerHeight, setFooterHeight] = useState(0)
 
   useEffect(() => {
@@ -229,15 +180,33 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
     }
   }, [])
 
+  /**
+   * 스크롤이 바닥 줄에 내주는 자리. **키보드를 타지 않는다.**
+   *
+   * 바닥 줄은 키보드가 뜨면 홈 인디케이터 몫만큼 짧아지는데, 그 값을 그대로 자리로 쓰면 시트
+   * 키가 키보드를 따라 두 번 바뀐다. 열고 닫는 애니메이션 위에 그 크기 변화가 얹혀 움직임이
+   * 끊긴다. 그래서 걷은 몫을 여기서 되돌려 늘 같은 수로 둔다.
+   */
+  const footerReserve = footerHeight + (keyboardHeight > 0 ? insets.bottom : 0)
+
   const scrollToEndOnKeyboard = props.scrollToEndOnKeyboard === true
   useEffect(() => {
     if (!scrollToEndOnKeyboard || keyboardHeight === 0) return
-    // 키보드가 뜨는 동안 시트 키가 줄고 스크롤 길이가 바뀐다. 그 뒤에 한 번 더 보내야 끝에 닿는다.
-    scrollRef.current?.scrollTo?.({ y: MAX_SCROLL, animated: true })
-    const settled = setTimeout(() => {
-      scrollRef.current?.scrollTo?.({ y: MAX_SCROLL, animated: true })
-    }, 350)
-    return () => clearTimeout(settled)
+    /*
+      시트가 줄어드는 **동안** 매 프레임 끝에 붙인다. 그래야 내용이 바닥에 붙은 채로 시트가
+      줄어드는 한 몸의 움직임이 된다.
+
+      한 번만 부르면 그 순간의 최대 오프셋에 잘려 도중에 멈춘다. 시트가 아직 안 줄어 스크롤이
+      그만큼 안 길기 때문이다. 뒤늦게 한 번 더 부르면 이번엔 두 번 움직이는 것으로 보인다.
+    */
+    let frame = 0
+    const until = Date.now() + KEYBOARD_SETTLE_MS
+    const pin = (): void => {
+      scrollRef.current?.scrollTo?.({ y: MAX_SCROLL, animated: false })
+      if (Date.now() < until) frame = requestAnimationFrame(pin)
+    }
+    pin()
+    return () => cancelAnimationFrame(frame)
   }, [scrollToEndOnKeyboard, keyboardHeight])
 
   const renderBackdrop = useCallback(
@@ -271,6 +240,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
         상한을 그대로 두면 윗변이 82% 선보다 키보드 높이만큼 더 올라간다.
       */
       maxDynamicContentSize={frame.height * MAX_HEIGHT_RATIO - keyboardHeight}
+      animationConfigs={move}
       backdropComponent={renderBackdrop}
       accessibilityLabel={props.label}
       style={{ maxWidth: MAX_WIDTH, width: '100%', alignSelf: 'center' }}
@@ -350,7 +320,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
           paddingBottom:
             props.footer === undefined
               ? (keyboardHeight > 0 ? 0 : insets.bottom) + 16
-              : footerHeight,
+              : footerReserve,
         }}
       >
         {/*
@@ -361,21 +331,30 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       </BottomSheetScrollView>
 
       {props.footer !== undefined && (
-        // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
-        <SheetFooterLayer keyboardHeight={keyboardHeight} onHeight={setFooterHeight}>
-          <View
-            testID="bottom-sheet-footer"
-            style={{
-              backgroundColor: sheetSurface,
-              paddingHorizontal: 16,
-              paddingTop: 12,
-              // 키보드가 덮고 있으면 홈 인디케이터 몫은 빈 띠가 된다.
-              paddingBottom: (keyboardHeight > 0 ? 0 : insets.bottom) + 16,
-            }}
-          >
-            <View style={vars(sheetScope)}>{props.footer}</View>
-          </View>
-        </SheetFooterLayer>
+        /*
+          바닥 줄. 스크롤 **뒤에 오는 흐름의 마지막 자식**이고, 자기 높이만큼의 음수 마진으로
+          흐름에서 차지하는 자리를 0 으로 만든다. 그래서 스크롤은 시트를 가득 채우고 이 줄은
+          그 위 마지막 칸에 겹쳐 선다. 겹칠 자리는 스크롤 내용의 `paddingBottom` 이 비워 둔다.
+
+          **자리를 직접 계산하지 말 것.** 절대 배치로 얹고 좌표를 세면 키보드가 뜰 때 이 줄만
+          먼저 튀고, 시트를 끌어내릴 때 이 줄만 제자리에 남는다. 시트가 크고 줄고 미끄러지는
+          것은 전부 라이브러리가 스프링으로 돌리는 값이라, 흐름에 얹혀 있어야 한 몸으로 움직인다.
+        */
+        <View
+          testID="bottom-sheet-footer"
+          onLayout={(event) => setFooterHeight(event.nativeEvent.layout.height)}
+          style={{
+            marginTop: -footerHeight,
+            zIndex: FOOTER_LAYER,
+            backgroundColor: sheetSurface,
+            paddingHorizontal: 16,
+            paddingTop: 12,
+            // 키보드가 덮고 있으면 홈 인디케이터 몫은 빈 띠가 된다.
+            paddingBottom: (keyboardHeight > 0 ? 0 : insets.bottom) + 16,
+          }}
+        >
+          <View style={vars(sheetScope)}>{props.footer}</View>
+        </View>
       )}
     </BottomSheetModal>
   )

@@ -30,6 +30,8 @@ jest.mock('@gorhom/bottom-sheet', () => {
     // 아래 입력은 안 그려진다. 그래도 **있어야 한다**: `lib/nativewind-interop` 이 모듈을
     // 읽는 순간 이것을 등록하므로, 없으면 스위트가 뜨기도 전에 죽는다.
     useBottomSheetInternal: () => null,
+    // 넘긴 것을 그대로 돌려준다. 시트가 무엇을 넘겼는지는 프롭에서 본다.
+    useBottomSheetTimingConfigs: (config: unknown) => config,
     BottomSheetTextInput: (props: Record<string, unknown>) =>
       React.createElement(ReactNative.TextInput, props),
     BottomSheetModalProvider: (props: { children: ReactNode }) => props.children,
