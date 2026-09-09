@@ -50,6 +50,14 @@ const SHEET_RADIUS = 20
  * `scrollToEnd` 를 안 쓰는 것은 `BottomSheetScrollView` 의 ref 에 그 메서드가 없어서다.
  */
 const MAX_SCROLL = 99999
+/**
+ * 겹치는 층 셋의 순서. 넷 다 같은 상자 안에 절대 배치로 서므로 이 수가 무엇이 위인지를 정한다.
+ *
+ * 핸들이 맨 위다. 머리가 핸들 자리를 덮는 데다 뒤에 그려져서, 층이 같으면 핸들이 안 보인다.
+ */
+const HEADER_LAYER = 1
+const FOOTER_LAYER = 2
+const HANDLE_LAYER = 3
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
 /**
@@ -102,7 +110,7 @@ function SheetFooterLayer(props: {
         ownHeight.set(event.nativeEvent.layout.height)
         props.onHeight(event.nativeEvent.layout.height)
       }}
-      style={[{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }, placement]}
+      style={[{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: FOOTER_LAYER }, placement]}
     >
       {props.children}
     </AnimatedBox>
@@ -279,6 +287,9 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
         흐름에서 빼 놓을 것(`position: absolute`). `handleComponent={null}` 이라 라이브러리는 핸들
         높이를 0 으로 보고 스크롤 내용만 재는데, 흐름 안에 두면 그 위에 24pt 가 더 얹혀 딱 그만큼
         넘친다. 뺀 몫은 아래 `paddingTop` 이 되돌려 준다.
+
+        층은 셋 중 맨 위다. 머리도 같은 자리를 절대 배치로 덮는데, 그쪽이 뒤에 그려지므로 층이
+        같으면 핸들이 머리 밑에 깔려 안 보인다.
       */}
       <View
         pointerEvents="none"
@@ -290,7 +301,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
           height: HANDLE_HEIGHT,
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1,
+          zIndex: HANDLE_LAYER,
         }}
       >
         <View
@@ -310,7 +321,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
             top: 0,
             left: 0,
             right: 0,
-            zIndex: 1,
+            zIndex: HEADER_LAYER,
             backgroundColor: sheetSurface,
             // 시트 모서리와 같은 값. 다르면 머리가 시트 위에 덧댄 판으로 보인다.
             borderTopLeftRadius: SHEET_RADIUS,

@@ -333,6 +333,18 @@ describe('BottomSheet: 머리와 바닥을 스크롤 밖에 고정한다', () =>
     expect(머리.position).toBe('absolute')
   })
 
+  /**
+   * 머리가 핸들 자리를 덮는다. 둘 다 절대 배치이고 머리가 뒤에 그려지므로, 층이 같으면 핸들이
+   * 머리 밑에 깔려 화면에서 사라진다(사용자 보고).
+   */
+  it('핸들이 머리 위에 선다. 안 그러면 핸들이 안 보인다', async () => {
+    const { getByTestId } = await 고정시트()
+    const 핸들층 = flattenStyle(getByTestId('bottom-sheet-handle').parent!.props.style).zIndex
+    const 머리층 = flattenStyle(getByTestId('bottom-sheet-header').props.style).zIndex
+
+    expect(핸들층).toBeGreaterThan(머리층 as number)
+  })
+
   // 머리가 흐름 밖이므로 그 몫을 스크롤 내용이 스스로 비워야 첫 줄이 안 가린다.
   it('머리가 먹은 높이를 스크롤 내용의 위 여백이 되돌려 준다', async () => {
     const { getByTestId } = await 고정시트()
