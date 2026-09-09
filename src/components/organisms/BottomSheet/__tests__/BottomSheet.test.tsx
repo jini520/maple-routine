@@ -306,6 +306,12 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
  * 서는지는 라이브러리가 컨테이너 좌표로 계산하는 일이라 이 목 위에서는 안 보인다. 그건 기기가
  * 답한다.
  */
+/** 바닥 줄이 앉는 층. 높이를 재는 것도 자리를 잡는 것도 이 상자다. */
+type 요소 = ReturnType<Awaited<ReturnType<typeof renderOverlay>>['getByTestId']>
+function 바닥층(getByTestId: (id: string) => 요소): 요소 {
+  return getByTestId('bottom-sheet-footer').parent as 요소
+}
+
 describe('BottomSheet: 머리와 바닥을 스크롤 밖에 고정한다', () => {
   const 키보드손잡이: 손잡이[] = []
 
@@ -385,14 +391,12 @@ describe('BottomSheet: 머리와 바닥을 스크롤 밖에 고정한다', () =>
         .paddingBottom
 
     await act(async () => {
-      fireEvent(getByTestId('bottom-sheet-footer'), 'layout', {
-        nativeEvent: { layout: { height: 106 } },
-      })
+      fireEvent(바닥층(getByTestId), 'layout', { nativeEvent: { layout: { height: 106 } } })
     })
 
     expect(아래여백()).toBe(106)
-    // 흐름에서 차지하는 자리는 0 이다. 스크롤이 시트를 가득 채우고 그 위에 겹쳐 선다.
-    expect(flattenStyle(getByTestId('bottom-sheet-footer').props.style).marginTop).toBe(-106)
+    // 흐름 밖이다. 스크롤이 시트를 가득 채우고 그 위에 겹쳐 선다.
+    expect(flattenStyle(바닥층(getByTestId).props.style).position).toBe('absolute')
   })
 
   it('바닥 줄은 스크롤 밖이다', async () => {
@@ -452,9 +456,7 @@ describe('BottomSheet: 머리와 바닥을 스크롤 밖에 고정한다', () =>
         .paddingBottom
 
     await act(async () => {
-      fireEvent(getByTestId('bottom-sheet-footer'), 'layout', {
-        nativeEvent: { layout: { height: 106 } },
-      })
+      fireEvent(바닥층(getByTestId), 'layout', { nativeEvent: { layout: { height: 106 } } })
     })
     expect(아래여백()).toBe(106)
 
@@ -463,9 +465,7 @@ describe('BottomSheet: 머리와 바닥을 스크롤 밖에 고정한다', () =>
       키보드손잡이[0]({ endCoordinates: { height: 336 } })
     })
     await act(async () => {
-      fireEvent(getByTestId('bottom-sheet-footer'), 'layout', {
-        nativeEvent: { layout: { height: 106 - 34 } },
-      })
+      fireEvent(바닥층(getByTestId), 'layout', { nativeEvent: { layout: { height: 106 - 34 } } })
     })
 
     expect(아래여백()).toBe(106)

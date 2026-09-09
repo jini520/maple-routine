@@ -18,11 +18,19 @@
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Keyboard, Platform, Pressable, View } from 'react-native'
-import Animated, { Easing, useAnimatedStyle, type SharedValue } from 'react-native-reanimated'
+import Animated, {
+  Easing,
+  useAnimatedReaction,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+  type SharedValue,
+} from 'react-native-reanimated'
 import { useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
   BottomSheetModal,
   BottomSheetScrollView,
+  useBottomSheetInternal,
   useBottomSheetTimingConfigs,
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet'
@@ -66,6 +74,78 @@ const FOOTER_LAYER = 2
 const HANDLE_LAYER = 3
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
+/**
+ * 애니메이션이 붙는 상자. `Animated.View` 를 그대로 쓰면 안 된다.
+ *
+ * 앱이 `lib/nativewind-interop` 에서 `Animated.View` 를 NativeWind 에 등록해 두는데, 그러면
+ * `style` 이 그쪽 처리를 한 번 거치면서 리애니메이티드가 넘긴 스타일이 붙지 않는다. 화면에서는
+ * 상자가 통째로 안 그려지는 것으로 보인다.
+ */
+const AnimatedBox = Animated.createAnimatedComponent(View)
+
+/**
+ * 바닥 줄이 서는 층. 저장 버튼이 여기 산다.
+ *
+ * 자리는 **시트 자신의 키**에서 잰다(`animatedSheetHeight`). 시트가 미끄러지는 동안 이 값은
+ * 안 바뀌므로 줄이 시트에 붙어 함께 움직인다. 열 때도, 손으로 끌어내릴 때도 같다.
+ *
+ * 흐름에 얹으면 안 된다. 라이브러리가 내용 상자의 키를 0 에서 키우며 여는데, 그 애니메이션이
+ * 시트가 미끄러지는 곡선보다 느려서 상자 바닥에 선 줄이 위로 뛰었다가 가라앉는다. 상자 키는
+ * 매 프레임 다시 시작되는 지수 접근이고(`animatedPaddingBottom` 이 시트가 선 자리를 읽는다)
+ * 밖에서 손댈 수 없다.
+ *
+ * 값이 바뀔 때는 시트와 같은 시간으로 따라간다. 그러지 않으면 키보드가 뜰 때 이 줄만 먼저 튄다.
+ * 첫 값은 애니메이션 없이 앉힌다. 열자마자 제자리에 있어야 상자가 커지며 드러난다.
+ *
+ * 공유값은 **지역 상수로 꺼내 쓸 것**. `internal.animatedSheetHeight.get()` 처럼 객체를 타고
+ * 들어가면 리애니메이티드가 클로저에서 그 공유값을 못 찾아 구독을 안 건다.
+ */
+function SheetFooterLayer(props: {
+  /** 잰 높이를 위로 올린다. 스크롤이 그만큼을 자리로 비워야 시트가 그만큼 자란다. */
+  onHeight: (height: number) => void
+  children: ReactNode
+}): React.JSX.Element {
+  const internal = useBottomSheetInternal(true)
+  const sheetHeight = internal?.animatedSheetHeight
+  const layout = internal?.animatedLayoutState
+  const ownHeight = useSharedValue(0)
+  /** 줄의 아랫변이 설 자리. 시트 위끝에서 잰다. */
+  const bottom = useSharedValue(0)
+
+  useAnimatedReaction(
+    () => {
+      if (sheetHeight === undefined || layout === undefined) return 0
+      return sheetHeight.get() - Math.max(0, layout.get().handleHeight)
+    },
+    (next, previous) => {
+      if (next <= 0) return
+      if (previous === null || previous <= 0) {
+        bottom.set(next)
+        return
+      }
+      bottom.set(withTiming(next, { duration: MOVE_MS, easing: Easing.out(Easing.exp) }))
+    },
+  )
+
+  const placement = useAnimatedStyle(() => ({
+    transform: [{ translateY: Math.max(0, bottom.get() - ownHeight.get()) }],
+  }))
+
+  return (
+    <AnimatedBox
+      onLayout={(event) => {
+        ownHeight.set(event.nativeEvent.layout.height)
+        props.onHeight(event.nativeEvent.layout.height)
+      }}
+      style={[
+        { position: 'absolute', top: 0, left: 0, right: 0, zIndex: FOOTER_LAYER },
+        placement,
+      ]}
+    >
+      {props.children}
+    </AnimatedBox>
+  )
+}
 
 /**
  * 시트 뒤를 덮고 누르면 닫는 스크림. 페이드까지 직접 보간하는 부품.
@@ -230,6 +310,19 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       enableDynamicSizing
       // `adjustResize` 로 바꾸지 말 것. 이 앱은 edge-to-edge 라 키보드가 떠도 창이 안 줄어드는데,
       // 그 값을 받으면 라이브러리가 OS 가 이미 올린 줄 알고 보정을 0 으로 두고 빠져나간다.
+      /*
+        끌어올림 저항을 0 으로 둔다. 두 가지가 함께 걸린다.
+
+        ① 라이브러리는 시트 아래에 저항용 여유를 패딩으로 깔아 두는데, 그 값이 **시트가 선
+        자리를 재료로 쓴다**. 그래서 시트가 미끄러지는 동안 내용 상자의 목표 높이가 매 프레임
+        바뀌고, 그 상자의 애니메이션이 매번 다시 시작돼 시트보다 느리게 자란다. 상자 바닥에 선
+        저장 줄이 열릴 때 위로 뛰었다가 가라앉는 것이 그것이다. 0 이면 목표가 고정이라 상자와
+        시트가 같은 곡선으로 움직여 저장 줄이 화면 바닥에 붙은 채로 올라온다.
+
+        ② 저항이 0 이면 위로 끌어도 안 늘어난다. 스냅 포인트가 하나뿐인 시트라 늘어날 자리가
+        애초에 없다. 아래로 끌어 닫는 길은 그대로다.
+      */
+      overDragResistanceFactor={0}
       android_keyboardInputMode="adjustPan"
       // 기본값 `none` 이면 키보드 닫힘에서 라이브러리가 위치를 다시 안 재서 시트가 올라간 자리에
       // 남는다.
@@ -331,30 +424,21 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       </BottomSheetScrollView>
 
       {props.footer !== undefined && (
-        /*
-          바닥 줄. 스크롤 **뒤에 오는 흐름의 마지막 자식**이고, 자기 높이만큼의 음수 마진으로
-          흐름에서 차지하는 자리를 0 으로 만든다. 그래서 스크롤은 시트를 가득 채우고 이 줄은
-          그 위 마지막 칸에 겹쳐 선다. 겹칠 자리는 스크롤 내용의 `paddingBottom` 이 비워 둔다.
-
-          **자리를 직접 계산하지 말 것.** 절대 배치로 얹고 좌표를 세면 키보드가 뜰 때 이 줄만
-          먼저 튀고, 시트를 끌어내릴 때 이 줄만 제자리에 남는다. 시트가 크고 줄고 미끄러지는
-          것은 전부 라이브러리가 스프링으로 돌리는 값이라, 흐름에 얹혀 있어야 한 몸으로 움직인다.
-        */
-        <View
-          testID="bottom-sheet-footer"
-          onLayout={(event) => setFooterHeight(event.nativeEvent.layout.height)}
-          style={{
-            marginTop: -footerHeight,
-            zIndex: FOOTER_LAYER,
-            backgroundColor: sheetSurface,
-            paddingHorizontal: 16,
-            paddingTop: 12,
-            // 키보드가 덮고 있으면 홈 인디케이터 몫은 빈 띠가 된다.
-            paddingBottom: (keyboardHeight > 0 ? 0 : insets.bottom) + 16,
-          }}
-        >
-          <View style={vars(sheetScope)}>{props.footer}</View>
-        </View>
+        // 겹칠 자리는 스크롤 내용의 `paddingBottom` 이 비워 둔다.
+        <SheetFooterLayer onHeight={setFooterHeight}>
+          <View
+            testID="bottom-sheet-footer"
+            style={{
+              backgroundColor: sheetSurface,
+              paddingHorizontal: 16,
+              paddingTop: 12,
+              // 키보드가 덮고 있으면 홈 인디케이터 몫은 빈 띠가 된다.
+              paddingBottom: (keyboardHeight > 0 ? 0 : insets.bottom) + 16,
+            }}
+          >
+            <View style={vars(sheetScope)}>{props.footer}</View>
+          </View>
+        </SheetFooterLayer>
       )}
     </BottomSheetModal>
   )
