@@ -731,6 +731,59 @@ describe('통화', () => {
     })
   })
 
+  /**
+   * **큰 숫자는 메소 축이다**(2026-09-09 사용자 보고). 종전에는 메포를 고르면 친 메포가 그대로
+   * 서서, 같은 기록이 시트에서는 `3,000 메포` · 가계부 칸에서는 `3억` 으로 보였다. 집계
+   * (`incomeMesoOf`)는 처음부터 환산해 세고 있었다.
+   *
+   * 시세 1,000 은 1억 메소당 1,000 메포다. 3,000 메포면 3억.
+   */
+  it('메포는 큰 숫자에서 메소로 환산돼 선다', async () => {
+    const view = await 그리기({ lastPointRate: 1_000 }, '기타')
+    await 이름으로누르기(view, '메포')
+    await 치기(view, '3000')
+
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('3억')
+    expect(within(view.getByTestId('income-sheet-amount-unit')).getByText('메소')).toBeTruthy()
+  })
+
+  /** 곱한 **다음에** 환산한다. 1,500 메포 × 2 = 3,000 메포 = 3억. */
+  it('수량까지 곱한 값을 환산한다', async () => {
+    const view = await 그리기({ lastPointRate: 1_000 }, '기타')
+    await 이름으로누르기(view, '메포')
+    await 치기(view, '1500')
+
+    await 이름으로누르기(view, '수량 늘리기')
+
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('3억')
+  })
+
+  /** 저장은 안 바뀐다. 환산값을 넣으면 시세가 기록에서 사라져 되짚을 수 없다. */
+  it('환산은 그리는 것뿐이다. 저장은 친 메포와 시세 그대로다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave, lastPointRate: 1_000 }, '기타')
+    await 이름으로누르기(view, '메포')
+    await 치기(view, '3000')
+
+    await 이름으로누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      mesoAmount: null,
+      pointAmount: 3_000,
+      pointPer100mMeso: 1_000,
+    })
+  })
+
+  /** 캐시는 환산하지 않으므로 친 값 그대로 `원` 이다. */
+  it('캐시는 환산하지 않고 원 으로 선다', async () => {
+    const view = await 그리기({}, '기타')
+    await 이름으로누르기(view, '캐시')
+    await 치기(view, '15000')
+
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('1만 5000')
+    expect(within(view.getByTestId('income-sheet-amount-unit')).getByText('원')).toBeTruthy()
+  })
+
   it('캐시는 캐시 칸에 담기고 **환산하지 않는다** 고 말한다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave }, '기타')
