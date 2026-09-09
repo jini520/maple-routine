@@ -23,8 +23,8 @@ import {
 } from '../../../lib/cashbook/free-currency'
 import { pointToMeso } from '../../../lib/cashbook/spend-catalog'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import { AmountInput, FieldRow, QuantityStepper } from '../sheet-fields'
-import { CharacterField, useSaveSlot, type IncomeFormProps } from './form-shared'
+import { AmountInput, CharacterField, FieldRow, QuantityStepper } from '../sheet-fields'
+import { useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
@@ -111,7 +111,12 @@ export function EtcForm(
 
   return (
     <>
-      <CharacterField characters={props.characters} selected={ocid} onSelect={setOcid} />
+      <CharacterField
+        characters={props.characters}
+        selected={ocid}
+        onSelect={setOcid}
+        testID="income-sheet-chain"
+      />
 
       <FieldRow label="내용" labelTestID="income-sheet-name-label">
         <SheetTextInput

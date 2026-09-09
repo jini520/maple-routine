@@ -103,13 +103,23 @@ async function 갈래바꾸기(view: Rendered, label: 갈래이름): Promise<voi
 }
 
 /**
- * 에픽던전 리워드는 **두 단계**다. 대표를 고르고, 그 안에서 형태와
- * 단계를 고른다. 단계도 형태도 없는 항목(몬스터 파크·영약)은 `누르기` 한 번으로 끝난다.
+ * 에픽던전 리워드는 **두 단계**다. 대표를 고르고, 그 안에서 형태마다 단계를 고른다.
+ * 형태도 단계도 없는 항목(몬스터 파크·영약)은 `누르기` 한 번으로 끝난다.
  */
 async function 에픽던전(view: Rendered, 대표: string, 형태: string, 단계: string): Promise<void> {
   await 누르기(view, 대표)
-  await 누르기(view, 형태)
-  await 누르기(view, 단계)
+  await 형태단계(view, 형태, 단계)
+}
+
+/**
+ * 형태 한 줄에서 단계를 고른다. **줄을 지목해서** 누른다.
+ *
+ * 두 줄의 조각 이름이 `0단계|1단계|2단계` 로 똑같아 라벨만으로는 어느 형태인지 안 갈린다.
+ */
+async function 형태단계(view: Rendered, 형태: string, 단계: string): Promise<void> {
+  await act(async () => {
+    fireEvent.press(within(view.getByTestId(`spend-sheet-form-${형태}`)).getByLabelText(단계))
+  })
 }
 
 describe('머리', () => {
@@ -381,10 +391,10 @@ describe('수량. 곱셈은 앱이 한다', () => {
     const view = await 그리기({ onSave, lastPointRate: 1_180 })
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
-    await 누르기(view, '1단계')
+    await 형태단계(view, '경험치', '1단계')
     await 누르기(view, '저장')
 
-    expect(onSave.mock.calls[0][0]).toMatchObject({ item: '하이마운틴 1단계', quantity: 1 })
+    expect(onSave.mock.calls[0][0]).toMatchObject({ item: '하이마운틴 EXP 1단계', quantity: 1 })
   })
 
   // 목록으로 돌아가면 고르던 것이 통째로 풀린다. 남으면 **대표는 몬스터 파크인데 저장되는 것은
@@ -412,26 +422,15 @@ describe('수량. 곱셈은 앱이 한다', () => {
     expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('하이마운틴')
   })
 
-  // 사용자가 준 한도를 **화면이 들고 있어야** 한다. 데이터에만 있고 안 보이면 받은 뜻이 없다
-  // (사용자 지적). 앱은 세지 않는다: 몬스터 파크 한도는 축이 셋(월드·캐릭터·무료)인데
-  // 앱은 지금 어느 월드·어느 캐릭터인지 모른다.
-  it('한도가 있는 항목은 사용자 문장 그대로 적는다', async () => {
+  // 한도 문장은 **화면에서 걷혔다**(사용자 지정). 앱이 해석하지도 세지도 않아 화면에서 하는
+  // 일이 없었다. 참조표의 문장은 `maxQuantity` 숫자의 출처로 그대로 남는다.
+  it('한도 문장을 안 적는다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
 
     await 누르기(view, '몬스터 파크')
 
-    expect(view.getByTestId('spend-sheet-limit')).toHaveTextContent(
-      '한도 · 일간 월드당 최대 14회, 캐릭터 당 최대 7회, 일간 무료 2회',
-    )
-  })
-
-  // 한도가 없는 항목에 빈 줄이 서면 **한도가 0** 으로 읽힌다.
-  it('한도가 없는 항목에는 그 줄이 서지 않는다', async () => {
-    const view = await 그리기({ lastPointRate: 1_180 })
-
-    await 누르기(view, '에픽던전')
-
     expect(view.queryByTestId('spend-sheet-limit')).toBeNull()
+    expect(view.queryByText(/한도/)).toBeNull()
   })
 
   // 한도를 적어만 두면 **넘겨서 적을 수 있다**. 스테퍼가 막아야 한다(사용자 지적).
@@ -467,12 +466,30 @@ describe('수량. 곱셈은 앱이 한다', () => {
     expect(view.getByLabelText('수량 늘리기').props.accessibilityState?.disabled).toBeFalsy()
   })
 
-  // 형태가 있는데 안 고르면 **어느 쪽인지 모르는 행** 이 된다. 칸을 더한 뜻이 사라진다.
-  it('형태를 안 고르면 저장이 막힌다', async () => {
+  // 0단계는 **사는 것이 아니라 기본 보상**이다. 둘 다 0단계면 적을 지출이 없다.
+  it('둘 다 0단계면 저장이 막힌다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180 })
+
+    await 누르기(view, '하이마운틴')
+
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  it('한 형태만 골라도 저장된다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
     await 누르기(view, '하이마운틴')
 
-    await 누르기(view, '2단계')
+    await 형태단계(view, '솔 에르다', '1단계')
+
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(false)
+  })
+
+  // 0단계로 되돌리면 그 형태는 안 산 것이 된다. 되돌릴 길이 없으면 잘못 누른 것이 저장된다.
+  it('0단계로 되돌리면 다시 막힌다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180 })
+    await 에픽던전(view, '하이마운틴', '경험치', '2단계')
+
+    await 형태단계(view, '경험치', '0단계')
 
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
@@ -629,9 +646,10 @@ describe('저장', () => {
       ocid: null,
       spentOn: '2026-08-23',
       category: '컨텐츠',
-      item: '하이마운틴 2단계',
-      // 가격이 같아 금액으로는 구분이 안 되므로 **고른 형태를 따로 박는다**.
-      form: '경험치',
+      // 고른 단계가 이름에 든다. 0단계인 솔 에르다는 안 적힌다.
+      item: '하이마운틴 EXP 2단계',
+      // 형태 칸은 안 쓴다. 한 기록이 형태 둘을 함께 지므로 어느 쪽인가 를 물을 수 없다.
+      form: null,
     itemKind: null,
       quantity: 1,
       mesoAmount: null,
@@ -668,6 +686,63 @@ describe('저장', () => {
     await 누르기(view, '저장')
 
     expect(onClose).toHaveBeenCalledTimes(1)
+  })
+})
+
+/**
+ * **에픽던전은 형태마다 단계를 고른다**(사용자 지정). 경험치와 솔 에르다가 각각 0·1·2단계이고
+ * 기본은 둘 다 0단계다. 0단계는 클리어하면 그냥 받는 기본 보상이라 살 것이 아니다.
+ */
+describe('형태별 단계', () => {
+  it('형태마다 줄이 서고 0단계에서 시작한다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180 })
+
+    await 누르기(view, '하이마운틴')
+
+    for (const 형태 of ['경험치', '솔 에르다']) {
+      const 줄 = within(view.getByTestId(`spend-sheet-form-${형태}`))
+      expect(줄.getByLabelText('0단계').props.accessibilityState?.selected).toBe(true)
+      expect(줄.getByLabelText('2단계')).toBeTruthy()
+    }
+    // 형태를 하나 고르던 줄은 사라졌다. 이제 그 자리가 형태 줄 둘이다.
+    expect(view.queryByText('형태')).toBeNull()
+    expect(view.queryByText('단계')).toBeNull()
+  })
+
+  // 형태마다 따로 사므로 **합**이다(사용자 확인). 7,500 + 30,000 = 37,500 메포.
+  it('둘 다 고르면 두 값을 더해 적는다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave, lastPointRate: 1_180 })
+
+    await 에픽던전(view, '하이마운틴', '경험치', '1단계')
+    await 형태단계(view, '솔 에르다', '2단계')
+    await 누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      item: '하이마운틴 EXP 1단계, 솔 2단계',
+      pointAmount: 37_500,
+    })
+  })
+
+  // 큰 숫자는 그 합을 메소로 옮긴 값이다. 37,500 ÷ 1,180 × 1억 = 3,177,966,101 메소.
+  it('큰 숫자가 그 합을 메소로 든다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180 })
+
+    await 에픽던전(view, '하이마운틴', '경험치', '1단계')
+    await 형태단계(view, '솔 에르다', '2단계')
+
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('31억 7796만 6101')
+  })
+
+  // 0단계인 형태를 이름에 적으면 **안 산 것이 산 것처럼** 읽힌다.
+  it('0단계인 형태는 이름에 안 적힌다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave, lastPointRate: 1_180 })
+
+    await 에픽던전(view, '악몽선경', '솔 에르다', '2단계')
+    await 누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({ item: '악몽선경 솔 2단계' })
   })
 })
 
@@ -1030,7 +1105,8 @@ describe('시세가 비어 있을 때', () => {
  * 캐릭터 귀속(사용자 말: *"캐릭터를 선택해서 입력하는 방법을 추가하는게
  * 좋을거 같아"*). 컬럼은 처음부터 있었고 **화면만 없었다**.
  *
- * **기본은 `선택 안함`**. `ocid = null` 이 계정 단위다.
+ * 줄은 **수입 시트와 같은 배지 사슬**이다(사용자 지시). 안 고르면 자리표시자가
+ * `캐릭터 선택` 이고 그 상태가 계정 단위(`ocid = null`)다.
  */
 describe('캐릭터 귀속', () => {
   async function 아이디로누르기(view: Rendered, testID: string): Promise<void> {
@@ -1039,18 +1115,19 @@ describe('캐릭터 귀속', () => {
     })
   }
 
-  it('기본이 `선택 안함` 이다', async () => {
+  it('안 고른 상태는 자리표시자가 말한다', async () => {
     const view = await 그리기()
     await 갈래바꾸기(view, '아이템 구매')
 
-    expect(view.getByTestId('spend-sheet-character-trigger')).toHaveTextContent('캐릭터선택 안함')
+    expect(view.getByTestId('spend-sheet-chain-placeholder')).toHaveTextContent('캐릭터 선택')
+    expect(view.queryByTestId('spend-sheet-chain-badge-캐릭터')).toBeNull()
   })
 
   // 고를 것을 고르는 화면에는 안 선다. 거기엔 아직 적을 기록이 없다.
   it('타일 격자에는 안 선다', async () => {
     const view = await 그리기()
 
-    expect(view.queryByTestId('spend-sheet-character-trigger')).toBeNull()
+    expect(view.queryByTestId('spend-sheet-chain-placeholder-trigger')).toBeNull()
   })
 
   it('목록 갈래에서도 고를 수 있다. 대표를 고른 뒤에 선다', async () => {
@@ -1058,17 +1135,19 @@ describe('캐릭터 귀속', () => {
 
     await 누르기(view, '하이마운틴')
 
-    expect(view.getByTestId('spend-sheet-character-trigger')).toBeTruthy()
+    expect(view.getByTestId('spend-sheet-chain-placeholder-trigger')).toBeTruthy()
   })
 
-  it('고르면 그 캐릭터로 저장한다', async () => {
+  it('고르면 그 캐릭터로 저장하고 이름이 알약으로 선다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
     await 갈래바꾸기(view, '아이템 구매')
     await 치기(view, '1200000000')
 
-    await 아이디로누르기(view, 'spend-sheet-character-trigger')
-    await 아이디로누르기(view, 'spend-sheet-character-option-ocid-2')
+    await 아이디로누르기(view, 'spend-sheet-chain-placeholder-trigger')
+    await 아이디로누르기(view, 'spend-sheet-chain-option-ocid-2')
+    expect(view.getByTestId('spend-sheet-chain-badge-캐릭터')).toHaveTextContent('아델')
+
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({ ocid: 'ocid-2' })
@@ -1230,7 +1309,42 @@ describe('수정 모드', () => {
 
     expect(view.queryByTestId('spend-sheet-quantity')).toBeNull()
     expect(view.getByTestId('spend-sheet-rate').props.value).toBe('1180')
-    expect(view.getByTestId('spend-sheet-character-trigger')).toBeTruthy()
+    expect(view.getByTestId('spend-sheet-chain-placeholder-trigger')).toBeTruthy()
+  })
+
+  /**
+   * 옛 기록은 이름 하나에 형태가 딸려 있었다(`악몽선경 2단계` + `경험치`). 그 짝을 형태 하나의
+   * 단계로 옮겨 연다. 못 되짚으면 안 고른 시트가 열려 고치는 사람이 다시 골라야 한다.
+   */
+  it('옛 기록도 그 형태의 단계로 열린다', async () => {
+    const view = await 고치기()
+
+    expect(
+      within(view.getByTestId('spend-sheet-form-경험치')).getByLabelText('2단계').props
+        .accessibilityState?.selected,
+    ).toBe(true)
+    expect(
+      within(view.getByTestId('spend-sheet-form-솔 에르다')).getByLabelText('0단계').props
+        .accessibilityState?.selected,
+    ).toBe(true)
+  })
+
+  // 새 이름은 형태 둘을 함께 든다. 앱이 만든 글자를 앱이 되읽는 자리다.
+  it('두 형태가 적힌 이름도 그대로 되짚는다', async () => {
+    const view = await 그리기({
+      editing: { ...악몽선경, item: '악몽선경 EXP 1단계, 솔 2단계', form: null },
+      onDelete: jest.fn(),
+    })
+
+    expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('악몽선경')
+    expect(
+      within(view.getByTestId('spend-sheet-form-경험치')).getByLabelText('1단계').props
+        .accessibilityState?.selected,
+    ).toBe(true)
+    expect(
+      within(view.getByTestId('spend-sheet-form-솔 에르다')).getByLabelText('2단계').props
+        .accessibilityState?.selected,
+    ).toBe(true)
   })
 
   // 직접 입력도 같다. 갈래는 글자이고 내용·금액은 고칠 수 있다.
