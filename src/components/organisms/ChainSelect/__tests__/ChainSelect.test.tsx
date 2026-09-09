@@ -64,6 +64,34 @@ describe('ChainSelect: 고른 것은 배지로, 남은 것은 자리표시자로
     expect(typeof 배지?.props.entering).toBe('function')
   })
 
+  /**
+   * 뒤 단계가 매여 있는 자리에서는 `선택 안함` 이 고르는 것이 아니다. 잘못 누른 한 번이 고른 것
+   * 둘을 지운다(사용자 지시). 목록은 `SelectField` 가 알아서 닫는다.
+   */
+  it('`clearable: false` 면 값이 `null` 인 보기가 아무 일도 안 한다', async () => {
+    const onSelect = jest.fn()
+    const { getByTestId } = await renderOverlay(
+      <ChainSelect
+        testID="hunt-chain"
+        steps={[
+          { name: '지역', options: 지역, selected: null, onSelect, clearable: false },
+          { name: '사냥터', options: [], selected: null, onSelect: jest.fn() },
+        ]}
+      />,
+    )
+
+    await act(async () => {
+      fireEvent.press(getByTestId('hunt-chain-placeholder-trigger'))
+    })
+    await act(async () => {
+      fireEvent.press(getByTestId('hunt-chain-option-'))
+    })
+
+    expect(onSelect).not.toHaveBeenCalled()
+    // 만진 적 없는 상태 그대로다. 이름이 자리표시자에서 안 빠진다.
+    expect(getByTestId('hunt-chain-placeholder').props.children).toBe('지역 · 사냥터 선택')
+  })
+
   it('다 골랐으면 자리표시자가 사라진다', async () => {
     const { queryByTestId, getByText } = await renderOverlay(
       <ChainSelect

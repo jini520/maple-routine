@@ -39,6 +39,13 @@ export interface ChainStep {
   onSelect: (value: string | null) => void
   /** 목록 한 줄을 그리는 법. `SelectField` 로 그대로 넘어간다. */
   renderOption?: (option: SelectOption, isSelected: boolean) => React.ReactNode
+  /**
+   * 값이 `null` 인 보기(`선택 안함` · 안내 문구)를 **고르는 것으로 볼지**. 안 주면 본다.
+   *
+   * 끄면 그 보기는 목록을 닫는 일만 한다. 뒤 단계가 매여 있는 자리에 쓴다. 지역을 `선택 안함`
+   * 으로 되돌리면 사냥터까지 함께 걷혀, 잘못 누른 한 번이 고른 것 둘을 지운다(사용자 지시).
+   */
+  clearable?: boolean
 }
 
 /**
@@ -76,8 +83,11 @@ export function ChainSelect(props: {
   const [touched, setTouched] = useState<readonly number[]>([])
 
   function pick(index: number, value: string | null): void {
+    const step = props.steps[index]
+    // 고르는 것이 아닌 보기다. 목록은 `SelectField` 가 알아서 닫는다.
+    if (value === null && step.clearable === false) return
     setTouched((current) => [...current.filter((each) => each < index), index])
-    props.steps[index].onSelect(value)
+    step.onSelect(value)
   }
 
   /** 줄의 폭. 새 알약이 어디서 출발할지를 이 값이 정한다. */

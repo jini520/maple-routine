@@ -192,7 +192,9 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
             aria-checked={huntMode === 'manual'}
             onPress={() => setHuntMode(huntMode === 'manual' ? 'calculator' : 'manual')}
             hitSlop={8}
-            className="flex-row items-center gap-2"
+            // `self-start` 가 없으면 세로 스택의 자식이라 줄 끝까지 늘어난다. 빈 자리를 눌러도
+            // 체크가 켜졌다(사용자 지적).
+            className="flex-row items-center gap-2 self-start"
           >
             <CheckBox checked={huntMode === 'manual'} />
             <Text className="text-xs font-semibold text-text-muted">획득 메소 직접 입력</Text>

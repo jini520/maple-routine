@@ -990,6 +990,49 @@ describe('사냥 계산기', () => {
     expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent('지역 · 사냥터 선택')
   })
 
+  /**
+   * 지역과 사냥터의 `선택 안함` 은 **고르는 것이 아니다**(2026-09-20 사용자 지시). 잘못 누른
+   * 한 번이 고른 것 둘을 지운다. 목록만 닫힌다.
+   */
+  it('지역을 `선택 안함` 으로 눌러도 아무 일이 없다', async () => {
+    const view = await 그리기()
+    await 밤의길3(view)
+
+    await 아이디로누르기(view, 'income-sheet-chain-badge-지역')
+    await 아이디로누르기(view, 'income-sheet-chain-option-')
+
+    expect(view.getByTestId('income-sheet-chain-badge-지역')).toHaveTextContent('탈라하트')
+    expect(view.getByTestId('income-sheet-chain-badge-사냥터')).toHaveTextContent('밤의 길 3')
+  })
+
+  it('사냥터를 `선택 안함` 으로 눌러도 아무 일이 없다', async () => {
+    const view = await 그리기()
+    await 밤의길3(view)
+
+    await 아이디로누르기(view, 'income-sheet-chain-badge-사냥터')
+    await 아이디로누르기(view, 'income-sheet-chain-option-')
+
+    expect(view.getByTestId('income-sheet-chain-badge-사냥터')).toHaveTextContent('밤의 길 3')
+  })
+
+  /**
+   * 아직 아무것도 안 고른 자리에서도 같다. 종전에는 그 한 번으로 지역이 만진 것이 되어
+   * 자리표시자에서 이름만 사라졌다. 알약도 안 서므로 고른 것이 없는데 고를 것도 없어졌다.
+   *
+   * 사냥터의 `지역을 먼저 고르세요` 도 값이 `null` 이라 같은 길로 걷힌다. 지역을 못 비우게
+   * 된 지금은 그 자리에 닿을 수 없다.
+   */
+  it('아무것도 안 고른 자리에서 `선택 안함` 을 눌러도 이름이 안 사라진다', async () => {
+    const view = await 그리기()
+    await 사슬고르기(view, '')
+
+    await 아이디로누르기(view, 'income-sheet-chain-placeholder-trigger')
+    await 아이디로누르기(view, 'income-sheet-chain-option-')
+
+    // 지역이 안 만져진 채로 남아 자리표시자가 그 이름을 계속 읽는다.
+    expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent('지역 · 사냥터 선택')
+  })
+
   it('지역을 옮기면 사냥터가 풀린다. 남의 맵으로 계산이 돌지 않는다', async () => {
     const view = await 그리기()
     await 밤의길3(view)
@@ -1355,6 +1398,18 @@ describe('사냥 수동 입력', () => {
   async function 직접입력켜기(view: Rendered): Promise<void> {
     await 이름으로누르기(view, '획득 메소 직접 입력')
   }
+
+  /**
+   * 누르는 자리가 **체크박스와 라벨까지**다. 세로 스택의 자식이라 그냥 두면 줄 끝까지 늘어나,
+   * 오른쪽 빈 자리를 눌러도 켜졌다(사용자 지적).
+   */
+  it('누르는 자리가 줄 전체로 안 늘어난다', async () => {
+    const view = await 그리기({}, '사냥')
+
+    expect(flattenStyle(view.getByLabelText('획득 메소 직접 입력').props.style).alignSelf).toBe(
+      'flex-start',
+    )
+  })
 
   it('켜면 계산기 줄이 걷히고 획득 메소가 치는 칸이 된다 (결정 1)', async () => {
     const view = await 그리기({}, '사냥')
