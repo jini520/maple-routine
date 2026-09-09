@@ -17,7 +17,12 @@ import { rnThemeAppearancePort } from '../../native/adapters/rn-theme-appearance
 import { __resetThemeAppearanceForTest } from '../appearance-store'
 import { MediaScope } from '../MediaScope'
 import { ThemeProvider } from '../ThemeProvider'
-import { useScrollIndicatorStyle, useThemeAppearance, useThemeMode } from '../context'
+import {
+  useScrollIndicatorStyle,
+  useSheetBlurTint,
+  useThemeAppearance,
+  useThemeMode,
+} from '../context'
 
 const 머쉬맘 = getThemeDefinition('머쉬맘')
 const 검은마법사 = getThemeDefinition('검은마법사')
@@ -46,6 +51,11 @@ function ModeProbe() {
   return (
     <Text testID="mode">{`${useThemeMode()}/${useScrollIndicatorStyle()}/${useThemeAppearance().theme}`}</Text>
   )
+}
+
+/** 명암을 고르는 플랫폼 프롭. OS 외형이 아니라 테마가 정하는지를 본다. */
+function BlurProbe() {
+  return <Text testID="blur-tint">{useSheetBlurTint()}</Text>
 }
 
 beforeEach(__resetThemeAppearanceForTest)
@@ -187,6 +197,27 @@ describe('모드 분기', () => {
     )
 
     expect(getByTestId('mode').props.children).toBe(`${mode}/${indicator}/${name}`)
+  })
+
+  /**
+   * 시트 전환 흐림의 재질. **OS 외형이 아니라 테마가 고른다.**
+   *
+   * `expo-blur` 의 기본 `default` 는 iOS 의 적응형 `.regular` 이라 OS 다크모드에서 검게 깔린다.
+   * 다크 OS 를 쓰는 사용자의 라이트 테마 시트가 통째로 어두워졌다(실기기 보고).
+   */
+  it.each([
+    ['머쉬맘', 'systemMaterialLight'],
+    ['검은마법사', 'systemMaterialDark'],
+  ] as const)('%s 의 시트 흐림 재질은 %s 다', async (name, tint) => {
+    rnThemeAppearancePort.apply(name, getThemeDefinition(name))
+
+    const { getByTestId } = await render(
+      <ThemeProvider>
+        <BlurProbe />
+      </ThemeProvider>,
+    )
+
+    expect(getByTestId('blur-tint').props.children).toBe(tint)
   })
 })
 

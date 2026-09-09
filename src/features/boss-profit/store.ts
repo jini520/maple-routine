@@ -314,6 +314,15 @@ async function loadWeeksWithRecords(ocids: string[], monthKey: string): Promise<
 // 구분되지 않아 정상적인 0 을 기록으로 덮어쓴다.
 async function buildWeeklySubtotalsForMonth(
   ocids: string[],
+  /**
+   * 추적 목록. 여기 없는 캐릭터는 **이 달에 기록이 있을 때만** 카드를 갖는다.
+   *
+   * `ocids` 는 표시 대상이라 한 번이라도 기록을 남긴 캐릭터가 다 든다. 이 함수는 받은 목록을
+   * 그대로 돌며 주마다 한 줄씩 만들므로, 거르지 않으면 관리 목록에서 뺀 캐릭터가 기록이 없는
+   * 달에도 0 원 카드로 선다(사용자 보고). 추적 중인 캐릭터의 0 은 이번 달에 아직 안 잡았다 는
+   * 사실이라 그대로 남긴다.
+   */
+  trackedOcids: ReadonlySet<string>,
   monthPeriodKey: string,
   liveRows: BossProfitRow[],
   knownProfiles: Map<string, CharacterProfileInfo>,
@@ -396,11 +405,31 @@ async function buildWeeklySubtotalsForMonth(
 
   const subtotals: BossProfitWeeklySubtotal[] = []
 
+  /**
+   * 이 달에 이 캐릭터의 것이 하나라도 있나. 결정석 기록 · 드롭 · 라이브 행 셋을 본다.
+   *
+   * 라이브 행까지 보는 것은 진행 중인 주의 기록이 위 조회에 안 들어 있어서다(그 주의 금액은
+   * 스냅샷에서 읽는다). 그 스냅샷에는 기록에서 되살린 행도 들어 있어 해제한 캐릭터의 이번 주
+   * 수익이 여기서 잡힌다. 기간 키로 한 번 거르는 것은 한 주가 달 경계를 걸칠 때 옆 달의 행이
+   * 이 달의 근거가 되지 않게 하기 위해서다.
+   */
+  const monthKeys = new Set([...weekKeys, monthPeriodKey])
+  const liveOcids = new Set(
+    liveRows.filter((row) => monthKeys.has(row.periodKey)).map((row) => row.ocid),
+  )
+  const hasMonthData = (ocid: string): boolean =>
+    liveOcids.has(ocid) ||
+    records.some((record) => record.ocid === ocid) ||
+    weekDrops.some((drop) => drop.ocid === ocid)
+
   // 호출부가 안 넘긴 ocid 만 한 번에 찾는다.
   const missing = ocids.filter((ocid) => !knownProfiles.has(ocid))
   const looked = await resolveDisplayProfiles(missing)
 
   for (const ocid of ocids) {
+    if (!trackedOcids.has(ocid) && !hasMonthData(ocid)) {
+      continue
+    }
     const known = knownProfiles.get(ocid)
     const fallback = looked.get(ocid)
     const characterName = known?.characterName ?? fallback?.name ?? null
@@ -634,6 +663,7 @@ async function loadPeriod(
       tab === 'monthly'
         ? await buildWeeklySubtotalsForMonth(
             sortedOcids,
+            new Set(ocids),
             periodKey,
             latestSyncSnapshot?.rows ?? [],
             latestSyncSnapshot?.characterProfiles ?? new Map(),
@@ -721,7 +751,15 @@ async function loadPeriod(
   )
   const weeklySubtotals =
     tab === 'monthly'
-      ? await buildWeeklySubtotalsForMonth(sortedOcids, periodKey, [], profileSnapshot, now, outcomes)
+      ? await buildWeeklySubtotalsForMonth(
+          sortedOcids,
+          new Set(ocids),
+          periodKey,
+          [],
+          profileSnapshot,
+          now,
+          outcomes,
+        )
       : []
   // 지난 기간의 고아 드롭을 지운다. 과거 기간은 기록이 곧 사실이라 동기화 신선도를 따질 것이
   // 없다. 백필된 적 없는 주는 행이 통째로 비어 안전 장치가 알아서 막는다.
@@ -1107,6 +1145,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         tab === 'monthly'
           ? await buildWeeklySubtotalsForMonth(
               sortedOcids,
+              new Set(ocids),
               currentPeriodKey,
               cachedSortedRows,
               cachedCharacterProfiles,
@@ -1298,7 +1337,14 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
 
     const weeklySubtotals =
       tab === 'monthly'
-        ? await buildWeeklySubtotalsForMonth(syncedOcids, currentPeriodKey, sortedRows, characterProfiles, now)
+        ? await buildWeeklySubtotalsForMonth(
+            syncedOcids,
+            new Set(ocids),
+            currentPeriodKey,
+            sortedRows,
+            characterProfiles,
+            now,
+          )
         : []
 
     const [liveDropsByRowKey, livePreviousPeriodTotalMeso, liveWeeksWithRecords] = await Promise.all([

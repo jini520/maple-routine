@@ -55,3 +55,16 @@ export function useThemeMode(): ThemeMode {
 export function useScrollIndicatorStyle(): 'black' | 'white' {
   return useThemeMode() === 'dark' ? 'white' : 'black'
 }
+
+/**
+ * 시트가 단계를 갈 때 얹히는 흐림의 재질(`expo-blur` 의 `tint`).
+ *
+ * 위 훅과 **같은 이유로 여기 있다**. `expo-blur` 의 기본값 `'default'` 는 iOS 에서
+ * `UIBlurEffect.Style.regular` 이고, 그 재질은 트레잇의 `userInterfaceStyle` 을 따라가 **OS 가
+ * 다크면 검게** 깔린다. 다크 OS 를 쓰는 사용자의 라이트 테마 시트가 통째로 어두워졌다.
+ *
+ * 여기서 내는 둘은 **고정** 재질이라 OS 를 안 본다. 시트는 자기가 이미 입고 있는 색으로 녹는다.
+ */
+export function useSheetBlurTint(): 'systemMaterialLight' | 'systemMaterialDark' {
+  return useThemeMode() === 'dark' ? 'systemMaterialDark' : 'systemMaterialLight'
+}

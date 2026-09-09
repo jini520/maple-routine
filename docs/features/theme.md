@@ -157,6 +157,12 @@ X ∈ `primary` · `secondary` · `third` · `error` 각각 `X` / `on-X` / `X-ti
 `'light' | 'dark'` 다. 상태바(`native/status-bar.ts`)와 하단 내비 글리프(`native/system-bars.ts`)의
 명암을 결정한다. 우리가 그리지 않는 크롬(스크롤 인디케이터 등)의 색을 OS가 고르는 근거이기도 하다.
 
+**명암을 고르는 플랫폼 프롭은 전부 이 값에서 온다.** 스크롤 인디케이터(`useScrollIndicatorStyle`) ·
+시트 전환 흐림의 재질(`useSheetBlurTint`) · 유리 판의 `colorScheme`([[ADR-132]] 정정 19) 셋이다.
+그 프롭들의 기본값(`default`·`auto`)은 **OS 외형**을 보는데 이 앱은 자체 테마를 쓴다. 빠뜨리면 OS
+설정과 앱 테마가 어긋난 사용자에게서만 색이 뒤집힌다([[ADR-244]] 정정 5 가 그렇게 났다).
+앞의 둘은 `theme/context.ts` 에 나란히 산다.
+
 **자동 계산하지 않고 테마마다 사람이 명시한다**([[ADR-064]] 결정 8). 파스텔처럼 경계가 애매한
 테마에서 오분류를 막기 위해서다.
 
