@@ -245,8 +245,8 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
   it('키보드가 움직이면 그 시간에 맞춘다', async () => {
     const { getByTestId } = await open()
 
-    // 기본은 여유로운 쪽이다.
-    expect(getByTestId('sheet').props.animationConfigs).toMatchObject({ duration: 460 })
+    // 기본은 여유로운 쪽이다. 키보드의 250 보다 길어야 휙 바뀌지 않는다.
+    expect(getByTestId('sheet').props.animationConfigs).toMatchObject({ duration: 380 })
 
     await act(async () => {
       키보드손잡이[0]?.({ endCoordinates: { height: 336 } })
@@ -647,6 +647,64 @@ async function 고정시트(): Promise<ReturnType<typeof renderOverlay>> {
  *
  * 색은 손으로 적지 않는다. `buildSheetScopeVariables` 가 내는 값과 대조한다.
  */
+/**
+ * 단계를 갈 때 얹히는 흐림의 **재질**.
+ *
+ * `expo-blur` 의 기본 `default` 는 iOS 의 적응형 `.regular` 이라 **OS 외형**을 따라간다. 다크 OS 를
+ * 쓰는 사용자의 라이트 테마 시트가 통째로 어두워졌다(실기기 보고). 상수로 박히면 그 사고가
+ * 그대로 돌아오므로 배선을 여기서 붙든다.
+ */
+describe('BottomSheet: 흐림 재질은 테마가 고른다', () => {
+  const 검은마법사 = getThemeDefinition('검은마법사')
+
+  beforeEach(__resetThemeAppearanceForTest)
+  afterEach(__resetThemeAppearanceForTest)
+
+  /**
+   * 단계를 안에서 갈아 준다. 밖에서 `rerender` 하면 껍데기(안전 영역 프로바이더)까지 함께
+   * 갈려 시트가 설 자리를 잃는다.
+   */
+  function StepKeySheet(): React.JSX.Element {
+    const [단계, set단계] = useState('갈래')
+    return (
+      <>
+        <Pressable role="button" aria-label="단계 바꾸기" onPress={() => set단계('폼')} />
+        <BottomSheet onClose={noop} label="지출 기록" stepKey={단계}>
+          <Text>시트 내용</Text>
+        </BottomSheet>
+      </>
+    )
+  }
+
+  /** 흐림은 **단계가 갈릴 때만** 선다. 한 번 갈아 준다. */
+  async function 단계갈기(): Promise<ReturnType<typeof renderOverlay>> {
+    const view = await renderOverlay(<StepKeySheet />)
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('단계 바꾸기'))
+    })
+    return view
+  }
+
+  /** 흐림 층은 스크린리더에서 빼 뒀다. 기본 쿼리가 건너뛰므로 숨은 것까지 찾게 한다. */
+  function 흐림(view: Awaited<ReturnType<typeof renderOverlay>>): 요소 {
+    return view.getByTestId('bottom-sheet-veil-blur', { includeHiddenElements: true })
+  }
+
+  it('라이트 테마에서는 밝은 재질이다', async () => {
+    const view = await 단계갈기()
+
+    expect(흐림(view).props.tint).toBe('systemMaterialLight')
+  })
+
+  it('다크 테마에서는 어두운 재질이다', async () => {
+    setThemeAppearance('검은마법사', 검은마법사)
+
+    const view = await 단계갈기()
+
+    expect(흐림(view).props.tint).toBe('systemMaterialDark')
+  })
+})
+
 describe('BottomSheet: 다크에서 표면 계열을 한 칸 올린다', () => {
   const 검은마법사 = getThemeDefinition('검은마법사')
   const 스코프 = buildSheetScopeVariables(검은마법사)

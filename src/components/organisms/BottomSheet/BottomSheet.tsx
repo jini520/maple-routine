@@ -38,7 +38,7 @@ import {
 import { vars } from 'nativewind'
 import { BlurView } from 'expo-blur'
 
-import { useThemeAppearance } from '../../../theme/context'
+import { useSheetBlurTint, useThemeAppearance } from '../../../theme/context'
 import { buildSheetScopeVariables } from '../../../theme/theme-vars'
 
 import { nextScrimOpacity } from './scrim-opacity'
@@ -71,11 +71,11 @@ const MOVE_MS = 250
 /**
  * 단계가 갈려 자리를 옮기는 시간. 키보드와 달리 **맞출 상대가 없다**.
  *
- * 키보드의 250ms 를 그대로 쓰면 시트가 휙 바뀐다(사용자 지적). 흐림이 560ms 에 걸쳐 걷히는데
- * 그 밑에서 상자만 먼저 자리를 잡으면 둘이 따로 논다. 곡선도 `exp` 가 아니라 `cubic` 이다.
- * `exp` 는 진행도를 앞쪽에 몰아 툭 하고 끝난다.
+ * 키보드의 250ms 를 그대로 쓰면 시트가 휙 바뀐다(사용자 지적). 그 아래로 내려가지 않는 것이
+ * 이 값의 하한이다. 곡선도 `exp` 가 아니라 `cubic` 이다. `exp` 는 진행도를 앞쪽에 몰아 툭 하고
+ * 끝난다.
  */
-const STEP_MOVE_MS = 460
+const STEP_MOVE_MS = 380
 /**
  * 겹치는 층 셋의 순서. 같은 자리에 포개져 서므로 이 수가 무엇이 위인지를 정한다.
  *
@@ -104,10 +104,13 @@ const STEP_BLUR = 72
 /**
  * 얹힌 흐림이 걷히는 데 걸리는 시간.
  *
- * 시트가 자리를 옮기는 250ms 보다 훨씬 길다(사용자 지정). 흐림은 움직임이 아니라 되찾는
- * 초점이라, 짧으면 깜빡인 것으로만 읽히고 무엇이 흐려졌었는지가 안 남는다.
+ * **시트가 옮겨 앉는 시간(`STEP_MOVE_MS`)과 별개다.** 이 값만 줄이면 흐림이 먼저 걷히고 시트는
+ * 제 속도로 앉는다(사용자 지시).
+ *
+ * 아래로는 한계가 있다. 흐림은 움직임이 아니라 되찾는 초점이라, 너무 짧으면 깜빡인 것으로만
+ * 읽히고 무엇이 흐려졌었는지가 안 남는다.
  */
-const STEP_MS = 560
+const STEP_MS = 300
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
 /**
@@ -272,6 +275,11 @@ interface BottomSheetProps {
  */
 function StepVeil(props: { onDone: () => void }): React.JSX.Element {
   /**
+   * 재질은 **앱 테마가 고른다**. 기본값 `'default'` 는 OS 외형을 따라가 다크 OS 에서 검게 깔린다
+   * (라이트 테마 시트가 통째로 어두워졌다).
+   */
+  const tint = useSheetBlurTint()
+  /**
    * 1 로 시작해 0 으로 걷힌다.
    *
    * **여기서 만드는 것이 계약이다.** 리애니메이티드는 `useAnimatedProps` 를 처음 부른 그 순간의
@@ -317,9 +325,10 @@ function StepVeil(props: { onDone: () => void }): React.JSX.Element {
       }}
     >
       <AnimatedVeil
+        testID="bottom-sheet-veil-blur"
         animatedProps={veil}
-        // 색을 안 얹는다. 시트 표면 위라 얹으면 바탕이 함께 물든다.
-        tint="default"
+        // 색을 따로 안 얹는다. 시트 표면 위라 얹으면 바탕이 함께 물든다.
+        tint={tint}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
     </View>
