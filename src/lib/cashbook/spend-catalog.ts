@@ -29,8 +29,13 @@ export interface SpendCatalogItem {
    */
   readonly base?: string
   readonly tier?: string
-  /** 같은 값을 받는 두 형태. 경험치·솔 에르다. **가격을 안 바꾼다.** */
+  /**
+   * 값을 받는 형태들. 경험치·솔 에르다. **가격을 안 바꾼다.**
+   *
+   * 형태마다 단계를 따로 고르고 금액은 그 값들의 합이다. 하나를 고르는 축이 아니다.
+   */
   readonly forms?: readonly string[]
+  /** 사용자가 준 한도 문장. **화면에 안 쓴다**. `maxQuantity` 숫자의 출처로만 남는다. */
   readonly limit?: string
   /**
    * 기록 한 건의 수량 상한. `limit` 문장에서 사용자가 고른 숫자다.
@@ -145,6 +150,106 @@ export function findSpendChoice(
     for (const choice of group.choices) {
       const item = choice.items.find((each) => each.name === itemName)
       if (item !== undefined) return { choice, item }
+    }
+  }
+  return null
+}
+
+/**
+ * 안 사는 상태. 형태별 단계는 여기서 시작한다.
+ *
+ * 클리어하면 그냥 받는 **기본 보상**이라 참조표에 자리가 없다. 값이 0 인 항목이 아니라 항목이
+ * 아닌 것이고, 그래서 형태가 전부 이 값이면 적을 지출이 없다.
+ */
+export const BASE_TIER = '0단계'
+
+/**
+ * 기록 이름에 적히는 형태의 짧은 이름 (사용자 지정).
+ *
+ * 하루 목록의 줄이 이 글자를 그대로 읽어서 짧다. 표에 없는 형태는 제 이름 그대로 적힌다.
+ */
+const FORM_SHORT_NAMES: Readonly<Record<string, string>> = {
+  경험치: 'EXP',
+  '솔 에르다': '솔',
+}
+
+/** 한 대표 안에서 단계를 부르는 이름. `tier` 가 없는 항목은 제 이름이 곧 단계다. */
+export function tierNameOf(item: SpendCatalogItem): string {
+  return item.tier ?? item.name
+}
+
+/** 그 대표가 묻는 형태들. 없으면 빈 배열이고 그때 화면은 단계 줄을 하나만 세운다. */
+export function formsOf(choice: SpendCatalogChoice | null): readonly string[] {
+  return choice?.items[0]?.forms ?? []
+}
+
+function itemOfTier(choice: SpendCatalogChoice, tier: string): SpendCatalogItem | undefined {
+  return choice.items.find((each) => tierNameOf(each) === tier)
+}
+
+/**
+ * 고른 단계 값의 **합**. 형태마다 따로 사기 때문이다 (사용자 확인 2026-09-10).
+ *
+ * 0단계와 모르는 단계는 0 이다. 안 고른 자리를 0 으로 두면 고르기 전에도 합계 줄이 그대로
+ * 서고, 저장은 `buildSpendRewardName` 이 `null` 을 내는 것으로 막힌다.
+ */
+export function spendRewardPrice(
+  choice: SpendCatalogChoice,
+  tierByForm: Readonly<Record<string, string>>,
+): number {
+  return formsOf(choice).reduce((sum, form) => {
+    const tier = tierByForm[form]
+    return sum + (tier === undefined ? 0 : (itemOfTier(choice, tier)?.unitPrice ?? 0))
+  }, 0)
+}
+
+/**
+ * 기록에 적히는 이름. `하이마운틴 EXP 1단계, 솔 2단계`.
+ *
+ * 하루 목록의 줄 이름이 곧 이 값이라(`recordTitleOf` 가 `item` 을 읽는다) 화면용 문자열을 따로
+ * 만들지 않는다. **0단계는 안 적는다**. 안 산 것이 적히면 그 줄이 산 것으로 읽힌다.
+ *
+ * 고른 것이 없으면 `null` 이고, 그 `null` 이 곧 저장할 수 없다 다.
+ */
+export function buildSpendRewardName(
+  choice: SpendCatalogChoice,
+  tierByForm: Readonly<Record<string, string>>,
+): string | null {
+  const parts = formsOf(choice).flatMap((form) => {
+    const tier = tierByForm[form]
+    if (tier === undefined || tier === BASE_TIER || itemOfTier(choice, tier) === undefined) return []
+    return [`${FORM_SHORT_NAMES[form] ?? form} ${tier}`]
+  })
+  return parts.length === 0 ? null : `${choice.label} ${parts.join(', ')}`
+}
+
+/**
+ * 그 이름에서 대표와 형태별 단계를 되짚는다. `buildSpendRewardName` 의 역이다.
+ *
+ * 앱이 만든 글자를 앱이 되읽는 것이라 문법이 고정이다(사용자가 쓴 문장을 푸는 일이 아니다).
+ * 한 조각이라도 못 읽으면 `null` 이고 그때 화면은 목록을 세운다. 지어낸 단계로 시트를 열면
+ * 안 고른 것이 골라진 채로 서고, 그대로 저장하면 그것이 참이 된다.
+ */
+export function parseSpendRewardName(
+  category: SpendCategory,
+  itemName: string | null,
+): { choice: SpendCatalogChoice; tierByForm: Record<string, string> } | null {
+  if (itemName === null) return null
+  for (const group of spendGroupsOf(category)) {
+    for (const choice of group.choices) {
+      const forms = formsOf(choice)
+      if (forms.length === 0 || !itemName.startsWith(`${choice.label} `)) continue
+
+      const tierByForm: Record<string, string> = {}
+      for (const part of itemName.slice(choice.label.length + 1).split(', ')) {
+        const cut = part.lastIndexOf(' ')
+        if (cut < 0) return null
+        const form = forms.find((each) => (FORM_SHORT_NAMES[each] ?? each) === part.slice(0, cut))
+        const tier = part.slice(cut + 1)
+        if (form === undefined || itemOfTier(choice, tier) === undefined) return null
+        tierByForm[form] = tier
+      }
+      return { choice, tierByForm }
     }
   }
   return null

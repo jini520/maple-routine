@@ -20,14 +20,8 @@ import {
   type FreeCurrency,
 } from '../../../lib/cashbook/free-currency'
 import { pointToMeso } from '../../../lib/cashbook/spend-catalog'
-import { AmountInput, FieldRow, QuantityStepper } from '../sheet-fields'
-import {
-  CharacterRow,
-  RateRow,
-  SpendHeader,
-  useSaveSlot,
-  type SpendFormProps,
-} from './form-shared'
+import { AmountInput, CharacterField, FieldRow, QuantityStepper } from '../sheet-fields'
+import { RateRow, SpendHeader, useSaveSlot, type SpendFormProps } from './form-shared'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
@@ -107,7 +101,12 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
         onBack={editing ? undefined : props.onBack}
       />
 
-      <CharacterRow characters={props.characters} selected={ocid} onSelect={setOcid} />
+      <CharacterField
+        characters={props.characters}
+        selected={ocid}
+        onSelect={setOcid}
+        testID="spend-sheet-chain"
+      />
 
       <FieldRow label="내용" labelTestID="spend-sheet-name-label">
         <SheetTextInput

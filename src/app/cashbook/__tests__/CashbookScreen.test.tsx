@@ -702,11 +702,9 @@ describe('펼침판이 시트를 연다', () => {
     const view = await 그리기()
 
     await 고르기(view, '지출 추가')
-    // 갈래는 1차 시트에서 고른다. 그 다음이 에픽던전 리워드의 두 단계다(대표 → 형태 → 단계).
+    // 갈래는 1차 시트에서 고른다. 그 다음이 에픽던전 리워드의 두 단계다(대표 → 형태별 단계).
     await 누르기(view, 'spend-sheet-category-컨텐츠')
     await 이름으로누르기(view, '하이마운틴')
-    await 이름으로누르기(view, '경험치')
-    await 이름으로누르기(view, '2단계')
 
     expect(view.getByTestId('spend-sheet-rate').props.value).toBe('1180')
   })

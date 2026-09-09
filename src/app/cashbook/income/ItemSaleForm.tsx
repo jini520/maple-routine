@@ -14,8 +14,8 @@ import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountF
 import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { netProceedsMeso, type FeePercent } from '../../../lib/cashbook/item-split'
-import { AmountInput, FieldRow } from '../sheet-fields'
-import { CharacterField, useSaveSlot, type IncomeFormProps } from './form-shared'
+import { AmountInput, CharacterField, FieldRow } from '../sheet-fields'
+import { useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
@@ -86,7 +86,12 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
 
   return (
     <>
-      <CharacterField characters={props.characters} selected={ocid} onSelect={setOcid} />
+      <CharacterField
+        characters={props.characters}
+        selected={ocid}
+        onSelect={setOcid}
+        testID="income-sheet-chain"
+      />
 
       <FieldRow label="판매 아이템" labelTestID="income-sheet-name-label">
         <SheetTextInput

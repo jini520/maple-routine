@@ -3,10 +3,14 @@
 // 파일의 **형태**는 `data/__tests__/spend-catalog.spec.ts` 가 붙든다(사용자가 준 값 그대로인가).
 // 여기서 보는 것은 **화면이 그 값을 어떻게 집어 오는가** 다. 갈래별 묶음과 환산 둘.
 import {
+  BASE_TIER,
   SPEND_TARIFF_PERCENT,
+  buildSpendRewardName,
   findSpendChoice,
+  parseSpendRewardName,
   pointToMeso,
   spendGroupsOf,
+  spendRewardPrice,
   tariffMesoOf,
   withTariffMeso,
 } from '../cashbook/spend-catalog'
@@ -189,5 +193,73 @@ describe('findSpendChoice: 이름으로 대표와 단계를 되짚는다', () =>
   // 갈래를 잘못 대면 못 찾는다. 이름만으로 찾으면 **버프의 영약** 이 **컨텐츠** 로 되살아난다.
   it('갈래가 다르면 못 찾는다', () => {
     expect(findSpendChoice('버프', '몬스터 파크')).toBeNull()
+  })
+})
+
+// 에픽던전은 **형태마다 단계를 고른다**. 그 고름을 값 하나(금액)와 글자 하나(기록 이름)로
+// 접는 자리가 여기다. 되짚기는 그 글자를 앱이 다시 읽는 일이라 **왕복**을 본다.
+describe('형태별 단계: 값과 이름', () => {
+  const 하이마운틴 = spendGroupsOf('컨텐츠')[0].choices[0]
+
+  describe('spendRewardPrice: 고른 단계 값의 합', () => {
+    // 형태마다 따로 사므로 합이다(사용자 확인 2026-09-10).
+    it('둘 다 고르면 두 값을 더한다', () => {
+      expect(spendRewardPrice(하이마운틴, { 경험치: '1단계', '솔 에르다': '2단계' })).toBe(37_500)
+    })
+
+    it('하나만 고르면 그 값 하나다', () => {
+      expect(spendRewardPrice(하이마운틴, { 경험치: '2단계' })).toBe(30_000)
+    })
+
+    // 0단계는 **사는 것이 아니라 기본 보상**이라 참조표에 자리가 없다. 더할 값도 없다.
+    it('0단계는 값이 없다. 둘 다 0단계면 0 이다', () => {
+      expect(spendRewardPrice(하이마운틴, { 경험치: BASE_TIER, '솔 에르다': BASE_TIER })).toBe(0)
+      expect(spendRewardPrice(하이마운틴, {})).toBe(0)
+    })
+  })
+
+  describe('buildSpendRewardName: 기록에 적히는 이름', () => {
+    // 하루 목록의 줄이 이 글자를 그대로 읽는다(`recordTitleOf` 가 `item` 을 읽는다).
+    it('고른 단계를 형태 차례대로 적는다', () => {
+      expect(buildSpendRewardName(하이마운틴, { 경험치: '1단계', '솔 에르다': '2단계' })).toBe(
+        '하이마운틴 EXP 1단계, 솔 2단계',
+      )
+    })
+
+    it('0단계인 형태는 안 적는다', () => {
+      expect(buildSpendRewardName(하이마운틴, { '솔 에르다': '2단계' })).toBe('하이마운틴 솔 2단계')
+    })
+
+    // 산 것이 없는 지출은 지출이 아니다. 이름이 없는 것이 곧 **저장할 수 없다** 다.
+    it('아무것도 안 골랐으면 null 이다', () => {
+      expect(buildSpendRewardName(하이마운틴, { 경험치: BASE_TIER })).toBeNull()
+    })
+  })
+
+  describe('parseSpendRewardName: 그 이름을 되짚는다', () => {
+    it('왕복한다. 적은 그대로 되돌아온다', () => {
+      const tierByForm = { 경험치: '1단계', '솔 에르다': '2단계' }
+      const name = buildSpendRewardName(하이마운틴, tierByForm)
+
+      const found = parseSpendRewardName('컨텐츠', name)
+
+      expect(found?.choice.label).toBe('하이마운틴')
+      expect(found?.tierByForm).toEqual(tierByForm)
+    })
+
+    it('한 형태만 적힌 이름도 되짚는다', () => {
+      const found = parseSpendRewardName('컨텐츠', '악몽선경 솔 2단계')
+
+      expect(found?.choice.label).toBe('악몽선경')
+      expect(found?.tierByForm).toEqual({ '솔 에르다': '2단계' })
+    })
+
+    // 못 읽는 이름에 값을 지어내면 **안 고른 단계가 골라진 채로** 시트가 열린다.
+    it('모르는 이름은 null 이다', () => {
+      expect(parseSpendRewardName('컨텐츠', '하이마운틴 2단계')).toBeNull()
+      expect(parseSpendRewardName('컨텐츠', '하이마운틴 EXP 9단계')).toBeNull()
+      expect(parseSpendRewardName('컨텐츠', '몬스터 파크')).toBeNull()
+      expect(parseSpendRewardName('컨텐츠', null)).toBeNull()
+    })
   })
 })

@@ -16,11 +16,13 @@ import {
   PlusIcon,
   Text,
 } from '../../components/atoms'
+import { ChainSelect } from '../../components/organisms/ChainSelect/ChainSelect'
 import {
   acceptMesoText,
   settleMesoText,
 } from '../../components/organisms/MesoPad/meso-pad'
 import { SheetTextInput } from '../../components/molecules/SheetTextInput/SheetTextInput'
+import { characterOptions } from './character-options'
 import { formatDayLabel, shiftDateKey } from '../../lib/calendar'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 
@@ -107,6 +109,41 @@ export function CheckBox(props: { checked: boolean }): React.JSX.Element {
         <CheckIcon className="h-3 w-3 text-on-primary" strokeWidth={2.5} aria-hidden />
       )}
     </View>
+  )
+}
+
+/**
+ * 캐릭터 줄. 두 시트의 폼 여섯이 함께 쓴다.
+ *
+ * 안 고르면 자리표시자가 `캐릭터 선택` 이고 고르면 그 이름이 알약으로 선다. 목록 맨 앞의
+ * `선택 안함` 은 되돌리는 자리이고 그 상태가 계정 단위(`ocid = null`)다.
+ *
+ * 사냥 폼의 캐릭터·지역·사냥터와 **같은 부품**이다. 여기서는 단계가 캐릭터 하나뿐이라 줄 수가
+ * 줄지는 않는다. 같은 모양인 것이 값이다. 한 시트의 갈래들이 첫 줄에서 저마다 다른 모양으로
+ * 캐릭터를 물으면 갈래를 옮길 때마다 다른 화면으로 읽힌다.
+ *
+ * 폼 안에 사는 것은 갈래를 옮기면 폼이 언마운트되어 고른 것이 함께 사라지기 때문이다.
+ * 껍데기에 두면 그것만 남아 **갈래를 옮겼는데 캐릭터는 그대로** 가 된다.
+ */
+export function CharacterField(props: {
+  characters: ReadonlyArray<{ ocid: string; name: string }>
+  selected: string | null
+  onSelect: (next: string | null) => void
+  /** `{testID}-badge-캐릭터` · `{testID}-option-{ocid}`. 두 시트가 자기 이름을 준다. */
+  testID: string
+}): React.JSX.Element {
+  return (
+    <ChainSelect
+      testID={props.testID}
+      steps={[
+        {
+          name: '캐릭터',
+          options: characterOptions(props.characters),
+          selected: props.selected,
+          onSelect: props.onSelect,
+        },
+      ]}
+    />
   )
 }
 

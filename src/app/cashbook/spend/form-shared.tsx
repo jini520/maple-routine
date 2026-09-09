@@ -1,16 +1,14 @@
 /**
  * 지출 시트의 **갈래별 폼이 함께 쓰는 것**.
  *
- * 머리줄 · 캐릭터 줄 · 시세 줄 · 저장·삭제 줄은 갈래가 안 바꾼다. 세 벌로 갈리면 한쪽만
- * 고쳐지는 자리가 생기므로 한 벌만 둔다.
+ * 머리줄 · 시세 줄 · 저장·삭제 줄은 갈래가 안 바꾼다. 세 벌로 갈리면 한쪽만 고쳐지는 자리가
+ * 생기므로 한 벌만 둔다. 캐릭터 줄은 수입 시트와도 같은 것이라 `../sheet-fields` 에 산다.
  */
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { Pressable, View } from 'react-native'
 
 import { ChevronLeftIcon, Text } from '../../../components/atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import { SelectField } from '../../../components/organisms/SelectField/SelectField'
-import { characterOptions } from '../character-options'
 import { DateStepper } from '../sheet-fields'
 import { type SpendCategory, type SpendRecord } from '../../../storage/spend'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
@@ -107,27 +105,6 @@ export function SpendHeader(props: {
         testID="spend-sheet-date"
       />
     </View>
-  )
-}
-
-/**
- * 캐릭터 줄. 기본은 `선택 안함`.
- *
- * 고를 것을 고르는 화면(타일 격자)에는 안 선다. 거기엔 아직 적을 기록이 없다.
- */
-export function CharacterRow(props: {
-  characters: ReadonlyArray<{ ocid: string; name: string }>
-  selected: string | null
-  onSelect: (value: string | null) => void
-}): React.JSX.Element {
-  return (
-    <SelectField
-      label="캐릭터"
-      options={characterOptions(props.characters)}
-      selected={props.selected}
-      onSelect={props.onSelect}
-      testID="spend-sheet-character"
-    />
   )
 }
 

@@ -21,13 +21,8 @@ import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/m
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { SPEND_TARIFF_PERCENT, withTariffMeso } from '../../../lib/cashbook/spend-catalog'
 import { SPEND_ITEM_KINDS, countsQuantity, type SpendItemKind } from '../../../storage/spend'
-import { AmountInput, FieldRow } from '../sheet-fields'
-import {
-  CharacterRow,
-  SpendHeader,
-  useSaveSlot,
-  type SpendFormProps,
-} from './form-shared'
+import { AmountInput, CharacterField, FieldRow } from '../sheet-fields'
+import { SpendHeader, useSaveSlot, type SpendFormProps } from './form-shared'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
@@ -124,7 +119,12 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
         onBack={editing ? undefined : props.onBack}
       />
 
-      <CharacterRow characters={props.characters} selected={ocid} onSelect={setOcid} />
+      <CharacterField
+        characters={props.characters}
+        selected={ocid}
+        onSelect={setOcid}
+        testID="spend-sheet-chain"
+      />
 
       <FieldRow label="구매 아이템" labelTestID="spend-sheet-name-label">
         <SheetTextInput

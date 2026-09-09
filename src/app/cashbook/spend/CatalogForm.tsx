@@ -5,9 +5,12 @@
  * 금액이 되며 수량만 조절한다. 곱셈은 앱이 한다. 사용자가 대신하면 몇 포인트 썼나 를 나중에
  * 되물을 수 없다.
  *
- * 두 단계다. ① 묶음별 대표를 고른다(하이마운틴 · 몬스터 파크 …). ② 대표가 여러 갈래를 품으면
- * 그 안에서 고른다. 단계(1·2단계)와 형태(경험치·솔 에르다). `choice` 가 지금 어느 단계인가 를
- * 든다. `null` 이면 목록이 서고, 있으면 그 안이 선다.
+ * 두 단계다. ① 묶음별 대표를 고른다(하이마운틴 · 몬스터 파크 …). ② 대표가 여럿을 품으면 그
+ * 안에서 고른다. `choice` 가 지금 어느 단계인가 를 든다. `null` 이면 목록이 서고, 있으면 그
+ * 안이 선다.
+ *
+ * ②에서 고르는 것은 대표가 정한다. 형태가 있는 대표(에픽던전)는 **형태마다 단계를 따로**
+ * 고르고 금액이 그 값들의 합이며, 없는 대표는 단계 하나를 고른다.
  */
 import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
@@ -18,21 +21,22 @@ import { Segment } from '../../../components/molecules/Segment/Segment'
 import { formatMesoCompact } from '../../../lib/cashbook/meso-compact'
 import { spendIconOf } from '../../../lib/assets/asset-lookup'
 import {
+  BASE_TIER,
+  buildSpendRewardName,
   findSpendChoice,
+  formsOf,
+  parseSpendRewardName,
   pointToMeso,
   spendGroupsOf,
+  spendRewardPrice,
+  tierNameOf,
   type SpendCatalogChoice,
   type SpendCatalogItem,
 } from '../../../lib/cashbook/spend-catalog'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import { FieldRow, QuantityStepper } from '../sheet-fields'
-import {
-  CharacterRow,
-  RateRow,
-  SpendHeader,
-  useSaveSlot,
-  type SpendFormProps,
-} from './form-shared'
+import { CharacterField, FieldRow, QuantityStepper } from '../sheet-fields'
+import { RateRow, SpendHeader, useSaveSlot, type SpendFormProps } from './form-shared'
+import type { SpendRecord } from '../../../storage/spend'
 import { rowsOfGroups } from './tile-rows'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
 
@@ -153,20 +157,49 @@ function GroupLabel(props: { group: string; active: boolean }): React.JSX.Elemen
   )
 }
 
+/**
+ * 수정으로 열 때 고르던 자리를 되짚는다. 길이 둘이다.
+ *
+ * 새 기록의 이름은 형태별 단계를 담고 있어(`하이마운틴 EXP 1단계, 솔 2단계`) 그것을 되읽는다.
+ * 옛 기록은 항목 이름 하나에 `form` 이 딸려 있으므로(`하이마운틴 2단계` + `경험치`) 그 짝을
+ * 형태 하나짜리 표로 옮긴다. 둘 다 못 읽으면 `null` 이고 그때 목록이 선다. 시트가 안 열리는
+ * 것보다 낫다.
+ */
+function restoreChoice(record: SpendRecord): {
+  choice: SpendCatalogChoice
+  item: SpendCatalogItem | null
+  tierByForm: Record<string, string>
+} | null {
+  const exact = findSpendChoice(record.category, record.item)
+  if (exact !== null) {
+    const tier = exact.item.tier
+    return {
+      choice: exact.choice,
+      item: exact.item,
+      tierByForm: record.form !== null && tier !== undefined ? { [record.form]: tier } : {},
+    }
+  }
+
+  const reward = parseSpendRewardName(record.category, record.item)
+  if (reward === null) return null
+  return { choice: reward.choice, item: null, tierByForm: reward.tierByForm }
+}
+
 export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   const editing = props.editing !== undefined
-  /**
-   * 한 번만 되짚는 복원. 이름만 카탈로그를 거친다. 하이마운틴 2단계 는 행에서 한 글자지만
-   * 시트에서는 대표와 단계 둘이다. 못 찾으면 목록이 선다. 시트가 안 열리는 것보다 낫다.
-   */
+  /** 한 번만 되짚는 복원. 이름만 카탈로그를 거친다. */
   const [found] = useState(() =>
-    props.editing === undefined
-      ? null
-      : findSpendChoice(props.editing.category, props.editing.item),
+    props.editing === undefined ? null : restoreChoice(props.editing),
   )
   const [choice, setChoice] = useState<SpendCatalogChoice | null>(found?.choice ?? null)
   const [item, setItem] = useState<SpendCatalogItem | null>(found?.item ?? null)
-  const [form, setForm] = useState<string | null>(props.editing?.form ?? null)
+  /**
+   * 형태마다 고른 단계. 없는 형태는 0단계다.
+   *
+   * 형태가 있는 대표(에픽던전)만 쓴다. 한 기록이 형태 둘을 함께 지므로 어느 쪽인가 가 아니라
+   * 각각 몇 단계인가 를 든다.
+   */
+  const [tierByForm, setTierByForm] = useState<Record<string, string>>(found?.tierByForm ?? {})
   const [quantity, setQuantity] = useState(props.editing?.quantity ?? 1)
   const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
   const [rateText, setRateText] = useState(() => {
@@ -176,12 +209,19 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   const { saving, submit, remove } = useSpendSubmit(props)
 
   const groups = spendGroupsOf(props.category)
-  const forms = choice?.items[0]?.forms ?? []
-  /** 단계가 여럿일 때만 ②에 단계 줄이 선다. 하나뿐이면 고를 것이 없다. */
-  const tiers = choice !== null && choice.items.length > 1 ? choice.items : []
-  // 형태가 있으면 고르기 전에는 저장할 수 없다. 안 고르고 저장하면 그 행은 어느 쪽인지 모르는
-  // 행이 되고, 그것은 칸을 더한 뜻을 없앤다.
-  const formMissing = forms.length > 0 && form === null
+  const forms = formsOf(choice)
+  /**
+   * 형태 없는 대표의 단계 줄. 형태가 있으면 단계를 형태 줄마다 고르므로 이 줄이 안 선다.
+   * 단계가 하나뿐인 대표는 고를 것이 없어 여기도 빈 배열이다.
+   */
+  const tiers = choice !== null && forms.length === 0 && choice.items.length > 1 ? choice.items : []
+  /** 형태 줄의 조각들. 0단계가 맨 앞이고 나머지는 대표가 든 단계 그대로다. */
+  const tierOptions = choice === null ? [] : [BASE_TIER, ...choice.items.map(tierNameOf)]
+  /**
+   * 형태별 단계를 고른 기록의 이름. 하나도 안 골랐으면 `null` 이고 그것이 곧 저장할 것이
+   * 없다 다. 0단계는 사는 것이 아니라 기본 보상이라 여기 안 든다.
+   */
+  const rewardName = choice === null ? null : buildSpendRewardName(choice, tierByForm)
   /**
    * 단계를 고르기 전에도 대표가 아는 것. 한 대표 안의 단계들은 단위도 통화도 같다. 그래서
    * 수량과 시세는 무엇을 골랐나 를 안 기다려도 된다.
@@ -192,23 +232,29 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   const usesPoint = currency === 'point'
   const typedRate = Number(rateText)
   const rate = usesPoint && rateText !== '' && Number.isFinite(typedRate) ? typedRate : null
-  const amount = (item?.unitPrice ?? 0) * quantity
+  // 형태가 있으면 고른 단계 값의 합이다. 형태마다 따로 사기 때문이다.
+  const unitPrice =
+    choice !== null && forms.length > 0
+      ? spendRewardPrice(choice, tierByForm)
+      : (item?.unitPrice ?? 0)
+  const amount = unitPrice * quantity
   const totalMeso = usesPoint ? pointToMeso(amount, rate ?? 0) : amount
   // 메소로 셀 수 없는 상태. 시세 줄의 빨간 `*` 와 꺼진 저장 버튼이 그 사실을 말한다.
   const blocked = usesPoint && (rate === null || rate <= 0)
-  const canSave = item !== null && !formMissing && !blocked
+  const picked = forms.length > 0 ? rewardName !== null : item !== null
+  const canSave = picked && !blocked
 
   /** ① 대표를 고르는 단계. 갈래가 하나뿐이면 **그 자리에서 항목까지 정해진다.** */
   function selectChoice(next: SpendCatalogChoice): void {
     setChoice(next)
     setItem(next.items.length === 1 ? next.items[0] : null)
-    // 형태는 있어도 **기본값을 안 고른다**. 앱이 **경험치였겠지** 라고 정하면 그것이 추정이 된다.
-    setForm(null)
+    // 형태별 단계는 **전부 0단계에서 시작한다**. 산 것을 앱이 미리 정하지 않는다.
+    setTierByForm({})
     setQuantity(1)
     props.onScrollKeyChange(next.label)
   }
 
-  /** ② 그 안의 단계를 고르는 단계. */
+  /** ② 그 안의 단계를 고르는 단계. 형태가 없는 대표의 길이다. */
   function selectItem(next: SpendCatalogItem): void {
     setItem(next)
     setQuantity(1)
@@ -218,7 +264,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   function clearChoice(): void {
     setChoice(null)
     setItem(null)
-    setForm(null)
+    setTierByForm({})
     setQuantity(1)
     props.onScrollKeyChange('')
   }
@@ -243,8 +289,10 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
         ocid,
         spentOn: props.dateKey,
         category: props.category,
-        item: item?.name ?? null,
-        form,
+        // 형태가 있으면 고른 단계들이 이름에 든다(`하이마운틴 EXP 1단계, 솔 2단계`).
+        item: forms.length > 0 ? rewardName : (item?.name ?? null),
+        // 형태 칸은 안 쓴다. 한 기록이 형태 둘을 함께 지므로 어느 쪽인가 를 물을 수 없다.
+        form: null,
         // 종류는 아이템 구매의 것이다. 여기서는 `null` 이라 장비를 산 컨텐츠 지출 같은
         // 행이 생기지 않는다.
         itemKind: null,
@@ -317,22 +365,34 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
       ) : (
         // 고른 뒤. 라벨–값 줄들이 서고 **합계가 저장 바로 위**에 선다.
         <>
-          <CharacterRow characters={props.characters} selected={ocid} onSelect={setOcid} />
+          <CharacterField
+            characters={props.characters}
+            selected={ocid}
+            onSelect={setOcid}
+            testID="spend-sheet-chain"
+          />
 
-          {forms.length > 0 && (
-            // 형태는 **기본값을 안 고른다**. 앱이 **경험치였겠지** 라고 정하면 그것이 추정이 된다.
-            <FieldRow label="형태">
-              <Segment options={forms} selected={form} onSelect={setForm} />
+          {/*
+            형태마다 한 줄이고 단계는 0단계에서 시작한다. 0단계는 클리어하면 그냥 받는 기본
+            보상이라 안 산 상태이고, 그래서 전부 0단계면 저장이 막힌다.
+          */}
+          {forms.map((each) => (
+            <FieldRow key={each} label={each} testID={`spend-sheet-form-${each}`}>
+              <Segment
+                options={tierOptions}
+                selected={tierByForm[each] ?? BASE_TIER}
+                onSelect={(tier) => setTierByForm((prev) => ({ ...prev, [each]: tier }))}
+              />
             </FieldRow>
-          )}
+          ))}
 
           {tiers.length > 0 && (
             <FieldRow label="단계">
               <Segment
-                options={tiers.map((each) => each.tier ?? each.name)}
-                selected={item === null ? null : (item.tier ?? item.name)}
+                options={tiers.map(tierNameOf)}
+                selected={item === null ? null : tierNameOf(item)}
                 onSelect={(label) => {
-                  const next = tiers.find((each) => (each.tier ?? each.name) === label)
+                  const next = tiers.find((each) => tierNameOf(each) === label)
                   if (next !== undefined) selectItem(next)
                 }}
               />
@@ -352,17 +412,6 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
                 testID="spend-sheet-quantity"
               />
             </FieldRow>
-          )}
-
-          {item?.limit !== undefined && (
-            // 적어만 두고 세지 않는다. 몬스터 파크 한도는 축이 셋이라 앱이 하나를 골라 수량을
-            // 막으면 그 고름이 곧 추정이 된다.
-            <Text
-              testID="spend-sheet-limit"
-              className="-mt-1 text-11 leading-4 text-text-disabled"
-            >
-              한도 · {item.limit}
-            </Text>
           )}
 
           {usesPoint && <RateRow value={rateText} onChange={setRateText} valid={rate !== null} />}
