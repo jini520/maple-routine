@@ -3336,6 +3336,71 @@ describe('추적에서 빠진 캐릭터의 기록', () => {
     expect(해제행[0].isComplete).toBe(true)
   })
 
+  /**
+   * 월간 탭의 카드는 행이 아니라 **주차 소계**가 세운다. 그 함수가 받은 캐릭터 목록을 그대로
+   * 돌며 주마다 한 줄씩 만들어, 그 달에 한 줄도 없는 캐릭터에도 0 원 카드가 섰다(사용자 보고).
+   */
+  it('월간 탭: 이 달에 기록이 없으면 해제한 캐릭터의 카드가 안 선다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    getRecordedCharacterOcidsMock.mockResolvedValue(['ocid-1', 'ocid-해제'])
+    // 이 달에는 한 줄도 없다. 다른 달의 기록이 이 캐릭터를 `기록이 있는 ocid` 로 만들 뿐이다.
+    getBossProfitRecordsMock.mockResolvedValue([])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    await useBossProfitStore.getState().setTab('monthly')
+
+    const subtotals = useBossProfitStore.getState().weeklySubtotals
+    expect(subtotals.some((subtotal) => subtotal.ocid === 'ocid-해제')).toBe(false)
+    // 추적 중인 캐릭터는 0 이어도 남는다. 그 0 은 이번 달에 아직 안 잡았다 는 사실이다.
+    expect(subtotals.some((subtotal) => subtotal.ocid === 'ocid-1')).toBe(true)
+  })
+
+  // 기록이 있는 달을 열면 그대로 선다. 이 규칙이 걷는 것은 **기록이 없는 기간**뿐이다.
+  it('월간 탭: 이 달에 기록이 있으면 해제한 캐릭터도 선다', async () => {
+    jest.useFakeTimers({ doNotFake: NOT_FAKED })
+    jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00'))
+
+    try {
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+      getRecordedCharacterOcidsMock.mockResolvedValue(['ocid-1', 'ocid-해제'])
+      // 7/09 주. 이 달 안의 지난 주라 기록이 곧 원천이다.
+      getBossProfitRecordsMock.mockResolvedValue([해제기록('2026-07-09')])
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+      await useBossProfitStore.getState().setTab('monthly')
+
+      const 해제소계 = useBossProfitStore
+        .getState()
+        .weeklySubtotals.filter((subtotal) => subtotal.ocid === 'ocid-해제')
+      expect(해제소계.length).toBeGreaterThan(0)
+      expect(해제소계.find((subtotal) => subtotal.periodKey === '2026-07-09')?.totalMeso).toBe(
+        8_080_000,
+      )
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  /**
+   * 진행 중인 주의 금액은 라이브 스냅샷에서 읽는데 그 스냅샷은 **동기화 대상만** 담는다. 주
+   * 중간에 해제하면 그 주의 수익이 0 으로 굳었고, 카드를 지우는 규칙이 그 위에 얹히면 실제
+   * 수익이 화면에서 통째로 사라진다. 라이브에 그 캐릭터 행이 없으면 기록에서 읽는다.
+   */
+  it('월간 탭: 이번 주에 해제해도 그 주의 수익이 소계에 남는다', async () => {
+    const 이번주 = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    getRecordedCharacterOcidsMock.mockResolvedValue(['ocid-1', 'ocid-해제'])
+    getBossProfitRecordsMock.mockResolvedValue([해제기록(이번주)])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    await useBossProfitStore.getState().setTab('monthly')
+
+    const 해제소계 = useBossProfitStore
+      .getState()
+      .weeklySubtotals.filter((subtotal) => subtotal.ocid === 'ocid-해제')
+    expect(해제소계.find((subtotal) => subtotal.periodKey === 이번주)?.totalMeso).toBe(8_080_000)
+  })
+
   // 고아 드롭 정리의 안전 장치 하나가 `믿을 수 있는 캐릭터`(동기화가 성공한 캐릭터)다. 해제한
   // 캐릭터는 영원히 그것이 못 되므로 넣는 순간 술어가 그들의 드롭을 고아로 읽는다.
   it('고아 드롭 정리에는 동기화 대상만 넘긴다', async () => {
