@@ -1838,7 +1838,10 @@ describe('날짜 바꾸기', () => {
     await 아이디로누르기(view, 'income-sheet-date-next')
 
     expect(view.getByTestId('income-sheet-date')).toHaveTextContent('8월 25일 (화)')
-    expect(view.getByTestId('income-sheet-date-next').props.accessibilityState.disabled).toBe(true)
+    const 화살촉 = view.getByTestId('income-sheet-date-next')
+    expect(화살촉.props.accessibilityState.disabled).toBe(true)
+    // 못 누른다는 것이 눈에도 보여야 한다.
+    expect(flattenStyle(화살촉.props.style).opacity).toBeCloseTo(0.4)
   })
 
   it('바꾼 날짜로 저장된다', async () => {

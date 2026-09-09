@@ -66,6 +66,8 @@ export function DateStepper(props: {
         disabled={끝}
         onPress={() => props.onChange(shiftDateKey(props.dateKey, 1))}
         hitSlop={8}
+        // 꺼진 화살촉은 흐린 색에 투명도까지 얹는다. 색만으로는 켜진 것과 잘 안 갈렸다.
+        className={끝 ? 'opacity-40' : undefined}
       >
         <ChevronRightIcon
           className={`h-4 w-4 ${끝 ? 'text-text-disabled' : 'text-text-muted'}`}

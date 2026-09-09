@@ -33,7 +33,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
   }
 })
 
-import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { SpendSheet } from '../SpendSheet'
 
 // 큰 숫자의 카운트업 기억은 **모듈 수준**이라 케이스 사이로 샌다.
@@ -1878,7 +1878,10 @@ describe('날짜 바꾸기', () => {
     await 아이디로누르기(view, 'spend-sheet-date-next')
 
     expect(view.getByTestId('spend-sheet-date')).toHaveTextContent('8월 25일 (화)')
-    expect(view.getByTestId('spend-sheet-date-next').props.accessibilityState.disabled).toBe(true)
+    const 화살촉 = view.getByTestId('spend-sheet-date-next')
+    expect(화살촉.props.accessibilityState.disabled).toBe(true)
+    // 못 누른다는 것이 눈에도 보여야 한다.
+    expect(flattenStyle(화살촉.props.style).opacity).toBeCloseTo(0.4)
   })
 
   it('바꾼 날짜로 저장된다', async () => {
