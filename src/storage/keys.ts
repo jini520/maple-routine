@@ -22,6 +22,8 @@ export const STORAGE_KEYS = {
   // `KEEP_KEYS` 에는 안 넣는다. 지워져도 다음 입력이 다시 채우고, 그때 생기는 것은 거짓 값이
   // 아니라 한 번 더 물어보기다. 지난 기록의 시세는 이미 그 행에 박혀 있어 영향이 없다.
   lastPointRate: 'lastPointRate',
+  // 마지막으로 계산기에 세운 사냥 자리(캐릭터 + 사냥터 이름). `사냥터 자동 입력` 이 되살린다.
+  lastHuntSelection: 'lastHuntSelection',
   // 이벤트 월드(스페셜) 캐릭터 이름. 수집기가 `character/list` 에서 받아 남기고, 지출을 읽는
   // 쪽이 그대로 쓴다.
   //

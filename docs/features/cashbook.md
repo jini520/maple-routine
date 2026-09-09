@@ -62,6 +62,7 @@
 | 사냥 메소 계산 | `lib/cashbook/hunting-meso.ts` | ‘어디서 · 얼마나 · 무슨 버프로’ → 메소. 젠·메소 계수·**레벨 차이 페널티 표 둘**·효율·아이템 증가율이 전부 여기 있다([[ADR-175]] 결정 3·4). 화면은 이 함수 하나만 부른다 |
 | 캐릭터 메소 획득량 | `lib/cashbook/meso-rate.ts` + `nexon/meso-rate` + `storage/meso-rate-cache` | 캐릭터에 박힌 메획을 **최대 세팅**으로 낸다([[ADR-177]]). 소스 다섯(장비 잠재·에디셔널 · 어빌리티 · 심볼 · 유니온 공격대 · 유니온 아티팩트)을 **직접 파싱**하고 `character/stat` 환산값은 **안 쓴다**(현재 프리셋이고 일시 버프가 섞인다). 장비는 **잠재+에디셔널 합에 100% 캡**을 **프리셋 단위**로 건다 |
 | 포스 아이콘 | `lib/assets/asset-lookup.ts` + `src/assets/force/` | `forceType`(`arcane`·`authentic`) → 그림. 에셋 그룹 `force`([[ADR-129]]) |
+| 마지막 사냥터 | `storage/last-hunt-selection.ts` + `features/cashbook/records.ts` 의 `loadLastHuntSelection` | `사냥터 자동 입력` 이 되살릴 값([[ADR-242]] 결정 2). Preferences 키 하나(`{ ocid, ground }`)이고 **행에 박는 것과 별개**라 소급하지 않는다. `lastPointRate` 와 같은 성질·같은 모양 |
 | 오케스트레이션 | `features/cashbook/records.ts` | 행의 신원(`id`·`recordedAt`) · 시세 기억 · **네 원천을 하루로 접기** · 줄의 표기(`recordTitleOf`·`recordCountLabelOf`) · **그날 합계**(`dayTotalsOf`) |
 | 보스 날짜 캐기 | `features/boss-profit/defeat-dates.ts` | 날짜별 응답을 훑어 ‘뒤집힌 날’을 찾아 `defeated_on` 을 채운다([[ADR-172]]) |
 | 입력 | `app/cashbook/SpendSheet.tsx` · `IncomeSheet.tsx` · `components/organisms/SpeedDial/`(`speed-dial-motion` 움직임 · `speed-dial-metrics` 치수) | 떠 있는 ＋ → 종류 둘 → 시트 |
@@ -471,6 +472,13 @@ SpendSheet    껍데기: 시트 상자 · 종류 하나 · 스크롤 키
 
 - **큰 숫자는 합계이고 못 친다**. 아이템 판매·‘기타’와 같은 모양이다([[ADR-170]] 정정 9 ④ ·
   [[ADR-173]] 결정 17). 앱이 세는 값을 사람이 덮어쓰면 어느 쪽이 참인지 사라진다.
+- **`사냥터 자동 입력` 버튼이 셋을 한 번에 되살린다**([[ADR-242]], 사용자 지시). 자리는 심볼·레벨·
+  마리수 줄의 **왼쪽**이다. 기억하는 것은 캐릭터와 사냥터 이름 둘이고 지역은 이름에서 따라온다
+  (`findHuntingGround`). 기억은 **저장이 성공한 뒤에만** 남고 **계산기로 적은 행만** 든다(수동
+  폼은 사냥터를 안 고른다). 되살린 값이 고르개의 보기에 없으면 줄이 깨지므로 걸러 낸다 — 사냥터가
+  참조표에서 사라졌으면 버튼이 꺼지고, 기억한 캐릭터가 추적 목록에 없거나 그 레벨로 그 지역에
+  못 가면 캐릭터는 안 세우고 지역·사냥터만 채운다. **꺼진 버튼도 눌리고** 왜 꺼졌는지를 팝오버가
+  말한다(결정 4).
 - **캐릭터를 골라야 지역에 간다**(2026-09-20 사용자 지시). 계산의 근거가 그 차례로 쌓인다.
   자리표시자는 안 고른 첫 단계를 열고 알약은 고른 단계에만 서므로 건너뛸 길이 없다.
 - **`선택 안함` 은 되돌리기다**. 이미 고른 단계에서 누르면 그 값과 뒤 단계가 걷히고

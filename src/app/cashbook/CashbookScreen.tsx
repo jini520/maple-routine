@@ -76,6 +76,7 @@ import {
   dayTotalsOf,
   loadCalendarAmounts,
   loadLastPointRate,
+  loadLastHuntSelection,
   loadTrackedCharacters,
   recordIncome,
   recordSpend,
@@ -95,6 +96,7 @@ import {
   type EnhancedItem,
   type ManualDayRecord,
 } from '../../features/cashbook/records'
+import type { LastHuntSelection } from '../../storage/last-hunt-selection'
 import { loadMesoRate } from '../../features/cashbook/meso-rate'
 // 보스 수익 탭의 행이 초상을 찾는 그 함수다. 같은 보스가 두 화면에서 다른 그림이면 안 된다.
 import { findPortraitSlug } from '../boss-profit/character-groups'
@@ -598,6 +600,8 @@ export function CashbookScreen(): React.JSX.Element {
     amounts: NO_AMOUNTS,
   })
   const [lastPointRate, setLastPointRate] = useState<number | null>(null)
+  /** 마지막에 적은 사냥 자리. 사냥 계산기의 `사냥터 자동 입력` 이 되살린다. */
+  const [lastHuntSelection, setLastHuntSelection] = useState<LastHuntSelection | null>(null)
   /**
    * 시트의 캐릭터 고르개가 쓸 목록. 화면이 읽는다(시트는 `storage/` 를 모른다).
    * 들어올 때 한 번이면 된다. 추적 목록이 시트를 여는 사이에 바뀌지 않는다.
@@ -717,6 +721,7 @@ export function CashbookScreen(): React.JSX.Element {
 
   useEffect(() => {
     void loadLastPointRate().then(setLastPointRate)
+    void loadLastHuntSelection().then(setLastHuntSelection)
     void loadTrackedCharacters().then(setCharacters)
   }, [])
 
@@ -750,6 +755,10 @@ export function CashbookScreen(): React.JSX.Element {
     } catch (error) {
       useToastStore.getState().showError('수입을 적지 못했습니다')
       throw error
+    }
+    // 방금 적은 사냥 자리가 다음 자동 입력의 값이다. 다시 읽지 않고 그대로 든다.
+    if (draft.category === '사냥' && draft.item !== null) {
+      setLastHuntSelection({ ocid: draft.ocid, ground: draft.item })
     }
     setReloadToken((token) => token + 1)
   }
@@ -1049,6 +1058,7 @@ export function CashbookScreen(): React.JSX.Element {
         <IncomeSheet
           characters={characters}
           lastPointRate={lastPointRate}
+          lastHuntSelection={lastHuntSelection}
           // 캐릭터의 메소 획득량. 시트는 `nexon/` 도 `storage/` 도 모른다.
           loadMesoRate={loadMesoRate}
           dateKey={typeof sheet === 'object' ? sheet.record.earnedOn : selectedDateKey}

@@ -75,6 +75,8 @@ async function 시트열기(overrides: Partial<React.ComponentProps<typeof Incom
       // 기본은 **0** 이다. 메획이 테스트가 세는 금액을 흔들지 않는다.
       // 메획이 든 계산은 아래 describe 가 값을 직접 준다.
       loadMesoRate={async () => ({ kind: 'read' as const, percent: 0 })}
+      // 기억이 없는 상태가 기본이다. 자동 입력을 보는 케이스만 값을 준다.
+      lastHuntSelection={null}
       onSave={jest.fn()}
       onClose={jest.fn()}
       {...overrides}
@@ -1132,7 +1134,9 @@ describe('사냥 계산기', () => {
     const view = await 그리기()
     await 밤의길3(view)
 
-    expect(view.getByTestId('income-sheet-ground-detail')).toHaveTextContent('700lv.29440마리')
+    // 줄 왼쪽에는 자동 입력 누르개가 선다. 여기서 보는 것은 **값 셋이 그 줄에 함께 선다** 는
+    // 것이라 줄 끝만 본다.
+    expect(view.getByTestId('income-sheet-ground-detail')).toHaveTextContent(/700lv\.29440마리$/)
     // 배지의 읽어 주는 이름은 그림이 있든 없든 온전한 말이다.
     expect(view.getAllByLabelText('어센틱 포스 700').length).toBeGreaterThan(0)
   })
@@ -1466,6 +1470,107 @@ describe('사냥 계산기', () => {
  * 계산기는 사냥터 하나에 머무는 것을 전제하고 그 사냥터가 참조표 안에 있어야 한다. 그 밖의 사냥은
  * 획득 메소를 사람이 친다.
  */
+/**
+ * 사냥은 **같은 자리를 반복해서 적는다**(사용자 지시). 사슬이 셋을 한 줄에 담아 세로 자리는
+ * 아꼈지만 누르는 횟수는 그대로였다. 목록을 세 번 열고 세 번 고른다.
+ *
+ * 버튼 하나가 캐릭터·지역·사냥터를 되살린다. 기억한 것을 그대로 세우면 안 되는 자리가 있어
+ * (고르개 목록에 없는 값은 배지도 자리표시자도 안 세운다) 세우기 전에 거른다.
+ */
+describe('사냥터 자동 입력', () => {
+  const 기억 = { ocid: 'ocid-1', ground: '밤의 길 3' }
+
+  async function 자동입력(view: Rendered): Promise<void> {
+    await 아이디로누르기(view, 'income-sheet-autofill')
+  }
+
+  it('기억한 셋을 한 번에 세운다', async () => {
+    const view = await 그리기({ lastHuntSelection: 기억 }, '사냥')
+
+    await 자동입력(view)
+
+    expect(view.getByTestId('income-sheet-chain-badge-캐릭터')).toHaveTextContent('루디')
+    expect(view.getByTestId('income-sheet-chain-badge-지역')).toHaveTextContent('탈라하트')
+    expect(view.getByTestId('income-sheet-chain-badge-사냥터')).toHaveTextContent('밤의 길 3')
+  })
+
+  /** 지역은 안 적어 뒀다. 사냥터 이름이 전역 유일이라 참조표가 지역을 돌려준다. */
+  it('되살린 사냥터로 금액까지 선다', async () => {
+    const view = await 그리기({ lastHuntSelection: 기억 }, '사냥')
+
+    await 자동입력(view)
+
+    expect(view.getByTestId('income-sheet-hunt-meso')).not.toHaveTextContent('0')
+  })
+
+  /**
+   * 기억한 캐릭터가 추적 목록에서 빠졌을 수 있다. 그 ocid 를 세우면 고르개가 목록에 없는 값을
+   * 들어 배지가 안 서고 자리표시자에서도 빠진다.
+   */
+  it('기억한 캐릭터가 목록에 없으면 지역·사냥터만 채운다', async () => {
+    const view = await 그리기({ lastHuntSelection: { ocid: 'ocid-없음', ground: '밤의 길 3' } }, '사냥')
+
+    await 자동입력(view)
+
+    expect(view.queryByTestId('income-sheet-chain-badge-캐릭터')).toBeNull()
+    expect(view.getByTestId('income-sheet-chain-badge-사냥터')).toHaveTextContent('밤의 길 3')
+    expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent('캐릭터 선택')
+  })
+
+  /**
+   * 창의 바닥이 몬스터 레벨 −20 이라 20 이상 레벨업하면 지난 지역이 목록에서 빠진다.
+   * 아델은 210 이고 탈라하트(290-294)는 그 창 밖이다.
+   */
+  it('그 캐릭터 레벨로 못 가는 지역이면 캐릭터를 안 세운다', async () => {
+    const view = await 그리기({ lastHuntSelection: { ocid: 'ocid-2', ground: '밤의 길 3' } }, '사냥')
+
+    await 자동입력(view)
+
+    expect(view.queryByTestId('income-sheet-chain-badge-캐릭터')).toBeNull()
+    expect(view.getByTestId('income-sheet-chain-badge-지역')).toHaveTextContent('탈라하트')
+    expect(view.getByTestId('income-sheet-chain-badge-사냥터')).toHaveTextContent('밤의 길 3')
+  })
+
+  it('참조표에서 사라진 사냥터면 버튼이 꺼진다', async () => {
+    const view = await 그리기(
+      { lastHuntSelection: { ocid: 'ocid-1', ground: '없어진 사냥터' } },
+      '사냥',
+    )
+
+    expect(view.getByTestId('income-sheet-autofill').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  /**
+   * **꺼진 버튼도 눌린다**(사용자 지정). `disabled` 로 두면 눌러도 아무 일이 없어, 처음 쓰는
+   * 사람은 이 버튼이 무엇인지도 왜 꺼졌는지도 못 듣는다.
+   */
+  it('한 번도 안 적었으면 꺼져 있고, 누르면 왜 꺼졌는지를 말한다', async () => {
+    const view = await 그리기({ lastHuntSelection: null }, '사냥')
+    expect(view.getByTestId('income-sheet-autofill').props.accessibilityState?.disabled).toBe(true)
+    expect(view.queryByTestId('income-sheet-autofill-tip')).toBeNull()
+
+    await 자동입력(view)
+
+    expect(view.getByTestId('income-sheet-autofill-tip')).toHaveTextContent(
+      '마지막에 입력된 사냥터 정보로 자동 입력됩니다. 최소 1회 선택 입력 시 활성화 됩니다.',
+    )
+  })
+
+  it('켜진 버튼은 안내를 안 띄운다. 채우는 것이 그 답이다', async () => {
+    const view = await 그리기({ lastHuntSelection: 기억 }, '사냥')
+
+    await 자동입력(view)
+
+    expect(view.queryByTestId('income-sheet-autofill-tip')).toBeNull()
+  })
+
+  it('다른 갈래에는 그 버튼이 없다', async () => {
+    const view = await 그리기({ lastHuntSelection: 기억 }, '아이템 판매')
+
+    expect(view.queryByTestId('income-sheet-autofill')).toBeNull()
+  })
+})
+
 describe('사냥 수동 입력', () => {
   async function 직접입력켜기(view: Rendered): Promise<void> {
     await 이름으로누르기(view, '획득 메소 직접 입력')
