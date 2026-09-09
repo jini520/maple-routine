@@ -64,7 +64,8 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
 
   useSaveSlot(props.setSave, {
     editing,
-    canSave: total > 0,
+    // 본체는 사람이 치는 획득 메소다. 조각은 곁다리라 그것만으로는 못 적는다(사용자 지시).
+    canSave: typedMeso > 0,
     saving,
     onSave: () =>
       void submit({

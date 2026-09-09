@@ -446,10 +446,10 @@ describe('BottomSheet: 머리와 바닥을 스크롤 밖에 고정한다', () =>
   })
 
   /**
-   * 자리로 비우는 몫이 키보드를 타면 시트 키가 키보드를 따라 한 번 더 바뀐다. 열고 닫는
-   * 움직임 위에 그 크기 변화가 얹혀 끊긴다. 그래서 걷은 인셋을 되돌려 늘 같은 수로 둔다.
+   * 비우는 몫이 바닥 줄 높이를 그대로 따라가야 마지막 줄과 바닥 줄 사이가 늘 같다. 안 따라가면
+   * 키보드가 뜰 때 바닥 줄이 인셋만큼 짧아지면서 그 위에 없던 공백이 생긴다(사용자 보고).
    */
-  it('비워 두는 몫은 키보드가 떠도 안 바뀐다', async () => {
+  it('비워 두는 몫이 바닥 줄 높이를 그대로 따라간다', async () => {
     const { getByTestId } = await 고정시트()
     const 아래여백 = (): number =>
       (getByTestId('income-sheet').props.contentContainerStyle as { paddingBottom: number })
@@ -460,7 +460,7 @@ describe('BottomSheet: 머리와 바닥을 스크롤 밖에 고정한다', () =>
     })
     expect(아래여백()).toBe(106)
 
-    // 키보드가 뜨면 바닥 줄이 인셋 34 만큼 짧아진다. 비우는 몫은 그대로여야 한다.
+    // 키보드가 뜨면 바닥 줄이 인셋 34 만큼 짧아진다. 비우는 몫도 그만큼 준다.
     await act(async () => {
       키보드손잡이[0]({ endCoordinates: { height: 336 } })
     })
@@ -468,7 +468,7 @@ describe('BottomSheet: 머리와 바닥을 스크롤 밖에 고정한다', () =>
       fireEvent(바닥층(getByTestId), 'layout', { nativeEvent: { layout: { height: 106 - 34 } } })
     })
 
-    expect(아래여백()).toBe(106)
+    expect(아래여백()).toBe(106 - 34)
   })
 
   it('안 켜면 안 보낸다. 치는 칸이 중간에 있는 시트가 위로 밀리지 않는다', async () => {

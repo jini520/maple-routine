@@ -148,9 +148,13 @@ export function SaveRow(props: {
         aria-label={props.editing ? '수정' : '저장'}
         disabled={!props.canSave || props.saving}
         onPress={props.onSave}
-        className={`items-center rounded-xl py-3 ${props.canSave ? 'bg-rise-ink' : 'bg-surface-2'}`}
+        // 지출 시트의 저장·1차 시트의 닫기와 같은 칠이다. `rise-ink` 는 수익을 말하는 색이라
+        // 테마를 바꿔도 주황 계열에 머물렀다.
+        className={`items-center rounded-xl py-3 ${props.canSave ? 'bg-primary' : 'bg-surface-2'}`}
       >
-        <Text className={`text-sm font-bold ${props.canSave ? 'text-bg' : 'text-text-disabled'}`}>
+        <Text
+          className={`text-sm font-bold ${props.canSave ? 'text-on-primary' : 'text-text-disabled'}`}
+        >
           {props.editing ? '수정' : '저장'}
         </Text>
       </Pressable>

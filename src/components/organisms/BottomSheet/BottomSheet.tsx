@@ -260,15 +260,6 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
     }
   }, [])
 
-  /**
-   * 스크롤이 바닥 줄에 내주는 자리. **키보드를 타지 않는다.**
-   *
-   * 바닥 줄은 키보드가 뜨면 홈 인디케이터 몫만큼 짧아지는데, 그 값을 그대로 자리로 쓰면 시트
-   * 키가 키보드를 따라 두 번 바뀐다. 열고 닫는 애니메이션 위에 그 크기 변화가 얹혀 움직임이
-   * 끊긴다. 그래서 걷은 몫을 여기서 되돌려 늘 같은 수로 둔다.
-   */
-  const footerReserve = footerHeight + (keyboardHeight > 0 ? insets.bottom : 0)
-
   const scrollToEndOnKeyboard = props.scrollToEndOnKeyboard === true
   useEffect(() => {
     if (!scrollToEndOnKeyboard || keyboardHeight === 0) return
@@ -413,7 +404,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
           paddingBottom:
             props.footer === undefined
               ? (keyboardHeight > 0 ? 0 : insets.bottom) + 16
-              : footerReserve,
+              : footerHeight,
         }}
       >
         {/*

@@ -272,8 +272,13 @@ export function HuntCalculatorForm(
   const fragments = mesoValueOf(fragmentsText)
   const fragmentPrice = mesoValueOf(fragmentPriceText)
   const huntTotal = huntingTotalOf({ ...huntInput, ground: huntGround, fragments, fragmentPrice })
-  /** 저장 가능 여부. 합계가 0 보다 크면 된다. 사냥터를 안 골라도 조각만 적을 수 있다. */
-  const canSave = huntTotal > 0
+  /**
+   * 저장 가능 여부. **사냥터가 세는 메소가 있어야 한다.**
+   *
+   * 이 기록의 본체는 획득 메소이고 계산기에서 그것은 사냥터가 정한다. 조각은 곁다리라
+   * 그것만 적힌 행은 사냥 기록이 아니다(사용자 지시).
+   */
+  const canSave = huntMeso > 0
 
   /**
    * 캐릭터를 고르면 레벨이 따라 바뀌고, 그 레벨로 못 가는 지역은 사냥터와 함께 풀린다.

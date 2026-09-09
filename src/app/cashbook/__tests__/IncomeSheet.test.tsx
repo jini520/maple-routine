@@ -1196,14 +1196,29 @@ describe('사냥 계산기', () => {
     expect(view.getByTestId('income-sheet-fragments').props.value).toBe('12340')
   })
 
-  it('사냥터를 안 골라도 조각만으로 적을 수 있다. 계산기가 반쯤 찬 상태다', async () => {
+  /**
+   * **조각은 곁다리다**(2026-09-09 사용자 지시). 이 기록의 본체는 획득 메소이고, 계산기에서
+   * 그것은 사냥터가 정한다. 사냥터 없이 조각만 적힌 행은 사냥 기록이 아니다.
+   */
+  it('사냥터를 안 고르면 조각을 적어도 저장이 안 된다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave }, '사냥')
     await 아이디로치기(view, 'income-sheet-fragments', '1')
     await 아이디로치기(view, 'income-sheet-fragment-price', '1000000')
     await 이름으로누르기(view, '저장')
 
-    expect(onSave.mock.calls[0][0]).toMatchObject({ item: null, mesoAmount: 1_000_000 })
+    expect(onSave).not.toHaveBeenCalled()
+  })
+
+  it('사냥터를 고르면 저장이 켜진다. 조각은 거기에 더해진다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave }, '사냥')
+    await 밤의길3(view)
+    await 아이디로치기(view, 'income-sheet-fragments', '1')
+    await 아이디로치기(view, 'income-sheet-fragment-price', '1000000')
+    await 이름으로누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({ item: '밤의 길 3' })
   })
 
   it('아무것도 안 고르면 저장이 안 된다', async () => {
@@ -1368,6 +1383,19 @@ describe('사냥 수동 입력', () => {
 
     expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('5억')
     expect(view.getByTestId('income-sheet-amount')).not.toHaveTextContent('≈')
+  })
+
+  /** 여기서도 조각은 곁다리다. 본체는 사람이 치는 획득 메소다(2026-09-09 사용자 지시). */
+  it('획득 메소를 안 치면 조각을 적어도 저장이 안 된다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave }, '사냥')
+    await 직접입력켜기(view)
+
+    await 아이디로치기(view, 'income-sheet-fragments', '83')
+    await 아이디로치기(view, 'income-sheet-fragment-price', '8000000')
+    await 이름으로누르기(view, '저장')
+
+    expect(onSave).not.toHaveBeenCalled()
   })
 
   it('저장하면 수동으로 적힌 행이 되고 사냥터 이름은 비어 있다 (결정 3·7)', async () => {
