@@ -15,7 +15,7 @@ import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/m
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { netProceedsMeso, type FeePercent } from '../../../lib/cashbook/item-split'
 import { AmountInput, FieldRow } from '../sheet-fields'
-import { CharacterField, SaveRow, type IncomeFormProps } from './form-shared'
+import { CharacterField, useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
@@ -57,6 +57,32 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
   /** 분배 계산기의 계산을 **그대로 부른다**. 수수료 쪽을 내림한다(= 손에 남는 쪽이 커진다). */
   const net = feePercent === null ? gross : netProceedsMeso(gross, feePercent)
   const canSave = gross > 0
+
+  useSaveSlot(props.setSave, {
+    editing,
+    canSave,
+    saving,
+    onSave: () =>
+      void submit({
+        ocid,
+        earnedOn: props.dateKey,
+        category: '아이템 판매',
+        // 빈 칸은 `null` 이다. 빈 문자열을 넣으면 **적었는데 비어 있다** 와 **안 적었다** 가 같아진다.
+        item: name.trim() === '' ? null : name.trim(),
+        // 수수료를 뗀 값이다. 집계가 보는 칸이 이것 하나다.
+        mesoAmount: net,
+        saleFeePercent: feePercent,
+        saleFeeMeso: feePercent === null ? null : gross - net,
+        pointAmount: null,
+        pointPer100mMeso: null,
+        cashAmount: null,
+        // 수량은 `기타`만 쓴다.
+        quantity: null,
+        hunt: null,
+        memo: null,
+      }),
+    onDelete: props.onDelete === undefined ? undefined : () => void remove(),
+  })
 
   return (
     <>
@@ -106,32 +132,6 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
         testID="income-sheet-amount"
       />
 
-      <SaveRow
-        editing={editing}
-        canSave={canSave}
-        saving={saving}
-        onSave={() =>
-          void submit({
-            ocid,
-            earnedOn: props.dateKey,
-            category: '아이템 판매',
-            // 빈 칸은 `null` 이다. 빈 문자열을 넣으면 **적었는데 비어 있다** 와 **안 적었다** 가 같아진다.
-            item: name.trim() === '' ? null : name.trim(),
-            // 수수료를 뗀 값이다. 집계가 보는 칸이 이것 하나다.
-            mesoAmount: net,
-            saleFeePercent: feePercent,
-            saleFeeMeso: feePercent === null ? null : gross - net,
-            pointAmount: null,
-            pointPer100mMeso: null,
-            cashAmount: null,
-            // 수량은 `기타`만 쓴다.
-            quantity: null,
-            hunt: null,
-            memo: null,
-          })
-        }
-        onDelete={props.onDelete === undefined ? undefined : () => void remove()}
-      />
     </>
   )
 }

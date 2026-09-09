@@ -211,7 +211,42 @@ describe('갈래', () => {
     expect(view.getByTestId('income-sheet-category-아이템 판매')).toBeTruthy()
     expect(view.getByTestId('income-sheet-category-기타')).toBeTruthy()
     // 고르기 전에는 폼이 없다. 무엇을 적을지가 아직 안 정해졌다.
-    expect(view.queryByTestId('income-sheet-chain-placeholder-trigger')).toBeNull()
+    expect(view.queryByTestId('income-sheet-meso-line')).toBeNull()
+  })
+
+  /**
+   * 그림은 파일명으로 찾는다. 목록(`assets/generated/items`)은 커밋 시점에 생성되므로, 파일을
+   * 더하고 `npm run assets:gen` 을 안 돌리면 셋 중 하나가 조용히 빈 자리가 된다.
+   */
+  it('타일 셋이 저마다 게임 그림을 든다. 빈 자리가 없다', async () => {
+    const view = await 그리기({}, null)
+
+    // 그림은 `aria-hidden` 이라 기본 조회에서 빠진다. 낭독기는 타일 이름만 읽으면 된다.
+    const 숨은것 = { includeHiddenElements: true }
+    expect(view.getByTestId('income-sheet-category-icon-사냥', 숨은것)).toBeTruthy()
+    expect(view.getByTestId('income-sheet-category-icon-아이템 판매', 숨은것)).toBeTruthy()
+    expect(view.getByTestId('income-sheet-category-icon-기타', 숨은것)).toBeTruthy()
+  })
+
+  /** 닫기는 다른 시트의 저장이 서는 자리다. 상자가 같고 칠만 다르다. */
+  it('1차 시트에 닫기가 선다. 누르면 시트를 닫는다', async () => {
+    const onClose = jest.fn()
+    const view = await 그리기({ onClose }, null)
+
+    const 닫기 = view.getByTestId('income-sheet-close')
+    expect(닫기).toHaveTextContent('닫기')
+
+    await act(async () => {
+      fireEvent.press(닫기)
+    })
+
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it('2차에는 닫기가 없다. 그 자리는 저장이 든다', async () => {
+    const view = await 그리기({}, '사냥')
+
+    expect(view.queryByTestId('income-sheet-close')).toBeNull()
   })
 
   it('고르면 그 갈래의 폼이 서고 제목이 갈래 이름을 든다', async () => {
@@ -468,6 +503,41 @@ describe('판매 수수료', () => {
    *
    * 여기서 지키는 것은 그 사실이다. 2차에는 갈래를 고르는 자리가 없다.
    */
+  /**
+   * **저장은 내용의 마지막 줄이다.** 키보드가 뜨면 시트가 그 높이만큼 자리를 만들고 스크롤이
+   * 끝으로 가서 이 줄이 키보드 위에 온다. 시트 높이 계산은 안 건드린다.
+   *
+   * 폼이 그 줄의 값을 올리고 자리는 시트가 준다. 올리는 길이 상태 하나뿐이라, 손잡이까지
+   * 상태로 올리면 매 렌더가 부모를 다시 그려 무한 렌더가 된다. 이 테스트가 그 자리를 붙든다.
+   * 고리가 나면 `Maximum update depth exceeded` 로 여기서 죽는다.
+   */
+  it('저장이 고정된 바닥 줄에 선다. 하나뿐이다', async () => {
+    const view = await 그리기({}, '사냥')
+
+    // 스크롤 밖이라야 키보드가 떠도 안 밀린다. 스크롤 안(`income-sheet`)에 있으면 안 된다.
+    expect(within(view.getByTestId('bottom-sheet-footer')).getAllByLabelText('저장')).toHaveLength(1)
+    expect(within(view.getByTestId('income-sheet')).queryByLabelText('저장')).toBeNull()
+  })
+
+  it('저장을 누르면 폼의 손잡이가 돈다. ref 로 넘긴 최신 것이다', async () => {
+    const onSave = jest.fn()
+    const view = await 판매시트({ onSave })
+    await 대금치기(view, '1200')
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('저장'))
+    })
+
+    expect(onSave).toHaveBeenCalled()
+  })
+
+  it('갈래를 고르기 전에는 저장이 없다. 닫기뿐이다', async () => {
+    const view = await 그리기({}, null)
+
+    expect(view.getByTestId('income-sheet-close')).toBeTruthy()
+    expect(view.queryByLabelText('저장')).toBeNull()
+  })
+
   it('2차에는 갈래를 옮기는 자리가 없다', async () => {
     const view = await 판매시트()
 
@@ -879,7 +949,7 @@ describe('사냥 계산기', () => {
     // 둘이 함께 풀린 증거는 자리표시자다. 지역과 사냥터가 다시 그 줄로 돌아온다.
     expect(view.queryByTestId('income-sheet-chain-badge-지역')).toBeNull()
     expect(view.queryByTestId('income-sheet-chain-badge-사냥터')).toBeNull()
-    expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent('지역·사냥터 선택')
+    expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent('지역 · 사냥터 선택')
   })
 
   it('지역을 옮기면 사냥터가 풀린다. 남의 맵으로 계산이 돌지 않는다', async () => {
@@ -948,17 +1018,17 @@ describe('사냥 계산기', () => {
     await 사슬고르기(view, '풍화된 기쁨의 땅')
 
     expect(view.getByLabelText('91%').props.accessibilityState?.selected).toBe(true)
-    expect(view.getByTestId('income-sheet-killed-mobs')).toHaveTextContent('20마리')
+    expect(view.getByTestId('income-sheet-killed-mobs')).toHaveTextContent('20')
   })
 
   it('놓친 만큼 덜 잡는다. 요약 줄의 마릿수가 준다 (사용자 지정)', async () => {
     const view = await 그리기()
     await 밤의길3(view)
-    expect(view.getByTestId('income-sheet-killed-mobs')).toHaveTextContent('40마리')
+    expect(view.getByTestId('income-sheet-killed-mobs')).toHaveTextContent('40')
 
     await 누르기(view, '95%') // 둘을 놓친다 → 38마리
 
-    expect(view.getByTestId('income-sheet-killed-mobs')).toHaveTextContent('38마리')
+    expect(view.getByTestId('income-sheet-killed-mobs')).toHaveTextContent('38')
     // 21,168,000 × 38/40
     expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 20,109,600')
   })
@@ -1189,7 +1259,7 @@ describe('사냥 계산기', () => {
     expect(view.getByTestId('income-sheet-chain-badge-사냥터')).toHaveTextContent('밤의 길 3')
     // 저장된 것은 **셋을 놓쳤다** 이고, 40마리 맵이라 글자가 93% 로 선다.
     expect(view.getByLabelText('93%').props.accessibilityState?.selected).toBe(true)
-    expect(view.getByTestId('income-sheet-killed-mobs')).toHaveTextContent('37마리')
+    expect(view.getByTestId('income-sheet-killed-mobs')).toHaveTextContent('37')
     // 켜고 끄는 것이라 **체크박스**다. 상태가 `selected` 가 아니라 `checked` 다.
     expect(view.getByLabelText('유니온의 부').props.accessibilityState?.checked).toBe(true)
     expect(view.getByTestId('income-sheet-sojae')).toHaveTextContent('3')
@@ -1239,8 +1309,8 @@ describe('사냥 수동 입력', () => {
 
     await 직접입력켜기(view)
 
-    expect(view.queryByTestId('income-sheet-chain-placeholder-trigger')).toBeNull()
-    expect(view.queryByTestId('income-sheet-chain-placeholder-trigger')).toBeNull()
+    expect(view.queryByTestId('income-sheet-meso-line')).toBeNull()
+    expect(view.queryByTestId('income-sheet-meso-line')).toBeNull()
     expect(view.queryByTestId('income-sheet-efficiency')).toBeNull()
     // 같은 자리·같은 라벨인데 못 치던 줄이 치는 칸이 된다.
     expect(view.getByTestId('income-sheet-hunt-meso').props.editable).not.toBe(false)
@@ -1304,7 +1374,7 @@ describe('사냥 수동 입력', () => {
   it('옛 사냥 기록은 수동 입력으로 열리고 저장된 금액이 선다 (결정 4)', async () => {
     const view = await 그리기({ editing: 옛사냥행, onDelete: jest.fn() })
 
-    expect(view.queryByTestId('income-sheet-chain-placeholder-trigger')).toBeNull()
+    expect(view.queryByTestId('income-sheet-meso-line')).toBeNull()
     expect(view.getByTestId('income-sheet-hunt-meso').props.value).toBe('1200000000')
     expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('12억')
     // 모드는 기록이 정했다. 바꾸는 칸이 없다.
@@ -1526,10 +1596,9 @@ describe('메소 획득량', () => {
     const view = await 그리기({ loadMesoRate: async () => ({ kind: 'read' as const, percent: 149 }) }, '사냥')
     await 루디고르기(view)
 
+    // 켜는 것과 값이 한 줄에 서되 덩어리는 갈린다. 켜는 칸 안에 값이 없다.
     const 켜는칸 = view.getByTestId('income-sheet-boosts')
     expect(within(켜는칸).queryByTestId('income-sheet-meso-rate')).toBeNull()
-    // 켜는 칸의 글자는 라벨 하나뿐이다. 켜는 것은 체크박스와 그림이다.
-    expect(켜는칸).toHaveTextContent('소비 아이템')
     expect(view.getByTestId('income-sheet-meso-rate')).toHaveTextContent('149%')
   })
 
@@ -1679,18 +1748,23 @@ describe('사냥 폼의 줄 배치 (사용자 지정 2026-09-01)', () => {
   })
 
   // 켜는 칸은 라벨 다섯 글자와 체크박스 둘이 함께 서고 값 칸은 라벨과 숫자 하나뿐이다.
-  it('소비 아이템이 메소 획득량의 **두 배**로 넓다', async () => {
-    const view = await 그리기()
+  /**
+   * 넷이 한 줄에 고르게 벌어진다(`space-between`). 칸을 둘로 갈라 비율을 주던 것을 걷었다.
+   * 갈라 두면 두 칸의 잰 높이가 달라 줄 안에서 아래위가 어긋난다.
+   *
+   * 값 자리의 폭은 못박는다. `0%` 와 `258%` 의 글자 폭이 달라 안 박으면 캐릭터를 고르는 순간
+   * 왼쪽 덩어리가 통째로 밀린다.
+   */
+  it('한 줄이고 값 자리의 폭이 못박혀 있다', async () => {
+    const view = await 그리기({}, '사냥')
 
-    const 소비 = flattenStyle(view.getByTestId('income-sheet-boosts').props.style) as {
-      flex: number
-    }
-    const 메획 = flattenStyle(view.getByTestId('income-sheet-meso-rate-slot').props.style) as {
-      flex: number
-    }
-
-    expect(소비.flex).toBe(메획.flex * 2)
+    const 줄 = view.getByTestId('income-sheet-meso-line')
+    expect(flattenStyle(줄.props.style).justifyContent).toBe('space-between')
+    expect(flattenStyle(view.getByTestId('income-sheet-meso-rate-slot').props.style).minWidth).toBe(
+      56,
+    )
   })
+
 
   it('켜고 끄는 것은 **체크박스**다. 눌리면 상태가 뒤집힌다', async () => {
     const view = await 그리기()

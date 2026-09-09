@@ -14,7 +14,7 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { Text } from '../../components/atoms'
+import { ChevronLeftIcon, Text } from '../../components/atoms'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import type { MesoRateLoad } from '../../features/cashbook/meso-rate'
 import {
@@ -28,7 +28,7 @@ import { EtcForm } from './income/EtcForm'
 import { HuntCalculatorForm } from './income/HuntCalculatorForm'
 import { ItemSaleForm } from './income/ItemSaleForm'
 import { HuntManualForm } from './income/HuntManualForm'
-import type { IncomeFormProps, SheetCharacter } from './income/form-shared'
+import { SaveRow, type IncomeFormProps, type SaveSlot, type SheetCharacter } from './income/form-shared'
 
 export type { IncomeDraft } from './income/form-shared'
 
@@ -79,8 +79,15 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
    * 합계가 사람이 친 값으로 둔갑한다.
    */
   const [huntMode, setHuntMode] = useState<HuntInputMode>(huntModeOf(props.editing))
+  /**
+   * 시트 바닥에 서는 저장 줄의 값. 폼이 올린다.
+   *
+   * 갈래를 고르기 전에는 없다. 그때 바닥에 서는 것은 닫기다.
+   */
+  const [save, setSave] = useState<SaveSlot | null>(null)
 
   const formProps: IncomeFormProps = {
+    setSave,
     dateKey,
     characters: props.characters,
     editing: props.editing,
@@ -95,25 +102,27 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
         testId="income-sheet"
         onClose={props.onClose}
         label="수입 기록"
-        header={
-          <View className="pb-3 pt-1">
-            <Text className="text-base font-bold text-text">수입 추가</Text>
-          </View>
-        }
-        footer={
+      >
+        {/*
+          닫기의 자리와 상자는 다른 시트의 저장과 같다(전폭 · radius 12 · 44). 칠은 테마의
+          `primary` 라 테마를 바꾸면 함께 바뀐다. 저장의 `rise-ink` 와 갈리는 것은 여기가 돈을
+          적는 자리가 아니어서다.
+
+          위 여백이 타일과의 간격보다 넓다. 고르는 것과 물러나는 것을 갈라 놓아야 손이 닫기로
+          잘못 가지 않는다.
+        */}
+        <View className="gap-2 px-4 pb-2">
+          <Text className="text-base font-bold text-text">수입 추가</Text>
+          <CategoryPicker onSelect={setCategory} />
           <Pressable
             role="button"
             aria-label="닫기"
             testID="income-sheet-close"
             onPress={props.onClose}
-            className="items-center rounded-xl border border-border py-3 active:opacity-60"
+            className="mt-7 items-center rounded-xl bg-primary py-3 active:opacity-60"
           >
-            <Text className="text-sm font-bold text-text-muted">닫기</Text>
+            <Text className="text-sm font-bold text-on-primary">닫기</Text>
           </Pressable>
-        }
-      >
-        <View className="px-4 pb-2 pt-6">
-          <CategoryPicker onSelect={setCategory} />
         </View>
       </BottomSheet>
     )
@@ -124,15 +133,39 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
       testId="income-sheet"
       onClose={props.onClose}
       label="수입 기록"
-      startAtBottom={category === '사냥'}
+      // 치는 칸이 맨 아래에 모여 있다. 조각 개수와 조각 가격.
+      scrollToEndOnKeyboard
       header={
-        <View className="flex-row items-center justify-between gap-2 pb-3 pt-1">
-          <Text testID="income-sheet-title" numberOfLines={1} className="shrink text-base font-bold text-text">
-            {category}
-          </Text>
+        <View className="flex-row items-center justify-between gap-2">
+          {/*
+            제목이 곧 되돌아가는 누르개다. 갈래를 바꾸는 일이 1차 시트로 돌아가는 일이므로
+            그 길이 제목에 붙는다(지출 시트의 둘째 화면과 같은 모양).
+
+            수정 모드에는 안 붙는다. 그 기록의 갈래는 이미 정해졌고 바꾸면 다른 기록이 된다.
+          */}
+          {editing ? (
+            <Text testID="income-sheet-title" numberOfLines={1} className="shrink text-base font-bold text-text">
+              {category}
+            </Text>
+          ) : (
+            <Pressable
+              role="button"
+              aria-label="갈래 다시 고르기"
+              testID="income-sheet-back"
+              onPress={() => setCategory(null)}
+              hitSlop={8}
+              className="-ml-1 shrink flex-row items-center gap-1 active:opacity-60"
+            >
+              <ChevronLeftIcon className="h-5 w-5 shrink-0 text-text" strokeWidth={2} aria-hidden />
+              <Text testID="income-sheet-title" numberOfLines={1} className="shrink text-base font-bold text-text">
+                {category}
+              </Text>
+            </Pressable>
+          )}
           <DateStepper dateKey={dateKey} onChange={setDateKey} testID="income-sheet-date" />
         </View>
       }
+      footer={save === null ? undefined : <SaveRow {...save} />}
     >
       <View className="gap-3 px-4 pb-2">
         {/* 사냥만 갖는 줄. 계산기로 셀지, 획득 메소를 직접 적을지 고른다. */}
@@ -158,6 +191,7 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
           {...props}
           formProps={formProps}
         />
+
       </View>
     </BottomSheet>
   )

@@ -19,6 +19,7 @@
  */
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
+import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated'
 
 import { ChevronDownIcon, Text } from '../../atoms'
 import { SelectField, type SelectOption } from '../SelectField/SelectField'
@@ -65,7 +66,7 @@ export function ChainSelect(props: {
     step.selected !== null || touched.includes(index)
 
   const 남은 = props.steps.filter((step, index) => !isChosen(step, index))
-  const placeholder = 남은.length === 0 ? null : `${남은.map((step) => step.name).join('·')} 선택`
+  const placeholder = 남은.length === 0 ? null : `${남은.map((step) => step.name).join(' · ')} 선택`
   const 첫빈칸 = props.steps.findIndex((step, index) => !isChosen(step, index))
   const active = props.steps[activeIndex] ?? props.steps[0]
 
@@ -79,25 +80,35 @@ export function ChainSelect(props: {
       testID={props.testID}
       renderTrigger={(open) => (
         <View className="min-h-7 flex-row items-center gap-2 border-b border-border pb-2">
-          <View className="flex-row items-center gap-1.5">
+          {/*
+            알약이 늘고 줄면 남은 것들이 왼쪽으로 미끄러진다. `LinearTransition` 이 그 자리
+            변화를 잇고, 새 알약은 그 자리에서 떠오른다. 값이 어디로 갔는지를 눈이 따라간다.
+          */}
+          <Animated.View layout={LinearTransition} className="flex-row items-center gap-1.5">
             {props.steps.map((step, index) =>
               !isChosen(step, index) || labelOf(step) === '' ? null : (
-                <Pressable
+                <Animated.View
                   key={step.name}
-                  role="button"
-                  aria-label={`${step.name} 다시 고르기`}
-                  testID={`${props.testID}-badge-${step.name}`}
-                  onPress={() => {
-                    setActiveIndex(index)
-                    open()
-                  }}
-                  className="h-5 shrink-0 justify-center rounded-full bg-surface-2 px-2 active:opacity-60"
+                  entering={FadeIn.duration(140)}
+                  layout={LinearTransition.duration(220)}
+                  className="shrink-0"
                 >
-                  <Text className="text-chip font-semibold text-text">{labelOf(step)}</Text>
-                </Pressable>
+                  <Pressable
+                    role="button"
+                    aria-label={`${step.name} 다시 고르기`}
+                    testID={`${props.testID}-badge-${step.name}`}
+                    onPress={() => {
+                      setActiveIndex(index)
+                      open()
+                    }}
+                    className="h-5 justify-center rounded-full bg-surface-2 px-2 active:opacity-60"
+                  >
+                    <Text className="text-chip font-semibold text-text">{labelOf(step)}</Text>
+                  </Pressable>
+                </Animated.View>
               ),
             )}
-          </View>
+          </Animated.View>
 
           {placeholder !== null && (
             // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)

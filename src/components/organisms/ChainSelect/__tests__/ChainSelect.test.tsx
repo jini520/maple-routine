@@ -36,7 +36,7 @@ describe('ChainSelect: 고른 것은 배지로, 남은 것은 자리표시자로
       사슬({ character: null, region: null }),
     )
 
-    expect(getByTestId('hunt-chain-placeholder').props.children).toBe('캐릭터·지역·사냥터 선택')
+    expect(getByTestId('hunt-chain-placeholder').props.children).toBe('캐릭터 · 지역 · 사냥터 선택')
     expect(queryByTestId('hunt-chain-badge-캐릭터')).toBeNull()
   })
 
@@ -46,7 +46,7 @@ describe('ChainSelect: 고른 것은 배지로, 남은 것은 자리표시자로
     )
 
     expect(getByText('아이샤')).toBeTruthy()
-    expect(getByTestId('hunt-chain-placeholder').props.children).toBe('지역·사냥터 선택')
+    expect(getByTestId('hunt-chain-placeholder').props.children).toBe('지역 · 사냥터 선택')
     expect(queryByTestId('hunt-chain-badge-지역')).toBeNull()
   })
 
@@ -128,7 +128,7 @@ describe('ChainSelect: 선택 안함도 고른 것이다', () => {
       fireEvent.press(getByTestId('hunt-chain-option-'))
     })
 
-    expect(getByTestId('hunt-chain-placeholder').props.children).toBe('지역·사냥터 선택')
+    expect(getByTestId('hunt-chain-placeholder').props.children).toBe('지역 · 사냥터 선택')
     expect(getByText('선택 안함')).toBeTruthy()
   })
 
@@ -155,6 +155,6 @@ describe('ChainSelect: 선택 안함도 고른 것이다', () => {
       fireEvent.press(getByTestId('hunt-chain-option-ocid-1'))
     })
 
-    expect(getByTestId('hunt-chain-placeholder').props.children).toBe('지역·사냥터 선택')
+    expect(getByTestId('hunt-chain-placeholder').props.children).toBe('지역 · 사냥터 선택')
   })
 })

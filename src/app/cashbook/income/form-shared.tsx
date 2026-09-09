@@ -4,6 +4,7 @@
  * 갈래마다 폼이 따로 서지만 캐릭터를 고르는 줄과 저장·삭제 줄은 전부 똑같다. 여러 벌로 갈리면
  * 한쪽만 고쳐지는 자리가 생기므로 한 벌만 둔다. 조각 두 줄도 사냥 폼 둘이 나눠 쓴다.
  */
+import { useEffect, useRef } from 'react'
 import { Pressable } from 'react-native'
 
 import { Text } from '../../../components/atoms'
@@ -22,7 +23,18 @@ export interface SheetCharacter {
 }
 
 /** 갈래별 폼이 **전부 받는 것**. 갈래에만 필요한 것은 각 폼이 따로 받는다. */
+/** 저장 줄이 그리는 값과 누를 때 부를 것. 시트가 이것을 받아 바닥에 세운다. */
+export interface SaveSlot {
+  editing: boolean
+  canSave: boolean
+  saving: boolean
+  onSave: () => void
+  onDelete?: () => void
+}
+
 export interface IncomeFormProps {
+  /** 저장 줄을 시트 바닥으로 올리는 손잡이. 폼이 값을 정하고 자리는 시트가 준다. */
+  setSave: (slot: SaveSlot) => void
   dateKey: string
   characters: readonly SheetCharacter[]
   /** 있으면 **수정 모드**다. */
@@ -88,6 +100,33 @@ export function FragmentFields(props: {
       </FieldRow>
     </>
   )
+}
+
+/**
+ * 저장 줄을 시트 바닥으로 올린다.
+ *
+ * **손잡이는 ref 로 넘긴다.** 그 함수는 폼의 모든 값을 물고 있어 렌더마다 새것인데, 그것을 상태로
+ * 올리면 매 렌더가 부모 상태를 바꿔 **무한 렌더**가 된다(2026-09-09 실제로 냈다). ref 는 상태가
+ * 아니라서 매 렌더 갱신해도 다시 안 돈다.
+ *
+ * 상태로 올리는 것은 줄이 **그리는 값** 셋뿐이고 전부 원시값이라 바뀔 때만 올라간다.
+ */
+export function useSaveSlot(setSave: (slot: SaveSlot) => void, slot: SaveSlot): void {
+  const latest = useRef(slot)
+  useEffect(() => {
+    latest.current = slot
+  })
+
+  const hasDelete = slot.onDelete !== undefined
+  useEffect(() => {
+    setSave({
+      editing: slot.editing,
+      canSave: slot.canSave,
+      saving: slot.saving,
+      onSave: () => latest.current.onSave(),
+      onDelete: hasDelete ? () => latest.current.onDelete?.() : undefined,
+    })
+  }, [setSave, slot.editing, slot.canSave, slot.saving, hasDelete])
 }
 
 /**
