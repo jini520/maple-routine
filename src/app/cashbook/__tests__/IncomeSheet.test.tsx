@@ -954,6 +954,25 @@ describe('사냥 계산기', () => {
     expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent('지역 · 사냥터 선택')
   })
 
+  /**
+   * `선택 안함` 은 레벨이 없는 상태다. 갈 수 있나를 잴 근거가 사라지므로 뒤 단계를 걷는다.
+   *
+   * 안 걷으면 그대로 남는다. 레벨을 모를 때 지역 목록이 **전부** 서기 때문에(결정 6) 지금 지역이
+   * 언제나 그 목록 안에 들어 통과해 버린다.
+   */
+  it('캐릭터를 `선택 안함` 으로 되돌려도 지역과 사냥터가 풀린다', async () => {
+    const view = await 그리기()
+    await 루디고르기(view)
+    await 밤의길3(view)
+    expect(view.getByTestId('income-sheet-chain-badge-사냥터')).toHaveTextContent('밤의 길 3')
+
+    await 사슬고르기(view, '')
+
+    expect(view.queryByTestId('income-sheet-chain-badge-지역')).toBeNull()
+    expect(view.queryByTestId('income-sheet-chain-badge-사냥터')).toBeNull()
+    expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent('지역 · 사냥터 선택')
+  })
+
   it('지역을 옮기면 사냥터가 풀린다. 남의 맵으로 계산이 돌지 않는다', async () => {
     const view = await 그리기()
     await 밤의길3(view)

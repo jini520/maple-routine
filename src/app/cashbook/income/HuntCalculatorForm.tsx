@@ -276,20 +276,22 @@ export function HuntCalculatorForm(
   const canSave = huntTotal > 0
 
   /**
-   * 캐릭터를 고르면 레벨이 따라 바뀌고 그 레벨의 창 밖으로 나간 지역은 풀린다.
+   * 캐릭터를 고르면 레벨이 따라 바뀌고, 그 레벨로 못 가는 지역은 사냥터와 함께 풀린다.
    *
    * 안 풀면 고르개가 목록에 없는 값을 들게 되어 트리거가 첫 칸(선택 안함)을 읽어 준다.
    * 화면에는 다른 지역이 적히는데 계산은 옛 사냥터로 도는 상태가 된다.
+   *
+   * **`선택 안함` 도 푼다.** 레벨이 없어져 갈 수 있나를 잴 근거가 사라진다. 레벨을 모를 때
+   * 지역 목록은 전부 서므로(`huntingRegionsForLevel(null)`) 창 검사만으로는 언제나 통과한다.
    */
   function selectCharacter(next: string | null): void {
     setOcid(next)
     const level =
       next === null ? null : (props.characters.find((each) => each.ocid === next)?.level ?? null)
     setHuntLevel(level)
-    if (
-      regionSlug !== null &&
-      !huntingRegionsForLevel(level).some((each) => each.slug === regionSlug)
-    ) {
+    const 갈수있다 =
+      next !== null && huntingRegionsForLevel(level).some((each) => each.slug === regionSlug)
+    if (regionSlug !== null && !갈수있다) {
       setRegionSlug(null)
       setGroundName(null)
     }
