@@ -65,6 +65,21 @@ export interface BarColors {
    * 다크는 반대로 둔다. 그 재질이 얹는 밝은 하이라이트가 다크에서는 원하는 방향이다.
    */
   readonly pillOnGlass: string
+  /**
+   * 유리 위 알약에 **덮는** 얇은 판. 라이트에만 있고 다크는 `null` 이다.
+   *
+   * 알약 자리는 유리가 두 겹이다(바 `regular` 위에 알약 `clear`). 실기기는 진짜 재질이라 그
+   * 자리에만 하이라이트를 두 번 깔고, 밝아진 판 위에서 강조색이 대비로 탁해진다. 시뮬레이터는
+   * 두 겹을 덜 두껍게 그려서 이 차이가 안 보이고 스크린샷에도 안 잡힌다.
+   *
+   * **`pillOnGlass` 로는 못 덜어낸다.** 그 값은 `UIGlassEffect.tintColor` 로 들어가고 tint 는
+   * 판을 거의 못 움직인다(0.38 에서 0.12 로 내려도 253.2 에서 253.3). 뷰 한 겹은 합성 경로가
+   * 달라 실제로 어두워진다. 그래서 tint 와 이 값이 **둘 다** 있다.
+   *
+   * 흰색이 아니라 `text` 다. 라이트에서 알약은 밝히는 자리가 아니라 덜어내는 자리라, 흰색을
+   * 얹으면 고치려던 것을 키운다. 세기 0.1 은 실기기에서 0.05 · 0.07 · 0.15 와 견줘 고른 값이다.
+   */
+  readonly pillVeil: string | null
 
   /**
    * 활성 항목의 아이콘과 라벨이 함께 쓰는 색. 강조색을 읽힐 때까지 민 값.
@@ -151,6 +166,11 @@ function liftAboveMuted(accent: string, muted: string): string {
  * 판을 진다. 세기를 더 주고 싶어지면 판이 아니라 그림자를 볼 것. 판이 색을 지기 시작하면
  * 강조는 판이 아니라 글리프가 진다 는 규칙이 깨진다.
  */
+/**
+ * 유리 위에 덮는 판의 세기. 0 은 옛 상태(그대로 탁하다) · 0.15 는 과했다. 실기기에서만 갈린다.
+ */
+const PILL_VEIL_ALPHA = 0.1
+
 function neutralPlate(bar: string, text: string): string {
   return withChroma(mixOklab(bar, text, 0.98), 0)
 }
@@ -163,6 +183,8 @@ export function resolveBarColors(theme: ThemeDefinition): BarColors {
       glassTint: withAlpha(theme.surface2, 0.28),
       glassEdge: 'rgba(255,255,255,0.22)',
       pillOnGlass: 'rgba(255,255,255,0.1)',
+      // 다크에서 `clear` 재질의 하이라이트는 원하는 방향이라 덜어낼 것이 없다.
+      pillVeil: null,
       accent: liftAboveMuted(theme.primaryInk, theme.textMuted),
       muted: withChroma(theme.textMuted, 0),
       bar: theme.surface2,
@@ -179,6 +201,7 @@ export function resolveBarColors(theme: ThemeDefinition): BarColors {
     glassTint: withAlpha(theme.surface, 0.3),
     glassEdge: 'rgba(255,255,255,0.6)',
     pillOnGlass: withAlpha(theme.text, 0.05),
+    pillVeil: withAlpha(theme.text, PILL_VEIL_ALPHA),
     accent: theme.primaryInk,
     muted: withChroma(theme.textMuted, 0),
     bar: theme.surface,
