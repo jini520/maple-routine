@@ -917,6 +917,21 @@ describe('사냥 계산기', () => {
     expect(view.queryByTestId('income-sheet-chain-option-roadOfVanishing')).toBeNull()
   })
 
+  /** 목록 끝이 곧 지금 갈 만한 곳이다. 참조표 차례로 세우면 그것이 맨 아래에 묻힌다. */
+  it('지역은 높은 데가 먼저 선다', async () => {
+    const view = await 그리기({}, '사냥')
+    await 루디고르기(view)
+    await 아이디로누르기(view, 'income-sheet-chain-placeholder-trigger')
+
+    const 보기들 = view
+      .getAllByTestId(/^income-sheet-chain-option-/)
+      .map((each) => each.props.testID as string)
+
+    // 첫 칸은 `선택 안함`(값이 `null` 이라 이름이 빈 글자다). 그다음이 가장 높은 지역이다.
+    expect(보기들[0]).toBe('income-sheet-chain-option-')
+    expect(보기들[1]).toBe('income-sheet-chain-option-tallahart')
+  })
+
   it('캐릭터를 안 고르면 지역이 **전부** 선다 (결정 6)', async () => {
     const view = await 그리기({}, '사냥')
     // 캐릭터를 `선택 안함` 으로 넘기면 사슬이 지역 단계를 연다.
