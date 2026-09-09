@@ -609,6 +609,17 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
                 tintColor={colors.pillOnGlass}
                 style={[StyleSheet.absoluteFill, { borderRadius: 999 }]}
               />
+              {/* 유리 위에 덮는 얇은 판. 재질이 두 겹으로 올려 놓은 하이라이트를 덜어낸다.
+                  tint 로는 안 움직여서 뷰로 덮는다(`bar-colors.ts` 의 `pillVeil`). */}
+              {colors.pillVeil === null ? null : (
+                <View
+                  pointerEvents="none"
+                  style={[
+                    StyleSheet.absoluteFill,
+                    { borderRadius: 999, backgroundColor: colors.pillVeil },
+                  ]}
+                />
+              )}
               {/* 유리 위 유리는 경계가 흐려진다. 헤어라인이 그 자리를 잡는다. */}
               <View
                 pointerEvents="none"
@@ -738,6 +749,16 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
               tintColor={colors.pillOnGlass}
               style={[StyleSheet.absoluteFill, { borderRadius: 999 }]}
             />
+            {/* 알약과 같은 판이다. 한쪽만 덮으면 하위 층에서 원이 알약보다 밝아진다. */}
+            {colors.pillVeil === null ? null : (
+              <View
+                pointerEvents="none"
+                style={[
+                  StyleSheet.absoluteFill,
+                  { borderRadius: 999, backgroundColor: colors.pillVeil },
+                ]}
+              />
+            )}
             <View
               pointerEvents="none"
               style={[
