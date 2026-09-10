@@ -19,6 +19,19 @@ beforeEach(async () => {
 })
 
 describe('페이로드 읽기', () => {
+  // 이벤트·캐시샵 본문은 이미지 한 장이라 평문이 0자다. 본문을 필수로 보면 그 두 분류의
+  // 알림이 통째로 버려지고, 탭해도 상세가 안 열린다.
+  it('본문이 비어도 공지로 읽는다', () => {
+    expect(parseNotice({ ...온전한, body: '' })).toMatchObject({ id: 'a', body: '' })
+  })
+
+  it('본문 키가 아예 없어도 읽는다', () => {
+    const 본문없음: Record<string, string> = { ...온전한 }
+    delete 본문없음.body
+
+    expect(parseNotice(본문없음)?.body).toBe('')
+  })
+
   it('분류를 실어 오면 그대로 읽는다', () => {
     expect(parseNotice({ ...온전한, kind: 'game' })?.kind).toBe('game')
   })
@@ -50,7 +63,9 @@ describe('페이로드 읽기', () => {
     expect(parseNotice({ ...온전한, 미래필드: '값' })).not.toBeNull()
   })
 
-  it.each(['noticeId', 'title', 'body', 'publishedAt'])('%s 가 없으면 null', (missing) => {
+  // `body` 는 여기 없다. 이벤트·캐시샵 본문이 이미지 한 장이라 평문이 0자로 오고, 그것은
+  // 계약 위반이 아니라 정상이다.
+  it.each(['noticeId', 'title', 'publishedAt'])('%s 가 없으면 null', (missing) => {
     const broken: Record<string, string> = { ...온전한 }
     delete broken[missing]
 

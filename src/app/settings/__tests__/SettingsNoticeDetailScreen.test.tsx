@@ -121,3 +121,53 @@ describe('서버 보강', () => {
     expect(view.getByTestId('notice-title')).toHaveTextContent('점검 안내')
   })
 })
+
+// 이벤트·캐시샵은 푸시가 본문을 0자로 실어 온다(본문이 이미지 한 장이라 평문이 없다).
+// 탭해서 들어온 직후에는 그릴 것이 정말 없고, 그 빈칸을 사용자는 고장으로 읽는다.
+describe('본문이 빈 공지', () => {
+  const 이미지공지: Notice = {
+    id: 'event-1374',
+    kind: 'event',
+    title: '스페셜 썬데이 메이플',
+    body: '',
+    publishedAt: '2026-09-06T00:00:00Z',
+  }
+
+  it('서버가 답하기 전에는 받는 중이라고 말한다', async () => {
+    notices.mockResolvedValue([이미지공지])
+    // 영영 안 끝나는 조회. 그 사이 화면이 무엇을 말하는지 본다.
+    remote.mockReturnValue(new Promise(() => {}))
+
+    const view = await renderOverlay(<SettingsNoticeDetailScreen route={{ params: { noticeId: 'event-1374' } }} />)
+
+    await waitFor(() => {
+      expect(view.getByTestId('notice-body-pending').props.children).toBe('본문을 받는 중이에요')
+    })
+  })
+
+  it('서버가 못 주면 못 받았다고 말한다', async () => {
+    notices.mockResolvedValue([이미지공지])
+    remote.mockResolvedValue(null)
+
+    const view = await renderOverlay(<SettingsNoticeDetailScreen route={{ params: { noticeId: 'event-1374' } }} />)
+
+    await waitFor(() => {
+      expect(view.getByTestId('notice-body-pending').props.children).toBe('본문을 받지 못했어요')
+    })
+  })
+
+  it('서버가 블록을 주면 그것을 그린다', async () => {
+    notices.mockResolvedValue([이미지공지])
+    remote.mockResolvedValue({
+      ...이미지공지,
+      blocks: [{ type: 'image', src: 'https://lwi.nexon.com/a.png' }],
+    })
+
+    const view = await renderOverlay(<SettingsNoticeDetailScreen route={{ params: { noticeId: 'event-1374' } }} />)
+
+    await waitFor(() => {
+      expect(view.getByTestId('notice-image')).toBeTruthy()
+    })
+    expect(view.queryByTestId('notice-body-pending')).toBeNull()
+  })
+})

@@ -38,6 +38,14 @@ export function SettingsNoticeDetailScreen(props: {
   // `undefined` 는 아직 찾는 중이고 `null` 은 없다는 답이다. 둘을 합치면 여는 순간 없음 이
   // 한 프레임 스친다.
   const [notice, setNotice] = useState<Notice | null | undefined>(undefined)
+  /**
+   * 서버 조회가 끝났는가. **본문이 빈 공지에만 쓴다.**
+   *
+   * 이벤트와 캐시샵은 푸시가 본문을 0자로 실어 온다(본문이 이미지 한 장이라 평문이 없다).
+   * 그래서 탭해서 들어온 직후에는 그릴 것이 정말 아무것도 없고, 그 빈칸이 «받는 중» 인지
+   * «못 받았다» 인지 화면이 말해 줘야 한다.
+   */
+  const [settled, setSettled] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -58,6 +66,9 @@ export function SettingsNoticeDetailScreen(props: {
         if (alive) setNotice(remote)
       })
       .catch(() => undefined)
+      .finally(() => {
+        if (alive) setSettled(true)
+      })
 
     return () => {
       alive = false
@@ -99,12 +110,17 @@ export function SettingsNoticeDetailScreen(props: {
             {/* 블록이 있으면 그것이 본문이다. `body` 는 목록 미리보기용으로 잘린 평문이라,
                 둘을 같이 그리면 같은 문장이 두 번 보인다. 넥슨 공지는 조회가 닿기 전까지
                 푸시로 온 `body` 만 있고, 그때는 잘린 채로 보이지 빈 화면이 되지 않는다. */}
-            {notice.blocks === undefined ? (
+            {notice.blocks !== undefined ? (
+              <NoticeBlocks blocks={notice.blocks} />
+            ) : notice.body !== '' ? (
               <Text testID="notice-body" className="text-sm leading-5 text-text">
                 {notice.body}
               </Text>
             ) : (
-              <NoticeBlocks blocks={notice.blocks} />
+              // 그릴 것이 정말 없는 자리. 빈칸으로 두면 사용자는 그것을 고장으로 읽는다.
+              <Text testID="notice-body-pending" className="text-sm text-text-disabled">
+                {settled ? '본문을 받지 못했어요' : '본문을 받는 중이에요'}
+              </Text>
             )}
 
             {notice.link !== undefined && (

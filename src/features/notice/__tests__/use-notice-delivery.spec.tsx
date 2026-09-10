@@ -101,6 +101,15 @@ describe('탭', () => {
     await waitFor(() => expect(openDetail).toHaveBeenCalledWith('a'))
   })
 
+  // 이벤트·캐시샵 본문은 이미지 한 장이라 평문이 0자로 온다. 본문을 필수로 보면 그 알림이
+  // 공지가 아닌 것으로 읽혀서, 눌러도 아무 일이 안 일어난다.
+  it('본문이 빈 알림도 상세를 민다', async () => {
+    renderHook(() => useNoticeDelivery(openDetail))
+    onOpened.mock.calls[0][0]({ ...공지, noticeId: 'event-1374', kind: 'event', body: '' })
+
+    await waitFor(() => expect(openDetail).toHaveBeenCalledWith('event-1374'))
+  })
+
   it('공지가 아닌 푸시로는 안 민다', async () => {
     renderHook(() => useNoticeDelivery(openDetail))
     onOpened.mock.calls[0][0]({ 아무거나: '값' })
