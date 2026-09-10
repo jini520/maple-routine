@@ -10,9 +10,12 @@ import { Pressable, View, type PressableProps } from 'react-native'
 import { MapleSpinner } from '../Spinner'
 import { Text } from '../Text/Text'
 import {
+  BUTTON_SIZE_CLASS,
   BUTTON_VARIANT_CLASS,
   BUTTON_VARIANT_SPINNER_CLASS,
   BUTTON_VARIANT_TEXT_CLASS,
+  buttonTextSizeClass,
+  type ButtonSize,
   type ButtonVariant,
 } from './variants'
 
@@ -20,8 +23,15 @@ import {
 const BUSY_SPINNER_SIZE = 16
 
 export interface ButtonProps extends Omit<PressableProps, 'children'> {
-  /** 외형. 변형이 정하는 것은 색·테두리·여백·글자이고 자리는 안 정한다. */
+  /** 외형. 변형이 정하는 것은 색·테두리·글자이고 여백도 자리도 안 정한다. */
   variant: ButtonVariant
+  /**
+   * 여백과 라벨 크기. 카드나 배너 안에 끼는 버튼이 `compact` 다.
+   *
+   * `className` 으로 여백을 주는 길이 막혀 있어 프롭이다. 같은 속성끼리는 이어 붙인 순서가
+   * 아니라 생성된 CSS 순서가 이겨서 조용히 안 덮인다.
+   */
+  size?: ButtonSize
   /** 상자 클래스(레이아웃). 글자 유틸은 여기가 아니라 `textClassName` 이다. */
   className?: string
   /** 글자 클래스. 변형 기본값 뒤에 이어 붙어 그것을 덮는다. */
@@ -73,6 +83,12 @@ function join(base: string, extra: string | undefined): string {
  * </Button>
  *
  * @example
+ * // 배너 안에 끼는 자리. 32px 라 손가락 자리는 `hitSlop` 이 되돌려 준다.
+ * <Button variant="primaryOutline" size="compact" hitSlop={{ top: 6, bottom: 6 }} onPress={openDetail}>
+ *   자세히 보기
+ * </Button>
+ *
+ * @example
  * // 대기. 라벨은 그대로 두고 `busy` 만 켠다. 스피너는 버튼이 그린다
  * <Button variant="primary" busy={isSubmitting} disabled={isSubmitting} onPress={handleSubmit}>
  *   확인
@@ -80,6 +96,7 @@ function join(base: string, extra: string | undefined): string {
  */
 export function Button({
   variant,
+  size = 'default',
   className,
   textClassName,
   busy = false,
@@ -88,13 +105,19 @@ export function Button({
 }: ButtonProps): React.JSX.Element {
   // 라벨을 지우지 않고 가린다. 자리를 그대로 차지해야 버튼 폭이 안 줄고, `opacity` 는 접근성
   // 트리를 안 건드려서 스크린리더는 라벨을 그대로 읽는다.
-  const label = join(join(BUTTON_VARIANT_TEXT_CLASS[variant], textClassName), busy ? 'opacity-0' : undefined)
+  const label = join(
+    join(
+      join(BUTTON_VARIANT_TEXT_CLASS[variant], buttonTextSizeClass(variant, size)),
+      textClassName,
+    ),
+    busy ? 'opacity-0' : undefined,
+  )
 
   return (
     <Pressable
       role="button"
       aria-busy={busy}
-      className={join(BUTTON_VARIANT_CLASS[variant], className)}
+      className={join(join(BUTTON_VARIANT_CLASS[variant], BUTTON_SIZE_CLASS[size]), className)}
       {...rest}
     >
       {Children.map(children, (child) =>

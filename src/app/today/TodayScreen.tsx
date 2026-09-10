@@ -270,8 +270,12 @@ export function TodayScreen(): React.JSX.Element {
             밀어내면 아래 열 폭 계산이 깨진다. 세울 공지가 없으면 아무것도 안 그린다. */}
         <NoticeBanner />
         {/* 좌우 16 은 앱 공통 `px-4` 라 화면의 래퍼가 준다. 격자가 또 주면 두 겹이 되는데,
-            열 폭 계산은 `창폭 − 32` 를 전제로 서 있다. */}
-        <View className="px-4 pb-4">
+            열 폭 계산은 `창폭 − 32` 를 전제로 서 있다.
+
+            위 8 은 셸의 `gap-2` 위에 이 화면만 얹는 값이다. 첫 타일이 전폭 카드라 앞의 것과
+            8 만 띄우면 붙어 보인다. 셸의 값을 올리지 않는 것은 그것이 앱 전체를 움직이기
+            때문이다(`ab7496ad` 가 사용자 지정으로 좁혀 둔 값이다). */}
+        <View className="px-4 pb-4 pt-2">
           <WidgetGrid data={viewModel} />
         </View>
       </ScreenScroll>
