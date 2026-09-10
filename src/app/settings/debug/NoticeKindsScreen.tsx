@@ -1,8 +1,8 @@
 /**
  * 임시 점검 화면. 공지 네 갈래를 **넥슨이 주는 것**과 **우리 서버가 든 것** 양쪽으로 본다.
  *
- * 출처가 둘인 것이 이 도구의 전부다. 둘을 나란히 보면 «넥슨에는 있는데 서버에 없다»(폴러가
- * 아직 안 돌았다)와 «양쪽 다 없다»(넥슨이 진짜 안 준다)가 갈린다. 제품 화면(설정 > 공지사항)은
+ * 출처가 둘인 것이 이 도구의 전부다. 둘을 나란히 보면 `넥슨에는 있는데 서버에 없다`(폴러가
+ * 아직 안 돌았다)와 `양쪽 다 없다`(넥슨이 진짜 안 준다)가 갈린다. 제품 화면(설정 > 공지사항)은
  * 켠 토글만 보여 주고 조회 실패를 빈 목록으로 접어서 그 구분을 못 한다.
  *
  * ⚠️ **임시다.** 폐기 절차는 넷이다.
@@ -87,7 +87,7 @@ function Chip(props: { label: string; on: boolean; onPress: () => void }): React
 
 /** 한 줄 아래에 붙는 회색 메타. 목록마다 적는 것이 달라 문자열로 받는다. */
 function Meta(props: { children: string }): React.JSX.Element {
-  return <Text className="text-[10px] leading-3 text-text-disabled">{props.children}</Text>
+  return <Text className="text-xs leading-4 text-text-disabled">{props.children}</Text>
 }
 
 /**
@@ -411,7 +411,7 @@ export function NoticeKindsScreen(): React.JSX.Element {
                   >
                     <View className="shrink gap-0.5">
                       <Text className="text-sm text-text">{row.title ?? '(title 없음)'}</Text>
-                      {/* 기록의 이름은 «어느 일요일이었나» 다. 등록일이 아니라 이 값이 축이다. */}
+                      {/* 기록의 이름은 `어느 일요일이었나` 다. 등록일이 아니라 이 값이 축이다. */}
                       <Meta>
                         {`${row.startsAt ?? '(기간 없음)'} ~ ${row.endsAt ?? '?'}`}
                       </Meta>

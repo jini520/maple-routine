@@ -3,7 +3,7 @@
  *
  * `server/notices.ts` 를 안 쓰는 이유가 하나다. 그쪽은 실패를 전부 빈 배열로 접는다 - 화면이
  * 네트워크를 안 보게 하려는 것이고 제품 화면에서는 그게 맞다. 그런데 여기서는 **0건과 조회
- * 실패를 갈라야** 한다. 둘 다 «아무것도 없음» 으로 보이면 서버에 그 분류가 아직 없는 것인지
+ * 실패를 갈라야** 한다. 둘 다 `아무것도 없음` 으로 보이면 서버에 그 분류가 아직 없는 것인지
  * 서버가 죽은 것인지 화면만 보고는 못 가린다.
  *
  * ⚠️ 이 파일은 임시다. `src/app/settings/debug/` 폴더째 지우는 것이 폐기 절차다.
@@ -15,14 +15,14 @@ import type { Notice, NoticeKind } from '../../../types/notice'
  *
  * `server/notices.ts` 는 `kind` 가 없으면 `app` 으로 채우고 모르는 블록을 버린다. 제품 화면이
  * 언제나 그릴 수 있게 하려는 것이고 거기서는 맞다. 그런데 이 도구가 답해야 하는 질문이
- * **«서버가 계약을 지키고 있나»** 라서, 채운 값을 보면 그 질문에 답할 수가 없다.
+ * **`서버가 계약을 지키고 있나`** 라서, 채운 값을 보면 그 질문에 답할 수가 없다.
  */
 export type RawNotice = Partial<Notice> & { id?: string }
 
 /**
  * 썬데이 기록 한 줄. 서버가 주는 것 그대로다.
  *
- * `Notice` 와 달리 **기간을 든다.** 기록에서 가장 중요한 값이 «어느 일요일이었나» 인데
+ * `Notice` 와 달리 **기간을 든다.** 기록에서 가장 중요한 값이 `어느 일요일이었나` 인데
  * `publishedAt` 은 등록 시각이라 그것과 다를 수 있다.
  */
 export interface RawSunday {
@@ -66,7 +66,7 @@ async function getJson<T>(path: string): Promise<ProbeResult<T>> {
     const body = (await response.json()) as T
     return { url, status: response.status, error: null, ms, data: body }
   } catch (error) {
-    // 여기서는 사유를 가린다. 제품 화면과 달리 «무엇이 안 됐나» 가 이 도구의 산출물이다.
+    // 여기서는 사유를 가린다. 제품 화면과 달리 `무엇이 안 됐나` 가 이 도구의 산출물이다.
     return {
       url,
       status: null,

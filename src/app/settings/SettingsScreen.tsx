@@ -1,61 +1,49 @@
 /**
- * 설정 본화면. 카드 둘 · 8행.
+ * 더보기 탭. **읽는 것만 남은 화면이다.**
  *
- * **위 카드는 값을 고르는 행**(모달이 뜨고, 고르면 그 자리에서 끝난다), **아래 카드는 화면이
- * 넘어가는 행**(하위 페이지로 이동한다). 두 무리를 가르는 것은 카드 경계뿐이고 섹션 제목은 달지
- * 않는다. 두 무리를 덮는 제목(`동작·표시`류)은 행 이름보다 덜 구체적이라 읽는 사람이 얻는
- * 것이 없다.
+ * 이름이 `설정` 이 아닌 이유. 이 탭이 드는 것이 성질로 셋이었다 - 매일 바뀌는 소식 · 평생 한 번
+ * 누르는 응원 · 가끔 바꾸는 설정. 셋을 덮는 말은 `여러 가지` 뿐이라 이름이 아무 말도 못 한다.
+ * 그래서 **설정을 머리의 톱니바퀴 뒤로 보내고**(`AppSettingsScreen`) 여기에는 읽을 것만 남겼다.
  *
- * **이 화면에는 고정 헤더(`PageHeader`)를 두지 않는다**. 그 ADR 이 단 재판단
- * 조건은 *"행이 늘어 세로가 길어지면"* 인데, 이 개편은 섹션 둘과 footer 한 줄을 하위 페이지로
- * 내려보내 **순감**이라 조건에 걸리지 않는다.
+ * 순서는 **얼마나 자주 바뀌는가**로 정한다. 소식이 맨 위이고 응원이 맨 아래다. 자주 바뀌는 것을
+ * 아래 두면 사용자가 스크롤을 배워야 한다.
+ *
+ * **이 화면에는 고정 헤더(`PageHeader`)를 두지 않는다**. 그 ADR 이 단 재판단 조건은 *"행이 늘어
+ * 세로가 길어지면"* 인데, 설정을 내보내 **순감**이라 조건에 걸리지 않는다.
  */
-import { useEffect, useState } from 'react'
-import { View } from 'react-native'
+import { useEffect } from 'react'
+import { Pressable, View } from 'react-native'
 import { useRoute, type RouteProp } from '@react-navigation/native'
 
-import type { CacheDataSizes } from '../../features/settings/cache-data'
-import { loadCacheDataSizes } from '../../features/settings/cache-data'
-import { TRACKING_MODE_LABELS } from '../../features/tracking-mode/copy'
-import { useThemeStore } from '../../features/theme/store'
-import { useTrackingModeStore } from '../../features/tracking-mode/store'
-import { useContentSchedulerStore } from '../../features/content-scheduler/store'
-import { formatBytes } from '../../lib/format-bytes'
 
 import packageJson from '../../../package.json'
-import { Badge, Card, Text } from '../../components/atoms'
+import { Card, GearIcon, Text } from '../../components/atoms'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import type { TabParamList } from '../../navigation/routes'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
-import { TABULAR_NUMS } from '../../constants/style/text-styles'
+import type { NoticeKind } from '../../types/notice'
 import { SettingsRow } from './SettingsRow'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
-import { ThemeModal } from './ThemeModal'
-import { TrackingModeModal } from './TrackingModeModal'
 
-type OpenModal = 'theme' | 'trackingMode' | null
+/**
+ * 소식 카드의 행들. 행 하나가 분류 하나를 열고, 그 이름이 곧 목록 화면의 제목이 된다.
+ *
+ * `공지사항` 이 앱 공지와 게임 공지를 함께 드는 이유는 **사용자에게 둘이 같은 것**이기
+ * 때문이다. 누가 썼는지는 우리 사정이고 읽는 쪽에는 `알려 줄 것` 하나다.
+ */
+const NOTICE_SECTIONS: readonly { label: string; kinds: readonly NoticeKind[] }[] = [
+  { label: '공지사항', kinds: ['app', 'game'] },
+  { label: '업데이트', kinds: ['update'] },
+  { label: '이벤트', kinds: ['event'] },
+  { label: '캐시샵', kinds: ['cashshop'] },
+]
 
 export function SettingsScreen(): React.JSX.Element {
-  const { theme } = useThemeStore()
-  const { mode: trackingMode } = useTrackingModeStore()
   // 저장 로직을 새로 갖지 않는다. 통합 키 쓰기·수동 모드 시드·추가분만 동기화·
   // 진행률 보고가 이 액션에 이미 한 벌로 들어 있다. 이름이 **컨텐츠** 인 것은 이전의
-  // 흔적이고, 목록 자체는 앱 전역 하나다(그 대가는 ADR 이 적는다).
-  const { trackedOcids } = useContentSchedulerStore()
   const navigation = useSettingsNavigation()
   const route = useRoute<RouteProp<TabParamList, 'Settings'>>()
-
-  const [openModal, setOpenModal] = useState<OpenModal>(null)
-  const [sizes, setSizes] = useState<CacheDataSizes | null>(null)
-
-  // `계정 및 데이터` 행의 대표값. 캐시 행이 한 층 내려가면서 그 값은 한 층
-  // 올라와, 들어가지 않고도 안을 짐작하게 한다. 실패는 자리표시(`- KB`)로 남긴다.
-  useEffect(() => {
-    loadCacheDataSizes()
-      .then(setSizes)
-      .catch(() => {})
-  }, [])
 
   // 보스 수익의 "캐릭터 선택하러 가기"와 두 스케줄러의 빈
   // 상태 CTA 가 캐릭터 관리를 **열어 둔 채로** 이 탭에 보낸다.
@@ -71,52 +59,51 @@ export function SettingsScreen(): React.JSX.Element {
   }, [])
 
   const displayedVersion = packageJson.version
-  // 행에 쓰는 총합은 그룹별 용량의 합으로 파생한다.
-  const totalCacheBytes = sizes === null ? null : sizes.general + sizes.records
 
   return (
-    <>
-      <ScreenScroll>
+    <ScreenScroll>
         {/* `screen-Settings` 는 나머지 세 탭 화면과 같은 관례다(`screen-Content`·`-Boss`·`-Profit`).
             이것이 없어서 내비게이션 테스트가 **자리표시자의 같은 testID 를 보고 초록**이었고,
             설정 탭이 통째로 빠진 것을 아무도 못 잡았다(실기기 관측). */}
         <View className="gap-4 px-4 pb-4" testID="screen-Settings">
           {/* 이 화면에는 `PageHeader` 가 없지만 제목 줄은 다른 탭과 **같은
               프리미티브**다. 셸이 달라도 제목이 서는 선은 같아야 한다. */}
+          {/* 설정은 머리의 아이콘 뒤에 산다. 본문에 두면 매일 보는 소식이 가끔 쓰는 설정에
+              밀려 내려간다. 톱니바퀴가 하단 바에서 여기로 옮겨 온 그림이다. */}
           <PageHeaderTitleRow>
-            <Text className="text-lg font-semibold text-text">설정</Text>
+            <Text className="text-lg font-semibold text-text">더보기</Text>
+            <Pressable
+              role="button"
+              aria-label="설정"
+              onPress={() => navigation.navigate('AppSettings')}
+              className="ml-auto p-1"
+            >
+              {/* 제목 글자(18)보다 크다. 이 화면에서 유일하게 누를 수 있는 머리 요소라 뒤로
+                  가기(20)와 같은 크기면 눈에 안 걸린다. */}
+              <GearIcon className="h-6 w-6 text-text-muted" strokeWidth={2} aria-hidden />
+            </Pressable>
           </PageHeaderTitleRow>
 
-          {/* 값을 고르는 행. 배지(현재값) + chevron 병기. */}
+          {/* **소식이 맨 위다.** 이 페이지에서 유일하게 매일 바뀌는 것이고, 나머지는 다 `가끔
+              한 번` 이다. 자주 바뀌는 것을 아래 두면 사용자가 스크롤을 배워야 한다. */}
           <Card className="px-6" testID="settings-card">
-            <SettingsRow
-              label="스케줄 관리 방법"
-              onPress={() => setOpenModal('trackingMode')}
-              rightContent={<ValueBadge>{TRACKING_MODE_LABELS[trackingMode]}</ValueBadge>}
-            />
-            <View className={SETTINGS_ROW_DIVIDER_CLASS}>
-              <SettingsRow
-                label="테마"
-                onPress={() => setOpenModal('theme')}
-                rightContent={<ValueBadge>{theme}</ValueBadge>}
-              />
-            </View>
-            {/* `테마` 아래. 이 카드에 남는 것은 성질이 같기 때문이다. 고르면 그 자리에서
-                끝난다. 배지는 추적 캐릭터 수이고 아직 못 읽었으면(`null`) 그리지 않는다.
-                `null` 은 0개가 아니다. 단위가 명 이 아니라 개 인 것은 캐릭터가 사람이
-                아니어서다. */}
-            <View className={SETTINGS_ROW_DIVIDER_CLASS}>
-              <SettingsRow
-                label="캐릭터 관리"
-                onPress={() => navigation.navigate('SettingsCharacters')}
-                rightContent={
-                  trackedOcids === null ? undefined : <ValueBadge>{trackedOcids.length}개</ValueBadge>
-                }
-              />
-            </View>
+            {NOTICE_SECTIONS.map((section, index) => (
+              <View key={section.label} className={index === 0 ? '' : SETTINGS_ROW_DIVIDER_CLASS}>
+                <SettingsRow
+                  label={section.label}
+                  onPress={() =>
+                    navigation.navigate('SettingsNotices', {
+                      kinds: [...section.kinds],
+                      title: section.label,
+                    })
+                  }
+                />
+              </View>
+            ))}
           </Card>
 
-          {/* 화면이 넘어가는 행. 대표값(있으면) + chevron. */}
+          {/* 읽는 것들. 설정과 갈라 둔 이유는 성질이 달라서다 - 이쪽은 한 번 읽고 끝나고
+              설정은 값을 바꾼다. */}
           <Card className="px-6" testID="settings-card">
             {/* `기능 설명` 이 `개발 노트` 위다. 이 앱을 어떻게 쓰나 가 무엇이 바뀌었나 보다
                 자주 묻는 질문이고 설명의 원천도 이쪽이다. */}
@@ -124,49 +111,20 @@ export function SettingsScreen(): React.JSX.Element {
               label="기능 설명"
               onPress={() => navigation.navigate('SettingsFeatureGuideList')}
             />
-            {/* `공지사항` 이 `기능 설명` 아래다. 운영자가 보내는 소식이라 이 앱을 어떻게 쓰나
-                보다 뒤이고, 무엇이 바뀌었나(개발 노트)보다는 앞이다. 알림 스위치도 이 안에
-                산다 - 그 페이지의 주된 내용이 스위치가 아니라 목록이라 화면이 빈말을 안 한다. */}
-            <View className={SETTINGS_ROW_DIVIDER_CLASS}>
-              <SettingsRow
-                label="공지사항"
-                onPress={() => navigation.navigate('SettingsNotices')}
-              />
-            </View>
-            {/* 대표값을 비운다. 최신 버전 은 아래 `앱 정보` 행과 같은 값이라 중복이고, n개 는
-                개수가 늘어난다고 뜻이 생기지 않는다. */}
             <View className={SETTINGS_ROW_DIVIDER_CLASS}>
               <SettingsRow
                 label="개발 노트"
                 onPress={() => navigation.navigate('SettingsReleaseNotes')}
               />
             </View>
-            {/* ⚠️ 임시 점검 행. 넥슨 공지 네 갈래가 서버에 실제로 찼는지 눈으로 보는 자리다.
-                폐기 절차는 `settings/debug/NoticeKindsScreen.tsx` 머리에 적혀 있다. */}
+          </Card>
+
+          {/* **응원은 맨 아래다.** 평생 한 번 누르는 것이라 자주 쓰는 것 위에 못 올린다.
+              사람들이 후원을 찾을 때 관습적으로 화면 끝부터 본다. */}
+          <Card className="px-6" testID="settings-card">
+            <SettingsRow label="별점 남기기" onPress={() => undefined} />
             <View className={SETTINGS_ROW_DIVIDER_CLASS}>
-              <SettingsRow
-                label="공지 분류 점검 (임시)"
-                onPress={() => navigation.navigate('SettingsDebugNoticeKinds')}
-              />
-            </View>
-            <View className={SETTINGS_ROW_DIVIDER_CLASS}>
-              <SettingsRow
-                label="계정 및 데이터"
-                onPress={() => navigation.navigate('SettingsAccountData')}
-                rightContent={
-                  // 조회 전에도 값과 같은 폭·타이포로 자리를 잡는다.
-                  <SummaryValue>
-                    {totalCacheBytes !== null ? formatBytes(totalCacheBytes) : '- KB'}
-                  </SummaryValue>
-                }
-              />
-            </View>
-            <View className={SETTINGS_ROW_DIVIDER_CLASS}>
-              <SettingsRow
-                label="앱 정보"
-                onPress={() => navigation.navigate('SettingsAbout')}
-                rightContent={<SummaryValue>{displayedVersion}</SummaryValue>}
-              />
+              <SettingsRow label="커피 한 잔 사주기" onPress={() => undefined} />
             </View>
           </Card>
 
@@ -193,25 +151,5 @@ export function SettingsScreen(): React.JSX.Element {
           </View>
         </View>
       </ScreenScroll>
-
-      {openModal === 'trackingMode' && <TrackingModeModal onClose={() => setOpenModal(null)} />}
-      {openModal === 'theme' && <ThemeModal onClose={() => setOpenModal(null)} />}
-    </>
-  )
-}
-
-/** 설정 행의 현재값 배지. 값을 고르는 두 행이 공유한다. */
-function ValueBadge(props: { children: React.ReactNode }): React.JSX.Element {
-  return (
-    <Badge variant="outline">{props.children}</Badge>
-  )
-}
-
-/** 이동 행의 대표값. 배지가 아니라 평문이다(고를 수 있는 값이 아니라 안을 미리 보여주는 값). */
-function SummaryValue(props: { children: React.ReactNode }): React.JSX.Element {
-  return (
-    <Text style={TABULAR_NUMS} className="text-sm text-text-muted">
-      {props.children}
-    </Text>
   )
 }

@@ -7,9 +7,6 @@
 import { act, fireEvent, waitFor } from '@testing-library/react-native'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
-import { useNoticeStore } from '../../../features/notice/store'
-import { NOTICE_TOPICS } from '../../../features/notice/topics'
-import { NO_SUBSCRIPTIONS } from '../../../types/notice'
 import { fetchNotices } from '../../../server/notices'
 import { getNotices, mergeNotices } from '../../../storage/notices'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
@@ -43,55 +40,38 @@ beforeEach(() => {
   remote.mockResolvedValue([])
   merge.mockResolvedValue(undefined)
   jest.mocked(useSettingsNavigation).mockReturnValue({ navigate, goBack } as never)
-  useNoticeStore.setState({
-    subscriptions: NO_SUBSCRIPTIONS,
-    blockedByPermission: false,
-    setSubscribed: jest.fn().mockResolvedValue(undefined),
-  })
 })
 
-describe('구독 스위치', () => {
-  it('네 토글이 다 있다', async () => {
-    const view = await renderOverlay(<SettingsNoticesScreen />)
-
-    for (const topic of NOTICE_TOPICS) {
-      expect(view.getByLabelText(`${topic.label} 알림`)).toBeTruthy()
-    }
-  })
-
-  it('꺼져 있으면 켜는 쪽으로 부른다', async () => {
-    const setSubscribed = jest.fn().mockResolvedValue(undefined)
-    useNoticeStore.setState({ subscriptions: NO_SUBSCRIPTIONS, setSubscribed })
-    const view = await renderOverlay(<SettingsNoticesScreen />)
-
-    await act(async () => {
-      fireEvent.press(view.getByLabelText('게임 공지사항 알림'))
-    })
-
-    expect(setSubscribed).toHaveBeenCalledWith('game', true)
-  })
-
-  it('켜져 있으면 끄는 쪽으로 부른다', async () => {
-    const setSubscribed = jest.fn().mockResolvedValue(undefined)
-    useNoticeStore.setState({
-      subscriptions: { ...NO_SUBSCRIPTIONS, cashshop: true },
-      setSubscribed,
-    })
-    const view = await renderOverlay(<SettingsNoticesScreen />)
-
-    await act(async () => {
-      fireEvent.press(view.getByLabelText('캐시샵 알림'))
-    })
-
-    expect(setSubscribed).toHaveBeenCalledWith('cashshop', false)
-  })
-})
 
 describe('목록', () => {
-  it('받은 것이 없으면 빈 상태를 말한다', async () => {
+  // 제목은 부르는 쪽이 준다. 소식 카드의 행 이름이 그대로 화면 제목이자 빈 상태 문구가 된다.
+  it('받은 것이 없으면 그 분류 이름으로 빈 상태를 말한다', async () => {
+    const view = await renderOverlay(
+      <SettingsNoticesScreen route={{ params: { kinds: ['cashshop'], title: '캐시샵' } }} />,
+    )
+
+    expect(view.getByText('아직 받은 캐시샵이 없습니다')).toBeTruthy()
+  })
+
+  it('분류를 안 주면 소식 전부다', async () => {
     const view = await renderOverlay(<SettingsNoticesScreen />)
 
-    expect(view.getByText('아직 받은 공지가 없습니다')).toBeTruthy()
+    expect(view.getByText('아직 받은 소식이 없습니다')).toBeTruthy()
+  })
+
+  // 한 목록에 다 담으면 점검 안내와 캐시아이템이 섞인다.
+  it('준 분류만 그린다', async () => {
+    notices.mockResolvedValue([
+      { id: 'game-1', kind: 'game', title: '점검 안내', body: '본문', publishedAt: '2026-09-09T00:00:00Z' },
+      { id: 'cashshop-1', kind: 'cashshop', title: '캐시 업데이트', body: '본문', publishedAt: '2026-09-08T00:00:00Z' },
+    ])
+
+    const view = await renderOverlay(
+      <SettingsNoticesScreen route={{ params: { kinds: ['game'], title: '공지사항' } }} />,
+    )
+
+    await waitFor(() => expect(view.getByText('점검 안내')).toBeTruthy())
+    expect(view.queryByText('캐시 업데이트')).toBeNull()
   })
 
   it('저장소가 준 순서를 그대로 그린다', async () => {
@@ -118,22 +98,6 @@ describe('목록', () => {
   })
 })
 
-describe('권한이 없어 막혔을 때', () => {
-  it('평소에는 안내가 없다', async () => {
-    const view = await renderOverlay(<SettingsNoticesScreen />)
-
-    expect(view.queryByLabelText('알림 권한 설정 열기')).toBeNull()
-  })
-
-  // 조용히 두면 사용자는 스위치가 안 켜지는 것을 고장으로 읽는다.
-  it('막히면 설정으로 가는 길을 준다', async () => {
-    useNoticeStore.setState({ blockedByPermission: true })
-    const view = await renderOverlay(<SettingsNoticesScreen />)
-
-    expect(view.getByLabelText('알림 권한 설정 열기')).toBeTruthy()
-    expect(view.getByText('기기에서 알림이 꺼져 있어요')).toBeTruthy()
-  })
-})
 
 describe('서버 보강', () => {
   // 푸시는 배경에서 도착만 한 공지를 못 쌓는다. 그 구멍을 이 조회가 메운다.

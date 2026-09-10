@@ -83,7 +83,7 @@ async function call<T>(path: string): Promise<NexonProbe<T>> {
   }
 }
 
-/** 그 분류의 목록. 넥슨은 최근 20건까지 주고 이벤트만 «진행 중인 것» 이라 수가 들쭉날쭉하다. */
+/** 그 분류의 목록. 넥슨은 최근 20건까지 주고 이벤트만 `진행 중인 것` 이라 수가 들쭉날쭉하다. */
 export async function probeNexonList(kind: NexonNoticeKind): Promise<NexonProbe<NexonRow[]>> {
   const endpoint = ENDPOINTS[kind]
   const result = await call<Record<string, unknown>>(endpoint.list)

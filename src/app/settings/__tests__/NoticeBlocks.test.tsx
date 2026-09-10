@@ -43,7 +43,7 @@ describe('공지 본문 블록', () => {
   })
 
   // 그냥 두면 자리만 잡은 빈칸이 남는다. 이벤트·캐시샵은 본문이 이미지 한 장뿐이라 그 빈칸이
-  // 곧 «본문이 없는 공지» 로 읽힌다.
+  // 곧 `본문이 없는 공지` 로 읽힌다.
   it('못 받은 이미지는 못 받았다고 말한다', async () => {
     const view = await renderOverlay(
       <NoticeBlocks blocks={[{ type: 'image', src: 'https://x.test/없는것.png' }]} />,

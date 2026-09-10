@@ -69,7 +69,9 @@ export const BAR_GROUPS: readonly BarGroup[] = [
     ],
   },
   { id: 'utility', label: '유틸리티', subs: [], page: 'Utility', layer: null },
-  { id: 'settings', label: '설정', subs: [], page: 'Settings', layer: null },
+  // 이름이 `설정` 이 아닌 이유. 이 페이지가 드는 것이 셋인데 성질이 다르다 - 매일 바뀌는
+  // 소식 · 평생 한 번 누르는 응원 · 가끔 바꾸는 설정. 셋을 덮는 말은 `여러 가지` 뿐이다.
+  { id: 'settings', label: '더보기', subs: [], page: 'Settings', layer: null },
 ]
 
 /** 그룹마다 마지막으로 보던 하위. 다시 들어갈 때 그 자리로 돌아간다. */

@@ -24,7 +24,7 @@ import {
   ArrowLeftIcon,
   CalendarCheckIcon,
   CalendarIcon,
-  GearIcon,
+  MenuIcon,
   LayoutDashboardIcon,
   ListChecksIcon,
   ProfitIcon,
@@ -215,7 +215,9 @@ const ICONS: Readonly<Record<GroupId | TabRouteName, IconComponent>> = {
   schedule: CalendarCheckIcon,
   ledger: WalletIcon,
   utility: WrenchIcon,
-  settings: GearIcon,
+  // 톱니바퀴는 더보기 머리로 옮겨 갔다. 같은 그림이 두 자리에 있으면 어느 쪽이 설정인지
+  // 흐려진다. **자리표시자다** - 사용자가 고를 그림이 정해지면 바꾼다.
+  settings: MenuIcon,
   Today: LayoutDashboardIcon,
   Content: ListChecksIcon,
   Boss: SwordsIcon,
@@ -225,7 +227,7 @@ const ICONS: Readonly<Record<GroupId | TabRouteName, IconComponent>> = {
   // 가계부 = 장부. 달력 계열(`CalendarCheck` = 스케줄러 그룹)과 겹치지 않게 골랐다.
   Cashbook: CalendarIcon,
   Utility: WrenchIcon,
-  Settings: GearIcon,
+  Settings: MenuIcon,
 }
 
 /**
@@ -246,10 +248,12 @@ const FILLED_ICONS: ReadonlySet<IconComponent> = new Set([
   LayoutDashboardIcon,
   WrenchIcon,
   SwordsIcon,
-  // 아래 둘은 우리가 그린 아이콘이라 **채울 자리를 고를 수 있다**. 수익은 동전 두 개만 면이
-  // 되고 단을 그리는 호는 선으로 남으며, 톱니는 몸통만 차고 가운데가 구멍으로 남는다.
+  // 수익은 우리가 그린 아이콘이라 **채울 자리를 고를 수 있다** - 동전 두 개만 면이 되고 단을
+  // 그리는 호는 선으로 남는다.
+  //
+  // 톱니(`GearIcon`)가 여기서 빠진 것은 그 그림이 하단 바를 떠나 더보기 머리로 갔기 때문이다.
+  // 자리를 물려받은 `MenuIcon` 은 선 셋이라 채울 안쪽이 없다.
   ProfitIcon,
-  GearIcon,
 ])
 
 /** 활성 아이콘이 쓸 `fill`. 채우지 않는 그림은 `none` 그대로다. */
