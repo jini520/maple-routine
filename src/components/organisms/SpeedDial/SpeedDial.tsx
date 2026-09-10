@@ -14,7 +14,7 @@
  *    `ProfitIcon` 과 거의 같은데 미묘하게 다른 동전 더미가 둘이 된다.
  */
 import { useEffect, useState } from 'react'
-import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -25,10 +25,8 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated'
 
-import { FAB_LIFT_PX } from './speed-dial-metrics'
 import { BottomBarOverlay } from '../BottomBar/BottomBarOverlay'
-import { resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
-import { useBottomSafeAreaPx } from '../../../lib/safe-area'
+import { useFabBottomPx } from '../../../lib/fab-metrics'
 import { useThemeAppearance } from '../../../theme/context'
 import type { ThemeDefinition } from '../../../types/theme'
 import { PlusIcon, ProfitIcon, ShoppingCartIcon, Text } from '../../atoms'
@@ -182,23 +180,8 @@ export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
   const reduceMotion = useReducedMotion()
   const { definition } = useThemeAppearance()
 
-  /**
-   * 떠 있는 하단바 위에 앉는다.
-   *
-   * 바는 화면 상자 밖이 아니라 그 위에 떠 있어서 화면 기준 `bottom: 0` 은 바 뒤다. 그렇게
-   * 두면 FAB 가 캡슐에 반쯤 가려 안 보인다.
-   *
-   * 값은 `ScreenScroll` 이 콘텐츠 끝에 남기는 몫과 같은 함수에서 나온다
-   * (`bottomSafeAreaPx + barSpacePx`, `bottom-inset.ts`). 손으로 옮겨 적으면 기기마다 갈린다.
-   * 바 높이가 창 폭의 함수이기 때문이다.
-   *
-   * 이 컴포넌트는 탭 화면에 선다고 전제한다. 바가 없는 하위 페이지에 놓을 일이 생기면 그때
-   * 프롭으로 가른다.
-   */
-  const bottomSafeAreaPx = useBottomSafeAreaPx()
-  const { width: windowWidthPx } = useWindowDimensions()
-  const dialBottomPx =
-    bottomSafeAreaPx + resolveBottomBarMetrics(windowWidthPx).spacePx + FAB_LIFT_PX
+  // 떠 있는 하단바 위에 앉는다. 화면 기준 `bottom: 0` 은 바 뒤라 거기 두면 반쯤 가린다.
+  const dialBottomPx = useFabBottomPx()
 
   const scrim = useDialProgress(DIAL_MOTION.scrim, isOpen, reduceMotion)
   const fab = useDialProgress(DIAL_MOTION.fab, isOpen, reduceMotion)

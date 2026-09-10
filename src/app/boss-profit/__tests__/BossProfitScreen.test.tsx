@@ -31,7 +31,11 @@ import { getCurrentBossProfitPeriod } from '../../../lib/boss/boss-profit-period
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import type { RecordedDrop } from '../../../types/drops'
 
-import { 테스트_안전영역 } from '../../../components/__tests__/render-atom'
+import { PortalProvider } from '@gorhom/portal'
+
+import { flattenStyle, 테스트_안전영역 } from '../../../components/__tests__/render-atom'
+import { BottomBarOverlayHost } from '../../../components/organisms/BottomBar/BottomBarOverlay'
+import { FAB_CONTENT_GAP_PX, FAB_SPACE_PX } from '../../../lib/fab-metrics'
 import { ThemeProvider } from '../../../theme/ThemeProvider'
 import { useDataFreshness } from '../../../features/refresh/freshness'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
@@ -154,14 +158,27 @@ function 드롭(overrides: Partial<RecordedDrop> = {}): RecordedDrop {
   return { itemName: '기타', slot: null, ...overrides } as RecordedDrop
 }
 
-function renderScreen(): ReturnType<typeof render> {
-  return render(
+/**
+ * 화면이 서는 트리. `rerender` 도 이것을 그대로 다시 넘긴다. 한 벌만 두는 것은 프로바이더가
+ * 한쪽에서만 빠지면 그 케이스만 다른 화면을 보기 때문이다.
+ */
+function 화면트리(): React.JSX.Element {
+  return (
     <SafeAreaProvider initialMetrics={테스트_안전영역}>
       <ThemeProvider>
-        <BossProfitScreen />
+        {/* 떠 있는 버튼은 하단바 위 슬롯으로 나간다. 호스트가 없으면 트리에서 통째로
+            사라져 보인다(`BottomBarOverlay` 의 계약). */}
+        <PortalProvider shouldAddRootHost={false}>
+          <BossProfitScreen />
+          <BottomBarOverlayHost />
+        </PortalProvider>
       </ThemeProvider>
-    </SafeAreaProvider>,
+    </SafeAreaProvider>
   )
+}
+
+function renderScreen(): ReturnType<typeof render> {
+  return render(화면트리())
 }
 
 beforeEach(() => {
@@ -197,10 +214,11 @@ describe('빈 상태', () => {
 
   it('빈 배열이면 빈 상태만 보인다. 진입점은 두지 않는다', async () => {
     mockStore({ trackedOcids: [] })
-    const { getByText, queryByText } = await renderScreen()
+    const { getByText, queryByLabelText } = await renderScreen()
 
     expect(getByText('추적 중인 캐릭터가 없습니다')).toBeTruthy()
-    expect(queryByText('아이템 가격')).toBeNull()
+    // 값을 매길 드롭이 아직 하나도 없다. 문을 열어 두면 빈 화면으로 보낸다.
+    expect(queryByLabelText('아이템 가격 입력')).toBeNull()
   })
 
   // **열어 둔 채로 보낸다** 는 그대로이고 **목적지만 바뀌었다**. 피커를 여는
@@ -222,12 +240,30 @@ describe('빈 상태', () => {
   })
 })
 
-describe('제목 줄 진입점', () => {
-  it('아이템 가격은 하위 페이지로 push 한다', async () => {
-    const { getByText } = await renderScreen()
+describe('아이템 가격 입력으로 가는 문', () => {
+  function 월간으로(): void {
+    mockStore({
+      tab: 'monthly',
+      loadedTab: 'monthly',
+      periodKey: CURRENT_MONTHLY,
+      loadedPeriodKey: CURRENT_MONTHLY,
+    })
+  }
+
+  // 제목 줄의 회색 글자였다. 버튼처럼 안 보여 떠 있는 원으로 올렸고, 같은 화면으로 가는 길을
+  // 둘로 안 남긴다.
+  it('제목 줄에는 제목만 있다', async () => {
+    const { getByText, queryByText } = await renderScreen()
+
+    expect(getByText('보스 수익')).toBeTruthy()
+    expect(queryByText('아이템 가격')).toBeNull()
+  })
+
+  it('떠 있는 버튼을 누르면 하위 페이지로 push 한다', async () => {
+    const { getByLabelText } = await renderScreen()
 
     await act(async () => {
-      fireEvent.press(getByText('아이템 가격'))
+      fireEvent.press(getByLabelText('아이템 가격 입력'))
     })
     expect(navigate).toHaveBeenCalledWith('DropPrice')
   })
@@ -239,16 +275,25 @@ describe('제목 줄 진입점', () => {
     expect(queryByText('히스토리')).toBeNull()
   })
 
-  it('월간 탭에서는 아이템 가격 링크가 서지 않는다', async () => {
-    mockStore({
-      tab: 'monthly',
-      loadedTab: 'monthly',
-      periodKey: CURRENT_MONTHLY,
-      loadedPeriodKey: CURRENT_MONTHLY,
-    })
-    const { queryByText } = await renderScreen()
+  it('월간 탭에서는 버튼이 서지 않는다', async () => {
+    월간으로()
+    const { queryByLabelText } = await renderScreen()
 
-    expect(queryByText('아이템 가격')).toBeNull()
+    expect(queryByLabelText('아이템 가격 입력')).toBeNull()
+  })
+
+  // 버튼은 콘텐츠를 밀어내지 않는다. 갚지 않으면 마지막 카드가 원 뒤로 들어간다.
+  it('버튼이 선 탭에서만 그 몫을 바닥에 갚는다', async () => {
+    const 주간 = await renderScreen()
+    expect(flattenStyle(주간.getByTestId('pull-content').props.style).paddingBottom).toBe(
+      FAB_SPACE_PX,
+    )
+
+    월간으로()
+    const 월간 = await renderScreen()
+    expect(flattenStyle(월간.getByTestId('pull-content').props.style).paddingBottom).toBe(
+      FAB_CONTENT_GAP_PX,
+    )
   })
 })
 
@@ -693,13 +738,7 @@ describe('구조 계약', () => {
 
     mockStore({ periodKey: '2026-07-09' })
     await act(async () => {
-      rerender(
-        <SafeAreaProvider initialMetrics={테스트_안전영역}>
-          <ThemeProvider>
-            <BossProfitScreen />
-          </ThemeProvider>
-        </SafeAreaProvider>,
-      )
+      rerender(화면트리())
     })
 
     expect(scrollTo).toHaveBeenCalledWith({ y: 0, animated: false })
@@ -712,13 +751,7 @@ describe('구조 계약', () => {
     scrollTo.mockClear()
 
     await act(async () => {
-      rerender(
-        <SafeAreaProvider initialMetrics={테스트_안전영역}>
-          <ThemeProvider>
-            <BossProfitScreen />
-          </ThemeProvider>
-        </SafeAreaProvider>,
-      )
+      rerender(화면트리())
     })
 
     expect(scrollTo).not.toHaveBeenCalled()
@@ -738,13 +771,7 @@ describe('구조 계약', () => {
 
     mockStore({ status: 'loaded', periodState: 'recorded', rows: [보스행()], periodKey: '2026-07-09' })
     await act(async () => {
-      rerender(
-        <SafeAreaProvider initialMetrics={테스트_안전영역}>
-          <ThemeProvider>
-            <BossProfitScreen />
-          </ThemeProvider>
-        </SafeAreaProvider>,
-      )
+      rerender(화면트리())
     })
 
     expect(queryByText(주간보스)).toBeNull()

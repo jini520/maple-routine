@@ -44,7 +44,7 @@ import { DIFFICULTY_SHORT } from '../../constants/domain/boss-difficulty'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { SpeedDial } from '../../components/organisms/SpeedDial/SpeedDial'
-import { SPEED_DIAL_SPACE_PX } from '../../components/organisms/SpeedDial/speed-dial-metrics'
+import { FAB_SPACE_PX } from '../../lib/fab-metrics'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -1014,12 +1014,12 @@ export function CashbookScreen(): React.JSX.Element {
         {/* 바닥 여백이 떠 있는 ＋ 의 몫이다. FAB 는 콘텐츠를 밀어내지 않아 여기서 갚지 않으면
             끝까지 내렸을 때 마지막 줄이 버튼 뒤로 들어간다.
 
-            `pb-4` 를 대신한다. 그 상수가 숨돌림 16 을 이미 품고 있어(`speed-dial-metrics.ts`)
+            `pb-4` 를 대신한다. 그 상수가 숨돌림 16 을 이미 품고 있어(`lib/fab-metrics.ts`)
             함께 주면 바닥 여백이 두 번 붙는다. 하단바의 몫은 `ScreenScroll` 이 이미 남긴다. */}
         <View
           testID="cashbook-content"
           className="gap-4 px-4"
-          style={{ paddingBottom: SPEED_DIAL_SPACE_PX }}
+          style={{ paddingBottom: FAB_SPACE_PX }}
         >
           {/* 기간의 **단위**를 고른다. 바로 아래 기간 이동과 한 덩어리로 읽히도록 붙여 둔다.
               왼쪽 정렬인 것은 형제 탭인 보스 수익의 같은 자리와 맞추기 위해서다. 두 화면이 같은

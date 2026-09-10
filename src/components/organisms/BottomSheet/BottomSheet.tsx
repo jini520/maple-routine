@@ -38,7 +38,7 @@ import {
 import { vars } from 'nativewind'
 import { BlurView } from 'expo-blur'
 
-import { useSheetBlurTint, useThemeAppearance } from '../../../theme/context'
+import { useBlurTint, useThemeAppearance } from '../../../theme/context'
 import { buildSheetScopeVariables } from '../../../theme/theme-vars'
 
 import { nextScrimOpacity } from './scrim-opacity'
@@ -278,7 +278,7 @@ function StepVeil(props: { onDone: () => void }): React.JSX.Element {
    * 재질은 **앱 테마가 고른다**. 기본값 `'default'` 는 OS 외형을 따라가 다크 OS 에서 검게 깔린다
    * (라이트 테마 시트가 통째로 어두워졌다).
    */
-  const tint = useSheetBlurTint()
+  const tint = useBlurTint()
   /**
    * 1 로 시작해 0 으로 걷힌다.
    *
