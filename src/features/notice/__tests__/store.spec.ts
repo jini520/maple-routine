@@ -64,12 +64,12 @@ describe('구독 토글', () => {
     await expect(getNoticeSubscriptions()).resolves.toMatchObject({ game: false })
   })
 
-  // 업데이트와 이벤트는 한 토글이지만 토픽도 하나다. 둘을 따로 구독하면 썬데이 알림이 두 번 온다.
-  it('업데이트·이벤트는 토픽 하나를 쓴다', async () => {
-    await useNoticeStore.getState().setSubscribed('updateEvent', true)
+  // 이벤트로 나가는 것이 썬데이뿐이라 그 줄이 제 이름을 갖는다.
+  it('썬데이는 자기 토픽을 쓴다', async () => {
+    await useNoticeStore.getState().setSubscribed('event', true)
 
     expect(subscribe).toHaveBeenCalledTimes(1)
-    expect(subscribe).toHaveBeenCalledWith('notice-update-event')
+    expect(subscribe).toHaveBeenCalledWith('notice-event')
   })
 
   it('토글끼리 서로를 안 건드린다', async () => {
@@ -79,7 +79,8 @@ describe('구독 토글', () => {
     expect(useNoticeStore.getState().subscriptions).toEqual({
       app: true,
       game: false,
-      updateEvent: false,
+      update: false,
+      event: false,
       cashshop: true,
     })
   })
@@ -116,7 +117,8 @@ describe('복원', () => {
     expect(useNoticeStore.getState().subscriptions).toEqual({
       app: true,
       game: false,
-      updateEvent: false,
+      update: false,
+      event: false,
       cashshop: false,
     })
   })
@@ -142,22 +144,87 @@ describe('복원', () => {
 describe('권한을 허용한 자리에서 켜는 기본 묶음', () => {
   // 패치 날 이벤트 5건과 캐시샵 4건이 같은 분에 올라온다(실측). 묻지도 않고 켜면 그날 알림이
   // 아홉 번 울린다.
-  it('앱 공지와 게임 공지만 켠다', async () => {
+  it('앱 공지·게임 공지·썬데이 셋을 켠다', async () => {
     await useNoticeStore.getState().subscribeDefaults()
 
     expect(useNoticeStore.getState().subscriptions).toEqual({
       app: true,
       game: true,
-      updateEvent: false,
+      event: true,
+      update: false,
       cashshop: false,
     })
-    expect(subscribe).toHaveBeenCalledTimes(2)
+    expect(subscribe).toHaveBeenCalledTimes(3)
   })
 
   it('안 켜는 것은 해제도 안 부른다', async () => {
     await useNoticeStore.getState().subscribeDefaults()
 
     expect(unsubscribe).not.toHaveBeenCalled()
+  })
+})
+
+describe('전체 스위치', () => {
+  // 화면에서 감추기만 하면 구독은 FCM 쪽에 남아, 스위치는 꺼져 있는데 알림은 오는 상태가 된다.
+  it('끄면 켜져 있던 것을 실제로 해제한다', async () => {
+    await useNoticeStore.getState().setSubscribed('app', true)
+    await useNoticeStore.getState().setSubscribed('cashshop', true)
+    jest.clearAllMocks()
+
+    await useNoticeStore.getState().setAllSubscribed(false)
+
+    expect(unsubscribe.mock.calls.map((call) => call[0]).sort()).toEqual([
+      'notice',
+      'notice-cashshop',
+    ])
+    expect(useNoticeStore.getState().subscriptions).toEqual(NO_SUBSCRIPTIONS)
+    await expect(getNoticeSubscriptions()).resolves.toEqual(NO_SUBSCRIPTIONS)
+  })
+
+  // 안 켠 것을 또 해제하면 FCM 왕복이 공짜로 늘고 실패할 자리도 는다.
+  it('안 켠 것은 해제도 안 부른다', async () => {
+    await useNoticeStore.getState().setSubscribed('app', true)
+    jest.clearAllMocks()
+
+    await useNoticeStore.getState().setAllSubscribed(false)
+
+    expect(unsubscribe).toHaveBeenCalledTimes(1)
+  })
+
+  it('켜면 기본 묶음 셋을 켠다', async () => {
+    await useNoticeStore.getState().setAllSubscribed(true)
+
+    expect(useNoticeStore.getState().subscriptions).toEqual({
+      app: true,
+      game: true,
+      event: true,
+      update: false,
+      cashshop: false,
+    })
+  })
+
+  // 켜는 길은 개별 스위치와 같은 문을 지난다.
+  it('권한이 없으면 켜지 않고 막힌 이유를 남긴다', async () => {
+    hasPermission.mockResolvedValue(false)
+    await setNotificationPermissionAsked()
+
+    await useNoticeStore.getState().setAllSubscribed(true)
+
+    expect(subscribe).not.toHaveBeenCalled()
+    expect(useNoticeStore.getState().subscriptions).toEqual(NO_SUBSCRIPTIONS)
+    expect(useNoticeStore.getState().blockedByPermission).toBe(true)
+  })
+
+  // 끄는 길은 권한과 무관하다. 거기서 막으면 권한 없는 사용자가 구독을 해제할 방법이 없어진다.
+  it('끄는 길은 권한을 안 본다', async () => {
+    await useNoticeStore.getState().setSubscribed('app', true)
+    hasPermission.mockResolvedValue(false)
+    jest.clearAllMocks()
+
+    await useNoticeStore.getState().setAllSubscribed(false)
+
+    expect(unsubscribe).toHaveBeenCalled()
+    expect(hasPermission).not.toHaveBeenCalled()
   })
 })
 

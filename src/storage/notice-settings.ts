@@ -41,7 +41,8 @@ export async function getNoticeSubscriptions(): Promise<NoticeSubscriptions> {
     return {
       app: saved.app === true,
       game: saved.game === true,
-      updateEvent: saved.updateEvent === true,
+      update: saved.update === true,
+      event: saved.event === true,
       cashshop: saved.cashshop === true,
     }
   } catch {

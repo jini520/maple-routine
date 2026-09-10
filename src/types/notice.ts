@@ -56,15 +56,20 @@ export interface Notice {
   blocks?: NoticeBlock[]
 }
 
-/** 구독 토글 넷의 열쇠. 무엇을 담는지는 `features/notice/topics.ts` 가 안다. */
-export type NoticeTopicKey = 'app' | 'game' | 'updateEvent' | 'cashshop'
-
-export type NoticeSubscriptions = Record<NoticeTopicKey, boolean>
+/**
+ * 켠 구독. **분류 하나가 토글 하나다.**
+ *
+ * 전에는 업데이트와 이벤트가 한 토글을 나눠 썼는데, 이벤트 알림이 썬데이 메이플만 나가면서
+ * 그 묶음이 뜻을 잃었다 - 한 줄이 `패치 노트와 썬데이` 두 가지를 말해야 했다. 갈라서 각자
+ * 자기 이름을 갖는다.
+ */
+export type NoticeSubscriptions = Record<NoticeKind, boolean>
 
 /** 아무것도 안 켠 상태. 기본은 꺼짐이고 켠 사람만 받는다. */
 export const NO_SUBSCRIPTIONS: NoticeSubscriptions = {
   app: false,
   game: false,
-  updateEvent: false,
+  update: false,
+  event: false,
   cashshop: false,
 }

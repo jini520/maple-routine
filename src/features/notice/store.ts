@@ -19,10 +19,10 @@ import {
   setNoticeSubscriptions,
   setNotificationPermissionAsked,
 } from '../../storage/notice-settings'
-import { NO_SUBSCRIPTIONS, type NoticeSubscriptions, type NoticeTopicKey } from '../../types/notice'
+import { NO_SUBSCRIPTIONS, type NoticeKind, type NoticeSubscriptions } from '../../types/notice'
 import { DEFAULT_SUBSCRIPTIONS, NOTICE_TOPICS } from './topics'
 
-function topicName(key: NoticeTopicKey): string {
+function topicName(key: NoticeKind): string {
   // 표에 없는 열쇠는 타입이 막는다. 그래도 여기서 빈 문자열을 내면 FCM 이 던지므로 찾아서 준다.
   const found = NOTICE_TOPICS.find((one) => one.key === key)
   if (found === undefined) throw new Error(`모르는 토픽 ${key}`)
@@ -40,9 +40,16 @@ interface NoticeState {
   blockedByPermission: boolean
   /** 저장된 값을 상태에 올린다. 토픽을 다시 구독하지 않는다. */
   restore: () => Promise<void>
-  setSubscribed: (key: NoticeTopicKey, subscribed: boolean) => Promise<void>
+  setSubscribed: (key: NoticeKind, subscribed: boolean) => Promise<void>
   /** 권한을 막 허용한 자리에서 기본 묶음을 켠다. */
   subscribeDefaults: () => Promise<void>
+  /**
+   * 전체 스위치. 끄면 켜져 있던 것을 전부 해제하고, 켜면 기본 묶음을 켠다.
+   *
+   * **끌 때 실제로 해제한다.** 화면에서 감추기만 하면 구독은 FCM 쪽에 남아, 스위치는 꺼져
+   * 있는데 알림은 오는 상태가 된다.
+   */
+  setAllSubscribed: (subscribed: boolean) => Promise<void>
 }
 
 /**
@@ -85,6 +92,26 @@ export const useNoticeStore = create<NoticeState>()((set, get) => ({
     const next = { ...get().subscriptions, [key]: subscribed }
     await setNoticeSubscriptions(next)
     set({ subscriptions: next, blockedByPermission: false })
+  },
+  async setAllSubscribed(subscribed) {
+    if (subscribed) {
+      // 켜는 길은 개별 스위치와 같은 문을 지난다. 권한이 없으면 구독하지 않는다.
+      if (!(await hasNotificationPermission()) && !(await ensurePermission())) {
+        set({ blockedByPermission: true })
+        return
+      }
+      await get().subscribeDefaults()
+      return
+    }
+
+    // 켜져 있던 것만 해제한다. 안 켠 것을 또 해제하면 FCM 왕복이 공짜로 늘고 실패할 자리도 는다.
+    const current = get().subscriptions
+    for (const one of NOTICE_TOPICS.filter((topic) => current[topic.key])) {
+      await unsubscribeFromPushTopic(one.topic)
+    }
+
+    await setNoticeSubscriptions(NO_SUBSCRIPTIONS)
+    set({ subscriptions: NO_SUBSCRIPTIONS, blockedByPermission: false })
   },
   async subscribeDefaults() {
     // 켤 것만 부른다. 이미 꺼진 것을 또 해제하면 FCM 왕복이 공짜로 늘고, 실패할 자리도 는다.

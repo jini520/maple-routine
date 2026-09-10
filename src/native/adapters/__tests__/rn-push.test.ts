@@ -11,19 +11,29 @@ jest.mock('@react-native-firebase/messaging', () => ({
   getMessaging: jest.fn(() => ({})),
   subscribeToTopic: jest.fn(),
   unsubscribeFromTopic: jest.fn(),
+  getAPNSToken: jest.fn(),
 }))
 
-import { subscribeToTopic, unsubscribeFromTopic } from '@react-native-firebase/messaging'
+import { Platform } from 'react-native'
+import {
+  getAPNSToken,
+  subscribeToTopic,
+  unsubscribeFromTopic,
+} from '@react-native-firebase/messaging'
 
 import { rnPushPort } from '../rn-push'
 
 const subscribe = jest.mocked(subscribeToTopic)
 const unsubscribe = jest.mocked(unsubscribeFromTopic)
+const apnsToken = jest.mocked(getAPNSToken)
 
 beforeEach(() => {
   jest.clearAllMocks()
   subscribe.mockResolvedValue(undefined)
   unsubscribe.mockResolvedValue(undefined)
+  // 기본은 `토큰이 이미 있다`. 없는 경우는 그 테스트가 따로 세운다.
+  apnsToken.mockResolvedValue('apns-token')
+  Platform.OS = 'ios'
 })
 
 describe('토픽 구독', () => {
@@ -46,5 +56,58 @@ describe('토픽 구독', () => {
     subscribe.mockRejectedValue(new Error('network'))
 
     await expect(rnPushPort.subscribe('notice')).rejects.toThrow('network')
+  })
+})
+
+// `subscribeToTopic` 은 FCM 토큰을 쓰고 FCM 토큰은 APNs 토큰이 있어야 발급된다. APNs 등록은
+// 앱이 뜰 때 시작해 비동기로 끝나므로, 그 사이에 누르면 구독이
+// `No APNS token specified before fetching FCM Token` 으로 던진다(실기기 관측 2026-09-10).
+describe('APNs 토큰을 기다린다', () => {
+  it('토큰이 있으면 바로 건다', async () => {
+    await rnPushPort.subscribe('notice-game')
+
+    expect(subscribe).toHaveBeenCalledWith(expect.anything(), 'notice-game')
+  })
+
+  it('토큰이 늦게 오면 기다렸다 건다', async () => {
+    apnsToken.mockResolvedValueOnce(null).mockResolvedValue('apns-token')
+
+    await rnPushPort.subscribe('notice-game')
+
+    expect(apnsToken).toHaveBeenCalledTimes(2)
+    expect(subscribe).toHaveBeenCalled()
+  })
+
+  // 토큰 없이 구독하면 FCM 이 영문 오류를 내고 사용자가 그것을 읽는다.
+  // 가짜 시계를 쓰는 이유는 기다리는 상한이 5초라 실제로 재면 테스트가 그만큼 멈추기 때문이다.
+  it('끝내 안 오면 읽을 수 있는 사유로 던진다', async () => {
+    jest.useFakeTimers()
+    apnsToken.mockResolvedValue(null)
+
+    const pending = rnPushPort.subscribe('notice-game')
+    const rejected = expect(pending).rejects.toThrow(/알림 서버/)
+    await jest.advanceTimersByTimeAsync(6_000)
+    await rejected
+
+    expect(subscribe).not.toHaveBeenCalled()
+    jest.useRealTimers()
+  })
+
+  // 끄는 길이 토큰 때문에 막히면 구독을 못 지운다. 해제도 같은 문을 지난다.
+  it('해제도 토큰을 기다린다', async () => {
+    apnsToken.mockResolvedValueOnce(null).mockResolvedValue('apns-token')
+
+    await rnPushPort.unsubscribe('notice-game')
+
+    expect(unsubscribe).toHaveBeenCalled()
+  })
+
+  it('안드로이드는 기다리지 않는다', async () => {
+    Platform.OS = 'android'
+
+    await rnPushPort.subscribe('notice-game')
+
+    expect(apnsToken).not.toHaveBeenCalled()
+    expect(subscribe).toHaveBeenCalled()
   })
 })
