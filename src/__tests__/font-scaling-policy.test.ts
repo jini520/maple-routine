@@ -69,14 +69,16 @@ function reactNativeImportNames(source: string): string[] {
 }
 
 /**
- * `<Text …>` 여는 태그의 속성 문자열을 전부 모은다.
+ * `<Name …>` 여는 태그의 속성 문자열을 전부 모은다.
  *
- * 정규식 하나로 `<Text([^>]*)>` 를 쓸 수 없다. 속성 안의 화살표 함수(`onPress={ => …}`)에 `>`
+ * 정규식 하나로 `<Name([^>]*)>` 를 쓸 수 없다. 속성 안의 화살표 함수(`onPress={ => …}`)에 `>`
  * 가 들어 있어 태그가 거기서 끊긴다. 그래서 중괄호 깊이를 세며 **깊이 0 의 `>`** 까지 걷는다.
+ *
+ * @param name 태그 이름. `<Text>` 와 `<Segment>` 가 같은 걸음을 쓴다
  */
-function openingTextTags(source: string): string[] {
+function openingTags(source: string, name: string): string[] {
   const tags: string[] = []
-  const pattern = /<Text(?![A-Za-z])/g
+  const pattern = new RegExp(`<${name}(?![A-Za-z])`, 'g')
   for (const match of source.matchAll(pattern)) {
     let depth = 0
     let end = match.index + match[0].length
@@ -120,36 +122,68 @@ function resolveModule(base: string): string | null {
  *
  * `atoms/Icon`·`atoms/Spinner` 처럼 배럴이 배럴을 내보내는 자리가 있어 한 겹 더 판다.
  */
-function barrelTargets(barrel: string, names: string[], depth = 0): string[] {
+function barrelTargets(barrel: string, names: string[], depth = 0): LocalImport[] {
   if (depth > 3) return []
   const source = readFileSync(barrel, 'utf8')
-  const out: string[] = []
+  const out: LocalImport[] = []
   for (const match of source.matchAll(/export\s*\{([^}]*)\}\s*from\s*'(\.[^']+)'/g)) {
-    if (!namedSpecifiers(`{${match[1]}}`).some((name) => names.includes(name))) continue
+    const passed = namedSpecifiers(`{${match[1]}}`).filter((name) => names.includes(name))
+    if (passed.length === 0) continue
     const target = resolveModule(join(dirname(barrel), match[2]))
     if (target === null) continue
-    if (/index\.tsx?$/.test(target)) out.push(...barrelTargets(target, names, depth + 1))
-    else out.push(target)
+    if (/index\.tsx?$/.test(target)) out.push(...barrelTargets(target, passed, depth + 1))
+    else out.push(...passed.map((name) => ({ name, target })))
   }
   return out
 }
 
+/** 가져온 것 하나. 이름이 붙는 것은 **그 자리에서 `fixed` 를 골랐는지**를 세기 위해서다. */
+interface LocalImport {
+  /** 가져간 이름. 기본 import 처럼 이름이 없으면 `null` */
+  name: string | null
+  target: string
+}
+
 /**
- * 이 파일이 상대 경로로 가져오는 모듈들의 **절대 경로**. 배럴은 가져간 이름의 파일로 편다.
+ * 이 파일이 상대 경로로 가져오는 것들. 배럴은 가져간 이름의 파일로 편다.
  *
- * 이름(`<CharacterRow>`)이 아니라 경로로 판정한다. 위젯 파일 안에 같은 이름의 **로컬 함수**가
- * 사는 경우가 실제로 있고(`WeeklyBossProfitWidget`), 이름만 보면 그것을 molecule 로 오인한다.
+ * **어디서 왔나는 경로로 판정한다.** 위젯 파일 안에 같은 이름의 로컬 함수가 사는 경우가 실제로
+ * 있고(`WeeklyBossProfitWidget`), 이름만 보면 그것을 molecule 로 오인한다. 이름은 그 뒤에 이
+ * 파일에서 그 부품이 **어떻게 불렸나**를 찾을 때만 쓴다.
  */
-function localImportTargets(file: string): string[] {
+function localImports(file: string): LocalImport[] {
   const source = readFileSync(file, 'utf8')
-  const out: string[] = []
+  const out: LocalImport[] = []
   for (const match of source.matchAll(/import\s+([^'";]*?)\s*from\s*'(\.[^']+)'/g)) {
     const target = resolveModule(join(dirname(file), match[2]))
     if (target === null) continue
-    if (/index\.tsx?$/.test(target)) out.push(...barrelTargets(target, namedSpecifiers(match[1])))
-    else out.push(target)
+    const names = namedSpecifiers(match[1])
+    if (/index\.tsx?$/.test(target)) {
+      out.push(...barrelTargets(target, names))
+      continue
+    }
+    if (names.length === 0) out.push({ name: null, target })
+    else out.push(...names.map((name) => ({ name, target })))
   }
   return out
+}
+
+function localImportTargets(file: string): string[] {
+  return localImports(file).map((found) => found.target)
+}
+
+/**
+ * 그 부품이 `fixed` 를 **프롭으로 받는가**. 받으면 상자가 자리마다 갈리는 부품이라 호출부가 고른다.
+ *
+ * 안 받으면 고를 길이 없으므로, 고정칸이 그것을 쓰는 순간 글자가 샌다.
+ */
+function acceptsFixedProp(file: string): boolean {
+  return /(^|[\s{(])fixed\??:\s*boolean/.test(readFileSync(file, 'utf8'))
+}
+
+/** 그 여는 태그가 `fixed` 를 달았나. `<Text fixed>` 를 세던 것과 같은 판정이다. */
+function hasFixedAttribute(attributes: string): boolean {
+  return /(^|\s)fixed(\s|$|=)/.test(attributes)
 }
 
 /**
@@ -212,7 +246,7 @@ describe('글자는 atom 한 곳에서만 나온다', () => {
 describe('칸에 묶인 글자는 `fixed` 다', () => {
   it('고정칸 넷의 `<Text>` 는 하나도 빠짐없이 `fixed` 를 단다', () => {
     const missing = fixedBoxFiles().flatMap((file) =>
-      openingTextTags(readFileSync(file, 'utf8'))
+      openingTags(readFileSync(file, 'utf8'), 'Text')
         .filter((attributes) => !/(^|\s)fixed(\s|$|=)/.test(attributes))
         .map(() => relative(SRC, file)),
     )
@@ -220,21 +254,47 @@ describe('칸에 묶인 글자는 `fixed` 다', () => {
     expect(missing).toEqual([])
   })
 
-  it('고정칸이 쓰는 글자 컴포넌트도 고정칸이다. 한 겹 아래에서 새는 자리를 막는다', () => {
+  it('고정칸이 쓰는 글자 컴포넌트는 고정칸이거나, 고를 수 있고 실제로 골랐다', () => {
  // `<Text fixed>` 만 검사하면 자식 컴포넌트가 그리는 글자가 그대로 샌다. 76px 타일 안의 난이도
- // 배지가 자기 `<Text>` 를 갖고 있으면 배수를 그대로 받는다. 그 컴포넌트들은 `fixed` 프롭을 받는
- // 대신 자기 자신이 고정칸이어야 한다. 상자가 `h-5` 처럼 고정이라 어느 호출부에서도 글자를 못
- // 키운다.
+ // 배지가 자기 `<Text>` 를 갖고 있으면 배수를 그대로 받는다.
+ //
+ // 그 부품이 **어느 호출부에서도** 상자가 고정이면 자기 자신이 고정칸이어야 한다(`Badge` 는
+ // 상자가 `h-5` 라 어디서도 글자를 못 키운다). **상자가 자리마다 갈리는 부품**은 그렇게 못
+ // 정한다 - `Segment` 는 폼 안에서 글자를 따라 커지고 76px 타일 안에서는 못 커진다. 그런
+ // 부품은 `fixed` 를 프롭으로 열고, 여기서는 **이 자리에서 실제로 골랐는지**까지 본다.
     const drawsText = new Set(textRenderingComponentFiles())
     const fixedBoxes = new Set(fixedBoxFiles())
 
-    const leaking = fixedBoxFiles().flatMap((file) =>
-      localImportTargets(file)
-        .filter((target) => drawsText.has(target) && !fixedBoxes.has(target))
-        .map((target) => `${relative(SRC, file)} → ${relative(SRC, target)}`),
-    )
+    const leaking = fixedBoxFiles().flatMap((file) => {
+      const source = readFileSync(file, 'utf8')
+      return localImports(file)
+        .filter(({ target }) => drawsText.has(target) && !fixedBoxes.has(target))
+        .filter(({ name, target }) => {
+          // 고를 길이 없으면 쓰는 순간 샌다.
+          if (name === null || !acceptsFixedProp(target)) return true
+          // 고를 수 있으면 이 파일에서 그 부품이 서는 자리마다 골랐어야 한다.
+          return openingTags(source, name).some((attributes) => !hasFixedAttribute(attributes))
+        })
+        .map(({ target }) => `${relative(SRC, file)} → ${relative(SRC, target)}`)
+    })
 
     expect([...new Set(leaking)]).toEqual([])
+  })
+
+  // 위 단언의 둘째 갈래(`고를 수 있고 실제로 골랐다`)가 아무것도 안 걸러도 초록이다. 그 갈래를
+  // 타는 자리가 실제로 있는지 따로 확인한다.
+  it('`fixed` 를 프롭으로 받는 부품을 고정칸이 실제로 쓴다', () => {
+    const drawsText = new Set(textRenderingComponentFiles())
+    const fixedBoxes = new Set(fixedBoxFiles())
+
+    const choosable = fixedBoxFiles().flatMap((file) =>
+      localImports(file).filter(
+        ({ target }) =>
+          drawsText.has(target) && !fixedBoxes.has(target) && acceptsFixedProp(target),
+      ),
+    )
+
+    expect(choosable.length).toBeGreaterThan(0)
   })
 
   it('글자 컴포넌트를 실제로 찾아냈다. 위 단언이 빈 표를 검사하는 것이 아니다', () => {
@@ -243,7 +303,7 @@ describe('칸에 묶인 글자는 `fixed` 다', () => {
 
   it('위젯에서 실제로 글자를 그리고 있다. 위 단언이 빈 목록을 검사하는 것이 아니다', () => {
     const tags = fixedBoxFiles().flatMap((file) =>
-      openingTextTags(readFileSync(file, 'utf8')),
+      openingTags(readFileSync(file, 'utf8'), 'Text'),
     )
 
     expect(tags.length).toBeGreaterThan(50)

@@ -381,6 +381,49 @@ describe('CashbookScreen: 달 이동', () => {
   })
 })
 
+// 화살표가 한 칸씩만 옮기므로 조회 한도(18개월)의 바닥에서 이번 달로 돌아오려면 열여덟 번,
+// 주간이면 일흔여덟 번을 눌러야 했다.
+describe('오늘로 이동', () => {
+  it('이번 주를 보고 있으면 안 보인다', async () => {
+    const view = await 그리기()
+
+    expect(view.queryByLabelText('오늘로 이동')).toBeNull()
+  })
+
+  it('과거로 가면 나타나고, 누르면 이번 주로 돌아온다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '이전 주')
+    await 이름으로누르기(view, '이전 주')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('8월 1주차')
+
+    await 이름으로누르기(view, '오늘로 이동')
+
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('이번 주')
+    expect(view.queryByLabelText('오늘로 이동')).toBeNull()
+  })
+
+  // 보는 기간만 옮기면 격자는 이번 주인데 아래 상세는 8월 6일이 서서, 한 화면의 두 구역이
+  // 서로 다른 때를 말한다.
+  it('고른 날도 오늘로 함께 온다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '이전 주')
+
+    await 이름으로누르기(view, '오늘로 이동')
+
+    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('8월 23일 (일)')
+  })
+
+  it('월간에서는 이번 달로 온다', async () => {
+    const view = await 그리기()
+    await 월간으로(view)
+    await 이름으로누르기(view, '이전 달')
+
+    await 이름으로누르기(view, '오늘로 이동')
+
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 8월')
+  })
+})
+
 /**
  * **앞으로는 못 간다**. 다음 주·다음 달은 **지금 기간에서 죽는다.**
  *

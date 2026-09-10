@@ -18,6 +18,14 @@ export function Segment<T extends string>(props: {
   /** `null` 이면 **아무것도 안 골랐다**. 형태처럼 기본값을 안 정하는 자리가 있다. */
   selected: T | null
   onSelect: (value: T) => void
+  /**
+   * 시스템 글자 크기를 **안 따르나**. 이 부품은 상자가 자리마다 갈려 호출부가 정한다.
+   *
+   * 폼 안과 설정에서는 상자가 글자를 따라 커지므로 배수를 그대로 받아야 하고, 높이가 못박힌
+   * today 타일 안에서는 배수를 받으면 알약이 타일을 넘는다. 기본값이 거짓인 것은 **무시하는
+   * 쪽이 예외**여서다.
+   */
+  fixed?: boolean
 }): React.JSX.Element {
   const selectedIndex = props.selected === null ? -1 : props.options.indexOf(props.selected)
   const thumb = useSlidingThumb(selectedIndex)
@@ -69,6 +77,7 @@ export function Segment<T extends string>(props: {
               {/* 글자색은 상자를 안 기다린다. 도착을 기다리면 누른 조각이 그동안 안 눌린
                   것처럼 보인다. */}
               <Text
+                fixed={props.fixed}
                 className={`text-11 font-semibold ${
                   isSelected ? 'text-primary-ink' : 'text-text-muted'
                 }`}

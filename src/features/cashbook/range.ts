@@ -22,17 +22,12 @@ export interface CashbookRange {
 export const PREFETCH_RADIUS = 2
 
 /**
- * 채워 둘 달들. **보는 달이 먼저**고 그다음 가까운 순이다.
+ * 이어진 창. **보는 달 ± 2** 이고 그 밖은 화살표가 죽어 있어 갈 수 없다.
  *
- * 순서가 곧 기기 DB 를 읽는 순서다. 보는 달이 늦게 오면 옮긴 화면이 빈 채로 남는다.
- *
- * 앞으로는 이번 달까지만, 뒤로는 한도까지만 간다. 그 밖으로는 화살표가 죽어 있어 갈 수 없고,
- * 채워 봐야 볼 수 없는 달이다.
- *
- * @param viewMonthKey 지금 보는 달
- * @param todayMonthKey 이번 달. 창의 천장이다
+ * 층에 알릴 범위(`monthWindowRange`)의 재료라 **이어져 있어야 한다**. `monthWindow` 가 여기에
+ * 이번 달을 더하는데, 그것을 범위에 넣으면 여섯 달 전을 볼 때 그 사이가 통째로 조회 대상이 된다.
  */
-export function monthWindow(viewMonthKey: string, todayMonthKey: string): string[] {
+function contiguousMonthWindow(viewMonthKey: string, todayMonthKey: string): string[] {
   const keys = [viewMonthKey]
   for (let step = 1; step <= PREFETCH_RADIUS; step += 1) {
     keys.push(getAdjacentMonthKey(viewMonthKey, -step), getAdjacentMonthKey(viewMonthKey, step))
@@ -43,6 +38,26 @@ export function monthWindow(viewMonthKey: string, todayMonthKey: string): string
 }
 
 /**
+ * 채워 둘 달들. **보는 달이 먼저**고 그다음 가까운 순이며, 끝에 **이번 달**이 늘 붙는다.
+ *
+ * 순서가 곧 기기 DB 를 읽는 순서다. 보는 달이 늦게 오면 옮긴 화면이 빈 채로 남는다.
+ *
+ * 앞으로는 이번 달까지만, 뒤로는 한도까지만 간다. 그 밖으로는 화살표가 죽어 있어 갈 수 없고,
+ * 채워 봐야 볼 수 없는 달이다.
+ *
+ * **이번 달은 창 밖이어도 든다.** 여섯 달 전을 보고 있으면 `보는 달 ± 2` 에 이번 달이 없어서
+ * `오늘` 버튼이 그때만 기다린다. 이번 달은 층의 실시간 수집이 언제나 받아 두므로 기기 DB 에서
+ * 읽는 것만으로 충분하다.
+ *
+ * @param viewMonthKey 지금 보는 달
+ * @param todayMonthKey 이번 달. 창의 천장이다
+ */
+export function monthWindow(viewMonthKey: string, todayMonthKey: string): string[] {
+  const keys = contiguousMonthWindow(viewMonthKey, todayMonthKey)
+  return keys.includes(todayMonthKey) ? keys : [...keys, todayMonthKey]
+}
+
+/**
  * 창 전체를 덮는 하나의 날짜 범위. **층에 이 범위를 알린다.**
  *
  * 층에게 보이는 격자만 알리면 이웃 달이 기기 DB 에 없는 채로 남아, 옮겼을 때 그릴 것이 없다.
@@ -50,7 +65,9 @@ export function monthWindow(viewMonthKey: string, todayMonthKey: string): string
  * 걸러 내므로(`planEnhancementHistory`) 두 번 받지 않는다.
  */
 export function monthWindowRange(viewMonthKey: string, todayMonthKey: string): CashbookRange {
-  const months = [...monthWindow(viewMonthKey, todayMonthKey)].sort()
+  // 이어진 창만 쓴다. `monthWindow` 가 더하는 이번 달을 넣으면 여섯 달 전을 볼 때 그 사이가
+  // 통째로 조회 대상이 된다.
+  const months = [...contiguousMonthWindow(viewMonthKey, todayMonthKey)].sort()
   const thisMonth = monthBounds(todayMonthKey)
   /**
    * 창이 비는 것은 **한도 밖의 달**을 보고 있을 때다. 화살표가 그리로 못 가게 막으므로 앱에서는

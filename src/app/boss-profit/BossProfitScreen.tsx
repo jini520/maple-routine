@@ -20,6 +20,7 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { ScrollView } from 'react-native'
 import { Pressable, View } from 'react-native'
 
+import { useDropPriceStore } from '../../features/boss-profit/drop-price-store'
 import { useBossProfitStore } from '../../features/boss-profit/store'
 import { usePeriodLoadErrorToast } from '../../features/boss-profit/use-period-error-toast'
 import {
@@ -28,6 +29,7 @@ import {
 } from '../../features/schedule-sync/use-sync-error-toast'
 import {
   formatBossProfitPeriodLabel,
+  getCurrentBossProfitPeriod,
   isLatestPeriod,
 } from '../../lib/boss/boss-profit-period'
 import { canPreviewNextWeek } from '../../lib/boss/monthly-boss-week'
@@ -36,6 +38,7 @@ import { FAB_CONTENT_GAP_PX, FAB_SPACE_PX } from '../../lib/fab-metrics'
 
 import {
   AnimatedNumber,
+  Button,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -98,6 +101,7 @@ export function BossProfitScreen(): React.JSX.Element {
     loadTrackedOcids,
     refresh,
     setTab,
+    goToCurrentPeriod,
     goToPreviousPeriod,
     goToNextPeriod,
     retryPeriod,
@@ -151,6 +155,11 @@ export function BossProfitScreen(): React.JSX.Element {
   // "현재 기간 판정"과 "기간 라벨"이 서로 다른 기간을 가리킬 수 있다.
   const now = new Date()
   const isCurrentPeriod = isLatestPeriod(tab, periodKey, now)
+  /**
+   * 오늘로 가는 길이 있나. `isCurrentPeriod` 와 갈라 둔다 - 달 경계를 걸친 주에는 한 칸 앞을
+   * 미리 보고 있을 수 있고(`canPreviewNextWeek`) 그때는 지금 기간이 아니다.
+   */
+  const isOnCurrentPeriod = periodKey === getCurrentBossProfitPeriod(tab, now).periodKey
   // 앞으로 갈 수 있나. 보통은 지금 기간이면 끝인데, 달 경계를 걸친 주에만 한 칸 더 열린다.
   const canGoNext = !isCurrentPeriod || (tab === 'weekly' && canPreviewNextWeek(periodKey, now))
 
@@ -170,6 +179,17 @@ export function BossProfitScreen(): React.JSX.Element {
   // 값이 없다. 목적지는 0 이다.
   useLayoutEffect(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: false })
+  }, [tab, periodKey])
+
+  /**
+   * 아이템 가격 화면이 읽을 창을 미리 채운다. **여기서 부르는 방향이라야 한다** - 저쪽 스토어가
+   * 이 스토어를 부르므로(`applyExternalDropEdit`) 반대로 두면 순환 의존이 된다.
+   *
+   * 주간 탭에서만 부른다. 그 화면으로 가는 문(`DropPriceFab`)이 거기에만 서기 때문이다.
+   */
+  useEffect(() => {
+    if (tab !== 'weekly') return
+    void useDropPriceStore.getState().warmWindow(periodKey)
   }, [tab, periodKey])
 
   // 아래 `usePeriodLoadErrorToast` 가 이 값을 읽으므로 조기 반환보다 위에서 계산한다. 순수
@@ -266,12 +286,27 @@ export function BossProfitScreen(): React.JSX.Element {
       <PageHeaderTitleRow
         fetchedAt={fetchedAt}
         trailing={
-          <TabSegment
-            options={BOSS_PROFIT_TABS}
-            selected={tab}
-            onSelect={setTab}
-            labelOf={(value) => BOSS_PROFIT_TAB_LABELS[value]}
-          />
+          // `오늘` 은 세그먼트 **왼쪽**이고 이미 지금 기간이면 안 그린다. 가계부도 같은 자리에
+          // 같은 것이 선다. **테두리를 두르지 않는다**(사용자 지정) - 곁에 선 알약이 이미 홈을
+          // 가진 덩이라, 그 옆에 또 하나의 테두리가 서면 고르는 축이 둘로 읽힌다.
+          <View className="flex-row items-center gap-1">
+            {!isOnCurrentPeriod && (
+              <Button
+                variant="text"
+                size="compact"
+                onPress={() => void goToCurrentPeriod()}
+                aria-label="오늘로 이동"
+              >
+                오늘
+              </Button>
+            )}
+            <TabSegment
+              options={BOSS_PROFIT_TABS}
+              selected={tab}
+              onSelect={setTab}
+              labelOf={(value) => BOSS_PROFIT_TAB_LABELS[value]}
+            />
+          </View>
         }
       >
         <Text className="text-lg font-semibold text-text">보스 수익</Text>

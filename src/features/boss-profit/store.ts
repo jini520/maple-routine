@@ -71,6 +71,15 @@ import {
   resolveNextPeriodKey,
   resolvePreviousPeriodKey,
 } from './period-navigation'
+import {
+  bossRecordsStamp,
+  isPrefetchTokenCurrent,
+  nextPrefetchToken,
+  readPeriodSnapshot,
+  writePeriodSnapshot,
+  type PeriodSnapshot,
+} from './period-cache'
+import { resolvePeriodWindow } from './period-window'
 
 
 /**
@@ -196,6 +205,8 @@ export interface BossProfitStore extends BossProfitState {
     onProgress?: (completed: number, total: number) => void,
   ): Promise<void>
   setTab(tab: BossCycle): Promise<void>
+  /** 지금 탭의 현재 기간으로 돌아온다. 이미 거기면 아무 일도 없다 */
+  goToCurrentPeriod(): Promise<void>
   goToPreviousPeriod(): Promise<void>
   goToNextPeriod(): Promise<void>
   /**
@@ -236,6 +247,19 @@ interface LatestSyncSnapshot {
 }
 
 let latestSyncSnapshot: LatestSyncSnapshot | null = null
+
+/**
+ * 위 스냅샷이 몇 번 갈렸나. **기간 표의 판**에 든다.
+ *
+ * 현재 기간의 행은 기기 DB 가 아니라 이 스냅샷에서 나오므로, 저장 계층의 기록 개정만 봐서는
+ * 그 줄이 낡은 것을 모른다. `setLatestSyncSnapshot` 하나로만 갈리게 두어 세는 자리를 놓치지 않는다.
+ */
+let syncSnapshotRevision = 0
+
+function setLatestSyncSnapshot(snapshot: LatestSyncSnapshot | null): void {
+  latestSyncSnapshot = snapshot
+  syncSnapshotRevision += 1
+}
 
 // 액션 넷이 전부 비동기라 여러 호출이 동시에 진행될 수 있다(‹ › 연타). 나중에 시작된 호출이
 // 먼저 끝나고 느린 호출이 뒤늦게 끝나면 그 낡은 결과가 최신 화면을 덮는다. 액션을 시작할 때마다
@@ -607,14 +631,40 @@ function withCurrentPeriodRows(rows: BossProfitRow[]): BossProfitRow[] {
 
 
 
-async function loadPeriod(
-  set: BossProfitSetter,
-  tab: BossCycle,
-  periodKey: string,
-  ocids: string[],
-  now: Date,
-  generation: number,
-): Promise<void> {
+/** 스냅샷을 만들려다 나온 답 셋. */
+type PeriodBuildOutcome =
+  | { kind: 'snapshot'; snapshot: PeriodSnapshot }
+  /** 창 동기화가 있어야 답이 나오는 기간. 프리페치는 여기서 물러난다 */
+  | { kind: 'needsWindowSync' }
+  /** 더 새 회차가 들어와 이 답은 버린다 */
+  | { kind: 'cancelled' }
+
+interface PeriodBuildInput {
+  tab: BossCycle
+  periodKey: string
+  ocids: string[]
+  now: Date
+  /**
+   * 창 동기화를 부를 수 있나. **프리페치는 못 부른다.**
+   *
+   * 거짓이면 동기화가 필요한 기간에서 `needsWindowSync` 로 물러난다. 배경에서 조용히 Nexon API
+   * 를 훑는 것도, 조회 전의 빈 상태를 `0건 확정` 으로 표에 굳히는 것도 안 한다.
+   */
+  allowWindowSync: boolean
+  /** 그 동기화를 시작할 때. 화면 회차만 로딩을 세운다 */
+  onWindowSyncStart?: () => void
+  /** 더 새 회차가 들어왔나. 참이면 이 답을 버린다 */
+  isStale: () => boolean
+}
+
+/**
+ * 한 기간이 화면에 그려질 값 전부를 만든다. **화면 회차와 프리페치가 같은 함수를 쓴다.**
+ *
+ * 갈리는 것은 창 동기화 하나다(`allowWindowSync`). 여기서 `set` 을 부르지 않으므로 답을 쓸지는
+ * 부르는 쪽이 정한다.
+ */
+async function buildPeriodSnapshot(input: PeriodBuildInput): Promise<PeriodBuildOutcome> {
+  const { tab, periodKey, ocids, now } = input
   const currentPeriodKey = getCurrentBossProfitPeriod(tab, now).periodKey
   // `ocids` 는 동기화 대상이고 이쪽은 표시 대상이다. 기록을 남긴 캐릭터가 함께 든다. 백필과
   // 고아 드롭 정리에는 계속 `ocids` 를 넘긴다(그 둘이 왜 넓히면 안 되는지는 위 함수 주석).
@@ -677,33 +727,27 @@ async function loadPeriod(
       loadDropsByRowKey(displayOcids, withCurrentPeriodRows(rows), now),
       loadPreviousPeriodTotal(displayOcids, tab, periodKey),
     ])
-    if (generation !== requestGeneration) return
-    // loadPeriod 는 항상 로컬 데이터로만 뷰를 정착시키고 실시간 동기화를 하지 않는다. 또한 이
-    // 함수는 requestGeneration 을 올린 네비게이션 뒤에만 실행되므로 진행 중이던 refresh 의
-    // loading 은 이미 무효화돼 있다. 여기서 status 를 loaded 로 확정하지 않으면 refresh 도중
-    // 기간을 이동했다가 돌아왔을 때 status 가 loading 에 영구히 갇힌다.
-    set({
-      status: 'loaded',
-      rows,
-      loadedTab: tab,
-      loadedPeriodKey: periodKey,
-      dropsByRowKey,
-      weeklySubtotals,
-      isPeriodLoading: false,
-      // 현재 기간은 실시간 동기화가 원천이라 집계를 기다리는 자리가 아니다.
-      periodPendingAggregation: false,
-      // 현재 기간은 실시간 동기화가 원천이라 recorded/confirmedEmpty뿐이다.
-      periodState: resolvePeriodDataState({
-        isCurrentPeriod: true,
-        hasRecords: rows.length > 0,
-        isObserved: false,
-        isQueryable: false,
-        lastOutcome: null,
-      }),
-      canGoPreviousPeriod,
-      previousPeriodTotalMeso,
-    })
-    return
+    if (input.isStale()) return { kind: 'cancelled' }
+    return {
+      kind: 'snapshot',
+      snapshot: {
+        rows,
+        dropsByRowKey,
+        weeklySubtotals,
+        // 현재 기간은 실시간 동기화가 원천이라 집계를 기다리는 자리가 아니다.
+        periodPendingAggregation: false,
+        // 현재 기간은 실시간 동기화가 원천이라 recorded/confirmedEmpty뿐이다.
+        periodState: resolvePeriodDataState({
+          isCurrentPeriod: true,
+          hasRecords: rows.length > 0,
+          isObserved: false,
+          isQueryable: false,
+          lastOutcome: null,
+        }),
+        canGoPreviousPeriod,
+        previousPeriodTotalMeso,
+      },
+    }
   }
 
   // **여기서 조회하지 않는다.** 창이 진입할 때 이미 채웠다. 이 함수는 읽어서 그릴 뿐이다.
@@ -726,10 +770,11 @@ async function loadPeriod(
     isPeriodQueryable(tab, periodKey, now) &&
     !ocids.some((ocid) => observedKeys.has(periodStateKey(ocid, tab, periodKey)))
   ) {
-    if (generation !== requestGeneration) return
-    set({ isPeriodLoading: true })
+    if (input.isStale()) return { kind: 'cancelled' }
+    if (!input.allowWindowSync) return { kind: 'needsWindowSync' }
+    input.onWindowSyncStart?.()
     await syncScheduleWindow(ocids, now)
-    if (generation !== requestGeneration) return
+    if (input.isStale()) return { kind: 'cancelled' }
     observedKeys = await loadObservedPeriodKeys(ocids, now)
   }
 
@@ -807,22 +852,154 @@ async function loadPeriod(
     (ocid) => outcomes.get(periodStateKey(ocid, tab, periodKey)) === 'notCollected',
   )
 
-  if (generation !== requestGeneration) return
-  // status 를 loaded 로 확정한다. 위 현재 기간 분기와 같은 이유다(중단된 refresh 의 loading 이
-  // 세대 가드로 갇히는 것을 막는다).
+  if (input.isStale()) return { kind: 'cancelled' }
+  return {
+    kind: 'snapshot',
+    snapshot: {
+      rows,
+      dropsByRowKey,
+      weeklySubtotals,
+      periodState,
+      periodPendingAggregation,
+      canGoPreviousPeriod,
+      previousPeriodTotalMeso,
+    },
+  }
+}
+
+/**
+ * 표의 한 줄을 화면에 편다.
+ *
+ * status 를 `loaded` 로 확정한다. 이 자리는 `requestGeneration` 을 올린 네비게이션 뒤에만 오므로
+ * 진행 중이던 refresh 의 loading 은 이미 무효화돼 있다. 여기서 확정하지 않으면 refresh 도중
+ * 기간을 이동했다가 돌아왔을 때 status 가 loading 에 영구히 갇힌다.
+ */
+function commitPeriod(
+  set: BossProfitSetter,
+  tab: BossCycle,
+  periodKey: string,
+  snapshot: PeriodSnapshot,
+): void {
   set({
     status: 'loaded',
-    periodPendingAggregation,
-    rows,
+    rows: snapshot.rows,
     loadedTab: tab,
     loadedPeriodKey: periodKey,
-    dropsByRowKey,
-    weeklySubtotals,
+    dropsByRowKey: snapshot.dropsByRowKey,
+    weeklySubtotals: snapshot.weeklySubtotals,
     isPeriodLoading: false,
-    periodState,
-    canGoPreviousPeriod,
-    previousPeriodTotalMeso,
+    periodState: snapshot.periodState,
+    periodPendingAggregation: snapshot.periodPendingAggregation,
+    canGoPreviousPeriod: snapshot.canGoPreviousPeriod,
+    previousPeriodTotalMeso: snapshot.previousPeriodTotalMeso,
   })
+}
+
+/**
+ * 표의 판. 기기 DB 기록 둘에 **동기화 스냅샷**을 더한다.
+ *
+ * 현재 기간의 행은 SQLite 가 아니라 `latestSyncSnapshot` 에서 나오므로, 그 스냅샷이 갈리면
+ * 표의 현재 기간 줄도 낡는다.
+ */
+function periodStamp(): string {
+  return `${bossRecordsStamp()}|${syncSnapshotRevision}`
+}
+
+/**
+ * 도는 프리페치를 멈춘다. **사용자가 움직이면 앞의 창은 낡은 것**이고, 그대로 두면 사용자
+ * 회차와 SQLite 를 두고 다툰다.
+ */
+function cancelPrefetch(): void {
+  nextPrefetchToken()
+}
+
+function schedulePrefetch(tab: BossCycle, periodKey: string, ocids: string[], now: Date): void {
+  void fillPeriodWindow(tab, periodKey, ocids, now, nextPrefetchToken())
+}
+
+/**
+ * 창을 **하나씩** 채운다. 사용자 회차를 안 취소한다.
+ *
+ * `requestGeneration` 을 안 올리는 것이 핵심이다. 올리면 지금 보고 있는 회차가 취소된다. 대신
+ * 자기 토큰을 두고, 기간 하나를 채울 때마다 그것이 아직 최신인지 본다.
+ *
+ * 다섯을 한꺼번에 던지지 않는 것도 같은 이유다. 사용자 회차와 SQLite 를 두고 다투고, 도중에
+ * 기간을 옮겨도 앞의 것들이 계속 돈다.
+ */
+async function fillPeriodWindow(
+  tab: BossCycle,
+  periodKey: string,
+  ocids: string[],
+  now: Date,
+  myToken: number,
+): Promise<void> {
+  const window = await resolvePeriodWindow(tab, periodKey, ocids, now)
+  for (const entry of window) {
+    if (!isPrefetchTokenCurrent(myToken)) return
+    // **읽기 전에 찍는다.** 읽는 중에 들어온 변경을 본 것으로 표시하면 그 변경을 영영 놓친다.
+    const stamp = periodStamp()
+    if (readPeriodSnapshot(entry.tab, entry.periodKey, stamp) !== null) continue
+
+    const outcome = await buildPeriodSnapshot({
+      tab: entry.tab,
+      periodKey: entry.periodKey,
+      ocids,
+      now,
+      allowWindowSync: false,
+      isStale: () => !isPrefetchTokenCurrent(myToken),
+    })
+    if (outcome.kind === 'cancelled') return
+    // 조회가 있어야 답이 나오는 기간은 표에 안 넣는다. 사용자가 실제로 가면 그때 원래대로 돈다.
+    if (outcome.kind === 'needsWindowSync') continue
+    writePeriodSnapshot(entry.tab, entry.periodKey, stamp, outcome.snapshot)
+  }
+}
+
+/**
+ * 그 기간을 화면에 세운다. **표에 있으면 안 읽는다.**
+ *
+ * 표에서 나오면 `isPeriodLoading` 이 아예 안 뜬다. 없으면 지금까지 하던 일을 그대로 하고 그
+ * 결과를 표에 넣는다. 어느 쪽이든 끝나고 창을 다시 채운다.
+ *
+ * @param ignoreCache 표를 건너뛰고 다시 읽는다. **재시도가 참으로 준다** - 실패한 기간의
+ *   스냅샷도 표에 들어가므로, 안 건너뛰면 `다시 시도` 가 같은 실패를 그대로 되돌려 준다
+ */
+async function loadPeriod(
+  set: BossProfitSetter,
+  tab: BossCycle,
+  periodKey: string,
+  ocids: string[],
+  now: Date,
+  generation: number,
+  ignoreCache = false,
+): Promise<void> {
+  cancelPrefetch()
+  const stamp = periodStamp()
+  const cached = ignoreCache ? null : readPeriodSnapshot(tab, periodKey, stamp)
+  if (cached !== null) {
+    if (generation !== requestGeneration) return
+    commitPeriod(set, tab, periodKey, cached)
+    schedulePrefetch(tab, periodKey, ocids, now)
+    return
+  }
+
+  const outcome = await buildPeriodSnapshot({
+    tab,
+    periodKey,
+    ocids,
+    now,
+    allowWindowSync: true,
+    onWindowSyncStart: () => {
+      set({ isPeriodLoading: true })
+    },
+    isStale: () => generation !== requestGeneration,
+  })
+  if (outcome.kind !== 'snapshot') return
+
+  writePeriodSnapshot(tab, periodKey, stamp, outcome.snapshot)
+  if (generation !== requestGeneration) return
+  commitPeriod(set, tab, periodKey, outcome.snapshot)
+  schedulePrefetch(tab, periodKey, ocids, now)
 }
 
 const initialState: BossProfitState = {
@@ -909,7 +1086,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     const previousPeriodTotalPromise = loadPreviousPeriodTotal(displayOcids, tab, currentPeriodKey)
 
     if (ocids.length === 0) {
-      latestSyncSnapshot = { ocids: [], rows: [], characterProfiles: new Map() }
+      setLatestSyncSnapshot({ ocids: [], rows: [], characterProfiles: new Map() })
       if (myGeneration !== requestGeneration) return
       // 추적은 비었는데 기록이 있으면 화면은 여전히 그것을 그려야 한다. 동기화할 것이 없을 뿐
       // 이라, 화면 반영은 기록을 원천으로 아는 `loadPeriod` 에 넘긴다.
@@ -1111,11 +1288,11 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // latestSyncSnapshot 을 캐시 데이터로 즉시 채워 둔다. 이후 syncSchedules 가 실패해도 이
     // 스냅샷이 null 로 남지 않아야 그 상태에서 탭 전환·기간 이동을 해도 캐시 우선 표시가
     // 유지된다. 동기화가 성공하면 아래에서 다시 최신 데이터로 덮어쓴다.
-    latestSyncSnapshot = {
+    setLatestSyncSnapshot({
       ocids: [...ocids],
       rows: cachedSortedRows,
       characterProfiles: cachedCharacterProfiles,
-    }
+    })
 
     // 제자리 새로고침은 캐시 우선 표시의 화면 반영만 건너뛴다. 이 단계가 그리는 것은 현재 기간의
     // 캐시 행이라 그대로 두면 7월 화면에 8월 데이터가 한 프레임 스친다. 화면은 이미 그 기간을
@@ -1291,7 +1468,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // 기록만 있는 조합을 행으로 되살린다(위 appendRecordOnlyRows 주석).
     const unionRows = appendRecordOnlyRows(autoRecordedRows, records ?? [], characterProfiles, now)
     const sortedRows = sortRowsByOcidOrder(unionRows, syncedOcids)
-    latestSyncSnapshot = { ocids: [...ocids], rows: sortedRows, characterProfiles }
+    setLatestSyncSnapshot({ ocids: [...ocids], rows: sortedRows, characterProfiles })
 
     // 잡지 않은 보스의 드롭을 지운다. 주간 한도 마감으로 행이 걷힌 자리, 추적에서 빠진 보스,
     // 영영 미처치로 굳은 기간이 전부 여기로 온다.
@@ -1374,6 +1551,27 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       characterIssues,
       // lastSyncedAt은 위에서 세대 가드보다 먼저 갱신했다(중단돼도 시각이 남도록).
     })
+
+    // 동기화가 스냅샷을 갈았으니 표의 판도 갈렸다. 창을 다시 채워 다음 이동이 안 기다리게 한다.
+    schedulePrefetch(tab, currentPeriodKey, ocids, now)
+  },
+
+  /**
+   * 지금 탭의 **현재 기간**으로 돌아온다. 화면의 `오늘` 버튼이 부른다.
+   *
+   * 창이 오늘의 주간·월간을 언제나 들고 있어(`resolvePeriodWindow`) 눌러도 기다릴 것이 없다.
+   */
+  async goToCurrentPeriod() {
+    const { tab, periodKey } = get()
+    const now = new Date()
+    const currentPeriodKey = getCurrentBossProfitPeriod(tab, now).periodKey
+    if (periodKey === currentPeriodKey) {
+      return
+    }
+    const myGeneration = ++requestGeneration
+    const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
+    set({ periodKey: currentPeriodKey })
+    await loadPeriod(set, tab, currentPeriodKey, ocids, now, myGeneration)
   },
 
   async setTab(tab) {
@@ -1443,7 +1641,9 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     const { tab, periodKey } = get()
     const myGeneration = ++requestGeneration
     const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
-    await loadPeriod(set, tab, periodKey, ocids, new Date(), myGeneration)
+    // 표를 건너뛴다. 실패한 기간의 스냅샷도 표에 들어가므로, 쓰면 `다시 시도` 가 같은 실패를
+    // 그대로 되돌려 준다.
+    await loadPeriod(set, tab, periodKey, ocids, new Date(), myGeneration, true)
   },
 
   async setPartySize(rowKey, partySize) {
@@ -1483,7 +1683,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // set 보다 앞이어야 한다. 아래 set 이 이 스냅샷을 그대로 실어 `currentPeriodRows` 를
     // 만든다. 뒤에 두면 이 수정이 today 위젯에 한 커밋 늦게 닿는다.
     if (latestSyncSnapshot !== null) {
-      latestSyncSnapshot = { ...latestSyncSnapshot, rows: latestSyncSnapshot.rows.map(applyEdit) }
+      setLatestSyncSnapshot({ ...latestSyncSnapshot, rows: latestSyncSnapshot.rows.map(applyEdit) })
     }
 
     set({ rows: get().rows.map(applyEdit) })

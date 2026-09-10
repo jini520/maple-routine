@@ -100,7 +100,8 @@ function mockStores(options: { price?: Partial<PriceStore>; tab?: 'weekly' | 'mo
 
   mockedPriceStore.mockReturnValue({
     status: 'ready',
-    periodKey: PERIOD,
+    // 화면이 `읽은 기간` 과 `보는 기간` 을 대조하므로 기본값은 열린 기간과 같아야 한다.
+    periodKey: options.periodKey ?? PERIOD,
     groups: 그룹([항목()]),
     load,
     savePrice,
@@ -173,6 +174,23 @@ describe('DropPriceScreen: 기간을 이어받는다', () => {
     const { getByText } = await renderOverlay(<DropPriceScreen />)
 
     expect(getByText('이 달에 기록된 아이템이 없습니다')).toBeTruthy()
+  })
+
+  // 이 스토어는 화면을 떠나도 살아 있어 지난번 기간의 `ready` 를 그대로 든다. 읽기를 거는
+  // 효과는 첫 렌더 뒤에 도므로, 안 가르면 기록이 있는데도 빈 상태가 한 프레임 번쩍인다.
+  it('아직 이 기간을 안 읽었으면 빈 상태가 아니라 불러오는 중이다', async () => {
+    mockStores({ periodKey: '2026-08-06', price: { periodKey: '2026-07-30', groups: [] } })
+    const { getByTestId, queryByText } = await renderOverlay(<DropPriceScreen />)
+
+    expect(getByTestId('loading-state')).toBeTruthy()
+    expect(queryByText('이 주에 기록된 아이템이 없습니다')).toBeNull()
+  })
+
+  it('그 기간을 읽고 나서야 빈 상태가 선다', async () => {
+    mockStores({ periodKey: '2026-08-06', price: { periodKey: '2026-08-06', groups: [] } })
+    const { getByText } = await renderOverlay(<DropPriceScreen />)
+
+    expect(getByText('이 주에 기록된 아이템이 없습니다')).toBeTruthy()
   })
 
   it('더 갈 수 없는 과거에서는 이전 기간 버튼이 잠긴다', async () => {

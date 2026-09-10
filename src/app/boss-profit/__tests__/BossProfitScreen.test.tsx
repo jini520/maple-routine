@@ -77,6 +77,12 @@ jest.mock('../../../features/boss-profit/store', () => ({
   dropRowKey: (ocid: string, boss: string, difficulty: string, periodKey: string) =>
     `${ocid}|${boss}|${difficulty}|${periodKey}` }))
 
+// 이 화면은 가격 화면이 읽을 창을 미리 채운다. 여기서 재는 것은 화면이지 그 창이 아니라,
+// 스토어째 목으로 세운다(실물은 SQLite 를 친다).
+jest.mock('../../../features/boss-profit/drop-price-store', () => ({
+  useDropPriceStore: { getState: () => ({ warmWindow: jest.fn().mockResolvedValue(undefined) }) },
+}))
+
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 
 const mockedStore = jest.mocked(useBossProfitStore)
@@ -114,6 +120,7 @@ function mockStore(overrides: Partial<BossProfitStore> = {}): void {
     // 실물은 `Promise<void>` 다. 당김 훅이 회차의 **끝** 을 기다린다.
     refresh: jest.fn().mockResolvedValue(undefined),
     setTab: jest.fn(),
+    goToCurrentPeriod: jest.fn(),
     goToPreviousPeriod: jest.fn(),
     goToNextPeriod: jest.fn(),
     retryPeriod: jest.fn(),
@@ -308,6 +315,27 @@ describe('탭과 기간 네비게이터', () => {
     })
 
     expect(setTab).toHaveBeenCalledWith('monthly')
+  })
+
+  // 화살표는 한 칸(정확히는 기록이 있는 다음 칸)씩만 옮기므로 과거를 훑다가 이번 주로
+  // 돌아오는 길이 없었다. `오늘` 은 세그먼트 왼쪽에 서고 이미 지금 기간이면 안 그린다.
+  it('지금 기간을 보고 있으면 `오늘` 이 안 보인다', async () => {
+    mockStore({ periodKey: CURRENT_WEEKLY })
+    const { queryByLabelText } = await renderScreen()
+
+    expect(queryByLabelText('오늘로 이동')).toBeNull()
+  })
+
+  it('과거 기간에서는 `오늘` 이 서고 누르면 지금 기간으로 부른다', async () => {
+    const goToCurrentPeriod = jest.fn()
+    mockStore({ periodKey: '2026-07-02', goToCurrentPeriod })
+    const { getByLabelText } = await renderScreen()
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('오늘로 이동'))
+    })
+
+    expect(goToCurrentPeriod).toHaveBeenCalled()
   })
 
   it('‹ › 는 각각 이전·다음 기간을 부른다', async () => {
