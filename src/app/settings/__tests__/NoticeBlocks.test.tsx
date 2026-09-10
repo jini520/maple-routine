@@ -3,7 +3,7 @@
 //
 // **이벤트·캐시샵 본문은 이미지 한 장뿐이다**(실측). 그래서 이미지를 못 그리면 그 두 분류는
 // 상세 화면이 통째로 빈칸이 된다.
-import { fireEvent } from '@testing-library/react-native'
+import { act, fireEvent } from '@testing-library/react-native'
 import { Linking } from 'react-native'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
@@ -40,6 +40,21 @@ describe('공지 본문 블록', () => {
     )
 
     expect(view.getByTestId('notice-image').props.style.aspectRatio).toBeGreaterThan(0)
+  })
+
+  // 그냥 두면 자리만 잡은 빈칸이 남는다. 이벤트·캐시샵은 본문이 이미지 한 장뿐이라 그 빈칸이
+  // 곧 «본문이 없는 공지» 로 읽힌다.
+  it('못 받은 이미지는 못 받았다고 말한다', async () => {
+    const view = await renderOverlay(
+      <NoticeBlocks blocks={[{ type: 'image', src: 'https://x.test/없는것.png' }]} />,
+    )
+
+    await act(async () => {
+      fireEvent(view.getByTestId('notice-image'), 'error')
+    })
+
+    expect(view.getByTestId('notice-image-failed')).toBeTruthy()
+    expect(view.queryByTestId('notice-image')).toBeNull()
   })
 
   it('표는 행과 칸을 세운다', async () => {
