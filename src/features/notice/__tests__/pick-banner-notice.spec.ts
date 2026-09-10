@@ -1,8 +1,8 @@
 import { pickBannerNotice } from '../pick-banner-notice'
-import type { Notice } from '../../../types/notice'
+import type { Notice, NoticeKind } from '../../../types/notice'
 
-function notice(id: string, publishedAt: string): Notice {
-  return { id, kind: 'app', title: `공지 ${id}`, body: '본문', publishedAt }
+function notice(id: string, publishedAt: string, kind: NoticeKind = 'app'): Notice {
+  return { id, kind, title: `공지 ${id}`, body: '본문', publishedAt }
 }
 
 describe('배너가 세우는 공지 고르기', () => {
@@ -82,5 +82,36 @@ describe('배너가 세우는 공지 고르기', () => {
     )
 
     expect(picked?.id).toBe('ok')
+  })
+
+  // 넥슨 네 갈래는 매일 들어온다. 분류를 안 가리면 배너가 사실상 항상 그것이 되고, 운영자가
+  // 무슨 말을 해도 첫 화면에 못 닿는다. 읽는 자리는 더보기 · 소식의 자기 목록이다.
+  it.each<NoticeKind>(['game', 'update', 'event', 'cashshop'])('%s 은 배너에 안 선다', (kind) => {
+    expect(pickBannerNotice([notice('n', '2026-09-05T00:00:00Z', kind)], [])).toBeNull()
+  })
+
+  it('더 최근 넥슨 공지가 있어도 앱 공지를 세운다', () => {
+    const picked = pickBannerNotice(
+      [
+        notice('app', '2026-09-01T00:00:00Z'),
+        notice('cash', '2026-09-09T00:00:00Z', 'cashshop'),
+      ],
+      [],
+    )
+
+    expect(picked?.id).toBe('app')
+  })
+
+  // 앱 공지 중 최신을 닫았으면 그것으로 끝이다. 넥슨 것이 그 자리를 대신 채우면 안 된다.
+  it('앱 공지를 닫은 자리에 넥슨 공지가 올라오지 않는다', () => {
+    const picked = pickBannerNotice(
+      [
+        notice('app', '2026-09-05T00:00:00Z'),
+        notice('game', '2026-09-09T00:00:00Z', 'game'),
+      ],
+      ['app'],
+    )
+
+    expect(picked).toBeNull()
   })
 })
