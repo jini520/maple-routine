@@ -32,6 +32,7 @@ import {
 } from '../../lib/boss/boss-profit-period'
 import { canPreviewNextWeek } from '../../lib/boss/monthly-boss-week'
 import { sumDropPayout } from '../../lib/drop/drop-price'
+import { FAB_CONTENT_GAP_PX, FAB_SPACE_PX } from '../../lib/fab-metrics'
 
 import {
   AnimatedNumber,
@@ -52,11 +53,11 @@ import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import { useDataFreshness } from '../../features/refresh/freshness'
 import { useOpenTab } from '../../hooks/useOpenTab'
-import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { useLedgerData } from '../../features/ledger/useLedgerData'
 import type { BossProfitContextValue } from './boss-profit-context'
 import { BossProfitContextProvider } from './boss-profit-context'
 import { CharacterAccordion } from './CharacterAccordion'
+import { DropPriceFab } from './DropPriceFab'
 import {
   buildCharacterGroups,
   collectAllValuableDrops,
@@ -112,7 +113,6 @@ export function BossProfitScreen(): React.JSX.Element {
   // 조각 둘만 고른다. 강화 사용 내역은 이 화면이 안 그리므로 안 받는다. 그것을 받는 것은
   // 가계부의 당김과 층 마운트다.
 
-  const navigation = useScreenNavigation()
   const openTab = useOpenTab()
   /**
    * 머리 아래 한 줄이 읽는 값. **실시간 데이터를 마지막으로 받은 시각 하나**다.
@@ -229,6 +229,8 @@ export function BossProfitScreen(): React.JSX.Element {
   // 총 수익 헤드라인 우측 뱃지용. 이 기간 전체 고가 드롭.
   const periodValuableDrops = collectAllValuableDrops(characterGroups, dropsByRowKey)
 
+  const showsDropPriceFab = tab === 'weekly'
+
   // 기간·탭 맥락과 스토어 바인딩을 자손에게 내린다. 이 열 개는 4단계를 타고 내려가며 51지점을
   // 만들고 있었다. 참조 동일성을 위한 메모이제이션은 하지 않는다.
   const bossProfitContext: BossProfitContextValue = {
@@ -251,16 +253,10 @@ export function BossProfitScreen(): React.JSX.Element {
     // 헤더는 제목 줄 하나다. 주간/월간 · 기간 이동 · 총 수익 요약은 **이 화면에서 무엇을
     // 보는가**에 딸린 것이라 콘텐츠로 내려갔다.
     <View testID="page-header" className="z-10 px-4" style={{ paddingTop: topSafeAreaPx }}>
-      {/* 다른 페이지로 가는 것이라 헤더에 남는 진입점. 주간 탭에만 세운다(사용자 지정).
-          `히스토리` 링크가 그 오른쪽에 있었고 임시로 걷었다. 화면과 라우트는 그대로 살아
-          있으므로 자리를 다시 정하면 이 자리에 `Pressable` 하나를 되돌린다. */}
-      <PageHeaderTitleRow className="justify-between" fetchedAt={fetchedAt}>
+      {/* 제목 하나다. 아이템 가격 입력으로 가는 문은 오른쪽 아래에 떠 있는 원이고
+          (`DropPriceFab`), `히스토리` 링크는 자리를 다시 정할 때까지 걷혀 있다. */}
+      <PageHeaderTitleRow fetchedAt={fetchedAt}>
         <Text className="text-lg font-semibold text-text">보스 수익</Text>
-        {tab === 'weekly' && (
-          <Pressable role="button" onPress={() => navigation.navigate('DropPrice')}>
-            <Text className="text-sm font-medium text-text-muted">아이템 가격</Text>
-          </Pressable>
-        )}
       </PageHeaderTitleRow>
     </View>
   )
@@ -417,7 +413,15 @@ export function BossProfitScreen(): React.JSX.Element {
         >
           {periodSection}
 
-          <View testID="pull-content" className="gap-2 px-4 pb-4">
+          {/* 바닥 여백이 떠 있는 버튼의 몫이다. 버튼은 콘텐츠를 밀어내지 않아 여기서 갚지
+              않으면 끝까지 내렸을 때 마지막 카드가 원 뒤로 들어간다. `pb-4` 를 안 쓰는 것은
+              그 상수가 숨돌림 16 을 이미 품고 있어서다. 버튼이 안 서는 월간에서는 그 숨돌림만
+              준다 - 84 를 그대로 주면 아무것도 없는 자리가 68px 빈다. */}
+          <View
+            testID="pull-content"
+            className="gap-2 px-4"
+            style={{ paddingBottom: showsDropPriceFab ? FAB_SPACE_PX : FAB_CONTENT_GAP_PX }}
+          >
             {/* 점선 박스(빈 상태의 어법)와 비-브랜드 링을 쓰지 않고 셸 승계 카드를 쓴다. 백필이
                 끝나면 같은 자리·같은 껍데기에 캐릭터 카드가 들어온다. */}
             {isPeriodLoading && (
@@ -462,6 +466,10 @@ export function BossProfitScreen(): React.JSX.Element {
               ))}
           </View>
         </ScreenScroll>
+
+        {/* 아이템 가격 입력으로 가는 문. 주간 탭에만 선다(사용자 지정). 월간 보스 드롭에 값을
+            매기는 것은 이 제약과 무관하다 - 그 화면이 그 주에 서는 월간 보스를 함께 담는다. */}
+        {showsDropPriceFab && <DropPriceFab />}
 
         {/* 총 수익 내역. 카드·보스 행과 같은 상자다. 셸 바깥에 두는 것은 별도 네이티브
             윈도우라 트리 위치가 겹침에 영향을 주지 않기 때문이다. */}
