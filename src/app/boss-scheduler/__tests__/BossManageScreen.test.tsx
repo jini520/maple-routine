@@ -540,6 +540,57 @@ describe('BossManageScreen: 자동 모드', () => {
     await press(screen.getByLabelText('스우 파티원 수 증가'))
     expect(store.setPartySize).toHaveBeenCalledWith('ocid-1', '스우', '익스트림', 2)
   })
+
+  // 이슈 #341. 고른 난이도는 어느 난이도의 파티 인원을 편집 중인가 라는 화면 전용 상태다.
+  // 캐릭터를 옮기는 것이 그 편집을 끝내는 행위라 표를 비운다. 안 비우면 보스 이름만으로 다음
+  // 캐릭터의 행에 남아, 등록이 노말인 보스가 익스트림으로 선다.
+  it('캐릭터를 옮기면 앞 캐릭터에서 고른 난이도가 따라오지 않는다', async () => {
+    mockStore({
+      characters: [
+        character({
+          weeklyBosses: [registeredBoss({ apiName: '스우', matchedBossName: '스우', difficulty: '하드' })],
+        }),
+        character({
+          ocid: 'ocid-2',
+          characterName: '캐릭터2',
+          weeklyBosses: [registeredBoss({ apiName: '스우', matchedBossName: '스우', difficulty: '노멀' })],
+        }),
+      ],
+    })
+    await renderScreen()
+
+    await press(button('익스트림'))
+    expect(stateOf(button('익스트림')).selected).toBe(true)
+
+    await press(screen.getAllByTestId('character-portrait')[1])
+
+    expect(stateOf(button('노멀')).selected).toBe(true)
+    expect(stateOf(button('익스트림')).selected).toBe(false)
+  })
+
+  // 표시만 틀리는 것이 아니다. 같은 값이 스테퍼로 흘러가 `partySizeKey` 의 다른 칸을 열고,
+  // 거기서 수를 고치면 그 캐릭터가 잡지도 않는 난이도의 파티 인원이 기기에 적힌다.
+  it('캐릭터를 옮긴 뒤 스테퍼는 그 캐릭터의 등록 난이도로 저장한다', async () => {
+    const store = mockStore({
+      characters: [
+        character({
+          weeklyBosses: [registeredBoss({ apiName: '스우', matchedBossName: '스우', difficulty: '하드' })],
+        }),
+        character({
+          ocid: 'ocid-2',
+          characterName: '캐릭터2',
+          weeklyBosses: [registeredBoss({ apiName: '스우', matchedBossName: '스우', difficulty: '노멀' })],
+        }),
+      ],
+    })
+    await renderScreen()
+
+    await press(button('익스트림'))
+    await press(screen.getAllByTestId('character-portrait')[1])
+    await press(screen.getByLabelText('스우 파티원 수 증가'))
+
+    expect(store.setPartySize).toHaveBeenCalledWith('ocid-2', '스우', '노멀', 2)
+  })
 })
 
 describe('BossManageScreen: 주간 12개 한도', () => {

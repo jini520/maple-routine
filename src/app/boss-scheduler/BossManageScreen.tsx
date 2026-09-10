@@ -63,6 +63,9 @@ function toListEntries(entries: BossReferenceEntry[]): BossListEntry[] {
     }))
 }
 
+/** 주인이 다른 편집 표를 읽을 때 대신 주는 빈 표. 렌더마다 새 객체를 만들지 않는다. */
+const NO_DIFFICULTY_EDITS: Record<string, BossDifficulty> = {}
+
 const WEEKLY_BOSSES = toListEntries(weeklyBossesData.weekly as BossReferenceEntry[])
 const SEASON_BOSSES = toListEntries(weeklyBossesData.eventWeekly as BossReferenceEntry[])
 const MONTHLY_BOSSES = toListEntries(weeklyBossesData.monthly as BossReferenceEntry[])
@@ -90,9 +93,16 @@ export function BossManageScreen(): React.JSX.Element {
   // 방향이 뒤집혀 읽힌다.
   // 스위치는 `모든 보스 보기`(기본 꺼짐)다. `거른다` 를 뜻하는 스위치는 끄면 더 보인다가 되어
   const [showAllBosses, setShowAllBosses] = useState(false)
-  // 아니라 저장하지 않는다.
-  // 자동 모드에서 행마다 어느 난이도의 파티 인원을 편집 중인지 담는 화면 전용 상태. 멤버십이
-  const [autoDifficultyByBoss, setAutoDifficultyByBoss] = useState<Record<string, BossDifficulty>>({})
+  /**
+   * 자동 모드에서 행마다 어느 난이도의 파티 인원을 편집 중인지. 멤버십이 아니라 저장하지 않는다.
+   *
+   * `ocid` 가 이 표의 주인이다. 보스 이름만으로 키를 잡으면 캐릭터를 옮겼을 때 같은 이름의 행에
+   * 앞 캐릭터의 선택이 그대로 남는다.
+   */
+  const [difficultyEdit, setDifficultyEdit] = useState<{
+    ocid: string | null
+    byBoss: Record<string, BossDifficulty>
+  }>({ ocid: null, byBoss: {} })
 
   // 스케줄러를 거치지 않고 직접 진입해도 스토어가 채워지도록 동일하게 로드한다.
   useEffect(() => {
@@ -110,6 +120,15 @@ export function BossManageScreen(): React.JSX.Element {
   // 화면 넷이 **같은 규칙**으로 고른다. 폴백을 화면마다 두면 공유했는데 화면마다 다른 캐릭터가 된다.
   // 넘기는 목록이 화면 순서여야 한다. 폴백이 그 첫 번째다.
   const selected = resolveSelectedCharacter(selectedOcid, characters)
+
+  /**
+   * 지금 캐릭터의 편집 표. 주인이 다르면 빈 표다.
+   *
+   * 캐릭터를 옮기는 것이 편집을 끝내는 행위다. 안 버리면 앞 캐릭터가 고른 난이도가 보스 이름만으로
+   * 이 캐릭터의 행에 남고, 그 난이도가 스테퍼로 흘러가 잡지도 않는 난이도의 파티 인원이 저장된다.
+   */
+  const autoDifficultyByBoss =
+    difficultyEdit.ocid === (selected?.ocid ?? null) ? difficultyEdit.byBoss : NO_DIFFICULTY_EDITS
 
   // 링 없는 초상화 레일. 이름과 레벨만 싣는다(`rings: []`).
   const railEntries: CharacterRailEntry[] = characters.map((character) => ({
@@ -411,7 +430,10 @@ export function BossManageScreen(): React.JSX.Element {
                           difficulties={entry.difficulties}
                           selected={autoDifficulty}
                           onSelect={(difficulty) =>
-                            setAutoDifficultyByBoss((prev) => ({ ...prev, [entry.boss]: difficulty }))
+                            setDifficultyEdit({
+                              ocid: selected?.ocid ?? null,
+                              byBoss: { ...autoDifficultyByBoss, [entry.boss]: difficulty },
+                            })
                           }
                         />
                       )}
