@@ -30,6 +30,7 @@ import { ScreenScroll } from '../../../components/templates/ScreenScroll/ScreenS
 import { formatNoticeDate } from '../../../features/notice/format'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 import { NoticeBlocks } from '../NoticeBlocks'
+import { parseContents } from './html-preview'
 import {
   describeContents,
   probeNexonDetail,
@@ -41,6 +42,14 @@ import {
 import { probeDetail, probeList, type ProbeResult, type RawNotice } from './probe'
 
 type Source = 'nexon' | 'server'
+
+/**
+ * 미리보기에서 한 번에 그리는 블록 수.
+ *
+ * 업데이트 한 건이 797블록이다(실측). 다 그리면 펼치는 순간 화면이 멎어 도구를 못 쓴다.
+ * 자른 사실은 아래 줄이 말한다 - 몇 개 중 몇 개인지 안 적으면 그것대로 거짓말이 된다.
+ */
+const PREVIEW_BLOCK_LIMIT = 200
 
 /** 넥슨에서 오는 넷만 본다. 앱 공지는 제품 화면이 이미 보여 준다. */
 const KINDS: readonly { kind: NexonNoticeKind; label: string }[] = [
@@ -68,7 +77,12 @@ function Meta(props: { children: string }): React.JSX.Element {
   return <Text className="text-[10px] leading-3 text-text-disabled">{props.children}</Text>
 }
 
-/** 넥슨 상세. 앱은 HTML 을 해석하지 않으므로 **원문이 어떻게 생겼는지만** 보여 준다. */
+/**
+ * 넥슨 상세. 원문 HTML 을 **서버와 같은 파서로 블록으로 바꿔** 보여 준다.
+ *
+ * 원문을 그대로 세우면 태그가 글자의 90%를 넘어 읽을 것이 없다(공지 한 건이 HTML 17,596자에
+ * 텍스트 826자다). 여기서 보이는 것이 곧 서버 배포 뒤 사용자가 볼 화면이다.
+ */
 function NexonDetail(props: { kind: NexonNoticeKind; noticeId: number }): React.JSX.Element {
   const [result, setResult] = useState<NexonProbe<{ contents?: string }> | null>(null)
 
@@ -90,13 +104,24 @@ function NexonDetail(props: { kind: NexonNoticeKind; noticeId: number }): React.
   }
 
   const contents = result.data.contents ?? ''
+  const blocks = parseContents(contents)
+  const counts: Record<string, number> = {}
+  for (const block of blocks) counts[block.type] = (counts[block.type] ?? 0) + 1
+
   return (
-    <View className="gap-1 pb-3">
+    <View className="gap-2 pb-3">
       <Meta>{`${result.ms}ms · ${describeContents(contents)}`}</Meta>
-      {/* 원문 앞부분. 서버 파서가 씹을 것이 이 모양이다. */}
-      <Text className="text-[10px] leading-4 text-text-muted">
-        {contents === '' ? '(contents 가 비어 있다)' : `${contents.slice(0, 500)}…`}
-      </Text>
+      <Meta>{`파싱 → 블록 ${blocks.length}개 ${JSON.stringify(counts)}`}</Meta>
+      {blocks.length > PREVIEW_BLOCK_LIMIT && (
+        <Meta>{`${blocks.length}개 중 앞 ${PREVIEW_BLOCK_LIMIT}개만 그린다`}</Meta>
+      )}
+      {blocks.length === 0 ? (
+        <Text className="text-xs text-text-disabled">
+          {contents === '' ? '(contents 가 비어 있다)' : '(파싱 결과가 비었다)'}
+        </Text>
+      ) : (
+        <NoticeBlocks blocks={blocks.slice(0, PREVIEW_BLOCK_LIMIT)} />
+      )}
     </View>
   )
 }

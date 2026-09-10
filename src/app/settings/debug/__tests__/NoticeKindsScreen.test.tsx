@@ -192,6 +192,54 @@ describe('한 건을 펼치기', () => {
     expect(view.getByText(/HTML 9자/)).toBeTruthy()
   })
 
+  // 원문을 그대로 세우면 태그가 글자의 90%를 넘어 읽을 것이 없다. 서버와 같은 파서로 판
+  // 결과가 보여야 하고, 그것이 곧 배포 뒤 사용자가 볼 화면이다.
+  it('넥슨 것은 HTML 을 파싱해 본문을 읽게 보여 준다', async () => {
+    nexonDetail.mockResolvedValue({
+      path: '/maplestory/v1/notice/detail?notice_id=149862',
+      error: null,
+      ms: 90,
+      data: {
+        title: '점검',
+        contents: '<p><span>안녕하세요</span><span>.</span></p><p>점검 안내입니다.</p>',
+      },
+    })
+    const view = await renderOverlay(<NoticeKindsScreen />)
+    await waitFor(() => view.getByText('9/10(목) 넥슨 정기점검 안내'))
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('9/10(목) 넥슨 정기점검 안내 펼치기'))
+    })
+
+    // 문단 경계가 살아 두 덩어리이고, 한 문단 안의 span 조각은 공백 없이 붙는다.
+    expect(view.getByText('안녕하세요.')).toBeTruthy()
+    expect(view.getByText('점검 안내입니다.')).toBeTruthy()
+    expect(view.getByText(/블록 2개/)).toBeTruthy()
+  })
+
+  // 이벤트·캐시샵 본문은 이미지 한 장이라 텍스트가 0자다. 그래도 화면이 비면 안 된다.
+  it('이미지 한 장짜리 본문은 이미지로 보여 준다', async () => {
+    nexonDetail.mockResolvedValue({
+      path: '/maplestory/v1/notice-event/detail?notice_id=149862',
+      error: null,
+      ms: 90,
+      data: {
+        title: '울티마 유물 탐사',
+        contents: '<div class="gen_container"><img src="https://lwi.nexon.com/a.png"></div>',
+      },
+    })
+    const view = await renderOverlay(<NoticeKindsScreen />)
+    await waitFor(() => view.getByText('9/10(목) 넥슨 정기점검 안내'))
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('9/10(목) 넥슨 정기점검 안내 펼치기'))
+    })
+
+    expect(view.getByTestId('notice-image').props.source).toEqual({
+      uri: 'https://lwi.nexon.com/a.png',
+    })
+  })
+
   it('서버 것은 블록을 편다', async () => {
     const view = await renderOverlay(<NoticeKindsScreen />)
     await act(async () => {
