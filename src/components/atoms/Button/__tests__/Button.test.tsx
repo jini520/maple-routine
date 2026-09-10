@@ -8,6 +8,7 @@ import { Text } from 'react-native'
 import { findAllOfType, flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
 import { Button } from '../Button'
 import {
+  BUTTON_SIZE_CLASS,
   BUTTON_VARIANT_CLASS,
   BUTTON_VARIANT_SPINNER_CLASS,
   BUTTON_VARIANT_TEXT_CLASS,
@@ -201,5 +202,64 @@ describe('Button: busy', () => {
         BUTTON_VARIANT_SPINNER_CLASS[variant],
       )
     }
+  })
+  // 여백은 변형이 아니라 크기가 정한다. 여섯 변형이 전부 같은 값을 적고 있었으므로 그것은
+  // 변형의 성질이 아니었다. 호출부에서 `className` 으로 덮는 길은 생성된 CSS 순서가 이겨서 막혀 있다.
+  it('size 를 안 주면 지금까지의 여백 그대로다', async () => {
+    const { getByRole } = await renderAtom(<Button variant="primary">확인</Button>)
+
+    expect(flattenStyle(getByRole('button').props.style)).toMatchObject({
+      paddingLeft: 20,
+      paddingRight: 20,
+      paddingTop: 10,
+      paddingBottom: 10,
+    })
+  })
+
+  it('compact: 상자가 14/6 으로 줄고 라벨이 13px 이 된다', async () => {
+    const { getByRole, getByText } = await renderAtom(
+      <Button variant="primary" size="compact">
+        확인
+      </Button>,
+    )
+
+    expect(flattenStyle(getByRole('button').props.style)).toMatchObject({
+      paddingLeft: 14,
+      paddingRight: 14,
+      paddingTop: 6,
+      paddingBottom: 6,
+    })
+    // 변형 표의 `text-sm` 을 실제로 이기는지 본다. 글자 크기는 덮이고 여백은 안 덮이는데,
+    // 그 차이가 조용해서 여기서 값으로 못박는다.
+    expect(flattenStyle(getByText('확인').props.style).fontSize).toBe(13)
+  })
+
+  // `primary` 는 `default` 에서만 16px 이다. compact 는 그 예외를 안 둬서 13px 로 내려간다.
+  it('compact 도 변형의 색을 그대로 쓴다', async () => {
+    const { getByRole } = await renderAtom(
+      <Button variant="primary" size="compact">
+        확인
+      </Button>,
+    )
+
+    expect(flattenStyle(getByRole('button').props.style).backgroundColor).toBe(기본테마.primary)
+  })
+
+  it('크기 표에는 색도 글자 유틸도 없다', () => {
+    for (const box of Object.values(BUTTON_SIZE_CLASS)) {
+      expect(box).not.toMatch(/(^|\s)(bg-|border-|rounded-|font-)/)
+    }
+  })
+  // 선도 글자도 테마색이다. 밝은 테마에서 대비가 AA 에 못 미치는 것은 알고 고른 값이라
+  // (머쉬맘 2.38) 여기서 토큰을 값으로 물어 둔다. 중립으로 되돌아가면 이 단언이 잡는다.
+  it('primaryOutline: 테마색 테두리에 테마색 글자', async () => {
+    const { getByRole, getByText } = await renderAtom(
+      <Button variant="primaryOutline">자세히 보기</Button>,
+    )
+
+    const box = flattenStyle(getByRole('button').props.style)
+    expect(box.borderColor).toBe(기본테마.primary)
+    expect(box.backgroundColor).toBeUndefined()
+    expect(flattenStyle(getByText('자세히 보기').props.style).color).toBe(기본테마.primaryInk)
   })
 })
