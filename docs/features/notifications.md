@@ -50,7 +50,6 @@
 | 상태 | `src/features/notice/store.ts` | **있다.** 구독 스위치 넷. 저장보다 구독이 먼저다 |
 | 계약 | `src/features/notice/topics.ts` | **있다.** 토글 넷과 토픽 이름. 서버와 나눠 갖는다 |
 | 화면 | `src/app/settings/NoticeBlocks.tsx` | **있다.** 상세 본문 블록을 그린다 |
-| 화면 | `src/app/settings/debug/` | ⚠️ **임시 점검 화면.** 분류별로 서버가 뭘 들고 있는지 본다. 폐기 절차는 `NoticeKindsScreen.tsx` 머리에 있다(`feat-debug-notice-kinds` 브랜치 전용) |
 | 저장 | `src/storage/notice-settings.ts` · `notices.ts` | **둘 다 있다** |
 | 타입 | `src/types/notice.ts` | **있다.** 푸시 `data` 와 서버 응답의 공통 모양 |
 | 화면 | `src/app/settings/SettingsNoticesScreen.tsx` | **있다.** 목록 + 구독 스위치 |

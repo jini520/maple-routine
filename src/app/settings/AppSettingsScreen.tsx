@@ -146,14 +146,6 @@ export function AppSettingsScreen(): React.JSX.Element {
                 rightContent={<SummaryValue>{displayedVersion}</SummaryValue>}
               />
             </View>
-            {/* ⚠️ 임시 점검 행. 넥슨 공지 네 갈래가 서버에 실제로 찼는지 눈으로 보는 자리다.
-                폐기 절차는 `settings/debug/NoticeKindsScreen.tsx` 머리에 적혀 있다. */}
-            <View className={SETTINGS_ROW_DIVIDER_CLASS}>
-              <SettingsRow
-                label="공지 분류 점검 (임시)"
-                onPress={() => navigation.navigate('SettingsDebugNoticeKinds')}
-              />
-            </View>
           </Card>
         </View>
       </ScreenScroll>

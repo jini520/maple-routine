@@ -132,8 +132,6 @@ const ROW_LABELS = [
   '캐릭터 관리',
   '계정 및 데이터',
   '앱 정보',
-  // ⚠️ 임시 점검 행. `settings/debug/` 를 지울 때 이 줄도 함께 걷는다.
-  '공지 분류 점검 (임시)',
 ]
 
 function mockThemeStore(overrides: Partial<ReturnType<typeof useThemeStore>> = {}): void {
@@ -190,7 +188,7 @@ afterEach(() => {
 })
 
 describe('AppSettingsScreen', () => {
-  it('행이 정확히 일곱이고 값 카드 → 이동 카드다', async () => {
+  it('행이 정확히 여섯이고 값 카드 → 이동 카드다', async () => {
     const view = await renderOverlay(<AppSettingsScreen />)
 
     for (const label of ROW_LABELS) expect(view.getByText(label)).toBeTruthy()
