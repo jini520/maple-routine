@@ -35,5 +35,8 @@ export async function askNotificationPermissionOnce(): Promise<void> {
   if (!granted) return
 
   // 허용한 그 순간이 사용자가 알림을 받겠다고 답한 자리다. 설정에 들어가 다시 켜라고 하지 않는다.
-  await useNoticeStore.getState().setSubscribed(true).catch(() => undefined)
+  //
+  // **넷을 다 켜지는 않는다.** 업데이트·이벤트와 캐시샵은 패치 날 한꺼번에 올라와서, 묻지도
+  // 않고 켜면 그날 알림이 아홉 번 울린다(`topics.ts` 의 DEFAULT_SUBSCRIPTIONS).
+  await useNoticeStore.getState().subscribeDefaults().catch(() => undefined)
 }

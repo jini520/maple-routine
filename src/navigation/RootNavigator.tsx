@@ -13,6 +13,8 @@ import { SettingsFeatureGuideListScreen } from '../app/settings/SettingsFeatureG
 import { SettingsFeatureGuideScreen } from '../app/settings/SettingsFeatureGuideScreen'
 import { SettingsNoticeDetailScreen } from '../app/settings/SettingsNoticeDetailScreen'
 import { SettingsNoticesScreen } from '../app/settings/SettingsNoticesScreen'
+import { SettingsNoticeAlertsScreen } from '../app/settings/SettingsNoticeAlertsScreen'
+import { AppSettingsScreen } from '../app/settings/AppSettingsScreen'
 import { SettingsPrivacyScreen } from '../app/settings/SettingsPrivacyScreen'
 import { SettingsReleaseNotesScreen } from '../app/settings/SettingsReleaseNotesScreen'
 import { ItemSplitScreen } from '../app/utility/ItemSplitScreen'
@@ -45,6 +47,8 @@ const STACK_SCREENS = {
   SettingsPrivacy: SettingsPrivacyScreen,
   SettingsCharacters: SettingsCharactersScreen,
   SettingsNotices: SettingsNoticesScreen,
+  SettingsNoticeAlerts: SettingsNoticeAlertsScreen,
+  AppSettings: AppSettingsScreen,
   SettingsNoticeDetail: SettingsNoticeDetailScreen,
   UtilityItemSplit: ItemSplitScreen,
 } as const satisfies Record<StackRouteName, React.ComponentType>

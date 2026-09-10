@@ -6,7 +6,7 @@ import { fetchNotice, fetchNotices } from '../notices'
 
 const 응답 = {
   items: [
-    { id: 'a', title: '점검', body: '본문', publishedAt: '2026-09-08T00:00:00.000Z' },
+    { id: 'a', kind: 'game', title: '점검', body: '본문', publishedAt: '2026-09-08T00:00:00.000Z' },
   ],
   nextCursor: null,
 }
@@ -62,6 +62,45 @@ describe('목록', () => {
     jest.spyOn(global, 'fetch').mockResolvedValue(ok({ items: '이상함' }))
 
     await expect(fetchNotices()).resolves.toEqual([])
+  })
+})
+
+describe('계약을 어긴 응답', () => {
+  // 서버가 분류를 안 실어 보내던 시절이 있다. 그때 것도 화면이 서야 한다.
+  it('분류가 없으면 앱 공지로 읽는다', async () => {
+    const 옛것 = { id: 'a', title: '점검', body: '본문', publishedAt: '2026-09-08T00:00:00.000Z' }
+    jest.spyOn(global, 'fetch').mockResolvedValue(ok({ items: [옛것], nextCursor: null }))
+
+    await expect(fetchNotices()).resolves.toEqual([{ ...옛것, kind: 'app' }])
+  })
+
+  // 모르는 블록을 그리는 코드가 없어서 그대로 두면 빈 칸이 난다. 그 조각만 버린다.
+  it('모르는 블록은 버리고 아는 것만 남긴다', async () => {
+    jest.spyOn(global, 'fetch').mockResolvedValue(
+      ok({
+        ...응답.items[0],
+        blocks: [
+          { type: 'text', text: '본문' },
+          { type: '아직없는것', text: '뭔가' },
+          { type: 'image', src: 'https://x.test/a.png' },
+        ],
+      }),
+    )
+
+    await expect(fetchNotice('a')).resolves.toMatchObject({
+      blocks: [
+        { type: 'text', text: '본문' },
+        { type: 'image', src: 'https://x.test/a.png' },
+      ],
+    })
+  })
+
+  it('분류를 주면 주소에 싣는다', async () => {
+    const spy = jest.spyOn(global, 'fetch').mockResolvedValue(ok(응답))
+
+    await fetchNotices(20, ['update', 'event'])
+
+    expect(String(spy.mock.calls[0][0])).toContain('kind=update,event')
   })
 })
 

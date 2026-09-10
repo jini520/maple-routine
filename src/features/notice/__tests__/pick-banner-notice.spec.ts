@@ -2,7 +2,7 @@ import { pickBannerNotice } from '../pick-banner-notice'
 import type { Notice } from '../../../types/notice'
 
 function notice(id: string, publishedAt: string): Notice {
-  return { id, title: `공지 ${id}`, body: '본문', publishedAt }
+  return { id, kind: 'app', title: `공지 ${id}`, body: '본문', publishedAt }
 }
 
 describe('배너가 세우는 공지 고르기', () => {

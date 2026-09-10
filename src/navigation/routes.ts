@@ -13,6 +13,8 @@
 
 import type { NavigatorScreenParams } from '@react-navigation/native'
 
+import type { NoticeKind } from '../types/notice'
+
 /**
  * 탭 내비게이터의 화면 아홉. 그룹이 아니라 페이지다.
  *
@@ -147,8 +149,22 @@ export type RootStackParamList = {
    * 캐릭터 관리. 두 층 + 드롭다운 + 순서 + 대표가 385px 모달 본문에 안 들어가 하위 페이지가 됐다.
    */
   SettingsCharacters: undefined
-  /** 공지사항. 받은 공지 목록과 구독 스위치가 한 화면에 산다. */
-  SettingsNotices: undefined
+  /**
+   * 공지 목록. **분류를 받아 그것만 그린다.**
+   *
+   * 분류가 다섯이 되면서 한 목록에 다 담으면 점검 안내와 캐시아이템이 섞인다. 소식 카드의
+   * 행마다 자기 분류를 넘긴다. 안 넘기면 전부다.
+   */
+  SettingsNotices: { kinds?: NoticeKind[]; title?: string } | undefined
+  /** 소식 알림 스위치 넷. 목록에서 떼어 냈다 - 분류마다 목록이 생겨 스위치가 갈 곳이 없어졌다. */
+  SettingsNoticeAlerts: undefined
+  /**
+   * 앱 설정. 더보기 머리의 톱니바퀴가 연다.
+   *
+   * 더보기 본문에서 떼어 낸 것은 그 탭이 든 셋(소식·응원·설정)의 성질이 달라서다. 셋을 한
+   * 화면에 세우면 매일 보는 소식이 가끔 쓰는 설정에 밀려 내려간다.
+   */
+  AppSettings: undefined
   /** 공지 상세. 알림 탭이 곧장 여는 자리이고 목록에서도 들어간다. */
   SettingsNoticeDetail: NoticeDetailParams
 }
@@ -285,6 +301,18 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
     path: '/settings/notices',
     screen: 'SettingsNoticesScreen',
     target: { kind: 'push', route: 'SettingsNotices' },
+    origin: 'rn',
+  },
+  {
+    path: '/settings/notices/alerts',
+    screen: 'SettingsNoticeAlertsScreen',
+    target: { kind: 'push', route: 'SettingsNoticeAlerts' },
+    origin: 'rn',
+  },
+  {
+    path: '/settings/app',
+    screen: 'AppSettingsScreen',
+    target: { kind: 'push', route: 'AppSettings' },
     origin: 'rn',
   },
   {

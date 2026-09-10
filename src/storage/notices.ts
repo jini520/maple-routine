@@ -9,7 +9,7 @@
  */
 import { STORAGE_KEYS } from './keys'
 import { preferences } from './ports'
-import type { Notice } from '../types/notice'
+import { isNoticeKind, type Notice } from '../types/notice'
 
 /**
  * 남기는 건수. 넘으면 오래된 것부터 자른다.
@@ -30,6 +30,16 @@ function isNotice(value: unknown): value is Notice {
   )
 }
 
+/**
+ * 분류가 없는 옛 기록을 `app` 으로 읽는다.
+ *
+ * 토글이 하나였던 시절에 쌓인 것에는 이 값이 없다. 그때는 운영자 공지밖에 없었으므로 그
+ * 분류가 맞고, 저장된 것을 고쳐 쓰지 않아도 화면이 선다.
+ */
+function withKind(notice: Notice): Notice {
+  return isNoticeKind(notice.kind) ? notice : { ...notice, kind: 'app' }
+}
+
 /** 최근 발행순. 저장된 것이 없거나 깨졌으면 빈 배열. */
 export async function getNotices(): Promise<Notice[]> {
   const raw = await preferences.get(STORAGE_KEYS.notices)
@@ -38,7 +48,7 @@ export async function getNotices(): Promise<Notice[]> {
   try {
     const parsed: unknown = JSON.parse(raw)
     // 깨진 값에 화면을 세우느니 빈 목록이 낫다. 다음 공지가 오면 다시 찬다.
-    return Array.isArray(parsed) ? parsed.filter(isNotice) : []
+    return Array.isArray(parsed) ? parsed.filter(isNotice).map(withKind) : []
   } catch {
     return []
   }

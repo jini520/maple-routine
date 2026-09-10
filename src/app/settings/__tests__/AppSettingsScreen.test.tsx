@@ -20,7 +20,7 @@ import { THEME_NAMES } from '../../../lib/theme/theme-registry'
 
 import packageJson from '../../../../package.json'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
-import { SettingsScreen } from '../SettingsScreen'
+import { AppSettingsScreen } from '../AppSettingsScreen'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 
 // 이름이 `mock` 으로 시작해야 한다. babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데
@@ -114,19 +114,24 @@ function textsIn(node: AtomElement): string[] {
   return texts
 }
 
+function hasChevron(node: AtomElement): boolean {
+  if (node.props.testID === 'settings-row-chevron') return true
+  return node.children.some((child) => typeof child !== 'string' && hasChevron(child))
+}
+
 /** 카드 안에 선 행 라벨들. 순서가 곧 화면 순서다. */
 // **소식이 맨 위다.** 이 페이지에서 유일하게 매일 바뀌는 것이고 나머지는 다 `가끔 한 번` 이라,
 // 자주 바뀌는 것을 아래 두면 사용자가 스크롤을 배워야 한다.
+// 더보기 머리의 톱니바퀴가 여는 화면. 값을 바꾸는 것만 모여 있다.
 const ROW_LABELS = [
-  '공지사항',
-  '업데이트',
-  '이벤트',
-  '캐시샵',
-  '기능 설명',
-  '개발 노트',
-  // 평생 한 번 누르는 것이라 맨 아래다.
-  '별점 남기기',
-  '커피 한 잔 사주기',
+  // 맨 위에 혼자 선다. 이 화면에서 유일하게 밖으로 나가는 설정이라 성질이 다르다.
+  '알림 설정',
+  '스케줄 관리 방법',
+  '테마',
+  // `테마` **아래**. 이 자리가 계약이다.
+  '캐릭터 관리',
+  '계정 및 데이터',
+  '앱 정보',
 ]
 
 function mockThemeStore(overrides: Partial<ReturnType<typeof useThemeStore>> = {}): void {
@@ -182,31 +187,19 @@ afterEach(() => {
   jest.clearAllMocks()
 })
 
-describe('SettingsScreen', () => {
-  //  딸림 작업. 문서 스크롤에 얹혀 있던 **마지막 탭 화면**이 자기 스크롤을 소유하게
-  // 됐다. RN 에서는 그것이 기본값이지만, 셸을 안 쓰고 직접 그리면 다시 잃는다.
-  it('자기 스크롤 컨테이너를 소유한다', async () => {
-    const view = await renderOverlay(<SettingsScreen />)
-
-    expect(view.getByTestId('screen-scroll')).toBeTruthy()
-  })
-
-  // 본화면은 카드 둘. **행은 5 → 6이 됐다**:
-  // 사용법 설명의 원천이 기능 카탈로그로 옮겨오면서 그 입구가 필요해졌다. `기능 설명`이
-  // `개발 노트` **위**인 것은 *"이 앱을 어떻게 쓰나"* 가 더 자주 묻는 질문이기 때문이다.
-  it('행이 정확히 8개이고 소식 → 읽을거리 → 응원 순이다', async () => {
-    const view = await renderOverlay(<SettingsScreen />)
+describe('AppSettingsScreen', () => {
+  it('행이 정확히 여섯이고 값 카드 → 이동 카드다', async () => {
+    const view = await renderOverlay(<AppSettingsScreen />)
 
     for (const label of ROW_LABELS) expect(view.getByText(label)).toBeTruthy()
     expect(view.getAllByTestId('settings-row-chevron')).toHaveLength(ROW_LABELS.length)
   })
 
-  // **이 개편의 핵심.** 두 무리를 가르는 것은 카드 경계뿐이다. 한 카드에 다 넣는 시안은
-  // "성격이 다른 것이 한 덩어리로 읽힌다"는 문제를 그대로 둔다.
-  it('세 카드가 성질대로 갈린다', async () => {
-    const view = await renderOverlay(<SettingsScreen />)
+  // 카드 셋이 성질을 가른다. 알림(밖으로 나간다) · 값(앱 안에서 돈다) · 이동(다른 화면).
+  it('카드가 셋이고 알림이 혼자 맨 위다', async () => {
+    const view = await renderOverlay(<AppSettingsScreen />)
 
-    const cards = view.getAllByTestId('settings-card')
+    const cards = view.getAllByTestId('app-settings-card')
     expect(cards).toHaveLength(3)
 
     const labelsIn = (card: AtomElement): string[] =>
@@ -216,117 +209,168 @@ describe('SettingsScreen', () => {
         return node === card
       })
 
-    expect(labelsIn(cards[0])).toEqual([
-      '공지사항',
-      '업데이트',
-      '이벤트',
-      '캐시샵',
-    ])
-    expect(labelsIn(cards[1])).toEqual(['기능 설명', '개발 노트'])
-    expect(labelsIn(cards[2])).toEqual(['별점 남기기', '커피 한 잔 사주기'])
+    expect(labelsIn(cards[0])).toEqual(['알림 설정'])
+    expect(labelsIn(cards[1])).toEqual(['스케줄 관리 방법', '테마', '캐릭터 관리'])
   })
 
-  // 화살표가 "값이 있는가"가 아니라 "누르면 무언가 열린다"를 말한다.
-  // 옛 배타(`rightContent ?? chevron`)에서는 값이 있는 행에서 화살표가 사라졌다.
+  it('"알림 설정" 행을 누르면 SettingsNoticeAlerts 로 민다', async () => {
+    const view = await renderOverlay(<AppSettingsScreen />)
+
+    await press(rowOf(view, '알림 설정'))
+
+    expect(navigate).toHaveBeenCalledWith('SettingsNoticeAlerts')
+  })
 
   it.each([
-    ['기능 설명', 'SettingsFeatureGuideList'],
-    ['개발 노트', 'SettingsReleaseNotes'],
-  ])('"%s" 행을 누르면 %s 로 민다', async (label, route) => {
-    const view = await renderOverlay(<SettingsScreen />)
+    ['스케줄 관리 방법', '수동'],
+    ['테마', 다른테마],
+  ])('"%s" 행에 현재값 배지와 chevron 이 함께 있다', async (label, value) => {
+    mockTrackingModeStore({ mode: 'manual' })
+    mockThemeStore({ theme: 다른테마 })
+    const view = await renderOverlay(<AppSettingsScreen />)
 
-    await press(rowOf(view, label))
-
-    expect(navigate).toHaveBeenCalledWith(route)
+    const row = rowOf(view, label)
+    expect(textsIn(row)).toEqual([label, value])
+    expect(hasChevron(row)).toBe(true)
   })
 
-  // 소식 행은 **자기 분류를 들고** 간다. 목록 화면이 그것만 그리고 제목도 그 이름을 쓴다.
-  it.each([
-    ['공지사항', ['app', 'game']],
-    ['업데이트', ['update']],
-    ['이벤트', ['event']],
-    ['캐시샵', ['cashshop']],
-  ])('"%s" 행은 그 분류로 목록을 연다', async (label, kinds) => {
-    const view = await renderOverlay(<SettingsScreen />)
+  it('"계정 및 데이터" 우측에 캐시 총 용량(두 그룹의 합)을 표시한다', async () => {
+    mockedLoadCacheDataSizes.mockResolvedValue({ general: 1024 * 1024, records: 1024 * 512 })
+    const view = await renderOverlay(<AppSettingsScreen />)
 
-    await press(rowOf(view, label))
-
-    expect(navigate).toHaveBeenCalledWith('SettingsNotices', { kinds, title: label })
+    expect(await view.findByText('1.5MB')).toBeTruthy()
   })
 
-  // 설정은 본문이 아니라 머리에 산다. 본문에 두면 매일 보는 소식이 가끔 쓰는 설정에 밀린다.
-  it('머리의 톱니바퀴가 설정을 연다', async () => {
-    const view = await renderOverlay(<SettingsScreen />)
+  it('캐시 용량 조회 전에는 "- KB" 로 자리를 잡는다', async () => {
+    const view = await renderOverlay(<AppSettingsScreen />)
 
-    await press(view.getByLabelText('설정'))
-
-    expect(navigate).toHaveBeenCalledWith('AppSettings')
+    expect(view.getByText('- KB')).toBeTruthy()
   })
 
-  // 들어가지 않고도 안을 짐작하게 하는 값 하나.
+  it('캐시 용량 조회가 실패해도 "- KB" 로 남고 화면은 그대로다', async () => {
+    mockedLoadCacheDataSizes.mockRejectedValue(new Error('storage down'))
+    const view = await renderOverlay(<AppSettingsScreen />)
 
-  // 조회 전에도 값과 같은 자리를 잡는다(빈 문자열이면 값이 툭 나타나며 행이 밀린다).
+    await act(async () => {})
 
-  // 조회 실패도 같은 자리표시로 남는다. 설정을 못 여는 실패가 아니다.
-
-  // 후보가 전부 틀린 말을 한다. "최신 버전"은 아래 `앱 정보` 행과 중복이고 "n개"는
-  // 뜻이 없다. 없는 대표값을 지어내지 않는다.
-  it('"기능 설명"·"개발 노트" 행에는 대표값을 두지 않는다', async () => {
-    const view = await renderOverlay(<SettingsScreen />)
-
-    // 행 안에 남는 글자는 라벨 하나뿐이다(chevron 은 글자가 아니다).
-    for (const label of ['기능 설명', '개발 노트']) {
-      expect(textsIn(rowOf(view, label))).toEqual([label])
-    }
+    expect(view.getByText('- KB')).toBeTruthy()
+    expect(view.getByText('계정 및 데이터')).toBeTruthy()
   })
 
-  //  정정: 모드 전환은 세 스토어를 **모두** 낡게 만든다(저장 경로에서 컨텐츠가
-  // 빠진 것은 그쪽이 저장의 주체여서일 뿐이다). 이것이 없으면 자동 → 수동 직후 보스 탭이
-  // "추적할 주간 보스가 없습니다"로 뜨고 새로고침해야 목록이 나온다.
+  it('"앱 정보" 우측에 앱 버전을 표시한다', async () => {
+    const view = await renderOverlay(<AppSettingsScreen />)
 
-  // 셋 다 `/settings/account-data` 로 내려갔다. 되돌아오면 값을 고르는 카드가 다시 혼종이 된다.
-
-  it('하단에 앱 버전·카피라이트·NEXON Open API 출처 문구·비제휴 고지를 표시한다', async () => {
-    const view = await renderOverlay(<SettingsScreen />)
-
-    expect(view.getByText(`v${packageJson.version}`)).toBeTruthy()
-    expect(view.getByText(/©\s*\d{4}\s*메이플 루틴/)).toBeTruthy()
-    expect(view.getByText('Data based on NEXON Open API')).toBeTruthy()
-    expect(view.getByText('Maple Routine is not associated with NEXON Korea')).toBeTruthy()
+    expect(view.getAllByText(packageJson.version).length).toBeGreaterThan(0)
   })
 
-  // 개인정보 처리방침은 `/settings/about` 의 행으로 옮겼고, 고지 블록은
-  // 전부 읽고 끝나는 정적 문구만 남는다. 링크가 여기로 되돌아오면 그 균일함이 다시 깨진다.
-  it('고지 블록은 4줄이고 링크를 두지 않는다', async () => {
-    const view = await renderOverlay(<SettingsScreen />)
+  it('"스케줄 관리 방법"을 누르면 트래킹 모드 모달이 열린다', async () => {
+    const view = await renderOverlay(<AppSettingsScreen />)
 
-    expect(view.getByTestId('settings-footer').children).toHaveLength(4)
-    expect(view.queryByText('개인정보 처리방침')).toBeNull()
+    await press(rowOf(view, '스케줄 관리 방법'))
+
+    expect(view.getByTestId('tracking-mode-modal-overlay')).toBeTruthy()
   })
-})
 
-// 보스 수익의 `캐릭터 선택하러 가기` 와 두 스케줄러의 빈 상태 CTA 가 캐릭터 관리를 열어 둔 채로
-// 이 탭에 보낸다. 설정이 머리로 옮겨 가도 그 계약은 더보기가 그대로 진다.
-describe('SettingsScreen: openPicker 로 들어올 때', () => {
+  it('스케줄 관리 방법을 바꾸면 컨텐츠·보스·수익 스토어를 순차로 다시 읽힌다', async () => {
+    const order: string[] = []
+    let resolveContent: () => void = () => {}
+    mockLoadContentTracked.mockImplementation(() => {
+      order.push('content')
+      return new Promise<void>((resolve) => {
+        resolveContent = resolve
+      })
+    })
+    mockLoadBossTracked.mockImplementation(() => {
+      order.push('boss')
+      return Promise.resolve()
+    })
+    mockLoadProfitTracked.mockImplementation(() => {
+      order.push('profit')
+      return Promise.resolve()
+    })
+    const view = await renderOverlay(<AppSettingsScreen />)
 
-})
+    await press(rowOf(view, '스케줄 관리 방법'))
+    await press(view.getByText('수동'))
+    await press(view.getByText('적용'))
 
-// 보스 수익의 `캐릭터 선택하러 가기` 와 두 스케줄러의 빈 상태 CTA 가 캐릭터 관리를 열어 둔 채로
-// 이 탭에 보낸다. 설정이 머리로 옮겨 가도 그 계약은 더보기가 그대로 진다.
-describe('SettingsScreen: openPicker 로 들어올 때', () => {
-  it('openPicker 파라미터로 진입하면 캐릭터 관리 화면을 밀고 파라미터를 지운다', async () => {
-    mockRouteParams = { openPicker: true }
+    // 컨텐츠가 끝나기 전에는 다음이 시작되지 않는다(게이트. `prehydrateTabStores` 와
+    // 같은 이유). 모달은 그 셋을 기다리지 않고 닫힌다.
+    expect(order).toEqual(['content'])
+    expect(view.queryByTestId('tracking-mode-modal-overlay')).toBeNull()
 
-    await renderOverlay(<SettingsScreen />)
+    await act(async () => {
+      resolveContent()
+    })
+
+    expect(order).toEqual(['content', 'boss', 'profit'])
+  })
+
+  it('"테마"를 누르면 테마 선택 모달이 열린다', async () => {
+    const view = await renderOverlay(<AppSettingsScreen />)
+
+    await press(rowOf(view, '테마'))
+
+    expect(view.getByTestId('theme-modal-overlay')).toBeTruthy()
+  })
+
+  it.each(['계정 변경', '연결 해제', '캐시 데이터 삭제', 'API 키 재입력'])(
+    '"%s" 행을 본화면에 두지 않는다',
+    async (label) => {
+      const view = await renderOverlay(<AppSettingsScreen />)
+
+      expect(view.queryByText(label)).toBeNull()
+    },
+  )
+
+describe('AppSettingsScreen: 캐릭터 관리', () => {
+  // 파생·추정값이 아니라 저장된 목록의 길이다. **단위가 명 이 아니라 개** 인 것은
+  //  이 그 표기를 정정했기 때문이다. 캐릭터는 사람이 아니다.
+  it('행 오른쪽에 추적 캐릭터 수 배지와 chevron 이 함께 있다', async () => {
+    mockContentStore({ trackedOcids: ['a', 'b', 'c'] })
+    const view = await renderOverlay(<AppSettingsScreen />)
+
+    const row = rowOf(view, '캐릭터 관리')
+    expect(textsIn(row)).toEqual(['캐릭터 관리', '3', '개'])
+    expect(hasChevron(row)).toBe(true)
+  })
+
+  // `null` 은 "0개"가 아니라 **"아직 안 읽었다"** 다. 모르는 사실을 단정하지 않는다.
+  it('추적 목록이 null(미로드)이면 배지를 그리지 않는다', async () => {
+    mockContentStore({ trackedOcids: null })
+    const view = await renderOverlay(<AppSettingsScreen />)
+
+    expect(textsIn(rowOf(view, '캐릭터 관리'))).toEqual(['캐릭터 관리'])
+  })
+
+  it('0개면 "0개" 배지를 그린다. 미로드와 다른 상태다', async () => {
+    mockContentStore({ trackedOcids: [] })
+    const view = await renderOverlay(<AppSettingsScreen />)
+
+    expect(textsIn(rowOf(view, '캐릭터 관리'))).toEqual(['캐릭터 관리', '0', '개'])
+  })
+
+  // 모달이 아니라 화면 push 다. 로스터 조회·저장은 그 화면이 갖고, 여기 남은 것은 누르면
+  // 그리로 간다 하나다.
+  it('행을 누르면 캐릭터 관리 화면을 민다', async () => {
+    const view = await renderOverlay(<AppSettingsScreen />)
+
+    await press(rowOf(view, '캐릭터 관리'))
 
     expect(navigate).toHaveBeenCalledWith('SettingsCharacters')
-    expect(setParams).toHaveBeenCalledWith({ openPicker: undefined })
   })
 
-  it('파라미터 없이 진입하면 아무 데도 밀지 않는다', async () => {
-    await renderOverlay(<SettingsScreen />)
+  // 조회가 통째로 옮겨간 것이 이 개편의 요점이다. 설정 본화면은 이제 캐릭터 목록을 모른다.
+  it('이 화면은 로스터를 조회하지 않는다', async () => {
+    mockRouteParams = { openPicker: true }
 
-    expect(navigate).not.toHaveBeenCalled()
-    expect(setParams).not.toHaveBeenCalled()
+    await renderOverlay(<AppSettingsScreen />)
+
+    expect(mockedRoster).not.toHaveBeenCalled()
   })
+
+  // 보스 수익·두 스케줄러의 빈 상태가 캐릭터 관리를 **열어 둔 채로** 보낸다. 목적지가
+  // 모달에서 화면으로 바뀌어도 계약은 그대로다.
+})
+
 })

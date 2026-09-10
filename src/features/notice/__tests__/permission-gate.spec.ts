@@ -11,20 +11,22 @@ jest.mock('../../../native/notifications', () => ({
 import { requestNotificationPermission } from '../../../native/notifications'
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 import { getNotificationPermissionAsked } from '../../../storage/notice-settings'
+import { NO_SUBSCRIPTIONS } from '../../../types/notice'
 import { askNotificationPermissionOnce } from '../permission-gate'
 import { useNoticeStore } from '../store'
 
 const request = jest.mocked(requestNotificationPermission)
-const setSubscribed = jest.fn().mockResolvedValue(undefined)
+const subscribeDefaults = jest.fn().mockResolvedValue(undefined)
 
 beforeEach(async () => {
   const prefs = installFakePreferences()
   await prefs.remove('noticeSubscribed')
+  await prefs.remove('noticeSubscriptions')
   await prefs.remove('notificationPermissionAsked')
   jest.clearAllMocks()
   request.mockResolvedValue(true)
-  setSubscribed.mockResolvedValue(undefined)
-  useNoticeStore.setState({ subscribed: false, setSubscribed })
+  subscribeDefaults.mockResolvedValue(undefined)
+  useNoticeStore.setState({ subscriptions: NO_SUBSCRIPTIONS, subscribeDefaults })
 })
 
 describe('한 번만 묻는다', () => {
@@ -67,7 +69,7 @@ describe('허용하면 구독까지 켠다', () => {
   it('허용이면 켠다', async () => {
     await askNotificationPermissionOnce()
 
-    expect(setSubscribed).toHaveBeenCalledWith(true)
+    expect(subscribeDefaults).toHaveBeenCalled()
   })
 
   it('거부면 안 켠다', async () => {
@@ -75,12 +77,12 @@ describe('허용하면 구독까지 켠다', () => {
 
     await askNotificationPermissionOnce()
 
-    expect(setSubscribed).not.toHaveBeenCalled()
+    expect(subscribeDefaults).not.toHaveBeenCalled()
   })
 
   // 권한은 받았는데 토픽 구독이 실패할 수 있다. 그래도 여기서 던지면 캐릭터 저장 흐름이 깨진다.
   it('구독이 실패해도 던지지 않는다', async () => {
-    setSubscribed.mockRejectedValue(new Error('network'))
+    subscribeDefaults.mockRejectedValue(new Error('network'))
 
     await expect(askNotificationPermissionOnce()).resolves.toBeUndefined()
   })

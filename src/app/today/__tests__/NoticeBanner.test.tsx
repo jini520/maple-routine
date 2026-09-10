@@ -29,6 +29,7 @@ const 점검공지: Notice = {
   id: 'notice-1',
   title: '9월 정기 점검 안내',
   body: '9월 10일 오전 2시부터 4시까지 서버 점검이 진행됩니다.',
+  kind: 'app',
   publishedAt: '2026-09-08T01:00:00.000Z',
 }
 
@@ -127,6 +128,7 @@ describe('펼침', () => {
         id: 'notice-2',
         title: '9월 이벤트 안내',
         body: '이벤트 본문',
+        kind: 'app',
         publishedAt: '2026-09-09T01:00:00.000Z',
       })
     })

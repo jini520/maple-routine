@@ -13,7 +13,7 @@ import { useNoticeBannerStore } from '../banner-store'
 const fetchAll = jest.mocked(fetchNotices)
 
 function notice(id: string, publishedAt: string, title = `공지 ${id}`): Notice {
-  return { id, title, body: '본문', publishedAt }
+  return { id, kind: 'app', title, body: '본문', publishedAt }
 }
 
 beforeEach(async () => {
