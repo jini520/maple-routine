@@ -6,7 +6,7 @@
  */
 import { fireEvent } from '@testing-library/react-native'
 
-import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
+import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
 import { Segment } from '../Segment'
 
 describe('Segment', () => {
@@ -50,5 +50,37 @@ describe('Segment', () => {
 
     expect(flattenStyle(view.getByTestId('segment').props.style).borderWidth).toBe(1)
     expect(flattenStyle(view.getByLabelText('메포').props.style).borderWidth ?? 0).toBe(0)
+  })
+
+  // 배경이 조각마다 켜졌다 꺼지는 대신 **상자 하나가 옮겨 간다**. 조각이 자기 배경을 들고
+  // 있으면 옮겨 갈 것이 없다.
+  it('칠하는 것은 조각이 아니라 옮겨 다니는 상자다', async () => {
+    const view = await renderAtom(
+      <Segment options={['메소', '메포']} selected="메소" onSelect={jest.fn()} />,
+    )
+
+    expect(flattenStyle(view.getByLabelText('메소').props.style).backgroundColor).toBeUndefined()
+    expect(flattenStyle(view.getByTestId('segment-thumb').props.style).backgroundColor).toBe(
+      기본테마.primaryTint,
+    )
+  })
+
+  // 상자가 도착하기를 기다리면 누른 조각이 200ms 동안 안 눌린 것처럼 보인다.
+  it('글자색은 상자를 안 기다린다', async () => {
+    const view = await renderAtom(
+      <Segment options={['메소', '메포']} selected="메소" onSelect={jest.fn()} />,
+    )
+
+    expect(flattenStyle(view.getByText('메소').props.style).color).toBe(기본테마.primaryInk)
+    expect(flattenStyle(view.getByText('메포').props.style).color).toBe(기본테마.textMuted)
+  })
+
+  // 상자는 그림일 뿐이라 손가락을 먹으면 안 된다. 고른 조각을 다시 누르는 일이 막힌다.
+  it('상자는 터치를 안 먹는다', async () => {
+    const view = await renderAtom(
+      <Segment options={['메소', '메포']} selected="메소" onSelect={jest.fn()} />,
+    )
+
+    expect(view.getByTestId('segment-thumb').props.pointerEvents).toBe('none')
   })
 })

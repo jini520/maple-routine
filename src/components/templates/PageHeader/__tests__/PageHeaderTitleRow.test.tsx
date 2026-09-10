@@ -140,3 +140,59 @@ describe('PageHeaderTitleRow: 갱신 시각 줄', () => {
     expect(styleOf(getByTestId('page-header-title-block')).justifyContent).toBeUndefined()
   })
 })
+
+// 제목 줄 **옆**이 아니라 덩어리 **옆**에 서는 자리.
+//
+// 주기 탭처럼 32px 인 것을 제목 줄에 넣으면 줄을 꽉 채워 위아래 여백이 0 이 된다. 헤더 맨 위에
+// 딱 붙어 보이고(사용자 지적), 왼쪽은 두 줄인데 오른쪽은 첫 줄에만 붙어 균형도 깨진다.
+// 덩어리 옆에 두면 제목과 갱신 시각 둘을 합친 48 의 한가운데에 앉는다.
+describe('PageHeaderTitleRow: 덩어리 옆에 서는 것', () => {
+  it('주면 덩어리가 가로 줄이 되고 세로 중앙에 놓는다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <PageHeaderTitleRow trailing={<View testID="곁" />}>
+        <Text>보스 수익</Text>
+      </PageHeaderTitleRow>,
+    )
+
+    expect(styleOf(getByTestId('page-header-title-block'))).toMatchObject({
+      flexDirection: 'row',
+      alignItems: 'center',
+    })
+    expect(getByTestId('곁')).toBeTruthy()
+  })
+
+  // 제목 줄 안에 있으면 제목 옆에 서고 줄 높이까지 밀어 올린다. 갱신 시각 줄과 같은 이유다.
+  it('제목 줄 **밖**이다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <PageHeaderTitleRow trailing={<View testID="곁" />}>
+        <Text>보스 수익</Text>
+      </PageHeaderTitleRow>,
+    )
+
+    expect(within(getByTestId('page-header-title-row')).queryByTestId('곁')).toBeNull()
+  })
+
+  // 제목이 길면 그쪽이 줄어들어야 한다. 곁에 선 것이 줄어들면 조각이 찌그러진다.
+  it('제목 쪽이 남는 폭을 먹고 곁에 선 것은 안 줄어든다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <PageHeaderTitleRow trailing={<View testID="곁" />}>
+        <Text>컨텐츠 스케줄러</Text>
+      </PageHeaderTitleRow>,
+    )
+
+    expect(styleOf(getByTestId('page-header-title-column'))).toMatchObject({ flexGrow: 1 })
+    expect(styleOf(getByTestId('page-header-title-trailing')).flexShrink).toBe(0)
+  })
+
+  // 안 주면 지금 트리 그대로여야 한다. 덩어리에 가로 규칙이 붙으면 갱신 시각 줄이 제목 옆으로 간다.
+  it('안 주면 덩어리는 세로 그대로다', async () => {
+    const { getByTestId, queryByTestId } = await renderOverlay(
+      <PageHeaderTitleRow>
+        <Text>설정</Text>
+      </PageHeaderTitleRow>,
+    )
+
+    expect(styleOf(getByTestId('page-header-title-block')).flexDirection).toBeUndefined()
+    expect(queryByTestId('page-header-title-trailing')).toBeNull()
+  })
+})
