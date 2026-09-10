@@ -9,6 +9,8 @@ jest.mock('../../../storage/boss-drops', () => {
   mockModule0 = mockModule0 ?? {
   getBossDropRecords: jest.fn(),
   replaceBossDropRecords: jest.fn(),
+  // 창 표의 판. 이 스위트는 한 테스트 안에서 기록을 갈지 않으므로 고정이면 된다.
+  getBossDropRecordsRevision: jest.fn(() => 0),
 }
   return mockModule0
 })
@@ -20,6 +22,7 @@ jest.mock('../../../storage/boss-profit', () => {
     getBossProfitRecords: jest.fn(),
     getRecordedCharacterOcids: jest.fn(),
     getWeeklyPeriodKeysWithRecords: jest.fn(),
+    getBossProfitRecordsRevision: jest.fn(() => 0),
   }
   return mockModule1
 })
@@ -102,7 +105,10 @@ describe('load', () => {
     const { status, groups } = useDropPriceStore.getState()
     expect(status).toBe('ready')
     // 그 주가 속한 달도 함께 읽는다. 그 달의 월간 보스가 이 주에 설 수 있다.
-    expect(getBossDropRecordsMock).toHaveBeenCalledWith(['ocid-1'], [PERIOD, MONTH])
+    expect(getBossDropRecordsMock).toHaveBeenCalledWith(
+      ['ocid-1'],
+      expect.arrayContaining([PERIOD, MONTH]),
+    )
     expect(groups).toHaveLength(1)
     expect(groups[0].characterName).toBe('지내우시')
     expect(groups[0].entries[0].boss).toBe('스우')
@@ -115,7 +121,10 @@ describe('load', () => {
 
     await useDropPriceStore.getState().load(PERIOD)
 
-    expect(getBossDropRecordsMock).toHaveBeenCalledWith(['ocid-1', 'ocid-해제'], [PERIOD, MONTH])
+    expect(getBossDropRecordsMock).toHaveBeenCalledWith(
+      ['ocid-1', 'ocid-해제'],
+      expect.arrayContaining([PERIOD, MONTH]),
+    )
   })
 
   it('분배 인원 기본값은 그 행의 파티원 수다. 기록이 없으면 1인', async () => {
@@ -171,7 +180,10 @@ describe('load: 그 주에 서는 월간 보스', () => {
 
     await useDropPriceStore.getState().load(PERIOD)
 
-    expect(getBossDropRecordsMock).toHaveBeenCalledWith(['ocid-1'], [PERIOD, MONTH])
+    expect(getBossDropRecordsMock).toHaveBeenCalledWith(
+      ['ocid-1'],
+      expect.arrayContaining([PERIOD, MONTH]),
+    )
   })
 
   it('그 주에 잡은 월간 보스의 드롭이 목록에 든다', async () => {
@@ -217,8 +229,53 @@ describe('load: 그 주에 서는 월간 보스', () => {
 
     await useDropPriceStore.getState().load(MONTH)
 
-    expect(getBossDropRecordsMock).toHaveBeenCalledWith(['ocid-1'], [MONTH])
+    expect(getBossDropRecordsMock).toHaveBeenCalledWith(['ocid-1'], expect.arrayContaining([MONTH]))
+    // 달 키 창은 달만 든다. 그 안의 주 키는 안 읽는다.
+    const [, queriedKeys] = getBossDropRecordsMock.mock.calls[0] as [string[], string[]]
+    expect(queriedKeys.every((key) => key.length === MONTH.length)).toBe(true)
     expect(useDropPriceStore.getState().groups.flatMap((group) => group.entries)).toHaveLength(1)
+  })
+})
+
+// 이 화면의 화살표는 한 칸씩 걸으므로 달력의 앞뒤 두 달이 곧 갈 수 있는 곳이다. 창을 통째로
+// 읽어 두면 그 안의 이동은 조회가 0회다.
+describe('창을 미리 든다', () => {
+  it('창 전체를 조회 한 번으로 읽는다. 기간마다 따로 안 읽는다', async () => {
+    const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
+
+    await useDropPriceStore.getState().load(PERIOD)
+
+    expect(getBossDropRecordsMock).toHaveBeenCalledTimes(1)
+    const [, queriedKeys] = getBossDropRecordsMock.mock.calls[0] as [string[], string[]]
+    // 앞뒤 두 달치 리셋 주가 한 목록에 든다.
+    expect(queriedKeys).toContain('2026-07-30')
+    expect(queriedKeys).toContain('2026-08-13')
+  })
+
+  it('창 안의 다른 주로 옮기면 다시 안 읽는다', async () => {
+    const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
+    await useDropPriceStore.getState().load(PERIOD)
+    getBossDropRecordsMock.mockClear()
+
+    await useDropPriceStore.getState().load('2026-07-30')
+
+    expect(getBossDropRecordsMock).not.toHaveBeenCalled()
+    expect(useDropPriceStore.getState().status).toBe('ready')
+    expect(useDropPriceStore.getState().periodKey).toBe('2026-07-30')
+  })
+
+  it('warmWindow 는 화면 상태를 안 건드린다', async () => {
+    const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
+
+    await useDropPriceStore.getState().warmWindow(PERIOD)
+
+    expect(useDropPriceStore.getState().status).toBe('idle')
+    expect(useDropPriceStore.getState().periodKey).toBeNull()
+    // 미리 채워 뒀으므로 화면이 열릴 때는 조회가 없다.
+    getBossDropRecordsMock.mockClear()
+    await useDropPriceStore.getState().load(PERIOD)
+    expect(getBossDropRecordsMock).not.toHaveBeenCalled()
+    expect(useDropPriceStore.getState().groups).toHaveLength(1)
   })
 })
 

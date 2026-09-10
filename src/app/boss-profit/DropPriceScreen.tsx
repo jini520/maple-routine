@@ -157,7 +157,7 @@ export function DropPriceScreen(): React.JSX.Element {
   const navigation = useScreenNavigation()
   const topSafeAreaPx = useTopSafeAreaPx()
   const { tab, periodKey: profitPeriodKey } = useBossProfitStore()
-  const { status, groups, load, savePrice, excludePrice } = useDropPriceStore()
+  const { status, periodKey: readPeriodKey, groups, load, savePrice, excludePrice } = useDropPriceStore()
 
   // 화면이 한 번만 만든 지금. 두 번 부르면 기간 경계를 사이에 두고 갈릴 수 있다.
   const [now] = useState(() => new Date())
@@ -177,6 +177,13 @@ export function DropPriceScreen(): React.JSX.Element {
   const excluded = allEntries.filter((entry) => entry.drop.priceState === 'excluded').length
   const unpriced = allEntries.length - entered - excluded
   const periodLabel = formatBossProfitPeriodLabel(cycle, week, now)
+  /**
+   * **이 기간을 읽었나.** `status` 만 보면 지난번 기간의 `ready` 를 이번 기간의 사실로 읽는다.
+   *
+   * 이 스토어는 화면을 떠나도 살아 있고 읽기를 거는 효과는 첫 렌더 뒤에 도므로, 안 가르면
+   * 기록이 있는데도 `기록된 아이템이 없습니다` 가 한 프레임 번쩍인다.
+   */
+  const readThisPeriod = status === 'ready' && readPeriodKey === week
 
   // 미입력만 골라 순차로 돈다. 첫 건을 열고 나머지는 큐에 쌓아 저장·스킵마다 하나씩 꺼낸다.
   function startSequence(): void {
@@ -265,15 +272,15 @@ export function DropPriceScreen(): React.JSX.Element {
             </Pressable>
           </View>
 
-          {status === 'loading' || status === 'idle' ? (
-            <LoadingState size="page" message="불러오고 있어요" />
-          ) : status === 'failed' ? (
+          {status === 'failed' ? (
             // 실패를 빈 목록으로 위장하지 않는다.
             <ErrorState
               title="가격 기록을 불러오지 못했습니다"
               description="기기에 저장된 기록을 읽지 못했습니다. 다시 시도해주세요."
               action={{ label: '다시 시도', onClick: () => void load(week) }}
             />
+          ) : !readThisPeriod ? (
+            <LoadingState size="page" message="불러오고 있어요" />
           ) : allEntries.length === 0 ? (
             <EmptyState
               icon={PackageOpenIcon}

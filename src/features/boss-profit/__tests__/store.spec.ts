@@ -13,6 +13,12 @@ jest.mock('../../schedule-sync/schedule-sync', () => ({
 }))
 const { syncSchedules: syncSchedulesMock } = jest.requireMock('../../schedule-sync/schedule-sync') as Record<string, jest.Mock>
 
+/**
+ * 기록의 판. 실물은 쓰기마다 오르는데 이 스위트는 픽스처를 갈아 끼우는 것이 곧 쓰기다.
+ * **이미 한 번 읽은 기간의 픽스처를 바꾸는 테스트는 이 값을 함께 올려야** 표가 다시 읽는다.
+ */
+let mockRecordsRevision = 0
+
 jest.mock('../../../storage/character-selection', () => ({
   getTrackedCharacterOcids: jest.fn(),
 }))
@@ -28,8 +34,10 @@ jest.mock('../../../storage/boss-profit', () => ({
   getWeeklyPeriodKeysWithRecords: jest.fn(),
   // 추적 목록 밖에서 기록을 남긴 캐릭터. 화면이 그릴 범위가 여기서 넓어진다.
   getRecordedCharacterOcids: jest.fn(),
+  // 기간 표의 판. 실물은 쓰기가 있을 때마다 오른다.
+  getBossProfitRecordsRevision: jest.fn(() => mockRecordsRevision),
 }))
-const { getBossProfitRecords: getBossProfitRecordsMock, findAdjacentPeriodKeyWithRecords: findAdjacentMock, fillMissingRecordWorlds: fillMissingRecordWorldsMock, upsertBossProfitRecord: upsertBossProfitRecordMock, getWeeklyPeriodKeysWithRecords: getWeeklyPeriodKeysWithRecordsMock, getRecordedCharacterOcids: getRecordedCharacterOcidsMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
+const { getBossProfitRecords: getBossProfitRecordsMock, findAdjacentPeriodKeyWithRecords: findAdjacentMock, fillMissingRecordWorlds: fillMissingRecordWorldsMock, upsertBossProfitRecord: upsertBossProfitRecordMock, getWeeklyPeriodKeysWithRecords: getWeeklyPeriodKeysWithRecordsMock, getRecordedCharacterOcids: getRecordedCharacterOcidsMock, getBossProfitRecordsRevision: getBossProfitRecordsRevisionMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 
 // 처치 날짜 캐기는 **동기화가 끝난 뒤 기다리지 않고** 튼다. 이 화면은
 // `defeated_on` 을 안 쓰므로 결과를 기다릴 이유가 없다. 목으로 **떴는가** 만 본다.
@@ -83,8 +91,9 @@ const { getManualTrackedContent: getManualTrackedContentMock } = jest.requireMoc
 jest.mock('../../../storage/boss-drops', () => ({
   getBossDropRecords: jest.fn(),
   replaceBossDropRecords: jest.fn(),
+  getBossDropRecordsRevision: jest.fn(() => 0),
 }))
-const { getBossDropRecords: getBossDropRecordsMock, replaceBossDropRecords: replaceBossDropRecordsMock } = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
+const { getBossDropRecords: getBossDropRecordsMock, replaceBossDropRecords: replaceBossDropRecordsMock, getBossDropRecordsRevision: getBossDropRecordsRevisionMock } = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
 
 // 잡지 않은 보스의 드롭을 지운 뒤 **건수를 토스트로 알린다**. 값까지 사라지므로.
 const mockShowInfo = jest.fn()
@@ -103,6 +112,7 @@ import {
   resetSyncRunStateForTests,
 } from '../../schedule-sync/sync-run-state'
 import { useBossProfitStore } from '../store'
+import { cachedPeriodKeysForTests, clearPeriodCacheForTests } from '../period-cache'
 // **Date 만 가짜로 만든다.** jest 는 `doNotFake` 로 **건드리지 말 것** 을 받는다. 그대로 두면
 // 타이머까지 전부 가짜가 되어 실제
 // `setTimeout` 에 기대는 플러시가 영영 안 끝난다.
@@ -156,6 +166,12 @@ function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterSc
 beforeEach(() => {
   // 모듈 수준 실행 플래그라 테스트끼리 오염된다.
   resetSyncRunStateForTests()
+  // 기간 스냅샷 표도 모듈 수준이다. 안 비우면 앞 테스트가 읽어 둔 기간이 그대로 그려진다.
+  clearPeriodCacheForTests()
+  // `afterEach` 의 `resetAllMocks` 가 구현을 지운다. 판이 `undefined` 로 굳으면 표가 영영 안 낡는다.
+  mockRecordsRevision = 0
+  getBossProfitRecordsRevisionMock.mockImplementation(() => mockRecordsRevision)
+  getBossDropRecordsRevisionMock.mockImplementation(() => 0)
   mockShowInfo.mockClear()
   syncWindowMock.mockReset().mockResolvedValue(undefined)
   useBossProfitStore.setState({
@@ -2345,6 +2361,8 @@ describe('useBossProfitStore', () => {
           world: null,
         }
         getBossProfitRecordsMock.mockResolvedValue([cachedRecord])
+        // 픽스처 교체는 실물에서 쓰기다. 판을 안 올리면 앞서 읽어 둔 스냅샷이 그대로 그려진다.
+        mockRecordsRevision += 1
 
         await useBossProfitStore.getState().setTab('monthly')
 
@@ -3474,5 +3492,109 @@ describe('periodPendingAggregation', () => {
     await useBossProfitStore.getState().refresh(['ocid-1'])
 
     expect(useBossProfitStore.getState().periodPendingAggregation).toBe(false)
+  })
+})
+
+// 창을 미리 채워 두면 화살표를 눌러도 안 기다린다. 프리페치는 뒤에서 돌되 사용자가 보고 있는
+// 회차를 취소하면 안 된다.
+describe('기간을 미리 들고 있는다', () => {
+  const previousKey = getAdjacentPeriodKey(
+    'weekly',
+    getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
+    'prev',
+  )
+
+  /** 프리페치가 그 기간을 표에 넣을 때까지. 창은 한 칸씩 채워지므로 여러 회차를 기다린다. */
+  async function waitForWindowToCover(periodKey: string): Promise<void> {
+    await waitFor(() => {
+      expect(cachedPeriodKeysForTests()).toContain(`weekly|${periodKey}`)
+    }, 500)
+  }
+
+  it('표에 있는 기간은 조회가 멈춰 있어도 그려진다', async () => {
+    // 롤링 조회 창 밖의 주다. 조회가 필요 없는 기간이라 프리페치가 표에 넣는다(창 동기화가
+    // 있어야 답이 나오는 기간은 배경에서 안 채운다).
+    let outOfWindowKey = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
+    for (let step = 0; step < 8; step += 1) {
+      outOfWindowKey = getAdjacentPeriodKey('weekly', outOfWindowKey, 'prev')
+    }
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    findAdjacentMock.mockResolvedValue(outOfWindowKey)
+    getBossProfitRecordsMock.mockResolvedValue([
+      {
+        ocid: 'ocid-1',
+        boss: '자쿰',
+        difficulty: '카오스',
+        cycle: 'weekly',
+        periodKey: outOfWindowKey,
+        partySize: 1,
+        priceMeso: 8_080_000,
+        payoutMeso: 8_080_000,
+        recordedAt: '2026-07-01T00:00:00.000Z',
+        world: null,
+      } satisfies BossProfitRecord,
+    ])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    await waitForWindowToCover(outOfWindowKey)
+
+    // 여기서부터 기기 DB 는 대답하지 않는다. 표에서 나오는 기간만 그려질 수 있다.
+    getBossProfitRecordsMock.mockImplementation(() => new Promise(() => {}))
+    await useBossProfitStore.getState().goToPreviousPeriod()
+
+    expect(useBossProfitStore.getState().periodKey).toBe(outOfWindowKey)
+    expect(useBossProfitStore.getState().loadedPeriodKey).toBe(outOfWindowKey)
+    expect(useBossProfitStore.getState().isPeriodLoading).toBe(false)
+    expect(useBossProfitStore.getState().rows).toHaveLength(1)
+  })
+
+  // 프리페치가 `requestGeneration` 을 올리면 사용자가 보고 있는 회차가 취소된다.
+  it('프리페치가 다 돌아도 화면은 사용자가 고른 기간 그대로다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    await useBossProfitStore.getState().goToPreviousPeriod()
+    // 이동 뒤에 시작된 창 채우기가 다 돌 시간을 준다.
+    await waitFor(() => {
+      expect(useBossProfitStore.getState().status).toBe('loaded')
+    })
+    for (let turn = 0; turn < 50; turn += 1) await Promise.resolve()
+
+    expect(useBossProfitStore.getState().periodKey).toBe(previousKey)
+    expect(useBossProfitStore.getState().loadedPeriodKey).toBe(previousKey)
+  })
+
+  // 실패한 기간의 스냅샷도 표에 들어간다. 표를 쓰면 `다시 시도` 가 같은 실패를 되돌려 준다.
+  it('retryPeriod 는 표를 건너뛰고 다시 읽는다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    getBossProfitRecordsMock.mockClear()
+
+    await useBossProfitStore.getState().retryPeriod()
+
+    expect(getBossProfitRecordsMock).toHaveBeenCalled()
+  })
+
+  it('goToCurrentPeriod: 지금 기간으로 돌아온다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    const currentKey = useBossProfitStore.getState().periodKey
+    await useBossProfitStore.getState().goToPreviousPeriod()
+    expect(useBossProfitStore.getState().periodKey).toBe(previousKey)
+
+    await useBossProfitStore.getState().goToCurrentPeriod()
+
+    expect(useBossProfitStore.getState().periodKey).toBe(currentKey)
+    expect(useBossProfitStore.getState().loadedPeriodKey).toBe(currentKey)
+  })
+
+  // 이미 거기면 회차를 안 연다. 열면 도는 프리페치가 취소되고 화면이 한 번 다시 그려진다.
+  it('goToCurrentPeriod: 이미 지금 기간이면 아무 일도 없다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    const callsBefore = getBossProfitRecordsMock.mock.calls.length
+
+    await useBossProfitStore.getState().goToCurrentPeriod()
+
+    expect(getBossProfitRecordsMock.mock.calls.length).toBe(callsBefore)
   })
 })

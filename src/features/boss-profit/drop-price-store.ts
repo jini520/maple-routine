@@ -11,6 +11,12 @@
  * **읽는 기간 키가 둘이다.** 월간 보스 드롭의 `period_key` 는 달이라 주간 키 조회에 안 걸린다.
  * 보스 수익이 그 보스를 주간 탭의 그 주에 세우므로(`filterRowsForTab`) 값을 매기는 자리도 같은
  * 주에 세운다. 어느 주인가는 `isMonthlyRowInWeek` 한 함수가 정한다.
+ *
+ * **창을 통째로 읽는다.** 이 화면의 화살표는 한 칸씩 걸으므로 달력의 앞뒤 두 달이 곧 갈 수 있는
+ * 곳이다. 기간마다 따로 읽지 않고 저장 계층의 두 조회에 기간 키 **목록**을 넘겨 한 번에 읽은 뒤
+ * 메모리에서 기간별로 가른다. 창이 열일곱 주여도 조회는 그대로 둘이다.
+ *
+ * @see docs/features/item-drop.md 의 `창을 조회 둘로 한 번에 읽는다`
  */
 
 import { withSqliteTimeout } from './sqlite-guards'
@@ -25,6 +31,9 @@ import {
   getWeeklyPeriodKeysWithRecords,
 } from '../../storage/boss-profit'
 import { isMonthlyRowInWeek, monthOfWeek } from '../../lib/boss/monthly-boss-week'
+import { bossRecordsStamp } from './period-cache'
+import { dropWindowPeriodKeys } from './period-window'
+import type { BossCycle } from '../../types'
 import { resolveDisplayProfiles } from '../character-profile/resolve'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import type { BossDifficulty } from '../../types'
@@ -53,9 +62,23 @@ export interface DropPriceGroup {
 
 interface DropPriceState {
   status: 'idle' | 'loading' | 'ready' | 'failed'
+  /**
+   * 지금 상태가 **어느 기간의 것인가**. 읽기를 걸 때 곧장 바뀐다.
+   *
+   * 화면이 `status` 만 보면 지난번 기간의 `ready` 를 이번 기간의 사실로 읽어, 기록이 있는데도
+   * 빈 상태가 한 프레임 번쩍인다. 둘을 함께 봐야 **아직 안 읽었다** 와 **읽었더니 없더라** 가
+   * 갈린다.
+   */
   periodKey: string | null
   groups: DropPriceGroup[]
   load: (periodKey: string) => Promise<void>
+  /**
+   * 창을 미리 채운다. **화면 상태는 안 건드린다.** 보스 수익 화면이 부른다.
+   *
+   * 저쪽이 이 스토어를 부르는 방향이라야 한다. 반대로 두면 순환 의존이 된다
+   * (`drop-price-store` → `store`).
+   */
+  warmWindow: (periodKey: string) => Promise<void>
   savePrice: (entry: DropPriceEntry, priceMeso: number, share: number) => Promise<void>
   /** 기록 안함. 값을 매기지 않기로 한 결정을 저장한다(스킵과 다르다 정정). */
   excludePrice: (entry: DropPriceEntry) => Promise<void>
@@ -114,62 +137,128 @@ function buildGroups(
   return groups
 }
 
+/** 창 한 칸. 어느 판에서 읽었나가 함께 붙는다 */
+interface WindowEntry {
+  groups: DropPriceGroup[]
+  stamp: string
+}
+
+/**
+ * 기간별 그룹 표. 화면이 왕복해도 살아 있어야 해서 스토어 상태가 아니라 모듈 변수다.
+ *
+ * 판이 다른 줄은 없는 것으로 친다. 판은 보스 수익의 기간 표와 **같은 값**이라 가격 한 건을
+ * 적으면 둘이 함께 낡는다.
+ */
+const windowCache = new Map<string, WindowEntry>()
+
+function readWindowCache(periodKey: string, stamp: string): DropPriceGroup[] | null {
+  const entry = windowCache.get(periodKey)
+  return entry === undefined || entry.stamp !== stamp ? null : entry.groups
+}
+
+/**
+ * 창 전체를 **조회 둘로** 읽어 표를 채운다. 실패하면 `null`.
+ *
+ * 실패를 빈 표로 바꾸지 않는다. 그러면 화면이 `기록이 없습니다` 라는 거짓 빈 상태를 그린다.
+ */
+async function fillWindowCache(periodKey: string): Promise<Map<string, DropPriceGroup[]> | null> {
+  // **읽기 전에 찍는다.** 읽는 중에 들어온 변경을 본 것으로 표시하면 그 변경을 영영 놓친다.
+  const stamp = bossRecordsStamp()
+  const cycle: BossCycle = isMonthlyPeriodKey(periodKey) ? 'monthly' : 'weekly'
+  const windowKeys = dropWindowPeriodKeys(cycle, periodKey, new Date())
+
+  // 추적 목록으로 범위를 정하면 캐릭터를 관리 목록에서 뺀 순간 그 캐릭터의 미입력 드롭을
+  // 여기서 못 고친다. 그런데 보스 수익과 가계부는 그 건수를 계속 `미입력 n` 으로 센다.
+  const tracked = (await getTrackedCharacterOcids()) ?? []
+  const recorded = await getRecordedCharacterOcids().catch(() => [])
+  const ocids = [...new Set([...tracked, ...recorded])]
+  const built = new Map<string, DropPriceGroup[]>()
+  if (ocids.length === 0) {
+    for (const key of windowKeys) {
+      built.set(key, [])
+      windowCache.set(key, { groups: [], stamp })
+    }
+    return built
+  }
+
+  // 주간 키로 열었으면 그 주가 속한 달도 함께 읽는다. 그 달의 월간 보스가 이 주에 설 수 있다.
+  const monthKeys = cycle === 'weekly' ? [...new Set(windowKeys.map(monthOfWeek))] : []
+  const queryKeys = [...new Set([...windowKeys, ...monthKeys])]
+
+  try {
+    // 드롭과 수익 기록을 함께 읽는다. 후자는 **분배 인원 기본값(파티원 수)** 과, 월간 보스가
+    // 어느 주에 서는지를 정하는 처치 여부·처치일에 쓴다.
+    const [allDropRecords, profitRecords, weekLists] = await Promise.all([
+      withSqliteTimeout(getBossDropRecords(ocids, queryKeys)),
+      withSqliteTimeout(getBossProfitRecords(ocids, queryKeys)),
+      Promise.all(
+        monthKeys.map(async (monthKey) =>
+          [monthKey, await withSqliteTimeout(getWeeklyPeriodKeysWithRecords(ocids, monthKey))] as const,
+        ),
+      ),
+    ])
+    const weeksByMonth = new Map(weekLists)
+
+    const partySizes = new Map(
+      profitRecords.map((record) => [saveGroupKey(record), record.partySize] as const),
+    )
+
+    // 이름은 창 전체에 한 번만 묻는다. 기간마다 물으면 왕복이 창의 칸 수만큼 는다.
+    const profiles = await resolveDisplayProfiles(allDropRecords.map((record) => record.ocid))
+    const characters = new Map<string, { characterName: string; imageUrl: string | null }>()
+    for (const [ocid, profile] of profiles) {
+      characters.set(ocid, { characterName: profile.name, imageUrl: profile.imageUrl })
+    }
+
+    for (const key of windowKeys) {
+      const monthKey = cycle === 'weekly' ? monthOfWeek(key) : null
+      const dropRecords = allDropRecords.filter(
+        (record) =>
+          record.periodKey === key ||
+          (monthKey !== null &&
+            record.periodKey === monthKey &&
+            standsInWeek(record, key, profitRecords, weeksByMonth.get(monthKey) ?? [])),
+      )
+      const groups = buildGroups(dropRecords, characters, partySizes)
+      built.set(key, groups)
+      windowCache.set(key, { groups, stamp })
+    }
+    return built
+  } catch {
+    return null
+  }
+}
+
+export function clearDropWindowForTests(): void {
+  windowCache.clear()
+}
+
 export const useDropPriceStore = create<DropPriceState>((set, get) => ({
   status: 'idle',
   periodKey: null,
   groups: [],
 
   async load(periodKey) {
-    set({ status: 'loading', periodKey })
-
-    // 추적 목록으로 범위를 정하면 캐릭터를 관리 목록에서 뺀 순간 그 캐릭터의 미입력 드롭을
-    // 여기서 못 고친다. 그런데 보스 수익과 가계부는 그 건수를 계속 `미입력 n` 으로 센다.
-    const tracked = (await getTrackedCharacterOcids()) ?? []
-    const recorded = await getRecordedCharacterOcids().catch(() => [])
-    const ocids = [...new Set([...tracked, ...recorded])]
-    if (ocids.length === 0) {
-      set({ status: 'ready', groups: [] })
+    const cached = readWindowCache(periodKey, bossRecordsStamp())
+    if (cached !== null) {
+      set({ status: 'ready', periodKey, groups: cached })
       return
     }
 
-    // 주간 키로 열었으면 그 주가 속한 달도 함께 읽는다. 그 달의 월간 보스가 이 주에 설 수 있다.
-    const monthKey = isMonthlyPeriodKey(periodKey) ? null : monthOfWeek(periodKey)
-    const periodKeys = monthKey === null ? [periodKey] : [periodKey, monthKey]
-
-    try {
-      // 드롭과 수익 기록을 함께 읽는다. 후자는 **분배 인원 기본값(파티원 수)** 과, 월간 보스가
-      // 어느 주에 서는지를 정하는 처치 여부·처치일에 쓴다.
-      const [allDropRecords, profitRecords, weeksWithRecords] = await Promise.all([
-        withSqliteTimeout(getBossDropRecords(ocids, periodKeys)),
-        withSqliteTimeout(getBossProfitRecords(ocids, periodKeys)),
-        monthKey === null
-          ? Promise.resolve<string[]>([])
-          : withSqliteTimeout(getWeeklyPeriodKeysWithRecords(ocids, monthKey)),
-      ])
-
-      const partySizes = new Map(
-        profitRecords.map((record) => [saveGroupKey(record), record.partySize] as const),
-      )
-
-      const dropRecords =
-        monthKey === null
-          ? allDropRecords
-          : allDropRecords.filter(
-              (record) =>
-                record.periodKey === periodKey ||
-                standsInWeek(record, periodKey, profitRecords, weeksWithRecords),
-            )
-
-      const profiles = await resolveDisplayProfiles(dropRecords.map((record) => record.ocid))
-      const characters = new Map<string, { characterName: string; imageUrl: string | null }>()
-      for (const [ocid, profile] of profiles) {
-        characters.set(ocid, { characterName: profile.name, imageUrl: profile.imageUrl })
-      }
-
-      set({ status: 'ready', groups: buildGroups(dropRecords, characters, partySizes) })
-    } catch {
+    set({ status: 'loading', periodKey })
+    const built = await fillWindowCache(periodKey)
+    // 읽는 사이에 기간을 옮겼으면 이 답은 다른 기간의 것이다.
+    if (get().periodKey !== periodKey) return
+    if (built === null) {
       set({ status: 'failed', groups: [] })
+      return
     }
+    set({ status: 'ready', groups: built.get(periodKey) ?? [] })
+  },
+
+  async warmWindow(periodKey) {
+    if (readWindowCache(periodKey, bossRecordsStamp()) !== null) return
+    await fillWindowCache(periodKey)
   },
 
   async savePrice(entry, priceMeso, share) {

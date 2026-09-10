@@ -30,6 +30,7 @@ import { Image, Pressable, View } from 'react-native'
 
 import {
   Badge,
+  Button,
   CalendarIcon,
   ChevronDownIcon,
   ChevronLeftIcon,
@@ -954,6 +955,22 @@ export function CashbookScreen(): React.JSX.Element {
       : null
 
   /**
+   * `오늘` 버튼. **보는 기간과 고른 날을 함께** 오늘로 옮긴다.
+   *
+   * 화살표가 한 칸씩만 옮기므로 조회 한도(18개월)의 바닥에서 이번 달로 돌아오려면 열여덟 번,
+   * 주간이면 일흔여덟 번을 눌러야 했다.
+   */
+  function goToToday(): void {
+    setExpandedRowKey(null)
+    setSelectedDateKey(todayDateKey)
+    if (isWeekly) {
+      setWeekStartKey(resetWeekStartOf(todayDateKey))
+      return
+    }
+    setMonthKey(todayMonthKey)
+  }
+
+  /**
    * 화살표. **보는 기간과 고른 날을 함께** 옮긴다.
    *
    * 고른 날을 두고 오면 격자는 6월인데 아래 상세는 8월 23일이 서서, 한 화면의 두 구역이 서로
@@ -989,12 +1006,26 @@ export function CashbookScreen(): React.JSX.Element {
             <PageHeaderTitleRow
               fetchedAt={fetchedAt}
               trailing={
-                <TabSegment
-                  options={PERIOD_TABS}
-                  selected={isWeekly ? 'weekly' : 'monthly'}
-                  onSelect={(value) => (value === 'weekly' ? showWeekly() : showMonthly())}
-                  labelOf={(value) => PERIOD_TAB_LABELS[value]}
-                />
+                // `오늘` 은 세그먼트 **왼쪽**이고 이미 이번 주·이번 달이면 안 그린다. 보스
+                // 수익도 같은 자리에 같은 것이 선다. **테두리를 두르지 않는다**(사용자 지정).
+                <View className="flex-row items-center gap-1">
+                  {!isLatest && (
+                    <Button
+                      variant="text"
+                      size="compact"
+                      onPress={goToToday}
+                      aria-label="오늘로 이동"
+                    >
+                      오늘
+                    </Button>
+                  )}
+                  <TabSegment
+                    options={PERIOD_TABS}
+                    selected={isWeekly ? 'weekly' : 'monthly'}
+                    onSelect={(value) => (value === 'weekly' ? showWeekly() : showMonthly())}
+                    labelOf={(value) => PERIOD_TAB_LABELS[value]}
+                  />
+                </View>
               }
             >
               <Text className="text-lg font-semibold text-text">가계부</Text>
