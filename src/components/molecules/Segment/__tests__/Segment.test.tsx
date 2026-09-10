@@ -42,6 +42,24 @@ describe('Segment', () => {
     expect(onSelect).not.toHaveBeenCalled()
   })
 
+  // 이 부품은 상자가 자리마다 갈린다. 폼 안에서는 글자를 따라 커지고, 높이가 못박힌 today
+  // 타일 안에서는 못 커진다. 그래서 무시할지를 호출부가 정한다.
+  it('시스템 글자 크기를 기본으로 따른다', async () => {
+    const { getByText } = await renderAtom(
+      <Segment options={['메소', '메포']} selected="메소" onSelect={jest.fn()} />,
+    )
+
+    expect(getByText('메소').props.allowFontScaling).toBe(true)
+  })
+
+  it('`fixed` 를 주면 안 따른다', async () => {
+    const { getByText } = await renderAtom(
+      <Segment fixed options={['메소', '메포']} selected="메소" onSelect={jest.fn()} />,
+    )
+
+    expect(getByText('메소').props.allowFontScaling).toBe(false)
+  })
+
   // **칩이 아니다.** 조각들이 한 상자 안에 붙어 있고, 고른 것만 그 안에서 칠해진다.
   it('한 상자 안에 붙어 있다. 조각마다 테두리를 두르지 않는다', async () => {
     const view = await renderAtom(

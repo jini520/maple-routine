@@ -315,6 +315,8 @@ export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
         <Text fixed className="text-11 font-bold text-text-muted">남은 스케줄</Text>
         <View className="ml-auto">
           <Segment
+            // 타일 높이가 76 으로 못박혀 있어 글자가 커지면 알약이 타일을 넘는다.
+            fixed
             options={CYCLE_LABELS}
             selected={cycle}
             onSelect={(value) => {
