@@ -19,7 +19,7 @@ import { MediaScope } from '../MediaScope'
 import { ThemeProvider } from '../ThemeProvider'
 import {
   useScrollIndicatorStyle,
-  useSheetBlurTint,
+  useBlurTint,
   useThemeAppearance,
   useThemeMode,
 } from '../context'
@@ -55,7 +55,7 @@ function ModeProbe() {
 
 /** 명암을 고르는 플랫폼 프롭. OS 외형이 아니라 테마가 정하는지를 본다. */
 function BlurProbe() {
-  return <Text testID="blur-tint">{useSheetBlurTint()}</Text>
+  return <Text testID="blur-tint">{useBlurTint()}</Text>
 }
 
 beforeEach(__resetThemeAppearanceForTest)

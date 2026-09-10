@@ -114,7 +114,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
 
 import { useToastStore } from '../../../features/toast/store'
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
-import { SPEED_DIAL_SPACE_PX } from '../../../components/organisms/SpeedDial/speed-dial-metrics'
+import { FAB_SPACE_PX } from '../../../lib/fab-metrics'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import { BOSS_SLOT_MAX_PX, CashbookScreen } from '../CashbookScreen'
 
@@ -1289,7 +1289,7 @@ describe('떠 있는 ＋ 가 먹는 자리', () => {
 
     const 여백 = flattenStyle(view.getByTestId('cashbook-content').props.style).paddingBottom
 
-    expect(여백).toBe(SPEED_DIAL_SPACE_PX)
+    expect(여백).toBe(FAB_SPACE_PX)
   })
 })
 
