@@ -32,6 +32,7 @@ import {
 } from '../../components/atoms'
 import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
+import { TabSegment } from '../../components/molecules/TabSegment/TabSegment'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -62,6 +63,13 @@ function categoryIcon(label: string | null): LucideIcon {
 // 컨텐츠 스케줄러에서 선택된 캐릭터를 승계한다. 수동 모드 전용.
 // 리디자인(와이어프레임 리뷰): content_name에 이미 있는 접두사(lib/scheduler/content-category)로
 // 카테고리 그룹핑. 반복되는 "[일일 퀘스트] …"를 헤더로 한 번만 묶고 행에는 알맹이만 표시한다.
+/** 주기 탭. 값은 스케줄러가 쓰는 주기이고 화면에는 라벨이 선다. */
+const CONTENT_TABS = ['daily', 'weekly'] as const
+const CONTENT_TAB_LABELS: Record<(typeof CONTENT_TABS)[number], string> = {
+  daily: '일간',
+  weekly: '주간',
+}
+
 export function ContentManageScreen(): React.JSX.Element {
   const {
     status,
@@ -176,29 +184,13 @@ export function ContentManageScreen(): React.JSX.Element {
 
       {/* 목록에서 무엇을 보는가를 고르는 장치라 콘텐츠다. */}
       {selected !== null && (
-        <View className="flex-row items-center gap-4 px-4">
-          <Pressable role="button" aria-selected={activeTab === 'daily'} onPress={() => setActiveTab('daily')}>
-            <Text
-              className={
-                activeTab === 'daily'
-                  ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
-                  : 'px-3 text-sm font-medium text-text-muted'
-              }
-            >
-              일간
-            </Text>
-          </Pressable>
-          <Pressable role="button" aria-selected={activeTab === 'weekly'} onPress={() => setActiveTab('weekly')}>
-            <Text
-              className={
-                activeTab === 'weekly'
-                  ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
-                  : 'px-3 text-sm font-medium text-text-muted'
-              }
-            >
-              주간
-            </Text>
-          </Pressable>
+        <View className="px-4">
+          <TabSegment
+            options={CONTENT_TABS}
+            selected={activeTab}
+            onSelect={setActiveTab}
+            labelOf={(value) => CONTENT_TAB_LABELS[value]}
+          />
         </View>
       )}
 

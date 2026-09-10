@@ -556,21 +556,33 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 
 ## 공유 레이아웃 패턴
 
-### 탭 토글(주간/월간, 일간/주간 등): [[ADR-018]]
+### 탭 토글(주간/월간, 일간/주간 등): `molecules/TabSegment` ([[ADR-250]] 결정 2)
+**부품 하나다. 손으로 그리지 말 것.** 여섯 군데가 같은 클래스 문자열을 베끼고 있던 것을 모았다.
 드롭다운·탭·카운트 배지를 **별도 카드로 묶지 않는다**(배경 위에 바로).
 ```
-탭 행: flex items-center gap-4
-활성 탭: w-14 rounded-full bg-primary-tint text-primary-ink py-[5px] text-center text-sm font-semibold (배지 pill 재사용, 새 스타일 금지)
-비활성 탭: w-14 배경 없음, text-center text-sm font-medium text-text-muted (폭이 활성과 같다)
-필터 칩 변형(text-xs, 예 전체/솔로/파티): w-12 · py-1 · text-center, 나머지는 위와 같다
+트랙: self-start rounded-full bg-surface-2 p-0.5   ← 파인 홈. 조각들을 담는다
+조각: rounded-full px-3.5 py-1 · text-sm
+고른 것: 썸(bg-surface + 옅은 그림자)이 그 자리로 **미끄러진다** · text-text font-semibold
+안 고른 것: 배경 없음 · text-text-muted font-medium
 카운트 배지(있는 화면만, 예 n/12): 같은 줄 justify-between 오른쪽 끝, rounded-full bg-primary-tint text-primary-ink text-xs font-semibold px-2.5 py-1
 ```
-활성/비활성 색 차이만으로는 저채도 팔레트에서 약해 배경 pill 필수(굵기 차이만으로 대체 금지). 기능 전용 변형(솔로/파티 필터·보스 수익 네비게이터)은 각 feature 문서.
+**자리는 헤더 제목 덩어리의 오른쪽**이다([[ADR-250]] 결정 3, 사용자 지시). 제목 **줄** 이 아니라
+덩어리 옆이다 - 그 줄은 최소 32 인데 이 알약이 딱 32 라, 줄에 넣으면 위아래 여백이 0 이 되어
+헤더 맨 위에 붙어 보인다. 덩어리 옆에 두면 제목과 갱신 시각을 합친 48 의 한가운데에 앉는다.
+`PageHeaderTitleRow` 의 `trailing` 이 그 자리다. 글자 링크처럼 제목과 한 줄로 읽혀야 하는 것은
+그대로 `children` + `justify-between` 이다.
 
-**폭을 값으로 못박는 것이 규칙이다**(좌우 `px-3` 이 아니라). 안드로이드는 상자가 글자 폭과 정확히
-같으면 그릴 때 뒷 음절을 다음 줄로 넘기고, 그 줄은 한 줄 높이에 가려 사라진다(`주간` 이 `주` 로
-보였다). 두 음절이 `text-sm` 에서 24.2dp 라 `w-14`(56dp)면 남는다. 덤으로 탭을 오갈 때 알약 폭이
-안 흔들린다. 라벨을 세 음절 이상으로 바꾸면 폭도 함께 볼 것([[ADR-225]] 결정 2).
+**색을 프롭으로 열지 않는다**([[ADR-250]] 결정 2-1). 변형 축을 두면 다음 화면이 또 고르고, 이
+부품이 생긴 이유가 그것이었다. 갈아탈 일이 생기면 `TabSegment.tsx` 의 상수 넷을 고친다.
+
+값과 라벨이 다른 자리는 `labelOf` 를 준다(`'weekly'` → `주간`). 안 주면 값을 그대로 적는다.
+
+`settings/SettingsFeatureGuideListScreen` 의 그룹 탭은 **이 부품이 아니다**. `role="tab"` 이고
+라벨이 2음절부터 4음절까지 섞여 있다([[ADR-225]] 결정 4).
+
+~~폭을 값으로 못박는 것이 규칙이다(`w-14`·`w-12`)~~ → **걷혔다**([[ADR-225]] 정정 2). 안드로이드가
+뒷 음절을 다음 줄로 넘기던 결함을 `enablePreparedTextLayout` 이 원인에서 끊었다. 폭은 글자가
+정하고 좌우 여백을 쓴다. 그래서 썸이 조각마다 폭을 다시 재서 미끄러질 수 있다.
 
 ### 스크롤 영역: 화면이 스크롤을 소유하고, **고정되는 영역은 없다** ([[ADR-099]] · [[ADR-131]])
 
@@ -937,6 +949,12 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 - **떠 있는 것은 자기 그림만큼만 막는다.** RN 에서 `opacity: 0` 도 `disabled` 도 **터치를 통과시키지
   않는다**. 안 보이는 층이 뒤를 먹는다([[ADR-170]] 정정 7). 접었다 폈다 하는 오버레이에는
   `pointerEvents={열렸나 ? 'auto' : 'none'}` 을, 그것을 담은 상자에는 `box-none` 을 준다.
+- **세그먼트의 선택 배경은 미끄러진다**([[ADR-250]] 결정 1). 조각마다 배경을 켰다 껐다 하지
+  않고 **상자 하나가 옮겨 간다**. 자리는 `hooks/useSlidingThumb` 가 `onLayout` 으로 재서 낸다.
+  **등분하지 않는다** - 조각 폭을 글자가 정하는 자리가 있어서, 등분으로 바꾸면 둘짜리는
+  헐렁해지고 다섯짜리는 좁아진다. **처음 서는 자리와 움직임 줄이기에서는 안 미끄러진다.**
+  글자색은 상자를 안 기다리고 누르는 즉시 바뀐다(기다리면 누른 조각이 안 눌린 것처럼 보인다).
+  상자와 조각은 **테두리도 여백도 없는 같은 부모** 안에 있어야 자리가 맞는다.
 - **떠 있는 원은 탭 화면마다 한 자리다.** 오른쪽 아래, 지름 56, 하단바 위 12. 값은
   `lib/fab-metrics.ts` 하나에서 나오고 자리는 `useFabBottomPx()` 가 낸다([[ADR-249]] 결정 5).
   **바 높이가 창 폭의 함수라 화면이 손으로 옮겨 적으면 기기마다 갈린다.** 지금 서 있는 둘은

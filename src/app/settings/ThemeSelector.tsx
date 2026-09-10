@@ -13,6 +13,7 @@ import { THEME_NAMES, getThemeDefinition, groupThemesByCategory } from '../../li
 import type { ThemeName } from '../../types/theme'
 
 import { CheckIcon, MoonIcon, SunIcon, Text } from '../../components/atoms'
+import { TabSegment } from '../../components/molecules/TabSegment/TabSegment'
 
 export interface ThemeSelectorProps {
   theme: ThemeName
@@ -34,13 +35,6 @@ const FILTERED_MODE: Record<ModeFilter, 'light' | 'dark' | null> = {
   다크: 'dark',
 }
 
-// 탭 토글 모양은 design-system `탭 토글`을 그대로 쓴다. 새 스타일을 만들지 않는다.
-// 글자가 상속되지 않아 배경과 글자를 두 벌로 갈라 둔다.
-const CHIP_CLASS = 'rounded-full px-3 py-[5px]'
-const CHIP_ACTIVE_CLASS = `${CHIP_CLASS} bg-primary-tint`
-const CHIP_TEXT_ACTIVE = 'text-sm font-semibold text-primary-ink'
-const CHIP_TEXT_IDLE = 'text-sm font-medium text-text-muted'
-
 export function ThemeSelector(props: ThemeSelectorProps): React.JSX.Element {
   const [filter, setFilter] = useState<ModeFilter>('전체')
 
@@ -51,20 +45,8 @@ export function ThemeSelector(props: ThemeSelectorProps): React.JSX.Element {
 
   return (
     <View className="gap-4">
-      <View className="flex-row items-center gap-1">
-        {MODE_FILTERS.map((option) => (
-          <Pressable
-            key={option}
-            role="button"
-            aria-label={option}
-            aria-selected={filter === option}
-            onPress={() => setFilter(option)}
-            className={filter === option ? CHIP_ACTIVE_CLASS : CHIP_CLASS}
-          >
-            <Text className={filter === option ? CHIP_TEXT_ACTIVE : CHIP_TEXT_IDLE}>{option}</Text>
-          </Pressable>
-        ))}
-      </View>
+      {/* 값이 곧 보이는 글자라 `labelOf` 를 안 준다. */}
+      <TabSegment options={MODE_FILTERS} selected={filter} onSelect={setFilter} />
 
       {groupThemesByCategory(visible).map((group) => (
         <View key={group.category} className="gap-2">

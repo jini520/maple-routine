@@ -38,6 +38,7 @@ import {
 } from '../../components/atoms'
 import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
+import { TabSegment } from '../../components/molecules/TabSegment/TabSegment'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { IllustratedCard, FadedIllustration } from '../../components/molecules/FadedIllustration/FadedIllustration'
 import { PartySizeModal } from '../../components/organisms/PartySizeModal/PartySizeModal'
@@ -48,6 +49,8 @@ import { ILLUSTRATION_TEXT_SHADOW_STYLE } from '../../constants/style/text-style
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import { useOpenTab } from '../../hooks/useOpenTab'
+
+const PARTY_FILTERS = ['all', 'solo', 'party'] as const satisfies readonly PartyFilter[]
 
 const PARTY_FILTER_LABELS: Record<PartyFilter, string> = {
   all: '전체',
@@ -401,10 +404,25 @@ export function BossScreen(): React.JSX.Element {
         // 당김은 헤더 버튼과 **같은 재조회**를 부른다. 컨텐츠 스케줄러와 배선이 같아야 한다.
         onRefresh={() => refresh(trackedOcids ?? [])}
         header={
-          // 헤더는 제목 줄 하나다. 레일도 필터도 로딩 카드도 콘텐츠로 내려갔다. 헤더에 담는
-          // 것은 제목 · 기준 시각 · 다른 페이지로 가는 것 셋뿐이다.
+          // 제목과 무리 필터 둘이다. 레일도 로딩 카드도 콘텐츠에 남는다.
+          //
+          // 필터가 **줄 안**에서 조건부다. 밖으로 빼면 캐릭터가 없는 동안 제목만 선 줄과 둘이
+          // 선 줄의 높이가 갈린다. 이 줄은 `min-h-8` 이 바닥을 잡아 그럴 일이 없다.
           <PageHeader>
-            <PageHeaderTitleRow fetchedAt={fetchedAt}>
+            <PageHeaderTitleRow
+              fetchedAt={fetchedAt}
+              trailing={
+                characters.length > 0 &&
+                selected !== null && (
+                  <TabSegment
+                    options={PARTY_FILTERS}
+                    selected={partyFilter}
+                    onSelect={setPartyFilter}
+                    labelOf={(filter) => PARTY_FILTER_LABELS[filter]}
+                  />
+                )
+              }
+            >
               <Text className="shrink text-lg font-semibold text-text">보스 스케줄러</Text>
             </PageHeaderTitleRow>
           </PageHeader>
@@ -432,31 +450,6 @@ export function BossScreen(): React.JSX.Element {
           </View>
         )}
           
-        {/* 목록에서 무엇을 보는가를 고르는 장치라 콘텐츠다. `n/12`·`season` 배지는 `주간` 섹션
-            헤더가 싣는다. 그 수치가 어느 무리의 것인지 그쪽이 말한다. */}
-        {characters.length > 0 && selected !== null && (
-          <View className="flex-row items-center gap-2 px-4">
-            {(['all', 'solo', 'party'] as const).map((filter) => (
-              <Pressable
-                key={filter}
-                role="button"
-                aria-selected={partyFilter === filter}
-                onPress={() => setPartyFilter(filter)}
-              >
-                <Text
-                  className={
-                    partyFilter === filter
-                      ? 'rounded-full bg-primary-tint px-3 py-1 text-xs font-semibold text-primary-ink'
-                      : 'px-3 text-xs font-medium text-text-muted'
-                  }
-                >
-                  {PARTY_FILTER_LABELS[filter]}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        )}
-
         {characters.length > 0 && selected !== null && (
           <View testID="pull-content" className="gap-4 px-4 pb-4">
             {/* 빈 상태 둘은 **목록 하나**를 보고 판정한다. 무리별로 물으면 검마를 안 잡는

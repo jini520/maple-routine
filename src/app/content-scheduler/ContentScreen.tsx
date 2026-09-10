@@ -27,6 +27,7 @@ import { dailyContentProgress, weeklyContentProgress } from './content-completio
 import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
+import { TabSegment } from '../../components/molecules/TabSegment/TabSegment'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -36,6 +37,13 @@ import { useOpenTab } from '../../hooks/useOpenTab'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { renderDailyContentCard } from './DailyContentCards'
 import { renderWeeklyContentCard } from './WeeklyContentCards'
+
+/** 주기 탭. 값은 스케줄러가 쓰는 주기이고 화면에는 라벨이 선다. */
+const CONTENT_TABS = ['daily', 'weekly'] as const
+const CONTENT_TAB_LABELS: Record<(typeof CONTENT_TABS)[number], string> = {
+  daily: '일간',
+  weekly: '주간',
+}
 
 export function ContentScreen(): React.JSX.Element {
   const {
@@ -202,11 +210,28 @@ export function ContentScreen(): React.JSX.Element {
           // 헤더는 제목 줄 하나다. 레일도 탭도 로딩 카드도 콘텐츠로 내려갔다. `관리` 만
           // 남는 것은 그것이 **다른 페이지로 가는 것**이기 때문이다.
           <PageHeader>
-            {/* 동기화 상태가 드롭다운 줄에서 **제목 옆**으로 올라왔다. 오른쪽
-                끝은 관리 버튼 자리 그대로다. 그쪽은 **가는 곳**, 이쪽은 **상태** 라 성질이 다르다. */}
-            <PageHeaderTitleRow className="justify-between" fetchedAt={fetchedAt}>
+            {/* 오른쪽에 둘이 선다. 주기 탭은 **이 화면에서 무엇을 보는가**이고 `컨텐츠 관리` 는
+                **다른 페이지로 가는 것**이라, 성질이 달라도 자리는 같은 쪽이다.
+
+                이 줄이 이 앱에서 가장 붐빈다. 제목이 일곱 자라 셋을 담으면 남는 폭이 거의
+                없다. 제목에 `shrink` 를 준 것이 그래서이고, 좁은 기기에서 제목이 먼저 줄어든다. */}
+            <PageHeaderTitleRow
+              fetchedAt={fetchedAt}
+              trailing={
+                <View className="flex-row items-center gap-3">
+                  {characters.length > 0 && selected !== null && (
+                    <TabSegment
+                      options={CONTENT_TABS}
+                      selected={activeTab}
+                      onSelect={setActiveTab}
+                      labelOf={(value) => CONTENT_TAB_LABELS[value]}
+                    />
+                  )}
+                  {manualManageButton}
+                </View>
+              }
+            >
               <Text className="shrink text-lg font-semibold text-text">컨텐츠 스케줄러</Text>
-              {manualManageButton}
             </PageHeaderTitleRow>
           </PageHeader>
         }
@@ -230,34 +255,6 @@ export function ContentScreen(): React.JSX.Element {
         {(status === 'idle' || status === 'loading') && characters.length === 0 && (
           <View className="px-4">
             <LoadingState size="page" message="불러오고 있어요" />
-          </View>
-        )}
-
-        {/* 목록에서 무엇을 보는가를 고르는 장치라 콘텐츠다. */}
-        {characters.length > 0 && selected !== null && (
-          <View className="flex-row items-center gap-4 px-4">
-            <Pressable role="button" aria-selected={activeTab === 'daily'} onPress={() => setActiveTab('daily')}>
-              <Text
-                className={
-                  activeTab === 'daily'
-                    ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
-                    : 'px-3 text-sm font-medium text-text-muted'
-                }
-              >
-                일간
-              </Text>
-            </Pressable>
-            <Pressable role="button" aria-selected={activeTab === 'weekly'} onPress={() => setActiveTab('weekly')}>
-              <Text
-                className={
-                  activeTab === 'weekly'
-                    ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
-                    : 'px-3 text-sm font-medium text-text-muted'
-                }
-              >
-                주간
-              </Text>
-            </Pressable>
           </View>
         )}
 

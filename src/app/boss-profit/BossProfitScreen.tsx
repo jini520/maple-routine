@@ -45,6 +45,7 @@ import {
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
+import { TabSegment } from '../../components/molecules/TabSegment/TabSegment'
 import { ValuableDropBadge } from '../../components/molecules/ValuableDropBadge/ValuableDropBadge'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -69,6 +70,13 @@ import {
 import { CrystalSummaryChip } from './HeadlineChips'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 import { ItemRevenuePopover } from './ItemRevenuePopover'
+
+/** 주기 탭. 값은 스토어의 `tab` 이고 화면에는 라벨이 선다. */
+const BOSS_PROFIT_TABS = ['weekly', 'monthly'] as const
+const BOSS_PROFIT_TAB_LABELS: Record<(typeof BOSS_PROFIT_TABS)[number], string> = {
+  weekly: '주간',
+  monthly: '월간',
+}
 
 export function BossProfitScreen(): React.JSX.Element {
   const {
@@ -253,9 +261,19 @@ export function BossProfitScreen(): React.JSX.Element {
     // 헤더는 제목 줄 하나다. 주간/월간 · 기간 이동 · 총 수익 요약은 **이 화면에서 무엇을
     // 보는가**에 딸린 것이라 콘텐츠로 내려갔다.
     <View testID="page-header" className="z-10 px-4" style={{ paddingTop: topSafeAreaPx }}>
-      {/* 제목 하나다. 아이템 가격 입력으로 가는 문은 오른쪽 아래에 떠 있는 원이고
+      {/* 제목과 주기 탭 둘이다. 아이템 가격 입력으로 가는 문은 오른쪽 아래에 떠 있는 원이고
           (`DropPriceFab`), `히스토리` 링크는 자리를 다시 정할 때까지 걷혀 있다. */}
-      <PageHeaderTitleRow fetchedAt={fetchedAt}>
+      <PageHeaderTitleRow
+        fetchedAt={fetchedAt}
+        trailing={
+          <TabSegment
+            options={BOSS_PROFIT_TABS}
+            selected={tab}
+            onSelect={setTab}
+            labelOf={(value) => BOSS_PROFIT_TAB_LABELS[value]}
+          />
+        }
+      >
         <Text className="text-lg font-semibold text-text">보스 수익</Text>
       </PageHeaderTitleRow>
     </View>
@@ -265,32 +283,6 @@ export function BossProfitScreen(): React.JSX.Element {
   // 안쪽 `gap-4` 는 옛 헤더가 쓰던 값 그대로라 보이는 간격이 안 바뀐다.
   const periodSection = (
     <View className="gap-4 px-4">
-        <View className="flex-row items-center gap-4">
-          <Pressable role="button" aria-selected={tab === 'weekly'} onPress={() => setTab('weekly')}>
-            <Text
-              className={
-                tab === 'weekly'
-                  ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
-                  : 'px-3 text-sm font-medium text-text-muted'
-              }
-            >
-              주간
-            </Text>
-          </Pressable>
-          <Pressable role="button" aria-selected={tab === 'monthly'} onPress={() => setTab('monthly')}>
-            <Text
-              className={
-                tab === 'monthly'
-                  ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
-                  : 'px-3 text-sm font-medium text-text-muted'
-              }
-            >
-              월간
-            </Text>
-          </Pressable>
-
-        </View>
-
         <View className="flex-row items-center justify-center gap-4">
           <Pressable
             role="button"

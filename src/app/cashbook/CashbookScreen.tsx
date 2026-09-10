@@ -43,6 +43,7 @@ import { CalendarGrid } from '../../components/molecules/CalendarGrid/CalendarGr
 import { DIFFICULTY_SHORT } from '../../constants/domain/boss-difficulty'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
+import { TabSegment } from '../../components/molecules/TabSegment/TabSegment'
 import { SpeedDial } from '../../components/organisms/SpeedDial/SpeedDial'
 import { FAB_SPACE_PX } from '../../lib/fab-metrics'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
@@ -114,30 +115,11 @@ import { useMonthDays } from './useMonthDays'
 
 const NO_RECORDS: DayRecord[] = []
 
-/** 주간 · 월간. 보스 수익 탭의 알약 그대로다. 고른 값은 기억하지 않는다. 그쪽도 화면 상태다. */
-function PeriodTab(props: {
-  label: string
-  selected: boolean
-  onPress: () => void
-}): React.JSX.Element {
-  return (
-    <Pressable
-      role="button"
-      aria-label={props.label}
-      aria-selected={props.selected}
-      onPress={props.onPress}
-    >
-      <Text
-        className={
-          props.selected
-            ? 'rounded-full bg-primary-tint px-3 py-[5px] text-sm font-semibold text-primary-ink'
-            : 'px-3 text-sm font-medium text-text-muted'
-        }
-      >
-        {props.label}
-      </Text>
-    </Pressable>
-  )
+/** 주간 · 월간. 보스 수익 탭과 같은 부품이다. 고른 값은 기억하지 않는다. 그쪽도 화면 상태다. */
+const PERIOD_TABS = ['weekly', 'monthly'] as const
+const PERIOD_TAB_LABELS: Record<(typeof PERIOD_TABS)[number], string> = {
+  weekly: '주간',
+  monthly: '월간',
 }
 
 /**
@@ -1002,10 +984,19 @@ export function CashbookScreen(): React.JSX.Element {
         // 색만 테마에서 넘기고 컨트롤은 셸이 그대로 받는다.
         onRefresh={() => ledger.reload(['live', 'window', 'enhancement'])}
         header={
-          // 헤더는 제목 줄 하나다. 주간/월간은 **이 화면에서 무엇을 보는가**를 고르는 장치라
-          // 콘텐츠로 내려갔다. 헤더에 담는 것은 제목 · 기준 시각 · 다른 페이지로 가는 것뿐이다.
+          // 제목과 주기 탭 둘이다. 형제 탭인 보스 수익과 같은 자리에 같은 것이 선다.
           <PageHeader>
-            <PageHeaderTitleRow fetchedAt={fetchedAt}>
+            <PageHeaderTitleRow
+              fetchedAt={fetchedAt}
+              trailing={
+                <TabSegment
+                  options={PERIOD_TABS}
+                  selected={isWeekly ? 'weekly' : 'monthly'}
+                  onSelect={(value) => (value === 'weekly' ? showWeekly() : showMonthly())}
+                  labelOf={(value) => PERIOD_TAB_LABELS[value]}
+                />
+              }
+            >
               <Text className="text-lg font-semibold text-text">가계부</Text>
             </PageHeaderTitleRow>
           </PageHeader>
@@ -1021,14 +1012,6 @@ export function CashbookScreen(): React.JSX.Element {
           className="gap-4 px-4"
           style={{ paddingBottom: FAB_SPACE_PX }}
         >
-          {/* 기간의 **단위**를 고른다. 바로 아래 기간 이동과 한 덩어리로 읽히도록 붙여 둔다.
-              왼쪽 정렬인 것은 형제 탭인 보스 수익의 같은 자리와 맞추기 위해서다. 두 화면이 같은
-              `periodKey` 로 기간을 말하는데 컨트롤이 좌우로 갈리면 다른 것으로 읽힌다. */}
-          <View className="flex-row items-center gap-1">
-            <PeriodTab label="주간" selected={isWeekly} onPress={showWeekly} />
-            <PeriodTab label="월간" selected={!isWeekly} onPress={showMonthly} />
-          </View>
-
           <View
             testID="cashbook-period-nav"
             className="flex-row items-center justify-center gap-4"
