@@ -10,13 +10,14 @@ import { act, fireEvent, waitFor } from '@testing-library/react-native'
 import { renderOverlay } from '../../../../components/__tests__/render-atom'
 import type { Notice } from '../../../../types/notice'
 import { probeNexonDetail, probeNexonList } from '../nexon-probe'
-import { probeDetail, probeList } from '../probe'
+import { probeDetail, probeList, probeSunday } from '../probe'
 import { NoticeKindsScreen } from '../NoticeKindsScreen'
 
 jest.mock('../probe', () => ({
   __esModule: true,
   probeList: jest.fn(),
   probeDetail: jest.fn(),
+  probeSunday: jest.fn(),
 }))
 jest.mock('../nexon-probe', () => ({
   __esModule: true,
@@ -33,6 +34,7 @@ const nexonList = jest.mocked(probeNexonList)
 const nexonDetail = jest.mocked(probeNexonDetail)
 const serverList = jest.mocked(probeList)
 const serverDetail = jest.mocked(probeDetail)
+const sunday = jest.mocked(probeSunday)
 
 const 넥슨한건 = {
   notice_id: 149862,
@@ -65,6 +67,24 @@ beforeEach(() => {
     error: null,
     ms: 42,
     data: { items: [notice('game-149862', '서버가 든 공지')], nextCursor: null },
+  })
+  sunday.mockResolvedValue({
+    url: 'https://mapleroutine.store/v1/sunday-maple?limit=20',
+    status: 200,
+    error: null,
+    ms: 20,
+    data: {
+      items: [
+        {
+          id: 'event-1368',
+          title: '스페셜 썬데이 메이플',
+          publishedAt: '2026-09-05T00:00:00.000Z',
+          startsAt: '2026-09-06T00:00:00.000Z',
+          endsAt: '2026-09-06T14:59:00.000Z',
+          blocks: [{ type: 'image', src: 'https://lwi.nexon.com/sunday.png' }],
+        },
+      ],
+    },
   })
   serverDetail.mockResolvedValue({
     url: 'https://mapleroutine.store/v1/notices/game-149862',
@@ -257,7 +277,25 @@ describe('한 건을 펼치기', () => {
 
   // 상세에 blocks 가 없으면 서버가 아직 옛 코드다. 그 사실이 화면에 보여야 한다.
   it('서버 상세에 블록이 없으면 없다고 말한다', async () => {
-    serverDetail.mockResolvedValue({
+    sunday.mockResolvedValue({
+    url: 'https://mapleroutine.store/v1/sunday-maple?limit=20',
+    status: 200,
+    error: null,
+    ms: 20,
+    data: {
+      items: [
+        {
+          id: 'event-1368',
+          title: '스페셜 썬데이 메이플',
+          publishedAt: '2026-09-05T00:00:00.000Z',
+          startsAt: '2026-09-06T00:00:00.000Z',
+          endsAt: '2026-09-06T14:59:00.000Z',
+          blocks: [{ type: 'image', src: 'https://lwi.nexon.com/sunday.png' }],
+        },
+      ],
+    },
+  })
+  serverDetail.mockResolvedValue({
       url: 'https://mapleroutine.store/v1/notices/game-149862',
       status: 200,
       error: null,
@@ -275,5 +313,64 @@ describe('한 건을 펼치기', () => {
     })
 
     expect(view.getByText(/blocks 가 없다/)).toBeTruthy()
+  })
+})
+
+// 썬데이는 일요일 하루만 넥슨 목록에 뜨고 지나면 상세도 400 이다. 폴러가 그날 잡아 둔 것이
+// 유일한 사본이라, 그것을 눈으로 볼 자리가 필요하다.
+describe('썬데이 기록', () => {
+  it('출처를 고르면 기록을 부른다', async () => {
+    const view = await renderOverlay(<NoticeKindsScreen />)
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('썬데이 기록 보기'))
+    })
+
+    expect(sunday).toHaveBeenCalled()
+    expect(view.getByText('스페셜 썬데이 메이플')).toBeTruthy()
+  })
+
+  // 기록의 이름은 «어느 일요일이었나» 다. 등록일이 아니라 이 값이 축이다.
+  it('이벤트 기간을 앞줄에 세운다', async () => {
+    const view = await renderOverlay(<NoticeKindsScreen />)
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('썬데이 기록 보기'))
+    })
+
+    expect(view.getByText(/2026-09-06T00:00:00.000Z ~ 2026-09-06T14:59:00.000Z/)).toBeTruthy()
+  })
+
+  // 이 목록은 본문을 함께 실어 온다. 펼치는 데 조회가 더 안 나가야 한다.
+  it('펼쳐도 상세를 다시 안 부른다', async () => {
+    const view = await renderOverlay(<NoticeKindsScreen />)
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('썬데이 기록 보기'))
+    })
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('스페셜 썬데이 메이플 펼치기'))
+    })
+
+    expect(serverDetail).not.toHaveBeenCalled()
+    expect(view.getByTestId('notice-image').props.source).toEqual({
+      uri: 'https://lwi.nexon.com/sunday.png',
+    })
+  })
+
+  it('아직 쌓인 것이 없으면 왜 없는지 말한다', async () => {
+    sunday.mockResolvedValue({
+      url: 'https://mapleroutine.store/v1/sunday-maple?limit=20',
+      status: 200,
+      error: null,
+      ms: 20,
+      data: { items: [] },
+    })
+    const view = await renderOverlay(<NoticeKindsScreen />)
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('썬데이 기록 보기'))
+    })
+
+    expect(view.getByText(/일요일에 폴러가 잡아야 찬다/)).toBeTruthy()
   })
 })

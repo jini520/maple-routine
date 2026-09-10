@@ -39,9 +39,22 @@ import {
   type NexonProbe,
   type NexonRow,
 } from './nexon-probe'
-import { probeDetail, probeList, type ProbeResult, type RawNotice } from './probe'
+import {
+  probeDetail,
+  probeList,
+  probeSunday,
+  type ProbeResult,
+  type RawNotice,
+  type RawSunday,
+} from './probe'
 
-type Source = 'nexon' | 'server'
+/**
+ * `sunday` 는 분류가 아니라 **우리 서버만 답할 수 있는 목록**이다.
+ *
+ * 썬데이 메이플은 일요일 하루만 넥슨 목록에 뜨고 지나면 상세도 400 이라, 폴러가 그날 잡아
+ * 둔 것이 유일한 사본이다. 그래서 넥슨 쪽에는 이 갈래가 없다.
+ */
+type Source = 'nexon' | 'server' | 'sunday'
 
 /**
  * 미리보기에서 한 번에 그리는 블록 수.
@@ -186,6 +199,7 @@ export function NoticeKindsScreen(): React.JSX.Element {
   const [source, setSource] = useState<Source>('nexon')
   const [kind, setKind] = useState<NexonNoticeKind>('game')
   const [nexon, setNexon] = useState<NexonProbe<NexonRow[]> | null>(null)
+  const [sunday, setSunday] = useState<ProbeResult<{ items: RawSunday[] }> | null>(null)
   const [server, setServer] = useState<ProbeResult<{
     items: RawNotice[]
     nextCursor: string | null
@@ -198,6 +212,7 @@ export function NoticeKindsScreen(): React.JSX.Element {
   const reset = (): void => {
     setNexon(null)
     setServer(null)
+    setSunday(null)
     setOpenKey(null)
   }
 
@@ -206,6 +221,10 @@ export function NoticeKindsScreen(): React.JSX.Element {
     if (source === 'nexon') {
       void probeNexonList(kind).then((next) => {
         if (alive) setNexon(next)
+      })
+    } else if (source === 'sunday') {
+      void probeSunday().then((next) => {
+        if (alive) setSunday(next)
       })
     } else {
       void probeList(kind).then((next) => {
@@ -219,10 +238,24 @@ export function NoticeKindsScreen(): React.JSX.Element {
 
   const nexonRows = nexon?.data ?? []
   const serverRows = server?.data?.items ?? []
-  const pending = source === 'nexon' ? nexon === null : server === null
-  const error = source === 'nexon' ? nexon?.error : server?.error
-  const count = source === 'nexon' ? nexonRows.length : serverRows.length
-  const path = source === 'nexon' ? nexon?.path : server?.url
+  const sundayRows = sunday?.data?.items ?? []
+  const current =
+    source === 'nexon'
+      ? { pending: nexon === null, error: nexon?.error, count: nexonRows.length, path: nexon?.path }
+      : source === 'sunday'
+        ? {
+            pending: sunday === null,
+            error: sunday?.error,
+            count: sundayRows.length,
+            path: sunday?.url,
+          }
+        : {
+            pending: server === null,
+            error: server?.error,
+            count: serverRows.length,
+            path: server?.url,
+          }
+  const { pending, error, count, path } = current
 
   return (
     <ScreenScroll
@@ -275,9 +308,19 @@ export function NoticeKindsScreen(): React.JSX.Element {
               setSource('server')
             }}
           />
+          <Chip
+            label="썬데이 기록"
+            on={source === 'sunday'}
+            onPress={() => {
+              if (source === 'sunday') return
+              reset()
+              setSource('sunday')
+            }}
+          />
         </View>
 
-        <View className="flex-row flex-wrap gap-2">
+        {/* 썬데이 기록은 분류가 없다. 우리 서버가 이벤트에서 골라 낸 한 갈래뿐이다. */}
+        <View className={`flex-row flex-wrap gap-2 ${source === 'sunday' ? 'hidden' : ''}`}>
           {KINDS.map((one) => (
             <Chip
               key={one.kind}
@@ -306,7 +349,9 @@ export function NoticeKindsScreen(): React.JSX.Element {
             <Text className="pt-1 text-xs text-text-disabled">
               {source === 'nexon'
                 ? '넥슨이 이 분류로 주는 것이 지금 없다.'
-                : '조회는 됐고 서버에 이 분류가 없다. 서버 배포와 첫 폴링이 끝나야 찬다.'}
+                : source === 'sunday'
+                  ? '아직 쌓인 썬데이가 없다. 일요일에 폴러가 잡아야 찬다. 지난 회차는 넥슨이 안 준다.'
+                  : '조회는 됐고 서버에 이 분류가 없다. 서버 배포와 첫 폴링이 끝나야 찬다.'}
             </Text>
           )}
         </Card>
@@ -346,6 +391,55 @@ export function NoticeKindsScreen(): React.JSX.Element {
                   {openKey === key && row.notice_id !== undefined && (
                     <NexonDetail kind={kind} noticeId={row.notice_id} />
                   )}
+                </View>
+              )
+            })}
+          </Card>
+        )}
+
+        {source === 'sunday' && sundayRows.length > 0 && (
+          <Card className="px-4">
+            {sundayRows.map((row, index) => {
+              const key = row.id ?? String(index)
+              return (
+                <View key={key} className={index === 0 ? '' : 'border-t border-border'}>
+                  <Pressable
+                    role="button"
+                    aria-label={`${row.title ?? key} 펼치기`}
+                    onPress={() => setOpenKey(openKey === key ? null : key)}
+                    className="flex-row items-center gap-2 py-3"
+                  >
+                    <View className="shrink gap-0.5">
+                      <Text className="text-sm text-text">{row.title ?? '(title 없음)'}</Text>
+                      {/* 기록의 이름은 «어느 일요일이었나» 다. 등록일이 아니라 이 값이 축이다. */}
+                      <Meta>
+                        {`${row.startsAt ?? '(기간 없음)'} ~ ${row.endsAt ?? '?'}`}
+                      </Meta>
+                      <Meta>{`${row.id ?? '(id 없음)'} · 등록 ${row.publishedAt ?? '?'}`}</Meta>
+                    </View>
+                    {openKey === key ? (
+                      <ChevronDownIcon
+                        className="ml-auto h-4 w-4 shrink-0 text-text-disabled"
+                        strokeWidth={2}
+                        aria-hidden
+                      />
+                    ) : (
+                      <ChevronRightIcon
+                        className="ml-auto h-4 w-4 shrink-0 text-text-disabled"
+                        strokeWidth={2}
+                        aria-hidden
+                      />
+                    )}
+                  </Pressable>
+                  {/* 이 목록은 본문을 함께 실어 온다. 펼치는 데 조회가 더 안 나간다. */}
+                  {openKey === key &&
+                    (row.blocks === undefined ? (
+                      <Text className="pb-3 text-xs text-text-disabled">(blocks 가 없다)</Text>
+                    ) : (
+                      <View className="pb-3">
+                        <NoticeBlocks blocks={row.blocks} />
+                      </View>
+                    ))}
                 </View>
               )
             })}

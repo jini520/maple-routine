@@ -19,6 +19,22 @@ import type { Notice, NoticeKind } from '../../../types/notice'
  */
 export type RawNotice = Partial<Notice> & { id?: string }
 
+/**
+ * 썬데이 기록 한 줄. 서버가 주는 것 그대로다.
+ *
+ * `Notice` 와 달리 **기간을 든다.** 기록에서 가장 중요한 값이 «어느 일요일이었나» 인데
+ * `publishedAt` 은 등록 시각이라 그것과 다를 수 있다.
+ */
+export interface RawSunday {
+  id?: string
+  title?: string
+  publishedAt?: string
+  startsAt?: string | null
+  endsAt?: string | null
+  link?: string
+  blocks?: Notice['blocks']
+}
+
 const BASE_URL = 'https://mapleroutine.store/v1'
 const TIMEOUT_MS = 10_000
 
@@ -69,6 +85,16 @@ export function probeList(
   limit = 50,
 ): Promise<ProbeResult<{ items: RawNotice[]; nextCursor: string | null }>> {
   return getJson(`/notices?limit=${limit}&kind=${kind}`)
+}
+
+/**
+ * 썬데이 메이플 기록. **넥슨이 안 들고 있는 것을 우리 서버가 든다.**
+ *
+ * 썬데이는 일요일 하루만 넥슨 목록에 뜨고 지나면 상세도 400 이라, 폴러가 그날 잡아 둔 것이
+ * 유일한 사본이다. 이 목록은 `blocks` 를 함께 싣는다(본문이 이미지 한두 장이라 가볍다).
+ */
+export function probeSunday(limit = 20): Promise<ProbeResult<{ items: RawSunday[] }>> {
+  return getJson(`/sunday-maple?limit=${limit}`)
 }
 
 /** 한 건의 상세. 여기에만 `blocks` 가 실려 온다. */
