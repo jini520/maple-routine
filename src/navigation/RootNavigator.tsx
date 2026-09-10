@@ -13,6 +13,8 @@ import { SettingsFeatureGuideListScreen } from '../app/settings/SettingsFeatureG
 import { SettingsFeatureGuideScreen } from '../app/settings/SettingsFeatureGuideScreen'
 import { SettingsNoticeDetailScreen } from '../app/settings/SettingsNoticeDetailScreen'
 import { SettingsNoticesScreen } from '../app/settings/SettingsNoticesScreen'
+// ⚠️ 임시 점검 화면. 지울 때 이 줄과 아래 등록을 함께 걷는다.
+import { NoticeKindsScreen } from '../app/settings/debug/NoticeKindsScreen'
 import { SettingsPrivacyScreen } from '../app/settings/SettingsPrivacyScreen'
 import { SettingsReleaseNotesScreen } from '../app/settings/SettingsReleaseNotesScreen'
 import { ItemSplitScreen } from '../app/utility/ItemSplitScreen'
@@ -46,6 +48,7 @@ const STACK_SCREENS = {
   SettingsCharacters: SettingsCharactersScreen,
   SettingsNotices: SettingsNoticesScreen,
   SettingsNoticeDetail: SettingsNoticeDetailScreen,
+  SettingsDebugNoticeKinds: NoticeKindsScreen,
   UtilityItemSplit: ItemSplitScreen,
 } as const satisfies Record<StackRouteName, React.ComponentType>
 

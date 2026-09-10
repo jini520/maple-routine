@@ -151,6 +151,12 @@ export type RootStackParamList = {
   SettingsNotices: undefined
   /** 공지 상세. 알림 탭이 곧장 여는 자리이고 목록에서도 들어간다. */
   SettingsNoticeDetail: NoticeDetailParams
+  /**
+   * ⚠️ 임시 점검 화면. 서버가 분류별로 무엇을 들고 있는지 눈으로 본다.
+   *
+   * 폐기 절차는 `app/settings/debug/NoticeKindsScreen.tsx` 머리에 적혀 있다.
+   */
+  SettingsDebugNoticeKinds: undefined
 }
 
 export type StackRouteName = Exclude<

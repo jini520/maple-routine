@@ -130,6 +130,8 @@ const ROW_LABELS = [
   // 무엇이 바뀌었나보다 앞이다. 알림 스위치도 이 페이지 안에 산다.
   '공지사항',
   '개발 노트',
+  // ⚠️ 임시 점검 행. `settings/debug/` 를 지울 때 이 줄도 함께 걷는다.
+  '공지 분류 점검 (임시)',
   '계정 및 데이터',
   '앱 정보',
 ]
@@ -199,7 +201,7 @@ describe('SettingsScreen', () => {
   // 본화면은 카드 둘. **행은 5 → 6이 됐다**:
   // 사용법 설명의 원천이 기능 카탈로그로 옮겨오면서 그 입구가 필요해졌다. `기능 설명`이
   // `개발 노트` **위**인 것은 *"이 앱을 어떻게 쓰나"* 가 더 자주 묻는 질문이기 때문이다.
-  it('행이 정확히 8개이고 순서가 값 카드 → 이동 카드다', async () => {
+  it('행이 정확히 9개이고 순서가 값 카드 → 이동 카드다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
 
     for (const label of ROW_LABELS) expect(view.getByText(label)).toBeTruthy()
@@ -208,7 +210,7 @@ describe('SettingsScreen', () => {
 
   // **이 개편의 핵심.** 두 무리를 가르는 것은 카드 경계뿐이다. 한 카드에 다 넣는 시안은
   // "성격이 다른 것이 한 덩어리로 읽힌다"는 문제를 그대로 둔다.
-  it('값을 고르는 세 행과 화면이 넘어가는 다섯 행이 서로 다른 카드에 있다', async () => {
+  it('값을 고르는 세 행과 화면이 넘어가는 여섯 행이 서로 다른 카드에 있다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
 
     const cards = view.getAllByTestId('settings-card')
@@ -226,6 +228,8 @@ describe('SettingsScreen', () => {
       '기능 설명',
       '공지사항',
       '개발 노트',
+      // ⚠️ 임시 점검 행. `settings/debug/` 를 지울 때 이 줄도 함께 걷는다.
+      '공지 분류 점검 (임시)',
       '계정 및 데이터',
       '앱 정보',
     ])
