@@ -299,6 +299,13 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
     target: { kind: 'push', route: 'SettingsNoticeDetail' },
     origin: 'rn',
   },
+  // ⚠️ 임시 점검 화면. 지울 때 이 행도 함께 걷는다.
+  {
+    path: '/settings/debug/notice-kinds',
+    screen: 'NoticeKindsScreen',
+    target: { kind: 'push', route: 'SettingsDebugNoticeKinds' },
+    origin: 'rn',
+  },
 ]
 
 /** 하위 페이지 이름. `RootNavigator` 가 이 목록으로 `<Stack.Screen>` 을 그린다. */
