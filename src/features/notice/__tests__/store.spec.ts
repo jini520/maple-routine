@@ -18,45 +18,70 @@ import { subscribeToPushTopic, unsubscribeFromPushTopic } from '../../../native/
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 import {
   getNoticeSubscribed,
+  getNoticeSubscriptions,
   setNotificationPermissionAsked,
 } from '../../../storage/notice-settings'
-import { NOTICE_TOPIC, useNoticeStore } from '../store'
+import { NO_SUBSCRIPTIONS } from '../../../types/notice'
+import { useNoticeStore } from '../store'
 
 const subscribe = jest.mocked(subscribeToPushTopic)
 const unsubscribe = jest.mocked(unsubscribeFromPushTopic)
 const hasPermission = jest.mocked(hasNotificationPermission)
 const requestPermission = jest.mocked(requestNotificationPermission)
 
+let prefs: ReturnType<typeof installFakePreferences>
+
 beforeEach(async () => {
-  const prefs = installFakePreferences()
+  prefs = installFakePreferences()
   await prefs.remove('noticeSubscribed')
+  await prefs.remove('noticeSubscriptions')
   await prefs.remove('notificationPermissionAsked')
   jest.clearAllMocks()
   subscribe.mockResolvedValue(undefined)
   unsubscribe.mockResolvedValue(undefined)
   hasPermission.mockResolvedValue(true)
   requestPermission.mockResolvedValue(true)
-  useNoticeStore.setState({ subscribed: false, blockedByPermission: false })
+  useNoticeStore.setState({ subscriptions: NO_SUBSCRIPTIONS, blockedByPermission: false })
 })
 
 describe('구독 토글', () => {
-  it('켜면 토픽을 구독하고 저장한다', async () => {
-    await useNoticeStore.getState().setSubscribed(true)
+  it('켜면 그 토픽을 구독하고 저장한다', async () => {
+    await useNoticeStore.getState().setSubscribed('game', true)
 
-    expect(subscribe).toHaveBeenCalledWith(NOTICE_TOPIC)
-    expect(useNoticeStore.getState().subscribed).toBe(true)
-    await expect(getNoticeSubscribed()).resolves.toBe(true)
+    expect(subscribe).toHaveBeenCalledWith('notice-game')
+    expect(useNoticeStore.getState().subscriptions.game).toBe(true)
+    await expect(getNoticeSubscriptions()).resolves.toMatchObject({ game: true })
   })
 
   it('끄면 해제하고 저장한다', async () => {
-    await useNoticeStore.getState().setSubscribed(true)
+    await useNoticeStore.getState().setSubscribed('game', true)
     jest.clearAllMocks()
 
-    await useNoticeStore.getState().setSubscribed(false)
+    await useNoticeStore.getState().setSubscribed('game', false)
 
-    expect(unsubscribe).toHaveBeenCalledWith(NOTICE_TOPIC)
-    expect(useNoticeStore.getState().subscribed).toBe(false)
-    await expect(getNoticeSubscribed()).resolves.toBe(false)
+    expect(unsubscribe).toHaveBeenCalledWith('notice-game')
+    expect(useNoticeStore.getState().subscriptions.game).toBe(false)
+    await expect(getNoticeSubscriptions()).resolves.toMatchObject({ game: false })
+  })
+
+  // 업데이트와 이벤트는 한 토글이지만 토픽도 하나다. 둘을 따로 구독하면 썬데이 알림이 두 번 온다.
+  it('업데이트·이벤트는 토픽 하나를 쓴다', async () => {
+    await useNoticeStore.getState().setSubscribed('updateEvent', true)
+
+    expect(subscribe).toHaveBeenCalledTimes(1)
+    expect(subscribe).toHaveBeenCalledWith('notice-update-event')
+  })
+
+  it('토글끼리 서로를 안 건드린다', async () => {
+    await useNoticeStore.getState().setSubscribed('app', true)
+    await useNoticeStore.getState().setSubscribed('cashshop', true)
+
+    expect(useNoticeStore.getState().subscriptions).toEqual({
+      app: true,
+      game: false,
+      updateEvent: false,
+      cashshop: true,
+    })
   })
 
   // FCM 구독이 실패했는데 켜졌다고 저장하면, 스위치는 켜져 있고 알림은 안 온다.
@@ -64,31 +89,75 @@ describe('구독 토글', () => {
   it('토픽 구독이 실패하면 저장도 상태도 안 바뀐다', async () => {
     subscribe.mockRejectedValue(new Error('network'))
 
-    await expect(useNoticeStore.getState().setSubscribed(true)).rejects.toThrow('network')
+    await expect(useNoticeStore.getState().setSubscribed('game', true)).rejects.toThrow('network')
 
-    expect(useNoticeStore.getState().subscribed).toBe(false)
-    await expect(getNoticeSubscribed()).resolves.toBe(false)
+    expect(useNoticeStore.getState().subscriptions.game).toBe(false)
+    await expect(getNoticeSubscriptions()).resolves.toMatchObject({ game: false })
   })
 })
 
 describe('복원', () => {
   it('저장된 값을 읽어 상태에 올린다', async () => {
-    await useNoticeStore.getState().setSubscribed(true)
-    useNoticeStore.setState({ subscribed: false })
+    await useNoticeStore.getState().setSubscribed('cashshop', true)
+    useNoticeStore.setState({ subscriptions: NO_SUBSCRIPTIONS })
 
     await useNoticeStore.getState().restore()
 
-    expect(useNoticeStore.getState().subscribed).toBe(true)
+    expect(useNoticeStore.getState().subscriptions.cashshop).toBe(true)
+  })
+
+  // 토글이 하나였던 시절의 값이다. 그 사람은 `notice` 토픽을 이미 구독하고 있고, 그 토픽이
+  // 지금은 앱 공지 자리다. 물려받지 않으면 스위치가 꺼져 보이는데 알림은 계속 온다.
+  it('옛 값이 켜져 있으면 앱 공지로 이어받는다', async () => {
+    await prefs.set('noticeSubscribed', 'on')
+
+    await useNoticeStore.getState().restore()
+
+    expect(useNoticeStore.getState().subscriptions).toEqual({
+      app: true,
+      game: false,
+      updateEvent: false,
+      cashshop: false,
+    })
+  })
+
+  // OTA 를 회수하면 옛 코드가 다시 돈다. 그 코드는 새 칸을 모른다.
+  it('앱 공지는 옛 칸에도 함께 적는다', async () => {
+    await useNoticeStore.getState().setSubscribed('app', true)
+
+    await expect(getNoticeSubscribed()).resolves.toBe(true)
   })
 
   // 복원은 저장된 사실을 읽는 것이지 새로 구독하는 것이 아니다.
   it('복원이 토픽을 다시 구독하지 않는다', async () => {
-    await useNoticeStore.getState().setSubscribed(true)
+    await useNoticeStore.getState().setSubscribed('game', true)
     jest.clearAllMocks()
 
     await useNoticeStore.getState().restore()
 
     expect(subscribe).not.toHaveBeenCalled()
+  })
+})
+
+describe('권한을 허용한 자리에서 켜는 기본 묶음', () => {
+  // 패치 날 이벤트 5건과 캐시샵 4건이 같은 분에 올라온다(실측). 묻지도 않고 켜면 그날 알림이
+  // 아홉 번 울린다.
+  it('앱 공지와 게임 공지만 켠다', async () => {
+    await useNoticeStore.getState().subscribeDefaults()
+
+    expect(useNoticeStore.getState().subscriptions).toEqual({
+      app: true,
+      game: true,
+      updateEvent: false,
+      cashshop: false,
+    })
+    expect(subscribe).toHaveBeenCalledTimes(2)
+  })
+
+  it('안 켜는 것은 해제도 안 부른다', async () => {
+    await useNoticeStore.getState().subscribeDefaults()
+
+    expect(unsubscribe).not.toHaveBeenCalled()
   })
 })
 
@@ -99,18 +168,18 @@ describe('권한이 없는 채로 켜려 할 때', () => {
     hasPermission.mockResolvedValue(false)
     await setNotificationPermissionAsked()
 
-    await useNoticeStore.getState().setSubscribed(true)
+    await useNoticeStore.getState().setSubscribed('game', true)
 
     expect(subscribe).not.toHaveBeenCalled()
-    expect(useNoticeStore.getState().subscribed).toBe(false)
+    expect(useNoticeStore.getState().subscriptions.game).toBe(false)
     expect(useNoticeStore.getState().blockedByPermission).toBe(true)
   })
 
   it('권한이 있으면 막지 않는다', async () => {
     hasPermission.mockResolvedValue(true)
-  requestPermission.mockResolvedValue(true)
+    requestPermission.mockResolvedValue(true)
 
-    await useNoticeStore.getState().setSubscribed(true)
+    await useNoticeStore.getState().setSubscribed('game', true)
 
     expect(subscribe).toHaveBeenCalled()
     expect(useNoticeStore.getState().blockedByPermission).toBe(false)
@@ -120,7 +189,7 @@ describe('권한이 없는 채로 켜려 할 때', () => {
   it('끄는 길은 권한을 안 본다', async () => {
     hasPermission.mockResolvedValue(false)
 
-    await useNoticeStore.getState().setSubscribed(false)
+    await useNoticeStore.getState().setSubscribed('game', false)
 
     expect(unsubscribe).toHaveBeenCalled()
     expect(hasPermission).not.toHaveBeenCalled()
@@ -133,7 +202,7 @@ describe('한 번도 안 물은 채로 켤 때', () => {
   it('설정으로 보내지 않고 직접 묻는다', async () => {
     hasPermission.mockResolvedValue(false)
 
-    await useNoticeStore.getState().setSubscribed(true)
+    await useNoticeStore.getState().setSubscribed('game', true)
 
     expect(requestPermission).toHaveBeenCalledTimes(1)
     expect(useNoticeStore.getState().blockedByPermission).toBe(false)
@@ -143,17 +212,17 @@ describe('한 번도 안 물은 채로 켤 때', () => {
     hasPermission.mockResolvedValue(false)
     requestPermission.mockResolvedValue(true)
 
-    await useNoticeStore.getState().setSubscribed(true)
+    await useNoticeStore.getState().setSubscribed('game', true)
 
     expect(subscribe).toHaveBeenCalled()
-    expect(useNoticeStore.getState().subscribed).toBe(true)
+    expect(useNoticeStore.getState().subscriptions.game).toBe(true)
   })
 
   it('물었는데 거부하면 막힌다', async () => {
     hasPermission.mockResolvedValue(false)
     requestPermission.mockResolvedValue(false)
 
-    await useNoticeStore.getState().setSubscribed(true)
+    await useNoticeStore.getState().setSubscribed('game', true)
 
     expect(subscribe).not.toHaveBeenCalled()
     expect(useNoticeStore.getState().blockedByPermission).toBe(true)
@@ -164,7 +233,7 @@ describe('한 번도 안 물은 채로 켤 때', () => {
     hasPermission.mockResolvedValue(false)
     await setNotificationPermissionAsked()
 
-    await useNoticeStore.getState().setSubscribed(true)
+    await useNoticeStore.getState().setSubscribed('game', true)
 
     expect(requestPermission).not.toHaveBeenCalled()
     expect(useNoticeStore.getState().blockedByPermission).toBe(true)

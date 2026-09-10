@@ -29,6 +29,7 @@ const remote = jest.mocked(fetchNotice)
 
 const 점검: Notice = {
   id: 'a',
+  kind: 'app',
   title: '점검 안내',
   body: '9월 8일 02시부터 06시까지 점검합니다.',
   publishedAt: '2026-09-07T12:00:00Z',

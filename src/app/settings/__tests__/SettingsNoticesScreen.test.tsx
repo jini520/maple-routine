@@ -8,6 +8,8 @@ import { act, fireEvent, waitFor } from '@testing-library/react-native'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { useNoticeStore } from '../../../features/notice/store'
+import { NOTICE_TOPICS } from '../../../features/notice/topics'
+import { NO_SUBSCRIPTIONS } from '../../../types/notice'
 import { fetchNotices } from '../../../server/notices'
 import { getNotices, mergeNotices } from '../../../storage/notices'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
@@ -32,7 +34,7 @@ const navigate = jest.fn()
 const goBack = jest.fn()
 
 function notice(id: string, title: string, publishedAt: string): Notice {
-  return { id, title, body: `${id} 본문`, publishedAt }
+  return { id, kind: 'app', title, body: `${id} 본문`, publishedAt }
 }
 
 beforeEach(() => {
@@ -42,41 +44,46 @@ beforeEach(() => {
   merge.mockResolvedValue(undefined)
   jest.mocked(useSettingsNavigation).mockReturnValue({ navigate, goBack } as never)
   useNoticeStore.setState({
-    subscribed: false,
+    subscriptions: NO_SUBSCRIPTIONS,
     blockedByPermission: false,
     setSubscribed: jest.fn().mockResolvedValue(undefined),
   })
 })
 
 describe('구독 스위치', () => {
-  it('이 화면 안에 있다', async () => {
+  it('네 토글이 다 있다', async () => {
     const view = await renderOverlay(<SettingsNoticesScreen />)
 
-    expect(view.getByLabelText('공지 알림')).toBeTruthy()
+    for (const topic of NOTICE_TOPICS) {
+      expect(view.getByLabelText(`${topic.label} 알림`)).toBeTruthy()
+    }
   })
 
   it('꺼져 있으면 켜는 쪽으로 부른다', async () => {
     const setSubscribed = jest.fn().mockResolvedValue(undefined)
-    useNoticeStore.setState({ subscribed: false, setSubscribed })
+    useNoticeStore.setState({ subscriptions: NO_SUBSCRIPTIONS, setSubscribed })
     const view = await renderOverlay(<SettingsNoticesScreen />)
 
     await act(async () => {
-      fireEvent.press(view.getByLabelText('공지 알림'))
+      fireEvent.press(view.getByLabelText('게임 공지사항 알림'))
     })
 
-    expect(setSubscribed).toHaveBeenCalledWith(true)
+    expect(setSubscribed).toHaveBeenCalledWith('game', true)
   })
 
   it('켜져 있으면 끄는 쪽으로 부른다', async () => {
     const setSubscribed = jest.fn().mockResolvedValue(undefined)
-    useNoticeStore.setState({ subscribed: true, setSubscribed })
+    useNoticeStore.setState({
+      subscriptions: { ...NO_SUBSCRIPTIONS, cashshop: true },
+      setSubscribed,
+    })
     const view = await renderOverlay(<SettingsNoticesScreen />)
 
     await act(async () => {
-      fireEvent.press(view.getByLabelText('공지 알림'))
+      fireEvent.press(view.getByLabelText('캐시샵 알림'))
     })
 
-    expect(setSubscribed).toHaveBeenCalledWith(false)
+    expect(setSubscribed).toHaveBeenCalledWith('cashshop', false)
   })
 })
 

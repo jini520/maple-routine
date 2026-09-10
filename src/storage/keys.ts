@@ -38,6 +38,17 @@ export const STORAGE_KEYS = {
   // `KEEP_KEYS` 에 넣는다. 지워지면 구독은 FCM 쪽에 남아 있는데 앱은 껐다고 믿어, 스위치가
   // 꺼져 있는데 알림이 오는 상태가 된다.
   noticeSubscribed: 'noticeSubscribed',
+  // 구독 토글 넷의 상태. `{ app, game, updateEvent, cashshop }` JSON 한 칸이다.
+  //
+  // 키를 넷으로 안 쪼개는 것은 읽는 쪽이 언제나 넷을 한 번에 쓰기 때문이다(설정 화면이 넷을
+  // 함께 그리고 스토어가 부팅 때 한 번 읽는다).
+  //
+  // 이 칸이 없으면 위 `noticeSubscribed` 에서 `app` 만 물려받는다. 토글이 하나였던 시절의
+  // 값이고, 그것이 앱 공지 자리로 이어진다.
+  //
+  // `KEEP_KEYS` 에 넣는다. 지워지면 구독은 FCM 쪽에 남아 있는데 앱은 껐다고 믿어, 스위치가
+  // 꺼져 있는데 알림이 오는 상태가 된다.
+  noticeSubscriptions: 'noticeSubscriptions',
   // 알림 권한을 **물어본 적 있는가**. OS 에 물어서는 이 값을 알 수 없다. 안드로이드의 `denied` 는
   // 거부했다와 아직 안 물었다를 구분해 주지 않는 상태가 있고, 그것을 안 물었다로 읽으면 거부한
   // 사용자에게 팝업이 계속 뜬다.

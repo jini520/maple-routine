@@ -10,7 +10,7 @@ beforeEach(async () => {
 })
 
 function notice(id: string, publishedAt: string, body = '본문'): Notice {
-  return { id, title: `공지 ${id}`, body, publishedAt }
+  return { id, kind: 'app', title: `공지 ${id}`, body, publishedAt }
 }
 
 describe('공지 저장', () => {

@@ -21,6 +21,7 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { formatNoticeDate } from '../../features/notice/format'
 import { useNoticeStore } from '../../features/notice/store'
+import { NOTICE_TOPICS } from '../../features/notice/topics'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { fetchNotices } from '../../server/notices'
 import { getNotices, mergeNotices } from '../../storage/notices'
@@ -32,12 +33,16 @@ import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
  *
  * 공용 컴포넌트로 안 뽑는다. 소비자가 둘뿐이라 뽑으면 자리만 하나 늘고 규칙은 안 준다.
  */
-function SubscribeToggle(props: { on: boolean; onToggle: () => void }): React.JSX.Element {
+function SubscribeToggle(props: {
+  on: boolean
+  label: string
+  onToggle: () => void
+}): React.JSX.Element {
   return (
     <Pressable
       role="switch"
       aria-checked={props.on}
-      aria-label="공지 알림"
+      aria-label={props.label}
       onPress={props.onToggle}
       className="ml-auto shrink-0 flex-row items-center"
     >
@@ -55,7 +60,7 @@ function SubscribeToggle(props: { on: boolean; onToggle: () => void }): React.JS
 
 export function SettingsNoticesScreen(): React.JSX.Element {
   const navigation = useSettingsNavigation()
-  const subscribed = useNoticeStore((state) => state.subscribed)
+  const subscriptions = useNoticeStore((state) => state.subscriptions)
   const setSubscribed = useNoticeStore((state) => state.setSubscribed)
   const blockedByPermission = useNoticeStore((state) => state.blockedByPermission)
   const [notices, setNotices] = useState<Notice[]>([])
@@ -104,22 +109,26 @@ export function SettingsNoticesScreen(): React.JSX.Element {
     >
       <View className="gap-3 px-4 pb-4" testID="screen-SettingsNotices">
         <Card className="px-6">
-          <View className="flex-row items-center py-4">
-            <View className="shrink">
-              <Text className="text-sm text-text">공지 알림</Text>
-              <Text className="text-xs text-text-disabled">
-                점검과 업데이트 소식을 알림으로 받아요
-              </Text>
+          {NOTICE_TOPICS.map((topic, index) => (
+            <View
+              key={topic.key}
+              className={`flex-row items-center py-4 ${index === 0 ? '' : SETTINGS_ROW_DIVIDER_CLASS}`}
+            >
+              <View className="shrink">
+                <Text className="text-sm text-text">{topic.label}</Text>
+                <Text className="text-xs text-text-disabled">{topic.description}</Text>
+              </View>
+              <SubscribeToggle
+                on={subscriptions[topic.key]}
+                label={`${topic.label} 알림`}
+                onToggle={() => {
+                  // 실패는 여기서 삼킨다. 스위치는 스토어 값을 그리므로 실패하면 안 켜진 채로
+                  // 남고, 그 자체가 사용자에게 보이는 결과다.
+                  void setSubscribed(topic.key, !subscriptions[topic.key]).catch(() => undefined)
+                }}
+              />
             </View>
-            <SubscribeToggle
-              on={subscribed}
-              onToggle={() => {
-                // 실패는 여기서 삼킨다. 스위치는 스토어 값을 그리므로 실패하면 안 켜진 채로
-                // 남고, 그 자체가 사용자에게 보이는 결과다.
-                void setSubscribed(!subscribed).catch(() => undefined)
-              }}
-            />
-          </View>
+          ))}
 
           {/* 켜려 했는데 권한이 없을 때만 뜬다. iOS 는 여기서 팝업을 다시 못 띄우므로
               OS 설정으로 보내는 것 말고 할 수 있는 일이 없다. 조용히 두면 사용자는

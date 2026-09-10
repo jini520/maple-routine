@@ -19,9 +19,20 @@ beforeEach(async () => {
 })
 
 describe('페이로드 읽기', () => {
+  it('분류를 실어 오면 그대로 읽는다', () => {
+    expect(parseNotice({ ...온전한, kind: 'game' })?.kind).toBe('game')
+  })
+
+  // 서버가 새 분류를 늘렸는데 이 앱이 그것을 모르면 화면에 그릴 자리가 없다.
+  it('모르는 분류는 앱 공지로 읽는다', () => {
+    expect(parseNotice({ ...온전한, kind: '뭔가새로운것' })?.kind).toBe('app')
+  })
+
   it('네 필드가 다 있으면 공지가 된다', () => {
     expect(parseNotice(온전한)).toEqual({
       id: 'a',
+      // 분류가 없는 옛 푸시는 운영자 공지다. 그때는 그것밖에 없었다.
+      kind: 'app',
       title: '점검 안내',
       body: '9월 8일 02시부터 점검합니다.',
       publishedAt: '2026-09-07T12:00:00Z',

@@ -25,6 +25,7 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { formatNoticeDate } from '../../features/notice/format'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
+import { NoticeBlocks } from './NoticeBlocks'
 import { fetchNotice } from '../../server/notices'
 import { getNotices, mergeNotices } from '../../storage/notices'
 import type { Notice } from '../../types/notice'
@@ -95,9 +96,16 @@ export function SettingsNoticeDetailScreen(props: {
               <Text className="text-xs text-text-disabled">{formatNoticeDate(notice.publishedAt)}</Text>
             </View>
 
-            <Text testID="notice-body" className="text-sm leading-5 text-text">
-              {notice.body}
-            </Text>
+            {/* 블록이 있으면 그것이 본문이다. `body` 는 목록 미리보기용으로 잘린 평문이라,
+                둘을 같이 그리면 같은 문장이 두 번 보인다. 넥슨 공지는 조회가 닿기 전까지
+                푸시로 온 `body` 만 있고, 그때는 잘린 채로 보이지 빈 화면이 되지 않는다. */}
+            {notice.blocks === undefined ? (
+              <Text testID="notice-body" className="text-sm leading-5 text-text">
+                {notice.body}
+              </Text>
+            ) : (
+              <NoticeBlocks blocks={notice.blocks} />
+            )}
 
             {notice.link !== undefined && (
               <Pressable

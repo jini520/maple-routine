@@ -19,6 +19,8 @@
  *   eligibility — [[ADR-086]] 결정 3의 후보 자격 판정을 **그대로 재현하고 무엇이 자격을 켰는지 찍는다**.
  *              "왜 이 캐릭터가 목록에 있는가"에 추론이 아니라 관측으로 답하기 위한 모드다.
  *              캐릭터명을 주면 그 캐릭터만 14일 전부를 훑어 날짜별 트리거를 나열한다(중간에 멈추지 않는다).
+ *   notices  — 공지·업데이트·이벤트·캐시샵 네 분류의 목록과 상세 모양. 목록 밖 id 가 여전히
+ *              400 인지도 함께 본다(그 경계가 서버 폴링 주기의 근거다).
  *   items    — 일간/주간 항목 전체 이름 + `scheduler-content-catalog.json` 의 현재 분류(공유/캐릭터).
  *              공유 목록이 실제 API 이름과 어긋나면 여기서 드러난다(2026-08-03 실측: 카탈로그의
  *              `몬스터파크` 가 API 의 `[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?` 를 못 잡는다).
@@ -317,6 +319,53 @@ async function probeEligibility(name) {
   if (verdicts.swept.length > 0) console.log(`\n활동 관측으로 통과: ${verdicts.swept.join(', ')}`)
 }
 
+/**
+ * 공지 정보 네 분류의 목록과 상세를 받아 모양을 찍는다.
+ *
+ * `docs/foundation/nexon-api.md` 의 "공지 정보 엔드포인트" 절이 이 출력에서 나왔다(2026-09-10).
+ * 이 API 는 **목록에 지금 떠 있는 것만 상세를 답한다** — 목록 밖 id 는 400 `OPENAPI00004` 다.
+ * 그 성질이 서버 폴링 주기의 근거라서, 넥슨이 바꾸면 여기서 먼저 드러나야 한다.
+ */
+async function probeNotices() {
+  const kinds = [
+    { key: 'notice', label: '공지사항', list: '/maplestory/v1/notice', detail: '/maplestory/v1/notice/detail', arr: 'notice' },
+    { key: 'update', label: '업데이트', list: '/maplestory/v1/notice-update', detail: '/maplestory/v1/notice-update/detail', arr: 'update_notice' },
+    { key: 'event', label: '이벤트', list: '/maplestory/v1/notice-event', detail: '/maplestory/v1/notice-event/detail', arr: 'event_notice' },
+    { key: 'cashshop', label: '캐시샵', list: '/maplestory/v1/notice-cashshop', detail: '/maplestory/v1/notice-cashshop/detail', arr: 'cashshop_notice' },
+  ]
+
+  for (const kind of kinds) {
+    const listed = await call(kind.list)
+    if (listed.status !== 200) {
+      console.log(`${kind.label}: ${listed.status} ${errorCode(listed) ?? ''}`)
+      await sleep(300)
+      continue
+    }
+
+    const items = listed.json?.[kind.arr] ?? []
+    console.log(`\n=== ${kind.label} (${items.length}건)`)
+    for (const item of items.slice(0, 3)) {
+      console.log(`  ${item.notice_id}  ${item.date}  ${item.title}`)
+    }
+
+    const first = items[0]
+    if (first === undefined) continue
+    await sleep(300)
+
+    const detail = await call(`${kind.detail}?notice_id=${first.notice_id}`)
+    const contents = detail.json?.contents ?? ''
+    const text = contents.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim()
+    console.log(`  상세 ${first.notice_id}: ${detail.status} · contents ${contents.length}자 → 텍스트 ${text.length}자`)
+    console.log(`  상세 응답 키: ${Object.keys(detail.json ?? {}).join(', ')}`)
+
+    // 목록 밖은 못 받는다. 그 경계가 아직 유효한지 매번 확인한다.
+    await sleep(300)
+    const gone = await call(`${kind.detail}?notice_id=${Number(first.notice_id) - 1000}`)
+    console.log(`  목록 밖 id: ${gone.status} ${errorCode(gone) ?? '200 (경계가 바뀌었다!)'}`)
+    await sleep(300)
+  }
+}
+
 const [mode, name] = process.argv.slice(2)
 
 if (mode === 'dates' && name !== undefined) {
@@ -327,11 +376,13 @@ if (mode === 'dates' && name !== undefined) {
   await probeShape(name)
 } else if (mode === 'eligibility') {
   await probeEligibility(name)
+} else if (mode === 'notices') {
+  await probeNotices()
 } else if (mode === 'items' && name !== undefined) {
   await probeItems(name)
 } else {
   console.error(
-    '사용법: NEXON_KEY=<키> node scripts/probe-nexon-api.mjs <dates|accounts|shape|eligibility|items> [캐릭터명]',
+    '사용법: NEXON_KEY=<키> node scripts/probe-nexon-api.mjs <dates|accounts|shape|eligibility|items|notices> [캐릭터명]',
   )
   process.exit(1)
 }
