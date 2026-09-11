@@ -10,12 +10,11 @@
 import { useRef, useState } from 'react'
 import { Linking, Pressable, View } from 'react-native'
 
-import { Card, Text } from '../../components/atoms'
+import { Card, Switch, Text } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { selectionFeedback } from '../../native/haptics'
 import { useNoticeStore } from '../../features/notice/store'
 import { anySubscribed, DEFAULT_SUBSCRIPTIONS, NOTICE_TOPICS } from '../../features/notice/topics'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
@@ -40,36 +39,6 @@ const SCHEDULER_ALERTS: readonly { key: string; label: string }[] = [
 /** 구역 이름. 다섯과 둘이 성질이 달라(서버가 쏘는 것 · 기기가 띄우는 것) 카드만으로는 안 갈린다. */
 function SectionLabel(props: { children: string }): React.JSX.Element {
   return <Text className="px-2 text-xs text-text-disabled">{props.children}</Text>
-}
-
-/**
- * 구독 스위치. `BossDropSheet` 의 `EffectToggle` 과 같은 모양이다.
- *
- * 공용 컴포넌트로 안 뽑는다. 소비자가 둘뿐이라 뽑으면 자리만 하나 늘고 규칙은 안 준다.
- */
-function SubscribeToggle(props: {
-  on: boolean
-  label: string
-  onToggle: () => void
-}): React.JSX.Element {
-  return (
-    <Pressable
-      role="switch"
-      aria-checked={props.on}
-      aria-label={props.label}
-      onPress={props.onToggle}
-      className="ml-auto shrink-0 flex-row items-center"
-    >
-      <View
-        className={`h-4 w-7 shrink-0 flex-row items-center rounded-full ${props.on ? 'bg-primary' : 'bg-border-strong'}`}
-      >
-        <View
-          className="h-3 w-3 rounded-full bg-white"
-          style={{ transform: [{ translateX: props.on ? 14 : 2 }] }}
-        />
-      </View>
-    </Pressable>
-  )
 }
 
 export function SettingsNoticeAlertsScreen(): React.JSX.Element {
@@ -121,8 +90,6 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
    * @param next 성공했을 때 스토어가 갖게 될 값. 그것을 미리 그린다.
    */
   const run = (next: NoticeSubscriptions, action: Promise<void>): void => {
-    // 두드림은 여기서 낸다. 누름을 무시하는 자리(왕복 중)는 이 함수에 안 들어온다.
-    selectionFeedback()
     busyRef.current = true
     setFailure(null)
     setPreview(next)
@@ -155,9 +122,14 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
         <Card className="px-6">
           <View className="flex-row items-center py-4">
             <Text className="shrink text-sm text-text">알림 받기</Text>
-            <SubscribeToggle
+            <Switch
               on={on}
               label="알림 받기"
+              size="lg"
+              // 왕복 중에는 누름이 무시된다. 스위치가 그것을 알아야 두드림도 같이 멎는다 -
+              // 안 말하면 손끝은 바뀌었다고 하고 값은 그대로다.
+              disabled={preview !== null}
+              className="ml-auto"
               onToggle={() => {
                 if (busyRef.current) return
                 // 켜면 기본 묶음이 켜지고 끄면 전부 꺼진다. 스토어가 하는 일과 같은 값을 그린다.
@@ -207,9 +179,12 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
               className={`flex-row items-center py-4 ${index === 0 ? '' : SETTINGS_ROW_DIVIDER_CLASS}`}
             >
               <Text className="shrink text-sm text-text">{topic.label}</Text>
-              <SubscribeToggle
+              <Switch
                 on={shown[topic.key]}
                 label={`${topic.label} 알림`}
+                size="lg"
+                disabled={preview !== null}
+                className="ml-auto"
                 onToggle={() => {
                   if (busyRef.current) return
                   const next = { ...shown, [topic.key]: !shown[topic.key] }

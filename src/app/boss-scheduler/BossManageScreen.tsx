@@ -25,12 +25,11 @@ import { useDataFreshness } from '../../features/refresh/freshness'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import type { BossDifficulty } from '../../types'
 
-import { Badge, Text } from '../../components/atoms'
+import { Badge, Switch, Text } from '../../components/atoms'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
 import { CharacterUnavailableNotice } from '../../components/organisms/CharacterUnavailable/CharacterUnavailableNotice'
 import { DifficultySegment } from '../../components/molecules/DifficultySegment/DifficultySegment'
-import { selectionFeedback } from '../../native/haptics'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { PartySizeStepper } from '../../components/molecules/PartySizeStepper/PartySizeStepper'
@@ -311,30 +310,17 @@ export function BossManageScreen(): React.JSX.Element {
           있다). `n/12` 카운터는 `주간` 섹션 헤더가 싣는다. */}
       {selected !== null && mode === 'auto' && (
         <View className="items-end px-4">
-          <Pressable
-            role="switch"
-            aria-checked={showAllBosses}
-            aria-label="모든 보스 보기"
-            // 켜고 끄는 것도 고른 값이 바뀌는 일이라 선택 촉각이다.
-            onPress={() => {
-              selectionFeedback()
+          <Switch
+            on={showAllBosses}
+            label="모든 보스 보기"
+            size="lg"
+            onToggle={() => {
               setShowAllBosses((prev) => !prev)
             }}
-            className="shrink-0 flex-row items-center gap-1.5"
+            className="gap-1.5"
           >
             <Text className="text-xs font-medium text-text-muted">모든 보스 보기</Text>
-            <View
-              className={`relative h-6 w-11 shrink-0 rounded-full ${
-                showAllBosses ? 'bg-primary' : 'bg-surface-2'
-              }`}
-            >
-              <View
-                className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-surface ${
-                  showAllBosses ? 'translate-x-5' : 'translate-x-0'
-                }`}
-              />
-            </View>
-          </Pressable>
+          </Switch>
         </View>
       )}
 
