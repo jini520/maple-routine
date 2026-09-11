@@ -20,7 +20,8 @@ import { Image, View } from 'react-native'
 
 import { worldEmblemUrl } from '../../../lib/assets/asset-lookup'
 
-import { Badge, ProgressBar, Text } from '../../../components/atoms'
+import { ProgressBar, Text } from '../../../components/atoms'
+import { UnavailableBadge } from '../../../components/molecules/UnavailableBadge/UnavailableBadge'
 import { CharacterAvatar } from '../../../components/molecules/CharacterAvatar/CharacterAvatar'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
@@ -177,14 +178,17 @@ function ExpBlock(props: {
     return (
       <View
         testID="representative-issue-block"
-        // 오른쪽에 붙는다(사용자 지정). EXP 줄의 퍼센트가 서던 자리라 그 끝과 줄이 맞는다.
-        className={compactColumn ? 'w-[100px] shrink-0 items-end' : 'w-full items-end'}
+        // 오른쪽에 붙는다(사용자 지정). 다만 EXP 줄의 퍼센트와 **같은 끝에 두지 않는다** -
+        // 그쪽은 글자라 끝이 획에서 끝나고 이것은 칠해진 알약이라 면이 카드 끝까지 닿는다.
+        // 8px 을 물려 그 차이를 돌려준다(사용자 보고).
+        className={
+          compactColumn ? 'w-[100px] shrink-0 items-end pr-2' : 'w-full items-end pr-2'
+        }
       >
-        {/* `mini` 가 아니라 기본 크기다. 이 자리는 EXP 바 한 줄을 통째로 쓰므로 폭을 다툴 상대가
-            없고, 카드에서 가장 중요한 말이라 작게 두면 묻힌다. */}
-        <Badge variant="error" weight="bold" testID="representative-issue">
-          조회 불가
-        </Badge>
+        {/* 보스 수익의 금액 자리에 서는 것과 **같은 알약**이다(사용자 지정). 그쪽도 여기도
+            금액을 말할 수 없어 그 칸을 대신 차지한 것이라 같은 말이 같은 그림으로 선다.
+            누를 것은 없다. 이 카드에는 열 팝오버가 없다. */}
+        <UnavailableBadge fixed testID="representative-issue" label="조회 불가" />
       </View>
     )
   }
