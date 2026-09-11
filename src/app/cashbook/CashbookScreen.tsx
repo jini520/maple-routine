@@ -1053,7 +1053,7 @@ export function CashbookScreen(): React.JSX.Element {
         >
           <View
             testID="cashbook-period-nav"
-            className="flex-row items-center justify-center gap-4"
+            className="flex-row items-center justify-center gap-4 py-3"
           >
             {/* 이름이 모드를 따른다. 스크린리더가 무엇이 옮겨지는가 를 듣는다. */}
             <MonthArrow

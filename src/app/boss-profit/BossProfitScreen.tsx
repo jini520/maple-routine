@@ -329,7 +329,7 @@ export function BossProfitScreen(): React.JSX.Element {
   // 안쪽 `gap-4` 는 옛 헤더가 쓰던 값 그대로라 보이는 간격이 안 바뀐다.
   const periodSection = (
     <View className="gap-4 px-4">
-        <View className="flex-row items-center justify-center gap-4">
+        <View className="flex-row items-center justify-center gap-4 py-3">
           <Pressable
             role="button"
             aria-label="이전 기간"
