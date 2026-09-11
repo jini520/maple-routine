@@ -49,6 +49,24 @@ export class NexonBadRequestError extends NexonApiError {
 }
 
 /**
+ * 200 인데 **본문에 캐릭터가 없다**. 월드 이전으로 남겨진 ocid 의 실제 응답이다.
+ *
+ * 넥슨은 이 사실을 400 으로 말하지 않는다. `character/basic` 이 200 을 주고 `character_name`
+ * 부터 `access_flag` 까지 전 필드가 `null` 이다(실측 2026-09-11). 400 `OPENAPI00003` 과 같은
+ * 것으로 접으면 안 된다. 그쪽은 **ocid 자체가 거부된 것**이고 이쪽은 ocid 는 유효한데(과거 날짜
+ * 조회는 지금도 200 으로 실제 데이터를 준다) 지금 그 자리에 캐릭터가 없는 것이다.
+ *
+ * 부르는 쪽에 필요한 처방은 둘 다 같아서 `toScheduleSyncError` 가 `characterUnavailable` 하나로
+ * 접는다. 여기서 갈라 두는 것은 **넥슨이 말한 것을 그대로 적기 위해서**다.
+ */
+export class NexonNoCharacterError extends NexonApiError {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options)
+    this.name = 'NexonNoCharacterError'
+  }
+}
+
+/**
  * 무효한 API 키인가. 이 판정은 여기 한 곳뿐이고
  * `toScheduleSyncError`·`toAuthError`·`toSettingsError` 셋이 첫 분기로 쓴다.
  *

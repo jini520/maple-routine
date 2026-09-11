@@ -5,14 +5,19 @@
  * 일을 하고 있었고, 둘 사이 참조는 한 방향뿐이라(동기화 → 로스터) 경계가 뚜렷했다.
  */
 
-import { fetchCharacterList } from '../../nexon/character'
+import { fetchCharacterBasic, fetchCharacterList } from '../../nexon/character'
 import { NexonAuthError, NexonRateLimitError } from '../../nexon/errors'
 import { getAllCachedCharacterBasicOcids, getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getAuthConfig } from '../../storage/api-key'
+import { getCharacterProfiles } from '../../storage/character-profiles'
+import type { CharacterProfileSnapshot } from '../../storage/character-profiles'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
-import { markScheduleProbeUnavailable } from '../../storage/schedule-probe-ledger'
+import { getScheduleProbeLedger, markScheduleProbeUnavailable } from '../../storage/schedule-probe-ledger'
 import type { CharacterPickerEntry, MapleCharacter } from '../../types'
 import { compareByName } from '../../lib/character-order'
+import { detectWorldLeap } from '../character-manage/world-leap'
+import type { StrandedCharacter } from '../character-manage/world-leap'
+import { useWorldLeapStore } from '../character-manage/world-leap-store'
 import { fetchCharacterBasicCached } from './character-basic-fetch'
 import { readKnownEligibility, resolveCharacterEligibility } from './character-eligibility'
 import type { CharacterEligibility } from './character-eligibility'
@@ -36,6 +41,14 @@ export async function resolveRegisteredCharacters(accountId?: string): Promise<{
   apiKey: string
   accountId: string
   characters: MapleCharacter[]
+  /**
+   * **전 계정** 캐릭터를 편 것. 같은 응답에서 나오므로 호출이 안 는다.
+   *
+   * 위 `characters` 와 묻는 것이 다르다. 그쪽은 지금 연 계정에 누가 사는가 이고 이쪽은 이 키로
+   * 조회되는 캐릭터가 전부 누구인가 다. 추적 목록이 계정 경계를 넘을 수 있어, 목록 밖 추적
+   * ocid 를 가릴 때 한 계정만 보면 다른 계정 캐릭터가 전원 조회 불가가 된다.
+   */
+  allCharacters: MapleCharacter[]
 }> {
   const { apiKey, accountId: resolved } = await resolveAccountContext(accountId)
 
@@ -45,7 +58,12 @@ export async function resolveRegisteredCharacters(accountId?: string): Promise<{
     throw new Error('resolveRegisteredCharacters: 지정한 계정을 응답에서 찾을 수 없습니다')
   }
 
-  return { apiKey, accountId: resolved, characters: account.characters }
+  return {
+    apiKey,
+    accountId: resolved,
+    characters: account.characters,
+    allCharacters: accounts.flatMap((candidate) => candidate.characters),
+  }
 }
 
 /** 추적 캐릭터 하나와 **그 캐릭터가 사는 계정**. 둘은 함께 다녀야 한다. */
@@ -110,6 +128,107 @@ function shouldShowEntry(
   isTracked: boolean,
 ): boolean {
   return isTracked || eligibility === 'eligible'
+}
+
+/**
+ * `character/list` 에서 빠진 추적 ocid 를 **하나씩 물어** 조회 불가를 확정하고, 월드 리프로
+ * 보이면 물어볼 후보를 세운다.
+ *
+ * 이 단계가 없으면 그 캐릭터는 아무도 안 부른다. 위 로스터 경로는 목록이 준 캐릭터만 돌고
+ * 동기화(`resolveTrackedCharacterContext`)도 같아서, 목록에서 빠지는 순간 `character/basic` 이
+ * 영영 안 나간다. 표식이 안 서고 화면은 로컬 캐시로 멀쩡한 행을 그린다.
+ *
+ * **목록에 없다는 것만으로 판정하지 않는다.** 그 판정은 계정을 바꾸는 순간 다른 계정 캐릭터를
+ * 전원 죽은 것으로 만든다. 빠진 것은 물어볼 이유이지 답이 아니라, 넥슨에게 실제로 묻는다.
+ *
+ * 부르는 것은 `fetchCharacterBasicCached` 가 아니라 `fetchCharacterBasic` 이다. 캐시 인덱스가
+ * 계정별이라, 다른 계정 ocid 를 지금 연 계정의 인덱스에 넣으면 stub 단계가 남의 계정 캐릭터를
+ * 그린다. 여기서 필요한 것은 살아 있는가 하나뿐이라 캐시에 남길 것도 없다.
+ *
+ * 호출 수는 원장이 잡는다. 이미 조회 불가로 적힌 ocid 는 안 부르므로, 화면을 여닫아도 캐릭터
+ * 하나당 성공하는 호출은 한 번뿐이다.
+ */
+async function probeStrandedTrackedCharacters(
+  apiKey: string,
+  trackedOcids: ReadonlySet<string>,
+  allCharacters: readonly MapleCharacter[],
+  now: Date,
+): Promise<void> {
+  const listed = new Set(allCharacters.map((character) => character.ocid))
+  const stranded = [...trackedOcids].filter((ocid) => !listed.has(ocid))
+  if (stranded.length === 0) {
+    return
+  }
+
+  const unavailable: string[] = []
+  await Promise.all(
+    stranded.map(async (ocid) => {
+      if ((await getScheduleProbeLedger(ocid, now)).unavailable) {
+        unavailable.push(ocid)
+        return
+      }
+      try {
+        await fetchCharacterBasic(apiKey, ocid)
+      } catch (error) {
+        // 401/429 는 여기서 안 던진다. 이 단계는 목록을 만드는 일이 아니라 곁다리 확정이라,
+        // 전역 실패로 올리면 멀쩡히 그려진 로스터가 통째로 사라진다. 다음 회차가 다시 묻는다.
+        if (toScheduleSyncError(error).kind !== 'characterUnavailable') {
+          return
+        }
+        await markScheduleProbeUnavailable(ocid)
+        unavailable.push(ocid)
+      }
+    }),
+  )
+
+  if (unavailable.length === 0) {
+    return
+  }
+
+  // 판정 재료는 **지워지지 않는 스냅샷**이 먼저다. 5분 TTL 캐시만 보면 설정의 캐시 비우기 한
+  // 번에 이 캐릭터를 영영 못 짚는다.
+  const profiles = await getCharacterProfiles(unavailable)
+  await Promise.all(
+    unavailable.map(async (ocid) => {
+      const stranded = await resolveStrandedCharacter(ocid, profiles.get(ocid))
+      if (stranded === null) {
+        return
+      }
+      const leap = detectWorldLeap(stranded, allCharacters, trackedOcids)
+      if (leap !== null) {
+        useWorldLeapStore.getState().noticeWorldLeap(leap)
+      }
+    }),
+  )
+}
+
+/**
+ * 판정이 쓸 마지막으로 아는 것 을 두 출처에서 모은다. 스냅샷이 먼저이고 빈 칸만 캐시가 메운다.
+ *
+ * 캐시를 보는 이유는 `job_class` 가 **이 기능과 함께 생긴 칸**이기 때문이다. 옛 기기의 행에는
+ * 비어 있고, 채우는 경로는 `character/basic` 하나인데 이전으로 남겨진 ocid 는 그 호출이 영영
+ * 성공하지 않는다. 그러면 정확히 이 기능이 겨냥한 캐릭터만 판정에서 빠진다. 5분 캐시에는 마지막
+ * 성공 응답의 직업이 아직 들어 있다.
+ *
+ * 이름을 모르면 `null` 이다. 판정의 모든 조건이 이름에서 시작한다.
+ */
+async function resolveStrandedCharacter(
+  ocid: string,
+  snapshot: CharacterProfileSnapshot | undefined,
+): Promise<StrandedCharacter | null> {
+  const cached = await getCachedCharacterBasic(ocid).catch(() => null)
+  const name = snapshot?.name ?? cached?.profile.name ?? null
+  if (name === null || name === '') {
+    return null
+  }
+
+  return {
+    ocid,
+    name,
+    world: snapshot?.world ?? cached?.profile.world ?? null,
+    jobClass: snapshot?.jobClass ?? cached?.profile.jobClass ?? null,
+    level: snapshot?.level ?? cached?.profile.level ?? null,
+  }
 }
 
 export interface CharacterPickerRosterOptions {
@@ -196,7 +315,11 @@ export async function getCharacterPickerRoster(
     }
   }
 
-  const { characters } = await resolveRegisteredCharacters(options?.accountId)
+  const { characters, allCharacters } = await resolveRegisteredCharacters(options?.accountId)
+
+  // 목록 밖 추적 ocid 확정. 로스터 방출과 섞이지 않게 먼저 끝낸다 - 이 단계가 원장에 표식을
+  // 남기고, 아래 `readKnownEligibility` 가 그 원장을 읽는다.
+  await probeStrandedTrackedCharacters(apiKey, trackedOcids, allCharacters, now)
   if (characters.length === 0) {
     onUpdate([])
     return

@@ -2,6 +2,7 @@ import {
   NexonAuthError,
   NexonBadRequestError,
   NexonNetworkError,
+  NexonNoCharacterError,
   NexonRateLimitError,
 } from '../../../nexon/errors'
 import { formatScheduleSyncError } from '../format'
@@ -22,6 +23,14 @@ describe('toScheduleSyncError', () => {
 
   it('OPENAPI00003 → characterUnavailable', () => {
     expect(toScheduleSyncError(new NexonBadRequestError('x', 'OPENAPI00003'))).toEqual({
+      kind: 'characterUnavailable',
+    })
+  })
+
+  // 월드 이전으로 남겨진 ocid 는 400 이 아니라 200 + 전 필드 null 로 온다. 부르는 쪽에 필요한
+  // 처방이 00003 과 같아서 어휘를 늘리지 않고 같은 종류로 접는다.
+  it('NexonNoCharacterError → characterUnavailable', () => {
+    expect(toScheduleSyncError(new NexonNoCharacterError('x'))).toEqual({
       kind: 'characterUnavailable',
     })
   })

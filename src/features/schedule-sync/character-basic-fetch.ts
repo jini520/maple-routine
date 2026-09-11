@@ -1,6 +1,7 @@
 import { fetchCharacterBasic } from '../../nexon/character'
 import { getCachedCharacterBasic, setCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { saveCharacterProfile } from '../../storage/character-profiles'
+import { markScheduleProbeUnavailable } from '../../storage/schedule-probe-ledger'
 import type { CharacterBasicProfile } from '../../types'
 
 /**
@@ -101,8 +102,16 @@ export async function fetchCharacterBasicCached(
     imageUrl: profile.imageUrl,
     world: profile.world ?? null,
     level: profile.level,
+    // 월드 이전 판정이 읽는다. 출처는 `character/list` 라 이 경로에서만 알 수 있고, 모르면
+    // 위 UPSERT 의 COALESCE 가 이미 박아 둔 값을 지킨다.
+    jobClass: profile.jobClass ?? null,
     updatedAt: now.toISOString(),
   }).catch(() => undefined)
+
+  // 여기 왔다는 것은 `character/basic` 이 **캐릭터를 줬다**는 뜻이다(안 주면 위에서 던진다).
+  // 조회 불가로 굳어 있던 캐릭터가 다시 살아나면 이 한 줄이 그 표식을 내린다. 표식이 사는 곳은
+  // 조회 원장이고(400 `OPENAPI00003` 도 거기 쓴다) 같은 사실의 출처가 하나여야 한다.
+  await markScheduleProbeUnavailable(ocid, false).catch(() => undefined)
 
   return profile
 }

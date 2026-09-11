@@ -161,10 +161,23 @@ export async function recordScheduleProbe(
   })
 }
 
-export async function markScheduleProbeUnavailable(ocid: string): Promise<void> {
+/**
+ * 조회 불가 표식을 올리거나 내린다. **날짜 기록은 안 건드린다.**
+ *
+ * 내리는 길이 있는 것은 넥슨이 다시 답하기 시작할 수 있기 때문이다(월드 이전 뒤 그 ocid 가
+ * 되살아나는 일은 없지만, 400 `OPENAPI00003` 은 계정 상태로도 나며 그것은 풀린다). 표식이
+ * 남으면 화면이 영영 조회 불가라고 말한다.
+ *
+ * `clearScheduleProbeLedger` 로 내리지 않는 이유는 그쪽이 **14일 관측까지** 버리기 때문이다.
+ * 다음 회차가 그 날짜들을 처음부터 다시 훑어 호출이 그만큼 다시 나간다.
+ */
+export async function markScheduleProbeUnavailable(
+  ocid: string,
+  unavailable = true,
+): Promise<void> {
   await withLedgerLock(ocid, async () => {
     const ledger = await readLedger(ocid)
-    await preferences.set(scheduleProbeKey(ocid), JSON.stringify({ ...ledger, unavailable: true }))
+    await preferences.set(scheduleProbeKey(ocid), JSON.stringify({ ...ledger, unavailable }))
   })
 }
 
