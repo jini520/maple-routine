@@ -204,6 +204,50 @@ export async function loadObservedPeriodKeys(
 }
 
 /**
+ * 창이 **영구히 못 읽는** (캐릭터, 기간)들. 화면이 `다시 시도` 와 `조회 불가` 를 이걸로 가른다.
+ *
+ * 참이 되는 길이 둘이다. 원장의 `unavailable` 표식(400 `OPENAPI00003` - 이 ocid 는 어느 날짜로도
+ * 못 부른다)과, 그 기간의 **부를 수 있던 날짜가 전부** `outOfRange`(400 `OPENAPI00004` - 날짜마다
+ * 물어서 전부 거부당했다. 월드 이전으로 새로 생긴 ocid 가 그 자리다).
+ *
+ * 둘째가 **전부**여야 하는 것이 핵심이다. 하나라도 안 물어본 날이 남아 있으면 그 날이 답을 줄 수
+ * 있어 아직 재시도가 맞는 말이다. 집계 전(`OPENAPI00009`)은 시간이 지나면 풀리므로 애초에 원장에
+ * 안 적히고, 그래서 이 목록에도 안 든다.
+ */
+export async function loadUnqueryablePeriodKeys(
+  ocids: readonly string[],
+  now: Date,
+): Promise<Set<string>> {
+  const unqueryable = new Set<string>()
+  if (ocids.length === 0) {
+    return unqueryable
+  }
+
+  const rollingFloor = getMinQueryableDate(now)
+  const floorDateKey = rollingFloor > MIN_SCHEDULER_DATE ? rollingFloor : MIN_SCHEDULER_DATE
+  const ceilingDateKey = getMaxQueryableDate(now)
+  const periods = periodsInWindow(now, floorDateKey)
+
+  for (const ocid of ocids) {
+    const ledger = await getScheduleProbeLedger(ocid, now).catch(() => null)
+    if (ledger === null) continue
+    for (const { cycle, periodKey } of periods) {
+      if (ledger.unavailable) {
+        unqueryable.add(periodStateKey(ocid, cycle, periodKey))
+        continue
+      }
+      const askable = getPeriodDateKeys(cycle, periodKey).filter(
+        (day) => day >= floorDateKey && day <= ceilingDateKey,
+      )
+      if (askable.length > 0 && askable.every((day) => ledger.dates[day]?.kind === 'outOfRange')) {
+        unqueryable.add(periodStateKey(ocid, cycle, periodKey))
+      }
+    }
+  }
+  return unqueryable
+}
+
+/**
  * 못 채운 날짜들을 **그 날이 속한 기간**의 결과로 옮긴다.
  *
  * 한 기간에 여러 실패가 있으면 `failed` 가 이긴다. `notCollected`(집계 전)는 시간이 지나면

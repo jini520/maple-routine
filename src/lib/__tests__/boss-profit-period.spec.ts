@@ -293,6 +293,7 @@ describe('resolvePeriodDataState', () => {
     hasRecords: false,
     isObserved: false,
     isQueryable: true,
+    isProbedOutOfRange: false,
     lastOutcome: null,
   } as const
 
@@ -309,6 +310,29 @@ describe('resolvePeriodDataState', () => {
 
   it('조회 구간 밖이면 outOfRange', () => {
     expect(resolvePeriodDataState({ ...base, isQueryable: false })).toBe('outOfRange')
+  })
+
+  // 월드 이전으로 새로 생긴 ocid 는 이전 이전 날짜에 400 을 준다. 날짜 범위만 보면 조회 가능한
+  // 기간이라 이 입력이 없으면 `failed` 로 떨어지고, 눌러도 같은 400 이 돌아온다.
+  it('원장이 400 으로 굳힌 기간이면 outOfRange', () => {
+    expect(resolvePeriodDataState({ ...base, isProbedOutOfRange: true })).toBe('outOfRange')
+  })
+
+  // 이번 세션에 난 429 하나가 영구한 400 을 가리면 안 된다.
+  it('원장의 400 이 이번 회차의 실패보다 앞선다', () => {
+    expect(resolvePeriodDataState({ ...base, isProbedOutOfRange: true, lastOutcome: 'failed' })).toBe(
+      'outOfRange',
+    )
+  })
+
+  // 받아 둔 기록과 관측은 원장의 400 보다 앞선다. 이미 아는 사실을 모른다로 덮지 않는다.
+  it('기록·관측은 원장의 400 보다 앞선다', () => {
+    expect(resolvePeriodDataState({ ...base, isProbedOutOfRange: true, hasRecords: true })).toBe(
+      'recorded',
+    )
+    expect(resolvePeriodDataState({ ...base, isProbedOutOfRange: true, isObserved: true })).toBe(
+      'confirmedEmpty',
+    )
   })
 
   it('이번 시도가 집계 전이었으면 notCollected', () => {

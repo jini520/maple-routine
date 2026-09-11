@@ -15,6 +15,7 @@ import { sumDropPayout } from '../../lib/drop/drop-price'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss/boss-matching'
 
 import { AnimatedNumber, Badge, RefreshCwIcon, Text } from '../../components/atoms'
+import { UnavailableBadge } from '../../components/molecules/UnavailableBadge/UnavailableBadge'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { BossProfitBossRow } from './BossProfitBossRow'
 import { ItemRevenueTrigger } from './ItemRevenueTrigger'
@@ -192,13 +193,12 @@ export function WeeklySubtotalRow(props: {
         <Badge variant="primary">진행 중</Badge>
       )}
 
-      {/* 금액 자리를 대신한다(카드 머리와 같은 규칙). 이 주에 무엇을 벌었는지 모르므로 숫자도
-          `진행 중` 도 안 적는다. */}
-      {cannotStateWeek && (
-        <Badge variant="error" size="mini" weight="bold" testID="subtotal-issue">
-          조회 불가
-        </Badge>
-      )}
+      {/* 금액 자리를 대신한다(카드 머리와 **같은 부품**). 이 주에 무엇을 벌었는지 모르므로
+          숫자도 `진행 중` 도 안 적는다.
+
+          기간이 못 읽히는 주(`staticLabel`)는 회색 글자다. 이 알약은 **캐릭터가** 못 읽힐 때만
+          선다 - 그쪽은 사용자가 할 일이 있고(캐릭터 관리에서 해제하거나 갈아끼운다) 이쪽은 없다. */}
+      {cannotStateWeek && <UnavailableBadge testID="subtotal-issue" label="조회 불가" />}
 
       {staticLabel !== undefined && !cannotStateWeek && (
         <Text className="text-xs text-text-muted">{staticLabel}</Text>
