@@ -315,6 +315,15 @@ export interface PeriodDataStateInput {
    */
   isObserved: boolean
   isQueryable: boolean
+  /**
+   * 조회 원장이 이 (캐릭터, 기간)을 **영구히 조회 불가로 알고 있는가.** `isQueryable` 과 갈라 든다.
+   *
+   * 그쪽은 날짜만 보는 전역 질문(`이 날짜를 API 가 받아 주나`)이고 이쪽은 캐릭터별 사실이다.
+   * 월드 이전으로 새로 생긴 ocid 는 날짜 범위 안인데도 400 `OPENAPI00004` 를 돌려받는다.
+   *
+   * 값을 내는 곳은 `schedule-window/records` 의 `loadUnqueryablePeriodKeys`.
+   */
+  isProbedOutOfRange: boolean
   lastOutcome: PeriodQueryOutcome | null
 }
 
@@ -338,6 +347,11 @@ export function resolvePeriodDataState(input: PeriodDataStateInput): PeriodDataS
   }
   // 조회 자체가 불가능한 기간의 시도 결과는 신뢰하지 않는다(애초에 호출하지 않으므로 outcome이 남지 않는다).
   if (!input.isQueryable) {
+    return 'outOfRange'
+  }
+  // 날짜로는 조회 가능한데 이 캐릭터에게만 막힌 기간. 눌러도 같은 400 이 돌아오므로 재시도를
+  // 권하면 안 된다. `lastOutcome` 보다 앞이어야 이번 세션의 429 하나가 영구한 400 을 안 가린다.
+  if (input.isProbedOutOfRange) {
     return 'outOfRange'
   }
   if (input.lastOutcome !== null) {

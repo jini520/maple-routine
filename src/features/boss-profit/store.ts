@@ -58,6 +58,7 @@ import { withSqliteFallback } from './sqlite-guards'
 import { autoRecordRows } from './auto-record'
 import {
   loadObservedPeriodKeys,
+  loadUnqueryablePeriodKeys,
   periodStateKey,
   toPeriodOutcomes,
 } from '../schedule-window/records'
@@ -377,12 +378,13 @@ async function loadWeeksWithRecords(ocids: string[], monthKey: string): Promise<
 async function buildWeeklySubtotalsForMonth(
   ocids: string[],
   /**
-   * 추적 목록. 여기 없는 캐릭터는 **이 달에 기록이 있을 때만** 카드를 갖는다.
+   * 추적 목록. 여기 없는 캐릭터는 **이 달에 기록이 있을 때만** 카드를 갖고, **앞으로의 주는
+   * 조회 불가**다.
    *
    * `ocids` 는 표시 대상이라 한 번이라도 기록을 남긴 캐릭터가 다 든다. 이 함수는 받은 목록을
    * 그대로 돌며 주마다 한 줄씩 만들므로, 거르지 않으면 관리 목록에서 뺀 캐릭터가 기록이 없는
-   * 달에도 0 원 카드로 선다(사용자 보고). 추적 중인 캐릭터의 0 은 이번 달에 아직 안 잡았다 는
-   * 사실이라 그대로 남긴다.
+   * 달에도 0 원 카드로 선다(사용자 보고). 이번 달의 0 은 아직 안 잡았다 는 사실이라 추적 중인
+   * 캐릭터에는 그대로 남긴다.
    */
   trackedOcids: ReadonlySet<string>,
   monthPeriodKey: string,
@@ -433,7 +435,13 @@ async function buildWeeklySubtotalsForMonth(
 
   // 지난 주의 상태를 판정하려면 관측 여부가 필요하다. 기록이 없는 주가 조회해서 0건을 본
   // 주인지 아직 못 받은 주인지는 그것만이 갈라 준다.
-  const observedKeys = await loadObservedPeriodKeys(ocids, now)
+  //
+  // 원장이 400 으로 굳힌 주도 함께 읽는다. 안 읽으면 눌러도 같은 400 이 돌아오는 자리에
+  // `다시 시도` 가 선다.
+  const [observedKeys, unqueryableKeys] = await Promise.all([
+    loadObservedPeriodKeys(ocids, now),
+    loadUnqueryablePeriodKeys(ocids, now),
+  ])
 
   // 아이템 수익도 소계에 넣는다. 안 넣으면 주간 탭과 월간 탭의 같은 주가 다른 숫자가 된다
   // (주간 탭은 보스 행에 더해 보여준다). 주차 전체를 한 번에 읽어 접는다.
@@ -499,10 +507,23 @@ async function buildWeeklySubtotalsForMonth(
     if (characterName === null) {
       continue
     }
+    // 추적하지 않는 캐릭터는 동기화가 안 돈다. 이번 주도 다음 주도 조회할 길이 없으므로
+    // `진행 중`·`예정` 이 거짓이 된다. 둘 다 앱이 앞으로 무언가 하겠다는 말이다.
+    const isTracked = trackedOcids.has(ocid)
+    // 한 캐릭터의 줄을 모아 든다. 이전 달의 0 원 카드를 걷으려면 그 달 합을 알아야 한다.
+    const characterSubtotals: BossProfitWeeklySubtotal[] = []
 
     for (const weekKey of weekKeys) {
       if (weekKey > currentWeeklyPeriodKey) {
-        subtotals.push({ ocid, characterName, imageUrl, periodKey: weekKey, totalMeso: 0, drops: [], state: 'upcoming' })
+        characterSubtotals.push({
+          ocid,
+          characterName,
+          imageUrl,
+          periodKey: weekKey,
+          totalMeso: 0,
+          drops: [],
+          state: isTracked ? 'upcoming' : 'outOfRange',
+        })
         continue
       }
 
@@ -529,14 +550,17 @@ async function buildWeeklySubtotalsForMonth(
             )
           : recordedMeso
         const drops = dropsByOcidWeek.get(`${ocid}|${weekKey}`) ?? []
-        subtotals.push({
+        const totalMeso = crystalMeso + sumDropPayout(drops)
+        characterSubtotals.push({
           ocid,
           characterName,
           imageUrl,
           periodKey: weekKey,
-          totalMeso: crystalMeso + sumDropPayout(drops),
+          totalMeso,
           drops,
-          state: 'inProgress',
+          // 추적을 끊어도 **받아 둔 사실은 안 변한다**. 주 중간에 해제한 그 주의 수익이 남아야
+          // 하므로, 금액이 있으면 기록으로 말하고 없을 때만 모른다고 말한다.
+          state: isTracked ? 'inProgress' : totalMeso > 0 ? 'recorded' : 'outOfRange',
         })
         continue
       }
@@ -548,10 +572,11 @@ async function buildWeeklySubtotalsForMonth(
         hasRecords: matchingRecords.length > 0,
         isObserved: observedKeys.has(periodStateKey(ocid, 'weekly', weekKey)),
         isQueryable: isPeriodQueryable('weekly', weekKey, now),
+        isProbedOutOfRange: unqueryableKeys.has(periodStateKey(ocid, 'weekly', weekKey)),
         lastOutcome: outcomes?.get(periodStateKey(ocid, 'weekly', weekKey)) ?? null,
       })
       const drops = dropsByOcidWeek.get(`${ocid}|${weekKey}`) ?? []
-      subtotals.push({
+      characterSubtotals.push({
         ocid,
         characterName,
         imageUrl,
@@ -561,6 +586,14 @@ async function buildWeeklySubtotalsForMonth(
         state,
       })
     }
+
+    // 이전 달에 0 원이면 줄을 통째로 버린다. 추적 중인 캐릭터를 기록 없이 통과시킨 근거는
+    // `이번 달에 아직 안 잡았다` 인데 지난 달에는 그 사실이 없다. 카드는 이 줄들에서 생기므로
+    // 카드가 함께 사라진다.
+    if (!hasLiveSource && characterSubtotals.every((subtotal) => subtotal.totalMeso === 0)) {
+      continue
+    }
+    subtotals.push(...characterSubtotals)
   }
 
   return subtotals
@@ -820,6 +853,7 @@ async function buildPeriodSnapshot(input: PeriodBuildInput): Promise<PeriodBuild
           hasRecords: rows.length > 0,
           isObserved: false,
           isQueryable: false,
+          isProbedOutOfRange: false,
           lastOutcome: null,
         }),
         canGoPreviousPeriod,
@@ -835,6 +869,8 @@ async function buildPeriodSnapshot(input: PeriodBuildInput): Promise<PeriodBuild
   // 기록을 지우면 주간 탭에서 월간 보스가 안 돌아왔다.
   //
   let observedKeys = await loadObservedPeriodKeys(ocids, now)
+  // 원장이 400 으로 굳힌 (캐릭터, 기간). 관측과 같은 자격으로 **이 기간의 답**이다.
+  let unqueryableKeys = await loadUnqueryablePeriodKeys(ocids, now)
 
   // **관측이 하나도 없는데 조회는 가능한 기간이면 여기서 채우고 기다린다.**
   //
@@ -847,7 +883,11 @@ async function buildPeriodSnapshot(input: PeriodBuildInput): Promise<PeriodBuild
   // 이 갈래에 안 온다.
   if (
     isPeriodQueryable(tab, periodKey, now) &&
-    !ocids.some((ocid) => observedKeys.has(periodStateKey(ocid, tab, periodKey)))
+    !ocids.some(
+      (ocid) =>
+        observedKeys.has(periodStateKey(ocid, tab, periodKey)) ||
+        unqueryableKeys.has(periodStateKey(ocid, tab, periodKey)),
+    )
   ) {
     if (input.isStale()) return { kind: 'cancelled' }
     if (!input.allowWindowSync) return { kind: 'needsWindowSync' }
@@ -855,6 +895,7 @@ async function buildPeriodSnapshot(input: PeriodBuildInput): Promise<PeriodBuild
     await syncScheduleWindow(ocids, now)
     if (input.isStale()) return { kind: 'cancelled' }
     observedKeys = await loadObservedPeriodKeys(ocids, now)
+    unqueryableKeys = await loadUnqueryablePeriodKeys(ocids, now)
   }
 
   const outcomes = toPeriodOutcomes(getLastWindowFailures())
@@ -920,6 +961,7 @@ async function buildPeriodSnapshot(input: PeriodBuildInput): Promise<PeriodBuild
         hasRecords: recordedOcids.has(ocid),
         isObserved: observedKeys.has(periodStateKey(ocid, tab, periodKey)),
         isQueryable: isPeriodQueryable(tab, periodKey, now),
+        isProbedOutOfRange: unqueryableKeys.has(periodStateKey(ocid, tab, periodKey)),
         lastOutcome: outcomes.get(periodStateKey(ocid, tab, periodKey)) ?? null,
       }),
     ),
@@ -1294,8 +1336,14 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // 캐릭터의 첫 페인트가 `0 메소` 이고, 그 숫자는 0원을 벌었다는 단정이라 할 수 없는 말이다.
     //
     // `null`(아직 안 물어봤다)은 안 담는다. 담으면 새 캐릭터가 전부 배지를 달고 시작한다.
+    //
+    // **추적 중인 캐릭터만** 담는다. 이 배지의 처방은 캐릭터 관리에서 해제하거나 갈아끼우는
+    // 것이라 이미 뺀 캐릭터에는 할 것이 없다. 동기화 뒤 목록(`strandedOcids`)도 추적 목록에서
+    // 나오므로, 여기서 넓게 담으면 신선한 캐시로 동기화를 건너뛴 진입에만 배지가 서서 같은
+    // 화면이 진입마다 달라진다.
+    const trackedOcidSet = new Set(ocids)
     const knownUnavailableOcids = sortedCharacterInfo
-      .filter((info) => info.unavailable === true)
+      .filter((info) => info.unavailable === true && trackedOcidSet.has(info.ocid))
       .map((info) => info.ocid)
     const cachedIssues: Record<string, 'unavailable' | 'failed'> = Object.fromEntries(
       knownUnavailableOcids.map((ocid) => [ocid, 'unavailable' as const]),

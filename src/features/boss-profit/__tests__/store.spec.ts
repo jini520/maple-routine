@@ -3425,6 +3425,139 @@ describe('추적에서 빠진 캐릭터의 기록', () => {
     expect(해제소계.find((subtotal) => subtotal.periodKey === 이번주)?.totalMeso).toBe(8_080_000)
   })
 
+  /**
+   * 관리에서 뺀 캐릭터는 동기화가 안 돈다. 이번 주 금액을 아는 길이 앱에 없다.
+   *
+   * `진행 중` 은 앱이 지금도 그 캐릭터를 본다는 말이고 `예정` 은 그 주가 오면 채운다는 약속이라
+   * 둘 다 거짓이다. 그 줄의 `0 메소` 는 그 주에 0원을 벌었다는 단정이다.
+   */
+  describe('월간 탭: 해제한 캐릭터의 앞으로의 주는 조회 불가다', () => {
+    async function 해제캐릭터소계(records: BossProfitRecord[]) {
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+      getRecordedCharacterOcidsMock.mockResolvedValue(['ocid-1', 'ocid-해제'])
+      getBossProfitRecordsMock.mockResolvedValue(records)
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+      await useBossProfitStore.getState().setTab('monthly')
+
+      return useBossProfitStore.getState().weeklySubtotals
+    }
+
+    it('이번 주는 진행 중이 아니라 조회 불가다', async () => {
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 2026-07-16
+
+      try {
+        const subtotals = await 해제캐릭터소계([해제기록('2026-07-09')])
+
+        const 이번주 = subtotals.find((s) => s.ocid === 'ocid-해제' && s.periodKey === '2026-07-16')
+        expect(이번주?.state).toBe('outOfRange')
+        expect(이번주?.totalMeso).toBe(0)
+        // 추적 중인 캐릭터는 그대로다. 그쪽은 동기화가 방금 답했다.
+        expect(subtotals.find((s) => s.ocid === 'ocid-1' && s.periodKey === '2026-07-16')?.state).toBe(
+          'inProgress',
+        )
+      } finally {
+        jest.useRealTimers()
+      }
+    })
+
+    it('아직 안 온 주는 예정이 아니라 조회 불가다', async () => {
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00'))
+
+      try {
+        const subtotals = await 해제캐릭터소계([해제기록('2026-07-09')])
+
+        expect(subtotals.find((s) => s.ocid === 'ocid-해제' && s.periodKey === '2026-07-23')?.state).toBe(
+          'outOfRange',
+        )
+        expect(subtotals.find((s) => s.ocid === 'ocid-1' && s.periodKey === '2026-07-23')?.state).toBe(
+          'upcoming',
+        )
+      } finally {
+        jest.useRealTimers()
+      }
+    })
+
+    // 추적하던 동안 받아 둔 사실은 추적을 끊어도 안 변한다. 주 중간에 해제한 사용자의 그 주
+    // 수익을 모른다로 덮으면 안 된다.
+    it('이번 주에 기록이 있으면 금액이 남는다', async () => {
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00'))
+
+      try {
+        const subtotals = await 해제캐릭터소계([해제기록('2026-07-16')])
+
+        const 이번주 = subtotals.find((s) => s.ocid === 'ocid-해제' && s.periodKey === '2026-07-16')
+        expect(이번주?.totalMeso).toBe(8_080_000)
+        expect(이번주?.state).toBe('recorded')
+      } finally {
+        jest.useRealTimers()
+      }
+    })
+  })
+
+  /**
+   * 추적 중인 캐릭터를 기록 없이도 통과시키던 게이트의 근거는 `이번 달에 아직 안 잡았다` 인데
+   * 지난 달에는 그 사실이 없다. 지난 달의 0 은 그냥 없는 것이다.
+   */
+  it('월간 탭: 이전 달에는 총액 0원인 캐릭터의 줄이 안 선다', async () => {
+    jest.useFakeTimers({ doNotFake: NOT_FAKED })
+    jest.setSystemTime(new Date('2026-08-20T12:00:00+09:00'))
+
+    try {
+      syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1' }), syncResult({ ocid: 'ocid-2' })])
+      // 7월에는 ocid-1 만 잡았다. ocid-2 는 추적 중이지만 그 달에 한 줄도 없다.
+      getBossProfitRecordsMock.mockImplementation(async (_ocids: string[], keys: string[]) =>
+        keys.includes('2026-07-09') ? [{ ...해제기록('2026-07-09'), ocid: 'ocid-1' }] : [],
+      )
+      await useBossProfitStore.getState().refresh(['ocid-1', 'ocid-2'])
+      await useBossProfitStore.getState().setTab('monthly')
+
+      await useBossProfitStore.getState().goToPreviousPeriod()
+
+      const subtotals = useBossProfitStore.getState().weeklySubtotals
+      expect(useBossProfitStore.getState().periodKey).toBe('2026-07')
+      expect(subtotals.some((s) => s.ocid === 'ocid-1')).toBe(true)
+      expect(subtotals.some((s) => s.ocid === 'ocid-2')).toBe(false)
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  /**
+   * 월드 이전으로 새로 생긴 ocid 는 이전 이전 날짜에 400 `OPENAPI00004` 를 준다. 창이 그것을
+   * 날짜마다 원장에 적어 두는데 판정이 `observed` 만 읽어 `failed`(다시 시도)로 떨어졌다.
+   * 눌러도 같은 400 이 돌아온다.
+   */
+  it('월간 탭: 원장이 400 으로 굳힌 주는 다시 시도가 아니라 조회 불가다', async () => {
+    jest.useFakeTimers({ doNotFake: NOT_FAKED })
+    jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00'))
+
+    try {
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+      // 7/09 주(7/9~7/15). 창 하한이 7/9 라 그 주에 부를 수 있는 날은 7/9~7/15 이고 전부 400 이다.
+      getScheduleProbeLedgerMock.mockResolvedValue({
+        unavailable: false,
+        dates: Object.fromEntries(
+          ['2026-07-09', '2026-07-10', '2026-07-11', '2026-07-12', '2026-07-13', '2026-07-14', '2026-07-15'].map(
+            (day) => [day, { kind: 'outOfRange' }],
+          ),
+        ),
+      })
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+      await useBossProfitStore.getState().setTab('monthly')
+
+      expect(useBossProfitStore.getState().weeklySubtotals.find((s) => s.periodKey === '2026-07-09')?.state).toBe(
+        'outOfRange',
+      )
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
   // 고아 드롭 정리의 안전 장치 하나가 `믿을 수 있는 캐릭터`(동기화가 성공한 캐릭터)다. 해제한
   // 캐릭터는 영원히 그것이 못 되므로 넣는 순간 술어가 그들의 드롭을 고아로 읽는다.
   it('고아 드롭 정리에는 동기화 대상만 넘긴다', async () => {
@@ -3670,6 +3803,34 @@ describe('첫 페인트의 조회 불가', () => {
         { ocid: 'stranded', characterName: '지내우시', imageUrl: '' },
       ])
     })
+  })
+
+  /**
+   * 배지의 처방은 `캐릭터 관리에서 해제하거나 갈아끼운다` 인데 이미 뺀 캐릭터에는 할 것이 없다.
+   * 그 캐릭터의 주차 줄은 회색 `조회 불가` 로 조용히 말한다.
+   *
+   * 동기화가 끝나면 저절로 걷히던 자리라 더 위험했다. 신선한 캐시로 동기화를 건너뛴 진입에는
+   * 걷을 단계가 없어 같은 화면이 진입마다 달라졌다.
+   */
+  it('관리에서 뺀 캐릭터에는 배지를 안 단다', async () => {
+    resolveDisplayProfilesMock.mockResolvedValue(
+      new Map([
+        ['ocid-1', { name: '낟낟', imageUrl: '', world: '엘리시움', level: 295 }],
+        ['해제', { name: '지내우시', imageUrl: '', world: '챌린저스2', level: 285 }],
+      ]),
+    )
+    getRecordedCharacterOcidsMock.mockResolvedValue(['ocid-1', '해제'])
+    getScheduleProbeLedgerMock.mockImplementation(async (ocid: string) => ({
+      unavailable: ocid === '해제',
+      dates: {},
+    }))
+    syncSchedulesMock.mockImplementation(() => new Promise(() => {}))
+
+    void useBossProfitStore.getState().refresh(['ocid-1'])
+
+    await waitFor(() => expect(useBossProfitStore.getState().status).toBe('loading'))
+    expect(useBossProfitStore.getState().characterIssues['해제']).toBeUndefined()
+    expect(useBossProfitStore.getState().unqueryableCards).toEqual([])
   })
 
   // `아직 안 물어봤다`(null)를 `조회 불가` 로 읽으면 새 캐릭터가 전부 배지를 달고 시작한다.

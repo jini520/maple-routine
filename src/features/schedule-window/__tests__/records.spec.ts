@@ -19,7 +19,7 @@ jest.mock('../../../storage/boss-drops', () => ({ getBossDropRecords: jest.fn(),
 jest.mock('../../../storage/boss-party-settings', () => ({ getBossPartySize: jest.fn() }))
 jest.mock('../../../storage/character-basic-cache', () => ({ getCachedCharacterBasic: jest.fn() }))
 
-import { recordBossProfitFromWindow } from '../records'
+import { loadUnqueryablePeriodKeys, recordBossProfitFromWindow } from '../records'
 
 const { getScheduleProbeLedger: getLedgerMock } = jest.requireMock('../../../storage/schedule-probe-ledger') as Record<string, jest.Mock>
 const { getBossProfitRecords: getRecordsMock, upsertBossProfitRecord: upsertMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
@@ -227,4 +227,61 @@ it('기록만 지운 뒤 원장만으로 지난 주가 되살아난다', async (
   expect(upserted()).toContain('스우|하드|weekly|2026-08-20')
   // 이번 주는 이미 있으니 다시 안 쓴다.
   expect(upserted()).not.toContain('카링|노멀|weekly|2026-09-03')
+})
+
+// 400 `OPENAPI00004` 는 그 (캐릭터, 날짜)의 영구한 답이라 원장에 굳는다. 집계 전(00009)은
+// 시간이 지나면 풀리므로 아예 안 적는다. 둘의 구분이 저장소에 이미 있으니 판정도 그것을 읽어야
+// 한다 - 안 읽으면 눌러도 같은 400 이 돌아오는 자리에 `다시 시도` 가 선다.
+describe('loadUnqueryablePeriodKeys', () => {
+  const outOfRange = { kind: 'outOfRange' as const }
+
+  // 창(08-23 ~ 09-04)에서 08-20 주가 겹치는 날은 8/23~8/26 넷뿐이다. 그 앞 사흘은 애초에 못 부른다.
+  const 겹치는날 = ['2026-08-23', '2026-08-24', '2026-08-25', '2026-08-26']
+
+  it('원장이 이 ocid 를 조회 불가로 알면 창 안의 기간이 전부 든다', async () => {
+    getLedgerMock.mockResolvedValue({ unavailable: true, dates: {} })
+
+    const keys = await loadUnqueryablePeriodKeys(['o1'], NOW)
+
+    expect(keys.has('o1|weekly|2026-08-27')).toBe(true)
+    expect(keys.has('o1|weekly|2026-09-03')).toBe(true)
+    expect(keys.has('o1|monthly|2026-09')).toBe(true)
+  })
+
+  it('부를 수 있던 날짜가 전부 400 이면 그 기간이 든다', async () => {
+    getLedgerMock.mockResolvedValue({
+      unavailable: false,
+      dates: Object.fromEntries(겹치는날.map((day) => [day, outOfRange])),
+    })
+
+    const keys = await loadUnqueryablePeriodKeys(['o1'], NOW)
+
+    expect(keys.has('o1|weekly|2026-08-20')).toBe(true)
+  })
+
+  // 안 물어본 날이 남아 있으면 그 날이 답을 줄 수 있다. 아직 `다시 시도` 가 맞는 말이다.
+  it('하루라도 안 물어봤으면 안 든다', async () => {
+    getLedgerMock.mockResolvedValue({
+      unavailable: false,
+      dates: Object.fromEntries(겹치는날.slice(1).map((day) => [day, outOfRange])),
+    })
+
+    const keys = await loadUnqueryablePeriodKeys(['o1'], NOW)
+
+    expect(keys.has('o1|weekly|2026-08-20')).toBe(false)
+  })
+
+  it('하루라도 관측했으면 안 든다. 그 주는 읽힌 주다', async () => {
+    getLedgerMock.mockResolvedValue({
+      unavailable: false,
+      dates: {
+        ...Object.fromEntries(겹치는날.map((day) => [day, outOfRange])),
+        '2026-08-26': observed([]),
+      },
+    })
+
+    const keys = await loadUnqueryablePeriodKeys(['o1'], NOW)
+
+    expect(keys.has('o1|weekly|2026-08-20')).toBe(false)
+  })
 })

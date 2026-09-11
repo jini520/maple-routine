@@ -8,7 +8,7 @@ import { act, fireEvent } from '@testing-library/react-native'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import type { WeeklySubtotalState } from '../../../features/boss-profit/store'
 
-import { flattenStyle, 기본테마 } from '../../../components/__tests__/render-atom'
+import { findAllOfType, flattenStyle, 기본테마 } from '../../../components/__tests__/render-atom'
 import { resolveCardBody } from '../../../theme/theme-vars'
 import { MonthlyAccordionBody, WeeklyAccordionBody, WeeklySubtotalRow } from '../AccordionBody'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
@@ -297,5 +297,26 @@ describe('조회 불가 캐릭터의 주차 합계', () => {
     )
 
     expect(queryByTestId('subtotal-issue')).toBeNull()
+  })
+
+  // 카드 머리의 금액 자리와 같은 부품이다. 같은 말이 한 카드 안에서 두 그림이면 안 된다.
+  // lucide 그림은 `testID` 가 안 통해 트리에서 본다.
+  it('배지는 금지 아이콘을 함께 든다', async () => {
+    const view = await renderProfit(
+      <WeeklySubtotalRow subtotal={주차소계({ state: 'inProgress', totalMeso: 0 })} unavailable />,
+    )
+
+    expect(findAllOfType(view.toJSON(), 'RNSVGSvgView')).toHaveLength(1)
+    expect(view.getByText('조회 불가')).toBeTruthy()
+  })
+
+  // 기간이 못 읽히는 것은 회색 글자다. 캐릭터가 못 읽히는 것만 알약이라 아이콘이 안 든다.
+  it('기간이 조회 구간 밖인 주는 알약이 아니다', async () => {
+    const view = await renderProfit(
+      <WeeklySubtotalRow subtotal={주차소계({ state: 'outOfRange', totalMeso: 0 })} />,
+    )
+
+    expect(view.getByText('조회 불가')).toBeTruthy()
+    expect(findAllOfType(view.toJSON(), 'RNSVGSvgView')).toHaveLength(0)
   })
 })
