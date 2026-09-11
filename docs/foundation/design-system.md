@@ -464,6 +464,29 @@ compact: 카드 안에 중첩될 때. rounded-[10px] bg-surface-2 px-3 py-2.5, �
 
 **선택 카드 안의 주의 줄은 이 규격의 축소판이되 컴포넌트를 공유하지 않는다** ([[ADR-035]] 결정 22, 2026-08-03). 트래킹 모드 옵션(설정 `TrackingModeSelector`)이 각 모드의 한계를 고지하는 자리: `rounded-[8px] bg-info-tint px-2.5 py-1.5 text-xs text-info-ink` + `Info h-3.5`. 색·아이콘·"고칠 수 없는 제약이므로 error 가 아니다"는 판단을 그대로 물려받는다. 이 컴포넌트를 재사용하지 않는 이유는 **`UnavailableNotice` 가 문구를 자기 안에 고정으로 갖기 때문**이고(임의 문구를 못 받는다), 어미도 `~습니다` 가 아니라 **같은 카드 안 설명문과 맞춘 `~요`** 다(한 카드 안에서 어미가 갈리면 두 문장이 다른 출처처럼 읽힌다). 규격 전문은 [../features/settings.md](../features/settings.md).
 
+### 조회 불가 알약 (`components/molecules/UnavailableBadge`): 2026-09-11
+
+**금액이 있어야 할 칸을 대신 차지하는 알약.** 조회할 수 없게 된 캐릭터의 금액을 `0 메소` 로 적으면
+**0원을 벌었다는 단정**이 되는데 그것은 할 수 없는 말이고, 칸을 비우면 카드 오른쪽이 빈다.
+그래서 모른다는 사실 자체를 그 자리에 적는다.
+
+```
+flex-row items-center gap-1 rounded-full bg-error-tint px-2 py-0.5
++ BanIcon h-3 w-3 text-error-ink strokeWidth 2.5
++ Text text-11 font-bold text-error-ink
+```
+
+- **색은 `Badge` 의 `error` 와 같은 값**이다(`bg-error-tint`·`text-error-ink`). 갈리는 것은
+  **아이콘이 함께 든다**는 것 하나인데, `Badge` 는 `Text` 하나거나 그라디언트 상자 하나라 그것을
+  못 한다. 그래서 `Badge` 에 크기 칸을 더하는 대신 부품을 따로 둔다.
+- **`onPress` 를 주면 버튼이 되고 안 주면 그림이다.** 보스 수익의 카드는 눌러 설명 팝오버를 열고
+  (`boss-profit/CharacterIssue` 의 `CharacterIssueAmount`), 오늘 화면의 대표 캐릭터 카드는 열
+  팝오버가 없다. 누를 곳이 없는 자리가 스크린리더에 버튼으로 들리면 안 된다.
+- **글자 배수는 호출부가 정한다**(`fixed`). 상자가 여백으로 자라므로 글자가 커져도 안 잘린다.
+  today 위젯은 칸에 묶여 있어 `fixed` 를 준다([[ADR-252]] 결정 1 의 셋째 갈래).
+- **이름 옆에 서는 표식은 이것이 아니다.** 그쪽은 아이콘만이고(`CharacterIssueBadge`), 라벨을
+  달면 캐릭터명 폭을 먹어 여섯 자 이름부터 잘린다.
+
 ### 실패 상태 (`components/ErrorState`): [[ADR-062]]
 로딩·빈 상태·조회 불가에는 공용 컴포넌트가 있는데 실패에만 없어 화면마다 `text-error` 한 줄을 각자 갖고 있던 것을 통일한다. 세 상태(**조회 중 / 확정된 빈 상태 / 확인 불가·실패**)는 항상 구분 가능해야 하므로([error-resilience.md](./error-resilience.md) 원칙 2) 빈 상태와 **디자인을 공유하지 않는다**.
 

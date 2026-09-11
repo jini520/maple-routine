@@ -14,6 +14,7 @@ import { anchorPopover } from '../../lib/popover-anchor'
 import type { PopoverAnchorGeometry } from '../../lib/popover-anchor'
 
 import { AlertTriangleIcon, BanIcon, Text } from '../../components/atoms'
+import { UnavailableBadge } from '../../components/molecules/UnavailableBadge/UnavailableBadge'
 import { useThemeAppearance } from '../../theme/context'
 import type { PopoverAnchorRect } from '../../hooks/useAnchoredPopover'
 
@@ -121,16 +122,11 @@ export function CharacterIssueBadge(props: {
  */
 export function CharacterIssueAmount(props: { onToggle: () => void }): React.JSX.Element {
   return (
-    <Pressable
+    <UnavailableBadge
       testID="character-issue-amount"
-      role="button"
-      aria-label={CHARACTER_ISSUE_LABEL.unavailable}
+      label={CHARACTER_ISSUE_LABEL.unavailable}
       onPress={props.onToggle}
-      className="flex-row items-center gap-1 rounded-full bg-error-tint px-2 py-0.5"
-    >
-      <BanIcon className="h-3 w-3 text-error-ink" strokeWidth={2.5} aria-hidden />
-      <Text className="text-11 font-bold text-error-ink">{CHARACTER_ISSUE_LABEL.unavailable}</Text>
-    </Pressable>
+    />
   )
 }
 
