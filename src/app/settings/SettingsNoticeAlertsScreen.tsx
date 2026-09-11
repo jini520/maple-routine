@@ -15,6 +15,7 @@ import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
+import { selectionFeedback } from '../../native/haptics'
 import { useNoticeStore } from '../../features/notice/store'
 import { anySubscribed, DEFAULT_SUBSCRIPTIONS, NOTICE_TOPICS } from '../../features/notice/topics'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
@@ -120,6 +121,8 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
    * @param next 성공했을 때 스토어가 갖게 될 값. 그것을 미리 그린다.
    */
   const run = (next: NoticeSubscriptions, action: Promise<void>): void => {
+    // 두드림은 여기서 낸다. 누름을 무시하는 자리(왕복 중)는 이 함수에 안 들어온다.
+    selectionFeedback()
     busyRef.current = true
     setFailure(null)
     setPreview(next)

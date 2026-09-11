@@ -8,6 +8,7 @@
  */
 import { Pressable, View } from 'react-native'
 
+import { selectionFeedback } from '../../../native/haptics'
 import { Text } from '../../atoms'
 import {
   WEEKDAY_LABELS,
@@ -86,7 +87,11 @@ export function CalendarGrid(props: CalendarGridProps): React.JSX.Element {
                 // 오늘은 이름으로도 갈린다. 채움과 테두리 차이는 스크린리더에 안 들린다.
                 aria-label={isToday ? `${formatDayLabel(day.dateKey)} 오늘` : formatDayLabel(day.dateKey)}
                 aria-selected={isSelected}
-                onPress={() => props.onSelectDate(day.dateKey)}
+                // 고른 날이 바뀔 때만 두드린다. 같은 날을 다시 눌러도 바뀌는 것이 없다.
+                onPress={() => {
+                  if (!isSelected) selectionFeedback()
+                  props.onSelectDate(day.dateKey)
+                }}
                 className="flex-1 items-center pb-1.5 pt-1"
               >
                 {/* 열지도 바탕. 형제보다 먼저라 글자 뒤에 깔린다. **네 방향으로 같은 만큼** 물러난다

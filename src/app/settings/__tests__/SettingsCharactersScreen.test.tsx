@@ -40,6 +40,8 @@ import {
   type AtomElement,
 } from '../../../components/__tests__/render-atom'
 import { moveOcid } from '../../../hooks/useSelectionDraft'
+import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
+import { setHapticsPort } from '../../../native/ports'
 import { SettingsCharactersScreen } from '../SettingsCharactersScreen'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 
@@ -911,5 +913,56 @@ describe('화면 골격', () => {
     await press(view.getByLabelText('뒤로'))
 
     expect(goBack).toHaveBeenCalledTimes(1)
+  })
+})
+
+// 카드를 더하고 빼는 것은 목록이 옮겨 가는 일이라 이동 촉각이고, 순서를 한 칸 옮기는 것은
+// 끊긴 값 사이를 옮기는 일이라 선택 촉각이다.
+describe('캐릭터 카드의 촉각', () => {
+  const tap = jest.fn(async () => undefined)
+  const select = jest.fn(async () => undefined)
+
+  beforeEach(() => {
+    tap.mockClear()
+    select.mockClear()
+    setHapticsPort({ tap, select })
+  })
+
+  afterEach(installNoopNativePorts)
+
+  it('카드를 더하면 이동 촉각이 한 번 난다', async () => {
+    const view = await renderScreen()
+
+    await press(view.getByText('달의아이'))
+
+    expect(tap).toHaveBeenCalledTimes(1)
+    expect(select).not.toHaveBeenCalled()
+  })
+
+  it('카드를 빼도 이동 촉각이 난다', async () => {
+    const view = await renderScreen()
+    await press(view.getByText('달의아이'))
+    tap.mockClear()
+
+    await press(view.getByLabelText('달의아이 선택 해제'))
+
+    expect(tap).toHaveBeenCalledTimes(1)
+  })
+
+  it('스크린리더의 한 칸 옮기기에도 선택 촉각이 난다', async () => {
+    const view = await renderScreen()
+    await press(view.getByText('달의아이'))
+    await press(view.getByText('별헤는밤'))
+    tap.mockClear()
+    select.mockClear()
+
+    await act(async () => {
+      fireEvent(view.getByLabelText('별헤는밤 순서 변경'), 'accessibilityAction', {
+        nativeEvent: { actionName: 'moveUp' },
+      })
+    })
+
+    expect(select).toHaveBeenCalledTimes(1)
+    expect(tap).not.toHaveBeenCalled()
   })
 })

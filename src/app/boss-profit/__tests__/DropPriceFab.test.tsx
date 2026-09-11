@@ -8,6 +8,8 @@ import { flattenStyle, renderOverlay } from '../../../components/__tests__/rende
 import { FAB_DIAMETER_PX } from '../../../lib/fab-metrics'
 import { getItemIconUrl } from '../../../lib/assets/asset-lookup'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
+import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
+import { setHapticsPort } from '../../../native/ports'
 import { DropPriceFab, DROP_PRICE_FAB_ITEMS } from '../DropPriceFab'
 
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
@@ -114,5 +116,27 @@ describe('흐림', () => {
     const view = await renderOverlay(<DropPriceFab />)
 
     expect(view.getByTestId('drop-price-fab-veil').props.pointerEvents).toBe('none')
+  })
+})
+
+// 누르면 가격 입력 화면으로 간다. 화면이 바뀌므로 이동 촉각이다.
+describe('떠 있는 버튼의 촉각', () => {
+  const tap = jest.fn(async () => undefined)
+
+  beforeEach(() => {
+    tap.mockClear()
+    setHapticsPort({ tap, select: async () => {} })
+  })
+
+  afterEach(installNoopNativePorts)
+
+  it('누르면 한 번 난다', async () => {
+    const view = await renderOverlay(<DropPriceFab />)
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('아이템 가격 입력'))
+    })
+
+    expect(tap).toHaveBeenCalledTimes(1)
   })
 })

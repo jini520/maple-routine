@@ -764,13 +764,24 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
   - **활성 탭을 두 번 두드리면 그 화면이 맨 위로 간다**([[ADR-234]] 결정 1~3). 같은 항목 · 300ms 이내가 판정의 전부이고 짝을 이루면 기록을 지운다(세 번째 누름은 다시 첫 누름이다). 바가 화면 밖이라 과녁은 **라우트 이름**으로 찾는다(`navigation/scroll-to-top.ts`). 등록은 `ScreenScroll` 하나가 하고, 화면 안의 버튼은 `useScrollToTop()` 으로 같은 길을 쓴다.
   - **햅틱은 누름이 실제로 무언가를 바꿀 때 낸다**([[ADR-234]] 결정 4~5 · 정정 1~3). 기준은 처음에 **화면이 바뀌는가**였다가 정정 2 로 **누른 결과로 무엇이 바뀌는가**로 넓어졌다. 기간 이동과 세그먼트는 화면이 그대로여도 보는 기간과 고른 값이 바뀐다.
     ```
-    두드리는 자리 넷
+    이동(tap)
       하단바      탭 이동 · `←` (BottomBar.tsx)
-      세그먼트     Segment · TabSegment · DifficultySegment 부품 셋이 든다(사용처 18곳)
       기간 이동    CashbookScreen · BossProfitScreen · DropPriceScreen 의 이전 · 다음 · `오늘`
       페이지 뒤로   components/molecules/BackButton 하나가 든다(사용처 15곳)
+      캐릭터 카드   추가 · 해제 (CharacterLayerGrid)
+      설정 버튼    SettingsScreen 의 톱니바퀴
+      FAB        가계부의 `＋`(organisms/SpeedDial) · 보스 수익의 아이템 가격 입력(DropPriceFab)
+    선택(select)
+      세그먼트     Segment · TabSegment · DifficultySegment 부품 셋이 든다(사용처 18곳)
+      스위치       알림 받기와 알림 토픽 넷 · 보스 관리의 `모든 보스 보기`
+      캐릭터 카드   순서 바꾸기 (CharacterLayerGrid 의 onOrderChange, 끄는 동안 자리가 바뀔 때마다)
+                  스크린리더의 위로·아래로 옮기기도 같다
+      캘린더       날 고르기 (molecules/CalendarGrid)
+      캐릭터 레일   캐릭터 고르기 (organisms/CharacterRail)
     침묵하는 자리
       활성 탭 재누름 · 최상단 이동 · 이미 고른 세그먼트 칸 · 끝 기간의 꺼진 화살표
+      이미 고른 날 · 이미 고른 캐릭터 · 알림 왕복 중의 누름
+      끌기 시작 · 끌던 카드에서 손을 뗄 때 · SpeedDial 을 펼친 뒤 고르는 수입·지출
       시트 안의 단계 뒤로 · 가계부 입력 시트의 `하루 앞으로`·`하루 뒤로`(입력 필드다)
       가장자리 스와이프 · 안드로이드 시스템 뒤로(완료 시점을 우리 코드가 안 받는다)
     ```

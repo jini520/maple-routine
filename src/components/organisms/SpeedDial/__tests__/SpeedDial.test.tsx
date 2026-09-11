@@ -5,6 +5,7 @@
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { flattenStyle, renderOverlay } from '../../../__tests__/render-atom'
+import { __resetNativePortsForTest, setHapticsPort } from '../../../../native/ports'
 import { SpeedDial } from '../SpeedDial'
 import {
   FAB_CONTENT_GAP_PX,
@@ -196,5 +197,37 @@ describe('접혀 있을 때 뒤를 안 막는다', () => {
     const view = await 그리기()
 
     expect(view.getByTestId('speed-dial-actions').props.pointerEvents).toBe('box-none')
+  })
+})
+
+// `＋` 는 기록을 더하는 문을 여는 버튼이라 이동이다. 펼친 뒤 고르는 갈래 둘은 안 낸다(사용자 지정).
+describe('＋ 의 촉각', () => {
+  const tap = jest.fn(async () => undefined)
+
+  beforeEach(() => {
+    tap.mockClear()
+    setHapticsPort({ tap, select: async () => {} })
+  })
+
+  afterEach(__resetNativePortsForTest)
+
+  it('열 때와 닫을 때 한 번씩 난다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, '기록 추가')
+    expect(tap).toHaveBeenCalledTimes(1)
+
+    await 누르기(view, '닫기')
+    expect(tap).toHaveBeenCalledTimes(2)
+  })
+
+  it('펼친 뒤 고르는 갈래에는 안 난다', async () => {
+    const view = await 그리기()
+    await 누르기(view, '기록 추가')
+    tap.mockClear()
+
+    await 누르기(view, '수입 추가')
+
+    expect(tap).not.toHaveBeenCalled()
   })
 })

@@ -23,6 +23,7 @@ import { BottomBarOverlay } from '../../components/organisms/BottomBar/BottomBar
 import { getItemIconUrl } from '../../lib/assets/asset-lookup'
 import { useFabBottomPx } from '../../lib/fab-metrics'
 import { useLoopedValue } from '../../hooks/useLoopedValue'
+import { tapFeedback } from '../../native/haptics'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { useBlurTint } from '../../theme/context'
 import {
@@ -117,7 +118,10 @@ export function DropPriceFab(): React.JSX.Element {
           role="button"
           // 원 안에 글자가 없다. 이 이름이 무엇이 열리는지 말하는 유일한 자리다.
           aria-label="아이템 가격 입력"
-          onPress={() => navigation.navigate('DropPrice')}
+          onPress={() => {
+            tapFeedback()
+            navigation.navigate('DropPrice')
+          }}
           className="h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-primary"
         >
           {DROP_PRICE_FAB_ITEMS.map((itemName, slot) => (

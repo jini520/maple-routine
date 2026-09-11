@@ -3,6 +3,7 @@ import { act, fireEvent } from '@testing-library/react-native'
 
 import { renderAtom } from '../../../__tests__/render-atom'
 import { PORTRAIT_RAIL } from '../../CharacterPortrait/portrait-metrics'
+import { __resetNativePortsForTest, setHapticsPort } from '../../../../native/ports'
 import { CharacterRail, type CharacterRailEntry } from '../CharacterRail'
 
 const onSelect = jest.fn()
@@ -108,5 +109,37 @@ describe('조회 불가 표식', () => {
     const { getByLabelText } = await render([entry({ unavailable: true })])
 
     expect(getByLabelText(/일간 3\/7/)).toBeTruthy()
+  })
+})
+
+// 고른 캐릭터가 바뀌는 것은 선택이다. 이미 고른 것을 다시 눌러도 바뀌는 것이 없다.
+describe('캐릭터를 고를 때의 촉각', () => {
+  const select = jest.fn(async () => undefined)
+
+  beforeEach(() => {
+    select.mockClear()
+    setHapticsPort({ tap: async () => {}, select })
+  })
+
+  afterEach(__resetNativePortsForTest)
+
+  it('다른 캐릭터를 누르면 한 번 난다', async () => {
+    const view = await render([entry(), entry({ ocid: 'ocid-2', characterName: '헹글' })])
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('헹글'))
+    })
+
+    expect(select).toHaveBeenCalledTimes(1)
+  })
+
+  it('이미 고른 캐릭터를 다시 눌러도 안 난다', async () => {
+    const view = await render([entry(), entry({ ocid: 'ocid-2', characterName: '헹글' })])
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('내옆에최성일'))
+    })
+
+    expect(select).not.toHaveBeenCalled()
   })
 })

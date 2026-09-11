@@ -26,6 +26,7 @@ import Animated, {
 } from 'react-native-reanimated'
 
 import { BottomBarOverlay } from '../BottomBar/BottomBarOverlay'
+import { tapFeedback } from '../../../native/haptics'
 import { useFabBottomPx } from '../../../lib/fab-metrics'
 import { useThemeAppearance } from '../../../theme/context'
 import type { ThemeDefinition } from '../../../types/theme'
@@ -247,7 +248,11 @@ export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
           role="button"
           // 이름이 상태를 든다. 그림은 하나이고 **각도만** 다르므로 스크린리더에는 안 들린다.
           aria-label={isOpen ? '닫기' : '기록 추가'}
-          onPress={() => setIsOpen((open) => !open)}
+          // 기록을 더하는 문을 여닫는 버튼이라 이동이다. 펼친 뒤 고르는 갈래 둘은 안 낸다.
+          onPress={() => {
+            tapFeedback()
+            setIsOpen((open) => !open)
+          }}
           className={`h-14 w-14 items-center justify-center rounded-full ${
             isOpen ? 'bg-surface-2' : 'bg-primary'
           }`}

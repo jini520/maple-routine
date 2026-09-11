@@ -22,6 +22,7 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import type { TabParamList } from '../../navigation/routes'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
+import { tapFeedback } from '../../native/haptics'
 import type { NoticeKind } from '../../types/notice'
 import { SettingsRow } from './SettingsRow'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
@@ -75,7 +76,10 @@ export function SettingsScreen(): React.JSX.Element {
             <Pressable
               role="button"
               aria-label="설정"
-              onPress={() => navigation.navigate('AppSettings')}
+              onPress={() => {
+                tapFeedback()
+                navigation.navigate('AppSettings')
+              }}
               className="ml-auto p-1"
             >
               {/* 제목 글자(18)보다 크다. 이 화면에서 유일하게 누를 수 있는 머리 요소라 뒤로

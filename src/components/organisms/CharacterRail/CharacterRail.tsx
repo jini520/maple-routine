@@ -12,6 +12,7 @@
  */
 import { ScrollView, View } from 'react-native'
 
+import { selectionFeedback } from '../../../native/haptics'
 import { CharacterPortrait } from '../CharacterPortrait/CharacterPortrait'
 import { PORTRAIT_RAIL } from '../CharacterPortrait/portrait-metrics'
 import type { PortraitRingProgress } from '../CharacterPortrait/PortraitRing'
@@ -64,7 +65,11 @@ export function CharacterRail(props: CharacterRailProps): React.JSX.Element {
             rings={entry.rings}
             unavailable={entry.unavailable}
             isSelected={entry.ocid === props.selectedOcid}
-            onPress={() => props.onSelect(entry.ocid)}
+            // 고른 캐릭터가 바뀔 때만 두드린다. 같은 캐릭터를 다시 눌러도 바뀌는 것이 없다.
+            onPress={() => {
+              if (entry.ocid !== props.selectedOcid) selectionFeedback()
+              props.onSelect(entry.ocid)
+            }}
           />
         ))}
       </ScrollView>
