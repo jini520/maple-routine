@@ -63,8 +63,23 @@ describe('받은 프로필은 지워지지 않는 스냅샷에도 함께 쓴다'
       imageUrl: 'https://example.com/1.png',
       world: '스카니아',
       level: 293,
+      // `character/basic` 은 직업을 안 준다. 호출부가 `character/list` 의 값을 함께 넘겨야
+      // 실리고, 안 넘기면 UPSERT 의 COALESCE 가 이미 박아 둔 값을 지킨다.
+      jobClass: null,
       updatedAt: NOW.toISOString(),
     })
+  })
+
+  // 월드 이전 판정이 이 칸을 읽는다. 출처가 `character/list` 뿐이라 그 값을 든 호출부가
+  // 넘길 때만 스냅샷에 실린다.
+  it('호출부가 직업을 넘기면 스냅샷에도 실린다', async () => {
+    fetchCharacterBasicMock.mockResolvedValue(profile({ name: '지내우시', level: 285 }))
+
+    await fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW, '레테')
+
+    expect(saveCharacterProfileMock).toHaveBeenCalledWith(
+      expect.objectContaining({ jobClass: '레테' }),
+    )
   })
 
   // 월드는 옛 응답에 없을 수 있다. undefined 를 그대로 넘기면 SQLite 바인딩이 갈라진다.

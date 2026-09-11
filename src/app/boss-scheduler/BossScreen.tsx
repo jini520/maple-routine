@@ -37,6 +37,7 @@ import {
   UsersIcon,
 } from '../../components/atoms'
 import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
+import { CharacterUnavailableNotice } from '../../components/organisms/CharacterUnavailable/CharacterUnavailableNotice'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { TabSegment } from '../../components/molecules/TabSegment/TabSegment'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
@@ -183,7 +184,13 @@ export function BossScreen(): React.JSX.Element {
 
   // 반환하므로 실패의 대부분이 전역 error 가 아니라 이 값으로 온다. 둘이 동시에 울릴 조합은 없다.
   // 캐릭터별 실패도 토스트다. `syncSchedules` 는 캐릭터 단위 실패를 던지지 않고 결과에 실어
-  useScheduleSyncErrorToast(selected?.error ?? null, { onRetry: () => refresh(trackedOcids ?? []) })
+  // **조회 불가는 토스트로 안 말한다.** 그 실패는 사건이 아니라 그 캐릭터를 고르고 있는 동안
+  // 계속 참인 상태라, 토스트로 두면 고를 때마다·돌아올 때마다 같은 문구가 다시 뜬다. 내용 자리에
+  // `CharacterUnavailableNotice` 가 서고 거기에 처방(캐릭터 관리로 이동)이 붙는다.
+  const isSelectedUnavailable = selected?.error?.kind === 'characterUnavailable'
+  useScheduleSyncErrorToast(isSelectedUnavailable ? null : (selected?.error ?? null), {
+    onRetry: () => refresh(trackedOcids ?? []),
+  })
 
   // 카드로 그릴 목록. 판정은 `displayed-bosses` 가 갖는다. today 가 세는 남은 보스와 한 글자도
   //
@@ -215,6 +222,9 @@ export function BossScreen(): React.JSX.Element {
     characterName: character.characterName,
     level: character.level ?? null,
     imageUrl: character.imageUrl ?? null,
+    // 동기화가 이 캐릭터를 조회하지 못했다. 링의 진행도는 마지막으로 본 값이라 지우지 않고
+    // 표식만 얹는다.
+    unavailable: character.error?.kind === 'characterUnavailable',
     rings: [
       {
         label: '주간',
@@ -450,7 +460,17 @@ export function BossScreen(): React.JSX.Element {
           </View>
         )}
           
-        {characters.length > 0 && selected !== null && (
+        {/* 조회할 수 없는 캐릭터를 고르면 내용 자리가 통째로 이 안내다. 그 캐릭터의 보스 목록은
+            **빈 것이 아니라 모르는 것**이라, 빈 상태로 그리면 다 잡았다 로 읽힌다. */}
+        {characters.length > 0 && isSelectedUnavailable && (
+          <View className="px-4">
+            <CharacterUnavailableNotice
+              onOpenCharacterManage={() => openTab('Settings', { openPicker: true })}
+            />
+          </View>
+        )}
+
+        {characters.length > 0 && selected !== null && !isSelectedUnavailable && (
           <View testID="pull-content" className="gap-4 px-4 pb-4">
             {/* 빈 상태 둘은 **목록 하나**를 보고 판정한다. 무리별로 물으면 검마를 안 잡는
                 캐릭터마다 추적할 월간 보스가 없습니다 가 뜬다. */}

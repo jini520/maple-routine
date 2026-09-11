@@ -27,6 +27,20 @@ export interface PeriodSnapshot {
   periodPendingAggregation: boolean
   previousPeriodTotalMeso: number
   canGoPreviousPeriod: boolean
+  /**
+   * 행이 하나도 없지만 카드는 세워야 하는 캐릭터. 조회할 수 없게 된 추적 캐릭터다.
+   *
+   * **주간 탭의 현재 기간에서만 찬다.** 다른 기간은 기록이 있으면 이미 행으로 서고, 월간 탭은
+   * `buildWeeklySubtotalsForMonth` 의 추적 게이트가 세운다.
+   */
+  unqueryableCards: CharacterCardStub[]
+}
+
+/** 행 없이 카드만 세우는 데 필요한 것. 이름과 얼굴이 전부다. */
+export interface CharacterCardStub {
+  ocid: string
+  characterName: string
+  imageUrl: string | null
 }
 
 interface CacheEntry {

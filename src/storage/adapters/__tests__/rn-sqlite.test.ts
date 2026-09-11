@@ -136,6 +136,7 @@ describe('db.ts 와 맞물리는가', () => {
 
     const executed = mockOpened[0].statements.map((entry) => entry.statement.trim())
     expect(executed.filter((statement) => statement.startsWith('ALTER TABLE'))).toEqual([
+      'ALTER TABLE character_profiles ADD COLUMN job_class TEXT',
       'ALTER TABLE boss_profit_records ADD COLUMN world TEXT',
       'ALTER TABLE boss_profit_records ADD COLUMN defeated_on TEXT',
       "ALTER TABLE enhancement_history ADD COLUMN target_item TEXT NOT NULL DEFAULT ''",
@@ -173,6 +174,7 @@ describe('db.ts 와 맞물리는가', () => {
         ? [
             { name: 'world' },
             { name: 'defeated_on' },
+            { name: 'job_class' },
             { name: 'target_item' },
             { name: 'item_level' },
             { name: 'price_state' },

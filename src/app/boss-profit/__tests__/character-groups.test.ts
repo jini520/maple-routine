@@ -10,6 +10,7 @@ import type { RecordedDrop } from '../../../types/drops'
 import valuableDropsData from '../../../data/valuable-drops.json'
 
 import {
+  buildCharacterGroups,
   collectAllValuableDrops,
   collectGroupDrops,
   collectGroupValuableDrops,
@@ -161,5 +162,39 @@ describe('월간 탭의 금액은 주차 소계가 전부다', () => {
     expect(
       groupTotalMeso({ ...group([월간행]), weeklySubtotals: [주차소계({ totalMeso: 1_000 })] }, drops),
     ).toBe(1_000)
+  })
+})
+
+// 이전으로 남겨진 ocid 는 동기화가 안 돌고 이번 주 기록도 없어 행이 0개다. 행에서만 카드를
+// 만들면 그 캐릭터가 화면에서 통째로 사라져, 빠진 것 과 0원인 것 이 같아진다.
+describe('buildCharacterGroups 의 조회 불가 카드', () => {
+  const 조회불가 = { ocid: 'stranded', characterName: '지내우시', imageUrl: null }
+
+  it('행이 없어도 카드를 세운다', () => {
+    const groups = buildCharacterGroups([], [], [조회불가])
+
+    expect(groups).toHaveLength(1)
+    expect(groups[0]).toMatchObject({ ocid: 'stranded', characterName: '지내우시', bossRows: [] })
+  })
+
+  it('이미 행이 있는 캐릭터는 두 번 안 만든다', () => {
+    const groups = buildCharacterGroups([보스행()], [], [
+      { ocid: 보스행().ocid, characterName: '아무개', imageUrl: null },
+    ])
+
+    expect(groups).toHaveLength(1)
+    expect(groups[0].bossRows).toHaveLength(1)
+  })
+
+  // 행이 있는 카드가 먼저 서야 화면 순서가 지금과 안 갈린다. 순서는 `orderByTracked` 가 다시
+  // 세우지만, 그 함수는 추적 목록에 없는 캐릭터의 차례를 이 배열 순서로 둔다.
+  it('행에서 만든 카드 뒤에 붙는다', () => {
+    const groups = buildCharacterGroups([보스행()], [], [조회불가])
+
+    expect(groups.map((group) => group.ocid)).toEqual([보스행().ocid, 'stranded'])
+  })
+
+  it('안 넘기면 지금과 같다', () => {
+    expect(buildCharacterGroups([보스행()], [])).toHaveLength(1)
   })
 })

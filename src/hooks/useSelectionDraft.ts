@@ -33,6 +33,14 @@ export interface SelectionDraft {
    */
   replaceSelection: (ocids: string[]) => void
   removeCharacter: (ocid: string) => void
+  /**
+   * 저장소에서 ocid 가 갈렸다는 사실을 초안에도 옮긴다(월드 이전 확인).
+   *
+   * 사용자의 편집이 아니라 **바깥에서 온 사실**이라 다른 편집 함수와 성격이 다르다. 손대지 않은
+   * 초안에는 아무것도 안 만든다 - `trackedOcids` 가 이미 새 값이라 그대로 보이고, 여기서 초안을
+   * 만들면 사용자가 손댄 적 없는데 저장 버튼이 켜진다.
+   */
+  renameCharacter: (fromOcid: string, toOcid: string) => void
   /** 끌어 놓았을 때·접근성 액션일 때. 둘 다 `moveOcid` 하나를 통과한다. */
   moveCharacter: (fromIndex: number, toIndex: number) => void
   setRepresentative: (ocid: string) => void
@@ -137,6 +145,18 @@ export function useSelectionDraft(trackedOcids: string[] | null): SelectionDraft
     [editSelection],
   )
 
+  const renameCharacter = useCallback((fromOcid: string, toOcid: string): void => {
+    // 손대지 않은 초안(`null`)은 그대로 둔다. `trackedOcids` 가 이미 새 값이다.
+    setEditedOcids((previous) =>
+      previous === null || !previous.includes(fromOcid)
+        ? previous
+        : previous.map((ocid) => (ocid === fromOcid ? toOcid : ocid)),
+    )
+    // 고른 대표도 함께 간다. 안 옮기면 `resolveRepresentative` 가 목록에 없는 값으로 읽어
+    // 사용자가 방금 찍은 별이 사라진다. 안 골랐으면(`undefined`) 그대로 둔다.
+    setPickedRepresentative((previous) => (previous === fromOcid ? toOcid : previous))
+  }, [])
+
   // 놓은 자리가 곧 배열 순서다. 저장 시점에 다시 정렬하지 않는다. 레벨 내림차순은 아직 순서를
   // 정하지 않았을 때의 초기값이다.
   const moveCharacter = useCallback(
@@ -158,6 +178,7 @@ export function useSelectionDraft(trackedOcids: string[] | null): SelectionDraft
     addCharacter,
     replaceSelection,
     removeCharacter,
+    renameCharacter,
     moveCharacter,
     setRepresentative,
   }

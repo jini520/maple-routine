@@ -127,6 +127,55 @@ export async function setCharacterSelection(
   await clearRepresentativeCharacter()
 }
 
+/**
+ * 월드 이전으로 ocid 가 바뀐 캐릭터를 **추적 목록에서 갈아끼운다**.
+ *
+ * 사용자가 확인 모달에서 그렇다고 답할 때만 불린다. 앱이 스스로 부르는 자리는 없다.
+ *
+ * 바뀌는 것은 **추적 목록의 그 자리와, 옛 ocid 를 가리키던 포인터 둘**뿐이다. 기록
+ * (`boss_profit_records`)·프로필 스냅샷·조회 원장은 안 건드린다. 챌린저스에서 만들어진 기록은
+ * 챌린저스 기록으로 남아야 하고, 보스 수익 화면은 `추적 목록 ∪ 기록을 남긴 캐릭터` 를 그리므로
+ * 추적에서 빠져도 과거 카드가 안 사라진다.
+ *
+ * **자리를 지킨다.** 빼고 뒤에 붙이면 사용자가 끌어서 맞춰 둔 순서가 그 캐릭터만 맨 아래로
+ * 떨어진다.
+ *
+ * 새 ocid 가 이미 목록에 있으면(모달을 띄워 둔 채 손으로 추가한 경우) 옛 자리만 빼고 중복을
+ * 안 만든다. 같은 ocid 가 두 번 서면 격자 키가 겹쳐 행 하나가 조용히 사라진다.
+ *
+ * **바뀐 목록을 돌려준다.** 저장소만 고치면 화면은 스토어가 든 옛 목록을 그대로 보여 주고,
+ * 그 상태에서 저장을 누르면 방금 뺀 ocid 가 다시 쓰인다. 호출부가 이 값을 앱 상태에 전파해야
+ * 한다. 할 일이 없었으면 `null`.
+ */
+export async function replaceTrackedCharacter(
+  oldOcid: string,
+  newOcid: string,
+): Promise<string[] | null> {
+  const tracked = await getTrackedCharacterOcids()
+  if (tracked === null || !tracked.includes(oldOcid)) {
+    return null
+  }
+
+  // **포인터를 목록보다 먼저 읽는다.** `setTrackedCharacterOcids` 안의
+  // `pruneDanglingRepresentative` 가 새 목록에 없는 대표를 지우므로, 쓰고 나서 읽으면 옛 대표가
+  // 이미 `null` 이라 옮길 대상을 잃는다.
+  const wasRepresentative = (await getRepresentativeCharacter()) === oldOcid
+  const wasLastSelected = (await getLastSelectedCharacter()) === oldOcid
+
+  const replaced = [...new Set(tracked.map((ocid) => (ocid === oldOcid ? newOcid : ocid)))]
+  // 쓰기는 목록이 먼저다. 대표를 앞세우면 목록 저장이 실패했을 때 목록에 없는 대표가 남는다
+  // (`setCharacterSelection` 과 같은 순서).
+  await setTrackedCharacterOcids(replaced)
+
+  if (wasRepresentative) {
+    await setRepresentativeCharacter(newOcid)
+  }
+  if (wasLastSelected) {
+    await setLastSelectedCharacter(newOcid)
+  }
+  return replaced
+}
+
 export async function getRepresentativeCharacter(): Promise<string | null> {
   return preferences.get(representativeCharacterKey())
 }

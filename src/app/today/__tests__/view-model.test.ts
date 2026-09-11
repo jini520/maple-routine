@@ -335,7 +335,147 @@ describe('남은 스케줄. 순서는 **관리 순서**뿐이다', () => {
     )
 
     expect(model.schedule.map((row) => row.ocid)).toEqual(['a', 'b'])
-    expect(model.schedule[0].hasSyncIssue).toBe(true)
+    expect(model.schedule[0].syncIssue).toBe('failed')
+  })
+
+  // 조회 불가와 동기화 실패는 처방이 다르다. 앞은 영구라 캐릭터 관리에서 손봐야 하고 뒤는
+  // 새로고침이면 풀린다. 화면이 둘을 같은 말로 덮으면 사용자가 새로고침만 반복한다.
+  it('조회 불가는 동기화 실패와 갈라 담는다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a'],
+        contentCharacters: [withRemaining('a', 1)],
+        characterIssues: { a: 'unavailable' },
+      }),
+    )
+
+    expect(model.schedule[0].syncIssue).toBe('unavailable')
+  })
+
+  // **출처가 둘이고 도착 시각이 다르다.** 스케줄러 뷰는 캐시 우선 표시에서 즉시 오는데
+  // `characterIssues` 는 보스 수익 스토어가 돌고 난 뒤에 온다. 그 사이에 위젯이 빈 내용 배열을
+  // `0개 남음 = CLEAR` 로 읽어, 앱을 켜면 `CLEAR` 가 떴다가 `조회 불가` 로 바뀌었다.
+  it('스케줄러 뷰가 조회 불가면 characterIssues 를 안 기다린다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a'],
+        contentCharacters: [
+          { ...withRemaining('a', 0), error: { kind: 'characterUnavailable' as const } },
+        ],
+        characterIssues: {},
+      }),
+    )
+
+    expect(model.schedule[0].syncIssue).toBe('unavailable')
+  })
+
+  it('보스 스케줄러 뷰만 알고 있어도 선다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a'],
+        bossCharacters: [bossView('a', { error: { kind: 'characterUnavailable' as const } })],
+        characterIssues: {},
+      }),
+    )
+
+    expect(model.schedule[0].syncIssue).toBe('unavailable')
+  })
+
+  // 그쪽 실패는 새로고침이면 풀린다. 영구 실패와 같은 말로 덮지 않는다.
+  it('스케줄러 뷰의 그 외 실패는 failed 다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a'],
+        contentCharacters: [{ ...withRemaining('a', 1), error: { kind: 'network' as const } }],
+        characterIssues: {},
+      }),
+    )
+
+    expect(model.schedule[0].syncIssue).toBe('failed')
+  })
+
+  // 이 위젯이 답하는 것은 **이번 주에 얼마 벌었나** 다. 조회 불가 캐릭터는 그 숫자를 못 내므로
+  // 줄을 세우지 않는다(사용자 지정).
+  it('이번 주 보스 수익 목록에서 조회 불가 캐릭터를 뺀다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a'],
+        profilesByOcid: { a: profile({ name: '지내우시' }) },
+        contentCharacters: [
+          { ...withRemaining('a', 0), error: { kind: 'characterUnavailable' as const } },
+        ],
+      }),
+    )
+
+    expect(model.profit.topCharacters.map((view) => view.ocid)).not.toContain('a')
+  })
+
+  // 대표 카드도 같은 시각에 알아야 EXP 바가 떴다가 배지로 바뀌지 않는다.
+  it('대표 카드도 스케줄러 뷰로 판정한다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a'],
+        representativeOcid: 'a',
+        profilesByOcid: { a: profile({ name: '지내우시' }) },
+        contentCharacters: [
+          { ...withRemaining('a', 0), error: { kind: 'characterUnavailable' as const } },
+        ],
+        characterIssues: {},
+      }),
+    )
+
+    expect(model.representative?.unavailable).toBe(true)
+  })
+
+  it('실패가 없으면 null 이다', () => {
+    const model = buildTodayViewModel(
+      input({ orderedOcids: ['a'], contentCharacters: [withRemaining('a', 1)] }),
+    )
+
+    expect(model.schedule[0].syncIssue).toBeNull()
+  })
+})
+
+// 조회 불가 캐릭터가 어디에 서든 그 사실이 함께 서야 한다. 한 화면에서만 말하면 다른 자리의
+// 숫자가 여전히 아는 값처럼 읽힌다.
+describe('조회 불가 표식이 닿는 자리', () => {
+  it('대표 캐릭터가 조회 불가면 그 사실을 나른다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a'],
+        representativeOcid: 'a',
+        profilesByOcid: { a: profile({ name: '지내우시' }) },
+        characterIssues: { a: 'unavailable' },
+      }),
+    )
+
+    expect(model.representative?.unavailable).toBe(true)
+  })
+
+  it('대표가 멀쩡하면 거짓이다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a'],
+        representativeOcid: 'a',
+        profilesByOcid: { a: profile({ name: '지내우시' }) },
+      }),
+    )
+
+    expect(model.representative?.unavailable).toBe(false)
+  })
+
+  // 동기화 실패는 마지막으로 확인한 값을 보여주는 상태라 조회 불가와 다르다.
+  it('동기화 실패는 조회 불가가 아니다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a'],
+        representativeOcid: 'a',
+        profilesByOcid: { a: profile({ name: '지내우시' }) },
+        characterIssues: { a: 'failed' },
+      }),
+    )
+
+    expect(model.representative?.unavailable).toBe(false)
   })
 })
 

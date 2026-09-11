@@ -21,6 +21,7 @@ import { pageFromLayerState } from './page-from-layer-state'
 import { PUSH_SCREEN_OPTIONS } from './push-screen-options'
 import {
   INITIAL_TAB_ROUTE,
+  LAYER_STACK_ID,
   type GroupLayerParamList,
   type LayerParamList,
   type LayerRouteName,
@@ -111,6 +112,8 @@ const LAYER_SCREENS = {
 export function LayerStack(): React.JSX.Element {
   return (
     <Layer.Navigator
+      // `useOpenTab` 이 이 이름으로 층 깊이를 본다(`popToTop` 을 헛치지 않으려고).
+      id={LAYER_STACK_ID}
       // 벽지는 여기가 아니라 탭 쪽이다. 이 스택의 화면은 셋 다 탭 내비게이터이고 그 탭들이
       // 자기 화면을 불투명하게 칠하므로 여기 깐 벽지는 어차피 덮인다. 두 겹 마운트하지 않도록
       // `TAB_LAYER_PROPS` 한 곳에만 둔다.

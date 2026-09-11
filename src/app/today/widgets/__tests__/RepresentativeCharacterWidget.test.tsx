@@ -200,3 +200,57 @@ describe('EXP 열이 길어졌다', () => {
     }
   })
 })
+
+// 이 카드의 레벨·EXP 는 조회 불가 캐릭터에서 **마지막으로 본 값**이다. 말하지 않으면 지금의
+// 사실로 읽힌다.
+describe('조회 불가 대표 캐릭터', () => {
+  const 조회불가 = 뷰모델({ representative: { ...대표_캐릭터, unavailable: true } })
+
+  // EXP 는 조회를 못 한 순간 굳은 값이다. 바가 그대로 서 있으면 지금의 진행도로 읽힌다.
+  it('EXP 바 자리에 배지가 선다', async () => {
+    const { getByTestId, queryByTestId } = await 위젯(크기['4x2'], 조회불가)
+
+    expect(getByTestId('representative-issue')).toBeTruthy()
+    expect(queryByTestId('representative-exp')).toBeNull()
+  })
+
+  it('멀쩡하면 EXP 바가 그대로다', async () => {
+    const { getByTestId, queryByTestId } = await 위젯(크기['4x2'])
+
+    expect(getByTestId('representative-exp')).toBeTruthy()
+    expect(queryByTestId('representative-issue')).toBeNull()
+  })
+
+  // 이름 옆은 비운다. 같은 말을 두 번 하고, 그 자리는 닉네임이 먼저 줄어드는 자리다.
+  it('배지는 EXP 블록 안에만 하나 선다', async () => {
+    const { getAllByText, getByTestId } = await 위젯(크기['4x2'], 조회불가)
+
+    expect(getAllByText('조회 불가')).toHaveLength(1)
+    expect(getByTestId('representative-issue-block')).toBeTruthy()
+  })
+
+  // 아는 값까지 버리지 않는다. 이름·레벨은 그대로 서고 배지가 그 값의 나이를 말한다.
+  it('이름은 그대로 그린다', async () => {
+    const { getByText } = await 위젯(크기['4x2'], 조회불가)
+
+    expect(getByText(대표_캐릭터.name)).toBeTruthy()
+  })
+})
+
+// 카드의 얼굴에도 표식이 붙는다. EXP 자리의 배지와 함께 선다.
+describe('조회 불가 대표의 얼굴', () => {
+  it('얼굴에 표식이 붙는다', async () => {
+    const { getByTestId } = await 위젯(
+      크기['4x2'],
+      뷰모델({ representative: { ...대표_캐릭터, unavailable: true } }),
+    )
+
+    expect(getByTestId('portrait-unavailable')).toBeTruthy()
+  })
+
+  it('멀쩡하면 안 붙는다', async () => {
+    const { queryByTestId } = await 위젯(크기['4x2'])
+
+    expect(queryByTestId('portrait-unavailable')).toBeNull()
+  })
+})

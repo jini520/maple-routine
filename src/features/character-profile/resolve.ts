@@ -65,7 +65,14 @@ export async function resolveDisplayProfiles(
       }
       profiles.set(ocid, profile)
       // `updatedAt` 은 캐시가 적어 둔 시각이다. 지금 시각으로 쓰면 방금 받은 값처럼 보인다.
-      await saveCharacterProfile({ ocid, ...profile, updatedAt: cached.cachedAt }).catch(() => undefined)
+      // `jobClass` 는 `DisplayProfile` 에 없다. 이 화면이 안 그리는 값이지만 스냅샷은 들어야
+      // 해서(월드 이전 판정이 읽는다) 캐시에서 따로 꺼낸다.
+      await saveCharacterProfile({
+        ocid,
+        ...profile,
+        jobClass: cached.profile.jobClass ?? null,
+        updatedAt: cached.cachedAt,
+      }).catch(() => undefined)
     }),
   )
 

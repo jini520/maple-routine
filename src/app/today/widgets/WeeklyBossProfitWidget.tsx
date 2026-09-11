@@ -267,7 +267,12 @@ function CharacterRow(props: {
         </Text>
       )}
       {/* 목록 행에는 `메소`를 안 붙인다. 머리가 이미 단위를 말했다. */}
-      <Text fixed style={TABULAR_NUMS} className="shrink-0 text-[12.5px] font-bold text-text">
+      <Text
+        fixed
+        testID="profit-character-total"
+        style={TABULAR_NUMS}
+        className="shrink-0 text-[12.5px] font-bold text-text"
+      >
         {formatMesoShort(props.character.totalMeso)}
       </Text>
     </View>

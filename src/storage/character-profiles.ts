@@ -21,18 +21,27 @@ export interface CharacterProfileSnapshot {
   /** 모르면 `null`. 0 이나 빈 문자열로 채우지 않는다. */
   world: string | null
   level: number | null
+  /**
+   * `character/list` 가 주는 직업명. 모르면 `null`.
+   *
+   * 여기 사는 이유는 **월드 이전 판정이 읽기 때문**이다. 옮겨간 캐릭터는 옛 ocid 로 아무것도 못
+   * 부르므로 이름·직업·레벨만으로 새 ocid 를 짚어야 하고, 이름 하나로는 유일하지 않다. 5분 TTL
+   * 캐시에 두면 캐시 비우기 한 번에 판정 재료가 사라진다.
+   */
+  jobClass: string | null
   updatedAt: string
 }
 
 const UPSERT_SQL = `
-  INSERT INTO character_profiles (ocid, name, image_url, world, level, updated_at)
-  VALUES (?, ?, ?, ?, ?, ?)
+  INSERT INTO character_profiles (ocid, name, image_url, world, level, job_class, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(ocid) DO UPDATE SET
     name = excluded.name,
     image_url = excluded.image_url,
     -- 아는 값이 있을 때만 덮는다. 모르는 채로 부르는 경로가 이미 박아 둔 값을 지우면 안 된다.
     world = COALESCE(excluded.world, character_profiles.world),
     level = COALESCE(excluded.level, character_profiles.level),
+    job_class = COALESCE(excluded.job_class, character_profiles.job_class),
     updated_at = excluded.updated_at
 `
 
@@ -52,6 +61,7 @@ export async function saveCharacterProfile(snapshot: CharacterProfileSnapshot): 
     snapshot.imageUrl,
     snapshot.world,
     snapshot.level,
+    snapshot.jobClass,
     snapshot.updatedAt,
   ])
 }
@@ -86,6 +96,7 @@ export async function getCharacterProfiles(
       // 컬럼이 nullable 이다. 0 이나 빈 문자열로 채우면 모름 이 값으로 둔갑한다.
       world: (row.world as string | null | undefined) ?? null,
       level: (row.level as number | null | undefined) ?? null,
+      jobClass: (row.job_class as string | null | undefined) ?? null,
       updatedAt: row.updated_at as string,
     })
   }

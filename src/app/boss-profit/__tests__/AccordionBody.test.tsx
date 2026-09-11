@@ -258,3 +258,44 @@ describe('주간 본문의 띠 둘', () => {
     expect(getAllByTestId('accordion-band-count')).toHaveLength(1)
   })
 })
+
+// 월간 탭의 주차 행. **조회 불가 캐릭터는 기록이 있는 주만 아는 값**이고 나머지 주는 모르는
+// 값이다. `0 메소` 로 그리면 그 주에 0원을 벌었다는 단정이 된다.
+describe('조회 불가 캐릭터의 주차 합계', () => {
+  it('기록이 있는 주는 금액을 그대로 그린다', async () => {
+    const { getByText, queryByTestId } = await renderProfit(
+      <WeeklySubtotalRow subtotal={주차소계({ state: 'recorded', totalMeso: 1_000 })} unavailable />,
+    )
+
+    expect(getByText(/메소/)).toBeTruthy()
+    expect(queryByTestId('subtotal-issue')).toBeNull()
+  })
+
+  // 진행 중인 주가 특히 위험하다. `showsMeso` 가 참이라 조회를 못 하는데도 `0 메소` 가 선다.
+  it('진행 중인 주는 금액 대신 배지가 선다', async () => {
+    const { getByTestId, queryByText } = await renderProfit(
+      <WeeklySubtotalRow subtotal={주차소계({ state: 'inProgress', totalMeso: 0 })} unavailable />,
+    )
+
+    expect(getByTestId('subtotal-issue')).toBeTruthy()
+    expect(queryByText(/메소/)).toBeNull()
+  })
+
+  // 조회해서 0건을 확인한 주 도 조회 불가 캐릭터에서는 못 믿는다. 그 확인은 조회가 되던 시절의
+  // 것이고, 지금은 그 뒤로 무슨 일이 있었는지 알 길이 없다.
+  it('0건으로 확인된 주도 배지가 선다', async () => {
+    const { getByTestId } = await renderProfit(
+      <WeeklySubtotalRow subtotal={주차소계({ state: 'confirmedEmpty', totalMeso: 0 })} unavailable />,
+    )
+
+    expect(getByTestId('subtotal-issue')).toBeTruthy()
+  })
+
+  it('멀쩡한 캐릭터는 지금 그대로다', async () => {
+    const { queryByTestId } = await renderProfit(
+      <WeeklySubtotalRow subtotal={주차소계({ state: 'inProgress', totalMeso: 0 })} />,
+    )
+
+    expect(queryByTestId('subtotal-issue')).toBeNull()
+  })
+})

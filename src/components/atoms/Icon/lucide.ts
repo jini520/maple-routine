@@ -15,6 +15,7 @@
 
 import ArrowDown from 'lucide-react-native/icons/arrow-down'
 import ArrowLeft from 'lucide-react-native/icons/arrow-left'
+import ArrowRight from 'lucide-react-native/icons/arrow-right'
 import ArrowUp from 'lucide-react-native/icons/arrow-up'
 import Ban from 'lucide-react-native/icons/ban'
 import BookOpen from 'lucide-react-native/icons/book-open'
@@ -84,6 +85,7 @@ export const AlertTriangleIcon = withIconInterop(TriangleAlert)
 export const ArrowDownIcon = withIconInterop(ArrowDown)
 /** 하위 페이지의 뒤로. 설정 하위 화면 다섯. */
 export const ArrowLeftIcon = withIconInterop(ArrowLeft)
+export const ArrowRightIcon = withIconInterop(ArrowRight)
 /** 직전 기간 대비 **증가**. 보스 수익 증감 칩. */
 export const ArrowUpIcon = withIconInterop(ArrowUp)
 /** 조회 불가 캐릭터. 보스 수익 `CharacterIssue`(영구 이슈 표식). */

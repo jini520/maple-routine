@@ -30,6 +30,7 @@ import { fetchCharacterBasicCached } from './character-basic-fetch'
 import { resolveTrackedCharacterContext } from './character-roster'
 import type { TrackedCharacterContext } from './character-roster'
 import { markSyncAttemptedThisRun } from './sync-run-state'
+import { persistUnavailable } from './stranded-characters'
 import { resolveDisplayRepresentative } from '../character-manage/derivations'
 import { getRepresentativeCharacter } from '../../storage/character-selection'
 // 공개 API 는 그대로 둔다. 옮긴 것은 구현 위치이지 호출부가 알 바가 아니다.
@@ -355,6 +356,9 @@ async function runSyncRound(
     )
     completed += fallbackRest.length
     onProgress?.(completed, total)
+    // 401·429 다. 전원에 폴백 결과가 있어 답하지 않은 ocid 가 0개이므로, 이 길로도 조회 불가
+    // 표식이 잘못 서지 않는다. 그래도 부르는 것은 **되던 캐릭터의 표식을 내리기** 위해서다.
+    await persistUnavailable(ocids, [firstResult, ...fallbackRest])
     return [firstResult, ...fallbackRest]
   }
 
@@ -378,7 +382,11 @@ async function runSyncRound(
     refreshCharacterBasics(apiKey, targets, forcedOcid),
   ])
 
-  return [firstResult, ...restResults]
+  const results = [firstResult, ...restResults]
+  // 조회 불가를 **여기서** 표에 남긴다. 이 사실을 배우는 자리가 동기화다. 화면 스토어에 두면
+  // 그 화면을 안 여는 사용자에게는 표가 영영 안 찬다.
+  await persistUnavailable(ocids, results)
+  return results
 }
 
 // 진행 중인 회차가 있으면 새 회차를 시작하지 않고 그 프라미스를 함께 기다린다.

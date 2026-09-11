@@ -212,3 +212,31 @@ describe('isSettledProbe: 잠정 관측', () => {
     ).toBe(false)
   })
 })
+
+// 조회 불가는 영구가 기본이지만 **되돌아오는 길이 있어야 한다**. 넥슨이 다시 답하기 시작하면
+// 그 표식이 남아 화면이 영영 조회 불가라고 말한다.
+describe('조회 불가를 내린다', () => {
+  it('거짓으로 부르면 표식만 내리고 날짜 기록은 남는다', async () => {
+    await recordScheduleProbe('ocid-1', '2026-07-10', {
+      kind: 'observed',
+      hasCompletion: true,
+      sections: { daily: true, weekly: true, weeklyBoss: true, monthlyBoss: true },
+      bosses: [],
+    })
+    await markScheduleProbeUnavailable('ocid-1')
+
+    await markScheduleProbeUnavailable('ocid-1', false)
+
+    const ledger = await getScheduleProbeLedger('ocid-1', new Date('2026-07-11T00:00:00.000Z'))
+    expect(ledger.unavailable).toBe(false)
+    // 14일 관측을 버리면 다음 회차가 그 날짜들을 처음부터 다시 훑는다.
+    expect(Object.keys(ledger.dates)).toContain('2026-07-10')
+  })
+
+  it('안 적으면 지금처럼 올린다', async () => {
+    await markScheduleProbeUnavailable('ocid-1')
+
+    const ledger = await getScheduleProbeLedger('ocid-1', new Date('2026-07-11T00:00:00.000Z'))
+    expect(ledger.unavailable).toBe(true)
+  })
+})

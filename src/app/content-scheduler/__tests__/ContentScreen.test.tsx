@@ -132,7 +132,14 @@ beforeEach(() => {
   mockNoticeApiKeyIssue.mockClear()
   navigate.mockClear()
   dispatch.mockClear()
-  mockedNavigation.mockReturnValue({ navigate, dispatch, goBack: jest.fn() } as never)
+  // 이 화면은 하위 층에 산다. 층 스택 깊이 2 여야 `useOpenTab` 이 실제와 같이 되돌린다.
+  // `dispatch` 를 그대로 물려 그 액션이 어디로 가는지를 기존 단언이 계속 본다.
+  mockedNavigation.mockReturnValue({
+    navigate,
+    dispatch,
+    goBack: jest.fn(),
+    getParent: () => ({ getState: () => ({ routes: [{}, {}] }), dispatch }),
+  } as never)
   useTrackingModeStore.setState({ mode: 'auto' })
   useDataFreshness.setState({ fetchedAt: null })
 })
@@ -501,18 +508,45 @@ describe('ContentScreen: 실패의 목적지', () => {
     expect(mockShowError).toHaveBeenCalledTimes(1)
   })
 
-  // 영구 실패라 "다시 시도"는 눌러도 같은 400 이다.
-  it('characterUnavailable 토스트에는 액션이 없다', async () => {
+  // **조회 불가는 토스트가 아니다.** 사건이 아니라 그 캐릭터를 고르고 있는 동안 계속 참인
+  // 상태라, 토스트로 두면 고를 때마다·돌아올 때마다 같은 문구가 다시 뜬다(관측된 증상).
+  it('characterUnavailable 은 토스트를 안 띄우고 내용 자리에 안내를 세운다', async () => {
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
       characters: [character({ error: { kind: 'characterUnavailable' } })],
     })
 
+    const { getByText } = await renderScreen()
+
+    expect(mockShowError).not.toHaveBeenCalled()
+    expect(getByText('이 캐릭터는 조회할 수 없습니다')).toBeTruthy()
+  })
+
+  // 처방이 새로고침이 아니라 캐릭터 관리라 그 길을 버튼으로 준다.
+  it('그 안내에 캐릭터 관리로 가는 버튼이 있다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [character({ error: { kind: 'characterUnavailable' } })],
+    })
+
+    const { getByText } = await renderScreen()
+
+    expect(getByText('캐릭터 관리로 이동하기')).toBeTruthy()
+  })
+
+  // 네트워크 실패는 새로고침이면 풀리므로 지금처럼 토스트다.
+  it('그 외 캐릭터 실패는 토스트 그대로다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [character({ error: { kind: 'network' } })],
+    })
+
     await renderScreen()
 
     expect(mockShowError).toHaveBeenCalledTimes(1)
-    expect(mockShowError.mock.calls[0][1]).toBeUndefined()
   })
 
   it('isStale 이지만 error 가 없으면(캐시 우선 표시) 아무것도 알리지 않는다', async () => {

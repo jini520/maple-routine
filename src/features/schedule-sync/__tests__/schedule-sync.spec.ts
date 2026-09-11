@@ -8,7 +8,13 @@ import type {
   MapleCharacter,
   SchedulerCharacterState,
 } from '../../../types'
-import { NexonAuthError, NexonBadRequestError, NexonNetworkError, NexonRateLimitError } from '../../../nexon/errors'
+import {
+  NexonAuthError,
+  NexonBadRequestError,
+  NexonNetworkError,
+  NexonNoCharacterError,
+  NexonRateLimitError,
+} from '../../../nexon/errors'
 
 jest.mock('../../../nexon/character', () => ({
   fetchCharacterList: jest.fn(),
@@ -39,6 +45,13 @@ jest.mock('../../../storage/character-basic-cache', () => ({
 }))
 const { getCachedCharacterBasic: getCachedCharacterBasicMock, setCachedCharacterBasic: setCachedCharacterBasicMock, getAllCachedCharacterBasicOcids: getAllCachedCharacterBasicOcidsMock } = jest.requireMock('../../../storage/character-basic-cache') as Record<string, jest.Mock>
 
+jest.mock('../../../storage/character-profiles', () => ({
+  getCharacterProfiles: jest.fn(),
+  saveCharacterProfile: jest.fn(),
+  markCharacterUnavailable: jest.fn(),
+}))
+const { getCharacterProfiles: getCharacterProfilesMock, saveCharacterProfile: saveCharacterProfileMock, markCharacterUnavailable: markCharacterUnavailableMock } = jest.requireMock('../../../storage/character-profiles') as Record<string, jest.Mock>
+
 jest.mock('../../../storage/shared-progress-cache', () => ({
   getWorldSharedProgress: jest.fn(),
   getAccountSharedProgress: jest.fn(),
@@ -64,6 +77,10 @@ import {
 import { hasSyncAttemptedThisRun, resetSyncRunStateForTests } from '../sync-run-state'
 import { useRefreshProgress } from '../../refresh/progress'
 import { setRepresentativeCharacter } from '../../../storage/character-selection'
+import {
+  resetWorldLeapStoreForTests,
+  useWorldLeapStore,
+} from '../../character-manage/world-leap-store'
 
 function mockCharacter(ocid: string): MapleCharacter {
   return {
@@ -137,6 +154,10 @@ beforeEach(async () => {
   getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
   getCachedSchedulerStateMock.mockResolvedValue(null)
   setCachedSchedulerStateMock.mockResolvedValue(undefined)
+  saveCharacterProfileMock.mockResolvedValue(undefined)
+  markCharacterUnavailableMock.mockReset().mockResolvedValue(undefined)
+  getCharacterProfilesMock.mockResolvedValue(new Map())
+  resetWorldLeapStoreForTests()
   getCachedCharacterBasicMock.mockResolvedValue(null)
   setCachedCharacterBasicMock.mockResolvedValue(undefined)
   getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
@@ -1550,6 +1571,165 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
 
   // 조회 불가 캐릭터(400 OPENAPI00003)를 목록에서 빼지 않는다. 빼면 trackedOcids에
   // 남은 그 ocid를 사용자가 해제할 방법이 없다.
+  // 월드 이전으로 남겨진 ocid. `character/list` 에서 빠졌으므로 위 경로들은 이 캐릭터를 한 번도
+  // 안 부른다. 아무도 안 물으면 표식도 안 서고 화면은 캐시로 멀쩡한 행을 그린다.
+  describe('목록에 없는 추적 ocid', () => {
+    const 옛ocid = 'stranded-ocid'
+
+    async function setTrackedOcids(ocids: string[]): Promise<void> {
+      await prefs.set('trackedCharacters', JSON.stringify(ocids))
+    }
+
+    function 챌린저스캐릭터(ocid: string): MapleCharacter {
+      return { ocid, name: '지내우시', world: '챌린저스2', jobClass: '레테', level: 285 }
+    }
+
+    beforeEach(() => {
+      resetWorldLeapStoreForTests()
+      getCharacterProfilesMock.mockResolvedValue(new Map())
+    })
+
+    it('로스터에 없는 추적 ocid 를 따로 물어 조회 불가를 원장에 남긴다', async () => {
+      await setTrackedOcids([옛ocid])
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1')])])
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
+      getCachedCharacterBasicMock.mockResolvedValue(null)
+      fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
+        if (ocid === 옛ocid) throw new NexonNoCharacterError('캐릭터가 없습니다')
+        return basicProfile({ name: '정상', level: 250 })
+      })
+
+      await getCharacterPickerRoster(jest.fn(), { accountId: 'acc-1' })
+
+      const { getScheduleProbeLedger } = require('../../../storage/schedule-probe-ledger') as typeof import('../../../storage/schedule-probe-ledger')
+      expect((await getScheduleProbeLedger(옛ocid, new Date(NOW))).unavailable).toBe(true)
+    })
+
+    // 다른 계정 캐릭터를 죽었다고 읽으면 계정을 바꾸는 순간 전원이 조회 불가가 된다.
+    it('다른 계정 목록에 있으면 안 묻는다', async () => {
+      await setTrackedOcids([옛ocid])
+      fetchCharacterListMock.mockResolvedValue([
+        account('acc-1', [mockCharacter('ocid-1')]),
+        account('acc-2', [mockCharacter(옛ocid)]),
+      ])
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
+      getCachedCharacterBasicMock.mockResolvedValue(null)
+      fetchCharacterBasicMock.mockResolvedValue(basicProfile({ name: '정상', level: 250 }))
+
+      await getCharacterPickerRoster(jest.fn(), { accountId: 'acc-1' })
+
+      expect(fetchCharacterBasicMock).not.toHaveBeenCalledWith(expect.anything(), 옛ocid)
+    })
+
+    // 이미 확정된 사실이라 다시 부를 이유가 없다. 화면을 열 때마다 한 건씩 새면 안 된다.
+    it('원장에 이미 조회 불가로 적혀 있으면 다시 안 부른다', async () => {
+      await setTrackedOcids([옛ocid])
+      const { markScheduleProbeUnavailable } = require('../../../storage/schedule-probe-ledger') as typeof import('../../../storage/schedule-probe-ledger')
+      await markScheduleProbeUnavailable(옛ocid)
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', [])])
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
+      getCachedCharacterBasicMock.mockResolvedValue(null)
+
+      await getCharacterPickerRoster(jest.fn(), { accountId: 'acc-1' })
+
+      expect(fetchCharacterBasicMock).not.toHaveBeenCalledWith(expect.anything(), 옛ocid)
+    })
+
+    it('월드 리프로 보이면 물어볼 후보를 세운다', async () => {
+      await setTrackedOcids([옛ocid])
+      const 새캐릭터 = { ...챌린저스캐릭터('new-ocid'), world: '엘리시움' }
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', [새캐릭터])])
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
+      getCachedCharacterBasicMock.mockResolvedValue(null)
+      getCharacterProfilesMock.mockResolvedValue(
+        new Map([[옛ocid, { ocid: 옛ocid, name: '지내우시', world: '챌린저스2', jobClass: '레테', level: 285, imageUrl: '', updatedAt: NOW }]]),
+      )
+      fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
+        if (ocid === 옛ocid) throw new NexonNoCharacterError('캐릭터가 없습니다')
+        return basicProfile({ name: '지내우시', level: 285 })
+      })
+
+      await getCharacterPickerRoster(jest.fn(), { accountId: 'acc-1' })
+
+      const { candidate } = useWorldLeapStore.getState()
+      expect(candidate?.from.ocid).toBe(옛ocid)
+      expect(candidate?.to.ocid).toBe('new-ocid')
+    })
+
+    // `job_class` 는 이 기능과 함께 생긴 칸이라 옛 기기의 행에는 비어 있다. 그런데 이전으로
+    // 남겨진 캐릭터는 다시 조회할 길이 없어 그 칸이 영영 안 채워진다. 정확히 이 기능이 겨냥한
+    // 캐릭터만 판정에서 빠지므로, 아직 남아 있는 5분 캐시에서 메운다.
+    it('스냅샷에 직업이 없으면 캐릭터 캐시에서 메워 판정한다', async () => {
+      await setTrackedOcids([옛ocid])
+      const 새캐릭터 = { ...챌린저스캐릭터('new-ocid'), world: '엘리시움' }
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', [새캐릭터])])
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
+      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) =>
+        ocid === 옛ocid
+          ? { profile: basicProfile({ name: '지내우시', level: 285, jobClass: '레테' }), cachedAt: STALE_CACHED_AT }
+          : null,
+      )
+      getCharacterProfilesMock.mockResolvedValue(
+        new Map([[옛ocid, { ocid: 옛ocid, name: '지내우시', world: '챌린저스2', jobClass: null, level: 285, imageUrl: '', updatedAt: NOW }]]),
+      )
+      fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
+        if (ocid === 옛ocid) throw new NexonNoCharacterError('캐릭터가 없습니다')
+        return basicProfile({ name: '지내우시', level: 285 })
+      })
+
+      await getCharacterPickerRoster(jest.fn(), { accountId: 'acc-1' })
+
+      expect(useWorldLeapStore.getState().candidate?.to.ocid).toBe('new-ocid')
+    })
+
+    // 스냅샷이 통째로 없는 기기도 있다(기록만 있고 프로필을 쓴 적 없는 경우). 캐시가 들고 있으면
+    // 그것으로 선다.
+    it('스냅샷이 아예 없어도 캐릭터 캐시만으로 판정한다', async () => {
+      await setTrackedOcids([옛ocid])
+      const 새캐릭터 = { ...챌린저스캐릭터('new-ocid'), world: '엘리시움' }
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', [새캐릭터])])
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
+      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) =>
+        ocid === 옛ocid
+          ? {
+              profile: { ...basicProfile({ name: '지내우시', level: 285, jobClass: '레테' }), world: '챌린저스2' },
+              cachedAt: STALE_CACHED_AT,
+            }
+          : null,
+      )
+      getCharacterProfilesMock.mockResolvedValue(new Map())
+      fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
+        if (ocid === 옛ocid) throw new NexonNoCharacterError('캐릭터가 없습니다')
+        return basicProfile({ name: '지내우시', level: 285 })
+      })
+
+      await getCharacterPickerRoster(jest.fn(), { accountId: 'acc-1' })
+
+      expect(useWorldLeapStore.getState().candidate?.to.ocid).toBe('new-ocid')
+    })
+
+    // 스냅샷이 챌린저스가 아니면 삭제일 수 있다. 그때 동명 캐릭터를 짚으면 안 된다.
+    it('옛 월드가 챌린저스 계열이 아니면 후보를 안 세운다', async () => {
+      await setTrackedOcids([옛ocid])
+      fetchCharacterListMock.mockResolvedValue([
+        account('acc-1', [{ ...챌린저스캐릭터('new-ocid'), world: '엘리시움' }]),
+      ])
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
+      getCachedCharacterBasicMock.mockResolvedValue(null)
+      getCharacterProfilesMock.mockResolvedValue(
+        new Map([[옛ocid, { ocid: 옛ocid, name: '지내우시', world: '베라', jobClass: '레테', level: 285, imageUrl: '', updatedAt: NOW }]]),
+      )
+      fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
+        if (ocid === 옛ocid) throw new NexonNoCharacterError('캐릭터가 없습니다')
+        return basicProfile({ name: '지내우시', level: 285 })
+      })
+
+      await getCharacterPickerRoster(jest.fn(), { accountId: 'acc-1' })
+
+      expect(useWorldLeapStore.getState().candidate).toBeNull()
+    })
+  })
+
   describe('조회 불가 캐릭터(OPENAPI00003)', () => {
     // 남기는 목적이 **해제 경로 확보**였으므로 추적 중일 때만 남긴다.
     // 추적 중이 아니면 고를 이유도 해제할 필요도 없어 목록에서 뺀다.

@@ -47,10 +47,16 @@ export const ISSUE_POPOVER_WIDTH = 220
 
 export const ISSUE_POPOVER_EDGE_GAP = 12
 
-// 아이콘 바로 아래에 붙인다. 아이콘은 헤더에서 y 9~23px 을 차지하고 꼬리는 팝오버 위로 6px
-// 튀어나오므로, 30px 이면 꼬리 끝이 아이콘 밑변에서 1px 아래에 온다. 닿아 보이면서 아이콘을
-// 덮지는 않는다. 금액 글자를 덮는 것은 허용한다. 열린 동안 그 카드의 금액 대신 팝오버가 말한다.
+/**
+ * 트리거를 못 쟀을 때의 세로 자리. **평소에는 잰 값을 쓴다**(`resolveIssueAnchor`).
+ *
+ * 상수 하나로 두면 트리거 모양이 바뀔 때마다 어긋난다. 원형 배지는 금액 왼쪽 위에 떠 있고
+ * 알약은 금액 칸을 통째로 차지해 밑변이 서로 다른 자리에 있다.
+ */
 export const ISSUE_POPOVER_TOP = 30
+
+/** 트리거 밑변과 팝오버 사이. 꼬리가 팝오버 위로 6px 튀어나오므로 그만큼은 비워야 닿아 보인다. */
+export const ISSUE_POPOVER_GAP = 7
 
 export const ISSUE_CARET_SIZE = 8
 
@@ -99,6 +105,36 @@ export function CharacterIssueBadge(props: {
 }
 
 /**
+ * **금액 자리에 서는 조회 불가 배지.** 금액을 말할 수 없는 카드가 이것으로 그 자리를 채운다.
+ *
+ * 조회할 수 없게 된 캐릭터가 그 주에 기록도 없으면 금액이 `0 메소` 로 나오는데, 그것은
+ * **0원을 벌었다는 단정**이라 우리가 할 수 없는 말이다. 자리를 비울 수도 없어(카드 오른쪽이
+ * 빈 칸이 된다) 모른다는 사실 자체를 그 자리에 적는다.
+ *
+ * 여기서는 라벨을 글자로 쓴다. 위 `CharacterIssueBadge` 가 아이콘만인 것은 캐릭터명과 폭을
+ * 다투기 때문인데, 이 자리는 금액을 **대신하는** 것이라 다툴 상대가 없다.
+ *
+ * 원형 배지와 **함께 서지 않는다.** 둘 다 같은 말을 하고 팝오버도 같다.
+ *
+ * 색은 `error` 다(사용자 지정). 위 원형 배지는 영구·일시를 `info`·`error` 로 갈라 칠하는데, 이
+ * 자리는 **금액이 있어야 할 칸을 대신 차지한 것**이라 그 축과 성격이 다르다.
+ */
+export function CharacterIssueAmount(props: { onToggle: () => void }): React.JSX.Element {
+  return (
+    <Pressable
+      testID="character-issue-amount"
+      role="button"
+      aria-label={CHARACTER_ISSUE_LABEL.unavailable}
+      onPress={props.onToggle}
+      className="flex-row items-center gap-1 rounded-full bg-error-tint px-2 py-0.5"
+    >
+      <BanIcon className="h-3 w-3 text-error-ink" strokeWidth={2.5} aria-hidden />
+      <Text className="text-11 font-bold text-error-ink">{CHARACTER_ISSUE_LABEL.unavailable}</Text>
+    </Pressable>
+  )
+}
+
+/**
  * 잰 두 상자를 팝오버 기하로 옮기는 환산.
  *
  * 금액은 자릿수에 따라 폭이 변해 배지의 x 를 고정값으로 알 수 없다. clamp·꼬리 계산은 순수
@@ -106,34 +142,60 @@ export function CharacterIssueBadge(props: {
  *
  * 둘 다 같은 기준(윈도우)에서 잰 값이어야 한다. 뺄셈으로 카드 기준 좌표를 만든다.
  */
+/** 팝오버를 여는 트리거의 모양. 둘의 밑변과 중심이 서로 다른 자리에 있다. */
+export type IssueTriggerShape = 'dot' | 'amount'
+
+/** 세로 자리까지 담는다. 트리거 모양마다 밑변이 달라 상수로 둘 수 없다. */
+export interface IssuePopoverGeometry extends PopoverAnchorGeometry {
+  top: number
+}
+
 export function resolveIssueAnchor(
   card: PopoverAnchorRect | null,
   money: PopoverAnchorRect | null,
-): PopoverAnchorGeometry {
+  shape: IssueTriggerShape = 'dot',
+): IssuePopoverGeometry {
   if (card === null || money === null) {
-    return { left: ISSUE_POPOVER_EDGE_GAP, caretLeft: ISSUE_POPOVER_WIDTH / 2 }
+    return { left: ISSUE_POPOVER_EDGE_GAP, caretLeft: ISSUE_POPOVER_WIDTH / 2, top: ISSUE_POPOVER_TOP }
   }
-  return anchorPopover({
-    containerWidth: card.width,
-    // 배지는 금액 왼쪽 끝에서 4px 밀려 있고 폭이 14px이므로 중심은 그 +7px이다.
-    anchorCenterX: money.left - card.left + BADGE_OFFSET.left + BADGE_SIZE / 2,
-    popoverWidth: ISSUE_POPOVER_WIDTH,
-    edgeGap: ISSUE_POPOVER_EDGE_GAP,
-    caretSize: ISSUE_CARET_SIZE,
-  })
+  const moneyLeft = money.left - card.left
+  return {
+    ...anchorPopover({
+      containerWidth: card.width,
+      // 원형 배지는 금액 왼쪽 끝에서 4px 밀려 있고 폭이 14px 이라 중심이 그 +7px 이다. 알약은
+      // 금액 칸을 통째로 차지하므로 그 칸의 가운데가 곧 중심이다.
+      anchorCenterX:
+        shape === 'amount'
+          ? moneyLeft + money.width / 2
+          : moneyLeft + BADGE_OFFSET.left + BADGE_SIZE / 2,
+      popoverWidth: ISSUE_POPOVER_WIDTH,
+      edgeGap: ISSUE_POPOVER_EDGE_GAP,
+      caretSize: ISSUE_CARET_SIZE,
+    }),
+    // 잰 상자의 밑변에 붙인다. 금액 글자를 덮는 것은 허용한다. 열린 동안 그 카드의 금액 대신
+    // 팝오버가 말한다.
+    top: money.top - card.top + money.height + ISSUE_POPOVER_GAP,
+  }
 }
 
 export function CharacterIssuePopover(props: {
   issue: CharacterIssue
-  geometry: PopoverAnchorGeometry
+  geometry: IssuePopoverGeometry
   onClose: () => void
+  /**
+   * 캐릭터 관리로 보낸다. **`unavailable` 에서만 선다** - 그 처방이 해제하거나 바꾸는 것이라서다.
+   * `failed` 의 처방은 새로고침이고, 갈 이유가 없는 길을 주면 화면이 두 말을 한다.
+   *
+   * 안 주면 버튼이 안 선다. 카드가 네비게이션을 모르고 화면에서 내려받기 때문이다.
+   */
+  onOpenCharacterManage?: () => void
 }): React.JSX.Element {
   const copy = CHARACTER_ISSUE_EXPLANATION[props.issue]
   return (
     <View
       testID="character-issue-popover"
       role="status"
-      style={{ left: props.geometry.left, width: ISSUE_POPOVER_WIDTH, top: ISSUE_POPOVER_TOP }}
+      style={{ left: props.geometry.left, width: ISSUE_POPOVER_WIDTH, top: props.geometry.top }}
       className="absolute z-[20] rounded-[12px] border border-border bg-surface p-3 shadow-lg"
     >
       {/* 꼬리: 45도 회전한 정사각형의 위·왼쪽 테두리만 남겨 카드 배경과 이어 붙인다. */}
@@ -144,9 +206,19 @@ export function CharacterIssuePopover(props: {
       />
       <Text className="text-xs font-bold text-text">{copy.title}</Text>
       <Text className="mt-1 text-11 leading-relaxed text-text-muted">{copy.body}</Text>
-      <Pressable role="button" onPress={props.onClose} className="mt-2 self-start">
-        <Text className="text-11 font-semibold text-primary-ink underline">닫기</Text>
-      </Pressable>
+      {/* 오른쪽에 선다. 강조는 **다음에 할 일** 이 갖고 닫기는 물러나는 쪽이라 안 가져간다. */}
+      <View className="mt-2 flex-row items-center justify-end gap-3">
+        <Pressable role="button" onPress={props.onClose}>
+          <Text className="text-11 text-text-muted">닫기</Text>
+        </Pressable>
+        {props.issue === 'unavailable' && props.onOpenCharacterManage !== undefined && (
+          <Pressable role="button" onPress={props.onOpenCharacterManage}>
+            <Text className="text-11 font-semibold text-primary-ink underline">
+              캐릭터 관리로 이동하기
+            </Text>
+          </Pressable>
+        )}
+      </View>
     </View>
   )
 }

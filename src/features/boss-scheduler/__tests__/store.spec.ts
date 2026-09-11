@@ -88,6 +88,15 @@ function bossContent(overrides: Partial<BossContent> = {}): BossContent {
   return { ...merged, ownComplete: overrides.ownComplete ?? merged.isComplete }
 }
 
+jest.mock('../../../storage/schedule-probe-ledger', () => ({
+  getScheduleProbeLedger: jest.fn(),
+  markScheduleProbeUnavailable: jest.fn(),
+}))
+const { getScheduleProbeLedger: getScheduleProbeLedgerMock } = jest.requireMock('../../../storage/schedule-probe-ledger') as Record<string, jest.Mock>
+
+jest.mock('../../character-profile/resolve', () => ({ resolveDisplayProfiles: jest.fn() }))
+const { resolveDisplayProfiles: resolveDisplayProfilesMock } = jest.requireMock('../../character-profile/resolve') as Record<string, jest.Mock>
+
 function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterScheduleSync {
   return {
     ocid: 'ocid-1',
@@ -114,6 +123,8 @@ function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterSc
 }
 
 beforeEach(() => {
+  resolveDisplayProfilesMock.mockReset().mockResolvedValue(new Map())
+  getScheduleProbeLedgerMock.mockReset().mockResolvedValue({ unavailable: false, dates: {} })
   useCharacterSelectionStore.setState({ selectedOcid: null })
   useBossSchedulerStore.setState({
     status: 'idle',
@@ -1317,5 +1328,95 @@ describe('useBossSchedulerStore', () => {
       expect(getBossPartySettingsMock).toHaveBeenCalledWith(['ocid-1'])
       expect(useBossSchedulerStore.getState().partySizes).toEqual({ 'ocid-1:자쿰:카오스': 4 })
     })
+  })
+})
+
+
+// 결과만 보고 목록을 만들면 그 캐릭터가 첫 페인트에 캐시로 보였다가 동기화가 끝나는 순간 사라진다.
+describe('동기화가 답하지 않은 캐릭터', () => {
+  it('목록에 남고 조회 불가로 표시된다', async () => {
+    resolveDisplayProfilesMock.mockResolvedValue(
+      new Map([
+        ['stranded', { name: '지내우시', imageUrl: null, world: '챌린저스2', level: 285, unavailable: true }],
+      ]),
+    )
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+
+    await useBossSchedulerStore.getState().refresh(['ocid-1', 'stranded'])
+
+    const view = useBossSchedulerStore
+      .getState()
+      .characters.find((character) => character.ocid === 'stranded')
+    expect(view?.characterName).toBe('지내우시')
+    expect(view?.error).toEqual({ kind: 'characterUnavailable' })
+    // 무엇을 잡았는지 모르므로 진행률이 0/12 를 단정하면 안 된다.
+    expect(view?.weeklyBossClearCount).toBeNull()
+  })
+})
+
+
+function 캐시상태() {
+  return {
+    state: {
+      asOf: '2026-07-11T00:00+09:00',
+      characterName: '지내우시',
+      world: '챌린저스2',
+      level: 285,
+      jobClass: '레테',
+      dailyContents: [],
+      weeklyContents: [],
+      bossContents: [],
+    },
+    syncedAt: '2026-07-11T00:00:00.000Z',
+  }
+}
+
+function 캐시상태FULL() {
+  const base = 캐시상태()
+  return { ...base, state: { ...base.state, bossContents: [bossContent()] } }
+}
+
+// 조회 불가는 `character_profiles.unavailable` 에 남아 있다. 동기화가 끝나야 안다고 두면 그
+// 사이에 낡은 캐시로 목록이 그려지고, 그것은 지금 할 일처럼 읽힌다.
+describe('표가 아는 조회 불가는 동기화 전에 선다', () => {
+  it('캐시 우선 표시 단계에서 이미 조회 불가다', async () => {
+    getScheduleProbeLedgerMock.mockResolvedValue({ unavailable: true, dates: {} })
+    getCachedSchedulerStateMock.mockResolvedValue(캐시상태())
+    // 동기화는 안 끝난 채로 둔다. 이 시점에 화면이 무엇을 아는지가 대상이다.
+    syncSchedulesMock.mockImplementation(() => new Promise(() => {}))
+
+    void useBossSchedulerStore.getState().refresh(['ocid-1'])
+
+    await waitFor(() =>
+      expect(useBossSchedulerStore.getState().characters[0]?.error).toEqual({ kind: 'characterUnavailable' }),
+    )
+  })
+
+  it('표가 모르면 캐시 그대로다', async () => {
+    getCachedSchedulerStateMock.mockResolvedValue(캐시상태())
+    syncSchedulesMock.mockImplementation(() => new Promise(() => {}))
+
+    void useBossSchedulerStore.getState().refresh(['ocid-1'])
+
+    await waitFor(() => expect(useBossSchedulerStore.getState().characters).toHaveLength(1))
+    expect(useBossSchedulerStore.getState().characters[0]?.error).toBeNull()
+  })
+})
+
+
+// 링이 캐시의 옛 진행률을 그렸다가 동기화가 끝나는 순간 빈 링으로 바뀌던 자리다. 첫 페인트와
+// 동기화 후가 같은 것을 그려야 한다.
+describe('조회 불가면 캐시 단계부터 내용이 비어 있다', () => {
+  it('보스 목록과 처치 수가 비어 있다', async () => {
+    getScheduleProbeLedgerMock.mockResolvedValue({ unavailable: true, dates: {} })
+    getCachedSchedulerStateMock.mockResolvedValue(캐시상태FULL())
+    syncSchedulesMock.mockImplementation(() => new Promise(() => {}))
+
+    void useBossSchedulerStore.getState().refresh(['ocid-1'])
+
+    await waitFor(() => expect(useBossSchedulerStore.getState().characters).toHaveLength(1))
+    const view = useBossSchedulerStore.getState().characters[0]
+    expect(view?.weeklyBosses).toEqual([])
+    expect(view?.weeklyBossClearCount).toBeNull()
   })
 })

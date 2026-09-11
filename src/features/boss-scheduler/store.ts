@@ -10,6 +10,7 @@ import {
   type MatchedBoss,
 } from '../../lib/boss/boss-matching'
 import { syncSchedules, toScheduleSyncError, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
+import { applyKnownUnavailable, resolveStrandedCharacters } from '../schedule-sync/stranded-characters'
 import { hasSyncAttemptedThisRun } from '../schedule-sync/sync-run-state'
 import { isSyncFresh } from '../../lib/scheduler/sync-freshness'
 import { getTrackedCharacterOcids, setTrackedCharacterOcids } from '../../storage/character-selection'
@@ -175,6 +176,22 @@ async function readCachedView(ocid: string): Promise<BossCharacterView | null> {
   }
 }
 
+/**
+ * 조회할 수 없는 캐릭터의 **모르는 상태**. 캐시 단계와 동기화 후가 이 함수 하나를 쓴다.
+ *
+ * 처치 수를 `null` 로 두는 것은 `0/12` 가 안 잡았다는 단정이라서다. 두 시점이 서로 다른 것을
+ * 그리면 진행 링이 진행률을 그렸다가 빈 링으로 바뀐다.
+ */
+function toUnknownBossView(view: BossCharacterView): BossCharacterView {
+  return {
+    ...view,
+    weeklyBosses: [],
+    monthlyBosses: [],
+    weeklyBossClearCount: null,
+    weeklyBossClearLimitCount: null,
+  }
+}
+
 export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => ({
   ...initialState,
 
@@ -308,7 +325,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
 
     // 캐시 우선 표시. 재검증(fetch) 전에 마지막으로 성공한 캐시 값이 있으면
     // 그 값으로 먼저 채워 화면이 비지 않게 한다. 재검증 응답이 오면 그대로 덮어쓴다.
-    const cachedCharacters = (
+    const cachedCharactersFromStore = (
       await Promise.all(
         ocids.map(async (ocid): Promise<BossCharacterView | null> => {
           const cached = await getCachedSchedulerState(ocid)
@@ -331,6 +348,10 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
         }),
       )
     ).filter((view): view is BossCharacterView => view !== null)
+
+    // **표가 이미 아는 조회 불가를 여기서 얹는다.** 안 얹으면 동기화가 끝날 때까지 이 캐릭터의
+    // 낡은 보스 목록이 그대로 서고, 그 목록은 지금 잡을 것처럼 읽힌다.
+    const cachedCharacters = await applyKnownUnavailable(cachedCharactersFromStore, toUnknownBossView)
 
     // 파티 설정은 완료 여부·주차와 무관한 상시 데이터라 스케줄 동기화와 독립적이다. 벌크 조회
     // 한 번으로 충분하다. 독립적이므로 조회가 실패해도 스케줄 refresh 전체를 중단시키지 않는다.
@@ -398,7 +419,28 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       }
     })
 
-    set({ status: 'loaded', characters: await sortByCachedLevel(characters), error: null, manualTrackedByOcid })
+    // 동기화가 한 번도 답하지 않은 추적 캐릭터도 남긴다. 버리면 그 캐릭터가 첫 페인트에 캐시로
+    // 보였다가 여기서 사라진다. 빠진 것과 없는 것은 다른 사실이라, 자리를 두고 조회 불가라고 말한다.
+    const strandedViews: BossCharacterView[] = (await resolveStrandedCharacters(ocids, results)).map(
+      (stranded) =>
+        toUnknownBossView({
+          ...stranded,
+          weeklyBosses: [],
+          monthlyBosses: [],
+          weeklyBossClearCount: null,
+          weeklyBossClearLimitCount: null,
+          isStale: true,
+          syncedAt: null,
+          error: { kind: 'characterUnavailable' },
+        }),
+    )
+
+    set({
+      status: 'loaded',
+      characters: await sortByCachedLevel([...characters, ...strandedViews]),
+      error: null,
+      manualTrackedByOcid,
+    })
   },
 
   setPartyFilter(filter) {

@@ -71,7 +71,9 @@ function orderForCycle(rows: readonly ScheduleRowView[], cycle: Cycle): Schedule
   return rows
     .map((row, index) => ({ row, index }))
     .sort((a, b) => {
-      if (a.row.hasSyncIssue !== b.row.hasSyncIssue) return a.row.hasSyncIssue ? 1 : -1
+      const aIssue = a.row.syncIssue !== null
+      const bIssue = b.row.syncIssue !== null
+      if (aIssue !== bIssue) return aIssue ? 1 : -1
 
       const countA = itemCount(cycleItems(a.row, cycle))
       const countB = itemCount(cycleItems(b.row, cycle))
@@ -142,6 +144,7 @@ function Portrait(props: { row: ScheduleRowView }): React.JSX.Element {
       imageUrl={props.row.imageUrl}
       name={props.row.characterName}
       size={PORTRAIT_PX}
+      unavailable={props.row.syncIssue === 'unavailable'}
       className="shrink-0"
       fallback={
         // `CharacterRow` 와 같은 폴백. 이름 첫 글자는 이 캐릭터의 얼굴처럼 보여 못 가져왔다는 것을
@@ -250,7 +253,7 @@ function ScheduleRow(props: {
   const { row, cycle } = props
   const items = cycleItems(row, cycle)
   // 펼칠 것이 없는 행은 누를 수도 없다. CLEAR 는 보여 줄 것이 없고, 실패는 **모른다**.
-  const openable = !row.hasSyncIssue && itemCount(items) > 0
+  const openable = row.syncIssue === null && itemCount(items) > 0
 
   const head = (
     <View testID="schedule-row" className="flex-row items-center gap-2 py-1.5">
@@ -263,8 +266,14 @@ function ScheduleRow(props: {
       >
         {row.characterName}
       </Text>
-      {row.hasSyncIssue ? (
-        <StatusBadge testID="schedule-issue" tone="issue" label="동기화 실패" />
+      {row.syncIssue !== null ? (
+        // 문구가 처방을 가른다. 조회 불가는 영구라 캐릭터 관리에서 손봐야 하고, 동기화 실패는
+        // 새로고침이면 풀린다. 한 말로 덮으면 사용자가 새로고침만 반복한다.
+        <StatusBadge
+          testID="schedule-issue"
+          tone="issue"
+          label={row.syncIssue === 'unavailable' ? '조회 불가' : '동기화 실패'}
+        />
       ) : itemCount(items) === 0 ? (
         <StatusBadge testID="schedule-clear" tone="clear" label="CLEAR" />
       ) : (

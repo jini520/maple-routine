@@ -65,6 +65,7 @@ export const 대표_캐릭터: RepresentativeView = {
   jobClass: '아크메이지(불,독)',
   guildName: '백호단',
   expRate: 80.3,
+  unavailable: false,
 }
 
 /**
@@ -84,7 +85,7 @@ export function 스케줄행(부분: Partial<ScheduleRowView> = {}): ScheduleRow
       { name: '파풀라투스', difficulty: '카오스' },
     ],
     monthlyBosses: [{ name: '검은마법사', difficulty: '하드' }],
-    hasSyncIssue: false,
+    syncIssue: null,
   }
 
   return { ...base, ...부분 }

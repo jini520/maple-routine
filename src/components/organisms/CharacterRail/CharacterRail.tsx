@@ -23,6 +23,13 @@ export interface CharacterRailEntry {
   imageUrl: string | null
   /** 0개면 링 없음(관리 화면), 1개면 온전한 원, 2개면 좌·우 반원. */
   rings: [] | [PortraitRingProgress] | [PortraitRingProgress, PortraitRingProgress]
+  /**
+   * 조회할 수 없게 된 캐릭터인가. 칸에 표식이 붙는다.
+   *
+   * 링은 그대로 둔다. 그 진행도는 **마지막으로 본 값**이라 지우면 아는 것까지 버리는 것이고,
+   * 표식이 그 값을 지금의 사실로 읽지 말라고 말한다.
+   */
+  unavailable?: boolean
 }
 
 export interface CharacterRailProps {
@@ -55,6 +62,7 @@ export function CharacterRail(props: CharacterRailProps): React.JSX.Element {
             level={entry.level}
             imageUrl={entry.imageUrl}
             rings={entry.rings}
+            unavailable={entry.unavailable}
             isSelected={entry.ocid === props.selectedOcid}
             onPress={() => props.onSelect(entry.ocid)}
           />

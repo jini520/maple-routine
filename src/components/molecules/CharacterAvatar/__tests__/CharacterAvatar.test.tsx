@@ -85,3 +85,45 @@ describe('CharacterAvatar', () => {
     expect(flattenStyle(getByTestId('얼굴').props.style)).toMatchObject({ flexShrink: 0 })
   })
 })
+
+// 표식은 원 **밖**에 서야 한다. 그림을 자르는 `overflow-hidden` 이 원 안의 것을 함께 자른다.
+describe('조회 불가 표식', () => {
+  it('참이면 얼굴에 표식이 붙는다', async () => {
+    const { getByTestId } = await renderAtom(
+      <CharacterAvatar imageUrl={null} name="지내우시" size={26} unavailable />,
+    )
+
+    expect(getByTestId('portrait-unavailable')).toBeTruthy()
+  })
+
+  it('안 적으면 안 붙는다', async () => {
+    const { queryByTestId } = await renderAtom(
+      <CharacterAvatar imageUrl={null} name="지내우시" size={26} />,
+    )
+
+    expect(queryByTestId('portrait-unavailable')).toBeNull()
+  })
+
+  // 얼굴이 자리마다 달라 고정값으로 두면 작은 얼굴을 덮는다.
+  it('표식이 얼굴 크기를 따라간다', async () => {
+    const 작은 = await renderAtom(
+      <CharacterAvatar imageUrl={null} name="가" size={20} unavailable testID="작은" />,
+    )
+    const 큰 = await renderAtom(
+      <CharacterAvatar imageUrl={null} name="나" size={44} unavailable testID="큰" />,
+    )
+
+    const 작은표식 = flattenStyle(작은.getByTestId('portrait-unavailable').props.style).width
+    const 큰표식 = flattenStyle(큰.getByTestId('portrait-unavailable').props.style).width
+    expect(Number(큰표식)).toBeGreaterThan(Number(작은표식))
+  })
+
+  // 배치 클래스는 바깥 상자가 져야 한다. 안쪽은 자르는 일만 한다.
+  it('표식이 붙어도 `testID` 는 바깥 상자 하나다', async () => {
+    const { getAllByTestId } = await renderAtom(
+      <CharacterAvatar imageUrl={null} name="지내우시" size={26} unavailable testID="얼굴" />,
+    )
+
+    expect(getAllByTestId('얼굴')).toHaveLength(1)
+  })
+})

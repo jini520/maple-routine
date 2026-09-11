@@ -5,7 +5,12 @@
  * 쓰는데, 어느 한쪽에 두면 다른 쪽이 그쪽을 import 하면서 서로를 가리키게 된다.
  */
 
-import { isInvalidApiKeyError, NexonBadRequestError, NexonRateLimitError } from '../../nexon/errors'
+import {
+  isInvalidApiKeyError,
+  NexonBadRequestError,
+  NexonNoCharacterError,
+  NexonRateLimitError,
+} from '../../nexon/errors'
 // 400 하나에 처방이 전혀 다른 세 실패가 들어 있어 종류를 갈라 담는다. 재시도 가능성이 셋 다
 // 다르다. characterUnavailable 은 영구, notCollected 는 나중에 자동으로 풀리고,
 // periodOutOfRange 는 그 날짜에 대해 영구다.
@@ -28,6 +33,11 @@ export function toScheduleSyncError(error: unknown): ScheduleSyncError {
   }
   if (error instanceof NexonRateLimitError) {
     return { kind: 'rateLimited' }
+  }
+  // 200 인데 본문에 캐릭터가 없다(월드 이전으로 남겨진 ocid). 넥슨이 준 것은 00003 과 다르지만
+  // 부르는 쪽의 처방은 같다 - 영구이고, 추적 중이면 해제 경로로 남긴다. 어휘를 늘리지 않는다.
+  if (error instanceof NexonNoCharacterError) {
+    return { kind: 'characterUnavailable' }
   }
   // 코드를 아는 400만 갈라내고, 모르는 코드·본문 없는 400은 network로 degrade한다.
   // 넥슨이 코드 체계를 바꿔도 최악의 경우 지금 동작(재시도 유도)으로 떨어지게 하는 안전판이다

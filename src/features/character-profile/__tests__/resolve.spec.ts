@@ -64,8 +64,25 @@ it('표에 없으면 캐시에서 가져오고, 그 값을 표에 심는다', as
     imageUrl: 'https://example.test/a.png',
     world: '루나',
     level: 285,
+    // 캐시가 직업을 모르면 `null` 이다. 표의 UPSERT 가 COALESCE 라 이미 박아 둔 값을 안 지운다.
+    jobClass: null,
     updatedAt: NOW,
   })
+})
+
+// 직업은 월드 이전 판정이 읽는 값이다. 캐시가 들고 있으면 그 이관 길로 표까지 따라가야, 이미
+// 조회할 수 없게 된 캐릭터도 판정 재료를 갖는다.
+it('캐시가 직업을 알면 표에도 함께 심는다', async () => {
+  await setCachedCharacterBasic('account-1', 'ocid-4', {
+    profile: { ...basic({ name: '레테캐릭', world: '챌린저스2' }), jobClass: '레테' },
+    cachedAt: NOW,
+  })
+
+  await resolveDisplayProfiles(['ocid-4'])
+
+  expect(saveCharacterProfileMock).toHaveBeenCalledWith(
+    expect.objectContaining({ ocid: 'ocid-4', jobClass: '레테' }),
+  )
 })
 
 it('표에도 캐시에도 없으면 결과에 안 든다. 이름 없는 행을 만들지 않는다', async () => {

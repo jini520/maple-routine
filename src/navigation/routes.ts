@@ -355,3 +355,12 @@ export const TAB_ROUTE_NAMES: readonly TabRouteName[] = ROUTE_TABLE.flatMap((row
  * `routes.test.ts` 가 양쪽을 함께 고정한다.
  */
 export const INITIAL_TAB_ROUTE: keyof GroupLayerParamList = 'Today'
+
+/**
+ * 층 스택 내비게이터의 이름. `getParent` 로 **그 스택만** 짚는 데 쓴다.
+ *
+ * 이름이 필요한 이유는 `popToTop` 이 바닥에서 무동작이 아니기 때문이다. 라우터가 그 액션을
+ * 처리하지 못하면 위로 전파되고, 아무도 안 받으면 개발 모드에서 `not handled by any navigator`
+ * 경고가 뜬다(today 위젯 타일을 누를 때 실제로 났다). 층 스택의 깊이를 먼저 보고 부른다.
+ */
+export const LAYER_STACK_ID = 'LayerStack'

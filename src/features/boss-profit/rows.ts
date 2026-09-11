@@ -68,6 +68,13 @@ export interface SortedCharacterInfo {
   // 않게 한다. 캐시가 없으면 null 이다. 정렬용 빈 이름을 그대로 넘기면 캐시 없음 이 이름이 빈
   // 캐릭터로 둔갑해 `buildRowsFromRecords` 의 제외 규칙이 깨진다.
   characterName: string | null
+  /**
+   * 마지막 조회에서 못 본 캐릭터인가. **모르면 `null`.**
+   *
+   * 지워지지 않는 스냅샷이 들고 있어 **동기화 전에** 읽힌다. 이것이 없으면 조회 불가 캐릭터의
+   * 첫 페인트가 `0 메소` 이고, 그 숫자는 0원을 벌었다는 단정이라 할 수 없는 말이다.
+   */
+  unavailable: boolean | null
 }
 
 // 한 번의 기간 로드가 공유하는 프로필 스냅샷. 캐시가 없는 ocid는 **넣지 않는다**
