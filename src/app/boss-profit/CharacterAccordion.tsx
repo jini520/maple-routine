@@ -19,7 +19,7 @@ import { useReducedMotion } from 'react-native-reanimated'
 
 import { sumDropPayout } from '../../lib/drop/drop-price'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss/boss-matching'
-import type { PopoverAnchorGeometry } from '../../lib/popover-anchor'
+
 import weeklyBossesData from '../../data/weekly-bosses.json'
 
 import { AnimatedNumber, ChevronDownIcon, ChevronUpIcon, Text } from '../../components/atoms'
@@ -31,12 +31,15 @@ import { ItemRevenueTrigger } from './ItemRevenueTrigger'
 import { useBossProfitContext } from './boss-profit-context'
 import { CharacterPortrait } from '../../components/organisms/CharacterPortrait/CharacterPortrait'
 import {
+  CharacterIssueAmount,
   CharacterIssueBadge,
   CharacterIssuePopover,
   resolveIssueAnchor,
   ISSUE_POPOVER_EDGE_GAP,
+  ISSUE_POPOVER_TOP,
   ISSUE_POPOVER_WIDTH,
   type CharacterIssue,
+  type IssuePopoverGeometry,
 } from './CharacterIssue'
 import {
   collectPayableDrops,
@@ -165,14 +168,22 @@ export function CharacterAccordion(props: {
   group: CharacterGroup
   /** 이 캐릭터의 동기화가 실패했으면 그 종류(없으면 `undefined`). */
   issue?: CharacterIssue
+  /**
+   * 조회 불가 팝오버의 `캐릭터 관리로 이동하기`. **화면이 준다** - 이 카드는 네비게이션을 모르고,
+   * 알게 하면 카드만 세우는 테스트가 전부 네비게이션 컨테이너를 요구한다.
+   *
+   * 안 주면 그 버튼이 안 선다. 화면이 주는지는 `BossProfitScreen` 테스트가 지킨다.
+   */
+  onOpenCharacterManage?: () => void
 }): React.JSX.Element {
   const { tab, loadedTab, loadedPeriodKey, dropsByRowKey } = useBossProfitContext()
   const [isExpanded, setIsExpanded] = useState(false)
   // 아이콘만으로는 원인을 말할 수 없어, 탭하면 설명 팝오버를 연다.
   const [isIssueOpen, setIsIssueOpen] = useState(false)
-  const [issueGeometry, setIssueGeometry] = useState<PopoverAnchorGeometry>({
+  const [issueGeometry, setIssueGeometry] = useState<IssuePopoverGeometry>({
     left: ISSUE_POPOVER_EDGE_GAP,
     caretLeft: ISSUE_POPOVER_WIDTH / 2,
+    top: ISSUE_POPOVER_TOP,
   })
   // 팝오버 가로 위치를 정하려면 카드와 금액 두 상자가 필요하다. 금액 폭이 자릿수에 따라 변해
   // 배지의 x 를 고정값으로 알 수 없다. state 가 아니라 ref 인 것은 이 값을 렌더가 읽지 않기
@@ -189,6 +200,26 @@ export function CharacterAccordion(props: {
 
   const { group } = props
   const totalMeso = groupTotalMeso(group, dropsByRowKey)
+  /**
+   * 금액을 **말할 수 없는** 카드인가. 그러면 그 자리를 `조회 불가` 배지가 채운다.
+   *
+   * 조건이 둘 다 필요하다.
+   *
+   * - **조회 불가**여야 한다. `failed` 는 마지막으로 확인한 기록을 보여주는 상태라 이 자리가 아니다
+   * - **금액이 0** 이어야 한다. 0 이 아니면 그 돈은 기록에서 온 **아는 사실**이라 덮으면 안 된다.
+   *   행 수로 보지 않는 이유는 스케줄 캐시가 남은 캐릭터다. 조회는 못 하는데 낡은 캐시가 행을
+   *   만들어, 행이 있는데 금액은 `0 메소` 인 자리가 실제로 생긴다
+   */
+  const cannotStateAmount = props.issue === 'unavailable' && totalMeso === 0
+  /**
+   * 금액 옆 **원형 배지**가 말할 것. `undefined` 면 안 선다.
+   *
+   * 월간의 조회 불가는 뺀다(사용자 지정). 그 탭은 펼치면 주차 줄마다 `조회 불가` 를 적으므로
+   * 머리의 원형 배지가 같은 말을 한 번 더 하는데, 그 자리가 금액 좌상단이라 숫자를 가린다.
+   * `failed` 는 남는다. 그것은 한 주가 아니라 카드 전체의 사실이라 주차 줄이 대신 말해 주지 않는다.
+   */
+  const badgeIssue =
+    tab === 'monthly' && props.issue === 'unavailable' ? undefined : props.issue
   // 이 기간에 고가 아이템을 먹었을 때: 카드에 골드 링 + 글로우 + 우상단 획득 아이템 배지.
   const valuableDrops = collectGroupValuableDrops(group, dropsByRowKey)
   const hasValuable = valuableDrops.length > 0
@@ -237,7 +268,15 @@ export function CharacterAccordion(props: {
     card.measureInWindow((cx, cy, cw, ch) => {
       const cardRect: PopoverAnchorRect = { left: cx, top: cy, width: cw, height: ch }
       money.measureInWindow((mx, my, mw, mh) => {
-        setIssueGeometry(resolveIssueAnchor(cardRect, { left: mx, top: my, width: mw, height: mh }))
+        // 트리거 모양을 함께 넘긴다. 원형은 금액 왼쪽 위에 떠 있고 알약은 금액 칸을 통째로
+        // 차지해, 꼬리가 가리킬 x 와 팝오버가 설 y 가 서로 다르다.
+        setIssueGeometry(
+          resolveIssueAnchor(
+            cardRect,
+            { left: mx, top: my, width: mw, height: mh },
+            cannotStateAmount ? 'amount' : 'dot',
+          ),
+        )
       })
     })
   }
@@ -258,6 +297,14 @@ export function CharacterAccordion(props: {
           issue={props.issue}
           geometry={issueGeometry}
           onClose={() => setIsIssueOpen(false)}
+          onOpenCharacterManage={
+            props.onOpenCharacterManage === undefined
+              ? undefined
+              : () => {
+                  setIsIssueOpen(false)
+                  props.onOpenCharacterManage?.()
+                }
+          }
         />
       )}
 
@@ -313,6 +360,7 @@ export function CharacterAccordion(props: {
             variant="compact"
             characterName={group.characterName}
             imageUrl={group.imageUrl}
+            unavailable={props.issue === 'unavailable'}
             clears={{
               cleared: clearProgress.cleared,
               total: clearProgress.total,
@@ -335,19 +383,25 @@ export function CharacterAccordion(props: {
             {/* 실패 배지의 절대배치 기준이자 팝오버 가로 위치의 기준 상자다. 아이템이 섞이면
                 금액 색이 달라진다. 새 색을 만들지 않고 보스 행과 같은 `primary-ink` 를 쓴다. */}
             <View ref={moneyRef} className="relative flex-row items-center">
-              {props.issue !== undefined && (
-                <CharacterIssueBadge issue={props.issue} onToggle={toggleIssue} />
+              {cannotStateAmount ? (
+                <CharacterIssueAmount onToggle={toggleIssue} />
+              ) : (
+                <>
+                  {badgeIssue !== undefined && (
+                    <CharacterIssueBadge issue={badgeIssue} onToggle={toggleIssue} />
+                  )}
+                  <Text
+                    className={`text-sm font-bold ${hasItemRevenue ? 'text-primary-ink' : 'text-text'}`}
+                    style={TABULAR_NUMS}
+                  >
+                    <AnimatedNumber
+                      identity={`character|${group.ocid}|${loadedTab}|${loadedPeriodKey}`}
+                      value={totalMeso}
+                    />
+                    {' 메소'}
+                  </Text>
+                </>
               )}
-              <Text
-                className={`text-sm font-bold ${hasItemRevenue ? 'text-primary-ink' : 'text-text'}`}
-                style={TABULAR_NUMS}
-              >
-                <AnimatedNumber
-                  identity={`character|${group.ocid}|${loadedTab}|${loadedPeriodKey}`}
-                  value={totalMeso}
-                />
-                {' 메소'}
-              </Text>
             </View>
 
           </MoneyBox>
@@ -363,7 +417,11 @@ export function CharacterAccordion(props: {
           (tab === 'weekly' ? (
             <WeeklyAccordionBody rows={group.bossRows} />
           ) : (
-            <MonthlyAccordionBody bossRows={group.bossRows} weeklySubtotals={group.weeklySubtotals} />
+            <MonthlyAccordionBody
+              bossRows={group.bossRows}
+              weeklySubtotals={group.weeklySubtotals}
+              unavailable={props.issue === 'unavailable'}
+            />
           ))}
 
         {/* 링은 셸 **안**의 마지막 자식이라 콘텐츠 위에 그려진다. */}

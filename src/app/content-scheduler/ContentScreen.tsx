@@ -25,6 +25,7 @@ import { ListChecksIcon, Text } from '../../components/atoms'
 import { dailyContentProgress, weeklyContentProgress } from './content-completion'
 
 import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
+import { CharacterUnavailableNotice } from '../../components/organisms/CharacterUnavailable/CharacterUnavailableNotice'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { TabSegment } from '../../components/molecules/TabSegment/TabSegment'
@@ -103,7 +104,13 @@ export function ContentScreen(): React.JSX.Element {
   // 캐릭터별 실패도 인라인 문단이 아니라 토스트다(보스 스케줄러와 동일한 배선).
   // syncSchedules가 캐릭터 단위 실패를 던지지 않고 결과에 실어 반환하므로 실패의 대부분이 위의
   // 전역 error가 아니라 이 값으로 온다.
-  useScheduleSyncErrorToast(selected?.error ?? null, { onRetry: () => refresh(trackedOcids ?? []) })
+  // **조회 불가는 토스트로 안 말한다.** 그 실패는 사건이 아니라 그 캐릭터를 고르고 있는 동안
+  // 계속 참인 상태라, 토스트로 두면 고를 때마다·돌아올 때마다 같은 문구가 다시 뜬다. 내용 자리에
+  // `CharacterUnavailableNotice` 가 서고 거기에 처방(캐릭터 관리로 이동)이 붙는다.
+  const isSelectedUnavailable = selected?.error?.kind === 'characterUnavailable'
+  useScheduleSyncErrorToast(isSelectedUnavailable ? null : (selected?.error ?? null), {
+    onRetry: () => refresh(trackedOcids ?? []),
+  })
 
   // 판정은 `features/content-scheduler/displayed-contents` 가 갖는다. today 의 `남은 스케줄`이
   // 같은 수를 세므로 화면 안에 두면 두 벌이 되고, 실제로 갈라졌던 자리다(모든 캐릭터 **일퀘 18**).
@@ -134,6 +141,9 @@ export function ContentScreen(): React.JSX.Element {
     characterName: character.characterName,
     level: character.level ?? null,
     imageUrl: character.imageUrl ?? null,
+    // 동기화가 이 캐릭터를 조회하지 못했다. 링의 진행도는 마지막으로 본 값이라 지우지 않고
+    // 표식만 얹는다.
+    unavailable: character.error?.kind === 'characterUnavailable',
     rings: [
       // 링이 세는 것도 요구 레벨을 탄다. 링·카드 목록·today 가 같은 판정을
       // 봐야 이 성립한다.
@@ -258,7 +268,17 @@ export function ContentScreen(): React.JSX.Element {
           </View>
         )}
 
-        {characters.length > 0 && selected !== null && (
+        {/* 조회할 수 없는 캐릭터를 고르면 내용 자리가 통째로 이 안내다. 그 캐릭터의 목록은
+            **빈 것이 아니라 모르는 것**이라, 빈 상태로 그리면 다 했다 로 읽힌다. */}
+        {characters.length > 0 && isSelectedUnavailable && (
+          <View className="px-4">
+            <CharacterUnavailableNotice
+              onOpenCharacterManage={() => openTab('Settings', { openPicker: true })}
+            />
+          </View>
+        )}
+
+        {characters.length > 0 && selected !== null && !isSelectedUnavailable && (
           <View testID="pull-content" className="gap-4 px-4 pb-4">
             {activeTab === 'daily' && (
               <>

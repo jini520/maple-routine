@@ -16,9 +16,18 @@ import { Svg } from '../../../lib/nativewind-interop'
 import { useThemeAppearance } from '../../../theme/context'
 import { Text } from '../../atoms'
 import { CharacterAvatar } from '../../molecules/CharacterAvatar/CharacterAvatar'
+import { UnavailableFaceMark } from '../../molecules/CharacterAvatar/UnavailableFaceMark'
 import { PORTRAIT_COMPACT, PORTRAIT_RAIL } from './portrait-metrics'
 import { PortraitCaption } from './PortraitCaption'
 import { EmptyRing, ProgressArc, SegmentedRing, type PortraitRingProgress } from './PortraitRing'
+
+/**
+ * 조회 불가 표식의 치수. 얼굴 원의 **오른쪽 아래 대각선**에 앉는다(사용자 지정).
+ *
+ * `offset` 은 중심에서 그 방향으로 민 거리다. 얼굴 반지름이 20 이라 14 면 원 테두리에 걸치고,
+ * 링(반지름 26)보다 안쪽이라 진행도를 안 가린다.
+ */
+const UNAVAILABLE_MARK = { size: 16, offset: 14 } as const
 
 /** 안 고른 칸의 불투명도. 0.45 는 칸이 여섯을 넘으면 안 잡혔다. */
 const SELECTED_DIM_OPACITY = 0.3
@@ -36,6 +45,8 @@ export interface RailPortraitProps extends CommonProps {
   level: number | null
   /** 0개면 링 없음, 1개면 온전한 원, 2개면 좌·우 반원. 셋 이상은 못 읽어서 안 받는다. */
   rings: [] | [PortraitRingProgress] | [PortraitRingProgress, PortraitRingProgress]
+  /** 조회할 수 없게 된 캐릭터. 칸 아래에 `조회 불가` 가 붙고 레벨·진행도는 마지막으로 본 값이 된다. */
+  unavailable?: boolean
   isSelected: boolean
   onPress: () => void
 }
@@ -44,6 +55,8 @@ export interface CompactPortraitProps extends CommonProps {
   variant: 'compact'
   /** 링이 이 값만큼 쪼개진다. `label` 은 읽어 주는 주기(`주간`·`월간`)다. */
   clears: { cleared: number; total: number; label: string }
+  /** 조회할 수 없게 된 캐릭터. 얼굴 오른쪽 아래에 표식이 붙는다. */
+  unavailable?: boolean
 }
 
 export type CharacterPortraitProps = RailPortraitProps | CompactPortraitProps
@@ -87,6 +100,7 @@ function CompactPortrait(props: CompactPortraitProps): React.JSX.Element {
         name={props.characterName}
         size={PORTRAIT_COMPACT.faceSize}
         className="bg-surface-2"
+        unavailable={props.unavailable}
         fallback={<InitialFallback name={props.characterName} textClass="text-xs" />}
       />
       <SegmentedRing
@@ -190,6 +204,23 @@ function RailPortrait(props: RailPortraitProps): React.JSX.Element {
           />
         </Svg>
       </View>
+
+      {/* 조회 불가 표식. **SVG 뒤에 그린다** - 그 층이 `inset-0` 이라 먼저 두면 링에 덮인다.
+          자리는 얼굴 원의 오른쪽 아래다(사용자 지정). */}
+      {props.unavailable === true && (
+        <View
+          pointerEvents="none"
+          style={{
+            top: PORTRAIT_RAIL.centerY + UNAVAILABLE_MARK.offset - UNAVAILABLE_MARK.size / 2,
+            left: PORTRAIT_RAIL.centerX + UNAVAILABLE_MARK.offset - UNAVAILABLE_MARK.size / 2,
+            width: UNAVAILABLE_MARK.size,
+            height: UNAVAILABLE_MARK.size,
+          }}
+          className="absolute"
+        >
+          <UnavailableFaceMark size={UNAVAILABLE_MARK.size} />
+        </View>
+      )}
     </Pressable>
   )
 }

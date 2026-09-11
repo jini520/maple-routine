@@ -10,6 +10,17 @@
 import { Image, View } from 'react-native'
 
 import { faceCropStyle } from '../../../lib/face-crop'
+import { UnavailableFaceMark } from './UnavailableFaceMark'
+
+/**
+ * 얼굴 지름에서 표식 지름을 낸다. 0.42 는 26px 얼굴에서 11, 40px 에서 17 이다.
+ *
+ * 아래로 자르는 것은 그보다 작으면 아이콘이 안 읽히기 때문이고, 위로 자르는 것은 큰 얼굴에서
+ * 표식이 얼굴만큼 커지지 않게 하기 위해서다.
+ */
+function markSizeOf(faceSize: number): number {
+  return Math.min(Math.max(Math.round(faceSize * 0.42), 12), 18)
+}
 
 export interface CharacterAvatarProps {
   /** 넥슨이 주는 전신 룩 URL. `null` 이면 `fallback` 이 선다. */
@@ -24,15 +35,22 @@ export interface CharacterAvatarProps {
   readonly className?: string
   readonly testID?: string
   readonly imageTestID?: string
+  /**
+   * 조회할 수 없게 된 캐릭터. 원의 **오른쪽 아래**에 표식이 붙는다.
+   *
+   * 표식은 원 **밖**에 서야 한다. 그림을 자르는 `overflow-hidden` 이 원 안의 것을 함께 자르므로,
+   * 참이면 자르지 않는 바깥 상자를 한 겹 두르고 그 위에 얹는다.
+   */
+  readonly unavailable?: boolean
 }
 
 export function CharacterAvatar(props: CharacterAvatarProps): React.JSX.Element {
-  return (
+  const circle = (
     <View
-      testID={props.testID}
+      testID={props.unavailable === true ? undefined : props.testID}
       style={{ width: props.size, height: props.size }}
       // 크롭한 그림은 원보다 커서 삐져나온다. RN 의 `<Image>` 는 자식이라 부모가 안 자르면 네모다.
-      className={`overflow-hidden rounded-full ${props.className ?? ''}`}
+      className={`overflow-hidden rounded-full ${props.unavailable === true ? '' : (props.className ?? '')}`}
     >
       {props.imageUrl !== null && (
         <Image
@@ -43,6 +61,26 @@ export function CharacterAvatar(props: CharacterAvatarProps): React.JSX.Element 
         />
       )}
       {props.imageUrl === null && props.fallback}
+    </View>
+  )
+
+  if (props.unavailable !== true) {
+    return circle
+  }
+
+  const markSize = markSizeOf(props.size)
+  return (
+    // 바깥 상자는 원과 같은 크기이고 **안 자른다**. 표식이 절반쯤 밖으로 나가 원 테두리에 걸린다.
+    // 배치 클래스(`shrink-0` 등)는 이쪽이 진다. 안쪽은 자르는 일만 한다.
+    <View
+      testID={props.testID}
+      style={{ width: props.size, height: props.size }}
+      className={`relative ${props.className ?? ''}`}
+    >
+      {circle}
+      <View className="absolute" style={{ right: -markSize / 4, bottom: -markSize / 4 }}>
+        <UnavailableFaceMark size={markSize} />
+      </View>
     </View>
   )
 }

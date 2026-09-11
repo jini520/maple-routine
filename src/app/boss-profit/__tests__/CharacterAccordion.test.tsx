@@ -336,3 +336,169 @@ describe('실패 표식', () => {
     expect(getByText('조회할 수 없는 캐릭터입니다')).toBeTruthy()
   })
 })
+
+// 월드 이전으로 조회할 수 없게 된 캐릭터는 이번 주에 행이 0개다. 그래도 카드는 서야 하고
+// (안 그러면 화면이 빠진 것과 0원인 것을 같게 말한다) 배지가 그 이유를 말한다.
+describe('행이 없는 조회 불가 카드', () => {
+  const 빈그룹 = { ocid: 'stranded', characterName: '지내우시', imageUrl: null, bossRows: [], weeklySubtotals: [] }
+
+  it('행이 0개여도 이름을 그린다', async () => {
+    const { getByText } = await renderProfit(
+      <CharacterAccordion group={빈그룹} issue="unavailable" />,
+    )
+
+    expect(getByText('지내우시')).toBeTruthy()
+  })
+
+  // `0 메소` 는 **0원을 벌었다**는 단정이다. 조회를 못 한 캐릭터에 그 말을 쓰면 안 되고, 그
+  // 자리가 비어 있을 수도 없어 배지가 대신 선다.
+  it('금액 자리에 `조회 불가` 배지가 서고 금액은 안 그린다', async () => {
+    const { getByTestId, queryByText } = await renderProfit(
+      <CharacterAccordion group={빈그룹} issue="unavailable" />,
+    )
+
+    expect(getByTestId('character-issue-amount')).toBeTruthy()
+    expect(queryByText(/메소/)).toBeNull()
+  })
+
+  // 같은 말을 두 번 하지 않는다. 금액 자리 배지가 이미 조회 불가 를 글자로 말한다.
+  it('금액 자리 배지가 서면 원형 배지는 안 그린다', async () => {
+    const { queryByTestId } = await renderProfit(
+      <CharacterAccordion group={빈그룹} issue="unavailable" />,
+    )
+
+    expect(queryByTestId('character-issue-badge')).toBeNull()
+  })
+
+  it('그 배지를 탭하면 조회할 수 없다는 설명이 열린다', async () => {
+    const { getByTestId, getByText } = await renderProfit(
+      <CharacterAccordion group={빈그룹} issue="unavailable" />,
+    )
+
+    await act(async () => {
+      fireEvent.press(getByTestId('character-issue-amount'))
+    })
+
+    expect(getByText('조회할 수 없는 캐릭터입니다')).toBeTruthy()
+  })
+
+  // 금액이 0 이 아니면 그 돈은 기록에서 온 **아는 사실**이다. 조회 불가여도 배지로 덮지 않는다.
+  it('번 돈이 있는 조회 불가 캐릭터는 금액을 그대로 그린다', async () => {
+    const 번카드 = 그룹([보스행({ isComplete: true, payoutMeso: 1_000 })])
+    const { getByTestId, queryByTestId } = await renderProfit(
+      <CharacterAccordion group={번카드} issue="unavailable" />,
+    )
+
+    expect(queryByTestId('character-issue-amount')).toBeNull()
+    expect(getByTestId('character-issue-badge')).toBeTruthy()
+  })
+
+  // 조회는 못 하는데 낡은 스케줄 캐시가 행을 만든 자리다. 행이 있어도 금액이 0 이면 그 0 을
+  // 말할 수 없다.
+  it('행이 있어도 금액이 0 이면 배지가 선다', async () => {
+    const 빈돈카드 = 그룹([보스행({ isComplete: false, payoutMeso: 0 })])
+    const { getByTestId, queryByText } = await renderProfit(
+      <CharacterAccordion group={빈돈카드} issue="unavailable" />,
+    )
+
+    expect(getByTestId('character-issue-amount')).toBeTruthy()
+    expect(queryByText(/메소/)).toBeNull()
+  })
+
+  // 네트워크 실패는 마지막으로 확인한 기록을 보여주는 상태라 금액 자리를 안 건드린다.
+  it('행이 없어도 `failed` 면 원형 배지 그대로다', async () => {
+    const { getByTestId, queryByTestId } = await renderProfit(
+      <CharacterAccordion group={빈그룹} issue="failed" />,
+    )
+
+    expect(queryByTestId('character-issue-amount')).toBeNull()
+    expect(getByTestId('character-issue-badge')).toBeTruthy()
+  })
+})
+
+// 카드의 얼굴에도 표식이 붙는다. 금액 자리의 배지만으로는 목록을 훑는 눈에 안 들어온다.
+describe('조회 불가 카드의 얼굴', () => {
+  it('조회 불가면 얼굴에 표식이 붙는다', async () => {
+    const { getByTestId } = await renderProfit(
+      <CharacterAccordion group={그룹()} issue="unavailable" />,
+    )
+
+    expect(getByTestId('portrait-unavailable')).toBeTruthy()
+  })
+
+  it('동기화 실패에는 안 붙는다', async () => {
+    const { queryByTestId } = await renderProfit(
+      <CharacterAccordion group={그룹()} issue="failed" />,
+    )
+
+    expect(queryByTestId('portrait-unavailable')).toBeNull()
+  })
+})
+
+// 월간 탭의 두 자리가 서로 다른 말을 한다. 머리는 **그 달에 확실히 번 돈**을 말하고, 주차 행은
+// 그 주를 아는가를 말한다. 한 주라도 기록이 있으면 그 달의 합계는 아는 값이다.
+describe('월간 탭의 조회 불가 카드', () => {
+  const 월간컨텍스트 = 컨텍스트값({ tab: 'monthly' })
+
+  it('그 달 수익이 0이면 머리의 금액 자리에 배지가 선다', async () => {
+    const 빈달 = 그룹([], [주차소계({ state: 'confirmedEmpty', totalMeso: 0 })])
+    const { getByTestId } = await renderProfit(
+      <CharacterAccordion group={빈달} issue="unavailable" />,
+      월간컨텍스트,
+    )
+
+    expect(getByTestId('character-issue-amount')).toBeTruthy()
+  })
+
+  // 한 주라도 기록이 있으면 그 돈은 이미 받아 둔 사실이다. 배지로 덮으면 번 돈을 숨긴다.
+  it('한 주라도 수익이 있으면 머리는 금액을 그린다', async () => {
+    const 번달 = 그룹([], [주차소계({ state: 'recorded', totalMeso: 1_000 })])
+    const { queryByTestId } = await renderProfit(
+      <CharacterAccordion group={번달} issue="unavailable" />,
+      월간컨텍스트,
+    )
+
+    expect(queryByTestId('character-issue-amount')).toBeNull()
+  })
+
+  // 주차 줄이 주마다 조회 불가 를 적으므로(`subtotal-issue`) 머리의 원형 배지는 같은 말을 한 번
+  // 더 하는 것이고, 그 자리가 금액 좌상단이라 숫자를 가린다(사용자 지정).
+  it('금액을 그릴 때 머리의 원형 배지는 안 선다', async () => {
+    const 번달 = 그룹([], [주차소계({ state: 'recorded', totalMeso: 1_000 })])
+    const { getByText, queryByTestId } = await renderProfit(
+      <CharacterAccordion group={번달} issue="unavailable" />,
+      월간컨텍스트,
+    )
+
+    expect(queryByTestId('character-issue-badge')).toBeNull()
+    expect(getByText(/메소/)).toBeTruthy()
+  })
+
+  // `failed` 는 한 주가 아니라 카드 전체의 사실이라 주차 줄이 대신 말해 주지 않는다.
+  it('`failed` 는 월간에서도 원형 배지가 선다', async () => {
+    const 번달 = 그룹([], [주차소계({ state: 'recorded', totalMeso: 1_000 })])
+    const { getByTestId } = await renderProfit(
+      <CharacterAccordion group={번달} issue="failed" />,
+      월간컨텍스트,
+    )
+
+    expect(getByTestId('character-issue-badge')).toBeTruthy()
+  })
+
+  it('그때 모르는 주에는 주차 행에 배지가 선다', async () => {
+    const 번달 = 그룹([], [
+      주차소계({ periodKey: '2026-09-03', state: 'recorded', totalMeso: 1_000 }),
+      주차소계({ periodKey: '2026-09-10', state: 'inProgress', totalMeso: 0 }),
+    ])
+    const { getByRole, getAllByTestId } = await renderProfit(
+      <CharacterAccordion group={번달} issue="unavailable" />,
+      월간컨텍스트,
+    )
+
+    await act(async () => {
+      fireEvent.press(getByRole('button', { name: /지내우시/ }))
+    })
+
+    expect(getAllByTestId('subtotal-issue')).toHaveLength(1)
+  })
+})

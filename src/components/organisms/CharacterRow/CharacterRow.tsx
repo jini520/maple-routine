@@ -73,6 +73,7 @@ export function CharacterRow(props: CharacterRowProps): React.JSX.Element {
         imageUrl={props.imageUrl}
         name={props.name}
         size={FACE_AVATAR_SIZE}
+        unavailable={props.unavailable}
         className="shrink-0"
         fallback={
           <View

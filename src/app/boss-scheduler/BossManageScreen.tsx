@@ -28,8 +28,10 @@ import type { BossDifficulty } from '../../types'
 import { Badge, Text } from '../../components/atoms'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
+import { CharacterUnavailableNotice } from '../../components/organisms/CharacterUnavailable/CharacterUnavailableNotice'
 import { DifficultySegment } from '../../components/molecules/DifficultySegment/DifficultySegment'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
+import { useOpenTab } from '../../hooks/useOpenTab'
 import { PartySizeStepper } from '../../components/molecules/PartySizeStepper/PartySizeStepper'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
@@ -120,6 +122,8 @@ export function BossManageScreen(): React.JSX.Element {
   // 화면 넷이 **같은 규칙**으로 고른다. 폴백을 화면마다 두면 공유했는데 화면마다 다른 캐릭터가 된다.
   // 넘기는 목록이 화면 순서여야 한다. 폴백이 그 첫 번째다.
   const selected = resolveSelectedCharacter(selectedOcid, characters)
+  // 조회 불가 안내가 캐릭터 관리로 보내는 길. 빈 상태 CTA 와 같은 목적지다.
+  const openTab = useOpenTab()
 
   /**
    * 지금 캐릭터의 편집 표. 주인이 다르면 빈 표다.
@@ -136,6 +140,9 @@ export function BossManageScreen(): React.JSX.Element {
     characterName: character.characterName,
     level: character.level ?? null,
     imageUrl: character.imageUrl ?? null,
+    // 동기화가 이 캐릭터를 조회하지 못했다. 링의 진행도는 마지막으로 본 값이라 지우지 않고
+    // 표식만 얹는다.
+    unavailable: character.error?.kind === 'characterUnavailable',
     rings: [],
   }))
 
@@ -337,6 +344,14 @@ export function BossManageScreen(): React.JSX.Element {
             <Text className="text-sm text-text-muted">
               캐릭터를 먼저 선택해주세요. 보스 스케줄러의 "캐릭터 관리"에서 추가할 수 있어요.
             </Text>
+          </View>
+        ) : selected.error?.kind === 'characterUnavailable' ? (
+          // 편집할 목록이 **빈 것이 아니라 모르는 것**이다. 체크박스를 세우면 사용자가 지금
+          // 추적을 고르고 있다고 믿는데, 그 선택은 조회가 돌아와야 뜻을 갖는다.
+          <View className="px-4 pb-4">
+            <CharacterUnavailableNotice
+              onOpenCharacterManage={() => openTab('Settings', { openPicker: true })}
+            />
           </View>
         ) : (
           <View className="gap-2 px-4 pb-4">

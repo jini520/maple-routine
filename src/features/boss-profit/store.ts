@@ -53,6 +53,7 @@ import type { BossProfitRow, BossProfitRowKey, CharacterProfileInfo, SortedChara
 // 가져오고, 옮긴 것은 구현 위치일 뿐이다.
 export type { BossProfitRow } from './rows'
 export { dropRowKey } from './rows'
+import { getScheduleProbeLedger } from '../../storage/schedule-probe-ledger'
 import { withSqliteFallback } from './sqlite-guards'
 import { autoRecordRows } from './auto-record'
 import {
@@ -77,6 +78,7 @@ import {
   nextPrefetchToken,
   readPeriodSnapshot,
   writePeriodSnapshot,
+  type CharacterCardStub,
   type PeriodSnapshot,
 } from './period-cache'
 import { resolvePeriodWindow } from './period-window'
@@ -188,6 +190,15 @@ export interface BossProfitState {
    *   `failed`      그 외 실패(네트워크·타임아웃 등)
    */
   characterIssues: Record<string, 'unavailable' | 'failed'>
+  /**
+   * 행이 하나도 없지만 카드는 세워야 하는 캐릭터. 조회할 수 없게 된 추적 캐릭터다.
+   *
+   * 카드는 행에서 생기는데 이 캐릭터는 동기화가 안 돌고 그 주 기록도 없어 행이 0개다. 세우지
+   * 않으면 화면이 **빠진 것과 0원인 것을 같게** 말한다. `characterIssues` 가 그 카드에 배지를 단다.
+   *
+   * **주간 탭의 현재 기간에서만 찬다.** 다른 기간·탭은 항상 `[]`.
+   */
+  unqueryableCards: CharacterCardStub[]
   trackedOcids: string[] | null
   lastSyncedAt: string | null // 페이지 전체 기준 마지막으로 성공한 실시간 동기화 시각(ISO 8601). 컨텐츠/보스 스케줄러의 formatSyncedAt과 동일하게 새로고침 아이콘 옆에 표시
 }
@@ -244,6 +255,14 @@ interface LatestSyncSnapshot {
   ocids: string[]
   rows: BossProfitRow[]
   characterProfiles: Map<string, CharacterProfileInfo>
+  /**
+   * 동기화가 **한 번도 답하지 않은** 추적 ocid. 월드 이전으로 `character/list` 에서 빠진
+   * 캐릭터가 여기 온다(`resolveTrackedCharacterContext` 가 목록 밖 ocid 를 버린다).
+   *
+   * 행이 0개인 것만으로는 이 캐릭터를 가려낼 수 없다. 보스를 하나도 등록 안 한 저레벨 캐릭터도
+   * 행이 0개인데, 그쪽은 조회가 된 것이라 배지를 달면 거짓말이 된다.
+   */
+  strandedOcids: string[]
 }
 
 let latestSyncSnapshot: LatestSyncSnapshot | null = null
@@ -290,8 +309,20 @@ async function resolveDisplayOcids(trackedOcids: string[]): Promise<string[]> {
 // 하나가 네이티브 호출 하나라 해제한 캐릭터까지 세면 목록이 길어질수록 왕복이 그만큼 늘었다.
 // world 는 정렬에 참여하지 않는다.
 async function getSortedCharacterInfo(ocids: string[]): Promise<SortedCharacterInfo[]> {
-  const profiles = await resolveDisplayProfiles(ocids)
-  const withProfile = ocids.map((ocid) => {
+  // 조회 불가는 프로필이 아니라 **조회 원장**에 산다(Preferences). 400 `OPENAPI00003` 이 이미 그
+  // 칸에 쓰고 캐릭터 관리 배지가 그 값을 읽으므로, 같은 사실의 출처가 앱 전체에서 하나다.
+  const now = new Date()
+  const [profiles, unavailableFlags] = await Promise.all([
+    resolveDisplayProfiles(ocids),
+    Promise.all(
+      ocids.map((ocid) =>
+        getScheduleProbeLedger(ocid, now)
+          .then((ledger) => ledger.unavailable)
+          .catch(() => false),
+      ),
+    ),
+  ])
+  const withProfile = ocids.map((ocid, index) => {
     const profile = profiles.get(ocid)
     return {
       ocid,
@@ -302,6 +333,7 @@ async function getSortedCharacterInfo(ocids: string[]): Promise<SortedCharacterI
       characterName: profile?.name ?? null,
       imageUrl: profile?.imageUrl ?? null,
       world: profile?.world ?? null,
+      unavailable: unavailableFlags[index] === true,
     }
   })
 
@@ -313,7 +345,13 @@ async function getSortedCharacterInfo(ocids: string[]): Promise<SortedCharacterI
       if (b.level !== a.level) return b.level - a.level
       return compareByName(a.name, b.name)
     })
-    .map(({ ocid, imageUrl, world, characterName }) => ({ ocid, imageUrl, world, characterName }))
+    .map(({ ocid, imageUrl, world, characterName, unavailable }) => ({
+      ocid,
+      imageUrl,
+      world,
+      characterName,
+      unavailable,
+    }))
 }
 
 /**
@@ -663,6 +701,40 @@ interface PeriodBuildInput {
  * 갈리는 것은 창 동기화 하나다(`allowWindowSync`). 여기서 `set` 을 부르지 않으므로 답을 쓸지는
  * 부르는 쪽이 정한다.
  */
+/**
+ * 행이 0개인 **조회 불가** 캐릭터를 카드 자리로 만든다.
+ *
+ * 카드는 행에서 생기는데(`buildCharacterGroups`) 이 캐릭터는 동기화가 안 돌아 행이 없고, 이번
+ * 주 기록도 없으면 되살릴 행도 없다. 그대로 두면 화면이 **빠진 것과 0원인 것을 같게** 말한다.
+ *
+ * **주간 탭에서만 만든다.** 월간 탭은 `buildWeeklySubtotalsForMonth` 의 추적 게이트가 이미
+ * 세우므로 여기서 또 세우면 같은 캐릭터가 두 번 선다.
+ *
+ * **미완료 행을 지어내는 것과 다르다.** 그 캐릭터가 이번 주에 무엇을 잡았는지는 모르는 사실이라
+ * 행으로 단정하면 안 되고, 모른다는 것을 말하는 자리가 카드와 그 배지다.
+ *
+ * 이름을 모르면 안 세운다. 이름 없는 카드는 사용자에게 아무것도 말하지 않는다.
+ */
+function buildUnqueryableCards(
+  tab: BossCycle,
+  strandedOcids: readonly string[],
+  rows: readonly BossProfitRow[],
+  profiles: Map<string, CharacterProfileInfo>,
+): CharacterCardStub[] {
+  if (tab !== 'weekly') {
+    return []
+  }
+  const drawn = new Set(rows.map((row) => row.ocid))
+  return strandedOcids
+    .filter((ocid) => !drawn.has(ocid))
+    .map((ocid) => ({
+      ocid,
+      characterName: profiles.get(ocid)?.characterName ?? '',
+      imageUrl: profiles.get(ocid)?.imageUrl ?? null,
+    }))
+    .filter((card) => card.characterName !== '')
+}
+
 async function buildPeriodSnapshot(input: PeriodBuildInput): Promise<PeriodBuildOutcome> {
   const { tab, periodKey, ocids, now } = input
   const currentPeriodKey = getCurrentBossProfitPeriod(tab, now).periodKey
@@ -709,6 +781,12 @@ async function buildPeriodSnapshot(input: PeriodBuildInput): Promise<PeriodBuild
       ],
       sortedOcids,
     )
+    const unqueryableCards = buildUnqueryableCards(
+      tab,
+      latestSyncSnapshot?.strandedOcids ?? [],
+      rows,
+      profileSnapshot,
+    )
     const weeklySubtotals =
       tab === 'monthly'
         ? await buildWeeklySubtotalsForMonth(
@@ -746,6 +824,7 @@ async function buildPeriodSnapshot(input: PeriodBuildInput): Promise<PeriodBuild
         }),
         canGoPreviousPeriod,
         previousPeriodTotalMeso,
+        unqueryableCards,
       },
     }
   }
@@ -863,6 +942,8 @@ async function buildPeriodSnapshot(input: PeriodBuildInput): Promise<PeriodBuild
       periodPendingAggregation,
       canGoPreviousPeriod,
       previousPeriodTotalMeso,
+      // 지난 기간은 기록이 있으면 행으로 이미 서고, 없으면 그 주에 없었던 것이 맞다.
+      unqueryableCards: [],
     },
   }
 }
@@ -892,6 +973,7 @@ function commitPeriod(
     periodPendingAggregation: snapshot.periodPendingAggregation,
     canGoPreviousPeriod: snapshot.canGoPreviousPeriod,
     previousPeriodTotalMeso: snapshot.previousPeriodTotalMeso,
+    unqueryableCards: snapshot.unqueryableCards,
   })
 }
 
@@ -1020,6 +1102,7 @@ const initialState: BossProfitState = {
   error: null,
   staleCharacterNames: [],
   characterIssues: {},
+  unqueryableCards: [],
   trackedOcids: null,
   lastSyncedAt: null,
 }
@@ -1086,7 +1169,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     const previousPeriodTotalPromise = loadPreviousPeriodTotal(displayOcids, tab, currentPeriodKey)
 
     if (ocids.length === 0) {
-      setLatestSyncSnapshot({ ocids: [], rows: [], characterProfiles: new Map() })
+      setLatestSyncSnapshot({ ocids: [], rows: [], characterProfiles: new Map(), strandedOcids: [] })
       if (myGeneration !== requestGeneration) return
       // 추적은 비었는데 기록이 있으면 화면은 여전히 그것을 그려야 한다. 동기화할 것이 없을 뿐
       // 이라, 화면 반영은 기록을 원천으로 아는 `loadPeriod` 에 넘긴다.
@@ -1207,6 +1290,17 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       if (profile !== null) cachedCharacterProfiles.set(ocid, profile)
     })
 
+    // **표가 이미 아는 조회 불가.** 로컬 조회라 동기화를 안 기다린다. 이것이 없으면 조회 불가
+    // 캐릭터의 첫 페인트가 `0 메소` 이고, 그 숫자는 0원을 벌었다는 단정이라 할 수 없는 말이다.
+    //
+    // `null`(아직 안 물어봤다)은 안 담는다. 담으면 새 캐릭터가 전부 배지를 달고 시작한다.
+    const knownUnavailableOcids = sortedCharacterInfo
+      .filter((info) => info.unavailable === true)
+      .map((info) => info.ocid)
+    const cachedIssues: Record<string, 'unavailable' | 'failed'> = Object.fromEntries(
+      knownUnavailableOcids.map((ocid) => [ocid, 'unavailable' as const]),
+    )
+
     // 화면 진입 자동 재조회는 데이터가 신선하면 건너뛴다. 캐시가 없는 캐릭터는 여기서 빠지므로
     // `isSyncFresh` 가 개수 불일치로 만료 판정한다. 새 캐릭터가 빈 채 남지 않는다.
     const cachedSyncedAts = cachedByOcid
@@ -1292,6 +1386,9 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       ocids: [...ocids],
       rows: cachedSortedRows,
       characterProfiles: cachedCharacterProfiles,
+      // 이번 회차가 물어본 결과가 아니라 **표가 이미 들고 있던 사실**이다. 동기화가 답하면 아래
+      // 최종 커밋이 이 목록을 그 결과로 갈아끼운다.
+      strandedOcids: knownUnavailableOcids,
     })
 
     // 제자리 새로고침은 캐시 우선 표시의 화면 반영만 건너뛴다. 이 단계가 그리는 것은 현재 기간의
@@ -1306,13 +1403,13 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         set({
           error: null,
           staleCharacterNames: [],
-          characterIssues: {},
+          characterIssues: cachedIssues,
           lastSyncedAt: oldestCachedSyncedAt,
         })
         await loadPeriod(set, tab, viewedPeriodKey, ocids, now, myGeneration)
         return
       }
-      set({ status: 'loading', error: null, staleCharacterNames: [], characterIssues: {} })
+      set({ status: 'loading', error: null, staleCharacterNames: [], characterIssues: cachedIssues })
     } else {
       // monthly 탭의 주차별 합계도 캐시 단계에서 미리 채운다. 지난 주차 합계는 로컬 기록
       // (getBossProfitRecords) 조회만으로 구해지는 값이라 API 재검증을 기다릴 이유가 없다.
@@ -1366,7 +1463,13 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         previousPeriodTotalMeso,
         error: null,
         staleCharacterNames: [],
-        characterIssues: {},
+        characterIssues: cachedIssues,
+        unqueryableCards: buildUnqueryableCards(
+          tab,
+          knownUnavailableOcids,
+          cachedSortedRows,
+          cachedCharacterProfiles,
+        ),
         ...(skipSync ? { lastSyncedAt: oldestCachedSyncedAt } : {}),
       })
       if (skipSync) return
@@ -1468,7 +1571,19 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // 기록만 있는 조합을 행으로 되살린다(위 appendRecordOnlyRows 주석).
     const unionRows = appendRecordOnlyRows(autoRecordedRows, records ?? [], characterProfiles, now)
     const sortedRows = sortRowsByOcidOrder(unionRows, syncedOcids)
-    setLatestSyncSnapshot({ ocids: [...ocids], rows: sortedRows, characterProfiles })
+    // 동기화가 한 번도 답하지 않은 추적 ocid. 월드 이전으로 `character/list` 에서 빠지면
+    // `resolveTrackedCharacterContext` 가 버려 `results` 에 아예 안 온다. 그 캐릭터는 위 루프가
+    // 행도 프로필도 안 만들어, 여기서 건지지 않으면 화면에서 통째로 사라진다.
+    const respondedOcids = new Set(results.map((result) => result.ocid))
+    const strandedOcids = ocids.filter((ocid) => !respondedOcids.has(ocid))
+    // 실패한 캐릭터와 같은 표를 쓴다. 사용자에게 처방이 같고(해제하거나 바꾼다) 배지·팝오버가
+    // 이미 그 문구를 든다.
+    for (const ocid of strandedOcids) {
+      characterIssues[ocid] = 'unavailable'
+    }
+    // 표에 남기는 일은 **`syncSchedules` 가 한다**(`persistUnavailable`). 조회 불가는 보스 수익의
+    // 사실이 아니라 캐릭터의 사실이라, 이 화면을 안 여는 사용자에게도 표가 차야 한다.
+    setLatestSyncSnapshot({ ocids: [...ocids], rows: sortedRows, characterProfiles, strandedOcids })
 
     // 잡지 않은 보스의 드롭을 지운다. 주간 한도 마감으로 행이 걷힌 자리, 추적에서 빠진 보스,
     // 영영 미처치로 굳은 기간이 전부 여기로 온다.
@@ -1549,6 +1664,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       error: null,
       staleCharacterNames,
       characterIssues,
+      unqueryableCards: buildUnqueryableCards(tab, strandedOcids, sortedRows, characterProfiles),
       // lastSyncedAt은 위에서 세대 가드보다 먼저 갱신했다(중단돼도 시각이 남도록).
     })
 

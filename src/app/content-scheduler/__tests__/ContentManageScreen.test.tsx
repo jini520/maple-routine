@@ -288,3 +288,20 @@ describe('ContentManageScreen: 길드 미가입 잠금', () => {
     expect(stateOf(row(GUILD_ITEM)).disabled).toBeFalsy()
   })
 })
+
+
+// 편집할 목록이 **빈 것이 아니라 모르는 것**이다. 체크박스를 세우면 사용자가 지금 추적을 고르고
+// 있다고 믿는데, 그 선택은 조회가 돌아와야 뜻을 갖는다.
+describe('조회 불가 캐릭터', () => {
+  it('편집 목록 대신 안내가 선다', async () => {
+    mockStore({
+      status: 'loaded',
+      characters: [character({ error: { kind: 'characterUnavailable' } })],
+    })
+
+    await renderScreen()
+
+    expect(screen.getByText('이 캐릭터는 조회할 수 없습니다')).toBeTruthy()
+    expect(screen.getByText('캐릭터 관리로 이동하기')).toBeTruthy()
+  })
+})

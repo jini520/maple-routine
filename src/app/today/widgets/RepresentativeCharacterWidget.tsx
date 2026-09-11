@@ -20,7 +20,7 @@ import { Image, View } from 'react-native'
 
 import { worldEmblemUrl } from '../../../lib/assets/asset-lookup'
 
-import { ProgressBar, Text } from '../../../components/atoms'
+import { Badge, ProgressBar, Text } from '../../../components/atoms'
 import { CharacterAvatar } from '../../../components/molecules/CharacterAvatar/CharacterAvatar'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
@@ -76,6 +76,7 @@ function Portrait(props: { view: RepresentativeView; sizePx: number }): React.JS
       name={props.view.name}
       size={props.sizePx}
       className="shrink-0"
+          unavailable={props.view.unavailable}
     />
   )
 }
@@ -167,9 +168,28 @@ function ExpBlock(props: {
   variant: Variant
 }): React.JSX.Element | null {
   const rate = props.view.expRate
-  if (rate === undefined) return null
-
   const compactColumn = props.variant === 'row'
+
+  // **조회 불가면 이 자리가 통째로 배지다.** EXP 는 조회를 못 한 순간 굳은 값이라, 바를 그대로
+  // 두면 지금의 진행도로 읽힌다. 자리를 비우지 않는 것은 카드 높이가 줄어 다른 위젯이 밀리기
+  // 때문이고, 이름 옆에 안 다는 것은 그 줄이 닉네임부터 줄어드는 자리라서다.
+  if (props.view.unavailable) {
+    return (
+      <View
+        testID="representative-issue-block"
+        // 오른쪽에 붙는다(사용자 지정). EXP 줄의 퍼센트가 서던 자리라 그 끝과 줄이 맞는다.
+        className={compactColumn ? 'w-[100px] shrink-0 items-end' : 'w-full items-end'}
+      >
+        {/* `mini` 가 아니라 기본 크기다. 이 자리는 EXP 바 한 줄을 통째로 쓰므로 폭을 다툴 상대가
+            없고, 카드에서 가장 중요한 말이라 작게 두면 묻힌다. */}
+        <Badge variant="error" weight="bold" testID="representative-issue">
+          조회 불가
+        </Badge>
+      </View>
+    )
+  }
+
+  if (rate === undefined) return null
 
   return (
     <View

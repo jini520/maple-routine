@@ -97,6 +97,7 @@ export function BossProfitScreen(): React.JSX.Element {
     error,
     staleCharacterNames,
     characterIssues,
+    unqueryableCards,
     trackedOcids,
     loadTrackedOcids,
     refresh,
@@ -197,7 +198,13 @@ export function BossProfitScreen(): React.JSX.Element {
   //
   // 그룹의 순서는 행의 순서(= 스토어의 레벨 내림차순)가 아니라 사용자가 캐릭터 관리에서 정한
   // 저장 배열 순서다. 캐릭터 안쪽 보스 순서는 안 건드린다. 바뀌는 것은 카드가 서는 차례뿐이다.
-  const characterGroups = orderByTracked(buildCharacterGroups(rows, weeklySubtotals), trackedOcids ?? [])
+  // 조회할 수 없게 된 캐릭터는 행이 0개라 카드가 안 선다. 그 자리를 비우면 화면이 빠진 것과
+  // 0원인 것을 같게 말하므로, 이번 주 목록에 한해 빈 카드를 세우고 배지가 이유를 말한다
+  // (스토어가 그 자리에서만 채운다).
+  const characterGroups = orderByTracked(
+    buildCharacterGroups(rows, weeklySubtotals, unqueryableCards),
+    trackedOcids ?? [],
+  )
 
   // 기간 로드 실패는 카드가 있을 때만 토스트다. 카드가 없으면 문구가 사라진 자리에 빈 칸이
   // 남으므로 아래에서 `ErrorState` 를 그린다.
@@ -489,6 +496,9 @@ export function BossProfitScreen(): React.JSX.Element {
                   key={`${tab}-${periodKey}-${group.ocid}`}
                   group={group}
                   issue={characterIssues[group.ocid]}
+                  // 조회 불가 팝오버의 갈 길. 카드는 네비게이션을 모르고 화면이 내려준다.
+                  // 피커를 열어 둔 채로 설정 탭에 보낸다(빈 상태 CTA 와 같은 길).
+                  onOpenCharacterManage={() => openTab('Settings', { openPicker: true })}
                 />
               ))}
           </View>

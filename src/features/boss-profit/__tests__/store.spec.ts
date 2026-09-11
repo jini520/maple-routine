@@ -66,6 +66,11 @@ const { getCachedCharacterBasic: getCachedCharacterBasicMock } = jest.requireMoc
 // 프로필의 출처는 이제 지워지지 않는 스냅샷이다. 이 스위트는 캐시에 값을 심어 화면을 재므로,
 // 목이 그 캐시를 그대로 읽어 같은 모양으로 돌려준다(실물도 표에 없으면 캐시를 본다).
 jest.mock('../../character-profile/resolve', () => ({ resolveDisplayProfiles: jest.fn() }))
+// 조회 불가는 Preferences 의 조회 원장에 산다. 캐릭터 관리 배지도 같은 값을 읽는다.
+jest.mock('../../../storage/schedule-probe-ledger', () => ({
+  getScheduleProbeLedger: jest.fn(),
+}))
+const { getScheduleProbeLedger: getScheduleProbeLedgerMock } = jest.requireMock('../../../storage/schedule-probe-ledger') as Record<string, jest.Mock>
 const { resolveDisplayProfiles: resolveDisplayProfilesMock } = jest.requireMock('../../character-profile/resolve') as Record<string, jest.Mock>
 
 jest.mock('../../../storage/api-key', () => ({
@@ -208,6 +213,7 @@ beforeEach(() => {
     cachedAt: '2026-07-01T00:00:00.000Z',
   }))
   getRecordedCharacterOcidsMock.mockReset().mockResolvedValue([])
+  getScheduleProbeLedgerMock.mockReset().mockResolvedValue({ unavailable: false, dates: {} })
   resolveDisplayProfilesMock.mockReset().mockImplementation(async (ocids: readonly string[]) => {
     const profiles = new Map()
     for (const ocid of new Set(ocids)) {
@@ -3598,3 +3604,100 @@ describe('기간을 미리 들고 있는다', () => {
     expect(getBossProfitRecordsMock.mock.calls.length).toBe(callsBefore)
   })
 })
+
+// 월드 이전으로 `character/list` 에서 빠진 ocid 는 `syncSchedules` 가 아예 안 돌려준다. 행을
+// 만드는 자리가 그 결과 하나뿐이라 카드가 통째로 사라졌다. 빠진 것과 0원인 것은 다른 사실이다.
+describe('동기화가 답하지 않은 추적 캐릭터', () => {
+  it('조회 불가 배지를 단다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+
+    await useBossProfitStore.getState().refresh(['ocid-1', 'stranded'])
+
+    expect(useBossProfitStore.getState().characterIssues.stranded).toBe('unavailable')
+  })
+
+  it('이번 주 목록에 행 없는 카드로 선다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+
+    await useBossProfitStore.getState().refresh(['ocid-1', 'stranded'])
+
+    expect(useBossProfitStore.getState().unqueryableCards).toEqual([
+      { ocid: 'stranded', characterName: '캐릭터-stranded', imageUrl: expect.anything() },
+    ])
+  })
+
+  it('동기화가 답한 캐릭터는 안 넣는다. 보스가 0개여도 조회는 된 것이다', async () => {
+    syncSchedulesMock.mockResolvedValue([
+      syncResult({ state: { ...syncResult().state!, bossContents: [] } }),
+    ])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    expect(useBossProfitStore.getState().unqueryableCards).toEqual([])
+    expect(useBossProfitStore.getState().characterIssues['ocid-1']).toBeUndefined()
+  })
+
+  // 월간 탭은 `buildWeeklySubtotalsForMonth` 의 추적 게이트가 이미 세운다. 여기서 또 세우면
+  // 같은 캐릭터가 두 번 선다.
+  it('월간 탭에서는 안 채운다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    await useBossProfitStore.getState().refresh(['ocid-1', 'stranded'])
+
+    await useBossProfitStore.getState().setTab('monthly')
+
+    expect(useBossProfitStore.getState().unqueryableCards).toEqual([])
+  })
+})
+
+// 동기화가 끝나야 조회 불가를 알면 그 전까지 화면이 `0 메소` 를 한 번 그린다. 표에 남은 표식은
+// 로컬 조회라 **첫 페인트에 이미 손에 있다**.
+describe('첫 페인트의 조회 불가', () => {
+  it('표가 조회 불가라고 하면 동기화 전에 배지를 세운다', async () => {
+    resolveDisplayProfilesMock.mockResolvedValue(
+      new Map([['stranded', { name: '지내우시', imageUrl: '', world: '챌린저스2', level: 285 }]]),
+    )
+    getScheduleProbeLedgerMock.mockResolvedValue({ unavailable: true, dates: {} })
+    // 동기화는 안 끝난 채로 둔다. 이 시점의 화면이 무엇을 아는지가 이 테스트의 대상이다.
+    syncSchedulesMock.mockImplementation(() => new Promise(() => {}))
+
+    void useBossProfitStore.getState().refresh(['stranded'])
+
+    // 둘을 한 번에 읽는다. 나눠 읽으면 그 사이에 앞선 테스트가 남긴 회차가 커밋해 값이 갈린다.
+    await waitFor(() => {
+      const state = useBossProfitStore.getState()
+      expect(state.characterIssues.stranded).toBe('unavailable')
+      expect(state.unqueryableCards).toEqual([
+        { ocid: 'stranded', characterName: '지내우시', imageUrl: '' },
+      ])
+    })
+  })
+
+  // `아직 안 물어봤다`(null)를 `조회 불가` 로 읽으면 새 캐릭터가 전부 배지를 달고 시작한다.
+  it('모르는 캐릭터는 배지를 안 단다', async () => {
+    resolveDisplayProfilesMock.mockResolvedValue(
+      new Map([['ocid-1', { name: '낟낟', imageUrl: '', world: '엘리시움', level: 295 }]]),
+    )
+    syncSchedulesMock.mockImplementation(() => new Promise(() => {}))
+
+    void useBossProfitStore.getState().refresh(['ocid-1'])
+
+    // 동기화를 기다리는 동안이라 `loading` 이다. 그 사이에 배지가 붙는지가 대상이다.
+    await waitFor(() => expect(useBossProfitStore.getState().status).toBe('loading'))
+    expect(useBossProfitStore.getState().characterIssues).toEqual({})
+  })
+
+  // 동기화가 그 캐릭터를 돌려주면 표식이 내려가고 화면도 따라야 한다.
+  it('동기화가 답하면 배지를 걷는다', async () => {
+    resolveDisplayProfilesMock.mockResolvedValue(
+      new Map([['ocid-1', { name: '낟낟', imageUrl: '', world: '엘리시움', level: 295 }]]),
+    )
+    getScheduleProbeLedgerMock.mockResolvedValue({ unavailable: true, dates: {} })
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    expect(useBossProfitStore.getState().characterIssues).toEqual({})
+    expect(useBossProfitStore.getState().unqueryableCards).toEqual([])
+  })
+})
+

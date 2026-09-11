@@ -64,9 +64,29 @@ export function sumSubtotals(subtotals: BossProfitWeeklySubtotal[]): number {
   return subtotals.reduce((sum, subtotal) => sum + subtotal.totalMeso, 0)
 }
 
+/** 행이 없어도 카드를 세워야 하는 캐릭터. 이름과 얼굴만 있으면 된다. */
+export interface CharacterCardStub {
+  ocid: string
+  characterName: string
+  imageUrl: string | null
+}
+
+/**
+ * 카드는 **행에서 생긴다**. 셋째 인자는 그 규칙의 유일한 예외다.
+ *
+ * 이전으로 남겨진 ocid 는 동기화가 안 돌고 그 주 기록도 없어 행이 0개인데, 행이 없다고 카드를
+ * 안 세우면 화면이 **빠진 것과 0원인 것을 같게** 말한다. 그 캐릭터는 조회할 수 없다는 사실
+ * 자체를 카드가 배지로 말해야 해서, 비어 있어도 자리를 준다.
+ *
+ * **미완료 행을 지어내는 것과 다르다.** 그 캐릭터가 이번 주에 무엇을 잡았는지는 모르는 사실이라
+ * 행으로 단정하면 안 되고, 모른다는 것을 말하는 자리가 카드와 배지다.
+ *
+ * 행이 이미 있는 ocid 는 건너뛴다. 순서는 행에서 만든 카드가 먼저다.
+ */
 export function buildCharacterGroups(
   rows: BossProfitRow[],
   weeklySubtotals: BossProfitWeeklySubtotal[],
+  emptyCards: readonly CharacterCardStub[] = [],
 ): CharacterGroup[] {
   const groups: CharacterGroup[] = []
   const indexByOcid = new Map<string, number>()
@@ -87,6 +107,9 @@ export function buildCharacterGroups(
   }
   for (const subtotal of weeklySubtotals) {
     ensureGroup(subtotal.ocid, subtotal.characterName, subtotal.imageUrl).weeklySubtotals.push(subtotal)
+  }
+  for (const card of emptyCards) {
+    ensureGroup(card.ocid, card.characterName, card.imageUrl)
   }
 
   return groups

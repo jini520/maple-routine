@@ -127,15 +127,31 @@ export function WeeklyAccordionBody(props: { rows: BossProfitRow[] }): React.JSX
   )
 }
 
-export function WeeklySubtotalRow(props: { subtotal: BossProfitWeeklySubtotal }): React.JSX.Element {
+export function WeeklySubtotalRow(props: {
+  subtotal: BossProfitWeeklySubtotal
+  /**
+   * 이 캐릭터를 조회할 수 없다. **기록이 있는 주만 아는 값**이고 나머지 주는 모르는 값이다.
+   *
+   * 진행 중인 주가 특히 위험하다. `showsMeso` 가 참이라 조회를 못 하는데도 `0 메소` 가 서고,
+   * 그것은 그 주에 0원을 벌었다는 단정이다.
+   */
+  unavailable?: boolean
+}): React.JSX.Element {
   const { subtotal } = props
   const { now, onRetryPeriod } = useBossProfitContext()
   const label = formatBossProfitPeriodLabel('weekly', subtotal.periodKey, now)
   const actionLabel = SUBTOTAL_ACTION_LABEL[subtotal.state]
   const staticLabel = SUBTOTAL_STATIC_LABEL[subtotal.state]
+  // 조회 불가 캐릭터에서 금액을 말할 수 있는 주는 **기록이 있는 주뿐**이다. 그 값은 이미 받아
+  // 둔 사실이라 조회가 막혀도 안 변한다. 나머지는 조회로만 알 수 있어 영영 모른다.
+  const cannotStateWeek = props.unavailable === true && subtotal.state !== 'recorded'
+
   // 금액을 말할 수 있는 상태. 기록이 있거나(recorded), 조회해서 0건을 확인했거나, 진행 중.
   const showsMeso =
-    subtotal.state === 'recorded' || subtotal.state === 'confirmedEmpty' || subtotal.state === 'inProgress'
+    !cannotStateWeek &&
+    (subtotal.state === 'recorded' ||
+      subtotal.state === 'confirmedEmpty' ||
+      subtotal.state === 'inProgress')
 
   const itemMeso = sumDropPayout(subtotal.drops)
   // 구조 분해가 필수다. 이유는 `BossProfitBossRow` 의 같은 자리 주석 참고.
@@ -172,11 +188,21 @@ export function WeeklySubtotalRow(props: { subtotal: BossProfitWeeklySubtotal })
         </Text>
       </View>
 
-      {subtotal.state === 'inProgress' && (
+      {subtotal.state === 'inProgress' && !cannotStateWeek && (
         <Badge variant="primary">진행 중</Badge>
       )}
 
-      {staticLabel !== undefined && <Text className="text-xs text-text-muted">{staticLabel}</Text>}
+      {/* 금액 자리를 대신한다(카드 머리와 같은 규칙). 이 주에 무엇을 벌었는지 모르므로 숫자도
+          `진행 중` 도 안 적는다. */}
+      {cannotStateWeek && (
+        <Badge variant="error" size="mini" weight="bold" testID="subtotal-issue">
+          조회 불가
+        </Badge>
+      )}
+
+      {staticLabel !== undefined && !cannotStateWeek && (
+        <Text className="text-xs text-text-muted">{staticLabel}</Text>
+      )}
 
       {/* 누를 수 있는 행만 어포던스(칩)를 갖는다. 한 주를 누르면 그 달의 미확인 주를 함께 채운다.
           같은 백필이 그 달 전체를 대상으로 돌기 때문이고, 탭 수를 늘릴 이유가 없다. */}
@@ -249,6 +275,8 @@ export function WeeklySubtotalRow(props: { subtotal: BossProfitWeeklySubtotal })
 export function MonthlyAccordionBody(props: {
   bossRows: BossProfitRow[]
   weeklySubtotals: BossProfitWeeklySubtotal[]
+  /** 조회할 수 없는 캐릭터. 기록이 있는 주만 금액을 그리고 나머지는 배지가 선다. */
+  unavailable?: boolean
 }): React.JSX.Element {
 
   return (
@@ -257,7 +285,11 @@ export function MonthlyAccordionBody(props: {
         <>
           <SectionBand label="주차별 합계" />
           {props.weeklySubtotals.map((subtotal) => (
-            <WeeklySubtotalRow key={subtotal.periodKey} subtotal={subtotal} />
+            <WeeklySubtotalRow
+              key={subtotal.periodKey}
+              subtotal={subtotal}
+              unavailable={props.unavailable}
+            />
           ))}
         </>
       )}

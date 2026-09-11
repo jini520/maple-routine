@@ -88,3 +88,25 @@ describe('CharacterRail', () => {
     expect(style.gap).toBe(PORTRAIT_RAIL.gap)
   })
 })
+
+// 조회할 수 없게 된 캐릭터가 그냥 서 있으면 그 진행도가 지금의 사실처럼 읽힌다. 링은 마지막으로
+// 본 값이라 지우지 않고 표식만 얹는다.
+describe('조회 불가 표식', () => {
+  it('참이면 칸에 표식이 붙는다', async () => {
+    const { getByTestId } = await render([entry({ unavailable: true })])
+
+    expect(getByTestId('portrait-unavailable')).toBeTruthy()
+  })
+
+  it('안 적으면 안 붙는다', async () => {
+    const { queryByTestId } = await render([entry()])
+
+    expect(queryByTestId('portrait-unavailable')).toBeNull()
+  })
+
+  it('표식이 붙어도 링은 그대로 읽힌다', async () => {
+    const { getByLabelText } = await render([entry({ unavailable: true })])
+
+    expect(getByLabelText(/일간 3\/7/)).toBeTruthy()
+  })
+})

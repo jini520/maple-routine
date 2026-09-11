@@ -93,6 +93,13 @@ export interface RepresentativeView {
   /** `null` = 미가입 · `undefined` = 모름. */
   guildName?: string | null
   expRate?: number
+  /**
+   * 조회할 수 없게 된 캐릭터인가. 참이면 위젯이 배지를 단다.
+   *
+   * 동기화 실패(`failed`)는 여기 안 든다. 그쪽은 마지막으로 확인한 값을 보여주는 상태라
+   * 새로고침이 처방이고, 이쪽은 영구라 캐릭터 관리에서 손봐야 한다.
+   */
+  unavailable: boolean
 }
 
 /**
@@ -121,8 +128,13 @@ export interface ScheduleRowView {
   weeklyNames: readonly string[]
   weeklyBosses: readonly RemainingBossView[]
   monthlyBosses: readonly RemainingBossView[]
-  /** 보스 수익 스토어의 캐릭터 단위 실패 표식. 참이면 위젯이 수치 대신 동기화 실패를 그린다. */
-  hasSyncIssue: boolean
+  /**
+   * 보스 수익 스토어의 캐릭터 단위 실패. 있으면 위젯이 수치 대신 그 사실을 그린다.
+   *
+   * **종류를 나른다.** 처방이 갈리기 때문이다 - `unavailable` 은 영구라 캐릭터 관리에서 손봐야
+   * 하고 `failed` 는 새로고침이면 풀린다. 참·거짓 하나로 접으면 화면이 둘을 같은 말로 덮는다.
+   */
+  syncIssue: 'unavailable' | 'failed' | null
 }
 
 /**
@@ -363,6 +375,32 @@ export function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel 
   }
 }
 
+/**
+ * 이 회차에 **캐릭터 단위 실패로 확인된 것** 전부. 두 출처를 합친다.
+ *
+ * 합치는 이유는 **도착 시각이 다르기 때문**이다. 스케줄러 뷰의 `error` 는 캐시 우선 표시에서
+ * 즉시 오는데 보스 수익 스토어의 `characterIssues` 는 그 스토어가 돌고 난 뒤에 온다. 뒤엣것만
+ * 보면 그 사이에 조회 불가 캐릭터의 **빈 내용 배열이 `0개 남음 = CLEAR` 로 읽혀**, 앱을 켜면
+ * `CLEAR` 가 떴다가 `조회 불가` 로 바뀐다(관측된 증상).
+ *
+ * **`unavailable` 이 `failed` 를 이긴다.** 한 캐릭터가 두 출처에서 다르게 오면 영구인 쪽이
+ * 사실이다. 새로고침하면 풀린다고 말해 놓고 안 풀리는 것이 그 반대보다 나쁘다.
+ */
+function resolveCharacterIssues(
+  input: TodayViewModelInput,
+): Record<string, 'unavailable' | 'failed'> {
+  const issues: Record<string, 'unavailable' | 'failed'> = { ...input.characterIssues }
+
+  for (const view of [...input.contentCharacters, ...input.bossCharacters]) {
+    if (view.error === null) continue
+    const kind = view.error.kind === 'characterUnavailable' ? 'unavailable' : 'failed'
+    if (kind === 'unavailable' || issues[view.ocid] === undefined) {
+      issues[view.ocid] = kind
+    }
+  }
+  return issues
+}
+
 function buildRepresentative(input: TodayViewModelInput): RepresentativeView | null {
   const ocid = resolveDisplayRepresentative(input.orderedOcids, input.representativeOcid)
   if (ocid === null) return null
@@ -381,6 +419,7 @@ function buildRepresentative(input: TodayViewModelInput): RepresentativeView | n
     jobClass: profile.jobClass,
     guildName: profile.guildName,
     expRate: profile.expRate,
+    unavailable: resolveCharacterIssues(input)[ocid] === 'unavailable',
   }
 }
 
@@ -474,6 +513,7 @@ function buildSharedContents(input: TodayViewModelInput): SharedContentGroupView
 }
 
 function buildScheduleRows(input: TodayViewModelInput): ScheduleRowView[] {
+  const issues = resolveCharacterIssues(input)
   const contentByOcid = new Map(input.contentCharacters.map((view) => [view.ocid, view]))
   const bossByOcid = new Map(input.bossCharacters.map((view) => [view.ocid, view]))
 
@@ -527,7 +567,7 @@ function buildScheduleRows(input: TodayViewModelInput): ScheduleRowView[] {
       weeklyNames,
       weeklyBosses,
       monthlyBosses,
-      hasSyncIssue: input.characterIssues[ocid] !== undefined,
+      syncIssue: issues[ocid] ?? null,
     }
   })
 
@@ -577,8 +617,18 @@ function buildProfit(
   // 월간 탭에서만 채워지는 값이라 이번 주 계산에는 언제나 빈 배열이다.
   const groups = buildCharacterGroups(rows, [])
   const dropsByRowKey = input.profitDropsByRowKey as Record<string, RecordedDrop[]>
+  const issues = resolveCharacterIssues(input)
 
-  const characters = groups.map((group) => ({
+  // **조회 불가 캐릭터는 이 위젯에 안 선다**(사용자 지정). 이 위젯이 답하는 것은 이번 주에 얼마
+  // 벌었나 하나이고, 그 숫자를 못 내는 줄은 답이 아니라 사정이다. 그 사정을 말하는 자리는 같은
+  // 화면의 남은 스케줄과 보스 수익 화면이 이미 갖고 있다.
+  //
+  // 거르는 자리가 여기라 **총액에서도 빠진다**. 그 캐릭터가 이미 기록한 수익이 있으면 그만큼
+  // 머리 숫자가 준다. 줄은 뺐는데 총액에는 남기면 목록의 합과 머리가 안 맞아, 사용자가 못 찾는
+  // 금액이 생긴다.
+  const characters = groups
+    .filter((group) => issues[group.ocid] !== 'unavailable')
+    .map((group) => ({
     ocid: group.ocid,
     characterName: group.characterName,
     imageUrl: group.imageUrl,

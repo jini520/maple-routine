@@ -806,3 +806,27 @@ describe('구조 계약', () => {
   })
 })
 
+
+// 카드는 네비게이션을 모르고 이 화면이 갈 길을 내려준다. 안 내려주면 팝오버의 버튼이 조용히
+// 사라지므로, 그 배선을 여기서 지킨다.
+describe('조회 불가 카드의 캐릭터 관리로 이동하기', () => {
+  it('팝오버 버튼을 누르면 피커를 열어 둔 채 설정 탭으로 보낸다', async () => {
+    mockStore({
+      characterIssues: { stranded: 'unavailable' },
+      unqueryableCards: [{ ocid: 'stranded', characterName: '지내우시', imageUrl: null }],
+    })
+
+    const { getByTestId, getByText } = await renderScreen()
+    await act(async () => {
+      fireEvent.press(getByTestId('character-issue-amount'))
+    })
+    await act(async () => {
+      fireEvent.press(getByText('캐릭터 관리로 이동하기'))
+    })
+
+    expect(navigate).toHaveBeenCalledWith('Main', {
+      screen: 'Groups',
+      params: { screen: 'Settings', params: { openPicker: true } },
+    })
+  })
+})

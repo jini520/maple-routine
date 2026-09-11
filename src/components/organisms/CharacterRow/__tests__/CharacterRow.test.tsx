@@ -180,3 +180,18 @@ describe('DragHandle · AddMark', () => {
     expect(queryByRole('button')).toBeNull()
   })
 })
+
+// 캐릭터 관리 목록의 얼굴에도 표식이 붙는다. 캡션만으로는 목록을 훑는 눈에 안 들어온다.
+describe('조회 불가 행의 얼굴', () => {
+  it('참이면 얼굴에 표식이 붙는다', async () => {
+    const { getByTestId } = await renderAtom(<CharacterRow {...기본} unavailable />)
+
+    expect(getByTestId('portrait-unavailable')).toBeTruthy()
+  })
+
+  it('안 적으면 안 붙는다', async () => {
+    const { queryByTestId } = await renderAtom(<CharacterRow {...기본} />)
+
+    expect(queryByTestId('portrait-unavailable')).toBeNull()
+  })
+})

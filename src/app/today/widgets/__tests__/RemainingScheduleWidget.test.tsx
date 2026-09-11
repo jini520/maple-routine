@@ -171,7 +171,7 @@ describe('0 은 언제나 CLEAR', () => {
   })
 
   it('동기화 실패는 어느 탭에서나 그 사실을 말한다. CLEAR 가 아니다', async () => {
-    const view = await 위젯([스케줄행({ hasSyncIssue: true })])
+    const view = await 위젯([스케줄행({ syncIssue: 'failed' as const })])
 
     expect(view.getByTestId('schedule-issue')).toBeTruthy()
     expect(view.queryByTestId('schedule-clear')).toBeNull()
@@ -232,7 +232,7 @@ describe('목록은 캐릭터 전부다', () => {
   // 자리를 모르는 값이 거짓으로 차지한다.
   it('동기화 실패는 어느 탭에서나 맨 아래다. CLEAR 보다도 아래다', async () => {
     const view = await 위젯([
-      스케줄행({ ocid: '실패', characterName: '실패한캐릭터', hasSyncIssue: true }),
+      스케줄행({ ocid: '실패', characterName: '실패한캐릭터', syncIssue: 'failed' as const }),
       스케줄행({ ocid: 'clear', characterName: '끝낸캐릭터', dailyNames: [], weeklyNames: [] }),
       스케줄행({ ocid: 'a', characterName: '남은캐릭터', dailyNames: ['하나'] }),
     ])
@@ -342,7 +342,7 @@ describe('펼침도 그 탭의 것만이다', () => {
     const view = await 위젯([
       스케줄행({ ocid: 'open' }),
       스케줄행({ ocid: 'clear', dailyNames: [] }),
-      스케줄행({ ocid: 'issue', hasSyncIssue: true }),
+      스케줄행({ ocid: 'issue', syncIssue: 'failed' as const }),
     ])
 
     expect(view.queryAllByTestId('schedule-toggle')).toHaveLength(1)
@@ -368,5 +368,21 @@ describe('펼침도 그 탭의 것만이다', () => {
     await 펼치기(view)
 
     expect(view.getAllByText('타락한 세계수')).toHaveLength(2)
+  })
+})
+
+// 얼굴에도 표식이 붙는다. 배지는 오른쪽 끝에 있어 이름과 얼굴만 보고 훑는 눈에는 안 들어온다.
+describe('조회 불가 행의 얼굴', () => {
+  it('조회 불가면 얼굴에 표식이 붙는다', async () => {
+    const view = await 위젯([스케줄행({ syncIssue: 'unavailable' as const })])
+
+    expect(view.getByTestId('portrait-unavailable')).toBeTruthy()
+  })
+
+  // 동기화 실패는 마지막으로 확인한 값을 보여주는 상태다. 영구 실패와 같은 표식을 주면 안 된다.
+  it('동기화 실패에는 안 붙는다', async () => {
+    const view = await 위젯([스케줄행({ syncIssue: 'failed' as const })])
+
+    expect(view.queryByTestId('portrait-unavailable')).toBeNull()
   })
 })
