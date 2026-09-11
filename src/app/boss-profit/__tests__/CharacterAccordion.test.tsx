@@ -416,6 +416,59 @@ describe('행이 없는 조회 불가 카드', () => {
   })
 })
 
+// 금액 자리를 알약이 차지한 카드는 본문에 그릴 것이 없다. 알약이 서는 조건이 조회 불가 +
+// 합계 0 메소 라서 주간은 낡은 캐시가 만든 미완료 행뿐이고 월간은 주차 줄마다 같은 알약이다.
+describe('금액을 말할 수 없는 카드는 안 펼쳐진다', () => {
+  const 빈그룹 = { ocid: 'stranded', characterName: '지내우시', imageUrl: null, bossRows: [], weeklySubtotals: [] }
+
+  it('머리가 버튼이 아니고 셰브런도 안 선다', async () => {
+    const { queryByRole, queryByTestId } = await renderProfit(
+      <CharacterAccordion group={빈그룹} issue="unavailable" />,
+    )
+
+    expect(queryByRole('button', { expanded: false })).toBeNull()
+    expect(queryByTestId('accordion-chevron')).toBeNull()
+  })
+
+  // 조회는 못 하는데 낡은 스케줄 캐시가 행을 만든 자리다. 행이 있어도 지금의 사실이 아니다.
+  it('행이 있어도 열 길이 없다', async () => {
+    const 빈돈카드 = 그룹([보스행({ isComplete: false, payoutMeso: 0 })])
+    const { queryByRole, queryByText } = await renderProfit(
+      <CharacterAccordion group={빈돈카드} issue="unavailable" />,
+    )
+
+    expect(queryByRole('button', { expanded: false })).toBeNull()
+    expect(queryByText(주간보스)).toBeNull()
+  })
+
+  // 월간 탭은 주차 줄이 전부 조회 불가라 카드 합계도 0 이다. 같은 말을 주차 수만큼 반복한다.
+  it('월간 탭의 주차 줄이 전부 조회 불가여도 마찬가지다', async () => {
+    const group = 그룹([], [주차소계({ state: 'outOfRange', totalMeso: 0 })])
+    const { queryByRole, queryByTestId } = await renderProfit(
+      <CharacterAccordion group={group} issue="unavailable" />,
+      컨텍스트값({ tab: 'monthly' }),
+    )
+
+    expect(queryByRole('button', { expanded: false })).toBeNull()
+    expect(queryByTestId('accordion-body')).toBeNull()
+  })
+
+  // 금액이 0 이 아니면 그 돈을 만든 보스 행이 본문에 실제로 있다. 조회가 막혔다고 이미 받아 둔
+  // 기록을 못 보게 할 이유가 없다.
+  it('번 돈이 있는 조회 불가 캐릭터는 그대로 펼쳐진다', async () => {
+    const 번카드 = 그룹([보스행({ isComplete: true, payoutMeso: 1_000 })])
+    const { getByRole, getByText } = await renderProfit(
+      <CharacterAccordion group={번카드} issue="unavailable" />,
+    )
+
+    await act(async () => {
+      fireEvent.press(getByRole('button', { expanded: false }))
+    })
+
+    expect(getByText(주간보스)).toBeTruthy()
+  })
+})
+
 // 카드의 얼굴에도 표식이 붙는다. 금액 자리의 배지만으로는 목록을 훑는 눈에 안 들어온다.
 describe('조회 불가 카드의 얼굴', () => {
   it('조회 불가면 얼굴에 표식이 붙는다', async () => {

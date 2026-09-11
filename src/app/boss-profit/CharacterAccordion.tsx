@@ -164,6 +164,32 @@ function MoneyBox({
   )
 }
 
+/**
+ * 카드 머리를 감싸는 상자. 펼칠 수 있으면 버튼이고 아니면 보통 상자다.
+ *
+ * 펼칠 수 없는 카드에서 버튼 역할까지 빼는 것은 스크린리더 때문이다. `onPress` 만 떼면 그
+ * 자리가 여전히 `펼치기` 로 읽혀 누를 것이 있다고 말한다.
+ */
+function CardHeader(props: {
+  expandable: boolean
+  isExpanded: boolean
+  onPress: () => void
+  className: string
+  children: React.ReactNode
+}): React.JSX.Element {
+  if (!props.expandable) return <View className={props.className}>{props.children}</View>
+  return (
+    <Pressable
+      role="button"
+      aria-expanded={props.isExpanded}
+      onPress={props.onPress}
+      className={props.className}
+    >
+      {props.children}
+    </Pressable>
+  )
+}
+
 export function CharacterAccordion(props: {
   group: CharacterGroup
   /** 이 캐릭터의 동기화가 실패했으면 그 종류(없으면 `undefined`). */
@@ -177,7 +203,7 @@ export function CharacterAccordion(props: {
   onOpenCharacterManage?: () => void
 }): React.JSX.Element {
   const { tab, loadedTab, loadedPeriodKey, dropsByRowKey } = useBossProfitContext()
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isOpenedByUser, setIsOpenedByUser] = useState(false)
   // 아이콘만으로는 원인을 말할 수 없어, 탭하면 설명 팝오버를 연다.
   const [isIssueOpen, setIsIssueOpen] = useState(false)
   const [issueGeometry, setIssueGeometry] = useState<IssuePopoverGeometry>({
@@ -211,6 +237,16 @@ export function CharacterAccordion(props: {
    *   만들어, 행이 있는데 금액은 `0 메소` 인 자리가 실제로 생긴다
    */
   const cannotStateAmount = props.issue === 'unavailable' && totalMeso === 0
+  /**
+   * 실제로 펼쳐진 상태. **금액을 말할 수 없는 카드는 펼치지 않는다**(사용자 지정).
+   *
+   * 그 카드는 본문에 그릴 것이 없다. 주간이면 행이 아예 없거나 낡은 스케줄 캐시가 만든 미완료
+   * 행만 남고, 월간이면 금액을 말할 수 있는 주가 하나도 없어 주차 줄마다 같은 배지가 반복된다.
+   *
+   * 펼침 state 를 지우지 않고 곱하는 것은 되돌아올 자리를 남기기 위해서다. 드롭 값이 지워져
+   * 금액이 0 으로 떨어지면 본문이 닫히고, 값이 다시 생기면 열어 둔 그대로 돌아온다.
+   */
+  const isExpanded = isOpenedByUser && !cannotStateAmount
   /**
    * 금액 옆 **원형 배지**가 말할 것. `undefined` 면 안 선다.
    *
@@ -340,15 +376,15 @@ export function CharacterAccordion(props: {
         {/* 상하 패딩이 `p-4`(16)가 아니라 `py-3`(12)인 것은 아바타 슬롯이 진행 링 때문에
             32 → 40px 로 커진 만큼 돌려받은 것이다. 헤더 높이는 링 도입 전과 같은 64px
             (12 + 40 + 12). 좌우는 보스 행(`p-4`)과 맞춰 16px 유지. */}
-        <Pressable
-          role="button"
-          aria-expanded={isExpanded}
+        <CardHeader
+          expandable={!cannotStateAmount}
+          isExpanded={isExpanded}
           // 접기는 **상태만 바꾼다.** 여기에 스크롤 조작을 다시 넣지 말 것.
           onPress={() => {
             // 카드를 여닫으면 설명 팝오버를 닫는다. 펼침이 레이아웃을 바꿔 열기 직전에 잰 위치가
             // 낡은 값이 되고, 헤더 탭은 팝오버 바깥 탭으로 잡히지도 않는다.
             setIsIssueOpen(false)
-            setIsExpanded((expanded) => !expanded)
+            setIsOpenedByUser((expanded) => !expanded)
           }}
           className={
             isExpanded
@@ -406,12 +442,14 @@ export function CharacterAccordion(props: {
 
           </MoneyBox>
 
-          {isExpanded ? (
-            <ChevronUpIcon className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden />
-          ) : (
-            <ChevronDownIcon className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden />
-          )}
-        </Pressable>
+          {/* 펼칠 수 없는 카드에는 안 세운다. 눌러도 아무 일이 없는 셰브런은 거짓 어포던스다. */}
+          {!cannotStateAmount &&
+            (isExpanded ? (
+              <ChevronUpIcon testID="accordion-chevron" className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden />
+            ) : (
+              <ChevronDownIcon testID="accordion-chevron" className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden />
+            ))}
+        </CardHeader>
 
         {isExpanded &&
           (tab === 'weekly' ? (
