@@ -27,7 +27,10 @@ import { latestSyncedAt } from '../../lib/data-freshness'
 import { useDataFreshness } from '../refresh/freshness'
 import { useRefreshProgress } from '../refresh/progress'
 import { fetchCharacterBasicCached } from './character-basic-fetch'
-import { resolveTrackedCharacterContext } from './character-roster'
+import {
+  probeStrandedTrackedCharacters,
+  resolveTrackedCharacterContext,
+} from './character-roster'
 import type { TrackedCharacterContext } from './character-roster'
 import { markSyncAttemptedThisRun } from './sync-run-state'
 import { persistUnavailable } from './stranded-characters'
@@ -338,7 +341,7 @@ async function runSyncRound(
 
   // 추적 목록이 메이플 ID 경계를 넘으므로 선택 계정의 캐릭터를 받아 거르지 않는다. 전 계정에서
   // 찾고 각 캐릭터가 자기 계정을 들고 다닌다. 단일 계정에서는 결과가 완전히 같다.
-  const { apiKey, characters: targets } = await resolveTrackedCharacterContext(ocids)
+  const { apiKey, characters: targets, allCharacters } = await resolveTrackedCharacterContext(ocids)
   const total = targets.length
 
   onProgress?.(0, total)
@@ -383,6 +386,17 @@ async function runSyncRound(
   ])
 
   const results = [firstResult, ...restResults]
+
+  // 목록 밖 추적 ocid 를 따로 물어 월드 리프를 짚는다. **`persistUnavailable` 보다 앞이어야
+  // 한다** - 그쪽이 원장에 표식을 먼저 적으면 프로브가 건너뛰어, 목록에 없다는 것만으로 판정한
+  // 셈이 된다. 빠진 것은 물어볼 이유이지 답이 아니다.
+  //
+  // 여기 있는 것은 이 판정이 캐릭터 관리 화면에만 있어 그 화면을 안 여는 사용자에게 영영 안
+  // 닿았기 때문이다. 콜드 스타트는 이 경로를 반드시 지난다.
+  //
+  // 401·429 갈래에는 안 둔다. 그 상태에서는 프로브도 같은 실패를 받아 아무것도 못 짚는다.
+  await probeStrandedTrackedCharacters(apiKey, new Set(ocids), allCharacters, new Date())
+
   // 조회 불가를 **여기서** 표에 남긴다. 이 사실을 배우는 자리가 동기화다. 화면 스토어에 두면
   // 그 화면을 안 여는 사용자에게는 표가 영영 안 찬다.
   await persistUnavailable(ocids, results)

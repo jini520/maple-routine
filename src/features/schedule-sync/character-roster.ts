@@ -87,6 +87,13 @@ export interface TrackedCharacterContext {
 export async function resolveTrackedCharacterContext(ocids: string[]): Promise<{
   apiKey: string
   characters: TrackedCharacterContext[]
+  /**
+   * **전 계정** 캐릭터를 편 것. 같은 응답에서 나오므로 호출이 안 는다.
+   *
+   * 동기화가 월드 리프 판정에 쓴다. 목록 밖으로 사라진 ocid 의 새 자리를 찾으려면 지금 연
+   * 계정만으로는 모자란다 - 리프가 계정 경계를 넘을 수 있다.
+   */
+  allCharacters: MapleCharacter[]
 }> {
   const authConfig = await getAuthConfig()
   if (authConfig === null) {
@@ -101,7 +108,11 @@ export async function resolveTrackedCharacterContext(ocids: string[]): Promise<{
       .map((character) => ({ character, accountId: account.accountId })),
   )
 
-  return { apiKey: authConfig.apiKey, characters }
+  return {
+    apiKey: authConfig.apiKey,
+    characters,
+    allCharacters: accounts.flatMap((account) => account.characters),
+  }
 }
 
 // 조회 불가 항목은 레벨과 무관하게 맨 뒤로 보낸다. 고를 수 없는 후보가 고를 수 있는 후보를
@@ -147,8 +158,12 @@ function shouldShowEntry(
  *
  * 호출 수는 원장이 잡는다. 이미 조회 불가로 적힌 ocid 는 안 부르므로, 화면을 여닫아도 캐릭터
  * 하나당 성공하는 호출은 한 번뿐이다.
+ *
+ * **부르는 곳이 둘이다.** 아래 로스터 조회와 `runSyncRound`(부팅 포함). 묻는 자리가 캐릭터 관리
+ * 화면 하나였을 때는 그 화면을 안 여는 사용자에게 표식만 붙고 고칠 길이 영영 안 닿았다. 판정을
+ * 두 벌로 만들지 않으려고 그쪽이 이 함수를 그대로 부른다.
  */
-async function probeStrandedTrackedCharacters(
+export async function probeStrandedTrackedCharacters(
   apiKey: string,
   trackedOcids: ReadonlySet<string>,
   allCharacters: readonly MapleCharacter[],
