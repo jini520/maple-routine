@@ -132,7 +132,14 @@ beforeEach(() => {
   mockNoticeApiKeyIssue.mockClear()
   navigate.mockClear()
   dispatch.mockClear()
-  mockedNavigation.mockReturnValue({ navigate, dispatch, goBack: jest.fn() } as never)
+  // 이 화면은 하위 층에 산다. 층 스택 깊이 2 여야 `useOpenTab` 이 실제와 같이 되돌린다.
+  // `dispatch` 를 그대로 물려 그 액션이 어디로 가는지를 기존 단언이 계속 본다.
+  mockedNavigation.mockReturnValue({
+    navigate,
+    dispatch,
+    goBack: jest.fn(),
+    getParent: () => ({ getState: () => ({ routes: [{}, {}] }), dispatch }),
+  } as never)
   useTrackingModeStore.setState({ mode: 'auto' })
   useDataFreshness.setState({ fetchedAt: null })
 })

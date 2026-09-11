@@ -10,14 +10,14 @@
  */
 import { useCallback } from 'react'
 
-import { StackActions } from '@react-navigation/native'
+import { StackActions, type NavigationProp } from '@react-navigation/native'
 
 import {
   needsPopToGroupLayer,
   tabNavigateArgs,
   type TabNavigateParams,
 } from '../navigation/tab-navigate'
-import type { TabRouteName } from '../navigation/routes'
+import { LAYER_STACK_ID, type LayerParamList, type TabRouteName } from '../navigation/routes'
 import { useScreenNavigation } from './useScreenNavigation'
 
 export function useOpenTab(): (page: TabRouteName, params?: Record<string, unknown>) => void {
@@ -28,7 +28,22 @@ export function useOpenTab(): (page: TabRouteName, params?: Record<string, unkno
       // 그룹 층은 층 스택의 바닥이라 **되돌아가기** 가 곧 `popToTop` 이다(`needsPopToGroupLayer`).
       // 화면에서 부르므로 이 액션은 가장 가까운 내비게이터(탭)를 못 지나 **층 스택까지 올라간다**.
       // 액션이 부모로 전파되는 것은 `navigate('DropPrice')` 가 여기서 통하는 것과 같은 성질이다.
-      if (needsPopToGroupLayer(page)) navigation.dispatch(StackActions.popToTop())
+      //
+      // **바닥에서는 안 부른다.** `popToTop` 은 무동작이 아니다 - 뺄 것이 없으면 라우터가 그
+      // 액션을 처리하지 않고 위로 넘기고, 아무도 안 받으면 개발 모드에서
+      // `not handled by any navigator` 경고가 뜬다(today 위젯 타일에서 실제로 났다).
+      //
+      // 깊이를 **층 스택에 직접 묻는다**. `canGoBack()` 은 조상을 훑어 탭 내비게이터의 뒤로
+      // 가기까지 참으로 세므로 바닥에서도 참이 될 수 있다.
+      // 타입 인자를 손으로 준다. `RootStackParamList` 만 아는 내비게이션 객체는 층 스택의 이름을
+      // 모르고, 그 표까지 물리면 `navigation/` 의 층 표가 훅으로 새어 나온다.
+      const layerStack = navigation.getParent<NavigationProp<LayerParamList>>(
+        LAYER_STACK_ID as never,
+      )
+      const layerDepth = layerStack?.getState().routes.length ?? 0
+      if (needsPopToGroupLayer(page) && layerDepth > 1) {
+        layerStack?.dispatch(StackActions.popToTop())
+      }
 
       const [name, nested] = tabNavigateArgs(page, params)
       // 층 이름이 유니온이라 `navigate` 의 파라미터가 하나로 안 좁혀진다(`LayerStack.tsx` 와 같은 대가).

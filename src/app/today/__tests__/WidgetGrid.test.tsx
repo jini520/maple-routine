@@ -51,7 +51,8 @@ function 스타일(element: AtomElement): Record<string, unknown> {
 }
 
 beforeEach(() => {
-  mockedUseScreenNavigation.mockReturnValue({ navigate, dispatch } as unknown as ReturnType<
+  // 층 스택이 없는 가짜다. `useOpenTab` 이 그 깊이를 물어 `popToTop` 을 헛치지 않는다.
+  mockedUseScreenNavigation.mockReturnValue({ navigate, dispatch, getParent: () => undefined } as unknown as ReturnType<
     typeof useScreenNavigation
   >)
 })
