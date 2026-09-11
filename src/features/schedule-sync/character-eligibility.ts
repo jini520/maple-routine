@@ -37,16 +37,23 @@ function judgeFromLedger(ledger: ScheduleProbeLedger): CharacterEligibility | nu
  * 네트워크 없이, 이미 가진 것만으로 내리는 판정. 피커의 stub 단계처럼
  * `character/list` 응답을 기다리지 않고 먼저 그려야 하는 자리가 쓴다.
  * `'unknown'` 은 "아직 확인하지 못했다"이고, 확인 전에는 목록에 넣지 않는다.
+ *
+ * **여기서는 `access_flag` 가 원장보다 뒤다.** 아래 `resolveCharacterEligibility` 와 갈리는
+ * 지점이고, 이유는 그 값의 나이다. 이 함수가 받는 `access_flag` 는 **캐시된** `character/basic`
+ * 에서 오는데 그 캐시에는 만료가 없어(읽는 쪽이 TTL 을 안 본다) 몇 달 전 값이 그대로 온다.
+ * 월드 이전으로 조회가 끊긴 캐릭터의 캐시에는 이전 **전**에 찍힌 `true` 가 남아 있고, 그것을
+ * 먼저 믿으면 원장이 조회 불가로 굳힌 캐릭터가 자격 있음 으로 서다가 다음 방출에서 사라진다.
  */
 export async function readKnownEligibility(
   ocid: string,
   accessFlag: boolean,
   now: Date,
 ): Promise<CharacterEligibility | 'unknown'> {
-  if (accessFlag) {
-    return 'eligible'
+  const known = judgeFromLedger(await getScheduleProbeLedger(ocid, now))
+  if (known !== null) {
+    return known
   }
-  return judgeFromLedger(await getScheduleProbeLedger(ocid, now)) ?? 'unknown'
+  return accessFlag ? 'eligible' : 'unknown'
 }
 
 /** 한 날짜가 스윕에 남기는 것. 날짜끼리 독립이라 이것만 모으면 판정이 선다. */
@@ -75,6 +82,8 @@ export async function resolveCharacterEligibility(
   todayState?: SchedulerCharacterState | null,
 ): Promise<CharacterEligibility> {
   // access_flag 는 배제 게이트가 아니라 자격의 **충분조건**이다. true 면 호출 0회로 통과한다.
+  // 여기서는 원장보다 앞에 둬도 된다. 이 값은 방금 받은 `character/basic` 에서 오고, 그 성공이
+  // 조회 불가 표식을 이미 내렸다(`fetchCharacterBasicCached`).
   if (accessFlag) {
     return 'eligible'
   }
