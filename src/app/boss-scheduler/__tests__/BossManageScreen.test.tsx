@@ -15,6 +15,8 @@ import type { ManualTrackedItem } from '../../../types'
 
 import { flattenStyle, renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
+import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
+import { setHapticsPort } from '../../../native/ports'
 import { BossManageScreen } from '../BossManageScreen'
 
 const mockShowError = jest.fn()
@@ -788,5 +790,26 @@ describe('조회 불가 캐릭터', () => {
 
     expect(getByText('이 캐릭터는 조회할 수 없습니다')).toBeTruthy()
     expect(getByText('캐릭터 관리로 이동하기')).toBeTruthy()
+  })
+})
+
+// 켜고 끄는 것도 고른 값이 바뀌는 일이라 선택 촉각이다.
+describe('`모든 보스 보기` 스위치의 촉각', () => {
+  const select = jest.fn(async () => undefined)
+
+  beforeEach(() => {
+    select.mockClear()
+    setHapticsPort({ tap: async () => {}, select })
+  })
+
+  afterEach(installNoopNativePorts)
+
+  it('누르면 한 번 난다', async () => {
+    mockStore({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
+    await renderScreen()
+
+    await press(screen.getByLabelText('모든 보스 보기'))
+
+    expect(select).toHaveBeenCalledTimes(1)
   })
 })

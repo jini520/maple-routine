@@ -30,6 +30,7 @@ import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortra
 import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
 import { CharacterUnavailableNotice } from '../../components/organisms/CharacterUnavailable/CharacterUnavailableNotice'
 import { DifficultySegment } from '../../components/molecules/DifficultySegment/DifficultySegment'
+import { selectionFeedback } from '../../native/haptics'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { PartySizeStepper } from '../../components/molecules/PartySizeStepper/PartySizeStepper'
@@ -314,7 +315,11 @@ export function BossManageScreen(): React.JSX.Element {
             role="switch"
             aria-checked={showAllBosses}
             aria-label="모든 보스 보기"
-            onPress={() => setShowAllBosses((prev) => !prev)}
+            // 켜고 끄는 것도 고른 값이 바뀌는 일이라 선택 촉각이다.
+            onPress={() => {
+              selectionFeedback()
+              setShowAllBosses((prev) => !prev)
+            }}
             className="shrink-0 flex-row items-center gap-1.5"
           >
             <Text className="text-xs font-medium text-text-muted">모든 보스 보기</Text>

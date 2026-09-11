@@ -11,6 +11,7 @@ import {
   buildResetWeek,
   monthIncomeMax,
 } from '../../../../lib/calendar'
+import { __resetNativePortsForTest, setHapticsPort } from '../../../../native/ports'
 import { CalendarGrid } from '../CalendarGrid'
 
 const 팔월 = buildCalendarMonth('2026-08')
@@ -358,4 +359,32 @@ it('금액 두 줄은 오른쪽 끝에 맞춘다', async () => {
     // 부모가 `items-center` 라 폭을 안 채우면 `text-right` 가 걸릴 자리가 없다.
     expect(style.width).toBe('100%')
   }
+})
+
+// 고른 날이 바뀌는 것은 어딘가로 가는 것과 다른 일이라 선택 촉각이다.
+describe('날을 고를 때의 촉각', () => {
+  const select = jest.fn(async () => undefined)
+
+  beforeEach(() => {
+    select.mockClear()
+    setHapticsPort({ tap: async () => {}, select })
+  })
+
+  afterEach(__resetNativePortsForTest)
+
+  it('다른 날을 누르면 한 번 난다', async () => {
+    const view = await 그리기()
+
+    fireEvent.press(view.getByTestId('calendar-day-2026-08-24'))
+
+    expect(select).toHaveBeenCalledTimes(1)
+  })
+
+  it('이미 고른 날을 다시 눌러도 안 난다', async () => {
+    const view = await 그리기()
+
+    fireEvent.press(view.getByTestId('calendar-day-2026-08-23'))
+
+    expect(select).not.toHaveBeenCalled()
+  })
 })

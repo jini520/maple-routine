@@ -6,6 +6,8 @@ import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { useNoticeStore } from '../../../features/notice/store'
 import { NOTICE_TOPICS } from '../../../features/notice/topics'
 import { NO_SUBSCRIPTIONS } from '../../../types/notice'
+import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
+import { setHapticsPort } from '../../../native/ports'
 import { SettingsNoticeAlertsScreen } from '../SettingsNoticeAlertsScreen'
 
 jest.mock('../../../hooks/useSettingsNavigation', () => ({
@@ -358,5 +360,38 @@ describe('스케줄러 알림', () => {
 
     expect(view.queryByText('스케줄러')).toBeNull()
     expect(view.queryByText('미완료 스케줄 알림')).toBeNull()
+  })
+})
+
+// 켜고 끄는 것도 고른 값이 바뀌는 일이라 선택 촉각이다. 이 화면은 왕복이 끝나기 전에 누른
+// 결과를 먼저 그리므로 두드림도 누를 때 난다. 왕복 중의 누름은 화면이 무시하니 두드림도 없다.
+describe('스위치의 촉각', () => {
+  const select = jest.fn(async () => undefined)
+
+  beforeEach(() => {
+    select.mockClear()
+    setHapticsPort({ tap: async () => {}, select })
+  })
+
+  afterEach(installNoopNativePorts)
+
+  it('전체 스위치를 누르면 한 번 난다', async () => {
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('알림 받기'))
+    })
+
+    expect(select).toHaveBeenCalledTimes(1)
+  })
+
+  it('토픽 스위치에서도 난다', async () => {
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('게임 공지 사항 알림'))
+    })
+
+    expect(select).toHaveBeenCalledTimes(1)
   })
 })

@@ -19,6 +19,8 @@ import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedu
 import { THEME_NAMES } from '../../../lib/theme/theme-registry'
 
 import packageJson from '../../../../package.json'
+import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
+import { setHapticsPort } from '../../../native/ports'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { SettingsScreen } from '../SettingsScreen'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
@@ -328,5 +330,25 @@ describe('SettingsScreen: openPicker 로 들어올 때', () => {
 
     expect(navigate).not.toHaveBeenCalled()
     expect(setParams).not.toHaveBeenCalled()
+  })
+})
+
+// 설정 하위 화면으로 가는 버튼이다. 화면이 바뀌므로 이동 촉각이다.
+describe('설정 버튼의 촉각', () => {
+  const tap = jest.fn(async () => undefined)
+
+  beforeEach(() => {
+    tap.mockClear()
+    setHapticsPort({ tap, select: async () => {} })
+  })
+
+  afterEach(installNoopNativePorts)
+
+  it('누르면 한 번 난다', async () => {
+    const view = await renderOverlay(<SettingsScreen />)
+
+    await press(view.getByLabelText('설정'))
+
+    expect(tap).toHaveBeenCalledTimes(1)
   })
 })

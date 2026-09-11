@@ -20,9 +20,11 @@ import { View } from 'react-native'
 import type { ScrollView } from 'react-native'
 import type { AnimatedRef } from 'react-native-reanimated'
 import Sortable from 'react-native-sortables'
+import { runOnJS } from 'react-native-reanimated'
 
 import type { SelectedCharacterView } from '../../../features/character-manage/derivations'
 import { SEPARATOR_KEY, selectedFromOrder } from '../../../features/character-manage/grid-split'
+import { selectionFeedback, tapFeedback } from '../../../native/haptics'
 import type { CharacterPickerEntry } from '../../../types'
 
 import { AddMark } from '../../organisms/CharacterRow/AddMark'
@@ -93,6 +95,18 @@ export function CharacterLayerGrid(props: CharacterLayerGridProps): React.JSX.El
       itemExiting={null}
       // 배열은 놓을 때 한 번만 바뀐다. 끄는 동안 움직이는 것은 그림뿐이라 도중에 취소되면 저장
       // 활성 판정이 안 깜빡인다.
+      // **끄는 동안** 자리가 바뀔 때마다 두드린다(사용자 지정). 놓을 때가 아니다. 카드가 옆
+      // 카드를 지나 자리를 차지하는 그 순간이 사용자가 보는 변화다.
+      //
+      // 이 콜백은 **UI 스레드에서** 돈다. 두드림은 JS 쪽 포트를 지나므로 건너뛴다.
+      //
+      // 라이브러리의 `hapticsEnabled` 를 안 쓴다. 그쪽은 `expo-haptics` 의 `impactAsync` 를
+      // 직접 부르는데, 안드로이드의 그 구현은 `Vibrator` 흉내라 사용자가 시스템 촉각 설정을
+      // 꺼도 울린다. 끌기 시작에 세기가 다른 두드림이 하나 더 붙기도 한다.
+      onOrderChange={() => {
+        'worklet'
+        runOnJS(selectionFeedback)()
+      }}
       onDragEnd={({ indexToKey }) => {
         const next = selectedFromOrder(indexToKey)
         // 구분자가 없으면 아무것도 안 바꾼다. 전부를 선택으로 읽으면 후보 전원이 한 번에 추적
@@ -182,8 +196,15 @@ function SelectedRow(props: SelectedRowProps): React.JSX.Element {
             accessibilityLabel={`${view.name} 순서 변경`}
             accessibilityActions={reorderActions}
             onAccessibilityAction={(event) => {
-              if (event.nativeEvent.actionName === MOVE_UP) props.onMove(index, index - 1)
-              if (event.nativeEvent.actionName === MOVE_DOWN) props.onMove(index, index + 1)
+              // 액션은 **할 수 있을 때만** 뜬다(`reorderActions`). 그래서 여기 오면 자리가 바뀐다.
+              if (event.nativeEvent.actionName === MOVE_UP) {
+                selectionFeedback()
+                props.onMove(index, index - 1)
+              }
+              if (event.nativeEvent.actionName === MOVE_DOWN) {
+                selectionFeedback()
+                props.onMove(index, index + 1)
+              }
             }}
           >
             <DragHandle />
@@ -198,7 +219,13 @@ function SelectedRow(props: SelectedRowProps): React.JSX.Element {
             dimmed={props.dimmed}
             onPress={() => props.onSelectRepresentative(view.ocid)}
           />
-          <RemoveButton label={view.name} onPress={() => props.onRemove(view.ocid)} />
+          <RemoveButton
+            label={view.name}
+            onPress={() => {
+              tapFeedback()
+              props.onRemove(view.ocid)
+            }}
+          />
         </View>
       }
     />
@@ -228,7 +255,10 @@ function CandidateRow(props: {
         world={entry.world}
         imageUrl={entry.imageUrl}
         // 누르는 것은 카드 전체다. `＋` 는 표시일 뿐 버튼이 아니다.
-        onPress={() => props.onAdd(entry.ocid)}
+        onPress={() => {
+          tapFeedback()
+          props.onAdd(entry.ocid)
+        }}
         trailing={<AddMark />}
       />
     </Sortable.Handle>
