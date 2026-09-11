@@ -41,7 +41,11 @@ beforeEach(async () => {
   unsubscribe.mockResolvedValue(undefined)
   hasPermission.mockResolvedValue(true)
   requestPermission.mockResolvedValue(true)
-  useNoticeStore.setState({ subscriptions: NO_SUBSCRIPTIONS, blockedByPermission: false })
+  useNoticeStore.setState({
+    subscriptions: NO_SUBSCRIPTIONS,
+    pending: {},
+    blockedByPermission: false,
+  })
 })
 
 describe('구독 토글', () => {
@@ -254,7 +258,9 @@ describe('권한이 없는 채로 켜려 할 때', () => {
 
   // 끄는 것은 권한과 무관하다. 권한이 없어도 구독 해제는 되어야 한다.
   it('끄는 길은 권한을 안 본다', async () => {
+    await useNoticeStore.getState().setSubscribed('game', true)
     hasPermission.mockResolvedValue(false)
+    jest.clearAllMocks()
 
     await useNoticeStore.getState().setSubscribed('game', false)
 
@@ -303,6 +309,201 @@ describe('한 번도 안 물은 채로 켤 때', () => {
     await useNoticeStore.getState().setSubscribed('game', true)
 
     expect(requestPermission).not.toHaveBeenCalled()
+    expect(useNoticeStore.getState().blockedByPermission).toBe(true)
+  })
+})
+
+// 구독은 FCM 왕복이라 몇 초가 걸린다. 그 사이 누름을 막으면 사용자는 반응이 느리다고 본다. 막지
+// 않으려면 겹침을 스토어가 없애야 한다. 다섯이 저장 값 하나를 고쳐 쓰고 저장할 값을 왕복 뒤에
+// 읽어서, 둘이 겹치면 늦게 끝난 쪽이 먼저 끝난 쪽을 덮는다.
+describe('왕복 중의 누름', () => {
+  /** 풀어 줄 때까지 안 끝나는 왕복. 그동안 뒤의 요청은 줄에서 기다린다. */
+  function 멈춘왕복(): { promise: Promise<void>; resolve: () => void; reject: (e: Error) => void } {
+    let resolve!: () => void
+    let reject!: (e: Error) => void
+    const promise = new Promise<void>((res, rej) => {
+      resolve = res
+      reject = rej
+    })
+    return { promise, resolve, reject }
+  }
+
+  /** 앞 요청이 왕복에 들어설 때까지. 목과 가짜 저장소가 전부 마이크로태스크라 한 틱이면 된다. */
+  const 한틱 = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
+
+  it('누른 값은 왕복을 기다리지 않고 바로 적힌다', async () => {
+    const 대기 = 멈춘왕복()
+    subscribe.mockReturnValueOnce(대기.promise)
+
+    const done = useNoticeStore.getState().setSubscribed('game', true)
+
+    expect(useNoticeStore.getState().pending).toEqual({ game: true })
+    expect(useNoticeStore.getState().subscriptions.game).toBe(false)
+
+    대기.resolve()
+    await done
+
+    expect(useNoticeStore.getState().pending).toEqual({})
+    expect(useNoticeStore.getState().subscriptions.game).toBe(true)
+  })
+
+  it('앞 요청이 도는 동안 다른 스위치를 눌러도 바로 적힌다', async () => {
+    const 대기 = 멈춘왕복()
+    subscribe.mockReturnValueOnce(대기.promise)
+    const first = useNoticeStore.getState().setSubscribed('game', true)
+    await 한틱()
+
+    const second = useNoticeStore.getState().setSubscribed('cashshop', true)
+
+    expect(useNoticeStore.getState().pending).toEqual({ game: true, cashshop: true })
+    // 줄이 하나씩 돌린다. 앞 것이 끝나기 전에는 둘째 구독을 부르지 않는다.
+    expect(subscribe).toHaveBeenCalledTimes(1)
+
+    대기.resolve()
+    await Promise.all([first, second])
+
+    // 둘이 서로를 덮지 않는다.
+    expect(useNoticeStore.getState().subscriptions).toMatchObject({ game: true, cashshop: true })
+    await expect(getNoticeSubscriptions()).resolves.toMatchObject({ game: true, cashshop: true })
+  })
+
+  // 늦게 끝난 요청이 이기면 마지막으로 누른 것과 다른 상태로 끝난다.
+  it('켜기, 끄기 연타는 끄기로 끝난다', async () => {
+    const 대기 = 멈춘왕복()
+    subscribe.mockReturnValueOnce(대기.promise)
+    const on = useNoticeStore.getState().setSubscribed('game', true)
+    await 한틱()
+
+    const off = useNoticeStore.getState().setSubscribed('game', false)
+
+    expect(useNoticeStore.getState().pending).toEqual({ game: false })
+
+    대기.resolve()
+    await Promise.all([on, off])
+
+    expect(unsubscribe).toHaveBeenCalledWith('notice-game')
+    expect(useNoticeStore.getState().subscriptions.game).toBe(false)
+    expect(useNoticeStore.getState().pending).toEqual({})
+    await expect(getNoticeSubscriptions()).resolves.toMatchObject({ game: false })
+  })
+
+  it('켜기, 끄기, 켜기는 서버에 구독 한 번만 보낸다', async () => {
+    const 대기 = 멈춘왕복()
+    subscribe.mockReturnValueOnce(대기.promise)
+    const presses = [useNoticeStore.getState().setSubscribed('game', true)]
+    await 한틱()
+    presses.push(useNoticeStore.getState().setSubscribed('game', false))
+    presses.push(useNoticeStore.getState().setSubscribed('game', true))
+
+    대기.resolve()
+    await Promise.all(presses)
+
+    expect(subscribe).toHaveBeenCalledTimes(1)
+    expect(unsubscribe).not.toHaveBeenCalled()
+    expect(useNoticeStore.getState().subscriptions.game).toBe(true)
+  })
+
+  // 요청은 차례가 왔을 때 누른 값을 읽는다. 그때 저장된 값과 같으면 보낼 것이 없다.
+  it('차례가 오기 전에 되돌린 누름은 서버에 아무것도 안 보낸다', async () => {
+    const 대기 = 멈춘왕복()
+    subscribe.mockReturnValueOnce(대기.promise)
+    const first = useNoticeStore.getState().setSubscribed('cashshop', true)
+    await 한틱()
+    const presses = [
+      useNoticeStore.getState().setSubscribed('game', true),
+      useNoticeStore.getState().setSubscribed('game', false),
+    ]
+
+    대기.resolve()
+    await Promise.all([first, ...presses])
+
+    expect(subscribe).toHaveBeenCalledTimes(1)
+    expect(subscribe).toHaveBeenCalledWith('notice-cashshop')
+    expect(useNoticeStore.getState().subscriptions.game).toBe(false)
+  })
+
+  it('실패하면 그 스위치만 돌아간다', async () => {
+    subscribe.mockImplementation(async (topic) => {
+      if (topic === 'notice-game') throw new Error('망 끊김')
+    })
+
+    const [game, cashshop] = await Promise.allSettled([
+      useNoticeStore.getState().setSubscribed('game', true),
+      useNoticeStore.getState().setSubscribed('cashshop', true),
+    ])
+
+    expect(game).toMatchObject({ status: 'rejected' })
+    expect(cashshop).toMatchObject({ status: 'fulfilled' })
+    expect(useNoticeStore.getState().subscriptions).toMatchObject({ game: false, cashshop: true })
+    expect(useNoticeStore.getState().pending).toEqual({})
+  })
+
+  it('실패한 요청 뒤에 같은 스위치를 또 눌렀으면 마지막 누름을 따른다', async () => {
+    await useNoticeStore.getState().setSubscribed('game', true)
+    jest.clearAllMocks()
+    const 대기 = 멈춘왕복()
+    unsubscribe.mockReturnValueOnce(대기.promise)
+    const off = useNoticeStore.getState().setSubscribed('game', false)
+    await 한틱()
+    const on = useNoticeStore.getState().setSubscribed('game', true)
+
+    대기.reject(new Error('망 끊김'))
+    await Promise.allSettled([off, on])
+
+    expect(useNoticeStore.getState().subscriptions.game).toBe(true)
+    expect(useNoticeStore.getState().pending).toEqual({})
+    // 마지막 누름이 이미 저장된 값이라 다시 구독하지 않는다.
+    expect(subscribe).not.toHaveBeenCalled()
+  })
+
+  // 전체와 개별이 같은 줄에 서야 서로를 덮지 않는다.
+  it('개별 켜기가 도는 중에 전체를 끄면 전부 꺼진 채로 끝난다', async () => {
+    await useNoticeStore.getState().setSubscribed('app', true)
+    jest.clearAllMocks()
+    const 대기 = 멈춘왕복()
+    subscribe.mockReturnValueOnce(대기.promise)
+    const on = useNoticeStore.getState().setSubscribed('game', true)
+    await 한틱()
+
+    const allOff = useNoticeStore.getState().setAllSubscribed(false)
+
+    expect(useNoticeStore.getState().pending).toEqual(NO_SUBSCRIPTIONS)
+
+    대기.resolve()
+    await Promise.all([on, allOff])
+
+    expect(unsubscribe.mock.calls.map((call) => call[0]).sort()).toEqual(['notice', 'notice-game'])
+    expect(useNoticeStore.getState().subscriptions).toEqual(NO_SUBSCRIPTIONS)
+    await expect(getNoticeSubscriptions()).resolves.toEqual(NO_SUBSCRIPTIONS)
+  })
+
+  it('전체 켜기가 도는 중에 끈 스위치는 꺼진 채로 끝난다', async () => {
+    const 대기 = 멈춘왕복()
+    subscribe.mockReturnValueOnce(대기.promise)
+    const allOn = useNoticeStore.getState().setAllSubscribed(true)
+    await 한틱()
+
+    const off = useNoticeStore.getState().setSubscribed('event', false)
+
+    대기.resolve()
+    await Promise.all([allOn, off])
+
+    expect(subscribe).toHaveBeenCalledTimes(2)
+    expect(useNoticeStore.getState().subscriptions).toEqual({
+      ...NO_SUBSCRIPTIONS,
+      app: true,
+      game: true,
+    })
+  })
+
+  // 켜진 채로 남으면 알림은 안 오는데 스위치는 켜져 보인다.
+  it('권한에 막히면 누른 값을 버린다', async () => {
+    hasPermission.mockResolvedValue(false)
+    await setNotificationPermissionAsked()
+
+    await useNoticeStore.getState().setSubscribed('game', true)
+
+    expect(useNoticeStore.getState().pending).toEqual({})
     expect(useNoticeStore.getState().blockedByPermission).toBe(true)
   })
 })

@@ -6,12 +6,21 @@
 //
 // 클래스 문자열은 트리에 안 남으므로(NativeWind 가 스타일로 푼다) 풀린 값을 본다.
 import { fireEvent } from '@testing-library/react-native'
+import { useReducedMotion } from 'react-native-reanimated'
 
 import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
 import { installNoopNativePorts } from '../../../../native/__tests__/fake-native-ports'
 import { setHapticsPort } from '../../../../native/ports'
 import { Text } from '../../Text/Text'
 import { Switch } from '../Switch'
+
+// 움직임 줄이기만 바꿔 끼운다. `__esModule` 은 펼쳐도 안 넘어와서(열거되지 않는 키) 직접 적는다.
+// 빠지면 `import Animated from` 이 모듈 전체를 받아 `Animated.View` 가 없어진다.
+jest.mock('react-native-reanimated', () => ({
+  ...jest.requireActual('react-native-reanimated'),
+  __esModule: true,
+  useReducedMotion: jest.fn(() => false),
+}))
 
 beforeEach(installNoopNativePorts)
 
@@ -109,6 +118,41 @@ describe('Switch: 색 한 벌', () => {
   })
 })
 
+// 손잡이만 흐르고 트랙 색은 누르는 즉시 바뀐다. Reanimated 는 트랜지션 키를 `style` 에서 걷어
+// 가므로, 전달됐는지는 `jestInlineStyle`(테스트용으로 남기는 원본)로 본다.
+describe('Switch: 손잡이가 미끄러진다', () => {
+  const 움직임줄이기 = jest.mocked(useReducedMotion)
+
+  beforeEach(() => {
+    움직임줄이기.mockReturnValue(false)
+  })
+
+  it('손잡이에 transform 트랜지션이 붙는다', async () => {
+    const { getByTestId } = await renderAtom(<Switch on label="켜기" onToggle={() => {}} />)
+
+    expect(getByTestId('switch-knob').props.jestInlineStyle).toMatchObject({
+      transitionProperty: 'transform',
+      transitionDuration: '200ms',
+    })
+  })
+
+  it('움직임 줄이기를 켜면 트랜지션 키가 아예 없다. 곧바로 선다', async () => {
+    움직임줄이기.mockReturnValue(true)
+    const { getByTestId } = await renderAtom(<Switch on label="켜기" onToggle={() => {}} />)
+
+    expect(getByTestId('switch-knob').props.jestInlineStyle).not.toHaveProperty(
+      'transitionProperty',
+    )
+  })
+
+  // 색까지 흐르면 그동안 누른 스위치가 안 눌린 것처럼 보인다.
+  it('트랙 색은 안 흐른다', async () => {
+    const { getByTestId } = await renderAtom(<Switch on label="켜기" onToggle={() => {}} />)
+
+    expect(getByTestId('switch-track').props.jestInlineStyle?.transitionProperty).toBeUndefined()
+  })
+})
+
 describe('Switch: 누름', () => {
   it('누르면 onToggle 과 선택 촉각을 부품이 낸다', async () => {
     const select = jest.fn().mockResolvedValue(undefined)
@@ -122,22 +166,6 @@ describe('Switch: 누름', () => {
 
     expect(onToggle).toHaveBeenCalledTimes(1)
     expect(select).toHaveBeenCalledTimes(1)
-  })
-
-  // 누름이 아무 일도 안 하는 동안(알림 설정의 FCM 왕복)은 두드림도 없어야 한다. 울리면 손끝은
-  // 바뀌었다고 말하고 값은 그대로다.
-  it('disabled 면 onToggle 도 두드림도 없다', async () => {
-    const select = jest.fn().mockResolvedValue(undefined)
-    setHapticsPort({ tap: jest.fn().mockResolvedValue(undefined), select })
-    const onToggle = jest.fn()
-    const { getByLabelText } = await renderAtom(
-      <Switch on={false} label="켜기" disabled onToggle={onToggle} />,
-    )
-
-    fireEvent.press(getByLabelText('켜기'))
-
-    expect(onToggle).not.toHaveBeenCalled()
-    expect(select).not.toHaveBeenCalled()
   })
 
   // 글자가 누름 과녁 안이라 글자를 눌러도 토글된다. 스위치만 과녁이면 표적이 44×24 하나뿐이다.

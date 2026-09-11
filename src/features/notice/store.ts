@@ -5,6 +5,8 @@
  * 안 오는 상태가 남는다. 그 어긋남은 화면만 보고는 못 가린다. 그래서 구독이 성공한 뒤에만 적는다.
  *
  * **토글끼리 서로를 안 건드린다.** 하나를 켜다 실패해도 나머지 셋의 저장된 값은 그대로다.
+ *
+ * **요청은 한 줄로 선다.** 누른 값은 `pending` 에 바로 적히고, 구독과 저장은 `queue` 에서 하나씩 돈다.
  */
 import { create } from 'zustand'
 
@@ -29,8 +31,19 @@ function topicName(key: NoticeKind): string {
   return found.topic
 }
 
+/** 전체를 끌 때 누르는 분류. */
+const ALL_KINDS = NOTICE_TOPICS.map((one) => one.key)
+
+/** 전체를 켜거나 권한을 막 허용했을 때 누르는 기본 묶음. */
+const DEFAULT_KINDS = NOTICE_TOPICS.filter((one) => DEFAULT_SUBSCRIPTIONS[one.key]).map(
+  (one) => one.key,
+)
+
 interface NoticeState {
+  /** 실제 구독. 구독이 성공한 뒤에만 바뀐다. */
   subscriptions: NoticeSubscriptions
+  /** 눌렀는데 왕복이 안 끝난 값. 화면이 `subscriptions` 위에 덮어 그린다. */
+  pending: Partial<NoticeSubscriptions>
   /**
    * 켜려 했는데 알림 권한이 없어 막혔다.
    *
@@ -70,13 +83,19 @@ async function ensurePermission(): Promise<boolean> {
   return requestNotificationPermission().catch(() => false)
 }
 
-export const useNoticeStore = create<NoticeState>()((set, get) => ({
-  subscriptions: NO_SUBSCRIPTIONS,
-  blockedByPermission: false,
-  async restore() {
-    set({ subscriptions: await getNoticeSubscriptions() })
-  },
-  async setSubscribed(key, subscribed) {
+/** 구독 요청이 하나씩 도는 줄. 겹치면 늦게 끝난 쪽이 먼저 끝난 쪽의 저장을 덮는다. */
+let queue: Promise<void> = Promise.resolve()
+
+/** 요청을 줄 끝에 세우는 함수. 앞 요청이 실패해도 줄은 이어지고, 실패는 부른 쪽이 받는다. */
+function enqueue(job: () => Promise<void>): Promise<void> {
+  const done = queue.then(job)
+  queue = done.catch(() => undefined)
+  return done
+}
+
+export const useNoticeStore = create<NoticeState>()((set, get) => {
+  /** 구독하거나 해제하고, 성공하면 적는 함수. */
+  async function apply(key: NoticeKind, subscribed: boolean): Promise<void> {
     if (subscribed) {
       // **켤 때만 권한을 본다.** 끄는 길은 권한과 무관하고, 거기서 막으면 권한 없는 사용자가
       // 구독을 해제할 방법이 없어진다.
@@ -92,36 +111,53 @@ export const useNoticeStore = create<NoticeState>()((set, get) => ({
     const next = { ...get().subscriptions, [key]: subscribed }
     await setNoticeSubscriptions(next)
     set({ subscriptions: next, blockedByPermission: false })
-  },
-  async setAllSubscribed(subscribed) {
-    if (subscribed) {
-      // 켜는 길은 개별 스위치와 같은 문을 지난다. 권한이 없으면 구독하지 않는다.
-      if (!(await hasNotificationPermission()) && !(await ensurePermission())) {
-        set({ blockedByPermission: true })
-        return
+  }
+
+  /**
+   * 한 분류를 누른 값까지 데려가는 요청.
+   *
+   * 누른 값은 **차례가 왔을 때** 읽는다. 줄에 설 때 읽으면 켜기, 끄기, 켜기가 서버에 셋 다 간다.
+   */
+  async function settle(key: NoticeKind): Promise<void> {
+    const target = get().pending[key]
+    if (target === undefined) return
+
+    try {
+      // 저장된 값과 같으면 보낼 것이 없다. 또 부르면 FCM 왕복이 공짜로 늘고 실패할 자리도 는다.
+      if (target !== get().subscriptions[key]) await apply(key, target)
+    } finally {
+      // 도는 사이 같은 스위치를 또 눌렀으면 그 값은 뒤에 선 요청 몫이라 남긴다.
+      if (get().pending[key] === target) {
+        const pending = { ...get().pending }
+        delete pending[key]
+        set({ pending })
       }
-      await get().subscribeDefaults()
-      return
     }
+  }
 
-    // 켜져 있던 것만 해제한다. 안 켠 것을 또 해제하면 FCM 왕복이 공짜로 늘고 실패할 자리도 는다.
-    const current = get().subscriptions
-    for (const one of NOTICE_TOPICS.filter((topic) => current[topic.key])) {
-      await unsubscribeFromPushTopic(one.topic)
-    }
+  /** 누른 값을 먼저 적고 분류마다 요청 하나를 줄에 세우는 함수. */
+  function press(kinds: readonly NoticeKind[], subscribed: boolean): Promise<void> {
+    const pending = { ...get().pending }
+    for (const kind of kinds) pending[kind] = subscribed
+    set({ pending })
+    return Promise.all(kinds.map((kind) => enqueue(() => settle(kind)))).then(() => undefined)
+  }
 
-    await setNoticeSubscriptions(NO_SUBSCRIPTIONS)
-    set({ subscriptions: NO_SUBSCRIPTIONS, blockedByPermission: false })
-  },
-  async subscribeDefaults() {
-    // 켤 것만 부른다. 이미 꺼진 것을 또 해제하면 FCM 왕복이 공짜로 늘고, 실패할 자리도 는다.
-    const wanted = NOTICE_TOPICS.filter((one) => DEFAULT_SUBSCRIPTIONS[one.key])
-    for (const one of wanted) await subscribeToPushTopic(one.topic)
-
-    const next = { ...get().subscriptions }
-    for (const one of wanted) next[one.key] = true
-
-    await setNoticeSubscriptions(next)
-    set({ subscriptions: next, blockedByPermission: false })
-  },
-}))
+  return {
+    subscriptions: NO_SUBSCRIPTIONS,
+    pending: {},
+    blockedByPermission: false,
+    async restore() {
+      set({ subscriptions: await getNoticeSubscriptions() })
+    },
+    setSubscribed(key, subscribed) {
+      return press([key], subscribed)
+    },
+    setAllSubscribed(subscribed) {
+      return press(subscribed ? DEFAULT_KINDS : ALL_KINDS, subscribed)
+    },
+    subscribeDefaults() {
+      return press(DEFAULT_KINDS, true)
+    },
+  }
+})
