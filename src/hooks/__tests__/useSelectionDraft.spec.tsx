@@ -309,11 +309,18 @@ describe('replaceSelection', () => {
 // 초안이 든 옛 ocid 가 저장 버튼 한 번에 다시 쓰여 방금 뺀 죽은 캐릭터가 되살아난다.
 //
 // **모달이 이 훅을 부르지 않는다.** 모달은 화면 밖(`AppNavigation`)에 살아 초안에 손이 닿지
-// 않으므로, 초안이 스토어의 `replaced` 를 구독한다. 그래서 여기서도 스토어를 몰아 잰다.
+// 않으므로, 초안이 스토어의 `resolved` 를 구독한다. 그래서 여기서도 스토어를 몰아 잰다.
 describe('월드 이전 교체를 초안이 이어받는다', () => {
   const 갈아끼움 = async (from: string, to: string): Promise<void> => {
     await act(async () => {
-      useWorldLeapStore.setState({ replaced: { from, to } })
+      useWorldLeapStore.setState({ resolved: { from, to } })
+    })
+  }
+
+  /** 옮겨간 캐릭터를 이미 관리 중이라 옛 것을 뺐다. 같은 문으로 오고 `to` 만 `null` 이다. */
+  const 뺌 = async (from: string): Promise<void> => {
+    await act(async () => {
+      useWorldLeapStore.setState({ resolved: { from, to: null } })
     })
   }
 
@@ -369,10 +376,47 @@ describe('월드 이전 교체를 초안이 이어받는다', () => {
 
   // 이 훅이 뒤늦게 마운트되면 스토어에 이미 값이 있다. 그 자리에 옛 ocid 가 없어 무동작이다.
   it('이미 적힌 교체를 뒤늦게 읽어도 손대지 않은 초안을 안 만든다', async () => {
-    useWorldLeapStore.setState({ replaced: { from: 'a2', to: 'b2' } })
+    useWorldLeapStore.setState({ resolved: { from: 'a2', to: 'b2' } })
 
     const view = await 초안()
 
     expect(view.result.current.isDirty).toBe(false)
+  })
+
+  // 옮겨간 캐릭터를 이미 관리 중이면 교체가 아니라 해제다. 초안이 이어받지 않으면 방금 뺀 옛
+  // ocid 가 저장 한 번에 되살아나는 것이 똑같다.
+  describe('해제도 같은 문으로 온다', () => {
+    it('초안을 손댄 뒤라도 그 ocid 가 초안에서 빠진다', async () => {
+      const view = await 초안()
+      await act(async () => {
+        view.result.current.addCharacter('a4')
+      })
+
+      await 뺌('a2')
+
+      expect(view.result.current.selectedOcids).toEqual(['a1', 'a3', 'a4'])
+    })
+
+    it('초안을 안 손댔으면 아무것도 안 만든다', async () => {
+      const view = await 초안()
+
+      await 뺌('a2')
+
+      expect(view.result.current.selectedOcids).toEqual(저장된목록)
+      expect(view.result.current.isDirty).toBe(false)
+    })
+
+    // 뺀 캐릭터에 별이 남아 있으면 `resolveRepresentative` 가 목록에 없는 값을 읽는다.
+    it('고른 대표가 그 캐릭터였으면 별이 꺼진다', async () => {
+      const view = await 초안()
+      await act(async () => {
+        view.result.current.setRepresentative('a2')
+      })
+      await view.rerender({ ocids: ['a1', 'a3'] })
+
+      await 뺌('a2')
+
+      expect(view.result.current.representativeOcid).toBeNull()
+    })
   })
 })

@@ -2006,6 +2006,30 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
       const first = onUpdate.mock.calls[0]?.[0] as CharacterPickerEntry[]
       expect(first.map((entry) => entry.ocid)).toEqual(['ocid-2'])
     })
+
+    // 월드 이전으로 남겨진 ocid 를 추적에서 뺀 자리. 그 캐릭터는 `character/list` 에 없고 캐시에만
+    // 남는데, 그 캐시의 `access_flag` 는 이전 **전**에 찍힌 `true` 다. 원장을 안 보고 그것을 믿으면
+    // 후보 층에 한 번 섰다가 마지막 방출에서 사라진다.
+    it('원장이 조회 불가로 굳힌 캐릭터는 캐시가 access_flag: true 여도 stub 에 안 선다', async () => {
+      const { markScheduleProbeUnavailable } = require('../../../storage/schedule-probe-ledger') as typeof import('../../../storage/schedule-probe-ledger')
+      await markScheduleProbeUnavailable('ocid-2')
+
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1')])])
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2'])
+      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
+        profile: basicProfile({ name: ocid === 'ocid-1' ? '멀쩡이' : '이전한캐릭', level: 285 }),
+        cachedAt: STALE_CACHED_AT,
+      }))
+      fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {}))
+
+      const onUpdate = jest.fn()
+      void getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
+
+      await waitFor(() => expect(onUpdate).toHaveBeenCalled())
+      for (const [entries] of onUpdate.mock.calls) {
+        expect((entries as CharacterPickerEntry[]).map((entry) => entry.ocid)).toEqual(['ocid-1'])
+      }
+    })
   })
 
   it('캐시상 access_flag가 false이고 활동 기록도 없는 캐릭터는 모든 방출에서 제외된다', async () => {

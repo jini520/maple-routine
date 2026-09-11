@@ -139,7 +139,10 @@ export function useSelectionDraft(trackedOcids: string[] | null): SelectionDraft
   )
 
   /**
-   * 저장소에서 ocid 가 갈렸다는 사실을 **초안이 이어받는다**(월드 이전 확인).
+   * 저장소에서 그 ocid 가 정리됐다는 사실을 **초안이 이어받는다**(월드 이전 확인).
+   *
+   * 갈아끼운 것(`to` 가 새 ocid)과 목록에서 뺀 것(`to` 가 `null`)이 같은 문으로 온다. 초안이
+   * 할 일이 그 자리를 바꾸느냐 지우느냐로만 갈린다.
    *
    * 사용자의 편집이 아니라 바깥에서 온 사실이라 다른 편집 함수와 성격이 다르다. 그래서 화면이
    * 부르지 않고 이 훅이 스토어를 구독한다. 묻는 모달이 화면 밖(`AppNavigation`)에 살아 이 훅에
@@ -155,18 +158,24 @@ export function useSelectionDraft(trackedOcids: string[] | null): SelectionDraft
   useEffect(
     () =>
       useWorldLeapStore.subscribe((state, previous) => {
-        const replaced = state.replaced
-        if (replaced === null || replaced === previous.replaced) {
+        const resolved = state.resolved
+        if (resolved === null || resolved === previous.resolved) {
           return
         }
-        setEditedOcids((current) =>
-          current === null || !current.includes(replaced.from)
-            ? current
-            : current.map((ocid) => (ocid === replaced.from ? replaced.to : ocid)),
-        )
+        // 지역 상수로 푼다. 속성으로 두면 `to === null` 로 좁힌 것이 아래 콜백 안에서 풀린다.
+        const { from, to } = resolved
+        setEditedOcids((current) => {
+          if (current === null || !current.includes(from)) {
+            return current
+          }
+          return to === null
+            ? current.filter((ocid) => ocid !== from)
+            : current.map((ocid) => (ocid === from ? to : ocid))
+        })
         // 고른 대표도 함께 간다. 안 옮기면 `resolveRepresentative` 가 목록에 없는 값으로 읽어
-        // 사용자가 방금 찍은 별이 사라진다. 안 골랐으면(`undefined`) 그대로 둔다.
-        setPickedRepresentative((current) => (current === replaced.from ? replaced.to : current))
+        // 사용자가 방금 찍은 별이 사라진다. 뺀 것이면 `null`(없음으로 고름)이 맞는 값이다. 안
+        // 골랐으면(`undefined`) 그대로 둔다.
+        setPickedRepresentative((current) => (current === from ? to : current))
       }),
     [],
   )

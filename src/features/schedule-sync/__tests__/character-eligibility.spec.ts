@@ -1,8 +1,12 @@
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 import { NexonBadRequestError, NexonNetworkError } from '../../../nexon/errors'
-import { clearScheduleProbeLedger, getScheduleProbeLedger } from '../../../storage/schedule-probe-ledger'
+import {
+  clearScheduleProbeLedger,
+  getScheduleProbeLedger,
+  markScheduleProbeUnavailable,
+} from '../../../storage/schedule-probe-ledger'
 import type { SchedulerCharacterState } from '../../../types'
-import { resolveCharacterEligibility } from '../character-eligibility'
+import { readKnownEligibility, resolveCharacterEligibility } from '../character-eligibility'
 
 jest.mock('../../../nexon/schedule', () => ({
   fetchSchedulerCharacterState: jest.fn(),
@@ -60,6 +64,25 @@ async function flushMicrotasks(): Promise<void> {
     await Promise.resolve()
   }
 }
+
+// `access_flag` 는 **캐시된 character/basic** 에서 온다. 그 캐시에는 만료가 없어(읽는 쪽이
+// TTL 을 안 본다) 월드 이전 전에 찍힌 `true` 가 몇 달이고 남는다. 원장의 조회 불가는 그보다
+// 나중에 배운 사실이라 캐시가 그것을 덮으면 안 된다.
+describe('readKnownEligibility. 낡은 access_flag 가 원장을 못 덮는다', () => {
+  it('원장이 조회 불가면 access_flag: true 여도 조회 불가다', async () => {
+    await markScheduleProbeUnavailable('ocid-1')
+
+    await expect(readKnownEligibility('ocid-1', true, NOW)).resolves.toBe('unavailable')
+  })
+
+  it('원장이 조용하면 access_flag: true 가 그대로 자격 O 다', async () => {
+    await expect(readKnownEligibility('ocid-1', true, NOW)).resolves.toBe('eligible')
+  })
+
+  it('access_flag: false 이고 원장도 아는 것이 없으면 아직 모른다', async () => {
+    await expect(readKnownEligibility('ocid-1', false, NOW)).resolves.toBe('unknown')
+  })
+})
 
 describe('access_flag는 배제 게이트가 아니라 충분조건이다', () => {
   it('access_flag: true면 API를 부르지 않고 곧바로 자격 O다', async () => {

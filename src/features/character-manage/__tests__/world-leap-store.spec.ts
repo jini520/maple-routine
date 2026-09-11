@@ -1,9 +1,11 @@
 jest.mock('../../../storage/character-selection', () => ({
   replaceTrackedCharacter: jest.fn(),
+  removeTrackedCharacter: jest.fn(),
 }))
-const { replaceTrackedCharacter: replaceTrackedCharacterMock } = jest.requireMock(
-  '../../../storage/character-selection',
-) as Record<string, jest.Mock>
+const {
+  replaceTrackedCharacter: replaceTrackedCharacterMock,
+  removeTrackedCharacter: removeTrackedCharacterMock,
+} = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
 
 import { resetWorldLeapStoreForTests, useWorldLeapStore } from '../world-leap-store'
 import type { WorldLeapNotice } from '../world-leap'
@@ -18,8 +20,12 @@ const 짚음: WorldLeapNotice = {
 
 const 모름: WorldLeapNotice = { kind: 'unknown', from: 옛것 }
 
+/** 옮겨간 캐릭터를 이미 관리 중이다. 할 일이 교체가 아니라 옛 것 해제다. */
+const 이미관리중: WorldLeapNotice = { ...짚음, kind: 'alreadyTracked' }
+
 beforeEach(() => {
   replaceTrackedCharacterMock.mockReset().mockResolvedValue(undefined)
+  removeTrackedCharacterMock.mockReset().mockResolvedValue(undefined)
   resetWorldLeapStoreForTests()
 })
 
@@ -58,7 +64,35 @@ it('갈아끼운 자리를 남겨 초안이 따라올 수 있게 한다', async 
   useWorldLeapStore.getState().noticeWorldLeap(짚음)
   await useWorldLeapStore.getState().confirm()
 
-  expect(useWorldLeapStore.getState().replaced).toEqual({ from: 'old', to: 'new' })
+  expect(useWorldLeapStore.getState().resolved).toEqual({ from: 'old', to: 'new' })
+})
+
+// 옮겨간 캐릭터가 이미 목록에 있으므로 더할 것이 없다. 남은 것은 조회할 수 없는 옛 ocid 뿐이다.
+describe('옮겨간 캐릭터를 이미 관리 중일 때', () => {
+  it('목록에서 빼기 를 누르면 그 ocid 만 빼고 모달을 닫는다', async () => {
+    removeTrackedCharacterMock.mockResolvedValue(['new'])
+    useWorldLeapStore.getState().noticeWorldLeap(이미관리중)
+
+    await expect(useWorldLeapStore.getState().confirm()).resolves.toEqual(['new'])
+    expect(removeTrackedCharacterMock).toHaveBeenCalledWith('old')
+    expect(replaceTrackedCharacterMock).not.toHaveBeenCalled()
+    expect(useWorldLeapStore.getState().notice).toBeNull()
+  })
+
+  it('뺀 자리를 남겨 초안이 따라올 수 있게 한다', async () => {
+    useWorldLeapStore.getState().noticeWorldLeap(이미관리중)
+    await useWorldLeapStore.getState().confirm()
+
+    expect(useWorldLeapStore.getState().resolved).toEqual({ from: 'old', to: null })
+  })
+
+  it('빼기가 실패하면 모달을 안 닫는다', async () => {
+    removeTrackedCharacterMock.mockRejectedValue(new Error('저장 실패'))
+    useWorldLeapStore.getState().noticeWorldLeap(이미관리중)
+
+    await expect(useWorldLeapStore.getState().confirm()).rejects.toThrow('저장 실패')
+    expect(useWorldLeapStore.getState().notice).toEqual(이미관리중)
+  })
 })
 
 // 목적지를 모르는 것은 바꿀 대상이 없다. 그 모달의 주 버튼은 캐릭터 관리로 이동이다.
@@ -84,5 +118,6 @@ it('들고 있는 것이 없으면 확인도 거절도 아무 일을 안 한다'
   useWorldLeapStore.getState().dismiss()
 
   expect(replaceTrackedCharacterMock).not.toHaveBeenCalled()
+  expect(removeTrackedCharacterMock).not.toHaveBeenCalled()
   expect(useWorldLeapStore.getState().dismissedOcids.size).toBe(0)
 })
