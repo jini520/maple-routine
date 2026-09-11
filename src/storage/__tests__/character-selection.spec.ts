@@ -6,6 +6,7 @@ import {
   getLastSelectedCharacter,
   getRepresentativeCharacter,
   getTrackedCharacterOcids,
+  removeTrackedCharacter,
   replaceTrackedCharacter,
   setCharacterSelection,
   setLastSelectedCharacter,
@@ -306,5 +307,43 @@ describe('replaceTrackedCharacter', () => {
     await setTrackedCharacterOcids(['old', 'new', 'b'])
     await replaceTrackedCharacter('old', 'new')
     await expect(getTrackedCharacterOcids()).resolves.toEqual(['new', 'b'])
+  })
+})
+
+// 옮겨간 캐릭터를 이미 관리 중일 때의 처방. 사용자가 모달에서 `목록에서 빼기` 를 누를 때만
+// 불린다. 교체와 달리 **남는 캐릭터의 자리를 안 건드린다**.
+describe('removeTrackedCharacter', () => {
+  it('그 ocid 만 빼고 나머지 순서는 그대로 둔다', async () => {
+    await setTrackedCharacterOcids(['a', 'old', 'b'])
+    await expect(removeTrackedCharacter('old')).resolves.toEqual(['a', 'b'])
+    await expect(getTrackedCharacterOcids()).resolves.toEqual(['a', 'b'])
+  })
+
+  // 교체는 옛 자리를 새 ocid 가 물려받지만 여기서는 새 것이 이미 제 자리에 서 있다. 끌어오면
+  // 사용자가 맞춰 둔 순서가 이유 없이 바뀐다.
+  it('옮겨간 캐릭터의 자리를 안 옮긴다', async () => {
+    await setTrackedCharacterOcids(['a', 'old', 'b', 'new'])
+    await expect(removeTrackedCharacter('old')).resolves.toEqual(['a', 'b', 'new'])
+  })
+
+  it('대표가 그 ocid 였으면 대표를 비운다', async () => {
+    await setTrackedCharacterOcids(['a', 'old'])
+    await setRepresentativeCharacter('old')
+    await removeTrackedCharacter('old')
+    await expect(getRepresentativeCharacter()).resolves.toBeNull()
+  })
+
+  it('대표가 남이면 안 건드린다', async () => {
+    await setTrackedCharacterOcids(['a', 'old'])
+    await setRepresentativeCharacter('a')
+    await removeTrackedCharacter('old')
+    await expect(getRepresentativeCharacter()).resolves.toBe('a')
+  })
+
+  // 모달을 띄워 둔 채 사용자가 캐릭터 관리에서 직접 뺀 경우.
+  it('목록에 없으면 아무것도 안 하고 null 이다', async () => {
+    await setTrackedCharacterOcids(['a', 'b'])
+    await expect(removeTrackedCharacter('old')).resolves.toBeNull()
+    await expect(getTrackedCharacterOcids()).resolves.toEqual(['a', 'b'])
   })
 })

@@ -176,6 +176,33 @@ export async function replaceTrackedCharacter(
   return replaced
 }
 
+/**
+ * 조회할 수 없게 된 ocid 를 **추적 목록에서만 뺀다**.
+ *
+ * 옮겨간 캐릭터를 이미 관리 중일 때의 처방이다. 사용자가 확인 모달에서 누를 때만 불리고 앱이
+ * 스스로 부르는 자리는 없다.
+ *
+ * 위 `replaceTrackedCharacter` 를 안 쓰는 것은 **남는 캐릭터의 자리** 때문이다. 교체는 옛 자리를
+ * 새 ocid 가 물려받는데, 여기서는 새 ocid 가 이미 제 자리에 서 있어 끌어오면 사용자가 맞춰 둔
+ * 순서가 이유 없이 바뀐다.
+ *
+ * 기록·프로필 스냅샷·조회 원장은 안 건드린다. 대표가 이 ocid 였으면 `setTrackedCharacterOcids`
+ * 안의 참조 무결성이 키를 지운다.
+ *
+ * **남은 목록을 돌려준다**(교체와 같은 이유). 저장소만 고치면 화면이 스토어가 든 옛 목록을 그대로
+ * 보여 주고, 그 상태에서 저장하면 방금 뺀 ocid 가 다시 쓰인다. 할 일이 없었으면 `null`.
+ */
+export async function removeTrackedCharacter(ocid: string): Promise<string[] | null> {
+  const tracked = await getTrackedCharacterOcids()
+  if (tracked === null || !tracked.includes(ocid)) {
+    return null
+  }
+
+  const remaining = tracked.filter((candidate) => candidate !== ocid)
+  await setTrackedCharacterOcids(remaining)
+  return remaining
+}
+
 export async function getRepresentativeCharacter(): Promise<string | null> {
   return preferences.get(representativeCharacterKey())
 }

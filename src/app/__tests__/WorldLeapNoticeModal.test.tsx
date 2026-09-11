@@ -1,4 +1,4 @@
-// 월드 리프 안내 모달. 갈린 것 둘이고 그 둘이 이 파일의 실질이다.
+// 월드 리프 안내 모달. 갈린 것 셋이고 그 셋이 이 파일의 실질이다.
 //
 // 스토어를 모킹하지 않고 `setState` 로 몬다(이 패키지의 관례). 실물 리듀서를 쓰므로 `notice` 가
 // 실제로 그 값을 가질 수 있는지까지 함께 검사된다. 저장소를 만지는 `confirm` 과 스케줄러
@@ -21,6 +21,9 @@ const 짚음: WorldLeapNotice = {
 }
 
 const 모름: WorldLeapNotice = { kind: 'unknown', from: 옛것 }
+
+/** 옮겨간 캐릭터를 이미 관리 중이다. 목적지는 아는데 바꿀 일이 없다. */
+const 이미관리중: WorldLeapNotice = { ...짚음, kind: 'alreadyTracked' }
 
 let confirm: jest.Mock
 let dismiss: jest.Mock
@@ -66,6 +69,34 @@ describe('목적지를 짚었을 때', () => {
 
     expect(confirm).toHaveBeenCalled()
     expect(saveTrackedOcids).toHaveBeenCalledWith(['new'])
+  })
+})
+
+// 사용자가 리프 뒤에 새 캐릭터를 직접 추가한 경우. 새 것은 이미 목록에 있으므로 할 일은
+// 조회할 수 없는 옛 것을 빼는 하나다.
+describe('옮겨간 캐릭터를 이미 관리 중일 때', () => {
+  beforeEach(() => {
+    useWorldLeapStore.setState({ notice: 이미관리중 })
+  })
+
+  it('목적지를 아는 대로 그린다', async () => {
+    const { getByText, queryByText } = await 그리기()
+
+    expect(getByText('챌린저스2')).toBeTruthy()
+    expect(getByText('엘리시움')).toBeTruthy()
+    expect(queryByText('?')).toBeNull()
+  })
+
+  it('목록에서 빼기 를 누르면 빼고 그 목록을 스케줄러에 흘린다', async () => {
+    const { getByText, queryByText } = await 그리기()
+
+    expect(queryByText('변경')).toBeNull()
+    fireEvent.press(getByText('목록에서 빼기'))
+    await Promise.resolve()
+
+    expect(confirm).toHaveBeenCalled()
+    expect(saveTrackedOcids).toHaveBeenCalledWith(['new'])
+    expect(onOpenCharacterManage).not.toHaveBeenCalled()
   })
 })
 

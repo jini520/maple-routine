@@ -16,7 +16,7 @@
  */
 import { create } from 'zustand'
 
-import { replaceTrackedCharacter } from '../../storage/character-selection'
+import { removeTrackedCharacter, replaceTrackedCharacter } from '../../storage/character-selection'
 import type { WorldLeapNotice } from './world-leap'
 
 interface WorldLeapStore {
@@ -25,23 +25,29 @@ interface WorldLeapStore {
   /** 이 실행 동안 사용자가 답한 옛 ocid. `나중에` 와 `캐릭터 관리로 이동` 이 함께 넣는다. */
   dismissedOcids: Set<string>
   /**
-   * 방금 갈아끼운 자리. **초안(`useSelectionDraft`)이 이것을 구독한다.**
+   * 방금 정리한 자리. `to` 가 ocid 면 갈아끼웠고 `null` 이면 목록에서 뺐다.
    *
-   * 모달이 화면 밖에 살아 초안에 손이 닿지 않는다. 안 옮기면 캐릭터 관리를 편집하던 중에
-   * `변경` 을 눌렀을 때 초안이 죽은 ocid 를 든 채 남아 저장 한 번에 되살아난다.
+   * **초안(`useSelectionDraft`)이 이것을 구독한다.** 모달이 화면 밖에 살아 초안에 손이 닿지
+   * 않는다. 안 이어받으면 캐릭터 관리를 편집하던 중에 눌렀을 때 초안이 죽은 ocid 를 든 채 남아
+   * 저장 한 번에 되살아난다.
+   *
+   * 해제를 위한 칸을 따로 두지 않는다. 구독이 둘이 되면 다음 갈래가 생길 때 하나를 안 본다.
    *
    * 안 비운다. 초안이 뒤늦게 마운트돼 이 값을 다시 읽어도 그 자리에 옛 ocid 가 없어 무동작이다.
    */
-  replaced: { from: string; to: string } | null
+  resolved: { from: string; to: string | null } | null
   /** 판정이 짚은 것을 들인다. 이미 들고 있거나 거절당한 것이면 아무 일도 안 한다. */
   noticeWorldLeap: (notice: WorldLeapNotice) => void
   /** `나중에` · `캐릭터 관리로 이동`. 표식은 그대로 남는다. */
   dismiss: () => void
   /**
-   * `변경`. 추적 목록의 ocid 를 갈아끼우고 **바뀐 목록을 돌려준다**. 기록은 안 옮긴다.
+   * 주 버튼. **바뀐 목록을 돌려준다**. 기록은 어느 쪽으로도 안 옮긴다.
    *
-   * 목적지를 모르는 알림(`unknown`)에는 바꿀 대상이 없어 `null` 이다. 그 모달의 주 버튼은
-   * `변경` 이 아니라 캐릭터 관리로 이동이라 여기 오지 않는다.
+   * 하는 일이 알림에 따라 갈린다. `confirmed` 는 추적 목록의 ocid 를 갈아끼우고,
+   * `alreadyTracked` 는 옛 ocid 를 뺀다(옮겨간 캐릭터가 이미 목록에 있어 더할 것이 없다).
+   *
+   * 목적지를 모르는 알림(`unknown`)에는 할 일이 없어 `null` 이다. 그 모달의 주 버튼은 캐릭터
+   * 관리로 이동이라 여기 오지 않는다.
    *
    * 앱 상태 전파는 호출부의 일이다. 여기서 컨텐츠 스케줄러 스토어를 부르면 모듈 순환이 된다
    * (그 스토어 → `schedule-sync` → `character-roster` → 이 파일). 모달이 그 값을 받아
@@ -53,7 +59,7 @@ interface WorldLeapStore {
 export const useWorldLeapStore = create<WorldLeapStore>((set, get) => ({
   notice: null,
   dismissedOcids: new Set(),
-  replaced: null,
+  resolved: null,
 
   noticeWorldLeap: (notice) => {
     const { notice: standing, dismissedOcids } = get()
@@ -73,23 +79,28 @@ export const useWorldLeapStore = create<WorldLeapStore>((set, get) => ({
 
   confirm: async () => {
     const { notice } = get()
-    if (notice === null || notice.kind !== 'confirmed') {
+    if (notice === null || notice.kind === 'unknown') {
       return null
     }
+    // 옮겨간 캐릭터를 이미 관리 중이면 갈아끼울 것이 없다. 남은 일은 옛 것을 빼는 하나다.
+    const to = notice.kind === 'confirmed' ? notice.to.ocid : null
     // 모달을 먼저 닫지 않는다. 저장이 실패하면 목록이 안 바뀐 채 질문만 사라진다.
-    const replaced = await replaceTrackedCharacter(notice.from.ocid, notice.to.ocid)
-    // 거절 목록에도 넣는다. 바꾼 뒤에는 옛 ocid 가 추적 목록에 없어 판정이 다시 서지 않지만,
+    const saved =
+      to === null
+        ? await removeTrackedCharacter(notice.from.ocid)
+        : await replaceTrackedCharacter(notice.from.ocid, to)
+    // 거절 목록에도 넣는다. 정리한 뒤에는 옛 ocid 가 추적 목록에 없어 판정이 다시 서지 않지만,
     // 같은 회차에 이미 흐르고 있던 판정이 뒤늦게 도착할 수 있다.
     set((state) => ({
       notice: null,
       dismissedOcids: new Set(state.dismissedOcids).add(notice.from.ocid),
-      replaced: { from: notice.from.ocid, to: notice.to.ocid },
+      resolved: { from: notice.from.ocid, to },
     }))
-    return replaced
+    return saved
   },
 }))
 
 /** 테스트가 실행 간 상태를 흘리지 않게 되돌린다. */
 export function resetWorldLeapStoreForTests(): void {
-  useWorldLeapStore.setState({ notice: null, dismissedOcids: new Set(), replaced: null })
+  useWorldLeapStore.setState({ notice: null, dismissedOcids: new Set(), resolved: null })
 }

@@ -110,10 +110,17 @@ describe('detectWorldLeap', () => {
       )
     })
 
-    it('후보가 이미 추적 중이면 모름 이다', () => {
-      // 사용자가 이미 손을 댄 상태다. 그때 할 일은 교체가 아니라 옛 것 해제이고, 그 자리가
-      // 캐릭터 관리라 모달이 보내는 곳과 같다.
-      expect(detectWorldLeap(옛프로필, [새캐릭터], new Set([새캐릭터.ocid]))).toEqual(모름(옛프로필))
+    it('이름·직업이 같은 후보가 추적 중으로 둘이면 모름 이다', () => {
+      // 하나가 추적 중이라 걸러졌다는 사실이 나머지를 고를 근거가 되지는 않는다.
+      const 둘째 = { ...새캐릭터, ocid: 'another', world: '스카니아' }
+      const 추적중 = new Set([새캐릭터.ocid, 둘째.ocid])
+      expect(detectWorldLeap(옛프로필, [새캐릭터, 둘째], 추적중)).toEqual(모름(옛프로필))
+    })
+
+    it('추적 중인 후보라도 레벨이 낮으면 모름 이다', () => {
+      // 목적지를 짚는 규칙은 추적 여부와 무관하게 같다. 낮으면 동명이인이다.
+      const 낮음 = { ...새캐릭터, level: 284 }
+      expect(detectWorldLeap(옛프로필, [낮음], new Set([낮음.ocid]))).toEqual(모름(옛프로필))
     })
 
     it('옛 직업을 모르면 모름 이다', () => {
@@ -122,6 +129,28 @@ describe('detectWorldLeap', () => {
       expect(detectWorldLeap({ ...옛프로필, jobClass: null }, [새캐릭터], new Set())).toEqual(
         모름({ ...옛프로필, jobClass: null }),
       )
+    })
+  })
+
+  // 사용자가 리프 뒤에 새 캐릭터를 직접 추가한 경우. 앱이 후보를 짚을 수 있는데도 전에는
+  // 추적 중이라는 이유로 걸러 모름 으로 떨어졌다.
+  describe('옮겨간 캐릭터를 이미 관리 중일 때', () => {
+    it('월드를 그대로 짚고 해제를 묻는다', () => {
+      expect(detectWorldLeap(옛프로필, [새캐릭터], new Set([새캐릭터.ocid]))).toEqual({
+        kind: 'alreadyTracked',
+        from: 옛프로필,
+        to: 새캐릭터,
+      })
+    })
+
+    it('추적 중이 아닌 후보가 함께 있으면 그쪽이 이긴다', () => {
+      // 교체할 수 있으면 교체가 답이다. 해제를 먼저 보면 지금 확정되는 교체가 해제로 바뀐다.
+      const 미추적 = { ...새캐릭터, ocid: 'free', world: '스카니아' }
+      expect(detectWorldLeap(옛프로필, [새캐릭터, 미추적], new Set([새캐릭터.ocid]))).toEqual({
+        kind: 'confirmed',
+        from: 옛프로필,
+        to: 미추적,
+      })
     })
   })
 })
