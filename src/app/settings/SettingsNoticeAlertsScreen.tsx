@@ -7,7 +7,7 @@
  *
  * **이 화면은 스위치만 있어도 거짓말을 안 한다.** 이름이 `알림 설정` 이고 실제로 그것뿐이다.
  */
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { Linking, Pressable, View } from 'react-native'
 
 import { Card, Switch, Text } from '../../components/atoms'
@@ -16,9 +16,8 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { useNoticeStore } from '../../features/notice/store'
-import { anySubscribed, DEFAULT_SUBSCRIPTIONS, NOTICE_TOPICS } from '../../features/notice/topics'
+import { anySubscribed, NOTICE_TOPICS } from '../../features/notice/topics'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
-import { NO_SUBSCRIPTIONS, type NoticeSubscriptions } from '../../types/notice'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
 
 /**
@@ -44,38 +43,15 @@ function SectionLabel(props: { children: string }): React.JSX.Element {
 export function SettingsNoticeAlertsScreen(): React.JSX.Element {
   const navigation = useSettingsNavigation()
   const subscriptions = useNoticeStore((state) => state.subscriptions)
+  const pending = useNoticeStore((state) => state.pending)
   const setSubscribed = useNoticeStore((state) => state.setSubscribed)
   const setAllSubscribed = useNoticeStore((state) => state.setAllSubscribed)
   const blockedByPermission = useNoticeStore((state) => state.blockedByPermission)
+  /** 누른 값을 덮은 구독. 스위치가 왕복을 기다리지 않게 하는 값. */
+  const shown = { ...subscriptions, ...pending }
   // **저장하지 않고 파생한다.** 저장하면 `전체는 켜졌는데 넷은 다 꺼진` 상태가 생기고, 그때
   // 화면은 스위치가 켜졌다고 말하면서 알림은 안 온다.
-  /**
-   * 누른 직후에 그릴 값. **스위치가 왕복을 기다리지 않게 한다.**
-   *
-   * 구독은 FCM 왕복이라 수백 밀리초에서 몇 초가 걸린다. 스토어 값만 그리면 그동안 스위치가
-   * 안 움직여서 사용자는 `눌러도 반응이 없다` 로 읽고 한 번 더 누른다.
-   *
-   * **저장 순서는 그대로다.** 구독이 성공해야 저장하고 스토어가 바뀐다 - 여기서 바꾸는 것은
-   * 그리는 값뿐이고, 왕복이 끝나면 이 값을 버려 스토어가 진실이 된다. 실패하면 스위치가 제자리로
-   * 돌아가고 아래 카드가 이유를 말한다.
-   */
-  const [preview, setPreview] = useState<NoticeSubscriptions | null>(null)
-  const shown = preview ?? subscriptions
   const on = anySubscribed(shown)
-  /**
-   * 왕복이 도는 중. **이 사이의 터치는 무시한다.**
-   *
-   * 스위치가 즉시 움직여도 실제 구독은 몇 초 걸릴 수 있고, 그 사이 여러 번 누르면 요청이
-   * 겹친다. 겹치면 나중에 끝난 것이 이기므로 **마지막으로 누른 것과 다른 상태로 끝날 수 있다.**
-   *
-   * 하나가 도는 동안 넷을 다 막는 이유는 다섯이 같은 값 하나를 고쳐 쓰기 때문이다. 스토어가
-   * 저장할 값을 자기 왕복이 끝난 뒤에 읽으므로, 다른 스위치가 그 사이에 끼면 서로를 덮는다.
-   *
-   * ⚠️ **상태가 아니라 ref 다.** 리액트는 한 번의 이벤트 묶음에서 상태를 몰아 반영하므로,
-   * 빠르게 두 번 누르면 둘째 핸들러가 아직 옛 상태를 본다. 막으려는 것이 정확히 그 연타라
-   * 여기서는 즉시 읽히는 값이어야 한다.
-   */
-  const busyRef = useRef(false)
   /**
    * 스위치를 못 켠 이유. **삼키면 화면이 아무 말도 안 한다.**
    *
@@ -84,24 +60,12 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
    */
   const [failure, setFailure] = useState<string | null>(null)
 
-  /**
-   * 누른 결과를 먼저 그리고, 왕복이 끝나면 그리는 값을 스토어에 돌려준다.
-   *
-   * @param next 성공했을 때 스토어가 갖게 될 값. 그것을 미리 그린다.
-   */
-  const run = (next: NoticeSubscriptions, action: Promise<void>): void => {
-    busyRef.current = true
+  /** 요청의 실패를 카드로 옮기는 함수. */
+  const report = (action: Promise<void>): void => {
     setFailure(null)
-    setPreview(next)
-    void action
-      .catch((error: unknown) => {
-        setFailure(error instanceof Error ? error.message : String(error))
-      })
-      .finally(() => {
-        busyRef.current = false
-        // 성공이든 실패든 미리 그린 값을 버린다. 스토어가 바뀌었으면 그대로이고, 아니면 되돌아간다.
-        setPreview(null)
-      })
+    void action.catch((error: unknown) => {
+      setFailure(error instanceof Error ? error.message : String(error))
+    })
   }
 
   return (
@@ -126,14 +90,10 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
               on={on}
               label="알림 받기"
               size="lg"
-              // 왕복 중에는 누름이 무시된다. 스위치가 그것을 알아야 두드림도 같이 멎는다 -
-              // 안 말하면 손끝은 바뀌었다고 하고 값은 그대로다.
-              disabled={preview !== null}
               className="ml-auto"
               onToggle={() => {
-                if (busyRef.current) return
-                // 켜면 기본 묶음이 켜지고 끄면 전부 꺼진다. 스토어가 하는 일과 같은 값을 그린다.
-                run(on ? NO_SUBSCRIPTIONS : DEFAULT_SUBSCRIPTIONS, setAllSubscribed(!on))
+                // 켜면 기본 묶음이 켜지고 끄면 전부 꺼진다.
+                report(setAllSubscribed(!on))
               }}
             />
           </View>
@@ -183,12 +143,9 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
                 on={shown[topic.key]}
                 label={`${topic.label} 알림`}
                 size="lg"
-                disabled={preview !== null}
                 className="ml-auto"
                 onToggle={() => {
-                  if (busyRef.current) return
-                  const next = { ...shown, [topic.key]: !shown[topic.key] }
-                  run(next, setSubscribed(topic.key, !shown[topic.key]))
+                  report(setSubscribed(topic.key, !shown[topic.key]))
                 }}
               />
             </View>

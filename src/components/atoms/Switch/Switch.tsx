@@ -6,7 +6,7 @@
  *
  * @example
  * // 행 왼쪽에 글자가 따로 서는 자리
- * <Switch on={on} label="알림 받기" size="lg" disabled={busy} onToggle={toggle} className="ml-auto" />
+ * <Switch on={on} label="알림 받기" size="lg" onToggle={toggle} className="ml-auto" />
  *
  * // 글자를 눌러도 토글돼야 하는 자리. 글자 크기는 자리마다 달라 호출부가 정한다
  * <Switch on={showAll} label="모든 보스 보기" size="lg" onToggle={toggle} className="gap-1.5">
@@ -35,12 +35,6 @@ export interface SwitchProps {
   onToggle: () => void
   /** 안 적으면 `sm`. */
   size?: keyof typeof SWITCH_SIZE
-  /**
-   * 눌러도 아무 일이 없는 동안. 누름도 두드림도 안 낸다.
-   *
-   * 알림 설정이 FCM 왕복 중에 쓴다. 안 막으면 손끝은 바뀌었다고 말하고 값은 그대로다.
-   */
-  disabled?: boolean
   /** 스위치 왼쪽에 서는 글자. 누름 과녁 안이라 글자를 눌러도 토글된다. */
   children?: React.ReactNode
   /** 자리잡기(`ml-auto`·`gap-1.5`)는 호출부 몫이다. */
@@ -55,8 +49,6 @@ export function Switch(props: SwitchProps): React.JSX.Element {
       role="switch"
       aria-checked={props.on}
       aria-label={props.label}
-      aria-disabled={props.disabled}
-      disabled={props.disabled}
       // 켜고 끄는 것도 고른 값이 바뀌는 일이라 선택 촉각이다.
       onPress={() => {
         selectionFeedback()

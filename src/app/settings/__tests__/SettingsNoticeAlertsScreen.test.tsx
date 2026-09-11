@@ -7,7 +7,8 @@ import { useNoticeStore } from '../../../features/notice/store'
 import { NOTICE_TOPICS } from '../../../features/notice/topics'
 import { NO_SUBSCRIPTIONS } from '../../../types/notice'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
-import { setHapticsPort } from '../../../native/ports'
+import { setHapticsPort, setNotificationsPort, setPushPort } from '../../../native/ports'
+import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 import { SettingsNoticeAlertsScreen } from '../SettingsNoticeAlertsScreen'
 
 jest.mock('../../../hooks/useSettingsNavigation', () => ({
@@ -18,10 +19,14 @@ jest.mock('../../../hooks/useSettingsNavigation', () => ({
 /** 전체 스위치가 켜진 상태. 넷 중 하나라도 켜져 있으면 켜진 것으로 파생된다. */
 const 켜짐 = { ...NO_SUBSCRIPTIONS, app: true }
 
+/** 스토어의 진짜 동작. 아래 `beforeEach` 가 목으로 덮기 전에 붙잡아 둔다. */
+const 진짜 = useNoticeStore.getState()
+
 beforeEach(() => {
   jest.clearAllMocks()
   useNoticeStore.setState({
     subscriptions: 켜짐,
+    pending: {},
     blockedByPermission: false,
     setSubscribed: jest.fn().mockResolvedValue(undefined),
     setAllSubscribed: jest.fn().mockResolvedValue(undefined),
@@ -186,150 +191,145 @@ describe('스위치가 실패할 때', () => {
   })
 })
 
-// 구독은 FCM 왕복이라 수백 밀리초에서 몇 초가 걸린다. 스토어 값만 그리면 그동안 스위치가 안
-// 움직여서 사용자는 `눌러도 반응이 없다` 로 읽고 한 번 더 누른다.
-describe('왕복을 기다리지 않고 먼저 그린다', () => {
-  /** 끝나지 않는 구독. 그동안 화면이 무엇을 그리는지 본다. */
-  function 멈춘구독(): { promise: Promise<void>; resolve: () => void; reject: (e: Error) => void } {
-    let resolve!: () => void
-    let reject!: (e: Error) => void
-    const promise = new Promise<void>((res, rej) => {
-      resolve = res
-      reject = rej
+// 구독은 FCM 왕복이라 수백 밀리초에서 몇 초가 걸린다. 그 사이 스위치가 안 움직이거나 누름이
+// 무시되면 사용자는 반응이 느리다고 본다. 줄과 누른 값이 스토어에 있어서, 여기서는 스토어를
+// 목으로 덮지 않고 진짜로 돌린다.
+describe('왕복을 기다리지 않는다', () => {
+  /** 문을 열 때까지 안 끝나는 푸시. 줄에 선 요청이 그 앞에서 기다린다. */
+  function 문달린푸시(실패할토픽: readonly string[] = []): { open: () => void } {
+    let open!: () => void
+    const gate = new Promise<void>((resolve) => {
+      open = resolve
     })
-    return { promise, resolve, reject }
+    const pass = async (topic: string): Promise<void> => {
+      await gate
+      if (실패할토픽.includes(topic)) throw new Error(`${topic} 망 끊김`)
+    }
+    setPushPort({
+      subscribe: pass,
+      unsubscribe: pass,
+      addMessageListener: () => () => {},
+      addOpenedListener: () => () => {},
+      getInitialNotification: async () => null,
+    })
+    return { open }
   }
+
+  /** 문을 열고 줄이 빌 때까지 기다린다. 줄에 선 것이 전부 마이크로태스크라 한 틱이면 된다. */
+  async function 문열기(push: { open: () => void }): Promise<void> {
+    await act(async () => {
+      push.open()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+  }
+
+  function 켜졌나(view: Awaited<ReturnType<typeof renderOverlay>>, label: string): boolean {
+    return view.getByLabelText(label).props.accessibilityState.checked
+  }
+
+  beforeEach(() => {
+    installFakePreferences()
+    setNotificationsPort({
+      requestPermission: async () => true,
+      hasPermission: async () => true,
+      schedule: async () => {},
+      cancel: async () => {},
+      getPendingCount: async () => 0,
+    })
+    useNoticeStore.setState({
+      setSubscribed: 진짜.setSubscribed,
+      setAllSubscribed: 진짜.setAllSubscribed,
+    })
+  })
+
+  afterEach(installNoopNativePorts)
 
   it('누르면 왕복이 끝나기 전에 켜진 것으로 그린다', async () => {
-    const 대기 = 멈춘구독()
-    useNoticeStore.setState({
-      subscriptions: NO_SUBSCRIPTIONS,
-      setAllSubscribed: jest.fn(() => 대기.promise),
-    })
+    const push = 문달린푸시()
+    useNoticeStore.setState({ subscriptions: NO_SUBSCRIPTIONS })
     const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
 
     await act(async () => {
       fireEvent.press(view.getByLabelText('알림 받기'))
     })
 
-    expect(view.getByLabelText('알림 받기').props.accessibilityState.checked).toBe(true)
+    expect(켜졌나(view, '알림 받기')).toBe(true)
     // 기본 묶음이 켜진 모양으로 하위도 함께 나온다.
-    expect(view.getByLabelText('게임 공지 사항 알림').props.accessibilityState.checked).toBe(true)
-    expect(view.getByLabelText('캐시 아이템 업데이트 알림').props.accessibilityState.checked).toBe(false)
+    expect(켜졌나(view, '게임 공지 사항 알림')).toBe(true)
+    expect(켜졌나(view, '캐시 아이템 업데이트 알림')).toBe(false)
 
-    await act(async () => {
-      대기.resolve()
-    })
+    await 문열기(push)
   })
 
-  // 미리 그린 값이 실패한 채로 남으면 스위치는 켜져 있는데 알림은 안 오는 상태가 된다.
-  it('실패하면 제자리로 돌아가고 이유를 말한다', async () => {
-    const 대기 = 멈춘구독()
-    useNoticeStore.setState({
-      subscriptions: NO_SUBSCRIPTIONS,
-      setAllSubscribed: jest.fn(() => 대기.promise),
-    })
-    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
-
-    await act(async () => {
-      fireEvent.press(view.getByLabelText('알림 받기'))
-    })
-    await act(async () => {
-      대기.reject(new Error('망 끊김'))
-      await 대기.promise.catch(() => undefined)
-    })
-
-    expect(view.getByLabelText('알림 받기').props.accessibilityState.checked).toBe(false)
-    expect(view.getByText('망 끊김')).toBeTruthy()
-  })
-
-  it('하위 스위치도 먼저 그린다', async () => {
-    const 대기 = 멈춘구독()
-    useNoticeStore.setState({
-      subscriptions: 켜짐,
-      setSubscribed: jest.fn(() => 대기.promise),
-    })
+  it('첫 요청이 도는 중에 다른 스위치를 누르면 즉시 움직인다', async () => {
+    const push = 문달린푸시()
     const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
 
     await act(async () => {
       fireEvent.press(view.getByLabelText('캐시 아이템 업데이트 알림'))
     })
-
-    expect(view.getByLabelText('캐시 아이템 업데이트 알림').props.accessibilityState.checked).toBe(true)
-
     await act(async () => {
-      대기.resolve()
-    })
-  })
-})
-
-// 스위치가 즉시 움직여도 실제 구독은 몇 초 걸린다. 그 사이 여러 번 누르면 요청이 겹치고,
-// 겹치면 나중에 끝난 것이 이겨 마지막으로 누른 것과 다른 상태로 끝날 수 있다.
-describe('도는 중에는 터치를 무시한다', () => {
-  function 멈춘구독(): { promise: Promise<void>; resolve: () => void } {
-    let resolve!: () => void
-    const promise = new Promise<void>((res) => {
-      resolve = res
-    })
-    return { promise, resolve }
-  }
-
-  it('전체 스위치를 연달아 눌러도 한 번만 부른다', async () => {
-    const 대기 = 멈춘구독()
-    const setAllSubscribed = jest.fn(() => 대기.promise)
-    useNoticeStore.setState({ subscriptions: NO_SUBSCRIPTIONS, setAllSubscribed })
-    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
-
-    await act(async () => {
-      fireEvent.press(view.getByLabelText('알림 받기'))
-      fireEvent.press(view.getByLabelText('알림 받기'))
-      fireEvent.press(view.getByLabelText('알림 받기'))
-    })
-
-    expect(setAllSubscribed).toHaveBeenCalledTimes(1)
-
-    await act(async () => {
-      대기.resolve()
-    })
-  })
-
-  // 다섯이 같은 값 하나를 고쳐 쓴다. 하나가 도는 동안 다른 것이 끼면 서로를 덮는다.
-  it('하나가 도는 동안 다른 스위치도 막는다', async () => {
-    const 대기 = 멈춘구독()
-    const setSubscribed = jest.fn(() => 대기.promise)
-    useNoticeStore.setState({ subscriptions: 켜짐, setSubscribed })
-    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
-
-    await act(async () => {
-      fireEvent.press(view.getByLabelText('캐시 아이템 업데이트 알림'))
       fireEvent.press(view.getByLabelText('게임 공지 사항 알림'))
     })
 
-    expect(setSubscribed).toHaveBeenCalledTimes(1)
-    expect(setSubscribed).toHaveBeenCalledWith('cashshop', true)
+    expect(켜졌나(view, '캐시 아이템 업데이트 알림')).toBe(true)
+    expect(켜졌나(view, '게임 공지 사항 알림')).toBe(true)
 
-    await act(async () => {
-      대기.resolve()
-    })
+    await 문열기(push)
+
+    expect(useNoticeStore.getState().subscriptions).toMatchObject({ cashshop: true, game: true })
   })
 
-  it('끝나면 다시 받는다', async () => {
-    const 대기 = 멈춘구독()
-    const setAllSubscribed = jest.fn(() => 대기.promise)
-    useNoticeStore.setState({ subscriptions: NO_SUBSCRIPTIONS, setAllSubscribed })
+  // 늦게 끝난 요청이 이기면 마지막으로 누른 것과 다른 상태로 끝난다.
+  it('켜기, 끄기 연타는 끄기로 끝난다', async () => {
+    const push = 문달린푸시()
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('캐시 아이템 업데이트 알림'))
+    })
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('캐시 아이템 업데이트 알림'))
+    })
+
+    expect(켜졌나(view, '캐시 아이템 업데이트 알림')).toBe(false)
+
+    await 문열기(push)
+
+    expect(켜졌나(view, '캐시 아이템 업데이트 알림')).toBe(false)
+    expect(useNoticeStore.getState().subscriptions.cashshop).toBe(false)
+  })
+
+  // 미리 그린 값이 실패한 채로 남으면 스위치는 켜져 있는데 알림은 안 오는 상태가 된다.
+  it('실패하면 그 스위치만 돌아가고 이유를 말한다', async () => {
+    const push = 문달린푸시(['notice-cashshop'])
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('캐시 아이템 업데이트 알림'))
+    })
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('게임 공지 사항 알림'))
+    })
+    await 문열기(push)
+
+    expect(켜졌나(view, '캐시 아이템 업데이트 알림')).toBe(false)
+    expect(켜졌나(view, '게임 공지 사항 알림')).toBe(true)
+    expect(view.getByText('notice-cashshop 망 끊김')).toBeTruthy()
+  })
+
+  it('전체 스위치가 실패하면 제자리로 돌아가고 이유를 말한다', async () => {
+    const push = 문달린푸시(['notice', 'notice-game', 'notice-event'])
+    useNoticeStore.setState({ subscriptions: NO_SUBSCRIPTIONS })
     const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
 
     await act(async () => {
       fireEvent.press(view.getByLabelText('알림 받기'))
     })
-    await act(async () => {
-      대기.resolve()
-    })
-    await act(async () => {
-      fireEvent.press(view.getByLabelText('알림 받기'))
-    })
+    await 문열기(push)
 
-    expect(setAllSubscribed).toHaveBeenCalledTimes(2)
+    expect(켜졌나(view, '알림 받기')).toBe(false)
+    expect(view.getByText('notice 망 끊김')).toBeTruthy()
   })
 })
 
@@ -364,7 +364,7 @@ describe('스케줄러 알림', () => {
 })
 
 // 켜고 끄는 것도 고른 값이 바뀌는 일이라 선택 촉각이다. 이 화면은 왕복이 끝나기 전에 누른
-// 결과를 먼저 그리므로 두드림도 누를 때 난다. 왕복 중의 누름은 화면이 무시하니 두드림도 없다.
+// 결과를 먼저 그리므로 두드림도 누를 때 난다.
 describe('스위치의 촉각', () => {
   const select = jest.fn(async () => undefined)
 
@@ -393,5 +393,20 @@ describe('스위치의 촉각', () => {
     })
 
     expect(select).toHaveBeenCalledTimes(1)
+  })
+
+  // 왕복 중에도 누름을 받는다. 두드림이 안 나면 손끝은 안 눌렸다고 말하는데 값은 바뀐다.
+  it('앞 요청이 도는 중에 눌러도 난다', async () => {
+    useNoticeStore.setState({ setSubscribed: jest.fn(() => new Promise<void>(() => {})) })
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('게임 공지 사항 알림'))
+    })
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('캐시 아이템 업데이트 알림'))
+    })
+
+    expect(select).toHaveBeenCalledTimes(2)
   })
 })

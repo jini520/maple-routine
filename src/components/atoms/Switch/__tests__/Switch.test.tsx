@@ -124,22 +124,6 @@ describe('Switch: 누름', () => {
     expect(select).toHaveBeenCalledTimes(1)
   })
 
-  // 누름이 아무 일도 안 하는 동안(알림 설정의 FCM 왕복)은 두드림도 없어야 한다. 울리면 손끝은
-  // 바뀌었다고 말하고 값은 그대로다.
-  it('disabled 면 onToggle 도 두드림도 없다', async () => {
-    const select = jest.fn().mockResolvedValue(undefined)
-    setHapticsPort({ tap: jest.fn().mockResolvedValue(undefined), select })
-    const onToggle = jest.fn()
-    const { getByLabelText } = await renderAtom(
-      <Switch on={false} label="켜기" disabled onToggle={onToggle} />,
-    )
-
-    fireEvent.press(getByLabelText('켜기'))
-
-    expect(onToggle).not.toHaveBeenCalled()
-    expect(select).not.toHaveBeenCalled()
-  })
-
   // 글자가 누름 과녁 안이라 글자를 눌러도 토글된다. 스위치만 과녁이면 표적이 44×24 하나뿐이다.
   it('children 으로 넣은 글자를 눌러도 토글된다', async () => {
     const onToggle = jest.fn()
