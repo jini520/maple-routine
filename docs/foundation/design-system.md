@@ -555,6 +555,7 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
   - **보스 스케줄러: 주간만, 온전한 원 하나**(`primary`, **반시계**, 12시 틈 없음). 월간은 종류가 하나뿐이라 ‘몇 개 중 몇 개’가 1/1 뿐이고, 표현은 따로 정한다(보류). 가를 상대가 없는 링에서 틈은 ‘나눔’이 아니라 ‘결손’으로 읽힌다([[ADR-059]] 정정 1과 같은 판단). **한 바퀴는 호로 못 그려** 그 자리만 `Circle` 이다(트랙과 100% 진행 둘 다).
 - **선택 표시는 흐림**이다. 테두리는 진행률이 이미 쓴다. 고른 칸은 `opacity 1`, 나머지는 **`0.3`**(~~`0.45`~~ → [[ADR-161]] 결정 2, 칸이 여섯을 넘으면 0.45 로는 어느 것이 선택인지 한눈에 안 잡혔다), 접근성에는 `aria-selected` 로 따로 말한다.
 - 얼굴 크롭은 **`CharacterAvatar` 가 든다**([[ADR-204]] 결정 1 · 위 절). 표는 `lib/face-crop` 하나이고 자리마다 지름만 다르다. 이미지가 없으면 이름 첫 글자.
+- **위아래 여백은 레일이 안 든다**([[ADR-257]] 결정 1, 2026-09-12). 같은 레일이 네 화면에 서고 그 아래에 오는 것이 화면마다 다르다(스케줄러 둘은 카드, 관리 둘은 탭·스위치). 스케줄러 둘은 **레일을 감싼 뷰**가 `pb-1` 을 들어 `ScreenScroll` 의 자식 간격 8 과 합쳐 12 를 만든다. 감싸는 뷰에는 레일과 **같은 조건**이 걸려야 캐릭터가 없는 첫 조회에서 빈 4 가 안 남는다.
 
 ### 스케줄러 캐릭터 드롭다운: 선택 캐릭터 월드 아이콘: 2026-07-16
 > ⛔ **이 드롭다운은 없다**([[ADR-142]] 정정 8, 2026-08-16). 네 화면 모두 위 ‘캐릭터 초상화 레일’이 그 자리이고, 컴포넌트 자체가 지워졌다. 아래는 기록이다.
@@ -580,6 +581,32 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 켠 상자는 `bg-primary` + `border-primary`, 그 안의 체크는 `text-on-primary`. 안 켠 것은 **테두리만**(`border-border`, 배경이 있는 자리면 `border-border-strong`). 크기·모서리는 자리마다 다르다(설정·가계부 18px `rounded-md`, today 위젯 12px `rounded-[3px]`). 고정하는 것은 **색** 하나다.
 
 **‘완료 = `secondary`’ 계보를 여기에 끌어오지 않는다.** `secondary` 는 테마의 두 번째 시드라 메인 컬러와 색상(H)이 무관해서(렌은 빨강 테마에 틸, 엔젤릭버스터는 분홍 테마에 하늘) 상자를 그 색으로 채우면 **테마 밖의 색**으로 읽힌다(사용자 판정). 그 계보가 사는 자리는 **배지**다. 컨텐츠 완료 배지·보스 `CLEAR`·성공 토스트.
+
+### 스위치 (`components/atoms/Switch`): [[ADR-255]] (2026-09-12)
+**앱의 스위치는 이 아톰 하나다. 손으로 그리지 말 것.** 세 자리가 클래스 문자열을 따로 적다가
+모양이 둘로 갈렸던 것을 모았다.
+
+```
+트랙   sm 28×16 · lg 44×24 · rounded-full
+손잡이 sm 12 · lg 20 · rounded-full · bg-surface
+색     켜짐 bg-primary · 꺼짐 bg-surface-2
+거리   손잡이가 가는 거리 = 트랙 폭 − 손잡이 − 2 (sm 14 · lg 22). SWITCH_SIZE 표 하나에 있다
+```
+
+- **크기는 둘뿐이다.** `lg` 는 알림 설정과 보스 관리의 `모든 보스 보기`, `sm` 은 드롭 연출
+  시트 머리. 셋째 크기를 두지 않는 것은 `ProgressBar` 의 두께와 같은 규칙이다.
+- **`role="switch"`·`aria-checked`·`aria-label` 과 선택 촉각은 부품이 든다.** 호출부에서
+  `selectionFeedback()` 을 또 부르면 한 번 누르고 두 번 울린다.
+- **누름이 아무 일도 안 하는 동안은 `disabled` 를 준다.** 알림 설정이 FCM 왕복 중에 쓴다.
+  안 막으면 손끝은 바뀌었다고 말하고 값은 그대로다.
+- **옆 글자는 호출부가 `children` 으로 넣는다.** 글자를 눌러도 토글돼야 하는 자리(보스 관리 ·
+  드롭 연출)가 있고 그 글자의 크기·두께는 자리마다 다르다. 자리잡기(`ml-auto`·`gap-1.5`)도
+  `className` 으로 호출부가 쥔다. `Badge` 와 같은 규칙이다.
+- **손잡이는 아직 순간이동한다.** 미끄러지게 하는 것은 #378 이다.
+
+다크 테마에서 꺼진 스위치의 대비가 낮다. `surface` 가 `surface-2` 보다 어두워서
+(검은마법사 `#1C1319` 대 `#2E222A`) 어두운 트랙 위의 더 어두운 동그라미가 된다.
+사용자가 흰 손잡이와 견줘 보고 고른 색이다([[ADR-255]] 결정 3).
 
 ## 공유 레이아웃 패턴
 
@@ -610,6 +637,19 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 ~~폭을 값으로 못박는 것이 규칙이다(`w-14`·`w-12`)~~ → **걷혔다**([[ADR-225]] 정정 2). 안드로이드가
 뒷 음절을 다음 줄로 넘기던 결함을 `enablePreparedTextLayout` 이 원인에서 끊었다. 폭은 글자가
 정하고 좌우 여백을 쓴다. 그래서 썸이 조각마다 폭을 다시 재서 미끄러질 수 있다.
+
+### 기간 이동 줄(`←` · 기간 라벨 · `→`): [[ADR-256]] (2026-09-12)
+`BossProfitScreen` · `CashbookScreen` · `DropPriceScreen` 셋에 있다. **아직 부품이 아니다** —
+셋이 서로 베낀 코드이고, #351 이 년 → 월 → 주 드릴다운을 세우면서 하나로 모은다.
+
+```
+화살표  h-7 w-7 rounded-full border border-border · 꺼지면 opacity-30
+라벨    가운데 두 줄. 위가 상대 표현(`이번 주`) · 아래가 정확한 날짜(tabular-nums)
+줄      flex-row items-center justify-center gap-4 py-3
+```
+
+**`py-3`(위아래 각 12)은 세 화면이 같은 값이다.** 한 곳만 바꾸면 같은 줄이 화면마다 다르게
+보인다. `src/__tests__/period-nav-padding.test.ts` 가 셋이 같은지 본다.
 
 ### 스크롤 영역: 화면이 스크롤을 소유하고, **고정되는 영역은 없다** ([[ADR-099]] · [[ADR-131]])
 
@@ -800,7 +840,8 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
       FAB        가계부의 `＋`(organisms/SpeedDial) · 보스 수익의 아이템 가격 입력(DropPriceFab)
     선택(select)
       세그먼트     Segment · TabSegment · DifficultySegment 부품 셋이 든다(사용처 18곳)
-      스위치       알림 받기와 알림 토픽 넷 · 보스 관리의 `모든 보스 보기`
+      스위치       알림 받기와 알림 토픽 다섯 · 보스 관리의 `모든 보스 보기` · 드롭 연출
+                  `atoms/Switch` 가 든다. 호출부에서 또 부르면 두 번 울린다
       캐릭터 카드   순서 바꾸기 (CharacterLayerGrid 의 onOrderChange, 끄는 동안 자리가 바뀔 때마다)
                   스크린리더의 위로·아래로 옮기기도 같다
       캘린더       날 고르기 (molecules/CalendarGrid)

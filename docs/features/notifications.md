@@ -48,6 +48,10 @@
 | 어댑터 | 같은 폴더의 `rn-push.ts` | **있다** |
 | 어댑터 | 같은 폴더의 `rn-background-task.ts` | **신설 예정** |
 | 상태 | `src/features/notice/store.ts` | **있다.** 구독 스위치 넷. 저장보다 구독이 먼저다 |
+
+**구독 스위치는 `atoms/Switch` 의 `lg`(44×24)다**([[ADR-255]] 결정 6, 2026-09-12, 사용자 지정).
+**FCM 왕복 중에는 `disabled` 를 넘긴다**(결정 5) - 그 동안 누름은 무시되는데 부품이 두드림을
+들고 있어서, 안 막으면 손끝은 바뀌었다고 말하고 값은 그대로가 된다.
 | 계약 | `src/features/notice/topics.ts` | **있다.** 토글 넷과 토픽 이름. 서버와 나눠 갖는다 |
 | 화면 | `src/app/settings/NoticeBlocks.tsx` | **있다.** 상세 본문 블록을 그린다 |
 | 저장 | `src/storage/notice-settings.ts` · `notices.ts` | **둘 다 있다** |
