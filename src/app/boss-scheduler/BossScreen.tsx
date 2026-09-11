@@ -439,17 +439,23 @@ export function BossScreen(): React.JSX.Element {
         }
       >
         {/* 캐릭터를 고르는 장치라 콘텐츠다. 조건이 **줄 밖**에 있다. 안에 두면 캐릭터가 없는
-            동안 빈 줄이 `gap-4` 를 두 번 먹는다.
+            동안 빈 줄이 셸의 자식 간격을 두 번 먹는다.
 
-            좌우 여백을 주지 않는다. 레일이 자기 안쪽 스크롤로 그 16 을 든다. */}
+            좌우 여백을 주지 않는다. 레일이 자기 안쪽 스크롤로 그 16 을 든다.
+
+            아래 여백은 **감싸는 뷰**가 든다. 레일 아래에 오는 것이 셋이라서다 - 카드 덩어리 ·
+            첫 조회 중의 로딩 카드 · 조회할 수 없는 캐릭터를 골랐을 때의 안내. 레일 안에 넣으면
+            관리 화면 둘까지 같이 벌어진다. */}
         {characters.length > 0 && selected !== null && (
-          <CharacterRail
-            entries={railEntries}
-            selectedOcid={selected.ocid}
-            onSelect={(ocid) => {
-              void select(ocid)
-            }}
-          />
+          <View className="pb-1">
+            <CharacterRail
+              entries={railEntries}
+              selectedOcid={selected.ocid}
+              onSelect={(ocid) => {
+                void select(ocid)
+              }}
+            />
+          </View>
         )}
 
         {/* 캐시된 `characters` 가 있으면 재검증 중에도 계속 보여준다. 셸 승계 카드는

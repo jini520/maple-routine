@@ -249,15 +249,21 @@ export function ContentScreen(): React.JSX.Element {
         {/* 캐릭터를 고르는 장치라 콘텐츠다. 조건이 **줄 밖**에 있다. 안에 두면 캐릭터가 없는
             동안(첫 조회) 빈 줄이 남아 콘텐츠 간격을 두 번 먹는다.
 
-            좌우 여백을 주지 않는다. 레일이 자기 안쪽 스크롤로 그 16 을 든다. */}
+            좌우 여백을 주지 않는다. 레일이 자기 안쪽 스크롤로 그 16 을 든다.
+
+            아래 여백은 **감싸는 뷰**가 든다. 레일 아래에 오는 것이 셋이라서다 - 카드 덩어리 ·
+            첫 조회 중의 로딩 카드 · 조회할 수 없는 캐릭터를 골랐을 때의 안내. 레일 안에 넣으면
+            관리 화면 둘까지 같이 벌어진다. */}
         {characters.length > 0 && selected !== null && (
-          <CharacterRail
-            entries={railEntries}
-            selectedOcid={selected.ocid}
-            onSelect={(ocid) => {
-              void select(ocid)
-            }}
-          />
+          <View className="pb-1">
+            <CharacterRail
+              entries={railEntries}
+              selectedOcid={selected.ocid}
+              onSelect={(ocid) => {
+                void select(ocid)
+              }}
+            />
+          </View>
         )}
 
         {/* 캐시된 characters가 있으면 재검증(status: 'loading') 중에도 계속 보여준다.
@@ -286,8 +292,12 @@ export function ContentScreen(): React.JSX.Element {
                   <EmptyState {...contentEmptyProps('daily')} />
                 )}
 
+                {/* 위 여백은 보스 스케줄러의 무리 제목(`월간`)이 차지하는 높이다
+                    (제목 20 + 그 아래 간격 8). 이 화면은 제목 없이 바로 카드라, 두 화면을 오갈 때
+                    첫 카드가 뛰지 않으려면 그만큼 비워 둬야 한다. 주기는 머리의 탭이 말하므로
+                    여기 세울 제목이 없다. */}
                 {displayDailyContents.length > 0 && (
-                  <View className="gap-2">
+                  <View className="gap-2 pt-7">
                     {displayDailyContents.map((content) => (
                       <View key={content.name}>{renderDailyContentCard(content, selected.level ?? null)}</View>
                     ))}
@@ -303,7 +313,7 @@ export function ContentScreen(): React.JSX.Element {
                 )}
 
                 {displayWeeklyContents.length > 0 && (
-                  <View className="gap-2">
+                  <View className="gap-2 pt-7">
                     {displayWeeklyContents.map((content) => (
                       <View key={content.name}>{renderWeeklyContentCard(content, selected.level ?? null)}</View>
                     ))}
