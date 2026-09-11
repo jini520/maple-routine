@@ -79,13 +79,23 @@ export function useSlidingThumb(selectedIndex: number): SlidingThumb {
   const [placement, setPlacement] = useState<ThumbPlacement | null>(null)
   const reduceMotion = useReducedMotion()
 
-  const settle = useCallback((index: number) => {
+  /**
+   * 지금 고른 조각. **`onItemLayout` 이 닫아 둔 값을 믿으면 안 된다.**
+   *
+   * RN 은 레이아웃 이벤트를 그 자리가 잡힐 때 붙어 있던 핸들러로 보낸다. 고른 조각이 막 바뀐
+   * 뒤에 도착한 이벤트는 아직 옛 번호를 들고 있어, 새로 잰 자리를 받아 놓고도 상자를 안 옮겼다.
+   */
+  const selected = useRef(selectedIndex)
+
+  const settle = useCallback(() => {
+    const index = selected.current
     const slot = index < 0 ? undefined : slots.current.get(index)
     setPlacement((previous) => nextThumbPlacement(previous, slot))
   }, [])
 
   useEffect(() => {
-    settle(selectedIndex)
+    selected.current = selectedIndex
+    settle()
   }, [selectedIndex, settle])
 
   const onItemLayout = useCallback(
@@ -95,10 +105,14 @@ export function useSlidingThumb(selectedIndex: number): SlidingThumb {
       if (known?.x === x && known.width === width) return
 
       slots.current.set(index, { x, width })
-      // 다른 조각이 자란 것은 이 상자와 상관없다. 고른 조각의 자리가 바뀔 때만 따라간다.
-      if (index === selectedIndex) settle(selectedIndex)
+      // **어느 조각이 알리든 다시 센다.** 옆 조각이 넓어지면 고른 조각이 밀리고, 화면을 떠났다
+      // 돌아오면 줄 전체가 다시 재어진다. 고른 조각의 알림만 듣던 때는 한 번 어긋나면 다시 잴
+      // 계기가 없어(RN 은 치수가 바뀔 때만 알린다) 상자가 엉뚱한 자리에 남거나 사라진 채 굳었다.
+      //
+      // 같은 자리를 다시 받으면 `nextThumbPlacement` 가 들고 있던 것을 그대로 내므로 렌더가 안 는다.
+      settle()
     },
-    [selectedIndex, settle],
+    [settle],
   )
 
   const style = useAnimatedStyle(() => {
