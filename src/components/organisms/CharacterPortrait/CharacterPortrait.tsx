@@ -94,6 +94,14 @@ function CompactPortrait(props: CompactPortraitProps): React.JSX.Element {
       className="relative shrink-0 items-center justify-center"
       style={{ width: PORTRAIT_COMPACT.slot, height: PORTRAIT_COMPACT.slot }}
     >
+      {/* **링이 먼저다.** RN 은 형제 순서가 곧 그리는 순서라, 뒤에 서면 얼굴에 붙는 조회 불가
+          표식을 이 링이 덮는다(실기기 관측). 링은 `absolute inset-0` 이고 stroke 가 얼굴보다
+          바깥이라, 차례를 바꿔도 얼굴이 링을 가리지 않는다. */}
+      <SegmentedRing
+        cleared={props.clears.cleared}
+        total={props.clears.total}
+        label={props.clears.label}
+      />
       <CharacterAvatar
         imageTestID="character-portrait-image"
         imageUrl={props.imageUrl}
@@ -102,11 +110,6 @@ function CompactPortrait(props: CompactPortraitProps): React.JSX.Element {
         className="bg-surface-2"
         unavailable={props.unavailable}
         fallback={<InitialFallback name={props.characterName} textClass="text-xs" />}
-      />
-      <SegmentedRing
-        cleared={props.clears.cleared}
-        total={props.clears.total}
-        label={props.clears.label}
       />
     </View>
   )

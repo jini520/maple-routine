@@ -7,6 +7,7 @@ import { useLiveUpdateStore } from '../features/live-update/store'
 
 import { useRootBackToBackground } from '../hooks/useRootBackToBackground'
 import { UpdatePromptModal } from '../app/UpdatePromptModal'
+import { WorldLeapNoticeModal } from '../app/WorldLeapNoticeModal'
 import { RootNavigator } from './RootNavigator'
 import { useNavigationTheme } from './navigation-theme'
 import type { RootStackParamList } from './routes'
@@ -30,6 +31,11 @@ const NOTICE_DETAIL = 'SettingsNoticeDetail'
  *
  * `ApiKeyNoticeModal` 보다 아래로 그려진다. 키가 무효화된 상태에서는 업데이트를 받아도 앱을
  * 쓸 수 없으므로 그쪽이 먼저다.
+ *
+ * `WorldLeapNoticeModal` 도 같은 자리에 같은 이유로 있다. 어느 화면에 있든 떠야 하고(판정이
+ * 부팅 동기화에서도 난다), `캐릭터 관리로 이동` 이 내비게이션을 잡아야 한다. **셋 중 맨 먼저**
+ * 그린다. RN 모달은 나중에 선 것이 위라 이것이 둘 밑으로 간다. 키가 무효면 이 질문에 답해도
+ * 아무것도 못 하고, 업데이트는 앱을 다시 띄우므로 그쪽이 먼저 끝나야 한다.
  */
 export function AppNavigation(): React.JSX.Element {
   const navigationRef = useNavigationContainerRef<RootStackParamList>()
@@ -82,6 +88,9 @@ export function AppNavigation(): React.JSX.Element {
       onStateChange={(state) => setRouteNames(state?.routeNames ?? [])}
     >
       <RootNavigator />
+      <WorldLeapNoticeModal
+        onOpenCharacterManage={() => navigationRef.navigate('SettingsCharacters')}
+      />
       <ConnectedUpdatePrompt onOpenReleaseNotes={() => navigationRef.navigate('SettingsReleaseNotes')} />
     </NavigationContainer>
   )

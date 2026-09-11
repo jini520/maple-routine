@@ -1,4 +1,5 @@
 import { detectWorldLeap, isChallengersWorld } from '../world-leap'
+import type { StrandedCharacter } from '../world-leap'
 import type { MapleCharacter } from '../../../types'
 
 // 실제로 겪은 사례를 그대로 세운다(2026-09-11). 챌린저스2 의 지내우시가 `character/list` 에서
@@ -28,6 +29,9 @@ const 남 = (over: Partial<MapleCharacter>): MapleCharacter => ({
   ...over,
 })
 
+/** 옮긴 것은 아는데 어디로 갔는지 모르는 결과. */
+const 모름 = (from: StrandedCharacter) => ({ kind: 'unknown', from })
+
 describe('isChallengersWorld', () => {
   it.each(['챌린저스', '챌린저스2'])('%s 는 챌린저스 계열이다', (world) => {
     expect(isChallengersWorld(world)).toBe(true)
@@ -38,68 +42,86 @@ describe('isChallengersWorld', () => {
   })
 })
 
+// 챌린저스에서 조회가 끊기는 길은 리프뿐이라(사용자 판단), 후보를 짚든 못 짚든 **묻는다**.
+// 후보 조건들은 묻는 조건이 아니라 **목적지를 아는 조건**으로 내려갔다.
 describe('detectWorldLeap', () => {
   it('겪은 사례를 그대로 짚는다', () => {
     expect(detectWorldLeap(옛프로필, [새캐릭터, 남({})], new Set())).toEqual({
+      kind: 'confirmed',
       from: 옛프로필,
       to: 새캐릭터,
     })
   })
 
-  it('옛 월드가 챌린저스 계열이 아니면 안 묻는다', () => {
-    // 일반 월드에서 캐릭터가 사라지는 것은 삭제일 수 있다. 그때 동명 캐릭터를 짚으면 남의
-    // 캐릭터를 관리 목록에 넣는다.
-    const 일반 = { ...옛프로필, world: '베라' }
-    expect(detectWorldLeap(일반, [새캐릭터], new Set())).toBeNull()
-  })
-
-  it('월드를 모르면 안 묻는다', () => {
-    expect(detectWorldLeap({ ...옛프로필, world: null }, [새캐릭터], new Set())).toBeNull()
-  })
-
-  it('이름이 같아도 직업이 다르면 안 묻는다', () => {
-    expect(
-      detectWorldLeap(옛프로필, [{ ...새캐릭터, jobClass: '보우마스터' }], new Set()),
-    ).toBeNull()
-  })
-
-  it('이름·직업이 같은 후보가 둘이면 안 묻는다', () => {
-    // 고를 근거가 없다. 앱이 하나를 고르면 그 근거는 응답 순서뿐이다.
-    const 둘째 = { ...새캐릭터, ocid: 'another', world: '스카니아' }
-    expect(detectWorldLeap(옛프로필, [새캐릭터, 둘째], new Set())).toBeNull()
-  })
-
-  it('후보 레벨이 옛 레벨보다 낮으면 안 묻는다', () => {
-    // 리프는 레벨을 유지하고 그 뒤로 오를 수만 있다. 낮으면 동명이인이다.
-    expect(detectWorldLeap(옛프로필, [{ ...새캐릭터, level: 284 }], new Set())).toBeNull()
-  })
-
-  it('후보 레벨이 더 높으면 묻는다', () => {
+  it('후보 레벨이 더 높아도 짚는다', () => {
     // 이전한 뒤 레벨업했을 수 있다.
     const 오른 = { ...새캐릭터, level: 290 }
-    expect(detectWorldLeap(옛프로필, [오른], new Set())).toEqual({ from: 옛프로필, to: 오른 })
+    expect(detectWorldLeap(옛프로필, [오른], new Set())).toEqual({
+      kind: 'confirmed',
+      from: 옛프로필,
+      to: 오른,
+    })
   })
 
-  it('후보가 이미 추적 중이면 안 묻는다', () => {
-    // 사용자가 이미 손을 댄 상태다. 그때 필요한 것은 교체가 아니라 옛 것 해제이고 `✕` 가 한다.
-    expect(detectWorldLeap(옛프로필, [새캐릭터], new Set([새캐릭터.ocid]))).toBeNull()
-  })
-
-  it('후보가 없으면 안 묻는다', () => {
-    expect(detectWorldLeap(옛프로필, [남({})], new Set())).toBeNull()
-  })
-
-  it('옛 레벨을 모르면 레벨 조건을 건너뛰고 나머지로 판정한다', () => {
+  it('옛 레벨을 모르면 레벨 조건을 건너뛰고 짚는다', () => {
     // 모르는 것을 못 넘긴다로 읽으면, 캐시가 레벨을 잃은 사용자에게 영영 안 묻는다.
     const 레벨없음 = { ...옛프로필, level: null }
     expect(detectWorldLeap(레벨없음, [새캐릭터], new Set())).toEqual({
+      kind: 'confirmed',
       from: 레벨없음,
       to: 새캐릭터,
     })
   })
 
-  it('직업을 모르면 안 묻는다', () => {
-    // 레벨과 달리 직업은 **유일성을 세우는 조건**이다. 없으면 이름 하나로만 짚게 된다.
-    expect(detectWorldLeap({ ...옛프로필, jobClass: null }, [새캐릭터], new Set())).toBeNull()
+  describe('안 묻는 경우는 옛 월드를 모를 때뿐이다', () => {
+    it('옛 월드가 챌린저스 계열이 아니면 안 묻는다', () => {
+      // 일반 월드는 장기 미접속으로 조회가 막혔다가 접속하면 풀릴 수 있다(사용자 판단). 그 캐릭터를
+      // 옮겼다고 말하면 안 된다.
+      expect(detectWorldLeap({ ...옛프로필, world: '베라' }, [새캐릭터], new Set())).toBeNull()
+    })
+
+    it('월드를 모르면 안 묻는다', () => {
+      // 챌린저스였는지 모르면 위 규칙을 걸 근거가 없다.
+      expect(detectWorldLeap({ ...옛프로필, world: null }, [새캐릭터], new Set())).toBeNull()
+    })
+  })
+
+  describe('옮긴 것만 알고 어디로 갔는지 모를 때', () => {
+    it('후보가 없으면 모름 으로 묻는다', () => {
+      // 닉네임을 바꾸고 리프한 경우가 여기다. 로스터에는 새 이름이 서 있어 앱이 못 잇는다.
+      expect(detectWorldLeap(옛프로필, [남({})], new Set())).toEqual(모름(옛프로필))
+    })
+
+    it('이름이 같아도 직업이 다르면 모름 이다', () => {
+      const 다른직업 = { ...새캐릭터, jobClass: '보우마스터' }
+      expect(detectWorldLeap(옛프로필, [다른직업], new Set())).toEqual(모름(옛프로필))
+    })
+
+    it('이름·직업이 같은 후보가 둘이면 모름 이다', () => {
+      // 고를 근거가 없다. 앱이 하나를 고르면 그 근거는 응답 순서뿐이다.
+      const 둘째 = { ...새캐릭터, ocid: 'another', world: '스카니아' }
+      expect(detectWorldLeap(옛프로필, [새캐릭터, 둘째], new Set())).toEqual(모름(옛프로필))
+    })
+
+    it('후보 레벨이 옛 레벨보다 낮으면 모름 이다', () => {
+      // 리프는 레벨을 유지하고 그 뒤로 오를 수만 있다. 낮으면 동명이인이다.
+      expect(detectWorldLeap(옛프로필, [{ ...새캐릭터, level: 284 }], new Set())).toEqual(
+        모름(옛프로필),
+      )
+    })
+
+    it('후보가 이미 추적 중이면 모름 이다', () => {
+      // 사용자가 이미 손을 댄 상태다. 그때 할 일은 교체가 아니라 옛 것 해제이고, 그 자리가
+      // 캐릭터 관리라 모달이 보내는 곳과 같다.
+      expect(detectWorldLeap(옛프로필, [새캐릭터], new Set([새캐릭터.ocid]))).toEqual(모름(옛프로필))
+    })
+
+    it('옛 직업을 모르면 모름 이다', () => {
+      // 직업은 후보를 짚는 재료이지 **옮겼는가** 를 정하는 재료가 아니다. 이름 하나로 짚을 수 없을
+      // 뿐이라, 안 묻는 대신 목적지를 비운다.
+      expect(detectWorldLeap({ ...옛프로필, jobClass: null }, [새캐릭터], new Set())).toEqual(
+        모름({ ...옛프로필, jobClass: null }),
+      )
+    })
   })
 })

@@ -27,10 +27,18 @@ export interface StrandedCharacter {
   level: number | null
 }
 
-export interface WorldLeapCandidate {
-  from: StrandedCharacter
-  to: MapleCharacter
-}
+/**
+ * 옮겼다는 사실 하나. **목적지를 아는가로 갈린다.**
+ *
+ * 챌린저스에서 조회가 끊기는 길은 리프뿐이라(사용자 판단 2026-09-11) 묻는 조건은 옛 월드
+ * 하나다. 이름·직업·레벨은 **어디로 갔는지를 짚는 조건**이라, 못 짚어도 안 묻을 이유가 안 된다.
+ *
+ * `unknown` 이 겨냥하는 것은 닉네임을 바꾸고 리프한 경우다. 두 ocid 를 잇는 단서가
+ * 이름·직업·레벨뿐이라 그 사이 `character/list` 를 못 받았으면 바뀐 이름을 알 길이 없다.
+ */
+export type WorldLeapNotice =
+  | { kind: 'confirmed'; from: StrandedCharacter; to: MapleCharacter }
+  | { kind: 'unknown'; from: StrandedCharacter }
 
 /**
  * 챌린저스 계열 월드인가. 지금까지 본 이름은 `챌린저스`·`챌린저스2` 다.
@@ -43,21 +51,24 @@ export function isChallengersWorld(world: string): boolean {
 }
 
 /**
- * 이 캐릭터가 월드 리프를 했다고 **물어도 되는가**. 아니면 `null`.
+ * 이 캐릭터가 **옮겼는가**, 그리고 **어디로 갔는지 아는가**.
  *
- * 다섯 조건을 전부 만족해야 한다. 하나라도 어긋나면 안 묻는다 - 틀리게 물으면 사용자가 남의
- * 캐릭터를 자기 관리 목록에 넣는다.
+ * 묻는 조건은 하나다. 옛 월드가 챌린저스 계열일 것. 챌린저스에서 ocid 가 조회 불가로 굳는 길은
+ * 리프뿐이다(사용자 판단 2026-09-11). 일반 월드는 장기 미접속으로 막혔다가 접속하면 풀릴 수
+ * 있어 같은 말을 할 수 없고, 옛 월드를 모르면 이 규칙을 걸 근거가 없다. 그 둘만 `null` 이다.
+ *
+ * 나머지는 **목적지를 짚는 조건**이고, 전부 맞아야 `confirmed` 다. 하나라도 어긋나면 `unknown`
+ * 이다. 틀리게 짚으면 사용자가 남의 캐릭터를 자기 관리 목록에 넣는다.
  *
  * | 조건 | 왜 |
  * |---|---|
- * | 옛 월드가 챌린저스 계열 | 일반 월드에서 캐릭터가 사라지는 것은 **삭제**일 수 있다 |
- * | 이름·직업이 같은 후보가 정확히 하나 | 이름만으로는 유일하지 않다. 둘 이상이면 고를 근거가 없다 |
+ * | 옛 직업을 안다 | 이름만으로는 유일하지 않다 |
+ * | 이름·직업이 같은 후보가 정확히 하나 | 둘 이상이면 고를 근거가 응답 순서뿐이다 |
  * | 후보 레벨 ≥ 옛 레벨 | 리프는 레벨을 유지하고 그 뒤로 오를 수만 있다 |
- * | 후보가 추적 중이 아님 | 이미 추적 중이면 사용자가 손을 댄 것이고, 그때 할 일은 옛 것 해제다 |
+ * | 후보가 추적 중이 아님 | 이미 추적 중이면 사용자가 손을 댄 것이라 할 일이 해제다 |
  *
- * **모르는 값의 처지가 둘로 갈린다.** 옛 레벨을 모르면 그 조건만 건너뛴다(모름을 못 넘긴다로
- * 읽으면 캐시가 레벨을 잃은 사용자에게 영영 안 묻는다). 옛 직업을 모르면 **안 묻는다** - 직업은
- * 후보의 유일성을 세우는 조건이라, 빠지면 이름 하나로 짚는 것이 된다.
+ * 옛 레벨만 처지가 다르다. 모르면 그 조건을 건너뛴다. 모름을 못 넘긴다로 읽으면 캐시가 레벨을
+ * 잃은 사용자에게 영영 목적지를 못 짚어 준다.
  *
  * 후보의 월드가 챌린저스 계열인지는 안 본다. 여기까지 온 캐릭터가 또 다른 챌린저스 월드에
  * 있다면 그것도 이전이라 물을 이유가 같다.
@@ -70,22 +81,24 @@ export function detectWorldLeap(
   stranded: StrandedCharacter,
   roster: readonly MapleCharacter[],
   trackedOcids: ReadonlySet<string>,
-): WorldLeapCandidate | null {
+): WorldLeapNotice | null {
   if (stranded.world === null || !isChallengersWorld(stranded.world)) {
     return null
   }
-  if (stranded.jobClass === null) {
-    return null
-  }
 
-  const matches = roster.filter(
-    (character) =>
-      character.name === stranded.name &&
-      character.jobClass === stranded.jobClass &&
-      character.ocid !== stranded.ocid &&
-      !trackedOcids.has(character.ocid) &&
-      (stranded.level === null || character.level >= stranded.level),
-  )
+  const matches =
+    stranded.jobClass === null
+      ? []
+      : roster.filter(
+          (character) =>
+            character.name === stranded.name &&
+            character.jobClass === stranded.jobClass &&
+            character.ocid !== stranded.ocid &&
+            !trackedOcids.has(character.ocid) &&
+            (stranded.level === null || character.level >= stranded.level),
+        )
 
-  return matches.length === 1 ? { from: stranded, to: matches[0]! } : null
+  return matches.length === 1
+    ? { kind: 'confirmed', from: stranded, to: matches[0]! }
+    : { kind: 'unknown', from: stranded }
 }

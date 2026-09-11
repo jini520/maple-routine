@@ -1651,9 +1651,11 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
 
       await getCharacterPickerRoster(jest.fn(), { accountId: 'acc-1' })
 
-      const { candidate } = useWorldLeapStore.getState()
-      expect(candidate?.from.ocid).toBe(옛ocid)
-      expect(candidate?.to.ocid).toBe('new-ocid')
+      expect(useWorldLeapStore.getState().notice).toMatchObject({
+        kind: 'confirmed',
+        from: { ocid: 옛ocid },
+        to: { ocid: 'new-ocid' },
+      })
     })
 
     // `job_class` 는 이 기능과 함께 생긴 칸이라 옛 기기의 행에는 비어 있다. 그런데 이전으로
@@ -1679,7 +1681,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
 
       await getCharacterPickerRoster(jest.fn(), { accountId: 'acc-1' })
 
-      expect(useWorldLeapStore.getState().candidate?.to.ocid).toBe('new-ocid')
+      expect(useWorldLeapStore.getState().notice).toMatchObject({ kind: 'confirmed', to: { ocid: 'new-ocid' } })
     })
 
     // 스냅샷이 통째로 없는 기기도 있다(기록만 있고 프로필을 쓴 적 없는 경우). 캐시가 들고 있으면
@@ -1705,7 +1707,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
 
       await getCharacterPickerRoster(jest.fn(), { accountId: 'acc-1' })
 
-      expect(useWorldLeapStore.getState().candidate?.to.ocid).toBe('new-ocid')
+      expect(useWorldLeapStore.getState().notice).toMatchObject({ kind: 'confirmed', to: { ocid: 'new-ocid' } })
     })
 
     // 스냅샷이 챌린저스가 아니면 삭제일 수 있다. 그때 동명 캐릭터를 짚으면 안 된다.
@@ -1726,7 +1728,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
 
       await getCharacterPickerRoster(jest.fn(), { accountId: 'acc-1' })
 
-      expect(useWorldLeapStore.getState().candidate).toBeNull()
+      expect(useWorldLeapStore.getState().notice).toBeNull()
     })
   })
 
@@ -2356,5 +2358,102 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
 
     const last = onUpdate.mock.calls.at(-1)?.[0] as Array<{ name: string }>
     expect(last.map((entry) => entry.name)).toEqual(['최고레벨', '한글캐릭', 'Alpha'])
+  })
+})
+
+// 묻는 자리가 캐릭터 관리 화면 하나였다. 그 화면을 안 여는 사용자에게는 표식만 붙고 고칠 길이
+// 영영 안 닿아, 동기화에서도 판정이 돌게 했다. 콜드 스타트는 이 경로를 반드시 지난다.
+describe('동기화가 월드 리프를 짚는다', () => {
+  const 옛ocid = 'stranded-ocid'
+  const 스냅샷 = new Map([
+    [
+      옛ocid,
+      {
+        ocid: 옛ocid,
+        name: '지내우시',
+        world: '챌린저스2',
+        jobClass: '레테',
+        level: 285,
+        imageUrl: '',
+        updatedAt: '2026-09-11T00:00:00.000Z',
+      },
+    ],
+  ])
+
+  const 새캐릭터: MapleCharacter = {
+    ocid: 'new-ocid',
+    name: '지내우시',
+    world: '엘리시움',
+    jobClass: '레테',
+    level: 285,
+  }
+
+  beforeEach(() => {
+    resetWorldLeapStoreForTests()
+    getCharacterProfilesMock.mockResolvedValue(스냅샷)
+    getCachedCharacterBasicMock.mockResolvedValue(null)
+    fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
+    // 목록에서 빠진 ocid 를 따로 물으면 조회 불가라고 답한다(실제 응답은 200 + 전 필드 null).
+    fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
+      if (ocid === 옛ocid) throw new NexonNoCharacterError('캐릭터가 없습니다')
+      return basicProfile({ name: '지내우시', level: 285 })
+    })
+  })
+
+  it('목적지를 짚으면 그 후보를 세운다', async () => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1'), 새캐릭터])])
+
+    await syncSchedules([옛ocid, 'ocid-1'])
+
+    expect(useWorldLeapStore.getState().notice).toMatchObject({
+      kind: 'confirmed',
+      from: { ocid: 옛ocid },
+      to: { ocid: 'new-ocid' },
+    })
+  })
+
+  // 닉네임을 바꾸고 리프하면 로스터에 새 이름이 서서 앱이 두 ocid 를 못 잇는다. 그래도 챌린저스에서
+  // 조회가 끊긴 이상 옮긴 것은 맞으므로, 목적지만 비우고 묻는다.
+  it('목적지를 못 짚어도 묻는다', async () => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1')])])
+
+    await syncSchedules([옛ocid, 'ocid-1'])
+
+    expect(useWorldLeapStore.getState().notice).toMatchObject({
+      kind: 'unknown',
+      from: { ocid: 옛ocid, name: '지내우시' },
+    })
+  })
+
+  // **순서가 계약이다.** `persistUnavailable` 이 먼저 돌면 원장에 표식을 적어 프로브가 건너뛰고,
+  // 그러면 목록에 없다는 것만으로 판정한 셈이 된다. 넥슨에게 실제로 묻고 나서 짚어야 한다.
+  it('표식을 적기 전에 넥슨에게 직접 묻는다', async () => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1'), 새캐릭터])])
+
+    await syncSchedules([옛ocid, 'ocid-1'])
+
+    expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 옛ocid)
+  })
+
+  // 옛 월드가 챌린저스가 아니면 조회가 막힌 이유가 리프라고 단정할 수 없다(일반 월드는 장기
+  // 미접속으로 막혔다가 접속하면 풀릴 수 있다).
+  it('옛 월드가 챌린저스 계열이 아니면 안 묻는다', async () => {
+    getCharacterProfilesMock.mockResolvedValue(
+      new Map([[옛ocid, { ...스냅샷.get(옛ocid)!, world: '베라' }]]),
+    )
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1'), 새캐릭터])])
+
+    await syncSchedules([옛ocid, 'ocid-1'])
+
+    expect(useWorldLeapStore.getState().notice).toBeNull()
+  })
+
+  // 판정의 입구가 추적 목록이다. 해제하면 그 ocid 가 후보에조차 안 든다.
+  it('추적 목록에서 빠진 캐릭터는 안 묻는다', async () => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1'), 새캐릭터])])
+
+    await syncSchedules(['ocid-1'])
+
+    expect(useWorldLeapStore.getState().notice).toBeNull()
   })
 })

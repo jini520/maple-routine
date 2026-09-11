@@ -10,6 +10,10 @@ import { act, renderHook, waitFor } from '@testing-library/react-native'
 
 import { getRepresentativeCharacter } from '../../storage/character-selection'
 import { moveOcid, useSelectionDraft, type SelectionDraft } from '../useSelectionDraft'
+import {
+  resetWorldLeapStoreForTests,
+  useWorldLeapStore,
+} from '../../features/character-manage/world-leap-store'
 
 // 라이브러리가 끌기 중에 쓰는 재배열 함수. 패키지 얼굴에 없어 깊은 경로로 가져오고, 그쪽에는
 // 타입이 안 딸려 오므로 **우리가 부르는 모양만** 여기 적는다(넷째 인자 `fixedItemKeys` 는 안 쓴다).
@@ -303,24 +307,35 @@ describe('replaceSelection', () => {
 
 // 월드 이전 확인이 추적 목록의 ocid 를 갈아끼울 때, 손대던 초안도 함께 가야 한다. 안 그러면
 // 초안이 든 옛 ocid 가 저장 버튼 한 번에 다시 쓰여 방금 뺀 죽은 캐릭터가 되살아난다.
-describe('renameCharacter', () => {
+//
+// **모달이 이 훅을 부르지 않는다.** 모달은 화면 밖(`AppNavigation`)에 살아 초안에 손이 닿지
+// 않으므로, 초안이 스토어의 `replaced` 를 구독한다. 그래서 여기서도 스토어를 몰아 잰다.
+describe('월드 이전 교체를 초안이 이어받는다', () => {
+  const 갈아끼움 = async (from: string, to: string): Promise<void> => {
+    await act(async () => {
+      useWorldLeapStore.setState({ replaced: { from, to } })
+    })
+  }
+
+  beforeEach(() => {
+    resetWorldLeapStoreForTests()
+  })
+
   it('초안을 손댄 뒤라도 그 자리의 ocid 가 새 것으로 바뀐다', async () => {
     const view = await 초안()
     await act(async () => {
       view.result.current.addCharacter('a4')
     })
-    await act(async () => {
-      view.result.current.renameCharacter('a2', 'b2')
-    })
+
+    await 갈아끼움('a2', 'b2')
 
     expect(view.result.current.selectedOcids).toEqual(['a1', 'b2', 'a3', 'a4'])
   })
 
   it('초안을 안 손댔으면 아무것도 안 만든다. 저장된 목록이 그대로 보인다', async () => {
     const view = await 초안()
-    await act(async () => {
-      view.result.current.renameCharacter('a2', 'b2')
-    })
+
+    await 갈아끼움('a2', 'b2')
 
     // 초안을 새로 만들면 `isDirty` 가 참이 되어, 사용자가 손댄 적 없는데 저장이 켜진다.
     expect(view.result.current.selectedOcids).toEqual(저장된목록)
@@ -332,9 +347,8 @@ describe('renameCharacter', () => {
     await act(async () => {
       view.result.current.addCharacter('a4')
     })
-    await act(async () => {
-      view.result.current.renameCharacter('없는', 'b2')
-    })
+
+    await 갈아끼움('없는', 'b2')
 
     expect(view.result.current.selectedOcids).toEqual(['a1', 'a2', 'a3', 'a4'])
   })
@@ -347,10 +361,18 @@ describe('renameCharacter', () => {
       view.result.current.setRepresentative('a2')
     })
     await view.rerender({ ocids: ['a1', 'b2', 'a3'] })
-    await act(async () => {
-      view.result.current.renameCharacter('a2', 'b2')
-    })
+
+    await 갈아끼움('a2', 'b2')
 
     expect(view.result.current.representativeOcid).toBe('b2')
+  })
+
+  // 이 훅이 뒤늦게 마운트되면 스토어에 이미 값이 있다. 그 자리에 옛 ocid 가 없어 무동작이다.
+  it('이미 적힌 교체를 뒤늦게 읽어도 손대지 않은 초안을 안 만든다', async () => {
+    useWorldLeapStore.setState({ replaced: { from: 'a2', to: 'b2' } })
+
+    const view = await 초안()
+
+    expect(view.result.current.isDirty).toBe(false)
   })
 })
