@@ -108,6 +108,7 @@ import { loadMesoRate } from '../../features/cashbook/meso-rate'
 import { findPortraitSlug } from '../boss-profit/character-groups'
 import { useDataFreshness } from '../../features/refresh/freshness'
 import { useLedgerData } from '../../features/ledger/useLedgerData'
+import { tapFeedback } from '../../native/haptics'
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { useToastStore } from '../../features/toast/store'
 import { IncomeSheet, type IncomeDraft } from './IncomeSheet'
@@ -144,7 +145,11 @@ function MonthArrow(props: {
       aria-label={props.label}
       aria-disabled={props.disabled}
       disabled={props.disabled}
-      onPress={props.onPress}
+      // 화면은 그대로여도 보는 기간이 바뀐다. 꺼진 화살표는 누름 자체가 안 들어와 조용하다.
+      onPress={() => {
+        tapFeedback()
+        props.onPress()
+      }}
       className={`h-7 w-7 items-center justify-center rounded-full border border-border${
         props.disabled ? ' opacity-30' : ''
       }`}
@@ -1013,7 +1018,10 @@ export function CashbookScreen(): React.JSX.Element {
                     <Button
                       variant="text"
                       size="compact"
-                      onPress={goToToday}
+                      onPress={() => {
+                        tapFeedback()
+                        goToToday()
+                      }}
                       aria-label="오늘로 이동"
                     >
                       오늘

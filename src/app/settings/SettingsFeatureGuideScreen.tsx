@@ -9,7 +9,8 @@
  * **컴포넌트는 하나다**. `RootNavigator` 가 두 이름에 같은 것을 꽂는다(`routes.ts` 의
  * `FEATURE_GUIDE_ROUTE_NAMES`). 사본을 두면 같은 글이 두 벌이 되어 반드시 갈라진다.
  */
-import { ArrowLeftIcon, Text } from '../../components/atoms'
+import { Text } from '../../components/atoms'
+import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { useEffect, useRef, useState } from 'react'
 import type { ScrollView as ScrollViewType } from 'react-native'
 import { Image, Pressable, View } from 'react-native'
@@ -86,14 +87,7 @@ export function SettingsFeatureGuideScreen(): React.JSX.Element | null {
       header={
         <PageHeader>
           <PageHeaderTitleRow className="gap-2">
-            <Pressable
-              role="button"
-              aria-label="뒤로"
-              onPress={() => navigation.goBack()}
-              className="-ml-1 p-1"
-            >
-              <ArrowLeftIcon className="h-5 w-5 text-text-muted" strokeWidth={2} aria-hidden />
-            </Pressable>
+            <BackButton onPress={() => navigation.goBack()} />
             {/* `min-w-0` + 한 줄 말줄임. 말줄임은 글자 쪽 프롭이다. */}
             <Text numberOfLines={1} className="min-w-0 flex-1 text-lg font-semibold text-text">
               {guide.title}

@@ -460,7 +460,7 @@ describe('탭 이동에만 햅틱이 난다', () => {
 
   beforeEach(() => {
     tap.mockClear()
-    setHapticsPort({ tap })
+    setHapticsPort({ tap, select: async () => {} })
   })
 
   it('비활성 탭을 누르면 한 번 난다', async () => {

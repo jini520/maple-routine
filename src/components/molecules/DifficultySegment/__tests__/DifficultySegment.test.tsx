@@ -3,6 +3,7 @@
 import { fireEvent } from '@testing-library/react-native'
 
 import { findAllOfType, flattenStyle, renderAtom } from '../../../__tests__/render-atom'
+import { __resetNativePortsForTest, setHapticsPort } from '../../../../native/ports'
 import { DifficultySegment } from '../DifficultySegment'
 
 describe('DifficultySegment', () => {
@@ -93,4 +94,36 @@ describe('DifficultySegment', () => {
     expect(onSelect).not.toHaveBeenCalled()
   })
 
+})
+
+// 선택이 실제로 바뀔 때만 손끝이 답한다. 꺼진 칩은 누름 자체가 막힌다.
+describe('DifficultySegment 의 촉각', () => {
+  const select = jest.fn(async () => undefined)
+
+  beforeEach(() => {
+    select.mockClear()
+    setHapticsPort({ tap: async () => {}, select })
+  })
+
+  afterEach(__resetNativePortsForTest)
+
+  it('다른 칩을 누르면 한 번 난다', async () => {
+    const { getByText } = await renderAtom(
+      <DifficultySegment difficulties={['노멀', '하드']} selected="노멀" onSelect={jest.fn()} />,
+    )
+
+    fireEvent.press(getByText('하드'))
+
+    expect(select).toHaveBeenCalledTimes(1)
+  })
+
+  it('고른 칩을 다시 눌러도 안 난다', async () => {
+    const { getByText } = await renderAtom(
+      <DifficultySegment difficulties={['노멀', '하드']} selected="노멀" onSelect={jest.fn()} />,
+    )
+
+    fireEvent.press(getByText('노멀'))
+
+    expect(select).not.toHaveBeenCalled()
+  })
 })

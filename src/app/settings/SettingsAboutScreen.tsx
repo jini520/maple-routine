@@ -11,12 +11,13 @@
  * @see docs/features/live-update.md 업데이트 상태 정책
  */
 import { useEffect } from 'react'
-import { Pressable, View } from 'react-native'
+import { View } from 'react-native'
 
 import { useLiveUpdateStore } from '../../features/live-update/store'
 
 import packageJson from '../../../package.json'
-import { ArrowLeftIcon, Card, Text } from '../../components/atoms'
+import { Card, Text } from '../../components/atoms'
+import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -41,14 +42,7 @@ export function SettingsAboutScreen(): React.JSX.Element {
       header={
         <PageHeader>
           <PageHeaderTitleRow className="gap-2">
-            <Pressable
-              role="button"
-              aria-label="뒤로"
-              onPress={() => navigation.goBack()}
-              className="-ml-1 p-1"
-            >
-              <ArrowLeftIcon className="h-5 w-5 text-text-muted" strokeWidth={2} aria-hidden />
-            </Pressable>
+            <BackButton onPress={() => navigation.goBack()} />
             <Text className="text-lg font-semibold text-text">앱 정보</Text>
           </PageHeaderTitleRow>
         </PageHeader>

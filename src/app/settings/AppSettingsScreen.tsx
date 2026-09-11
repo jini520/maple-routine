@@ -10,7 +10,7 @@
  * 달지 않는다. 두 무리를 덮는 제목은 행 이름보다 덜 구체적이라 읽는 사람이 얻는 것이 없다.
  */
 import { useEffect, useState } from 'react'
-import { Pressable, View } from 'react-native'
+import { View } from 'react-native'
 
 import type { CacheDataSizes } from '../../features/settings/cache-data'
 import { loadCacheDataSizes } from '../../features/settings/cache-data'
@@ -21,7 +21,8 @@ import { useContentSchedulerStore } from '../../features/content-scheduler/store
 import { formatBytes } from '../../lib/format-bytes'
 
 import packageJson from '../../../package.json'
-import { ArrowLeftIcon, Badge, Card, Text } from '../../components/atoms'
+import { Badge, Card, Text } from '../../components/atoms'
+import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -75,14 +76,7 @@ export function AppSettingsScreen(): React.JSX.Element {
         header={
           <PageHeader>
             <PageHeaderTitleRow className="gap-2">
-              <Pressable
-                role="button"
-                aria-label="뒤로"
-                onPress={() => navigation.goBack()}
-                className="-ml-1 p-1"
-              >
-                <ArrowLeftIcon className="h-5 w-5 text-text-muted" strokeWidth={2} aria-hidden />
-              </Pressable>
+              <BackButton onPress={() => navigation.goBack()} />
               <Text className="text-lg font-semibold text-text">설정</Text>
             </PageHeaderTitleRow>
           </PageHeader>

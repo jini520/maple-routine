@@ -20,7 +20,8 @@ import {
 } from '../../data/feature-guides'
 import type { FeatureGuideGroup } from '../../types'
 
-import { ArrowLeftIcon, BookOpenIcon, Card, ChevronRightIcon, Text } from '../../components/atoms'
+import { BookOpenIcon, Card, ChevronRightIcon, Text } from '../../components/atoms'
+import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
@@ -59,14 +60,7 @@ export function SettingsFeatureGuideListScreen(): React.JSX.Element {
       header={
         <PageHeader>
           <PageHeaderTitleRow className="gap-2">
-            <Pressable
-              role="button"
-              aria-label="뒤로"
-              onPress={() => navigation.goBack()}
-              className="-ml-1 p-1"
-            >
-              <ArrowLeftIcon className="h-5 w-5 text-text-muted" strokeWidth={2} aria-hidden />
-            </Pressable>
+            <BackButton onPress={() => navigation.goBack()} />
             <Text className="text-lg font-semibold text-text">기능 설명</Text>
           </PageHeaderTitleRow>
         </PageHeader>

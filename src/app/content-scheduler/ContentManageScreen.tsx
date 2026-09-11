@@ -19,7 +19,6 @@ import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { useToastStore } from '../../features/toast/store'
 
 import {
-  ArrowLeftIcon,
   Badge,
   CastleIcon,
   FlagIcon,
@@ -30,6 +29,7 @@ import {
   SwordsIcon,
   Text,
 } from '../../components/atoms'
+import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
 import { CharacterUnavailableNotice } from '../../components/organisms/CharacterUnavailable/CharacterUnavailableNotice'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
@@ -162,9 +162,7 @@ export function ContentManageScreen(): React.JSX.Element {
         <PageHeader>
           <PageHeaderTitleRow className="justify-between">
             <View className="flex-row items-center gap-2">
-              <Pressable role="button" aria-label="뒤로" onPress={() => navigation.goBack()} className="-ml-1 p-1">
-                <ArrowLeftIcon className="h-5 w-5 text-text-muted" strokeWidth={2} aria-hidden />
-              </Pressable>
+              <BackButton onPress={() => navigation.goBack()} />
               <Text className="text-lg font-semibold text-text">컨텐츠 관리</Text>
             </View>
             {/* 읽기 전용 칩이던 자리. 이 화면에서 캐릭터를 갈아 가며 쓰는데도

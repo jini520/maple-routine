@@ -10,7 +10,7 @@
  * @see docs/features/settings.md 정책
  */
 import { useEffect, useState } from 'react'
-import { Pressable, View } from 'react-native'
+import { View } from 'react-native'
 import { reloadAppAsync } from 'expo'
 
 import type { CacheDataSizes } from '../../features/settings/cache-data'
@@ -19,7 +19,8 @@ import { useSettingsStore } from '../../features/settings/store'
 import { formatBytes } from '../../lib/format-bytes'
 import type { CacheDataSelection } from '../../storage/cache-data'
 
-import { ArrowLeftIcon, Card, Text } from '../../components/atoms'
+import { Card, Text } from '../../components/atoms'
+import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -76,14 +77,7 @@ export function SettingsAccountDataScreen(
         header={
           <PageHeader>
             <PageHeaderTitleRow className="gap-2">
-              <Pressable
-                role="button"
-                aria-label="뒤로"
-                onPress={() => navigation.goBack()}
-                className="-ml-1 p-1"
-              >
-                <ArrowLeftIcon className="h-5 w-5 text-text-muted" strokeWidth={2} aria-hidden />
-              </Pressable>
+              <BackButton onPress={() => navigation.goBack()} />
               <Text className="text-lg font-semibold text-text">계정 및 데이터</Text>
             </PageHeaderTitleRow>
           </PageHeader>

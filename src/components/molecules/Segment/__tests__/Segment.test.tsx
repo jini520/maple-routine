@@ -7,6 +7,7 @@
 import { fireEvent } from '@testing-library/react-native'
 
 import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
+import { __resetNativePortsForTest, setHapticsPort } from '../../../../native/ports'
 import { Segment } from '../Segment'
 
 describe('Segment', () => {
@@ -100,5 +101,37 @@ describe('Segment', () => {
     )
 
     expect(view.getByTestId('segment-thumb').props.pointerEvents).toBe('none')
+  })
+})
+
+// 선택이 실제로 바뀔 때만 손끝이 답한다. 이미 고른 칸을 다시 누르는 것은 바뀌는 것이 없다.
+describe('Segment 의 촉각', () => {
+  const select = jest.fn(async () => undefined)
+
+  beforeEach(() => {
+    select.mockClear()
+    setHapticsPort({ tap: async () => {}, select })
+  })
+
+  afterEach(__resetNativePortsForTest)
+
+  it('다른 칸을 누르면 한 번 난다', async () => {
+    const { getByLabelText } = await renderAtom(
+      <Segment options={['메소', '메포']} selected="메소" onSelect={jest.fn()} />,
+    )
+
+    fireEvent.press(getByLabelText('메포'))
+
+    expect(select).toHaveBeenCalledTimes(1)
+  })
+
+  it('고른 칸을 다시 눌러도 안 난다', async () => {
+    const { getByLabelText } = await renderAtom(
+      <Segment options={['메소', '메포']} selected="메소" onSelect={jest.fn()} />,
+    )
+
+    fireEvent.press(getByLabelText('메소'))
+
+    expect(select).not.toHaveBeenCalled()
   })
 })

@@ -38,7 +38,6 @@ import { getItemIconUrl } from '../../lib/assets/asset-lookup'
 import type { RecordedDrop } from '../../types/drops'
 
 import {
-  ArrowLeftIcon,
   Badge,
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -46,12 +45,14 @@ import {
   ProfitIcon,
   Text,
 } from '../../components/atoms'
+import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
+import { tapFeedback } from '../../native/haptics'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { CharacterAvatar } from '../../components/molecules/CharacterAvatar/CharacterAvatar'
@@ -220,14 +221,7 @@ export function DropPriceScreen(): React.JSX.Element {
           // 안전영역을 `useTopSafeAreaPx()` 로 받는 것도 같다.
           <View testID="page-header" className="z-10 px-4" style={{ paddingTop: topSafeAreaPx }}>
             <PageHeaderTitleRow className="gap-1">
-              <Pressable
-                role="button"
-                onPress={() => navigation.goBack()}
-                aria-label="뒤로"
-                className="-ml-2 h-9 w-9 items-center justify-center"
-              >
-                <ArrowLeftIcon className="h-5 w-5 text-text" strokeWidth={2} aria-hidden />
-              </Pressable>
+              <BackButton size="regular" onPress={() => navigation.goBack()} />
               <Text className="text-lg font-semibold text-text">아이템 가격 입력</Text>
             </PageHeaderTitleRow>
           </View>
@@ -242,7 +236,11 @@ export function DropPriceScreen(): React.JSX.Element {
           <View className="flex-row items-center justify-center gap-4">
             <Pressable
               role="button"
-              onPress={() => setWeek(getAdjacentPeriodKey(cycle, week, 'prev'))}
+              // 화면은 그대로여도 보는 기간이 바뀐다. 꺼진 화살표는 누름 자체가 안 들어와 조용하다.
+              onPress={() => {
+                tapFeedback()
+                setWeek(getAdjacentPeriodKey(cycle, week, 'prev'))
+              }}
               disabled={isEarliestNavigablePeriod(cycle, week)}
               aria-label="이전 기간"
               className={`h-7 w-7 items-center justify-center rounded-full border border-border${
@@ -261,7 +259,10 @@ export function DropPriceScreen(): React.JSX.Element {
 
             <Pressable
               role="button"
-              onPress={() => setWeek(getAdjacentPeriodKey(cycle, week, 'next'))}
+              onPress={() => {
+                tapFeedback()
+                setWeek(getAdjacentPeriodKey(cycle, week, 'next'))
+              }}
               disabled={isLatestPeriod(cycle, week, now)}
               aria-label="다음 기간"
               className={`h-7 w-7 items-center justify-center rounded-full border border-border${

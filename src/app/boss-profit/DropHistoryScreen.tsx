@@ -10,7 +10,7 @@
  * `useDropHistoryStore.load()` 가 전 기간 조회·획득 불가 필터·가뭄 집계를 전부 갖는다.
  */
 import { useEffect, useState } from 'react'
-import { Image, Pressable, View } from 'react-native'
+import { Image, View } from 'react-native'
 
 import {
   useDropHistoryStore,
@@ -32,7 +32,8 @@ import type {
 import { getItemIconUrl } from '../../lib/assets/asset-lookup'
 import { isValuableDrop } from '../../lib/drop/valuable-drops'
 
-import { ArrowLeftIcon, MapleLeaf, ScrollTextIcon, Text } from '../../components/atoms'
+import { MapleLeaf, ScrollTextIcon, Text } from '../../components/atoms'
+import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
@@ -265,14 +266,7 @@ export function DropHistoryScreen(): React.JSX.Element {
         // 이어야 가격 화면과 나란히 열릴 때 제목 높이가 안 갈린다. 그 값이 `useTopSafeAreaPx()` 다.
         <View testID="page-header" className="z-10 px-4" style={{ paddingTop: topSafeAreaPx }}>
           <PageHeaderTitleRow className="gap-1">
-            <Pressable
-              role="button"
-              onPress={() => navigation.goBack()}
-              aria-label="뒤로"
-              className="-ml-2 h-9 w-9 items-center justify-center"
-            >
-              <ArrowLeftIcon className="h-5 w-5 text-text" strokeWidth={2} aria-hidden />
-            </Pressable>
+            <BackButton size="regular" onPress={() => navigation.goBack()} />
             <Text className="text-lg font-semibold text-text">히스토리</Text>
           </PageHeaderTitleRow>
         </View>

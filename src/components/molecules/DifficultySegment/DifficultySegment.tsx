@@ -1,6 +1,7 @@
 import { Pressable, View } from 'react-native'
 
 import { Badge } from '../../atoms'
+import { selectionFeedback } from '../../../native/haptics'
 import type { BossDifficulty } from '../../../types'
 
 export function DifficultySegment(props: {
@@ -19,8 +20,11 @@ export function DifficultySegment(props: {
             role="button"
             aria-selected={isSelected}
             disabled={props.disabled === true}
+            // 두드림은 선택이 실제로 바뀔 때만이다. 안 바뀌는 누름에 내면 손끝이 거짓을 말한다.
             onPress={() => {
-              if (!isSelected) props.onSelect(difficulty)
+              if (isSelected) return
+              selectionFeedback()
+              props.onSelect(difficulty)
             }}
             className={`rounded-full${isSelected ? '' : ' opacity-40'}`}
           >

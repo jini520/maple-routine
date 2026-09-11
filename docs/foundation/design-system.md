@@ -762,7 +762,27 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
   - **광고 게이트는 그룹 이동에만**(ADR-090 결정 3 축소). 하위 이동과 ← 는 게이트 밖.
   - **여섯 번째 그룹은 안 들어간다**. 360dp 에서 칸이 64dp 라 ‘유틸리티’가 이미 하한이다. 늘릴 땐 라벨 규칙부터 다시 정할 것.
   - **활성 탭을 두 번 두드리면 그 화면이 맨 위로 간다**([[ADR-234]] 결정 1~3). 같은 항목 · 300ms 이내가 판정의 전부이고 짝을 이루면 기록을 지운다(세 번째 누름은 다시 첫 누름이다). 바가 화면 밖이라 과녁은 **라우트 이름**으로 찾는다(`navigation/scroll-to-top.ts`). 등록은 `ScreenScroll` 하나가 하고, 화면 안의 버튼은 `useScrollToTop()` 으로 같은 길을 쓴다.
-  - **햅틱은 실제로 이동이 일어날 때만 낸다**([[ADR-234]] 결정 4~5). 비활성 탭 누름과 `←` 에 나고([[ADR-234]] 정정 1), 활성 탭 재누름·최상단 이동에는 없다. 가르는 기준은 **화면이 바뀌는가**다. 가장자리 스와이프는 시스템 제스처라 여전히 조용하다. iOS 는 `impactAsync(Light)` · 안드로이드는 `performAndroidHapticsAsync(Virtual_Key)` — 그쪽 `impactAsync` 는 `Vibrator` 흉내라 시스템 촉각 설정을 무시한다. 실패는 삼킨다(장치가 없거나 사용자가 껐다고 이동이 막히면 안 된다).
+  - **햅틱은 누름이 실제로 무언가를 바꿀 때 낸다**([[ADR-234]] 결정 4~5 · 정정 1~3). 기준은 처음에 **화면이 바뀌는가**였다가 정정 2 로 **누른 결과로 무엇이 바뀌는가**로 넓어졌다. 기간 이동과 세그먼트는 화면이 그대로여도 보는 기간과 고른 값이 바뀐다.
+    ```
+    두드리는 자리 넷
+      하단바      탭 이동 · `←` (BottomBar.tsx)
+      세그먼트     Segment · TabSegment · DifficultySegment 부품 셋이 든다(사용처 18곳)
+      기간 이동    CashbookScreen · BossProfitScreen · DropPriceScreen 의 이전 · 다음 · `오늘`
+      페이지 뒤로   components/molecules/BackButton 하나가 든다(사용처 15곳)
+    침묵하는 자리
+      활성 탭 재누름 · 최상단 이동 · 이미 고른 세그먼트 칸 · 끝 기간의 꺼진 화살표
+      시트 안의 단계 뒤로 · 가계부 입력 시트의 `하루 앞으로`·`하루 뒤로`(입력 필드다)
+      가장자리 스와이프 · 안드로이드 시스템 뒤로(완료 시점을 우리 코드가 안 받는다)
+    ```
+  - **부르는 함수는 둘이다**(`native/haptics.ts`). `tapFeedback()` 은 **눌러서 어딘가로 갔다**, `selectionFeedback()` 은 **고른 값이 바뀌었다**. 뒤쪽은 세그먼트 셋만 부른다. 세기를 고르는 인자는 없다. 자리마다 다른 세기가 붙으면 앱 전체의 촉감이 갈린다.
+
+    | | 이동(`tap`) | 선택(`select`) |
+    |---|---|---|
+    | iOS | `impactAsync(Light)` | `selectionAsync()` |
+    | Android | `performAndroidHapticsAsync(Virtual_Key)` | `performAndroidHapticsAsync(Clock_Tick)` |
+
+    안드로이드에서 `impactAsync`·`selectionAsync` 를 안 쓴다. 그쪽 구현이 `Vibrator` 흉내라 시스템 촉각 설정을 무시한다. 이름이 더 맞는 `Segment_Tick` 도 안 쓴다. API 34+ 라 그 아래 기기에서는 거절되고, 거절은 삼켜지므로 두드림이 아예 안 난다. 실패를 삼키는 것은 장치가 없거나 사용자가 껐다고 누름이 막히면 안 되기 때문이다.
+  - **새 페이지의 `←` 는 `BackButton` 을 쓴다**. 두드림을 호출부마다 적으면 다음 페이지가 빠뜨리고, 그 페이지에서만 손끝이 조용한 것을 아무도 못 본다. `size` 는 `compact`(28px · `text-text-muted`, 설정 하위 화면들)와 `regular`(36px · `text-text`, 가격 입력 · 히스토리) 둘이다.
 - **안전영역 페이드: RN 은 ‘덮지 않고 깎는다’** ([[ADR-134]], 2026-08-14). 콘텐츠가 크롬과 겹치는 자리(상단 상태바 밑 · 하단 홈 인디케이터)에서 **알파가 0으로 간다.** 배경색을 덮는 스크림이 아니다. 그러면 벽지 테마에서 정지 상태에도 띠가 보여 [[ADR-133]] 이 걷어낸 상태로 돌아간다.
   ```
   자리    ScreenScroll (화면 셸 하나). 마스크 상자 = 스크롤포트. 전역 오버레이로 두면 떠 있는

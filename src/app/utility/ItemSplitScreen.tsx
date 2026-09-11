@@ -13,7 +13,8 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { ArrowLeftIcon, Card, Text, TextInput } from '../../components/atoms'
+import { Card, Text, TextInput } from '../../components/atoms'
+import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { PartySizeStepper } from '../../components/molecules/PartySizeStepper/PartySizeStepper'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
@@ -108,14 +109,7 @@ export function ItemSplitScreen(): React.JSX.Element {
       header={
         <PageHeader>
           <PageHeaderTitleRow className="gap-2">
-            <Pressable
-              role="button"
-              aria-label="뒤로"
-              onPress={() => navigation.goBack()}
-              className="-ml-1 p-1"
-            >
-              <ArrowLeftIcon className="h-5 w-5 text-text-muted" strokeWidth={2} aria-hidden />
-            </Pressable>
+            <BackButton onPress={() => navigation.goBack()} />
             <Text className="text-lg font-semibold text-text">{ITEM_SPLIT_TOOL_NAME}</Text>
           </PageHeaderTitleRow>
         </PageHeader>

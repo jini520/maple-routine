@@ -41,4 +41,39 @@ describe('rnHapticsPort', () => {
     expect(android).toHaveBeenCalledWith(Haptics.AndroidHaptics.Virtual_Key)
     expect(impact).not.toHaveBeenCalled()
   })
+
+  it('iOS 의 선택은 선택 전용 촉각이다', async () => {
+    setPlatform('ios')
+    const selection = jest.spyOn(Haptics, 'selectionAsync').mockResolvedValue()
+    const impact = jest.spyOn(Haptics, 'impactAsync').mockResolvedValue()
+
+    await rnHapticsPort.select()
+
+    expect(selection).toHaveBeenCalledTimes(1)
+    expect(impact).not.toHaveBeenCalled()
+  })
+
+  // 안드로이드의 `selectionAsync` 도 `Vibrator` 흉내다. 이동 쪽과 같은 이유로 안 쓴다.
+  it('안드로이드의 선택은 끊긴 값 사이를 옮기는 틱이다', async () => {
+    setPlatform('android')
+    const selection = jest.spyOn(Haptics, 'selectionAsync').mockResolvedValue()
+    const android = jest.spyOn(Haptics, 'performAndroidHapticsAsync').mockResolvedValue()
+
+    await rnHapticsPort.select()
+
+    expect(android).toHaveBeenCalledWith(Haptics.AndroidHaptics.Clock_Tick)
+    expect(selection).not.toHaveBeenCalled()
+  })
+
+  // 이름이 더 맞는 `Segment_Tick` 은 API 34+ 다. 그 아래 기기에서는 거절돼 두드림이 아예 안 난다.
+  it('안드로이드의 선택은 이동과 다른 상수를 쓴다', async () => {
+    setPlatform('android')
+    const android = jest.spyOn(Haptics, 'performAndroidHapticsAsync').mockResolvedValue()
+
+    await rnHapticsPort.tap()
+    await rnHapticsPort.select()
+
+    const [[이동], [선택]] = android.mock.calls
+    expect(이동).not.toBe(선택)
+  })
 })

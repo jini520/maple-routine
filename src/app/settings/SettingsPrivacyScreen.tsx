@@ -11,10 +11,11 @@
  * 부모가 `settings` 가 아니라 `settings/about` 이다. 이 앱에서 스택이 2단이 되는 자리가 여기뿐이다.
  */
 import { useEffect, useState } from 'react'
-import { Linking, Pressable, View } from 'react-native'
+import { Linking, View } from 'react-native'
 import { WebView } from 'react-native-webview'
 
-import { ArrowLeftIcon, Text } from '../../components/atoms'
+import { Text } from '../../components/atoms'
+import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
@@ -58,14 +59,7 @@ export function SettingsPrivacyScreen(): React.JSX.Element {
           줄만 여백 없이 화면 끝에 붙는다. */}
       <View className="px-4 pb-2">
         <PageHeaderTitleRow className="gap-2">
-          <Pressable
-            role="button"
-            aria-label="뒤로"
-            onPress={() => navigation.goBack()}
-            className="-ml-1 p-1"
-          >
-            <ArrowLeftIcon className="h-5 w-5 text-text-muted" strokeWidth={2} aria-hidden />
-          </Pressable>
+          <BackButton onPress={() => navigation.goBack()} />
           <Text className="text-lg font-semibold text-text">개인정보 처리방침</Text>
         </PageHeaderTitleRow>
       </View>

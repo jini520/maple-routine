@@ -17,7 +17,7 @@
  * 추가분만 동기화 · 진행률 보고가 들어 있다.
  */
 import { useState } from 'react'
-import { Pressable, View, type ScrollView } from 'react-native'
+import { View, type ScrollView } from 'react-native'
 import { useAnimatedRef } from 'react-native-reanimated'
 
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
@@ -27,7 +27,8 @@ import {
   setRepresentativeCharacter,
 } from '../../storage/character-selection'
 
-import { ArrowLeftIcon, Button, Text } from '../../components/atoms'
+import { Button, Text } from '../../components/atoms'
+import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { CharacterManageBody } from '../../components/organisms/CharacterManage/CharacterManageBody'
 import { useCharacterManage } from '../../hooks/useCharacterManage'
 import { ProgressModal } from '../../components/organisms/ProgressModal/ProgressModal'
@@ -90,14 +91,7 @@ export function SettingsCharactersScreen(): React.JSX.Element {
         header={
           <PageHeader>
             <PageHeaderTitleRow className="gap-2">
-              <Pressable
-                role="button"
-                aria-label="뒤로"
-                onPress={() => navigation.goBack()}
-                className="-ml-1 p-1"
-              >
-                <ArrowLeftIcon className="h-5 w-5 text-text-muted" strokeWidth={2} aria-hidden />
-              </Pressable>
+              <BackButton onPress={() => navigation.goBack()} />
               <Text className="text-lg font-semibold text-text">캐릭터 관리</Text>
             </PageHeaderTitleRow>
           </PageHeader>
