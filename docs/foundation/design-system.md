@@ -1099,6 +1099,26 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 - **RN 하단바의 활성 아이콘은 ‘면’이다. 다만 가려서 채운다**([[ADR-132]] 정정 25). fill 과 stroke 가 같은 색이라, **안쪽에 선이 있는 그림은 채우는 순간 그 선이 사라진다**(조준경 → 원판, 달력 → 체크 소실). 통째로 채우는 것은 안쪽에 의미가 없는 넷뿐이고(`LayoutDashboard`·`Wrench`·`ShoppingCart`·`Swords`), 톱니와 수익은 **커스텀이라 채울 자리를 고른다**. `GearIcon` 은 lucide `settings` 와 같은 좌표를 한 패스로 다시 그려 `fillRule="evenodd"` 로 가운데를 비우고(설정 화면들은 계속 lucide `Settings` 를 쓴다), `ProfitIcon` 은 동전 두 개만 채우고 단을 그리는 호는 선으로 남긴다. **채우지 못하는 넷(달력·지갑·목록·조준경)은 대신 획을 굵힌다**(1.5 → 2.75, [[ADR-132]] 정정 27). 채우기와 굵히기는 **배타**다(둘 다 주면 채운 그림이 과해진다). **채운 그림에서는 구멍을 키운다**(톱니 r 3 → 4.5). 둘레의 획이 구멍 안쪽을 먹어 원래 크기로는 ‘덩어리 속 점’이 된다.
 - **커스텀 SVG 에 `fill` 프롭을 열 때는 `?? 'none'` 을 붙일 것.** `undefined` 를 그대로 내려보내면 `react-native-svg` 가 뿌리의 `fill="none"` 을 상속하지 않고 **검정**으로 떨어뜨린다. 안 채우는 자리에서 아이콘이 새까매진다.
 
+## Tailwind 는 `src/` 를 **글자로** 훑는다 (2026-09-12)
+
+스캔 범위는 `tailwind.config.js` 의 `content: ['./App.tsx', './src/**/*.{ts,tsx}']` 이고,
+**테스트 파일도 그 안이다**. 파서가 아니라 문자열 추출기라 주석·정규식·문서 문자열도 똑같이 후보가 된다.
+
+- **정책 테스트에서 여백 클래스를 대괄호 임의값 꼴 정규식으로 찾지 말 것.** `pb` + `-` + 대괄호로
+  감싼 문자 클래스를 적으면 Tailwind 가 그것을 임의값 유틸리티로 읽어 값이 `\d.` 인 CSS 규칙을
+  만든다. 그 깨진 값이 번들에 그대로 실려 **앱이 아예 안 뜬다**(`Compiling JS failed:
+  non-terminated string`). 대괄호 없이 숫자로 적으면 된다(`/\bpy-\d(?:\.5)?\b/`).
+  `src/__tests__/period-nav-padding.test.ts` · `scheduler-rail-gap.test.ts` 가 그렇게 적혀 있다.
+- **`tsc`·jest·eslint 는 이것을 못 잡는다.** 셋 다 CSS 를 안 만든다. 번들을 한 번 받아 보는 것만이
+  증거다 — `curl -s -o /tmp/b.js -w "%{http_code} %{size_download}\n"
+  'http://localhost:8081/index.bundle?platform=ios&dev=true&minify=false'`.
+
+**처음 쓰는 유틸리티는 Metro 를 재시작해야 나온다.** NativeWind 의 Metro 통합이 CSS 를 **서버가
+뜰 때 한 번** 컴파일하고 그 결과를 계속 돌려준다. 그래서 코드에 `pt-7` 을 새로 적어도, 그 클래스를
+아무도 안 쓰던 상태에서 뜬 서버는 그 유틸리티를 안 갖고 있고 **여백이 조용히 0 이 된다**. 화면이
+디스크의 값과 다르면 `npx expo start --port 8081 --clear` 로 다시 띄우고 볼 것. 클래스 자체가
+유효한지는 jest 가 즉답한다(`renderAtom(<View className="pt-7" />)` 의 풀린 스타일).
+
 ## NativeWind 가 안 가로채는 컴포넌트 ([[ADR-197]])
 
 `className` 은 `react-native` 의 기본 컴포넌트(`View`·`Text`·`Pressable`)에만 자동으로 붙는다.

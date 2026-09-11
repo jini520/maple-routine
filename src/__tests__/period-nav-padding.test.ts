@@ -19,9 +19,15 @@ const SCREENS = [
 /** 줄을 여는 클래스. 셋이 같은 문자열로 시작한다. */
 const NAV_ROW = /className="flex-row items-center justify-center gap-4([^"]*)"/g
 
+// **여백 클래스를 대괄호 임의값 꼴 정규식으로 찾지 말 것.** Tailwind 의 스캔 범위가
+// `./src/**/*.{ts,tsx}` 라 테스트 파일도 훑는다. `pb` + `-` + 대괄호로 감싼 문자 클래스를 적으면
+// 그것을 임의값 유틸리티로 읽어 값이 `\d.` 인 규칙을 만들고, 그 깨진 값이 번들을 통째로 못 쓰게
+// 만든다(`Compiling JS failed: non-terminated string`). 그래서 대괄호 없이 숫자만 적는다.
 /** 그 줄이 든 위아래 여백. 없으면 `null`. */
 function verticalPadding(source: string): (string | null)[] {
-  return [...source.matchAll(NAV_ROW)].map((match) => /\bpy-[\d.]+\b/.exec(match[1])?.[0] ?? null)
+  return [...source.matchAll(NAV_ROW)].map(
+    (match) => /\bpy-\d(?:\.5)?\b/.exec(match[1])?.[0] ?? null,
+  )
 }
 
 describe('기간 이동 줄', () => {

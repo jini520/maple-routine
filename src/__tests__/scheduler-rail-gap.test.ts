@@ -16,13 +16,18 @@ const SCREENS = [
   join(APP, 'boss-scheduler', 'BossScreen.tsx'),
 ]
 
+// **여백 클래스를 대괄호 임의값 꼴 정규식으로 찾지 말 것.** Tailwind 의 스캔 범위가
+// `./src/**/*.{ts,tsx}` 라 테스트 파일도 훑는다. `pb` + `-` + 대괄호로 감싼 문자 클래스를 적으면
+// 그것을 임의값 유틸리티로 읽어 값이 `\d.` 인 규칙을 만들고, 그 깨진 값이 번들을 통째로 못 쓰게
+// 만든다(`Compiling JS failed: non-terminated string`). 그래서 대괄호 없이 숫자만 적는다.
+
 /**
  * 레일을 감싼 뷰. 레일과 **같은 조건** 안에 있어야 하므로 조건까지 함께 본다.
  *
  * 주석이 조건과 감싸개 사이에 들어가므로 그 사이를 넉넉히 허용한다.
  */
 const WRAPPED_RAIL =
-  /characters\.length > 0 && selected !== null && \(\s*(?:\{\/\*[\s\S]*?\*\/\}\s*)?<View className="(pb-[\d.]+)">\s*<CharacterRail/
+  /characters\.length > 0 && selected !== null && \(\s*(?:\{\/\*[\s\S]*?\*\/\}\s*)?<View className="(pb-\d(?:\.5)?)">\s*<CharacterRail/
 
 describe('캐릭터 레일 아래 간격', () => {
   const found = SCREENS.map((path) => ({
@@ -49,7 +54,7 @@ describe('컨텐츠 스케줄러의 첫 카드 자리', () => {
 
   it('카드 목록 둘이 같은 위 여백을 든다', () => {
     const lists = [...source.matchAll(/className="gap-2([^"]*)"/g)].map(
-      (match) => /\bpt-[\d.]+\b/.exec(match[1])?.[0] ?? null,
+      (match) => /\bpt-\d(?:\.5)?\b/.exec(match[1])?.[0] ?? null,
     )
 
     expect(lists).toHaveLength(2)
