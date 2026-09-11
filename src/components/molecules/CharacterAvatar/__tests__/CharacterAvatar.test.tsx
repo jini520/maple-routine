@@ -2,7 +2,7 @@
 import { View } from 'react-native'
 
 import { FACE_CROP_BOX, FACE_SOURCE_IMAGE_SIZE } from '../../../../lib/face-crop'
-import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
+import { findAllOfType, flattenStyle, renderAtom } from '../../../__tests__/render-atom'
 import { Text } from '../../../atoms'
 import { CharacterAvatar } from '../CharacterAvatar'
 
@@ -125,5 +125,37 @@ describe('조회 불가 표식', () => {
     )
 
     expect(getAllByTestId('얼굴')).toHaveLength(1)
+  })
+
+  // 바깥 상자는 안 깎는다. 거기에 바탕색이 실리면 **둥근 얼굴 뒤에 네모가 한 겹** 생긴다
+  // (보스 수익 아코디언 머리에서 관측).
+  it('바탕색은 바깥 상자가 아니라 원이 든다', async () => {
+    const { getByTestId, toJSON } = await renderAtom(
+      <CharacterAvatar
+        imageTestID="그림"
+        imageUrl="https://example.test/a.png"
+        name="지내우시"
+        size={32}
+        unavailable
+        testID="얼굴"
+        className="bg-surface-2"
+      />,
+    )
+
+    expect(flattenStyle(getByTestId('얼굴').props.style).backgroundColor).toBeUndefined()
+
+    const 원 = findAllOfType(toJSON(), 'View').find(
+      (node) => flattenStyle(node.props.style).overflow === 'hidden',
+    )
+    expect(flattenStyle(원?.props.style).backgroundColor).toBeDefined()
+  })
+
+  // 바깥 상자가 layout 을 지므로 안 줄어들어야 한다. 안쪽으로 내려가면 이 상자가 형제에게 밀린다.
+  it('바깥 상자는 줄어들지 않는다', async () => {
+    const { getByTestId } = await renderAtom(
+      <CharacterAvatar imageUrl={null} name="지내우시" size={32} unavailable testID="얼굴" />,
+    )
+
+    expect(flattenStyle(getByTestId('얼굴').props.style).flexShrink).toBe(0)
   })
 })

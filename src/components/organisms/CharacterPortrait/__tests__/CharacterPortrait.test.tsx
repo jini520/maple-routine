@@ -6,7 +6,13 @@
 import { processColor } from 'react-native'
 import { act, fireEvent } from '@testing-library/react-native'
 
-import { flattenStyle, renderAtom, 기본테마, type AtomElement } from '../../../__tests__/render-atom'
+import {
+  findAllOfType,
+  flattenStyle,
+  renderAtom,
+  기본테마,
+  type AtomElement,
+} from '../../../__tests__/render-atom'
 import { CharacterPortrait, type RailPortraitProps } from '../CharacterPortrait'
 import { portraitRingSpan } from '../portrait-arc'
 import { PORTRAIT_RAIL } from '../portrait-metrics'
@@ -363,5 +369,30 @@ describe('CharacterPortrait · compact 규격', () => {
 
     expect(view.queryByTestId('portrait-name-text')).toBeNull()
     expect(view.queryByTestId('portrait-level-text')).toBeNull()
+  })
+
+  // RN 은 형제 순서가 곧 그리는 순서다. 링이 표식보다 뒤에 서면 표식이 그 밑으로 들어간다
+  // (보스 수익 아코디언 머리에서 관측). rail 규격은 같은 이유로 이미 표식을 SVG 뒤에 둔다.
+  it('조회 불가 표식이 링보다 위에 그려진다', async () => {
+    const view = await renderAtom(
+      <CharacterPortrait
+        variant="compact"
+        characterName="지내우시"
+        imageUrl="https://example.test/face.png"
+        clears={{ cleared: 0, total: 12, label: '주간' }}
+        unavailable
+      />,
+    )
+
+    // `findAllOfType` 은 트리를 앞에서부터 훑으므로 그 차례가 곧 그리는 차례다.
+    const 상자들 = findAllOfType(view.toJSON(), 'View')
+    const 표식자리 = 상자들.findIndex((node) => node.props.testID === 'portrait-unavailable')
+    const 링자리 = 상자들.findIndex((node) =>
+      String(node.props['aria-label'] ?? '').includes('보스 처치'),
+    )
+
+    expect(표식자리).toBeGreaterThan(-1)
+    expect(링자리).toBeGreaterThan(-1)
+    expect(표식자리).toBeGreaterThan(링자리)
   })
 })
