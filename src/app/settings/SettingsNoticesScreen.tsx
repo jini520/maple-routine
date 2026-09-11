@@ -17,7 +17,8 @@
 import { useEffect, useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { ArrowLeftIcon, Card, ChevronRightIcon, ScrollTextIcon, Text } from '../../components/atoms'
+import { Card, ChevronRightIcon, ScrollTextIcon, Text } from '../../components/atoms'
+import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
@@ -74,14 +75,7 @@ export function SettingsNoticesScreen(props: {
       header={
         <PageHeader>
           <PageHeaderTitleRow className="gap-2">
-            <Pressable
-              role="button"
-              aria-label="뒤로"
-              onPress={() => navigation.goBack()}
-              className="-ml-1 p-1"
-            >
-              <ArrowLeftIcon className="h-5 w-5 text-text-muted" strokeWidth={2} aria-hidden />
-            </Pressable>
+            <BackButton onPress={() => navigation.goBack()} />
             <Text className="text-lg font-semibold text-text">{title}</Text>
           </PageHeaderTitleRow>
         </PageHeader>

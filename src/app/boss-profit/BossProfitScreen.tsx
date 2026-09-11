@@ -49,6 +49,7 @@ import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { TabSegment } from '../../components/molecules/TabSegment/TabSegment'
+import { tapFeedback } from '../../native/haptics'
 import { ValuableDropBadge } from '../../components/molecules/ValuableDropBadge/ValuableDropBadge'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -301,7 +302,10 @@ export function BossProfitScreen(): React.JSX.Element {
               <Button
                 variant="text"
                 size="compact"
-                onPress={() => void goToCurrentPeriod()}
+                onPress={() => {
+                  tapFeedback()
+                  void goToCurrentPeriod()
+                }}
                 aria-label="오늘로 이동"
               >
                 오늘
@@ -331,7 +335,11 @@ export function BossProfitScreen(): React.JSX.Element {
             aria-label="이전 기간"
             aria-disabled={isPrevDisabled}
             disabled={isPrevDisabled}
-            onPress={() => goToPreviousPeriod()}
+            // 화면은 그대로여도 보는 기간이 바뀐다. 꺼진 화살표는 누름 자체가 안 들어와 조용하다.
+            onPress={() => {
+              tapFeedback()
+              goToPreviousPeriod()
+            }}
             className={
               isPrevDisabled
                 ? 'h-7 w-7 items-center justify-center rounded-full border border-border opacity-30'
@@ -356,7 +364,10 @@ export function BossProfitScreen(): React.JSX.Element {
             aria-label="다음 기간"
             aria-disabled={!canGoNext}
             disabled={!canGoNext}
-            onPress={() => goToNextPeriod()}
+            onPress={() => {
+              tapFeedback()
+              goToNextPeriod()
+            }}
             className={
               !canGoNext
                 ? 'h-7 w-7 items-center justify-center rounded-full border border-border opacity-30'

@@ -116,6 +116,8 @@ import { useToastStore } from '../../../features/toast/store'
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { FAB_SPACE_PX } from '../../../lib/fab-metrics'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
+import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
+import { setHapticsPort } from '../../../native/ports'
 import { BOSS_SLOT_MAX_PX, CashbookScreen } from '../CashbookScreen'
 
 const records = jest.requireMock('../../../features/cashbook/records') as Record<string, jest.Mock>
@@ -2068,5 +2070,56 @@ describe('확정 전에는 안 그린다', () => {
     expect(view.getByTestId('cashbook-summary-net')).toHaveTextContent('+64억 메소')
     expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+76억')
     expect(view.getByTestId('cashbook-summary-expense')).toHaveTextContent('−12억')
+  })
+})
+
+// 화면은 그대로여도 **보는 기간이 바뀐다**. 손끝이 답하는 것은 화면 전환이 아니라 누름이 먹혔다이다.
+describe('기간 이동의 촉각', () => {
+  const tap = jest.fn(async () => undefined)
+
+  beforeEach(() => {
+    tap.mockClear()
+    setHapticsPort({ tap, select: async () => {} })
+  })
+
+  afterEach(installNoopNativePorts)
+
+  it('주 화살표 둘에 한 번씩 난다', async () => {
+    const view = await 그리기()
+
+    await 이름으로누르기(view, '이전 주')
+    expect(tap).toHaveBeenCalledTimes(1)
+
+    await 이름으로누르기(view, '다음 주')
+    expect(tap).toHaveBeenCalledTimes(2)
+  })
+
+  it('달 화살표에도 난다', async () => {
+    const view = await 그리기()
+    await 월간으로(view)
+    tap.mockClear()
+
+    await 이름으로누르기(view, '이전 달')
+
+    expect(tap).toHaveBeenCalledTimes(1)
+  })
+
+  it('오늘로 이동에도 난다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '이전 주')
+    tap.mockClear()
+
+    await 이름으로누르기(view, '오늘로 이동')
+
+    expect(tap).toHaveBeenCalledTimes(1)
+  })
+
+  // 이번 주에서는 `다음 주` 가 꺼져 있다. 꺼진 버튼은 누름 자체가 안 들어간다.
+  it('끝 기간의 꺼진 화살표에는 안 난다', async () => {
+    const view = await 그리기()
+
+    await 이름으로누르기(view, '다음 주')
+
+    expect(tap).not.toHaveBeenCalled()
   })
 })

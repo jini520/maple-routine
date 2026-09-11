@@ -43,6 +43,8 @@ import type { RecordedDrop } from '../../../types/drops'
 
 import { flattenStyle, renderOverlay, 테스트_안전영역 } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
+import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
+import { setHapticsPort } from '../../../native/ports'
 import { DropPriceScreen } from '../DropPriceScreen'
 
 const mockShowError = jest.fn()
@@ -466,5 +468,55 @@ describe('DropPriceScreen: 순차 입력', () => {
     // 마지막 건이라 진행 표기가 사라지고 버튼도 `다음` 이 아니라 `저장` 이다.
     expect(within(getByTestId('drop-price-pad')).getByText('저장')).toBeTruthy()
     expect(queryByText('스킵')).toBeNull()
+  })
+})
+
+// 화면은 그대로여도 **보는 기간이 바뀐다**. 손끝이 답하는 것은 화면 전환이 아니라 누름이 먹혔다이다.
+describe('기간 이동의 촉각', () => {
+  const tap = jest.fn(async () => undefined)
+
+  beforeEach(() => {
+    tap.mockClear()
+    setHapticsPort({ tap, select: async () => {} })
+  })
+
+  afterEach(installNoopNativePorts)
+
+  it('‹ › 에 한 번씩 난다', async () => {
+    mockStores({ periodKey: '2026-07-30' })
+    const { getByLabelText } = await renderOverlay(<DropPriceScreen />)
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('이전 기간'))
+    })
+    expect(tap).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('다음 기간'))
+    })
+    expect(tap).toHaveBeenCalledTimes(2)
+  })
+
+  // 조회 한도 바닥에서는 `이전 기간` 이 꺼져 있다. 꺼진 버튼은 누름 자체가 안 들어간다.
+  it('끝 기간의 꺼진 화살표에는 안 난다', async () => {
+    mockStores({ periodKey: '2025-01-02' })
+    const { getByLabelText } = await renderOverlay(<DropPriceScreen />)
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('이전 기간'))
+    })
+
+    expect(tap).not.toHaveBeenCalled()
+  })
+
+  // 페이지 뒤로는 `BackButton` 이 든다. 이 화면이 그것을 실제로 쓰고 있는지를 함께 본다.
+  it('뒤로에도 난다', async () => {
+    const { getByLabelText } = await renderOverlay(<DropPriceScreen />)
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('뒤로'))
+    })
+
+    expect(tap).toHaveBeenCalledTimes(1)
   })
 })

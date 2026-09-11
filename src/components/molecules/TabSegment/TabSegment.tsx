@@ -11,6 +11,7 @@ import { Pressable, View } from 'react-native'
 import Animated from 'react-native-reanimated'
 
 import { useSlidingThumb } from '../../../hooks/useSlidingThumb'
+import { selectionFeedback } from '../../../native/haptics'
 import { useThemeAppearance } from '../../../theme/context'
 import { Text } from '../../atoms'
 
@@ -87,8 +88,11 @@ export function TabSegment<T extends string>(props: {
               aria-selected={isSelected}
               onLayout={(event) => thumb.onItemLayout(index, event)}
               // 이미 고른 것을 다시 눌러도 아무 일이 없어야 한다. `Segment` 와 같은 계약이다.
+              // 두드림도 그 조건 안이다. 안 바뀌는 누름에 내면 손끝이 거짓을 말한다.
               onPress={() => {
-                if (!isSelected) props.onSelect(option)
+                if (isSelected) return
+                selectionFeedback()
+                props.onSelect(option)
               }}
               className={ITEM_CLASS}
             >

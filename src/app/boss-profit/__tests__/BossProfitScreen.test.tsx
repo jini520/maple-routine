@@ -36,6 +36,8 @@ import { PortalProvider } from '@gorhom/portal'
 import { flattenStyle, 테스트_안전영역 } from '../../../components/__tests__/render-atom'
 import { BottomBarOverlayHost } from '../../../components/organisms/BottomBar/BottomBarOverlay'
 import { FAB_CONTENT_GAP_PX, FAB_SPACE_PX } from '../../../lib/fab-metrics'
+import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
+import { setHapticsPort } from '../../../native/ports'
 import { ThemeProvider } from '../../../theme/ThemeProvider'
 import { useDataFreshness } from '../../../features/refresh/freshness'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
@@ -376,6 +378,54 @@ describe('탭과 기간 네비게이터', () => {
     expect(getByLabelText('이전 기간')).toBeDisabled()
   })
 
+  // 화면은 그대로여도 **보는 기간이 바뀐다**. 손끝이 답하는 것은 화면 전환이 아니라 누름이 먹혔다이다.
+  describe('기간 이동의 촉각', () => {
+    const tap = jest.fn(async () => undefined)
+
+    beforeEach(() => {
+      tap.mockClear()
+      setHapticsPort({ tap, select: async () => {} })
+    })
+
+    afterEach(installNoopNativePorts)
+
+    it('‹ › 에 한 번씩 난다', async () => {
+      mockStore({ periodKey: '2026-07-09' })
+      const { getByLabelText } = await renderScreen()
+
+      await act(async () => {
+        fireEvent.press(getByLabelText('이전 기간'))
+      })
+      expect(tap).toHaveBeenCalledTimes(1)
+
+      await act(async () => {
+        fireEvent.press(getByLabelText('다음 기간'))
+      })
+      expect(tap).toHaveBeenCalledTimes(2)
+    })
+
+    it('`오늘` 에도 난다', async () => {
+      mockStore({ periodKey: '2026-07-02' })
+      const { getByLabelText } = await renderScreen()
+
+      await act(async () => {
+        fireEvent.press(getByLabelText('오늘로 이동'))
+      })
+
+      expect(tap).toHaveBeenCalledTimes(1)
+    })
+
+    // 최신 기간에서는 `다음 기간` 이 꺼져 있다. 꺼진 버튼은 누름 자체가 안 들어간다.
+    it('끝 기간의 꺼진 화살표에는 안 난다', async () => {
+      const { getByLabelText } = await renderScreen()
+
+      await act(async () => {
+        fireEvent.press(getByLabelText('다음 기간'))
+      })
+
+      expect(tap).not.toHaveBeenCalled()
+    })
+  })
 })
 
 describe('갱신 시각', () => {
