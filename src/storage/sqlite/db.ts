@@ -154,6 +154,8 @@ const TABLE_DEFINITIONS = [
     -- 모르면 NULL. 0 이나 빈 문자열로 채우면 '모름' 이 값으로 둔갑한다.
     world TEXT,
     level INTEGER,
+    -- 월드 이전 판정이 읽는다. 이름만으로는 옮겨간 캐릭터를 짚을 수 없어 직업이 유일성을 세운다.
+    job_class TEXT,
     updated_at TEXT NOT NULL,
     PRIMARY KEY (ocid)
 )`,
@@ -428,6 +430,9 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   }
   // **칸의 모양 은 이 길로만 바꿀 수 있어 `ensureColumn` 들보다 먼저 선다**(③).
   await rebuildIncomeRecords(db)
+  // 이미 프로필을 쌓아 둔 기기에는 CREATE 가 안 붙인다. 없으면 월드 이전 판정이 그 캐릭터를
+  // 영영 못 짚는다(직업을 모르면 안 묻기로 했다).
+  await ensureColumn(db, 'character_profiles', 'job_class', 'TEXT')
   await ensureColumn(db, 'boss_profit_records', 'world', 'TEXT')
   // `world` 와 같은 사정이다. 이미 보스를 기록해 둔 기기에는 CREATE 가 안 붙인다.
   await ensureColumn(db, 'boss_profit_records', 'defeated_on', 'TEXT')

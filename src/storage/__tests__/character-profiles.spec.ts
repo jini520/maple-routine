@@ -23,6 +23,7 @@ describe('saveCharacterProfile', () => {
       imageUrl: 'https://open.api.nexon.com/static/maplestory/character/look/abc',
       world: '스카니아',
       level: 285,
+      jobClass: '레테',
       updatedAt: '2026-09-05T00:00:00.000Z',
     })
 
@@ -34,8 +35,28 @@ describe('saveCharacterProfile', () => {
       'https://open.api.nexon.com/static/maplestory/character/look/abc',
       '스카니아',
       285,
+      '레테',
       '2026-09-05T00:00:00.000Z',
     ])
+  })
+
+  // 월드 이전 판정이 이 칸을 읽는다. `world`·`level` 과 같은 이유로 아는 값이 있을 때만 덮는다 -
+  // 직업을 모르는 채 부르는 경로가 이미 박아 둔 값을 지우면 그 캐릭터를 영영 못 짚는다.
+  it('직업을 모르면 그 칸을 덮지 않는다', async () => {
+    const { saveCharacterProfile } = require('../character-profiles') as typeof import('../character-profiles')
+
+    await saveCharacterProfile({
+      ocid: 'ocid-1',
+      name: '루디',
+      imageUrl: 'https://example.test/a.png',
+      world: null,
+      level: null,
+      jobClass: null,
+      updatedAt: '2026-09-05T00:00:00.000Z',
+    })
+
+    const [sql] = runMock.mock.calls[0]
+    expect(sql).toContain('job_class = COALESCE(excluded.job_class, character_profiles.job_class)')
   })
 
   // 이름이 빈 스냅샷은 행을 못 만든다. 그것을 심으면 화면에 이름 없는 행이 서고, 그때
@@ -49,6 +70,7 @@ describe('saveCharacterProfile', () => {
       imageUrl: 'https://example.test/a.png',
       world: null,
       level: null,
+      jobClass: null,
       updatedAt: '2026-09-05T00:00:00.000Z',
     })
 
@@ -67,6 +89,7 @@ describe('getCharacterProfiles', () => {
           image_url: 'https://example.test/a.png',
           world: '스카니아',
           level: 285,
+          job_class: '레테',
           updated_at: '2026-09-05T00:00:00.000Z',
         },
       ],
@@ -84,6 +107,7 @@ describe('getCharacterProfiles', () => {
       imageUrl: 'https://example.test/a.png',
       world: '스카니아',
       level: 285,
+      jobClass: '레테',
       updatedAt: '2026-09-05T00:00:00.000Z',
     })
     expect(profiles.has('ocid-2')).toBe(false)

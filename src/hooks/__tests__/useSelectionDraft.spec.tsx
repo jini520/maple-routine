@@ -300,3 +300,57 @@ describe('replaceSelection', () => {
     expect(view.result.current.selectedOcids).toBe(before)
   })
 })
+
+// 월드 이전 확인이 추적 목록의 ocid 를 갈아끼울 때, 손대던 초안도 함께 가야 한다. 안 그러면
+// 초안이 든 옛 ocid 가 저장 버튼 한 번에 다시 쓰여 방금 뺀 죽은 캐릭터가 되살아난다.
+describe('renameCharacter', () => {
+  it('초안을 손댄 뒤라도 그 자리의 ocid 가 새 것으로 바뀐다', async () => {
+    const view = await 초안()
+    await act(async () => {
+      view.result.current.addCharacter('a4')
+    })
+    await act(async () => {
+      view.result.current.renameCharacter('a2', 'b2')
+    })
+
+    expect(view.result.current.selectedOcids).toEqual(['a1', 'b2', 'a3', 'a4'])
+  })
+
+  it('초안을 안 손댔으면 아무것도 안 만든다. 저장된 목록이 그대로 보인다', async () => {
+    const view = await 초안()
+    await act(async () => {
+      view.result.current.renameCharacter('a2', 'b2')
+    })
+
+    // 초안을 새로 만들면 `isDirty` 가 참이 되어, 사용자가 손댄 적 없는데 저장이 켜진다.
+    expect(view.result.current.selectedOcids).toEqual(저장된목록)
+    expect(view.result.current.isDirty).toBe(false)
+  })
+
+  it('초안에 없는 ocid 면 아무 일도 안 한다', async () => {
+    const view = await 초안()
+    await act(async () => {
+      view.result.current.addCharacter('a4')
+    })
+    await act(async () => {
+      view.result.current.renameCharacter('없는', 'b2')
+    })
+
+    expect(view.result.current.selectedOcids).toEqual(['a1', 'a2', 'a3', 'a4'])
+  })
+
+  // 실제 순서를 그대로 태운다. 저장소가 먼저 바뀌어 `trackedOcids` 가 새 목록으로 오고, 그
+  // 사실을 초안이 이어받는다. 대표는 목록 안에 있을 때만 서므로 둘이 함께 가야 별이 안 꺼진다.
+  it('고른 대표가 그 캐릭터였으면 대표도 함께 간다', async () => {
+    const view = await 초안()
+    await act(async () => {
+      view.result.current.setRepresentative('a2')
+    })
+    await view.rerender({ ocids: ['a1', 'b2', 'a3'] })
+    await act(async () => {
+      view.result.current.renameCharacter('a2', 'b2')
+    })
+
+    expect(view.result.current.representativeOcid).toBe('b2')
+  })
+})

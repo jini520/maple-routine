@@ -6,6 +6,7 @@ import {
   getLastSelectedCharacter,
   getRepresentativeCharacter,
   getTrackedCharacterOcids,
+  replaceTrackedCharacter,
   setCharacterSelection,
   setLastSelectedCharacter,
   setRepresentativeCharacter,
@@ -260,5 +261,50 @@ describe('마지막 선택 캐릭터', () => {
     await setLastSelectedCharacter('ocid-1')
     await clearLastSelectedCharacter()
     await expect(getLastSelectedCharacter()).resolves.toBeNull()
+  })
+})
+
+// 월드 리프 확인 뒤의 교체. 사용자가 모달에서 그렇다고 답할 때만 불린다.
+describe('replaceTrackedCharacter', () => {
+  it('추적 목록에서 옛 ocid 자리에 새 ocid 를 넣는다. 순서가 안 바뀐다', async () => {
+    await setTrackedCharacterOcids(['a', 'old', 'b'])
+    await replaceTrackedCharacter('old', 'new')
+    await expect(getTrackedCharacterOcids()).resolves.toEqual(['a', 'new', 'b'])
+  })
+
+  it('대표가 옛 ocid 였으면 새 ocid 로 옮긴다', async () => {
+    await setTrackedCharacterOcids(['old'])
+    await setRepresentativeCharacter('old')
+    await replaceTrackedCharacter('old', 'new')
+    await expect(getRepresentativeCharacter()).resolves.toBe('new')
+  })
+
+  it('대표가 남이면 안 건드린다', async () => {
+    await setTrackedCharacterOcids(['a', 'old'])
+    await setRepresentativeCharacter('a')
+    await replaceTrackedCharacter('old', 'new')
+    await expect(getRepresentativeCharacter()).resolves.toBe('a')
+  })
+
+  it('마지막 선택이 옛 ocid 였으면 새 ocid 로 옮긴다', async () => {
+    await setTrackedCharacterOcids(['old'])
+    await setLastSelectedCharacter('old')
+    await replaceTrackedCharacter('old', 'new')
+    await expect(getLastSelectedCharacter()).resolves.toBe('new')
+  })
+
+  // 화면이 한 번 더 부르거나 두 기기가 겹쳐 도는 경우. 이미 바뀐 목록을 망가뜨리면 안 된다.
+  it('옛 ocid 가 목록에 없으면 아무것도 안 한다', async () => {
+    await setTrackedCharacterOcids(['a', 'new'])
+    await replaceTrackedCharacter('old', 'new')
+    await expect(getTrackedCharacterOcids()).resolves.toEqual(['a', 'new'])
+  })
+
+  // 사용자가 모달을 띄워 둔 채 새 캐릭터를 손으로 추가한 경우. 같은 ocid 가 두 번 서면 격자
+  // 키가 겹쳐 행 하나가 사라진다.
+  it('새 ocid 가 이미 목록에 있으면 옛 자리만 빼고 중복을 안 만든다', async () => {
+    await setTrackedCharacterOcids(['old', 'new', 'b'])
+    await replaceTrackedCharacter('old', 'new')
+    await expect(getTrackedCharacterOcids()).resolves.toEqual(['new', 'b'])
   })
 })

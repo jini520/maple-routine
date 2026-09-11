@@ -29,6 +29,7 @@ import { useAuthStore } from '../../../features/auth/store'
 
 import { MapleSweepSpinner, Text } from '../../atoms'
 import { CharacterLayerGrid } from './CharacterLayerGrid'
+import { WorldLeapNoticeModal } from './WorldLeapNoticeModal'
 import { EmptyState } from '../../molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../molecules/ErrorState/ErrorState'
 import { StaleBanner } from '../../molecules/ErrorState/StaleBanner'
@@ -164,6 +165,9 @@ export function CharacterManageBody({
 
   return (
     <View testID="character-manage-body" className="gap-4">
+      {/* 이 화면에서만 뜬다. 판정이 로스터 조회 중에 나고 그 조회가 여기서만 돌기 때문이고,
+          바꾼 결과를 초안에도 옮겨야 해서 그 손이 닿는 자리가 여기다. */}
+      <WorldLeapNoticeModal onRenamed={manage.renameCharacter} />
       {/* 격자 밖 위에 남는다. 안에 넣으면 첫 칸이 고정 항목이 되어 맨 위로 옮기려는 카드가
           설 자리를 잃는다. */}
       <View testID="character-manage-selected">
