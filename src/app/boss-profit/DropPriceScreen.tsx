@@ -233,7 +233,7 @@ export function DropPriceScreen(): React.JSX.Element {
           {/* 기간 네비게이터. 보스 수익 화면의 것을 그대로 옮겼다(같은 h-7 원형 버튼 + 가운데
               2줄 라벨). 이 화면은 그 화면에서 보던 기간을 이어받아 열리므로 넘기는 손짓도
               같아야 한다. */}
-          <View className="flex-row items-center justify-center gap-4">
+          <View className="flex-row items-center justify-center gap-4 py-3">
             <Pressable
               role="button"
               // 화면은 그대로여도 보는 기간이 바뀐다. 꺼진 화살표는 누름 자체가 안 들어와 조용하다.

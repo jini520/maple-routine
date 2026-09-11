@@ -10,7 +10,8 @@ export function tapFeedback(): void {
 }
 
 /**
- * 고른 값이 바뀌었다. 세그먼트 셋(`Segment` · `TabSegment` · `DifficultySegment`)만 부른다.
+ * 고른 값이 바뀌었다. 부르는 것은 전부 부품이다. 세그먼트 셋(`Segment` · `TabSegment` ·
+ * `DifficultySegment`)과 `Switch` · `CalendarGrid` · `CharacterRail` · `CharacterLayerGrid`.
  *
  * 이동과 다른 촉각이다. 두 플랫폼 모두 선택이 바뀌는 자리에 쓰라고 둔 것을 따로 갖고 있다.
  */

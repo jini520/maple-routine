@@ -32,6 +32,7 @@ import {
   PinIcon,
   ProfitIcon,
   SwordIcon,
+  Switch,
   Text,
 } from '../../components/atoms'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
@@ -110,20 +111,18 @@ function FixedDropIcon(props: { icon: FixedDropIconSpec }): React.JSX.Element {
 // 드롭 연출 토글. 활성(ON) = 연출을 표시한다. 라벨이 긍정형이라 스토어의 positive 모델
 // (enabled)을 반전 없이 그대로 그린다. 부정형 라벨은 토글과 겹쳐 이중 부정이 된다. 값은 전역
 // 스토어라 시트 밖에서도 공유·영구 저장된다.
+//
+// 크기가 `sm` 인 것은 여기가 시트 머리의 작은 줄이라 그 줄의 글자와 키가 맞아야 해서다.
 function EffectToggle(props: { on: boolean; onToggle: () => void }): React.JSX.Element {
   return (
-    <Pressable
-      role="switch"
-      aria-checked={props.on}
-      aria-label="드롭 연출"
-      onPress={props.onToggle}
-      className="ml-auto shrink-0 flex-row items-center gap-1.5"
+    <Switch
+      on={props.on}
+      label="드롭 연출"
+      onToggle={props.onToggle}
+      className="ml-auto gap-1.5"
     >
       <Text className="text-11 font-semibold text-text-muted">드롭 연출</Text>
-      <View className={`h-4 w-7 shrink-0 flex-row items-center rounded-full ${props.on ? 'bg-primary' : 'bg-border-strong'}`}>
-        <View className="h-3 w-3 rounded-full bg-white" style={{ transform: [{ translateX: props.on ? 14 : 2 }] }} />
-      </View>
-    </Pressable>
+    </Switch>
   )
 }
 

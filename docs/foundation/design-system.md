@@ -555,6 +555,7 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
   - **보스 스케줄러: 주간만, 온전한 원 하나**(`primary`, **반시계**, 12시 틈 없음). 월간은 종류가 하나뿐이라 ‘몇 개 중 몇 개’가 1/1 뿐이고, 표현은 따로 정한다(보류). 가를 상대가 없는 링에서 틈은 ‘나눔’이 아니라 ‘결손’으로 읽힌다([[ADR-059]] 정정 1과 같은 판단). **한 바퀴는 호로 못 그려** 그 자리만 `Circle` 이다(트랙과 100% 진행 둘 다).
 - **선택 표시는 흐림**이다. 테두리는 진행률이 이미 쓴다. 고른 칸은 `opacity 1`, 나머지는 **`0.3`**(~~`0.45`~~ → [[ADR-161]] 결정 2, 칸이 여섯을 넘으면 0.45 로는 어느 것이 선택인지 한눈에 안 잡혔다), 접근성에는 `aria-selected` 로 따로 말한다.
 - 얼굴 크롭은 **`CharacterAvatar` 가 든다**([[ADR-204]] 결정 1 · 위 절). 표는 `lib/face-crop` 하나이고 자리마다 지름만 다르다. 이미지가 없으면 이름 첫 글자.
+- **위아래 여백은 레일이 안 든다**([[ADR-257]] 결정 1, 2026-09-12). 같은 레일이 네 화면에 서고 그 아래에 오는 것이 화면마다 다르다(스케줄러 둘은 카드, 관리 둘은 탭·스위치). 스케줄러 둘은 **레일을 감싼 뷰**가 `pb-1` 을 들어 `ScreenScroll` 의 자식 간격 8 과 합쳐 12 를 만든다. 감싸는 뷰에는 레일과 **같은 조건**이 걸려야 캐릭터가 없는 첫 조회에서 빈 4 가 안 남는다.
 
 ### 스케줄러 캐릭터 드롭다운: 선택 캐릭터 월드 아이콘: 2026-07-16
 > ⛔ **이 드롭다운은 없다**([[ADR-142]] 정정 8, 2026-08-16). 네 화면 모두 위 ‘캐릭터 초상화 레일’이 그 자리이고, 컴포넌트 자체가 지워졌다. 아래는 기록이다.
@@ -580,6 +581,32 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 켠 상자는 `bg-primary` + `border-primary`, 그 안의 체크는 `text-on-primary`. 안 켠 것은 **테두리만**(`border-border`, 배경이 있는 자리면 `border-border-strong`). 크기·모서리는 자리마다 다르다(설정·가계부 18px `rounded-md`, today 위젯 12px `rounded-[3px]`). 고정하는 것은 **색** 하나다.
 
 **‘완료 = `secondary`’ 계보를 여기에 끌어오지 않는다.** `secondary` 는 테마의 두 번째 시드라 메인 컬러와 색상(H)이 무관해서(렌은 빨강 테마에 틸, 엔젤릭버스터는 분홍 테마에 하늘) 상자를 그 색으로 채우면 **테마 밖의 색**으로 읽힌다(사용자 판정). 그 계보가 사는 자리는 **배지**다. 컨텐츠 완료 배지·보스 `CLEAR`·성공 토스트.
+
+### 스위치 (`components/atoms/Switch`): [[ADR-255]] (2026-09-12)
+**앱의 스위치는 이 아톰 하나다. 손으로 그리지 말 것.** 세 자리가 클래스 문자열을 따로 적다가
+모양이 둘로 갈렸던 것을 모았다.
+
+```
+트랙   sm 28×16 · lg 44×24 · rounded-full
+손잡이 sm 12 · lg 20 · rounded-full · bg-surface
+색     켜짐 bg-primary · 꺼짐 bg-surface-2
+거리   손잡이가 가는 거리 = 트랙 폭 − 손잡이 − 2 (sm 14 · lg 22). SWITCH_SIZE 표 하나에 있다
+```
+
+- **크기는 둘뿐이다.** `lg` 는 알림 설정과 보스 관리의 `모든 보스 보기`, `sm` 은 드롭 연출
+  시트 머리. 셋째 크기를 두지 않는 것은 `ProgressBar` 의 두께와 같은 규칙이다.
+- **`role="switch"`·`aria-checked`·`aria-label` 과 선택 촉각은 부품이 든다.** 호출부에서
+  `selectionFeedback()` 을 또 부르면 한 번 누르고 두 번 울린다.
+- **누름이 아무 일도 안 하는 동안은 `disabled` 를 준다.** 알림 설정이 FCM 왕복 중에 쓴다.
+  안 막으면 손끝은 바뀌었다고 말하고 값은 그대로다.
+- **옆 글자는 호출부가 `children` 으로 넣는다.** 글자를 눌러도 토글돼야 하는 자리(보스 관리 ·
+  드롭 연출)가 있고 그 글자의 크기·두께는 자리마다 다르다. 자리잡기(`ml-auto`·`gap-1.5`)도
+  `className` 으로 호출부가 쥔다. `Badge` 와 같은 규칙이다.
+- **손잡이는 아직 순간이동한다.** 미끄러지게 하는 것은 #378 이다.
+
+다크 테마에서 꺼진 스위치의 대비가 낮다. `surface` 가 `surface-2` 보다 어두워서
+(검은마법사 `#1C1319` 대 `#2E222A`) 어두운 트랙 위의 더 어두운 동그라미가 된다.
+사용자가 흰 손잡이와 견줘 보고 고른 색이다([[ADR-255]] 결정 3).
 
 ## 공유 레이아웃 패턴
 
@@ -610,6 +637,19 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 ~~폭을 값으로 못박는 것이 규칙이다(`w-14`·`w-12`)~~ → **걷혔다**([[ADR-225]] 정정 2). 안드로이드가
 뒷 음절을 다음 줄로 넘기던 결함을 `enablePreparedTextLayout` 이 원인에서 끊었다. 폭은 글자가
 정하고 좌우 여백을 쓴다. 그래서 썸이 조각마다 폭을 다시 재서 미끄러질 수 있다.
+
+### 기간 이동 줄(`←` · 기간 라벨 · `→`): [[ADR-256]] (2026-09-12)
+`BossProfitScreen` · `CashbookScreen` · `DropPriceScreen` 셋에 있다. **아직 부품이 아니다** —
+셋이 서로 베낀 코드이고, #351 이 년 → 월 → 주 드릴다운을 세우면서 하나로 모은다.
+
+```
+화살표  h-7 w-7 rounded-full border border-border · 꺼지면 opacity-30
+라벨    가운데 두 줄. 위가 상대 표현(`이번 주`) · 아래가 정확한 날짜(tabular-nums)
+줄      flex-row items-center justify-center gap-4 py-3
+```
+
+**`py-3`(위아래 각 12)은 세 화면이 같은 값이다.** 한 곳만 바꾸면 같은 줄이 화면마다 다르게
+보인다. `src/__tests__/period-nav-padding.test.ts` 가 셋이 같은지 본다.
 
 ### 스크롤 영역: 화면이 스크롤을 소유하고, **고정되는 영역은 없다** ([[ADR-099]] · [[ADR-131]])
 
@@ -800,7 +840,8 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
       FAB        가계부의 `＋`(organisms/SpeedDial) · 보스 수익의 아이템 가격 입력(DropPriceFab)
     선택(select)
       세그먼트     Segment · TabSegment · DifficultySegment 부품 셋이 든다(사용처 18곳)
-      스위치       알림 받기와 알림 토픽 넷 · 보스 관리의 `모든 보스 보기`
+      스위치       알림 받기와 알림 토픽 다섯 · 보스 관리의 `모든 보스 보기` · 드롭 연출
+                  `atoms/Switch` 가 든다. 호출부에서 또 부르면 두 번 울린다
       캐릭터 카드   순서 바꾸기 (CharacterLayerGrid 의 onOrderChange, 끄는 동안 자리가 바뀔 때마다)
                   스크린리더의 위로·아래로 옮기기도 같다
       캘린더       날 고르기 (molecules/CalendarGrid)
@@ -1057,6 +1098,26 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 - 현재 사용: 하단 탭바 `ListChecks`(컨텐츠)/`Swords`(보스)/`ProfitIcon`(수익, 커스텀)/`Settings`(설정), 새로고침 `RefreshCw`, 보스 카드 파티 배지 `Users`, 파티 스테퍼 `Minus`/`Plus`.
 - **RN 하단바의 활성 아이콘은 ‘면’이다. 다만 가려서 채운다**([[ADR-132]] 정정 25). fill 과 stroke 가 같은 색이라, **안쪽에 선이 있는 그림은 채우는 순간 그 선이 사라진다**(조준경 → 원판, 달력 → 체크 소실). 통째로 채우는 것은 안쪽에 의미가 없는 넷뿐이고(`LayoutDashboard`·`Wrench`·`ShoppingCart`·`Swords`), 톱니와 수익은 **커스텀이라 채울 자리를 고른다**. `GearIcon` 은 lucide `settings` 와 같은 좌표를 한 패스로 다시 그려 `fillRule="evenodd"` 로 가운데를 비우고(설정 화면들은 계속 lucide `Settings` 를 쓴다), `ProfitIcon` 은 동전 두 개만 채우고 단을 그리는 호는 선으로 남긴다. **채우지 못하는 넷(달력·지갑·목록·조준경)은 대신 획을 굵힌다**(1.5 → 2.75, [[ADR-132]] 정정 27). 채우기와 굵히기는 **배타**다(둘 다 주면 채운 그림이 과해진다). **채운 그림에서는 구멍을 키운다**(톱니 r 3 → 4.5). 둘레의 획이 구멍 안쪽을 먹어 원래 크기로는 ‘덩어리 속 점’이 된다.
 - **커스텀 SVG 에 `fill` 프롭을 열 때는 `?? 'none'` 을 붙일 것.** `undefined` 를 그대로 내려보내면 `react-native-svg` 가 뿌리의 `fill="none"` 을 상속하지 않고 **검정**으로 떨어뜨린다. 안 채우는 자리에서 아이콘이 새까매진다.
+
+## Tailwind 는 `src/` 를 **글자로** 훑는다 (2026-09-12)
+
+스캔 범위는 `tailwind.config.js` 의 `content: ['./App.tsx', './src/**/*.{ts,tsx}']` 이고,
+**테스트 파일도 그 안이다**. 파서가 아니라 문자열 추출기라 주석·정규식·문서 문자열도 똑같이 후보가 된다.
+
+- **정책 테스트에서 여백 클래스를 대괄호 임의값 꼴 정규식으로 찾지 말 것.** `pb` + `-` + 대괄호로
+  감싼 문자 클래스를 적으면 Tailwind 가 그것을 임의값 유틸리티로 읽어 값이 `\d.` 인 CSS 규칙을
+  만든다. 그 깨진 값이 번들에 그대로 실려 **앱이 아예 안 뜬다**(`Compiling JS failed:
+  non-terminated string`). 대괄호 없이 숫자로 적으면 된다(`/\bpy-\d(?:\.5)?\b/`).
+  `src/__tests__/period-nav-padding.test.ts` · `scheduler-rail-gap.test.ts` 가 그렇게 적혀 있다.
+- **`tsc`·jest·eslint 는 이것을 못 잡는다.** 셋 다 CSS 를 안 만든다. 번들을 한 번 받아 보는 것만이
+  증거다 — `curl -s -o /tmp/b.js -w "%{http_code} %{size_download}\n"
+  'http://localhost:8081/index.bundle?platform=ios&dev=true&minify=false'`.
+
+**처음 쓰는 유틸리티는 Metro 를 재시작해야 나온다.** NativeWind 의 Metro 통합이 CSS 를 **서버가
+뜰 때 한 번** 컴파일하고 그 결과를 계속 돌려준다. 그래서 코드에 `pt-7` 을 새로 적어도, 그 클래스를
+아무도 안 쓰던 상태에서 뜬 서버는 그 유틸리티를 안 갖고 있고 **여백이 조용히 0 이 된다**. 화면이
+디스크의 값과 다르면 `npx expo start --port 8081 --clear` 로 다시 띄우고 볼 것. 클래스 자체가
+유효한지는 jest 가 즉답한다(`renderAtom(<View className="pt-7" />)` 의 풀린 스타일).
 
 ## NativeWind 가 안 가로채는 컴포넌트 ([[ADR-197]])
 
