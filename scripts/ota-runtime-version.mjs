@@ -53,6 +53,50 @@ export const PINNED_RUNTIME_VERSIONS = {
 }
 
 /**
+ * **심사 중인** 바이너리의 지문 ([[ADR-268]] 결정 4). 발행 지문과 **함께** 받아주는 값이다.
+ *
+ * ## 왜 필요한가
+ *
+ * 심사 담당자가 실행하는 것은 아직 스토어에 없는 새 바이너리다. `latest-*.json` 은 그 바이너리가
+ * 게시된 **뒤에야** 갱신되므로, 심사 시점에는 자기 지문이 안 맞아 스토어 업데이트 필요로 떨어진다.
+ * 모달이 `나중에` 로 닫히던 동안은 아무도 안 밟았는데, 잠금이 되면 그 사람은 켜자마자 못 쓰는
+ * 앱을 본다. 반대로 미리 갱신하면 기존 사용자가 받을 것 없는 채로 심사 기간 내내 잠긴다.
+ *
+ * ## 값은 지어내는 것이 아니라 바이너리에서 읽는다
+ *
+ * `PINNED_RUNTIME_VERSIONS` 와 같은 자리에서 같은 방식으로 읽는다.
+ *
+ * ```bash
+ * cat <archive>/Products/Applications/app.app/EXUpdates.bundle/fingerprint
+ * unzip -p app-release.aab base/assets/fingerprint
+ * ```
+ *
+ * 심사 반려로 네이티브를 고쳐 다시 구우면 지문이 바뀌므로 이 값도 함께 갱신한다.
+ *
+ * ## 게시가 확인되면 **비운다**
+ *
+ * 비우는 것이 곧 그 플랫폼의 **잠금 스위치**다([[ADR-268]] 결정 3). 안 비우면 아무도 안 잠기는데,
+ * 그 방향이 안전한 쪽이라 조용히 지나간다. 플랫폼마다 따로 비운다 - 두 스토어의 게시 시점이 다르다.
+ */
+export const IN_REVIEW_RUNTIME_VERSIONS = {}
+
+/**
+ * `latest-<platform>.json` 에 실을 **받는 지문 목록** ([[ADR-268]] 결정 2). 발행 지문이 앞이고
+ * 심사 중인 것이 뒤다.
+ *
+ * 같은 값을 겹쳐 싣지 않는 것은, 그 파일을 읽는 사람이 중복을 **서로 다른 바이너리 둘** 로 읽기
+ * 때문이다.
+ */
+export function resolveAcceptedRuntimeVersions(runtimeVersions, inReview) {
+  return Object.fromEntries(
+    Object.entries(runtimeVersions).map(([platform, runtimeVersion]) => {
+      const extra = (inReview?.[platform] ?? []).filter((value) => value !== runtimeVersion)
+      return [platform, [runtimeVersion, ...extra]]
+    }),
+  )
+}
+
+/**
  * 플랫폼마다 «실제로 쓸 지문» 을 정한다 — 못박은 값이 트리 계산값을 이긴다([[ADR-190]] 결정 1).
  *
  * `pinned` 를 결과에 함께 실어 보내는 것은 호출부가 **그 사실을 찍어야** 하기 때문이다. 조용히

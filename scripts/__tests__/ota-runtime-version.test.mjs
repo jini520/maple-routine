@@ -4,7 +4,13 @@
 //
 // 이 둘이 깨지면 나는 사고가 화면에 안 보인다 — 배포도 성공하고 앱도 안 죽고, 스토어 사용자만
 // 부팅할 때마다 「스토어 업데이트가 필요해요」를 본다. 그래서 수치로 못 박는다.
-import { PINNED_RUNTIME_VERSIONS, describePinMismatch, resolveRuntimeVersions } from '../ota-runtime-version.mjs'
+import {
+  IN_REVIEW_RUNTIME_VERSIONS,
+  PINNED_RUNTIME_VERSIONS,
+  describePinMismatch,
+  resolveAcceptedRuntimeVersions,
+  resolveRuntimeVersions,
+} from '../ota-runtime-version.mjs'
 
 const IOS_STORE = 'd304704ee9eeedd73d61383372e00849f830f8fb'
 const ANDROID_STORE = '3df849c014ea95bb7b0b9dd506094148b0fdc508'
@@ -75,5 +81,55 @@ describe('PINNED_RUNTIME_VERSIONS — 1.0.6 스토어 바이너리의 지문 ([[
       ios: { runtimeVersion: IOS_STORE, binaryAppVersion: '1.0.6' },
       android: { runtimeVersion: ANDROID_STORE, binaryAppVersion: '1.0.6' },
     })
+  })
+})
+
+// 앱이 **나는 잠기지 않아도 되는가** 를 묻는 자리다([[ADR-268]] 결정 2). 값 하나와 같은가로
+// 두면 심사 기간을 표현할 수 없다. 그때는 정당한 바이너리가 둘이다(스토어에 있는 옛 것 · 심사
+// 중인 새 것). 여기서 틀리면 심사 담당자가 못 쓰는 앱을 보거나, 반대로 아무도 안 잠긴다.
+describe('resolveAcceptedRuntimeVersions ([[ADR-268]] 결정 2)', () => {
+  const RUNTIME = { ios: IOS_STORE, android: ANDROID_STORE }
+
+  it('심사 중인 것이 없으면 발행 지문 하나다: 이것이 정상 상태다', () => {
+    expect(resolveAcceptedRuntimeVersions(RUNTIME, {})).toEqual({
+      ios: [IOS_STORE],
+      android: [ANDROID_STORE],
+    })
+  })
+
+  it('심사 중인 지문을 뒤에 붙인다', () => {
+    const accepted = resolveAcceptedRuntimeVersions(RUNTIME, { ios: ['NEW_IOS'] })
+
+    expect(accepted.ios).toEqual([IOS_STORE, 'NEW_IOS'])
+  })
+
+  // 두 스토어의 게시 시점이 달라 한쪽만 심사 중인 구간이 실제로 생긴다(결정 3).
+  it('플랫폼마다 따로 든다', () => {
+    const accepted = resolveAcceptedRuntimeVersions(RUNTIME, { ios: ['NEW_IOS'] })
+
+    expect(accepted.android).toEqual([ANDROID_STORE])
+  })
+
+  // 같은 값이 두 번 실리면 그 파일을 읽는 사람이 **둘이 다른 바이너리** 로 읽는다.
+  it('발행 지문과 같은 값은 겹쳐 싣지 않는다', () => {
+    const accepted = resolveAcceptedRuntimeVersions(RUNTIME, { ios: [IOS_STORE] })
+
+    expect(accepted.ios).toEqual([IOS_STORE])
+  })
+
+  it('심사 목록 자체가 없어도 발행 지문은 나온다', () => {
+    expect(resolveAcceptedRuntimeVersions(RUNTIME, undefined)).toEqual({
+      ios: [IOS_STORE],
+      android: [ANDROID_STORE],
+    })
+  })
+})
+
+// 못박은 지문과 같은 성질이라 같은 파일에 둔다. 지어내는 값이 아니라 **바이너리에서 읽어 온
+// 사실**이다([[ADR-268]] 결정 4). 여기 수치로 박아 두는 것은 **출시 후에 비워야 하기** 때문이다.
+// 안 비우면 아무도 안 잠기고, 그 방향이 안전한 쪽이라 조용히 지나간다.
+describe('IN_REVIEW_RUNTIME_VERSIONS: 심사 중인 바이너리의 지문 ([[ADR-268]])', () => {
+  it('지금은 비어 있다', () => {
+    expect(IN_REVIEW_RUNTIME_VERSIONS).toEqual({})
   })
 })

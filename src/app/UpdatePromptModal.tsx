@@ -323,11 +323,6 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
         icon={StoreIcon}
         tone="third"
         title="스토어 업데이트가 필요해요"
-        content={
-          <BadgeRow>
-            <VersionBadge version={state.availableVersion} />
-          </BadgeRow>
-        }
         description="이 업데이트는 앱 스토어에서 업데이트해야 받을 수 있어요."
         option={
           state.minNativeVersion !== null ? (
@@ -338,7 +333,16 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
           ) : undefined
         }
         action={{ label: '스토어로 이동', onPress: actions.openStore }}
-        secondaryAction={물러나기}
+        // 물러나는 길이 없다. 네이티브가 낡아 새 번들을 못 받는 상태라 닫아도 돌아갈 곳이 없고,
+        // 닫히는 동안 그 기기는 옛 번들에 붙잡혀 있었다. 배경 탭과 안드로이드 뒤로가기를 함께
+        // 막으려고 `공통` 의 `onClose` 를 덮는다.
+        //
+        // 종료 버튼은 두지 않는다. iOS 에는 앱이 스스로 끝나는 길이 없어(`BackHandler.exitApp` 의
+        // iOS 구현이 빈 함수) 한쪽만 종료하면 같은 화면이 플랫폼마다 다른 말을 한다.
+        //
+        // 버전 배지도 없다. 잠금이 켜질 때 이 번들은 스토어 바이너리와 같은 버전이라, 그리면
+        // 이미 쓰고 있는 버전으로 업데이트하라고 말하게 된다.
+        onClose={() => {}}
       />
     )
   }

@@ -59,10 +59,28 @@ async function checkStoreRequired(): Promise<LiveUpdateCheckResult | null> {
       headers: { 'cache-control': 'no-cache' },
     })
     if (!response.ok) return null
-    const latest = (await response.json()) as { runtimeVersion?: string | null; appVersion?: string | null }
+    const latest = (await response.json()) as {
+      runtimeVersion?: string | null
+      acceptedRuntimeVersions?: unknown
+      appVersion?: string | null
+    }
     if (!latest.runtimeVersion || !latest.appVersion) return null
-    // 런타임이 같으면 스토어를 거칠 이유가 없다. 그냥 최신이다.
-    if (latest.runtimeVersion === Updates.runtimeVersion) return null
+    // 자기 지문을 모르면 판정하지 않는다. 조회 실패를 삼키는 것과 같은 이유로, 확인되지 않은
+    // 것을 근거로 앱을 막을 수는 없다.
+    const mine = Updates.runtimeVersion
+    if (!mine) return null
+    // 잠그지 않고 받아주는 지문들. 심사 기간에는 정당한 바이너리가 둘이라(스토어에 있는 옛 것과
+    // 심사 중인 새 것) 값 하나로는 그 기간을 표현할 수 없다. 값 하나로 두면 심사 담당자가 아직
+    // 갱신되지 않은 판정 파일 때문에 잠긴다.
+    //
+    // 형식이 아니거나 비어 있으면 `runtimeVersion` 하나로 떨어진다. **그 폴백이 곧 옛 동작이라**
+    // 이 필드를 모르는 옛 번들과 판정이 같고, 필드가 사라져도 거짓 잠금이 생기지 않는다.
+    const raw = latest.acceptedRuntimeVersions
+    const accepted =
+      Array.isArray(raw) && raw.length > 0 && raw.every((value) => typeof value === 'string')
+        ? (raw as string[])
+        : [latest.runtimeVersion]
+    if (accepted.includes(mine)) return null
     // minNativeVersion 은 **싣지 않는다**: runtimeVersion 은 fingerprint 해시라 사용자에게 보여 줄
     // 이름이 아니다. 모달은 그 줄을 안 그린다.
     return { kind: 'store-required', version: latest.appVersion }
