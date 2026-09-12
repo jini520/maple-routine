@@ -55,10 +55,21 @@ const CIRCLE_BACKGROUND = { light: '#ffffff', dark: '#000000' } as const
  * 서버가 뜰 때 한 번 컴파일하는 탓에 **두께가 조용히 0 이 된다**(`mr-2` 에서 겪은 그 자리).
  * 색은 `border-primary` 가 이미 쓰이는 클래스라 그쪽에 남는다.
  *
- * 이 값이 원 안의 여백(원 40 − 얼굴 32 의 절반 = 4)의 절반을 넘으면 여백이 선에 먹힌다. 2 가
- * 그 바닥이라, 더 두껍게 하려면 `PORTRAIT_HEADER.faceSize` 를 함께 줄여야 한다.
+ * 이 값이 원 안의 여백(원 48 − 얼굴 40 의 절반 = 4)을 넘으면 여백이 선에 먹힌다. 2 가 그
+ * 바닥이라, 더 두껍게 하려면 `PORTRAIT_HEADER.faceSize` 를 함께 줄여야 한다.
  */
 const CIRCLE_BORDER_PX = 2
+
+/**
+ * 얼굴을 원 안에서 작게 보이게 하는 배수(사용자 지시).
+ *
+ * 크롭 표는 얼굴만 원에 꽉 채우도록 잡혀 있어서, 원이 48 까지 커지자 머리통만 크게 보였다. 박스를
+ * 35% 넓게 잡아 어깨 쪽까지 조금 더 들인다. 얼굴 상자(40)와 원(48)은 그대로다.
+ *
+ * 이 값을 주는 곳은 여기뿐이다. `faceCropStyle` 의 기본값은 1 이라 나머지 초상화 여덟 자리는
+ * 안 움직인다.
+ */
+const HEADER_FACE_ZOOM = 1.35
 
 function DrumFace(props: {
   portrait: HeaderPortraitView
@@ -88,6 +99,7 @@ function DrumFace(props: {
         imageUrl={props.portrait.imageUrl}
         name={props.portrait.name}
         size={PORTRAIT_HEADER.faceSize}
+        faceZoom={HEADER_FACE_ZOOM}
       />
     </AnimatedBox>
   )

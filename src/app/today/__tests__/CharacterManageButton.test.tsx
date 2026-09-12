@@ -13,6 +13,7 @@ import { mockReducedMotion, withRepeatSpy } from '../../../components/__tests__/
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { flattenStyle, renderAtom, 기본테마 } from '../../../components/__tests__/render-atom'
+import { faceCropStyle } from '../../../lib/face-crop'
 import { getThemeDefinition } from '../../../lib/theme/theme-registry'
 import {
   __resetThemeAppearanceForTest,
@@ -175,6 +176,16 @@ describe('도는 얼굴', () => {
     expect(view.getByTestId('character-manage-face-0').props.source).toEqual({
       uri: 셋[0].imageUrl,
     })
+  })
+
+  // 얼굴을 **넓게 잡은 크롭**으로 그린다(사용자 지시). 원이 48 까지 커지자 기본 크롭에서는
+  // 머리통만 크게 보였다. `faceZoom` 을 떼면 이 단언이 깨진다.
+  it('얼굴을 기본보다 넓게 잡아 머리통을 작게 그린다', async () => {
+    const view = await renderAtom(<CharacterManageButton portraits={셋} />)
+    const face = flattenStyle(view.getByTestId('character-manage-face-0').props.style)
+    const 기본 = faceCropStyle(PORTRAIT_HEADER.faceSize)
+
+    expect(face.width).toBeLessThan(기본.width)
   })
 })
 

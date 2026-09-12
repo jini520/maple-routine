@@ -74,10 +74,10 @@ describe('header 규격은 머리를 안 높인다', () => {
     expect(여백).toBeGreaterThanOrEqual(테두리)
   })
 
-  // 얼굴 크기는 compact 규격과 같은 값이다. 40 짜리 칸에 얼굴을 앉히는 모양이 앱에 하나로 남는다.
-  it('compact 규격과 같은 칸·얼굴을 쓴다', () => {
-    expect(PORTRAIT_HEADER.slot).toBe(PORTRAIT_COMPACT.slot)
-    expect(PORTRAIT_HEADER.faceSize).toBe(PORTRAIT_COMPACT.faceSize)
+  // 얼굴은 레일 칸의 얼굴과 같은 지름이다. 이 앱이 이미 그리는 크기라 얼굴 크롭
+  // (`lib/face-crop`)이 새 배율을 만나지 않는다.
+  it('얼굴이 레일 칸의 얼굴과 같은 지름이다', () => {
+    expect(PORTRAIT_HEADER.faceSize).toBe(PORTRAIT_RAIL.faceSize)
   })
 })
 
