@@ -2,6 +2,9 @@
 
 > **범위**: 하단 탭바 네 번째 탭. 스케줄 관리 방법 · 테마 · 캐릭터 관리 · 기능 설명 · 개발 노트 ·
 > 계정 및 데이터 · 앱 정보를 여는 얕은 계층이다.
+> **이 문서 본문은 [[ADR-248]] 이전 구조다.** 그 결정이 이 탭 이름을 `더보기` 로 바꾸고 값을 바꾸는
+> 행들을 머리의 톱니바퀴 뒤(`AppSettingsScreen`)로 보냈는데 본문이 아직 안 따라왔다. 더보기 화면의
+> 현행 구조는 [[ADR-248]] 과 [[ADR-266]] 에 있다.
 > **여기 없는 것**: 테마 목록과 색 정책은 [theme.md](./theme.md), 온보딩 흐름은
 > [onboarding.md](./onboarding.md), OTA 적용은 [live-update.md](./live-update.md).
 > **관련 문서**: [../foundation/nexon-api.md](../foundation/nexon-api.md) ·
