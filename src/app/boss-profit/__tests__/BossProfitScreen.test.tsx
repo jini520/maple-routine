@@ -881,3 +881,33 @@ describe('조회 불가 카드의 캐릭터 관리로 이동하기', () => {
     })
   })
 })
+
+// 과거 기간의 카드는 전부 기록에서 생긴다(빈 카드는 현재 기간에서만 만들어진다). 받아 둔
+// 사실 위에 조회 불가 표식을 얹지 않는다.
+describe('조회 불가 표식은 현재 기간에서만 선다', () => {
+  const 조회불가 = { characterIssues: { 'ocid-1': 'unavailable' as const } }
+
+  it('기록이 있는 과거 기간 카드에는 표식을 안 그린다', async () => {
+    mockStore({
+      ...조회불가,
+      status: 'loaded',
+      periodState: 'recorded',
+      periodKey: '2026-07-09',
+      loadedPeriodKey: '2026-07-09',
+      rows: [보스행({ periodKey: '2026-07-09' })],
+    })
+
+    const { queryByTestId } = await renderScreen()
+
+    expect(queryByTestId('character-issue-badge')).toBeNull()
+    expect(queryByTestId('character-issue-amount')).toBeNull()
+  })
+
+  it('현재 기간에서는 그대로 선다', async () => {
+    mockStore({ ...조회불가, status: 'loaded', periodState: 'recorded', rows: [보스행()] })
+
+    const { getByTestId } = await renderScreen()
+
+    expect(getByTestId('character-issue-badge')).toBeTruthy()
+  })
+})
