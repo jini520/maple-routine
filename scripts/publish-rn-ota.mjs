@@ -35,8 +35,10 @@ import { describeReleaseNoteGap } from './release-note-gap.mjs'
 // 지문 못박기는 **순수 로직이라 따로 산다**([[ADR-190]]) — 이 파일이 최상위 `await` 를 쓰는 ESM
 // 이라 테스트가 import 하지 못하기 때문이다. 그쪽에는 테스트가 붙어 있다.
 import {
+  IN_REVIEW_RUNTIME_VERSIONS,
   PINNED_RUNTIME_VERSIONS,
   describePinMismatch,
+  resolveAcceptedRuntimeVersions,
   resolveRuntimeVersions,
 } from './ota-runtime-version.mjs'
 // 못박은 발행은 «옛 바이너리를 겨냥한다» 는 뜻이라 에셋 이름까지 그 바이너리에 맞춰야 한다
@@ -409,10 +411,22 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 
     // `/latest` 가 읽는 파일([[ADR-137]] 결정 4) — 프로토콜이 204 로 삼키는 «스토어 업데이트 필요»
     // 를 되살리는 유일한 재료다.
+    // 받는 지문 목록([[ADR-268]] 결정 2). 발행 지문 + 심사 중인 바이너리. 값 하나로 두면 심사
+    // 담당자가 아직 갱신되지 않은 이 파일 때문에 잠긴다.
+    const accepted = resolveAcceptedRuntimeVersions(runtimeVersions, IN_REVIEW_RUNTIME_VERSIONS)[platform]
     const latestPath = join(workDir, `latest-${platform}.json`)
     writeFileSync(
       latestPath,
-      JSON.stringify({ runtimeVersion: runtimeVersions[platform], appVersion, storeUrl: STORE_URLS[platform] }, null, 2),
+      JSON.stringify(
+        {
+          runtimeVersion: runtimeVersions[platform],
+          acceptedRuntimeVersions: accepted,
+          appVersion,
+          storeUrl: STORE_URLS[platform],
+        },
+        null,
+        2,
+      ),
     )
     manifestFiles.push(latestPath)
   }

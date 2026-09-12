@@ -190,6 +190,30 @@ describe('UpdatePromptModal', () => {
     expect(actions.openStore).toHaveBeenCalledTimes(1)
   })
 
+  // 뒤 화면이 이미 제 기능을 못 하는 모달이라 닫아서 돌아갈 곳이 없다. `ApiKeyNoticeModal` 이
+  // 같은 자리에 있다. 종료 버튼을 안 두는 것은 iOS 에 스스로 종료하는 길이 없어서다
+  // (`BackHandler.exitApp` 의 iOS 구현이 빈 함수). 한쪽만 종료되면 같은 화면이 플랫폼마다
+  // 다른 말을 한다.
+  it('store-required: 물러나는 길이 없다', async () => {
+    const { view, actions } = await renderModal({ status: 'store-required' })
+
+    expect(view.queryByText('나중에')).toBeNull()
+    expect(view.queryByText('취소')).toBeNull()
+    expect(view.queryByText('종료')).toBeNull()
+
+    await fireEvent.press(view.getByTestId('update-prompt-overlay'))
+    expect(actions.dismiss).not.toHaveBeenCalled()
+  })
+
+  // 스토어 바이너리와 잠금이 켜질 때의 번들이 같은 버전이라(완료 안내를 안 띄우려고 맞췄다)
+  // 배지를 그리면 이미 쓰고 있는 버전으로 업데이트하라고 말하게 된다. 갈 곳이 스토어 하나뿐이라
+  // 버전을 봐도 사용자가 할 수 있는 일이 안 달라진다.
+  it('store-required: 버전 배지를 그리지 않는다', async () => {
+    const { view } = await renderModal({ status: 'store-required', availableVersion: '1.0.8' })
+
+    expect(view.queryByText('v1.0.8')).toBeNull()
+  })
+
   describe('update-available: 자세히 보기(핵심 목록)', () => {
     const highlights = ['보스 카드에서 파티 인원을 고칠 수 있어요', '기능 설명 화면이 생겼어요']
 
