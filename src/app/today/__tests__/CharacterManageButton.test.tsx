@@ -95,8 +95,9 @@ describe('버튼', () => {
     const circle = flattenStyle(view.getByLabelText('캐릭터 관리').props.style)
 
     expect(circle.borderColor).toBe(기본테마.primary)
-    // 살짝 이라 굵기는 1 이다. 이 값이 커지면 40 원 안에서 얼굴이 그만큼 깎인다.
-    expect(circle.borderWidth).toBe(1)
+    // 두께는 2 다(사용자 지시로 1 에서 올렸다). 원 안의 여백 4 의 절반이라, 더 두꺼워지면
+    // 여백이 선에 먹힌다.
+    expect(circle.borderWidth).toBe(2)
   })
 
   // 얼굴이 없을 때도 버튼의 테두리는 남는다. 빈 원이 아니라 **문**으로 읽혀야 하는 자리다.

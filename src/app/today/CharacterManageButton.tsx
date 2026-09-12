@@ -48,6 +48,18 @@ const AnimatedBox = Animated.createAnimatedComponent(View)
  */
 const CIRCLE_BACKGROUND = { light: '#ffffff', dark: '#000000' } as const
 
+/**
+ * 테두리 두께(사용자 지시로 1 에서 올렸다).
+ *
+ * 클래스(`border-2`)로 쓰지 않는다. 이 저장소에서 아무도 안 쓰던 유틸리티라, NativeWind 가 CSS 를
+ * 서버가 뜰 때 한 번 컴파일하는 탓에 **두께가 조용히 0 이 된다**(`mr-2` 에서 겪은 그 자리).
+ * 색은 `border-primary` 가 이미 쓰이는 클래스라 그쪽에 남는다.
+ *
+ * 이 값이 원 안의 여백(원 40 − 얼굴 32 의 절반 = 4)의 절반을 넘으면 여백이 선에 먹힌다. 2 가
+ * 그 바닥이라, 더 두껍게 하려면 `PORTRAIT_HEADER.faceSize` 를 함께 줄여야 한다.
+ */
+const CIRCLE_BORDER_PX = 2
+
 function DrumFace(props: {
   portrait: HeaderPortraitView
   slot: number
@@ -121,17 +133,19 @@ export function CharacterManageButton(props: {
         height: PORTRAIT_HEADER.slot,
         marginRight: 8,
         backgroundColor: CIRCLE_BACKGROUND[mode],
+        borderWidth: CIRCLE_BORDER_PX,
       }}
       /*
        * `overflow-hidden` 은 얼굴이 오르내리며 테두리를 넘기 때문이다. 안 자르면 둥근 틀 밖에
        * 얼굴 조각이 뜬다.
        *
-       * 테두리는 **테마 컬러**이고 굵기는 1 이다(사용자 지시). 살짝 을 알파가 아니라 굵기로 낸다.
+       * 테두리 색은 **테마 컬러**이고 두께는 `CIRCLE_BORDER_PX` 다(사용자 지시). 알파가 아니라
+       * 굵기로 낸다.
        * 반투명하게 깔면 얼굴 그림 위에서 색이 섞여 탁해지고, 테마마다 원색의 밝기가 달라 다크에서
        * 선이 사라지는 테마가 생긴다. 레일 칸의 링도 같은 토큰으로 초상화를 두른다
        * (`CharacterPortrait` 의 `EmptyRing`).
        */
-      className="shrink-0 items-center justify-center overflow-hidden rounded-full border border-primary"
+      className="shrink-0 items-center justify-center overflow-hidden rounded-full border-primary"
     >
       {props.portraits.map((portrait, slot) => (
         <DrumFace

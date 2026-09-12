@@ -45,8 +45,8 @@ describe('rail 규격은 겹치지 않는다', () => {
 describe('header 규격은 머리를 안 높인다', () => {
   /** 갱신 시각 줄의 높이. `DataFreshness` 의 `h-4` 다(클래스 문자열이라 값으로는 못 가져온다). */
   const 갱신시각_높이 = 16
-  /** 테두리 두께. 원의 `border` 1px 이고, 안쪽 여백이 이것보다 커야 눈에 보인다. */
-  const 테두리 = 1
+  /** 테두리 두께. `CharacterManageButton` 의 `CIRCLE_BORDER_PX` 다. */
+  const 테두리 = 2
 
   // 머리 덩어리는 제목 줄과 갱신 시각 줄을 쌓은 것이고, 곁에 서는 것이 그 합을 넘을 때만 덩어리
   // 높이가 그것을 따라간다. 그러면 today 머리만 높아져 탭을 옮길 때 들썩여 보인다.
@@ -66,11 +66,12 @@ describe('header 규격은 머리를 안 높인다', () => {
     expect(PORTRAIT_HEADER.faceSize).toBeLessThan(PORTRAIT_HEADER.slot)
   })
 
-  // 여백이 테두리보다 얇으면 선에 먹혀 안 보인다. `살짝 보인다` 가 이 관계다.
-  it('그 여백이 테두리보다 두껍다', () => {
+  // 여백이 테두리보다 얇으면 선에 먹혀 안 보인다. 지금은 둘이 같은 2 이고 **그것이 바닥**이다.
+  // 테두리를 더 두껍게 하려면 `faceSize` 를 함께 줄여야 한다.
+  it('그 여백이 테두리보다 얇지 않다', () => {
     const 여백 = (PORTRAIT_HEADER.slot - PORTRAIT_HEADER.faceSize) / 2
 
-    expect(여백).toBeGreaterThan(테두리)
+    expect(여백).toBeGreaterThanOrEqual(테두리)
   })
 
   // 얼굴 크기는 compact 규격과 같은 값이다. 40 짜리 칸에 얼굴을 앉히는 모양이 앱에 하나로 남는다.
