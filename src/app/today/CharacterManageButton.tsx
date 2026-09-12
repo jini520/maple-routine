@@ -101,8 +101,16 @@ export function CharacterManageButton(props: {
         height: PORTRAIT_HEADER.faceSize,
         marginRight: 8,
       }}
-      // 얼굴이 오르내리며 테두리를 넘는다. 원이 안 자르면 둥근 틀 밖에 얼굴 조각이 뜬다.
-      className="shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-2"
+      /*
+       * `overflow-hidden` 은 얼굴이 오르내리며 테두리를 넘기 때문이다. 안 자르면 둥근 틀 밖에
+       * 얼굴 조각이 뜬다.
+       *
+       * 테두리는 **테마 컬러**이고 굵기는 1 이다(사용자 지시). 살짝 을 알파가 아니라 굵기로 낸다.
+       * 반투명하게 깔면 얼굴 그림 위에서 색이 섞여 탁해지고, 테마마다 원색의 밝기가 달라 다크에서
+       * 선이 사라지는 테마가 생긴다. 레일 칸의 링도 같은 토큰으로 초상화를 두른다
+       * (`CharacterPortrait` 의 `EmptyRing`).
+       */
+      className="shrink-0 items-center justify-center overflow-hidden rounded-full border border-primary bg-surface-2"
     >
       {props.portraits.map((portrait, slot) => (
         <DrumFace

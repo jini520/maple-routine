@@ -12,7 +12,7 @@ import { mockReducedMotion, withRepeatSpy } from '../../../components/__tests__/
 
 import { act, fireEvent } from '@testing-library/react-native'
 
-import { flattenStyle, renderAtom } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderAtom, 기본테마 } from '../../../components/__tests__/render-atom'
 import { PORTRAIT_HEADER } from '../../../components/organisms/CharacterPortrait/portrait-metrics'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { setHapticsPort, __resetNativePortsForTest } from '../../../native/ports'
@@ -71,6 +71,26 @@ describe('버튼', () => {
     const view = await renderAtom(<CharacterManageButton portraits={셋} />)
 
     expect(flattenStyle(view.getByLabelText('캐릭터 관리').props.style).overflow).toBe('hidden')
+  })
+
+  // 테두리는 **테마 컬러**다(사용자 지시). 색을 손으로 적지 않고 테마에서 읽는다 - 베끼면 테마가
+  // 늘 때 이 자리만 옛 색에 굳는다. 레일 칸의 링이 같은 토큰으로 초상화를 두른다.
+  it('테두리가 테마의 메인 컬러다', async () => {
+    const view = await renderAtom(<CharacterManageButton portraits={셋} />)
+    const circle = flattenStyle(view.getByLabelText('캐릭터 관리').props.style)
+
+    expect(circle.borderColor).toBe(기본테마.primary)
+    // 살짝 이라 굵기는 1 이다. 이 값이 커지면 40 원 안에서 얼굴이 그만큼 깎인다.
+    expect(circle.borderWidth).toBe(1)
+  })
+
+  // 얼굴이 없을 때도 버튼의 테두리는 남는다. 빈 원이 아니라 **문**으로 읽혀야 하는 자리다.
+  it('관리 대상이 없어도 테두리는 그대로다', async () => {
+    const view = await renderAtom(<CharacterManageButton portraits={[]} />)
+
+    expect(flattenStyle(view.getByLabelText('캐릭터 관리').props.style).borderColor).toBe(
+      기본테마.primary,
+    )
   })
 })
 
