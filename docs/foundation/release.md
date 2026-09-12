@@ -196,6 +196,15 @@ cd android && ./gradlew bundleRelease -PreactNativeArchitectures=armeabi-v7a,arm
 아니라 **추출 자체를 멈춰** Play 에 올릴 파일도 안 남긴다(실측). 기본값이 이미 `symbol_table` 이라
 낮출 여지도 없다.
 
+**난독화 매핑도 따로 할 일이 없다**([[ADR-269]] 정정 1). R8 이 켜져 있어 `mapping.txt` 가 생기지만
+AGP 가 그 사본을 AAB 안(`BUNDLE-METADATA/com.android.tools.build.obfuscation/proguard.map`)에
+넣으므로 Play 가 자동으로 쓴다. 스택트레이스가 난독화된 채 보이면 그때 이 파일을 의심할 것.
+
+> ⚠️ **R8 이 켜진 릴리스는 실기기 스모크가 게이트다**([[ADR-269]] 정정 1). R8 은 리플렉션으로만
+> 닿는 코드를 지울 수 있고, 그것은 **빌드도 설치도 성공한 뒤 그 화면을 눌렀을 때** 드러난다.
+> debug 빌드에서는 R8 이 안 돌아 재현되지 않는다. 릴리스 APK 를 실기기에 올려 주요 화면을 전부
+> 밟을 것. 확인할 때 OTA 번들이 임베드 번들을 가릴 수 있으므로 버전을 올려 리셋한 뒤 본다.
+
 **서명 확인**. 서명이 안 붙어도 빌드는 성공하므로([[ADR-091]] 결정 4) 산출물을 직접 본다.
 
 ```bash
