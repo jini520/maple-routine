@@ -78,7 +78,13 @@ export const PINNED_RUNTIME_VERSIONS = {
  * 비우는 것이 곧 그 플랫폼의 **잠금 스위치**다([[ADR-268]] 결정 3). 안 비우면 아무도 안 잠기는데,
  * 그 방향이 안전한 쪽이라 조용히 지나간다. 플랫폼마다 따로 비운다 - 두 스토어의 게시 시점이 다르다.
  */
-export const IN_REVIEW_RUNTIME_VERSIONS = {}
+export const IN_REVIEW_RUNTIME_VERSIONS = {
+  // 2026-09-13 App Store 심사에 올린 1.0.8 build 15 의 지문. 아카이브의
+  // `EXUpdates.bundle/fingerprint` 에서 읽었다.
+  //
+  // 게시가 확인되면 비운다. 비우는 것이 곧 1.0.6 기기의 잠금 스위치다.
+  ios: ['6bc20c979ffdbc05f07ea9b9ca6d0cad1f3b20b3'],
+}
 
 /**
  * `latest-<platform>.json` 에 실을 **받는 지문 목록** ([[ADR-268]] 결정 2). 발행 지문이 앞이고
