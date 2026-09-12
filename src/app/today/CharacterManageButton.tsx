@@ -88,15 +88,21 @@ export function CharacterManageButton(props: {
         tapFeedback()
         navigation.navigate('SettingsCharacters')
       }}
-      style={{ width: PORTRAIT_HEADER.faceSize, height: PORTRAIT_HEADER.faceSize }}
       /*
-       * `overflow-hidden` 은 얼굴이 오르내리며 테두리를 넘기 때문이다. 안 자르면 둥근 틀 밖에
-       * 얼굴 조각이 뜬다.
-       *
-       * `mr-2` 는 헤더가 쥔 `px-4` 위에 이 버튼만 더 미는 값이다(사용자 지시). 원이 화면
+       * 오른쪽 8 은 헤더가 쥔 `px-4` 위에 이 버튼만 더 미는 값이다(사용자 지시). 원이 화면
        * 가장자리에 붙어 보이던 것을 떼어 놓는다. 다른 탭 화면의 세그먼트보다 그만큼 안쪽이다.
+       *
+       * 클래스(`mr-2`)로 쓰지 말 것. 이 저장소에서 아무도 안 쓰던 유틸리티라, NativeWind 가 CSS 를
+       * 서버가 뜰 때 한 번 컴파일하고 그 결과를 계속 돌려주는 탓에 **여백이 조용히 0 이 된다**
+       * (Metro 를 다시 띄워야 나온다). 값으로 적으면 그 함정이 없다.
        */
-      className="mr-2 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-2"
+      style={{
+        width: PORTRAIT_HEADER.faceSize,
+        height: PORTRAIT_HEADER.faceSize,
+        marginRight: 8,
+      }}
+      // 얼굴이 오르내리며 테두리를 넘는다. 원이 안 자르면 둥근 틀 밖에 얼굴 조각이 뜬다.
+      className="shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-2"
     >
       {props.portraits.map((portrait, slot) => (
         <DrumFace
