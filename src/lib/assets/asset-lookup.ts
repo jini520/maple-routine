@@ -198,12 +198,26 @@ const ITEM_ICON_BY_LABEL: Record<string, string> = {
   '알레리아의 영약': 'alleria_elixir.webp',
   '콜렉터의 영약': 'collector_elixir.webp',
   '명예의 영약': 'honor_elixir.webp',
+  // 주문서 갈래의 타일. 타일 하나에 그림 한 장이라, 항목이 여럿인 타일은 **대표의 그림**이다
+  // (사용자 지정). 일반과 카르마 두 벌이 온 것은 일반 쪽을 쓰고, 프리미엄 악세의 대표는
+  // 공격력 주문서다.
+  '매지컬 주문서': 'magical_onehand_attack_scroll.webp',
+  '프리미엄 악세': 'premium_accessory_attack_scroll.webp',
+  '귀 장식 주문서': 'scroll_10_percent.webp',
+  '놀긍': 'amazing_positive_chaos_scroll.webp',
+  '펫장비 주문서': 'pet_equip_attack_scroll.webp',
+  '프리미엄 펫장비': 'premium_pet_equip_attack_scroll.webp',
+  '펫장비 이노센트': 'pet_equip_innocent_scroll.webp',
+  '펫장비 순백': 'pet_equip_pure_white_scroll.webp',
+  '리턴 스크롤': 'return_scroll.webp',
+  '펫장비 리턴': 'pet_equip_return_scroll.webp',
 }
 
 const MAP_ICON_BY_LABEL: Record<string, string> = {
   '하이마운틴': 'highMountain',
   '앵글러 컴퍼니': 'anglerCompany',
   '악몽선경': 'nightmareParadise',
+  '아우룸 레기스': 'aurumRegis',
 }
 
 /**

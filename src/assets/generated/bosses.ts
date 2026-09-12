@@ -26,22 +26,23 @@ import a11 from '../bosses/gloom.webp'
 import a12 from '../bosses/jupiter.webp'
 import a13 from '../bosses/kaling.webp'
 import a14 from '../bosses/kalos.webp'
-import a15 from '../bosses/limbo.webp'
-import a16 from '../bosses/lotus.webp'
-import a17 from '../bosses/lucid.webp'
-import a18 from '../bosses/maerin.webp'
-import a19 from '../bosses/magnus.webp'
-import a20 from '../bosses/maleficStar.webp'
-import a21 from '../bosses/papulatus.webp'
-import a22 from '../bosses/pierre.webp'
-import a23 from '../bosses/senya.webp'
-import a24 from '../bosses/seren.webp'
-import a25 from '../bosses/slime.webp'
-import a26 from '../bosses/vellum.webp'
-import a27 from '../bosses/verusHilla.webp'
-import a28 from '../bosses/vonBon.webp'
-import a29 from '../bosses/will.webp'
-import a30 from '../bosses/zakum.webp'
+import a15 from '../bosses/lesa.webp'
+import a16 from '../bosses/limbo.webp'
+import a17 from '../bosses/lotus.webp'
+import a18 from '../bosses/lucid.webp'
+import a19 from '../bosses/maerin.webp'
+import a20 from '../bosses/magnus.webp'
+import a21 from '../bosses/maleficStar.webp'
+import a22 from '../bosses/papulatus.webp'
+import a23 from '../bosses/pierre.webp'
+import a24 from '../bosses/senya.webp'
+import a25 from '../bosses/seren.webp'
+import a26 from '../bosses/slime.webp'
+import a27 from '../bosses/vellum.webp'
+import a28 from '../bosses/verusHilla.webp'
+import a29 from '../bosses/vonBon.webp'
+import a30 from '../bosses/will.webp'
+import a31 from '../bosses/zakum.webp'
 
 export const BOSS_PORTRAIT_ASSETS: Record<string, ImageAssetRef> = {
   "adversary": a0,
@@ -59,20 +60,21 @@ export const BOSS_PORTRAIT_ASSETS: Record<string, ImageAssetRef> = {
   "jupiter": a12,
   "kaling": a13,
   "kalos": a14,
-  "limbo": a15,
-  "lotus": a16,
-  "lucid": a17,
-  "maerin": a18,
-  "magnus": a19,
-  "maleficStar": a20,
-  "papulatus": a21,
-  "pierre": a22,
-  "senya": a23,
-  "seren": a24,
-  "slime": a25,
-  "vellum": a26,
-  "verusHilla": a27,
-  "vonBon": a28,
-  "will": a29,
-  "zakum": a30,
+  "lesa": a15,
+  "limbo": a16,
+  "lotus": a17,
+  "lucid": a18,
+  "maerin": a19,
+  "magnus": a20,
+  "maleficStar": a21,
+  "papulatus": a22,
+  "pierre": a23,
+  "senya": a24,
+  "seren": a25,
+  "slime": a26,
+  "vellum": a27,
+  "verusHilla": a28,
+  "vonBon": a29,
+  "will": a30,
+  "zakum": a31,
 }

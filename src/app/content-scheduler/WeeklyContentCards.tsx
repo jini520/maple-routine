@@ -41,6 +41,7 @@ export const EPIC_DUNGEON_BACKGROUND_SLUGS: Record<string, string> = {
   하이마운틴: 'ancientGodMitra',
   '앵글러 컴퍼니': 'senya',
   악몽선경: 'baekyeon',
+  '아우룸 레기스': 'lesa',
 }
 export const GUILD_MISSION_POINTS_NAME = '[길드] 주간 미션 포인트'
 export const GUILD_UNDERGROUND_WATERWAY_NAME = '[길드] 지하 수로'
