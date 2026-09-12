@@ -9,10 +9,13 @@
  * 처방을 버튼으로 준다. 이 실패는 영구라 새로고침이 답이 아니고, 사용자가 할 수 있는 일은 캐릭터
  * 관리에서 추적을 풀거나 옮겨간 캐릭터로 바꾸는 것뿐이다.
  *
+ * **카드를 이 부품이 든다.** 안에 쓰는 빈 상태는 `page` 라 자체 박스가 없어, 세우는 화면 넷이
+ * 전부 맨 배경에 놓았고 내용 자리에 경계 없이 글자만 떠 있었다. 화면마다 씌우면 넷이 어긋난다.
+ *
  * @example
  * <CharacterUnavailableNotice onOpenCharacterManage={() => openTab('Settings', { openPicker: true })} />
  */
-import { AlertTriangleIcon } from '../../atoms'
+import { AlertTriangleIcon, Card } from '../../atoms'
 import { EmptyState } from '../../molecules/EmptyState/EmptyState'
 
 export interface CharacterUnavailableNoticeProps {
@@ -24,14 +27,16 @@ export function CharacterUnavailableNotice(
   props: CharacterUnavailableNoticeProps,
 ): React.JSX.Element {
   return (
-    <EmptyState
-      size="page"
-      icon={AlertTriangleIcon}
-      title="이 캐릭터는 조회할 수 없습니다"
-      // 무엇이 일어났는지와 무엇을 할 수 있는지를 함께 말한다. 원인을 단정하지는 않는다 - 월드를
-      // 옮겼는지 삭제됐는지 넥슨 응답만으로는 갈라낼 수 없다.
-      description="넥슨 API가 이 캐릭터를 더 이상 조회하지 못합니다. 캐릭터 관리에서 추적을 해제하거나 다른 캐릭터로 바꿔주세요."
-      action={{ label: '캐릭터 관리로 이동하기', onClick: props.onOpenCharacterManage }}
-    />
+    <Card testID="character-unavailable" className="p-6">
+      <EmptyState
+        size="page"
+        icon={AlertTriangleIcon}
+        title="이 캐릭터는 조회할 수 없습니다"
+        // 무엇이 일어났는지와 무엇을 할 수 있는지를 함께 말한다. 원인을 단정하지는 않는다 - 월드를
+        // 옮겼는지 삭제됐는지 넥슨 응답만으로는 갈라낼 수 없다.
+        description="넥슨 API가 이 캐릭터를 더 이상 조회하지 못합니다. 캐릭터 관리에서 추적을 해제하거나 다른 캐릭터로 바꿔주세요."
+        action={{ label: '캐릭터 관리로 이동하기', onClick: props.onOpenCharacterManage }}
+      />
+    </Card>
   )
 }

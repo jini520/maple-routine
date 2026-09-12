@@ -339,7 +339,7 @@ export function BossManageScreen(): React.JSX.Element {
         ) : selected.error?.kind === 'characterUnavailable' ? (
           // 편집할 목록이 **빈 것이 아니라 모르는 것**이다. 체크박스를 세우면 사용자가 지금
           // 추적을 고르고 있다고 믿는데, 그 선택은 조회가 돌아와야 뜻을 갖는다.
-          <View className="px-4 pb-4">
+          <View className="px-4 pb-4 pt-8">
             <CharacterUnavailableNotice
               onOpenCharacterManage={() => openTab('Settings', { openPicker: true })}
             />

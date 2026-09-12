@@ -398,8 +398,8 @@ default  pill 40 · 버튼 32 · 아이콘 16 · 값 19 · 단위 "인" 12    �
 "비어있음"을 표시하는 11곳이 이 컴포넌트 하나를 쓴다. `size` 두 변형만 다르고 구조는 동일: **원형 배지(컨텍스트 아이콘) + 제목 + 설명 + CTA**, 중앙 정렬.
 ```
 공통:   flex flex-col items-center text-center, 배지 rounded-full bg-primary-tint, 아이콘 text-primary-ink strokeWidth 1.75
-page:   배지 84px / 아이콘 40px / 제목 text-base / 설명 text-sm max-w-[220px] / CTA px-5 py-2.5 text-sm / gap-4
-inline: 배지 56px / 아이콘 28px / 제목 text-sm  / 설명 text-xs max-w-[240px] / CTA px-4 py-2 text-xs / gap-3
+page:   배지 64px / 아이콘 32px / 제목 text-base / 설명 text-xs max-w-[220px] / CTA px-5 py-2.5 text-sm / gap-4
+inline: 배지 48px / 아이콘 24px / 제목 text-sm  / 설명 text-11 max-w-[240px] / CTA px-4 py-2 text-xs / gap-3
         + 박스 rounded-[14px] border border-border bg-surface px-4 py-8 (page 는 자체 박스 없음. 화면이 감싼다)
 CTA:    rounded-full bg-primary text-on-primary font-semibold hover:bg-primary-hover (Primary 버튼 재사용, 새 스타일 금지)
 ```
@@ -407,6 +407,7 @@ CTA:    rounded-full bg-primary text-on-primary font-semibold hover:bg-primary-h
 - **문구 규칙**: 제목은 *무엇이* 비었는지(`추적할 일간 컨텐츠가 없습니다` / `등록된 주간 보스가 없습니다`). 탭·모드별로 문구를 나눈다(일간/주간, 주간/월간, 수동/자동이 같은 문구를 공유하지 않는다). 설명은 다음 행동 한 줄. CTA 라벨은 목적지 이름 그대로(`컨텐츠 관리`·`보스 관리`).
 - **CTA는 문구가 지시하는 곳으로 실제 이동시킨다**. 수동 모드 컨텐츠 `/content/manage`, 수동 모드 보스 `/boss/manage`, 필터 결과 없음은 필터 초기화. **갈 곳이 없으면 CTA를 만들지 않는다**: 자동 모드("게임에서 등록해주세요")는 목적지가 앱 밖이고, 보스 수익 "아직 처치한 보스가 없습니다"는 앱 안에 할 일이 없다. 억지 목적지 금지.
 - **"조회 불가"에는 이 컴포넌트를 쓰지 않는다**. 아래 `UnavailableNotice` 참고([error-resilience.md](./error-resilience.md) 원칙 2).
+- **`page` 의 "자체 박스 없음" 에는 예외가 하나 있다** (2026-09-12, 사용자 지정). `CharacterUnavailableNotice` 는 `page` 빈 상태를 쓰면서 **자기 `Card` 를 든다**(`p-6`). 그 안내를 세우는 화면이 넷인데(스케줄러 둘 · 관리 둘) 전부 맨 배경에 놓아, 내용 자리에 경계 없이 글자만 떠 있었다. 화면마다 카드를 씌우면 넷이 조용히 어긋나므로 부품이 든다. **표면이 로딩 셸 카드와 같은 `bg-surface` 인 것은 사용자가 고른 것이다** - 조회 중과 조회 불가가 같은 표면을 쓰게 되는 대가를 알고 중립 카드를 택했다. **레일 아래에서는 40 을 띄운다**(2026-09-12, 사용자 지시). 붙여 두면 초상화와 카드가 한 덩어리로 읽힌다. 값이 화면마다 갈리는데 **보이는 간격은 같다** - 스케줄러 둘은 레일 감싸개 `pb-1`(4) + `ScreenScroll` 8 위에 `pt-7`(28)을 얹고, 보스 관리는 그 감싸개가 없어(레일 아래가 카드가 아닌 화면이라 [[ADR-257]] 결정 1 이 일부러 뺐다) 8 위에 `pt-8`(32)을 얹는다.
 - 배지(둥근 배경 박스)는 아래 "아이콘" 절의 *배경 없이 단독* 규칙에 대한 **명시적 예외**다. 빈 상태 배지는 아이콘이 아니라 **일러스트 자리**로 취급한다.
 
 ### 로딩 표현 (`molecules/LoadingState`, `atoms/Spinner`): [[ADR-061]], 구현 완료 2026-07-30
@@ -461,6 +462,8 @@ inline: 스피너 24px:             보스 수익 과거 기간 백필
 compact: 카드 안에 중첩될 때. rounded-[10px] bg-surface-2 px-3 py-2.5, 아이콘 h-4, 제목 한 줄만(설명 생략)
 ```
 문구 어미는 실패와 같은 `~습니다` 를 쓴다([[ADR-062]] 결정 5). 정보 톤은 **색(info-tint)이 담당하지 어미가 담당하지 않는다**.
+
+**위 스펙을 든 부품은 아직 없다**(2026-09-12 확인). `components/EmptyState/UnavailableNotice` 는 코드에 없고, 보스 수익 조회 윈도우 밖 기간이 그 스펙을 기다린다. 지금 조회 불가를 그리는 실물은 **`organisms/CharacterUnavailable/CharacterUnavailableNotice`** 하나이고([[ADR-253]] 결정 10), 그것은 `bg-info-tint` 가 아니라 **중립 `Card`(`bg-surface p-6`)** 위의 `page` 빈 상태다(위 빈 상태 절의 예외 항목). 둘의 톤이 갈려 있으므로 **새 조회 불가 자리를 만들 때 어느 쪽을 따를지 먼저 물을 것**.
 
 **선택 카드 안의 주의 줄은 이 규격의 축소판이되 컴포넌트를 공유하지 않는다** ([[ADR-035]] 결정 22, 2026-08-03). 트래킹 모드 옵션(설정 `TrackingModeSelector`)이 각 모드의 한계를 고지하는 자리: `rounded-[8px] bg-info-tint px-2.5 py-1.5 text-xs text-info-ink` + `Info h-3.5`. 색·아이콘·"고칠 수 없는 제약이므로 error 가 아니다"는 판단을 그대로 물려받는다. 이 컴포넌트를 재사용하지 않는 이유는 **`UnavailableNotice` 가 문구를 자기 안에 고정으로 갖기 때문**이고(임의 문구를 못 받는다), 어미도 `~습니다` 가 아니라 **같은 카드 안 설명문과 맞춘 `~요`** 다(한 카드 안에서 어미가 갈리면 두 문장이 다른 출처처럼 읽힌다). 규격 전문은 [../features/settings.md](../features/settings.md).
 
