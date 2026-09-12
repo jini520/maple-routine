@@ -146,6 +146,7 @@ Feature 단위 구조. 각 `features/*` 폴더가 그 기능의 상태·로직�
 - **로컬 Expo 모듈** `modules/` 셋: `capacitor-storage`(기존 사용자 저장소를 그대로 연다. `migration/data.md`) · `app-background`(앱을 백그라운드로) · `app-system-bars`(시스템 바).
 - `@op-engineering/op-sqlite`: 보스 수익 기록 등([[ADR-003]]).
 - `expo-updates`: Live Update([[ADR-137]]) → [features/live-update.md](../features/live-update.md).
+- **이미지 내보내기**([[ADR-267]], 네이티브만 실었고 기능은 미구현): 바이너리에 `react-native-view-shot`(화면을 그림으로) · `expo-sharing`(공유 시트) · `expo-media-library`(앨범 저장)가 들어가고, 무엇을 어떤 모양으로 내보내는가는 전부 JS = OTA 다. 알림과 같은 모양이다 — 능력만 네이티브에 두고 판단은 JS 에 둔다. **다음 스토어 바이너리가 나가기 전에는 부르면 안 된다**(기기에 그 모듈이 없다). 포트는 기능과 함께 생긴다.
 - **셀룰러 감지는 없다**. RN 에 내장 API 가 없고 `@react-native-community/netinfo` 는 새 네이티브 의존이라, `getNetworkType()` 이 `'unknown'` 을 돌리고 호출부가 경고를 생략한다(ADR-027 결정 6 의 폴백, `rn-live-update.ts`).
 - 플랫폼별 백그라운드 정책 차이(특히 iOS Live Activity 16.1+ 제약)는 `native/` 레이어에서 흡수해 `features/*` 가 플랫폼 분기를 모르게 한다.
 

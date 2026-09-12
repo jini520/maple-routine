@@ -31,6 +31,20 @@ Xcode 아카이브다. 저장소 루트가 곧 Expo 프로젝트라 둘 다 루�
 > 확인하고, 그 트리에서 바이너리를 굽는 것이다. 아래 규칙 1~4 를 그대로 따르면 된다. 자세한
 > 배경은 [../features/ads.md](../features/ads.md).
 
+> **SNS 공유용 이미지 내보내기의 의존성이 심겨 있다**(#388, [[ADR-267]]). 이번 바이너리가 그것을
+> 처음 싣는다. 새로 들어가는 것은 `react-native-view-shot`·`expo-sharing`·`expo-media-library`
+> 셋이다. `expo-file-system` 은 `expo` 자신의 의존성이라 전부터 들어 있었고 **버전을 안 올렸다.**
+>
+> **앨범 저장까지 한다**(사용자 결정). 그래서 권한 자리 셋이 함께 들어 있다. `ios/app/Info.plist`
+> 의 `NSPhotoLibraryAddUsageDescription`, 안드로이드 매니페스트의
+> `READ_MEDIA_VISUAL_USER_SELECTED` 와 `<application>` 의 `android:requestLegacyExternalStorage`.
+> **전부 OTA 로 못 바꾸는 자리다.**
+>
+> 구운 뒤에 **둘을 함께 치운다.** 규칙 5 의 `PINNED_RUNTIME_VERSIONS` 와
+> `scripts/__tests__/share-image-native-modules.test.mjs`. 그 가드가 막고 있는 것은 «모듈이 없는
+> 1.0.6 기기에 그 모듈을 부르는 JS 가 OTA 로 배달되는 것»이고, 못박기가 사라지면 지문 불일치가
+> 다시 그것을 막는다. 그때부터 시안·화면 구현은 전부 OTA 로 나간다.
+
 ## 릴리스는 노트를 쓰는 것으로 시작한다 ([[ADR-119]])
 
 **버전을 올리기 전이 아니라, 올리면서 `src/data/release-notes.ts` 에 그 버전의 항목을
