@@ -129,15 +129,12 @@ describe('resolveAcceptedRuntimeVersions ([[ADR-268]] 결정 2)', () => {
 // 사실**이다([[ADR-268]] 결정 4). 여기 수치로 박아 두는 것은 **출시 후에 비워야 하기** 때문이다.
 // 안 비우면 아무도 안 잠기고, 그 방향이 안전한 쪽이라 조용히 지나간다.
 describe('IN_REVIEW_RUNTIME_VERSIONS: 심사 중인 바이너리의 지문 ([[ADR-268]])', () => {
-  // 값이 들어 있는 것은 **임시 상태**다. 지금은 App Store 심사에 올린 1.0.8 build 15 를
-  // 받아주고 있고, 게시가 확인되면 비운다. 비우는 것이 곧 1.0.6 기기의 잠금 스위치다.
-  it('iOS 는 심사 중인 바이너리 하나를 받아주는 중이다', () => {
+  // 값이 들어 있는 것은 **임시 상태**다. 지금은 두 스토어에 올린 1.0.8 을 받아주고 있고,
+  // 게시가 확인된 플랫폼부터 비운다. 비우는 것이 곧 그 플랫폼 1.0.6 기기의 잠금 스위치다.
+  it('두 플랫폼 다 심사 중인 바이너리 하나씩을 받아주는 중이다', () => {
     expect(IN_REVIEW_RUNTIME_VERSIONS).toEqual({
       ios: ['6bc20c979ffdbc05f07ea9b9ca6d0cad1f3b20b3'],
+      android: ['eebd6802bff90e10333584aedafee0037c67e958'],
     })
-  })
-
-  it('안드로이드는 받아주는 것이 없다', () => {
-    expect(IN_REVIEW_RUNTIME_VERSIONS.android).toBeUndefined()
   })
 })
