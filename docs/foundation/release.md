@@ -15,6 +15,20 @@ Xcode 아카이브다. 저장소 루트가 곧 Expo 프로젝트라 둘 다 루�
 
 ## 다음 스토어 릴리스에서 같이 할 일
 
+> **진행 중: 1.0.8 (2026-09-13)** — iOS build 15 를 심사에 제출했다. 안드로이드는 아직 안 구웠고
+> `versionCode 22` 는 이미 커밋돼 있어 AAB 만 구우면 된다(`app.json` 을 다시 건드리면 iOS 바이너리의
+> 지문이 무효가 되므로 **건드리지 말 것**).
+>
+> | 플랫폼 | 지문 | 상태 |
+> |---|---|---|
+> | iOS | `6bc20c979ffdbc05f07ea9b9ca6d0cad1f3b20b3` | 심사 중. `IN_REVIEW_RUNTIME_VERSIONS.ios` 와 `latest-ios.json` 에 등록됨 |
+> | Android | 아직 없음 | 굽지 않았다 |
+>
+> **게시가 확인되면 순서대로**: ① 1.0.8 OTA 발행(규칙 4·[[ADR-268]] 결정 5 - 발행이 잠금보다
+> 앞이거나 같은 회차여야 완료 안내가 안 뜬다) → ② `latest-ios.json` 의 `runtimeVersion` 을 새 지문으로,
+> `appVersion` 을 1.0.8 로 → ③ `IN_REVIEW_RUNTIME_VERSIONS.ios` 비우기(**이것이 1.0.6 iOS 기기의 잠금
+> 스위치다**) → ④ `PINNED_RUNTIME_VERSIONS.ios` 제거(규칙 5) → ⑤ 안드로이드 차례.
+
 > **네이티브 트리에서 AdMob 앱 ID를 걷는다.** 2026-08-31에 앱 ID를 환경 변수로 옮겼지만
 > (`EXPO_PUBLIC_ADS_APP_ID_ANDROID`·`..._IOS`, `app.config.js`), 커밋된 prebuild 산출물에는
 > 옛 값이 그대로 남아 있다.
@@ -270,9 +284,8 @@ keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release
 [[ADR-156]] 에서 지워졌다). 1.0.8 문구에서 셋 다 걷었다. 다음에 문구를 고칠 때도 **화면에서 눌러
 확인한 것만** 적을 것.
 
-> ⚠️ **콘솔은 아직 1.0.6 문구다.** 게시된 App Store(KR)·Play 설명이 위에서 걷은 셋을 그대로
-> 광고하고 있다. **1.0.8 을 제출할 때 콘솔의 여섯 칸(짧은 설명 · 프로모션 텍스트 · 자세한 설명 ·
-> 키워드 · 출시 노트 · 심사 메모)을 위 문구로 교체할 것.** 교체하면 이 경고를 지운다.
+> **App Store 는 교체했다**(2026-09-13, 1.0.8 심사 제출과 함께). **Play 는 아직 1.0.6 문구다** -
+> 안드로이드 1.0.8 을 올릴 때 짧은 설명 · 자세한 설명 · 출시 노트 셋을 위 문구로 교체할 것.
 
 ### 짧은 설명 (Play, 80자 제한)
 
