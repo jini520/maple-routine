@@ -164,6 +164,7 @@
 				568DBBA3BEA0772A8EA2F9C6 /* [CP] Embed Pods Frameworks */,
 				5345D52F6685066A54AE23C1 /* [CP-User] [RNGoogleMobileAds] Configuration */,
 				4977FA76CD048F6A74AA363C /* [CP-User] [RNFB] Core Configuration */,
+				B1C2D3E4F5A6B7C8D9E0F1A2 /* Strip Embedded Frameworks */,
 			);
 			buildRules = (
 			);
@@ -403,6 +404,19 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-app/Pods-app-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		B1C2D3E4F5A6B7C8D9E0F1A2 /* Strip Embedded Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Strip Embedded Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# 임베드된 프레임워크에서 디버그 심볼을 벗기고 다시 서명한다 (ADR-269 결정 3).\n#\n# 아홉 개 전부 prebuilt XCFramework 라 STRIP_INSTALLED_PRODUCT 가 하나도 못 건드린다.\n# 실측 24.1 MB -> 12.1 MB 이고 이것은 사용자가 받는 크기다.\n#\n# 재서명이 핵심이다. Pods-app-frameworks.sh 가 복사 직후 code_sign_if_enabled 로 프레임워크마다\n# 서명하는데, 그 뒤에 벗기면 바이너리가 바뀌어 서명이 전부 무효가 된다.\n#\n# -s 가 아니라 -x -S 인 것도 계약이다. 동적 프레임워크라 전역 심볼을 지우면 링크가 깨진다.\n# dSYM 은 아카이브에 따로 남고 strip 이 UUID 를 안 바꾸므로 크래시 심볼화는 안 깨진다.\nset -e\n\nif [ \"${CONFIGURATION}\" != \"Release\" ]; then\n  echo \"note: Release 가 아니라 건너뛴다 (${CONFIGURATION})\"\n  exit 0\nfi\n\nFRAMEWORKS_DIR=\"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}\"\nif [ ! -d \"${FRAMEWORKS_DIR}\" ]; then\n  echo \"note: 임베드된 프레임워크가 없다\"\n  exit 0\nfi\n\nfor FRAMEWORK in \"${FRAMEWORKS_DIR}\"/*.framework; do\n  [ -d \"${FRAMEWORK}\" ] || continue\n  BINARY=\"${FRAMEWORK}/$(basename \"${FRAMEWORK}\" .framework)\"\n  [ -f \"${BINARY}\" ] || continue\n\n  BEFORE=$(stat -f%z \"${BINARY}\")\n  strip -x -S \"${BINARY}\"\n  AFTER=$(stat -f%z \"${BINARY}\")\n  echo \"note: stripped $(basename \"${FRAMEWORK}\") $((BEFORE / 1024))KB -> $((AFTER / 1024))KB\"\n\n  if [ -n \"${EXPANDED_CODE_SIGN_IDENTITY:-}\" ] && [ \"${CODE_SIGNING_REQUIRED:-}\" != \"NO\" ] && [ \"${CODE_SIGNING_ALLOWED}\" != \"NO\" ]; then\n    /usr/bin/codesign --force --sign \"${EXPANDED_CODE_SIGN_IDENTITY}\" ${OTHER_CODE_SIGN_FLAGS:-} --preserve-metadata=identifier,entitlements \"${FRAMEWORK}\"\n  fi\ndone\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */

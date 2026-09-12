@@ -183,9 +183,27 @@ keyPassword=<같은 비밀번호>
 #      스탈해지면 새 그림이 **에러도 로그도 없이** 빈 자리로 나온다(c9ce4697: 카링·벨로나 5장).
 rm -rf android/app/build/generated/assets/createReleaseUpdatesResources
 # 3. AAB (APK 아님: Play는 AAB만 받는다)
-cd android && ./gradlew bundleRelease
+#      **플래그를 빼지 말 것**([[ADR-269]] 결정 1). x86·x86_64 는 에뮬레이터 전용이라 스토어
+#      빌드에 담을 이유가 없고, 빼면 그 ABI 의 네이티브 16.0 MB 와 **그 ABI 의 디버그 심볼
+#      14.3 MB 가 함께** 빠진다(합 30.3 MB). 기본값(`gradle.properties`)은 에뮬레이터 개발
+#      빌드를 위해 넷 그대로 두므로, 좁히는 것은 이 커맨드뿐이다.
+cd android && ./gradlew bundleRelease -PreactNativeArchitectures=armeabi-v7a,arm64-v8a
 # 4. 산출물: android/app/build/outputs/bundle/release/app-release.aab
 ```
+
+**디버그 심볼은 따로 할 일이 없다**([[ADR-269]] 결정 2). AAB 에 실린 채로 나가고 Play 가 거기서
+자동으로 꺼내 쓴다. `debugSymbolLevel` 을 손대지 말 것 - `'none'` 은 심볼을 AAB 에서 빼는 것이
+아니라 **추출 자체를 멈춰** Play 에 올릴 파일도 안 남긴다(실측). 기본값이 이미 `symbol_table` 이라
+낮출 여지도 없다.
+
+**난독화 매핑도 따로 할 일이 없다**([[ADR-269]] 정정 1). R8 이 켜져 있어 `mapping.txt` 가 생기지만
+AGP 가 그 사본을 AAB 안(`BUNDLE-METADATA/com.android.tools.build.obfuscation/proguard.map`)에
+넣으므로 Play 가 자동으로 쓴다. 스택트레이스가 난독화된 채 보이면 그때 이 파일을 의심할 것.
+
+> ⚠️ **R8 이 켜진 릴리스는 실기기 스모크가 게이트다**([[ADR-269]] 정정 1). R8 은 리플렉션으로만
+> 닿는 코드를 지울 수 있고, 그것은 **빌드도 설치도 성공한 뒤 그 화면을 눌렀을 때** 드러난다.
+> debug 빌드에서는 R8 이 안 돌아 재현되지 않는다. 릴리스 APK 를 실기기에 올려 주요 화면을 전부
+> 밟을 것. 확인할 때 OTA 번들이 임베드 번들을 가릴 수 있으므로 버전을 올려 리셋한 뒤 본다.
 
 **서명 확인**. 서명이 안 붙어도 빌드는 성공하므로([[ADR-091]] 결정 4) 산출물을 직접 본다.
 
@@ -397,6 +415,18 @@ xcodebuild -workspace app.xcworkspace -scheme app \
 
 `npm run build`·`npx cap sync` 는 **필요 없다**(그건 capacitor 쪽 절차다). RN 은 `Bundle React Native
 code and images` 빌드 단계가 `expo export:embed` 를 돌려 JS 번들과 에셋을 매 빌드 새로 만든다.
+
+**임베드 프레임워크는 빌드 단계가 벗긴다**([[ADR-269]] 결정 3). `Strip Embedded Frameworks` 단계가
+`[CP] Embed Pods Frameworks` 뒤에서 `strip -x -S` 를 걸고 **같은 신원으로 다시 서명한다.** 재서명이
+빠지면 CocoaPods 가 복사 직후 붙여 둔 서명이 무효가 되어 업로드가 튕긴다. 실측으로 24.1 MB →
+12.1 MB 이고 이것은 사용자가 받는 크기다.
+
+아카이브 뒤 실제로 벗겨졌는지는 산출물에서 본다. `React.framework` 가 12 MB 에 가까우면 안 벗겨진
+것이다.
+
+```bash
+find <아카이브>/Products/Applications/app.app/Frameworks -name "React" -exec ls -lh {} \;
+```
 
 #### 4. 업로드 전에 export 까지 돌려 배포 서명을 확인한다
 

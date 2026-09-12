@@ -35,6 +35,45 @@ export const RELEASE_NOTE_CATEGORY_ORDER: readonly ReleaseNoteCategory[] = [
 // 이 파일은 순수 데이터다. `features/`·`storage/`·`native/` 를 import 하지 않는다.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '1.0.8',
+    date: '2026-09-12',
+    // 네 줄이고 `items` 에서 파생하지 않았다(사용자가 직접 골랐다). 마지막 줄은 노트에 안 적은
+    // 자잘한 수정들을 한 줄로 뭉친 것이라 어떤 파생 규칙으로도 안 나온다.
+    highlights: [
+      '가계부에 강화·주문서 지출과 사냥 수입 계산기 추가.',
+      '9월 패치내용을 반영했습니다.',
+      '앱 최적화를 진행했습니다.',
+      '다수의 버그 및 사용성 개선.',
+    ],
+    // 1.0.7 이후 머지된 PR #290~#390 에서 **화면에서 겪는 변화**만 사용자가 직접 골랐다
+    // (2026-09-12). 그래서 노트가 PR 수보다 훨씬 짧다.
+    items: [
+      {
+        category: 'feature',
+        text: '넥슨 공지를 앱에서 받아봅니다. 새 공지는 알림과 첫 화면 배너로 알려드립니다.',
+      },
+      {
+        category: 'feature',
+        text: '가계부에 강화 사용 내역과 주문서 지출을 적을 수 있습니다.',
+      },
+      {
+        category: 'feature',
+        text: '사냥 수입을 계산기와 직접 입력 두 가지로 적을 수 있습니다.',
+      },
+      {
+        category: 'feature',
+        text: '9월 패치내용을 반영했습니다.',
+      },
+      {
+        // 안 쓰는 CPU 종류를 빼고, iOS 프레임워크의 디버그 심볼을 벗기고, 코드 축소를 켰다.
+        // 네이티브 빌드 설정이라 OTA 로는 못 나가고 스토어 업데이트가 있어야 받는다.
+        category: 'improvement',
+        text: '앱 최적화를 진행했습니다.',
+        requiresStoreUpdate: true,
+      },
+    ],
+  },
+  {
     version: '1.0.7',
     // `chore(release): 1.0.7` 커밋 날짜다(작성일과 같은 날이라 정정할 것이 없었다).
     date: '2026-08-30',
