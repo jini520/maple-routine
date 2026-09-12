@@ -27,7 +27,8 @@ import Animated, {
 
 import { BottomBarOverlay } from '../BottomBar/BottomBarOverlay'
 import { tapFeedback } from '../../../native/haptics'
-import { useFabBottomPx } from '../../../lib/fab-metrics'
+import { FAB_DARK_EDGE, FAB_SHADOW, useFabBottomPx } from '../../../lib/fab-metrics'
+import { boxShadowOf } from '../../../lib/shadow'
 import { useThemeAppearance } from '../../../theme/context'
 import type { ThemeDefinition } from '../../../types/theme'
 import { PlusIcon, ProfitIcon, ShoppingCartIcon, Text } from '../../atoms'
@@ -244,6 +245,14 @@ export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
           definition={definition}
           onPress={() => select(props.onSelectExpense)}
         />
+        {/* 그림자만 드는 상자. 원과 같은 모양으로 그 자리에 선다.
+            `DropPriceFab` 의 원은 `overflow-hidden` 이라 그림자를 자기 뷰에 달면 잘리는데, 둘이
+            같은 물건으로 보여야 하므로 이쪽도 같은 자리에 단다. 모양은 `borderRadius` 에서
+            나온다. 없으면 둥근 원 뒤에 네모난 그림자가 깔린다. */}
+        <View
+          testID="speed-dial-fab-elevation"
+          style={{ borderRadius: 999, boxShadow: boxShadowOf(definition.shadowColor, FAB_SHADOW) }}
+        >
         <Pressable
           role="button"
           // 이름이 상태를 든다. 그림은 하나이고 **각도만** 다르므로 스크린리더에는 안 들린다.
@@ -253,6 +262,16 @@ export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
             tapFeedback()
             setIsOpen((open) => !open)
           }}
+          /*
+           * 다크에서는 그림자가 거의 안 보여 테두리가 경계를 진다. 크기가 박힌 이 원이 들어야
+           * 테두리가 안쪽에 그려져 자리가 안 움직인다(위 상자는 자식 크기로 서 있어서 두께만큼
+           * 커진다).
+           */
+          style={
+            definition.mode === 'dark'
+              ? { borderWidth: StyleSheet.hairlineWidth, borderColor: FAB_DARK_EDGE }
+              : undefined
+          }
           className={`h-14 w-14 items-center justify-center rounded-full ${
             isOpen ? 'bg-surface-2' : 'bg-primary'
           }`}
@@ -265,6 +284,7 @@ export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
             />
           </AnimatedBox>
         </Pressable>
+        </View>
       </View>
     </BottomBarOverlay>
   )

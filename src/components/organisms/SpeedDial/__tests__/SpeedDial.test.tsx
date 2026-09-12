@@ -3,14 +3,23 @@
 // **움직임은 여기서 안 본다**. 값은 `speed-dial-motion.ts` 가 들고 그쪽 테스트가 붙든다. 여기서
 // 보는 것은 **무엇이 눌리고 무엇이 안 눌리는가** 다.
 import { act, fireEvent } from '@testing-library/react-native'
+import { StyleSheet } from 'react-native'
 
-import { flattenStyle, renderOverlay } from '../../../__tests__/render-atom'
+import { flattenStyle, renderOverlay, 기본테마 } from '../../../__tests__/render-atom'
 import { __resetNativePortsForTest, setHapticsPort } from '../../../../native/ports'
+import { getThemeDefinition } from '../../../../lib/theme/theme-registry'
+import {
+  __resetThemeAppearanceForTest,
+  setThemeAppearance,
+} from '../../../../theme/appearance-store'
 import { SpeedDial } from '../SpeedDial'
+import { boxShadowOf } from '../../../../lib/shadow'
 import {
   FAB_CONTENT_GAP_PX,
+  FAB_DARK_EDGE,
   FAB_DIAMETER_PX,
   FAB_LIFT_PX,
+  FAB_SHADOW,
   FAB_SPACE_PX,
 } from '../../../../lib/fab-metrics'
 
@@ -197,6 +206,65 @@ describe('접혀 있을 때 뒤를 안 막는다', () => {
     const view = await 그리기()
 
     expect(view.getByTestId('speed-dial-actions').props.pointerEvents).toBe('box-none')
+  })
+})
+
+// 입체감. **세기는 테스트가 못 잡는다**(jest 는 그림자를 그리지 않는다). 여기서 지키는 것은
+// 값이 한 자리에서 오는가와, 다크에서 경계를 지는 것이 그림자가 아니라 테두리인가 둘이다.
+describe('떠 있는 원의 입체감', () => {
+  afterEach(__resetThemeAppearanceForTest)
+
+  it('그림자는 원 밖의 뷰가 든다. 값은 공용 상수에서 온다', async () => {
+    const view = await 그리기()
+
+    const elevation = flattenStyle(view.getByTestId('speed-dial-fab-elevation').props.style)
+
+    expect(elevation.boxShadow).toBe(boxShadowOf(기본테마.shadowColor, FAB_SHADOW))
+    // 모양은 `borderRadius` 에서 나온다. 없으면 둥근 원 뒤에 네모난 그림자가 깔린다.
+    expect(elevation.borderRadius).toBe(999)
+  })
+
+  // `shadowOpacity`·`shadowRadius`·`shadowOffset` 은 iOS 전용이라 안드로이드에 안 닿고,
+  // `elevation` 을 함께 주면 그림자가 두 번 그려진다.
+  it('iOS 전용 프롭과 elevation 을 쓰지 않는다', async () => {
+    const view = await 그리기()
+
+    const elevation = flattenStyle(view.getByTestId('speed-dial-fab-elevation').props.style)
+
+    expect(elevation.shadowOpacity).toBeUndefined()
+    expect(elevation.shadowRadius).toBeUndefined()
+    expect(elevation.elevation).toBeUndefined()
+  })
+
+  it('라이트에서는 테두리가 없다. 경계를 그림자가 진다', async () => {
+    const view = await 그리기()
+
+    expect(flattenStyle(view.getByLabelText('기록 추가').props.style).borderWidth).toBeUndefined()
+  })
+
+  // 어두운 바탕에서는 그림자가 거의 안 보인다. 하단바가 라이트 그림자 · 다크 테두리로 가른 것과
+  // 같은 자리다. 테두리는 크기가 박힌 **원 자신**이 든다(바깥 뷰에 주면 두께만큼 커진다).
+  it('다크에서는 흰 헤어라인이 원에 붙는다', async () => {
+    setThemeAppearance('검은마법사', getThemeDefinition('검은마법사'))
+
+    const view = await 그리기()
+    const circle = flattenStyle(view.getByLabelText('기록 추가').props.style)
+
+    expect(circle.borderWidth).toBe(StyleSheet.hairlineWidth)
+    expect(circle.borderColor).toBe(FAB_DARK_EDGE)
+    // 지름은 그대로다. 테두리가 안쪽에 그려져 자리가 안 움직인다.
+    expect(circle.height).toBe(FAB_DIAMETER_PX)
+  })
+
+  // 사용자 결정. 어두운 스크림 위에 색이 꽉 찬 원이라 그림자가 거의 안 보이고, 떠 있음은
+  // 스크림이 이미 만든다. 값이 큰 원 하나에만 걸려 있으면 갈릴 자리도 없다.
+  it('펼침판의 작은 원 둘에는 그림자가 없다', async () => {
+    const view = await 그리기()
+    await 누르기(view, '기록 추가')
+
+    for (const row of view.getAllByTestId(/^speed-dial-row-/)) {
+      expect(flattenStyle(row.props.style).boxShadow).toBeUndefined()
+    }
   })
 })
 

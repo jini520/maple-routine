@@ -4,8 +4,13 @@
 // 여기서 보는 것은 **무엇이 어디에 섰고 누르면 어디로 가는가** 다.
 import { act, fireEvent } from '@testing-library/react-native'
 
-import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
-import { FAB_DIAMETER_PX } from '../../../lib/fab-metrics'
+import { StyleSheet } from 'react-native'
+
+import { flattenStyle, renderOverlay, 기본테마 } from '../../../components/__tests__/render-atom'
+import { getThemeDefinition } from '../../../lib/theme/theme-registry'
+import { __resetThemeAppearanceForTest, setThemeAppearance } from '../../../theme/appearance-store'
+import { boxShadowOf } from '../../../lib/shadow'
+import { FAB_DARK_EDGE, FAB_DIAMETER_PX, FAB_SHADOW } from '../../../lib/fab-metrics'
 import { getItemIconUrl } from '../../../lib/assets/asset-lookup'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
@@ -116,6 +121,62 @@ describe('흐림', () => {
     const view = await renderOverlay(<DropPriceFab />)
 
     expect(view.getByTestId('drop-price-fab-veil').props.pointerEvents).toBe('none')
+  })
+})
+
+// 입체감. 가계부의 ＋ 와 **같은 값**을 쓴다. 둘은 같은 층에 떠 있는 물건이라 같은 높이로 보여야
+// 하고, 값을 각자 적어 두면 한쪽만 손볼 때 조용히 갈린다.
+describe('떠 있는 원의 입체감', () => {
+  afterEach(__resetThemeAppearanceForTest)
+
+  // 이 원은 `overflow-hidden` 이다(도는 그림과 흐림 판을 원 안에 가두는 값). 같은 뷰에 그림자를
+  // 달면 플랫폼에 따라 잘리므로 원을 감싸는 바깥 뷰가 든다.
+  it('그림자는 자르는 원 밖의 뷰가 든다', async () => {
+    const view = await renderOverlay(<DropPriceFab />)
+
+    const elevation = flattenStyle(view.getByTestId('drop-price-fab-elevation').props.style)
+
+    expect(elevation.boxShadow).toBe(boxShadowOf(기본테마.shadowColor, FAB_SHADOW))
+    expect(elevation.borderRadius).toBe(999)
+    // 자르는 것은 이 뷰가 아니다. 여기서 자르면 그림자가 자기 상자 안에 갇힌다.
+    expect(elevation.overflow).toBeUndefined()
+  })
+
+  it('원 자신은 그림자를 안 든다', async () => {
+    const view = await renderOverlay(<DropPriceFab />)
+
+    expect(
+      flattenStyle(view.getByLabelText('아이템 가격 입력').props.style).boxShadow,
+    ).toBeUndefined()
+  })
+
+  it('iOS 전용 프롭과 elevation 을 쓰지 않는다', async () => {
+    const view = await renderOverlay(<DropPriceFab />)
+
+    const elevation = flattenStyle(view.getByTestId('drop-price-fab-elevation').props.style)
+
+    expect(elevation.shadowOpacity).toBeUndefined()
+    expect(elevation.shadowRadius).toBeUndefined()
+    expect(elevation.elevation).toBeUndefined()
+  })
+
+  it('라이트에서는 테두리가 없다', async () => {
+    const view = await renderOverlay(<DropPriceFab />)
+
+    expect(
+      flattenStyle(view.getByLabelText('아이템 가격 입력').props.style).borderWidth,
+    ).toBeUndefined()
+  })
+
+  it('다크에서는 흰 헤어라인이 원에 붙는다', async () => {
+    setThemeAppearance('검은마법사', getThemeDefinition('검은마법사'))
+
+    const view = await renderOverlay(<DropPriceFab />)
+    const circle = flattenStyle(view.getByLabelText('아이템 가격 입력').props.style)
+
+    expect(circle.borderWidth).toBe(StyleSheet.hairlineWidth)
+    expect(circle.borderColor).toBe(FAB_DARK_EDGE)
+    expect(circle.height).toBe(FAB_DIAMETER_PX)
   })
 })
 
