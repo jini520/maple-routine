@@ -30,6 +30,7 @@ export async function migrateDropsToConfirmedDifficulty(
   const plan = planConfirmedDifficultyDropMigration(
     row.boss,
     row.difficulty,
+    row.periodKey,
     dropRecords
       .filter(
         (record) =>
@@ -81,13 +82,14 @@ export async function loadDropsByRowKey(
   // 처치 난이도가 확정된(완료) 행에 한해 그 난이도에서 획득 불가한 드롭을 제거한다. 미완료
   // 시트의 표시용 난이도 토글로 다른 난이도 전용 아이템이 행 난이도 키에 섞여 저장될 수 있기
   // 때문이다. 변경이 있으면 DB 에도 영구 반영한다(멱등). 미완료 행은 아직 처치 난이도가 없어
-  // 건드리지 않는다.
+  // 건드리지 않는다. 판정은 그 행의 기간으로 한다. 패치로 빠진 아이템의 패치 전 기록이 지워지면
+  // 안 된다.
   for (const row of rows) {
     if (!row.isComplete) continue
     const key = dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)
     const drops = map[key]
     if (drops === undefined || drops.length === 0) continue
-    const pruned = pruneUnobtainableDrops(row.boss, row.difficulty, drops)
+    const pruned = pruneUnobtainableDrops(row.boss, row.difficulty, row.periodKey, drops)
     if (pruned.length !== drops.length) {
       map[key] = pruned
       await withSqliteFallback(

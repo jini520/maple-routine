@@ -45,7 +45,8 @@ const KNOWN_MISSING_DROP_ENTRIES = new Set([
 ])
 
 describe('게임 레퍼런스 데이터 정합성', () => {
-  it('각 파일 내부에 중복된 보스+난이도 조합이 없다', () => {
+  // 가격 파일은 한 조합에 줄이 여럿일 수 있다(기간을 든 줄). 그쪽은 아래 `기간을 든 줄` 이 본다.
+  it('주간 보스·드롭 테이블 안에 중복된 보스+난이도 조합이 없다', () => {
     const allWeeklyKeys: string[] = []
     for (const section of ['weekly', 'eventWeekly', 'monthly'] as const) {
       for (const entry of weeklyBosses[section]) {
@@ -55,9 +56,6 @@ describe('게임 레퍼런스 데이터 정합성', () => {
       }
     }
     expect(findDuplicates(allWeeklyKeys)).toEqual([])
-
-    const priceKeys = bossCrystalPrices.prices.map((p) => key(p.boss, p.difficulty))
-    expect(findDuplicates(priceKeys)).toEqual([])
 
     const dropKeys = itemDropTable.rewards.map((r) => key(r.boss, r.difficulty))
     expect(findDuplicates(dropKeys)).toEqual([])
@@ -216,6 +214,131 @@ describe('게임 레퍼런스 데이터 정합성', () => {
       if (apiAlias === undefined) continue
       expect(typeof apiAlias).toBe('string')
       expect(apiAlias.replace(/\s/g, '')).not.toBe(entry.boss.replace(/\s/g, ''))
+    }
+  })
+})
+
+// 줄이 `from`(이 날부터)·`until`(이 날 전까지)을 든다. 기간은 첫날로 판정한다.
+interface PeriodRow {
+  from?: string
+  until?: string
+}
+interface PriceRow extends PeriodRow {
+  boss: string
+  difficulty: string
+  priceMeso: number | null
+  maxPartySize?: number
+}
+type DropItem = PeriodRow & { name: string; note?: string }
+
+const priceRows = bossCrystalPrices.prices as PriceRow[]
+const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/
+
+function priceRowsByKey(): Map<string, PriceRow[]> {
+  const groups = new Map<string, PriceRow[]>()
+  for (const row of priceRows) {
+    const k = key(row.boss, row.difficulty)
+    groups.set(k, [...(groups.get(k) ?? []), row])
+  }
+  return groups
+}
+
+function dropItems(): { category: string; item: DropItem }[] {
+  return itemDropTable.rewards.flatMap((reward) =>
+    Object.entries(reward.rewards).flatMap(([category, items]) =>
+      (items as DropItem[]).map((item) => ({ category, item })),
+    ),
+  )
+}
+
+describe('기간을 든 줄', () => {
+  // 어느 기간이든 가격이 정확히 하나여야 한다. 줄 사이가 비면 가격 미확정이 되고, 겹치면 먼저
+  // 적힌 줄이 조용히 이긴다.
+  it('한 보스·난이도의 가격 줄들이 겹침 없이 이어진다', () => {
+    const broken: string[] = []
+    for (const [k, rows] of priceRowsByKey()) {
+      const sorted = [...rows].sort((a, b) => (a.from ?? '').localeCompare(b.from ?? ''))
+      const chained =
+        sorted[0].from === undefined &&
+        sorted[sorted.length - 1].until === undefined &&
+        sorted.slice(0, -1).every((row, i) => row.until !== undefined && row.until === sorted[i + 1].from)
+      if (!chained) broken.push(k)
+    }
+    expect(broken).toEqual([])
+  })
+
+  // 경계가 기간 가운데에 서면 첫날로 판정하는 규칙이 그 기간의 처치 일부에 틀린 가격을 준다.
+  it('가격의 경계는 그 보스의 기간 경계에 선다. 주간은 목요일, 월간은 1일이다', () => {
+    const monthlyBosses = new Set(weeklyBosses.monthly.map((entry) => entry.boss))
+    const misplaced: string[] = []
+    for (const row of priceRows) {
+      for (const date of [row.from, row.until]) {
+        if (date === undefined) continue
+        const [year, month, day] = date.split('-').map(Number)
+        const onBoundary = monthlyBosses.has(row.boss)
+          ? day === 1
+          : new Date(Date.UTC(year, month - 1, day)).getUTCDay() === 4
+        if (!onBoundary) misplaced.push(`${key(row.boss, row.difficulty)} ${date}`)
+      }
+    }
+    expect(misplaced).toEqual([])
+  })
+
+  // 파티 인원 상한은 기간을 안 탄다(`getMaxPartySize`). 줄마다 다르면 어느 줄을 읽느냐로 갈린다.
+  it('한 보스·난이도의 가격 줄들은 같은 파티 인원 상한을 든다', () => {
+    const mismatched = [...priceRowsByKey()]
+      .filter(([, rows]) => new Set(rows.map((row) => row.maxPartySize)).size > 1)
+      .map(([k]) => k)
+    expect(mismatched).toEqual([])
+  })
+
+  it('기간 칸은 YYYY-MM-DD 이고, 둘 다 있으면 from 이 until 보다 앞이다', () => {
+    const rows: PeriodRow[] = [...priceRows, ...dropItems().map((entry) => entry.item)]
+    const invalid = rows.filter(
+      (row) =>
+        (row.from !== undefined && !DATE_KEY.test(row.from)) ||
+        (row.until !== undefined && !DATE_KEY.test(row.until)) ||
+        (row.from !== undefined && row.until !== undefined && row.from >= row.until),
+    )
+    expect(invalid).toEqual([])
+  })
+})
+
+// 2026-09-17 패치(사용자 제공 2026-09-11). 값을 전부 베끼지 않고 칸 수와 모양만 붙든다.
+describe('2026-09-17 패치', () => {
+  it('교환권 셋은 26칸 모두 2026-09-17 전까지다', () => {
+    for (const name of ['프리미엄 악세서리 스크롤 교환권', '프리미엄 펫장비 스크롤 교환권', '매지컬 무기 주문서 교환권']) {
+      const found = dropItems().filter((entry) => entry.item.name === name)
+
+      expect(found).toHaveLength(26)
+      for (const entry of found) {
+        expect(entry.item.until).toBe('2026-09-17')
+        expect(entry.item.from).toBeUndefined()
+      }
+    }
+  })
+
+  it('소울 에테르 넷은 16칸에 2026-09-17 부터 교환 가능한 소비로 선다', () => {
+    const found = dropItems().filter((entry) => entry.item.name.endsWith('소울 에테르'))
+
+    expect(found).toHaveLength(16)
+    for (const entry of found) {
+      expect(entry.category).toBe('consumable')
+      expect(entry.item).toMatchObject({ note: '교환 가능', from: '2026-09-17' })
+    }
+  })
+
+  it('에픽 던전은 넷이고 max_count 는 총 스테이지 수 5 다', () => {
+    const epic = contentTemplate.weekly.filter((entry) => entry.content_name.startsWith('에픽 던전 : '))
+
+    expect(epic.map((entry) => entry.content_name)).toEqual([
+      '에픽 던전 : 하이마운틴',
+      '에픽 던전 : 앵글러 컴퍼니',
+      '에픽 던전 : 악몽선경',
+      '에픽 던전 : 아우룸 레기스',
+    ])
+    for (const entry of epic) {
+      expect(entry.max_count).toBe(5)
     }
   })
 })

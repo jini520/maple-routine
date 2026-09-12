@@ -45,7 +45,12 @@ function byQuestState(content: { questState: 0 | 1 | 2 | null }): ContentComplet
   return content.questState === 2 ? 'complete' : 'incomplete'
 }
 
-/** 참여 여부만 아는 항목(에픽 던전·플래그 레이스). 카드가 `nowCount > 0` 을 완료 배지로 그린다. */
+/**
+ * 한 번이라도 했으면 완료인 항목. 카드가 `nowCount > 0` 을 완료 배지로 그린다.
+ *
+ * 에픽 던전은 `maxCount` 가 총 스테이지 수(5)이고 `nowCount` 가 깬 스테이지 수라 한 스테이지라도
+ * 깨면 완료로 친다. 플래그 레이스는 참여 여부만 안다.
+ */
 function byParticipation(content: { nowCount: number }): ContentCompletion {
   return content.nowCount > 0 ? 'complete' : 'incomplete'
 }

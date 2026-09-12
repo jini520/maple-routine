@@ -38,6 +38,11 @@ describe('이름으로 찾는다', () => {
     expect(equipmentItemLevel('제네시스 카르타')).toBe(200)
     expect(equipmentItemLevel('제네시스 카타나')).toBe(200)
   })
+
+  // 스타포스 응답에 `item_level` 이 없어 표에 없으면 비용 없이 건수만 센다.
+  it('2026-09-17 패치의 새 반지도 레벨을 갖는다 (사용자 제공)', () => {
+    expect(equipmentItemLevel('어센던트 펄스 링')).toBe(130)
+  })
 })
 
 // 키는 `arcane_umbra_soul_shooter` 인데 이름이 아케인셰이드엔젤릭슈터로 들어와 있었다. API 가

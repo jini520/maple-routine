@@ -10,7 +10,9 @@ import {
   isEarliestNavigablePeriod,
   isLatestPeriod,
   getMaxQueryableDate,
+  isEffectiveIn,
   isPeriodQueryable,
+  periodStartDateKey,
   resolvePagePeriodState,
   resolvePeriodDataState,
   MIN_SCHEDULER_DATE,
@@ -19,6 +21,52 @@ import {
 describe('MIN_SCHEDULER_DATE', () => {
   it('사용자 재실측(2026-07-14)으로 확인된 스케줄러 API 조회 가능 최소 날짜다', () => {
     expect(MIN_SCHEDULER_DATE).toBe('2026-07-01')
+  })
+})
+
+// 참조 데이터의 줄이 `from`(이 날부터)·`until`(이 날 전까지)을 든다. 기간은 첫날로 판정한다.
+describe('periodStartDateKey', () => {
+  it('주간 키는 그 리셋일이 곧 첫날이다', () => {
+    expect(periodStartDateKey('2026-09-17')).toBe('2026-09-17')
+  })
+
+  it('월간 키는 그 달 1일이다', () => {
+    expect(periodStartDateKey('2026-09')).toBe('2026-09-01')
+  })
+})
+
+describe('isEffectiveIn', () => {
+  const 교환권 = { until: '2026-09-17' }
+  const 소울에테르 = { from: '2026-09-17' }
+
+  it('기간 칸이 없는 줄은 언제나 쓴다', () => {
+    expect(isEffectiveIn({}, '2026-07-02')).toBe(true)
+    expect(isEffectiveIn({}, '2026-10')).toBe(true)
+  })
+
+  it('`until` 은 그 날 전까지다. 그 날 시작하는 주부터 안 쓴다', () => {
+    expect(isEffectiveIn(교환권, '2026-09-10')).toBe(true)
+    expect(isEffectiveIn(교환권, '2026-09-17')).toBe(false)
+  })
+
+  it('`from` 은 그 날부터다', () => {
+    expect(isEffectiveIn(소울에테르, '2026-09-10')).toBe(false)
+    expect(isEffectiveIn(소울에테르, '2026-09-17')).toBe(true)
+  })
+
+  // 드롭 기록에는 처치 날짜가 없다. 9월 초에 먹은 기록을 지우지 않으려면 적용일 전 날을 품은
+  // 기간을 그 전의 기간으로 봐야 한다.
+  it('기간을 가르는 날짜는 기간의 첫날로 판정한다. 9월 기간은 09-17 전이다', () => {
+    expect(isEffectiveIn(교환권, '2026-09')).toBe(true)
+    expect(isEffectiveIn(교환권, '2026-10')).toBe(false)
+  })
+
+  it('둘 다 있으면 그 사이만 쓴다', () => {
+    const 두주 = { from: '2026-09-17', until: '2026-10-01' }
+
+    expect(isEffectiveIn(두주, '2026-09-10')).toBe(false)
+    expect(isEffectiveIn(두주, '2026-09-24')).toBe(true)
+    expect(isEffectiveIn(두주, '2026-10-01')).toBe(false)
   })
 })
 

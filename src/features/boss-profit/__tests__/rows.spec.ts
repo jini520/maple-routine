@@ -5,9 +5,11 @@
 // 만들기가 번거로워, 실제로 결정적 정렬에 직접 붙은 테스트가 없었다.
 import weeklyBossesData from '../../../data/weekly-bosses.json'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
+import type { MatchedBoss } from '../../../lib/boss/boss-matching'
 import type { ManualTrackedItem } from '../../../storage/manual-tracked-content'
 import type { BossContent } from '../../../types'
 import {
+  buildBossProfitRow,
   filterRowsForTab,
   matchesRowKey,
   mergeRecordsIntoRows,
@@ -107,6 +109,27 @@ describe('filterRowsForTab', () => {
     expect(kept).toHaveLength(1)
     expect(kept[0].cycle).toBe('weekly')
     expect(kept[0].periodKey).toBe('2026-07-09')
+  })
+})
+
+// 아직 기록 안 된 이번 기간 행. 가격은 그 행의 기간의 표에서 찾는다(2026-09-17 패치).
+describe('buildBossProfitRow', () => {
+  const 자쿰: MatchedBoss = {
+    apiName: '자쿰',
+    difficulty: '카오스',
+    cycle: 'weekly',
+    isRegistered: true,
+    isComplete: true,
+    ownComplete: true,
+    matchedBossName: '자쿰',
+    portraitSlug: null,
+    isSeasonBoss: false,
+  }
+  const 캐릭터 = { characterName: '낟낟', imageUrl: null, world: null }
+
+  it('09-10 주는 옛 가격, 09-17 주는 새 가격이다', () => {
+    expect(buildBossProfitRow('o1', 캐릭터, 자쿰, new Date('2026-09-12T12:00:00+09:00')).priceMeso).toBe(8_080_000)
+    expect(buildBossProfitRow('o1', 캐릭터, 자쿰, new Date('2026-09-18T12:00:00+09:00')).priceMeso).toBe(4_040_000)
   })
 })
 
@@ -319,12 +342,22 @@ describe('toUpcomingWeekRows', () => {
     expect(row.defeatedOn).toBeNull()
   })
 
-  // 그 둘은 설정이지 그 주의 결과가 아니다.
-  it('파티원 수와 시세는 그대로 든다', () => {
+  // 파티원 수는 설정이지 그 주의 결과가 아니다.
+  it('파티원 수는 그대로 든다', () => {
     const [row] = toUpcomingWeekRows([이번주행()], '2026-09-10', NOW)
 
     expect(row.partySize).toBe(2)
-    expect(row.priceMeso).toBe(1_000_000)
+  })
+
+  // 시세는 기간마다 다를 수 있다(2026-09-17 패치). 이번 주의 값을 옮기면 다음 주가 옛 가격을 든다.
+  it('시세는 그 주의 표에서 다시 찾는다', () => {
+    const [row] = toUpcomingWeekRows(
+      [이번주행({ boss: '자쿰', difficulty: '카오스', periodKey: '2026-09-10', priceMeso: 8_080_000 })],
+      '2026-09-17',
+      NOW,
+    )
+
+    expect(row.priceMeso).toBe(4_040_000)
   })
 
   // 월간 보스는 기록이 자기 주를 정한다(`isMonthlyRowInWeek`). 여기서 옮기면 두 번 선다.

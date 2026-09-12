@@ -8,7 +8,7 @@
  * SQLite 복원력 래퍼, 백필 대상 계산은 스토어의 흐름에 붙어 있어 그대로 남겼다.
  */
 
-import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry } from '../../lib/boss/boss-crystal-prices'
+import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry, getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
 import {
   compareBossOrder,
   isWeeklyClearLimitReached,
@@ -126,7 +126,7 @@ export function buildBossProfitRow(
   const bossName = boss.matchedBossName ?? boss.apiName
   const period = getCurrentBossProfitPeriod(boss.cycle, now)
   const periodLabel = formatBossProfitPeriodLabel(boss.cycle, period.periodKey, now).primary
-  const priceEntry = findPriceEntry(bossName, boss.difficulty)
+  const priceEntry = findPriceEntry(bossName, boss.difficulty, period.periodKey)
   const priceMeso = priceEntry?.priceMeso ?? null
   const maxPartySize = priceEntry?.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE
 
@@ -208,8 +208,7 @@ export function buildRowFromRecord(
   now: Date,
 ): BossProfitRow {
   const difficulty = record.difficulty as BossDifficulty
-  const priceEntry = findPriceEntry(record.boss, difficulty)
-  const maxPartySize = priceEntry?.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE
+  const maxPartySize = getMaxPartySize(record.boss, difficulty)
 
   return {
     ocid: record.ocid,
@@ -342,8 +341,9 @@ export function filterRowsForTab(
  * **주간 행만 옮긴다.** 월간 보스는 기록이 자기 주를 정하므로(`isMonthlyRowInWeek`) 여기서
  * 옮기면 두 번 선다.
  *
- * 파티원 수와 시세는 그대로 든다. 그 둘은 설정이지 그 주의 결과가 아니다. 처치 관련 값
- * (`payoutMeso`·`isComplete`·`defeatedOn`)만 미완료로 되돌린다.
+ * 파티원 수는 그대로 든다. 설정이지 그 주의 결과가 아니다. 시세는 그 주의 표에서 다시 찾는다.
+ * 기간마다 값이 다를 수 있어서다. 처치 관련 값(`payoutMeso`·`isComplete`·`defeatedOn`)은
+ * 미완료로 되돌린다.
  */
 export function toUpcomingWeekRows(
   rows: readonly BossProfitRow[],
@@ -357,6 +357,7 @@ export function toUpcomingWeekRows(
       ...row,
       periodKey: weeklyPeriodKey,
       periodLabel,
+      priceMeso: findPriceEntry(row.boss, row.difficulty, weeklyPeriodKey)?.priceMeso ?? null,
       // 미완료 자리는 항상 0메소다(`buildBossProfitRow` 와 같은 규약).
       payoutMeso: 0,
       isComplete: false,

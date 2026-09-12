@@ -17,6 +17,8 @@ describe('getShareScope', () => {
     expect(getShareScope('에픽 던전 : 하이마운틴')).toBe('account')
     expect(getShareScope('에픽 던전 : 앵글러 컴퍼니')).toBe('account')
     expect(getShareScope('에픽 던전 : 악몽선경')).toBe('account')
+    // 2026-09-17 패치 신규. 메이플 ID 공유는 기존 셋과 같다(사용자 확인).
+    expect(getShareScope('에픽 던전 : 아우룸 레기스')).toBe('account')
   })
 
   it('카탈로그에 없는 항목은 character(기본값)를 반환한다', () => {
@@ -100,7 +102,7 @@ describe('getContentCatalogEntries', () => {
     expect(entries).toEqual([{ name: '몬스터파크', scope: 'world' }])
   })
 
-  it('weekly section에는 world 2종 + account 4종이 있다', () => {
+  it('weekly section에는 world 2종 + account 5종이 있다', () => {
     const entries = getContentCatalogEntries('weekly')
     expect(entries).toContainEqual({ name: '[메이플 유니온] 주간 드래곤 퇴치', scope: 'world' })
     expect(entries).toContainEqual({
@@ -110,8 +112,9 @@ describe('getContentCatalogEntries', () => {
     expect(entries).toContainEqual({ name: '에픽 던전 : 하이마운틴', scope: 'account' })
     expect(entries).toContainEqual({ name: '에픽 던전 : 앵글러 컴퍼니', scope: 'account' })
     expect(entries).toContainEqual({ name: '에픽 던전 : 악몽선경', scope: 'account' })
+    expect(entries).toContainEqual({ name: '에픽 던전 : 아우룸 레기스', scope: 'account' })
     expect(entries).toContainEqual({ name: '[메이플 유니온] PC방 주간 드래곤 퇴치', scope: 'account' })
-    expect(entries).toHaveLength(6)
+    expect(entries).toHaveLength(7)
   })
 })
 
@@ -133,6 +136,7 @@ describe('getSharedContentGroups', () => {
       '하이마운틴',
       '앵글러컴퍼니',
       '악몽선경',
+      '아우룸레기스',
     ])
     // 월드 것(몬스터파크)이 계정 것보다 앞이고, 사이에 낀 유니온 항목은 이 계열에 안 든다.
     expect(byGroup.get('몬스터파크')?.entries.map((entry) => entry.shortName)).toEqual([
@@ -168,13 +172,13 @@ describe('getSharedContentGroups', () => {
     expect(conditional).toEqual(['주간 드래곤 퇴치', 'PC방 주간 드래곤 퇴치'])
   })
 
-  it('일곱을 하나도 빠뜨리거나 더하지 않는다', () => {
+  it('여덟을 하나도 빠뜨리거나 더하지 않는다', () => {
     const names = getSharedContentGroups().flatMap((group) =>
       group.entries.map((entry) => entry.name),
     )
 
-    expect(names).toHaveLength(7)
-    expect(new Set(names).size).toBe(7)
+    expect(names).toHaveLength(8)
+    expect(new Set(names).size).toBe(8)
     // 카탈로그가 **공유** 라고 적은 것과 정확히 같은 집합이어야 한다. 여기서 갈리면 `남은 스케줄`이
     // 빼는 것과 이 위젯이 그리는 것이 어긋나 항목이 통째로 사라지거나 두 곳에 겹쳐 나온다.
     for (const name of names) {
