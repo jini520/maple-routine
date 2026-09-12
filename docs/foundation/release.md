@@ -544,11 +544,32 @@ find <아카이브>/Products/Applications/app.app/Frameworks -name "React" -exec
 
 ```bash
 xcodebuild -exportArchive -archivePath <위 경로> \
-  -exportPath /tmp/export -exportOptionsPlist ExportOptions.plist
+  -exportPath /tmp/export -exportOptionsPlist ExportOptions.plist -allowProvisioningUpdates
 # method: app-store-connect · destination: export · teamID: TQPKW249G7 · signingStyle: automatic
 ```
 
-`destination` 을 `export` 로 두면 IPA 만 만들고 업로드하지 않는다.
+`destination` 을 `export` 로 두면 IPA 만 만들고 업로드하지 않는다. **업로드까지 CLI 로 하려면 같은
+plist 의 `destination` 만 `upload` 로 바꿔 한 번 더 돌린다** — Xcode 에 로그인된 계정으로 올라가고
+아카이브에 `uploadedBuildNumber` 가 기록된다(2026-09-13, build 15 로 확인).
+
+**`ExportOptions.plist` 는 저장소에 두지 말 것.** `ios/` 안의 추적되지 않는 파일도 지문 재료라
+거기 두면 **바이너리에 박힌 지문과 트리 계산값이 갈린다**(규칙 2 가 그것을 잡는다). 스크래치패드
+같은 저장소 밖에 두고 경로로 넘긴다.
+
+**`-allowProvisioningUpdates` 가 필요하다.** 없으면 프로파일이 낡은 채로 실패한다.
+
+```
+error: Provisioning profile "iOS Team Store Provisioning Profile: com.mapleroutine.app"
+       doesn't include the Push Notifications capability.
+```
+
+1.0.8 이 그랬다. 아카이브는 통과하고 여기서 떨어진다. 플래그를 주면 xcodebuild 가 App ID 의
+capability 를 맞춰 **프로파일을 새로 발급**받는다. 손으로 하려면 developer.apple.com 의
+Identifiers 에서 Push Notifications 를 켜고 프로파일을 재발급한다.
+
+**`ios/app/app.entitlements` 의 `aps-environment` 는 `development` 로 둔다.** App Store export 가
+배포 프로파일로 다시 서명하면서 `production` 으로 바꿔 넣는다(1.0.8 IPA 에서 확인). 손으로
+`production` 으로 고치면 개발 빌드가 깨진다.
 
 #### 5. 산출물 확인: 무엇을 보는가
 
