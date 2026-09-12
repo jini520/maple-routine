@@ -21,8 +21,12 @@ Xcode 아카이브다. 저장소 루트가 곧 Expo 프로젝트라 둘 다 루�
 >
 > | 플랫폼 | 지문 | 상태 |
 > |---|---|---|
-> | iOS | `6bc20c979ffdbc05f07ea9b9ca6d0cad1f3b20b3` | 심사 중. `IN_REVIEW_RUNTIME_VERSIONS.ios` 와 `latest-ios.json` 에 등록됨 |
-> | Android | 아직 없음 | 굽지 않았다 |
+> | iOS | `6bc20c979ffdbc05f07ea9b9ca6d0cad1f3b20b3` | build 15 심사 중. `IN_REVIEW_RUNTIME_VERSIONS.ios` 와 `latest-ios.json` 에 등록됨 |
+> | Android | `eebd6802bff90e10333584aedafee0037c67e958` | `versionCode 22` AAB 를 구웠다. 지문 등록 완료. 업로드는 콘솔에서 |
+>
+> **AAB 를 그대로 쓴다**(사용자 결정 2026-09-13). 광고 SDK 가 붙인 `com.google.android.gms.permission.AD_ID`
+> 가 병합 매니페스트에 남아 있어 **데이터 안전 양식에서 광고 ID 수집을 신고해야 한다**. 1.0.6 이
+> 그 상태로 나갔으므로 양식을 안 고쳐도 된다. 빼려면 `tools:node="remove"` 두 줄과 재빌드다.
 >
 > **게시가 확인되면 순서대로**: ① 1.0.8 OTA 발행(규칙 4·[[ADR-268]] 결정 5 - 발행이 잠금보다
 > 앞이거나 같은 회차여야 완료 안내가 안 뜬다) → ② `latest-ios.json` 의 `runtimeVersion` 을 새 지문으로,
