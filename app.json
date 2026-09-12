@@ -95,6 +95,14 @@
           }
         }
       ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": false,
+          "savePhotosPermission": "만든 보스 수익·가계부 이미지를 사진 앨범에 저장할 때 씁니다.",
+          "granularPermissions": []
+        }
+      ],
       "@react-native-firebase/app"
     ]
   }
