@@ -25,7 +25,7 @@ import {
   type DropPriceGroup,
 } from '../../features/boss-profit/drop-price-store'
 import { useToastStore } from '../../features/toast/store'
-import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry } from '../../lib/boss/boss-crystal-prices'
+import { getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
 import { formatMesoShort } from '../../lib/boss/boss-profit-delta'
 import {
   formatBossProfitPeriodLabel,
@@ -385,9 +385,7 @@ export function DropPriceScreen(): React.JSX.Element {
           difficulty={pricing.difficulty}
           characterName={groups.find((group) => group.ocid === pricing.ocid)?.characterName ?? ''}
           defaultShare={pricing.partySize}
-          maxShare={
-            findPriceEntry(pricing.boss, pricing.difficulty)?.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE
-          }
+          maxShare={getMaxPartySize(pricing.boss, pricing.difficulty)}
           progress={queue.length > 0 ? { current: unpriced - queue.length, total: unpriced } : undefined}
           onSave={(priceMeso, share) => void runWrite(() => savePrice(pricing, priceMeso, share))}
           onExclude={() => void runWrite(() => excludePrice(pricing))}

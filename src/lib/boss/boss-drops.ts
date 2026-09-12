@@ -9,6 +9,7 @@ import {
   type RecordedDrop,
 } from '../../types/drops'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types/scheduler'
+import { isEffectiveIn } from './boss-profit-period'
 
 // item-drop-table.json / boss-ring-boxes.json / accessory-boxes.json 조회 헬퍼. 게임
 // 수치 데이터는 여기서 읽기만 하고 추정하지 않는다.
@@ -19,6 +20,10 @@ interface RawRewardItem {
   slot?: string
   set?: string
   note?: string
+  /** 이 날부터 나온다(KST `YYYY-MM-DD`). 패치로 생긴 아이템. */
+  from?: string
+  /** 이 날 전까지 나온다. 패치로 빠진 아이템. 줄을 지우면 패치 전 기록이 거짓 기록으로 지워진다. */
+  until?: string
 }
 interface RawRewardEntry {
   boss: string
@@ -49,7 +54,8 @@ function entriesForBoss(boss: string): RawRewardEntry[] {
 // 보스의 선택 가능한 드롭 후보(장비·소비)를 난이도 무관하게 통합해 반환한다.
 // 같은 아이템은 name+slot으로 dedupe하고, 등장하는 난이도를 difficulties에 정규 순서로 담는다.
 // 고정 드롭은 값이 난이도마다 달라 여기서 제외하고 getBossFixedDrops로 별도 표시한다.
-export function getBossDropCandidates(boss: string): DropCandidate[] {
+// 그 기간에 나오는 줄만 든다.
+export function getBossDropCandidates(boss: string, periodKey: string): DropCandidate[] {
   const byKey = new Map<string, DropCandidate>()
   const order: string[] = []
 
@@ -57,6 +63,7 @@ export function getBossDropCandidates(boss: string): DropCandidate[] {
     const difficulty = entry.difficulty as BossDifficulty
     for (const category of SELECTABLE_DROP_CATEGORIES) {
       for (const item of entry.rewards[category] ?? []) {
+        if (!isEffectiveIn(item, periodKey)) continue
         const key = `${category}|${nfc(item.name)}|${nfc(item.slot ?? '')}`
         const existing = byKey.get(key)
         if (existing === undefined) {
@@ -78,11 +85,11 @@ export function getBossDropCandidates(boss: string): DropCandidate[] {
   return order.map((key) => byKey.get(key) as DropCandidate)
 }
 
-// 보스의 고정 드롭을 난이도별 그룹(정규 순서)으로 반환한다. 읽기 전용 표시용.
-export function getBossFixedDrops(boss: string): FixedDropGroup[] {
+// 보스의 고정 드롭을 난이도별 그룹(정규 순서)으로 반환한다. 읽기 전용 표시용. 그 기간의 수량이다.
+export function getBossFixedDrops(boss: string, periodKey: string): FixedDropGroup[] {
   const groups: FixedDropGroup[] = []
   for (const entry of entriesForBoss(boss)) {
-    const items = (entry.rewards.fixed ?? []).map((item) => ({
+    const items = (entry.rewards.fixed ?? []).filter((item) => isEffectiveIn(item, periodKey)).map((item) => ({
       name: item.name,
       amount: item.amount,
       slot: item.slot,
@@ -108,11 +115,11 @@ export function getBossDifficulties(boss: string): BossDifficulty[] {
   return BOSS_DIFFICULTIES.filter((difficulty) => present.has(difficulty))
 }
 
-// 이 보스의 특정 난이도에서 획득 가능한 '선택 타일' 이름 집합(장비·소비, 상자 포함). 상자 결과는
+// 이 보스의 특정 난이도·기간에서 획득 가능한 '선택 타일' 이름 집합(장비·소비, 상자 포함). 상자 결과는
 // 상자명(=타일명=boxOrigin) 기준. 시트 난이도 변경 재조정·처치 난이도 확정 정리에 공통으로 쓴다.
-export function getObtainableTileNames(boss: string, difficulty: BossDifficulty): Set<string> {
+export function getObtainableTileNames(boss: string, difficulty: BossDifficulty, periodKey: string): Set<string> {
   return new Set(
-    getBossDropCandidates(boss)
+    getBossDropCandidates(boss, periodKey)
       .filter((candidate) => candidate.difficulties.includes(difficulty))
       .map((candidate) => candidate.name),
   )
@@ -123,33 +130,39 @@ export function getObtainableTileNames(boss: string, difficulty: BossDifficulty)
 // JSON뿐이라 결과가 바뀔 일이 없다.
 const obtainableTileNamesCache = new Map<string, Set<string>>()
 
-function obtainableTileNames(boss: string, difficulty: BossDifficulty): Set<string> {
-  const key = `${boss}|${difficulty}`
+function obtainableTileNames(boss: string, difficulty: BossDifficulty, periodKey: string): Set<string> {
+  const key = `${boss}|${difficulty}|${periodKey}`
   let cached = obtainableTileNamesCache.get(key)
   if (cached === undefined) {
-    cached = getObtainableTileNames(boss, difficulty)
+    cached = getObtainableTileNames(boss, difficulty, periodKey)
     obtainableTileNamesCache.set(key, cached)
   }
   return cached
 }
 
-// 이 드롭이 그 난이도(처치 난이도)에서 획득 가능한지. 상자 결과는 상자명 기준. 레거시 고정(fixed)
-// 기록은 선택 대상이 아니므로 항상 true 다.
+// 이 드롭이 그 난이도(처치 난이도)와 그 기간에서 획득 가능한지. 상자 결과는 상자명 기준. 레거시
+// 고정(fixed) 기록은 선택 대상이 아니므로 항상 true 다. 기간을 보는 것은 패치로 빠진 아이템의
+// 패치 전 기록을 거짓 기록으로 판정하지 않기 위해서다.
 export function isObtainableDrop(
   boss: string,
   difficulty: BossDifficulty,
+  periodKey: string,
   drop: RecordedDrop,
 ): boolean {
-  return drop.category === 'fixed' || obtainableTileNames(boss, difficulty).has(drop.boxOrigin ?? drop.itemName)
+  return (
+    drop.category === 'fixed' ||
+    obtainableTileNames(boss, difficulty, periodKey).has(drop.boxOrigin ?? drop.itemName)
+  )
 }
 
-// 기록 드롭에서 이 난이도(처치 난이도)에서 획득 불가한 선택 드롭을 제거한다.
+// 기록 드롭에서 이 난이도(처치 난이도)와 그 기간에서 획득 불가한 선택 드롭을 제거한다.
 export function pruneUnobtainableDrops(
   boss: string,
   difficulty: BossDifficulty,
+  periodKey: string,
   drops: RecordedDrop[],
 ): RecordedDrop[] {
-  return drops.filter((drop) => isObtainableDrop(boss, difficulty, drop))
+  return drops.filter((drop) => isObtainableDrop(boss, difficulty, periodKey, drop))
 }
 
 /**
@@ -197,6 +210,7 @@ function compareStoredDrops(a: StoredDropRecord, b: StoredDropRecord): number {
  * 남아 영구 고아가 된다(화면·배지·환산 가치에서 사라지고 DB에만 쌓인다).
  *
  * - `records` 는 **같은 `(ocid, boss, period_key)`** 의 전 난이도 드롭이어야 한다(호출 측이 걸러 넘긴다).
+ *   `periodKey` 는 그 기간이다. 그 기간에 나오는 아이템만 되살린다.
  * - 확정 난이도에서 획득 불가한 항목은 **되살리지 않는다**. 근거는 사용자 판단이다: 그 난이도에서
  *   나올 수 없는 아이템은 거짓 기록이고, 표시하는 것보다 삭제가 안전하다. 잘못된 환산 가치가
  *   계산에 섞이는 것이 기록 한 줄을 잃는 것보다 나쁘다.
@@ -207,6 +221,7 @@ function compareStoredDrops(a: StoredDropRecord, b: StoredDropRecord): number {
 export function planConfirmedDifficultyDropMigration(
   boss: string,
   confirmedDifficulty: BossDifficulty,
+  periodKey: string,
   records: StoredDropRecord[],
 ): DropMigrationPlan | null {
   const stale = records.filter((record) => record.difficulty !== confirmedDifficulty)
@@ -219,6 +234,7 @@ export function planConfirmedDifficultyDropMigration(
   const migrated = pruneUnobtainableDrops(
     boss,
     confirmedDifficulty,
+    periodKey,
     [...stale].sort(compareStoredDrops).map(toRecordedDrop),
   )
   const existing = records

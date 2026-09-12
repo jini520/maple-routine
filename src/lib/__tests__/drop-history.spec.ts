@@ -161,6 +161,27 @@ describe('filterUnobtainableConfirmedDrops', () => {
     const records = [record({ category: 'fixed', itemName: '주문의 흔적', slot: undefined })]
     expect(filterUnobtainableConfirmedDrops(records, confirmed)).toEqual(records)
   })
+
+  // 2026-09-17 패치로 교환권이 빠졌다. 판정은 기록의 기간으로 한다.
+  it('기록의 기간으로 판정한다. 패치 전 주의 교환권은 남는다', () => {
+    const 교환권 = (periodKey: string) =>
+      record({
+        boss: '가디언 엔젤 슬라임',
+        difficulty: '카오스',
+        periodKey,
+        category: 'consumable',
+        itemName: '매지컬 무기 주문서 교환권',
+        slot: undefined,
+      })
+    const keys = new Set([
+      confirmedDropKey('ocid-1', '가디언 엔젤 슬라임', '카오스', '2026-09-10'),
+      confirmedDropKey('ocid-1', '가디언 엔젤 슬라임', '카오스', '2026-09-17'),
+    ])
+
+    const kept = filterUnobtainableConfirmedDrops([교환권('2026-09-10'), 교환권('2026-09-17')], keys)
+
+    expect(kept.map((entry) => entry.periodKey)).toEqual(['2026-09-10'])
+  })
 })
 
 describe('summarizeValuableDrought', () => {

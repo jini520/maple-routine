@@ -43,6 +43,27 @@ describe('Segment', () => {
     expect(onSelect).not.toHaveBeenCalled()
   })
 
+  // 잠긴 줄. 고를 값이 남은 항목에 없는 자리다(지출의 주문서).
+  it('`disabled` 면 조각이 안 눌리고 그렇게 읽힌다', async () => {
+    const onSelect = jest.fn()
+    const { getByLabelText } = await renderAtom(
+      <Segment disabled options={['힘', '민첩']} selected={null} onSelect={onSelect} />,
+    )
+
+    fireEvent.press(getByLabelText('힘'))
+
+    expect(onSelect).not.toHaveBeenCalled()
+    expect(getByLabelText('힘').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  it('`disabled` 면 상자째 흐려진다', async () => {
+    const { getByTestId } = await renderAtom(
+      <Segment disabled options={['힘', '민첩']} selected={null} onSelect={jest.fn()} />,
+    )
+
+    expect(flattenStyle(getByTestId('segment').props.style).opacity).toBeCloseTo(0.4)
+  })
+
   // 이 부품은 상자가 자리마다 갈린다. 폼 안에서는 글자를 따라 커지고, 높이가 못박힌 today
   // 타일 안에서는 못 커진다. 그래서 무시할지를 호출부가 정한다.
   it('시스템 글자 크기를 기본으로 따른다', async () => {

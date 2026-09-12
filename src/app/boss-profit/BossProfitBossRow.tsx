@@ -254,6 +254,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
         <BossDropSheet
           boss={row.boss}
           difficulty={row.difficulty}
+          periodKey={row.periodKey}
           isComplete={row.isComplete}
           // 시트에는 **기록된 순서**를 넘긴다. 저장이 replace-all 이라 정렬한 배열을 넘기면
           // 그 순서가 `drop_index` 로 굳어, 보여 주려던 차례가 저장 계층까지 내려간다.

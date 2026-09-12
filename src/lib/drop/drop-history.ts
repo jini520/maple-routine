@@ -217,7 +217,7 @@ export function filterUnobtainableConfirmedDrops(
     if (!confirmedKeys.has(confirmedDropKey(record.ocid, record.boss, record.difficulty, record.periodKey))) {
       return true
     }
-    return isObtainableDrop(record.boss, record.difficulty as BossDifficulty, record)
+    return isObtainableDrop(record.boss, record.difficulty as BossDifficulty, record.periodKey, record)
   })
 }
 

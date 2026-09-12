@@ -78,6 +78,8 @@ function renderSheet(overrides: Partial<React.ComponentProps<typeof BossDropShee
       boss="스우"
       difficulty="하드"
       isComplete
+      // 패치 전 주다. 교환권이 서고 소울 에테르가 안 선다.
+      periodKey="2026-09-10"
       initialDrops={[]}
       onSave={onSave}
       onClose={onClose}
@@ -169,6 +171,33 @@ describe('BossDropSheet: 난이도 표시', () => {
     })
 
     expect(onSave).toHaveBeenCalledWith([])
+  })
+})
+
+// 2026-09-17 패치. 시트는 그 행의 기간에 나오는 아이템과 고정 보상만 세운다.
+describe('BossDropSheet: 기간', () => {
+  it('패치 뒤의 주에는 교환권 대신 소울 에테르가 선다', async () => {
+    const { result } = renderSheet({ boss: '카링', difficulty: '노멀', periodKey: '2026-09-17' })
+    const { getByLabelText, queryByLabelText } = await result
+
+    expect(getByLabelText('1단계 소울 에테르')).toBeTruthy()
+    expect(queryByLabelText('매지컬 무기 주문서 교환권')).toBeNull()
+  })
+
+  it('패치 전의 주는 그대로다', async () => {
+    const { result } = renderSheet({ boss: '카링', difficulty: '노멀', periodKey: '2026-09-10' })
+    const { getByLabelText, queryByLabelText } = await result
+
+    expect(getByLabelText('매지컬 무기 주문서 교환권')).toBeTruthy()
+    expect(queryByLabelText('1단계 소울 에테르')).toBeNull()
+  })
+
+  it('고정 보상도 그 주의 것을 보여 준다 (데미안 하드 메멘토 실버 큐브)', async () => {
+    const 전 = await renderSheet({ boss: '데미안', difficulty: '하드', periodKey: '2026-09-10' }).result
+    expect(전.queryByLabelText('메멘토 실버 큐브')).not.toBeNull()
+
+    const 후 = await renderSheet({ boss: '데미안', difficulty: '하드', periodKey: '2026-09-17' }).result
+    expect(후.queryByLabelText('메멘토 실버 큐브')).toBeNull()
   })
 })
 

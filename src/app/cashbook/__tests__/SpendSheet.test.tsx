@@ -78,7 +78,7 @@ async function 누르기(view: Rendered, label: string): Promise<void> {
   })
 }
 
-type 갈래이름 = '컨텐츠' | '이벤트·BM' | '버프' | '아이템 구매' | '기타'
+type 갈래이름 = '컨텐츠' | '이벤트·BM' | '버프' | '주문서' | '아이템 구매' | '기타'
 
 /**
  * 1차의 카드를 누른다. **이름이 아니라 `testID` 로 집는다**. 기타가 갈래 이름이자
@@ -137,11 +137,11 @@ describe('머리', () => {
 })
 
 describe('갈래', () => {
-  // 갈래 다섯. 목록 셋과 직접 입력 둘.
-  it('1차 시트가 갈래 다섯을 카드로 세운다', async () => {
+  // 갈래 여섯. 목록 넷과 직접 입력 둘.
+  it('1차 시트가 갈래 여섯을 카드로 세운다', async () => {
     const view = await 그리기({}, null)
 
-    for (const label of ['컨텐츠', '이벤트·BM', '버프', '아이템 구매', '기타']) {
+    for (const label of ['컨텐츠', '이벤트·BM', '버프', '주문서', '아이템 구매', '기타']) {
       expect(view.getByTestId(`spend-sheet-category-${label}`)).toBeTruthy()
     }
     // 고르기 전에는 목록도 폼도 없다. 무엇을 적을지가 아직 안 정해졌다.
@@ -150,14 +150,14 @@ describe('갈래', () => {
 
   /**
    * 그림은 파일명으로 찾는다. 목록(`assets/generated/items`)은 커밋 시점에 생성되므로, 파일을
-   * 더하고 `npm run assets:gen` 을 안 돌리면 다섯 중 하나가 조용히 빈 자리가 된다.
+   * 더하고 `npm run assets:gen` 을 안 돌리면 하나가 조용히 빈 자리가 된다.
    */
-  it('카드 다섯이 저마다 게임 그림을 든다. 빈 자리가 없다', async () => {
+  it('카드 여섯이 저마다 게임 그림을 든다. 빈 자리가 없다', async () => {
     const view = await 그리기({}, null)
 
     // 그림은 `aria-hidden` 이라 기본 조회에서 빠진다. 낭독기는 카드 이름만 읽으면 된다.
     const 숨은것 = { includeHiddenElements: true }
-    for (const label of ['컨텐츠', '이벤트·BM', '버프', '아이템 구매', '기타']) {
+    for (const label of ['컨텐츠', '이벤트·BM', '버프', '주문서', '아이템 구매', '기타']) {
       expect(view.getByTestId(`spend-sheet-category-icon-${label}`, 숨은것)).toBeTruthy()
     }
   })
@@ -743,6 +743,178 @@ describe('형태별 단계', () => {
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({ item: '악몽선경 솔 2단계' })
+  })
+})
+
+/**
+ * **주문서는 줄 둘로 항목 하나를 고른다**(사용자 지정). 가격이 같고 이름이 비슷한 주문서가 타일
+ * 하나로 묶였고, 매지컬과 귀 장식은 고를 줄이 둘이다.
+ */
+describe('주문서', () => {
+  async function 줄에서(view: Rendered, 줄: string, 값: string): Promise<void> {
+    await act(async () => {
+      fireEvent.press(within(view.getByTestId(`spend-sheet-option-${줄}`)).getByLabelText(값))
+    })
+  }
+  const 조각 = (view: Rendered, 줄: string, 값: string) =>
+    within(view.getByTestId(`spend-sheet-option-${줄}`)).getByLabelText(값).props.accessibilityState
+
+  it('묶음 셋과 타일이 선다', async () => {
+    const view = await 그리기({}, '주문서')
+
+    // 묶음 이름과 타일 이름이 같은 자리가 있다(`펫장비 주문서`, 사용자 지정). 글자가 둘 선다.
+    expect(view.getAllByText('펫장비 주문서').length).toBeGreaterThan(0)
+    for (const 타일 of ['매지컬 주문서', '프리미엄 악세', '귀 장식 주문서', '놀긍', '펫장비 주문서', '펫장비 이노센트', '펫장비 순백', '펫장비 리턴']) {
+      expect(view.getByLabelText(타일)).toBeTruthy()
+    }
+    // 단계와 축 값은 목록에 안 선다. 타일을 고른 뒤에 나온다.
+    expect(view.queryByLabelText('매지컬 한손무기 마력 주문서 100%')).toBeNull()
+  })
+
+  // 표의 파일 이름이 틀리면 그림이 **조용히** 빠진다. 타일 셋으로 그 길을 붙든다.
+  it('타일이 저마다 그림을 든다', async () => {
+    const view = await 그리기({}, '주문서')
+
+    for (const 타일 of ['매지컬 주문서', '프리미엄 악세', '펫장비 이노센트']) {
+      expect(view.getByTestId(`spend-tile-icon-${타일}`)).toBeTruthy()
+    }
+  })
+
+  // 같은 값을 셋 적으면 좁은 타일에서 잘리고 갈래마다 값이 다르다고 읽힌다.
+  it('값이 모두 같은 타일은 가격을 하나만 적는다', async () => {
+    const view = await 그리기({}, '주문서')
+
+    expect(view.queryByText(/6,000만 \| 6,000만/)).toBeNull()
+    expect(view.getAllByText('6,000만 메소').length).toBeGreaterThan(0)
+    expect(view.getByText('50만 | 3억 메소')).toBeTruthy()
+  })
+
+  it('매지컬은 처음에 아무것도 안 골랐고 저장이 꺼져 있다', async () => {
+    const view = await 그리기({}, '주문서')
+    await 누르기(view, '매지컬 주문서')
+
+    for (const [줄, 값] of [['무기', '한손무기'], ['무기', '두손무기'], ['능력치', '공격력'], ['능력치', '마력']]) {
+      expect(조각(view, 줄, 값)?.selected).toBe(false)
+      expect(조각(view, 줄, 값)?.disabled).toBeFalsy()
+    }
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  it('매지컬에서 마력을 누르면 한손무기가 골라지고 저장이 켜진다', async () => {
+    const view = await 그리기({}, '주문서')
+    await 누르기(view, '매지컬 주문서')
+
+    await 줄에서(view, '능력치', '마력')
+
+    expect(조각(view, '무기', '한손무기')?.selected).toBe(true)
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(false)
+  })
+
+  it('두손무기를 누르면 능력치가 공격력으로 바뀐다', async () => {
+    const view = await 그리기({}, '주문서')
+    await 누르기(view, '매지컬 주문서')
+    await 줄에서(view, '능력치', '마력')
+
+    await 줄에서(view, '무기', '두손무기')
+
+    expect(조각(view, '능력치', '공격력')?.selected).toBe(true)
+  })
+
+  it('귀 장식에서 마력을 누르면 스탯 줄이 잠긴다. 공격력으로 돌아오면 스탯은 비어 있다', async () => {
+    const view = await 그리기({}, '주문서')
+    await 누르기(view, '귀 장식 주문서')
+    await 줄에서(view, '스탯', '운')
+    // 능력치를 안 골랐어도 공격력이 골라졌다. 운은 공격력 주문서에만 있다.
+    expect(조각(view, '능력치', '공격력')?.selected).toBe(true)
+
+    await 줄에서(view, '능력치', '마력')
+
+    expect(조각(view, '스탯', '운')?.disabled).toBe(true)
+    expect(조각(view, '스탯', '운')?.selected).toBe(false)
+    // 마력 주문서는 스탯이 안 갈려 항목이 하나로 정해졌다.
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(false)
+
+    await 줄에서(view, '능력치', '공격력')
+
+    for (const 값 of ['힘', '민첩', '운']) {
+      expect(조각(view, '스탯', 값)?.disabled).toBeFalsy()
+      expect(조각(view, '스탯', 값)?.selected).toBe(false)
+    }
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  it('저장하면 그 항목의 이름과 메소 금액이 적힌다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave }, '주문서')
+    await 누르기(view, '귀 장식 주문서')
+    await 줄에서(view, '스탯', '민첩')
+
+    await 누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      category: '주문서',
+      item: '귀 장식 공격력(민첩) 주문서 10%',
+      quantity: 1,
+      mesoAmount: 100_000_000,
+      pointAmount: null,
+      tariffMeso: null,
+    })
+  })
+
+  it('줄이 하나인 타일은 단계 줄로 고른다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave }, '주문서')
+    await 누르기(view, '놀긍')
+
+    await 누르기(view, '100%')
+    await 누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      item: '놀라운 긍정의 혼돈 주문서 100%',
+      mesoAmount: 300_000_000,
+    })
+  })
+
+  // 펫장비 공격력·마력도 타일 하나로 묶였다(사용자 지정). 기록에 남는 이름은 그 항목 이름 그대로다.
+  it('펫장비 주문서도 단계 줄로 고른다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave }, '주문서')
+    await 누르기(view, '펫장비 주문서')
+
+    await 누르기(view, '마력')
+    await 누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      item: '펫장비 마력 주문서 100%',
+      mesoAmount: 30_000_000,
+    })
+  })
+
+  it('수정으로 열면 두 줄의 값이 되살아난다', async () => {
+    const view = await 그리기({
+      editing: {
+        id: 'spd-scroll',
+        ocid: null,
+        spentOn: '2026-08-23',
+        category: '주문서',
+        item: '매지컬 두손무기 공격력 주문서 100%',
+        form: null,
+        itemKind: null,
+        quantity: 2,
+        mesoAmount: 120_000_000,
+        tariffMeso: null,
+        pointAmount: null,
+        pointPer100mMeso: null,
+        cashAmount: null,
+        memo: null,
+        recordedAt: '2026-08-23T01:00:00.000Z',
+      },
+      onDelete: jest.fn(),
+    })
+
+    expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('매지컬 주문서')
+    expect(조각(view, '무기', '두손무기')?.selected).toBe(true)
+    expect(조각(view, '능력치', '공격력')?.selected).toBe(true)
   })
 })
 

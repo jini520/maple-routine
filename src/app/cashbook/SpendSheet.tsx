@@ -56,7 +56,7 @@ export interface SpendSheetProps {
 }
 
 /**
- * 갈래마다 그림 하나(전부 사용자 지정). 앞 셋은 그 갈래의 목록에 실제로 있는 항목이라
+ * 갈래마다 그림 하나(전부 사용자 지정). 앞 넷은 그 갈래의 목록에 실제로 있는 항목이라
  * `ITEM_ICON_BY_LABEL` 이 같은 파일을 쓰지만, 저쪽은 항목 이름으로 찾고 여기는 갈래 이름으로
  * 찾으므로 **표를 합치지 않는다**. 합치면 항목 이름을 바꿀 때 카드 그림이 같이 사라진다.
  */
@@ -64,6 +64,7 @@ const CATEGORY_ICON_FILES: Record<SpendCategory, string> = {
   컨텐츠: 'monster_park_ticket.webp',
   '이벤트·BM': 'vip_sauna_ticket.webp',
   버프: 'seiram_elixir.webp',
+  주문서: 'amazing_positive_chaos_scroll.webp',
   '아이템 구매': 'dark_boss_pendant.png',
   기타: 'meso.webp',
 }

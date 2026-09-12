@@ -30,6 +30,12 @@ export interface SpendCatalogItem {
   readonly base?: string
   readonly tier?: string
   /**
+   * 줄이 둘인 타일에서 이 항목이 드는 축 값. `{ 무기: '한손무기', 능력치: '마력' }`.
+   *
+   * 있으면 `tier` 가 없다. 고른 값이 한 항목의 축 값과 꼭 맞아야 그 항목이 정해진다(`optionItemOf`).
+   */
+  readonly options?: Readonly<Record<string, string>>
+  /**
    * 값을 받는 형태들. 경험치·솔 에르다. **가격을 안 바꾼다.**
    *
    * 형태마다 단계를 따로 고르고 금액은 그 값들의 합이다. 하나를 고르는 축이 아니다.
@@ -253,6 +259,101 @@ export function parseSpendRewardName(
     }
   }
   return null
+}
+
+/** 축 하나와 그 값들. 폼의 줄 하나가 된다. */
+export interface SpendOptionAxis {
+  readonly axis: string
+  readonly values: readonly string[]
+}
+
+/**
+ * 대표가 묻는 축들. 줄의 차례와 값의 차례는 항목들에 처음 나온 차례다.
+ *
+ * 축 값이 없는 대표는 빈 배열이고, 그때 화면은 단계 줄을 세운다.
+ */
+export function optionAxesOf(choice: SpendCatalogChoice | null): SpendOptionAxis[] {
+  const axes: { axis: string; values: string[] }[] = []
+  for (const item of choice?.items ?? []) {
+    for (const [axis, value] of Object.entries(item.options ?? {})) {
+      let entry = axes.find((each) => each.axis === axis)
+      if (entry === undefined) {
+        entry = { axis, values: [] }
+        axes.push(entry)
+      }
+      if (!entry.values.includes(value)) entry.values.push(value)
+    }
+  }
+  return axes
+}
+
+/**
+ * 한 값을 누른 뒤의 고른 값들. 넷을 차례로 한다.
+ *
+ * ① 그 값을 가진 항목만 남긴다. ② 다른 축에서 고른 값이 남은 항목에 없으면 지운다. ③ 남은
+ * 항목이 다른 축에 값을 하나만 가지면 그 값을 고른다. ④ 남은 항목이 그 축을 아예 안 가지면 그
+ * 축은 잠긴다(`isOptionAxisOpen`). 규칙을 타일마다 적지 않는 것은 주문서가 늘 때마다 코드를
+ * 고치지 않기 위해서다.
+ */
+export function pickSpendOption(
+  choice: SpendCatalogChoice,
+  picked: Readonly<Record<string, string>>,
+  axis: string,
+  value: string,
+): Record<string, string> {
+  let remaining = choice.items.filter((item) => item.options?.[axis] === value)
+  const next: Record<string, string> = { [axis]: value }
+
+  for (const [other, chosen] of Object.entries(picked)) {
+    if (other === axis) continue
+    const narrowed = remaining.filter((item) => item.options?.[other] === chosen)
+    if (narrowed.length === 0) continue
+    next[other] = chosen
+    remaining = narrowed
+  }
+
+  for (const { axis: other } of optionAxesOf(choice)) {
+    if (next[other] !== undefined) continue
+    const values = new Set(remaining.map((item) => item.options?.[other]))
+    const [only] = values
+    if (values.size === 1 && only !== undefined) next[other] = only
+  }
+  return next
+}
+
+/**
+ * 그 축을 지금 누를 수 있나. 다른 축에서 고른 값에 맞는 항목 중 하나라도 그 축을 가지면 열려 있다.
+ *
+ * 귀 장식에서 마력을 고르면 스탯이 없는 항목만 남아 스탯 축이 잠긴다.
+ */
+export function isOptionAxisOpen(
+  choice: SpendCatalogChoice,
+  picked: Readonly<Record<string, string>>,
+  axis: string,
+): boolean {
+  return choice.items.some(
+    (item) =>
+      item.options?.[axis] !== undefined &&
+      Object.entries(picked).every(([other, chosen]) => other === axis || item.options?.[other] === chosen),
+  )
+}
+
+/**
+ * 고른 값이 가리키는 항목. 한 항목의 축 값과 **꼭 맞아야** 정해진다. 못 정하면 `null` 이고 그것이
+ * 곧 저장할 수 없다 다.
+ */
+export function optionItemOf(
+  choice: SpendCatalogChoice,
+  picked: Readonly<Record<string, string>>,
+): SpendCatalogItem | null {
+  const pickedAxes = Object.keys(picked)
+  const matches = choice.items.filter((item) => {
+    const options = item.options
+    if (options === undefined) return false
+    const axes = Object.keys(options)
+    return axes.length === pickedAxes.length && axes.every((axis) => picked[axis] === options[axis])
+  })
+  return matches.length === 1 ? matches[0]! : null
 }
 
 /**

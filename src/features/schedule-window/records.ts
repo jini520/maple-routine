@@ -108,7 +108,9 @@ async function recordPeriod(
     )
     if (alreadyRecorded) continue
 
-    const priceEntry = findPriceEntry(boss, difficulty)
+    // 가격은 그 처치의 기간으로 고른다. 동기화한 날의 표로 고르면 패치 경계 주가 틀린 값으로 굳고,
+    // 위의 `alreadyRecorded` 때문에 다시 고쳐지지 않는다.
+    const priceEntry = findPriceEntry(boss, difficulty, periodKey)
     if (priceEntry === undefined || priceEntry.priceMeso === null) continue
 
     const partySize = (await withSqliteFallback(getBossPartySize(ocid, boss, difficulty), null)) ?? 1

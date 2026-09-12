@@ -7,7 +7,11 @@ import {
   SPEND_TARIFF_PERCENT,
   buildSpendRewardName,
   findSpendChoice,
+  isOptionAxisOpen,
+  optionAxesOf,
+  optionItemOf,
   parseSpendRewardName,
+  pickSpendOption,
   pointToMeso,
   spendGroupsOf,
   spendRewardPrice,
@@ -26,15 +30,16 @@ describe('spendGroupsOf: 갈래 → 묶음들', () => {
     ])
   })
 
-  // **단계가 여럿인 항목은 대표 하나로 접힌다**. 목록에 여섯이 서면
-  // 그 여섯이 실은 셋 × 두 단계라는 사실이 화면에서 사라진다.
-  it('같은 대표는 한 칸으로 접힌다. 여섯이 셋이 된다', () => {
+  // **단계가 여럿인 항목은 대표 하나로 접힌다**. 목록에 여덟이 서면
+  // 그 여덟이 실은 넷 × 두 단계라는 사실이 화면에서 사라진다.
+  it('같은 대표는 한 칸으로 접힌다. 여덟이 넷이 된다', () => {
     const [first] = spendGroupsOf('컨텐츠')
 
     expect(first.choices.map((choice) => choice.label)).toEqual([
       '하이마운틴',
       '앵글러 컴퍼니',
       '악몽선경',
+      '아우룸 레기스',
     ])
   })
 
@@ -52,17 +57,18 @@ describe('spendGroupsOf: 갈래 → 묶음들', () => {
     expect(monsterPark.choices[0].items).toHaveLength(1)
   })
 
-  it('갈래 셋이 스물넷을 나눠 갖는다. 접혀도 항목 수는 그대로다', () => {
-    const counted = ['컨텐츠', '이벤트·BM', '버프'].map((category) =>
+  it('목록 갈래 넷이 마흔다섯을 나눠 갖는다. 접혀도 항목 수는 그대로다', () => {
+    const counted = ['컨텐츠', '이벤트·BM', '버프', '주문서'].map((category) =>
       spendGroupsOf(category as '컨텐츠').reduce(
         (sum, group) => sum + group.choices.reduce((n, choice) => n + choice.items.length, 0),
         0,
       ),
     )
 
-    // 보약 버프 둘이 `버프` 에서 `이벤트·BM` 으로 옮겨갔다.
-    expect(counted).toEqual([10, 10, 4])
-    expect(counted.reduce((sum, count) => sum + count, 0)).toBe(24)
+    // 보약 버프 둘이 `버프` 에서 `이벤트·BM` 으로 옮겨갔다. 아우룸 레기스 둘과 주문서 열아홉은
+    // 2026-09-11 사용자 제공분이다.
+    expect(counted).toEqual([12, 10, 4, 19])
+    expect(counted.reduce((sum, count) => sum + count, 0)).toBe(45)
   })
 
   // 직접 입력 둘은 목록이 없다. 빈 배열이지 예외가 아니다.
@@ -261,5 +267,123 @@ describe('형태별 단계: 값과 이름', () => {
       expect(parseSpendRewardName('컨텐츠', '몬스터 파크')).toBeNull()
       expect(parseSpendRewardName('컨텐츠', null)).toBeNull()
     })
+  })
+})
+
+// 줄이 둘인 주문서 타일. 항목이 축 값을 들고, 누름 한 번이 규칙 넷을 차례로 한다.
+describe('축 값: 줄 둘로 항목 하나를 고른다', () => {
+  const tileOf = (label: string) => {
+    for (const group of spendGroupsOf('주문서')) {
+      const found = group.choices.find((choice) => choice.label === label)
+      if (found !== undefined) return found
+    }
+    throw new Error(`${label} 타일이 없다`)
+  }
+  const 매지컬 = tileOf('매지컬 주문서')
+  const 귀장식 = tileOf('귀 장식 주문서')
+
+  it('줄과 값은 항목에 처음 나온 차례다', () => {
+    expect(optionAxesOf(매지컬)).toEqual([
+      { axis: '무기', values: ['한손무기', '두손무기'] },
+      { axis: '능력치', values: ['공격력', '마력'] },
+    ])
+    expect(optionAxesOf(귀장식)).toEqual([
+      { axis: '능력치', values: ['공격력', '마력'] },
+      { axis: '스탯', values: ['힘', '민첩', '운'] },
+    ])
+  })
+
+  it('축 값이 없는 타일은 줄이 없다', () => {
+    expect(optionAxesOf(tileOf('놀긍'))).toEqual([])
+    expect(optionAxesOf(null)).toEqual([])
+  })
+
+  it('처음에는 아무것도 안 골랐고 두 줄 모두 열려 있다', () => {
+    expect(isOptionAxisOpen(귀장식, {}, '능력치')).toBe(true)
+    expect(isOptionAxisOpen(귀장식, {}, '스탯')).toBe(true)
+    expect(optionItemOf(귀장식, {})).toBeNull()
+  })
+
+  describe('매지컬', () => {
+    it('마력을 누르면 한손무기가 골라진다. 두손무기 마력은 없다', () => {
+      expect(pickSpendOption(매지컬, {}, '능력치', '마력')).toEqual({ 능력치: '마력', 무기: '한손무기' })
+    })
+
+    it('두손무기를 골라 둔 채 마력을 누르면 두손무기가 지워지고 한손무기가 골라진다', () => {
+      expect(pickSpendOption(매지컬, { 무기: '두손무기', 능력치: '공격력' }, '능력치', '마력')).toEqual({
+        능력치: '마력',
+        무기: '한손무기',
+      })
+    })
+
+    it('두손무기를 누르면 능력치가 공격력으로 바뀐다', () => {
+      expect(pickSpendOption(매지컬, { 무기: '한손무기', 능력치: '마력' }, '무기', '두손무기')).toEqual({
+        무기: '두손무기',
+        능력치: '공격력',
+      })
+    })
+
+    it('한손무기를 누르면 능력치는 그대로다. 둘 다 있다', () => {
+      expect(pickSpendOption(매지컬, { 능력치: '마력' }, '무기', '한손무기')).toEqual({
+        무기: '한손무기',
+        능력치: '마력',
+      })
+      expect(pickSpendOption(매지컬, {}, '무기', '한손무기')).toEqual({ 무기: '한손무기' })
+    })
+
+    it('잠기는 줄이 없다', () => {
+      const cases: Record<string, string>[] = [{}, { 무기: '두손무기', 능력치: '공격력' }, { 무기: '한손무기', 능력치: '마력' }]
+      for (const picked of cases) {
+        expect(isOptionAxisOpen(매지컬, picked, '무기')).toBe(true)
+        expect(isOptionAxisOpen(매지컬, picked, '능력치')).toBe(true)
+      }
+    })
+  })
+
+  describe('귀 장식', () => {
+    it('능력치 없이 힘을 누르면 공격력이 골라진다', () => {
+      expect(pickSpendOption(귀장식, {}, '스탯', '힘')).toEqual({ 스탯: '힘', 능력치: '공격력' })
+    })
+
+    it('마력을 누르면 스탯이 지워지고 스탯 줄이 잠긴다', () => {
+      const picked = pickSpendOption(귀장식, { 능력치: '공격력', 스탯: '운' }, '능력치', '마력')
+
+      expect(picked).toEqual({ 능력치: '마력' })
+      expect(isOptionAxisOpen(귀장식, picked, '스탯')).toBe(false)
+      expect(isOptionAxisOpen(귀장식, picked, '능력치')).toBe(true)
+    })
+
+    // 사용자 확인. 마력 전에 고른 스탯을 되살리지 않는다.
+    it('공격력으로 돌아오면 스탯 줄이 열리고 비어 있다', () => {
+      const picked = pickSpendOption(귀장식, { 능력치: '마력' }, '능력치', '공격력')
+
+      expect(picked).toEqual({ 능력치: '공격력' })
+      expect(isOptionAxisOpen(귀장식, picked, '스탯')).toBe(true)
+    })
+  })
+
+  describe('optionItemOf: 항목 하나가 정해져야 저장이 켜진다', () => {
+    it('고른 값이 한 항목의 축 값과 꼭 맞으면 그 항목이다', () => {
+      expect(optionItemOf(귀장식, { 능력치: '공격력', 스탯: '민첩' })?.name).toBe('귀 장식 공격력(민첩) 주문서 10%')
+      expect(optionItemOf(매지컬, { 무기: '두손무기', 능력치: '공격력' })?.name).toBe(
+        '매지컬 두손무기 공격력 주문서 100%',
+      )
+    })
+
+    it('줄이 없는 항목은 그 줄을 안 골라도 정해진다', () => {
+      expect(optionItemOf(귀장식, { 능력치: '마력' })?.name).toBe('귀 장식 마력 주문서 10%')
+    })
+
+    it('한 줄만 골라 항목이 여럿 남으면 null 이다', () => {
+      expect(optionItemOf(귀장식, { 능력치: '공격력' })).toBeNull()
+      expect(optionItemOf(매지컬, { 무기: '한손무기' })).toBeNull()
+    })
+  })
+
+  it('수정으로 열 때 이름이 항목과 축 값을 되짚는다', () => {
+    const found = findSpendChoice('주문서', '귀 장식 공격력(운) 주문서 10%')
+
+    expect(found?.choice.label).toBe('귀 장식 주문서')
+    expect(found?.item.options).toEqual({ 능력치: '공격력', 스탯: '운' })
   })
 })

@@ -209,6 +209,28 @@ export function getPeriodDateKeys(cycle: BossCycle, periodKey: string): string[]
   )
 }
 
+/** 기간의 첫날(KST `YYYY-MM-DD`). 주간은 리셋 목요일, 월간은 그 달 1일이다. */
+export function periodStartDateKey(periodKey: string): string {
+  return periodKey.split('-').length === 2 ? `${periodKey}-01` : periodKey
+}
+
+/** 기간을 든 참조 데이터 한 줄. `from` 날부터 `until` 날 전까지 유효하다(KST `YYYY-MM-DD`). */
+export interface EffectivePeriod {
+  from?: string
+  until?: string
+}
+
+/**
+ * 그 줄이 이 기간에 유효한가. 기간의 첫날로 판정한다.
+ *
+ * 드롭 기록에는 처치 날짜가 없어 기간 가운데의 날짜를 가를 수 없다. 첫날로 보면 적용일 전 날을
+ * 품은 기간이 옛 줄을 쓴다. 9월 기간의 검은마법사가 09-17 에 빠진 교환권을 얻을 수 있는 이유다.
+ */
+export function isEffectiveIn(row: EffectivePeriod, periodKey: string): boolean {
+  const start = periodStartDateKey(periodKey)
+  return (row.from === undefined || row.from <= start) && (row.until === undefined || start < row.until)
+}
+
 /**
  * 과거 기간 백필에 쓸 조회 날짜(`YYYY-MM-DD`).
  * 그 기간의 완료 현황이 가장 온전히 반영되는 시점, 곧 다음 리셋 직전(그 기간의 마지막 날)을 쓴다.

@@ -866,6 +866,7 @@ describe('공유 컨텐츠. 계열로 묶는다', () => {
       '하이마운틴',
       '앵글러컴퍼니',
       '악몽선경',
+      '아우룸레기스',
     ])
   })
 
@@ -877,10 +878,10 @@ describe('공유 컨텐츠. 계열로 묶는다', () => {
       }),
     )
 
-    expect(model.sharedContents.flatMap((group) => group.items)).toHaveLength(7)
+    expect(model.sharedContents.flatMap((group) => group.items)).toHaveLength(8)
   })
 
-  it('`남은 스케줄`에서는 일곱이 빠진다', () => {
+  it('`남은 스케줄`에서는 여덟이 빠진다', () => {
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a'],
@@ -1072,15 +1073,16 @@ describe('공유 컨텐츠. 유니온만 조건부다', () => {
           ['하이마운틴', null, false],
           ['앵글러컴퍼니', null, false],
           ['악몽선경', null, false],
+          ['아우룸레기스', null, false],
         ],
       ],
     ])
   })
 
-  it('캐릭터가 하나도 없어도 다섯 줄이 선다. 위젯은 사라지지 않는다', () => {
+  it('캐릭터가 하나도 없어도 여섯 줄이 선다. 위젯은 사라지지 않는다', () => {
     const model = buildTodayViewModel(input({}))
 
-    expect(model.sharedContents.flatMap((group) => group.items)).toHaveLength(5)
+    expect(model.sharedContents.flatMap((group) => group.items)).toHaveLength(6)
   })
 
   it('수동 모드에서는 추적 목록 멤버십이 **스케줄러에 있는가** 다', () => {

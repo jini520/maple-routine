@@ -124,6 +124,11 @@ import { cachedPeriodKeysForTests, clearPeriodCacheForTests } from '../period-ca
 const NOT_FAKED = ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'setImmediate', 'clearImmediate', 'nextTick', 'queueMicrotask', 'performance', 'requestAnimationFrame', 'cancelAnimationFrame', 'requestIdleCallback', 'cancelIdleCallback', 'hrtime',
 ] as never
 
+// 이 파일의 `지금`. 결정석 가격이 기간을 들어서(2026-09-17 패치) 실제 시계로 돌면 패치일이 지나는
+// 순간 기대값(자쿰 카오스 8,080,000 등)이 조용히 틀린다. describe 에서 미리 셈하는 기간 키도 이
+// 값으로 셈해야 테스트 안의 시계와 어긋나지 않는다.
+const PINNED_NOW = new Date('2026-09-12T12:00:00+09:00')
+
 // "시세표(boss-crystal-prices.json)에 없는 보스" 표본. 실재 보스명을 쓰면 그 보스의 가격이
 // 확정되는 날 검증하려던 것과 반대 상태를 검증하게 된다. 벨로나가 실제로 그랬다
 // 어떤 보스도 이 이름을 갖지 않는다는 사실이 이 픽스처의 불변조건이다.
@@ -169,6 +174,9 @@ function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterSc
 }
 
 beforeEach(() => {
+  // 제 시계를 따로 세우는 테스트는 그 값이 이긴다.
+  jest.useFakeTimers({ doNotFake: NOT_FAKED })
+  jest.setSystemTime(PINNED_NOW)
   // 모듈 수준 실행 플래그라 테스트끼리 오염된다.
   resetSyncRunStateForTests()
   // 기간 스냅샷 표도 모듈 수준이다. 안 비우면 앞 테스트가 읽어 둔 기간이 그대로 그려진다.
@@ -236,6 +244,7 @@ beforeEach(() => {
 
 afterEach(() => {
   jest.resetAllMocks()
+  jest.useRealTimers()
 })
 
 describe('setBossDrops', () => {
@@ -3145,7 +3154,7 @@ describe('useBossProfitStore', () => {
 // 사라지고(그룹 합계가 행으로만 훑는다) 드롭 히스토리·today 위젯에는 영원히 남는다.
 describe('잡지 않은 보스의 드롭 정리', () => {
   const WEEKLY = weeklyBossesData.weekly as { boss: string; difficulties: string[] }[]
-  const WEEK_KEY = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
+  const WEEK_KEY = getCurrentBossProfitPeriod('weekly', PINNED_NOW).periodKey
 
   /** 끝에서부터 한도만큼 실제로 처치한 보스. 자쿰(목록 맨 앞)과 겹치지 않는다. */
   function clearedContents(count: number): BossContent[] {
@@ -3639,7 +3648,7 @@ describe('periodPendingAggregation', () => {
 describe('기간을 미리 들고 있는다', () => {
   const previousKey = getAdjacentPeriodKey(
     'weekly',
-    getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
+    getCurrentBossProfitPeriod('weekly', PINNED_NOW).periodKey,
     'prev',
   )
 

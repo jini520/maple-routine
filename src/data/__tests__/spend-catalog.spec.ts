@@ -13,6 +13,9 @@ const items = spendCatalog.items as {
   currency: string
   unitPrice: number
   unit: string
+  base?: string
+  tier?: string
+  options?: Record<string, string>
   forms?: string[]
   limit?: string
   maxQuantity?: number
@@ -73,9 +76,9 @@ describe('spend-catalog.json: 규약', () => {
     }
   })
 
-  // 큰 갈래 셋. 나머지 둘(아이템 구매·기타)은 직접 입력이라 항목이 없다.
-  it('갈래는 머리에 선언된 셋뿐이다', () => {
-    expect(spendCatalog.categories).toEqual(['컨텐츠', '이벤트·BM', '버프'])
+  // 큰 갈래 넷. 나머지 둘(아이템 구매·기타)은 직접 입력이라 항목이 없다.
+  it('갈래는 머리에 선언된 넷뿐이다', () => {
+    expect(spendCatalog.categories).toEqual(['컨텐츠', '이벤트·BM', '버프', '주문서'])
 
     for (const item of items) {
       expect(spendCatalog.categories).toContain(item.category)
@@ -93,7 +96,7 @@ describe('spend-catalog.json: 규약', () => {
     }
   })
 
-  it('갈래 셋이 모두 항목을 갖는다. 빈 갈래는 고를 수 없는 자리가 된다', () => {
+  it('갈래마다 항목이 있다. 빈 갈래는 고를 수 없는 자리가 된다', () => {
     for (const category of spendCatalog.categories) {
       expect(items.some((item) => item.category === category)).toBe(true)
     }
@@ -113,14 +116,19 @@ describe('spend-catalog.json: 닻 (사용자 확인값, 2026-08-23)', () => {
     expect(priceOf('에픽던전')).toBe(5000)
     expect(priceOf('닉네임 변경')).toBe(15000)
     expect(priceOf('콜렉터의 영약')).toBe(20000000)
+    // 2026-09-11 사용자 제공(2026-09-17 패치 · 주문서 갈래).
+    expect(priceOf('아우룸 레기스 2단계')).toBe(60000)
+    expect(priceOf('놀라운 긍정의 혼돈 주문서 60%')).toBe(500000)
+    expect(priceOf('펫장비 이노센트')).toBe(1000000000)
+    expect(priceOf('펫장비 리턴')).toBe(500000000)
   })
 
   // 에픽던전 추가 리워드는 **경험치 / 솔 에르다** 두 형태가 **같은 값**이다(사용자 확인). 형태가
   // 가격을 가르지 않는다는 것이 이 데이터의 성질이라 구조로 못 박는다.
-  it('에픽던전 추가 리워드는 여섯이고 전부 두 형태를 갖는다', () => {
+  it('에픽던전 추가 리워드는 여덟이고 전부 두 형태를 갖는다', () => {
     const rewards = items.filter((item) => item.group === '에픽던전 추가 리워드')
 
-    expect(rewards).toHaveLength(6)
+    expect(rewards).toHaveLength(8)
     for (const reward of rewards) {
       expect(reward.forms).toEqual(['경험치', '솔 에르다'])
     }
@@ -133,10 +141,11 @@ describe('spend-catalog.json: 닻 (사용자 확인값, 2026-08-23)', () => {
     }
   })
 
-  // 버프 물약만 메소다. 나머지는 전부 메포라는 것이 이 데이터의 축이다.
-  it('메소로 사는 것은 버프 물약뿐이다', () => {
+  // 버프 물약과 주문서만 메소다(주문서는 2026-09-11 사용자 제공). 나머지는 전부 메포라는 것이
+  // 이 데이터의 축이다.
+  it('메소로 사는 것은 버프 물약과 주문서뿐이다', () => {
     for (const item of items) {
-      expect(item.currency).toBe(item.group === '버프 물약' ? 'meso' : 'point')
+      expect(item.currency).toBe(item.group === '버프 물약' || item.category === '주문서' ? 'meso' : 'point')
     }
   })
 })
@@ -172,12 +181,56 @@ describe('spend-catalog.json: 묶음 표', () => {
  * 화면은 이 값으로 수량 줄을 세울지 정하므로, 여기가 바뀌면 그 줄이 조용히 되살아난다.
  */
 describe('spend-catalog.json: 수량 상한', () => {
-  it('에픽던전 추가 리워드 여섯은 상한이 1이다', () => {
+  it('에픽던전 추가 리워드 여덟은 상한이 1이다', () => {
     const epic = items.filter((item) => item.group === '에픽던전 추가 리워드')
 
-    expect(epic).toHaveLength(6)
+    expect(epic).toHaveLength(8)
     for (const item of epic) {
       expect(item.maxQuantity).toBe(1)
     }
+  })
+})
+
+/**
+ * 주문서 19종(사용자 제공 2026-09-11). 가격이 같고 이름이 비슷한 것은 타일 하나로 묶였고, 줄이
+ * 둘인 타일(매지컬 · 귀 장식)은 항목이 축 값(`options`)을 든다.
+ */
+describe('spend-catalog.json: 주문서', () => {
+  const scrolls = items.filter((item) => item.category === '주문서')
+
+  it('열아홉이고 전부 메소로 개수를 센다. 수량 상한이 없다', () => {
+    expect(scrolls).toHaveLength(19)
+    for (const item of scrolls) {
+      expect(item).toMatchObject({ currency: 'meso', unit: '개' })
+      expect(item.maxQuantity).toBeUndefined()
+    }
+  })
+
+  it('묶음은 셋이다', () => {
+    expect([...new Set(scrolls.map((item) => item.group))]).toEqual(['주문서', '펫장비 주문서', '리턴 스크롤'])
+  })
+
+  // 축 값과 단계는 둘 중 하나다. 둘 다 있으면 폼이 어느 줄을 세울지 모른다.
+  it('축 값을 든 항목은 단계를 안 들고 대표를 든다', () => {
+    for (const item of items.filter((each) => each.options !== undefined)) {
+      expect(item.tier).toBeUndefined()
+      expect(item.base).toBeDefined()
+    }
+  })
+
+  // 조합이 겹치면 두 줄을 다 골라도 항목이 하나로 안 정해져 저장이 영영 꺼진다.
+  it('한 타일 안에서 축 값의 조합이 겹치지 않는다', () => {
+    const seen = new Set<string>()
+    for (const item of items.filter((each) => each.options !== undefined)) {
+      const combo = `${item.base}|${JSON.stringify(Object.entries(item.options!).sort())}`
+      expect(seen.has(combo)).toBe(false)
+      seen.add(combo)
+    }
+  })
+
+  it('줄이 둘인 타일은 매지컬 주문서와 귀 장식 주문서다', () => {
+    const tiles = new Set(items.filter((each) => each.options !== undefined).map((each) => each.base))
+
+    expect([...tiles]).toEqual(['매지컬 주문서', '귀 장식 주문서'])
   })
 })

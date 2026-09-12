@@ -105,3 +105,38 @@ describe('loadDropsByRowKey: 가격 생존', () => {
     ])
   })
 })
+
+// 2026-09-17 패치. 교환권의 끝 기간만 적었으므로 패치 전 주의 기록은 정리되지 않는다.
+describe('loadDropsByRowKey: 기간으로 정리한다', () => {
+  const 교환권 = (periodKey: string) =>
+    record({
+      boss: '가디언 엔젤 슬라임',
+      difficulty: '카오스',
+      periodKey,
+      category: 'consumable',
+      itemName: '매지컬 무기 주문서 교환권',
+      slot: null,
+    })
+  const 가엔슬행 = (periodKey: string) => row({ boss: '가디언 엔젤 슬라임', difficulty: '카오스', periodKey })
+
+  it('패치 전 주의 교환권 기록은 남고 DB 에 다시 안 쓴다', async () => {
+    getBossDropRecordsMock.mockResolvedValue([교환권('2026-09-10')])
+    const { loadDropsByRowKey } = require('../drops-loader') as typeof import('../drops-loader')
+
+    const map = await loadDropsByRowKey(['ocid-1'], [가엔슬행('2026-09-10')], new Date('2026-09-12T00:00:00Z'))
+
+    expect(map['ocid-1|가디언 엔젤 슬라임|카오스|2026-09-10']).toHaveLength(1)
+    expect(replaceBossDropRecordsMock).not.toHaveBeenCalled()
+  })
+
+  it('패치 뒤의 주에 적힌 교환권은 정리된다', async () => {
+    getBossDropRecordsMock.mockResolvedValue([교환권('2026-09-17')])
+    const { loadDropsByRowKey } = require('../drops-loader') as typeof import('../drops-loader')
+
+    await loadDropsByRowKey(['ocid-1'], [가엔슬행('2026-09-17')], new Date('2026-09-19T00:00:00Z'))
+
+    const [, , , periodKey, written] = replaceBossDropRecordsMock.mock.calls[0]
+    expect(periodKey).toBe('2026-09-17')
+    expect(written).toEqual([])
+  })
+})

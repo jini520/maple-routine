@@ -16,6 +16,12 @@ describe('isValuableDrop', () => {
     expect(isValuableDrop('오만의 원죄')).toBe(true) // set: 광휘의 보스 세트 (사용자 데이터, 2026-07-27)
   })
 
+  it('소울 에테르 1~4단계는 고가 (2026-09-17 패치, 사용자 확인)', () => {
+    for (const tier of [1, 2, 3, 4]) {
+      expect(isValuableDrop(`${tier}단계 소울 에테르`)).toBe(true)
+    }
+  })
+
   it('개별 지정 아이템(연마석 2종·칠흑 장신구 상자·익셉셔널 해머 슬롯별 5종)은 고가', () => {
     expect(isValuableDrop('생명의 연마석')).toBe(true)
     expect(isValuableDrop('신념의 연마석')).toBe(true)

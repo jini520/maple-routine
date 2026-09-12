@@ -27,6 +27,8 @@ export function Segment<T extends string>(props: {
    * 쪽이 예외**여서다.
    */
   fixed?: boolean
+  /** 잠긴 줄. 상자째 흐리고 조각이 안 눌린다. 고를 값이 남은 항목에 없을 때 쓴다. */
+  disabled?: boolean
 }): React.JSX.Element {
   const selectedIndex = props.selected === null ? -1 : props.options.indexOf(props.selected)
   const thumb = useSlidingThumb(selectedIndex)
@@ -36,7 +38,9 @@ export function Segment<T extends string>(props: {
     <View
       testID="segment"
       // **테두리는 상자 하나뿐**이다. 조각마다 두르면 칩 여럿과 같은 그림이 된다.
-      className="flex-row items-center rounded-full border border-border bg-surface p-0.5"
+      className={`flex-row items-center rounded-full border border-border bg-surface p-0.5 ${
+        props.disabled === true ? 'opacity-40' : ''
+      }`}
     >
       {/*
         안쪽 줄에 테두리도 여백도 없어야 한다. 조각이 알리는 `x` 와 아래 상자의 `left: 0` 이
@@ -68,11 +72,12 @@ export function Segment<T extends string>(props: {
               role="button"
               aria-label={option}
               aria-selected={isSelected}
+              disabled={props.disabled}
               onLayout={(event) => thumb.onItemLayout(index, event)}
               // 이미 고른 것을 다시 눌러도 아무 일이 없어야 한다. `DifficultySegment` 와 같은 계약이다.
               // 두드림도 그 조건 안이다. 안 바뀌는 누름에 내면 손끝이 거짓을 말한다.
               onPress={() => {
-                if (isSelected) return
+                if (isSelected || props.disabled === true) return
                 selectionFeedback()
                 props.onSelect(option)
               }}

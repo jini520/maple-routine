@@ -1,5 +1,5 @@
 /**
- * 고르는 갈래의 폼. 컨텐츠 · 이벤트·BM · 버프.
+ * 고르는 갈래의 폼. 컨텐츠 · 이벤트·BM · 버프 · 주문서.
  *
  * 이 갈래들의 항목에는 전부 가격이 붙어 있다. 그래서 금액 칸이 없고, 고르면 단가가 그대로
  * 금액이 되며 수량만 조절한다. 곱셈은 앱이 한다. 사용자가 대신하면 몇 포인트 썼나 를 나중에
@@ -10,7 +10,8 @@
  * 안이 선다.
  *
  * ②에서 고르는 것은 대표가 정한다. 형태가 있는 대표(에픽던전)는 **형태마다 단계를 따로**
- * 고르고 금액이 그 값들의 합이며, 없는 대표는 단계 하나를 고른다.
+ * 고르고 금액이 그 값들의 합이며, 없는 대표는 단계 하나를 고른다. 축 값을 든 대표(매지컬 · 귀 장식
+ * 주문서)는 축마다 값을 골라 항목 하나를 정한다.
  */
 import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
@@ -25,7 +26,11 @@ import {
   buildSpendRewardName,
   findSpendChoice,
   formsOf,
+  isOptionAxisOpen,
+  optionAxesOf,
+  optionItemOf,
   parseSpendRewardName,
+  pickSpendOption,
   pointToMeso,
   spendGroupsOf,
   spendRewardPrice,
@@ -46,11 +51,15 @@ import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
  * 단위를 붙이는 것은 갈래 하나 안에서 통화가 갈리는 곳이 있어서다(버프의 영약은 메소, 보약은
  * 메포). 메소만 줄여 적는다. 메포는 200~50,000 이라 그대로가 읽히지만 메소는 백만 단위라
  * 1/3 폭 타일에서 잘린다.
+ *
+ * 값이 모두 같으면 하나만 적는다. 같은 값을 셋 적으면 좁은 타일에서 잘리고, 갈래마다 값이
+ * 다르다고 읽힌다.
  */
 function tilePriceLabel(items: readonly SpendCatalogItem[]): string {
   const first = items[0]
   if (first === undefined) return ''
-  const numbers = items.map((item) =>
+  const shown = items.every((item) => item.unitPrice === first.unitPrice) ? [first] : items
+  const numbers = shown.map((item) =>
     item.currency === 'point' ? item.unitPrice.toLocaleString() : formatMesoCompact(item.unitPrice),
   )
   return `${numbers.join(' | ')} ${first.currency === 'point' ? '메포' : '메소'}`
@@ -169,6 +178,7 @@ function restoreChoice(record: SpendRecord): {
   choice: SpendCatalogChoice
   item: SpendCatalogItem | null
   tierByForm: Record<string, string>
+  optionByAxis: Record<string, string>
 } | null {
   const exact = findSpendChoice(record.category, record.item)
   if (exact !== null) {
@@ -177,12 +187,13 @@ function restoreChoice(record: SpendRecord): {
       choice: exact.choice,
       item: exact.item,
       tierByForm: record.form !== null && tier !== undefined ? { [record.form]: tier } : {},
+      optionByAxis: { ...exact.item.options },
     }
   }
 
   const reward = parseSpendRewardName(record.category, record.item)
   if (reward === null) return null
-  return { choice: reward.choice, item: null, tierByForm: reward.tierByForm }
+  return { choice: reward.choice, item: null, tierByForm: reward.tierByForm, optionByAxis: {} }
 }
 
 export function CatalogForm(props: SpendFormProps): React.JSX.Element {
@@ -200,6 +211,8 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
    * 각각 몇 단계인가 를 든다.
    */
   const [tierByForm, setTierByForm] = useState<Record<string, string>>(found?.tierByForm ?? {})
+  /** 축마다 고른 값. 축 값을 든 대표(매지컬 · 귀 장식 주문서)만 쓴다. */
+  const [optionByAxis, setOptionByAxis] = useState<Record<string, string>>(found?.optionByAxis ?? {})
   const [quantity, setQuantity] = useState(props.editing?.quantity ?? 1)
   const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
   const [rateText, setRateText] = useState(() => {
@@ -210,11 +223,13 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
 
   const groups = spendGroupsOf(props.category)
   const forms = formsOf(choice)
+  const axes = optionAxesOf(choice)
   /**
-   * 형태 없는 대표의 단계 줄. 형태가 있으면 단계를 형태 줄마다 고르므로 이 줄이 안 선다.
+   * 형태 없는 대표의 단계 줄. 형태나 축이 있으면 그 줄들로 고르므로 이 줄이 안 선다.
    * 단계가 하나뿐인 대표는 고를 것이 없어 여기도 빈 배열이다.
    */
-  const tiers = choice !== null && forms.length === 0 && choice.items.length > 1 ? choice.items : []
+  const tiers =
+    choice !== null && forms.length === 0 && axes.length === 0 && choice.items.length > 1 ? choice.items : []
   /** 형태 줄의 조각들. 0단계가 맨 앞이고 나머지는 대표가 든 단계 그대로다. */
   const tierOptions = choice === null ? [] : [BASE_TIER, ...choice.items.map(tierNameOf)]
   /**
@@ -248,8 +263,10 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   function selectChoice(next: SpendCatalogChoice): void {
     setChoice(next)
     setItem(next.items.length === 1 ? next.items[0] : null)
-    // 형태별 단계는 **전부 0단계에서 시작한다**. 산 것을 앱이 미리 정하지 않는다.
+    // 형태별 단계는 **전부 0단계에서 시작한다**. 산 것을 앱이 미리 정하지 않는다. 축도 안 고른
+    // 채로 시작한다.
     setTierByForm({})
+    setOptionByAxis({})
     setQuantity(1)
     props.onScrollKeyChange(next.label)
   }
@@ -260,11 +277,20 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
     setQuantity(1)
   }
 
+  /** ② 축 하나의 값을 고르는 단계. 고른 값들이 한 항목과 꼭 맞으면 그 항목이 정해진다. */
+  function selectOption(axis: string, value: string): void {
+    if (choice === null) return
+    const next = pickSpendOption(choice, optionByAxis, axis, value)
+    setOptionByAxis(next)
+    setItem(optionItemOf(choice, next))
+  }
+
   /** 목록으로 돌아가는 초기화. */
   function clearChoice(): void {
     setChoice(null)
     setItem(null)
     setTierByForm({})
+    setOptionByAxis({})
     setQuantity(1)
     props.onScrollKeyChange('')
   }
@@ -385,6 +411,19 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
               />
             </FieldRow>
           ))}
+
+          {/* 축마다 한 줄이고 처음에는 아무것도 안 골랐다. 남은 항목이 그 축을 안 가지면 잠긴다. */}
+          {choice !== null &&
+            axes.map((each) => (
+              <FieldRow key={each.axis} label={each.axis} testID={`spend-sheet-option-${each.axis}`}>
+                <Segment
+                  options={each.values}
+                  selected={optionByAxis[each.axis] ?? null}
+                  disabled={!isOptionAxisOpen(choice, optionByAxis, each.axis)}
+                  onSelect={(value) => selectOption(each.axis, value)}
+                />
+              </FieldRow>
+            ))}
 
           {tiers.length > 0 && (
             <FieldRow label="단계">

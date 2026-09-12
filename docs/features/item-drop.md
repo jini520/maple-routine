@@ -31,7 +31,7 @@
 | 상태 | `features/drop-effect/` | 연출 on·off |
 | 저장 | `storage/boss-drop-records.ts` | SQLite `boss_drop_records` |
 | 저장 | `storage/drop-effect.ts` | 연출 토글 |
-| 계산 | `lib/boss/boss-drops.ts` | `pruneUnobtainableDrops` · `planConfirmedDifficultyDropMigration` |
+| 계산 | `lib/boss/boss-drops.ts` | 드롭 후보 · 고정 보상 · 획득 판정. 모두 기간을 받는다([[ADR-261]]). `pruneUnobtainableDrops` · `planConfirmedDifficultyDropMigration` |
 | 계산 | `lib/drop/drop-history.ts` | 전 기간 집계, `VALUABLE_DROUGHT_TIERS` |
 | 계산 | `constants/style/drought-tier-styles.ts` | 가뭄 단계 잎 램프. today 위젯과 공유한다 |
 | 계산 | `lib/drop/drop-price.ts` | 판매가를 수익으로 환산 |
@@ -45,7 +45,7 @@
 
 **관련 ADR** (유효): [[ADR-010]] [[ADR-011]] [[ADR-038]] [[ADR-040]] [[ADR-041]] [[ADR-045]]
 [[ADR-048]] [[ADR-069]] [[ADR-070]] [[ADR-071]] [[ADR-103]] [[ADR-124]] [[ADR-147]] [[ADR-172]]
-[[ADR-174]] [[ADR-187]]
+[[ADR-174]] [[ADR-187]] [[ADR-261]]
 
 **폐기됐지만 이 화면이 그 결정 일부를 아직 따르는 것**: ⛔ ADR-039(바텀시트 계약) · ADR-077(스택에서
 아래 화면을 언마운트하지 않는다). **각 파일 배너의 🔗 줄에 적힌 것만 살아 있다.**
@@ -140,6 +140,30 @@
 문자열이라 **같은 아이템이 두 표기로 존재하면 전부 갈라진다.** 이름을 바꿀 땐 그 이름으로 저장된
 기록이 있는지 먼저 확인한다. 노출된 적 없는 항목만 이관 없이 개명해도 안전하다.
 
+### 아이템은 기간을 든다 ([[ADR-261]])
+
+드롭 테이블의 아이템 줄이 `from`(이 날부터)과 `until`(이 날 전까지)을 가질 수 있다. 2026-09-17
+패치가 처음 쓴다.
+
+| 무엇 | 줄 | 09-10 주 | 09-17 주부터 |
+|---|---|---|---|
+| 교환권 셋(26칸) | `until: 2026-09-17` | 고를 수 있다 | 안 선다 |
+| 소울 에테르 1~4단계(16칸) | `from: 2026-09-17` | 안 선다 | 고를 수 있다 |
+| 메멘토 큐브 17칸(고정) | 옛 수량에 `until`, 새 수량에 `from` | 옛 수량 | 새 수량 |
+
+**표에서 지우지 않고 끝 기간을 적는 이유**는 획득 판정이 기록을 지우기 때문이다.
+`loadDropsByRowKey` 는 그 난이도에서 얻을 수 없는 드롭을 DB 에서 지운다. 교환권을 표에서 지우면
+패치 전에 실제로 먹은 기록이 거짓 기록으로 판정되어 영구히 사라진다.
+
+**판정은 그 기록의 기간 첫날로 한다.** 주간은 리셋 목요일, 월간은 1일이다. 검은마법사의 교환권도
+09-17 에 빠지는데 9월 기간은 9/1 에 시작하므로, 9월 기간은 교환권을 얻을 수 있고 10월 기간부터 못
+얻는다. 드롭 기록에 처치 날짜가 없어 9월 초와 17일 뒤를 가를 수 없다. 지우는 쪽으로 가르면 실제로
+먹은 기록이 지워진다.
+
+기간을 받는 자리는 넷이다. 드롭 시트의 후보(`getBossDropCandidates`)와 고정 보상
+(`getBossFixedDrops`), 획득 판정(`getObtainableTileNames` · `isObtainableDrop`)이다. 드롭 시트는 그
+행의 기간(`BossDropSheet` 의 `periodKey`)을 넘기고, 정리와 히스토리는 기록의 `periodKey` 를 넘긴다.
+
 ### 아이콘 캔버스 여백 규칙 (2026-07-30)
 
 표시부가 전부 고정 정사각 박스(`h-6`·`h-8`·`h-9`)에 `object-contain` 이라, **렌더 크기를 정하는 것은
@@ -160,11 +184,11 @@
 
 **기록과 가격을 한 시트에서 끝낸다**([[ADR-124]] 결정 6).
 
-- **난이도를 가리지 않고 통합해 보여준다**([[ADR-040]] 결정 1). `getBossDropCandidates(boss)` 가 전
-  난이도 장비와 소비를 이름과 slot으로 중복 제거하고 등장 난이도를 붙인다. 각 타일에 그 난이도를
+- **난이도를 가리지 않고 통합해 보여준다**([[ADR-040]] 결정 1). `getBossDropCandidates(boss, periodKey)`
+  가 그 기간에 나오는 전 난이도 장비와 소비를 이름과 slot으로 중복 제거하고 등장 난이도를 붙인다. 각 타일에 그 난이도를
   약자 컬러 배지(`components/atoms/Badge` 의 난이도 variant)로 표기한다.
 - **고정 드롭은 읽기 전용이다**([[ADR-040]] 결정 3). 값이 난이도마다 달라 선택 기능을 없앴다.
-  `getBossFixedDrops(boss)` 로 난이도별 그룹을 보여주기만 한다.
+  `getBossFixedDrops(boss, periodKey)` 로 그 기간의 난이도별 그룹을 보여주기만 한다.
 - **카테고리 헤더 아이콘**([[ADR-040]] 결정 4): 장비 `Sword`, 소비 `FlaskConical`, 고정 `Pin`.
 - **일반 아이템은 확인창 없이 누르면 바로 기록되고 토스트가 뜬다.** 잘못 등록한 기록은 시트에서
   개별로 지운다. 전 기간 목록(히스토리)은 **읽기 전용**이라 삭제가 없다.
@@ -464,6 +488,9 @@ const loadedThisPeriod = status === 'ready' && storePeriodKey === week
 `boss_profit_records` 행이 있을 때만** 건다. **그 행의 존재가 곧 처치 난이도 확정이다.** 확정 전 행에
 걸면 익스트림 등록에 하드 처치인 상황에서, 나중에 이관돼 살아남을 기록을 미리 숨긴다([[ADR-069]]
 결정 4).
+
+술어는 **기록의 기간으로** 판정한다([[ADR-261]] 결정 4). 09-10 주의 교환권 기록은 남고, 09-17
+주부터 적힌 것만 걸린다.
 
 **히스토리는 쓰지 않는다.** 거르기만 하고 DB 정리는 기존 경로에 맡긴다.
 

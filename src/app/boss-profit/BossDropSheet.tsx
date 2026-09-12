@@ -57,6 +57,8 @@ interface BossDropSheetProps {
   boss: string
   // 수익 리스트 행의 난이도. 미완료면 시트 안 난이도 토글의 기본값, 완료면 그 난이도만 표시한다.
   difficulty: BossDifficulty
+  /** 그 행의 기간. 그 기간에 나오는 아이템과 고정 보상만 선다. */
+  periodKey: string
   // 완료 여부(수익 리스트 행 기준). true면 난이도 토글 없이 완료 난이도만 표시, false면 토글 노출.
   isComplete: boolean
   initialDrops: RecordedDrop[]
@@ -151,8 +153,8 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
 
   // 난이도별 표시: 장비·소비는 name+slot으로 통합된 후보에서 현재 난이도만 필터, 고정은 현재
   // 난이도 그룹만. 통합 후보는 등장 난이도(difficulties)를 담고 있어 그대로 필터에 쓴다.
-  const allCandidates = getBossDropCandidates(props.boss)
-  const allFixedGroups = getBossFixedDrops(props.boss)
+  const allCandidates = getBossDropCandidates(props.boss, props.periodKey)
+  const allFixedGroups = getBossFixedDrops(props.boss, props.periodKey)
   // 난이도 토글 후보 = 드롭 테이블에 있는 난이도 + 행 난이도(테이블에 없어도 기본값은 항상 노출).
   const tableDifficulties = getBossDifficulties(props.boss)
   const difficultyOptions = BOSS_DIFFICULTIES.filter(
@@ -181,7 +183,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   // 초기화한다. 상자 결과는 상자(boxOrigin)가 새 난이도 후보에 있으면 유지(타일 기준이 상자명이라).
   function selectDifficulty(next: BossDifficulty): void {
     if (next === selectedDifficulty) return
-    const availableTileNames = getObtainableTileNames(props.boss, next)
+    const availableTileNames = getObtainableTileNames(props.boss, next, props.periodKey)
     setSelected((prev) => prev.filter((drop) => availableTileNames.has(drop.boxOrigin ?? drop.itemName)))
     setSelectedDifficulty(next)
   }

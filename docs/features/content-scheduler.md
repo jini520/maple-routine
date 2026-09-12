@@ -535,6 +535,12 @@ mask `linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)`)이다.
   맞춘 색이라 테마를 따라가면 의미가 깨진다.
 - **폴백**: 길드 미션 포인트와 플래그 레이스가 둘 다 미등록이면 묶음 카드 대신 등록된 길드 항목만
   기본 카드(테마 토큰 `bg-surface`·`border-border`, "이름 · now/max")로 그린다.
+- **에픽 던전은 넷이다**(2026-09-17 패치로 아우룸 레기스가 들어왔다, 이슈 #360). 배경은 **레사
+  초상화**다(`WeeklyContentCards.tsx` 의 `EPIC_DUNGEON_BACKGROUND_SLUGS` 에 `lesa`, 사용자 지정
+  2026-09-12). 기존 셋처럼 그 던전의 보스 초상화를 쓴다. 크롭은 `boss-portrait-crops.json` 의
+  `lesa` 가 든다. 시작값은 `100% auto` · `50% 35%` 이고 사용자가 카드를 보며 맞춘다. 에픽 던전의 `max_count` 는 총
+  스테이지 수(5)이고 `now_count` 는 깬 스테이지 수다. 한 스테이지라도 깨면 완료다(`byParticipation`).
+  API 이름(`에픽 던전 : 아우룸 레기스`)은 아직 받아 본 적이 없어 09-17 뒤 첫 응답과 대조한다.
 
 ### 빈 상태
 

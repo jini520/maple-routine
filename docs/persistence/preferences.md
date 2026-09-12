@@ -170,7 +170,7 @@ flowchart TD
       { "name": "[일일 퀘스트] 레헬른의 평온한 밤", "kind": "quest", "isRegistered": true, "nowCount": 0, "maxCount": 0, "questState": 1 }
     ],
     "weeklyContents": [
-      { "name": "에픽 던전 : 악몽선경", "kind": "contents", "isRegistered": true, "nowCount": 5, "maxCount": 0, "questState": null },
+      { "name": "에픽 던전 : 악몽선경", "kind": "contents", "isRegistered": true, "nowCount": 5, "maxCount": 5, "questState": null },
       { "name": "[메이플 유니온] 주간 드래곤 퇴치", "kind": "quest", "isRegistered": false, "nowCount": 0, "maxCount": 0, "questState": 0 }
     ],
     "bossContents": [

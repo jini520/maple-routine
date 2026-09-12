@@ -168,6 +168,46 @@ describe('처치 난이도 확정', () => {
   })
 })
 
+// 2026-09-17 패치. 가격은 동기화한 날이 아니라 처치의 기간이 고른다.
+describe('가격은 처치의 기간으로 고른다', () => {
+  const priceOf = (key: string): number | undefined =>
+    upsertMock.mock.calls
+      .map(([r]) => r)
+      .find((r) => `${r.boss}|${r.difficulty}|${r.cycle}|${r.periodKey}` === key)?.priceMeso
+
+  it('09-10 주 처치는 옛 가격, 09-17 주 처치는 새 가격이다', async () => {
+    getLedgerMock.mockResolvedValue({
+      unavailable: false,
+      dates: {
+        '2026-09-16': observed(['자쿰|카오스']),
+        '2026-09-18': observed(['자쿰|카오스']),
+      },
+    })
+
+    // KST 2026-09-19(토). 창은 9/6 ~ 9/18.
+    await recordBossProfitFromWindow(['o1'], new Date('2026-09-19T03:00:00.000Z'))
+
+    expect(priceOf('자쿰|카오스|weekly|2026-09-10')).toBe(8_080_000)
+    expect(priceOf('자쿰|카오스|weekly|2026-09-17')).toBe(4_040_000)
+  })
+
+  it('검은마법사는 9월 기간이 옛 가격, 10월 기간이 새 가격이다', async () => {
+    getLedgerMock.mockResolvedValue({
+      unavailable: false,
+      dates: {
+        '2026-09-29': observed(['검은마법사|하드']),
+        '2026-10-02': observed(['검은마법사|하드']),
+      },
+    })
+
+    // KST 2026-10-03(토). 창은 9/20 ~ 10/2.
+    await recordBossProfitFromWindow(['o1'], new Date('2026-10-03T03:00:00.000Z'))
+
+    expect(priceOf('검은마법사|하드|monthly|2026-09')).toBe(665_000_000)
+    expect(priceOf('검은마법사|하드|monthly|2026-10')).toBe(465_000_000)
+  })
+})
+
 // ⚠️ 한 기간의 쓰기 실패가 나머지를 죽이면 안 된다. 쓰기는 타임아웃을 성공으로 위장하지 않아
 // 실제로 던진다(`withSqliteTimeout`). 옛 백필은 (캐릭터, 기간)마다 자기 try 를 가졌다.
 describe('한 기간이 죽어도 나머지는 산다', () => {

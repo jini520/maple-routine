@@ -73,7 +73,7 @@ export function planOrphanDropCleanup(input: OrphanDropPlanInput): OrphanDropGro
     if (!input.knownPeriodKeys.has(record.periodKey)) continue
     if (!periodsWithRow.has(periodKeyOf(record.ocid, record.periodKey))) continue
     if (bossesWithRow.has(bossKey(record.ocid, record.boss, record.periodKey))) continue
-    if (findPriceEntry(record.boss, record.difficulty as BossDifficulty) === undefined) continue
+    if (findPriceEntry(record.boss, record.difficulty as BossDifficulty, record.periodKey) === undefined) continue
 
     const key = `${record.ocid}|${record.boss}|${record.difficulty}|${record.periodKey}`
     const group = groups.get(key)
