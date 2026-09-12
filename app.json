@@ -2,7 +2,7 @@
   "expo": {
     "name": "메이플 루틴",
     "slug": "maple-routine",
-    "version": "1.0.7",
+    "version": "1.0.8",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
@@ -17,7 +17,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.mapleroutine.app",
-      "buildNumber": "13",
+      "buildNumber": "15",
       "supportsTablet": true,
       "infoPlist": {
         "CFBundleDevelopmentRegion": "ko",
@@ -29,7 +29,7 @@
     },
     "android": {
       "package": "com.mapleroutine.app",
-      "versionCode": 21,
+      "versionCode": 22,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#E6DECF"
