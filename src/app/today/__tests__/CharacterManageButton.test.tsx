@@ -57,12 +57,22 @@ describe('버튼', () => {
   })
 
   // 지름이 치수 표에서 온다. 화면에 숫자로 적으면 다음 규격이 또 다른 자리에 선다.
-  it('지름이 치수 표에서 온다', async () => {
+  it('원의 지름이 치수 표에서 온다', async () => {
     const view = await renderAtom(<CharacterManageButton portraits={셋} />)
     const circle = flattenStyle(view.getByLabelText('캐릭터 관리').props.style)
 
-    expect(circle.width).toBe(PORTRAIT_HEADER.faceSize)
-    expect(circle.height).toBe(PORTRAIT_HEADER.faceSize)
+    expect(circle.width).toBe(PORTRAIT_HEADER.slot)
+    expect(circle.height).toBe(PORTRAIT_HEADER.slot)
+  })
+
+  // 얼굴은 원보다 작다. 그 차이가 원 안의 여백이고, 여기서 `slot` 을 넘기면 여백이 사라져
+  // 얼굴이 테두리에 붙는다(고치기 전의 그 모양이다).
+  it('얼굴은 원보다 작게 앉는다', async () => {
+    const view = await renderAtom(<CharacterManageButton portraits={셋} />)
+    const face = flattenStyle(view.getByTestId('character-manage-face-box-0').props.style)
+
+    expect(face.width).toBe(PORTRAIT_HEADER.faceSize)
+    expect(face.height).toBe(PORTRAIT_HEADER.faceSize)
   })
 
   // 얼굴이 원보다 크지 않아도 오르내리는 동안 테두리를 넘는다. 원이 안 자르면 둥근 틀 밖에

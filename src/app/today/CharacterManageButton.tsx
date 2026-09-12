@@ -51,8 +51,13 @@ function DrumFace(props: {
   })
 
   return (
-    <AnimatedBox style={[StyleSheet.absoluteFill, style]}>
+    // 얼굴이 원보다 작으므로 가운데로 모은다. 안 모으면 왼쪽 위로 붙어 여백이 오른쪽 아래에만
+    // 생긴다(`DropPriceFab` 의 드럼이 같은 이유로 가운데 정렬이다).
+    <AnimatedBox
+      style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, style]}
+    >
       <CharacterAvatar
+        testID={`character-manage-face-box-${slot}`}
         imageTestID={`character-manage-face-${slot}`}
         imageUrl={props.portrait.imageUrl}
         name={props.portrait.name}
@@ -97,8 +102,8 @@ export function CharacterManageButton(props: {
        * (Metro 를 다시 띄워야 나온다). 값으로 적으면 그 함정이 없다.
        */
       style={{
-        width: PORTRAIT_HEADER.faceSize,
-        height: PORTRAIT_HEADER.faceSize,
+        width: PORTRAIT_HEADER.slot,
+        height: PORTRAIT_HEADER.slot,
         marginRight: 8,
       }}
       /*
