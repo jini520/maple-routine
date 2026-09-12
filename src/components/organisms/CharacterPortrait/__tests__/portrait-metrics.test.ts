@@ -43,10 +43,21 @@ describe('rail 규격은 겹치지 않는다', () => {
 // today 머리의 캐릭터 관리 버튼. 이 규격은 링도 글자도 없어 값이 지름 하나뿐이고, 그 하나가
 // **머리 높이를 정한다.**
 describe('header 규격은 머리를 안 높인다', () => {
-  // 제목 줄의 바닥이 32 이고 다른 탭 화면이 같은 자리에 두는 주기 탭도 그 높이다. 이 값이 더
-  // 크면 머리 덩어리가 today 에서만 높아져 탭을 옮길 때 들썩여 보인다.
-  it('지름이 제목 줄의 바닥과 같다', () => {
-    expect(PORTRAIT_HEADER.faceSize).toBe(PAGE_HEADER_TITLE_ROW_MIN_H)
+  /** 갱신 시각 줄의 높이. `DataFreshness` 의 `h-4` 다(클래스 문자열이라 값으로는 못 가져온다). */
+  const 갱신시각_높이 = 16
+
+  // 머리 덩어리는 제목 줄과 갱신 시각 줄을 쌓은 것이고, 곁에 서는 것이 그 합을 넘을 때만 덩어리
+  // 높이가 그것을 따라간다. 그러면 today 머리만 높아져 탭을 옮길 때 들썩여 보인다.
+  it('지름이 머리 덩어리 높이를 안 넘는다', () => {
+    expect(PORTRAIT_HEADER.faceSize).toBeLessThanOrEqual(
+      PAGE_HEADER_TITLE_ROW_MIN_H + 갱신시각_높이,
+    )
+  })
+
+  // 판별력: 상한만 재면 32 로 되돌아가도 초록이다. 키우라는 지시를 받은 값이라 제목 줄 하나보다
+  // 크다는 것을 함께 못박는다.
+  it('제목 줄 하나보다는 크다', () => {
+    expect(PORTRAIT_HEADER.faceSize).toBeGreaterThan(PAGE_HEADER_TITLE_ROW_MIN_H)
   })
 })
 

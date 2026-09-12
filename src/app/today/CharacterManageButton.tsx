@@ -89,8 +89,14 @@ export function CharacterManageButton(props: {
         navigation.navigate('SettingsCharacters')
       }}
       style={{ width: PORTRAIT_HEADER.faceSize, height: PORTRAIT_HEADER.faceSize }}
-      // 얼굴이 오르내리며 테두리를 넘는다. 원이 안 자르면 둥근 틀 밖에 얼굴 조각이 뜬다.
-      className="shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-2"
+      /*
+       * `overflow-hidden` 은 얼굴이 오르내리며 테두리를 넘기 때문이다. 안 자르면 둥근 틀 밖에
+       * 얼굴 조각이 뜬다.
+       *
+       * `mr-2` 는 헤더가 쥔 `px-4` 위에 이 버튼만 더 미는 값이다(사용자 지시). 원이 화면
+       * 가장자리에 붙어 보이던 것을 떼어 놓는다. 다른 탭 화면의 세그먼트보다 그만큼 안쪽이다.
+       */
+      className="mr-2 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-2"
     >
       {props.portraits.map((portrait, slot) => (
         <DrumFace
@@ -104,10 +110,12 @@ export function CharacterManageButton(props: {
 
       {/* 빈 원이나 지어낸 얼굴을 세우지 않는다. 추적이 없는 첫 실행에서도 문은 열려 있어야 한다.
           아이콘에 `testID` 를 직접 주지 않는 것은 그것이 SVG 부품이라 프롭이 어디까지 내려가는지가
-          이 파일의 약속이 아니기 때문이다. */}
+          이 파일의 약속이 아니기 때문이다.
+
+          24 인 것은 원이 40 이기 때문이다. 20 은 그 안에서 헐거웠다. */}
       {slots === 0 && (
         <View testID="character-manage-fallback">
-          <CircleUserRoundIcon className="h-5 w-5 text-text-muted" strokeWidth={2} aria-hidden />
+          <CircleUserRoundIcon className="h-6 w-6 text-text-muted" strokeWidth={2} aria-hidden />
         </View>
       )}
     </Pressable>

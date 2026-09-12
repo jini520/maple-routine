@@ -52,10 +52,14 @@ export const PORTRAIT_COMPACT = {
 /**
  * today 머리의 캐릭터 관리 버튼(`app/today/CharacterManageButton.tsx`).
  *
- * 링도 곡선 글자도 없어 값이 지름 하나뿐이고, 그 하나가 **머리 높이를 정한다**. 제목 줄의 바닥
- * (`PAGE_HEADER_TITLE_ROW_MIN_H`)과 같아야 한다. 크면 머리 덩어리가 today 에서만 높아져 탭을
- * 옮길 때 들썩여 보인다. 그 약속은 `__tests__/portrait-metrics.test.ts` 가 잰다.
+ * 링도 곡선 글자도 없어 값이 지름 하나뿐이고, 그 하나가 **머리 높이를 정한다**. 상한은 제목 줄
+ * (`PAGE_HEADER_TITLE_ROW_MIN_H` 32)과 갱신 시각 줄(`DataFreshness` 의 `h-4` 16)을 쌓은 48 이다.
+ * 그보다 크면 머리 덩어리가 그 높이를 따라가 today 만 높아지고, 탭을 옮길 때 들썩여 보인다.
+ * 그 약속은 `__tests__/portrait-metrics.test.ts` 가 잰다.
+ *
+ * 40 은 사용자 지시로 32 에서 올린 값이다. 레일 칸의 얼굴(`PORTRAIT_RAIL.faceSize`)과 같은 지름
+ * 이라 이 앱이 이미 그리는 크기이고, 상한 48 아래라 머리 높이는 그대로다.
  */
 export const PORTRAIT_HEADER = {
-  faceSize: 32,
+  faceSize: 40,
 } as const
