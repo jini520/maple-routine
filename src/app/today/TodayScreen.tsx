@@ -42,6 +42,7 @@ import { Text } from '../../components/atoms'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
+import { CharacterManageButton } from './CharacterManageButton'
 import { NoticeBanner } from './NoticeBanner'
 import { buildTodayViewModel } from './view-model'
 import { WidgetGrid } from './WidgetGrid'
@@ -260,7 +261,12 @@ export function TodayScreen(): React.JSX.Element {
         onRefresh={refreshAll}
         header={
           <PageHeader>
-            <PageHeaderTitleRow fetchedAt={fetchedAt}>
+            {/* 오른쪽 자리는 캐릭터 관리로 가는 문이다. 다른 탭 화면이 세그먼트를 두는 그 자리이고,
+                이 화면에는 가를 목록이 없다. 돌릴 얼굴은 뷰모델이 골라 둔 것을 그대로 넘긴다. */}
+            <PageHeaderTitleRow
+              fetchedAt={fetchedAt}
+              trailing={<CharacterManageButton portraits={viewModel.headerPortraits} />}
+            >
               <Text className="shrink-0 text-lg font-semibold text-text">today</Text>
             </PageHeaderTitleRow>
           </PageHeader>

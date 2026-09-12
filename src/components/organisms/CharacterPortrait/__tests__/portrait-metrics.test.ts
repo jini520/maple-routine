@@ -3,7 +3,8 @@
 // 이 파일이 없으면 값 하나를 조금만 옮겼을 때 겹침이 조용히 생긴다(RN 은 넘친 글자를 에러로 말하지
 // 않는다). jest 에 레이아웃이 없어 **실제 글꼴 폭은 못 본다**. 볼 수 있는 것은 반지름들의 관계뿐이고
 // 그것이 이 테스트의 상한이다.
-import { PORTRAIT_COMPACT, PORTRAIT_RAIL } from '../portrait-metrics'
+import { PAGE_HEADER_TITLE_ROW_MIN_H } from '../../../templates/PageHeader/PageHeaderTitleRow'
+import { PORTRAIT_COMPACT, PORTRAIT_HEADER, PORTRAIT_RAIL } from '../portrait-metrics'
 
 const ringOuterEdge = PORTRAIT_RAIL.ringR + PORTRAIT_RAIL.ringStroke / 2
 const ringInnerEdge = PORTRAIT_RAIL.ringR - PORTRAIT_RAIL.ringStroke / 2
@@ -36,6 +37,16 @@ describe('rail 규격은 겹치지 않는다', () => {
     expect(PORTRAIT_RAIL.textR - textCap - PORTRAIT_RAIL.faceSize / 2).toBeGreaterThan(
       PORTRAIT_RAIL.ringStroke,
     )
+  })
+})
+
+// today 머리의 캐릭터 관리 버튼. 이 규격은 링도 글자도 없어 값이 지름 하나뿐이고, 그 하나가
+// **머리 높이를 정한다.**
+describe('header 규격은 머리를 안 높인다', () => {
+  // 제목 줄의 바닥이 32 이고 다른 탭 화면이 같은 자리에 두는 주기 탭도 그 높이다. 이 값이 더
+  // 크면 머리 덩어리가 today 에서만 높아져 탭을 옮길 때 들썩여 보인다.
+  it('지름이 제목 줄의 바닥과 같다', () => {
+    expect(PORTRAIT_HEADER.faceSize).toBe(PAGE_HEADER_TITLE_ROW_MIN_H)
   })
 })
 

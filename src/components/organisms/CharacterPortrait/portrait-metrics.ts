@@ -1,5 +1,5 @@
 /**
- * 초상화 두 규격의 치수. 이 부품이 쓰는 숫자는 여기 다 있다.
+ * 초상화 규격 셋의 치수. 둘은 이 부품이 쓰고 하나(`PORTRAIT_HEADER`)는 today 머리의 버튼이 쓴다.
  *
  * 값들이 서로를 붙잡고 있어 하나만 옮기면 얼굴·링·글자가 겹친다. 그 관계는
  * `__tests__/portrait-metrics.test.ts` 가 지킨다. 값 자체는 계산이지 실측이 아니라서,
@@ -47,4 +47,15 @@ export const PORTRAIT_COMPACT = {
   ringStroke: 2.5,
   /** 칸 사이 간격(둘레 위의 길이). 12칸이 한 원처럼 안 보이는 최소값이다. */
   ringGap: 2.4,
+} as const
+
+/**
+ * today 머리의 캐릭터 관리 버튼(`app/today/CharacterManageButton.tsx`).
+ *
+ * 링도 곡선 글자도 없어 값이 지름 하나뿐이고, 그 하나가 **머리 높이를 정한다**. 제목 줄의 바닥
+ * (`PAGE_HEADER_TITLE_ROW_MIN_H`)과 같아야 한다. 크면 머리 덩어리가 today 에서만 높아져 탭을
+ * 옮길 때 들썩여 보인다. 그 약속은 `__tests__/portrait-metrics.test.ts` 가 잰다.
+ */
+export const PORTRAIT_HEADER = {
+  faceSize: 32,
 } as const

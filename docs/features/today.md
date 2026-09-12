@@ -15,6 +15,7 @@
 | 절 | 무엇을 정하나 |
 |---|---|
 | [이 화면이 지키려는 한 문장](#이-화면이-지키려는-한-문장) | 무엇을 위한 화면인가 |
+| [머리의 캐릭터 관리 버튼](#머리의-캐릭터-관리-버튼-adr-264) | 제목 줄 오른쪽에 서는 초상화 버튼 |
 | [공지 배너](#공지-배너-adr-230) | 격자 위에 서는 전폭 배너 |
 | [격자](#격자-adr-147-결정-1) | 치수와 열 수 |
 | [배치](#배치-adr-147-결정-2) | 좌표, 겹침 검증, 레지스트리 |
@@ -31,6 +32,7 @@
 | 화면 | `app/today/TodayScreen.tsx` | 첫 화면 |
 | 화면 | `app/today/WidgetGrid.tsx` | 격자 |
 | 화면 | `app/today/NoticeBanner.tsx` | 공지 배너. 격자 밖에 선다 |
+| 화면 | `app/today/CharacterManageButton.tsx` | 머리의 캐릭터 관리 버튼. 얼굴 셋이 차례로 돈다 |
 | 상태 | `features/notice/banner-store.ts` | 배너가 세우는 공지 하나 |
 | 판정 | `features/notice/pick-banner-notice.ts` | 안 닫은 것 중 가장 최근 하나 |
 | 저장 | `storage/notice-banner.ts` | 닫은 공지 id |
@@ -39,6 +41,8 @@
 | 위젯 | `app/today/widgets/` 의 아홉 컴포넌트 | `RepresentativeCharacterWidget` · `ResetCountdownWidget` · `RemainingScheduleWidget` · `CrystalLimitWidget` · `WeeklyBossProfitWidget` · `TopValuableItemWidget` · `UnpricedDropsWidget` · `ValuableDroughtWidget` · `SharedContentsWidget` |
 | 계산 | `lib/today/widget-grid-metrics.ts` · `lib/today/widget-layout.ts` | 치수와 좌표 검증 |
 | 계산 | `constants/style/drought-tier-styles.ts` | 잎 램프. 드롭 히스토리 화면과 공유한다 |
+| 계산 | `app/today/header-portrait-motion.ts` | 머리 버튼의 드럼 값. 슬롯 수가 변수다 |
+| 치수 | `components/organisms/CharacterPortrait/portrait-metrics.ts` 의 `PORTRAIT_HEADER` | 머리 버튼의 지름 |
 | 원천 | `features/content-scheduler/store` · `features/boss-scheduler/store` · `features/boss-profit/store` | **읽기만 한다** |
 | 원천 | `features/boss-profit/drop-history-store` | 드롭 위젯 셋이 같은 투영을 공유한다 |
 | 판정 | `features/boss-scheduler/displayed-bosses.ts` 의 `displayedBosses` | **화면과 같은 함수를 부른다**([[ADR-147]] 결정 8) |
@@ -51,7 +55,7 @@
 [[ADR-142]](완료 판정의 출처) · [[ADR-035]]·[[ADR-031]](표시 대상 보스) · [[ADR-187]](주간 한도를
 채우면 ‘남은 것’이 아니다) · [[ADR-054]]·[[ADR-059]](결정석 한도) · [[ADR-071]]·[[ADR-124]](드롭
 히스토리 · 아이템 수익) · [[ADR-060]]·[[ADR-062]](빈 상태 · 실패) · [[ADR-140]]·[[ADR-143]](대표
-캐릭터) · [[ADR-181]]·[[ADR-182]](남은 스케줄 · 공유 컨텐츠) · [[ADR-057]](길드 가입 캐릭터만)
+캐릭터) · [[ADR-181]]·[[ADR-182]](남은 스케줄 · 공유 컨텐츠) · [[ADR-057]](길드 가입 캐릭터만) · [[ADR-264]](머리의 캐릭터 관리 버튼)
 
 **상태**: **구현 완료 · 실기기에 띄워 봄 · 치수는 미검증**(2026-08-18). `UnderConstruction` 껍데기가
 걷히고 위젯 격자가 섰다. 그 껍데기를 쓰던 나머지 셋도 이제 없다: 유틸리티는 도구 목록이 됐고
@@ -91,6 +95,36 @@ jest 는 레이아웃을 계산하지 않아 auto 타일의 실측 높이조차 
 보스 수익 · 가계부의 **과거 기간**은 Open API 를 부르더라도 이미 확정된 기록이라 안 움직인다.
 
 **드롭 기록만 새로 읽힌 회차는 이 줄에 안 나타난다.** 실시간 원천 셋에 안 든다.
+
+## 머리의 캐릭터 관리 버튼 ([[ADR-264]])
+
+제목 줄 오른쪽(`PageHeaderTitleRow` 의 `trailing`)에 원 하나가 선다. 누르면 캐릭터 관리
+(`SettingsCharacters`)로 push 하고 두드림이 난다. 읽어 주는 이름은 ‘캐릭터 관리’ 다. 원 안에
+글자가 없으므로 그 이름이 무엇이 열리는지 말하는 유일한 자리다.
+
+| 값 | 크기 |
+|---|---|
+| 지름 | **32**(`PORTRAIT_HEADER.faceSize`) |
+| 도는 얼굴 | **앞 3명**. 대표가 첫 칸, 그 뒤는 캐릭터 관리 순서 |
+| 한 바퀴 | **6초**(얼굴 하나가 2초) |
+| 아무도 없을 때 | lucide `CircleUserRound` |
+
+- **지름이 32 인 이유.** 제목 줄의 바닥(`PAGE_HEADER_TITLE_ROW_MIN_H`)이 32 이고 다른 탭 화면이
+  같은 자리에 두는 주기 탭도 그 높이다. 그보다 크면 머리 덩어리가 이 화면에서만 높아져 탭을
+  옮길 때 들썩여 보인다.
+- **얼굴이 차례로 넘어간다.** 위로 빠지고 다음 얼굴이 아래에서 올라온다. 보스 수익의 아이템 가격
+  입력 버튼과 같은 방식이고 진행률 하나에서 셋의 자리와 불투명도가 다 나온다. 초상화 한 장이
+  제자리에서 도는 것은 아니다(사용자 결정) - 얼굴이 뒤집히는 구간이 생기고, 끝없이 도는 원은
+  이 앱의 스피너와 같은 몸짓이라 불러오는 중으로 읽힌다.
+- **셋으로 자른다**(사용자 결정). 추적 캐릭터는 45명까지 간다. 전원을 돌리면 한 바퀴가 90초이고
+  얼굴 45장이 다 마운트된다. 셋이면 비용이 캐릭터 수와 무관하다.
+- **목록은 뷰모델이 낸다**(`headerPortraits`). 대표를 앞에 두는 것과 셋으로 자르는 것이 판정이라,
+  화면에 두면 이 화면에 판정이 한 줄도 없다는 규칙이 깨진다.
+- **프로필을 모르는 ocid 는 빠진다.** 이름 없이 얼굴을 그릴 수 없고 ocid 는 사용자에게 뜻이 없는
+  값이다(대표 카드·드롭 위젯과 같은 규칙). 그래서 추적이 넷이어도 도는 얼굴이 셋보다 적을 수 있다.
+- **움직임 줄이기면 첫 칸에 멈춘다.** `useLoopedValue` 가 진행률을 `from` 에 두고, 그 값에서 첫
+  얼굴이 가운데 서고 나머지는 불투명도가 0 이다. 애니메이션을 끄는 갈래를 따로 두지 않는다.
+  캐릭터가 한 명뿐일 때도 같다.
 
 ## 공지 배너 ([[ADR-230]])
 
