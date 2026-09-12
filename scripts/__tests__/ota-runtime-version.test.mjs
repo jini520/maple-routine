@@ -129,7 +129,16 @@ describe('resolveAcceptedRuntimeVersions ([[ADR-268]] 결정 2)', () => {
 // 사실**이다([[ADR-268]] 결정 4). 여기 수치로 박아 두는 것은 **출시 후에 비워야 하기** 때문이다.
 // 안 비우면 아무도 안 잠기고, 그 방향이 안전한 쪽이라 조용히 지나간다.
 describe('IN_REVIEW_RUNTIME_VERSIONS: 심사 중인 바이너리의 지문 ([[ADR-268]])', () => {
-  it('지금은 비어 있다', () => {
-    expect(IN_REVIEW_RUNTIME_VERSIONS).toEqual({})
+  // 값이 들어 있는 것은 **임시 상태**다. 지금은 실기기 스모크용 로컬 APK 를 받아주고 있고,
+  // 테스트가 끝나면 비운다. 이 단언이 여기 있는 이유는 비우는 것을 잊으면 아무도 안 잠기는데
+  // 그 방향이 안전한 쪽이라 조용히 지나가기 때문이다.
+  it('안드로이드는 스모크용 지문 하나를 받아주는 중이다', () => {
+    expect(IN_REVIEW_RUNTIME_VERSIONS).toEqual({
+      android: ['b6621e0d899c6a12cbb3781630cf6bae75bef895'],
+    })
+  })
+
+  it('iOS 는 받아주는 것이 없다', () => {
+    expect(IN_REVIEW_RUNTIME_VERSIONS.ios).toBeUndefined()
   })
 })
