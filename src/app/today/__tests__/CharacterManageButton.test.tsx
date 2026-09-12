@@ -13,6 +13,11 @@ import { mockReducedMotion, withRepeatSpy } from '../../../components/__tests__/
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { flattenStyle, renderAtom, 기본테마 } from '../../../components/__tests__/render-atom'
+import { getThemeDefinition } from '../../../lib/theme/theme-registry'
+import {
+  __resetThemeAppearanceForTest,
+  setThemeAppearance,
+} from '../../../theme/appearance-store'
 import { PORTRAIT_HEADER } from '../../../components/organisms/CharacterPortrait/portrait-metrics'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { setHapticsPort, __resetNativePortsForTest } from '../../../native/ports'
@@ -101,6 +106,48 @@ describe('버튼', () => {
     expect(flattenStyle(view.getByLabelText('캐릭터 관리').props.style).borderColor).toBe(
       기본테마.primary,
     )
+  })
+})
+
+// 원 안의 여백이 드러내는 바탕. **테마 토큰이 아니라 순백과 순검정**이다(사용자 지시). 토큰으로는
+// 낼 수 없는 값이다 - `surface` 가 순백인 테마는 렌 하나고 라이트의 `bg` 는 테마마다 물들어 있다.
+describe('원의 바탕', () => {
+  afterEach(__resetThemeAppearanceForTest)
+
+  it('라이트에서는 흰색이다', async () => {
+    const view = await renderAtom(<CharacterManageButton portraits={셋} />)
+
+    expect(flattenStyle(view.getByLabelText('캐릭터 관리').props.style).backgroundColor).toBe(
+      '#ffffff',
+    )
+  })
+
+  it('다크에서는 검정이다', async () => {
+    setThemeAppearance('검은마법사', getThemeDefinition('검은마법사'))
+
+    const view = await renderAtom(<CharacterManageButton portraits={셋} />)
+
+    expect(flattenStyle(view.getByLabelText('캐릭터 관리').props.style).backgroundColor).toBe(
+      '#000000',
+    )
+  })
+
+  // 판별력: 테마 표면색으로 되돌아가면 두 단언이 함께 깨진다. 머쉬맘의 `surface-2` 도
+  // 검은마법사의 것도 순백·순검정이 아니다.
+  it('테마의 표면색이 아니다', async () => {
+    const view = await renderAtom(<CharacterManageButton portraits={셋} />)
+
+    expect(flattenStyle(view.getByLabelText('캐릭터 관리').props.style).backgroundColor).not.toBe(
+      기본테마.surface2,
+    )
+  })
+
+  // 3자리 hex 를 쓰면 안드로이드 `Color.parseColor` 가 거부한다(이 저장소가 한 번 겪었다).
+  it('6자리 hex 다', async () => {
+    const view = await renderAtom(<CharacterManageButton portraits={셋} />)
+    const background = flattenStyle(view.getByLabelText('캐릭터 관리').props.style).backgroundColor
+
+    expect(background).toMatch(/^#[0-9a-f]{6}$/)
   })
 })
 

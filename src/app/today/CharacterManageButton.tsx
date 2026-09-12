@@ -17,6 +17,7 @@ import { PORTRAIT_HEADER } from '../../components/organisms/CharacterPortrait/po
 import { useLoopedValue } from '../../hooks/useLoopedValue'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { tapFeedback } from '../../native/haptics'
+import { useThemeMode } from '../../theme/context'
 import {
   headerLoopMs,
   loopTo,
@@ -33,6 +34,19 @@ import type { HeaderPortraitView } from './view-model'
  * 대가는 `className` 을 못 쓰는 것이라 자리를 `style` 로 준다.
  */
 const AnimatedBox = Animated.createAnimatedComponent(View)
+
+/**
+ * 원 안의 여백이 드러내는 바탕. **순백과 순검정**이다(사용자 지시).
+ *
+ * 테마 토큰으로는 낼 수 없는 값이다. `surface` 가 순백인 테마는 렌 하나뿐이고, 라이트의 `bg` 는
+ * 테마마다 물들어 있다(엔젤릭버스터 `#F9E9F1`). 그래서 토큰을 쓰지 않고 값으로 박는다.
+ *
+ * **3자리 hex(`#fff`)를 쓰지 말 것.** 안드로이드 `Color.parseColor` 가 거부해 화면이 죽는다.
+ *
+ * 가르는 기준은 `mode` 다. 테마 이름으로 가르면 테마가 늘 때마다 목록을 고쳐야 하고 빠뜨리면
+ * 조용히 틀린다(`theme/context.ts` 의 `useThemeMode`).
+ */
+const CIRCLE_BACKGROUND = { light: '#ffffff', dark: '#000000' } as const
 
 function DrumFace(props: {
   portrait: HeaderPortraitView
@@ -72,6 +86,7 @@ export function CharacterManageButton(props: {
   portraits: readonly HeaderPortraitView[]
 }): React.JSX.Element {
   const navigation = useScreenNavigation()
+  const mode = useThemeMode()
   const slots = props.portraits.length
 
   // 움직임 줄이기면 진행률이 `from` 에 머문다. 그 값에서 첫 얼굴이 가운데 서고 나머지는 불투명도가
@@ -105,6 +120,7 @@ export function CharacterManageButton(props: {
         width: PORTRAIT_HEADER.slot,
         height: PORTRAIT_HEADER.slot,
         marginRight: 8,
+        backgroundColor: CIRCLE_BACKGROUND[mode],
       }}
       /*
        * `overflow-hidden` 은 얼굴이 오르내리며 테두리를 넘기 때문이다. 안 자르면 둥근 틀 밖에
@@ -115,7 +131,7 @@ export function CharacterManageButton(props: {
        * 선이 사라지는 테마가 생긴다. 레일 칸의 링도 같은 토큰으로 초상화를 두른다
        * (`CharacterPortrait` 의 `EmptyRing`).
        */
-      className="shrink-0 items-center justify-center overflow-hidden rounded-full border border-primary bg-surface-2"
+      className="shrink-0 items-center justify-center overflow-hidden rounded-full border border-primary"
     >
       {props.portraits.map((portrait, slot) => (
         <DrumFace
