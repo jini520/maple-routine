@@ -192,3 +192,24 @@ CFBundleShortVersionString=1.0.6 · CFBundleVersion=12
 그러므로 **`app.json` 을 고쳐 prebuild 를 돌린 뒤에는 이 세 값이 살아 있는지 반드시 확인할 것**
 ([[ADR-138]]). 서명 설정은 `app.json` 이 원천이 아니라 pbxproj 에만 있는 값이라, 원천에서 다시
 생성되지 않는다.
+
+## 후속 (2026-09-13) — 그 셋이 다시 사라진 채로 1.0.8 아카이브가 실패했다
+
+1.0.8 iOS 를 구우려고 위 CLI 를 돌리자 그대로 멈췄다.
+
+```
+ios/app.xcodeproj: error: Signing for "app" requires a development team.
+** ARCHIVE FAILED **
+```
+
+`grep -c DEVELOPMENT_TEAM project.pbxproj` 가 다시 `0` 이었고, 레거시 문자열도
+`"iPhone Developer"` 로 돌아와 있었다. 2026-08-19 에 손으로 넣은 값이 그 뒤 `expo prebuild` 로
+덮이면서 함께 지워진 것이다(바로 위 절이 경고한 그것이다). **그 사이 iOS 를 한 번도 안 구워서
+한 달 가까이 아무 증상이 없었다** — 1.0.7 은 OTA 라 네이티브를 안 탄다.
+
+처방은 같다. 타겟 Debug·Release 에 `CODE_SIGN_STYLE = Automatic` + `DEVELOPMENT_TEAM =
+TQPKW249G7`, 프로젝트 레벨 둘의 `CODE_SIGN_IDENTITY[sdk=iphoneos*]` 를 `"Apple Development"` 로.
+
+**세 번째를 막으려고 가드를 뒀다**: `scripts/__tests__/ios-signing-settings.test.mjs`. pbxproj 에서
+그 값들을 세고, 레거시 문자열이 돌아오면 깨진다. 사람의 기억 대신 테스트가 기다리게 하는 편이
+낫다 - 이 값은 **다음 아카이브를 돌릴 때까지 아무 증상도 안 내기** 때문이다.
