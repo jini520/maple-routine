@@ -213,15 +213,15 @@ describe('getSpendRecordsBetween', () => {
 })
 
 describe('SPEND_CATEGORIES', () => {
-  it('저장하는 것은 다섯이다', () => {
+  it('저장하는 것은 여섯이다', () => {
     const { SPEND_CATEGORIES } = require('../spend') as typeof import('../spend')
 
-    expect(SPEND_CATEGORIES).toEqual(['컨텐츠', '이벤트·BM', '버프', '아이템 구매', '기타'])
+    expect(SPEND_CATEGORIES).toEqual(['컨텐츠', '이벤트·BM', '버프', '주문서', '아이템 구매', '기타'])
   })
 
-  // 갈래 이름이 **두 곳**에 산다. 목록을 갖는 셋은 카탈로그에도 있다. 어긋나면 고른 항목의
+  // 갈래 이름이 **두 곳**에 산다. 목록을 갖는 넷은 카탈로그에도 있다. 어긋나면 고른 항목의
   // 카테고리가 레코드의 카테고리와 달라져 집계에서 조용히 빠진다.
-  it('카탈로그가 아는 셋을 그대로 품는다', () => {
+  it('카탈로그가 아는 넷을 그대로 품는다', () => {
     const { SPEND_CATEGORIES } = require('../spend') as typeof import('../spend')
 
     for (const category of spendCatalog.categories) {

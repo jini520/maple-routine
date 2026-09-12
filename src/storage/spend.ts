@@ -11,9 +11,9 @@
 import { getBossProfitDb } from './sqlite/db'
 
 /**
- * 지출의 갈래. 앞의 셋은 **선택 목록**이고 뒤의 둘은 **직접 입력**이다.
+ * 지출의 갈래. 앞의 넷은 **선택 목록**이고 뒤의 둘은 **직접 입력**이다.
  *
- * 앞의 셋은 `src/data/spend-catalog.json` 의 `categories` 와 **같은 이름이어야 한다**(그 파일이
+ * 앞의 넷은 `src/data/spend-catalog.json` 의 `categories` 와 **같은 이름이어야 한다**(그 파일이
  * 항목을 그 이름으로 묶는다). 어긋나면 고른 항목의 카테고리와 레코드의 카테고리가 달라져
  * **집계에서 조용히 빠진다**. `__tests__/spend.spec.ts` 가 그 일치를 붙든다.
  */
@@ -23,6 +23,7 @@ export const SPEND_CATEGORIES = [
   // 안 옮기면 고아가 된다.
   '이벤트·BM',
   '버프',
+  '주문서',
   '아이템 구매',
   '기타',
 ] as const
