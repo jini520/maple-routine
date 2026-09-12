@@ -33,6 +33,13 @@ export interface CharacterAvatarProps {
   readonly fallback?: React.ReactNode
   /** 원에 붙는 클래스. 배치(`shrink-0`)나 바탕이 필요한 자리가 있다. */
   readonly className?: string
+  /**
+   * 얼굴을 원 안에서 **작게** 보이게 하는 배수. 안 주면 크롭 박스가 원을 꽉 채운다(기본).
+   *
+   * 큰 원에서 얼굴만 꽉 차면 머리통만 보인다. 그 자리에서 둘레를 더 보여 주려고 쓴다. 지금 주는
+   * 곳은 today 머리의 캐릭터 관리 버튼 하나뿐이고, 나머지 여덟 자리는 기본값이다.
+   */
+  readonly faceZoom?: number
   readonly testID?: string
   readonly imageTestID?: string
   /**
@@ -60,7 +67,7 @@ export function CharacterAvatar(props: CharacterAvatarProps): React.JSX.Element 
           testID={props.imageTestID}
           accessibilityLabel={props.name}
           source={{ uri: props.imageUrl }}
-          style={{ position: 'absolute', ...faceCropStyle(props.size) }}
+          style={{ position: 'absolute', ...faceCropStyle(props.size, props.faceZoom) }}
         />
       )}
       {props.imageUrl === null && props.fallback}

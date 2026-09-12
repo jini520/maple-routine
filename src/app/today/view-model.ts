@@ -37,6 +37,7 @@ import {
 } from '../../lib/drop/drop-history'
 import { dropPayoutMeso, sumDropPayout } from '../../lib/drop/drop-price'
 import { getCurrentKstDateKey, getMostRecentWeeklyResetKst } from '../../lib/scheduler/reset-clock'
+import { HEADER_PORTRAIT_MAX } from './header-portrait-motion'
 import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
 import type { TrackingMode } from '../../storage/tracking-mode'
 import type {
@@ -327,8 +328,25 @@ export interface TodayViewModelInput {
   drought: ValuableDroughtSummary | null
 }
 
+/**
+ * 머리 버튼이 돌리는 얼굴 하나.
+ *
+ * 그림과 이름만 든다. `RepresentativeView` 를 쓰면 이 버튼이 한 번도 안 읽는 필드(레벨·길드·EXP)를
+ * 뷰모델이 채우게 된다.
+ */
+export interface HeaderPortraitView {
+  ocid: string
+  name: string
+  imageUrl: string
+}
+
 export interface TodayViewModel {
   representative: RepresentativeView | null
+  /**
+   * 머리의 캐릭터 관리 버튼이 돌리는 얼굴들. **대표가 첫 칸**이고 그 뒤는 캐릭터 관리 순서다.
+   * 최대 `HEADER_PORTRAIT_MAX`.
+   */
+  headerPortraits: HeaderPortraitView[]
   /** 계열별로 묶인 공유 컨텐츠. 위젯 9. */
   sharedContents: SharedContentGroupView[]
   /** **캐릭터 관리 순서**의 목록. 남은 개수 많은 순은 탭을 아는 위젯이 세운다. */
@@ -362,6 +380,7 @@ export function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel 
 
   return {
     representative: buildRepresentative(input),
+    headerPortraits: buildHeaderPortraits(input),
     sharedContents,
     schedule,
     ...buildProfit(input, weeklyPeriodKey),
@@ -421,6 +440,31 @@ function buildRepresentative(input: TodayViewModelInput): RepresentativeView | n
     expRate: profile.expRate,
     unavailable: resolveCharacterIssues(input)[ocid] === 'unavailable',
   }
+}
+
+/**
+ * 머리 버튼이 돌릴 얼굴들. 대표를 앞으로 당기고 셋까지 자른다.
+ *
+ * 대표를 앞에 두는 것은 그 자리에 설 캐릭터가 이미 정해져 있기 때문이다
+ * (`resolveDisplayRepresentative`. 미지정이면 목록의 첫 번째). 셋으로 자르는 것은 추적이 45명까지
+ * 가기 때문이고, 전원을 돌리면 한 바퀴가 90초에 얼굴 45장이 다 마운트된다.
+ *
+ * 프로필을 모르는 ocid 는 **항목을 만들지 않는다**. 이름 없이 얼굴을 그릴 수 없고 ocid 는
+ * 사용자에게 뜻이 없는 값이다(위 `buildRepresentative` 와 같은 규칙). 자르기가 **걸러낸 뒤**라,
+ * 앞의 셋을 모르면 그 뒤의 아는 얼굴이 올라온다.
+ */
+function buildHeaderPortraits(input: TodayViewModelInput): HeaderPortraitView[] {
+  const first = resolveDisplayRepresentative(input.orderedOcids, input.representativeOcid)
+  const ordered =
+    first === null ? [] : [first, ...input.orderedOcids.filter((ocid) => ocid !== first)]
+
+  return ordered
+    .flatMap((ocid) => {
+      const profile = input.profilesByOcid[ocid]
+      if (profile === undefined) return []
+      return [{ ocid, name: profile.name, imageUrl: profile.imageUrl }]
+    })
+    .slice(0, HEADER_PORTRAIT_MAX)
 }
 
 /** 공백을 지운 뒤 비교하는 이름 대조. 카탈로그와 응답의 공백 방향이 항목마다 다르다. */

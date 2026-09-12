@@ -157,6 +157,87 @@ function input(overrides: Partial<TodayViewModelInput> = {}): TodayViewModelInpu
   }
 }
 
+// 머리 버튼이 돌리는 얼굴 목록. **대표를 앞에 두는 것과 셋으로 자르는 것이 판정**이라 화면이
+// 아니라 여기가 낸다(`TodayScreen` 에는 판정이 한 줄도 없다).
+describe('머리 버튼의 얼굴 목록', () => {
+  it('대표가 첫 칸이고 그 뒤는 캐릭터 관리 순서다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a', 'b', 'c'],
+        representativeOcid: 'b',
+        profilesByOcid: {
+          a: profile({ name: 'A' }),
+          b: profile({ name: 'B' }),
+          c: profile({ name: 'C' }),
+        },
+      }),
+    )
+
+    expect(model.headerPortraits.map((p) => p.name)).toEqual(['B', 'A', 'C'])
+  })
+
+  // 미지정이면 목록의 첫 번째가 대표 자리에 선다(`resolveDisplayRepresentative`). 그 규칙을 여기서
+  // 다시 쓰면 대표 카드와 이 버튼이 다른 캐릭터를 가리킬 수 있다.
+  it('대표를 안 골랐으면 목록 순서 그대로다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a', 'b'],
+        representativeOcid: null,
+        profilesByOcid: { a: profile({ name: 'A' }), b: profile({ name: 'B' }) },
+      }),
+    )
+
+    expect(model.headerPortraits.map((p) => p.name)).toEqual(['A', 'B'])
+  })
+
+  // 추적은 45명까지 간다. 전원을 돌리면 한 바퀴가 90초이고 얼굴 45장이 다 마운트된다.
+  it('셋까지만 돈다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a', 'b', 'c', 'd', 'e'],
+        profilesByOcid: {
+          a: profile({ name: 'A' }),
+          b: profile({ name: 'B' }),
+          c: profile({ name: 'C' }),
+          d: profile({ name: 'D' }),
+          e: profile({ name: 'E' }),
+        },
+      }),
+    )
+
+    expect(model.headerPortraits.map((p) => p.name)).toEqual(['A', 'B', 'C'])
+  })
+
+  // 이름 없이 얼굴을 그릴 수 없고 ocid 는 사용자에게 뜻이 없는 값이다(대표 카드·드롭 위젯과 같은
+  // 규칙). 그래서 추적이 넷이어도 도는 얼굴은 셋보다 적을 수 있다.
+  it('프로필을 모르는 ocid 는 빠진다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a', 'b', 'c'],
+        profilesByOcid: { b: profile({ name: 'B' }) },
+      }),
+    )
+
+    expect(model.headerPortraits.map((p) => p.name)).toEqual(['B'])
+  })
+
+  it('추적이 없으면 빈 목록이다. 버튼이 사람 아이콘을 그린다', () => {
+    expect(buildTodayViewModel(input()).headerPortraits).toEqual([])
+  })
+
+  it('얼굴 그림은 프로필이 든 것을 그대로 나른다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a'],
+        profilesByOcid: { a: profile({ imageUrl: 'https://example.test/face.png' }) },
+      }),
+    )
+
+    expect(model.headerPortraits[0].imageUrl).toBe('https://example.test/face.png')
+    expect(model.headerPortraits[0].ocid).toBe('a')
+  })
+})
+
 describe('남은 스케줄. 분류 넷', () => {
   it('일퀘·주간퀘는 content-completion 의 미완료 수다', () => {
     const model = buildTodayViewModel(

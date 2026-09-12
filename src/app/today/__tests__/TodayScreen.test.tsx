@@ -582,6 +582,45 @@ describe('TodayScreen: 갱신 시각', () => {
   })
 })
 
+// 머리의 캐릭터 관리 버튼. **화면이 하는 일은 배선뿐**이라 여기서 보는 것은 그 버튼이 머리에
+// 섰는가와 누르면 어디로 가는가 둘이다. 도는 얼굴의 목록은 뷰모델이 내고(`view-model.test.ts`),
+// 움직임은 `header-portrait-motion.test.ts` 가 붙든다.
+describe('TodayScreen: 머리의 캐릭터 관리 버튼', () => {
+  it('제목 줄 오른쪽에 선다', async () => {
+    setStores(캐릭터_넷)
+    mockedGetCachedCharacterBasic.mockResolvedValue(cachedBasic(80.3))
+
+    await renderScreen()
+
+    const trailing = screen.getByTestId('page-header-title-trailing')
+    expect(within(trailing).getByLabelText('캐릭터 관리')).toBeTruthy()
+  })
+
+  // 설정 안쪽으로 들어가야 닿던 화면이다. 루트 스택 push 라 뒤로가기로 today 에 돌아온다.
+  it('누르면 캐릭터 관리로 push 한다', async () => {
+    const navigate = jest.fn()
+    mockedNavigation.mockReturnValue({ navigate, goBack: jest.fn() } as never)
+    setStores(캐릭터_넷)
+    mockedGetCachedCharacterBasic.mockResolvedValue(cachedBasic(80.3))
+
+    await renderScreen()
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('캐릭터 관리'))
+    })
+
+    expect(navigate).toHaveBeenCalledWith('SettingsCharacters')
+  })
+
+  // 추적이 하나도 없는 첫 실행에서도 문은 열려 있어야 한다. 그때가 캐릭터를 고르러 갈 이유가
+  // 가장 큰 순간이다. 얼굴이 없으면 사람 아이콘이 그 자리를 채운다.
+  it('관리 대상이 없어도 버튼은 선다', async () => {
+    await renderScreen()
+
+    expect(screen.getByLabelText('캐릭터 관리')).toBeTruthy()
+    expect(screen.getByTestId('character-manage-fallback')).toBeTruthy()
+  })
+})
+
 describe('TodayScreen: 격자', () => {
   // 데이터가 없다고 타일을 빼지 않는다. 콜드 스타트(스토어 전부 빈 값)에서도
   // 여덟이 서고, 각자 자기 타일 안에서 빈 상태를 말한다.

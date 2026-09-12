@@ -14,6 +14,7 @@ import { useWindowDimensions } from 'react-native'
 
 import { resolveBottomBarMetrics } from './bottom-bar-metrics'
 import { useBottomSafeAreaPx } from './safe-area'
+import type { ShadowLayer } from './shadow'
 
 /** FAB 의 지름. 버튼의 `h-14 w-14` 와 같아야 하고, 그 약속은 테스트가 잰다. */
 export const FAB_DIAMETER_PX = 56
@@ -35,6 +36,29 @@ export const FAB_CONTENT_GAP_PX = 16
  * 화면의 `pb-4` 를 대신한다(더하지 않는다). 둘을 더하면 바닥 여백이 두 번 붙는다.
  */
 export const FAB_SPACE_PX = FAB_LIFT_PX + FAB_DIAMETER_PX + FAB_CONTENT_GAP_PX
+
+/**
+ * 원이 드는 그림자 한 겹. 원 둘이 같은 것을 쓴다.
+ *
+ * 같은 층에 떠 있는 물건이라 같은 높이로 보여야 한다. 값을 각자 적어 두면 한쪽만 손볼 때 갈리고,
+ * 갈려도 화면에서는 한쪽이 조금 진하다로만 보인다.
+ *
+ * 불투명도 0.65 는 테마 `shadowColor` 의 알파(0.35)와 곱해져 실효 0.23 이다. 하단바의 알약이
+ * 같은 실효값을 쓰고(반경 10 · y 3) 그 값은 실기기에서 고른 것이다. 반경과 민 거리만 한 걸음 큰
+ * 것은 원이 알약보다 한 겹 위에 떠 있어서다(`FAB_LIFT_PX`).
+ */
+export const FAB_SHADOW: ShadowLayer = { opacity: 0.65, radius: 12, y: 4 }
+
+/**
+ * 다크에서 원의 경계를 내는 헤어라인.
+ *
+ * 어두운 바탕에서는 그림자가 거의 안 보인다. 하단바가 라이트 그림자 · 다크 테두리로 가른 것과
+ * 같은 자리다.
+ *
+ * 흰색인 것은 원이 색을 진 판이기 때문이다. 바의 폴백 테두리는 무채색 판의 가장자리를 세우는
+ * 값인데, 닫혀 있으면 `bg-primary` 인 이 원에 어두운 중립선을 두르면 파낸 구멍처럼 읽힌다.
+ */
+export const FAB_DARK_EDGE = 'rgba(255,255,255,0.22)'
 
 /**
  * 떠 있는 하단바 위에 앉는 `bottom` 값.

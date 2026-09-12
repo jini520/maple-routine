@@ -25,7 +25,9 @@ import { useFabBottomPx } from '../../lib/fab-metrics'
 import { useLoopedValue } from '../../hooks/useLoopedValue'
 import { tapFeedback } from '../../native/haptics'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
-import { useBlurTint } from '../../theme/context'
+import { useBlurTint, useThemeAppearance } from '../../theme/context'
+import { FAB_DARK_EDGE, FAB_SHADOW } from '../../lib/fab-metrics'
+import { boxShadowOf } from '../../lib/shadow'
 import {
   FAB_ITEM_LOOP_MS,
   FAB_ITEM_SLOTS,
@@ -91,6 +93,7 @@ function DrumItem(props: DrumItemProps): React.JSX.Element | null {
 export function DropPriceFab(): React.JSX.Element {
   const navigation = useScreenNavigation()
   const tint = useBlurTint()
+  const { definition } = useThemeAppearance()
   const fabBottomPx = useFabBottomPx()
 
   // 움직임 줄이기면 진행률이 0 에 머문다. 그 값에서 첫 그림 하나가 가운데 서고 나머지 둘은
@@ -114,6 +117,13 @@ export function DropPriceFab(): React.JSX.Element {
         style={{ bottom: fabBottomPx }}
         className="absolute right-4"
       >
+        {/* 그림자만 드는 상자. **원 밖이어야 한다** - 아래 원이 `overflow-hidden` 이라 같은 뷰에
+            달면 플랫폼에 따라 그림자가 잘린다. 여기서 자르지도 않는다(자르면 그림자가 자기 상자
+            안에 갇힌다). 모양은 `borderRadius` 에서 나온다. */}
+        <View
+          testID="drop-price-fab-elevation"
+          style={{ borderRadius: 999, boxShadow: boxShadowOf(definition.shadowColor, FAB_SHADOW) }}
+        >
         <Pressable
           role="button"
           // 원 안에 글자가 없다. 이 이름이 무엇이 열리는지 말하는 유일한 자리다.
@@ -122,6 +132,13 @@ export function DropPriceFab(): React.JSX.Element {
             tapFeedback()
             navigation.navigate('DropPrice')
           }}
+          // 다크에서는 그림자가 거의 안 보여 테두리가 경계를 진다. 크기가 박힌 이 원이 들어야
+          // 테두리가 안쪽에 그려져 자리가 안 움직인다.
+          style={
+            definition.mode === 'dark'
+              ? { borderWidth: StyleSheet.hairlineWidth, borderColor: FAB_DARK_EDGE }
+              : undefined
+          }
           className="h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-primary"
         >
           {DROP_PRICE_FAB_ITEMS.map((itemName, slot) => (
@@ -139,6 +156,7 @@ export function DropPriceFab(): React.JSX.Element {
             style={StyleSheet.absoluteFill}
           />
         </Pressable>
+        </View>
       </View>
     </BottomBarOverlay>
   )

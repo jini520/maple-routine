@@ -18,18 +18,37 @@ export const FACE_AVATAR_SIZE = 36
  *
  * 프레임은 `overflow-hidden rounded-full` 이고, 이 값이 그 안에서 원본을 확대·이동해 크롭 박스가
  * 프레임을 꽉 채우게 만든다.
+ *
+ * @param size 프레임(원)의 지름
+ * @param zoom 크롭 박스를 넓혀 **얼굴을 작게** 보이게 하는 배수. 1 이 기본이고 그때 박스가 프레임을
+ *   꽉 채운다. 1.35 면 박스를 35% 넓게 잡아 얼굴 둘레가 더 보인다. 1 보다 작게 주면 더 확대된다
+ * @example faceCropStyle(PORTRAIT_HEADER.faceSize, HEADER_FACE_ZOOM)
  */
-export function faceCropStyle(size: number = FACE_AVATAR_SIZE): {
+export function faceCropStyle(
+  size: number = FACE_AVATAR_SIZE,
+  zoom = 1,
+): {
   width: number
   height: number
   left: number
   top: number
 } {
-  const scale = size / FACE_CROP_BOX.size
+  const scale = size / (FACE_CROP_BOX.size * zoom)
+
+  /*
+   * 박스의 **중심**을 프레임 중심에 맞춘다.
+   *
+   * `-x * scale` 로 두면 박스의 왼쪽 위 모서리가 프레임 왼쪽 위에 붙는다. `zoom` 이 1 일 때는 박스와
+   * 프레임이 같은 크기라 그것이 곧 중심 정렬이지만, 넓힌 박스에서는 얼굴이 왼쪽 위로 쏠린다.
+   * 그래서 중심을 기준으로 적는다. `zoom` 이 1 이면 아래 식이 `-x * scale` 로 되돌아간다.
+   */
+  const centerX = FACE_CROP_BOX.x + FACE_CROP_BOX.size / 2
+  const centerY = FACE_CROP_BOX.y + FACE_CROP_BOX.size / 2
+
   return {
     width: FACE_SOURCE_IMAGE_SIZE * scale,
     height: FACE_SOURCE_IMAGE_SIZE * scale,
-    left: -FACE_CROP_BOX.x * scale,
-    top: -FACE_CROP_BOX.y * scale,
+    left: size / 2 - centerX * scale,
+    top: size / 2 - centerY * scale,
   }
 }

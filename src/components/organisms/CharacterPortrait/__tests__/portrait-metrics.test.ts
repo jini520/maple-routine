@@ -3,7 +3,8 @@
 // 이 파일이 없으면 값 하나를 조금만 옮겼을 때 겹침이 조용히 생긴다(RN 은 넘친 글자를 에러로 말하지
 // 않는다). jest 에 레이아웃이 없어 **실제 글꼴 폭은 못 본다**. 볼 수 있는 것은 반지름들의 관계뿐이고
 // 그것이 이 테스트의 상한이다.
-import { PORTRAIT_COMPACT, PORTRAIT_RAIL } from '../portrait-metrics'
+import { PAGE_HEADER_TITLE_ROW_MIN_H } from '../../../templates/PageHeader/PageHeaderTitleRow'
+import { PORTRAIT_COMPACT, PORTRAIT_HEADER, PORTRAIT_RAIL } from '../portrait-metrics'
 
 const ringOuterEdge = PORTRAIT_RAIL.ringR + PORTRAIT_RAIL.ringStroke / 2
 const ringInnerEdge = PORTRAIT_RAIL.ringR - PORTRAIT_RAIL.ringStroke / 2
@@ -36,6 +37,47 @@ describe('rail 규격은 겹치지 않는다', () => {
     expect(PORTRAIT_RAIL.textR - textCap - PORTRAIT_RAIL.faceSize / 2).toBeGreaterThan(
       PORTRAIT_RAIL.ringStroke,
     )
+  })
+})
+
+// today 머리의 캐릭터 관리 버튼. 이 규격은 링도 글자도 없어 값이 지름 하나뿐이고, 그 하나가
+// **머리 높이를 정한다.**
+describe('header 규격은 머리를 안 높인다', () => {
+  /** 갱신 시각 줄의 높이. `DataFreshness` 의 `h-4` 다(클래스 문자열이라 값으로는 못 가져온다). */
+  const 갱신시각_높이 = 16
+  /** 테두리 두께. `CharacterManageButton` 의 `CIRCLE_BORDER_PX` 다. */
+  const 테두리 = 2
+
+  // 머리 덩어리는 제목 줄과 갱신 시각 줄을 쌓은 것이고, 곁에 서는 것이 그 합을 넘을 때만 덩어리
+  // 높이가 그것을 따라간다. 그러면 today 머리만 높아져 탭을 옮길 때 들썩여 보인다.
+  it('원이 머리 덩어리 높이를 안 넘는다', () => {
+    expect(PORTRAIT_HEADER.slot).toBeLessThanOrEqual(PAGE_HEADER_TITLE_ROW_MIN_H + 갱신시각_높이)
+  })
+
+  // 판별력: 상한만 재면 32 로 되돌아가도 초록이다. 키우라는 지시를 받은 값이라 제목 줄 하나보다
+  // 크다는 것을 함께 못박는다.
+  it('원이 제목 줄 하나보다는 크다', () => {
+    expect(PORTRAIT_HEADER.slot).toBeGreaterThan(PAGE_HEADER_TITLE_ROW_MIN_H)
+  })
+
+  // 얼굴이 원을 꽉 채우면 테두리에 딱 붙어 어색하다(사용자 관측). 얼굴을 원보다 작게 두어
+  // 그 차이가 안쪽 여백으로 남는다. `PORTRAIT_COMPACT` 가 같은 모양이다(칸 40 · 얼굴 32).
+  it('얼굴이 원보다 작아 안쪽에 여백이 남는다', () => {
+    expect(PORTRAIT_HEADER.faceSize).toBeLessThan(PORTRAIT_HEADER.slot)
+  })
+
+  // 여백이 테두리보다 얇으면 선에 먹혀 안 보인다. 지금은 둘이 같은 2 이고 **그것이 바닥**이다.
+  // 테두리를 더 두껍게 하려면 `faceSize` 를 함께 줄여야 한다.
+  it('그 여백이 테두리보다 얇지 않다', () => {
+    const 여백 = (PORTRAIT_HEADER.slot - PORTRAIT_HEADER.faceSize) / 2
+
+    expect(여백).toBeGreaterThanOrEqual(테두리)
+  })
+
+  // 얼굴은 레일 칸의 얼굴과 같은 지름이다. 이 앱이 이미 그리는 크기라 얼굴 크롭
+  // (`lib/face-crop`)이 새 배율을 만나지 않는다.
+  it('얼굴이 레일 칸의 얼굴과 같은 지름이다', () => {
+    expect(PORTRAIT_HEADER.faceSize).toBe(PORTRAIT_RAIL.faceSize)
   })
 })
 

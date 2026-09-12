@@ -40,6 +40,7 @@ import { scrollPageToTop } from '../../../navigation/scroll-to-top'
 import { isSecondTap, type TapRecord } from './double-tap'
 import { BAR_LIFT, resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
 import { useBottomSafeAreaPx } from '../../../lib/safe-area'
+import { boxShadowOf, type ShadowLayer } from '../../../lib/shadow'
 import { useThemeAppearance } from '../../../theme/context'
 import { resolveBarColors } from './bar-colors'
 import {
@@ -120,43 +121,6 @@ const BACK_CIRCLE_RATIO = 48 / 66
  * 70~145pt 를 움직이는 작은 판에 길다.
  */
 const TRAVEL_MS = 240
-
-/**
- * 그림자 한 겹. 불투명도 · 반경 · 아래로 민 거리.
- *
- * `shadowOpacity` 라는 이름이 남은 것은 그 값이 테마 `shadowColor` 의 알파(`59` = 0.35)와
- * 곱해지는 자리이기 때문이다. 0.65 는 과한 값이 아니라 실효 0.23 이다.
- */
-interface ShadowLayer {
-  readonly opacity: number
-  readonly radius: number
-  readonly y: number
-}
-
-/**
- * `shadow*` → `boxShadow` 번역기.
- *
- * `shadowOpacity`·`shadowRadius`·`shadowOffset` 은 iOS 전용 프롭이라 그것으로 맞춘 층은
- * 안드로이드에 하나도 도달하지 않는다. 거기서는 `elevation` 의 기본 그림자가 바·알약·← 셋을
- * 같은 세기로 그린다. `boxShadow` 는 RN 0.76+ 가 양 플랫폼에 같은 그림자를 그리는 자리다
- * (안드로이드는 새 아키텍처 전용. 이 앱은 `newArchEnabled=true`).
- *
- * 옮기면서 두 값이 번역된다. 그대로 옮기면 다른 그림자가 된다.
- *
- * - 블러는 두 배다. `boxShadow` 의 반경은 CSS 정의이고 RN 의 iOS 구현이 그것을
- *   `shadowRadius = blurRadius / 2` 로 되돌린다. 그래서 여기서 ×2 로 낸다.
- * - 알파는 미리 곱한다. iOS 는 `shadowColor` 의 알파와 `shadowOpacity` 를 곱하는데
- *   `boxShadow` 는 색의 알파를 그대로 쓴다. 곱을 여기서 한 번 해 두면 실효값이 안 변한다.
- */
-function boxShadow(shadowColor: string, { opacity, radius, y }: ShadowLayer): string {
-  const base = shadowColor.slice(0, 7)
-  const themeAlpha = Number.parseInt(shadowColor.slice(7, 9) || 'ff', 16) / 255
-  const alpha = Math.round(themeAlpha * opacity * 255)
-    .toString(16)
-    .padStart(2, '0')
-
-  return `0px ${y}px ${radius * 2}px ${base}${alpha}`
-}
 
 /** 바 자신의 그림자. 아주 약하게. 층은 알약 쪽에서 만든다. */
 const BAR_SHADOW: ShadowLayer = { opacity: 0.22, radius: 14, y: 5 }
@@ -561,7 +525,7 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
         // 그림자는 약하되 떠 있음은 남는 값이다. 불투명도 1 · radius 22 · y 9 는 두껍게 읽혔고,
         // 0.18/10/3 은 입체감이 사라졌다. 층을 만드는 장치가 셋이라(그림자 · 알약 자체 그림자 ·
         // 위쪽 광택) 그림자 혼자 다 지지 않는다.
-        boxShadow: boxShadow(definition.shadowColor, BAR_SHADOW),
+        boxShadow: boxShadowOf(definition.shadowColor, BAR_SHADOW),
       }}
     >
       {glass ? (
@@ -600,7 +564,7 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
             // 대신 그 색을 굴절시켜 재질이 아니라 흰 알약이 된다. 그림자 모양은 `borderRadius`
             // 에서 나오므로 뒤판 없이도 둥글다.
             backgroundColor: glass ? 'transparent' : colors.pill,
-            boxShadow: boxShadow(definition.shadowColor, PLATE_SHADOW),
+            boxShadow: boxShadowOf(definition.shadowColor, PLATE_SHADOW),
           }}
         >
           {glass ? (
@@ -742,7 +706,7 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
           borderRadius: 999,
           transform: [{ translateX: backShift }, { scale: backScale }],
           backgroundColor: glass ? 'transparent' : colors.pill,
-          boxShadow: boxShadow(definition.shadowColor, PLATE_SHADOW),
+          boxShadow: boxShadowOf(definition.shadowColor, PLATE_SHADOW),
         }}
       >
         {glass ? (

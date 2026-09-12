@@ -31,6 +31,7 @@ import ChevronUp from 'lucide-react-native/icons/chevron-up'
 import CircleAlert from 'lucide-react-native/icons/circle-alert'
 import CircleCheckBig from 'lucide-react-native/icons/circle-check-big'
 import CircleQuestionMark from 'lucide-react-native/icons/circle-question-mark'
+import CircleUserRound from 'lucide-react-native/icons/circle-user-round'
 import Clock from 'lucide-react-native/icons/clock'
 import CloudDownload from 'lucide-react-native/icons/cloud-download'
 import Crosshair from 'lucide-react-native/icons/crosshair'
@@ -113,6 +114,12 @@ export const ChevronUpIcon = withIconInterop(ChevronUp)
 
 /** 도움말 여는 자리. 위젯 9 머리의 `?`. */
 export const CircleQuestionMarkIcon = withIconInterop(CircleQuestionMark)
+/**
+ * 관리 대상 캐릭터가 없을 때 얼굴 자리를 채우는 그림. today 머리의 `CharacterManageButton`.
+ *
+ * 여럿을 뜻하는 `Users` 와 다른 자리다. 그 원 안에 서는 것이 초상화 한 장이라 사람도 하나다.
+ */
+export const CircleUserRoundIcon = withIconInterop(CircleUserRound)
 /** 아직 집계 전(pending 톤). 지금 쓰는 화면 없음. */
 export const ClockIcon = withIconInterop(Clock)
 /** 새 업데이트 있음. `UpdatePromptModal`(update-available). */
