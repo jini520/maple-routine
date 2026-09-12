@@ -12,7 +12,7 @@
  * 세로가 길어지면"* 인데, 설정을 내보내 **순감**이라 조건에 걸리지 않는다.
  */
 import { useEffect } from 'react'
-import { Pressable, View } from 'react-native'
+import { Platform, Pressable, View } from 'react-native'
 import { useRoute, type RouteProp } from '@react-navigation/native'
 
 
@@ -24,17 +24,23 @@ import type { TabParamList } from '../../navigation/routes'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { tapFeedback } from '../../native/haptics'
 import type { NoticeKind } from '../../types/notice'
+import { SettingsLinkRow } from './SettingsLinkRow'
 import { SettingsRow } from './SettingsRow'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
+import { storeReviewUrl } from './store-review-link'
 
 /**
- * 소식 카드의 행들. 행 하나가 분류 하나를 열고, 그 이름이 곧 목록 화면의 제목이 된다.
+ * 소식 카드의 행들. 행 하나가 분류 하나를 열고, 그 이름이 곧 목록 화면의 제목이자 빈 상태
+ * 문구가 된다.
  *
- * `공지사항` 이 앱 공지와 게임 공지를 함께 드는 이유는 **사용자에게 둘이 같은 것**이기
- * 때문이다. 누가 썼는지는 우리 사정이고 읽는 쪽에는 `알려 줄 것` 하나다.
+ * 앱 공지와 게임 공지가 **행 둘**인 이유. 앱 공지는 이 앱의 일(점검·새 버전)이고 게임 공지는
+ * 넥슨의 일이라, 섞이면 목록 한 줄만 보고 어느 쪽 이야기인지 모른다. 구독 스위치도 이미 둘로
+ * 갈려 있어서, 읽는 자리만 하나로 묶으면 게임 공지만 켠 사용자가 켠 적 없는 앱 공지와 섞인
+ * 목록을 본다.
  */
 const NOTICE_SECTIONS: readonly { label: string; kinds: readonly NoticeKind[] }[] = [
-  { label: '공지사항', kinds: ['app', 'game'] },
+  { label: '앱 공지사항', kinds: ['app'] },
+  { label: '게임 공지사항', kinds: ['game'] },
   { label: '업데이트', kinds: ['update'] },
   { label: '이벤트', kinds: ['event'] },
   { label: '캐시샵', kinds: ['cashshop'] },
@@ -126,10 +132,12 @@ export function SettingsScreen(): React.JSX.Element {
           {/* **응원은 맨 아래다.** 평생 한 번 누르는 것이라 자주 쓰는 것 위에 못 올린다.
               사람들이 후원을 찾을 때 관습적으로 화면 끝부터 본다. */}
           <Card className="px-6" testID="settings-card">
-            <SettingsRow label="별점 남기기" onPress={() => undefined} />
-            <View className={SETTINGS_ROW_DIVIDER_CLASS}>
-              <SettingsRow label="커피 한 잔 사주기" onPress={() => undefined} />
-            </View>
+            {/* 앱을 떠나 스토어로 가는 행이라 오른쪽이 chevron 이 아니라 외부 링크 표식이다.
+                chevron 을 쓰면 다른 이동 행과 같은 약속을 하고는 앱을 떠나 버린다.
+
+                후원 행은 수단을 정하면 이 카드로 돌아온다. 행이 하나만 남아도 카드를 지우지 않는
+                이유가 그것이다. */}
+            <SettingsLinkRow label="개발자 응원하기(앱 리뷰)" href={storeReviewUrl(Platform.OS)} />
           </Card>
 
           {/* 이용약관 제6조④가 요구하는 출처 표기. 문구를 의역하지 않고 원문 그대로 노출한다.

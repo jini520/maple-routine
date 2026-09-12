@@ -10,6 +10,7 @@
 // ⑤ 캐릭터 관리 행의 계약은 셋뿐이다. 배지(단위 개), 누르면 그 화면을 민다, `openPicker` 로
 //    들어와도 같은 곳으로 민다. 조회·저장·401/429 배선은 `SettingsCharactersScreen` 이 갖는다.
 import { act, fireEvent } from '@testing-library/react-native'
+import { Linking, Platform } from 'react-native'
 
 import { loadCacheDataSizes } from '../../../features/settings/cache-data'
 import { useThemeStore } from '../../../features/theme/store'
@@ -98,7 +99,9 @@ async function press(element: AtomElement): Promise<void> {
 
 function rowOf(view: Rendered, label: string): AtomElement {
   let node: AtomElement | null = view.getByText(label)
-  while (node !== null && node.props.role !== 'button') node = node.parent
+  // 응원 행은 `role="link"` 다. 앱을 떠나므로 버튼이 아니다.
+  while (node !== null && node.props.role !== 'button' && node.props.role !== 'link')
+    node = node.parent
   if (node === null) throw new Error(`행을 찾지 못했다: ${label}`)
   return node
 }
@@ -120,15 +123,17 @@ function textsIn(node: AtomElement): string[] {
 // **소식이 맨 위다.** 이 페이지에서 유일하게 매일 바뀌는 것이고 나머지는 다 `가끔 한 번` 이라,
 // 자주 바뀌는 것을 아래 두면 사용자가 스크롤을 배워야 한다.
 const ROW_LABELS = [
-  '공지사항',
+  // 앱 공지는 이 앱의 일이고 게임 공지는 넥슨의 일이다. 구독 스위치가 이미 둘로 갈려 있어,
+  // 읽는 자리만 하나로 묶으면 게임 공지만 켠 사용자가 켠 적 없는 앱 공지를 함께 본다.
+  '앱 공지사항',
+  '게임 공지사항',
   '업데이트',
   '이벤트',
   '캐시샵',
   '기능 설명',
   '개발 노트',
   // 평생 한 번 누르는 것이라 맨 아래다.
-  '별점 남기기',
-  '커피 한 잔 사주기',
+  '개발자 응원하기(앱 리뷰)',
 ]
 
 function mockThemeStore(overrides: Partial<ReturnType<typeof useThemeStore>> = {}): void {
@@ -161,7 +166,12 @@ function mockContentStore(overrides: Partial<ContentSchedulerStore> = {}): Conte
   return base
 }
 
+// 응원 행이 앱을 떠나는 것을 재려면 이 호출을 봐야 한다. 실제로 스토어를 열 수는 없다.
+const openURL = jest.spyOn(Linking, 'openURL')
+const 원래플랫폼 = Platform.OS
+
 beforeEach(() => {
+  openURL.mockResolvedValue(true)
   mockThemeStore()
   mockTrackingModeStore()
   mockContentStore()
@@ -181,6 +191,8 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  // 플랫폼을 갈아 끼운 케이스가 뒤 케이스로 새면 안 된다.
+  Platform.OS = 원래플랫폼
   jest.clearAllMocks()
 })
 
@@ -200,7 +212,10 @@ describe('SettingsScreen', () => {
     const view = await renderOverlay(<SettingsScreen />)
 
     for (const label of ROW_LABELS) expect(view.getByText(label)).toBeTruthy()
-    expect(view.getAllByTestId('settings-row-chevron')).toHaveLength(ROW_LABELS.length)
+    // 응원 행만 오른쪽이 chevron 이 아니다. chevron 을 쓰면 다른 이동 행과 같은 약속을 하고는
+    // 앱을 떠나 버린다.
+    expect(view.getAllByTestId('settings-row-chevron')).toHaveLength(ROW_LABELS.length - 1)
+    expect(view.getAllByTestId('settings-row-external')).toHaveLength(1)
   })
 
   // **이 개편의 핵심.** 두 무리를 가르는 것은 카드 경계뿐이다. 한 카드에 다 넣는 시안은
@@ -219,13 +234,15 @@ describe('SettingsScreen', () => {
       })
 
     expect(labelsIn(cards[0])).toEqual([
-      '공지사항',
+      '앱 공지사항',
+      '게임 공지사항',
       '업데이트',
       '이벤트',
       '캐시샵',
     ])
     expect(labelsIn(cards[1])).toEqual(['기능 설명', '개발 노트'])
-    expect(labelsIn(cards[2])).toEqual(['별점 남기기', '커피 한 잔 사주기'])
+    // 행이 하나만 남아도 카드로 남는다. 후원 수단이 정해지면 그 자리에 다시 들어온다.
+    expect(labelsIn(cards[2])).toEqual(['개발자 응원하기(앱 리뷰)'])
   })
 
   // 화살표가 "값이 있는가"가 아니라 "누르면 무언가 열린다"를 말한다.
@@ -244,7 +261,8 @@ describe('SettingsScreen', () => {
 
   // 소식 행은 **자기 분류를 들고** 간다. 목록 화면이 그것만 그리고 제목도 그 이름을 쓴다.
   it.each([
-    ['공지사항', ['app', 'game']],
+    ['앱 공지사항', ['app']],
+    ['게임 공지사항', ['game']],
     ['업데이트', ['update']],
     ['이벤트', ['event']],
     ['캐시샵', ['cashshop']],
@@ -254,6 +272,27 @@ describe('SettingsScreen', () => {
     await press(rowOf(view, label))
 
     expect(navigate).toHaveBeenCalledWith('SettingsNotices', { kinds, title: label })
+  })
+
+  // 후원 수단을 아직 안 정했다. 누를 수 있게 그려 놓고 아무 일도 안 하는 행은 고장으로 읽힌다.
+  it('커피 행을 두지 않는다', async () => {
+    const view = await renderOverlay(<SettingsScreen />)
+
+    expect(view.queryByText('커피 한 잔 사주기')).toBeNull()
+  })
+
+  // 앱 안 리뷰 팝업을 안 쓴다. 네이티브 의존을 들이면 런타임 지문이 바뀌고, 그러면 이미 스토어에
+  // 나간 바이너리가 OTA 를 못 받는다. 링크는 JS 라 OTA 로 나간다.
+  it.each([
+    ['ios', 'itms-apps://apps.apple.com/app/id6797579391?action=write-review'],
+    ['android', 'market://details?id=com.mapleroutine.app'],
+  ])('%s 에서 응원 행은 스토어 리뷰 주소를 연다', async (os, url) => {
+    Platform.OS = os as typeof Platform.OS
+
+    const view = await renderOverlay(<SettingsScreen />)
+    await press(rowOf(view, '개발자 응원하기(앱 리뷰)'))
+
+    expect(openURL).toHaveBeenCalledWith(url)
   })
 
   // 설정은 본문이 아니라 머리에 산다. 본문에 두면 매일 보는 소식이 가끔 쓰는 설정에 밀린다.
