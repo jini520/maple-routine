@@ -36,7 +36,7 @@ export const RELEASE_NOTE_CATEGORY_ORDER: readonly ReleaseNoteCategory[] = [
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
     version: '1.0.8',
-    date: '2026-09-12',
+    date: '2026-09-13',
     // 네 줄이고 `items` 에서 파생하지 않았다(사용자가 직접 골랐다). 마지막 줄은 노트에 안 적은
     // 자잘한 수정들을 한 줄로 뭉친 것이라 어떤 파생 규칙으로도 안 나온다.
     highlights: [
