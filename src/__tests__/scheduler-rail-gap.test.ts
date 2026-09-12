@@ -46,6 +46,28 @@ describe('캐릭터 레일 아래 간격', () => {
   })
 })
 
+// 빈 상태도 첫 카드와 같은 자리에 선다. 전에는 목록이 있으면 첫 카드가 28 내려가고 비면 빈 상태가
+// 레일 바로 밑에 붙어, 같은 화면이 두 높이를 오갔다. 네 자리가 같은 값이어야 한다 - 화면 둘 ×
+// 빈 상태 둘(컨텐츠는 일간·주간, 보스는 목록 없음·필터 결과 없음).
+describe('빈 상태의 위 여백', () => {
+  const wrappers = SCREENS.flatMap((path) => [
+    ...readFileSync(path, 'utf8').matchAll(/<View className="(pt-\d(?:\.5)?)">\s*<EmptyState/g),
+  ]).map((match) => match[1])
+
+  it('빈 상태 넷이 모두 위 여백을 든다', () => {
+    expect(wrappers).toHaveLength(4)
+  })
+
+  // 카드 목록이 드는 값에서 따온다. 둘이 갈리면 목록이 있을 때와 없을 때 첫 줄의 높이가 달라진다.
+  it('그 값이 카드 목록의 위 여백과 같다', () => {
+    const source = readFileSync(SCREENS[0], 'utf8')
+    const cardList = /className="gap-2 (pt-\d(?:\.5)?)"/.exec(source)?.[1] ?? null
+
+    expect(cardList).not.toBeNull()
+    expect(new Set([...wrappers, cardList]).size).toBe(1)
+  })
+})
+
 // 보스 스케줄러는 카드 앞에 무리 제목(`월간`)이 서고 컨텐츠 스케줄러는 바로 카드다. 그 제목이
 // 차지하는 높이만큼 컨텐츠 쪽 카드 목록이 비워 둬야 두 화면을 오갈 때 첫 카드가 안 뛴다.
 // 일간·주간 목록 둘 다 같은 값이어야 한다.

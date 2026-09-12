@@ -229,6 +229,7 @@ export function ContentScreen(): React.JSX.Element {
               fetchedAt={fetchedAt}
               trailing={
                 <View className="flex-row items-center gap-3">
+                  {manualManageButton}
                   {characters.length > 0 && selected !== null && (
                     <TabSegment
                       options={CONTENT_TABS}
@@ -237,7 +238,6 @@ export function ContentScreen(): React.JSX.Element {
                       labelOf={(value) => CONTENT_TAB_LABELS[value]}
                     />
                   )}
-                  {manualManageButton}
                 </View>
               }
             >
@@ -277,7 +277,7 @@ export function ContentScreen(): React.JSX.Element {
         {/* 조회할 수 없는 캐릭터를 고르면 내용 자리가 통째로 이 안내다. 그 캐릭터의 목록은
             **빈 것이 아니라 모르는 것**이라, 빈 상태로 그리면 다 했다 로 읽힌다. */}
         {characters.length > 0 && isSelectedUnavailable && (
-          <View className="px-4">
+          <View className="px-4 pt-7">
             <CharacterUnavailableNotice
               onOpenCharacterManage={() => openTab('Settings', { openPicker: true })}
             />
@@ -288,8 +288,12 @@ export function ContentScreen(): React.JSX.Element {
           <View testID="pull-content" className="gap-4 px-4 pb-4">
             {activeTab === 'daily' && (
               <>
+                {/* 위 여백은 아래 카드 목록이 드는 것과 같은 값이다. 목록이 있을 때와 없을 때
+                    첫 줄이 같은 높이에 서야 한다. */}
                 {displayDailyContents.length === 0 && (mode === 'manual' || !selected.isStale) && (
-                  <EmptyState {...contentEmptyProps('daily')} />
+                  <View className="pt-7">
+                    <EmptyState {...contentEmptyProps('daily')} />
+                  </View>
                 )}
 
                 {/* 위 여백은 보스 스케줄러의 무리 제목(`월간`)이 차지하는 높이다
@@ -309,7 +313,9 @@ export function ContentScreen(): React.JSX.Element {
             {activeTab === 'weekly' && (
               <>
                 {displayWeeklyContents.length === 0 && (mode === 'manual' || !selected.isStale) && (
-                  <EmptyState {...contentEmptyProps('weekly')} />
+                  <View className="pt-7">
+                    <EmptyState {...contentEmptyProps('weekly')} />
+                  </View>
                 )}
 
                 {displayWeeklyContents.length > 0 && (

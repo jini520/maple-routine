@@ -25,15 +25,15 @@ export function EmptyState(props: EmptyStateProps): React.JSX.Element {
         testID="empty-state-badge"
         aria-hidden
         className={`items-center justify-center rounded-full bg-primary-tint ${
-          isPage ? 'h-[84px] w-[84px]' : 'h-14 w-14'
+          isPage ? 'h-16 w-16' : 'h-12 w-12'
         }`}
       >
         {/* 마크 색은 primary 계열로 통일. primary-ink 는 라이트 테마에선 더 또렷하지만 레테(다크)에서
             배지 배경에 묻힌다(그 테마만 primary-ink 가 primary 보다 어둡다). */}
         {Icon === 'leaf' ? (
-          <MapleLeaf size={isPage ? 42 : 28} className="text-primary-ink" />
+          <MapleLeaf size={isPage ? 32 : 24} className="text-primary-ink" />
         ) : (
-          <Icon className={`text-primary-ink ${isPage ? 'h-10 w-10' : 'h-7 w-7'}`} strokeWidth={1.75} />
+          <Icon className={`text-primary-ink ${isPage ? 'h-8 w-8' : 'h-6 w-6'}`} strokeWidth={1.75} />
         )}
       </View>
 
@@ -49,8 +49,8 @@ export function EmptyState(props: EmptyStateProps): React.JSX.Element {
             testID="empty-state-description"
             className={
               isPage
-                ? 'max-w-[220px] text-center text-sm text-text-muted'
-                : 'mx-auto max-w-[240px] text-center text-xs text-text-muted'
+                ? 'max-w-[220px] text-center text-xs text-text-muted'
+                : 'mx-auto max-w-[240px] text-center text-11 text-text-muted'
             }
           >
             {description}

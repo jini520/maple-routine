@@ -469,7 +469,7 @@ export function BossScreen(): React.JSX.Element {
         {/* 조회할 수 없는 캐릭터를 고르면 내용 자리가 통째로 이 안내다. 그 캐릭터의 보스 목록은
             **빈 것이 아니라 모르는 것**이라, 빈 상태로 그리면 다 잡았다 로 읽힌다. */}
         {characters.length > 0 && isSelectedUnavailable && (
-          <View className="px-4">
+          <View className="px-4 pt-7">
             <CharacterUnavailableNotice
               onOpenCharacterManage={() => openTab('Settings', { openPicker: true })}
             />
@@ -480,11 +480,19 @@ export function BossScreen(): React.JSX.Element {
           <View testID="pull-content" className="gap-4 px-4 pb-4">
             {/* 빈 상태 둘은 **목록 하나**를 보고 판정한다. 무리별로 물으면 검마를 안 잡는
                 캐릭터마다 추적할 월간 보스가 없습니다 가 뜬다. */}
+            {/* 위 여백은 무리 제목(`월간`)이 차지하는 높이다. 목록이 있을 때와 없을 때 첫 줄이
+                같은 자리에 서야 한다. 컨텐츠 스케줄러의 카드 목록과 같은 값이다. */}
             {displayedCount === 0 && (mode === 'manual' || !selected.isStale) && (
-              <EmptyState {...bossEmptyProps()} />
+              <View className="pt-7">
+                <EmptyState {...bossEmptyProps()} />
+              </View>
             )}
 
-            {displayedCount > 0 && filteredCount === 0 && <EmptyState {...filterEmptyProps()} />}
+            {displayedCount > 0 && filteredCount === 0 && (
+              <View className="pt-7">
+                <EmptyState {...filterEmptyProps()} />
+              </View>
+            )}
 
             {/* 순서는 `displayedBossSections` 것이고 **비어 있는 무리는 이미 걷혔다**
                 (`visibleSections`). 헤더만 남아 여기 뭔가 있었다로 읽히지 않게 한다. */}
