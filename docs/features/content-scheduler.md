@@ -165,7 +165,7 @@ today ‘남은 스케줄’) 흩어지면 같은 항목이 화면마다 다르�
   그대로). 목록을 흘리는 통로는 `getCharacterPickerRoster` 의 `onUpdate` 다.
 - **stub 단계가 그리는 캐릭터는 그 계정의 캐시 인덱스(`characterBasicCache:index:{accountId}`)가 정하고,
   그 인덱스는 `character/list` 를 받을 때마다 그 목록에 맞춰진다**([[ADR-017]] 결정 6 의 2026-09-13 정정,
-  이슈 #408, **설계 · 구현 전**). 맞추는 함수는 `reconcileCachedCharacterBasicOcids` 다. 맞추지 않으면 목록에서
+  이슈 #408, **구현 완료** 2026-09-14). 맞추는 함수는 `reconcileCachedCharacterBasicOcids` 다. 맞추지 않으면 목록에서
   빠진 캐릭터가 인덱스에 영영 남는다. 그러면 화면을 열 때마다 stub 단계가 그 캐릭터를 그리고,
   `character/list` 응답 뒤의 방출이 목록을 갈아끼우며 지운다. 빠지는 경우로 확인된 것은 월드 리프로 남은
   옛 ocid 하나다.
