@@ -9,6 +9,7 @@ interface CatalogEntry extends EffectivePeriod {
   group: string
   shortName: string
   onlyWhenScheduled?: boolean
+  trustRegistrationFlag?: boolean
 }
 
 export interface ContentCatalogEntry {
@@ -40,6 +41,16 @@ export function getShareScope(name: string): ShareScope {
     return 'account'
   }
   return 'character'
+}
+
+/**
+ * 병합이 이 항목의 등록을 **이번 응답의 `registration_flag`** 로 정하는가. 메이플 유니온 두 항목만 참이다.
+ *
+ * 나머지 공유 항목은 원장의 `active` 가 한 번 참이면 계속 참이다.
+ */
+export function trustsRegistrationFlag(name: string): boolean {
+  const entry = findEntry(WORLD_ENTRIES, name) ?? findEntry(ACCOUNT_ENTRIES, name)
+  return entry?.trustRegistrationFlag === true
 }
 
 export function getContentSection(name: string): 'daily' | 'weekly' | null {

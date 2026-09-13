@@ -8,7 +8,12 @@ import type {
 } from '../../types'
 import { getCurrentBossProfitPeriod } from '../boss/boss-profit-period'
 import { getCurrentKstDateKey } from './reset-clock'
-import { getContentCatalogEntries, getMaxCountOverride, getShareScope } from './scheduler-content-scope'
+import {
+  getContentCatalogEntries,
+  getMaxCountOverride,
+  getShareScope,
+  trustsRegistrationFlag,
+} from './scheduler-content-scope'
 
 export interface MergeInput {
   previous: SchedulerCharacterState | null
@@ -44,7 +49,8 @@ interface SectionResult {
 // 병합 알고리즘 (daily/weekly 공통):
 // 1. fresh 섹션이면 character 범위 항목은 그대로 쓰고, world/account 범위 항목은 개별 응답의
 //  registration_flag를 무시(마지막 활성 캐릭터 오염)하고 원장의 active를 ratchet(한번
-//    true면 계속 true)한 뒤 값을 갱신한다.
+//    true면 계속 true)한 뒤 값을 갱신한다. 카탈로그가 trustRegistrationFlag 로 지목한 항목(유니온 둘)만
+//    ratchet 없이 이번 응답의 등록 값을 쓴다.
 // 2. stale 섹션이면 character 범위 항목만 이전 캐시에서 이름/등록을 유지하고 진행값만 리셋한다.
 // 3. 두 경우 모두, 이 섹션 소속 world/account 카탈로그 항목 중 아직 결과에 없는 것을 원장에서
 //  복원한다(캐릭터 자신의 응답에 그 항목이 없어도. 개별 항목 누락 오염). 원장 자체가
@@ -92,7 +98,7 @@ function mergeSection(
 
       const ledger = scope === 'world' ? worldLedger : accountLedger
       const wasActive = ledger[item.name]?.active === true
-      const active = wasActive || item.isRegistered
+      const active = trustsRegistrationFlag(item.name) ? item.isRegistered : wasActive || item.isRegistered
       const entry: SharedProgressEntry = {
         active,
         kind: item.kind,

@@ -265,6 +265,110 @@ describe('mergeSchedulerState: account 범위 (에픽 던전)', () => {
   })
 })
 
+// 공유 항목의 등록은 원장의 active 가 한 번 참이면 계속 참이다. 유니온 두 항목만 그 규칙에서 빠져
+// 이번 응답의 registration_flag 를 그대로 쓴다. 아무도 등록 안 한 줄이 굳은 원장 한 칸 때문에 섰다.
+describe('mergeSchedulerState: 유니온 두 항목은 응답의 등록 값을 그대로 쓴다', () => {
+  const UNION_PC = '[메이플 유니온] PC방 주간 드래곤 퇴치'
+  const UNION_WEEKLY = '[메이플 유니온] 주간 드래곤 퇴치'
+  const EPIC = '에픽 던전 : 하이마운틴'
+  const WEEK = '2026-07-16'
+  const questItem = (name: string, isRegistered: boolean) => ({
+    name,
+    kind: 'quest' as const,
+    isRegistered,
+    nowCount: 0,
+    maxCount: 0,
+    questState: 0 as const,
+  })
+  const ledgerEntry = (active: boolean): SharedProgressEntry => ({
+    active,
+    kind: 'quest',
+    nowCount: 0,
+    maxCount: 0,
+    questState: 0,
+    lastUpdatedBucket: WEEK,
+  })
+
+  it('원장이 active: true 여도 응답이 false 면 등록 안 한 것이고, 원장도 false 로 쓴다', () => {
+    const fresh = baseState({ weeklyContents: [questItem(UNION_PC, false)] })
+
+    const result = mergeSchedulerState({
+      previous: null,
+      fresh,
+      worldLedger: {},
+      accountLedger: { [UNION_PC]: ledgerEntry(true) },
+      now: NOW,
+    })
+
+    expect(result.characterState.weeklyContents).toEqual([questItem(UNION_PC, false)])
+    expect(result.accountLedgerUpdates[UNION_PC].active).toBe(false)
+  })
+
+  it('월드 공유인 주간 드래곤 퇴치도 같다', () => {
+    const fresh = baseState({ weeklyContents: [questItem(UNION_WEEKLY, false)] })
+
+    const result = mergeSchedulerState({
+      previous: null,
+      fresh,
+      worldLedger: { [UNION_WEEKLY]: ledgerEntry(true) },
+      accountLedger: {},
+      now: NOW,
+    })
+
+    expect(result.characterState.weeklyContents).toEqual([questItem(UNION_WEEKLY, false)])
+    expect(result.worldLedgerUpdates[UNION_WEEKLY].active).toBe(false)
+  })
+
+  it('원장이 없고 응답이 true 면 등록한 것이다', () => {
+    const fresh = baseState({ weeklyContents: [questItem(UNION_PC, true)] })
+
+    const result = mergeSchedulerState({ previous: null, fresh, worldLedger: {}, accountLedger: {}, now: NOW })
+
+    expect(result.characterState.weeklyContents).toEqual([questItem(UNION_PC, true)])
+    expect(result.accountLedgerUpdates[UNION_PC].active).toBe(true)
+  })
+
+  it('에픽 던전은 지금처럼 원장이 active: true 면 응답이 false 여도 계속 노출된다', () => {
+    const fresh = baseState({
+      weeklyContents: [{ name: EPIC, kind: 'contents', isRegistered: false, nowCount: 1, maxCount: 0, questState: null }],
+    })
+
+    const result = mergeSchedulerState({
+      previous: null,
+      fresh,
+      worldLedger: {},
+      accountLedger: { [EPIC]: { ...ledgerEntry(true), kind: 'contents', questState: null } },
+      now: NOW,
+    })
+
+    expect(result.characterState.weeklyContents[0]?.isRegistered).toBe(true)
+    expect(result.accountLedgerUpdates[EPIC].active).toBe(true)
+  })
+
+  it('섹션이 빈 캐릭터(미접속)는 원장의 마지막 값으로 복원된다', () => {
+    const stale = baseState({ weeklyContents: [], isWeeklyStale: true })
+
+    const registered = mergeSchedulerState({
+      previous: null,
+      fresh: stale,
+      worldLedger: {},
+      accountLedger: { [UNION_PC]: ledgerEntry(true) },
+      now: NOW,
+    })
+    const unregistered = mergeSchedulerState({
+      previous: null,
+      fresh: stale,
+      worldLedger: {},
+      accountLedger: { [UNION_PC]: ledgerEntry(false) },
+      now: NOW,
+    })
+
+    const find = (items: { name: string; isRegistered: boolean }[]) => items.find((item) => item.name === UNION_PC)
+    expect(find(registered.characterState.weeklyContents)?.isRegistered).toBe(true)
+    expect(find(unregistered.characterState.weeklyContents)?.isRegistered ?? false).toBe(false)
+  })
+})
+
 describe('mergeSchedulerState: maxCountOverride', () => {
   it('오버라이드가 등록된 항목은 API 응답의 max_count 대신 오버라이드 값을 쓴다', () => {
     const fresh = baseState({
