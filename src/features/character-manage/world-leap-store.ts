@@ -17,6 +17,7 @@
 import { create } from 'zustand'
 
 import { removeTrackedCharacter, replaceTrackedCharacter } from '../../storage/character-selection'
+import { linkWorldLeap } from '../boss-profit/world-leap-link'
 import type { WorldLeapNotice } from './world-leap'
 
 interface WorldLeapStore {
@@ -41,7 +42,7 @@ interface WorldLeapStore {
   /** `나중에` · `캐릭터 관리로 이동`. 표식은 그대로 남는다. */
   dismiss: () => void
   /**
-   * 주 버튼. **바뀐 목록을 돌려준다**. 기록은 어느 쪽으로도 안 옮긴다.
+   * 주 버튼. **바뀐 목록을 돌려준다**. 두 ocid 의 연결을 남기고, 기록은 여기서 안 옮긴다.
    *
    * 하는 일이 알림에 따라 갈린다. `confirmed` 는 추적 목록의 ocid 를 갈아끼우고,
    * `alreadyTracked` 는 옛 ocid 를 뺀다(옮겨간 캐릭터가 이미 목록에 있어 더할 것이 없다).
@@ -89,6 +90,9 @@ export const useWorldLeapStore = create<WorldLeapStore>((set, get) => ({
       to === null
         ? await removeTrackedCharacter(notice.from.ocid)
         : await replaceTrackedCharacter(notice.from.ocid, to)
+    // 리프한 기간의 중복 기록을 짝지을 연결이다. 뒷정리라 못 남겨도 목록 변경은 끝내고, 이름·직업
+    // 대조가 나중에 다시 잇는다.
+    await linkWorldLeap(notice.from.ocid, notice.to.ocid, new Date()).catch(() => undefined)
     // 거절 목록에도 넣는다. 정리한 뒤에는 옛 ocid 가 추적 목록에 없어 판정이 다시 서지 않지만,
     // 같은 회차에 이미 흐르고 있던 판정이 뒤늦게 도착할 수 있다.
     set((state) => ({

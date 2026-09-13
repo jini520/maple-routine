@@ -53,6 +53,24 @@ export async function getBossPartySize(
   return row === undefined ? null : (row.party_size as number)
 }
 
+/**
+ * 옛 캐릭터의 설정을 전부 새 캐릭터로 옮겨 적는다. **새 캐릭터에 이미 있는 설정은 안 덮는다.**
+ *
+ * 월드 리프로 두 ocid 가 이어지는 순간 한 번 부른다. 새 캐릭터에서 사용자가 이미 정한 값이 이긴다.
+ */
+export async function copyMissingBossPartySettings(
+  fromOcid: string,
+  toOcid: string,
+  updatedAt: string,
+): Promise<void> {
+  const db = await getBossProfitDb()
+  await db.run(
+    `INSERT OR IGNORE INTO boss_party_settings (ocid, boss, difficulty, party_size, updated_at)
+     SELECT ?, boss, difficulty, party_size, ? FROM boss_party_settings WHERE ocid = ?`,
+    [toOcid, updatedAt, fromOcid],
+  )
+}
+
 export async function getBossPartySettings(ocids: string[]): Promise<BossPartySetting[]> {
   if (ocids.length === 0) {
     return []

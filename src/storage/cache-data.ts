@@ -59,6 +59,8 @@ export const RECORD_TABLE_NAMES: readonly string[] = [
   // 이 표를 `general` 로 두면 기록을 남긴 사용자가 이름 없는 기록을 받아, 지운 적 없는 과거
   // 수익이 화면에서 통째로 사라진다. 지우는 무게가 기록과 같아서 같은 그룹이다.
   'character_profiles',
+  // 리프한 기간의 중복 기록을 지우는 연결이다. 기록만 남고 연결이 사라지면 두 번 센 채로 굳는다.
+  'character_world_leaps',
 ]
 
 // db.ts에 테이블이 추가되면 자동으로 여기 들어와 계속 삭제 대상으로 남는다.

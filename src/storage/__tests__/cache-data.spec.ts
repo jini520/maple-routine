@@ -139,6 +139,12 @@ describe('그룹 ↔ 테이블 분할', () => {
     expect(RECORD_TABLE_NAMES).toContain('character_profiles')
     expect(GENERAL_TABLE_NAMES).not.toContain('character_profiles')
   })
+
+  // 기록을 정리하는 데만 쓰는 연결이고, 옛 ocid 는 목록에서 빠져 되살릴 길이 없다.
+  it('월드 리프 연결도 `기록` 그룹이다. 기록만 남고 연결이 사라지면 중복을 못 지운다', () => {
+    expect(RECORD_TABLE_NAMES).toContain('character_world_leaps')
+    expect(GENERAL_TABLE_NAMES).not.toContain('character_world_leaps')
+  })
 })
 
 describe('clearCacheData', () => {
