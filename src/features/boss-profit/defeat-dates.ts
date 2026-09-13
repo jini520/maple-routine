@@ -55,6 +55,12 @@ export interface DefeatDateInput {
    */
   readonly queryFloorDateKey?: string
   /**
+   * 창 안인데 **영영 못 보는 날**. 리프 경계 앞의 `outOfRange` 가 여기 든다(`unobservableDaysOf`).
+   *
+   * 창 하한 앞의 날과 같이 건너뛴다. 안 주면 창 안의 빈 날은 전부 구멍이다.
+   */
+  readonly unobservableDays?: ReadonlySet<string>
+  /**
    * 뒤집힘을 못 봤을 때 **조회 가능한 가장 빠른 날**을 처치일로 쓸 것인가.
    *
    * 켜면 이 함수가 `그 날이거나 그 앞` 을 `그 날` 로 단정한다. 그 대가를 지는 이유는 창을 매일
@@ -71,7 +77,7 @@ export interface DefeatDateInput {
  *
  * | 만나는 것 | 답 |
  * |---|---|
- * | 창 하한보다 앞선 날 | **건너뛴다**. 못 봤다는 것이 굳어 있어 그 뒤의 첫 완료를 못 믿는다 |
+ * | 창 하한보다 앞선 날 · `unobservableDays` | **건너뛴다**. 못 봤다는 것이 굳어 있어 그 뒤의 첫 완료를 못 믿는다 |
  * | 그날 완료로 관측됐다 | 앞에 못 본 날이 없으면 **그날이다** |
  * | 못 본 날인데 그날이 **오늘**이다 | **오늘이다**(소거법. 어제까지 미완료인데 기록이 있다) |
  * | 못 본 날인데 오늘이 아니다 | **`null`**. 구멍이라 그 뒤의 완료를 못 믿는다 |
@@ -93,7 +99,7 @@ export function resolveDefeatedOn(input: DefeatDateInput): string | null {
     if (day > input.todayDateKey) {
       return null
     }
-    if (day < floorDateKey) {
+    if (day < floorDateKey || input.unobservableDays?.has(day) === true) {
       blind = true
       continue
     }
@@ -165,13 +171,18 @@ function missingDays(
   return [...days]
 }
 
-/** 한 캐릭터의 미조회 날짜를 훑어 관측을 모은다. 실패한 날은 **비워 둔다**(구멍 → 확정 안 함). */
+/**
+ * 한 캐릭터의 미조회 날짜를 훑어 관측을 모은다. 실패한 날은 **비워 둔다**(구멍 → 확정 안 함).
+ *
+ * `outOfRange` 로 굳은 날도 함께 돌려준다. 원장에 적히는 사실이라 같은 회차의 리프 경계에 든다.
+ */
 async function probeDays(
   apiKey: string,
   ocid: string,
   days: string[],
-): Promise<Map<string, ReadonlySet<string>>> {
+): Promise<{ observed: Map<string, ReadonlySet<string>>; outOfRange: string[] }> {
   const observed = new Map<string, ReadonlySet<string>>()
+  const outOfRange: string[] = []
 
   await Promise.all(
     days.map(async (dateKey) => {
@@ -186,6 +197,7 @@ async function probeDays(
         }
         if (kind === 'periodOutOfRange') {
           await recordScheduleProbe(ocid, dateKey, { kind: 'outOfRange' })
+          outOfRange.push(dateKey)
           return
         }
         // 집계 전(00009)·네트워크·파싱은 **기록하지 않는다**. 나중에 풀린다.
@@ -198,21 +210,52 @@ async function probeDays(
     }),
   )
 
-  return observed
+  return { observed, outOfRange }
+}
+
+/**
+ * 리프 경계 앞의 `outOfRange` 날. 원장에서 **가장 이른 `observed` 보다 앞선** 것만 든다.
+ *
+ * 월드 리프로 새로 생긴 ocid 는 리프 전 날짜를 영영 못 부르고, 그 날이 주 첫날이면 구멍으로 읽혀
+ * 리프한 주가 영구 `NULL` 로 굳는다. `outOfRange` 전부를 넣으면 안 된다. 오늘 날짜도 같은 코드라
+ * 기기 시계가 빠르면 자정 직후 주 첫날이 영구 `outOfRange` 로 적히고, 그 앞에는 전 주의 관측이 있다.
+ *
+ * `bosses` 가 없는 옛 관측도 첫 관측으로 센다. 그 날에 조회가 됐다는 사실은 같다.
+ */
+function unobservableDaysOf(kindByDate: ReadonlyMap<string, string>): Set<string> {
+  let earliestObserved: string | null = null
+  for (const [dateKey, kind] of kindByDate) {
+    if (kind === 'observed' && (earliestObserved === null || dateKey < earliestObserved)) {
+      earliestObserved = dateKey
+    }
+  }
+  const days = new Set<string>()
+  if (earliestObserved === null) {
+    return days
+  }
+  for (const [dateKey, kind] of kindByDate) {
+    if (kind === 'outOfRange' && dateKey < earliestObserved) {
+      days.add(dateKey)
+    }
+  }
+  return days
 }
 
 const EMPTY_OBSERVED: ReadonlyMap<string, ReadonlySet<string>> = new Map()
+const EMPTY_DAYS: ReadonlySet<string> = new Set()
 
 /** 기록 하나의 날짜 판정. 기간의 날짜들과 보스 키를 그 기록에서 뽑아 순수 함수에 넘긴다. */
 function resolveFor(
   record: UndatedBossProfitRecord,
   observed: ReadonlyMap<string, ReadonlySet<string>>,
+  unobservableDays: ReadonlySet<string>,
   todayDateKey: string,
   floorDateKey: string,
 ): string | null {
   return resolveDefeatedOn({
     periodDays: getPeriodDateKeys(record.cycle, record.periodKey),
     observed,
+    unobservableDays,
     todayDateKey,
     bossKey: bossCompletionKey(record.boss, record.difficulty),
     queryFloorDateKey: floorDateKey,
@@ -295,42 +338,53 @@ async function runResolveDefeatDates(ocids: readonly string[], now: Date): Promi
 
   // 조회는 캐릭터끼리 나란히, **쓰기는 뒤에서 차례로**. 단일 공유 커넥션이라 동시에 쓰면 트랜잭션이
   // 겹쳐 던진다(`auto-record.ts` 가 같은 이유로 순차다).
-  const observedByOcid = await Promise.all(
+  const knownByOcid = await Promise.all(
     [...byOcid.entries()].map(async ([ocid, records]) => {
       const ledger = await getScheduleProbeLedger(ocid, now)
       if (ledger.unavailable) {
-        return [ocid, new Map<string, ReadonlySet<string>>()] as const
+        return [ocid, { observed: EMPTY_OBSERVED, unobservable: EMPTY_DAYS }] as const
       }
 
       const observed = new Map<string, ReadonlySet<string>>()
+      const kindByDate = new Map<string, string>()
       for (const [dateKey, record] of Object.entries(ledger.dates)) {
+        kindByDate.set(dateKey, record.kind)
         if (record.kind === 'observed' && record.bosses !== undefined) {
           observed.set(dateKey, new Set(record.bosses))
         }
       }
+      let unobservable = unobservableDaysOf(kindByDate)
 
       // **가진 것으로 먼저 풀어 본다.** 원장이 이미 답을 들고 있으면(다른 경로가 훑어 둔 날짜들)
       // 호출이 0회다. 그러지 않으면 **이미 아는 것** 을 확인하려고 그 주를 다시 훑게 된다.
       const unresolved = records.filter(
-        (record) => resolveFor(record, observed, todayDateKey, floorDateKey) === null,
+        (record) => resolveFor(record, observed, unobservable, todayDateKey, floorDateKey) === null,
       )
       // 키가 없으면 **부를 수가 없다**. 가진 것으로 푼 만큼만 채우고 나머지는 NULL 로 둔다.
       if (unresolved.length > 0 && authConfig !== null) {
         const days = missingDays(ledger.dates, periodsOf(unresolved), floorDateKey, ceilingDateKey)
-        for (const [dateKey, keys] of await probeDays(authConfig.apiKey, ocid, days)) {
+        const probed = await probeDays(authConfig.apiKey, ocid, days)
+        for (const [dateKey, keys] of probed.observed) {
           observed.set(dateKey, keys)
+          kindByDate.set(dateKey, 'observed')
         }
+        for (const dateKey of probed.outOfRange) {
+          kindByDate.set(dateKey, 'outOfRange')
+        }
+        unobservable = unobservableDaysOf(kindByDate)
       }
-      return [ocid, observed] as const
+      return [ocid, { observed, unobservable }] as const
     }),
   )
-  const observedFor = new Map(observedByOcid)
+  const knownFor = new Map(knownByOcid)
 
   let dated = 0
   for (const candidate of candidates) {
+    const known = knownFor.get(candidate.ocid)
     const defeatedOn = resolveFor(
       candidate,
-      observedFor.get(candidate.ocid) ?? EMPTY_OBSERVED,
+      known?.observed ?? EMPTY_OBSERVED,
+      known?.unobservable ?? EMPTY_DAYS,
       todayDateKey,
       floorDateKey,
     )
