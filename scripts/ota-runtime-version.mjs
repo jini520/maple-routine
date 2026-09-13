@@ -48,7 +48,7 @@
  * 가리킨다.
  */
 export const PINNED_RUNTIME_VERSIONS = {
-  ios: { runtimeVersion: 'd304704ee9eeedd73d61383372e00849f830f8fb', binaryAppVersion: '1.0.6' },
+  // iOS 는 뺐다(2026-09-13). 1.0.8 build 15 가 게시돼 트리 계산값이 곧 바이너리의 값이다.
   android: { runtimeVersion: '3df849c014ea95bb7b0b9dd506094148b0fdc508', binaryAppVersion: '1.0.6' },
 }
 
@@ -85,7 +85,7 @@ export const IN_REVIEW_RUNTIME_VERSIONS = {
   //
   // 플랫폼마다 따로 비운다. 게시가 확인된 쪽부터 비우고, 비우는 것이 곧 그 플랫폼
   // 1.0.6 기기의 잠금 스위치다.
-  ios: ['6bc20c979ffdbc05f07ea9b9ca6d0cad1f3b20b3'],
+  // iOS 는 비웠다(2026-09-13 게시 확인). 비운 것이 곧 1.0.6 iOS 기기의 잠금이다.
   android: ['eebd6802bff90e10333584aedafee0037c67e958'],
 }
 
