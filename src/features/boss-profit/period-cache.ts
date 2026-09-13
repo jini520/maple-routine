@@ -10,8 +10,8 @@
  *
  * @see docs/features/boss-profit.md 의 `기간을 미리 들고 있는다`
  */
-import { getBossDropRecordsRevision } from '../../storage/boss-drops'
-import { getBossProfitRecordsRevision } from '../../storage/boss-profit'
+import { getBossDropRecordsRevision, subscribeBossDropRecordsRevision } from '../../storage/boss-drops'
+import { getBossProfitRecordsRevision, subscribeBossProfitRecordsRevision } from '../../storage/boss-profit'
 import type { PeriodDataState } from '../../lib/boss/boss-profit-period'
 import type { RecordedDrop } from '../../types/drops'
 import type { BossCycle } from '../../types'
@@ -63,6 +63,21 @@ function cacheKey(tab: BossCycle, periodKey: string): string {
  */
 export function bossRecordsStamp(): string {
   return `${getBossProfitRecordsRevision()}|${getBossDropRecordsRevision()}`
+}
+
+/**
+ * 판이 바뀔 때 부를 함수를 건다. 풀 함수를 돌려준다.
+ *
+ * @example
+ * const stamp = useSyncExternalStore(subscribeBossRecordsStamp, bossRecordsStamp)
+ */
+export function subscribeBossRecordsStamp(listener: () => void): () => void {
+  const unsubscribeProfit = subscribeBossProfitRecordsRevision(listener)
+  const unsubscribeDrops = subscribeBossDropRecordsRevision(listener)
+  return () => {
+    unsubscribeProfit()
+    unsubscribeDrops()
+  }
 }
 
 /** 표에 있는 그 기간. 판이 다르거나 없으면 `null` 이다. */

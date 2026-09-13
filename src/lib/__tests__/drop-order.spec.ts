@@ -1,7 +1,7 @@
 // 아이콘 스택은 셋만 보여준다. 이 순서가 곧 **무엇이 보이는가**다.
 import valuableDropsData from '../../data/valuable-drops.json'
 import type { RecordedDrop } from '../../types/drops'
-import { sortDropsForDisplay } from '../drop/drop-order'
+import { sortDropsForDisplay, takeTopDropsByPayout } from '../drop/drop-order'
 
 const 연출아이템 = valuableDropsData.items[0]
 const 다른연출아이템 = valuableDropsData.items[1]
@@ -65,4 +65,73 @@ it('원본을 안 건드린다', () => {
   sortDropsForDisplay(drops)
 
   expect(이름들(drops)).toEqual(['싼 것', '비싼 것'])
+})
+
+describe('takeTopDropsByPayout: 잘리는 수익 내역 목록', () => {
+  it('값을 매긴 것만 몫이 큰 순으로 N 건 싣고, 나머지는 건수와 몫 합으로 접는다', () => {
+    const result = takeTopDropsByPayout(
+      [값매김('셋째', 300), 값매김('첫째', 900), 값매김('넷째', 100), 값매김('둘째', 500), 값매김('다섯째', 50)],
+      3,
+    )
+
+    expect(이름들(result.shown)).toEqual(['첫째', '둘째', '셋째'])
+    expect(result.restCount).toBe(2)
+    expect(result.restMeso).toBe(150)
+  })
+
+  // 연출 먼저면 값을 안 매긴 연출 아이템이 비싼 아이템의 자리를 뺏는다.
+  it('연출 아이템을 앞에 두지 않는다. 값만으로 줄 세운다', () => {
+    const result = takeTopDropsByPayout([값매김(연출아이템, 100), 값매김('평범한 것', 900)], 1)
+
+    expect(이름들(result.shown)).toEqual(['평범한 것'])
+    expect(result.restCount).toBe(1)
+    expect(result.restMeso).toBe(100)
+  })
+
+  // 상위 합 + 나머지 합이 상자의 아이템 줄과 같아야 한다.
+  it('미입력과 기록 안함은 목록에도 나머지에도 안 센다', () => {
+    const result = takeTopDropsByPayout(
+      [드롭('미입력'), 드롭('기록 안함', { priceState: 'excluded' }), 값매김('입력함', 10), 값매김('또 입력함', 5)],
+      1,
+    )
+
+    expect(이름들(result.shown)).toEqual(['입력함'])
+    expect(result.restCount).toBe(1)
+    expect(result.restMeso).toBe(5)
+  })
+
+  it('몫은 분배 인원을 나눈 값이다', () => {
+    const result = takeTopDropsByPayout(
+      [
+        드롭('4인 분배', { priceState: 'entered', priceMeso: 1_000, priceShare: 4 }),
+        드롭('솔로', { priceState: 'entered', priceMeso: 400, priceShare: 1 }),
+      ],
+      1,
+    )
+
+    expect(이름들(result.shown)).toEqual(['솔로'])
+    expect(result.restMeso).toBe(250)
+  })
+
+  it('몫이 같으면 받은 순서를 지킨다', () => {
+    const result = takeTopDropsByPayout([값매김('가', 100), 값매김('나', 100), 값매김('다', 100)], 2)
+
+    expect(이름들(result.shown)).toEqual(['가', '나'])
+    expect(result.restCount).toBe(1)
+  })
+
+  it('N 건 이하면 나머지가 없다', () => {
+    const result = takeTopDropsByPayout([값매김('가', 100), 드롭('미입력')], 1)
+
+    expect(이름들(result.shown)).toEqual(['가'])
+    expect(result.restCount).toBe(0)
+    expect(result.restMeso).toBe(0)
+  })
+
+  it('원본을 안 건드린다', () => {
+    const drops = [값매김('싼 것', 100), 값매김('비싼 것', 900)]
+    takeTopDropsByPayout(drops, 1)
+
+    expect(이름들(drops)).toEqual(['싼 것', '비싼 것'])
+  })
 })

@@ -375,6 +375,50 @@ describe('getBossProfitRecordsRevision', () => {
   })
 })
 
+// 판이 바뀐 것을 물어볼 뿐 아니라 **알림을 받아야** 하는 쪽이 있다. 아이템 가격 입력 버튼의 배지는
+// 쓰기마다 그 주 창을 다시 채운다.
+describe('subscribeBossProfitRecordsRevision', () => {
+  it('판이 오를 때마다 구독자를 부른다', async () => {
+    const { subscribeBossProfitRecordsRevision, upsertBossProfitRecord, setBossProfitDefeatedOn } =
+      require('../boss-profit') as typeof import('../boss-profit')
+    const listener = jest.fn()
+    const unsubscribe = subscribeBossProfitRecordsRevision(listener)
+
+    await upsertBossProfitRecord(sampleRecord)
+    await setBossProfitDefeatedOn(
+      { ocid: 'ocid-1', boss: '스우', difficulty: '하드', periodKey: '2026-08-20' },
+      '2026-08-21',
+    )
+
+    expect(listener).toHaveBeenCalledTimes(2)
+    unsubscribe()
+  })
+
+  it('쓰기가 던지면 안 부른다', async () => {
+    const { subscribeBossProfitRecordsRevision, upsertBossProfitRecord } =
+      require('../boss-profit') as typeof import('../boss-profit')
+    const listener = jest.fn()
+    const unsubscribe = subscribeBossProfitRecordsRevision(listener)
+    runMock.mockRejectedValueOnce(new Error('database is locked'))
+
+    await expect(upsertBossProfitRecord(sampleRecord)).rejects.toThrow('database is locked')
+
+    expect(listener).not.toHaveBeenCalled()
+    unsubscribe()
+  })
+
+  it('구독을 풀면 더 안 부른다', async () => {
+    const { subscribeBossProfitRecordsRevision, upsertBossProfitRecord } =
+      require('../boss-profit') as typeof import('../boss-profit')
+    const listener = jest.fn()
+    subscribeBossProfitRecordsRevision(listener)()
+
+    await upsertBossProfitRecord(sampleRecord)
+
+    expect(listener).not.toHaveBeenCalled()
+  })
+})
+
 // 추적 목록이 아니라 기록 자신이 `누구의 것을 그릴까` 를 정하게 하는 값이다. 캐릭터를 관리
 // 목록에서 빼도 그 캐릭터가 남긴 기록은 화면에 계속 서야 한다.
 describe('getRecordedCharacterOcids', () => {

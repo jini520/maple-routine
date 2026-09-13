@@ -97,6 +97,48 @@ describe('replaceBossDropRecords', () => {
   })
 })
 
+// 아이템 가격 입력 버튼의 배지가 쓰기마다 그 주 창을 다시 채운다. 판을 물어보는 것만으로는 쓰기를
+// 알 수 없어서 알림을 받는다.
+describe('subscribeBossDropRecordsRevision', () => {
+  it('쓰기가 끝나면 구독자를 부른다', async () => {
+    const { replaceBossDropRecords, subscribeBossDropRecordsRevision } =
+      require('../boss-drops') as typeof import('../boss-drops')
+    const listener = jest.fn()
+    const unsubscribe = subscribeBossDropRecordsRevision(listener)
+
+    await replaceBossDropRecords('ocid-1', '스우', '하드', '2026-W30', drops, '2026-07-26T00:00:00.000Z')
+
+    expect(listener).toHaveBeenCalledTimes(1)
+    unsubscribe()
+  })
+
+  it('쓰기가 던지면 안 부른다', async () => {
+    const { replaceBossDropRecords, subscribeBossDropRecordsRevision } =
+      require('../boss-drops') as typeof import('../boss-drops')
+    const listener = jest.fn()
+    const unsubscribe = subscribeBossDropRecordsRevision(listener)
+    runMock.mockRejectedValueOnce(new Error('database is locked'))
+
+    await expect(
+      replaceBossDropRecords('ocid-1', '스우', '하드', '2026-W30', drops, '2026-07-26T00:00:00.000Z'),
+    ).rejects.toThrow('database is locked')
+
+    expect(listener).not.toHaveBeenCalled()
+    unsubscribe()
+  })
+
+  it('구독을 풀면 더 안 부른다', async () => {
+    const { replaceBossDropRecords, subscribeBossDropRecordsRevision } =
+      require('../boss-drops') as typeof import('../boss-drops')
+    const listener = jest.fn()
+    subscribeBossDropRecordsRevision(listener)()
+
+    await replaceBossDropRecords('ocid-1', '스우', '하드', '2026-W30', [], '2026-07-26T00:00:00.000Z')
+
+    expect(listener).not.toHaveBeenCalled()
+  })
+})
+
 describe('getBossDropRecords', () => {
   it('ocids가 비면 DB를 호출하지 않고 빈 배열을 반환한다', async () => {
     const { getBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')

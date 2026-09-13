@@ -8,6 +8,9 @@
  * 원 안에서 아이템 그림 셋이 돈다. 도는 값은 `drop-price-fab-motion.ts` 가 들고, 진행률
  * 하나에서 셋의 자리가 다 나온다.
  *
+ * 원 오른쪽 위에 보고 있는 주의 가격 미입력 건수가 선다. 수익 내역 상자가 미입력 줄을 안 싣는
+ * 대신 이 배지가 그 신호를 받는다.
+ *
  * @see docs/features/boss-profit.md 정책
  */
 import { BlurView } from 'expo-blur'
@@ -19,7 +22,9 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated'
 
+import { Text } from '../../components/atoms'
 import { BottomBarOverlay } from '../../components/organisms/BottomBar/BottomBarOverlay'
+import { useUnpricedDropCount } from '../../features/boss-profit/use-unpriced-drop-count'
 import { getItemIconUrl } from '../../lib/assets/asset-lookup'
 import { useFabBottomPx } from '../../lib/fab-metrics'
 import { useLoopedValue } from '../../hooks/useLoopedValue'
@@ -54,6 +59,9 @@ const AnimatedVeil = Animated.createAnimatedComponent(BlurView)
 
 /** 그림의 한 변. 원의 지름 56 안에서 좌우로 12씩 남는다. */
 const ITEM_PX = 32
+
+/** 배지에 그대로 적는 가장 큰 수. 넘으면 `9+` 다. */
+const BADGE_MAX_COUNT = 9
 
 interface DrumItemProps {
   itemName: string
@@ -90,11 +98,17 @@ function DrumItem(props: DrumItemProps): React.JSX.Element | null {
   )
 }
 
-export function DropPriceFab(): React.JSX.Element {
+export function DropPriceFab(props: {
+  /** 보스 수익 주간 탭이 보고 있는 주. 버튼이 여는 가격 입력 화면도 그 주로 열린다. */
+  periodKey: string
+}): React.JSX.Element {
   const navigation = useScreenNavigation()
   const tint = useBlurTint()
   const { definition } = useThemeAppearance()
   const fabBottomPx = useFabBottomPx()
+  // 모르는 수(`null`)와 0 은 배지를 안 세운다.
+  const unpriced = useUnpricedDropCount(props.periodKey)
+  const showsBadge = unpriced !== null && unpriced > 0
 
   // 움직임 줄이기면 진행률이 0 에 머문다. 그 값에서 첫 그림 하나가 가운데 서고 나머지 둘은
   // 불투명도가 0 이라, 애니메이션을 끄는 갈래를 따로 둘 필요가 없다.
@@ -126,8 +140,9 @@ export function DropPriceFab(): React.JSX.Element {
         >
         <Pressable
           role="button"
-          // 원 안에 글자가 없다. 이 이름이 무엇이 열리는지 말하는 유일한 자리다.
-          aria-label="아이템 가격 입력"
+          // 원 안에 글자가 없다. 이 이름이 무엇이 열리는지 말하는 유일한 자리다. 배지가 `9+` 여도
+          // 스크린리더는 실제 수를 읽는다.
+          aria-label={showsBadge ? `아이템 가격 입력, 미입력 ${unpriced}건` : '아이템 가격 입력'}
           onPress={() => {
             tapFeedback()
             navigation.navigate('DropPrice')
@@ -157,6 +172,20 @@ export function DropPriceFab(): React.JSX.Element {
           />
         </Pressable>
         </View>
+        {/* 원이 `overflow-hidden` 이라 원 밖에 얹어야 가장자리에 걸친 부분이 안 잘린다. 뜻은 원의
+            이름이 읽으므로 배지는 장식이다. */}
+        {showsBadge && (
+          <View
+            testID="drop-price-fab-badge"
+            pointerEvents="none"
+            aria-hidden
+            className="absolute right-0 top-0 h-4 min-w-4 items-center justify-center rounded-full bg-error px-1"
+          >
+            <Text className="text-10 font-bold leading-none text-on-error">
+              {unpriced > BADGE_MAX_COUNT ? `${BADGE_MAX_COUNT}+` : String(unpriced)}
+            </Text>
+          </View>
+        )}
       </View>
     </BottomBarOverlay>
   )

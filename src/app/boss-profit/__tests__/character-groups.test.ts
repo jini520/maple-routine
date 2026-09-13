@@ -15,6 +15,7 @@ import {
   collectGroupDrops,
   collectGroupValuableDrops,
   collectPayableDrops,
+  collectRevenueDrops,
   groupTotalMeso,
   sumPayout,
 } from '../character-groups'
@@ -162,6 +163,38 @@ describe('월간 탭의 금액은 주차 소계가 전부다', () => {
     expect(
       groupTotalMeso({ ...group([월간행]), weeklySubtotals: [주차소계({ totalMeso: 1_000 })] }, drops),
     ).toBe(1_000)
+  })
+})
+
+// 수익 내역 상자의 목록과 아이템 줄이 읽는 드롭. 카드 금액과 같은 원천이어야 셋이 맞는다. 월간 보스
+// 드롭은 보스 행에도 남고 그 보스가 선 주차 소계로도 옮겨 담기므로, 둘을 합치면 두 번 센다.
+describe('collectRevenueDrops: 상자가 읽는 드롭은 카드 금액과 같은 원천이다', () => {
+  const 반지 = (priceMeso: number): RecordedDrop => ({
+    category: 'equipment',
+    itemName: '반지',
+    quantity: 1,
+    priceState: 'entered',
+    priceMeso,
+    priceShare: 1,
+  })
+
+  it('주차 소계가 없으면(주간 탭) 완료된 보스 행의 드롭이다', () => {
+    const drops = { [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: priced }
+
+    expect(collectRevenueDrops(group([보스행()]), drops)).toEqual(priced)
+  })
+
+  it('주차 소계가 있으면(월간 탭) 소계의 드롭만이다. 보스 행의 드롭을 안 더한다', () => {
+    const 월간행 = 보스행({ boss: 월간보스, cycle: 'monthly', periodKey: '2026-08', payoutMeso: 0 })
+    const 월간드롭 = 반지(5_000_000_000)
+    const 주간드롭 = 반지(1_000_000)
+    const drops = { [dropRowKey(월간행.ocid, 월간행.boss, 월간행.difficulty, 월간행.periodKey)]: [월간드롭] }
+    const weeklySubtotals = [
+      주차소계({ periodKey: '2026-08-06', drops: [주간드롭] }),
+      주차소계({ periodKey: '2026-08-13', drops: [월간드롭] }),
+    ]
+
+    expect(collectRevenueDrops({ ...group([월간행]), weeklySubtotals }, drops)).toEqual([주간드롭, 월간드롭])
   })
 })
 

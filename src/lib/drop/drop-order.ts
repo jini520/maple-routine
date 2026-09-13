@@ -33,3 +33,31 @@ export function sortDropsForDisplay<T extends OrderableDrop>(drops: readonly T[]
     return dropPayoutMeso(right) - dropPayoutMeso(left)
   })
 }
+
+/** 잘린 목록과 잘려 나간 몫. */
+export interface TopDrops<T> {
+  shown: T[]
+  restCount: number
+  restMeso: number
+}
+
+/**
+ * 값을 매긴 드롭만 몫이 큰 순으로 `limit` 건. 나머지는 건수와 몫 합으로 접는다.
+ *
+ * 연출 아이템을 앞에 두지 않는다. 잘리는 목록에서 앞자리는 곧 보이는가라, 값을 안 매긴 연출
+ * 아이템이 비싼 아이템을 밀어낸다. 미입력과 기록 안함을 빼야 상위 합과 나머지 합이 아이템 합과 같다.
+ *
+ * @example
+ * const { shown, restCount, restMeso } = takeTopDropsByPayout(drops, 5)
+ */
+export function takeTopDropsByPayout<T extends OrderableDrop>(drops: readonly T[], limit: number): TopDrops<T> {
+  const ranked = drops
+    .filter((drop) => drop.priceState === 'entered')
+    .sort((left, right) => dropPayoutMeso(right) - dropPayoutMeso(left))
+  const rest = ranked.slice(limit)
+  return {
+    shown: ranked.slice(0, limit),
+    restCount: rest.length,
+    restMeso: rest.reduce((sum, drop) => sum + dropPayoutMeso(drop), 0),
+  }
+}

@@ -14,7 +14,11 @@ jest.mock('../../../storage/boss-drops', () => {
 }
   return mockModule0
 })
-const { getBossDropRecords: getBossDropRecordsMock, replaceBossDropRecords: replaceBossDropRecordsMock } = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
+const {
+  getBossDropRecords: getBossDropRecordsMock,
+  replaceBossDropRecords: replaceBossDropRecordsMock,
+  getBossDropRecordsRevision: getBossDropRecordsRevisionMock,
+} = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
 var mockModule1: Record<string, unknown>
 jest.mock('../../../storage/boss-profit', () => {
   // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다.
@@ -80,6 +84,7 @@ beforeEach(async () => {
   jest.resetModules()
   getBossDropRecordsMock.mockReset().mockResolvedValue([record()])
   replaceBossDropRecordsMock.mockReset().mockResolvedValue(undefined)
+  getBossDropRecordsRevisionMock.mockReset().mockReturnValue(0)
   getBossProfitRecordsMock.mockReset().mockResolvedValue([])
   getWeeklyPeriodKeysWithRecordsMock.mockReset().mockResolvedValue([])
   getTrackedCharacterOcidsMock.mockReset().mockResolvedValue(['ocid-1'])
@@ -276,6 +281,92 @@ describe('창을 미리 든다', () => {
     await useDropPriceStore.getState().load(PERIOD)
     expect(getBossDropRecordsMock).not.toHaveBeenCalled()
     expect(useDropPriceStore.getState().groups).toHaveLength(1)
+  })
+})
+
+// 아이템 가격 입력 버튼의 배지가 읽는 값. 창은 모듈 변수라 구독할 수 없어서, 채울 때 기간마다 센
+// 수를 상태로 낸다. 배지 숫자는 그 주 화면에 서는 `입력` 알약 수와 같아야 한다.
+describe('창을 채우면 기간마다 미입력 건수를 낸다', () => {
+  it('값을 안 매긴 드롭만 센다. 입력함과 기록 안함은 안 센다', async () => {
+    getBossDropRecordsMock.mockResolvedValue([
+      record({ dropIndex: 0 }),
+      record({ dropIndex: 1 }),
+      record({ dropIndex: 2, priceState: 'entered', priceMeso: 1_000, priceShare: 1 }),
+      record({ dropIndex: 3, priceState: 'excluded' }),
+    ])
+    const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
+
+    await useDropPriceStore.getState().warmWindow(PERIOD)
+
+    expect(useDropPriceStore.getState().unpricedCounts[PERIOD]).toBe(2)
+    // 창 안의 드롭 없는 주는 0 이다. 읽었더니 없더라 는 아는 수다.
+    expect(useDropPriceStore.getState().unpricedCounts['2026-07-30']).toBe(0)
+  })
+
+  // 읽는 사이 쓰기가 끼면 그 답은 옛 판의 것이다. 옛 수를 내면 배지가 틀린 수를 말한다.
+  it('읽는 사이 판이 바뀌면 그 수를 안 낸다', async () => {
+    getBossDropRecordsMock.mockImplementation(async () => {
+      getBossDropRecordsRevisionMock.mockReturnValue(1)
+      return [record()]
+    })
+    const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
+
+    await useDropPriceStore.getState().warmWindow(PERIOD)
+
+    expect(useDropPriceStore.getState().unpricedCounts[PERIOD]).toBeUndefined()
+  })
+
+  it('읽기가 실패하면 수를 안 낸다. 모르는 수를 0 으로 말하지 않는다', async () => {
+    getBossDropRecordsMock.mockRejectedValue(new Error('database is locked'))
+    const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
+
+    await useDropPriceStore.getState().warmWindow(PERIOD)
+
+    expect(useDropPriceStore.getState().unpricedCounts[PERIOD]).toBeUndefined()
+  })
+
+  // 배지에는 실패를 보일 자리가 없고, 미입력 신호가 사라지는 것보다 직전 수가 낫다(사용자 결정).
+  it('직전 수가 있는데 다시 읽기가 실패하면 직전 수를 둔다', async () => {
+    const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
+    await useDropPriceStore.getState().warmWindow(PERIOD)
+    expect(useDropPriceStore.getState().unpricedCounts[PERIOD]).toBe(1)
+
+    getBossDropRecordsRevisionMock.mockReturnValue(1)
+    getBossDropRecordsMock.mockRejectedValue(new Error('database is locked'))
+    await useDropPriceStore.getState().warmWindow(PERIOD)
+
+    expect(getBossDropRecordsMock).toHaveBeenCalledTimes(2)
+    expect(useDropPriceStore.getState().unpricedCounts[PERIOD]).toBe(1)
+  })
+
+  it('가격 입력 화면의 load 가 창을 채워도 같은 수를 낸다', async () => {
+    const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
+
+    await useDropPriceStore.getState().load(PERIOD)
+
+    expect(useDropPriceStore.getState().unpricedCounts[PERIOD]).toBe(1)
+  })
+
+  // 자동 기록처럼 쓰기가 몰려 오면 쓰기마다 창을 읽게 된다. 도는 채우기가 끝난 뒤 한 번만 다시 읽는다.
+  it('채우는 중에 여러 번 불러도 끝난 뒤 한 번만 다시 채운다', async () => {
+    let 판 = 0
+    getBossDropRecordsRevisionMock.mockImplementation(() => 판)
+    getBossDropRecordsMock.mockImplementation(async () => {
+      판 += 1
+      return [record()]
+    })
+    const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
+    const store = useDropPriceStore.getState()
+
+    const first = store.warmWindow(PERIOD)
+    void store.warmWindow(PERIOD)
+    void store.warmWindow(PERIOD)
+    await first
+    // 줄 선 다시 채우기가 끝날 때까지 기다린다.
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(getBossDropRecordsMock).toHaveBeenCalledTimes(2)
   })
 })
 

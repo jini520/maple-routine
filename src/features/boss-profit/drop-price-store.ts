@@ -63,6 +63,13 @@ export interface DropPriceGroup {
 interface DropPriceState {
   status: 'idle' | 'loading' | 'ready' | 'failed'
   /**
+   * 기간별로 마지막에 센 미입력 건수. 아이템 가격 입력 버튼의 배지가 읽는다.
+   *
+   * 창(`windowCache`)은 모듈 변수라 구독할 수 없어서, 창을 채울 때 센 수를 여기 낸다. 다시 세는 동안과
+   * 다시 읽기가 실패했을 때는 직전 수가 남는다. 없는 키는 한 번도 못 센 기간이다.
+   */
+  unpricedCounts: Record<string, number>
+  /**
    * 지금 상태가 **어느 기간의 것인가**. 읽기를 걸 때 곧장 바뀐다.
    *
    * 화면이 `status` 만 보면 지난번 기간의 `ready` 를 이번 기간의 사실로 읽어, 기록이 있는데도
@@ -156,6 +163,28 @@ function readWindowCache(periodKey: string, stamp: string): DropPriceGroup[] | n
   return entry === undefined || entry.stamp !== stamp ? null : entry.groups
 }
 
+/** 값을 안 매긴 기록 수. 가격 입력 화면의 `입력` 알약 수와 같은 정의다. */
+export function countUnpricedDrops(groups: readonly DropPriceGroup[]): number {
+  return groups.reduce(
+    (sum, group) => sum + group.entries.filter((entry) => entry.drop.priceState === undefined).length,
+    0,
+  )
+}
+
+/**
+ * 채운 창의 기간별 미입력 건수를 낸다.
+ *
+ * 읽는 사이 판이 바뀌었으면 안 낸다. 옛 판의 수가 늦게 도착해 뒤따른 채우기의 새 수를 덮으면 안 된다.
+ */
+function publishUnpricedCounts(built: Map<string, DropPriceGroup[]>, stamp: string): void {
+  if (bossRecordsStamp() !== stamp) return
+  const counts: Record<string, number> = {}
+  for (const [key, groups] of built) {
+    counts[key] = countUnpricedDrops(groups)
+  }
+  useDropPriceStore.setState((state) => ({ unpricedCounts: { ...state.unpricedCounts, ...counts } }))
+}
+
 /**
  * 창 전체를 **조회 둘로** 읽어 표를 채운다. 실패하면 `null`.
  *
@@ -178,6 +207,7 @@ async function fillWindowCache(periodKey: string): Promise<Map<string, DropPrice
       built.set(key, [])
       windowCache.set(key, { groups: [], stamp })
     }
+    publishUnpricedCounts(built, stamp)
     return built
   }
 
@@ -223,6 +253,7 @@ async function fillWindowCache(periodKey: string): Promise<Map<string, DropPrice
       built.set(key, groups)
       windowCache.set(key, { groups, stamp })
     }
+    publishUnpricedCounts(built, stamp)
     return built
   } catch {
     return null
@@ -233,10 +264,15 @@ export function clearDropWindowForTests(): void {
   windowCache.clear()
 }
 
+/** 도는 `warmWindow` 채우기. 도는 동안 들어온 부탁은 `queuedWarmKey` 하나로 접는다. */
+let warmInFlight: Promise<unknown> | null = null
+let queuedWarmKey: string | null = null
+
 export const useDropPriceStore = create<DropPriceState>((set, get) => ({
   status: 'idle',
   periodKey: null,
   groups: [],
+  unpricedCounts: {},
 
   async load(periodKey) {
     const cached = readWindowCache(periodKey, bossRecordsStamp())
@@ -257,8 +293,21 @@ export const useDropPriceStore = create<DropPriceState>((set, get) => ({
   },
 
   async warmWindow(periodKey) {
+    // 자동 기록처럼 쓰기가 몰려 오면 쓰기마다 불린다. 도는 채우기가 끝난 뒤 한 번만 다시 채운다.
+    if (warmInFlight !== null) {
+      queuedWarmKey = periodKey
+      return
+    }
     if (readWindowCache(periodKey, bossRecordsStamp()) !== null) return
-    await fillWindowCache(periodKey)
+    warmInFlight = fillWindowCache(periodKey)
+    try {
+      await warmInFlight
+    } finally {
+      warmInFlight = null
+    }
+    const queued = queuedWarmKey
+    queuedWarmKey = null
+    if (queued !== null) void get().warmWindow(queued)
   },
 
   async savePrice(entry, priceMeso, share) {

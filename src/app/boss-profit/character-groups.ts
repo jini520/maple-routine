@@ -182,6 +182,22 @@ export function collectPayableDrops(
   return group.bossRows.flatMap((row) => confirmedDropsOf(row, dropsByRowKey))
 }
 
+/**
+ * 수익 내역 상자의 목록과 `아이템` 줄이 읽는 드롭. `groupTotalMeso` 와 같은 원천이다.
+ *
+ * 주차 소계가 있으면(월간 탭) 소계의 드롭만 낸다. 월간 보스 드롭은 보스 행에도 남고 그 보스가 선
+ * 주차 소계로도 옮겨 담겨, 둘을 합치면 두 번 센다.
+ */
+export function collectRevenueDrops(
+  group: CharacterGroup,
+  dropsByRowKey: Record<string, RecordedDrop[]>,
+): RecordedDrop[] {
+  if (group.weeklySubtotals.length > 0) {
+    return group.weeklySubtotals.flatMap((subtotal) => subtotal.drops)
+  }
+  return collectPayableDrops(group, dropsByRowKey)
+}
+
 // 이 캐릭터가 현재 기간에 먹은 고가 아이템 드롭 목록. 카드의 골드 링·글로우·우상단 배지가
 // 이것을 본다. weekly 탭 기준이며 monthly 탭에서는 월간 보스 행의 드롭만 집계된다.
 //

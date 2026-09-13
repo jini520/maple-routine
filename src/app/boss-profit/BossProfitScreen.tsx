@@ -20,7 +20,6 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { ScrollView } from 'react-native'
 import { Pressable, View } from 'react-native'
 
-import { useDropPriceStore } from '../../features/boss-profit/drop-price-store'
 import { useBossProfitStore } from '../../features/boss-profit/store'
 import { usePeriodLoadErrorToast } from '../../features/boss-profit/use-period-error-toast'
 import {
@@ -66,7 +65,7 @@ import { DropPriceFab } from './DropPriceFab'
 import {
   buildCharacterGroups,
   collectAllValuableDrops,
-  collectPayableDrops,
+  collectRevenueDrops,
   groupTotalMeso,
 } from './character-groups'
 // `DeltaChip` 은 증감 표시를 통계 기능으로 옮길 때까지 쓰이지 않는다. 컴포넌트와 테스트는
@@ -81,6 +80,9 @@ const BOSS_PROFIT_TAB_LABELS: Record<(typeof BOSS_PROFIT_TABS)[number], string> 
   weekly: '주간',
   monthly: '월간',
 }
+
+/** 총 수익 내역 상자에 싣는 아이템 건수. 나머지는 한 줄로 접는다. */
+const PERIOD_REVENUE_LIST_LIMIT = 10
 
 export function BossProfitScreen(): React.JSX.Element {
   const {
@@ -183,17 +185,6 @@ export function BossProfitScreen(): React.JSX.Element {
     scrollRef.current?.scrollTo({ y: 0, animated: false })
   }, [tab, periodKey])
 
-  /**
-   * 아이템 가격 화면이 읽을 창을 미리 채운다. **여기서 부르는 방향이라야 한다** - 저쪽 스토어가
-   * 이 스토어를 부르므로(`applyExternalDropEdit`) 반대로 두면 순환 의존이 된다.
-   *
-   * 주간 탭에서만 부른다. 그 화면으로 가는 문(`DropPriceFab`)이 거기에만 서기 때문이다.
-   */
-  useEffect(() => {
-    if (tab !== 'weekly') return
-    void useDropPriceStore.getState().warmWindow(periodKey)
-  }, [tab, periodKey])
-
   // 아래 `usePeriodLoadErrorToast` 가 이 값을 읽으므로 조기 반환보다 위에서 계산한다. 순수
   // 함수라 위치를 올려도 결과가 같고, 토스트 조건과 화면 조건이 같은 값을 보게 된다.
   //
@@ -252,15 +243,9 @@ export function BossProfitScreen(): React.JSX.Element {
   // 이전 이동 가능 여부는 스토어가 매 기간 로드 시 계산해 둔 값으로 판단한다. 조회 불가능하고
   // 캐시 기록도 없는 기간에 착지하지 않도록 막는다.
   const isPrevDisabled = !canGoPreviousPeriod
-  // 이 기간의 아이템 몫. 월간 탭은 주간 수익이 소계로만 들어오므로 그쪽 몫도 더해야 결정석과
-  // 정확히 갈린다.
-  const periodItemMeso = characterGroups.reduce(
-    (sum, group) =>
-      sum +
-      sumDropPayout(collectPayableDrops(group, dropsByRowKey)) +
-      group.weeklySubtotals.reduce((weekSum, subtotal) => weekSum + sumDropPayout(subtotal.drops), 0),
-    0,
-  )
+  // 이 기간의 아이템 드롭. 카드 금액과 같은 원천이라 결정석과 정확히 갈린다.
+  const periodRevenueDrops = characterGroups.flatMap((group) => collectRevenueDrops(group, dropsByRowKey))
+  const periodItemMeso = sumDropPayout(periodRevenueDrops)
   const crystalTotalMeso = totalMeso - periodItemMeso
   // 총 수익 헤드라인 우측 뱃지용. 이 기간 전체 고가 드롭.
   const periodValuableDrops = collectAllValuableDrops(characterGroups, dropsByRowKey)
@@ -519,14 +504,16 @@ export function BossProfitScreen(): React.JSX.Element {
         </ScreenScroll>
 
         {/* 아이템 가격 입력으로 가는 문. 주간 탭에만 선다(사용자 지정). 월간 보스 드롭에 값을
-            매기는 것은 이 제약과 무관하다 - 그 화면이 그 주에 서는 월간 보스를 함께 담는다. */}
-        {showsDropPriceFab && <DropPriceFab />}
+            매기는 것은 이 제약과 무관하다 - 그 화면이 그 주에 서는 월간 보스를 함께 담는다.
+            가격 입력 창을 채우는 일도 버튼이 서 있는 동안 버튼이 한다. */}
+        {showsDropPriceFab && <DropPriceFab periodKey={periodKey} />}
 
         {/* 총 수익 내역. 카드·보스 행과 같은 상자다. 셸 바깥에 두는 것은 별도 네이티브
             윈도우라 트리 위치가 겹침에 영향을 주지 않기 때문이다. */}
         {isPeriodPopoverOpen && (
           <ItemRevenuePopover
-            drops={characterGroups.flatMap((group) => collectPayableDrops(group, dropsByRowKey))}
+            drops={periodRevenueDrops}
+            limit={PERIOD_REVENUE_LIST_LIMIT}
             crystalMeso={crystalTotalMeso}
             itemMeso={periodItemMeso}
             anchor={periodAnchor}
