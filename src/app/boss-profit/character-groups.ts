@@ -28,7 +28,10 @@ export interface CharacterGroup {
 
 export interface WorldCrystalSummary {
   world: string
+  /** 주간 90 한도에 드는 주간 보스 결정석 수. */
   cleared: number
+  /** 그 월드의 월간 보스 결정석 수. 90 한도와 무관한 별개 수치다. */
+  monthlyCleared: number
 }
 
 export const REFERENCE_ENTRIES: BossReferenceEntry[] = [
@@ -238,8 +241,8 @@ export function collectAllValuableDrops(
 // 이 캐릭터가 이번 주에 처치한 주간 보스 수. 처치 수는 스토어 필드가 아니라 rows 에서
 // 파생한다. 보스명 기준 distinct 라 같은 보스를 여러 난이도로 완료해도 1 로 센다. 게임 룰이
 // 그렇고 보스 스케줄러가 쓰는 `countClearedWeeklyBosses` 도 content_name 그룹당 1 이다.
-// 시즌 보스(메이린)는 12마리 제한 예외라 제외한다. cycle 필터는 주간 탭에서 사실상 no-op
-// 이지만 월드별 결정석 합계도 이 함수를 공유하므로 함수 안에 둔다.
+// 시즌 보스(메이린)는 12마리 제한 예외라 제외한다. 주간 탭의 행에는 그 주에 선 월간 보스도
+// 들어 있어, cycle 필터가 월간 보스를 12 · 90 한도에서 빼는 방어선이다.
 export function countGroupClearedWeeklyBosses(group: CharacterGroup): number {
   const clearedBossNames = new Set<string>()
   for (const row of group.bossRows) {
@@ -266,8 +269,8 @@ export function countGroupClearedWeeklyBosses(group: CharacterGroup): number {
 // 무관하게 그 주 전체를 센다.
 export function summarizeWorldCrystals(groups: CharacterGroup[]): WorldCrystalSummary[] {
   // 월드 → (캐릭터 → 그 월드에서 처치한 보스명 집합). 캐릭터를 한 번 더 갈라야 서로 다른
-  // 캐릭터가 같은 보스를 잡은 것이 하나로 합쳐지지 않는다.
-  const bossNamesByWorld = new Map<string, Map<string, Set<string>>>()
+  // 캐릭터가 같은 보스를 잡은 것이 하나로 합쳐지지 않는다. 주간과 월간은 한도가 갈려 집합도 따로다.
+  const byWorld = new Map<string, Map<string, { weekly: Set<string>; monthly: Set<string> }>>()
 
   for (const group of groups) {
     for (const row of group.bossRows) {
@@ -276,25 +279,29 @@ export function summarizeWorldCrystals(groups: CharacterGroup[]): WorldCrystalSu
       }
       // 월드 집합과 처치 수를 분리한다. 월드를 아는 행이 있으면 처치가 0 이어도 그 월드를
       // 목록에 넣어 `0 / 90` 을 보여준다. 완료 조건을 월드 판정에 섞으면 그 표시가 사라진다.
-      const byCharacter = bossNamesByWorld.get(row.world) ?? new Map<string, Set<string>>()
-      const bossNames = byCharacter.get(row.ocid) ?? new Set<string>()
-      if (row.cycle === 'weekly' && row.isComplete && !isSeasonBossName(row.boss)) {
-        bossNames.add(row.boss)
+      const byCharacter = byWorld.get(row.world) ?? new Map<string, { weekly: Set<string>; monthly: Set<string> }>()
+      const bossNames = byCharacter.get(row.ocid) ?? { weekly: new Set<string>(), monthly: new Set<string>() }
+      if (row.isComplete && row.cycle === 'weekly' && !isSeasonBossName(row.boss)) {
+        bossNames.weekly.add(row.boss)
+      }
+      if (row.isComplete && row.cycle === 'monthly') {
+        bossNames.monthly.add(row.boss)
       }
       byCharacter.set(row.ocid, bossNames)
-      bossNamesByWorld.set(row.world, byCharacter)
+      byWorld.set(row.world, byCharacter)
     }
   }
 
-  return [...bossNamesByWorld].map(([world, byCharacter]) => ({
+  return [...byWorld].map(([world, byCharacter]) => ({
     world,
-    cleared: [...byCharacter.values()].reduce((sum, bossNames) => sum + bossNames.size, 0),
+    cleared: [...byCharacter.values()].reduce((sum, bossNames) => sum + bossNames.weekly.size, 0),
+    monthlyCleared: [...byCharacter.values()].reduce((sum, bossNames) => sum + bossNames.monthly.size, 0),
   }))
 }
 
 // 이 캐릭터가 이 달에 처치한 월간 보스 수(보스명 distinct. 같은 보스를 여러 난이도로 잡아도 1).
-// 주간 쪽 `countGroupClearedWeeklyBosses` 와 대칭이며 월간 탭 진행 링과 월간 결정석 칩이 이
-// 함수 하나를 공유한다.
+// 주간 쪽 `countGroupClearedWeeklyBosses` 와 대칭이며 월간 탭 진행 링이 쓴다. 결정석 칩의 월간
+// 수는 월드별로 세는 `summarizeWorldCrystals` 에서 나온다.
 export function countGroupClearedMonthlyBosses(group: CharacterGroup): number {
   const clearedBossNames = new Set<string>()
   for (const row of group.bossRows) {
@@ -302,11 +309,4 @@ export function countGroupClearedMonthlyBosses(group: CharacterGroup): number {
     clearedBossNames.add(row.boss)
   }
   return clearedBossNames.size
-}
-
-// 이 기간 월간 보스(검은마법사) 결정석 개수. 주간 90 한도에 포함되지 않는 별개 수치라 위 주간
-// 집계와 섞지 않는다. 시즌 보스는 weekly 소속이라 여기선 판정할 것이 없다. 결정석은 캐릭터마다
-// 각자 나오므로 그룹별 처치 수를 더한다.
-export function countMonthlyCrystals(groups: CharacterGroup[]): number {
-  return groups.reduce((total, group) => total + countGroupClearedMonthlyBosses(group), 0)
 }

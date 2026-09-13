@@ -20,7 +20,7 @@ import {
   Text,
 } from '../../components/atoms'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
-import { countMonthlyCrystals, summarizeWorldCrystals } from './character-groups'
+import { summarizeWorldCrystals } from './character-groups'
 import type { CharacterGroup } from './character-groups'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 
@@ -34,15 +34,18 @@ const BREAKDOWN_EDGE_GAP = 12
 export const WEEKLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_weekly.webp')
 export const MONTHLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_monthly.webp')
 
-// 총 수익 헤드라인의 결정석 판매 현황. 라벨행의 `{기간} 총 수익` 텍스트 바로 옆 칩이다. 금액행
-// 아래 새 줄로 두면 그 한 줄이 헤더를 그대로 높여 목록을 잠식한다.
+// 총 수익 헤드라인의 결정석 판매 현황. 주간 탭 라벨행의 `{기간} 총 수익` 텍스트 바로 옆 칩이다.
+// 금액행 아래 새 줄로 두면 그 한 줄이 헤더를 그대로 높여 목록을 잠식한다.
+//
+// 칩 하나에 몫이 둘이다. 주간 90 한도 대비 주간 몫과, 그 주에 잡은 월간 보스의 월간 몫이다. 월간
+// 몫은 한도가 없어 분모 없이 개수만 적고, 안 잡은 주에도 `0개` 로 선다.
 //
 // 칩 높이는 라벨(text-xs = 16px)을 넘지 않아야 한다. 이 줄에 흐름으로 들어가는 요소가
 // 라벨행(h-6 = 24px)을 넘으면 라벨행이 튄다. 그것이 고가 드롭 배지(24px)를 절대배치로 빼낸
 // 이유이고, 그 배지가 우측 끝을 쓰므로 칩은 좌측(라벨 옆)에 붙는다.
 //
 // 월드별 분해는 흐름이 아니라 별도 네이티브 창의 팝오버로 띄운다. 펼쳐도 헤더 높이가 변하지 않는다.
-export function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGroup[] }): React.JSX.Element | null {
+export function CrystalSummaryChip(props: { groups: CharacterGroup[] }): React.JSX.Element | null {
   // 구조 분해가 필수다. `popover.toggle` 처럼 프로퍼티로 읽으면 `react-hooks/refs` 가 그 접근을
   // 렌더 중 ref 접근으로 본다. 훅이 안에서 `useRef` 를 쓴다.
   const {
@@ -54,38 +57,39 @@ export function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGro
   } = useAnchoredPopover()
   const { width: windowWidth } = useWindowDimensions()
 
-  const isWeekly = props.tab === 'weekly'
-  const worlds = isWeekly ? summarizeWorldCrystals(props.groups) : []
-  // 주간 탭인데 월드를 아는 캐릭터가 하나도 없으면(구버전 캐시만 있는 경우) 대비할 한도가 없다.
-  // 반대로 월드는 알지만 처치 수가 0 이면 `0 / 90` 을 그대로 보여준다. 정보로서 유효하다.
-  if (isWeekly && worlds.length === 0) return null
+  const worlds = summarizeWorldCrystals(props.groups)
+  // 월드를 아는 캐릭터가 하나도 없으면(구버전 캐시만 있는 경우) 대비할 한도가 없다. 반대로 월드는
+  // 알지만 처치 수가 0 이면 `0 / 90` 을 그대로 보여준다. 정보로서 유효하다.
+  if (worlds.length === 0) return null
 
-  const iconUrl = isWeekly ? WEEKLY_CRYSTAL_ICON_URL : MONTHLY_CRYSTAL_ICON_URL
-  const cleared = isWeekly
-    ? worlds.reduce((sum, summary) => sum + summary.cleared, 0)
-    : countMonthlyCrystals(props.groups)
+  const cleared = worlds.reduce((sum, summary) => sum + summary.cleared, 0)
+  // 월간 수도 월드별 줄의 합이다. 칩과 펼친 줄이 같은 수를 말하고, 월드를 모르는 행은 둘 다에서 빠진다.
+  const monthlyCleared = worlds.reduce((sum, summary) => sum + summary.monthlyCleared, 0)
   // 각 월드가 각자 90 을 가지므로 복수 월드의 분모는 90 × 월드 수다.
   const limit = WEEKLY_CRYSTAL_SALE_LIMIT * worlds.length
   const isExpandable = worlds.length > 1
-  const label = isWeekly ? `주간 결정석 판매 ${cleared} / ${limit}` : `월간 결정석 ${cleared}개`
+  const label = `주간 결정석 판매 ${cleared} / ${limit}, 월간 결정석 ${monthlyCleared}개`
 
   // 칩은 화면에 간단히만. 월드 수·월드명 같은 부가 표기는 팝오버로 넘긴다.
   const chipContent = (
     <>
-      {iconUrl !== null && <Image source={iconUrl} resizeMode="contain" className="h-4 w-4 shrink-0" />}
+      {WEEKLY_CRYSTAL_ICON_URL !== null && (
+        <Image source={WEEKLY_CRYSTAL_ICON_URL} resizeMode="contain" className="h-4 w-4 shrink-0" />
+      )}
       {/* 숫자와 단위 사이는 마진이 아니라 실제 공백 문자로 띄운다. 마진만으론 읽는 문자열이
           `34/90` 으로 붙어 스크린리더가 이어 읽는다. `개` 는 한국어 표기상 숫자에 붙으므로
           공백을 넣지 않는다. */}
-      {isWeekly ? (
-        <Text className="text-xs font-bold leading-none text-primary-ink" style={TABULAR_NUMS}>
-          {cleared} <Text className="font-semibold opacity-70">/ {limit}</Text>
-        </Text>
-      ) : (
-        <Text className="text-xs font-bold leading-none text-primary-ink" style={TABULAR_NUMS}>
-          {cleared}
-          <Text className="font-semibold opacity-70">개</Text>
-        </Text>
+      <Text className="text-xs font-bold leading-none text-primary-ink" style={TABULAR_NUMS}>
+        {cleared} <Text className="font-semibold opacity-70">/ {limit}</Text>
+      </Text>
+      <Text className="text-xs font-semibold leading-none text-primary-ink opacity-70">·</Text>
+      {MONTHLY_CRYSTAL_ICON_URL !== null && (
+        <Image source={MONTHLY_CRYSTAL_ICON_URL} resizeMode="contain" className="h-4 w-4 shrink-0" />
       )}
+      <Text className="text-xs font-bold leading-none text-primary-ink" style={TABULAR_NUMS}>
+        {monthlyCleared}
+        <Text className="font-semibold opacity-70">개</Text>
+      </Text>
     </>
   )
 
@@ -93,8 +97,8 @@ export function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGro
   // `leading-none` 과 함께 두어야 글꼴 line-height 가 칩 높이를 밀어 올리지 않는다.
   const chipClassName = 'ml-2 h-5 shrink-0 flex-row items-center gap-1 rounded-full bg-primary-tint px-1.5'
 
-  // 단일 월드·월간 탭은 펼칠 것이 없어 버튼으로 두지 않는다. 수치만으로는 무엇의 비율인지
-  // 읽히지 않으므로 칩 전체에 레이블을 주고 아이콘은 장식으로 남긴다.
+  // 단일 월드는 펼칠 것이 없어 버튼으로 두지 않는다. 수치만으로는 무엇의 비율인지 읽히지 않으므로
+  // 칩 전체에 레이블 하나를 주고 아이콘은 장식으로 남긴다.
   if (!isExpandable) {
     return (
       <View role="img" aria-label={label} className={chipClassName}>
@@ -165,8 +169,9 @@ export function CrystalSummaryChip(props: { tab: BossCycle; groups: CharacterGro
                   <View key={summary.world} className="flex-row items-center gap-1.5 px-1">
                     {emblemUrl !== null && <Image source={emblemUrl} className="h-4 w-4 shrink-0" resizeMode="contain" />}
                     <Text className="text-xs text-text-muted">{summary.world}</Text>
+                    {/* 칩에 두 몫이 있으니 펼친 줄도 월드마다 두 몫을 함께 말한다. */}
                     <Text className="ml-auto pl-3 text-xs font-semibold text-text" style={TABULAR_NUMS}>
-                      {summary.cleared} / {WEEKLY_CRYSTAL_SALE_LIMIT}
+                      {`${summary.cleared} / ${WEEKLY_CRYSTAL_SALE_LIMIT} | 월간 ${summary.monthlyCleared}개`}
                     </Text>
                   </View>
                 )

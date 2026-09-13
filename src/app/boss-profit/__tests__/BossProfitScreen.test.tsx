@@ -819,11 +819,25 @@ describe('총 수익 헤드라인', () => {
     expect(popover.getByText('15,000,000')).toBeTruthy()
   })
 
-  it('월드를 아는 캐릭터가 있으면 결정석 판매 현황 칩이 선다', async () => {
+  it('월드를 아는 캐릭터가 있으면 결정석 판매 현황 칩이 선다. 월간 몫을 함께 든다', async () => {
     mockStore({ status: 'loaded', periodState: 'recorded', rows: [보스행({ world: '스카니아' })] })
     const { getByLabelText } = await renderScreen()
 
-    expect(getByLabelText(`주간 결정석 판매 1 / ${WEEKLY_CRYSTAL_SALE_LIMIT}`)).toBeTruthy()
+    expect(getByLabelText(`주간 결정석 판매 1 / ${WEEKLY_CRYSTAL_SALE_LIMIT}, 월간 결정석 0개`)).toBeTruthy()
+  })
+
+  // 주간 탭 행에 그 주에 선 월간 보스가 들어 있어, 그 주의 칩이 월간 결정석을 센다.
+  it('그 주에 월간 보스를 잡았으면 월간 몫이 그 수이고 주간 몫은 그대로다', async () => {
+    mockStore({
+      status: 'loaded',
+      periodState: 'recorded',
+      rows: [
+        보스행({ world: '스카니아' }),
+        보스행({ boss: weeklyBossesData.monthly[0].boss, cycle: 'monthly', periodKey: CURRENT_MONTHLY, world: '스카니아' }),
+      ] })
+    const { getByLabelText } = await renderScreen()
+
+    expect(getByLabelText(`주간 결정석 판매 1 / ${WEEKLY_CRYSTAL_SALE_LIMIT}, 월간 결정석 1개`)).toBeTruthy()
   })
 
   it('기간 전체 고가 드롭이 있으면 헤드라인에도 뱃지가 붙는다', async () => {
@@ -872,6 +886,23 @@ describe('월간 탭', () => {
     const { getByText } = await renderScreen()
 
     expect(getByText('지내우시')).toBeTruthy()
+  })
+
+  // 월간 결정석 칩은 주간 탭으로 옮겼다. 라벨행에는 `{기간} 총 수익` 과 고가 드롭 배지만 선다.
+  it('결정석 칩이 없다', async () => {
+    mockStore({
+      status: 'loaded',
+      periodState: 'recorded',
+      tab: 'monthly',
+      loadedTab: 'monthly',
+      periodKey: CURRENT_MONTHLY,
+      loadedPeriodKey: CURRENT_MONTHLY,
+      rows: [보스행({ boss: weeklyBossesData.monthly[0].boss, cycle: 'monthly', periodKey: CURRENT_MONTHLY, world: '스카니아' })],
+      weeklySubtotals: [주차소계()] })
+    const { getByText, queryByLabelText } = await renderScreen()
+
+    expect(getByText(/총 수익$/)).toBeTruthy()
+    expect(queryByLabelText(/결정석/)).toBeNull()
   })
 })
 
