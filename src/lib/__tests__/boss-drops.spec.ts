@@ -258,6 +258,48 @@ describe('planConfirmedDifficultyDropMigration', () => {
     ])
   })
 
+  // 한 카드에는 같은 타일(일반 아이템은 이름, 상자 결과는 상자)이 하나만 선다. 이관이 그것을 둘로
+  // 만들면 시트가 하나만 보여 주고 금액은 두 번 센다.
+  it('확정 난이도에 같은 아이템이 이미 있으면 두 번 넣지 않는다. 이미 있는 쪽을 남긴다', () => {
+    const plan = planConfirmedDifficultyDropMigration('스우', '하드', 패치전, [
+      { difficulty: '하드', dropIndex: 0, category: 'equipment', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
+      {
+        difficulty: '익스트림',
+        dropIndex: 0,
+        category: 'equipment',
+        itemName: '루즈 컨트롤 머신 마크',
+        slot: '얼굴장식',
+        quantity: 1,
+        priceState: 'entered',
+        priceMeso: 15_000_000_000,
+      },
+    ])
+
+    expect(plan).toEqual({
+      drops: [{ category: 'equipment', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 }],
+      staleDifficulties: ['익스트림'],
+    })
+  })
+
+  it('같은 상자면 결과가 달라도 같은 드롭이다', () => {
+    const plan = planConfirmedDifficultyDropMigration('스우', '하드', 패치전, [
+      { difficulty: '하드', dropIndex: 0, category: 'consumable', itemName: '리스트레인트 링', boxOrigin: '홍옥의 보스 반지 상자', ringLevel: 3, quantity: 1 },
+      { difficulty: '익스트림', dropIndex: 0, category: 'consumable', itemName: '웨폰퍼프 - I 링', boxOrigin: '홍옥의 보스 반지 상자', ringLevel: 4, quantity: 1 },
+    ])
+
+    expect(plan?.drops.map((drop) => drop.itemName)).toEqual(['리스트레인트 링'])
+  })
+
+  it('옛 난이도 키 여럿에 같은 아이템이 있어도 하나만 옮긴다', () => {
+    const plan = planConfirmedDifficultyDropMigration('스우', '하드', 패치전, [
+      { difficulty: '익스트림', dropIndex: 0, category: 'fixed', itemName: '주문의 흔적', quantity: 2 },
+      { difficulty: '노멀', dropIndex: 0, category: 'fixed', itemName: '주문의 흔적', quantity: 1 },
+    ])
+
+    // 정규 난이도 순서(노멀 → 익스트림)의 앞선 것이 남는다.
+    expect(plan?.drops).toEqual([{ category: 'fixed', itemName: '주문의 흔적', quantity: 1 }])
+  })
+
   it('이관분이 전부 삭제돼도 옛 키는 비워야 한다. 고아를 남기지 않는다', () => {
     const plan = planConfirmedDifficultyDropMigration('스우', '하드', 패치전,[
       { difficulty: '익스트림', dropIndex: 0, category: 'equipment', itemName: '컴플리트 언더컨트롤', quantity: 1 },
