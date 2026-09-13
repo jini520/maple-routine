@@ -308,7 +308,7 @@ pop 되면 설정으로 돌아온다.
 - **저장은 컨텐츠 스케줄러 store의 `saveTrackedOcids` 를 그대로 부른다**([[ADR-140]] 결정 4. 세 번째
   사본을 만들지 않는다). 그 뒤 보스와 수익 store를 순차로 다시 읽힌다(결정 5). 로스터 로딩 · 실패 ·
   재시도 정책은 [content-scheduler.md](./content-scheduler.md) 의 "캐릭터 관리 피커" 절 그대로다.
-- **대표는 목록 저장 뒤에 선택 스토어의 `setRepresentative` 로 쓴다**([[ADR-275]] 결정 2, 설계 · 구현 전). 저장소 함수
+- **대표는 목록 저장 뒤에 선택 스토어의 `setRepresentative` 로 쓴다**([[ADR-275]] 결정 2). 저장소 함수
   (`setRepresentativeCharacter` · `clearRepresentativeCharacter`)를 바로 부르면 기기 값은 바뀌지만 today
   가 든 값이 안 바뀐다. 위 `reloadTabStores` 로는 못 푼다. 그 함수가 다시 읽히는 것은 스토어의 추적
   목록이고, 대표만 바꾼 저장은 목록을 안 건드린다(이슈 #395). 목록 저장 뒤인 이유는 목록 저장 안의
