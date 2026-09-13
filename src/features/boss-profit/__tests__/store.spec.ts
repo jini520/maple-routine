@@ -100,6 +100,10 @@ jest.mock('../../../storage/boss-drops', () => ({
 }))
 const { getBossDropRecords: getBossDropRecordsMock, replaceBossDropRecords: replaceBossDropRecordsMock, getBossDropRecordsRevision: getBossDropRecordsRevisionMock } = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
 
+// 월드 리프한 기간의 중복 기록 정리. 자동 기록 뒤에 불리고, 지운 것이 있으면 기록을 다시 읽는가만 본다.
+jest.mock('../world-leap-records', () => ({ cleanUpWorldLeapDuplicates: jest.fn() }))
+const { cleanUpWorldLeapDuplicates: cleanUpWorldLeapMock } = jest.requireMock('../world-leap-records') as Record<string, jest.Mock>
+
 // 잡지 않은 보스의 드롭을 지운 뒤 **건수를 토스트로 알린다**. 값까지 사라지므로.
 const mockShowInfo = jest.fn()
 jest.mock('../../toast/store', () => ({
@@ -187,6 +191,7 @@ beforeEach(() => {
   getBossDropRecordsRevisionMock.mockImplementation(() => 0)
   mockShowInfo.mockClear()
   syncWindowMock.mockReset().mockResolvedValue(undefined)
+  cleanUpWorldLeapMock.mockReset().mockResolvedValue(0)
   useBossProfitStore.setState({
     status: 'idle',
     tab: 'weekly',
@@ -3871,3 +3876,52 @@ describe('첫 페인트의 조회 불가', () => {
   })
 })
 
+// 리프 전 완료가 새 ocid 로 넘어와 같은 처치가 두 ocid 로 한 번씩 기록된다. 정리가 옛 기록을 지우면 이번
+// 회차 화면에서도 옛 카드 행이 빠지고, 옮겨 온 파티원 수가 새 카드에 서야 한다.
+describe('월드 리프한 기간의 중복 기록', () => {
+  function 기록(ocid: string, partySize: number): BossProfitRecord {
+    return {
+      ocid,
+      boss: '자쿰',
+      difficulty: '카오스',
+      cycle: 'weekly',
+      periodKey: getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
+      partySize,
+      priceMeso: 8_080_000,
+      payoutMeso: Math.floor(8_080_000 / partySize),
+      recordedAt: '2026-09-11T00:00:00.000Z',
+      world: ocid === 'old' ? '챌린저스2' : '엘리시움',
+    }
+  }
+
+  it('자동 기록 뒤에 정리하고, 지운 것이 있으면 기록을 다시 읽어 그린다', async () => {
+    let cleaned = false
+    syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'new', characterName: '캐릭터-new' })])
+    getRecordedCharacterOcidsMock.mockResolvedValue(['new', 'old'])
+    getBossProfitRecordsMock.mockImplementation(async () =>
+      cleaned ? [기록('new', 3)] : [기록('old', 3), 기록('new', 1)],
+    )
+    cleanUpWorldLeapMock.mockImplementation(async () => {
+      cleaned = true
+      return 1
+    })
+
+    await useBossProfitStore.getState().refresh(['new'])
+
+    // 방금 동기화가 쓴 새 기록의 짝을 봐야 해서 동기화 뒤다.
+    expect(cleanUpWorldLeapMock.mock.invocationCallOrder[0]).toBeGreaterThan(syncSchedulesMock.mock.invocationCallOrder[0])
+    const rows = useBossProfitStore.getState().rows
+    expect(rows.map((row) => row.ocid)).toEqual(['new'])
+    expect(rows[0]).toMatchObject({ partySize: 3, payoutMeso: Math.floor(8_080_000 / 3) })
+  })
+
+  // 기록 조회가 실패하면 무엇이 있는지 모른다. 그 상태로 지우지 않는다.
+  it('기록 조회가 실패하면 정리하지 않는다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'new', characterName: '캐릭터-new' })])
+    getBossProfitRecordsMock.mockRejectedValue(new Error('sqlite'))
+
+    await useBossProfitStore.getState().refresh(['new'])
+
+    expect(cleanUpWorldLeapMock).not.toHaveBeenCalled()
+  })
+})

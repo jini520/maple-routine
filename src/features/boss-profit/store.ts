@@ -56,6 +56,7 @@ export { dropRowKey } from './rows'
 import { getScheduleProbeLedger } from '../../storage/schedule-probe-ledger'
 import { withSqliteFallback } from './sqlite-guards'
 import { autoRecordRows } from './auto-record'
+import { cleanUpWorldLeapDuplicates } from './world-leap-records'
 import {
   loadObservedPeriodKeys,
   loadUnqueryablePeriodKeys,
@@ -1154,6 +1155,28 @@ const initialState: BossProfitState = {
 // 진입 재조회의 10분 TTL 이 죽는다.
 let hydration: Promise<void> | null = null
 
+/**
+ * 자동 기록 뒤에 월드 리프한 기간의 중복 기록을 정리하고, 지운 것이 있으면 기록을 다시 읽는다.
+ *
+ * 다시 안 읽으면 이번 회차 화면에 지운 옛 카드 행이 남고, 새 카드는 옮겨 온 파티원 수를 모른다. 기록
+ * 조회가 실패했으면(`null`) 무엇이 있는지 모르는 상태라 정리하지 않는다.
+ */
+async function settleWorldLeapDuplicates(
+  records: BossProfitRecord[] | null,
+  ocids: string[],
+  periodKeys: string[],
+  now: Date,
+): Promise<BossProfitRecord[] | null> {
+  if (records === null) {
+    return null
+  }
+  const removed = await withSqliteFallback(cleanUpWorldLeapDuplicates(now), 0)
+  if (removed === 0) {
+    return records
+  }
+  return withSqliteFallback(getBossProfitRecords(ocids, periodKeys), records)
+}
+
 export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
   /**
    * 이 스토어의 모든 커밋은 지금 기간을 함께 싣는다.
@@ -1416,6 +1439,14 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
           isSourceCurrent: isCachedRowCurrent,
         })
       : cachedMergedRows
+    // 자동 기록을 한 진입만 리프 중복을 정리한다. 방금 쓴 새 기록의 짝을 봐야 해서 그 뒤다.
+    const cachedSettledRecords = skipSync
+      ? await settleWorldLeapDuplicates(cachedRecords, displayOcids, cachedPeriodKeys, now)
+      : cachedRecords
+    const cachedSettledRows =
+      cachedSettledRecords === cachedRecords
+        ? cachedAutoRecordedRows
+        : mergeRecordsIntoRows(cachedAutoRecordedRows, cachedSettledRecords ?? [])
 
     // 기록만 있는 조합을 행으로 되살린다. 자동 기록 뒤여야 한다. 복원 행은 기록에서 나와
     // partySize 가 이미 채워져 있어 자동 기록 대상이 아니고, 앞에 두면 그 루프가 헛돈다.
@@ -1423,7 +1454,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // 다음 결함이 된다. 정렬은 여기서 한 번만 한다. 복원 행이 정렬 밖에 남으면 캐릭터 아코디언
     // 순서가 흔들린다.
     const cachedSortedRows = sortRowsByOcidOrder(
-      appendRecordOnlyRows(cachedAutoRecordedRows, cachedRecords ?? [], cachedCharacterProfiles, now),
+      appendRecordOnlyRows(cachedSettledRows, cachedSettledRecords ?? [], cachedCharacterProfiles, now),
       sortedOcids,
     )
 
@@ -1616,8 +1647,13 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       isSourceCurrent: (row) => !staleOcids.has(row.ocid),
     })
 
+    // 리프 중복 정리. 방금 쓴 새 기록의 짝을 봐야 해서 자동 기록 뒤다(위 캐시 단계와 같은 이유).
+    const settledRecords = await settleWorldLeapDuplicates(records, displayOcids, periodKeys, now)
+    const settledRows =
+      settledRecords === records ? autoRecordedRows : mergeRecordsIntoRows(autoRecordedRows, settledRecords ?? [])
+
     // 기록만 있는 조합을 행으로 되살린다(위 appendRecordOnlyRows 주석).
-    const unionRows = appendRecordOnlyRows(autoRecordedRows, records ?? [], characterProfiles, now)
+    const unionRows = appendRecordOnlyRows(settledRows, settledRecords ?? [], characterProfiles, now)
     const sortedRows = sortRowsByOcidOrder(unionRows, syncedOcids)
     // 동기화가 한 번도 답하지 않은 추적 ocid. 월드 이전으로 `character/list` 에서 빠지면
     // `resolveTrackedCharacterContext` 가 버려 `results` 에 아예 안 온다. 그 캐릭터는 위 루프가

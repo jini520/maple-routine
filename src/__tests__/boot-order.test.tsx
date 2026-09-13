@@ -19,12 +19,18 @@ import { readFileSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 
 import { act } from '@testing-library/react-native'
+import { AppState, type AppStateStatus } from 'react-native'
 
 /** 관측한 호출을 부른 순서대로 쌓는 목록. 무엇을 했는지가 아니라 **언제** 했는지가 계약이다. */
 const mockCalls: string[] = []
 
 /** 진입 단계만 케이스마다 갈아 끼운다(선하이드레이션 게이트가 이 값 하나로 갈린다). */
 const mockEntry = { stage: 'ready' }
+
+/** 참조가 렌더마다 같아야 한다. 셸이 이 함수를 포그라운드 복귀 리스너의 의존으로 쓴다. */
+const mockResubscribe = jest.fn(async () => {
+  mockCalls.push('resubscribe:notice')
+})
 
 jest.mock('../features/app-entry/store', () => ({
   __esModule: true,
@@ -79,6 +85,21 @@ jest.mock('../features/drop-effect/store', () => ({
       restoreFromStorage: async () => {
         mockCalls.push('restore:dropEffect')
       },
+    }),
+}))
+
+// 공지 구독. 복원이 **끝난 뒤에** 재구독이 도는지를 본다. 복원을 한 틱 늦게 끝내서, 복원을 기다리지
+// 않고 부르는 배선이면 재구독이 복원 끝보다 앞에 찍힌다.
+jest.mock('../features/notice/store', () => ({
+  __esModule: true,
+  useNoticeStore: (selector: (state: unknown) => unknown) =>
+    selector({
+      restore: async () => {
+        mockCalls.push('restore:notice')
+        await Promise.resolve()
+        mockCalls.push('restored:notice')
+      },
+      resubscribe: mockResubscribe,
     }),
 }))
 
@@ -203,6 +224,44 @@ describe('① 셸이 무엇을 언제 하는가', () => {
     const view = await renderOverlay(<AppShell />)
 
     expect(view.getByTestId('boot-splash')).toBeTruthy()
+  })
+
+  // 토픽 구독은 FCM 등록 토큰에 묶여 토큰이 바뀌면 사라진다. 무엇이 켜짐인지는 복원이 끝나야 안다.
+  it('공지 구독 복원이 끝난 뒤에 켜 둔 토픽을 다시 구독한다', async () => {
+    await mountShell()
+
+    expect(mockCalls.filter((call) => call === 'resubscribe:notice')).toHaveLength(1)
+    expect(mockCalls.indexOf('restored:notice')).toBeLessThan(mockCalls.indexOf('resubscribe:notice'))
+  })
+
+  // OS 설정에서 알림 권한을 켜고 돌아오면 그때 구독이 맞춰져야 한다.
+  it('백그라운드에서 돌아오면 다시 구독한다', async () => {
+    const currentState = Object.getOwnPropertyDescriptor(AppState, 'currentState')
+    Object.defineProperty(AppState, 'currentState', { value: 'active', configurable: true, writable: true })
+    const listeners: ((next: AppStateStatus) => void)[] = []
+    const spy = jest.spyOn(AppState, 'addEventListener').mockImplementation(((
+      _event: string,
+      callback: (next: AppStateStatus) => void,
+    ) => {
+      listeners.push(callback)
+      return { remove: jest.fn() }
+    }) as unknown as typeof AppState.addEventListener)
+
+    try {
+      await mountShell()
+      mockCalls.length = 0
+
+      await act(async () => {
+        for (const next of ['inactive', 'background', 'active'] as const) {
+          listeners.forEach((listener) => listener(next))
+        }
+      })
+
+      expect(mockCalls).toEqual(['resubscribe:notice'])
+    } finally {
+      spy.mockRestore()
+      if (currentState !== undefined) Object.defineProperty(AppState, 'currentState', currentState)
+    }
   })
 
 })

@@ -4,10 +4,10 @@
 // 밀린다). ② 접힘에는 버튼이 없다. ③ 머리를 누르면 본문과 버튼 둘이 열리고 다시 누르면 접힌다.
 // ④ 버튼 둘이 각자 제 일을 한다.
 //
-// 고르는 규칙은 `pick-banner-notice.spec.ts`, 저장과 서버 보강은 `banner-store.spec.ts` 가 본다.
+// 고르는 규칙은 `pick-banner-notice.spec.ts`, 사본과 서버 조회는 `banner-store.spec.ts` 가 본다.
 jest.mock('../../../server/notices', () => ({
   __esModule: true,
-  fetchNotices: jest.fn(async () => []),
+  fetchNotices: jest.fn(async () => null),
 }))
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 
@@ -18,7 +18,7 @@ import { useNoticeBannerStore } from '../../../features/notice/banner-store'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 import { getDismissedNoticeIds } from '../../../storage/notice-banner'
-import { mergeNotices } from '../../../storage/notices'
+import { replaceNotices } from '../../../storage/notices'
 import type { Notice } from '../../../types/notice'
 import { NoticeBanner } from '../NoticeBanner'
 
@@ -42,9 +42,9 @@ beforeEach(async () => {
   useNoticeBannerStore.setState({ notice: null })
 })
 
-/** 공지를 기기에 심고 스토어에 올린다. 화면은 스토어만 읽는다. 렌더 **전**에 부른다. */
+/** 공지를 사본에 심고 스토어에 올린다. 화면은 스토어만 읽는다. 렌더 **전**에 부른다. */
 async function 공지를_세운다(notice: Notice = 점검공지): Promise<void> {
-  await mergeNotices([notice])
+  await replaceNotices('app', [notice])
   await useNoticeBannerStore.getState().load()
 }
 

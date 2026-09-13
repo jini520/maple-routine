@@ -407,6 +407,37 @@ export async function getUndatedBossProfitRecords(
 }
 
 /**
+ * 이 ocid 의 **주기별 가장 이른 기간 키**. 기록이 없는 주기는 안 든다.
+ *
+ * 월드 리프로 새로 생긴 ocid 는 리프 전 날짜를 못 불러 그 앞 기간 기록을 가질 수 없다. 그래서 이
+ * 값이 리프한 주와 그 달이다. 주간 `YYYY-MM-DD` · 월간 `YYYY-MM` 은 문자열 순서가 날짜 순서다.
+ */
+export async function getEarliestBossProfitPeriodKeys(
+  ocid: string,
+): Promise<Partial<Record<BossCycle, string>>> {
+  const db = await getBossProfitDb()
+  const { values } = await db.query(
+    `SELECT cycle, MIN(period_key) AS period_key FROM boss_profit_records WHERE ocid = ? GROUP BY cycle`,
+    [ocid],
+  )
+  const earliest: Partial<Record<BossCycle, string>> = {}
+  for (const row of values ?? []) {
+    earliest[row.cycle as BossCycle] = row.period_key as string
+  }
+  return earliest
+}
+
+/** 기록 한 행을 지운다. 짝인 드롭은 안 건드리므로 부르는 쪽이 먼저 옮기거나 지운다. */
+export async function deleteBossProfitRecord(key: BossProfitRecordKey): Promise<void> {
+  const db = await getBossProfitDb()
+  await db.run(
+    `DELETE FROM boss_profit_records WHERE ocid = ? AND boss = ? AND difficulty = ? AND period_key = ?`,
+    [key.ocid, key.boss, key.difficulty, key.periodKey],
+  )
+  recordsRevision += 1
+}
+
+/**
  * 캐낸 날짜를 박는 쓰기. **upsert 를 안 탄다**.
  *
  * `upsertBossProfitRecord` 는 이 칸을 아예 안 적는다(INSERT 목록에도 `DO UPDATE SET` 에도 없다).

@@ -11,6 +11,7 @@
  * 무릉도장처럼 `다 했다` 가 정의되지 않는 항목은 `unmeasurable` 이고 링의 분모에서 빠진다.
  * 영원히 안 차는 칸을 넣으면 링이 항상 미완료를 말한다.
  */
+import { isClosedByWeeklyLimit } from '../../lib/scheduler/group-weekly-limit'
 import { isContentBlocked } from '../../lib/scheduler/required-level'
 import {
   matchWeeklyQuestRegionSlug,
@@ -130,9 +131,32 @@ export function dailyContentProgress(
   return tally(progressible(contents, characterLevel).map(dailyContentCompletion))
 }
 
+/**
+ * 계열 주간 한도가 차서 더 진행할 수 없는 미완료 항목의 이름들. 카드의 `마감` 과 링이 같은 값을 본다.
+ *
+ * 넘기는 목록은 표시 목록이 아니라 **그 캐릭터의 병합된 목록 전체**다. 등록 안 한 던전의 완료도 한도를 채운다.
+ */
+export function weeklyLimitClosedNames(contents: WeeklyContent[]): ReadonlySet<string> {
+  const limited = contents.map((content) => ({
+    name: content.name,
+    isComplete: weeklyContentCompletion(content) === 'complete',
+  }))
+  return new Set(limited.filter((content) => isClosedByWeeklyLimit(content, limited)).map((content) => content.name))
+}
+
+/**
+ * `마감` 은 분자에 든다. 이번 주 일이 끝난 것이라, 안 넣으면 링이 100% 에 절대 못 닿는다.
+ *
+ * @param closedNames `weeklyLimitClosedNames` 의 결과
+ */
 export function weeklyContentProgress(
   contents: WeeklyContent[],
   characterLevel: number | null,
+  closedNames: ReadonlySet<string>,
 ): ContentProgress {
-  return tally(progressible(contents, characterLevel).map(weeklyContentCompletion))
+  return tally(
+    progressible(contents, characterLevel).map((content) =>
+      closedNames.has(content.name) ? 'complete' : weeklyContentCompletion(content),
+    ),
+  )
 }

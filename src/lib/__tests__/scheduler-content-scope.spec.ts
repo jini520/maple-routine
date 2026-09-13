@@ -4,7 +4,10 @@ import {
   getMaxCountOverride,
   getShareScope,
   getSharedContentGroups,
+  getContentGroup,
+  getGroupWeeklyLimit,
   isCumulativeScore,
+  trustsRegistrationFlag,
 } from '../scheduler/scheduler-content-scope'
 
 describe('getShareScope', () => {
@@ -199,5 +202,42 @@ describe('getMaxCountOverride: 익스트림 몬스터파커', () => {
   // 성격이 다르고 그대로 선다.
   it('길드 주간 미션 포인트는 그대로 10 이다', () => {
     expect(getMaxCountOverride('[길드] 주간 미션 포인트')).toBe(10)
+  })
+})
+
+// 어느 항목이 응답의 등록 값을 믿는지는 카탈로그의 칸이 말한다. 이름으로 추론하지 않는다.
+describe('trustsRegistrationFlag', () => {
+  it('메이플 유니온 두 항목만 참이다', () => {
+    expect(trustsRegistrationFlag('[메이플 유니온] 주간 드래곤 퇴치')).toBe(true)
+    expect(trustsRegistrationFlag('[메이플 유니온] PC방 주간 드래곤 퇴치')).toBe(true)
+  })
+
+  it('나머지 공유 항목과 캐릭터 항목은 거짓이다', () => {
+    expect(trustsRegistrationFlag('몬스터파크')).toBe(false)
+    expect(trustsRegistrationFlag('[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?')).toBe(false)
+    expect(trustsRegistrationFlag('에픽 던전 : 하이마운틴')).toBe(false)
+    expect(trustsRegistrationFlag('무릉도장')).toBe(false)
+  })
+
+  it('양쪽 공백이 달라도 매칭된다', () => {
+    expect(trustsRegistrationFlag('[메이플유니온] 주간 드래곤 퇴치')).toBe(true)
+  })
+})
+
+// 에픽 던전은 4종이지만 주 3회만 돈다(사용자 확인 2026-09-13). 게임 규칙이라 카탈로그가 든다.
+describe('계열의 주간 한도', () => {
+  it('에픽던전 계열의 한도는 3 이다', () => {
+    expect(getGroupWeeklyLimit('에픽던전')).toBe(3)
+  })
+
+  it('한도가 없는 계열은 null 이다', () => {
+    expect(getGroupWeeklyLimit('몬스터파크')).toBeNull()
+    expect(getGroupWeeklyLimit('없는 계열')).toBeNull()
+  })
+
+  it('항목의 계열은 카탈로그의 group 이다. 이름으로 추론하지 않는다', () => {
+    expect(getContentGroup('에픽 던전 : 아우룸 레기스')).toBe('에픽던전')
+    expect(getContentGroup('[메이플 유니온] 주간 드래곤 퇴치')).toBe('메이플 유니온')
+    expect(getContentGroup('에르다 스펙트럼')).toBeNull()
   })
 })

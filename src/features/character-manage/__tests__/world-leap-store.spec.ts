@@ -1,12 +1,21 @@
 jest.mock('../../../storage/character-selection', () => ({
   replaceTrackedCharacter: jest.fn(),
   removeTrackedCharacter: jest.fn(),
+  getRepresentativeCharacter: jest.fn(),
 }))
 const {
   replaceTrackedCharacter: replaceTrackedCharacterMock,
   removeTrackedCharacter: removeTrackedCharacterMock,
+  getRepresentativeCharacter: getRepresentativeCharacterMock,
 } = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
 
+jest.mock('../../boss-profit/world-leap-link', () => ({ linkWorldLeap: jest.fn() }))
+const { linkWorldLeap: linkWorldLeapMock } = jest.requireMock('../../boss-profit/world-leap-link') as Record<
+  string,
+  jest.Mock
+>
+
+import { useCharacterSelectionStore } from '../../character-selection/store'
 import { resetWorldLeapStoreForTests, useWorldLeapStore } from '../world-leap-store'
 import type { WorldLeapNotice } from '../world-leap'
 
@@ -26,7 +35,14 @@ const 이미관리중: WorldLeapNotice = { ...짚음, kind: 'alreadyTracked' }
 beforeEach(() => {
   replaceTrackedCharacterMock.mockReset().mockResolvedValue(undefined)
   removeTrackedCharacterMock.mockReset().mockResolvedValue(undefined)
+  linkWorldLeapMock.mockReset().mockResolvedValue(undefined)
+  getRepresentativeCharacterMock.mockReset().mockResolvedValue(null)
   resetWorldLeapStoreForTests()
+  useCharacterSelectionStore.setState({
+    selectedOcid: null,
+    representativeOcid: null,
+    isRepresentativeHydrated: false,
+  })
 })
 
 it('짚은 것을 들고 있는다', () => {
@@ -67,6 +83,28 @@ it('갈아끼운 자리를 남겨 초안이 따라올 수 있게 한다', async 
   expect(useWorldLeapStore.getState().resolved).toEqual({ from: 'old', to: 'new' })
 })
 
+// 대표를 옮길지는 `replaceTrackedCharacter` 가 저장소 안에서 정한다. today 가 구독하는 선택 스토어가
+// 그 결과를 따라와야 한다. 안 따라오면 옛 ocid 가 목록에 없어 대표 자리가 첫 번째로 떨어진다.
+it('대표였던 캐릭터를 갈아끼우면 선택 스토어가 새 ocid 를 든다', async () => {
+  useCharacterSelectionStore.setState({ representativeOcid: 'old', isRepresentativeHydrated: true })
+  replaceTrackedCharacterMock.mockResolvedValue(['new'])
+  getRepresentativeCharacterMock.mockResolvedValue('new')
+  useWorldLeapStore.getState().noticeWorldLeap(짚음)
+
+  await useWorldLeapStore.getState().confirm()
+
+  expect(useCharacterSelectionStore.getState().representativeOcid).toBe('new')
+})
+
+it('할 일이 없었으면 대표를 다시 읽지 않는다', async () => {
+  replaceTrackedCharacterMock.mockResolvedValue(null)
+  useWorldLeapStore.getState().noticeWorldLeap(짚음)
+
+  await useWorldLeapStore.getState().confirm()
+
+  expect(getRepresentativeCharacterMock).not.toHaveBeenCalled()
+})
+
 // 옮겨간 캐릭터가 이미 목록에 있으므로 더할 것이 없다. 남은 것은 조회할 수 없는 옛 ocid 뿐이다.
 describe('옮겨간 캐릭터를 이미 관리 중일 때', () => {
   it('목록에서 빼기 를 누르면 그 ocid 만 빼고 모달을 닫는다', async () => {
@@ -77,6 +115,18 @@ describe('옮겨간 캐릭터를 이미 관리 중일 때', () => {
     expect(removeTrackedCharacterMock).toHaveBeenCalledWith('old')
     expect(replaceTrackedCharacterMock).not.toHaveBeenCalled()
     expect(useWorldLeapStore.getState().notice).toBeNull()
+  })
+
+  // 목록 저장이 목록에 없는 대표를 지운다. 선택 스토어도 그 빈 값을 따라온다.
+  it('대표였던 것을 빼면 선택 스토어의 대표도 빈다', async () => {
+    useCharacterSelectionStore.setState({ representativeOcid: 'old', isRepresentativeHydrated: true })
+    removeTrackedCharacterMock.mockResolvedValue(['new'])
+    getRepresentativeCharacterMock.mockResolvedValue(null)
+    useWorldLeapStore.getState().noticeWorldLeap(이미관리중)
+
+    await useWorldLeapStore.getState().confirm()
+
+    expect(useCharacterSelectionStore.getState().representativeOcid).toBeNull()
   })
 
   it('뺀 자리를 남겨 초안이 따라올 수 있게 한다', async () => {
@@ -120,4 +170,48 @@ it('들고 있는 것이 없으면 확인도 거절도 아무 일을 안 한다'
   expect(replaceTrackedCharacterMock).not.toHaveBeenCalled()
   expect(removeTrackedCharacterMock).not.toHaveBeenCalled()
   expect(useWorldLeapStore.getState().dismissedOcids.size).toBe(0)
+})
+
+// 리프한 기간에 같은 처치가 두 ocid 로 한 번씩 기록된다. 짝을 찾으려면 두 ocid 가 이어져 있어야 하고,
+// 앱이 리프를 확실히 아는 순간이 이 주 버튼이다.
+describe('두 ocid 의 연결', () => {
+  it('변경 을 누르면 옛 ocid 를 새 ocid 에 잇는다', async () => {
+    useWorldLeapStore.getState().noticeWorldLeap(짚음)
+    await useWorldLeapStore.getState().confirm()
+
+    expect(linkWorldLeapMock).toHaveBeenCalledWith('old', 'new', expect.any(Date))
+  })
+
+  it('목록에서 빼기 도 옛 ocid 를 새 ocid 에 잇는다', async () => {
+    removeTrackedCharacterMock.mockResolvedValue(['new'])
+    useWorldLeapStore.getState().noticeWorldLeap(이미관리중)
+    await useWorldLeapStore.getState().confirm()
+
+    expect(linkWorldLeapMock).toHaveBeenCalledWith('old', 'new', expect.any(Date))
+  })
+
+  it('목적지를 모르면 잇지 않는다', async () => {
+    useWorldLeapStore.getState().noticeWorldLeap(모름)
+    await useWorldLeapStore.getState().confirm()
+
+    expect(linkWorldLeapMock).not.toHaveBeenCalled()
+  })
+
+  it('추적 목록 저장이 실패하면 잇지 않는다', async () => {
+    replaceTrackedCharacterMock.mockRejectedValue(new Error('저장 실패'))
+    useWorldLeapStore.getState().noticeWorldLeap(짚음)
+
+    await expect(useWorldLeapStore.getState().confirm()).rejects.toThrow('저장 실패')
+    expect(linkWorldLeapMock).not.toHaveBeenCalled()
+  })
+
+  // 연결은 뒷정리다. 못 남겨도 추적 목록은 바뀌어야 하고, 이름·직업 대조가 나중에 다시 잇는다.
+  it('연결을 못 남겨도 추적 목록 변경은 끝난다', async () => {
+    replaceTrackedCharacterMock.mockResolvedValue(['new'])
+    linkWorldLeapMock.mockRejectedValue(new Error('sqlite'))
+    useWorldLeapStore.getState().noticeWorldLeap(짚음)
+
+    await expect(useWorldLeapStore.getState().confirm()).resolves.toEqual(['new'])
+    expect(useWorldLeapStore.getState().notice).toBeNull()
+  })
 })

@@ -265,6 +265,186 @@ describe('mergeSchedulerState: account 범위 (에픽 던전)', () => {
   })
 })
 
+// 공유 항목의 등록은 원장의 active 가 한 번 참이면 계속 참이다. 유니온 두 항목만 그 규칙에서 빠져
+// 이번 응답의 registration_flag 를 그대로 쓴다. 아무도 등록 안 한 줄이 굳은 원장 한 칸 때문에 섰다.
+describe('mergeSchedulerState: 유니온 두 항목은 응답의 등록 값을 그대로 쓴다', () => {
+  const UNION_PC = '[메이플 유니온] PC방 주간 드래곤 퇴치'
+  const UNION_WEEKLY = '[메이플 유니온] 주간 드래곤 퇴치'
+  const EPIC = '에픽 던전 : 하이마운틴'
+  const WEEK = '2026-07-16'
+  const questItem = (name: string, isRegistered: boolean) => ({
+    name,
+    kind: 'quest' as const,
+    isRegistered,
+    nowCount: 0,
+    maxCount: 0,
+    questState: 0 as const,
+  })
+  const ledgerEntry = (active: boolean): SharedProgressEntry => ({
+    active,
+    kind: 'quest',
+    nowCount: 0,
+    maxCount: 0,
+    questState: 0,
+    lastUpdatedBucket: WEEK,
+  })
+
+  it('원장이 active: true 여도 응답이 false 면 등록 안 한 것이고, 원장도 false 로 쓴다', () => {
+    const fresh = baseState({ weeklyContents: [questItem(UNION_PC, false)] })
+
+    const result = mergeSchedulerState({
+      previous: null,
+      fresh,
+      worldLedger: {},
+      accountLedger: { [UNION_PC]: ledgerEntry(true) },
+      now: NOW,
+    })
+
+    expect(result.characterState.weeklyContents).toEqual([questItem(UNION_PC, false)])
+    expect(result.accountLedgerUpdates[UNION_PC].active).toBe(false)
+  })
+
+  it('월드 공유인 주간 드래곤 퇴치도 같다', () => {
+    const fresh = baseState({ weeklyContents: [questItem(UNION_WEEKLY, false)] })
+
+    const result = mergeSchedulerState({
+      previous: null,
+      fresh,
+      worldLedger: { [UNION_WEEKLY]: ledgerEntry(true) },
+      accountLedger: {},
+      now: NOW,
+    })
+
+    expect(result.characterState.weeklyContents).toEqual([questItem(UNION_WEEKLY, false)])
+    expect(result.worldLedgerUpdates[UNION_WEEKLY].active).toBe(false)
+  })
+
+  it('원장이 없고 응답이 true 면 등록한 것이다', () => {
+    const fresh = baseState({ weeklyContents: [questItem(UNION_PC, true)] })
+
+    const result = mergeSchedulerState({ previous: null, fresh, worldLedger: {}, accountLedger: {}, now: NOW })
+
+    expect(result.characterState.weeklyContents).toEqual([questItem(UNION_PC, true)])
+    expect(result.accountLedgerUpdates[UNION_PC].active).toBe(true)
+  })
+
+  it('에픽 던전은 지금처럼 원장이 active: true 면 응답이 false 여도 계속 노출된다', () => {
+    const fresh = baseState({
+      weeklyContents: [{ name: EPIC, kind: 'contents', isRegistered: false, nowCount: 1, maxCount: 0, questState: null }],
+    })
+
+    const result = mergeSchedulerState({
+      previous: null,
+      fresh,
+      worldLedger: {},
+      accountLedger: { [EPIC]: { ...ledgerEntry(true), kind: 'contents', questState: null } },
+      now: NOW,
+    })
+
+    expect(result.characterState.weeklyContents[0]?.isRegistered).toBe(true)
+    expect(result.accountLedgerUpdates[EPIC].active).toBe(true)
+  })
+
+  it('섹션이 빈 캐릭터(미접속)는 원장의 마지막 값으로 복원된다', () => {
+    const stale = baseState({ weeklyContents: [], isWeeklyStale: true })
+
+    const registered = mergeSchedulerState({
+      previous: null,
+      fresh: stale,
+      worldLedger: {},
+      accountLedger: { [UNION_PC]: ledgerEntry(true) },
+      now: NOW,
+    })
+    const unregistered = mergeSchedulerState({
+      previous: null,
+      fresh: stale,
+      worldLedger: {},
+      accountLedger: { [UNION_PC]: ledgerEntry(false) },
+      now: NOW,
+    })
+
+    const find = (items: { name: string; isRegistered: boolean }[]) => items.find((item) => item.name === UNION_PC)
+    expect(find(registered.characterState.weeklyContents)?.isRegistered).toBe(true)
+    expect(find(unregistered.characterState.weeklyContents)?.isRegistered ?? false).toBe(false)
+  })
+})
+
+// 원장 복원은 원장에 있는 칸 전부를 채운다. 등록 여부는 원장의 active 그대로다. active 가 거짓인 칸을
+// 건너뛰면, 과거 날짜로 다시 병합할 때 아무도 등록하지 않은 에픽 던전이 목록에서 빠져 주 3회 한도가
+// 그 완료를 못 센다.
+describe('mergeSchedulerState: 원장 복원은 active 와 무관하게 칸을 채운다', () => {
+  const EPIC = '에픽 던전 : 하이마운틴'
+  const WEEK = '2026-07-16'
+  const inactive: SharedProgressEntry = {
+    active: false,
+    kind: 'contents',
+    nowCount: 1,
+    maxCount: 0,
+    questState: null,
+    lastUpdatedBucket: WEEK,
+  }
+
+  it('active: false 인 칸은 isRegistered: false 와 원장 진행값으로 채운다', () => {
+    const fresh = baseState({ weeklyContents: [], isWeeklyStale: true })
+
+    const result = mergeSchedulerState({ previous: null, fresh, worldLedger: {}, accountLedger: { [EPIC]: inactive }, now: NOW })
+
+    expect(result.characterState.weeklyContents).toContainEqual({
+      name: EPIC,
+      kind: 'contents',
+      isRegistered: false,
+      nowCount: 1,
+      maxCount: 0,
+      questState: null,
+    })
+  })
+
+  it('원장에 칸이 없으면 채우지 않는다', () => {
+    const fresh = baseState({ weeklyContents: [], isWeeklyStale: true })
+
+    const result = mergeSchedulerState({ previous: null, fresh, worldLedger: {}, accountLedger: {}, now: NOW })
+
+    expect(result.characterState.weeklyContents.map((item) => item.name)).not.toContain(EPIC)
+  })
+
+  // `fillMissingSections` 가 하는 일을 그대로 한 번 더 태운다. 네 섹션을 낡은 것으로 두고 과거 날짜
+  // 응답을 previous 로 삼는다.
+  it('과거 날짜로 다시 병합해도 등록 안 한 에픽 던전과 그 진행이 남는다', () => {
+    const stage1 = mergeSchedulerState({
+      previous: null,
+      fresh: baseState({
+        isDailyStale: true,
+        weeklyContents: [
+          { name: EPIC, kind: 'contents', isRegistered: false, nowCount: 1, maxCount: 0, questState: null },
+          { name: '에르다 스펙트럼', kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 3, questState: null },
+        ],
+      }),
+      worldLedger: {},
+      accountLedger: {},
+      now: NOW,
+    })
+
+    const folded = mergeSchedulerState({
+      previous: baseState(),
+      fresh: {
+        ...stage1.characterState,
+        isDailyStale: true,
+        isWeeklyStale: true,
+        isWeeklyBossStale: true,
+        isMonthlyBossStale: true,
+      },
+      worldLedger: {},
+      accountLedger: stage1.accountLedgerUpdates,
+      now: NOW,
+    })
+
+    expect(folded.characterState.weeklyContents.find((item) => item.name === EPIC)).toMatchObject({
+      isRegistered: false,
+      nowCount: 1,
+    })
+  })
+})
+
 describe('mergeSchedulerState: maxCountOverride', () => {
   it('오버라이드가 등록된 항목은 API 응답의 max_count 대신 오버라이드 값을 쓴다', () => {
     const fresh = baseState({

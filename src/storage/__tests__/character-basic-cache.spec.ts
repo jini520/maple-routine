@@ -4,6 +4,7 @@ import {
   clearCachedCharacterBasic,
   getAllCachedCharacterBasicOcids,
   getCachedCharacterBasic,
+  reconcileCachedCharacterBasicOcids,
   setCachedCharacterBasic,
   type CachedCharacterBasicEntry,
 } from '../character-basic-cache'
@@ -185,5 +186,85 @@ describe('인덱스 갱신 동시성 (2026-07-14 정정)', () => {
     for (const ocid of raceOcids) {
       await expect(getCachedCharacterBasic(ocid)).resolves.toEqual(sampleEntry)
     }
+  })
+})
+
+// 인덱스를 붙이기만 하면 `character/list` 에서 빠진 캐릭터가 영영 남아, 캐릭터 관리를 열 때마다
+// stub 단계가 그 캐릭터를 그렸다가 목록 응답 뒤에 지운다.
+describe('reconcileCachedCharacterBasicOcids', () => {
+  it('목록에 없는 ocid 는 인덱스에서 빠지고 캐시 항목은 남는다', async () => {
+    await setCachedCharacterBasic(ACCOUNT, 'ocid-1', sampleEntry)
+    await setCachedCharacterBasic(ACCOUNT, 'ocid-old', sampleEntry)
+
+    await reconcileCachedCharacterBasicOcids(ACCOUNT, ['ocid-1'])
+
+    await expect(getAllCachedCharacterBasicOcids(ACCOUNT)).resolves.toEqual(['ocid-1'])
+    // 이름과 얼굴을 캐릭터 관리 밖에서도 읽는다.
+    await expect(getCachedCharacterBasic('ocid-old')).resolves.toEqual(sampleEntry)
+  })
+
+  // 목록에 돌아온 캐릭터의 캐시가 5분 TTL 안이면 `setCachedCharacterBasic` 이 다시 안 불린다.
+  it('목록에 있고 캐시 항목도 있으면 인덱스에 없어도 다시 붙인다', async () => {
+    await setCachedCharacterBasic(ACCOUNT, 'ocid-1', sampleEntry)
+    await prefs.set('characterBasicCache:ocid-back', JSON.stringify(sampleEntry))
+
+    await reconcileCachedCharacterBasicOcids(ACCOUNT, ['ocid-1', 'ocid-back'])
+
+    const ocids = await getAllCachedCharacterBasicOcids(ACCOUNT)
+    expect(ocids.sort()).toEqual(['ocid-1', 'ocid-back'])
+  })
+
+  it('목록에 있어도 캐시 항목이 없으면 붙이지 않는다', async () => {
+    await setCachedCharacterBasic(ACCOUNT, 'ocid-1', sampleEntry)
+
+    await reconcileCachedCharacterBasicOcids(ACCOUNT, ['ocid-1', 'ocid-never-cached'])
+
+    await expect(getAllCachedCharacterBasicOcids(ACCOUNT)).resolves.toEqual(['ocid-1'])
+  })
+
+  it('다른 계정의 인덱스는 건드리지 않는다', async () => {
+    await setCachedCharacterBasic(ACCOUNT, 'ocid-1', sampleEntry)
+    await setCachedCharacterBasic('account-2', 'ocid-9', sampleEntry)
+
+    await reconcileCachedCharacterBasicOcids(ACCOUNT, [])
+
+    await expect(getAllCachedCharacterBasicOcids(ACCOUNT)).resolves.toEqual([])
+    await expect(getAllCachedCharacterBasicOcids('account-2')).resolves.toEqual(['ocid-9'])
+  })
+
+  it('레거시 전역 인덱스를 먼저 이관한 뒤 맞춘다', async () => {
+    await prefs.set('selectedAccountId', ACCOUNT)
+    await prefs.set('characterBasicCache:index', JSON.stringify(['ocid-1', 'ocid-old']))
+    await prefs.set('characterBasicCache:ocid-1', JSON.stringify(sampleEntry))
+    await prefs.set('characterBasicCache:ocid-old', JSON.stringify(sampleEntry))
+
+    await reconcileCachedCharacterBasicOcids(ACCOUNT, ['ocid-1'])
+
+    await expect(getAllCachedCharacterBasicOcids(ACCOUNT)).resolves.toEqual(['ocid-1'])
+    await expect(prefs.get('characterBasicCache:index')).resolves.toBeNull()
+  })
+
+  // 동기화의 `character/basic` 편승 갱신이 피커와 겹친다.
+  it('맞추는 도중 setCachedCharacterBasic 이 끼어들어도 새로 붙은 ocid 가 남는다', async () => {
+    await setCachedCharacterBasic(ACCOUNT, 'ocid-1', sampleEntry)
+    await setCachedCharacterBasic(ACCOUNT, 'ocid-old', sampleEntry)
+
+    // 맞추기가 캐시 항목을 읽는 동안을 늘려, 인덱스를 쓰기 전에 붙이기가 끼어들 틈을 만든다.
+    const read = prefs.get.getMockImplementation()!
+    prefs.get.mockImplementation(async (key: string) => {
+      const value = await read(key)
+      if (key === 'characterBasicCache:ocid-1') {
+        await new Promise((resolve) => setTimeout(resolve, 20))
+      }
+      return value
+    })
+
+    await Promise.all([
+      reconcileCachedCharacterBasicOcids(ACCOUNT, ['ocid-1']),
+      setCachedCharacterBasic(ACCOUNT, 'ocid-new', sampleEntry),
+    ])
+
+    const ocids = await getAllCachedCharacterBasicOcids(ACCOUNT)
+    expect(ocids.sort()).toEqual(['ocid-1', 'ocid-new'])
   })
 })

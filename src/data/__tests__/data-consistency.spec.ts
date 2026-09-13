@@ -2,6 +2,8 @@ import weeklyBosses from '../weekly-bosses.json'
 import bossCrystalPrices from '../boss-crystal-prices.json'
 import itemDropTable from '../item-drop-table.json'
 import contentTemplate from '../scheduler-content-template.json'
+import contentCatalog from '../scheduler-content-catalog.json'
+import spendCatalog from '../spend-catalog.json'
 import { DROP_CATEGORIES } from '../../types/drops'
 
 function key(boss: string, difficulty: string): string {
@@ -339,6 +341,69 @@ describe('2026-09-17 패치', () => {
     ])
     for (const entry of epic) {
       expect(entry.max_count).toBe(5)
+    }
+  })
+})
+
+// 컨텐츠 줄도 시작 기간을 든다. 같은 컨텐츠가 파일 셋에 나뉘어 있어, 날짜가 갈리면 어느 자리는 서고
+// 어느 자리는 안 선다.
+describe('기간을 든 컨텐츠 줄', () => {
+  type ContentRow = PeriodRow & { name: string }
+  const catalogRows = (): ContentRow[] =>
+    [...contentCatalog.worldShared, ...contentCatalog.accountShared] as ContentRow[]
+  const templateRows = (): ContentRow[] =>
+    [...contentTemplate.daily, ...contentTemplate.weekly].map((row) => ({
+      ...(row as PeriodRow),
+      name: row.content_name,
+    }))
+  const spendRows = () => spendCatalog.items as (PeriodRow & { name: string; base?: string })[]
+
+  it('기간 칸은 YYYY-MM-DD 이고, 둘 다 있으면 from 이 until 보다 앞이다', () => {
+    const rows: ContentRow[] = [...catalogRows(), ...templateRows(), ...spendRows()]
+    const invalid = rows.filter(
+      (row) =>
+        (row.from !== undefined && !DATE_KEY.test(row.from)) ||
+        (row.until !== undefined && !DATE_KEY.test(row.until)) ||
+        (row.from !== undefined && row.until !== undefined && row.from >= row.until),
+    )
+    expect(invalid).toEqual([])
+  })
+
+  it('공유 카탈로그와 템플릿에서 이름이 같은 줄은 기간이 같다', () => {
+    const templateByName = new Map(templateRows().map((row) => [row.name, row]))
+    const mismatched = catalogRows()
+      .filter((row) => templateByName.has(row.name))
+      .filter((row) => {
+        const template = templateByName.get(row.name)
+        return template?.from !== row.from || template?.until !== row.until
+      })
+      .map((row) => row.name)
+    expect(mismatched).toEqual([])
+  })
+
+  // 한 대표의 단계가 서로 다른 날 서면 타일 하나가 반쪽만 선다.
+  it('지출에서 base 가 같은 줄들은 기간이 같다', () => {
+    const byBase = new Map<string, Set<string>>()
+    for (const row of spendRows()) {
+      if (row.base === undefined) continue
+      const periods = byBase.get(row.base) ?? new Set<string>()
+      periods.add(`${row.from ?? ''}~${row.until ?? ''}`)
+      byBase.set(row.base, periods)
+    }
+    expect([...byBase].filter(([, periods]) => periods.size > 1).map(([base]) => base)).toEqual([])
+  })
+
+  it('아우룸 레기스는 네 줄 모두 2026-09-17 부터다', () => {
+    const rows = [
+      ...catalogRows().filter((row) => row.name === '에픽 던전 : 아우룸 레기스'),
+      ...templateRows().filter((row) => row.name === '에픽 던전 : 아우룸 레기스'),
+      ...spendRows().filter((row) => row.base === '아우룸 레기스'),
+    ]
+
+    expect(rows).toHaveLength(4)
+    for (const row of rows) {
+      expect(row).toMatchObject({ from: '2026-09-17' })
+      expect(row.until).toBeUndefined()
     }
   })
 })

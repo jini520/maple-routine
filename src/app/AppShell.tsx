@@ -16,6 +16,7 @@ import { ThemeBackdrop } from '../components/templates/ThemeBackdrop/ThemeBackdr
 import { ApiKeyNoticeModal } from './auth/ApiKeyNoticeModal'
 import { prehydrateTabStores } from './prehydrate'
 import { useKeyboardVisible } from '../hooks/useKeyboardVisible'
+import { useReturnToForeground } from '../hooks/useReturnToForeground'
 
 /**
  * 앱 셸. 웹 `AppShell`(573줄)의 짝. 화면이 아니라 **부팅 순서**가 이 파일의 실질이다.
@@ -64,6 +65,7 @@ export function AppShell(): React.JSX.Element {
   const restoreTrackingMode = useTrackingModeStore((state) => state.restoreFromStorage)
   const restoreDropEffect = useDropEffectStore((state) => state.restoreFromStorage)
   const restoreNotice = useNoticeStore((state) => state.restore)
+  const resubscribeNotice = useNoticeStore((state) => state.resubscribe)
   const restoreFreshness = useDataFreshness((state) => state.restore)
   const isKeyboardVisible = useKeyboardVisible()
 
@@ -100,12 +102,16 @@ export function AppShell(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // 구독 스위치가 저장된 값을 그린다. **여기서 토픽을 다시 구독하지 않는다** - 복원은 사실을
-  // 읽는 것이고, 부팅마다 구독을 걸면 껐다는 사실을 부팅이 덮는다.
+  // 구독 스위치가 저장된 값을 그리고, **복원이 끝난 뒤** 켜 둔 토픽을 다시 구독한다. 토픽 구독은
+  // FCM 등록 토큰에 묶여 토큰이 바뀌면 사라지는데, 앱은 구독 목록을 FCM 에 물을 수 없다. 켜짐인
+  // 것만 보내므로 끈 토픽을 부팅이 덮지 않는다.
   useEffect(() => {
-    void restoreNotice()
+    void restoreNotice().then(() => resubscribeNotice())
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // 돌아올 때도 같다. OS 설정에서 알림 권한을 켜고 돌아오면 그때 구독이 맞춰진다.
+  useReturnToForeground(resubscribeNotice)
 
   // 페이지별 갱신 시각. 앱을 다시 켜도 화면이 그리는 것은 캐시에 있던 그 데이터라, 시각만
   // 비우면 그 데이터가 언제 것인지 말할 방법이 사라진다.
