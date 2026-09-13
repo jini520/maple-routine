@@ -42,7 +42,7 @@ import {
   type IssuePopoverGeometry,
 } from './CharacterIssue'
 import {
-  collectPayableDrops,
+  collectRevenueDrops,
   collectGroupValuableDrops,
   countGroupClearedMonthlyBosses,
   countGroupClearedWeeklyBosses,
@@ -67,6 +67,9 @@ import {
 // 두지 않는 것은 성격이 달라서다. 그쪽은 게임이 정한 한도이고 이건 우리가 추적하는 월간 보스
 // 종류 수라 이 화면만 쓴다.
 const MONTHLY_BOSS_COUNT = weeklyBossesData.monthly.length
+
+/** 카드 수익 내역 상자에 싣는 아이템 건수. 나머지는 한 줄로 접는다. */
+const CARD_REVENUE_LIST_LIMIT = 5
 
 /**
  * 카드 강조. 글로우(카드 루트에 붙는 그림자 겹)와 링(셸 위에 얹는 골드 테두리)을 함께 낸다.
@@ -259,14 +262,9 @@ export function CharacterAccordion(props: {
   // 이 기간에 고가 아이템을 먹었을 때: 카드에 골드 링 + 글로우 + 우상단 획득 아이템 배지.
   const valuableDrops = collectGroupValuableDrops(group, dropsByRowKey)
   const hasValuable = valuableDrops.length > 0
-  // 금액을 그리는 자리라 **완료된 행의 것만** 든다. 미완료 행에도 드롭을 적을 수 있는데 그 행은
-  // 금액 대신 `미완료` 배지를 세우므로, 여기서 더하면 카드 안 어디에도 없는 돈이 머리에 선다.
-  const groupDrops = collectPayableDrops(group, dropsByRowKey)
-  // 월간 탭에서는 주간 보스 수익이 **주차 소계로 뭉쳐** 들어오므로 그 안의 아이템분도 더해야 카드
-  // 합계와 맞는다. 낱개로는 못 꺼내지만 합은 안다.
-  const itemTotal =
-    sumDropPayout(groupDrops) +
-    group.weeklySubtotals.reduce((sum, subtotal) => sum + sumDropPayout(subtotal.drops), 0)
+  // 카드 금액(`groupTotalMeso`)과 같은 원천이어야 상자의 목록 · 아이템 줄 · 합계가 맞는다.
+  const groupDrops = collectRevenueDrops(group, dropsByRowKey)
+  const itemTotal = sumDropPayout(groupDrops)
   const hasItemRevenue = itemTotal > 0
   // 낱개가 없는 몫은 주차 한 줄씩 말한다. 라벨을 `N주차` 로 고정하는 것은
   // `formatBossProfitPeriodLabel` 이 최근 두 주만 이번 주·지난 주로 불러 줄이 어긋나기 때문이다.
@@ -349,6 +347,7 @@ export function CharacterAccordion(props: {
       {isItemPopoverOpen && (
         <ItemRevenuePopover
           drops={groupDrops}
+          limit={CARD_REVENUE_LIST_LIMIT}
           weeklyLines={weeklyItemLines}
           crystalMeso={totalMeso - itemTotal}
           itemMeso={itemTotal}

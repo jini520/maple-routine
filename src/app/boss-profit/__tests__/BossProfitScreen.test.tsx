@@ -41,6 +41,7 @@ import { setHapticsPort } from '../../../native/ports'
 import { ThemeProvider } from '../../../theme/ThemeProvider'
 import { useDataFreshness } from '../../../features/refresh/freshness'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
+import { useUnpricedDropCount } from '../../../features/boss-profit/use-unpriced-drop-count'
 import { BossProfitScreen } from '../BossProfitScreen'
 
 // 이름이 `mock` 으로 시작해야 한다. babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데 그
@@ -79,10 +80,10 @@ jest.mock('../../../features/boss-profit/store', () => ({
   dropRowKey: (ocid: string, boss: string, difficulty: string, periodKey: string) =>
     `${ocid}|${boss}|${difficulty}|${periodKey}` }))
 
-// 이 화면은 가격 화면이 읽을 창을 미리 채운다. 여기서 재는 것은 화면이지 그 창이 아니라,
-// 스토어째 목으로 세운다(실물은 SQLite 를 친다).
-jest.mock('../../../features/boss-profit/drop-price-store', () => ({
-  useDropPriceStore: { getState: () => ({ warmWindow: jest.fn().mockResolvedValue(undefined) }) },
+// 떠 있는 버튼이 가격 입력 창을 채우고 미입력 건수를 센다. 여기서 재는 것은 화면이지 그 창이
+// 아니라 훅째 목으로 세운다(실물은 SQLite 를 친다).
+jest.mock('../../../features/boss-profit/use-unpriced-drop-count', () => ({
+  useUnpricedDropCount: jest.fn(() => null),
 }))
 
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
@@ -267,6 +268,13 @@ describe('아이템 가격 입력으로 가는 문', () => {
 
     expect(getByText('보스 수익')).toBeTruthy()
     expect(queryByText('아이템 가격')).toBeNull()
+  })
+
+  // 배지 수는 버튼이 여는 가격 입력 화면과 같은 주의 것이어야 한다.
+  it('버튼은 보고 있는 주의 미입력 건수를 센다', async () => {
+    await renderScreen()
+
+    expect(jest.mocked(useUnpricedDropCount)).toHaveBeenCalledWith(CURRENT_WEEKLY)
   })
 
   it('떠 있는 버튼을 누르면 하위 페이지로 push 한다', async () => {
@@ -744,6 +752,71 @@ describe('총 수익 헤드라인', () => {
     expect(getByText('결정석')).toBeTruthy()
     expect(getByText('아이템')).toBeTruthy()
     expect(getByText('합계')).toBeTruthy()
+  })
+
+  it('총 수익 상자는 모든 카드의 드롭에서 비싼 순 상위 10건과 나머지 한 줄이다', async () => {
+    const 값매김 = (itemName: string, 억: number): RecordedDrop =>
+      드롭({ itemName, priceState: 'entered', priceMeso: 억 * 100_000_000, priceShare: 1 })
+    mockStore({
+      status: 'loaded',
+      periodState: 'recorded',
+      rows: [보스행(), 보스행({ ocid: 'ocid-2', characterName: '두번째' })],
+      dropsByRowKey: {
+        [`ocid-1|${주간보스}|하드|${CURRENT_WEEKLY}`]: [1, 2, 3, 4, 5, 6].map((n) =>
+          값매김(`첫째${n}`, n === 1 ? 1 : n * 10),
+        ),
+        [`ocid-2|${주간보스}|하드|${CURRENT_WEEKLY}`]: [
+          ...[1, 2, 3, 4, 5, 6].map((n) => 값매김(`둘째${n}`, n === 1 ? 2 : n * 10 + 1)),
+          드롭({ itemName: '미입력' }),
+        ],
+      } })
+    const { getByLabelText, getByTestId } = await renderScreen()
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('총 수익 자세히 보기'))
+    })
+
+    const popover = within(getByTestId('item-revenue-popover'))
+    expect(popover.getByText('둘째6')).toBeTruthy()
+    expect(popover.getByText('첫째2')).toBeTruthy()
+    expect(popover.queryByText('첫째1')).toBeNull()
+    expect(popover.queryByText('둘째1')).toBeNull()
+    expect(popover.queryByText('미입력')).toBeNull()
+    // 순위 밖 둘(1억 · 2억)의 몫 합.
+    expect(popover.getByText('외 2건')).toBeTruthy()
+    expect(popover.getByText('3.0억')).toBeTruthy()
+  })
+
+  // 월간 보스 드롭은 보스 행에도 남고 그 보스가 선 주차 소계로도 옮겨 담긴다.
+  it('월간 탭의 총 수익 상자는 주차 소계의 드롭에서 읽는다. 월간 보스 드롭을 두 번 안 센다', async () => {
+    const 월간드롭 = 드롭({ itemName: '월간 아이템', priceState: 'entered', priceMeso: 4_000_000, priceShare: 1 })
+    const 주간드롭 = 드롭({ itemName: '주간 아이템', priceState: 'entered', priceMeso: 1_000_000, priceShare: 1 })
+    mockStore({
+      status: 'loaded',
+      tab: 'monthly',
+      periodKey: CURRENT_MONTHLY,
+      loadedTab: 'monthly',
+      loadedPeriodKey: CURRENT_MONTHLY,
+      periodState: 'recorded',
+      rows: [보스행({ boss: weeklyBossesData.monthly[0].boss, cycle: 'monthly', periodKey: CURRENT_MONTHLY, payoutMeso: 0 })],
+      dropsByRowKey: { [`ocid-1|${weeklyBossesData.monthly[0].boss}|하드|${CURRENT_MONTHLY}`]: [월간드롭] },
+      weeklySubtotals: [
+        주차소계({ periodKey: '2026-01-01', totalMeso: 11_000_000, drops: [주간드롭] }),
+        주차소계({ periodKey: '2026-01-08', totalMeso: 4_000_000, drops: [월간드롭] }),
+      ] })
+    const { getByLabelText, getByTestId } = await renderScreen()
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('총 수익 자세히 보기'))
+    })
+
+    const popover = within(getByTestId('item-revenue-popover'))
+    expect(popover.getByText('주간 아이템')).toBeTruthy()
+    expect(popover.getByText('월간 아이템')).toBeTruthy()
+    // 합계 15,000,000 = 결정석 10,000,000 + 아이템 5,000,000
+    expect(popover.getByText('5,000,000')).toBeTruthy()
+    expect(popover.getByText('10,000,000')).toBeTruthy()
+    expect(popover.getByText('15,000,000')).toBeTruthy()
   })
 
   it('월드를 아는 캐릭터가 있으면 결정석 판매 현황 칩이 선다', async () => {

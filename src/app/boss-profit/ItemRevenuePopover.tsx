@@ -10,13 +10,15 @@
  *
  * 기록 한 건이 한 줄이다. 가격이 기록 단위 실판매가라 같은 아이템도 건마다 판 값이 다를 수
  * 있고, `×N` 으로 접으면 그 차이가 합계 하나로 뭉개진다.
+ *
+ * 값을 매긴 기록만 싣는다. 미입력을 0 이나 빈 줄로 그리면 적지 않은 사실이 판 값처럼 읽힌다.
  */
 import { Image, Modal, Pressable, ScrollView, useWindowDimensions, View } from 'react-native'
 
 import { type PopoverAnchorRect } from '../../hooks/useAnchoredPopover'
 
 import { formatMesoShort } from '../../lib/boss/boss-profit-delta'
-import { sortDropsForDisplay } from '../../lib/drop/drop-order'
+import { sortDropsForDisplay, takeTopDropsByPayout } from '../../lib/drop/drop-order'
 import { dropPayoutMeso } from '../../lib/drop/drop-price'
 import type { RecordedDrop } from '../../types/drops'
 import { getItemIconUrl } from '../../lib/assets/asset-lookup'
@@ -38,22 +40,18 @@ export function ItemRevenuePopover(props: {
   /** `null` 이면 아직 못 쟀다. 그리되 보이지 않는다. */
   anchor: PopoverAnchorRect | null
   onClose: () => void
-  /**
-   * 이 층의 결정석 합과 아이템 합.
-   *
-   * 목록에서 더하지 않고 받는다. 목록은 이름을 댈 수 있는 것만 담는데 그게 아이템 전부가 아닐
-   * 수 있다. 월간 탭에서는 주간 보스 수익이 주차 소계로 뭉쳐 들어와 그 안의 아이템을 낱개로
-   * 못 꺼내고, 목록 합으로 계산하면 합계가 카드 숫자와 어긋난다.
-   */
+  /** 이 층의 결정석 합과 아이템 합. 합계 줄은 목록이 아니라 이 두 값으로 만든다. */
   crystalMeso: number
   itemMeso: number
-  /**
-   * 낱개로 못 펼치는 몫. 주차 한 줄씩 선다.
-   *
-   * 월간 탭의 캐릭터 카드에서만 쓴다. 그 층의 주간 수익은 주차 소계로 뭉쳐 들어와 목록
-   * (`drops`)에 낱개가 없다. 아이템까지 보려면 그 주차 행을 열면 된다.
-   */
+  /** 주차마다 한 줄씩 서는 아이템 몫. 월간 탭의 캐릭터 카드에서만 쓴다. */
   weeklyLines?: { periodKey: string; label: string; meso: number }[]
+  /**
+   * 목록에 실을 건수. 주면 몫이 큰 순 상위 N 건과 나머지 한 줄이고, 안 주면 전부를
+   * `sortDropsForDisplay` 차례로 싣는다.
+   *
+   * 보스 행 · 주차 소계 상자는 안 준다. 그 상자는 같은 행의 아이콘 스택과 맨 앞이 맞아야 한다.
+   */
+  limit?: number
 }): React.JSX.Element {
   const { width: windowWidth } = useWindowDimensions()
   const { anchor } = props
@@ -66,12 +64,17 @@ export function ItemRevenuePopover(props: {
     caretSize: ITEM_CARET_SIZE,
   })
 
-  // 스킵은 싣지 않는다. 값을 매기지 않기로 한 것이라 수익 내역에서 할 말이 없다. 미입력은
-  // 남긴다. 그 줄이 곧 여기 값이 비었다 는 신호다.
-  //
-  // 차례는 보스 행의 아이콘 스택과 **같은 함수**가 정한다. 갈라 두면 스택 맨 앞의 그림과 목록
-  // 맨 위의 줄이 서로 다른 아이템이 된다.
-  const listed = sortDropsForDisplay(props.drops.filter((drop) => drop.priceState !== 'excluded'))
+  // 자르지 않는 차례는 보스 행의 아이콘 스택과 **같은 함수**가 정한다. 갈라 두면 스택 맨 앞의
+  // 그림과 목록 맨 위의 줄이 서로 다른 아이템이 된다.
+  const top =
+    props.limit === undefined
+      ? {
+          shown: sortDropsForDisplay(props.drops.filter((drop) => drop.priceState === 'entered')),
+          restCount: 0,
+          restMeso: 0,
+        }
+      : takeTopDropsByPayout(props.drops, props.limit)
+  const listed = top.shown
 
   return (
     <Modal visible transparent animationType="none" statusBarTranslucent navigationBarTranslucent onRequestClose={props.onClose}>
@@ -97,10 +100,15 @@ export function ItemRevenuePopover(props: {
           className="absolute rotate-45 border-l border-t border-border bg-surface"
         />
         {listed.length === 0 ? (
-          // 아이템이 없어도 상자는 뜬다(결정석/합계를 말해야 하므로). 목록 자리에 그 사실을 쓴다.
-          <Text className="py-1.5 text-center text-11 text-text-disabled">기록된 아이템이 없어요</Text>
+          // 아이템이 없어도 상자는 뜬다(결정석/합계를 말해야 하므로). 기록이 없을 때도 미입력만
+          // 있을 때도 참인 문장이어야 한다.
+          <Text className="py-1.5 text-center text-11 text-text-disabled">가격을 입력한 아이템이 없어요</Text>
         ) : (
-          <ScrollView style={{ maxHeight: ITEM_LIST_MAX_HEIGHT }} contentContainerClassName="gap-1.5">
+          <ScrollView
+            testID="item-revenue-list"
+            style={{ maxHeight: ITEM_LIST_MAX_HEIGHT }}
+            contentContainerClassName="gap-1.5"
+          >
             {listed.map((drop, index) => {
               const iconUrl = getItemIconUrl(drop.itemName, drop.slot)
               const share = drop.priceShare ?? 1
@@ -120,25 +128,26 @@ export function ItemRevenuePopover(props: {
                       {drop.ringLevel !== undefined && ` ${drop.ringLevel}레벨`}
                     </Text>
                     {/* 나눠 가졌을 때만 그 분배를 말한다. 1인이면 나눈 것이 없다. */}
-                    {drop.priceState === 'entered' && share > 1 && (
+                    {share > 1 && (
                       <Text className="text-10 text-text-muted" style={TABULAR_NUMS}>
                         {formatMesoShort(drop.priceMeso ?? 0)} ÷ {share}인
                       </Text>
                     )}
                   </View>
-                  {/* 값이 없는 줄에 0 을 쓰지 않는다. 미입력은 0원에 팔았다 가 아니라 아직 안
-                      적었다 이고, 그 둘을 같은 숫자로 그리면 사용자의 기록이 조용히 거짓이
-                      된다. 합산에서 0 으로 접히는 것과 화면이 말하는 것은 다른 층이다. */}
-                  {drop.priceState === 'entered' ? (
-                    <Text className="shrink-0 text-11 font-bold text-text" style={TABULAR_NUMS}>
-                      {formatMesoShort(dropPayoutMeso(drop))}
-                    </Text>
-                  ) : (
-                    <Text className="shrink-0 text-10 text-text-disabled">미입력</Text>
-                  )}
+                  <Text className="shrink-0 text-11 font-bold text-text" style={TABULAR_NUMS}>
+                    {formatMesoShort(dropPayoutMeso(drop))}
+                  </Text>
                 </View>
               )
             })}
+            {top.restCount > 0 && (
+              <View className="flex-row items-center justify-between">
+                <Text className="text-11 text-text-muted">외 {top.restCount}건</Text>
+                <Text className="shrink-0 text-11 font-bold text-text" style={TABULAR_NUMS}>
+                  {formatMesoShort(top.restMeso)}
+                </Text>
+              </View>
+            )}
           </ScrollView>
         )}
         {props.weeklyLines !== undefined && props.weeklyLines.length > 0 && (

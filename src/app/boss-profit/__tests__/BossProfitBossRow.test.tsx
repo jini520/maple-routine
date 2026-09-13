@@ -183,7 +183,24 @@ describe('BossProfitBossRow: 아이템 차례', () => {
       })
   }
 
-  it('연출이 나는 아이템이 값을 매긴 것보다 앞이다', async () => {
+  it('연출이 나는 아이템이 더 비싼 것보다 앞이다', async () => {
+    const 이름들 = await 목록([
+      {
+        category: 'equipment',
+        itemName: '평범한 것',
+        quantity: 1,
+        priceState: 'entered',
+        priceMeso: 9_000_000_000,
+        priceShare: 1,
+      },
+      { category: 'equipment', itemName: 고가아이템, quantity: 1, priceState: 'entered', priceMeso: 1, priceShare: 1 },
+    ])
+
+    expect(이름들).toEqual([고가아이템, '평범한 것'])
+  })
+
+  // 미입력 신호는 아이템 가격 입력 버튼의 배지가 받는다. 행 상자도 미입력을 싣지 않는다.
+  it('값을 안 매긴 드롭은 행 상자에도 안 선다', async () => {
     const 이름들 = await 목록([
       {
         category: 'equipment',
@@ -196,7 +213,7 @@ describe('BossProfitBossRow: 아이템 차례', () => {
       { category: 'equipment', itemName: 고가아이템, quantity: 1 },
     ])
 
-    expect(이름들.indexOf(고가아이템)).toBeLessThan(이름들.indexOf('평범한 것'))
+    expect(이름들).toEqual(['평범한 것'])
   })
 
   it('연출이 없는 것끼리는 비싼 순이다', async () => {

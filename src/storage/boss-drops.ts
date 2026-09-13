@@ -60,9 +60,28 @@ const INSERT_SQL = `
  * **영속화하지 않는다.** 프로세스와 함께 사라지는 것이 맞다. 앱을 다시 켜면 어느 캐시든 비어 있다.
  */
 let recordsRevision = 0
+const revisionListeners = new Set<() => void>()
 
 export function getBossDropRecordsRevision(): number {
   return recordsRevision
+}
+
+/**
+ * 판이 오를 때 부를 함수를 건다. 풀 함수를 돌려준다.
+ *
+ * 판을 묻는 쪽은 다시 읽을 때를 스스로 알지만, 쓰기마다 곧바로 다시 읽어야 하는 쪽은 알림이 없으면
+ * 쓰기를 모른다.
+ */
+export function subscribeBossDropRecordsRevision(listener: () => void): () => void {
+  revisionListeners.add(listener)
+  return () => {
+    revisionListeners.delete(listener)
+  }
+}
+
+function bumpRecordsRevision(): void {
+  recordsRevision += 1
+  for (const listener of revisionListeners) listener()
 }
 
 /** 테스트 전용. 모듈 수준 상태라 테스트끼리 오염된다. 프로덕션에서 부르지 말 것. */
@@ -105,7 +124,7 @@ export async function replaceBossDropRecords(
 
   // **삭제/삽입이 다 끝난 뒤**에 올린다. 중간에 던지면 테이블이 바뀌지 않은 채로 끝나므로
   // 그때 올리면 읽는 쪽이 헛되이 전 기간을 다시 읽는다.
-  recordsRevision += 1
+  bumpRecordsRevision()
 }
 
 /** 저장된 상태 문자열을 도메인 값으로. 모르는 값은 미입력으로 떨어뜨린다(거짓 상태를 만들지 않는다). */

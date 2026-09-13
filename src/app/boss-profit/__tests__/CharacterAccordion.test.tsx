@@ -274,6 +274,68 @@ describe('아이템 수익', () => {
   })
 })
 
+describe('카드 수익 내역 상자', () => {
+  function 값매김(itemName: string, priceMeso: number): RecordedDrop {
+    return 드롭({ itemName, priceState: 'entered', priceMeso, priceShare: 1 })
+  }
+
+  async function 상자열기(
+    group: ReturnType<typeof 그룹>,
+    context: ReturnType<typeof 컨텍스트값>,
+  ): Promise<ReturnType<typeof renderProfit>> {
+    const view = await renderProfit(<CharacterAccordion group={group} />, context)
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('지내우시 아이템 수익 확인'))
+    })
+    return view
+  }
+
+  it('주간 탭은 비싼 순 상위 5건과 나머지 한 줄이다', async () => {
+    const drops = {
+      [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: [1, 2, 3, 4, 5, 6, 7].map((n) =>
+        값매김(`아이템${n}`, n * n * 100_000_000),
+      ),
+    }
+    const view = await 상자열기(그룹(), 컨텍스트값({ dropsByRowKey: drops }))
+
+    expect(view.getByText('아이템7')).toBeTruthy()
+    expect(view.getByText('아이템3')).toBeTruthy()
+    expect(view.queryByText('아이템2')).toBeNull()
+    // 순위 밖 둘(1억 · 4억)의 몫 합.
+    expect(view.getByText('외 2건')).toBeTruthy()
+    expect(view.getByText('5.0억')).toBeTruthy()
+  })
+
+  // 월간 보스 드롭은 보스 행에도 남고 그 보스가 선 주차 소계로도 옮겨 담긴다. 둘을 더하면 아이템이
+  // 부풀고 결정석 줄이 그만큼 준다.
+  it('월간 탭은 주차 소계의 드롭에서 목록과 아이템 줄을 만든다. 월간 보스 드롭을 두 번 안 센다', async () => {
+    const 월간행 = 보스행({ boss: 월간보스, cycle: 'monthly', periodKey: '2026-08', payoutMeso: 0 })
+    const 월간드롭 = 값매김('월간 아이템', 400_000_000)
+    const 주간드롭 = 값매김('주간 아이템', 100_000_000)
+    const group = 그룹(
+      [월간행],
+      [
+        주차소계({ periodKey: '2026-08-06', totalMeso: 1_100_000_000, drops: [주간드롭] }),
+        주차소계({ periodKey: '2026-08-13', totalMeso: 400_000_000, drops: [월간드롭] }),
+      ],
+    )
+    const view = await 상자열기(
+      group,
+      컨텍스트값({
+        tab: 'monthly',
+        dropsByRowKey: { [dropRowKey(월간행.ocid, 월간행.boss, 월간행.difficulty, 월간행.periodKey)]: [월간드롭] },
+      }),
+    )
+
+    expect(view.getByText('주간 아이템')).toBeTruthy()
+    expect(view.getByText('월간 아이템')).toBeTruthy()
+    // 합계 1,500,000,000 = 결정석 1,000,000,000 + 아이템 500,000,000
+    expect(view.getByText('500,000,000')).toBeTruthy()
+    expect(view.getByText('1,000,000,000')).toBeTruthy()
+    expect(view.getByText('1,500,000,000')).toBeTruthy()
+  })
+})
+
 describe('실패 표식', () => {
   it('issue 가 없으면 배지를 붙이지 않는다', async () => {
     const { queryByTestId } = await renderProfit(<CharacterAccordion group={그룹()} />)
