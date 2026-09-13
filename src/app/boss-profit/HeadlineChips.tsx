@@ -20,7 +20,7 @@ import {
   Text,
 } from '../../components/atoms'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
-import { countMonthlyCrystals, summarizeWorldCrystals } from './character-groups'
+import { summarizeWorldCrystals } from './character-groups'
 import type { CharacterGroup } from './character-groups'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 
@@ -63,7 +63,8 @@ export function CrystalSummaryChip(props: { groups: CharacterGroup[] }): React.J
   if (worlds.length === 0) return null
 
   const cleared = worlds.reduce((sum, summary) => sum + summary.cleared, 0)
-  const monthlyCleared = countMonthlyCrystals(props.groups)
+  // 월간 수도 월드별 줄의 합이다. 칩과 펼친 줄이 같은 수를 말하고, 월드를 모르는 행은 둘 다에서 빠진다.
+  const monthlyCleared = worlds.reduce((sum, summary) => sum + summary.monthlyCleared, 0)
   // 각 월드가 각자 90 을 가지므로 복수 월드의 분모는 90 × 월드 수다.
   const limit = WEEKLY_CRYSTAL_SALE_LIMIT * worlds.length
   const isExpandable = worlds.length > 1

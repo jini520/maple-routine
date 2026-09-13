@@ -300,8 +300,8 @@ export function summarizeWorldCrystals(groups: CharacterGroup[]): WorldCrystalSu
 }
 
 // 이 캐릭터가 이 달에 처치한 월간 보스 수(보스명 distinct. 같은 보스를 여러 난이도로 잡아도 1).
-// 주간 쪽 `countGroupClearedWeeklyBosses` 와 대칭이며 월간 탭 진행 링과 월간 결정석 칩이 이
-// 함수 하나를 공유한다.
+// 주간 쪽 `countGroupClearedWeeklyBosses` 와 대칭이며 월간 탭 진행 링이 쓴다. 결정석 칩의 월간
+// 수는 월드별로 세는 `summarizeWorldCrystals` 에서 나온다.
 export function countGroupClearedMonthlyBosses(group: CharacterGroup): number {
   const clearedBossNames = new Set<string>()
   for (const row of group.bossRows) {
@@ -309,11 +309,4 @@ export function countGroupClearedMonthlyBosses(group: CharacterGroup): number {
     clearedBossNames.add(row.boss)
   }
   return clearedBossNames.size
-}
-
-// 이 기간 월간 보스(검은마법사) 결정석 개수. 주간 90 한도에 포함되지 않는 별개 수치라 위 주간
-// 집계와 섞지 않는다. 시즌 보스는 weekly 소속이라 여기선 판정할 것이 없다. 결정석은 캐릭터마다
-// 각자 나오므로 그룹별 처치 수를 더한다.
-export function countMonthlyCrystals(groups: CharacterGroup[]): number {
-  return groups.reduce((total, group) => total + countGroupClearedMonthlyBosses(group), 0)
 }
