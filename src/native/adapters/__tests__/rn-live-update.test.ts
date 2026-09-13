@@ -10,6 +10,8 @@
 // 게터로 감싸는 것도 같은 이유다: 팩토리는 모듈 평가보다 먼저 돈다.
 let mockRuntimeVersion = 'NEW'
 let mockCheckResult: { isAvailable: boolean } = { isAvailable: false }
+let mockManifest: unknown = {}
+let mockExpoConfig: { version?: string } | null = null
 
 jest.mock('expo-updates', () => ({
   __esModule: true,
@@ -18,13 +20,25 @@ jest.mock('expo-updates', () => ({
   },
   isEnabled: true,
   channel: 'production',
-  manifest: {},
+  get manifest() {
+    return mockManifest
+  },
   checkForUpdateAsync: jest.fn(async () => mockCheckResult),
   fetchUpdateAsync: jest.fn(),
   reloadAsync: jest.fn(),
   addUpdatesStateChangeListener: jest.fn(() => ({ remove: jest.fn() })),
 }))
 
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: {
+    get expoConfig() {
+      return mockExpoConfig
+    },
+  },
+}))
+
+import packageJson from '../../../../package.json'
 import { rnLiveUpdatePort } from '../rn-live-update'
 
 const OLD = 'OLD'
@@ -39,6 +53,8 @@ function serveLatest(body: unknown, ok = true): jest.Mock {
 beforeEach(() => {
   mockRuntimeVersion = 'NEW'
   mockCheckResult = { isAvailable: false }
+  mockManifest = {}
+  mockExpoConfig = null
 })
 
 describe('check: 받는 지문 목록으로 스토어 업데이트 필요를 가른다', () => {
@@ -99,5 +115,30 @@ describe('check: 받는 지문 목록으로 스토어 업데이트 필요를 가
 
     // 최신으로 떨어졌을 때만 묻는 것이 계약이다. 매번 물으면 곁가지 실패가 본 확인을 뒤집는다.
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+})
+
+// 설정의 `현재 버전`. 스토어 1.0.8 바이너리가 1.0.7 로 보였던 자리다. 내장 번들의 매니페스트에는
+// `extra` 가 없어 `package.json` 으로 떨어졌고, 스토어 릴리스는 `app.json` 만 올렸다.
+describe('getCurrentVersion: 도는 번들이 말하는 버전', () => {
+  it('OTA 번들이면 매니페스트의 버전이다. 바이너리 버전보다 앞선다', async () => {
+    mockManifest = { extra: { appVersion: '1.0.9' } }
+    mockExpoConfig = { version: '1.0.8' }
+
+    await expect(rnLiveUpdatePort.getCurrentVersion()).resolves.toBe('1.0.9')
+  })
+
+  it('내장 번들이면 매니페스트에 버전이 없어 바이너리에 박힌 버전이다', async () => {
+    mockManifest = { id: 'embedded', commitTime: 0, assets: [] }
+    mockExpoConfig = { version: '1.0.8' }
+
+    await expect(rnLiveUpdatePort.getCurrentVersion()).resolves.toBe('1.0.8')
+  })
+
+  it('둘 다 못 읽으면 package.json 버전이다', async () => {
+    mockManifest = {}
+    mockExpoConfig = null
+
+    await expect(rnLiveUpdatePort.getCurrentVersion()).resolves.toBe(packageJson.version)
   })
 })
