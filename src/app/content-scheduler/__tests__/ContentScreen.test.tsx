@@ -362,6 +362,46 @@ describe('ContentScreen: 목록', () => {
   })
 })
 
+// 에픽 던전 주 3회 한도. 카드와 링이 같은 판정을 본다. 원천은 표시 목록이 아니라 병합된 목록 전체다.
+describe('ContentScreen: 에픽 던전 주간 한도', () => {
+  const epic = (name: string, nowCount: number, isRegistered = true) => ({
+    name: `에픽 던전 : ${name}`,
+    kind: 'contents' as const,
+    isRegistered,
+    nowCount,
+    maxCount: 0,
+    questState: null,
+  })
+
+  function withEpics(weeklyContents: ContentCharacterView['weeklyContents']): void {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      activeTab: 'weekly',
+      characters: [character({ weeklyContents })],
+    })
+  }
+
+  it('3종을 완료하면 남은 1종의 카드가 마감이고 링은 가득 찬다', async () => {
+    withEpics([epic('하이마운틴', 1), epic('앵글러 컴퍼니', 1), epic('악몽선경', 0), epic('아우룸 레기스', 1)])
+
+    await renderScreen()
+
+    expect(screen.getAllByText('마감')).toHaveLength(1)
+    expect(screen.getByTestId('character-portrait').props.accessibilityLabel).toContain('주간 4/4')
+  })
+
+  // 자동 모드에서 등록 안 한 던전은 카드가 없지만 그 완료는 한도를 채운다.
+  it('등록 안 한 던전의 완료도 한도에 든다', async () => {
+    withEpics([epic('하이마운틴', 1), epic('앵글러 컴퍼니', 1), epic('악몽선경', 1, false), epic('아우룸 레기스', 0)])
+
+    await renderScreen()
+
+    expect(screen.getByText('마감')).toBeTruthy()
+    expect(screen.getByTestId('character-portrait').props.accessibilityLabel).toContain('주간 3/3')
+  })
+})
+
 describe('ContentScreen: 재조회', () => {
   const loaded = (status: Store['status'] = 'loaded'): Store =>
     mockStore({ status, trackedOcids: ['ocid-1'], characters: [character()] })

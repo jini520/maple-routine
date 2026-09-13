@@ -18,13 +18,13 @@ function publishedAtMs(notice: Notice): number {
 /**
  * 가장 최근 발행분. 단 그것이 닫혔으면 `null`.
  *
- * **`app` 만 본다.** 저장소에는 넥슨 네 갈래도 같이 쌓이는데, 그것들이 매일 들어와서 분류를
+ * **`app` 만 본다.** 사본에는 넥슨 네 갈래도 같이 있는데, 그것들이 매일 들어와서 분류를
  * 안 가리면 배너가 사실상 항상 넥슨 것이 된다. 그러면 운영자가 쓴 공지는 첫 화면에 못 닿는다.
  *
  * **저장 순서에 안 기댄다.** `storage/notices.ts` 가 최근순으로 넣어 두기는 하지만, 그 사실에
  * 기대면 저장 순서를 바꾸는 날 배너가 옛 공지를 세운다.
  *
- * @param notices 기기에 쌓인 공지. 분류가 섞여 있다
+ * @param notices 공지 사본. 분류가 섞여 있다
  * @param dismissedIds 배너에서 닫은 id
  */
 export function pickBannerNotice(

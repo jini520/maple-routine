@@ -233,6 +233,62 @@ describe('완료는 체크와 취소선이 말한다', () => {
   })
 })
 
+// 에픽 던전 주 3회 한도. 계열 제목 줄 오른쪽 끝에 줄 카운트와 같은 모양으로 n/3 이 서고, 한도 때문에
+// 막힌 줄은 체크 없이 취소선만 긋는다.
+describe('계열의 주간 한도', () => {
+  const 숨은것포함 = { includeHiddenElements: true } as const
+  const 한도참 = (): SharedContentGroupView[] => [
+    공유계열(
+      '에픽던전',
+      [
+        공유항목('하이마운틴', { isComplete: true }),
+        공유항목('앵글러컴퍼니', { isComplete: true }),
+        공유항목('악몽선경', { isWeeklyLimitClosed: true }),
+        공유항목('아우룸레기스', { isComplete: true }),
+      ],
+      { now: 3, max: 3 },
+    ),
+  ]
+
+  it('계열 제목 줄에 n/3 이 줄 카운트와 같은 모양으로 선다', async () => {
+    const { getByTestId } = await 위젯(한도참())
+
+    const 수 = getByTestId('shared-group-count')
+    expect(수).toHaveTextContent('3/3')
+    // 제목과 같은 줄의 오른쪽 끝이다. 제목과 수를 함께 품는 가로 줄이 양 끝으로 벌린다.
+    const 줄 = getByTestId('shared-group-name').parent
+    expect(수.parent).toBe(줄)
+    expect(flattenStyle(줄?.props.style)).toMatchObject({ flexDirection: 'row', justifyContent: 'space-between' })
+  })
+
+  it('수의 모양은 줄의 n/max 와 같다', async () => {
+    const { getByTestId } = await 위젯([
+      공유계열('에픽던전', [공유항목('악몽선경', { count: { now: 1, max: 5 } })], { now: 2, max: 3 }),
+    ])
+
+    expect(flattenStyle(getByTestId('shared-group-count').props.style)).toEqual(
+      flattenStyle(getByTestId('shared-count').props.style),
+    )
+  })
+
+  it('한도가 없는 계열은 수를 안 단다', async () => {
+    const { queryByTestId } = await 위젯([공유계열('몬스터파크', [공유항목('일간')])])
+
+    expect(queryByTestId('shared-group-count')).toBeNull()
+  })
+
+  it('막힌 줄은 체크 없이 취소선과 흐린 색이 걸린다', async () => {
+    const { getAllByTestId } = await 위젯(한도참())
+
+    const 이름들 = getAllByTestId('shared-item-name')
+    const 상자들 = getAllByTestId('shared-checkbox', 숨은것포함)
+    expect(flattenStyle(이름들[2]?.props.style).textDecorationLine).toBe('line-through')
+    expect(flattenStyle(이름들[2]?.props.style).color).toBe(기본테마.textDisabled)
+    expect(상자들[2]?.props.children).toBeFalsy()
+    expect(상자들[0]?.props.children).toBeTruthy()
+  })
+})
+
 describe('빈 상태와 이동', () => {
   it('계열이 하나도 없어도 타일은 선다. 위젯은 사라지지 않는다', async () => {
     const { getByTestId, queryAllByTestId } = await 위젯([])

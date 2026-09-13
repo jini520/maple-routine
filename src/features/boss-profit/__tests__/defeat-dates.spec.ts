@@ -4,7 +4,7 @@
 // ② **구멍이 있으면 확정하지 않는다**. 시작일부터 끊김 없이 봐야 **그 앞엔 없었다** 를 말한다.
 // ③ **오늘은 소거법**이다. `date=오늘` 은 400 이라 조회로는 영영 못 본다.
 // ④ **캘 수 없는 날만 건너뛴다**. 창에 하루라도 걸치는 기간은 부르고, 창 하한보다
-//    앞선 날만 안 본다(정정 6). 건너뛴 뒤 첫 관측이 이미 완료면 그때만 포기한다.
+//    앞선 날과 리프 경계 앞의 `outOfRange` 만 안 본다. 건너뛴 뒤 첫 관측이 이미 완료면 그 날로 적는다.
 
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
 jest.mock('../../../storage/boss-profit', () => ({
@@ -18,6 +18,7 @@ jest.mock('../../../storage/schedule-probe-ledger', () => ({
 }))
 jest.mock('../../../nexon/schedule', () => ({ fetchSchedulerCharacterState: jest.fn() }))
 
+import { NexonBadRequestError } from '../../../nexon/errors'
 import { resolveDefeatDates, resolveDefeatedOn } from '../defeat-dates'
 
 const { getAuthConfig: getAuthConfigMock } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
@@ -449,8 +450,8 @@ describe('resolveDefeatDates: 원장이 겹침을 막는다 (결정 5)', () => {
 
     const asked = fetchStateMock.mock.calls.map(([, , dateKey]) => dateKey)
     expect(asked).not.toContain('2026-08-20')
-    // 구멍이 시작일이라 확정도 안 한다.
-    expect(setDefeatedOnMock).not.toHaveBeenCalled()
+    // 원장의 첫 관측(8/21)보다 앞선 `outOfRange` 라 영영 못 보는 날이다. 뒤가 전부 미완료라 오늘이다.
+    expect(setDefeatedOnMock).toHaveBeenCalledWith(미확정_스우, '2026-08-24')
   })
 })
 
@@ -552,5 +553,191 @@ describe('키가 없을 때', () => {
 
     expect(dated).toBe(0)
     expect(fetchStateMock).not.toHaveBeenCalled()
+  })
+})
+
+// 월드 리프로 새로 생긴 ocid 는 리프 전 날짜를 영영 못 부른다. 그 날이 주 첫날이면 구멍으로 읽혀
+// 리프한 주의 기록이 영구 NULL 로 굳었다(이슈 #406). 원장에서 가장 이른 `observed` 보다 앞선
+// `outOfRange` 만 창 하한 앞의 날처럼 건너뛴다.
+describe('resolveDefeatedOn: 리프 경계 앞의 날', () => {
+  const LEAP_WEEK = [
+    '2026-09-10',
+    '2026-09-11',
+    '2026-09-12',
+    '2026-09-13',
+    '2026-09-14',
+    '2026-09-15',
+    '2026-09-16',
+  ]
+
+  it('건너뛴 뒤 미완료를 보면 다음 완료가 처치일이다', () => {
+    expect(
+      resolveDefeatedOn({
+        periodDays: LEAP_WEEK,
+        observed: observed({ '2026-09-11': [], '2026-09-12': ['스우|하드'] }),
+        unobservableDays: new Set(['2026-09-10']),
+        todayDateKey: '2026-09-14',
+        bossKey: '스우|하드',
+        queryFloorDateKey: '2026-09-01',
+        fallbackToEarliestQueryable: true,
+      }),
+    ).toBe('2026-09-12')
+  })
+
+  it('기록한 당일에도 소거법으로 선다', () => {
+    expect(
+      resolveDefeatedOn({
+        periodDays: LEAP_WEEK,
+        observed: observed({ '2026-09-11': [] }),
+        unobservableDays: new Set(['2026-09-10']),
+        todayDateKey: '2026-09-12',
+        bossKey: '스우|하드',
+        queryFloorDateKey: '2026-08-30',
+        fallbackToEarliestQueryable: true,
+      }),
+    ).toBe('2026-09-12')
+  })
+
+  it('첫 관측이 이미 완료면 폴백으로 그 날이다', () => {
+    expect(
+      resolveDefeatedOn({
+        periodDays: LEAP_WEEK,
+        observed: observed({ '2026-09-11': ['스우|하드'] }),
+        unobservableDays: new Set(['2026-09-10']),
+        todayDateKey: '2026-09-14',
+        bossKey: '스우|하드',
+        queryFloorDateKey: '2026-09-01',
+        fallbackToEarliestQueryable: true,
+      }),
+    ).toBe('2026-09-11')
+  })
+
+  it('영영 못 보는 날로 안 준 창 안의 빈 날은 여전히 구멍이다', () => {
+    expect(
+      resolveDefeatedOn({
+        periodDays: LEAP_WEEK,
+        observed: observed({ '2026-09-11': [], '2026-09-12': ['스우|하드'] }),
+        todayDateKey: '2026-09-14',
+        bossKey: '스우|하드',
+        queryFloorDateKey: '2026-09-01',
+        fallbackToEarliestQueryable: true,
+      }),
+    ).toBeNull()
+  })
+})
+
+describe('resolveDefeatDates: 리프 경계는 원장에서 읽는다', () => {
+  const 리프주_스우 = { ...미확정_스우, periodKey: '2026-09-10' }
+
+  function outOfRangeDays(from: string, to: string): Record<string, { kind: 'outOfRange' }> {
+    const days: Record<string, { kind: 'outOfRange' }> = {}
+    for (let day = new Date(`${from}T00:00:00Z`); day <= new Date(`${to}T00:00:00Z`); day.setUTCDate(day.getUTCDate() + 1)) {
+      days[day.toISOString().slice(0, 10)] = { kind: 'outOfRange' }
+    }
+    return days
+  }
+
+  // 실기기 백업(2026-09-12)의 새 ocid 원장. 09-10 까지 `outOfRange`, 09-11 완료 0건.
+  it('실기기 원장 모양에서 기록한 당일 소거법으로 날짜가 선다', async () => {
+    getUndatedMock.mockResolvedValue([리프주_스우])
+    getLedgerMock.mockResolvedValue({
+      unavailable: false,
+      dates: {
+        ...outOfRangeDays('2026-08-30', '2026-09-10'),
+        '2026-09-11': { kind: 'observed', hasCompletion: false, sections: {}, bosses: [] },
+      },
+    })
+
+    await expect(resolveDefeatDates(['ocid-1'], new Date('2026-09-12T05:00:00.000Z'))).resolves.toBe(1)
+
+    expect(setDefeatedOnMock).toHaveBeenCalledWith(리프주_스우, '2026-09-12')
+    expect(fetchStateMock).not.toHaveBeenCalled()
+  })
+
+  it('다음 날 관측이 들어오면 뒤집힌 날이 선다', async () => {
+    getUndatedMock.mockResolvedValue([리프주_스우])
+    getLedgerMock.mockResolvedValue({
+      unavailable: false,
+      dates: {
+        ...outOfRangeDays('2026-09-01', '2026-09-10'),
+        '2026-09-11': { kind: 'observed', hasCompletion: false, sections: {}, bosses: [] },
+        '2026-09-12': { kind: 'observed', hasCompletion: true, sections: {}, bosses: ['스우|하드'] },
+        '2026-09-13': { kind: 'observed', hasCompletion: true, sections: {}, bosses: ['스우|하드'] },
+      },
+    })
+
+    await resolveDefeatDates(['ocid-1'], new Date('2026-09-14T05:00:00.000Z'))
+
+    expect(setDefeatedOnMock).toHaveBeenCalledWith(리프주_스우, '2026-09-12')
+  })
+
+  // `OPENAPI00004` 는 오늘 날짜에도 온다. 기기 시계가 빠르면 자정 직후 주 첫날이 영구 `outOfRange` 로
+  // 적힌다. 그 앞에 전 주의 관측이 있으면 리프 경계가 아니다.
+  it('앞에 관측이 있는 outOfRange 는 구멍 그대로다', async () => {
+    const 목요일_스우 = { ...미확정_스우, periodKey: '2026-09-03' }
+    getUndatedMock.mockResolvedValue([목요일_스우])
+    getLedgerMock.mockResolvedValue({
+      unavailable: false,
+      dates: {
+        '2026-09-01': { kind: 'observed', hasCompletion: false, sections: {}, bosses: [] },
+        '2026-09-02': { kind: 'observed', hasCompletion: false, sections: {}, bosses: [] },
+        '2026-09-03': { kind: 'outOfRange' },
+        '2026-09-04': { kind: 'observed', hasCompletion: true, sections: {}, bosses: ['스우|하드'] },
+      },
+    })
+
+    await resolveDefeatDates(['ocid-1'], new Date('2026-09-05T05:00:00.000Z'))
+
+    expect(setDefeatedOnMock).not.toHaveBeenCalled()
+  })
+
+  // 경계를 가르는 첫 관측은 `bosses` 유무와 무관하다. 그 날에 조회가 됐다는 사실이 같다.
+  it('bosses 가 없는 옛 관측도 첫 관측으로 센다', async () => {
+    const 목요일_스우 = { ...미확정_스우, periodKey: '2026-09-03' }
+    getUndatedMock.mockResolvedValue([목요일_스우])
+    getLedgerMock.mockResolvedValue({
+      unavailable: false,
+      dates: {
+        '2026-09-02': { kind: 'observed', hasCompletion: false, sections: {} },
+        '2026-09-03': { kind: 'outOfRange' },
+        '2026-09-04': { kind: 'observed', hasCompletion: true, sections: {}, bosses: ['스우|하드'] },
+      },
+    })
+    // 다시 불러도 못 받아 9/2 는 `bosses` 없는 관측으로 남는다.
+    fetchStateMock.mockRejectedValue(new Error('network'))
+
+    await resolveDefeatDates(['ocid-1'], new Date('2026-09-05T05:00:00.000Z'))
+
+    expect(setDefeatedOnMock).not.toHaveBeenCalled()
+  })
+
+  // 이번 회차의 조회가 받은 `outOfRange` 도 원장에 적히는 사실이라 같은 회차에서 센다.
+  it('이번 회차에 받은 outOfRange 도 경계로 센다', async () => {
+    getUndatedMock.mockResolvedValue([미확정_스우])
+    fetchStateMock.mockImplementation(async (_key: string, _ocid: string, dateKey: string) => {
+      if (dateKey === '2026-08-20') throw new NexonBadRequestError('out of range', 'OPENAPI00004')
+      return schedulerState([])
+    })
+
+    await resolveDefeatDates(['ocid-1'], NOW)
+
+    expect(setDefeatedOnMock).toHaveBeenCalledWith(미확정_스우, '2026-08-24')
+  })
+
+  it('일시적인 구멍 뒤 곧바로 완료는 여전히 확정하지 않는다', async () => {
+    getUndatedMock.mockResolvedValue([리프주_스우])
+    getLedgerMock.mockResolvedValue({
+      unavailable: false,
+      dates: {
+        '2026-09-10': { kind: 'observed', hasCompletion: false, sections: {}, bosses: [] },
+        '2026-09-12': { kind: 'observed', hasCompletion: true, sections: {}, bosses: ['스우|하드'] },
+        '2026-09-13': { kind: 'observed', hasCompletion: true, sections: {}, bosses: ['스우|하드'] },
+      },
+    })
+    fetchStateMock.mockRejectedValue(new Error('network'))
+
+    await resolveDefeatDates(['ocid-1'], new Date('2026-09-14T05:00:00.000Z'))
+
+    expect(setDefeatedOnMock).not.toHaveBeenCalled()
   })
 })

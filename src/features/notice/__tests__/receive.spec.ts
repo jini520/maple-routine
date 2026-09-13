@@ -2,9 +2,7 @@
 //
 // FCM 은 data 값을 전부 문자열로만 싣는다. 그래서 숫자나 객체가 오는 경우는 없고, 대신
 // **빠져 있는 경우**가 실제로 온다(서버가 필드를 안 넣거나 이름을 바꿨을 때).
-import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
-import { getNotices } from '../../../storage/notices'
-import { parseNotice, receiveNotice } from '../receive'
+import { parseNotice } from '../receive'
 
 const 온전한 = {
   noticeId: 'a',
@@ -12,11 +10,6 @@ const 온전한 = {
   body: '9월 8일 02시부터 점검합니다.',
   publishedAt: '2026-09-07T12:00:00Z',
 }
-
-beforeEach(async () => {
-  const prefs = installFakePreferences()
-  await prefs.remove('notices')
-})
 
 describe('페이로드 읽기', () => {
   // 이벤트·캐시샵 본문은 이미지 한 장이라 평문이 0자다. 본문을 필수로 보면 그 두 분류의
@@ -79,29 +72,5 @@ describe('페이로드 읽기', () => {
   // 공지가 아닌 푸시가 올 수 있다. 그때 조용히 지나가야지 던지면 안 된다.
   it('빈 페이로드는 null', () => {
     expect(parseNotice({})).toBeNull()
-  })
-})
-
-describe('받아서 쌓기', () => {
-  it('온전한 것은 저장된다', async () => {
-    await receiveNotice(온전한)
-
-    const all = await getNotices()
-    expect(all).toHaveLength(1)
-    expect(all[0].id).toBe('a')
-  })
-
-  it('못 읽는 것은 저장하지 않는다', async () => {
-    await receiveNotice({ 아무거나: '값' })
-
-    await expect(getNotices()).resolves.toEqual([])
-  })
-
-  // 같은 공지가 포그라운드 수신과 탭 양쪽으로 올 수 있다. 두 번 쌓이면 안 된다.
-  it('같은 것을 두 번 받아도 한 건이다', async () => {
-    await receiveNotice(온전한)
-    await receiveNotice(온전한)
-
-    await expect(getNotices()).resolves.toHaveLength(1)
   })
 })

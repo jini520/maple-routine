@@ -12,6 +12,7 @@ import type { DailyContent, WeeklyContent } from '../../../types'
 import { findAllOfType, renderAtom, type AtomElement } from '../../../components/__tests__/render-atom'
 import { renderDailyContentCard } from '../DailyContentCards'
 import { renderWeeklyContentCard } from '../WeeklyContentCards'
+import { weeklyLimitClosedNames } from '../content-completion'
 
 const HIDDEN = { includeHiddenElements: true } as const
 
@@ -105,18 +106,18 @@ describe('일간 카드', () => {
 
 describe('주간 카드', () => {
   it('에픽 던전은 카테고리 배지 + 접두어 뗀 이름이고 now_count 로 완료를 가른다', async () => {
-    const done = await renderAtom(renderWeeklyContentCard(weekly({ name: '에픽 던전 : 앵글러 컴퍼니', nowCount: 5 }), 300))
+    const done = await renderAtom(renderWeeklyContentCard(weekly({ name: '에픽 던전 : 앵글러 컴퍼니', nowCount: 5 }), 300, false))
     expect(done.getByText('에픽 던전')).toBeTruthy()
     expect(done.getByText('앵글러 컴퍼니')).toBeTruthy()
     expect(done.getByText('완료')).toBeTruthy()
 
-    const todo = await renderAtom(renderWeeklyContentCard(weekly({ name: '에픽 던전 : 하이마운틴', nowCount: 0 }), 300))
+    const todo = await renderAtom(renderWeeklyContentCard(weekly({ name: '에픽 던전 : 하이마운틴', nowCount: 0 }), 300, false))
     expect(todo.getByText('시작 안함')).toBeTruthy()
   })
 
   it('지역 주간 퀘스트는 지역 배경과 now/max 기반 완료 배지를 쓴다', async () => {
     const view = await renderAtom(
-      renderWeeklyContentCard(weekly({ name: '에르다 스펙트럼', nowCount: 1, maxCount: 1 }), 300),
+      renderWeeklyContentCard(weekly({ name: '에르다 스펙트럼', nowCount: 1, maxCount: 1 }), 300, false),
     )
 
     expect(view.getByText('에르다 스펙트럼')).toBeTruthy()
@@ -128,7 +129,7 @@ describe('주간 카드', () => {
     const view = await renderAtom(
       renderWeeklyContentCard(
         weekly({ name: '[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?', questState: 1, nowCount: 0, maxCount: 5 }),
-        300,
+        300, false,
       ),
     )
 
@@ -140,13 +141,13 @@ describe('주간 카드', () => {
   // quest_state 가 아니라 **도달 층수**다. 배지 종류가 갈리는 자리라 두 방향을 다 본다.
   it('무릉도장은 now_count 를 "N층"으로 보여주고, 참여 전이면 "시작 안함"이다', async () => {
     const played = await renderAtom(
-      renderWeeklyContentCard(weekly({ name: '무릉도장', nowCount: 37, maxCount: 100 }), 300),
+      renderWeeklyContentCard(weekly({ name: '무릉도장', nowCount: 37, maxCount: 100 }), 300, false),
     )
     expect(played.getByText('37층')).toBeTruthy()
     expect(played.queryByText('완료')).toBeNull()
     expect(artUri(played)).toContain('muruengRaid')
 
-    const fresh = await renderAtom(renderWeeklyContentCard(weekly({ name: '무릉도장', nowCount: 0, maxCount: 100 }), 300))
+    const fresh = await renderAtom(renderWeeklyContentCard(weekly({ name: '무릉도장', nowCount: 0, maxCount: 100 }), 300, false))
     expect(fresh.getByText('시작 안함')).toBeTruthy()
   })
 
@@ -154,7 +155,7 @@ describe('주간 카드', () => {
     const partial = await renderAtom(
       renderWeeklyContentCard(
         weekly({ name: '성실한 조사에 대한 보답', questState: 1, nowCount: 1, maxCount: 2 }),
-        300,
+        300, false,
       ),
     )
     expect(partial.getByText('1회 완료')).toBeTruthy()
@@ -162,7 +163,7 @@ describe('주간 카드', () => {
     const complete = await renderAtom(
       renderWeeklyContentCard(
         weekly({ name: '성실한 조사에 대한 보답', questState: 1, nowCount: 2, maxCount: 2 }),
-        300,
+        300, false,
       ),
     )
     expect(complete.getByText('완료')).toBeTruthy()
@@ -170,7 +171,7 @@ describe('주간 카드', () => {
 
   it('메이플 유니온은 접두어를 떼고 드래곤 배경의 카테고리 카드가 된다', async () => {
     const view = await renderAtom(
-      renderWeeklyContentCard(weekly({ name: '[메이플 유니온] 드래곤 퇴치', questState: 2 }), 300),
+      renderWeeklyContentCard(weekly({ name: '[메이플 유니온] 드래곤 퇴치', questState: 2 }), 300, false),
     )
 
     expect(view.getByText('유니온')).toBeTruthy()
@@ -181,26 +182,26 @@ describe('주간 카드', () => {
   // 셋이 **서로 독립**이라는 것이 요점이다. 하나만 등록돼도 나머지에 영향이 없다.
   it('길드 3종은 저마다 다른 카드다', async () => {
     const waterway = await renderAtom(
-      renderWeeklyContentCard(weekly({ name: '[길드] 지하 수로', nowCount: 1200 }), 300),
+      renderWeeklyContentCard(weekly({ name: '[길드] 지하 수로', nowCount: 1200 }), 300, false),
     )
     expect(waterway.getByText('지하 수로')).toBeTruthy()
     expect(waterway.getByText('1200점')).toBeTruthy()
 
     const points = await renderAtom(
-      renderWeeklyContentCard(weekly({ name: '[길드] 주간 미션 포인트', nowCount: 3, maxCount: 10 }), 300),
+      renderWeeklyContentCard(weekly({ name: '[길드] 주간 미션 포인트', nowCount: 3, maxCount: 10 }), 300, false),
     )
     expect(points.getByText('3/10')).toBeTruthy()
     expect(progressNow(points)).toBe(3)
 
     const flag = await renderAtom(
-      renderWeeklyContentCard(weekly({ name: '[길드] 플래그 레이스', nowCount: 1 }), 300),
+      renderWeeklyContentCard(weekly({ name: '[길드] 플래그 레이스', nowCount: 1 }), 300, false),
     )
     expect(flag.getByText('플래그 레이스')).toBeTruthy()
     expect(flag.getByText('완료')).toBeTruthy()
   })
 
   it('그 밖의 항목은 기본 카드다', async () => {
-    const view = await renderAtom(renderWeeklyContentCard(weekly({ name: '기타', nowCount: 1, maxCount: 3 }), 300))
+    const view = await renderAtom(renderWeeklyContentCard(weekly({ name: '기타', nowCount: 1, maxCount: 3 }), 300, false))
 
     expect(view.getByText('기타 · 1/3')).toBeTruthy()
   })
@@ -225,8 +226,58 @@ describe('진행 불가 배지', () => {
 
   // 주간 컨텐츠 5개(유니온 둘· 길드 셋)는 참조표에 요구 레벨이 없다. 어떤 레벨에서도 진행 가능이다.
   it('요구 레벨이 없는 항목은 낮은 레벨에서도 배지가 안 뜬다', async () => {
-    const view = await renderAtom(renderWeeklyContentCard(weekly({ name: '[길드] 지하 수로', nowCount: 1200 }), 1))
+    const view = await renderAtom(renderWeeklyContentCard(weekly({ name: '[길드] 지하 수로', nowCount: 1200 }), 1, false))
 
     expect(view.queryByText('진행 불가')).toBeNull()
+  })
+})
+
+// 에픽 던전 주 3회 한도가 차면 남은 던전은 `마감` 이다. 보스 카드의 `마감` 과 같은 배지이고
+// 우선순위도 보스와 같다. `진행 불가` → `마감` → `완료`. 카드에 넘기는 값은 화면처럼
+// `weeklyLimitClosedNames` 로 판정한다.
+describe('마감 배지', () => {
+  const 넷 = [
+    weekly({ name: '에픽 던전 : 하이마운틴', nowCount: 1 }),
+    weekly({ name: '에픽 던전 : 앵글러 컴퍼니', nowCount: 1 }),
+    weekly({ name: '에픽 던전 : 악몽선경', nowCount: 0 }),
+    weekly({ name: '에픽 던전 : 아우룸 레기스', nowCount: 1 }),
+  ]
+  const closed = weeklyLimitClosedNames(넷)
+  const 카드 = (index: number, level: number) =>
+    renderAtom(renderWeeklyContentCard(넷[index], level, closed.has(넷[index].name)))
+
+  it('한도가 찼고 미완료면 상태 배지 자리에 마감이 선다', async () => {
+    const view = await 카드(2, 300)
+
+    expect(view.getByText('마감')).toBeTruthy()
+    expect(view.queryByText('시작 안함')).toBeNull()
+  })
+
+  it('한도가 찼어도 완료한 던전은 완료다', async () => {
+    const view = await 카드(0, 300)
+
+    expect(view.getByText('완료')).toBeTruthy()
+    expect(view.queryByText('마감')).toBeNull()
+  })
+
+  it('요구 레벨 미달이면 한도가 차도 진행 불가다', async () => {
+    const 셋완료 = [...넷.slice(0, 2), weekly({ name: '에픽 던전 : 악몽선경', nowCount: 1 }), weekly({ name: '에픽 던전 : 아우룸 레기스', nowCount: 0 })]
+    const aurum = 셋완료[3]
+    const view = await renderAtom(renderWeeklyContentCard(aurum, 285, weeklyLimitClosedNames(셋완료).has(aurum.name)))
+
+    expect(view.getByText('진행 불가')).toBeTruthy()
+    expect(view.queryByText('마감')).toBeNull()
+  })
+
+  // 완료 자리를 대신하는 배지라 상자가 같아야 한다. 크기가 다르면 카드 오른쪽 끝이 흔들린다. 색만 갈린다.
+  it('마감 배지는 완료 배지와 같은 상자다', async () => {
+    const boxOf = (element: AtomElement): Record<string, unknown> => {
+      const { color, backgroundColor, ...box } = element.props.style as Record<string, unknown>
+      void color
+      void backgroundColor
+      return box
+    }
+
+    expect(boxOf((await 카드(2, 300)).getByText('마감'))).toEqual(boxOf((await 카드(0, 300)).getByText('완료')))
   })
 })

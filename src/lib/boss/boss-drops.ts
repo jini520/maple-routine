@@ -140,6 +140,16 @@ function obtainableTileNames(boss: string, difficulty: BossDifficulty, periodKey
   return cached
 }
 
+/**
+ * 드롭 하나가 서는 **타일 이름**. 상자 결과는 상자명, 그 밖은 아이템 이름이다.
+ *
+ * 한 기록(카드)은 같은 타일을 하나만 든다(`BossDropSheet` 의 `toggleNormal` · `applyBoxResult`). 그래서
+ * 같은 상자면 나온 반지가 달라도 같은 드롭이다.
+ */
+export function dropTileName(drop: Pick<RecordedDrop, 'itemName' | 'boxOrigin'>): string {
+  return drop.boxOrigin ?? drop.itemName
+}
+
 // 이 드롭이 그 난이도(처치 난이도)와 그 기간에서 획득 가능한지. 상자 결과는 상자명 기준. 레거시
 // 고정(fixed) 기록은 선택 대상이 아니므로 항상 true 다. 기간을 보는 것은 패치로 빠진 아이템의
 // 패치 전 기록을 거짓 기록으로 판정하지 않기 위해서다.
@@ -151,7 +161,7 @@ export function isObtainableDrop(
 ): boolean {
   return (
     drop.category === 'fixed' ||
-    obtainableTileNames(boss, difficulty, periodKey).has(drop.boxOrigin ?? drop.itemName)
+    obtainableTileNames(boss, difficulty, periodKey).has(dropTileName(drop))
   )
 }
 
@@ -175,7 +185,7 @@ export interface StoredDropRecord extends RecordedDrop {
 }
 
 export interface DropMigrationPlan {
-  /** 확정 난이도 키에 새로 기록할 드롭 목록. 기존분 뒤에 이관분을 이어 붙인 것 */
+  /** 확정 난이도 키에 새로 기록할 드롭 목록. 기존분 뒤에 기존분에 없는 타일의 이관분을 이어 붙인 것 */
   drops: RecordedDrop[]
   /** 비워야 하는 옛 난이도 키들 */
   staleDifficulties: string[]
@@ -214,8 +224,9 @@ function compareStoredDrops(a: StoredDropRecord, b: StoredDropRecord): number {
  * - 확정 난이도에서 획득 불가한 항목은 **되살리지 않는다**. 근거는 사용자 판단이다: 그 난이도에서
  *   나올 수 없는 아이템은 거짓 기록이고, 표시하는 것보다 삭제가 안전하다. 잘못된 환산 가치가
  *   계산에 섞이는 것이 기록 한 줄을 잃는 것보다 나쁘다.
- * - 확정 난이도에 **이미 드롭이 있으면 그 뒤에 이어 붙인다**. 같은 아이템이 두 번 들어갈 수 있지만
- *   실제로 두 개를 먹은 경우와 구분할 수 없어 임의로 합치지 않는다. 고아를 안 남기려면 이 길뿐이다.
+ * - 확정 난이도에 **이미 드롭이 있으면 그 뒤에 이어 붙인다**. 단 **같은 타일(`dropTileName`)은 두 번
+ *   안 넣는다.** 한 카드는 같은 타일을 하나만 들어 두 번째 줄은 먹은 것이 아니고 금액만 두 번 센다.
+ *   이미 있는 쪽이 남고, 옮겨 오는 것끼리 겹치면 정규 난이도 순서로 앞선 것이 남는다.
  * - 옛 키가 없으면 `null`(할 일 없음)이라 매번 호출해도 안전하다(멱등).
  */
 export function planConfirmedDifficultyDropMigration(
@@ -229,18 +240,25 @@ export function planConfirmedDifficultyDropMigration(
     return null
   }
 
+  const existing = records
+    .filter((record) => record.difficulty === confirmedDifficulty)
+    .sort(compareStoredDrops)
+    .map(toRecordedDrop)
+  const seenTiles = new Set(existing.map(dropTileName))
+
   // SQLite는 `ORDER BY drop_index` 만 보장하므로 난이도가 섞이면 순서가 미정이다. 정규 난이도
-  // 순서로 정렬해 이관 결과가 실행마다 같게 한다.
+  // 순서로 정렬해 이관 결과가 실행마다 같게 한다. 겹치는 타일에서 어느 쪽이 남는지도 이 순서가 정한다.
   const migrated = pruneUnobtainableDrops(
     boss,
     confirmedDifficulty,
     periodKey,
     [...stale].sort(compareStoredDrops).map(toRecordedDrop),
-  )
-  const existing = records
-    .filter((record) => record.difficulty === confirmedDifficulty)
-    .sort(compareStoredDrops)
-    .map(toRecordedDrop)
+  ).filter((drop) => {
+    const tile = dropTileName(drop)
+    if (seenTiles.has(tile)) return false
+    seenTiles.add(tile)
+    return true
+  })
 
   return {
     drops: [...existing, ...migrated],

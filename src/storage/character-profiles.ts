@@ -88,17 +88,42 @@ export async function getCharacterProfiles(
   )
 
   for (const row of values ?? []) {
-    const ocid = row.ocid as string
-    profiles.set(ocid, {
-      ocid,
-      name: row.name as string,
-      imageUrl: row.image_url as string,
-      // 컬럼이 nullable 이다. 0 이나 빈 문자열로 채우면 모름 이 값으로 둔갑한다.
-      world: (row.world as string | null | undefined) ?? null,
-      level: (row.level as number | null | undefined) ?? null,
-      jobClass: (row.job_class as string | null | undefined) ?? null,
-      updatedAt: row.updated_at as string,
-    })
+    const profile = rowToProfile(row)
+    profiles.set(profile.ocid, profile)
   }
   return profiles
+}
+
+/**
+ * 이름이 같은 스냅샷 전부. ocid 로 안 거른다.
+ *
+ * 월드 리프로 갈린 두 ocid 를 이름·직업으로 잇는 대조가 읽는다. 옛 ocid 는 목록에서 빠져 이름으로만 찾는다.
+ */
+export async function getCharacterProfilesByNames(
+  names: readonly string[],
+): Promise<CharacterProfileSnapshot[]> {
+  if (names.length === 0) {
+    return []
+  }
+
+  const db = await getBossProfitDb()
+  const placeholders = names.map(() => '?').join(', ')
+  const { values } = await db.query(
+    `SELECT * FROM character_profiles WHERE name IN (${placeholders})`,
+    [...names],
+  )
+  return (values ?? []).map(rowToProfile)
+}
+
+function rowToProfile(row: Record<string, unknown>): CharacterProfileSnapshot {
+  return {
+    ocid: row.ocid as string,
+    name: row.name as string,
+    imageUrl: row.image_url as string,
+    // 컬럼이 nullable 이다. 0 이나 빈 문자열로 채우면 모름 이 값으로 둔갑한다.
+    world: (row.world as string | null | undefined) ?? null,
+    level: (row.level as number | null | undefined) ?? null,
+    jobClass: (row.job_class as string | null | undefined) ?? null,
+    updatedAt: row.updated_at as string,
+  }
 }

@@ -160,6 +160,17 @@ const TABLE_DEFINITIONS = [
     PRIMARY KEY (ocid)
 )`,
   },
+  // 월드 리프로 갈린 옛 ocid → 새 ocid 연결. 리프한 기간의 중복 기록을 지우는 데만 쓴다.
+  // 옛 ocid 는 목록에서 빠져 되살릴 길이 없어 `RECORD_TABLE_NAMES` 에 **직접 적혀 있어야 한다**.
+  {
+    name: 'character_world_leaps',
+    createSql: `CREATE TABLE IF NOT EXISTS character_world_leaps (
+    from_ocid TEXT NOT NULL,
+    to_ocid TEXT NOT NULL,
+    linked_at TEXT NOT NULL,
+    PRIMARY KEY (from_ocid)
+)`,
+  },
   // 계정 단위 강화 사용 내역. 큐브·스타포스·잠재 재설정에 무엇을 썼나.
   //
   // **`payload` 를 통째로 남기는 이유**: 비용 표가 아직 없어 지금은 메소를 못 매기는데, 어제
