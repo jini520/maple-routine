@@ -5,8 +5,8 @@ jest.mock('../../../server/notices', () => ({
 
 import { fetchNotices } from '../../../server/notices'
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
-import { getDismissedNoticeIds } from '../../../storage/notice-banner'
-import { mergeNotices } from '../../../storage/notices'
+import { dismissNotice, getDismissedNoticeIds } from '../../../storage/notice-banner'
+import { getNotices, replaceNotices } from '../../../storage/notices'
 import type { Notice } from '../../../types/notice'
 import { useNoticeBannerStore } from '../banner-store'
 
@@ -33,17 +33,16 @@ describe('load', () => {
   })
 
   it('가장 최근 공지를 세운다', async () => {
-    await mergeNotices([notice('old', '2026-09-01T00:00:00Z'), notice('new', '2026-09-05T00:00:00Z')])
+    await replaceNotices('app', [notice('old', '2026-09-01T00:00:00Z'), notice('new', '2026-09-05T00:00:00Z')])
 
     await useNoticeBannerStore.getState().load()
 
     expect(useNoticeBannerStore.getState().notice?.id).toBe('new')
   })
 
-  // 앞에 있을 때 푸시가 오면 이 문을 다시 두드린다. 그 경로에 네트워크가 붙으면 알림 한 건이
-  // 요청 한 건이 된다.
+  // 마운트와 포커스가 부르는 문이다. 화면에 들어올 때마다 요청이 나가면 안 된다.
   it('서버를 안 부른다', async () => {
-    await mergeNotices([notice('a', '2026-09-01T00:00:00Z')])
+    await replaceNotices('app', [notice('a', '2026-09-01T00:00:00Z')])
 
     await useNoticeBannerStore.getState().load()
 
@@ -61,7 +60,7 @@ describe('load', () => {
 
 describe('refresh', () => {
   // 배경에서 도착만 하고 안 탭한 공지가 여기서 들어온다.
-  it('서버에서 받아 기기에 합친 뒤 세운다', async () => {
+  it('서버에서 받은 것을 세운다', async () => {
     fetchAll.mockResolvedValue([notice('remote', '2026-09-05T00:00:00Z')])
 
     await useNoticeBannerStore.getState().refresh()
@@ -69,22 +68,73 @@ describe('refresh', () => {
     expect(useNoticeBannerStore.getState().notice?.id).toBe('remote')
   })
 
-  it('같은 id 는 서버가 이긴다', async () => {
-    await mergeNotices([notice('a', '2026-09-01T00:00:00Z', '잘린 제목')])
-    fetchAll.mockResolvedValue([notice('a', '2026-09-01T00:00:00Z', '온전한 제목')])
+  // 분류 없이 20건을 받으면 넥슨 공지가 몰린 날 앱 공지가 그 밖으로 밀려 배너가 사라진다.
+  it('앱 공지만 20건 묻는다', async () => {
+    await useNoticeBannerStore.getState().refresh()
+
+    expect(fetchAll).toHaveBeenCalledWith(20, ['app'])
+  })
+
+  it('같은 id 는 서버 것으로 선다', async () => {
+    await replaceNotices('app', [notice('a', '2026-09-01T00:00:00Z', '옛 제목')])
+    fetchAll.mockResolvedValue([notice('a', '2026-09-01T00:00:00Z', '고친 제목')])
 
     await useNoticeBannerStore.getState().refresh()
 
-    expect(useNoticeBannerStore.getState().notice?.title).toBe('온전한 제목')
+    expect(useNoticeBannerStore.getState().notice?.title).toBe('고친 제목')
   })
 
-  it('서버가 실패해도 기기에 있는 것을 세운다', async () => {
-    await mergeNotices([notice('local', '2026-09-01T00:00:00Z')])
+  // 서버에서 지운 공지가 배너에 남던 자리.
+  it('서버에서 지운 공지는 배너에서도 내려간다', async () => {
+    await replaceNotices('app', [
+      notice('old', '2026-09-01T00:00:00Z'),
+      notice('deleted', '2026-09-05T00:00:00Z'),
+    ])
+    await useNoticeBannerStore.getState().load()
+    fetchAll.mockResolvedValue([notice('old', '2026-09-01T00:00:00Z')])
+
+    await useNoticeBannerStore.getState().refresh()
+
+    expect(useNoticeBannerStore.getState().notice?.id).toBe('old')
+    expect((await getNotices()).map((n) => n.id)).toEqual(['old'])
+  })
+
+  it('서버가 빈손이면 배너가 없다', async () => {
+    await replaceNotices('app', [notice('a', '2026-09-01T00:00:00Z')])
+    fetchAll.mockResolvedValue([])
+
+    await useNoticeBannerStore.getState().refresh()
+
+    expect(useNoticeBannerStore.getState().notice).toBeNull()
+  })
+
+  it('조회가 실패하면 사본에 있는 것을 세운다', async () => {
+    await replaceNotices('app', [notice('local', '2026-09-01T00:00:00Z')])
+    fetchAll.mockResolvedValue(null)
+
+    await useNoticeBannerStore.getState().refresh()
+
+    expect(useNoticeBannerStore.getState().notice?.id).toBe('local')
+    expect((await getNotices()).map((n) => n.id)).toEqual(['local'])
+  })
+
+  it('조회가 던져도 사본에 있는 것을 세운다', async () => {
+    await replaceNotices('app', [notice('local', '2026-09-01T00:00:00Z')])
     fetchAll.mockRejectedValue(new Error('망 끊김'))
 
     await useNoticeBannerStore.getState().refresh()
 
     expect(useNoticeBannerStore.getState().notice?.id).toBe('local')
+  })
+
+  it('서버 목록에 없는 공지는 닫은 기록에서 빠진다', async () => {
+    await dismissNotice('deleted')
+    await dismissNotice('a')
+    fetchAll.mockResolvedValue([notice('a', '2026-09-01T00:00:00Z')])
+
+    await useNoticeBannerStore.getState().refresh()
+
+    await expect(getDismissedNoticeIds()).resolves.toEqual(['a'])
   })
 
   it('이미 닫은 공지는 서버가 다시 줘도 안 선다', async () => {
@@ -100,7 +150,7 @@ describe('refresh', () => {
 
 describe('dismiss', () => {
   it('닫으면 배너가 내려가고 저장에 남는다', async () => {
-    await mergeNotices([notice('a', '2026-09-01T00:00:00Z')])
+    await replaceNotices('app', [notice('a', '2026-09-01T00:00:00Z')])
     await useNoticeBannerStore.getState().load()
 
     await useNoticeBannerStore.getState().dismiss()
@@ -111,7 +161,7 @@ describe('dismiss', () => {
 
   // 후보가 최신 하나뿐이라 닫으면 배너가 없다. 옛 공지가 그 자리에 안 올라온다.
   it('닫으면 옛 공지가 그 자리에 안 올라온다', async () => {
-    await mergeNotices([notice('old', '2026-09-01T00:00:00Z'), notice('new', '2026-09-05T00:00:00Z')])
+    await replaceNotices('app', [notice('old', '2026-09-01T00:00:00Z'), notice('new', '2026-09-05T00:00:00Z')])
     await useNoticeBannerStore.getState().load()
 
     await useNoticeBannerStore.getState().dismiss()
@@ -120,11 +170,11 @@ describe('dismiss', () => {
   })
 
   it('닫은 뒤 더 최근 공지가 도착하면 다시 선다', async () => {
-    await mergeNotices([notice('new', '2026-09-05T00:00:00Z')])
+    await replaceNotices('app', [notice('new', '2026-09-05T00:00:00Z')])
     await useNoticeBannerStore.getState().load()
     await useNoticeBannerStore.getState().dismiss()
 
-    await mergeNotices([notice('newer', '2026-09-09T00:00:00Z')])
+    await replaceNotices('app', [notice('new', '2026-09-05T00:00:00Z'), notice('newer', '2026-09-09T00:00:00Z')])
     await useNoticeBannerStore.getState().load()
 
     expect(useNoticeBannerStore.getState().notice?.id).toBe('newer')

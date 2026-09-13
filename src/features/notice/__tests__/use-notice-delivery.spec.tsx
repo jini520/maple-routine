@@ -8,6 +8,9 @@
 //
 // 배경에서 도착만 하고 안 탭한 것은 여기 안 온다. notification 페이로드는 JS 를 안 깨운다.
 // 그 구멍은 서버 조회가 메운다.
+//
+// **어느 길도 기기에 쓰지 않는다.** 공지의 기준은 서버라 푸시 내용을 저장하면 서버가 지운 공지를
+// 기기에서 지울 신호가 없다. 앞에 있을 때 오면 배너가 서버를 다시 묻고, 탭하면 상세가 서버에 묻는다.
 import { renderHook, waitFor } from '@testing-library/react'
 
 jest.mock('../../../native/push', () => ({
@@ -16,27 +19,26 @@ jest.mock('../../../native/push', () => ({
   addPushOpenedListener: jest.fn(() => () => {}),
   getInitialPushNotification: jest.fn(async () => null),
 }))
-// `parseNotice` 는 순수 함수라 진짜를 쓴다. 목으로 덮으면 이 훅이 페이로드를 실제로 읽는지가
-// 검사에서 빠지고, 그 자리가 바로 탭이 안 먹는 원인이 되는 곳이다.
-jest.mock('../receive', () => ({
-  __esModule: true,
-  ...jest.requireActual('../receive'),
-  receiveNotice: jest.fn(async () => {}),
-}))
+jest.mock('../banner-store', () => {
+  const refresh = jest.fn(async () => {})
+  return { __esModule: true, useNoticeBannerStore: { getState: () => ({ refresh }) } }
+})
 
 import {
   addPushMessageListener,
   addPushOpenedListener,
   getInitialPushNotification,
 } from '../../../native/push'
-import { receiveNotice } from '../receive'
+import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
+import { useNoticeBannerStore } from '../banner-store'
 import { useNoticeDelivery } from '../use-notice-delivery'
 
 const onMessage = jest.mocked(addPushMessageListener)
 const onOpened = jest.mocked(addPushOpenedListener)
 const initial = jest.mocked(getInitialPushNotification)
-const receive = jest.mocked(receiveNotice)
+const refresh = jest.mocked(useNoticeBannerStore.getState().refresh)
 const openDetail = jest.fn()
+let prefs = installFakePreferences()
 
 const 공지 = {
   noticeId: 'a',
@@ -47,6 +49,7 @@ const 공지 = {
 
 beforeEach(() => {
   jest.clearAllMocks()
+  prefs = installFakePreferences()
   onMessage.mockReturnValue(() => {})
   onOpened.mockReturnValue(() => {})
   initial.mockResolvedValue(null)
@@ -74,31 +77,45 @@ describe('진입점 셋을 다 단다', () => {
 })
 
 describe('앞에 있을 때 도착', () => {
-  it('쌓기만 하고 화면을 밀지 않는다', async () => {
+  // 이 길은 OS 가 알림을 안 그린다. 배너가 서버를 다시 묻지 않으면 화면에 아무 일도 안 일어난다.
+  it('배너가 서버를 다시 묻고 화면을 밀지 않는다', async () => {
     renderHook(() => useNoticeDelivery(openDetail))
     onMessage.mock.calls[0][0](공지)
 
-    await waitFor(() => expect(receive).toHaveBeenCalledWith(공지))
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1))
     expect(openDetail).not.toHaveBeenCalled()
+  })
+
+  it('푸시 내용을 기기에 쓰지 않는다', async () => {
+    renderHook(() => useNoticeDelivery(openDetail))
+    onMessage.mock.calls[0][0](공지)
+
+    await waitFor(() => expect(refresh).toHaveBeenCalled())
+    expect(prefs.set).not.toHaveBeenCalled()
+  })
+
+  it('공지가 아닌 푸시로는 서버를 안 묻는다', () => {
+    renderHook(() => useNoticeDelivery(openDetail))
+    onMessage.mock.calls[0][0]({ 아무거나: '값' })
+
+    expect(refresh).not.toHaveBeenCalled()
   })
 })
 
 describe('탭', () => {
-  it('쌓고 나서 상세를 민다', async () => {
+  it('상세를 민다', async () => {
     renderHook(() => useNoticeDelivery(openDetail))
     onOpened.mock.calls[0][0](공지)
 
     await waitFor(() => expect(openDetail).toHaveBeenCalledWith('a'))
-    expect(receive).toHaveBeenCalledWith(공지)
   })
 
-  // 저장이 실패해도 상세는 열려야 한다. 사용자는 알림을 눌렀고 답을 기다린다.
-  it('저장이 실패해도 상세를 민다', async () => {
-    receive.mockRejectedValueOnce(new Error('disk full'))
+  it('푸시 내용을 기기에 쓰지 않는다', async () => {
     renderHook(() => useNoticeDelivery(openDetail))
     onOpened.mock.calls[0][0](공지)
 
-    await waitFor(() => expect(openDetail).toHaveBeenCalledWith('a'))
+    await waitFor(() => expect(openDetail).toHaveBeenCalled())
+    expect(prefs.set).not.toHaveBeenCalled()
   })
 
   // 이벤트·캐시샵 본문은 이미지 한 장이라 평문이 0자로 온다. 본문을 필수로 보면 그 알림이
@@ -110,17 +127,16 @@ describe('탭', () => {
     await waitFor(() => expect(openDetail).toHaveBeenCalledWith('event-1374'))
   })
 
-  it('공지가 아닌 푸시로는 안 민다', async () => {
+  it('공지가 아닌 푸시로는 안 민다', () => {
     renderHook(() => useNoticeDelivery(openDetail))
     onOpened.mock.calls[0][0]({ 아무거나: '값' })
 
-    await waitFor(() => expect(receive).toHaveBeenCalled())
     expect(openDetail).not.toHaveBeenCalled()
   })
 })
 
 describe('죽어 있다 탭으로 열림', () => {
-  it('있으면 쌓고 상세를 민다', async () => {
+  it('있으면 상세를 민다', async () => {
     initial.mockResolvedValue(공지)
 
     renderHook(() => useNoticeDelivery(openDetail))
