@@ -507,3 +507,135 @@ describe('왕복 중의 누름', () => {
     expect(useNoticeStore.getState().blockedByPermission).toBe(true)
   })
 })
+
+// 토픽 구독은 FCM 등록 토큰에 묶여 있다. 재설치 · 백업 복원 · 토큰 회전 뒤에는 새 토큰에 구독이
+// 없는데 저장값은 켜짐으로 남는다. 앱은 구독 목록을 FCM 에 물을 수 없어 다시 보내는 것이 유일한 방어다.
+describe('재구독', () => {
+  function 멈춘왕복(): { promise: Promise<void>; resolve: () => void } {
+    let resolve!: () => void
+    const promise = new Promise<void>((res) => {
+      resolve = res
+    })
+    return { promise, resolve }
+  }
+
+  const 한틱 = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
+
+  it('저장값이 켜짐인 토픽만 다시 구독한다', async () => {
+    useNoticeStore.setState({ subscriptions: { ...NO_SUBSCRIPTIONS, app: true, event: true } })
+
+    await useNoticeStore.getState().resubscribe()
+
+    expect(subscribe.mock.calls.map(([topic]) => topic)).toEqual(['notice', 'notice-event'])
+    // 꺼짐은 해제가 성공한 뒤에만 저장되므로 보낼 것이 없다.
+    expect(unsubscribe).not.toHaveBeenCalled()
+  })
+
+  it('저장값을 다시 적지 않는다', async () => {
+    useNoticeStore.setState({ subscriptions: { ...NO_SUBSCRIPTIONS, app: true } })
+
+    await useNoticeStore.getState().resubscribe()
+
+    expect(prefs.set).not.toHaveBeenCalled()
+  })
+
+  it('권한이 없으면 아무것도 안 보낸다', async () => {
+    useNoticeStore.setState({ subscriptions: { ...NO_SUBSCRIPTIONS, app: true } })
+    hasPermission.mockResolvedValue(false)
+
+    await useNoticeStore.getState().resubscribe()
+
+    expect(subscribe).not.toHaveBeenCalled()
+  })
+
+  // 앱을 켤 때와 돌아올 때 부른다. 맥락 없는 팝업이 iOS 의 한 번뿐인 기회를 쓴다.
+  it('권한을 묻지 않는다', async () => {
+    useNoticeStore.setState({ subscriptions: { ...NO_SUBSCRIPTIONS, app: true } })
+    hasPermission.mockResolvedValue(false)
+
+    await useNoticeStore.getState().resubscribe()
+
+    expect(requestPermission).not.toHaveBeenCalled()
+    expect(useNoticeStore.getState().blockedByPermission).toBe(false)
+  })
+
+  // 실패는 알리지 않는다. 다음 계기에 다시 보낸다.
+  it('한 분류가 실패해도 다음 분류로 가고 던지지 않는다', async () => {
+    useNoticeStore.setState({ subscriptions: { ...NO_SUBSCRIPTIONS, app: true, game: true } })
+    subscribe.mockRejectedValueOnce(new Error('기기가 알림 서버에 아직 등록되지 않았어요'))
+
+    await expect(useNoticeStore.getState().resubscribe()).resolves.toBeUndefined()
+
+    expect(subscribe.mock.calls.map(([topic]) => topic)).toEqual(['notice', 'notice-game'])
+    expect(useNoticeStore.getState().subscriptions).toMatchObject({ app: true, game: true })
+  })
+
+  it('권한 확인이 던져도 던지지 않는다', async () => {
+    useNoticeStore.setState({ subscriptions: { ...NO_SUBSCRIPTIONS, app: true } })
+    hasPermission.mockRejectedValue(new Error('권한 확인 실패'))
+
+    await expect(useNoticeStore.getState().resubscribe()).resolves.toBeUndefined()
+  })
+
+  // 부팅 직후 끈 스위치를 재구독이 덮으면 스위치는 꺼짐인데 알림이 온다.
+  it('스위치 요청과 같은 줄에 서고 차례가 왔을 때 저장값을 읽는다', async () => {
+    useNoticeStore.setState({ subscriptions: { ...NO_SUBSCRIPTIONS, game: true } })
+    const 대기 = 멈춘왕복()
+    unsubscribe.mockReturnValueOnce(대기.promise)
+    const off = useNoticeStore.getState().setSubscribed('game', false)
+    await 한틱()
+
+    const again = useNoticeStore.getState().resubscribe()
+    await 한틱()
+    expect(subscribe).not.toHaveBeenCalled()
+
+    대기.resolve()
+    await Promise.all([off, again])
+
+    expect(subscribe).not.toHaveBeenCalled()
+    expect(useNoticeStore.getState().subscriptions.game).toBe(false)
+  })
+
+  // 줄에서 기다리는 재구독은 아직 아무것도 안 읽었다. 둘이 돌면 같은 것을 두 번 보낸다.
+  it('기다리는 재구독에 새 요청을 합친다', async () => {
+    useNoticeStore.setState({ subscriptions: { ...NO_SUBSCRIPTIONS, game: true } })
+    const 대기 = 멈춘왕복()
+    subscribe.mockReturnValueOnce(대기.promise)
+    const press = useNoticeStore.getState().setSubscribed('cashshop', true)
+    await 한틱()
+
+    const first = useNoticeStore.getState().resubscribe()
+    const second = useNoticeStore.getState().resubscribe()
+
+    대기.resolve()
+    await Promise.all([press, first, second])
+
+    // 스위치 요청의 구독 한 번 + 재구독 한 번(game · cashshop).
+    expect(subscribe.mock.calls.map(([topic]) => topic)).toEqual([
+      'notice-cashshop',
+      'notice-game',
+      'notice-cashshop',
+    ])
+  })
+
+  // 도는 요청은 이미 권한과 저장값을 읽었다. 그 사이 켠 권한을 뒤의 요청이 본다.
+  it('도는 중에 온 요청은 뒤에 하나를 더 세운다', async () => {
+    useNoticeStore.setState({ subscriptions: { ...NO_SUBSCRIPTIONS, game: true } })
+    // 첫 요청이 권한을 읽는 사이 사용자가 OS 설정에서 권한을 켜고 돌아온다.
+    const 권한대기 = 멈춘왕복()
+    hasPermission.mockImplementationOnce(async () => {
+      await 권한대기.promise
+      return false
+    })
+
+    const first = useNoticeStore.getState().resubscribe()
+    await 한틱()
+    const second = useNoticeStore.getState().resubscribe()
+
+    권한대기.resolve()
+    await Promise.all([first, second])
+
+    expect(hasPermission).toHaveBeenCalledTimes(2)
+    expect(subscribe.mock.calls.map(([topic]) => topic)).toEqual(['notice-game'])
+  })
+})
