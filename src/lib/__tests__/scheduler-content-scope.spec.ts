@@ -4,6 +4,8 @@ import {
   getMaxCountOverride,
   getShareScope,
   getSharedContentGroups,
+  getContentGroup,
+  getGroupWeeklyLimit,
   isCumulativeScore,
   trustsRegistrationFlag,
 } from '../scheduler/scheduler-content-scope'
@@ -219,5 +221,23 @@ describe('trustsRegistrationFlag', () => {
 
   it('양쪽 공백이 달라도 매칭된다', () => {
     expect(trustsRegistrationFlag('[메이플유니온] 주간 드래곤 퇴치')).toBe(true)
+  })
+})
+
+// 에픽 던전은 4종이지만 주 3회만 돈다(사용자 확인 2026-09-13). 게임 규칙이라 카탈로그가 든다.
+describe('계열의 주간 한도', () => {
+  it('에픽던전 계열의 한도는 3 이다', () => {
+    expect(getGroupWeeklyLimit('에픽던전')).toBe(3)
+  })
+
+  it('한도가 없는 계열은 null 이다', () => {
+    expect(getGroupWeeklyLimit('몬스터파크')).toBeNull()
+    expect(getGroupWeeklyLimit('없는 계열')).toBeNull()
+  })
+
+  it('항목의 계열은 카탈로그의 group 이다. 이름으로 추론하지 않는다', () => {
+    expect(getContentGroup('에픽 던전 : 아우룸 레기스')).toBe('에픽던전')
+    expect(getContentGroup('[메이플 유니온] 주간 드래곤 퇴치')).toBe('메이플 유니온')
+    expect(getContentGroup('에르다 스펙트럼')).toBeNull()
   })
 })

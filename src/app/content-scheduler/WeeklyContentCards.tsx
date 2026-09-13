@@ -63,6 +63,8 @@ export function EpicDungeonCard(props: {
   crop?: ImageCrop
   /** 요구 레벨 미달. 상태 배지를 진행 불가 로 대체한다. */
   isBlocked?: boolean
+  /** 계열 주간 한도가 찬 미완료 던전. 상태 배지를 마감 으로 대체한다. */
+  isWeeklyLimitClosed?: boolean
 }): React.JSX.Element {
   const { content } = props
   const displayName = content.name.startsWith(EPIC_DUNGEON_PREFIX)
@@ -85,9 +87,14 @@ export function EpicDungeonCard(props: {
           </Text>
         </View>
 
-        {/* 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
+        {/* 진행 불가 · 마감이면 상태 배지를 **대체**한다(늘리지 않는다). 순서는 보스 카드와 같다.
+            마감은 완료와 같은 상자라 카드 끝이 안 흔들린다. */}
         {props.isBlocked === true ? (
           <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
+        ) : props.isWeeklyLimitClosed === true ? (
+          <Badge variant="muted" weight="bold">
+            마감
+          </Badge>
         ) : (
           <Badge variant={QUEST_STATE_VARIANT[questState]}>
             {QUEST_STATE_LABELS[questState]}
@@ -324,6 +331,8 @@ export function renderWeeklyContentCard(
   content: WeeklyContent,
   /** 이 카드를 보는 캐릭터의 레벨. 판정은 `lib/scheduler/required-level` 한 곳이 한다. */
   characterLevel: number | null,
+  /** 계열 주간 한도가 찬 미완료 항목인가. 판정은 `weeklyLimitClosedNames` 가 한다. */
+  isWeeklyLimitClosed: boolean,
 ): React.JSX.Element {
   // 길드 셋과 유니온 둘은 참조표에 요구 레벨이 **없다**. 어떤 레벨에서도 진행 가능이라
   // 그 카드들에는 이 프롭을 넘기지 않는다(`대가`).
@@ -342,7 +351,7 @@ export function renderWeeklyContentCard(
   }
 
   if (content.name.startsWith(EPIC_DUNGEON_PREFIX)) {
-    return <EpicDungeonCard content={content} isBlocked={isBlocked} />
+    return <EpicDungeonCard content={content} isBlocked={isBlocked} isWeeklyLimitClosed={isWeeklyLimitClosed} />
   }
 
   if (matchWeeklyRegionalQuestSlug(content.name) !== null) {

@@ -261,11 +261,15 @@ export function 공유항목(
   shortName: string,
   부분: Partial<SharedContentItemView> = {},
 ): SharedContentItemView {
-  return { name: shortName, shortName, count: null, isComplete: false, ...부분 }
+  return { name: shortName, shortName, count: null, isComplete: false, isWeeklyLimitClosed: false, ...부분 }
 }
 
-export function 공유계열(group: string, items: SharedContentItemView[]): SharedContentGroupView {
-  return { group, items }
+export function 공유계열(
+  group: string,
+  items: SharedContentItemView[],
+  weeklyLimit: SharedContentGroupView['weeklyLimit'] = null,
+): SharedContentGroupView {
+  return { group, items, weeklyLimit }
 }
 
 /** 카탈로그 일곱을 다 그린 상태. 남은 것 넷(악몽선경· 일간· 익스트림· PC방). */
