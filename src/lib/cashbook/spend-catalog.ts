@@ -12,8 +12,11 @@
  */
 import spendCatalog from '../../data/spend-catalog.json'
 import type { SpendCategory } from '../../storage/spend'
+import { isEffectiveIn, type EffectivePeriod } from '../boss/boss-profit-period'
+import { resetWeekStartOf } from '../calendar'
 
-export interface SpendCatalogItem {
+/** 항목 줄. `from` · `until` 은 그 항목이 서는 기간이다(KST 날짜). */
+export interface SpendCatalogItem extends EffectivePeriod {
   readonly category: string
   readonly group: string
   readonly name: string
@@ -105,15 +108,33 @@ const MESO_PER_RATE_UNIT = 100_000_000
  *
  * 직접 입력 갈래(아이템 구매 · 기타)는 목록이 없으므로 **빈 배열**이다. 예외가 아니라
  * 고를 것이 없다 는 사실이고, 화면은 그 갈래에서 입력 칸을 그린다.
+ *
+ * 기간 밖의 항목은 뺀다. 기준은 오늘이 아니라 **적는 날짜**가 든 주간 기간이다. 항목이 하나도 안
+ * 남은 묶음은 안 선다.
+ *
+ * @param dateKey 적는 날짜(KST `YYYY-MM-DD`)
  */
-export function spendGroupsOf(category: SpendCategory): SpendCatalogGroup[] {
+export function spendGroupsOf(category: SpendCategory, dateKey: string): SpendCatalogGroup[] {
+  const periodKey = resetWeekStartOf(dateKey)
+  return groupItems(ITEMS.filter((item) => item.category === category && isEffectiveIn(item, periodKey)))
+}
+
+/**
+ * 기간과 무관한 갈래의 묶음들. 기록을 되짚는 자리만 쓴다.
+ *
+ * 기간으로 거르면 출시 전 날짜로 적힌 기록을 수정 시트가 못 찾아 세부를 못 편다.
+ */
+function allSpendGroupsOf(category: SpendCategory): SpendCatalogGroup[] {
+  return groupItems(ITEMS.filter((item) => item.category === category))
+}
+
+function groupItems(items: readonly SpendCatalogItem[]): SpendCatalogGroup[] {
   const groups: {
     group: string
     active: boolean
     choices: { label: string; items: SpendCatalogItem[] }[]
   }[] = []
-  for (const item of ITEMS) {
-    if (item.category !== category) continue
+  for (const item of items) {
     const label = item.base ?? item.name
 
     let group = groups[groups.length - 1]
@@ -152,7 +173,7 @@ export function findSpendChoice(
   itemName: string | null,
 ): { choice: SpendCatalogChoice; item: SpendCatalogItem } | null {
   if (itemName === null) return null
-  for (const group of spendGroupsOf(category)) {
+  for (const group of allSpendGroupsOf(category)) {
     for (const choice of group.choices) {
       const item = choice.items.find((each) => each.name === itemName)
       if (item !== undefined) return { choice, item }
@@ -241,7 +262,7 @@ export function parseSpendRewardName(
   itemName: string | null,
 ): { choice: SpendCatalogChoice; tierByForm: Record<string, string> } | null {
   if (itemName === null) return null
-  for (const group of spendGroupsOf(category)) {
+  for (const group of allSpendGroupsOf(category)) {
     for (const choice of group.choices) {
       const forms = formsOf(choice)
       if (forms.length === 0 || !itemName.startsWith(`${choice.label} `)) continue

@@ -25,6 +25,7 @@ import {
   formatBossProfitPeriodLabel,
   getAdjacentPeriodKey,
   getCurrentBossProfitPeriod,
+  isEffectiveIn,
 } from '../../lib/boss/boss-profit-period'
 import {
   formatValuableDroughtItems,
@@ -371,12 +372,12 @@ export interface TodayViewModel {
 export function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel {
   const weeklyPeriodKey = getCurrentBossProfitPeriod('weekly', input.now).periodKey
   const weeklyDrops = collectWeeklyDrops(input.dropGroups, weeklyPeriodKey)
-  const schedule = buildScheduleRows(input)
+  const schedule = buildScheduleRows(input, weeklyPeriodKey)
   // 값을 기다리는 것 의 정의는 `priceState === undefined` 하나다. `'excluded'`(기록 안 함)는
   // 사용자가 값을 매기지 않기로 정한 것이라 기다리는 건이 아니다.
   const unpriced = weeklyDrops.filter((record) => record.priceState === undefined)
 
-  const sharedContents = buildSharedContents(input)
+  const sharedContents = buildSharedContents(input, weeklyPeriodKey)
 
   return {
     representative: buildRepresentative(input),
@@ -499,8 +500,11 @@ function contentsInputOf(
  *   멤버십). `onlyWhenScheduled` 인 항목만 이 판정을 탄다.
  *
  * 둘을 한 목록으로 합치면 등록 안 했지만 진행은 있다 를 표현할 방법이 사라진다.
+ *
+ * 줄은 카탈로그에서 만들므로 게임에 아직 없는 컨텐츠도 카탈로그에 있으면 선다. 그래서 줄의 시작
+ * 기간을 **지금 주간 기간**으로 거른다.
  */
-function buildSharedContents(input: TodayViewModelInput): SharedContentGroupView[] {
+function buildSharedContents(input: TodayViewModelInput, weeklyPeriodKey: string): SharedContentGroupView[] {
   const daily: DailyContent[] = []
   const weekly: WeeklyContent[] = []
   const scheduled = new Set<string>()
@@ -510,10 +514,10 @@ function buildSharedContents(input: TodayViewModelInput): SharedContentGroupView
     weekly.push(...content.weeklyContents)
 
     const contentsInput = contentsInputOf(input, content)
-    for (const item of displayedDailyContents(contentsInput, input.trackingMode)) {
+    for (const item of displayedDailyContents(contentsInput, input.trackingMode, weeklyPeriodKey)) {
       scheduled.add(item.name.replace(/\s+/g, ''))
     }
-    for (const item of displayedWeeklyContents(contentsInput, input.trackingMode)) {
+    for (const item of displayedWeeklyContents(contentsInput, input.trackingMode, weeklyPeriodKey)) {
       scheduled.add(item.name.replace(/\s+/g, ''))
     }
   }
@@ -521,6 +525,7 @@ function buildSharedContents(input: TodayViewModelInput): SharedContentGroupView
   return getSharedContentGroups()
     .map((group): SharedContentGroupView => {
       const items = group.entries
+        .filter((entry) => isEffectiveIn(entry, weeklyPeriodKey))
         .filter(
           (entry) => !entry.onlyWhenScheduled || scheduled.has(entry.name.replace(/\s+/g, '')),
         )
@@ -556,7 +561,7 @@ function buildSharedContents(input: TodayViewModelInput): SharedContentGroupView
     .filter((group) => group.items.length > 0)
 }
 
-function buildScheduleRows(input: TodayViewModelInput): ScheduleRowView[] {
+function buildScheduleRows(input: TodayViewModelInput, weeklyPeriodKey: string): ScheduleRowView[] {
   const issues = resolveCharacterIssues(input)
   const contentByOcid = new Map(input.contentCharacters.map((view) => [view.ocid, view]))
   const bossByOcid = new Map(input.bossCharacters.map((view) => [view.ocid, view]))
@@ -590,12 +595,12 @@ function buildScheduleRows(input: TodayViewModelInput): ScheduleRowView[] {
     // 요구 레벨에 못 미치는 항목은 남은 것이 아니다. 게임이 등록을 허용해도 이 캐릭터로는 못
     // 하므로 세면 그 숫자가 영원히 안 줄어든다. 스케줄러 카드·진행률·링과 같은 판정 함수를 본다.
     const characterLevel = content?.level ?? boss?.level ?? null
-    const dailyNames = displayedDailyContents(contentsInput, input.trackingMode)
+    const dailyNames = displayedDailyContents(contentsInput, input.trackingMode, weeklyPeriodKey)
       .filter((item) => getShareScope(item.name) === 'character')
       .filter((item) => !isContentBlocked(characterLevel, item.name))
       .filter((item) => dailyContentCompletion(item) === 'incomplete')
       .map((item) => shortDailyContentName(item.name))
-    const weeklyNames = displayedWeeklyContents(contentsInput, input.trackingMode)
+    const weeklyNames = displayedWeeklyContents(contentsInput, input.trackingMode, weeklyPeriodKey)
       .filter((item) => getShareScope(item.name) === 'character')
       .filter((item) => !isContentBlocked(characterLevel, item.name))
       .filter((item) => weeklyContentCompletion(item) === 'incomplete')

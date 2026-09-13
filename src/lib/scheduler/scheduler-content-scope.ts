@@ -1,8 +1,9 @@
 import catalog from '../../data/scheduler-content-catalog.json'
+import type { EffectivePeriod } from '../boss/boss-profit-period'
 
 export type ShareScope = 'character' | 'world' | 'account'
 
-interface CatalogEntry {
+interface CatalogEntry extends EffectivePeriod {
   name: string
   section: 'daily' | 'weekly'
   group: string
@@ -65,8 +66,8 @@ export function getMaxCountOverride(name: string): number | null {
   return match?.[1] ?? null
 }
 
-/** 공유 항목 하나. 계열까지 붙은 카탈로그 줄 그대로다. */
-export interface SharedContentEntry {
+/** 공유 항목 하나. 계열까지 붙은 카탈로그 줄 그대로다. `from` · `until` 은 그 줄이 서는 기간이다. */
+export interface SharedContentEntry extends EffectivePeriod {
   /** API 가 보내는 이름. 호출부가 캐릭터 응답에서 이 항목을 다시 찾을 때 쓴다. */
   name: string
   /** 화면에 그리는 짧은 이름. 계열명이 위에 있어 그것을 뺀 나머지다. */
@@ -97,6 +98,8 @@ function toSharedEntry(entry: CatalogEntry, scope: 'world' | 'account'): SharedC
     section: entry.section,
     scope,
     onlyWhenScheduled: entry.onlyWhenScheduled === true,
+    from: entry.from,
+    until: entry.until,
   }
 }
 

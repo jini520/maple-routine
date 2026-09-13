@@ -221,7 +221,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   })
   const { saving, submit, remove } = useSpendSubmit(props)
 
-  const groups = spendGroupsOf(props.category)
+  const groups = spendGroupsOf(props.category, props.dateKey)
   const forms = formsOf(choice)
   const axes = optionAxesOf(choice)
   /**

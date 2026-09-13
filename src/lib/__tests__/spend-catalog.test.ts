@@ -19,9 +19,12 @@ import {
   withTariffMeso,
 } from '../cashbook/spend-catalog'
 
+/** 모든 항목이 서는 날. 아우룸 레기스(2026-09-17 부터)까지 든다. */
+const 패치후 = '2026-09-17'
+
 describe('spendGroupsOf: 갈래 → 묶음들', () => {
   it('사용자가 적어 준 묶음 이름 그대로 묶는다. 앱이 다시 묶지 않는다', () => {
-    const groups = spendGroupsOf('컨텐츠')
+    const groups = spendGroupsOf('컨텐츠', 패치후)
 
     expect(groups.map((group) => group.group)).toEqual([
       '에픽던전 추가 리워드',
@@ -33,7 +36,7 @@ describe('spendGroupsOf: 갈래 → 묶음들', () => {
   // **단계가 여럿인 항목은 대표 하나로 접힌다**. 목록에 여덟이 서면
   // 그 여덟이 실은 넷 × 두 단계라는 사실이 화면에서 사라진다.
   it('같은 대표는 한 칸으로 접힌다. 여덟이 넷이 된다', () => {
-    const [first] = spendGroupsOf('컨텐츠')
+    const [first] = spendGroupsOf('컨텐츠', 패치후)
 
     expect(first.choices.map((choice) => choice.label)).toEqual([
       '하이마운틴',
@@ -44,14 +47,14 @@ describe('spendGroupsOf: 갈래 → 묶음들', () => {
   })
 
   it('접힌 칸이 자기 단계들을 그대로 든다', () => {
-    const [first] = spendGroupsOf('컨텐츠')
+    const [first] = spendGroupsOf('컨텐츠', 패치후)
 
     expect(first.choices[0].items.map((item) => item.tier)).toEqual(['1단계', '2단계'])
     expect(first.choices[0].items.map((item) => item.unitPrice)).toEqual([7_500, 30_000])
   })
 
   it('단계가 없는 항목은 자기 이름이 곧 칸 이름이다', () => {
-    const [, monsterPark] = spendGroupsOf('컨텐츠')
+    const [, monsterPark] = spendGroupsOf('컨텐츠', 패치후)
 
     expect(monsterPark.choices.map((choice) => choice.label)).toEqual(['몬스터 파크'])
     expect(monsterPark.choices[0].items).toHaveLength(1)
@@ -59,7 +62,7 @@ describe('spendGroupsOf: 갈래 → 묶음들', () => {
 
   it('목록 갈래 넷이 마흔다섯을 나눠 갖는다. 접혀도 항목 수는 그대로다', () => {
     const counted = ['컨텐츠', '이벤트·BM', '버프', '주문서'].map((category) =>
-      spendGroupsOf(category as '컨텐츠').reduce(
+      spendGroupsOf(category as '컨텐츠', 패치후).reduce(
         (sum, group) => sum + group.choices.reduce((n, choice) => n + choice.items.length, 0),
         0,
       ),
@@ -73,8 +76,8 @@ describe('spendGroupsOf: 갈래 → 묶음들', () => {
 
   // 직접 입력 둘은 목록이 없다. 빈 배열이지 예외가 아니다.
   it('직접 입력 갈래는 묶음이 없다', () => {
-    expect(spendGroupsOf('아이템 구매')).toEqual([])
-    expect(spendGroupsOf('기타')).toEqual([])
+    expect(spendGroupsOf('아이템 구매', 패치후)).toEqual([])
+    expect(spendGroupsOf('기타', 패치후)).toEqual([])
   })
 
   /**
@@ -86,14 +89,14 @@ describe('spendGroupsOf: 갈래 → 묶음들', () => {
    */
   it('갈래 안에서 통화가 갈리는 자리가 있다. 항목이 안다', () => {
     const 버프 = new Set(
-      spendGroupsOf('버프').flatMap((group) =>
+      spendGroupsOf('버프', 패치후).flatMap((group) =>
         group.choices.flatMap((choice) => choice.items.map((item) => item.currency)),
       ),
     )
     expect(버프).toEqual(new Set(['meso']))
 
     const 이벤트 = new Set(
-      spendGroupsOf('이벤트·BM').flatMap((group) =>
+      spendGroupsOf('이벤트·BM', 패치후).flatMap((group) =>
         group.choices.flatMap((choice) => choice.items.map((item) => item.currency)),
       ),
     )
@@ -102,12 +105,47 @@ describe('spendGroupsOf: 갈래 → 묶음들', () => {
 
   // 사용자가 적어 준 묶음 차례 그대로다. 앱이 다시 묶지도, 정렬하지도 않는다.
   it('이벤트·BM 의 묶음 넷이 지정한 차례로 선다', () => {
-    expect(spendGroupsOf('이벤트·BM').map((group) => group.group)).toEqual([
+    expect(spendGroupsOf('이벤트·BM', 패치후).map((group) => group.group)).toEqual([
       '메이플 포인트 샵',
       '이벤트',
       'VIP 사우나',
       '기타',
     ])
+  })
+})
+
+// 항목 줄이 시작 기간을 든다. 목록은 **적는 날짜**가 든 주간 기간으로 거른다. 오늘이 아니다.
+describe('spendGroupsOf: 적는 날짜의 기간으로 거른다', () => {
+  const 대표들 = (dateKey: string): string[] =>
+    spendGroupsOf('컨텐츠', dateKey).flatMap((group) => group.choices.map((choice) => choice.label))
+
+  it('적는 날짜가 2026-09-16 이면 아우룸 레기스 타일이 없다', () => {
+    expect(대표들('2026-09-16')).not.toContain('아우룸 레기스')
+    expect(대표들('2026-09-16')).toContain('악몽선경')
+  })
+
+  it('적는 날짜가 2026-09-17 이면 선다. 리셋 목요일이라 그 주 전체가 같다', () => {
+    expect(대표들('2026-09-17')).toContain('아우룸 레기스')
+    expect(대표들('2026-09-23')).toContain('아우룸 레기스')
+  })
+
+  // 목록이 시계를 안 본다. 09-20 에 지난 날짜(09-16)로 적어도 그 날의 기간으로 거른다.
+  it('오늘이 언제든 적는 날짜만 본다', () => {
+    jest.useFakeTimers({ now: new Date('2026-09-20T03:00:00.000Z') })
+    try {
+      expect(대표들('2026-09-16')).not.toContain('아우룸 레기스')
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  // 1.0.8 에서 09-17 전 날짜로 적힌 기록이 있을 수 있다. 되짚기가 거르면 수정 시트가 세부를 못 편다.
+  it('기록을 되짚는 두 함수는 기간을 안 본다', () => {
+    expect(findSpendChoice('컨텐츠', '아우룸 레기스 2단계')?.choice.label).toBe('아우룸 레기스')
+    expect(parseSpendRewardName('컨텐츠', '아우룸 레기스 EXP 1단계, 솔 2단계')?.tierByForm).toEqual({
+      경험치: '1단계',
+      '솔 에르다': '2단계',
+    })
   })
 })
 
@@ -205,7 +243,7 @@ describe('findSpendChoice: 이름으로 대표와 단계를 되짚는다', () =>
 // 에픽던전은 **형태마다 단계를 고른다**. 그 고름을 값 하나(금액)와 글자 하나(기록 이름)로
 // 접는 자리가 여기다. 되짚기는 그 글자를 앱이 다시 읽는 일이라 **왕복**을 본다.
 describe('형태별 단계: 값과 이름', () => {
-  const 하이마운틴 = spendGroupsOf('컨텐츠')[0].choices[0]
+  const 하이마운틴 = spendGroupsOf('컨텐츠', 패치후)[0].choices[0]
 
   describe('spendRewardPrice: 고른 단계 값의 합', () => {
     // 형태마다 따로 사므로 합이다(사용자 확인 2026-09-10).
@@ -273,7 +311,7 @@ describe('형태별 단계: 값과 이름', () => {
 // 줄이 둘인 주문서 타일. 항목이 축 값을 들고, 누름 한 번이 규칙 넷을 차례로 한다.
 describe('축 값: 줄 둘로 항목 하나를 고른다', () => {
   const tileOf = (label: string) => {
-    for (const group of spendGroupsOf('주문서')) {
+    for (const group of spendGroupsOf('주문서', 패치후)) {
       const found = group.choices.find((choice) => choice.label === label)
       if (found !== undefined) return found
     }
