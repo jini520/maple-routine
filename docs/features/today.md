@@ -48,7 +48,7 @@
 | 판정 | `features/boss-scheduler/displayed-bosses.ts` 의 `displayedBosses` | **화면과 같은 함수를 부른다**([[ADR-147]] 결정 8) |
 | 판정 | `features/content-scheduler/displayed-contents.ts` 의 `displayedDailyContents` | 같다 |
 | 판정 | `lib/scheduler/scheduler-content-scope.ts` 의 `getSharedContentGroups` | 공유 컨텐츠 계열 묶기(`onlyWhenScheduled`) |
-| 상태 | 대표 표식 스토어(파일 자리는 [[ADR-275]] 의 열린 질문) | 저장된 대표 ocid. 대표 카드와 머리 버튼이 구독한다 |
+| 상태 | `features/character-selection/store.ts` 의 `representativeOcid` | 저장된 대표 ocid. 대표 카드와 머리 버튼이 구독한다([[ADR-275]]) |
 | 저장 | `storage/character-selection` 의 `getRepresentativeCharacter` | 대표 표식. **today 는 직접 안 부른다**. 스토어가 읽는다 |
 
 **관련 ADR**: [[ADR-147]](이 화면의 설계 전부) · [[ADR-230]](공지 배너) · [[ADR-153]](수익 위젯이 읽는 값: ‘지금 기간’) ·
@@ -464,8 +464,9 @@ interface WidgetProps { w: number; h: WidgetHeight; data: TodayViewModel }
   아래 스토어 값으로 `resolveDisplayRepresentative` 가 정한다. 전원을
   읽지 않는 것은 읽기 하나가 네이티브 호출 하나여서고, 나머지 항목에서 이 화면이 꺼내는 것은
   드롭 위젯의 캐릭터 이름 하나뿐이라 개명이 아니면 안 바뀐다.
-- **대표 표식은 스토어가 든다**([[ADR-275]], 이슈 #395, 설계 · 구현 전). 대표 카드와 머리 버튼의 얼굴
-  순서가 그 값을 구독한다. 대표를 바꾸는 자리 셋(캐릭터 관리 저장 · 캐릭터 설정 · 월드 이전 확인)이
+- **대표 표식은 선택 스토어가 든다**([[ADR-275]], 이슈 #395, 설계 · 구현 전). 대표 카드와 머리 버튼의
+  얼굴 순서가 `useCharacterSelectionStore` 의 `representativeOcid` 를 구독한다. 복원은 마운트의
+  `loadTrackedOcids()` 가 부르는 `hydrate()` 가 한다. 대표를 바꾸는 자리 셋(캐릭터 관리 저장 · 캐릭터 설정 · 월드 이전 확인)이
   저장소와 함께 그 스토어를 고친다. **today 는 표식을 다시 읽지 않는다.** 마운트의 프로필 이펙트도,
   `refreshAll` 끝도 프로필만 읽는다. 화면 상태로 들고 다시 읽는 계기를 늘리는 식이면, 계기를 빠뜨린
   길에서 옛 대표가 남는다. 지금 main 이 그렇다. today 는 탭이라 캐릭터 관리를 다녀와도 다시
@@ -1158,8 +1159,6 @@ formatValuableDroughtHeadline(weeksSince, lateIndex)  →  (weeksSince, index)
   2026-09-05, [[ADR-147]] 정정 44). 진짜다. 그 값은 이번 주에 일간 몬스터파크를 돈 횟수이고 분모는
   5 다. 늘 0 일까 봐 걱정하던 자리가 아니었다.
 - **공유 컨텐츠 타일의 목적지**. 지금은 `target` 이 없다(위젯 2 와 같다).
-- **대표 표식 스토어의 파일 자리 · 부팅 복원 · 쓰기 순서**([[ADR-275]] 열린 질문). 관례가 둘로 갈려
-  사용자 답을 기다린다. 답이 오면 위 `관련 소스` 표의 상태 행에 경로를 적는다.
 
 ## 폐기된 정책 (history)
 
