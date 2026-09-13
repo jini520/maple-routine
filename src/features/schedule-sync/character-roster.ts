@@ -7,7 +7,11 @@
 
 import { fetchCharacterBasic, fetchCharacterList } from '../../nexon/character'
 import { NexonAuthError, NexonRateLimitError } from '../../nexon/errors'
-import { getAllCachedCharacterBasicOcids, getCachedCharacterBasic } from '../../storage/character-basic-cache'
+import {
+  getAllCachedCharacterBasicOcids,
+  getCachedCharacterBasic,
+  reconcileCachedCharacterBasicOcids,
+} from '../../storage/character-basic-cache'
 import { getAuthConfig } from '../../storage/api-key'
 import { getCharacterProfiles } from '../../storage/character-profiles'
 import type { CharacterProfileSnapshot } from '../../storage/character-profiles'
@@ -346,6 +350,11 @@ export async function getCharacterPickerRoster(
   }
 
   const { characters, allCharacters } = await resolveRegisteredCharacters(options?.accountId)
+  // 다음 회차의 stub 단계가 읽는 인덱스다. 목록에서 빠진 캐릭터가 남으면 열 때마다 떴다가 사라진다.
+  await reconcileCachedCharacterBasicOcids(
+    accountId,
+    characters.map((character) => character.ocid),
+  )
 
   // 목록 밖 추적 ocid 확정. 로스터 방출과 섞이지 않게 먼저 끝낸다 - 이 단계가 원장에 표식을
   // 남기고, 아래 `readKnownEligibility` 가 그 원장을 읽는다.

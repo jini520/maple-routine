@@ -5,7 +5,8 @@ import { useEffect, useState } from 'react'
 import { Pressable, View } from 'react-native'
 import type { LucideIcon } from 'lucide-react-native'
 
-import { CONTENT_TEMPLATE } from '../../lib/scheduler/scheduler-content-template'
+import { CONTENT_TEMPLATE, effectiveTemplateEntries } from '../../lib/scheduler/scheduler-content-template'
+import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
 import {
   categorizeContentEntries,
   contentCountTag,
@@ -223,7 +224,11 @@ export function ContentManageScreen(): React.JSX.Element {
         ) : (
           <View className="gap-4 px-4 pb-4">
             {categorizeContentEntries(
-              CONTENT_TEMPLATE[activeTab],
+              // 출시 전인 컨텐츠는 고를 수 없다. 이미 추적 중이어도 목록에서만 빠지고 저장은 그대로다.
+              effectiveTemplateEntries(
+                CONTENT_TEMPLATE[activeTab],
+                getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
+              ),
               activeTab === 'weekly' ? WEEKLY_CATEGORY_ORDER : undefined,
             ).map((group, groupIndex) => {
               const GroupIcon = categoryIcon(group.label)

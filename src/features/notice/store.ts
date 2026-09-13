@@ -7,6 +7,9 @@
  * **토글끼리 서로를 안 건드린다.** 하나를 켜다 실패해도 나머지 셋의 저장된 값은 그대로다.
  *
  * **요청은 한 줄로 선다.** 누른 값은 `pending` 에 바로 적히고, 구독과 저장은 `queue` 에서 하나씩 돈다.
+ *
+ * **켜 둔 토픽은 앱을 켤 때와 돌아올 때 다시 구독한다**(`resubscribe`). 토픽 구독은 FCM 등록 토큰에
+ * 묶여 있어 토큰이 바뀌면 사라지는데, 앱은 구독 목록을 FCM 에 물을 수 없다.
  */
 import { create } from 'zustand'
 
@@ -53,6 +56,12 @@ interface NoticeState {
   blockedByPermission: boolean
   /** 저장된 값을 상태에 올린다. 토픽을 다시 구독하지 않는다. */
   restore: () => Promise<void>
+  /**
+   * 저장값이 켜짐인 토픽을 다시 구독한다. 권한이 없으면 안 보내고 묻지도 않는다.
+   *
+   * **던지지 않는다.** 실패는 알리지 않고 다음 계기(앱을 켤 때 · 포그라운드 복귀)에 다시 보낸다.
+   */
+  resubscribe: () => Promise<void>
   setSubscribed: (key: NoticeKind, subscribed: boolean) => Promise<void>
   /** 권한을 막 허용한 자리에서 기본 묶음을 켠다. */
   subscribeDefaults: () => Promise<void>
@@ -92,6 +101,14 @@ function enqueue(job: () => Promise<void>): Promise<void> {
   queue = done.catch(() => undefined)
   return done
 }
+
+/**
+ * 줄에서 차례를 기다리는 재구독. 도는 중이거나 없으면 `null`.
+ *
+ * 기다리는 요청은 아직 권한도 저장값도 안 읽어서 새 요청을 합쳐도 결과가 같다. 도는 요청은 이미
+ * 읽었을 수 있어 합치면 그 사이 켠 권한을 못 본다.
+ */
+let waitingResubscribe: Promise<void> | null = null
 
 export const useNoticeStore = create<NoticeState>()((set, get) => {
   /** 구독하거나 해제하고, 성공하면 적는 함수. */
@@ -149,6 +166,26 @@ export const useNoticeStore = create<NoticeState>()((set, get) => {
     blockedByPermission: false,
     async restore() {
       set({ subscriptions: await getNoticeSubscriptions() })
+    },
+    resubscribe() {
+      if (waitingResubscribe !== null) return waitingResubscribe
+
+      const job = enqueue(async () => {
+        waitingResubscribe = null
+        // 권한은 묻지 않는다. 앱을 켤 때와 돌아올 때 뜨는 팝업은 iOS 의 한 번뿐인 기회를 맥락 없이 쓴다.
+        if (!(await hasNotificationPermission())) return
+
+        // 켜짐은 차례가 왔을 때 읽는다. 줄에 설 때 읽으면 기다리는 사이 끈 토픽을 다시 구독한다.
+        const { subscriptions } = get()
+        for (const { key, topic } of NOTICE_TOPICS) {
+          if (!subscriptions[key]) continue
+          // 한 분류의 실패가 다른 분류를 막지 않는다.
+          await subscribeToPushTopic(topic).catch(() => undefined)
+        }
+      }).catch(() => undefined)
+
+      waitingResubscribe = job
+      return job
     },
     setSubscribed(key, subscribed) {
       return press([key], subscribed)

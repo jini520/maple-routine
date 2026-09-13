@@ -42,6 +42,7 @@ jest.mock('../../../storage/character-basic-cache', () => ({
   getCachedCharacterBasic: jest.fn(),
   setCachedCharacterBasic: jest.fn(),
   getAllCachedCharacterBasicOcids: jest.fn(),
+  reconcileCachedCharacterBasicOcids: jest.fn(),
 }))
 const { getCachedCharacterBasic: getCachedCharacterBasicMock, setCachedCharacterBasic: setCachedCharacterBasicMock, getAllCachedCharacterBasicOcids: getAllCachedCharacterBasicOcidsMock } = jest.requireMock('../../../storage/character-basic-cache') as Record<string, jest.Mock>
 

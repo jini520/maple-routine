@@ -1423,6 +1423,54 @@ describe('기타. 금액 × 수량', () => {
   })
 })
 
+// 항목 줄이 시작 기간을 든다. 목록은 **적는 날짜**가 든 주간 기간으로 거른다. 오늘이 아니다.
+describe('시작 기간 전인 항목', () => {
+  it('적는 날짜가 2026-09-16 이면 아우룸 레기스 타일이 없다. 오늘이 09-20 이어도 같다', async () => {
+    const view = await 그리기({ dateKey: '2026-09-16', todayDateKey: '2026-09-20' })
+
+    expect(view.queryByLabelText('아우룸 레기스')).toBeNull()
+    expect(view.getByLabelText('악몽선경')).toBeTruthy()
+  })
+
+  it('적는 날짜가 2026-09-17 이면 선다', async () => {
+    const view = await 그리기({ dateKey: '2026-09-17', todayDateKey: '2026-09-20' })
+
+    expect(view.getByLabelText('아우룸 레기스')).toBeTruthy()
+  })
+
+  // 1.0.8 에서 09-17 전 날짜로 적힌 기록이 있을 수 있다. 되짚기는 기간을 안 본다.
+  it('2026-09-16 날짜로 적힌 아우룸 레기스 기록을 고치러 열면 그 항목이 되짚인다', async () => {
+    const view = await 그리기({
+      dateKey: '2026-09-16',
+      todayDateKey: '2026-09-20',
+      editing: {
+        id: 'spd-aurum',
+        ocid: null,
+        spentOn: '2026-09-16',
+        category: '컨텐츠',
+        item: '아우룸 레기스 EXP 1단계, 솔 2단계',
+        form: null,
+        itemKind: null,
+        quantity: 1,
+        mesoAmount: null,
+        tariffMeso: null,
+        pointAmount: 135_000,
+        pointPer100mMeso: 1_180,
+        cashAmount: null,
+        memo: null,
+        recordedAt: '2026-09-16T01:00:00.000Z',
+      },
+      onDelete: jest.fn(),
+    })
+
+    expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('아우룸 레기스')
+    expect(
+      within(view.getByTestId('spend-sheet-form-솔 에르다')).getByLabelText('2단계').props
+        .accessibilityState?.selected,
+    ).toBe(true)
+  })
+})
+
 describe('수정 모드', () => {
   const 악몽선경 = {
     id: 'spd-9',

@@ -18,6 +18,7 @@ import { create } from 'zustand'
 
 import { removeTrackedCharacter, replaceTrackedCharacter } from '../../storage/character-selection'
 import { linkWorldLeap } from '../boss-profit/world-leap-link'
+import { useCharacterSelectionStore } from '../character-selection/store'
 import type { WorldLeapNotice } from './world-leap'
 
 interface WorldLeapStore {
@@ -93,6 +94,11 @@ export const useWorldLeapStore = create<WorldLeapStore>((set, get) => ({
     // 리프한 기간의 중복 기록을 짝지을 연결이다. 뒷정리라 못 남겨도 목록 변경은 끝내고, 이름·직업
     // 대조가 나중에 다시 잇는다.
     await linkWorldLeap(notice.from.ocid, notice.to.ocid, new Date()).catch(() => undefined)
+    // 대표를 옮길지는 저장소 함수가 정했다. 선택 스토어가 따라오지 않으면 today 가 목록에 없는 옛
+    // ocid 를 들어 대표 자리가 첫 번째로 떨어진다.
+    if (saved !== null) {
+      await useCharacterSelectionStore.getState().reloadRepresentative()
+    }
     // 거절 목록에도 넣는다. 정리한 뒤에는 옛 ocid 가 추적 목록에 없어 판정이 다시 서지 않지만,
     // 같은 회차에 이미 흐르고 있던 판정이 뒤늦게 도착할 수 있다.
     set((state) => ({
