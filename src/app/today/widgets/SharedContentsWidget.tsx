@@ -114,9 +114,10 @@ function Checkbox(props: { checked: boolean }): React.JSX.Element {
   )
 }
 
-function CountValue(props: { count: { now: number; max: number } }): React.JSX.Element {
+/** `n/max`. 줄의 진행과 계열 제목의 주간 한도가 같은 모양을 쓴다. */
+function CountValue(props: { count: { now: number; max: number }; testID: string }): React.JSX.Element {
   return (
-    <Text fixed testID="shared-count" style={TABULAR_NUMS} className="shrink-0 text-[11.5px] text-text-muted">
+    <Text fixed testID={props.testID} style={TABULAR_NUMS} className="shrink-0 text-[11.5px] text-text-muted">
       <Text fixed style={TABULAR_NUMS} className="text-[11.5px] font-bold text-text">
         {String(props.count.now)}
       </Text>
@@ -127,6 +128,8 @@ function CountValue(props: { count: { now: number; max: number } }): React.JSX.E
 
 function SharedItemRow(props: { item: SharedContentItemView }): React.JSX.Element {
   const { item } = props
+  // 체크는 줄의 완료만 본다. 취소선은 한도로 막힌 줄에도 긋는다. 더 진행할 수 없는 줄이다.
+  const isStruck = item.isComplete || item.isWeeklyLimitClosed
 
   return (
     <View
@@ -140,12 +143,12 @@ function SharedItemRow(props: { item: SharedContentItemView }): React.JSX.Elemen
         testID="shared-item-name"
         numberOfLines={1}
         className={`min-w-0 flex-1 text-[11.5px] leading-tight ${
-          item.isComplete ? 'text-text-disabled line-through' : 'text-text'
+          isStruck ? 'text-text-disabled line-through' : 'text-text'
         }`}
       >
         {item.shortName}
       </Text>
-      {item.count !== null && <CountValue count={item.count} />}
+      {item.count !== null && <CountValue count={item.count} testID="shared-count" />}
     </View>
   )
 }
@@ -243,9 +246,14 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
                     testID="shared-group"
                     className={index === 0 ? '' : 'mt-2 border-t border-border pt-2'}
                   >
-                    <Text fixed testID="shared-group-name" className="text-[12.5px] font-bold text-text">
-                      {group.group}
-                    </Text>
+                    <View className="flex-row items-center justify-between gap-1.5">
+                      <Text fixed testID="shared-group-name" className="text-[12.5px] font-bold text-text">
+                        {group.group}
+                      </Text>
+                      {group.weeklyLimit !== null && (
+                        <CountValue count={group.weeklyLimit} testID="shared-group-count" />
+                      )}
+                    </View>
                     <View className="mt-1.5 gap-1.5">
                       {group.items.map((item) => (
                         <SharedItemRow key={item.name} item={item} />
