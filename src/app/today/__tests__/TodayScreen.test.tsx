@@ -15,6 +15,7 @@ import { act, fireEvent, screen, within } from '@testing-library/react-native'
 import { useDropHistoryStore } from '../../../features/boss-profit/drop-history-store'
 import { useBossProfitStore, type BossProfitRow } from '../../../features/boss-profit/store'
 import { useBossSchedulerStore, type BossCharacterView } from '../../../features/boss-scheduler/store'
+import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import {
   useContentSchedulerStore,
   type ContentCharacterView } from '../../../features/content-scheduler/store'
@@ -24,7 +25,11 @@ import { formatMesoShort } from '../../../lib/boss/boss-profit-delta'
 import type { MatchedBoss } from '../../../lib/boss/boss-matching'
 import type { DropHistoryPeriodGroup, DropHistoryRecord } from '../../../lib/drop/drop-history'
 import { getCachedCharacterBasic } from '../../../storage/character-basic-cache'
-import { getRepresentativeCharacter } from '../../../storage/character-selection'
+import {
+  getLastSelectedCharacter,
+  getRepresentativeCharacter,
+  setRepresentativeCharacter,
+} from '../../../storage/character-selection'
 import type { CharacterBasicProfile, DailyContent, WeeklyContent } from '../../../types'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
@@ -57,9 +62,13 @@ jest.mock('../../../features/boss-profit/drop-history-store', () => ({
 jest.mock('../../../storage/character-basic-cache', () => ({
   ...jest.requireActual('../../../storage/character-basic-cache'),
   getCachedCharacterBasic: jest.fn() }))
+// 대표 표식은 선택 스토어가 든다. 스토어는 실물이고 그 밑의 저장소만 막는다. 포트가 주입되지 않은
+// 이 하네스에서 실물 저장소를 부르면 던진다.
 jest.mock('../../../storage/character-selection', () => ({
   ...jest.requireActual('../../../storage/character-selection'),
-  getRepresentativeCharacter: jest.fn() }))
+  getLastSelectedCharacter: jest.fn(),
+  getRepresentativeCharacter: jest.fn(),
+  setRepresentativeCharacter: jest.fn() }))
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 // 새로고침이 공지 배너의 서버 조회를 함께 탄다. 안 막으면 이 스위트가 실제 망으로 나간다.
 // 배너 자체의 동작은 `NoticeBanner.test.tsx` 와 `banner-store.spec.ts` 가 본다.
@@ -74,6 +83,8 @@ const mockedProfit = jest.mocked(useBossProfitStore)
 const mockedDropHistory = jest.mocked(useDropHistoryStore)
 const mockedGetCachedCharacterBasic = jest.mocked(getCachedCharacterBasic)
 const mockedGetRepresentative = jest.mocked(getRepresentativeCharacter)
+const mockedGetLastSelected = jest.mocked(getLastSelectedCharacter)
+const mockedSetRepresentative = jest.mocked(setRepresentativeCharacter)
 const mockedNavigation = jest.mocked(useScreenNavigation)
 
 // 2026-08-17(월) 12:00 KST. `view-model.test.ts` 와 같은 시각이라 주간 기간 키가 2026-08-13 이다.
@@ -297,7 +308,7 @@ async function renderScreen(): Promise<Rendered> {
   // **`await` 가 계약이다**. RNTL 14 의 `render` 는 비동기다. 안 기다리면 아래 `act` 가 마운트보다
   // 먼저 돌아 **아무것도 안 그려졌는데 초록** 인 테스트가 된다(실제로 그렇게 한 번 갔다).
   const view = await renderOverlay(<TodayScreen />)
-  // 프로필·대표 표식은 비동기 효과가 채운다. 한 번 흘려보내야 대표 카드가 그려진다.
+  // 프로필은 비동기 효과가 채운다. 한 번 흘려보내야 대표 카드가 그려진다.
   await act(async () => {})
   return view
 }
@@ -336,6 +347,13 @@ beforeEach(() => {
     profit: { loadTrackedOcids: jest.fn(), refresh: jest.fn().mockResolvedValue(undefined) },
     dropHistory: { load: jest.fn().mockResolvedValue(undefined) } }
   mockedGetRepresentative.mockResolvedValue(null)
+  mockedGetLastSelected.mockResolvedValue(null)
+  mockedSetRepresentative.mockResolvedValue(undefined)
+  // 스토어는 모듈 수명이라 앞 테스트가 쓴 대표가 남는다.
+  useCharacterSelectionStore.setState({
+    selectedOcid: null,
+    representativeOcid: null,
+    isRepresentativeHydrated: false })
   mockedGetCachedCharacterBasic.mockResolvedValue(null)
   mockedNavigation.mockReturnValue({ navigate: jest.fn(), goBack: jest.fn() } as never)
   useTrackingModeStore.setState({ mode: 'auto' })
@@ -515,15 +533,16 @@ describe('TodayScreen: 명시적 재조회', () => {
     expect(mockedGetCachedCharacterBasic).toHaveBeenCalledWith(OCIDS[0])
   })
 
-  // 대표를 바꾸는 것은 캐릭터 관리 화면인데 그것이 추적 목록을 안 건드린다. 표식을 다시 읽지
-  // 않으면 별을 옮기고 today 로 돌아와 당겨도 옛 캐릭터가 그 자리에 남는다.
-  it('대표 표식이 바뀌면 그 캐릭터를 읽는다', async () => {
+  // 누구의 프로필을 읽는지는 선택 스토어의 대표가 정한다.
+  it('대표가 바뀌었으면 그 캐릭터를 읽는다', async () => {
     setStores(캐릭터_넷)
     mockedGetCachedCharacterBasic.mockResolvedValue(cachedBasic(80.3))
 
     await renderScreen()
     mockedGetCachedCharacterBasic.mockClear()
-    mockedGetRepresentative.mockResolvedValue(OCIDS[2])
+    await act(async () => {
+      useCharacterSelectionStore.setState({ representativeOcid: OCIDS[2], isRepresentativeHydrated: true })
+    })
 
     await act(async () => {
       refreshControl().onRefresh()
@@ -543,6 +562,109 @@ describe('TodayScreen: 명시적 재조회', () => {
     await renderScreen()
 
     expect(refreshControl().refreshing).toBe(false)
+  })
+})
+
+/** 캐릭터마다 이름과 얼굴이 다른 캐시. 대표 카드와 머리 버튼이 누구를 그리는지 가를 수 있다. */
+function cachedBasicByOcid(ocid: string): { profile: CharacterBasicProfile; cachedAt: string } {
+  const index = OCIDS.indexOf(ocid) + 1
+  return {
+    profile: {
+      name: `캐릭터${index}`,
+      level: 280 + index,
+      imageUrl: `https://example.com/${index}.png`,
+      accessFlag: true,
+      world: '스카니아',
+      expRate: 10 },
+    cachedAt: NOW.toISOString() }
+}
+
+// 대표 표식은 선택 스토어가 든다. 화면 상태로 들던 때는 다시 읽는 계기가 추적 목록 변경과 당김
+// 둘뿐이라, 캐릭터 관리에서 대표만 옮기고 돌아오면 당기기 전까지 옛 캐릭터가 남았다(#395). today 는
+// 탭이라 캐릭터 관리를 다녀와도 다시 마운트되지 않는다.
+describe('TodayScreen: 대표 표식', () => {
+  it('다시 마운트하거나 당기지 않아도 대표를 바꾸면 대표 카드와 머리 첫 얼굴이 새 캐릭터다', async () => {
+    setStores(캐릭터_넷)
+    mockedGetCachedCharacterBasic.mockImplementation(async (ocid) => cachedBasicByOcid(ocid))
+
+    await renderScreen()
+    expect(screen.getByTestId('representative-name')).toHaveTextContent('캐릭터1')
+    expect(screen.getByTestId('character-manage-face-0').props.source).toEqual({
+      uri: 'https://example.com/1.png' })
+
+    // 캐릭터 관리의 저장이 부르는 것과 같은 문이다.
+    await act(async () => {
+      await useCharacterSelectionStore.getState().setRepresentative(OCIDS[2])
+    })
+
+    expect(screen.getByTestId('representative-name')).toHaveTextContent('캐릭터3')
+    expect(screen.getByTestId('character-manage-face-0').props.source).toEqual({
+      uri: 'https://example.com/3.png' })
+    expect(mocks.content.loadTrackedOcids).toHaveBeenCalledTimes(1)
+    expect(mocks.content.refresh).not.toHaveBeenCalled()
+  })
+
+  // 표식을 저장소에서 다시 읽으면 스토어와 두 벌이 되고, 늦게 온 읽기가 방금 바꾼 대표를 되돌린다.
+  it('마운트도 당김도 표식을 저장소에서 읽지 않는다', async () => {
+    setStores(캐릭터_넷)
+    mockedGetCachedCharacterBasic.mockImplementation(async (ocid) => cachedBasicByOcid(ocid))
+    mockedGetRepresentative.mockClear()
+
+    await renderScreen()
+    await act(async () => {
+      refreshControl().onRefresh()
+    })
+
+    expect(mockedGetRepresentative).not.toHaveBeenCalled()
+  })
+
+  // 온보딩의 순서. `completeCharacterSetup` 이 앱을 연 뒤에 대표를 쓰므로, today 의 복원 읽기와 대표
+  // 쓰기 중 어느 쪽이 먼저 끝날지 코드가 정하지 않는다. 두 순서 모두에서 고른 대표가 서야 한다.
+  describe('캐릭터 설정 직후', () => {
+    function loadTrackedOcidsHydrates(): void {
+      // 실물 `loadTrackedOcids` 가 하는 일 중 이 화면에 닿는 것만 남긴다.
+      mocks.content.loadTrackedOcids.mockImplementation(() =>
+        useCharacterSelectionStore.getState().hydrate(),
+      )
+    }
+
+    it('복원 읽기가 대표 쓰기보다 늦게 도착해도 고른 대표를 그린다', async () => {
+      loadTrackedOcidsHydrates()
+      let resolveRead!: (value: string | null) => void
+      mockedGetRepresentative.mockReturnValue(
+        new Promise((resolve) => {
+          resolveRead = resolve
+        }),
+      )
+      setStores(캐릭터_넷)
+      mockedGetCachedCharacterBasic.mockImplementation(async (ocid) => cachedBasicByOcid(ocid))
+
+      await renderScreen()
+      await act(async () => {
+        await useCharacterSelectionStore.getState().setRepresentative(OCIDS[2])
+      })
+      // 쓰기 전에 읽은 저장소 값(대표 없음)이 이제야 도착한다.
+      await act(async () => {
+        resolveRead(null)
+      })
+
+      expect(screen.getByTestId('representative-name')).toHaveTextContent('캐릭터3')
+    })
+
+    it('복원 읽기가 먼저 끝나도 고른 대표를 그린다', async () => {
+      loadTrackedOcidsHydrates()
+      setStores(캐릭터_넷)
+      mockedGetCachedCharacterBasic.mockImplementation(async (ocid) => cachedBasicByOcid(ocid))
+
+      await renderScreen()
+      expect(screen.getByTestId('representative-name')).toHaveTextContent('캐릭터1')
+
+      await act(async () => {
+        await useCharacterSelectionStore.getState().setRepresentative(OCIDS[2])
+      })
+
+      expect(screen.getByTestId('representative-name')).toHaveTextContent('캐릭터3')
+    })
   })
 })
 

@@ -27,6 +27,7 @@ import {
 } from '../../../storage/character-selection'
 import { getScheduleProbeLedger } from '../../../storage/schedule-probe-ledger'
 import { useContentSchedulerStore, type ContentSchedulerStore } from '../../../features/content-scheduler/store'
+import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import type { CachedCharacterBasicEntry } from '../../../storage/character-basic-cache'
 import type { CharacterPickerEntry, MapleAccount, MapleCharacter } from '../../../types'
 
@@ -175,6 +176,11 @@ beforeEach(() => {
     trackedOcids: [],
     saveTrackedOcids: jest.fn(async () => {}),
   } as unknown as ContentSchedulerStore)
+  useCharacterSelectionStore.setState({
+    selectedOcid: null,
+    representativeOcid: null,
+    isRepresentativeHydrated: false,
+  })
 })
 
 afterEach(() => {
@@ -342,6 +348,18 @@ describe('CharacterSetupScreen: 저장 배선', () => {
     expect(mockCompleteCharacterSetup.mock.invocationCallOrder[0]).toBeLessThan(
       mockedSetRepresentative.mock.invocationCallOrder[0],
     )
+  })
+
+  // 설정을 마치면 today 가 선다. 그 화면은 선택 스토어의 대표를 그린다.
+  it('고른 대표를 today 가 구독하는 선택 스토어에도 쓴다', async () => {
+    const { view } = await renderStep()
+
+    await press(pressableOf(view.getByText('낟낟')))
+    await press(pressableOf(view.getByText('달의아이')))
+    await press(view.getByLabelText('달의아이 대표 캐릭터'))
+    await press(button(view, '계속하기'))
+
+    expect(useCharacterSelectionStore.getState().representativeOcid).toBe('a2')
   })
 
   it('대표를 안 고르면 저장된 대표를 지운다', async () => {
