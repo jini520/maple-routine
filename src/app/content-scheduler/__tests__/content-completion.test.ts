@@ -9,6 +9,7 @@ import {
   dailyContentProgress,
   weeklyContentCompletion,
   weeklyContentProgress,
+  weeklyLimitClosedNames,
 } from '../content-completion'
 
 function daily(overrides: Partial<DailyContent> = {}): DailyContent {
@@ -138,7 +139,7 @@ describe('진행 합계', () => {
       weekly({ name: '[주간 퀘스트] 크리티아스', questState: 2 }),
     ]
 
-    expect(weeklyContentProgress(contents, 300)).toEqual({ completed: 2, total: 2 })
+    expect(weeklyContentProgress(contents, 300, new Set())).toEqual({ completed: 2, total: 2 })
   })
 
   // 요구 레벨에 못 미치는 항목은 **분모에서도 빠진다.** 남겨 두면 그 캐릭터의
@@ -162,5 +163,39 @@ describe('진행 합계', () => {
 
   it('빈 목록은 0/0 이다', () => {
     expect(dailyContentProgress([], 300)).toEqual({ completed: 0, total: 0 })
+  })
+})
+
+// 에픽 던전은 4종이지만 주 3회가 한도다. 3종을 끝낸 뒤 남은 1종은 할 일이 아니라 `마감` 이다.
+describe('에픽 던전 주간 한도', () => {
+  const epic = (name: string, nowCount: number, isRegistered = true): WeeklyContent =>
+    weekly({ name: `에픽 던전 : ${name}`, kind: 'contents', nowCount, questState: null, isRegistered })
+  const 넷 = [epic('하이마운틴', 1), epic('앵글러 컴퍼니', 2), epic('악몽선경', 0), epic('아우룸 레기스', 1)]
+
+  it('3종을 완료하면 남은 1종이 막힌다', () => {
+    expect([...weeklyLimitClosedNames(넷)]).toEqual(['에픽 던전 : 악몽선경'])
+  })
+
+  it('2종이면 아무것도 안 막힌다', () => {
+    expect(weeklyLimitClosedNames([epic('하이마운틴', 1), epic('앵글러 컴퍼니', 1), epic('악몽선경', 0)]).size).toBe(0)
+  })
+
+  // 한도는 등록이 아니라 진행 횟수를 막는다. 원천은 표시 목록이 아니라 병합된 목록 전체다.
+  it('등록 안 한 던전의 완료도 센다', () => {
+    const 섞임 = [epic('하이마운틴', 1), epic('앵글러 컴퍼니', 1), epic('악몽선경', 1, false), epic('아우룸 레기스', 0)]
+
+    expect([...weeklyLimitClosedNames(섞임)]).toEqual(['에픽 던전 : 아우룸 레기스'])
+  })
+
+  // 마감은 이번 주 일이 끝난 것이라 링의 분자에 든다. 안 넣으면 3/4 에 멈춰 100% 에 절대 못 닿는다.
+  it('4종 추적 · 3종 완료면 링은 4/4 다', () => {
+    expect(weeklyContentProgress(넷, 300, weeklyLimitClosedNames(넷))).toEqual({ completed: 4, total: 4 })
+  })
+
+  it('요구 레벨 미달은 막혀도 분모에서 빠진다', () => {
+    // 아우룸 레기스의 요구 레벨은 290 이다. 285 캐릭터에게는 그 한 줄이 이 캐릭터의 일이 아니다.
+    const 셋완료 = [epic('하이마운틴', 1), epic('앵글러 컴퍼니', 1), epic('악몽선경', 1), epic('아우룸 레기스', 0)]
+
+    expect(weeklyContentProgress(셋완료, 285, weeklyLimitClosedNames(셋완료))).toEqual({ completed: 3, total: 3 })
   })
 })

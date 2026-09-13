@@ -14,6 +14,9 @@
  * 대표 캐릭터의 EXP·레벨은 스토어가 아니라 `character-basic-cache` 에서 온다. 그 캐시를 읽는
  * 이펙트는 추적 목록이 바뀔 때만 돌므로, 재조회가 끝나는 자리에서 한 번 더 읽는다.
  *
+ * 누가 대표인가는 선택 스토어를 구독한다. 화면 상태로 사본을 들면 이 탭은 다시 마운트되지 않아
+ * 캐릭터 관리에서 대표를 바꿔도 옛 캐릭터가 남는다.
+ *
  * 대가를 적어 둔다. 이 화면에 오래 머물러 TTL 이 만료되면 컨텐츠 쪽만 다시 동기화되고 보스·수익
  * 위젯은 그 탭에 들어갈 때까지 옛 스냅샷을 그린다. 당김과 헤더 버튼은 셋을 모두 새로 읽는다.
  *
@@ -31,10 +34,10 @@ import { useDropHistoryStore } from '../../features/boss-profit/drop-history-sto
 import { getBossDropRecordsRevision } from '../../storage/boss-drops'
 import { useBossProfitStore } from '../../features/boss-profit/store'
 import { useBossSchedulerStore } from '../../features/boss-scheduler/store'
+import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
-import { getRepresentativeCharacter } from '../../storage/character-selection'
 import { resolveDisplayRepresentative } from '../../features/character-manage/derivations'
 import type { CharacterBasicProfile } from '../../types'
 
@@ -48,56 +51,42 @@ import { buildTodayViewModel } from './view-model'
 import { WidgetGrid } from './WidgetGrid'
 
 /**
- * 대표 표식과 프로필 맵을 저장소에서 한 번에 읽는 함수. 마운트가 쓴다. 네트워크는 없다.
+ * 프로필 맵을 저장소에서 읽는 함수. 마운트가 쓴다. 네트워크는 없다.
  *
  * 캐시에 없는 캐릭터는 **항목을 만들지 않는다**. 이름 없이 카드를 그릴 수 없고, ocid 는
  * 사용자에게 뜻이 없는 값이라 대신 넣지 않는다(`drop-history-store` 와 같은 규칙).
  */
-async function readCharacterProfiles(ocids: string[]): Promise<{
-  representative: string | null
-  profiles: Readonly<Record<string, CharacterBasicProfile>>
-}> {
-  const [representative, entries] = await Promise.all([
-    getRepresentativeCharacter().catch(() => null),
-    Promise.all(
-      ocids.map(async (ocid) => [ocid, await getCachedCharacterBasic(ocid).catch(() => null)] as const),
-    ),
-  ])
+async function readCharacterProfiles(
+  ocids: string[],
+): Promise<Readonly<Record<string, CharacterBasicProfile>>> {
+  const entries = await Promise.all(
+    ocids.map(async (ocid) => [ocid, await getCachedCharacterBasic(ocid).catch(() => null)] as const),
+  )
 
-  return {
-    representative,
-    profiles: Object.fromEntries(
-      entries.flatMap(([ocid, entry]) => (entry === null ? [] : [[ocid, entry.profile] as const])),
-    ),
-  }
+  return Object.fromEntries(
+    entries.flatMap(([ocid, entry]) => (entry === null ? [] : [[ocid, entry.profile] as const])),
+  )
 }
 
 /**
- * 대표 표식과 **대표 하나**의 프로필을 다시 읽는 함수. 재조회 끝이 쓴다.
+ * **대표 하나**의 프로필을 다시 읽는 함수. 재조회 끝이 쓴다.
  *
  * 전원을 다시 읽지 않는다. 저장소 읽기 하나가 네이티브 호출 하나라 추적 45명이면 당길 때마다
  * 45번이 되는데, 이 화면이 나머지 항목에서 꺼내는 것은 드롭 위젯의 캐릭터 **이름** 하나뿐이라
  * 개명이 아니면 값이 안 바뀐다. 그 이름은 다음 마운트가 읽어도 늦지 않다.
  *
- * 표식도 함께 읽는 것은 대표를 바꾸는 캐릭터 관리 화면이 **추적 목록을 안 건드려서**다. 표식만
- * 옛 값으로 두면 별을 옮기고 돌아와 당겨도 옛 캐릭터가 그 자리에 남는다.
+ * @param representative 선택 스토어의 대표 표식. 저장소에서 다시 읽으면 늦게 온 읽기가 방금 바꾼 대표를 되돌린다.
  */
-async function readRepresentativeProfile(ocids: string[]): Promise<{
-  representative: string | null
-  displayed: { ocid: string; profile: CharacterBasicProfile } | null
-}> {
-  const representative = await getRepresentativeCharacter().catch(() => null)
+async function readRepresentativeProfile(
+  ocids: string[],
+  representative: string | null,
+): Promise<{ ocid: string; profile: CharacterBasicProfile } | null> {
   // 화면이 대표 자리에 세우는 캐릭터를 그대로 고른다. 미지정이면 목록의 첫 번째다.
   const ocid = resolveDisplayRepresentative(ocids, representative)
-  if (ocid === null) {
-    return { representative, displayed: null }
-  }
+  if (ocid === null) return null
 
   const entry = await getCachedCharacterBasic(ocid).catch(() => null)
-  return {
-    representative,
-    displayed: entry === null ? null : { ocid, profile: entry.profile },
-  }
+  return entry === null ? null : { ocid, profile: entry.profile }
 }
 
 export function TodayScreen(): React.JSX.Element {
@@ -109,12 +98,12 @@ export function TodayScreen(): React.JSX.Element {
   const loadNoticeBanner = useNoticeBannerStore((state) => state.load)
   const refreshNoticeBanner = useNoticeBannerStore((state) => state.refresh)
 
-  // 프로필과 대표 표식은 스토어가 아니라 저장소에서 온다(둘 다 이 화면이 처음 읽는 자리는 아니고,
-  // `character-basic-cache` 는 보스 수익·히스토리가 이미 같은 방식으로 읽는다).
+  // 프로필은 스토어가 아니라 저장소에서 온다(`character-basic-cache` 는 보스 수익·히스토리가 이미
+  // 같은 방식으로 읽는다).
   const [profilesByOcid, setProfilesByOcid] = useState<Readonly<Record<string, CharacterBasicProfile>>>(
     {},
   )
-  const [representativeOcid, setRepresentativeOcid] = useState<string | null>(null)
+  const representativeOcid = useCharacterSelectionStore((state) => state.representativeOcid)
 
   useEffect(() => {
     // 진입 자동 조회. 게이트가 있는 문 하나. 드롭 기록은 아래 포커스 훅이 맡는다.
@@ -176,11 +165,10 @@ export function TodayScreen(): React.JSX.Element {
     let cancelled = false
 
     void (async () => {
-      const read = await readCharacterProfiles(orderedOcidsKey === '' ? [] : orderedOcidsKey.split(','))
+      const profiles = await readCharacterProfiles(orderedOcidsKey === '' ? [] : orderedOcidsKey.split(','))
       if (cancelled) return
 
-      setRepresentativeOcid(read.representative)
-      setProfilesByOcid(read.profiles)
+      setProfilesByOcid(profiles)
     })()
 
     return () => {
@@ -240,10 +228,13 @@ export function TodayScreen(): React.JSX.Element {
     // 방금 끝난 동기화가 대표 캐릭터의 `character/basic` 을 5분 가드를 건너뛰고 다시 받아 캐시를
     // 갱신했다. 여기서 다시 읽지 않으면 그 EXP·레벨이 앱을 다시 켤 때까지 화면에 못 닿는다. 위
     // 이펙트는 추적 목록이 바뀔 때만 도는데 재조회는 그 목록을 안 건드리기 때문이다.
-    const read = await readRepresentativeProfile(content.trackedOcids ?? [])
-    setRepresentativeOcid(read.representative)
-    if (read.displayed !== null) {
-      const { ocid, profile } = read.displayed
+    const displayed = await readRepresentativeProfile(
+      content.trackedOcids ?? [],
+      // 렌더가 잡아 둔 값이 아니라 지금 값이다. 당기는 동안 대표가 바뀌었을 수 있다.
+      useCharacterSelectionStore.getState().representativeOcid,
+    )
+    if (displayed !== null) {
+      const { ocid, profile } = displayed
       setProfilesByOcid((previous) => ({ ...previous, [ocid]: profile }))
     }
 

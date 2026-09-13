@@ -10,8 +10,12 @@
  */
 
 import { categorizeContentEntries, WEEKLY_CATEGORY_ORDER } from '../../lib/scheduler/content-category'
-import { mergeManualContentList, orderContentsByTemplate } from '../../lib/scheduler/manual-content-merge'
-import { CONTENT_TEMPLATE } from '../../lib/scheduler/scheduler-content-template'
+import {
+  mergeManualContentList,
+  orderContentsByTemplate,
+  type SchedulerContentTemplateEntry,
+} from '../../lib/scheduler/manual-content-merge'
+import { CONTENT_TEMPLATE, effectiveTemplateEntries } from '../../lib/scheduler/scheduler-content-template'
 import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
 import type { TrackingMode } from '../../storage/tracking-mode'
 import type { DailyContent, WeeklyContent } from '../../types'
@@ -37,13 +41,34 @@ export interface DisplayedContentsInput {
   manualItems: ManualTrackedItem[]
 }
 
+/**
+ * 그 주간 기간에 그릴 수동 추적 항목. 시작 기간 전인 템플릿 줄만 뺀다.
+ *
+ * 저장된 추적 목록은 그대로 둔다. 출시 전에 고른 항목을 지우면 출시 뒤에 다시 골라야 한다.
+ * 템플릿 자체를 거르면 `mergeManualContentList` 가 그 항목을 템플릿 밖 항목으로 뒤에 붙인다.
+ */
+function trackedInPeriod(
+  items: ManualTrackedItem[],
+  kind: ManualTrackedItem['kind'],
+  template: readonly SchedulerContentTemplateEntry[],
+  weeklyPeriodKey: string,
+): ManualTrackedItem[] {
+  const effective = new Set(effectiveTemplateEntries(template, weeklyPeriodKey))
+  const hidden = new Set(
+    template.filter((entry) => !effective.has(entry)).map((entry) => entry.content_name),
+  )
+  return items.filter((item) => item.kind === kind && !hidden.has(item.contentName))
+}
+
+/** @param weeklyPeriodKey 지금 주간 기간 키. 수동 모드가 시작 기간 전인 항목을 거르는 기준 */
 export function displayedDailyContents(
   input: DisplayedContentsInput,
   mode: TrackingMode,
+  weeklyPeriodKey: string,
 ): DailyContent[] {
   if (mode === 'manual') {
     return mergeManualContentList(
-      input.manualItems.filter((item) => item.kind === 'daily'),
+      trackedInPeriod(input.manualItems, 'daily', ORDERED_DAILY_TEMPLATE, weeklyPeriodKey),
       input.dailyContents,
       ORDERED_DAILY_TEMPLATE,
     )
@@ -55,13 +80,15 @@ export function displayedDailyContents(
   )
 }
 
+/** @param weeklyPeriodKey 지금 주간 기간 키. 수동 모드가 시작 기간 전인 항목을 거르는 기준 */
 export function displayedWeeklyContents(
   input: DisplayedContentsInput,
   mode: TrackingMode,
+  weeklyPeriodKey: string,
 ): WeeklyContent[] {
   if (mode === 'manual') {
     return mergeManualContentList(
-      input.manualItems.filter((item) => item.kind === 'weekly'),
+      trackedInPeriod(input.manualItems, 'weekly', ORDERED_WEEKLY_TEMPLATE, weeklyPeriodKey),
       input.weeklyContents,
       ORDERED_WEEKLY_TEMPLATE,
     ) as WeeklyContent[]

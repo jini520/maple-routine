@@ -899,6 +899,12 @@ const EPIC_ANGLER = '에픽 던전 : 앵글러 컴퍼니'
 const EPIC_NIGHTMARE = '에픽 던전 : 악몽선경'
 const UNION_WEEKLY = '[메이플 유니온] 주간 드래곤 퇴치'
 const UNION_PC = '[메이플 유니온] PC방 주간 드래곤 퇴치'
+const EPIC_AURUM = '에픽 던전 : 아우룸 레기스'
+
+/** 아우룸 레기스가 서는 첫 주(2026-09-17 목) 안의 시각. 줄 넷을 모두 재는 케이스가 쓴다. */
+const PATCH_WEEK_NOW = new Date('2026-09-18T03:00:00.000Z')
+/** 그 전 주(2026-09-10 목) 안의 시각. */
+const PRE_PATCH_WEEK_NOW = new Date('2026-09-16T03:00:00.000Z')
 
 /** 카탈로그의 일곱을 전부 등록해 둔 캐릭터. 값만 덮어 쓰며 쓴다. */
 function sharedView(ocid: string, overrides: Partial<ContentCharacterView> = {}): ContentCharacterView {
@@ -938,7 +944,7 @@ describe('공유 컨텐츠. 계열로 묶는다', () => {
 
   it('짧은 이름을 쓴다. 계열명은 위에 있으므로 항목에서 뺀다', () => {
     const model = buildTodayViewModel(
-      input({ orderedOcids: ['a'], contentCharacters: [sharedView('a')] }),
+      input({ now: PATCH_WEEK_NOW, orderedOcids: ['a'], contentCharacters: [sharedView('a')] }),
     )
 
     const epic = model.sharedContents.find((group) => group.group === '에픽던전')
@@ -954,6 +960,7 @@ describe('공유 컨텐츠. 계열로 묶는다', () => {
   it('캐릭터가 넷이어도 항목은 한 줄씩이다. 이 분리의 이유가 그 중복이다', () => {
     const model = buildTodayViewModel(
       input({
+        now: PATCH_WEEK_NOW,
         orderedOcids: ['a', 'b', 'c', 'd'],
         contentCharacters: ['a', 'b', 'c', 'd'].map((ocid) => sharedView(ocid)),
       }),
@@ -1106,6 +1113,93 @@ describe('공유 컨텐츠. 오른쪽 열은 `maxCount > 0` 하나로 갈린다'
 
 })
 
+// 줄을 응답이 아니라 카탈로그에서 만들기 때문에, 게임에 아직 없는 컨텐츠도 카탈로그에 있으면 선다.
+// 카탈로그 줄의 시작 기간을 **지금 주간 기간**으로 거른다.
+describe('공유 컨텐츠. 시작 기간 전인 줄은 안 그린다', () => {
+  const epicNames = (now: Date): string[] =>
+    buildTodayViewModel(input({ now, orderedOcids: ['a'], contentCharacters: [sharedView('a')] }))
+      .sharedContents.find((group) => group.group === '에픽던전')
+      ?.items.map((item) => item.shortName) ?? []
+
+  it('2026-09-10 주에는 아우룸 레기스 줄이 없다', () => {
+    expect(epicNames(PRE_PATCH_WEEK_NOW)).toEqual(['하이마운틴', '앵글러컴퍼니', '악몽선경'])
+  })
+
+  it('2026-09-17 주부터 선다. 등록 여부와 무관하게 늘 그리는 규칙은 그대로다', () => {
+    expect(epicNames(PATCH_WEEK_NOW)).toEqual(['하이마운틴', '앵글러컴퍼니', '악몽선경', '아우룸레기스'])
+  })
+
+  // 응답에 값이 와도 기간이 이긴다. 이 위젯은 지금 할 수 있는 일을 말하는 자리다.
+  it('기간 전이면 응답에 값이 있어도 안 그린다', () => {
+    const model = buildTodayViewModel(
+      input({
+        now: PRE_PATCH_WEEK_NOW,
+        orderedOcids: ['a'],
+        contentCharacters: [
+          sharedView('a', {
+            weeklyContents: [weekly({ name: EPIC_AURUM, kind: 'contents', nowCount: 1, questState: null })],
+          }),
+        ],
+      }),
+    )
+
+    expect(model.sharedContents.flatMap((group) => group.items).map((item) => item.name)).not.toContain(
+      EPIC_AURUM,
+    )
+  })
+})
+
+// 에픽 던전은 4종이지만 주 3회가 한도다. 계열 제목에 n/3 이 서고, 한도가 차면 네 줄 모두 취소선을 긋는다.
+// 체크는 실제로 진행한 줄만 채운다.
+describe('공유 컨텐츠. 에픽 던전 주간 한도', () => {
+  const epicView = (nowCounts: [number, number, number, number], maxCount = 0) =>
+    sharedView('a', {
+      weeklyContents: [EPIC_HIGH, EPIC_ANGLER, EPIC_NIGHTMARE, EPIC_AURUM].map((name, index) =>
+        weekly({ name, kind: 'contents', nowCount: nowCounts[index], maxCount, questState: null }),
+      ),
+    })
+  const epicOf = (view: ContentCharacterView) =>
+    buildTodayViewModel(input({ now: PATCH_WEEK_NOW, orderedOcids: ['a'], contentCharacters: [view] }))
+      .sharedContents.find((group) => group.group === '에픽던전')
+
+  it('계열 제목의 수는 완료한 에픽 던전 수와 한도 3 이다', () => {
+    expect(epicOf(epicView([1, 1, 0, 0]))?.weeklyLimit).toEqual({ now: 2, max: 3 })
+  })
+
+  it('한도가 없는 계열은 수가 없다', () => {
+    const model = buildTodayViewModel(
+      input({ now: PATCH_WEEK_NOW, orderedOcids: ['a'], contentCharacters: [sharedView('a')] }),
+    )
+
+    expect(model.sharedContents.find((group) => group.group === '몬스터파크')?.weeklyLimit).toBeNull()
+  })
+
+  it('3종을 완료하면 남은 1줄이 막힌다. 체크는 완료한 3줄만이다', () => {
+    const epic = epicOf(epicView([1, 1, 0, 1]))
+
+    expect(epic?.weeklyLimit).toEqual({ now: 3, max: 3 })
+    expect(epic?.items.map((item) => [item.shortName, item.isComplete, item.isWeeklyLimitClosed])).toEqual([
+      ['하이마운틴', true, false],
+      ['앵글러컴퍼니', true, false],
+      ['악몽선경', false, true],
+      ['아우룸레기스', true, false],
+    ])
+  })
+
+  // 더 진행할 수 없는 줄의 진행 칸이다. 응답의 max_count 가 0 이 아니어도 안 그린다.
+  it('막힌 줄은 카운트를 안 그린다', () => {
+    const epic = epicOf(epicView([1, 1, 0, 1], 5))
+
+    expect(epic?.items.find((item) => item.shortName === '악몽선경')?.count).toBeNull()
+  })
+
+  it('2종이면 아무 줄도 안 막힌다', () => {
+    const epic = epicOf(epicView([1, 1, 0, 0]))
+
+    expect(epic?.items.some((item) => item.isWeeklyLimitClosed)).toBe(false)
+  })
+})
+
 describe('공유 컨텐츠. 유니온만 조건부다', () => {
   it('아무 캐릭터의 스케줄러에도 없으면 유니온 계열이 통째로 빠진다', () => {
     const model = buildTodayViewModel(
@@ -1143,7 +1237,7 @@ describe('공유 컨텐츠. 유니온만 조건부다', () => {
 
   it('에픽 던전·몬스터파크는 아무도 등록 안 해도 그린다', () => {
     const model = buildTodayViewModel(
-      input({ orderedOcids: ['a'], contentCharacters: [contentView('a')] }),
+      input({ now: PATCH_WEEK_NOW, orderedOcids: ['a'], contentCharacters: [contentView('a')] }),
     )
 
     expect(sharedRows(model)).toEqual([
@@ -1161,7 +1255,7 @@ describe('공유 컨텐츠. 유니온만 조건부다', () => {
   })
 
   it('캐릭터가 하나도 없어도 여섯 줄이 선다. 위젯은 사라지지 않는다', () => {
-    const model = buildTodayViewModel(input({}))
+    const model = buildTodayViewModel(input({ now: PATCH_WEEK_NOW }))
 
     expect(model.sharedContents.flatMap((group) => group.items)).toHaveLength(6)
   })

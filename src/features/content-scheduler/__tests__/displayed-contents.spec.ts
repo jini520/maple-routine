@@ -22,6 +22,11 @@ function weekly(name: string, isRegistered: boolean): WeeklyContent {
 const DAILY_NAMES = CONTENT_TEMPLATE.daily.map((entry) => entry.content_name)
 const WEEKLY_NAMES = CONTENT_TEMPLATE.weekly.map((entry) => entry.content_name)
 
+/** 주간 기간 키. 아우룸 레기스는 2026-09-17 주부터 선다. */
+const 패치전주 = '2026-09-10'
+const 패치주 = '2026-09-17'
+const 아우룸 = '에픽 던전 : 아우룸 레기스'
+
 function input(overrides: Partial<DisplayedContentsInput> = {}): DisplayedContentsInput {
   return { dailyContents: [], weeklyContents: [], manualItems: [], ...overrides }
 }
@@ -30,7 +35,7 @@ describe('displayedDailyContents', () => {
   it('자동 모드는 **등록된 것만** 센다. 카탈로그 전체가 아니다', () => {
     const contents = DAILY_NAMES.map((name, index) => daily(name, index < 2))
 
-    const result = displayedDailyContents(input({ dailyContents: contents }), 'auto')
+    const result = displayedDailyContents(input({ dailyContents: contents }), 'auto', 패치주)
 
     expect(result).toHaveLength(2)
     expect(result.length).toBeLessThan(DAILY_NAMES.length)
@@ -39,7 +44,7 @@ describe('displayedDailyContents', () => {
   it('등록이 하나도 없으면 빈 목록이다. 카탈로그 길이로 떨어지지 않는다', () => {
     const contents = DAILY_NAMES.map((name) => daily(name, false))
 
-    expect(displayedDailyContents(input({ dailyContents: contents }), 'auto')).toEqual([])
+    expect(displayedDailyContents(input({ dailyContents: contents }), 'auto', 패치주)).toEqual([])
   })
 
   it('수동 모드는 등록 여부가 아니라 **멤버십**이 목록을 정한다', () => {
@@ -51,6 +56,7 @@ describe('displayedDailyContents', () => {
         manualItems: [{ contentName: DAILY_NAMES[0], kind: 'daily' }],
       }),
       'manual',
+      패치주,
     )
 
     expect(result.map((content) => content.name)).toEqual([DAILY_NAMES[0]])
@@ -63,6 +69,7 @@ describe('displayedDailyContents', () => {
         manualItems: [{ contentName: WEEKLY_NAMES[0], kind: 'weekly' }],
       }),
       'manual',
+      패치주,
     )
 
     expect(result).toEqual([])
@@ -72,7 +79,7 @@ describe('displayedDailyContents', () => {
     const picked = [DAILY_NAMES[3], DAILY_NAMES[1], DAILY_NAMES[0]]
     const contents = picked.map((name) => daily(name, true))
 
-    const result = displayedDailyContents(input({ dailyContents: contents }), 'auto')
+    const result = displayedDailyContents(input({ dailyContents: contents }), 'auto', 패치주)
 
     expect(result.map((content) => content.name)).toEqual([
       DAILY_NAMES[0],
@@ -86,7 +93,7 @@ describe('displayedWeeklyContents', () => {
   it('자동 모드는 등록된 것만 센다', () => {
     const contents = WEEKLY_NAMES.map((name, index) => weekly(name, index === 0))
 
-    const result = displayedWeeklyContents(input({ weeklyContents: contents }), 'auto')
+    const result = displayedWeeklyContents(input({ weeklyContents: contents }), 'auto', 패치주)
 
     expect(result.map((content) => content.name)).toEqual([WEEKLY_NAMES[0]])
   })
@@ -101,8 +108,50 @@ describe('displayedWeeklyContents', () => {
         ],
       }),
       'manual',
+      패치주,
     )
 
     expect(result.map((content) => content.name)).toEqual([WEEKLY_NAMES[1]])
+  })
+})
+
+// 출시 전인 컨텐츠를 지금 할 수 있는 일로 그리지 않는다. 그런데 1.0.8 사용자가 09-17 전에 이미
+// 골랐을 수 있어서, 추적 목록은 그대로 두고 그리기만 거른다.
+describe('수동 모드: 시작 기간 전인 추적 항목', () => {
+  const manualItems = [
+    { contentName: 아우룸, kind: 'weekly' as const },
+    { contentName: WEEKLY_NAMES[0], kind: 'weekly' as const },
+  ]
+
+  it('2026-09-10 주에는 안 그린다', () => {
+    const result = displayedWeeklyContents(input({ manualItems }), 'manual', 패치전주)
+
+    expect(result.map((content) => content.name)).toEqual([WEEKLY_NAMES[0]])
+  })
+
+  it('2026-09-17 주부터 그린다', () => {
+    const result = displayedWeeklyContents(input({ manualItems }), 'manual', 패치주)
+
+    expect(result.map((content) => content.name)).toContain(아우룸)
+  })
+
+  it('추적 목록은 건드리지 않는다. 09-17 뒤에 다시 고르지 않아도 돌아온다', () => {
+    const tracked = input({ manualItems })
+
+    displayedWeeklyContents(tracked, 'manual', 패치전주)
+
+    expect(tracked.manualItems).toEqual(manualItems)
+  })
+
+  // 자동 모드는 응답에 있고 등록된 것만 그린다. 출시 전에는 응답에 없으므로 거를 것이 없고,
+  // 응답에 있으면 게임에 있는 것이다.
+  it('자동 모드는 기간을 안 본다', () => {
+    const result = displayedWeeklyContents(
+      input({ weeklyContents: [weekly(아우룸, true)] }),
+      'auto',
+      패치전주,
+    )
+
+    expect(result.map((content) => content.name)).toEqual([아우룸])
   })
 })

@@ -1,13 +1,15 @@
 import catalog from '../../data/scheduler-content-catalog.json'
+import type { EffectivePeriod } from '../boss/boss-profit-period'
 
 export type ShareScope = 'character' | 'world' | 'account'
 
-interface CatalogEntry {
+interface CatalogEntry extends EffectivePeriod {
   name: string
   section: 'daily' | 'weekly'
   group: string
   shortName: string
   onlyWhenScheduled?: boolean
+  trustRegistrationFlag?: boolean
 }
 
 export interface ContentCatalogEntry {
@@ -20,6 +22,7 @@ const ACCOUNT_ENTRIES = catalog.accountShared as CatalogEntry[]
 const MAX_COUNT_OVERRIDES = catalog.maxCountOverrides as Record<string, number>
 const SHARED_GROUP_ORDER = catalog.sharedGroupOrder as string[]
 const CUMULATIVE_SCORES = catalog.cumulativeScores as string[]
+const GROUP_WEEKLY_LIMITS = catalog.groupWeeklyLimits as Record<string, number>
 
 // 공백 유무 방향이 항목마다 달라 양쪽 공백을 제거한 뒤 비교한다.
 function stripSpaces(value: string): string {
@@ -39,6 +42,27 @@ export function getShareScope(name: string): ShareScope {
     return 'account'
   }
   return 'character'
+}
+
+/**
+ * 병합이 이 항목의 등록을 **이번 응답의 `registration_flag`** 로 정하는가. 메이플 유니온 두 항목만 참이다.
+ *
+ * 나머지 공유 항목은 원장의 `active` 가 한 번 참이면 계속 참이다.
+ */
+export function trustsRegistrationFlag(name: string): boolean {
+  const entry = findEntry(WORLD_ENTRIES, name) ?? findEntry(ACCOUNT_ENTRIES, name)
+  return entry?.trustRegistrationFlag === true
+}
+
+/** 공유 항목의 계열(카탈로그의 `group`). 공유 항목이 아니면 `null`. */
+export function getContentGroup(name: string): string | null {
+  const entry = findEntry(WORLD_ENTRIES, name) ?? findEntry(ACCOUNT_ENTRIES, name)
+  return entry?.group ?? null
+}
+
+/** 계열의 주간 진행 한도(카탈로그의 `groupWeeklyLimits`). 한도가 없는 계열이면 `null`. */
+export function getGroupWeeklyLimit(group: string): number | null {
+  return GROUP_WEEKLY_LIMITS[group] ?? null
 }
 
 export function getContentSection(name: string): 'daily' | 'weekly' | null {
@@ -65,8 +89,8 @@ export function getMaxCountOverride(name: string): number | null {
   return match?.[1] ?? null
 }
 
-/** 공유 항목 하나. 계열까지 붙은 카탈로그 줄 그대로다. */
-export interface SharedContentEntry {
+/** 공유 항목 하나. 계열까지 붙은 카탈로그 줄 그대로다. `from` · `until` 은 그 줄이 서는 기간이다. */
+export interface SharedContentEntry extends EffectivePeriod {
   /** API 가 보내는 이름. 호출부가 캐릭터 응답에서 이 항목을 다시 찾을 때 쓴다. */
   name: string
   /** 화면에 그리는 짧은 이름. 계열명이 위에 있어 그것을 뺀 나머지다. */
@@ -97,6 +121,8 @@ function toSharedEntry(entry: CatalogEntry, scope: 'world' | 'account'): SharedC
     section: entry.section,
     scope,
     onlyWhenScheduled: entry.onlyWhenScheduled === true,
+    from: entry.from,
+    until: entry.until,
   }
 }
 

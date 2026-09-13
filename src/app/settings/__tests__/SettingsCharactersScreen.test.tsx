@@ -30,6 +30,7 @@ import {
 } from '../../../storage/character-selection'
 import { getScheduleProbeLedger } from '../../../storage/schedule-probe-ledger'
 import { useContentSchedulerStore, type ContentSchedulerStore } from '../../../features/content-scheduler/store'
+import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import { CHARACTER_BASIC_TTL_MS } from '../../../features/schedule-sync/character-basic-fetch'
 import type { CachedCharacterBasicEntry } from '../../../storage/character-basic-cache'
 import type { CharacterPickerEntry, MapleAccount, MapleCharacter } from '../../../types'
@@ -252,6 +253,11 @@ beforeEach(() => {
   mockLoadBossTracked.mockResolvedValue(undefined)
   mockLoadProfitTracked.mockResolvedValue(undefined)
   mockContentStore()
+  useCharacterSelectionStore.setState({
+    selectedOcid: null,
+    representativeOcid: null,
+    isRepresentativeHydrated: false,
+  })
 })
 
 afterEach(() => {
@@ -823,6 +829,33 @@ describe('저장', () => {
     // 목록 저장이 먼저 돌아야 한다. `setTrackedCharacterOcids` 가 목록에 없는 대표를 지운다.
     expect(order).toEqual(['save', 'representative', 'boss', 'profit'])
     expect(goBack).toHaveBeenCalled()
+  })
+
+  // today 는 탭이라 이 화면을 다녀와도 다시 마운트되지 않는다. 저장소만 고치면 today 가 든 값이
+  // 안 바뀌어 당기기 전까지 옛 대표를 그렸다(#395).
+  it('저장하면 today 가 구독하는 선택 스토어의 대표가 바뀐다', async () => {
+    mockContentStore({ trackedOcids: ['a1'] })
+    const view = await renderScreen()
+    await press(view.getByText('달의아이'))
+    await press(star(view, '달의아이'))
+
+    await press(saveButton(view))
+    await act(async () => {})
+
+    expect(useCharacterSelectionStore.getState().representativeOcid).toBe('a2')
+  })
+
+  it('대표를 비우고 저장하면 선택 스토어의 대표도 빈다', async () => {
+    useCharacterSelectionStore.setState({ representativeOcid: 'a1', isRepresentativeHydrated: true })
+    mockedGetRepresentative.mockResolvedValue('a1')
+    mockContentStore({ trackedOcids: ['a1', 'a2'] })
+    const view = await renderScreen()
+    await press(view.getByLabelText('낟낟 선택 해제'))
+
+    await press(saveButton(view))
+    await act(async () => {})
+
+    expect(useCharacterSelectionStore.getState().representativeOcid).toBeNull()
   })
 
   it('대표를 고르지 않았으면 저장할 때 그 키를 지운다', async () => {

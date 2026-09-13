@@ -1,9 +1,10 @@
 import type { DailyContent, WeeklyContent } from '../../types'
 import type { ManualTrackedItem } from '../../types/scheduler'
+import type { EffectivePeriod } from '../boss/boss-profit-period'
 
 // scheduler-content-template.json의 항목 shape. Nexon wire 응답(NexonDailyContentWire/
-// NexonWeeklyContentWire)과 동일하다. 값은 개발자가 직접 채운다.
-export interface SchedulerContentTemplateEntry {
+// NexonWeeklyContentWire)과 동일하다. 값은 개발자가 직접 채운다. `from`·`until` 은 그 줄이 서는 기간이다.
+export interface SchedulerContentTemplateEntry extends EffectivePeriod {
   content_name: string
   type: 'contents' | 'quest'
   registration_flag: 'true' | 'false'
