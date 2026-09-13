@@ -64,6 +64,10 @@
   [스토어 업데이트 잠금](#스토어-업데이트-잠금-adr-268) 참고.
 - **우리 축의 값 넷은 매니페스트 `extra` 에 싣는다**. `appVersion`(사용자 표시 버전) ·
   `highlights`([[ADR-126]] 결정 2) · `sizeBytes` · `storeUrl`.
+- **설정의 `현재 버전` 은 도는 번들이 말한다**([[ADR-279]]). OTA 번들이면 매니페스트 `extra.appVersion`,
+  스토어 바이너리의 내장 번들이면 바이너리에 박힌 버전(`expo-constants` 의 `Constants.expoConfig.version`)
+  이다. 내장 번들의 매니페스트에는 `extra` 가 없어서, 예전 규칙(`package.json` 으로 폴백)은 1.0.8
+  바이너리를 1.0.7 로 보였다. `package.json` 은 둘 다 못 읽을 때의 마지막 폴백이다.
 - **버전 형식은 세 자리다**(⛔ ADR-024 에서 살아남은 것). `1.0`(2단)은 `x.y.z` 파싱을 못 맞춰 OTA 가
   한 번도 작동하지 않았던 적이 있고, `native/live-update.ts` 의 파서가 지금도 그 형식을 강제한다.
 
@@ -305,6 +309,10 @@ OTA 를 낼수록 둘은 계속 벌어진다. 1.0.8 을 OTA 로 내도 `binaryAp
    이 릴리스 자체는 OTA 로 못 나간다([[ADR-137]] 대가 2).
 
 ## 폐기된 정책 (history)
+
+- ~~설정의 `현재 버전` 은 매니페스트 `extra.appVersion`, 없으면 `package.json` 버전이다~~ → **내장
+  번들은 바이너리 버전을 보인다**([[ADR-279]], 2026-09-14). 내장 번들의 매니페스트에 `extra` 가 없어
+  늘 `package.json` 으로 떨어졌고, 스토어 1.0.8 릴리스가 `app.json` 만 올려 1.0.7 로 보였다.
 
 - ~~`@capgo/capacitor-updater` 플러그인 + 자체 매니페스트(`latest.json`) 프로토콜~~ → **`expo-updates` v1**(🗑 [[ADR-022]] →
 [[ADR-137]]). 호스팅을 GitHub Releases 로 둔다는 판단만 그대로 남았다.
