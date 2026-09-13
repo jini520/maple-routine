@@ -33,6 +33,7 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
+import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
@@ -123,12 +124,15 @@ export function ContentScreen(): React.JSX.Element {
     }
   }
 
+  // 수동 모드가 시작 기간 전인 추적 항목을 거르는 기준. 지금 할 수 있는 일을 그리는 화면이라 지금이다.
+  const weeklyPeriodKey = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
+
   function dailyContentsOf(character: ContentCharacterView): DailyContent[] {
-    return displayedDailyContents(contentsInputOf(character), mode)
+    return displayedDailyContents(contentsInputOf(character), mode, weeklyPeriodKey)
   }
 
   function weeklyContentsOf(character: ContentCharacterView): WeeklyContent[] {
-    return displayedWeeklyContents(contentsInputOf(character), mode)
+    return displayedWeeklyContents(contentsInputOf(character), mode, weeklyPeriodKey)
   }
 
   const displayDailyContents: DailyContent[] = selected === null ? [] : dailyContentsOf(selected)

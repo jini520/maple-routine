@@ -305,3 +305,29 @@ describe('조회 불가 캐릭터', () => {
     expect(screen.getByText('캐릭터 관리로 이동하기')).toBeTruthy()
   })
 })
+
+// 출시 전인 컨텐츠를 고를 수 있으면 안 된다. 기준은 지금 주간 기간이다.
+describe('시작 기간 전인 컨텐츠', () => {
+  afterEach(() => {
+    jest.useRealTimers()
+  })
+
+  async function 주간목록(now: string): Promise<void> {
+    jest.useFakeTimers({ now: new Date(now) })
+    mockStore({ characters: [character()], activeTab: 'weekly' })
+    await renderScreen()
+  }
+
+  it('2026-09-10 주에는 아우룸 레기스 행이 없다', async () => {
+    await 주간목록('2026-09-16T03:00:00.000Z')
+
+    expect(screen.queryByText('아우룸 레기스')).toBeNull()
+    expect(row('악몽선경')).toBeTruthy()
+  })
+
+  it('2026-09-17 주부터 선다', async () => {
+    await 주간목록('2026-09-18T03:00:00.000Z')
+
+    expect(row('아우룸 레기스')).toBeTruthy()
+  })
+})
