@@ -1,5 +1,5 @@
-// 아이템 가격 입력 버튼의 배지 수. 판이 바뀔 때마다 그 주 창을 다시 채우고, 다시 채우는 사이에는
-// 모르는 수라 `null` 이다.
+// 아이템 가격 입력 버튼의 배지 수. 판이 바뀔 때마다 그 주 창을 다시 채우고, 다시 세는 동안에는 직전
+// 수를 둔다. 한 번도 못 셌으면 모르는 수라 `null` 이다.
 import { act, renderHook, waitFor } from '@testing-library/react-native'
 
 import type { BossDropRecord } from '../../../storage/boss-drops'
@@ -45,6 +45,7 @@ jest.mock('../../character-profile/resolve', () => ({
 
 const getBossDropRecordsMock = jest.requireMock('../../../storage/boss-drops').getBossDropRecords as jest.Mock
 
+import { useDropPriceStore } from '../drop-price-store'
 import { useUnpricedDropCount } from '../use-unpriced-drop-count'
 
 const PERIOD = '2026-08-06'
@@ -78,8 +79,10 @@ function 쓰기(): void {
 
 beforeEach(() => {
   getBossDropRecordsMock.mockReset().mockResolvedValue([record(0), record(1)])
-  // 창과 센 수는 모듈 수준이라 테스트를 건너 산다. 판을 올려 앞 테스트의 것을 전부 낡게 한다.
+  // 창과 센 수는 모듈 수준이라 테스트를 건너 산다. 판을 올려 앞 테스트의 창을 낡게 하고, 센 수는
+  // 비워 한 번도 못 센 상태에서 시작한다.
   mockDropRevision.value += 1
+  useDropPriceStore.setState({ unpricedCounts: {} })
 })
 
 describe('useUnpricedDropCount', () => {
@@ -95,7 +98,7 @@ describe('useUnpricedDropCount', () => {
     await waitFor(() => expect(result.current).toBe(2))
   })
 
-  it('쓰기로 판이 바뀌면 곧바로 모르는 수가 되고, 그 주 창을 다시 채워 새 수를 낸다', async () => {
+  it('쓰기로 판이 바뀌면 다시 세는 동안 직전 수를 두고, 다 세면 새 수로 바뀐다', async () => {
     const { result } = await renderHook(() => useUnpricedDropCount(PERIOD))
     await waitFor(() => expect(result.current).toBe(2))
 
@@ -105,12 +108,36 @@ describe('useUnpricedDropCount', () => {
       쓰기()
     })
 
-    // 옛 수를 말하지 않는다.
-    expect(result.current).toBeNull()
+    expect(getBossDropRecordsMock).toHaveBeenCalledTimes(2)
+    expect(result.current).toBe(2)
     await act(async () => {
       풀기([record(0), record(1, { priceState: 'entered', priceMeso: 1, priceShare: 1 })])
     })
     await waitFor(() => expect(result.current).toBe(1))
+  })
+
+  it('첫 읽기가 실패하면 모르는 수(null)다', async () => {
+    getBossDropRecordsMock.mockRejectedValue(new Error('database is locked'))
+    const { result } = await renderHook(() => useUnpricedDropCount(PERIOD))
+
+    await waitFor(() => expect(getBossDropRecordsMock).toHaveBeenCalledTimes(1))
+    await act(async () => {})
+    expect(result.current).toBeNull()
+  })
+
+  // 배지에는 실패를 보일 자리가 없고, 미입력 신호가 사라지는 것보다 직전 수가 낫다(사용자 결정).
+  it('직전 수가 있는데 다시 세기가 실패하면 직전 수를 둔다', async () => {
+    const { result } = await renderHook(() => useUnpricedDropCount(PERIOD))
+    await waitFor(() => expect(result.current).toBe(2))
+
+    getBossDropRecordsMock.mockRejectedValue(new Error('database is locked'))
+    await act(async () => {
+      쓰기()
+    })
+
+    await waitFor(() => expect(getBossDropRecordsMock).toHaveBeenCalledTimes(2))
+    await act(async () => {})
+    expect(result.current).toBe(2)
   })
 
   it('보는 주가 바뀌면 그 주의 수를 낸다', async () => {

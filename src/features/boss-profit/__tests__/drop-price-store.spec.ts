@@ -295,13 +295,12 @@ describe('창을 채우면 기간마다 미입력 건수를 낸다', () => {
       record({ dropIndex: 3, priceState: 'excluded' }),
     ])
     const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
-    const { bossRecordsStamp } = require('../period-cache') as typeof import('../period-cache')
 
     await useDropPriceStore.getState().warmWindow(PERIOD)
 
-    expect(useDropPriceStore.getState().unpricedCounts[PERIOD]).toEqual({ stamp: bossRecordsStamp(), count: 2 })
+    expect(useDropPriceStore.getState().unpricedCounts[PERIOD]).toBe(2)
     // 창 안의 드롭 없는 주는 0 이다. 읽었더니 없더라 는 아는 수다.
-    expect(useDropPriceStore.getState().unpricedCounts['2026-07-30']).toEqual({ stamp: bossRecordsStamp(), count: 0 })
+    expect(useDropPriceStore.getState().unpricedCounts['2026-07-30']).toBe(0)
   })
 
   // 읽는 사이 쓰기가 끼면 그 답은 옛 판의 것이다. 옛 수를 내면 배지가 틀린 수를 말한다.
@@ -326,12 +325,26 @@ describe('창을 채우면 기간마다 미입력 건수를 낸다', () => {
     expect(useDropPriceStore.getState().unpricedCounts[PERIOD]).toBeUndefined()
   })
 
+  // 배지에는 실패를 보일 자리가 없고, 미입력 신호가 사라지는 것보다 직전 수가 낫다(사용자 결정).
+  it('직전 수가 있는데 다시 읽기가 실패하면 직전 수를 둔다', async () => {
+    const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
+    await useDropPriceStore.getState().warmWindow(PERIOD)
+    expect(useDropPriceStore.getState().unpricedCounts[PERIOD]).toBe(1)
+
+    getBossDropRecordsRevisionMock.mockReturnValue(1)
+    getBossDropRecordsMock.mockRejectedValue(new Error('database is locked'))
+    await useDropPriceStore.getState().warmWindow(PERIOD)
+
+    expect(getBossDropRecordsMock).toHaveBeenCalledTimes(2)
+    expect(useDropPriceStore.getState().unpricedCounts[PERIOD]).toBe(1)
+  })
+
   it('가격 입력 화면의 load 가 창을 채워도 같은 수를 낸다', async () => {
     const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
 
     await useDropPriceStore.getState().load(PERIOD)
 
-    expect(useDropPriceStore.getState().unpricedCounts[PERIOD]?.count).toBe(1)
+    expect(useDropPriceStore.getState().unpricedCounts[PERIOD]).toBe(1)
   })
 
   // 자동 기록처럼 쓰기가 몰려 오면 쓰기마다 창을 읽게 된다. 도는 채우기가 끝난 뒤 한 번만 다시 읽는다.

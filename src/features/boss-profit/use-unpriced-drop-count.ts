@@ -9,8 +9,8 @@ import { useDropPriceStore } from './drop-price-store'
 import { bossRecordsStamp, subscribeBossRecordsStamp } from './period-cache'
 
 /**
- * 그 주 창을 채우고 판이 바뀔 때마다 다시 채우는 훅. 모르는 수(아직 못 읽음 · 읽기 실패 · 다시
- * 채우는 중)는 `null` 이다.
+ * 그 주 창을 채우고 판이 바뀔 때마다 다시 채우는 훅. 다시 세는 동안과 다시 읽기가 실패했을 때는
+ * 직전 수를 낸다. 한 번도 못 셌으면(첫 채우기 전 · 첫 읽기 실패) `null` 이다.
  *
  * @example
  * const unpriced = useUnpricedDropCount(periodKey)
@@ -22,6 +22,5 @@ export function useUnpricedDropCount(periodKey: string): number | null {
     void useDropPriceStore.getState().warmWindow(periodKey)
   }, [periodKey, stamp])
 
-  const entry = useDropPriceStore((state) => state.unpricedCounts[periodKey])
-  return entry !== undefined && entry.stamp === stamp ? entry.count : null
+  return useDropPriceStore((state) => state.unpricedCounts[periodKey]) ?? null
 }
