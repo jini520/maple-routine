@@ -22,6 +22,7 @@ const ACCOUNT_ENTRIES = catalog.accountShared as CatalogEntry[]
 const MAX_COUNT_OVERRIDES = catalog.maxCountOverrides as Record<string, number>
 const SHARED_GROUP_ORDER = catalog.sharedGroupOrder as string[]
 const CUMULATIVE_SCORES = catalog.cumulativeScores as string[]
+const GROUP_WEEKLY_LIMITS = catalog.groupWeeklyLimits as Record<string, number>
 
 // 공백 유무 방향이 항목마다 달라 양쪽 공백을 제거한 뒤 비교한다.
 function stripSpaces(value: string): string {
@@ -51,6 +52,17 @@ export function getShareScope(name: string): ShareScope {
 export function trustsRegistrationFlag(name: string): boolean {
   const entry = findEntry(WORLD_ENTRIES, name) ?? findEntry(ACCOUNT_ENTRIES, name)
   return entry?.trustRegistrationFlag === true
+}
+
+/** 공유 항목의 계열(카탈로그의 `group`). 공유 항목이 아니면 `null`. */
+export function getContentGroup(name: string): string | null {
+  const entry = findEntry(WORLD_ENTRIES, name) ?? findEntry(ACCOUNT_ENTRIES, name)
+  return entry?.group ?? null
+}
+
+/** 계열의 주간 진행 한도(카탈로그의 `groupWeeklyLimits`). 한도가 없는 계열이면 `null`. */
+export function getGroupWeeklyLimit(group: string): number | null {
+  return GROUP_WEEKLY_LIMITS[group] ?? null
 }
 
 export function getContentSection(name: string): 'daily' | 'weekly' | null {

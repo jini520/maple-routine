@@ -22,7 +22,7 @@ import {
 } from '../../features/content-scheduler/displayed-contents'
 
 import { ListChecksIcon, Text } from '../../components/atoms'
-import { dailyContentProgress, weeklyContentProgress } from './content-completion'
+import { dailyContentProgress, weeklyContentProgress, weeklyLimitClosedNames } from './content-completion'
 
 import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
 import { CharacterUnavailableNotice } from '../../components/organisms/CharacterUnavailable/CharacterUnavailableNotice'
@@ -137,6 +137,8 @@ export function ContentScreen(): React.JSX.Element {
 
   const displayDailyContents: DailyContent[] = selected === null ? [] : dailyContentsOf(selected)
   const displayWeeklyContents: WeeklyContent[] = selected === null ? [] : weeklyContentsOf(selected)
+  // 한도는 표시 목록이 아니라 병합된 목록 전체로 센다. 등록 안 한 던전의 완료도 한도를 채운다.
+  const selectedClosedNames = weeklyLimitClosedNames(selected?.weeklyContents ?? [])
 
   // 링 **하나를 좌·우 반원으로 가른다**. 왼쪽 일간, 오른쪽 주간. 둘 다 12시에서
   // 시작해 아래로 차므로 두 반원을 나란히 읽을 수 있다.
@@ -152,7 +154,14 @@ export function ContentScreen(): React.JSX.Element {
       // 링이 세는 것도 요구 레벨을 탄다. 링·카드 목록·today 가 같은 판정을
       // 봐야 이 성립한다.
       { label: '일간', ...dailyContentProgress(dailyContentsOf(character), character.level ?? null) },
-      { label: '주간', ...weeklyContentProgress(weeklyContentsOf(character), character.level ?? null) },
+      {
+        label: '주간',
+        ...weeklyContentProgress(
+          weeklyContentsOf(character),
+          character.level ?? null,
+          weeklyLimitClosedNames(character.weeklyContents),
+        ),
+      },
     ],
   }))
 
@@ -325,7 +334,9 @@ export function ContentScreen(): React.JSX.Element {
                 {displayWeeklyContents.length > 0 && (
                   <View className="gap-2 pt-7">
                     {displayWeeklyContents.map((content) => (
-                      <View key={content.name}>{renderWeeklyContentCard(content, selected.level ?? null)}</View>
+                      <View key={content.name}>
+                        {renderWeeklyContentCard(content, selected.level ?? null, selectedClosedNames.has(content.name))}
+                      </View>
                     ))}
                   </View>
                 )}

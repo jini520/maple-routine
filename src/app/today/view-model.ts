@@ -21,6 +21,7 @@ import type { ContentCharacterView } from '../../features/content-scheduler/stor
 import type { BossProfitRow } from '../../features/boss-profit/store'
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss/boss-matching'
 import { getShareScope, getSharedContentGroups } from '../../lib/scheduler/scheduler-content-scope'
+import { groupWeeklyLimitOf, isClosedByWeeklyLimit } from '../../lib/scheduler/group-weekly-limit'
 import {
   formatBossProfitPeriodLabel,
   getAdjacentPeriodKey,
@@ -159,11 +160,15 @@ export interface SharedContentItemView {
    */
   count: { now: number; max: number } | null
   isComplete: boolean
+  /** 계열의 주간 한도가 차서 더 진행할 수 없는 미완료 줄. 화면이 체크 없이 취소선만 긋고 카운트를 안 준다. */
+  isWeeklyLimitClosed: boolean
 }
 
 export interface SharedContentGroupView {
   group: string
   items: SharedContentItemView[]
+  /** 계열의 주간 한도. `now` 는 완료한 줄 수다. 한도가 없는 계열이면 `null`. */
+  weeklyLimit: { now: number; max: number } | null
 }
 
 /**
@@ -553,10 +558,22 @@ function buildSharedContents(input: TodayViewModelInput, weeklyPeriodKey: string
             // 규칙이 된다.
             count: !isComplete && max > 0 ? { now: Math.min(now, max), max } : null,
             isComplete,
+            isWeeklyLimitClosed: false,
           }
         })
 
-      return { group: group.group, items }
+      // 한도는 컨텐츠 스케줄러의 카드 · 링과 같은 판정이다. 막힌 줄은 더 진행할 수 없어 카운트를 안 준다.
+      const limit = groupWeeklyLimitOf(group.group, items)
+      const limitedItems = items.map((item): SharedContentItemView => {
+        const isWeeklyLimitClosed = isClosedByWeeklyLimit(item, items)
+        return isWeeklyLimitClosed ? { ...item, count: null, isWeeklyLimitClosed } : item
+      })
+
+      return {
+        group: group.group,
+        items: limitedItems,
+        weeklyLimit: limit === null ? null : { now: limit.completed, max: limit.limit },
+      }
     })
     .filter((group) => group.items.length > 0)
 }

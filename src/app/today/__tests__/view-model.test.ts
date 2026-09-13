@@ -1149,6 +1149,57 @@ describe('공유 컨텐츠. 시작 기간 전인 줄은 안 그린다', () => {
   })
 })
 
+// 에픽 던전은 4종이지만 주 3회가 한도다. 계열 제목에 n/3 이 서고, 한도가 차면 네 줄 모두 취소선을 긋는다.
+// 체크는 실제로 진행한 줄만 채운다.
+describe('공유 컨텐츠. 에픽 던전 주간 한도', () => {
+  const epicView = (nowCounts: [number, number, number, number], maxCount = 0) =>
+    sharedView('a', {
+      weeklyContents: [EPIC_HIGH, EPIC_ANGLER, EPIC_NIGHTMARE, EPIC_AURUM].map((name, index) =>
+        weekly({ name, kind: 'contents', nowCount: nowCounts[index], maxCount, questState: null }),
+      ),
+    })
+  const epicOf = (view: ContentCharacterView) =>
+    buildTodayViewModel(input({ now: PATCH_WEEK_NOW, orderedOcids: ['a'], contentCharacters: [view] }))
+      .sharedContents.find((group) => group.group === '에픽던전')
+
+  it('계열 제목의 수는 완료한 에픽 던전 수와 한도 3 이다', () => {
+    expect(epicOf(epicView([1, 1, 0, 0]))?.weeklyLimit).toEqual({ now: 2, max: 3 })
+  })
+
+  it('한도가 없는 계열은 수가 없다', () => {
+    const model = buildTodayViewModel(
+      input({ now: PATCH_WEEK_NOW, orderedOcids: ['a'], contentCharacters: [sharedView('a')] }),
+    )
+
+    expect(model.sharedContents.find((group) => group.group === '몬스터파크')?.weeklyLimit).toBeNull()
+  })
+
+  it('3종을 완료하면 남은 1줄이 막힌다. 체크는 완료한 3줄만이다', () => {
+    const epic = epicOf(epicView([1, 1, 0, 1]))
+
+    expect(epic?.weeklyLimit).toEqual({ now: 3, max: 3 })
+    expect(epic?.items.map((item) => [item.shortName, item.isComplete, item.isWeeklyLimitClosed])).toEqual([
+      ['하이마운틴', true, false],
+      ['앵글러컴퍼니', true, false],
+      ['악몽선경', false, true],
+      ['아우룸레기스', true, false],
+    ])
+  })
+
+  // 더 진행할 수 없는 줄의 진행 칸이다. 응답의 max_count 가 0 이 아니어도 안 그린다.
+  it('막힌 줄은 카운트를 안 그린다', () => {
+    const epic = epicOf(epicView([1, 1, 0, 1], 5))
+
+    expect(epic?.items.find((item) => item.shortName === '악몽선경')?.count).toBeNull()
+  })
+
+  it('2종이면 아무 줄도 안 막힌다', () => {
+    const epic = epicOf(epicView([1, 1, 0, 0]))
+
+    expect(epic?.items.some((item) => item.isWeeklyLimitClosed)).toBe(false)
+  })
+})
+
 describe('공유 컨텐츠. 유니온만 조건부다', () => {
   it('아무 캐릭터의 스케줄러에도 없으면 유니온 계열이 통째로 빠진다', () => {
     const model = buildTodayViewModel(

@@ -54,7 +54,8 @@ interface SectionResult {
 // 2. stale 섹션이면 character 범위 항목만 이전 캐시에서 이름/등록을 유지하고 진행값만 리셋한다.
 // 3. 두 경우 모두, 이 섹션 소속 world/account 카탈로그 항목 중 아직 결과에 없는 것을 원장에서
 //  복원한다(캐릭터 자신의 응답에 그 항목이 없어도. 개별 항목 누락 오염). 원장 자체가
-//    리셋 경계를 넘겼는데 아무도 안 갱신했으면 진행값만 리셋한다.
+//    리셋 경계를 넘겼는데 아무도 안 갱신했으면 진행값만 리셋한다. 등록 여부는 원장의 active 그대로라
+//    active 가 거짓인 칸도 채운다. 건너뛰면 등록 안 한 에픽 던전의 완료가 주간 한도에서 빠진다.
 function mergeSection(
   section: 'daily' | 'weekly',
   freshItems: ContentItem[],
@@ -131,7 +132,7 @@ function mergeSection(
 
     const ledger = catalogEntry.scope === 'world' ? worldLedger : accountLedger
     const ledgerEntry = ledger[catalogEntry.name]
-    if (ledgerEntry === undefined || !ledgerEntry.active) {
+    if (ledgerEntry === undefined) {
       continue
     }
 
@@ -140,7 +141,7 @@ function mergeSection(
       withMaxCountOverride({
         name: catalogEntry.name,
         kind: ledgerEntry.kind,
-        isRegistered: true,
+        isRegistered: ledgerEntry.active,
         nowCount: isLedgerStale ? 0 : ledgerEntry.nowCount,
         maxCount: ledgerEntry.maxCount,
         questState: isLedgerStale ? (ledgerEntry.questState === null ? null : 0) : ledgerEntry.questState,
