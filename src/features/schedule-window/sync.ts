@@ -1,13 +1,15 @@
 /**
  * 창 동기화의 **한 문**. 화면은 이것만 부른다.
  *
- * 순서가 계약이다. **창을 채운다 → 기록을 굳힌다 → 날짜를 캔다.** 없는 기록은 날짜를 캘 수
- * 없고, 없는 관측으로는 기록을 만들 수 없다.
+ * 순서가 계약이다. **창을 채운다 → 기록을 굳힌다 → 리프 중복을 정리한다 → 날짜를 캔다.** 없는 기록은
+ * 날짜를 캘 수 없고, 없는 관측으로는 기록을 만들 수 없다. 리프 중복 정리는 방금 쓴 새 기록의 짝을 봐야 해서
+ * 굳힌 뒤이고, 지울 기록의 날짜를 캐지 않으려고 캐기 앞이다.
  *
  * 지출 기록용 호출은 나중에 이 안에 수집기 하나를 더 붙이는 일이 된다. 창을 도는 규칙
  * (원장·게이트·중복 방지)은 `fillScheduleWindow` 가 이미 들고 있다.
  */
 import { resolveDefeatDates } from '../boss-profit/defeat-dates'
+import { cleanUpWorldLeapDuplicates } from '../boss-profit/world-leap-records'
 import { recordBossProfitFromWindow } from './records'
 import { fillScheduleWindow, type ScheduleWindowPlan, type WindowProgress } from './window'
 
@@ -44,7 +46,7 @@ export async function syncScheduleWindow(
 }
 
 /**
- * 세 걸음은 **서로를 죽이지 않는다.**
+ * 네 걸음은 **서로를 죽이지 않는다.**
  *
  * 한 try 로 묶으면 채우기가 던진 순간 굳히기와 캐기가 통째로 안 돈다. 그러면 원장은 다 찼는데
  * 기록이 하나도 없는 상태가 되고, 화면은 그것을 실패로 그린다. 셋은 원장을 사이에 두고 이어질
@@ -59,5 +61,6 @@ async function runSyncScheduleWindow(
 ): Promise<void> {
   await fillScheduleWindow(ocids, now, onProgress, plan).catch(() => undefined)
   await recordBossProfitFromWindow(ocids, now).catch(() => undefined)
+  await cleanUpWorldLeapDuplicates(now).catch(() => undefined)
   await resolveDefeatDates(ocids, now).catch(() => undefined)
 }

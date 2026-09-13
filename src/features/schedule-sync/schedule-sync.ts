@@ -28,6 +28,7 @@ import { useDataFreshness } from '../refresh/freshness'
 import { useRefreshProgress } from '../refresh/progress'
 import { fetchCharacterBasicCached } from './character-basic-fetch'
 import {
+  linkWorldLeapsFromRoster,
   probeStrandedTrackedCharacters,
   resolveTrackedCharacterContext,
 } from './character-roster'
@@ -396,6 +397,8 @@ async function runSyncRound(
   //
   // 401·429 갈래에는 안 둔다. 그 상태에서는 프로브도 같은 실패를 받아 아무것도 못 짚는다.
   await probeStrandedTrackedCharacters(apiKey, new Set(ocids), allCharacters, new Date())
+  // 모달을 안 거친 리프의 연결. 뒤에서 스토어가 기록을 쓰고 정리할 때 이 연결을 읽는다.
+  await linkWorldLeapsFromRoster(allCharacters, new Date())
 
   // 조회 불가를 **여기서** 표에 남긴다. 이 사실을 배우는 자리가 동기화다. 화면 스토어에 두면
   // 그 화면을 안 여는 사용자에게는 표가 영영 안 찬다.

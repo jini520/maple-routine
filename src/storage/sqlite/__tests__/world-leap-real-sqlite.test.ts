@@ -16,6 +16,7 @@ import {
   type BossProfitRecord,
 } from '../../boss-profit'
 import { getCharacterWorldLeaps, linkCharacterWorldLeap } from '../../character-world-leaps'
+import { getCharacterProfilesByNames, saveCharacterProfile } from '../../character-profiles'
 import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
 
 let real: RealSqlite
@@ -113,5 +114,23 @@ describe('deleteBossProfitRecord', () => {
     const left = await getBossProfitRecords(['old', 'new'], ['2026-09-10'])
     expect(left.map((row) => row.ocid)).toEqual(['new'])
     expect(getBossProfitRecordsRevision()).toBe(before + 1)
+  })
+})
+
+describe('getCharacterProfilesByNames', () => {
+  it('이름이 같은 스냅샷을 ocid 와 무관하게 전부 준다', async () => {
+    const snapshot = { imageUrl: '', world: null, level: 285, updatedAt: '2026-09-14T00:00:00.000Z' }
+    await saveCharacterProfile({ ...snapshot, ocid: 'old', name: '지내우시', jobClass: '레테', world: '챌린저스2' })
+    await saveCharacterProfile({ ...snapshot, ocid: 'new', name: '지내우시', jobClass: '레테', world: '엘리시움' })
+    await saveCharacterProfile({ ...snapshot, ocid: 'other', name: '루디', jobClass: '아크메이지' })
+
+    const profiles = await getCharacterProfilesByNames(['지내우시'])
+
+    expect(profiles.map((profile) => profile.ocid).sort()).toEqual(['new', 'old'])
+    expect(profiles.find((profile) => profile.ocid === 'old')).toMatchObject({ jobClass: '레테', world: '챌린저스2' })
+  })
+
+  it('이름이 없으면 조회하지 않고 빈 목록이다', async () => {
+    await expect(getCharacterProfilesByNames([])).resolves.toEqual([])
   })
 })

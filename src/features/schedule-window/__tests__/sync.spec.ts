@@ -2,12 +2,14 @@
 jest.mock('../window', () => ({ fillScheduleWindow: jest.fn() }))
 jest.mock('../records', () => ({ recordBossProfitFromWindow: jest.fn() }))
 jest.mock('../../boss-profit/defeat-dates', () => ({ resolveDefeatDates: jest.fn() }))
+jest.mock('../../boss-profit/world-leap-records', () => ({ cleanUpWorldLeapDuplicates: jest.fn() }))
 
 import { syncScheduleWindow } from '../sync'
 
 const { fillScheduleWindow: fillMock } = jest.requireMock('../window') as Record<string, jest.Mock>
 const { recordBossProfitFromWindow: recordMock } = jest.requireMock('../records') as Record<string, jest.Mock>
 const { resolveDefeatDates: datesMock } = jest.requireMock('../../boss-profit/defeat-dates') as Record<string, jest.Mock>
+const { cleanUpWorldLeapDuplicates: cleanUpMock } = jest.requireMock('../../boss-profit/world-leap-records') as Record<string, jest.Mock>
 
 const NOW = new Date('2026-09-05T03:00:00.000Z')
 
@@ -15,17 +17,29 @@ beforeEach(() => {
   fillMock.mockReset().mockResolvedValue(undefined)
   recordMock.mockReset().mockResolvedValue(undefined)
   datesMock.mockReset().mockResolvedValue(0)
+  cleanUpMock.mockReset().mockResolvedValue(0)
 })
 
-it('채우고 · 굳히고 · 캔다. 이 순서다', async () => {
+// 리프 중복 정리는 굳힌 뒤 · 캐기 전이다. 앞이면 방금 쓴 새 기록의 짝을 못 보고, 뒤면 지울 기록의 날짜를 캔다.
+it('채우고 · 굳히고 · 리프 중복을 정리하고 · 캔다. 이 순서다', async () => {
   const order: string[] = []
   fillMock.mockImplementation(async () => void order.push('fill'))
   recordMock.mockImplementation(async () => void order.push('record'))
+  cleanUpMock.mockImplementation(async () => order.push('cleanup'))
   datesMock.mockImplementation(async () => order.push('dates'))
 
   await syncScheduleWindow(['o1'], NOW)
 
-  expect(order).toEqual(['fill', 'record', 'dates'])
+  expect(order).toEqual(['fill', 'record', 'cleanup', 'dates'])
+  expect(cleanUpMock).toHaveBeenCalledWith(NOW)
+})
+
+it('리프 중복 정리가 던져도 캐기는 돈다', async () => {
+  cleanUpMock.mockRejectedValue(new Error('sqlite timeout'))
+
+  await syncScheduleWindow(['o1'], NOW)
+
+  expect(datesMock).toHaveBeenCalledWith(['o1'], NOW)
 })
 
 // 창이 덜 채워지는 것은 화면이 덜 채워진다 이지 부르는 쪽의 실패가 아니다.
