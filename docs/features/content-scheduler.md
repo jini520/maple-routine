@@ -302,11 +302,11 @@ today ‘남은 스케줄’) 흩어지면 같은 항목이 화면마다 다르�
      `{ active, 진행값, lastUpdatedBucket }` 을 갱신한다. 한 번 `active: true` 가 되면 이후 이 원장을
      기준으로 삼는다.
    - **예외: 메이플 유니온 두 항목은 응답의 `registration_flag` 를 그대로 쓴다**([[ADR-270]], 사용자
-     결정 2026-09-13, 이슈 #411. 설계 · 구현 전). `[메이플 유니온] 주간 드래곤 퇴치`(월드) ·
+     결정 2026-09-13, 이슈 #411. 구현 완료 2026-09-14 · 실기기 미검증). `[메이플 유니온] 주간 드래곤 퇴치`(월드) ·
      `[메이플 유니온] PC방 주간 드래곤 퇴치`(계정)는 `active = 이번 응답의 등록 값` 이고 원장에도 그 값을
      쓴다. 올라가기만 하는 `active` 때문에 아무도 등록하지 않은 `PC방 주간 드래곤 퇴치` 가 실기기 원장에
      `active: true` 로 굳어 today 위젯에 줄이 섰다. 대상은 카탈로그 줄의 `trustRegistrationFlag` 가
-     말한다. `onlyWhenScheduled`(위젯이 줄을 그릴지)와 뜻이 달라 칸을 따로 두고, 이름으로 추론하지
+     말하고 `trustsRegistrationFlag`(`scheduler-content-scope`)가 읽는다. `onlyWhenScheduled`(위젯이 줄을 그릴지)와 뜻이 달라 칸을 따로 두고, 이름으로 추론하지
      않는다. 몬스터파크 · 익스트림 몬스터파커 · 에픽 던전은 위 규칙 그대로다.
 4. **표시할 때** character 항목은 캐릭터 캐시 값을 쓰고, world·account 항목은 원장의 `active` 로 노출
    여부를 정하고 진행값도 원장에서 가져온다. 원장이 낡았는지는 `lastUpdatedBucket` 을
