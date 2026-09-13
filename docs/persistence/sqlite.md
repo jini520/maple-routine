@@ -136,8 +136,11 @@ PK: `from_ocid`. 칸은 `from_ocid`(옛 ocid) · `to_ocid`(새 ocid) · `linked_
 
 - **리프한 기간의 중복 기록을 정리하는 데만 쓴다.** 리프 전 완료가 새 ocid 로 넘어와 같은 처치가 두
   ocid 에 한 번씩 기록되면, 이 연결로 짝을 찾아 옛 기록을 지우고 드롭·파티원 수를 새 기록으로 옮긴다.
-- **쓰는 자리는 리프 모달의 주 버튼 하나다**(`useWorldLeapStore.confirm`, `confirmed` · `alreadyTracked`).
-  모달을 안 거친 리프는 행이 없고, 그때는 `character_profiles` 의 이름·직업으로 잇는다([[ADR-274]] 결정 5).
+- **쓰는 자리는 둘이다.** 리프 모달의 주 버튼(`useWorldLeapStore.confirm`, `confirmed` · `alreadyTracked`)과,
+  모달을 안 거친 리프를 `character_profiles` 의 이름·직업으로 찾은 정리다([[ADR-274]] 결정 5).
+- **행을 처음 쓸 때 보스별 파티원 수 설정을 한 번 복사한다**([[ADR-274]] 결정 4). 옛 ocid 의
+  `boss_party_settings` 를 새 ocid 로 옮겨 적고, 새 ocid 에 이미 있는 설정은 안 덮는다. 이 표에 행이
+  있다는 것이 복사를 이미 했다는 뜻이라 두 번 안 한다.
 - **`RECORD_TABLE_NAMES` 에 든다.** 옛 ocid 는 `character/list` 에서 빠져 이 연결을 되살릴 길이 없고,
   기록과 수명이 같아야 기록은 남았는데 연결만 사라진 상태가 안 생긴다.
 
