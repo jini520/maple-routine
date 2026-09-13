@@ -130,7 +130,7 @@ PK: `ocid`. 캐릭터 하나당 한 행. **기록에 이름과 얼굴을 붙이�
 - **이름은 마지막으로 안 이름이다.** 추적 중이면 동기화가 덮으므로 어긋남은 해제한 캐릭터에만
   생긴다.
 
-### `character_world_leaps` - 월드 리프로 갈린 두 ocid 의 연결 ([[ADR-274]] 결정 4, 설계 · 구현 전)
+### `character_world_leaps` - 월드 리프로 갈린 두 ocid 의 연결 ([[ADR-274]] 결정 4)
 
 PK: `from_ocid`. 칸은 `from_ocid`(옛 ocid) · `to_ocid`(새 ocid) · `linked_at`. 옛 ocid 하나당 한 행.
 

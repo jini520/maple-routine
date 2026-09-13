@@ -42,6 +42,9 @@
 | 상태 | `features/boss-profit/auto-record.ts` | 처치를 DB에 쓰는 루프. 동기화 경로와 캐시 경로가 함께 부른다([[ADR-111]]) |
 | 상태 | `features/boss-profit/orphan-drops.ts` | 잡지 않은 보스에 남은 드롭 정리([[ADR-187]]) |
 | 상태 | `features/boss-profit/defeat-dates.ts` | 처치 날짜(`defeated_on`) 알아내기([[ADR-172]]) |
+| 상태 | `features/boss-profit/world-leap-records.ts` | 월드 리프한 기간의 중복 기록 짝짓기·드롭 합치기·정리([[ADR-274]]) |
+| 상태 | `features/boss-profit/world-leap-link.ts` | 리프로 갈린 두 ocid 잇기와 보스별 파티원 수 설정 복사([[ADR-274]]) |
+| 저장 | `storage/character-world-leaps` | 옛 ocid → 새 ocid 연결(`character_world_leaps`) |
 | 저장 | `storage/boss-party-settings` | 파티원 수 기본값이 오는 곳([[ADR-019]]) |
 | 저장 | `storage/boss-profit` | SQLite `boss_profit_records`. `defeated_on` 칸 포함 |
 | 저장 | `storage/schedule-probe-ledger` | 어느 날짜를 이미 조회했는지 적는 원장. `bosses` 칸 포함 |
@@ -166,7 +169,7 @@ Nexon API 를 부른다.
 
 **이 키는 ocid 를 품어 월드 리프에는 안 닿는다.** 리프한 기간에 넘어온 완료는 새 ocid 라는 다른 키로
 한 번 더 쓰인다. 그 중복은 upsert 가 아니라 기록 뒤의 정리가 옛 기록을 지워 푼다([[ADR-274]], 아래
-[자동 기록](#월드-리프한-기간의-같은-처치는-옛-캐릭터-기록을-지운다-adr-274-설계--구현-전)).
+[자동 기록](#월드-리프한-기간의-같은-처치는-옛-캐릭터-기록을-지운다-adr-274)).
 
 참조 데이터에서 보스가 빠져도 과거 기록은 남는다
 ([../foundation/error-resilience.md](../foundation/error-resilience.md)).
@@ -269,7 +272,7 @@ placeholder 행을 지운다([[ADR-187]] 결정 4, 2026-08-30).
 - **리프는 ocid 를 새로 만들고, 리프 전 완료가 새 ocid 로 넘어온다**(사용자 확인 2026-09-13. 주간은
   그 주, 월간은 그 달). 12 가 이어지는 것이 스케줄러에서는 이 모양으로 보인다. 그래서 앱은 리프한
   기간에 같은 처치를 두 ocid 로 한 번씩 기록하게 되고, 옛 기록을 지워 새 기록 하나로 센다
-  ([자동 기록](#월드-리프한-기간의-같은-처치는-옛-캐릭터-기록을-지운다-adr-274-설계--구현-전), [[ADR-274]]).
+  ([자동 기록](#월드-리프한-기간의-같은-처치는-옛-캐릭터-기록을-지운다-adr-274), [[ADR-274]]).
   **그 결과 리프 전에 옛 월드에서 판 결정석도 새 월드 칩에 든다.** 위 `90 × 2` 가 게임 사실이지만
   앱은 그 기간을 새 월드 하나로 그린다. 사용자가 받아들인 오차다.
 
@@ -420,7 +423,7 @@ placeholder 행을 지운다([[ADR-187]] 결정 4, 2026-08-30).
   `loadDropsByRowKey` 의 기존 prune([[ADR-044]] 후속)은 **행 자신의** 난이도 키 안만 정리하므로 이
   경우를 잡지 못한다. 두 정리는 역할이 다르다.
 
-### 월드 리프한 기간의 같은 처치는 옛 캐릭터 기록을 지운다 ([[ADR-274]], 설계 · 구현 전)
+### 월드 리프한 기간의 같은 처치는 옛 캐릭터 기록을 지운다 ([[ADR-274]])
 
 월드 리프는 ocid 를 새로 만들고, **리프 전 완료는 새 ocid 로 넘어온다**(주간은 그 주, 월간은 그 달.
 사용자 확인 2026-09-13). 기록 키가 ocid 를 품어 옛 ocid 에 있는 기록을 새 ocid 행이 못 찾으므로,
