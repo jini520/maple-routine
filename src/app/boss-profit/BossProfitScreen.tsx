@@ -378,8 +378,9 @@ export function BossProfitScreen(): React.JSX.Element {
                 {periodLabel.primary} 총 수익
               </Text>
               {/* 결정석 판매 현황은 라벨 텍스트 바로 옆이다. 우측 끝은 고가 드롭 배지의
-                  절대배치 자리라 침범하지 않는다. */}
-              <CrystalSummaryChip tab={tab} groups={characterGroups} />
+                  절대배치 자리라 침범하지 않는다. 주간 탭에만 서고 월간 몫도 이 칩이 든다. 월간
+                  보스가 주간 목록의 그 주에 서므로 그 주의 행이 월간 결정석을 이미 들고 있다. */}
+              {tab === 'weekly' && <CrystalSummaryChip groups={characterGroups} />}
               {periodValuableDrops.length > 0 && (
                 <ValuableDropBadge
                   drops={periodValuableDrops}

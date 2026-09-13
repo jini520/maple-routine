@@ -18,6 +18,7 @@ import {
   collectRevenueDrops,
   groupTotalMeso,
   sumPayout,
+  summarizeWorldCrystals,
 } from '../character-groups'
 import type { CharacterGroup } from '../character-groups'
 import { 다른주간보스, PERIOD, 월간보스, 보스행, 주간보스, 주차소계 } from './harness'
@@ -195,6 +196,52 @@ describe('collectRevenueDrops: 상자가 읽는 드롭은 카드 금액과 같�
     ]
 
     expect(collectRevenueDrops({ ...group([월간행]), weeklySubtotals }, drops)).toEqual([주간드롭, 월간드롭])
+  })
+})
+
+// 주간 탭의 행에는 그 주에 선 월간 보스가 들어 있다. 주간 90 한도와 월간 결정석 수는 한도가 갈리는
+// 별개 값이라, 월드마다 따로 세되 서로 섞이면 안 된다.
+describe('summarizeWorldCrystals: 주간 몫과 월간 몫', () => {
+  const 월간행 = (overrides: Partial<BossProfitRow> = {}): BossProfitRow =>
+    보스행({ boss: 월간보스, cycle: 'monthly', periodKey: '2026-08', ...overrides })
+
+  it('월간 보스를 잡아도 주간 몫의 분자는 그대로다', () => {
+    const summaries = summarizeWorldCrystals([group([보스행({ world: '스카니아' }), 월간행({ world: '스카니아' })])])
+
+    expect(summaries).toEqual([{ world: '스카니아', cleared: 1, monthlyCleared: 1 }])
+  })
+
+  it('월간 수도 행의 월드로 가른다', () => {
+    const summaries = summarizeWorldCrystals([
+      group([보스행({ world: '스카니아' })]),
+      {
+        ...group([보스행({ ocid: 'ocid-2', world: '루나' }), 월간행({ ocid: 'ocid-2', world: '루나' })]),
+        ocid: 'ocid-2',
+      },
+    ])
+
+    expect(summaries).toEqual([
+      { world: '스카니아', cleared: 1, monthlyCleared: 0 },
+      { world: '루나', cleared: 1, monthlyCleared: 1 },
+    ])
+  })
+
+  it('안 잡은 월간 보스는 월간 수에 안 든다', () => {
+    const summaries = summarizeWorldCrystals([group([보스행({ world: '스카니아' }), 월간행({ world: '스카니아', isComplete: false })])])
+
+    expect(summaries).toEqual([{ world: '스카니아', cleared: 1, monthlyCleared: 0 }])
+  })
+
+  it('월간 수는 캐릭터마다 보스명 하나로 센다', () => {
+    const summaries = summarizeWorldCrystals([
+      group([
+        보스행({ world: '스카니아' }),
+        월간행({ world: '스카니아', difficulty: '노멀' }),
+        월간행({ world: '스카니아', difficulty: '하드' }),
+      ]),
+    ])
+
+    expect(summaries).toEqual([{ world: '스카니아', cleared: 1, monthlyCleared: 1 }])
   })
 })
 
