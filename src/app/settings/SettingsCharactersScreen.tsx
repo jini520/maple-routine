@@ -21,11 +21,8 @@ import { View, type ScrollView } from 'react-native'
 import { useAnimatedRef } from 'react-native-reanimated'
 
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
+import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useApiKeyNotice } from '../../features/auth/use-api-key-notice'
-import {
-  clearRepresentativeCharacter,
-  setRepresentativeCharacter,
-} from '../../storage/character-selection'
 
 import { Button, Text } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
@@ -41,6 +38,7 @@ import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 
 export function SettingsCharactersScreen(): React.JSX.Element {
   const { saveTrackedOcids } = useContentSchedulerStore()
+  const setRepresentative = useCharacterSelectionStore((state) => state.setRepresentative)
   const navigation = useSettingsNavigation()
   const manage = useCharacterManage()
   // 끌어서 순서를 바꾸는 동안 화면 가장자리에서 자동으로 굴러간다. 이 화면에는 고정 영역이
@@ -69,11 +67,8 @@ export function SettingsCharactersScreen(): React.JSX.Element {
     // 저장이 실패해도 진행률 모달은 항상 닫는다. 안 그러면 모달이 멈춘다(피커가 하던 그대로).
     try {
       await saveTrackedOcids(ocids, (completed, total) => setSaveProgress({ completed, total }))
-      if (representative === null) {
-        await clearRepresentativeCharacter()
-      } else {
-        await setRepresentativeCharacter(representative)
-      }
+      // 저장소 함수를 바로 부르지 않는다. today 는 탭이라 다시 마운트되지 않고 이 스토어의 값을 그린다.
+      await setRepresentative(representative)
     } finally {
       setSaveProgress(null)
       navigation.goBack()
