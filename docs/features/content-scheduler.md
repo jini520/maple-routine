@@ -163,6 +163,27 @@ today ‘남은 스케줄’) 흩어지면 같은 항목이 화면마다 다르�
 
 - **캐시가 있으면 즉시 표시하고 개별로 patch 한다**([[ADR-016]] 결정 4 · [[ADR-017]] 결정 6
   그대로). 목록을 흘리는 통로는 `getCharacterPickerRoster` 의 `onUpdate` 다.
+- **stub 단계가 그리는 캐릭터는 그 계정의 캐시 인덱스(`characterBasicCache:index:{accountId}`)가 정하고,
+  그 인덱스는 `character/list` 를 받을 때마다 그 목록에 맞춰진다**([[ADR-017]] 결정 6 의 2026-09-13 정정,
+  이슈 #408, **구현 완료** 2026-09-14). 맞추는 함수는 `reconcileCachedCharacterBasicOcids` 다. 맞추지 않으면 목록에서
+  빠진 캐릭터가 인덱스에 영영 남는다. 그러면 화면을 열 때마다 stub 단계가 그 캐릭터를 그리고,
+  `character/list` 응답 뒤의 방출이 목록을 갈아끼우며 지운다. 빠지는 경우로 확인된 것은 월드 리프로 남은
+  옛 ocid 하나다.
+  - **목록 밖 ocid 는 빼고, 목록에 있고 캐시 항목도 있는 ocid 는 없으면 다시 붙인다.** 목록에 돌아온
+    캐릭터의 캐시가 5분 TTL 안이면 `fetchCharacterBasicCached` 가 캐시를 다시 쓰지 않아 인덱스에 안 붙기
+    때문이다. 그대로 두면 그 캐릭터만 stub 단계에 없다가 목록 응답 뒤에 나타난다. 목록에서 빠졌다가
+    돌아오는 경우는 확인된 사례가 없는 가정이다.
+  - **맞추는 것은 인덱스뿐이다.** 캐시 항목(`characterBasicCache:{ocid}`)은 남긴다. today · 보스 수익과
+    가계부의 이름과 얼굴 · 리프 판정 · `schedule-window` 기록이 그 항목을 읽는다. 캐릭터 관리의 선택된 캐릭터 목록
+    (`buildSelectedCharacterViews`)도 인덱스가 아니라 항목과 원장 표식(`useKnownProfiles`)으로 그리므로,
+    추적 중인 조회 불가 캐릭터는 그대로 선다.
+  - **목록 조회가 성공한 뒤에만 맞춘다.** `resolveRegisteredCharacters` 가 던지면(목록 실패 · 계정을
+    응답에서 못 찾음) 인덱스를 안 건드린다. 판정 근거는 목록에 있는가 하나라, `character/basic` 이
+    실패하거나 400 `OPENAPI00003` 인 캐릭터도 목록에 있으면 남는다. 캐릭터가 0명인 계정은
+    `normalizeCharacterList` 가 걸러 계정을 못 찾은 경우가 된다. 메이플 ID 가 여럿인 상황이라 범위 밖이다.
+  - **조회 원장만으로는 못 막는다.** 목록에서 빠진 ocid 를 원장에 `unavailable` 로 적는
+    `probeStrandedTrackedCharacters` 가 추적 ocid 만 돈다([[ADR-253]] 정정 6). 추적하지 않는 캐릭터는
+    캐시된 `access_flag` 가 `true` 면 `readKnownEligibility` 가 `eligible` 로 읽는다.
 - **콜드 스타트에서도 확인된 캐릭터부터 흘린다**([[ADR-149]] 결정 1). `character/basic` 응답과 자격
   판정을 통과한 항목은 ‘확인된’ 것이라 형제 캐릭터를 기다릴 이유가 없다. 가장 느린 한 명이 화면
   전체를 잡던 자리다.

@@ -14,8 +14,8 @@ export interface CachedCharacterBasicEntry {
 
 // character-basic-cache는 ocid별로 개별 키에 저장돼 있어, "지금까지 캐싱된
 // 캐릭터가 누구누구인지" 자체를 조회할 방법이 없었다. 이 인덱스가 그 목록을 별도로 들고 있어
-// "캐릭터 관리" 피커가 character/list 응답을 기다리지 않고도 캐싱된 전체 캐릭터로 stub 목록을
-// 만들 수 있게 한다.
+// "캐릭터 관리" 피커가 character/list 응답을 기다리지 않고도 캐싱된 캐릭터로 stub 목록을
+// 만들 수 있게 한다. 담는 것은 마지막으로 받은 목록에 있던 캐릭터뿐이다(`reconcileCachedCharacterBasicOcids`).
 //
 // 그 인덱스에 **계정 개념이 없어서** 계정을 바꿔도 stub 단계가 이전 계정
 // 캐릭터를 먼저 그렸다. 이제 계정별로 나눈다. 엔트리(characterBasicCache:{ocid}) 자체는 그대로
@@ -110,6 +110,33 @@ export async function setCachedCharacterBasic(
     if (!index.includes(ocid)) {
       await setIndexedOcids(accountId, [...index, ocid])
     }
+  })
+}
+
+/**
+ * 계정의 인덱스를 방금 받은 `character/list` 에 맞추는 함수. 결과는 목록에 있고 캐시 항목도 있는
+ * ocid 전부이고, 캐시 항목은 지우지 않는다.
+ *
+ * 목록에 있는데 인덱스에 없는 ocid 도 다시 붙인다. 캐시가 5분 TTL 안이면 `setCachedCharacterBasic`
+ * 이 안 불려, 목록에 돌아온 캐릭터가 인덱스 밖에 남는다.
+ *
+ * @example
+ * await reconcileCachedCharacterBasicOcids(accountId, characters.map((character) => character.ocid))
+ */
+export async function reconcileCachedCharacterBasicOcids(
+  accountId: string,
+  listedOcids: string[],
+): Promise<void> {
+  // 잠금 밖이면 그 사이 `setCachedCharacterBasic` 이 붙인 ocid 를 이 쓰기가 덮는다.
+  await withIndexLock(async () => {
+    await runLegacyIndexMigration()
+    const hasEntry = await Promise.all(
+      listedOcids.map(async (ocid) => (await preferences.get(characterBasicCacheKey(ocid))) !== null),
+    )
+    await setIndexedOcids(
+      accountId,
+      listedOcids.filter((_, index) => hasEntry[index]),
+    )
   })
 }
 
