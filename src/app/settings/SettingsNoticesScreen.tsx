@@ -7,12 +7,12 @@
  * 구독 스위치는 여기 없다. 목록이 넷으로 갈라져서 어느 목록에 둬도 나머지 셋이 안 보인다
  * (`SettingsNoticeAlertsScreen`).
  *
- * **로컬을 먼저 그리고 서버를 그 위에 얹는다.** 서버 조회가 실패하면 로컬 것만 보인다.
- * 빈 화면도 에러 화면도 아니다. 조회 실패를 화면 전체의 실패로 만들지 않는다.
+ * **사본을 먼저 그리고, 조회가 성공하면 응답으로 바꾼다.** 공지의 기준은 서버라서 서버에서 지운
+ * 공지는 응답에 없고 목록에서도 사라진다. 조회가 실패하면 사본이 그대로 선다. 빈 화면도 에러
+ * 화면도 아니다.
  *
- * 서버가 필요한 이유가 있다. 푸시는 **배경에서 도착만 하고 안 탭한 것을 못 쌓는다**
- * (`notification` 페이로드가 OS 에서 그려지고 JS 를 안 깨운다). 그래서 알림은 떴는데 목록에는
- * 없는 공지가 생기고, 그 구멍을 이 조회가 메운다.
+ * **한 분류를 묻는 조회만 사본을 바꾼다.** 분류 없는 20건은 어느 한 분류의 최근 20건이 아니라서,
+ * 그것으로 사본을 바꾸면 20건 밖으로 밀린 공지가 지워진 것처럼 사라진다.
  */
 import { useEffect, useState } from 'react'
 import { Pressable, View } from 'react-native'
@@ -24,10 +24,11 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { formatNoticeDate } from '../../features/notice/format'
+import { saveNoticeResponse } from '../../features/notice/notice-copy'
 
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { fetchNotices } from '../../server/notices'
-import { getNotices, mergeNotices } from '../../storage/notices'
+import { getNotices } from '../../storage/notices'
 import type { Notice, NoticeKind } from '../../types/notice'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
 
@@ -44,22 +45,21 @@ export function SettingsNoticesScreen(props: {
   useEffect(() => {
     let alive = true
 
-    // 분류를 거른다. 기기에 쌓인 것과 서버에서 받은 것에 같은 잣대를 댄다.
+    // 분류를 거른다. 사본에는 다섯 분류가 함께 있다.
     const only = (all: Notice[]): Notice[] =>
       kinds === undefined ? all : all.filter((n) => kinds.includes(n.kind))
 
-    // 로컬이 먼저다. 네트워크를 기다리는 동안 빈 화면을 보여 주지 않는다.
+    // 사본이 먼저다. 네트워크를 기다리는 동안 빈 화면을 보여 주지 않는다.
     void getNotices()
-      .then((local) => {
-        if (alive) setNotices(only(local))
-        // 서버 것을 받아 기기에 합친다. 같은 id 는 서버가 이긴다(발송 뒤 오타를 고칠 수 있다).
+      .then((copy) => {
+        if (alive) setNotices(only(copy))
         return fetchNotices(20, kinds ?? [])
       })
       .then(async (remote) => {
-        if (remote.length === 0) return
-        await mergeNotices(remote)
-        const merged = await getNotices()
-        if (alive) setNotices(only(merged))
+        // 실패면 사본을 그대로 둔다. 빈 배열은 실패가 아니라 서버에 공지가 없다는 답이다.
+        if (remote === null) return
+        if (alive) setNotices(only(remote))
+        if (kinds?.length === 1) await saveNoticeResponse(kinds[0], remote)
       })
       .catch(() => undefined)
 

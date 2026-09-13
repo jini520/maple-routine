@@ -1,13 +1,14 @@
 /**
  * 설정 하위 페이지 `공지 상세`. 알림 탭이 곧장 여는 자리이고 목록에서도 들어간다.
  *
- * **본문은 기기에서 읽는다.** 파라미터로 받는 것은 `noticeId` 하나이고 내용은 저장소가 준다.
- * 알림에서 온 경로와 목록에서 온 경로가 같은 것을 그리게 하는 방법이 그것뿐이다. 본문을
- * 파라미터로 넘기면 두 경로가 서로 다른 내용을 그릴 수 있다.
+ * **본문은 서버가 준다.** 파라미터로 받는 것은 `noticeId` 하나다. 알림에서 온 경로와 목록에서 온
+ * 경로가 같은 것을 그리게 하는 방법이 그것뿐이다.
  *
- * 그래서 서버가 죽어도 이 화면은 열린다. **서버는 그 위에 얹는다** - 푸시는 4KB 상한 때문에
- * 본문이 잘려 올 수 있고, 조회가 그 자리를 온전한 것으로 덮는다. 조회가 실패하면 잘린 채로
- * 보이지 빈 화면이 되지 않는다.
+ * 먼저 목록 사본의 같은 공지를 그리고, 조회가 성공하면 받은 것으로 바꾼다. 받은 상세는 기기에 안
+ * 적는다. 조회가 실패하면 사본의 `body` 가 그대로 선다.
+ *
+ * **404 는 실패가 아니라 없다는 답이다.** 사본에 남아 있어도 `공지를 찾을 수 없습니다` 를 그리고,
+ * 사본과 배너의 닫은 기록에서 뺀다.
  */
 import { useEffect, useState } from 'react'
 import { Linking, Pressable, View } from 'react-native'
@@ -24,10 +25,11 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { formatNoticeDate } from '../../features/notice/format'
+import { forgetNotice } from '../../features/notice/notice-copy'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { NoticeBlocks } from './NoticeBlocks'
 import { fetchNotice } from '../../server/notices'
-import { getNotices, mergeNotices } from '../../storage/notices'
+import { getNotices } from '../../storage/notices'
 import type { Notice } from '../../types/notice'
 
 export function SettingsNoticeDetailScreen(props: {
@@ -41,9 +43,9 @@ export function SettingsNoticeDetailScreen(props: {
   /**
    * 서버 조회가 끝났는가. **본문이 빈 공지에만 쓴다.**
    *
-   * 이벤트와 캐시샵은 푸시가 본문을 0자로 실어 온다(본문이 이미지 한 장이라 평문이 없다).
-   * 그래서 탭해서 들어온 직후에는 그릴 것이 정말 아무것도 없고, 그 빈칸이 `받는 중` 인지
-   * `못 받았다` 인지 화면이 말해 줘야 한다.
+   * 이벤트와 캐시샵은 목록 사본의 본문이 0자다(본문이 이미지 한 장이라 평문이 없다). 그래서
+   * 조회가 답하기 전에는 그릴 것이 정말 아무것도 없고, 그 빈칸이 `받는 중` 인지 `못 받았다` 인지
+   * 화면이 말해 줘야 한다.
    */
   const [settled, setSettled] = useState(false)
 
@@ -54,16 +56,19 @@ export function SettingsNoticeDetailScreen(props: {
     // 렌더 도중에 상태가 바뀌어 한 번 더 그린다.
     void getNotices()
       .then((all) => {
-        const local = noticeId === undefined ? null : (all.find((n) => n.id === noticeId) ?? null)
-        if (alive) setNotice(local)
-        // 로컬에 없어도 조회한다. 알림을 안 탭해 안 쌓인 공지를 목록에서 열 수 있다.
+        const copy = noticeId === undefined ? null : (all.find((n) => n.id === noticeId) ?? null)
+        if (alive) setNotice(copy)
+        // 사본에 없어도 조회한다. 20건 밖 공지나 방금 온 알림은 사본에 없다.
         return noticeId === undefined ? null : fetchNotice(noticeId)
       })
       .then(async (remote) => {
-        if (remote === null) return
-        // 받은 김에 기기에도 남긴다. 다음에는 서버 없이 열린다.
-        await mergeNotices([remote])
-        if (alive) setNotice(remote)
+        if (remote === null || remote.status === 'failed') return
+        if (remote.status === 'found') {
+          if (alive) setNotice(remote.notice)
+          return
+        }
+        if (alive) setNotice(null)
+        if (noticeId !== undefined) await forgetNotice(noticeId)
       })
       .catch(() => undefined)
       .finally(() => {
@@ -89,7 +94,7 @@ export function SettingsNoticeDetailScreen(props: {
     >
       <View className="gap-3 px-4 pb-4" testID="screen-SettingsNoticeDetail">
         {notice === undefined ? null : notice === null ? (
-          // 목록에서 잘려 나갔거나(50건 상한) 다른 기기에서 온 알림일 수 있다.
+          // 서버에서 지웠거나, 오프라인인데 사본(분류마다 20건)에 없는 공지다.
           <EmptyState icon={ScrollTextIcon} title="공지를 찾을 수 없습니다" />
         ) : (
           <Card className="gap-3 p-4">
@@ -101,8 +106,8 @@ export function SettingsNoticeDetailScreen(props: {
             </View>
 
             {/* 블록이 있으면 그것이 본문이다. `body` 는 목록 미리보기용으로 잘린 평문이라,
-                둘을 같이 그리면 같은 문장이 두 번 보인다. 넥슨 공지는 조회가 닿기 전까지
-                푸시로 온 `body` 만 있고, 그때는 잘린 채로 보이지 빈 화면이 되지 않는다. */}
+                둘을 같이 그리면 같은 문장이 두 번 보인다. 조회가 닿기 전이나 오프라인에서는
+                사본의 `body` 만 있고, 그때는 요약이라도 보이지 빈 화면이 되지 않는다. */}
             {notice.blocks !== undefined ? (
               <NoticeBlocks blocks={notice.blocks} />
             ) : notice.body !== '' ? (

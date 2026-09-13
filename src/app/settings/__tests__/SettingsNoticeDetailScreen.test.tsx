@@ -1,24 +1,28 @@
 // 이 화면이 지키는 것.
 //
-// ① 본문을 파라미터가 아니라 **저장소**에서 읽는다. 알림 탭이 연 경로와 목록이 연 경로가 같은
-//    것을 그려야 해서다. 그래서 서버가 죽어도 열린다.
-// ② 못 찾는 경우가 정상 경로다. 50건 상한에 잘렸거나 다른 기기에서 온 알림일 수 있다.
+// ① 본문을 파라미터가 아니라 **서버와 사본**에서 읽는다. 알림 탭이 연 경로와 목록이 연 경로가 같은
+//    것을 그려야 해서다. 서버가 죽으면 사본이 열린다.
+// ② 못 찾는 경우가 정상 경로다. 20건 밖이거나 서버에서 지운 공지일 수 있다.
 // ③ 찾는 중과 없음을 가른다. 합치면 여는 순간 못 찾았다는 문구가 한 프레임 스친다.
 import { waitFor } from '@testing-library/react-native'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { forgetNotice } from '../../../features/notice/notice-copy'
 import { fetchNotice } from '../../../server/notices'
 import { getNotices } from '../../../storage/notices'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 import { SettingsNoticeDetailScreen } from '../SettingsNoticeDetailScreen'
 import type { Notice } from '../../../types/notice'
 
-jest.mock('../../../storage/notices', () => ({
+jest.mock('../../../storage/notices', () => ({ __esModule: true, getNotices: jest.fn() }))
+jest.mock('../../../features/notice/notice-copy', () => ({
   __esModule: true,
-  getNotices: jest.fn(),
-  mergeNotices: jest.fn(async () => {}),
+  forgetNotice: jest.fn(async () => {}),
 }))
-jest.mock('../../../server/notices', () => ({ __esModule: true, fetchNotice: jest.fn(async () => null) }))
+jest.mock('../../../server/notices', () => ({
+  __esModule: true,
+  fetchNotice: jest.fn(async () => ({ status: 'failed' })),
+}))
 jest.mock('../../../hooks/useSettingsNavigation', () => ({
   __esModule: true,
   useSettingsNavigation: jest.fn(),
@@ -26,6 +30,7 @@ jest.mock('../../../hooks/useSettingsNavigation', () => ({
 
 const notices = jest.mocked(getNotices)
 const remote = jest.mocked(fetchNotice)
+const forget = jest.mocked(forgetNotice)
 
 const 점검: Notice = {
   id: 'a',
@@ -38,12 +43,12 @@ const 점검: Notice = {
 beforeEach(() => {
   jest.clearAllMocks()
   notices.mockResolvedValue([점검])
-  remote.mockResolvedValue(null)
+  remote.mockResolvedValue({ status: 'failed' })
   jest.mocked(useSettingsNavigation).mockReturnValue({ navigate: jest.fn(), goBack: jest.fn() } as never)
 })
 
 describe('본문', () => {
-  it('저장소에서 찾아 그린다', async () => {
+  it('사본에서 찾아 그린다', async () => {
     const view = await renderOverlay(
       <SettingsNoticeDetailScreen route={{ params: { noticeId: 'a' } }} />,
     )
@@ -86,11 +91,10 @@ describe('링크', () => {
   })
 })
 
-describe('서버 보강', () => {
-  // 푸시는 4KB 상한 때문에 본문이 잘려 올 수 있다. 조회가 그 자리를 덮는다.
-  it('서버가 준 본문이 로컬 것을 덮는다', async () => {
-    notices.mockResolvedValue([{ ...점검, body: '잘린 본문…' }])
-    remote.mockResolvedValue({ ...점검, body: '온전한 본문 전부' })
+describe('서버 조회', () => {
+  it('서버가 준 본문이 사본의 것을 덮는다', async () => {
+    notices.mockResolvedValue([{ ...점검, body: '목록의 요약' }])
+    remote.mockResolvedValue({ status: 'found', notice: { ...점검, body: '온전한 본문 전부' } })
 
     const view = await renderOverlay(
       <SettingsNoticeDetailScreen route={{ params: { noticeId: 'a' } }} />,
@@ -99,10 +103,10 @@ describe('서버 보강', () => {
     await waitFor(() => expect(view.getByTestId('notice-body')).toHaveTextContent('온전한 본문 전부'))
   })
 
-  // 알림을 안 탭해 기기에 없는 공지를 목록에서 열 수 있어야 한다.
-  it('로컬에 없어도 서버에서 가져온다', async () => {
+  // 20건 밖 공지나 방금 온 알림은 사본에 없다.
+  it('사본에 없어도 서버에서 가져온다', async () => {
     notices.mockResolvedValue([])
-    remote.mockResolvedValue(점검)
+    remote.mockResolvedValue({ status: 'found', notice: 점검 })
 
     const view = await renderOverlay(
       <SettingsNoticeDetailScreen route={{ params: { noticeId: 'a' } }} />,
@@ -111,7 +115,17 @@ describe('서버 보강', () => {
     await waitFor(() => expect(view.getByTestId('notice-title')).toHaveTextContent('점검 안내'))
   })
 
-  it('조회가 실패해도 로컬 것을 그린다', async () => {
+  it('조회가 실패하면 사본을 그린다', async () => {
+    const view = await renderOverlay(
+      <SettingsNoticeDetailScreen route={{ params: { noticeId: 'a' } }} />,
+    )
+
+    await waitFor(() => expect(remote).toHaveBeenCalled())
+    expect(view.getByTestId('notice-title')).toHaveTextContent('점검 안내')
+    expect(forget).not.toHaveBeenCalled()
+  })
+
+  it('조회가 던져도 사본을 그린다', async () => {
     remote.mockRejectedValue(new Error('offline'))
 
     const view = await renderOverlay(
@@ -120,10 +134,22 @@ describe('서버 보강', () => {
 
     expect(view.getByTestId('notice-title')).toHaveTextContent('점검 안내')
   })
+
+  // 서버가 그 공지를 없다고 답했다. 사본에 남아 있어도 그리지 않는다.
+  it('404 면 사본에 있어도 못 찾았다고 말하고 사본과 닫은 기록에서 뺀다', async () => {
+    remote.mockResolvedValue({ status: 'missing' })
+
+    const view = await renderOverlay(
+      <SettingsNoticeDetailScreen route={{ params: { noticeId: 'a' } }} />,
+    )
+
+    await waitFor(() => expect(view.getByText('공지를 찾을 수 없습니다')).toBeTruthy())
+    expect(forget).toHaveBeenCalledWith('a')
+  })
 })
 
-// 이벤트·캐시샵은 푸시가 본문을 0자로 실어 온다(본문이 이미지 한 장이라 평문이 없다).
-// 탭해서 들어온 직후에는 그릴 것이 정말 없고, 그 빈칸을 사용자는 고장으로 읽는다.
+// 이벤트·캐시샵은 목록 사본의 본문이 0자다(본문이 이미지 한 장이라 평문이 없다).
+// 서버가 답하기 전이나 오프라인에서는 그릴 것이 정말 없고, 그 빈칸을 사용자는 고장으로 읽는다.
 describe('본문이 빈 공지', () => {
   const 이미지공지: Notice = {
     id: 'event-1374',
@@ -147,7 +173,7 @@ describe('본문이 빈 공지', () => {
 
   it('서버가 못 주면 못 받았다고 말한다', async () => {
     notices.mockResolvedValue([이미지공지])
-    remote.mockResolvedValue(null)
+    remote.mockResolvedValue({ status: 'failed' })
 
     const view = await renderOverlay(<SettingsNoticeDetailScreen route={{ params: { noticeId: 'event-1374' } }} />)
 
@@ -159,8 +185,8 @@ describe('본문이 빈 공지', () => {
   it('서버가 블록을 주면 그것을 그린다', async () => {
     notices.mockResolvedValue([이미지공지])
     remote.mockResolvedValue({
-      ...이미지공지,
-      blocks: [{ type: 'image', src: 'https://lwi.nexon.com/a.png' }],
+      status: 'found',
+      notice: { ...이미지공지, blocks: [{ type: 'image', src: 'https://lwi.nexon.com/a.png' }] },
     })
 
     const view = await renderOverlay(<SettingsNoticeDetailScreen route={{ params: { noticeId: 'event-1374' } }} />)
