@@ -22,6 +22,7 @@ import { compareByName } from '../../lib/character-order'
 import { detectWorldLeap } from '../character-manage/world-leap'
 import type { StrandedCharacter } from '../character-manage/world-leap'
 import { useWorldLeapStore } from '../character-manage/world-leap-store'
+import { linkWorldLeapsByNameAndJob } from '../boss-profit/world-leap-link'
 import { fetchCharacterBasicCached } from './character-basic-fetch'
 import { readKnownEligibility, resolveCharacterEligibility } from './character-eligibility'
 import type { CharacterEligibility } from './character-eligibility'
@@ -143,6 +144,20 @@ function shouldShowEntry(
   isTracked: boolean,
 ): boolean {
   return isTracked || eligibility === 'eligible'
+}
+
+/**
+ * 모달을 안 거친 월드 리프를 이름·직업으로 잇는다. 방향을 `character/list` 응답이 정해 그 응답을 받은
+ * 자리(로스터 조회 · `runSyncRound`)에서만 부른다.
+ *
+ * 던지지 않는다. 연결은 기록 뒷정리라 못 남겨도 목록과 동기화는 끝나야 하고, 다음 회차가 다시 잇는다.
+ */
+export async function linkWorldLeapsFromRoster(allCharacters: readonly MapleCharacter[], now: Date): Promise<void> {
+  try {
+    await linkWorldLeapsByNameAndJob(allCharacters, now)
+  } catch {
+    // 다음 회차가 다시 잇는다.
+  }
 }
 
 /**
@@ -344,6 +359,7 @@ export async function getCharacterPickerRoster(
   // 목록 밖 추적 ocid 확정. 로스터 방출과 섞이지 않게 먼저 끝낸다 - 이 단계가 원장에 표식을
   // 남기고, 아래 `readKnownEligibility` 가 그 원장을 읽는다.
   await probeStrandedTrackedCharacters(apiKey, trackedOcids, allCharacters, now)
+  await linkWorldLeapsFromRoster(allCharacters, now)
   if (characters.length === 0) {
     onUpdate([])
     return

@@ -61,6 +61,13 @@ jest.mock('../../../storage/shared-progress-cache', () => ({
 }))
 const { getWorldSharedProgress: getWorldSharedProgressMock, getAccountSharedProgress: getAccountSharedProgressMock, setWorldSharedProgressEntry: setWorldSharedProgressEntryMock, setAccountSharedProgressEntry: setAccountSharedProgressEntryMock } = jest.requireMock('../../../storage/shared-progress-cache') as Record<string, jest.Mock>
 
+// 모달을 안 거친 리프를 이름·직업으로 잇는 대조. 목록 응답을 받은 자리에서 불리는가만 본다.
+jest.mock('../../boss-profit/world-leap-link', () => ({
+  linkWorldLeap: jest.fn(),
+  linkWorldLeapsByNameAndJob: jest.fn(),
+}))
+const { linkWorldLeapsByNameAndJob: linkByNameAndJobMock } = jest.requireMock('../../boss-profit/world-leap-link') as Record<string, jest.Mock>
+
 jest.mock('../../../lib/scheduler/scheduler-merge', () => ({
   mergeSchedulerState: jest.fn(),
 }))
@@ -166,6 +173,7 @@ beforeEach(async () => {
   getAccountSharedProgressMock.mockResolvedValue({})
   setWorldSharedProgressEntryMock.mockResolvedValue(undefined)
   setAccountSharedProgressEntryMock.mockResolvedValue(undefined)
+  linkByNameAndJobMock.mockResolvedValue(undefined)
   // 기본값: 병합 없이 fresh 그대로 통과(ledger 갱신 없음). 병합 알고리즘 자체는
   // lib/scheduler/scheduler-merge 의 자체 단위 테스트가 검증하고, 여기서는 syncOneCharacter가 그 결과를
   // 올바른 곳(캐시·원장)에 정확히 반영하는지만 확인한다.
@@ -2480,5 +2488,40 @@ describe('동기화가 월드 리프를 짚는다', () => {
     await syncSchedules(['ocid-1'])
 
     expect(useWorldLeapStore.getState().notice).toBeNull()
+  })
+})
+
+// 모달을 안 거친 리프(새 캐릭터 직접 추가 + 옛 캐릭터 ✕)는 이름·직업으로 잇고, 방향은 `character/list`
+// 응답에 있는가가 정한다. 그래서 그 응답을 받은 두 자리가 대조를 부른다.
+describe('이름·직업으로 월드 리프를 잇는다', () => {
+  const 목록 = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
+
+  it('동기화 회차가 목록 전체를 넘긴다', async () => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', [목록[0]!]), account('acc-2', [목록[1]!])])
+    fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
+    fetchCharacterBasicMock.mockResolvedValue(basicProfile({ name: '캐릭터1', level: 200 }))
+
+    await syncSchedules(['ocid-1'])
+
+    expect(linkByNameAndJobMock).toHaveBeenCalledWith(목록, expect.any(Date))
+  })
+
+  it('캐릭터 관리 로스터 조회도 목록 전체를 넘긴다', async () => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', 목록)])
+    fetchCharacterBasicMock.mockResolvedValue(basicProfile({ name: '캐릭터1', level: 200 }))
+
+    await getCharacterPickerRoster(jest.fn(), { accountId: 'acc-1' })
+
+    expect(linkByNameAndJobMock).toHaveBeenCalledWith(목록, expect.any(Date))
+  })
+
+  // 뒷정리다. 연결을 못 남겨도 동기화 결과는 그대로 돌아와야 한다.
+  it('대조가 던져도 동기화는 끝난다', async () => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', [목록[0]!])])
+    fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
+    fetchCharacterBasicMock.mockResolvedValue(basicProfile({ name: '캐릭터1', level: 200 }))
+    linkByNameAndJobMock.mockRejectedValue(new Error('sqlite'))
+
+    await expect(syncSchedules(['ocid-1'])).resolves.toHaveLength(1)
   })
 })
