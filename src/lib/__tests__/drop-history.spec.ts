@@ -36,6 +36,7 @@ function record(overrides: Partial<DropHistoryRecord>): DropHistoryRecord {
     difficulty: '하드',
     periodKey: '2026-07-09',
     category: 'equipment',
+    itemKey: 'loose_control_machine_mark',
     itemName: '루즈 컨트롤 머신 마크',
     slot: '얼굴장식',
     quantity: 1,
@@ -96,9 +97,9 @@ describe('groupDropRecordsByPeriod', () => {
 
   it('같은 기간 안에서는 입력 순서를 보존한다. 조회 SQL이 정한 순서가 표시 순서다', () => {
     const groups = groupDropRecordsByPeriod([
-      record({ itemName: '루즈 컨트롤 머신 마크' }),
-      record({ itemName: '주문의 흔적', category: 'fixed', slot: undefined }),
-      record({ itemName: '리스트레인트 링', category: 'consumable', slot: undefined }),
+      record({ itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' }),
+      record({ itemKey: 'spell_trace', itemName: '주문의 흔적', category: 'fixed', slot: undefined }),
+      record({ itemKey: 'restraint_ring', itemName: '리스트레인트 링', category: 'consumable', slot: undefined }),
     ])
 
     expect(groups[0].records.map((entry) => entry.itemName)).toEqual([
@@ -118,8 +119,8 @@ describe('filterUnobtainableConfirmedDrops', () => {
 
   it('처치 난이도가 확정된 조합에서는 그 난이도에서 못 나오는 기록을 거른다', () => {
     const records = [
-      record({ itemName: '루즈 컨트롤 머신 마크' }), // 하드+익스 → 유지
-      record({ itemName: '컴플리트 언더컨트롤', slot: undefined }), // 익스 전용 → 제거
+      record({ itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' }), // 하드+익스 → 유지
+      record({ itemKey: 'complete_under_control', itemName: '컴플리트 언더컨트롤', slot: undefined }), // 익스 전용 → 제거
     ]
 
     expect(filterUnobtainableConfirmedDrops(records, confirmed).map((entry) => entry.itemName)).toEqual([
@@ -130,16 +131,20 @@ describe('filterUnobtainableConfirmedDrops', () => {
   it('상자 개봉 결과는 상자명(boxOrigin) 기준으로 판정한다', () => {
     const records = [
       record({
+        itemKey: 'restraint_ring',
         itemName: '리스트레인트 링',
         category: 'consumable',
         slot: undefined,
+        boxOriginKey: 'red_boss_ring_box',
         boxOrigin: '홍옥의 보스 반지 상자', // 하드 → 유지
         ringLevel: 3,
       }),
       record({
+        itemKey: null,
         itemName: '아무 반지',
         category: 'consumable',
         slot: undefined,
+        boxOriginKey: 'white_boss_ring_box',
         boxOrigin: '백옥의 보스 반지 상자', // 익스 전용 → 제거
       }),
     ]
@@ -152,13 +157,13 @@ describe('filterUnobtainableConfirmedDrops', () => {
   it('확정되지 않은 조합은 건드리지 않는다. 나중에 이관되어 살아남을 기록이다', () => {
     // 익스트림으로 등록해두고 실제로는 하드를 잡은 상황: 하드 전용 기록이 익스트림 키에 들어 있다.
     // 여기서 걸러버리면 난이도가 확정되면 살아남을 기록을 미리 숨기게 된다.
-    const records = [record({ difficulty: '익스트림', itemName: '녹옥의 보스 반지 상자' })]
+    const records = [record({ difficulty: '익스트림', itemKey: 'green_boss_ring_box', itemName: '녹옥의 보스 반지 상자' })]
 
     expect(filterUnobtainableConfirmedDrops(records, new Set())).toEqual(records)
   })
 
   it('고정(fixed) 기록은 선택 대상이 아니라 항상 보존한다', () => {
-    const records = [record({ category: 'fixed', itemName: '주문의 흔적', slot: undefined })]
+    const records = [record({ category: 'fixed', itemKey: 'spell_trace', itemName: '주문의 흔적', slot: undefined })]
     expect(filterUnobtainableConfirmedDrops(records, confirmed)).toEqual(records)
   })
 
@@ -170,6 +175,7 @@ describe('filterUnobtainableConfirmedDrops', () => {
         difficulty: '카오스',
         periodKey,
         category: 'consumable',
+        itemKey: 'magical_weapon_scroll_voucher',
         itemName: '매지컬 무기 주문서 교환권',
         slot: undefined,
       })
@@ -191,8 +197,8 @@ describe('summarizeValuableDrought', () => {
   it('마지막 고가 획득 기간과 그 뒤로 지난 주 수를 반환한다', () => {
     const summary = summarizeValuableDrought(
       [
-        record({ periodKey: '2026-07-09', itemName: '루즈 컨트롤 머신 마크' }), // 고가
-        record({ periodKey: '2026-07-23', itemName: '리스트레인트 링', category: 'consumable', slot: undefined }), // 고가 아님
+        record({ periodKey: '2026-07-09', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' }), // 고가
+        record({ periodKey: '2026-07-23', itemKey: 'restraint_ring', itemName: '리스트레인트 링', category: 'consumable', slot: undefined }), // 고가 아님
       ],
       now,
     )
@@ -204,9 +210,9 @@ describe('summarizeValuableDrought', () => {
   it('여러 고가 기록 중 가장 최신 기간을 고른다 (입력 순서와 무관)', () => {
     const summary = summarizeValuableDrought(
       [
-        record({ periodKey: '2026-07-16', itemName: '생명의 연마석', category: 'consumable', slot: undefined }),
-        record({ periodKey: '2026-06-25', itemName: '루즈 컨트롤 머신 마크' }),
-        record({ periodKey: '2026-07-02', itemName: '창세의 뱃지', slot: undefined }),
+        record({ periodKey: '2026-07-16', itemKey: 'life_whetstone', itemName: '생명의 연마석', category: 'consumable', slot: undefined }),
+        record({ periodKey: '2026-06-25', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' }),
+        record({ periodKey: '2026-07-02', itemKey: 'genesis_badge', itemName: '창세의 뱃지', slot: undefined }),
       ],
       now,
     )
@@ -217,10 +223,10 @@ describe('summarizeValuableDrought', () => {
   it('그 기간의 고가 기록을 함께 반환한다. 아이콘 스택 표시용', () => {
     const summary = summarizeValuableDrought(
       [
-        record({ periodKey: '2026-07-16', itemName: '루즈 컨트롤 머신 마크' }),
-        record({ periodKey: '2026-07-16', itemName: '리스트레인트 링', category: 'consumable', slot: undefined }),
-        record({ periodKey: '2026-07-16', itemName: '창세의 뱃지', slot: undefined }),
-        record({ periodKey: '2026-07-09', itemName: '생명의 연마석', category: 'consumable', slot: undefined }),
+        record({ periodKey: '2026-07-16', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' }),
+        record({ periodKey: '2026-07-16', itemKey: 'restraint_ring', itemName: '리스트레인트 링', category: 'consumable', slot: undefined }),
+        record({ periodKey: '2026-07-16', itemKey: 'genesis_badge', itemName: '창세의 뱃지', slot: undefined }),
+        record({ periodKey: '2026-07-09', itemKey: 'life_whetstone', itemName: '생명의 연마석', category: 'consumable', slot: undefined }),
       ],
       now,
     )
@@ -234,7 +240,7 @@ describe('summarizeValuableDrought', () => {
 
   it('이번 주에 먹었으면 weeksSince는 0이다', () => {
     const summary = summarizeValuableDrought(
-      [record({ periodKey: '2026-07-30', itemName: '루즈 컨트롤 머신 마크' })],
+      [record({ periodKey: '2026-07-30', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' })],
       now,
     )
     expect(summary?.weeksSince).toBe(0)
@@ -243,7 +249,7 @@ describe('summarizeValuableDrought', () => {
   it('월간 기록도 주 축으로 환산해 센다 (주 경계에 걸리면 내림)', () => {
     // 월간 7월 시작(7/1 00:00 KST) → 7/30 = 29일 = 4주 + 1일 → 4주
     const summary = summarizeValuableDrought(
-      [record({ periodKey: '2026-07', boss: '검은 마법사', difficulty: '하드', itemName: '창세의 뱃지', slot: undefined })],
+      [record({ periodKey: '2026-07', boss: '검은 마법사', difficulty: '하드', itemKey: 'genesis_badge', itemName: '창세의 뱃지', slot: undefined })],
       now,
     )
     expect(summary).toMatchObject({ periodKey: '2026-07', cycle: 'monthly', weeksSince: 4 })
@@ -251,7 +257,7 @@ describe('summarizeValuableDrought', () => {
 
   it('고가 기록이 하나도 없으면 null"∞주째" 같은 값을 만들지 않는다', () => {
     const summary = summarizeValuableDrought(
-      [record({ itemName: '리스트레인트 링', category: 'consumable', slot: undefined })],
+      [record({ itemKey: 'restraint_ring', itemName: '리스트레인트 링', category: 'consumable', slot: undefined })],
       now,
     )
     expect(summary).toBeNull()
@@ -288,6 +294,7 @@ describe('formatDropHistoryLine', () => {
       record({
         boss: '가디언 엔젤 슬라임',
         difficulty: '카오스',
+        itemKey: null,
         itemName: '가디언 엔젤링',
         slot: undefined,
       }),
@@ -317,7 +324,7 @@ describe('formatDropHistoryLine', () => {
 
   it('캐릭터명을 모르면 이름 부분을 비운다. ocid를 노출하지 않는다', () => {
     const line = formatDropHistoryLine(
-      record({ boss: '스우', difficulty: '하드', itemName: '가디언 엔젤링', slot: undefined }),
+      record({ boss: '스우', difficulty: '하드', itemKey: null, itemName: '가디언 엔젤링', slot: undefined }),
       undefined,
     )
 
@@ -327,7 +334,7 @@ describe('formatDropHistoryLine', () => {
   it('수량이 2 이상이면 개수를 아이템에 붙인다 (1은 붙이지 않는다)', () => {
     expect(
       formatDropHistoryLine(
-        record({ itemName: '주문의 흔적', category: 'fixed', slot: undefined, quantity: 240 }),
+        record({ itemKey: 'spell_trace', itemName: '주문의 흔적', category: 'fixed', slot: undefined, quantity: 240 }),
         '지내우시',
       ).item,
     ).toBe('주문의 흔적 240개')
@@ -340,9 +347,11 @@ describe('formatDropHistoryLine', () => {
   it('반지 등급이 기록돼 있으면 레벨을 붙인다', () => {
     const line = formatDropHistoryLine(
       record({
+        itemKey: 'restraint_ring',
         itemName: '리스트레인트 링',
         category: 'consumable',
         slot: undefined,
+        boxOriginKey: 'red_boss_ring_box',
         boxOrigin: '홍옥의 보스 반지 상자',
         ringLevel: 3,
       }),
@@ -358,9 +367,11 @@ describe('formatDropHistoryLine', () => {
       record({
         boss: '스우',
         difficulty: '하드',
+        itemKey: 'restraint_ring',
         itemName: '리스트레인트 링',
         category: 'consumable',
         slot: undefined,
+        boxOriginKey: 'red_boss_ring_box',
         boxOrigin: '홍옥의 보스 반지 상자',
         ringLevel: 3,
       }),
@@ -470,7 +481,7 @@ describe('valuableDroughtHeadlineCount', () => {
 
 describe('formatValuableDroughtItems', () => {
   it('하나면 그 이름만', () => {
-    expect(formatValuableDroughtItems([record({ itemName: '루즈 컨트롤 머신 마크' })])).toBe(
+    expect(formatValuableDroughtItems([record({ itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' })])).toBe(
       '루즈 컨트롤 머신 마크',
     )
   })
@@ -478,9 +489,9 @@ describe('formatValuableDroughtItems', () => {
   it('여럿이면 첫 항목 + "외 N개"전부 나열하면 한 줄을 넘긴다', () => {
     expect(
       formatValuableDroughtItems([
-        record({ itemName: '루즈 컨트롤 머신 마크' }),
-        record({ itemName: '창세의 뱃지' }),
-        record({ itemName: '생명의 연마석' }),
+        record({ itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' }),
+        record({ itemKey: 'genesis_badge', itemName: '창세의 뱃지' }),
+        record({ itemKey: 'life_whetstone', itemName: '생명의 연마석' }),
       ]),
     ).toBe('루즈 컨트롤 머신 마크 외 2개')
   })

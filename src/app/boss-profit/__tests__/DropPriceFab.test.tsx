@@ -11,7 +11,7 @@ import { getThemeDefinition } from '../../../lib/theme/theme-registry'
 import { __resetThemeAppearanceForTest, setThemeAppearance } from '../../../theme/appearance-store'
 import { boxShadowOf } from '../../../lib/shadow'
 import { FAB_DARK_EDGE, FAB_DIAMETER_PX, FAB_SHADOW } from '../../../lib/fab-metrics'
-import { getItemIconUrl } from '../../../lib/assets/asset-lookup'
+import { dropItemIconOf } from '../../../lib/assets/asset-lookup'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { setHapticsPort } from '../../../native/ports'
@@ -159,13 +159,14 @@ describe('도는 그림', () => {
     }
   })
 
-  // 파일명은 화면이 안 든다. `item-icons.json` 이 이름에 매어 둔 것을 그대로 꺼내므로
+  // 파일명은 화면이 안 든다. `drop-items.json` 이 key 에 매어 둔 것을 그대로 꺼내므로
   // 매핑이 바뀌면 이 버튼도 함께 따라간다.
-  it('그림은 아이템 이름으로 찾은 것이다', async () => {
+  it('그림은 아이템 key 로 찾은 것이다', async () => {
     const view = await renderOverlay(<DropPriceFab periodKey={PERIOD} />)
 
-    DROP_PRICE_FAB_ITEMS.forEach((itemName, slot) => {
-      const icon = getItemIconUrl(itemName)
+    expect(DROP_PRICE_FAB_ITEMS).toEqual(['source_of_suffering', 'giant_terror', 'complete_under_control'])
+    DROP_PRICE_FAB_ITEMS.forEach((itemKey, slot) => {
+      const icon = dropItemIconOf(itemKey)
 
       expect(icon).not.toBeNull()
       expect(view.getByTestId(`drop-price-fab-item-${slot}`).props.source).toBe(icon)

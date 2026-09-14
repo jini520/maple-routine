@@ -201,7 +201,7 @@ export function UnpricedDropsWidget({ w, h, data }: WidgetProps): React.JSX.Elem
         </View>
         <View testID="unpriced-preview" className="gap-0.5">
           {preview.map((drop, index) => (
-            <ItemRow key={`${drop.ocid}|${drop.boss}|${drop.itemName}|${index}`} drop={drop} />
+            <ItemRow key={`${drop.ocid}|${drop.boss}|${drop.itemKey ?? drop.itemName}|${index}`} drop={drop} />
           ))}
         </View>
         <Cta prefix={rest > 0 ? `외 ${rest}건` : undefined} />

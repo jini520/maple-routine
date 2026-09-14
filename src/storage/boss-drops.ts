@@ -14,8 +14,13 @@ export interface BossDropRecord {
   periodKey: string
   dropIndex: number
   category: DropCategory
+  /** 아이템 key. 이름만 저장된 옛 행에서 이관이 못 찾았으면 `null` 이다. */
+  itemKey: string | null
+  /** 적을 때의 이름. */
   itemName: string
   slot: string | null
+  /** 상자 결과면 상자의 아이템 key. */
+  boxOriginKey: string | null
   boxOrigin: string | null
   ringLevel: number | null
   quantity: number
@@ -35,9 +40,9 @@ const DELETE_SQL = `
 
 const INSERT_SQL = `
   INSERT INTO boss_drop_records
-    (ocid, boss, difficulty, period_key, drop_index, category, item_name, slot, box_origin, ring_level, quantity, recorded_at,
-     price_state, price_meso, price_share)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (ocid, boss, difficulty, period_key, drop_index, category, item_key, item_name, slot, box_origin_key, box_origin,
+     ring_level, quantity, recorded_at, price_state, price_meso, price_share)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 // 한 보스/기간의 드롭 집합을 통째로 교체한다(기존 삭제 후 0..n으로 재삽입). 빈 배열이면 삭제만.
@@ -108,8 +113,10 @@ export async function replaceBossDropRecords(
       periodKey,
       index,
       drop.category,
+      drop.itemKey,
       drop.itemName,
       drop.slot ?? null,
+      drop.boxOriginKey ?? null,
       drop.boxOrigin ?? null,
       drop.ringLevel ?? null,
       drop.quantity,
@@ -142,8 +149,10 @@ function rowToRecord(row: Record<string, unknown>): BossDropRecord {
     periodKey: row.period_key as string,
     dropIndex: row.drop_index as number,
     category: row.category as DropCategory,
+    itemKey: (row.item_key as string | null | undefined) ?? null,
     itemName: row.item_name as string,
     slot: (row.slot as string | null) ?? null,
+    boxOriginKey: (row.box_origin_key as string | null | undefined) ?? null,
     boxOrigin: (row.box_origin as string | null) ?? null,
     ringLevel: (row.ring_level as number | null) ?? null,
     quantity: row.quantity as number,

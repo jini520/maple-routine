@@ -14,10 +14,10 @@
  * const shown = sortDropsForDisplay(drops).slice(0, 3)
  */
 import { dropPayoutMeso, type DropPriceFields } from './drop-price'
-import { isValuableDrop } from './valuable-drops'
+import { isValuableDropItem } from './valuable-drops'
 
 /** 순서를 정하는 데 필요한 것만 본다. 도메인 `RecordedDrop` 과 저장 계층 기록이 함께 통과한다. */
-type OrderableDrop = DropPriceFields & { itemName: string }
+type OrderableDrop = DropPriceFields & { itemKey: string | null }
 
 /**
  * 견주는 값은 **내가 받은 몫**(`dropPayoutMeso`)이지 판매 총액이 아니다. 화면이 세는 값과
@@ -28,7 +28,7 @@ type OrderableDrop = DropPriceFields & { itemName: string }
  */
 export function sortDropsForDisplay<T extends OrderableDrop>(drops: readonly T[]): T[] {
   return [...drops].sort((left, right) => {
-    const valuable = Number(isValuableDrop(right.itemName)) - Number(isValuableDrop(left.itemName))
+    const valuable = Number(isValuableDropItem(right.itemKey)) - Number(isValuableDropItem(left.itemKey))
     if (valuable !== 0) return valuable
     return dropPayoutMeso(right) - dropPayoutMeso(left)
   })

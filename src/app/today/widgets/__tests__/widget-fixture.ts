@@ -147,7 +147,7 @@ export function 수익캐릭터셋(): WeeklyProfitCharacterView[] {
   ]
 }
 
-/** 아이콘이 실제로 해석되는 이름을 기본값으로 둔다(`item-icons.json` 에 있는 반지). */
+/** 아이콘이 실제로 해석되는 key 를 기본값으로 둔다(마스터 표 `drop-items.json` 에 그림이 있는 반지). */
 export function 드롭(부분: Partial<PricedDropView> = {}): PricedDropView {
   return {
     ocid: 'ocid-1',
@@ -155,6 +155,7 @@ export function 드롭(부분: Partial<PricedDropView> = {}): PricedDropView {
     boss: '스우',
     difficulty: '노멀',
     itemName: '가디언 엔젤 링',
+    itemKey: 'guardian_angel_ring',
     quantity: 1,
     category: 'equipment',
     payoutMeso: 12_000_000_000,
@@ -230,6 +231,7 @@ export function 미입력(
         boss: '스우',
         difficulty: '노멀',
         itemName,
+        itemKey: null,
         quantity: 1,
         category: 'equipment',
       }),

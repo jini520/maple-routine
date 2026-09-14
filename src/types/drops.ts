@@ -13,9 +13,12 @@ export type DropCategory = (typeof DROP_CATEGORIES)[number]
 export const SELECTABLE_DROP_CATEGORIES = ['equipment', 'consumable'] as const
 export type SelectableDropCategory = (typeof SELECTABLE_DROP_CATEGORIES)[number]
 
-// 드롭 피커 후보 = 한 보스의 전 난이도 장비·소비 아이템을 name+slot으로 통합한 것.
+// 드롭 피커 후보 = 한 보스의 전 난이도 장비·소비 아이템을 아이템 key+slot으로 통합한 것.
 // 난이도 무관 통합 표시라 difficulties에 이 후보가 등장하는 난이도를 정규 순서로 담는다.
 export interface DropCandidate {
+  /** 아이템 key(`drop-items.json`). */
+  key: string
+  /** 마스터 표의 지금 이름. */
   name: string
   category: SelectableDropCategory
   slot?: string
@@ -26,6 +29,7 @@ export interface DropCandidate {
 
 // 고정 드롭은 난이도마다 값이 달라 통합하지 않고 난이도별 그룹으로 읽기 전용 표시.
 export interface FixedDropItem {
+  key: string
   name: string
   amount?: string
   slot?: string
@@ -47,8 +51,13 @@ export interface BoxResult {
 // "금액을 저장하지 않는다"를 뒤집은 자리이고, 그래서 세 필드가 전부 optional이다(옛 기록엔 없다).
 export interface RecordedDrop {
   category: DropCategory
+  /** 아이템 key. 이름만 저장된 옛 기록에서 이관이 못 찾았으면 `null` 이다. */
+  itemKey: string | null
+  /** 적을 때의 이름. 보이는 이름은 key 로 찾고, key 가 없을 때만 이 값을 쓴다. */
   itemName: string
   slot?: string
+  /** 상자 결과면 상자의 아이템 key. 상자 결과인데 `null` 이면 이관이 상자 이름을 못 찾았다. */
+  boxOriginKey?: string | null
   boxOrigin?: string
   ringLevel?: number
   quantity: number

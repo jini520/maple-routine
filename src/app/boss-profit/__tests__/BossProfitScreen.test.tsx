@@ -166,7 +166,7 @@ function 주차소계(overrides: Partial<BossProfitWeeklySubtotal> = {}): BossPr
 }
 
 function 드롭(overrides: Partial<RecordedDrop> = {}): RecordedDrop {
-  return { itemName: '기타', slot: null, ...overrides } as RecordedDrop
+  return { itemKey: 'other_ring', itemName: '기타', slot: null, ...overrides } as RecordedDrop
 }
 
 /**
@@ -772,7 +772,7 @@ describe('총 수익 헤드라인', () => {
 
   it('총 수익 상자는 모든 카드의 드롭에서 비싼 순 상위 10건과 나머지 한 줄이다', async () => {
     const 값매김 = (itemName: string, 억: number): RecordedDrop =>
-      드롭({ itemName, priceState: 'entered', priceMeso: 억 * 100_000_000, priceShare: 1 })
+      드롭({ itemKey: null, itemName, priceState: 'entered', priceMeso: 억 * 100_000_000, priceShare: 1 })
     mockStore({
       status: 'loaded',
       periodState: 'recorded',
@@ -783,7 +783,7 @@ describe('총 수익 헤드라인', () => {
         ),
         [`ocid-2|${주간보스}|하드|${CURRENT_WEEKLY}`]: [
           ...[1, 2, 3, 4, 5, 6].map((n) => 값매김(`둘째${n}`, n === 1 ? 2 : n * 10 + 1)),
-          드롭({ itemName: '미입력' }),
+          드롭({ itemKey: null, itemName: '미입력' }),
         ],
       } })
     const { getByLabelText, getByTestId } = await renderScreen()
@@ -805,8 +805,8 @@ describe('총 수익 헤드라인', () => {
 
   // 월간 보스 드롭은 보스 행에도 남고 그 보스가 선 주차 소계로도 옮겨 담긴다.
   it('월간 탭의 총 수익 상자는 주차 소계의 드롭에서 읽는다. 월간 보스 드롭을 두 번 안 센다', async () => {
-    const 월간드롭 = 드롭({ itemName: '월간 아이템', priceState: 'entered', priceMeso: 4_000_000, priceShare: 1 })
-    const 주간드롭 = 드롭({ itemName: '주간 아이템', priceState: 'entered', priceMeso: 1_000_000, priceShare: 1 })
+    const 월간드롭 = 드롭({ itemKey: null, itemName: '월간 아이템', priceState: 'entered', priceMeso: 4_000_000, priceShare: 1 })
+    const 주간드롭 = 드롭({ itemKey: null, itemName: '주간 아이템', priceState: 'entered', priceMeso: 1_000_000, priceShare: 1 })
     mockStore({
       status: 'loaded',
       tab: 'monthly',
@@ -862,7 +862,7 @@ describe('총 수익 헤드라인', () => {
       periodState: 'recorded',
       rows: [보스행()],
       dropsByRowKey: {
-        [`ocid-1|${주간보스}|하드|${CURRENT_WEEKLY}`]: [드롭({ itemName: 고가아이템 })] } })
+        [`ocid-1|${주간보스}|하드|${CURRENT_WEEKLY}`]: [드롭({ itemKey: 고가아이템, itemName: 고가아이템 })] } })
     const { getByLabelText } = await renderScreen()
 
     expect(getByLabelText('이 기간 고가 드롭')).toBeTruthy()
@@ -874,7 +874,7 @@ describe('총 수익 헤드라인', () => {
       periodState: 'recorded',
       rows: [보스행({ isComplete: false, payoutMeso: null })],
       dropsByRowKey: {
-        [`ocid-1|${주간보스}|하드|${CURRENT_WEEKLY}`]: [드롭({ itemName: 고가아이템 })] } })
+        [`ocid-1|${주간보스}|하드|${CURRENT_WEEKLY}`]: [드롭({ itemKey: 고가아이템, itemName: 고가아이템 })] } })
     const { queryByTestId } = await renderScreen()
 
     expect(queryByTestId('valuable-drop-badge')).toBeNull()

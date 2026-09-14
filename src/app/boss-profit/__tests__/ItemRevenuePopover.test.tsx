@@ -9,6 +9,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import type { RecordedDrop } from '../../../types/drops'
 
 import valuableDropsData from '../../../data/valuable-drops.json'
+import { dropItemNameOf } from '../../../lib/drop/drop-items'
 import { 테스트_안전영역 } from '../../../components/__tests__/render-atom'
 import { ThemeProvider } from '../../../theme/ThemeProvider'
 import { ItemRevenuePopover } from '../ItemRevenuePopover'
@@ -16,7 +17,7 @@ import { ItemRevenuePopover } from '../ItemRevenuePopover'
 const ANCHOR = { left: 200, top: 300, width: 80, height: 20 }
 
 function drop(overrides: Partial<RecordedDrop> = {}): RecordedDrop {
-  return { category: 'equipment', itemName: '가디언 엔젤 링', quantity: 1, ...overrides }
+  return { category: 'equipment', itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링', quantity: 1, ...overrides }
 }
 
 function renderPopover(props: {
@@ -44,8 +45,9 @@ function renderPopover(props: {
   )
 }
 
-function entered(itemName: string, priceMeso: number): RecordedDrop {
-  return drop({ itemName, priceState: 'entered', priceMeso, priceShare: 1 })
+/** 이름으로 가려 보는 기록. key 가 없으면 적어 둔 이름이 그대로 선다. */
+function entered(itemName: string, priceMeso: number, itemKey: string | null = null): RecordedDrop {
+  return drop({ itemKey, itemName, priceState: 'entered', priceMeso, priceShare: 1 })
 }
 
 describe('ItemRevenuePopover: 미입력은 싣지 않는다', () => {
@@ -83,7 +85,7 @@ describe('ItemRevenuePopover: 미입력은 싣지 않는다', () => {
 
   it('기록 안함(excluded)도 목록에서 뺀다. 값을 안 매기기로 한 것이라 할 말이 없다', async () => {
     const { queryByText, getByText } = await renderPopover({
-      drops: [drop({ itemName: '거대한 공포', priceState: 'excluded' }), entered('가디언 엔젤 링', 1_000)],
+      drops: [drop({ itemKey: 'giant_terror', itemName: '거대한 공포', priceState: 'excluded' }), entered('가디언 엔젤 링', 1_000)],
     })
 
     expect(queryByText('거대한 공포')).toBeNull()
@@ -91,12 +93,13 @@ describe('ItemRevenuePopover: 미입력은 싣지 않는다', () => {
   })
 
   it('자르지 않으면 연출 먼저, 그다음 값이 큰 순이다(보스 행 · 주차 소계 상자)', async () => {
-    const 연출아이템 = valuableDropsData.items[0]
+    const 연출키 = valuableDropsData.items[0]
+    const 연출아이템 = dropItemNameOf(연출키, 연출키)
     const { getAllByText } = await renderPopover({
       drops: [
         entered('정렬-작은', 1_000_000_000),
         entered('정렬-큰', 9_000_000_000),
-        entered(연출아이템, 1),
+        entered(연출아이템, 1, 연출키),
       ],
     })
 
@@ -149,9 +152,10 @@ describe('ItemRevenuePopover: 미입력은 싣지 않는다', () => {
 
 describe('ItemRevenuePopover: 자르는 수를 받으면 비싼 순 상위 N 건과 나머지 한 줄이다', () => {
   it('값만으로 줄 세워 N 건을 싣는다. 연출 아이템을 앞에 두지 않는다', async () => {
-    const 연출아이템 = valuableDropsData.items[0]
+    const 연출키 = valuableDropsData.items[0]
+    const 연출아이템 = dropItemNameOf(연출키, 연출키)
     const { getAllByText, queryByText } = await renderPopover({
-      drops: [entered(연출아이템, 1), entered('정렬-큰', 9_000_000_000), entered('정렬-작은', 1_000_000_000)],
+      drops: [entered(연출아이템, 1, 연출키), entered('정렬-큰', 9_000_000_000), entered('정렬-작은', 1_000_000_000)],
       limit: 2,
     })
 
@@ -169,7 +173,7 @@ describe('ItemRevenuePopover: 자르는 수를 받으면 비싼 순 상위 N 건
         entered('정렬-큰', 9_000_000_000),
         entered('나머지-하나', 60_000_000),
         entered('나머지-둘', 50_000_000),
-        drop({ itemName: '미입력' }),
+        drop({ itemKey: null, itemName: '미입력' }),
       ],
       limit: 1,
     })
@@ -181,7 +185,7 @@ describe('ItemRevenuePopover: 자르는 수를 받으면 비싼 순 상위 N 건
 
   it('순위 밖이 없으면 나머지 줄이 안 선다', async () => {
     const { queryByText } = await renderPopover({
-      drops: [entered('정렬-큰', 9_000_000_000), drop({ itemName: '미입력' })],
+      drops: [entered('정렬-큰', 9_000_000_000), drop({ itemKey: null, itemName: '미입력' })],
       limit: 1,
     })
 

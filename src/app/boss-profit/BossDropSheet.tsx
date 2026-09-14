@@ -9,18 +9,20 @@ import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
 import {
+  dropTileKey,
   getAccessoryBoxContents,
   getBossDifficulties,
   getBossDropCandidates,
   getBossFixedDrops,
-  getObtainableTileNames,
+  getObtainableTileKeys,
   getRingBoxContents,
   isBoxItem,
 } from '../../lib/boss/boss-drops'
 import { useDropEffectStore } from '../../features/drop-effect/store'
 import { getFixedDropIcons, type FixedDropIconSpec } from '../../lib/drop/fixed-drops'
-import { getItemIconUrl, getItemIconUrlByFile } from '../../lib/assets/asset-lookup'
-import { isValuableDrop } from '../../lib/drop/valuable-drops'
+import { dropItemIconOf, getItemIconUrlByFile } from '../../lib/assets/asset-lookup'
+import { dropItemNameOf } from '../../lib/drop/drop-items'
+import { isValuableDropItem } from '../../lib/drop/valuable-drops'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types'
 import type { DropCandidate, DropCategory, RecordedDrop, SelectableDropCategory } from '../../types/drops'
 
@@ -71,8 +73,8 @@ interface BossDropSheetProps {
   pricing?: { defaultShare: number; maxShare: number; characterName: string }
 }
 
-function ItemThumb(props: { name: string; slot?: string; level?: number }): React.JSX.Element {
-  const url = getItemIconUrl(props.name, props.slot)
+function ItemThumb(props: { itemKey: string | null; level?: number }): React.JSX.Element {
+  const url = dropItemIconOf(props.itemKey)
   return (
     <View className="h-9 w-9">
       {url !== null ? (
@@ -93,13 +95,14 @@ function ItemThumb(props: { name: string; slot?: string; level?: number }): Reac
 // 아니다. 수량은 이미지 우측 하단 배지(`N개`)로 표시한다.
 function FixedDropIcon(props: { icon: FixedDropIconSpec }): React.JSX.Element {
   const { icon } = props
-  const url = icon.iconFile !== null ? getItemIconUrlByFile(icon.iconFile) : getItemIconUrl(icon.itemName)
+  const url = icon.iconFile !== null ? getItemIconUrlByFile(icon.iconFile) : dropItemIconOf(icon.itemKey)
+  const name = dropItemNameOf(icon.itemKey, icon.itemKey)
   return (
     <View className="h-8 w-8">
       {url !== null ? (
-        <Image source={url} accessibilityLabel={icon.itemName} resizeMode="contain" className="h-8 w-8" />
+        <Image source={url} accessibilityLabel={name} resizeMode="contain" className="h-8 w-8" />
       ) : (
-        <View className="h-8 w-8 rounded-md bg-surface-2" role="img" aria-label={icon.itemName} />
+        <View className="h-8 w-8 rounded-md bg-surface-2" role="img" aria-label={name} />
       )}
       <View className="absolute -bottom-1 -right-1 rounded-full bg-primary px-1 py-px">
         <Text className="text-8 font-bold leading-none text-on-primary" style={TABULAR_NUMS}>
@@ -133,9 +136,11 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   // 표시할 난이도. 기본값은 행 난이도(props.difficulty). 완료면 고정, 미완료면 토글로 변경한다.
   // 저장 키는 항상 행 난이도(display-only 필터)라 이 값은 표시·필터에만 쓴다.
   const [selectedDifficulty, setSelectedDifficulty] = useState<BossDifficulty>(props.difficulty)
-  const [activeBox, setActiveBox] = useState<{ name: string; category: SelectableDropCategory } | null>(null)
+  const [activeBox, setActiveBox] = useState<{ key: string; name: string; category: SelectableDropCategory } | null>(
+    null,
+  )
   // 고가 아이템을 새로 추가하면 전체화면 연출을 띄운다. 표시 여부는 전역 토글.
-  const [effect, setEffect] = useState<{ itemName: string; slot?: string } | null>(null)
+  const [effect, setEffect] = useState<{ itemKey: string } | null>(null)
   // 가격을 입력하는 중인 드롭. `null` 이면 평소의 타일 그리드다.
   //
   // 상자 드릴다운과 같은 자리다. 시트를 닫고 새 시트를 여는 대신 시트 내용을 갈아 끼운다.
@@ -171,55 +176,78 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   }
   const isEmpty = candidates.length === 0 && fixedGroups.length === 0
 
-  // 드롭 결과 하나가 이 후보(일반 아이템/상자)와 일치하는지.
-  function findNormalDrop(name: string): RecordedDrop | undefined {
-    return selected.find((drop) => drop.itemName === name && drop.boxOrigin === undefined)
+  // 드롭 결과 하나가 이 후보(일반 아이템/상자)와 일치하는지. 아이템 key 로 맞춘다.
+  function isNormalDropOf(drop: RecordedDrop, key: string): boolean {
+    return drop.itemKey === key && drop.boxOrigin === undefined
   }
-  function findBoxDrop(boxName: string): RecordedDrop | undefined {
-    return selected.find((drop) => drop.boxOrigin === boxName)
+  function findNormalDrop(key: string): RecordedDrop | undefined {
+    return selected.find((drop) => isNormalDropOf(drop, key))
+  }
+  function findBoxDrop(boxKey: string): RecordedDrop | undefined {
+    return selected.find((drop) => drop.boxOrigin !== undefined && drop.boxOriginKey === boxKey)
   }
 
   // 난이도 변경(미완료 전용). 이미 선택된 드롭 중 새 난이도에 존재하는 것만 유지하고 나머지는
-  // 초기화한다. 상자 결과는 상자(boxOrigin)가 새 난이도 후보에 있으면 유지(타일 기준이 상자명이라).
+  // 초기화한다. 상자 결과는 상자가 새 난이도 후보에 있으면 유지(타일 기준이 상자 key 라).
+  // 타일 key 가 없는 옛 기록은 판정하지 않고 남긴다. 못 찾은 것이 못 먹은 것은 아니다.
   function selectDifficulty(next: BossDifficulty): void {
     if (next === selectedDifficulty) return
-    const availableTileNames = getObtainableTileNames(props.boss, next, props.periodKey)
-    setSelected((prev) => prev.filter((drop) => availableTileNames.has(drop.boxOrigin ?? drop.itemName)))
+    const availableTileKeys = getObtainableTileKeys(props.boss, next, props.periodKey)
+    setSelected((prev) =>
+      prev.filter((drop) => {
+        const tileKey = dropTileKey(drop)
+        return tileKey === null || availableTileKeys.has(tileKey)
+      }),
+    )
     setSelectedDifficulty(next)
   }
 
   function toggleNormal(candidate: DropCandidate): void {
-    const isAdding = findNormalDrop(candidate.name) === undefined
+    const isAdding = findNormalDrop(candidate.key) === undefined
     const added: RecordedDrop = {
       category: candidate.category,
+      itemKey: candidate.key,
       itemName: candidate.name,
       slot: candidate.slot,
       quantity: 1,
     }
     setSelected((prev) => {
       if (!isAdding) {
-        return prev.filter((drop) => !(drop.itemName === candidate.name && drop.boxOrigin === undefined))
+        return prev.filter((drop) => !isNormalDropOf(drop, candidate.key))
       }
       return [...prev, added]
     })
     // 해제한 아이템의 물음이 남아 있으면 없는 기록의 가격을 묻게 된다.
     setJustAdded(isAdding ? added : null)
-    if (isAdding && effectEnabled && isValuableDrop(candidate.name)) {
-      setEffect({ itemName: candidate.name, slot: candidate.slot })
+    if (isAdding && effectEnabled && isValuableDropItem(candidate.key)) {
+      setEffect({ itemKey: candidate.key })
     }
   }
 
-  function applyBoxResult(boxName: string, category: DropCategory, itemName: string, ringLevel?: number): void {
-    const added: RecordedDrop = { category, itemName, boxOrigin: boxName, ringLevel, quantity: 1 }
-    setSelected((prev) => [...prev.filter((drop) => drop.boxOrigin !== boxName), added])
+  function applyBoxResult(
+    box: { key: string; name: string },
+    category: DropCategory,
+    itemKey: string,
+    ringLevel?: number,
+  ): void {
+    const added: RecordedDrop = {
+      category,
+      itemKey,
+      itemName: dropItemNameOf(itemKey, itemKey),
+      boxOriginKey: box.key,
+      boxOrigin: box.name,
+      ringLevel,
+      quantity: 1,
+    }
+    setSelected((prev) => [...prev.filter((drop) => !(drop.boxOrigin !== undefined && drop.boxOriginKey === box.key)), added])
     setActiveBox(null)
     setJustAdded(added)
-    if (effectEnabled && isValuableDrop(itemName)) {
-      setEffect({ itemName })
+    if (effectEnabled && isValuableDropItem(itemKey)) {
+      setEffect({ itemKey })
     }
   }
-  function removeBoxResult(boxName: string): void {
-    setSelected((prev) => prev.filter((drop) => drop.boxOrigin !== boxName))
+  function removeBoxResult(boxKey: string): void {
+    setSelected((prev) => prev.filter((drop) => !(drop.boxOrigin !== undefined && drop.boxOriginKey === boxKey)))
     setJustAdded(null)
   }
 
@@ -232,12 +260,12 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   }
 
   function handleTileTap(candidate: DropCandidate): void {
-    if (isBoxItem(candidate.name)) {
+    if (isBoxItem(candidate.key)) {
       // 이미 결과가 지정된 상자를 다시 탭하면 드릴다운을 열지 않고 선택을 제거한다(일반 아이템 토글과 동일).
-      if (findBoxDrop(candidate.name) !== undefined) {
-        removeBoxResult(candidate.name)
+      if (findBoxDrop(candidate.key) !== undefined) {
+        removeBoxResult(candidate.key)
       } else {
-        setActiveBox({ name: candidate.name, category: candidate.category })
+        setActiveBox({ key: candidate.key, name: candidate.name, category: candidate.category })
       }
     } else {
       toggleNormal(candidate)
@@ -330,13 +358,16 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                       {/* 4열. 간격은 자식 패딩 + 부모 음수 마진. */}
                       <View className="-mx-1 -mb-2 flex-row flex-wrap">
                         {(byCategory.get(category) ?? []).map((candidate) => {
-                          const box = isBoxItem(candidate.name)
-                          const boxDrop = box ? findBoxDrop(candidate.name) : undefined
-                          const normalDrop = box ? undefined : findNormalDrop(candidate.name)
+                          const box = isBoxItem(candidate.key)
+                          const boxDrop = box ? findBoxDrop(candidate.key) : undefined
+                          const normalDrop = box ? undefined : findNormalDrop(candidate.key)
                           const on = box ? boxDrop !== undefined : normalDrop !== undefined
-                          const displayName = boxDrop?.itemName ?? candidate.name
+                          // 상자 타일에는 나온 내용물이 선다.
+                          const displayName =
+                            boxDrop === undefined ? candidate.name : dropItemNameOf(boxDrop.itemKey, boxDrop.itemName)
+                          const thumbKey = boxDrop === undefined ? candidate.key : boxDrop.itemKey
                           return (
-                            <View key={candidate.name} className="w-1/4 px-1 pb-2">
+                            <View key={candidate.key} className="w-1/4 px-1 pb-2">
                               <Pressable
                                 role="button"
                                 aria-label={displayName}
@@ -364,11 +395,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                                     <ProfitIcon className="h-2.5 w-2.5 text-on-primary" strokeWidth={2.5} aria-hidden />
                                   </View>
                                 )}
-                                <ItemThumb
-                                  name={displayName}
-                                  slot={boxDrop ? undefined : candidate.slot}
-                                  level={boxDrop?.ringLevel}
-                                />
+                                <ItemThumb itemKey={thumbKey} level={boxDrop?.ringLevel} />
                                 <View className="h-8 w-full items-center justify-center">
                                   <Text numberOfLines={2} className="text-center text-10 leading-tight text-text">
                                     {displayName}
@@ -413,7 +440,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                             <View className="mt-1.5 flex-row flex-wrap items-center justify-center gap-x-2 gap-y-2.5">
                               {group.items.flatMap((item) =>
                                 getFixedDropIcons(item).map((icon, i) => (
-                                  <FixedDropIcon key={`${item.name}-${icon.iconFile ?? 'name'}-${i}`} icon={icon} />
+                                  <FixedDropIcon key={`${item.key}-${icon.iconFile ?? 'item'}-${i}`} icon={icon} />
                                 )),
                               )}
                             </View>
@@ -438,7 +465,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                 >
                   <View className="min-w-0 flex-1">
                     <Text numberOfLines={1} className="text-[12.5px] font-semibold leading-tight text-text">
-                      {justAdded.itemName}
+                      {dropItemNameOf(justAdded.itemKey, justAdded.itemName)}
                       {justAdded.ringLevel !== undefined && ` ${justAdded.ringLevel}레벨`} 기록됨
                     </Text>
                     <Text className="text-[12.5px] font-medium leading-tight text-text-muted">
@@ -476,41 +503,41 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
           </View>
         ) : (
           <BoxDrillDown
+            boxKey={activeBox.key}
             boxName={activeBox.name}
             category={activeBox.category}
             onBack={() => setActiveBox(null)}
-            onConfirm={(itemName, ringLevel) =>
-              applyBoxResult(activeBox.name, activeBox.category, itemName, ringLevel)
-            }
+            onConfirm={(itemKey, ringLevel) => applyBoxResult(activeBox, activeBox.category, itemKey, ringLevel)}
           />
         )}
       </BottomSheet>
 
       {effect !== null && (
-        <DropEffectOverlay itemName={effect.itemName} slot={effect.slot} onClose={() => setEffect(null)} />
+        <DropEffectOverlay itemKey={effect.itemKey} onClose={() => setEffect(null)} />
       )}
     </>
   )
 }
 
 interface BoxDrillDownProps {
+  boxKey: string
   boxName: string
   category: DropCategory
   onBack: () => void
-  onConfirm: (itemName: string, ringLevel?: number) => void
+  onConfirm: (itemKey: string, ringLevel?: number) => void
 }
 
 // 랜덤 상자 결과 선택. 반지 상자=등급+반지 2축, 칠흑 장신구=1축. 확률 자동추정 없음.
 // 이미 지정된 상자는 타일 재탭으로 제거하므로 이 화면은 항상 새 선택 전용. 제거 버튼 없음.
 function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
-  const ring = getRingBoxContents(props.boxName)
-  const accessory = ring === null ? getAccessoryBoxContents(props.boxName) : null
+  const ring = getRingBoxContents(props.boxKey)
+  const accessory = ring === null ? getAccessoryBoxContents(props.boxKey) : null
 
   const [level, setLevel] = useState<number | null>(null)
   const [item, setItem] = useState<string | null>(null)
 
   // 선택한 반지의 레벨 유무. 연마석(hasLevel=false)은 레벨 선택을 비활성하고 레벨 없이 기록.
-  const selectedOption = ring?.rings.find((r) => r.name === item) ?? null
+  const selectedOption = ring?.rings.find((r) => r.key === item) ?? null
   const needsLevel = selectedOption?.hasLevel ?? false
   const levelDisabled = selectedOption !== null && !selectedOption.hasLevel
 
@@ -530,22 +557,22 @@ function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
         <Text className="mb-2 text-xs font-bold text-text-muted">{ring !== null ? '반지' : '장신구'}</Text>
         <View className="-mx-1 -mb-2 flex-row flex-wrap">
           {(ring?.rings ?? accessory ?? []).map((entry) => (
-            <View key={entry.name} className="w-1/4 px-1 pb-2">
+            <View key={entry.key} className="w-1/4 px-1 pb-2">
               <Pressable
                 role="button"
                 aria-label={entry.name}
-                aria-selected={item === entry.name}
-                onPress={() => setItem(entry.name)}
+                aria-selected={item === entry.key}
+                onPress={() => setItem(entry.key)}
                 className={`w-full items-center gap-1 rounded-xl border p-2 pt-4 ${
-                  item === entry.name ? 'border-primary bg-primary-tint' : 'border-border bg-surface'
+                  item === entry.key ? 'border-primary bg-primary-tint' : 'border-border bg-surface'
                 }`}
               >
-                {item === entry.name && (
+                {item === entry.key && (
                   <View className="absolute right-1 top-1 h-4 w-4 items-center justify-center rounded-full bg-primary">
                     <Text className="text-10 text-on-primary">✓</Text>
                   </View>
                 )}
-                <ItemThumb name={entry.name} />
+                <ItemThumb itemKey={entry.key} />
                 <View className="h-8 w-full items-center justify-center">
                   <Text numberOfLines={2} className="text-center text-10 leading-tight text-text">
                     {entry.name}

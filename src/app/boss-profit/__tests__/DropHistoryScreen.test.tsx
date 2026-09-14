@@ -87,6 +87,7 @@ function 기록(overrides: Partial<DropHistoryRecord> = {}): DropHistoryRecord {
     difficulty: '하드',
     periodKey: PERIOD,
     category: 'equipment',
+    itemKey: 'loose_control_machine_mark',
     itemName: '루즈 컨트롤 머신 마크',
     slot: '얼굴장식',
     quantity: 1,
@@ -208,16 +209,48 @@ describe('DropHistoryScreen: 기록 한 줄', () => {
         {
           periodKey: PERIOD,
           cycle: 'weekly',
-          records: [기록({ itemName: '가디언 엔젤링', slot: undefined })],
+          records: [기록({ itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링', slot: undefined })],
         },
       ],
     })
     const { getByTestId, queryByLabelText, queryByTestId } = await renderHistory()
 
     expect(문장(getByTestId('drop-history-entry'))).toBe(
-      `메이플영웅님이 ${주간보스}(하드)에서 가디언 엔젤링을 획득하였습니다.`,
+      `메이플영웅님이 ${주간보스}(하드)에서 가디언 엔젤 링을 획득하였습니다.`,
     )
     // 꾸밈 없음. 골드 강조도, 아이템 아이콘도 붙지 않는다.
+    expect(queryByLabelText('고가 드롭 기록')).toBeNull()
+    expect(queryByTestId('valuable-drop-inline')).toBeNull()
+  })
+
+  // 이름은 key 로 찾은 표의 지금 이름이다. 적을 때의 이름이 달라도 표를 따른다.
+  it('key 가 있으면 적어 둔 이름이 아니라 표의 이름으로 선다', async () => {
+    mockStore({ groups: [{ periodKey: PERIOD, cycle: 'weekly', records: [기록({ itemName: '옛 이름' })] }] })
+    const { getByTestId } = await renderHistory()
+
+    // 고가 줄이라 아이템 앞에 그림 자리가 끼어 공백이 하나 더 선다. 이름만 본다.
+    const line = 문장(getByTestId('drop-history-entry'))
+    expect(line).toContain('루즈 컨트롤 머신 마크를 획득하였습니다.')
+    expect(line).not.toContain('옛 이름')
+  })
+
+  // 이관이 이름을 못 찾은 옛 기록(슬롯이 나뉘기 전 이름 등)은 지우지 않고 적어 둔 이름으로 세운다.
+  // key 로 하는 판정(고가 · 그림)에서는 빠진다.
+  it('key 가 없는 옛 기록은 적어 둔 이름으로 서고 고가로 꾸미지 않는다', async () => {
+    mockStore({
+      groups: [
+        {
+          periodKey: PERIOD,
+          cycle: 'weekly',
+          records: [기록({ itemKey: null, itemName: '익셉셔널 해머', slot: undefined })],
+        },
+      ],
+    })
+    const { getByTestId, queryByLabelText, queryByTestId } = await renderHistory()
+
+    expect(문장(getByTestId('drop-history-entry'))).toBe(
+      `메이플영웅님이 ${주간보스}(하드)에서 익셉셔널 해머를 획득하였습니다.`,
+    )
     expect(queryByLabelText('고가 드롭 기록')).toBeNull()
     expect(queryByTestId('valuable-drop-inline')).toBeNull()
   })
@@ -252,8 +285,8 @@ describe('DropHistoryScreen: 기록 한 줄', () => {
           periodKey: PERIOD,
           cycle: 'weekly',
           records: [
-            기록({ itemName: '주문의 흔적', category: 'fixed', slot: undefined, quantity: 240 }),
-            기록({ itemName: '가디언 엔젤링', slot: undefined, quantity: 1 }),
+            기록({ itemKey: 'spell_trace', itemName: '주문의 흔적', category: 'fixed', slot: undefined, quantity: 240 }),
+            기록({ itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링', slot: undefined, quantity: 1 }),
           ],
         },
       ],
@@ -262,7 +295,7 @@ describe('DropHistoryScreen: 기록 한 줄', () => {
 
     const entries = getAllByTestId('drop-history-entry')
     expect(문장(entries[0])).toContain('주문의 흔적 240개를 획득하였습니다.')
-    expect(문장(entries[1])).toContain('가디언 엔젤링을 획득하였습니다.')
+    expect(문장(entries[1])).toContain('가디언 엔젤 링을 획득하였습니다.')
     expect(문장(entries[1])).not.toContain('개')
   })
 
@@ -274,9 +307,11 @@ describe('DropHistoryScreen: 기록 한 줄', () => {
           cycle: 'weekly',
           records: [
             기록({
+              itemKey: 'restraint_ring',
               itemName: '리스트레인트 링',
               category: 'consumable',
               slot: undefined,
+              boxOriginKey: 'red_boss_ring_box',
               boxOrigin: '홍옥의 보스 반지 상자',
               ringLevel: 3,
             }),
@@ -301,7 +336,7 @@ describe('DropHistoryScreen: 기록 한 줄', () => {
         {
           periodKey: PERIOD,
           cycle: 'weekly',
-          records: [기록({ ocid: 'ocid-unknown', itemName: '가디언 엔젤링', slot: undefined })],
+          records: [기록({ ocid: 'ocid-unknown', itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링', slot: undefined })],
         },
       ],
       charactersByOcid: {},
@@ -309,7 +344,7 @@ describe('DropHistoryScreen: 기록 한 줄', () => {
     const { getByTestId } = await renderHistory()
 
     expect(문장(getByTestId('drop-history-entry'))).toBe(
-      `${주간보스}(하드)에서 가디언 엔젤링을 획득하였습니다.`,
+      `${주간보스}(하드)에서 가디언 엔젤 링을 획득하였습니다.`,
     )
   })
 })
@@ -472,7 +507,7 @@ describe('DropHistoryScreen: 미획득 요약', () => {
 
   it('그 주에 고가를 여럿 먹었으면 첫 항목 + 외 N개로 줄인다', async () => {
     mockStore({
-      drought: 가뭄(3, [기록(), 기록({ itemName: '창세의 뱃지', slot: undefined })]),
+      drought: 가뭄(3, [기록(), 기록({ itemKey: 'genesis_badge', itemName: '창세의 뱃지', slot: undefined })]),
     })
     const { getByTestId } = await renderHistory()
 

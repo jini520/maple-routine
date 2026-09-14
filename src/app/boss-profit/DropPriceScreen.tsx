@@ -35,7 +35,8 @@ import {
   isLatestPeriod,
 } from '../../lib/boss/boss-profit-period'
 import { dropPayoutMeso } from '../../lib/drop/drop-price'
-import { getItemIconUrl } from '../../lib/assets/asset-lookup'
+import { dropItemIconOf } from '../../lib/assets/asset-lookup'
+import { dropItemNameOf } from '../../lib/drop/drop-items'
 import type { RootStackParamList } from '../../navigation/routes'
 import type { RecordedDrop } from '../../types/drops'
 import type { BossCycle } from '../../types/scheduler'
@@ -104,7 +105,8 @@ function EntryRow(props: {
   onSelect: () => void
 }): React.JSX.Element {
   const { drop } = props.entry
-  const iconUrl = getItemIconUrl(drop.itemName, drop.slot)
+  const iconUrl = dropItemIconOf(drop.itemKey)
+  const itemName = dropItemNameOf(drop.itemKey, drop.itemName)
   // 상자명(`boxOrigin`)은 쓰지 않는다. 반지 상자·칠흑 장신구 상자는 이름이 길어 실제 정보인
   // 아이템명과 보스를 밀어낸다. 무엇을 열었는지는 히스토리가 말한다.
   //
@@ -119,7 +121,7 @@ function EntryRow(props: {
       <Pressable
         role="button"
         onPress={props.onSelect}
-        aria-label={`${drop.itemName} 가격 입력`}
+        aria-label={`${itemName} 가격 입력`}
         className={`flex-row items-center gap-3 border-b p-4 ${
           props.isLast ? 'border-b-transparent' : 'border-border'
         }`}
@@ -132,7 +134,7 @@ function EntryRow(props: {
         <View className="min-w-0 flex-1">
           <View className="flex-row items-center gap-1.5">
             <Text numberOfLines={1} className="shrink text-[13.5px] font-semibold text-text">
-              {drop.itemName}
+              {itemName}
               {drop.ringLevel !== undefined && ` ${drop.ringLevel}레벨`}
             </Text>
             {drop.quantity > 1 && (

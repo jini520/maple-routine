@@ -1,11 +1,11 @@
 import type { FixedDropItem } from '../../types/drops'
 
-// 고정 드롭 표시용 로직(순수 함수). URL 해석은 컴포넌트가 item-icons에서 처리한다. 여기선
+// 고정 드롭 표시용 로직(순수 함수). URL 해석은 컴포넌트가 drop-items 에서 처리한다. 여기선
 // "무슨 아이콘을 몇 개로 보여줄지"만 결정한다.
 
 // `솔 에르다의 기운` 은 단일 아이콘이 아니라 기운량을 단위별 아이콘으로 분해해 표시한다.
 // 단위는 1000(솔 에르다) > 500 > 200 > 10 이고 큰 단위부터 greedy 로 나눈다.
-export const SOL_ERDA_ENERGY_NAME = '솔 에르다의 기운'
+export const SOL_ERDA_ENERGY_KEY = 'sol_erda_energy'
 export const SOL_ERDA_DENOMINATIONS: ReadonlyArray<{ value: number; iconFile: string }> = [
   { value: 1000, iconFile: 'sole_1000.webp' },
   { value: 500, iconFile: 'sole_500.webp' },
@@ -35,21 +35,21 @@ export function decomposeSolErda(energy: number): Array<{ iconFile: string; coun
 }
 
 export interface FixedDropIconSpec {
-  // 표시전용 분해 아이콘이면 파일명(솔 에르다 단위), 일반 아이템이면 null(itemName으로 조회).
+  // 표시전용 분해 아이콘이면 파일명(솔 에르다 단위), 일반 아이템이면 null(itemKey로 조회).
   iconFile: string | null
-  itemName: string
+  itemKey: string
   count: number
 }
 
 // 고정 드롭 항목 하나를 화면에 그릴 아이콘 목록으로 변환한다. 솔 에르다는 다단위로 펼쳐지고,
 // 일반 항목은 아이콘 1개. 수량은 1개여도 항상 표시한다(뱃지).
 export function getFixedDropIcons(item: FixedDropItem): FixedDropIconSpec[] {
-  if (item.name === SOL_ERDA_ENERGY_NAME) {
+  if (item.key === SOL_ERDA_ENERGY_KEY) {
     return decomposeSolErda(parseFixedAmount(item.amount)).map((denom) => ({
       iconFile: denom.iconFile,
-      itemName: SOL_ERDA_ENERGY_NAME,
+      itemKey: SOL_ERDA_ENERGY_KEY,
       count: denom.count,
     }))
   }
-  return [{ iconFile: null, itemName: item.name, count: parseFixedAmount(item.amount) }]
+  return [{ iconFile: null, itemKey: item.key, count: parseFixedAmount(item.amount) }]
 }

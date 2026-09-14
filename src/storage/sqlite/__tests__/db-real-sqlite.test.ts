@@ -14,6 +14,7 @@ import { closeBossProfitDb, getBossProfitDb } from '../db'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 import { getIncomeRecordsBetween, insertIncomeRecord, type IncomeRecord } from '../../income'
 import { getSpendRecordsBetween } from '../../spend'
+import { getAllBossDropRecords } from '../../boss-drops'
 import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
 
 /**
@@ -383,7 +384,7 @@ describe('버전 이관: 가계부 기록에 key 를 채운다', () => {
   it('새 DB 는 이관할 것 없이 마지막 버전으로 선다', async () => {
     await getBossProfitDb()
 
-    expect(userVersion(real)).toBe(2)
+    expect(userVersion(real)).toBe(3)
   })
 
   it('옛 지출 기록의 이름으로 갈래 · 항목 · 형태별 항목 · 종류 key 를 채운다', async () => {
@@ -402,7 +403,7 @@ describe('버전 이관: 가계부 기록에 key 를 채운다', () => {
     })
     expect(byId.get('reward-split')).toMatchObject({ itemKey: null, formItemKeys: { exp: 'nightmare_paradise_2' } })
     expect(byId.get('purchase')).toMatchObject({ category: 'item_purchase', itemKey: null, itemKind: 'consumable' })
-    expect(userVersion(real)).toBe(2)
+    expect(userVersion(real)).toBe(3)
   })
 
   // 못 찾은 이름은 지우지 않는다. key 만 비고 그때 이름으로 선다.
@@ -445,5 +446,73 @@ describe('버전 이관: 가계부 기록에 key 를 채운다', () => {
 
     expect(real.statements.some((statement) => statement.includes('상점·편의'))).toBe(false)
     expect(real.statements.some((statement) => statement.startsWith('BEGIN'))).toBe(false)
+  })
+})
+
+// key 칸이 없던 드롭 기록 표. 가격 칸까지는 있던 기기다.
+const OLD_DROP_TABLE = `
+  CREATE TABLE boss_drop_records (
+    ocid TEXT NOT NULL,
+    boss TEXT NOT NULL,
+    difficulty TEXT NOT NULL,
+    period_key TEXT NOT NULL,
+    drop_index INTEGER NOT NULL,
+    category TEXT NOT NULL,
+    item_name TEXT NOT NULL,
+    slot TEXT,
+    box_origin TEXT,
+    ring_level INTEGER,
+    quantity INTEGER NOT NULL,
+    recorded_at TEXT NOT NULL,
+    price_state TEXT,
+    price_meso INTEGER,
+    price_share INTEGER,
+    PRIMARY KEY (ocid, boss, difficulty, period_key, drop_index)
+  )
+`
+
+describe('버전 이관: 드롭 기록에 아이템 key 를 채운다', () => {
+  function seedOldDrops(): void {
+    real.inspect((db) => {
+      db.exec(OLD_DROP_TABLE)
+      const drop = db.prepare(
+        `INSERT INTO boss_drop_records (ocid, boss, difficulty, period_key, drop_index, category, item_name, slot, box_origin, ring_level, quantity, recorded_at)
+         VALUES ('ocid-1', '루시드', '하드', '2026-09-10', ?, 'consumable', ?, ?, ?, ?, 1, '2026-09-11T00:00:00.000Z')`,
+      )
+      drop.run(0, '몽환의 벨트', '벨트', null, null)
+      drop.run(1, '리스트레인트 링', null, '녹옥의 보스 반지 상자', 2)
+      drop.run(2, '기타', null, '녹옥의 보스 반지 상자', 3)
+      // 파일시스템에서 온 NFD 글자도 같은 이름이다.
+      drop.run(3, '고통의 근원'.normalize('NFD'), null, '혼돈의 칠흑 장신구 상자', null)
+      // 슬롯이 나뉘기 전의 옛 이름. 표에 없다.
+      drop.run(4, '익셉셔널 해머', null, null, null)
+    })
+  }
+
+  it('이름으로 아이템 key 와 상자 key 를 채운다', async () => {
+    seedOldDrops()
+
+    await getBossProfitDb()
+
+    const rows = await getAllBossDropRecords(['ocid-1'])
+    expect(rows.map((row) => [row.itemKey, row.boxOriginKey])).toEqual([
+      ['dreamy_belt', null],
+      ['restraint_ring', 'green_boss_ring_box'],
+      ['other_ring', 'green_boss_ring_box'],
+      ['source_of_suffering', 'chaos_pitch_black_accessory_box'],
+      [null, null],
+    ])
+    expect(userVersion(real)).toBe(3)
+  })
+
+  // 못 찾은 이름은 지우지 않는다. key 만 비고 그때 이름과 가격이 남는다.
+  it('못 찾는 이름은 key 만 비우고 행과 이름을 지킨다', async () => {
+    seedOldDrops()
+
+    await getBossProfitDb()
+
+    const rows = await getAllBossDropRecords(['ocid-1'])
+    expect(rows).toHaveLength(5)
+    expect(rows[4]).toMatchObject({ itemKey: null, itemName: '익셉셔널 해머', boxOriginKey: null, boxOrigin: null })
   })
 })

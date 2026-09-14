@@ -1,6 +1,7 @@
 import { isObtainableDrop } from '../boss/boss-drops'
 import { getCurrentBossProfitPeriod } from '../boss/boss-profit-period'
-import { isValuableDrop } from './valuable-drops'
+import { dropItemNameOf } from './drop-items'
+import { isValuableDropItem } from './valuable-drops'
 import type { BossCycle } from '../../types'
 import type { RecordedDrop } from '../../types/drops'
 import type { BossDifficulty } from '../../types/scheduler'
@@ -139,15 +140,13 @@ export function formatDropHistoryLine(
   // 상자 개봉 결과는 어떤 상자를 열었는지가 기록의 절반이다. 아이템 앞에 두되 상자명도
   // 강조 대상이라 따로 뗀다. 강조가 둘이어도 **가치를 정하는 쪽은 결과**라 pill(고가 판정)은 결과에만
   // 붙고 상자명은 굵기만 받는다.
-  const box =
-    record.boxOrigin === undefined
-      ? undefined
-      : { name: record.boxOrigin, connector: `${objectParticle(record.boxOrigin)} 열어 ` }
+  const boxName = record.boxOrigin === undefined ? undefined : dropItemNameOf(record.boxOriginKey, record.boxOrigin)
+  const box = boxName === undefined ? undefined : { name: boxName, connector: `${objectParticle(boxName)} 열어 ` }
 
   const level = record.ringLevel === undefined ? '' : ` ${record.ringLevel}레벨`
   // 수량 1은 말하지 않는다. "주문의 흔적 240개"처럼 실제로 여러 개인 것만 센다.
   const count = record.quantity > 1 ? ` ${record.quantity}개` : ''
-  const item = `${record.itemName}${level}${count}`
+  const item = `${dropItemNameOf(record.itemKey, record.itemName)}${level}${count}`
 
   // 난이도 괄호 양옆을 word joiner 로 묶는다. 괄호가 줄바꿈 지점이라 "슬라임(카오스)⏎에서" 로
   // 갈리는 것을 막는다(위 WORD_JOINER 주석).
@@ -228,8 +227,8 @@ export function filterUnobtainableConfirmedDrops(
  *   기록 없음 으로 채워져 정보가 아니라 소음이 된다.
  * - 달력 주 경과로 센다. 그 사이 실제로 처치한 주만 이 더 정확해 보이지만 백필 안 된 과거
  *   주는 처치 여부를 알 수 없어 셀 수도 뺄 수도 없는 주가 생긴다.
- * - 고가 여부는 화면 배지들과 같은 술어(`isValuableDrop(itemName)`)를 쓴다. 상자 개봉 결과는
- *   상자명이 아니라 나온 아이템 이름으로 판정된다.
+ * - 고가 여부는 화면 배지들과 같은 술어(`isValuableDropItem(itemKey)`)를 쓴다. 상자 개봉 결과는
+ *   상자가 아니라 나온 아이템으로 판정된다.
  * - 고가 기록이 없으면 `null`. 기준점이 없는데 기간을 만들어내지 않는다.
  */
 /**
@@ -298,14 +297,15 @@ export function formatValuableDroughtHeadline(weeksSince: number, index = 0): st
 export function formatValuableDroughtItems(records: DropHistoryRecord[]): string {
   if (records.length === 0) return ''
   const [first, ...rest] = records
-  return rest.length === 0 ? first.itemName : `${first.itemName} 외 ${rest.length}개`
+  const firstName = dropItemNameOf(first.itemKey, first.itemName)
+  return rest.length === 0 ? firstName : `${firstName} 외 ${rest.length}개`
 }
 
 export function summarizeValuableDrought(
   records: DropHistoryRecord[],
   now: Date,
 ): ValuableDroughtSummary | null {
-  const valuable = records.filter((record) => isValuableDrop(record.itemName))
+  const valuable = records.filter((record) => isValuableDropItem(record.itemKey))
   if (valuable.length === 0) {
     return null
   }

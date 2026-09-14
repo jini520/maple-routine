@@ -117,6 +117,8 @@ function dropRecord(overrides: Partial<DropHistoryRecord> = {}): DropHistoryReco
     difficulty: '노멀',
     periodKey: WEEK_KEY,
     category: 'equipment',
+    // key 가 없는 기록이 기본이다. 그래야 이름을 덮는 케이스가 적어 둔 이름을 그대로 읽는다.
+    itemKey: null,
     itemName: '가디언 엔젤링',
     quantity: 1,
     ...overrides,
@@ -609,7 +611,7 @@ describe('대표 캐릭터', () => {
 
 describe('주간 보스 수익', () => {
   it('결정석과 아이템 판매가를 함께 더한다', () => {
-    const drops = { [`a|스우|노멀|${WEEK_KEY}`]: [{ category: 'equipment' as const, itemName: '반지', quantity: 1, priceState: 'entered' as const, priceMeso: 60, priceShare: 2 }] }
+    const drops = { [`a|스우|노멀|${WEEK_KEY}`]: [{ category: 'equipment' as const, itemKey: null, itemName: '반지', quantity: 1, priceState: 'entered' as const, priceMeso: 60, priceShare: 2 }] }
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a'],
@@ -660,7 +662,7 @@ describe('주간 보스 수익', () => {
   it('총액을 결정석과 아이템으로 가르고, 둘의 합이 총액이다', () => {
     const drops = {
       [`a|스우|노멀|${WEEK_KEY}`]: [
-        { category: 'equipment' as const, itemName: '반지', quantity: 1, priceState: 'entered' as const, priceMeso: 60, priceShare: 2 },
+        { category: 'equipment' as const, itemKey: null, itemName: '반지', quantity: 1, priceState: 'entered' as const, priceMeso: 60, priceShare: 2 },
       ],
     }
     const model = buildTodayViewModel(
@@ -812,17 +814,33 @@ describe('최고가 아이템', () => {
     expect(없음.topItem?.top.characterName).toBeUndefined()
   })
 
-  // 아이콘 조회(`getItemIconUrl(name, slot)`)가 쓴다. 빠지면 에러가 아니라 조용한 폴백 원이 된다.
-  it('아이콘 조회에 필요한 `slot` 을 그대로 나른다', () => {
+  // 아이콘 조회(`dropItemIconOf(itemKey)`)가 쓴다. 빠지면 에러가 아니라 조용한 폴백 원이 된다.
+  // 이름은 key 로 찾은 표의 지금 이름이라, 적을 때의 이름이 달라도 표를 따른다.
+  it('아이콘 조회에 필요한 `itemKey` 를 나르고 이름은 표에서 찾는다', () => {
     const model = buildTodayViewModel(
       input({
         dropGroups: [
-          dropGroup([dropRecord({ itemName: '반지', slot: '반지', priceState: 'entered', priceMeso: 10 })]),
+          dropGroup([
+            dropRecord({ itemKey: 'guardian_angel_ring', itemName: '옛 이름', priceState: 'entered', priceMeso: 10 }),
+          ]),
         ],
       }),
     )
 
-    expect(model.topItem?.top.slot).toBe('반지')
+    expect(model.topItem?.top).toMatchObject({ itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링' })
+  })
+
+  // 이관이 이름을 못 찾은 옛 기록. 지우지 않고 적어 둔 이름으로 싣고, 그림은 폴백이다.
+  it('key 가 없는 옛 기록은 적어 둔 이름을 그대로 싣는다', () => {
+    const model = buildTodayViewModel(
+      input({
+        dropGroups: [
+          dropGroup([dropRecord({ itemKey: null, itemName: '익셉셔널 해머', priceState: 'entered', priceMeso: 10 })]),
+        ],
+      }),
+    )
+
+    expect(model.topItem?.top).toMatchObject({ itemKey: null, itemName: '익셉셔널 해머' })
   })
 })
 

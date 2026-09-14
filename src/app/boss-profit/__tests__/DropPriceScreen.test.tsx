@@ -84,7 +84,13 @@ const savePrice = jest.fn()
 const excludePrice = jest.fn()
 
 function 드롭(overrides: Partial<RecordedDrop> = {}): RecordedDrop {
-  return { category: 'equipment', itemName: '루즈 컨트롤 머신 마크', quantity: 1, ...overrides }
+  return {
+    category: 'equipment',
+    itemKey: 'loose_control_machine_mark',
+    itemName: '루즈 컨트롤 머신 마크',
+    quantity: 1,
+    ...overrides,
+  }
 }
 
 function 항목(overrides: Partial<DropPriceEntry> = {}): DropPriceEntry {
@@ -349,7 +355,7 @@ describe('DropPriceScreen: 미입력 ≠ 0원', () => {
       price: {
         groups: 그룹([
           항목({ drop: 드롭({ priceState: 'excluded' }) }),
-          항목({ id: 'second', dropIndex: 1, drop: 드롭({ itemName: '가디언 엔젤 링' }) }),
+          항목({ id: 'second', dropIndex: 1, drop: 드롭({ itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링' }) }),
         ]),
       },
     })
@@ -383,7 +389,7 @@ describe('DropPriceScreen: 미입력 ≠ 0원', () => {
       price: {
         groups: 그룹([
           항목({ drop: 드롭({ priceState: 'entered', priceMeso: 100, priceShare: 1 }) }),
-          항목({ id: 'second', dropIndex: 1, drop: 드롭({ itemName: '가디언 엔젤 링' }) }),
+          항목({ id: 'second', dropIndex: 1, drop: 드롭({ itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링' }) }),
         ]),
       },
     })
@@ -398,8 +404,8 @@ describe('DropPriceScreen: 미입력 ≠ 0원', () => {
       price: {
         groups: 그룹([
           항목({ drop: 드롭({ priceState: 'entered', priceMeso: 100, priceShare: 1 }) }),
-          항목({ id: 'second', dropIndex: 1, drop: 드롭({ itemName: '가디언 엔젤 링' }) }),
-          항목({ id: 'third', dropIndex: 2, drop: 드롭({ itemName: '루즈 컨트롤 머신 마크', priceState: 'excluded' }) }),
+          항목({ id: 'second', dropIndex: 1, drop: 드롭({ itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링' }) }),
+          항목({ id: 'third', dropIndex: 2, drop: 드롭({ priceState: 'excluded' }) }),
         ]),
       },
     })
@@ -431,7 +437,9 @@ describe('DropPriceScreen: 표시 규칙 정정 (2026-08-10)', () => {
           항목({
             drop: 드롭({
               category: 'consumable',
+              itemKey: 'restraint_ring',
               itemName: '리스트레인트 링',
+              boxOriginKey: 'red_boss_ring_box',
               boxOrigin: '홍옥의 보스 반지 상자',
               ringLevel: 3,
               priceState: 'entered',
@@ -446,6 +454,23 @@ describe('DropPriceScreen: 표시 규칙 정정 (2026-08-10)', () => {
 
     expect(queryByText(/홍옥의 보스 반지 상자/)).toBeNull()
     expect(getByText('리스트레인트 링 3레벨')).toBeTruthy()
+  })
+
+  // 줄 이름은 key 로 찾은 지금 이름이다. key 가 없는 옛 기록만 적어 둔 이름으로 선다.
+  it('key 로 찾은 이름을 쓰고, key 가 없는 옛 기록은 적어 둔 이름을 쓴다', async () => {
+    mockStores({
+      price: {
+        groups: 그룹([
+          항목({ drop: 드롭({ itemName: '옛 이름' }) }),
+          항목({ id: 'legacy', dropIndex: 1, drop: 드롭({ itemKey: null, itemName: '익셉셔널 해머' }) }),
+        ]),
+      },
+    })
+    const { getByLabelText, queryByLabelText } = await renderOverlay(<DropPriceScreen />)
+
+    expect(getByLabelText('루즈 컨트롤 머신 마크 가격 입력')).toBeTruthy()
+    expect(queryByLabelText('옛 이름 가격 입력')).toBeNull()
+    expect(getByLabelText('익셉셔널 해머 가격 입력')).toBeTruthy()
   })
 })
 
@@ -481,7 +506,7 @@ describe('DropPriceScreen: 순차 입력', () => {
       price: {
         groups: 그룹([
           항목(),
-          항목({ id: 'second', dropIndex: 1, drop: 드롭({ itemName: '가디언 엔젤 링' }) }),
+          항목({ id: 'second', dropIndex: 1, drop: 드롭({ itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링' }) }),
         ]),
       },
     })

@@ -1,7 +1,7 @@
 {
   "updatedAt": "2026-09-11",
   "source": "사용자 제공 보스별 상세 보상 정보 전체를 카테고리별로 그대로 전사. 가치 판단에 따른 임의 제외 없음 — 필요 없는 항목은 사용자가 직접 제거.",
-  "note": "사용자가 불필요하다고 판단한 항목(공용 소모품·재화류, 일부 안드로이드/방어구 상자 등)은 카테고리 또는 보스 단위로 직접 제거함. 자쿰·매그너스·반반·피에르·블러디 퀸·벨룸은 상세 보상 정보 자체가 제공되지 않아 항목이 없음(가치 판단 아님, 데이터 없음). 벨로나는 2026-08-19 출시분을 사용자 제공 목록대로 세 난이도 전부 반영함([[ADR-151]]) — 원본 「고정 보상」의 강렬한 힘의 결정·메소·마일리지는 이 파일에 넣지 않는다(결정은 boss-crystal-prices.json의 존재 이유, 메소는 그 결정의 priceMeso로 들어가므로 여기 또 적으면 두 번 세어지고, 마일리지는 기존 26엔트리가 한 번도 적지 않은 승계 사항). 카이는 시즌이 종료된 레거시 보스라 weekly-bosses.json에서 제외됨. 메이린의 '황금 메소 주머니'는 아이템이 아닌 메소 재화이므로 이 파일에서 제거하고 `boss-crystal-prices.json`의 가격으로 이전함. 2026-07-26 — 사용자 지시로 '소형 경험 축적의 비약'·'소형 고농축 경험 축적의 비약'(공용 소모품)을 전 보스 consumable에서 제거(총 46건). 2026-07-31 — 어떤 코드도 읽지 않던 `scroll` 카테고리(주문서 교환권 3종)를 `consumable`로 흡수하고, 이름을 '프리미엄 악세서리/펫장비 스크롤 교환권'으로 통일했다. 찬란한 흉성(노멀)에 3종을 추가했다(사용자 제공 목록). 목록에 없던 기존 위치는 삭제하지 않고 보존한다. 카링(노멀·익스트림)만 '교환 불가'였던 3종 note를 나머지와 같은 '교환 불가, 7일'로 맞췄다(사용자 확인). ([[ADR-070]]) 2026-07-31 — 사용자 지시로 '루인 포스실드'(데미안 노멀·하드 equipment)를 제거함. item-icons.json의 매핑과 1×1 플레이스홀더 파일도 함께 제거. 2026-09-11 사용자 제공(2026-09-17 패치): 교환권 셋(26칸)은 지우지 않고 until: 2026-09-17 을 적었다. 표에서 지우면 패치 전에 먹은 기록이 거짓 기록으로 지워지기 때문이다. 소울 에테르 1~4단계(교환 가능, 확률 드롭)를 16칸의 consumable 끝에 from: 2026-09-17 로 더했다. 메멘토 큐브 17건은 옛 줄에 until, 새 줄에 from 을 적었다(검은마법사 하드는 2026-10-01). 판정은 기록 기간의 첫날로 한다. 사용자가 주지 않은 칸은 그대로다.",
+  "note": "사용자가 불필요하다고 판단한 항목(공용 소모품·재화류, 일부 안드로이드/방어구 상자 등)은 카테고리 또는 보스 단위로 직접 제거함. 자쿰·매그너스·반반·피에르·블러디 퀸·벨룸은 상세 보상 정보 자체가 제공되지 않아 항목이 없음(가치 판단 아님, 데이터 없음). 벨로나는 2026-08-19 출시분을 사용자 제공 목록대로 세 난이도 전부 반영함([[ADR-151]]) — 원본 「고정 보상」의 강렬한 힘의 결정·메소·마일리지는 이 파일에 넣지 않는다(결정은 boss-crystal-prices.json의 존재 이유, 메소는 그 결정의 priceMeso로 들어가므로 여기 또 적으면 두 번 세어지고, 마일리지는 기존 26엔트리가 한 번도 적지 않은 승계 사항). 카이는 시즌이 종료된 레거시 보스라 weekly-bosses.json에서 제외됨. 메이린의 '황금 메소 주머니'는 아이템이 아닌 메소 재화이므로 이 파일에서 제거하고 `boss-crystal-prices.json`의 가격으로 이전함. 2026-07-26 — 사용자 지시로 '소형 경험 축적의 비약'·'소형 고농축 경험 축적의 비약'(공용 소모품)을 전 보스 consumable에서 제거(총 46건). 2026-07-31 — 어떤 코드도 읽지 않던 `scroll` 카테고리(주문서 교환권 3종)를 `consumable`로 흡수하고, 이름을 '프리미엄 악세서리/펫장비 스크롤 교환권'으로 통일했다. 찬란한 흉성(노멀)에 3종을 추가했다(사용자 제공 목록). 목록에 없던 기존 위치는 삭제하지 않고 보존한다. 카링(노멀·익스트림)만 '교환 불가'였던 3종 note를 나머지와 같은 '교환 불가, 7일'로 맞췄다(사용자 확인). ([[ADR-070]]) 2026-07-31 — 사용자 지시로 '루인 포스실드'(데미안 노멀·하드 equipment)를 제거함. item-icons.json의 매핑과 1×1 플레이스홀더 파일도 함께 제거. 2026-09-11 사용자 제공(2026-09-17 패치): 교환권 셋(26칸)은 지우지 않고 until: 2026-09-17 을 적었다. 표에서 지우면 패치 전에 먹은 기록이 거짓 기록으로 지워지기 때문이다. 소울 에테르 1~4단계(교환 가능, 확률 드롭)를 16칸의 consumable 끝에 from: 2026-09-17 로 더했다. 메멘토 큐브 17건은 옛 줄에 until, 새 줄에 from 을 적었다(검은마법사 하드는 2026-10-01). 판정은 기록 기간의 첫날로 한다. 사용자가 주지 않은 칸은 그대로다. 2026-09-15: 줄의 name 을 item(drop-items.json 의 아이템 key)으로, set 을 세트 key 로 바꿨다. 이름은 drop-items.json 에만 적는다([[ADR-280]] 결정 11).",
   "rewards": [
     {
       "boss": "파풀라투스",
@@ -9,7 +9,7 @@
       "rewards": {
         "equipment": [
           {
-            "name": "파풀라투스 마크",
+            "item": "papulatus_mark",
             "slot": "눈장식",
             "note": "보스 장신구 세트"
           }
@@ -22,17 +22,17 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "160개"
           },
           {
-            "name": "메멘토 브론즈 에디셔널 큐브",
+            "item": "memento_bronze_additional_cube",
             "amount": "3개"
           }
         ],
         "consumable": [
           {
-            "name": "녹옥의 보스 반지 상자",
+            "item": "green_boss_ring_box",
             "note": "교환 불가"
           }
         ]
@@ -44,33 +44,33 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "240개"
           },
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "50"
           },
           {
-            "name": "메멘토 실버 큐브",
+            "item": "memento_silver_cube",
             "amount": "1개",
             "until": "2026-09-17"
           },
           {
-            "name": "메멘토 브론즈 에디셔널 큐브",
+            "item": "memento_bronze_additional_cube",
             "amount": "6개"
           }
         ],
         "equipment": [
           {
-            "name": "루즈 컨트롤 머신 마크",
+            "item": "loose_control_machine_mark",
             "slot": "얼굴장식",
-            "set": "칠흑의 보스 세트"
+            "set": "pitch_black_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "홍옥의 보스 반지 상자",
+            "item": "red_boss_ring_box",
             "note": "교환 불가"
           }
         ]
@@ -82,29 +82,29 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "240개"
           },
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "280"
           }
         ],
         "equipment": [
           {
-            "name": "루즈 컨트롤 머신 마크",
+            "item": "loose_control_machine_mark",
             "slot": "얼굴장식",
-            "set": "칠흑의 보스 세트"
+            "set": "pitch_black_boss_set"
           },
           {
-            "name": "컴플리트 언더컨트롤",
+            "item": "complete_under_control",
             "slot": "기계심장",
-            "set": "칠흑의 보스 세트"
+            "set": "pitch_black_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "백옥의 보스 반지 상자",
+            "item": "white_boss_ring_box",
             "note": "교환 불가"
           }
         ]
@@ -116,18 +116,18 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "160개"
           },
           {
-            "name": "메멘토 브론즈 에디셔널 큐브",
+            "item": "memento_bronze_additional_cube",
             "amount": "3개"
           }
         ],
         "equipment": [],
         "consumable": [
           {
-            "name": "녹옥의 보스 반지 상자",
+            "item": "green_boss_ring_box",
             "note": "교환 불가"
           }
         ]
@@ -139,33 +139,33 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "240개"
           },
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "50"
           },
           {
-            "name": "메멘토 실버 큐브",
+            "item": "memento_silver_cube",
             "amount": "1개",
             "until": "2026-09-17"
           },
           {
-            "name": "메멘토 브론즈 에디셔널 큐브",
+            "item": "memento_bronze_additional_cube",
             "amount": "6개"
           }
         ],
         "equipment": [
           {
-            "name": "마력이 깃든 안대",
+            "item": "magic_eyepatch",
             "slot": "눈장식",
-            "set": "칠흑의 보스 세트"
+            "set": "pitch_black_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "홍옥의 보스 반지 상자",
+            "item": "red_boss_ring_box",
             "note": "교환 불가"
           }
         ]
@@ -177,24 +177,24 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "160개"
           },
           {
-            "name": "메멘토 브론즈 에디셔널 큐브",
+            "item": "memento_bronze_additional_cube",
             "amount": "3개"
           }
         ],
         "equipment": [
           {
-            "name": "가디언 엔젤 링",
+            "item": "guardian_angel_ring",
             "slot": "반지",
-            "set": "보스 장신구 세트 or 여명의 보스 세트"
+            "set": "boss_accessory_or_dawn_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "녹옥의 보스 반지 상자",
+            "item": "green_boss_ring_box",
             "note": "교환 불가"
           }
         ]
@@ -206,52 +206,52 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "240개"
           },
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "70"
           },
           {
-            "name": "메멘토 실버 큐브",
+            "item": "memento_silver_cube",
             "amount": "2개",
             "until": "2026-09-17"
           },
           {
-            "name": "메멘토 실버 큐브",
+            "item": "memento_silver_cube",
             "amount": "1개",
             "from": "2026-09-17"
           },
           {
-            "name": "메멘토 브론즈 에디셔널 큐브",
+            "item": "memento_bronze_additional_cube",
             "amount": "8개"
           }
         ],
         "equipment": [
           {
-            "name": "가디언 엔젤 링",
+            "item": "guardian_angel_ring",
             "slot": "반지",
-            "set": "보스 장신구 세트 or 여명의 보스 세트"
+            "set": "boss_accessory_or_dawn_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "흑옥의 보스 반지 상자",
+            "item": "black_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           }
@@ -264,17 +264,17 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "160개"
           },
           {
-            "name": "메멘토 브론즈 에디셔널 큐브",
+            "item": "memento_bronze_additional_cube",
             "amount": "3개"
           }
         ],
         "consumable": [
           {
-            "name": "녹옥의 보스 반지 상자",
+            "item": "green_boss_ring_box",
             "note": "교환 불가"
           }
         ]
@@ -286,24 +286,24 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "160개"
           },
           {
-            "name": "메멘토 브론즈 에디셔널 큐브",
+            "item": "memento_bronze_additional_cube",
             "amount": "5개"
           }
         ],
         "equipment": [
           {
-            "name": "트와일라이트 마크",
+            "item": "twilight_mark",
             "slot": "얼굴장식",
-            "set": "여명의 보스 세트"
+            "set": "dawn_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "녹옥의 보스 반지 상자",
+            "item": "green_boss_ring_box",
             "note": "교환 불가"
           }
         ]
@@ -315,37 +315,37 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "240개"
           },
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "50"
           },
           {
-            "name": "메멘토 실버 큐브",
+            "item": "memento_silver_cube",
             "amount": "2개"
           },
           {
-            "name": "메멘토 브론즈 에디셔널 큐브",
+            "item": "memento_bronze_additional_cube",
             "amount": "8개"
           }
         ],
         "equipment": [
           {
-            "name": "몽환의 벨트",
+            "item": "dreamy_belt",
             "slot": "벨트",
-            "set": "칠흑의 보스 세트"
+            "set": "pitch_black_boss_set"
           },
           {
-            "name": "트와일라이트 마크",
+            "item": "twilight_mark",
             "slot": "얼굴장식",
-            "set": "여명의 보스 세트"
+            "set": "dawn_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "홍옥의 보스 반지 상자",
+            "item": "red_boss_ring_box",
             "note": "교환 불가"
           }
         ]
@@ -357,17 +357,17 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "160개"
           },
           {
-            "name": "메멘토 브론즈 에디셔널 큐브",
+            "item": "memento_bronze_additional_cube",
             "amount": "3개"
           }
         ],
         "consumable": [
           {
-            "name": "녹옥의 보스 반지 상자",
+            "item": "green_boss_ring_box",
             "note": "교환 불가"
           }
         ]
@@ -379,24 +379,24 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "160개"
           },
           {
-            "name": "메멘토 브론즈 에디셔널 큐브",
+            "item": "memento_bronze_additional_cube",
             "amount": "5개"
           }
         ],
         "equipment": [
           {
-            "name": "트와일라이트 마크",
+            "item": "twilight_mark",
             "slot": "얼굴장식",
-            "set": "여명의 보스 세트"
+            "set": "dawn_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "녹옥의 보스 반지 상자",
+            "item": "green_boss_ring_box",
             "note": "교환 불가"
           }
         ]
@@ -408,47 +408,47 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "240개"
           },
           {
-            "name": "거울세계의 코어 젬스톤"
+            "item": "mirror_world_core_gemstone"
           },
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "50"
           },
           {
-            "name": "메멘토 실버 큐브",
+            "item": "memento_silver_cube",
             "amount": "2개",
             "until": "2026-09-17"
           },
           {
-            "name": "메멘토 실버 큐브",
+            "item": "memento_silver_cube",
             "amount": "1개",
             "from": "2026-09-17"
           },
           {
-            "name": "메멘토 브론즈 에디셔널 큐브",
+            "item": "memento_bronze_additional_cube",
             "amount": "8개"
           }
         ],
         "equipment": [
           {
-            "name": "트와일라이트 마크",
+            "item": "twilight_mark",
             "slot": "얼굴장식",
-            "set": "여명의 보스 세트"
+            "set": "dawn_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "저주받은 마도서 선택 상자",
+            "item": "cursed_spellbook_selection_box",
             "slot": "포켓 아이템",
-            "set": "칠흑의 보스 세트",
+            "set": "pitch_black_boss_set",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "홍옥의 보스 반지 상자",
+            "item": "red_boss_ring_box",
             "note": "교환 불가"
           }
         ]
@@ -460,24 +460,24 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "160개"
           },
           {
-            "name": "메멘토 브론즈 에디셔널 큐브",
+            "item": "memento_bronze_additional_cube",
             "amount": "5개"
           }
         ],
         "equipment": [
           {
-            "name": "에스텔라 이어링",
+            "item": "estella_earring",
             "slot": "귀고리",
-            "set": "여명의 보스 세트"
+            "set": "dawn_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "녹옥의 보스 반지 상자",
+            "item": "green_boss_ring_box",
             "note": "교환 불가"
           }
         ]
@@ -489,57 +489,57 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "240개"
           },
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "100"
           },
           {
-            "name": "메멘토 실버 큐브",
+            "item": "memento_silver_cube",
             "amount": "2개",
             "until": "2026-09-17"
           },
           {
-            "name": "메멘토 실버 큐브",
+            "item": "memento_silver_cube",
             "amount": "1개",
             "from": "2026-09-17"
           },
           {
-            "name": "메멘토 브론즈 에디셔널 큐브",
+            "item": "memento_bronze_additional_cube",
             "amount": "8개"
           }
         ],
         "equipment": [
           {
-            "name": "거대한 공포",
+            "item": "giant_terror",
             "slot": "반지",
-            "set": "칠흑의 보스 세트"
+            "set": "pitch_black_boss_set"
           },
           {
-            "name": "에스텔라 이어링",
+            "item": "estella_earring",
             "slot": "귀고리",
-            "set": "여명의 보스 세트"
+            "set": "dawn_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "흑옥의 보스 반지 상자",
+            "item": "black_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           }
@@ -552,33 +552,33 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "240개"
           },
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "70"
           },
           {
-            "name": "메멘토 실버 큐브",
+            "item": "memento_silver_cube",
             "amount": "1개",
             "until": "2026-09-17"
           },
           {
-            "name": "메멘토 브론즈 에디셔널 큐브",
+            "item": "memento_bronze_additional_cube",
             "amount": "5개"
           }
         ],
         "equipment": [
           {
-            "name": "데이브레이크 펜던트",
+            "item": "daybreak_pendant",
             "slot": "펜던트",
-            "set": "여명의 보스 세트"
+            "set": "dawn_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "홍옥의 보스 반지 상자",
+            "item": "red_boss_ring_box",
             "note": "교환 불가"
           }
         ]
@@ -590,57 +590,57 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "240개"
           },
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "120"
           },
           {
-            "name": "메멘토 실버 큐브",
+            "item": "memento_silver_cube",
             "amount": "2개",
             "until": "2026-09-17"
           },
           {
-            "name": "메멘토 실버 큐브",
+            "item": "memento_silver_cube",
             "amount": "1개",
             "from": "2026-09-17"
           },
           {
-            "name": "메멘토 브론즈 에디셔널 큐브",
+            "item": "memento_bronze_additional_cube",
             "amount": "8개"
           }
         ],
         "equipment": [
           {
-            "name": "고통의 근원",
+            "item": "source_of_suffering",
             "slot": "펜던트",
-            "set": "칠흑의 보스 세트"
+            "set": "pitch_black_boss_set"
           },
           {
-            "name": "데이브레이크 펜던트",
+            "item": "daybreak_pendant",
             "slot": "펜던트",
-            "set": "여명의 보스 세트"
+            "set": "dawn_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "흑옥의 보스 반지 상자",
+            "item": "black_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           }
@@ -653,24 +653,24 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "160개"
           },
           {
-            "name": "메멘토 브론즈 에디셔널 큐브",
+            "item": "memento_bronze_additional_cube",
             "amount": "5개"
           }
         ],
         "equipment": [
           {
-            "name": "에스텔라 이어링",
+            "item": "estella_earring",
             "slot": "귀고리",
-            "set": "여명의 보스 세트"
+            "set": "dawn_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "녹옥의 보스 반지 상자",
+            "item": "green_boss_ring_box",
             "note": "교환 불가"
           }
         ]
@@ -682,57 +682,57 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "240개"
           },
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "120"
           },
           {
-            "name": "메멘토 실버 큐브",
+            "item": "memento_silver_cube",
             "amount": "2개",
             "until": "2026-09-17"
           },
           {
-            "name": "메멘토 실버 큐브",
+            "item": "memento_silver_cube",
             "amount": "1개",
             "from": "2026-09-17"
           },
           {
-            "name": "메멘토 브론즈 에디셔널 큐브",
+            "item": "memento_bronze_additional_cube",
             "amount": "8개"
           }
         ],
         "equipment": [
           {
-            "name": "커맨더 포스 이어링",
+            "item": "commander_force_earring",
             "slot": "귀고리",
-            "set": "칠흑의 보스 세트"
+            "set": "pitch_black_boss_set"
           },
           {
-            "name": "에스텔라 이어링",
+            "item": "estella_earring",
             "slot": "귀고리",
-            "set": "여명의 보스 세트"
+            "set": "dawn_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "흑옥의 보스 반지 상자",
+            "item": "black_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           }
@@ -745,51 +745,51 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "240개"
           },
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "150"
           },
           {
-            "name": "메멘토 골드 큐브",
+            "item": "memento_gold_cube",
             "amount": "1개",
             "until": "2026-09-17"
           },
           {
-            "name": "메멘토 실버 큐브",
+            "item": "memento_silver_cube",
             "amount": "2개",
             "from": "2026-09-17"
           },
           {
-            "name": "메멘토 브론즈 에디셔널 큐브",
+            "item": "memento_bronze_additional_cube",
             "amount": "5개"
           }
         ],
         "equipment": [
           {
-            "name": "데이브레이크 펜던트",
+            "item": "daybreak_pendant",
             "slot": "펜던트",
-            "set": "여명의 보스 세트"
+            "set": "dawn_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "흑옥의 보스 반지 상자"
+            "item": "black_boss_ring_box"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           }
@@ -802,55 +802,55 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "240개"
           },
           {
-            "name": "미트라의 코어 젬스톤"
+            "item": "mitra_core_gemstone"
           },
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "220"
           },
           {
-            "name": "메멘토 골드 큐브",
+            "item": "memento_gold_cube",
             "amount": "2개"
           },
           {
-            "name": "메멘토 브론즈 에디셔널 큐브",
+            "item": "memento_bronze_additional_cube",
             "amount": "8개"
           }
         ],
         "equipment": [
           {
-            "name": "데이브레이크 펜던트",
+            "item": "daybreak_pendant",
             "slot": "펜던트",
-            "set": "여명의 보스 세트"
+            "set": "dawn_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "백옥의 보스 반지 상자",
+            "item": "white_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "미트라의 분노 선택 상자",
+            "item": "mitra_rage_selection_box",
             "slot": "엠블렘",
-            "set": "칠흑의 보스 세트",
+            "set": "pitch_black_boss_set",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           }
@@ -863,45 +863,45 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "240개"
           },
           {
-            "name": "미트라의 코어 젬스톤"
+            "item": "mitra_core_gemstone"
           },
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "560"
           },
           {
-            "name": "에리온의 조각",
+            "item": "erion_fragment",
             "amount": "30개"
           }
         ],
         "equipment": [
           {
-            "name": "데이브레이크 펜던트",
+            "item": "daybreak_pendant",
             "slot": "펜던트",
-            "set": "여명의 보스 세트"
+            "set": "dawn_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "영롱한 달빛 포션",
+            "item": "clear_moonlight_potion",
             "note": "교환 가능"
           },
           {
-            "name": "백옥의 보스 반지 상자",
+            "item": "white_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "미트라의 분노 선택 상자",
+            "item": "mitra_rage_selection_box",
             "slot": "엠블렘",
-            "set": "칠흑의 보스 세트",
+            "set": "pitch_black_boss_set",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "익셉셔널 해머(얼굴장식)",
+            "item": "exceptional_hammer_face_accessory",
             "slot": "얼굴장식",
             "note": "교환 가능"
           }
@@ -914,39 +914,39 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "240개"
           },
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "200"
           },
           {
-            "name": "메멘토 골드 큐브",
+            "item": "memento_gold_cube",
             "amount": "2개"
           },
           {
-            "name": "메멘토 브론즈 에디셔널 큐브",
+            "item": "memento_bronze_additional_cube",
             "amount": "8개"
           }
         ],
         "consumable": [
           {
-            "name": "백옥의 보스 반지 상자",
+            "item": "white_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           }
@@ -959,44 +959,44 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "240개"
           },
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "250"
           },
           {
-            "name": "남겨진 칼로스의 의지 조각",
+            "item": "lingering_kalos_will_fragment",
             "amount": "3"
           },
           {
-            "name": "메멘토 골드 큐브",
+            "item": "memento_gold_cube",
             "amount": "3개",
             "from": "2026-09-17"
           }
         ],
         "consumable": [
           {
-            "name": "백옥의 보스 반지 상자",
+            "item": "white_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "생명의 연마석",
+            "item": "life_whetstone",
             "note": "교환 가능"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           }
@@ -1009,51 +1009,51 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "240개"
           },
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "400"
           },
           {
-            "name": "남겨진 칼로스의 의지",
+            "item": "lingering_kalos_will",
             "amount": "5"
           }
         ],
         "equipment": [],
         "consumable": [
           {
-            "name": "의지의 에테르넬 방어구 상자",
+            "item": "will_eternel_armor_box",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "생명의 보스 반지 상자",
+            "item": "life_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "생명의 연마석",
+            "item": "life_whetstone",
             "note": "교환 가능"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           }
         ],
         "misc": [
           {
-            "name": "태초의 정수",
+            "item": "primordial_essence",
             "note": "교환 가능"
           }
         ]
@@ -1065,53 +1065,53 @@
       "rewards": {
         "fixed": [
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "700"
           },
           {
-            "name": "남겨진 칼로스의 의지",
+            "item": "lingering_kalos_will",
             "amount": "14"
           },
           {
-            "name": "에리온의 조각",
+            "item": "erion_fragment",
             "amount": "180개"
           }
         ],
         "equipment": [],
         "consumable": [
           {
-            "name": "의지의 에테르넬 방어구 상자",
+            "item": "will_eternel_armor_box",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "영롱한 달빛 포션",
+            "item": "clear_moonlight_potion",
             "note": "교환 가능"
           },
           {
-            "name": "생명의 보스 반지 상자",
+            "item": "life_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "생명의 연마석",
+            "item": "life_whetstone",
             "note": "교환 가능"
           },
           {
-            "name": "익셉셔널 해머(눈장식)",
+            "item": "exceptional_hammer_eye_accessory",
             "slot": "눈장식",
             "note": "교환 가능"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           }
@@ -1124,35 +1124,35 @@
       "rewards": {
         "fixed": [
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "200"
           },
           {
-            "name": "메멘토 골드 큐브",
+            "item": "memento_gold_cube",
             "amount": "2개"
           },
           {
-            "name": "메멘토 브론즈 에디셔널 큐브",
+            "item": "memento_bronze_additional_cube",
             "amount": "8개"
           }
         ],
         "consumable": [
           {
-            "name": "백옥의 보스 반지 상자",
+            "item": "white_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           }
@@ -1165,45 +1165,45 @@
       "rewards": {
         "fixed": [
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "280"
           },
           {
-            "name": "이어진 고대의 결의 조각",
+            "item": "linked_ancient_resolve_fragment",
             "amount": "4"
           },
           {
-            "name": "메멘토 골드 큐브",
+            "item": "memento_gold_cube",
             "amount": "3개",
             "from": "2026-09-17"
           }
         ],
         "consumable": [
           {
-            "name": "백옥의 보스 반지 상자",
+            "item": "white_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "생명의 연마석",
+            "item": "life_whetstone",
             "note": "교환 가능"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "1단계 소울 에테르",
+            "item": "soul_ether_1",
             "note": "교환 가능",
             "from": "2026-09-17"
           }
@@ -1216,54 +1216,54 @@
       "rewards": {
         "fixed": [
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "450"
           },
           {
-            "name": "이어진 고대의 결의",
+            "item": "linked_ancient_resolve",
             "amount": "6"
           },
           {
-            "name": "에리온의 조각",
+            "item": "erion_fragment",
             "amount": "30개"
           }
         ],
         "equipment": [
           {
-            "name": "불멸의 유산",
+            "item": "immortal_legacy",
             "slot": "훈장",
-            "set": "광휘의 보스 세트"
+            "set": "brilliant_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "고대의 에테르넬 방어구 상자"
+            "item": "ancient_eternel_armor_box"
           },
           {
-            "name": "생명의 보스 반지 상자",
+            "item": "life_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "생명의 연마석",
+            "item": "life_whetstone",
             "note": "교환 가능"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "1단계 소울 에테르",
+            "item": "soul_ether_1",
             "note": "교환 가능",
             "from": "2026-09-17"
           }
@@ -1276,63 +1276,63 @@
       "rewards": {
         "fixed": [
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "750"
           },
           {
-            "name": "이어진 고대의 결의",
+            "item": "linked_ancient_resolve",
             "amount": "16"
           },
           {
-            "name": "에리온의 조각",
+            "item": "erion_fragment",
             "amount": "240개"
           }
         ],
         "equipment": [
           {
-            "name": "불멸의 유산",
+            "item": "immortal_legacy",
             "slot": "훈장",
-            "set": "광휘의 보스 세트"
+            "set": "brilliant_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "고대의 에테르넬 방어구 상자"
+            "item": "ancient_eternel_armor_box"
           },
           {
-            "name": "영롱한 달빛 포션",
+            "item": "clear_moonlight_potion",
             "note": "교환 가능"
           },
           {
-            "name": "생명의 보스 반지 상자",
+            "item": "life_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "생명의 연마석",
+            "item": "life_whetstone",
             "note": "교환 가능"
           },
           {
-            "name": "익셉셔널 해머(훈장)",
+            "item": "exceptional_hammer_medal",
             "slot": "훈장",
             "note": "교환 가능"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "1단계 소울 에테르",
+            "item": "soul_ether_1",
             "note": "교환 가능",
             "from": "2026-09-17"
           }
@@ -1345,46 +1345,46 @@
       "rewards": {
         "fixed": [
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "200"
           },
           {
-            "name": "뒤엉킨 흉수의 고리 조각",
+            "item": "tangled_beast_link_fragment",
             "amount": "1"
           },
           {
-            "name": "메멘토 골드 큐브",
+            "item": "memento_gold_cube",
             "amount": "2개"
           },
           {
-            "name": "메멘토 브론즈 에디셔널 큐브",
+            "item": "memento_bronze_additional_cube",
             "amount": "8개"
           }
         ],
         "consumable": [
           {
-            "name": "백옥의 보스 반지 상자",
+            "item": "white_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           }
         ],
         "misc": [
           {
-            "name": "태초의 정수",
+            "item": "primordial_essence",
             "note": "교환 가능"
           }
         ]
@@ -1396,15 +1396,15 @@
       "rewards": {
         "fixed": [
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "300"
           },
           {
-            "name": "뒤엉킨 흉수의 고리 조각",
+            "item": "tangled_beast_link_fragment",
             "amount": "5"
           },
           {
-            "name": "메멘토 골드 큐브",
+            "item": "memento_gold_cube",
             "amount": "3개",
             "from": "2026-09-17"
           }
@@ -1412,34 +1412,34 @@
         "equipment": [],
         "consumable": [
           {
-            "name": "혼돈의 칠흑 장신구 상자",
+            "item": "chaos_pitch_black_accessory_box",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "백옥의 보스 반지 상자",
+            "item": "white_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "생명의 연마석",
+            "item": "life_whetstone",
             "note": "교환 가능"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "1단계 소울 에테르",
+            "item": "soul_ether_1",
             "note": "교환 가능",
             "from": "2026-09-17"
           }
@@ -1452,53 +1452,53 @@
       "rewards": {
         "fixed": [
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "500"
           },
           {
-            "name": "뒤엉킨 흉수의 고리",
+            "item": "tangled_beast_link",
             "amount": "7"
           },
           {
-            "name": "에리온의 조각",
+            "item": "erion_fragment",
             "amount": "60개"
           }
         ],
         "equipment": [],
         "consumable": [
           {
-            "name": "흉수의 에테르넬 방어구 상자",
+            "item": "beast_eternel_armor_box",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "혼돈의 칠흑 장신구 상자",
+            "item": "chaos_pitch_black_accessory_box",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "생명의 보스 반지 상자",
+            "item": "life_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "신념의 연마석",
+            "item": "faith_whetstone",
             "note": "교환 가능"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "1단계 소울 에테르",
+            "item": "soul_ether_1",
             "note": "교환 가능",
             "from": "2026-09-17"
           }
@@ -1511,62 +1511,62 @@
       "rewards": {
         "fixed": [
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "800"
           },
           {
-            "name": "뒤엉킨 흉수의 고리",
+            "item": "tangled_beast_link",
             "amount": "18"
           },
           {
-            "name": "에리온의 조각",
+            "item": "erion_fragment",
             "amount": "480개"
           }
         ],
         "equipment": [],
         "consumable": [
           {
-            "name": "흉수의 에테르넬 방어구 상자",
+            "item": "beast_eternel_armor_box",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "영롱한 달빛 포션",
+            "item": "clear_moonlight_potion",
             "note": "교환 가능"
           },
           {
-            "name": "혼돈의 칠흑 장신구 상자",
+            "item": "chaos_pitch_black_accessory_box",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "생명의 보스 반지 상자",
+            "item": "life_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "신념의 연마석",
+            "item": "faith_whetstone",
             "note": "교환 가능"
           },
           {
-            "name": "익셉셔널 해머(귀고리)",
+            "item": "exceptional_hammer_earring",
             "slot": "귀고리",
             "note": "교환 가능"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "1단계 소울 에테르",
+            "item": "soul_ether_1",
             "note": "교환 가능",
             "from": "2026-09-17"
           }
@@ -1579,49 +1579,49 @@
       "rewards": {
         "fixed": [
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "350"
           },
           {
-            "name": "황홀한 환상의 단편 조각",
+            "item": "enchanting_illusion_shard_fragment",
             "amount": "6"
           },
           {
-            "name": "메멘토 골드 큐브",
+            "item": "memento_gold_cube",
             "amount": "3개",
             "from": "2026-09-17"
           }
         ],
         "consumable": [
           {
-            "name": "혼돈의 칠흑 장신구 상자",
+            "item": "chaos_pitch_black_accessory_box",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "백옥의 보스 반지 상자",
+            "item": "white_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "생명의 연마석",
+            "item": "life_whetstone",
             "note": "교환 가능"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "2단계 소울 에테르",
+            "item": "soul_ether_2",
             "note": "교환 가능",
             "from": "2026-09-17"
           }
@@ -1634,44 +1634,44 @@
       "rewards": {
         "fixed": [
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "550"
           },
           {
-            "name": "황홀한 환상의 단편",
+            "item": "enchanting_illusion_shard",
             "amount": "18"
           },
           {
-            "name": "에리온의 조각",
+            "item": "erion_fragment",
             "amount": "90개"
           }
         ],
         "equipment": [
           {
-            "name": "황홀한 악몽",
+            "item": "enchanting_nightmare",
             "slot": "반지",
-            "set": "광휘의 보스 세트"
+            "set": "brilliant_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "환상의 에테르넬 방어구 상자",
+            "item": "illusion_eternel_armor_box",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "혼돈의 칠흑 장신구 상자",
+            "item": "chaos_pitch_black_accessory_box",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "생명의 보스 반지 상자",
+            "item": "life_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "신념의 연마석",
+            "item": "faith_whetstone",
             "note": "교환 가능"
           },
           {
-            "name": "2단계 소울 에테르",
+            "item": "soul_ether_2",
             "note": "교환 가능",
             "from": "2026-09-17"
           }
@@ -1684,18 +1684,18 @@
       "rewards": {
         "fixed": [
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "200"
           },
           {
-            "name": "메멘토 골드 큐브",
+            "item": "memento_gold_cube",
             "amount": "2개",
             "from": "2026-09-17"
           }
         ],
         "consumable": [
           {
-            "name": "백옥의 보스 반지 상자",
+            "item": "white_boss_ring_box",
             "note": "교환 불가"
           }
         ]
@@ -1707,29 +1707,29 @@
       "rewards": {
         "fixed": [
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "290"
           },
           {
-            "name": "저주받은 원혼의 잔재",
+            "item": "cursed_wraith_remnant",
             "amount": "1개"
           }
         ],
         "consumable": [
           {
-            "name": "혼돈의 칠흑 장신구 상자",
+            "item": "chaos_pitch_black_accessory_box",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "백옥의 보스 반지 상자",
+            "item": "white_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "생명의 연마석",
+            "item": "life_whetstone",
             "note": "교환 가능"
           },
           {
-            "name": "2단계 소울 에테르",
+            "item": "soul_ether_2",
             "note": "교환 가능",
             "from": "2026-09-17"
           }
@@ -1742,40 +1742,40 @@
       "rewards": {
         "fixed": [
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "590"
           },
           {
-            "name": "저주받은 원혼의 잔재",
+            "item": "cursed_wraith_remnant",
             "amount": "2개"
           }
         ],
         "equipment": [
           {
-            "name": "굶주리는 핏빛 원혼",
+            "item": "starving_crimson_wraith",
             "slot": "눈장식",
-            "set": "광휘의 보스 세트"
+            "set": "brilliant_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "광기의 에테르넬 방어구 상자",
+            "item": "madness_eternel_armor_box",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "혼돈의 칠흑 장신구 상자",
+            "item": "chaos_pitch_black_accessory_box",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "생명의 보스 반지 상자",
+            "item": "life_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "신념의 연마석",
+            "item": "faith_whetstone",
             "note": "교환 가능"
           },
           {
-            "name": "2단계 소울 에테르",
+            "item": "soul_ether_2",
             "note": "교환 가능",
             "from": "2026-09-17"
           }
@@ -1788,45 +1788,45 @@
       "rewards": {
         "fixed": [
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "400"
           },
           {
-            "name": "왜곡된 욕망의 결정",
+            "item": "distorted_desire_crystal",
             "amount": "1개"
           }
         ],
         "equipment": [],
         "consumable": [
           {
-            "name": "혼돈의 칠흑 장신구 상자",
+            "item": "chaos_pitch_black_accessory_box",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "생명의 보스 반지 상자",
+            "item": "life_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "신념의 연마석",
+            "item": "faith_whetstone",
             "note": "교환 가능"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "3단계 소울 에테르",
+            "item": "soul_ether_3",
             "note": "교환 가능",
             "from": "2026-09-17"
           }
@@ -1839,59 +1839,59 @@
       "rewards": {
         "fixed": [
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "600"
           },
           {
-            "name": "왜곡된 욕망의 결정",
+            "item": "distorted_desire_crystal",
             "amount": "2개"
           },
           {
-            "name": "에리온의 조각",
+            "item": "erion_fragment",
             "amount": "60개"
           }
         ],
         "equipment": [
           {
-            "name": "근원의 속삭임",
+            "item": "whisper_of_origin",
             "slot": "반지",
-            "set": "광휘의 보스 세트"
+            "set": "brilliant_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "욕망의 에테르넬 방어구 상자",
+            "item": "desire_eternel_armor_box",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "혼돈의 칠흑 장신구 상자",
+            "item": "chaos_pitch_black_accessory_box",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "생명의 보스 반지 상자",
+            "item": "life_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "신념의 연마석",
+            "item": "faith_whetstone",
             "note": "교환 가능"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "3단계 소울 에테르",
+            "item": "soul_ether_3",
             "note": "교환 가능",
             "from": "2026-09-17"
           }
@@ -1904,44 +1904,44 @@
       "rewards": {
         "fixed": [
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "450"
           },
           {
-            "name": "영원한 충성의 흔적",
+            "item": "eternal_loyalty_trace",
             "amount": "1개"
           }
         ],
         "consumable": [
           {
-            "name": "혼돈의 칠흑 장신구 상자",
+            "item": "chaos_pitch_black_accessory_box",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "생명의 보스 반지 상자",
+            "item": "life_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "신념의 연마석",
+            "item": "faith_whetstone",
             "note": "교환 가능"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "3단계 소울 에테르",
+            "item": "soul_ether_3",
             "note": "교환 가능",
             "from": "2026-09-17"
           }
@@ -1954,58 +1954,58 @@
       "rewards": {
         "fixed": [
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "650"
           },
           {
-            "name": "영원한 충성의 흔적",
+            "item": "eternal_loyalty_trace",
             "amount": "2개"
           },
           {
-            "name": "에리온의 조각",
+            "item": "erion_fragment",
             "amount": "120개"
           }
         ],
         "equipment": [
           {
-            "name": "죽음의 맹세",
+            "item": "oath_of_death",
             "slot": "펜던트",
-            "set": "광휘의 보스 세트"
+            "set": "brilliant_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "맹세의 에테르넬 방어구 상자"
+            "item": "oath_eternel_armor_box"
           },
           {
-            "name": "혼돈의 칠흑 장신구 상자",
+            "item": "chaos_pitch_black_accessory_box",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "생명의 보스 반지 상자",
+            "item": "life_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "신념의 연마석",
+            "item": "faith_whetstone",
             "note": "교환 가능"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "3단계 소울 에테르",
+            "item": "soul_ether_3",
             "note": "교환 가능",
             "from": "2026-09-17"
           }
@@ -2018,33 +2018,33 @@
       "rewards": {
         "fixed": [
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "500"
           },
           {
-            "name": "뒤틀린 갈망의 편린",
+            "item": "twisted_longing_shard",
             "amount": "1개"
           },
           {
-            "name": "에리온의 조각",
+            "item": "erion_fragment",
             "amount": "45개"
           }
         ],
         "consumable": [
           {
-            "name": "혼돈의 칠흑 장신구 상자",
+            "item": "chaos_pitch_black_accessory_box",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "생명의 보스 반지 상자",
+            "item": "life_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "신념의 연마석",
+            "item": "faith_whetstone",
             "note": "교환 가능"
           },
           {
-            "name": "4단계 소울 에테르",
+            "item": "soul_ether_4",
             "note": "교환 가능",
             "from": "2026-09-17"
           }
@@ -2057,44 +2057,44 @@
       "rewards": {
         "fixed": [
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "700"
           },
           {
-            "name": "뒤틀린 갈망의 편린",
+            "item": "twisted_longing_shard",
             "amount": "2개"
           },
           {
-            "name": "에리온의 조각",
+            "item": "erion_fragment",
             "amount": "360개"
           }
         ],
         "equipment": [
           {
-            "name": "오만의 원죄",
+            "item": "original_sin_of_arrogance",
             "slot": "얼굴장식",
-            "set": "광휘의 보스 세트"
+            "set": "brilliant_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "갈망의 에테르넬 방어구 상자",
+            "item": "longing_eternel_armor_box",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "혼돈의 칠흑 장신구 상자",
+            "item": "chaos_pitch_black_accessory_box",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "생명의 보스 반지 상자",
+            "item": "life_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "신념의 연마석",
+            "item": "faith_whetstone",
             "note": "교환 가능"
           },
           {
-            "name": "4단계 소울 에테르",
+            "item": "soul_ether_4",
             "note": "교환 가능",
             "from": "2026-09-17"
           }
@@ -2107,16 +2107,16 @@
       "rewards": {
         "fixed": [
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "400"
           },
           {
-            "name": "메이린의 하급 솔 에르다 조각 상자"
+            "item": "meirin_lower_sol_erda_fragment_box"
           }
         ],
         "consumable": [
           {
-            "name": "메이린의 칠흑 장신구 상자",
+            "item": "meirin_pitch_black_accessory_box",
             "note": "교환 불가, 7일"
           }
         ]
@@ -2128,42 +2128,42 @@
       "rewards": {
         "fixed": [
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "550"
           },
           {
-            "name": "메이린의 상급 솔 에르다 조각 상자"
+            "item": "meirin_upper_sol_erda_fragment_box"
           },
           {
-            "name": "변화하는 운명의 파편",
+            "item": "changing_fate_shard",
             "amount": "2개"
           }
         ],
         "consumable": [
           {
-            "name": "메이린의 칠흑 장신구 상자",
+            "item": "meirin_pitch_black_accessory_box",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "운명의 에테르넬 방어구 상자",
+            "item": "fate_eternel_armor_box",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "메이린의 에테르넬 방어구 상자",
+            "item": "meirin_eternel_armor_box",
             "note": "교환 불가, 7일"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           }
@@ -2176,52 +2176,52 @@
       "rewards": {
         "fixed": [
           {
-            "name": "주문의 흔적",
+            "item": "spell_trace",
             "amount": "800개"
           },
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "300"
           },
           {
-            "name": "메멘토 골드 큐브",
+            "item": "memento_gold_cube",
             "amount": "8개",
             "until": "2026-10-01"
           },
           {
-            "name": "메멘토 실버 큐브",
+            "item": "memento_silver_cube",
             "amount": "8개",
             "from": "2026-10-01"
           },
           {
-            "name": "메멘토 브론즈 에디셔널 큐브",
+            "item": "memento_bronze_additional_cube",
             "amount": "24개"
           }
         ],
         "equipment": [
           {
-            "name": "창세의 뱃지",
+            "item": "genesis_badge",
             "slot": "뱃지",
-            "set": "칠흑의 보스 세트"
+            "set": "pitch_black_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "백옥의 보스 반지 상자",
+            "item": "white_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           }
@@ -2234,39 +2234,39 @@
       "rewards": {
         "fixed": [
           {
-            "name": "솔 에르다의 기운",
+            "item": "sol_erda_energy",
             "amount": "600"
           }
         ],
         "equipment": [
           {
-            "name": "창세의 뱃지",
+            "item": "genesis_badge",
             "slot": "뱃지",
-            "set": "칠흑의 보스 세트"
+            "set": "pitch_black_boss_set"
           }
         ],
         "consumable": [
           {
-            "name": "백옥의 보스 반지 상자",
+            "item": "white_boss_ring_box",
             "note": "교환 불가"
           },
           {
-            "name": "익셉셔널 해머(벨트)",
+            "item": "exceptional_hammer_belt",
             "slot": "벨트",
             "note": "교환 가능"
           },
           {
-            "name": "프리미엄 악세서리 스크롤 교환권",
+            "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "프리미엄 펫장비 스크롤 교환권",
+            "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           },
           {
-            "name": "매지컬 무기 주문서 교환권",
+            "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
             "until": "2026-09-17"
           }

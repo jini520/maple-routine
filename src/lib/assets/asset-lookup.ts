@@ -23,10 +23,9 @@ import bossIconCropsData from '../../data/boss-portrait-icon-crops.json'
  * @see. 목록(`assets/generated/*`)은 빌드가 아니라 커밋 시점에 생성된다.
  * @see. 모르는 것을 그리지 않는다.
  */
-import bossRingBoxesData from '../../data/boss-ring-boxes.json'
 import dailyQuestCropsData from '../../data/daily-quest-region-crops.json'
-import itemIconsData from '../../data/item-icons.json'
 import worldEmblemsData from '../../data/world-emblems.json'
+import { findDropItem } from '../drop/drop-items'
 
 type AssetMap = Record<string, ImageAssetRef>
 
@@ -122,48 +121,10 @@ export function forceIconOf(forceType: ForceType): ImageAssetRef | null {
 
 // 아이템 아이콘
 
-/** 이름에서 파일명을 계산하지 않고 표에서 찾는 항목. @see */
-interface ItemIconEntry {
-  name: string
-  iconFile?: string
-  iconFileBySlot?: Record<string, string>
-}
-
-type IconMapping = string | Record<string, string>
-
-const iconByName: Record<string, IconMapping> = {}
-
-// 반지를 먼저 넣고 `item-icons` 가 덮어써 우선한다. `생명의 연마석` 은 반지 표에선 `iconFile` 이
-// null 이고 `item-icons` 의 `whetstone_life.png` 가 실제 아이콘이라 후자가 이겨야 한다.
-for (const box of bossRingBoxesData.boxes) {
-  for (const ring of box.itemProbabilities) {
-    if (ring.iconFile) {
-      iconByName[ring.name.normalize('NFC')] = ring.iconFile
-    }
-  }
-}
-for (const item of itemIconsData.items as ItemIconEntry[]) {
-  if (item.iconFileBySlot !== undefined) {
-    iconByName[item.name.normalize('NFC')] = item.iconFileBySlot
-  } else if (item.iconFile !== undefined) {
-    iconByName[item.name.normalize('NFC')] = item.iconFile
-  }
-}
-
-// `기타`는 백옥 반지 상자 목록 밖 저가치 반지 묶음이다. 실재 아이템명이 아니라 UI
-// 전용이라 `item-icons.json`(정합성 테스트가 드랍테이블 실재를 강제한다)이 아니라 여기서 맨다.
-iconByName['기타'.normalize('NFC')] = 'Limit_Ring.webp'
-
-/** 슬롯별 매핑(`iconFileBySlot`, 현재 데이터엔 없다)은 `slot` 이 있어야 특정할 수 있다. */
-export function getItemIconUrl(name: string, slot?: string): ImageAssetRef | null {
-  const mapping = iconByName[name.normalize('NFC')]
-  if (mapping === undefined) return null
-
-  const fileName =
-    typeof mapping === 'string' ? mapping : slot === undefined ? undefined : mapping[slot]
-  if (fileName === undefined) return null
-
-  return ITEM_ASSETS[fileName.normalize('NFC')] ?? null
+/** 드롭 아이템 그림. 아이템 key 로 마스터 표(`drop-items.json`)의 파일을 찾는다. 모르는 key 는 `null` 이다. */
+export function dropItemIconOf(itemKey: string | null | undefined): ImageAssetRef | null {
+  const fileName = findDropItem(itemKey)?.iconFile
+  return fileName === undefined ? null : (ITEM_ASSETS[fileName.normalize('NFC')] ?? null)
 }
 
 /** 파일명으로만 참조되는 표시 전용 아이콘(솔 에르다 단위 분해 등). */

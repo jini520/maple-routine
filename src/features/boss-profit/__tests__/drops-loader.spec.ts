@@ -44,8 +44,10 @@ function record(overrides: Partial<BossDropRecord> = {}): BossDropRecord {
     periodKey: PERIOD,
     dropIndex: 0,
     category: 'equipment',
+    itemKey: 'loose_control_machine_mark',
     itemName: '루즈 컨트롤 머신 마크',
     slot: '얼굴장식',
+    boxOriginKey: null,
     boxOrigin: null,
     ringLevel: null,
     quantity: 1,
@@ -70,6 +72,7 @@ describe('loadDropsByRowKey: 가격 생존', () => {
 
     expect(map[`ocid-1|스우|하드|${PERIOD}`]).toEqual([
       expect.objectContaining({
+        itemKey: 'loose_control_machine_mark',
         itemName: '루즈 컨트롤 머신 마크',
         priceState: 'entered',
         priceMeso: 15_000_000_000,
@@ -93,7 +96,15 @@ describe('loadDropsByRowKey: 가격 생존', () => {
     // 컴플리트 언더컨트롤은 스우 익스트림 전용. 하드 확정 행에서는 탈락한다.
     getBossDropRecordsMock.mockResolvedValue([
       record({ dropIndex: 0 }),
-      record({ dropIndex: 1, itemName: '컴플리트 언더컨트롤', slot: null, priceState: null, priceMeso: null, priceShare: null }),
+      record({
+        dropIndex: 1,
+        itemKey: 'complete_under_control',
+        itemName: '컴플리트 언더컨트롤',
+        slot: null,
+        priceState: null,
+        priceMeso: null,
+        priceShare: null,
+      }),
     ])
     const { loadDropsByRowKey } = require('../drops-loader') as typeof import('../drops-loader')
 
@@ -101,8 +112,29 @@ describe('loadDropsByRowKey: 가격 생존', () => {
 
     const [, , , , written] = replaceBossDropRecordsMock.mock.calls[0]
     expect(written).toEqual([
-      expect.objectContaining({ itemName: '루즈 컨트롤 머신 마크', priceMeso: 15_000_000_000 }),
+      expect.objectContaining({
+        itemKey: 'loose_control_machine_mark',
+        itemName: '루즈 컨트롤 머신 마크',
+        priceMeso: 15_000_000_000,
+      }),
     ])
+  })
+
+  // 이관이 이름을 못 찾아 key 가 빈 옛 기록. 못 찾은 것이 못 먹은 것은 아니라 지우지 않는다.
+  it('완료 행이어도 아이템 key 가 없는 옛 기록은 지우지 않고 DB 에 다시 안 쓴다', async () => {
+    getBossDropRecordsMock.mockResolvedValue([
+      record({ dropIndex: 0 }),
+      record({ dropIndex: 1, itemKey: null, itemName: '익셉셔널 해머', slot: null }),
+    ])
+    const { loadDropsByRowKey } = require('../drops-loader') as typeof import('../drops-loader')
+
+    const map = await loadDropsByRowKey(['ocid-1'], [row()], new Date('2026-08-10T00:00:00Z'))
+
+    expect(map[`ocid-1|스우|하드|${PERIOD}`].map((drop) => drop.itemName)).toEqual([
+      '루즈 컨트롤 머신 마크',
+      '익셉셔널 해머',
+    ])
+    expect(replaceBossDropRecordsMock).not.toHaveBeenCalled()
   })
 })
 
@@ -114,6 +146,7 @@ describe('loadDropsByRowKey: 기간으로 정리한다', () => {
       difficulty: '카오스',
       periodKey,
       category: 'consumable',
+      itemKey: 'magical_weapon_scroll_voucher',
       itemName: '매지컬 무기 주문서 교환권',
       slot: null,
     })

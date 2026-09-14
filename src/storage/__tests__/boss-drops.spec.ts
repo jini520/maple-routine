@@ -17,10 +17,12 @@ beforeEach(() => {
 })
 
 const drops: RecordedDrop[] = [
-  { category: 'equipment', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
+  { category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
   {
     category: 'consumable',
+    itemKey: 'restraint_ring',
     itemName: '리스트레인트 링',
+    boxOriginKey: 'red_boss_ring_box',
     boxOrigin: '홍옥의 보스 반지 상자',
     ringLevel: 3,
     quantity: 1,
@@ -56,8 +58,10 @@ describe('replaceBossDropRecords', () => {
       '2026-W30',
       0,
       'equipment',
+      'loose_control_machine_mark',
       '루즈 컨트롤 머신 마크',
       '얼굴장식',
+      null,
       null,
       null,
       1,
@@ -75,8 +79,10 @@ describe('replaceBossDropRecords', () => {
       '2026-W30',
       1,
       'consumable',
+      'restraint_ring',
       '리스트레인트 링',
       null,
+      'red_boss_ring_box',
       '홍옥의 보스 반지 상자',
       3,
       1,
@@ -165,8 +171,10 @@ describe('getBossDropRecords', () => {
           period_key: '2026-W30',
           drop_index: 1,
           category: 'consumable',
+          item_key: 'restraint_ring',
           item_name: '리스트레인트 링',
           slot: null,
+          box_origin_key: 'red_boss_ring_box',
           box_origin: '홍옥의 보스 반지 상자',
           ring_level: 3,
           quantity: 1,
@@ -190,8 +198,10 @@ describe('getBossDropRecords', () => {
         periodKey: '2026-W30',
         dropIndex: 1,
         category: 'consumable',
+        itemKey: 'restraint_ring',
         itemName: '리스트레인트 링',
         slot: null,
+        boxOriginKey: 'red_boss_ring_box',
         boxOrigin: '홍옥의 보스 반지 상자',
         ringLevel: 3,
         quantity: 1,
@@ -272,8 +282,11 @@ describe('getAllBossDropRecords', () => {
         periodKey: '2026-07-09',
         dropIndex: 0,
         category: 'equipment',
+        // key 칸이 없던 옛 행이다. 읽을 때 `null` 로 선다.
+        itemKey: null,
         itemName: '루즈 컨트롤 머신 마크',
         slot: '얼굴장식',
+        boxOriginKey: null,
         boxOrigin: null,
         ringLevel: null,
         quantity: 1,
@@ -307,6 +320,7 @@ describe('가격 컬럼 왕복', () => {
       [
         {
           category: 'equipment',
+          itemKey: 'loose_control_machine_mark',
           itemName: '루즈 컨트롤 머신 마크',
           slot: '얼굴장식',
           quantity: 1,
@@ -331,7 +345,7 @@ describe('가격 컬럼 왕복', () => {
       '스우',
       '하드',
       '2026-08-06',
-      [{ category: 'equipment', itemName: '루즈 컨트롤 머신 마크', quantity: 1 }],
+      [{ category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 }],
       '2026-08-10T00:00:00.000Z',
     )
 

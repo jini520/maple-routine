@@ -67,8 +67,10 @@ function record(overrides: Partial<BossDropRecord> = {}): BossDropRecord {
     periodKey: PERIOD,
     dropIndex: 0,
     category: 'equipment',
+    itemKey: 'loose_control_machine_mark',
     itemName: '루즈 컨트롤 머신 마크',
     slot: '얼굴장식',
+    boxOriginKey: null,
     boxOrigin: null,
     ringLevel: null,
     quantity: 1,
@@ -373,8 +375,15 @@ describe('창을 채우면 기간마다 미입력 건수를 낸다', () => {
 describe('savePrice · excludePrice', () => {
   it('그 그룹 전체를 replace-all 하되 대상 한 건에만 가격을 박는다', async () => {
     getBossDropRecordsMock.mockResolvedValue([
-      record({ dropIndex: 0, itemName: '루즈 컨트롤 머신 마크' }),
-      record({ dropIndex: 1, itemName: '리스트레인트 링', boxOrigin: '홍옥의 보스 반지 상자', ringLevel: 3 }),
+      record({ dropIndex: 0, itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' }),
+      record({
+        dropIndex: 1,
+        itemKey: 'restraint_ring',
+        itemName: '리스트레인트 링',
+        boxOriginKey: 'red_boss_ring_box',
+        boxOrigin: '홍옥의 보스 반지 상자',
+        ringLevel: 3,
+      }),
     ])
     const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
     await useDropPriceStore.getState().load(PERIOD)
@@ -389,6 +398,11 @@ describe('savePrice · excludePrice', () => {
     expect(drops[0].priceState).toBeUndefined()
     expect(drops[1]).toEqual(
       expect.objectContaining({ priceState: 'entered', priceMeso: 1_200_000_000, priceShare: 1 }),
+    )
+    // 가격만 고친다. 다시 쓰면서 key 를 빠뜨리면 그 기록이 그림과 판정을 잃는다.
+    expect(drops[0]).toEqual(expect.objectContaining({ itemKey: 'loose_control_machine_mark' }))
+    expect(drops[1]).toEqual(
+      expect.objectContaining({ itemKey: 'restraint_ring', boxOriginKey: 'red_boss_ring_box' }),
     )
   })
 

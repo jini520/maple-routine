@@ -4,7 +4,7 @@ import { SparklesIcon, Text } from '../../atoms'
 import { LinearGradient } from '../../../lib/nativewind-interop'
 import type { RecordedDrop } from '../../../types/drops'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import { getItemIconUrl } from '../../../lib/assets/asset-lookup'
+import { dropItemIconOf } from '../../../lib/assets/asset-lookup'
 
 const BADGE_GRADIENT = ['#ffe98a', '#f7c400'] as const
 const BADGE_INK = '#6b4e00'
@@ -39,7 +39,7 @@ export function ValuableDropBadge(props: {
       <SparklesIcon className="h-3 w-3 shrink-0" color={BADGE_INK} strokeWidth={2.5} aria-hidden />
       <View className="flex-row items-center">
         {shown.map((drop, index) => {
-          const url = getItemIconUrl(drop.itemName, drop.slot)
+          const url = dropItemIconOf(drop.itemKey)
   // 스택·링은 두 갈래가 같다.
           const stackStyle = {
             marginLeft: index === 0 ? 0 : -6,
@@ -49,14 +49,14 @@ export function ValuableDropBadge(props: {
 
           return url === null ? (
             <View
-              key={`${drop.itemName}-${index}`}
+              key={`${drop.itemKey ?? drop.itemName}-${index}`}
               testID="valuable-drop-icon"
               style={stackStyle}
               className="h-5 w-5 shrink-0 rounded-full bg-surface-2"
             />
           ) : (
             <Image
-              key={`${drop.itemName}-${index}`}
+              key={`${drop.itemKey ?? drop.itemName}-${index}`}
               testID="valuable-drop-icon"
               source={url}
               resizeMode="contain"

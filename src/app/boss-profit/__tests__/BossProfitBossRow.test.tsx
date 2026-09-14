@@ -6,7 +6,8 @@
 import { act, fireEvent, within } from '@testing-library/react-native'
 
 import valuableDropsData from '../../../data/valuable-drops.json'
-import { isValuableDrop } from '../../../lib/drop/valuable-drops'
+import { dropItemNameOf } from '../../../lib/drop/drop-items'
+import { isValuableDropItem } from '../../../lib/drop/valuable-drops'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import type { RecordedDrop } from '../../../types/drops'
 
@@ -22,6 +23,7 @@ beforeEach(() => {
 const 값매긴드롭: RecordedDrop[] = [
   {
     category: 'equipment',
+    itemKey: 'papulatus_mark',
     itemName: '파풀라투스 마크',
     quantity: 1,
     priceState: 'entered',
@@ -96,7 +98,7 @@ describe('BossProfitBossRow: 금액과 아이템 칩', () => {
     const { getByText, queryByLabelText } = await renderProfit(
       <BossProfitBossRow
         row={보스행()}
-        drops={[{ category: 'equipment', itemName: '가디언 엔젤 링', quantity: 1 }]}
+        drops={[{ category: 'equipment', itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링', quantity: 1 }]}
       />,
     )
 
@@ -128,6 +130,7 @@ describe('BossProfitBossRow: 드롭 지시자', () => {
   it('네 개 이상이면 셋만 보이고 나머지는 개수로 접는다', async () => {
     const drops: RecordedDrop[] = ['가', '나', '다', '라', '마'].map((name) => ({
       category: 'equipment',
+      itemKey: null,
       itemName: name,
       quantity: 1,
     }))
@@ -142,17 +145,17 @@ describe('BossProfitBossRow: 드롭 지시자', () => {
 // 고가 드롭 행의 숨쉬는 배경을 걷었다(사용자 지시, 다시 디자인할 예정). 같은 효과가 가격 기록
 // 화면에는 그대로 남아 있어 컴포넌트 자체는 산다.
 describe('BossProfitBossRow: 고가 드롭 배경이 없다', () => {
-  const 고가아이템 = valuableDropsData.items[0]
+  const 고가키 = valuableDropsData.items[0]
 
   it('고가 목록에 든 아이템이어도 배경을 안 깐다', async () => {
     const { queryByTestId } = await renderProfit(
       <BossProfitBossRow
         row={보스행()}
-        drops={[{ category: 'equipment', itemName: 고가아이템, quantity: 1 }]}
+        drops={[{ category: 'equipment', itemKey: 고가키, itemName: dropItemNameOf(고가키, 고가키), quantity: 1 }]}
       />,
     )
 
-    expect(isValuableDrop(고가아이템)).toBe(true)
+    expect(isValuableDropItem(고가키)).toBe(true)
     expect(queryByTestId('valuable-drop-row-tint')).toBeNull()
     expect(queryByTestId('valuable-drop-row-glow')).toBeNull()
   })
@@ -162,7 +165,8 @@ describe('BossProfitBossRow: 고가 드롭 배경이 없다', () => {
 // 안 된다. 규칙 자체는 `lib/drop/drop-order` 가 갖고 여기서는 **화면이 그것을 쓰는가**만 본다.
 // 차례는 팝오버 목록에서 읽는다. 스택은 그림뿐이라 이름을 안 든다.
 describe('BossProfitBossRow: 아이템 차례', () => {
-  const 고가아이템 = valuableDropsData.items[0]
+  const 고가키 = valuableDropsData.items[0]
+  const 고가아이템 = dropItemNameOf(고가키, 고가키)
 
   /** 팝오버를 열고 목록에 선 이름을 **선 차례대로** 읽는다. */
   async function 목록(drops: RecordedDrop[]): Promise<string[]> {
@@ -187,13 +191,14 @@ describe('BossProfitBossRow: 아이템 차례', () => {
     const 이름들 = await 목록([
       {
         category: 'equipment',
+        itemKey: null,
         itemName: '평범한 것',
         quantity: 1,
         priceState: 'entered',
         priceMeso: 9_000_000_000,
         priceShare: 1,
       },
-      { category: 'equipment', itemName: 고가아이템, quantity: 1, priceState: 'entered', priceMeso: 1, priceShare: 1 },
+      { category: 'equipment', itemKey: 고가키, itemName: 고가아이템, quantity: 1, priceState: 'entered', priceMeso: 1, priceShare: 1 },
     ])
 
     expect(이름들).toEqual([고가아이템, '평범한 것'])
@@ -204,13 +209,14 @@ describe('BossProfitBossRow: 아이템 차례', () => {
     const 이름들 = await 목록([
       {
         category: 'equipment',
+        itemKey: null,
         itemName: '평범한 것',
         quantity: 1,
         priceState: 'entered',
         priceMeso: 9_000_000_000,
         priceShare: 1,
       },
-      { category: 'equipment', itemName: 고가아이템, quantity: 1 },
+      { category: 'equipment', itemKey: 고가키, itemName: 고가아이템, quantity: 1 },
     ])
 
     expect(이름들).toEqual(['평범한 것'])
@@ -218,8 +224,8 @@ describe('BossProfitBossRow: 아이템 차례', () => {
 
   it('연출이 없는 것끼리는 비싼 순이다', async () => {
     const 이름들 = await 목록([
-      { category: 'equipment', itemName: '싼 것', quantity: 1, priceState: 'entered', priceMeso: 100, priceShare: 1 },
-      { category: 'equipment', itemName: '비싼 것', quantity: 1, priceState: 'entered', priceMeso: 900, priceShare: 1 },
+      { category: 'equipment', itemKey: null, itemName: '싼 것', quantity: 1, priceState: 'entered', priceMeso: 100, priceShare: 1 },
+      { category: 'equipment', itemKey: null, itemName: '비싼 것', quantity: 1, priceState: 'entered', priceMeso: 900, priceShare: 1 },
     ])
 
     expect(이름들.indexOf('비싼 것')).toBeLessThan(이름들.indexOf('싼 것'))
