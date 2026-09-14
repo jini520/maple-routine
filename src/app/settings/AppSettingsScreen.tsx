@@ -20,7 +20,7 @@ import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
 import { formatBytes } from '../../lib/format-bytes'
 
-import packageJson from '../../../package.json'
+import { useRunningAppVersion } from '../../features/live-update/use-running-app-version'
 import { Badge, Card, Text } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
@@ -65,7 +65,7 @@ export function AppSettingsScreen(): React.JSX.Element {
       .catch(() => {})
   }, [])
 
-  const displayedVersion = packageJson.version
+  const displayedVersion = useRunningAppVersion()
   // 행에 쓰는 총합은 그룹별 용량의 합으로 파생한다.
   const totalCacheBytes = sizes === null ? null : sizes.general + sizes.records
 

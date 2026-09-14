@@ -10,7 +10,7 @@
  */
 import { Pressable, View } from 'react-native'
 
-import packageJson from '../../../package.json'
+import { useRunningAppVersion } from '../../features/live-update/use-running-app-version'
 import {
   RELEASE_NOTES,
   RELEASE_NOTE_CATEGORY_LABELS,
@@ -37,7 +37,7 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
 
   // 폴백까지 했는데도 일치하는 노트가 없으면 아무 배지도 붙지 않는다. 1.0.2 이전 사용자는
   // 자기 버전이 목록에 없고, 없는 것을 지어내지 않는다.
-  const runningVersion = packageJson.version
+  const runningVersion = useRunningAppVersion()
 
   return (
     <ScreenScroll

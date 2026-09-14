@@ -16,7 +16,7 @@ import { Platform, Pressable, View } from 'react-native'
 import { useRoute, type RouteProp } from '@react-navigation/native'
 
 
-import packageJson from '../../../package.json'
+import { useRunningAppVersion } from '../../features/live-update/use-running-app-version'
 import { Card, GearIcon, Text } from '../../components/atoms'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -65,7 +65,7 @@ export function SettingsScreen(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const displayedVersion = packageJson.version
+  const displayedVersion = useRunningAppVersion()
 
   return (
     <ScreenScroll>

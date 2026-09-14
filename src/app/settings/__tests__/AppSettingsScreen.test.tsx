@@ -18,6 +18,7 @@ import { useContentSchedulerStore, type ContentSchedulerStore } from '../../../f
 import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
 import { THEME_NAMES } from '../../../lib/theme/theme-registry'
 
+import { useLiveUpdateStore } from '../../../features/live-update/store'
 import packageJson from '../../../../package.json'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { AppSettingsScreen } from '../AppSettingsScreen'
@@ -261,6 +262,17 @@ describe('AppSettingsScreen', () => {
     const view = await renderOverlay(<AppSettingsScreen />)
 
     expect(view.getAllByText(packageJson.version).length).toBeGreaterThan(0)
+  })
+
+  it('"앱 정보" 의 버전은 package.json 이 아니라 도는 번들의 버전이다', async () => {
+    useLiveUpdateStore.setState({ currentVersion: '9.9.9' })
+    try {
+      const view = await renderOverlay(<AppSettingsScreen />)
+
+      expect(view.getAllByText('9.9.9').length).toBeGreaterThan(0)
+    } finally {
+      useLiveUpdateStore.setState({ currentVersion: null })
+    }
   })
 
   it('"스케줄 관리 방법"을 누르면 트래킹 모드 모달이 열린다', async () => {
