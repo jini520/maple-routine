@@ -266,6 +266,7 @@ function dropRecord(overrides: Partial<DropHistoryRecord> = {}): DropHistoryReco
     difficulty: '노멀',
     periodKey: WEEK_KEY,
     category: 'equipment',
+    itemKey: null,
     itemName: '가디언 엔젤링',
     quantity: 1,
     ...overrides }
@@ -291,7 +292,7 @@ const 캐릭터_넷 = {
         cycle: 'weekly',
         records: [
           dropRecord({ priceState: 'entered', priceMeso: 1_200_000_000, priceShare: 1 }),
-          dropRecord({ itemName: '생명의 연마석', category: 'consumable' }),
+          dropRecord({ itemKey: 'life_whetstone', itemName: '생명의 연마석', category: 'consumable' }),
         ] },
     ] satisfies DropHistoryPeriodGroup[],
     drought: {

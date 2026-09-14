@@ -857,10 +857,9 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
   안 잘리고, 잘린 이름 한 조각보다 ‘얼마였나’가 이 타일이 답하는 질문이다.
 - **캐릭터 이름은 프로필 캐시에서 온다**. `PricedDropView.characterName` 이 옵셔널인 이유이고,
   캐시에 없으면 보스만 나온다(ocid 를 대신 넣지 않는다. 대표 카드와 같은 규칙).
-- **아이콘 조회에 `slot` 을 함께 넘긴다**(`getItemIconUrl(name, slot)`). 지금 데이터에는
-  `iconFileBySlot` 이 없지만 다른 호출부 여섯이 전부 넘기고 있고, 안 넘겨서 나는 실패는 에러가 아니라
+- **아이콘은 아이템 key 로 찾는다**(`dropItemIconOf(itemKey)`, [[ADR-280]] 결정 11). key 가 없는 옛 기록은
   **조용한 폴백 원**이다.
-- **위젯 8(아이템 드롭 가뭄)은 가격 없이도 그려진다**. `isValuableDrop` 판정이 **이름 기반**이다. 두 위젯이
+- **위젯 8(아이템 드롭 가뭄)은 가격 없이도 그려진다**. `isValuableDropItem` 판정이 **아이템 key 기반**이다. 두 위젯이
   겹쳐 보이지만 묻는 것이 다르다(얼마였나 / 언제 마지막이었나).
 
 ### 5. 주간 결정석 판매 한도: 링은 **연속 호**, 한도는 **합치지 않는다** ([[ADR-054]])
@@ -1236,6 +1235,8 @@ formatValuableDroughtHeadline(weeksSince, lateIndex)  →  (weeksSince, index)
 
 ## 폐기된 정책 (history)
 
+- ~~아이콘 조회에 `slot` 을 함께 넘긴다(`getItemIconUrl(name, slot)`)~~ → 아이템 key 하나로 찾는다(`dropItemIconOf`,
+  [[ADR-280]] 결정 11, 2026-09-15, 이슈 #444). slot 별 그림은 데이터가 0건이었다.
 - ~~공지 배너는 기기에 쌓인 공지에서 고르고, 앞에 있을 때 도착한 푸시는 기기에 쌓은 뒤 `load` 로 다시
   고른다([[ADR-230]] 결정 5)~~ → **마지막 서버 응답의 사본에서 고르고, 공지 푸시가 오면 `refresh` 로
   서버를 다시 조회한다**([[ADR-277]] · [[ADR-230]] 정정 9, 2026-09-13, 이슈 #398, 구현 완료 2026-09-14). 합치기만

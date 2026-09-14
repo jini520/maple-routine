@@ -7,14 +7,14 @@ import { processColor } from 'react-native'
 import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
 import { ValuableDropBadge } from '../ValuableDropBadge'
 
-function drops(...names: string[]): RecordedDrop[] {
-  return names.map((itemName) => ({ itemName }) as RecordedDrop)
+function drops(...itemKeys: string[]): RecordedDrop[] {
+  return itemKeys.map((itemKey) => ({ itemKey, itemName: itemKey }) as RecordedDrop)
 }
 
 describe('ValuableDropBadge', () => {
   it('라벨은 호출부가 정한다. 자리마다 다른 문구를 받는다', async () => {
     const { getByTestId } = await renderAtom(
-      <ValuableDropBadge drops={drops('칠흑의 보스 반지 상자')} label="이 기간 고가 드롭" />,
+      <ValuableDropBadge drops={drops('black_boss_ring_box')} label="이 기간 고가 드롭" />,
     )
 
     const badge = getByTestId('valuable-drop-badge')
@@ -90,12 +90,12 @@ describe('ValuableDropBadge', () => {
 
   // 아이콘이 붙었다
   //
-  // 이 컴포넌트는 `getItemIconUrl` 을 **아예 부르지 않아** 아이콘 자리가 늘 폴백 원이었다(에셋
+  // 이 컴포넌트는 그림 조회를 **아예 부르지 않아** 아이콘 자리가 늘 폴백 원이었다(에셋
   // 레이어가 값을 대는 데까지였고 그림 붙이기는 화면 작업 몫이었다). 어두운 테마에서 그 원이
   // 까맣게 보여 **아이템 이미지가 안 나온다** 로 보고됐다(사용자).
   it('매핑이 있는 아이템은 그림을 그린다. 폴백 원이 아니다', async () => {
     const { getAllByTestId } = await renderAtom(
-      <ValuableDropBadge drops={drops('홍옥의 보스 반지 상자')} label="고가 드롭" />,
+      <ValuableDropBadge drops={drops('red_boss_ring_box')} label="고가 드롭" />,
     )
 
     const [icon] = getAllByTestId('valuable-drop-icon')
@@ -106,10 +106,10 @@ describe('ValuableDropBadge', () => {
     expect(flattenStyle(icon.props.style).backgroundColor).toBe(기본테마.surface)
   })
 
-  // 매핑에 없는 이름은 여전히 폴백이다. **에셋이 왔으니 무조건 그린다** 로 굳지 않게 남긴다.
+  // 표에 없는 key 는 여전히 폴백이다. **에셋이 왔으니 무조건 그린다** 로 굳지 않게 남긴다.
   it('매핑이 없는 아이템은 폴백 원으로 남는다', async () => {
     const { getAllByTestId } = await renderAtom(
-      <ValuableDropBadge drops={drops('존재하지않는아이템')} label="고가 드롭" />,
+      <ValuableDropBadge drops={drops('unknown_item')} label="고가 드롭" />,
     )
 
     const [icon] = getAllByTestId('valuable-drop-icon')
@@ -122,7 +122,7 @@ describe('ValuableDropBadge', () => {
   it('그림이 있어도 겹침·zIndex·흰 링이 그대로다', async () => {
     const { getAllByTestId } = await renderAtom(
       <ValuableDropBadge
-        drops={drops('홍옥의 보스 반지 상자', '흑옥의 보스 반지 상자', '백옥의 보스 반지 상자')}
+        drops={drops('red_boss_ring_box', 'black_boss_ring_box', 'white_boss_ring_box')}
         label="고가 드롭"
       />,
     )

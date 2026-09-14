@@ -7,8 +7,8 @@
  *
  * 미입력 건수는 여기서 말하지 않는다. 옆 타일(위젯 7)이 이미 들고 있다.
  *
- * 아이콘은 `getItemIconUrl(name, slot)` 으로 `slot` 과 함께 묻는다. 안 넘겨서 나는 실패는 에러가
- * 아니라 조용한 폴백 원이다.
+ * 아이콘은 `dropItemIconOf(itemKey)` 로 묻는다. key 가 없거나 그림이 없는 것은 에러가 아니라 조용한
+ * 폴백 원이다.
  *
  * @see docs/features/today.md 위젯 정책
  */
@@ -16,7 +16,7 @@
 import { Image, View } from 'react-native'
 
 import { formatMesoShort } from '../../../lib/boss/boss-profit-delta'
-import { getItemIconUrl } from '../../../lib/assets/asset-lookup'
+import { dropItemIconOf } from '../../../lib/assets/asset-lookup'
 
 import { Text } from '../../../components/atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
@@ -39,7 +39,7 @@ function variantOf(w: number, h: WidgetHeight): Variant {
 }
 
 function Icon(props: { drop: PricedDropView; sizePx: number }): React.JSX.Element {
-  const url = getItemIconUrl(props.drop.itemName, props.drop.slot)
+  const url = dropItemIconOf(props.drop.itemKey)
 
   if (url === null) {
     // `ItemRevenuePopover` 와 같은 폴백. 빈 상자다. 다른 아이템 그림을 대신 세우면 **이 아이템** 으로
@@ -138,7 +138,7 @@ function RestList(props: { rest: PricedDropView[] }): React.JSX.Element | null {
     <View testID="top-item-rest" className="gap-1">
       {props.rest.map((drop, index) => (
         <View
-          key={`${drop.ocid}|${drop.boss}|${drop.itemName}|${index}`}
+          key={`${drop.ocid}|${drop.boss}|${drop.itemKey ?? drop.itemName}|${index}`}
           testID="top-item-rest-row"
           className="flex-row items-center gap-1.5"
         >

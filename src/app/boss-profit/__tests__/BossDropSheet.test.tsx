@@ -102,7 +102,13 @@ describe('BossDropSheet: 타일 선택', () => {
     })
 
     expect(onSave).toHaveBeenCalledWith([
-      { category: 'equipment', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
+      {
+        category: 'equipment',
+        itemKey: 'loose_control_machine_mark',
+        itemName: '루즈 컨트롤 머신 마크',
+        slot: '얼굴장식',
+        quantity: 1,
+      },
     ])
     expect(onClose).toHaveBeenCalled()
   })
@@ -270,7 +276,9 @@ describe('BossDropSheet: 상자 드릴다운', () => {
 
     expect(onSave).toHaveBeenCalledWith([
       expect.objectContaining({
+        itemKey: 'restraint_ring',
         itemName: '리스트레인트 링',
+        boxOriginKey: 'black_boss_ring_box',
         boxOrigin: '흑옥의 보스 반지 상자',
         ringLevel: 4,
       }),
@@ -304,6 +312,62 @@ describe('BossDropSheet: 상자 드릴다운', () => {
 
     expect(queryByText('이 결과로 기록')).toBeNull()
     expect(onSave).toHaveBeenCalledWith([])
+  })
+
+  // 타일은 기록의 key 로 찾은 지금 이름을 보인다. 적을 때의 이름이 달라도 따라온다.
+  it('기록된 상자 결과는 적어 둔 이름이 아니라 key 로 찾은 이름으로 선다', async () => {
+    const { result } = renderSheet({
+      boss: '더스크',
+      difficulty: '카오스',
+      initialDrops: [
+        {
+          category: 'consumable',
+          itemKey: 'restraint_ring',
+          itemName: '옛 반지 이름',
+          boxOriginKey: 'black_boss_ring_box',
+          boxOrigin: '옛 상자 이름',
+          ringLevel: 4,
+          quantity: 1,
+        },
+      ],
+    })
+    const { getByLabelText, queryByLabelText } = await result
+
+    expect(getByLabelText('리스트레인트 링').props.accessibilityState.selected).toBe(true)
+    expect(queryByLabelText('옛 반지 이름')).toBeNull()
+  })
+})
+
+// 이관이 이름을 못 찾아 key 가 빈 옛 기록. 판정할 key 가 없으므로 지우지 않는다(사용자 결정 2026-09-15).
+describe('BossDropSheet: key 가 없는 옛 기록', () => {
+  const 옛기록 = { category: 'consumable' as const, itemKey: null, itemName: '익셉셔널 해머', quantity: 1 }
+
+  it('난이도를 바꿔도 남고 저장에 그대로 실린다', async () => {
+    const { result, onSave } = renderSheet({ isComplete: false, initialDrops: [옛기록] })
+    const { getByLabelText, getByText } = await result
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('노멀'))
+    })
+    await act(async () => {
+      fireEvent.press(getByText('추가 완료 · 1개'))
+    })
+
+    expect(onSave).toHaveBeenCalledWith([옛기록])
+  })
+
+  it('다른 타일을 골라도 옛 기록이 풀리지 않는다', async () => {
+    const { result, onSave } = renderSheet({ initialDrops: [옛기록] })
+    const { getByLabelText, getByText } = await result
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크'))
+    })
+    await act(async () => {
+      fireEvent.press(getByText('추가 완료 · 2개'))
+    })
+
+    expect(onSave).toHaveBeenCalledWith([옛기록, expect.objectContaining({ itemKey: 'loose_control_machine_mark' })])
   })
 })
 
@@ -421,6 +485,7 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
     })
     expect(onSave).toHaveBeenCalledWith([
       expect.objectContaining({
+        itemKey: 'loose_control_machine_mark',
         itemName: '루즈 컨트롤 머신 마크',
         priceState: 'entered',
         priceMeso: 100,
@@ -446,6 +511,7 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
       initialDrops: [
         {
           category: 'equipment',
+          itemKey: 'loose_control_machine_mark',
           itemName: '루즈 컨트롤 머신 마크',
           slot: '얼굴장식',
           quantity: 1,
@@ -468,6 +534,7 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
       initialDrops: [
         {
           category: 'equipment',
+          itemKey: 'loose_control_machine_mark',
           itemName: '루즈 컨트롤 머신 마크',
           slot: '얼굴장식',
           quantity: 1,

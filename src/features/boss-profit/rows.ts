@@ -385,8 +385,11 @@ export function dropRowKey(ocid: string, boss: string, difficulty: string, perio
 export function toRecordedDrop(record: BossDropRecord): RecordedDrop {
   return {
     category: record.category,
+    // key 둘을 빠뜨리면 다시 쓰는 순간(가격 저장 · 난이도 확정 이관 · prune) 기록의 key 가 지워진다.
+    itemKey: record.itemKey,
     itemName: record.itemName,
     slot: record.slot ?? undefined,
+    boxOriginKey: record.boxOriginKey ?? undefined,
     boxOrigin: record.boxOrigin ?? undefined,
     ringLevel: record.ringLevel ?? undefined,
     quantity: record.quantity,

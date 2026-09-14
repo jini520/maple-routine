@@ -37,6 +37,7 @@ import {
   type DropHistoryRecord,
   type ValuableDroughtSummary,
 } from '../../lib/drop/drop-history'
+import { dropItemNameOf } from '../../lib/drop/drop-items'
 import { dropPayoutMeso, sumDropPayout } from '../../lib/drop/drop-price'
 import { getCurrentKstDateKey, getMostRecentWeeklyResetKst } from '../../lib/scheduler/reset-clock'
 import { HEADER_PORTRAIT_MAX } from './header-portrait-motion'
@@ -220,9 +221,10 @@ export interface UnpricedDropView {
   characterName?: string
   boss: string
   difficulty: string
+  /** 보이는 이름. 마스터 표의 지금 이름이고, 표에서 못 찾은 옛 기록은 적어 둔 이름이다. */
   itemName: string
-  /** 아이콘 조회(`getItemIconUrl(name, slot)`)가 쓰는 칸. 안 넘기면 조용한 폴백 원이다. */
-  slot?: string
+  /** 아이콘 조회(`dropItemIconOf(itemKey)`)가 쓰는 칸. `null` 이면 조용한 폴백 원이다. */
+  itemKey: string | null
   ringLevel?: number
   quantity: number
   category: DropCategory
@@ -759,8 +761,8 @@ function toDropView(
     characterName: profilesByOcid[record.ocid]?.name,
     boss: record.boss,
     difficulty: record.difficulty,
-    itemName: record.itemName,
-    slot: record.slot,
+    itemName: dropItemNameOf(record.itemKey, record.itemName),
+    itemKey: record.itemKey,
     ringLevel: record.ringLevel,
     quantity: record.quantity,
     category: record.category,

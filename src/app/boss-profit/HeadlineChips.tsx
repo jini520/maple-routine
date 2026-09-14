@@ -29,7 +29,7 @@ const BREAKDOWN_GAP = 6
 /** 상자 오른쪽 변과 화면 끝 사이에 남길 최소 여백. */
 const BREAKDOWN_EDGE_GAP = 12
 
-// 결정석 아이콘(주간/월간). 드랍 테이블 항목이 아니라 UI 표시 전용이라 `item-icons.json` 에
+// 결정석 아이콘(주간/월간). 드랍 테이블 항목이 아니라 UI 표시 전용이라 `drop-items.json` 에
 // 등록하지 않고 파일명으로 직접 조회한다. 파일이 없으면 null. 아이콘만 생략하고 숫자는 그대로 둔다.
 export const WEEKLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_weekly.webp')
 export const MONTHLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_monthly.webp')

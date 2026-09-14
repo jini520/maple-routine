@@ -48,7 +48,13 @@ import { DropPricePad, DropPricePadContent } from '../DropPricePad'
 const 주간보스 = weeklyBossesData.weekly[0].boss
 
 function 드롭(overrides: Partial<RecordedDrop> = {}): RecordedDrop {
-  return { category: 'equipment', itemName: '루즈 컨트롤 머신 마크', quantity: 1, ...overrides }
+  return {
+    category: 'equipment',
+    itemKey: 'loose_control_machine_mark',
+    itemName: '루즈 컨트롤 머신 마크',
+    quantity: 1,
+    ...overrides,
+  }
 }
 
 function renderPad(overrides: Partial<React.ComponentProps<typeof DropPricePadContent>> = {}) {
@@ -198,12 +204,16 @@ describe('DropPricePad: 분배 인원', () => {
 // **대상 교체를 `rerender` 로 하지 않는다**. 그것은 루트를 통째로 갈아치워 프로바이더까지 날린다
 // 부모가 상태를 들고 버튼으로 바꾼다.
 function PadHost(): React.JSX.Element {
-  const [name, setName] = useState('루즈 컨트롤 머신 마크')
+  const [item, setItem] = useState({ itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' })
   return (
     <>
-      <Pressable role="button" aria-label="다음 아이템" onPress={() => setName('가디언 엔젤 링')} />
+      <Pressable
+        role="button"
+        aria-label="다음 아이템"
+        onPress={() => setItem({ itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링' })}
+      />
       <DropPricePadContent
-        drop={드롭({ itemName: name })}
+        drop={드롭(item)}
         boss={주간보스}
         difficulty="하드"
         characterName="지내우시"
@@ -215,6 +225,18 @@ function PadHost(): React.JSX.Element {
     </>
   )
 }
+
+// 보이는 이름은 key 로 찾은 지금 이름이다. key 가 없는 옛 기록만 적어 둔 이름으로 선다.
+describe('DropPricePad: 이름', () => {
+  it('key 로 찾은 이름을 보이고, key 가 없으면 적어 둔 이름을 보인다', async () => {
+    const 이름바뀐 = await renderPad({ drop: 드롭({ itemName: '옛 이름' }) }).result
+    expect(이름바뀐.getByText('루즈 컨트롤 머신 마크')).toBeTruthy()
+    expect(이름바뀐.queryByText('옛 이름')).toBeNull()
+
+    const 옛기록 = await renderPad({ drop: 드롭({ itemKey: null, itemName: '익셉셔널 해머' }) }).result
+    expect(옛기록.getByText('익셉셔널 해머')).toBeTruthy()
+  })
+})
 
 describe('DropPricePad: 대상이 갈리면 값이 따라간다', () => {
   it('다른 아이템으로 바뀌면 금액과 인원이 그 아이템의 것으로 되돌아간다', async () => {

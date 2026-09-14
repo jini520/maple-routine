@@ -11,7 +11,7 @@ import type { BossProfitRow } from '../../features/boss-profit/store'
 import { useToastStore } from '../../features/toast/store'
 import { sumDropPayout } from '../../lib/drop/drop-price'
 import { sortDropsForDisplay } from '../../lib/drop/drop-order'
-import { getItemIconUrl } from '../../lib/assets/asset-lookup'
+import { dropItemIconOf } from '../../lib/assets/asset-lookup'
 import type { RecordedDrop } from '../../types/drops'
 
 import { AnimatedNumber, Badge, MinusIcon, PlusIcon, Text } from '../../components/atoms'
@@ -57,10 +57,10 @@ export function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Eleme
   return (
     <View className="ml-auto shrink-0 flex-row items-center">
       {shown.map((drop, index) => {
-        const url = getItemIconUrl(drop.itemName, drop.slot)
+        const url = dropItemIconOf(drop.itemKey)
         return (
           <View
-            key={`${drop.itemName}-${index}`}
+            key={`${drop.itemKey ?? drop.itemName}-${index}`}
             className="h-6 w-6 shrink-0"
             style={{ marginLeft: index === 0 ? 0 : -2, zIndex: shown.length - index }}
           >

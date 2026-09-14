@@ -516,6 +516,7 @@ function 드롭(overrides: Record<string, unknown> = {}): Record<string, unknown
     difficulty: '하드',
     periodKey: '2026-08-20',
     dropIndex: 0,
+    itemKey: 'loose_control_machine_mark',
     itemName: '루즈 컨트롤 머신 마크',
     priceState: 'entered',
     priceMeso: 12_000_000_000,
@@ -616,7 +617,7 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     bossDrops.getBossDropRecords.mockResolvedValue([
       드롭({ priceState: 'entered', priceMeso: 1_000_000 }),
-      드롭({ itemName: '칠흑의 보스 반지 상자', priceState: null, priceMeso: null }),
+      드롭({ itemKey: null, itemName: '칠흑의 보스 반지 상자', priceState: null, priceMeso: null }),
     ])
     const { loadDayRecords, recordCountLabelOf } =
       require('../records') as typeof import('../records')

@@ -17,7 +17,8 @@ import { Image, Modal, Pressable, View, useWindowDimensions } from 'react-native
 import { useReducedMotion } from 'react-native-reanimated'
 import { Defs, RadialGradient, Rect, Stop } from 'react-native-svg'
 
-import { getItemIconUrl } from '../../../lib/assets/asset-lookup'
+import { dropItemIconOf } from '../../../lib/assets/asset-lookup'
+import { findDropItem } from '../../../lib/drop/drop-items'
 import { DROP_EFFECT_FRAMES, screenEffectScale } from './drop-effect-layout'
 
 import { AnimatedView, Svg } from '../../../lib/nativewind-interop'
@@ -50,8 +51,8 @@ const BACKDROP_OUTER = '#05010a'
 const BACKDROP_RADIUS = '70.7%'
 
 interface DropEffectOverlayProps {
-  itemName: string
-  slot?: string
+  /** 드롭 아이템 key. 그림과 스크린리더 이름을 마스터 표에서 찾는다. */
+  itemKey: string
   onClose: () => void
 }
 
@@ -121,7 +122,7 @@ function SpriteLayer(props: {
 
 export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Element {
   const gradientId = `drop-effect-backdrop-${useId().replace(/[^a-zA-Z0-9]/g, '')}`
-  const itemUrl = getItemIconUrl(props.itemName, props.slot)
+  const itemUrl = dropItemIconOf(props.itemKey)
   const reduceMotion = useReducedMotion()
   const { width: viewportW, height: viewportH } = useWindowDimensions()
 
@@ -292,7 +293,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
                 <Image
                   testID="drop-effect-item-image"
                   source={itemUrl}
-                  accessibilityLabel={props.itemName}
+                  accessibilityLabel={findDropItem(props.itemKey)?.name}
                   resizeMode="contain"
                   style={{ width: ITEM_SIZE_PX, height: ITEM_SIZE_PX }}
                 />

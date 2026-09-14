@@ -3,7 +3,7 @@
  * 한 번씩 돌린다.
  *
  * 부팅마다 도는 멱등 `UPDATE` 로 두지 않는 것은 차례 때문이다. 뒤 버전이 앞 버전의 결과를 읽는다
- * (버전 2 는 버전 1 이 옮긴 이름으로 key 를 찾는다). 그리고 key 를 못 찾아 비워 둔 행을 부팅마다 다시
+ * (버전 2 는 버전 1 이 옮긴 이름으로 key 를 찾는다). 드롭 기록은 key 를 채운 뒤에야 획득 판정을 돌린다. 그리고 key 를 못 찾아 비워 둔 행을 부팅마다 다시
  * 찾지 않는다.
  *
  * 칸을 더하는 일은 여기가 아니라 `db.ts` 의 CREATE 문과 `ensureColumn` 이다. 이 모듈은 칸이 다 선
@@ -16,10 +16,11 @@ import {
 } from '../../lib/cashbook/categories'
 import { findHuntingGroundByName } from '../../lib/cashbook/hunting-grounds'
 import { legacySpendKeysOf } from '../../lib/cashbook/spend-catalog'
+import { dropItemKeyOfName } from '../../lib/drop/drop-items'
 import type { SqliteDbConnection } from '../ports'
 
 /** 이 앱의 마지막 DB 버전. 새 기기는 곧바로 이 값이 된다. */
-export const DB_VERSION = 2
+export const DB_VERSION = 3
 
 /**
  * 갈래와 항목 이름을 바꾸며 옛 기록을 옮기던 문장들. 버전 1 이 한 번 돌린다.
@@ -91,11 +92,39 @@ async function fillCashbookKeys(db: SqliteDbConnection): Promise<void> {
   }
 }
 
+/**
+ * 보스 드롭 기록에 아이템 key 와 상자 key 를 채운다. 못 찾은 이름은 key 를 비운 채 행을 남긴다.
+ *
+ * 이름은 NFC 로 맞춘다. 드롭 이름을 비교하던 코드가 NFC 로 비교해 왔다.
+ */
+async function fillDropKeys(db: SqliteDbConnection): Promise<void> {
+  const { values } = await db.query(
+    'SELECT ocid, boss, difficulty, period_key, drop_index, item_name, box_origin FROM boss_drop_records',
+  )
+  for (const row of (values ?? []) as Row[]) {
+    const boxOrigin = textOrNull(row.box_origin)
+    await db.run(
+      `UPDATE boss_drop_records SET item_key = ?, box_origin_key = ?
+        WHERE ocid = ? AND boss = ? AND difficulty = ? AND period_key = ? AND drop_index = ?`,
+      [
+        dropItemKeyOfName(String(row.item_name)),
+        boxOrigin === null ? null : dropItemKeyOfName(boxOrigin),
+        row.ocid,
+        row.boss,
+        row.difficulty,
+        row.period_key,
+        row.drop_index,
+      ],
+    )
+  }
+}
+
 const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   async (db) => {
     for (const statement of LEGACY_NAME_MIGRATIONS) await db.execute(statement)
   },
   fillCashbookKeys,
+  fillDropKeys,
 ]
 
 async function userVersionOf(db: SqliteDbConnection): Promise<number> {

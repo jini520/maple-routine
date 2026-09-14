@@ -41,7 +41,7 @@ import { mockReducedMotion } from '../../../components/__tests__/reduced-motion'
 const 고가아이템 = valuableDropsData.items[0]
 
 function 드롭(overrides: Partial<RecordedDrop> = {}): RecordedDrop {
-  return { itemName: '기타', slot: null, ...overrides } as RecordedDrop
+  return { itemKey: 'other_ring', itemName: '기타', slot: null, ...overrides } as RecordedDrop
 }
 
 function 그룹(rows = [보스행()], subtotals: ReturnType<typeof 주차소계>[] = []) {
@@ -115,7 +115,7 @@ describe('처치 진행 링', () => {
 })
 
 describe('고가 드롭 강조', () => {
-  const 고가드롭 = { [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: [드롭({ itemName: 고가아이템 })] }
+  const 고가드롭 = { [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: [드롭({ itemKey: 고가아이템, itemName: 고가아이템 })] }
   const 평범한드롭 = { [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: [드롭()] }
 
   it('고가 아이템을 먹으면 골드 링·글로우·배지가 함께 붙는다', async () => {
@@ -276,7 +276,7 @@ describe('아이템 수익', () => {
 
 describe('카드 수익 내역 상자', () => {
   function 값매김(itemName: string, priceMeso: number): RecordedDrop {
-    return 드롭({ itemName, priceState: 'entered', priceMeso, priceShare: 1 })
+    return 드롭({ itemKey: null, itemName, priceState: 'entered', priceMeso, priceShare: 1 })
   }
 
   async function 상자열기(

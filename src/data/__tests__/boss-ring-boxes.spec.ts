@@ -1,10 +1,8 @@
-/// <reference types="node" />
-import { existsSync } from 'node:fs'
-import {  join } from 'node:path'
 import bossRingBoxes from '../boss-ring-boxes.json'
+import dropItems from '../drop-items.json'
 import itemDropTable from '../item-drop-table.json'
 
-const ringsDir = join(__dirname, '../../assets/items/rings')
+const nameByKey = new Map(dropItems.items.map((item) => [item.key, item.name]))
 
 function sum(values: number[]): number {
   return values.reduce((total, value) => total + value, 0)
@@ -12,7 +10,7 @@ function sum(values: number[]): number {
 
 describe('보스 반지 상자 확률 데이터 정합성', () => {
   it('박스 이름에 중복이 없다', () => {
-    const names = bossRingBoxes.boxes.map((box) => box.name)
+    const names = bossRingBoxes.boxes.map((box) => box.item)
     expect(new Set(names).size).toBe(names.length)
   })
 
@@ -34,38 +32,24 @@ describe('보스 반지 상자 확률 데이터 정합성', () => {
 
   it('박스별 아이템 확률표 안에 이름 중복이 없다', () => {
     for (const box of bossRingBoxes.boxes) {
-      const names = box.itemProbabilities.map((entry) => entry.name)
+      const names = box.itemProbabilities.map((entry) => entry.item)
       expect(new Set(names).size).toBe(names.length)
     }
   })
 
   it('item-drop-table.json의 "보스 반지 상자" 소모품은 모두 카탈로그에 존재한다', () => {
-    const catalogNames = new Set(bossRingBoxes.boxes.map((box) => box.name))
+    const catalogKeys = new Set(bossRingBoxes.boxes.map((box) => box.item))
     const referenced = new Set<string>()
 
     for (const entry of itemDropTable.rewards) {
       for (const item of entry.rewards.consumable ?? []) {
-        if (item.name.endsWith('보스 반지 상자')) {
-          referenced.add(item.name)
+        if (nameByKey.get(item.item)?.endsWith('보스 반지 상자')) {
+          referenced.add(item.item)
         }
       }
     }
 
-    const missing = [...referenced].filter((name) => !catalogNames.has(name))
+    const missing = [...referenced].filter((key) => !catalogKeys.has(key))
     expect(missing).toEqual([])
-  })
-
-  it('iconFile이 지정된 항목은 실제로 assets/items/rings/에 파일이 존재한다', () => {
-    const missingFiles: string[] = []
-
-    for (const box of bossRingBoxes.boxes) {
-      for (const item of box.itemProbabilities) {
-        if (item.iconFile && !existsSync(join(ringsDir, item.iconFile))) {
-          missingFiles.push(`${item.name} -> ${item.iconFile}`)
-        }
-      }
-    }
-
-    expect(missingFiles).toEqual([])
   })
 })

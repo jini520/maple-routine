@@ -29,8 +29,8 @@ import type {
   DropHistoryRecord,
   ValuableDroughtSummary,
 } from '../../lib/drop/drop-history'
-import { getItemIconUrl } from '../../lib/assets/asset-lookup'
-import { isValuableDrop } from '../../lib/drop/valuable-drops'
+import { dropItemIconOf } from '../../lib/assets/asset-lookup'
+import { isValuableDropItem } from '../../lib/drop/valuable-drops'
 
 import { MapleLeaf, ScrollTextIcon, Text } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
@@ -134,8 +134,8 @@ function DropHistoryEntry(props: {
 }): React.JSX.Element {
   const { record } = props
   const line = formatDropHistoryLine(record, props.character?.characterName)
-  const isValuable = isValuableDrop(record.itemName)
-  const iconUrl = isValuable ? getItemIconUrl(record.itemName, record.slot) : null
+  const isValuable = isValuableDropItem(record.itemKey)
+  const iconUrl = isValuable ? dropItemIconOf(record.itemKey) : null
 
   return (
     <View testID="drop-history-entry" aria-label={isValuable ? '고가 드롭 기록' : undefined} className="py-0.5">
@@ -236,7 +236,7 @@ function DropHistoryPeriodSection(props: {
           <DropHistoryEntry
             // 같은 기간·보스에 같은 아이템을 두 개 먹은 경우를 구분할 수 없으므로 index 를
             // 키에 넣는다. 기록 자체가 그 둘을 구분하지 않는다.
-            key={`${record.ocid}-${record.boss}-${record.difficulty}-${record.itemName}-${index}`}
+            key={`${record.ocid}-${record.boss}-${record.difficulty}-${record.itemKey ?? record.itemName}-${index}`}
             record={record}
             character={props.charactersByOcid[record.ocid]}
           />

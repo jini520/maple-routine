@@ -23,7 +23,7 @@ const noop = (): void => {}
 describe('DropEffectOverlay: 구조', () => {
   it('전체 화면 오버레이로 뜬다. 시트 위에 서는 것을 네이티브 윈도우가 보장한다', async () => {
     const { getByTestId } = await renderOverlay(
-      <DropEffectOverlay itemName="칠흑의 보스 반지 상자" onClose={noop} />,
+      <DropEffectOverlay itemKey="black_boss_ring_box" onClose={noop} />,
     )
 
     const modal = getByTestId('drop-effect-overlay-modal', { includeHiddenElements: true })
@@ -33,7 +33,7 @@ describe('DropEffectOverlay: 구조', () => {
 
   it('안내 문구를 보여준다', async () => {
     const { getByText } = await renderOverlay(
-      <DropEffectOverlay itemName="칠흑의 보스 반지 상자" onClose={noop} />,
+      <DropEffectOverlay itemKey="black_boss_ring_box" onClose={noop} />,
     )
 
     expect(getByText('화면을 터치하면 닫힙니다')).toBeTruthy()
@@ -42,7 +42,7 @@ describe('DropEffectOverlay: 구조', () => {
   // 레이어 순서: 배경 → 기둥(2) → 아이템(3) → 버스트(4) → 문구(5).
   it('기둥과 버스트 레이어의 쌓임 순서가 정해져 있다', async () => {
     const { getByTestId } = await renderOverlay(
-      <DropEffectOverlay itemName="칠흑의 보스 반지 상자" onClose={noop} />,
+      <DropEffectOverlay itemKey="black_boss_ring_box" onClose={noop} />,
     )
 
     expect(getByTestId('drop-effect-pillar').props.style).toMatchObject({ zIndex: 2 })
@@ -56,7 +56,7 @@ describe('DropEffectOverlay: 구조', () => {
   // 아니라 **어디에 걸렸는지**를 고정한다.
   it('가산 합성은 zIndex 를 가진 앵커에 걸린다. 안쪽에 걸면 스태킹 컨텍스트에 갇힌다', async () => {
     const { getByTestId } = await renderOverlay(
-      <DropEffectOverlay itemName="칠흑의 보스 반지 상자" onClose={noop} />,
+      <DropEffectOverlay itemKey="black_boss_ring_box" onClose={noop} />,
     )
 
     expect(getByTestId('drop-effect-pillar').props.style).toMatchObject({ mixBlendMode: 'screen' })
@@ -67,7 +67,7 @@ describe('DropEffectOverlay: 구조', () => {
 // 있고, 매핑 없는 아이템은 영영 안 그려진다.
   it('중앙 아이템은 마운트 직후엔 그리지 않는다. 엔진이 8프레임에 켠다', async () => {
     const { queryByTestId } = await renderOverlay(
-      <DropEffectOverlay itemName="칠흑의 보스 반지 상자" onClose={noop} />,
+      <DropEffectOverlay itemKey="black_boss_ring_box" onClose={noop} />,
     )
 
     expect(queryByTestId('drop-effect-item')).toBeNull()
@@ -83,7 +83,7 @@ describe('DropEffectOverlay: 구조', () => {
   it('화면을 탭하면 닫힌다', async () => {
     const onClose = jest.fn()
     const { getByTestId } = await renderOverlay(
-      <DropEffectOverlay itemName="칠흑의 보스 반지 상자" onClose={onClose} />,
+      <DropEffectOverlay itemKey="black_boss_ring_box" onClose={onClose} />,
     )
 
     await fireEvent.press(getByTestId('drop-effect-overlay'))
@@ -99,7 +99,7 @@ describe('DropEffectOverlay: 구조', () => {
   // 시트가 그대로 비친다. 창 크기를 숫자로 박아 그 의존을 끊는다.
   it('배경 그라디언트는 창 크기를 숫자로 받는다. 퍼센트는 늦은 재배치를 놓친다', async () => {
     const { getByTestId } = await renderOverlay(
-      <DropEffectOverlay itemName="칠흑의 보스 반지 상자" onClose={noop} />,
+      <DropEffectOverlay itemKey="black_boss_ring_box" onClose={noop} />,
     )
 
     const window = Dimensions.get('window')
@@ -111,7 +111,7 @@ describe('DropEffectOverlay: 구조', () => {
   it('안드로이드 뒤로가기도 같은 자리로 이어진다', async () => {
     const onClose = jest.fn()
     const { getByTestId } = await renderOverlay(
-      <DropEffectOverlay itemName="칠흑의 보스 반지 상자" onClose={onClose} />,
+      <DropEffectOverlay itemKey="black_boss_ring_box" onClose={onClose} />,
     )
 
     const modal = getByTestId('drop-effect-overlay-modal', { includeHiddenElements: true })
@@ -130,7 +130,7 @@ describe('DropEffectOverlay: 구조', () => {
     expect(DROP_EFFECT_FRAMES.end.length).toBeGreaterThan(0)
 
     const { getByTestId } = await renderOverlay(
-      <DropEffectOverlay itemName="흑옥의 보스 반지 상자" onClose={noop} />,
+      <DropEffectOverlay itemKey="black_boss_ring_box" onClose={noop} />,
     )
 
     expect(getByTestId('drop-effect-pillar')).toBeTruthy()

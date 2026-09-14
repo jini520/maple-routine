@@ -8,34 +8,34 @@ import valuableDrops from '../valuable-drops.json'
 const CATEGORIES = ['fixed', 'equipment', 'consumable'] as const
 
 const allDropSets = new Set<string>()
-const allDropItemNames = new Set<string>()
+const allDropItemKeys = new Set<string>()
 for (const entry of itemDropTable.rewards as {
-  rewards: Partial<Record<(typeof CATEGORIES)[number], { name: string; set?: string }[]>>
+  rewards: Partial<Record<(typeof CATEGORIES)[number], { item: string; set?: string }[]>>
 }[]) {
   for (const category of CATEGORIES) {
     for (const item of entry.rewards[category] ?? []) {
-      allDropItemNames.add(item.name)
+      allDropItemKeys.add(item.item)
       if (item.set !== undefined) allDropSets.add(item.set)
     }
   }
 }
 
-const allBoxNames = new Set<string>([
-  ...(bossRingBoxes.boxes as { name: string }[]).map((box) => box.name),
-  ...(accessoryBoxes.boxes as { name: string }[]).map((box) => box.name),
+const allBoxKeys = new Set<string>([
+  ...bossRingBoxes.boxes.map((box) => box.item),
+  ...accessoryBoxes.boxes.map((box) => box.item),
 ])
 
 describe('valuable-drops.json 정합성', () => {
-  it('sets의 모든 세트명이 item-drop-table의 set 필드에 실제로 존재한다', () => {
+  it('sets의 모든 세트 key가 item-drop-table의 set 필드에 실제로 존재한다', () => {
     for (const set of valuableDrops.sets) {
       expect(allDropSets, `세트 "${set}"가 item-drop-table에 없음`).toContain(set)
     }
   })
 
-  it('items의 모든 아이템명이 드롭 테이블 또는 상자 데이터에 실제로 존재한다', () => {
-    for (const name of valuableDrops.items) {
-      const exists = allDropItemNames.has(name) || allBoxNames.has(name)
-      expect(exists, `아이템 "${name}"가 드롭/상자 데이터에 없음`).toBe(true)
+  it('items의 모든 아이템 key가 드롭 테이블 또는 상자 데이터에 실제로 존재한다', () => {
+    for (const key of valuableDrops.items) {
+      const exists = allDropItemKeys.has(key) || allBoxKeys.has(key)
+      expect(exists, `아이템 "${key}"가 드롭/상자 데이터에 없음`).toBe(true)
     }
   })
 })

@@ -4,7 +4,7 @@
  * 리프 전 완료가 새 ocid 로 넘어와 자동 기록이 같은 처치를 한 번 더 쓴다. 기록 키가 ocid 를 품어
  * upsert 가 그 중복을 못 막으므로, 짝을 찾아 옛 기록을 지우고 새 기록 하나로 센다.
  */
-import { dropTileName } from '../../lib/boss/boss-drops'
+import { dropTileIdentity } from '../../lib/boss/boss-drops'
 import { getBossDropRecords, replaceBossDropRecords, type BossDropRecord } from '../../storage/boss-drops'
 import {
   deleteBossProfitRecord,
@@ -80,16 +80,16 @@ export function planWorldLeapRecordPairs(input: WorldLeapRecordPairsInput): Worl
 /**
  * 새 카드 드롭에 옛 카드 드롭을 합친 목록.
  *
- * 같은 드롭은 같은 타일(`dropTileName`)이다. 새 카드 드롭은 그대로 두고, 옛 카드 드롭은 새 카드에 없는
+ * 같은 드롭은 같은 타일(`dropTileIdentity`)이다. 새 카드 드롭은 그대로 두고, 옛 카드 드롭은 새 카드에 없는
  * 타일만 앞선 하나씩 붙인다. 한 카드는 같은 타일을 하나만 든다(`BossDropSheet`).
  */
 export function mergeWorldLeapDrops(
   keptDrops: readonly RecordedDrop[],
   staleDrops: readonly RecordedDrop[],
 ): RecordedDrop[] {
-  const seenTiles = new Set(keptDrops.map(dropTileName))
+  const seenTiles = new Set(keptDrops.map(dropTileIdentity))
   const appended = staleDrops.filter((drop) => {
-    const tile = dropTileName(drop)
+    const tile = dropTileIdentity(drop)
     if (seenTiles.has(tile)) return false
     seenTiles.add(tile)
     return true

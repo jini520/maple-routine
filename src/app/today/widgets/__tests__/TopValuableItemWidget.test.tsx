@@ -178,7 +178,7 @@ describe('아이템 이름과 출처', () => {
 })
 
 describe('아이콘', () => {
-  it('매핑에 있는 이름이면 번들 에셋을 그린다', async () => {
+  it('key 가 표에 있으면 번들 에셋을 그린다', async () => {
     const { getByTestId, queryByTestId } = await 위젯(크기['2x1'])
 
     expect(getByTestId('top-item-icon')).toBeTruthy()
@@ -186,10 +186,11 @@ describe('아이콘', () => {
   })
 
   // 다른 아이템 그림을 대신 세우면 **이 아이템** 으로 읽힌다. 빈 상자가 폴백이다.
-  it('매핑에 없는 이름이면 빈 상자가 선다', async () => {
+  // key 가 없는 옛 기록도 같은 폴백이다. 이름은 적어 둔 이름 그대로 선다.
+  it('key 가 없으면 빈 상자가 선다', async () => {
     const { getByTestId, queryByTestId } = await 위젯(
       크기['2x1'],
-      뷰모델({ topItem: { top: 드롭({ itemName: '없는아이템' }), rest: [] } }),
+      뷰모델({ topItem: { top: 드롭({ itemKey: null, itemName: '없는아이템' }), rest: [] } }),
     )
 
     expect(getByTestId('top-item-icon-fallback')).toBeTruthy()

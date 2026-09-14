@@ -144,6 +144,9 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE boss_drop_records ADD COLUMN price_state TEXT',
       'ALTER TABLE boss_drop_records ADD COLUMN price_meso INTEGER',
       'ALTER TABLE boss_drop_records ADD COLUMN price_share INTEGER',
+      // 드롭 기록도 이름 대신 아이템 key 를 든다.
+      'ALTER TABLE boss_drop_records ADD COLUMN item_key TEXT',
+      'ALTER TABLE boss_drop_records ADD COLUMN box_origin_key TEXT',
       'ALTER TABLE spend_records ADD COLUMN form TEXT',
       // `아이템 구매`의 종류. `form` 이 겪은 그 사정이다.
       'ALTER TABLE spend_records ADD COLUMN item_kind TEXT',
@@ -204,6 +207,7 @@ describe('db.ts 와 맞물리는가', () => {
             { name: 'item_key' },
             { name: 'form_item_keys' },
             { name: 'item_kind_key' },
+            { name: 'box_origin_key' },
             { name: 'hunt_meso_rate' },
             { name: 'hunt_typed_meso' },
           ]

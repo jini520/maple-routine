@@ -30,6 +30,7 @@ function group(rows: BossProfitRow[]): CharacterGroup {
 const priced: RecordedDrop[] = [
   {
     category: 'equipment',
+    itemKey: 'loose_control_machine_mark',
     itemName: '루즈 컨트롤 머신 마크',
     quantity: 1,
     priceState: 'entered',
@@ -58,8 +59,8 @@ describe('groupTotalMeso: 아이템 수익 합산', () => {
   it('스킵·미입력은 더하지 않는다', () => {
     const drops = {
       [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: [
-        { category: 'equipment' as const, itemName: '가디언 엔젤 링', quantity: 1 },
-        { category: 'equipment' as const, itemName: '거대한 공포', quantity: 1, priceState: 'excluded' as const },
+        { category: 'equipment' as const, itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링', quantity: 1 },
+        { category: 'equipment' as const, itemKey: 'giant_terror', itemName: '거대한 공포', quantity: 1, priceState: 'excluded' as const },
       ],
     }
 
@@ -72,6 +73,7 @@ describe('groupTotalMeso: 아이템 수익 합산', () => {
 // 어디에도 없는 돈이 총액에 선다**(사용자 보고).
 const 고가드롭: RecordedDrop = {
   category: 'equipment',
+  itemKey: valuableDropsData.items[0],
   itemName: valuableDropsData.items[0],
   quantity: 1,
 }
@@ -157,7 +159,7 @@ describe('월간 탭의 금액은 주차 소계가 전부다', () => {
     const 월간행 = 보스행({ boss: 월간보스, cycle: 'monthly', periodKey: '2026-08', payoutMeso: 0 })
     const drops = {
       [dropRowKey(월간행.ocid, 월간행.boss, 월간행.difficulty, 월간행.periodKey)]: [
-        { category: 'equipment' as const, itemName: '반지', quantity: 1, priceState: 'entered' as const, priceMeso: 5_000_000_000, priceShare: 1 },
+        { category: 'equipment' as const, itemKey: null, itemName: '반지', quantity: 1, priceState: 'entered' as const, priceMeso: 5_000_000_000, priceShare: 1 },
       ],
     }
 
@@ -172,6 +174,7 @@ describe('월간 탭의 금액은 주차 소계가 전부다', () => {
 describe('collectRevenueDrops: 상자가 읽는 드롭은 카드 금액과 같은 원천이다', () => {
   const 반지 = (priceMeso: number): RecordedDrop => ({
     category: 'equipment',
+    itemKey: null,
     itemName: '반지',
     quantity: 1,
     priceState: 'entered',

@@ -136,11 +136,20 @@ it('연결 밖 캐릭터의 기록은 안 본다', () => {
   ).toEqual([])
 })
 
-function drop(itemName: string, overrides: Partial<RecordedDrop> = {}): RecordedDrop {
-  return { category: 'equipment', itemName, quantity: 1, ...overrides }
+/** 테스트가 쓰는 드롭 이름의 key. `drop-items.json` 과 같다. */
+const KEY_BY_NAME: Record<string, string> = {
+  '루즈 컨트롤 머신 마크': 'loose_control_machine_mark',
+  '마력이 깃든 안대': 'magic_eyepatch',
+  '리스트레인트 링': 'restraint_ring',
+  '웨폰퍼프 - I링': 'weapon_puff_i_ring',
+  '홍옥의 보스 반지 상자': 'red_boss_ring_box',
 }
 
-// 같은 드롭은 같은 타일이다. 일반 아이템은 이름, 상자 결과는 상자.
+function drop(itemName: string, overrides: Partial<RecordedDrop> = {}): RecordedDrop {
+  return { category: 'equipment', itemKey: KEY_BY_NAME[itemName] ?? null, itemName, quantity: 1, ...overrides }
+}
+
+// 같은 드롭은 같은 타일이다. 일반 아이템은 아이템 key, 상자 결과는 상자 key.
 describe('mergeWorldLeapDrops', () => {
   it('새 카드 드롭을 그대로 두고 새 카드에 없는 옛 카드 드롭을 뒤에 붙인다', () => {
     expect(mergeWorldLeapDrops([drop('루즈 컨트롤 머신 마크')], [drop('마력이 깃든 안대')])).toEqual([
@@ -157,10 +166,27 @@ describe('mergeWorldLeapDrops', () => {
   })
 
   it('같은 상자면 나온 반지가 달라도 새 카드 결과만 남는다', () => {
-    const kept = drop('리스트레인트 링', { category: 'consumable', boxOrigin: '홍옥의 보스 반지 상자', ringLevel: 3 })
-    const stale = drop('웨폰퍼프 - I 링', { category: 'consumable', boxOrigin: '홍옥의 보스 반지 상자', ringLevel: 4 })
+    const box = { category: 'consumable' as const, boxOriginKey: 'red_boss_ring_box', boxOrigin: '홍옥의 보스 반지 상자' }
+    const kept = drop('리스트레인트 링', { ...box, ringLevel: 3 })
+    const stale = drop('웨폰퍼프 - I링', { ...box, ringLevel: 4 })
 
     expect(mergeWorldLeapDrops([kept], [stale])).toEqual([kept])
+  })
+
+  // 이름을 바꿔도 옛 기록이 같은 아이템으로 따라온다. 그래서 적힌 이름이 달라도 key 가 같으면 같은 타일이다.
+  it('적힌 이름이 달라도 아이템 key 가 같으면 같은 드롭이다', () => {
+    const kept = drop('마력이 깃든 안대')
+    const stale = drop('옛 이름의 안대', { itemKey: 'magic_eyepatch' })
+
+    expect(mergeWorldLeapDrops([kept], [stale])).toEqual([kept])
+  })
+
+  it('key 가 없는 옛 기록은 적힌 이름으로 가른다', () => {
+    const first = drop('익셉셔널 해머')
+    const second = drop('익셉셔널 해머')
+    const other = drop('루인 포스실드')
+
+    expect(mergeWorldLeapDrops([first], [second, other])).toEqual([first, other])
   })
 
   it('옛 카드 안에서 같은 아이템이 겹치면 앞선 하나만 붙인다', () => {
@@ -184,8 +210,10 @@ describe('cleanUpWorldLeapDuplicates', () => {
       periodKey: '2026-09-10',
       dropIndex,
       category: 'equipment',
+      itemKey: KEY_BY_NAME[itemName] ?? null,
       itemName,
       slot: null,
+      boxOriginKey: null,
       boxOrigin: null,
       ringLevel: null,
       quantity: 1,
@@ -239,8 +267,16 @@ describe('cleanUpWorldLeapDuplicates', () => {
       '하드',
       '2026-09-10',
       [
-        { category: 'equipment', itemName: '루즈 컨트롤 머신 마크', quantity: 1 },
-        { category: 'equipment', itemName: '마력이 깃든 안대', quantity: 1, priceState: 'entered', priceMeso: 500_000_000, priceShare: 3 },
+        { category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 },
+        {
+          category: 'equipment',
+          itemKey: 'magic_eyepatch',
+          itemName: '마력이 깃든 안대',
+          quantity: 1,
+          priceState: 'entered',
+          priceMeso: 500_000_000,
+          priceShare: 3,
+        },
       ],
       NOW.toISOString(),
     )

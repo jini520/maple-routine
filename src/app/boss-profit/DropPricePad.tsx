@@ -12,7 +12,9 @@
 import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
-import { getItemIconUrl } from '../../lib/assets/asset-lookup'
+import { dropItemIconOf } from '../../lib/assets/asset-lookup'
+import { dropTileIdentity } from '../../lib/boss/boss-drops'
+import { dropItemNameOf } from '../../lib/drop/drop-items'
 import type { BossDifficulty } from '../../types'
 import type { RecordedDrop } from '../../types/drops'
 
@@ -65,7 +67,7 @@ export function DropPricePadContent(
   //
   // 렌더 중 setState 는 프롭 변화에 상태 맞추기 패턴이다. effect 로 하면 옛 값으로 한 프레임
   // 그려진 뒤 덮인다.
-  const identity = `${props.drop.boxOrigin ?? ''}|${props.drop.itemName}|${props.drop.ringLevel ?? ''}`
+  const identity = `${dropTileIdentity(props.drop)}|${props.drop.itemKey ?? props.drop.itemName}|${props.drop.ringLevel ?? ''}`
   const [lastIdentity, setLastIdentity] = useState(identity)
   if (lastIdentity !== identity) {
     setLastIdentity(identity)
@@ -73,7 +75,7 @@ export function DropPricePadContent(
     setShare(props.drop.priceShare ?? props.defaultShare)
   }
 
-  const iconUrl = getItemIconUrl(props.drop.itemName, props.drop.slot)
+  const iconUrl = dropItemIconOf(props.drop.itemKey)
   const perPerson = share > 1 ? Math.floor(meso / share) : 0
 
   function pressKey(key: MesoKey): void {
@@ -96,7 +98,7 @@ export function DropPricePadContent(
           )}
           <View className="min-w-0 flex-1">
             <Text numberOfLines={1} className="text-15 font-bold tracking-[-.012em] text-text">
-              {props.drop.itemName}
+              {dropItemNameOf(props.drop.itemKey, props.drop.itemName)}
               {props.drop.ringLevel !== undefined && ` ${props.drop.ringLevel}레벨`}
             </Text>
             <View className="mt-0.5 flex-row items-center gap-1.5">

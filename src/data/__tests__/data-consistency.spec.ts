@@ -1,10 +1,13 @@
 import weeklyBosses from '../weekly-bosses.json'
 import bossCrystalPrices from '../boss-crystal-prices.json'
 import itemDropTable from '../item-drop-table.json'
+import dropItemTable from '../drop-items.json'
 import contentTemplate from '../scheduler-content-template.json'
 import contentCatalog from '../scheduler-content-catalog.json'
 import spendCatalog from '../spend-catalog.json'
 import { DROP_CATEGORIES } from '../../types/drops'
+
+const dropNameByKey = new Map(dropItemTable.items.map((item) => [item.key, item.name]))
 
 function key(boss: string, difficulty: string): string {
   return `${boss}::${difficulty}`
@@ -119,7 +122,7 @@ describe('게임 레퍼런스 데이터 정합성', () => {
     const names = new Set(
       itemDropTable.rewards.flatMap((r) =>
         Object.values(r.rewards).flatMap((category) =>
-          (category as Array<{ name: string }>).map((item) => item.name)
+          (category as Array<{ item: string }>).map((item) => dropNameByKey.get(item.item))
         )
       )
     )
@@ -134,7 +137,7 @@ describe('게임 레퍼런스 데이터 정합성', () => {
   it('루인 포스실드는 드랍 항목이 아니므로 item-drop-table에 존재하지 않는다 (사용자 지시 2026-07-31)', () => {
     const hasRuinForceShield = itemDropTable.rewards.some((r) =>
       Object.values(r.rewards).some((category) =>
-        (category as Array<{ name: string }>).some((item) => item.name === '루인 포스실드')
+        (category as Array<{ item: string }>).some((item) => dropNameByKey.get(item.item) === '루인 포스실드')
       )
     )
     expect(hasRuinForceShield).toBe(false)
@@ -143,7 +146,7 @@ describe('게임 레퍼런스 데이터 정합성', () => {
   it('황금 메소 주머니는 재화이므로 item-drop-table에 존재하지 않는다', () => {
     const hasGoldenPouch = itemDropTable.rewards.some((r) =>
       Object.values(r.rewards).some((category) =>
-        (category as Array<{ name: string }>).some((item) => item.name === '황금 메소 주머니')
+        (category as Array<{ item: string }>).some((item) => dropNameByKey.get(item.item) === '황금 메소 주머니')
       )
     )
     expect(hasGoldenPouch).toBe(false)
@@ -231,7 +234,7 @@ interface PriceRow extends PeriodRow {
   priceMeso: number | null
   maxPartySize?: number
 }
-type DropItem = PeriodRow & { name: string; note?: string }
+type DropItem = PeriodRow & { item: string; note?: string }
 
 const priceRows = bossCrystalPrices.prices as PriceRow[]
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/
@@ -310,7 +313,7 @@ describe('기간을 든 줄', () => {
 describe('2026-09-17 패치', () => {
   it('교환권 셋은 26칸 모두 2026-09-17 전까지다', () => {
     for (const name of ['프리미엄 악세서리 스크롤 교환권', '프리미엄 펫장비 스크롤 교환권', '매지컬 무기 주문서 교환권']) {
-      const found = dropItems().filter((entry) => entry.item.name === name)
+      const found = dropItems().filter((entry) => dropNameByKey.get(entry.item.item) === name)
 
       expect(found).toHaveLength(26)
       for (const entry of found) {
@@ -321,7 +324,7 @@ describe('2026-09-17 패치', () => {
   })
 
   it('소울 에테르 넷은 16칸에 2026-09-17 부터 교환 가능한 소비로 선다', () => {
-    const found = dropItems().filter((entry) => entry.item.name.endsWith('소울 에테르'))
+    const found = dropItems().filter((entry) => dropNameByKey.get(entry.item.item)?.endsWith('소울 에테르'))
 
     expect(found).toHaveLength(16)
     for (const entry of found) {

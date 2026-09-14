@@ -6,12 +6,13 @@ import { sortDropsForDisplay, takeTopDropsByPayout } from '../drop/drop-order'
 const 연출아이템 = valuableDropsData.items[0]
 const 다른연출아이템 = valuableDropsData.items[1]
 
-function 드롭(itemName: string, overrides: Partial<RecordedDrop> = {}): RecordedDrop {
-  return { category: 'equipment', itemName, quantity: 1, ...overrides }
+/** 이름 자리에 고가 목록의 key 를 넣으면 연출 아이템이 된다. 나머지 글자는 표에 없는 key 라 평범하다. */
+function 드롭(itemKey: string, overrides: Partial<RecordedDrop> = {}): RecordedDrop {
+  return { category: 'equipment', itemKey, itemName: itemKey, quantity: 1, ...overrides }
 }
 
-function 값매김(itemName: string, meso: number): RecordedDrop {
-  return 드롭(itemName, { priceState: 'entered', priceMeso: meso, priceShare: 1 })
+function 값매김(itemKey: string, meso: number): RecordedDrop {
+  return 드롭(itemKey, { priceState: 'entered', priceMeso: meso, priceShare: 1 })
 }
 
 const 이름들 = (drops: RecordedDrop[]): string[] => drops.map((drop) => drop.itemName)

@@ -21,7 +21,8 @@ import { formatMesoShort } from '../../lib/boss/boss-profit-delta'
 import { sortDropsForDisplay, takeTopDropsByPayout } from '../../lib/drop/drop-order'
 import { dropPayoutMeso } from '../../lib/drop/drop-price'
 import type { RecordedDrop } from '../../types/drops'
-import { getItemIconUrl } from '../../lib/assets/asset-lookup'
+import { dropItemIconOf } from '../../lib/assets/asset-lookup'
+import { dropItemNameOf } from '../../lib/drop/drop-items'
 import { anchorPopover } from '../../lib/popover-anchor'
 
 import { Text } from '../../components/atoms'
@@ -110,11 +111,11 @@ export function ItemRevenuePopover(props: {
             contentContainerClassName="gap-1.5"
           >
             {listed.map((drop, index) => {
-              const iconUrl = getItemIconUrl(drop.itemName, drop.slot)
+              const iconUrl = dropItemIconOf(drop.itemKey)
               const share = drop.priceShare ?? 1
               return (
                 <View
-                  key={`${drop.itemName}|${drop.ringLevel ?? ''}|${index}`}
+                  key={`${drop.itemKey ?? drop.itemName}|${drop.ringLevel ?? ''}|${index}`}
                   className="flex-row items-center gap-2"
                 >
                   {iconUrl !== null ? (
@@ -124,7 +125,7 @@ export function ItemRevenuePopover(props: {
                   )}
                   <View className="min-w-0 flex-1">
                     <Text numberOfLines={1} className="text-11 font-semibold text-text">
-                      {drop.itemName}
+                      {dropItemNameOf(drop.itemKey, drop.itemName)}
                       {drop.ringLevel !== undefined && ` ${drop.ringLevel}레벨`}
                     </Text>
                     {/* 나눠 가졌을 때만 그 분배를 말한다. 1인이면 나눈 것이 없다. */}

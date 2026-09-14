@@ -25,7 +25,7 @@ import Animated, {
 import { Text } from '../../components/atoms'
 import { BottomBarOverlay } from '../../components/organisms/BottomBar/BottomBarOverlay'
 import { useUnpricedDropCount } from '../../features/boss-profit/use-unpriced-drop-count'
-import { getItemIconUrl } from '../../lib/assets/asset-lookup'
+import { dropItemIconOf } from '../../lib/assets/asset-lookup'
 import { useFabBottomPx } from '../../lib/fab-metrics'
 import { useLoopedValue } from '../../hooks/useLoopedValue'
 import { tapFeedback } from '../../native/haptics'
@@ -43,10 +43,10 @@ import {
 } from './drop-price-fab-motion'
 
 /**
- * 도는 아이템 셋(사용자 지정). 파일명이 아니라 **이름**이라 `item-icons.json` 의 매핑이
+ * 도는 아이템 셋(사용자 지정). 파일명이 아니라 **아이템 key** 라 `drop-items.json` 의 그림이
  * 바뀌면 이 버튼도 함께 따라간다.
  */
-export const DROP_PRICE_FAB_ITEMS = ['고통의 근원', '거대한 공포', '컴플리트 언더컨트롤'] as const
+export const DROP_PRICE_FAB_ITEMS = ['source_of_suffering', 'giant_terror', 'complete_under_control'] as const
 
 /**
  * 애니메이션이 붙는 상자. `nativewind-interop` 에 등록된 `Animated.View` 를 쓰지 않는다.
@@ -64,7 +64,7 @@ const ITEM_PX = 32
 const BADGE_MAX_COUNT = 9
 
 interface DrumItemProps {
-  itemName: string
+  itemKey: string
   slot: number
   progress: SharedValue<number>
 }
@@ -81,7 +81,7 @@ function DrumItem(props: DrumItemProps): React.JSX.Element | null {
   })
 
   // 모르는 그림을 비슷한 것으로 때우지 않는다. 매핑이 비면 그 슬롯만 빠지고 나머지는 돈다.
-  const source = getItemIconUrl(props.itemName)
+  const source = dropItemIconOf(props.itemKey)
   if (source === null) return null
 
   return (
@@ -157,8 +157,8 @@ export function DropPriceFab(props: {
           }
           className="h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-primary"
         >
-          {DROP_PRICE_FAB_ITEMS.map((itemName, slot) => (
-            <DrumItem key={itemName} itemName={itemName} slot={slot} progress={progress} />
+          {DROP_PRICE_FAB_ITEMS.map((itemKey, slot) => (
+            <DrumItem key={itemKey} itemKey={itemKey} slot={slot} progress={progress} />
           ))}
 
           {/* 흐림은 **자기 뒤에 있는 것**을 흐린다. 그림들보다 뒤에 서야 그것들이 흐려진다.

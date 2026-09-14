@@ -174,8 +174,10 @@ describe('toRecordedDrop: 가격 필드', () => {
     periodKey: '2026-08-06',
     dropIndex: 0,
     category: 'equipment' as const,
+    itemKey: 'loose_control_machine_mark',
     itemName: '루즈 컨트롤 머신 마크',
     slot: '얼굴장식',
+    boxOriginKey: null,
     boxOrigin: null,
     ringLevel: null,
     quantity: 1,
@@ -207,6 +209,31 @@ describe('toRecordedDrop: 가격 필드', () => {
 
     expect(drop.priceState).toBe('excluded')
     expect(drop.priceMeso).toBeUndefined()
+  })
+
+  // 가격 셋과 같은 사정이다. 여기서 빠지면 다시 쓰는 모든 경로가 기록의 key 를 지운다.
+  it('아이템 key 와 상자 key 를 옮긴다', () => {
+    const drop = toRecordedDrop({
+      ...base,
+      category: 'consumable',
+      itemKey: 'restraint_ring',
+      itemName: '리스트레인트 링',
+      slot: null,
+      boxOriginKey: 'red_boss_ring_box',
+      boxOrigin: '홍옥의 보스 반지 상자',
+      priceState: null,
+      priceMeso: null,
+      priceShare: null,
+    })
+
+    expect(drop).toMatchObject({ itemKey: 'restraint_ring', boxOriginKey: 'red_boss_ring_box' })
+  })
+
+  it('key 가 없는 옛 기록은 아이템 key 를 null 로 둔다', () => {
+    const drop = toRecordedDrop({ ...base, itemKey: null, priceState: null, priceMeso: null, priceShare: null })
+
+    expect(drop.itemKey).toBeNull()
+    expect(drop.boxOriginKey).toBeUndefined()
   })
 })
 

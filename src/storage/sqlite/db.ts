@@ -129,8 +129,10 @@ const TABLE_DEFINITIONS = [
     period_key TEXT NOT NULL,
     drop_index INTEGER NOT NULL,
     category TEXT NOT NULL,
+    item_key TEXT,
     item_name TEXT NOT NULL,
     slot TEXT,
+    box_origin_key TEXT,
     box_origin TEXT,
     ring_level INTEGER,
     quantity INTEGER NOT NULL,
@@ -397,6 +399,9 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'boss_drop_records', 'price_state', 'TEXT')
   await ensureColumn(db, 'boss_drop_records', 'price_meso', 'INTEGER')
   await ensureColumn(db, 'boss_drop_records', 'price_share', 'INTEGER')
+  // 드롭 기록도 이름 대신 아이템 key 를 든다. 값은 아래 버전 이관이 채운다.
+  await ensureColumn(db, 'boss_drop_records', 'item_key', 'TEXT')
+  await ensureColumn(db, 'boss_drop_records', 'box_origin_key', 'TEXT')
   // **테이블을 세운 커밋과 이 컬럼을 더한 커밋이 갈렸다.** `spend_records` 는 `form` 없이 만들어졌고
   // (`177c195b`) `지출 항목 고르기를 두 단계로`(`89e806fa`)가 그 컬럼을 **CREATE 문에만** 더했다.
   // 그 사이에 앱을 켠 기기는 `form` 없는 테이블을 들고 있고, INSERT 는 모든 칸을 적으므로
