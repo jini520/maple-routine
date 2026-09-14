@@ -35,6 +35,48 @@ export const RELEASE_NOTE_CATEGORY_ORDER: readonly ReleaseNoteCategory[] = [
 // 이 파일은 순수 데이터다. `features/`·`storage/`·`native/` 를 import 하지 않는다.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '1.0.9',
+    // 발행하는 날로 적는다(사용자 결정). 발행이 다른 날이 되면 발행 직전에 그날로 고친다.
+    date: '2026-09-14',
+    // 세 줄이고 `items` 에서 파생하지 않았다(사용자가 골랐다).
+    highlights: [
+      '에픽 던전 주 3회 한도를 표기합니다.',
+      '월간 결정석 판매 개수를 주간 수익으로 옮겼습니다.',
+      '다수의 버그 수정.',
+    ],
+    // 1.0.8 이후 머지된 PR #414~#424 에서 사용자가 직접 골라 쓴 문구다(2026-09-14).
+    items: [
+      {
+        category: 'improvement',
+        text: '에픽 던전 주 3회 한도를 표기하도록 수정됩니다. (아우룸레기스 대비)',
+      },
+      {
+        category: 'improvement',
+        text: '월간 결정석 판매 개수를 주간 수익으로 옮겼습니다.',
+      },
+      {
+        category: 'fix',
+        text: '대표 캐릭터가 변경되었을 때 카드에 즉시 반영되지 않는 현상이 수정됩니다.',
+      },
+      {
+        category: 'fix',
+        text: '캐릭터 관리 목록 캐시 방식이 수정됩니다.',
+      },
+      {
+        category: 'fix',
+        text: '출시 전인 컨텐츠가 목록에 출력되는 현상이 수정됩니다.',
+      },
+      {
+        category: 'fix',
+        text: '서버에서 삭제된 공지가 앱에 계속 남아있는 현상이 수정됩니다.',
+      },
+      {
+        category: 'fix',
+        text: '모달로 관리 상태가 변경된 캐릭터의 수익이 가계부에 기록되지 않는 현상이 수정됩니다.',
+      },
+    ],
+  },
+  {
     version: '1.0.8',
     date: '2026-09-13',
     // 네 줄이고 `items` 에서 파생하지 않았다(사용자가 직접 골랐다). 마지막 줄은 노트에 안 적은
