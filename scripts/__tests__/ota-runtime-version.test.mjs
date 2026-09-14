@@ -8,7 +8,9 @@ import {
   IN_REVIEW_RUNTIME_VERSIONS,
   PINNED_RUNTIME_VERSIONS,
   describePinMismatch,
+  pinsForPlatforms,
   resolveAcceptedRuntimeVersions,
+  resolvePublishPlatforms,
   resolveRuntimeVersions,
 } from '../ota-runtime-version.mjs'
 
@@ -144,5 +146,40 @@ describe('IN_REVIEW_RUNTIME_VERSIONS: 심사 중인 바이너리의 지문 ([[AD
 
   it('iOS 는 비었다 - 1.0.8 이 게시돼 1.0.6 기기가 잠긴다', () => {
     expect(IN_REVIEW_RUNTIME_VERSIONS.ios).toBeUndefined()
+  })
+})
+
+// 한 플랫폼만 발행하는 자리. 안드로이드 스토어가 1.0.6 에 머문 동안 iOS 만 내야 했다.
+describe('resolvePublishPlatforms: --platform 으로 발행할 플랫폼을 고른다', () => {
+  it('안 주면 둘 다다', () => {
+    expect(resolvePublishPlatforms([])).toEqual(['ios', 'android'])
+  })
+
+  it('--platform ios 면 iOS 만이다', () => {
+    expect(resolvePublishPlatforms(['--platform', 'ios'])).toEqual(['ios'])
+  })
+
+  it('--platform=android 모양도 받는다', () => {
+    expect(resolvePublishPlatforms(['--platform=android'])).toEqual(['android'])
+  })
+
+  it('모르는 플랫폼이면 던진다. 오타로 둘 다 발행되면 안 된다', () => {
+    expect(() => resolvePublishPlatforms(['--platform', 'ipados'])).toThrow('ipados')
+  })
+
+  it('--platform 뒤에 값이 없으면 던진다', () => {
+    expect(() => resolvePublishPlatforms(['--platform'])).toThrow()
+  })
+})
+
+describe('pinsForPlatforms: 발행하는 플랫폼의 못박기만 남긴다', () => {
+  const pins = { android: { runtimeVersion: ANDROID_STORE, binaryAppVersion: '1.0.6' } }
+
+  it('iOS 만 발행하면 안드로이드 못박기는 안 걸린다', () => {
+    expect(pinsForPlatforms(pins, ['ios'])).toEqual({})
+  })
+
+  it('안드로이드를 발행하면 그 못박기가 남는다', () => {
+    expect(pinsForPlatforms(pins, ['ios', 'android'])).toEqual(pins)
   })
 })

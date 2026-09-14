@@ -143,3 +143,40 @@ export function describePinMismatch(platform, pin, published) {
     `  둘 중 무엇이 맞는지는 바이너리에서 읽어 확인하세요(release.md 규칙 2·5).`
   )
 }
+
+/** 발행 스크립트가 아는 플랫폼. 순서가 발행 순서다. */
+export const PUBLISH_PLATFORMS = ['ios', 'android']
+
+/**
+ * 발행할 플랫폼. `--platform ios` 나 `--platform=ios` 를 주면 그 플랫폼만, 안 주면 둘 다.
+ *
+ * 모르는 값이면 던진다. 오타가 둘 다 발행으로 떨어지면 못 받는 기기가 있는 플랫폼에 번들이 나간다.
+ *
+ * @param argv `process.argv.slice(2)`
+ */
+export function resolvePublishPlatforms(argv) {
+  const picked = []
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i]
+    let value = null
+    if (arg === '--platform') {
+      value = argv[i + 1]
+      i += 1
+      if (value === undefined) throw new Error('--platform 뒤에 ios 나 android 를 주세요.')
+    } else if (arg.startsWith('--platform=')) {
+      value = arg.slice('--platform='.length)
+    } else {
+      continue
+    }
+    if (!PUBLISH_PLATFORMS.includes(value)) {
+      throw new Error(`모르는 플랫폼 "${value}" 입니다. ios 나 android 를 주세요.`)
+    }
+    if (!picked.includes(value)) picked.push(value)
+  }
+  return picked.length === 0 ? [...PUBLISH_PLATFORMS] : PUBLISH_PLATFORMS.filter((platform) => picked.includes(platform))
+}
+
+/** 발행하는 플랫폼의 못박기만 남긴 표. 안 내는 플랫폼의 못박기가 검사와 이름표 요구를 걸면 안 된다. */
+export function pinsForPlatforms(pins, platforms) {
+  return Object.fromEntries(Object.entries(pins ?? {}).filter(([platform]) => platforms.includes(platform)))
+}
