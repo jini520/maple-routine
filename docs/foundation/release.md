@@ -1,7 +1,7 @@
 # 스토어 릴리스 (Play · App Store)
 
 > **범위**: 스토어에 나가는 **바이너리**를 만드는 절차: 서명·버전·빌드 커맨드·산출물 검증, 그리고 콘솔에 채워 넣어야 하는 요건. 앱 안에서 도는 OTA 갱신은 [features/live-update.md](../features/live-update.md), 광고 관련 스토어 요건의 *배경*은 [features/ads.md](../features/ads.md).
-> **관련 소스**(전부 저장소 루트 아래: [[ADR-155]] 결정 2): `android/app/build.gradle`(서명·`versionCode`) · `android/keystore.properties`(**커밋 금지**) · `ios/app.xcodeproj`(iOS 서명) · `ios/app/Info.plist`(`CFBundleVersion`) · `app.json`(**두 플랫폼 공통 지문 재료**. `expo.version`·`ios.buildNumber`·`android.versionCode`) · `package.json`(OTA 매니페스트 `appVersion` 의 원천. `app.json` 의 `expo.version` 과 **같아야 하고** `src/__tests__/app-version-policy.test.ts` 가 본다. 설정 화면은 내장 번들이면 바이너리 버전을 보인다: [[ADR-279]]).
+> **관련 소스**(전부 저장소 루트 아래: [[ADR-155]] 결정 2): `android/app/build.gradle`(서명·`versionCode`) · `android/keystore.properties`(**커밋 금지**) · `ios/app.xcodeproj`(iOS 서명) · `ios/app/Info.plist`(`CFBundleVersion`) · `app.json`(**두 플랫폼 공통 지문 재료**. `expo.version`·`ios.buildNumber`·`android.versionCode`) · `package.json`(**OTA 버전**. 매니페스트 `appVersion` 의 원천이고 스토어 버전인 `app.json` 의 `expo.version` 과 따로 올린다. 화면은 도는 번들의 버전을 보인다: [[ADR-279]]).
 > **관련 ADR**: [[ADR-091]](Android 서명) ADR-090(광고: 스토어 요건이 늘어난 이유) ADR-024(버전 형식) [[ADR-119]](릴리스 노트) [[ADR-126]](핵심 목록·모달). **관련 문서**: [../features/ads.md](../features/ads.md), [../features/live-update.md](../features/live-update.md), [../features/site.md](../features/site.md), [../trouble/2026-08-04-ios-appstore-signing.md](../trouble/2026-08-04-ios-appstore-signing.md).
 
 ## 빌드는 Expo/네이티브 하나다 ([[ADR-155]])
@@ -653,10 +653,9 @@ AAB `base/assets/fingerprint`), `publish-rn-ota.mjs` 는 **발행 시점 트리�
 굽고 나서 번호를 올리면(소진 여부를 로컬 아카이브에서 확인한 뒤 올리므로 그렇게 되기 쉽다)
 **두 바이너리를 모두 다시 구워야 한다.**
 
-**버전을 올릴 때는 `app.json` 의 `expo.version` 과 `package.json` 의 `version` 을 함께 올린다.** 1.0.8 은
-`app.json` 만 올려 스토어 바이너리의 설정 화면이 1.0.7 을 보였다([[ADR-279]]). 둘이 다르면
-`src/__tests__/app-version-policy.test.ts` 가 실패한다. `package.json` 의 `version` 은 지문 재료가 아니라서
-나중에 맞춰도 바이너리를 다시 굽지 않아도 된다(2026-09-14 실측).
+**스토어 릴리스는 `app.json` 의 `expo.version` 을, OTA 발행은 `package.json` 의 `version` 을 올린다.** 둘은 서로
+관계를 검사하지 않는다([[ADR-279]] 결정 4). OTA 버전을 올리려고 `app.json` 을 건드리면 지문이 바뀐다.
+`package.json` 의 `version` 은 지문 재료가 아니다(2026-09-14 실측).
 
 ### 규칙 2: 업로드 직전에 ‘바이너리 안 지문 == 트리 계산값’을 대조한다
 
