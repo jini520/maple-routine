@@ -1,6 +1,6 @@
 
 import { assetUri } from '../../assets/__tests__/asset-uri'
-import { cashbookRowIconOf, getItemIconUrl, getItemIconUrlByFile } from '../assets/asset-lookup'
+import { cashbookRowIconOf, getItemIconUrl, getItemIconUrlByFile, spendIconOf } from '../assets/asset-lookup'
 
 describe('getItemIconUrl', () => {
   it('item-icons.json에 매핑된 일반 아이템은 URL을 반환한다 (홍옥의 보스 반지 상자 -> boss_ring_box_red.png)', () => {
@@ -93,17 +93,38 @@ describe('가계부 줄 표식', () => {
     '스타포스',
     '잠재능력',
     '에디셔널 잠재능력',
-    '사냥',
-    '버프',
+    'income:hunting',
+    'spend:buff',
   ])('%s 줄이 그림을 찾는다', (key) => {
     expect(cashbookRowIconOf(key)).not.toBeNull()
   })
 
   // 표에 없는 갈래는 `null` 이어야 화면이 아이콘으로 떨어진다. 폴백 그림을 두면 틀린 것을 그린다.
-  it.each(['아이템 판매', '컨텐츠', '이벤트·BM', '아이템 구매', '기타'])(
+  it.each(['아이템 판매', 'income:item_sale', 'income:etc', 'spend:content', 'spend:event_bm', 'spend:item_purchase', 'spend:etc'])(
     '%s 줄은 그림이 없다',
     (key) => {
       expect(cashbookRowIconOf(key)).toBeNull()
     },
   )
+})
+
+// 지출 타일 그림. 그림은 카탈로그의 `tiles` 가 들고 여기서는 자산으로 풀기만 한다.
+describe('spendIconOf', () => {
+  it('아이템 그림 파일은 타일 왼쪽에 선다', () => {
+    const icon = spendIconOf({ file: 'seiram_elixir.webp' })
+    expect(icon?.ref).toBeDefined()
+    expect(icon?.beside).toBe(false)
+  })
+
+  it('지역 아이콘은 이름 옆에 선다', () => {
+    const icon = spendIconOf({ map: 'highMountain' })
+    expect(icon?.ref).toBeDefined()
+    expect(icon?.beside).toBe(true)
+  })
+
+  it('그림이 없거나 못 찾으면 null 이다', () => {
+    expect(spendIconOf(undefined)).toBeNull()
+    expect(spendIconOf({ file: 'nope.webp' })).toBeNull()
+    expect(spendIconOf({ map: 'nope' })).toBeNull()
+  })
 })

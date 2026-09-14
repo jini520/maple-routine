@@ -89,8 +89,9 @@ const 수입: IncomeDraft = {
   hunt: null,
   quantity: null,
   earnedOn: '2026-08-23',
-  category: '사냥',
-  item: '엘리시움',
+  category: 'hunting',
+  item: '밤의 길 3',
+  itemKey: 'tallahart_road_of_night_3',
   mesoAmount: 1_200_000_000,
   // 사냥에는 경매장이 없다. 수수료 칸 둘은 언제나 `null` 이다.
   saleFeePercent: null,
@@ -104,9 +105,10 @@ const 수입: IncomeDraft = {
 const 메포지출: SpendDraft = {
   ocid: null,
   spentOn: '2026-08-23',
-  category: '컨텐츠',
-  item: '하이마운틴 2단계',
-  form: '솔 에르다',
+  category: 'content',
+  item: '하이마운틴 솔 2단계',
+  itemKey: null,
+  formItemKeys: { sol_erda: 'high_mountain_2' },
   itemKind: null,
   quantity: 1,
   mesoAmount: null,
@@ -191,7 +193,7 @@ describe('마지막 사냥 자리를 기억한다', () => {
 
     expect(huntSelection.setLastHuntSelection).toHaveBeenCalledWith({
       ocid: 'ocid-1',
-      ground: '엘리시움',
+      groundKey: 'tallahart_road_of_night_3',
     })
   })
 
@@ -199,7 +201,7 @@ describe('마지막 사냥 자리를 기억한다', () => {
   it('사냥터가 없는 사냥 행은 안 남긴다', async () => {
     const { recordIncome } = require('../records') as typeof import('../records')
 
-    await recordIncome({ ...수입, item: null }, 지금)
+    await recordIncome({ ...수입, item: null, itemKey: null }, 지금)
 
     expect(huntSelection.setLastHuntSelection).not.toHaveBeenCalled()
   })
@@ -207,7 +209,7 @@ describe('마지막 사냥 자리를 기억한다', () => {
   it('다른 갈래는 안 남긴다. 그 칸의 글자는 사냥터가 아니다', async () => {
     const { recordIncome } = require('../records') as typeof import('../records')
 
-    await recordIncome({ ...수입, category: '아이템 판매', item: '엘리시움' }, 지금)
+    await recordIncome({ ...수입, category: 'item_sale', item: '엘리시움', itemKey: 'tallahart_road_of_night_3' }, 지금)
 
     expect(huntSelection.setLastHuntSelection).not.toHaveBeenCalled()
   })
@@ -287,8 +289,9 @@ const 수입행 = {
   id: 'inc-1',
   ocid: null,
   earnedOn: '2026-08-25',
-  category: '사냥' as const,
+  category: 'hunting' as const,
   item: '엘리시움',
+  itemKey: null,
   mesoAmount: 1_200_000_000,
   saleFeePercent: null,
   saleFeeMeso: null,
@@ -303,9 +306,10 @@ const 지출행 = {
   id: 'spd-1',
   ocid: null,
   spentOn: '2026-08-25',
-  category: '컨텐츠' as const,
+  category: 'content' as const,
   item: '몬스터 파크',
-  form: null,
+  itemKey: 'monster_park',
+  formItemKeys: null,
   itemKind: null,
   quantity: 2,
   mesoAmount: null,
@@ -376,7 +380,7 @@ describe('줄에 적는 것', () => {
     expect(
       recordTitleOf({
         kind: 'income',
-        record: { ...수입행, category: '아이템 판매' },
+        record: { ...수입행, category: 'item_sale' },
         characterName: '아델',
       }),
     ).toBe('아델 · 엘리시움')
@@ -386,8 +390,49 @@ describe('줄에 적는 것', () => {
   it('이름이 없으면 갈래 이름을 대신 적는다', () => {
     const { recordTitleOf } = require('../records') as typeof import('../records')
 
-    expect(recordTitleOf({ kind: 'spend', record: { ...지출행, item: null }, characterName: '' })).toBe('컨텐츠')
+    expect(
+      recordTitleOf({ kind: 'spend', record: { ...지출행, item: null, itemKey: null }, characterName: '' }),
+    ).toBe('컨텐츠')
     expect(recordTitleOf({ kind: 'income', record: { ...수입행, item: null }, characterName: '' })).toBe('사냥')
+  })
+
+  // 기록은 key 로 카탈로그를 가리킨다. 카탈로그에서 이름을 바꾸면 옛 기록도 새 이름으로 선다.
+  it('항목 key 가 있으면 저장된 이름이 아니라 카탈로그의 지금 이름을 적는다', () => {
+    const { recordTitleOf } = require('../records') as typeof import('../records')
+
+    expect(
+      recordTitleOf({
+        kind: 'spend',
+        record: { ...지출행, category: 'event_bm', item: '미호로이드 교환권', itemKey: 'mihoroid' },
+        characterName: '',
+      }),
+    ).toBe('미호로이드')
+  })
+
+  it('에픽던전 리워드는 형태별 항목 key 로 이름을 다시 만든다', () => {
+    const { recordTitleOf } = require('../records') as typeof import('../records')
+
+    expect(
+      recordTitleOf({
+        kind: 'spend',
+        record: {
+          ...지출행,
+          item: '옛 이름',
+          itemKey: null,
+          formItemKeys: { exp: 'high_mountain_2', sol_erda: 'high_mountain_1' },
+        },
+        characterName: '',
+      }),
+    ).toBe('하이마운틴 EXP 2단계, 솔 1단계')
+  })
+
+  // 카탈로그에서 빠진 항목이다. 지우지 않고 그때 이름으로 선다.
+  it('key 로 못 찾으면 저장된 이름을 적는다', () => {
+    const { recordTitleOf } = require('../records') as typeof import('../records')
+
+    expect(
+      recordTitleOf({ kind: 'spend', record: { ...지출행, item: '없어진 항목', itemKey: 'removed_item' }, characterName: '' }),
+    ).toBe('없어진 항목')
   })
 })
 
@@ -590,8 +635,8 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
   it('손입력 줄이 캐릭터 이름을 든다. 없으면 빈 문자열이다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([
       // `사냥` 은 첫 칸이 갈래라(아래 describe) 이름이 보이는 갈래로 잰다.
-      { id: 'i1', ocid: 'ocid-1', earnedOn: '2026-08-21', category: '아이템 판매', item: '엘리시움', mesoAmount: 1, recordedAt: 'a' },
-      { id: 'i2', ocid: null, earnedOn: '2026-08-21', category: '아이템 판매', item: '리우', mesoAmount: 1, recordedAt: 'b' },
+      { id: 'i1', ocid: 'ocid-1', earnedOn: '2026-08-21', category: 'item_sale', item: '엘리시움', mesoAmount: 1, recordedAt: 'a' },
+      { id: 'i2', ocid: null, earnedOn: '2026-08-21', category: 'item_sale', item: '리우', mesoAmount: 1, recordedAt: 'b' },
     ])
     const { loadDayRecords, recordTitleOf } = require('../records') as typeof import('../records')
 
@@ -605,7 +650,7 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
   it('보스 줄이 손입력보다 위에 선다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     income.getIncomeRecordsBetween.mockResolvedValue([
-      { id: 'i1', earnedOn: '2026-08-21', category: '사냥', item: null, mesoAmount: 1, recordedAt: 'z' },
+      { id: 'i1', earnedOn: '2026-08-21', category: 'hunting', item: null, mesoAmount: 1, recordedAt: 'z' },
     ])
     const { loadDayRecords, isManualRecord } = require('../records') as typeof import('../records')
 
@@ -716,11 +761,11 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     bossDrops.getBossDropRecords.mockResolvedValue([드롭()])
     income.getIncomeRecordsBetween.mockResolvedValue([
-      { id: 'i1', earnedOn: '2026-08-21', category: '사냥', item: null, mesoAmount: 700_000_000, recordedAt: 'a' },
+      { id: 'i1', earnedOn: '2026-08-21', category: 'hunting', item: null, mesoAmount: 700_000_000, recordedAt: 'a' },
     ])
     spend.getSpendRecordsBetween.mockResolvedValue([
       {
-        id: 's1', spentOn: '2026-08-21', category: '컨텐츠', item: '몬스터 파크', form: null, itemKind: null,
+        id: 's1', spentOn: '2026-08-21', category: 'content', item: '몬스터 파크', itemKey: 'monster_park', formItemKeys: null, itemKind: null,
         quantity: 1, mesoAmount: 50_000_000, tariffMeso: null, pointAmount: 1_200,
         pointPer100mMeso: 1_180, cashAmount: null, memo: null, recordedAt: 'b',
       },
@@ -811,8 +856,9 @@ describe('사냥 줄의 이름과 셈', () => {
     id: 'inc-h',
     ocid: 'ocid-1',
     earnedOn: '2026-08-21',
-    category: '사냥' as const,
+    category: 'hunting' as const,
     item: '밤의 길 3',
+    itemKey: 'tallahart_road_of_night_3',
     mesoAmount: 41_760_000,
     saleFeePercent: null,
     saleFeeMeso: null,

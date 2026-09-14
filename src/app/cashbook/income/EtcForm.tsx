@@ -92,8 +92,10 @@ export function EtcForm(
       void submit({
         ocid,
         earnedOn: props.dateKey,
-        category: '기타',
+        category: 'etc',
         item: name.trim() === '' ? null : name.trim(),
+        // 직접 친 이름이라 가리킬 key 가 없다.
+        itemKey: null,
         // 통화가 갈리는 갈래에서는 **고른 통화의 칸에만** 담는다.
         mesoAmount: currency === 'meso' ? amount : null,
         saleFeePercent: null,

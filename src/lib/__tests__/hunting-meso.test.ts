@@ -13,12 +13,12 @@ import {
 import { getItemIconUrlByFile } from '../assets/asset-lookup'
 
 /** 사용자가 준 예시의 맵. 밤의 길 3(탈라하트, 40마리, lv.294). */
-const NIGHT_ROAD_3 = { name: '밤의 길 3', force: 700, mobs: 40, levels: [294] } as const
+const NIGHT_ROAD_3 = { key: 'tallahart_road_of_night_3', name: '밤의 길 3', force: 700, mobs: 40, levels: [294] } as const
 /** 레벨이 둘인 맵. 풍화된 기쁨과 분노의 땅(소멸의 여로). */
-const TWO_LEVEL_MAP = { name: '풍화된 기쁨과 분노의 땅', force: 30, mobs: 29, levels: [200, 201] } as const
+const TWO_LEVEL_MAP = { key: 'road_of_vanishing_weathered_land_of_joy_and_anger', name: '풍화된 기쁨과 분노의 땅', force: 30, mobs: 29, levels: [200, 201] } as const
 
 /** 34마리 맵. 반올림이 실제로 일어나는 자리다(33/34 = 97.06%). */
-const ODIUM_1 = { name: '성문으로 가는 길 1', force: 130, mobs: 34, levels: [270] } as const
+const ODIUM_1 = { key: 'odium_road_to_castle_gate_1', name: '성문으로 가는 길 1', force: 130, mobs: 34, levels: [270] } as const
 
 const BASE = {
   characterLevel: null,
@@ -88,7 +88,7 @@ describe('huntingMesoOf', () => {
   it('사용자가 준 예시를 그대로 낸다. 290레벨 40마리 1시간 = 41,760,000', () => {
     const meso = huntingMesoOf({
       ...BASE,
-      ground: { name: '가상', force: 0, mobs: 40, levels: [290] },
+      ground: { key: 'fake', name: '가상', force: 0, mobs: 40, levels: [290] },
     })
     expect(meso).toBe(41_760_000)
   })

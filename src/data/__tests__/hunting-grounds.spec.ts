@@ -25,6 +25,26 @@ describe('사냥터 참조표 정합성', () => {
     expect(new Set(names).size).toBe(names.length)
   })
 
+  // key 는 기록이 사냥터를 가리키는 열쇠다. 이름이 바뀌어도 그대로여야 한다.
+  it('지역 · 사냥터 key 는 영문 snake_case 이고 유일하다', () => {
+    const regionKeys = REGIONS.map((region) => region.key)
+    const groundKeys = GROUNDS.map((ground) => ground.key)
+    for (const key of [...regionKeys, ...groundKeys]) {
+      expect(key).toMatch(/^[a-z0-9]+(_[a-z0-9]+)*$/)
+    }
+    expect(new Set(regionKeys).size).toBe(regionKeys.length)
+    expect(new Set(groundKeys).size).toBe(groundKeys.length)
+  })
+
+  // 번역이 다른 지역에서 겹치지 않게 지역 key 를 앞에 붙인다.
+  it('사냥터 key 는 제 지역 key 로 시작한다', () => {
+    for (const region of REGIONS) {
+      for (const ground of region.grounds) {
+        expect(ground.key.startsWith(`${region.key}_`)).toBe(true)
+      }
+    }
+  })
+
   it('지역 슬러그도 유일하다', () => {
     const slugs = REGIONS.map((region) => region.slug)
     expect(new Set(slugs).size).toBe(slugs.length)
@@ -116,6 +136,7 @@ describe('사냥터 참조표 정합성', () => {
   it('사용자가 예시로 준 줄이 그대로 있다', () => {
     const tallahart = REGIONS.find((region) => region.name === '탈라하트')
     expect(tallahart?.grounds).toContainEqual({
+      key: 'tallahart_road_of_night_3',
       name: '밤의 길 3',
       force: 700,
       mobs: 40,

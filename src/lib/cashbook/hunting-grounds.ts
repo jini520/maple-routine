@@ -5,11 +5,10 @@
  * 파일 자체는 대상이라 **사용자가 준 값 그대로**이고, 그 형태는
  * `data/__tests__/hunting-grounds.spec.ts` 가 붙든다. 여기 있는 것은 조회 셋뿐이다.
  *
- * ## 이름 하나로 지역이 따라온다
+ * ## 사냥터 key 하나로 지역이 따라온다
  *
- * 사냥터 이름이 **전역 유일**이라(408개 중 중복 0. 그 사실을 테스트가 지킨다) 기록에 지역을
- * 안 적는다. 그래서 `findHuntingGround` 가 사냥터와 지역을 **함께** 돌려준다.
- * 부르는 쪽이 지역을 다시 찾게 두면 그 조회가 화면마다 한 벌씩 생긴다.
+ * 기록은 사냥터 key 만 적고 지역을 안 적는다. 그래서 `findHuntingGround` 가 사냥터와 지역을
+ * **함께** 돌려준다. 부르는 쪽이 지역을 다시 찾게 두면 그 조회가 화면마다 한 벌씩 생긴다.
  */
 import huntingGrounds from '../../data/hunting-grounds.json'
 import type { HuntingGround, HuntingGroundTable, HuntingRegion } from '../../types/hunting-grounds'
@@ -111,23 +110,35 @@ export function huntingGroundsFor(
   })
 }
 
-/** 슬러그로 지역 하나. 없으면 `null`. 화면이 지운 슬러그를 들고 있을 수 있다. */
-export function findHuntingRegion(slug: string): HuntingRegion | null {
-  return HUNTING_REGIONS.find((region) => region.slug === slug) ?? null
+/** 지역 key 로 지역 하나. 없으면 `null`. 화면이 지운 key 를 들고 있을 수 있다. */
+export function findHuntingRegion(key: string): HuntingRegion | null {
+  return HUNTING_REGIONS.find((region) => region.key === key) ?? null
 }
 
 /**
- * 이름으로 사냥터 하나. **지역과 함께** 돌려준다.
+ * 사냥터 key 로 사냥터 하나. **지역과 함께** 돌려준다.
  *
- * 못 찾으면 `null` 이고, 그것이 정상 경로다: 이전에 적힌 사냥 기록은 이 칸에
- * **자유 입력 글자**를 들고 있어 어느 사냥터에도 안 걸린다. 그때 화면은 계산기 대신 옛 모양으로
- * 연다.
+ * 못 찾으면 `null` 이다. 참조표에서 빠진 사냥터를 기록이 들고 있을 수 있고, 그때 화면은 계산기
+ * 대신 옛 모양으로 연다.
  */
 export function findHuntingGround(
+  key: string,
+): { region: HuntingRegion; ground: HuntingGround } | null {
+  return findGround((ground) => ground.key === key)
+}
+
+/** 이름으로 사냥터 하나. 이름만 저장된 옛 사냥 기록을 key 로 옮기는 이관만 쓴다. */
+export function findHuntingGroundByName(
   name: string,
 ): { region: HuntingRegion; ground: HuntingGround } | null {
+  return findGround((ground) => ground.name === name)
+}
+
+function findGround(
+  matches: (ground: HuntingGround) => boolean,
+): { region: HuntingRegion; ground: HuntingGround } | null {
   for (const region of HUNTING_REGIONS) {
-    const ground = region.grounds.find((each) => each.name === name)
+    const ground = region.grounds.find(matches)
     if (ground !== undefined) return { region, ground }
   }
   return null

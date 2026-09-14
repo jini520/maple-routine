@@ -21,22 +21,25 @@ import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountF
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { formatMesoCompact } from '../../../lib/cashbook/meso-compact'
 import { spendIconOf } from '../../../lib/assets/asset-lookup'
+import { spendCategoryNameOf, spendFormOf } from '../../../lib/cashbook/categories'
 import {
   BASE_TIER,
   buildSpendRewardName,
   findSpendChoice,
+  findSpendRewardChoice,
   formsOf,
   isOptionAxisOpen,
   optionAxesOf,
   optionItemOf,
-  parseSpendRewardName,
   pickSpendOption,
   pointToMeso,
   spendGroupsOf,
+  spendRewardItemKeys,
   spendRewardPrice,
   tierNameOf,
   type SpendCatalogChoice,
   type SpendCatalogItem,
+  type SpendTileIcon,
 } from '../../../lib/cashbook/spend-catalog'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { CharacterField, FieldRow, QuantityStepper } from '../sheet-fields'
@@ -75,7 +78,10 @@ const TILE_ICON_SIZE = 24
 const TITLE_ICON_SIZE = 18
 
 function ItemTile(props: {
+  /** 타일 key. 그림의 `testID` 가 쓴다. */
+  tileKey: string
   label: string
+  icon?: SpendTileIcon
   /** 값이 하나로 정해지는 칸만 가격을 적는다. 단계가 여럿이면 단계마다 값이 달라 못 적는다. */
   price: string | null
   selected: boolean
@@ -83,7 +89,7 @@ function ItemTile(props: {
   disabled?: boolean
   onPress: () => void
 }): React.JSX.Element {
-  const icon = spendIconOf(props.label)
+  const icon = spendIconOf(props.icon)
   return (
     <Pressable
       role="button"
@@ -109,7 +115,7 @@ function ItemTile(props: {
         {icon !== null && !icon.beside && (
           // 아이템 아이콘은 **원본 비율 그대로** 둔다. 상자에 맞춰 늘리면 도트가 뭉갠다.
           <Image
-            testID={`spend-tile-icon-${props.label}`}
+            testID={`spend-tile-icon-${props.tileKey}`}
             source={icon.ref}
             resizeMode="contain"
             style={{ width: TILE_ICON_SIZE, height: TILE_ICON_SIZE }}
@@ -120,7 +126,7 @@ function ItemTile(props: {
           <View className="w-full flex-row items-center justify-center gap-1">
             {icon !== null && icon.beside && (
               <Image
-                testID={`spend-tile-icon-${props.label}`}
+                testID={`spend-tile-icon-${props.tileKey}`}
                 source={icon.ref}
                 resizeMode="contain"
                 style={{ width: TITLE_ICON_SIZE, height: TITLE_ICON_SIZE }}
@@ -153,12 +159,12 @@ function ItemTile(props: {
  * 묶음 이름. 안 열린 묶음은 지우지 않고 흐리게 둔다. 기간제 이벤트는 열릴 때만 있는 것이라
  * 숨기면 그런 것이 있었지 를 기억할 자리가 사라진다. 자리는 남기고 못 고르게 한다.
  */
-function GroupLabel(props: { group: string; active: boolean }): React.JSX.Element {
+function GroupLabel(props: { groupKey: string; group: string; active: boolean }): React.JSX.Element {
   return (
     <View className="flex-row items-center gap-1.5">
       <Text className="text-11 text-text-disabled">{props.group}</Text>
       {!props.active && (
-        <Text testID={`spend-sheet-closed-${props.group}`} className="text-11 text-text-disabled">
+        <Text testID={`spend-sheet-closed-${props.groupKey}`} className="text-11 text-text-disabled">
           · 이벤트 기간이 아닙니다
         </Text>
       )}
@@ -169,10 +175,9 @@ function GroupLabel(props: { group: string; active: boolean }): React.JSX.Elemen
 /**
  * 수정으로 열 때 고르던 자리를 되짚는다. 길이 둘이다.
  *
- * 새 기록의 이름은 형태별 단계를 담고 있어(`하이마운틴 EXP 1단계, 솔 2단계`) 그것을 되읽는다.
- * 옛 기록은 항목 이름 하나에 `form` 이 딸려 있으므로(`하이마운틴 2단계` + `경험치`) 그 짝을
- * 형태 하나짜리 표로 옮긴다. 둘 다 못 읽으면 `null` 이고 그때 목록이 선다. 시트가 안 열리는
- * 것보다 낫다.
+ * 항목 key 가 있으면 그 항목의 단계와 축 값으로 선택을 되살린다. 에픽던전 리워드는 형태별 항목 key 로
+ * 형태마다 단계를 되살린다. 둘 다 못 찾으면 `null` 이고 그때 목록이 선다. 시트가 안 열리는 것보다
+ * 낫다.
  */
 function restoreChoice(record: SpendRecord): {
   choice: SpendCatalogChoice
@@ -180,25 +185,19 @@ function restoreChoice(record: SpendRecord): {
   tierByForm: Record<string, string>
   optionByAxis: Record<string, string>
 } | null {
-  const exact = findSpendChoice(record.category, record.item)
+  const exact = findSpendChoice(record.category, record.itemKey)
   if (exact !== null) {
-    const tier = exact.item.tier
-    return {
-      choice: exact.choice,
-      item: exact.item,
-      tierByForm: record.form !== null && tier !== undefined ? { [record.form]: tier } : {},
-      optionByAxis: { ...exact.item.options },
-    }
+    return { choice: exact.choice, item: exact.item, tierByForm: {}, optionByAxis: { ...exact.item.options } }
   }
 
-  const reward = parseSpendRewardName(record.category, record.item)
+  const reward = findSpendRewardChoice(record.category, record.formItemKeys)
   if (reward === null) return null
   return { choice: reward.choice, item: null, tierByForm: reward.tierByForm, optionByAxis: {} }
 }
 
 export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   const editing = props.editing !== undefined
-  /** 한 번만 되짚는 복원. 이름만 카탈로그를 거친다. */
+  /** 한 번만 되짚는 복원. 항목 key 나 형태별 항목 key 로 카탈로그를 찾는다. */
   const [found] = useState(() =>
     props.editing === undefined ? null : restoreChoice(props.editing),
   )
@@ -268,7 +267,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
     setTierByForm({})
     setOptionByAxis({})
     setQuantity(1)
-    props.onScrollKeyChange(next.label)
+    props.onScrollKeyChange(next.key)
   }
 
   /** ② 그 안의 단계를 고르는 단계. 형태가 없는 대표의 길이다. */
@@ -300,9 +299,8 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
    *
    * 수정 모드는 고른 것을 적되, 카탈로그가 그 항목을 못 찾으면 기록에 적힌 이름을 그대로 쓴다.
    */
-  const title = editing
-    ? (choice?.label ?? props.editing?.item ?? props.category)
-    : (choice?.label ?? props.category)
+  const categoryName = spendCategoryNameOf(props.category)
+  const title = editing ? (choice?.label ?? props.editing?.item ?? categoryName) : (choice?.label ?? categoryName)
 
   // **타일 격자에만 저장이 없다**. 거기엔 셀 자리 자체가 없어 시트가 바닥 줄을 안 세운다.
   useSaveSlot(props.setSave, {
@@ -315,10 +313,11 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
         ocid,
         spentOn: props.dateKey,
         category: props.category,
-        // 형태가 있으면 고른 단계들이 이름에 든다(`하이마운틴 EXP 1단계, 솔 2단계`).
+        // 그때 이름. 형태가 있으면 고른 단계들이 이름에 든다(`하이마운틴 EXP 1단계, 솔 2단계`).
         item: forms.length > 0 ? rewardName : (item?.name ?? null),
-        // 형태 칸은 안 쓴다. 한 기록이 형태 둘을 함께 지므로 어느 쪽인가 를 물을 수 없다.
-        form: null,
+        // 한 기록이 형태 둘을 함께 지므로 형태가 있으면 항목 key 하나가 아니라 형태별 항목 key 다.
+        itemKey: forms.length > 0 ? null : (item?.key ?? null),
+        formItemKeys: forms.length > 0 && choice !== null ? spendRewardItemKeys(choice, tierByForm) : null,
         // 종류는 아이템 구매의 것이다. 여기서는 `null` 이라 장비를 산 컨텐츠 지출 같은
         // 행이 생기지 않는다.
         itemKind: null,
@@ -356,15 +355,15 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
         // 격자 바닥에 빈 띠가 남는다. 타일 줄의 `-mb-1` 이 빠지는 4 를 메운다.
         <View className="gap-4">
           {rowsOfGroups(groups).map((row) => (
-            <View key={row[0]!.group} className="gap-1">
+            <View key={row[0]!.key} className="gap-1">
               {/*
                 이름과 타일이 **같은 칸 폭**을 쓴다. 짝지은 줄에서는 이름 둘이 타일 둘 바로
                 위에 각각 서고, 타일은 3열 격자의 1열·2열 자리 그대로다(폭도 간격도 같다).
               */}
               <View className="-mx-1 flex-row">
                 {row.map((group) => (
-                  <View key={group.group} className={row.length === 2 ? 'w-1/3 px-1' : 'px-1'}>
-                    <GroupLabel group={group.group} active={group.active} />
+                  <View key={group.key} className={row.length === 2 ? 'w-1/3 px-1' : 'px-1'}>
+                    <GroupLabel groupKey={group.key} group={group.group} active={group.active} />
                   </View>
                 ))}
               </View>
@@ -374,8 +373,10 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
                 {row.flatMap((group) =>
                   group.choices.map((each) => (
                     <ItemTile
-                      key={each.label}
+                      key={each.key}
+                      tileKey={each.key}
                       label={each.label}
+                      icon={each.icon}
                       // 단계가 여럿이면 **나란히** 적는다. `7,500 | 30,000 메포`.
                       price={tilePriceLabel(each.items)}
                       selected={false}
@@ -403,7 +404,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
             보상이라 안 산 상태이고, 그래서 전부 0단계면 저장이 막힌다.
           */}
           {forms.map((each) => (
-            <FieldRow key={each} label={each} testID={`spend-sheet-form-${each}`}>
+            <FieldRow key={each} label={spendFormOf(each)?.name ?? each} testID={`spend-sheet-form-${each}`}>
               <Segment
                 options={tierOptions}
                 selected={tierByForm[each] ?? BASE_TIER}

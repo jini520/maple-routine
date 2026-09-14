@@ -34,6 +34,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
 })
 
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
+import type { SpendCategoryKey, SpendFormKey } from '../../../lib/cashbook/categories'
 import { SpendSheet } from '../SpendSheet'
 
 // 큰 숫자의 카운트업 기억은 **모듈 수준**이라 케이스 사이로 샌다.
@@ -80,13 +81,23 @@ async function 누르기(view: Rendered, label: string): Promise<void> {
 
 type 갈래이름 = '컨텐츠' | '이벤트·BM' | '버프' | '주문서' | '아이템 구매' | '기타'
 
+/** 카드의 `testID` 는 갈래 key 로 선다. 케이스는 읽히게 이름으로 적고 여기서 key 로 옮긴다. */
+const 갈래key: Record<갈래이름, SpendCategoryKey> = {
+  컨텐츠: 'content',
+  '이벤트·BM': 'event_bm',
+  버프: 'buff',
+  주문서: 'scroll',
+  '아이템 구매': 'item_purchase',
+  기타: 'etc',
+}
+
 /**
  * 1차의 카드를 누른다. **이름이 아니라 `testID` 로 집는다**. 기타가 갈래 이름이자
  * 아이템 구매의 종류 이름이라 라벨만으로는 둘이 안 갈린다.
  */
 async function 갈래고르기(view: Rendered, label: 갈래이름): Promise<void> {
   await act(async () => {
-    fireEvent.press(view.getByTestId(`spend-sheet-category-${label}`))
+    fireEvent.press(view.getByTestId(`spend-sheet-category-${갈래key[label]}`))
   })
 }
 
@@ -106,19 +117,25 @@ async function 갈래바꾸기(view: Rendered, label: 갈래이름): Promise<voi
  * 에픽던전 리워드는 **두 단계**다. 대표를 고르고, 그 안에서 형태마다 단계를 고른다.
  * 형태도 단계도 없는 항목(몬스터 파크·영약)은 `누르기` 한 번으로 끝난다.
  */
-async function 에픽던전(view: Rendered, 대표: string, 형태: string, 단계: string): Promise<void> {
+async function 에픽던전(view: Rendered, 대표: string, 형태: 형태이름, 단계: string): Promise<void> {
   await 누르기(view, 대표)
   await 형태단계(view, 형태, 단계)
 }
 
-/**
- * 형태 한 줄에서 단계를 고른다. **줄을 지목해서** 누른다.
- *
- * 두 줄의 조각 이름이 `0단계|1단계|2단계` 로 똑같아 라벨만으로는 어느 형태인지 안 갈린다.
- */
-async function 형태단계(view: Rendered, 형태: string, 단계: string): Promise<void> {
+type 형태이름 = '경험치' | '솔 에르다'
+
+/** 형태 줄의 `testID` 는 형태 key 로 선다. */
+const 형태key: Record<형태이름, SpendFormKey> = { 경험치: 'exp', '솔 에르다': 'sol_erda' }
+
+/** 형태 한 줄. 두 줄의 조각 이름이 `0단계|1단계|2단계` 로 똑같아 라벨만으로는 어느 형태인지 안 갈린다. */
+function 형태줄(view: Rendered, 형태: 형태이름) {
+  return within(view.getByTestId(`spend-sheet-form-${형태key[형태]}`))
+}
+
+/** 형태 한 줄에서 단계를 고른다. **줄을 지목해서** 누른다. */
+async function 형태단계(view: Rendered, 형태: 형태이름, 단계: string): Promise<void> {
   await act(async () => {
-    fireEvent.press(within(view.getByTestId(`spend-sheet-form-${형태}`)).getByLabelText(단계))
+    fireEvent.press(형태줄(view, 형태).getByLabelText(단계))
   })
 }
 
@@ -141,8 +158,8 @@ describe('갈래', () => {
   it('1차 시트가 갈래 여섯을 카드로 세운다', async () => {
     const view = await 그리기({}, null)
 
-    for (const label of ['컨텐츠', '이벤트·BM', '버프', '주문서', '아이템 구매', '기타']) {
-      expect(view.getByTestId(`spend-sheet-category-${label}`)).toBeTruthy()
+    for (const label of Object.keys(갈래key) as 갈래이름[]) {
+      expect(view.getByTestId(`spend-sheet-category-${갈래key[label]}`)).toHaveTextContent(label)
     }
     // 고르기 전에는 목록도 폼도 없다. 무엇을 적을지가 아직 안 정해졌다.
     expect(view.queryByText('에픽던전 추가 리워드')).toBeNull()
@@ -157,8 +174,8 @@ describe('갈래', () => {
 
     // 그림은 `aria-hidden` 이라 기본 조회에서 빠진다. 낭독기는 카드 이름만 읽으면 된다.
     const 숨은것 = { includeHiddenElements: true }
-    for (const label of ['컨텐츠', '이벤트·BM', '버프', '주문서', '아이템 구매', '기타']) {
-      expect(view.getByTestId(`spend-sheet-category-icon-${label}`, 숨은것)).toBeTruthy()
+    for (const key of Object.values(갈래key)) {
+      expect(view.getByTestId(`spend-sheet-category-icon-${key}`, 숨은것)).toBeTruthy()
     }
   })
 
@@ -197,11 +214,11 @@ describe('갈래', () => {
    */
   it('2차에는 갈래를 옮기는 자리가 없다', async () => {
     const 목록 = await 그리기()
-    expect(목록.queryByTestId('spend-sheet-category-버프')).toBeNull()
+    expect(목록.queryByTestId('spend-sheet-category-buff')).toBeNull()
     expect(목록.queryByTestId('spend-sheet-categories')).toBeNull()
 
     const 직접입력 = await 그리기({}, '기타')
-    expect(직접입력.queryByTestId('spend-sheet-category-컨텐츠')).toBeNull()
+    expect(직접입력.queryByTestId('spend-sheet-category-content')).toBeNull()
   })
 
   it('항목 격자에서 되돌아가면 1차다', async () => {
@@ -209,7 +226,7 @@ describe('갈래', () => {
 
     await 누르기(view, '다시 고르기')
 
-    expect(view.getByTestId('spend-sheet-category-버프')).toBeTruthy()
+    expect(view.getByTestId('spend-sheet-category-buff')).toBeTruthy()
   })
 
   // 직접 입력에는 항목 격자가 없다. 되돌아가는 한 걸음이 곧 1차다.
@@ -218,7 +235,7 @@ describe('갈래', () => {
 
     await 누르기(view, '다시 고르기')
 
-    expect(view.getByTestId('spend-sheet-category-컨텐츠')).toBeTruthy()
+    expect(view.getByTestId('spend-sheet-category-content')).toBeTruthy()
   })
 
   // 고르던 항목이 남아 있으면 **컨텐츠를 골랐는데 버프 항목이 저장되는** 일이 생긴다.
@@ -619,9 +636,10 @@ const 악몽선경2 = {
   id: 'spd-9',
   ocid: null,
   spentOn: '2026-08-23',
-  category: '컨텐츠' as const,
-  item: '악몽선경 2단계',
-  form: '경험치',
+  category: 'content' as const,
+  item: '악몽선경 EXP 2단계',
+  itemKey: null,
+  formItemKeys: { exp: 'nightmare_paradise_2' },
   itemKind: null,
   quantity: 1,
   mesoAmount: null,
@@ -645,12 +663,13 @@ describe('저장', () => {
     expect(onSave.mock.calls[0][0]).toEqual({
       ocid: null,
       spentOn: '2026-08-23',
-      category: '컨텐츠',
+      category: 'content',
       // 고른 단계가 이름에 든다. 0단계인 솔 에르다는 안 적힌다.
       item: '하이마운틴 EXP 2단계',
-      // 형태 칸은 안 쓴다. 한 기록이 형태 둘을 함께 지므로 어느 쪽인가 를 물을 수 없다.
-      form: null,
-    itemKind: null,
+      // 한 기록이 형태 둘을 함께 지므로 항목 key 하나가 아니라 형태별 항목 key 를 든다.
+      itemKey: null,
+      formItemKeys: { exp: 'high_mountain_2' },
+      itemKind: null,
       quantity: 1,
       mesoAmount: null,
       tariffMeso: null,
@@ -670,8 +689,10 @@ describe('저장', () => {
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
-      category: '버프',
+      category: 'buff',
       item: '콜렉터의 영약',
+      itemKey: 'collector_elixir',
+      formItemKeys: null,
       mesoAmount: 20_000_000,
       pointAmount: null,
       pointPer100mMeso: null,
@@ -699,8 +720,8 @@ describe('형태별 단계', () => {
 
     await 누르기(view, '하이마운틴')
 
-    for (const 형태 of ['경험치', '솔 에르다']) {
-      const 줄 = within(view.getByTestId(`spend-sheet-form-${형태}`))
+    for (const 형태 of ['경험치', '솔 에르다'] as const) {
+      const 줄 = 형태줄(view, 형태)
       expect(줄.getByLabelText('0단계').props.accessibilityState?.selected).toBe(true)
       expect(줄.getByLabelText('2단계')).toBeTruthy()
     }
@@ -720,6 +741,7 @@ describe('형태별 단계', () => {
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
       item: '하이마운틴 EXP 1단계, 솔 2단계',
+      formItemKeys: { exp: 'high_mountain_1', sol_erda: 'high_mountain_2' },
       pointAmount: 37_500,
     })
   })
@@ -734,15 +756,18 @@ describe('형태별 단계', () => {
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('31억 7796만 6101')
   })
 
-  // 0단계인 형태를 이름에 적으면 **안 산 것이 산 것처럼** 읽힌다.
-  it('0단계인 형태는 이름에 안 적힌다', async () => {
+  // 0단계인 형태를 이름이나 key 에 적으면 **안 산 것이 산 것처럼** 읽힌다.
+  it('0단계인 형태는 이름에도 key 에도 안 적힌다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave, lastPointRate: 1_180 })
 
     await 에픽던전(view, '악몽선경', '솔 에르다', '2단계')
     await 누르기(view, '저장')
 
-    expect(onSave.mock.calls[0][0]).toMatchObject({ item: '악몽선경 솔 2단계' })
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      item: '악몽선경 솔 2단계',
+      formItemKeys: { sol_erda: 'nightmare_paradise_2' },
+    })
   })
 })
 
@@ -775,7 +800,7 @@ describe('주문서', () => {
   it('타일이 저마다 그림을 든다', async () => {
     const view = await 그리기({}, '주문서')
 
-    for (const 타일 of ['매지컬 주문서', '프리미엄 악세', '펫장비 이노센트']) {
+    for (const 타일 of ['magical_scroll', 'premium_accessory_scroll', 'pet_equipment_innocent_scroll']) {
       expect(view.getByTestId(`spend-tile-icon-${타일}`)).toBeTruthy()
     }
   })
@@ -852,8 +877,9 @@ describe('주문서', () => {
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
-      category: '주문서',
+      category: 'scroll',
       item: '귀 장식 공격력(민첩) 주문서 10%',
+      itemKey: 'earring_attack_dex_scroll_10',
       quantity: 1,
       mesoAmount: 100_000_000,
       pointAmount: null,
@@ -890,15 +916,17 @@ describe('주문서', () => {
     })
   })
 
-  it('수정으로 열면 두 줄의 값이 되살아난다', async () => {
+  // 축 값은 기록에 안 적는다. 항목 key 로 항목을 찾고 그 항목이 든 축 값으로 되살린다.
+  it('수정으로 열면 항목 key 로 두 줄의 값이 되살아난다', async () => {
     const view = await 그리기({
       editing: {
         id: 'spd-scroll',
         ocid: null,
         spentOn: '2026-08-23',
-        category: '주문서',
+        category: 'scroll',
         item: '매지컬 두손무기 공격력 주문서 100%',
-        form: null,
+        itemKey: 'magical_two_handed_weapon_attack_scroll_100',
+        formItemKeys: null,
         itemKind: null,
         quantity: 2,
         mesoAmount: 120_000_000,
@@ -1070,8 +1098,10 @@ describe('아이템 구매', () => {
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
-      category: '아이템 구매',
+      category: 'item_purchase',
       item: '앱솔랩스 슈즈',
+      // 직접 친 이름이라 가리킬 카탈로그 항목이 없다.
+      itemKey: null,
       mesoAmount: 935_000_000,
       tariffMeso: 85_000_000,
       pointAmount: null,
@@ -1172,7 +1202,7 @@ describe('기타. 캐시는 여기서만 산다', () => {
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
-      category: '기타',
+      category: 'etc',
       cashAmount: 6_900,
       mesoAmount: null,
       pointAmount: null,
@@ -1447,9 +1477,10 @@ describe('시작 기간 전인 항목', () => {
         id: 'spd-aurum',
         ocid: null,
         spentOn: '2026-09-16',
-        category: '컨텐츠',
+        category: 'content',
         item: '아우룸 레기스 EXP 1단계, 솔 2단계',
-        form: null,
+        itemKey: null,
+        formItemKeys: { exp: 'aurum_regis_1', sol_erda: 'aurum_regis_2' },
         itemKind: null,
         quantity: 1,
         mesoAmount: null,
@@ -1464,10 +1495,7 @@ describe('시작 기간 전인 항목', () => {
     })
 
     expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('아우룸 레기스')
-    expect(
-      within(view.getByTestId('spend-sheet-form-솔 에르다')).getByLabelText('2단계').props
-        .accessibilityState?.selected,
-    ).toBe(true)
+    expect(형태줄(view, '솔 에르다').getByLabelText('2단계').props.accessibilityState?.selected).toBe(true)
   })
 })
 
@@ -1476,9 +1504,10 @@ describe('수정 모드', () => {
     id: 'spd-9',
     ocid: null,
     spentOn: '2026-08-23',
-    category: '컨텐츠' as const,
-    item: '악몽선경 2단계',
-    form: '경험치',
+    category: 'content' as const,
+    item: '악몽선경 EXP 2단계',
+    itemKey: null,
+    formItemKeys: { exp: 'nightmare_paradise_2' },
     itemKind: null,
     quantity: 1,
     mesoAmount: null,
@@ -1509,8 +1538,8 @@ describe('수정 모드', () => {
   it('갈래를 못 바꾼다. 1차를 건너뛴다', async () => {
     const view = await 고치기()
 
-    expect(view.queryByTestId('spend-sheet-category-아이템 구매')).toBeNull()
-    expect(view.queryByTestId('spend-sheet-category-컨텐츠')).toBeNull()
+    expect(view.queryByTestId('spend-sheet-category-item_purchase')).toBeNull()
+    expect(view.queryByTestId('spend-sheet-category-content')).toBeNull()
     expect(view.queryByTestId('spend-sheet-close')).toBeNull()
   })
 
@@ -1533,44 +1562,43 @@ describe('수정 모드', () => {
   })
 
   /**
-   * 옛 기록은 이름 하나에 형태가 딸려 있었다(`악몽선경 2단계` + `경험치`). 그 짝을 형태 하나의
-   * 단계로 옮겨 연다. 못 되짚으면 안 고른 시트가 열려 고치는 사람이 다시 골라야 한다.
+   * 형태별 항목 key 에 없는 형태는 0단계로 연다. 기록에는 단계를 안 적고 항목 key 로 되찾는다.
+   * 못 되짚으면 안 고른 시트가 열려 고치는 사람이 다시 골라야 한다.
    */
-  it('옛 기록도 그 형태의 단계로 열린다', async () => {
+  it('key 가 든 형태만 그 단계로 열리고 나머지는 0단계다', async () => {
     const view = await 고치기()
 
-    expect(
-      within(view.getByTestId('spend-sheet-form-경험치')).getByLabelText('2단계').props
-        .accessibilityState?.selected,
-    ).toBe(true)
-    expect(
-      within(view.getByTestId('spend-sheet-form-솔 에르다')).getByLabelText('0단계').props
-        .accessibilityState?.selected,
-    ).toBe(true)
+    expect(형태줄(view, '경험치').getByLabelText('2단계').props.accessibilityState?.selected).toBe(true)
+    expect(형태줄(view, '솔 에르다').getByLabelText('0단계').props.accessibilityState?.selected).toBe(true)
   })
 
-  // 새 이름은 형태 둘을 함께 든다. 앱이 만든 글자를 앱이 되읽는 자리다.
-  it('두 형태가 적힌 이름도 그대로 되짚는다', async () => {
+  it('형태 둘의 key 를 모두 되짚는다', async () => {
     const view = await 그리기({
-      editing: { ...악몽선경, item: '악몽선경 EXP 1단계, 솔 2단계', form: null },
+      editing: {
+        ...악몽선경,
+        item: '악몽선경 EXP 1단계, 솔 2단계',
+        formItemKeys: { exp: 'nightmare_paradise_1', sol_erda: 'nightmare_paradise_2' },
+      },
       onDelete: jest.fn(),
     })
 
     expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('악몽선경')
-    expect(
-      within(view.getByTestId('spend-sheet-form-경험치')).getByLabelText('1단계').props
-        .accessibilityState?.selected,
-    ).toBe(true)
-    expect(
-      within(view.getByTestId('spend-sheet-form-솔 에르다')).getByLabelText('2단계').props
-        .accessibilityState?.selected,
-    ).toBe(true)
+    expect(형태줄(view, '경험치').getByLabelText('1단계').props.accessibilityState?.selected).toBe(true)
+    expect(형태줄(view, '솔 에르다').getByLabelText('2단계').props.accessibilityState?.selected).toBe(true)
   })
 
   // 직접 입력도 같다. 갈래는 글자이고 내용·금액은 고칠 수 있다.
   it('직접 입력도 갈래를 못 바꾼다', async () => {
     const view = await 그리기({
-      editing: { ...악몽선경, category: '기타' as const, item: '메소마켓 수수료', form: null, itemKind: null, quantity: null },
+      editing: {
+        ...악몽선경,
+        category: 'etc' as const,
+        item: '메소마켓 수수료',
+        itemKey: null,
+        formItemKeys: null,
+        itemKind: null,
+        quantity: null,
+      },
       onDelete: jest.fn(),
     })
 
@@ -1625,7 +1653,8 @@ describe('안 열린 묶음', () => {
 
     await 갈래바꾸기(view, '이벤트·BM')
 
-    expect(view.getByTestId('spend-sheet-closed-메이플 포인트 샵')).toHaveTextContent('· 이벤트 기간이 아닙니다')
+    expect(view.getByText('메이플 포인트 샵')).toBeTruthy()
+    expect(view.getByTestId('spend-sheet-closed-maple_point_shop')).toHaveTextContent('· 이벤트 기간이 아닙니다')
   })
 
   it('그 묶음의 타일은 안 눌린다', async () => {
@@ -1699,7 +1728,7 @@ describe('타일 그림', () => {
   it('그림이 있는 것에는 붙는다', async () => {
     const view = await 그리기()
 
-    expect(view.getByTestId('spend-tile-icon-몬스터 파크')).toBeTruthy()
+    expect(view.getByTestId('spend-tile-icon-monster_park')).toBeTruthy()
   })
 
   it('버프 물약 넷은 다 붙는다', async () => {
@@ -1707,8 +1736,8 @@ describe('타일 그림', () => {
 
     await 갈래바꾸기(view, '버프')
 
-    for (const label of ['세이람의 영약', '알레리아의 영약', '콜렉터의 영약', '명예의 영약']) {
-      expect(view.getByTestId(`spend-tile-icon-${label}`)).toBeTruthy()
+    for (const key of ['seiram_elixir', 'alleria_elixir', 'collector_elixir', 'honor_elixir']) {
+      expect(view.getByTestId(`spend-tile-icon-${key}`)).toBeTruthy()
     }
   })
 
@@ -1718,19 +1747,18 @@ describe('타일 그림', () => {
     await 갈래바꾸기(view, '이벤트·BM')
 
     // 아직 그림을 안 받은 셋. `이벤트` 묶음이 통째로 그렇다.
-    expect(view.queryByTestId('spend-tile-icon-출석 이벤트 패스')).toBeNull()
-    expect(view.queryByTestId('spend-tile-icon-보약 버프 추가 구매')).toBeNull()
+    expect(view.queryByTestId('spend-tile-icon-attendance_event_pass')).toBeNull()
+    expect(view.queryByTestId('spend-tile-icon-tonic_buff_extra_purchase')).toBeNull()
   })
 
-  // 이름이 바뀌면 표도 따라가야 한다. 안 고치면 **에러 없이 그림만** 사라진다
-  // (`… 입장권` 을 뗐다).
+  // 이름에서 `… 입장권` 을 뗀 둘. 그림은 이름이 아니라 타일 key 로 찾으므로 이름을 바꿔도 따라온다.
   it('농장 둘은 이름이 바뀐 뒤에도 그림이 붙는다', async () => {
     const view = await 그리기()
 
     await 갈래바꾸기(view, '이벤트·BM')
 
-    expect(view.getByTestId('spend-tile-icon-메카베리 농장')).toBeTruthy()
-    expect(view.getByTestId('spend-tile-icon-블루베리 농장')).toBeTruthy()
+    expect(view.getByTestId('spend-tile-icon-mechaberry_farm')).toBeTruthy()
+    expect(view.getByTestId('spend-tile-icon-blueberry_farm')).toBeTruthy()
   })
 
   // 조각 그림을 달았다가 *"그거 아니야"* 로 물렸고 사용자가 `sole_1000` 을 지정했다.
@@ -1740,23 +1768,23 @@ describe('타일 그림', () => {
 
     await 갈래바꾸기(view, '이벤트·BM')
 
-    expect(view.getByTestId('spend-tile-icon-솔 에르다')).toBeTruthy()
+    expect(view.getByTestId('spend-tile-icon-sol_erda')).toBeTruthy()
   })
 
-  // 에픽던전 셋은 **지역 아이콘**에서 온다(원천이 둘이다. `lib/spend-icons` 주석).
+  // 에픽던전 셋은 **지역 아이콘**에서 온다(원천이 둘이다. `spendIconOf` 주석).
   it('에픽던전 셋은 지역 아이콘을 단다', async () => {
     const view = await 그리기()
 
-    for (const label of ['하이마운틴', '앵글러 컴퍼니', '악몽선경']) {
-      expect(view.getByTestId(`spend-tile-icon-${label}`)).toBeTruthy()
+    for (const key of ['high_mountain', 'angler_company', 'nightmare_paradise']) {
+      expect(view.getByTestId(`spend-tile-icon-${key}`)).toBeTruthy()
     }
   })
 
   it('퀵 패스 셋도 그림을 단다. 이름에서 `퀵패스` 를 뗐다', async () => {
     const view = await 그리기()
 
-    for (const label of ['에픽던전', '일간 퀘스트', '주간 퀘스트']) {
-      expect(view.getByTestId(`spend-tile-icon-${label}`)).toBeTruthy()
+    for (const key of ['epic_dungeon_quick_pass', 'daily_quest_quick_pass', 'weekly_quest_quick_pass']) {
+      expect(view.getByTestId(`spend-tile-icon-${key}`)).toBeTruthy()
     }
   })
 
@@ -1771,8 +1799,8 @@ describe('타일 그림', () => {
 
     await 갈래바꾸기(view, '이벤트·BM')
 
-    expect(view.queryByTestId('spend-tile-icon-slot-블랙 서큘레이터')).toBeNull()
-    expect(view.queryByTestId('spend-tile-icon-slot-하이마운틴')).toBeNull()
+    expect(view.queryByTestId('spend-tile-icon-slot-black_circulator')).toBeNull()
+    expect(view.queryByTestId('spend-tile-icon-slot-high_mountain')).toBeNull()
   })
 })
 
@@ -1878,9 +1906,9 @@ describe('아이템 구매의 종류', () => {
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
-      category: '아이템 구매',
+      category: 'item_purchase',
       item: '주문서',
-      itemKind: '소비',
+      itemKind: 'consumable',
       quantity: 300,
       mesoAmount: 3_600_000,
       tariffMeso: null,
@@ -1897,7 +1925,7 @@ describe('아이템 구매의 종류', () => {
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
-      itemKind: '장비',
+      itemKind: 'equipment',
       quantity: null,
       mesoAmount: 935_000_000,
       tariffMeso: 85_000_000,
@@ -1982,7 +2010,8 @@ describe('되짚어 여는 식', () => {
     id: 'spd-k',
     ocid: null,
     spentOn: '2026-08-23',
-    form: null,
+    itemKey: null,
+    formItemKeys: null,
     pointAmount: null,
     pointPer100mMeso: null,
     cashAmount: null,
@@ -2000,9 +2029,9 @@ describe('되짚어 여는 식', () => {
   it('관세 기록을 다시 열어도 관세가 두 번 안 붙는다', async () => {
     const view = await 고치기({
       ...기록,
-      category: '아이템 구매',
+      category: 'item_purchase',
       item: '앱솔 무기',
-      itemKind: '장비',
+      itemKind: 'equipment',
       quantity: null,
       mesoAmount: 935_000_000,
       tariffMeso: 85_000_000,
@@ -2017,9 +2046,9 @@ describe('되짚어 여는 식', () => {
     const view = await 고치기(
       {
         ...기록,
-        category: '아이템 구매',
+        category: 'item_purchase',
         item: '앱솔 무기',
-        itemKind: '장비',
+        itemKind: 'equipment',
         quantity: null,
         mesoAmount: 935_000_000,
         tariffMeso: 85_000_000,
@@ -2038,9 +2067,9 @@ describe('되짚어 여는 식', () => {
   it('소비 기록은 단가와 수량으로 갈라 연다', async () => {
     const view = await 고치기({
       ...기록,
-      category: '아이템 구매',
+      category: 'item_purchase',
       item: '주문서',
-      itemKind: '소비',
+      itemKind: 'consumable',
       quantity: 300,
       mesoAmount: 3_600_000,
       tariffMeso: null,
@@ -2060,7 +2089,7 @@ describe('되짚어 여는 식', () => {
   it('종류가 없는 옛 행은 장비로 연다', async () => {
     const view = await 고치기({
       ...기록,
-      category: '아이템 구매',
+      category: 'item_purchase',
       item: '앱솔 무기',
       itemKind: null,
       quantity: null,
@@ -2080,7 +2109,7 @@ describe('되짚어 여는 식', () => {
   it('`기타`의 수량 기록은 합계가 저장된 값 그대로다', async () => {
     const view = await 고치기({
       ...기록,
-      category: '기타',
+      category: 'etc',
       item: '자유',
       itemKind: null,
       quantity: 3,
@@ -2235,9 +2264,10 @@ describe('수정으로 열 때의 큰 숫자', () => {
       id: `spend-${mesoAmount}`,
       ocid: null,
       spentOn: '2026-08-23',
-      category: '기타' as const,
+      category: 'etc' as const,
       item: '경매장 수수료',
-      form: null,
+      itemKey: null,
+      formItemKeys: null,
       itemKind: null,
       quantity: 1,
       mesoAmount,

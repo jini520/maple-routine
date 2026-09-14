@@ -66,9 +66,11 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
       void submit({
         ocid,
         earnedOn: props.dateKey,
-        category: '아이템 판매',
+        category: 'item_sale',
         // 빈 칸은 `null` 이다. 빈 문자열을 넣으면 **적었는데 비어 있다** 와 **안 적었다** 가 같아진다.
         item: name.trim() === '' ? null : name.trim(),
+        // 직접 친 이름이라 가리킬 key 가 없다.
+        itemKey: null,
         // 수수료를 뗀 값이다. 집계가 보는 칸이 이것 하나다.
         mesoAmount: net,
         saleFeePercent: feePercent,

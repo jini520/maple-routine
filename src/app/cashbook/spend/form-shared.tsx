@@ -10,7 +10,8 @@ import { Pressable, View } from 'react-native'
 import { ChevronLeftIcon, Text } from '../../../components/atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { DateStepper } from '../sheet-fields'
-import { type SpendCategory, type SpendRecord } from '../../../storage/spend'
+import type { SpendCategoryKey } from '../../../lib/cashbook/categories'
+import { type SpendRecord } from '../../../storage/spend'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
 /** 저장할 값에서 **어댑터가 아니라 화면이 정하는 것 둘**(`id`·`recordedAt`)을 뺀 나머지. */
@@ -33,8 +34,8 @@ export interface SpendFormProps {
   setSave: (slot: SpendSaveSlot) => void
   dateKey: string
   characters: ReadonlyArray<{ ocid: string; name: string }>
-  /** 머리의 제목이 쓰는 값. 1차에서 고른 갈래다. */
-  category: SpendCategory
+  /** 1차에서 고른 갈래 key. 머리의 제목은 이 key 로 찾은 갈래 이름이다. */
+  category: SpendCategoryKey
   /** 1차로 되돌아간다. 머리의 화살촉이 부른다. 수정 모드에서는 폼이 안 붙인다. */
   onBack: () => void
   editing?: SpendRecord

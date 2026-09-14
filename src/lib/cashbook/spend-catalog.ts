@@ -11,26 +11,29 @@
  * 나눗셈은 둘 다 버린다. 이 저장소의 돈 계산이 그렇다.
  */
 import spendCatalog from '../../data/spend-catalog.json'
-import type { SpendCategory } from '../../storage/spend'
 import { isEffectiveIn, type EffectivePeriod } from '../boss/boss-profit-period'
 import { resetWeekStartOf } from '../calendar'
+import { SPEND_FORMS, spendFormOf, type SpendCategoryKey } from './categories'
 
 /** 항목 줄. `from` · `until` 은 그 항목이 서는 기간이다(KST 날짜). */
 export interface SpendCatalogItem extends EffectivePeriod {
+  /** 기록이 이 항목을 가리키는 열쇠. 이름이 바뀌어도 그대로다. */
+  readonly key: string
+  /** 갈래 key. */
   readonly category: string
+  /** 묶음 key. */
   readonly group: string
+  /** 타일 key. 같은 타일의 항목이 목록에서 한 칸으로 접힌다. */
+  readonly tile: string
   readonly name: string
   readonly currency: 'meso' | 'point'
   readonly unitPrice: number
   /** 가격 하나가 무엇 하나의 값인가. 회 · 개 · 포인트 · 시간. 수량 칸의 라벨이 된다. */
   readonly unit: string
   /**
-   * 이름 안에 글자로만 있던 축을 뺀 칸.
-   *
-   * `base` 는 대표 이름(하이마운틴), `tier` 는 그 안의 갈래(1단계)다. 둘이 있으면 입력이 두
-   * 단계가 된다. 대표를 고르고 그 안에서 단계를 고른다. 없는 항목은 한 단계다.
+   * 한 타일 안의 단계(1단계 · 공격력). 타일에 항목이 여럿이면 입력이 두 단계가 된다. 타일을 고르고
+   * 그 안에서 단계를 고른다. 기록에는 안 적고 항목 key 로 되찾는다.
    */
-  readonly base?: string
   readonly tier?: string
   /**
    * 줄이 둘인 타일에서 이 항목이 드는 축 값. `{ 무기: '한손무기', 능력치: '마력' }`.
@@ -39,7 +42,7 @@ export interface SpendCatalogItem extends EffectivePeriod {
    */
   readonly options?: Readonly<Record<string, string>>
   /**
-   * 값을 받는 형태들. 경험치·솔 에르다. **가격을 안 바꾼다.**
+   * 값을 받는 형태 key 들(`exp` · `sol_erda`). **가격을 안 바꾼다.**
    *
    * 형태마다 단계를 따로 고르고 금액은 그 값들의 합이다. 하나를 고르는 축이 아니다.
    */
@@ -63,18 +66,34 @@ export interface SpendCatalogItem extends EffectivePeriod {
 }
 
 /**
- * 목록의 **한 칸**. 사용자가 1단계에서 고르는 단위다.
+ * 타일 그림. 아이템 그림 파일(`src/assets/items/`) 또는 지역 아이콘 slug(`src/assets/maps/icons/`).
  *
- * `tier` 가 있는 항목들은 대표 하나로 접힌다(하이마운틴 1·2단계 → 하이마운틴). 그래서
- * `items` 가 둘 이상이면 **고른 뒤 한 번 더 골라야 한다**.
+ * 지역 아이콘은 에픽던전 넷의 것이라 타일에서 이름 옆에 선다.
+ */
+export interface SpendTileIcon {
+  readonly file?: string
+  readonly map?: string
+}
+
+/**
+ * 목록의 **한 칸**(타일). 사용자가 1단계에서 고르는 단위다.
+ *
+ * 같은 타일의 항목들이 한 칸으로 접힌다(하이마운틴 1·2단계 → 하이마운틴). 그래서 `items` 가 둘
+ * 이상이면 **고른 뒤 한 번 더 골라야 한다**.
  */
 export interface SpendCatalogChoice {
-  /** 칸에 적히는 이름. `base` 가 있으면 그것, 없으면 항목 이름 그대로다. */
+  /** 타일 key. */
+  readonly key: string
+  /** 칸에 적히는 이름. */
   readonly label: string
+  readonly icon?: SpendTileIcon
   readonly items: readonly SpendCatalogItem[]
 }
 
 export interface SpendCatalogGroup {
+  /** 묶음 key. */
+  readonly key: string
+  /** 묶음 이름. 목록의 제목이다. */
   readonly group: string
   readonly choices: readonly SpendCatalogChoice[]
   /**
@@ -92,8 +111,10 @@ export interface SpendCatalogGroup {
 
 const ITEMS = spendCatalog.items as readonly SpendCatalogItem[]
 
-/** 묶음 표. 닫힌 것만 적혀 있다(없으면 열린 것이다). 사유는 `SpendCatalogGroup.active` 주석. */
-const GROUPS = spendCatalog.groups as Readonly<Record<string, { readonly active: boolean }>>
+/** 묶음 표. `active` 는 닫힌 묶음만 적는다(없으면 열린 것이다). 사유는 `SpendCatalogGroup.active` 주석. */
+const GROUPS = spendCatalog.groups as Readonly<Record<string, { readonly name: string; readonly active?: boolean }>>
+
+const TILES = spendCatalog.tiles as Readonly<Record<string, { readonly name: string; readonly icon?: SpendTileIcon }>>
 
 /** 관세율. **화면이 `* 1.1` 을 들면 게임 수치가 코드에 박히는 자리**가 된다. */
 export const SPEND_TARIFF_PERCENT = spendCatalog.tariffPercent
@@ -114,7 +135,7 @@ const MESO_PER_RATE_UNIT = 100_000_000
  *
  * @param dateKey 적는 날짜(KST `YYYY-MM-DD`)
  */
-export function spendGroupsOf(category: SpendCategory, dateKey: string): SpendCatalogGroup[] {
+export function spendGroupsOf(category: SpendCategoryKey, dateKey: string): SpendCatalogGroup[] {
   const periodKey = resetWeekStartOf(dateKey)
   return groupItems(ITEMS.filter((item) => item.category === category && isEffectiveIn(item, periodKey)))
 }
@@ -124,58 +145,58 @@ export function spendGroupsOf(category: SpendCategory, dateKey: string): SpendCa
  *
  * 기간으로 거르면 출시 전 날짜로 적힌 기록을 수정 시트가 못 찾아 세부를 못 편다.
  */
-function allSpendGroupsOf(category: SpendCategory): SpendCatalogGroup[] {
+function allSpendGroupsOf(category: string): SpendCatalogGroup[] {
   return groupItems(ITEMS.filter((item) => item.category === category))
 }
 
 function groupItems(items: readonly SpendCatalogItem[]): SpendCatalogGroup[] {
   const groups: {
+    key: string
     group: string
     active: boolean
-    choices: { label: string; items: SpendCatalogItem[] }[]
+    choices: { key: string; label: string; icon?: SpendTileIcon; items: SpendCatalogItem[] }[]
   }[] = []
   for (const item of items) {
-    const label = item.base ?? item.name
-
     let group = groups[groups.length - 1]
-    if (group === undefined || group.group !== item.group) {
-      // 표에 없는 묶음은 **열린 것**이다. 닫힘만 적는다.
-      group = { group: item.group, active: GROUPS[item.group]?.active ?? true, choices: [] }
+    if (group === undefined || group.key !== item.group) {
+      const entry = GROUPS[item.group]
+      // `active` 를 안 적은 묶음은 **열린 것**이다. 닫힘만 적는다.
+      group = { key: item.group, group: entry?.name ?? item.group, active: entry?.active ?? true, choices: [] }
       groups.push(group)
     }
 
-    // **같은 `base` 는 한 칸으로 접힌다**. 1단계·2단계가 목록에 둘로 서면 사용자가 고를 것이
-    // 여섯이 되고, 그 여섯이 실은 셋 × 두 단계라는 사실이 화면에서 사라진다.
+    // **같은 타일은 한 칸으로 접힌다**. 1단계·2단계가 목록에 둘로 서면 사용자가 고를 것이 여섯이
+    // 되고, 그 여섯이 실은 셋 × 두 단계라는 사실이 화면에서 사라진다.
     const last = group.choices[group.choices.length - 1]
-    if (last !== undefined && last.label === label) {
+    if (last !== undefined && last.key === item.tile) {
       last.items.push(item)
       continue
     }
-    group.choices.push({ label, items: [item] })
+    const tile = TILES[item.tile]
+    group.choices.push({ key: item.tile, label: tile?.name ?? item.name, icon: tile?.icon, items: [item] })
   }
   return groups
 }
 
 /**
- * 적어 둔 이름에서 **고르던 자리를 되짚는다**.
+ * 적어 둔 항목 key 에서 **고르던 자리를 되짚는다**.
  *
- * 기록에는 항목 이름만 있고(하이마운틴 2단계) 시트는 **대표와 단계 둘**을 든다. 수정으로
- * 시트를 열려면 그 둘을 이름에서 되찾아야 한다.
+ * 기록에는 항목 key 만 있고 시트는 **대표와 단계 둘**을 든다. 수정으로 시트를 열려면 그 둘을
+ * key 에서 되찾는다. 단계와 축 값은 항목이 들고 있다.
  *
- * **갈래를 함께 받는다.** 이름만으로 찾으면 갈래가 다른 동명 항목이 걸려, 버프에서 적은 것이
- * 컨텐츠로 되살아날 수 있다.
+ * **갈래를 함께 받는다.** 갈래가 다른 기록이 엉뚱한 목록으로 되살아나지 않게 한다.
  *
- * 못 찾으면 `null` 이다. 예외가 아니다. 카탈로그가 바뀌어 사라진 항목이 기록에는 남아 있을 수
- * 있고, 그때 **시트가 안 열리는 것보다 값만 채워 여는 편이 낫다**(대가).
+ * 못 찾으면 `null` 이다. 예외가 아니다. 카탈로그에서 사라진 항목이 기록에는 남아 있을 수 있고,
+ * 그때 **시트가 안 열리는 것보다 값만 채워 여는 편이 낫다**(대가).
  */
 export function findSpendChoice(
-  category: SpendCategory,
-  itemName: string | null,
+  category: string,
+  itemKey: string | null,
 ): { choice: SpendCatalogChoice; item: SpendCatalogItem } | null {
-  if (itemName === null) return null
+  if (itemKey === null) return null
   for (const group of allSpendGroupsOf(category)) {
     for (const choice of group.choices) {
-      const item = choice.items.find((each) => each.name === itemName)
+      const item = choice.items.find((each) => each.key === itemKey)
       if (item !== undefined) return { choice, item }
     }
   }
@@ -190,22 +211,12 @@ export function findSpendChoice(
  */
 export const BASE_TIER = '0단계'
 
-/**
- * 기록 이름에 적히는 형태의 짧은 이름 (사용자 지정).
- *
- * 하루 목록의 줄이 이 글자를 그대로 읽어서 짧다. 표에 없는 형태는 제 이름 그대로 적힌다.
- */
-const FORM_SHORT_NAMES: Readonly<Record<string, string>> = {
-  경험치: 'EXP',
-  '솔 에르다': '솔',
-}
-
 /** 한 대표 안에서 단계를 부르는 이름. `tier` 가 없는 항목은 제 이름이 곧 단계다. */
 export function tierNameOf(item: SpendCatalogItem): string {
   return item.tier ?? item.name
 }
 
-/** 그 대표가 묻는 형태들. 없으면 빈 배열이고 그때 화면은 단계 줄을 하나만 세운다. */
+/** 그 대표가 묻는 형태 key 들. 없으면 빈 배열이고 그때 화면은 단계 줄을 하나만 세운다. */
 export function formsOf(choice: SpendCatalogChoice | null): readonly string[] {
   return choice?.items[0]?.forms ?? []
 }
@@ -231,10 +242,10 @@ export function spendRewardPrice(
 }
 
 /**
- * 기록에 적히는 이름. `하이마운틴 EXP 1단계, 솔 2단계`.
+ * 형태별 단계를 이은 이름. `하이마운틴 EXP 1단계, 솔 2단계`.
  *
- * 하루 목록의 줄 이름이 곧 이 값이라(`recordTitleOf` 가 `item` 을 읽는다) 화면용 문자열을 따로
- * 만들지 않는다. **0단계는 안 적는다**. 안 산 것이 적히면 그 줄이 산 것으로 읽힌다.
+ * 하루 목록의 줄 이름이고 기록의 이름 칸에 그때 이름으로도 남는다. **0단계는 안 적는다**. 안 산
+ * 것이 적히면 그 줄이 산 것으로 읽힌다.
  *
  * 고른 것이 없으면 `null` 이고, 그 `null` 이 곧 저장할 수 없다 다.
  */
@@ -245,41 +256,91 @@ export function buildSpendRewardName(
   const parts = formsOf(choice).flatMap((form) => {
     const tier = tierByForm[form]
     if (tier === undefined || tier === BASE_TIER || itemOfTier(choice, tier) === undefined) return []
-    return [`${FORM_SHORT_NAMES[form] ?? form} ${tier}`]
+    return [`${spendFormOf(form)?.shortName ?? form} ${tier}`]
   })
   return parts.length === 0 ? null : `${choice.label} ${parts.join(', ')}`
 }
 
 /**
- * 그 이름에서 대표와 형태별 단계를 되짚는다. `buildSpendRewardName` 의 역이다.
+ * 기록에 적는 형태별 항목 key. `{ exp: 'high_mountain_1', sol_erda: 'high_mountain_2' }`.
  *
- * 앱이 만든 글자를 앱이 되읽는 것이라 문법이 고정이다(사용자가 쓴 문장을 푸는 일이 아니다).
- * 한 조각이라도 못 읽으면 `null` 이고 그때 화면은 목록을 세운다. 지어낸 단계로 시트를 열면
- * 안 고른 것이 골라진 채로 서고, 그대로 저장하면 그것이 참이 된다.
+ * 0단계는 안 적는다. 고른 것이 없으면 `null` 이다.
  */
-export function parseSpendRewardName(
-  category: SpendCategory,
-  itemName: string | null,
+export function spendRewardItemKeys(
+  choice: SpendCatalogChoice,
+  tierByForm: Readonly<Record<string, string>>,
+): Record<string, string> | null {
+  const keys: Record<string, string> = {}
+  for (const form of formsOf(choice)) {
+    const tier = tierByForm[form]
+    const item = tier === undefined || tier === BASE_TIER ? undefined : itemOfTier(choice, tier)
+    if (item !== undefined) keys[form] = item.key
+  }
+  return Object.keys(keys).length === 0 ? null : keys
+}
+
+/**
+ * 형태별 항목 key 에서 대표와 형태별 단계를 되짚는다. `spendRewardItemKeys` 의 역이다.
+ *
+ * 한 조각이라도 못 찾으면 `null` 이고 그때 화면은 목록을 세운다. 지어낸 단계로 시트를 열면 안 고른
+ * 것이 골라진 채로 서고, 그대로 저장하면 그것이 참이 된다. 기간은 안 본다.
+ */
+export function findSpendRewardChoice(
+  category: string,
+  formItemKeys: Readonly<Record<string, string>> | null,
 ): { choice: SpendCatalogChoice; tierByForm: Record<string, string> } | null {
-  if (itemName === null) return null
+  if (formItemKeys === null) return null
+  let choice: SpendCatalogChoice | null = null
+  const tierByForm: Record<string, string> = {}
+  for (const [form, itemKey] of Object.entries(formItemKeys)) {
+    const found = findSpendChoice(category, itemKey)
+    if (found === null || (choice !== null && found.choice.key !== choice.key)) return null
+    if (!formsOf(found.choice).includes(form)) return null
+    choice = found.choice
+    tierByForm[form] = tierNameOf(found.item)
+  }
+  return choice === null ? null : { choice, tierByForm }
+}
+
+/**
+ * 이름만 저장된 옛 기록의 key. key 칸을 채우는 이관(`storage/sqlite`)만 쓴다.
+ *
+ * 옛 모양은 셋이다. ① 항목 이름 하나 ② 형태별 단계를 이은 이름(`하이마운틴 EXP 1단계, 솔 2단계`)
+ * ③ 항목 이름과 형태 이름을 따로 든 행(`악몽선경 2단계` + `경험치`). 못 찾으면 둘 다 `null` 이고
+ * 기록은 이름 그대로 남는다.
+ */
+export function legacySpendKeysOf(
+  category: string,
+  itemName: string | null,
+  formName: string | null,
+): { itemKey: string | null; formItemKeys: Record<string, string> | null } {
+  const none = { itemKey: null, formItemKeys: null }
+  if (itemName === null) return none
   for (const group of allSpendGroupsOf(category)) {
     for (const choice of group.choices) {
+      const item = choice.items.find((each) => each.name === itemName)
+      if (item !== undefined) {
+        const form = SPEND_FORMS.find((each) => each.name === formName)
+        if (formName === null || form === undefined || !formsOf(choice).includes(form.key)) {
+          return formsOf(choice).length > 0 ? none : { itemKey: item.key, formItemKeys: null }
+        }
+        return { itemKey: null, formItemKeys: { [form.key]: item.key } }
+      }
+
       const forms = formsOf(choice)
       if (forms.length === 0 || !itemName.startsWith(`${choice.label} `)) continue
-
-      const tierByForm: Record<string, string> = {}
+      const keys: Record<string, string> = {}
       for (const part of itemName.slice(choice.label.length + 1).split(', ')) {
         const cut = part.lastIndexOf(' ')
-        if (cut < 0) return null
-        const form = forms.find((each) => (FORM_SHORT_NAMES[each] ?? each) === part.slice(0, cut))
-        const tier = part.slice(cut + 1)
-        if (form === undefined || itemOfTier(choice, tier) === undefined) return null
-        tierByForm[form] = tier
+        const form = forms.find((each) => (spendFormOf(each)?.shortName ?? each) === part.slice(0, cut))
+        const found = cut < 0 || form === undefined ? undefined : itemOfTier(choice, part.slice(cut + 1))
+        if (form === undefined || found === undefined) return none
+        keys[form] = found.key
       }
-      return { choice, tierByForm }
+      return { itemKey: null, formItemKeys: keys }
     }
   }
-  return null
+  return none
 }
 
 /** 축 하나와 그 값들. 폼의 줄 하나가 된다. */

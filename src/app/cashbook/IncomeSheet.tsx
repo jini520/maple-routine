@@ -20,10 +20,10 @@ import type { MesoRateLoad } from '../../features/cashbook/meso-rate'
 import type { LastHuntSelection } from '../../storage/last-hunt-selection'
 import {
   INCOME_CATEGORIES,
-  type HuntInputMode,
-  type IncomeCategory,
-  type IncomeRecord,
-} from '../../storage/income'
+  incomeCategoryNameOf,
+  type IncomeCategoryKey,
+} from '../../lib/cashbook/categories'
+import type { HuntInputMode, IncomeRecord } from '../../storage/income'
 import { CategoryPicker } from './CategoryPicker'
 import { CheckBox, DateStepper } from './sheet-fields'
 import { EtcForm } from './income/EtcForm'
@@ -70,16 +70,6 @@ export interface IncomeSheetProps {
   onClose: () => void
 }
 
-/**
- * 갈래마다 그림 하나. 재획비와 메소는 드랍이 아니라 **표시 전용**이라 이름표가 아니라
- * 파일명으로 찾는다.
- */
-const CATEGORY_ICON_FILES: Record<IncomeCategory, string> = {
-  사냥: 'wealth_acquisition_potion_small.webp',
-  '아이템 판매': 'dark_boss_pendant.png',
-  기타: 'meso.webp',
-}
-
 export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
   const editing = props.editing !== undefined
   /**
@@ -88,7 +78,7 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
    * 수정으로 열면 기록이 정하므로 고르는 단계를 건너뛴다. 갈래를 바꾸면 그 기록은 다른 것이
    * 되고, 무엇이었는지는 제목이 이미 말한다.
    */
-  const [category, setCategory] = useState<IncomeCategory | null>(props.editing?.category ?? null)
+  const [category, setCategory] = useState<IncomeCategoryKey | null>(props.editing?.category ?? null)
   /**
    * 어느 날에 적히나. 시트를 연 날로 시작하고 머리에서 바꾼다.
    *
@@ -145,7 +135,7 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
           */}
           {editing ? (
             <Text testID="income-sheet-title" numberOfLines={1} className="shrink text-base font-bold text-text">
-              {category}
+              {incomeCategoryNameOf(category)}
             </Text>
           ) : (
             <Pressable
@@ -158,7 +148,7 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
             >
               <ChevronLeftIcon className="h-5 w-5 shrink-0 text-text" strokeWidth={2} aria-hidden />
               <Text testID="income-sheet-title" numberOfLines={1} className="shrink text-base font-bold text-text">
-                {category}
+                {incomeCategoryNameOf(category)}
               </Text>
             </Pressable>
           )}
@@ -177,7 +167,6 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
         <CategoryPicker
           title="수입 추가"
           categories={INCOME_CATEGORIES}
-          iconFiles={CATEGORY_ICON_FILES}
           testIdPrefix="income-sheet"
           onSelect={setCategory}
           onClose={props.onClose}
@@ -186,7 +175,7 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
       // 아래 여백을 안 붙인다. 바닥의 숨돌림은 껍데기가 한 값으로 낸다.
       <View className="gap-3 px-4">
         {/* 사냥만 갖는 줄. 계산기로 셀지, 획득 메소를 직접 적을지 고른다. */}
-        {!editing && category === '사냥' && (
+        {!editing && category === 'hunting' && (
           // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
           <Pressable
             role="checkbox"
@@ -230,13 +219,13 @@ function huntModeOf(editing: IncomeRecord | undefined): HuntInputMode {
 /** 갈래 하나에 폼 하나. 고르는 자리는 여기 하나뿐이다. 사냥만 그 아래로 한 번 더 갈린다. */
 function IncomeForm(
   props: IncomeSheetProps & {
-    category: IncomeCategory
+    category: IncomeCategoryKey
     huntMode: HuntInputMode
     formProps: IncomeFormProps
   },
 ): React.JSX.Element {
-  if (props.category === '아이템 판매') return <ItemSaleForm {...props.formProps} />
-  if (props.category === '기타') {
+  if (props.category === 'item_sale') return <ItemSaleForm {...props.formProps} />
+  if (props.category === 'etc') {
     return <EtcForm {...props.formProps} lastPointRate={props.lastPointRate} />
   }
   return props.huntMode === 'manual' ? (

@@ -1,5 +1,6 @@
 // 지출 어댑터.
 import spendCatalog from '../../data/spend-catalog.json'
+import { SPEND_CATEGORIES } from '../../lib/cashbook/categories'
 import type { SpendRecord } from '../spend'
 
 jest.mock('../sqlite/db', () => ({
@@ -25,9 +26,10 @@ const mesoSpend: SpendRecord = {
   id: 'spd-1',
   ocid: null,
   spentOn: '2026-08-23',
-  category: '버프',
+  category: 'buff',
   item: '세이람의 영약',
-  form: null,
+  itemKey: 'seiram_elixir',
+  formItemKeys: null,
   itemKind: null,
   quantity: 1,
   mesoAmount: 2_000_000,
@@ -43,8 +45,9 @@ const mesoSpend: SpendRecord = {
 const pointSpend: SpendRecord = {
   ...mesoSpend,
   id: 'spd-2',
-  category: '컨텐츠',
-  item: '하이마운틴 2단계',
+  category: 'content',
+  item: '몬스터 파크',
+  itemKey: 'monster_park',
   mesoAmount: null,
   pointAmount: 30_000,
   pointPer100mMeso: 1_180,
@@ -63,10 +66,16 @@ describe('insertSpendRecord', () => {
       'spd-1',
       null,
       '2026-08-23',
+      // 갈래는 그때 이름과 key 를 함께 적는다. 이름은 key 를 못 찾을 때 서는 글자다.
       '버프',
+      'buff',
       '세이람의 영약',
+      'seiram_elixir',
+      // 옛 형태 칸은 더 안 쓴다. 형태는 아래 형태별 항목 key 가 든다.
+      null,
       null,
       // 종류는 `아이템 구매`의 것이다. 다른 갈래에서는 NULL 이다.
+      null,
       null,
       1,
       2_000_000,
@@ -79,21 +88,48 @@ describe('insertSpendRecord', () => {
     ])
   })
 
+  it('에픽던전 리워드는 형태별 항목 key 를 JSON 한 칸에 적는다', async () => {
+    const { insertSpendRecord } = require('../spend') as typeof import('../spend')
+
+    await insertSpendRecord({
+      ...pointSpend,
+      item: '하이마운틴 EXP 2단계, 솔 1단계',
+      itemKey: null,
+      formItemKeys: { exp: 'high_mountain_2', sol_erda: 'high_mountain_1' },
+    })
+
+    const values = runMock.mock.calls[0][1]
+    expect(values[6]).toBeNull()
+    expect(JSON.parse(values[8])).toEqual({ exp: 'high_mountain_2', sol_erda: 'high_mountain_1' })
+  })
+
+  it('아이템 구매 종류는 이름과 key 를 함께 적는다', async () => {
+    const { insertSpendRecord } = require('../spend') as typeof import('../spend')
+
+    await insertSpendRecord({ ...mesoSpend, category: 'item_purchase', item: '주문서', itemKey: null, itemKind: 'consumable' })
+
+    const values = runMock.mock.calls[0][1]
+    expect(values.slice(3, 5)).toEqual(['아이템 구매', 'item_purchase'])
+    expect(values.slice(9, 11)).toEqual(['소비', 'consumable'])
+  })
+
   it('관세는 총액과 그 안의 몫을 **둘 다** 박는다', async () => {
     const { insertSpendRecord } = require('../spend') as typeof import('../spend')
 
     // 구입가 8.5억 + 관세 10% = 9.35억. meso_amount 는 **총액**이라 집계가 한 칸만 보면 된다.
     await insertSpendRecord({
       ...mesoSpend,
-      category: '아이템 구매',
+      category: 'item_purchase',
       item: '앱솔랩스 슈즈',
+      itemKey: null,
+      itemKind: 'equipment',
       mesoAmount: 935_000_000,
       tariffMeso: 85_000_000,
     })
 
     const values = runMock.mock.calls[0][1]
-    expect(values[8]).toBe(935_000_000)
-    expect(values[9]).toBe(85_000_000)
+    expect(values[12]).toBe(935_000_000)
+    expect(values[13]).toBe(85_000_000)
   })
 })
 
@@ -123,8 +159,8 @@ describe('메포 지출의 시세 요구', () => {
     await insertSpendRecord(pointSpend)
 
     const values = runMock.mock.calls[0][1]
-    expect(values[10]).toBe(30_000)
-    expect(values[11]).toBe(1_180)
+    expect(values[14]).toBe(30_000)
+    expect(values[15]).toBe(1_180)
   })
 
   it('메포를 안 썼으면 시세를 안 물어본다', async () => {
@@ -154,8 +190,11 @@ describe('getSpendRecordsBetween', () => {
           ocid: undefined,
           spent_on: '2026-08-23',
           category: '컨텐츠',
-          item: '하이마운틴 2단계',
+          category_key: 'content',
+          item: '몬스터 파크',
+          item_key: 'monster_park',
           form: undefined,
+          form_item_keys: null,
           quantity: 1,
           meso_amount: null,
           tariff_meso: null,
@@ -184,9 +223,13 @@ describe('getSpendRecordsBetween', () => {
           ocid: null,
           spent_on: '2026-08-28',
           category: '아이템 구매',
+          category_key: 'item_purchase',
           item: '주문서',
+          item_key: null,
           form: null,
+          form_item_keys: null,
           item_kind: '소비',
+          item_kind_key: 'consumable',
           quantity: 300,
           meso_amount: 3_600_000,
           tariff_meso: null,
@@ -201,7 +244,39 @@ describe('getSpendRecordsBetween', () => {
     const { getSpendRecordsBetween } = require('../spend') as typeof import('../spend')
 
     const [row] = await getSpendRecordsBetween('2026-08-01', '2026-08-31')
-    expect(row).toMatchObject({ itemKind: '소비', quantity: 300, mesoAmount: 3_600_000 })
+    expect(row).toMatchObject({ category: 'item_purchase', itemKind: 'consumable', quantity: 300, mesoAmount: 3_600_000 })
+  })
+
+  it('형태별 항목 key 는 JSON 을 풀어 되읽는다', async () => {
+    queryMock.mockResolvedValue({
+      values: [
+        {
+          id: 'spd-4',
+          ocid: null,
+          spent_on: '2026-09-01',
+          category: '컨텐츠',
+          category_key: 'content',
+          item: '하이마운틴 솔 2단계',
+          item_key: null,
+          form: null,
+          form_item_keys: '{"sol_erda":"high_mountain_2"}',
+          item_kind: null,
+          item_kind_key: null,
+          quantity: 1,
+          meso_amount: null,
+          tariff_meso: null,
+          point_amount: 30_000,
+          point_per_100m_meso: 1_180,
+          cash_amount: null,
+          memo: null,
+          recorded_at: '2026-09-01T05:00:00.000Z',
+        },
+      ],
+    })
+    const { getSpendRecordsBetween } = require('../spend') as typeof import('../spend')
+
+    const [row] = await getSpendRecordsBetween('2026-09-01', '2026-09-30')
+    expect(row).toMatchObject({ itemKey: null, formItemKeys: { sol_erda: 'high_mountain_2' } })
   })
 
   it('값이 없으면 빈 배열이다', async () => {
@@ -212,27 +287,21 @@ describe('getSpendRecordsBetween', () => {
   })
 })
 
-describe('SPEND_CATEGORIES', () => {
-  it('저장하는 것은 여섯이다', () => {
-    const { SPEND_CATEGORIES } = require('../spend') as typeof import('../spend')
-
-    expect(SPEND_CATEGORIES).toEqual(['컨텐츠', '이벤트·BM', '버프', '주문서', '아이템 구매', '기타'])
-  })
-
-  // 갈래 이름이 **두 곳**에 산다. 목록을 갖는 넷은 카탈로그에도 있다. 어긋나면 고른 항목의
-  // 카테고리가 레코드의 카테고리와 달라져 집계에서 조용히 빠진다.
+describe('SPEND_CATEGORIES 와 카탈로그', () => {
+  // 갈래 key 가 **두 곳**에 산다. 목록을 갖는 넷은 카탈로그에도 있다. 어긋나면 고른 항목의 갈래가
+  // 기록의 갈래와 달라진다.
   it('카탈로그가 아는 넷을 그대로 품는다', () => {
-    const { SPEND_CATEGORIES } = require('../spend') as typeof import('../spend')
+    const keys = SPEND_CATEGORIES.map((each) => each.key)
 
     for (const category of spendCatalog.categories) {
-      expect(SPEND_CATEGORIES).toContain(category)
+      expect(keys).toContain(category)
     }
   })
 
   // 나머지 둘은 **직접 입력**이라 카탈로그에 항목이 없다.
   it('직접 입력 둘은 카탈로그에 없다', () => {
-    expect(spendCatalog.categories).not.toContain('아이템 구매')
-    expect(spendCatalog.categories).not.toContain('기타')
+    expect(spendCatalog.categories).not.toContain('item_purchase')
+    expect(spendCatalog.categories).not.toContain('etc')
   })
 })
 

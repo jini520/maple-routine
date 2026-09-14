@@ -87,6 +87,40 @@ describe('getBossProfitDb', () => {
     )
   })
 
+  // 이름 이관은 부팅마다 돌지 않는다. 버전 번호가 이미 끝까지 올랐으면 한 문장도 안 나간다.
+  it('user_version 이 마지막 버전이면 값을 옮기는 이관이 안 돈다', async () => {
+    dbQueryMock.mockImplementation(async (sql: string) =>
+      sql === 'PRAGMA user_version' ? { values: [{ user_version: 2 }] } : { values: [{ name: 'world' }] },
+    )
+    const { getBossProfitDb } = require('../db') as typeof import('../db')
+
+    await getBossProfitDb()
+
+    const statements = dbExecuteMock.mock.calls.map(([sql]) => String(sql))
+    expect(statements.some((sql) => sql.includes('시즌 보스 메이린'))).toBe(false)
+    expect(statements.some((sql) => sql.startsWith('PRAGMA user_version ='))).toBe(false)
+  })
+
+  it('버전마다 트랜잭션 안에서 돌고 버전 번호를 올린다', async () => {
+    dbQueryMock.mockImplementation(async (sql: string) =>
+      sql === 'PRAGMA user_version' ? { values: [{ user_version: 0 }] } : { values: [] },
+    )
+    const { getBossProfitDb } = require('../db') as typeof import('../db')
+
+    await getBossProfitDb()
+
+    const statements = dbExecuteMock.mock.calls.map(([sql]) => String(sql))
+    const tail = statements.slice(statements.indexOf('BEGIN'))
+    expect(tail.filter((sql) => ['BEGIN', 'COMMIT', 'PRAGMA user_version = 1', 'PRAGMA user_version = 2'].includes(sql))).toEqual([
+      'BEGIN',
+      'PRAGMA user_version = 1',
+      'COMMIT',
+      'BEGIN',
+      'PRAGMA user_version = 2',
+      'COMMIT',
+    ])
+  })
+
   it('웹 플랫폼에서는 커넥션을 열기 전에 initWebStore를 먼저 호출한다', async () => {
     isWebPlatformMock.mockReturnValue(true)
     const { getBossProfitDb } = require('../db') as typeof import('../db')
@@ -444,7 +478,7 @@ describe('form 컬럼 마이그레이션', () => {
     const { getBossProfitDb } = require('../db') as typeof import('../db')
     await getBossProfitDb()
 
-    const altered = dbExecuteMock.mock.calls.some(([sql]) => String(sql).includes('ADD COLUMN form'))
+    const altered = dbExecuteMock.mock.calls.some(([sql]) => String(sql) === 'ALTER TABLE spend_records ADD COLUMN form TEXT')
     expect(altered).toBe(false)
   })
 })

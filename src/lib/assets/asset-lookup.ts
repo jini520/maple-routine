@@ -174,53 +174,6 @@ export function getItemIconUrlByFile(fileName: string): ImageAssetRef | null {
 // 지출 타일
 
 /**
- * 키가 **타일에 적히는 이름**이다(카탈로그의 `base ?? name`). 카탈로그를 사용자가 고치면 이 표도
- * 함께 고쳐야 하고, 안 고치면 그림만 조용히 사라진다. `SpendSheet.test` 가 그 자리를 붙든다.
- *
- * 표가 둘인 것은 원천이 둘이라서다. 에픽던전 셋만 지역 아이콘을 쓰는데(일일 퀘스트 화면과 같은
- * 그림이다) 두 생성물의 키 모양이 달라 파일명과 슬러그가 섞이면 안 된다.
- *
- * @see
- */
-const ITEM_ICON_BY_LABEL: Record<string, string> = {
-  '몬스터 파크': 'monster_park_ticket.webp',
-  '에픽던전': 'cerzar.webp',
-  '일간 퀘스트': 'grandis_spiegelmann.webp',
-  '주간 퀘스트': 'arcane_river_spiegelmann.webp',
-  '메카베리 농장': 'mechaberry_farm_ticket.webp',
-  '블루베리 농장': 'blueberry_farm_ticket.webp',
-  '솔 에르다': 'sole_1000.webp',
-  '블랙 서큘레이터': 'black_circulator.webp',
-  '미호로이드': 'mihoroid.webp',
-  'VIP 사우나': 'vip_sauna_ticket.webp',
-  '닉네임 변경': 'npc_mr_newname.webp',
-  '세이람의 영약': 'seiram_elixir.webp',
-  '알레리아의 영약': 'alleria_elixir.webp',
-  '콜렉터의 영약': 'collector_elixir.webp',
-  '명예의 영약': 'honor_elixir.webp',
-  // 주문서 갈래의 타일. 타일 하나에 그림 한 장이라, 항목이 여럿인 타일은 **대표의 그림**이다
-  // (사용자 지정). 일반과 카르마 두 벌이 온 것은 일반 쪽을 쓰고, 프리미엄 악세의 대표는
-  // 공격력 주문서다.
-  '매지컬 주문서': 'magical_onehand_attack_scroll.webp',
-  '프리미엄 악세': 'premium_accessory_attack_scroll.webp',
-  '귀 장식 주문서': 'scroll_10_percent.webp',
-  '놀긍': 'amazing_positive_chaos_scroll.webp',
-  '펫장비 주문서': 'pet_equip_attack_scroll.webp',
-  '프리미엄 펫장비': 'premium_pet_equip_attack_scroll.webp',
-  '펫장비 이노센트': 'pet_equip_innocent_scroll.webp',
-  '펫장비 순백': 'pet_equip_pure_white_scroll.webp',
-  '리턴 스크롤': 'return_scroll.webp',
-  '펫장비 리턴': 'pet_equip_return_scroll.webp',
-}
-
-const MAP_ICON_BY_LABEL: Record<string, string> = {
-  '하이마운틴': 'highMountain',
-  '앵글러 컴퍼니': 'anglerCompany',
-  '악몽선경': 'nightmareParadise',
-  '아우룸 레기스': 'aurumRegis',
-}
-
-/**
  * 그림과 서는 자리를 함께 든 값. `beside` 는 이름 바로 옆이고 아니면 타일 왼쪽 끝이다.
  *
  * 지역 아이콘이면 이름 옆 이 지금은 우연히 일치하지만 그 둘은 다른 이야기라, 자리를 표가
@@ -246,9 +199,9 @@ const CASHBOOK_ROW_ICON_BY_KEY: Record<string, string> = {
   '스타포스': 'equipment_enhancement_scroll.png',
   '잠재능력': 'potential_reset.png',
   '에디셔널 잠재능력': 'additional_potential_reset.png',
-  // 손입력 갈래 둘. 수익의 `사냥` 과 지출의 `버프` 는 이름이 겹치지 않는다.
-  '사냥': 'wealth_acquisition_potion_small.webp',
-  '버프': 'seiram_elixir.webp',
+  // 손입력 갈래 둘. 열쇠는 `기록 종류:갈래 key` 라 수익 · 지출의 같은 갈래 key 가 안 겹친다.
+  'income:hunting': 'wealth_acquisition_potion_small.webp',
+  'spend:buff': 'seiram_elixir.webp',
 }
 
 export function cashbookRowIconOf(key: string): ImageAssetRef | null {
@@ -257,16 +210,19 @@ export function cashbookRowIconOf(key: string): ImageAssetRef | null {
   return ITEM_ASSETS[file.normalize('NFC')] ?? null
 }
 
-export function spendIconOf(label: string): SpendIcon | null {
-  const file = ITEM_ICON_BY_LABEL[label]
-  if (file !== undefined) {
-    const ref = ITEM_ASSETS[file]
+/**
+ * 지출 타일 그림을 자산으로 푼다. 그림 파일 이름은 카탈로그의 `tiles` 가 든다.
+ *
+ * 파일이면 타일 왼쪽, 지역 아이콘 slug 면 이름 옆에 선다. 못 찾으면 `null` 이고 화면은 그림 없이 선다.
+ */
+export function spendIconOf(icon: { readonly file?: string; readonly map?: string } | undefined): SpendIcon | null {
+  if (icon?.file !== undefined) {
+    const ref = ITEM_ASSETS[icon.file]
     return ref === undefined ? null : { ref, beside: false }
   }
 
-  const slug = MAP_ICON_BY_LABEL[label]
-  if (slug !== undefined) {
-    const ref = DAILY_QUEST_ICON_ASSETS[slug]
+  if (icon?.map !== undefined) {
+    const ref = DAILY_QUEST_ICON_ASSETS[icon.map]
     return ref === undefined ? null : { ref, beside: true }
   }
 

@@ -20,7 +20,8 @@ import { useState } from 'react'
 import { View } from 'react-native'
 
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
-import { SPEND_CATEGORIES, type SpendCategory, type SpendRecord } from '../../storage/spend'
+import { SPEND_CATEGORIES, type SpendCategoryKey } from '../../lib/cashbook/categories'
+import type { SpendRecord } from '../../storage/spend'
 import { CategoryPicker } from './CategoryPicker'
 import { CatalogForm } from './spend/CatalogForm'
 import { EtcForm } from './spend/EtcForm'
@@ -55,20 +56,6 @@ export interface SpendSheetProps {
   onClose: () => void
 }
 
-/**
- * 갈래마다 그림 하나(전부 사용자 지정). 앞 넷은 그 갈래의 목록에 실제로 있는 항목이라
- * `ITEM_ICON_BY_LABEL` 이 같은 파일을 쓰지만, 저쪽은 항목 이름으로 찾고 여기는 갈래 이름으로
- * 찾으므로 **표를 합치지 않는다**. 합치면 항목 이름을 바꿀 때 카드 그림이 같이 사라진다.
- */
-const CATEGORY_ICON_FILES: Record<SpendCategory, string> = {
-  컨텐츠: 'monster_park_ticket.webp',
-  '이벤트·BM': 'vip_sauna_ticket.webp',
-  버프: 'seiram_elixir.webp',
-  주문서: 'amazing_positive_chaos_scroll.webp',
-  '아이템 구매': 'dark_boss_pendant.png',
-  기타: 'meso.webp',
-}
-
 export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   /**
    * 무엇을 적나. `null` 이면 **아직 안 골랐다**이고 그때 이 시트는 갈래 고르개다.
@@ -76,7 +63,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
    * 수정으로 열면 기록이 정하므로 고르는 단계를 건너뛴다. 갈래를 바꾸면 그 기록은 다른 것이
    * 되고, 무엇이었는지는 제목이 이미 말한다.
    */
-  const [category, setCategory] = useState<SpendCategory | null>(props.editing?.category ?? null)
+  const [category, setCategory] = useState<SpendCategoryKey | null>(props.editing?.category ?? null)
   /**
    * 스크롤을 되돌릴 열쇠. 목록 갈래가 단계를 오갈 때 채운다. 갈래가 바뀌거나 단계를 오가면
    * 내용이 통째로 갈리므로 **밀린 자리에서 시작하면 안 된다.**
@@ -151,7 +138,6 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
           <CategoryPicker
             title="지출 추가"
             categories={SPEND_CATEGORIES}
-            iconFiles={CATEGORY_ICON_FILES}
             testIdPrefix="spend-sheet"
             onSelect={setCategory}
             onClose={props.onClose}
@@ -170,10 +156,10 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
 
 /** 갈래 하나에 폼 하나. 고르는 자리는 여기 하나뿐이다. */
 function SpendForm(props: {
-  category: SpendCategory
+  category: SpendCategoryKey
   formProps: SpendFormProps
 }): React.JSX.Element {
-  if (props.category === '아이템 구매') return <ItemBuyForm {...props.formProps} />
-  if (props.category === '기타') return <EtcForm {...props.formProps} />
+  if (props.category === 'item_purchase') return <ItemBuyForm {...props.formProps} />
+  if (props.category === 'etc') return <EtcForm {...props.formProps} />
   return <CatalogForm {...props.formProps} />
 }
