@@ -74,20 +74,12 @@ describe('describePinMismatch — 판정값과 다르면 멈춘다 ([[ADR-190]] 
   })
 })
 
-// 값은 «우리가 정한 것» 이 아니라 **바이너리에서 읽어 온 사실**이다([[ADR-190]] 결정 1). 그래서
-// 여기 적어 둔다 — 이 두 줄이 바뀌면 그것은 새 스토어 바이너리가 나왔다는 뜻이고, 그때는 상수를
-// 고치는 것이 아니라 **비우는** 것이 맞다(결정 4).
-describe('PINNED_RUNTIME_VERSIONS — 1.0.6 스토어 바이너리의 지문 ([[ADR-190]])', () => {
-  it('안드로이드만 1.0.6 바이너리를 가리킨다', () => {
-    expect(PINNED_RUNTIME_VERSIONS).toEqual({
-      android: { runtimeVersion: ANDROID_STORE, binaryAppVersion: '1.0.6' },
-    })
-  })
-
-  // 1.0.8 build 15 가 게시되면서(2026-09-13) 트리 계산값이 곧 그 바이너리의 값이 됐다. 못박을
-  // 이유가 사라진 자리는 **고치는 것이 아니라 비운다**.
-  it('iOS 는 비었다', () => {
-    expect(PINNED_RUNTIME_VERSIONS.ios).toBeUndefined()
+// 값은 우리가 정한 것이 아니라 바이너리에서 읽어 온 사실이다. 새 스토어 바이너리가 나오면 상수를
+// 고치는 것이 아니라 비운다.
+describe('PINNED_RUNTIME_VERSIONS: 못박은 스토어 바이너리의 지문', () => {
+  // 두 스토어의 1.0.8 이 트리 계산값과 같은 지문으로 게시됐다(iOS 2026-09-12 · 안드로이드 2026-09-13).
+  it('두 플랫폼 다 비었다', () => {
+    expect(PINNED_RUNTIME_VERSIONS).toEqual({})
   })
 })
 
@@ -132,20 +124,12 @@ describe('resolveAcceptedRuntimeVersions ([[ADR-268]] 결정 2)', () => {
   })
 })
 
-// 못박은 지문과 같은 성질이라 같은 파일에 둔다. 지어내는 값이 아니라 **바이너리에서 읽어 온
-// 사실**이다([[ADR-268]] 결정 4). 여기 수치로 박아 두는 것은 **출시 후에 비워야 하기** 때문이다.
-// 안 비우면 아무도 안 잠기고, 그 방향이 안전한 쪽이라 조용히 지나간다.
-describe('IN_REVIEW_RUNTIME_VERSIONS: 심사 중인 바이너리의 지문 ([[ADR-268]])', () => {
-  // 값이 들어 있는 것은 **임시 상태**다. 지금은 두 스토어에 올린 1.0.8 을 받아주고 있고,
-  // 게시가 확인된 플랫폼부터 비운다. 비우는 것이 곧 그 플랫폼 1.0.6 기기의 잠금 스위치다.
-  it('안드로이드만 심사 중인 바이너리를 받아주는 중이다', () => {
-    expect(IN_REVIEW_RUNTIME_VERSIONS).toEqual({
-      android: ['eebd6802bff90e10333584aedafee0037c67e958'],
-    })
-  })
-
-  it('iOS 는 비었다 - 1.0.8 이 게시돼 1.0.6 기기가 잠긴다', () => {
-    expect(IN_REVIEW_RUNTIME_VERSIONS.ios).toBeUndefined()
+// 못박은 지문과 같은 성질이라 같은 파일에 둔다. 출시 후에 비워야 해서 수치로 박아 둔다. 안 비우면
+// 아무도 안 잠기고, 그 방향이 안전한 쪽이라 조용히 지나간다.
+describe('IN_REVIEW_RUNTIME_VERSIONS: 심사 중인 바이너리의 지문', () => {
+  // 비운 것이 곧 그 플랫폼 1.0.6 기기의 잠금이다. iOS 2026-09-13 · 안드로이드 2026-09-14.
+  it('두 플랫폼 다 비었다: 1.0.8 이 게시돼 1.0.6 기기가 잠긴다', () => {
+    expect(IN_REVIEW_RUNTIME_VERSIONS).toEqual({})
   })
 })
 

@@ -48,8 +48,8 @@
  * 가리킨다.
  */
 export const PINNED_RUNTIME_VERSIONS = {
-  // iOS 는 뺐다(2026-09-13). 1.0.8 build 15 가 게시돼 트리 계산값이 곧 바이너리의 값이다.
-  android: { runtimeVersion: '3df849c014ea95bb7b0b9dd506094148b0fdc508', binaryAppVersion: '1.0.6' },
+  // 비었다(2026-09-14). 두 스토어의 1.0.8 이 트리 계산값과 같은 지문으로 게시됐다. 여기 값을 넣으면
+  // 발행 스크립트가 발행을 거부한다. 안드로이드 이미지 리소스 이름을 옛 바이너리에 맞추는 장치가 없다.
 }
 
 /**
@@ -79,14 +79,8 @@ export const PINNED_RUNTIME_VERSIONS = {
  * 그 방향이 안전한 쪽이라 조용히 지나간다. 플랫폼마다 따로 비운다 - 두 스토어의 게시 시점이 다르다.
  */
 export const IN_REVIEW_RUNTIME_VERSIONS = {
-  // 2026-09-13 심사에 올린 1.0.8 의 지문. 바이너리에서 읽었다.
-  // iOS 는 아카이브의 `EXUpdates.bundle/fingerprint`, 안드로이드는 AAB 의
-  // `base/assets/fingerprint` 다.
-  //
-  // 플랫폼마다 따로 비운다. 게시가 확인된 쪽부터 비우고, 비우는 것이 곧 그 플랫폼
-  // 1.0.6 기기의 잠금 스위치다.
-  // iOS 는 비웠다(2026-09-13 게시 확인). 비운 것이 곧 1.0.6 iOS 기기의 잠금이다.
-  android: ['eebd6802bff90e10333584aedafee0037c67e958'],
+  // 비었다. 1.0.8 게시를 확인하고 iOS 는 2026-09-13, 안드로이드는 2026-09-14 에 비웠다.
+  // 비운 것이 곧 그 플랫폼 1.0.6 기기의 잠금이다.
 }
 
 /**
@@ -176,7 +170,7 @@ export function resolvePublishPlatforms(argv) {
   return picked.length === 0 ? [...PUBLISH_PLATFORMS] : PUBLISH_PLATFORMS.filter((platform) => picked.includes(platform))
 }
 
-/** 발행하는 플랫폼의 못박기만 남긴 표. 안 내는 플랫폼의 못박기가 검사와 이름표 요구를 걸면 안 된다. */
+/** 발행하는 플랫폼의 못박기만 남긴 표. 안 내는 플랫폼의 못박기가 검사와 발행 거부를 걸면 안 된다. */
 export function pinsForPlatforms(pins, platforms) {
   return Object.fromEntries(Object.entries(pins ?? {}).filter(([platform]) => platforms.includes(platform)))
 }

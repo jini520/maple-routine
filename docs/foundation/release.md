@@ -15,26 +15,6 @@ Xcode 아카이브다. 저장소 루트가 곧 Expo 프로젝트라 둘 다 루�
 
 ## 다음 스토어 릴리스에서 같이 할 일
 
-> **진행 중: 1.0.8 (2026-09-13)** — **iOS 는 게시 완료**(App Store 1.0.8, 2026-09-12T20:04Z).
-> 안드로이드는 AAB 를 구워 비공개 테스트에 제출했다. `app.json` 을 다시 건드리면 두 바이너리의
-> 지문이 함께 무효가 되므로 **안드로이드가 게시될 때까지 건드리지 말 것**.
->
-> | 플랫폼 | 지문 | 상태 |
-> |---|---|---|
-> | iOS | `6bc20c979ffdbc05f07ea9b9ca6d0cad1f3b20b3` | **게시 완료.** `latest-ios.json` 이 이 값 하나를 든다(= 1.0.6 iOS 기기 잠김). 못박기·심사 목록에서 iOS 를 비웠다 |
-> | Android | `eebd6802bff90e10333584aedafee0037c67e958` | 비공개 테스트 검토 중. `IN_REVIEW_RUNTIME_VERSIONS.android` 와 `latest-android.json` 에 등록됨 |
->
-> **AAB 를 그대로 쓴다**(사용자 결정 2026-09-13). 광고 SDK 가 붙인 `com.google.android.gms.permission.AD_ID`
-> 가 병합 매니페스트에 남아 있어 **데이터 안전 양식에서 광고 ID 수집을 신고해야 한다**. 1.0.6 이
-> 그 상태로 나갔으므로 양식을 안 고쳐도 된다. 빼려면 `tools:node="remove"` 두 줄과 재빌드다.
->
-> **iOS 는 ②③④ 를 했고 ① 을 안 했다**(2026-09-13). 번들을 발행하지 않은 이유는 아래
-> `못박은 동안 HEAD 에서 발행하면 1.0.6 기기가 죽는다` 에 있다. 대가로 1.0.6 에서 올라온
-> 사용자가 `업데이트를 마쳤어요` 를 한 번 볼 수 있다. 안드로이드도 게시되면 같은 순서다 -
-> `latest-android.json` 갱신 → `IN_REVIEW.android` 비우기 → `PINNED.android` 제거, 그리고 그때
-> `OTA_LEGACY_ASSET_MAP` 이름표와 `scripts/__tests__/share-image-native-modules.test.mjs` 도 함께
-> 치운다(규칙 6).
-
 > **네이티브 트리에서 AdMob 앱 ID를 걷는다.** 2026-08-31에 앱 ID를 환경 변수로 옮겼지만
 > (`EXPO_PUBLIC_ADS_APP_ID_ANDROID`·`..._IOS`, `app.config.js`), 커밋된 prebuild 산출물에는
 > 옛 값이 그대로 남아 있다.
@@ -50,20 +30,6 @@ Xcode 아카이브다. 저장소 루트가 곧 Expo 프로젝트라 둘 다 루�
 > 할 일은 `.env` 를 채운 상태로 prebuild 를 돌려 네이티브 파일이 환경 변수 값으로 다시 써지는지
 > 확인하고, 그 트리에서 바이너리를 굽는 것이다. 아래 규칙 1~4 를 그대로 따르면 된다. 자세한
 > 배경은 [../features/ads.md](../features/ads.md).
-
-> **SNS 공유용 이미지 내보내기의 의존성이 심겨 있다**(#388, [[ADR-267]]). 이번 바이너리가 그것을
-> 처음 싣는다. 새로 들어가는 것은 `react-native-view-shot`·`expo-sharing`·`expo-media-library`
-> 셋이다. `expo-file-system` 은 `expo` 자신의 의존성이라 전부터 들어 있었고 **버전을 안 올렸다.**
->
-> **앨범 저장까지 한다**(사용자 결정). 그래서 권한 자리 셋이 함께 들어 있다. `ios/app/Info.plist`
-> 의 `NSPhotoLibraryAddUsageDescription`, 안드로이드 매니페스트의
-> `READ_MEDIA_VISUAL_USER_SELECTED` 와 `<application>` 의 `android:requestLegacyExternalStorage`.
-> **전부 OTA 로 못 바꾸는 자리다.**
->
-> 구운 뒤에 **둘을 함께 치운다.** 규칙 5 의 `PINNED_RUNTIME_VERSIONS` 와
-> `scripts/__tests__/share-image-native-modules.test.mjs`. 그 가드가 막고 있는 것은 «모듈이 없는
-> 1.0.6 기기에 그 모듈을 부르는 JS 가 OTA 로 배달되는 것»이고, 못박기가 사라지면 지문 불일치가
-> 다시 그것을 막는다. 그때부터 시안·화면 구현은 전부 OTA 로 나간다.
 
 ## 릴리스는 노트를 쓰는 것으로 시작한다 ([[ADR-119]])
 
@@ -689,7 +655,7 @@ node scripts/publish-rn-ota.mjs --platform ios
 ```
 
 `--platform` 을 주면 export · 지문 해석 · 매니페스트와 `latest-<platform>.json` 쓰기 · 왕복 확인 ·
-못박기 검사와 에셋 이름표 요구가 **그 플랫폼에만** 걸린다. 안 주면 지금처럼 둘 다 발행한다.
+못박기 검사가 **그 플랫폼에만** 걸린다. 안 주면 지금처럼 둘 다 발행한다.
 
 두 스토어의 바이너리가 따로 움직여서 필요하다. 2026-09-14 에 iOS 는 1.0.8 이 게시돼 트리 지문이
 스토어와 같았고, 안드로이드는 스토어가 여전히 1.0.6(FCM 네이티브 모듈이 없다)이라 main 번들을 보내면
@@ -702,6 +668,18 @@ node scripts/publish-rn-ota.mjs --platform ios
 ```bash
 npx expo-updates runtimeversion:resolve --platform ios   # 스토어 바이너리의 EXUpdates.bundle/fingerprint 와 같아야 한다
 ```
+
+**워크트리에서 발행하면 git 이 무시하는 파일 넷을 본 체크아웃에서 복사한다.** 그 파일들도 지문
+재료인데 워크트리에는 없어서, 코드가 같아도 지문이 달라진다. 2026-09-14 에 `android/keystore.properties`
+하나가 빠져 안드로이드 지문이 `eebd6802…` 대신 `2491b08e…` 로 나왔다. 넷 다 하나씩 빼 보고 지문이
+바뀌는 것을 확인했다.
+
+| 파일 | 걸리는 지문 | 이유 |
+|---|---|---|
+| `.env` | 둘 다 | `app.config.js` 가 광고 앱 ID 를 읽어 설정에 넣는다. 번들의 `EXPO_PUBLIC_*` 값도 여기서 온다 |
+| `android/keystore.properties` | android | `android/` 디렉터리 전체가 지문 재료다 |
+| `ios/.xcode.env.local` | ios | `ios/` 디렉터리 전체가 지문 재료다 |
+| `ios/app.xcodeproj/project.xcworkspace/` | ios | 같다 |
 
 ### 규칙 5: 규칙 1~4 가 **이미 어긋난 뒤**에는 지문을 못박는다 ([[ADR-190]])
 
@@ -738,62 +716,26 @@ const PINNED_RUNTIME_VERSIONS = {
 > 가리키므로, 네이티브를 고쳤으면 **스토어 빌드**로 가야 한다. 그리고 새 스토어 바이너리를
 > 규칙 1~3 을 지켜 구운 뒤에는 **이 상수를 지운다**. 그때부터 트리 계산값이 곧 바이너리의 값이다.
 
-### 규칙 5-1: 못박은 동안 **HEAD 에서 발행하면 1.0.6 기기가 부팅에서 죽는다**
+**지금은 비어 있다**(2026-09-14). 두 스토어의 1.0.8 이 트리 계산값과 같은 지문으로 게시됐다(iOS
+`6bc20c97…` · 안드로이드 `eebd6802…`). 다시 못박아야 하면 규칙 6 을 먼저 볼 것. 발행 스크립트는
+못박은 플랫폼이 있으면 발행을 거부한다.
 
-2026-09-13 에 확인했다. 진입점이 Firebase 를 **최상단에서 import** 한다.
+### 규칙 6: 못박은 발행은 **에셋 이름도** 옛 바이너리에 맞춰야 한다 ([[ADR-191]])
 
-```ts
-// index.ts
-import { getMessaging, setBackgroundMessageHandler } from '@react-native-firebase/messaging'
-```
-
-1.0.6 바이너리에는 그 네이티브 모듈이 없다(FCM 은 2026-09 에 들어왔다). 못박기가 살아 있는 동안은
-**못박은 지문이 트리 계산값을 이겨서** 네이티브 그래프가 달라져도 발행이 그냥 성공하고, 그 번들이
-1.0.6 기기로 간다. 최상단 import 라 화면을 누를 것도 없이 **첫 렌더 전에 죽는다.** 업데이트 모달도
-그 안에 있어서 OTA 로는 못 푼다([[ADR-117]] 이 1.0.5 에서 겪은 그 자리다).
-
-`share-image-native-modules.test.mjs` 가 막는 것은 **모듈 셋뿐**이라 이것을 못 잡는다.
-
-**그래서 1.0.8 은 iOS 번들을 발행하지 않았다.** 잠금만 켰다. 대가는 1.0.6 에서 올라온 사용자가
-`업데이트를 마쳤어요` 를 한 번 보는 것이고, 그것은 화면 하나짜리 대가다.
-
-**꼭 발행해야 한다면** 기준점 워크트리에서 낸다. 발행된 번들의 기준 커밋에서 워크트리를 따고
-버전만 올려, **새 네이티브를 부르는 JS 가 안 들어간 번들**을 만든다. 그 절차는 저장소에 없고
-1.0.7 을 그렇게 냈다.
-
-### 규칙 6: 못박았으면 **에셋 이름표도** 함께 준다 ([[ADR-191]])
-
-지문을 못박는다는 것은 ‘번들이 지금 트리로는 못 만드는 바이너리를 겨냥한다’는 뜻이다. 그러면
-지문 말고 하나가 더 갈린다. **안드로이드 이미지의 리소스 이름**.
+지문을 못박는다는 것은 번들이 지금 트리로는 못 만드는 바이너리를 겨냥한다는 뜻이다. 그러면
+지문 말고 하나가 더 갈린다. **안드로이드 이미지의 리소스 이름**이다.
 
 안드로이드는 APK 에 박힌 이미지를 파일이 아니라 드로어블 **리소스**로 들고, 그 이름을 에셋의
 소스 경로(`httpServerLocation`)에서 파생한다. [[ADR-155]] 가 `packages/core` 를 `src` 로 옮기면서
-그 이름이 `_core_src_assets_…` → `src_assets_…` 로 바뀌었고, 1.0.7 을 그대로 내보냈다가 **앱
+그 이름이 `_core_src_assets_…` 에서 `src_assets_…` 로 바뀌었고, 1.0.7 을 그대로 내보냈다가 **앱
 이미지 273개가 전부 빈칸**이 됐다(iOS 는 파일 경로로 풀어 멀쩡했다).
 
-**이름표는 기기에서 뽑는다**. 저장소가 만들 수 있는 값이 아니다.
+**그 이름을 맞추던 장치는 걷었다**(2026-09-14). 두 스토어 1.0.8 이 게시돼 못박기를 비웠고, 새
+바이너리의 드로어블은 이미 `src_assets_…` 라 장치가 켜져 있으면 같은 사고가 반대 방향으로 난다.
+그래서 **발행 스크립트는 못박은 플랫폼이 있으면 발행을 거부한다.** 다시 못박아야 하면
+`git log -- scripts/ota-legacy-asset-paths.cjs` 에서 플러그인과 발행 관문을 되살리고, 이름표는 그
+바이너리가 깔린 기기의 logcat `embeddedAssetFileMap` 에서 새로 뽑는다.
 
-```bash
-adb -s <기기> logcat -c && adb -s <기기> logcat -v time > logcat.txt &
-adb -s <기기> shell am force-stop com.mapleroutine.app
-adb -s <기기> shell monkey -p com.mapleroutine.app -c android.intent.category.LAUNCHER 1
-# 부팅 로그의 `embeddedAssetFileMap: <md5>,<ext> => file:///android_res/<폴더>/<이름>.<ext>` 를
-# {"<md5>": {"ext": "...", "name": "..."}} 로 접는다
-```
-
-그 표를 주고 발행한다. **주지 않으면 스크립트가 발행을 거부한다.**
-
-```bash
-OTA_LEGACY_ASSET_MAP=apk-embedded-map.json OTA_ASSET_REPORT=asset-report.jsonl \
-  node scripts/publish-rn-ota.mjs
-```
-
-`metro.config.js` 가 그때만 역산 플러그인을 걸고(`scripts/ota-legacy-asset-paths.cjs`), export 뒤
-스크립트가 이름표 **전 항목**을 대조해 하나라도 어긋나면 멈춘다.
-
-> ⚠️ **플러그인과 못박기는 함께 죽는다.** 새 스토어 바이너리의 드로어블은 `src_assets_…` 라,
-> 상수를 비우는 날 이름표도 함께 치우지 않으면 **같은 사고가 거울처럼 뒤집혀** 일어난다.
->
 > ⚠️ **정적 대조가 실기기 확인을 대신하지 않는다.** 1.0.7 은 에셋 누락 0 · 해시 손상 0 · 키 집합
 > 정상이었고 화면만 빈칸이었다. 발행 뒤 **실기기에서 그림이 뜨는 것을 눈으로 본다.**
 
@@ -804,6 +746,23 @@ JS 만 바뀌었는지는 지문이 안 말해 주므로 **사람이 확인한�
 
 ## 폐기된 정책 (history)
 
+- ~~1.0.8 진행 중: iOS 게시 완료 · 안드로이드 비공개 테스트 검토 중~~ → **두 스토어 게시 완료**(iOS
+  2026-09-12T20:04Z · Play 2026-09-13). 지문은 iOS `6bc20c97…` · 안드로이드 `eebd6802…` 이고 둘 다
+  트리 계산값과 같다. 잠금은 iOS 가 2026-09-13 에 번들 없이 켰고, 안드로이드는 2026-09-14 에 1.0.9
+  번들과 같은 회차로 켰다. 안드로이드 AAB 는 광고 SDK 가 붙인 `com.google.android.gms.permission.AD_ID`
+  를 그대로 들고 나갔다(사용자 결정 2026-09-13). 그래서 데이터 안전 양식의 광고 ID 수집 신고가 계속
+  필요하고, 빼려면 `tools:node="remove"` 두 줄과 재빌드다.
+- ~~SNS 공유용 이미지 내보내기의 의존성은 다음 바이너리가 처음 싣는다. 구운 뒤 못박기와
+  `share-image-native-modules.test.mjs` 를 함께 치운다~~ → **두 스토어 1.0.8 에 실렸고 둘 다
+  치웠다**(2026-09-14, [[ADR-267]]). 이제 시안과 화면 구현은 OTA 로 나간다.
+- ~~규칙 5-1: 못박은 동안 HEAD 에서 발행하면 1.0.6 기기가 부팅에서 죽는다~~ → **못박기를
+  비웠다**(2026-09-14). `index.ts` 가 `@react-native-firebase/messaging` 을 최상단에서 import 하는데
+  1.0.6 바이너리에는 그 모듈이 없다. 못박은 지문으로 나간 번들은 그 기기에서 첫 렌더 전에 죽고
+  업데이트 모달도 함께 죽는다. 그래서 두 플랫폼 다 1.0.6 기기에 번들을 더 내지 않고 잠갔다. 지금은
+  지문이 다르면 매니페스트 이름이 갈려 새 번들이 옛 기기로 안 간다.
+- ~~규칙 6: 못박은 발행은 `OTA_LEGACY_ASSET_MAP`·`OTA_ASSET_REPORT` 로 에셋 이름표를 주고,
+  `metro.config.js` 가 `scripts/ota-legacy-asset-paths.cjs` 를 건다~~ → **장치를 걷었다**
+  (2026-09-14). 1.0.6 Play 바이너리의 이름표 `ota/apk-embedded-map-android-1.0.6.json` 도 함께 지웠다.
 - ~~스토어 문구는 1.0.0 원문이고 준비 사항이 기능 목록보다 앞이다~~ → **1.0.8 기준으로 다시
   썼다**(2026-09-13). 순서를 뒤집고 API 키가 필요하다는 한 줄만 인트로 아래로 올렸다. 1.0.0
   원문은 `git log -p -- docs/foundation/release.md` 에 있다.
