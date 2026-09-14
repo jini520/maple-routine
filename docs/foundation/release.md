@@ -669,6 +669,18 @@ node scripts/publish-rn-ota.mjs --platform ios
 npx expo-updates runtimeversion:resolve --platform ios   # 스토어 바이너리의 EXUpdates.bundle/fingerprint 와 같아야 한다
 ```
 
+**워크트리에서 발행하면 git 이 무시하는 파일 넷을 본 체크아웃에서 복사한다.** 그 파일들도 지문
+재료인데 워크트리에는 없어서, 코드가 같아도 지문이 달라진다. 2026-09-14 에 `android/keystore.properties`
+하나가 빠져 안드로이드 지문이 `eebd6802…` 대신 `2491b08e…` 로 나왔다. 넷 다 하나씩 빼 보고 지문이
+바뀌는 것을 확인했다.
+
+| 파일 | 걸리는 지문 | 이유 |
+|---|---|---|
+| `.env` | 둘 다 | `app.config.js` 가 광고 앱 ID 를 읽어 설정에 넣는다. 번들의 `EXPO_PUBLIC_*` 값도 여기서 온다 |
+| `android/keystore.properties` | android | `android/` 디렉터리 전체가 지문 재료다 |
+| `ios/.xcode.env.local` | ios | `ios/` 디렉터리 전체가 지문 재료다 |
+| `ios/app.xcodeproj/project.xcworkspace/` | ios | 같다 |
+
 ### 규칙 5: 규칙 1~4 가 **이미 어긋난 뒤**에는 지문을 못박는다 ([[ADR-190]])
 
 트리가 스토어 바이너리의 지문을 **재현하지 못하는 상태**가 있다. 1.0.6 이 그렇다. GUI 아카이브가
