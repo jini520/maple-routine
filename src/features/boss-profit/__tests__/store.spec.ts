@@ -3750,6 +3750,46 @@ describe('기간을 미리 들고 있는다', () => {
 
     expect(getBossProfitRecordsMock.mock.calls.length).toBe(callsBefore)
   })
+
+  // 수익·지출을 떠날 때 부른다. 옆 탭인 가계부가 떠나면 주간 · 이번 주로 돌아오므로 같게 맞춘다.
+  it('resetToCurrentWeek: 월간 탭이면 주간 · 이번 주로 돌린다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    const currentWeekKey = getCurrentBossProfitPeriod('weekly', PINNED_NOW).periodKey
+    await useBossProfitStore.getState().setTab('monthly')
+
+    await useBossProfitStore.getState().resetToCurrentWeek()
+
+    expect(useBossProfitStore.getState().tab).toBe('weekly')
+    expect(useBossProfitStore.getState().periodKey).toBe(currentWeekKey)
+    expect(useBossProfitStore.getState().loadedTab).toBe('weekly')
+    expect(useBossProfitStore.getState().loadedPeriodKey).toBe(currentWeekKey)
+  })
+
+  it('resetToCurrentWeek: 주간 탭의 지난 기간이면 이번 주로 돌린다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    const currentWeekKey = getCurrentBossProfitPeriod('weekly', PINNED_NOW).periodKey
+    await useBossProfitStore.getState().goToPreviousPeriod()
+    expect(useBossProfitStore.getState().periodKey).toBe(previousKey)
+
+    await useBossProfitStore.getState().resetToCurrentWeek()
+
+    expect(useBossProfitStore.getState().tab).toBe('weekly')
+    expect(useBossProfitStore.getState().periodKey).toBe(currentWeekKey)
+    expect(useBossProfitStore.getState().loadedPeriodKey).toBe(currentWeekKey)
+  })
+
+  // 이미 거기면 회차를 안 연다. 열면 떠나는 순간 돌던 동기화의 마지막 반영이 취소된다.
+  it('resetToCurrentWeek: 이미 주간 · 이번 주면 아무 일도 없다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    const callsBefore = getBossProfitRecordsMock.mock.calls.length
+
+    await useBossProfitStore.getState().resetToCurrentWeek()
+
+    expect(getBossProfitRecordsMock.mock.calls.length).toBe(callsBefore)
+  })
 })
 
 // 월드 이전으로 `character/list` 에서 빠진 ocid 는 `syncSchedules` 가 아예 안 돌려준다. 행을

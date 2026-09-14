@@ -25,6 +25,12 @@ export type WidgetId =
   | 'unpriced-drops'
   | 'valuable-drought'
 
+/**
+ * 탭 이름이거나 루트 스택 화면 `DropPrice`. 그 화면은 파라미터를 안 받으면 열리는 순간의 이번 주로
+ * 열리므로 타일이 넘길 것이 없다.
+ */
+export type WidgetTarget = TabRouteName | 'DropPrice'
+
 export interface WidgetProps {
   w: number
   /**
@@ -46,6 +52,6 @@ export interface WidgetDefinition {
    * 타일을 누르면 가는 곳. **없으면 누를 수 없는 타일이다**. 갈 데가 없는 것을 누를 수 있게 두면
    * 무반응이 고장 으로 읽힌다.
    */
-  target?: TabRouteName
+  target?: WidgetTarget
   Component: React.ComponentType<WidgetProps>
 }

@@ -14,6 +14,7 @@
 import type { NavigatorScreenParams } from '@react-navigation/native'
 
 import type { NoticeKind } from '../types/notice'
+import type { BossCycle } from '../types/scheduler'
 
 /**
  * 탭 내비게이터의 화면 아홉. 그룹이 아니라 페이지다.
@@ -110,6 +111,18 @@ export interface NoticeDetailParams {
   noticeId: string
 }
 
+/**
+ * 아이템 가격 입력이 여는 주기와 기간.
+ *
+ * 보스 수익의 떠 있는 버튼이 보던 값을 넘기고, today 타일은 안 넘긴다. 없으면 화면이 열리는 순간의
+ * 주간 · 이번 주를 센다. 보스 수익 스토어의 `periodKey` 를 읽지 않는 것은 그 값이 계산해 둔 날짜
+ * 글자라 보스 수익 화면이 없을 때 낡을 수 있어서다.
+ */
+export interface DropPriceParams {
+  cycle: BossCycle
+  periodKey: string
+}
+
 export type RootStackParamList = {
   /**
    * 앱을 열기 전 화면 둘. 탭과 배타로 그려지고 **한 번에 하나만** 스택에 선다.
@@ -130,7 +143,7 @@ export type RootStackParamList = {
   Main: NavigatorScreenParams<LayerParamList> | undefined
   ContentManage: undefined
   DropHistory: undefined
-  DropPrice: undefined
+  DropPrice: DropPriceParams | undefined
   SettingsFeatureGuideList: undefined
   SettingsFeatureGuide: FeatureGuideParams
   SettingsReleaseNotes: undefined

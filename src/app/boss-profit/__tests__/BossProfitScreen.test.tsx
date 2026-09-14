@@ -124,6 +124,7 @@ function mockStore(overrides: Partial<BossProfitStore> = {}): void {
     refresh: jest.fn().mockResolvedValue(undefined),
     setTab: jest.fn(),
     goToCurrentPeriod: jest.fn(),
+    resetToCurrentWeek: jest.fn(),
     goToPreviousPeriod: jest.fn(),
     goToNextPeriod: jest.fn(),
     retryPeriod: jest.fn(),
@@ -215,6 +216,21 @@ describe('빈 상태', () => {
     expect(loadTrackedOcids).toHaveBeenCalledTimes(1)
   })
 
+  // 이 화면은 보스 수익과 가계부가 함께 사는 층이 층 스택에서 빠질 때만 언마운트된다. 곧 수익·지출을
+  // 떠날 때다. 옆 탭인 가계부가 떠나면 주간 · 이번 주로 돌아오므로 같게 맞춘다.
+  it('언마운트하면 보는 기간을 주간 · 이번 주로 돌린다', async () => {
+    const resetToCurrentWeek = jest.fn()
+    mockStore({ resetToCurrentWeek })
+    const view = await renderScreen()
+    expect(resetToCurrentWeek).not.toHaveBeenCalled()
+
+    await act(async () => {
+      view.unmount()
+    })
+
+    expect(resetToCurrentWeek).toHaveBeenCalledTimes(1)
+  })
+
   it('`trackedOcids` 가 `null` 이면 빈 상태를 그리지 않는다. "아직 안 읽었다" 는 "0명" 이 아니다', async () => {
     mockStore({ trackedOcids: null })
     const { queryByText, getByText } = await renderScreen()
@@ -277,13 +293,13 @@ describe('아이템 가격 입력으로 가는 문', () => {
     expect(jest.mocked(useUnpricedDropCount)).toHaveBeenCalledWith(CURRENT_WEEKLY)
   })
 
-  it('떠 있는 버튼을 누르면 하위 페이지로 push 한다', async () => {
+  it('떠 있는 버튼을 누르면 보고 있는 주를 들고 하위 페이지로 push 한다', async () => {
     const { getByLabelText } = await renderScreen()
 
     await act(async () => {
       fireEvent.press(getByLabelText('아이템 가격 입력'))
     })
-    expect(navigate).toHaveBeenCalledWith('DropPrice')
+    expect(navigate).toHaveBeenCalledWith('DropPrice', { cycle: 'weekly', periodKey: CURRENT_WEEKLY })
   })
 
   // 화면·라우트는 살아 있고 링크만 걷었다. 자리를 다시 정하면 되돌린다.
