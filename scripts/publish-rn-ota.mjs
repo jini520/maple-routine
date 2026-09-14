@@ -2,7 +2,8 @@
 // RN OTA 배포 스크립트 ([[ADR-137]]). capacitor 쪽 `publish-live-update.mjs` 의 짝이고, 두 앱이
 // **서로 다른 프로토콜**을 쓰는 동안 둘 다 산다([[ADR-137]] 대가 4).
 //
-// 사용법: node scripts/publish-rn-ota.mjs
+// 사용법: node scripts/publish-rn-ota.mjs [--platform ios|android]
+//   --platform 을 주면 그 플랫폼만 발행한다(release.md 규칙 4-1). 안 주면 둘 다.
 //
 // 배포 버전은 CLI 인자로 받지 않고 app.json 의 expo.version 을 그대로 쓴다 —
 // capacitor 스크립트가 같은 이유를 적어 두었다(버전을 인자로 받으면 앱에 박히는 표시값과 실제
@@ -38,7 +39,9 @@ import {
   IN_REVIEW_RUNTIME_VERSIONS,
   PINNED_RUNTIME_VERSIONS,
   describePinMismatch,
+  pinsForPlatforms,
   resolveAcceptedRuntimeVersions,
+  resolvePublishPlatforms,
   resolveRuntimeVersions,
 } from './ota-runtime-version.mjs'
 // 못박은 발행은 «옛 바이너리를 겨냥한다» 는 뜻이라 에셋 이름까지 그 바이너리에 맞춰야 한다
@@ -47,7 +50,6 @@ import legacyAssetPaths from './ota-legacy-asset-paths.cjs'
 
 const REPO = 'jini520/maple-routine'
 const RELEASE_TAG = 'live-update-rn'
-const PLATFORMS = ['ios', 'android']
 
 /** 스토어 이동 대상([[ADR-027]] 결정 7 · `extra.storeUrl`). */
 const STORE_URLS = {
@@ -149,6 +151,17 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const appDir = join(import.meta.dirname, '..')
   const distDir = join(appDir, 'dist')
 
+  let PLATFORMS
+  try {
+    PLATFORMS = resolvePublishPlatforms(process.argv.slice(2))
+  } catch (error) {
+    console.error(error.message)
+    process.exit(1)
+  }
+  // 안 내는 플랫폼의 못박기는 검사도 이름표 요구도 걸지 않는다.
+  const pins = pinsForPlatforms(PINNED_RUNTIME_VERSIONS, PLATFORMS)
+  console.log(`발행 플랫폼: ${PLATFORMS.join(', ')}`)
+
   // OTA 버전은 `package.json` 이 든다. 스토어 버전(`app.json` 의 `expo.version`)과 **맞추지 않는다**.
   // `app.json` 은 지문 재료라, OTA 버전을 올리려고 건드리면 스토어 바이너리가 이 번들을 못 받는다.
   const { version: appVersion } = JSON.parse(readFileSync(join(appDir, 'package.json'), 'utf-8'))
@@ -173,7 +186,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   // 사고는 «배포는 성공했는데 스토어 사용자 전원에게 거짓 모달» 이라 사후에 알아채기 가장 어렵다.
   const latestBaseUrl = `${appConfig.expo.updates.url.replace(/\/manifest$/, '')}/latest`
   for (const platform of PLATFORMS) {
-    const pin = PINNED_RUNTIME_VERSIONS[platform]
+    const pin = pins[platform]
     if (!pin) continue
 
     let published = null
@@ -203,7 +216,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   // 만들었다. 지문만 맞추고 이 축을 안 보면 같은 사고가 반복되므로 **강제**한다.
   const legacyMapPath = process.env.OTA_LEGACY_ASSET_MAP
   const legacyReportPath = process.env.OTA_ASSET_REPORT
-  const hasPins = Object.keys(PINNED_RUNTIME_VERSIONS).length > 0
+  const hasPins = Object.keys(pins).length > 0
   if (hasPins && (!legacyMapPath || !legacyReportPath)) {
     console.error(
       '지문을 못박은 발행입니다 — 에셋 이름표 없이는 나갈 수 없습니다([[ADR-191]]).\n' +
@@ -215,7 +228,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (hasPins) rmSync(legacyReportPath, { force: true })
 
   console.log('[1/5] expo export 중...')
-  execFileSync('npx', ['expo', 'export', '--platform', 'ios', '--platform', 'android', '--output-dir', 'dist'], {
+  execFileSync('npx', ['expo', 'export', ...PLATFORMS.flatMap((platform) => ['--platform', platform]), '--output-dir', 'dist'], {
     cwd: appDir,
     stdio: 'inherit',
   })
@@ -263,7 +276,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 
   // 못박은 값이 있으면 그것이 이긴다([[ADR-190]] 결정 1) — 트리가 스토어 바이너리의 지문을
   // 재현하지 못하는 동안의 상태다.
-  const resolved = resolveRuntimeVersions(computedRuntimeVersions, PINNED_RUNTIME_VERSIONS)
+  const resolved = resolveRuntimeVersions(computedRuntimeVersions, pins)
   const runtimeVersions = Object.fromEntries(
     Object.entries(resolved).map(([platform, entry]) => [platform, entry.runtimeVersion]),
   )
@@ -476,5 +489,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     console.log(`      ${platform} ✓ (runtime ${runtimeVersions[platform]} · 번들 해시 일치)`)
   }
 
-  console.log(`완료: ${appVersion} 배포됨 (runtime ios=${runtimeVersions.ios} android=${runtimeVersions.android})`)
+  console.log(
+    `완료: ${appVersion} 배포됨 (${PLATFORMS.map((platform) => `${platform}=${runtimeVersions[platform]}`).join(' ')})`,
+  )
 }

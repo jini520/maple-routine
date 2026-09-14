@@ -46,7 +46,7 @@
 - **`runtimeVersion` 정책은 `fingerprint`**. 네이티브 그래프에서 **계산된다.** @capgo 시절
   `minNativeVersion` 을 손으로 적던 자리이고, 안 올리면 앱이 죽는 종류의 사고라 사람이 기억할 일이
   아니다([[ADR-137]] 결정 3).
-- **배포는 `node scripts/publish-rn-ota.mjs`.** `expo export` → 에셋 업로드(이름이 내용에서 나오므로
+- **배포는 `node scripts/publish-rn-ota.mjs`.** 한 플랫폼만 낼 때는 `--platform ios` 처럼 준다(`release.md` 규칙 4-1). `expo export` → 에셋 업로드(이름이 내용에서 나오므로
   **이미 있는 것은 건너뛴다**) → 매니페스트 생성·업로드 → **왕복 확인**. JS 만 고친 배포는 번들 2개만
   오른다(실측 확인).
 - ⚠️ **순서 규칙: 네이티브를 건드렸으면 `expo prebuild` 를 먼저 끝내고 배포하라.** `runtimeVersion` 이
