@@ -15,7 +15,7 @@ const income = (over: Partial<IncomeRecord> = {}): DayRecord => ({
     id: 'i',
     ocid: null,
     earnedOn: '2026-09-05',
-    category: '사냥',
+    category: 'hunting',
     item: null,
     ...over,
   } as IncomeRecord,
@@ -28,7 +28,7 @@ const spend = (over: Partial<SpendRecord> = {}): DayRecord => ({
     id: 's',
     ocid: null,
     spentOn: '2026-09-05',
-    category: '버프',
+    category: 'buff',
     item: null,
     ...over,
   } as SpendRecord,
@@ -61,9 +61,11 @@ describe('recordIconKeyOf', () => {
     ).toBe('큐브 재설정')
   })
 
-  it('손입력 줄은 이름을 적어도 갈래로 잡는다', () => {
-    expect(recordIconKeyOf(spend({ item: '세이람의 영약 3개' }))).toBe('버프')
-    expect(recordIconKeyOf(income({ item: '아무거나' }))).toBe('사냥')
+  // 수익 `기타` 와 지출 `기타` 가 겹치지 않게 기록 종류를 앞에 붙인다.
+  it('손입력 줄은 이름을 적어도 기록 종류와 갈래 key 로 잡는다', () => {
+    expect(recordIconKeyOf(spend({ item: '세이람의 영약 3개' }))).toBe('spend:buff')
+    expect(recordIconKeyOf(income({ item: '아무거나' }))).toBe('income:hunting')
+    expect(recordIconKeyOf(income({ category: 'etc' }))).not.toBe(recordIconKeyOf(spend({ category: 'etc' })))
   })
 
   // 그림이 없는 갈래도 열쇠는 낸다. 무엇을 그릴지는 조회표가 정하므로, 나중에 그림을 붙일 때
@@ -79,6 +81,6 @@ describe('recordIconKeyOf', () => {
         unpricedCount: 0,
       } as unknown as DayRecord),
     ).toBe('아이템 판매')
-    expect(recordIconKeyOf(spend({ category: '컨텐츠' }))).toBe('컨텐츠')
+    expect(recordIconKeyOf(spend({ category: 'content' }))).toBe('spend:content')
   })
 })

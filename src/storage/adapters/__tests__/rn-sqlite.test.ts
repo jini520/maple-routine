@@ -164,6 +164,12 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE income_records ADD COLUMN hunt_fragment_price INTEGER',
       'ALTER TABLE income_records ADD COLUMN hunt_meso_rate INTEGER',
       'ALTER TABLE income_records ADD COLUMN hunt_typed_meso INTEGER',
+      'ALTER TABLE spend_records ADD COLUMN category_key TEXT',
+      'ALTER TABLE spend_records ADD COLUMN item_key TEXT',
+      'ALTER TABLE spend_records ADD COLUMN form_item_keys TEXT',
+      'ALTER TABLE spend_records ADD COLUMN item_kind_key TEXT',
+      'ALTER TABLE income_records ADD COLUMN category_key TEXT',
+      'ALTER TABLE income_records ADD COLUMN item_key TEXT',
     ])
   })
 
@@ -194,6 +200,10 @@ describe('db.ts 와 맞물리는가', () => {
             { name: 'hunt_sojae' },
             { name: 'hunt_fragments' },
             { name: 'hunt_fragment_price' },
+            { name: 'category_key' },
+            { name: 'item_key' },
+            { name: 'form_item_keys' },
+            { name: 'item_kind_key' },
             { name: 'hunt_meso_rate' },
             { name: 'hunt_typed_meso' },
           ]

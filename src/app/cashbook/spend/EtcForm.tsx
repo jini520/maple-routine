@@ -19,6 +19,7 @@ import {
   labelOfCurrency,
   type FreeCurrency,
 } from '../../../lib/cashbook/free-currency'
+import { spendCategoryNameOf } from '../../../lib/cashbook/categories'
 import { pointToMeso } from '../../../lib/cashbook/spend-catalog'
 import { AmountInput, CharacterField, FieldRow, QuantityStepper } from '../sheet-fields'
 import { RateRow, SpendHeader, useSaveSlot, type SpendFormProps } from './form-shared'
@@ -75,9 +76,10 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
       void submit({
         ocid,
         spentOn: props.dateKey,
-        category: '기타',
+        category: 'etc',
         item: name.trim() === '' ? null : name.trim(),
-        form: null,
+        itemKey: null,
+        formItemKeys: null,
         itemKind: null,
         quantity,
         mesoAmount: currency === 'meso' ? amount : null,
@@ -93,7 +95,7 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
   return (
     <>
       <SpendHeader
-        title={props.category}
+        title={spendCategoryNameOf(props.category)}
         dateKey={props.dateKey}
         todayDateKey={props.todayDateKey}
         onDateChange={props.onDateChange}

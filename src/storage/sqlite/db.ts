@@ -1,5 +1,6 @@
 import { getSqlitePort } from '../ports'
 import type { SqliteDbConnection } from '../ports'
+import { runVersionedMigrations } from './migrations'
 
 const DB_NAME = 'boss_profit'
 
@@ -13,8 +14,10 @@ const INCOME_RECORDS_BODY = `(
     -- NULL = 계정 단위가 기본이다. 통화가 귀속을 강제하지 않는다.
     ocid TEXT,
     earned_on TEXT NOT NULL, -- 'YYYY-MM-DD' KST
-    category TEXT NOT NULL, -- 아이템 판매 · 사냥 · 기타
-    item TEXT, -- 판 것 / 사냥터 / 자유
+    category TEXT NOT NULL, -- 그때의 갈래 이름. 아이템 판매 · 사냥 · 기타
+    category_key TEXT, -- 갈래 key. 버전 이관이 옛 행까지 채운다
+    item TEXT, -- 그때의 이름. 판 것 / 사냥터 / 자유
+    item_key TEXT, -- 사냥 기록의 사냥터 key. 다른 갈래는 NULL
     -- **수수료를 뗀 값**이다. 캘린더도 합계도 이 칸 하나를 더한다.
     -- **NULL 이 될 수 있다**(이슈 #265): **기타**는 통화가 갈려서 **메소로 번 것이
     -- 아니다** 가 성립한다. 0 으로 채우면 **메소를 0 벌었다** 와 같아져 수정
@@ -241,17 +244,26 @@ const TABLE_DEFINITIONS = [
     id TEXT NOT NULL,
     ocid TEXT,
     spent_on TEXT NOT NULL, -- 'YYYY-MM-DD' KST
-    -- 컨텐츠 · 이벤트·BM · 버프 · 아이템 구매 · 기타(정정 4)
+    -- 그때의 갈래 이름. 컨텐츠 · 이벤트·BM · 버프 · 주문서 · 아이템 구매 · 기타
     category TEXT NOT NULL,
+    -- 갈래 key. 버전 이관이 옛 행까지 채운다.
+    category_key TEXT,
+    -- 그때의 이름. key 로 카탈로그를 못 찾을 때 서는 글자다.
     item TEXT,
+    -- 목록에서 고른 항목 key. 직접 친 기록과 에픽던전 리워드는 NULL.
+    item_key TEXT,
     -- 같은 값을 두 형태로 받는 항목이 있다. 에픽던전 리워드는 **경험치** 와 **솔 에르다** 중 하나다
     -- (카탈로그의 **forms**). **가격이 같아서** 금액으로는 구분이 안 되므로 따로 적는다:
     -- 안 적으면 **솔 에르다를 몇 번 받았나** 를 나중에 되물을 수 없다. 형태가 없는 항목은 NULL.
     form TEXT,
+    -- 에픽던전 리워드의 형태별 항목 key JSON. 새 기록은 form 대신 이 칸을 쓴다.
+    form_item_keys TEXT,
     -- **아이템 구매**의 **종류**(장비·소비·기타). 이 값 하나가 수량과 관세를
     -- 함께 가른다: 소비·기타는 **월드 간 거래가 안 되어** 관세가 없다. NULL 은 다른 갈래이거나
     -- **정정 1 이전 행**이고, 그 행은 장비로 연다(그때가 실제로 그 모양이었다).
     item_kind TEXT,
+    -- 종류 key.
+    item_kind_key TEXT,
     -- 금액 = 카탈로그의 **unitPrice** × 이 값. 단위 이름은 안 적는다.
     -- **src/data/spend-catalog.json** 이 항목별로 알고 있어 베끼면 두 벌이 어긋난다.
     quantity INTEGER,
@@ -280,76 +292,6 @@ const TABLE_DEFINITIONS = [
 export const BOSS_PROFIT_TABLE_NAMES: readonly string[] = TABLE_DEFINITIONS.map(
   (table) => table.name,
 )
-
-/**
- * 갈래 상점·편의 가 이벤트·BM 으로 이름을 바꿨다. `category` 는 이름 그 자체가 값이라 안
- * 옮기면 기존 기록이 어느 갈래에도 없는 고아가 된다. 갈래 칩에도 안 걸리고 `spendGroupsOf`
- * 도 빈손이라 목록 갈래가 직접 입력처럼 보인다.
- *
- * 이미 옮겨진 뒤에는 `WHERE` 에 걸리는 행이 없어 매번 실행해도 안전한 no-op 이다.
- */
-const MIGRATE_SHOP_CATEGORY_RENAME = `
-  UPDATE spend_records SET category = '이벤트·BM' WHERE category = '상점·편의'
-`
-
-/**
- * 보약 버프 둘이 **`버프` 에서 `이벤트·BM` 으로 옮겨갔다**(같은 지정). 갈래가 안 따라가면
- * `findSpendChoice(category, item)` 이 그 항목을 못 찾아 **수정 시트가 세부를 못 편다**.
- */
-const MIGRATE_TONIC_BUFF_CATEGORY = `
-  UPDATE spend_records SET category = '이벤트·BM'
-   WHERE category = '버프' AND item IN ('보약 버프 추가 구매', '보약 버프 초기화')
-`
-
-/**
- * 농장 입장권 둘이 `… 입장권` 을 뗀 이름이 됐다.
- *
- * `item` 은 이름 그 자체가 값이라 안 옮기면 옛 기록이 카탈로그에서 사라진 이름을 들고 남는다.
- * `findSpendChoice` 가 못 찾아 수정 시트가 세부를 못 펴고, 목록에서도 지금 고를 수 있는 것과
- * 다른 글자로 적힌다.
- *
- * 이미 옮겨진 뒤에는 `WHERE` 에 걸리는 행이 없어 매번 실행해도 안전한 no-op 이다.
- */
-const MIGRATE_FARM_TICKET_ITEM_RENAME = `
-  UPDATE spend_records
-     SET item = REPLACE(item, ' 입장권', '')
-   WHERE category = '이벤트·BM'
-     AND item IN ('메카베리 농장 입장권', '블루베리 농장 입장권')
-`
-
-/**
- * 퀵 패스 셋이 `… 퀵패스` 를 뗀 이름이 됐다. 묶음 이름(퀵 패스)이 그 맥락을 이미 들고 있어
- * 항목마다 되풀이할 이유가 없다.
- *
- * 옮기는 이유는 농장 둘과 같다. `item` 은 이름 자체가 값이라 안 옮기면 옛 기록이 카탈로그에서
- * 사라진 이름을 들고 남는다.
- */
-const MIGRATE_QUICK_PASS_ITEM_RENAME = `
-  UPDATE spend_records
-     SET item = REPLACE(item, ' 퀵패스', '')
-   WHERE category = '컨텐츠'
-     AND item IN ('에픽던전 퀵패스', '일간 퀘스트 퀵패스', '주간 퀘스트 퀵패스')
-`
-
-/**
- * 미호로이드 교환권 이 `미호로이드` 가 됐다. 타일에서 교환 / 권 으로 끊기던 이름이고, 무엇을
- * 사는지는 그림과 묶음이 이미 말한다.
- */
-const MIGRATE_MIHOROID_ITEM_RENAME = `
-  UPDATE spend_records SET item = '미호로이드'
-   WHERE category = '이벤트·BM' AND item = '미호로이드 교환권'
-`
-
-// 메이린 카드 표시명을 API content_name('시즌 보스 메이린')과 통일하며 boss 식별 키를
-// 바꿨다(2026-07-22, weekly-bosses.json 참고). 기존에 저장된 파티 설정·수익 기록이 새 키를
-// 못 찾는 고아 데이터가 되지 않도록 옛 키를 새 키로 옮긴다. 이미 옮겨진 뒤에는 WHERE절에
-// 걸리는 행이 없어 매번 실행해도 안전한 no-op이다.
-const MIGRATE_MEIRIN_BOSS_KEY_PARTY_SETTINGS = `
-  UPDATE boss_party_settings SET boss = '시즌 보스 메이린' WHERE boss = '메이린'
-`
-const MIGRATE_MEIRIN_BOSS_KEY_PROFIT_RECORDS = `
-  UPDATE boss_profit_records SET boss = '시즌 보스 메이린' WHERE boss = '메이린'
-`
 
 // 이미 만들어진 DB에는 CREATE TABLE IF NOT EXISTS가 컬럼을 더해주지 않는다.
 // SQLite에 ADD COLUMN IF NOT EXISTS가 없으므로 table_info로 있는지 보고 없을 때만 더한다
@@ -487,13 +429,15 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'income_records', 'hunt_meso_rate', 'INTEGER')
   // 수동으로 적힌 사냥의 친 메소이자 **수동인가** 의 판정자.
   await ensureColumn(db, 'income_records', 'hunt_typed_meso', 'INTEGER')
-  await db.execute(MIGRATE_SHOP_CATEGORY_RENAME)
-  await db.execute(MIGRATE_TONIC_BUFF_CATEGORY)
-  await db.execute(MIGRATE_FARM_TICKET_ITEM_RENAME)
-  await db.execute(MIGRATE_QUICK_PASS_ITEM_RENAME)
-  await db.execute(MIGRATE_MIHOROID_ITEM_RENAME)
-  await db.execute(MIGRATE_MEIRIN_BOSS_KEY_PARTY_SETTINGS)
-  await db.execute(MIGRATE_MEIRIN_BOSS_KEY_PROFIT_RECORDS)
+  // 기록이 이름 대신 key 로 카탈로그와 사냥터를 가리킨다. 값은 아래 버전 이관이 채운다.
+  await ensureColumn(db, 'spend_records', 'category_key', 'TEXT')
+  await ensureColumn(db, 'spend_records', 'item_key', 'TEXT')
+  await ensureColumn(db, 'spend_records', 'form_item_keys', 'TEXT')
+  await ensureColumn(db, 'spend_records', 'item_kind_key', 'TEXT')
+  await ensureColumn(db, 'income_records', 'category_key', 'TEXT')
+  await ensureColumn(db, 'income_records', 'item_key', 'TEXT')
+  // 칸이 다 선 뒤에 돈다. 값을 옮기는 이관은 버전 번호로 한 번씩만 돈다.
+  await runVersionedMigrations(db)
 
   return db
 }

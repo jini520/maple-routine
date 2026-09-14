@@ -175,7 +175,7 @@ function 칸금액을(amounts: Record<string, { incomeMeso: number; expenseMeso:
         kind: 'spend',
         characterName: '',
         record: {
-          id: `s-${dateKey}`, spentOn: dateKey, category: '기타', item: null, form: null,
+          id: `s-${dateKey}`, spentOn: dateKey, category: 'etc', item: null, itemKey: null, formItemKeys: null,
           itemKind: null, quantity: null, mesoAmount: amount.expenseMeso, tariffMeso: null,
           pointAmount: null, pointPer100mMeso: null, cashAmount: null, memo: null,
           recordedAt: dateKey,
@@ -1017,7 +1017,7 @@ describe('펼침판이 시트를 연다', () => {
 
     await 고르기(view, '수입 추가')
     // 날짜는 2차 시트의 머리에 산다. 1차는 갈래만 묻는다.
-    await 누르기(view, 'income-sheet-category-사냥')
+    await 누르기(view, 'income-sheet-category-hunting')
 
     expect(view.getByTestId('income-sheet-date')).toHaveTextContent('8월 25일 (화)')
   })
@@ -1028,7 +1028,7 @@ describe('펼침판이 시트를 연다', () => {
 
     await 고르기(view, '지출 추가')
     // 갈래는 1차 시트에서 고른다. 그 다음이 에픽던전 리워드의 두 단계다(대표 → 형태별 단계).
-    await 누르기(view, 'spend-sheet-category-컨텐츠')
+    await 누르기(view, 'spend-sheet-category-content')
     await 이름으로누르기(view, '하이마운틴')
 
     expect(view.getByTestId('spend-sheet-rate').props.value).toBe('1180')
@@ -1099,7 +1099,7 @@ describe('저장이 실패하면', () => {
     const view = await 그리기()
     await 고르기(view, '지출 추가')
 
-    await 누르기(view, 'spend-sheet-category-컨텐츠')
+    await 누르기(view, 'spend-sheet-category-content')
     await 이름으로누르기(view, '몬스터 파크')
     await 이름으로누르기(view, '저장')
     await act(async () => {})
@@ -1115,7 +1115,7 @@ describe('저장이 실패하면', () => {
     const view = await 그리기()
     await 고르기(view, '지출 추가')
 
-    await 누르기(view, 'spend-sheet-category-컨텐츠')
+    await 누르기(view, 'spend-sheet-category-content')
     await 이름으로누르기(view, '몬스터 파크')
     records.loadMonthDays.mockClear()
     await 이름으로누르기(view, '저장')
@@ -1131,8 +1131,9 @@ const 그날수입 = {
   id: 'inc-1',
   ocid: null,
   earnedOn: '2026-08-23',
-  category: '아이템 판매',
+  category: 'item_sale',
   item: '앱솔랩스 케이프',
+  itemKey: null,
   mesoAmount: 1_200_000_000,
   saleFeePercent: null,
   saleFeeMeso: null,
@@ -1148,9 +1149,10 @@ const 그날지출 = {
   id: 'spd-1',
   ocid: null,
   spentOn: '2026-08-23',
-  category: '컨텐츠',
+  category: 'content',
   item: '몬스터 파크',
-  form: null,
+  itemKey: 'monster_park',
+  formItemKeys: null,
   quantity: 2,
   mesoAmount: null,
   tariffMeso: null,

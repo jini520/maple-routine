@@ -18,9 +18,8 @@ const CARD_ICON_SIZE = 28
 export function CategoryPicker<T extends string>(props: {
   /** 시트 제목. `수입 추가` · `지출 추가`. */
   title: string
-  categories: readonly T[]
-  /** 갈래마다 그림 하나. 값은 `src/assets/items/` 의 파일명이다. */
-  iconFiles: Record<T, string>
+  /** 갈래 표(`lib/cashbook/categories.ts`). 그림은 `src/assets/items/` 의 파일명이다. */
+  categories: ReadonlyArray<{ readonly key: T; readonly name: string; readonly icon: string }>
   /** `testID` 뿌리. `income-sheet` · `spend-sheet`. */
   testIdPrefix: string
   onSelect: (category: T) => void
@@ -38,14 +37,14 @@ export function CategoryPicker<T extends string>(props: {
           패딩이 만들고 바깥의 `-mx-1` 이 그만큼을 되돌린다(항목 타일 격자와 같은 방식). */}
       <View className="-mx-1 flex-row flex-wrap">
         {props.categories.map((category) => {
-          const icon = getItemIconUrlByFile(props.iconFiles[category])
+          const icon = getItemIconUrlByFile(category.icon)
           return (
             <Pressable
-              key={category}
+              key={category.key}
               role="button"
-              aria-label={category}
-              testID={`${props.testIdPrefix}-category-${category}`}
-              onPress={() => props.onSelect(category)}
+              aria-label={category.name}
+              testID={`${props.testIdPrefix}-category-${category.key}`}
+              onPress={() => props.onSelect(category.key)}
               className="w-1/3 p-1 active:opacity-60"
             >
               <View className="h-[92px] items-center justify-center gap-2.5 rounded-[14px] border border-border bg-surface px-2">
@@ -58,12 +57,12 @@ export function CategoryPicker<T extends string>(props: {
                     style={{ width: CARD_ICON_SIZE, height: CARD_ICON_SIZE }}
                     // 아이템 아이콘은 **원본 비율 그대로** 둔다. 상자에 맞춰 늘리면 도트가 뭉갠다.
                     resizeMode="contain"
-                    testID={`${props.testIdPrefix}-category-icon-${category}`}
+                    testID={`${props.testIdPrefix}-category-icon-${category.key}`}
                     aria-hidden
                   />
                 )}
                 <Text numberOfLines={2} className="text-center text-13 font-semibold text-text">
-                  {category}
+                  {category.name}
                 </Text>
               </View>
             </Pressable>

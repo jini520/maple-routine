@@ -221,7 +221,7 @@ sequenceDiagram
     Note over UI: JS 컨텍스트 파괴·재로드
     UI->>DB: getBossProfitDb() (다음 쿼리가 최초 호출)
     DB->>Native: isConnection() 확인 후 없으면 createConnection + open
-    DB->>Native: CREATE TABLE IF NOT EXISTS × 4 + 마이그레이션 UPDATE 실행
+    DB->>Native: CREATE TABLE IF NOT EXISTS × 4 + ensureColumn + 버전 이관
 ```
 
 이 패턴을 쓰는 두 곳:
@@ -252,7 +252,7 @@ sequenceDiagram
 |---|---|---|
 | `ensureColumn` | 없는 **칸을 더한다** ([[ADR-069]] 결정 1) | `PRAGMA table_info` 에 그 이름이 있나 |
 | **테이블 재작성** | 칸의 **모양을 바꾼다**(`NOT NULL` 을 뗀다 — [[ADR-176]]) | `PRAGMA table_info` 의 `notnull` |
-| `UPDATE … WHERE` | **값을 옮긴다**(이름이 곧 값인 칸) | `WHERE` 에 걸리는 행이 없다 |
+| **버전 이관** | **값을 옮긴다**(옛 이름을 새 이름으로 · 이름으로 key 를 채운다) | `PRAGMA user_version` 이 그 버전 이상이다 |
 
 ### 칸을 더한다 — `ensureColumn`
 
@@ -282,17 +282,31 @@ COMMIT;
 
 > **목으로는 못 잡는 결함이다.** 제약은 목이 흉내 내라고 배운 목록에 없다 — 그래서 `node:sqlite`(노드 내장, 새 의존성 0)로 `SqlitePort` 를 구현해 **진짜 엔진 위에서 한 번 태우는** 경로를 뒀다(`src/storage/sqlite/__tests__/`). 스키마 제약을 만질 때는 그 파일에 케이스를 더할 것.
 
-### 값을 옮긴다 — `UPDATE … WHERE`
+### 값을 옮긴다. 버전 이관 ([[ADR-280]] 결정 5 · 10, 구현 완료 2026-09-15, 이슈 #443)
 
-다음 UPDATE 문들을 함께 실행한다. 조건에 걸리는 행이 이미 없으면 매번 실행해도 안전한 no-op이다.
+`runVersionedMigrations`(`storage/sqlite/migrations.ts`)가 `PRAGMA user_version` 에 마지막으로 돈 버전을 적고, 아직 안 돈 버전만 차례로 한 번씩 돌린다. 버전 하나가 한 트랜잭션이라 중간에 던지면 그 버전의 변경과 버전 번호가 함께 되돌아가 다음 부팅에 다시 돈다. 칸을 더하는 것은 이 모듈이 아니라 CREATE 문과 `ensureColumn` 이고, 이관은 칸이 다 선 뒤에 돈다.
+
+부팅마다 도는 멱등 `UPDATE` 로 두지 않는 이유는 둘이다. 뒤 버전이 앞 버전의 결과를 읽는다(버전 2 는 버전 1 이 옮긴 이름으로 key 를 찾는다). 그리고 key 를 못 찾아 비워 둔 행을 부팅마다 다시 찾지 않는다.
+
+| 버전 | 하는 일 |
+|---|---|
+| 1 | 이름을 바꾸며 옛 기록을 옮기던 `UPDATE` 일곱을 한 번 돌린다. 지출 다섯(갈래 `상점·편의` → `이벤트·BM`, 보약 버프 둘의 갈래, 농장 · 퀵패스 · 미호로이드 항목 이름)과 아래 메이린 둘이다 |
+| 2 | 가계부 기록에 key 를 채운다. `spend_records` 의 `category_key` · `item_key` · `form_item_keys` · `item_kind_key`, `income_records` 의 `category_key` · `item_key` 다. 이름으로 표를 찾고, 못 찾으면 key 를 비운 채 행을 남긴다([[ADR-280]] 결정 4) |
+
+새 기기는 CREATE 뒤 빈 테이블에 버전 1 · 2 가 돌고 `user_version` 이 2 가 된다. 이관은 진짜 엔진(`db-real-sqlite.test.ts`) 위에서 테스트한다.
 
 ```sql
 UPDATE boss_party_settings SET boss = '시즌 보스 메이린' WHERE boss = '메이린';
 UPDATE boss_profit_records SET boss = '시즌 보스 메이린' WHERE boss = '메이린';
 ```
 
-위 둘은 메이린의 표시명을 Nexon API 응답(`content_name: "시즌 보스 메이린"`)과 통일하며 보스 식별 키가 바뀐 데이터를 옛 키에서 새 키로 옮겨, 기존에 저장된 파티 설정·수익 기록이 고아 데이터가 되지 않게 한다(2026-07-22).
+메이린 둘은 표시명을 Nexon API 응답(`content_name: "시즌 보스 메이린"`)과 통일하며 보스 식별 키가 바뀐 데이터를 옛 키에서 새 키로 옮겨, 기존에 저장된 파티 설정·수익 기록이 고아 데이터가 되지 않게 한다(2026-07-22).
 
 ## 웹 플랫폼
 
 ~~`Capacitor.getPlatform() === 'web'`이면 `connection.initWebStore()`를 먼저 호출해 웹 스토리지 백엔드를 초기화한다(개발 서버에서 SQLite를 흉내 내는 경로)~~ — **웹 경로가 사라졌다**(RN 은 실기기·시뮬레이터뿐). 실기기(iOS/Android)에서는 이 호출을 건너뛰고 네이티브 SQLite를 바로 연다.
+
+## 폐기된 정책 (history)
+
+- ~~이름을 바꾸며 기록을 옮기는 `UPDATE … WHERE` 는 부팅마다 돈다. 걸리는 행이 없으면 no-op 이다~~ → **DB 버전 1 이
+  한 번 돈다**([[ADR-280]] 결정 5, 2026-09-15, 이슈 #443). 뒤 버전이 앞 버전의 결과를 읽어야 해서 차례가 필요했다.

@@ -356,7 +356,7 @@ describe('기간을 든 컨텐츠 줄', () => {
       ...(row as PeriodRow),
       name: row.content_name,
     }))
-  const spendRows = () => spendCatalog.items as (PeriodRow & { name: string; base?: string })[]
+  const spendRows = () => spendCatalog.items as (PeriodRow & { name: string; tile: string })[]
 
   it('기간 칸은 YYYY-MM-DD 이고, 둘 다 있으면 from 이 until 보다 앞이다', () => {
     const rows: ContentRow[] = [...catalogRows(), ...templateRows(), ...spendRows()]
@@ -382,22 +382,21 @@ describe('기간을 든 컨텐츠 줄', () => {
   })
 
   // 한 대표의 단계가 서로 다른 날 서면 타일 하나가 반쪽만 선다.
-  it('지출에서 base 가 같은 줄들은 기간이 같다', () => {
-    const byBase = new Map<string, Set<string>>()
+  it('지출에서 타일이 같은 줄들은 기간이 같다', () => {
+    const byTile = new Map<string, Set<string>>()
     for (const row of spendRows()) {
-      if (row.base === undefined) continue
-      const periods = byBase.get(row.base) ?? new Set<string>()
+      const periods = byTile.get(row.tile) ?? new Set<string>()
       periods.add(`${row.from ?? ''}~${row.until ?? ''}`)
-      byBase.set(row.base, periods)
+      byTile.set(row.tile, periods)
     }
-    expect([...byBase].filter(([, periods]) => periods.size > 1).map(([base]) => base)).toEqual([])
+    expect([...byTile].filter(([, periods]) => periods.size > 1).map(([tile]) => tile)).toEqual([])
   })
 
   it('아우룸 레기스는 네 줄 모두 2026-09-17 부터다', () => {
     const rows = [
       ...catalogRows().filter((row) => row.name === '에픽 던전 : 아우룸 레기스'),
       ...templateRows().filter((row) => row.name === '에픽 던전 : 아우룸 레기스'),
-      ...spendRows().filter((row) => row.base === '아우룸 레기스'),
+      ...spendRows().filter((row) => row.tile === 'aurum_regis'),
     ]
 
     expect(rows).toHaveLength(4)

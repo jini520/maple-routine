@@ -71,10 +71,12 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
       void submit({
         ocid,
         earnedOn: props.dateKey,
-        category: '사냥',
+        category: 'hunting',
         // 사냥터 이름 칸이 없다. 새 기록은 비고, 옛 행의 이름은 그대로 들고 간다. 칸이
         // 없다는 것과 값을 지운다는 것은 다르다.
         item: props.editing?.item ?? null,
+        // 수동 입력에는 사냥터 칸이 없다. 옛 행이 들고 있던 사냥터는 그대로 들고 간다.
+        itemKey: props.editing?.itemKey ?? null,
         mesoAmount: total,
         saleFeePercent: null,
         saleFeeMeso: null,

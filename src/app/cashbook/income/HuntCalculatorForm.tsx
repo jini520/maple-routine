@@ -200,14 +200,14 @@ export function HuntCalculatorForm(
       props.characters.find((each) => each.ocid === props.editing?.ocid)?.level ??
       null,
   )
-  /** 고른 사냥터 이름. 지역은 여기서 따라온다(이름이 전역 유일이다). */
-  const [groundName, setGroundName] = useState<string | null>(
-    detail === null ? null : (props.editing?.item ?? null),
+  /** 고른 사냥터 key. 지역은 여기서 따라온다. */
+  const [groundKey, setGroundKey] = useState<string | null>(
+    detail === null ? null : (props.editing?.itemKey ?? null),
   )
-  /** 고른 지역. 사냥터를 아직 안 골랐어도 지역만 골라 둔 상태가 있다. */
-  const [regionSlug, setRegionSlug] = useState<string | null>(() => {
-    const name = detail === null ? null : (props.editing?.item ?? null)
-    return name === null ? null : (findHuntingGround(name)?.region.slug ?? null)
+  /** 고른 지역 key. 사냥터를 아직 안 골랐어도 지역만 골라 둔 상태가 있다. */
+  const [regionKey, setRegionKey] = useState<string | null>(() => {
+    const key = detail === null ? null : (props.editing?.itemKey ?? null)
+    return key === null ? null : (findHuntingGround(key)?.region.key ?? null)
   })
   /**
    * 고르는 것은 놓치는 마릿수(0~4)이지 퍼센트가 아니다. 효율 % 는 맵이 정하는 라벨이라 맵을
@@ -236,16 +236,16 @@ export function HuntCalculatorForm(
   const { saving, submit, remove } = useSheetSubmit(props)
 
   const huntRegions = huntingRegionsForLevel(huntLevel)
-  const huntRegion = regionSlug === null ? null : findHuntingRegion(regionSlug)
+  const huntRegion = regionKey === null ? null : findHuntingRegion(regionKey)
   /**
    * 목록에 서는 차례. **레벨 차이가 적은 순, 같으면 마릿수가 많은 순**.
    * 거르는 것이 아니라 줄 세우는 것이라 지역 안의 맵은 전부 든다.
    */
   const huntGrounds = huntRegion === null ? [] : huntingGroundsFor(huntRegion, huntLevel)
   const huntGround =
-    groundName === null || huntRegion === null
+    groundKey === null || huntRegion === null
       ? null
-      : (huntRegion.grounds.find((each) => each.name === groundName) ?? null)
+      : (huntRegion.grounds.find((each) => each.key === groundKey) ?? null)
 
   /** 폴백 칸의 값. 못 읽었을 때만 쓰인다. 비어 있으면 0 이고, 그때 곱은 ×1 이다. */
   const typedMesoRate = /^\d+$/.test(mesoRateText) ? Number(mesoRateText) : 0
@@ -299,10 +299,10 @@ export function HuntCalculatorForm(
       next === null ? null : (props.characters.find((each) => each.ocid === next)?.level ?? null)
     setHuntLevel(level)
     const 갈수있다 =
-      next !== null && huntingRegionsForLevel(level).some((each) => each.slug === regionSlug)
-    if (regionSlug !== null && !갈수있다) {
-      setRegionSlug(null)
-      setGroundName(null)
+      next !== null && huntingRegionsForLevel(level).some((each) => each.key === regionKey)
+    if (regionKey !== null && !갈수있다) {
+      setRegionKey(null)
+      setGroundKey(null)
     }
     loadMesoRateFor(next)
   }
@@ -338,11 +338,11 @@ export function HuntCalculatorForm(
   /**
    * 되살릴 사냥터. 참조표에서 사라졌으면 `null` 이고 그때 자동 입력이 꺼진다.
    *
-   * 참조표는 갱신되는 데이터라 어제 적은 이름이 오늘 없을 수 있다. 없는 이름을 고르개에 세우면
+   * 참조표는 갱신되는 데이터라 어제 적은 사냥터가 오늘 없을 수 있다. 없는 key 를 고르개에 세우면
    * 배지도 자리표시자도 안 서는 줄이 된다.
    */
   const remembered =
-    props.lastHuntSelection === null ? null : findHuntingGround(props.lastHuntSelection.ground)
+    props.lastHuntSelection === null ? null : findHuntingGround(props.lastHuntSelection.groundKey)
 
   /**
    * 기억한 자리를 한 번에 세운다.
@@ -358,21 +358,21 @@ export function HuntCalculatorForm(
     const 갈수있다 =
       character !== null &&
       huntingRegionsForLevel(character.level).some(
-        (each) => each.slug === remembered.region.slug,
+        (each) => each.key === remembered.region.key,
       )
     const nextOcid = 갈수있다 && character !== null ? character.ocid : null
 
     setOcid(nextOcid)
     setHuntLevel(nextOcid === null ? null : (character?.level ?? null))
-    setRegionSlug(remembered.region.slug)
-    setGroundName(remembered.ground.name)
+    setRegionKey(remembered.region.key)
+    setGroundKey(remembered.ground.key)
     loadMesoRateFor(nextOcid)
   }
 
   /** 지역을 옮기면 **사냥터가 풀린다**. 그 지역에 없는 맵이 남으면 계산이 남의 맵으로 돈다. */
   function selectRegion(next: string | null): void {
-    setRegionSlug(next)
-    setGroundName(null)
+    setRegionKey(next)
+    setGroundKey(null)
   }
 
   function toggleBoost(id: string): void {
@@ -389,9 +389,10 @@ export function HuntCalculatorForm(
       void submit({
         ocid,
         earnedOn: props.dateKey,
-        category: '사냥',
-        // **고른 사냥터의 이름**이 그 자리다(전역 유일이라 지역이 따라온다).
-        item: groundName,
+        category: 'hunting',
+        // 고른 사냥터의 key 가 그 자리다(지역이 따라온다). 이름 칸에는 그때 이름을 함께 남긴다.
+        item: huntGround?.name ?? null,
+        itemKey: huntGround?.key ?? null,
         // **합계**다(메소 + 조각 × 가격). 큰 숫자에 서는 그 값이다.
         mesoAmount: huntTotal,
         saleFeePercent: null,
@@ -438,9 +439,9 @@ export function HuntCalculatorForm(
             name: '지역',
             options: [
               { value: null, label: '선택 안함' },
-              ...huntRegions.map((region) => ({ value: region.slug, label: region.name })),
+              ...huntRegions.map((region) => ({ value: region.key, label: region.name })),
             ],
-            selected: regionSlug,
+            selected: regionKey,
             onSelect: selectRegion,
           },
           {
@@ -450,16 +451,16 @@ export function HuntCalculatorForm(
                 ? [{ value: null, label: '지역을 먼저 고르세요' }]
                 : [
                     { value: null, label: '선택 안함' },
-                    ...huntGrounds.map((ground) => ({ value: ground.name, label: ground.name })),
+                    ...huntGrounds.map((ground) => ({ value: ground.key, label: ground.name })),
                   ],
-            selected: groundName,
-            onSelect: setGroundName,
+            selected: groundKey,
+            onSelect: setGroundKey,
             // 목록 한 줄에 포스 배지·레벨·마릿수가 함께 선다.
             renderOption: (option: SelectOption, isSelected: boolean) => {
               const ground =
                 huntRegion === null || option.value === null
                   ? null
-                  : (huntRegion.grounds.find((each) => each.name === option.value) ?? null)
+                  : (huntRegion.grounds.find((each) => each.key === option.value) ?? null)
               return ground === null || huntRegion === null ? (
                 <Text
                   numberOfLines={1}

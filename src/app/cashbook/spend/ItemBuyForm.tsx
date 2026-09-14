@@ -20,7 +20,13 @@ import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountF
 import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { SPEND_TARIFF_PERCENT, withTariffMeso } from '../../../lib/cashbook/spend-catalog'
-import { SPEND_ITEM_KINDS, countsQuantity, type SpendItemKind } from '../../../storage/spend'
+import {
+  SPEND_ITEM_KINDS,
+  countsQuantity,
+  spendCategoryNameOf,
+  spendItemKindNameOf,
+  type SpendItemKindKey,
+} from '../../../lib/cashbook/categories'
 import { AmountInput, CharacterField, FieldRow } from '../sheet-fields'
 import { SpendHeader, useSaveSlot, type SpendFormProps } from './form-shared'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
@@ -53,8 +59,8 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
   })
   const [hasTariff, setHasTariff] = useState(props.editing?.tariffMeso != null)
   /** `null` 은 종류 칸이 생기기 전 행이고 장비다. */
-  const [itemKind, setItemKind] = useState<SpendItemKind>(
-    props.editing?.itemKind ?? SPEND_ITEM_KINDS[0],
+  const [itemKind, setItemKind] = useState<SpendItemKindKey>(
+    props.editing?.itemKind ?? SPEND_ITEM_KINDS[0].key,
   )
   const { saving, submit, remove } = useSpendSubmit(props)
 
@@ -76,7 +82,9 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
    * 관세를 안 끄면 화면에 없는 값이 저장된다(소비·기타에는 그 체크가 아예 없다). 친 금액은
    * 남긴다. 수량이 1 이면 장비의 금액과 소비의 단가가 같은 값이라 거짓이 되지 않는다.
    */
-  function selectItemKind(next: SpendItemKind): void {
+  function selectItemKind(name: string): void {
+    const next = SPEND_ITEM_KINDS.find((each) => each.name === name)?.key
+    if (next === undefined) return
     setItemKind(next)
     setQuantityText('1')
     setHasTariff(false)
@@ -91,9 +99,11 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
       void submit({
         ocid,
         spentOn: props.dateKey,
-        category: '아이템 구매',
+        category: 'item_purchase',
         item: name.trim() === '' ? null : name.trim(),
-        form: null,
+        // 직접 친 이름이라 가리킬 카탈로그 항목이 없다.
+        itemKey: null,
+        formItemKeys: null,
         itemKind,
         // 수량은 **곱할 것이 있을 때만** 실린다. 그 `null` 이 곧 **곱하지 않은 행** 이라는 사실이다.
         quantity: counts ? quantity : null,
@@ -111,7 +121,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
   return (
     <>
       <SpendHeader
-        title={props.category}
+        title={spendCategoryNameOf(props.category)}
         dateKey={props.dateKey}
         todayDateKey={props.todayDateKey}
         onDateChange={props.onDateChange}
@@ -139,7 +149,11 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
       {/* 종류가 나머지 둘을 정한다. 세그먼트인 것은 통화와 같은 이유다. 갈래가 아니라 값의
           축이다. */}
       <FieldRow label="종류" testID="spend-sheet-item-kind">
-        <Segment options={SPEND_ITEM_KINDS} selected={itemKind} onSelect={selectItemKind} />
+        <Segment
+          options={SPEND_ITEM_KINDS.map((each) => each.name)}
+          selected={spendItemKindNameOf(itemKind)}
+          onSelect={selectItemKind}
+        />
       </FieldRow>
 
       {/* 늘 선다. 자리가 `종류` 바로 밑이라 장비의 줄 차례가 `종류 · 구매 비용 · 관세` 가 된다. */}

@@ -10,23 +10,9 @@
  * 원천을 적는 칸이 없다. 이 테이블에 드는 것은 손입력 하나뿐이고 **테이블이 곧 원천**이다. 화면의
  * 배지는 여러 원천을 읽어 합칠 때 붙는 뷰 모델의 값이지 컬럼이 아니다.
  */
+import { incomeCategoryNameOf, type IncomeCategoryKey } from '../lib/cashbook/categories'
 import type { FeePercent } from '../lib/cashbook/item-split'
 import { getBossProfitDb } from './sqlite/db'
-
-/**
- * 수입의 갈래. 사용자가 준 둘 + 안전망 하나.
- *
- * 기타가 없으면 셋으로 안 잡히는 수입이 **기록 자체를 못 남긴다**(가계부에 구멍이 뚫린다).
- * 넷째가 생기면 여기 한 줄을 더하면 된다. 늘리는 것은 싸고 **지우는 쪽이 비싸다**(이미 그 갈래로
- * 적힌 행이 갈 곳을 잃는다).
- *
- * **차례가 곧 화면**이다. 시트의 칩이 이 차례로 서고 `[0]` 이 **＋ 수입** 을
- * 열었을 때 골라져 있는 갈래다. 사냥이 앞인 것은 그 갈래가 계산기라 손이 가장
- * 많이 가서이고, 기타는 안전망이라 끝이다. **줄을 옮기면 기본 갈래가 함께 바뀐다.**
- */
-export const INCOME_CATEGORIES = ['사냥', '아이템 판매', '기타'] as const
-
-export type IncomeCategory = (typeof INCOME_CATEGORIES)[number]
 
 export interface IncomeRecord {
   id: string
@@ -34,9 +20,12 @@ export interface IncomeRecord {
   ocid: string | null
   /** `'YYYY-MM-DD'` KST. **사용자가 고른 날짜**라 캘린더 칸에 바로 선다. */
   earnedOn: string
-  category: IncomeCategory
-  /** 판 것 / 사냥터 / 자유. 갈래가 이 칸의 **라벨만** 바꾼다. */
+  /** 갈래 key. DB 에는 그때 이름(`category`)도 함께 적는다. */
+  category: IncomeCategoryKey
+  /** 그때의 이름. 판 것 / 사냥터 / 자유. 갈래가 이 칸의 **라벨만** 바꾼다. */
   item: string | null
+  /** 사냥 기록의 사냥터 key. 다른 갈래와 사냥터가 없는 사냥 기록은 `null` 이다. */
+  itemKey: string | null
   /**
    * 메소로 들어온 수입. 통화가 갈리는 갈래(`기타`)에서는 `null` 일 수 있다.
    *
@@ -80,8 +69,8 @@ export interface IncomeRecord {
    * 다른 갈래에서는 전부 `null` 이다. 계산기 도입 전에 적힌 사냥 행도 `null` 인데 그 행은
    * 수동 입력으로 연다. 조각이 없어 합계가 곧 획득 메소이고 그것은 지어낸 값이 아니다.
    *
-   * 사냥터는 여기가 아니라 `item` 에 이름 그대로 들어간다(전역 유일이라 지역이 따라온다).
-   * 수동 입력에는 그 칸이 없어 새 행은 `item` 이 비고, 옛 행의 이름은 그대로 들고 간다.
+   * 사냥터는 여기가 아니라 `itemKey` 에 들어간다(key 하나로 지역이 따라온다). 수동 입력에는 그
+   * 칸이 없어 새 행은 비고, 옛 행의 사냥터는 그대로 들고 간다.
    */
   hunt: HuntingIncomeDetail | null
   memo: string | null
@@ -220,12 +209,13 @@ function huntToValues(hunt: HuntingIncomeDetail | null): Array<number | string |
 
 const INSERT_SQL = `
   INSERT INTO income_records
-    (id, ocid, earned_on, category, item, meso_amount, sale_fee_percent, sale_fee_meso,
+    (id, ocid, earned_on, category, category_key, item, item_key, meso_amount,
+     sale_fee_percent, sale_fee_meso,
      point_amount, point_per_100m_meso, cash_amount, quantity,
      hunt_character_level, hunt_missed_mobs, hunt_boosts, hunt_sojae, hunt_fragments,
      hunt_fragment_price, hunt_meso_rate, hunt_typed_meso,
      memo, recorded_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
@@ -234,8 +224,10 @@ export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
     record.id,
     record.ocid,
     record.earnedOn,
+    incomeCategoryNameOf(record.category),
     record.category,
     record.item,
+    record.itemKey,
     record.mesoAmount,
     record.saleFeePercent,
     record.saleFeeMeso,
@@ -252,7 +244,7 @@ export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
 /** 갈아 끼우기. 지출과 같은 계약이다. `recorded_at` 은 SET 에 없다. */
 const UPDATE_SQL = `
   UPDATE income_records SET
-    ocid = ?, earned_on = ?, category = ?, item = ?, meso_amount = ?,
+    ocid = ?, earned_on = ?, category = ?, category_key = ?, item = ?, item_key = ?, meso_amount = ?,
     sale_fee_percent = ?, sale_fee_meso = ?,
     point_amount = ?, point_per_100m_meso = ?, cash_amount = ?, quantity = ?,
     hunt_character_level = ?, hunt_missed_mobs = ?, hunt_boosts = ?, hunt_sojae = ?,
@@ -266,8 +258,10 @@ export async function updateIncomeRecord(record: IncomeRecord): Promise<void> {
   await db.run(UPDATE_SQL, [
     record.ocid,
     record.earnedOn,
+    incomeCategoryNameOf(record.category),
     record.category,
     record.item,
+    record.itemKey,
     record.mesoAmount,
     record.saleFeePercent,
     record.saleFeeMeso,
@@ -293,8 +287,10 @@ function rowToRecord(row: Record<string, unknown>): IncomeRecord {
     // `undefined` 도 `null` 로 접어 호출부가 한 형태만 다루게 한다(`boss-profit.ts` 와 같은 처리).
     ocid: (row.ocid as string | null | undefined) ?? null,
     earnedOn: row.earned_on as string,
-    category: row.category as IncomeCategory,
+    // key 칸은 DB 를 여는 버전 이관이 옛 행까지 채운다.
+    category: row.category_key as IncomeCategoryKey,
     item: (row.item as string | null | undefined) ?? null,
+    itemKey: (row.item_key as string | null | undefined) ?? null,
     mesoAmount: (row.meso_amount as number | null | undefined) ?? null,
     saleFeePercent: (row.sale_fee_percent as FeePercent | null | undefined) ?? null,
     saleFeeMeso: (row.sale_fee_meso as number | null | undefined) ?? null,

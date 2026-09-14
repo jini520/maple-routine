@@ -9,7 +9,9 @@
 export type ForceType = 'arcane' | 'authentic'
 
 export interface HuntingGround {
-  /** **전역 유일**이다(408개 중 중복 0). 그래서 기록은 이름만 적고 지역을 되짚는다. */
+  /** 기록이 사냥터를 가리키는 열쇠. `지역 key_번역` 이고 이름이 바뀌어도 그대로다. */
+  readonly key: string
+  /** 화면에 적는 이름. 전역 유일이다(408개 중 중복 0). */
   readonly name: string
   /** 아케인/어센틱 포스 요구치. 어느 쪽인지는 지역의 `forceType` 이 안다. */
   readonly force: number
@@ -23,7 +25,9 @@ export interface HuntingGround {
 }
 
 export interface HuntingRegion {
-  /** `assets/maps/icons/` 의 기존 지역 슬러그와 **같은 글자**다. */
+  /** 지역의 열쇠. 슬러그를 snake_case 로 옮긴 것이다. */
+  readonly key: string
+  /** `assets/maps/icons/` 의 기존 지역 슬러그와 **같은 글자**다. 그림 열쇠로만 쓴다. */
   readonly slug: string
   readonly name: string
   /** 아케인 리버·그란디스. 사용자가 나눈 묶음이다. */

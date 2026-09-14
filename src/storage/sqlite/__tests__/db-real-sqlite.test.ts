@@ -13,6 +13,7 @@
 import { closeBossProfitDb, getBossProfitDb } from '../db'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 import { getIncomeRecordsBetween, insertIncomeRecord, type IncomeRecord } from '../../income'
+import { getSpendRecordsBetween } from '../../spend'
 import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
 
 /**
@@ -121,8 +122,9 @@ describe('income_records.meso_amount 재작성 (이슈 #265)', () => {
       id: 'a1',
       ocid: 'ocid-1',
       earnedOn: '2026-08-20',
-      category: '아이템 판매',
+      category: 'item_sale',
       item: '앱솔 무기',
+      itemKey: null,
       mesoAmount: 4_850_000_000,
       saleFeePercent: 5,
       saleFeeMeso: 250_000_000,
@@ -215,8 +217,9 @@ describe('기타를 메포·캐시로 적어도 저장된다 (목이 아닌 SQLi
   const base = {
     ocid: null,
     earnedOn: '2026-08-28',
-    category: '기타',
+    category: 'etc',
     item: '이벤트 보상',
+    itemKey: null,
     saleFeePercent: null,
     saleFeeMeso: null,
     hunt: null,
@@ -282,8 +285,9 @@ describe('기타를 메포·캐시로 적어도 저장된다 (목이 아닌 SQLi
     await insertIncomeRecord({
       ...base,
       id: 'hunt',
-      category: '사냥',
-      item: '탈라하트 밤의 길 3',
+      category: 'hunting',
+      item: '밤의 길 3',
+      itemKey: 'tallahart_road_of_night_3',
       mesoAmount: 1_800_000_000,
       pointAmount: null,
       pointPer100mMeso: null,
@@ -313,5 +317,133 @@ describe('기타를 메포·캐시로 적어도 저장된다 (목이 아닌 SQLi
       fragmentPrice: 2_500_000,
       mesoRate: 149,
     })
+  })
+})
+
+/**
+ * **처음 만들어졌을 때의 `spend_records`** 에 `form` · `item_kind` 가 붙은 모양. key 칸이 생기기 전
+ * 기기의 테이블이다.
+ */
+const OLD_SPEND_TABLE = `
+  CREATE TABLE spend_records (
+    id TEXT NOT NULL,
+    ocid TEXT,
+    spent_on TEXT NOT NULL,
+    category TEXT NOT NULL,
+    item TEXT,
+    form TEXT,
+    item_kind TEXT,
+    quantity INTEGER,
+    meso_amount INTEGER,
+    tariff_meso INTEGER,
+    point_amount INTEGER,
+    point_per_100m_meso INTEGER,
+    cash_amount INTEGER,
+    memo TEXT,
+    recorded_at TEXT NOT NULL,
+    PRIMARY KEY (id)
+  )
+`
+
+function userVersion(target: RealSqlite): number {
+  return target.inspect((db) => (db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version)
+}
+
+// 이름만 저장된 옛 기록에 key 를 채운다. 이관은 버전 번호로 한 번씩 돈다.
+describe('버전 이관: 가계부 기록에 key 를 채운다', () => {
+  function seedOldDevice(): void {
+    real.inspect((db) => {
+      db.exec(OLD_SPEND_TABLE)
+      const spend = db.prepare(
+        `INSERT INTO spend_records (id, spent_on, category, item, form, item_kind, quantity, point_amount, point_per_100m_meso, meso_amount, recorded_at)
+         VALUES (?, '2026-08-20', ?, ?, ?, ?, 1, NULL, NULL, 1000, '2026-08-20T00:00:00.000Z')`,
+      )
+      spend.run('buff', '버프', '세이람의 영약', null, null)
+      // 버전 1 이 옮기는 옛 이름 둘. 옮긴 뒤의 이름으로 key 를 찾는다.
+      spend.run('renamed-category', '상점·편의', '닉네임 변경', null, null)
+      spend.run('renamed-item', '이벤트·BM', '미호로이드 교환권', null, null)
+      // 에픽던전 리워드의 옛 모양 둘.
+      spend.run('reward-joined', '컨텐츠', '하이마운틴 EXP 1단계, 솔 2단계', null, null)
+      spend.run('reward-split', '컨텐츠', '악몽선경 2단계', '경험치', null)
+      spend.run('purchase', '아이템 구매', '루즈 컨트롤 머신 마크', null, '소비')
+      spend.run('removed', '컨텐츠', '없어진 항목', null, null)
+
+      db.exec(OLD_INCOME_TABLE)
+      for (const alter of OLD_INCOME_ALTERS) db.exec(alter)
+      const income = db.prepare(
+        `INSERT INTO income_records (id, earned_on, category, item, meso_amount, recorded_at)
+         VALUES (?, '2026-08-20', ?, ?, 1000, '2026-08-20T00:00:00.000Z')`,
+      )
+      income.run('ground', '사냥', '밤의 길 3')
+      income.run('typed-ground', '사냥', '츄츄 아일랜드')
+      income.run('sale', '아이템 판매', '앱솔 무기')
+    })
+  }
+
+  it('새 DB 는 이관할 것 없이 마지막 버전으로 선다', async () => {
+    await getBossProfitDb()
+
+    expect(userVersion(real)).toBe(2)
+  })
+
+  it('옛 지출 기록의 이름으로 갈래 · 항목 · 형태별 항목 · 종류 key 를 채운다', async () => {
+    seedOldDevice()
+
+    await getBossProfitDb()
+
+    const rows = await getSpendRecordsBetween('2026-08-01', '2026-08-31')
+    const byId = new Map(rows.map((row) => [row.id, row]))
+    expect(byId.get('buff')).toMatchObject({ category: 'buff', item: '세이람의 영약', itemKey: 'seiram_elixir' })
+    expect(byId.get('renamed-category')).toMatchObject({ category: 'event_bm', itemKey: 'nickname_change' })
+    expect(byId.get('renamed-item')).toMatchObject({ item: '미호로이드', itemKey: 'mihoroid' })
+    expect(byId.get('reward-joined')).toMatchObject({
+      itemKey: null,
+      formItemKeys: { exp: 'high_mountain_1', sol_erda: 'high_mountain_2' },
+    })
+    expect(byId.get('reward-split')).toMatchObject({ itemKey: null, formItemKeys: { exp: 'nightmare_paradise_2' } })
+    expect(byId.get('purchase')).toMatchObject({ category: 'item_purchase', itemKey: null, itemKind: 'consumable' })
+    expect(userVersion(real)).toBe(2)
+  })
+
+  // 못 찾은 이름은 지우지 않는다. key 만 비고 그때 이름으로 선다.
+  it('못 찾는 항목은 key 만 비우고 행과 이름을 지킨다', async () => {
+    seedOldDevice()
+
+    await getBossProfitDb()
+
+    const rows = await getSpendRecordsBetween('2026-08-01', '2026-08-31')
+    expect(rows).toHaveLength(7)
+    expect(rows.find((row) => row.id === 'removed')).toMatchObject({
+      category: 'content',
+      item: '없어진 항목',
+      itemKey: null,
+      formItemKeys: null,
+    })
+  })
+
+  it('옛 수익 기록은 갈래 key 와 사냥터 key 를 채운다. 사냥터가 아닌 글자는 비운다', async () => {
+    seedOldDevice()
+
+    await getBossProfitDb()
+
+    const rows = await getIncomeRecordsBetween('2026-08-01', '2026-08-31')
+    const byId = new Map(rows.map((row) => [row.id, row]))
+    expect(byId.get('ground')).toMatchObject({ category: 'hunting', item: '밤의 길 3', itemKey: 'tallahart_road_of_night_3' })
+    expect(byId.get('typed-ground')).toMatchObject({ category: 'hunting', item: '츄츄 아일랜드', itemKey: null })
+    expect(byId.get('sale')).toMatchObject({ category: 'item_sale', item: '앱솔 무기', itemKey: null })
+  })
+
+  // 부팅마다 다시 돌면 못 찾아 비워 둔 행을 매번 다시 찾는다. 버전이 오르면 다시 안 돈다.
+  it('한 번 돈 이관은 다음 부팅에 다시 안 돈다', async () => {
+    seedOldDevice()
+    await getBossProfitDb()
+    await closeBossProfitDb()
+    real.inspect((db) => db.exec(`UPDATE spend_records SET item = '상점 이름', category = '상점·편의' WHERE id = 'buff'`))
+    real.statements.length = 0
+
+    await getBossProfitDb()
+
+    expect(real.statements.some((statement) => statement.includes('상점·편의'))).toBe(false)
+    expect(real.statements.some((statement) => statement.startsWith('BEGIN'))).toBe(false)
   })
 })

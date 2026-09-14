@@ -15,7 +15,13 @@ import type { BossDifficulty } from '../../types'
 import { compareBossOrder } from '../../lib/boss/boss-matching'
 import type { CalendarAmounts, CalendarDayAmounts } from '../../lib/calendar'
 import { dropPayoutMeso } from '../../lib/drop/drop-price'
-import { pointToMeso } from '../../lib/cashbook/spend-catalog'
+import { incomeCategoryNameOf, spendCategoryNameOf } from '../../lib/cashbook/categories'
+import {
+  buildSpendRewardName,
+  findSpendChoice,
+  findSpendRewardChoice,
+  pointToMeso,
+} from '../../lib/cashbook/spend-catalog'
 import { getBossDropRecords, getBossDropRecordsRevision } from '../../storage/boss-drops'
 import {
   getBossProfitRecordsRevision,
@@ -73,10 +79,10 @@ function newRecordId(now: Date): string {
 
 export async function recordIncome(draft: IncomeDraft, now: Date): Promise<void> {
   await insertIncomeRecord({ ...draft, id: newRecordId(now), recordedAt: now.toISOString() })
-  // 저장이 성공한 뒤에만 기억한다. 사냥의 `item` 은 사냥터 이름이고, 그것이 없는 행은
-  // 수동으로 적은 것이라 되살릴 자리가 없다.
-  if (draft.category === '사냥' && draft.item !== null) {
-    await setLastHuntSelection({ ocid: draft.ocid, ground: draft.item })
+  // 저장이 성공한 뒤에만 기억한다. 사냥터 key 가 없는 사냥 행은 수동으로 적은 것이라 되살릴
+  // 자리가 없다.
+  if (draft.category === 'hunting' && draft.itemKey !== null) {
+    await setLastHuntSelection({ ocid: draft.ocid, groundKey: draft.itemKey })
   }
 }
 
@@ -767,15 +773,25 @@ const AUTO_LABELS: Record<AutoDayRecord['kind'], string> = {
  * 캐릭터를 만들어 낸다.
  */
 /**
- * 손입력 줄의 첫 칸. 적어 둔 이름, 없으면 갈래.
+ * 손입력 줄의 첫 칸. key 로 찾은 카탈로그의 지금 이름, 못 찾으면 적어 둔 이름, 그것도 없으면 갈래.
+ *
+ * 카탈로그 이름을 먼저 보는 것은 이름을 바꿔도 옛 기록이 따라오게 하려는 것이다. 에픽던전 리워드는
+ * 형태별 항목 key 로 이름을 다시 만든다.
  *
  * 사냥만 갈래로 적는다. 거기 적힌 이름은 사냥터인데 그 줄이 답하는 것은 오늘 무엇으로
  * 벌었나 이고 어느 맵이었나 는 열어 봐야 뜻이 생기는 값이다. 대신 몇 재획을 돌았나 가 세는
  * 칸에 선다(`recordCountLabelOf`).
  */
 function manualLabelOf(entry: ManualDayRecord): string {
-  if (entry.kind === 'income' && entry.record.category === '사냥') return entry.record.category
-  return entry.record.item ?? entry.record.category
+  if (entry.kind === 'income') {
+    const categoryName = incomeCategoryNameOf(entry.record.category)
+    return entry.record.category === 'hunting' ? categoryName : (entry.record.item ?? categoryName)
+  }
+  const { category, itemKey, formItemKeys, item } = entry.record
+  const chosen = findSpendChoice(category, itemKey)?.item.name
+  const reward = findSpendRewardChoice(category, formItemKeys)
+  const rewardName = reward === null ? null : buildSpendRewardName(reward.choice, reward.tierByForm)
+  return chosen ?? rewardName ?? item ?? spendCategoryNameOf(category)
 }
 
 export function recordTitleOf(entry: DayRecord): string {

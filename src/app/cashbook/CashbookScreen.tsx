@@ -763,8 +763,8 @@ export function CashbookScreen(): React.JSX.Element {
       throw error
     }
     // 방금 적은 사냥 자리가 다음 자동 입력의 값이다. 다시 읽지 않고 그대로 든다.
-    if (draft.category === '사냥' && draft.item !== null) {
-      setLastHuntSelection({ ocid: draft.ocid, ground: draft.item })
+    if (draft.category === 'hunting' && draft.itemKey !== null) {
+      setLastHuntSelection({ ocid: draft.ocid, groundKey: draft.itemKey })
     }
     setReloadToken((token) => token + 1)
   }

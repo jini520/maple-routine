@@ -29,8 +29,9 @@ const sample: IncomeRecord = {
   quantity: null,
   ocid: null,
   earnedOn: '2026-08-23',
-  category: '아이템 판매',
+  category: 'item_sale',
   item: '앱솔랩스 케이프',
+  itemKey: null,
   mesoAmount: 1_200_000_000,
   saleFeePercent: null,
   saleFeeMeso: null,
@@ -57,8 +58,11 @@ describe('insertIncomeRecord', () => {
       'inc-1',
       null,
       '2026-08-23',
+      // 갈래는 그때 이름과 key 를 함께 적는다. 사냥터 key 는 사냥 갈래만 든다.
       '아이템 판매',
+      'item_sale',
       '앱솔랩스 케이프',
+      null,
       1_200_000_000,
       null,
       null,
@@ -123,7 +127,9 @@ describe('getIncomeRecordsBetween', () => {
           ocid: null,
           earned_on: '2026-08-23',
           category: '사냥',
+          category_key: 'hunting',
           item: '엘리시움',
+          item_key: null,
           meso_amount: 1_200_000_000,
           memo: undefined,
           recorded_at: '2026-08-23T05:00:00.000Z',
@@ -139,8 +145,9 @@ describe('getIncomeRecordsBetween', () => {
         id: 'inc-1',
         ocid: null,
         earnedOn: '2026-08-23',
-        category: '사냥',
+        category: 'hunting',
         item: '엘리시움',
+        itemKey: null,
         mesoAmount: 1_200_000_000,
         saleFeePercent: null,
         saleFeeMeso: null,
@@ -164,18 +171,6 @@ describe('getIncomeRecordsBetween', () => {
   })
 })
 
-describe('INCOME_CATEGORIES', () => {
-  // 사용자가 준 둘 + 안전망 하나. `기타`가 없으면 갈래가 안 잡히는 수입이
-  // 기록 자체를 못 남긴다.
-  //
-  // **차례가 곧 화면**이다. 칩이 서는 차례이고 `[0]` 이 열었을 때 골라져
-  // 있는 갈래다. 그래서 이 배열을 뒤집는 것이 **기본 갈래를 바꾼다** 와 같은 말이다.
-  it('사냥 · 아이템 판매 · 기타 차례다. 첫째가 기본 갈래다', () => {
-    const { INCOME_CATEGORIES } = require('../income') as typeof import('../income')
-
-    expect(INCOME_CATEGORIES).toEqual(['사냥', '아이템 판매', '기타'])
-  })
-})
 
 
 // 지출과 같은 계약이다.
@@ -266,7 +261,9 @@ describe('판매 수수료 칸 둘', () => {
           ocid: null,
           earned_on: '2026-08-23',
           category: '아이템 판매',
+          category_key: 'item_sale',
           item: '앱솔랩스 케이프',
+          item_key: null,
           meso_amount: 1_140_000_000,
           sale_fee_percent: 5,
           sale_fee_meso: 60_000_000,
@@ -280,7 +277,9 @@ describe('판매 수수료 칸 둘', () => {
           ocid: null,
           earned_on: '2026-08-22',
           category: '아이템 판매',
+          category_key: 'item_sale',
           item: null,
+          item_key: null,
           meso_amount: 500_000_000,
           memo: null,
           recorded_at: '2026-08-22T05:00:00.000Z',
@@ -311,8 +310,9 @@ describe('hunt_meso_rate: 그때의 메소 획득량', () => {
   }
   const 계산기행: IncomeRecord = {
     ...sample,
-    category: '사냥',
+    category: 'hunting',
     item: '밤의 길 3',
+    itemKey: 'tallahart_road_of_night_3',
     hunt: 계산기입력,
   }
 
@@ -356,7 +356,9 @@ describe('hunt_meso_rate: 그때의 메소 획득량', () => {
           ocid: null,
           earned_on: '2026-08-23',
           category: '사냥',
+          category_key: 'hunting',
           item: '밤의 길 3',
+          item_key: 'tallahart_road_of_night_3',
           meso_amount: 1_200_000_000,
           hunt_character_level: 294,
           hunt_missed_mobs: 1,
@@ -383,7 +385,9 @@ describe('hunt_meso_rate: 그때의 메소 획득량', () => {
           id: 'inc-1',
           earned_on: '2026-08-23',
           category: '사냥',
+          category_key: 'hunting',
           item: '밤의 길 3',
+          item_key: 'tallahart_road_of_night_3',
           meso_amount: 1_200_000_000,
           hunt_missed_mobs: 0,
           hunt_meso_rate: 149,
@@ -409,8 +413,9 @@ describe('hunt_typed_meso: 수동으로 적힌 사냥', () => {
   }
   const 수동행: IncomeRecord = {
     ...sample,
-    category: '사냥',
+    category: 'hunting',
     item: null,
+    itemKey: null,
     mesoAmount: 1_664_000_000,
     hunt: 수동입력,
   }
@@ -424,7 +429,7 @@ describe('hunt_typed_meso: 수동으로 적힌 사냥', () => {
     expect(sql).toContain('hunt_typed_meso')
     // 사냥 칸 여덟. 레벨· 놓침· 아이템· 소재· 조각· 조각가· 메획· **친 메소**.
     // 계산기 칸 넷이 null 인 것이 **앱이 센 값이 아니다** 를 말한다.
-    expect(values.slice(12, 20)).toEqual([
+    expect(values.slice(14, 22)).toEqual([
       null,
       null,
       null,
@@ -453,7 +458,9 @@ describe('hunt_typed_meso: 수동으로 적힌 사냥', () => {
           id: 'inc-1',
           earned_on: '2026-08-23',
           category: '사냥',
+          category_key: 'hunting',
           item: null,
+          item_key: null,
           meso_amount: 1_664_000_000,
           hunt_missed_mobs: null,
           hunt_fragments: 83,
@@ -483,6 +490,7 @@ describe('hunt_typed_meso: 수동으로 적힌 사냥', () => {
           id: 'inc-1',
           earned_on: '2026-08-23',
           category: '사냥',
+          category_key: 'hunting',
           meso_amount: 500_000_000,
           hunt_typed_meso: 500_000_000,
           recorded_at: '2026-08-23T05:00:00.000Z',
@@ -510,6 +518,7 @@ describe('hunt_typed_meso: 수동으로 적힌 사냥', () => {
           id: 'inc-1',
           earned_on: '2026-08-23',
           category: '사냥',
+          category_key: 'hunting',
           meso_amount: 664_000_000,
           hunt_typed_meso: 0,
           hunt_fragments: 83,
@@ -533,7 +542,9 @@ describe('hunt_typed_meso: 수동으로 적힌 사냥', () => {
           id: 'inc-1',
           earned_on: '2026-08-23',
           category: '사냥',
+          category_key: 'hunting',
           item: '엘리시움',
+          item_key: null,
           meso_amount: 1_200_000_000,
           recorded_at: '2026-08-23T05:00:00.000Z',
         },
@@ -554,8 +565,9 @@ describe('hunt_typed_meso: 수동으로 적힌 사냥', () => {
 describe('quantity: 수입의 수량', () => {
   const 세번받은보상: IncomeRecord = {
     ...sample,
-    category: '기타',
+    category: 'etc',
     item: '이벤트 보상',
+    itemKey: null,
     mesoAmount: 300_000_000,
     quantity: 3,
   }
@@ -567,7 +579,7 @@ describe('quantity: 수입의 수량', () => {
 
     const [sql, values] = runMock.mock.calls[0]
     expect(sql).toContain('quantity')
-    expect(values[11]).toBe(3)
+    expect(values[13]).toBe(3)
   })
 
   it('고칠 때도 함께 갈아 끼운다', async () => {
@@ -587,7 +599,9 @@ describe('quantity: 수입의 수량', () => {
           id: 'inc-1',
           earned_on: '2026-08-23',
           category: '기타',
+          category_key: 'etc',
           item: '이벤트 보상',
+          item_key: null,
           meso_amount: 300_000_000,
           quantity: 3,
           recorded_at: '2026-08-23T05:00:00.000Z',
@@ -609,6 +623,7 @@ describe('quantity: 수입의 수량', () => {
           id: 'inc-1',
           earned_on: '2026-08-23',
           category: '기타',
+          category_key: 'etc',
           meso_amount: 300_000_000,
           recorded_at: '2026-08-23T05:00:00.000Z',
         },

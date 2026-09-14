@@ -16,7 +16,8 @@ const AUTO_KEYS = {
 } as const
 
 export function recordIconKeyOf(entry: DayRecord): string {
-  if (isManualRecord(entry)) return entry.record.category
+  // 수익과 지출의 갈래 key 가 겹칠 수 있어(`etc`) 기록 종류를 앞에 붙인다.
+  if (isManualRecord(entry)) return `${entry.kind}:${entry.record.category}`
   if (entry.kind === 'enhancement') return entry.category
   return AUTO_KEYS[entry.kind]
 }

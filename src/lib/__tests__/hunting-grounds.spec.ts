@@ -2,6 +2,7 @@ import {
   HUNTING_LEVEL_BELOW,
   HUNTING_REGIONS,
   findHuntingGround,
+  findHuntingGroundByName,
   findHuntingRegion,
   huntingGroundsFor,
   huntingRegionsForLevel,
@@ -19,7 +20,7 @@ describe('monsterLevelRangeOf', () => {
   })
 
   it('추천 레벨과 **다를 수 있다**. 리버스 시티는 209 까지라 적혀 있지만 몬스터가 213 까지다', () => {
-    const reverseCity = findHuntingRegion('reverseCity')!
+    const reverseCity = findHuntingRegion('reverse_city')!
     expect([reverseCity.minLevel, reverseCity.maxLevel]).toEqual([205, 209])
     expect(monsterLevelRangeOf(reverseCity)).toEqual({ min: 205, max: 213 })
   })
@@ -157,7 +158,7 @@ describe('huntingGroundsFor', () => {
 
 describe('levelGapOf', () => {
   it('레벨이 하나면 그냥 차이다', () => {
-    expect(levelGapOf({ name: '', force: 0, mobs: 0, levels: [270] }, 274)).toBe(4)
+    expect(levelGapOf({ key: '', name: '', force: 0, mobs: 0, levels: [270] }, 274)).toBe(4)
   })
 
   /**
@@ -165,13 +166,13 @@ describe('levelGapOf', () => {
    * 평균 레벨로 접는 것과는 캐릭터가 두 레벨 **사이**에 있을 때 갈린다(217·219 와 218).
    */
   it('레벨이 둘이면 레벨마다 재서 평균낸다', () => {
-    expect(levelGapOf({ name: '', force: 0, mobs: 0, levels: [273, 274] }, 274)).toBe(0.5)
-    expect(levelGapOf({ name: '', force: 0, mobs: 0, levels: [217, 219] }, 218)).toBe(1)
+    expect(levelGapOf({ key: '', name: '', force: 0, mobs: 0, levels: [273, 274] }, 274)).toBe(0.5)
+    expect(levelGapOf({ key: '', name: '', force: 0, mobs: 0, levels: [217, 219] }, 218)).toBe(1)
   })
 })
 
 describe('findHuntingRegion', () => {
-  it('슬러그로 찾는다', () => {
+  it('지역 key 로 찾는다', () => {
     expect(findHuntingRegion('tallahart')?.name).toBe('탈라하트')
   })
 
@@ -181,14 +182,26 @@ describe('findHuntingRegion', () => {
 })
 
 describe('findHuntingGround', () => {
-  it('이름 하나로 **사냥터와 지역이 함께** 나온다. 기록이 지역을 안 적는 이유다', () => {
-    const found = findHuntingGround('밤의 길 3')
+  it('사냥터 key 하나로 **사냥터와 지역이 함께** 나온다. 기록이 지역을 안 적는 이유다', () => {
+    const found = findHuntingGround('tallahart_road_of_night_3')
     expect(found?.region.name).toBe('탈라하트')
-    expect(found?.ground).toEqual({ name: '밤의 길 3', force: 700, mobs: 40, levels: [294] })
+    expect(found?.ground).toEqual({ key: 'tallahart_road_of_night_3', name: '밤의 길 3', force: 700, mobs: 40, levels: [294] })
   })
 
-  it('옛 기록의 자유 입력 글자는 안 잡힌다. `null` 이고, 그때는 계산기가 안 선다', () => {
-    expect(findHuntingGround('아무 데나 적은 글자')).toBeNull()
-    expect(findHuntingGround('')).toBeNull()
+  it('모르는 key 는 `null` 이다. 그때는 계산기가 안 선다', () => {
+    expect(findHuntingGround('removed_ground')).toBeNull()
+    expect(findHuntingGround('밤의 길 3')).toBeNull()
+  })
+})
+
+// 이름만 저장된 옛 사냥 기록을 key 로 옮기는 이관이 쓴다.
+describe('findHuntingGroundByName', () => {
+  it('이름으로 사냥터를 찾는다', () => {
+    expect(findHuntingGroundByName('밤의 길 3')?.ground.key).toBe('tallahart_road_of_night_3')
+  })
+
+  it('옛 기록의 자유 입력 글자는 안 잡힌다', () => {
+    expect(findHuntingGroundByName('아무 데나 적은 글자')).toBeNull()
+    expect(findHuntingGroundByName('')).toBeNull()
   })
 })
