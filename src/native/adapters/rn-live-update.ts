@@ -1,3 +1,4 @@
+import Constants from 'expo-constants'
 import * as Updates from 'expo-updates'
 import { addUpdatesStateChangeListener } from 'expo-updates'
 import { Linking, Platform } from 'react-native'
@@ -112,15 +113,15 @@ export const rnLiveUpdatePort: LiveUpdatePort = {
   async notifyAppReady() {},
 
   /**
-   * 지금 도는 번들의 **사용자 표시 버전**.
+   * 지금 도는 번들의 **사용자 표시 버전**. OTA 번들이면 매니페스트 `extra.appVersion`, 내장 번들이면
+   * 바이너리에 박힌 버전.
    *
-   * 프로토콜의 정체성은 `Updates.updateId`(UUID)지만 그것은 사용자에게 아무 뜻이 없다. 우리 축의
-   * 버전은 매니페스트 `extra.appVersion` 이고, 내장 번들로 돌 때는 그 값이
-   * 없으므로 빌드에 박힌 앱 버전으로 떨어진다.
+   * 내장 번들의 매니페스트에는 `extra` 가 없다. 거기서 `package.json` 으로 떨어지면 스토어
+   * 릴리스가 `app.json` 만 올렸을 때 옛 버전이 보인다(1.0.8 이 1.0.7 로 보였다).
    */
   async getCurrentVersion() {
     const { appVersion } = readExtra(Updates.manifest)
-    return appVersion ?? packageJson.version
+    return appVersion ?? Constants.expoConfig?.version ?? packageJson.version
   },
 
   // 채널이 하나다. 빌드 시점 분리는 사이드로딩 베타를 위한 것이었다. 표시값은 관찰용 UI 로 남는다.

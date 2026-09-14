@@ -149,21 +149,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const appDir = join(import.meta.dirname, '..')
   const distDir = join(appDir, 'dist')
 
-  // 버전 축이 **둘**이라 여기서 먼저 묶는다.
-  //   · `package.json` — 앱이 읽는다(`SettingsScreen` · `rn-live-update.ts` 의 내장 폴백).
-  //   · `app.json` — 네이티브 빌드가 읽는다(`CFBundleShortVersionString` 등).
-  // 갈리면 «화면에 보이는 버전»과 «스토어에 올라간 버전»이 달라지는데, 그것은 배포되고 나서야
-  // 드러난다(capacitor 스크립트 머리가 같은 종류의 사고를 적어 두었다). 그래서 **일치를 강제**한다.
+  // OTA 버전은 `package.json` 이 든다. 스토어 버전(`app.json` 의 `expo.version`)과 **맞추지 않는다**.
+  // `app.json` 은 지문 재료라, OTA 버전을 올리려고 건드리면 스토어 바이너리가 이 번들을 못 받는다.
   const { version: appVersion } = JSON.parse(readFileSync(join(appDir, 'package.json'), 'utf-8'))
   const appConfig = JSON.parse(readFileSync(join(appDir, 'app.json'), 'utf-8'))
   if (!appVersion || !/^\d+\.\d+\.\d+$/.test(appVersion)) {
     console.error(`package.json 의 version("${appVersion}")이 x.y.z 형식이 아닙니다.`)
-    process.exit(1)
-  }
-  if (appConfig?.expo?.version !== appVersion) {
-    console.error(
-      `버전이 갈렸습니다 — package.json="${appVersion}" vs app.json="${appConfig?.expo?.version}". 둘을 맞춰주세요.`,
-    )
     process.exit(1)
   }
 

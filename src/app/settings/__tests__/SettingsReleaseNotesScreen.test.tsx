@@ -17,6 +17,7 @@ import { act, fireEvent } from '@testing-library/react-native'
 
 import type { ReleaseNote } from '../../../types'
 
+import { useLiveUpdateStore } from '../../../features/live-update/store'
 import packageJson from '../../../../package.json'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { SettingsReleaseNotesScreen } from '../SettingsReleaseNotesScreen'
@@ -205,6 +206,26 @@ describe('SettingsReleaseNotesScreen', () => {
     let card: AtomElement | null = badges[0]
     while (card !== null && card.props.testID !== 'release-note') card = card.parent
     expect(textsIn(card as AtomElement)).toContain(packageJson.version)
+  })
+
+  // OTA 번들이면 package.json 이 아니라 매니페스트 버전의 노트가 `사용 중` 이다.
+  it('"사용 중" 배지의 기준은 package.json 이 아니라 도는 번들의 버전이다', async () => {
+    setNotes([
+      { version: '9.9.9', date: '2026-09-17', items: [{ category: 'feature', text: 'A' }] },
+      { version: packageJson.version, date: '2026-08-09', items: [{ category: 'feature', text: 'B' }] },
+    ])
+    useLiveUpdateStore.setState({ currentVersion: '9.9.9' })
+    try {
+      const view = await renderOverlay(<SettingsReleaseNotesScreen />)
+
+      const badges = view.getAllByText('사용 중')
+      expect(badges).toHaveLength(1)
+      let card: AtomElement | null = badges[0]
+      while (card !== null && card.props.testID !== 'release-note') card = card.parent
+      expect(textsIn(card as AtomElement)).toContain('9.9.9')
+    } finally {
+      useLiveUpdateStore.setState({ currentVersion: null })
+    }
   })
 
   // 없는 것을 지어내지 않는다. 1.0.2 이전 사용자는 자기 버전이 목록에 없다.

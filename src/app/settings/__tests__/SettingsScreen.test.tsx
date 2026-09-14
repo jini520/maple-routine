@@ -19,6 +19,7 @@ import { useContentSchedulerStore, type ContentSchedulerStore } from '../../../f
 import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
 import { THEME_NAMES } from '../../../lib/theme/theme-registry'
 
+import { useLiveUpdateStore } from '../../../features/live-update/store'
 import packageJson from '../../../../package.json'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { setHapticsPort } from '../../../native/ports'
@@ -334,6 +335,18 @@ describe('SettingsScreen', () => {
     expect(view.getByText(/©\s*\d{4}\s*메이플 루틴/)).toBeTruthy()
     expect(view.getByText('Data based on NEXON Open API')).toBeTruthy()
     expect(view.getByText('Maple Routine is not associated with NEXON Korea')).toBeTruthy()
+  })
+
+  // package.json 을 바로 읽으면 스토어 바이너리가 app.json 만 올렸을 때 옛 버전이 보인다.
+  it('하단 버전은 package.json 이 아니라 도는 번들의 버전이다', async () => {
+    useLiveUpdateStore.setState({ currentVersion: '9.9.9' })
+    try {
+      const view = await renderOverlay(<SettingsScreen />)
+
+      expect(view.getByText('v9.9.9')).toBeTruthy()
+    } finally {
+      useLiveUpdateStore.setState({ currentVersion: null })
+    }
   })
 
   // 개인정보 처리방침은 `/settings/about` 의 행으로 옮겼고, 고지 블록은
