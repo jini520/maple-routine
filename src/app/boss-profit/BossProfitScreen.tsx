@@ -106,6 +106,7 @@ export function BossProfitScreen(): React.JSX.Element {
     refresh,
     setTab,
     goToCurrentPeriod,
+    resetToCurrentWeek,
     goToPreviousPeriod,
     goToNextPeriod,
     retryPeriod,
@@ -148,6 +149,11 @@ export function BossProfitScreen(): React.JSX.Element {
 
   useEffect(() => {
     loadTrackedOcids()
+    // 이 화면은 가계부와 함께 사는 층이 층 스택에서 빠질 때만 언마운트된다. 곧 수익·지출을 떠날
+    // 때다. 가계부는 떠나면 주간 · 이번 주로 돌아오므로 보는 기간을 같게 맞춘다.
+    return () => {
+      void resetToCurrentWeek()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

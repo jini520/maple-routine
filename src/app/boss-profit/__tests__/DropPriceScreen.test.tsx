@@ -39,6 +39,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
 import weeklyBossesData from '../../../data/weekly-bosses.json'
 import { useDropPriceStore, type DropPriceEntry } from '../../../features/boss-profit/drop-price-store'
 import { useBossProfitStore } from '../../../features/boss-profit/store'
+import { getCurrentBossProfitPeriod } from '../../../lib/boss/boss-profit-period'
 import type { RecordedDrop } from '../../../types/drops'
 
 import { flattenStyle, renderOverlay, 테스트_안전영역 } from '../../../components/__tests__/render-atom'
@@ -56,6 +57,16 @@ jest.mock('../../../features/toast/store', () => ({
 jest.mock('../../../features/boss-profit/store', () => ({ useBossProfitStore: jest.fn() }))
 jest.mock('../../../features/boss-profit/drop-price-store', () => ({ useDropPriceStore: jest.fn() }))
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
+
+// 기간은 라우트 파라미터가 준다. 떠 있는 버튼은 넘기고 today 타일은 안 넘긴다.
+let mockRoute: { name: 'DropPrice'; params?: { cycle: 'weekly' | 'monthly'; periodKey: string } } = {
+  name: 'DropPrice',
+}
+jest.mock('@react-navigation/native', () => ({
+  // 통째로 갈아 끼우면 이 패키지가 내보내는 컨텍스트까지 사라진다. 실물을 깔고 필요한 것만 덮는다.
+  ...jest.requireActual('@react-navigation/native'),
+  useRoute: () => mockRoute,
+}))
 
 const mockedProfitStore = jest.mocked(useBossProfitStore)
 const mockedPriceStore = jest.mocked(useDropPriceStore)
@@ -94,11 +105,11 @@ function 그룹(entries: DropPriceEntry[]) {
   return [{ ocid: 'ocid-1', characterName: '지내우시', imageUrl: null, entries }]
 }
 
-function mockStores(options: { price?: Partial<PriceStore>; tab?: 'weekly' | 'monthly'; periodKey?: string } = {}): void {
-  mockedProfitStore.mockReturnValue({
-    tab: options.tab ?? 'weekly',
-    periodKey: options.periodKey ?? PERIOD,
-  } as unknown as ReturnType<typeof useBossProfitStore>)
+function mockStores(options: { price?: Partial<PriceStore>; cycle?: 'weekly' | 'monthly'; periodKey?: string } = {}): void {
+  mockRoute = {
+    name: 'DropPrice',
+    params: { cycle: options.cycle ?? 'weekly', periodKey: options.periodKey ?? PERIOD },
+  }
 
   mockedPriceStore.mockReturnValue({
     status: 'ready',
@@ -145,23 +156,45 @@ describe('DropPriceScreen: 셸', () => {
 })
 
 describe('DropPriceScreen: 기간을 이어받는다', () => {
-  it('보스 수익에서 보던 주를 그대로 연다', async () => {
+  it('넘겨받은 주를 그대로 연다', async () => {
     await renderOverlay(<DropPriceScreen />)
 
     expect(load).toHaveBeenCalledWith(PERIOD)
   })
 
+  // today 타일이 기간을 안 넘긴다. 보스 수익 스토어의 보는 기간은 계산해 둔 날짜 글자라, 보스 수익
+  // 화면이 없을 때는 낡아 있을 수 있다(수요일 밤에 백그라운드로 두고 목요일에 돌아온 경우).
+  it('넘겨받은 기간이 없으면 스토어에 남은 기간이 아니라 열리는 순간의 주간 · 이번 주로 연다', async () => {
+    const currentWeekKey = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
+    mockStores({ periodKey: currentWeekKey })
+    mockRoute = { name: 'DropPrice' }
+    mockedProfitStore.mockReturnValue({
+      tab: 'monthly',
+      periodKey: '2026-08',
+    } as unknown as ReturnType<typeof useBossProfitStore>)
+
+    const { getByLabelText } = await renderOverlay(<DropPriceScreen />)
+
+    expect(load).toHaveBeenCalledTimes(1)
+    expect(load).toHaveBeenCalledWith(currentWeekKey)
+    // 주 단위로 열렸다. 달 단위면 이전 기간이 `YYYY-MM` 이다.
+    await act(async () => {
+      fireEvent.press(getByLabelText('이전 기간'))
+    })
+    expect(load).toHaveBeenLastCalledWith(expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/))
+  })
+
   // 주 단위로만 열면 월간 보스 드롭에 닿을 길이 없다. 그 기록의 `period_key` 는 `YYYY-MM` 이라
   // 어느 주차 조회에도 안 걸린다.
-  it('월간 탭에서 들어오면 그 달을 연다', async () => {
-    mockStores({ tab: 'monthly', periodKey: '2026-08' })
+  it('월간을 넘겨받으면 그 달을 연다', async () => {
+    mockStores({ cycle: 'monthly', periodKey: '2026-08' })
     await renderOverlay(<DropPriceScreen />)
 
     expect(load).toHaveBeenCalledWith('2026-08')
   })
 
   it('월간으로 열면 기간 이동도 달 단위다', async () => {
-    mockStores({ tab: 'monthly', periodKey: '2026-08' })
+    mockStores({ cycle: 'monthly', periodKey: '2026-08' })
     const { getByLabelText } = await renderOverlay(<DropPriceScreen />)
 
     await act(async () => {
@@ -172,7 +205,7 @@ describe('DropPriceScreen: 기간을 이어받는다', () => {
   })
 
   it('월간으로 열면 문구도 달로 말한다', async () => {
-    mockStores({ tab: 'monthly', periodKey: '2026-08', price: { groups: [] } })
+    mockStores({ cycle: 'monthly', periodKey: '2026-08', price: { groups: [] } })
     const { getByText } = await renderOverlay(<DropPriceScreen />)
 
     expect(getByText('이 달에 기록된 아이템이 없습니다')).toBeTruthy()

@@ -225,22 +225,43 @@ describe('타일 탭', () => {
   // 지금은 적을 기록이 없다. 이동 자체가 스택 한 단이라 되돌아갈 자리가 구조로 실재하고 그
   // 안전망도 함께 사라졌다.
 
-  it('하위가 없는 그룹으로 보내면 그룹 층 안의 옆걸음이다. 층이 안 쌓인다', async () => {
+  it('결정석 한도도 보스 수익으로 보낸다', async () => {
     const view = await 격자()
 
     await act(async () => {
-      fireEvent.press(within(타일(view, 'representative-character')).getByRole('button'))
+      fireEvent.press(within(타일(view, 'crystal-limit')).getByRole('button'))
     })
 
     expect(navigate).toHaveBeenCalledWith('Main', {
-      screen: 'Groups',
-      params: { screen: 'Settings' },
+      screen: 'LedgerSubs',
+      params: { screen: 'Profit' },
     })
   })
 
-  it('`target` 이 없는 타일은 누를 수 없다', async () => {
-    const view = await 격자()
+  // 두 타일이 가리키는 것이 값을 매길 드롭이다. 이번 주로 열리는 것은 기간을 넘기지 않아서다.
+  // 가격 입력 화면이 넘긴 값이 없으면 열리는 순간의 이번 주를 센다(`DropPriceScreen.test.tsx`).
+  it.each(['top-valuable-item', 'unpriced-drops'])(
+    '%s 타일은 기간을 넘기지 않고 아이템 가격 입력을 push 한다',
+    async (id) => {
+      const view = await 격자()
 
-    expect(within(타일(view, 'reset-countdown')).queryByRole('button')).toBeNull()
-  })
+      await act(async () => {
+        fireEvent.press(within(타일(view, id)).getByRole('button'))
+      })
+
+      expect(navigate).toHaveBeenCalledTimes(1)
+      expect(navigate).toHaveBeenCalledWith('DropPrice')
+    },
+  )
+
+  // 대표 캐릭터는 나중에 다른 화면으로 잇는다. 드롭 가뭄이 가려던 드롭 히스토리는 진입점이 임시로
+  // 걷혀 있다. 갈 데가 없는 것을 누를 수 있게 두면 무반응이 고장으로 읽힌다.
+  it.each(['reset-countdown', 'representative-character', 'valuable-drought'])(
+    '`target` 이 없는 %s 타일은 누를 수 없다',
+    async (id) => {
+      const view = await 격자()
+
+      expect(within(타일(view, id)).queryByRole('button')).toBeNull()
+    },
+  )
 })

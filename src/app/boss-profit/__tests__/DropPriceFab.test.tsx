@@ -56,14 +56,16 @@ describe('버튼', () => {
     expect(view.getByLabelText('아이템 가격 입력')).toBeTruthy()
   })
 
-  it('누르면 하위 페이지로 push 한다', async () => {
+  // 보던 주를 넘긴다. 가격 입력 화면이 보스 수익 스토어를 읽으면, 이 화면이 없을 때 남은 낡은
+  // 기간으로 열린다(today 에서 열 때).
+  it('누르면 보고 있는 주를 들고 하위 페이지로 push 한다', async () => {
     const view = await renderOverlay(<DropPriceFab periodKey={PERIOD} />)
 
     await act(async () => {
       fireEvent.press(view.getByLabelText('아이템 가격 입력'))
     })
 
-    expect(navigate).toHaveBeenCalledWith('DropPrice')
+    expect(navigate).toHaveBeenCalledWith('DropPrice', { cycle: 'weekly', periodKey: PERIOD })
   })
 
   // 가계부의 ＋ 와 같은 원이다. 두 탭 화면의 같은 자리에 다른 크기가 서면 자리가 아니라

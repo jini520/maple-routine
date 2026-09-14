@@ -17,11 +17,12 @@ import { Pressable, useWindowDimensions, View } from 'react-native'
 import { Card } from '../../components/atoms'
 import { resolveWidgetGridMetrics } from '../../lib/today/widget-grid-metrics'
 import { resolveWidgetPositions } from '../../lib/today/widget-layout'
-import type { TabRouteName } from '../../navigation/routes'
 import { useOpenTab } from '../../hooks/useOpenTab'
+import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import type { TodayViewModel } from './view-model'
 import { TILE_LAYOUT } from './widgets/layout'
 import { WIDGET_BY_ID } from './widgets/registry'
+import type { WidgetTarget } from './widgets/types'
 
 export interface WidgetGridProps {
   data: TodayViewModel
@@ -29,6 +30,7 @@ export interface WidgetGridProps {
 
 export function WidgetGrid({ data }: WidgetGridProps): React.JSX.Element {
   const openTab = useOpenTab()
+  const navigation = useScreenNavigation()
   const { width } = useWindowDimensions()
   const metrics = resolveWidgetGridMetrics(width)
   const [autoHeights, setAutoHeights] = useState<Readonly<Record<string, number>>>({})
@@ -45,7 +47,11 @@ export function WidgetGrid({ data }: WidgetGridProps): React.JSX.Element {
 
   // 타일 탭은 today(그룹 행)에서 하위 층으로 한 층 내려가는 이동이라, 층이 스택이 된 뒤로는
   // 그냥 그 층을 여는 것으로 끝난다. 바 기록을 손으로 맞출 일이 없다.
-  function open(target: TabRouteName): void {
+  function open(target: WidgetTarget): void {
+    if (target === 'DropPrice') {
+      navigation.navigate('DropPrice')
+      return
+    }
     openTab(target)
   }
 

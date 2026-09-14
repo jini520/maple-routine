@@ -145,7 +145,8 @@ export function DropPriceFab(props: {
           aria-label={showsBadge ? `아이템 가격 입력, 미입력 ${unpriced}건` : '아이템 가격 입력'}
           onPress={() => {
             tapFeedback()
-            navigation.navigate('DropPrice')
+            // 버튼은 주간 탭에만 선다. 가격 입력 화면은 보스 수익 스토어를 안 읽으므로 보던 주를 넘긴다.
+            navigation.navigate('DropPrice', { cycle: 'weekly', periodKey: props.periodKey })
           }}
           // 다크에서는 그림자가 거의 안 보여 테두리가 경계를 진다. 크기가 박힌 이 원이 들어야
           // 테두리가 안쪽에 그려져 자리가 안 움직인다.

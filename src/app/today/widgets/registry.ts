@@ -30,8 +30,7 @@ export const WIDGETS: readonly WidgetDefinition[] = [
       { w: 4, h: 2 },
       { w: 2, h: 2 },
     ],
-    // 대표를 바꾸는 자리가 캐릭터 관리이고, 그 자리는 설정 하나다.
-    target: 'Settings',
+    // `target` 이 없다. 나중에 다른 화면으로 잇는다. 캐릭터 관리는 제목 줄 오른쪽 원이 연다.
     Component: RepresentativeCharacterWidget,
   },
   {
@@ -75,7 +74,8 @@ export const WIDGETS: readonly WidgetDefinition[] = [
       { w: 2, h: 2 },
       { w: 1, h: 1 },
     ],
-    target: 'Profit',
+    // 가리키는 것이 값을 매길 드롭이다.
+    target: 'DropPrice',
     Component: TopValuableItemWidget,
   },
   {
@@ -90,7 +90,7 @@ export const WIDGETS: readonly WidgetDefinition[] = [
     Component: CrystalLimitWidget,
   },
   {
-    // **목적지가 없는 위젯은 이것뿐이다**. 초기화 시각은 이 타일이 다 말하고, 더 볼 화면이 없다.
+    // 초기화 시각은 이 타일이 다 말하고, 더 볼 화면이 없다.
     id: 'reset-countdown',
     sizes: [
       { w: 2, h: 1 },
@@ -107,7 +107,7 @@ export const WIDGETS: readonly WidgetDefinition[] = [
       { w: 2, h: 2 },
       { w: 1, h: 1 },
     ],
-    target: 'Profit',
+    target: 'DropPrice',
     Component: UnpricedDropsWidget,
   },
   {
@@ -117,7 +117,7 @@ export const WIDGETS: readonly WidgetDefinition[] = [
       { w: 2, h: 2 },
       { w: 2, h: 1 },
     ],
-    target: 'Profit',
+    // `target` 이 없다. 가려던 드롭 히스토리는 진입점이 임시로 걷혀 있어 갈 수 없다.
     Component: ValuableDroughtWidget,
   },
 ]

@@ -17,8 +17,8 @@
  */
 import { useEffect, useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
+import { useRoute, type RouteProp } from '@react-navigation/native'
 
-import { useBossProfitStore } from '../../features/boss-profit/store'
 import {
   useDropPriceStore,
   type DropPriceEntry,
@@ -30,12 +30,15 @@ import { formatMesoShort } from '../../lib/boss/boss-profit-delta'
 import {
   formatBossProfitPeriodLabel,
   getAdjacentPeriodKey,
+  getCurrentBossProfitPeriod,
   isEarliestNavigablePeriod,
   isLatestPeriod,
 } from '../../lib/boss/boss-profit-period'
 import { dropPayoutMeso } from '../../lib/drop/drop-price'
 import { getItemIconUrl } from '../../lib/assets/asset-lookup'
+import type { RootStackParamList } from '../../navigation/routes'
 import type { RecordedDrop } from '../../types/drops'
+import type { BossCycle } from '../../types/scheduler'
 
 import {
   Badge,
@@ -157,13 +160,16 @@ function EntryRow(props: {
 export function DropPriceScreen(): React.JSX.Element {
   const navigation = useScreenNavigation()
   const topSafeAreaPx = useTopSafeAreaPx()
-  const { tab, periodKey: profitPeriodKey } = useBossProfitStore()
+  const { params } = useRoute<RouteProp<RootStackParamList, 'DropPrice'>>()
   const { status, periodKey: readPeriodKey, groups, load, savePrice, excludePrice } = useDropPriceStore()
 
   // 화면이 한 번만 만든 지금. 두 번 부르면 기간 경계를 사이에 두고 갈릴 수 있다.
   const [now] = useState(() => new Date())
-  const [cycle] = useState(tab)
-  const [week, setWeek] = useState(profitPeriodKey)
+  // 넘겨받은 값이 없으면(today 타일) 열리는 순간의 이번 주다.
+  const [cycle] = useState<BossCycle>(() => params?.cycle ?? 'weekly')
+  const [week, setWeek] = useState(
+    () => params?.periodKey ?? getCurrentBossProfitPeriod('weekly', now).periodKey,
+  )
   const [pricing, setPricing] = useState<DropPriceEntry | null>(null)
   // 순차 모드에서 남은 미입력 건. 비어 있으면 단건 편집이다.
   const [queue, setQueue] = useState<DropPriceEntry[]>([])

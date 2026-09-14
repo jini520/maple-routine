@@ -220,6 +220,11 @@ export interface BossProfitStore extends BossProfitState {
   setTab(tab: BossCycle): Promise<void>
   /** 지금 탭의 현재 기간으로 돌아온다. 이미 거기면 아무 일도 없다 */
   goToCurrentPeriod(): Promise<void>
+  /**
+   * 주간 탭의 현재 기간으로 돌린다. 이미 거기면 아무 일도 없다. 보스 수익 화면이 언마운트될 때,
+   * 곧 수익·지출을 떠날 때 부른다. 옆 탭인 가계부가 떠나면 주간 · 이번 주로 돌아오는 것과 맞춘다.
+   */
+  resetToCurrentWeek(): Promise<void>
   goToPreviousPeriod(): Promise<void>
   goToNextPeriod(): Promise<void>
   /**
@@ -1772,6 +1777,16 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
     set({ periodKey: currentPeriodKey })
     await loadPeriod(set, tab, currentPeriodKey, ocids, now, myGeneration)
+  },
+
+  async resetToCurrentWeek() {
+    // 이미 주간 · 이번 주면 회차를 안 연다(`goToCurrentPeriod` 가 거른다). 열면 떠나는 순간 돌던
+    // 동기화의 마지막 반영이 취소된다.
+    if (get().tab !== 'weekly') {
+      await get().setTab('weekly')
+      return
+    }
+    await get().goToCurrentPeriod()
   },
 
   async setTab(tab) {
