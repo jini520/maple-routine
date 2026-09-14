@@ -1542,9 +1542,9 @@ sticky도 없다(⛔ ADR-047. RN에서 안 만들기로 판정났다).
 **접힘 상태는 월드가 몇 개든 칩 하나로 고정한다**([[ADR-054]] 결정 7·정정 2·3). 헤더가 커지면 첫
 화면에서 목록이 밀려난다.
 
-결정석 아이콘은 `item-icons.json` 에 등록하지 않고 `getItemIconUrlByFile(fileName)` 로 파일명을 직접
+결정석 아이콘은 `drop-items.json` 에 등록하지 않고 `getItemIconUrlByFile(fileName)` 로 파일명을 직접
 조회한다(주간·월간 각 1장). 결정석은 드랍 테이블 항목이 아니라 UI 표시 전용이라, 등록하면
-`item-icons.test.ts` 의 드랍 테이블 실재 정합성 검사를 깬다.
+`drop-items.spec.ts` 의 `어느 파일도 안 가리키는 줄이 없다` 검사를 깬다.
 
 **수치 파생**은 이렇다.
 
@@ -1869,7 +1869,7 @@ a11y: 화살표는 `aria-hidden` 이고, 색은 의미를 못 전하므로 칩 �
 
 ### 고가 드롭 강조
 
-[[ADR-045]] 다. 그 주차에 고가 아이템(`isValuableDrop`)을 먹은 항목을 네온 골드(`#f7d00d`)로 강조한다.
+[[ADR-045]] 다. 그 주차에 고가 아이템(`isValuableDropItem`)을 먹은 항목을 네온 골드(`#f7d00d`)로 강조한다.
 
 값은 `app/boss-profit/valuable-card-glow.ts` 에 있다. 컴포넌트에서 export 하면 fast refresh 가
 깨지기 때문에 파일을 나눴다. 그리는 것은 `CharacterAccordion` 하나다. 행 배경을 그리던

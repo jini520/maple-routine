@@ -99,7 +99,8 @@ PK: `(ocid, boss, difficulty, period_key, drop_index)`. [[ADR-038]]에서 도입
 - **⚠️ `RecordedDrop` 변환기가 **셋**이다** — `lib/boss/boss-drops.ts`·`features/boss-profit/rows.ts`의 동명 함수 `toRecordedDrop` 둘, 그리고 `drops-loader.ts` `loadDropsByRowKey`(이제 `toRecordedDrop` 에 위임). 새 컬럼을 여기 더하지 않으면 **타입 에러 없이 통과하고 값만 조용히 사라진다** — [[ADR-124]] 구현 중 세 번째를 놓쳐 "기간을 왕복하면 가격이 사라지는" 버그가 났다(인라인 리터럴이라 이름으로 못 찾았다). 컬럼을 늘릴 땐 **이름이 아니라 `RecordedDrop` 을 만드는 자리**를 훑을 것.
 - **가격을 이 테이블에 둔 이유**([[ADR-124]] 결정 4): 난이도 확정 이관이 행을 통째로 옮기므로 가격이 **따라가고**, `pruneUnobtainableDrops` 탈락분의 가격이 **함께 사라지며**, 히스토리의 "원천은 이 테이블 하나"([[ADR-071]] 결정 1)가 유지된다. 가격 전용 테이블이면 셋 다 별도 코드가 된다.
 - **⚠️ `recorded_at`은 "언제 먹었는가"가 아니다 — 감사 필드다**([[ADR-071]] 결정 2). `replaceBossDropRecords`가 DELETE→INSERT로 그룹을 통째로 교체하며 **그룹 전체 행에 호출 시점을 박고**, `pruneUnobtainableDrops` 정리와 난이도 확정 이관도 `now`로 덮는다. 그래서 같은 (보스, 난이도, 기간)에 드롭 하나를 더 추가하면 기존 드롭들의 `recorded_at`까지 오늘로 갱신된다. **드롭이 일어난 시점을 알아야 하면 `period_key`를 쓴다**(주간=리셋일 `YYYY-MM-DD`, 월간=`YYYY-MM`, 불변). 시간순 정렬도 `period_key DESC, drop_index`이고 `recorded_at DESC`는 과거 기간 재편집 한 번에 순서가 뒤집힌다.
-- **고가 여부는 저장하지 않는다.** `isValuableDrop`(`lib/drop/valuable-drops`)은 표시 시점 판정이라, 이 테이블에는 **선택 등록 가능한 모든 아이템**이 구분 없이 들어 있다 — 드롭 히스토리가 별도 테이블 없이 이 테이블만 읽는 근거다([[ADR-071]] 결정 1).
+- **아이템을 key 로 든다**([[ADR-280]] 결정 11, 2026-09-15, 이슈 #444). `item_key`(아이템 key) · `box_origin_key`(상자 결과면 상자의 아이템 key)와 그때 이름(`item_name` · `box_origin`)을 함께 적는다. 이름만 든 옛 행은 버전 3 이 key 를 채웠고, 못 찾은 행은 key 가 `NULL` 이다. **`RecordedDrop` 을 만드는 자리(아래 변환기 셋)가 두 key 칸을 빠뜨리면 기록의 key 가 조용히 사라진다.** 가격 칸과 같은 함정이다.
+- **고가 여부는 저장하지 않는다.** `isValuableDropItem`(`lib/drop/valuable-drops`)은 표시 시점 판정이라, 이 테이블에는 **선택 등록 가능한 모든 아이템**이 구분 없이 들어 있다 — 드롭 히스토리가 별도 테이블 없이 이 테이블만 읽는 근거다([[ADR-071]] 결정 1).
 - **날짜 컬럼이 없다 — 짝인 수익 행의 `defeated_on` 을 물려받는다**([[ADR-172]] 결정 6). «먹은 날» 이 맞는 축이고([[ADR-170]] 결정 4 ④), 두 벌로 박으면 갈라질 수 있는 값이 하나 는다. 수익 행이 없는 드롭(결정석 가격을 모르는 보스)은 물려받을 것이 없어 NULL 이다.
 - **`boss_profit_records`와 짝을 이룬다**(같은 `(ocid, boss, difficulty, period_key)`). FK가 없으므로 수익 기록만 지우고 이걸 남기면 고아 행이 되고, 같은 보스를 같은 기간에 다시 처치하면 예전 드롭이 되살아나 붙는다([[ADR-052]]).
 
@@ -292,8 +293,9 @@ COMMIT;
 |---|---|
 | 1 | 이름을 바꾸며 옛 기록을 옮기던 `UPDATE` 일곱을 한 번 돌린다. 지출 다섯(갈래 `상점·편의` → `이벤트·BM`, 보약 버프 둘의 갈래, 농장 · 퀵패스 · 미호로이드 항목 이름)과 아래 메이린 둘이다 |
 | 2 | 가계부 기록에 key 를 채운다. `spend_records` 의 `category_key` · `item_key` · `form_item_keys` · `item_kind_key`, `income_records` 의 `category_key` · `item_key` 다. 이름으로 표를 찾고, 못 찾으면 key 를 비운 채 행을 남긴다([[ADR-280]] 결정 4) |
+| 3 | 드롭 기록에 key 를 채운다. `boss_drop_records` 의 `item_key` · `box_origin_key` 다([[ADR-280]] 결정 11). 이름은 NFC 로 맞추고 `drop-items.json` 에서 찾는다. 기본키에 아이템 이름이 없어 표를 다시 만들지 않는다. 드롭 기록은 key 를 채운 뒤에야 획득 판정을 돌린다 |
 
-새 기기는 CREATE 뒤 빈 테이블에 버전 1 · 2 가 돌고 `user_version` 이 2 가 된다. 이관은 진짜 엔진(`db-real-sqlite.test.ts`) 위에서 테스트한다.
+새 기기는 CREATE 뒤 빈 테이블에 버전 1 ~ 3 이 돌고 `user_version` 이 3 이 된다. 이관은 진짜 엔진(`db-real-sqlite.test.ts`) 위에서 테스트한다.
 
 ```sql
 UPDATE boss_party_settings SET boss = '시즌 보스 메이린' WHERE boss = '메이린';

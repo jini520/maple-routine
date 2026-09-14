@@ -35,13 +35,14 @@
 | 계산 | `lib/drop/drop-history.ts` | 전 기간 집계, `VALUABLE_DROUGHT_TIERS` |
 | 계산 | `constants/style/drought-tier-styles.ts` | 가뭄 단계 잎 램프. today 위젯과 공유한다 |
 | 계산 | `lib/drop/drop-price.ts` | 판매가를 수익으로 환산 |
-| 계산 | `lib/assets/asset-lookup.ts` | 아이콘 조회. 일반 아이템은 `item-icons.json`, 반지는 `boss-ring-boxes.json` 의 `iconFile` 이다. 매핑이 없으면 플레이스홀더 |
+| 계산 | `lib/drop/drop-items.ts` | 드롭 아이템 마스터 표 조회. 보이는 이름(`dropItemNameOf`) · 옛 이름에서 key(`dropItemKeyOfName`, 이관만 쓴다) |
+| 계산 | `lib/assets/asset-lookup.ts` | 아이콘 조회(`dropItemIconOf`). 아이템 key 로 마스터 표의 그림 파일을 찾는다. 없으면 플레이스홀더 |
 | 연출 | `components/organisms/DropEffectOverlay/` | 전체화면 연출 |
 | 연출 | `components/organisms/DropEffectOverlay/drop-effect-layout.ts` | 프레임 목록과 origin 테이블 |
 | 도구 | `scripts/measure-drop-effect-origins.py` | origin 재계측 |
 | 참조 | `src/data/item-drop-table.json` | 보스별 드롭 테이블 |
 | 참조 | `src/data/boss-ring-boxes.json` · `accessory-boxes.json` | 상자 개봉 후보 |
-| 참조 | `src/data/item-icons.json` · `valuable-drops.json` | 아이콘 매핑, 고가 목록 |
+| 참조 | `src/data/drop-items.json` · `valuable-drops.json` | 드롭 아이템 key 마스터 표(이름 · 그림), 고가 목록 |
 
 **관련 ADR** (유효): [[ADR-010]] [[ADR-011]] [[ADR-038]] [[ADR-040]] [[ADR-041]] [[ADR-045]]
 [[ADR-048]] [[ADR-069]] [[ADR-070]] [[ADR-071]] [[ADR-103]] [[ADR-124]] [[ADR-147]] [[ADR-172]]
@@ -49,6 +50,24 @@
 
 **폐기됐지만 이 화면이 그 결정 일부를 아직 따르는 것**: ⛔ ADR-039(바텀시트 계약) · ADR-077(스택에서
 아래 화면을 언마운트하지 않는다). **각 파일 배너의 🔗 줄에 적힌 것만 살아 있다.**
+
+## 이름 대신 key 로 찾는다 ([[ADR-280]] 결정 11, 이슈 #444: 구현 완료 2026-09-15, 실기기 미검증)
+
+드롭 기록과 데이터 파일은 아이템을 영문 snake_case key 로 가리킨다. 이름 글자로 찾으면 이름을 바꿀 때 옛 기록이 그림 ·
+고가 판정 · 획득 판정을 잃는다. 자세한 모양은 결정 11 이 든다.
+
+- **마스터 표는 `src/data/drop-items.json` 하나다.** 드롭 표 이름 77 · 반지 31 · `기타` 의 key · 이름 · 그림과 세트 넷의
+  key · 이름을 든다. 드롭 표 · 상자 파일 둘 · 고가 목록은 key 로 가리킨다(사용자 결정 2026-09-15). 가리키는 key 가 모두
+  표에 있는지는 `drop-items.spec.ts` 가 지킨다.
+- 같은 아이템은 직접 고른 것이든 상자에서 나온 것이든 key 하나다. `slot` · `ring_level` 은 따로 칸에 둔다(사용자
+  결정 2026-09-15).
+- 기록은 `item_key` · `box_origin_key` 와 그때 이름(`item_name` · `box_origin`)을 함께 든다. 보이는 이름은 key 로 찾은 표
+  이름이고, 못 찾으면 저장된 이름이다(`dropItemNameOf`). 그림(`dropItemIconOf`) · 고가(`isValuableDropItem`) ·
+  상자 판정(`isBoxItem`)은 key 로 한다.
+- **key 를 못 찾은 옛 기록은 획득 판정 없이 남는다**(사용자 결정 2026-09-15). 못 찾은 것이 못 먹은 것은 아니라서다.
+  슬롯이 나뉘기 전의 `익셉셔널 해머` · 드롭 표에서 빠진 `루인 포스실드` 가 그렇고, 이름으로 서고 그림과 고가 표시가 없다.
+  드롭 시트에는 그 기록의 타일이 없어 이름으로 안 서고, 저장할 때 그대로 다시 적힌다.
+- 옛 기록은 DB 버전 3 이 이름으로 key 를 채웠다([persistence/sqlite.md](../persistence/sqlite.md) 의 `마이그레이션`).
 
 ## 무엇을 기록하나
 
@@ -81,7 +100,8 @@
 시점에 옛 난이도 키의 드롭을 확정 키로 옮기고, **그 난이도에서 못 먹는 항목(`pruneUnobtainableDrops`
 탈락분)은 삭제한다.** 거짓 기록이 환산 가치와 고가 드롭 연출에 섞이는 것을 막는다(사용자 판단).
 **확정 키에 같은 드롭이 이미 있으면 두 번 넣지 않는다**([[ADR-069]] 정정 1). 같은 드롭은 같은
-타일이다(일반 아이템은 이름, 상자 결과는 상자). 이미 있는 쪽이 남는다.
+타일이다(일반 아이템은 아이템 key, 상자 결과는 상자 key. key 가 없는 옛 기록은 이름으로 가른다, `dropTileIdentity`). 이미
+있는 쪽이 남는다.
 
 상세는 [boss-profit.md](./boss-profit.md) 의 "처치 난이도가 확정되면 드롭을 옮긴다"에 있다. 계산은
 `planConfirmedDifficultyDropMigration`, 쓰기는 store 다(2026-07-31 구현 완료).
@@ -138,9 +158,9 @@
 - **`misc`("태초의 정수" 2건)는 흡수도 삭제도 하지 않고 죽은 데이터로 둔다**(사용자 확인 2026-07-31).
   정합성 테스트가 이 상태를 고정한다.
 
-**아이템명은 조인 키다**([[ADR-070]] 결정 2·4). 후보 중복 제거 · 아이콘 매핑 · 기록 키가 모두 `name`
-문자열이라 **같은 아이템이 두 표기로 존재하면 전부 갈라진다.** 이름을 바꿀 땐 그 이름으로 저장된
-기록이 있는지 먼저 확인한다. 노출된 적 없는 항목만 이관 없이 개명해도 안전하다.
+**아이템 key 가 조인 키다**([[ADR-280]] 결정 11). 후보 중복 제거 · 아이콘 · 고가 판정 · 획득 판정이 모두 `drop-items.json`
+의 key 를 쓴다. 그래서 **이름은 마스터 표의 `name` 한 칸만 고치면 된다.** 옛 기록도 key 로 새 이름을 찾는다. key 는 기록에
+저장되므로 한 번 정한 key 는 바꾸지 않는다.
 
 ### 아이템은 기간을 든다 ([[ADR-261]])
 
@@ -163,7 +183,7 @@
 먹은 기록이 지워진다.
 
 기간을 받는 자리는 넷이다. 드롭 시트의 후보(`getBossDropCandidates`)와 고정 보상
-(`getBossFixedDrops`), 획득 판정(`getObtainableTileNames` · `isObtainableDrop`)이다. 드롭 시트는 그
+(`getBossFixedDrops`), 획득 판정(`getObtainableTileKeys` · `isObtainableDrop`)이다. 드롭 시트는 그
 행의 기간(`BossDropSheet` 의 `periodKey`)을 넘기고, 정리와 히스토리는 기록의 `periodKey` 를 넘긴다.
 
 ### 아이콘 캔버스 여백 규칙 (2026-07-30)
@@ -187,7 +207,7 @@
 **기록과 가격을 한 시트에서 끝낸다**([[ADR-124]] 결정 6).
 
 - **난이도를 가리지 않고 통합해 보여준다**([[ADR-040]] 결정 1). `getBossDropCandidates(boss, periodKey)`
-  가 그 기간에 나오는 전 난이도 장비와 소비를 이름과 slot으로 중복 제거하고 등장 난이도를 붙인다. 각 타일에 그 난이도를
+  가 그 기간에 나오는 전 난이도 장비와 소비를 아이템 key 와 slot으로 중복 제거하고 등장 난이도를 붙인다. 각 타일에 그 난이도를
   약자 컬러 배지(`components/atoms/Badge` 의 난이도 variant)로 표기한다.
 - **고정 드롭은 읽기 전용이다**([[ADR-040]] 결정 3). 값이 난이도마다 달라 선택 기능을 없앴다.
   `getBossFixedDrops(boss, periodKey)` 로 그 기간의 난이도별 그룹을 보여주기만 한다.
@@ -653,6 +673,13 @@ const loadedThisPeriod = status === 'ready' && storePeriodKey === week
 
 ## 폐기된 정책 (history)
 
+- ~~아이템명은 조인 키다. 후보 중복 제거 · 아이콘 매핑 · 기록 키가 모두 `name` 문자열이라 이름을 바꿀 땐 그 이름으로
+  저장된 기록이 있는지 먼저 확인한다([[ADR-070]] 결정 2·4). 아이콘은 `item-icons.json` 과 `boss-ring-boxes.json` 의
+  `iconFile` 이 이름으로 찾는다~~ → **아이템 key 가 조인 키다**([[ADR-280]] 결정 11, 2026-09-15, 이슈 #444). 이름을 바꾸면
+  옛 기록이 그림과 판정을 잃었다.
+- ~~드롭 표에 없는 이름의 기록은 획득 불가로 보고 그 주를 불러올 때 · 난이도가 확정될 때 지운다~~ → **key 를 못 찾은
+  기록은 판정 없이 남긴다**(사용자 결정 2026-09-15, 이슈 #444). 드롭 표에 있는 key 인데 그 난이도에서 못 먹는 기록은 여전히
+  지운다.
 - ~~아이템 가격 입력 화면이 보스 수익 스토어의 `tab` · `periodKey` 를 마운트 때 읽어 주기와 기간을 이어받는다.
   화면 쪽은 주기를 이어받는 코드를 그대로 들고 있어서 다른 자리에서 열면 월간도 그대로 열린다~~ → **떠 있는
   버튼이 라우트 파라미터로 넘기고, 넘긴 값이 없으면 열리는 순간의 주간 · 이번 주로 연다**(이슈 #431,
