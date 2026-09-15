@@ -74,6 +74,9 @@ erDiagram
 
 ### `boss_profit_records` — 기간별 수익 기록
 
+> **이 표와 `character_profiles` 는 월드 이름(`world`)과 함께 월드 key(`world_key`)를 든다**([[ADR-280]] 결정 15, 2026-09-15, 이슈 #446). `world` 는 적을 때의 API 이름이고, 결정석 집계와 월드 판정은 `world_key` 로 가른다. 둘 다 아는 값이 있을 때만 덮고(`COALESCE`), 월드가 빈 수익 기록을 채우는 보정(`fillMissingRecordWorlds`)도 둘을 함께 채운다. 기존 행은 DB 버전 6 이 `world` 로 채웠다.
+
+
 PK: `(ocid, boss_key, difficulty, period_key)`. **보스 key 와 난이도 key 가 기본키에 든다**([[ADR-280]] 결정 12, 2026-09-15, 이슈 #445). `boss` 는 적을 때의 보스 이름이고 보이는 이름은 key 로 보스 표에서 찾는다. 세 보스 표의 본문은 `storage/sqlite/boss-tables.ts` 한 벌을 CREATE 와 버전 4 가 함께 쓴다. 캐릭터가 특정 (보스, 난이도)를 특정 기간(`period_key`, 예: 주차)에 처치했을 때의 파티원 수·정가·실수령액 스냅샷.
 
 - **자동 생성**: 사용자가 화면에 들어오지 않아도, 스케줄러 동기화 응답에서 `complete_flag: true`인 (ocid, boss, difficulty, periodKey) 조합을 처음 만나는 순간 즉시 upsert된다([[ADR-014]]).
@@ -302,8 +305,9 @@ COMMIT;
 | 4 | 보스 표 셋(`boss_profit_records` · `boss_party_settings` · `boss_drop_records`)을 다시 만들어 기본키의 `boss` 를 `boss_key` 로 바꾸고 한글 난이도를 key 로 옮긴다([[ADR-280]] 결정 12). 보스 key 는 `boss` 이름을 API 이름과 같은 규칙(NFC · 공백 제거)으로 찾는다. **보스를 못 찾는 행은 옮기지 않는다.** 기본키를 못 채우고, 표에 없는 보스는 기록하지 않는다는 결정과 같다 |
 | 3 | 드롭 기록에 key 를 채운다. `boss_drop_records` 의 `item_key` · `box_origin_key` 다([[ADR-280]] 결정 11). 이름은 NFC 로 맞추고 `drop-items.json` 에서 찾는다. 기본키에 아이템 이름이 없어 표를 다시 만들지 않는다. 드롭 기록은 key 를 채운 뒤에야 획득 판정을 돌린다 |
 | 5 | 강화 기록에 장비 key 를 채운다. `enhancement_history` 의 `item_key` 다([[ADR-280]] 결정 14). `target_item` 을 API 이름과 같은 규칙(NFC · 공백 제거)으로 `equipment-items.json` 에서 찾는다. 기본키가 응답의 `id` 라 표를 다시 만들지 않는다. **못 찾는 행은 key 만 비우고 남긴다** |
+| 6 | 수익 기록(`boss_profit_records`)과 캐릭터 프로필(`character_profiles`)에 월드 key 를 채운다([[ADR-280]] 결정 15). `world` 이름을 API 이름과 같은 규칙(NFC · 공백 제거)으로 `worlds.json` 에서 찾는다. 두 표 모두 기본키에 월드가 없어 표를 다시 만들지 않는다. `world` 가 NULL 인 행은 key 도 NULL 이다 |
 
-새 기기는 CREATE 뒤 빈 테이블에 버전 1 ~ 5 가 돌고 `user_version` 이 5 가 된다. 이관은 진짜 엔진(`db-real-sqlite.test.ts`) 위에서 테스트한다.
+새 기기는 CREATE 뒤 빈 테이블에 버전 1 ~ 6 이 돌고 `user_version` 이 6 이 된다. 이관은 진짜 엔진(`db-real-sqlite.test.ts`) 위에서 테스트한다.
 
 ```sql
 UPDATE boss_party_settings SET boss = '시즌 보스 메이린' WHERE boss = '메이린';
