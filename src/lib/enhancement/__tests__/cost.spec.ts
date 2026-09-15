@@ -76,6 +76,18 @@ describe('스타포스 비용', () => {
     expect(starforceCost(150, 16)).toBe(35_437_900)
   })
 
+  it('파괴 방지는 할인 전 비용의 200% 를 더한다', () => {
+    // 반올림 66,913,100 의 세 배
+    expect(starforceCost(160, 17, 0, true)).toBe(200_739_300)
+  })
+
+  // 이슈 #450 의 응답 줄. 할인은 강화 비용에만 붙고 파괴 방지 추가분은 그대로다.
+  it('파괴 방지 추가분은 할인을 안 받는다', () => {
+    // 46,839,170 + 133,826,200
+    expect(starforceCost(160, 17, 30, true)).toBe(180_665_370)
+    expect(starforceCost(160, 17, 30, false)).toBe(46_839_170)
+  })
+
   it('성수를 벗어나면 값이 없다', () => {
     expect(starforceCost(160, 30)).toBeNull()
     expect(starforceCost(160, -1)).toBeNull()
