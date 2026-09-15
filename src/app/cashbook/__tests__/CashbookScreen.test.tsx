@@ -1372,7 +1372,11 @@ describe('자동으로 흘러든 줄', () => {
     characterName: '루디',
     payoutMeso: 4_000_000_000,
     count: 3,
-    unpricedCount: 2,
+    items: [
+      { itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', payoutMeso: 3_000_000_000 },
+      { itemKey: 'dreamy_belt', itemName: '몽환의 벨트', payoutMeso: 700_000_000 },
+      { itemKey: null, itemName: '없어진 아이템', payoutMeso: 300_000_000 },
+    ],
   }
 
   beforeEach(() => {
@@ -1418,7 +1422,7 @@ describe('자동으로 흘러든 줄', () => {
       '루디 · 보스 결정석2마리+36억',
     )
     expect(view.getByTestId('cashbook-row-dropSale:ocid-1')).toHaveTextContent(
-      '루디 · 아이템 판매3건 · 미입력 2+40억',
+      '루디 · 아이템 판매3건+40억',
     )
   })
 
@@ -1431,12 +1435,40 @@ describe('자동으로 흘러든 줄', () => {
     expect(view.queryByTestId('income-sheet-date')).toBeNull()
   })
 
-  it('판매 줄은 보스 수익 탭으로 간다. `미입력` 이 저쪽 할 일을 가리킨다', async () => {
+  // 판매 줄도 탭을 안 옮기고 그 자리에서 판 아이템을 편다(사용자 결정). 그날 무엇을 팔았는지를 가계부에서 본다.
+  it('판매 줄을 누르면 탭을 안 옮기고 판 아이템을 한 줄씩 편다', async () => {
     const view = await 그리기()
 
-    await 이름으로누르기(view, '루디 · 아이템 판매 보스 수익에서 보기')
+    expect(view.queryByTestId('cashbook-row-items-dropSale:ocid-1')).toBeNull()
 
-    expect(mockOpenTab).toHaveBeenCalledWith('Profit')
+    await 이름으로누르기(view, '루디 · 아이템 판매 펼치기')
+
+    expect(mockOpenTab).not.toHaveBeenCalled()
+    expect(view.getByTestId('cashbook-sold-item-dropSale:ocid-1-0')).toHaveTextContent('루즈 컨트롤 머신 마크+30억')
+    expect(view.getByTestId('cashbook-sold-item-dropSale:ocid-1-1')).toHaveTextContent('몽환의 벨트+7억')
+    expect(view.getByTestId('cashbook-sold-item-dropSale:ocid-1-2')).toHaveTextContent('없어진 아이템+3억')
+  })
+
+  // 그림은 보스 수익 드롭 시트와 같은 조회다. 못 찾으면 그림 자리 없이 이름부터 적는다(사용자 결정).
+  it('판 아이템의 그림은 아이템 key 로 찾고 없으면 그림 자리가 없다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '루디 · 아이템 판매 펼치기')
+
+    expect(view.getByTestId('cashbook-sold-item-image-dropSale:ocid-1-0', 숨은것까지)).toBeTruthy()
+    expect(view.queryByTestId('cashbook-sold-item-image-dropSale:ocid-1-2', 숨은것까지)).toBeNull()
+  })
+
+  it('판매 줄도 다시 누르면 접히고 날을 바꾸면 접힌다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '루디 · 아이템 판매 펼치기')
+    await 이름으로누르기(view, '루디 · 아이템 판매 접기')
+
+    expect(view.queryByTestId('cashbook-row-items-dropSale:ocid-1')).toBeNull()
+
+    await 이름으로누르기(view, '루디 · 아이템 판매 펼치기')
+    await 누르기(view, 'calendar-day-2026-08-25')
+
+    expect(view.queryByTestId('cashbook-row-items-dropSale:ocid-1')).toBeNull()
   })
 
   // 결정석 줄은 그 자리에서 펼친다.

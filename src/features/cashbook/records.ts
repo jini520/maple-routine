@@ -15,6 +15,7 @@ import type { BossDifficulty } from '../../types'
 import { compareBossOrder } from '../../lib/boss/boss-matching'
 import { bossNameOf } from '../../lib/boss/bosses'
 import type { CalendarAmounts, CalendarDayAmounts } from '../../lib/calendar'
+import { dropItemNameOf } from '../../lib/drop/drop-items'
 import { dropPayoutMeso } from '../../lib/drop/drop-price'
 import { incomeCategoryNameOf, spendCategoryNameOf } from '../../lib/cashbook/categories'
 import {
@@ -138,7 +139,8 @@ interface BossDaySummary {
   bosses: DefeatedBoss[]
   dropMeso: number
   dropCount: number
-  unpricedCount: number
+  /** 그날 판 아이템. 값을 넣은 드롭 한 행이 한 칸이다. 판매 줄을 펼치면 뜨는 줄의 원재료다 */
+  soldItems: SoldItem[]
 }
 
 function summaryKey(dateKey: string, ocid: string): string {
@@ -213,7 +215,7 @@ async function loadBossDaySummaries(
       bosses: [],
       dropMeso: 0,
       dropCount: 0,
-      unpricedCount: 0,
+      soldItems: [],
     }
     summaries.set(key, created)
     return created
@@ -240,16 +242,13 @@ async function loadBossDaySummaries(
     const dateKey = dateByBossRow.get(bossRowKey(drop))
     if (dateKey === undefined) continue
 
+    // 가계부는 판 것만 보여 준다. 값을 안 넣은 드롭과 `'excluded'`(기록 안 함)는 줄에도 판에도 안 든다.
+    if (drop.priceState !== 'entered') continue
     const bucket = bucketOf(dateKey, drop.ocid)
-    if (drop.priceState === 'entered') {
-      bucket.dropMeso += dropPayoutMeso(drop)
-      bucket.dropCount += 1
-      continue
-    }
-    // `'excluded'`(기록 안 함)는 미입력이 아니다. 사용자가 안 적겠다 고 정한 것이라 셈에서 뺀다.
-    if (drop.priceState === null) {
-      bucket.unpricedCount += 1
-    }
+    const payoutMeso = dropPayoutMeso(drop)
+    bucket.dropMeso += payoutMeso
+    bucket.dropCount += 1
+    bucket.soldItems.push({ itemKey: drop.itemKey, itemName: dropItemNameOf(drop.itemKey, drop.itemName), payoutMeso })
   }
 
   return [...summaries.values()]
@@ -516,11 +515,25 @@ export interface BossCrystalDayRecord extends AutoDayRecordBase {
   bosses: readonly DefeatedBoss[]
 }
 
-/** 아이템 판매 줄. 누르면 보스 수익 탭이다. 미입력 n 이 저쪽에 할 일이 있다고 말한다. */
+/** 아이템 판매 줄. 누르면 그 자리에서 판 아이템을 편다. */
 export interface DropSaleDayRecord extends AutoDayRecordBase {
   kind: 'dropSale'
-  /** 값을 아직 안 넣은 드롭 수. `'excluded'`(기록 안 함)는 안 센다. */
-  unpricedCount: number
+  /** 판 아이템. 금액이 큰 순이고 같으면 이름 순이다. **비어 있지 않다.** 이 줄이 서는 조건이다 */
+  items: readonly SoldItem[]
+}
+
+/**
+ * 펼친 판매 줄의 한 칸. 드롭 기록 한 행이라 같은 아이템을 둘 팔았으면 두 칸이다(사용자 지정).
+ *
+ * 수량을 안 든다. 드롭 시트가 행마다 수량 1 을 쓴다.
+ */
+export interface SoldItem {
+  /** 그림을 찾는 열쇠. 드롭 아이템 표에 없으면 `null` 이고 그림 없이 이름부터 선다 */
+  itemKey: string | null
+  /** 아이템 key 로 찾은 표 이름. 없으면 기록에 적어 둔 이름이다 */
+  itemName: string
+  /** 분배 후 금액. 줄의 합계에 더한 값과 같다 */
+  payoutMeso: number
 }
 
 /**
@@ -751,9 +764,6 @@ function toAutoRecords(
     /**
      * 판 것이 하나라도 있어야 줄이 선다. 가계부는 돈이 오간 기록을 세는 자리라, 아직 값이 없는
      * 건이 0원으로 서면 그날의 목록이 그만큼 헐거워진다.
-     *
-     * 줄이 서면 `미입력 n` 은 그대로 적는다. 그것은 항목이 아니라 저쪽에 할 일이 있다는
-     * 표시이고, 그 줄은 이미 판 것이 있어서 선 줄이다.
      */
     if (summary.dropCount > 0) {
       rows.push({
@@ -762,7 +772,10 @@ function toAutoRecords(
         characterName,
         payoutMeso: summary.dropMeso,
         count: summary.dropCount,
-        unpricedCount: summary.unpricedCount,
+        // 큰 금액이 위다. 펼쳐서 보는 이유가 무엇을 얼마에 팔았나 라서다. 같으면 이름으로 가른다(순서가 흔들리면 안 된다).
+        items: [...summary.soldItems].sort(
+          (left, right) => right.payoutMeso - left.payoutMeso || left.itemName.localeCompare(right.itemName),
+        ),
       })
     }
   }
@@ -866,7 +879,7 @@ export function recordCashOf(entry: DayRecord): number | null {
  * 이름과 금액 사이에 서는 작은 글자. 없으면 `null`.
  *
  * 갈래마다 세는 것이 다르다. 지출은 수량(`×2`. 맨 숫자는 2번째 로도 읽힌다), 결정석은 마리 수,
- * 판매는 건수와 미입력 건수다. 화면이 갈래별로 분기하지 않도록 여기서 한 문자열로 접는다.
+ * 판매는 판 건수다. 화면이 갈래별로 분기하지 않도록 여기서 한 문자열로 접는다.
  */
 export function recordCountLabelOf(entry: DayRecord): string | null {
   if (entry.kind === 'spend') {
@@ -877,7 +890,7 @@ export function recordCountLabelOf(entry: DayRecord): string | null {
     return `${entry.count}마리`
   }
   if (entry.kind === 'dropSale') {
-    return entry.unpricedCount > 0 ? `${entry.count}건 · 미입력 ${entry.unpricedCount}` : `${entry.count}건`
+    return `${entry.count}건`
   }
   if (entry.kind === 'enhancement') {
     // 값을 못 매긴 건은 금액에 안 들어 있다. 그 사실을 줄이 말해야 합계가 적어 보이는 것이
