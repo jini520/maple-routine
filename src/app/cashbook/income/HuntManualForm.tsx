@@ -25,13 +25,19 @@ import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountF
 import { ChainSelect } from '../../../components/organisms/ChainSelect/ChainSelect'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 import { getItemIconUrlByFile } from '../../../lib/assets/asset-lookup'
+import { huntTotalOf } from '../../../lib/cashbook/hunting-meso'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import { characterOptions } from '../character-options'
+import { requiredCharacterOptions } from '../character-options'
 import { AmountInput, FieldRow } from '../sheet-fields'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 
-export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
+export function HuntManualForm(
+  props: IncomeFormProps & {
+    /** 조각 가격 나중에 입력. 시트가 들고 넘긴다. */
+    fragmentsDeferred: boolean
+  },
+): React.JSX.Element {
   const editing = props.editing !== undefined
   /**
    * 되살릴 입력. 수동으로 적힌 행일 때만 값이 있다.
@@ -53,19 +59,32 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
   const [fragmentPriceText, setFragmentPriceText] = useState(mesoTextOf(detail?.fragmentPrice ?? 0))
   const { saving, submit, remove } = useSheetSubmit(props)
 
+  /** 마지막으로 그린 나중에 입력 값. 켜지는 순간을 그리는 중에 알아내려고 상태로 든다. */
+  const [deferredSeen, setDeferredSeen] = useState(props.fragmentsDeferred)
+  if (deferredSeen !== props.fragmentsDeferred) {
+    // 켜면 가격 칸이 빈다. 끄고 나서 켜기 전 가격이 되살아나면 안 판 조각에 값이 붙는다.
+    setDeferredSeen(props.fragmentsDeferred)
+    if (props.fragmentsDeferred) setFragmentPriceText('')
+  }
+
   /** 조각 줄의 그림. 계산기와 같은 파일을 본다. */
   const fragmentIcon = getItemIconUrlByFile('sol_erda_fragment.webp')
 
   const typedMeso = mesoValueOf(typedMesoText)
   const fragments = mesoValueOf(fragmentsText)
   const fragmentPrice = mesoValueOf(fragmentPriceText)
-  /** 계산기의 `huntingTotalOf` 와 **같은 식**이고 메소의 출처만 다르다(거기서는 앱이 센다). */
-  const total = typedMeso + fragments * fragmentPrice
+  /** 계산기와 **같은 식**이고 메소의 출처만 다르다(거기서는 앱이 센다). */
+  const total = huntTotalOf(typedMeso, {
+    fragments,
+    fragmentPrice,
+    fragmentsDeferred: props.fragmentsDeferred,
+  })
 
   useSaveSlot(props.setSave, {
     editing,
     // 본체는 사람이 치는 획득 메소다. 조각은 곁다리라 그것만으로는 못 적는다(사용자 지시).
-    canSave: typedMeso > 0,
+    // 캐릭터도 있어야 한다. 조각 보관이 캐릭터별이다.
+    canSave: typedMeso > 0 && ocid !== null,
     saving,
     onSave: () =>
       void submit({
@@ -85,7 +104,13 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
         cashAmount: null,
         // 수량은 `기타`만 쓴다.
         quantity: null,
-        hunt: { mode: 'manual', typedMeso, fragments, fragmentPrice },
+        hunt: {
+          mode: 'manual',
+          typedMeso,
+          fragments,
+          fragmentPrice,
+          fragmentsDeferred: props.fragmentsDeferred,
+        },
         memo: null,
       }),
     onDelete: props.onDelete === undefined ? undefined : () => void remove(),
@@ -94,15 +119,16 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
   return (
     <>
       {/*
-        계산에 안 들고 **기록을 누구에게 붙일지**만 정한다. 고르는 자리의 모양은 계산기와 같다.
-        자리표시자가 이름을 말하고 고른 것은 알약이 된다. 단계가 하나라 알약도 하나다.
+        계산에 안 들고 **기록을 누구에게 붙일지**만 정한다. 조각 보관이 캐릭터별이라 `선택 안함` 이
+        없다. 고르는 자리의 모양은 계산기와 같다. 자리표시자가 이름을 말하고 고른 것은 알약이 된다.
+        단계가 하나라 알약도 하나다.
       */}
       <ChainSelect
         testID="income-sheet-chain"
         steps={[
           {
             name: '캐릭터',
-            options: characterOptions(props.characters),
+            options: requiredCharacterOptions(props.characters),
             selected: ocid,
             onSelect: setOcid,
           },
@@ -145,10 +171,15 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
           />
           <Text className="text-xs text-text-muted">개</Text>
         </View>
-        <View className="ml-auto min-w-0 flex-1 flex-row items-baseline gap-1.5">
+        <View
+          className={`ml-auto min-w-0 flex-1 flex-row items-baseline gap-1.5${
+            props.fragmentsDeferred ? ' opacity-40' : ''
+          }`}
+        >
           <SheetTextInput
             testID="income-sheet-fragment-price"
             aria-label="조각 가격"
+            editable={!props.fragmentsDeferred}
             value={fragmentPriceText}
             onChangeText={(text) => setFragmentPriceText(acceptMesoText(fragmentPriceText, text))}
             onBlur={() => setFragmentPriceText(settleMesoText(fragmentPriceText))}

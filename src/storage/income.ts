@@ -104,6 +104,8 @@ export interface HuntingManualDetail {
   fragments: number
   /** 조각 개당 메소. */
   fragmentPrice: number
+  /** 조각 가격을 나중에 입력하나. 켜져 있으면 조각 값이 합계에 없고 개수가 그 캐릭터의 보관에 든다. */
+  fragmentsDeferred: boolean
 }
 
 /** 계산기로 적은 사냥. 계산에 쓴 입력 한 벌이고 일곱이 **함께 있거나 함께 없다**. */
@@ -131,6 +133,8 @@ export interface HuntingCalculatorDetail {
   fragments: number
   /** 조각 개당 메소. */
   fragmentPrice: number
+  /** 조각 가격을 나중에 입력하나. 수동 입력과 같은 뜻이다. */
+  fragmentsDeferred: boolean
   /**
    * **그때의** 캐릭터 메소 획득량(%).
    *
@@ -163,6 +167,7 @@ function rowToHunt(row: Record<string, unknown>): HuntingIncomeDetail | null {
       typedMeso,
       fragments: numberOrNull(row.hunt_fragments) ?? 0,
       fragmentPrice: numberOrNull(row.hunt_fragment_price) ?? 0,
+      fragmentsDeferred: row.hunt_fragments_deferred === 1,
     }
   }
 
@@ -178,6 +183,8 @@ function rowToHunt(row: Record<string, unknown>): HuntingIncomeDetail | null {
     sojae: (row.hunt_sojae as number | null | undefined) ?? 0,
     fragments: (row.hunt_fragments as number | null | undefined) ?? 0,
     fragmentPrice: (row.hunt_fragment_price as number | null | undefined) ?? 0,
+    // `NULL` 은 이 칸 이전의 행이고 지금 판매다. 가격 0 인 옛 기록을 보관으로 읽으면 안 된다.
+    fragmentsDeferred: row.hunt_fragments_deferred === 1,
     // **`NULL` 은 이전 행**이고 0 으로 읽는다. 없는 값을 지어내면 옛 기록의 금액이
     // 지금 세는 값과 안 맞는다.
     mesoRate: (row.hunt_meso_rate as number | null | undefined) ?? 0,
@@ -185,15 +192,16 @@ function rowToHunt(row: Record<string, unknown>): HuntingIncomeDetail | null {
 }
 
 /**
- * 한 덩어리 → 칸 여덟. 없으면 전부 `null` 이다(다른 갈래의 행이 그렇다).
+ * 한 덩어리 → 칸 아홉. 없으면 전부 `null` 이다(다른 갈래의 행이 그렇다). 마지막 칸이 조각 가격 나중에 입력(1 · 0)이다.
  *
  * **수동 행은 계산기 칸 넷을 비운다**. 0 을 채우면 그 행이 놓친 마릿수 0 으로
  * 센 행 처럼 읽힌다. 비어 있는 것이 곧 앱이 센 값이 아니라는 뜻이다.
  */
 function huntToValues(hunt: HuntingIncomeDetail | null): Array<number | string | null> {
-  if (hunt === null) return [null, null, null, null, null, null, null, null]
+  if (hunt === null) return [null, null, null, null, null, null, null, null, null]
+  const deferred = hunt.fragmentsDeferred ? 1 : 0
   if (hunt.mode === 'manual') {
-    return [null, null, null, null, hunt.fragments, hunt.fragmentPrice, null, hunt.typedMeso]
+    return [null, null, null, null, hunt.fragments, hunt.fragmentPrice, null, hunt.typedMeso, deferred]
   }
   return [
     hunt.characterLevel,
@@ -204,6 +212,7 @@ function huntToValues(hunt: HuntingIncomeDetail | null): Array<number | string |
     hunt.fragmentPrice,
     hunt.mesoRate,
     null,
+    deferred,
   ]
 }
 
@@ -213,9 +222,9 @@ const INSERT_SQL = `
      sale_fee_percent, sale_fee_meso,
      point_amount, point_per_100m_meso, cash_amount, quantity,
      hunt_character_level, hunt_missed_mobs, hunt_boosts, hunt_sojae, hunt_fragments,
-     hunt_fragment_price, hunt_meso_rate, hunt_typed_meso,
+     hunt_fragment_price, hunt_meso_rate, hunt_typed_meso, hunt_fragments_deferred,
      memo, recorded_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
@@ -249,6 +258,7 @@ const UPDATE_SQL = `
     point_amount = ?, point_per_100m_meso = ?, cash_amount = ?, quantity = ?,
     hunt_character_level = ?, hunt_missed_mobs = ?, hunt_boosts = ?, hunt_sojae = ?,
     hunt_fragments = ?, hunt_fragment_price = ?, hunt_meso_rate = ?, hunt_typed_meso = ?,
+    hunt_fragments_deferred = ?,
     memo = ?
   WHERE id = ?
 `
@@ -323,4 +333,31 @@ export async function getIncomeRecordsBetween(
   )
 
   return (values ?? []).map((row) => rowToRecord(row as Record<string, unknown>))
+}
+
+/**
+ * 한 캐릭터의 솔 에르다 조각 보관 개수. 조각 가격을 나중에 입력한 사냥 기록의 조각 합에서 `솔 에르다 조각` 정산 기록이 판 개수
+ * 합을 뺀 값이다.
+ *
+ * 보관을 따로 저장하지 않고 기록에서 센다. 저장하면 사냥 기록을 고치거나 지울 때마다 그 값도 맞춰야 한다. 마이너스도 그대로 낸다.
+ *
+ * @param ocid 보관이 캐릭터별이라 캐릭터 없는 기록은 안 든다
+ * @param onOrBeforeDateKey 이 날까지 쌓인 기록만 센다. 나중에 보관한 조각을 앞선 날짜로 팔 수 없다
+ * @param excludeRecordId 수정 중인 정산 기록. 자기 몫을 빼야 보관을 다 판 기록을 열어 저장할 수 있다
+ */
+export async function getFragmentStorage(
+  ocid: string,
+  onOrBeforeDateKey: string,
+  excludeRecordId?: string,
+): Promise<number> {
+  const db = await getBossProfitDb()
+  const { values } = await db.query(
+    `SELECT
+       COALESCE(SUM(CASE WHEN category_key = 'hunting' AND hunt_fragments_deferred = 1 THEN hunt_fragments ELSE 0 END), 0)
+       - COALESCE(SUM(CASE WHEN category_key = 'sol_erda_fragment' THEN quantity ELSE 0 END), 0) AS stored
+     FROM income_records
+     WHERE ocid = ? AND earned_on <= ? AND id != ?`,
+    [ocid, onOrBeforeDateKey, excludeRecordId ?? ''],
+  )
+  return Number((values?.[0] as { stored?: unknown } | undefined)?.stored ?? 0)
 }

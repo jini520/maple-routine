@@ -172,6 +172,7 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE income_records ADD COLUMN hunt_fragment_price INTEGER',
       'ALTER TABLE income_records ADD COLUMN hunt_meso_rate INTEGER',
       'ALTER TABLE income_records ADD COLUMN hunt_typed_meso INTEGER',
+      'ALTER TABLE income_records ADD COLUMN hunt_fragments_deferred INTEGER',
       'ALTER TABLE spend_records ADD COLUMN category_key TEXT',
       'ALTER TABLE spend_records ADD COLUMN item_key TEXT',
       'ALTER TABLE spend_records ADD COLUMN form_item_keys TEXT',
@@ -215,6 +216,7 @@ describe('db.ts 와 맞물리는가', () => {
             { name: 'box_origin_key' },
             { name: 'hunt_meso_rate' },
             { name: 'hunt_typed_meso' },
+            { name: 'hunt_fragments_deferred' },
             { name: 'world_key' },
           ]
         : []

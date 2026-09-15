@@ -33,6 +33,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
 
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { IncomeSheet } from '../IncomeSheet'
+import type { IncomeRecord } from '../../../storage/income'
 
 // 큰 숫자의 카운트업 기억은 **모듈 수준**이라 케이스 사이로 샌다.
 
@@ -53,7 +54,7 @@ const 캐릭터둘 = [
  */
 async function 그리기(
   overrides: Partial<React.ComponentProps<typeof IncomeSheet>> = {},
-  pick: 'hunting' | 'item_sale' | 'etc' | null = 'hunting',
+  pick: 'hunting' | 'sol_erda_fragment' | 'item_sale' | 'etc' | null = 'hunting',
 ) {
   const view = await 시트열기(overrides)
   if (pick !== null && overrides.editing === undefined) {
@@ -77,6 +78,8 @@ async function 시트열기(overrides: Partial<React.ComponentProps<typeof Incom
       loadMesoRate={async () => ({ kind: 'read' as const, percent: 0 })}
       // 기억이 없는 상태가 기본이다. 자동 입력을 보는 케이스만 값을 준다.
       lastHuntSelection={null}
+      // 보관이 없는 상태가 기본이다. 정산을 보는 케이스만 값을 준다.
+      loadFragmentStorage={async () => 0}
       onSave={jest.fn()}
       onClose={jest.fn()}
       {...overrides}
@@ -202,10 +205,11 @@ async function 치기(view: Rendered, text: string): Promise<void> {
 }
 
 describe('갈래', () => {
-  it('1차 시트가 갈래 셋을 카드로 세운다', async () => {
+  it('1차 시트가 갈래 넷을 카드로 세운다', async () => {
     const view = await 그리기({}, null)
 
     expect(view.getByTestId('income-sheet-category-hunting')).toBeTruthy()
+    expect(view.getByTestId('income-sheet-category-sol_erda_fragment')).toBeTruthy()
     expect(view.getByTestId('income-sheet-category-item_sale')).toBeTruthy()
     expect(view.getByTestId('income-sheet-category-etc')).toBeTruthy()
     // 고르기 전에는 폼이 없다. 무엇을 적을지가 아직 안 정해졌다.
@@ -216,12 +220,13 @@ describe('갈래', () => {
    * 그림은 파일명으로 찾는다. 목록(`assets/generated/items`)은 커밋 시점에 생성되므로, 파일을
    * 더하고 `npm run assets:gen` 을 안 돌리면 셋 중 하나가 조용히 빈 자리가 된다.
    */
-  it('타일 셋이 저마다 게임 그림을 든다. 빈 자리가 없다', async () => {
+  it('타일 넷이 저마다 게임 그림을 든다. 빈 자리가 없다', async () => {
     const view = await 그리기({}, null)
 
     // 그림은 `aria-hidden` 이라 기본 조회에서 빠진다. 낭독기는 타일 이름만 읽으면 된다.
     const 숨은것 = { includeHiddenElements: true }
     expect(view.getByTestId('income-sheet-category-icon-hunting', 숨은것)).toBeTruthy()
+    expect(view.getByTestId('income-sheet-category-icon-sol_erda_fragment', 숨은것)).toBeTruthy()
     expect(view.getByTestId('income-sheet-category-icon-item_sale', 숨은것)).toBeTruthy()
     expect(view.getByTestId('income-sheet-category-icon-etc', 숨은것)).toBeTruthy()
   })
@@ -1010,16 +1015,14 @@ describe('사냥 계산기', () => {
 
   /**
    * **캐릭터를 고르기 전에는 지역에 못 간다**(2026-09-20 사용자 지시). 자리표시자는 안 고른 첫
-   * 단계를 열고 `선택 안함` 은 고른 것이 아니라, 캐릭터 목록에서 벗어날 길이 없다.
+   * 단계를 연다. 사냥의 캐릭터 목록에는 `선택 안함` 이 없어 캐릭터 목록에서 벗어날 길이 없다.
    */
   it('캐릭터를 안 고르면 지역 목록에 못 간다', async () => {
     const view = await 그리기({}, 'hunting')
-    // `선택 안함` 을 눌러도 걷을 것이 없어 그 자리에 머문다.
-    await 아이디로누르기(view, 'income-sheet-chain-placeholder-trigger')
-    await 아이디로누르기(view, 'income-sheet-chain-option-')
     await 아이디로누르기(view, 'income-sheet-chain-placeholder-trigger')
 
     expect(view.getByTestId('income-sheet-chain-option-ocid-1')).toBeTruthy()
+    expect(view.queryByTestId('income-sheet-chain-option-')).toBeNull()
     expect(view.queryByTestId('income-sheet-chain-option-tallahart')).toBeNull()
   })
 
@@ -1050,28 +1053,6 @@ describe('사냥 계산기', () => {
     expect(view.queryByTestId('income-sheet-chain-badge-지역')).toBeNull()
     expect(view.queryByTestId('income-sheet-chain-badge-사냥터')).toBeNull()
     expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent('지역 · 사냥터 선택')
-  })
-
-  /**
-   * `선택 안함` 은 레벨이 없는 상태다. 갈 수 있나를 잴 근거가 사라지므로 뒤 단계를 걷는다.
-   *
-   * 안 걷으면 그대로 남는다. 레벨을 모를 때 지역 목록이 **전부** 서기 때문에(결정 6) 지금 지역이
-   * 언제나 그 목록 안에 들어 통과해 버린다.
-   */
-  it('캐릭터를 `선택 안함` 으로 되돌리면 셋이 다 풀린다', async () => {
-    const view = await 그리기()
-    await 밤의길3(view)
-    expect(view.getByTestId('income-sheet-chain-badge-사냥터')).toHaveTextContent('밤의 길 3')
-
-    await 아이디로누르기(view, 'income-sheet-chain-badge-캐릭터')
-    await 아이디로누르기(view, 'income-sheet-chain-option-')
-
-    expect(view.queryByTestId('income-sheet-chain-badge-캐릭터')).toBeNull()
-    expect(view.queryByTestId('income-sheet-chain-badge-지역')).toBeNull()
-    expect(view.queryByTestId('income-sheet-chain-badge-사냥터')).toBeNull()
-    expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent(
-      '캐릭터 · 지역 · 사냥터 선택',
-    )
   })
 
   /**
@@ -1401,6 +1382,7 @@ describe('사냥 계산기', () => {
         sojae: 2,
         fragments: 35,
         fragmentPrice: 8_000_000,
+        fragmentsDeferred: false,
       },
     })
   })
@@ -1429,6 +1411,7 @@ describe('사냥 계산기', () => {
           sojae: 3,
           fragments: 7,
           fragmentPrice: 8_000_000,
+          fragmentsDeferred: false,
           mesoRate: 161,
         },
         memo: null,
@@ -1464,6 +1447,7 @@ describe('사냥 계산기', () => {
           sojae: 2,
           fragments: 0,
           fragmentPrice: 0,
+          fragmentsDeferred: false,
           mesoRate: 0,
         },
       },
@@ -1594,9 +1578,11 @@ describe('사냥 수동 입력', () => {
   it('누르는 자리가 줄 전체로 안 늘어난다', async () => {
     const view = await 그리기({}, 'hunting')
 
-    expect(flattenStyle(view.getByLabelText('획득 메소 직접 입력').props.style).alignSelf).toBe(
-      'flex-start',
-    )
+    // 체크박스 둘이 가로줄의 자식이라 각자 글자 폭만 차지한다.
+    const 줄 = view.getByTestId('income-sheet-hunt-toggles')
+    expect(flattenStyle(줄.props.style).flexDirection).toBe('row')
+    expect(within(줄).getByLabelText('획득 메소 직접 입력')).toBeTruthy()
+    expect(within(줄).getByLabelText('조각 가격 나중에 입력')).toBeTruthy()
   })
 
   it('켜면 계산기 줄이 걷히고 획득 메소가 치는 칸이 된다 (결정 1)', async () => {
@@ -1661,6 +1647,7 @@ describe('사냥 수동 입력', () => {
     const view = await 그리기({ onSave }, 'hunting')
     await 직접입력켜기(view)
 
+    await 사슬고르기(view, 'ocid-1')
     await 아이디로치기(view, 'income-sheet-hunt-meso', '1000000000')
     await 아이디로치기(view, 'income-sheet-fragments', '83')
     await 아이디로치기(view, 'income-sheet-fragment-price', '8000000')
@@ -1672,7 +1659,13 @@ describe('사냥 수동 입력', () => {
         item: null,
         itemKey: null,
         mesoAmount: 1_664_000_000,
-        hunt: { mode: 'manual', typedMeso: 1_000_000_000, fragments: 83, fragmentPrice: 8_000_000 },
+        hunt: {
+          mode: 'manual',
+          typedMeso: 1_000_000_000,
+          fragments: 83,
+          fragmentPrice: 8_000_000,
+          fragmentsDeferred: false,
+        },
       }),
     )
   })
@@ -1696,6 +1689,8 @@ describe('사냥 수동 입력', () => {
     const onSave = jest.fn()
     const view = await 그리기({ editing: 옛사냥행, onDelete: jest.fn(), onSave })
 
+    // 옛 행은 캐릭터가 비어 있다. 사냥 기록은 캐릭터를 골라야 다시 저장된다.
+    await 사슬고르기(view, 'ocid-1')
     await 아이디로치기(view, 'income-sheet-hunt-meso', '900000000')
     await 이름으로누르기(view, '수정')
 
@@ -1704,9 +1699,398 @@ describe('사냥 수동 입력', () => {
         item: '엘리시움',
         itemKey: null,
         mesoAmount: 900_000_000,
-        hunt: { mode: 'manual', typedMeso: 900_000_000, fragments: 0, fragmentPrice: 0 },
+        hunt: { mode: 'manual', typedMeso: 900_000_000, fragments: 0, fragmentPrice: 0, fragmentsDeferred: false },
       }),
     )
+  })
+})
+
+/**
+ * 조각 가격 나중에 입력(이슈 #440). 조각을 아직 안 팔았으면 가격 없이 개수만 적고 판 날에 정산한다.
+ *
+ * 켜면 가격 칸이 꺼지고 비고, 조각 값이 합계에서 빠진다. 체크 상태는 시트가 들어 모드를 옮겨도
+ * 안 풀린다.
+ */
+describe('조각 가격 나중에 입력', () => {
+  async function 나중에입력켜기(view: Rendered): Promise<void> {
+    await 이름으로누르기(view, '조각 가격 나중에 입력')
+  }
+
+  async function 밤의길3(view: Rendered): Promise<void> {
+    await 사슬고르기(view, 'ocid-1')
+    await 사슬고르기(view, 'tallahart')
+    await 사슬고르기(view, 'tallahart_road_of_night_3')
+  }
+
+  function 사냥기록(hunt: NonNullable<IncomeRecord['hunt']>, mesoAmount: number): IncomeRecord {
+    return {
+      ...옛사냥행,
+      id: 'inc-deferred',
+      ocid: 'ocid-1',
+      item: hunt.mode === 'calculator' ? '밤의 길 3' : null,
+      itemKey: hunt.mode === 'calculator' ? 'tallahart_road_of_night_3' : null,
+      mesoAmount,
+      hunt,
+    }
+  }
+
+  it('새 사냥에서 획득 메소 직접 입력 옆에 서고 꺼진 채 시작한다', async () => {
+    const view = await 그리기({}, 'hunting')
+
+    expect(view.getByLabelText('조각 가격 나중에 입력').props.accessibilityState?.checked).toBe(false)
+  })
+
+  it.each(['item_sale', 'etc'] as const)('%s 에는 안 선다', async (갈래) => {
+    const view = await 그리기({}, 갈래)
+
+    expect(view.queryByLabelText('조각 가격 나중에 입력')).toBeNull()
+  })
+
+  it('계산기에서 켜면 가격 칸이 꺼지고 비며 조각 값이 합계에서 빠진다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+    await 밤의길3(view)
+    await 아이디로치기(view, 'income-sheet-fragments', '12')
+    await 아이디로치기(view, 'income-sheet-fragment-price', '8000000')
+
+    await 나중에입력켜기(view)
+
+    expect(view.getByTestId('income-sheet-fragment-price').props.editable).toBe(false)
+    expect(view.getByTestId('income-sheet-fragment-price').props.value).toBe('')
+    await 이름으로누르기(view, '저장')
+    // 밤의 길 3 · 1소재의 메소 21,168,000 만 선다. 조각 12개는 개수로만 남는다.
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      mesoAmount: 21_168_000,
+      hunt: { fragments: 12, fragmentPrice: 0, fragmentsDeferred: true },
+    })
+  })
+
+  it('수동 입력에서 켜면 합계가 친 메소뿐이다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave }, 'hunting')
+    await 이름으로누르기(view, '획득 메소 직접 입력')
+    await 사슬고르기(view, 'ocid-1')
+    await 아이디로치기(view, 'income-sheet-hunt-meso', '1000000000')
+    await 아이디로치기(view, 'income-sheet-fragments', '83')
+    await 아이디로치기(view, 'income-sheet-fragment-price', '8000000')
+
+    await 나중에입력켜기(view)
+
+    expect(view.getByTestId('income-sheet-fragment-price').props.editable).toBe(false)
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('10억')
+    await 이름으로누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      mesoAmount: 1_000_000_000,
+      hunt: { mode: 'manual', typedMeso: 1_000_000_000, fragments: 83, fragmentPrice: 0, fragmentsDeferred: true },
+    })
+  })
+
+  it('끄면 가격 칸이 다시 켜지고 켜기 전 가격은 안 돌아온다', async () => {
+    const view = await 그리기({}, 'hunting')
+    await 아이디로치기(view, 'income-sheet-fragment-price', '8000000')
+
+    await 나중에입력켜기(view)
+    await 나중에입력켜기(view)
+
+    expect(view.getByTestId('income-sheet-fragment-price').props.editable).not.toBe(false)
+    expect(view.getByTestId('income-sheet-fragment-price').props.value).toBe('')
+  })
+
+  /** 획득 메소 직접 입력을 바꾸면 폼이 새로 심긴다. 체크 상태가 폼 안에 있으면 그때 풀린다. */
+  it('획득 메소 직접 입력을 바꿔도 켠 것이 안 풀린다', async () => {
+    const view = await 그리기({}, 'hunting')
+    await 나중에입력켜기(view)
+
+    await 이름으로누르기(view, '획득 메소 직접 입력')
+
+    expect(view.getByLabelText('조각 가격 나중에 입력').props.accessibilityState?.checked).toBe(true)
+    expect(view.getByTestId('income-sheet-fragment-price').props.editable).toBe(false)
+  })
+
+  /** 이 값이 빠진 채 열리면 저장만 해도 지금 판매로 바뀌어 보관에서 빠진다. */
+  it('수정으로 열면 저장된 값으로 켜진 채 열리고, 그대로 저장하면 켜진 채 남는다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({
+      editing: 사냥기록(
+        {
+          mode: 'calculator',
+          characterLevel: 294,
+          missedMobs: 0,
+          boosts: [],
+          sojae: 1,
+          fragments: 40,
+          fragmentPrice: 0,
+          fragmentsDeferred: true,
+          mesoRate: 0,
+        },
+        21_168_000,
+      ),
+      onDelete: jest.fn(),
+      onSave,
+    })
+
+    // 모드는 못 바꾸므로 직접 입력 체크박스는 없고 이 체크박스만 선다.
+    expect(view.queryByLabelText('획득 메소 직접 입력')).toBeNull()
+    expect(view.getByLabelText('조각 가격 나중에 입력').props.accessibilityState?.checked).toBe(true)
+    expect(view.getByTestId('income-sheet-fragment-price').props.editable).toBe(false)
+
+    await 이름으로누르기(view, '수정')
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      mesoAmount: 21_168_000,
+      hunt: { fragments: 40, fragmentPrice: 0, fragmentsDeferred: true },
+    })
+  })
+
+  it('지금 판매로 적힌 기록을 열어 켜면 나중에 입력으로 저장된다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({
+      editing: 사냥기록(
+        { mode: 'manual', typedMeso: 500_000_000, fragments: 10, fragmentPrice: 7_000_000, fragmentsDeferred: false },
+        570_000_000,
+      ),
+      onDelete: jest.fn(),
+      onSave,
+    })
+    expect(view.getByTestId('income-sheet-fragment-price').props.value).toBe('7000000')
+
+    await 나중에입력켜기(view)
+    await 이름으로누르기(view, '수정')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      mesoAmount: 500_000_000,
+      hunt: { mode: 'manual', typedMeso: 500_000_000, fragments: 10, fragmentPrice: 0, fragmentsDeferred: true },
+    })
+  })
+})
+
+/**
+ * 사냥 기록은 캐릭터를 골라야 저장된다(2026-09-16 사용자 지정). 솔 에르다 조각 보관이 캐릭터별이라
+ * 캐릭터 없는 사냥 기록의 조각은 갈 곳이 없다.
+ */
+describe('사냥 기록의 캐릭터', () => {
+  it('계산기는 사냥터를 골라도 캐릭터가 없으면 저장이 꺼진다', async () => {
+    const onSave = jest.fn()
+    // 기억한 사냥 자리의 캐릭터가 추적 목록에 없다. 자동 입력이 지역과 사냥터만 세운다.
+    const view = await 그리기({
+      onSave,
+      lastHuntSelection: { ocid: 'ocid-없음', groundKey: 'tallahart_road_of_night_3' },
+    })
+    await 아이디로누르기(view, 'income-sheet-autofill')
+    expect(view.getByTestId('income-sheet-chain-badge-사냥터')).toHaveTextContent('밤의 길 3')
+    expect(view.queryByTestId('income-sheet-chain-badge-캐릭터')).toBeNull()
+
+    await 이름으로누르기(view, '저장')
+    expect(onSave).not.toHaveBeenCalled()
+  })
+
+  it('수동 입력은 획득 메소를 쳐도 캐릭터가 없으면 저장이 꺼진다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave }, 'hunting')
+    await 이름으로누르기(view, '획득 메소 직접 입력')
+    await 아이디로치기(view, 'income-sheet-hunt-meso', '1000000000')
+
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+    await 사슬고르기(view, 'ocid-2')
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).not.toBe(true)
+  })
+
+  it('수동 입력의 캐릭터 목록에 `선택 안함` 이 없다', async () => {
+    const view = await 그리기({}, 'hunting')
+    await 이름으로누르기(view, '획득 메소 직접 입력')
+
+    await 아이디로누르기(view, 'income-sheet-chain-placeholder-trigger')
+
+    expect(view.getByTestId('income-sheet-chain-option-ocid-1')).toBeTruthy()
+    expect(view.queryByTestId('income-sheet-chain-option-')).toBeNull()
+  })
+
+  it('캐릭터 없이 적힌 옛 사냥 기록은 캐릭터가 빈 채 열리고 저장이 꺼져 있다', async () => {
+    const view = await 그리기({ editing: 옛사냥행, onDelete: jest.fn() })
+
+    expect(view.queryByTestId('income-sheet-chain-badge-캐릭터')).toBeNull()
+    expect(view.getByLabelText('수정').props.accessibilityState?.disabled).toBe(true)
+  })
+})
+
+/**
+ * 솔 에르다 조각 정산(이슈 #441). 사냥에서 나중에 입력으로 보관한 조각을 판 날에 적는다.
+ *
+ * 보관은 캐릭터별이고 고른 날까지 쌓인 것만 센다. 시트는 저장소를 모르므로 화면이 넘긴 함수로 읽는다.
+ */
+describe('솔 에르다 조각 정산', () => {
+  function 정산시트(overrides: Partial<React.ComponentProps<typeof IncomeSheet>> = {}): Promise<Rendered> {
+    return 그리기(overrides, 'sol_erda_fragment')
+  }
+
+  const 정산기록: IncomeRecord = {
+    ...옛사냥행,
+    id: 'inc-settle',
+    ocid: 'ocid-1',
+    category: 'sol_erda_fragment',
+    item: null,
+    mesoAmount: 400_000_000,
+    quantity: 50,
+  }
+
+  it('캐릭터 목록에 `선택 안함` 이 없다', async () => {
+    const view = await 정산시트()
+
+    await 아이디로누르기(view, 'income-sheet-chain-placeholder-trigger')
+
+    expect(view.getByTestId('income-sheet-chain-option-ocid-1')).toBeTruthy()
+    expect(view.queryByTestId('income-sheet-chain-option-')).toBeNull()
+  })
+
+  it('캐릭터를 고르기 전에는 보관을 안 읽고 저장이 꺼져 있다', async () => {
+    const loadFragmentStorage = jest.fn(async () => 120)
+    const view = await 정산시트({ loadFragmentStorage })
+
+    expect(loadFragmentStorage).not.toHaveBeenCalled()
+    expect(view.getByTestId('income-sheet-fragment-storage')).toHaveTextContent('-')
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  /** 판 개수를 치면서 상한인 보관을 같은 줄에서 본다(사용자 지정 2026-09-16). */
+  it('보관 중과 판 개수가 한 줄에 선다', async () => {
+    const view = await 정산시트()
+
+    const 줄 = view.getByTestId('income-sheet-settle-count-row')
+    expect(flattenStyle(줄.props.style).flexDirection).toBe('row')
+    expect(within(줄).getByTestId('income-sheet-fragment-storage')).toBeTruthy()
+    expect(within(줄).getByTestId('income-sheet-settle-count')).toBeTruthy()
+  })
+
+  it('캐릭터를 고르면 그 캐릭터의 고른 날까지 보관을 센다', async () => {
+    const loadFragmentStorage = jest.fn(async () => 120)
+    const view = await 정산시트({ loadFragmentStorage })
+
+    await 사슬고르기(view, 'ocid-1')
+
+    expect(loadFragmentStorage).toHaveBeenLastCalledWith('ocid-1', '2026-08-23', undefined)
+    expect(view.getByTestId('income-sheet-fragment-storage')).toHaveTextContent('120개')
+  })
+
+  it('판 개수 × 개당 가격이 금액이고 판 날에 적힌다', async () => {
+    const onSave = jest.fn()
+    const view = await 정산시트({ onSave, loadFragmentStorage: async () => 120 })
+    await 사슬고르기(view, 'ocid-1')
+
+    await 아이디로치기(view, 'income-sheet-settle-count', '50')
+    await 아이디로치기(view, 'income-sheet-settle-price', '8000000')
+
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('4억')
+    await 이름으로누르기(view, '저장')
+    expect(onSave).toHaveBeenCalledWith({
+      ocid: 'ocid-1',
+      earnedOn: '2026-08-23',
+      category: 'sol_erda_fragment',
+      item: null,
+      itemKey: null,
+      mesoAmount: 400_000_000,
+      // 수수료 줄이 없다. 수수료를 뗀 값을 원하면 개당 가격에 뗀 값을 친다.
+      saleFeePercent: null,
+      saleFeeMeso: null,
+      pointAmount: null,
+      pointPer100mMeso: null,
+      cashAmount: null,
+      quantity: 50,
+      hunt: null,
+      memo: null,
+    })
+  })
+
+  it('판 개수가 보관을 넘기면 저장이 꺼진다. 보관만큼은 팔 수 있다', async () => {
+    const view = await 정산시트({ loadFragmentStorage: async () => 120 })
+    await 사슬고르기(view, 'ocid-1')
+    await 아이디로치기(view, 'income-sheet-settle-price', '8000000')
+
+    await 아이디로치기(view, 'income-sheet-settle-count', '121')
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+
+    await 아이디로치기(view, 'income-sheet-settle-count', '120')
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).not.toBe(true)
+  })
+
+  it('판 개수나 개당 가격이 비면 저장이 꺼진다', async () => {
+    const view = await 정산시트({ loadFragmentStorage: async () => 120 })
+    await 사슬고르기(view, 'ocid-1')
+
+    await 아이디로치기(view, 'income-sheet-settle-count', '50')
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+
+    await 아이디로치기(view, 'income-sheet-settle-count', '')
+    await 아이디로치기(view, 'income-sheet-settle-price', '8000000')
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  /** 0 으로 맞추지 않아 오차가 드러난다. */
+  it('보관이 0 이하면 없다고 적고 저장이 꺼진다. 마이너스도 그대로 보인다', async () => {
+    const view = await 정산시트({ loadFragmentStorage: async () => -5 })
+    await 사슬고르기(view, 'ocid-1')
+    await 아이디로치기(view, 'income-sheet-settle-count', '1')
+    await 아이디로치기(view, 'income-sheet-settle-price', '8000000')
+
+    expect(view.getByTestId('income-sheet-fragment-storage')).toHaveTextContent('-5개')
+    expect(view.getByText('보관 중인 조각이 없습니다')).toBeTruthy()
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  /** 못 읽은 것을 없다고 적으면 보관이 있는데도 없다는 말이 된다. */
+  it('보관을 못 읽으면 개수 자리가 비고 없다고 안 적는다', async () => {
+    const view = await 정산시트({ loadFragmentStorage: async () => null })
+    await 사슬고르기(view, 'ocid-1')
+
+    expect(view.getByTestId('income-sheet-fragment-storage')).toHaveTextContent('-')
+    expect(view.queryByText('보관 중인 조각이 없습니다')).toBeNull()
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  it('날짜를 바꾸면 보관을 다시 센다', async () => {
+    const loadFragmentStorage = jest.fn(async (_ocid: string, dateKey: string) =>
+      dateKey === '2026-08-22' ? 30 : 120,
+    )
+    const view = await 정산시트({ loadFragmentStorage })
+    await 사슬고르기(view, 'ocid-1')
+
+    await 아이디로누르기(view, 'income-sheet-date-prev')
+
+    expect(loadFragmentStorage).toHaveBeenLastCalledWith('ocid-1', '2026-08-22', undefined)
+    expect(view.getByTestId('income-sheet-fragment-storage')).toHaveTextContent('30개')
+  })
+
+  it('캐릭터를 바꾸면 그 캐릭터의 보관을 센다', async () => {
+    const loadFragmentStorage = jest.fn(async (ocid: string) => (ocid === 'ocid-2' ? 40 : 80))
+    const view = await 정산시트({ loadFragmentStorage })
+    await 사슬고르기(view, 'ocid-1')
+    expect(view.getByTestId('income-sheet-fragment-storage')).toHaveTextContent('80개')
+
+    await 사슬고르기(view, 'ocid-2')
+
+    expect(view.getByTestId('income-sheet-fragment-storage')).toHaveTextContent('40개')
+  })
+
+  /** 지금 보관만 보면 보관을 다 판 기록은 열어서 저장만 해도 막힌다. */
+  it('수정으로 열면 이 기록을 뺀 보관을 세고 판 개수와 단가를 되짚는다', async () => {
+    const onSave = jest.fn()
+    const loadFragmentStorage = jest.fn(async () => 50)
+    const view = await 그리기({ editing: 정산기록, onDelete: jest.fn(), onSave, loadFragmentStorage })
+
+    expect(view.getByTestId('income-sheet-title')).toHaveTextContent('솔 에르다 조각')
+    expect(loadFragmentStorage).toHaveBeenLastCalledWith('ocid-1', '2026-08-23', 'inc-settle')
+    expect(view.getByTestId('income-sheet-fragment-storage')).toHaveTextContent('50개')
+    expect(view.getByTestId('income-sheet-settle-count').props.value).toBe('50')
+    expect(view.getByTestId('income-sheet-settle-price').props.value).toBe('8000000')
+
+    await 이름으로누르기(view, '수정')
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ mesoAmount: 400_000_000, quantity: 50, category: 'sol_erda_fragment' }),
+    )
+  })
+
+  it('조각 가격 나중에 입력 체크박스는 안 선다', async () => {
+    const view = await 정산시트()
+
+    expect(view.queryByLabelText('조각 가격 나중에 입력')).toBeNull()
   })
 })
 
@@ -1965,6 +2349,7 @@ describe('메소 획득량', () => {
           sojae: 1,
           fragments: 0,
           fragmentPrice: 0,
+          fragmentsDeferred: false,
           mesoRate: 161,
         },
         memo: null,

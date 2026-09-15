@@ -224,17 +224,32 @@ export function huntingMesoOf(input: HuntingMesoInput): number {
   return Math.floor(perLevelMean * (1 + input.boostPercent / 100) * input.boostMultiplier)
 }
 
-export interface HuntingTotalInput extends Omit<HuntingMesoInput, 'ground'> {
-  /** `null` = 아직 안 골랐다. 그때도 조각 값은 선다. 계산기가 반쯤 찬 상태다. */
-  ground: HuntingGround | null
+/** 조각 줄의 입력. 사냥 폼 둘이 같은 모양으로 넘긴다. */
+export interface HuntFragmentsInput {
   /** 솔 에르다 조각 **획득 개수**. 앱이 추정하지 않는다. */
   fragments: number
   /** 조각 개당 메소. */
   fragmentPrice: number
+  /** 조각 가격 나중에 입력. 켜져 있으면 조각을 판 날에 정산하므로 조각 값이 합계에서 빠진다. */
+  fragmentsDeferred: boolean
 }
 
-/** 큰 숫자에 서는 값. **메소 + 조각 × 개당 가격**이다. */
+/**
+ * 사냥 기록의 합계. **획득 메소 + 조각 × 개당 가격**이고, 나중에 입력이면 획득 메소뿐이다.
+ *
+ * 계산기와 수동 입력이 이 함수 하나를 부른다. 폼마다 따로 세면 한쪽만 고쳐져 두 폼의 합계가 갈린다.
+ */
+export function huntTotalOf(meso: number, input: HuntFragmentsInput): number {
+  return input.fragmentsDeferred ? meso : meso + input.fragments * input.fragmentPrice
+}
+
+export interface HuntingTotalInput extends Omit<HuntingMesoInput, 'ground'>, HuntFragmentsInput {
+  /** `null` = 아직 안 골랐다. 그때도 조각 값은 선다. 계산기가 반쯤 찬 상태다. */
+  ground: HuntingGround | null
+}
+
+/** 계산기의 큰 숫자에 서는 값. 사냥터가 세는 메소에 `huntTotalOf` 를 건다. */
 export function huntingTotalOf(input: HuntingTotalInput): number {
   const meso = input.ground === null ? 0 : huntingMesoOf({ ...input, ground: input.ground })
-  return meso + input.fragments * input.fragmentPrice
+  return huntTotalOf(meso, input)
 }

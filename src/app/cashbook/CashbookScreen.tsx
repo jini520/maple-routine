@@ -82,6 +82,7 @@ import {
   dayTotalsOf,
   loadLastPointRate,
   loadLastHuntSelection,
+  loadFragmentStorage,
   loadTrackedCharacters,
   recordIncome,
   recordSpend,
@@ -1212,6 +1213,7 @@ export function CashbookScreen(): React.JSX.Element {
           lastHuntSelection={lastHuntSelection}
           // 캐릭터의 메소 획득량. 시트는 `nexon/` 도 `storage/` 도 모른다.
           loadMesoRate={loadMesoRate}
+          loadFragmentStorage={loadFragmentStorage}
           dateKey={typeof sheet === 'object' ? sheet.record.earnedOn : selectedDateKey}
           todayDateKey={todayDateKey}
           editing={typeof sheet === 'object' ? sheet.record : undefined}

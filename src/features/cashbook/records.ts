@@ -36,6 +36,7 @@ import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { resolveDefeatDates } from '../boss-profit/defeat-dates'
 import {
   deleteIncomeRecord,
+  getFragmentStorage,
   getIncomeRecordsBetween,
   insertIncomeRecord,
   updateIncomeRecord,
@@ -909,7 +910,29 @@ export function recordCountLabelOf(entry: DayRecord): string | null {
   if (entry.kind === 'income' && entry.record.hunt?.mode === 'calculator') {
     return `${entry.record.hunt.sojae}재획`
   }
+  // 솔 에르다 조각 정산은 판 개수다. 사냥 줄의 재획이 서는 자리와 같다.
+  if (entry.kind === 'income' && entry.record.category === 'sol_erda_fragment' && entry.record.quantity !== null) {
+    return `${entry.record.quantity}개`
+  }
   return null
+}
+
+/**
+ * 한 캐릭터가 고른 날까지 보관 중인 솔 에르다 조각 개수. 정산 폼이 쓴다.
+ *
+ * 못 읽으면 `null` 이다. 0 으로 읽으면 보관이 있는데도 정산 폼이 없다고 적는다.
+ *
+ * @param excludeRecordId 수정 중인 정산 기록. 그 기록이 판 개수를 빼야 상한이 자기 몫을 포함한다.
+ */
+export function loadFragmentStorage(
+  ocid: string,
+  onOrBeforeDateKey: string,
+  excludeRecordId: string | undefined,
+): Promise<number | null> {
+  return withSqliteFallback<number | null>(
+    getFragmentStorage(ocid, onOrBeforeDateKey, excludeRecordId),
+    null,
+  )
 }
 
 /** 고치기. `recordedAt` 은 안 바뀐다. 시세를 기억하는 순서는 넣을 때와 같다. 성공한 뒤에만. */

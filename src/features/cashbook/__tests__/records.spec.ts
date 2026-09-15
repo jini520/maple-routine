@@ -8,6 +8,7 @@ jest.mock('../../../storage/income', () => ({
   deleteIncomeRecord: jest.fn(),
   getIncomeRecordsBetween: jest.fn(),
   getIncomeMonthRows: jest.fn(),
+  getFragmentStorage: jest.fn(),
 }))
 jest.mock('../../../storage/spend', () => ({
   insertSpendRecord: jest.fn(),
@@ -976,6 +977,65 @@ describe('사냥 줄의 이름과 셈', () => {
 
     expect(recordTitleOf(rows[0])).toBe('루디 · 사냥')
     expect(recordCountLabelOf(rows[0])).toBeNull()
+  })
+})
+
+/**
+ * 솔 에르다 조각 정산 줄은 `캐릭터 · 솔 에르다 조각` + `n개` 다(사용자 지정). 개수는 사냥 줄의 `n재획` 이
+ * 서는 자리다.
+ */
+describe('솔 에르다 조각 정산 줄', () => {
+  const 정산기록 = {
+    id: 'inc-s',
+    ocid: 'ocid-1',
+    earnedOn: '2026-08-21',
+    category: 'sol_erda_fragment' as const,
+    item: null,
+    itemKey: null,
+    mesoAmount: 400_000_000,
+    saleFeePercent: null,
+    saleFeeMeso: null,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    cashAmount: null,
+    hunt: null,
+    quantity: 50,
+    memo: null,
+    recordedAt: '2026-08-21T01:00:00.000Z',
+  }
+
+  it('이름은 캐릭터 · 솔 에르다 조각이고 판 개수를 센다', async () => {
+    income.getIncomeRecordsBetween.mockResolvedValue([정산기록])
+    const { loadDayRecords, recordCountLabelOf, recordTitleOf, recordMesoOf } =
+      require('../records') as typeof import('../records')
+
+    const rows = await loadDayRecords('2026-08-21')
+
+    expect(recordTitleOf(rows[0])).toBe('루디 · 솔 에르다 조각')
+    expect(recordCountLabelOf(rows[0])).toBe('50개')
+    expect(recordMesoOf(rows[0])).toBe(400_000_000)
+  })
+})
+
+/**
+ * 정산 폼이 보는 보관 개수. 시트는 저장소를 모르므로 이 층이 감싸 화면에 넘긴다.
+ *
+ * 못 읽으면 `null` 이다. 0 으로 읽으면 보관이 있는데도 없다고 적는다.
+ */
+describe('loadFragmentStorage', () => {
+  it('캐릭터 · 고른 날 · 뺄 기록 id 를 그대로 넘긴다', async () => {
+    income.getFragmentStorage.mockResolvedValue(120)
+    const { loadFragmentStorage } = require('../records') as typeof import('../records')
+
+    await expect(loadFragmentStorage('ocid-1', '2026-09-10', 'inc-s')).resolves.toBe(120)
+    expect(income.getFragmentStorage).toHaveBeenCalledWith('ocid-1', '2026-09-10', 'inc-s')
+  })
+
+  it('못 읽으면 null 이다', async () => {
+    income.getFragmentStorage.mockRejectedValue(new Error('db'))
+    const { loadFragmentStorage } = require('../records') as typeof import('../records')
+
+    await expect(loadFragmentStorage('ocid-1', '2026-09-10', undefined)).resolves.toBeNull()
   })
 })
 

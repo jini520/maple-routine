@@ -155,6 +155,8 @@ const CASHBOOK_ROW_ICON_BY_KEY: Record<string, string> = {
   'enhancement:additional_potential': 'additional_potential_reset.png',
   // 손입력 갈래. 열쇠는 `기록 종류:갈래 key` 라 수익 · 지출의 같은 갈래 key(`etc`)가 안 겹친다.
   'income:hunting': 'wealth_acquisition_potion_small.webp',
+  // 정산 줄은 시트 첫 화면의 솔 에르다 조각 카드와 같은 그림이다.
+  'income:sol_erda_fragment': 'sol_erda_fragment.webp',
   // 기타 둘은 두 시트 첫 화면의 기타 카드와 같은 메소 주머니다. 지출의 목록 갈래는 여기 없고 고른 타일의 그림을 쓴다.
   'income:etc': 'meso.webp',
   'spend:etc': 'meso.webp',

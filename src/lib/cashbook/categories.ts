@@ -26,11 +26,15 @@ export type SpendCategoryKey = (typeof SPEND_CATEGORIES)[number]['key']
 /**
  * 수익의 갈래. **차례가 곧 화면**이고 `[0]` 이 기본 갈래다.
  *
- * 사냥이 앞인 것은 계산기라 손이 가장 많이 가서이고, 기타는 안전망이라 끝이다. 기타가 없으면 셋으로
+ * 사냥이 앞인 것은 계산기라 손이 가장 많이 가서이고, 기타는 안전망이라 끝이다. 기타가 없으면 나머지로
  * 안 잡히는 수입이 기록 자체를 못 남긴다.
+ *
+ * 솔 에르다 조각은 사냥에서 가격을 나중에 입력으로 보관한 조각을 판 날에 정산하는 갈래라 사냥 바로
+ * 뒤다. 이름이 기록의 `category` 칸에 글자로 박히므로 바꾸면 기존 기록을 옮겨야 한다.
  */
 export const INCOME_CATEGORIES = [
   { key: 'hunting', name: '사냥', icon: 'wealth_acquisition_potion_small.webp' },
+  { key: 'sol_erda_fragment', name: '솔 에르다 조각', icon: 'sol_erda_fragment.webp' },
   { key: 'item_sale', name: '아이템 판매', icon: 'dark_boss_pendant.png' },
   { key: 'etc', name: '기타', icon: 'meso.webp' },
 ] as const
