@@ -54,15 +54,18 @@ export function potentialResetCost(
  *
  * @param fromStar 시도 **전** 성수(`before_starforce_count`)
  * @param discountRate 백분율. 반올림 **뒤**에 깎는 것이라 순서를 바꾸면 값이 어긋난다.
+ * @param destroyDefence 파괴 방지를 켰나. 추가분은 할인 전 값에 붙고 할인을 안 받는다.
  */
 export function starforceCost(
   itemLevel: number,
   fromStar: number,
   discountRate = 0,
+  destroyDefence = false,
 ): number | null {
   const step = STAR_STEPS.get(fromStar)
   if (step === undefined) return null
   const raw = 1000 + itemLevel ** 3 * (fromStar + 1) ** step.exponent / step.divisor
   const rounded = Math.round(raw / 100) * 100
-  return Math.floor((rounded * (100 - discountRate)) / 100)
+  const surcharge = destroyDefence ? (rounded * prices.starforce.destroyDefence.surchargePercent) / 100 : 0
+  return Math.floor((rounded * (100 - discountRate)) / 100) + surcharge
 }

@@ -74,7 +74,9 @@ function starforceMeso(
   const fromStar = field(entry.payload, 'before_starforce_count')
   if (level === null || typeof fromStar !== 'number') return null
 
-  return starforceCost(level, fromStar, discountRate(entry.payload))
+  // 모르는 값이면 추가분 없이 센다. 시도 비용은 확실히 들었다.
+  const destroyDefence = text(entry.payload, 'destroy_defence') === '파괴 방지 적용'
+  return starforceCost(level, fromStar, discountRate(entry.payload), destroyDefence)
 }
 
 function potentialMeso(entry: EnhancementHistoryEntry): number | null {
