@@ -15,6 +15,11 @@ export type NoticeKind = 'app' | 'game' | 'update' | 'event' | 'cashshop'
 
 export const NOTICE_KINDS: readonly NoticeKind[] = ['app', 'game', 'update', 'event', 'cashshop']
 
+/** 넥슨 Open API 가 주는 분류. `app` 은 우리 서버가 준다. */
+export type NexonNoticeKind = Exclude<NoticeKind, 'app'>
+
+export const NEXON_NOTICE_KINDS: readonly NexonNoticeKind[] = ['game', 'update', 'event', 'cashshop']
+
 export function isNoticeKind(value: unknown): value is NoticeKind {
   return typeof value === 'string' && (NOTICE_KINDS as readonly string[]).includes(value)
 }
@@ -54,7 +59,18 @@ export interface Notice {
    * 된다. `fetchNotice` 로 한 건을 받을 때만 온다.
    */
   blocks?: NoticeBlock[]
+  /** 이벤트 · 캐시샵 배너 그림. 넥슨 목록에서 읽는 앱 쪽 값이라 서버 계약에는 없다. */
+  thumbnailUrl?: string
+  /** 이벤트 · 판매 기간(ISO UTC). 넥슨 목록에서 읽고, 캐시샵 상시 판매는 둘 다 없다. */
+  startsAt?: string
+  endsAt?: string
 }
+
+/** 상세 조회의 답. 없다와 실패를 가른다. 없다는 사본에서 빼고, 실패는 사본을 그대로 둔다. */
+export type NoticeLookup =
+  | { status: 'found'; notice: Notice }
+  | { status: 'missing' }
+  | { status: 'failed' }
 
 /**
  * 켠 구독. **분류 하나가 토글 하나다.**

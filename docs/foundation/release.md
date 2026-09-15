@@ -432,11 +432,11 @@ TEST API KEY:
 
 [PERMISSIONS / THIRD PARTIES]
 - Notifications: optional, used only for NEXON notice alerts (game notices, update notices, Sunday Maple, cash shop). The app works fully if denied.
-- Network: NEXON Open API for game data, and our own server at mapleroutine.store for the notice list and detail (read-only GET, no user identifier in the request). Push delivery uses Firebase Cloud Messaging topics, so no device token or account is tied to a user on our side.
+- Network: NEXON Open API for game data and NEXON notices (game notices, updates, events, cash shop), and our own server at mapleroutine.store for the app notice list and detail (read-only GET, no user identifier in the request). Push delivery uses Firebase Cloud Messaging topics, so no device token or account is tied to a user on our side.
 - No ads in this version.
 - No user accounts and no analytics service. The API key and every record the user creates stay on the device.
 
-[AFFILIATION] Not affiliated with, endorsed by, or sponsored by NEXON Korea Corp. Uses only publicly documented read-only endpoints of NEXON Open API. The required attribution "Data based on NEXON Open API" is shown at the bottom of the 더보기 (More) tab.
+[AFFILIATION] Not affiliated with, endorsed by, or sponsored by NEXON Korea Corp. Uses only publicly documented read-only endpoints of NEXON Open API. The required attribution "Data based on NEXON Open API" is shown at the bottom of the Settings screen (gear icon at the top of the 더보기 (More) tab).
 
 [CONTACT] If the test key stops working during review, please email support.mapleroutine@gmail.com and we will send a replacement immediately.
 ```

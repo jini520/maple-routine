@@ -9,7 +9,7 @@
 // ④ 하단 버전은 실행 중인 OTA 번들이 아니라 빌드 시점 값이다.
 // ⑤ 캐릭터 관리 행의 계약은 셋뿐이다. 배지(단위 개), 누르면 그 화면을 민다, `openPicker` 로
 //    들어와도 같은 곳으로 민다. 조회·저장·401/429 배선은 `SettingsCharactersScreen` 이 갖는다.
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, waitFor } from '@testing-library/react-native'
 import { Linking, Platform } from 'react-native'
 
 import { loadCacheDataSizes } from '../../../features/settings/cache-data'
@@ -19,7 +19,6 @@ import { useContentSchedulerStore, type ContentSchedulerStore } from '../../../f
 import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
 import { THEME_NAMES } from '../../../lib/theme/theme-registry'
 
-import { useLiveUpdateStore } from '../../../features/live-update/store'
 import { __resetToastsForTest, useToastStore } from '../../../features/toast/store'
 import packageJson from '../../../../package.json'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
@@ -27,6 +26,9 @@ import { setHapticsPort } from '../../../native/ports'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { SettingsScreen } from '../SettingsScreen'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
+import { refreshNoticeKind } from '../../../features/notice/notice-feed'
+import { getNotices } from '../../../storage/notices'
+import type { Notice, NoticeKind } from '../../../types/notice'
 
 // 이름이 `mock` 으로 시작해야 한다. babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데
 // 그 접두사만 예외로 통과시킨다(스케줄러 화면 테스트와 같은 규칙).
@@ -41,6 +43,13 @@ jest.mock('../../../features/tracking-mode/store', () => ({ useTrackingModeStore
 // 저장소·SQLite 는 그 아래가 맡는다(CLAUDE.md CRITICAL).
 jest.mock('../../../features/settings/cache-data', () => ({ loadCacheDataSizes: jest.fn() }))
 jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation: jest.fn() }))
+// 소식은 사본을 먼저 그리고 분류마다 받은 것으로 바꾼다. 분류를 나누는 함수는 실물이다.
+jest.mock('../../../storage/notices', () => ({ __esModule: true, getNotices: jest.fn() }))
+jest.mock('../../../features/notice/notice-feed', () => ({
+  __esModule: true,
+  ...jest.requireActual('../../../features/notice/notice-feed'),
+  refreshNoticeKind: jest.fn(),
+}))
 
 // 저장은 컨텐츠 스케줄러 스토어의 액션을 그대로 부른다(세 번째 사본 금지).
 // 훅으로도(배지·저장) `getState` 로도 만지므로 둘 다 세운다.
@@ -77,6 +86,11 @@ jest.mock('@react-navigation/native', () => ({
   // 그것으로 읽으므로(최상단 이동 등록) 실물을 깔고 필요한 것만 덮는다.
   ...jest.requireActual('@react-navigation/native'),
   useRoute: () => ({ params: mockRouteParams }),
+  // `useFocusEffect` 는 내비게이션 컨텍스트를 요구한다. 마운트를 첫 포커스로 흉내 낸다.
+  useFocusEffect: (callback: () => void | (() => void)) => {
+    const react = require('react') as typeof import('react')
+    react.useEffect(callback, [callback])
+  },
 }))
 
 const mockedUseThemeStore = jest.mocked(useThemeStore)
@@ -121,17 +135,8 @@ function textsIn(node: AtomElement): string[] {
   return texts
 }
 
-/** 카드 안에 선 행 라벨들. 순서가 곧 화면 순서다. */
-// **소식이 맨 위다.** 이 페이지에서 유일하게 매일 바뀌는 것이고 나머지는 다 `가끔 한 번` 이라,
-// 자주 바뀌는 것을 아래 두면 사용자가 스크롤을 배워야 한다.
+/** 카드 안에 선 행 라벨들. 순서가 곧 화면 순서다. 소식은 행이 아니라 갈래로 펼친다. */
 const ROW_LABELS = [
-  // 앱 공지는 이 앱의 일이고 게임 공지는 넥슨의 일이다. 구독 스위치가 이미 둘로 갈려 있어,
-  // 읽는 자리만 하나로 묶으면 게임 공지만 켠 사용자가 켠 적 없는 앱 공지를 함께 본다.
-  '앱 공지사항',
-  '게임 공지사항',
-  '업데이트',
-  '이벤트',
-  '캐시샵',
   '기능 설명',
   '개발 노트',
   // 둘 다 앱을 떠나는 줄이다. 문의는 응원보다 자주 써서 위다.
@@ -139,6 +144,23 @@ const ROW_LABELS = [
   // 평생 한 번 누르는 것이라 맨 아래다.
   '개발자 응원하기(앱 리뷰)',
 ]
+
+/** 소식 갈래의 이름과 분류. 순서는 사용자가 정했다. */
+const SECTIONS: readonly [string, NoticeKind][] = [
+  ['앱 공지사항', 'app'],
+  ['진행 중인 이벤트', 'event'],
+  // 넥슨 캐시샵 공지는 캐시아이템 업데이트 소식이다.
+  ['캐시샵 업데이트', 'cashshop'],
+  ['게임 공지사항', 'game'],
+  ['업데이트', 'update'],
+]
+
+function notice(id: string, kind: NoticeKind, patch: Partial<Notice> = {}): Notice {
+  return { id, kind, title: `제목 ${id}`, body: '', publishedAt: '2026-09-15T00:00:00.000Z', ...patch }
+}
+
+const mockedGetNotices = jest.mocked(getNotices)
+const mockedRefresh = jest.mocked(refreshNoticeKind)
 
 function mockThemeStore(overrides: Partial<ReturnType<typeof useThemeStore>> = {}): void {
   mockedUseThemeStore.mockReturnValue({
@@ -192,6 +214,9 @@ beforeEach(() => {
   mockLoadContentTracked.mockResolvedValue(undefined)
   mockLoadBossTracked.mockResolvedValue(undefined)
   mockLoadProfitTracked.mockResolvedValue(undefined)
+  mockedGetNotices.mockResolvedValue([])
+  // 기본은 "영원히 받는 중". 받은 결과가 필요한 케이스만 따로 세운다.
+  mockedRefresh.mockReturnValue(new Promise(() => {}))
 })
 
 afterEach(() => {
@@ -210,26 +235,21 @@ describe('SettingsScreen', () => {
     expect(view.getByTestId('screen-scroll')).toBeTruthy()
   })
 
-  // 본화면은 카드 둘. **행은 5 → 6이 됐다**:
-  // 사용법 설명의 원천이 기능 카탈로그로 옮겨오면서 그 입구가 필요해졌다. `기능 설명`이
-  // `개발 노트` **위**인 것은 *"이 앱을 어떻게 쓰나"* 가 더 자주 묻는 질문이기 때문이다.
-  it('행이 정확히 9개이고 소식 → 읽을거리 → 문의 · 응원 순이다', async () => {
+  it('행이 정확히 4개이고 읽을거리 → 문의 · 응원 순이다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
 
     for (const label of ROW_LABELS) expect(view.getByText(label)).toBeTruthy()
     // 문의 · 응원 행만 오른쪽이 chevron 이 아니다. chevron 을 쓰면 다른 이동 행과 같은 약속을 하고는
     // 앱을 떠나 버린다.
-    expect(view.getAllByTestId('settings-row-chevron')).toHaveLength(ROW_LABELS.length - 2)
+    expect(view.getAllByTestId('settings-row-chevron')).toHaveLength(2)
     expect(view.getAllByTestId('settings-row-external')).toHaveLength(2)
   })
 
-  // **이 개편의 핵심.** 두 무리를 가르는 것은 카드 경계뿐이다. 한 카드에 다 넣는 시안은
-  // "성격이 다른 것이 한 덩어리로 읽힌다"는 문제를 그대로 둔다.
-  it('세 카드가 성질대로 갈린다', async () => {
+  it('두 카드가 성질대로 갈린다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
 
     const cards = view.getAllByTestId('settings-card')
-    expect(cards).toHaveLength(3)
+    expect(cards).toHaveLength(2)
 
     const labelsIn = (card: AtomElement): string[] =>
       ROW_LABELS.filter((label) => {
@@ -238,20 +258,10 @@ describe('SettingsScreen', () => {
         return node === card
       })
 
-    expect(labelsIn(cards[0])).toEqual([
-      '앱 공지사항',
-      '게임 공지사항',
-      '업데이트',
-      '이벤트',
-      '캐시샵',
-    ])
-    expect(labelsIn(cards[1])).toEqual(['기능 설명', '개발 노트'])
+    expect(labelsIn(cards[0])).toEqual(['기능 설명', '개발 노트'])
     // 앱을 떠나는 줄 둘이다. 후원 수단이 정해지면 그 자리에 다시 들어온다.
-    expect(labelsIn(cards[2])).toEqual(['문의하기', '개발자 응원하기(앱 리뷰)'])
+    expect(labelsIn(cards[1])).toEqual(['문의하기', '개발자 응원하기(앱 리뷰)'])
   })
-
-  // 화살표가 "값이 있는가"가 아니라 "누르면 무언가 열린다"를 말한다.
-  // 옛 배타(`rightContent ?? chevron`)에서는 값이 있는 행에서 화살표가 사라졌다.
 
   it.each([
     ['기능 설명', 'SettingsFeatureGuideList'],
@@ -262,21 +272,6 @@ describe('SettingsScreen', () => {
     await press(rowOf(view, label))
 
     expect(navigate).toHaveBeenCalledWith(route)
-  })
-
-  // 소식 행은 **자기 분류를 들고** 간다. 목록 화면이 그것만 그리고 제목도 그 이름을 쓴다.
-  it.each([
-    ['앱 공지사항', ['app']],
-    ['게임 공지사항', ['game']],
-    ['업데이트', ['update']],
-    ['이벤트', ['event']],
-    ['캐시샵', ['cashshop']],
-  ])('"%s" 행은 그 분류로 목록을 연다', async (label, kinds) => {
-    const view = await renderOverlay(<SettingsScreen />)
-
-    await press(rowOf(view, label))
-
-    expect(navigate).toHaveBeenCalledWith('SettingsNotices', { kinds, title: label })
   })
 
   // 후원 수단을 아직 안 정했다. 누를 수 있게 그려 놓고 아무 일도 안 하는 행은 고장으로 읽힌다.
@@ -358,34 +353,114 @@ describe('SettingsScreen', () => {
 
   // 셋 다 `/settings/account-data` 로 내려갔다. 되돌아오면 값을 고르는 카드가 다시 혼종이 된다.
 
-  it('하단에 앱 버전·카피라이트·NEXON Open API 출처 문구·비제휴 고지를 표시한다', async () => {
+  // 버전 · 출처 표기는 설정 화면 맨 아래로 갔다. 소식 갈래로 길어진 이 화면 끝에 두면 멀리 밀린다.
+  it('고지 블록을 두지 않는다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
 
-    expect(view.getByText(`v${packageJson.version}`)).toBeTruthy()
-    expect(view.getByText(/©\s*\d{4}\s*메이플 루틴/)).toBeTruthy()
-    expect(view.getByText('Data based on NEXON Open API')).toBeTruthy()
-    expect(view.getByText('Maple Routine is not associated with NEXON Korea')).toBeTruthy()
+    expect(view.queryByTestId('settings-footer')).toBeNull()
+    expect(view.queryByText('Data based on NEXON Open API')).toBeNull()
   })
+})
 
-  // package.json 을 바로 읽으면 스토어 바이너리가 app.json 만 올렸을 때 옛 버전이 보인다.
-  it('하단 버전은 package.json 이 아니라 도는 번들의 버전이다', async () => {
-    useLiveUpdateStore.setState({ currentVersion: '9.9.9' })
-    try {
-      const view = await renderOverlay(<SettingsScreen />)
-
-      expect(view.getByText('v9.9.9')).toBeTruthy()
-    } finally {
-      useLiveUpdateStore.setState({ currentVersion: null })
-    }
-  })
-
-  // 개인정보 처리방침은 `/settings/about` 의 행으로 옮겼고, 고지 블록은
-  // 전부 읽고 끝나는 정적 문구만 남는다. 링크가 여기로 되돌아오면 그 균일함이 다시 깨진다.
-  it('고지 블록은 4줄이고 링크를 두지 않는다', async () => {
+describe('SettingsScreen: 소식 갈래', () => {
+  it('갈래 다섯이 앱 공지 → 진행 중인 이벤트 → 캐시샵 업데이트 → 게임 공지 → 업데이트 순이다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
 
-    expect(view.getByTestId('settings-footer').children).toHaveLength(4)
-    expect(view.queryByText('개인정보 처리방침')).toBeNull()
+    expect(view.getAllByTestId('notice-section').map((section) => textsIn(section)[0])).toEqual(
+      SECTIONS.map(([label]) => label),
+    )
+  })
+
+  // 갈래 이름이 목록 화면의 제목이자 빈 문구다.
+  it.each(SECTIONS)('"%s" 의 전체는 그 분류로 목록을 연다', async (label, kind) => {
+    const view = await renderOverlay(<SettingsScreen />)
+
+    await press(view.getByLabelText(`${label} 전체`))
+
+    expect(navigate).toHaveBeenCalledWith('SettingsNotices', { kinds: [kind], title: label })
+  })
+
+  // 갈래를 숨기면 화면 순서가 바뀐다.
+  it('글이 없는 갈래도 제목과 빈 문구를 그린다', async () => {
+    const view = await renderOverlay(<SettingsScreen />)
+
+    expect(view.getByText('아직 받은 앱 공지사항이 없습니다')).toBeTruthy()
+    expect(view.getByText('아직 받은 진행 중인 이벤트가 없습니다')).toBeTruthy()
+    expect(view.getByText('아직 받은 업데이트가 없습니다')).toBeTruthy()
+    expect(view.getByText('아직 받은 캐시샵 업데이트가 없습니다')).toBeTruthy()
+  })
+
+  it('들어오면 다섯 분류를 모두 받는다', async () => {
+    await renderOverlay(<SettingsScreen />)
+
+    await waitFor(() => expect(mockedRefresh).toHaveBeenCalledTimes(5))
+    expect(mockedRefresh.mock.calls.map(([kind]) => kind).sort()).toEqual(['app', 'cashshop', 'event', 'game', 'update'])
+  })
+
+  it('글 갈래는 최근 글을 앱 공지 3 · 게임 공지 3 · 업데이트 2 줄만 보인다', async () => {
+    mockedGetNotices.mockResolvedValue([
+      ...[1, 2, 3, 4].map((n) => notice(`app-${n}`, 'app')),
+      ...[1, 2, 3, 4].map((n) => notice(`game-${n}`, 'game')),
+      ...[1, 2, 3].map((n) => notice(`update-${n}`, 'update')),
+    ])
+
+    const view = await renderOverlay(<SettingsScreen />)
+
+    await waitFor(() => expect(view.getAllByTestId('notice-row')).toHaveLength(8))
+    expect(view.queryByText('제목 app-4')).toBeNull()
+    expect(view.queryByText('제목 update-3')).toBeNull()
+  })
+
+  // 사본이 먼저 서고, 받은 분류만 받은 것으로 바뀐다.
+  it('사본을 먼저 그리고 받은 목록으로 바꾼다', async () => {
+    mockedGetNotices.mockResolvedValue([notice('game-old', 'game')])
+    let resolveGame: (value: Notice[]) => void = () => {}
+    mockedRefresh.mockImplementation((kind) =>
+      kind === 'game' ? new Promise((resolve) => (resolveGame = resolve)) : new Promise(() => {}),
+    )
+
+    const view = await renderOverlay(<SettingsScreen />)
+    await waitFor(() => expect(view.getByText('제목 game-old')).toBeTruthy())
+
+    await act(async () => {
+      resolveGame([notice('game-new', 'game')])
+    })
+
+    expect(view.getByText('제목 game-new')).toBeTruthy()
+    expect(view.queryByText('제목 game-old')).toBeNull()
+  })
+
+  it('실패한 분류는 사본이 그대로 선다', async () => {
+    mockedGetNotices.mockResolvedValue([notice('update-1', 'update')])
+    mockedRefresh.mockResolvedValue(null)
+
+    const view = await renderOverlay(<SettingsScreen />)
+
+    await waitFor(() => expect(mockedRefresh).toHaveBeenCalledTimes(5))
+    expect(view.getByText('제목 update-1')).toBeTruthy()
+  })
+
+  it('이벤트 · 캐시샵은 배너 줄이고 누르면 상세를 연다', async () => {
+    mockedGetNotices.mockResolvedValue([
+      notice('event-1', 'event', { thumbnailUrl: 'https://file.nexon.com/1' }),
+      notice('cashshop-1', 'cashshop', { thumbnailUrl: 'https://file.nexon.com/2' }),
+    ])
+
+    const view = await renderOverlay(<SettingsScreen />)
+
+    await waitFor(() => expect(view.getAllByTestId('notice-banner-slide')).toHaveLength(2))
+    await press(view.getByLabelText('제목 event-1'))
+    expect(navigate).toHaveBeenCalledWith('SettingsNoticeDetail', { noticeId: 'event-1' })
+  })
+
+  it('글 줄을 누르면 상세를 연다', async () => {
+    mockedGetNotices.mockResolvedValue([notice('notice-20260915-1', 'app')])
+
+    const view = await renderOverlay(<SettingsScreen />)
+
+    await waitFor(() => expect(view.getByLabelText('제목 notice-20260915-1')).toBeTruthy())
+    await press(view.getByLabelText('제목 notice-20260915-1'))
+    expect(navigate).toHaveBeenCalledWith('SettingsNoticeDetail', { noticeId: 'notice-20260915-1' })
   })
 })
 

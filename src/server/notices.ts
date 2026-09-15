@@ -10,7 +10,7 @@
  * 계약의 원본은 서버 저장소와 이 앱이 나눠 갖는다. 한쪽만 바꾸면 타입 검사가 못 잡으므로
  * 필드를 더할 때 양쪽을 함께 볼 것.
  */
-import { isNoticeKind, type Notice, type NoticeBlock, type NoticeKind } from '../types/notice'
+import { isNoticeKind, type Notice, type NoticeBlock, type NoticeKind, type NoticeLookup } from '../types/notice'
 
 const BASE_URL = 'https://mapleroutine.store/v1'
 
@@ -98,12 +98,6 @@ async function getJson(path: string): Promise<JsonResponse | null> {
     clearTimeout(timer)
   }
 }
-
-/** 상세 조회의 답. 없다(404)와 실패를 가른다. */
-export type NoticeLookup =
-  | { status: 'found'; notice: Notice }
-  | { status: 'missing' }
-  | { status: 'failed' }
 
 /**
  * 최근 공지. 실패하면 `null`, 서버에 공지가 없으면 빈 배열.

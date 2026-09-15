@@ -141,6 +141,26 @@ export function AppSettingsScreen(): React.JSX.Element {
               />
             </View>
           </Card>
+
+          {/* 이용약관 제6조④가 요구하는 출처 표기. 문구를 의역하지 않고 원문 그대로 노출한다.
+              더보기 맨 아래에 있다가 여기로 왔다. 더보기가 소식 갈래로 길어져 멀리 밀렸고, 이 화면은 카드 셋이라
+              스크롤 없이 보인다. 전부 읽고 끝나는 정적 문구라 톤(text-text-disabled)이 균일하다.
+              (`text-center` 가 각 `Text` 에 있는 것은 RN 이 글자 정렬을 상속하지 않기 때문이다.) */}
+          <View className="gap-1 pt-4" testID="settings-footer">
+            <Text className="text-center text-xs text-text-disabled">v{displayedVersion}</Text>
+            <Text className="text-center text-xs text-text-disabled">
+              © {new Date().getFullYear()} 메이플 루틴
+            </Text>
+            <Text className="text-center text-xs text-text-disabled">
+              Data based on NEXON Open API
+            </Text>
+            {/* 비제휴 고지는 약관이 요구하는 것이 아니라 동종 서비스(maple.gg·chuchu.gg·
+                maplescouter)의 공통 관행이다. 출처 표기만 있으면 넥슨 공식 서비스로 오인될
+                여지가 남는다. 문구도 그 3사와 같은 영문 형태로 맞춘다. */}
+            <Text className="text-center text-xs text-text-disabled">
+              Maple Routine is not associated with NEXON Korea
+            </Text>
+          </View>
         </View>
       </ScreenScroll>
 

@@ -8,12 +8,15 @@
  * 순서는 **얼마나 자주 바뀌는가**로 정한다. 소식이 맨 위이고 응원이 맨 아래다. 자주 바뀌는 것을
  * 아래 두면 사용자가 스크롤을 배워야 한다.
  *
+ * 소식은 행을 눌러 여는 목록이 아니라 첫 화면에 갈래로 펼친다. 이벤트 · 캐시샵은 본문이 그림 한 장이라 제목만으로는 무엇인지
+ * 알 수 없어 배너로 세운다. 버전 · 출처 표기는 설정 화면 맨 아래에 있다. 소식 갈래로 길어진 이 화면 끝에 두면 멀리 밀린다.
+ *
  * **이 화면에는 고정 헤더(`PageHeader`)를 두지 않는다**. 그 ADR 이 단 재판단 조건은 *"행이 늘어
  * 세로가 길어지면"* 인데, 설정을 내보내 **순감**이라 조건에 걸리지 않는다.
  */
-import { useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Platform, Pressable, View } from 'react-native'
-import { useRoute, type RouteProp } from '@react-navigation/native'
+import { useFocusEffect, useRoute, type RouteProp } from '@react-navigation/native'
 
 
 import { useRunningAppVersion } from '../../features/live-update/use-running-app-version'
@@ -24,7 +27,12 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import type { TabParamList } from '../../navigation/routes'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { tapFeedback } from '../../native/haptics'
-import type { NoticeKind } from '../../types/notice'
+import { emptyNoticeText } from '../../features/notice/notice-display'
+import { groupNoticesByKind, refreshNoticeKind } from '../../features/notice/notice-feed'
+import { getNotices } from '../../storage/notices'
+import { NOTICE_KINDS, type Notice, type NoticeKind } from '../../types/notice'
+import { NoticeBannerRail } from './NoticeBannerRail'
+import { NoticeLines } from './NoticeLines'
 import { SettingsLinkRow } from './SettingsLinkRow'
 import { SettingsRow } from './SettingsRow'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
@@ -32,21 +40,36 @@ import { CONTACT_EMAIL, contactDeviceOf, contactMailUrl } from './contact-mail'
 import { storeReviewUrl } from './store-review-link'
 
 /**
- * 소식 카드의 행들. 행 하나가 분류 하나를 열고, 그 이름이 곧 목록 화면의 제목이자 빈 상태
- * 문구가 된다.
+ * 소식 갈래 다섯. 순서는 사용자가 정했다.
  *
- * 앱 공지와 게임 공지가 **행 둘**인 이유. 앱 공지는 이 앱의 일(점검·새 버전)이고 게임 공지는
- * 넥슨의 일이라, 섞이면 목록 한 줄만 보고 어느 쪽 이야기인지 모른다. 구독 스위치도 이미 둘로
- * 갈려 있어서, 읽는 자리만 하나로 묶으면 게임 공지만 켠 사용자가 켠 적 없는 앱 공지와 섞인
- * 목록을 본다.
+ * 앱 공지와 게임 공지가 갈래 둘인 이유. 앱 공지는 이 앱의 일(점검·새 버전)이고 게임 공지는 넥슨의 일이라, 섞이면 한 줄만 보고
+ * 어느 쪽 이야기인지 모른다. 이름은 `전체` 목록 화면의 제목이자 빈 문구에 들어간다.
+ *
+ * `lines` 는 글 갈래가 보이는 최근 글 수다. 배너 갈래는 받은 것 전부를 넘긴다.
  */
-const NOTICE_SECTIONS: readonly { label: string; kinds: readonly NoticeKind[] }[] = [
-  { label: '앱 공지사항', kinds: ['app'] },
-  { label: '게임 공지사항', kinds: ['game'] },
-  { label: '업데이트', kinds: ['update'] },
-  { label: '이벤트', kinds: ['event'] },
-  { label: '캐시샵', kinds: ['cashshop'] },
+const NOTICE_SECTIONS: readonly { label: string; kind: NoticeKind; lines?: number }[] = [
+  { label: '앱 공지사항', kind: 'app', lines: 3 },
+  // 넥슨 이벤트 목록은 지금 게시 중인 글만 준다.
+  { label: '진행 중인 이벤트', kind: 'event' },
+  // 넥슨 캐시샵 공지는 캐시아이템 업데이트 소식이다.
+  { label: '캐시샵 업데이트', kind: 'cashshop' },
+  { label: '게임 공지사항', kind: 'game', lines: 3 },
+  { label: '업데이트', kind: 'update', lines: 2 },
 ]
+
+const NO_NOTICES = groupNoticesByKind([])
+
+/** 갈래 제목 줄. 이름과 그 갈래의 목록 화면을 여는 `전체` 다. */
+function NoticeSectionHeader(props: { label: string; onOpenAll: () => void }): React.JSX.Element {
+  return (
+    <View testID="notice-section" className="flex-row items-center justify-between px-1">
+      <Text className="text-sm font-semibold text-text">{props.label}</Text>
+      <Pressable role="button" aria-label={`${props.label} 전체`} onPress={props.onOpenAll} hitSlop={8}>
+        <Text className="text-xs font-semibold text-primary-ink">전체</Text>
+      </Pressable>
+    </View>
+  )
+}
 
 export function SettingsScreen(): React.JSX.Element {
   // 저장 로직을 새로 갖지 않는다. 통합 키 쓰기·수동 모드 시드·추가분만 동기화·
@@ -68,6 +91,32 @@ export function SettingsScreen(): React.JSX.Element {
   }, [])
 
   const displayedVersion = useRunningAppVersion()
+  const [notices, setNotices] = useState<Record<NoticeKind, Notice[]>>(NO_NOTICES)
+
+  // 들어올 때마다 다섯 목록을 다시 받는다. 사본을 먼저 그리고 분류마다 받은 것으로 바꾼다. 실패한 분류는 사본이 선다.
+  // 사본을 다 읽은 뒤에 부른다. 거꾸로면 늦게 끝난 사본 읽기가 방금 받은 목록을 덮는다.
+  useFocusEffect(
+    useCallback(() => {
+      let alive = true
+      void getNotices()
+        .then((copy) => {
+          if (alive) setNotices(groupNoticesByKind(copy))
+        })
+        .catch(() => undefined)
+        .then(() => {
+          for (const kind of NOTICE_KINDS) {
+            void refreshNoticeKind(kind).then((received) => {
+              if (alive && received !== null) setNotices((current) => ({ ...current, [kind]: received }))
+            })
+          }
+        })
+      return () => {
+        alive = false
+      }
+    }, []),
+  )
+
+  const openNotice = (notice: Notice): void => navigation.navigate('SettingsNoticeDetail', { noticeId: notice.id })
 
   return (
     <ScreenScroll>
@@ -96,82 +145,74 @@ export function SettingsScreen(): React.JSX.Element {
             </Pressable>
           </PageHeaderTitleRow>
 
-          {/* **소식이 맨 위다.** 이 페이지에서 유일하게 매일 바뀌는 것이고, 나머지는 다 `가끔
-              한 번` 이다. 자주 바뀌는 것을 아래 두면 사용자가 스크롤을 배워야 한다. */}
-          <Card className="px-6" testID="settings-card">
-            {NOTICE_SECTIONS.map((section, index) => (
-              <View key={section.label} className={index === 0 ? '' : SETTINGS_ROW_DIVIDER_CLASS}>
+          {/* 영역 사이만 넓힌다. 머리와 첫 영역까지 벌리면 제목이 내용과 떨어져 보인다. */}
+          <View className="gap-7">
+            {/* **소식이 맨 위다.** 이 페이지에서 유일하게 매일 바뀌는 것이고, 나머지는 다 `가끔
+                한 번` 이다. 자주 바뀌는 것을 아래 두면 사용자가 스크롤을 배워야 한다. */}
+            {NOTICE_SECTIONS.map((section) => {
+              const items = notices[section.kind]
+              return (
+                <View key={section.kind} className="gap-2">
+                  <NoticeSectionHeader
+                    label={section.label}
+                    onOpenAll={() =>
+                      navigation.navigate('SettingsNotices', { kinds: [section.kind], title: section.label })
+                    }
+                  />
+                  {items.length === 0 ? (
+                    // 갈래를 숨기면 화면 순서가 바뀐다.
+                    <Card className="px-5 py-4">
+                      <Text className="text-center text-sm text-text-disabled">{emptyNoticeText(section.label)}</Text>
+                    </Card>
+                  ) : section.lines === undefined ? (
+                    // 배너는 화면 양끝까지 닿는다. 화면 좌우 여백을 이 줄만 되돌린다.
+                    <View className="-mx-4">
+                      <NoticeBannerRail notices={items} onOpen={openNotice} />
+                    </View>
+                  ) : (
+                    <NoticeLines notices={items.slice(0, section.lines)} titleLines={1} onPress={openNotice} />
+                  )}
+                </View>
+              )
+            })}
+
+            {/* 읽는 것들. 설정과 갈라 둔 이유는 성질이 달라서다 - 이쪽은 한 번 읽고 끝나고
+                설정은 값을 바꾼다. */}
+            <Card className="px-6" testID="settings-card">
+              {/* `기능 설명` 이 `개발 노트` 위다. 이 앱을 어떻게 쓰나 가 무엇이 바뀌었나 보다
+                  자주 묻는 질문이고 설명의 원천도 이쪽이다. */}
+              <SettingsRow
+                label="기능 설명"
+                onPress={() => navigation.navigate('SettingsFeatureGuideList')}
+              />
+              <View className={SETTINGS_ROW_DIVIDER_CLASS}>
                 <SettingsRow
-                  label={section.label}
-                  onPress={() =>
-                    navigation.navigate('SettingsNotices', {
-                      kinds: [...section.kinds],
-                      title: section.label,
-                    })
-                  }
+                  label="개발 노트"
+                  onPress={() => navigation.navigate('SettingsReleaseNotes')}
                 />
               </View>
-            ))}
-          </Card>
+            </Card>
 
-          {/* 읽는 것들. 설정과 갈라 둔 이유는 성질이 달라서다 - 이쪽은 한 번 읽고 끝나고
-              설정은 값을 바꾼다. */}
-          <Card className="px-6" testID="settings-card">
-            {/* `기능 설명` 이 `개발 노트` 위다. 이 앱을 어떻게 쓰나 가 무엇이 바뀌었나 보다
-                자주 묻는 질문이고 설명의 원천도 이쪽이다. */}
-            <SettingsRow
-              label="기능 설명"
-              onPress={() => navigation.navigate('SettingsFeatureGuideList')}
-            />
-            <View className={SETTINGS_ROW_DIVIDER_CLASS}>
-              <SettingsRow
-                label="개발 노트"
-                onPress={() => navigation.navigate('SettingsReleaseNotes')}
+            {/* **응원은 맨 아래다.** 평생 한 번 누르는 것이라 자주 쓰는 것 위에 못 올린다.
+                사람들이 후원을 찾을 때 관습적으로 화면 끝부터 본다. */}
+            <Card className="px-6" testID="settings-card">
+              {/* 앱을 떠나 스토어로 가는 행이라 오른쪽이 chevron 이 아니라 외부 링크 표식이다.
+                  chevron 을 쓰면 다른 이동 행과 같은 약속을 하고는 앱을 떠나 버린다.
+
+                  후원 행은 수단을 정하면 이 카드로 돌아온다. 행이 하나만 남아도 카드를 지우지 않는
+                  이유가 그것이다. */}
+              {/* 문의는 응원보다 자주 써서 위다. 메일 앱이 안 열리면 주소를 적은 토스트로만 알린다(복사는 없다). */}
+              <SettingsLinkRow
+                label="문의하기"
+                href={contactMailUrl(contactDeviceOf(Platform, displayedVersion))}
+                onOpenFailed={() =>
+                  useToastStore.getState().showError(`메일 앱을 열지 못했습니다. ${CONTACT_EMAIL} 으로 보내 주세요`)
+                }
               />
-            </View>
-          </Card>
-
-          {/* **응원은 맨 아래다.** 평생 한 번 누르는 것이라 자주 쓰는 것 위에 못 올린다.
-              사람들이 후원을 찾을 때 관습적으로 화면 끝부터 본다. */}
-          <Card className="px-6" testID="settings-card">
-            {/* 앱을 떠나 스토어로 가는 행이라 오른쪽이 chevron 이 아니라 외부 링크 표식이다.
-                chevron 을 쓰면 다른 이동 행과 같은 약속을 하고는 앱을 떠나 버린다.
-
-                후원 행은 수단을 정하면 이 카드로 돌아온다. 행이 하나만 남아도 카드를 지우지 않는
-                이유가 그것이다. */}
-            {/* 문의는 응원보다 자주 써서 위다. 메일 앱이 안 열리면 주소를 적은 토스트로만 알린다(복사는 없다). */}
-            <SettingsLinkRow
-              label="문의하기"
-              href={contactMailUrl(contactDeviceOf(Platform, displayedVersion))}
-              onOpenFailed={() =>
-                useToastStore.getState().showError(`메일 앱을 열지 못했습니다. ${CONTACT_EMAIL} 으로 보내 주세요`)
-              }
-            />
-            <View className={SETTINGS_ROW_DIVIDER_CLASS}>
-              <SettingsLinkRow label="개발자 응원하기(앱 리뷰)" href={storeReviewUrl(Platform.OS)} />
-            </View>
-          </Card>
-
-          {/* 이용약관 제6조④가 요구하는 출처 표기. 문구를 의역하지 않고 원문 그대로 노출한다.
-              이 블록은 전부 읽고 끝나는 정적 문구라 톤(text-text-disabled)이
-              균일하다. 눌러야 하는 것 하나가 한 단계 밝은 색·밑줄로 섞여 있던 예외는
-              /settings/about 의 행으로 내려가면서 사라졌다.
-              (`text-center` 가 상자에서 각 `Text` 로 내려온 것은 RN 이 글자 정렬을 상속하지
-              않기 때문이다. `EmptyState` 와 같은 자리.) */}
-          <View className="gap-1 pt-4" testID="settings-footer">
-            <Text className="text-center text-xs text-text-disabled">v{displayedVersion}</Text>
-            <Text className="text-center text-xs text-text-disabled">
-              © {new Date().getFullYear()} 메이플 루틴
-            </Text>
-            <Text className="text-center text-xs text-text-disabled">
-              Data based on NEXON Open API
-            </Text>
-            {/* 비제휴 고지는 약관이 요구하는 것이 아니라 동종 서비스(maple.gg·chuchu.gg·
-                maplescouter)의 공통 관행이다. 출처 표기만 있으면 넥슨 공식 서비스로 오인될
-                여지가 남는다. 문구도 그 3사와 같은 영문 형태로 맞춘다. */}
-            <Text className="text-center text-xs text-text-disabled">
-              Maple Routine is not associated with NEXON Korea
-            </Text>
+              <View className={SETTINGS_ROW_DIVIDER_CLASS}>
+                <SettingsLinkRow label="개발자 응원하기(앱 리뷰)" href={storeReviewUrl(Platform.OS)} />
+              </View>
+            </Card>
           </View>
         </View>
       </ScreenScroll>

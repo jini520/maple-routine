@@ -12,7 +12,7 @@
   - **판정이 안 서는 자리**가 둘 있다([[ADR-214]] 대가 1·2). 안드로이드는 RN 이 OkHttp Dispatcher 를 안 덮어 `maxRequestsPerHost = 5` 가 서므로 10건이 동시에 안 나가고, 왕복이 1초를 넘는 느린 망에서는 초당 5건을 못 넘긴다(iOS 는 HTTP/2 라 함께 나간다). 넥슨 리미터가 버스트를 허용하는지도 모른다. 그래서 **개발 단계 키가 문을 통과하는 경우가 있고, 그때 벌어지는 일이 사슬이 혼자 서 있던 때와 같다.**
   - **429 를 만났을 때 화면이 하는 말**은 자리에 따라 갈린다. **온보딩 키 입력**은 이제 단계를 단정하고 수치를 든다(‘개발 단계 키로는 사용할 수 없습니다’ + 폼 위 인라인이 초당 5건과 서비스 단계 신청까지, [[ADR-214]] 결정 4). **그 밖의 자리**는 [[ADR-114]] 결정 1 그대로 단계를 판정하지 않고 ‘입력하신 API 키가 서비스 단계 키인지 확인해주세요’ 를 안내한다 — 그 자리들에는 프로브가 없어 429 만 보고는 여전히 구분할 수 없기 때문이다. 액션은 자리마다 갈린다([[ADR-116]] 이 [[ADR-114]] 결정 2 를 `ErrorState` 자리에서만 정정했다).
 - 별도 서버/프록시 없음. 키는 기기에만 저장되고 호출도 기기에서 직접 나간다([[ADR-003]]).
-- 이용약관 출처 표기: 영문 원문 **"Data based on NEXON Open API"** 를 **설정 화면 하단**(앱 버전·카피라이트와 함께) 상시 노출([[ADR-007]], 앱 전역 footer는 만들지 않음).
+- 이용약관 출처 표기: 영문 원문 **"Data based on NEXON Open API"** 를 **설정 화면 하단**(앱 버전·카피라이트와 함께) 상시 노출([[ADR-007]], 앱 전역 footer는 만들지 않음). 더보기 탭 맨 아래에 있다가 [[ADR-282]] 결정 10 이 설정 화면(`AppSettingsScreen`) 맨 아래로 되돌렸다(2026-09-16).
 
 ## 엔드포인트
 - **`GET /maplestory/v1/character/list`** (`nexon/character`): 계정 소속 캐릭터 목록. 캐릭터명+월드 수동 입력 폼은 없다. 응답: `{ account_list: [{ account_id, character_list: [{ ocid, character_name, world_name, character_class, character_level }] }] }`. **하나의 키가 여러 `account_id`(메이플 ID)를 반환할 수 있다**(실측, 2026-07-09). `account_list.length > 1` 이면 계정 선택 UI. `ocid` 는 길이가 계정마다 다르므로(32~65자 관찰) 불투명 문자열로 다룬다. 키가 등록된 Nexon 계정 캐릭터만 반환(다른 계정은 별도 키 필요). **`character_list` 가 빈 계정이 섞여 올 수 있다**([[ADR-127]], 2026-08-12). 그런 계정은 `normalizeCharacterList` 가 걸러 도메인 모델로 올리지 않는다(캐릭터가 0명이면 대표 캐릭터를 세울 수 없어 계정 선택 화면이 렌더 중에 던졌다). ⚠️ **넥슨이 어떤 조건에서 그 응답을 내는지는 모른다**. 테스터 크래시에서 역산한 것이고 그 응답을 직접 받아 본 적이 없다.
@@ -40,6 +40,11 @@
 목록 항목은 `title` · `url` · `notice_id` · `date` 이고, 상세는 `title` · `url` · `contents` · `date` 다.
 이벤트는 `date_event_start`·`date_event_end`, 캐시샵은 `date_sale_start`·`date_sale_end`·`ongoing_flag`
 가 양쪽에 더 붙는다.
+
+**이벤트 · 캐시샵 목록 항목은 `thumbnail_url` 도 준다**(실측 2026-09-15, [[ADR-247]] 정정 2). 각 20 건 전부에 있었다.
+이벤트는 285×120, 캐시샵은 443×130 PNG 로 분류마다 크기가 하나였다. 주소는
+`file.nexon.com/NxFile/download/FileDownloader.aspx?oidFile=…` 이고 302 로 `storage.nexon.com/…png` 에 보낸다. 그 `Location` 에
+역슬래시가 섞여 있다(`Board/589824\05/…`). 앱이 넥슨 목록을 직접 불러 이 값을 배너로 쓴다([[ADR-282]]).
 
 **`date` 는 `2026-09-09T16:24+09:00` 꼴이다** — 초가 없고 KST 오프셋이 붙는다. `Date.parse` 는
 통과하지만 우리 `publishedAt` 은 ISO UTC 라 정규화가 필요하다.
