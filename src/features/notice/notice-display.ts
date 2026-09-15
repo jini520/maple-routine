@@ -45,13 +45,16 @@ export function noticePeriodLabel(notice: Notice): string | null {
   return notice.kind === 'cashshop' ? '상시 판매' : null
 }
 
-/** 이름 끝 한글의 받침으로 고른 주격 조사. 한글이 없으면 `이`. */
+/**
+ * 주격 조사. 끝 글자가 한글이면 받침으로 고른다.
+ *
+ * 영문으로 끝나면 받침이 없어 끝 글자가 모음 글자면 `가` 다(`NOTICE` 노티스). 그 밖은 `이` 다.
+ */
 function subjectParticle(word: string): '이' | '가' {
-  for (let index = word.length - 1; index >= 0; index--) {
-    const code = word.charCodeAt(index)
-    if (code >= 0xac00 && code <= 0xd7a3) return (code - 0xac00) % 28 === 0 ? '가' : '이'
-  }
-  return '이'
+  const last = word.trim().slice(-1)
+  const code = last.charCodeAt(0)
+  if (code >= 0xac00 && code <= 0xd7a3) return (code - 0xac00) % 28 === 0 ? '가' : '이'
+  return /[aeiou]/i.test(last) ? '가' : '이'
 }
 
 /** 글이 없는 갈래 · 목록의 문구. 갈래 이름이 곧 목록 화면 제목이라 같은 이름을 넣는다. */

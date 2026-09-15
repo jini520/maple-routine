@@ -147,7 +147,7 @@ const ROW_LABELS = [
 
 /** 소식 갈래의 이름과 분류. 순서는 사용자가 정했다. */
 const SECTIONS: readonly [string, NoticeKind][] = [
-  ['앱 공지사항', 'app'],
+  ['NOTICE', 'app'],
   ['진행 중인 이벤트', 'event'],
   // 넥슨 캐시샵 공지는 캐시아이템 업데이트 소식이다.
   ['캐시샵 업데이트', 'cashshop'],
@@ -384,7 +384,7 @@ describe('SettingsScreen: 소식 갈래', () => {
   it('글이 없는 갈래도 제목과 빈 문구를 그린다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
 
-    expect(view.getByText('아직 받은 앱 공지사항이 없습니다')).toBeTruthy()
+    expect(view.getByText('아직 받은 NOTICE가 없습니다')).toBeTruthy()
     expect(view.getByText('아직 받은 진행 중인 이벤트가 없습니다')).toBeTruthy()
     expect(view.getByText('아직 받은 업데이트가 없습니다')).toBeTruthy()
     expect(view.getByText('아직 받은 캐시샵 업데이트가 없습니다')).toBeTruthy()

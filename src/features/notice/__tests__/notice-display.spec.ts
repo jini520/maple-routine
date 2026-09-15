@@ -61,4 +61,9 @@ describe('emptyNoticeText', () => {
     expect(emptyNoticeText('업데이트')).toBe('아직 받은 업데이트가 없습니다')
     expect(emptyNoticeText('진행 중인 이벤트')).toBe('아직 받은 진행 중인 이벤트가 없습니다')
   })
+
+  // 영문 이름은 받침으로 못 고른다. 끝 글자가 모음 글자면 모음으로 끝나게 읽힌다(`NOTICE` 노티스).
+  it('영문 이름은 끝 글자가 모음 글자면 가 다', () => {
+    expect(emptyNoticeText('NOTICE')).toBe('아직 받은 NOTICE가 없습니다')
+  })
 })

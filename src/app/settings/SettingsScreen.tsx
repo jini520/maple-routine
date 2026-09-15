@@ -48,7 +48,8 @@ import { storeReviewUrl } from './store-review-link'
  * `lines` 는 글 갈래가 보이는 최근 글 수다. 배너 갈래는 받은 것 전부를 넘긴다.
  */
 const NOTICE_SECTIONS: readonly { label: string; kind: NoticeKind; lines?: number }[] = [
-  { label: '앱 공지사항', kind: 'app', lines: 3 },
+  // 앱 공지 갈래의 이름은 영문 `NOTICE` 다(사용자 지정).
+  { label: 'NOTICE', kind: 'app', lines: 3 },
   // 넥슨 이벤트 목록은 지금 게시 중인 글만 준다.
   { label: '진행 중인 이벤트', kind: 'event' },
   // 넥슨 캐시샵 공지는 캐시아이템 업데이트 소식이다.
@@ -123,7 +124,7 @@ export function SettingsScreen(): React.JSX.Element {
         {/* `screen-Settings` 는 나머지 세 탭 화면과 같은 관례다(`screen-Content`·`-Boss`·`-Profit`).
             이것이 없어서 내비게이션 테스트가 **자리표시자의 같은 testID 를 보고 초록**이었고,
             설정 탭이 통째로 빠진 것을 아무도 못 잡았다(실기기 관측). */}
-        <View className="gap-4 px-4 pb-4" testID="screen-Settings">
+        <View className="gap-2 px-4 pb-4" testID="screen-Settings">
           {/* 이 화면에는 `PageHeader` 가 없지만 제목 줄은 다른 탭과 **같은
               프리미티브**다. 셸이 달라도 제목이 서는 선은 같아야 한다. */}
           {/* 설정은 머리의 아이콘 뒤에 산다. 본문에 두면 매일 보는 소식이 가끔 쓰는 설정에
