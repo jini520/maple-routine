@@ -100,15 +100,16 @@ import {
   type DefeatedBoss,
   type EnhancedItem,
   type ManualDayRecord,
+  type SoldItem,
 } from '../../features/cashbook/records'
 import type { LastHuntSelection } from '../../storage/last-hunt-selection'
 import { loadMesoRate } from '../../features/cashbook/meso-rate'
 // 보스 수익 탭의 행이 초상을 찾는 그 함수다. 같은 보스가 두 화면에서 다른 그림이면 안 된다.
 import { bossPortraitSlugOf } from '../../lib/boss/bosses'
+import { dropItemIconOf } from '../../lib/assets/asset-lookup'
 import { useDataFreshness } from '../../features/refresh/freshness'
 import { useLedgerData } from '../../features/ledger/useLedgerData'
 import { tapFeedback } from '../../native/haptics'
-import { useOpenTab } from '../../hooks/useOpenTab'
 import { useToastStore } from '../../features/toast/store'
 import { IncomeSheet, type IncomeDraft } from './IncomeSheet'
 import { SpendSheet, type SpendDraft } from './SpendSheet'
@@ -435,6 +436,45 @@ function EnhancedItemRows(props: {
   )
 }
 
+/**
+ * 펼친 판매 줄의 판. 한 줄에 그림 · 이름 · 판매 금액(분배 후)이다.
+ *
+ * 강화 줄의 판과 같은 모양이다. 그림은 보스 수익 드롭 시트와 같은 `dropItemIconOf` 로 찾아 같은 아이템이 두 화면에서
+ * 다르게 생기지 않는다. 못 찾으면 그림 자리 없이 이름부터 선다(사용자 지정). 같은 아이템을 둘 팔면 줄이 둘이라 칸의
+ * 신원은 차례다.
+ */
+function SoldItemRows(props: { rowKey: string; items: readonly SoldItem[] }): React.JSX.Element {
+  return (
+    <View
+      testID={`cashbook-row-items-${props.rowKey}`}
+      className="gap-y-1.5 rounded-b-xl border border-t-0 border-border bg-surface px-2.5 pb-2.5 pt-1.5"
+    >
+      {props.items.map((item, index) => {
+        const icon = dropItemIconOf(item.itemKey)
+        return (
+          <View key={index} testID={`cashbook-sold-item-${props.rowKey}-${index}`} className="flex-row items-center gap-2">
+            {icon !== null && (
+              <Image
+                testID={`cashbook-sold-item-image-${props.rowKey}-${index}`}
+                source={icon}
+                className="h-5 w-5 shrink-0"
+                resizeMode="contain"
+                aria-hidden
+              />
+            )}
+            <Text numberOfLines={1} className="shrink text-11 text-text-muted">
+              {item.itemName}
+            </Text>
+            <Text className="ml-auto shrink-0 text-11 font-medium text-rise-ink" style={TABULAR_NUMS}>
+              +{formatMesoCompact(item.payoutMeso)}
+            </Text>
+          </View>
+        )
+      })}
+    </View>
+  )
+}
+
 function DayRecordRow(props: {
   entry: DayRecord
   expanded: boolean
@@ -457,20 +497,15 @@ function DayRecordRow(props: {
    */
   const bosses = entry.kind === 'bossCrystal' ? entry.bosses : null
   const items = entry.kind === 'enhancement' ? entry.items : null
-  const expandable = bosses !== null || items !== null
+  const soldItems = entry.kind === 'dropSale' ? entry.items : null
+  const expandable = bosses !== null || items !== null || soldItems !== null
   const isOpen = expanded && expandable
   /**
    * 무슨 일이 일어날지 미리 말하는 화살촉. 같은 카드 두 줄이 서로 다르게 반응하는데
    * 그림이 같으면 그것이 고장으로 읽힌다.
    */
   const Chevron = !expandable ? ChevronRightIcon : isOpen ? ChevronUpIcon : ChevronDownIcon
-  const action = isManualRecord(entry)
-    ? '고치기'
-    : !expandable
-      ? '보스 수익에서 보기'
-      : isOpen
-        ? '접기'
-        : '펼치기'
+  const action = !expandable ? '고치기' : isOpen ? '접기' : '펼치기'
 
   return (
     <View>
@@ -544,6 +579,7 @@ function DayRecordRow(props: {
       </Pressable>
       {isOpen && bosses !== null && <DefeatedBossTiles rowKey={rowKey} bosses={bosses} />}
       {isOpen && items !== null && <EnhancedItemRows rowKey={rowKey} items={items} />}
+      {isOpen && soldItems !== null && <SoldItemRows rowKey={rowKey} items={soldItems} />}
     </View>
   )
 }
@@ -590,7 +626,6 @@ export function CashbookScreen(): React.JSX.Element {
   const [characters, setCharacters] = useState<
     Array<{ ocid: string; name: string; level: number | null }>
   >([])
-  const openTab = useOpenTab()
 
   const monthWeeks = buildCalendarMonth(monthKey)
   const weeks = isWeekly ? [buildResetWeek(weekStartKey)] : monthWeeks
@@ -821,19 +856,13 @@ export function CashbookScreen(): React.JSX.Element {
       return
     }
     /**
-     * 결정석과 강화 줄은 안 나간다. 그 자리에서 편다. 펼친 판은 읽기 전용이라 두 곳에서 고칠 수
-     * 있게 되지 않는다. 탭을 옮기면 고른 날과 보던 기간을 함께 잃어 그 날의 다른 줄을 못 본다.
+     * 자동 줄은 안 나간다. 그 자리에서 편다. 펼친 판은 읽기 전용이라 두 곳에서 고칠 수 있게 되지 않는다. 탭을 옮기면
+     * 고른 날과 보던 기간을 함께 잃어 그 날의 다른 줄을 못 본다.
      *
-     * 강화는 갈 곳이 아예 없다. 원천이 넥슨 API 라 앱 안에 그 줄을 더 보여 줄 화면이 없어,
-     * 펼치는 것이 여기서 할 수 있는 전부다.
+     * 판매 줄도 편다. 가계부는 판 것만 보여 주고 값을 넣을 일은 보스 수익 탭이 든다.
      */
-    if (entry.kind === 'bossCrystal' || entry.kind === 'enhancement') {
-      const key = rowKeyOf(entry)
-      setExpandedRowKey((current) => (current === key ? null : key))
-      return
-    }
-    // 판매 줄은 그대로 간다. `미입력 n` 이 **여기서 못 하는 일**(값 넣기)을 가리킨다.
-    openTab('Profit')
+    const key = rowKeyOf(entry)
+    setExpandedRowKey((current) => (current === key ? null : key))
   }
 
   // 앞뒤 달로 채운 칸을 누르면 **보는 달도 따라간다**. 아니면 고른 날이 격자 밖에 있게 된다.

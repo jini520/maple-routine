@@ -584,7 +584,7 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
 
     expect(rows.map(recordTitleOf)).toEqual(['루디 · 보스 결정석', '루디 · 아이템 판매'])
     expect(rows.map(recordMesoOf)).toEqual([3_600_000_000, 4_000_000_000])
-    expect(rows.map(recordCountLabelOf)).toEqual(['2마리', '1건 · 미입력 1'])
+    expect(rows.map(recordCountLabelOf)).toEqual(['2마리', '1건'])
   })
 
   it('판매가 하나도 없으면 그 줄이 안 선다', async () => {
@@ -614,8 +614,8 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
     expect(rows.map(recordTitleOf)).toEqual(['루디 · 보스 결정석'])
   })
 
-  // 판 것이 하나라도 있으면 그 줄은 선다. `미입력 n` 이 **저쪽에 할 일이 있다**고 말한다.
-  it('판 것이 섞여 있으면 줄이 서고 미입력 건수를 함께 적는다', async () => {
+  // 판 것이 하나라도 있으면 그 줄은 선다. 가계부는 판 것만 보여 줘 `미입력` 을 안 적는다.
+  it('판 것이 섞여 있으면 줄이 서고 판 건수만 적는다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     bossDrops.getBossDropRecords.mockResolvedValue([
       드롭({ priceState: 'entered', priceMeso: 1_000_000 }),
@@ -626,7 +626,54 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
 
     const rows = await loadDayRecords('2026-08-21')
 
-    expect(recordCountLabelOf(rows[1])).toBe('1건 · 미입력 1')
+    expect(recordCountLabelOf(rows[1])).toBe('1건')
+  })
+
+  // 판매 줄을 펼치면 그날 판 아이템이 한 줄씩 뜬다. 값을 넣은 드롭만 들고 한 행이 한 줄이다.
+  describe('판매 줄의 판 아이템', () => {
+    async function 판매줄(drops: Record<string, unknown>[]) {
+      bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
+      bossDrops.getBossDropRecords.mockResolvedValue(drops)
+      const { loadDayRecords } = require('../records') as typeof import('../records')
+      const rows = await loadDayRecords('2026-08-21')
+      return rows.find((row) => row.kind === 'dropSale')
+    }
+
+    it('값을 넣은 드롭만 표 이름과 분배 후 금액으로 든다', async () => {
+      const row = await 판매줄([
+        드롭(),
+        드롭({ dropIndex: 1, priceState: null, priceMeso: null }),
+        드롭({ dropIndex: 2, priceState: 'excluded', priceMeso: null }),
+      ])
+
+      expect(row?.kind === 'dropSale' && row.items).toEqual([
+        { itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', payoutMeso: 4_000_000_000 },
+      ])
+    })
+
+    // 표에 없는 key 면 기록에 적어 둔 이름이다.
+    it('보이는 이름은 아이템 key 로 찾은 표 이름이고 없으면 기록의 이름이다', async () => {
+      const row = await 판매줄([드롭({ itemName: '옛 이름' }), 드롭({ dropIndex: 1, itemKey: null, itemName: '없어진 아이템' })])
+
+      expect(row?.kind === 'dropSale' && row.items.map((item) => item.itemName)).toEqual(['루즈 컨트롤 머신 마크', '없어진 아이템'])
+    })
+
+    // 같은 아이템을 둘 팔았으면 두 줄이다(사용자 결정). 금액이 큰 순이고 같으면 이름 순이다.
+    it('행마다 한 줄이고 금액이 큰 순, 같으면 이름 순이다', async () => {
+      const row = await 판매줄([
+        드롭({ dropIndex: 0, itemKey: 'dreamy_belt', itemName: '몽환의 벨트', priceMeso: 300, priceShare: 1 }),
+        드롭({ dropIndex: 1, priceMeso: 900, priceShare: 1 }),
+        드롭({ dropIndex: 2, priceMeso: 300, priceShare: 1 }),
+        드롭({ dropIndex: 3, itemKey: 'dreamy_belt', itemName: '몽환의 벨트', priceMeso: 300, priceShare: 1 }),
+      ])
+
+      expect(row?.kind === 'dropSale' && row.items.map((item) => [item.itemName, item.payoutMeso])).toEqual([
+        ['루즈 컨트롤 머신 마크', 900],
+        ['루즈 컨트롤 머신 마크', 300],
+        ['몽환의 벨트', 300],
+        ['몽환의 벨트', 300],
+      ])
+    })
   })
 
   /**
