@@ -113,6 +113,28 @@ describe('스타포스', () => {
       .toBe(226_843_330)
   })
 
+  describe('파괴 방지', () => {
+    // 200 레벨 17→18. 반올림 130,688,600, 30% 할인 91,482,020
+    const discounted = (destroyDefence: string) =>
+      toEnhancementSpending(
+        [starforce({ before_starforce_count: 17, destroy_defence: destroyDefence, starforce_event_list: [{ cost_discount_rate: '30' }] })],
+        NO_EVENT,
+      )[0].costMeso
+
+    it('적용이면 할인 전 비용의 200% 를 할인 없이 더한다', () => {
+      expect(discounted('파괴 방지 적용')).toBe(352_859_220)
+    })
+
+    it('미적용이면 더하지 않는다', () => {
+      expect(discounted('파괴 방지 미적용')).toBe(91_482_020)
+    })
+
+    it('모르는 값이면 추가분 없이 센다', () => {
+      expect(discounted('파괴 방지 알 수 없음')).toBe(91_482_020)
+      expect(toEnhancementSpending([starforce({ before_starforce_count: 17 })], NO_EVENT)[0].costMeso).toBe(130_688_600)
+    })
+  })
+
   it('강화권을 쓰면 메소가 안 든다', () => {
     expect(toEnhancementSpending([starforce({ upgrade_item: '주문의 흔적' })], NO_EVENT)[0].costMeso).toBe(0)
   })
