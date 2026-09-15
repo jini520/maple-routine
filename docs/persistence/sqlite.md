@@ -73,7 +73,8 @@ erDiagram
 ## 테이블별 역할
 
 ### `boss_profit_records` — 기간별 수익 기록
-PK: `(ocid, boss, difficulty, period_key)`. 캐릭터가 특정 (보스, 난이도)를 특정 기간(`period_key`, 예: 주차)에 처치했을 때의 파티원 수·정가·실수령액 스냅샷.
+
+PK: `(ocid, boss_key, difficulty, period_key)`. **보스 key 와 난이도 key 가 기본키에 든다**([[ADR-280]] 결정 12, 2026-09-15, 이슈 #445). `boss` 는 적을 때의 보스 이름이고 보이는 이름은 key 로 보스 표에서 찾는다. 세 보스 표의 본문은 `storage/sqlite/boss-tables.ts` 한 벌을 CREATE 와 버전 4 가 함께 쓴다. 캐릭터가 특정 (보스, 난이도)를 특정 기간(`period_key`, 예: 주차)에 처치했을 때의 파티원 수·정가·실수령액 스냅샷.
 
 - **자동 생성**: 사용자가 화면에 들어오지 않아도, 스케줄러 동기화 응답에서 `complete_flag: true`인 (ocid, boss, difficulty, periodKey) 조합을 처음 만나는 순간 즉시 upsert된다([[ADR-014]]).
 - **로컬 전용**: Nexon API는 최근 14일치만 조회 가능하므로, 장기 히스토리는 이 테이블에만 존재한다 — 삭제하면 서버 재동기화로도 복구 불가.
@@ -83,7 +84,7 @@ PK: `(ocid, boss, difficulty, period_key)`. 캐릭터가 특정 (보스, 난이�
 - **`defeated_on` = 처치 **날짜** (KST `YYYY-MM-DD`, nullable — [[ADR-172]]).** `period_key` 는 주(목요일)·달이라 «며칟날» 을 못 든다. 이 칸이 그것을 들고, **가계부 캘린더만** 읽는다. 값은 스케줄러 API 의 날짜별 응답을 훑어 «미완료 → 완료» 로 뒤집힌 날을 찾아 채운다(`features/boss-profit/defeat-dates.ts`). **NULL 은 «모름» 이고 월간 칸 집계에서 조용히 빠진다** — `world` 와 같은 모양이다([[ADR-069]] 결정 1). `world` 와 마찬가지로 나중에 더한 컬럼이라 **`ensureColumn` 이 함께 있어야 한다.** 키가 아니므로 옛 행을 옮기지 않는다.
 
 ### `boss_party_settings` — 상시 파티 인원 설정
-PK: `(ocid, boss, difficulty)`. "이 캐릭터는 이 보스를 항상 N인 파티로 잡는다"는 사용자 설정. 완료 여부·기간과 무관한 상시 값이며, 보스 스케줄러 화면의 파티 배지·솔로/파티 필터와 보스 수익 계산기가 공유한다.
+PK: `(ocid, boss_key, difficulty)`. "이 캐릭터는 이 보스를 항상 N인 파티로 잡는다"는 사용자 설정. 완료 여부·기간과 무관한 상시 값이며, 보스 스케줄러 화면의 파티 배지·솔로/파티 필터와 보스 수익 계산기가 공유한다.
 
 - 삭제 API가 따로 없다 — 솔로로 되돌리려면 `party_size = 1`로 upsert한다("파티 관리" 설정과 솔로 취급이 값 레벨에서는 동일).
 
@@ -93,7 +94,7 @@ PK: `(ocid, cycle, period_key)`. "이 캐릭터의 이 기간은 이미 (재)조
 - 보스 수익 화면의 기간 네비게이터가 과거로 이동할 때, 이 테이블에 체크 기록이 없는 기간만 `nexon/schedule`을 `date` 파라미터로 1회 재조회한다([[ADR-023]]). 한 번 체크되면 그 기간은 다시 재조회하지 않고 로컬 기록만 신뢰한다.
 
 ### `boss_drop_records` — 기간별 드롭 기록
-PK: `(ocid, boss, difficulty, period_key, drop_index)`. [[ADR-038]]에서 도입했다. **PK에 난이도가 들어 있어 처치 난이도가 나중에 확정·변경되면 이관이 필요하다**([[ADR-069]] 결정 4 — 옛 난이도 키의 드롭을 확정 키로 옮기고 그 난이도에서 획득 불가한 항목은 삭제한다. 상세는 [../features/boss-profit.md](../features/boss-profit.md) "자동 기록"). 한 보스가 여러 드롭을 가지므로 `drop_index`로 **같은 (보스, 난이도, 기간)에 여러 행**이 들어간다 — 위 세 테이블처럼 조합당 1행이 아니다.
+PK: `(ocid, boss_key, difficulty, period_key, drop_index)`. [[ADR-038]]에서 도입했다. **PK에 난이도가 들어 있어 처치 난이도가 나중에 확정·변경되면 이관이 필요하다**([[ADR-069]] 결정 4 — 옛 난이도 키의 드롭을 확정 키로 옮기고 그 난이도에서 획득 불가한 항목은 삭제한다. 상세는 [../features/boss-profit.md](../features/boss-profit.md) "자동 기록"). 한 보스가 여러 드롭을 가지므로 `drop_index`로 **같은 (보스, 난이도, 기간)에 여러 행**이 들어간다 — 위 세 테이블처럼 조합당 1행이 아니다.
 
 - **금액을 저장한다 — 기록 한 건에 붙는 실판매가다**([[ADR-124]] 결정 1·4, 이슈 #185). `price_state`(`'entered'`·`'skipped'`·`NULL`=미입력) · `price_meso`(판매 **총액**, 수량이 2 이상이어도 묶음가 하나) · `price_share`(분배 인원 **스냅샷**). **상태를 금액의 유무로 추론하지 않는다** — 스킵과 미입력이 둘 다 "금액 없음"이라 구분이 사라진다. `slot`·`box_origin`·`ring_level`도 nullable이다(해당 카테고리가 아닌 드롭에는 값이 없다).
 - **⚠️ `RecordedDrop` 변환기가 **셋**이다** — `lib/boss/boss-drops.ts`·`features/boss-profit/rows.ts`의 동명 함수 `toRecordedDrop` 둘, 그리고 `drops-loader.ts` `loadDropsByRowKey`(이제 `toRecordedDrop` 에 위임). 새 컬럼을 여기 더하지 않으면 **타입 에러 없이 통과하고 값만 조용히 사라진다** — [[ADR-124]] 구현 중 세 번째를 놓쳐 "기간을 왕복하면 가격이 사라지는" 버그가 났다(인라인 리터럴이라 이름으로 못 찾았다). 컬럼을 늘릴 땐 **이름이 아니라 `RecordedDrop` 을 만드는 자리**를 훑을 것.
@@ -293,9 +294,10 @@ COMMIT;
 |---|---|
 | 1 | 이름을 바꾸며 옛 기록을 옮기던 `UPDATE` 일곱을 한 번 돌린다. 지출 다섯(갈래 `상점·편의` → `이벤트·BM`, 보약 버프 둘의 갈래, 농장 · 퀵패스 · 미호로이드 항목 이름)과 아래 메이린 둘이다 |
 | 2 | 가계부 기록에 key 를 채운다. `spend_records` 의 `category_key` · `item_key` · `form_item_keys` · `item_kind_key`, `income_records` 의 `category_key` · `item_key` 다. 이름으로 표를 찾고, 못 찾으면 key 를 비운 채 행을 남긴다([[ADR-280]] 결정 4) |
+| 4 | 보스 표 셋(`boss_profit_records` · `boss_party_settings` · `boss_drop_records`)을 다시 만들어 기본키의 `boss` 를 `boss_key` 로 바꾸고 한글 난이도를 key 로 옮긴다([[ADR-280]] 결정 12). 보스 key 는 `boss` 이름을 API 이름과 같은 규칙(NFC · 공백 제거)으로 찾는다. **보스를 못 찾는 행은 옮기지 않는다.** 기본키를 못 채우고, 표에 없는 보스는 기록하지 않는다는 결정과 같다 |
 | 3 | 드롭 기록에 key 를 채운다. `boss_drop_records` 의 `item_key` · `box_origin_key` 다([[ADR-280]] 결정 11). 이름은 NFC 로 맞추고 `drop-items.json` 에서 찾는다. 기본키에 아이템 이름이 없어 표를 다시 만들지 않는다. 드롭 기록은 key 를 채운 뒤에야 획득 판정을 돌린다 |
 
-새 기기는 CREATE 뒤 빈 테이블에 버전 1 ~ 3 이 돌고 `user_version` 이 3 이 된다. 이관은 진짜 엔진(`db-real-sqlite.test.ts`) 위에서 테스트한다.
+새 기기는 CREATE 뒤 빈 테이블에 버전 1 ~ 4 가 돌고 `user_version` 이 4 가 된다. 이관은 진짜 엔진(`db-real-sqlite.test.ts`) 위에서 테스트한다.
 
 ```sql
 UPDATE boss_party_settings SET boss = '시즌 보스 메이린' WHERE boss = '메이린';
@@ -310,5 +312,6 @@ UPDATE boss_profit_records SET boss = '시즌 보스 메이린' WHERE boss = '�
 
 ## 폐기된 정책 (history)
 
+- ~~보스 표 셋의 기본키는 보스 이름과 한글 난이도다. 이름을 바꾸면 이름 이관 SQL 로 옮긴다(메이린)~~ → **보스 key 와 난이도 key 가 기본키다**([[ADR-280]] 결정 12, 2026-09-15, 이슈 #445).
 - ~~이름을 바꾸며 기록을 옮기는 `UPDATE … WHERE` 는 부팅마다 돈다. 걸리는 행이 없으면 no-op 이다~~ → **DB 버전 1 이
   한 번 돈다**([[ADR-280]] 결정 5, 2026-09-15, 이슈 #443). 뒤 버전이 앞 버전의 결과를 읽어야 해서 차례가 필요했다.

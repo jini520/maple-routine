@@ -26,6 +26,8 @@
 | [SQLite 안정성](#sqlite-안정성) | 리로드 전에 커넥션을 닫는 이유 |
 | [열린 질문](#열린-질문) · [폐기된 정책](#폐기된-정책-history) | |
 
+> **보스와 난이도를 key 로 잇는다**([[ADR-280]] 결정 12, 구현 완료 2026-09-15, 이슈 #445). 수익 행(`BossProfitRow`)은 `bossKey` 와 보이는 이름 `bossName` 을 따로 들고, 수익 기록 · 파티 설정 · 드롭 기록은 보스 key 와 난이도 key 로 잇는다. 보이는 보스 이름은 API 표기(`검은 마법사`)다. 보스 표에 없는 보스는 수익 행 · 자동 기록에 안 들어간다(`selectBossProfitBosses` 가 뺀다).
+
 ## 관련 소스
 
 | 구분 | 파일 | 하는 일 |
@@ -54,7 +56,7 @@
 | 계산 | `lib/boss/boss-profit-delta.ts` | 직전 기간 대비 증감 |
 | 계산 | `lib/drop/drop-price.ts` | 드롭 판매가를 수익으로 환산 |
 | 계산 | `lib/assets/asset-lookup.ts` · `lib/assets/asset-lookup.ts` | 월드 엠블럼과 결정석 아이콘 |
-| 계산 | `lib/boss/boss-matching.ts` | 보스 정렬 순서, `WEEKLY_BOSS_CLEAR_LIMIT`, `WEEKLY_CRYSTAL_SALE_LIMIT`, `isSeasonBossName` |
+| 계산 | `lib/boss/boss-matching.ts` · `lib/boss/bosses.ts` | 보스 정렬 순서(`compareBossOrder`), `WEEKLY_BOSS_CLEAR_LIMIT`, `WEEKLY_CRYSTAL_SALE_LIMIT`, 보스 표 조회(`bossNameOf` · `isSeasonBoss` · `bossPortraitSlugOf` 등) |
 | 훅 | `hooks/useCountUp.ts` | 금액이 바뀌면 목표까지 굴러가는 숫자([[ADR-087]]) |
 | UI | `components/atoms/AnimatedNumber/` | 그 훅을 **잎에 가두는** 컴포넌트(정정 3). 매 프레임 다시 그리는 범위를 좁히는 것이 존재 이유다 |
 | 참조 | `src/data/boss-crystal-prices.json` | 결정석 정가 |
@@ -196,7 +198,7 @@ Nexon API 를 부른다.
 store에 필드를 두지 않고 `rows` 에서 그때그때 파생한다.
 
 ```
-distinct(bossRows.filter(r => r.isComplete && !isSeasonBossName(r.boss)).map(r => r.boss)).length
+distinct(bossRows.filter(r => r.isComplete && !isSeasonBoss(r.bossKey)).map(r => r.bossKey)).length
 ```
 
 의미는 보스 스케줄러의 `countClearedWeeklyBosses` 와 같다. 등록 여부는 안 보고, 실제 처치만 세고,
@@ -906,11 +908,11 @@ today 화면은 언제나 이번 주를 그리므로 이 화면의 네비게이�
 ### 표시 순서
 
 - **보스 순서**([[ADR-036]]): `sortRowsByOcidOrder` 가 `weekly-bosses.json` 의 정규 순서
-  (`REFERENCE_ENTRIES`: weekly → eventWeekly → monthly)를 2차 정렬 키로 써서 캐시·라이브·과거 기록 세
+  (보스 표 차례: weekly → eventWeekly → monthly)를 2차 정렬 키로 써서 캐시·라이브·과거 기록 세
   경로를 같은 순서로 고정한다. 키 셋(참조 인덱스 → 난이도 인덱스 → 보스명)은 이제 `boss-matching.ts`
   의 공용 `compareBossOrder` 가 맡는다([[ADR-186]], 2026-08-30). 인라인이던 것을 그대로 옮긴 것이라 이
   화면의 계약은 안 바뀌었고, 스케줄러 자동 모드·today·가계부 타일이 같은 함수를 부르게 됐다
-  (`getBossReferenceOrder` 도 그대로 남는다).
+  (보스 표 차례 조회는 `lib/boss/bosses.ts` 의 `bossReferenceOrder` 다).
 - **캐릭터 카드 순서**([[ADR-143]] 결정 3, 구현 완료 2026-08-17): 카드가 나오는 차례는 행의 순서
   (`getSortedCharacterInfo` 의 레벨 내림차순)가 아니라 사용자가 캐릭터 관리에서 정한
   `trackedCharacters` 배열 순서다. 화면이 `buildCharacterGroups` 결과를 `orderByTracked`
