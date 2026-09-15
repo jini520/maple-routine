@@ -67,13 +67,15 @@ describe('가계부 줄 표식', () => {
     'enhancement:potential',
     'enhancement:additional_potential',
     'income:hunting',
-    'spend:buff',
+    'income:etc',
+    'spend:etc',
   ])('%s 줄이 그림을 찾는다', (key) => {
     expect(cashbookRowIconOf(key)).not.toBeNull()
   })
 
   // 표에 없는 갈래는 `null` 이어야 화면이 아이콘으로 떨어진다. 폴백 그림을 두면 틀린 것을 그린다.
-  it.each(['dropSale', 'income:item_sale', 'income:etc', 'spend:content', 'spend:event_bm', 'spend:item_purchase', 'spend:etc'])(
+  // 목록 갈래 넷(`spend:buff` 등)은 갈래 열쇠로 그림을 안 찾는다. 고른 타일의 그림이 줄 표식이다.
+  it.each(['dropSale', 'income:item_sale', 'spend:content', 'spend:event_bm', 'spend:buff', 'spend:scroll', 'spend:item_purchase'])(
     '%s 줄은 그림이 없다',
     (key) => {
       expect(cashbookRowIconOf(key)).toBeNull()

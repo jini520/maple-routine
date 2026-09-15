@@ -1214,14 +1214,14 @@ describe('그날 목록', () => {
     expect(view.getByTestId('cashbook-row-chevron-spd-1')).toBeTruthy()
   })
 
-  // 그림이 붙는 갈래는 배지 안이 아이콘이 아니라 그림이다. 조회표는 `item-icons.spec.ts` 가
-  // 따로 검사하므로 여기서 물을 것은 **배선** 하나다. 표에 없는 갈래는 아이콘 그대로여야 한다.
-  // 표에 없는 갈래는 아이콘 그대로여야 한다. 폴백 그림을 두면 틀린 것을 그린다.
-  it('그림을 안 붙인 갈래는 배지 안이 아이콘 그대로다', async () => {
+  // 그림이 붙는 줄은 배지 안이 아이콘이 아니라 그림이다. 무엇을 그리는지는 `row-icon.spec.ts` 가
+  // 따로 검사하므로 여기서 물을 것은 **배선** 하나다. 그림이 없는 갈래는 아이콘 그대로여야 한다.
+  // 폴백 그림을 두면 틀린 것을 그린다.
+  it('고른 타일의 그림이 배지 안에 서고 그림 없는 갈래는 아이콘 그대로다', async () => {
     const view = await 그리기()
 
-    // 지출은 `컨텐츠`, 수입은 `아이템 판매` 다. 둘 다 표에 없다.
-    expect(view.queryByTestId('cashbook-row-image-spd-1', { includeHiddenElements: true })).toBeNull()
+    // 지출은 목록에서 고른 `몬스터 파크` 라 그 타일의 그림이다. 수입은 `아이템 판매` 라 그림이 없다.
+    expect(view.getByTestId('cashbook-row-image-spd-1', { includeHiddenElements: true })).toBeTruthy()
     expect(view.queryByTestId('cashbook-row-image-inc-1', { includeHiddenElements: true })).toBeNull()
   })
 

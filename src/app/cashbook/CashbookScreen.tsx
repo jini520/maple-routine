@@ -73,8 +73,7 @@ import {
   floorWeekStartKey,
   monthWindow,
 } from '../../features/cashbook/range'
-import { recordIconKeyOf } from '../../features/cashbook/row-icon'
-import { cashbookRowIconOf } from '../../lib/assets/asset-lookup'
+import { recordIconOf } from '../../features/cashbook/row-icon'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
@@ -448,9 +447,9 @@ function DayRecordRow(props: {
   const cash = recordCashOf(entry)
   const countLabel = recordCountLabelOf(entry)
   const Icon = income ? ProfitIcon : ShoppingCartIcon
-  // 열쇠는 화면 글자가 아니라 줄의 신원이다. 손입력 줄은 이름을 적으면 그것이 뜨므로
+  // 화면 글자가 아니라 줄의 신원으로 찾는다. 손입력 줄은 이름을 적으면 그것이 뜨므로
   // 보이는 글자로 찾으면 이름을 적은 줄에서만 그림이 사라진다.
-  const rowIcon = cashbookRowIconOf(recordIconKeyOf(entry))
+  const rowIcon = recordIconOf(entry)
   /**
    * 펼칠 수 있는 줄은 둘이다. 결정석은 잡은 보스를, 강화는 만진 장비를 편다. 판매 줄은 둘 중
    * 어느 칸도 안 갖는 타입이라(`AutoDayRecord` 가 합집합이다) 분기를 잘못 쓰면 컴파일 단계에서

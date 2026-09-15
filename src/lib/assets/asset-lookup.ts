@@ -153,9 +153,11 @@ const CASHBOOK_ROW_ICON_BY_KEY: Record<string, string> = {
   'enhancement:starforce': 'equipment_enhancement_scroll.png',
   'enhancement:potential': 'potential_reset.png',
   'enhancement:additional_potential': 'additional_potential_reset.png',
-  // 손입력 갈래 둘. 열쇠는 `기록 종류:갈래 key` 라 수익 · 지출의 같은 갈래 key 가 안 겹친다.
+  // 손입력 갈래. 열쇠는 `기록 종류:갈래 key` 라 수익 · 지출의 같은 갈래 key(`etc`)가 안 겹친다.
   'income:hunting': 'wealth_acquisition_potion_small.webp',
-  'spend:buff': 'seiram_elixir.webp',
+  // 기타 둘은 두 시트 첫 화면의 기타 카드와 같은 메소 주머니다. 지출의 목록 갈래는 여기 없고 고른 타일의 그림을 쓴다.
+  'income:etc': 'meso.webp',
+  'spend:etc': 'meso.webp',
 }
 
 export function cashbookRowIconOf(key: string): ImageAssetRef | null {
