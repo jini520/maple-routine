@@ -11,7 +11,7 @@ import {
   getDailyQuestRegionIconUrl,
 } from '../../lib/assets/asset-lookup'
 import type { ImageCrop } from '../../lib/image-crop'
-import { matchDailyQuestRegionSlug, stripDailyQuestPrefix } from '../../lib/scheduler/quest-region-matching'
+import { contentDisplayNameOf, findContent } from '../../lib/scheduler/contents'
 import type { DailyContent } from '../../types'
 import { Image, View } from 'react-native'
 
@@ -22,8 +22,7 @@ import { IllustratedCard, FadedIllustration } from '../../components/molecules/F
 
 // "몬스터파크"만 배경+아이콘 카드로 확장한다. 다른 kind: 'contents' 항목이 생기면 그때
 // 매핑 테이블로 일반화할지 재검토한다(현재는 인스턴스가 하나뿐이라 과설계 방지).
-export const MONSTER_PARK_NAME = '몬스터파크'
-export const MONSTER_PARK_BACKGROUND_SLUG = 'monsterPark'
+export const MONSTER_PARK_KEY = 'monster_park'
 
 export function DailyQuestCard(props: {
   content: DailyContent
@@ -32,8 +31,8 @@ export function DailyQuestCard(props: {
   isBlocked?: boolean
 }): React.JSX.Element {
   const { content } = props
-  const displayName = stripDailyQuestPrefix(content.name)
-  const backgroundSlug = matchDailyQuestRegionSlug(displayName)
+  const displayName = contentDisplayNameOf(content.contentKey, content.apiName)
+  const backgroundSlug = findContent(content.contentKey)?.background?.map ?? null
   const backgroundUrl = getDailyQuestBackgroundUrl(backgroundSlug)
   const iconUrl = getDailyQuestRegionIconUrl(backgroundSlug)
   const crop = props.crop ?? getDailyQuestRegionCrop(backgroundSlug)
@@ -81,9 +80,10 @@ export function MonsterParkCard(props: {
   isBlocked?: boolean
 }): React.JSX.Element {
   const { content } = props
-  const backgroundUrl = getDailyQuestBackgroundUrl(MONSTER_PARK_BACKGROUND_SLUG)
-  const iconUrl = getDailyQuestRegionIconUrl(MONSTER_PARK_BACKGROUND_SLUG)
-  const crop = props.crop ?? getDailyQuestRegionCrop(MONSTER_PARK_BACKGROUND_SLUG)
+  const backgroundSlug = findContent(content.contentKey)?.background?.map ?? null
+  const backgroundUrl = getDailyQuestBackgroundUrl(backgroundSlug)
+  const iconUrl = getDailyQuestRegionIconUrl(backgroundSlug)
+  const crop = props.crop ?? getDailyQuestRegionCrop(backgroundSlug)
   const progressPercent = content.maxCount > 0 ? Math.min((content.nowCount / content.maxCount) * 100, 100) : 0
 
   return (
@@ -102,7 +102,7 @@ export function MonsterParkCard(props: {
               />
             )}
             <Text className="text-sm font-medium text-text" style={ILLUSTRATION_TEXT_SHADOW_STYLE}>
-              {content.name}
+              {contentDisplayNameOf(content.contentKey, content.apiName)}
             </Text>
           </View>
 
@@ -137,13 +137,13 @@ export function renderDailyContentCard(
   /** 이 카드를 보는 캐릭터의 레벨. 판정은 `lib/scheduler/required-level` 한 곳이 한다. */
   characterLevel: number | null,
 ): React.JSX.Element {
-  const isBlocked = isContentBlocked(characterLevel, content.name)
+  const isBlocked = isContentBlocked(characterLevel, content.contentKey)
 
   if (content.kind === 'quest') {
     return <DailyQuestCard content={content} isBlocked={isBlocked} />
   }
 
-  if (content.name === MONSTER_PARK_NAME) {
+  if (content.contentKey === MONSTER_PARK_KEY) {
     return <MonsterParkCard content={content} isBlocked={isBlocked} />
   }
 
@@ -151,7 +151,7 @@ export function renderDailyContentCard(
     <Card className="gap-2 p-4">
       <View className="flex-row items-center justify-between gap-2">
         <Text className="shrink text-sm text-text">
-          {content.name} · {content.nowCount}/{content.maxCount}
+          {contentDisplayNameOf(content.contentKey, content.apiName)} · {content.nowCount}/{content.maxCount}
         </Text>
         {isBlocked && <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>}
       </View>

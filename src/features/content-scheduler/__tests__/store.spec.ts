@@ -3,6 +3,7 @@ import { waitFor } from '../../../__tests__/wait-for'
 import { useCharacterSelectionStore } from '../../character-selection/store'
 import type { CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
 import type { DailyContent, WeeklyContent } from '../../../types'
+import { findContent } from '../../../lib/scheduler/contents'
 
 // 스토어가 toScheduleSyncError로 원인을 살리므로 그 매핑은 실물을 쓴다(부분 모킹).
 jest.mock('../../schedule-sync/schedule-sync', () => ({
@@ -77,12 +78,14 @@ import {
 // 읽는 자리에서 채운다.
 var mockTrackingModeStateMock: { mode: 'auto' | 'manual' } = { mode: 'auto' }
 
-function dailyContent(name: string): DailyContent {
-  return { name, kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 3, questState: null }
+function dailyContent(contentKey: string): DailyContent {
+  const apiName = findContent(contentKey)!.content_name
+  return { contentKey, apiName, kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 3, questState: null }
 }
 
-function weeklyContent(name: string): WeeklyContent {
-  return { name, kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 3, questState: null }
+function weeklyContent(contentKey: string): WeeklyContent {
+  const apiName = findContent(contentKey)!.content_name
+  return { contentKey, apiName, kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 3, questState: null }
 }
 
 function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterScheduleSync {
@@ -95,8 +98,8 @@ function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterSc
       world: '베라',
       level: 200,
       jobClass: '렌',
-      dailyContents: [dailyContent('몬스터파크')],
-      weeklyContents: [weeklyContent('에픽 던전 : 악몽선경')],
+      dailyContents: [dailyContent('monster_park')],
+      weeklyContents: [weeklyContent('epic_dungeon_nightmare_paradise')],
       bossContents: [],
       isDailyStale: false,
       isWeeklyStale: false,
@@ -174,8 +177,8 @@ describe('useContentSchedulerStore', () => {
       {
         ocid: 'ocid-1',
         characterName: '캐릭터1',
-        dailyContents: [dailyContent('몬스터파크')],
-        weeklyContents: [weeklyContent('에픽 던전 : 악몽선경')],
+        dailyContents: [dailyContent('monster_park')],
+        weeklyContents: [weeklyContent('epic_dungeon_nightmare_paradise')],
         isStale: false,
         syncedAt: '2026-07-11T00:00:00.000Z',
         error: null,
@@ -253,7 +256,7 @@ describe('useContentSchedulerStore', () => {
         world: '베라',
         level: 200,
         jobClass: '렌',
-        dailyContents: [dailyContent('몬스터파크')],
+        dailyContents: [dailyContent('monster_park')],
         weeklyContents: [],
         bossContents: [],
       },
@@ -269,7 +272,7 @@ describe('useContentSchedulerStore', () => {
         ocid: 'ocid-1',
         characterName: '캐시된캐릭터',
         world: '베라',
-        dailyContents: [dailyContent('몬스터파크')],
+        dailyContents: [dailyContent('monster_park')],
         weeklyContents: [],
         isStale: true,
         syncedAt: '2026-07-11T00:00:00.000Z',
@@ -418,7 +421,7 @@ describe('useContentSchedulerStore', () => {
       return {
         ocid,
         characterName,
-        dailyContents: [dailyContent('몬스터파크')],
+        dailyContents: [dailyContent('monster_park')],
         weeklyContents: [],
         isStale: false,
         syncedAt: '2026-07-27T00:00:00.000Z',
@@ -524,7 +527,7 @@ describe('useContentSchedulerStore', () => {
       mockTrackingModeStateMock.mode = 'manual'
       syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-2', characterName: '새캐릭터' })])
       getManualTrackedContentMock.mockImplementation(async (ocid: string) =>
-        ocid === 'ocid-2' ? [{ contentName: '몬스터파크', kind: 'daily' }] : [],
+        ocid === 'ocid-2' ? [{ contentKey: 'monster_park', kind: 'daily' }] : [],
       )
       useContentSchedulerStore.setState({
         trackedOcids: ['ocid-1'],
@@ -534,7 +537,7 @@ describe('useContentSchedulerStore', () => {
       await useContentSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
 
       expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({
-        'ocid-2': [{ contentName: '몬스터파크', kind: 'daily' }],
+        'ocid-2': [{ contentKey: 'monster_park', kind: 'daily' }],
       })
     })
   })
@@ -583,14 +586,14 @@ describe('useContentSchedulerStore', () => {
       mockTrackingModeStateMock.mode = 'manual'
       syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1' })])
       getManualTrackedContentMock.mockImplementation(async (ocid: string) =>
-        ocid === 'ocid-1' ? [{ contentName: '몬스터파크', kind: 'daily' }] : [],
+        ocid === 'ocid-1' ? [{ contentKey: 'monster_park', kind: 'daily' }] : [],
       )
 
       await useContentSchedulerStore.getState().refresh(['ocid-1'])
 
       expect(getManualTrackedContentMock).toHaveBeenCalledWith('ocid-1')
       expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({
-        'ocid-1': [{ contentName: '몬스터파크', kind: 'daily' }],
+        'ocid-1': [{ contentKey: 'monster_park', kind: 'daily' }],
       })
     })
 
@@ -606,21 +609,21 @@ describe('useContentSchedulerStore', () => {
     it('addManualContent는 저장소에 멤버십(kind 포함)과 템플릿 max_count를 저장하고 상태를 갱신한다', async () => {
       getManualTrackedContentMock.mockResolvedValue([])
 
-      await useContentSchedulerStore.getState().addManualContent('ocid-1', '몬스터파크', 'daily')
+      await useContentSchedulerStore.getState().addManualContent('ocid-1', 'monster_park', 'daily')
 
-      // '몬스터파크'는 scheduler-content-template.json daily에 max_count 14로 있다
+      // 'monster_park'는 scheduler-content-template.json daily에 max_count 14로 있다
       expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
-        { contentName: '몬스터파크', kind: 'daily', maxCount: 14 },
+        { contentKey: 'monster_park', kind: 'daily', maxCount: 14 },
       ])
       expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({
-        'ocid-1': [{ contentName: '몬스터파크', kind: 'daily', maxCount: 14 }],
+        'ocid-1': [{ contentKey: 'monster_park', kind: 'daily', maxCount: 14 }],
       })
     })
 
     it('addManualContent는 이미 추적 중인 콘텐츠면 중복 추가하지 않는다', async () => {
-      getManualTrackedContentMock.mockResolvedValue([{ contentName: '몬스터파크', kind: 'daily', maxCount: 14 }])
+      getManualTrackedContentMock.mockResolvedValue([{ contentKey: 'monster_park', kind: 'daily', maxCount: 14 }])
 
-      await useContentSchedulerStore.getState().addManualContent('ocid-1', '몬스터파크', 'daily')
+      await useContentSchedulerStore.getState().addManualContent('ocid-1', 'monster_park', 'daily')
 
       expect(setManualTrackedContentMock).not.toHaveBeenCalled()
     })
@@ -645,7 +648,7 @@ describe('useContentSchedulerStore', () => {
         characters: [guardView({ guildName: null })],
       })
 
-      const result = await useContentSchedulerStore.getState().addManualContent('ocid-1', '[길드] 지하 수로', 'weekly')
+      const result = await useContentSchedulerStore.getState().addManualContent('ocid-1', 'guild_underground_waterway', 'weekly')
 
       expect(result).toBe('guildRequired')
       expect(setManualTrackedContentMock).not.toHaveBeenCalled()
@@ -656,7 +659,7 @@ describe('useContentSchedulerStore', () => {
         characters: [guardView({ guildName: undefined })],
       })
 
-      const result = await useContentSchedulerStore.getState().addManualContent('ocid-1', '[길드] 지하 수로', 'weekly')
+      const result = await useContentSchedulerStore.getState().addManualContent('ocid-1', 'guild_underground_waterway', 'weekly')
 
       expect(result).toBe('added')
       expect(setManualTrackedContentMock).toHaveBeenCalled()
@@ -667,28 +670,28 @@ describe('useContentSchedulerStore', () => {
         characters: [guardView({ guildName: null })],
       })
 
-      const result = await useContentSchedulerStore.getState().addManualContent('ocid-1', '무릉도장', 'weekly')
+      const result = await useContentSchedulerStore.getState().addManualContent('ocid-1', 'mu_lung_dojo', 'weekly')
 
       expect(result).toBe('added')
     })
 
-    it('removeManualContent는 해당 (kind, 이름) 항목만 제거하고 다른 kind(boss)·다른 이름은 보존한다', async () => {
+    it('removeManualContent는 해당 (kind, key) 항목만 제거하고 다른 kind(boss)·다른 key 는 보존한다', async () => {
       getManualTrackedContentMock.mockResolvedValue([
-        { contentName: '몬스터파크', kind: 'daily', maxCount: 14 },
-        { contentName: '무릉도장', kind: 'weekly' },
-        { contentName: '몬스터파크', kind: 'boss', difficulty: '하드' },
+        { contentKey: 'monster_park', kind: 'daily', maxCount: 14 },
+        { contentKey: 'mu_lung_dojo', kind: 'weekly' },
+        { kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' },
       ])
 
-      await useContentSchedulerStore.getState().removeManualContent('ocid-1', '몬스터파크', 'daily')
+      await useContentSchedulerStore.getState().removeManualContent('ocid-1', 'monster_park', 'daily')
 
       expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
-        { contentName: '무릉도장', kind: 'weekly' },
-        { contentName: '몬스터파크', kind: 'boss', difficulty: '하드' },
+        { contentKey: 'mu_lung_dojo', kind: 'weekly' },
+        { kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' },
       ])
       expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({
         'ocid-1': [
-          { contentName: '무릉도장', kind: 'weekly' },
-          { contentName: '몬스터파크', kind: 'boss', difficulty: '하드' },
+          { contentKey: 'mu_lung_dojo', kind: 'weekly' },
+          { kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' },
         ],
       })
     })
@@ -815,7 +818,7 @@ describe('useContentSchedulerStore', () => {
           world: '베라',
           level: 200,
           jobClass: '렌',
-          dailyContents: [dailyContent('몬스터파크')],
+          dailyContents: [dailyContent('monster_park')],
           weeklyContents: [],
           bossContents: [],
         },
@@ -960,7 +963,7 @@ function 캐시상태() {
 
 function 캐시상태FULL() {
   const base = 캐시상태()
-  return { ...base, state: { ...base.state, dailyContents: [dailyContent('몬스터파크')] } }
+  return { ...base, state: { ...base.state, dailyContents: [dailyContent('monster_park')] } }
 }
 
 // 조회 불가는 `character_profiles.unavailable` 에 남아 있다. 동기화가 끝나야 안다고 두면 그

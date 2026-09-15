@@ -16,7 +16,7 @@ import { getMaxQueryableDate, getMinQueryableDate, MIN_SCHEDULER_DATE } from '..
 import { getKstDateKeyDaysAgo } from '../../lib/scheduler/reset-clock'
 import { toProbeObservation } from '../../lib/scheduler/scheduler-activity'
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
-import { bossKeyOfApiName } from '../../lib/boss/bosses'
+import { SCHEDULE_NAME_RESOLVERS } from '../../lib/scheduler/schedule-name-resolvers'
 import { getAuthConfig } from '../../storage/api-key'
 import {
   getScheduleProbeLedger,
@@ -177,7 +177,7 @@ export async function fillScheduleWindow(
 
     let state
     try {
-      state = await fetchSchedulerCharacterState(authConfig.apiKey, ocid, bossKeyOfApiName, dateKey)
+      state = await fetchSchedulerCharacterState(authConfig.apiKey, ocid, SCHEDULE_NAME_RESOLVERS, dateKey)
     } catch (error) {
       const kind = toScheduleSyncError(error).kind
       if (kind === 'characterUnavailable') {

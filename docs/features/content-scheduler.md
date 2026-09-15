@@ -21,6 +21,8 @@
 | [컨텐츠 관리 화면](#컨텐츠-관리-화면) | 카테고리 그룹핑, 길드 잠금 |
 | [폐기된 정책](#폐기된-정책-history) | |
 
+> **컨텐츠는 이름이 아니라 컨텐츠 key 로 찾는다**([[ADR-280]] 결정 13, 구현 완료 2026-09-15 · 실기기 미검증, 이슈 #446 의 첫 PR). 템플릿(`scheduler-content-template.json`)이 컨텐츠 마스터 표이고 줄마다 key · 갈래 key · 보이는 이름 · 그림을 든다. 응답을 정규화하는 자리가 API 이름에서 key 를 한 번 얻고, 카드 고르기 · 완료 판정 · 공유 범위 · 수동 추적은 모두 그 key 와 갈래 key 로 가른다. 표에 없는 컨텐츠는 key 가 `null` 이고 자동 모드 목록에만 원문 이름으로 선다.
+
 ## 관련 소스
 
 | 구분 | 파일 | 하는 일 |
@@ -32,19 +34,20 @@
 | 상태 | `features/character-selection/store.ts` | 고른 캐릭터. 화면 넷이 구독한다([[ADR-159]]) |
 | 상태 | `features/schedule-sync` | `getCharacterPickerRoster` · `resolveCharacterEligibility` · `format.ts` |
 | 계산 | `lib/scheduler/scheduler-merge.ts` | 3단 캐시 병합 |
-| 계산 | `lib/scheduler/scheduler-content-scope.ts` | `getShareScope(name)`. 캐릭터·월드·계정 구분 |
-| 계산 | `lib/scheduler/content-category.ts` | `categorizeContentEntries`. 카테고리 도출 |
+| 계산 | `lib/scheduler/contents.ts` | 컨텐츠 표 조회. `findContent(key)` · API 이름에서 key 를 얻는 `contentKeyOfApiName` |
+| 계산 | `lib/scheduler/content-categories.ts` | 갈래 표. 보이는 글자 · 참고 태그 · 주간 관리 화면 차례 |
+| 계산 | `lib/scheduler/scheduler-content-scope.ts` | `getShareScope(contentKey)`. 캐릭터·월드·계정 구분 |
+| 계산 | `lib/scheduler/content-category.ts` | `categorizeContentEntries`. 갈래로 묶기 |
 | 계산 | `lib/scheduler/required-level.ts` | 요구 레벨 판정([[ADR-162]]). **소비처 다섯이 이 한 곳을 쓴다** |
 | 계산 | `lib/scheduler/tracked-order.ts` | `orderByTracked`. 저장 순서 적용 |
 | 계산 | `lib/boss/boss-profit-period.ts` 의 `isEffectiveIn` | 데이터 줄의 시작 기간(`from`) 판정. 보스 수익의 가격 · 드롭과 같은 함수다([[ADR-261]]) |
-| 계산 | `lib/assets/asset-lookup.ts` | 일일퀘스트 지역 배경 매칭 |
+| 계산 | `lib/assets/asset-lookup.ts` | 지도 배경 slug 로 아이콘 · 배경 · 크롭 찾기 |
 | 저장 | `storage/scheduler-cache.ts` | 캐릭터별 마지막 정상 상태와 `syncedAt` |
 | 저장 | `storage/shared-progress-cache.ts` | 월드·계정 공유 진행 원장 |
 | 저장 | `storage/schedule-probe-ledger.ts` | 어느 캐릭터를 어느 날짜로 조회했는지 |
 | 참조 | `src/data/scheduler-content-catalog.json` | 공유 범위 · `cumulativeScores` |
-| 참조 | `src/data/scheduler-content-template.json` | 관리 화면 목록의 원천 |
-| 참조 | `src/data/daily-quest-regions.json` · `daily-quest-region-crops.json` | 지역명 매핑과 크롭 |
-| 참조 | `src/data/weekly-regional-quests.json` | 주간 지역 퀘스트 |
+| 참조 | `src/data/scheduler-content-template.json` | 컨텐츠 마스터 표. 관리 화면 목록의 원천 |
+| 참조 | `src/data/daily-quest-region-crops.json` | 지도 배경 크롭 |
 
 **관련 ADR** (유효): [[ADR-012]] [[ADR-013]] [[ADR-020]] [[ADR-021]] [[ADR-030]] [[ADR-034]]
 [[ADR-035]] [[ADR-053]] [[ADR-057]] [[ADR-062]] [[ADR-063]] [[ADR-074]] [[ADR-086]] [[ADR-096]]
@@ -155,19 +158,20 @@ today ‘남은 스케줄’) 흩어지면 같은 항목이 화면마다 다르�
 - **완료 판정**: `dailyContents`·`weeklyContents` 는 `nowCount > 0 || questState === 2`,
   `bossContents` 는 `ownComplete === true` 다([[ADR-032]]. 승격된 `isComplete` 가 아니라 자기 난이도의
   원본). "등록만 하고 완료 안 함"은 자격이 아니다.
-- **월드·계정 공유 항목은 뺀다**(`getShareScope(name) !== 'character'`). 몬스터파크와 에픽 던전의
+- **월드·계정 공유 항목은 뺀다**(`getShareScope(contentKey) !== 'character'`). 몬스터파크와 에픽 던전의
   완료는 다른 캐릭터가 만들었을 수 있어 이 캐릭터의 활동 증거가 못 된다([[ADR-030]] 의 "마지막 활성
   캐릭터" 오염).
-- **리셋 없이 누적되는 개인 점수도 뺀다**(`isCumulativeScore(name)`, [[ADR-086]] 정정 2). 공유
+- **리셋 없이 누적되는 개인 점수도 뺀다**(`isCumulativeScore(contentKey)`, [[ADR-086]] 정정 2). 공유
   여부와는 **다른 축**이다. `[길드] 지하 수로` 는 개인 기록이 맞지만 `now_count` 가 주간 리셋을
   넘어서도 줄지 않아(실측 73635 → 75889 → 79579) "한 번이라도 해봤음"이 영원히 "최근 14일에 했음"으로
   읽힌다. 카탈로그의 `cumulativeScores` 목록이 원천이고 **자격 판정에서만** 쓴다. 병합과 표시는
   바뀌지 않는다. 같은 `[길드]` 접두라도 `주간 미션 포인트` 와 `플래그 레이스` 는 주기마다 리셋되므로
   그대로 활동 증거다.
-- **이 제외는 카탈로그가 정확할 때만 성립한다**([[ADR-086]] 정정 1). `getShareScope` 는 공백만 제거하고
-  완전히 일치하는지로 비교하므로, 접두가 붙은 변형(`[몬스터파크] 익스트림 몬스터파커에
-  도전해보겠나?`)은 **별도 항목으로 등록해야** 잡힌다. 안 그러면 월드 공유 진행이 캐릭터 활동으로
-  읽혀 미접속 캐릭터가 목록에 남는다(실기기 확인). 새 항목이 의심되면
+- **이 제외는 템플릿과 카탈로그가 정확할 때만 성립한다**([[ADR-086]] 정정 1). 공유 범위는 컨텐츠 key 로 찾고,
+  key 는 API 이름을 템플릿의 `content_name` 과 NFC 뒤 공백만 지워 완전 일치로 맞춰 얻는다([[ADR-280]] 결정 13).
+  그래서 접두가 붙은 변형(`[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?`)은 **템플릿에 별도 줄로 넣고
+  카탈로그에 그 key 로 등록해야** 잡힌다. 템플릿에 없는 이름은 key 가 `null` 이라 캐릭터 범위로 읽힌다.
+  그러면 월드 공유 진행이 캐릭터 활동으로 읽혀 미접속 캐릭터가 목록에 남는다(실기기 확인). 새 항목이 의심되면
   `scripts/probe-nexon-api.mjs items <캐릭터명>` 으로 이름과 현재 분류를 대조하고, 분류 자체는 반드시
   사용자 확인을 거친다([[ADR-006]]).
 - **`access_flag` 는 계속 캐싱하되 배제 게이트로 쓰지 않는다.** [[ADR-067]] 계측이 "false 여도 세
@@ -556,7 +560,7 @@ mask `linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)`)이다.
 #### 일일퀘스트 카드
 
 [[ADR-020]] 이다. 일간 탭의 `kind: 'quest'` 항목에만 쓴다. 왼쪽에 지역 아이콘
-(`assets/maps/icons/{slug}`, 없으면 생략)과 퀘스트명("[일일 퀘스트] " 접두어 제거), 오른쪽에
+(`assets/maps/icons/{slug}`, 없으면 생략)과 퀘스트명(템플릿 줄의 `displayName`, 표에 없으면 API 원문), 오른쪽에
 `quest_state` 3단 배지다.
 
 ```
@@ -565,10 +569,10 @@ mask `linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)`)이다.
 시작 안함(0): rounded-full bg-surface-2 text-text-muted text-xs font-semibold px-2.5 py-1 "시작 안함" ← .media-scope 안
 ```
 
-**지역 배경 매칭**은 `daily-quest-regions.json`(지역명 → 슬러그)과
-`daily-quest-region-crops.json`(슬러그 → 크롭)을 `lib/assets/asset-lookup` 가 조회한다. 공백을
-제거한 표시명이 공백을 제거한 지역명으로 `startsWith` 하는지 본다(예: "레헬른의평온한밤"이
-"레헬른"으로 시작한다). 매칭이 안 되면 일러스트 층을 생략한다. 크롭을 맞추던 디버그 화면은 ⛔ ADR-092 에서 삭제했다.
+**지역 배경**은 템플릿 줄의 `background.map`(지도 배경 slug)이다([[ADR-280]] 결정 13). `lib/assets/asset-lookup` 이
+그 slug 로 아이콘 · 배경 · 크롭(`daily-quest-region-crops.json`)을 찾는다. 이름을 비교하지 않는다. 줄에 slug 가
+없거나 표에 없는 컨텐츠면 일러스트 층을 생략한다. 일간 탭은 카드를 `kind` 로 고르므로 표에 없는 일일 퀘스트도
+이 카드이고, 이름만 API 원문(`[일일 퀘스트] …`)이다. 크롭을 맞추던 디버그 화면은 ⛔ ADR-092 에서 삭제했다.
 
 `kind: 'contents'` 항목은 몬스터파크 예외를 빼면 "이름 · now/max + 진행률 바"를 그대로 쓴다.
 
@@ -585,16 +589,19 @@ mask `linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)`)이다.
 진행률 바: maxCount > 0 일 때만. 트랙 bg-track, 채움 bg-third
 ```
 
-이름 · 아이콘 · 배경은 "몬스터파크" 고정이다(별도 매핑 없이 이름을 직접 비교한다). 이 **메인 행 80px +
+컨텐츠 key `monster_park` 하나로 고른다(`MONSTER_PARK_KEY`). 이 **메인 행 80px +
 하단 확장** 원칙은 길드 카드도 재사용한다.
 
 #### 주간 컨텐츠 카드
 
-[[ADR-021]] 이다. 카테고리에 따라 네 종류다.
+[[ADR-021]] 이다. 템플릿 줄의 갈래(`category`)와 컨텐츠 key 로 고르고 네 종류다. 아케인리버 지역 퀘스트 갈래는 줄의
+`type` 으로 한 번 더 가른다(`contents` 는 ② 지역 카드, `quest` 인 성실한 조사는 주간 퀘스트 카드). 표에 없는 컨텐츠(key 가
+`null`)는 갈래를 몰라 기본 카드("이름 · now/max")에 API 원문 이름으로 선다. 이름이 `에픽 던전 : …` 이어도 에픽 던전 카드와
+주간 한도에 들지 않는다.
 
 | 종류 | 왼쪽 | 오른쪽 | 배경 | 높이 |
 |---|---|---|---|---|
-| ① 에픽 던전 | 카테고리 배지 "에픽 던전" + 던전명(접두어 제거) | `Badge`(`QUEST_STATE_VARIANT` 로 고른다. 0 → 시작 안함, 완료는 2 매핑). 주간 한도가 찼고 미완료면 `마감`([[ADR-271]]) | 던전 일러스트(`assets/bosses/`) | 80px |
+| ① 에픽 던전 | 카테고리 배지 "에픽 던전" + 던전명(`displayName`) | `Badge`(`QUEST_STATE_VARIANT` 로 고른다. 0 → 시작 안함, 완료는 2 매핑). 주간 한도가 찼고 미완료면 `마감`([[ADR-271]]) | 던전 일러스트(템플릿 줄의 `background.portrait`, `assets/bosses/`) | 80px |
 | ② 주간 지역 퀘스트 | 지역 아이콘 + 컨텐츠명 | `Badge`(`QUEST_STATE_VARIANT` 로 고른다. 0 → 시작 안함, 1 → 완료) | 일일퀘스트 지역 에셋 재사용 | 80px |
 | ③ 무릉도장 | 이름만 수직 가운데 | 없음 | 없음 | 80px |
 | ④ 길드 | 카테고리 배지 "길드" + "지하 수로" | 점수 배지 `bg-third-tint text-third-ink` "{now}점" | `arcanus` | 112px |
@@ -608,7 +615,7 @@ mask `linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)`)이다.
 - **폴백**: 길드 미션 포인트와 플래그 레이스가 둘 다 미등록이면 묶음 카드 대신 등록된 길드 항목만
   기본 카드(테마 토큰 `bg-surface`·`border-border`, "이름 · now/max")로 그린다.
 - **에픽 던전은 넷이다**(2026-09-17 패치로 아우룸 레기스가 들어왔다, 이슈 #360). 배경은 **레사
-  초상화**다(`WeeklyContentCards.tsx` 의 `EPIC_DUNGEON_BACKGROUND_SLUGS` 에 `lesa`, 사용자 지정
+  초상화**다(템플릿 줄의 `background.portrait` 가 `lesa`, 사용자 지정
   2026-09-12). 기존 셋처럼 그 던전의 보스 초상화를 쓴다. 크롭은 `boss-portrait-crops.json` 의
   `lesa` 가 든다. 시작값은 `100% auto` · `50% 35%` 이고 사용자가 카드를 보며 맞춘다. 에픽 던전의 `max_count` 는 총
   스테이지 수(5)이고 `now_count` 는 깬 스테이지 수다. 한 스테이지라도 깨면 완료다(`byParticipation`).
@@ -616,7 +623,7 @@ mask `linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)`)이다.
   **아우룸 레기스의 템플릿 줄은 `from: 2026-09-17` 을 든다**(사용자 확인 2026-09-13). 그 전 주에는
   관리 목록과 수동 모드 카드에 안 선다(위 `출시 전인 컨텐츠는 목록에 안 선다`).
 - **에픽 던전은 주 3회가 한도다**([[ADR-271]], 사용자 확인 · 지정 2026-09-13, 이슈 #413. 구현 완료
-  2026-09-14 · 실기기 미검증). 4종이지만 주당 3회만 돈다. 한도 `3` 은 카탈로그의 `groupWeeklyLimits`(`에픽던전`)가 든다.
+  2026-09-14 · 실기기 미검증). 4종이지만 주당 3회만 돈다. 한도 `3` 은 카탈로그의 `groupWeeklyLimits`(갈래 key `epic_dungeon`)가 든다.
   - **3종을 완료하면 남은 1종의 카드가 `마감`** 이다. 보스 카드가 주간 12마리 한도를 채운 보스에 쓰는
     말이고 같은 배지다(`Badge variant="muted" weight="bold"`). `완료` 와 같은 상자라 카드 끝이 안 흔들린다.
   - **우선순위는 보스와 같다.** `진행 불가`(요구 레벨 미달) → `마감` → `완료`/`시작 안함`. 요구 레벨
@@ -674,12 +681,12 @@ mask `linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)`)이다.
 [[ADR-261]] 정정 1), 추적 중인 항목만 선택 상태다(`aria-pressed`, 선택 시
 `border-primary bg-primary-tint`). 행을 누르면 추적 토글이고 **즉시 저장**한다.
 
-**카테고리 도출**은 둘이다. (1) `content_name` 접두사(`[X] Y` → 카테고리 X, `에픽 던전 : Y` → "에픽
-던전"), (2) 명시적 오버라이드 맵 `CATEGORY_OVERRIDE`. 게임 도메인 분류라 **사용자가 지정한 값만**
-쓴다([[ADR-006]]). 도출 로직은 공용 유틸 `lib/scheduler/content-category.ts` 의 `categorizeContentEntries` 이고
-단위 테스트가 있다.
+**카테고리**는 템플릿 줄의 `category`(갈래 key)다([[ADR-280]] 결정 13). 이름 접두사를 가르지 않는다. 갈래의
+보이는 글자 · 참고 태그 · 주간 차례는 갈래 표 `lib/scheduler/content-categories.ts` 가 든다. 게임 도메인 분류라
+**사용자가 지정한 값만** 쓴다([[ADR-006]]). 묶는 로직은 공용 유틸 `lib/scheduler/content-category.ts` 의
+`categorizeContentEntries` 이고 단위 테스트가 있다.
 
-**사용자 확정 오버라이드**(2026-07-24): 일간 `몬스터파크`(단독 그룹, 주간 몬파와 아이콘 통일), 주간
+**사용자 확정 갈래**(2026-07-24): 일간 `몬스터파크`(단독 그룹, 주간 몬파와 아이콘 통일), 주간
 `무릉도장`(단독), 주간 "아케인리버 지역 퀘스트"(에르다 스펙트럼 · 배고픈 무토 · 미드나잇 체이서 ·
 스피릿 세이비어 · 엔하임 디펜스 · 프로텍트 에스페라 + `성실한 조사에 대한 보답`).
 
@@ -688,10 +695,10 @@ mask `linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)`)이다.
 
 - **그룹 헤더**: 아이콘 배지(`h-6 w-6 rounded-lg bg-third-tint text-third-ink`) + 카테고리명 + 추적
   카운트(`{tracked}/{total}`). 아이콘은 일일·주간 퀘스트 `MapPin`, 에픽 던전 `Castle`, 메이플 유니온
-  `LayoutGrid`, 몬스터파크 `Swords`, 아케인리버 지역 퀘스트 `Sparkles`, 무릉도장 `Medal`, 길드 `Flag`,
-  그 외 `Sparkles` 다. 행 왼쪽에도 같은 아이콘을 작게 둔다(선택 시 `text-primary-ink`).
-- **카운트 태그**: `contentCountTag(entry, category)` 다. 우선순위는 아이템 오버라이드 → 카테고리
-  오버라이드 → 기본(카운트형이면 "최대 {max_count}회")이다. 도메인 오버라이드(사용자 확정,
+  `LayoutGrid`, 몬스터파크 `Swords`, 아케인리버 지역 퀘스트 `Sparkles`, 무릉도장 `Medal`, 길드 `Flag`
+  다. 갈래 key 로 찾는다. 행 왼쪽에도 같은 아이콘을 작게 둔다(선택 시 `text-primary-ink`).
+- **카운트 태그**: `contentCountTag(entry)` 다. 우선순위는 템플릿 줄의 `countTag` → 갈래 표의 태그 →
+  기본(카운트형이면 "최대 {max_count}회")이다. 도메인 오버라이드(사용자 확정,
   [[ADR-006]])는 일간 몬스터파크 "월드 당 최대 14회", 주간 익스트림 몬파 "월드 당 2회", 에픽 던전 "ID당
   1회", 아케인리버 지역 퀘스트 태그 숨김(`null`)이다.
 
@@ -706,12 +713,18 @@ mask `linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)`)이다.
   (`sortByCachedLevel` 이 `level` 과 함께 캐시에서 꺼내므로 추가 호출이 0회다).
 - **`null`(미가입)일 때만 잠근다.** `undefined` 는 "모름"(구버전 캐시 · 응답에 필드 없음)이라 잠그지
   않는다. 둘을 합치면 데이터가 불완전할 때 길드 컨텐츠가 전부 막힌다([[ADR-057]] 결정 2).
-- **대상 판정은 카테고리 도출을 재사용한다**(`isGuildContent` → `parse(name).category === '길드'`).
+- **대상 판정은 템플릿 줄의 갈래를 쓴다**(`isGuildContent(entry)` → `entry.category === 'guild'`).
   항목명을 코드에 나열하지 않아 화면 그룹핑과 어긋날 수 없다.
 - **이미 추적 중인 항목은 잠그지 않는다.** 길드를 탈퇴한 뒤에도 해제할 수 있어야 한다.
 
 ## 폐기된 정책 (history)
 
+- ~~카드 · 카테고리 · 그림 · 공유 범위를 컨텐츠 이름 글자로 찾는다. 카테고리는 이름 접두사(`[X] Y` · `에픽 던전 : Y`)와
+  `CATEGORY_OVERRIDE` 로 도출하고, 일일 퀘스트 배경은 `daily-quest-regions.json` 의 지역명으로 `startsWith` 매칭하고,
+  에픽 던전 초상은 `EPIC_DUNGEON_BACKGROUND_SLUGS` 가 든다~~ → **컨텐츠 key 와 템플릿 줄의 칸으로 찾는다**([[ADR-280]]
+  결정 13, 2026-09-15, 이슈 #446). 이름을 곳마다 다르게 비교해 띄어쓰기가 다르면 같은 컨텐츠가 원장에 두 번 들어갈 수
+  있었고, 이름을 바꾸면 그림과 분류를 잃었다. 관리 화면 카테고리 라벨 `에픽 던전` 과 카탈로그 계열 `에픽던전` 이 갈래 key
+  `epic_dungeon` 하나가 됐다.
 - ~~에픽 던전 카드는 제 진행만 보고 `완료`/`시작 안함` 이고, 링은 4종을 각각 따로 센다~~ → **주 3회
   한도가 차면 남은 던전은 `마감` 이고 링의 분자에 든다**([[ADR-271]], 2026-09-13, 이슈 #413). 3종을
   끝내도 남은 1종이 할 일로 남아 링이 100% 에 못 닿았다.

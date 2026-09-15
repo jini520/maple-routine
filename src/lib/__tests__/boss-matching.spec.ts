@@ -448,8 +448,8 @@ describe('countManualWeeklyBosses', () => {
   it('컨텐츠 항목(kind: daily/weekly)은 세지 않는다', () => {
     const items: ManualTrackedItem[] = [
       bossItem('zakum', 'chaos'),
-      { contentName: '몬스터파크', kind: 'daily' },
-      { contentName: '무릉도장', kind: 'weekly' },
+      { contentKey: 'monster_park', kind: 'daily' },
+      { contentKey: 'mu_lung_dojo', kind: 'weekly' },
     ]
     expect(countManualWeeklyBosses(items)).toBe(1)
   })

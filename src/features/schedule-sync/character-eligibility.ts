@@ -1,7 +1,7 @@
 import { getBackfillDateKeys } from '../../lib/scheduler/reset-clock'
 import { hasCharacterScopeCompletion, toProbeObservation } from '../../lib/scheduler/scheduler-activity'
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
-import { bossKeyOfApiName } from '../../lib/boss/bosses'
+import { SCHEDULE_NAME_RESOLVERS } from '../../lib/scheduler/schedule-name-resolvers'
 import {
   getScheduleProbeLedger,
   markScheduleProbeUnavailable,
@@ -105,7 +105,7 @@ export async function resolveCharacterEligibility(
     dateKeys.map(async (dateKey): Promise<DayOutcome> => {
       let dayState: SchedulerCharacterState
       try {
-        dayState = await fetchSchedulerCharacterState(apiKey, ocid, bossKeyOfApiName, dateKey)
+        dayState = await fetchSchedulerCharacterState(apiKey, ocid, SCHEDULE_NAME_RESOLVERS, dateKey)
       } catch (error) {
         const kind = toScheduleSyncError(error).kind
         if (kind === 'characterUnavailable') {

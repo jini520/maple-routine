@@ -1,6 +1,7 @@
 
 import { waitFor } from '../../../__tests__/wait-for'
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
+import { SCHEDULE_NAME_RESOLVERS } from '../../../lib/scheduler/schedule-name-resolvers'
 import type {
   CharacterBasicProfile,
   CharacterPickerEntry,
@@ -236,8 +237,8 @@ describe('syncSchedules', () => {
     const results = await syncSchedules(['ocid-2', 'ocid-4'])
 
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
-    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-2', expect.any(Function))
-    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-4', expect.any(Function))
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-2', SCHEDULE_NAME_RESOLVERS)
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-4', SCHEDULE_NAME_RESOLVERS)
     expect(results.map((r) => r.ocid)).toEqual(['ocid-2', 'ocid-4'])
   })
 
@@ -608,8 +609,8 @@ describe('syncSchedules', () => {
 
       expect(ownerResults.map((result) => result.ocid)).toEqual(['ocid-1'])
       expect(outsiderResults.map((result) => result.ocid)).toEqual(['ocid-2'])
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-1', expect.any(Function))
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-2', expect.any(Function))
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-2', SCHEDULE_NAME_RESOLVERS)
     })
 
     it('앞 회차가 실패해도 못 덮은 요청은 자기 회차를 잇는다', async () => {
@@ -689,8 +690,8 @@ describe('syncSchedules', () => {
 
       expect(fetchCharacterListMock).toHaveBeenCalledTimes(1)
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-1', expect.any(Function))
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-2', expect.any(Function))
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-2', SCHEDULE_NAME_RESOLVERS)
       expect(onProgress).toHaveBeenNthCalledWith(1, 0, 2)
       expect(onProgress).toHaveBeenLastCalledWith(2, 2)
       expect(results.map((result) => result.ocid)).toEqual(['ocid-1', 'ocid-2'])
@@ -706,8 +707,8 @@ describe('syncSchedules', () => {
       fetchSchedulerCharacterStateMock.mockResolvedValue(fresh)
       const cachedPrevious = { state: schedulerState('이전-캐릭터1'), syncedAt: '2026-07-10T00:00:00.000Z' }
       getCachedSchedulerStateMock.mockResolvedValue(cachedPrevious)
-      getWorldSharedProgressMock.mockResolvedValue({ 몬스터파크: { active: true } })
-      getAccountSharedProgressMock.mockResolvedValue({ '에픽 던전 : 악몽선경': { active: true } })
+      getWorldSharedProgressMock.mockResolvedValue({ monster_park: { active: true } })
+      getAccountSharedProgressMock.mockResolvedValue({ epic_dungeon_nightmare_paradise: { active: true } })
 
       await syncSchedules(['ocid-1'])
 
@@ -716,8 +717,8 @@ describe('syncSchedules', () => {
       expect(mergeSchedulerStateMock).toHaveBeenCalledWith({
         previous: cachedPrevious.state,
         fresh,
-        worldLedger: { 몬스터파크: { active: true } },
-        accountLedger: { '에픽 던전 : 악몽선경': { active: true } },
+        worldLedger: { monster_park: { active: true } },
+        accountLedger: { epic_dungeon_nightmare_paradise: { active: true } },
         now: expect.any(Date),
       })
     })
@@ -759,14 +760,14 @@ describe('syncSchedules', () => {
       const accountEntry = { active: true, kind: 'contents' as const, nowCount: 1, maxCount: 0, questState: null, lastUpdatedBucket: '2026-07-09' }
       mergeSchedulerStateMock.mockReturnValue({
         characterState: fresh,
-        worldLedgerUpdates: { 몬스터파크: worldEntry },
-        accountLedgerUpdates: { '에픽 던전 : 악몽선경': accountEntry },
+        worldLedgerUpdates: { monster_park: worldEntry },
+        accountLedgerUpdates: { epic_dungeon_nightmare_paradise: accountEntry },
       })
 
       await syncSchedules(['ocid-1'])
 
-      expect(setWorldSharedProgressEntryMock).toHaveBeenCalledWith(fresh.world, '몬스터파크', worldEntry)
-      expect(setAccountSharedProgressEntryMock).toHaveBeenCalledWith('acc-1', '에픽 던전 : 악몽선경', accountEntry)
+      expect(setWorldSharedProgressEntryMock).toHaveBeenCalledWith(fresh.world, 'monster_park', worldEntry)
+      expect(setAccountSharedProgressEntryMock).toHaveBeenCalledWith('acc-1', 'epic_dungeon_nightmare_paradise', accountEntry)
     })
 
     it('ledger 변경분이 없으면 원장 쓰기를 호출하지 않는다', async () => {
@@ -783,7 +784,7 @@ describe('syncSchedules', () => {
 
   describe(': 최초 동기화·캐시 유실 대비 -13일 이내 선채움 (조회는 병렬 · 병합은 날짜 순)', () => {
     function bossContent(cycle: 'weekly' | 'monthly') {
-      return { name: '자쿰', difficulty: '카오스' as const, cycle, isRegistered: true, isComplete: false, ownComplete: false }
+      return { bossKey: 'zakum', apiName: '자쿰', difficulty: 'chaos' as const, cycle, isRegistered: true, isComplete: false, ownComplete: false }
     }
 
     // NOW = 2026-07-11T00:00:00.000Z = KST 2026-07-11T09:00:00(불안정 구간 아님)
@@ -880,8 +881,8 @@ describe('syncSchedules', () => {
 
       // 조회는 13일이 다 나가고, **멈추는 것은 병합이다**.
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(14)
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-1', expect.any(Function))
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', expect.any(Function), '2026-07-10')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-10')
 
       expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(2)
       expect(mergeSchedulerStateMock).toHaveBeenNthCalledWith(2, {
@@ -917,8 +918,8 @@ describe('syncSchedules', () => {
       await syncSchedules(['ocid-1'])
 
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(14)
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', expect.any(Function), '2026-07-10')
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 'key-1', 'ocid-1', expect.any(Function), '2026-07-09')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-10')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 'key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-09')
       // -1일이 아직 stale이라 -2일까지 접고 거기서 멈춘다. 병합 순서는 그대로다.
       expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(3)
     })
@@ -967,7 +968,7 @@ describe('syncSchedules', () => {
         await syncSchedules(['ocid-1'])
 
         expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
-        expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-1', expect.any(Function))
+        expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS)
       })
 
       it('그 날짜에 그 섹션이 있었다면 다시 부른다. 원장은 값이 아니라 유무만 기억한다', async () => {
@@ -999,7 +1000,7 @@ describe('syncSchedules', () => {
 
         await syncSchedules(['ocid-1'])
 
-        expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', expect.any(Function), '2026-07-10')
+        expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-10')
       })
 
       it('조회 불가(OPENAPI00003)로 확정된 캐릭터는 백필 루프에 아예 들어가지 않는다', async () => {
@@ -1053,7 +1054,7 @@ describe('syncSchedules', () => {
         await syncSchedules(['ocid-1'])
 
         expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
-        expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', expect.any(Function), '2026-07-10')
+        expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-10')
       })
     })
 
@@ -1077,7 +1078,7 @@ describe('syncSchedules', () => {
       const results = await syncSchedules(['ocid-1'])
 
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(14)
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 'key-1', 'ocid-1', expect.any(Function), '2026-07-09')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 'key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-09')
       // -1일 조회는 실패해서 merge가 안 불리고, 그다음 성공한 -2일만 merge된다(1단계 + -2일 = 2회)
       expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(2)
       expect(results[0].state).toEqual(finalState)
@@ -1100,28 +1101,29 @@ describe('syncSchedules', () => {
       const accountEntry = { active: true, kind: 'contents' as const, nowCount: 1, maxCount: 0, questState: null, lastUpdatedBucket: '2026-07-09' }
 
       mergeSchedulerStateMock
-        .mockReturnValueOnce({ characterState: stage1State, worldLedgerUpdates: { 몬스터파크: worldEntry }, accountLedgerUpdates: {} })
+        .mockReturnValueOnce({ characterState: stage1State, worldLedgerUpdates: { monster_park: worldEntry }, accountLedgerUpdates: {} })
         .mockReturnValueOnce({
           characterState: finalState,
           worldLedgerUpdates: {},
-          accountLedgerUpdates: { '에픽 던전 : 악몽선경': accountEntry },
+          accountLedgerUpdates: { epic_dungeon_nightmare_paradise: accountEntry },
         })
 
       await syncSchedules(['ocid-1'])
 
       expect(mergeSchedulerStateMock).toHaveBeenNthCalledWith(
         2,
-        expect.objectContaining({ worldLedger: { 몬스터파크: worldEntry }, accountLedger: {} }),
+        expect.objectContaining({ worldLedger: { monster_park: worldEntry }, accountLedger: {} }),
       )
-      expect(setWorldSharedProgressEntryMock).toHaveBeenCalledWith(fresh.world, '몬스터파크', worldEntry)
-      expect(setAccountSharedProgressEntryMock).toHaveBeenCalledWith('acc-1', '에픽 던전 : 악몽선경', accountEntry)
+      expect(setWorldSharedProgressEntryMock).toHaveBeenCalledWith(fresh.world, 'monster_park', worldEntry)
+      expect(setAccountSharedProgressEntryMock).toHaveBeenCalledWith('acc-1', 'epic_dungeon_nightmare_paradise', accountEntry)
     })
 
     // 추가 정정: 콜드 스타트에서 당일 daily가 완전히 비지 않고 월드공유
     // 항목(몬스터파크)만 남으면 isDailyStale이 false라 백필이 안 걸리던 사각지대. 병합 결과에
     // mockCharacter 범위 항목이 하나도 없으면(=몬스터파크뿐) stale로 보고 과거 조회를 발동한다.
     const monsterParkOnly = {
-      name: '몬스터파크',
+      contentKey: 'monster_park',
+      apiName: '몬스터파크',
       kind: 'contents' as const,
       isRegistered: true,
       nowCount: 0,
@@ -1129,7 +1131,8 @@ describe('syncSchedules', () => {
       questState: null,
     }
     const dailyQuest = {
-      name: '[일일 퀘스트] 세르니움 조사',
+      contentKey: 'daily_quest_cernium',
+      apiName: '[일일 퀘스트] 세르니움 조사',
       kind: 'quest' as const,
       isRegistered: true,
       nowCount: 0,
@@ -1163,7 +1166,7 @@ describe('syncSchedules', () => {
       const results = await syncSchedules(['ocid-1'])
 
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(14)
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', expect.any(Function), '2026-07-10')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-10')
       expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(2)
       expect(results[0].state).toEqual(finalState)
     })
@@ -1189,7 +1192,7 @@ describe('syncSchedules', () => {
       await syncSchedules(['ocid-1'])
 
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(14)
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 'key-1', 'ocid-1', expect.any(Function), '2026-07-09')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 'key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-09')
       expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(3)
     })
 
@@ -1315,7 +1318,7 @@ describe('syncSchedules', () => {
         expect.anything(),
       )
       // 스케줄 동기화 자체는 그대로 돈다. 건너뛴 것은 basic 하나뿐이다.
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-2', expect.any(Function))
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-2', SCHEDULE_NAME_RESOLVERS)
       expect(results[1].isStale).toBe(false)
     })
 
@@ -1389,8 +1392,8 @@ describe('syncSchedules', () => {
       const results = await syncSchedules(['ocid-1', 'ocid-2'])
 
       expect(results.map((result) => result.ocid)).toEqual(['ocid-1', 'ocid-2'])
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-1', expect.any(Function))
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-2', expect.any(Function))
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-2', SCHEDULE_NAME_RESOLVERS)
       expect(results.every((result) => result.isStale === false)).toBe(true)
     })
 
@@ -1422,13 +1425,13 @@ describe('syncSchedules', () => {
       mergeSchedulerStateMock.mockImplementation((input: { fresh: SchedulerCharacterState }) => ({
         characterState: input.fresh,
         worldLedgerUpdates: {},
-        accountLedgerUpdates: { '에픽 던전 : 악몽선경': entry },
+        accountLedgerUpdates: { epic_dungeon_nightmare_paradise: entry },
       }))
 
       await syncSchedules(['ocid-1', 'ocid-2'])
 
-      expect(setAccountSharedProgressEntryMock).toHaveBeenCalledWith('acc-1', '에픽 던전 : 악몽선경', entry)
-      expect(setAccountSharedProgressEntryMock).toHaveBeenCalledWith('acc-2', '에픽 던전 : 악몽선경', entry)
+      expect(setAccountSharedProgressEntryMock).toHaveBeenCalledWith('acc-1', 'epic_dungeon_nightmare_paradise', entry)
+      expect(setAccountSharedProgressEntryMock).toHaveBeenCalledWith('acc-2', 'epic_dungeon_nightmare_paradise', entry)
     })
 
     it('mockCharacter/basic 편승 갱신도 각 캐릭터의 자기 계정으로 캐시에 쓴다 (인덱스)', async () => {
@@ -1924,7 +1927,8 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
         ...schedulerState('휴면캐릭'),
         dailyContents: [
           {
-            name: '[일일 퀘스트] 레헬른의 평온한 밤',
+            contentKey: 'daily_quest_lacheln',
+            apiName: '[일일 퀘스트] 레헬른의 평온한 밤',
             kind: 'quest',
             isRegistered: true,
             nowCount: 0,

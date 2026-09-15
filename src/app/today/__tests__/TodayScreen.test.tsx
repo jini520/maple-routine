@@ -182,7 +182,8 @@ function setStores(
 
 function daily(overrides: Partial<DailyContent> = {}): DailyContent {
   return {
-    name: '일일 퀘스트',
+    contentKey: 'daily_quest_lacheln',
+    apiName: '[일일 퀘스트] 레헬른의 평온한 밤',
     kind: 'quest',
     isRegistered: true,
     nowCount: 0,
@@ -193,7 +194,8 @@ function daily(overrides: Partial<DailyContent> = {}): DailyContent {
 
 function weekly(overrides: Partial<WeeklyContent> = {}): WeeklyContent {
   return {
-    name: '[주간 퀘스트] 크리티아스',
+    contentKey: 'weekly_quest_critias',
+    apiName: '[주간 퀘스트] 크리티아스 주간 임무',
     kind: 'quest',
     isRegistered: true,
     nowCount: 0,
@@ -221,7 +223,7 @@ function contentView(ocid: string, index: number): ContentCharacterView {
     ocid,
     characterName: `캐릭터${index}`,
     // 캐릭터마다 남은 개수가 달라야 정렬(남은 개수 많은 순)이 스냅샷에 드러난다.
-    dailyContents: [daily(), daily({ name: '몬스터파크', questState: index % 2 === 0 ? 2 : 0 })],
+    dailyContents: [daily(), daily({ contentKey: 'monster_park', apiName: '몬스터파크', questState: index % 2 === 0 ? 2 : 0 })],
     weeklyContents: [weekly({ questState: index % 2 === 0 ? 2 : 0 })],
     isStale: false,
     syncedAt: NOW.toISOString(),
@@ -435,7 +437,7 @@ describe('TodayScreen: 수동 멤버십을 어느 스토어에서 읽는가', ()
         // character 범위 항목이어야 `남은 스케줄`에 남는다. 공유 컨텐츠는 별도 위젯으로 뗐다
         //
         manualTrackedByOcid: {
-          'ocid-1': [{ contentName: '[일일 퀘스트] 소멸의 여로 조사', kind: 'daily' }] } },
+          'ocid-1': [{ contentKey: 'daily_quest_road_of_vanishing', kind: 'daily' }] } },
       boss: { trackedOcids: ['ocid-1'], characters: [bossView('ocid-1', 1)] } })
 
     await renderScreen()
@@ -451,7 +453,7 @@ describe('TodayScreen: 수동 멤버십을 어느 스토어에서 읽는가', ()
       boss: {
         trackedOcids: ['ocid-1'],
         characters: [bossView('ocid-1', 1)],
-        manualTrackedByOcid: { 'ocid-1': [{ contentName: '스우', difficulty: 'normal', kind: 'boss' }] } } })
+        manualTrackedByOcid: { 'ocid-1': [{ bossKey: 'lotus', difficulty: 'normal', kind: 'boss' }] } } })
 
     await renderScreen()
 

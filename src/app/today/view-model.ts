@@ -21,6 +21,8 @@ import type { ContentCharacterView } from '../../features/content-scheduler/stor
 import type { BossProfitRow } from '../../features/boss-profit/store'
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss/boss-matching'
 import { getShareScope, getSharedContentGroups } from '../../lib/scheduler/scheduler-content-scope'
+import { contentCategoryNameOf, type ContentCategoryKey } from '../../lib/scheduler/content-categories'
+import { contentShortNameOf } from '../../lib/scheduler/contents'
 import { groupWeeklyLimitOf, isClosedByWeeklyLimit } from '../../lib/scheduler/group-weekly-limit'
 import {
   formatBossProfitPeriodLabel,
@@ -67,11 +69,6 @@ import {
   displayedDailyContents,
   displayedWeeklyContents,
 } from '../../features/content-scheduler/displayed-contents'
-
-import {
-  shortDailyContentName,
-  shortWeeklyContentName,
-} from '../../features/content-scheduler/short-content-name'
 
 import { dailyContentCompletion, weeklyContentCompletion } from '../content-scheduler/content-completion'
 
@@ -152,8 +149,8 @@ export interface ScheduleRowView {
  * 부풀림을 없애는 것이 위젯 9의 존재 이유다.
  */
 export interface SharedContentItemView {
-  /** API 원문 이름. 화면은 안 쓰지만 어느 항목인가 의 신원이라 남긴다. */
-  name: string
+  /** 컨텐츠 key. 화면은 안 쓰지만 어느 항목인가 의 신원이라 남긴다. */
+  contentKey: string
   /** 그리는 이름. 계열명이 위에 있으므로 그것을 뺀 나머지다(카탈로그의 `shortName`). */
   shortName: string
   /**
@@ -170,7 +167,9 @@ export interface SharedContentItemView {
 }
 
 export interface SharedContentGroupView {
-  group: string
+  category: ContentCategoryKey
+  /** 계열 머리글. 갈래 표의 이름이다. */
+  label: string
   items: SharedContentItemView[]
   /** 계열의 주간 한도. `now` 는 완료한 줄 수다. 한도가 없는 계열이면 `null`. */
   weeklyLimit: { now: number; max: number } | null
@@ -480,11 +479,6 @@ function buildHeaderPortraits(input: TodayViewModelInput): HeaderPortraitView[] 
     .slice(0, HEADER_PORTRAIT_MAX)
 }
 
-/** 공백을 지운 뒤 비교하는 이름 대조. 카탈로그와 응답의 공백 방향이 항목마다 다르다. */
-function sameContentName(a: string, b: string): boolean {
-  return a.replace(/\s+/g, '') === b.replace(/\s+/g, '')
-}
-
 /** 한 캐릭터의 컨텐츠 입력. 남은 스케줄과 공유 위젯이 같은 모양으로 읽는다. */
 function contentsInputOf(
   input: TodayViewModelInput,
@@ -527,10 +521,10 @@ function buildSharedContents(input: TodayViewModelInput, weeklyPeriodKey: string
 
     const contentsInput = contentsInputOf(input, content)
     for (const item of displayedDailyContents(contentsInput, input.trackingMode, weeklyPeriodKey)) {
-      scheduled.add(item.name.replace(/\s+/g, ''))
+      if (item.contentKey !== null) scheduled.add(item.contentKey)
     }
     for (const item of displayedWeeklyContents(contentsInput, input.trackingMode, weeklyPeriodKey)) {
-      scheduled.add(item.name.replace(/\s+/g, ''))
+      if (item.contentKey !== null) scheduled.add(item.contentKey)
     }
   }
 
@@ -538,12 +532,10 @@ function buildSharedContents(input: TodayViewModelInput, weeklyPeriodKey: string
     .map((group): SharedContentGroupView => {
       const items = group.entries
         .filter((entry) => isEffectiveIn(entry, weeklyPeriodKey))
-        .filter(
-          (entry) => !entry.onlyWhenScheduled || scheduled.has(entry.name.replace(/\s+/g, '')),
-        )
+        .filter((entry) => !entry.onlyWhenScheduled || scheduled.has(entry.contentKey))
         .map((entry): SharedContentItemView => {
-          const matches = (entry.section === 'daily' ? daily : weekly).filter((item) =>
-            sameContentName(item.name, entry.name),
+          const matches = (entry.section === 'daily' ? daily : weekly).filter(
+            (item) => item.contentKey === entry.contentKey,
           )
           const isComplete = matches.some(
             (item) =>
@@ -557,7 +549,7 @@ function buildSharedContents(input: TodayViewModelInput, weeklyPeriodKey: string
           const now = Math.max(0, ...matches.map((item) => item.nowCount))
 
           return {
-            name: entry.name,
+            contentKey: entry.contentKey,
             shortName: entry.shortName,
             // 완료하면 카운트를 안 준다. 완료한 항목의 몇 번 했나 는 언제나 `max` 라 `CLEAR` 가
             // 이미 그 말을 하고, 안 주면 카운트로 완료를 재지 않는 항목이 끝냈는데 `0/2` 로
@@ -570,14 +562,15 @@ function buildSharedContents(input: TodayViewModelInput, weeklyPeriodKey: string
         })
 
       // 한도는 컨텐츠 스케줄러의 카드 · 링과 같은 판정이다. 막힌 줄은 더 진행할 수 없어 카운트를 안 준다.
-      const limit = groupWeeklyLimitOf(group.group, items)
+      const limit = groupWeeklyLimitOf(group.category, items)
       const limitedItems = items.map((item): SharedContentItemView => {
         const isWeeklyLimitClosed = isClosedByWeeklyLimit(item, items)
         return isWeeklyLimitClosed ? { ...item, count: null, isWeeklyLimitClosed } : item
       })
 
       return {
-        group: group.group,
+        category: group.category,
+        label: contentCategoryNameOf(group.category),
         items: limitedItems,
         weeklyLimit: limit === null ? null : { now: limit.completed, max: limit.limit },
       }
@@ -620,15 +613,15 @@ function buildScheduleRows(input: TodayViewModelInput, weeklyPeriodKey: string):
     // 하므로 세면 그 숫자가 영원히 안 줄어든다. 스케줄러 카드·진행률·링과 같은 판정 함수를 본다.
     const characterLevel = content?.level ?? boss?.level ?? null
     const dailyNames = displayedDailyContents(contentsInput, input.trackingMode, weeklyPeriodKey)
-      .filter((item) => getShareScope(item.name) === 'character')
-      .filter((item) => !isContentBlocked(characterLevel, item.name))
+      .filter((item) => getShareScope(item.contentKey) === 'character')
+      .filter((item) => !isContentBlocked(characterLevel, item.contentKey))
       .filter((item) => dailyContentCompletion(item) === 'incomplete')
-      .map((item) => shortDailyContentName(item.name))
+      .map((item) => contentShortNameOf(item.contentKey, item.apiName))
     const weeklyNames = displayedWeeklyContents(contentsInput, input.trackingMode, weeklyPeriodKey)
-      .filter((item) => getShareScope(item.name) === 'character')
-      .filter((item) => !isContentBlocked(characterLevel, item.name))
+      .filter((item) => getShareScope(item.contentKey) === 'character')
+      .filter((item) => !isContentBlocked(characterLevel, item.contentKey))
       .filter((item) => weeklyContentCompletion(item) === 'incomplete')
-      .map((item) => shortWeeklyContentName(item.name))
+      .map((item) => contentShortNameOf(item.contentKey, item.apiName))
     const weeklyBosses = remainingBosses(input, boss, 'weekly', characterLevel)
     const monthlyBosses = remainingBosses(input, boss, 'monthly', characterLevel)
 

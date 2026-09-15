@@ -804,7 +804,7 @@ describe('useBossSchedulerStore', () => {
       it('쓰기 1회로 난이도를 교체한다. 중간 상태(보스가 빠진 배열)를 저장하지 않는다', async () => {
         getManualTrackedContentMock.mockResolvedValue([
           { kind: 'boss', bossKey: 'lotus', difficulty: 'hard' },
-          { contentName: '무릉도장', kind: 'weekly' },
+          { contentKey: 'mu_lung_dojo', kind: 'weekly' },
         ])
 
         await useBossSchedulerStore.getState().setManualBossDifficulty('ocid-1', 'lotus', 'extreme')
@@ -812,7 +812,7 @@ describe('useBossSchedulerStore', () => {
         expect(setManualTrackedContentMock).toHaveBeenCalledTimes(1)
         expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
           { kind: 'boss', bossKey: 'lotus', difficulty: 'extreme' },
-          { contentName: '무릉도장', kind: 'weekly' },
+          { contentKey: 'mu_lung_dojo', kind: 'weekly' },
         ])
       })
 
@@ -824,7 +824,7 @@ describe('useBossSchedulerStore', () => {
 
         await useBossSchedulerStore.getState().setManualBossDifficulty('ocid-1', 'lotus', 'extreme')
 
-        expect(setManualTrackedContentMock.mock.calls[0][1].map((item: ManualTrackedItem) => (item.kind === 'boss' ? item.bossKey : item.contentName))).toEqual([
+        expect(setManualTrackedContentMock.mock.calls[0][1].map((item: ManualTrackedItem) => (item.kind === 'boss' ? item.bossKey : item.contentKey))).toEqual([
           'lotus',
           'lucid',
         ])
@@ -862,16 +862,16 @@ describe('useBossSchedulerStore', () => {
         expect(setManualTrackedContentMock).not.toHaveBeenCalled()
       })
 
-      it('같은 이름의 컨텐츠(kind가 boss가 아닌 항목)는 건드리지 않는다', async () => {
+      it('같은 key 의 컨텐츠(kind가 boss가 아닌 항목)는 건드리지 않는다', async () => {
         getManualTrackedContentMock.mockResolvedValue([
-          { contentName: '스우', kind: 'weekly' },
+          { contentKey: 'lotus', kind: 'weekly' },
           { kind: 'boss', bossKey: 'lotus', difficulty: 'hard' },
         ])
 
         await useBossSchedulerStore.getState().setManualBossDifficulty('ocid-1', 'lotus', 'extreme')
 
         expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
-          { contentName: '스우', kind: 'weekly' },
+          { contentKey: 'lotus', kind: 'weekly' },
           { kind: 'boss', bossKey: 'lotus', difficulty: 'extreme' },
         ])
       })
@@ -901,19 +901,19 @@ describe('useBossSchedulerStore', () => {
       getManualTrackedContentMock.mockResolvedValue([
         { kind: 'boss', bossKey: 'lucid', difficulty: 'easy' },
         { kind: 'boss', bossKey: 'lucid', difficulty: 'hard' },
-        { contentName: '무릉도장', kind: 'weekly' },
+        { contentKey: 'mu_lung_dojo', kind: 'weekly' },
       ])
 
       await useBossSchedulerStore.getState().removeManualBoss('ocid-1', 'lucid', 'easy')
 
       expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
         { kind: 'boss', bossKey: 'lucid', difficulty: 'hard' },
-        { contentName: '무릉도장', kind: 'weekly' },
+        { contentKey: 'mu_lung_dojo', kind: 'weekly' },
       ])
       expect(useBossSchedulerStore.getState().manualTrackedByOcid).toEqual({
         'ocid-1': [
           { kind: 'boss', bossKey: 'lucid', difficulty: 'hard' },
-          { contentName: '무릉도장', kind: 'weekly' },
+          { contentKey: 'mu_lung_dojo', kind: 'weekly' },
         ],
       })
     })
@@ -983,7 +983,7 @@ describe('useBossSchedulerStore', () => {
         ...trackedBosses(TWELVE_WEEKLY_BOSSES.slice(0, 11)),
         { kind: 'boss', bossKey: 'meirin', difficulty: 'normal' },
         { kind: 'boss', bossKey: 'black_mage', difficulty: 'hard' },
-        { contentName: '무릉도장', kind: 'weekly' },
+        { contentKey: 'mu_lung_dojo', kind: 'weekly' },
       ])
 
       const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', 'gloom', 'normal')

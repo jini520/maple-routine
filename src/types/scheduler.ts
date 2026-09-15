@@ -6,7 +6,10 @@ export const BOSS_CYCLES = ['weekly', 'monthly'] as const
 export type BossCycle = (typeof BOSS_CYCLES)[number]
 
 export interface DailyContent {
-  name: string
+  /** 컨텐츠 key. API 이름이 컨텐츠 표에 없으면 `null` 이고, 그 항목은 자동 모드 목록에만 선다. */
+  contentKey: string | null
+  /** API `content_name` 원문. */
+  apiName: string
   kind: 'contents' | 'quest'
   isRegistered: boolean
   nowCount: number
@@ -15,7 +18,10 @@ export interface DailyContent {
 }
 
 export interface WeeklyContent {
-  name: string
+  /** 컨텐츠 key. API 이름이 컨텐츠 표에 없으면 `null` 이다. */
+  contentKey: string | null
+  /** API `content_name` 원문. */
+  apiName: string
   kind: 'contents' | 'quest'
   isRegistered: boolean
   nowCount: number
@@ -78,7 +84,8 @@ export interface SharedProgressEntry {
 export type ManualTrackedItem = ManualTrackedContentItem | ManualTrackedBossItem
 
 export interface ManualTrackedContentItem {
-  contentName: string
+  /** 컨텐츠 key. */
+  contentKey: string
   kind: 'daily' | 'weekly'
   maxCount?: number // 카운트형일 때만. 템플릿(scheduler-content-template.json)의 확정값을 복사해 저장
 }

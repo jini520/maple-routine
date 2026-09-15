@@ -14,9 +14,9 @@ beforeEach(async () => {
 })
 
 const SAMPLE_ITEMS: ManualTrackedItem[] = [
-  { contentName: '몬스터파크', kind: 'daily', maxCount: 14 },
-  { contentName: '[일일 퀘스트] 소멸의 여로 조사', kind: 'daily' },
-  { contentName: '무릉도장', kind: 'weekly' },
+  { contentKey: 'monster_park', kind: 'daily', maxCount: 14 },
+  { contentKey: 'daily_quest_road_of_vanishing', kind: 'daily' },
+  { contentKey: 'mu_lung_dojo', kind: 'weekly' },
   { kind: 'boss', bossKey: 'black_mage', difficulty: 'extreme' },
 ]
 
@@ -34,7 +34,7 @@ describe('round-trip', () => {
 
   it('전체 교체 방식이라 다시 저장하면 이전 배열을 완전히 덮어쓴다', async () => {
     await setManualTrackedContent('ocid-1', SAMPLE_ITEMS)
-    const replaced: ManualTrackedItem[] = [{ contentName: '무릉도장', kind: 'weekly' }]
+    const replaced: ManualTrackedItem[] = [{ contentKey: 'mu_lung_dojo', kind: 'weekly' }]
     await setManualTrackedContent('ocid-1', replaced)
     await expect(getManualTrackedContent('ocid-1')).resolves.toEqual(replaced)
   })
@@ -53,7 +53,7 @@ describe('ocid 독립성', () => {
   })
 
   it('서로 다른 ocid는 서로 다른 배열을 독립적으로 저장한다', async () => {
-    const other: ManualTrackedItem[] = [{ contentName: '에르다 스펙트럼', kind: 'weekly', maxCount: 1 }]
+    const other: ManualTrackedItem[] = [{ contentKey: 'erda_spectrum', kind: 'weekly', maxCount: 1 }]
     await setManualTrackedContent('ocid-1', SAMPLE_ITEMS)
     await setManualTrackedContent('ocid-2', other)
     await expect(getManualTrackedContent('ocid-1')).resolves.toEqual(SAMPLE_ITEMS)
@@ -70,8 +70,8 @@ describe('레거시 kind 마이그레이션', () => {
       ]))
 
     await expect(getManualTrackedContent('ocid-1')).resolves.toEqual([
-      { contentName: '몬스터파크', kind: 'daily', maxCount: 14 },
-      { contentName: '무릉도장', kind: 'weekly' },
+      { contentKey: 'monster_park', kind: 'daily', maxCount: 14 },
+      { contentKey: 'mu_lung_dojo', kind: 'weekly' },
       { kind: 'boss', bossKey: 'lucid', difficulty: 'easy' },
     ])
   })
@@ -83,7 +83,7 @@ describe('레거시 kind 마이그레이션', () => {
       ]))
 
     await expect(getManualTrackedContent('ocid-1')).resolves.toEqual([
-      { contentName: '몬스터파크', kind: 'daily' },
+      { contentKey: 'monster_park', kind: 'daily' },
     ])
   })
 })
@@ -100,7 +100,7 @@ describe('보스 항목 key 이관', () => {
     await expect(getManualTrackedContent('ocid-1')).resolves.toEqual([
       { kind: 'boss', bossKey: 'lucid', difficulty: 'easy' },
       { kind: 'boss', bossKey: 'black_mage', difficulty: 'extreme' },
-      { contentName: '몬스터파크', kind: 'daily', maxCount: 14 },
+      { contentKey: 'monster_park', kind: 'daily', maxCount: 14 },
     ])
   })
 
@@ -113,6 +113,33 @@ describe('보스 항목 key 이관', () => {
       ]))
 
     await expect(getManualTrackedContent('ocid-1')).resolves.toEqual([{ kind: 'boss', bossKey: 'will', difficulty: 'hard' }])
+  })
+})
+
+// 컨텐츠가 key 대신 이름을 들던 모양. 읽을 때 컨텐츠 표에서 key 를 찾는다.
+describe('컨텐츠 항목 key 이관', () => {
+  it('컨텐츠 이름을 컨텐츠 key 로 옮기고 maxCount 를 지킨다. 띄어쓰기가 달라도 찾는다', async () => {
+    await prefs.set('manualTrackedContent:ocid-1', JSON.stringify([
+        { contentName: '[일일 퀘스트] 소멸의 여로 조사', kind: 'daily' },
+        { contentName: '에픽던전:하이마운틴', kind: 'weekly' },
+        { contentName: '[길드] 주간 미션 포인트', kind: 'weekly', maxCount: 10 },
+      ]))
+
+    await expect(getManualTrackedContent('ocid-1')).resolves.toEqual([
+      { contentKey: 'daily_quest_road_of_vanishing', kind: 'daily' },
+      { contentKey: 'epic_dungeon_high_mountain', kind: 'weekly' },
+      { contentKey: 'guild_weekly_mission_points', kind: 'weekly', maxCount: 10 },
+    ])
+  })
+
+  // 컨텐츠 표에 없는 항목은 관리 화면이 못 그리는 고아가 된다.
+  it('컨텐츠 표에서 못 찾는 항목은 빠진다', async () => {
+    await prefs.set('manualTrackedContent:ocid-1', JSON.stringify([
+        { contentName: '없어진 컨텐츠', kind: 'weekly' },
+        { contentName: '무릉도장', kind: 'weekly' },
+      ]))
+
+    await expect(getManualTrackedContent('ocid-1')).resolves.toEqual([{ contentKey: 'mu_lung_dojo', kind: 'weekly' }])
   })
 })
 

@@ -1,5 +1,5 @@
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
-import { bossKeyOfApiName } from '../../lib/boss/bosses'
+import { SCHEDULE_NAME_RESOLVERS } from '../../lib/scheduler/schedule-name-resolvers'
 import { mergeSchedulerState, type MergeOutput } from '../../lib/scheduler/scheduler-merge'
 import { getBackfillDateKeys } from '../../lib/scheduler/reset-clock'
 import {
@@ -111,7 +111,7 @@ function canResolveAnyStaleSection(
 }
 
 // 당일 응답에서 stale 이었던 섹션을 `getBackfillDateKeys` 가 주는 날짜 목록을 조회하며 항목
-// (이름 또는 이름+난이도) 단위로 채운다. 각 날짜 응답을 previous 로 삼아 `mergeSchedulerState`
+// (컨텐츠 key 또는 보스 key+난이도) 단위로 채운다. 각 날짜 응답을 previous 로 삼아 `mergeSchedulerState`
 // 를 한 번씩 더 태우되, world/account 원장은 이 루프의 범위 밖이라 네 플래그를 모두 true 로
 // 강제해 character 범위 항목 병합만 일어나게 한다. 그 날짜 응답이 더 이상 stale 이 아니면 그
 // 시점에 멈추고, 끝까지 못 찾으면 -13일까지 다 써 본 뒤 누적된 결과를 그대로 쓴다. 특정 날짜
@@ -162,7 +162,7 @@ async function fillMissingSections(
   const fetched = await Promise.all(
     dateKeys.map(async (dateKey) => {
       try {
-        const response = await fetchSchedulerCharacterState(apiKey, ocid, bossKeyOfApiName, dateKey)
+        const response = await fetchSchedulerCharacterState(apiKey, ocid, SCHEDULE_NAME_RESOLVERS, dateKey)
         await recordScheduleProbe(ocid, dateKey, { kind: 'observed', ...toProbeObservation(response) })
         return { response, failure: null }
       } catch (error) {
@@ -273,7 +273,7 @@ async function syncOneCharacter(
   accountId: string,
 ): Promise<CharacterScheduleSync> {
   try {
-    const fresh = await fetchSchedulerCharacterState(apiKey, character.ocid, bossKeyOfApiName)
+    const fresh = await fetchSchedulerCharacterState(apiKey, character.ocid, SCHEDULE_NAME_RESOLVERS)
     const [previousCache, worldLedger, accountLedger] = await Promise.all([
       getCachedSchedulerState(character.ocid),
       getWorldSharedProgress(fresh.world),

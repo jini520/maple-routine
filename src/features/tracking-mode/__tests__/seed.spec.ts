@@ -1,5 +1,6 @@
 import { syncSchedules, type CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
 import { setManualTrackedContent } from '../../../storage/manual-tracked-content'
+import { findContent } from '../../../lib/scheduler/contents'
 import type {
   BossContent,
   BossDifficulty,
@@ -19,12 +20,21 @@ jest.mock('../../../storage/manual-tracked-content', () => ({
 
 const OCID = 'ocid-1'
 
-function buildDaily(name: string, isRegistered: boolean): DailyContent {
-  return { name, kind: 'contents', isRegistered, nowCount: 7, maxCount: 14, questState: null }
+/** 컨텐츠 표에 없는 컨텐츠는 `contentKey` 가 `null` 이고 API 이름을 따로 넘긴다. */
+function buildDaily(
+  contentKey: string | null,
+  isRegistered: boolean,
+  apiName = findContent(contentKey)!.content_name,
+): DailyContent {
+  return { contentKey, apiName, kind: 'contents', isRegistered, nowCount: 7, maxCount: 14, questState: null }
 }
 
-function buildWeekly(name: string, isRegistered: boolean): WeeklyContent {
-  return { name, kind: 'contents', isRegistered, nowCount: 1, maxCount: 5, questState: null }
+function buildWeekly(
+  contentKey: string | null,
+  isRegistered: boolean,
+  apiName = findContent(contentKey)!.content_name,
+): WeeklyContent {
+  return { contentKey, apiName, kind: 'contents', isRegistered, nowCount: 1, maxCount: 5, questState: null }
 }
 
 /** `bossKey` 는 스케줄 응답을 앱 상태로 바꾸는 자리가 채운 값이다. 보스 표에 없는 보스는 `null` 이다. */
@@ -73,12 +83,12 @@ describe('seedManualTrackedContent', () => {
       buildSyncResult(
         buildState({
           dailyContents: [
-            buildDaily('몬스터파크', true),
-            buildDaily('[일일 퀘스트] 소멸의 여로 조사', false),
+            buildDaily('monster_park', true),
+            buildDaily('daily_quest_road_of_vanishing', false),
           ],
           weeklyContents: [
-            buildWeekly('에르다 스펙트럼', true),
-            buildWeekly('무릉도장', false),
+            buildWeekly('erda_spectrum', true),
+            buildWeekly('mu_lung_dojo', false),
           ],
           bossContents: [buildBoss('루시드', 'lucid', 'easy', true), buildBoss('스우', 'lotus', 'hard', false)],
         }),
@@ -89,18 +99,19 @@ describe('seedManualTrackedContent', () => {
 
     expect(syncSchedules).toHaveBeenCalledWith([OCID])
     expect(setManualTrackedContent).toHaveBeenCalledWith(OCID, [
-      { contentName: '몬스터파크', kind: 'daily' },
-      { contentName: '에르다 스펙트럼', kind: 'weekly' },
+      { contentKey: 'monster_park', kind: 'daily' },
+      { contentKey: 'erda_spectrum', kind: 'weekly' },
       { kind: 'boss', bossKey: 'lucid', difficulty: 'easy' },
     ])
   })
 
-  it('템플릿에 없는 컨텐츠는 등록돼 있어도 시드에서 제외한다', async () => {
+  // 컨텐츠 표에 없는 컨텐츠는 기록할 key 가 없다. 수동 추적 목록에 담으면 편집할 수 없는 고아가 된다.
+  it('템플릿에 없는 컨텐츠(key 가 없다)는 등록돼 있어도 시드에서 제외한다', async () => {
     jest.mocked(syncSchedules).mockResolvedValue([
       buildSyncResult(
         buildState({
-          dailyContents: [buildDaily('템플릿에 없는 이벤트 콘텐츠', true), buildDaily('몬스터파크', true)],
-          weeklyContents: [buildWeekly('알 수 없는 주간 콘텐츠', true)],
+          dailyContents: [buildDaily(null, true, '템플릿에 없는 이벤트 콘텐츠'), buildDaily('monster_park', true)],
+          weeklyContents: [buildWeekly(null, true, '알 수 없는 주간 콘텐츠')],
         }),
       ),
     ])
@@ -108,7 +119,7 @@ describe('seedManualTrackedContent', () => {
     await seedManualTrackedContent([OCID])
 
     expect(setManualTrackedContent).toHaveBeenCalledWith(OCID, [
-      { contentName: '몬스터파크', kind: 'daily' },
+      { contentKey: 'monster_park', kind: 'daily' },
     ])
   })
 
@@ -175,9 +186,9 @@ describe('seedManualTrackedContent: 여러 ocid', () => {
 
   it('결과 순서가 요청 순서와 달라도 각 ocid는 자기 결과로 시드된다', async () => {
     jest.mocked(syncSchedules).mockResolvedValue([
-      buildSyncResult(buildState({ dailyContents: [buildDaily('몬스터파크', true)] }), 'ocid-2'),
+      buildSyncResult(buildState({ dailyContents: [buildDaily('monster_park', true)] }), 'ocid-2'),
       buildSyncResult(
-        buildState({ dailyContents: [buildDaily('[일일 퀘스트] 소멸의 여로 조사', true)] }),
+        buildState({ dailyContents: [buildDaily('daily_quest_road_of_vanishing', true)] }),
         'ocid-1',
       ),
     ])
@@ -185,16 +196,16 @@ describe('seedManualTrackedContent: 여러 ocid', () => {
     await seedManualTrackedContent(['ocid-1', 'ocid-2'])
 
     expect(setManualTrackedContent).toHaveBeenCalledWith('ocid-1', [
-      { contentName: '[일일 퀘스트] 소멸의 여로 조사', kind: 'daily' },
+      { contentKey: 'daily_quest_road_of_vanishing', kind: 'daily' },
     ])
     expect(setManualTrackedContent).toHaveBeenCalledWith('ocid-2', [
-      { contentName: '몬스터파크', kind: 'daily' },
+      { contentKey: 'monster_park', kind: 'daily' },
     ])
   })
 
   it('요청한 ocid가 결과에 없으면 남의 결과로 시드하지 않고 에러를 던진다', async () => {
     jest.mocked(syncSchedules).mockResolvedValue([
-      buildSyncResult(buildState({ dailyContents: [buildDaily('몬스터파크', true)] }), 'ocid-1'),
+      buildSyncResult(buildState({ dailyContents: [buildDaily('monster_park', true)] }), 'ocid-1'),
     ])
 
     await expect(seedManualTrackedContent(['ocid-1', 'ocid-2'])).rejects.toThrow()

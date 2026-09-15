@@ -208,11 +208,11 @@ describe('ContentScreen: 목록', () => {
       characters: [
         character({
           dailyContents: [
-            { name: '일간항목', kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 3, questState: null },
-            { name: '미등록', kind: 'contents', isRegistered: false, nowCount: 0, maxCount: 3, questState: null },
+            { contentKey: null, apiName: '일간항목', kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 3, questState: null },
+            { contentKey: null, apiName: '미등록', kind: 'contents', isRegistered: false, nowCount: 0, maxCount: 3, questState: null },
           ],
           weeklyContents: [
-            { name: '주간항목', kind: 'contents', isRegistered: true, nowCount: 2, maxCount: 4, questState: null },
+            { contentKey: null, apiName: '주간항목', kind: 'contents', isRegistered: true, nowCount: 2, maxCount: 4, questState: null },
           ],
         }),
       ],
@@ -268,7 +268,7 @@ describe('ContentScreen: 목록', () => {
       characters: [
         character({
           dailyContents: [
-            { name: '캐시항목', kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 2, questState: null },
+            { contentKey: null, apiName: '캐시항목', kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 2, questState: null },
           ],
         }),
       ],
@@ -313,10 +313,10 @@ describe('ContentScreen: 목록', () => {
       characters: [
         character({
           dailyContents: [
-            { name: '완료됨', kind: 'quest', isRegistered: true, nowCount: 0, maxCount: 0, questState: 2 },
-            { name: '미완료', kind: 'quest', isRegistered: true, nowCount: 0, maxCount: 0, questState: 0 },
+            { contentKey: null, apiName: '완료됨', kind: 'quest', isRegistered: true, nowCount: 0, maxCount: 0, questState: 2 },
+            { contentKey: null, apiName: '미완료', kind: 'quest', isRegistered: true, nowCount: 0, maxCount: 0, questState: 0 },
             // 등록 안 된 항목은 목록에 없으므로 분모에도 없다.
-            { name: '미등록', kind: 'quest', isRegistered: false, nowCount: 0, maxCount: 0, questState: 0 },
+            { contentKey: null, apiName: '미등록', kind: 'quest', isRegistered: false, nowCount: 0, maxCount: 0, questState: 0 },
           ],
         }),
       ],
@@ -364,8 +364,9 @@ describe('ContentScreen: 목록', () => {
 
 // 에픽 던전 주 3회 한도. 카드와 링이 같은 판정을 본다. 원천은 표시 목록이 아니라 병합된 목록 전체다.
 describe('ContentScreen: 에픽 던전 주간 한도', () => {
-  const epic = (name: string, nowCount: number, isRegistered = true) => ({
-    name: `에픽 던전 : ${name}`,
+  const epic = (key: string, name: string, nowCount: number, isRegistered = true) => ({
+    contentKey: `epic_dungeon_${key}`,
+    apiName: `에픽 던전 : ${name}`,
     kind: 'contents' as const,
     isRegistered,
     nowCount,
@@ -383,7 +384,12 @@ describe('ContentScreen: 에픽 던전 주간 한도', () => {
   }
 
   it('3종을 완료하면 남은 1종의 카드가 마감이고 링은 가득 찬다', async () => {
-    withEpics([epic('하이마운틴', 1), epic('앵글러 컴퍼니', 1), epic('악몽선경', 0), epic('아우룸 레기스', 1)])
+    withEpics([
+      epic('high_mountain', '하이마운틴', 1),
+      epic('angler_company', '앵글러 컴퍼니', 1),
+      epic('nightmare_paradise', '악몽선경', 0),
+      epic('aurum_regis', '아우룸 레기스', 1),
+    ])
 
     await renderScreen()
 
@@ -393,7 +399,12 @@ describe('ContentScreen: 에픽 던전 주간 한도', () => {
 
   // 자동 모드에서 등록 안 한 던전은 카드가 없지만 그 완료는 한도를 채운다.
   it('등록 안 한 던전의 완료도 한도에 든다', async () => {
-    withEpics([epic('하이마운틴', 1), epic('앵글러 컴퍼니', 1), epic('악몽선경', 1, false), epic('아우룸 레기스', 0)])
+    withEpics([
+      epic('high_mountain', '하이마운틴', 1),
+      epic('angler_company', '앵글러 컴퍼니', 1),
+      epic('nightmare_paradise', '악몽선경', 1, false),
+      epic('aurum_regis', '아우룸 레기스', 0),
+    ])
 
     await renderScreen()
 
@@ -615,11 +626,19 @@ describe('ContentScreen: 수동 트래킹 모드', () => {
       characters: [
         character({
           dailyContents: [
-            { name: '몬스터파크', kind: 'contents', isRegistered: false, nowCount: 3, maxCount: 14, questState: null },
+            {
+              contentKey: 'monster_park',
+              apiName: '몬스터파크',
+              kind: 'contents',
+              isRegistered: false,
+              nowCount: 3,
+              maxCount: 14,
+              questState: null,
+            },
           ],
         }),
       ],
-      manualTrackedByOcid: { 'ocid-1': [{ contentName: '몬스터파크', kind: 'daily' }] },
+      manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'monster_park', kind: 'daily' }] },
     })
 
     await renderScreen()
@@ -633,7 +652,7 @@ describe('ContentScreen: 수동 트래킹 모드', () => {
       status: 'loaded',
       trackedOcids: ['ocid-1'],
       characters: [character()],
-      manualTrackedByOcid: { 'ocid-1': [{ contentName: '무릉도장', kind: 'weekly' }] },
+      manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'mu_lung_dojo', kind: 'weekly' }] },
     })
     await renderScreen()
 

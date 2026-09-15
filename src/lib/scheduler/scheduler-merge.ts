@@ -7,6 +7,7 @@ import type {
   WeeklyContent,
 } from '../../types'
 import { getCurrentBossProfitPeriod } from '../boss/boss-profit-period'
+import { findContent } from './contents'
 import { getCurrentKstDateKey } from './reset-clock'
 import {
   getContentCatalogEntries,
@@ -32,8 +33,18 @@ export interface MergeOutput {
 type ContentItem = DailyContent | WeeklyContent
 
 function withMaxCountOverride<T extends ContentItem>(item: T): T {
-  const override = getMaxCountOverride(item.name)
+  const override = getMaxCountOverride(item.contentKey)
   return override === null ? item : { ...item, maxCount: override }
+}
+
+/** 병합의 항목 신원. 컨텐츠 key 이고, 컨텐츠 표에 없는 항목은 API 원문이다. 두 모양이 겹치지 않게 앞에 표지를 붙인다. */
+function contentMergeKey(item: ContentItem): string {
+  return item.contentKey !== null ? `key:${item.contentKey}` : `api:${item.apiName}`
+}
+
+/** 원장에서 되살린 줄의 API 이름. 표의 `content_name` 이다. */
+function contentApiNameOf(contentKey: string): string {
+  return findContent(contentKey)?.content_name ?? contentKey
 }
 
 function resetProgress<T extends ContentItem>(item: T): T {
@@ -75,31 +86,32 @@ function mergeSection(
   // Nexon 응답이 섹션을 통째로 비우는 대신 개별 항목만 누락시키는 경우가 확인돼
   // (2026-07-23), "섹션이 stale이 아니면 fresh만 신뢰"하던 이전 방식으로는 그 누락을 못 잡았다.
   for (const item of freshItems) {
-    if (getShareScope(item.name) === 'character') {
+    if (getShareScope(item.contentKey) === 'character') {
       items.push(withMaxCountOverride(item))
-      seen.add(item.name)
+      seen.add(contentMergeKey(item))
     }
   }
   for (const item of previousItems) {
-    if (getShareScope(item.name) !== 'character' || seen.has(item.name)) {
+    if (getShareScope(item.contentKey) !== 'character' || seen.has(contentMergeKey(item))) {
       continue
     }
     items.push(withMaxCountOverride(resetProgress(item)))
-    seen.add(item.name)
+    seen.add(contentMergeKey(item))
   }
 
   // world/account 범위: "마지막 활성 캐릭터" API 오염 때문에 previous가 아니라
   // 원장을 신뢰해야 해서 위 정정의 범위 밖이다. 기존처럼 fresh가 stale이 아닐 때만 처리한다.
   if (!freshIsStale) {
     for (const item of freshItems) {
-      const scope = getShareScope(item.name)
-      if (scope === 'character') {
+      const scope = getShareScope(item.contentKey)
+      // 공유 범위는 컨텐츠 표에 있는 항목만 갖는다. 원장 열쇠는 컨텐츠 key 다.
+      if (scope === 'character' || item.contentKey === null) {
         continue
       }
 
       const ledger = scope === 'world' ? worldLedger : accountLedger
-      const wasActive = ledger[item.name]?.active === true
-      const active = trustsRegistrationFlag(item.name) ? item.isRegistered : wasActive || item.isRegistered
+      const wasActive = ledger[item.contentKey]?.active === true
+      const active = trustsRegistrationFlag(item.contentKey) ? item.isRegistered : wasActive || item.isRegistered
       const entry: SharedProgressEntry = {
         active,
         kind: item.kind,
@@ -110,9 +122,9 @@ function mergeSection(
       }
 
       if (scope === 'world') {
-        worldUpdates[item.name] = entry
+        worldUpdates[item.contentKey] = entry
       } else {
-        accountUpdates[item.name] = entry
+        accountUpdates[item.contentKey] = entry
       }
 
       // 값(now_count)은 active 여부와 무관하게 항상 실효 상태에 담고, 노출 여부는 isRegistered로만
@@ -121,17 +133,17 @@ function mergeSection(
       // 월드 총합이라 registration_flag가 false여도 값이 오는 경우, 값을 버리지 않아야 수동 모드가
       // 0 대신 실값을 보여줄 수 있다.
       items.push(withMaxCountOverride({ ...item, isRegistered: active }))
-      seen.add(item.name)
+      seen.add(contentMergeKey(item))
     }
   }
 
   for (const catalogEntry of getContentCatalogEntries(section)) {
-    if (seen.has(catalogEntry.name)) {
+    if (seen.has(`key:${catalogEntry.contentKey}`)) {
       continue
     }
 
     const ledger = catalogEntry.scope === 'world' ? worldLedger : accountLedger
-    const ledgerEntry = ledger[catalogEntry.name]
+    const ledgerEntry = ledger[catalogEntry.contentKey]
     if (ledgerEntry === undefined) {
       continue
     }
@@ -139,7 +151,8 @@ function mergeSection(
     const isLedgerStale = ledgerEntry.lastUpdatedBucket !== bucket
     items.push(
       withMaxCountOverride({
-        name: catalogEntry.name,
+        contentKey: catalogEntry.contentKey,
+        apiName: contentApiNameOf(catalogEntry.contentKey),
         kind: ledgerEntry.kind,
         isRegistered: ledgerEntry.active,
         nowCount: isLedgerStale ? 0 : ledgerEntry.nowCount,
@@ -147,7 +160,7 @@ function mergeSection(
         questState: isLedgerStale ? (ledgerEntry.questState === null ? null : 0) : ledgerEntry.questState,
       }),
     )
-    seen.add(catalogEntry.name)
+    seen.add(`key:${catalogEntry.contentKey}`)
   }
 
   return { items, worldUpdates, accountUpdates }

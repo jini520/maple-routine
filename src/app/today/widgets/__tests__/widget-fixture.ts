@@ -7,6 +7,7 @@
 // 테스트는 자기가 보는 필드만 덮어쓴다.
 
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../../lib/boss/boss-matching'
+import { contentCategoryNameOf, type ContentCategoryKey } from '../../../../lib/scheduler/content-categories'
 
 import { getValuableDroughtTier, valuableDroughtHeadlineCount } from '../../../../lib/drop/drop-history'
 
@@ -263,29 +264,30 @@ export function 공유항목(
   shortName: string,
   부분: Partial<SharedContentItemView> = {},
 ): SharedContentItemView {
-  return { name: shortName, shortName, count: null, isComplete: false, isWeeklyLimitClosed: false, ...부분 }
+  return { contentKey: shortName, shortName, count: null, isComplete: false, isWeeklyLimitClosed: false, ...부분 }
 }
 
+/** 공유 컨텐츠 계열. 머리글은 갈래 표의 이름이다. */
 export function 공유계열(
-  group: string,
+  category: ContentCategoryKey,
   items: SharedContentItemView[],
   weeklyLimit: SharedContentGroupView['weeklyLimit'] = null,
 ): SharedContentGroupView {
-  return { group, items, weeklyLimit }
+  return { category, label: contentCategoryNameOf(category), items, weeklyLimit }
 }
 
 /** 카탈로그 일곱을 다 그린 상태. 남은 것 넷(악몽선경· 일간· 익스트림· PC방). */
 export function 공유컨텐츠(): SharedContentGroupView[] {
   return [
-    공유계열('몬스터파크', [
+    공유계열('monster_park', [
       공유항목('일간', { count: { now: 7, max: 14 } }),
       공유항목('익스트림 몬스터파커', { count: { now: 1, max: 5 } }),
     ]),
-    공유계열('메이플 유니온', [
+    공유계열('maple_union', [
       공유항목('주간 드래곤 퇴치', { isComplete: true }),
       공유항목('PC방 주간 드래곤 퇴치'),
     ]),
-    공유계열('에픽던전', [
+    공유계열('epic_dungeon', [
       공유항목('하이마운틴', { isComplete: true }),
       공유항목('앵글러컴퍼니', { isComplete: true }),
       공유항목('악몽선경'),

@@ -1,17 +1,6 @@
 import type { DailyContent, WeeklyContent } from '../../types'
 import type { ManualTrackedContentItem } from '../../types/scheduler'
-import type { EffectivePeriod } from '../boss/boss-profit-period'
-
-// scheduler-content-template.json의 항목 shape. Nexon wire 응답(NexonDailyContentWire/
-// NexonWeeklyContentWire)과 동일하다. 값은 개발자가 직접 채운다. `from`·`until` 은 그 줄이 서는 기간이다.
-export interface SchedulerContentTemplateEntry extends EffectivePeriod {
-  content_name: string
-  type: 'contents' | 'quest'
-  registration_flag: 'true' | 'false'
-  now_count: number
-  max_count: number
-  quest_state: '0' | '1' | '2' | null
-}
+import type { ContentEntry } from './contents'
 
 function parseQuestState(raw: '0' | '1' | '2' | null): 0 | 1 | 2 | null {
   if (raw === '0') return 0
@@ -30,18 +19,19 @@ function parseQuestState(raw: '0' | '1' | '2' | null): 0 | 1 | 2 | null {
 // - template: 표시 순서 겸 값 default 소스. 호출부는 컨텐츠 관리 페이지와 동일한 정렬
 //  (categorizeContentEntries 평탄화)로 넘긴다.
 // 반환 순서는 tracked(추가/삭제 순서)가 아니라 template 순서를 따른다. 항목을 추가·제거해도
-// 순서가 흔들리지 않고 컨텐츠 관리 화면과 동일하게 고정된다.
+// 순서가 흔들리지 않고 컨텐츠 관리 화면과 동일하게 고정된다. 모두 컨텐츠 key 로 잇는다.
 export function mergeManualContentList(
   tracked: ManualTrackedContentItem[],
   synced: DailyContent[] | WeeklyContent[],
-  template: SchedulerContentTemplateEntry[],
+  template: readonly ContentEntry[],
 ): DailyContent[] {
-  function resolve(contentName: string): DailyContent {
-    // 등록 여부(isRegistered)는 수동 모드에서 아예 무시한다. synced에 이름이 있으면 그 값을 쓴다.
-    const syncedMatch = synced.find((content) => content.name === contentName)
+  function resolve(contentKey: string): DailyContent {
+    // 등록 여부(isRegistered)는 수동 모드에서 아예 무시한다. synced에 그 key 가 있으면 그 값을 쓴다.
+    const syncedMatch = (synced as DailyContent[]).find((content) => content.contentKey === contentKey)
     if (syncedMatch !== undefined) {
       return {
-        name: contentName,
+        contentKey,
+        apiName: syncedMatch.apiName,
         kind: syncedMatch.kind,
         isRegistered: true,
         nowCount: syncedMatch.nowCount,
@@ -51,10 +41,11 @@ export function mergeManualContentList(
     }
 
     // 한 번도 동기화된 적 없는 항목은 템플릿 기본값으로 채운다.
-    const templateMatch = template.find((entry) => entry.content_name === contentName)
+    const templateMatch = template.find((entry) => entry.key === contentKey)
     if (templateMatch !== undefined) {
       return {
-        name: contentName,
+        contentKey,
+        apiName: templateMatch.content_name,
         kind: templateMatch.type,
         isRegistered: true,
         nowCount: templateMatch.now_count,
@@ -66,7 +57,8 @@ export function mergeManualContentList(
     // 방어적: synced에도 template에도 없어도(템플릿 갱신 누락 등) 항목을 버리지 않고
     // 안전한 기본값으로 채운다(크래시 금지 원칙과 동일한 정신).
     return {
-      name: contentName,
+      contentKey,
+      apiName: contentKey,
       kind: 'contents',
       isRegistered: true,
       nowCount: 0,
@@ -75,31 +67,27 @@ export function mergeManualContentList(
     }
   }
 
-  const trackedNames = new Set(tracked.map((item) => item.contentName))
-  const templateNames = new Set(template.map((entry) => entry.content_name))
+  const trackedKeys = new Set(tracked.map((item) => item.contentKey))
+  const templateKeys = new Set(template.map((entry) => entry.key))
 
   // 1) template(=컨텐츠 관리 순서)에서 추적 중인 항목을 그 순서대로.
-  const ordered = template
-    .filter((entry) => trackedNames.has(entry.content_name))
-    .map((entry) => resolve(entry.content_name))
+  const ordered = template.filter((entry) => trackedKeys.has(entry.key)).map((entry) => resolve(entry.key))
 
   // 2) 방어적: template에 없는 추적 항목은 버리지 않고 뒤에 tracked 순서로 붙인다.
-  const extras = tracked
-    .filter((item) => !templateNames.has(item.contentName))
-    .map((item) => resolve(item.contentName))
+  const extras = tracked.filter((item) => !templateKeys.has(item.contentKey)).map((item) => resolve(item.contentKey))
 
   return [...ordered, ...extras]
 }
 
 // auto 모드 표시 목록을 수동 모드(mergeManualContentList)와 동일한 template(=컨텐츠 관리) 순서로
-// 맞춘다. template에 없는 항목은 rank가 같아(= template.length) 안정 정렬 덕에 원래(병합) 순서를
-// 유지하며 뒤로 온다. mergeManualContentList의 "template 항목 먼저, 나머지는 원래 순서로 뒤에"와 동일.
-export function orderContentsByTemplate<T extends { name: string }>(
+// 맞춘다. template에 없는 항목(컨텐츠 key 가 없거나 표에 없는 key)은 rank가 같아(= template.length) 안정
+// 정렬 덕에 원래(병합) 순서를 유지하며 뒤로 온다.
+export function orderContentsByTemplate<T extends { contentKey: string | null }>(
   contents: T[],
-  template: SchedulerContentTemplateEntry[],
+  template: readonly ContentEntry[],
 ): T[] {
-  const rank = new Map(template.map((entry, index) => [entry.content_name, index]))
-  return [...contents].sort(
-    (a, b) => (rank.get(a.name) ?? template.length) - (rank.get(b.name) ?? template.length),
-  )
+  const rank = new Map(template.map((entry, index) => [entry.key, index]))
+  const rankOf = (content: T): number =>
+    content.contentKey === null ? template.length : (rank.get(content.contentKey) ?? template.length)
+  return [...contents].sort((a, b) => rankOf(a) - rankOf(b))
 }

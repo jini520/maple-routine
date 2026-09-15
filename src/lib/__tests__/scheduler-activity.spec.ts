@@ -3,7 +3,8 @@ import { getSectionPresence, hasCharacterScopeCompletion } from '../scheduler/sc
 
 function daily(overrides: Partial<DailyContent> = {}): DailyContent {
   return {
-    name: '[일일 퀘스트] 레헬른의 평온한 밤',
+    contentKey: 'daily_quest_lacheln',
+    apiName: '[일일 퀘스트] 레헬른의 평온한 밤',
     kind: 'quest',
     isRegistered: true,
     nowCount: 0,
@@ -15,7 +16,8 @@ function daily(overrides: Partial<DailyContent> = {}): DailyContent {
 
 function weekly(overrides: Partial<WeeklyContent> = {}): WeeklyContent {
   return {
-    name: '[메이플 유니온] 주간 보스 격파',
+    contentKey: 'weekly_quest_haven',
+    apiName: '[주간 퀘스트] 헤이븐 주간 임무',
     kind: 'quest',
     isRegistered: true,
     nowCount: 0,
@@ -67,7 +69,16 @@ describe('hasCharacterScopeCompletion', () => {
   it('일간 콘텐츠의 카운트가 올랐으면 활동 증거다', () => {
     expect(
       hasCharacterScopeCompletion(
-        state({ dailyContents: [daily({ name: '어봤어', kind: 'contents', nowCount: 3, maxCount: 5 })] }),
+        state({ dailyContents: [daily({ kind: 'contents', nowCount: 3, maxCount: 5 })] }),
+      ),
+    ).toBe(true)
+  })
+
+  // 컨텐츠 표에 없는 컨텐츠는 공유라고 확인된 적 없어 캐릭터 범위다. 그 캐릭터 응답의 진행이 곧 활동이다.
+  it('컨텐츠 key 가 없는 항목(표에 없는 컨텐츠)의 진행도 캐릭터 활동 증거다', () => {
+    expect(
+      hasCharacterScopeCompletion(
+        state({ weeklyContents: [weekly({ contentKey: null, apiName: '새 주간 컨텐츠', questState: 2 })] }),
       ),
     ).toBe(true)
   })
@@ -101,7 +112,7 @@ describe('hasCharacterScopeCompletion', () => {
       expect(
         hasCharacterScopeCompletion(
           state({
-            dailyContents: [daily({ name: '몬스터파크', kind: 'contents', nowCount: 7, maxCount: 14 })],
+            dailyContents: [daily({ contentKey: 'monster_park', apiName: '몬스터파크', kind: 'contents', nowCount: 7, maxCount: 14 })],
           }),
         ),
       ).toBe(false)
@@ -112,7 +123,7 @@ describe('hasCharacterScopeCompletion', () => {
         hasCharacterScopeCompletion(
           state({
             weeklyContents: [
-              weekly({ name: '에픽 던전 : 악몽선경', kind: 'contents', nowCount: 5, maxCount: 5 }),
+              weekly({ contentKey: 'epic_dungeon_nightmare_paradise', apiName: '에픽 던전 : 악몽선경', kind: 'contents', nowCount: 5, maxCount: 5 }),
             ],
           }),
         ),
@@ -128,7 +139,8 @@ describe('hasCharacterScopeCompletion', () => {
           state({
             weeklyContents: [
               weekly({
-                name: '[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?',
+                contentKey: 'monster_park_extreme',
+                apiName: '[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?',
                 nowCount: 0,
                 maxCount: 0,
                 questState: 2,
@@ -144,7 +156,7 @@ describe('hasCharacterScopeCompletion', () => {
         hasCharacterScopeCompletion(
           state({
             weeklyContents: [
-              weekly({ name: '[메이플 유니온] PC방 주간 드래곤 퇴치', questState: 2 }),
+              weekly({ contentKey: 'maple_union_pc_cafe_weekly_dragon', apiName: '[메이플 유니온] PC방 주간 드래곤 퇴치', questState: 2 }),
             ],
           }),
         ),
@@ -156,7 +168,7 @@ describe('hasCharacterScopeCompletion', () => {
         hasCharacterScopeCompletion(
           state({
             dailyContents: [
-              daily({ name: '몬스터파크', kind: 'contents', nowCount: 7, maxCount: 14 }),
+              daily({ contentKey: 'monster_park', apiName: '몬스터파크', kind: 'contents', nowCount: 7, maxCount: 14 }),
               daily({ questState: 2 }),
             ],
           }),
@@ -175,7 +187,7 @@ describe('hasCharacterScopeCompletion', () => {
         hasCharacterScopeCompletion(
           state({
             weeklyContents: [
-              weekly({ name: '[길드] 지하 수로', kind: 'contents', nowCount: 79579, maxCount: 0 }),
+              weekly({ contentKey: 'guild_underground_waterway', apiName: '[길드] 지하 수로', kind: 'contents', nowCount: 79579, maxCount: 0 }),
             ],
           }),
         ),
@@ -187,7 +199,7 @@ describe('hasCharacterScopeCompletion', () => {
         hasCharacterScopeCompletion(
           state({
             weeklyContents: [
-              weekly({ name: '[길드] 주간 미션 포인트', kind: 'contents', nowCount: 5, maxCount: 10 }),
+              weekly({ contentKey: 'guild_weekly_mission_points', apiName: '[길드] 주간 미션 포인트', kind: 'contents', nowCount: 5, maxCount: 10 }),
             ],
           }),
         ),
@@ -199,7 +211,7 @@ describe('hasCharacterScopeCompletion', () => {
         hasCharacterScopeCompletion(
           state({
             weeklyContents: [
-              weekly({ name: '[길드] 지하 수로', kind: 'contents', nowCount: 79579, maxCount: 0 }),
+              weekly({ contentKey: 'guild_underground_waterway', apiName: '[길드] 지하 수로', kind: 'contents', nowCount: 79579, maxCount: 0 }),
             ],
             dailyContents: [daily({ questState: 2 })],
           }),
@@ -225,7 +237,7 @@ describe('getSectionPresence', () => {
   it('공유 항목만 남은 일간 섹션은 present가 아니다 (정정)', () => {
     expect(
       getSectionPresence(
-        state({ dailyContents: [daily({ name: '몬스터파크', kind: 'contents', nowCount: 7 })] }),
+        state({ dailyContents: [daily({ contentKey: 'monster_park', apiName: '몬스터파크', kind: 'contents', nowCount: 7 })] }),
       ),
     ).toMatchObject({ daily: false })
   })
