@@ -44,6 +44,19 @@ describe('SettingsLinkRow', () => {
     expect(openURL).toHaveBeenCalledWith('https://mapleroutine.store/privacy')
   })
 
+  // 여는 앱이 없으면 거절이 온다. 부르는 쪽이 사용자에게 알린다(문의하기의 토스트).
+  it('주소를 못 열면 onOpenFailed 를 부른다', async () => {
+    openURL.mockRejectedValueOnce(new Error('No activity found'))
+    const onOpenFailed = jest.fn()
+    const view = await renderAtom(<SettingsLinkRow label="문의하기" href="mailto:x" onOpenFailed={onOpenFailed} />)
+
+    fireEvent.press(linkOf(view, '문의하기'))
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(onOpenFailed).toHaveBeenCalledTimes(1)
+  })
+
   // chevron 은 "다음 화면이 열린다"는 약속이다. 앱을 떠나는 행이 그것을 쓰면
   // 같은 약속을 하고 다른 일을 한다.
   it('chevron이 아니라 외부 링크 아이콘을 보여준다', async () => {

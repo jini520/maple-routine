@@ -17,6 +17,7 @@ import { useRoute, type RouteProp } from '@react-navigation/native'
 
 
 import { useRunningAppVersion } from '../../features/live-update/use-running-app-version'
+import { useToastStore } from '../../features/toast/store'
 import { Card, GearIcon, Text } from '../../components/atoms'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -27,6 +28,7 @@ import type { NoticeKind } from '../../types/notice'
 import { SettingsLinkRow } from './SettingsLinkRow'
 import { SettingsRow } from './SettingsRow'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
+import { CONTACT_EMAIL, contactDeviceOf, contactMailUrl } from './contact-mail'
 import { storeReviewUrl } from './store-review-link'
 
 /**
@@ -137,7 +139,17 @@ export function SettingsScreen(): React.JSX.Element {
 
                 후원 행은 수단을 정하면 이 카드로 돌아온다. 행이 하나만 남아도 카드를 지우지 않는
                 이유가 그것이다. */}
-            <SettingsLinkRow label="개발자 응원하기(앱 리뷰)" href={storeReviewUrl(Platform.OS)} />
+            {/* 문의는 응원보다 자주 써서 위다. 메일 앱이 안 열리면 주소를 적은 토스트로만 알린다(복사는 없다). */}
+            <SettingsLinkRow
+              label="문의하기"
+              href={contactMailUrl(contactDeviceOf(Platform, displayedVersion))}
+              onOpenFailed={() =>
+                useToastStore.getState().showError(`메일 앱을 열지 못했습니다. ${CONTACT_EMAIL} 으로 보내 주세요`)
+              }
+            />
+            <View className={SETTINGS_ROW_DIVIDER_CLASS}>
+              <SettingsLinkRow label="개발자 응원하기(앱 리뷰)" href={storeReviewUrl(Platform.OS)} />
+            </View>
           </Card>
 
           {/* 이용약관 제6조④가 요구하는 출처 표기. 문구를 의역하지 않고 원문 그대로 노출한다.

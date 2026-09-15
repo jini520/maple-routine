@@ -20,6 +20,7 @@ import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedu
 import { THEME_NAMES } from '../../../lib/theme/theme-registry'
 
 import { useLiveUpdateStore } from '../../../features/live-update/store'
+import { __resetToastsForTest, useToastStore } from '../../../features/toast/store'
 import packageJson from '../../../../package.json'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { setHapticsPort } from '../../../native/ports'
@@ -133,6 +134,8 @@ const ROW_LABELS = [
   '캐시샵',
   '기능 설명',
   '개발 노트',
+  // 둘 다 앱을 떠나는 줄이다. 문의는 응원보다 자주 써서 위다.
+  '문의하기',
   // 평생 한 번 누르는 것이라 맨 아래다.
   '개발자 응원하기(앱 리뷰)',
 ]
@@ -194,6 +197,7 @@ beforeEach(() => {
 afterEach(() => {
   // 플랫폼을 갈아 끼운 케이스가 뒤 케이스로 새면 안 된다.
   Platform.OS = 원래플랫폼
+  __resetToastsForTest()
   jest.clearAllMocks()
 })
 
@@ -209,14 +213,14 @@ describe('SettingsScreen', () => {
   // 본화면은 카드 둘. **행은 5 → 6이 됐다**:
   // 사용법 설명의 원천이 기능 카탈로그로 옮겨오면서 그 입구가 필요해졌다. `기능 설명`이
   // `개발 노트` **위**인 것은 *"이 앱을 어떻게 쓰나"* 가 더 자주 묻는 질문이기 때문이다.
-  it('행이 정확히 8개이고 소식 → 읽을거리 → 응원 순이다', async () => {
+  it('행이 정확히 9개이고 소식 → 읽을거리 → 문의 · 응원 순이다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
 
     for (const label of ROW_LABELS) expect(view.getByText(label)).toBeTruthy()
-    // 응원 행만 오른쪽이 chevron 이 아니다. chevron 을 쓰면 다른 이동 행과 같은 약속을 하고는
+    // 문의 · 응원 행만 오른쪽이 chevron 이 아니다. chevron 을 쓰면 다른 이동 행과 같은 약속을 하고는
     // 앱을 떠나 버린다.
-    expect(view.getAllByTestId('settings-row-chevron')).toHaveLength(ROW_LABELS.length - 1)
-    expect(view.getAllByTestId('settings-row-external')).toHaveLength(1)
+    expect(view.getAllByTestId('settings-row-chevron')).toHaveLength(ROW_LABELS.length - 2)
+    expect(view.getAllByTestId('settings-row-external')).toHaveLength(2)
   })
 
   // **이 개편의 핵심.** 두 무리를 가르는 것은 카드 경계뿐이다. 한 카드에 다 넣는 시안은
@@ -242,8 +246,8 @@ describe('SettingsScreen', () => {
       '캐시샵',
     ])
     expect(labelsIn(cards[1])).toEqual(['기능 설명', '개발 노트'])
-    // 행이 하나만 남아도 카드로 남는다. 후원 수단이 정해지면 그 자리에 다시 들어온다.
-    expect(labelsIn(cards[2])).toEqual(['개발자 응원하기(앱 리뷰)'])
+    // 앱을 떠나는 줄 둘이다. 후원 수단이 정해지면 그 자리에 다시 들어온다.
+    expect(labelsIn(cards[2])).toEqual(['문의하기', '개발자 응원하기(앱 리뷰)'])
   })
 
   // 화살표가 "값이 있는가"가 아니라 "누르면 무언가 열린다"를 말한다.
@@ -294,6 +298,32 @@ describe('SettingsScreen', () => {
     await press(rowOf(view, '개발자 응원하기(앱 리뷰)'))
 
     expect(openURL).toHaveBeenCalledWith(url)
+  })
+
+  // 서버로 보내지 않고 메일 앱을 연다. 받는 사람 · 제목 · 기기 정보가 채워진다.
+  it('문의하기 행은 앱 버전이 든 문의 메일을 연다', async () => {
+    Platform.OS = 'ios'
+
+    const view = await renderOverlay(<SettingsScreen />)
+    await press(rowOf(view, '문의하기'))
+
+    const url = String(openURL.mock.calls[0]?.[0])
+    expect(url.startsWith('mailto:support.mapleroutine@gmail.com?')).toBe(true)
+    expect(new URLSearchParams(url.slice(url.indexOf('?') + 1)).get('body')).toContain(
+      `앱 ${packageJson.version} / iOS`,
+    )
+  })
+
+  // 복사는 없다(사용자 지정). 주소를 읽고 다른 곳에서 보낼 수 있게 토스트에 적는다.
+  it('메일 앱을 못 열면 주소를 적은 토스트가 뜬다', async () => {
+    openURL.mockRejectedValueOnce(new Error('Unable to open URL'))
+
+    const view = await renderOverlay(<SettingsScreen />)
+    await press(rowOf(view, '문의하기'))
+
+    expect(useToastStore.getState().toasts.map((toast) => toast.message)).toEqual([
+      '메일 앱을 열지 못했습니다. support.mapleroutine@gmail.com 으로 보내 주세요',
+    ])
   })
 
   // 설정은 본문이 아니라 머리에 산다. 본문에 두면 매일 보는 소식이 가끔 쓰는 설정에 밀린다.
