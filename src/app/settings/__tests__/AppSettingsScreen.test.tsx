@@ -275,6 +275,36 @@ describe('AppSettingsScreen', () => {
     }
   })
 
+  // 더보기 맨 아래에 있다가 옮겨 왔다. 더보기가 소식 갈래로 길어져 멀리 밀렸다.
+  it('맨 아래에 앱 버전·카피라이트·NEXON Open API 출처 문구·비제휴 고지를 표시한다', async () => {
+    const view = await renderOverlay(<AppSettingsScreen />)
+
+    expect(view.getByText(`v${packageJson.version}`)).toBeTruthy()
+    expect(view.getByText(/©\s*\d{4}\s*메이플 루틴/)).toBeTruthy()
+    expect(view.getByText('Data based on NEXON Open API')).toBeTruthy()
+    expect(view.getByText('Maple Routine is not associated with NEXON Korea')).toBeTruthy()
+  })
+
+  // package.json 을 바로 읽으면 스토어 바이너리가 app.json 만 올렸을 때 옛 버전이 보인다.
+  it('하단 버전은 package.json 이 아니라 도는 번들의 버전이다', async () => {
+    useLiveUpdateStore.setState({ currentVersion: '9.9.9' })
+    try {
+      const view = await renderOverlay(<AppSettingsScreen />)
+
+      expect(view.getByText('v9.9.9')).toBeTruthy()
+    } finally {
+      useLiveUpdateStore.setState({ currentVersion: null })
+    }
+  })
+
+  // 개인정보 처리방침은 `앱 정보` 화면의 행이다. 고지 블록은 전부 읽고 끝나는 정적 문구만 남는다.
+  it('고지 블록은 4줄이고 링크를 두지 않는다', async () => {
+    const view = await renderOverlay(<AppSettingsScreen />)
+
+    expect(view.getByTestId('settings-footer').children).toHaveLength(4)
+    expect(view.queryByText('개인정보 처리방침')).toBeNull()
+  })
+
   it('"스케줄 관리 방법"을 누르면 트래킹 모드 모달이 열린다', async () => {
     const view = await renderOverlay(<AppSettingsScreen />)
 

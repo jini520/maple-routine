@@ -1,14 +1,14 @@
 /**
  * 설정 하위 페이지 `공지 상세`. 알림 탭이 곧장 여는 자리이고 목록에서도 들어간다.
  *
- * **본문은 서버가 준다.** 파라미터로 받는 것은 `noticeId` 하나다. 알림에서 온 경로와 목록에서 온
- * 경로가 같은 것을 그리게 하는 방법이 그것뿐이다.
+ * **본문은 기준이 준다.** 앱 공지는 우리 서버, 넥슨 공지(`event-1374` 꼴 id)는 넥슨 상세다. 파라미터로 받는 것은
+ * `noticeId` 하나다. 알림에서 온 경로와 목록에서 온 경로가 같은 것을 그리게 하는 방법이 그것뿐이다.
  *
  * 먼저 목록 사본의 같은 공지를 그리고, 조회가 성공하면 받은 것으로 바꾼다. 받은 상세는 기기에 안
  * 적는다. 조회가 실패하면 사본의 `body` 가 그대로 선다.
  *
- * **404 는 실패가 아니라 없다는 답이다.** 사본에 남아 있어도 `공지를 찾을 수 없습니다` 를 그리고,
- * 사본과 배너의 닫은 기록에서 뺀다.
+ * **없다는 답은 실패가 아니다.** 서버의 404 · 넥슨의 400 `OPENAPI00004`(목록에서 내린 글)다. 사본에 남아 있어도
+ * `공지를 찾을 수 없습니다` 를 그리고, 사본과 배너의 닫은 기록에서 뺀다.
  */
 import { useEffect, useState } from 'react'
 import { Linking, Pressable, View } from 'react-native'
@@ -28,7 +28,7 @@ import { formatNoticeDate } from '../../features/notice/format'
 import { forgetNotice } from '../../features/notice/notice-copy'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { NoticeBlocks } from './NoticeBlocks'
-import { fetchNotice } from '../../server/notices'
+import { fetchNoticeDetail } from '../../features/notice/notice-feed'
 import { getNotices } from '../../storage/notices'
 import type { Notice } from '../../types/notice'
 
@@ -59,7 +59,7 @@ export function SettingsNoticeDetailScreen(props: {
         const copy = noticeId === undefined ? null : (all.find((n) => n.id === noticeId) ?? null)
         if (alive) setNotice(copy)
         // 사본에 없어도 조회한다. 20건 밖 공지나 방금 온 알림은 사본에 없다.
-        return noticeId === undefined ? null : fetchNotice(noticeId)
+        return noticeId === undefined ? null : fetchNoticeDetail(noticeId)
       })
       .then(async (remote) => {
         if (remote === null || remote.status === 'failed') return
