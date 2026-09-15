@@ -24,6 +24,7 @@ const items = spendCatalog.items as {
   forms?: string[]
   limit?: string
   maxQuantity?: number
+  rewardCoins?: number
   note?: string
   seasonal?: boolean
 }[]
@@ -245,6 +246,32 @@ describe('spend-catalog.json: 묶음 표', () => {
   it('`active` 를 적은 묶음은 메이플 포인트 샵뿐이다. 안 적은 묶음은 언제나 열린 것이다', () => {
     const withActive = Object.entries(groups).filter(([, group]) => group.active !== undefined)
     expect(withActive.map(([key]) => key)).toEqual(['maple_point_shop'])
+  })
+})
+
+/**
+ * 세라자르 주화(사용자 제공 2026-09-16). 추가 리워드를 사면 받고, 상점에 팔면 메소가 되므로 그
+ * 판매가가 지출에서 빠진다. 개수와 판매가가 조용히 바뀌면 지난 기록의 지출까지 달라지는 값이라
+ * 여기서 못 박는다.
+ */
+describe('spend-catalog.json: 세라자르 주화', () => {
+  const rewardCoin = spendCatalog.rewardCoin as { name: string; icon: string; priceMeso: number }
+
+  it('주화 1개는 40,000,000 메소에 팔린다. 그림 파일이 실제로 있다', () => {
+    expect(rewardCoin.name).toBe('세라자르 주화')
+    expect(rewardCoin.priceMeso).toBe(40_000_000)
+    expect(existsSync(join(ASSETS, 'items', rewardCoin.icon))).toBe(true)
+  })
+
+  // 네 던전이 모두 같다(사용자 확인). 단계가 개수를 정하는 유일한 축이라는 것이 이 값의 성질이다.
+  it('추가 리워드 여덟만 주화를 주고, 1단계는 4개 · 2단계는 8개다', () => {
+    for (const item of items) {
+      if (item.group !== 'epic_dungeon_bonus_reward') {
+        expect(item.rewardCoins).toBeUndefined()
+        continue
+      }
+      expect(item.rewardCoins).toBe(item.tier === '1단계' ? 4 : 8)
+    }
   })
 })
 

@@ -47,6 +47,13 @@ export interface SpendCatalogItem extends EffectivePeriod {
    * 형태마다 단계를 따로 고르고 금액은 그 값들의 합이다. 하나를 고르는 축이 아니다.
    */
   readonly forms?: readonly string[]
+  /**
+   * 그 항목을 **한 형태**에서 샀을 때 받는 세라자르 주화 개수. 없으면 주화를 안 준다.
+   *
+   * 형태 둘을 다 사면 두 값을 더한다. 주화는 상점에 팔면 메소가 되므로 이 개수 × 판매가가
+   * 지출에서 빠진다.
+   */
+  readonly rewardCoins?: number
   /** 사용자가 준 한도 문장. **화면에 안 쓴다**. `maxQuantity` 숫자의 출처로만 남는다. */
   readonly limit?: string
   /**
@@ -121,6 +128,13 @@ export const SPEND_TARIFF_PERCENT = spendCatalog.tariffPercent
 
 /** 시세의 단위. `'pointPer100mMeso'`(1억 메소당 메포). 이름이 방향을 든다. */
 export const SPEND_MARKET_RATE_UNIT = spendCatalog.marketRateUnit
+
+/** 세라자르 주화. 에픽던전 추가 리워드가 주고 상점에 팔면 메소가 된다. 이름 · 그림 · 상점 판매가. */
+export const SPEND_REWARD_COIN = spendCatalog.rewardCoin as {
+  readonly name: string
+  readonly icon: string
+  readonly priceMeso: number
+}
 
 const MESO_PER_RATE_UNIT = 100_000_000
 
@@ -239,6 +253,27 @@ export function spendRewardPrice(
     const tier = tierByForm[form]
     return sum + (tier === undefined ? 0 : (itemOfTier(choice, tier)?.unitPrice ?? 0))
   }, 0)
+}
+
+/**
+ * 고른 단계가 주는 세라자르 주화 개수의 **합**. 형태마다 각각 주기 때문이다 (사용자 제공 2026-09-16).
+ *
+ * 주화를 안 주는 대표와 0단계는 0 이다. 금액(`spendRewardPrice`)과 같은 축으로 세므로 둘이
+ * 어긋날 자리가 없다.
+ */
+export function spendRewardCoins(
+  choice: SpendCatalogChoice,
+  tierByForm: Readonly<Record<string, string>>,
+): number {
+  return formsOf(choice).reduce((sum, form) => {
+    const tier = tierByForm[form]
+    return sum + (tier === undefined ? 0 : (itemOfTier(choice, tier)?.rewardCoins ?? 0))
+  }, 0)
+}
+
+/** 주화 개수를 상점에 판 메소로. 지출에서 이만큼 뺀다. */
+export function rewardCoinMeso(coins: number): number {
+  return coins * SPEND_REWARD_COIN.priceMeso
 }
 
 /**

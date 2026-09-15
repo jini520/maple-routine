@@ -23,6 +23,8 @@ import {
   findSpendChoice,
   findSpendRewardChoice,
   pointToMeso,
+  rewardCoinMeso,
+  spendRewardCoins,
 } from '../../lib/cashbook/spend-catalog'
 import { getBossDropRecords, getBossDropRecordsRevision } from '../../storage/boss-drops'
 import {
@@ -109,10 +111,31 @@ export function incomeMesoOf(record: IncomeRecord): number {
   return meso + pointToMeso(record.pointAmount, record.pointPer100mMeso)
 }
 
+/**
+ * 지출 한 건의 메소 축 금액. 수입과 **같은 식**이되 주화 한 항이 더 있다.
+ *
+ * 에픽던전 추가 리워드는 세라자르 주화를 주고 그 주화는 상점에 팔면 메소가 되므로, 실제로 나간
+ * 돈은 메포 값에서 주화 판매가를 뺀 값이다. 그 뺄셈을 **읽을 때** 한다. 저장 칸을 안 더하므로
+ * 지난 기록도 다음 읽기부터 뺀 값으로 선다.
+ *
+ * 뺀 값이 음수면 음수 그대로다. 0 에서 멈추면 그 줄과 하루 합계가 조용히 달라진다.
+ */
 export function spendMesoOf(record: SpendRecord): number {
   const meso = record.mesoAmount ?? 0
+  // 메포를 환산하지 않는 행이라 주화를 얹을 축도 없다.
   if (record.pointAmount === null || record.pointPer100mMeso === null) return meso
-  return meso + pointToMeso(record.pointAmount, record.pointPer100mMeso)
+  return meso + pointToMeso(record.pointAmount, record.pointPer100mMeso) - rewardCoinMesoOf(record)
+}
+
+/**
+ * 그 기록이 받은 세라자르 주화의 판매가. 무엇을 샀는지는 형태별 항목 key 가 든다.
+ *
+ * 그 칸이 `null` 인 옛 행은 셀 수 없어 0 이다. 주화를 안 주는 항목도 0 이다.
+ */
+function rewardCoinMesoOf(record: SpendRecord): number {
+  const reward = findSpendRewardChoice(record.category, record.formItemKeys)
+  if (reward === null) return 0
+  return rewardCoinMeso(spendRewardCoins(reward.choice, reward.tierByForm))
 }
 
 

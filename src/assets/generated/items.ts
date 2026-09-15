@@ -146,22 +146,23 @@ import a131 from '../items/premium_petequip_scroll_coupon.png'
 import a132 from '../items/return_scroll.webp'
 import a133 from '../items/scroll_10_percent.webp'
 import a134 from '../items/seiram_elixir.webp'
-import a135 from '../items/sol_erda_fragment.webp'
-import a136 from '../items/sole_10.png'
-import a137 from '../items/sole_1000.webp'
-import a138 from '../items/sole_200.png'
-import a139 from '../items/sole_500.webp'
-import a140 from '../items/soul_ether_1.webp'
-import a141 from '../items/soul_ether_2.webp'
-import a142 from '../items/soul_ether_3.webp'
-import a143 from '../items/soul_ether_4.webp'
-import a144 from '../items/spell_trace.webp'
-import a145 from '../items/union_wealth.webp'
-import a146 from '../items/vip_sauna_ticket.webp'
-import a147 from '../items/wealth_acquisition_potion.webp'
-import a148 from '../items/wealth_acquisition_potion_small.webp'
-import a149 from '../items/whetstone_faith.png'
-import a150 from '../items/whetstone_life.png'
+import a135 from '../items/selazar_coin.webp'
+import a136 from '../items/sol_erda_fragment.webp'
+import a137 from '../items/sole_10.png'
+import a138 from '../items/sole_1000.webp'
+import a139 from '../items/sole_200.png'
+import a140 from '../items/sole_500.webp'
+import a141 from '../items/soul_ether_1.webp'
+import a142 from '../items/soul_ether_2.webp'
+import a143 from '../items/soul_ether_3.webp'
+import a144 from '../items/soul_ether_4.webp'
+import a145 from '../items/spell_trace.webp'
+import a146 from '../items/union_wealth.webp'
+import a147 from '../items/vip_sauna_ticket.webp'
+import a148 from '../items/wealth_acquisition_potion.webp'
+import a149 from '../items/wealth_acquisition_potion_small.webp'
+import a150 from '../items/whetstone_faith.png'
+import a151 from '../items/whetstone_life.png'
 
 export const ITEM_ASSETS: Record<string, ImageAssetRef> = {
   "Berserker_Ring.png": a0,
@@ -299,20 +300,21 @@ export const ITEM_ASSETS: Record<string, ImageAssetRef> = {
   "return_scroll.webp": a132,
   "scroll_10_percent.webp": a133,
   "seiram_elixir.webp": a134,
-  "sol_erda_fragment.webp": a135,
-  "sole_10.png": a136,
-  "sole_1000.webp": a137,
-  "sole_200.png": a138,
-  "sole_500.webp": a139,
-  "soul_ether_1.webp": a140,
-  "soul_ether_2.webp": a141,
-  "soul_ether_3.webp": a142,
-  "soul_ether_4.webp": a143,
-  "spell_trace.webp": a144,
-  "union_wealth.webp": a145,
-  "vip_sauna_ticket.webp": a146,
-  "wealth_acquisition_potion.webp": a147,
-  "wealth_acquisition_potion_small.webp": a148,
-  "whetstone_faith.png": a149,
-  "whetstone_life.png": a150,
+  "selazar_coin.webp": a135,
+  "sol_erda_fragment.webp": a136,
+  "sole_10.png": a137,
+  "sole_1000.webp": a138,
+  "sole_200.png": a139,
+  "sole_500.webp": a140,
+  "soul_ether_1.webp": a141,
+  "soul_ether_2.webp": a142,
+  "soul_ether_3.webp": a143,
+  "soul_ether_4.webp": a144,
+  "spell_trace.webp": a145,
+  "union_wealth.webp": a146,
+  "vip_sauna_ticket.webp": a147,
+  "wealth_acquisition_potion.webp": a148,
+  "wealth_acquisition_potion_small.webp": a149,
+  "whetstone_faith.png": a150,
+  "whetstone_life.png": a151,
 }
