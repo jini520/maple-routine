@@ -63,7 +63,12 @@
 | 화면 | `src/app/settings/NoticeBlocks.tsx` | **있다.** 상세 본문 블록을 그린다 |
 | 저장 | `src/storage/notice-settings.ts` · `notices.ts` | **둘 다 있다** |
 | 타입 | `src/types/notice.ts` | **있다.** 푸시 `data` 와 서버 응답의 공통 모양 |
-| 화면 | `src/app/settings/SettingsNoticesScreen.tsx` | **있다.** 목록 + 구독 스위치 |
+| 화면 | `src/app/settings/SettingsScreen.tsx` | **있다.** 더보기. 소식 다섯 갈래를 첫 화면에 펼치고 들어올 때마다 다시 받는다([[ADR-282]] 결정 4 · 8) |
+| 화면 | `src/app/settings/NoticeBannerRail.tsx` · `notice-banner-motion.ts` | **있다.** 더보기 배너 넘기기 · 점([[ADR-282]] 결정 5) |
+| 화면 | `src/app/settings/NoticeBannerCard.tsx` · `NoticeBannerArt.tsx` · `NoticeLines.tsx` | **있다.** 목록 카드 · 배너 칸 · 글 줄 |
+| API | `src/nexon/notice/client.ts` · `contents.ts` | **있다.** 넥슨 공지 목록 · 상세 조회와 본문 HTML 을 블록으로 바꾸는 `parseContents`([[ADR-282]] 결정 1 · 2) |
+| 상태 | `src/features/notice/notice-feed.ts` · `notice-display.ts` | **있다.** 분류마다 받기(앱 공지는 서버 · 넥슨 공지는 넥슨) · 화면에 적는 제목 · 기간 · 빈 문구 |
+| 화면 | `src/app/settings/SettingsNoticesScreen.tsx` | **있다.** 한 분류의 목록. 넥슨 네 분류의 목록 · 상세는 앱이 넥슨 Open API 에서 직접 받고, 이벤트 · 캐시샵은 그림 · 제목 · 기간 카드를 세로로 쌓는다([[ADR-282]] 결정 1 · 2 · 7) |
 | 화면 | `src/app/settings/SettingsNoticeDetailScreen.tsx` | **있다.** 상세 |
 | 화면 | `src/app/today/NoticeBanner.tsx` | **있다.** today 전폭 배너([[ADR-230]]) |
 | 상태 | `src/features/notice/banner-store.ts` | **있다.** 배너가 세우는 공지 하나 |
