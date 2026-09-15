@@ -123,9 +123,9 @@ export function manualTrackedContentKey(ocid: string): string {
   return `manualTrackedContent:${ocid}`
 }
 
-// 월드/계정 단위로 완료가 공유되는 콘텐츠의 진행 상태 원장 키
-export function worldSharedProgressKey(world: string): string {
-  return `worldSharedProgress:${world}`
+// 월드/계정 단위로 완료가 공유되는 콘텐츠의 진행 상태 원장 키. 월드 부분은 월드 key 다.
+export function worldSharedProgressKey(worldKey: string): string {
+  return `worldSharedProgress:${worldKey}`
 }
 
 export function accountSharedProgressKey(accountId: string): string {

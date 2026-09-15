@@ -68,7 +68,7 @@ const REGISTERED_DAILY: Record<string, string> = {
 const TRACKED = Object.keys(REGISTERED_DAILY)
 
 function mockCharacter(ocid: string): MapleCharacter {
-  return { ocid, name: `캐릭터-${ocid}`, world: '베라', jobClass: '렌', level: 200 }
+  return { ocid, name: `캐릭터-${ocid}`, world: '베라', worldKey: 'bera', jobClass: '렌', level: 200 }
 }
 
 function account(accountId: string, characters: MapleCharacter[]): MapleAccount {
@@ -80,6 +80,7 @@ function stateFor(ocid: string): SchedulerCharacterState {
     asOf: '2026-08-18T00:00+09:00',
     characterName: `캐릭터-${ocid}`,
     world: '베라',
+    worldKey: 'bera',
     level: 200,
     jobClass: '렌',
     dailyContents: [

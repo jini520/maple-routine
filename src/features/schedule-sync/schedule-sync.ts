@@ -45,8 +45,8 @@ export type { ScheduleSyncError } from './errors'
 export interface CharacterScheduleSync {
   ocid: string
   characterName: string
-  // 스케줄러 드롭다운의 월드 엠블럼 표시용. character/list의 world를 그대로 담는다.
-  world?: string
+  // 시즌 보스를 보일지 가르는 월드 key. character/list 의 worldKey 를 그대로 담는다.
+  worldKey?: string | null
   state: SchedulerCharacterState | null
   syncedAt: string | null
   isStale: boolean
@@ -72,7 +72,7 @@ async function buildFallbackResult(
   return {
     ocid: character.ocid,
     characterName: character.name,
-    world: character.world,
+    worldKey: character.worldKey,
     state: cached?.state ?? null,
     syncedAt: cached?.syncedAt ?? null,
     isStale: true,
@@ -276,7 +276,8 @@ async function syncOneCharacter(
     const fresh = await fetchSchedulerCharacterState(apiKey, character.ocid, SCHEDULE_NAME_RESOLVERS)
     const [previousCache, worldLedger, accountLedger] = await Promise.all([
       getCachedSchedulerState(character.ocid),
-      getWorldSharedProgress(fresh.world),
+      // 월드 key 가 없으면 월드 공유 원장을 읽지도 쓰지도 않는다. 월드를 모르는 것과 같다.
+      fresh.worldKey === null ? {} : getWorldSharedProgress(fresh.worldKey),
       getAccountSharedProgress(accountId),
     ])
 
@@ -302,9 +303,11 @@ async function syncOneCharacter(
 
     await Promise.all([
       setCachedSchedulerState(character.ocid, { state: characterState, syncedAt }),
-      ...Object.entries(worldLedgerUpdates).map(([name, entry]) =>
-        setWorldSharedProgressEntry(characterState.world, name, entry),
-      ),
+      ...(characterState.worldKey === null
+        ? []
+        : Object.entries(worldLedgerUpdates).map(([contentKey, entry]) =>
+            setWorldSharedProgressEntry(characterState.worldKey!, contentKey, entry),
+          )),
       ...Object.entries(accountLedgerUpdates).map(([name, entry]) =>
         setAccountSharedProgressEntry(accountId, name, entry),
       ),
@@ -313,7 +316,7 @@ async function syncOneCharacter(
     return {
       ocid: character.ocid,
       characterName: character.name,
-      world: character.world,
+      worldKey: character.worldKey,
       state: characterState,
       syncedAt,
       isStale: false,

@@ -1,0 +1,24 @@
+{
+  "note": "월드 마스터 표([[ADR-280]] 결정 15, 2026-09-15). 기록 · 원장 · 화면은 월드 key 로 이 표를 가리키고, 응답을 받는 자리가 API world_name 을 NFC 뒤 공백 제거 · 완전 일치로 name 과 맞춰 key 를 얻는다. name 은 API 표기이고 보이는 이름이다(챌린저스2 는 붙여 쓴다). emblem 은 src/assets/worlds 의 파일 basename 이고 챌린저스 넷이 같은 그림을 쓴다. challengers 가 true 인 월드만 시즌 보스를 보이고 월드 리프를 묻는다. 새 챌린저스 월드가 열리면 이 표부터 고친다(이름 앞부분으로 가리지 않는다, 사용자 결정 2026-09-15). event 가 true 인 스페셜은 재화에 가치가 없어 강화 지출에서 뺀다(사용자 지정). 챌린저스는 시즌 월드지만 재화가 본섭으로 넘어와 event 가 아니다. 한 번 기록에 저장된 key 는 바꾸지 않는다.",
+  "worlds": [
+    { "key": "scania", "name": "스카니아", "emblem": "scania" },
+    { "key": "bera", "name": "베라", "emblem": "bera" },
+    { "key": "luna", "name": "루나", "emblem": "luna" },
+    { "key": "zenith", "name": "제니스", "emblem": "zenith" },
+    { "key": "croa", "name": "크로아", "emblem": "croa" },
+    { "key": "union", "name": "유니온", "emblem": "union" },
+    { "key": "elysium", "name": "엘리시움", "emblem": "elysium" },
+    { "key": "enosis", "name": "이노시스", "emblem": "enosis" },
+    { "key": "red", "name": "레드", "emblem": "red" },
+    { "key": "aurora", "name": "오로라", "emblem": "aurora" },
+    { "key": "arcane", "name": "아케인", "emblem": "arcane" },
+    { "key": "nova", "name": "노바", "emblem": "nova" },
+    { "key": "eos", "name": "에오스", "emblem": "eos" },
+    { "key": "helios", "name": "헬리오스", "emblem": "helios" },
+    { "key": "challengers", "name": "챌린저스", "emblem": "challengers", "challengers": true },
+    { "key": "challengers_2", "name": "챌린저스2", "emblem": "challengers", "challengers": true },
+    { "key": "challengers_3", "name": "챌린저스3", "emblem": "challengers", "challengers": true },
+    { "key": "challengers_4", "name": "챌린저스4", "emblem": "challengers", "challengers": true },
+    { "key": "special", "name": "스페셜", "event": true }
+  ]
+}

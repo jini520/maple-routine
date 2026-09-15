@@ -16,7 +16,7 @@ const 기본 = {
   name: '내옆에최성일',
   level: 285,
   jobClass: '아크메이지(썬, 콜)',
-  world: '스카니아',
+  worldKey: 'scania',
   imageUrl: 'https://open.api.nexon.com/static/maplestory/character/look/abc',
 }
 
@@ -74,9 +74,15 @@ describe('CharacterRow: 얼굴과 이름', () => {
   })
 
   it('월드를 모르면 엠블럼을 그리지 않는다', async () => {
-    const { queryByTestId } = await renderAtom(<CharacterRow {...기본} world={undefined} />)
+    const { queryByTestId } = await renderAtom(<CharacterRow {...기본} worldKey={undefined} />)
 
     expect(queryByTestId('character-row-emblem')).toBeNull()
+  })
+
+  it('월드 key 로 엠블럼을 찾는다', async () => {
+    const { getByTestId } = await renderAtom(<CharacterRow {...기본} worldKey="challengers_2" />)
+
+    expect(getByTestId('character-row-emblem')).toBeTruthy()
   })
 
   it('onPress 를 주면 카드 전체가 버튼이다 (결정 3. 누르는 것은 `＋` 가 아니다)', async () => {

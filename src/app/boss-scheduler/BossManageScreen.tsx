@@ -15,7 +15,7 @@ import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
 import { countManualWeeklyBosses, WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss/boss-matching'
 import { bossCycleOf, bossesInSection, isSeasonBoss, type BossEntry } from '../../lib/boss/bosses'
-import { isChallengersWorld } from '../../lib/assets/asset-lookup'
+import { isChallengersWorld } from '../../lib/world/worlds'
 import { useDataFreshness } from '../../features/refresh/freshness'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import type { BossDifficulty } from '../../types'
@@ -156,7 +156,7 @@ export function BossManageScreen(): React.JSX.Element {
 
   // 비-챌린저스로 본다. 판정은 스케줄러 화면과 같은 함수여야 한다.
   // 시즌 보스는 챌린저스 월드 전용이라 그 월드 캐릭터에게만 보인다. 월드를 모르는 구버전 캐시는
-  const showsSeasonBosses = selected?.world !== undefined && isChallengersWorld(selected.world)
+  const showsSeasonBosses = isChallengersWorld(selected?.worldKey)
   // **무리 둘이고 월간이 위다.** 스케줄러 목록과 같은 순서여야 보는 화면과 편집 화면이 같아진다.
   const allSections = BOSS_SECTION_ORDER.map((cycle) => ({
     cycle,

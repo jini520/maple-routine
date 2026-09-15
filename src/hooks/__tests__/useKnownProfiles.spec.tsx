@@ -22,13 +22,13 @@ const 원장읽기 = getScheduleProbeLedger as jest.MockedFunction<typeof getSch
 
 function 캐시본(name: string, level: number) {
   return {
-    profile: { name, level, imageUrl: `https://cache/${name}`, world: '엘리시움' },
+    profile: { name, level, imageUrl: `https://cache/${name}`, world: '엘리시움', worldKey: 'elysium' },
     cachedAt: '2026-09-03T00:00:00.000Z',
   } as Awaited<ReturnType<typeof getCachedCharacterBasic>>
 }
 
 function 후보(ocid: string, name: string, level: number): CharacterPickerEntry {
-  return { ocid, name, level, imageUrl: `https://roster/${name}`, world: '스카니아' }
+  return { ocid, name, level, imageUrl: `https://roster/${name}`, world: '스카니아', worldKey: 'scania' }
 }
 
 async function 표(input: { ocids: string[]; fallbackEntries?: CharacterPickerEntry[] }) {

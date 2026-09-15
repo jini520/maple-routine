@@ -36,6 +36,7 @@ import { View } from 'react-native'
 import type { WorldLeapNotice } from '../features/character-manage/world-leap'
 import { useWorldLeapStore } from '../features/character-manage/world-leap-store'
 import { useContentSchedulerStore } from '../features/content-scheduler/store'
+import { worldNameOf } from '../lib/world/worlds'
 
 import { ArrowRightIcon, Text } from '../components/atoms'
 import { NoticeModal } from '../components/organisms/NoticeModal/NoticeModal'
@@ -96,10 +97,10 @@ export function WorldLeapNoticeModal(props: WorldLeapNoticeModalProps): React.JS
       title={`${notice.from.name} 님이 월드를 옮긴 것 같아요`}
       content={
         <View className="flex-row items-center justify-center gap-2">
-          <Text className="text-sm text-text-muted">{notice.from.world}</Text>
+          <Text className="text-sm text-text-muted">{worldNameOf(notice.from.worldKey, notice.from.world ?? '')}</Text>
           <ArrowRightIcon className="h-3.5 w-3.5 text-text-muted" aria-hidden />
           <Text className="text-sm font-semibold text-text">
-            {notice.kind === 'unknown' ? '?' : notice.to.world}
+            {notice.kind === 'unknown' ? '?' : worldNameOf(notice.to.worldKey, notice.to.world)}
           </Text>
         </View>
       }

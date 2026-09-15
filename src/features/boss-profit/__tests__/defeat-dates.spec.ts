@@ -342,6 +342,7 @@ function schedulerState(bosses: { bossKey: string; apiName: string; difficulty: 
     asOf: '2026-08-21',
     characterName: '루디',
     world: '스카니아',
+    worldKey: 'scania',
     level: 290,
     jobClass: '아크메이지',
     dailyContents: [],

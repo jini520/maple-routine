@@ -46,7 +46,7 @@ function profile(name: string): CharacterBasicProfile {
 }
 
 function character(ocid: string): MapleCharacter {
-  return { ocid, name: `캐릭-${ocid}`, world: '엘리시움', jobClass: '렌', level: 250 }
+  return { ocid, name: `캐릭-${ocid}`, world: '엘리시움', worldKey: 'elysium', jobClass: '렌', level: 250 }
 }
 
 function ocidsOf(entries: CharacterPickerEntry[]): string[] {
@@ -135,7 +135,7 @@ describe('getCharacterPickerRoster 가 캐시 인덱스를 character/list 에 �
 
     await getCharacterPickerRoster(jest.fn(), { accountId: ACCOUNT })
 
-    expect(fetchCharacterBasicMock).not.toHaveBeenCalledWith('key-1', 'gone')
+    expect(fetchCharacterBasicMock).not.toHaveBeenCalledWith('key-1', 'gone', expect.anything())
     const ocids = await getAllCachedCharacterBasicOcids(ACCOUNT)
     expect(ocids.sort()).toEqual(['gone', 'listed'])
   })

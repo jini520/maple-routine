@@ -48,7 +48,7 @@ it('이미 이어진 옛 ocid 면 복사하지 않는다', async () => {
 // 모달을 안 거친 리프(새 캐릭터 직접 추가 + 옛 캐릭터 ✕)를 잇는다. 캐릭터 이름은 게임 전체에서 하나라
 // 이름·직업 말고는 조건을 안 건다. 방향은 `character/list` 응답에 있는가가 정한다.
 describe('linkWorldLeapsByNameAndJob', () => {
-  const 새캐릭터: MapleCharacter = { ocid: 'new', name: '지내우시', world: '엘리시움', jobClass: '레테', level: 286 }
+  const 새캐릭터: MapleCharacter = { ocid: 'new', name: '지내우시', world: '엘리시움', worldKey: 'elysium', jobClass: '레테', level: 286 }
 
   function profile(ocid: string, overrides: { name?: string; jobClass?: string | null } = {}) {
     return {
@@ -56,6 +56,7 @@ describe('linkWorldLeapsByNameAndJob', () => {
       name: '지내우시',
       imageUrl: '',
       world: '챌린저스2',
+      worldKey: 'challengers_2',
       level: 285,
       jobClass: '레테',
       updatedAt: '2026-09-10T00:00:00.000Z',

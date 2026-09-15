@@ -24,7 +24,8 @@ import { useScheduleSyncErrorToast } from '../../features/schedule-sync/use-sync
 import { useToastStore } from '../../features/toast/store'
 import { useDataFreshness } from '../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
-import { getBossPortraitCrop, getBossPortraitUrl, isChallengersWorld } from '../../lib/assets/asset-lookup'
+import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/assets/asset-lookup'
+import { isChallengersWorld } from '../../lib/world/worlds'
 import type { ImageCrop } from '../../lib/image-crop'
 import type { MatchedBoss } from '../../lib/boss/boss-matching'
 import { bossNameOf, supportedDifficultiesOf } from '../../lib/boss/bosses'
@@ -242,10 +243,10 @@ export function BossScreen(): React.JSX.Element {
     ],
   }))
 
-  // `isChallengersWorld` 가 하고 화면이 월드 이름을 다시 뜯지 않는다. 관리 페이지와 같은 함수다.
+  // 월드 표의 `isChallengersWorld` 가 월드 key 로 하고 화면이 월드 이름을 다시 뜯지 않는다. 관리 페이지와 같은 함수다.
   // 챌린저스 월드면 등록 여부와 무관하게 시즌 보스 완료를 배지로 보인다. 판정은
   const seasonBosses =
-    selected !== null && selected.world !== undefined && isChallengersWorld(selected.world)
+    selected !== null && isChallengersWorld(selected.worldKey)
       ? selected.weeklyBosses.filter((boss) => boss.isSeasonBoss)
       : []
   const isSeasonBossComplete = seasonBosses.some((boss) => boss.isComplete)

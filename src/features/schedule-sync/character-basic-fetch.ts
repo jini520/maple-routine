@@ -1,3 +1,4 @@
+import { worldKeyOfApiName } from '../../lib/world/worlds'
 import { fetchCharacterBasic } from '../../nexon/character'
 import { getCachedCharacterBasic, setCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { saveCharacterProfile } from '../../storage/character-profiles'
@@ -79,7 +80,7 @@ export async function fetchCharacterBasicCached(
   // 실패는 캐시로 폴백하지 않고 그대로 던진다. 호출부들이 그 예외에 판정을 걸고 있다.
   // 400 `OPENAPI00003` 로 계정의 조회 불가를 확정하고 401·429 는 전역 실패로 갈라진다.
   // 여기서 삼키면 그 판정이 통째로 죽는다.
-  const fetched = await fetchCharacterBasic(apiKey, ocid)
+  const fetched = await fetchCharacterBasic(apiKey, ocid, worldKeyOfApiName)
 
   const resolvedJobClass = jobClass ?? cached?.profile.jobClass
   const profile: CharacterBasicProfile =
@@ -101,6 +102,7 @@ export async function fetchCharacterBasicCached(
     name: profile.name,
     imageUrl: profile.imageUrl,
     world: profile.world ?? null,
+    worldKey: profile.worldKey ?? null,
     level: profile.level,
     // 월드 이전 판정이 읽는다. 출처는 `character/list` 라 이 경로에서만 알 수 있고, 모르면
     // 위 UPSERT 의 COALESCE 가 이미 박아 둔 값을 지킨다.

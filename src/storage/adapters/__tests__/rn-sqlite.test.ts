@@ -139,6 +139,9 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE character_profiles ADD COLUMN job_class TEXT',
       'ALTER TABLE boss_profit_records ADD COLUMN world TEXT',
       'ALTER TABLE boss_profit_records ADD COLUMN defeated_on TEXT',
+      // 월드도 이름 대신 월드 key 를 든다.
+      'ALTER TABLE boss_profit_records ADD COLUMN world_key TEXT',
+      'ALTER TABLE character_profiles ADD COLUMN world_key TEXT',
       "ALTER TABLE enhancement_history ADD COLUMN target_item TEXT NOT NULL DEFAULT ''",
       'ALTER TABLE enhancement_history ADD COLUMN item_level INTEGER',
       // 강화 기록도 장비 이름 대신 장비 key 를 든다.
@@ -212,6 +215,7 @@ describe('db.ts 와 맞물리는가', () => {
             { name: 'box_origin_key' },
             { name: 'hunt_meso_rate' },
             { name: 'hunt_typed_meso' },
+            { name: 'world_key' },
           ]
         : []
 

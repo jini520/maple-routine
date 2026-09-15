@@ -10,7 +10,7 @@ import type {
 } from '../../types'
 
 /**
- * API 이름에서 보스 key · 컨텐츠 key. 못 찾으면 `null` 이다.
+ * API 이름에서 보스 key · 컨텐츠 key · 월드 key. 못 찾으면 `null` 이다.
  *
  * 부르는 쪽이 넘긴다. `nexon/` 은 `src/data/` 를 몰라야 응답 모양만으로 테스트할 수 있어서다. 앱은
  * `lib/scheduler/schedule-name-resolvers` 의 `SCHEDULE_NAME_RESOLVERS` 를 넘긴다.
@@ -18,6 +18,7 @@ import type {
 export interface ScheduleNameResolvers {
   bossKey: (apiName: string) => string | null
   contentKey: (apiName: string) => string | null
+  worldKey: (apiName: string) => string | null
 }
 
 function normalizeDailyContent(wire: NexonDailyContentWire, resolvers: ScheduleNameResolvers): DailyContent {
@@ -102,6 +103,7 @@ export function normalizeSchedulerCharacterState(
     asOf: wire.date,
     characterName: wire.character_name,
     world: wire.world_name,
+    worldKey: resolvers.worldKey(wire.world_name),
     level: wire.character_level,
     jobClass: wire.character_class,
     dailyContents: dailyContentsWire.map((content) => normalizeDailyContent(content, resolvers)),

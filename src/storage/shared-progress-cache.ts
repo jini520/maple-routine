@@ -1,4 +1,5 @@
 import { contentKeyOfApiName, findContent } from '../lib/scheduler/contents'
+import { findWorld } from '../lib/world/worlds'
 import { preferences } from './ports'
 import type { SharedProgressEntry } from '../types'
 import { accountSharedProgressKey, worldSharedProgressKey } from './keys'
@@ -45,16 +46,36 @@ async function setSharedProgressEntry(
   await preferences.set(key, JSON.stringify(current))
 }
 
-export async function getWorldSharedProgress(world: string): Promise<SharedProgressMap> {
-  return getSharedProgress(worldSharedProgressKey(world))
+/**
+ * 월드 이름을 키에 든 옛 원장(`worldSharedProgress:엘리시움`)을 월드 key 키로 옮긴다. 새 키에 값이 있으면 옮기지 않는다.
+ *
+ * 이 원장은 한 번이라도 활성으로 본 적이 있는지를 쌓은 값이라 API 에서 다시 받을 수 없어 옮긴다. 옛 이름은 월드 표의
+ * 이름이다. 표 이름이 곧 API 표기다.
+ */
+async function moveLegacyWorldLedger(worldKey: string): Promise<void> {
+  const name = findWorld(worldKey)?.name
+  if (name === undefined) return
+  const legacyKey = worldSharedProgressKey(name)
+  const legacy = await preferences.get(legacyKey)
+  if (legacy === null) return
+  if ((await preferences.get(worldSharedProgressKey(worldKey))) === null) {
+    await preferences.set(worldSharedProgressKey(worldKey), legacy)
+  }
+  await preferences.remove(legacyKey)
+}
+
+export async function getWorldSharedProgress(worldKey: string): Promise<SharedProgressMap> {
+  await moveLegacyWorldLedger(worldKey)
+  return getSharedProgress(worldSharedProgressKey(worldKey))
 }
 
 export async function setWorldSharedProgressEntry(
-  world: string,
+  worldKey: string,
   contentKey: string,
   entry: SharedProgressEntry,
 ): Promise<void> {
-  await setSharedProgressEntry(worldSharedProgressKey(world), contentKey, entry)
+  await moveLegacyWorldLedger(worldKey)
+  await setSharedProgressEntry(worldSharedProgressKey(worldKey), contentKey, entry)
 }
 
 export async function getAccountSharedProgress(accountId: string): Promise<SharedProgressMap> {

@@ -21,6 +21,7 @@ function row(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     characterName: '지내우시',
     imageUrl: null,
     world: null,
+    worldKey: null,
     bossKey: 'lotus',
     bossName: '스우',
     difficulty: 'hard',

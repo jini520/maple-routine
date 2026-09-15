@@ -9,6 +9,7 @@ function account(accountId: string): MapleAccount {
         ocid: `ocid-${accountId}`,
         name: `캐릭터-${accountId}`,
         world: '베라',
+        worldKey: 'bera',
         jobClass: '렌',
         level: 200,
       },

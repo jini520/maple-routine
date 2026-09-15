@@ -40,6 +40,7 @@ export function 보스행(overrides: Partial<BossProfitRow> = {}): BossProfitRow
     characterName: '지내우시',
     imageUrl: null,
     world: null,
+    worldKey: null,
     bossKey,
     bossName: bossNameOf(bossKey, bossKey),
     difficulty: 'hard',

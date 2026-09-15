@@ -11,7 +11,13 @@ import type {
 // 대표 캐릭터를 세우지 못해 렌더 중에 던진다. 사슬의 가장 위 고리를 끊어 그 상태가 애초에
 // 존재하지 않게 한다. 아래(프로브 판정·렌더 폴백)에서 막으면 캐릭터 0명 계정을 아는 코드가
 // 세 곳으로 흩어진다.
-export function normalizeCharacterList(wire: NexonCharacterListResponse): MapleAccount[] {
+/**
+ * @param worldKeyOf API 월드 이름에서 월드 key. `nexon/` 은 `src/data` 를 모르므로 부르는 쪽이 넘긴다
+ */
+export function normalizeCharacterList(
+  wire: NexonCharacterListResponse,
+  worldKeyOf: (apiName: string) => string | null,
+): MapleAccount[] {
   return wire.account_list
     .filter((account) => account.character_list.length > 0)
     .map((account) => ({
@@ -20,6 +26,7 @@ export function normalizeCharacterList(wire: NexonCharacterListResponse): MapleA
         ocid: character.ocid,
         name: character.character_name,
         world: character.world_name,
+        worldKey: worldKeyOf(character.world_name),
         jobClass: character.character_class,
         level: character.character_level,
       })),
@@ -47,13 +54,17 @@ function normalizeExpRate(raw: string | undefined): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined
 }
 
-export function normalizeCharacterBasic(wire: NexonCharacterBasicResponse): CharacterBasicProfile {
+export function normalizeCharacterBasic(
+  wire: NexonCharacterBasicResponse,
+  worldKeyOf: (apiName: string) => string | null,
+): CharacterBasicProfile {
   return {
     name: wire.character_name,
     level: wire.character_level,
     imageUrl: wire.character_image,
     accessFlag: wire.access_flag === 'true',
     world: wire.world_name,
+    worldKey: wire.world_name === undefined ? undefined : worldKeyOf(wire.world_name),
     // character_exp(누적 절대값)는 일부러 나르지 않는다. 카드가 답해야 하는 것은 진행률이다.
     expRate: normalizeExpRate(wire.character_exp_rate),
     guildName: normalizeGuildName(wire.character_guild_name),

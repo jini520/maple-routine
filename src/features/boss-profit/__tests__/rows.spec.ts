@@ -9,6 +9,7 @@ import type { ManualTrackedItem } from '../../../storage/manual-tracked-content'
 import type { BossContent } from '../../../types'
 import {
   buildBossProfitRow,
+  buildRowFromRecord,
   filterRowsForTab,
   matchesRowKey,
   mergeRecordsIntoRows,
@@ -27,6 +28,7 @@ function row(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     characterName: '낟낟',
     imageUrl: null,
     world: null,
+    worldKey: null,
     bossKey: 'zakum',
     bossName: '자쿰',
     difficulty: 'chaos',
@@ -126,11 +128,47 @@ describe('buildBossProfitRow', () => {
     portraitSlug: null,
     isSeasonBoss: false,
   }
-  const 캐릭터 = { characterName: '낟낟', imageUrl: null, world: null }
+  const 캐릭터 = { characterName: '낟낟', imageUrl: null, world: null, worldKey: null }
 
   it('09-10 주는 옛 가격, 09-17 주는 새 가격이다', () => {
     expect(buildBossProfitRow('o1', 캐릭터, 자쿰, new Date('2026-09-12T12:00:00+09:00')).priceMeso).toBe(8_080_000)
     expect(buildBossProfitRow('o1', 캐릭터, 자쿰, new Date('2026-09-18T12:00:00+09:00')).priceMeso).toBe(4_040_000)
+  })
+
+  it('행의 월드 key 는 캐릭터 프로필의 것이다', () => {
+    const row = buildBossProfitRow('o1', { ...캐릭터, world: '엘리시움', worldKey: 'elysium' }, 자쿰, new Date('2026-09-12T12:00:00+09:00'))
+
+    expect([row.world, row.worldKey]).toEqual(['엘리시움', 'elysium'])
+  })
+})
+
+// 기록의 월드 스냅샷이 이긴다. 이름과 key 는 같은 출처에서 짝으로 온다. 섞으면 이름과 엠블럼 · 한도가 다른 월드를 가리킨다.
+describe('buildRowFromRecord 의 월드', () => {
+  const 기록 = {
+    ocid: 'o1',
+    bossKey: 'zakum',
+    boss: '자쿰',
+    difficulty: 'chaos',
+    cycle: 'weekly' as const,
+    periodKey: '2026-09-10',
+    partySize: 1,
+    priceMeso: 1000,
+    payoutMeso: 1000,
+    recordedAt: '2026-09-11T00:00:00.000Z',
+  }
+  const 지금캐릭터 = { characterName: '낟낟', imageUrl: null, world: '엘리시움', worldKey: 'elysium' }
+  const now = new Date('2026-09-12T12:00:00+09:00')
+
+  it('기록에 월드가 있으면 기록의 이름과 key 다. 리프 뒤의 지금 월드로 옮기지 않는다', () => {
+    const row = buildRowFromRecord({ ...기록, world: '챌린저스2', worldKey: 'challengers_2' }, 지금캐릭터, now)
+
+    expect([row.world, row.worldKey]).toEqual(['챌린저스2', 'challengers_2'])
+  })
+
+  it('월드 칸이 없던 기록은 캐릭터의 이름과 key 로 채운다', () => {
+    const row = buildRowFromRecord({ ...기록, world: null, worldKey: null }, 지금캐릭터, now)
+
+    expect([row.world, row.worldKey]).toEqual(['엘리시움', 'elysium'])
   })
 })
 
@@ -354,6 +392,7 @@ it('mergeRecordsIntoRows 는 기록의 처치 날짜도 행에 싣는다', () =>
     payoutMeso: 50,
     recordedAt: '2026-09-20T00:00:00.000Z',
     world: null,
+    worldKey: null,
     defeatedOn: '2026-09-19',
   }
 
@@ -371,6 +410,7 @@ describe('toUpcomingWeekRows', () => {
     characterName: '낟낟',
     imageUrl: null,
     world: '엘리시움',
+    worldKey: 'elysium',
     bossKey: 'lotus',
     bossName: '스우',
     difficulty: 'hard',

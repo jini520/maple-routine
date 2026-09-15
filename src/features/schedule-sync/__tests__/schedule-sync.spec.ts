@@ -1,4 +1,5 @@
 
+import { worldKeyOfApiName } from '../../../lib/world/worlds'
 import { waitFor } from '../../../__tests__/wait-for'
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 import { SCHEDULE_NAME_RESOLVERS } from '../../../lib/scheduler/schedule-name-resolvers'
@@ -96,6 +97,7 @@ function mockCharacter(ocid: string): MapleCharacter {
     ocid,
     name: `캐릭터-${ocid}`,
     world: '베라',
+    worldKey: 'bera',
     jobClass: '렌',
     level: 200,
   }
@@ -110,6 +112,7 @@ function schedulerState(characterName: string): SchedulerCharacterState {
     asOf: '2026-07-09T00:00+09:00',
     characterName,
     world: '엘리시움',
+    worldKey: 'elysium',
     level: 293,
     jobClass: '렌',
     dailyContents: [],
@@ -266,7 +269,7 @@ describe('syncSchedules', () => {
       {
         ocid: 'ocid-1',
         characterName: '캐릭터-ocid-1',
-        world: '베라',
+        worldKey: 'bera',
         state: schedulerState('캐릭터1'),
         syncedAt: NOW,
         isStale: false,
@@ -275,7 +278,7 @@ describe('syncSchedules', () => {
       {
         ocid: 'ocid-2',
         characterName: '캐릭터-ocid-2',
-        world: '베라',
+        worldKey: 'bera',
         state: schedulerState('캐릭터2'),
         syncedAt: NOW,
         isStale: false,
@@ -408,7 +411,7 @@ describe('syncSchedules', () => {
       {
         ocid: 'ocid-1',
         characterName: '캐릭터-ocid-1',
-        world: '베라',
+        worldKey: 'bera',
         state: schedulerState('캐시된-캐릭터1'),
         syncedAt: '2026-07-10T00:00:00.000Z',
         isStale: true,
@@ -430,7 +433,7 @@ describe('syncSchedules', () => {
       {
         ocid: 'ocid-1',
         characterName: '캐릭터-ocid-1',
-        world: '베라',
+        worldKey: 'bera',
         state: null,
         syncedAt: null,
         isStale: true,
@@ -453,7 +456,7 @@ describe('syncSchedules', () => {
     expect(results[1]).toEqual({
       ocid: 'ocid-2',
       characterName: '캐릭터-ocid-2',
-      world: '베라',
+      worldKey: 'bera',
       state: schedulerState('캐릭터2'),
       syncedAt: NOW,
       isStale: false,
@@ -712,7 +715,7 @@ describe('syncSchedules', () => {
 
       await syncSchedules(['ocid-1'])
 
-      expect(getWorldSharedProgressMock).toHaveBeenCalledWith(fresh.world)
+      expect(getWorldSharedProgressMock).toHaveBeenCalledWith('elysium')
       expect(getAccountSharedProgressMock).toHaveBeenCalledWith('acc-1')
       expect(mergeSchedulerStateMock).toHaveBeenCalledWith({
         previous: cachedPrevious.state,
@@ -766,8 +769,28 @@ describe('syncSchedules', () => {
 
       await syncSchedules(['ocid-1'])
 
-      expect(setWorldSharedProgressEntryMock).toHaveBeenCalledWith(fresh.world, 'monster_park', worldEntry)
+      expect(setWorldSharedProgressEntryMock).toHaveBeenCalledWith('elysium', 'monster_park', worldEntry)
       expect(setAccountSharedProgressEntryMock).toHaveBeenCalledWith('acc-1', 'epic_dungeon_nightmare_paradise', accountEntry)
+    })
+
+    // 월드 key 가 없으면 월드를 모르는 것과 같다. 이름으로 원장 키를 만들지 않는다.
+    it('월드 key 가 없으면 월드 원장을 읽지도 쓰지도 않는다', async () => {
+      const characters = [mockCharacter('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      const fresh = { ...schedulerState('캐릭터1'), worldKey: null }
+      fetchSchedulerCharacterStateMock.mockResolvedValue(fresh)
+      const worldEntry = { active: true, kind: 'contents' as const, nowCount: 7, maxCount: 14, questState: null, lastUpdatedBucket: '2026-07-11' }
+      mergeSchedulerStateMock.mockReturnValue({
+        characterState: fresh,
+        worldLedgerUpdates: { monster_park: worldEntry },
+        accountLedgerUpdates: {},
+      })
+
+      await syncSchedules(['ocid-1'])
+
+      expect(getWorldSharedProgressMock).not.toHaveBeenCalled()
+      expect(setWorldSharedProgressEntryMock).not.toHaveBeenCalled()
+      expect(mergeSchedulerStateMock).toHaveBeenCalledWith(expect.objectContaining({ worldLedger: {} }))
     })
 
     it('ledger 변경분이 없으면 원장 쓰기를 호출하지 않는다', async () => {
@@ -1114,7 +1137,7 @@ describe('syncSchedules', () => {
         2,
         expect.objectContaining({ worldLedger: { monster_park: worldEntry }, accountLedger: {} }),
       )
-      expect(setWorldSharedProgressEntryMock).toHaveBeenCalledWith(fresh.world, 'monster_park', worldEntry)
+      expect(setWorldSharedProgressEntryMock).toHaveBeenCalledWith('elysium', 'monster_park', worldEntry)
       expect(setAccountSharedProgressEntryMock).toHaveBeenCalledWith('acc-1', 'epic_dungeon_nightmare_paradise', accountEntry)
     })
 
@@ -1230,8 +1253,8 @@ describe('syncSchedules', () => {
 
       // 프리플라이트로 이미 동기화한 첫 캐릭터도 갱신 대상이다.
       expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2)
-      expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-1')
-      expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-2')
+      expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-1', worldKeyOfApiName)
+      expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-2', worldKeyOfApiName)
       // mockCharacter/list 가 준 jobClass 가 엔트리에 함께 실린다. basic 응답에는 없다.
       expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-1', {
         profile: basicProfile({ name: '갱신-ocid-1', level: 293, jobClass: '렌' }),
@@ -1311,7 +1334,7 @@ describe('syncSchedules', () => {
 
       const results = await syncSchedules(['ocid-1', 'ocid-2'])
 
-      expect(fetchCharacterBasicMock).not.toHaveBeenCalledWith('key-1', 'ocid-2')
+      expect(fetchCharacterBasicMock).not.toHaveBeenCalledWith('key-1', 'ocid-2', worldKeyOfApiName)
       expect(setCachedCharacterBasicMock).not.toHaveBeenCalledWith(
         'acc-1',
         'ocid-2',
@@ -1343,7 +1366,7 @@ describe('syncSchedules', () => {
         await syncSchedules(['ocid-1', 'ocid-2'])
 
         expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(1)
-        expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-2')
+        expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-2', worldKeyOfApiName)
       })
 
       // 대표 미지정은 today 에서 목록의 첫 번째가 그 자리에 선다(`resolveDisplayRepresentative`).
@@ -1358,7 +1381,7 @@ describe('syncSchedules', () => {
         await syncSchedules(['ocid-1', 'ocid-2'])
 
         expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(1)
-        expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-1')
+        expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-1', worldKeyOfApiName)
       })
 
       // 강제는 예외지 특권이 아니다. best-effort 계약은 그대로라 실패해도 스케줄 결과를 안 흔든다.
@@ -1576,6 +1599,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
           level: 180,
           imageUrl: basicProfile({ name: '캐싱된캐릭', level: 180 }).imageUrl,
           world: '베라',
+          worldKey: 'bera',
         },
       ])
     })
@@ -1593,7 +1617,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
     }
 
     function 챌린저스캐릭터(ocid: string): MapleCharacter {
-      return { ocid, name: '지내우시', world: '챌린저스2', jobClass: '레테', level: 285 }
+      return { ocid, name: '지내우시', world: '챌린저스2', worldKey: 'challengers_2', jobClass: '레테', level: 285 }
     }
 
     beforeEach(() => {
@@ -1630,7 +1654,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
 
       await getCharacterPickerRoster(jest.fn(), { accountId: 'acc-1' })
 
-      expect(fetchCharacterBasicMock).not.toHaveBeenCalledWith(expect.anything(), 옛ocid)
+      expect(fetchCharacterBasicMock).not.toHaveBeenCalledWith(expect.anything(), 옛ocid, expect.anything())
     })
 
     // 이미 확정된 사실이라 다시 부를 이유가 없다. 화면을 열 때마다 한 건씩 새면 안 된다.
@@ -1644,17 +1668,17 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
 
       await getCharacterPickerRoster(jest.fn(), { accountId: 'acc-1' })
 
-      expect(fetchCharacterBasicMock).not.toHaveBeenCalledWith(expect.anything(), 옛ocid)
+      expect(fetchCharacterBasicMock).not.toHaveBeenCalledWith(expect.anything(), 옛ocid, expect.anything())
     })
 
     it('월드 리프로 보이면 물어볼 후보를 세운다', async () => {
       await setTrackedOcids([옛ocid])
-      const 새캐릭터 = { ...챌린저스캐릭터('new-ocid'), world: '엘리시움' }
+      const 새캐릭터 = { ...챌린저스캐릭터('new-ocid'), world: '엘리시움', worldKey: 'elysium' }
       fetchCharacterListMock.mockResolvedValue([account('acc-1', [새캐릭터])])
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
       getCachedCharacterBasicMock.mockResolvedValue(null)
       getCharacterProfilesMock.mockResolvedValue(
-        new Map([[옛ocid, { ocid: 옛ocid, name: '지내우시', world: '챌린저스2', jobClass: '레테', level: 285, imageUrl: '', updatedAt: NOW }]]),
+        new Map([[옛ocid, { ocid: 옛ocid, name: '지내우시', world: '챌린저스2', worldKey: 'challengers_2', jobClass: '레테', level: 285, imageUrl: '', updatedAt: NOW }]]),
       )
       fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
         if (ocid === 옛ocid) throw new NexonNoCharacterError('캐릭터가 없습니다')
@@ -1675,7 +1699,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
     // 캐릭터만 판정에서 빠지므로, 아직 남아 있는 5분 캐시에서 메운다.
     it('스냅샷에 직업이 없으면 캐릭터 캐시에서 메워 판정한다', async () => {
       await setTrackedOcids([옛ocid])
-      const 새캐릭터 = { ...챌린저스캐릭터('new-ocid'), world: '엘리시움' }
+      const 새캐릭터 = { ...챌린저스캐릭터('new-ocid'), world: '엘리시움', worldKey: 'elysium' }
       fetchCharacterListMock.mockResolvedValue([account('acc-1', [새캐릭터])])
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
       getCachedCharacterBasicMock.mockImplementation(async (ocid: string) =>
@@ -1684,7 +1708,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
           : null,
       )
       getCharacterProfilesMock.mockResolvedValue(
-        new Map([[옛ocid, { ocid: 옛ocid, name: '지내우시', world: '챌린저스2', jobClass: null, level: 285, imageUrl: '', updatedAt: NOW }]]),
+        new Map([[옛ocid, { ocid: 옛ocid, name: '지내우시', world: '챌린저스2', worldKey: 'challengers_2', jobClass: null, level: 285, imageUrl: '', updatedAt: NOW }]]),
       )
       fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
         if (ocid === 옛ocid) throw new NexonNoCharacterError('캐릭터가 없습니다')
@@ -1700,13 +1724,13 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
     // 그것으로 선다.
     it('스냅샷이 아예 없어도 캐릭터 캐시만으로 판정한다', async () => {
       await setTrackedOcids([옛ocid])
-      const 새캐릭터 = { ...챌린저스캐릭터('new-ocid'), world: '엘리시움' }
+      const 새캐릭터 = { ...챌린저스캐릭터('new-ocid'), world: '엘리시움', worldKey: 'elysium' }
       fetchCharacterListMock.mockResolvedValue([account('acc-1', [새캐릭터])])
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
       getCachedCharacterBasicMock.mockImplementation(async (ocid: string) =>
         ocid === 옛ocid
           ? {
-              profile: { ...basicProfile({ name: '지내우시', level: 285, jobClass: '레테' }), world: '챌린저스2' },
+              profile: { ...basicProfile({ name: '지내우시', level: 285, jobClass: '레테' }), world: '챌린저스2', worldKey: 'challengers_2' },
               cachedAt: STALE_CACHED_AT,
             }
           : null,
@@ -1726,12 +1750,12 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
     it('옛 월드가 챌린저스 계열이 아니면 후보를 안 세운다', async () => {
       await setTrackedOcids([옛ocid])
       fetchCharacterListMock.mockResolvedValue([
-        account('acc-1', [{ ...챌린저스캐릭터('new-ocid'), world: '엘리시움' }]),
+        account('acc-1', [{ ...챌린저스캐릭터('new-ocid'), world: '엘리시움', worldKey: 'elysium' }]),
       ])
       getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
       getCachedCharacterBasicMock.mockResolvedValue(null)
       getCharacterProfilesMock.mockResolvedValue(
-        new Map([[옛ocid, { ocid: 옛ocid, name: '지내우시', world: '베라', jobClass: '레테', level: 285, imageUrl: '', updatedAt: NOW }]]),
+        new Map([[옛ocid, { ocid: 옛ocid, name: '지내우시', world: '베라', worldKey: 'bera', jobClass: '레테', level: 285, imageUrl: '', updatedAt: NOW }]]),
       )
       fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
         if (ocid === 옛ocid) throw new NexonNoCharacterError('캐릭터가 없습니다')
@@ -1778,6 +1802,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
         level: 200,
         imageUrl: null,
         world: '베라',
+        worldKey: 'bera',
         unavailable: true,
       })
       expect(emitted.find((entry) => entry.ocid === 'ocid-1')?.unavailable).toBeUndefined()
@@ -1871,7 +1896,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
     // mockCharacter/list 응답 이후 방출도 캐시 값(+ world)을 그대로 유지한다
     await waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThanOrEqual(2))
     expect(onUpdate.mock.calls.at(-1)?.[0]).toEqual([
-      { ocid: 'ocid-1', name: '캐시캐릭', level: 150, imageUrl: basicProfile({ name: '캐시캐릭', level: 150 }).imageUrl, world: '베라' },
+      { ocid: 'ocid-1', name: '캐시캐릭', level: 150, imageUrl: basicProfile({ name: '캐시캐릭', level: 150 }).imageUrl, world: '베라', worldKey: 'bera' },
     ])
   })
 
@@ -2078,7 +2103,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
 
     const last = onUpdate.mock.calls.at(-1)?.[0]
     expect(last).toEqual([
-      { ocid: 'ocid-1', name: '최신캐릭', level: 293, imageUrl: basicProfile({ name: '최신캐릭', level: 293 }).imageUrl, world: '베라' },
+      { ocid: 'ocid-1', name: '최신캐릭', level: 293, imageUrl: basicProfile({ name: '최신캐릭', level: 293 }).imageUrl, world: '베라', worldKey: 'bera' },
     ])
     // 캐시 인덱스는 계정별이라 accountId가 첫 인자다.
     expect(setCachedCharacterBasicMock).toHaveBeenCalledWith(
@@ -2112,6 +2137,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
         level: 293,
         imageUrl: basicProfile({ name: '방금받음', level: 293 }).imageUrl,
         world: '베라',
+        worldKey: 'bera',
       },
     ])
   })
@@ -2174,7 +2200,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
 
     const last = onUpdate.mock.calls.at(-1)?.[0]
     expect(last).toEqual([
-      { ocid: 'ocid-1', name: '캐시캐릭', level: 150, imageUrl: basicProfile({ name: '캐시캐릭', level: 150 }).imageUrl, world: '베라' },
+      { ocid: 'ocid-1', name: '캐시캐릭', level: 150, imageUrl: basicProfile({ name: '캐시캐릭', level: 150 }).imageUrl, world: '베라', worldKey: 'bera' },
     ])
   })
 
@@ -2245,8 +2271,8 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
 
       expect(onUpdate.mock.calls.length).toBeGreaterThanOrEqual(4)
       expect(onUpdate.mock.calls.at(-1)?.[0]).toEqual([
-        { ocid: 'ocid-1', name: '최신-1', level: 250, imageUrl: basicProfile({ name: '최신-1', level: 250 }).imageUrl, world: '베라' },
-        { ocid: 'ocid-2', name: '최신-2', level: 240, imageUrl: basicProfile({ name: '최신-2', level: 240 }).imageUrl, world: '베라' },
+        { ocid: 'ocid-1', name: '최신-1', level: 250, imageUrl: basicProfile({ name: '최신-1', level: 250 }).imageUrl, world: '베라', worldKey: 'bera' },
+        { ocid: 'ocid-2', name: '최신-2', level: 240, imageUrl: basicProfile({ name: '최신-2', level: 240 }).imageUrl, world: '베라', worldKey: 'bera' },
       ])
     })
 
@@ -2281,8 +2307,8 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
       await promise
 
       expect(onUpdate.mock.calls.at(-1)?.[0]).toEqual([
-        { ocid: 'ocid-1', name: '캐릭1', level: 250, imageUrl: basicProfile({ name: '캐릭1', level: 250 }).imageUrl, world: '베라' },
-        { ocid: 'ocid-2', name: '캐릭2', level: 240, imageUrl: basicProfile({ name: '캐릭2', level: 240 }).imageUrl, world: '베라' },
+        { ocid: 'ocid-1', name: '캐릭1', level: 250, imageUrl: basicProfile({ name: '캐릭1', level: 250 }).imageUrl, world: '베라', worldKey: 'bera' },
+        { ocid: 'ocid-2', name: '캐릭2', level: 240, imageUrl: basicProfile({ name: '캐릭2', level: 240 }).imageUrl, world: '베라', worldKey: 'bera' },
       ])
     })
 
@@ -2409,6 +2435,7 @@ describe('동기화가 월드 리프를 짚는다', () => {
         ocid: 옛ocid,
         name: '지내우시',
         world: '챌린저스2',
+        worldKey: 'challengers_2',
         jobClass: '레테',
         level: 285,
         imageUrl: '',
@@ -2421,6 +2448,7 @@ describe('동기화가 월드 리프를 짚는다', () => {
     ocid: 'new-ocid',
     name: '지내우시',
     world: '엘리시움',
+    worldKey: 'elysium',
     jobClass: '레테',
     level: 285,
   }
@@ -2469,14 +2497,14 @@ describe('동기화가 월드 리프를 짚는다', () => {
 
     await syncSchedules([옛ocid, 'ocid-1'])
 
-    expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 옛ocid)
+    expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 옛ocid, worldKeyOfApiName)
   })
 
   // 옛 월드가 챌린저스가 아니면 조회가 막힌 이유가 리프라고 단정할 수 없다(일반 월드는 장기
   // 미접속으로 막혔다가 접속하면 풀릴 수 있다).
   it('옛 월드가 챌린저스 계열이 아니면 안 묻는다', async () => {
     getCharacterProfilesMock.mockResolvedValue(
-      new Map([[옛ocid, { ...스냅샷.get(옛ocid)!, world: '베라' }]]),
+      new Map([[옛ocid, { ...스냅샷.get(옛ocid)!, world: '베라', worldKey: 'bera' }]]),
     )
     fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1'), 새캐릭터])])
 

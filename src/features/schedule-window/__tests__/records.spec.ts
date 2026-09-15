@@ -41,7 +41,7 @@ beforeEach(() => {
   getDropsMock.mockReset().mockResolvedValue([])
   replaceDropsMock.mockReset().mockResolvedValue(undefined)
   getPartySizeMock.mockReset().mockResolvedValue(null)
-  getBasicMock.mockReset().mockResolvedValue({ profile: { world: '스카니아' } })
+  getBasicMock.mockReset().mockResolvedValue({ profile: { world: '스카니아', worldKey: 'scania' } })
 })
 
 const upserted = () =>
@@ -75,6 +75,18 @@ describe('그 기간의 확정 상태는 조회 가능한 마지막 날의 응�
     expect(upserted()).toContain('lotus|hard|weekly|2026-09-03')
     expect(upserted()).toContain('black_mage|hard|monthly|2026-09')
   })
+})
+
+// 월드별 결정석 집계는 월드 key 로 가른다. 이름만 적으면 그 기록이 월드 모름으로 빠진다.
+it('기록에 캐시의 월드 이름과 월드 key 를 함께 적는다', async () => {
+  getLedgerMock.mockResolvedValue({
+    unavailable: false,
+    dates: { '2026-09-04': observed(['lotus|hard']) },
+  })
+
+  await recordBossProfitFromWindow(['o1'], NOW)
+
+  expect(upsertMock).toHaveBeenCalledWith(expect.objectContaining({ world: '스카니아', worldKey: 'scania' }))
 })
 
 describe('이미 있는 행은 안 건드린다', () => {

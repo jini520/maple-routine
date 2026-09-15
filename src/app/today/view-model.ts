@@ -89,8 +89,8 @@ export interface RepresentativeView {
   name: string
   level: number
   imageUrl: string
-  /** 월드 이름. 엠블럼은 위젯이 `worldEmblemUrl` 로 푼다. 뷰모델은 이름만 나른다. */
-  world?: string
+  /** 월드 key. 엠블럼과 그 읽기 글자는 위젯이 `worldEmblemUrl` · `worldNameOf` 로 푼다. */
+  worldKey?: string | null
   jobClass?: string
   /** `null` = 미가입 · `undefined` = 모름. */
   guildName?: string | null
@@ -256,6 +256,9 @@ export interface TopItemView {
 }
 
 export interface CrystalLimitView {
+  /** 월드 key. 한도를 세는 단위이고 목록의 신원이다 */
+  worldKey: string
+  /** 보이는 월드 이름. 월드 표 이름이다 */
   world: string
   cleared: number
   limit: number
@@ -446,7 +449,7 @@ function buildRepresentative(input: TodayViewModelInput): RepresentativeView | n
     name: profile.name,
     level: profile.level,
     imageUrl: profile.imageUrl,
-    world: profile.world,
+    worldKey: profile.worldKey,
     jobClass: profile.jobClass,
     guildName: profile.guildName,
     expRate: profile.expRate,
@@ -731,6 +734,7 @@ function buildProfit(
         .map((entry) => entry.character),
     },
     crystalLimits: summarizeWorldCrystals(groups).map((summary) => ({
+      worldKey: summary.worldKey,
       world: summary.world,
       cleared: summary.cleared,
       limit: WEEKLY_CRYSTAL_SALE_LIMIT,

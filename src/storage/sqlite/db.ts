@@ -108,6 +108,8 @@ const TABLE_DEFINITIONS = [
     image_url TEXT NOT NULL,
     -- 모르면 NULL. 0 이나 빈 문자열로 채우면 '모름' 이 값으로 둔갑한다.
     world TEXT,
+    -- 월드 key. world 가 NULL 이면 함께 NULL 이다.
+    world_key TEXT,
     level INTEGER,
     -- 월드 이전 판정이 읽는다. 이름만으로는 옮겨간 캐릭터를 짚을 수 없어 직업이 유일성을 세운다.
     job_class TEXT,
@@ -343,6 +345,9 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'boss_profit_records', 'world', 'TEXT')
   // `world` 와 같은 사정이다. 이미 보스를 기록해 둔 기기에는 CREATE 가 안 붙인다.
   await ensureColumn(db, 'boss_profit_records', 'defeated_on', 'TEXT')
+  // 월드도 이름 대신 월드 key 를 든다. 값은 아래 버전 이관이 채운다.
+  await ensureColumn(db, 'boss_profit_records', 'world_key', 'TEXT')
+  await ensureColumn(db, 'character_profiles', 'world_key', 'TEXT')
   // 이 브랜치에서 표를 세우는 동안 붙인 칸 둘. 아직 배포된 적이 없어 이관할 데이터도 없지만,
   // DDL 과 여기가 함께 가야 재작성이 만드는 표와 어긋나지 않는다.
   await ensureColumn(db, 'enhancement_history', 'target_item', 'TEXT NOT NULL DEFAULT \'\'')

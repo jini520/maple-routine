@@ -249,6 +249,7 @@ function profitRow(ocid: string, index: number): BossProfitRow {
     characterName: `캐릭터${index}`,
     imageUrl: null,
     world: '스카니아',
+    worldKey: 'scania',
     bossKey: 'lotus',
     bossName: '스우',
     difficulty: 'normal',

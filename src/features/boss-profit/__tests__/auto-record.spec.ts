@@ -33,6 +33,7 @@ function row(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     characterName: '낟낟',
     imageUrl: null,
     world: '스카니아',
+    worldKey: 'scania',
     bossKey: 'zakum',
     bossName: '자쿰',
     difficulty: 'chaos',
@@ -82,6 +83,7 @@ describe('autoRecordRows', () => {
         payoutMeso: 10_000_000,
         recordedAt: NOW.toISOString(),
         world: '스카니아',
+        worldKey: 'scania',
       }),
     )
     expect(result[0].partySize).toBe(1)

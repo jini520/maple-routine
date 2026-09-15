@@ -34,7 +34,8 @@ export type ManualContentAddResult = 'added' | 'duplicate' | 'guildRequired'
 export interface ContentCharacterView {
   ocid: string
   characterName: string
-  world?: string
+  /** 월드 key. 시즌 보스를 보일지 가른다 */
+  worldKey?: string | null
   // 같은 캐시에서 함께 꺼내는 길드명. null = 미가입(길드 콘텐츠 잠금 근거),
   // undefined = 모름(잠그지 않음).
   guildName?: string | null
@@ -146,7 +147,7 @@ async function readCachedView(ocid: string): Promise<ContentCharacterView | null
   return {
     ocid,
     characterName: cached.state.characterName,
-    world: cached.state.world,
+    worldKey: cached.state.worldKey,
     dailyContents: cached.state.dailyContents,
     weeklyContents: cached.state.weeklyContents,
     isStale: true,
@@ -256,7 +257,7 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
         const addedViews: ContentCharacterView[] = results.map((result) => ({
           ocid: result.ocid,
           characterName: result.characterName,
-          world: result.world,
+          worldKey: result.worldKey,
           dailyContents: result.state?.dailyContents ?? [],
           weeklyContents: result.state?.weeklyContents ?? [],
           isStale: result.isStale,
@@ -303,7 +304,7 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
           return {
             ocid,
             characterName: cached.state.characterName,
-            world: cached.state.world,
+            worldKey: cached.state.worldKey,
             dailyContents: cached.state.dailyContents,
             weeklyContents: cached.state.weeklyContents,
             isStale: true,
@@ -359,7 +360,7 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
     const characters: ContentCharacterView[] = results.map((result) => ({
       ocid: result.ocid,
       characterName: result.characterName,
-      world: result.world,
+      worldKey: result.worldKey,
       dailyContents: result.state?.dailyContents ?? [],
       weeklyContents: result.state?.weeklyContents ?? [],
       isStale: result.isStale,

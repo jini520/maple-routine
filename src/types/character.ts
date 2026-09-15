@@ -1,7 +1,10 @@
 export interface MapleCharacter {
   ocid: string
   name: string
+  /** API `world_name` 원문 */
   world: string
+  /** 월드 key. 판정 · 집계 · 엠블럼은 이 값으로 찾는다. 이름이 월드 표에 없으면 `null` 이다 */
+  worldKey: string | null
   jobClass: string
   level: number
 }
@@ -19,6 +22,8 @@ export interface CharacterPickerEntry {
   // 서버 엠블럼 표시용. character/list(live) 또는 캐시된 character/basic에서 채운다.
   // 목록 도착 전 오래된 캐시 stub 등 world를 아직 모르면 undefined(엠블럼 생략).
   world?: string
+  // 월드 key. 엠블럼은 이 값으로 찾는다. 모르면 undefined, 월드 표에 없으면 null.
+  worldKey?: string | null
   /**
    * 캐릭터 카드 2줄의 레벨 + 직업. 출처는 `character/list` 이고 `world` 와
    * 같은 이유로 옵셔널이다. 모르면 그 자리를 비우고 레벨만 그린다.
@@ -42,6 +47,8 @@ export interface CharacterBasicProfile {
   accessFlag: boolean
   // character/basic 응답의 world_name. 이전 캐시엔 없을 수 있어 옵셔널.
   world?: string
+  // 월드 key. 이름이 월드 표에 없으면 null. 월드 key 가 생기기 전 캐시는 읽을 때 world 로 채운다.
+  worldKey?: string | null
   // 캐릭터 카드 2줄의 **레벨 + 직업**. **값의 출처는 `character/basic` 이 아니라
   // `character/list`** 다. basic 응답에도 직업이 있을 수 있지만 우리 wire 타입이 그것을 선언한 적도
   // 없어 `normalizeCharacterBasic` 이 채우지 않고 **캐시에 쓰는 쪽이

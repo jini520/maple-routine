@@ -157,6 +157,15 @@ describe('이벤트 월드', () => {
     expect(rows).toEqual([])
   })
 
+  // 줄의 월드 이름은 저장된 응답 원문이라 읽는 자리가 월드 key 로 맞춘다. 이벤트 월드인지는 월드 표의 칸이 정한다.
+  it('줄의 월드 이름을 월드 key 로 맞춰 판정한다', () => {
+    const starforce = (worldName: string) =>
+      entry({ kind: 'starforce', payload: { world_name: worldName, before_starforce_count: 0, upgrade_item: '' } })
+    const rows = toEnhancementSpending([starforce('스페셜 '.normalize('NFD')), starforce('챌린저스2')], new Set())
+
+    expect(rows.map((row) => row.payload)).toEqual([expect.objectContaining({ world_name: '챌린저스2' })])
+  })
+
   it('목록을 못 받았으면 월드를 모르는 줄을 뺀다', () => {
     const rows = toEnhancementSpending([entry({ characterName: '낟낟' })], null)
 

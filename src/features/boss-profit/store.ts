@@ -340,6 +340,7 @@ async function getSortedCharacterInfo(ocids: string[]): Promise<SortedCharacterI
       characterName: profile?.name ?? null,
       imageUrl: profile?.imageUrl ?? null,
       world: profile?.world ?? null,
+      worldKey: profile?.worldKey ?? null,
       unavailable: unavailableFlags[index] === true,
     }
   })
@@ -352,10 +353,11 @@ async function getSortedCharacterInfo(ocids: string[]): Promise<SortedCharacterI
       if (b.level !== a.level) return b.level - a.level
       return compareByName(a.name, b.name)
     })
-    .map(({ ocid, imageUrl, world, characterName, unavailable }) => ({
+    .map(({ ocid, imageUrl, world, worldKey, characterName, unavailable }) => ({
       ocid,
       imageUrl,
       world,
+      worldKey,
       characterName,
       unavailable,
     }))
@@ -656,6 +658,7 @@ async function buildRowsFromRecords(
       characterName: profile.name,
       imageUrl: profile.imageUrl,
       world: profile.world,
+      worldKey: profile.worldKey,
     })
   }
 
@@ -1276,12 +1279,13 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     const imageUrlByOcid = new Map(sortedCharacterInfo.map((info) => [info.ocid, info.imageUrl]))
     // 월드도 같은 조회 결과에서 그대로 꺼내 행까지 흘린다.
     const worldByOcid = new Map(sortedCharacterInfo.map((info) => [info.ocid, info.world]))
+    const worldKeyByOcid = new Map(sortedCharacterInfo.map((info) => [info.ocid, info.worldKey]))
 
-    // `world` 컬럼을 새로 더했으므로 그전 기록에는 월드가 없다. 지금 아는 월드로 채운다.
+    // `world` 컬럼을 새로 더했으므로 그전 기록에는 월드가 없다. 지금 아는 월드와 그 key 로 채운다.
     // `world IS NULL` 조건이 멱등성을 보장해 다시 실행돼도 과거 스냅샷을 덮어쓰지 않는다.
-    const knownWorlds = new Map<string, string>()
+    const knownWorlds = new Map<string, { world: string; worldKey: string | null }>()
     for (const [ocid, world] of worldByOcid) {
-      if (world !== null) knownWorlds.set(ocid, world)
+      if (world !== null) knownWorlds.set(ocid, { world, worldKey: worldKeyByOcid.get(ocid) ?? null })
     }
     await withSqliteFallback(fillMissingRecordWorlds(knownWorlds), undefined)
 
@@ -1337,6 +1341,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
           characterName: cached.state.characterName,
           imageUrl: imageUrlByOcid.get(ocid) ?? null,
           world: worldByOcid.get(ocid) ?? null,
+          worldKey: worldKeyByOcid.get(ocid) ?? null,
         }
         return {
           syncedAt: cached.syncedAt,
@@ -1579,6 +1584,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     const syncedOcids = syncedCharacterInfo.map((info) => info.ocid)
     const syncedImageUrlByOcid = new Map(syncedCharacterInfo.map((info) => [info.ocid, info.imageUrl]))
     const syncedWorldByOcid = new Map(syncedCharacterInfo.map((info) => [info.ocid, info.world]))
+    const syncedWorldKeyByOcid = new Map(syncedCharacterInfo.map((info) => [info.ocid, info.worldKey]))
 
     const rows: BossProfitRow[] = []
     const staleCharacterNames: string[] = []
@@ -1596,6 +1602,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         characterName: result.characterName,
         imageUrl: syncedImageUrlByOcid.get(result.ocid) ?? null,
         world: syncedWorldByOcid.get(result.ocid) ?? null,
+        worldKey: syncedWorldKeyByOcid.get(result.ocid) ?? null,
       }
       characterProfiles.set(result.ocid, profile)
 
@@ -1886,6 +1893,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         payoutMeso: payoutMeso as number,
         recordedAt: new Date().toISOString(),
         world: row.world,
+        worldKey: row.worldKey,
       })
     }
 

@@ -20,12 +20,13 @@ import { findHuntingGroundByName } from '../../lib/cashbook/hunting-grounds'
 import { legacySpendKeysOf } from '../../lib/cashbook/spend-catalog'
 import { dropItemKeyOfName } from '../../lib/drop/drop-items'
 import { equipmentItemKeyOfApiName } from '../../lib/equipment/equipment-items'
+import { worldKeyOfApiName } from '../../lib/world/worlds'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types/scheduler'
 import type { SqliteDbConnection } from '../ports'
 import { BOSS_KEYED_TABLES } from './boss-tables'
 
 /** 이 앱의 마지막 DB 버전. 새 기기는 곧바로 이 값이 된다. */
-export const DB_VERSION = 5
+export const DB_VERSION = 6
 
 /**
  * 갈래와 항목 이름을 바꾸며 옛 기록을 옮기던 문장들. 버전 1 이 한 번 돌린다.
@@ -184,6 +185,19 @@ async function fillEnhancementItemKeys(db: SqliteDbConnection): Promise<void> {
   }
 }
 
+/** 수익 기록과 캐릭터 프로필에 월드 key 를 채운다. 월드 이름(`world`)으로 월드 표를 찾는다. */
+async function fillWorldKeys(db: SqliteDbConnection): Promise<void> {
+  for (const table of ['boss_profit_records', 'character_profiles']) {
+    const { values } = await db.query(`SELECT DISTINCT world FROM ${table} WHERE world IS NOT NULL`)
+    for (const row of (values ?? []) as Row[]) {
+      const world = String(row.world)
+      const worldKey = worldKeyOfApiName(world)
+      if (worldKey === null) continue
+      await db.run(`UPDATE ${table} SET world_key = ? WHERE world = ?`, [worldKey, world])
+    }
+  }
+}
+
 const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   async (db) => {
     for (const statement of LEGACY_NAME_MIGRATIONS) await db.execute(statement)
@@ -192,6 +206,7 @@ const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   fillDropKeys,
   rekeyBossTables,
   fillEnhancementItemKeys,
+  fillWorldKeys,
 ]
 
 async function userVersionOf(db: SqliteDbConnection): Promise<number> {

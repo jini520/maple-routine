@@ -19,6 +19,7 @@
 import { Image, View } from 'react-native'
 
 import { worldEmblemUrl } from '../../../lib/assets/asset-lookup'
+import { worldNameOf } from '../../../lib/world/worlds'
 
 import { ProgressBar, Text } from '../../../components/atoms'
 import { UnavailableBadge } from '../../../components/molecules/UnavailableBadge/UnavailableBadge'
@@ -88,7 +89,7 @@ function NameLine(props: {
   center: boolean
 }): React.JSX.Element {
   const spec = VARIANT[props.variant]
-  const emblem = props.view.world === undefined ? null : worldEmblemUrl(props.view.world)
+  const emblem = worldEmblemUrl(props.view.worldKey)
 
   return (
     <View
@@ -98,7 +99,7 @@ function NameLine(props: {
       {emblem !== null && (
         <View testID="representative-emblem" className="shrink-0">
           <Image
-            accessibilityLabel={props.view.world ?? ''}
+            accessibilityLabel={worldNameOf(props.view.worldKey, '')}
             source={emblem}
             style={naturalAspectStyle(emblem, { height: spec.emblemPx })}
             resizeMode="contain"

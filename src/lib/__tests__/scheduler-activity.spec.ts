@@ -44,6 +44,7 @@ function state(overrides: Partial<SchedulerCharacterState> = {}): SchedulerChara
     asOf: '2026-08-03T00:00+09:00',
     characterName: '낟낟',
     world: '엘리시움',
+    worldKey: 'elysium',
     level: 293,
     jobClass: '렌',
     dailyContents: [],

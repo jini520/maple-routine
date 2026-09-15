@@ -19,12 +19,12 @@ import { useCharacterSelectionStore } from '../../character-selection/store'
 import { resetWorldLeapStoreForTests, useWorldLeapStore } from '../world-leap-store'
 import type { WorldLeapNotice } from '../world-leap'
 
-const 옛것 = { ocid: 'old', name: '지내우시', world: '챌린저스2', jobClass: '레테', level: 285 }
+const 옛것 = { ocid: 'old', name: '지내우시', world: '챌린저스2', worldKey: 'challengers_2', jobClass: '레테', level: 285 }
 
 const 짚음: WorldLeapNotice = {
   kind: 'confirmed',
   from: 옛것,
-  to: { ocid: 'new', name: '지내우시', world: '엘리시움', jobClass: '레테', level: 285 },
+  to: { ocid: 'new', name: '지내우시', world: '엘리시움', worldKey: 'elysium', jobClass: '레테', level: 285 },
 }
 
 const 모름: WorldLeapNotice = { kind: 'unknown', from: 옛것 }

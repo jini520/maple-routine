@@ -65,7 +65,7 @@ export const ASSET_GROUPS: AssetGroup[] = [
     key: 'slug',
     dirs: ['worlds'],
     extensions: ['png', 'webp'],
-    purpose: '월드 엠블럼. `lib/world-emblem.ts` 가 `world-emblems.json` 의 basename 으로 찾는다',
+    purpose: '월드 엠블럼. `lib/assets/asset-lookup.ts` 의 `worldEmblemUrl` 이 `worlds.json` 의 `emblem` 으로 찾는다',
   },
   {
     file: 'themes',

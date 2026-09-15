@@ -1,4 +1,4 @@
-import { detectWorldLeap, isChallengersWorld } from '../world-leap'
+import { detectWorldLeap } from '../world-leap'
 import type { StrandedCharacter } from '../world-leap'
 import type { MapleCharacter } from '../../../types'
 
@@ -8,6 +8,7 @@ const 옛프로필 = {
   ocid: '4c9b04493104afca3e25fdf619852443',
   name: '지내우시',
   world: '챌린저스2',
+  worldKey: 'challengers_2',
   jobClass: '레테',
   level: 285,
 }
@@ -16,6 +17,7 @@ const 새캐릭터: MapleCharacter = {
   ocid: '62328eaf219a887c3946f3e09918fe8f6fbb98200a15be5bcc73a64995849e9c',
   name: '지내우시',
   world: '엘리시움',
+  worldKey: 'elysium',
   jobClass: '레테',
   level: 285,
 }
@@ -24,6 +26,7 @@ const 남 = (over: Partial<MapleCharacter>): MapleCharacter => ({
   ocid: 'other',
   name: '낟낟',
   world: '엘리시움',
+  worldKey: 'elysium',
   jobClass: '렌',
   level: 295,
   ...over,
@@ -32,13 +35,21 @@ const 남 = (over: Partial<MapleCharacter>): MapleCharacter => ({
 /** 옮긴 것은 아는데 어디로 갔는지 모르는 결과. */
 const 모름 = (from: StrandedCharacter) => ({ kind: 'unknown', from })
 
-describe('isChallengersWorld', () => {
-  it.each(['챌린저스', '챌린저스2'])('%s 는 챌린저스 계열이다', (world) => {
-    expect(isChallengersWorld(world)).toBe(true)
+// 챌린저스인지는 월드 표의 칸이 정한다. 이름 앞부분이 같아도 표에 없는 월드는 묻지 않는다.
+describe('묻는 조건은 옛 월드가 월드 표의 챌린저스인가다', () => {
+  it.each([
+    ['challengers', '챌린저스'],
+    ['challengers_4', '챌린저스4'],
+  ])('%s 에서 옮기면 묻는다', (worldKey, world) => {
+    expect(detectWorldLeap({ ...옛프로필, world, worldKey }, [새캐릭터], new Set())).toMatchObject({ kind: 'confirmed' })
   })
 
-  it.each(['엘리시움', '스카니아', '스페셜', '베라'])('%s 는 아니다', (world) => {
-    expect(isChallengersWorld(world)).toBe(false)
+  it('표에 없는 챌린저스5 는 월드 key 가 없어 묻지 않는다', () => {
+    expect(detectWorldLeap({ ...옛프로필, world: '챌린저스5', worldKey: null }, [새캐릭터], new Set())).toBeNull()
+  })
+
+  it.each(['elysium', 'special'])('%s 는 챌린저스가 아니라 묻지 않는다', (worldKey) => {
+    expect(detectWorldLeap({ ...옛프로필, worldKey }, [새캐릭터], new Set())).toBeNull()
   })
 })
 
@@ -77,12 +88,12 @@ describe('detectWorldLeap', () => {
     it('옛 월드가 챌린저스 계열이 아니면 안 묻는다', () => {
       // 일반 월드는 장기 미접속으로 조회가 막혔다가 접속하면 풀릴 수 있다(사용자 판단). 그 캐릭터를
       // 옮겼다고 말하면 안 된다.
-      expect(detectWorldLeap({ ...옛프로필, world: '베라' }, [새캐릭터], new Set())).toBeNull()
+      expect(detectWorldLeap({ ...옛프로필, world: '베라', worldKey: 'bera' }, [새캐릭터], new Set())).toBeNull()
     })
 
     it('월드를 모르면 안 묻는다', () => {
       // 챌린저스였는지 모르면 위 규칙을 걸 근거가 없다.
-      expect(detectWorldLeap({ ...옛프로필, world: null }, [새캐릭터], new Set())).toBeNull()
+      expect(detectWorldLeap({ ...옛프로필, world: null, worldKey: null }, [새캐릭터], new Set())).toBeNull()
     })
   })
 

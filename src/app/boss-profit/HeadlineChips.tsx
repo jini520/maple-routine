@@ -164,9 +164,9 @@ export function CrystalSummaryChip(props: { groups: CharacterGroup[] }): React.J
             <Text className="px-1 pb-1.5 text-11 font-bold tracking-wide text-text-muted">월드별 판매 현황</Text>
             <View className="gap-1">
               {worlds.map((summary) => {
-                const emblemUrl = worldEmblemUrl(summary.world)
+                const emblemUrl = worldEmblemUrl(summary.worldKey)
                 return (
-                  <View key={summary.world} className="flex-row items-center gap-1.5 px-1">
+                  <View key={summary.worldKey} className="flex-row items-center gap-1.5 px-1">
                     {emblemUrl !== null && <Image source={emblemUrl} className="h-4 w-4 shrink-0" resizeMode="contain" />}
                     <Text className="text-xs text-text-muted">{summary.world}</Text>
                     {/* 칩에 두 몫이 있으니 펼친 줄도 월드마다 두 몫을 함께 말한다. */}

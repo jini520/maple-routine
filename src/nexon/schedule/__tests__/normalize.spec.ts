@@ -20,6 +20,7 @@ const TEST_CONTENT_KEYS: Record<string, string> = {
 const resolve: ScheduleNameResolvers = {
   bossKey: (apiName) => TEST_BOSS_KEYS[apiName] ?? null,
   contentKey: (apiName) => TEST_CONTENT_KEYS[apiName] ?? null,
+  worldKey: (apiName) => (apiName === '엘리시움' ? 'elysium' : null),
 }
 
 describe('normalizeSchedulerCharacterState', () => {
@@ -98,6 +99,7 @@ describe('normalizeSchedulerCharacterState', () => {
     expect(result.asOf).toBe('2026-07-09T00:00+09:00')
     expect(result.characterName).toBe('낟낟')
     expect(result.world).toBe('엘리시움')
+    expect(result.worldKey).toBe('elysium')
     expect(result.level).toBe(293)
     expect(result.jobClass).toBe('렌')
 

@@ -12,12 +12,12 @@ import type { WorldLeapNotice } from '../../features/character-manage/world-leap
 import { renderOverlay } from '../../components/__tests__/render-atom'
 import { WorldLeapNoticeModal } from '../WorldLeapNoticeModal'
 
-const 옛것 = { ocid: 'old', name: '지내우시', world: '챌린저스2', jobClass: '레테', level: 285 }
+const 옛것 = { ocid: 'old', name: '지내우시', world: '챌린저스2', worldKey: 'challengers_2', jobClass: '레테', level: 285 }
 
 const 짚음: WorldLeapNotice = {
   kind: 'confirmed',
   from: 옛것,
-  to: { ocid: 'new', name: '지내우시', world: '엘리시움', jobClass: '레테', level: 285 },
+  to: { ocid: 'new', name: '지내우시', world: '엘리시움', worldKey: 'elysium', jobClass: '레테', level: 285 },
 }
 
 const 모름: WorldLeapNotice = { kind: 'unknown', from: 옛것 }
@@ -59,6 +59,14 @@ describe('목적지를 짚었을 때', () => {
     expect(getByText('지내우시 님이 월드를 옮긴 것 같아요')).toBeTruthy()
     expect(getByText('챌린저스2')).toBeTruthy()
     expect(getByText('엘리시움')).toBeTruthy()
+  })
+
+  // 월드 글자는 월드 key 로 찾은 표 이름이다. 옛 스냅샷에 적힌 표기가 달라도 표 이름으로 선다.
+  it('월드 글자는 월드 key 로 찾은 표 이름이다', async () => {
+    useWorldLeapStore.setState({ notice: { ...짚음, from: { ...옛것, world: '챌린저스 2' } } })
+    const { getByText } = await 그리기()
+
+    expect(getByText('챌린저스2')).toBeTruthy()
   })
 
   it('변경을 누르면 갈아끼우고 그 목록을 스케줄러에 흘린다', async () => {

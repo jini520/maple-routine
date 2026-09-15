@@ -63,7 +63,7 @@ export const 대표_캐릭터: RepresentativeView = {
   name: '단풍루틴',
   level: 291,
   imageUrl: 'https://open.api.nexon.com/static/maplestory/character/look/abc',
-  world: '스카니아',
+  worldKey: 'scania',
   jobClass: '아크메이지(불,독)',
   guildName: '백호단',
   expRate: 80.3,
@@ -172,14 +172,24 @@ export function 드롭(부분: Partial<PricedDropView> = {}): PricedDropView {
  * 기본값을 상수로 두고, 판별력 확인이 필요한 테스트만 `limit` 을 명시적으로 덮는다.
  */
 export function 월드한도(부분: Partial<CrystalLimitView> = {}): CrystalLimitView {
-  return { world: '스카니아', cleared: 34, limit: WEEKLY_CRYSTAL_SALE_LIMIT, ...부분 }
+  return { worldKey: 'scania', world: '스카니아', cleared: 34, limit: WEEKLY_CRYSTAL_SALE_LIMIT, ...부분 }
 }
 
 /** n개 월드. 이름과 소진량이 서로 달라 합쳐졌는가 를 글자로 물을 수 있다. */
 export function 월드한도목록(n: number): CrystalLimitView[] {
-  const 이름 = ['스카니아', '루나', '오로라', '베라', '크로아']
+  const 월드 = [
+    ['scania', '스카니아'],
+    ['luna', '루나'],
+    ['aurora', '오로라'],
+    ['bera', '베라'],
+    ['croa', '크로아'],
+  ]
   return Array.from({ length: n }, (_, index) =>
-    월드한도({ world: 이름[index] ?? `월드${index + 1}`, cleared: 10 * (index + 1) }),
+    월드한도({
+      worldKey: 월드[index]?.[0] ?? `world_${index + 1}`,
+      world: 월드[index]?.[1] ?? `월드${index + 1}`,
+      cleared: 10 * (index + 1),
+    }),
   )
 }
 

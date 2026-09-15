@@ -41,7 +41,7 @@ function schedulerFixture(characterName: string): NexonSchedulerCharacterStateWi
 }
 
 /** 어떤 이름도 key 로 못 찾는 resolver. 호출 경로만 보는 사례에 넘긴다. */
-const NO_KEYS: ScheduleNameResolvers = { bossKey: () => null, contentKey: () => null }
+const NO_KEYS: ScheduleNameResolvers = { bossKey: () => null, contentKey: () => null, worldKey: () => null }
 
 afterEach(() => {
   unstubAllGlobals()
@@ -79,12 +79,14 @@ describe('fetchSchedulerCharacterState', () => {
     const result = await fetchSchedulerCharacterState('test-api-key', 'ocid-123', {
       bossKey: (name) => (name === '루시드' ? 'lucid' : null),
       contentKey: (name) => (name === '몬스터파크' ? 'monster_park' : null),
+      worldKey: (name) => (name === '엘리시움' ? 'elysium' : null),
     })
 
     expect(result.bossContents).toEqual([
       expect.objectContaining({ bossKey: 'lucid', apiName: '루시드', difficulty: 'hard' }),
     ])
     expect(result.dailyContents).toEqual([expect.objectContaining({ contentKey: 'monster_park', apiName: '몬스터파크' })])
+    expect(result.worldKey).toBe('elysium')
   })
 
   it('date가 주어지면 쿼리 파라미터에 date를 함께 담아 호출한다', async () => {

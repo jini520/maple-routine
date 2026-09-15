@@ -1,6 +1,9 @@
 import type { NexonCharacterBasicResponse, NexonCharacterListResponse } from '../../../types'
 import { normalizeCharacterBasic, normalizeCharacterList } from '../normalize'
 
+/** 월드 표 대신 넘기는 매칭 함수. `nexon/` 은 `src/data` 를 모른다. */
+const worldKeyOf = (apiName: string): string | null => ({ 베라: 'bera', 엘리시움: 'elysium' } as Record<string, string>)[apiName] ?? null
+
 describe('normalizeCharacterList', () => {
   it('snake_case wire 응답을 MapleAccount[] domain 타입으로 변환한다', () => {
     const wire: NexonCharacterListResponse = {
@@ -32,7 +35,7 @@ describe('normalizeCharacterList', () => {
       ],
     }
 
-    expect(normalizeCharacterList(wire)).toEqual([
+    expect(normalizeCharacterList(wire, worldKeyOf)).toEqual([
       {
         accountId: 'da9b2f2...',
         characters: [
@@ -40,6 +43,7 @@ describe('normalizeCharacterList', () => {
             ocid: '50119a0...',
             name: '내옆에최성일',
             world: '베라',
+            worldKey: 'bera',
             jobClass: '아크메이지(썬,콜)',
             level: 211,
           },
@@ -52,6 +56,7 @@ describe('normalizeCharacterList', () => {
             ocid: '23be5de...',
             name: '낟낟',
             world: '엘리시움',
+            worldKey: 'elysium',
             jobClass: '렌',
             level: 293,
           },
@@ -61,7 +66,7 @@ describe('normalizeCharacterList', () => {
   })
 
   it('account_list가 빈 배열이면 빈 배열을 반환한다', () => {
-    expect(normalizeCharacterList({ account_list: [] })).toEqual([])
+    expect(normalizeCharacterList({ account_list: [] }, worldKeyOf)).toEqual([])
   })
 
   // 캐릭터가 0명인 메이플 ID는 **고를 수 있는 계정이 아니다**. 그대로 올리면 계정 선택
@@ -89,7 +94,7 @@ describe('normalizeCharacterList', () => {
       ],
     }
 
-    expect(normalizeCharacterList(wire)).toEqual([
+    expect(normalizeCharacterList(wire, worldKeyOf)).toEqual([
       {
         accountId: 'da9b2f2...',
         characters: [
@@ -97,6 +102,7 @@ describe('normalizeCharacterList', () => {
             ocid: '50119a0...',
             name: '내옆에최성일',
             world: '베라',
+            worldKey: 'bera',
             jobClass: '아크메이지(썬,콜)',
             level: 211,
           },
@@ -112,7 +118,7 @@ describe('normalizeCharacterList', () => {
           { account_id: 'a', character_list: [] },
           { account_id: 'b', character_list: [] },
         ],
-      }),
+      }, worldKeyOf),
     ).toEqual([])
   })
 })
@@ -126,7 +132,7 @@ describe('normalizeCharacterBasic', () => {
       access_flag: 'true',
     }
 
-    expect(normalizeCharacterBasic(wire)).toEqual({
+    expect(normalizeCharacterBasic(wire, worldKeyOf)).toEqual({
       name: '낟낟',
       level: 293,
       imageUrl: 'https://open.api.nexon.com/static/maplestory/character/look/abc?wmotion=W02',
@@ -134,7 +140,7 @@ describe('normalizeCharacterBasic', () => {
     })
   })
 
-  it('world_name을 world로 매핑한다', () => {
+  it('world_name을 world로 옮기고 넘긴 매칭 함수로 월드 key 를 얻는다', () => {
     const wire: NexonCharacterBasicResponse = {
       character_name: '낟낟',
       world_name: '엘리시움',
@@ -143,7 +149,8 @@ describe('normalizeCharacterBasic', () => {
       access_flag: 'true',
     }
 
-    expect(normalizeCharacterBasic(wire).world).toBe('엘리시움')
+    expect(normalizeCharacterBasic(wire, worldKeyOf).world).toBe('엘리시움')
+    expect(normalizeCharacterBasic(wire, worldKeyOf).worldKey).toBe('elysium')
   })
 
   // 길드 가입 여부 판정의 원천. "필드가 아예 없음"(구버전 캐시·응답 미포함)과
@@ -158,7 +165,7 @@ describe('normalizeCharacterBasic', () => {
       character_guild_name: '메이플길드',
     }
 
-    expect(normalizeCharacterBasic(wire).guildName).toBe('메이플길드')
+    expect(normalizeCharacterBasic(wire, worldKeyOf).guildName).toBe('메이플길드')
   })
 
   it('길드 미가입(null·빈 문자열·공백)은 guildName: null로 정규화한다', () => {
@@ -169,9 +176,9 @@ describe('normalizeCharacterBasic', () => {
       access_flag: 'true' as const,
     }
 
-    expect(normalizeCharacterBasic({ ...base, character_guild_name: null }).guildName).toBeNull()
-    expect(normalizeCharacterBasic({ ...base, character_guild_name: '' }).guildName).toBeNull()
-    expect(normalizeCharacterBasic({ ...base, character_guild_name: '  ' }).guildName).toBeNull()
+    expect(normalizeCharacterBasic({ ...base, character_guild_name: null }, worldKeyOf).guildName).toBeNull()
+    expect(normalizeCharacterBasic({ ...base, character_guild_name: '' }, worldKeyOf).guildName).toBeNull()
+    expect(normalizeCharacterBasic({ ...base, character_guild_name: '  ' }, worldKeyOf).guildName).toBeNull()
   })
 
   it('응답에 character_guild_name 자체가 없으면 guildName은 undefined다(미가입이 아니라 "모름")', () => {
@@ -182,7 +189,7 @@ describe('normalizeCharacterBasic', () => {
       access_flag: 'true',
     }
 
-    expect(normalizeCharacterBasic(wire).guildName).toBeUndefined()
+    expect(normalizeCharacterBasic(wire, worldKeyOf).guildName).toBeUndefined()
   })
 
   // character_exp_rate 는 숫자가 아니라 **문자열**("80.300")이다. access_flag와 같은
@@ -197,7 +204,7 @@ describe('normalizeCharacterBasic', () => {
       character_exp_rate: '80.300',
     }
 
-    expect(normalizeCharacterBasic(wire).expRate).toBe(80.3)
+    expect(normalizeCharacterBasic(wire, worldKeyOf).expRate).toBe(80.3)
   })
 
   it('응답에 character_exp_rate가 없으면 expRate는 undefined다(0이 아니다)', () => {
@@ -208,7 +215,7 @@ describe('normalizeCharacterBasic', () => {
       access_flag: 'true',
     }
 
-    expect(normalizeCharacterBasic(wire).expRate).toBeUndefined()
+    expect(normalizeCharacterBasic(wire, worldKeyOf).expRate).toBeUndefined()
   })
 
   // Number('') 은 0이라 그냥 통과시키면 "모름"이 "0%"로 둔갑한다.
@@ -220,8 +227,8 @@ describe('normalizeCharacterBasic', () => {
       access_flag: 'true' as const,
     }
 
-    expect(normalizeCharacterBasic({ ...base, character_exp_rate: '' }).expRate).toBeUndefined()
-    expect(normalizeCharacterBasic({ ...base, character_exp_rate: '  ' }).expRate).toBeUndefined()
+    expect(normalizeCharacterBasic({ ...base, character_exp_rate: '' }, worldKeyOf).expRate).toBeUndefined()
+    expect(normalizeCharacterBasic({ ...base, character_exp_rate: '  ' }, worldKeyOf).expRate).toBeUndefined()
   })
 
   it('character_exp_rate가 숫자로 안 풀리면 expRate는 undefined다(NaN을 싣지 않는다)', () => {
@@ -233,7 +240,7 @@ describe('normalizeCharacterBasic', () => {
       character_exp_rate: 'abc',
     }
 
-    expect(normalizeCharacterBasic(wire).expRate).toBeUndefined()
+    expect(normalizeCharacterBasic(wire, worldKeyOf).expRate).toBeUndefined()
   })
 
   // 위 두 케이스와 갈리는 자리. 진짜 0%는 "모름"이 아니라 사실이므로 실어야 한다.
@@ -246,7 +253,7 @@ describe('normalizeCharacterBasic', () => {
       character_exp_rate: '0.000',
     }
 
-    expect(normalizeCharacterBasic(wire).expRate).toBe(0)
+    expect(normalizeCharacterBasic(wire, worldKeyOf).expRate).toBe(0)
   })
 
   // 누적 절대값은 레벨이 오를수록 커져 "얼마나 남았나"를 못 말한다. 카드가 답해야
@@ -261,7 +268,7 @@ describe('normalizeCharacterBasic', () => {
       character_exp_rate: '80.300',
     }
 
-    expect(normalizeCharacterBasic(wire)).toEqual({
+    expect(normalizeCharacterBasic(wire, worldKeyOf)).toEqual({
       name: '낟낟',
       level: 293,
       imageUrl: 'https://open.api.nexon.com/static/maplestory/character/look/abc',
@@ -278,6 +285,6 @@ describe('normalizeCharacterBasic', () => {
       access_flag: 'false',
     }
 
-    expect(normalizeCharacterBasic(wire).accessFlag).toBe(false)
+    expect(normalizeCharacterBasic(wire, worldKeyOf).accessFlag).toBe(false)
   })
 })

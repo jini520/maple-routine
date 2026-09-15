@@ -39,7 +39,7 @@ jest.mock('../../../storage/character-selection', () => ({
 }))
 jest.mock('../../character-profile/resolve', () => ({
   resolveDisplayProfiles: jest.fn(async (ocids: readonly string[]) =>
-    new Map([...new Set(ocids)].map((ocid) => [ocid, { name: '지내우시', imageUrl: null, world: null, level: null }])),
+    new Map([...new Set(ocids)].map((ocid) => [ocid, { name: '지내우시', imageUrl: null, world: null, worldKey: null, level: null }])),
   ),
 }))
 

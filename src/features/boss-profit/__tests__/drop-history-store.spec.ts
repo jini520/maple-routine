@@ -89,7 +89,7 @@ beforeEach(() => {
       new Map(
         [...new Set(ocids)].map((ocid) => [
           ocid,
-          { name: '메이플영웅', imageUrl: 'https://img/1.png', world: null, level: 290 },
+          { name: '메이플영웅', imageUrl: 'https://img/1.png', world: null, worldKey: null, level: 290 },
         ]),
       ),
     )

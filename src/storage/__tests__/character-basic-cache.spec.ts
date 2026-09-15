@@ -60,6 +60,30 @@ describe('jobClass', () => {
   })
 })
 
+// 월드 key 가 생기기 전 캐시. 수익 기록의 월드 폴백으로도 읽혀 비우지 않고 읽을 때 채운다.
+describe('월드 key', () => {
+  it('월드 key 가 없는 옛 엔트리는 읽을 때 월드 이름으로 채운다', async () => {
+    await setCachedCharacterBasic(ACCOUNT, 'ocid-1', { ...sampleEntry, profile: { ...sampleProfile, world: '챌린저스2' } })
+
+    expect((await getCachedCharacterBasic('ocid-1'))?.profile.worldKey).toBe('challengers_2')
+  })
+
+  it('월드를 모르는 엔트리는 월드 key 도 채우지 않는다', async () => {
+    await setCachedCharacterBasic(ACCOUNT, 'ocid-1', sampleEntry)
+
+    expect((await getCachedCharacterBasic('ocid-1'))?.profile.worldKey).toBeUndefined()
+  })
+
+  it('이미 든 월드 key 는 그대로 둔다', async () => {
+    await setCachedCharacterBasic(ACCOUNT, 'ocid-1', {
+      ...sampleEntry,
+      profile: { ...sampleProfile, world: '엘리시움', worldKey: 'elysium' },
+    })
+
+    expect((await getCachedCharacterBasic('ocid-1'))?.profile.worldKey).toBe('elysium')
+  })
+})
+
 describe('저장된 값이 없는 경우', () => {
   it('캐시된 적 없는 ocid는 null을 반환한다', async () => {
     await expect(getCachedCharacterBasic('unknown-ocid')).resolves.toBeNull()

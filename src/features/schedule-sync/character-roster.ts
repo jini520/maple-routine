@@ -5,6 +5,7 @@
  * 일을 하고 있었고, 둘 사이 참조는 한 방향뿐이라(동기화 → 로스터) 경계가 뚜렷했다.
  */
 
+import { worldKeyOfApiName } from '../../lib/world/worlds'
 import { fetchCharacterBasic, fetchCharacterList } from '../../nexon/character'
 import { NexonAuthError, NexonRateLimitError } from '../../nexon/errors'
 import {
@@ -57,7 +58,7 @@ export async function resolveRegisteredCharacters(accountId?: string): Promise<{
 }> {
   const { apiKey, accountId: resolved } = await resolveAccountContext(accountId)
 
-  const accounts = await fetchCharacterList(apiKey)
+  const accounts = await fetchCharacterList(apiKey, worldKeyOfApiName)
   const account = accounts.find((candidate) => candidate.accountId === resolved)
   if (account === undefined) {
     throw new Error('resolveRegisteredCharacters: 지정한 계정을 응답에서 찾을 수 없습니다')
@@ -106,7 +107,7 @@ export async function resolveTrackedCharacterContext(ocids: string[]): Promise<{
   }
 
   const wanted = new Set(ocids)
-  const accounts = await fetchCharacterList(authConfig.apiKey)
+  const accounts = await fetchCharacterList(authConfig.apiKey, worldKeyOfApiName)
   const characters = accounts.flatMap((account) =>
     account.characters
       .filter((character) => wanted.has(character.ocid))
@@ -202,7 +203,7 @@ export async function probeStrandedTrackedCharacters(
         return
       }
       try {
-        await fetchCharacterBasic(apiKey, ocid)
+        await fetchCharacterBasic(apiKey, ocid, worldKeyOfApiName)
       } catch (error) {
         // 401/429 는 여기서 안 던진다. 이 단계는 목록을 만드는 일이 아니라 곁다리 확정이라,
         // 전역 실패로 올리면 멀쩡히 그려진 로스터가 통째로 사라진다. 다음 회차가 다시 묻는다.
@@ -260,6 +261,7 @@ async function resolveStrandedCharacter(
     ocid,
     name,
     world: snapshot?.world ?? cached?.profile.world ?? null,
+    worldKey: snapshot?.worldKey ?? cached?.profile.worldKey ?? null,
     jobClass: snapshot?.jobClass ?? cached?.profile.jobClass ?? null,
     level: snapshot?.level ?? cached?.profile.level ?? null,
   }
@@ -337,6 +339,7 @@ export async function getCharacterPickerRoster(
             level: cached.profile.level,
             imageUrl: cached.profile.imageUrl,
             world: cached.profile.world,
+            worldKey: cached.profile.worldKey,
             ...(known === 'unavailable' ? { unavailable: true } : {}),
           }
         }),
@@ -381,6 +384,7 @@ export async function getCharacterPickerRoster(
         level: cached.profile.level,
         imageUrl: cached.profile.imageUrl,
         world: character.world,
+        worldKey: character.worldKey,
         ...(known === 'unavailable' ? { unavailable: true } : {}),
       })
     }),
@@ -417,6 +421,7 @@ export async function getCharacterPickerRoster(
             level: profile.level,
             imageUrl: profile.imageUrl,
             world: character.world,
+            worldKey: character.worldKey,
             ...(eligibility === 'unavailable' ? { unavailable: true } : {}),
           })
         } else {
@@ -439,6 +444,7 @@ export async function getCharacterPickerRoster(
               level: character.level,
               imageUrl: null,
               world: character.world,
+              worldKey: character.worldKey,
               unavailable: true,
             })
           } else {

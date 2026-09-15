@@ -18,10 +18,11 @@ import {
   resolveStrandedCharacters,
 } from '../stranded-characters'
 
-const 프로필 = (name: string, world: string | null = '챌린저스2') => ({
+const 프로필 = (name: string, world: string | null = '챌린저스2', worldKey: string | null = 'challengers_2') => ({
   name,
   imageUrl: 'https://example.test/a.png',
   world,
+  worldKey,
   level: 285,
   unavailable: true,
 })
@@ -51,7 +52,7 @@ describe('findStrandedOcids', () => {
 })
 
 describe('resolveStrandedCharacters', () => {
-  it('이름과 월드를 스냅샷에서 읽어 채운다', async () => {
+  it('이름과 월드 · 월드 key 를 스냅샷에서 읽어 채운다', async () => {
     resolveDisplayProfilesMock.mockResolvedValue(new Map([['b', 프로필('지내우시')]]))
 
     await expect(resolveStrandedCharacters(['a', 'b'], [{ ocid: 'a' }])).resolves.toEqual([
@@ -59,6 +60,7 @@ describe('resolveStrandedCharacters', () => {
         ocid: 'b',
         characterName: '지내우시',
         world: '챌린저스2',
+        worldKey: 'challengers_2',
         level: 285,
         imageUrl: 'https://example.test/a.png',
       },
@@ -73,10 +75,11 @@ describe('resolveStrandedCharacters', () => {
   })
 
   it('월드를 모르면 undefined 로 둔다', async () => {
-    resolveDisplayProfilesMock.mockResolvedValue(new Map([['b', 프로필('지내우시', null)]]))
+    resolveDisplayProfilesMock.mockResolvedValue(new Map([['b', 프로필('지내우시', null, null)]]))
 
     const [stranded] = await resolveStrandedCharacters(['b'], [])
     expect(stranded?.world).toBeUndefined()
+    expect(stranded?.worldKey).toBeUndefined()
   })
 
   it('없으면 조회조차 안 한다', async () => {

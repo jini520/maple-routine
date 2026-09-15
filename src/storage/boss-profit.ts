@@ -24,6 +24,8 @@ export interface BossProfitRecord {
    * 사실(사용자 확인)과 정면으로 어긋나므로 기록에 박아 고정한다.
    */
   world: string | null
+  /** 기록 시점의 월드 key. 집계는 이 값으로 가른다. `world` 가 `null` 이거나 월드 표에 없으면 `null` 이다 */
+  worldKey: string | null
   /**
    * 며칟날 잡았나(KST `YYYY-MM-DD`). 모르면 `null`.
    *
@@ -38,8 +40,8 @@ export interface BossProfitRecord {
 
 const UPSERT_SQL = `
   INSERT INTO boss_profit_records
-    (ocid, boss_key, boss, difficulty, cycle, period_key, party_size, price_meso, payout_meso, recorded_at, world)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (ocid, boss_key, boss, difficulty, cycle, period_key, party_size, price_meso, payout_meso, recorded_at, world, world_key)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(ocid, boss_key, difficulty, period_key) DO UPDATE SET
     boss = excluded.boss,
     cycle = excluded.cycle,
@@ -49,7 +51,8 @@ const UPSERT_SQL = `
     recorded_at = excluded.recorded_at,
     -- 월드는 아는 값이 있을 때만 덮어쓴다. 파티원 수 수정처럼 월드를 모르는 경로에서 upsert가
     -- 일어나도(그때 world를 null로 넘긴다) 이미 박아둔 스냅샷을 지우지 않는다.
-    world = COALESCE(excluded.world, boss_profit_records.world)
+    world = COALESCE(excluded.world, boss_profit_records.world),
+    world_key = COALESCE(excluded.world_key, boss_profit_records.world_key)
 `
 
 /**
@@ -106,13 +109,14 @@ export async function upsertBossProfitRecord(record: BossProfitRecord): Promise<
     record.payoutMeso,
     record.recordedAt,
     record.world,
+    record.worldKey,
   ])
   // **쓰기가 끝난 뒤**에 올린다. 중간에 던지면 표가 안 바뀐 것이라, 그때 올리면 읽는 쪽이 헛일한다.
   bumpRecordsRevision()
 }
 
 const FILL_MISSING_WORLD_SQL = `
-  UPDATE boss_profit_records SET world = ? WHERE ocid = ? AND world IS NULL
+  UPDATE boss_profit_records SET world = ?, world_key = ? WHERE ocid = ? AND world IS NULL
 `
 
 /**
@@ -126,13 +130,15 @@ const FILL_MISSING_WORLD_SQL = `
  * `world IS NULL` 조건이 멱등성을 보장한다. 한 번 채워진 기록은 이후 호출에 걸리지 않으므로 리프
  * 후에 다시 실행돼도 과거 스냅샷을 덮어쓰지 않는다.
  */
-export async function fillMissingRecordWorlds(worldByOcid: Map<string, string>): Promise<void> {
+export async function fillMissingRecordWorlds(
+  worldByOcid: Map<string, { world: string; worldKey: string | null }>,
+): Promise<void> {
   if (worldByOcid.size === 0) {
     return
   }
   const db = await getBossProfitDb()
-  for (const [ocid, world] of worldByOcid) {
-    await db.run(FILL_MISSING_WORLD_SQL, [world, ocid])
+  for (const [ocid, { world, worldKey }] of worldByOcid) {
+    await db.run(FILL_MISSING_WORLD_SQL, [world, worldKey, ocid])
   }
   bumpRecordsRevision()
 }
@@ -151,6 +157,7 @@ function rowToRecord(row: Record<string, unknown>): BossProfitRecord {
     recordedAt: row.recorded_at as string,
     // 컬럼을 더하기 전 기록에는 없다. undefined도 null로 정규화해 호출부가 한 형태만 다루게 한다.
     world: (row.world as string | null | undefined) ?? null,
+    worldKey: (row.world_key as string | null | undefined) ?? null,
     defeatedOn: (row.defeated_on as string | null | undefined) ?? null,
   }
 }

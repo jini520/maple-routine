@@ -143,6 +143,7 @@ function 보스행(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     characterName: '지내우시',
     imageUrl: null,
     world: null,
+    worldKey: null,
     bossKey,
     bossName: bossNameOf(bossKey, bossKey),
     difficulty: 'hard',
@@ -841,7 +842,7 @@ describe('총 수익 헤드라인', () => {
   })
 
   it('월드를 아는 캐릭터가 있으면 결정석 판매 현황 칩이 선다. 월간 몫을 함께 든다', async () => {
-    mockStore({ status: 'loaded', periodState: 'recorded', rows: [보스행({ world: '스카니아' })] })
+    mockStore({ status: 'loaded', periodState: 'recorded', rows: [보스행({ world: '스카니아', worldKey: 'scania' })] })
     const { getByLabelText } = await renderScreen()
 
     expect(getByLabelText(`주간 결정석 판매 1 / ${WEEKLY_CRYSTAL_SALE_LIMIT}, 월간 결정석 0개`)).toBeTruthy()
@@ -853,8 +854,8 @@ describe('총 수익 헤드라인', () => {
       status: 'loaded',
       periodState: 'recorded',
       rows: [
-        보스행({ world: '스카니아' }),
-        보스행({ bossKey: weeklyBossesData.monthly[0].key, cycle: 'monthly', periodKey: CURRENT_MONTHLY, world: '스카니아' }),
+        보스행({ world: '스카니아', worldKey: 'scania' }),
+        보스행({ bossKey: weeklyBossesData.monthly[0].key, cycle: 'monthly', periodKey: CURRENT_MONTHLY, world: '스카니아', worldKey: 'scania' }),
       ] })
     const { getByLabelText } = await renderScreen()
 
@@ -918,7 +919,7 @@ describe('월간 탭', () => {
       loadedTab: 'monthly',
       periodKey: CURRENT_MONTHLY,
       loadedPeriodKey: CURRENT_MONTHLY,
-      rows: [보스행({ bossKey: weeklyBossesData.monthly[0].key, cycle: 'monthly', periodKey: CURRENT_MONTHLY, world: '스카니아' })],
+      rows: [보스행({ bossKey: weeklyBossesData.monthly[0].key, cycle: 'monthly', periodKey: CURRENT_MONTHLY, world: '스카니아', worldKey: 'scania' })],
       weeklySubtotals: [주차소계()] })
     const { getByText, queryByLabelText } = await renderScreen()
 

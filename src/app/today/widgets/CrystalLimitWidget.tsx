@@ -216,7 +216,7 @@ export function CrystalLimitWidget({ w, h, data }: WidgetProps): React.JSX.Eleme
   return (
     <View testID="widget-crystal-limit" className="flex-1 flex-row items-center gap-2 p-3">
       {worlds.slice(0, SIDE_BY_SIDE_WORLDS).map((view) => (
-        <View key={view.world} testID="crystal-world-cell" className="min-w-0 flex-1 flex-row items-center gap-1.5">
+        <View key={view.worldKey} testID="crystal-world-cell" className="min-w-0 flex-1 flex-row items-center gap-1.5">
           <Ring view={view} sizePx={RING_PX.wide} />
           <View className="min-w-0 flex-1 gap-0.5">
             <WorldName world={view.world} sizeClass="text-xs font-semibold" />

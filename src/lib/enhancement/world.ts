@@ -5,15 +5,7 @@
  * 1년치 실측에서 스페셜이 3,043.9억 중 1,611.1억(52.9%)이었다.
  */
 import type { MapleAccount } from '../../types'
-
-/**
- * 챌린저스·챌린저스2 는 여기 안 든다. 시즌 월드지만 재화가 본섭으로 넘어온다(사용자 지정).
- */
-const EVENT_WORLDS: ReadonlySet<string> = new Set(['스페셜'])
-
-export function isEventWorld(world: string): boolean {
-  return EVENT_WORLDS.has(world)
-}
+import { isEventWorld } from '../world/worlds'
 
 /**
  * 이벤트 월드 캐릭터의 **이름**만.
@@ -26,7 +18,7 @@ export function eventWorldCharacterNames(accounts: readonly MapleAccount[]): Set
   const names = new Set<string>()
   for (const account of accounts) {
     for (const character of account.characters) {
-      if (isEventWorld(character.world)) names.add(character.name)
+      if (isEventWorld(character.worldKey)) names.add(character.name)
     }
   }
   return names
@@ -35,7 +27,7 @@ export function eventWorldCharacterNames(accounts: readonly MapleAccount[]): Set
 /**
  * 이 기록을 지출로 세나. **모르면 `null` 이다.**
  *
- * @param world 그 줄의 `world_name`. 큐브·잠재는 안 주므로 `null`
+ * @param worldKey 그 줄의 `world_name` 으로 찾은 월드 key. 큐브·잠재는 월드를 안 주므로 `null`
  * @param eventNames `eventWorldCharacterNames` 가 만든 집합. **목록을 못 받았으면 `null`**
  *
  * 줄이 월드를 주면 그 값이 이긴다. 그때의 월드라 지금 목록보다 정확하고, 삭제되어 목록에서
@@ -51,11 +43,11 @@ export function eventWorldCharacterNames(accounts: readonly MapleAccount[]): Set
  * 다시 만들면 그 캐릭터의 기록까지 빠지는데, 그 경우는 무시한다(사용자 지정).
  */
 export function isSpendingRecord(
-  world: string | null,
+  worldKey: string | null,
   characterName: string,
   eventNames: ReadonlySet<string> | null,
 ): boolean | null {
-  if (world !== null) return !isEventWorld(world)
+  if (worldKey !== null) return !isEventWorld(worldKey)
   if (eventNames === null) return null
   return !eventNames.has(characterName)
 }

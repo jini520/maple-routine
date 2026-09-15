@@ -86,7 +86,7 @@ const mockedRoster = mockGetRoster as unknown as jest.MockedFunction<typeof getC
 
 // 픽스처
 function 캐릭터(ocid: string, name: string, level: number): MapleCharacter {
-  return { ocid, name, world: '스카니아', jobClass: '아크메이지(썬, 콜)', level }
+  return { ocid, name, world: '스카니아', worldKey: 'scania', jobClass: '아크메이지(썬, 콜)', level }
 }
 
 const 낟낟 = 캐릭터('a1', '낟낟', 294)

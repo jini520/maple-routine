@@ -70,10 +70,10 @@ describe('모르는 것을 그리지 않는다', () => {
     expect(getByText('0.000%')).toBeTruthy()
   })
 
-  it('엠블럼 매핑에 없는 월드면 **엠블럼만** 빠진다', async () => {
+  it('엠블럼이 없는 월드면 **엠블럼만** 빠진다', async () => {
     const { queryByTestId, getByText } = await 위젯(
       크기['4x1'],
-      뷰모델({ representative: { ...대표_캐릭터, world: '없는월드' } }),
+      뷰모델({ representative: { ...대표_캐릭터, worldKey: 'special' } }),
     )
 
     expect(queryByTestId('representative-emblem')).toBeNull()

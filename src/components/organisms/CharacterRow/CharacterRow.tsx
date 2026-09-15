@@ -17,6 +17,7 @@
 import { Image, Pressable, View } from 'react-native'
 
 import { worldEmblemUrl } from '../../../lib/assets/asset-lookup'
+import { worldNameOf } from '../../../lib/world/worlds'
 
 import { FACE_AVATAR_SIZE } from '../../../lib/face-crop'
 import { CharacterAvatar } from '../../molecules/CharacterAvatar/CharacterAvatar'
@@ -45,7 +46,8 @@ export interface CharacterRowProps {
   name: string
   level: number | null
   jobClass?: string
-  world?: string
+  /** 엠블럼을 찾는 월드 key */
+  worldKey?: string | null
   imageUrl: string | null
   /** 조회 불가. 2줄이 조회할 수 없는 캐릭터 로 바뀐다. */
   unavailable?: boolean
@@ -58,7 +60,7 @@ export interface CharacterRowProps {
 }
 
 export function CharacterRow(props: CharacterRowProps): React.JSX.Element {
-  const emblem = props.world !== undefined ? worldEmblemUrl(props.world) : null
+  const emblem = worldEmblemUrl(props.worldKey)
   const caption = captionText(props.level, props.jobClass)
 
   const body = (
@@ -90,7 +92,7 @@ export function CharacterRow(props: CharacterRowProps): React.JSX.Element {
           {emblem !== null && (
             <View testID="character-row-emblem" className="shrink-0">
               <Image
-                accessibilityLabel={props.world ?? ''}
+                accessibilityLabel={worldNameOf(props.worldKey, '')}
                 source={emblem}
                 style={naturalAspectStyle(emblem, { height: 17 })}
                 resizeMode="contain"

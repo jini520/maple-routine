@@ -11,6 +11,7 @@ const sampleState: SchedulerCharacterState = {
   asOf: '2026-07-09T00:00+09:00',
   characterName: '낟낟',
   world: '엘리시움',
+  worldKey: 'elysium',
   level: 293,
   jobClass: '렌',
   dailyContents: [],
@@ -57,6 +58,12 @@ describe('저장된 값이 없는 경우', () => {
 describe('모양 번호', () => {
   it('모양 번호가 없는 옛 캐시는 없는 것으로 본다', async () => {
     await prefs.set('schedulerCache:ocid-old', JSON.stringify(sampleEntry))
+    await expect(getCachedSchedulerState('ocid-old')).resolves.toBeNull()
+  })
+
+  // 캐릭터 상태에 월드 key 칸이 생겨 모양 번호가 4 가 됐다. 3 인 캐시는 월드 key 가 없다.
+  it('모양 번호가 3 인 캐시도 없는 것으로 본다', async () => {
+    await prefs.set('schedulerCache:ocid-old', JSON.stringify({ ...sampleEntry, version: 3 }))
     await expect(getCachedSchedulerState('ocid-old')).resolves.toBeNull()
   })
 })
