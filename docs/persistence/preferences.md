@@ -35,7 +35,7 @@ flowchart TD
     Track --> last["lastSelectedCharacter"]
     Track --> manual["manualTrackedContent:{ocid}"]
 
-    Ledger --> world["worldSharedProgress:{world}"]
+    Ledger --> world["worldSharedProgress:{worldKey}"]
     Ledger --> account["accountSharedProgress:{accountId}"]
 ```
 
@@ -62,7 +62,7 @@ flowchart TD
 | `lastSelectedCharacter` | `string` (ocid, 평문) | `storage/character-selection.ts` | 삭제 | 드롭다운의 마지막 선택 캐릭터. 이것도 화면 구분 없는 단일 키([[ADR-042]]). `representativeCharacter` 와 **다른 축**이다 — 이쪽은 앱이 쓰고 저쪽은 사용자가 말한 값이다 |
 | `lastHuntSelection` | `{ ocid: string \| null, groundKey: string }` (JSON) | `storage/last-hunt-selection.ts` | 삭제 | 사냥 시트의 `사냥터 자동 입력` 이 되살릴 값([[ADR-242]] 결정 2). 계산기로 사냥을 적어 **저장이 성공한 뒤에만** 남는다. 지역은 안 적는다. 사냥터 key 가 전역 유일이라 `findHuntingGround` 가 돌려준다. **보존 안 하는 이유**: 한 번 적으면 다시 생기는 값이다. 지워지면 버튼이 다시 꺼질 뿐이고 기록은 그대로다. 어댑터는 새 모양의 **모양만** 본다(상한 JSON 이면 `null`). 그 사냥터가 참조표에 아직 있는지는 되살리는 쪽이 판정한다. 사냥터 이름을 든 옛 모양(`{ ocid, ground }`)만은 읽을 때 `findHuntingGroundByName` 으로 key 를 찾아 새 모양으로 다시 적고, 못 찾으면 지운다([[ADR-280]] 결정 10). 한 번 옮기면 옛 모양이 사라져 버전 키 없이 한 번만 돈다 |
 | `manualTrackedContent:{ocid}` | `ManualTrackedItem[]` (JSON). 컨텐츠 항목은 `{ kind: 'daily' \| 'weekly', contentKey, maxCount? }` 다. 컨텐츠 이름(`contentName`)을 든 옛 항목은 읽을 때 이름으로 key 를 찾아 옮기고 못 찾으면 뺀다([[ADR-280]] 결정 13). 보스 항목은 `{ kind: 'boss', bossKey, difficulty }` 다. 보스 이름 · 한글 난이도를 든 옛 항목은 읽을 때 key 로 옮기고 못 찾으면 뺀다([[ADR-280]] 결정 12) | `storage/manual-tracked-content.ts` | 삭제 | 수동 모드에서 그 캐릭터가 추적할 항목의 **멤버십 + 사용자 입력 `maxCount`만**([[ADR-035]] 결정 6). 진행값·체크 상태는 여기 없고 `schedulerCache`가 단일 진실 공급원 |
-| `worldSharedProgress:{world}` | `Record<contentKey, SharedProgressEntry>` (JSON). 컨텐츠 이름을 열쇠로 든 옛 원장은 읽을 때 key 로 옮기고 못 찾는 이름은 버린다([[ADR-280]] 결정 13). 한 번이라도 활성으로 본 적이 있는지를 쌓은 값이라 다시 받을 수 없어서다 | `storage/shared-progress-cache.ts` | 삭제 | 월드 단위로 완료가 공유되는 콘텐츠(예: 몬스터파크) 진행 원장([[ADR-030]]) |
+| `worldSharedProgress:{worldKey}` | 키의 월드 부분은 월드 key 다(`worldSharedProgress:elysium`, [[ADR-280]] 결정 15). 월드 이름을 키에 든 옛 원장(`worldSharedProgress:엘리시움`)은 읽거나 쓸 때 새 키로 옮기고 옛 키를 지운다. 새 키에 값이 이미 있으면 덮지 않는다. 캐릭터 상태의 월드 key 가 없으면 이 원장을 읽지도 쓰지도 않는다. `Record<contentKey, SharedProgressEntry>` (JSON). 컨텐츠 이름을 열쇠로 든 옛 원장은 읽을 때 key 로 옮기고 못 찾는 이름은 버린다([[ADR-280]] 결정 13). 한 번이라도 활성으로 본 적이 있는지를 쌓은 값이라 다시 받을 수 없어서다 | `storage/shared-progress-cache.ts` | 삭제 | 월드 단위로 완료가 공유되는 콘텐츠(예: 몬스터파크) 진행 원장([[ADR-030]]) |
 | `accountSharedProgress:{accountId}` | `Record<contentKey, SharedProgressEntry>` (JSON). 옛 이름 열쇠는 `worldSharedProgress` 와 같게 읽을 때 옮긴다([[ADR-280]] 결정 13) | `storage/shared-progress-cache.ts` | 삭제 | 계정 단위로 공유되는 콘텐츠(예: 에픽 던전) 진행 원장([[ADR-030]]). **`{accountId}` 는 «지금 고른 계정» 이 아니라 «그 캐릭터가 사는 계정» 이다**([[ADR-143]] 결정 6) — 추적 목록이 계정을 넘으면 이 키가 **동시에 여러 개** 살아 있고, 캐릭터마다 자기 것을 읽고 쓴다. 한 계정 것으로 몰면 계정 공유 완료가 계정을 넘어 번진다 |
 
 ### 알림 (**설계 완료, 구현 전** — [[ADR-146]])
@@ -190,7 +190,7 @@ flowchart TD
 > **캐치 — 배열 항목이 전부 "오늘" 응답인 건 아니다**: 캐릭터가 이번 리셋 주기 이후 미접속이면 해당 섹션이 비거나 개별 항목이 누락된 채로 온다. 이럴 때 `schedule-sync`가 로컬 캐시나(있으면, [[ADR-030]]) 어제~그제 응답을 추가 조회해([[ADR-034]]) 진행값만 리셋한 채로 항목을 채워 넣는다. 즉 최상위 `asOf`는 "오늘" 날짜여도, 그 안 배열의 개별 항목은 실제로는 며칠 전 응답에서 복원된 것일 수 있다 — 이 구분은 저장된 JSON만 봐서는 알 수 없고 동기화 로직을 신뢰해야 한다.
 
 ### `SharedProgressEntry` (공유 진행 원장 항목)
-캐릭터가 아니라 **월드/계정** 단위로 키가 잡히는 별도 원장이다(`worldSharedProgress:{world}` / `accountSharedProgress:{accountId}`) — 값 shape은 `DailyContent`/`WeeklyContent`와 비슷하지만 별개 타입이다.
+캐릭터가 아니라 **월드/계정** 단위로 키가 잡히는 별도 원장이다(`worldSharedProgress:{worldKey}` / `accountSharedProgress:{accountId}`) — 값 shape은 `DailyContent`/`WeeklyContent`와 비슷하지만 별개 타입이다.
 ```json
 {
   "몬스터파크": {
@@ -221,9 +221,9 @@ flowchart TB
     B --> CB[("characterBasicCache:B\nschedulerCache:B")]
     C --> CC[("characterBasicCache:C\nschedulerCache:C")]
 
-    A --> WE[("worldSharedProgress:엘리시움")]
+    A --> WE[("worldSharedProgress:elysium")]
     B --> WE
-    C --> WB[("worldSharedProgress:베라")]
+    C --> WB[("worldSharedProgress:bera")]
 
     A --> AC[("accountSharedProgress:69e3525...")]
     B --> AC
@@ -231,7 +231,7 @@ flowchart TB
 ```
 
 - **캐릭터당 1:1 (계속 늘어남)** — `characterBasicCache:{ocid}`, `schedulerCache:{ocid}`. 캐릭터가 3명이면 이 두 종류가 각각 3개씩, 총 6개 키가 생긴다.
-- **월드당 1개 (같은 월드 캐릭터끼리 공유)** — `worldSharedProgress:{world}`. 낟낟·둘째가 둘 다 "엘리시움"이면 **같은 키를 공유**한다. 몬스터파크처럼 게임 자체가 월드 단위로 진행을 공유하는 콘텐츠라, 이건 버그가 아니라 실제 게임 규칙을 그대로 반영한 것이다([[ADR-030]]).
+- **월드당 1개 (같은 월드 캐릭터끼리 공유)** — `worldSharedProgress:{worldKey}`. 낟낟·둘째가 둘 다 "엘리시움"이면 **같은 키를 공유**한다. 몬스터파크처럼 게임 자체가 월드 단위로 진행을 공유하는 콘텐츠라, 이건 버그가 아니라 실제 게임 규칙을 그대로 반영한 것이다([[ADR-030]]).
 - **계정당 1개 (그 계정의 캐릭터들이 공유)** — `accountSharedProgress:{accountId}`. 웹뷰 앱은 `selectedAccountId` 가 항상 하나뿐이라 실질적으로 이 키가 **한 번에 정확히 1개**만 존재한다 — 낟낟·둘째·셋째 전원이 같은 키에 쓴다(에픽 던전처럼 계정 전체가 공유하는 콘텐츠용). **RN 앱은 추적 목록이 계정을 넘으므로 추적 중인 계정 수만큼 존재한다**([[ADR-143]] 결정 6) — 캐릭터가 자기 계정 키에 쓰는 것이 규칙이고, 그래서 «전원이 같은 키» 가 아니라 «같은 계정 소속끼리 같은 키» 다.
 
 ### 캐릭터별로 언제 쓰기가 일어나는가 — 추적 여부에 따른 차이

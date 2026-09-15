@@ -106,6 +106,7 @@ function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterSc
       asOf: '2026-07-09T00:00+09:00',
       characterName: '캐릭터-ocid-1',
       world: '베라',
+      worldKey: 'bera',
       level: 200,
       jobClass: '렌',
       dailyContents: [],
@@ -319,6 +320,7 @@ describe('useBossSchedulerStore', () => {
           asOf: '2026-07-11T00:00+09:00',
           characterName: '캐시된캐릭터',
           world: '베라',
+          worldKey: 'bera',
           level: 200,
           jobClass: '렌',
           dailyContents: [],
@@ -388,6 +390,7 @@ describe('useBossSchedulerStore', () => {
         asOf: '2026-07-11T00:00+09:00',
         characterName: '캐시된캐릭터',
         world: '베라',
+        worldKey: 'bera',
         level: 200,
         jobClass: '렌',
         dailyContents: [],
@@ -407,7 +410,7 @@ describe('useBossSchedulerStore', () => {
     await waitFor(() => expect(useBossSchedulerStore.getState().status).toBe('loading'))
     const state = useBossSchedulerStore.getState()
     expect(state.characters[0].characterName).toBe('캐시된캐릭터')
-    expect(state.characters[0].world).toBe('베라')
+    expect(state.characters[0].worldKey).toBe('bera')
     expect(state.characters[0].isStale).toBe(true)
     expect(state.characters[0].weeklyBosses).toHaveLength(1)
 
@@ -1209,6 +1212,7 @@ describe('useBossSchedulerStore', () => {
           asOf: '2026-07-11T00:00+09:00',
           characterName: '캐시된캐릭터',
           world: '베라',
+          worldKey: 'bera',
           level: 200,
           jobClass: '렌',
           dailyContents: [],
@@ -1362,6 +1366,7 @@ function 캐시상태() {
       asOf: '2026-07-11T00:00+09:00',
       characterName: '지내우시',
       world: '챌린저스2',
+      worldKey: 'challengers_2',
       level: 285,
       jobClass: '레테',
       dailyContents: [],

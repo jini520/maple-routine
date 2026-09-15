@@ -8,6 +8,7 @@
  * 그 결과를 `useAppEntryStore` 에 알린다.
  */
 import { create } from 'zustand'
+import { worldKeyOfApiName } from '../../lib/world/worlds'
 import { fetchCharacterList } from '../../nexon/character'
 import { probeApiKeyStage } from '../../nexon/key-stage'
 import { isInvalidApiKeyError, NexonRateLimitError } from '../../nexon/errors'
@@ -68,7 +69,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
 
     let accounts: AuthState['accounts']
     try {
-      accounts = await fetchCharacterList(apiKey)
+      accounts = await fetchCharacterList(apiKey, worldKeyOfApiName)
     } catch (error) {
       const authError = toAuthError(error)
       useToastStore.getState().showError(formatAuthError(authError))

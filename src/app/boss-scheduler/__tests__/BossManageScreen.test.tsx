@@ -603,7 +603,7 @@ describe('BossManageScreen: 주간 12개 한도', () => {
 
   const atLimit = (extra: Partial<Store> = {}): Store =>
     mockStore({
-      characters: [character({ world: '챌린저스' })],
+      characters: [character({ worldKey: 'challengers' })],
       manualTrackedByOcid: { 'ocid-1': TWELVE.map((name) => trackedBoss(name, 'normal')) },
       ...extra,
     })
@@ -627,7 +627,7 @@ describe('BossManageScreen: 주간 12개 한도', () => {
   // 처치 11/12 인 모순이 생긴다.
   it('시즌 보스·월간 보스는 카운터에 포함하지 않는다', async () => {
     mockStore({
-      characters: [character({ world: '챌린저스' })],
+      characters: [character({ worldKey: 'challengers' })],
       manualTrackedByOcid: {
         'ocid-1': [
           trackedBoss('자쿰', 'chaos'),
@@ -748,10 +748,10 @@ describe('BossManageScreen: 목록 구성', () => {
   )
 
   it.each([
-    ['챌린저스 월드 캐릭터에게는 시즌 보스가 나온다', '챌린저스2', true],
-    ['일반 월드 캐릭터에게는 시즌 보스가 나오지 않는다', '스카니아', false],
-  ])('%s', async (_label, world, shown) => {
-    mockStore({ characters: [character({ world })] })
+    ['챌린저스 월드 캐릭터에게는 시즌 보스가 나온다', 'challengers_2', true],
+    ['일반 월드 캐릭터에게는 시즌 보스가 나오지 않는다', 'scania', false],
+  ])('%s', async (_label, worldKey, shown) => {
+    mockStore({ characters: [character({ worldKey })] })
 
     await renderScreen()
 
@@ -760,7 +760,7 @@ describe('BossManageScreen: 목록 구성', () => {
 
   // 스케줄러의 시즌 배지와 **같은 판정**이어야 두 화면이 갈라지지 않는다.
   it('월드를 모르면(구버전 캐시) 시즌 보스를 숨긴다', async () => {
-    mockStore({ characters: [character({ world: undefined })] })
+    mockStore({ characters: [character({ worldKey: undefined })] })
 
     await renderScreen()
 
@@ -769,7 +769,7 @@ describe('BossManageScreen: 목록 구성', () => {
 
   it('자동 모드에서도 같은 규칙이 적용된다', async () => {
     useTrackingModeStore.setState({ mode: 'auto' })
-    mockStore({ characters: [character({ world: '스카니아' })] })
+    mockStore({ characters: [character({ worldKey: 'scania' })] })
 
     await renderScreen()
 

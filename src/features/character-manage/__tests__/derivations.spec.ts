@@ -14,6 +14,7 @@ function character(
   return {
     ocid: `ocid-${overrides.name}`,
     world: '스카니아',
+    worldKey: 'scania',
     jobClass: '아크메이지(썬,콜)',
     ...overrides,
   }
@@ -30,6 +31,7 @@ function cached(overrides: Partial<CharacterBasicProfile> = {}): CharacterBasicP
     imageUrl: 'https://example.com/face.png',
     accessFlag: true,
     world: '스카니아',
+    worldKey: 'scania',
     ...overrides,
   }
 }
@@ -38,60 +40,74 @@ describe('summarizeAccount: 월드 집계', () => {
   it('월드가 셋이면 많은 순으로 둘만 남긴다', () => {
     const summary = summarizeAccount(
       account([
-        character({ name: '가', level: 200, world: '엘리시움' }),
-        character({ name: '나', level: 200, world: '스카니아' }),
-        character({ name: '다', level: 200, world: '스카니아' }),
-        character({ name: '라', level: 200, world: '스카니아' }),
-        character({ name: '마', level: 200, world: '엘리시움' }),
-        character({ name: '바', level: 200, world: '루나' }),
+        character({ name: '가', level: 200, world: '엘리시움', worldKey: 'elysium' }),
+        character({ name: '나', level: 200, world: '스카니아', worldKey: 'scania' }),
+        character({ name: '다', level: 200, world: '스카니아', worldKey: 'scania' }),
+        character({ name: '라', level: 200, world: '스카니아', worldKey: 'scania' }),
+        character({ name: '마', level: 200, world: '엘리시움', worldKey: 'elysium' }),
+        character({ name: '바', level: 200, world: '루나', worldKey: 'luna' }),
       ]),
     )
 
     expect(summary?.worldCounts).toEqual([
-      { world: '스카니아', count: 3 },
-      { world: '엘리시움', count: 2 },
+      { worldKey: 'scania', world: '스카니아', count: 3 },
+      { worldKey: 'elysium', world: '엘리시움', count: 2 },
     ])
   })
 
   it('개수가 같으면 이름순으로 결정된다 (입력 순서와 무관)', () => {
     const forward = summarizeAccount(
       account([
-        character({ name: '가', level: 200, world: '엘리시움' }),
-        character({ name: '나', level: 200, world: '스카니아' }),
+        character({ name: '가', level: 200, world: '엘리시움', worldKey: 'elysium' }),
+        character({ name: '나', level: 200, world: '스카니아', worldKey: 'scania' }),
       ]),
     )
     const reversed = summarizeAccount(
       account([
-        character({ name: '나', level: 200, world: '스카니아' }),
-        character({ name: '가', level: 200, world: '엘리시움' }),
+        character({ name: '나', level: 200, world: '스카니아', worldKey: 'scania' }),
+        character({ name: '가', level: 200, world: '엘리시움', worldKey: 'elysium' }),
       ]),
     )
 
     expect(forward?.worldCounts).toEqual([
-      { world: '스카니아', count: 1 },
-      { world: '엘리시움', count: 1 },
+      { worldKey: 'scania', world: '스카니아', count: 1 },
+      { worldKey: 'elysium', world: '엘리시움', count: 1 },
     ])
     expect(reversed?.worldCounts).toEqual(forward?.worldCounts)
+  })
+
+  // 월드 key 로 센다. 띄어쓰기만 다른 이름도 한 월드이고 적는 글자는 표 이름이다.
+  it('월드 key 로 세고 표 이름을 적는다. 월드 key 가 없는 캐릭터는 세지 않는다', () => {
+    const summary = summarizeAccount(
+      account([
+        character({ name: '가', level: 200, world: '챌린저스 2', worldKey: 'challengers_2' }),
+        character({ name: '나', level: 200, world: '챌린저스2', worldKey: 'challengers_2' }),
+        character({ name: '다', level: 200, world: '어딘가', worldKey: null }),
+      ]),
+    )
+
+    expect(summary?.worldCounts).toEqual([{ worldKey: 'challengers_2', world: '챌린저스2', count: 2 }])
+    expect(summary?.characterCount).toBe(3)
   })
 
   it('월드가 하나면 하나만 돌려준다', () => {
     const summary = summarizeAccount(
       account([
-        character({ name: '가', level: 200, world: '베라' }),
-        character({ name: '나', level: 200, world: '베라' }),
+        character({ name: '가', level: 200, world: '베라', worldKey: 'bera' }),
+        character({ name: '나', level: 200, world: '베라', worldKey: 'bera' }),
       ]),
     )
 
-    expect(summary?.worldCounts).toEqual([{ world: '베라', count: 2 }])
+    expect(summary?.worldCounts).toEqual([{ worldKey: 'bera', world: '베라', count: 2 }])
   })
 
   it('셋째 월드를 **외 n** 같은 꼬리로 적지 않는다. 목록이 정확히 둘이다', () => {
     const summary = summarizeAccount(
       account([
-        character({ name: '가', level: 200, world: '스카니아' }),
-        character({ name: '나', level: 200, world: '엘리시움' }),
-        character({ name: '다', level: 200, world: '루나' }),
-        character({ name: '라', level: 200, world: '오로라' }),
+        character({ name: '가', level: 200, world: '스카니아', worldKey: 'scania' }),
+        character({ name: '나', level: 200, world: '엘리시움', worldKey: 'elysium' }),
+        character({ name: '다', level: 200, world: '루나', worldKey: 'luna' }),
+        character({ name: '라', level: 200, world: '오로라', worldKey: 'aurora' }),
       ]),
     )
 
@@ -161,7 +177,7 @@ describe('buildSelectedCharacterViews', () => {
       name: '낟낟',
       level: 294,
       jobClass: '나이트로드',
-      world: '스카니아',
+      worldKey: 'scania',
       imageUrl: 'https://example.com/face.png',
       unavailable: false,
     })
@@ -173,7 +189,7 @@ describe('buildSelectedCharacterViews', () => {
     expect(views[0].level).toBeNull()
     expect(views[0].imageUrl).toBeNull()
     expect(views[0].jobClass).toBeUndefined()
-    expect(views[0].world).toBeUndefined()
+    expect(views[0].worldKey).toBeUndefined()
     expect(views[0].ocid).toBe('ocid-unknown')
     // 이름은 타입이 `string` 이라 **없음** 을 담을 자리가 빈 문자열뿐이다. 화면이 채울
     // 자리표시자(**알 수 없음** 등)를 여기서 만들지 않는다.

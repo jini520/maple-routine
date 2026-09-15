@@ -28,6 +28,7 @@ const sampleRecord: BossProfitRecord = {
   payoutMeso: 500_000,
   recordedAt: '2026-07-09T00:05:00.000Z',
   world: null,
+  worldKey: null,
 }
 
 describe('upsertBossProfitRecord', () => {
@@ -53,6 +54,7 @@ describe('upsertBossProfitRecord', () => {
       500_000,
       '2026-07-09T00:05:00.000Z',
       null,
+      null,
     ])
 
     const [secondSql, secondValues] = runMock.mock.calls[1]
@@ -68,6 +70,7 @@ describe('upsertBossProfitRecord', () => {
       1_000_000,
       333_333,
       '2026-07-09T00:05:00.000Z',
+      null,
       null,
     ])
   })
@@ -135,13 +138,14 @@ describe('world 스냅샷', () => {
   it('upsert가 world를 함께 쓰고, 아는 값이 없을 때는 기존 스냅샷을 지우지 않는다', async () => {
     const { upsertBossProfitRecord } = require('../boss-profit') as typeof import('../boss-profit')
 
-    await upsertBossProfitRecord({ ...sampleRecord, world: '엘리시움' })
+    await upsertBossProfitRecord({ ...sampleRecord, world: '엘리시움', worldKey: 'elysium' })
 
     const [sql, values] = runMock.mock.calls[0]
-    expect(values.at(-1)).toBe('엘리시움')
+    expect(values.slice(-2)).toEqual(['엘리시움', 'elysium'])
     // 파티원 수만 고치는 경로처럼 world를 모르고 upsert하는 경우가 있다. 그때 null로 덮어쓰면
-    // 이미 박아둔 스냅샷이 지워진다.
+    // 이미 박아둔 스냅샷이 지워진다. 월드 key 도 같다.
     expect(sql).toContain('world = COALESCE(excluded.world, boss_profit_records.world)')
+    expect(sql).toContain('world_key = COALESCE(excluded.world_key, boss_profit_records.world_key)')
   })
 
   it('컬럼 도입 전 기록(world 없음)은 null로 정규화해 읽는다', async () => {
@@ -172,13 +176,20 @@ describe('world 스냅샷', () => {
   it('fillMissingRecordWorlds는 비어 있는 기록만 채운다. 멱등이라 리프 후에도 과거를 덮지 않는다', async () => {
     const { fillMissingRecordWorlds } = require('../boss-profit') as typeof import('../boss-profit')
 
-    await fillMissingRecordWorlds(new Map([['ocid-1', '엘리시움'], ['ocid-2', '베라']]))
+    await fillMissingRecordWorlds(
+      new Map([
+        ['ocid-1', { world: '엘리시움', worldKey: 'elysium' }],
+        ['ocid-2', { world: '베라', worldKey: 'bera' }],
+      ]),
+    )
 
     expect(runMock).toHaveBeenCalledTimes(2)
     for (const [sql] of runMock.mock.calls) {
       expect(sql).toContain('world IS NULL')
+      // 월드 이름과 key 를 한 번에 채운다. 이름만 채우면 집계가 그 기록을 월드 모름으로 뺀다.
+      expect(sql).toContain('world_key = ?')
     }
-    expect(runMock.mock.calls[0][1]).toEqual(['엘리시움', 'ocid-1'])
+    expect(runMock.mock.calls[0][1]).toEqual(['엘리시움', 'elysium', 'ocid-1'])
   })
 
   it('채울 월드가 없으면 DB를 건드리지 않는다', async () => {
@@ -343,7 +354,7 @@ describe('getBossProfitRecordsRevision', () => {
     await upsertBossProfitRecord(sampleRecord)
     expect(getBossProfitRecordsRevision()).toBe(1)
 
-    await fillMissingRecordWorlds(new Map([['ocid-1', '스카니아']]))
+    await fillMissingRecordWorlds(new Map([['ocid-1', { world: '스카니아', worldKey: 'scania' }]]))
     expect(getBossProfitRecordsRevision()).toBe(2)
 
     await setBossProfitDefeatedOn(

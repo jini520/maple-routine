@@ -45,6 +45,7 @@ function record(overrides: Partial<BossProfitRecord>): BossProfitRecord {
     payoutMeso: 1_000_000,
     recordedAt: '2026-09-11T00:00:00.000Z',
     world: '챌린저스2',
+    worldKey: 'challengers_2',
     ...overrides,
   }
 }
@@ -122,15 +123,15 @@ describe('deleteBossProfitRecord', () => {
 
 describe('getCharacterProfilesByNames', () => {
   it('이름이 같은 스냅샷을 ocid 와 무관하게 전부 준다', async () => {
-    const snapshot = { imageUrl: '', world: null, level: 285, updatedAt: '2026-09-14T00:00:00.000Z' }
-    await saveCharacterProfile({ ...snapshot, ocid: 'old', name: '지내우시', jobClass: '레테', world: '챌린저스2' })
-    await saveCharacterProfile({ ...snapshot, ocid: 'new', name: '지내우시', jobClass: '레테', world: '엘리시움' })
+    const snapshot = { imageUrl: '', world: null, worldKey: null, level: 285, updatedAt: '2026-09-14T00:00:00.000Z' }
+    await saveCharacterProfile({ ...snapshot, ocid: 'old', name: '지내우시', jobClass: '레테', world: '챌린저스2', worldKey: 'challengers_2' })
+    await saveCharacterProfile({ ...snapshot, ocid: 'new', name: '지내우시', jobClass: '레테', world: '엘리시움', worldKey: 'elysium' })
     await saveCharacterProfile({ ...snapshot, ocid: 'other', name: '루디', jobClass: '아크메이지' })
 
     const profiles = await getCharacterProfilesByNames(['지내우시'])
 
     expect(profiles.map((profile) => profile.ocid).sort()).toEqual(['new', 'old'])
-    expect(profiles.find((profile) => profile.ocid === 'old')).toMatchObject({ jobClass: '레테', world: '챌린저스2' })
+    expect(profiles.find((profile) => profile.ocid === 'old')).toMatchObject({ jobClass: '레테', world: '챌린저스2', worldKey: 'challengers_2' })
   })
 
   it('이름이 없으면 조회하지 않고 빈 목록이다', async () => {

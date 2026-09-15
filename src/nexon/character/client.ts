@@ -11,9 +11,15 @@ import { normalizeCharacterBasic, normalizeCharacterList } from './normalize'
 /** ocid 없이 API 키만으로 부를 수 있는 유일한 경로. 키 단계 프로브도 이것을 쓴다. */
 export const CHARACTER_LIST_PATH = '/maplestory/v1/character/list'
 
-export async function fetchCharacterList(apiKey: string): Promise<MapleAccount[]> {
+/**
+ * @param worldKeyOf API 월드 이름에서 월드 key. 앱은 `lib/world/worlds` 의 `worldKeyOfApiName` 을 넘긴다
+ */
+export async function fetchCharacterList(
+  apiKey: string,
+  worldKeyOf: (apiName: string) => string | null,
+): Promise<MapleAccount[]> {
   const wire = await requestJson<NexonCharacterListResponse>(CHARACTER_LIST_PATH, apiKey)
-  return normalizeCharacterList(wire)
+  return normalizeCharacterList(wire, worldKeyOf)
 }
 
 /**
@@ -33,7 +39,11 @@ function hasCharacter(wire: NexonCharacterBasicResponse): boolean {
   return wire.character_name !== null && wire.character_name !== undefined
 }
 
-export async function fetchCharacterBasic(apiKey: string, ocid: string): Promise<CharacterBasicProfile> {
+export async function fetchCharacterBasic(
+  apiKey: string,
+  ocid: string,
+  worldKeyOf: (apiName: string) => string | null,
+): Promise<CharacterBasicProfile> {
   const wire = await requestJson<NexonCharacterBasicResponse>(
     `/maplestory/v1/character/basic?ocid=${encodeURIComponent(ocid)}`,
     apiKey,
@@ -41,5 +51,5 @@ export async function fetchCharacterBasic(apiKey: string, ocid: string): Promise
   if (!hasCharacter(wire)) {
     throw new NexonNoCharacterError('이 ocid 에는 더 이상 캐릭터가 없습니다')
   }
-  return normalizeCharacterBasic(wire)
+  return normalizeCharacterBasic(wire, worldKeyOf)
 }

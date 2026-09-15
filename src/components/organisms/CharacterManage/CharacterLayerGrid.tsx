@@ -184,7 +184,7 @@ function SelectedRow(props: SelectedRowProps): React.JSX.Element {
       name={view.name}
       level={view.level}
       jobClass={view.jobClass}
-      world={view.world}
+      worldKey={view.worldKey}
       imageUrl={view.imageUrl}
       unavailable={view.unavailable}
       leading={
@@ -252,7 +252,7 @@ function CandidateRow(props: {
         name={entry.name}
         level={entry.level}
         jobClass={entry.jobClass}
-        world={entry.world}
+        worldKey={entry.worldKey}
         imageUrl={entry.imageUrl}
         // 누르는 것은 카드 전체다. `＋` 는 표시일 뿐 버튼이 아니다.
         onPress={() => {

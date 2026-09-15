@@ -40,6 +40,7 @@ function schedulerState(): unknown {
     asOf: '2026-09-04',
     characterName: '루디',
     world: '스카니아',
+    worldKey: 'scania',
     level: 290,
     jobClass: '아크메이지',
     dailyContents: [],

@@ -163,6 +163,7 @@ function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterSc
       asOf: '2026-07-09T00:00+09:00',
       characterName: '캐릭터-ocid-1',
       world: '베라',
+      worldKey: 'bera',
       level: 200,
       jobClass: '렌',
       dailyContents: [],
@@ -239,6 +240,7 @@ beforeEach(() => {
         name: cached.profile.name,
         imageUrl: cached.profile.imageUrl ?? null,
         world: cached.profile.world ?? null,
+        worldKey: cached.profile.worldKey ?? null,
         level: cached.profile.level ?? null,
       })
     }
@@ -261,6 +263,7 @@ describe('setBossDrops', () => {
     characterName: '캐릭터-1',
     imageUrl: null,
     world: null,
+    worldKey: null,
     bossKey: 'lotus',
     bossName: '스우',
     difficulty: 'hard' as const,
@@ -915,6 +918,7 @@ describe('useBossProfitStore', () => {
       payoutMeso: 2020000,
       recordedAt: '2026-07-09T00:00:00.000Z',
       world: null,
+      worldKey: null,
     }
     getBossProfitRecordsMock.mockResolvedValue([record])
 
@@ -943,6 +947,7 @@ describe('useBossProfitStore', () => {
       payoutMeso: 3_500_000,
       recordedAt: '2026-07-09T00:00:00.000Z',
       world: null,
+      worldKey: null,
     }
     getBossProfitRecordsMock.mockResolvedValue([record])
 
@@ -1018,6 +1023,7 @@ describe('useBossProfitStore', () => {
         payoutMeso: 2020000,
         recordedAt: '2026-07-09T00:00:00.000Z',
         world: null,
+        worldKey: null,
       }
       getBossProfitRecordsMock.mockResolvedValue([record])
       getBossPartySizeMock.mockClear()
@@ -1309,6 +1315,7 @@ describe('useBossProfitStore', () => {
           asOf: '2026-07-09T00:00+09:00',
           characterName: '캐시캐릭터',
           world: '베라',
+          worldKey: 'bera',
           level: 200,
           jobClass: '렌',
           dailyContents: [],
@@ -1387,6 +1394,7 @@ describe('useBossProfitStore', () => {
         payoutMeso: 4040000,
         recordedAt: '2026-07-10T00:00:00.000Z',
         world: null,
+        worldKey: null,
       }
       jest.clearAllMocks() // 위 준비용 refresh에서 쌓인 호출 기록(자동 기록 포함)을 지운다
       getBossProfitRecordsMock.mockResolvedValue([record])
@@ -1488,6 +1496,7 @@ describe('useBossProfitStore', () => {
           payoutMeso: 2_000_000,
           recordedAt: '2026-07-01T00:00:00.000Z',
           world: null,
+          worldKey: null,
         }
 
         jest.clearAllMocks()
@@ -1536,6 +1545,7 @@ describe('useBossProfitStore', () => {
           asOf: '2026-07-09T00:00+09:00',
           characterName,
           world: '베라',
+          worldKey: 'bera',
           level: 200,
           jobClass: '렌',
           dailyContents: [],
@@ -1563,6 +1573,7 @@ describe('useBossProfitStore', () => {
         payoutMeso: 665_000_000,
         recordedAt: '2026-07-01T00:00:00.000Z',
         world: '베라',
+        worldKey: 'bera',
       }
     }
 
@@ -1733,6 +1744,7 @@ describe('useBossProfitStore', () => {
           asOf: '2026-07-09T00:00+09:00',
           characterName: '캐시캐릭터',
           world: '베라',
+          worldKey: 'bera',
           level: 200,
           jobClass: '렌',
           dailyContents: [],
@@ -1748,21 +1760,22 @@ describe('useBossProfitStore', () => {
     }
 
     // world를 넘기지 않으면 world 키가 아예 없는(= 구버전) 캐시 프로필이 된다.
-    function mockCachedBasicWorld(world?: string) {
+    // 진짜 캐시 읽기는 월드 key 를 채워 준다. 여기는 목이라 이름과 key 를 함께 넘긴다.
+    function mockCachedBasicWorld(world?: string, worldKey?: string) {
       getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
         profile: {
           name: `캐릭터-${ocid}`,
           level: 200,
           imageUrl: 'x',
           accessFlag: true,
-          ...(world === undefined ? {} : { world }),
+          ...(world === undefined ? {} : { world, worldKey: worldKey ?? null }),
         },
         cachedAt: '2026-07-01T00:00:00.000Z',
       }))
     }
 
     it('캐시 우선 표시 경로의 row에 character-basic-cache의 world가 실린다', async () => {
-      mockCachedBasicWorld('스카니아')
+      mockCachedBasicWorld('스카니아', 'scania')
       getCachedSchedulerStateMock.mockResolvedValue(cachedSchedulerEntry())
       syncSchedulesMock.mockReturnValue(new Promise<CharacterScheduleSync[]>(() => {}))
 
@@ -1772,10 +1785,11 @@ describe('useBossProfitStore', () => {
       const row = useBossProfitStore.getState().rows[0]
       expect(row.characterName).toBe('캐시캐릭터') // 캐시 경로임을 확인
       expect(row.world).toBe('스카니아')
+      expect(row.worldKey).toBe('scania')
     })
 
     it('실시간 동기화 경로의 row에도 world가 실린다', async () => {
-      mockCachedBasicWorld('스카니아')
+      mockCachedBasicWorld('스카니아', 'scania')
       syncSchedulesMock.mockResolvedValue([syncResult({ characterName: '라이브이름' })])
 
       await useBossProfitStore.getState().refresh(['ocid-1'])
@@ -1783,6 +1797,19 @@ describe('useBossProfitStore', () => {
       const row = useBossProfitStore.getState().rows[0]
       expect(row.characterName).toBe('라이브이름') // 라이브 경로임을 확인
       expect(row.world).toBe('스카니아')
+      expect(row.worldKey).toBe('scania')
+    })
+
+    // 월드가 빈 옛 기록을 채울 때 이름만 채우면 월드 집계가 그 기록을 월드 모름으로 뺀다.
+    it('월드가 빈 기록을 채우는 보정에 월드 이름과 key 를 함께 넘긴다', async () => {
+      mockCachedBasicWorld('스카니아', 'scania')
+      syncSchedulesMock.mockResolvedValue([syncResult()])
+
+      await useBossProfitStore.getState().refresh(['ocid-1'])
+
+      expect(fillMissingRecordWorldsMock).toHaveBeenCalledWith(
+        new Map([['ocid-1', { world: '스카니아', worldKey: 'scania' }]]),
+      )
     })
 
     // world는 옵셔널이라 이전 캐시엔 없다(그런 캐릭터는 월드 집계에서 제외된다).
@@ -1794,10 +1821,11 @@ describe('useBossProfitStore', () => {
       await useBossProfitStore.getState().refresh(['ocid-1'])
 
       expect(useBossProfitStore.getState().rows[0].world).toBeNull()
+      expect(useBossProfitStore.getState().rows[0].worldKey).toBeNull()
     })
 
     it('과거 기간(로컬 기록) 경로의 row에도 world가 실린다', async () => {
-      mockCachedBasicWorld('루나')
+      mockCachedBasicWorld('루나', 'luna')
       syncSchedulesMock.mockResolvedValue([syncResult()])
       await useBossProfitStore.getState().refresh(['ocid-1'])
       const previousPeriodKey = getAdjacentPeriodKey(
@@ -1818,6 +1846,7 @@ describe('useBossProfitStore', () => {
         payoutMeso: 8_080_000,
         recordedAt: '2026-07-01T00:00:00.000Z',
         world: null,
+        worldKey: null,
       }
       getBossProfitRecordsMock.mockResolvedValue([pastRecord])
 
@@ -1827,6 +1856,7 @@ describe('useBossProfitStore', () => {
       expect(state.periodKey).toBe(previousPeriodKey)
       expect(state.rows).toHaveLength(1)
       expect(state.rows[0].world).toBe('루나')
+      expect(state.rows[0].worldKey).toBe('luna')
     })
 
     // 회귀 가드: world는 정렬에 참여하지 않는다(캐릭터는 레벨 내림차순 → 이름순).
@@ -1874,6 +1904,7 @@ describe('useBossProfitStore', () => {
         payoutMeso: 8_080_000,
         recordedAt: '2026-07-10T00:00:00.000Z',
         world: '베라',
+        worldKey: 'bera',
         ...overrides,
       }
     }
@@ -1964,6 +1995,7 @@ describe('useBossProfitStore', () => {
         asOf: '2026-06-04T00:00+09:00',
         characterName: '낟낟',
         world: '베라',
+        worldKey: 'bera',
         level: 200,
         jobClass: '렌',
         dailyContents: [],
@@ -2039,6 +2071,7 @@ describe('useBossProfitStore', () => {
         payoutMeso: 2_693_333,
         recordedAt: '2026-06-01T00:00:00.000Z',
         world: null,
+        worldKey: null,
       }
       getBossProfitRecordsMock.mockResolvedValue([pastRecord])
       getCachedCharacterBasicMock.mockResolvedValue({
@@ -2086,6 +2119,7 @@ describe('useBossProfitStore', () => {
           payoutMeso: 2_693_333,
           recordedAt: '2026-06-01T00:00:00.000Z',
           world: null,
+          worldKey: null,
         } satisfies BossProfitRecord,
       ])
       getCachedCharacterBasicMock.mockResolvedValue({
@@ -2126,6 +2160,7 @@ describe('useBossProfitStore', () => {
           payoutMeso: 2_693_333,
           recordedAt: '2026-06-01T00:00:00.000Z',
           world: null,
+          worldKey: null,
         } satisfies BossProfitRecord,
       ])
       getCachedCharacterBasicMock.mockResolvedValue(null)
@@ -2334,6 +2369,7 @@ describe('useBossProfitStore', () => {
           payoutMeso: 4_040_000,
           recordedAt: '2026-07-08T00:00:00.000Z',
           world: null,
+          worldKey: null,
         }
         getBossProfitRecordsMock.mockImplementation(async (_ocids: string[], periodKeys: string[]) =>
           periodKeys.includes('2026-07-02') ? [cachedRecord] : [],
@@ -2418,6 +2454,7 @@ describe('useBossProfitStore', () => {
           payoutMeso: 4_040_000,
           recordedAt: '2026-07-08T00:00:00.000Z',
           world: null,
+          worldKey: null,
         }
         getBossProfitRecordsMock.mockResolvedValue([cachedRecord])
         // 픽스처 교체는 실물에서 쓰기다. 판을 안 올리면 앞서 읽어 둔 스냅샷이 그대로 그려진다.
@@ -2457,6 +2494,7 @@ describe('useBossProfitStore', () => {
             payoutMeso: 15_000_000_000,
             recordedAt: '2026-07-12T00:00:00.000Z',
             world: null,
+            worldKey: null,
             defeatedOn: '2026-07-12',
           } satisfies BossProfitRecord,
         ])
@@ -2519,6 +2557,7 @@ describe('useBossProfitStore', () => {
           payoutMeso: 2_000_000,
           recordedAt: '2026-08-01T00:00:00.000Z',
           world: null,
+          worldKey: null,
         }
         getBossProfitRecordsMock.mockResolvedValue([inProgressRecord])
         fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState())
@@ -2563,6 +2602,7 @@ describe('useBossProfitStore', () => {
             payoutMeso: 8_080_000,
             recordedAt: '2026-08-02T00:00:00.000Z',
             world: null,
+            worldKey: null,
           } satisfies BossProfitRecord,
         ])
 
@@ -2631,6 +2671,7 @@ describe('useBossProfitStore', () => {
           payoutMeso: 4_040_000,
           recordedAt: '2026-06-01T00:00:00.000Z',
           world: null,
+          worldKey: null,
         } satisfies BossProfitRecord,
       ])
       getCachedCharacterBasicMock.mockResolvedValue({
@@ -2799,6 +2840,7 @@ describe('useBossProfitStore', () => {
           asOf: '2026-07-09T00:00+09:00',
           characterName: '캐시캐릭터',
           world: '베라',
+          worldKey: 'bera',
           level: 200,
           jobClass: '렌',
           dailyContents: [],
@@ -3318,6 +3360,7 @@ describe('잡지 않은 보스의 드롭 정리', () => {
         payoutMeso: 1000,
         recordedAt: '2026-08-20T00:00:00.000Z',
         world: null,
+        worldKey: null,
       },
     ])
     getBossDropRecordsMock.mockResolvedValue([{ ...zakumDrop(), periodKey: previousPeriodKey }])
@@ -3367,6 +3410,7 @@ describe('추적에서 빠진 캐릭터의 기록', () => {
       payoutMeso: 8_080_000,
       recordedAt: '2026-06-01T00:00:00.000Z',
       world: null,
+      worldKey: null,
     }
   }
 
@@ -3743,6 +3787,7 @@ describe('기간을 미리 들고 있는다', () => {
         payoutMeso: 8_080_000,
         recordedAt: '2026-07-01T00:00:00.000Z',
         world: null,
+        worldKey: null,
       } satisfies BossProfitRecord,
     ])
     await useBossProfitStore.getState().refresh(['ocid-1'])
@@ -3899,7 +3944,7 @@ describe('동기화가 답하지 않은 추적 캐릭터', () => {
 describe('첫 페인트의 조회 불가', () => {
   it('표가 조회 불가라고 하면 동기화 전에 배지를 세운다', async () => {
     resolveDisplayProfilesMock.mockResolvedValue(
-      new Map([['stranded', { name: '지내우시', imageUrl: '', world: '챌린저스2', level: 285 }]]),
+      new Map([['stranded', { name: '지내우시', imageUrl: '', world: '챌린저스2', worldKey: 'challengers_2', level: 285 }]]),
     )
     getScheduleProbeLedgerMock.mockResolvedValue({ unavailable: true, dates: {} })
     // 동기화는 안 끝난 채로 둔다. 이 시점의 화면이 무엇을 아는지가 이 테스트의 대상이다.
@@ -3927,8 +3972,8 @@ describe('첫 페인트의 조회 불가', () => {
   it('관리에서 뺀 캐릭터에는 배지를 안 단다', async () => {
     resolveDisplayProfilesMock.mockResolvedValue(
       new Map([
-        ['ocid-1', { name: '낟낟', imageUrl: '', world: '엘리시움', level: 295 }],
-        ['해제', { name: '지내우시', imageUrl: '', world: '챌린저스2', level: 285 }],
+        ['ocid-1', { name: '낟낟', imageUrl: '', world: '엘리시움', worldKey: 'elysium', level: 295 }],
+        ['해제', { name: '지내우시', imageUrl: '', world: '챌린저스2', worldKey: 'challengers_2', level: 285 }],
       ]),
     )
     getRecordedCharacterOcidsMock.mockResolvedValue(['ocid-1', '해제'])
@@ -3948,7 +3993,7 @@ describe('첫 페인트의 조회 불가', () => {
   // `아직 안 물어봤다`(null)를 `조회 불가` 로 읽으면 새 캐릭터가 전부 배지를 달고 시작한다.
   it('모르는 캐릭터는 배지를 안 단다', async () => {
     resolveDisplayProfilesMock.mockResolvedValue(
-      new Map([['ocid-1', { name: '낟낟', imageUrl: '', world: '엘리시움', level: 295 }]]),
+      new Map([['ocid-1', { name: '낟낟', imageUrl: '', world: '엘리시움', worldKey: 'elysium', level: 295 }]]),
     )
     syncSchedulesMock.mockImplementation(() => new Promise(() => {}))
 
@@ -3962,7 +4007,7 @@ describe('첫 페인트의 조회 불가', () => {
   // 동기화가 그 캐릭터를 돌려주면 표식이 내려가고 화면도 따라야 한다.
   it('동기화가 답하면 배지를 걷는다', async () => {
     resolveDisplayProfilesMock.mockResolvedValue(
-      new Map([['ocid-1', { name: '낟낟', imageUrl: '', world: '엘리시움', level: 295 }]]),
+      new Map([['ocid-1', { name: '낟낟', imageUrl: '', world: '엘리시움', worldKey: 'elysium', level: 295 }]]),
     )
     getScheduleProbeLedgerMock.mockResolvedValue({ unavailable: true, dates: {} })
     syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -3990,6 +4035,7 @@ describe('월드 리프한 기간의 중복 기록', () => {
       payoutMeso: Math.floor(8_080_000 / partySize),
       recordedAt: '2026-09-11T00:00:00.000Z',
       world: ocid === 'old' ? '챌린저스2' : '엘리시움',
+      worldKey: ocid === 'old' ? 'challengers_2' : 'elysium',
     }
   }
 

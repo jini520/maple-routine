@@ -21,6 +21,8 @@ export interface DisplayProfile {
   imageUrl: string
   /** 모르면 `null`. 월드별 결정석 집계가 이 부재를 구분한다. */
   world: string | null
+  /** 월드 key. 모르면 `null` 이다. */
+  worldKey: string | null
   /** 모르면 `null`. 캐릭터 정렬이 이 부재를 맨 뒤로 보낸다. */
   level: number | null
 }
@@ -45,6 +47,7 @@ export async function resolveDisplayProfiles(
       name: snapshot.name,
       imageUrl: snapshot.imageUrl,
       world: snapshot.world,
+      worldKey: snapshot.worldKey,
       level: snapshot.level,
     })
   }
@@ -61,6 +64,7 @@ export async function resolveDisplayProfiles(
         name: cached.profile.name,
         imageUrl: cached.profile.imageUrl,
         world: cached.profile.world ?? null,
+        worldKey: cached.profile.worldKey ?? null,
         level: cached.profile.level,
       }
       profiles.set(ocid, profile)

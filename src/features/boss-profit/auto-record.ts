@@ -97,6 +97,7 @@ export async function autoRecordRows({
         payoutMeso,
         recordedAt: now.toISOString(),
         world: row.world,
+        worldKey: row.worldKey,
       }),
       undefined,
     )

@@ -37,6 +37,8 @@ export interface StrandedCharacter {
   characterName: string
   /** 모르면 `undefined`. 두 스토어의 뷰가 그 부재를 옵셔널로 표현한다. */
   world: string | undefined
+  /** 월드 key. 시즌 보스를 보일지 가르는 값이다. 모르면 `undefined` */
+  worldKey: string | undefined
   level: number | null
   imageUrl: string | null
 }
@@ -77,6 +79,7 @@ export async function resolveStrandedCharacters(
         ocid,
         characterName: profile.name,
         world: profile.world ?? undefined,
+        worldKey: profile.worldKey ?? undefined,
         level: profile.level,
         imageUrl: profile.imageUrl,
       },

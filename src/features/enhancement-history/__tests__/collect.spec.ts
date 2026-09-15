@@ -39,7 +39,7 @@ const page = (ids: string[], nextCursor: string | null = null) => ({
 beforeEach(() => {
   getAuthConfig.mockReset().mockResolvedValue({ apiKey: 'k' })
   fetchCharacterList.mockReset().mockResolvedValue([
-    { accountId: 'a', characters: [{ ocid: '1', name: '머리맨들맨둘', world: '스페셜', jobClass: '', level: 1 }] },
+    { accountId: 'a', characters: [{ ocid: '1', name: '머리맨들맨둘', world: '스페셜', worldKey: 'special', jobClass: '', level: 1 }] },
   ])
   fetchEnhancementHistory.mockReset().mockResolvedValue(page([]))
   store.loadEnhancementChecks.mockReset().mockResolvedValue(new Map())

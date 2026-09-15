@@ -47,6 +47,7 @@ function buildState(overrides: Partial<SchedulerCharacterState> = {}): Scheduler
     asOf: '2026-07-23T00:00+09:00',
     characterName: '낟낟',
     world: '엘리시움',
+    worldKey: 'elysium',
     level: 293,
     jobClass: '렌',
     dailyContents: [],

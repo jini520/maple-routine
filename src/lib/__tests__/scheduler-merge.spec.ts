@@ -6,6 +6,7 @@ function baseState(overrides: Partial<SchedulerCharacterState> = {}): SchedulerC
     asOf: '2026-07-21T00:00+09:00',
     characterName: '낟낟',
     world: '엘리시움',
+    worldKey: 'elysium',
     level: 293,
     jobClass: '렌',
     dailyContents: [],

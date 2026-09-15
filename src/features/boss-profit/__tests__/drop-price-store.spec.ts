@@ -98,7 +98,7 @@ beforeEach(async () => {
       new Map(
         [...new Set(ocids)].map((ocid) => [
           ocid,
-          { name: '지내우시', imageUrl: null, world: null, level: null },
+          { name: '지내우시', imageUrl: null, world: null, worldKey: null, level: null },
         ]),
       ),
     )

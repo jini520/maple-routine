@@ -35,7 +35,8 @@ export type ManualBossAddResult = 'added' | 'duplicate' | 'limitReached'
 export interface BossCharacterView {
   ocid: string
   characterName: string
-  world?: string
+  /** 월드 key. 시즌 보스를 보일지 가른다 */
+  worldKey?: string | null
   // 초상화 레일이 쓰는 둘. 컨텐츠 스케줄러 뷰와 같은 자리·같은 규약이다(`null` = 캐시가 아직
   // 모름). 정렬이 이미 읽는 캐시에서 함께 꺼내므로 조회가 안 는다.
   level?: number | null
@@ -164,7 +165,7 @@ async function readCachedView(ocid: string): Promise<BossCharacterView | null> {
   return {
     ocid,
     characterName: cached.state.characterName,
-    world: cached.state.world,
+    worldKey: cached.state.worldKey,
     weeklyBosses: bosses.filter((boss) => boss.cycle === 'weekly'),
     monthlyBosses: bosses.filter((boss) => boss.cycle === 'monthly'),
     weeklyBossClearCount: countClearedWeeklyBosses(bosses),
@@ -284,7 +285,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
           return {
             ocid: result.ocid,
             characterName: result.characterName,
-            world: result.world,
+            worldKey: result.worldKey,
             weeklyBosses: bosses.filter((boss) => boss.cycle === 'weekly'),
             monthlyBosses: bosses.filter((boss) => boss.cycle === 'monthly'),
             weeklyBossClearCount: result.state === null ? null : countClearedWeeklyBosses(bosses),
@@ -335,7 +336,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
           return {
             ocid,
             characterName: cached.state.characterName,
-            world: cached.state.world,
+            worldKey: cached.state.worldKey,
             weeklyBosses: bosses.filter((boss) => boss.cycle === 'weekly'),
             monthlyBosses: bosses.filter((boss) => boss.cycle === 'monthly'),
             weeklyBossClearCount: countClearedWeeklyBosses(bosses),
@@ -407,7 +408,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       return {
         ocid: result.ocid,
         characterName: result.characterName,
-        world: result.world,
+        worldKey: result.worldKey,
         weeklyBosses: bosses.filter((boss) => boss.cycle === 'weekly'),
         monthlyBosses: bosses.filter((boss) => boss.cycle === 'monthly'),
         weeklyBossClearCount: result.state === null ? null : countClearedWeeklyBosses(bosses),

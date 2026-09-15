@@ -45,6 +45,8 @@ export interface SchedulerCharacterState {
   asOf: string // ISO 문자열, wire의 date 그대로 보존
   characterName: string
   world: string
+  /** 월드 key. 월드 공유 원장의 키다. 이름이 월드 표에 없으면 `null` 이다 */
+  worldKey: string | null
   level: number
   jobClass: string
   dailyContents: DailyContent[]

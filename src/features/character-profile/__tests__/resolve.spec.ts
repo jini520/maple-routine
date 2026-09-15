@@ -26,7 +26,7 @@ beforeEach(() => {
 it('표에 있는 것은 표에서 읽는다. 캐시를 안 본다', async () => {
   getCharacterProfilesMock.mockResolvedValue(
     new Map([
-      ['ocid-1', { ocid: 'ocid-1', name: '루디', imageUrl: 'https://example.test/a.png', world: '스카니아', level: 285, updatedAt: NOW }],
+      ['ocid-1', { ocid: 'ocid-1', name: '루디', imageUrl: 'https://example.test/a.png', world: '스카니아', worldKey: 'scania', level: 285, updatedAt: NOW }],
     ]),
   )
 
@@ -36,6 +36,7 @@ it('표에 있는 것은 표에서 읽는다. 캐시를 안 본다', async () =>
     name: '루디',
     imageUrl: 'https://example.test/a.png',
     world: '스카니아',
+    worldKey: 'scania',
     level: 285,
   })
   expect(saveCharacterProfileMock).not.toHaveBeenCalled()
@@ -46,7 +47,7 @@ it('표에 있는 것은 표에서 읽는다. 캐시를 안 본다', async () =>
 // 옮겨진다.
 it('표에 없으면 캐시에서 가져오고, 그 값을 표에 심는다', async () => {
   await setCachedCharacterBasic('account-1', 'ocid-2', {
-    profile: basic({ name: '옛캐릭', world: '루나' }),
+    profile: basic({ name: '옛캐릭', world: '루나', worldKey: 'luna' }),
     cachedAt: NOW,
   })
 
@@ -56,6 +57,7 @@ it('표에 없으면 캐시에서 가져오고, 그 값을 표에 심는다', as
     name: '옛캐릭',
     imageUrl: 'https://example.test/a.png',
     world: '루나',
+    worldKey: 'luna',
     level: 285,
   })
   expect(saveCharacterProfileMock).toHaveBeenCalledWith({
@@ -63,6 +65,7 @@ it('표에 없으면 캐시에서 가져오고, 그 값을 표에 심는다', as
     name: '옛캐릭',
     imageUrl: 'https://example.test/a.png',
     world: '루나',
+    worldKey: 'luna',
     level: 285,
     // 캐시가 직업을 모르면 `null` 이다. 표의 UPSERT 가 COALESCE 라 이미 박아 둔 값을 안 지운다.
     jobClass: null,
@@ -74,7 +77,7 @@ it('표에 없으면 캐시에서 가져오고, 그 값을 표에 심는다', as
 // 조회할 수 없게 된 캐릭터도 판정 재료를 갖는다.
 it('캐시가 직업을 알면 표에도 함께 심는다', async () => {
   await setCachedCharacterBasic('account-1', 'ocid-4', {
-    profile: { ...basic({ name: '레테캐릭', world: '챌린저스2' }), jobClass: '레테' },
+    profile: { ...basic({ name: '레테캐릭', world: '챌린저스2', worldKey: 'challengers_2' }), jobClass: '레테' },
     cachedAt: NOW,
   })
 
@@ -95,7 +98,7 @@ it('표에도 캐시에도 없으면 결과에 안 든다. 이름 없는 행을 
 it('표에 없는 것만 캐시를 읽는다', async () => {
   getCharacterProfilesMock.mockResolvedValue(
     new Map([
-      ['ocid-1', { ocid: 'ocid-1', name: '루디', imageUrl: 'https://example.test/a.png', world: null, level: null, updatedAt: NOW }],
+      ['ocid-1', { ocid: 'ocid-1', name: '루디', imageUrl: 'https://example.test/a.png', world: null, worldKey: null, level: null, updatedAt: NOW }],
     ]),
   )
   await setCachedCharacterBasic('account-1', 'ocid-2', { profile: basic({ name: '둘' }), cachedAt: NOW })

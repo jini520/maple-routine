@@ -91,7 +91,7 @@ describe('CrystalSummaryChip', () => {
 
   it('단일 월드는 펼칠 것이 없어 버튼이 아니다', async () => {
     const { getByLabelText, queryByLabelText } = await renderOverlay(
-      <CrystalSummaryChip groups={[group([보스행({ world: '스카니아' })])]} />,
+      <CrystalSummaryChip groups={[group([보스행({ world: '스카니아', worldKey: 'scania' })])]} />,
     )
 
     expect(getByLabelText(`주간 결정석 판매 1 / ${WEEKLY_CRYSTAL_SALE_LIMIT}, 월간 결정석 0개`)).toBeTruthy()
@@ -101,7 +101,7 @@ describe('CrystalSummaryChip', () => {
   // 한 칩에 두 몫을 싣는다. 월간 보스를 안 잡은 주에도 월간 몫은 `0개` 로 선다(사용자 지정).
   it('칩 하나가 주간 몫과 월간 몫을 함께 읽힌다', async () => {
     const { getByLabelText } = await renderOverlay(
-      <CrystalSummaryChip groups={[group([보스행({ world: '스카니아' }), 월간행({ world: '스카니아' })])]} />,
+      <CrystalSummaryChip groups={[group([보스행({ world: '스카니아', worldKey: 'scania' }), 월간행({ world: '스카니아', worldKey: 'scania' })])]} />,
     )
 
     // 월간 보스를 잡은 주에도 주간 몫의 분자는 그대로다. 월간 결정석은 90 한도 밖이다.
@@ -111,8 +111,8 @@ describe('CrystalSummaryChip', () => {
   // 각 월드가 각자 한도를 가지므로 분모가 월드 수만큼 는다.
   it('월드가 둘이면 분모가 두 배이고 눌러 분해를 펼칠 수 있다', async () => {
     const groups = [
-      group([보스행({ world: '스카니아' })]),
-      group([보스행({ ocid: 'ocid-2', bossKey: 다른주간보스, world: '루나' })]),
+      group([보스행({ world: '스카니아', worldKey: 'scania' })]),
+      group([보스행({ ocid: 'ocid-2', bossKey: 다른주간보스, world: '루나', worldKey: 'luna' })]),
     ]
     const { getByLabelText, queryByTestId, getByTestId } = await renderOverlay(<CrystalSummaryChip groups={groups} />)
 
@@ -131,10 +131,10 @@ describe('CrystalSummaryChip', () => {
   // 칩에 두 몫이 있으니 펼친 상자도 월드마다 두 몫을 풀어 말한다(사용자 지정).
   it('펼치면 월드마다 한 줄에 주간과 월간을 함께 보인다. 월간 수도 행의 월드로 가른다', async () => {
     const groups = [
-      group([보스행({ world: '스카니아' })]),
+      group([보스행({ world: '스카니아', worldKey: 'scania' })]),
       group([
-        보스행({ ocid: 'ocid-2', bossKey: 다른주간보스, world: '루나' }),
-        월간행({ ocid: 'ocid-2', world: '루나' }),
+        보스행({ ocid: 'ocid-2', bossKey: 다른주간보스, world: '루나', worldKey: 'luna' }),
+        월간행({ ocid: 'ocid-2', world: '루나', worldKey: 'luna' }),
       ]),
     ]
     const { getByLabelText, getByTestId } = await renderOverlay(<CrystalSummaryChip groups={groups} />)
@@ -155,8 +155,8 @@ describe('CrystalSummaryChip', () => {
   // 그래서 부모를 한 번 타고 올라가 **그 안에서** 닫기 층을 찾는다. 둘이 갈려 있으면 여기서 못 찾는다.
   it('팝오버 내용이 닫는 층과 같은 창에 있다', async () => {
     const groups = [
-      group([보스행({ world: '스카니아' })]),
-      group([보스행({ ocid: 'ocid-2', bossKey: 다른주간보스, world: '루나' })]),
+      group([보스행({ world: '스카니아', worldKey: 'scania' })]),
+      group([보스행({ ocid: 'ocid-2', bossKey: 다른주간보스, world: '루나', worldKey: 'luna' })]),
     ]
     const { getByLabelText, getByTestId } = await renderOverlay(<CrystalSummaryChip groups={groups} />)
 
@@ -173,8 +173,8 @@ describe('CrystalSummaryChip', () => {
   // 칩에도 안 든다. 그래서 칩 수가 카드 링의 합보다 작을 수 있다(사용자 감수).
   it('월드를 모르는 월간 보스 행은 칩의 월간 수에 안 든다', async () => {
     const groups = [
-      group([보스행({ world: '스카니아' }), 월간행({ world: '스카니아' })]),
-      group([보스행({ ocid: 'ocid-2', world: '스카니아' }), 월간행({ ocid: 'ocid-2', world: null })]),
+      group([보스행({ world: '스카니아', worldKey: 'scania' }), 월간행({ world: '스카니아', worldKey: 'scania' })]),
+      group([보스행({ ocid: 'ocid-2', world: '스카니아', worldKey: 'scania' }), 월간행({ ocid: 'ocid-2', world: null, worldKey: null })]),
     ]
     const { getByLabelText } = await renderOverlay(<CrystalSummaryChip groups={groups} />)
 
@@ -183,9 +183,9 @@ describe('CrystalSummaryChip', () => {
 
   it('칩의 월간 수는 펼친 월드별 줄의 합과 같다', async () => {
     const groups = [
-      group([보스행({ world: '스카니아' }), 월간행({ world: '스카니아' })]),
-      group([보스행({ ocid: 'ocid-2', bossKey: 다른주간보스, world: '루나' }), 월간행({ ocid: 'ocid-2', world: '루나' })]),
-      group([월간행({ ocid: 'ocid-3', world: null })]),
+      group([보스행({ world: '스카니아', worldKey: 'scania' }), 월간행({ world: '스카니아', worldKey: 'scania' })]),
+      group([보스행({ ocid: 'ocid-2', bossKey: 다른주간보스, world: '루나', worldKey: 'luna' }), 월간행({ ocid: 'ocid-2', world: '루나', worldKey: 'luna' })]),
+      group([월간행({ ocid: 'ocid-3', world: null, worldKey: null })]),
     ]
     const { getByLabelText, getByTestId } = await renderOverlay(<CrystalSummaryChip groups={groups} />)
 
@@ -199,7 +199,7 @@ describe('CrystalSummaryChip', () => {
 
   it('월드는 아는데 처치가 0이면 0 / 90 과 0개 를 그대로 보여준다', async () => {
     const { getByLabelText } = await renderOverlay(
-      <CrystalSummaryChip groups={[group([보스행({ world: '스카니아', isComplete: false })])]} />,
+      <CrystalSummaryChip groups={[group([보스행({ world: '스카니아', worldKey: 'scania', isComplete: false })])]} />,
     )
 
     expect(getByLabelText(`주간 결정석 판매 0 / ${WEEKLY_CRYSTAL_SALE_LIMIT}, 월간 결정석 0개`)).toBeTruthy()

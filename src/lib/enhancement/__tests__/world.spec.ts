@@ -1,33 +1,29 @@
 import type { MapleAccount } from '../../../types'
-import { eventWorldCharacterNames, isEventWorld, isSpendingRecord } from '../world'
+import { eventWorldCharacterNames, isSpendingRecord } from '../world'
 
 const accounts: MapleAccount[] = [
   {
     accountId: 'a',
     characters: [
-      { ocid: '1', name: '머리맨들맨둘', world: '스페셜', jobClass: '히어로', level: 290 },
-      { ocid: '2', name: '낟낟', world: '엘리시움', jobClass: '비숍', level: 285 },
-      { ocid: '3', name: '지내우시', world: '챌린저스2', jobClass: '팔라딘', level: 260 },
+      { ocid: '1', name: '머리맨들맨둘', world: '스페셜', worldKey: 'special', jobClass: '히어로', level: 290 },
+      { ocid: '2', name: '낟낟', world: '엘리시움', worldKey: 'elysium', jobClass: '비숍', level: 285 },
+      { ocid: '3', name: '지내우시', world: '챌린저스2', worldKey: 'challengers_2', jobClass: '팔라딘', level: 260 },
     ],
   },
 ]
 
-describe('이벤트 월드', () => {
-  it('스페셜만 이벤트 월드다', () => {
-    expect(isEventWorld('스페셜')).toBe(true)
-  })
-
-  // 챌린저스는 시즌 월드지만 재화가 본섭으로 넘어온다(사용자 지정).
-  it('챌린저스는 일반 월드다', () => {
-    expect(isEventWorld('챌린저스')).toBe(false)
-    expect(isEventWorld('챌린저스2')).toBe(false)
-    expect(isEventWorld('엘리시움')).toBe(false)
-  })
-})
-
+// 이벤트 월드인지는 월드 표의 칸이 정한다(`lib/world/worlds` 의 `isEventWorld`). 챌린저스는 재화가 본섭으로 넘어와 아니다.
 describe('이름으로 거를 대상', () => {
   it('이벤트 월드 캐릭터의 이름만 모은다', () => {
     expect(eventWorldCharacterNames(accounts)).toEqual(new Set(['머리맨들맨둘']))
+  })
+
+  // 월드 이름 글자가 아니라 월드 key 로 가른다.
+  it('월드 key 가 이벤트 월드인 캐릭터만 모은다', () => {
+    const renamed: MapleAccount[] = [
+      { accountId: 'b', characters: [{ ocid: '4', name: '다른표기', world: '스페셜 ', worldKey: 'special', jobClass: '히어로', level: 1 }] },
+    ]
+    expect(eventWorldCharacterNames(renamed)).toEqual(new Set(['다른표기']))
   })
 
   it('계정이 없으면 빈 집합이다', () => {
@@ -39,9 +35,10 @@ describe('지출로 세나', () => {
   const names = eventWorldCharacterNames(accounts)
 
   // 스타포스는 줄이 월드를 직접 준다. 그때의 월드라 지금 목록보다 정확하다.
-  it('월드를 아는 줄은 그 값으로 판정한다', () => {
-    expect(isSpendingRecord('스페셜', '누구든', names)).toBe(false)
-    expect(isSpendingRecord('엘리시움', '머리맨들맨둘', names)).toBe(true)
+  it('월드를 아는 줄은 그 월드 key 로 판정한다', () => {
+    expect(isSpendingRecord('special', '누구든', names)).toBe(false)
+    expect(isSpendingRecord('elysium', '머리맨들맨둘', names)).toBe(true)
+    expect(isSpendingRecord('challengers_2', '누구든', names)).toBe(true)
   })
 
   // 큐브·잠재는 world_name 이 아예 없다. 이름이 유일한 단서다.
@@ -66,8 +63,8 @@ describe('목록을 못 받았을 때', () => {
 
   // 스타포스는 줄이 월드를 들고 있어 목록이 없어도 답이 난다.
   it('월드를 아는 줄은 목록 없이도 판정된다', () => {
-    expect(isSpendingRecord('스페셜', '머리맨들맨둘', null)).toBe(false)
-    expect(isSpendingRecord('엘리시움', '낟낟', null)).toBe(true)
+    expect(isSpendingRecord('special', '머리맨들맨둘', null)).toBe(false)
+    expect(isSpendingRecord('elysium', '낟낟', null)).toBe(true)
   })
 
   it('빈 목록은 못 받은 것이 아니다. 스페셜 캐릭터가 없는 계정이다', () => {

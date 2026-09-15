@@ -93,6 +93,7 @@ async function recordPeriod(
     getCachedCharacterBasic(ocid).catch(() => null),
   ])
   const world = cachedBasic?.profile.world ?? null
+  const worldKey = cachedBasic?.profile.worldKey ?? null
 
   for (const { bossKey, difficulty } of completed) {
     // 이관은 `alreadyRecorded` 판정보다 앞에 둔다. 이미 수익 기록이 있든 없든 이 관측이 말하는
@@ -128,6 +129,7 @@ async function recordPeriod(
         payoutMeso: Math.floor(priceEntry.priceMeso / partySize),
         recordedAt: now.toISOString(),
         world,
+        worldKey,
       }),
     )
   }

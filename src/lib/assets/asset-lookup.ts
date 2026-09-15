@@ -24,7 +24,7 @@ import bossIconCropsData from '../../data/boss-portrait-icon-crops.json'
  * @see. 모르는 것을 그리지 않는다.
  */
 import dailyQuestCropsData from '../../data/daily-quest-region-crops.json'
-import worldEmblemsData from '../../data/world-emblems.json'
+import { findWorld } from '../world/worlds'
 import { findDropItem } from '../drop/drop-items'
 
 type AssetMap = Record<string, ImageAssetRef>
@@ -88,19 +88,12 @@ export function getThemeBackgroundUrl(slug: string): ImageAssetRef | null {
 
 // 월드 엠블럼
 
-/** 월드 이름 → 엠블럼 파일의 basename. **여기서는 NFC 를 안 건다.** 표의 키가 소스 리터럴이다. */
-const basenameByWorld = worldEmblemsData as Record<string, string>
-
-export function worldEmblemUrl(world: string): ImageAssetRef | null {
-  const basename = basenameByWorld[world]
+/** 월드 key 의 엠블럼. 파일 basename 은 월드 표의 `emblem` 이 든다. 엠블럼이 없는 월드(스페셜)와 모르는 key 는 `null` 이다. */
+export function worldEmblemUrl(worldKey: string | null | undefined): ImageAssetRef | null {
+  const basename = findWorld(worldKey)?.emblem
   if (basename === undefined) return null
 
   return WORLD_EMBLEM_ASSETS[basename] ?? null
-}
-
-/** 월드를 아는 유일한 표라 판정도 여기 있다. @see */
-export function isChallengersWorld(world: string): boolean {
-  return basenameByWorld[world] === 'challengers'
 }
 
 // 포스

@@ -15,6 +15,7 @@ import {
 import type { EnhancementCategory } from '../../lib/enhancement/categories'
 import { isSpendingRecord } from '../../lib/enhancement/world'
 import { comparableEquipmentName, equipmentItemLevelOf } from '../../lib/equipment/equipment-items'
+import { worldKeyOfApiName } from '../../lib/world/worlds'
 import type { EnhancementHistoryEntry } from '../../storage/enhancement-history'
 
 export interface EnhancementSpendingRow extends EnhancementHistoryEntry {
@@ -42,10 +43,10 @@ function text(payload: unknown, key: string): string {
   return typeof value === 'string' ? value : ''
 }
 
-/** 스타포스 응답의 `world_name`. 큐브·잠재는 안 줘서 `null` 이다. */
-function worldOf(entry: EnhancementHistoryEntry): string | null {
+/** 스타포스 응답의 `world_name` 으로 찾은 월드 key. 큐브·잠재는 월드를 안 줘서 `null` 이다. 저장된 응답 원문이라 여기서 맞춘다. */
+function worldKeyOf(entry: EnhancementHistoryEntry): string | null {
   const world = text(entry.payload, 'world_name')
-  return world === '' ? null : world
+  return world === '' ? null : worldKeyOfApiName(world)
 }
 
 /** `starforce_event_list` 가 주는 비용 할인율. 여럿이면 가장 큰 것. */
@@ -124,7 +125,7 @@ export function toEnhancementSpending(
 ): EnhancementSpendingRow[] {
   const rows: EnhancementSpendingRow[] = []
   for (const entry of entries) {
-    if (isSpendingRecord(worldOf(entry), entry.characterName, eventNames) !== true) continue
+    if (isSpendingRecord(worldKeyOf(entry), entry.characterName, eventNames) !== true) continue
     rows.push({ ...entry, costMeso: enhancementCostOf(entry, observedLevels), category: categoryOf(entry) })
   }
   return rows

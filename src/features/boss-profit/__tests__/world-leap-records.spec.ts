@@ -48,6 +48,7 @@ function record(overrides: Partial<BossProfitRecord>): BossProfitRecord {
     payoutMeso: 1_000_000,
     recordedAt: '2026-09-11T00:00:00.000Z',
     world: '챌린저스2',
+    worldKey: 'challengers_2',
     ...overrides,
   }
 }
@@ -56,7 +57,7 @@ const LEAP = { weekly: '2026-09-10', monthly: '2026-09' }
 
 it('옛 기록을 지울 짝으로 내고, 새 기록의 파티원 수가 1 이면 옛 값으로 덮는다', () => {
   const stale = record({ ocid: 'old', partySize: 3, payoutMeso: 333_333 })
-  const kept = record({ ocid: 'new', world: '엘리시움' })
+  const kept = record({ ocid: 'new', world: '엘리시움', worldKey: 'elysium' })
 
   expect(
     planWorldLeapRecordPairs({ fromOcid: 'old', toOcid: 'new', leapPeriodKeys: LEAP, records: [stale, kept] }),
@@ -201,7 +202,7 @@ describe('mergeWorldLeapDrops', () => {
 describe('cleanUpWorldLeapDuplicates', () => {
   const NOW = new Date('2026-09-14T03:00:00.000Z')
   const stale = record({ ocid: 'old', partySize: 3, payoutMeso: 333_333 })
-  const kept = record({ ocid: 'new', world: '엘리시움' })
+  const kept = record({ ocid: 'new', world: '엘리시움', worldKey: 'elysium' })
 
   function stored(ocid: string, dropIndex: number, itemName: string, overrides: Partial<BossDropRecord> = {}): BossDropRecord {
     return {

@@ -21,6 +21,8 @@ export const BOSS_PROFIT_RECORDS_BODY = `(
     -- 제외된다. 월드를 파생값(캐시된 character/basic)으로 두면 월드 리프가 모든 과거 주의 귀속을
     -- 소급 이동시킨다. 분모(90 x 월드 수)까지 바뀐다.
     world TEXT,
+    -- 월드 key. 결정석 집계가 이 값으로 가른다. world 가 NULL 이면 함께 NULL 이다.
+    world_key TEXT,
     -- 처치 **날짜**(KST YYYY-MM-DD). period_key 는 주(목요일)·달이라 "며칟날" 을 못 든다.
     -- NULL 은 "모름" 이고 가계부의 월간 칸 집계에서 조용히 빠진다(world 와 같은 모양). 키가
     -- 아니므로 나중에 채워 넣어도 옛 행이 움직이지 않는다.

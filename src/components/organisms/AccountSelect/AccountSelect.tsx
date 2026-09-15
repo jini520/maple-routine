@@ -30,6 +30,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import type { AccountSummaryView } from '../../../features/character-manage/derivations'
 import { worldEmblemUrl } from '../../../lib/assets/asset-lookup'
+import { worldNameOf } from '../../../lib/world/worlds'
 
 import { FACE_AVATAR_SIZE } from '../../../lib/face-crop'
 import { CharacterAvatar } from '../../molecules/CharacterAvatar/CharacterAvatar'
@@ -55,7 +56,8 @@ interface AccountRowProps {
 
 function AccountRow(props: AccountRowProps): React.JSX.Element {
   const { accountId, representative, worldCounts } = props.summary
-  const emblem = worldEmblemUrl(representative.world)
+  const emblem = worldEmblemUrl(representative.worldKey)
+  const worldName = worldNameOf(representative.worldKey, representative.world)
 
   return (
     <View className="flex-row items-center gap-2.5">
@@ -82,7 +84,7 @@ function AccountRow(props: AccountRowProps): React.JSX.Element {
           {emblem !== null && (
             <View testID={`account-select-emblem-${accountId}`} className="shrink-0">
               <Image
-                accessibilityLabel={representative.world}
+                accessibilityLabel={worldName}
                 source={emblem}
                 // 폭은 그림이 정한다. 안 적으면 엠블럼의 고유 폭이 남아 줄 왼쪽이 벌어진다.
                 style={naturalAspectStyle(emblem, { height: 17 })}
@@ -91,7 +93,7 @@ function AccountRow(props: AccountRowProps): React.JSX.Element {
             </View>
           )}
           <Text numberOfLines={1} className="min-w-0 flex-1 text-sm text-text">
-            {`${representative.world} Lv.${representative.level} ${representative.name}`}
+            {`${worldName} Lv.${representative.level} ${representative.name}`}
           </Text>
         </View>
 

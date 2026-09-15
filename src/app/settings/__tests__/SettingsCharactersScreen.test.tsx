@@ -16,6 +16,7 @@
 // 여기서는 **화면이 그 규칙에 닿는 두 번째 경로**인 접근성 액션으로 본다(끌기와 같은 문을 쓰므로,
 // 결과가 `moveOcid` 와 같은지는 그쪽으로 확인된다).
 import { act, fireEvent, within } from '@testing-library/react-native'
+import { worldKeyOfApiName } from '../../../lib/world/worlds'
 import { StyleSheet } from 'react-native'
 
 import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
@@ -103,7 +104,7 @@ const goBack = jest.fn()
 
 // 픽스처
 function 캐릭터(ocid: string, name: string, world: string, level: number, jobClass: string): MapleCharacter {
-  return { ocid, name, world, jobClass, level }
+  return { ocid, name, world, worldKey: worldKeyOfApiName(world), jobClass, level }
 }
 
 const 낟낟 = 캐릭터('a1', '낟낟', '스카니아', 294, '아크메이지(썬, 콜)')

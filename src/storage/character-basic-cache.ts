@@ -1,3 +1,4 @@
+import { worldKeyOfApiName } from '../lib/world/worlds'
 import { preferences } from './ports'
 import type { CharacterBasicProfile } from '../types'
 import {
@@ -86,7 +87,13 @@ export async function getCachedCharacterBasic(ocid: string): Promise<CachedChara
   }
 
   try {
-    return JSON.parse(value) as CachedCharacterBasicEntry
+    const entry = JSON.parse(value) as CachedCharacterBasicEntry
+    // 월드 key 가 생기기 전 캐시는 읽을 때 이름으로 채운다. 수익 기록의 월드 폴백으로도 읽혀 비우지 않는다.
+    const { profile } = entry
+    if (profile.worldKey === undefined && profile.world !== undefined) {
+      return { ...entry, profile: { ...profile, worldKey: worldKeyOfApiName(profile.world) } }
+    }
+    return entry
   } catch {
     return null
   }

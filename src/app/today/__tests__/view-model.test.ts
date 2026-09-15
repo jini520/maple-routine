@@ -104,6 +104,7 @@ function profitRow(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     characterName: 'a',
     imageUrl: null,
     world: '스카니아',
+    worldKey: 'scania',
     bossKey: 'lotus',
     bossName: '스우',
     difficulty: 'normal',
@@ -884,17 +885,34 @@ describe('주간 결정석 판매 한도', () => {
       input({
         orderedOcids: ['a', 'b'],
         profitRows: [
-          profitRow({ ocid: 'a', world: '스카니아', bossKey: 'lotus', bossName: '스우', isComplete: true }),
-          profitRow({ ocid: 'a', world: '스카니아', bossKey: 'damien', bossName: '데미안', isComplete: true }),
-          profitRow({ ocid: 'b', world: '루나', bossKey: 'lotus', bossName: '스우', isComplete: true }),
-          profitRow({ ocid: 'b', world: '루나', bossKey: 'lucid', bossName: '루시드', isComplete: false }),
+          profitRow({ ocid: 'a', world: '스카니아', worldKey: 'scania', bossKey: 'lotus', bossName: '스우', isComplete: true }),
+          profitRow({ ocid: 'a', world: '스카니아', worldKey: 'scania', bossKey: 'damien', bossName: '데미안', isComplete: true }),
+          profitRow({ ocid: 'b', world: '루나', worldKey: 'luna', bossKey: 'lotus', bossName: '스우', isComplete: true }),
+          profitRow({ ocid: 'b', world: '루나', worldKey: 'luna', bossKey: 'lucid', bossName: '루시드', isComplete: false }),
         ],
       }),
     )
 
     expect(model.crystalLimits).toEqual([
-      { world: '스카니아', cleared: 2, limit: WEEKLY_CRYSTAL_SALE_LIMIT },
-      { world: '루나', cleared: 1, limit: WEEKLY_CRYSTAL_SALE_LIMIT },
+      { worldKey: 'scania', world: '스카니아', cleared: 2, limit: WEEKLY_CRYSTAL_SALE_LIMIT },
+      { worldKey: 'luna', world: '루나', cleared: 1, limit: WEEKLY_CRYSTAL_SALE_LIMIT },
+    ])
+  })
+
+  // 한도는 월드 key 로 센다. 행에 적힌 이름의 띄어쓰기가 달라도 한 월드이고 적는 글자는 표 이름이다.
+  it('월드 key 로 묶고 표 이름을 적는다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a', 'b'],
+        profitRows: [
+          profitRow({ ocid: 'a', world: '챌린저스 2', worldKey: 'challengers_2', bossKey: 'lotus', bossName: '스우', isComplete: true }),
+          profitRow({ ocid: 'b', world: '챌린저스2', worldKey: 'challengers_2', bossKey: 'lucid', bossName: '루시드', isComplete: true }),
+        ],
+      }),
+    )
+
+    expect(model.crystalLimits).toEqual([
+      { worldKey: 'challengers_2', world: '챌린저스2', cleared: 2, limit: WEEKLY_CRYSTAL_SALE_LIMIT },
     ])
   })
 })

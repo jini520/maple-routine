@@ -5,6 +5,7 @@ function character(overrides: Partial<MapleCharacter> & { name: string; level: n
   return {
     ocid: `ocid-${overrides.name}`,
     world: '베라',
+    worldKey: 'bera',
     jobClass: '렌',
     ...overrides,
   }

@@ -11,13 +11,14 @@ import {
   type AccountSummaryView,
 } from '../../../../features/character-manage/derivations'
 import type { MapleCharacter } from '../../../../types'
+import { worldKeyOfApiName } from '../../../../lib/world/worlds'
 
 import { flattenStyle, renderOverlay, 기본테마, type TreeNode } from '../../../__tests__/render-atom'
 import { AccountSelect } from '../AccountSelect'
 import { placeDropdown } from '../place-dropdown'
 
 function 캐릭터(name: string, world: string, level: number): MapleCharacter {
-  return { ocid: `ocid-${name}`, name, world, jobClass: '아크메이지(썬, 콜)', level }
+  return { ocid: `ocid-${name}`, name, world, worldKey: worldKeyOfApiName(world), jobClass: '아크메이지(썬, 콜)', level }
 }
 
 function 여럿(world: string, count: number, level: number): MapleCharacter[] {

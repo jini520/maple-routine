@@ -411,16 +411,16 @@ describe('BossScreen: 챌린저스 시즌 보스 배지', () => {
       ...overrides,
     })
 
-  const withWorld = (world: string | undefined, bosses: MatchedBoss[]): void => {
+  const withWorld = (worldKey: string | undefined, bosses: MatchedBoss[]): void => {
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
-      characters: [character({ world, weeklyBosses: bosses })],
+      characters: [character({ worldKey, weeklyBosses: bosses })],
     })
   }
 
   it('챌린저스 월드면 등록 여부와 무관하게 season 배지를 보여준다', async () => {
-    withWorld('챌린저스2', [seasonBoss()])
+    withWorld('challengers_2', [seasonBoss()])
 
     await renderScreen()
 
@@ -436,7 +436,7 @@ describe('BossScreen: 챌린저스 시즌 보스 배지', () => {
       trackedOcids: ['ocid-1'],
       characters: [
         character({
-          world: '챌린저스2',
+          worldKey: 'challengers_2',
           // 미등록·미완료라 카드로는 안 선다.
           weeklyBosses: [seasonBoss()],
           monthlyBosses: [
@@ -465,7 +465,7 @@ describe('BossScreen: 챌린저스 시즌 보스 배지', () => {
   })
 
   it('시즌 보스가 완료됐으면 배지가 완료를 말한다', async () => {
-    withWorld('챌린저스', [seasonBoss({ isComplete: true })])
+    withWorld('challengers', [seasonBoss({ isComplete: true })])
 
     await renderScreen()
 
@@ -473,7 +473,7 @@ describe('BossScreen: 챌린저스 시즌 보스 배지', () => {
   })
 
   it('일반 월드면 시즌 보스 항목이 있어도 배지가 없다', async () => {
-    withWorld('스카니아', [seasonBoss()])
+    withWorld('scania', [seasonBoss()])
 
     await renderScreen()
 
@@ -490,7 +490,7 @@ describe('BossScreen: 챌린저스 시즌 보스 배지', () => {
   })
 
   it('챌린저스 월드여도 시즌 보스 항목이 없으면 배지가 없다', async () => {
-    withWorld('챌린저스', [boss()])
+    withWorld('challengers', [boss()])
 
     await renderScreen()
 

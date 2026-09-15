@@ -22,6 +22,7 @@ describe('saveCharacterProfile', () => {
       name: '루디',
       imageUrl: 'https://open.api.nexon.com/static/maplestory/character/look/abc',
       world: '스카니아',
+      worldKey: 'scania',
       level: 285,
       jobClass: '레테',
       updatedAt: '2026-09-05T00:00:00.000Z',
@@ -34,6 +35,7 @@ describe('saveCharacterProfile', () => {
       '루디',
       'https://open.api.nexon.com/static/maplestory/character/look/abc',
       '스카니아',
+      'scania',
       285,
       '레테',
       '2026-09-05T00:00:00.000Z',
@@ -50,6 +52,7 @@ describe('saveCharacterProfile', () => {
       name: '루디',
       imageUrl: 'https://example.test/a.png',
       world: null,
+      worldKey: null,
       level: null,
       jobClass: null,
       updatedAt: '2026-09-05T00:00:00.000Z',
@@ -57,6 +60,8 @@ describe('saveCharacterProfile', () => {
 
     const [sql] = runMock.mock.calls[0]
     expect(sql).toContain('job_class = COALESCE(excluded.job_class, character_profiles.job_class)')
+    // 월드 key 도 아는 값이 있을 때만 덮는다.
+    expect(sql).toContain('world_key = COALESCE(excluded.world_key, character_profiles.world_key)')
   })
 
   // 이름이 빈 스냅샷은 행을 못 만든다. 그것을 심으면 화면에 이름 없는 행이 서고, 그때
@@ -69,6 +74,7 @@ describe('saveCharacterProfile', () => {
       name: '',
       imageUrl: 'https://example.test/a.png',
       world: null,
+      worldKey: null,
       level: null,
       jobClass: null,
       updatedAt: '2026-09-05T00:00:00.000Z',
@@ -88,6 +94,7 @@ describe('getCharacterProfiles', () => {
           name: '루디',
           image_url: 'https://example.test/a.png',
           world: '스카니아',
+          world_key: 'scania',
           level: 285,
           job_class: '레테',
           updated_at: '2026-09-05T00:00:00.000Z',
@@ -106,6 +113,7 @@ describe('getCharacterProfiles', () => {
       name: '루디',
       imageUrl: 'https://example.test/a.png',
       world: '스카니아',
+      worldKey: 'scania',
       level: 285,
       jobClass: '레테',
       updatedAt: '2026-09-05T00:00:00.000Z',
@@ -130,6 +138,7 @@ describe('getCharacterProfiles', () => {
           name: '루디',
           image_url: 'https://example.test/a.png',
           world: null,
+          world_key: null,
           level: null,
           updated_at: '2026-09-05T00:00:00.000Z',
         },
@@ -139,6 +148,7 @@ describe('getCharacterProfiles', () => {
     const profile = (await getCharacterProfiles(['ocid-1'])).get('ocid-1')
 
     expect(profile?.world).toBeNull()
+    expect(profile?.worldKey).toBeNull()
     expect(profile?.level).toBeNull()
   })
 })

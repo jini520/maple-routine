@@ -20,6 +20,8 @@ export interface CharacterProfileSnapshot {
   imageUrl: string
   /** 모르면 `null`. 0 이나 빈 문자열로 채우지 않는다. */
   world: string | null
+  /** 월드 key. `world` 가 `null` 이거나 월드 표에 없으면 `null` 이다 */
+  worldKey: string | null
   level: number | null
   /**
    * `character/list` 가 주는 직업명. 모르면 `null`.
@@ -33,13 +35,14 @@ export interface CharacterProfileSnapshot {
 }
 
 const UPSERT_SQL = `
-  INSERT INTO character_profiles (ocid, name, image_url, world, level, job_class, updated_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO character_profiles (ocid, name, image_url, world, world_key, level, job_class, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(ocid) DO UPDATE SET
     name = excluded.name,
     image_url = excluded.image_url,
     -- 아는 값이 있을 때만 덮는다. 모르는 채로 부르는 경로가 이미 박아 둔 값을 지우면 안 된다.
     world = COALESCE(excluded.world, character_profiles.world),
+    world_key = COALESCE(excluded.world_key, character_profiles.world_key),
     level = COALESCE(excluded.level, character_profiles.level),
     job_class = COALESCE(excluded.job_class, character_profiles.job_class),
     updated_at = excluded.updated_at
@@ -60,6 +63,7 @@ export async function saveCharacterProfile(snapshot: CharacterProfileSnapshot): 
     snapshot.name,
     snapshot.imageUrl,
     snapshot.world,
+    snapshot.worldKey,
     snapshot.level,
     snapshot.jobClass,
     snapshot.updatedAt,
@@ -122,6 +126,7 @@ function rowToProfile(row: Record<string, unknown>): CharacterProfileSnapshot {
     imageUrl: row.image_url as string,
     // 컬럼이 nullable 이다. 0 이나 빈 문자열로 채우면 모름 이 값으로 둔갑한다.
     world: (row.world as string | null | undefined) ?? null,
+    worldKey: (row.world_key as string | null | undefined) ?? null,
     level: (row.level as number | null | undefined) ?? null,
     jobClass: (row.job_class as string | null | undefined) ?? null,
     updatedAt: row.updated_at as string,

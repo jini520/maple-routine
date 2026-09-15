@@ -32,6 +32,8 @@ export interface BossProfitRow {
   characterName: string
   imageUrl: string | null // character/basic의 character_image(character-basic-cache 경유). 캐시가 없으면 null(이니셜 폴백)
   world: string | null // character/basic의 world_name(character-basic-cache 경유). 이전 캐시엔 없을 수 있어 null 가능(6. 월드를 모르는 캐릭터는 월드 집계에서 제외)
+  /** 월드 key. 월드별 결정석 집계가 이 값으로 가른다. `world` 와 같은 출처에서 오고, 모르면 `null` 이다. */
+  worldKey: string | null
   /** 보스 key. 행의 신원이다. 보스 표에 없는 보스는 행이 되지 않는다. */
   bossKey: string
   /** 보이는 보스 이름. 보스 표 이름이고, 표에서 빠진 보스의 기록이면 적어 둔 이름이다. */
@@ -62,12 +64,14 @@ export interface CharacterProfileInfo {
   characterName: string
   imageUrl: string | null
   world: string | null
+  worldKey: string | null
 }
 
 export interface SortedCharacterInfo {
   ocid: string
   imageUrl: string | null // character-basic-cache의 character_image. 아바타 렌더링용("미확정" 해소)
   world: string | null // 같은 캐시 프로필의 world_name. 월드별 결정석 한도 집계용
+  worldKey: string | null
   // 이 조회가 이미 읽은 이름을 버리지 않고 흘려보내 뒤따르는 함수들이 같은 캐시를 다시 읽지
   // 않게 한다. 캐시가 없으면 null 이다. 정렬용 빈 이름을 그대로 넘기면 캐시 없음 이 이름이 빈
   // 캐릭터로 둔갑해 `buildRowsFromRecords` 의 제외 규칙이 깨진다.
@@ -91,6 +95,7 @@ export function toProfileSnapshot(infos: SortedCharacterInfo[]): Map<string, Cha
       characterName: info.characterName,
       imageUrl: info.imageUrl,
       world: info.world,
+      worldKey: info.worldKey,
     })
   }
   return profiles
@@ -145,6 +150,7 @@ export function buildBossProfitRow(
     characterName: character.characterName,
     imageUrl: character.imageUrl,
     world: character.world,
+    worldKey: character.worldKey,
     bossKey: boss.bossKey,
     bossName: bossNameOf(boss.bossKey, boss.apiName),
     difficulty: boss.difficulty,
@@ -215,7 +221,7 @@ export function selectProfitDisplayBosses(
 
 // 원천 규칙은 기록이 있으면 record.world, 없으면 캐시다. 과거 기간 행은 전부 기록에서 오므로
 // 여기서 스냅샷이 이긴다. 캐시(라이브 값)를 쓰면 월드 리프가 과거 집계를 소급 이동시킨다.
-// 컬럼 도입 전 기록(world: null)만 캐시 값으로 폴백한다.
+// 컬럼 도입 전 기록(world: null)만 캐시 값으로 폴백한다. 월드 key 도 이름과 같은 출처에서 짝으로 가져온다.
 export function buildRowFromRecord(
   record: BossProfitRecord,
   character: CharacterProfileInfo,
@@ -223,12 +229,14 @@ export function buildRowFromRecord(
 ): BossProfitRow {
   const difficulty = record.difficulty as BossDifficulty
   const maxPartySize = getMaxPartySize(record.bossKey, difficulty)
+  const fromRecord = record.world !== null
 
   return {
     ocid: record.ocid,
     characterName: character.characterName,
     imageUrl: character.imageUrl,
-    world: record.world ?? character.world,
+    world: fromRecord ? record.world : character.world,
+    worldKey: fromRecord ? record.worldKey : character.worldKey,
     bossKey: record.bossKey,
     bossName: bossNameOf(record.bossKey, record.boss),
     difficulty,

@@ -670,9 +670,9 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
 일부지 별도 항목이 아니고, 4x1 은 내부 높이가 52 뿐이라 그 한 줄이 크다. 넘치면 **닉네임이 줄어든다**
 (길드는 잘리면 다른 길드로 읽히지만 닉네임은 초상화가 이미 말한다).
 
-- **월드는 텍스트 배지가 아니라 엠블럼 이미지**다. `lib/assets/asset-lookup.ts` 의 `worldEmblemUrl(world)`
-  (`world-emblems.json` 18종 + `assets/worlds/*.png`). 매핑에 없거나 파일이 없으면 `null` 이고 그때는
-  **엠블럼만 생략**한다(그 함수가 이미 정한 폴백).
+- **월드는 텍스트 배지가 아니라 엠블럼 이미지**다. `lib/assets/asset-lookup.ts` 의 `worldEmblemUrl(worldKey)`
+  (`worlds.json` 의 `emblem` + `assets/worlds/*.png`, 파일 15개를 월드 19개가 나눠 쓴다). 월드 key 로 찾는다([[ADR-280]] 결정 15).
+  엠블럼이 없는 월드(스페셜)면 `null` 이고 그때는 **엠블럼만 생략**한다(그 함수가 이미 정한 폴백).
 - **직업(`jobClass`)이 카드에 처음 나온다.** [[ADR-144]] 결정 2의 ‘레벨 + 직업’과 같은 조합이라 새
   규칙이 아니다. 그 값은 `character/basic` 이 아니라 `character/list` 에서 오므로 **옛 캐시에는 없고**,
   없으면 그 줄이 레벨만 그린다(타입이 이미 정한 규칙).

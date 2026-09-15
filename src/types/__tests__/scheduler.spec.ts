@@ -75,6 +75,7 @@ describe('domain 타입 샘플 객체', () => {
       asOf: '2026-07-09T00:00+09:00',
       characterName: '낟낟',
       world: '엘리시움',
+      worldKey: 'elysium',
       level: 293,
       jobClass: '렌',
       dailyContents: [],
@@ -105,6 +106,7 @@ describe('domain 타입 샘플 객체', () => {
       ocid: '50119a0...',
       name: '내옆에최성일',
       world: '베라',
+      worldKey: 'bera',
       jobClass: '아크메이지(썬,콜)',
       level: 211,
     }

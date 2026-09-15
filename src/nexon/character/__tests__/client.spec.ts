@@ -1,5 +1,8 @@
 import type { NexonCharacterBasicResponse, NexonCharacterListResponse } from '../../../types'
 import { fetchCharacterBasic, fetchCharacterList } from '../client'
+
+/** 월드 표 대신 넘기는 매칭 함수. `nexon/` 은 `src/data` 를 모른다. */
+const worldKeyOf = (apiName: string): string | null => ({ 베라: 'bera', 엘리시움: 'elysium' } as Record<string, string>)[apiName] ?? null
 import {
   NexonAuthError,
   NexonNetworkError,
@@ -66,7 +69,7 @@ describe('fetchCharacterList', () => {
     const fetchMock = jest.fn(async () => jsonResponse(200, characterListFixture))
     stubGlobal('fetch', fetchMock)
 
-    const result = await fetchCharacterList('test-api-key')
+    const result = await fetchCharacterList('test-api-key', worldKeyOf)
 
     expect(result).toEqual([
       {
@@ -76,6 +79,7 @@ describe('fetchCharacterList', () => {
             ocid: '50119a0...',
             name: '내옆에최성일',
             world: '베라',
+            worldKey: 'bera',
             jobClass: '아크메이지(썬,콜)',
             level: 211,
           },
@@ -104,7 +108,7 @@ describe('fetchCharacterBasic', () => {
     const fetchMock = jest.fn(async () => jsonResponse(200, characterBasicFixture))
     stubGlobal('fetch', fetchMock)
 
-    const result = await fetchCharacterBasic('test-api-key', 'ocid-1')
+    const result = await fetchCharacterBasic('test-api-key', 'ocid-1', worldKeyOf)
 
     expect(result).toEqual({
       name: '낟낟',
@@ -122,12 +126,12 @@ describe('fetchCharacterBasic', () => {
 
   it('401 응답이면 NexonAuthError를 던진다', async () => {
     stubGlobal('fetch', jest.fn(async () => jsonResponse(401, {})))
-    await expect(fetchCharacterBasic('test-api-key', 'ocid-1')).rejects.toThrow(NexonAuthError)
+    await expect(fetchCharacterBasic('test-api-key', 'ocid-1', worldKeyOf)).rejects.toThrow(NexonAuthError)
   })
 
   it('429 응답이면 NexonRateLimitError를 던진다', async () => {
     stubGlobal('fetch', jest.fn(async () => jsonResponse(429, { error: { name: 'OPENAPI00007' } })))
-    await expect(fetchCharacterBasic('test-api-key', 'ocid-1')).rejects.toThrow(NexonRateLimitError)
+    await expect(fetchCharacterBasic('test-api-key', 'ocid-1', worldKeyOf)).rejects.toThrow(NexonRateLimitError)
   })
 
   // 월드 이전으로 남겨진 ocid 의 실제 응답이다(실측 2026-09-11). 400 이 아니라 200 이고
@@ -151,7 +155,7 @@ describe('fetchCharacterBasic', () => {
     }
     stubGlobal('fetch', jest.fn(async () => jsonResponse(200, strandedPayload)))
 
-    await expect(fetchCharacterBasic('test-api-key', 'ocid-1')).rejects.toThrow(
+    await expect(fetchCharacterBasic('test-api-key', 'ocid-1', worldKeyOf)).rejects.toThrow(
       NexonNoCharacterError,
     )
   })
@@ -164,29 +168,29 @@ describe('fetchCharacterBasic', () => {
       jest.fn(async () => jsonResponse(200, { character_name: null, character_exp_rate: null })),
     )
 
-    await expect(fetchCharacterBasic('test-api-key', 'ocid-1')).rejects.not.toBeInstanceOf(TypeError)
+    await expect(fetchCharacterBasic('test-api-key', 'ocid-1', worldKeyOf)).rejects.not.toBeInstanceOf(TypeError)
   })
 })
 
 describe('에러 처리', () => {
   it('401 응답이면 NexonAuthError를 던진다', async () => {
     stubGlobal('fetch', jest.fn(async () => jsonResponse(401, {})))
-    await expect(fetchCharacterList('test-api-key')).rejects.toThrow(NexonAuthError)
+    await expect(fetchCharacterList('test-api-key', worldKeyOf)).rejects.toThrow(NexonAuthError)
   })
 
   it('403 응답이면 NexonAuthError를 던진다', async () => {
     stubGlobal('fetch', jest.fn(async () => jsonResponse(403, {})))
-    await expect(fetchCharacterList('test-api-key')).rejects.toThrow(NexonAuthError)
+    await expect(fetchCharacterList('test-api-key', worldKeyOf)).rejects.toThrow(NexonAuthError)
   })
 
   it('429 응답이면 NexonRateLimitError를 던진다', async () => {
     stubGlobal('fetch', jest.fn(async () => jsonResponse(429, { error: { name: 'OPENAPI00007' } })))
-    await expect(fetchCharacterList('test-api-key')).rejects.toThrow(NexonRateLimitError)
+    await expect(fetchCharacterList('test-api-key', worldKeyOf)).rejects.toThrow(NexonRateLimitError)
   })
 
   it('5xx 응답이면 NexonNetworkError를 던진다', async () => {
     stubGlobal('fetch', jest.fn(async () => jsonResponse(500, {})))
-    await expect(fetchCharacterList('test-api-key')).rejects.toThrow(NexonNetworkError)
+    await expect(fetchCharacterList('test-api-key', worldKeyOf)).rejects.toThrow(NexonNetworkError)
   })
 
   it('fetch 자체가 reject되면(네트워크 없음/타임아웃) NexonNetworkError를 던진다', async () => {
@@ -194,11 +198,11 @@ describe('에러 처리', () => {
         throw new TypeError('Failed to fetch')
       }),
     )
-    await expect(fetchCharacterList('test-api-key')).rejects.toThrow(NexonNetworkError)
+    await expect(fetchCharacterList('test-api-key', worldKeyOf)).rejects.toThrow(NexonNetworkError)
   })
 
   it('응답이 JSON이 아니면(WAF/CDN 차단 페이지 등) NexonNetworkError를 던진다', async () => {
     stubGlobal('fetch', jest.fn(async () => brokenJsonResponse(200)))
-    await expect(fetchCharacterList('test-api-key')).rejects.toThrow(NexonNetworkError)
+    await expect(fetchCharacterList('test-api-key', worldKeyOf)).rejects.toThrow(NexonNetworkError)
   })
 })

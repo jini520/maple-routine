@@ -5,6 +5,7 @@ import {
   getCachedCharacterBasic,
   setCachedCharacterBasic,
 } from '../../../storage/character-basic-cache'
+import { worldKeyOfApiName } from '../../../lib/world/worlds'
 import type { CharacterBasicProfile } from '../../../types'
 import { CHARACTER_BASIC_TTL_MS, fetchCharacterBasicCached } from '../character-basic-fetch'
 
@@ -51,7 +52,7 @@ beforeEach(async () => {
 describe('받은 프로필은 지워지지 않는 스냅샷에도 함께 쓴다', () => {
   it('네트워크로 받으면 스냅샷을 쓴다', async () => {
     fetchCharacterBasicMock.mockResolvedValue(
-      profile({ name: '낟낟', level: 293, imageUrl: 'https://example.com/1.png', world: '스카니아' }),
+      profile({ name: '낟낟', level: 293, imageUrl: 'https://example.com/1.png', world: '스카니아', worldKey: 'scania' }),
     )
 
     await fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)
@@ -62,6 +63,7 @@ describe('받은 프로필은 지워지지 않는 스냅샷에도 함께 쓴다'
       name: '낟낟',
       imageUrl: 'https://example.com/1.png',
       world: '스카니아',
+      worldKey: 'scania',
       level: 293,
       // `character/basic` 은 직업을 안 준다. 호출부가 `character/list` 의 값을 함께 넘겨야
       // 실리고, 안 넘기면 UPSERT 의 COALESCE 가 이미 박아 둔 값을 지킨다.
@@ -89,6 +91,7 @@ describe('받은 프로필은 지워지지 않는 스냅샷에도 함께 쓴다'
     await fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)
 
     expect(saveCharacterProfileMock.mock.calls[0][0].world).toBeNull()
+    expect(saveCharacterProfileMock.mock.calls[0][0].worldKey).toBeNull()
   })
 
   // 스냅샷 쓰기가 실패해도 프로필은 돌려줘야 한다. 이 저장은 화면의 목적이 아니라 뒷정리다.
@@ -118,7 +121,7 @@ describe('캐시가 없으면 네트워크로 받고 그 결과를 캐시에 쓴
 
     await expect(fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)).resolves.toEqual(fresh)
     expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(1)
-    expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key', OCID)
+    expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key', OCID, worldKeyOfApiName)
     await expect(getCachedCharacterBasic(OCID)).resolves.toEqual({
       profile: fresh,
       cachedAt: NOW.toISOString(),

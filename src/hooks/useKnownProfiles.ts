@@ -94,7 +94,7 @@ export function useKnownProfiles(input: {
           name: entry.name,
           level: entry.level,
           imageUrl: entry.imageUrl,
-          world: entry.world,
+          worldKey: entry.worldKey,
           jobClass: entry.jobClass,
         })
       }

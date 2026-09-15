@@ -10,6 +10,7 @@
 
 import type { MapleAccount, MapleCharacter } from '../../types'
 import { compareByName, pickRepresentativeCharacter } from '../../lib/character-order'
+import { worldNameOf } from '../../lib/world/worlds'
 
 /** 월드는 **많은 순으로 둘까지**만 적는다. 셋째부터는 적지 않는다. */
 const MAX_LISTED_WORLDS = 2
@@ -19,8 +20,8 @@ export interface AccountSummaryView {
   accountId: string
   /** 1줄에 서는 캐릭터. `character/list` 기준이라 조회 0회다. */
   representative: MapleCharacter
-  /** 2줄의 스카니아 19개, 엘리시움 7개. 많은 순, **최대 둘**. */
-  worldCounts: Array<{ world: string; count: number }>
+  /** 2줄의 스카니아 19개, 엘리시움 7개. 월드 key 로 세고 `world` 는 표 이름이다. 많은 순, **최대 둘**. */
+  worldCounts: Array<{ worldKey: string; world: string; count: number }>
   characterCount: number
 }
 
@@ -35,13 +36,19 @@ export function summarizeAccount(account: MapleAccount): AccountSummaryView | nu
     return null
   }
 
-  const countByWorld = new Map<string, number>()
+  // 월드 key 로 센다. 월드 key 가 없는 캐릭터는 월드를 모르는 것이라 세지 않는다.
+  const countByWorld = new Map<string, { world: string; count: number }>()
   for (const character of account.characters) {
-    countByWorld.set(character.world, (countByWorld.get(character.world) ?? 0) + 1)
+    if (character.worldKey === null) continue
+    const counted = countByWorld.get(character.worldKey)
+    countByWorld.set(character.worldKey, {
+      world: counted?.world ?? worldNameOf(character.worldKey, character.world),
+      count: (counted?.count ?? 0) + 1,
+    })
   }
 
   // 동수일 때 입력 순서를 따르면 같은 계정이 열 때마다 다르게 보인다. 이름순으로 못박는다.
-  const worldCounts = Array.from(countByWorld, ([world, count]) => ({ world, count }))
+  const worldCounts = Array.from(countByWorld, ([worldKey, { world, count }]) => ({ worldKey, world, count }))
     .sort((a, b) => (b.count !== a.count ? b.count - a.count : compareByName(a.world, b.world)))
     .slice(0, MAX_LISTED_WORLDS)
 
@@ -78,7 +85,8 @@ export interface SelectedCharacterView {
   name: string
   level: number | null
   jobClass?: string
-  world?: string
+  /** 엠블럼을 찾는 월드 key */
+  worldKey?: string | null
   imageUrl: string | null
   /** 조회 불가. 그래도 **목록에 남는다**. 해제할 자리가 여기뿐이다. */
   unavailable: boolean
@@ -95,7 +103,7 @@ export interface KnownCharacterProfile {
   name: string
   level: number
   imageUrl: string | null
-  world?: string
+  worldKey?: string | null
   jobClass?: string
 }
 
@@ -123,7 +131,7 @@ export function buildSelectedCharacterViews(
       name: profile?.name ?? '',
       level: profile?.level ?? null,
       jobClass: profile?.jobClass,
-      world: profile?.world,
+      worldKey: profile?.worldKey,
       imageUrl: profile?.imageUrl ?? null,
       unavailable: unavailableOcids.has(ocid),
     }

@@ -8,6 +8,7 @@
  * 저장소·네트워크를 안 부른다. 판정 재료를 전부 인자로 받아야 규칙을 테스트가 직접 물 수 있다.
  */
 
+import { isChallengersWorld } from '../../lib/world/worlds'
 import type { MapleCharacter } from '../../types'
 
 /**
@@ -22,7 +23,10 @@ import type { MapleCharacter } from '../../types'
 export interface StrandedCharacter {
   ocid: string
   name: string
+  /** 옛 월드의 API 이름. 모달이 표 이름을 못 찾을 때 적는다 */
   world: string | null
+  /** 옛 월드 key. 묻는 조건(챌린저스)을 이 값으로 가른다 */
+  worldKey: string | null
   jobClass: string | null
   level: number | null
 }
@@ -45,19 +49,10 @@ export type WorldLeapNotice =
   | { kind: 'unknown'; from: StrandedCharacter }
 
 /**
- * 챌린저스 계열 월드인가. 지금까지 본 이름은 `챌린저스`·`챌린저스2` 다.
- *
- * 접두사로 보는 것은 넥슨이 뒤에 숫자를 붙여 월드를 늘리기 때문이다. `챌린저스3` 이 생겨도
- * 이 판정이 따라간다.
- */
-export function isChallengersWorld(world: string): boolean {
-  return world.startsWith('챌린저스')
-}
-
-/**
  * 이 캐릭터가 **옮겼는가**, 그리고 **어디로 갔는지 아는가**.
  *
- * 묻는 조건은 하나다. 옛 월드가 챌린저스 계열일 것. 챌린저스에서 ocid 가 조회 불가로 굳는 길은
+ * 묻는 조건은 하나다. 옛 월드가 월드 표에서 챌린저스인 월드일 것(`isChallengersWorld`). 이름 앞부분으로 가리지 않아
+ * 표에 없는 `챌린저스5` 는 묻지 않는다. 챌린저스에서 ocid 가 조회 불가로 굳는 길은
  * 리프뿐이다(사용자 판단 2026-09-11). 일반 월드는 장기 미접속으로 막혔다가 접속하면 풀릴 수
  * 있어 같은 말을 할 수 없고, 옛 월드를 모르면 이 규칙을 걸 근거가 없다. 그 둘만 `null` 이다.
  *
@@ -89,7 +84,7 @@ export function detectWorldLeap(
   roster: readonly MapleCharacter[],
   trackedOcids: ReadonlySet<string>,
 ): WorldLeapNotice | null {
-  if (stranded.world === null || !isChallengersWorld(stranded.world)) {
+  if (!isChallengersWorld(stranded.worldKey)) {
     return null
   }
 

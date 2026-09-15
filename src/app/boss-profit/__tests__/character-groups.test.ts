@@ -209,42 +209,68 @@ describe('summarizeWorldCrystals: 주간 몫과 월간 몫', () => {
     보스행({ bossKey: 월간보스, cycle: 'monthly', periodKey: '2026-08', ...overrides })
 
   it('월간 보스를 잡아도 주간 몫의 분자는 그대로다', () => {
-    const summaries = summarizeWorldCrystals([group([보스행({ world: '스카니아' }), 월간행({ world: '스카니아' })])])
+    const summaries = summarizeWorldCrystals([group([보스행({ world: '스카니아', worldKey: 'scania' }), 월간행({ world: '스카니아', worldKey: 'scania' })])])
 
-    expect(summaries).toEqual([{ world: '스카니아', cleared: 1, monthlyCleared: 1 }])
+    expect(summaries).toEqual([{ world: '스카니아', worldKey: 'scania', cleared: 1, monthlyCleared: 1 }])
   })
 
   it('월간 수도 행의 월드로 가른다', () => {
     const summaries = summarizeWorldCrystals([
-      group([보스행({ world: '스카니아' })]),
+      group([보스행({ world: '스카니아', worldKey: 'scania' })]),
       {
-        ...group([보스행({ ocid: 'ocid-2', world: '루나' }), 월간행({ ocid: 'ocid-2', world: '루나' })]),
+        ...group([보스행({ ocid: 'ocid-2', world: '루나', worldKey: 'luna' }), 월간행({ ocid: 'ocid-2', world: '루나', worldKey: 'luna' })]),
         ocid: 'ocid-2',
       },
     ])
 
     expect(summaries).toEqual([
-      { world: '스카니아', cleared: 1, monthlyCleared: 0 },
-      { world: '루나', cleared: 1, monthlyCleared: 1 },
+      { world: '스카니아', worldKey: 'scania', cleared: 1, monthlyCleared: 0 },
+      { world: '루나', worldKey: 'luna', cleared: 1, monthlyCleared: 1 },
     ])
   })
 
   it('안 잡은 월간 보스는 월간 수에 안 든다', () => {
-    const summaries = summarizeWorldCrystals([group([보스행({ world: '스카니아' }), 월간행({ world: '스카니아', isComplete: false })])])
+    const summaries = summarizeWorldCrystals([group([보스행({ world: '스카니아', worldKey: 'scania' }), 월간행({ world: '스카니아', worldKey: 'scania', isComplete: false })])])
 
-    expect(summaries).toEqual([{ world: '스카니아', cleared: 1, monthlyCleared: 0 }])
+    expect(summaries).toEqual([{ world: '스카니아', worldKey: 'scania', cleared: 1, monthlyCleared: 0 }])
   })
 
   it('월간 수는 캐릭터마다 보스명 하나로 센다', () => {
     const summaries = summarizeWorldCrystals([
       group([
-        보스행({ world: '스카니아' }),
-        월간행({ world: '스카니아', difficulty: 'normal' }),
-        월간행({ world: '스카니아', difficulty: 'hard' }),
+        보스행({ world: '스카니아', worldKey: 'scania' }),
+        월간행({ world: '스카니아', worldKey: 'scania', difficulty: 'normal' }),
+        월간행({ world: '스카니아', worldKey: 'scania', difficulty: 'hard' }),
       ]),
     ])
 
-    expect(summaries).toEqual([{ world: '스카니아', cleared: 1, monthlyCleared: 1 }])
+    expect(summaries).toEqual([{ world: '스카니아', worldKey: 'scania', cleared: 1, monthlyCleared: 1 }])
+  })
+})
+
+// 한도를 세는 단위는 월드 이름 글자가 아니라 월드 key 다.
+describe('summarizeWorldCrystals: 월드 key 로 가른다', () => {
+  it('적어 둔 이름의 띄어쓰기가 달라도 월드 key 가 같으면 한 한도로 세고, 보이는 이름은 월드 표 이름이다', () => {
+    const summaries = summarizeWorldCrystals([
+      group([보스행({ world: '챌린저스 2', worldKey: 'challengers_2' })]),
+      { ...group([보스행({ ocid: 'ocid-2', world: '챌린저스2', worldKey: 'challengers_2' })]), ocid: 'ocid-2' },
+    ])
+
+    expect(summaries).toEqual([{ world: '챌린저스2', worldKey: 'challengers_2', cleared: 2, monthlyCleared: 0 }])
+  })
+
+  // 챌린저스 넷은 엠블럼만 같이 쓰고 판매 한도는 월드마다 따로다(사용자 결정).
+  it('챌린저스와 챌린저스2 는 다른 한도다', () => {
+    const summaries = summarizeWorldCrystals([
+      group([보스행({ world: '챌린저스', worldKey: 'challengers' })]),
+      { ...group([보스행({ ocid: 'ocid-2', world: '챌린저스2', worldKey: 'challengers_2' })]), ocid: 'ocid-2' },
+    ])
+
+    expect(summaries.map((summary) => summary.worldKey)).toEqual(['challengers', 'challengers_2'])
+  })
+
+  it('월드 이름이 있어도 월드 key 가 없는 행은 어느 한도에도 안 든다', () => {
+    expect(summarizeWorldCrystals([group([보스행({ world: '스카니아', worldKey: null })])])).toEqual([])
   })
 })
 
