@@ -59,6 +59,9 @@ const INCOME_RECORDS_BODY = `(
     -- 적힌 행이고, 그때 위 계산기 칸 넷은 전부 NULL 이다. 0 과 NULL 이 갈린다. 조각만 먹은
     -- 사냥은 친 메소가 0 이면서 수동이다.
     hunt_typed_meso INTEGER,
+    -- 1 = 솔 에르다 조각 가격을 나중에 입력한 사냥이다. 조각 값이 합계에 없고 개수가 그 캐릭터의 보관에 든다.
+    -- NULL · 0 = 지금 판매다. 가격 0 인 옛 기록과 가르려고 가격 칸이 아니라 따로 둔다.
+    hunt_fragments_deferred INTEGER,
     memo TEXT,
     recorded_at TEXT NOT NULL,
     PRIMARY KEY (id)
@@ -393,6 +396,8 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'income_records', 'hunt_meso_rate', 'INTEGER')
   // 수동으로 적힌 사냥의 친 메소이자 **수동인가** 의 판정자.
   await ensureColumn(db, 'income_records', 'hunt_typed_meso', 'INTEGER')
+  // 솔 에르다 조각 가격 나중에 입력. 옛 행은 NULL(지금 판매)이라 옮길 값이 없다.
+  await ensureColumn(db, 'income_records', 'hunt_fragments_deferred', 'INTEGER')
   // 기록이 이름 대신 key 로 카탈로그와 사냥터를 가리킨다. 값은 아래 버전 이관이 채운다.
   await ensureColumn(db, 'spend_records', 'category_key', 'TEXT')
   await ensureColumn(db, 'spend_records', 'item_key', 'TEXT')

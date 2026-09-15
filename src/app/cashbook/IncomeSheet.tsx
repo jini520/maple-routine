@@ -27,6 +27,7 @@ import type { HuntInputMode, IncomeRecord } from '../../storage/income'
 import { CategoryPicker } from './CategoryPicker'
 import { CheckBox, DateStepper } from './sheet-fields'
 import { EtcForm } from './income/EtcForm'
+import { FragmentSettleForm, type LoadFragmentStorage } from './income/FragmentSettleForm'
 import { HuntCalculatorForm } from './income/HuntCalculatorForm'
 import { ItemSaleForm } from './income/ItemSaleForm'
 import { HuntManualForm } from './income/HuntManualForm'
@@ -60,6 +61,8 @@ export interface IncomeSheetProps {
    * 화면이 읽어서 넘긴다.
    */
   lastHuntSelection: LastHuntSelection | null
+  /** 솔 에르다 조각 보관 개수 조회. 정산 폼이 쓰고 화면이 넘긴다. */
+  loadFragmentStorage: LoadFragmentStorage
   /**
    * 고칠 기록. 있으면 **수정 모드**다. 머리와 버튼 글자가 갈리고 삭제가 선다.
    */
@@ -90,6 +93,15 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
    * 합계가 사람이 친 값으로 둔갑한다.
    */
   const [huntMode, setHuntMode] = useState<HuntInputMode>(huntModeOf(props.editing))
+  /**
+   * 조각 가격 나중에 입력. 수정으로 열면 기록이 정한다.
+   *
+   * 시트가 드는 것은 모드를 바꾸면 폼이 새로 심기기 때문이다(`key` 가 모드를 담는다). 폼 안에 두면
+   * 모드를 옮길 때 풀린다.
+   */
+  const [fragmentsDeferred, setFragmentsDeferred] = useState(
+    props.editing?.hunt?.fragmentsDeferred ?? false,
+  )
   /**
    * 시트 바닥에 서는 저장 줄의 값. 폼이 마운트 뒤에 올린다.
    *
@@ -174,28 +186,47 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
         ) : (
       // 아래 여백을 안 붙인다. 바닥의 숨돌림은 껍데기가 한 값으로 낸다.
       <View className="gap-3 px-4">
-        {/* 사냥만 갖는 줄. 계산기로 셀지, 획득 메소를 직접 적을지 고른다. */}
-        {!editing && category === 'hunting' && (
-          // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
-          <Pressable
-            role="checkbox"
-            aria-label="획득 메소 직접 입력"
-            aria-checked={huntMode === 'manual'}
-            onPress={() => setHuntMode(huntMode === 'manual' ? 'calculator' : 'manual')}
-            hitSlop={8}
-            // `self-start` 가 없으면 세로 스택의 자식이라 줄 끝까지 늘어난다. 빈 자리를 눌러도
-            // 체크가 켜졌다(사용자 지적).
-            className="flex-row items-center gap-2 self-start"
-          >
-            <CheckBox checked={huntMode === 'manual'} />
-            <Text className="text-xs font-semibold text-text-muted">획득 메소 직접 입력</Text>
-          </Pressable>
+        {/*
+          사냥만 갖는 줄. 계산기로 셀지 획득 메소를 직접 적을지, 조각 가격을 나중에 적을지 고른다.
+          수정에서는 모드를 못 바꾸므로 앞의 것이 빠진다.
+
+          체크박스가 가로줄의 자식이라 각자 글자 폭만 누르는 자리다. 세로 스택의 자식으로 두면 줄
+          끝까지 늘어나 빈 자리를 눌러도 체크가 켜졌다(사용자 지적).
+        */}
+        {category === 'hunting' && (
+          <View testID="income-sheet-hunt-toggles" className="flex-row items-center gap-4">
+            {!editing && (
+              <Pressable
+                role="checkbox"
+                aria-label="획득 메소 직접 입력"
+                aria-checked={huntMode === 'manual'}
+                onPress={() => setHuntMode(huntMode === 'manual' ? 'calculator' : 'manual')}
+                hitSlop={8}
+                className="flex-row items-center gap-2"
+              >
+                <CheckBox checked={huntMode === 'manual'} />
+                <Text className="text-xs font-semibold text-text-muted">획득 메소 직접 입력</Text>
+              </Pressable>
+            )}
+            <Pressable
+              role="checkbox"
+              aria-label="조각 가격 나중에 입력"
+              aria-checked={fragmentsDeferred}
+              onPress={() => setFragmentsDeferred(!fragmentsDeferred)}
+              hitSlop={8}
+              className="flex-row items-center gap-2"
+            >
+              <CheckBox checked={fragmentsDeferred} />
+              <Text className="text-xs font-semibold text-text-muted">조각 가격 나중에 입력</Text>
+            </Pressable>
+          </View>
         )}
 
         <IncomeForm
           key={`${category}:${huntMode}`}
           category={category}
           huntMode={huntMode}
+          fragmentsDeferred={fragmentsDeferred}
           {...props}
           formProps={formProps}
         />
@@ -221,18 +252,25 @@ function IncomeForm(
   props: IncomeSheetProps & {
     category: IncomeCategoryKey
     huntMode: HuntInputMode
+    fragmentsDeferred: boolean
     formProps: IncomeFormProps
   },
 ): React.JSX.Element {
+  if (props.category === 'sol_erda_fragment') {
+    return (
+      <FragmentSettleForm {...props.formProps} loadFragmentStorage={props.loadFragmentStorage} />
+    )
+  }
   if (props.category === 'item_sale') return <ItemSaleForm {...props.formProps} />
   if (props.category === 'etc') {
     return <EtcForm {...props.formProps} lastPointRate={props.lastPointRate} />
   }
   return props.huntMode === 'manual' ? (
-    <HuntManualForm {...props.formProps} />
+    <HuntManualForm {...props.formProps} fragmentsDeferred={props.fragmentsDeferred} />
   ) : (
     <HuntCalculatorForm
       {...props.formProps}
+      fragmentsDeferred={props.fragmentsDeferred}
       loadMesoRate={props.loadMesoRate}
       lastHuntSelection={props.lastHuntSelection}
     />

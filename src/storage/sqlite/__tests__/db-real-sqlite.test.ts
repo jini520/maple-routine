@@ -305,6 +305,7 @@ describe('기타를 메포·캐시로 적어도 저장된다 (목이 아닌 SQLi
         sojae: 4,
         fragments: 83,
         fragmentPrice: 2_500_000,
+        fragmentsDeferred: false,
         // **그때의** 캐릭터 메소 획득량. 칸이 하나 더 있다.
         mesoRate: 149,
       },
@@ -320,6 +321,7 @@ describe('기타를 메포·캐시로 적어도 저장된다 (목이 아닌 SQLi
       sojae: 4,
       fragments: 83,
       fragmentPrice: 2_500_000,
+      fragmentsDeferred: false,
       mesoRate: 149,
     })
   })

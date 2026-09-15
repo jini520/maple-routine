@@ -46,7 +46,7 @@ import type { LastHuntSelection } from '../../../storage/last-hunt-selection'
 import { CheckBox, FieldRow, QuantityStepper } from '../sheet-fields'
 import { ChainSelect } from '../../../components/organisms/ChainSelect/ChainSelect'
 import { HuntAutoFillButton } from './HuntAutoFillButton'
-import { characterOptions } from '../character-options'
+import { requiredCharacterOptions } from '../character-options'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
@@ -179,6 +179,8 @@ export function HuntCalculatorForm(
     loadMesoRate: (ocid: string) => Promise<MesoRateLoad>
     /** 마지막에 적은 사냥 자리. 화면이 읽어서 넘긴다. 없으면 자동 입력이 꺼진다. */
     lastHuntSelection: LastHuntSelection | null
+    /** 조각 가격 나중에 입력. 시트가 들고 넘긴다. */
+    fragmentsDeferred: boolean
   },
 ): React.JSX.Element {
   const editing = props.editing !== undefined
@@ -235,6 +237,14 @@ export function HuntCalculatorForm(
   const mesoRateRequest = useRef<string | null>(props.editing?.ocid ?? null)
   const { saving, submit, remove } = useSheetSubmit(props)
 
+  /** 마지막으로 그린 나중에 입력 값. 켜지는 순간을 그리는 중에 알아내려고 상태로 든다. */
+  const [deferredSeen, setDeferredSeen] = useState(props.fragmentsDeferred)
+  if (deferredSeen !== props.fragmentsDeferred) {
+    // 켜면 가격 칸이 빈다. 끄고 나서 켜기 전 가격이 되살아나면 안 판 조각에 값이 붙는다.
+    setDeferredSeen(props.fragmentsDeferred)
+    if (props.fragmentsDeferred) setFragmentPriceText('')
+  }
+
   const huntRegions = huntingRegionsForLevel(huntLevel)
   const huntRegion = regionKey === null ? null : findHuntingRegion(regionKey)
   /**
@@ -275,23 +285,26 @@ export function HuntCalculatorForm(
   const huntMeso = huntGround === null ? 0 : huntingMesoOf({ ...huntInput, ground: huntGround })
   const fragments = mesoValueOf(fragmentsText)
   const fragmentPrice = mesoValueOf(fragmentPriceText)
-  const huntTotal = huntingTotalOf({ ...huntInput, ground: huntGround, fragments, fragmentPrice })
+  const huntTotal = huntingTotalOf({
+    ...huntInput,
+    ground: huntGround,
+    fragments,
+    fragmentPrice,
+    fragmentsDeferred: props.fragmentsDeferred,
+  })
   /**
-   * 저장 가능 여부. **사냥터가 세는 메소가 있어야 한다.**
+   * 저장 가능 여부. **사냥터가 세는 메소와 캐릭터가 있어야 한다.**
    *
    * 이 기록의 본체는 획득 메소이고 계산기에서 그것은 사냥터가 정한다. 조각은 곁다리라
-   * 그것만 적힌 행은 사냥 기록이 아니다(사용자 지시).
+   * 그것만 적힌 행은 사냥 기록이 아니다(사용자 지시). 캐릭터는 조각 보관이 캐릭터별이라 필요하다.
    */
-  const canSave = huntMeso > 0
+  const canSave = huntMeso > 0 && ocid !== null
 
   /**
    * 캐릭터를 고르면 레벨이 따라 바뀌고, 그 레벨로 못 가는 지역은 사냥터와 함께 풀린다.
    *
    * 안 풀면 고르개가 목록에 없는 값을 들게 되어 트리거가 첫 칸(선택 안함)을 읽어 준다.
    * 화면에는 다른 지역이 적히는데 계산은 옛 사냥터로 도는 상태가 된다.
-   *
-   * **`선택 안함` 도 푼다.** 레벨이 없어져 갈 수 있나를 잴 근거가 사라진다. 레벨을 모를 때
-   * 지역 목록은 전부 서므로(`huntingRegionsForLevel(null)`) 창 검사만으로는 언제나 통과한다.
    */
   function selectCharacter(next: string | null): void {
     setOcid(next)
@@ -412,6 +425,7 @@ export function HuntCalculatorForm(
           sojae,
           fragments,
           fragmentPrice,
+          fragmentsDeferred: props.fragmentsDeferred,
           // **그때의** 메획이다. 장비를 갈아입어도 이 기록은 안 흔들린다.
           mesoRate: mesoRatePercent,
         },
@@ -431,7 +445,7 @@ export function HuntCalculatorForm(
         steps={[
           {
             name: '캐릭터',
-            options: characterOptions(props.characters),
+            options: requiredCharacterOptions(props.characters),
             selected: ocid,
             onSelect: selectCharacter,
           },
@@ -647,10 +661,15 @@ export function HuntCalculatorForm(
           />
           <Text className="text-xs text-text-muted">개</Text>
         </View>
-        <View className="ml-auto min-w-0 flex-1 flex-row items-baseline gap-1.5">
+        <View
+          className={`ml-auto min-w-0 flex-1 flex-row items-baseline gap-1.5${
+            props.fragmentsDeferred ? ' opacity-40' : ''
+          }`}
+        >
           <SheetTextInput
             testID="income-sheet-fragment-price"
             aria-label="조각 가격"
+            editable={!props.fragmentsDeferred}
             value={fragmentPriceText}
             onChangeText={(text) => setFragmentPriceText(acceptMesoText(fragmentPriceText, text))}
             onBlur={() => setFragmentPriceText(settleMesoText(fragmentPriceText))}

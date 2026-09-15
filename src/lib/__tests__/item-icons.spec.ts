@@ -67,6 +67,7 @@ describe('가계부 줄 표식', () => {
     'enhancement:potential',
     'enhancement:additional_potential',
     'income:hunting',
+    'income:sol_erda_fragment',
     'income:etc',
     'spend:etc',
   ])('%s 줄이 그림을 찾는다', (key) => {
