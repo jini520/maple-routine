@@ -63,6 +63,13 @@ describe('formatMesoUnits', () => {
     expect(formatMesoUnits(0)).toBe('0')
   })
 
+  // 단위 나눗셈이 음수에서 0개로 떨어져 글자가 통째로 비어 있었다. 에픽던전 리워드의 주화
+  // 판매가를 빼면 시세가 높은 날 합계가 음수가 된다.
+  it('음수는 부호를 붙여 접는다. 빈 글자가 되지 않는다', () => {
+    expect(formatMesoUnits(-85_000_000)).toBe('-8500만')
+    expect(formatMesoUnits(-1_234_567_890_000)).toBe('-1조 2345억 6789만')
+  })
+
   it('비어 있는 자리는 건너뛴다. "32억 0만" 을 만들지 않는다', () => {
     expect(formatMesoUnits(3_200_000_000)).toBe('32억')
     expect(formatMesoUnits(5_000)).toBe('5000')
