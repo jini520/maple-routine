@@ -9,6 +9,7 @@
  */
 import { fetchCharacterList } from '../../nexon/character'
 import type { EnhancementHistoryRow, EnhancementKind } from '../../nexon/history/client'
+import { equipmentItemKeyOfApiName } from '../../lib/equipment/equipment-items'
 import { fetchEnhancementHistory } from '../../nexon/history/client'
 import { getAuthConfig } from '../../storage/api-key'
 import { saveEventWorldNames } from '../../storage/event-world-names'
@@ -141,7 +142,7 @@ async function collectOne(
 
   for (let pageIndex = 0; pageIndex < MAX_PAGES; pageIndex += 1) {
     const query = cursor === null ? { dateKey: job.dateKey } : { cursor }
-    const page = await fetchEnhancementHistory(apiKey, job.kind, query)
+    const page = await fetchEnhancementHistory(apiKey, job.kind, equipmentItemKeyOfApiName, query)
     if (pageIndex === 0) firstCursor = page.nextCursor
 
     await saveEnhancementHistory(job.kind, pricedRows(job.kind, page.rows, observedLevels))

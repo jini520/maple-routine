@@ -9,15 +9,10 @@
  */
 import { isManualRecord, type DayRecord } from './records'
 
-/** 자동 줄의 열쇠. 강화 줄은 갈래 이름이 그대로 열쇠라 이 표에 없다. */
-const AUTO_KEYS = {
-  bossCrystal: '보스 결정석',
-  dropSale: '아이템 판매',
-} as const
-
 export function recordIconKeyOf(entry: DayRecord): string {
-  // 수익과 지출의 갈래 key 가 겹칠 수 있어(`etc`) 기록 종류를 앞에 붙인다.
+  // 수익과 지출의 갈래 key 가 겹칠 수 있어(`etc`) 기록 종류를 앞에 붙인다. 강화 줄도 같은 모양이다.
   if (isManualRecord(entry)) return `${entry.kind}:${entry.record.category}`
-  if (entry.kind === 'enhancement') return entry.category
-  return AUTO_KEYS[entry.kind]
+  if (entry.kind === 'enhancement') return `${entry.kind}:${entry.category}`
+  // 결정석 · 판매 줄은 기록 종류 하나가 곧 열쇠다.
+  return entry.kind
 }

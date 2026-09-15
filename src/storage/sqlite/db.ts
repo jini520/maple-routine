@@ -147,6 +147,8 @@ const TABLE_DEFINITIONS = [
     character_name TEXT NOT NULL,
     -- 강화한 장비 이름. 셋 다 준다.
     target_item TEXT NOT NULL,
+    -- 장비 key. 응답을 받을 때 target_item 으로 장비 표에서 찾고, 표에 없는 장비면 NULL 이다.
+    item_key TEXT,
     -- 그 장비의 레벨. **스타포스 응답에는 없어서** 거기서는 NULL 이다.
     --
     -- 큐브·잠재는 이 값을 주고, 한 이름에 두 레벨이 붙은 적이 없다(1년치 27,187건 실측). 그래서
@@ -345,6 +347,8 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   // DDL 과 여기가 함께 가야 재작성이 만드는 표와 어긋나지 않는다.
   await ensureColumn(db, 'enhancement_history', 'target_item', 'TEXT NOT NULL DEFAULT \'\'')
   await ensureColumn(db, 'enhancement_history', 'item_level', 'INTEGER')
+  // 강화 기록도 이름 대신 장비 key 를 든다. 값은 아래 버전 이관이 채운다.
+  await ensureColumn(db, 'enhancement_history', 'item_key', 'TEXT')
   // 이미 만들어진 DB에는 위 CREATE 가 컬럼을 더해주지 않는다.
   await ensureColumn(db, 'boss_drop_records', 'price_state', 'TEXT')
   await ensureColumn(db, 'boss_drop_records', 'price_meso', 'INTEGER')

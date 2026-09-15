@@ -28,6 +28,7 @@ const row = (id: string) => ({
   createdAt: `2026-09-04T07:02:32.597+09:00`,
   dateKey: '2026-09-04',
   targetItem: '아케인셰이드 클로',
+  itemKey: 'arcane_umbra_knuckle',
   itemLevel: 200,
   payload: { id, foo: 1 },
 })
@@ -39,14 +40,15 @@ describe('내역 쓰기', () => {
     expect(runMock).toHaveBeenCalledTimes(1)
     const [sql, values] = runMock.mock.calls[0]
     expect(sql).toContain('INSERT OR IGNORE INTO enhancement_history')
-    expect(values).toHaveLength(16)
-    expect(values.slice(0, 8)).toEqual([
-      'a', 'cube', '2026-09-04', '2026-09-04T07:02:32.597+09:00', '낟낟', '아케인셰이드 클로', 200,
+    expect(sql).toContain('item_key')
+    expect(values).toHaveLength(18)
+    expect(values.slice(0, 9)).toEqual([
+      'a', 'cube', '2026-09-04', '2026-09-04T07:02:32.597+09:00', '낟낟', '아케인셰이드 클로', 'arcane_umbra_knuckle', 200,
       JSON.stringify({ id: 'a', foo: 1 }),
     ])
   })
 
-  // 한 줄에 8개라 200줄이면 1,600 변수다. SQLite 의 기본 상한(999)을 넘겨 조용히 던진다.
+  // 한 줄에 9개라 200줄이면 1,800 변수다. SQLite 의 기본 상한(999)을 넘겨 조용히 던진다.
   it('많으면 나눠 넣는다', async () => {
     await saveEnhancementHistory('cube', Array.from({ length: 250 }, (_, i) => row(String(i))))
 
@@ -91,6 +93,7 @@ describe('내역 읽기', () => {
           created_at: '2026-09-04T07:02:32.597+09:00',
           character_name: '낟낟',
           target_item: '아케인셰이드 클로',
+          item_key: 'arcane_umbra_knuckle',
           item_level: null,
           payload: '{"before_starforce_count":17}',
         },
@@ -105,6 +108,7 @@ describe('내역 읽기', () => {
         createdAt: '2026-09-04T07:02:32.597+09:00',
         characterName: '낟낟',
         targetItem: '아케인셰이드 클로',
+        itemKey: 'arcane_umbra_knuckle',
         itemLevel: null,
         payload: { before_starforce_count: 17 },
       },
@@ -131,10 +135,22 @@ describe('관측된 장비 레벨', () => {
     expect(await loadObservedItemLevels()).toEqual(new Map([['아케인셰이드클로', 200]]))
   })
 
-  it('공백을 지운 이름으로 담는다', async () => {
-    queryMock.mockResolvedValue({ values: [{ target_item: '데아 시두스 이어링', item_level: 130 }] })
+  it('NFC 뒤 공백을 지운 이름으로 담는다', async () => {
+    queryMock.mockResolvedValue({ values: [{ target_item: '데아 시두스 이어링'.normalize('NFD'), item_level: 130 }] })
 
     expect((await loadObservedItemLevels()).get('데아시두스이어링')).toBe(130)
+  })
+
+  // SQL 은 원문 이름으로 묶는다. 띄어쓰기만 다른 두 이름이 한 칸에 모이면 나중에 읽은 값이 아니라 큰 값이다.
+  it('띄어쓰기만 다른 이름이 한 칸에 모이면 큰 레벨을 남긴다', async () => {
+    queryMock.mockResolvedValue({
+      values: [
+        { target_item: '블랙 마법깃펜', item_level: 150 },
+        { target_item: '블랙마법깃펜', item_level: 140 },
+      ],
+    })
+
+    expect((await loadObservedItemLevels()).get('블랙마법깃펜')).toBe(150)
   })
 })
 

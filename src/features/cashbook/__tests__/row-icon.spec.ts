@@ -45,20 +45,20 @@ describe('recordIconKeyOf', () => {
         count: 1,
         bosses: [],
       } as unknown as DayRecord),
-    ).toBe('보스 결정석')
+    ).toBe('bossCrystal')
   })
 
-  it('강화 줄은 갈래가 곧 열쇠다', () => {
+  it('강화 줄은 기록 종류와 갈래 key 로 잡는다', () => {
     expect(
       recordIconKeyOf({
         kind: 'enhancement',
         characterName: '낟낟',
-        category: '큐브 재설정',
+        category: 'cube_reset',
         payoutMeso: 1,
         count: 1,
         items: [],
       } as unknown as DayRecord),
-    ).toBe('큐브 재설정')
+    ).toBe('enhancement:cube_reset')
   })
 
   // 수익 `기타` 와 지출 `기타` 가 겹치지 않게 기록 종류를 앞에 붙인다.
@@ -80,7 +80,7 @@ describe('recordIconKeyOf', () => {
         count: 1,
         unpricedCount: 0,
       } as unknown as DayRecord),
-    ).toBe('아이템 판매')
+    ).toBe('dropSale')
     expect(recordIconKeyOf(spend({ category: 'content' }))).toBe('spend:content')
   })
 })

@@ -141,6 +141,8 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE boss_profit_records ADD COLUMN defeated_on TEXT',
       "ALTER TABLE enhancement_history ADD COLUMN target_item TEXT NOT NULL DEFAULT ''",
       'ALTER TABLE enhancement_history ADD COLUMN item_level INTEGER',
+      // 강화 기록도 장비 이름 대신 장비 key 를 든다.
+      'ALTER TABLE enhancement_history ADD COLUMN item_key TEXT',
       'ALTER TABLE boss_drop_records ADD COLUMN price_state TEXT',
       'ALTER TABLE boss_drop_records ADD COLUMN price_meso INTEGER',
       'ALTER TABLE boss_drop_records ADD COLUMN price_share INTEGER',

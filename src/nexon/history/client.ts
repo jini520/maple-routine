@@ -25,8 +25,10 @@ export interface EnhancementHistoryRow {
   createdAt: string
   /** KST `YYYY-MM-DD`. 가계부 칸이 이 값으로 선다 */
   dateKey: string
-  /** 강화한 장비 이름. 셋 다 준다 */
+  /** 강화한 장비의 API 이름 원문. 셋 다 준다. 화면은 띄어쓰기가 살아 있는 이 글자를 보인다 */
   targetItem: string
+  /** 장비 key. 이름이 장비 표에 없으면 `null` 이고, 그 줄도 버리지 않는다 */
+  itemKey: string | null
   /**
    * 그 장비의 레벨. **스타포스 응답에는 없어서** 거기서는 `null` 이다.
    *
@@ -69,11 +71,13 @@ export interface EnhancementHistoryQuery {
 /**
  * 한 쪽을 받는다. **던진다.** 호출부가 실패를 원장에 안 적고 다음 회차에 다시 온다.
  *
- * @example const page = await fetchEnhancementHistory(key, 'cube', { dateKey: '2026-09-04' })
+ * @param itemKeyOf API 이름에서 장비 key. `nexon/` 은 `src/data` 를 모르므로 부르는 쪽이 넘긴다
+ * @example const page = await fetchEnhancementHistory(key, 'cube', equipmentItemKeyOfApiName, { dateKey: '2026-09-04' })
  */
 export async function fetchEnhancementHistory(
   apiKey: string,
   kind: EnhancementKind,
+  itemKeyOf: (apiName: string) => string | null,
   query: EnhancementHistoryQuery,
 ): Promise<EnhancementHistoryPage> {
   const tail = query.cursor === undefined ? `date=${query.dateKey}` : `cursor=${query.cursor}`
@@ -90,12 +94,14 @@ export async function fetchEnhancementHistory(
     rows: rows.map((entry) => {
       const record = entry as Record<string, unknown>
       const createdAt = String(record.date_create ?? '')
+      const targetItem = String(record.target_item ?? '')
       return {
         id: String(record.id ?? ''),
         characterName: String(record.character_name ?? ''),
         createdAt,
         dateKey: dateKeyOf(createdAt),
-        targetItem: String(record.target_item ?? ''),
+        targetItem,
+        itemKey: itemKeyOf(targetItem),
         itemLevel: typeof record.item_level === 'number' ? record.item_level : null,
         payload: entry,
       }

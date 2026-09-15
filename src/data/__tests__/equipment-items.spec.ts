@@ -2,6 +2,7 @@
 //
 // 이름은 사용자 제공, 보조무기 22종의 레벨도 사용자 제공, 그 밖의 레벨은 넥슨 히스토리 API 가
 // 준 값을 그대로 옮긴 것이다. 이 파일이 지키는 것은 그 표가 **스스로 모순되지 않는가** 다.
+import dropItems from '../drop-items.json'
 import equipmentItems from '../equipment-items.json'
 
 interface Item {
@@ -20,6 +21,16 @@ it('키가 유일하다. 겹치면 뒤엣것이 앞엣것을 조용히 덮는다
 // 조회가 **공백 지운 이름**으로 이뤄지므로 그 형태에서 겹치면 안 된다.
 it('이름이 유일하다', () => {
   expect(new Set(items.map((item) => item.name)).size).toBe(items.length)
+})
+
+// 같은 장비가 표마다 다른 key 를 가지면 기록끼리 이을 수 없다. 드롭 key 는 이미 `boss_drop_records.item_key` 에 저장돼 있다.
+it('드롭 아이템 표에도 있는 장비는 key 가 같다', () => {
+  const comparable = (name: string) => name.normalize('NFC').replace(/\s+/g, '')
+  const dropKeyByName = new Map(dropItems.items.map((item) => [comparable(item.name), item.key]))
+  const shared = items.filter((item) => dropKeyByName.has(comparable(item.name)))
+
+  expect(shared.length).toBe(17)
+  expect(shared.filter((item) => dropKeyByName.get(comparable(item.name)) !== item.key).map((item) => item.key)).toEqual([])
 })
 
 it('이름에 공백이 없다. 조회 쪽이 공백을 지워 맞춘다', () => {

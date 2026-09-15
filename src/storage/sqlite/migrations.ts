@@ -19,12 +19,13 @@ import {
 import { findHuntingGroundByName } from '../../lib/cashbook/hunting-grounds'
 import { legacySpendKeysOf } from '../../lib/cashbook/spend-catalog'
 import { dropItemKeyOfName } from '../../lib/drop/drop-items'
+import { equipmentItemKeyOfApiName } from '../../lib/equipment/equipment-items'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types/scheduler'
 import type { SqliteDbConnection } from '../ports'
 import { BOSS_KEYED_TABLES } from './boss-tables'
 
 /** 이 앱의 마지막 DB 버전. 새 기기는 곧바로 이 값이 된다. */
-export const DB_VERSION = 4
+export const DB_VERSION = 5
 
 /**
  * 갈래와 항목 이름을 바꾸며 옛 기록을 옮기던 문장들. 버전 1 이 한 번 돌린다.
@@ -168,6 +169,21 @@ async function rekeyBossTables(db: SqliteDbConnection): Promise<void> {
   }
 }
 
+/**
+ * 강화 기록에 장비 key 를 채운다. API 이름(`target_item`)으로 장비 표를 찾는다.
+ *
+ * **못 찾는 행은 key 만 비우고 남긴다.** 표에 없는 장비에 쓴 큐브 · 잠재도 실제 지출이라서다.
+ */
+async function fillEnhancementItemKeys(db: SqliteDbConnection): Promise<void> {
+  const { values } = await db.query('SELECT DISTINCT target_item FROM enhancement_history')
+  for (const row of (values ?? []) as Row[]) {
+    const targetItem = String(row.target_item)
+    const itemKey = equipmentItemKeyOfApiName(targetItem)
+    if (itemKey === null) continue
+    await db.run('UPDATE enhancement_history SET item_key = ? WHERE target_item = ?', [itemKey, targetItem])
+  }
+}
+
 const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   async (db) => {
     for (const statement of LEGACY_NAME_MIGRATIONS) await db.execute(statement)
@@ -175,6 +191,7 @@ const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   fillCashbookKeys,
   fillDropKeys,
   rekeyBossTables,
+  fillEnhancementItemKeys,
 ]
 
 async function userVersionOf(db: SqliteDbConnection): Promise<number> {

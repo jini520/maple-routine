@@ -61,11 +61,11 @@ describe('getItemIconUrlByFile', () => {
 // **아직 안 바꿨나** 로 보여 고장으로 안 읽힌다.
 describe('가계부 줄 표식', () => {
   it.each([
-    '보스 결정석',
-    '큐브 재설정',
-    '스타포스',
-    '잠재능력',
-    '에디셔널 잠재능력',
+    'bossCrystal',
+    'enhancement:cube_reset',
+    'enhancement:starforce',
+    'enhancement:potential',
+    'enhancement:additional_potential',
     'income:hunting',
     'spend:buff',
   ])('%s 줄이 그림을 찾는다', (key) => {
@@ -73,7 +73,7 @@ describe('가계부 줄 표식', () => {
   })
 
   // 표에 없는 갈래는 `null` 이어야 화면이 아이콘으로 떨어진다. 폴백 그림을 두면 틀린 것을 그린다.
-  it.each(['아이템 판매', 'income:item_sale', 'income:etc', 'spend:content', 'spend:event_bm', 'spend:item_purchase', 'spend:etc'])(
+  it.each(['dropSale', 'income:item_sale', 'income:etc', 'spend:content', 'spend:event_bm', 'spend:item_purchase', 'spend:etc'])(
     '%s 줄은 그림이 없다',
     (key) => {
       expect(cashbookRowIconOf(key)).toBeNull()

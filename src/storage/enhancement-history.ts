@@ -8,6 +8,7 @@
  *
  * @see docs/persistence/sqlite.md `enhancement_history`
  */
+import { comparableEquipmentName } from '../lib/equipment/equipment-items'
 import type { EnhancementHistoryRow, EnhancementKind } from '../nexon/history/client'
 import { getBossProfitDb } from './sqlite/db'
 
@@ -17,7 +18,10 @@ export interface EnhancementHistoryEntry {
   dateKey: string
   createdAt: string
   characterName: string
+  /** API 이름 원문. 화면은 이 글자를 보인다 */
   targetItem: string
+  /** 장비 key. 장비 표에 없는 장비면 `null` 이다 */
+  itemKey: string | null
   /** 스타포스는 응답에 없어 `null`. 읽는 쪽이 같은 이름의 다른 행에서 찾는다 */
   itemLevel: number | null
   /** 줄 원본. 못 풀면 `null` 이다 */
@@ -31,7 +35,7 @@ export interface EnhancementCheck {
   settled: boolean
 }
 
-const COLUMNS = 8
+const COLUMNS = 9
 /**
  * 한 문장에 넣을 줄 수. `COLUMNS` 를 곱한 값이 SQLite 의 기본 변수 상한(999)을 넘으면 안 된다.
  * 넘기면 조용히 던져 그 날짜가 통째로 안 들어간다.
@@ -66,12 +70,13 @@ export async function saveEnhancementHistory(
       row.createdAt,
       row.characterName,
       row.targetItem,
+      row.itemKey,
       row.itemLevel,
       JSON.stringify(row.payload),
     ])
     await db.run(
       `INSERT OR IGNORE INTO enhancement_history
-         (id, kind, date_key, created_at, character_name, target_item, item_level, payload)
+         (id, kind, date_key, created_at, character_name, target_item, item_key, item_level, payload)
        VALUES ${placeholders}`,
       values,
     )
@@ -95,7 +100,7 @@ export async function loadEnhancementHistory(
   if (dateKeys.length === 0) return []
   const db = await getBossProfitDb()
   const { values } = await db.query(
-    `SELECT id, kind, date_key, created_at, character_name, target_item, item_level, payload
+    `SELECT id, kind, date_key, created_at, character_name, target_item, item_key, item_level, payload
        FROM enhancement_history
       WHERE date_key IN (${dateKeys.map(() => '?').join(', ')})
       ORDER BY created_at`,
@@ -109,17 +114,18 @@ export async function loadEnhancementHistory(
     createdAt: String(row.created_at),
     characterName: String(row.character_name),
     targetItem: String(row.target_item),
+    itemKey: typeof row.item_key === 'string' ? row.item_key : null,
     itemLevel: typeof row.item_level === 'number' ? row.item_level : null,
     payload: parsePayload(row.payload),
   }))
 }
 
 /**
- * 이름에서 레벨로. **공백을 지운 이름**이 키다.
+ * 이름에서 레벨로. **NFC 뒤 공백을 지운 이름**(`comparableEquipmentName`)이 키다.
  *
  * 스타포스 응답에는 `item_level` 이 없다. 같은 장비를 큐브나 잠재로 만진 행이 그 값을 들고 있어
- * 표가 자라면 예전에 넣은 스타포스 행도 함께 값을 얻는다. `src/data/equipment-items.json` 이
- * 못 채운 자리를 여기가 받는다.
+ * 표가 자라면 예전에 넣은 스타포스 행도 함께 값을 얻는다. 장비 표(`equipment-items.json`)에 없는 장비를
+ * 여기가 받는다. 그 장비는 key 가 없어 이름으로 찾는다.
  */
 export async function loadObservedItemLevels(): Promise<Map<string, number>> {
   const db = await getBossProfitDb()
@@ -133,7 +139,9 @@ export async function loadObservedItemLevels(): Promise<Map<string, number>> {
   const levels = new Map<string, number>()
   for (const row of values ?? []) {
     if (typeof row.item_level === 'number') {
-      levels.set(String(row.target_item).replace(/\s/g, ''), row.item_level)
+      // SQL 은 원문으로 묶어서, 띄어쓰기만 다른 두 이름이 여기서 한 칸에 모인다. 그때도 큰 값이다.
+      const name = comparableEquipmentName(String(row.target_item))
+      levels.set(name, Math.max(levels.get(name) ?? 0, row.item_level))
     }
   }
   return levels

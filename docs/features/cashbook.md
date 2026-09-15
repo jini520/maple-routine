@@ -248,6 +248,12 @@
 - **손입력 줄은 기록 종류와 갈래 key 로 잡는다**(`income:hunting` · `spend:buff`). 줄에 적히는 글자는
   사용자가 고르거나 적은 항목 이름이라, 보이는 글자로 그림을 찾으면 이름을 적은 줄에서만 그림이 사라진다.
   기록 종류를 앞에 붙이는 것은 수익 기타와 지출 기타의 갈래 key 가 둘 다 `etc` 라서다.
+- **강화 줄은 기록 종류와 갈래 key 로 잡는다**(`enhancement:cube_reset` · `enhancement:starforce` · `enhancement:potential` ·
+  `enhancement:additional_potential`, [[ADR-280]] 결정 14). 갈래 key 와 줄 제목 글자는 `lib/enhancement/categories.ts` 가 든다.
+  줄 신원(`rowKeyOf`)과 testID 도 key 이고, 금액까지 같은 갈래 줄의 순서는 전처럼 글자 순서다. **결정석 · 판매 줄은 기록 종류
+  하나가 열쇠다**(`bossCrystal` · `dropSale`).
+- **펼친 강화 줄의 장비 칸은 장비 key 로 묶는다**([[ADR-280]] 결정 14). 이름은 그 칸에 처음 든 기록의 API 이름(`target_item`)이다.
+  장비 표 이름은 붙여 써 있어 띄어쓰기가 사라지기 때문이다. 장비 표에 없는 장비는 key 가 없어 NFC 뒤 공백을 지운 이름으로 묶는다.
 - **표식의 자리와 크기는 하나다**([[ADR-235]] 결정 3). 그림이든 아이콘이든 24 를 차지하고,
   벗어나면 줄 높이가 갈려 목록이 울퉁불퉁해진다.
 - **바탕은 아이콘일 때만 칠한다**(사용자 지정). 선 아이콘은 색 있는 원(`rise-tint`/`fall-tint`)이
