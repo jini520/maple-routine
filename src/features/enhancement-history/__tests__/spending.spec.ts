@@ -8,6 +8,7 @@ const entry = (over: Partial<EnhancementHistoryEntry> = {}): EnhancementHistoryE
   createdAt: '2026-09-05T07:00:00.000+09:00',
   characterName: '낟낟',
   targetItem: '아케인셰이드 클로',
+  itemKey: 'arcane_umbra_knuckle',
   itemLevel: 200,
   payload: {},
   ...over,
@@ -40,13 +41,27 @@ describe('큐브 갈래', () => {
   it.each(['수상한 큐브', '레드 큐브', '블랙 큐브', '에디셔널 큐브', '화이트 에디셔널 큐브'])(
     '%s 는 종류와 무관하게 큐브 재설정 줄이다',
     (cubeType) => {
-      expect(categoryOf(cubeType)).toBe('큐브 재설정')
+      expect(categoryOf(cubeType)).toBe('cube_reset')
     },
   )
 
   it('종류를 못 읽어도 줄은 선다', () => {
-    expect(toEnhancementSpending([entry({ payload: {} })], NO_EVENT)[0].category).toBe('큐브 재설정')
+    expect(toEnhancementSpending([entry({ payload: {} })], NO_EVENT)[0].category).toBe('cube_reset')
   })
+})
+
+// 잠재는 응답의 potential_type 이 본 잠재와 에디셔널을 가른다.
+it('스타포스 · 잠재능력 · 에디셔널 잠재능력은 각자 갈래 key 다', () => {
+  const categories = toEnhancementSpending(
+    [
+      entry({ id: 's', kind: 'starforce', payload: { before_starforce_count: 0, upgrade_item: '' } }),
+      entry({ id: 'p', kind: 'potential', payload: { potential_type: '잠재능력 재설정' } }),
+      entry({ id: 'a', kind: 'potential', payload: { potential_type: '에디셔널 잠재능력 재설정' } }),
+    ],
+    NO_EVENT,
+  ).map((row) => row.category)
+
+  expect(categories).toEqual(['starforce', 'potential', 'additional_potential'])
 })
 
 describe('잠재 재설정', () => {
@@ -87,8 +102,8 @@ describe('스타포스', () => {
       payload: { before_starforce_count: 18, upgrade_item: '', starforce_event_list: null, ...over },
     })
 
-  // 응답에 item_level 이 없다. 이름으로 표에서 찾는다.
-  it('장비 이름에서 레벨을 찾아 계산한다', () => {
+  // 응답에 item_level 이 없다. 응답을 받을 때 얻은 장비 key 로 표에서 찾는다.
+  it('장비 key 로 레벨을 찾아 계산한다', () => {
     expect(toEnhancementSpending([starforce()], NO_EVENT)[0].costMeso).toBe(324_061_900)
   })
 
@@ -103,17 +118,17 @@ describe('스타포스', () => {
   })
 
   it('표에 없는 장비는 값이 없다', () => {
-    expect(toEnhancementSpending([starforce({}) && entry({
-      kind: 'starforce', itemLevel: null, targetItem: '왕푸',
+    expect(toEnhancementSpending([entry({
+      kind: 'starforce', itemLevel: null, targetItem: '왕푸', itemKey: null,
       payload: { before_starforce_count: 3, upgrade_item: '' },
     })], NO_EVENT)[0].costMeso).toBeNull()
   })
 
-  // DB 가 같은 이름의 큐브 기록에서 본 레벨. 표가 못 채운 자리를 받는다.
-  it('관측된 레벨을 넘기면 그것으로 센다', () => {
-    const observed = new Map([['왕푸', 100]])
+  // DB 가 같은 이름의 큐브 기록에서 본 레벨. 표에 없는 장비는 key 가 없어 이름으로 찾는다.
+  it('표에 없는 장비는 관측된 레벨을 NFC 뒤 공백을 지운 이름으로 찾는다', () => {
+    const observed = new Map([['블랙마법깃펜', 100]])
     const row = toEnhancementSpending(
-      [entry({ kind: 'starforce', itemLevel: null, targetItem: '왕푸', payload: { before_starforce_count: 0, upgrade_item: '' } })],
+      [entry({ kind: 'starforce', itemLevel: null, targetItem: '블랙 마법깃펜'.normalize('NFD'), itemKey: null, payload: { before_starforce_count: 0, upgrade_item: '' } })],
       NO_EVENT,
       observed,
     )[0]

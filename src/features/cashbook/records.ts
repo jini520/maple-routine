@@ -45,11 +45,9 @@ import {
   loadEnhancementHistory,
   loadObservedItemLevels,
 } from '../../storage/enhancement-history'
-import {
-  toEnhancementSpending,
-  type EnhancementCategory,
-  type EnhancementSpendingRow,
-} from '../enhancement-history/spending'
+import { toEnhancementSpending, type EnhancementSpendingRow } from '../enhancement-history/spending'
+import { enhancementCategoryNameOf, type EnhancementCategory } from '../../lib/enhancement/categories'
+import { comparableEquipmentName } from '../../lib/equipment/equipment-items'
 import { datesBetween } from '../../lib/calendar'
 import { getLastPointRate, setLastPointRate } from '../../storage/last-point-rate'
 import {
@@ -538,7 +536,7 @@ export interface DropSaleDayRecord extends AutoDayRecordBase {
  */
 export interface EnhancementDayRecord {
   kind: 'enhancement'
-  /** 이름과 함께 이 줄의 신원이다 */
+  /** 갈래 key. 이름과 함께 이 줄의 신원이다. 제목에 적는 글자는 갈래 표에서 찾는다 */
   category: EnhancementCategory
   /** 이름뿐이다 */
   characterName: string
@@ -554,7 +552,9 @@ export interface EnhancementDayRecord {
 
 /** 펼친 강화 줄의 한 칸. 장비 하나가 그날 먹은 메소다. */
 export interface EnhancedItem {
-  /** API 가 준 이름 그대로. 띄어쓰기가 살아 있다 */
+  /** 장비 key. 장비 표에 없는 장비면 `null` 이고 그때는 이름으로 묶였다 */
+  itemKey: string | null
+  /** 이 칸에 처음 든 기록의 API 이름. 띄어쓰기가 살아 있다. 장비 표 이름은 붙여 써서 이 글자를 보인다 */
   targetItem: string
   count: number
   /** 값을 못 매긴 건은 안 들어 있다 */
@@ -640,6 +640,9 @@ function toEnhancementRecords(
     string,
     { record: EnhancementDayRecord; items: Map<string, EnhancedItem> }
   >()
+  // 장비 칸의 신원. 장비 key 이고, 장비 표에 없는 장비는 API 이름과 같은 규칙으로 맞춘 이름이다.
+  const itemIdentityOf = (row: EnhancementSpendingRow): string =>
+    row.itemKey !== null ? `key:${row.itemKey}` : `api:${comparableEquipmentName(row.targetItem)}`
   for (const row of rows) {
     const key = `${row.category}|${row.characterName}`
     let group = groups.get(key)
@@ -662,7 +665,9 @@ function toEnhancementRecords(
     if (row.costMeso === null) group.record.unpricedCount += 1
     else group.record.payoutMeso += row.costMeso
 
-    const item = group.items.get(row.targetItem) ?? {
+    const identity = itemIdentityOf(row)
+    const item = group.items.get(identity) ?? {
+      itemKey: row.itemKey,
       targetItem: row.targetItem,
       count: 0,
       costMeso: 0,
@@ -671,7 +676,7 @@ function toEnhancementRecords(
     item.count += 1
     if (row.costMeso === null) item.unpricedCount += 1
     else item.costMeso += row.costMeso
-    group.items.set(row.targetItem, item)
+    group.items.set(identity, item)
   }
 
   return [...groups.values()]
@@ -695,7 +700,8 @@ function toEnhancementRecords(
       (left, right) =>
         left.characterName.localeCompare(right.characterName) ||
         right.payoutMeso - left.payoutMeso ||
-        left.category.localeCompare(right.category),
+        // key 가 아니라 보이는 글자 순서다. key 로 가르면 전과 달리 큐브가 스타포스 앞에 선다.
+        enhancementCategoryNameOf(left.category).localeCompare(enhancementCategoryNameOf(right.category)),
     )
 }
 
@@ -766,7 +772,7 @@ function toAutoRecords(
 const AUTO_LABELS: Record<AutoDayRecord['kind'], string> = {
   bossCrystal: '보스 결정석',
   dropSale: '아이템 판매',
-  // 강화 줄은 이 표를 안 쓴다. 갈래 이름이 곧 라벨이다(`recordTitleOf`).
+  // 강화 줄은 이 표를 안 쓴다. 갈래 표의 글자가 라벨이다(`recordTitleOf`).
   enhancement: '강화',
 }
 
@@ -805,7 +811,7 @@ export function recordTitleOf(entry: DayRecord): string {
   const label = isManualRecord(entry)
     ? manualLabelOf(entry)
     : entry.kind === 'enhancement'
-      ? entry.category
+      ? enhancementCategoryNameOf(entry.category)
       : AUTO_LABELS[entry.kind]
   // 캐릭터가 붙어 있으면 이름이 앞에 선다. 보스 줄이 이미 쓰던 어법 그대로다. 손입력만 다르게
   // 적으면 한 목록 안에 두 어법이 생긴다.

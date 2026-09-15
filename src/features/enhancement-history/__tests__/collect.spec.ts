@@ -29,6 +29,7 @@ const page = (ids: string[], nextCursor: string | null = null) => ({
     createdAt: '2026-09-05T07:00:00.000+09:00',
     dateKey: '2026-09-05',
     targetItem: '아케인셰이드 클로',
+    itemKey: 'arcane_umbra_knuckle',
     itemLevel: 200,
     payload: { id },
   })),
@@ -177,6 +178,32 @@ describe('수집', () => {
     expect(store.saveEnhancementHistory).toHaveBeenCalledWith('starforce', [])
   })
 
+  // 장비 key 는 응답을 받는 자리에서 얻는다. 매칭 함수는 장비 표 조회 모듈의 것이다.
+  it('장비 표로 key 를 얻는 매칭 함수를 넘긴다', async () => {
+    await collectEnhancementHistory(['2026-09-05'], NOW)
+
+    const itemKeyOf = fetchEnhancementHistory.mock.calls[0][2] as (name: string) => string | null
+    expect(itemKeyOf('루즈 컨트롤 머신 마크')).toBe('loose_control_machine_mark')
+    expect(itemKeyOf('골드 히어로즈 엠블렘')).toBeNull()
+  })
+
+  // 표에 없는 장비에 쓴 큐브도 실제 지출이다. 버리는 기준은 값을 매기는가 하나다.
+  it('장비 key 를 못 찾아도 값을 매길 수 있으면 저장한다', async () => {
+    fetchEnhancementHistory.mockImplementation((_key: string, kind: string) =>
+      Promise.resolve(
+        kind === 'cube'
+          ? { rows: [{ ...page(['emblem']).rows[0], targetItem: '골드 히어로즈 엠블렘', itemKey: null, itemLevel: 100 }], nextCursor: null }
+          : page([]),
+      ),
+    )
+
+    await collectEnhancementHistory(['2026-09-05'], NOW)
+
+    expect(store.saveEnhancementHistory).toHaveBeenCalledWith('cube', [
+      expect.objectContaining({ id: 'emblem', itemKey: null }),
+    ])
+  })
+
   // **0 은 모르는 것이 아니다.** 강화권은 메소가 안 드는 것이지 값을 못 매기는 것이 아니다.
   it('값이 0 인 줄은 저장한다', async () => {
     fetchEnhancementHistory.mockImplementation((_key: string, kind: string) =>
@@ -213,7 +240,7 @@ describe('수집', () => {
   })
 
   it('커서가 있으면 이어 받는다', async () => {
-    fetchEnhancementHistory.mockImplementation((_key, kind, query) => {
+    fetchEnhancementHistory.mockImplementation((_key, kind, _itemKeyOf, query) => {
       if (kind !== 'cube') return Promise.resolve(page([]))
       return Promise.resolve(query.cursor === undefined ? page(['a'], 'c1') : page(['b'], null))
     })
@@ -221,14 +248,14 @@ describe('수집', () => {
     await collectEnhancementHistory(['2026-09-05'], NOW)
 
     const cube = fetchEnhancementHistory.mock.calls.filter((call) => call[1] === 'cube')
-    expect(cube.map((call) => call[2])).toEqual([{ dateKey: '2026-09-05' }, { cursor: 'c1' }])
+    expect(cube.map((call) => call[3])).toEqual([{ dateKey: '2026-09-05' }, { cursor: 'c1' }])
   })
 
   // 커서를 따라가다 이미 넣은 줄을 만나면 그 아래는 다 들어 있다.
   it('아는 id 를 만나면 멈춘다', async () => {
     store.loadKnownHistoryIds.mockResolvedValue(new Set(['b']))
     // 커서가 끊이지 않는다. 멈추는 것은 아는 id 뿐이다.
-    fetchEnhancementHistory.mockImplementation((_key, _kind, query) =>
+    fetchEnhancementHistory.mockImplementation((_key, _kind, _itemKeyOf, query) =>
       Promise.resolve(query.cursor === undefined ? page(['a'], 'c1') : page(['b'], 'c2')),
     )
 

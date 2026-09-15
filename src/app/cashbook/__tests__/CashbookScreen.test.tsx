@@ -1884,24 +1884,24 @@ describe('창이 뒤늦게 채운 것을 받는다', () => {
 describe('강화 줄', () => {
   const 스타포스줄 = {
     kind: 'enhancement' as const,
-    category: '스타포스' as const,
+    category: 'starforce' as const,
     characterName: '낟낟',
     payoutMeso: 1_200_000_000,
     count: 47,
     unpricedCount: 0,
     items: [
-      { targetItem: '아케인셰이드 클로', count: 32, costMeso: 980_000_000, unpricedCount: 0 },
-      { targetItem: '데아 시두스 이어링', count: 15, costMeso: 220_000_000, unpricedCount: 0 },
+      { itemKey: 'arcane_umbra_knuckle', targetItem: '아케인셰이드 클로', count: 32, costMeso: 980_000_000, unpricedCount: 0 },
+      { itemKey: 'dea_sidus_earring', targetItem: '데아 시두스 이어링', count: 15, costMeso: 220_000_000, unpricedCount: 0 },
     ],
   }
   const 에디셔널줄 = {
     kind: 'enhancement' as const,
-    category: '에디셔널 잠재능력' as const,
+    category: 'additional_potential' as const,
     characterName: '낟낟',
     payoutMeso: 740_000_000,
     count: 10,
     unpricedCount: 0,
-    items: [{ targetItem: '아케인셰이드 클로', count: 10, costMeso: 740_000_000, unpricedCount: 0 }],
+    items: [{ itemKey: 'arcane_umbra_knuckle', targetItem: '아케인셰이드 클로', count: 10, costMeso: 740_000_000, unpricedCount: 0 }],
   }
 
   beforeEach(() => {
@@ -1914,7 +1914,7 @@ describe('강화 줄', () => {
   it('나가는 돈으로 적힌다', async () => {
     const view = await 그리기()
 
-    expect(view.getByTestId('cashbook-row-enhancement:스타포스:낟낟')).toHaveTextContent(
+    expect(view.getByTestId('cashbook-row-enhancement:starforce:낟낟')).toHaveTextContent(
       '낟낟 · 스타포스47회−12억',
     )
   })
@@ -1923,7 +1923,7 @@ describe('강화 줄', () => {
   it('갈래마다 줄이 따로 선다', async () => {
     const view = await 그리기()
 
-    expect(view.getByTestId('cashbook-row-enhancement:에디셔널 잠재능력:낟낟')).toHaveTextContent(
+    expect(view.getByTestId('cashbook-row-enhancement:additional_potential:낟낟')).toHaveTextContent(
       '낟낟 · 에디셔널 잠재능력10회−7.4억',
     )
   })
@@ -1932,7 +1932,7 @@ describe('강화 줄', () => {
     그날줄을(고른날, [{ ...스타포스줄, unpricedCount: 3 }])
     const view = await 그리기()
 
-    expect(view.getByTestId('cashbook-row-enhancement:스타포스:낟낟')).toHaveTextContent(
+    expect(view.getByTestId('cashbook-row-enhancement:starforce:낟낟')).toHaveTextContent(
       '낟낟 · 스타포스47회 · 값모름 3−12억',
     )
   })
@@ -1940,7 +1940,7 @@ describe('강화 줄', () => {
   it('처음에는 접혀 있다', async () => {
     const view = await 그리기()
 
-    expect(view.queryByTestId('cashbook-row-items-enhancement:스타포스:낟낟')).toBeNull()
+    expect(view.queryByTestId('cashbook-row-items-enhancement:starforce:낟낟')).toBeNull()
   })
 
   // 원천이 넥슨 API 라 갈 곳이 없다. 펼치는 것이 여기서 할 수 있는 전부다.
@@ -1949,7 +1949,7 @@ describe('강화 줄', () => {
 
     await 이름으로누르기(view, '낟낟 · 스타포스 펼치기')
 
-    expect(view.getByTestId('cashbook-row-items-enhancement:스타포스:낟낟')).toBeTruthy()
+    expect(view.getByTestId('cashbook-row-items-enhancement:starforce:낟낟')).toBeTruthy()
     expect(mockOpenTab).not.toHaveBeenCalled()
     expect(view.queryByTestId('cashbook-spend-sheet')).toBeNull()
   })
@@ -1958,10 +1958,10 @@ describe('강화 줄', () => {
     const view = await 그리기()
     await 이름으로누르기(view, '낟낟 · 스타포스 펼치기')
 
-    expect(view.getByTestId('cashbook-item-row-아케인셰이드 클로')).toHaveTextContent(
+    expect(view.getByTestId('cashbook-item-row-arcane_umbra_knuckle')).toHaveTextContent(
       '아케인셰이드 클로32회−9.8억',
     )
-    expect(view.getByTestId('cashbook-item-row-데아 시두스 이어링')).toHaveTextContent(
+    expect(view.getByTestId('cashbook-item-row-dea_sidus_earring')).toHaveTextContent(
       '데아 시두스 이어링15회−2.2억',
     )
   })
@@ -1973,8 +1973,8 @@ describe('강화 줄', () => {
     await 이름으로누르기(view, '낟낟 · 스타포스 펼치기')
     await 이름으로누르기(view, '낟낟 · 에디셔널 잠재능력 펼치기')
 
-    expect(view.queryByTestId('cashbook-row-items-enhancement:스타포스:낟낟')).toBeNull()
-    expect(view.getByTestId('cashbook-row-items-enhancement:에디셔널 잠재능력:낟낟')).toBeTruthy()
+    expect(view.queryByTestId('cashbook-row-items-enhancement:starforce:낟낟')).toBeNull()
+    expect(view.getByTestId('cashbook-row-items-enhancement:additional_potential:낟낟')).toBeTruthy()
   })
 
   // 0 을 적으면 공짜로 강화한 것이 된다.
@@ -1982,7 +1982,7 @@ describe('강화 줄', () => {
     그날줄을(고른날, [
       {
         ...스타포스줄,
-        items: [{ targetItem: '왕푸', count: 8, costMeso: 0, unpricedCount: 8 }],
+        items: [{ itemKey: null, targetItem: '왕푸', count: 8, costMeso: 0, unpricedCount: 8 }],
       },
     ])
     const view = await 그리기()
@@ -1997,7 +1997,7 @@ describe('강화 줄', () => {
     await 이름으로누르기(view, '낟낟 · 스타포스 펼치기')
     await 이름으로누르기(view, '낟낟 · 스타포스 접기')
 
-    expect(view.queryByTestId('cashbook-row-items-enhancement:스타포스:낟낟')).toBeNull()
+    expect(view.queryByTestId('cashbook-row-items-enhancement:starforce:낟낟')).toBeNull()
   })
 })
 

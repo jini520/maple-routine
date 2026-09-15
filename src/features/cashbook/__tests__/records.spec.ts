@@ -959,6 +959,7 @@ describe('강화 지출이 칸에 든다', () => {
     createdAt: '2026-08-23T10:00:00.000+09:00',
     characterName: '낟낟',
     targetItem: '아케인셰이드 클로',
+    itemKey: 'arcane_umbra_knuckle',
     itemLevel: 150,
     payload: {},
     ...over,
@@ -1031,6 +1032,7 @@ describe('강화 줄', () => {
     createdAt: '2026-08-23T10:00:00.000+09:00',
     characterName: '낟낟',
     targetItem: '아케인셰이드 클로',
+    itemKey: 'arcane_umbra_knuckle',
     itemLevel: 150,
     payload: {},
     ...over,
@@ -1072,13 +1074,13 @@ describe('강화 줄', () => {
 
     expect(
       rows.flatMap((row) => (row.kind === 'enhancement' ? [row.category] : [])).sort(),
-    ).toEqual(['스타포스', '에디셔널 잠재능력', '잠재능력', '큐브 재설정'])
+    ).toEqual(['additional_potential', 'cube_reset', 'potential', 'starforce'])
   })
 
   it('잠재는 종류가 응답에서 온다', async () => {
     const rows = await 줄들([잠재('에디셔널 잠재능력 재설정')])
 
-    expect(rows[0]).toMatchObject({ category: '에디셔널 잠재능력', payoutMeso: 74_800_000 })
+    expect(rows[0]).toMatchObject({ category: 'additional_potential', payoutMeso: 74_800_000 })
   })
 
   it('금액과 횟수를 모은다', async () => {
@@ -1086,7 +1088,7 @@ describe('강화 줄', () => {
 
     expect(row).toMatchObject({
       kind: 'enhancement',
-      category: '큐브 재설정',
+      category: 'cube_reset',
       characterName: '낟낟',
       payoutMeso: 900_000,
       count: 2,
@@ -1105,7 +1107,7 @@ describe('강화 줄', () => {
     const { rowKeyOf } = require('../records') as typeof import('../records')
     const [row] = await 줄들([강화()])
 
-    expect(rowKeyOf(row)).toBe('enhancement:큐브 재설정:낟낟')
+    expect(rowKeyOf(row)).toBe('enhancement:cube_reset:낟낟')
   })
 
   // 캐릭터로 먼저 모으고 그 안에서 큰 금액이 위다. 갈래를 고정 순서로 두면 그날 제일 많이 쓴
@@ -1121,7 +1123,17 @@ describe('강화 줄', () => {
       rows.flatMap((row) =>
         row.kind === 'enhancement' ? [`${row.characterName}/${row.category}`] : [],
       ),
-    ).toEqual(['가가/큐브 재설정', '낟낟/잠재능력', '낟낟/큐브 재설정'])
+    ).toEqual(['가가/cube_reset', '낟낟/potential', '낟낟/cube_reset'])
+  })
+
+  // 금액까지 같으면 갈래 글자 순서다. key 순서로 가르면 전과 달리 큐브가 스타포스 앞에 선다.
+  it('금액이 같은 갈래 줄은 보이는 글자 순서다', async () => {
+    const rows = await 줄들([
+      강화({ itemLevel: null }),
+      강화({ id: 'e2', kind: 'starforce', itemLevel: null, itemKey: null, targetItem: '왕푸', payload: { before_starforce_count: 5, upgrade_item: '' } }),
+    ])
+
+    expect(rows.flatMap((row) => (row.kind === 'enhancement' ? [row.category] : []))).toEqual(['starforce', 'cube_reset'])
   })
 
   it('건수 라벨이 값모름을 말한다', async () => {
@@ -1136,33 +1148,57 @@ describe('강화 줄', () => {
   // 펼쳐서 보는 이유가 **어디에 썼나** 라서 이름순이면 그 답이 안 보인다.
   it('만진 장비를 큰 금액부터 담는다', async () => {
     const [row] = await 줄들([
-      강화({ targetItem: '데아 시두스 이어링', itemLevel: 130 }),
+      강화({ targetItem: '데아 시두스 이어링', itemKey: 'dea_sidus_earring', itemLevel: 130 }),
       강화({ id: 'e2', targetItem: '아케인셰이드 클로', itemLevel: 200 }),
       강화({ id: 'e3', targetItem: '아케인셰이드 클로', itemLevel: 200 }),
     ])
 
     expect(row.kind === 'enhancement' && row.items).toEqual([
-      { targetItem: '아케인셰이드 클로', count: 2, costMeso: 1_600_000, unpricedCount: 0 },
-      { targetItem: '데아 시두스 이어링', count: 1, costMeso: 338_000, unpricedCount: 0 },
+      { itemKey: 'arcane_umbra_knuckle', targetItem: '아케인셰이드 클로', count: 2, costMeso: 1_600_000, unpricedCount: 0 },
+      { itemKey: 'dea_sidus_earring', targetItem: '데아 시두스 이어링', count: 1, costMeso: 338_000, unpricedCount: 0 },
+    ])
+  })
+
+  // 장비 칸은 key 로 묶는다. 띄어쓰기만 다른 같은 장비가 두 칸이 되지 않고, 이름은 처음 든 기록의 API 이름이다.
+  it('같은 장비 key 는 한 칸이고 처음 든 기록의 API 이름을 보인다', async () => {
+    const [row] = await 줄들([
+      강화({ targetItem: '아케인셰이드 클로', itemLevel: 200 }),
+      강화({ id: 'e2', targetItem: '아케인셰이드클로', itemLevel: 200 }),
+    ])
+
+    expect(row.kind === 'enhancement' && row.items.map((item) => [item.targetItem, item.count])).toEqual([
+      ['아케인셰이드 클로', 2],
+    ])
+  })
+
+  // 장비 표에 없는 장비는 key 가 없어 이름으로 묶는다. 그 이름도 API 이름과 같은 규칙으로 맞춘다.
+  it('장비 key 가 없으면 NFC 뒤 공백을 지운 이름으로 묶는다', async () => {
+    const [row] = await 줄들([
+      강화({ targetItem: '블랙 마법깃펜', itemKey: null, itemLevel: 150 }),
+      강화({ id: 'e2', targetItem: '블랙마법깃펜'.normalize('NFD'), itemKey: null, itemLevel: 150 }),
+    ])
+
+    expect(row.kind === 'enhancement' && row.items).toEqual([
+      { itemKey: null, targetItem: '블랙 마법깃펜', count: 2, costMeso: 900_000, unpricedCount: 0 },
     ])
   })
 
   it('장비별로도 값 모름을 센다', async () => {
     const [row] = await 줄들([
-      강화({ targetItem: '왕푸', itemLevel: null }),
-      강화({ id: 'e2', targetItem: '왕푸', itemLevel: null }),
+      강화({ targetItem: '왕푸', itemKey: null, itemLevel: null }),
+      강화({ id: 'e2', targetItem: '왕푸', itemKey: null, itemLevel: null }),
     ])
 
     expect(row.kind === 'enhancement' && row.items).toEqual([
-      { targetItem: '왕푸', count: 2, costMeso: 0, unpricedCount: 2 },
+      { itemKey: null, targetItem: '왕푸', count: 2, costMeso: 0, unpricedCount: 2 },
     ])
   })
 
   // 금액이 같으면 순서가 흔들리면 안 된다. 다시 그릴 때마다 줄이 자리를 바꾼다.
   it('금액이 같으면 건수로, 그것도 같으면 이름으로 가른다', async () => {
     const [row] = await 줄들([
-      강화({ targetItem: '나', itemLevel: 150 }),
-      강화({ id: 'e2', targetItem: '가', itemLevel: 150 }),
+      강화({ targetItem: '나', itemKey: null, itemLevel: 150 }),
+      강화({ id: 'e2', targetItem: '가', itemKey: null, itemLevel: 150 }),
     ])
 
     expect(row.kind === 'enhancement' && row.items.map((item) => item.targetItem)).toEqual([
@@ -1190,7 +1226,7 @@ describe('강화 줄', () => {
   it('섞여 있으면 안 쓴 장비만 펼침에서 빠진다', async () => {
     const [row] = await 줄들([
       강화({ targetItem: '아케인셰이드 클로', itemLevel: 200 }),
-      강화({ id: 'e2', targetItem: '초보자의 장갑', itemLevel: 100 }),
+      강화({ id: 'e2', targetItem: '초보자의 장갑', itemKey: null, itemLevel: 100 }),
     ])
 
     expect(row.kind === 'enhancement' && row.items.map((item) => item.targetItem)).toEqual([

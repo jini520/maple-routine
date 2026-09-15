@@ -154,12 +154,12 @@ export interface SpendIcon {
  * 결정석은 **주간** 것이다. 그림 둘의 픽셀을 재서 골랐다(weekly 가 보라 · monthly 는 금색).
  */
 const CASHBOOK_ROW_ICON_BY_KEY: Record<string, string> = {
-  '보스 결정석': 'intense_power_crystal_weekly.webp',
-  // 큐브는 본잠·에디를 안 가르므로 그림도 하나다(사용자 지정).
-  '큐브 재설정': 'cube_gold.png',
-  '스타포스': 'equipment_enhancement_scroll.png',
-  '잠재능력': 'potential_reset.png',
-  '에디셔널 잠재능력': 'additional_potential_reset.png',
+  bossCrystal: 'intense_power_crystal_weekly.webp',
+  // 강화 갈래 넷. 열쇠는 `enhancement:갈래 key` 다. 큐브는 본잠·에디를 안 가르므로 그림도 하나다(사용자 지정).
+  'enhancement:cube_reset': 'cube_gold.png',
+  'enhancement:starforce': 'equipment_enhancement_scroll.png',
+  'enhancement:potential': 'potential_reset.png',
+  'enhancement:additional_potential': 'additional_potential_reset.png',
   // 손입력 갈래 둘. 열쇠는 `기록 종류:갈래 key` 라 수익 · 지출의 같은 갈래 key 가 안 겹친다.
   'income:hunting': 'wealth_acquisition_potion_small.webp',
   'spend:buff': 'seiram_elixir.webp',

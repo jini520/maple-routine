@@ -12,8 +12,9 @@ import {
   starforceCost,
   type PotentialResetType,
 } from '../../lib/enhancement/cost'
+import type { EnhancementCategory } from '../../lib/enhancement/categories'
 import { isSpendingRecord } from '../../lib/enhancement/world'
-import { equipmentItemLevel } from '../../lib/equipment/item-level'
+import { comparableEquipmentName, equipmentItemLevelOf } from '../../lib/equipment/equipment-items'
 import type { EnhancementHistoryEntry } from '../../storage/enhancement-history'
 
 export interface EnhancementSpendingRow extends EnhancementHistoryEntry {
@@ -23,28 +24,11 @@ export interface EnhancementSpendingRow extends EnhancementHistoryEntry {
   category: EnhancementCategory
 }
 
-/**
- * 지출을 가르는 단위. **`kind` 보다 하나 잘다.**
- *
- * `kind` 는 API 엔드포인트라 잠재 둘이 한 통에 온다. 그런데 본 잠재와 에디셔널은 비용 표가
- * 아예 다르고(에디셔널이 두 배 넘는다) 사용자가 따로 센다.
- *
- * **큐브는 안 가른다.** 한 번 본잠·에디로 갈라 봤고 되돌렸다(사용자 지정 2026-09-08). 갈라도
- * 값이 안 바뀌는데(감정비용은 장비 레벨 하나로 나온다) 줄만 둘로 늘었다.
- */
-export type EnhancementCategory =
-  | '큐브 재설정'
-  | '스타포스'
-  | '잠재능력'
-  | '에디셔널 잠재능력'
-
 function categoryOf(entry: EnhancementHistoryEntry): EnhancementCategory {
-  if (entry.kind === 'cube') return '큐브 재설정'
-  if (entry.kind === 'starforce') return '스타포스'
+  if (entry.kind === 'cube') return 'cube_reset'
+  if (entry.kind === 'starforce') return 'starforce'
   // 응답이 `에디셔널 잠재능력 재설정` 이라고 말한다. 그 값이 아니면 본 잠재다.
-  return text(entry.payload, 'potential_type') === '에디셔널 잠재능력 재설정'
-    ? '에디셔널 잠재능력'
-    : '잠재능력'
+  return text(entry.payload, 'potential_type') === '에디셔널 잠재능력 재설정' ? 'additional_potential' : 'potential'
 }
 
 function field(payload: unknown, key: string): unknown {
@@ -83,8 +67,9 @@ function starforceMeso(
   // 강화권은 메소가 안 든다. 0 이지 모르는 것이 아니다.
   if (text(entry.payload, 'upgrade_item') !== '') return 0
 
-  const name = entry.targetItem.replace(/\s/g, '')
-  const level = equipmentItemLevel(entry.targetItem) ?? observedLevels.get(name) ?? null
+  // 표에 없는 장비는 key 가 없어 관측 레벨을 이름으로 찾는다.
+  const level =
+    equipmentItemLevelOf(entry.itemKey) ?? observedLevels.get(comparableEquipmentName(entry.targetItem)) ?? null
   const fromStar = field(entry.payload, 'before_starforce_count')
   if (level === null || typeof fromStar !== 'number') return null
 
@@ -130,7 +115,7 @@ export function enhancementCostOf(
  *
  * @param eventNames 스페셜 캐릭터 이름. **목록을 못 받았으면 `null`** 이고, 그때는 월드를
  *   모르는 줄을 전부 뺀다. 가릴 수 없는 것을 세우면 지출이 두 배로 부푼다
- * @param observedLevels 이름에서 레벨로. `equipment-items.json` 이 못 채운 자리를 받는다
+ * @param observedLevels 이름에서 레벨로. 장비 표에 없는 장비를 받는다
  */
 export function toEnhancementSpending(
   entries: readonly EnhancementHistoryEntry[],

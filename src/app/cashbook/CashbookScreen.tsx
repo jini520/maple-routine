@@ -414,8 +414,9 @@ function EnhancedItemRows(props: {
     >
       {props.items.map((item) => (
         <View
-          key={item.targetItem}
-          testID={`cashbook-item-row-${item.targetItem}`}
+          // 장비 표에 없는 장비는 key 가 없어 이름으로 묶였다. 그 이름이 곧 칸의 신원이다.
+          key={item.itemKey ?? item.targetItem}
+          testID={`cashbook-item-row-${item.itemKey ?? item.targetItem}`}
           className="flex-row items-center gap-2"
         >
           <Text numberOfLines={1} className="shrink text-11 text-text-muted">
