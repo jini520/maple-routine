@@ -5,7 +5,6 @@
 // 만들기가 번거로워, 실제로 결정적 정렬에 직접 붙은 테스트가 없었다.
 import weeklyBossesData from '../../../data/weekly-bosses.json'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
-import type { MatchedBoss } from '../../../lib/boss/boss-matching'
 import type { ManualTrackedItem } from '../../../storage/manual-tracked-content'
 import type { BossContent } from '../../../types'
 import {
@@ -18,6 +17,7 @@ import {
   sumRowsPayout,
   toRecordedDrop,
   toUpcomingWeekRows,
+  type ProfitBoss,
 } from '../rows'
 import type { BossProfitRow } from '../store'
 
@@ -27,8 +27,9 @@ function row(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     characterName: '낟낟',
     imageUrl: null,
     world: null,
-    boss: '자쿰',
-    difficulty: '카오스',
+    bossKey: 'zakum',
+    bossName: '자쿰',
+    difficulty: 'chaos',
     cycle: 'weekly',
     periodKey: '2026-07-09',
     periodLabel: '이번 주',
@@ -54,10 +55,10 @@ describe('sortRowsByOcidOrder', () => {
   // ocid 로만 정렬하고 stable sort 에 기대면 보스 순서가 데이터 소스 순서를 물려받는다.
   // 그 소스 순서는 비결정적이라(ORDER BY 없는 조회· Map 삽입 순서) 로드마다 달라진다.
   it('같은 캐릭터 안에서는 참조 데이터 순서로 보스를 결정적으로 정렬한다', () => {
-    const rows = [row({ boss: '스우' }), row({ boss: '자쿰' }), row({ boss: '루시드' })]
+    const rows = [row({ bossKey: 'lotus', bossName: '스우' }), row({ bossKey: 'zakum', bossName: '자쿰' }), row({ bossKey: 'lucid', bossName: '루시드' })]
 
-    const once = sortRowsByOcidOrder(rows, ['ocid-1']).map((r) => r.boss)
-    const twice = sortRowsByOcidOrder([...rows].reverse(), ['ocid-1']).map((r) => r.boss)
+    const once = sortRowsByOcidOrder(rows, ['ocid-1']).map((r) => r.bossName)
+    const twice = sortRowsByOcidOrder([...rows].reverse(), ['ocid-1']).map((r) => r.bossName)
 
     // 입력 순서가 달라도 결과가 같아야 "결정적"이다.
     expect(twice).toEqual(once)
@@ -114,14 +115,14 @@ describe('filterRowsForTab', () => {
 
 // 아직 기록 안 된 이번 기간 행. 가격은 그 행의 기간의 표에서 찾는다(2026-09-17 패치).
 describe('buildBossProfitRow', () => {
-  const 자쿰: MatchedBoss = {
+  const 자쿰: ProfitBoss = {
+    bossKey: 'zakum',
     apiName: '자쿰',
-    difficulty: '카오스',
+    difficulty: 'chaos',
     cycle: 'weekly',
     isRegistered: true,
     isComplete: true,
     ownComplete: true,
-    matchedBossName: '자쿰',
     portraitSlug: null,
     isSeasonBoss: false,
   }
@@ -146,8 +147,8 @@ describe('sumRowsPayout', () => {
 describe('matchesRowKey', () => {
   const key = {
     ocid: 'ocid-1',
-    boss: '자쿰',
-    difficulty: '카오스' as const,
+    bossKey: 'zakum',
+    difficulty: 'chaos' as const,
     cycle: 'weekly' as const,
     periodKey: '2026-07-09',
   }
@@ -157,7 +158,7 @@ describe('matchesRowKey', () => {
   })
 
   it('난이도만 달라도 다른 행이다. 등록 난이도 ≠ 처치 난이도 오류의 근원', () => {
-    expect(matchesRowKey(row({ difficulty: '하드' }), key)).toBe(false)
+    expect(matchesRowKey(row({ difficulty: 'hard' }), key)).toBe(false)
   })
 })
 
@@ -169,8 +170,9 @@ describe('matchesRowKey', () => {
 describe('toRecordedDrop: 가격 필드', () => {
   const base = {
     ocid: 'ocid-1',
+    bossKey: 'lotus',
     boss: '스우',
-    difficulty: '하드',
+    difficulty: 'hard',
     periodKey: '2026-08-06',
     dropIndex: 0,
     category: 'equipment' as const,
@@ -240,12 +242,13 @@ describe('toRecordedDrop: 가격 필드', () => {
 // 주간 한도를 채우면 미처치 placeholder 행은 아예 서지 않는다. `마감` 배지를
 // 여기까지 들고 오지 않는다: 이 페이지는 정산이라 **벌지 않은 것** 은 줄을 갖지 않는다.
 describe('selectProfitDisplayBosses: 주간 한도 마감', () => {
-  const WEEKLY_NAMES = (weeklyBossesData.weekly as { boss: string }[]).map((entry) => entry.boss)
-  const PENDING = WEEKLY_NAMES[0]
+  const WEEKLY = weeklyBossesData.weekly as { key: string; name: string }[]
+  const PENDING = WEEKLY[0].key
 
-  function content(overrides: Partial<BossContent> & { name: string }): BossContent {
+  function content(overrides: Partial<BossContent> & { bossKey: string | null }): BossContent {
     return {
-      difficulty: '하드',
+      apiName: WEEKLY.find((entry) => entry.key === overrides.bossKey)?.name ?? '표에 없는 보스',
+      difficulty: 'hard',
       cycle: 'weekly',
       isRegistered: false,
       isComplete: false,
@@ -256,60 +259,81 @@ describe('selectProfitDisplayBosses: 주간 한도 마감', () => {
 
   /** 끝에서부터 한도만큼 실제로 처치한 보스들. `PENDING` 과 겹치지 않게 뒤에서 뽑는다. */
   function cleared(count: number): BossContent[] {
-    return WEEKLY_NAMES.slice(-count).map((name) =>
-      content({ name, isRegistered: true, isComplete: true, ownComplete: true }),
+    return WEEKLY.slice(-count).map((entry) =>
+      content({ bossKey: entry.key, isRegistered: true, isComplete: true, ownComplete: true }),
     )
   }
 
-  const names = (bosses: ReturnType<typeof selectProfitDisplayBosses>): string[] =>
-    bosses.map((boss) => boss.matchedBossName ?? boss.apiName)
+  const keys = (bosses: ReturnType<typeof selectProfitDisplayBosses>): string[] =>
+    bosses.map((boss) => boss.bossKey)
 
   it('자동 모드: 한도를 채우면 인게임 등록만 된 미처치 보스는 행이 서지 않는다', () => {
-    const contents = [content({ name: PENDING, isRegistered: true }), ...cleared(WEEKLY_BOSS_CLEAR_LIMIT)]
+    const contents = [content({ bossKey: PENDING, isRegistered: true }), ...cleared(WEEKLY_BOSS_CLEAR_LIMIT)]
 
-    expect(names(selectProfitDisplayBosses(contents, 'auto', []))).not.toContain(PENDING)
+    expect(keys(selectProfitDisplayBosses(contents, 'auto', []))).not.toContain(PENDING)
   })
 
   // 회귀 가드. 한도 전이면 미완료 placeholder 는 그대로 선다.
   it('자동 모드: 한 마리 모자라면 미완료 placeholder 는 그대로 선다', () => {
     const contents = [
-      content({ name: PENDING, isRegistered: true }),
+      content({ bossKey: PENDING, isRegistered: true }),
       ...cleared(WEEKLY_BOSS_CLEAR_LIMIT - 1),
     ]
 
-    expect(names(selectProfitDisplayBosses(contents, 'auto', []))).toContain(PENDING)
+    expect(keys(selectProfitDisplayBosses(contents, 'auto', []))).toContain(PENDING)
   })
 
   it('수동 모드: 한도를 채우면 추적 중인 미처치 보스도 행이 서지 않는다', () => {
     const contents = cleared(WEEKLY_BOSS_CLEAR_LIMIT)
-    const manual: ManualTrackedItem[] = [{ contentName: PENDING, kind: 'boss', difficulty: '하드' }]
+    const manual: ManualTrackedItem[] = [{ kind: 'boss', bossKey: PENDING, difficulty: 'hard' }]
 
-    expect(names(selectProfitDisplayBosses(contents, 'manual', manual))).not.toContain(PENDING)
+    expect(keys(selectProfitDisplayBosses(contents, 'manual', manual))).not.toContain(PENDING)
   })
 
   // 마감은 **안 잡은 것** 에만 붙는다. 실제로 번 것은 정산에서 사라지면 안 된다.
   it('실제로 처치한 보스는 한도를 채워도 전부 남는다', () => {
     const contents = cleared(WEEKLY_BOSS_CLEAR_LIMIT)
 
-    expect(names(selectProfitDisplayBosses(contents, 'auto', []))).toHaveLength(WEEKLY_BOSS_CLEAR_LIMIT)
+    expect(keys(selectProfitDisplayBosses(contents, 'auto', []))).toHaveLength(WEEKLY_BOSS_CLEAR_LIMIT)
   })
 
   it('시즌 보스는 한도 밖이라 미처치여도 남는다', () => {
     const contents = [
-      content({ name: '시즌 보스 메이린', difficulty: '노멀', isRegistered: true }),
+      content({ bossKey: 'meirin', apiName: '시즌 보스 메이린', difficulty: 'normal', isRegistered: true }),
       ...cleared(WEEKLY_BOSS_CLEAR_LIMIT),
     ]
 
-    expect(names(selectProfitDisplayBosses(contents, 'auto', []))).toContain('시즌 보스 메이린')
+    expect(keys(selectProfitDisplayBosses(contents, 'auto', []))).toContain('meirin')
   })
 
   it('월간 보스는 한도 밖이라 미처치여도 남는다', () => {
     const contents = [
-      content({ name: '검은마법사', cycle: 'monthly', isRegistered: true }),
+      content({ bossKey: 'black_mage', apiName: '검은 마법사', cycle: 'monthly', isRegistered: true }),
       ...cleared(WEEKLY_BOSS_CLEAR_LIMIT),
     ]
 
-    expect(names(selectProfitDisplayBosses(contents, 'auto', []))).toContain('검은마법사')
+    expect(keys(selectProfitDisplayBosses(contents, 'auto', []))).toContain('black_mage')
+  })
+})
+
+// API 이름이 보스 표에 없는 보스는 결정석 가격도 기록할 key 도 없다. 처치했어도 수익 행이 되지 않는다.
+describe('selectProfitDisplayBosses: 보스 표에 없는 보스', () => {
+  const 모르는보스: BossContent = {
+    bossKey: null,
+    apiName: '새 보스',
+    difficulty: 'hard',
+    cycle: 'weekly',
+    isRegistered: true,
+    isComplete: true,
+    ownComplete: true,
+  }
+
+  it('자동 모드에서 처치했어도 행이 되지 않는다', () => {
+    expect(selectProfitDisplayBosses([모르는보스], 'auto', [])).toEqual([])
+  })
+
+  it('수동 모드에서도 처치 행이 되지 않는다', () => {
+    expect(selectProfitDisplayBosses([모르는보스], 'manual', [])).toEqual([])
   })
 })
 
@@ -320,7 +344,8 @@ it('mergeRecordsIntoRows 는 기록의 처치 날짜도 행에 싣는다', () =>
   const target = row({ cycle: 'monthly', periodKey: '2026-09', defeatedOn: null })
   const record = {
     ocid: target.ocid,
-    boss: target.boss,
+    bossKey: target.bossKey,
+    boss: target.bossName,
     difficulty: target.difficulty,
     cycle: 'monthly' as const,
     periodKey: '2026-09',
@@ -346,8 +371,9 @@ describe('toUpcomingWeekRows', () => {
     characterName: '낟낟',
     imageUrl: null,
     world: '엘리시움',
-    boss: '스우',
-    difficulty: '하드',
+    bossKey: 'lotus',
+    bossName: '스우',
+    difficulty: 'hard',
     cycle: 'weekly',
     periodKey: '2026-09-03',
     periodLabel: '이번 주',
@@ -379,7 +405,7 @@ describe('toUpcomingWeekRows', () => {
   // 시세는 기간마다 다를 수 있다(2026-09-17 패치). 이번 주의 값을 옮기면 다음 주가 옛 가격을 든다.
   it('시세는 그 주의 표에서 다시 찾는다', () => {
     const [row] = toUpcomingWeekRows(
-      [이번주행({ boss: '자쿰', difficulty: '카오스', periodKey: '2026-09-10', priceMeso: 8_080_000 })],
+      [이번주행({ bossKey: 'zakum', bossName: '자쿰', difficulty: 'chaos', periodKey: '2026-09-10', priceMeso: 8_080_000 })],
       '2026-09-17',
       NOW,
     )
@@ -390,13 +416,13 @@ describe('toUpcomingWeekRows', () => {
   // 월간 보스는 기록이 자기 주를 정한다(`isMonthlyRowInWeek`). 여기서 옮기면 두 번 선다.
   it('월간 행은 안 옮긴다', () => {
     const rows = toUpcomingWeekRows(
-      [이번주행(), 이번주행({ boss: '검은마법사', cycle: 'monthly', periodKey: '2026-09' })],
+      [이번주행(), 이번주행({ bossKey: 'black_mage', bossName: '검은 마법사', cycle: 'monthly', periodKey: '2026-09' })],
       '2026-09-10',
       NOW,
     )
 
     expect(rows).toHaveLength(1)
-    expect(rows[0].boss).toBe('스우')
+    expect(rows[0].bossName).toBe('스우')
   })
 
   it('기간 라벨도 그 주의 것으로 바꾼다', () => {

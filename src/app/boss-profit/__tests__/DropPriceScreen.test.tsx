@@ -76,7 +76,8 @@ const mockedNavigation = jest.mocked(useScreenNavigation)
 type PriceStore = ReturnType<typeof useDropPriceStore>
 
 // 보스 이름·난이도는 게임 레퍼런스 데이터에서 뽑는다.
-const 주간보스 = weeklyBossesData.weekly[0].boss
+const 주간보스 = weeklyBossesData.weekly[0].key
+const 주간보스이름 = weeklyBossesData.weekly[0].name
 const PERIOD = '2026-08-06'
 
 const load = jest.fn()
@@ -95,10 +96,11 @@ function 드롭(overrides: Partial<RecordedDrop> = {}): RecordedDrop {
 
 function 항목(overrides: Partial<DropPriceEntry> = {}): DropPriceEntry {
   return {
-    id: `ocid-1|${주간보스}|하드|${PERIOD}|0`,
+    id: `ocid-1|${주간보스}|hard|${PERIOD}|0`,
     ocid: 'ocid-1',
-    boss: 주간보스,
-    difficulty: '하드',
+    bossKey: 주간보스,
+    bossName: 주간보스이름,
+    difficulty: 'hard',
     periodKey: PERIOD,
     dropIndex: 0,
     partySize: 3,
@@ -268,7 +270,7 @@ describe('DropPriceScreen: 값 매기기', () => {
     })
 
     expect(savePrice).toHaveBeenCalledWith(
-      expect.objectContaining({ boss: 주간보스 }),
+      expect.objectContaining({ bossKey: 주간보스 }),
       100_000_000,
       3,
     )
@@ -380,7 +382,7 @@ describe('DropPriceScreen: 미입력 ≠ 0원', () => {
     })
     const { getByText, queryByText } = await renderOverlay(<DropPriceScreen />)
 
-    expect(getByText(new RegExp(`${주간보스} · 3인`))).toBeTruthy()
+    expect(getByText(new RegExp(`${주간보스이름} · 3인`))).toBeTruthy()
     expect(queryByText(/1인$/)).toBeNull()
   })
 
@@ -488,7 +490,7 @@ describe('DropPriceScreen: 순차 입력', () => {
       fireEvent.press(getByText('기록 안함'))
     })
 
-    expect(excludePrice).toHaveBeenCalledWith(expect.objectContaining({ boss: 주간보스 }))
+    expect(excludePrice).toHaveBeenCalledWith(expect.objectContaining({ bossKey: 주간보스 }))
   })
 
   it('단건 편집에는 스킵이 없다. 닫으면 같은 일이라 버튼을 늘리지 않는다', async () => {

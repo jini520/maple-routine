@@ -17,10 +17,10 @@ import { useRef, useState } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 
+import { bossesInSection } from '../../lib/boss/bosses'
 import { sumDropPayout } from '../../lib/drop/drop-price'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss/boss-matching'
 
-import weeklyBossesData from '../../data/weekly-bosses.json'
 
 import { AnimatedNumber, ChevronDownIcon, ChevronUpIcon, Text } from '../../components/atoms'
 import { ValuableDropBadge } from '../../components/molecules/ValuableDropBadge/ValuableDropBadge'
@@ -66,7 +66,7 @@ import {
 // 수가 따라 늘어 데이터는 2종인데 링은 1칸 이 될 수 없다. `boss-matching` 의 두 한도와 나란히
 // 두지 않는 것은 성격이 달라서다. 그쪽은 게임이 정한 한도이고 이건 우리가 추적하는 월간 보스
 // 종류 수라 이 화면만 쓴다.
-const MONTHLY_BOSS_COUNT = weeklyBossesData.monthly.length
+const MONTHLY_BOSS_COUNT = bossesInSection('monthly').length
 
 /** 카드 수익 내역 상자에 싣는 아이템 건수. 나머지는 한 줄로 접는다. */
 const CARD_REVENUE_LIST_LIMIT = 5

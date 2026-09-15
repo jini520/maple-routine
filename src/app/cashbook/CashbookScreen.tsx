@@ -41,7 +41,7 @@ import {
   Text,
 } from '../../components/atoms'
 import { CalendarGrid } from '../../components/molecules/CalendarGrid/CalendarGrid'
-import { DIFFICULTY_SHORT } from '../../constants/domain/boss-difficulty'
+import { DIFFICULTY_NAME, DIFFICULTY_SHORT } from '../../constants/domain/boss-difficulty'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { TabSegment } from '../../components/molecules/TabSegment/TabSegment'
@@ -105,7 +105,7 @@ import {
 import type { LastHuntSelection } from '../../storage/last-hunt-selection'
 import { loadMesoRate } from '../../features/cashbook/meso-rate'
 // 보스 수익 탭의 행이 초상을 찾는 그 함수다. 같은 보스가 두 화면에서 다른 그림이면 안 된다.
-import { findPortraitSlug } from '../boss-profit/character-groups'
+import { bossPortraitSlugOf } from '../../lib/boss/bosses'
 import { useDataFreshness } from '../../features/refresh/freshness'
 import { useLedgerData } from '../../features/ledger/useLedgerData'
 import { tapFeedback } from '../../native/haptics'
@@ -324,7 +324,7 @@ function chunkBosses(bosses: readonly DefeatedBoss[]): DefeatedBoss[][] {
 /**
  * 펼친 결정석 줄의 타일 판. 그날 잡은 보스를 초상으로 편다.
  *
- * 새로 만든 그림이 0개다. 초상은 `BossPortrait`, 난이도는 `Badge`, 슬러그는 `findPortraitSlug`.
+ * 새로 만든 그림이 0개다. 초상은 `BossPortrait`, 난이도는 `Badge`, 슬러그는 `bossPortraitSlugOf`.
  * 셋 다 보스 수익 탭의 보스 행이 쓰는 그것이다.
  *
  * 마리당 금액은 안 적는다. 줄 머리가 합계를 이미 들고 있고, 마리당 금액은 파티원 수·정가와
@@ -352,22 +352,22 @@ function DefeatedBossTiles(props: { rowKey: string; bosses: readonly DefeatedBos
     >
       {chunkBosses(props.bosses).map((row, rowIndex) => (
         <View
-          key={`${row[0].boss}|${row[0].difficulty}`}
+          key={`${row[0].bossKey}|${row[0].difficulty}`}
           testID={`cashbook-boss-row-${rowIndex}`}
           className="flex-row justify-center"
         >
           {row.map((boss) => (
             <View
-              key={`${boss.boss}|${boss.difficulty}`}
-              testID={`cashbook-boss-slot-${boss.boss}|${boss.difficulty}`}
+              key={`${boss.bossKey}|${boss.difficulty}`}
+              testID={`cashbook-boss-slot-${boss.bossKey}|${boss.difficulty}`}
               className="flex-1 items-center"
               style={{ maxWidth: BOSS_SLOT_MAX_PX }}
             >
-              <View testID={`cashbook-boss-tile-${boss.boss}|${boss.difficulty}`}>
+              <View testID={`cashbook-boss-tile-${boss.bossKey}|${boss.difficulty}`}>
                 <BossPortrait
-                  portraitSlug={findPortraitSlug(boss.boss)}
+                  portraitSlug={bossPortraitSlugOf(boss.bossKey)}
                   // 이름 줄이 없으므로 그 정보는 여기서만 말한다.
-                  label={`${boss.difficulty} ${boss.boss}`}
+                  label={`${DIFFICULTY_NAME[boss.difficulty]} ${boss.bossName}`}
                   size={BOSS_TILE_PX}
                   shape="square"
                 />

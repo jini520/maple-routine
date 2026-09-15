@@ -157,7 +157,7 @@ export interface BossProfitState {
    * 어긋날 수 없다. 기간 이동(`loadPeriod`)은 이 값을 안 건드린다. 자르는 것은 읽는 쪽 몫이다.
    */
   currentPeriodRows: BossProfitRow[]
-  dropsByRowKey: Record<string, RecordedDrop[]> // 보스 행별 기록된 드롭. 키는 dropRowKey(ocid|boss|difficulty|periodKey). rows와 독립 상태라 탭 전환 시 loadPeriod가 DB에서 재로드
+  dropsByRowKey: Record<string, RecordedDrop[]> // 보스 행별 기록된 드롭. 키는 dropRowKey(ocid|bossKey|difficulty|periodKey). rows와 독립 상태라 탭 전환 시 loadPeriod가 DB에서 재로드
   weeklySubtotals: BossProfitWeeklySubtotal[] // monthly 탭에서만 채워짐(주차별 합계). weekly 탭에서는 항상 []
   isPeriodLoading: boolean // periodKey 이동이 도는 중인 창 동기화를 기다리는 중
   // 이 기간을 화면이 어떻게 말해야 하는지. boolean 하나로 두면 집계 전 과 그 외 실패를 같은
@@ -247,7 +247,7 @@ export interface BossProfitStore extends BossProfitState {
    */
   applyExternalDropEdit(
     ocid: string,
-    boss: string,
+    bossKey: string,
     difficulty: string,
     periodKey: string,
     drops: RecordedDrop[],
@@ -461,11 +461,11 @@ async function buildWeeklySubtotalsForMonth(
   const unpaidRowKeys = new Set(
     liveRows
       .filter((row) => !row.isComplete)
-      .map((row) => dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)),
+      .map((row) => dropRowKey(row.ocid, row.bossKey, row.difficulty, row.periodKey)),
   )
   const dropsByOcidWeek = new Map<string, RecordedDrop[]>()
   for (const record of weekDrops) {
-    if (unpaidRowKeys.has(dropRowKey(record.ocid, record.boss, record.difficulty, record.periodKey))) continue
+    if (unpaidRowKeys.has(dropRowKey(record.ocid, record.bossKey, record.difficulty, record.periodKey))) continue
     // 월간 보스의 드롭은 `period_key` 가 달이라 그대로 접으면 어느 주에도 안 든다. 그 보스가
     // 선 주로 옮겨 담는다.
     const weekKey =
@@ -1329,7 +1329,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
           return { syncedAt: null, profile: null, rows: [] }
         }
         // 자동 모드는 완료된 보스뿐 아니라 등록만 되고 아직 처치 전인 보스도 미완료 placeholder
-        // 로 함께 보여준다. `selectBossProfitBosses` 가 그룹(같은 apiName)당 실제로 처치한
+        // 로 함께 보여준다. `selectBossProfitBosses` 가 그룹(같은 보스 key)당 실제로 처치한
         // 난이도를 우선하고 없으면 등록 난이도를 대신 고른다. 등록 난이도와 실제 처치 난이도가
         // 다를 수 있어 가격 계산에는 반드시 실제 처치 난이도를 써야 한다.
         const displayBosses = selectProfitDisplayBosses(cached.state.bossContents, mode, manualItemsByOcid.get(ocid) ?? [])
@@ -1876,7 +1876,8 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     if (row.priceMeso !== null) {
       await upsertBossProfitRecord({
         ocid: row.ocid,
-        boss: row.boss,
+        bossKey: row.bossKey,
+        boss: row.bossName,
         difficulty: row.difficulty,
         cycle: row.cycle,
         periodKey: row.periodKey,
@@ -1913,7 +1914,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // 한 보스/기간의 드롭 집합을 통째로 교체한다(replace-all).
     await replaceBossDropRecords(
       row.ocid,
-      row.boss,
+      row.bossKey,
       row.difficulty,
       row.periodKey,
       drops,
@@ -1922,15 +1923,15 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
 
     // dropsByRowKey 는 rows 와 독립된 상태라 setPartySize 와 달리 latestSyncSnapshot 이중 갱신이
     // 필요 없다. 탭 전환·기간 이동 시 loadPeriod 가 DB 에서 다시 로드한다.
-    const key = dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)
+    const key = dropRowKey(row.ocid, row.bossKey, row.difficulty, row.periodKey)
     set({ dropsByRowKey: { ...get().dropsByRowKey, [key]: drops } })
   },
 
-  applyExternalDropEdit(ocid, boss, difficulty, periodKey, drops) {
+  applyExternalDropEdit(ocid, bossKey, difficulty, periodKey, drops) {
     set({
       dropsByRowKey: {
         ...get().dropsByRowKey,
-        [dropRowKey(ocid, boss, difficulty, periodKey)]: drops,
+        [dropRowKey(ocid, bossKey, difficulty, periodKey)]: drops,
       },
     })
   },

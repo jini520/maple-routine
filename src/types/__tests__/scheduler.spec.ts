@@ -19,8 +19,9 @@ import type {
 } from '../nexon-wire'
 
 describe('BOSS_DIFFICULTIES / BOSS_CYCLES 상수', () => {
-  it('BOSS_DIFFICULTIES는 정확히 5개 한글 난이도 값을 순서대로 갖는다', () => {
-    expect(BOSS_DIFFICULTIES).toEqual(['이지', '노멀', '하드', '카오스', '익스트림'])
+  // API 난이도 값이 곧 key 이고 차례가 정렬 순서다.
+  it('BOSS_DIFFICULTIES는 정확히 5개 난이도 key(API 영문 값)를 순서대로 갖는다', () => {
+    expect(BOSS_DIFFICULTIES).toEqual(['easy', 'normal', 'hard', 'chaos', 'extreme'])
   })
 
   it('BOSS_CYCLES는 정확히 weekly/monthly 2개만 갖는다 (bossDaily 대응 값 없음)', () => {
@@ -53,10 +54,11 @@ describe('domain 타입 샘플 객체', () => {
     expect(sample.kind).toBe('contents')
   })
 
-  it('BossContent 샘플이 한글 난이도·weekly/monthly cycle로 구성된다', () => {
+  it('BossContent 샘플이 보스 key·난이도 key·weekly/monthly cycle로 구성된다', () => {
     const sample: BossContent = {
-      name: '검은 마법사',
-      difficulty: '익스트림',
+      bossKey: 'black_mage',
+      apiName: '검은 마법사',
+      difficulty: 'extreme',
       cycle: 'monthly',
       isRegistered: true,
       isComplete: true,

@@ -13,7 +13,7 @@ import type { RecordedDrop } from '../../../types/drops'
 
 import { flattenStyle } from '../../../components/__tests__/render-atom'
 import { BossProfitBossRow } from '../BossProfitBossRow'
-import { 보스행, 컨텍스트값, renderProfit, 주간보스 } from './harness'
+import { 보스행, 컨텍스트값, renderProfit, 주간보스이름 } from './harness'
 
 // 카운트업은 모듈 수준 기억을 갖는다. 케이스 사이로 새지 않게 비운다.
 beforeEach(() => {
@@ -56,8 +56,8 @@ describe('BossProfitBossRow: 금액을 모르는 행', () => {
       <BossProfitBossRow row={보스행({ isComplete: false, payoutMeso: null })} drops={[]} />,
     )
 
-    expect(getByLabelText(`지내우시 ${주간보스} 하드 파티원 수 증가`).props.accessibilityState.disabled).toBe(true)
-    expect(getByLabelText(`지내우시 ${주간보스} 하드 파티원 수 감소`).props.accessibilityState.disabled).toBe(true)
+    expect(getByLabelText(`지내우시 ${주간보스이름} 하드 파티원 수 증가`).props.accessibilityState.disabled).toBe(true)
+    expect(getByLabelText(`지내우시 ${주간보스이름} 하드 파티원 수 감소`).props.accessibilityState.disabled).toBe(true)
   })
 })
 
@@ -66,7 +66,7 @@ describe('BossProfitBossRow: 금액과 아이템 칩', () => {
     const { getByText, queryByLabelText } = await renderProfit(<BossProfitBossRow row={보스행()} drops={[]} />)
 
     expect(getByText('6,800,000,000 메소')).toBeTruthy()
-    expect(queryByLabelText(`${주간보스} 아이템 수익 확인`)).toBeNull()
+    expect(queryByLabelText(`${주간보스이름} 아이템 수익 확인`)).toBeNull()
   })
 
   // 칩을 걷고 **금액 자체가 버튼**이 됐다(사용자 지시). 숫자만 남으면 눌린다는 것이 안 보이므로
@@ -78,7 +78,7 @@ describe('BossProfitBossRow: 금액과 아이템 칩', () => {
 
     // 결정석 68억 + 아이템 30억/3인 = 10억
     expect(getByText('7,800,000,000 메소')).toBeTruthy()
-    expect(getByLabelText(`${주간보스} 아이템 수익 확인`)).toBeTruthy()
+    expect(getByLabelText(`${주간보스이름} 아이템 수익 확인`)).toBeTruthy()
     expect(getByTestId('item-revenue-underline')).toBeTruthy()
     expect(queryByText(/^아이템 \+/)).toBeNull()
   })
@@ -90,7 +90,7 @@ describe('BossProfitBossRow: 금액과 아이템 칩', () => {
     )
 
     expect(queryByTestId('item-revenue-underline')).toBeNull()
-    expect(queryByLabelText(`${주간보스} 아이템 수익 확인`)).toBeNull()
+    expect(queryByLabelText(`${주간보스이름} 아이템 수익 확인`)).toBeNull()
   })
 
   // 값이 안 매겨진 드롭은 금액을 바꾸지 않는다. 칩도 서지 않는다.
@@ -103,7 +103,7 @@ describe('BossProfitBossRow: 금액과 아이템 칩', () => {
     )
 
     expect(getByText('6,800,000,000 메소')).toBeTruthy()
-    expect(queryByLabelText(`${주간보스} 아이템 수익 확인`)).toBeNull()
+    expect(queryByLabelText(`${주간보스이름} 아이템 수익 확인`)).toBeNull()
   })
 
   it('칩을 누르면 내역 팝오버가 뜬다', async () => {
@@ -113,7 +113,7 @@ describe('BossProfitBossRow: 금액과 아이템 칩', () => {
 
     expect(queryByTestId('item-revenue-popover')).toBeNull()
     await act(async () => {
-      fireEvent.press(getByLabelText(`${주간보스} 아이템 수익 확인`))
+      fireEvent.press(getByLabelText(`${주간보스이름} 아이템 수익 확인`))
     })
 
     expect(getByTestId('item-revenue-popover')).toBeTruthy()
@@ -174,7 +174,7 @@ describe('BossProfitBossRow: 아이템 차례', () => {
       <BossProfitBossRow row={보스행()} drops={drops} />,
     )
     await act(async () => {
-      fireEvent.press(getByLabelText(`${주간보스} 아이템 수익 확인`))
+      fireEvent.press(getByLabelText(`${주간보스이름} 아이템 수익 확인`))
     })
 
     // 이름 줄의 자식은 `[이름, 레벨 배지 또는 false]` 라 통째로 문자열로 만들면 안 된다.
@@ -242,7 +242,7 @@ describe('BossProfitBossRow: 파티원 수', () => {
     )
 
     await act(async () => {
-      fireEvent.press(getByLabelText(`지내우시 ${주간보스} 하드 파티원 수 증가`))
+      fireEvent.press(getByLabelText(`지내우시 ${주간보스이름} 하드 파티원 수 증가`))
     })
 
     expect(setPartySize).toHaveBeenCalledWith(row, 4)
@@ -250,12 +250,12 @@ describe('BossProfitBossRow: 파티원 수', () => {
 
   it('상한에서는 + 가, 1에서는 − 가 비활성이다', async () => {
     const atMax = await renderProfit(<BossProfitBossRow row={보스행({ partySize: 6 })} drops={[]} />)
-    expect(atMax.getByLabelText(`지내우시 ${주간보스} 하드 파티원 수 증가`).props.accessibilityState.disabled).toBe(
+    expect(atMax.getByLabelText(`지내우시 ${주간보스이름} 하드 파티원 수 증가`).props.accessibilityState.disabled).toBe(
       true,
     )
 
     const atMin = await renderProfit(<BossProfitBossRow row={보스행({ partySize: 1 })} drops={[]} />)
-    expect(atMin.getByLabelText(`지내우시 ${주간보스} 하드 파티원 수 감소`).props.accessibilityState.disabled).toBe(
+    expect(atMin.getByLabelText(`지내우시 ${주간보스이름} 하드 파티원 수 감소`).props.accessibilityState.disabled).toBe(
       true,
     )
   })

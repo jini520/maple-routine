@@ -26,6 +26,7 @@ import {
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { bossCompletionKey, toProbeObservation } from '../../lib/scheduler/scheduler-activity'
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
+import { bossKeyOfApiName } from '../../lib/boss/bosses'
 import {
   getUndatedBossProfitRecords,
   setBossProfitDefeatedOn,
@@ -46,7 +47,7 @@ export interface DefeatDateInput {
   /** 관측한 날짜 → 그날 완료로 본 보스 키 집합. 없는 날짜는 못 봤다 이지 완료 0건 이 아니다. */
   readonly observed: ReadonlyMap<string, ReadonlySet<string>>
   readonly todayDateKey: string
-  /** `bossCompletionKey(boss, difficulty)`. 기록의 키와 같은 이름·같은 난이도여야 한다. */
+  /** `bossCompletionKey(bossKey, difficulty)`. 기록과 같은 보스 key · 같은 난이도여야 한다. */
   readonly bossKey: string
   /**
    * 조회 창 하한(`YYYY-MM-DD`). 이보다 앞선 날은 **영영 못 본다**.
@@ -188,7 +189,7 @@ async function probeDays(
     days.map(async (dateKey) => {
       let state
       try {
-        state = await fetchSchedulerCharacterState(apiKey, ocid, dateKey)
+        state = await fetchSchedulerCharacterState(apiKey, ocid, bossKeyOfApiName, dateKey)
       } catch (error) {
         const kind = toScheduleSyncError(error).kind
         if (kind === 'characterUnavailable') {
@@ -257,7 +258,7 @@ function resolveFor(
     observed,
     unobservableDays,
     todayDateKey,
-    bossKey: bossCompletionKey(record.boss, record.difficulty),
+    bossKey: bossCompletionKey(record.bossKey, record.difficulty),
     queryFloorDateKey: floorDateKey,
     fallbackToEarliestQueryable: true,
   })

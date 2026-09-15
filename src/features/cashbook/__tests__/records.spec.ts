@@ -501,19 +501,21 @@ describe('고치기와 지우기', () => {
 // 보스 수익이 흘러드는 법
 const 스우기록 = {
   ocid: 'ocid-1',
+  bossKey: 'lotus',
   boss: '스우',
-  difficulty: '하드',
+  difficulty: 'hard',
   periodKey: '2026-08-20',
   payoutMeso: 2_100_000_000,
   defeatedOn: '2026-08-21',
 }
-const 데미안기록 = { ...스우기록, boss: '데미안', payoutMeso: 1_500_000_000 }
+const 데미안기록 = { ...스우기록, bossKey: 'damien', boss: '데미안', payoutMeso: 1_500_000_000 }
 
 function 드롭(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     ocid: 'ocid-1',
+    bossKey: 'lotus',
     boss: '스우',
-    difficulty: '하드',
+    difficulty: 'hard',
     periodKey: '2026-08-20',
     dropIndex: 0,
     itemKey: 'loose_control_machine_mark',
@@ -548,7 +550,7 @@ describe('칸 금액: 보스가 칸에 든다', () => {
 
   it('짝인 보스 행이 없는 드롭은 어느 칸에도 안 든다. 물려받을 날짜가 없다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
-    bossDrops.getBossDropRecords.mockResolvedValue([드롭({ boss: '가디언 엔젤 슬라임' })])
+    bossDrops.getBossDropRecords.mockResolvedValue([드롭({ bossKey: 'guardian_angel_slime', boss: '가디언 엔젤 슬라임' })])
 
     const amounts = await 칸금액('2026-08-01', '2026-08-31')
 
@@ -709,8 +711,8 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
 
     expect(줄.kind).toBe('bossCrystal')
     expect(줄.kind === 'bossCrystal' ? 줄.bosses : null).toEqual([
-      { boss: '스우', difficulty: '하드' },
-      { boss: '데미안', difficulty: '하드' },
+      { bossKey: 'lotus', bossName: '스우', difficulty: 'hard' },
+      { bossKey: 'damien', bossName: '데미안', difficulty: 'hard' },
     ])
   })
 
@@ -719,19 +721,19 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
   // 의 자리는 마리당 금액이 실제로 적힌 보스 수익 탭으로 남는다(타일 판은 금액을 안 적는다).
   it('금액이 아니라 weekly-bosses.json 순서로 선다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([
-      { ...스우기록, boss: '루시드', payoutMeso: 1_500_000_000 },
-      { ...스우기록, boss: '검은마법사', difficulty: '하드', payoutMeso: 9_000_000_000 },
+      { ...스우기록, bossKey: 'lucid', boss: '루시드', payoutMeso: 1_500_000_000 },
+      { ...스우기록, bossKey: 'black_mage', boss: '검은마법사', difficulty: 'hard', payoutMeso: 9_000_000_000 },
       스우기록,
     ])
     const { loadDayRecords } = require('../records') as typeof import('../records')
 
     const [줄] = await loadDayRecords('2026-08-21')
 
-    // 참조표: 스우(7) < 루시드(10) < 검은마법사(monthly, 맨 뒤). 금액 순이면 검은마법사가 앞이다.
-    expect(줄.kind === 'bossCrystal' ? 줄.bosses.map((boss) => boss.boss) : null).toEqual([
+    // 보스 표: 스우(7) < 루시드(10) < 검은 마법사(monthly, 맨 뒤). 금액 순이면 검은 마법사가 앞이다. 이름은 표의 API 표기다.
+    expect(줄.kind === 'bossCrystal' ? 줄.bosses.map((boss) => boss.bossName) : null).toEqual([
       '스우',
       '루시드',
-      '검은마법사',
+      '검은 마법사',
     ])
   })
 
@@ -739,7 +741,7 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
   it('난이도가 다르면 다른 타일이다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([
       스우기록,
-      { ...스우기록, difficulty: '노멀', payoutMeso: 500_000_000 },
+      { ...스우기록, difficulty: 'normal', payoutMeso: 500_000_000 },
     ])
     const { loadDayRecords } = require('../records') as typeof import('../records')
 
@@ -747,8 +749,8 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
 
     // 같은 보스면 난이도 순서다(이지 < 노멀 < 하드 …).
     expect(줄.kind === 'bossCrystal' ? 줄.bosses : null).toEqual([
-      { boss: '스우', difficulty: '노멀' },
-      { boss: '스우', difficulty: '하드' },
+      { bossKey: 'lotus', bossName: '스우', difficulty: 'normal' },
+      { bossKey: 'lotus', bossName: '스우', difficulty: 'hard' },
     ])
   })
 

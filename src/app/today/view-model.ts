@@ -38,6 +38,7 @@ import {
   type ValuableDroughtSummary,
 } from '../../lib/drop/drop-history'
 import { dropItemNameOf } from '../../lib/drop/drop-items'
+import { bossNameOf } from '../../lib/boss/bosses'
 import { dropPayoutMeso, sumDropPayout } from '../../lib/drop/drop-price'
 import { getCurrentKstDateKey, getMostRecentWeeklyResetKst } from '../../lib/scheduler/reset-clock'
 import { HEADER_PORTRAIT_MAX } from './header-portrait-motion'
@@ -114,6 +115,9 @@ export interface RepresentativeView {
  */
 /** 아코디언 본문의 보스 한 줄. 난이도는 공용 `Badge` 가 그린다. */
 export interface RemainingBossView {
+  /** 보스 key. 보스 표에 없는 보스는 `null` 이고 그때 `name` 이 API 원문이다. */
+  bossKey: string | null
+  /** 보이는 이름. 보스 표의 이름, 표에 없으면 API 원문. */
   name: string
   difficulty: BossDifficulty
 }
@@ -219,6 +223,7 @@ export interface UnpricedDropView {
    * 대신 넣지 않는다, 대표 카드와 같은 규칙).
    */
   characterName?: string
+  /** 보이는 보스 이름. 보스 표의 이름이고, 표에서 빠진 보스는 적어 둔 이름이다. */
   boss: string
   difficulty: string
   /** 보이는 이름. 마스터 표의 지금 이름이고, 표에서 못 찾은 옛 기록은 적어 둔 이름이다. */
@@ -648,8 +653,7 @@ function buildScheduleRows(input: TodayViewModelInput, weeklyPeriodKey: string):
 /**
  * 남은 보스. **개수가 아니라 목록**이다(아코디언 본문이 이름을 그린다).
  *
- * 이름은 `matchedBossName ?? apiName`. 참조 데이터에 매핑된 이름이 있으면 그것, 없으면 API 원문
- * 그대로다(매핑 실패는 원문 그대로).
+ * 이름은 보스 표의 이름이고, 표에 없는 보스는 API 원문 그대로다.
  */
 function remainingBosses(
   input: TodayViewModelInput,
@@ -662,14 +666,15 @@ function remainingBosses(
   return displayedBosses(boss, cycle, input.trackingMode, input.manualBossByOcid)
     .filter(
       (matched) =>
-        !isBossBlocked(characterLevel, matched.matchedBossName ?? matched.apiName, matched.difficulty),
+        !isBossBlocked(characterLevel, matched.bossKey, matched.difficulty),
     )
     .filter((matched) => !matched.isComplete)
     // 주간 한도를 채우면 남은 것이 아니다. 판정은 여기 없다. `displayedBosses` 가 실어 보낸
     // 값을 거를 뿐이라 스케줄러가 마감 배지를 다는 보스와 정확히 같은 집합이다.
     .filter((matched) => !matched.isWeeklyLimitClosed)
     .map((matched) => ({
-      name: matched.matchedBossName ?? matched.apiName,
+      bossKey: matched.bossKey,
+      name: bossNameOf(matched.bossKey, matched.apiName),
       difficulty: matched.difficulty,
     }))
 }
@@ -759,7 +764,7 @@ function toDropView(
   return {
     ocid: record.ocid,
     characterName: profilesByOcid[record.ocid]?.name,
-    boss: record.boss,
+    boss: bossNameOf(record.bossKey, record.boss),
     difficulty: record.difficulty,
     itemName: dropItemNameOf(record.itemKey, record.itemName),
     itemKey: record.itemKey,

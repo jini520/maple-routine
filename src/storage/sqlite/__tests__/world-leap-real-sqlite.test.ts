@@ -35,8 +35,9 @@ afterEach(async () => {
 function record(overrides: Partial<BossProfitRecord>): BossProfitRecord {
   return {
     ocid: 'old',
+    bossKey: 'lotus',
     boss: '스우',
-    difficulty: '하드',
+    difficulty: 'hard',
     cycle: 'weekly',
     periodKey: '2026-09-10',
     partySize: 1,
@@ -70,16 +71,18 @@ describe('character_world_leaps', () => {
 
 describe('copyMissingBossPartySettings', () => {
   it('옛 캐릭터 설정을 전부 옮기고, 새 캐릭터에 이미 있는 설정은 안 덮는다', async () => {
-    await setBossPartySize('old', '스우', '하드', 3, '2026-09-01T00:00:00.000Z')
-    await setBossPartySize('old', '데미안', '하드', 2, '2026-09-01T00:00:00.000Z')
-    await setBossPartySize('new', '스우', '하드', 6, '2026-09-12T00:00:00.000Z')
+    await setBossPartySize('old', 'lotus', 'hard', 3, '2026-09-01T00:00:00.000Z')
+    await setBossPartySize('old', 'damien', 'hard', 2, '2026-09-01T00:00:00.000Z')
+    await setBossPartySize('new', 'lotus', 'hard', 6, '2026-09-12T00:00:00.000Z')
 
     await copyMissingBossPartySettings('old', 'new', '2026-09-14T00:00:00.000Z')
 
     const settings = await getBossPartySettings(['new'])
-    expect(settings.map(({ boss, partySize }) => ({ boss, partySize })).sort((a, b) => a.boss.localeCompare(b.boss))).toEqual([
-      { boss: '데미안', partySize: 2 },
-      { boss: '스우', partySize: 6 },
+    expect(
+      settings.map(({ bossKey, partySize }) => ({ bossKey, partySize })).sort((a, b) => a.bossKey.localeCompare(b.bossKey)),
+    ).toEqual([
+      { bossKey: 'damien', partySize: 2 },
+      { bossKey: 'lotus', partySize: 6 },
     ])
     // 옛 캐릭터 설정은 그대로다.
     expect((await getBossPartySettings(['old'])).length).toBe(2)
@@ -89,8 +92,8 @@ describe('copyMissingBossPartySettings', () => {
 describe('getEarliestBossProfitPeriodKeys', () => {
   it('주간·월간을 따로 가장 이른 기간 키를 준다', async () => {
     await upsertBossProfitRecord(record({ ocid: 'new', periodKey: '2026-09-17' }))
-    await upsertBossProfitRecord(record({ ocid: 'new', periodKey: '2026-09-10', boss: '데미안' }))
-    await upsertBossProfitRecord(record({ ocid: 'new', cycle: 'monthly', periodKey: '2026-10', boss: '검은마법사' }))
+    await upsertBossProfitRecord(record({ ocid: 'new', periodKey: '2026-09-10', bossKey: 'damien', boss: '데미안' }))
+    await upsertBossProfitRecord(record({ ocid: 'new', cycle: 'monthly', periodKey: '2026-10', bossKey: 'black_mage', boss: '검은 마법사' }))
     await upsertBossProfitRecord(record({ ocid: 'old', periodKey: '2026-09-03' }))
 
     await expect(getEarliestBossProfitPeriodKeys('new')).resolves.toEqual({ weekly: '2026-09-10', monthly: '2026-10' })
@@ -109,7 +112,7 @@ describe('deleteBossProfitRecord', () => {
     await upsertBossProfitRecord(record({ ocid: 'new' }))
     const before = getBossProfitRecordsRevision()
 
-    await deleteBossProfitRecord({ ocid: 'old', boss: '스우', difficulty: '하드', periodKey: '2026-09-10' })
+    await deleteBossProfitRecord({ ocid: 'old', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-09-10' })
 
     const left = await getBossProfitRecords(['old', 'new'], ['2026-09-10'])
     expect(left.map((row) => row.ocid)).toEqual(['new'])

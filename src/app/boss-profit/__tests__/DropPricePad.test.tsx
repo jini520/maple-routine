@@ -44,8 +44,8 @@ import type { RecordedDrop } from '../../../types/drops'
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { DropPricePad, DropPricePadContent } from '../DropPricePad'
 
-// 보스 이름·난이도는 게임 레퍼런스 데이터에서 뽑는다(테스트가 베끼면 두 벌이 된다).
-const 주간보스 = weeklyBossesData.weekly[0].boss
+// 보스 이름은 게임 레퍼런스 데이터에서 뽑는다(테스트가 베끼면 두 벌이 된다).
+const 주간보스이름 = weeklyBossesData.weekly[0].name
 
 function 드롭(overrides: Partial<RecordedDrop> = {}): RecordedDrop {
   return {
@@ -63,8 +63,8 @@ function renderPad(overrides: Partial<React.ComponentProps<typeof DropPricePadCo
   const result = renderOverlay(
     <DropPricePadContent
       drop={드롭()}
-      boss={주간보스}
-      difficulty="하드"
+      bossName={주간보스이름}
+      difficulty="hard"
       characterName="지내우시"
       defaultShare={3}
       maxShare={6}
@@ -214,8 +214,8 @@ function PadHost(): React.JSX.Element {
       />
       <DropPricePadContent
         drop={드롭(item)}
-        boss={주간보스}
-        difficulty="하드"
+        bossName={주간보스이름}
+        difficulty="hard"
         characterName="지내우시"
         defaultShare={3}
         maxShare={6}
@@ -313,8 +313,8 @@ describe('DropPricePad: 두 자리가 같은 본문을 쓴다', () => {
     const result = renderOverlay(
       <DropPricePad
         drop={드롭()}
-        boss={주간보스}
-        difficulty="하드"
+        bossName={주간보스이름}
+        difficulty="hard"
         characterName="지내우시"
         defaultShare={3}
         maxShare={6}

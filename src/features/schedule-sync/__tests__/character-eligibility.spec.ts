@@ -120,8 +120,8 @@ describe('과거 날짜 스윕. 13일을 한꺼번에 태운다', () => {
 
     await resolveCharacterEligibility('key', 'ocid-1', false, NOW)
 
-    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key', 'ocid-1', '2026-08-02')
-    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(13, 'key', 'ocid-1', '2026-07-21')
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key', 'ocid-1', expect.any(Function), '2026-08-02')
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(13, 'key', 'ocid-1', expect.any(Function), '2026-07-21')
   })
 
   it('완료를 찾아도 13일이 다 나간다. 조기 종료를 포기한 대가다', async () => {
@@ -133,7 +133,7 @@ describe('과거 날짜 스윕. 13일을 한꺼번에 태운다', () => {
 
   it('완료가 가장 오래된 날짜 하나뿐이어도 자격 O다. 결과는 모아서 판정한다', async () => {
     fetchSchedulerCharacterStateMock.mockImplementation(
-      async (_apiKey: string, _ocid: string, dateKey: string) =>
+      async (_apiKey: string, _ocid: string, _resolveBossKey: unknown, dateKey: string) =>
         dateKey === '2026-07-21' ? COMPLETED : state(),
     )
 
@@ -176,7 +176,7 @@ describe('같은 날짜를 두 번 조회하지 않는다 (= 이슈 #87 문제 1
       'ineligible',
     )
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
-    expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key', 'ocid-1', '2026-08-03')
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key', 'ocid-1', expect.any(Function), '2026-08-03')
   })
 })
 
@@ -195,7 +195,7 @@ describe('실패 종류별 기록 정책', () => {
   // 같은 순서를 따라야 다음 회차와 갈리지 않는다.
   it('한 날짜라도 OPENAPI00003이면 다른 날짜에 완료가 있어도 unavailable이 이긴다', async () => {
     fetchSchedulerCharacterStateMock.mockImplementation(
-      async (_apiKey: string, _ocid: string, dateKey: string) => {
+      async (_apiKey: string, _ocid: string, _resolveBossKey: unknown, dateKey: string) => {
         if (dateKey === '2026-07-21') {
           throw new NexonBadRequestError('unavailable', 'OPENAPI00003')
         }

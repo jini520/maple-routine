@@ -27,8 +27,9 @@ function buildWeekly(name: string, isRegistered: boolean): WeeklyContent {
   return { name, kind: 'contents', isRegistered, nowCount: 1, maxCount: 5, questState: null }
 }
 
-function buildBoss(name: string, difficulty: BossDifficulty, isRegistered: boolean): BossContent {
-  return { name, difficulty, cycle: 'weekly', isRegistered, isComplete: false, ownComplete: false }
+/** `bossKey` 는 스케줄 응답을 앱 상태로 바꾸는 자리가 채운 값이다. 보스 표에 없는 보스는 `null` 이다. */
+function buildBoss(apiName: string, bossKey: string | null, difficulty: BossDifficulty, isRegistered: boolean): BossContent {
+  return { bossKey, apiName, difficulty, cycle: 'weekly', isRegistered, isComplete: false, ownComplete: false }
 }
 
 function buildState(overrides: Partial<SchedulerCharacterState> = {}): SchedulerCharacterState {
@@ -79,7 +80,7 @@ describe('seedManualTrackedContent', () => {
             buildWeekly('에르다 스펙트럼', true),
             buildWeekly('무릉도장', false),
           ],
-          bossContents: [buildBoss('루시드', '이지', true), buildBoss('스우', '하드', false)],
+          bossContents: [buildBoss('루시드', 'lucid', 'easy', true), buildBoss('스우', 'lotus', 'hard', false)],
         }),
       ),
     ])
@@ -90,7 +91,7 @@ describe('seedManualTrackedContent', () => {
     expect(setManualTrackedContent).toHaveBeenCalledWith(OCID, [
       { contentName: '몬스터파크', kind: 'daily' },
       { contentName: '에르다 스펙트럼', kind: 'weekly' },
-      { contentName: '루시드', difficulty: '이지', kind: 'boss' },
+      { kind: 'boss', bossKey: 'lucid', difficulty: 'easy' },
     ])
   })
 
@@ -111,12 +112,12 @@ describe('seedManualTrackedContent', () => {
     ])
   })
 
-  it('보스는 API 원문명이 아니라 matchBossContent 정규화 명으로 저장한다', async () => {
+  it('보스는 API 원문명이 아니라 보스 key 로 저장한다', async () => {
     jest.mocked(syncSchedules).mockResolvedValue([
       buildSyncResult(
         buildState({
-          // API가 공백 없이 내려주는 케이스. 우리 데이터 이름은 "선택받은 세렌"
-          bossContents: [buildBoss('선택받은세렌', '하드', true)],
+          // API가 공백 없이 내려주는 케이스. key 는 응답을 앱 상태로 바꾸는 자리가 이미 찾았다.
+          bossContents: [buildBoss('선택받은세렌', 'chosen_seren', 'hard', true)],
         }),
       ),
     ])
@@ -124,8 +125,23 @@ describe('seedManualTrackedContent', () => {
     await seedManualTrackedContent([OCID])
 
     expect(setManualTrackedContent).toHaveBeenCalledWith(OCID, [
-      { contentName: '선택받은 세렌', difficulty: '하드', kind: 'boss' },
+      { kind: 'boss', bossKey: 'chosen_seren', difficulty: 'hard' },
     ])
+  })
+
+  // 보스 표에 없는 보스는 기록할 key 가 없다. 수동 추적 목록에 담으면 편집할 수 없는 고아가 된다.
+  it('보스 표에 없는 보스(key 가 없다)는 등록돼 있어도 시드에서 제외한다', async () => {
+    jest.mocked(syncSchedules).mockResolvedValue([
+      buildSyncResult(
+        buildState({
+          bossContents: [buildBoss('새로 나온 보스', null, 'hard', true), buildBoss('루시드', 'lucid', 'hard', true)],
+        }),
+      ),
+    ])
+
+    await seedManualTrackedContent([OCID])
+
+    expect(setManualTrackedContent).toHaveBeenCalledWith(OCID, [{ kind: 'boss', bossKey: 'lucid', difficulty: 'hard' }])
   })
 
   it('동기화가 실패해 state가 null이면 에러를 던지고 저장하지 않는다', async () => {

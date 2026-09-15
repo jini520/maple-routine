@@ -476,10 +476,10 @@ describe('mergeSchedulerState: 보스 (cycle별 독립 stale)', () => {
   it('주간 보스만 stale이면 주간 보스만 리셋되고 월간 보스는 그대로 유지된다', () => {
     const previous = baseState({
       bossContents: [
-        { name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
+        { bossKey: 'lotus', apiName: '스우', difficulty: 'hard', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
         {
-          name: '검은 마법사',
-          difficulty: '익스트림',
+          bossKey: 'black_mage', apiName: '검은 마법사',
+          difficulty: 'extreme',
           cycle: 'monthly',
           isRegistered: true,
           isComplete: true,
@@ -490,8 +490,8 @@ describe('mergeSchedulerState: 보스 (cycle별 독립 stale)', () => {
     const fresh = baseState({
       bossContents: [
         {
-          name: '검은 마법사',
-          difficulty: '익스트림',
+          bossKey: 'black_mage', apiName: '검은 마법사',
+          difficulty: 'extreme',
           cycle: 'monthly',
           isRegistered: true,
           isComplete: true,
@@ -505,10 +505,10 @@ describe('mergeSchedulerState: 보스 (cycle별 독립 stale)', () => {
     const result = mergeSchedulerState({ previous, fresh, worldLedger: {}, accountLedger: {}, now: NOW })
 
     expect(result.characterState.bossContents).toEqual([
-      { name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: false, ownComplete: false },
+      { bossKey: 'lotus', apiName: '스우', difficulty: 'hard', cycle: 'weekly', isRegistered: true, isComplete: false, ownComplete: false },
       {
-        name: '검은 마법사',
-        difficulty: '익스트림',
+        bossKey: 'black_mage', apiName: '검은 마법사',
+        difficulty: 'extreme',
         cycle: 'monthly',
         isRegistered: true,
         isComplete: true,
@@ -520,7 +520,7 @@ describe('mergeSchedulerState: 보스 (cycle별 독립 stale)', () => {
   it('stale로 리셋될 때 ownComplete도 isComplete와 함께 false로 리셋된다. 안 그러면 지난 리셋의 완료 여부가 새 주에 그대로 남는다', () => {
     const previous = baseState({
       bossContents: [
-        { name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
+        { bossKey: 'lotus', apiName: '스우', difficulty: 'hard', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
       ],
     })
     const fresh = baseState({ bossContents: [], isWeeklyBossStale: true, isMonthlyBossStale: true })
@@ -534,40 +534,40 @@ describe('mergeSchedulerState: 보스 (cycle별 독립 stale)', () => {
   it(' 정정. 주간 보스가 stale이 아니어도(일부 항목만 왔어도) previous에만 있던 난이도는 항목 단위로 복원된다', () => {
     const previous = baseState({
       bossContents: [
-        { name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
-        { name: '루시드', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
+        { bossKey: 'lotus', apiName: '스우', difficulty: 'hard', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
+        { bossKey: 'lucid', apiName: '루시드', difficulty: 'hard', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
       ],
     })
     const fresh = baseState({
-      bossContents: [{ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: false, ownComplete: false }],
+      bossContents: [{ bossKey: 'lotus', apiName: '스우', difficulty: 'hard', cycle: 'weekly', isRegistered: true, isComplete: false, ownComplete: false }],
       isWeeklyBossStale: false,
     })
 
     const result = mergeSchedulerState({ previous, fresh, worldLedger: {}, accountLedger: {}, now: NOW })
 
     expect(result.characterState.bossContents).toEqual([
-      { name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: false, ownComplete: false },
-      { name: '루시드', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: false, ownComplete: false },
+      { bossKey: 'lotus', apiName: '스우', difficulty: 'hard', cycle: 'weekly', isRegistered: true, isComplete: false, ownComplete: false },
+      { bossKey: 'lucid', apiName: '루시드', difficulty: 'hard', cycle: 'weekly', isRegistered: true, isComplete: false, ownComplete: false },
     ])
   })
 
   it(' 정정. 같은 보스라도 난이도가 다르면 별개 항목으로 취급해 fresh에 없는 난이도만 복원한다', () => {
     const previous = baseState({
       bossContents: [
-        { name: '카링', difficulty: '이지', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
-        { name: '카링', difficulty: '하드', cycle: 'weekly', isRegistered: false, isComplete: false, ownComplete: false },
+        { bossKey: 'kaling', apiName: '카링', difficulty: 'easy', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
+        { bossKey: 'kaling', apiName: '카링', difficulty: 'hard', cycle: 'weekly', isRegistered: false, isComplete: false, ownComplete: false },
       ],
     })
     const fresh = baseState({
-      bossContents: [{ name: '카링', difficulty: '이지', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true }],
+      bossContents: [{ bossKey: 'kaling', apiName: '카링', difficulty: 'easy', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true }],
       isWeeklyBossStale: false,
     })
 
     const result = mergeSchedulerState({ previous, fresh, worldLedger: {}, accountLedger: {}, now: NOW })
 
     expect(result.characterState.bossContents).toEqual([
-      { name: '카링', difficulty: '이지', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
-      { name: '카링', difficulty: '하드', cycle: 'weekly', isRegistered: false, isComplete: false, ownComplete: false },
+      { bossKey: 'kaling', apiName: '카링', difficulty: 'easy', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
+      { bossKey: 'kaling', apiName: '카링', difficulty: 'hard', cycle: 'weekly', isRegistered: false, isComplete: false, ownComplete: false },
     ])
   })
 })

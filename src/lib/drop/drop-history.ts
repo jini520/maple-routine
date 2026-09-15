@@ -1,5 +1,7 @@
+import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
 import { isObtainableDrop } from '../boss/boss-drops'
 import { getCurrentBossProfitPeriod } from '../boss/boss-profit-period'
+import { bossNameOf } from '../boss/bosses'
 import { dropItemNameOf } from './drop-items'
 import { isValuableDropItem } from './valuable-drops'
 import type { BossCycle } from '../../types'
@@ -20,7 +22,11 @@ import type { BossDifficulty } from '../../types/scheduler'
  */
 export interface DropHistoryRecord extends RecordedDrop {
   ocid: string
+  /** 보스 key. */
+  bossKey: string
+  /** 적을 때의 보스 이름. 보이는 이름은 key 로 보스 표에서 찾는다. */
   boss: string
+  /** 난이도 key. */
   difficulty: string
   periodKey: string
 }
@@ -150,7 +156,8 @@ export function formatDropHistoryLine(
 
   // 난이도 괄호 양옆을 word joiner 로 묶는다. 괄호가 줄바꿈 지점이라 "슬라임(카오스)⏎에서" 로
   // 갈리는 것을 막는다(위 WORD_JOINER 주석).
-  const where = `${record.boss}${WORD_JOINER}(${record.difficulty})${WORD_JOINER}에서`
+  const difficultyName = DIFFICULTY_NAME[record.difficulty as BossDifficulty] ?? record.difficulty
+  const where = `${bossNameOf(record.bossKey, record.boss)}${WORD_JOINER}(${difficultyName})${WORD_JOINER}에서`
 
   return {
     prefix: `${who}${where} `,
@@ -164,17 +171,17 @@ export function formatDropHistoryLine(
 /** 획득 불가 판정·확정 난이도 조회에 쓰는 조합 키. */
 export function confirmedDropKey(
   ocid: string,
-  boss: string,
+  bossKey: string,
   difficulty: string,
   periodKey: string,
 ): string {
-  return `${ocid}|${boss}|${difficulty}|${periodKey}`
+  return `${ocid}|${bossKey}|${difficulty}|${periodKey}`
 }
 
 /**
  * 기록을 기간별로 묶어 최신 기간이 먼저 오게 정렬한 목록.
  *
- * 같은 기간 안의 순서는 입력 순서를 그대로 보존한다. 조회 SQL(`period_key DESC, ocid, boss,
+ * 같은 기간 안의 순서는 입력 순서를 그대로 보존한다. 조회 SQL(`period_key DESC, ocid, boss_key,
  * difficulty, drop_index`)이 정한 순서가 표시 순서이고, `Array.prototype.sort` 는 안정 정렬이라
  * 기간 단위로 재배열해도 그룹 내부가 흐트러지지 않는다.
  */
@@ -213,10 +220,10 @@ export function filterUnobtainableConfirmedDrops(
   confirmedKeys: Set<string>,
 ): DropHistoryRecord[] {
   return records.filter((record) => {
-    if (!confirmedKeys.has(confirmedDropKey(record.ocid, record.boss, record.difficulty, record.periodKey))) {
+    if (!confirmedKeys.has(confirmedDropKey(record.ocid, record.bossKey, record.difficulty, record.periodKey))) {
       return true
     }
-    return isObtainableDrop(record.boss, record.difficulty as BossDifficulty, record.periodKey, record)
+    return isObtainableDrop(record.bossKey, record.difficulty as BossDifficulty, record.periodKey, record)
   })
 }
 

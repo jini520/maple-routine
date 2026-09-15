@@ -236,8 +236,8 @@ describe('syncSchedules', () => {
     const results = await syncSchedules(['ocid-2', 'ocid-4'])
 
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
-    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-2')
-    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-4')
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-2', expect.any(Function))
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-4', expect.any(Function))
     expect(results.map((r) => r.ocid)).toEqual(['ocid-2', 'ocid-4'])
   })
 
@@ -608,8 +608,8 @@ describe('syncSchedules', () => {
 
       expect(ownerResults.map((result) => result.ocid)).toEqual(['ocid-1'])
       expect(outsiderResults.map((result) => result.ocid)).toEqual(['ocid-2'])
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-1')
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-2')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-1', expect.any(Function))
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-2', expect.any(Function))
     })
 
     it('앞 회차가 실패해도 못 덮은 요청은 자기 회차를 잇는다', async () => {
@@ -689,8 +689,8 @@ describe('syncSchedules', () => {
 
       expect(fetchCharacterListMock).toHaveBeenCalledTimes(1)
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-1')
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-2')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-1', expect.any(Function))
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-2', expect.any(Function))
       expect(onProgress).toHaveBeenNthCalledWith(1, 0, 2)
       expect(onProgress).toHaveBeenLastCalledWith(2, 2)
       expect(results.map((result) => result.ocid)).toEqual(['ocid-1', 'ocid-2'])
@@ -880,8 +880,8 @@ describe('syncSchedules', () => {
 
       // 조회는 13일이 다 나가고, **멈추는 것은 병합이다**.
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(14)
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-1')
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', '2026-07-10')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-1', expect.any(Function))
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', expect.any(Function), '2026-07-10')
 
       expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(2)
       expect(mergeSchedulerStateMock).toHaveBeenNthCalledWith(2, {
@@ -917,8 +917,8 @@ describe('syncSchedules', () => {
       await syncSchedules(['ocid-1'])
 
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(14)
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', '2026-07-10')
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 'key-1', 'ocid-1', '2026-07-09')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', expect.any(Function), '2026-07-10')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 'key-1', 'ocid-1', expect.any(Function), '2026-07-09')
       // -1일이 아직 stale이라 -2일까지 접고 거기서 멈춘다. 병합 순서는 그대로다.
       expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(3)
     })
@@ -967,7 +967,7 @@ describe('syncSchedules', () => {
         await syncSchedules(['ocid-1'])
 
         expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
-        expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-1')
+        expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-1', expect.any(Function))
       })
 
       it('그 날짜에 그 섹션이 있었다면 다시 부른다. 원장은 값이 아니라 유무만 기억한다', async () => {
@@ -999,7 +999,7 @@ describe('syncSchedules', () => {
 
         await syncSchedules(['ocid-1'])
 
-        expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', '2026-07-10')
+        expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', expect.any(Function), '2026-07-10')
       })
 
       it('조회 불가(OPENAPI00003)로 확정된 캐릭터는 백필 루프에 아예 들어가지 않는다', async () => {
@@ -1053,7 +1053,7 @@ describe('syncSchedules', () => {
         await syncSchedules(['ocid-1'])
 
         expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
-        expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', '2026-07-10')
+        expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', expect.any(Function), '2026-07-10')
       })
     })
 
@@ -1077,7 +1077,7 @@ describe('syncSchedules', () => {
       const results = await syncSchedules(['ocid-1'])
 
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(14)
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 'key-1', 'ocid-1', '2026-07-09')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 'key-1', 'ocid-1', expect.any(Function), '2026-07-09')
       // -1일 조회는 실패해서 merge가 안 불리고, 그다음 성공한 -2일만 merge된다(1단계 + -2일 = 2회)
       expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(2)
       expect(results[0].state).toEqual(finalState)
@@ -1163,7 +1163,7 @@ describe('syncSchedules', () => {
       const results = await syncSchedules(['ocid-1'])
 
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(14)
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', '2026-07-10')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', expect.any(Function), '2026-07-10')
       expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(2)
       expect(results[0].state).toEqual(finalState)
     })
@@ -1189,7 +1189,7 @@ describe('syncSchedules', () => {
       await syncSchedules(['ocid-1'])
 
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(14)
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 'key-1', 'ocid-1', '2026-07-09')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 'key-1', 'ocid-1', expect.any(Function), '2026-07-09')
       expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(3)
     })
 
@@ -1315,7 +1315,7 @@ describe('syncSchedules', () => {
         expect.anything(),
       )
       // 스케줄 동기화 자체는 그대로 돈다. 건너뛴 것은 basic 하나뿐이다.
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-2')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-2', expect.any(Function))
       expect(results[1].isStale).toBe(false)
     })
 
@@ -1389,8 +1389,8 @@ describe('syncSchedules', () => {
       const results = await syncSchedules(['ocid-1', 'ocid-2'])
 
       expect(results.map((result) => result.ocid)).toEqual(['ocid-1', 'ocid-2'])
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-1')
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-2')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-1', expect.any(Function))
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-2', expect.any(Function))
       expect(results.every((result) => result.isStale === false)).toBe(true)
     })
 

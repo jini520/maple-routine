@@ -1,4 +1,5 @@
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
+import { bossKeyOfApiName } from '../../lib/boss/bosses'
 import { mergeSchedulerState, type MergeOutput } from '../../lib/scheduler/scheduler-merge'
 import { getBackfillDateKeys } from '../../lib/scheduler/reset-clock'
 import {
@@ -161,7 +162,7 @@ async function fillMissingSections(
   const fetched = await Promise.all(
     dateKeys.map(async (dateKey) => {
       try {
-        const response = await fetchSchedulerCharacterState(apiKey, ocid, dateKey)
+        const response = await fetchSchedulerCharacterState(apiKey, ocid, bossKeyOfApiName, dateKey)
         await recordScheduleProbe(ocid, dateKey, { kind: 'observed', ...toProbeObservation(response) })
         return { response, failure: null }
       } catch (error) {
@@ -272,7 +273,7 @@ async function syncOneCharacter(
   accountId: string,
 ): Promise<CharacterScheduleSync> {
   try {
-    const fresh = await fetchSchedulerCharacterState(apiKey, character.ocid)
+    const fresh = await fetchSchedulerCharacterState(apiKey, character.ocid, bossKeyOfApiName)
     const [previousCache, worldLedger, accountLedger] = await Promise.all([
       getCachedSchedulerState(character.ocid),
       getWorldSharedProgress(fresh.world),

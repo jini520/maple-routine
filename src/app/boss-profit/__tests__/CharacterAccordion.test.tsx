@@ -29,7 +29,7 @@ import {
   VALUABLE_CARD_RING_COLOR,
   VALUABLE_CARD_RING_RADIUS,
 } from '../valuable-card-glow'
-import { 다른주간보스, 월간보스, PERIOD, renderProfit, 보스행, 주간보스, 주차소계, 컨텍스트값 } from './harness'
+import { 다른주간보스, 월간보스, PERIOD, renderProfit, 보스행, 주간보스, 주차소계, 컨텍스트값, 주간보스이름 } from './harness'
 
 // 모션 줄이기는 분기로만 관측된다(`components/__tests__/reduced-motion.ts`).
 jest.mock('react-native-reanimated', () =>
@@ -66,7 +66,7 @@ describe('펼침 (#27)', () => {
   it('기본은 접힘이라 보스 행이 안 보인다', async () => {
     const { queryByText } = await renderProfit(<CharacterAccordion group={그룹()} />)
 
-    expect(queryByText(주간보스)).toBeNull()
+    expect(queryByText(주간보스이름)).toBeNull()
   })
 
   it('헤더를 누르면 펼쳐지고 다시 누르면 접힌다', async () => {
@@ -75,18 +75,18 @@ describe('펼침 (#27)', () => {
     await act(async () => {
       fireEvent.press(getByRole('button', { expanded: false }))
     })
-    expect(getByText(주간보스)).toBeTruthy()
+    expect(getByText(주간보스이름)).toBeTruthy()
 
     await act(async () => {
       fireEvent.press(getByRole('button', { expanded: true }))
     })
-    expect(queryByText(주간보스)).toBeNull()
+    expect(queryByText(주간보스이름)).toBeNull()
   })
 
   // 월간 보스 상세는 주간 탭의 그 캐릭터 목록 맨 위로 갔다(사용자 지정). 이 탭에는 주차별
   // 합계만 남는다. 행은 그룹에 실려 오지만(아바타 진행 링이 센다) 그리지 않는다.
   it('월간 탭은 주차별 합계만 그린다', async () => {
-    const group = 그룹([보스행({ boss: 월간보스, cycle: 'monthly' })], [주차소계()])
+    const group = 그룹([보스행({ bossKey: 월간보스, cycle: 'monthly' })], [주차소계()])
     const { getByText, queryByTestId, getByRole } = await renderProfit(<CharacterAccordion group={group} />, 컨텍스트값({ tab: 'monthly' }))
 
     await act(async () => {
@@ -100,14 +100,14 @@ describe('펼침 (#27)', () => {
 
 describe('처치 진행 링', () => {
   it('주간 탭은 한도(12)를 분모로 삼는다. 리터럴이 아니라 참조 데이터에서 온다', async () => {
-    const group = 그룹([보스행(), 보스행({ boss: 다른주간보스 })])
+    const group = 그룹([보스행(), 보스행({ bossKey: 다른주간보스 })])
     const { getByLabelText } = await renderProfit(<CharacterAccordion group={group} />)
 
     expect(getByLabelText(`주간 보스 처치 2 / ${WEEKLY_BOSS_CLEAR_LIMIT}`)).toBeTruthy()
   })
 
   it('월간 탭은 월간 보스 종류 수를 분모로 삼는다. 주간 처치 수를 끌어오지 않는다', async () => {
-    const group = 그룹([보스행({ boss: 월간보스, cycle: 'monthly' })])
+    const group = 그룹([보스행({ bossKey: 월간보스, cycle: 'monthly' })])
     const { getByLabelText } = await renderProfit(<CharacterAccordion group={group} />, 컨텍스트값({ tab: 'monthly' }))
 
     expect(getByLabelText(`월간 보스 처치 1 / ${weeklyBossesData.monthly.length}`)).toBeTruthy()
@@ -115,8 +115,8 @@ describe('처치 진행 링', () => {
 })
 
 describe('고가 드롭 강조', () => {
-  const 고가드롭 = { [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: [드롭({ itemKey: 고가아이템, itemName: 고가아이템 })] }
-  const 평범한드롭 = { [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: [드롭()] }
+  const 고가드롭 = { [dropRowKey('ocid-1', 주간보스, 'hard', PERIOD)]: [드롭({ itemKey: 고가아이템, itemName: 고가아이템 })] }
+  const 평범한드롭 = { [dropRowKey('ocid-1', 주간보스, 'hard', PERIOD)]: [드롭()] }
 
   it('고가 아이템을 먹으면 골드 링·글로우·배지가 함께 붙는다', async () => {
     const { getByTestId, getByLabelText } = await renderProfit(
@@ -207,7 +207,7 @@ describe('고가 드롭 강조', () => {
 
 describe('아이템 수익', () => {
   const 값매긴드롭 = {
-    [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: [
+    [dropRowKey('ocid-1', 주간보스, 'hard', PERIOD)]: [
       드롭({ priceState: 'entered', priceMeso: 1_000_000_000, priceShare: 1 }),
     ],
   }
@@ -224,7 +224,7 @@ describe('아이템 수익', () => {
   })
 
   it('값을 안 매긴 드롭만 있으면 칩이 없다. 미입력은 0원이 아니다', async () => {
-    const 미입력 = { [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: [드롭()] }
+    const 미입력 = { [dropRowKey('ocid-1', 주간보스, 'hard', PERIOD)]: [드롭()] }
     const { queryByLabelText } = await renderProfit(
       <CharacterAccordion group={그룹()} />,
       컨텍스트값({ dropsByRowKey: 미입력 }),
@@ -235,7 +235,7 @@ describe('아이템 수익', () => {
 
   it('`priceMeso` 는 있는데 `priceState` 가 없으면 여전히 칩이 없다. 여기가 값이 새는 자리다', async () => {
     const 상태없음 = {
-      [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: [드롭({ priceMeso: 9_000_000_000 })],
+      [dropRowKey('ocid-1', 주간보스, 'hard', PERIOD)]: [드롭({ priceMeso: 9_000_000_000 })],
     }
     const { queryByLabelText } = await renderProfit(
       <CharacterAccordion group={그룹()} />,
@@ -247,7 +247,7 @@ describe('아이템 수익', () => {
 
   it('스킵한 아이템은 칩을 만들지 않는다', async () => {
     const 스킵 = {
-      [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: [
+      [dropRowKey('ocid-1', 주간보스, 'hard', PERIOD)]: [
         드롭({ priceState: 'excluded', priceMeso: 5_000_000_000 }),
       ],
     }
@@ -270,7 +270,7 @@ describe('아이템 수익', () => {
     })
 
     expect(getByTestId('item-revenue-popover')).toBeTruthy()
-    expect(queryByText(주간보스)).toBeNull()
+    expect(queryByText(주간보스이름)).toBeNull()
   })
 })
 
@@ -292,7 +292,7 @@ describe('카드 수익 내역 상자', () => {
 
   it('주간 탭은 비싼 순 상위 5건과 나머지 한 줄이다', async () => {
     const drops = {
-      [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: [1, 2, 3, 4, 5, 6, 7].map((n) =>
+      [dropRowKey('ocid-1', 주간보스, 'hard', PERIOD)]: [1, 2, 3, 4, 5, 6, 7].map((n) =>
         값매김(`아이템${n}`, n * n * 100_000_000),
       ),
     }
@@ -309,7 +309,7 @@ describe('카드 수익 내역 상자', () => {
   // 월간 보스 드롭은 보스 행에도 남고 그 보스가 선 주차 소계로도 옮겨 담긴다. 둘을 더하면 아이템이
   // 부풀고 결정석 줄이 그만큼 준다.
   it('월간 탭은 주차 소계의 드롭에서 목록과 아이템 줄을 만든다. 월간 보스 드롭을 두 번 안 센다', async () => {
-    const 월간행 = 보스행({ boss: 월간보스, cycle: 'monthly', periodKey: '2026-08', payoutMeso: 0 })
+    const 월간행 = 보스행({ bossKey: 월간보스, cycle: 'monthly', periodKey: '2026-08', payoutMeso: 0 })
     const 월간드롭 = 값매김('월간 아이템', 400_000_000)
     const 주간드롭 = 값매김('주간 아이템', 100_000_000)
     const group = 그룹(
@@ -323,7 +323,7 @@ describe('카드 수익 내역 상자', () => {
       group,
       컨텍스트값({
         tab: 'monthly',
-        dropsByRowKey: { [dropRowKey(월간행.ocid, 월간행.boss, 월간행.difficulty, 월간행.periodKey)]: [월간드롭] },
+        dropsByRowKey: { [dropRowKey(월간행.ocid, 월간행.bossKey, 월간행.difficulty, 월간행.periodKey)]: [월간드롭] },
       }),
     )
 
@@ -353,7 +353,7 @@ describe('실패 표식', () => {
     })
 
     expect(getByTestId('character-issue-popover')).toBeTruthy()
-    expect(queryByText(주간보스)).toBeNull()
+    expect(queryByText(주간보스이름)).toBeNull()
   })
 
   it('다시 탭하면 닫힌다', async () => {
@@ -500,7 +500,7 @@ describe('금액을 말할 수 없는 카드는 안 펼쳐진다', () => {
     )
 
     expect(queryByRole('button', { expanded: false })).toBeNull()
-    expect(queryByText(주간보스)).toBeNull()
+    expect(queryByText(주간보스이름)).toBeNull()
   })
 
   // 월간 탭은 주차 줄이 전부 조회 불가라 카드 합계도 0 이다. 같은 말을 주차 수만큼 반복한다.
@@ -527,7 +527,7 @@ describe('금액을 말할 수 없는 카드는 안 펼쳐진다', () => {
       fireEvent.press(getByRole('button', { expanded: false }))
     })
 
-    expect(getByText(주간보스)).toBeTruthy()
+    expect(getByText(주간보스이름)).toBeTruthy()
   })
 })
 

@@ -75,8 +75,8 @@ function renderSheet(overrides: Partial<React.ComponentProps<typeof BossDropShee
   const onClose = jest.fn()
   const result = renderOverlay(
     <BossDropSheet
-      boss="스우"
-      difficulty="하드"
+      bossKey="lotus"
+      difficulty="hard"
       isComplete
       // 패치 전 주다. 교환권이 서고 소울 에테르가 안 선다.
       periodKey="2026-09-10"
@@ -183,7 +183,7 @@ describe('BossDropSheet: 난이도 표시', () => {
 // 2026-09-17 패치. 시트는 그 행의 기간에 나오는 아이템과 고정 보상만 세운다.
 describe('BossDropSheet: 기간', () => {
   it('패치 뒤의 주에는 교환권 대신 소울 에테르가 선다', async () => {
-    const { result } = renderSheet({ boss: '카링', difficulty: '노멀', periodKey: '2026-09-17' })
+    const { result } = renderSheet({ bossKey: 'kaling', difficulty: 'normal', periodKey: '2026-09-17' })
     const { getByLabelText, queryByLabelText } = await result
 
     expect(getByLabelText('1단계 소울 에테르')).toBeTruthy()
@@ -191,7 +191,7 @@ describe('BossDropSheet: 기간', () => {
   })
 
   it('패치 전의 주는 그대로다', async () => {
-    const { result } = renderSheet({ boss: '카링', difficulty: '노멀', periodKey: '2026-09-10' })
+    const { result } = renderSheet({ bossKey: 'kaling', difficulty: 'normal', periodKey: '2026-09-10' })
     const { getByLabelText, queryByLabelText } = await result
 
     expect(getByLabelText('매지컬 무기 주문서 교환권')).toBeTruthy()
@@ -199,10 +199,10 @@ describe('BossDropSheet: 기간', () => {
   })
 
   it('고정 보상도 그 주의 것을 보여 준다 (데미안 하드 메멘토 실버 큐브)', async () => {
-    const 전 = await renderSheet({ boss: '데미안', difficulty: '하드', periodKey: '2026-09-10' }).result
+    const 전 = await renderSheet({ bossKey: 'damien', difficulty: 'hard', periodKey: '2026-09-10' }).result
     expect(전.queryByLabelText('메멘토 실버 큐브')).not.toBeNull()
 
-    const 후 = await renderSheet({ boss: '데미안', difficulty: '하드', periodKey: '2026-09-17' }).result
+    const 후 = await renderSheet({ bossKey: 'damien', difficulty: 'hard', periodKey: '2026-09-17' }).result
     expect(후.queryByLabelText('메멘토 실버 큐브')).toBeNull()
   })
 })
@@ -252,7 +252,7 @@ describe('BossDropSheet: 드롭 연출', () => {
 
 describe('BossDropSheet: 상자 드릴다운', () => {
   it('반지 상자를 탭하면 반지와 등급을 골라 기록한다', async () => {
-    const { result, onSave } = renderSheet({ boss: '더스크', difficulty: '카오스' })
+    const { result, onSave } = renderSheet({ bossKey: 'gloom', difficulty: 'chaos' })
     const { getByLabelText, getByText } = await result
 
     await act(async () => {
@@ -286,7 +286,7 @@ describe('BossDropSheet: 상자 드릴다운', () => {
   })
 
   it('결과가 지정된 상자를 다시 탭하면 드릴다운 없이 선택을 제거한다', async () => {
-    const { result, onSave } = renderSheet({ boss: '더스크', difficulty: '카오스' })
+    const { result, onSave } = renderSheet({ bossKey: 'gloom', difficulty: 'chaos' })
     const { getByLabelText, getByText, queryByText } = await result
 
     await act(async () => {
@@ -317,8 +317,8 @@ describe('BossDropSheet: 상자 드릴다운', () => {
   // 타일은 기록의 key 로 찾은 지금 이름을 보인다. 적을 때의 이름이 달라도 따라온다.
   it('기록된 상자 결과는 적어 둔 이름이 아니라 key 로 찾은 이름으로 선다', async () => {
     const { result } = renderSheet({
-      boss: '더스크',
-      difficulty: '카오스',
+      bossKey: 'gloom',
+      difficulty: 'chaos',
       initialDrops: [
         {
           category: 'consumable',
@@ -402,7 +402,7 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
 
   it('다른 아이템을 이어 찍으면 물음이 그쪽으로 갈아탄다', async () => {
     // 한 난이도에 선택 가능한 장비가 둘인 보스라야 이 경우를 만들 수 있다.
-    const { result } = renderSheet({ boss: '더스크', difficulty: '카오스', pricing: PRICING })
+    const { result } = renderSheet({ bossKey: 'gloom', difficulty: 'chaos', pricing: PRICING })
     const { getByLabelText, getByText } = await result
 
     await act(async () => {
@@ -550,7 +550,7 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
 
 describe('BossDropSheet: 드롭 데이터가 없는 보스', () => {
   it('빈 상태로 안내하고 타일을 만들지 않는다', async () => {
-    const { result } = renderSheet({ boss: '알 수 없는 보스' })
+    const { result } = renderSheet({ bossKey: 'unknown_boss' })
     const { getByText } = await result
 
     expect(getByText('이 보스의 드롭 데이터가 아직 없습니다')).toBeTruthy()

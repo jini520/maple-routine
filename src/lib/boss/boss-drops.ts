@@ -13,7 +13,7 @@ import { dropItemNameOf } from '../drop/drop-items'
 import { isEffectiveIn } from './boss-profit-period'
 
 // item-drop-table.json / boss-ring-boxes.json / accessory-boxes.json 조회 헬퍼. 게임
-// 수치 데이터는 여기서 읽기만 하고 추정하지 않는다.
+// 수치 데이터는 여기서 읽기만 하고 추정하지 않는다. 함수가 받는 `boss` 는 보스 key 이고 난이도는 난이도 key 다.
 
 interface RawRewardItem {
   /** 아이템 key(`drop-items.json`). */
@@ -28,6 +28,7 @@ interface RawRewardItem {
   until?: string
 }
 interface RawRewardEntry {
+  /** 보스 key. */
   boss: string
   difficulty: string
   rewards: Partial<Record<DropCategory, RawRewardItem[]>>
@@ -46,9 +47,9 @@ function difficultyOrder(difficulty: string): number {
 }
 
 // 보스의 전 난이도 엔트리를 난이도 정규 순서로 반환한다.
-function entriesForBoss(boss: string): RawRewardEntry[] {
+function entriesForBoss(bossKey: string): RawRewardEntry[] {
   return rewardEntries
-    .filter((entry) => nfc(entry.boss) === nfc(boss))
+    .filter((entry) => entry.boss === bossKey)
     .slice()
     .sort((a, b) => difficultyOrder(a.difficulty) - difficultyOrder(b.difficulty))
 }

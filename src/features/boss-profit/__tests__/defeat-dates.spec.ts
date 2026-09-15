@@ -63,11 +63,11 @@ describe('resolveDefeatedOn: 뒤집힌 날 (결정 2)', () => {
         observed: observed({
           '2026-08-20': [],
           '2026-08-21': [],
-          '2026-08-22': ['스우|하드'],
-          '2026-08-23': ['스우|하드'],
+          '2026-08-22': ['lotus|hard'],
+          '2026-08-23': ['lotus|hard'],
         }),
         todayDateKey: '2026-08-24',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
       }),
     ).toBe('2026-08-22')
   })
@@ -76,9 +76,9 @@ describe('resolveDefeatedOn: 뒤집힌 날 (결정 2)', () => {
     expect(
       resolveDefeatedOn({
         periodDays: WEEK,
-        observed: observed({ '2026-08-20': ['스우|하드'] }),
+        observed: observed({ '2026-08-20': ['lotus|hard'] }),
         todayDateKey: '2026-08-24',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
       }),
     ).toBe('2026-08-20')
   })
@@ -87,9 +87,9 @@ describe('resolveDefeatedOn: 뒤집힌 날 (결정 2)', () => {
     expect(
       resolveDefeatedOn({
         periodDays: WEEK,
-        observed: observed({ '2026-08-20': ['데미안|하드'], '2026-08-21': ['데미안|하드'] }),
+        observed: observed({ '2026-08-20': ['damien|hard'], '2026-08-21': ['damien|hard'] }),
         todayDateKey: '2026-08-21',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
       }),
     ).toBeNull()
   })
@@ -98,9 +98,9 @@ describe('resolveDefeatedOn: 뒤집힌 날 (결정 2)', () => {
     expect(
       resolveDefeatedOn({
         periodDays: WEEK,
-        observed: observed({ '2026-08-20': ['스우|이지'], '2026-08-21': ['스우|이지'] }),
+        observed: observed({ '2026-08-20': ['lotus|easy'], '2026-08-21': ['lotus|easy'] }),
         todayDateKey: '2026-08-21',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
       }),
     ).toBeNull()
   })
@@ -111,9 +111,9 @@ describe('resolveDefeatedOn: 구멍 (결정 2)', () => {
     expect(
       resolveDefeatedOn({
         periodDays: WEEK,
-        observed: observed({ '2026-08-21': ['스우|하드'], '2026-08-22': ['스우|하드'] }),
+        observed: observed({ '2026-08-21': ['lotus|hard'], '2026-08-22': ['lotus|hard'] }),
         todayDateKey: '2026-08-24',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
       }),
     ).toBeNull()
   })
@@ -122,9 +122,9 @@ describe('resolveDefeatedOn: 구멍 (결정 2)', () => {
     expect(
       resolveDefeatedOn({
         periodDays: WEEK,
-        observed: observed({ '2026-08-20': [], '2026-08-22': ['스우|하드'] }),
+        observed: observed({ '2026-08-20': [], '2026-08-22': ['lotus|hard'] }),
         todayDateKey: '2026-08-24',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
       }),
     ).toBeNull()
   })
@@ -133,9 +133,9 @@ describe('resolveDefeatedOn: 구멍 (결정 2)', () => {
     expect(
       resolveDefeatedOn({
         periodDays: WEEK,
-        observed: observed({ '2026-08-20': ['스우|하드'] }),
+        observed: observed({ '2026-08-20': ['lotus|hard'] }),
         todayDateKey: '2026-08-26',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
       }),
     ).toBe('2026-08-20')
   })
@@ -147,9 +147,9 @@ describe('resolveDefeatedOn: 창 하한 앞은 건너뛴다 (정정 6)', () => {
     expect(
       resolveDefeatedOn({
         periodDays: WEEK,
-        observed: observed({ '2026-08-22': [], '2026-08-23': ['스우|하드'] }),
+        observed: observed({ '2026-08-22': [], '2026-08-23': ['lotus|hard'] }),
         todayDateKey: '2026-09-04',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
         queryFloorDateKey: '2026-08-22',
       }),
     ).toBe('2026-08-23')
@@ -159,9 +159,9 @@ describe('resolveDefeatedOn: 창 하한 앞은 건너뛴다 (정정 6)', () => {
     expect(
       resolveDefeatedOn({
         periodDays: WEEK,
-        observed: observed({ '2026-08-22': ['스우|하드'], '2026-08-23': ['스우|하드'] }),
+        observed: observed({ '2026-08-22': ['lotus|hard'], '2026-08-23': ['lotus|hard'] }),
         todayDateKey: '2026-09-04',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
         queryFloorDateKey: '2026-08-22',
       }),
     ).toBeNull()
@@ -171,9 +171,9 @@ describe('resolveDefeatedOn: 창 하한 앞은 건너뛴다 (정정 6)', () => {
     expect(
       resolveDefeatedOn({
         periodDays: WEEK,
-        observed: observed({ '2026-08-22': [], '2026-08-24': ['스우|하드'] }),
+        observed: observed({ '2026-08-22': [], '2026-08-24': ['lotus|hard'] }),
         todayDateKey: '2026-09-04',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
         queryFloorDateKey: '2026-08-22',
       }),
     ).toBeNull()
@@ -186,7 +186,7 @@ describe('resolveDefeatedOn: 창 하한 앞은 건너뛴다 (정정 6)', () => {
         periodDays: WEEK,
         observed: new Map(),
         todayDateKey: '2026-08-22',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
         queryFloorDateKey: '2026-08-22',
       }),
     ).toBeNull()
@@ -198,7 +198,7 @@ describe('resolveDefeatedOn: 창 하한 앞은 건너뛴다 (정정 6)', () => {
         periodDays: WEEK,
         observed: observed({ '2026-08-22': [], '2026-08-23': [] }),
         todayDateKey: '2026-08-24',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
         queryFloorDateKey: '2026-08-22',
       }),
     ).toBe('2026-08-24')
@@ -215,9 +215,9 @@ describe('resolveDefeatedOn: 못 캐면 가장 빠른 조회 가능일', () => {
     expect(
       resolveDefeatedOn({
         periodDays: WEEK,
-        observed: observed({ '2026-08-23': ['스우|하드'] }),
+        observed: observed({ '2026-08-23': ['lotus|hard'] }),
         todayDateKey: '2026-09-05',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
         queryFloorDateKey: '2026-08-23',
         fallbackToEarliestQueryable: true,
       }),
@@ -228,9 +228,9 @@ describe('resolveDefeatedOn: 못 캐면 가장 빠른 조회 가능일', () => {
     expect(
       resolveDefeatedOn({
         periodDays: WEEK,
-        observed: observed({ '2026-08-23': [], '2026-08-24': [], '2026-08-25': ['스우|하드'] }),
+        observed: observed({ '2026-08-23': [], '2026-08-24': [], '2026-08-25': ['lotus|hard'] }),
         todayDateKey: '2026-09-05',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
         queryFloorDateKey: '2026-08-23',
         fallbackToEarliestQueryable: true,
       }),
@@ -244,7 +244,7 @@ describe('resolveDefeatedOn: 못 캐면 가장 빠른 조회 가능일', () => {
         periodDays: WEEK,
         observed: new Map(),
         todayDateKey: '2026-09-20',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
         queryFloorDateKey: '2026-09-07',
         fallbackToEarliestQueryable: true,
       }),
@@ -256,9 +256,9 @@ describe('resolveDefeatedOn: 못 캐면 가장 빠른 조회 가능일', () => {
     expect(
       resolveDefeatedOn({
         periodDays: WEEK,
-        observed: observed({ '2026-08-24': ['스우|하드'] }),
+        observed: observed({ '2026-08-24': ['lotus|hard'] }),
         todayDateKey: '2026-09-05',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
         queryFloorDateKey: '2026-08-23',
         fallbackToEarliestQueryable: true,
       }),
@@ -269,9 +269,9 @@ describe('resolveDefeatedOn: 못 캐면 가장 빠른 조회 가능일', () => {
     expect(
       resolveDefeatedOn({
         periodDays: WEEK,
-        observed: observed({ '2026-08-23': ['스우|하드'] }),
+        observed: observed({ '2026-08-23': ['lotus|hard'] }),
         todayDateKey: '2026-09-05',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
         queryFloorDateKey: '2026-08-23',
       }),
     ).toBeNull()
@@ -285,7 +285,7 @@ describe('resolveDefeatedOn: 오늘은 소거법 (결정 3)', () => {
         periodDays: WEEK,
         observed: observed({ '2026-08-20': [], '2026-08-21': [], '2026-08-22': [] }),
         todayDateKey: '2026-08-23',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
       }),
     ).toBe('2026-08-23')
   })
@@ -296,7 +296,7 @@ describe('resolveDefeatedOn: 오늘은 소거법 (결정 3)', () => {
         periodDays: WEEK,
         observed: new Map(),
         todayDateKey: '2026-08-20',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
       }),
     ).toBe('2026-08-20')
   })
@@ -315,7 +315,7 @@ describe('resolveDefeatedOn: 오늘은 소거법 (결정 3)', () => {
           '2026-08-26': [],
         }),
         todayDateKey: '2026-09-02',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
       }),
     ).toBeNull()
   })
@@ -324,9 +324,9 @@ describe('resolveDefeatedOn: 오늘은 소거법 (결정 3)', () => {
     expect(
       resolveDefeatedOn({
         periodDays: WEEK,
-        observed: observed({ '2026-08-20': [], '2026-08-26': ['스우|하드'] }),
+        observed: observed({ '2026-08-20': [], '2026-08-26': ['lotus|hard'] }),
         todayDateKey: '2026-08-21',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
       }),
     ).toBe('2026-08-21')
   })
@@ -337,7 +337,7 @@ describe('resolveDefeatedOn: 오늘은 소거법 (결정 3)', () => {
 // 8/11(오늘−13) ~ 8/23(오늘−1)이다.
 const NOW = new Date('2026-08-24T05:00:00.000Z')
 
-function schedulerState(bosses: { name: string; difficulty: string }[]): unknown {
+function schedulerState(bosses: { bossKey: string; apiName: string; difficulty: string }[]): unknown {
   return {
     asOf: '2026-08-21',
     characterName: '루디',
@@ -347,7 +347,8 @@ function schedulerState(bosses: { name: string; difficulty: string }[]): unknown
     dailyContents: [],
     weeklyContents: [],
     bossContents: bosses.map((boss) => ({
-      name: boss.name,
+      bossKey: boss.bossKey,
+      apiName: boss.apiName,
       difficulty: boss.difficulty,
       cycle: 'weekly',
       isRegistered: true,
@@ -363,8 +364,9 @@ function schedulerState(bosses: { name: string; difficulty: string }[]): unknown
 
 const 미확정_스우 = {
   ocid: 'ocid-1',
+  bossKey: 'lotus',
   boss: '스우',
-  difficulty: '하드',
+  difficulty: 'hard',
   cycle: 'weekly' as const,
   periodKey: '2026-08-20',
 }
@@ -412,13 +414,13 @@ describe('resolveDefeatDates: 원장이 겹침을 막는다 (결정 5)', () => {
       unavailable: false,
       dates: {
         '2026-08-20': { kind: 'observed', hasCompletion: false, sections: {}, bosses: [] },
-        '2026-08-21': { kind: 'observed', hasCompletion: true, sections: {}, bosses: ['스우|하드'] },
+        '2026-08-21': { kind: 'observed', hasCompletion: true, sections: {}, bosses: ['lotus|hard'] },
       },
     })
 
     await expect(resolveDefeatDates(['ocid-1'], NOW)).resolves.toBe(1)
 
-    const asked = fetchStateMock.mock.calls.map(([, , dateKey]) => dateKey)
+    const asked = fetchStateMock.mock.calls.map(([, , , dateKey]) => dateKey)
     expect(asked).not.toContain('2026-08-20')
     expect(asked).not.toContain('2026-08-21')
     expect(setDefeatedOnMock).toHaveBeenCalledWith(미확정_스우, '2026-08-21')
@@ -434,7 +436,7 @@ describe('resolveDefeatDates: 원장이 겹침을 막는다 (결정 5)', () => {
 
     await resolveDefeatDates(['ocid-1'], NOW)
 
-    const asked = fetchStateMock.mock.calls.map(([, , dateKey]) => dateKey)
+    const asked = fetchStateMock.mock.calls.map(([, , , dateKey]) => dateKey)
     expect(asked).toContain('2026-08-20')
   })
 
@@ -448,7 +450,7 @@ describe('resolveDefeatDates: 원장이 겹침을 막는다 (결정 5)', () => {
 
     await resolveDefeatDates(['ocid-1'], NOW)
 
-    const asked = fetchStateMock.mock.calls.map(([, , dateKey]) => dateKey)
+    const asked = fetchStateMock.mock.calls.map(([, , , dateKey]) => dateKey)
     expect(asked).not.toContain('2026-08-20')
     // 원장의 첫 관측(8/21)보다 앞선 `outOfRange` 라 영영 못 보는 날이다. 뒤가 전부 미완료라 오늘이다.
     expect(setDefeatedOnMock).toHaveBeenCalledWith(미확정_스우, '2026-08-24')
@@ -458,13 +460,13 @@ describe('resolveDefeatDates: 원장이 겹침을 막는다 (결정 5)', () => {
 describe('resolveDefeatDates: 캐낸 값을 박는다', () => {
   it('창 안의 날짜만 묻고, 뒤집힌 날을 저장한다', async () => {
     getUndatedMock.mockResolvedValue([미확정_스우])
-    fetchStateMock.mockImplementation(async (_key: string, _ocid: string, dateKey: string) =>
-      dateKey >= '2026-08-22' ? schedulerState([{ name: '스우', difficulty: '하드' }]) : schedulerState([]),
+    fetchStateMock.mockImplementation(async (_key: string, _ocid: string, _resolveBossKey: unknown, dateKey: string) =>
+      dateKey >= '2026-08-22' ? schedulerState([{ bossKey: 'lotus', apiName: '스우', difficulty: 'hard' }]) : schedulerState([]),
     )
 
     await expect(resolveDefeatDates(['ocid-1'], NOW)).resolves.toBe(1)
 
-    const asked = fetchStateMock.mock.calls.map(([, , dateKey]) => dateKey).sort()
+    const asked = fetchStateMock.mock.calls.map(([, , , dateKey]) => dateKey).sort()
     // 이번 주(8/20~8/26) 중 창 안은 8/20~8/23 뿐이다. 8/24 는 오늘이라 400 이다.
     expect(asked).toEqual(['2026-08-20', '2026-08-21', '2026-08-22', '2026-08-23'])
     expect(setDefeatedOnMock).toHaveBeenCalledWith(미확정_스우, '2026-08-22')
@@ -475,13 +477,13 @@ describe('resolveDefeatDates: 캐낸 값을 박는다', () => {
   it('시작일이 창 밖인 주도 걸친 날들만 물어 날짜를 낸다 (정정 6)', async () => {
     const 경계주_스우 = { ...미확정_스우, periodKey: '2026-08-06' }
     getUndatedMock.mockResolvedValue([경계주_스우])
-    fetchStateMock.mockImplementation(async (_key: string, _ocid: string, dateKey: string) =>
-      dateKey >= '2026-08-12' ? schedulerState([{ name: '스우', difficulty: '하드' }]) : schedulerState([]),
+    fetchStateMock.mockImplementation(async (_key: string, _ocid: string, _resolveBossKey: unknown, dateKey: string) =>
+      dateKey >= '2026-08-12' ? schedulerState([{ bossKey: 'lotus', apiName: '스우', difficulty: 'hard' }]) : schedulerState([]),
     )
 
     await expect(resolveDefeatDates(['ocid-1'], NOW)).resolves.toBe(1)
 
-    const asked = fetchStateMock.mock.calls.map(([, , dateKey]) => dateKey).sort()
+    const asked = fetchStateMock.mock.calls.map(([, , , dateKey]) => dateKey).sort()
     expect(asked).toEqual(['2026-08-11', '2026-08-12'])
     expect(setDefeatedOnMock).toHaveBeenCalledWith(경계주_스우, '2026-08-12')
   })
@@ -532,13 +534,13 @@ describe('키가 없을 때', () => {
   it('조회가 필요 없는 건은 그대로 채운다. 리셋 당일', async () => {
     getAuthConfigMock.mockResolvedValue(null)
     getUndatedMock.mockResolvedValue([
-      { ocid: 'o1', boss: '스우', difficulty: '하드', cycle: 'weekly', periodKey: '2026-08-27' },
+      { ocid: 'o1', bossKey: 'lotus', boss: '스우', difficulty: 'hard', cycle: 'weekly', periodKey: '2026-08-27' },
     ])
 
     const dated = await resolveDefeatDates(['o1'], new Date('2026-08-27T01:00:00.000Z'))
 
     expect(dated).toBe(1)
-    expect(setDefeatedOnMock).toHaveBeenCalledWith(expect.objectContaining({ boss: '스우' }), '2026-08-27')
+    expect(setDefeatedOnMock).toHaveBeenCalledWith(expect.objectContaining({ bossKey: 'lotus', boss: '스우' }), '2026-08-27')
     expect(fetchStateMock).not.toHaveBeenCalled()
   })
 
@@ -546,7 +548,7 @@ describe('키가 없을 때', () => {
   it('조회가 있어야 풀리는 건은 안 건드린다', async () => {
     getAuthConfigMock.mockResolvedValue(null)
     getUndatedMock.mockResolvedValue([
-      { ocid: 'o1', boss: '스우', difficulty: '하드', cycle: 'weekly', periodKey: '2026-08-20' },
+      { ocid: 'o1', bossKey: 'lotus', boss: '스우', difficulty: 'hard', cycle: 'weekly', periodKey: '2026-08-20' },
     ])
 
     const dated = await resolveDefeatDates(['o1'], new Date('2026-08-27T01:00:00.000Z'))
@@ -574,10 +576,10 @@ describe('resolveDefeatedOn: 리프 경계 앞의 날', () => {
     expect(
       resolveDefeatedOn({
         periodDays: LEAP_WEEK,
-        observed: observed({ '2026-09-11': [], '2026-09-12': ['스우|하드'] }),
+        observed: observed({ '2026-09-11': [], '2026-09-12': ['lotus|hard'] }),
         unobservableDays: new Set(['2026-09-10']),
         todayDateKey: '2026-09-14',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
         queryFloorDateKey: '2026-09-01',
         fallbackToEarliestQueryable: true,
       }),
@@ -591,7 +593,7 @@ describe('resolveDefeatedOn: 리프 경계 앞의 날', () => {
         observed: observed({ '2026-09-11': [] }),
         unobservableDays: new Set(['2026-09-10']),
         todayDateKey: '2026-09-12',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
         queryFloorDateKey: '2026-08-30',
         fallbackToEarliestQueryable: true,
       }),
@@ -602,10 +604,10 @@ describe('resolveDefeatedOn: 리프 경계 앞의 날', () => {
     expect(
       resolveDefeatedOn({
         periodDays: LEAP_WEEK,
-        observed: observed({ '2026-09-11': ['스우|하드'] }),
+        observed: observed({ '2026-09-11': ['lotus|hard'] }),
         unobservableDays: new Set(['2026-09-10']),
         todayDateKey: '2026-09-14',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
         queryFloorDateKey: '2026-09-01',
         fallbackToEarliestQueryable: true,
       }),
@@ -616,9 +618,9 @@ describe('resolveDefeatedOn: 리프 경계 앞의 날', () => {
     expect(
       resolveDefeatedOn({
         periodDays: LEAP_WEEK,
-        observed: observed({ '2026-09-11': [], '2026-09-12': ['스우|하드'] }),
+        observed: observed({ '2026-09-11': [], '2026-09-12': ['lotus|hard'] }),
         todayDateKey: '2026-09-14',
-        bossKey: '스우|하드',
+        bossKey: 'lotus|hard',
         queryFloorDateKey: '2026-09-01',
         fallbackToEarliestQueryable: true,
       }),
@@ -661,8 +663,8 @@ describe('resolveDefeatDates: 리프 경계는 원장에서 읽는다', () => {
       dates: {
         ...outOfRangeDays('2026-09-01', '2026-09-10'),
         '2026-09-11': { kind: 'observed', hasCompletion: false, sections: {}, bosses: [] },
-        '2026-09-12': { kind: 'observed', hasCompletion: true, sections: {}, bosses: ['스우|하드'] },
-        '2026-09-13': { kind: 'observed', hasCompletion: true, sections: {}, bosses: ['스우|하드'] },
+        '2026-09-12': { kind: 'observed', hasCompletion: true, sections: {}, bosses: ['lotus|hard'] },
+        '2026-09-13': { kind: 'observed', hasCompletion: true, sections: {}, bosses: ['lotus|hard'] },
       },
     })
 
@@ -682,7 +684,7 @@ describe('resolveDefeatDates: 리프 경계는 원장에서 읽는다', () => {
         '2026-09-01': { kind: 'observed', hasCompletion: false, sections: {}, bosses: [] },
         '2026-09-02': { kind: 'observed', hasCompletion: false, sections: {}, bosses: [] },
         '2026-09-03': { kind: 'outOfRange' },
-        '2026-09-04': { kind: 'observed', hasCompletion: true, sections: {}, bosses: ['스우|하드'] },
+        '2026-09-04': { kind: 'observed', hasCompletion: true, sections: {}, bosses: ['lotus|hard'] },
       },
     })
 
@@ -700,7 +702,7 @@ describe('resolveDefeatDates: 리프 경계는 원장에서 읽는다', () => {
       dates: {
         '2026-09-02': { kind: 'observed', hasCompletion: false, sections: {} },
         '2026-09-03': { kind: 'outOfRange' },
-        '2026-09-04': { kind: 'observed', hasCompletion: true, sections: {}, bosses: ['스우|하드'] },
+        '2026-09-04': { kind: 'observed', hasCompletion: true, sections: {}, bosses: ['lotus|hard'] },
       },
     })
     // 다시 불러도 못 받아 9/2 는 `bosses` 없는 관측으로 남는다.
@@ -714,7 +716,7 @@ describe('resolveDefeatDates: 리프 경계는 원장에서 읽는다', () => {
   // 이번 회차의 조회가 받은 `outOfRange` 도 원장에 적히는 사실이라 같은 회차에서 센다.
   it('이번 회차에 받은 outOfRange 도 경계로 센다', async () => {
     getUndatedMock.mockResolvedValue([미확정_스우])
-    fetchStateMock.mockImplementation(async (_key: string, _ocid: string, dateKey: string) => {
+    fetchStateMock.mockImplementation(async (_key: string, _ocid: string, _resolveBossKey: unknown, dateKey: string) => {
       if (dateKey === '2026-08-20') throw new NexonBadRequestError('out of range', 'OPENAPI00004')
       return schedulerState([])
     })
@@ -730,8 +732,8 @@ describe('resolveDefeatDates: 리프 경계는 원장에서 읽는다', () => {
       unavailable: false,
       dates: {
         '2026-09-10': { kind: 'observed', hasCompletion: false, sections: {}, bosses: [] },
-        '2026-09-12': { kind: 'observed', hasCompletion: true, sections: {}, bosses: ['스우|하드'] },
-        '2026-09-13': { kind: 'observed', hasCompletion: true, sections: {}, bosses: ['스우|하드'] },
+        '2026-09-12': { kind: 'observed', hasCompletion: true, sections: {}, bosses: ['lotus|hard'] },
+        '2026-09-13': { kind: 'observed', hasCompletion: true, sections: {}, bosses: ['lotus|hard'] },
       },
     })
     fetchStateMock.mockRejectedValue(new Error('network'))

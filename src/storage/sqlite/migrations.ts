@@ -9,6 +9,8 @@
  * 칸을 더하는 일은 여기가 아니라 `db.ts` 의 CREATE 문과 `ensureColumn` 이다. 이 모듈은 칸이 다 선
  * 뒤에 돈다.
  */
+import { difficultyKeyOfName } from '../../constants/domain/boss-difficulty'
+import { bossKeyOfApiName } from '../../lib/boss/bosses'
 import {
   incomeCategoryKeyOfName,
   spendCategoryKeyOfName,
@@ -17,10 +19,12 @@ import {
 import { findHuntingGroundByName } from '../../lib/cashbook/hunting-grounds'
 import { legacySpendKeysOf } from '../../lib/cashbook/spend-catalog'
 import { dropItemKeyOfName } from '../../lib/drop/drop-items'
+import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types/scheduler'
 import type { SqliteDbConnection } from '../ports'
+import { BOSS_KEYED_TABLES } from './boss-tables'
 
 /** 이 앱의 마지막 DB 버전. 새 기기는 곧바로 이 값이 된다. */
-export const DB_VERSION = 3
+export const DB_VERSION = 4
 
 /**
  * 갈래와 항목 이름을 바꾸며 옛 기록을 옮기던 문장들. 버전 1 이 한 번 돌린다.
@@ -119,12 +123,58 @@ async function fillDropKeys(db: SqliteDbConnection): Promise<void> {
   }
 }
 
+/** 한글 난이도(옛 행)나 난이도 key(새 표)에서 key. 둘 다 아니면 `null` 이다. */
+function difficultyKeyOf(value: string): BossDifficulty | null {
+  if ((BOSS_DIFFICULTIES as readonly string[]).includes(value)) return value as BossDifficulty
+  return difficultyKeyOfName(value)
+}
+
+/**
+ * 보스 기록 표 셋의 기본키를 보스 key 로 다시 만든다. 새 표 → 행 옮기기 → DROP → RENAME.
+ *
+ * 옮길 때 `boss`(이름)로 보스 key 를 찾고 한글 난이도를 key 로 바꾼다. 이름은 API 이름과 같은 규칙(NFC ·
+ * 공백 제거)으로 맞춘다. 옛 행에는 데이터 표기(`검은마법사`)와 API 원문(`검은 마법사`)이 섞여 있다.
+ *
+ * **보스를 못 찾는 행은 옮기지 않는다.** 기본키를 못 채우고, 표에 없는 보스는 기록하지 않는다는 결정과 같다.
+ * 가격을 모르는 보스는 자동 기록이 건너뛰었고 드롭 표에 없는 보스는 드롭 후보가 없어, 남는 것은 그런 보스에
+ * 적은 파티 설정 정도다.
+ *
+ * 새 설치는 CREATE 가 이미 새 모양으로 만들어 행이 없다. 같은 길을 타도 옮길 것이 없어 결과가 같다.
+ */
+async function rekeyBossTables(db: SqliteDbConnection): Promise<void> {
+  for (const table of BOSS_KEYED_TABLES) {
+    const rebuild = `${table.name}_rebuild`
+    const { values: rows } = await db.query(`SELECT * FROM ${table.name}`)
+    await db.execute(`CREATE TABLE ${rebuild} ${table.body}`)
+    // 옮길 칸은 새 표가 가진 칸이다. 옛 표에 없는 칸(`boss_key`)은 여기서 채운다.
+    const { values: columnRows } = await db.query(`PRAGMA table_info(${rebuild})`)
+    const columns = ((columnRows ?? []) as Row[]).map((column) => String(column.name))
+    // 이름 이관(버전 1)을 거쳤어도 두 이름이 한 key 로 모일 수 있다. 부딪히면 먼저 옮긴 행을 남기고 이관이
+    // 던지지 않게 한다. 던지면 부팅마다 DB 열기가 실패한다.
+    const insert = `INSERT OR IGNORE INTO ${rebuild} (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`
+    for (const row of (rows ?? []) as Row[]) {
+      const bossKey = textOrNull(row.boss_key) ?? bossKeyOfApiName(String(row.boss))
+      const difficulty = difficultyKeyOf(String(row.difficulty))
+      if (bossKey === null || difficulty === null) continue
+      await db.run(
+        insert,
+        columns.map((column) =>
+          column === 'boss_key' ? bossKey : column === 'difficulty' ? difficulty : (row[column] ?? null),
+        ),
+      )
+    }
+    await db.execute(`DROP TABLE ${table.name}`)
+    await db.execute(`ALTER TABLE ${rebuild} RENAME TO ${table.name}`)
+  }
+}
+
 const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   async (db) => {
     for (const statement of LEGACY_NAME_MIGRATIONS) await db.execute(statement)
   },
   fillCashbookKeys,
   fillDropKeys,
+  rekeyBossTables,
 ]
 
 async function userVersionOf(db: SqliteDbConnection): Promise<number> {

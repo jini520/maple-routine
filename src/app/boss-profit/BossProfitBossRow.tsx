@@ -17,10 +17,12 @@ import type { RecordedDrop } from '../../types/drops'
 import { AnimatedNumber, Badge, MinusIcon, PlusIcon, Text } from '../../components/atoms'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
+import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
+import { bossPortraitSlugOf } from '../../lib/boss/bosses'
 import { BossDropSheet } from './BossDropSheet'
 import { ItemRevenueTrigger } from './ItemRevenueTrigger'
 import { useBossProfitContext } from './boss-profit-context'
-import { clamp, findPortraitSlug } from './character-groups'
+import { clamp } from './character-groups'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 import { ItemRevenuePopover } from './ItemRevenuePopover'
 
@@ -130,7 +132,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
       style={TABULAR_NUMS}
     >
       <AnimatedNumber
-        identity={`boss|${row.ocid}|${row.boss}|${row.difficulty}|${row.periodKey}`}
+        identity={`boss|${row.ocid}|${row.bossKey}|${row.difficulty}|${row.periodKey}`}
         value={(row.payoutMeso ?? 0) + dropTotal}
       />
       {' 메소'}
@@ -160,23 +162,23 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
         props.isLast === true ? 'border-b-transparent' : 'border-border'
       }`}
     >
-      <BossPortrait portraitSlug={findPortraitSlug(row.boss)} label={row.boss} size={BOSS_PORTRAIT_SIZE} />
+      <BossPortrait portraitSlug={bossPortraitSlugOf(row.bossKey)} label={row.bossName} size={BOSS_PORTRAIT_SIZE} />
 
       <View className="min-w-0 flex-1">
         {/* 이름 라인 전체가 드롭 시트 열기 버튼. 파티 스테퍼는 아래 줄이라 탭 충돌 없음. */}
         <Pressable
           role="button"
           onPress={() => setIsDropSheetOpen(true)}
-          aria-label={`${row.boss} ${row.difficulty} 드롭 아이템 관리`}
+          aria-label={`${row.bossName} ${DIFFICULTY_NAME[row.difficulty]} 드롭 아이템 관리`}
           // h-6 고정. 자식(난이도 배지 20px · 보스명 20px · 드롭 지시자 24px) 중 최대값에
           // 높이를 맡기면 지시자 종류가 바뀔 때마다 행 높이가 흔들린다.
           className="h-6 w-full flex-row items-center gap-1.5"
         >
           <Badge variant={row.difficulty}>
-            {row.difficulty}
+            {DIFFICULTY_NAME[row.difficulty]}
           </Badge>
           <Text numberOfLines={1} className="shrink text-sm font-semibold text-text">
-            {row.boss}
+            {row.bossName}
           </Text>
           <DropIndicator drops={drops} />
         </Pressable>
@@ -193,7 +195,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
               role="button"
               onPress={() => void handleChange(-1)}
               disabled={!canDecrease}
-              aria-label={`${row.characterName} ${row.boss} ${row.difficulty} 파티원 수 감소`}
+              aria-label={`${row.characterName} ${row.bossName} ${DIFFICULTY_NAME[row.difficulty]} 파티원 수 감소`}
               className={`${stepperButtonClass}${canDecrease ? '' : ' opacity-40'}`}
             >
               <MinusIcon className="h-3 w-3 text-text" strokeWidth={2} aria-hidden />
@@ -205,7 +207,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
               role="button"
               onPress={() => void handleChange(1)}
               disabled={!canIncrease}
-              aria-label={`${row.characterName} ${row.boss} ${row.difficulty} 파티원 수 증가`}
+              aria-label={`${row.characterName} ${row.bossName} ${DIFFICULTY_NAME[row.difficulty]} 파티원 수 증가`}
               className={`${stepperButtonClass}${canIncrease ? '' : ' opacity-40'}`}
             >
               <PlusIcon className="h-3 w-3 text-text" strokeWidth={2} aria-hidden />
@@ -230,7 +232,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           ) : (
             <ItemRevenueTrigger
               ref={itemChipRef}
-              label={`${row.boss} 아이템 수익 확인`}
+              label={`${row.bossName} 아이템 수익 확인`}
               isOpen={isItemPopoverOpen}
               onPress={toggleItemPopover}
             >
@@ -252,7 +254,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
 
       {isDropSheetOpen && (
         <BossDropSheet
-          boss={row.boss}
+          bossKey={row.bossKey}
           difficulty={row.difficulty}
           periodKey={row.periodKey}
           isComplete={row.isComplete}

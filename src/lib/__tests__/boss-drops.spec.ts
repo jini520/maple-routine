@@ -20,7 +20,7 @@ const 패치후 = '2026-09-17'
 
 describe('getBossDropCandidates', () => {
   it('보스의 전 난이도 선택 후보(장비·소비)를 통합해 반환한다 (스우)', () => {
-    const candidates = getBossDropCandidates('스우', 패치전)
+    const candidates = getBossDropCandidates('lotus', 패치전)
 
     expect(candidates.length).toBeGreaterThan(0)
     // 선택 후보는 장비·소비만 (고정은 읽기 전용이라 제외)
@@ -32,16 +32,16 @@ describe('getBossDropCandidates', () => {
 
   it('같은 아이템은 key+slot으로 통합하고 등장 난이도를 정규 순서로 담는다', () => {
     // 루즈 컨트롤 머신 마크(얼굴장식)는 스우 하드+익스트림에서 드롭 → 한 후보로 통합
-    const marks = getBossDropCandidates('스우', 패치전).filter(
+    const marks = getBossDropCandidates('lotus', 패치전).filter(
       (candidate) => candidate.name === '루즈 컨트롤 머신 마크',
     )
     expect(marks.length).toBe(1)
     expect(marks[0]).toMatchObject({ category: 'equipment', slot: '얼굴장식' })
-    expect(marks[0].difficulties).toEqual(['하드', '익스트림'])
+    expect(marks[0].difficulties).toEqual(['hard', 'extreme'])
   })
 
   it('난이도별로만 드롭되는 소비 상자도 모두 통합해 노출한다 (스우 녹옥/홍옥/백옥)', () => {
-    const names = getBossDropCandidates('스우', 패치전).map((candidate) => candidate.name)
+    const names = getBossDropCandidates('lotus', 패치전).map((candidate) => candidate.name)
     expect(names).toContain('녹옥의 보스 반지 상자') // 노멀
     expect(names).toContain('홍옥의 보스 반지 상자') // 하드
     expect(names).toContain('백옥의 보스 반지 상자') // 익스트림
@@ -50,7 +50,7 @@ describe('getBossDropCandidates', () => {
   // 옛 scroll 카테고리는 코드가 순회하지 않아 화면에 나온 적이 없다. consumable로
   // 흡수했으니 이제 선택 후보로 잡혀야 한다.
   it('주문서 교환권 3종은 소비 후보로 노출된다 (가디언 엔젤 슬라임 카오스)', () => {
-    const coupons = getBossDropCandidates('가디언 엔젤 슬라임', 패치전).filter((candidate) =>
+    const coupons = getBossDropCandidates('guardian_angel_slime', 패치전).filter((candidate) =>
       candidate.name.endsWith('교환권'),
     )
 
@@ -61,23 +61,23 @@ describe('getBossDropCandidates', () => {
     ])
     for (const coupon of coupons) {
       expect(coupon.category).toBe('consumable')
-      expect(coupon.difficulties).toEqual(['카오스'])
+      expect(coupon.difficulties).toEqual(['chaos'])
     }
   })
 
   it('찬란한 흉성 노멀에도 교환권 3종이 있다 (신규 추가)', () => {
-    const coupons = getBossDropCandidates('찬란한 흉성', 패치전).filter((candidate) =>
+    const coupons = getBossDropCandidates('radiant_malefic_star', 패치전).filter((candidate) =>
       candidate.name.endsWith('교환권'),
     )
 
     expect(coupons.length).toBe(3)
     for (const coupon of coupons) {
-      expect(coupon.difficulties).toContain('노멀')
+      expect(coupon.difficulties).toContain('normal')
     }
   })
 
   it('듄켈 하드의 교환권은 하나로 통합된다. 옛 이름 갈림이 해소됐다', () => {
-    const names = getBossDropCandidates('듄켈', 패치전)
+    const names = getBossDropCandidates('darknell', 패치전)
       .map((candidate) => candidate.name)
       .filter((name) => name.includes('악세서리'))
 
@@ -85,48 +85,48 @@ describe('getBossDropCandidates', () => {
   })
 
   it('없는 보스는 빈 배열을 반환한다', () => {
-    expect(getBossDropCandidates('존재하지않는보스', 패치전)).toEqual([])
+    expect(getBossDropCandidates('no_such_boss', 패치전)).toEqual([])
   })
 })
 
 describe('getBossFixedDrops', () => {
   it('고정 드롭을 난이도별 그룹(정규 순서)으로 반환한다 (스우)', () => {
-    const groups = getBossFixedDrops('스우', 패치전)
+    const groups = getBossFixedDrops('lotus', 패치전)
 
-    expect(groups.map((group) => group.difficulty)).toEqual(['노멀', '하드', '익스트림'])
+    expect(groups.map((group) => group.difficulty)).toEqual(['normal', 'hard', 'extreme'])
     // 같은 아이템도 난이도마다 값이 다름. 그룹별 값을 그대로 유지한다
-    const hard = groups.find((group) => group.difficulty === '하드')
+    const hard = groups.find((group) => group.difficulty === 'hard')
     expect(hard?.items).toContainEqual(
       expect.objectContaining({ name: '솔 에르다의 기운', amount: '50' }),
     )
-    const extreme = groups.find((group) => group.difficulty === '익스트림')
+    const extreme = groups.find((group) => group.difficulty === 'extreme')
     expect(extreme?.items).toContainEqual(
       expect.objectContaining({ name: '솔 에르다의 기운', amount: '280' }),
     )
   })
 
   it('고정 드롭이 없는 보스는 빈 배열을 반환한다', () => {
-    expect(getBossFixedDrops('존재하지않는보스', 패치전)).toEqual([])
+    expect(getBossFixedDrops('no_such_boss', 패치전)).toEqual([])
   })
 })
 
 describe('getBossDifficulties', () => {
   it('드롭 테이블에 표시 가능한 드롭이 있는 난이도를 정규 순서로 반환한다 (스우)', () => {
-    expect(getBossDifficulties('스우')).toEqual(['노멀', '하드', '익스트림'])
+    expect(getBossDifficulties('lotus')).toEqual(['normal', 'hard', 'extreme'])
   })
 
   it('카링은 이지~익스트림 4난이도를 정규 순서로 반환한다', () => {
-    expect(getBossDifficulties('카링')).toEqual(['이지', '노멀', '하드', '익스트림'])
+    expect(getBossDifficulties('kaling')).toEqual(['easy', 'normal', 'hard', 'extreme'])
   })
 
   it('없는 보스는 빈 배열을 반환한다', () => {
-    expect(getBossDifficulties('존재하지않는보스')).toEqual([])
+    expect(getBossDifficulties('no_such_boss')).toEqual([])
   })
 })
 
 describe('getObtainableTileKeys', () => {
   it('그 난이도에서 획득 가능한 선택 타일 key 만 담는다 (스우 하드)', () => {
-    const keys = getObtainableTileKeys('스우', '하드', 패치전)
+    const keys = getObtainableTileKeys('lotus', 'hard', 패치전)
     expect(keys.has('loose_control_machine_mark')).toBe(true) // 루즈 컨트롤 머신 마크, 하드+익스
     expect(keys.has('red_boss_ring_box')).toBe(true) // 홍옥, 하드
     expect(keys.has('complete_under_control')).toBe(false) // 익스 전용
@@ -143,13 +143,13 @@ describe('pruneUnobtainableDrops', () => {
       { category: 'consumable', itemKey: 'restraint_ring', itemName: '리스트레인트 링', boxOriginKey: 'red_boss_ring_box', boxOrigin: '홍옥의 보스 반지 상자', ringLevel: 3, quantity: 1 }, // 홍옥(하드) 유지
       { category: 'consumable', itemKey: null, itemName: '아무 반지', boxOriginKey: 'white_boss_ring_box', boxOrigin: '백옥의 보스 반지 상자', quantity: 1 }, // 백옥(익스) 제거
     ]
-    const pruned = pruneUnobtainableDrops('스우', '하드', 패치전, drops)
+    const pruned = pruneUnobtainableDrops('lotus', 'hard', 패치전, drops)
     expect(pruned.map((drop) => drop.itemName)).toEqual(['루즈 컨트롤 머신 마크', '리스트레인트 링'])
   })
 
   it('선택 대상이 아닌 고정(fixed) 기록은 무손실 보존한다', () => {
     const drops: RecordedDrop[] = [{ category: 'fixed', itemKey: 'spell_trace', itemName: '주문의 흔적', quantity: 1 }]
-    expect(pruneUnobtainableDrops('스우', '하드', 패치전, drops)).toEqual(drops)
+    expect(pruneUnobtainableDrops('lotus', 'hard', 패치전, drops)).toEqual(drops)
   })
 
   // 이관이 이름을 못 찾은 옛 기록이다. 못 찾은 것이 못 먹은 것은 아니라서 지우지 않는다(사용자 결정).
@@ -158,7 +158,7 @@ describe('pruneUnobtainableDrops', () => {
       { category: 'consumable', itemKey: null, itemName: '익셉셔널 해머', quantity: 1 },
       { category: 'consumable', itemKey: 'restraint_ring', itemName: '리스트레인트 링', boxOriginKey: null, boxOrigin: '없어진 상자', quantity: 1 },
     ]
-    expect(pruneUnobtainableDrops('스우', '하드', 패치전, drops)).toEqual(drops)
+    expect(pruneUnobtainableDrops('lotus', 'hard', 패치전, drops)).toEqual(drops)
   })
 })
 
@@ -268,21 +268,21 @@ describe('getAccessoryBoxContents', () => {
 // 키에 남아 영구 고아가 된다(화면·환산 가치에서 사라지고 DB에만 남는다).
 describe('planConfirmedDifficultyDropMigration', () => {
   const extremeDrops: StoredDropRecord[] = [
-    { difficulty: '익스트림', dropIndex: 0, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
-    { difficulty: '익스트림', dropIndex: 1, category: 'equipment', itemKey: 'complete_under_control', itemName: '컴플리트 언더컨트롤', quantity: 1 },
+    { difficulty: 'extreme', dropIndex: 0, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
+    { difficulty: 'extreme', dropIndex: 1, category: 'equipment', itemKey: 'complete_under_control', itemName: '컴플리트 언더컨트롤', quantity: 1 },
   ]
 
   it('옛 난이도 키의 드롭을 확정 난이도로 옮기고, 그 난이도에서 못 나오는 항목은 삭제한다', () => {
-    const plan = planConfirmedDifficultyDropMigration('스우', '하드', 패치전,extremeDrops)
+    const plan = planConfirmedDifficultyDropMigration('lotus', 'hard', 패치전,extremeDrops)
 
     // 컴플리트 언더컨트롤은 익스 전용. 되살리지 않는다(거짓 기록, 사용자 판단)
     expect(plan?.drops.map((drop) => drop.itemName)).toEqual(['루즈 컨트롤 머신 마크'])
-    expect(plan?.staleDifficulties).toEqual(['익스트림'])
+    expect(plan?.staleDifficulties).toEqual(['extreme'])
   })
 
   it('확정 난이도에 이미 드롭이 있으면 그 뒤에 이어 붙인다', () => {
-    const plan = planConfirmedDifficultyDropMigration('스우', '하드', 패치전,[
-      { difficulty: '하드', dropIndex: 0, category: 'consumable', itemKey: 'restraint_ring', itemName: '리스트레인트 링', boxOriginKey: 'red_boss_ring_box', boxOrigin: '홍옥의 보스 반지 상자', ringLevel: 3, quantity: 1 },
+    const plan = planConfirmedDifficultyDropMigration('lotus', 'hard', 패치전,[
+      { difficulty: 'hard', dropIndex: 0, category: 'consumable', itemKey: 'restraint_ring', itemName: '리스트레인트 링', boxOriginKey: 'red_boss_ring_box', boxOrigin: '홍옥의 보스 반지 상자', ringLevel: 3, quantity: 1 },
       ...extremeDrops,
     ])
 
@@ -295,10 +295,10 @@ describe('planConfirmedDifficultyDropMigration', () => {
   // 한 카드에는 같은 타일(일반 아이템은 이름, 상자 결과는 상자)이 하나만 선다. 이관이 그것을 둘로
   // 만들면 시트가 하나만 보여 주고 금액은 두 번 센다.
   it('확정 난이도에 같은 아이템이 이미 있으면 두 번 넣지 않는다. 이미 있는 쪽을 남긴다', () => {
-    const plan = planConfirmedDifficultyDropMigration('스우', '하드', 패치전, [
-      { difficulty: '하드', dropIndex: 0, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
+    const plan = planConfirmedDifficultyDropMigration('lotus', 'hard', 패치전, [
+      { difficulty: 'hard', dropIndex: 0, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
       {
-        difficulty: '익스트림',
+        difficulty: 'extreme',
         dropIndex: 0,
         category: 'equipment',
         itemKey: 'loose_control_machine_mark',
@@ -312,23 +312,23 @@ describe('planConfirmedDifficultyDropMigration', () => {
 
     expect(plan).toEqual({
       drops: [{ category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 }],
-      staleDifficulties: ['익스트림'],
+      staleDifficulties: ['extreme'],
     })
   })
 
   it('같은 상자면 결과가 달라도 같은 드롭이다', () => {
-    const plan = planConfirmedDifficultyDropMigration('스우', '하드', 패치전, [
-      { difficulty: '하드', dropIndex: 0, category: 'consumable', itemKey: 'restraint_ring', itemName: '리스트레인트 링', boxOriginKey: 'red_boss_ring_box', boxOrigin: '홍옥의 보스 반지 상자', ringLevel: 3, quantity: 1 },
-      { difficulty: '익스트림', dropIndex: 0, category: 'consumable', itemKey: null, itemName: '웨폰퍼프 - I 링', boxOriginKey: 'red_boss_ring_box', boxOrigin: '홍옥의 보스 반지 상자', ringLevel: 4, quantity: 1 },
+    const plan = planConfirmedDifficultyDropMigration('lotus', 'hard', 패치전, [
+      { difficulty: 'hard', dropIndex: 0, category: 'consumable', itemKey: 'restraint_ring', itemName: '리스트레인트 링', boxOriginKey: 'red_boss_ring_box', boxOrigin: '홍옥의 보스 반지 상자', ringLevel: 3, quantity: 1 },
+      { difficulty: 'extreme', dropIndex: 0, category: 'consumable', itemKey: null, itemName: '웨폰퍼프 - I 링', boxOriginKey: 'red_boss_ring_box', boxOrigin: '홍옥의 보스 반지 상자', ringLevel: 4, quantity: 1 },
     ])
 
     expect(plan?.drops.map((drop) => drop.itemName)).toEqual(['리스트레인트 링'])
   })
 
   it('옛 난이도 키 여럿에 같은 아이템이 있어도 하나만 옮긴다', () => {
-    const plan = planConfirmedDifficultyDropMigration('스우', '하드', 패치전, [
-      { difficulty: '익스트림', dropIndex: 0, category: 'fixed', itemKey: 'spell_trace', itemName: '주문의 흔적', quantity: 2 },
-      { difficulty: '노멀', dropIndex: 0, category: 'fixed', itemKey: 'spell_trace', itemName: '주문의 흔적', quantity: 1 },
+    const plan = planConfirmedDifficultyDropMigration('lotus', 'hard', 패치전, [
+      { difficulty: 'extreme', dropIndex: 0, category: 'fixed', itemKey: 'spell_trace', itemName: '주문의 흔적', quantity: 2 },
+      { difficulty: 'normal', dropIndex: 0, category: 'fixed', itemKey: 'spell_trace', itemName: '주문의 흔적', quantity: 1 },
     ])
 
     // 정규 난이도 순서(노멀 → 익스트림)의 앞선 것이 남는다.
@@ -336,20 +336,20 @@ describe('planConfirmedDifficultyDropMigration', () => {
   })
 
   it('이관분이 전부 삭제돼도 옛 키는 비워야 한다. 고아를 남기지 않는다', () => {
-    const plan = planConfirmedDifficultyDropMigration('스우', '하드', 패치전,[
-      { difficulty: '익스트림', dropIndex: 0, category: 'equipment', itemKey: 'complete_under_control', itemName: '컴플리트 언더컨트롤', quantity: 1 },
+    const plan = planConfirmedDifficultyDropMigration('lotus', 'hard', 패치전,[
+      { difficulty: 'extreme', dropIndex: 0, category: 'equipment', itemKey: 'complete_under_control', itemName: '컴플리트 언더컨트롤', quantity: 1 },
     ])
 
-    expect(plan).toEqual({ drops: [], staleDifficulties: ['익스트림'] })
+    expect(plan).toEqual({ drops: [], staleDifficulties: ['extreme'] })
   })
 
   it('옛 난이도 키가 여러 개면 정규 난이도 순서로 이어 붙이고 모두 비운다', () => {
-    const plan = planConfirmedDifficultyDropMigration('스우', '하드', 패치전,[
-      { difficulty: '익스트림', dropIndex: 0, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
-      { difficulty: '노멀', dropIndex: 0, category: 'fixed', itemKey: 'spell_trace', itemName: '주문의 흔적', quantity: 1 },
+    const plan = planConfirmedDifficultyDropMigration('lotus', 'hard', 패치전,[
+      { difficulty: 'extreme', dropIndex: 0, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
+      { difficulty: 'normal', dropIndex: 0, category: 'fixed', itemKey: 'spell_trace', itemName: '주문의 흔적', quantity: 1 },
     ])
 
-    expect(plan?.staleDifficulties).toEqual(['노멀', '익스트림'])
+    expect(plan?.staleDifficulties).toEqual(['normal', 'extreme'])
     expect(plan?.drops.map((drop) => drop.itemName)).toEqual([
       '주문의 흔적',
       '루즈 컨트롤 머신 마크',
@@ -358,16 +358,16 @@ describe('planConfirmedDifficultyDropMigration', () => {
 
   it('옛 난이도 키가 없으면 null: 쓸 일이 없다는 뜻이다(멱등)', () => {
     expect(
-      planConfirmedDifficultyDropMigration('스우', '하드', 패치전,[
-        { difficulty: '하드', dropIndex: 0, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
+      planConfirmedDifficultyDropMigration('lotus', 'hard', 패치전,[
+        { difficulty: 'hard', dropIndex: 0, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
       ]),
     ).toBeNull()
-    expect(planConfirmedDifficultyDropMigration('스우', '하드', 패치전,[])).toBeNull()
+    expect(planConfirmedDifficultyDropMigration('lotus', 'hard', 패치전,[])).toBeNull()
   })
 
   it('고정(fixed) 드롭은 난이도가 바뀌어도 보존한다', () => {
-    const plan = planConfirmedDifficultyDropMigration('스우', '하드', 패치전,[
-      { difficulty: '익스트림', dropIndex: 0, category: 'fixed', itemKey: 'spell_trace', itemName: '주문의 흔적', quantity: 1 },
+    const plan = planConfirmedDifficultyDropMigration('lotus', 'hard', 패치전,[
+      { difficulty: 'extreme', dropIndex: 0, category: 'fixed', itemKey: 'spell_trace', itemName: '주문의 흔적', quantity: 1 },
     ])
 
     expect(plan?.drops).toEqual([{ category: 'fixed', itemKey: 'spell_trace', itemName: '주문의 흔적', quantity: 1 }])
@@ -381,9 +381,9 @@ describe('planConfirmedDifficultyDropMigration', () => {
 // 이관 계산에 가격 생존을 직접 못 박는다.
 describe('planConfirmedDifficultyDropMigration: 가격 생존', () => {
   it('이관된 드롭이 가격 세 필드를 그대로 들고 간다', () => {
-    const plan = planConfirmedDifficultyDropMigration('스우', '하드', 패치전,[
+    const plan = planConfirmedDifficultyDropMigration('lotus', 'hard', 패치전,[
       {
-        difficulty: '익스트림',
+        difficulty: 'extreme',
         dropIndex: 0,
         category: 'equipment',
         itemKey: 'loose_control_machine_mark',
@@ -408,9 +408,9 @@ describe('planConfirmedDifficultyDropMigration: 가격 생존', () => {
   })
 
   it('스킵 상태도 이관에서 살아남는다. 미입력으로 되돌아가면 다시 묻게 된다', () => {
-    const plan = planConfirmedDifficultyDropMigration('스우', '하드', 패치전,[
+    const plan = planConfirmedDifficultyDropMigration('lotus', 'hard', 패치전,[
       {
-        difficulty: '익스트림',
+        difficulty: 'extreme',
         dropIndex: 0,
         category: 'equipment',
         itemKey: 'loose_control_machine_mark',
@@ -425,9 +425,9 @@ describe('planConfirmedDifficultyDropMigration: 가격 생존', () => {
   })
 
   it('확정 난이도에 이미 있던 드롭의 가격도 보존한다', () => {
-    const plan = planConfirmedDifficultyDropMigration('스우', '하드', 패치전,[
+    const plan = planConfirmedDifficultyDropMigration('lotus', 'hard', 패치전,[
       {
-        difficulty: '하드',
+        difficulty: 'hard',
         dropIndex: 0,
         category: 'consumable',
         itemKey: 'restraint_ring',
@@ -441,7 +441,7 @@ describe('planConfirmedDifficultyDropMigration: 가격 생존', () => {
         priceShare: 1,
       },
       {
-        difficulty: '익스트림',
+        difficulty: 'extreme',
         dropIndex: 0,
         category: 'equipment',
         itemKey: 'loose_control_machine_mark',
@@ -466,48 +466,48 @@ describe('2026-09-17 패치: 아이템이 기간을 든다', () => {
     getBossFixedDrops(boss, periodKey).find((group) => group.difficulty === difficulty)?.items ?? []
 
   it('교환권 셋은 패치 전 주에만 후보로 선다', () => {
-    expect(namesOf('가디언 엔젤 슬라임', 패치전)).toEqual(expect.arrayContaining(교환권))
+    expect(namesOf('guardian_angel_slime', 패치전)).toEqual(expect.arrayContaining(교환권))
     for (const name of 교환권) {
-      expect(namesOf('가디언 엔젤 슬라임', 패치후)).not.toContain(name)
+      expect(namesOf('guardian_angel_slime', 패치후)).not.toContain(name)
     }
   })
 
   it('소울 에테르는 패치 뒤의 주부터 교환 가능한 소비 후보로 선다', () => {
-    expect(namesOf('카링', 패치전)).not.toContain('1단계 소울 에테르')
+    expect(namesOf('kaling', 패치전)).not.toContain('1단계 소울 에테르')
 
-    expect(getBossDropCandidates('카링', 패치후)).toContainEqual(
+    expect(getBossDropCandidates('kaling', 패치후)).toContainEqual(
       expect.objectContaining({
         name: '1단계 소울 에테르',
         category: 'consumable',
         note: '교환 가능',
-        difficulties: ['노멀', '하드', '익스트림'],
+        difficulties: ['normal', 'hard', 'extreme'],
       }),
     )
   })
 
   it('단계마다 보스가 다르다', () => {
-    expect(namesOf('벨로나', 패치후)).toContain('2단계 소울 에테르')
-    expect(namesOf('림보', 패치후)).toContain('3단계 소울 에테르')
-    expect(namesOf('유피테르', 패치후)).toContain('4단계 소울 에테르')
+    expect(namesOf('bellona', 패치후)).toContain('2단계 소울 에테르')
+    expect(namesOf('limbo', 패치후)).toContain('3단계 소울 에테르')
+    expect(namesOf('jupiter', 패치후)).toContain('4단계 소울 에테르')
   })
 
   it('고정 보상도 그 주의 것을 준다 (데미안 하드 실버 1 → 0)', () => {
-    expect(fixedOf('데미안', '하드', 패치전)).toContainEqual(
+    expect(fixedOf('damien', 'hard', 패치전)).toContainEqual(
       expect.objectContaining({ name: '메멘토 실버 큐브', amount: '1개' }),
     )
-    expect(fixedOf('데미안', '하드', 패치후).map((item) => item.name)).not.toContain('메멘토 실버 큐브')
+    expect(fixedOf('damien', 'hard', 패치후).map((item) => item.name)).not.toContain('메멘토 실버 큐브')
   })
 
   it('수량이 바뀐 칸은 한 기간에 한 줄만 선다 (더스크 카오스 실버 2 → 1)', () => {
     const 실버 = (periodKey: string) =>
-      fixedOf('더스크', '카오스', periodKey).filter((item) => item.name === '메멘토 실버 큐브')
+      fixedOf('gloom', 'chaos', periodKey).filter((item) => item.name === '메멘토 실버 큐브')
 
     expect(실버(패치전)).toEqual([expect.objectContaining({ amount: '2개' })])
     expect(실버(패치후)).toEqual([expect.objectContaining({ amount: '1개' })])
   })
 
   it('검은마법사 하드는 10월 기간부터 골드 8 이 실버 8 로 바뀐다', () => {
-    const names = (periodKey: string) => fixedOf('검은마법사', '하드', periodKey).map((item) => item.name)
+    const names = (periodKey: string) => fixedOf('black_mage', 'hard', periodKey).map((item) => item.name)
 
     expect(names('2026-09')).toContain('메멘토 골드 큐브')
     expect(names('2026-09')).not.toContain('메멘토 실버 큐브')
@@ -518,24 +518,24 @@ describe('2026-09-17 패치: 아이템이 기간을 든다', () => {
   const 교환권기록: RecordedDrop = { category: 'consumable', itemKey: 'magical_weapon_scroll_voucher', itemName: '매지컬 무기 주문서 교환권', quantity: 1 }
 
   it('패치 전 주의 교환권 기록은 획득 가능하다. 지우지 않는다', () => {
-    expect(pruneUnobtainableDrops('가디언 엔젤 슬라임', '카오스', 패치전, [교환권기록])).toEqual([교환권기록])
+    expect(pruneUnobtainableDrops('guardian_angel_slime', 'chaos', 패치전, [교환권기록])).toEqual([교환권기록])
   })
 
   it('패치 뒤의 주에 적힌 교환권은 정리된다', () => {
-    expect(pruneUnobtainableDrops('가디언 엔젤 슬라임', '카오스', 패치후, [교환권기록])).toEqual([])
+    expect(pruneUnobtainableDrops('guardian_angel_slime', 'chaos', 패치후, [교환권기록])).toEqual([])
   })
 
   // 9월 기간은 9/1 에 시작한다. 처치 날짜가 없어 9월 초에 먹은 기록을 가를 수 없으므로 얻을 수
   // 있었던 것으로 본다.
   it('검은마법사의 9월 기간은 교환권을 얻을 수 있다. 10월 기간부터 못 얻는다', () => {
-    expect(getObtainableTileKeys('검은마법사', '하드', '2026-09').has('magical_weapon_scroll_voucher')).toBe(true)
-    expect(getObtainableTileKeys('검은마법사', '하드', '2026-10').has('magical_weapon_scroll_voucher')).toBe(false)
+    expect(getObtainableTileKeys('black_mage', 'hard', '2026-09').has('magical_weapon_scroll_voucher')).toBe(true)
+    expect(getObtainableTileKeys('black_mage', 'hard', '2026-10').has('magical_weapon_scroll_voucher')).toBe(false)
   })
 
   it('처치 난이도 이관도 그 기간으로 판정한다', () => {
-    const plan = planConfirmedDifficultyDropMigration('카링', '노멀', 패치후, [
-      { difficulty: '하드', dropIndex: 0, category: 'consumable', itemKey: 'soul_ether_1', itemName: '1단계 소울 에테르', quantity: 1 },
-      { difficulty: '하드', dropIndex: 1, category: 'consumable', itemKey: 'magical_weapon_scroll_voucher', itemName: '매지컬 무기 주문서 교환권', quantity: 1 },
+    const plan = planConfirmedDifficultyDropMigration('kaling', 'normal', 패치후, [
+      { difficulty: 'hard', dropIndex: 0, category: 'consumable', itemKey: 'soul_ether_1', itemName: '1단계 소울 에테르', quantity: 1 },
+      { difficulty: 'hard', dropIndex: 1, category: 'consumable', itemKey: 'magical_weapon_scroll_voucher', itemName: '매지컬 무기 주문서 교환권', quantity: 1 },
     ])
 
     expect(plan?.drops.map((drop) => drop.itemName)).toEqual(['1단계 소울 에테르'])

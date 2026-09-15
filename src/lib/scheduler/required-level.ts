@@ -17,7 +17,8 @@
  * 읽으면 없는 사실을 단정하는 것이 된다.
  */
 
-import weeklyBossesData from '../../data/weekly-bosses.json'
+import type { BossDifficulty } from '../../types'
+import { bossRequiredLevel } from '../boss/bosses'
 import { CONTENT_TEMPLATE } from './scheduler-content-template'
 
 /** 컨텐츠 이름 → 요구 레벨. 참조표에 없거나 값이 없으면 `null`. */
@@ -28,32 +29,12 @@ const CONTENT_REQUIRED_LEVELS: ReadonlyMap<string, number> = new Map(
   }),
 )
 
-/**
- * 보스 이름 → (난이도 → 요구 레벨).
- *
- * 필드명이 `requiredLevel` 이 아니라 `requiredLevels` 다. 보스는 같은 이름이라도 난이도마다
- * 요구 레벨이 다르다(자쿰 카오스 90 · 검은 마법사 하드 200 …).
- */
-const BOSS_REQUIRED_LEVELS: ReadonlyMap<string, Readonly<Record<string, number>>> = new Map(
-  [
-    ...weeklyBossesData.weekly,
-    ...weeklyBossesData.eventWeekly,
-    ...weeklyBossesData.monthly,
-  ].flatMap((entry) => {
-    const levels = (entry as { requiredLevels?: Record<string, number> }).requiredLevels
-    return levels === undefined ? [] : [[entry.boss, levels] as const]
-  }),
-)
-
 /** 컨텐츠의 요구 레벨. 참조표에 없으면 `null`(제한 없음 으로 읽힌다). */
 export function contentRequiredLevel(contentName: string): number | null {
   return CONTENT_REQUIRED_LEVELS.get(contentName) ?? null
 }
 
-/** 보스+난이도의 요구 레벨. 참조표에 없으면 `null`. */
-export function bossRequiredLevel(bossName: string, difficulty: string): number | null {
-  return BOSS_REQUIRED_LEVELS.get(bossName)?.[difficulty] ?? null
-}
+export { bossRequiredLevel }
 
 /**
  * 판정의 알맹이. **둘 중 하나라도 모르면 **진행 가능**** 이다(위 표).
@@ -73,8 +54,8 @@ export function isContentBlocked(characterLevel: number | null, contentName: str
 /** 보스 한 항목(난이도까지)이 이 캐릭터에게 진행 불가 인가. */
 export function isBossBlocked(
   characterLevel: number | null,
-  bossName: string,
-  difficulty: string,
+  bossKey: string | null,
+  difficulty: BossDifficulty,
 ): boolean {
-  return isLevelBlocked(characterLevel, bossRequiredLevel(bossName, difficulty))
+  return isLevelBlocked(characterLevel, bossRequiredLevel(bossKey, difficulty))
 }

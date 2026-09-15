@@ -22,9 +22,9 @@ describe('참조표 조회', () => {
   // 보스는 **`requiredLevel` 이 아니라 `requiredLevels`**(난이도별 맵)다. 이슈 본문이 이 필드명을
   // 잘못 세어 **27곳** 이라 적었다.
   it('보스는 난이도별로 찾는다', () => {
-    expect(bossRequiredLevel('자쿰', '카오스')).toBe(90)
-    expect(bossRequiredLevel('자쿰', '없는난이도')).toBeNull()
-    expect(bossRequiredLevel('없는보스', '카오스')).toBeNull()
+    expect(bossRequiredLevel('zakum', 'chaos')).toBe(90)
+    expect(bossRequiredLevel('zakum', 'hard')).toBeNull()
+    expect(bossRequiredLevel('없는보스', 'chaos')).toBeNull()
   })
 })
 
@@ -63,7 +63,7 @@ describe('항목별 판정', () => {
   })
 
   it('보스. 난이도까지 보고 답한다', () => {
-    expect(isBossBlocked(89, '자쿰', '카오스')).toBe(true)
-    expect(isBossBlocked(90, '자쿰', '카오스')).toBe(false)
+    expect(isBossBlocked(89, 'zakum', 'chaos')).toBe(true)
+    expect(isBossBlocked(90, 'zakum', 'chaos')).toBe(false)
   })
 })

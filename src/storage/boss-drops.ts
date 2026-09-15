@@ -1,3 +1,4 @@
+import { bossNameOf } from '../lib/boss/bosses'
 import { getBossProfitDb } from './sqlite/db'
 import type { DropCategory, RecordedDrop } from '../types/drops'
 
@@ -9,7 +10,11 @@ import type { DropCategory, RecordedDrop } from '../types/drops'
 // 함께 옮기고 지운다.
 export interface BossDropRecord {
   ocid: string
+  /** 보스 key. 기본키에 든다. */
+  bossKey: string
+  /** 적을 때의 보스 이름. */
   boss: string
+  /** 난이도 key. */
   difficulty: string
   periodKey: string
   dropIndex: number
@@ -35,14 +40,14 @@ export interface BossDropRecord {
 
 const DELETE_SQL = `
   DELETE FROM boss_drop_records
-  WHERE ocid = ? AND boss = ? AND difficulty = ? AND period_key = ?
+  WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ?
 `
 
 const INSERT_SQL = `
   INSERT INTO boss_drop_records
-    (ocid, boss, difficulty, period_key, drop_index, category, item_key, item_name, slot, box_origin_key, box_origin,
-     ring_level, quantity, recorded_at, price_state, price_meso, price_share)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (ocid, boss_key, boss, difficulty, period_key, drop_index, category, item_key, item_name, slot, box_origin_key,
+     box_origin, ring_level, quantity, recorded_at, price_state, price_meso, price_share)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 // 한 보스/기간의 드롭 집합을 통째로 교체한다(기존 삭제 후 0..n으로 재삽입). 빈 배열이면 삭제만.
@@ -96,19 +101,22 @@ export function resetBossDropRecordsRevisionForTests(): void {
 
 export async function replaceBossDropRecords(
   ocid: string,
-  boss: string,
+  bossKey: string,
   difficulty: string,
   periodKey: string,
   drops: RecordedDrop[],
   recordedAt: string,
 ): Promise<void> {
   const db = await getBossProfitDb()
-  await db.run(DELETE_SQL, [ocid, boss, difficulty, periodKey])
+  await db.run(DELETE_SQL, [ocid, bossKey, difficulty, periodKey])
+  // 이름 칸은 적을 때의 이름이다. 수익 기록과 모양을 맞춘다.
+  const bossName = bossNameOf(bossKey, bossKey)
   for (let index = 0; index < drops.length; index++) {
     const drop = drops[index]
     await db.run(INSERT_SQL, [
       ocid,
-      boss,
+      bossKey,
+      bossName,
       difficulty,
       periodKey,
       index,
@@ -144,6 +152,7 @@ function normalizePriceState(value: unknown): BossDropRecord['priceState'] {
 function rowToRecord(row: Record<string, unknown>): BossDropRecord {
   return {
     ocid: row.ocid as string,
+    bossKey: row.boss_key as string,
     boss: row.boss as string,
     difficulty: row.difficulty as string,
     periodKey: row.period_key as string,
@@ -205,7 +214,7 @@ export async function getAllBossDropRecords(ocids: string[]): Promise<BossDropRe
   const db = await getBossProfitDb()
   const ocidPlaceholders = ocids.map(() => '?').join(', ')
   const { values } = await db.query(
-    `SELECT * FROM boss_drop_records WHERE ocid IN (${ocidPlaceholders}) ORDER BY period_key DESC, ocid, boss, difficulty, drop_index`,
+    `SELECT * FROM boss_drop_records WHERE ocid IN (${ocidPlaceholders}) ORDER BY period_key DESC, ocid, boss_key, difficulty, drop_index`,
     [...ocids],
   )
 

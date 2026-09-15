@@ -18,6 +18,7 @@ import { Pressable, View } from 'react-native'
 import { Badge, ChevronDownIcon, ChevronUpIcon, Text } from '../../../components/atoms'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { CharacterAvatar } from '../../../components/molecules/CharacterAvatar/CharacterAvatar'
+import { DIFFICULTY_NAME } from '../../../constants/domain/boss-difficulty'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { RemainingBossView, ScheduleRowView } from '../view-model'
 import type { WidgetProps } from './types'
@@ -185,7 +186,7 @@ function BossChip(props: { boss: RemainingBossView }): React.JSX.Element {
     <View testID="schedule-detail-boss" className="flex-row items-center gap-1">
       {/* 작은 크기. 20px 배지가 줄 높이를 혼자 정하고 있었다. */}
       <Badge variant={props.boss.difficulty} size="mini">
-        {props.boss.difficulty}
+        {DIFFICULTY_NAME[props.boss.difficulty]}
       </Badge>
       <Text fixed numberOfLines={1} className="text-11 leading-tight text-text">
         {props.boss.name}
@@ -235,7 +236,7 @@ function ScheduleDetail(props: { items: CycleItems; cycle: Cycle }): React.JSX.E
       {items.bosses.length > 0 && (
         <DetailGroup label={labelled ? '보스' : null}>
           {items.bosses.map((boss) => (
-            <BossChip key={`${boss.difficulty}-${boss.name}`} boss={boss} />
+            <BossChip key={`${boss.difficulty}-${boss.bossKey ?? boss.name}`} boss={boss} />
           ))}
         </DetailGroup>
       )}

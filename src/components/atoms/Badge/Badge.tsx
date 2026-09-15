@@ -20,7 +20,7 @@ export type { BadgeDifficulty, BadgeSize, BadgeVariant, BadgeWeight } from './va
 
 /** `TextProps` 를 그대로 물려받는 프롭. 배지가 평면일 때는 실제로 `Text` 하나이기 때문이다. */
 export interface BadgeProps extends TextProps {
-  /** 색. 난이도 배지는 난이도 이름을 그대로 넣는다. */
+  /** 색. 난이도 배지는 난이도 key 를 그대로 넣는다. */
   variant: BadgeVariant
   /** 안 적으면 `default`. 고정칸에 놓는 작은 배지만 `mini` 다. */
   size?: BadgeSize
@@ -39,8 +39,8 @@ export interface BadgeProps extends TextProps {
  * <Badge variant="primary">beta</Badge>
  * <Badge variant="outline" className="tabular-nums">v{version}</Badge>
  *
- * // 보스 난이도. variant 키가 난이도 이름 그대로다
- * <Badge variant={boss.difficulty}>{boss.difficulty}</Badge>
+ * // 보스 난이도. variant 키가 난이도 key 그대로이고 글자는 한글 이름이다
+ * <Badge variant={boss.difficulty}>{DIFFICULTY_NAME[boss.difficulty]}</Badge>
  *
  * // 고정칸(today 76px 타일 등)에 놓는 작은 배지. `fixed` 가 자동으로 켜진다
  * <Badge variant={boss.difficulty} size="mini">{DIFFICULTY_SHORT[boss.difficulty]}</Badge>

@@ -38,8 +38,9 @@ const { getBossDropRecords: dropsMock, replaceBossDropRecords: replaceDropsMock 
 function record(overrides: Partial<BossProfitRecord>): BossProfitRecord {
   return {
     ocid: 'old',
+    bossKey: 'lotus',
     boss: '스우',
-    difficulty: '하드',
+    difficulty: 'hard',
     cycle: 'weekly',
     periodKey: '2026-09-10',
     partySize: 1,
@@ -91,8 +92,8 @@ it('리프한 주가 아닌 기간의 같은 키는 짝이 아니다', () => {
 })
 
 it('월간 보스는 리프한 달에서 짝을 찾는다', () => {
-  const stale = record({ ocid: 'old', boss: '검은마법사', difficulty: '익스트림', cycle: 'monthly', periodKey: '2026-09' })
-  const kept = record({ ocid: 'new', boss: '검은마법사', difficulty: '익스트림', cycle: 'monthly', periodKey: '2026-09' })
+  const stale = record({ ocid: 'old', bossKey: 'black_mage', boss: '검은마법사', difficulty: 'extreme', cycle: 'monthly', periodKey: '2026-09' })
+  const kept = record({ ocid: 'new', bossKey: 'black_mage', boss: '검은마법사', difficulty: 'extreme', cycle: 'monthly', periodKey: '2026-09' })
 
   expect(
     planWorldLeapRecordPairs({ fromOcid: 'old', toOcid: 'new', leapPeriodKeys: LEAP, records: [stale, kept] }),
@@ -106,7 +107,7 @@ it('새 기록이 없는 옛 기록은 안 건드린다', () => {
       fromOcid: 'old',
       toOcid: 'new',
       leapPeriodKeys: LEAP,
-      records: [record({ ocid: 'old' }), record({ ocid: 'new', boss: '데미안' })],
+      records: [record({ ocid: 'old' }), record({ ocid: 'new', bossKey: 'damien', boss: '데미안' })],
     }),
   ).toEqual([])
 })
@@ -205,8 +206,9 @@ describe('cleanUpWorldLeapDuplicates', () => {
   function stored(ocid: string, dropIndex: number, itemName: string, overrides: Partial<BossDropRecord> = {}): BossDropRecord {
     return {
       ocid,
+      bossKey: 'lotus',
       boss: '스우',
-      difficulty: '하드',
+      difficulty: 'hard',
       periodKey: '2026-09-10',
       dropIndex,
       category: 'equipment',
@@ -263,8 +265,8 @@ describe('cleanUpWorldLeapDuplicates', () => {
 
     expect(replaceDropsMock).toHaveBeenCalledWith(
       'new',
-      '스우',
-      '하드',
+      'lotus',
+      'hard',
       '2026-09-10',
       [
         { category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 },
@@ -280,7 +282,7 @@ describe('cleanUpWorldLeapDuplicates', () => {
       ],
       NOW.toISOString(),
     )
-    expect(replaceDropsMock).toHaveBeenCalledWith('old', '스우', '하드', '2026-09-10', [], NOW.toISOString())
+    expect(replaceDropsMock).toHaveBeenCalledWith('old', 'lotus', 'hard', '2026-09-10', [], NOW.toISOString())
     expect(order).toEqual(['drops:new', 'drops:old', 'delete'])
   })
 
@@ -291,7 +293,7 @@ describe('cleanUpWorldLeapDuplicates', () => {
     await cleanUpWorldLeapDuplicates(NOW)
 
     expect(replaceDropsMock).not.toHaveBeenCalledWith('new', expect.anything(), expect.anything(), expect.anything(), expect.anything(), expect.anything())
-    expect(replaceDropsMock).toHaveBeenCalledWith('old', '스우', '하드', '2026-09-10', [], NOW.toISOString())
+    expect(replaceDropsMock).toHaveBeenCalledWith('old', 'lotus', 'hard', '2026-09-10', [], NOW.toISOString())
   })
 
   it('새 ocid 에 기록이 없으면 아무것도 안 읽는다', async () => {

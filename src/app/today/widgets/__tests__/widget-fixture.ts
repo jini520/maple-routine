@@ -82,10 +82,10 @@ export function 스케줄행(부분: Partial<ScheduleRowView> = {}): ScheduleRow
     dailyNames: ['소멸의 여로', '츄츄 아일랜드', '레헬른', '아르카나'],
     weeklyNames: ['에르다 스펙트럼', '크리티아스', '헤이븐'],
     weeklyBosses: [
-      { name: '스우', difficulty: '하드' },
-      { name: '파풀라투스', difficulty: '카오스' },
+      { bossKey: 'lotus', name: '스우', difficulty: 'hard' },
+      { bossKey: 'papulatus', name: '파풀라투스', difficulty: 'chaos' },
     ],
-    monthlyBosses: [{ name: '검은마법사', difficulty: '하드' }],
+    monthlyBosses: [{ bossKey: 'black_mage', name: '검은마법사', difficulty: 'hard' }],
     syncIssue: null,
   }
 
@@ -153,7 +153,7 @@ export function 드롭(부분: Partial<PricedDropView> = {}): PricedDropView {
     ocid: 'ocid-1',
     characterName: '야간비행',
     boss: '스우',
-    difficulty: '노멀',
+    difficulty: 'normal',
     itemName: '가디언 엔젤 링',
     itemKey: 'guardian_angel_ring',
     quantity: 1,
@@ -229,7 +229,7 @@ export function 미입력(
         ocid: `ocid-${index + 1}`,
         characterName: '야간비행',
         boss: '스우',
-        difficulty: '노멀',
+        difficulty: 'normal',
         itemName,
         itemKey: null,
         quantity: 1,

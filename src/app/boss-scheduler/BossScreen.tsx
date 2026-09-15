@@ -26,7 +26,8 @@ import { useDataFreshness } from '../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { getBossPortraitCrop, getBossPortraitUrl, isChallengersWorld } from '../../lib/assets/asset-lookup'
 import type { ImageCrop } from '../../lib/image-crop'
-import { getSupportedDifficulties, type MatchedBoss } from '../../lib/boss/boss-matching'
+import type { MatchedBoss } from '../../lib/boss/boss-matching'
+import { bossNameOf, supportedDifficultiesOf } from '../../lib/boss/bosses'
 import { getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
 
 import {
@@ -47,6 +48,7 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { ILLUSTRATION_TEXT_SHADOW_STYLE } from '../../constants/style/text-styles'
+import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import { useOpenTab } from '../../hooks/useOpenTab'
@@ -65,12 +67,15 @@ function BossCard(props: {
   partySize?: number
   /** 요구 레벨 미달 여부. 참이면 완료 자리를 진행 불가 배지가 대신한다. */
   isBlocked?: boolean
-  onEdit: () => void
+  /** 없으면 누를 수 없는 카드다. 보스 표에 없는 보스는 파티 설정을 저장할 key 가 없다. */
+  onEdit?: () => void
 }): React.JSX.Element {
   const { boss, partySize } = props
   const portraitUrl = getBossPortraitUrl(boss.portraitSlug)
   const crop = props.crop ?? getBossPortraitCrop(boss.portraitSlug)
-  const bossName = boss.matchedBossName ?? boss.apiName
+  // 보스 표에 없는 보스는 API 원문으로 선다.
+  const bossName = bossNameOf(boss.bossKey, boss.apiName)
+  const editable = props.onEdit !== undefined
 
   // 카드 배경·테두리·보스명은 페이지 표면이 아니라 일러스트 위 배색을 따른다.
   // bleed·페이드·text-shadow 가 어두운 배경을 전제로 맞춰져 있어서다.
@@ -79,8 +84,9 @@ function BossCard(props: {
   // 카드 전면(80px)이 버튼이다. 어포던스 표식을 두지 않고 눌림 피드백만 준다.
   return (
     <Pressable
-      role="button"
-      aria-label={`${bossName} 파티 설정`}
+      role={editable ? 'button' : undefined}
+      aria-label={editable ? `${bossName} 파티 설정` : bossName}
+      disabled={!editable}
       onPress={props.onEdit}
       // NativeWind 가 `brightness-*` 를 안 내보내 축소만 남는다.
       className="rounded-[14px] active:scale-[.985]"
@@ -91,7 +97,7 @@ function BossCard(props: {
         <View className="h-full flex-row items-center justify-between px-[14px]">
           <View className="flex-row items-center gap-2">
             <Badge variant={boss.difficulty}>
-              {boss.difficulty}
+              {DIFFICULTY_NAME[boss.difficulty]}
             </Badge>
             <Text className="text-sm font-medium text-text" style={ILLUSTRATION_TEXT_SHADOW_STYLE}>
               {bossName}
@@ -209,7 +215,7 @@ export function BossScreen(): React.JSX.Element {
     characterLevel: number | null,
   ): { completed: number; total: number } => {
     const progressible = bosses.filter(
-      (boss) => !isBossBlocked(characterLevel, boss.matchedBossName ?? boss.apiName, boss.difficulty),
+      (boss) => !isBossBlocked(characterLevel, boss.bossKey, boss.difficulty),
     )
     return {
       completed: progressible.filter((boss) => boss.isComplete || boss.isWeeklyLimitClosed).length,
@@ -245,8 +251,8 @@ export function BossScreen(): React.JSX.Element {
   const isSeasonBossComplete = seasonBosses.some((boss) => boss.isComplete)
 
   function getPartySize(ocid: string, boss: MatchedBoss): number | undefined {
-    const bossName = boss.matchedBossName ?? boss.apiName
-    return partySizes[partySizeKey(ocid, bossName, boss.difficulty)]
+    // 보스 표에 없는 보스는 파티 설정이 없다(저장할 key 가 없다).
+    return boss.bossKey === null ? undefined : partySizes[partySizeKey(ocid, boss.bossKey, boss.difficulty)]
   }
 
   // `boss_party_settings` 에 없는 조합은 솔로(1인)로 본다.
@@ -291,15 +297,11 @@ export function BossScreen(): React.JSX.Element {
       <View className="gap-2">
         {bosses.map((boss) => (
           <BossCard
-            key={`${boss.apiName}-${boss.difficulty}`}
+            key={`${boss.bossKey ?? boss.apiName}-${boss.difficulty}`}
             boss={boss}
             partySize={getPartySize(ocid, boss)}
-            isBlocked={isBossBlocked(
-              characterLevel,
-              boss.matchedBossName ?? boss.apiName,
-              boss.difficulty,
-            )}
-            onEdit={() => openPartyModal(boss)}
+            isBlocked={isBossBlocked(characterLevel, boss.bossKey, boss.difficulty)}
+            onEdit={boss.bossKey === null ? undefined : () => openPartyModal(boss)}
           />
         ))}
       </View>
@@ -312,13 +314,13 @@ export function BossScreen(): React.JSX.Element {
     setPartyModal({ boss, difficulty: boss.difficulty })
   }
 
-  const modalBossName =
-    partyModal !== null ? (partyModal.boss.matchedBossName ?? partyModal.boss.apiName) : null
+  // 모달은 보스 key 가 있는 카드에서만 열린다.
+  const modalBossKey = partyModal?.boss.bossKey ?? null
 
   async function handleModalPartySize(next: number): Promise<void> {
-    if (partyModal === null || selected === null || modalBossName === null) return
+    if (partyModal === null || selected === null || modalBossKey === null) return
     try {
-      await setPartySize(selected.ocid, modalBossName, partyModal.difficulty, next)
+      await setPartySize(selected.ocid, modalBossKey, partyModal.difficulty, next)
     } catch {
       useToastStore.getState().showError('파티원 수를 저장하지 못했습니다')
     }
@@ -327,11 +329,11 @@ export function BossScreen(): React.JSX.Element {
   // 수동 모드에서만 멤버십이 바뀐다. 자동 모드는 편집 대상만 옮긴다. 카드의 난이도는 게임 등록
   // 수동 모드에서만 멤버십이 바뀐다. 자동 모드는 편집 대상만 옮긴다. 카드의 난이도는 게임 등록
   async function handleModalDifficulty(difficulty: BossDifficulty): Promise<void> {
-    if (partyModal === null || selected === null || modalBossName === null) return
+    if (partyModal === null || selected === null || modalBossKey === null) return
     setPartyModal({ ...partyModal, difficulty })
     if (mode !== 'manual') return
     try {
-      await setManualBossDifficulty(selected.ocid, modalBossName, difficulty)
+      await setManualBossDifficulty(selected.ocid, modalBossKey, difficulty)
     } catch {
       useToastStore.getState().showError('추적 목록을 저장하지 못했습니다')
     }
@@ -528,20 +530,20 @@ export function BossScreen(): React.JSX.Element {
         )}
       </ScreenScroll>
 
-      {partyModal !== null && selected !== null && modalBossName !== null && (
+      {partyModal !== null && selected !== null && modalBossKey !== null && (
         <PartySizeModal
-          bossName={modalBossName}
+          bossName={bossNameOf(modalBossKey, partyModal.boss.apiName)}
           cycleLabel={partyModal.boss.cycle === 'monthly' ? '월간 보스' : '주간 보스'}
           portraitSlug={partyModal.boss.portraitSlug}
-          // 참조표에 없는 보스는 후보를 알 수 없다. 지금 난이도 하나만 그려 세그먼트가 사라지지 않게 한다.
+          // 표에서 빠진 key 는 후보를 알 수 없다. 지금 난이도 하나만 그려 세그먼트가 사라지지 않게 한다.
           difficulties={
-            getSupportedDifficulties(modalBossName).length > 0
-              ? getSupportedDifficulties(modalBossName)
+            supportedDifficultiesOf(modalBossKey).length > 0
+              ? supportedDifficultiesOf(modalBossKey)
               : [partyModal.difficulty]
           }
           difficulty={partyModal.difficulty}
-          partySize={partySizes[partySizeKey(selected.ocid, modalBossName, partyModal.difficulty)] ?? 1}
-          maxPartySize={getMaxPartySize(modalBossName, partyModal.difficulty)}
+          partySize={partySizes[partySizeKey(selected.ocid, modalBossKey, partyModal.difficulty)] ?? 1}
+          maxPartySize={getMaxPartySize(modalBossKey, partyModal.difficulty)}
           onSelectDifficulty={(difficulty) => void handleModalDifficulty(difficulty)}
           onChangePartySize={(next) => void handleModalPartySize(next)}
           onClose={() => setPartyModal(null)}

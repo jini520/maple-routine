@@ -3,12 +3,11 @@ import { getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
 import {
   countClearedWeeklyBosses,
   countManualWeeklyBosses,
-  getBossCycleByName,
-  isSeasonBossName,
   matchBossContent,
   WEEKLY_BOSS_CLEAR_LIMIT,
   type MatchedBoss,
 } from '../../lib/boss/boss-matching'
+import { bossCycleOf, isSeasonBoss } from '../../lib/boss/bosses'
 import { syncSchedules, toScheduleSyncError, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
 import { applyKnownUnavailable, resolveStrandedCharacters } from '../schedule-sync/stranded-characters'
 import { hasSyncAttemptedThisRun } from '../schedule-sync/sync-run-state'
@@ -68,7 +67,7 @@ export interface BossSchedulerState {
   characters: BossCharacterView[]
   error: ScheduleSyncError | null
   trackedOcids: string[] | null
-  // key: `${ocid}:${boss}:${difficulty}`. 맵에 키가 없으면 미설정(솔로)을 뜻한다. 이 스토어는
+  // key: `${ocid}:${bossKey}:${difficulty}`. 맵에 키가 없으면 미설정(솔로)을 뜻한다. 이 스토어는
   // 없는 키를 1 로 채워 넣지 않는다. 그 해석은 UI 의 책임이다.
   partySizes: Record<string, number>
   // 수동 모드에서 캐릭터별 추적 항목(멤버십). 값 필드는 여기 두지 않고 표시 시점에 characters 의
@@ -91,9 +90,9 @@ export interface BossSchedulerStore extends BossSchedulerState {
     options?: RefreshOptions,
   ): Promise<void>
   loadPartySizes(ocids: string[]): Promise<void>
-  setPartySize(ocid: string, boss: string, difficulty: string, partySize: number): Promise<void>
-  addManualBoss(ocid: string, contentName: string, difficulty: string): Promise<ManualBossAddResult>
-  removeManualBoss(ocid: string, contentName: string, difficulty: string): Promise<void>
+  setPartySize(ocid: string, bossKey: string, difficulty: BossDifficulty, partySize: number): Promise<void>
+  addManualBoss(ocid: string, bossKey: string, difficulty: BossDifficulty): Promise<ManualBossAddResult>
+  removeManualBoss(ocid: string, bossKey: string, difficulty: BossDifficulty): Promise<void>
   /**
    * 추적 중인 보스의 난이도를 `to` 로 바꾸는 명령.
    *
@@ -103,7 +102,7 @@ export interface BossSchedulerStore extends BossSchedulerState {
    *
    * 개수가 변하지 않으므로 주간 12개 한도에 걸리지 않는다. 반환값이 없는 이유다.
    */
-  setManualBossDifficulty(ocid: string, contentName: string, to: string): Promise<void>
+  setManualBossDifficulty(ocid: string, bossKey: string, to: BossDifficulty): Promise<void>
   // 필터 전환에 네트워크가 없어 동기 세터다(보스 수익 setTab과 다른 점).
   setPartyFilter(filter: PartyFilter): void
 }
@@ -118,8 +117,8 @@ const initialState: BossSchedulerState = {
   partyFilter: 'all',
 }
 
-export function partySizeKey(ocid: string, boss: string, difficulty: string): string {
-  return `${ocid}:${boss}:${difficulty}`
+export function partySizeKey(ocid: string, bossKey: string, difficulty: string): string {
+  return `${ocid}:${bossKey}:${difficulty}`
 }
 
 // 부팅 선하이드레이션과 화면 마운트가 같은 회차를 부르므로, 진행 중인 회차가 있으면 그 Promise 를
@@ -456,21 +455,21 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     const settings = await getBossPartySettings(ocids)
     const partySizes: Record<string, number> = {}
     for (const setting of settings) {
-      partySizes[partySizeKey(setting.ocid, setting.boss, setting.difficulty)] = setting.partySize
+      partySizes[partySizeKey(setting.ocid, setting.bossKey, setting.difficulty)] = setting.partySize
     }
     set({ partySizes })
   },
 
-  async setPartySize(ocid, boss, difficulty, partySize) {
-    const maxPartySize = getMaxPartySize(boss, difficulty as BossDifficulty)
+  async setPartySize(ocid, bossKey, difficulty, partySize) {
+    const maxPartySize = getMaxPartySize(bossKey, difficulty)
     if (!Number.isInteger(partySize) || partySize < 1 || partySize > maxPartySize) {
       throw new Error(`setPartySize: 파티원 수는 1 이상 ${maxPartySize} 이하의 정수여야 합니다`)
     }
 
-    await setBossPartySize(ocid, boss, difficulty, partySize, new Date().toISOString())
+    await setBossPartySize(ocid, bossKey, difficulty, partySize, new Date().toISOString())
 
     set({
-      partySizes: { ...get().partySizes, [partySizeKey(ocid, boss, difficulty)]: partySize },
+      partySizes: { ...get().partySizes, [partySizeKey(ocid, bossKey, difficulty)]: partySize },
     })
     useToastStore.getState().showSuccess('파티원 수를 저장했어요')
   },
@@ -479,24 +478,21 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
   // 저장한 뒤 화면 상태를 갱신한다. 보스는 maxCount 개념이 없어 값 필드를 안 채운다. 한도 초과는
   // 여기서 막고 결과 코드로 알린다. UI 사전 차단만으로는 난이도 교체(remove → add)·시드 같은
   // 다른 호출 경로가 새어 나간다.
-  async addManualBoss(ocid, contentName, difficulty) {
+  async addManualBoss(ocid, bossKey, difficulty) {
     const current = await getManualTrackedContent(ocid)
     if (
-      current.some(
-        (item) => item.kind === 'boss' && item.contentName === contentName && item.difficulty === difficulty,
-      )
+      current.some((item) => item.kind === 'boss' && item.bossKey === bossKey && item.difficulty === difficulty)
     ) {
       return 'duplicate'
     }
 
     // 한도는 주간 보스에만 걸린다. 시즌 보스·월간 보스는 카운트에도 이 검사에도 안 들어간다.
-    const countsTowardWeeklyLimit =
-      getBossCycleByName(contentName) === 'weekly' && !isSeasonBossName(contentName)
+    const countsTowardWeeklyLimit = bossCycleOf(bossKey) === 'weekly' && !isSeasonBoss(bossKey)
     if (countsTowardWeeklyLimit && countManualWeeklyBosses(current) >= WEEKLY_BOSS_CLEAR_LIMIT) {
       return 'limitReached'
     }
 
-    const next: ManualTrackedItem[] = [...current, { contentName, kind: 'boss', difficulty }]
+    const next: ManualTrackedItem[] = [...current, { kind: 'boss', bossKey, difficulty }]
     await setManualTrackedContent(ocid, next)
     set((state) => ({ manualTrackedByOcid: { ...state.manualTrackedByOcid, [ocid]: next } }))
     return 'added'
@@ -509,13 +505,13 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
   // 줄이는 것이다.
   //
   // 쓰기 앞은 순수 계산뿐이고 메모리 갱신은 쓰기 뒤라, 던지면 저장소도 스토어도 원래대로다.
-  async setManualBossDifficulty(ocid, contentName, to) {
+  async setManualBossDifficulty(ocid, bossKey, to) {
     const current = await getManualTrackedContent(ocid)
 
     // 같은 보스가 두 난이도로 저장돼 있었다면(스토어가 금지하지는 않는다) 하나로 수렴시킨다.
     let replaced = false
     const next = current.flatMap((item): ManualTrackedItem[] => {
-      if (item.kind !== 'boss' || item.contentName !== contentName) return [item]
+      if (item.kind !== 'boss' || item.bossKey !== bossKey) return [item]
       if (replaced) return []
       replaced = true
       return [{ ...item, difficulty: to }]
@@ -528,11 +524,10 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     set((state) => ({ manualTrackedByOcid: { ...state.manualTrackedByOcid, [ocid]: next } }))
   },
 
-  async removeManualBoss(ocid, contentName, difficulty) {
+  async removeManualBoss(ocid, bossKey, difficulty) {
     const current = await getManualTrackedContent(ocid)
     const next = current.filter(
-      (item) =>
-        !(item.kind === 'boss' && item.contentName === contentName && item.difficulty === difficulty),
+      (item) => !(item.kind === 'boss' && item.bossKey === bossKey && item.difficulty === difficulty),
     )
     await setManualTrackedContent(ocid, next)
     set((state) => ({ manualTrackedByOcid: { ...state.manualTrackedByOcid, [ocid]: next } }))

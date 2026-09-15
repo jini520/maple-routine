@@ -41,7 +41,7 @@ const priced: RecordedDrop[] = [
 
 describe('groupTotalMeso: 아이템 수익 합산', () => {
   it('보스 행 결정석 합에 그 행의 드롭 수익을 더한다', () => {
-    const drops = { [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: priced }
+    const drops = { [dropRowKey('ocid-1', 주간보스, 'hard', PERIOD)]: priced }
 
     expect(groupTotalMeso(group([보스행()]), drops)).toBe(6_800_000_000 + 5_000_000_000)
   })
@@ -51,14 +51,14 @@ describe('groupTotalMeso: 아이템 수익 합산', () => {
   })
 
   it('다른 행의 드롭은 세지 않는다. 키가 (ocid, boss, difficulty, periodKey) 다', () => {
-    const drops = { [dropRowKey('ocid-1', 다른주간보스, '카오스', PERIOD)]: priced }
+    const drops = { [dropRowKey('ocid-1', 다른주간보스, 'chaos', PERIOD)]: priced }
 
     expect(groupTotalMeso(group([보스행()]), drops)).toBe(6_800_000_000)
   })
 
   it('스킵·미입력은 더하지 않는다', () => {
     const drops = {
-      [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: [
+      [dropRowKey('ocid-1', 주간보스, 'hard', PERIOD)]: [
         { category: 'equipment' as const, itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링', quantity: 1 },
         { category: 'equipment' as const, itemKey: 'giant_terror', itemName: '거대한 공포', quantity: 1, priceState: 'excluded' as const },
       ],
@@ -80,7 +80,7 @@ const 고가드롭: RecordedDrop = {
 
 describe('미완료 행의 드롭은 돈으로 안 센다', () => {
   const 미완료 = 보스행({ isComplete: false, payoutMeso: null, defeatedOn: null })
-  const 미완료드롭 = { [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: priced }
+  const 미완료드롭 = { [dropRowKey('ocid-1', 주간보스, 'hard', PERIOD)]: priced }
 
   it('미완료 행의 드롭은 합에 안 든다', () => {
     expect(groupTotalMeso(group([미완료]), 미완료드롭)).toBe(0)
@@ -92,10 +92,10 @@ describe('미완료 행의 드롭은 돈으로 안 센다', () => {
 
   it('한 그룹에 섞여 있으면 완료된 행의 것만 더한다', () => {
     const drops = {
-      [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: priced,
-      [dropRowKey('ocid-1', 다른주간보스, '카오스', PERIOD)]: priced,
+      [dropRowKey('ocid-1', 주간보스, 'hard', PERIOD)]: priced,
+      [dropRowKey('ocid-1', 다른주간보스, 'chaos', PERIOD)]: priced,
     }
-    const 완료 = 보스행({ boss: 다른주간보스, difficulty: '카오스', payoutMeso: 1_000_000_000 })
+    const 완료 = 보스행({ bossKey: 다른주간보스, difficulty: 'chaos', payoutMeso: 1_000_000_000 })
 
     expect(groupTotalMeso(group([미완료, 완료]), drops)).toBe(1_000_000_000 + 5_000_000_000)
   })
@@ -113,14 +113,14 @@ describe('미완료 행의 드롭은 돈으로 안 센다', () => {
   // 카드 겉면(골드 링·글로우·우상단 배지)이 이것을 본다. 미완료 행이 금액 자리에 `미완료` 를
   // 세우는데 같은 드롭이 카드를 두르면, 카드가 펼쳐 봐도 없는 것을 겉면에서 주장한다.
   it('미완료 행의 고가 드롭은 카드 겉면을 못 만든다', () => {
-    const 고가 = { [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: [고가드롭] }
+    const 고가 = { [dropRowKey('ocid-1', 주간보스, 'hard', PERIOD)]: [고가드롭] }
 
     expect(collectGroupValuableDrops(group([미완료]), 고가)).toEqual([])
     expect(collectAllValuableDrops([group([미완료])], 고가)).toEqual([])
   })
 
   it('완료된 행의 고가 드롭은 그대로 선다', () => {
-    const 고가 = { [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: [고가드롭] }
+    const 고가 = { [dropRowKey('ocid-1', 주간보스, 'hard', PERIOD)]: [고가드롭] }
 
     expect(collectGroupValuableDrops(group([보스행()]), 고가)).toEqual([고가드롭])
   })
@@ -132,14 +132,14 @@ describe('sumPayout: 금액을 모르는 행', () => {
   it('미완료 placeholder 와 가격 미확정 행은 0으로 접힌다', () => {
     const rows = [
       보스행({ isComplete: false, payoutMeso: null }),
-      보스행({ boss: 다른주간보스, priceMeso: null, payoutMeso: null }),
+      보스행({ bossKey: 다른주간보스, priceMeso: null, payoutMeso: null }),
     ]
 
     expect(sumPayout(rows)).toBe(0)
   })
 
   it('그 행들이 섞여 있어도 아는 금액은 온전히 더한다', () => {
-    const rows = [보스행(), 보스행({ boss: 다른주간보스, payoutMeso: null })]
+    const rows = [보스행(), 보스행({ bossKey: 다른주간보스, payoutMeso: null })]
 
     expect(sumPayout(rows)).toBe(6_800_000_000)
   })
@@ -149,16 +149,16 @@ describe('sumPayout: 금액을 모르는 행', () => {
 // 들어 있고, 행은 아바타 진행 링을 위해서만 그룹에 실려 온다. 함께 더하면 두 번 센다.
 describe('월간 탭의 금액은 주차 소계가 전부다', () => {
   it('주차 소계가 있으면 보스 행을 안 더한다', () => {
-    const 월간행 = 보스행({ boss: 월간보스, cycle: 'monthly', periodKey: '2026-08', payoutMeso: 9_000_000_000 })
+    const 월간행 = 보스행({ bossKey: 월간보스, cycle: 'monthly', periodKey: '2026-08', payoutMeso: 9_000_000_000 })
     const 소계 = 주차소계({ totalMeso: 20_000_000_000 })
 
     expect(groupTotalMeso({ ...group([월간행]), weeklySubtotals: [소계] }, {})).toBe(20_000_000_000)
   })
 
   it('그 행에 붙은 드롭도 안 더한다', () => {
-    const 월간행 = 보스행({ boss: 월간보스, cycle: 'monthly', periodKey: '2026-08', payoutMeso: 0 })
+    const 월간행 = 보스행({ bossKey: 월간보스, cycle: 'monthly', periodKey: '2026-08', payoutMeso: 0 })
     const drops = {
-      [dropRowKey(월간행.ocid, 월간행.boss, 월간행.difficulty, 월간행.periodKey)]: [
+      [dropRowKey(월간행.ocid, 월간행.bossKey, 월간행.difficulty, 월간행.periodKey)]: [
         { category: 'equipment' as const, itemKey: null, itemName: '반지', quantity: 1, priceState: 'entered' as const, priceMeso: 5_000_000_000, priceShare: 1 },
       ],
     }
@@ -183,16 +183,16 @@ describe('collectRevenueDrops: 상자가 읽는 드롭은 카드 금액과 같�
   })
 
   it('주차 소계가 없으면(주간 탭) 완료된 보스 행의 드롭이다', () => {
-    const drops = { [dropRowKey('ocid-1', 주간보스, '하드', PERIOD)]: priced }
+    const drops = { [dropRowKey('ocid-1', 주간보스, 'hard', PERIOD)]: priced }
 
     expect(collectRevenueDrops(group([보스행()]), drops)).toEqual(priced)
   })
 
   it('주차 소계가 있으면(월간 탭) 소계의 드롭만이다. 보스 행의 드롭을 안 더한다', () => {
-    const 월간행 = 보스행({ boss: 월간보스, cycle: 'monthly', periodKey: '2026-08', payoutMeso: 0 })
+    const 월간행 = 보스행({ bossKey: 월간보스, cycle: 'monthly', periodKey: '2026-08', payoutMeso: 0 })
     const 월간드롭 = 반지(5_000_000_000)
     const 주간드롭 = 반지(1_000_000)
-    const drops = { [dropRowKey(월간행.ocid, 월간행.boss, 월간행.difficulty, 월간행.periodKey)]: [월간드롭] }
+    const drops = { [dropRowKey(월간행.ocid, 월간행.bossKey, 월간행.difficulty, 월간행.periodKey)]: [월간드롭] }
     const weeklySubtotals = [
       주차소계({ periodKey: '2026-08-06', drops: [주간드롭] }),
       주차소계({ periodKey: '2026-08-13', drops: [월간드롭] }),
@@ -206,7 +206,7 @@ describe('collectRevenueDrops: 상자가 읽는 드롭은 카드 금액과 같�
 // 별개 값이라, 월드마다 따로 세되 서로 섞이면 안 된다.
 describe('summarizeWorldCrystals: 주간 몫과 월간 몫', () => {
   const 월간행 = (overrides: Partial<BossProfitRow> = {}): BossProfitRow =>
-    보스행({ boss: 월간보스, cycle: 'monthly', periodKey: '2026-08', ...overrides })
+    보스행({ bossKey: 월간보스, cycle: 'monthly', periodKey: '2026-08', ...overrides })
 
   it('월간 보스를 잡아도 주간 몫의 분자는 그대로다', () => {
     const summaries = summarizeWorldCrystals([group([보스행({ world: '스카니아' }), 월간행({ world: '스카니아' })])])
@@ -239,8 +239,8 @@ describe('summarizeWorldCrystals: 주간 몫과 월간 몫', () => {
     const summaries = summarizeWorldCrystals([
       group([
         보스행({ world: '스카니아' }),
-        월간행({ world: '스카니아', difficulty: '노멀' }),
-        월간행({ world: '스카니아', difficulty: '하드' }),
+        월간행({ world: '스카니아', difficulty: 'normal' }),
+        월간행({ world: '스카니아', difficulty: 'hard' }),
       ]),
     ])
 

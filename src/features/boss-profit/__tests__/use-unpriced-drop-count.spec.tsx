@@ -53,8 +53,9 @@ const PERIOD = '2026-08-06'
 function record(dropIndex: number, overrides: Partial<BossDropRecord> = {}): BossDropRecord {
   return {
     ocid: 'ocid-1',
+    bossKey: 'lotus',
     boss: '스우',
-    difficulty: '하드',
+    difficulty: 'hard',
     periodKey: PERIOD,
     dropIndex,
     category: 'equipment',

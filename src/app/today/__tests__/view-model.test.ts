@@ -1,5 +1,6 @@
 import weeklyBossesData from '../../../data/weekly-bosses.json'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
+import { bossKeyOfApiName } from '../../../lib/boss/bosses'
 // today 뷰모델의 **조립 규칙**. 위젯이 스토어를 모르므로 화면이 값을 한
 // 번 모으는데, 그 조립을 순수 함수로 두면 **위젯이 한 줄도 없는 지금 로직 전부를 검증할 수 있다.**
 //
@@ -48,13 +49,13 @@ function weekly(overrides: Partial<WeeklyContent> = {}): WeeklyContent {
 
 function boss(overrides: Partial<MatchedBoss> = {}): MatchedBoss {
   return {
+    bossKey: 'lotus',
     apiName: '스우',
-    difficulty: '노멀',
+    difficulty: 'normal',
     cycle: 'weekly',
     isRegistered: true,
     isComplete: false,
     ownComplete: false,
-    matchedBossName: '스우',
     portraitSlug: null,
     isSeasonBoss: false,
     ...overrides,
@@ -95,8 +96,9 @@ function profitRow(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     characterName: 'a',
     imageUrl: null,
     world: '스카니아',
-    boss: '스우',
-    difficulty: '노멀',
+    bossKey: 'lotus',
+    bossName: '스우',
+    difficulty: 'normal',
     cycle: 'weekly',
     periodKey: WEEK_KEY,
     periodLabel: '이번 주',
@@ -113,8 +115,9 @@ function profitRow(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
 function dropRecord(overrides: Partial<DropHistoryRecord> = {}): DropHistoryRecord {
   return {
     ocid: 'a',
+    bossKey: 'lotus',
     boss: '스우',
-    difficulty: '노멀',
+    difficulty: 'normal',
     periodKey: WEEK_KEY,
     category: 'equipment',
     // key 가 없는 기록이 기본이다. 그래야 이름을 덮는 케이스가 적어 둔 이름을 그대로 읽는다.
@@ -281,11 +284,11 @@ describe('남은 스케줄. 분류 넷', () => {
         bossCharacters: [
           bossView('a', {
             weeklyBosses: [
-              boss({ apiName: '스우', isComplete: true }),
-              boss({ apiName: '데미안' }),
-              boss({ apiName: '루시드' }),
+              boss({ bossKey: 'lotus', apiName: '스우', isComplete: true }),
+              boss({ bossKey: 'damien', apiName: '데미안' }),
+              boss({ bossKey: 'lucid', apiName: '루시드' }),
             ],
-            monthlyBosses: [boss({ apiName: '검은 마법사', cycle: 'monthly' })],
+            monthlyBosses: [boss({ bossKey: 'black_mage', apiName: '검은 마법사', cycle: 'monthly' })],
           }),
         ],
       }),
@@ -304,8 +307,8 @@ describe('남은 스케줄. 분류 넷', () => {
         bossCharacters: [
           bossView('a', {
             weeklyBosses: [
-              boss({ apiName: '스우', difficulty: '하드', isRegistered: false, isComplete: true }),
-              boss({ apiName: '스우', difficulty: '노멀', isRegistered: false, isComplete: false }),
+              boss({ bossKey: 'lotus', apiName: '스우', difficulty: 'hard', isRegistered: false, isComplete: true }),
+              boss({ bossKey: 'lotus', apiName: '스우', difficulty: 'normal', isRegistered: false, isComplete: false }),
             ],
           }),
         ],
@@ -318,8 +321,8 @@ describe('남은 스케줄. 분류 넷', () => {
   // 주간 한도를 채우면 남은 미처치 보스는 **남은 일** 이 아니다. 판정은 여기
   // 없다(`displayedBosses` 가 실어 보낸 `isWeeklyLimitClosed` 를 거를 뿐이다).
   it('주간 12마리를 채우면 미처치 등록 보스를 남은 것으로 세지 않는다', () => {
-    const clearedNames = (weeklyBossesData.weekly as { boss: string }[])
-      .map((entry) => entry.boss)
+    const clearedNames = (weeklyBossesData.weekly as unknown as { name: string }[])
+      .map((entry) => entry.name)
       .slice(-WEEKLY_BOSS_CLEAR_LIMIT)
     const model = buildTodayViewModel(
       input({
@@ -327,9 +330,10 @@ describe('남은 스케줄. 분류 넷', () => {
         bossCharacters: [
           bossView('a', {
             weeklyBosses: [
-              boss({ apiName: '미처치보스', matchedBossName: '미처치보스' }),
+              // 보스 표에 없는 보스다. 기록은 안 되지만 남은 스케줄에는 API 원문으로 선다.
+              boss({ bossKey: null, apiName: '미처치보스' }),
               ...clearedNames.map((name) =>
-                boss({ apiName: name, matchedBossName: name, isComplete: true, ownComplete: true }),
+                boss({ bossKey: bossKeyOfApiName(name), apiName: name, isComplete: true, ownComplete: true }),
               ),
             ],
           }),
@@ -341,8 +345,8 @@ describe('남은 스케줄. 분류 넷', () => {
   })
 
   it('한 마리 모자라면 그 보스는 여전히 남은 것이다', () => {
-    const clearedNames = (weeklyBossesData.weekly as { boss: string }[])
-      .map((entry) => entry.boss)
+    const clearedNames = (weeklyBossesData.weekly as unknown as { name: string }[])
+      .map((entry) => entry.name)
       .slice(-(WEEKLY_BOSS_CLEAR_LIMIT - 1))
     const model = buildTodayViewModel(
       input({
@@ -350,9 +354,10 @@ describe('남은 스케줄. 분류 넷', () => {
         bossCharacters: [
           bossView('a', {
             weeklyBosses: [
-              boss({ apiName: '미처치보스', matchedBossName: '미처치보스' }),
+              // 보스 표에 없는 보스다. 기록은 안 되지만 남은 스케줄에는 API 원문으로 선다.
+              boss({ bossKey: null, apiName: '미처치보스' }),
               ...clearedNames.map((name) =>
-                boss({ apiName: name, matchedBossName: name, isComplete: true, ownComplete: true }),
+                boss({ bossKey: bossKeyOfApiName(name), apiName: name, isComplete: true, ownComplete: true }),
               ),
             ],
           }),
@@ -611,7 +616,7 @@ describe('대표 캐릭터', () => {
 
 describe('주간 보스 수익', () => {
   it('결정석과 아이템 판매가를 함께 더한다', () => {
-    const drops = { [`a|스우|노멀|${WEEK_KEY}`]: [{ category: 'equipment' as const, itemKey: null, itemName: '반지', quantity: 1, priceState: 'entered' as const, priceMeso: 60, priceShare: 2 }] }
+    const drops = { [`a|lotus|normal|${WEEK_KEY}`]: [{ category: 'equipment' as const, itemKey: null, itemName: '반지', quantity: 1, priceState: 'entered' as const, priceMeso: 60, priceShare: 2 }] }
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a'],
@@ -661,7 +666,7 @@ describe('주간 보스 수익', () => {
   // 위젯 3의 스택 바가 읽는 값이다. 위젯은 스토어를 모르므로 총액만 주면 갈라 그릴 수 없다.
   it('총액을 결정석과 아이템으로 가르고, 둘의 합이 총액이다', () => {
     const drops = {
-      [`a|스우|노멀|${WEEK_KEY}`]: [
+      [`a|lotus|normal|${WEEK_KEY}`]: [
         { category: 'equipment' as const, itemKey: null, itemName: '반지', quantity: 1, priceState: 'entered' as const, priceMeso: 60, priceShare: 2 },
       ],
     }
@@ -850,10 +855,10 @@ describe('주간 결정석 판매 한도', () => {
       input({
         orderedOcids: ['a', 'b'],
         profitRows: [
-          profitRow({ ocid: 'a', world: '스카니아', boss: '스우', isComplete: true }),
-          profitRow({ ocid: 'a', world: '스카니아', boss: '데미안', isComplete: true }),
-          profitRow({ ocid: 'b', world: '루나', boss: '스우', isComplete: true }),
-          profitRow({ ocid: 'b', world: '루나', boss: '루시드', isComplete: false }),
+          profitRow({ ocid: 'a', world: '스카니아', bossKey: 'lotus', bossName: '스우', isComplete: true }),
+          profitRow({ ocid: 'a', world: '스카니아', bossKey: 'damien', bossName: '데미안', isComplete: true }),
+          profitRow({ ocid: 'b', world: '루나', bossKey: 'lotus', bossName: '스우', isComplete: true }),
+          profitRow({ ocid: 'b', world: '루나', bossKey: 'lucid', bossName: '루시드', isComplete: false }),
         ],
       }),
     )

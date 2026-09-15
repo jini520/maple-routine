@@ -1351,20 +1351,20 @@ describe('자동으로 흘러든 줄', () => {
     payoutMeso: 3_600_000_000,
     count: 2,
     bosses: [
-      { boss: '스우', difficulty: '하드' },
-      { boss: '데미안', difficulty: '노멀' },
+      { bossKey: 'lotus', bossName: '스우', difficulty: 'hard' as const },
+      { bossKey: 'damien', bossName: '데미안', difficulty: 'normal' as const },
     ],
   }
   // 여섯을 넘겨야 **끊기는가** 를 볼 수 있다. 두 마리로는 한 줄에 다 들어가 아무것도 안 드러난다.
   const 보스여덟 = [
-    { boss: '검은 마법사', difficulty: '하드' },
-    { boss: '스우', difficulty: '하드' },
-    { boss: '데미안', difficulty: '노멀' },
-    { boss: '루시드', difficulty: '하드' },
-    { boss: '윌', difficulty: '하드' },
-    { boss: '더스크', difficulty: '카오스' },
-    { boss: '진 힐라', difficulty: '하드' },
-    { boss: '듄켈', difficulty: '하드' },
+    { bossKey: 'black_mage', bossName: '검은 마법사', difficulty: 'hard' as const },
+    { bossKey: 'lotus', bossName: '스우', difficulty: 'hard' as const },
+    { bossKey: 'damien', bossName: '데미안', difficulty: 'normal' as const },
+    { bossKey: 'lucid', bossName: '루시드', difficulty: 'hard' as const },
+    { bossKey: 'will', bossName: '윌', difficulty: 'hard' as const },
+    { bossKey: 'gloom', bossName: '더스크', difficulty: 'chaos' as const },
+    { bossKey: 'verus_hilla', bossName: '진 힐라', difficulty: 'hard' as const },
+    { bossKey: 'darknell', bossName: '듄켈', difficulty: 'hard' as const },
   ]
   const 판매줄 = {
     kind: 'dropSale' as const,
@@ -1448,8 +1448,8 @@ describe('자동으로 흘러든 줄', () => {
     await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
 
     expect(mockOpenTab).not.toHaveBeenCalled()
-    expect(view.getByTestId('cashbook-boss-tile-스우|하드')).toBeTruthy()
-    expect(view.getByTestId('cashbook-boss-tile-데미안|노멀')).toBeTruthy()
+    expect(view.getByTestId('cashbook-boss-tile-lotus|hard')).toBeTruthy()
+    expect(view.getByTestId('cashbook-boss-tile-damien|normal')).toBeTruthy()
   })
 
   // 사용자가 지정한 것이 **초상화** 다. 이름만 뜨면 그 지정을 안 지킨 것이다.
@@ -1511,7 +1511,7 @@ describe('자동으로 흘러든 줄', () => {
     const view = await 그리기()
     await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
 
-    const 칸 = flattenStyle(view.getByTestId('cashbook-boss-slot-스우|하드').props.style)
+    const 칸 = flattenStyle(view.getByTestId('cashbook-boss-slot-lotus|hard').props.style)
     expect(칸.width).toBeUndefined()
     expect(칸.flexGrow).toBe(1)
     expect(칸.maxWidth).toBe(BOSS_SLOT_MAX_PX)

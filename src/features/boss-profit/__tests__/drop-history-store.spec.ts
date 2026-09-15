@@ -42,8 +42,9 @@ const { resolveDisplayProfiles: resolveDisplayProfilesMock } = jest.requireMock(
 function dropRecord(overrides: Partial<BossDropRecord>): BossDropRecord {
   return {
     ocid: 'ocid-1',
+    bossKey: 'lotus',
     boss: '스우',
-    difficulty: '하드',
+    difficulty: 'hard',
     periodKey: '2026-07-09',
     dropIndex: 0,
     category: 'equipment',
@@ -162,7 +163,7 @@ describe('useDropHistoryStore.load', () => {
       dropRecord({ itemKey: 'complete_under_control', itemName: '컴플리트 언더컨트롤', slot: null, dropIndex: 1 }), // 익스 전용 → 제거
     ])
     getAllBossProfitRecordKeysMock.mockResolvedValue([
-      { ocid: 'ocid-1', boss: '스우', difficulty: '하드', periodKey: '2026-07-09' },
+      { ocid: 'ocid-1', bossKey: 'lotus', boss: '스우', difficulty: 'hard', periodKey: '2026-07-09' },
     ])
     const store = await loadStore()
 
@@ -179,7 +180,7 @@ describe('useDropHistoryStore.load', () => {
       dropRecord({ itemKey: null, itemName: '익셉셔널 해머', slot: null }),
     ])
     getAllBossProfitRecordKeysMock.mockResolvedValue([
-      { ocid: 'ocid-1', boss: '스우', difficulty: '하드', periodKey: '2026-07-09' },
+      { ocid: 'ocid-1', bossKey: 'lotus', boss: '스우', difficulty: 'hard', periodKey: '2026-07-09' },
     ])
     const store = await loadStore()
 

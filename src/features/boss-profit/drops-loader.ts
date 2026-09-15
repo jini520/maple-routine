@@ -23,18 +23,18 @@ import type { BossProfitRow } from './rows'
  * 이 순서면 최악이 "아무도 읽지 않는 옛 키에 사본이 남는다"(=이관 전과 같은 고아)로 끝난다.
  */
 export async function migrateDropsToConfirmedDifficulty(
-  row: Pick<BossProfitRow, 'ocid' | 'boss' | 'difficulty' | 'periodKey'>,
+  row: Pick<BossProfitRow, 'ocid' | 'bossKey' | 'difficulty' | 'periodKey'>,
   dropRecords: BossDropRecord[],
   now: Date,
 ): Promise<void> {
   const plan = planConfirmedDifficultyDropMigration(
-    row.boss,
+    row.bossKey,
     row.difficulty,
     row.periodKey,
     dropRecords
       .filter(
         (record) =>
-          record.ocid === row.ocid && record.boss === row.boss && record.periodKey === row.periodKey,
+          record.ocid === row.ocid && record.bossKey === row.bossKey && record.periodKey === row.periodKey,
       )
       .map((record) => ({
         ...toRecordedDrop(record),
@@ -47,13 +47,13 @@ export async function migrateDropsToConfirmedDifficulty(
   const recordedAt = now.toISOString()
   if (plan.drops.length > 0) {
     await withSqliteFallback(
-      replaceBossDropRecords(row.ocid, row.boss, row.difficulty, row.periodKey, plan.drops, recordedAt),
+      replaceBossDropRecords(row.ocid, row.bossKey, row.difficulty, row.periodKey, plan.drops, recordedAt),
       undefined,
     )
   }
   for (const staleDifficulty of plan.staleDifficulties) {
     await withSqliteFallback(
-      replaceBossDropRecords(row.ocid, row.boss, staleDifficulty, row.periodKey, [], recordedAt),
+      replaceBossDropRecords(row.ocid, row.bossKey, staleDifficulty, row.periodKey, [], recordedAt),
       undefined,
     )
   }
@@ -72,7 +72,7 @@ export async function loadDropsByRowKey(
   const records = await withSqliteFallback(getBossDropRecords(ocids, periodKeys), [])
   const map: Record<string, RecordedDrop[]> = {}
   for (const record of records) {
-    const key = dropRowKey(record.ocid, record.boss, record.difficulty, record.periodKey)
+    const key = dropRowKey(record.ocid, record.bossKey, record.difficulty, record.periodKey)
     if (map[key] === undefined) map[key] = []
     // 변환은 `toRecordedDrop` 하나에 맡긴다. 여기서 손으로 필드를 옮겨 적으면 읽을 때마다 가격
     // 세 필드가 떨어져 나가, 시트에서 넣은 직후에는 보이다가 기간을 왕복하면 사라진다.
@@ -86,14 +86,14 @@ export async function loadDropsByRowKey(
   // 안 된다.
   for (const row of rows) {
     if (!row.isComplete) continue
-    const key = dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)
+    const key = dropRowKey(row.ocid, row.bossKey, row.difficulty, row.periodKey)
     const drops = map[key]
     if (drops === undefined || drops.length === 0) continue
-    const pruned = pruneUnobtainableDrops(row.boss, row.difficulty, row.periodKey, drops)
+    const pruned = pruneUnobtainableDrops(row.bossKey, row.difficulty, row.periodKey, drops)
     if (pruned.length !== drops.length) {
       map[key] = pruned
       await withSqliteFallback(
-        replaceBossDropRecords(row.ocid, row.boss, row.difficulty, row.periodKey, pruned, now.toISOString()),
+        replaceBossDropRecords(row.ocid, row.bossKey, row.difficulty, row.periodKey, pruned, now.toISOString()),
         undefined,
       )
     }

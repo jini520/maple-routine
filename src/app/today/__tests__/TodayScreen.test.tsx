@@ -204,13 +204,13 @@ function weekly(overrides: Partial<WeeklyContent> = {}): WeeklyContent {
 
 function matchedBoss(overrides: Partial<MatchedBoss> = {}): MatchedBoss {
   return {
+    bossKey: 'lotus',
     apiName: '스우',
-    difficulty: '노멀',
+    difficulty: 'normal',
     cycle: 'weekly',
     isRegistered: true,
     isComplete: false,
     ownComplete: false,
-    matchedBossName: '스우',
     portraitSlug: null,
     isSeasonBoss: false,
     ...overrides }
@@ -232,8 +232,8 @@ function bossView(ocid: string, index: number): BossCharacterView {
   return {
     ocid,
     characterName: `캐릭터${index}`,
-    weeklyBosses: [matchedBoss({ isComplete: index % 2 === 0 }), matchedBoss({ apiName: '데미안' })],
-    monthlyBosses: [matchedBoss({ apiName: '검은 마법사', cycle: 'monthly' })],
+    weeklyBosses: [matchedBoss({ isComplete: index % 2 === 0 }), matchedBoss({ bossKey: 'damien', apiName: '데미안' })],
+    monthlyBosses: [matchedBoss({ bossKey: 'black_mage', apiName: '검은 마법사', cycle: 'monthly' })],
     weeklyBossClearCount: index,
     weeklyBossClearLimitCount: 12,
     isStale: false,
@@ -247,8 +247,9 @@ function profitRow(ocid: string, index: number): BossProfitRow {
     characterName: `캐릭터${index}`,
     imageUrl: null,
     world: '스카니아',
-    boss: '스우',
-    difficulty: '노멀',
+    bossKey: 'lotus',
+    bossName: '스우',
+    difficulty: 'normal',
     cycle: 'weekly',
     periodKey: WEEK_KEY,
     periodLabel: '이번 주',
@@ -262,8 +263,9 @@ function profitRow(ocid: string, index: number): BossProfitRow {
 function dropRecord(overrides: Partial<DropHistoryRecord> = {}): DropHistoryRecord {
   return {
     ocid: 'ocid-1',
+    bossKey: 'lotus',
     boss: '스우',
-    difficulty: '노멀',
+    difficulty: 'normal',
     periodKey: WEEK_KEY,
     category: 'equipment',
     itemKey: null,
@@ -449,7 +451,7 @@ describe('TodayScreen: 수동 멤버십을 어느 스토어에서 읽는가', ()
       boss: {
         trackedOcids: ['ocid-1'],
         characters: [bossView('ocid-1', 1)],
-        manualTrackedByOcid: { 'ocid-1': [{ contentName: '스우', difficulty: '노멀', kind: 'boss' }] } } })
+        manualTrackedByOcid: { 'ocid-1': [{ contentName: '스우', difficulty: 'normal', kind: 'boss' }] } } })
 
     await renderScreen()
 

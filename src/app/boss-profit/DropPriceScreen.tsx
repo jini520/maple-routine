@@ -56,6 +56,7 @@ import { LoadingState } from '../../components/molecules/LoadingState/LoadingSta
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
+import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
 import { tapFeedback } from '../../native/haptics'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
@@ -145,10 +146,10 @@ function EntryRow(props: {
           </View>
           <View className="mt-1 flex-row items-center gap-1.5">
             <Badge variant={props.entry.difficulty}>
-              {props.entry.difficulty}
+              {DIFFICULTY_NAME[props.entry.difficulty]}
             </Badge>
             <Text numberOfLines={1} className="shrink text-11 text-text-muted">
-              {props.entry.boss}
+              {props.entry.bossName}
               {shareLabel}
             </Text>
           </View>
@@ -389,11 +390,11 @@ export function DropPriceScreen(): React.JSX.Element {
       {pricing !== null && (
         <DropPricePad
           drop={pricing.drop}
-          boss={pricing.boss}
+          bossName={pricing.bossName}
           difficulty={pricing.difficulty}
           characterName={groups.find((group) => group.ocid === pricing.ocid)?.characterName ?? ''}
           defaultShare={pricing.partySize}
-          maxShare={getMaxPartySize(pricing.boss, pricing.difficulty)}
+          maxShare={getMaxPartySize(pricing.bossKey, pricing.difficulty)}
           progress={queue.length > 0 ? { current: unpriced - queue.length, total: unpriced } : undefined}
           onSave={(priceMeso, share) => void runWrite(() => savePrice(pricing, priceMeso, share))}
           onExclude={() => void runWrite(() => excludePrice(pricing))}

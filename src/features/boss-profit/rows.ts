@@ -18,6 +18,7 @@ import {
 import type { MatchedBoss } from '../../lib/boss/boss-matching'
 import { formatBossProfitPeriodLabel, getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
 import { isMonthlyRowInWeek } from '../../lib/boss/monthly-boss-week'
+import { bossNameOf } from '../../lib/boss/bosses'
 import { mergeManualBossList } from '../../lib/boss/manual-boss-merge'
 import type { BossDropRecord } from '../../storage/boss-drops'
 import type { BossProfitRecord, getBossProfitRecords } from '../../storage/boss-profit'
@@ -31,7 +32,10 @@ export interface BossProfitRow {
   characterName: string
   imageUrl: string | null // character/basic의 character_image(character-basic-cache 경유). 캐시가 없으면 null(이니셜 폴백)
   world: string | null // character/basic의 world_name(character-basic-cache 경유). 이전 캐시엔 없을 수 있어 null 가능(6. 월드를 모르는 캐릭터는 월드 집계에서 제외)
-  boss: string // matchedBossName ?? apiName (매핑 안 되면 원문 그대로)
+  /** 보스 key. 행의 신원이다. 보스 표에 없는 보스는 행이 되지 않는다. */
+  bossKey: string
+  /** 보이는 보스 이름. 보스 표 이름이고, 표에서 빠진 보스의 기록이면 적어 둔 이름이다. */
+  bossName: string
   difficulty: BossDifficulty
   cycle: BossCycle
   periodKey: string
@@ -50,7 +54,7 @@ export interface BossProfitRow {
   defeatedOn: string | null
 }
 
-export type BossProfitRowKey = Pick<BossProfitRow, 'ocid' | 'boss' | 'difficulty' | 'cycle' | 'periodKey'>
+export type BossProfitRowKey = Pick<BossProfitRow, 'ocid' | 'bossKey' | 'difficulty' | 'cycle' | 'periodKey'>
 
 // 행 하나에 실리는 캐릭터 정보 한 덩어리. `buildBossProfitRow`·`buildRowFromRecord` 가 이 객체를
 // 통째로 받으므로 필드가 늘어도 채우지 않은 호출부는 컴파일 단계에서 걸린다.
@@ -98,7 +102,7 @@ export function toProfileSnapshot(infos: SortedCharacterInfo[]): Map<string, Cha
 // ocid 로만 정렬하고 stable sort 에 의존하면 보스 순서를 데이터 소스가 만든 순서 그대로
 // 물려받는데, 그 소스 순서가 비결정적이라(ORDER BY 없는 조회 · Map 삽입 순서) 로드마다 달라진다.
 // 모든 행 경로가 이 함수를 거치므로 여기서 2차 정렬 키를 부여하면 세 경로가 같은 순서로 고정된다.
-// 세 키(참조 인덱스 → 난이도 → 보스명)는 `boss-matching` 의 공용 `compareBossOrder` 가 든다.
+// 세 키(보스 표 차례 → 난이도 → 보스 key)는 `boss-matching` 의 공용 `compareBossOrder` 가 든다.
 export function sortRowsByOcidOrder(rows: BossProfitRow[], sortedOcids: string[]): BossProfitRow[] {
   const rank = new Map(sortedOcids.map((ocid, index) => [ocid, index]))
   const ocidRank = (ocid: string): number => rank.get(ocid) ?? Number.MAX_SAFE_INTEGER
@@ -113,20 +117,26 @@ export function sortRowsByOcidOrder(rows: BossProfitRow[], sortedOcids: string[]
       return a.cycle === 'monthly' ? -1 : 1
     }
     // 2차 키 셋은 `boss-matching` 이 든다. 스케줄러·today·가계부가 같은 함수를 부른다.
-    return compareBossOrder(a, b)
+    return compareBossOrder({ boss: a.bossKey, difficulty: a.difficulty }, { boss: b.bossKey, difficulty: b.difficulty })
   })
+}
+
+/** 수익 행이 되는 보스. 보스 표에 있어 key 가 있다. */
+export type ProfitBoss = MatchedBoss & { bossKey: string }
+
+function hasBossKey(boss: MatchedBoss): boss is ProfitBoss {
+  return boss.bossKey !== null
 }
 
 export function buildBossProfitRow(
   ocid: string,
   character: CharacterProfileInfo,
-  boss: MatchedBoss,
+  boss: ProfitBoss,
   now: Date,
 ): BossProfitRow {
-  const bossName = boss.matchedBossName ?? boss.apiName
   const period = getCurrentBossProfitPeriod(boss.cycle, now)
   const periodLabel = formatBossProfitPeriodLabel(boss.cycle, period.periodKey, now).primary
-  const priceEntry = findPriceEntry(bossName, boss.difficulty, period.periodKey)
+  const priceEntry = findPriceEntry(boss.bossKey, boss.difficulty, period.periodKey)
   const priceMeso = priceEntry?.priceMeso ?? null
   const maxPartySize = priceEntry?.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE
 
@@ -135,7 +145,8 @@ export function buildBossProfitRow(
     characterName: character.characterName,
     imageUrl: character.imageUrl,
     world: character.world,
-    boss: bossName,
+    bossKey: boss.bossKey,
+    bossName: bossNameOf(boss.bossKey, boss.apiName),
     difficulty: boss.difficulty,
     cycle: boss.cycle,
     periodKey: period.periodKey,
@@ -159,11 +170,13 @@ export function buildBossProfitRow(
 //   placeholder).
 // - 수동 모드: 실제 처치한 보스 전부 ∪ 수동 추적 중이지만 미처치인 보스(고른 난이도
 //   placeholder). 자동 모드와 대칭이며 placeholder 의 출처만 인게임 등록 → 수동 멤버십이다.
+//
+// 보스 표에 없는 보스(key 가 없다)는 어느 모드에서도 안 고른다. 결정석 가격도 기록할 key 도 없다.
 export function selectProfitDisplayBosses(
   bossContents: BossContent[],
   mode: TrackingMode,
   manualItems: ManualTrackedItem[],
-): MatchedBoss[] {
+): ProfitBoss[] {
   const matched = bossContents.map(matchBossContent)
   // 주간 한도를 채웠으면 미처치 placeholder 는 아예 안 세운다. 두 모드 공통이라 아래 ①②보다
   // 앞에 선다. 판정은 동기화 결과 전체로 한다. 겨누는 상황이 표시 목록 밖 보스로 12를 채웠다
@@ -176,25 +189,26 @@ export function selectProfitDisplayBosses(
     limitReached && boss.cycle === 'weekly' && !boss.isSeasonBoss && !boss.ownComplete
 
   if (mode !== 'manual') {
-    return selectBossProfitBosses(matched).filter((boss) => !isLimitClosed(boss))
+    return selectBossProfitBosses(matched).filter(hasBossKey).filter((boss) => !isLimitClosed(boss))
   }
-
-  const nameOf = (boss: MatchedBoss): string => boss.matchedBossName ?? boss.apiName
 
   // ① 실제 처치한 보스는 추적 여부와 무관하게 전부, 처치한 난이도·가격으로 노출한다. 이 페이지는
   // 정산이 목적이라 실제로 번 것은 다 보여준다. 인게임 등록-only(미처치) placeholder 는 수동
   // 모드에서 신뢰하지 않으므로 ownComplete 인 것만 남긴다.
-  const kills = selectBossProfitBosses(matched).filter((boss) => boss.ownComplete)
-  const killedNames = new Set(kills.map(nameOf))
+  const kills = selectBossProfitBosses(matched)
+    .filter(hasBossKey)
+    .filter((boss) => boss.ownComplete)
+  const killedKeys = new Set(kills.map((boss) => boss.bossKey))
 
   // ② 수동 추적 중이지만 아직 처치하지 않은 보스는 고른 난이도로 미완료 placeholder. 보스 관리
-  // 페이지와 같은 규약(`mergeManualBossList`)으로 병합하되 이미 ①에서 나온 보스명은 중복 배제한다.
+  // 페이지와 같은 규약(`mergeManualBossList`)으로 병합하되 이미 ①에서 나온 보스는 중복 배제한다.
   const placeholders = mergeManualBossList(
     manualItems.filter((item) => item.kind === 'boss'),
     bossContents,
   )
     .map(matchBossContent)
-    .filter((boss) => !boss.ownComplete && !killedNames.has(nameOf(boss)) && !isLimitClosed(boss))
+    .filter(hasBossKey)
+    .filter((boss) => !boss.ownComplete && !killedKeys.has(boss.bossKey) && !isLimitClosed(boss))
 
   return [...kills, ...placeholders]
 }
@@ -208,14 +222,15 @@ export function buildRowFromRecord(
   now: Date,
 ): BossProfitRow {
   const difficulty = record.difficulty as BossDifficulty
-  const maxPartySize = getMaxPartySize(record.boss, difficulty)
+  const maxPartySize = getMaxPartySize(record.bossKey, difficulty)
 
   return {
     ocid: record.ocid,
     characterName: character.characterName,
     imageUrl: character.imageUrl,
     world: record.world ?? character.world,
-    boss: record.boss,
+    bossKey: record.bossKey,
+    bossName: bossNameOf(record.bossKey, record.boss),
     difficulty,
     cycle: record.cycle,
     periodKey: record.periodKey,
@@ -237,7 +252,7 @@ export function mergeRecordsIntoRows(
     const record = records.find(
       (candidate) =>
         candidate.ocid === row.ocid &&
-        candidate.boss === row.boss &&
+        candidate.bossKey === row.bossKey &&
         candidate.difficulty === row.difficulty &&
         candidate.periodKey === row.periodKey,
     )
@@ -273,11 +288,11 @@ export function appendRecordOnlyRows(
   profiles: Map<string, CharacterProfileInfo>,
   now: Date,
 ): BossProfitRow[] {
-  const seen = new Set(rows.map((row) => `${row.ocid}|${row.boss}|${row.difficulty}|${row.periodKey}`))
+  const seen = new Set(rows.map((row) => `${row.ocid}|${row.bossKey}|${row.difficulty}|${row.periodKey}`))
   const restored: BossProfitRow[] = []
 
   for (const record of records) {
-    const key = `${record.ocid}|${record.boss}|${record.difficulty}|${record.periodKey}`
+    const key = `${record.ocid}|${record.bossKey}|${record.difficulty}|${record.periodKey}`
     if (seen.has(key)) {
       continue
     }
@@ -297,7 +312,7 @@ export function appendRecordOnlyRows(
 export function matchesRowKey(row: BossProfitRow, key: BossProfitRowKey): boolean {
   return (
     row.ocid === key.ocid &&
-    row.boss === key.boss &&
+    row.bossKey === key.bossKey &&
     row.difficulty === key.difficulty &&
     row.cycle === key.cycle &&
     row.periodKey === key.periodKey
@@ -357,7 +372,7 @@ export function toUpcomingWeekRows(
       ...row,
       periodKey: weeklyPeriodKey,
       periodLabel,
-      priceMeso: findPriceEntry(row.boss, row.difficulty, weeklyPeriodKey)?.priceMeso ?? null,
+      priceMeso: findPriceEntry(row.bossKey, row.difficulty, weeklyPeriodKey)?.priceMeso ?? null,
       // 미완료 자리는 항상 0메소다(`buildBossProfitRow` 와 같은 규약).
       payoutMeso: 0,
       isComplete: false,
@@ -376,10 +391,10 @@ export function sumRowsPayout(rows: BossProfitRow[]): number {
 // generation 은 호출한 쪽이 periodKey 를 동기적으로 바꾸는 그 순간 캡처한 requestGeneration
 // 값이다. 이 비동기 함수가 끝나기 전에 더 최신 액션이 시작됐다면 set() 을 건너뛴다.
 //
-// 드롭 상태 키는 BossProfitRow 키와 달리 cycle 을 뺀다. 드롭은 (ocid,boss,difficulty,periodKey)
+// 드롭 상태 키는 BossProfitRow 키와 달리 cycle 을 뺀다. 드롭은 (ocid,bossKey,difficulty,periodKey)
 // 로 저장되고 periodKey 가 이미 주간·월간을 구분한다.
-export function dropRowKey(ocid: string, boss: string, difficulty: string, periodKey: string): string {
-  return `${ocid}|${boss}|${difficulty}|${periodKey}`
+export function dropRowKey(ocid: string, bossKey: string, difficulty: string, periodKey: string): string {
+  return `${ocid}|${bossKey}|${difficulty}|${periodKey}`
 }
 
 export function toRecordedDrop(record: BossDropRecord): RecordedDrop {

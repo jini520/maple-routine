@@ -41,8 +41,9 @@ const mockedNavigation = jest.mocked(useScreenNavigation)
 const load = jest.fn()
 const goBack = jest.fn()
 
-// 보스 이름은 게임 레퍼런스 데이터에서 뽑는다.
-const 주간보스 = weeklyBossesData.weekly[0].boss
+// 보스 key · 이름은 게임 레퍼런스 데이터에서 뽑는다.
+const 주간보스 = weeklyBossesData.weekly[0].key
+const 주간보스이름 = weeklyBossesData.weekly[0].name
 const PERIOD = '2026-07-09'
 
 /**
@@ -83,8 +84,9 @@ function 잎색(node: AtomElement): unknown {
 function 기록(overrides: Partial<DropHistoryRecord> = {}): DropHistoryRecord {
   return {
     ocid: 'ocid-1',
-    boss: 주간보스,
-    difficulty: '하드',
+    bossKey: 주간보스,
+    boss: 주간보스이름,
+    difficulty: 'hard',
     periodKey: PERIOD,
     category: 'equipment',
     itemKey: 'loose_control_machine_mark',
@@ -216,7 +218,7 @@ describe('DropHistoryScreen: 기록 한 줄', () => {
     const { getByTestId, queryByLabelText, queryByTestId } = await renderHistory()
 
     expect(문장(getByTestId('drop-history-entry'))).toBe(
-      `메이플영웅님이 ${주간보스}(하드)에서 가디언 엔젤 링을 획득하였습니다.`,
+      `메이플영웅님이 ${주간보스이름}(하드)에서 가디언 엔젤 링을 획득하였습니다.`,
     )
     // 꾸밈 없음. 골드 강조도, 아이템 아이콘도 붙지 않는다.
     expect(queryByLabelText('고가 드롭 기록')).toBeNull()
@@ -249,7 +251,7 @@ describe('DropHistoryScreen: 기록 한 줄', () => {
     const { getByTestId, queryByLabelText, queryByTestId } = await renderHistory()
 
     expect(문장(getByTestId('drop-history-entry'))).toBe(
-      `메이플영웅님이 ${주간보스}(하드)에서 익셉셔널 해머를 획득하였습니다.`,
+      `메이플영웅님이 ${주간보스이름}(하드)에서 익셉셔널 해머를 획득하였습니다.`,
     )
     expect(queryByLabelText('고가 드롭 기록')).toBeNull()
     expect(queryByTestId('valuable-drop-inline')).toBeNull()
@@ -322,7 +324,7 @@ describe('DropHistoryScreen: 기록 한 줄', () => {
     const { getByTestId, getByText, queryByTestId } = await renderHistory()
 
     expect(문장(getByTestId('drop-history-entry'))).toBe(
-      `메이플영웅님이 ${주간보스}(하드)에서 홍옥의 보스 반지 상자를 열어 리스트레인트 링 3레벨을 획득하였습니다.`,
+      `메이플영웅님이 ${주간보스이름}(하드)에서 홍옥의 보스 반지 상자를 열어 리스트레인트 링 3레벨을 획득하였습니다.`,
     )
     // 상자명도 아이템과 같은 굵기로 강조한다. "무엇을 열었는지"가 정보의 절반이다.
     // 단 골드(고가)는 결과에만 붙는다. 둘 다 골드면 어느 쪽이 값인지 흐려진다.
@@ -344,7 +346,7 @@ describe('DropHistoryScreen: 기록 한 줄', () => {
     const { getByTestId } = await renderHistory()
 
     expect(문장(getByTestId('drop-history-entry'))).toBe(
-      `${주간보스}(하드)에서 가디언 엔젤 링을 획득하였습니다.`,
+      `${주간보스이름}(하드)에서 가디언 엔젤 링을 획득하였습니다.`,
     )
   })
 })

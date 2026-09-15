@@ -11,8 +11,9 @@ const WEEK = '2026-08-27'
 function record(overrides: Partial<BossDropRecord> = {}): BossDropRecord {
   return {
     ocid: 'ocid-1',
+    bossKey: 'zakum',
     boss: '자쿰',
-    difficulty: '카오스',
+    difficulty: 'chaos',
     periodKey: WEEK,
     dropIndex: 0,
     category: 'equipment',
@@ -37,8 +38,9 @@ function row(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     characterName: '단풍',
     imageUrl: null,
     world: null,
-    boss: '매그너스',
-    difficulty: '하드',
+    bossKey: 'magnus',
+    bossName: '매그너스',
+    difficulty: 'hard',
     cycle: 'weekly',
     periodKey: WEEK,
     periodLabel: '이번 주',
@@ -65,7 +67,7 @@ function plan(overrides: Partial<Parameters<typeof planOrphanDropCleanup>[0]> = 
 describe('planOrphanDropCleanup', () => {
   it('설 자리도 처치 기록도 없는 드롭 그룹을 고른다', () => {
     expect(plan()).toEqual([
-      { ocid: 'ocid-1', boss: '자쿰', difficulty: '카오스', periodKey: WEEK, dropCount: 1 },
+      { ocid: 'ocid-1', bossKey: 'zakum', difficulty: 'chaos', periodKey: WEEK, dropCount: 1 },
     ])
   })
 
@@ -74,13 +76,13 @@ describe('planOrphanDropCleanup', () => {
   })
 
   it('행이 있는 보스의 드롭은 건드리지 않는다', () => {
-    expect(plan({ rows: [row({ boss: '자쿰', difficulty: '카오스' })] })).toEqual([])
+    expect(plan({ rows: [row({ bossKey: 'zakum', bossName: '자쿰', difficulty: 'chaos' })] })).toEqual([])
   })
 
   // 안전 장치 ①. 난이도만 다른 행이 있으면 그것은 고아가 아니라 **난이도 키가 어긋난 것** 이고,
   // 옮기는 일은 이관의 몫이다.
   it('같은 보스의 다른 난이도 행이 있으면 지우지 않는다. 이관의 몫이다', () => {
-    expect(plan({ rows: [row({ boss: '자쿰', difficulty: '노멀' })] })).toEqual([])
+    expect(plan({ rows: [row({ bossKey: 'zakum', bossName: '자쿰', difficulty: 'normal' })] })).toEqual([])
   })
 
   // 안전 장치 ②. 백필된 적 없는 과거 주는 기록이 통째로 비어 `행 없음`이 아무것도 뜻하지 않는다.
@@ -93,7 +95,7 @@ describe('planOrphanDropCleanup', () => {
   // 안전 장치 ③. 가격 미확정 보스는 완료여도 자동 기록이 안 남는다(`auto-record.ts` 의
   // `row.priceMeso === null` 가드). 참조표 밖 이름이 정확히 그 경우다.
   it('결정석 가격을 모르는 보스는 지우지 않는다', () => {
-    expect(plan({ records: [record({ boss: '알 수 없는 보스' })] })).toEqual([])
+    expect(plan({ records: [record({ bossKey: 'unknown_boss', boss: '알 수 없는 보스' })] })).toEqual([])
   })
 
   // 안전 장치 ④. 동기화가 실패해 낡은 캐시로 그려진 캐릭터, 그리고 이 회차가 모르는 기간.
@@ -109,12 +111,12 @@ describe('planOrphanDropCleanup', () => {
   it('한도 마감으로 사라진 행의 드롭이 정확히 그 대상이다', () => {
     const result = planOrphanDropCleanup({
       // 열두 마리를 잡아 행이 열둘, 그중 `자쿰`은 없다(한도 마감으로 걷혔다).
-      rows: [row({ boss: '매그너스' }), row({ boss: '스우' })],
-      records: [record({ boss: '자쿰' }), record({ boss: '스우', difficulty: '하드' })],
+      rows: [row({ bossKey: 'magnus', bossName: '매그너스' }), row({ bossKey: 'lotus', bossName: '스우' })],
+      records: [record({ bossKey: 'zakum', boss: '자쿰' }), record({ bossKey: 'lotus', boss: '스우', difficulty: 'hard' })],
       trustedOcids: new Set(['ocid-1']),
       knownPeriodKeys: new Set([WEEK]),
     })
 
-    expect(result.map((group) => group.boss)).toEqual(['자쿰'])
+    expect(result.map((group) => group.bossKey)).toEqual(['zakum'])
   })
 })

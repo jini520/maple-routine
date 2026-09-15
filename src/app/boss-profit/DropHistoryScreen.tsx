@@ -236,7 +236,7 @@ function DropHistoryPeriodSection(props: {
           <DropHistoryEntry
             // 같은 기간·보스에 같은 아이템을 두 개 먹은 경우를 구분할 수 없으므로 index 를
             // 키에 넣는다. 기록 자체가 그 둘을 구분하지 않는다.
-            key={`${record.ocid}-${record.boss}-${record.difficulty}-${record.itemKey ?? record.itemName}-${index}`}
+            key={`${record.ocid}-${record.bossKey}-${record.difficulty}-${record.itemKey ?? record.itemName}-${index}`}
             record={record}
             character={props.charactersByOcid[record.ocid]}
           />

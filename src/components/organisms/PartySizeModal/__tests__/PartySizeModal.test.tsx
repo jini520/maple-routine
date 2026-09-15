@@ -23,8 +23,8 @@ function props(overrides: Partial<Props> = {}): Props {
     bossName: '스우',
     cycleLabel: '주간 보스',
     portraitSlug: 'lotus',
-    difficulties: ['노멀', '하드', '익스트림'],
-    difficulty: '하드',
+    difficulties: ['normal', 'hard', 'extreme'],
+    difficulty: 'hard',
     partySize: 4,
     maxPartySize: 6,
     onSelectDifficulty: jest.fn(),
@@ -73,14 +73,14 @@ describe('PartySizeModal', () => {
 
     await fireEvent.press(chip(getByText, '익스트림'))
 
-    expect(p.onSelectDifficulty).toHaveBeenCalledWith('익스트림')
+    expect(p.onSelectDifficulty).toHaveBeenCalledWith('extreme')
   })
 
 // 파티 인원은 (보스 + 난이도)에 붙어 있다. 스우는 하드 6인, 익스트림 2인. 한 케이스에서
   // `cleanup` 뒤 다시 렌더했는데, RNTL 은 케이스마다 자동 정리하므로 둘로 나눈다.
   it.each([
     [{}, '4 / 6'],
-    [{ difficulty: '익스트림' as const, partySize: 1, maxPartySize: 2 }, '1 / 2'],
+    [{ difficulty: 'extreme' as const, partySize: 1, maxPartySize: 2 }, '1 / 2'],
   ])('현재 인원과 상한을 n / max 로 함께 보여준다 (%#)', async (overrides, expected) => {
     const { getByText } = await renderOverlay(<PartySizeModal {...props(overrides)} />)
 
@@ -98,7 +98,7 @@ describe('PartySizeModal', () => {
 
   it('상한에서 + 가 비활성이다', async () => {
     const { getByLabelText } = await renderOverlay(
-      <PartySizeModal {...props({ difficulty: '익스트림', partySize: 2, maxPartySize: 2 })} />,
+      <PartySizeModal {...props({ difficulty: 'extreme', partySize: 2, maxPartySize: 2 })} />,
     )
 
     expect(stateOf(getByLabelText('스우 파티원 수 증가')).disabled).toBe(true)
@@ -149,7 +149,7 @@ describe('PartySizeModal', () => {
 
   it('난이도가 하나뿐인 보스도 세그먼트를 그린다', async () => {
     const { getByText } = await renderOverlay(
-      <PartySizeModal {...props({ difficulties: ['카오스'], difficulty: '카오스' })} />,
+      <PartySizeModal {...props({ difficulties: ['chaos'], difficulty: 'chaos' })} />,
     )
 
     expect(stateOf(chip(getByText, '카오스')).selected).toBe(true)

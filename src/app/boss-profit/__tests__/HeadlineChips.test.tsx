@@ -80,7 +80,7 @@ function group(rows: BossProfitRow[]): CharacterGroup {
 
 describe('CrystalSummaryChip', () => {
   const 월간행 = (overrides: Partial<BossProfitRow> = {}): BossProfitRow =>
-    보스행({ boss: 월간보스, cycle: 'monthly', periodKey: '2026-07', ...overrides })
+    보스행({ bossKey: 월간보스, cycle: 'monthly', periodKey: '2026-07', ...overrides })
 
   it('월드를 아는 캐릭터가 없으면 아예 그리지 않는다. 대비할 한도가 없다', async () => {
     // 프로바이더는 남으므로 트리 전체가 아니라 **칩이 없는 것**을 본다.
@@ -112,7 +112,7 @@ describe('CrystalSummaryChip', () => {
   it('월드가 둘이면 분모가 두 배이고 눌러 분해를 펼칠 수 있다', async () => {
     const groups = [
       group([보스행({ world: '스카니아' })]),
-      group([보스행({ ocid: 'ocid-2', boss: 다른주간보스, world: '루나' })]),
+      group([보스행({ ocid: 'ocid-2', bossKey: 다른주간보스, world: '루나' })]),
     ]
     const { getByLabelText, queryByTestId, getByTestId } = await renderOverlay(<CrystalSummaryChip groups={groups} />)
 
@@ -133,7 +133,7 @@ describe('CrystalSummaryChip', () => {
     const groups = [
       group([보스행({ world: '스카니아' })]),
       group([
-        보스행({ ocid: 'ocid-2', boss: 다른주간보스, world: '루나' }),
+        보스행({ ocid: 'ocid-2', bossKey: 다른주간보스, world: '루나' }),
         월간행({ ocid: 'ocid-2', world: '루나' }),
       ]),
     ]
@@ -156,7 +156,7 @@ describe('CrystalSummaryChip', () => {
   it('팝오버 내용이 닫는 층과 같은 창에 있다', async () => {
     const groups = [
       group([보스행({ world: '스카니아' })]),
-      group([보스행({ ocid: 'ocid-2', boss: 다른주간보스, world: '루나' })]),
+      group([보스행({ ocid: 'ocid-2', bossKey: 다른주간보스, world: '루나' })]),
     ]
     const { getByLabelText, getByTestId } = await renderOverlay(<CrystalSummaryChip groups={groups} />)
 
@@ -184,7 +184,7 @@ describe('CrystalSummaryChip', () => {
   it('칩의 월간 수는 펼친 월드별 줄의 합과 같다', async () => {
     const groups = [
       group([보스행({ world: '스카니아' }), 월간행({ world: '스카니아' })]),
-      group([보스행({ ocid: 'ocid-2', boss: 다른주간보스, world: '루나' }), 월간행({ ocid: 'ocid-2', world: '루나' })]),
+      group([보스행({ ocid: 'ocid-2', bossKey: 다른주간보스, world: '루나' }), 월간행({ ocid: 'ocid-2', world: '루나' })]),
       group([월간행({ ocid: 'ocid-3', world: null })]),
     ]
     const { getByLabelText, getByTestId } = await renderOverlay(<CrystalSummaryChip groups={groups} />)

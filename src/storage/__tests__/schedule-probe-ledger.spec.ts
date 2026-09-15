@@ -49,6 +49,22 @@ describe('빈 원장', () => {
   })
 })
 
+// `bosses` 가 보스 이름 대신 보스 key 를 드는 모양으로 바뀌었다. 옛 원장은 옮기지 않고 14일 창을 다시 채운다.
+describe('모양 번호', () => {
+  it('모양 번호가 없는 옛 원장은 빈 원장으로 읽는다', async () => {
+    await prefs.set(
+      'scheduleProbe:ocid-old',
+      JSON.stringify({ unavailable: true, dates: { '2026-08-01': { kind: 'outOfRange' } } }),
+    )
+    await expect(getScheduleProbeLedger('ocid-old', NOW)).resolves.toEqual({ unavailable: false, dates: {} })
+  })
+
+  it('새로 적은 원장은 모양 번호를 들고 되읽힌다', async () => {
+    await recordScheduleProbe('ocid-1', '2026-08-01', { kind: 'outOfRange' })
+    expect(JSON.parse((await prefs.get('scheduleProbe:ocid-1'))!)).toMatchObject({ version: 2 })
+  })
+})
+
 describe('관측 기록', () => {
   it('기록한 날짜를 그대로 되읽는다', async () => {
     await recordScheduleProbe('ocid-1', '2026-08-01', {
@@ -133,7 +149,7 @@ describe('14일 윈도우 prune', () => {
   })
 
   it('윈도우 밖(오늘−14)의 날짜는 읽을 때 사라진다', async () => {
-    await recordScheduleProbe('ocid-1', '2026-07-20', { kind: 'outOfRange' })
+    await recordScheduleProbe('ocid-1', '2026-08-01', { kind: 'outOfRange' })
     const ledger = await getScheduleProbeLedger('ocid-1', NOW)
     expect(ledger.dates['2026-07-20']).toBeUndefined()
   })
@@ -176,7 +192,7 @@ describe('isSettledProbe: 잠정 관측', () => {
     kind: 'observed' as const,
     hasCompletion: true,
     sections: ALL_PRESENT,
-    bosses: ['스우|하드'],
+    bosses: ['lotus|hard'],
     ...(provisional === undefined ? {} : { provisional }),
   })
 

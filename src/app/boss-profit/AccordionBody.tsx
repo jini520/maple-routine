@@ -112,7 +112,7 @@ export function WeeklyAccordionBody(props: { rows: BossProfitRow[] }): React.JSX
         key={rowKey(row)}
         row={row}
         isLast={isLast}
-        drops={dropsByRowKey[dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)] ?? []}
+        drops={dropsByRowKey[dropRowKey(row.ocid, row.bossKey, row.difficulty, row.periodKey)] ?? []}
       />
     )
   }

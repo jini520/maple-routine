@@ -16,7 +16,7 @@ describe('보스 초상화 파일 정합성', () => {
 
       const fileName = `${slug}.webp`
       if (!existsSync(join(bossesDir, fileName))) {
-        missingFiles.push(`${entry.boss} -> ${fileName}`)
+        missingFiles.push(`${entry.key} -> ${fileName}`)
       }
     }
 
@@ -31,8 +31,8 @@ describe('보스 초상화 파일 정합성', () => {
       ...weeklyBosses.weekly,
       ...weeklyBosses.eventWeekly,
       ...weeklyBosses.monthly,
-    ] as { boss: string; portraitSlug?: string }[]
-    const withoutSlug = sections.filter((entry) => !('portraitSlug' in entry)).map((entry) => entry.boss)
+    ] as { key: string; portraitSlug?: string }[]
+    const withoutSlug = sections.filter((entry) => !('portraitSlug' in entry)).map((entry) => entry.key)
 
     // 문서화 목적의 스냅샷 성격 검증. 목록이 예상과 다르면(신규 이미지 추가 등) 실패해 갱신을 유도.
     // 벨로나 출시로 초상화가 붙어 현재는 전 보스가 슬러그를 갖는다.

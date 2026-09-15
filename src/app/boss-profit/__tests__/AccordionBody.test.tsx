@@ -22,11 +22,11 @@ describe('WeeklyAccordionBody', () => {
 // 마지막 행의 아래 테두리를 지우는 짝. RN 에 `:last-child` 가 없어 부모가 알려 준다.
   // 테두리를 **빼지 않고 색만** 지우는 것이 요점이라 두께는 두 행이 같아야 한다.
   it('보스 행을 순서대로 그리고 마지막 행만 테두리 색을 지운다', async () => {
-    const rows = [보스행(), 보스행({ boss: 다른주간보스 })]
+    const rows = [보스행(), 보스행({ bossKey: 다른주간보스 })]
     const { getByLabelText, getAllByTestId } = await renderProfit(<WeeklyAccordionBody rows={rows} />)
 
-    expect(getByLabelText(`${rows[0].boss} 하드 드롭 아이템 관리`)).toBeTruthy()
-    expect(getByLabelText(`${rows[1].boss} 하드 드롭 아이템 관리`)).toBeTruthy()
+    expect(getByLabelText(`${rows[0].bossName} 하드 드롭 아이템 관리`)).toBeTruthy()
+    expect(getByLabelText(`${rows[1].bossName} 하드 드롭 아이템 관리`)).toBeTruthy()
 
     const [first, last] = getAllByTestId('boss-profit-boss-row').map((node) => flattenStyle(node.props.style))
     expect(first.borderBottomWidth).toBe(last.borderBottomWidth)
@@ -37,7 +37,7 @@ describe('WeeklyAccordionBody', () => {
 
   it('행의 드롭은 (ocid, 보스, 난이도, 기간) 키로 찾아 넘긴다', async () => {
     const row = 보스행()
-    const key = `${row.ocid}|${row.boss}|${row.difficulty}|${row.periodKey}`
+    const key = `${row.ocid}|${row.bossKey}|${row.difficulty}|${row.periodKey}`
     const { getByTestId } = await renderProfit(
       <WeeklyAccordionBody rows={[row]} />,
       컨텍스트값({
@@ -154,7 +154,7 @@ describe('MonthlyAccordionBody', () => {
   it('주차별 합계만 그린다. 월간 보스 상세는 주간 탭으로 갔다', async () => {
     const { getByText, queryByTestId } = await renderProfit(
       <MonthlyAccordionBody
-        bossRows={[보스행({ boss: 월간보스, cycle: 'monthly' })]}
+        bossRows={[보스행({ bossKey: 월간보스, cycle: 'monthly' })]}
         weeklySubtotals={[주차소계()]}
       />,
     )
@@ -217,7 +217,7 @@ describe('본문은 자기 바탕을 갖는다', () => {
 
 // 월간 보스가 월간 탭에서 빠져 주간 목록 맨 위로 왔다(사용자 지정). 두 무리를 띠가 가른다.
 describe('주간 본문의 띠 둘', () => {
-  const 월간행 = () => 보스행({ boss: 월간보스, cycle: 'monthly', periodKey: '2026-08' })
+  const 월간행 = () => 보스행({ bossKey: 월간보스, cycle: 'monthly', periodKey: '2026-08' })
 
   it('월간 띠는 월간 행이 있을 때만 선다', async () => {
     const 있음 = await renderProfit(<WeeklyAccordionBody rows={[월간행(), 보스행()]} />)
@@ -230,7 +230,7 @@ describe('주간 본문의 띠 둘', () => {
   // 그 오른쪽 수가 주간 한도를 숫자로 말하는 유일한 자리다. 아바타 링은 그림으로만 말한다.
   it('주간 띠는 늘 선다. 오른쪽에 처치 수와 한도를 적는다', async () => {
     const { getByText, getByTestId } = await renderProfit(
-      <WeeklyAccordionBody rows={[보스행(), 보스행({ boss: 다른주간보스, isComplete: false })]} />,
+      <WeeklyAccordionBody rows={[보스행(), 보스행({ bossKey: 다른주간보스, isComplete: false })]} />,
     )
 
     expect(getByText('주간')).toBeTruthy()

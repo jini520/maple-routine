@@ -6,7 +6,6 @@
 import { useEffect, useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import weeklyBossesData from '../../data/weekly-bosses.json'
 import { partySizeKey, useBossSchedulerStore } from '../../features/boss-scheduler/store'
 import { BOSS_SECTION_ORDER } from '../../features/boss-scheduler/displayed-bosses'
 import { resolveSelectedCharacter } from '../../features/character-selection/selected-character'
@@ -14,12 +13,8 @@ import { useCharacterSelectionStore } from '../../features/character-selection/s
 import { useToastStore } from '../../features/toast/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
-import {
-  countManualWeeklyBosses,
-  getBossCycleByName,
-  isSeasonBossName,
-  WEEKLY_BOSS_CLEAR_LIMIT,
-} from '../../lib/boss/boss-matching'
+import { countManualWeeklyBosses, WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss/boss-matching'
+import { bossCycleOf, bossesInSection, isSeasonBoss, type BossEntry } from '../../lib/boss/bosses'
 import { isChallengersWorld } from '../../lib/assets/asset-lookup'
 import { useDataFreshness } from '../../features/refresh/freshness'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
@@ -37,40 +32,21 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 
-interface BossReferenceEntry {
-  boss: string
-  difficulties: string[]
-  portraitSlug?: string | null
-  status?: string
-}
-
-interface BossListEntry {
-  boss: string
-  difficulties: BossDifficulty[]
-  portraitSlug: string | null
-}
-
-// 목록은 게임 레퍼런스 데이터(`weekly-bosses.json`) 그대로다.
-// 주간 탭은 주간(챌린저스 월드는 시즌 주간까지), 월간 탭은 월간이다.
-// 난이도 후보도 같은 파일의 `difficulties` 를 쓴다.
-// 출시되면 그 필드를 지우는 것만으로 돌아온다. 지금 걸리는 엔트리는 0개다.
-// 미출시 보스(`status: 'unreleased'`)는 뺀다. 보스명을 코드에 안 박고 데이터로 거르므로
-function toListEntries(entries: BossReferenceEntry[]): BossListEntry[] {
-  return entries
-    .filter((entry) => entry.status !== 'unreleased')
-    .map((entry) => ({
-      boss: entry.boss,
-      difficulties: entry.difficulties as BossDifficulty[],
-      portraitSlug: entry.portraitSlug ?? null,
-    }))
-}
 
 /** 주인이 다른 편집 표를 읽을 때 대신 주는 빈 표. 렌더마다 새 객체를 만들지 않는다. */
 const NO_DIFFICULTY_EDITS: Record<string, BossDifficulty> = {}
 
-const WEEKLY_BOSSES = toListEntries(weeklyBossesData.weekly as BossReferenceEntry[])
-const SEASON_BOSSES = toListEntries(weeklyBossesData.eventWeekly as BossReferenceEntry[])
-const MONTHLY_BOSSES = toListEntries(weeklyBossesData.monthly as BossReferenceEntry[])
+// 목록은 보스 표(`weekly-bosses.json`) 그대로다. 주간 탭은 주간(챌린저스 월드는 시즌 주간까지),
+// 월간 탭은 월간이다. 난이도 후보도 같은 표의 `difficulties` 를 쓴다.
+// 미출시 보스(`status: 'unreleased'`)는 뺀다. 보스를 코드에 안 박고 데이터로 거르므로 출시되면 그 칸을
+// 지우는 것만으로 돌아온다. 지금 걸리는 줄은 0개다.
+function listedBosses(section: 'weekly' | 'eventWeekly' | 'monthly'): BossEntry[] {
+  return bossesInSection(section).filter((entry) => entry.status !== 'unreleased')
+}
+
+const WEEKLY_BOSSES: BossEntry[] = listedBosses('weekly')
+const SEASON_BOSSES: BossEntry[] = listedBosses('eventWeekly')
+const MONTHLY_BOSSES: BossEntry[] = listedBosses('monthly')
 
 // 수동 모드는 행 탭이 추적 토글이고 즉시 저장한다. 체크된 행에만 난이도와 스테퍼가 펼쳐진다.
 // 자동 모드는 체크 없이 파티 인원만 설정하고, 미등록 보스도 미리 설정할 수 있다.
@@ -98,7 +74,7 @@ export function BossManageScreen(): React.JSX.Element {
   /**
    * 자동 모드에서 행마다 어느 난이도의 파티 인원을 편집 중인지. 멤버십이 아니라 저장하지 않는다.
    *
-   * `ocid` 가 이 표의 주인이다. 보스 이름만으로 키를 잡으면 캐릭터를 옮겼을 때 같은 이름의 행에
+   * `ocid` 가 이 표의 주인이다. 보스 key 만으로 키를 잡으면 캐릭터를 옮겼을 때 같은 보스의 행에
    * 앞 캐릭터의 선택이 그대로 남는다.
    */
   const [difficultyEdit, setDifficultyEdit] = useState<{
@@ -128,7 +104,7 @@ export function BossManageScreen(): React.JSX.Element {
   /**
    * 지금 캐릭터의 편집 표. 주인이 다르면 빈 표다.
    *
-   * 캐릭터를 옮기는 것이 편집을 끝내는 행위다. 안 버리면 앞 캐릭터가 고른 난이도가 보스 이름만으로
+   * 캐릭터를 옮기는 것이 편집을 끝내는 행위다. 안 버리면 앞 캐릭터가 고른 난이도가 보스 key 만으로
    * 이 캐릭터의 행에 남고, 그 난이도가 스테퍼로 흘러가 잡지도 않는 난이도의 파티 인원이 저장된다.
    */
   const autoDifficultyByBoss =
@@ -146,12 +122,13 @@ export function BossManageScreen(): React.JSX.Element {
     rings: [],
   }))
 
-  // 등록 난이도 조회. 난이도 기본 선택(등록 난이도 우선)과 자동 모드의 "등록된 보스만 보기"에 쓴다.
+  // 등록 난이도 조회(보스 key → 난이도). 난이도 기본 선택(등록 난이도 우선)과 자동 모드의 "등록된 보스만
+  // 보기"에 쓴다. 보스 표에 없는 보스는 이 목록에 행이 없어 넣지 않는다.
   const registeredDifficultyByBoss = new Map<string, BossDifficulty>()
   if (selected !== null) {
     for (const boss of [...selected.weeklyBosses, ...selected.monthlyBosses]) {
-      if (boss.isRegistered) {
-        registeredDifficultyByBoss.set(boss.matchedBossName ?? boss.apiName, boss.difficulty)
+      if (boss.isRegistered && boss.bossKey !== null) {
+        registeredDifficultyByBoss.set(boss.bossKey, boss.difficulty)
       }
     }
   }
@@ -161,21 +138,20 @@ export function BossManageScreen(): React.JSX.Element {
       ? (manualTrackedByOcid?.[selected.ocid] ?? []).filter((item) => item.kind === 'boss')
       : []
 
-  function trackedDifficultyOf(bossName: string): BossDifficulty | null {
-    const item = trackedBossItems.find((candidate) => candidate.contentName === bossName)
-    return item !== undefined ? ((item.difficulty ?? null) as BossDifficulty | null) : null
+  function trackedDifficultyOf(bossKey: string): BossDifficulty | null {
+    return trackedBossItems.find((candidate) => candidate.bossKey === bossKey)?.difficulty ?? null
   }
 
-  function defaultDifficultyFor(bossName: string, difficulties: BossDifficulty[]): BossDifficulty | null {
-    return registeredDifficultyByBoss.get(bossName) ?? difficulties[0] ?? null
+  function defaultDifficultyFor(bossKey: string, difficulties: BossDifficulty[]): BossDifficulty | null {
+    return registeredDifficultyByBoss.get(bossKey) ?? difficulties[0] ?? null
   }
 
   // 12는 주간 한도이고 시즌 보스는 예외다. 카운트 규칙은 `lib/boss/boss-matching` 한 곳에만 있다.
   const weeklyTrackedCount = countManualWeeklyBosses(trackedBossItems)
   const isWeeklyLimitReached = mode === 'manual' && weeklyTrackedCount >= WEEKLY_BOSS_CLEAR_LIMIT
 
-  function countsTowardWeeklyLimit(bossName: string): boolean {
-    return getBossCycleByName(bossName) === 'weekly' && !isSeasonBossName(bossName)
+  function countsTowardWeeklyLimit(bossKey: string): boolean {
+    return bossCycleOf(bossKey) === 'weekly' && !isSeasonBoss(bossKey)
   }
 
   // 비-챌린저스로 본다. 판정은 스케줄러 화면과 같은 함수여야 한다.
@@ -202,7 +178,7 @@ export function BossManageScreen(): React.JSX.Element {
     .map((section) => ({
       ...section,
       entries: showsRegisteredOnly
-        ? section.entries.filter((entry) => registeredDifficultyByBoss.has(entry.boss))
+        ? section.entries.filter((entry) => registeredDifficultyByBoss.has(entry.key))
         : section.entries,
     }))
     // 없으면 보여 줄 이유도 없다.
@@ -210,23 +186,23 @@ export function BossManageScreen(): React.JSX.Element {
     .filter((section) => section.entries.length > 0)
 
   // 저장 실패를 토스트로 알린다. 안 알리면 체크가 조용히 되돌아가는 것 외에 설명이 없다.
-  async function handleToggleTracked(bossName: string, difficulties: BossDifficulty[]): Promise<void> {
+  async function handleToggleTracked(bossKey: string, difficulties: BossDifficulty[]): Promise<void> {
     if (selected === null) return
-    const trackedDifficulty = trackedDifficultyOf(bossName)
+    const trackedDifficulty = trackedDifficultyOf(bossKey)
     if (trackedDifficulty !== null) {
       try {
-        await removeManualBoss(selected.ocid, bossName, trackedDifficulty)
+        await removeManualBoss(selected.ocid, bossKey, trackedDifficulty)
       } catch {
         useToastStore.getState().showError('추적 목록을 저장하지 못했습니다')
       }
       return
     }
-    const difficulty = defaultDifficultyFor(bossName, difficulties)
+    const difficulty = defaultDifficultyFor(bossKey, difficulties)
     if (difficulty === null) return
     // 안내이고, `error` 는 자동 소멸이 없어 사용자가 직접 닫아야 한다.
     // 한도 초과는 행을 막지 않고 눌렀을 때 토스트로 알린다. `showInfo` 다. 실패가 아니라 규칙
     try {
-      const result = await addManualBoss(selected.ocid, bossName, difficulty)
+      const result = await addManualBoss(selected.ocid, bossKey, difficulty)
       if (result === 'limitReached') {
         useToastStore.getState().showInfo(`주간 ${WEEKLY_BOSS_CLEAR_LIMIT}개를 모두 선택했어요`)
       }
@@ -237,23 +213,23 @@ export function BossManageScreen(): React.JSX.Element {
 
   // remove → add 2단계는 커밋이 2회라 그 사이에 보스가 목록에 없는 상태가 실재했다.
   // 수동 모드의 난이도 변경은 멤버십 교체다. 스토어의 단일 액션이 쓰기 1회로 끝낸다.
-  async function handleSwitchDifficulty(bossName: string, to: BossDifficulty): Promise<void> {
+  async function handleSwitchDifficulty(bossKey: string, to: BossDifficulty): Promise<void> {
     if (selected === null) return
     try {
-      await setManualBossDifficulty(selected.ocid, bossName, to)
+      await setManualBossDifficulty(selected.ocid, bossKey, to)
     } catch {
       useToastStore.getState().showError('추적 목록을 저장하지 못했습니다')
     }
   }
 
   async function handleSetPartySize(
-    bossName: string,
+    bossKey: string,
     difficulty: BossDifficulty,
     partySize: number,
   ): Promise<void> {
     if (selected === null) return
     try {
-      await setPartySize(selected.ocid, bossName, difficulty, partySize)
+      await setPartySize(selected.ocid, bossKey, difficulty, partySize)
     } catch {
       useToastStore.getState().showError('파티원 수를 저장하지 못했습니다')
     }
@@ -261,16 +237,16 @@ export function BossManageScreen(): React.JSX.Element {
 
   // 콤팩트 스테퍼. 상한은 (보스, 난이도)마다 다르다. 화면이 숫자를 정하지 않고
   // `getMaxPartySize` 에 묻는다.
-  function renderPartyStepper(bossName: string, difficulty: BossDifficulty): React.JSX.Element {
+  function renderPartyStepper(entry: BossEntry, difficulty: BossDifficulty): React.JSX.Element {
     const ocid = selected?.ocid ?? ''
-    const value = partySizes[partySizeKey(ocid, bossName, difficulty)] ?? 1
+    const value = partySizes[partySizeKey(ocid, entry.key, difficulty)] ?? 1
     return (
       <PartySizeStepper
         size="compact"
-        label={bossName}
+        label={entry.name}
         value={value}
-        max={getMaxPartySize(bossName, difficulty)}
-        onChange={(next) => void handleSetPartySize(bossName, difficulty, next)}
+        max={getMaxPartySize(entry.key, difficulty)}
+        onChange={(next) => void handleSetPartySize(entry.key, difficulty, next)}
       />
     )
   }
@@ -364,7 +340,7 @@ export function BossManageScreen(): React.JSX.Element {
                   )}
                 </View>
                 {section.entries.map((entry) => {
-              const trackedDifficulty = mode === 'manual' ? trackedDifficultyOf(entry.boss) : null
+              const trackedDifficulty = mode === 'manual' ? trackedDifficultyOf(entry.key) : null
               const isTracked = trackedDifficulty !== null
 
               // 한도가 찼을 때 미선택 행은 흐리게만 둔다. 비활성화하면 이유를 알릴 수 없다.
@@ -372,11 +348,11 @@ export function BossManageScreen(): React.JSX.Element {
                 mode === 'manual' &&
                 !isTracked &&
                 isWeeklyLimitReached &&
-                countsTowardWeeklyLimit(entry.boss)
+                countsTowardWeeklyLimit(entry.key)
 
               // 자동 모드의 행 난이도: 화면 전용 선택 → 등록 난이도 → 첫 난이도 순.
               const autoDifficulty =
-                autoDifficultyByBoss[entry.boss] ?? defaultDifficultyFor(entry.boss, entry.difficulties)
+                autoDifficultyByBoss[entry.key] ?? defaultDifficultyFor(entry.key, entry.difficulties)
 
               // 스테퍼·난이도가 펼쳐지는 활성 난이도: 수동은 추적 난이도, 자동은 행 난이도.
               const activeDifficulty = mode === 'manual' ? trackedDifficulty : autoDifficulty
@@ -394,24 +370,24 @@ export function BossManageScreen(): React.JSX.Element {
               const nameContent = (
                 <>
                   <View aria-hidden>
-                    <BossPortrait portraitSlug={entry.portraitSlug} label={entry.boss} size={44} />
+                    <BossPortrait portraitSlug={entry.portraitSlug ?? null} label={entry.name} size={44} />
                   </View>
                   <Text numberOfLines={1} className="min-w-0 flex-1 text-sm font-semibold text-text">
-                    {entry.boss}
+                    {entry.name}
                   </Text>
                 </>
               )
 
               return (
-                <View key={entry.boss} className={rowClassName}>
+                <View key={entry.key} className={rowClassName}>
                   {/* 1번째 줄: 초상화 + 보스명(수동은 추적 토글 버튼) + 파티 스테퍼(우상단) */}
                   <View className="flex-row items-center gap-3 px-3 py-2.5">
                     {mode === 'manual' ? (
                       <Pressable
                         role="button"
                         aria-selected={isTracked}
-                        aria-label={entry.boss}
-                        onPress={() => void handleToggleTracked(entry.boss, entry.difficulties)}
+                        aria-label={entry.name}
+                        onPress={() => void handleToggleTracked(entry.key, entry.difficulties)}
                         className="min-w-0 flex-1 flex-row items-center gap-3"
                       >
                         {nameContent}
@@ -419,7 +395,7 @@ export function BossManageScreen(): React.JSX.Element {
                     ) : (
                       <View className="min-w-0 flex-1 flex-row items-center gap-3">{nameContent}</View>
                     )}
-                    {activeDifficulty !== null && renderPartyStepper(entry.boss, activeDifficulty)}
+                    {activeDifficulty !== null && renderPartyStepper(entry, activeDifficulty)}
                   </View>
 
                   {/* 2번째 줄: 난이도 세그먼트 */}
@@ -429,7 +405,7 @@ export function BossManageScreen(): React.JSX.Element {
                         <DifficultySegment
                           difficulties={entry.difficulties}
                           selected={trackedDifficulty}
-                          onSelect={(difficulty) => void handleSwitchDifficulty(entry.boss, difficulty)}
+                          onSelect={(difficulty) => void handleSwitchDifficulty(entry.key, difficulty)}
                         />
                       ) : (
                         <DifficultySegment
@@ -438,7 +414,7 @@ export function BossManageScreen(): React.JSX.Element {
                           onSelect={(difficulty) =>
                             setDifficultyEdit({
                               ocid: selected?.ocid ?? null,
-                              byBoss: { ...autoDifficultyByBoss, [entry.boss]: difficulty },
+                              byBoss: { ...autoDifficultyByBoss, [entry.key]: difficulty },
                             })
                           }
                         />

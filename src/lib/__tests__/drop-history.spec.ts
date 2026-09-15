@@ -32,8 +32,9 @@ function sentence(line: DropHistoryLine): string {
 function record(overrides: Partial<DropHistoryRecord>): DropHistoryRecord {
   return {
     ocid: 'ocid-1',
+    bossKey: 'lotus',
     boss: '스우',
-    difficulty: '하드',
+    difficulty: 'hard',
     periodKey: '2026-07-09',
     category: 'equipment',
     itemKey: 'loose_control_machine_mark',
@@ -115,7 +116,7 @@ describe('groupDropRecordsByPeriod', () => {
 })
 
 describe('filterUnobtainableConfirmedDrops', () => {
-  const confirmed = new Set([confirmedDropKey('ocid-1', '스우', '하드', '2026-07-09')])
+  const confirmed = new Set([confirmedDropKey('ocid-1', 'lotus', 'hard', '2026-07-09')])
 
   it('처치 난이도가 확정된 조합에서는 그 난이도에서 못 나오는 기록을 거른다', () => {
     const records = [
@@ -157,7 +158,7 @@ describe('filterUnobtainableConfirmedDrops', () => {
   it('확정되지 않은 조합은 건드리지 않는다. 나중에 이관되어 살아남을 기록이다', () => {
     // 익스트림으로 등록해두고 실제로는 하드를 잡은 상황: 하드 전용 기록이 익스트림 키에 들어 있다.
     // 여기서 걸러버리면 난이도가 확정되면 살아남을 기록을 미리 숨기게 된다.
-    const records = [record({ difficulty: '익스트림', itemKey: 'green_boss_ring_box', itemName: '녹옥의 보스 반지 상자' })]
+    const records = [record({ difficulty: 'extreme', itemKey: 'green_boss_ring_box', itemName: '녹옥의 보스 반지 상자' })]
 
     expect(filterUnobtainableConfirmedDrops(records, new Set())).toEqual(records)
   })
@@ -171,8 +172,9 @@ describe('filterUnobtainableConfirmedDrops', () => {
   it('기록의 기간으로 판정한다. 패치 전 주의 교환권은 남는다', () => {
     const 교환권 = (periodKey: string) =>
       record({
+        bossKey: 'guardian_angel_slime',
         boss: '가디언 엔젤 슬라임',
-        difficulty: '카오스',
+        difficulty: 'chaos',
         periodKey,
         category: 'consumable',
         itemKey: 'magical_weapon_scroll_voucher',
@@ -180,8 +182,8 @@ describe('filterUnobtainableConfirmedDrops', () => {
         slot: undefined,
       })
     const keys = new Set([
-      confirmedDropKey('ocid-1', '가디언 엔젤 슬라임', '카오스', '2026-09-10'),
-      confirmedDropKey('ocid-1', '가디언 엔젤 슬라임', '카오스', '2026-09-17'),
+      confirmedDropKey('ocid-1', 'guardian_angel_slime', 'chaos', '2026-09-10'),
+      confirmedDropKey('ocid-1', 'guardian_angel_slime', 'chaos', '2026-09-17'),
     ])
 
     const kept = filterUnobtainableConfirmedDrops([교환권('2026-09-10'), 교환권('2026-09-17')], keys)
@@ -249,7 +251,7 @@ describe('summarizeValuableDrought', () => {
   it('월간 기록도 주 축으로 환산해 센다 (주 경계에 걸리면 내림)', () => {
     // 월간 7월 시작(7/1 00:00 KST) → 7/30 = 29일 = 4주 + 1일 → 4주
     const summary = summarizeValuableDrought(
-      [record({ periodKey: '2026-07', boss: '검은 마법사', difficulty: '하드', itemKey: 'genesis_badge', itemName: '창세의 뱃지', slot: undefined })],
+      [record({ periodKey: '2026-07', bossKey: 'black_mage', boss: '검은 마법사', difficulty: 'hard', itemKey: 'genesis_badge', itemName: '창세의 뱃지', slot: undefined })],
       now,
     )
     expect(summary).toMatchObject({ periodKey: '2026-07', cycle: 'monthly', weeksSince: 4 })
@@ -292,8 +294,9 @@ describe('formatDropHistoryLine', () => {
   it('캐릭터·보스·난이도·아이템으로 한 줄 문장을 만든다', () => {
     const line = formatDropHistoryLine(
       record({
+        bossKey: 'guardian_angel_slime',
         boss: '가디언 엔젤 슬라임',
-        difficulty: '카오스',
+        difficulty: 'chaos',
         itemKey: null,
         itemName: '가디언 엔젤링',
         slot: undefined,
@@ -315,7 +318,7 @@ describe('formatDropHistoryLine', () => {
   // 로도 "슬라임(카오스)⏎에서" 가 막히지 않는다. 띄어쓰기만 기준이 되게 word joiner 로 묶는다.
   it('난이도 괄호 양옆을 word joiner로 묶어 그 지점의 줄바꿈을 막는다', () => {
     const line = formatDropHistoryLine(
-      record({ boss: '가디언 엔젤 슬라임', difficulty: '카오스', slot: undefined }),
+      record({ bossKey: 'guardian_angel_slime', boss: '가디언 엔젤 슬라임', difficulty: 'chaos', slot: undefined }),
       '지내우시',
     )
 
@@ -324,7 +327,7 @@ describe('formatDropHistoryLine', () => {
 
   it('캐릭터명을 모르면 이름 부분을 비운다. ocid를 노출하지 않는다', () => {
     const line = formatDropHistoryLine(
-      record({ boss: '스우', difficulty: '하드', itemKey: null, itemName: '가디언 엔젤링', slot: undefined }),
+      record({ bossKey: 'lotus', boss: '스우', difficulty: 'hard', itemKey: null, itemName: '가디언 엔젤링', slot: undefined }),
       undefined,
     )
 
@@ -365,8 +368,9 @@ describe('formatDropHistoryLine', () => {
   it('상자 개봉 결과는 어떤 상자를 열었는지 함께 말한다', () => {
     const line = formatDropHistoryLine(
       record({
+        bossKey: 'lotus',
         boss: '스우',
-        difficulty: '하드',
+        difficulty: 'hard',
         itemKey: 'restraint_ring',
         itemName: '리스트레인트 링',
         category: 'consumable',

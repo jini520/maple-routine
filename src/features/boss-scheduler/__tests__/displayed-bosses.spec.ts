@@ -10,17 +10,22 @@ import {
   WEEKLY_BOSS_CLEAR_LIMIT,
   type MatchedBoss,
 } from '../../../lib/boss/boss-matching'
+import { bossKeyOfApiName } from '../../../lib/boss/bosses'
 import type { BossContent, BossCycle, BossDifficulty } from '../../../types'
 import type { ManualTrackedItem } from '../../../types/scheduler'
 
+/** `name` 은 API 원문이다. key 는 보스 표에서 찾고, 표에 없는 이름이면 `null` 이다. */
 function boss(
   overrides: Partial<BossContent> & { name: string; difficulty: BossDifficulty; cycle: BossCycle },
 ): MatchedBoss {
+  const { name, ...rest } = overrides
   return matchBossContent({
+    bossKey: bossKeyOfApiName(name),
+    apiName: name,
     isRegistered: false,
     isComplete: false,
     ownComplete: false,
-    ...overrides,
+    ...rest,
   })
 }
 
@@ -47,22 +52,22 @@ function shown(matched: MatchedBoss, isWeeklyLimitClosed = false): DisplayedBoss
   return { ...matched, isWeeklyLimitClosed }
 }
 
-function bossItem(contentName: string, difficulty: string): ManualTrackedItem {
-  return { contentName, kind: 'boss', difficulty }
+function bossItem(name: string, difficulty: BossDifficulty): ManualTrackedItem {
+  return { kind: 'boss', bossKey: bossKeyOfApiName(name) ?? name, difficulty }
 }
 
 describe('displayedBosses: 자동 모드', () => {
   // 등록한 난이도가 있으면 그것만(중복 카드 방지), 없으면 완료한 난이도를 대신.
   it('등록된 보스와 **미등록이지만 완료된** 보스를 함께 보여준다', () => {
-    const registered = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true })
+    const registered = boss({ name: '스우', difficulty: 'hard', cycle: 'weekly', isRegistered: true })
     const unregisteredComplete = boss({
       name: '루시드',
-      difficulty: '하드',
+      difficulty: 'hard',
       cycle: 'weekly',
       isComplete: true,
       ownComplete: true,
     })
-    const unregisteredIncomplete = boss({ name: '윌', difficulty: '하드', cycle: 'weekly' })
+    const unregisteredIncomplete = boss({ name: '윌', difficulty: 'hard', cycle: 'weekly' })
 
     const result = displayedBosses(
       character({ weeklyBosses: [registered, unregisteredComplete, unregisteredIncomplete] }),
@@ -76,10 +81,10 @@ describe('displayedBosses: 자동 모드', () => {
 
   // 같은 보스를 여러 난이도로 받아도 등록된 난이도가 있으면 그 행만 남는다. 카드가 겹치지 않게.
   it('같은 보스의 등록 난이도가 있으면 완료된 다른 난이도는 카드로 서지 않는다', () => {
-    const registeredHard = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true })
+    const registeredHard = boss({ name: '스우', difficulty: 'hard', cycle: 'weekly', isRegistered: true })
     const completeNormal = boss({
       name: '스우',
-      difficulty: '노멀',
+      difficulty: 'normal',
       cycle: 'weekly',
       isComplete: true,
       ownComplete: true,
@@ -96,8 +101,8 @@ describe('displayedBosses: 자동 모드', () => {
   })
 
   it('cycle 이 주간·월간을 가른다. 자동 모드는 캐릭터 뷰의 두 목록에서 고른다', () => {
-    const weekly = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true })
-    const monthly = boss({ name: '검은마법사', difficulty: '하드', cycle: 'monthly', isRegistered: true })
+    const weekly = boss({ name: '스우', difficulty: 'hard', cycle: 'weekly', isRegistered: true })
+    const monthly = boss({ name: '검은마법사', difficulty: 'hard', cycle: 'monthly', isRegistered: true })
     const view = character({ weeklyBosses: [weekly], monthlyBosses: [monthly] })
 
     expect(displayedBosses(view, 'weekly', 'auto', null)).toEqual([shown(weekly)])
@@ -107,10 +112,10 @@ describe('displayedBosses: 자동 모드', () => {
   // 자동 모드는 게임 등록이 진실이라 멤버십을 아예 안 본다. 모드 전환 직후 남아 있는 수동 목록이
   // 자동 화면에 새지 않는다.
   it('멤버십이 있어도 자동 모드에서는 그것을 읽지 않는다', () => {
-    const registered = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true })
+    const registered = boss({ name: '스우', difficulty: 'hard', cycle: 'weekly', isRegistered: true })
 
     const result = displayedBosses(character({ weeklyBosses: [registered] }), 'weekly', 'auto', {
-      'ocid-1': [bossItem('루시드', '하드')],
+      'ocid-1': [bossItem('루시드', 'hard')],
     })
 
     expect(result).toEqual([shown(registered)])
@@ -121,9 +126,9 @@ describe('displayedBosses: 자동 모드', () => {
 // 이제 두 모드가 같은 비교자(`compareBossOrder`)를 지나므로 응답이 어떤 차례로 오든 화면이 안 흔들린다.
 describe('displayedBosses: 순서는 weekly-bosses.json 정규 순서다', () => {
   it('자동 모드가 응답 순서를 버리고 정규 순서로 낸다', () => {
-    const 루시드 = boss({ name: '루시드', difficulty: '하드', cycle: 'weekly', isRegistered: true })
-    const 자쿰 = boss({ name: '자쿰', difficulty: '카오스', cycle: 'weekly', isRegistered: true })
-    const 스우 = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true })
+    const 루시드 = boss({ name: '루시드', difficulty: 'hard', cycle: 'weekly', isRegistered: true })
+    const 자쿰 = boss({ name: '자쿰', difficulty: 'chaos', cycle: 'weekly', isRegistered: true })
+    const 스우 = boss({ name: '스우', difficulty: 'hard', cycle: 'weekly', isRegistered: true })
 
     const result = displayedBosses(
       character({ weeklyBosses: [루시드, 자쿰, 스우] }),
@@ -137,9 +142,9 @@ describe('displayedBosses: 순서는 weekly-bosses.json 정규 순서다', () =>
 
   it('입력 순서를 뒤집어도 같은 목록이 나온다. 결정적이다', () => {
     const bosses = [
-      boss({ name: '루시드', difficulty: '하드', cycle: 'weekly', isRegistered: true }),
-      boss({ name: '자쿰', difficulty: '카오스', cycle: 'weekly', isRegistered: true }),
-      boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true }),
+      boss({ name: '루시드', difficulty: 'hard', cycle: 'weekly', isRegistered: true }),
+      boss({ name: '자쿰', difficulty: 'chaos', cycle: 'weekly', isRegistered: true }),
+      boss({ name: '스우', difficulty: 'hard', cycle: 'weekly', isRegistered: true }),
     ]
 
     const once = displayedBosses(character({ weeklyBosses: bosses }), 'weekly', 'auto', null)
@@ -156,18 +161,18 @@ describe('displayedBosses: 순서는 weekly-bosses.json 정규 순서다', () =>
   // 같은 보스를 여러 난이도로 완료할 수는 없지만(게임 룰), 미등록 완료가 여러 난이도로 오는
   // 응답이 실재한다. 그때도 자리가 결정적이어야 한다.
   it('같은 보스의 여러 난이도는 난이도 순서로 선다', () => {
-    const 하드 = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isComplete: true, ownComplete: true })
-    const 노멀 = boss({ name: '스우', difficulty: '노멀', cycle: 'weekly', isComplete: true, ownComplete: true })
+    const 하드 = boss({ name: '스우', difficulty: 'hard', cycle: 'weekly', isComplete: true, ownComplete: true })
+    const 노멀 = boss({ name: '스우', difficulty: 'normal', cycle: 'weekly', isComplete: true, ownComplete: true })
 
     const result = displayedBosses(character({ weeklyBosses: [하드, 노멀] }), 'weekly', 'auto', null)
 
-    expect(result.map((entry) => entry.difficulty)).toEqual(['노멀', '하드'])
+    expect(result.map((entry) => entry.difficulty)).toEqual(['normal', 'hard'])
   })
 
   // 참조표에 없는 보스는 이름을 못 바꾼 채 맨 뒤에 선다. 버리지 않는다.
   it('참조표에 없는 보스는 버리지 않고 맨 뒤에 둔다', () => {
-    const 미지 = boss({ name: '알 수 없는 보스', difficulty: '하드', cycle: 'weekly', isRegistered: true })
-    const 자쿰 = boss({ name: '자쿰', difficulty: '카오스', cycle: 'weekly', isRegistered: true })
+    const 미지 = boss({ name: '알 수 없는 보스', difficulty: 'hard', cycle: 'weekly', isRegistered: true })
+    const 자쿰 = boss({ name: '자쿰', difficulty: 'chaos', cycle: 'weekly', isRegistered: true })
 
     const result = displayedBosses(character({ weeklyBosses: [미지, 자쿰] }), 'weekly', 'auto', null)
 
@@ -178,7 +183,7 @@ describe('displayedBosses: 순서는 weekly-bosses.json 정규 순서다', () =>
   // 여기서 못 박는다(정렬 자리가 모드 분기 안이 아니라 함수 끝인 것이 이다).
   it('수동 모드도 같은 순서다', () => {
     const result = displayedBosses(character(), 'weekly', 'manual', {
-      'ocid-1': [bossItem('루시드', '하드'), bossItem('자쿰', '카오스'), bossItem('스우', '하드')],
+      'ocid-1': [bossItem('루시드', 'hard'), bossItem('자쿰', 'chaos'), bossItem('스우', 'hard')],
     })
 
     expect(result.map((entry) => entry.apiName)).toEqual(['자쿰', '스우', '루시드'])
@@ -189,24 +194,24 @@ describe('displayedBosses: 수동 모드', () => {
   // 게임 등록 여부가 아니라 **앱에서 관리하는 멤버십** 이 표시 목록을 정한다.
   it('추적 멤버십이 표시 목록을 정한다. 등록·동기화된 적 없는 보스도 카드로 선다', () => {
     const result = displayedBosses(character(), 'weekly', 'manual', {
-      'ocid-1': [bossItem('스우', '하드')],
+      'ocid-1': [bossItem('스우', 'hard')],
     })
 
     expect(result).toHaveLength(1)
     expect(result[0]).toMatchObject({
       apiName: '스우',
-      difficulty: '하드',
+      difficulty: 'hard',
       cycle: 'weekly',
       isRegistered: false,
       isComplete: false,
-      matchedBossName: '스우',
+      bossKey: 'lotus',
     })
   })
 
   it('멤버십에 없는 보스는 등록·완료돼 있어도 카드로 서지 않는다', () => {
     const registeredComplete = boss({
       name: '루시드',
-      difficulty: '하드',
+      difficulty: 'hard',
       cycle: 'weekly',
       isRegistered: true,
       isComplete: true,
@@ -217,7 +222,7 @@ describe('displayedBosses: 수동 모드', () => {
       character({ weeklyBosses: [registeredComplete] }),
       'weekly',
       'manual',
-      { 'ocid-1': [bossItem('스우', '하드')] },
+      { 'ocid-1': [bossItem('스우', 'hard')] },
     )
 
     expect(result.map((entry) => entry.apiName)).toEqual(['스우'])
@@ -227,7 +232,7 @@ describe('displayedBosses: 수동 모드', () => {
   it('동기화 결과의 완료 여부가 멤버십 항목에 붙는다', () => {
     const synced = boss({
       name: '스우',
-      difficulty: '하드',
+      difficulty: 'hard',
       cycle: 'weekly',
       isRegistered: true,
       isComplete: true,
@@ -235,28 +240,29 @@ describe('displayedBosses: 수동 모드', () => {
     })
 
     const result = displayedBosses(character({ weeklyBosses: [synced] }), 'weekly', 'manual', {
-      'ocid-1': [bossItem('스우', '하드')],
+      'ocid-1': [bossItem('스우', 'hard')],
     })
 
-    expect(result[0]).toMatchObject({ apiName: '스우', difficulty: '하드', isComplete: true })
+    expect(result[0]).toMatchObject({ apiName: '스우', difficulty: 'hard', isComplete: true })
   })
 
   // 조회 대상이 주간·월간 두 목록을 합친 것이라, 월간 보스를 추적해도 주간 탭에 새지 않는다.
   it('멤버십 목록을 cycle 로 가른다. 월간 추적은 주간 탭에 오지 않는다', () => {
     const tracked = {
-      'ocid-1': [bossItem('스우', '하드'), bossItem('검은마법사', '하드')],
+      'ocid-1': [bossItem('스우', 'hard'), bossItem('검은마법사', 'hard')],
     }
     const view = character()
 
     expect(displayedBosses(view, 'weekly', 'manual', tracked).map((entry) => entry.apiName)).toEqual(['스우'])
-    expect(displayedBosses(view, 'monthly', 'manual', tracked).map((entry) => entry.apiName)).toEqual([
-      '검은마법사',
+    // 한 번도 동기화에 안 온 추적 보스는 보스 표의 이름(API 표기)으로 선다.
+    expect(displayedBosses(view, 'monthly', 'manual', tracked).map((entry) => [entry.bossKey, entry.apiName])).toEqual([
+      ['black_mage', '검은 마법사'],
     ])
   })
 
   it('보스가 아닌 멤버십 항목(컨텐츠)은 걸러진다', () => {
     const result = displayedBosses(character(), 'weekly', 'manual', {
-      'ocid-1': [bossItem('스우', '하드'), { contentName: '몬스터파크', kind: 'daily' }],
+      'ocid-1': [bossItem('스우', 'hard'), { contentName: '몬스터파크', kind: 'daily' }],
     })
 
     expect(result.map((entry) => entry.apiName)).toEqual(['스우'])
@@ -264,20 +270,20 @@ describe('displayedBosses: 수동 모드', () => {
 
   it('멤버십 맵이 null 이거나 그 ocid 키가 없으면 빈 목록', () => {
     const view = character({
-      weeklyBosses: [boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true })],
+      weeklyBosses: [boss({ name: '스우', difficulty: 'hard', cycle: 'weekly', isRegistered: true })],
     })
 
     expect(displayedBosses(view, 'weekly', 'manual', null)).toEqual([])
     expect(displayedBosses(view, 'weekly', 'manual', {})).toEqual([])
-    expect(displayedBosses(view, 'weekly', 'manual', { 'ocid-2': [bossItem('스우', '하드')] })).toEqual([])
+    expect(displayedBosses(view, 'weekly', 'manual', { 'ocid-2': [bossItem('스우', 'hard')] })).toEqual([])
   })
 
   // 화면이 캐릭터를 인자로 받는 이유. 레일의 링은 **선택되지 않은** 캐릭터의
   // 목록도 세야 하고, 그 목록은 그 캐릭터의 ocid 로 뽑은 멤버십이어야 한다.
   it('멤버십은 인자로 받은 캐릭터의 ocid 로 뽑는다', () => {
     const result = displayedBosses(character({ ocid: 'ocid-2' }), 'weekly', 'manual', {
-      'ocid-1': [bossItem('스우', '하드')],
-      'ocid-2': [bossItem('루시드', '하드')],
+      'ocid-1': [bossItem('스우', 'hard')],
+      'ocid-2': [bossItem('루시드', 'hard')],
     })
 
     expect(result.map((entry) => entry.apiName)).toEqual(['루시드'])
@@ -288,8 +294,8 @@ describe('displayedBosses: 수동 모드', () => {
 // 해석하면 today 가 같은 목록을 다른 순서로 읽을 길이 열린다.
 describe('displayedBossSections: 통합 목록의 순서', () => {
   it('월간이 먼저, 그다음 주간이다', () => {
-    const weekly = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true })
-    const monthly = boss({ name: '검은마법사', difficulty: '하드', cycle: 'monthly', isRegistered: true })
+    const weekly = boss({ name: '스우', difficulty: 'hard', cycle: 'weekly', isRegistered: true })
+    const monthly = boss({ name: '검은마법사', difficulty: 'hard', cycle: 'monthly', isRegistered: true })
 
     const sections = displayedBossSections(
       character({ weeklyBosses: [weekly], monthlyBosses: [monthly] }),
@@ -306,7 +312,7 @@ describe('displayedBossSections: 통합 목록의 순서', () => {
   // 빈 무리를 여기서 걷지 않는 것이 결정이다. 솔로/파티 필터는 화면이 걸고, **비었다** 는 판정은
   // 그 뒤에야 성립한다. 여기서 미리 걷으면 화면이 필터 후 다시 걷어야 한다.
   it('무리가 비어도 자리는 남긴다. 걷는 것은 화면의 일이다', () => {
-    const weekly = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true })
+    const weekly = boss({ name: '스우', difficulty: 'hard', cycle: 'weekly', isRegistered: true })
 
     expect(displayedBossSections(character({ weeklyBosses: [weekly] }), 'auto', null)).toEqual([
       { cycle: 'monthly', bosses: [] },
@@ -316,7 +322,7 @@ describe('displayedBossSections: 통합 목록의 순서', () => {
 
   // 무리 안의 규칙은 한 글자도 안 바뀐다. 같은 함수를 부른다.
   it('무리 안은 `displayedBosses` 와 같은 목록이다. 수동 모드도', () => {
-    const tracked = { 'ocid-1': [bossItem('스우', '하드'), bossItem('검은마법사', '하드')] }
+    const tracked = { 'ocid-1': [bossItem('스우', 'hard'), bossItem('검은마법사', 'hard')] }
     const view = character()
 
     const sections = displayedBossSections(view, 'manual', tracked)
@@ -328,10 +334,10 @@ describe('displayedBossSections: 통합 목록의 순서', () => {
 
   // 완료는 자리를 안 바꾼다. 정렬 규칙을 새로 만들지 않는 것이 그 결정의 값이다.
   it('완료된 검마도 여전히 위에 선다', () => {
-    const weekly = boss({ name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true })
+    const weekly = boss({ name: '스우', difficulty: 'hard', cycle: 'weekly', isRegistered: true })
     const doneMonthly = boss({
       name: '검은마법사',
-      difficulty: '하드',
+      difficulty: 'hard',
       cycle: 'monthly',
       isRegistered: true,
       isComplete: true,
@@ -353,14 +359,14 @@ describe('displayedBossSections: 통합 목록의 순서', () => {
 // 판정하면 그 등식이 깨진다.
 describe('displayedBosses: 주간 한도 마감', () => {
   // 참조표에서 앞에서부터 뽑는다. 이름을 손으로 적지 않는다.
-  const WEEKLY_NAMES = (weeklyBossesData.weekly as { boss: string }[]).map((entry) => entry.boss)
+  const WEEKLY_NAMES = (weeklyBossesData.weekly as unknown as { name: string }[]).map((entry) => entry.name)
 
   /** 끝에서부터 한도만큼 잡아 둔 주간 보스들. 아래 미처치 보스와 겹치지 않게 뒤에서 뽑는다. */
   function clearedBosses(count: number): MatchedBoss[] {
     return WEEKLY_NAMES.slice(-count).map((name) =>
       boss({
         name,
-        difficulty: '하드',
+        difficulty: 'hard',
         cycle: 'weekly',
         isRegistered: false,
         isComplete: true,
@@ -369,7 +375,7 @@ describe('displayedBosses: 주간 한도 마감', () => {
     )
   }
 
-  const pending = boss({ name: WEEKLY_NAMES[0], difficulty: '하드', cycle: 'weekly', isRegistered: true })
+  const pending = boss({ name: WEEKLY_NAMES[0], difficulty: 'hard', cycle: 'weekly', isRegistered: true })
 
   it('한도를 채우면 미처치 등록 보스가 마감이다', () => {
     const view = character({
@@ -406,7 +412,7 @@ describe('displayedBosses: 주간 한도 마감', () => {
   })
 
   it('시즌 보스는 한도 밖이라 마감이 없다', () => {
-    const season = boss({ name: '시즌 보스 메이린', difficulty: '노멀', cycle: 'weekly', isRegistered: true })
+    const season = boss({ name: '시즌 보스 메이린', difficulty: 'normal', cycle: 'weekly', isRegistered: true })
     const view = character({ weeklyBosses: [season, ...clearedBosses(WEEKLY_BOSS_CLEAR_LIMIT)] })
 
     const entry = displayedBosses(view, 'weekly', 'auto', null).find(
@@ -417,7 +423,7 @@ describe('displayedBosses: 주간 한도 마감', () => {
   })
 
   it('월간 보스는 한도 밖이라 마감이 없다', () => {
-    const monthly = boss({ name: '검은마법사', difficulty: '하드', cycle: 'monthly', isRegistered: true })
+    const monthly = boss({ name: '검은마법사', difficulty: 'hard', cycle: 'monthly', isRegistered: true })
     const view = character({
       weeklyBosses: clearedBosses(WEEKLY_BOSS_CLEAR_LIMIT),
       monthlyBosses: [monthly],
@@ -430,11 +436,11 @@ describe('displayedBosses: 주간 한도 마감', () => {
 
   // 이 결정이 겨누는 실제 상황. 추적한 12마리 중 열을 잡고, 목록 밖 두 마리로 한도를 채운 경우.
   it('수동 모드: 추적 목록 밖 처치로 한도를 채워도 목록의 미처치 보스가 마감이 된다', () => {
-    const tracked = { 'ocid-1': [bossItem(WEEKLY_NAMES[0], '하드')] }
+    const tracked = { 'ocid-1': [bossItem(WEEKLY_NAMES[0], 'hard')] }
     const view = character({ weeklyBosses: clearedBosses(WEEKLY_BOSS_CLEAR_LIMIT) })
 
     const entry = displayedBosses(view, 'weekly', 'manual', tracked).find(
-      (item) => item.matchedBossName === WEEKLY_NAMES[0],
+      (item) => item.bossKey === bossKeyOfApiName(WEEKLY_NAMES[0]),
     )
 
     expect(entry?.isWeeklyLimitClosed).toBe(true)

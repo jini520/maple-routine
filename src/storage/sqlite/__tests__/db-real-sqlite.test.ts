@@ -14,7 +14,9 @@ import { closeBossProfitDb, getBossProfitDb } from '../db'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 import { getIncomeRecordsBetween, insertIncomeRecord, type IncomeRecord } from '../../income'
 import { getSpendRecordsBetween } from '../../spend'
-import { getAllBossDropRecords } from '../../boss-drops'
+import { getAllBossDropRecords, replaceBossDropRecords } from '../../boss-drops'
+import { getBossPartySettings, setBossPartySize } from '../../boss-party-settings'
+import { getBossProfitRecords, upsertBossProfitRecord } from '../../boss-profit'
 import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
 
 /**
@@ -384,7 +386,7 @@ describe('버전 이관: 가계부 기록에 key 를 채운다', () => {
   it('새 DB 는 이관할 것 없이 마지막 버전으로 선다', async () => {
     await getBossProfitDb()
 
-    expect(userVersion(real)).toBe(3)
+    expect(userVersion(real)).toBe(4)
   })
 
   it('옛 지출 기록의 이름으로 갈래 · 항목 · 형태별 항목 · 종류 key 를 채운다', async () => {
@@ -403,7 +405,7 @@ describe('버전 이관: 가계부 기록에 key 를 채운다', () => {
     })
     expect(byId.get('reward-split')).toMatchObject({ itemKey: null, formItemKeys: { exp: 'nightmare_paradise_2' } })
     expect(byId.get('purchase')).toMatchObject({ category: 'item_purchase', itemKey: null, itemKind: 'consumable' })
-    expect(userVersion(real)).toBe(3)
+    expect(userVersion(real)).toBe(4)
   })
 
   // 못 찾은 이름은 지우지 않는다. key 만 비고 그때 이름으로 선다.
@@ -502,7 +504,7 @@ describe('버전 이관: 드롭 기록에 아이템 key 를 채운다', () => {
       ['source_of_suffering', 'chaos_pitch_black_accessory_box'],
       [null, null],
     ])
-    expect(userVersion(real)).toBe(3)
+    expect(userVersion(real)).toBe(4)
   })
 
   // 못 찾은 이름은 지우지 않는다. key 만 비고 그때 이름과 가격이 남는다.
@@ -514,5 +516,143 @@ describe('버전 이관: 드롭 기록에 아이템 key 를 채운다', () => {
     const rows = await getAllBossDropRecords(['ocid-1'])
     expect(rows).toHaveLength(5)
     expect(rows[4]).toMatchObject({ itemKey: null, itemName: '익셉셔널 해머', boxOriginKey: null, boxOrigin: null })
+  })
+})
+
+// 기본키에 보스 이름과 한글 난이도가 든 표 둘. 드롭 표는 위 OLD_DROP_TABLE 이다.
+const OLD_PROFIT_TABLE = `
+  CREATE TABLE boss_profit_records (
+    ocid TEXT NOT NULL,
+    boss TEXT NOT NULL,
+    difficulty TEXT NOT NULL,
+    cycle TEXT NOT NULL,
+    period_key TEXT NOT NULL,
+    party_size INTEGER NOT NULL,
+    price_meso INTEGER NOT NULL,
+    payout_meso INTEGER NOT NULL,
+    recorded_at TEXT NOT NULL,
+    world TEXT,
+    defeated_on TEXT,
+    PRIMARY KEY (ocid, boss, difficulty, period_key)
+  )
+`
+
+const OLD_PARTY_TABLE = `
+  CREATE TABLE boss_party_settings (
+    ocid TEXT NOT NULL,
+    boss TEXT NOT NULL,
+    difficulty TEXT NOT NULL,
+    party_size INTEGER NOT NULL,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (ocid, boss, difficulty)
+  )
+`
+
+describe('버전 이관: 보스 기록 표의 기본키를 보스 key 로 다시 만든다', () => {
+  function seedOldBossTables(): void {
+    real.inspect((db) => {
+      db.exec(OLD_PROFIT_TABLE)
+      const profit = db.prepare(
+        `INSERT INTO boss_profit_records (ocid, boss, difficulty, cycle, period_key, party_size, price_meso, payout_meso, recorded_at, world, defeated_on)
+         VALUES ('ocid-1', ?, ?, ?, ?, 2, 1000, 500, '2026-09-11T00:00:00.000Z', '챌린저스2', ?)`,
+      )
+      // 옛 행에는 데이터 표기(`검은마법사`)와 API 원문(`블러디퀸`)이 섞여 있다.
+      profit.run('루시드', '하드', 'weekly', '2026-09-10', '2026-09-12')
+      profit.run('검은마법사', '익스트림', 'monthly', '2026-09', null)
+      profit.run('블러디퀸', '카오스', 'weekly', '2026-09-10', null)
+      // 보스 표에 없는 보스. 기본키를 못 채워 옮기지 않는다.
+      profit.run('카이', '노멀', 'weekly', '2026-09-10', null)
+
+      db.exec(OLD_PARTY_TABLE)
+      const party = db.prepare(
+        `INSERT INTO boss_party_settings (ocid, boss, difficulty, party_size, updated_at) VALUES ('ocid-1', ?, ?, ?, '2026-09-11T00:00:00.000Z')`,
+      )
+      party.run('시즌 보스 메이린', '하드', 1)
+      party.run('카이', '노멀', 3)
+
+      db.exec(OLD_DROP_TABLE)
+      db.prepare(
+        `INSERT INTO boss_drop_records (ocid, boss, difficulty, period_key, drop_index, category, item_name, quantity, recorded_at, price_state, price_meso, price_share)
+         VALUES ('ocid-1', '루시드', '하드', '2026-09-10', 0, 'equipment', '몽환의 벨트', 1, '2026-09-11T00:00:00.000Z', 'entered', 9000, 2)`,
+      ).run()
+    })
+  }
+
+  it('수익 기록의 보스 이름으로 보스 key 를 채우고 난이도를 key 로 옮긴다. 이름 · 월드 · 날짜는 그대로다', async () => {
+    seedOldBossTables()
+
+    await getBossProfitDb()
+
+    const rows = await getBossProfitRecords(['ocid-1'], ['2026-09-10', '2026-09'])
+    expect(
+      rows.map((row) => [row.bossKey, row.boss, row.difficulty, row.world, row.defeatedOn]).sort(),
+    ).toEqual(
+      [
+        ['black_mage', '검은마법사', 'extreme', '챌린저스2', null],
+        ['crimson_queen', '블러디퀸', 'chaos', '챌린저스2', null],
+        ['lucid', '루시드', 'hard', '챌린저스2', '2026-09-12'],
+      ].sort(),
+    )
+    expect(userVersion(real)).toBe(4)
+  })
+
+  it('파티 설정과 드롭 기록도 보스 key 로 옮기고, 드롭의 아이템 key 와 가격을 지킨다', async () => {
+    seedOldBossTables()
+
+    await getBossProfitDb()
+
+    expect((await getBossPartySettings(['ocid-1'])).map(({ bossKey, difficulty, partySize }) => [bossKey, difficulty, partySize])).toEqual([
+      ['meirin', 'hard', 1],
+    ])
+    const [drop] = await getAllBossDropRecords(['ocid-1'])
+    expect(drop).toMatchObject({
+      bossKey: 'lucid',
+      boss: '루시드',
+      difficulty: 'hard',
+      itemKey: 'dreamy_belt',
+      priceState: 'entered',
+      priceMeso: 9000,
+      priceShare: 2,
+    })
+  })
+
+  // 새 기본키가 보스 key 라 이름 칸이 달라도 같은 행을 고친다.
+  it('다시 만든 표는 보스 key 로 행을 가른다', async () => {
+    seedOldBossTables()
+    await getBossProfitDb()
+
+    await upsertBossProfitRecord({
+      ocid: 'ocid-1',
+      bossKey: 'lucid',
+      boss: '루시드',
+      difficulty: 'hard',
+      cycle: 'weekly',
+      periodKey: '2026-09-10',
+      partySize: 3,
+      priceMeso: 1000,
+      payoutMeso: 333,
+      recordedAt: '2026-09-12T00:00:00.000Z',
+      world: null,
+    })
+    await setBossPartySize('ocid-1', 'meirin', 'hard', 2, '2026-09-12T00:00:00.000Z')
+    await replaceBossDropRecords('ocid-1', 'lucid', 'hard', '2026-09-10', [], '2026-09-12T00:00:00.000Z')
+
+    const lucid = (await getBossProfitRecords(['ocid-1'], ['2026-09-10'])).filter((row) => row.bossKey === 'lucid')
+    expect(lucid).toHaveLength(1)
+    expect(lucid[0]).toMatchObject({ partySize: 3, world: '챌린저스2', defeatedOn: '2026-09-12' })
+    expect((await getBossPartySettings(['ocid-1'])).map((setting) => setting.partySize)).toEqual([2])
+    expect(await getAllBossDropRecords(['ocid-1'])).toEqual([])
+  })
+
+  it('새 DB 는 새 모양 표로 서고 옮길 것 없이 마지막 버전이다', async () => {
+    await getBossProfitDb()
+
+    const columns = real.inspect((db) =>
+      (db.prepare('PRAGMA table_info(boss_profit_records)').all() as { name: string; pk: number }[])
+        .filter((column) => column.pk > 0)
+        .map((column) => column.name),
+    )
+    expect(columns).toEqual(['ocid', 'boss_key', 'difficulty', 'period_key'])
+    expect(userVersion(real)).toBe(4)
   })
 })

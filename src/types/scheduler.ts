@@ -1,4 +1,5 @@
-export const BOSS_DIFFICULTIES = ['이지', '노멀', '하드', '카오스', '익스트림'] as const
+/** 난이도 key. 넥슨 API 의 `difficulty` 값 그대로이고 차례가 곧 정렬 순서다. 한글 이름은 `constants/domain/boss-difficulty` 가 든다. */
+export const BOSS_DIFFICULTIES = ['easy', 'normal', 'hard', 'chaos', 'extreme'] as const
 export type BossDifficulty = (typeof BOSS_DIFFICULTIES)[number]
 
 export const BOSS_CYCLES = ['weekly', 'monthly'] as const
@@ -23,7 +24,10 @@ export interface WeeklyContent {
 }
 
 export interface BossContent {
-  name: string
+  /** 보스 key. API 이름이 보스 표에 없으면 `null` 이고, 그 항목은 스케줄러 화면에만 선다. */
+  bossKey: string | null
+  /** API `content_name` 원문. */
+  apiName: string
   difficulty: BossDifficulty
   cycle: BossCycle
   isRegistered: boolean
@@ -71,9 +75,17 @@ export interface SharedProgressEntry {
 // (`lib/boss/manual-boss-merge`·`lib/scheduler/manual-content-merge`·`lib/boss/boss-matching`)가 core 로 오면서
 // core → app 방향 참조가 생기기 때문이다. 저장 모듈은 이 타입을 그대로
 // 재-export 하므로 기존 import 경로는 전부 그대로 쓴다.
-export interface ManualTrackedItem {
+export type ManualTrackedItem = ManualTrackedContentItem | ManualTrackedBossItem
+
+export interface ManualTrackedContentItem {
   contentName: string
-  kind: 'daily' | 'weekly' | 'boss'
-  difficulty?: string // kind: 'boss'일 때만 사용(보스명만으로는 유일하지 않음)
-  maxCount?: number // 컨텐츠이고 카운트형일 때만. 템플릿(scheduler-content-template.json)의 확정값을 복사해 저장
+  kind: 'daily' | 'weekly'
+  maxCount?: number // 카운트형일 때만. 템플릿(scheduler-content-template.json)의 확정값을 복사해 저장
+}
+
+/** 보스는 이름만으로 유일하지 않아 난이도까지 든다. */
+export interface ManualTrackedBossItem {
+  kind: 'boss'
+  bossKey: string
+  difficulty: BossDifficulty
 }
