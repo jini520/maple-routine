@@ -1,6 +1,7 @@
 import { Pressable, View } from 'react-native'
 
 import { Badge } from '../../atoms'
+import { DIFFICULTY_NAME } from '../../../constants/domain/boss-difficulty'
 import { selectionFeedback } from '../../../native/haptics'
 import type { BossDifficulty } from '../../../types'
 
@@ -29,7 +30,7 @@ export function DifficultySegment(props: {
             className={`rounded-full${isSelected ? '' : ' opacity-40'}`}
           >
             <Badge variant={difficulty}>
-              {difficulty}
+              {DIFFICULTY_NAME[difficulty]}
             </Badge>
           </Pressable>
         )

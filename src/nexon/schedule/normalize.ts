@@ -3,20 +3,18 @@ import type {
   DailyContent,
   NexonBossContentWire,
   NexonDailyContentWire,
-  NexonRawDifficulty,
   NexonSchedulerCharacterStateWire,
   NexonWeeklyContentWire,
   SchedulerCharacterState,
   WeeklyContent,
 } from '../../types'
 
-const DIFFICULTY_MAP: Record<NexonRawDifficulty, BossContent['difficulty']> = {
-  easy: '이지',
-  normal: '노멀',
-  hard: '하드',
-  chaos: '카오스',
-  extreme: '익스트림',
-}
+/**
+ * API 보스 이름에서 보스 key. 못 찾으면 `null` 이다.
+ *
+ * 부르는 쪽이 넘긴다. `nexon/` 은 `src/data/` 를 몰라야 응답 모양만으로 테스트할 수 있어서다.
+ */
+export type BossKeyResolver = (apiName: string) => string | null
 
 function normalizeDailyContent(wire: NexonDailyContentWire): DailyContent {
   return {
@@ -49,7 +47,11 @@ function normalizeWeeklyContent(wire: NexonWeeklyContentWire): WeeklyContent {
 // 선택 로직에서 쓰인다. ownComplete는 승격 없이 이 항목 자신의 원본 complete_flag를 그대로
 // 보존한다. 보스 수익 계산기가 "실제로 어느 난이도를 처치했는지" 판정할 때 isComplete만으론
 // 승격된 건지 진짜 완료인지 구분할 수 없어서 별도로 필요하다.
-function normalizeBossContent(wire: NexonBossContentWire, completedNames: Set<string>): BossContent | null {
+function normalizeBossContent(
+  wire: NexonBossContentWire,
+  completedNames: Set<string>,
+  resolveBossKey: BossKeyResolver,
+): BossContent | null {
   if (wire.cycle === 'bossDaily') {
     return null
   }
@@ -58,8 +60,10 @@ function normalizeBossContent(wire: NexonBossContentWire, completedNames: Set<st
   const ownComplete = wire.complete_flag === 'true'
 
   return {
-    name: wire.content_name,
-    difficulty: DIFFICULTY_MAP[wire.difficulty],
+    bossKey: resolveBossKey(wire.content_name),
+    apiName: wire.content_name,
+    // API 난이도 값이 곧 난이도 key 다.
+    difficulty: wire.difficulty,
     cycle: wire.cycle === 'bossWeekly' ? 'weekly' : 'monthly',
     isRegistered,
     isComplete: ownComplete || (isRegistered && completedNames.has(wire.content_name)),
@@ -69,6 +73,7 @@ function normalizeBossContent(wire: NexonBossContentWire, completedNames: Set<st
 
 export function normalizeSchedulerCharacterState(
   wire: NexonSchedulerCharacterStateWire,
+  resolveBossKey: BossKeyResolver,
 ): SchedulerCharacterState {
   // 캐릭터가 해당 리셋 주기 이후 접속하지 않으면 이 필드들이 비거나(빈 배열) 아예
   // 없이(undefined) 온다. 두 경우를 동일하게 "이 섹션은 지금 신뢰할 수 없음"으로 취급한다.
@@ -96,7 +101,7 @@ export function normalizeSchedulerCharacterState(
     dailyContents: dailyContentsWire.map(normalizeDailyContent),
     weeklyContents: weeklyContentsWire.map(normalizeWeeklyContent),
     bossContents: bossContentsWire
-      .map((boss) => normalizeBossContent(boss, completedBossNames))
+      .map((boss) => normalizeBossContent(boss, completedBossNames, resolveBossKey))
       .filter((content): content is BossContent => content !== null),
     isDailyStale: dailyContentsWire.length === 0,
     isWeeklyStale: weeklyContentsWire.length === 0,

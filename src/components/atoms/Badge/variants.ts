@@ -46,7 +46,7 @@ function dropShadow(color: string): TextStyle {
  * @param borderWidth 테두리 폭(기본 1). 익스트림만 1.5 다. 이 값만큼 여백에서 뺀다
  *
  * @example
- * 노멀: difficulty(['#5cc2dd', '#2b93b0'], '#1f7690', { color: '#ffffff' })
+ * normal: difficulty(['#5cc2dd', '#2b93b0'], '#1f7690', { color: '#ffffff' })
  */
 function difficulty(
   gradient: readonly [string, string],
@@ -57,7 +57,7 @@ function difficulty(
   return { gradient, border: { borderWidth, borderColor }, textStyle, weight: 'bold', text: 'text-chip-sm' }
 }
 
-/** 색·테두리·그림자 17종. 난이도 이름이 그대로 키라 `variant={boss.difficulty}` 로 쓴다. */
+/** 색·테두리·그림자 17종. 난이도 key 가 그대로 키라 `variant={boss.difficulty}` 로 쓴다. 글자는 `DIFFICULTY_NAME` 이다. */
 export const BADGE_VARIANT = {
   primary: { className: 'bg-primary-tint text-primary-ink' },
   third: { className: 'bg-third-tint text-third-ink' },
@@ -71,11 +71,11 @@ export const BADGE_VARIANT = {
   epicDungeon: { className: 'bg-[#4DD2FF]/20 text-[#4DD2FF]' },
   mapleUnion: { className: 'bg-[#FFC93C]/20 text-[#FFC93C]' },
   guild: { className: 'bg-[#FF5C5C]/20 text-[#FF5C5C]' },
-  이지: difficulty(['#aab4bc', '#7d8891'], '#67717a', { color: '#f5f6f7', ...dropShadow('rgba(0,0,0,0.3)') }),
-  노멀: difficulty(['#5cc2dd', '#2b93b0'], '#1f7690', { color: '#ffffff', ...dropShadow('rgba(0,0,0,0.25)') }),
-  하드: difficulty(['#e784a6', '#c04b74'], '#9c3a5c', { color: '#ffffff', ...dropShadow('rgba(0,0,0,0.25)') }),
-  카오스: difficulty(['#3c3c3c', '#221f1f'], '#caa87f', { color: '#f0d8b8' }),
-  익스트림: difficulty(['#3c3c3c', '#1c1414'], '#ef5d78', { color: '#f4794f' }, 1.5),
+  easy: difficulty(['#aab4bc', '#7d8891'], '#67717a', { color: '#f5f6f7', ...dropShadow('rgba(0,0,0,0.3)') }),
+  normal: difficulty(['#5cc2dd', '#2b93b0'], '#1f7690', { color: '#ffffff', ...dropShadow('rgba(0,0,0,0.25)') }),
+  hard: difficulty(['#e784a6', '#c04b74'], '#9c3a5c', { color: '#ffffff', ...dropShadow('rgba(0,0,0,0.25)') }),
+  chaos: difficulty(['#3c3c3c', '#221f1f'], '#caa87f', { color: '#f0d8b8' }),
+  extreme: difficulty(['#3c3c3c', '#1c1414'], '#ef5d78', { color: '#f4794f' }, 1.5),
 } as const satisfies Record<string, BadgeVariantStyle>
 
 /**
@@ -95,11 +95,11 @@ export const BADGE_WEIGHT = {
   bold: 'font-bold',
 } as const
 
-/** 색 이름. 난이도는 `이지`·`노멀`·`하드`·`카오스`·`익스트림` 이 그대로 키다. */
+/** 색 이름. 난이도는 key(`easy`·`normal`·`hard`·`chaos`·`extreme`)가 그대로 키다. */
 export type BadgeVariant = keyof typeof BADGE_VARIANT
 /** `default` 아니면 `mini`. 높이가 아니라 여백과 글자 크기가 갈린다. */
 export type BadgeSize = keyof typeof BADGE_SIZE
 /** variant 의 기본 두께를 덮는 값. */
 export type BadgeWeight = keyof typeof BADGE_WEIGHT
-/** `variant` 로 바로 쓸 수 있게 난이도 이름이 그대로 키다. */
+/** `variant` 로 바로 쓸 수 있게 난이도 key 가 그대로 키다. */
 export type BadgeDifficulty = BossDifficulty & BadgeVariant

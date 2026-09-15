@@ -6,6 +6,7 @@ import contentTemplate from '../scheduler-content-template.json'
 import contentCatalog from '../scheduler-content-catalog.json'
 import spendCatalog from '../spend-catalog.json'
 import { DROP_CATEGORIES } from '../../types/drops'
+import { BOSS_DIFFICULTIES } from '../../types/scheduler'
 
 const dropNameByKey = new Map(dropItemTable.items.map((item) => [item.key, item.name]))
 
@@ -18,7 +19,7 @@ function weeklyBossKeys(): Set<string> {
   for (const section of ['weekly', 'eventWeekly', 'monthly'] as const) {
     for (const entry of weeklyBosses[section]) {
       for (const difficulty of entry.difficulties) {
-        keys.add(key(entry.boss, difficulty))
+        keys.add(key(entry.key, difficulty))
       }
     }
   }
@@ -41,12 +42,12 @@ function findDuplicates(keys: string[]): string[] {
 // 남은 여섯은 전부 "상세 보상 정보 자체가 제공되지 않은" 구보스다. 벨로나 세 조합은
 // 출시분 반영으로 빠졌다. 이제 이 목록에 "미출시" 사유는 없다.
 const KNOWN_MISSING_DROP_ENTRIES = new Set([
-  key('자쿰', '카오스'),
-  key('매그너스', '하드'),
-  key('반반', '카오스'),
-  key('피에르', '카오스'),
-  key('블러디 퀸', '카오스'),
-  key('벨룸', '카오스'),
+  key('zakum', 'chaos'), // 자쿰
+  key('magnus', 'hard'), // 매그너스
+  key('von_bon', 'chaos'), // 반반
+  key('pierre', 'chaos'), // 피에르
+  key('crimson_queen', 'chaos'), // 블러디퀸
+  key('vellum', 'chaos'), // 벨룸
 ])
 
 describe('게임 레퍼런스 데이터 정합성', () => {
@@ -56,7 +57,7 @@ describe('게임 레퍼런스 데이터 정합성', () => {
     for (const section of ['weekly', 'eventWeekly', 'monthly'] as const) {
       for (const entry of weeklyBosses[section]) {
         for (const difficulty of entry.difficulties) {
-          allWeeklyKeys.push(key(entry.boss, difficulty))
+          allWeeklyKeys.push(key(entry.key, difficulty))
         }
       }
     }
@@ -184,7 +185,7 @@ describe('게임 레퍼런스 데이터 정합성', () => {
         const requiredLevels = (entry as { requiredLevels?: Record<string, number> }).requiredLevels
         if (requiredLevels === undefined) continue
         for (const difficulty of Object.keys(requiredLevels)) {
-          if (!entry.difficulties.includes(difficulty)) invalid.push(key(entry.boss, difficulty))
+          if (!entry.difficulties.includes(difficulty)) invalid.push(key(entry.key, difficulty))
         }
       }
     }
@@ -198,7 +199,7 @@ describe('게임 레퍼런스 데이터 정합성', () => {
         const requiredLevels = (entry as { requiredLevels?: Record<string, number> }).requiredLevels
         if (requiredLevels === undefined) continue
         for (const [difficulty, level] of Object.entries(requiredLevels)) {
-          if (!Number.isInteger(level) || level <= 0) invalid.push(key(entry.boss, difficulty))
+          if (!Number.isInteger(level) || level <= 0) invalid.push(key(entry.key, difficulty))
         }
       }
     }
@@ -213,13 +214,31 @@ describe('게임 레퍼런스 데이터 정합성', () => {
     expect(invalid).toEqual([])
   })
 
-  it('eventWeekly의 apiAlias는 문자열이고 공백을 제거해도 boss 필드와 달라야 한다(별칭일 이유가 있어야 함)', () => {
-    for (const entry of weeklyBosses.eventWeekly) {
-      const apiAlias = (entry as { apiAlias?: string }).apiAlias
-      if (apiAlias === undefined) continue
-      expect(typeof apiAlias).toBe('string')
-      expect(apiAlias.replace(/\s/g, '')).not.toBe(entry.boss.replace(/\s/g, ''))
-    }
+  it('보스 key 는 snake_case 이고 겹치지 않는다', () => {
+    const keys = [...weeklyBosses.weekly, ...weeklyBosses.eventWeekly, ...weeklyBosses.monthly].map((entry) => entry.key)
+    expect(keys.filter((bossKey) => !/^[a-z0-9]+(_[a-z0-9]+)*$/.test(bossKey))).toEqual([])
+    expect(findDuplicates(keys)).toEqual([])
+  })
+
+  // API 이름은 NFC 뒤 공백을 지우고 맞춘다. 지운 뒤 두 이름이 같으면 한 응답이 어느 보스인지 갈리지 않는다.
+  it('보스 이름은 NFC 뒤 공백을 지워도 겹치지 않는다', () => {
+    const names = [...weeklyBosses.weekly, ...weeklyBosses.eventWeekly, ...weeklyBosses.monthly].map((entry) =>
+      entry.name.normalize('NFC').replace(/\s+/g, ''),
+    )
+    expect(findDuplicates(names)).toEqual([])
+  })
+
+  it('보스 난이도 · 가격 · 드롭 표의 난이도는 난이도 key 다', () => {
+    const difficulties = [
+      ...[...weeklyBosses.weekly, ...weeklyBosses.eventWeekly, ...weeklyBosses.monthly].flatMap(
+        (entry) => entry.difficulties,
+      ),
+      ...bossCrystalPrices.prices.map((price) => price.difficulty),
+      ...itemDropTable.rewards.map((reward) => reward.difficulty),
+    ]
+    expect(difficulties.filter((difficulty) => !(BOSS_DIFFICULTIES as readonly string[]).includes(difficulty))).toEqual(
+      [],
+    )
   })
 })
 
@@ -274,7 +293,7 @@ describe('기간을 든 줄', () => {
 
   // 경계가 기간 가운데에 서면 첫날로 판정하는 규칙이 그 기간의 처치 일부에 틀린 가격을 준다.
   it('가격의 경계는 그 보스의 기간 경계에 선다. 주간은 목요일, 월간은 1일이다', () => {
-    const monthlyBosses = new Set(weeklyBosses.monthly.map((entry) => entry.boss))
+    const monthlyBosses = new Set(weeklyBosses.monthly.map((entry) => entry.key))
     const misplaced: string[] = []
     for (const row of priceRows) {
       for (const date of [row.from, row.until]) {

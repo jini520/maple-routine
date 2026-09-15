@@ -62,8 +62,9 @@ const 그주의날 = getPeriodDateKeys('weekly', PERIOD)[2]
 function record(overrides: Partial<BossDropRecord> = {}): BossDropRecord {
   return {
     ocid: 'ocid-1',
+    bossKey: 'lotus',
     boss: '스우',
-    difficulty: '하드',
+    difficulty: 'hard',
     periodKey: PERIOD,
     dropIndex: 0,
     category: 'equipment',
@@ -118,7 +119,7 @@ describe('load', () => {
     )
     expect(groups).toHaveLength(1)
     expect(groups[0].characterName).toBe('지내우시')
-    expect(groups[0].entries[0].boss).toBe('스우')
+    expect(groups[0].entries[0].bossName).toBe('스우')
   })
 
   // 여기서 못 고치면 보스 수익과 가계부가 그 건수를 계속 `미입력 n` 으로 세는데 고칠 길이 없다.
@@ -136,7 +137,7 @@ describe('load', () => {
 
   it('분배 인원 기본값은 그 행의 파티원 수다. 기록이 없으면 1인', async () => {
     getBossProfitRecordsMock.mockResolvedValue([
-      { ocid: 'ocid-1', boss: '스우', difficulty: '하드', periodKey: PERIOD, partySize: 3 },
+      { ocid: 'ocid-1', bossKey: 'lotus', boss: '스우', difficulty: 'hard', periodKey: PERIOD, partySize: 3 },
     ])
     const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
 
@@ -169,12 +170,13 @@ describe('load', () => {
 // 세워야 한다. 안 그러면 그 드롭에 닿을 길이 앱 안에 없다.
 describe('load: 그 주에 서는 월간 보스', () => {
   const 월간드롭 = (overrides: Partial<BossDropRecord> = {}): BossDropRecord =>
-    record({ boss: '검은 마법사', difficulty: '하드', periodKey: MONTH, ...overrides })
+    record({ bossKey: 'black_mage', boss: '검은 마법사', difficulty: 'hard', periodKey: MONTH, ...overrides })
 
   const 월간수익기록 = (defeatedOn: string | null) => ({
     ocid: 'ocid-1',
+    bossKey: 'black_mage',
     boss: '검은 마법사',
-    difficulty: '하드',
+    difficulty: 'hard',
     periodKey: MONTH,
     cycle: 'monthly' as const,
     partySize: 1,
@@ -201,7 +203,7 @@ describe('load: 그 주에 서는 월간 보스', () => {
     await useDropPriceStore.getState().load(PERIOD)
 
     const entries = useDropPriceStore.getState().groups.flatMap((group) => group.entries)
-    expect(entries.map((entry) => entry.boss)).toEqual(['검은 마법사'])
+    expect(entries.map((entry) => entry.bossName)).toEqual(['검은 마법사'])
     expect(entries[0].periodKey).toBe(MONTH)
   })
 
@@ -392,7 +394,7 @@ describe('savePrice · excludePrice', () => {
     await useDropPriceStore.getState().savePrice(target, 1_200_000_000, 1)
 
     const [, boss, difficulty, periodKey, drops] = replaceBossDropRecordsMock.mock.calls[0]
-    expect([boss, difficulty, periodKey]).toEqual(['스우', '하드', PERIOD])
+    expect([boss, difficulty, periodKey]).toEqual(['lotus', 'hard', PERIOD])
     // 같은 그룹의 다른 드롭은 손대지 않는다. replace-all 이라 함께 넘겨야 사라지지 않는다.
     expect(drops).toHaveLength(2)
     expect(drops[0].priceState).toBeUndefined()
@@ -451,7 +453,7 @@ describe('보스 수익 스토어 동기화', () => {
 
     await useDropPriceStore.getState().savePrice(target, 6_000_000_000, 2)
 
-    expect(useBossProfitStore.getState().dropsByRowKey[`ocid-1|스우|하드|${PERIOD}`]).toEqual([
+    expect(useBossProfitStore.getState().dropsByRowKey[`ocid-1|lotus|hard|${PERIOD}`]).toEqual([
       expect.objectContaining({ priceState: 'entered', priceMeso: 6_000_000_000, priceShare: 2 }),
     ])
   })
@@ -465,7 +467,7 @@ describe('보스 수익 스토어 동기화', () => {
     await useDropPriceStore.getState().excludePrice(target)
 
     expect(
-      useBossProfitStore.getState().dropsByRowKey[`ocid-1|스우|하드|${PERIOD}`][0].priceState,
+      useBossProfitStore.getState().dropsByRowKey[`ocid-1|lotus|hard|${PERIOD}`][0].priceState,
     ).toBe('excluded')
   })
 
@@ -478,6 +480,6 @@ describe('보스 수익 스토어 동기화', () => {
 
     await expect(useDropPriceStore.getState().savePrice(target, 1, 1)).rejects.toThrow()
 
-    expect(useBossProfitStore.getState().dropsByRowKey[`ocid-1|스우|하드|${PERIOD}`]).toBeUndefined()
+    expect(useBossProfitStore.getState().dropsByRowKey[`ocid-1|lotus|hard|${PERIOD}`]).toBeUndefined()
   })
 })

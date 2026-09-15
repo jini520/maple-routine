@@ -21,8 +21,9 @@ function row(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     characterName: '지내우시',
     imageUrl: null,
     world: null,
-    boss: '스우',
-    difficulty: '하드',
+    bossKey: 'lotus',
+    bossName: '스우',
+    difficulty: 'hard',
     cycle: 'weekly',
     periodKey: PERIOD,
     periodLabel: '이번 주',
@@ -39,8 +40,9 @@ function row(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
 function record(overrides: Partial<BossDropRecord> = {}): BossDropRecord {
   return {
     ocid: 'ocid-1',
+    bossKey: 'lotus',
     boss: '스우',
-    difficulty: '하드',
+    difficulty: 'hard',
     periodKey: PERIOD,
     dropIndex: 0,
     category: 'equipment',
@@ -70,7 +72,7 @@ describe('loadDropsByRowKey: 가격 생존', () => {
 
     const map = await loadDropsByRowKey(['ocid-1'], [row()], new Date('2026-08-10T00:00:00Z'))
 
-    expect(map[`ocid-1|스우|하드|${PERIOD}`]).toEqual([
+    expect(map[`ocid-1|lotus|hard|${PERIOD}`]).toEqual([
       expect.objectContaining({
         itemKey: 'loose_control_machine_mark',
         itemName: '루즈 컨트롤 머신 마크',
@@ -89,7 +91,7 @@ describe('loadDropsByRowKey: 가격 생존', () => {
 
     const map = await loadDropsByRowKey(['ocid-1'], [row()], new Date('2026-08-10T00:00:00Z'))
 
-    expect(map[`ocid-1|스우|하드|${PERIOD}`][0].priceState).toBe('excluded')
+    expect(map[`ocid-1|lotus|hard|${PERIOD}`][0].priceState).toBe('excluded')
   })
 
   it('prune 이 DB에 다시 쓸 때도 살아남은 드롭의 가격을 함께 쓴다', async () => {
@@ -130,7 +132,7 @@ describe('loadDropsByRowKey: 가격 생존', () => {
 
     const map = await loadDropsByRowKey(['ocid-1'], [row()], new Date('2026-08-10T00:00:00Z'))
 
-    expect(map[`ocid-1|스우|하드|${PERIOD}`].map((drop) => drop.itemName)).toEqual([
+    expect(map[`ocid-1|lotus|hard|${PERIOD}`].map((drop) => drop.itemName)).toEqual([
       '루즈 컨트롤 머신 마크',
       '익셉셔널 해머',
     ])
@@ -142,15 +144,16 @@ describe('loadDropsByRowKey: 가격 생존', () => {
 describe('loadDropsByRowKey: 기간으로 정리한다', () => {
   const 교환권 = (periodKey: string) =>
     record({
+      bossKey: 'guardian_angel_slime',
       boss: '가디언 엔젤 슬라임',
-      difficulty: '카오스',
+      difficulty: 'chaos',
       periodKey,
       category: 'consumable',
       itemKey: 'magical_weapon_scroll_voucher',
       itemName: '매지컬 무기 주문서 교환권',
       slot: null,
     })
-  const 가엔슬행 = (periodKey: string) => row({ boss: '가디언 엔젤 슬라임', difficulty: '카오스', periodKey })
+  const 가엔슬행 = (periodKey: string) => row({ bossKey: 'guardian_angel_slime', bossName: '가디언 엔젤 슬라임', difficulty: 'chaos', periodKey })
 
   it('패치 전 주의 교환권 기록은 남고 DB 에 다시 안 쓴다', async () => {
     getBossDropRecordsMock.mockResolvedValue([교환권('2026-09-10')])
@@ -158,7 +161,7 @@ describe('loadDropsByRowKey: 기간으로 정리한다', () => {
 
     const map = await loadDropsByRowKey(['ocid-1'], [가엔슬행('2026-09-10')], new Date('2026-09-12T00:00:00Z'))
 
-    expect(map['ocid-1|가디언 엔젤 슬라임|카오스|2026-09-10']).toHaveLength(1)
+    expect(map['ocid-1|guardian_angel_slime|chaos|2026-09-10']).toHaveLength(1)
     expect(replaceBossDropRecordsMock).not.toHaveBeenCalled()
   })
 

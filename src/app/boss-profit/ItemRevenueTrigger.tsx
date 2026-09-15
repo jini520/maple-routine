@@ -16,7 +16,7 @@
  * 있었으므로 같은 어포던스를 쓴다.
  *
  * @example
- * <ItemRevenueTrigger ref={itemChipRef} label={`${row.boss} 아이템 수익 확인`} isOpen={isItemPopoverOpen} onPress={toggleItemPopover}>
+ * <ItemRevenueTrigger ref={itemChipRef} label={`${row.bossName} 아이템 수익 확인`} isOpen={isItemPopoverOpen} onPress={toggleItemPopover}>
  *   {amount}
  * </ItemRevenueTrigger>
  */

@@ -1,6 +1,18 @@
 import type { NexonSchedulerCharacterStateWire } from '../../../types'
 import { normalizeSchedulerCharacterState } from '../normalize'
 
+/** 테스트용 보스 표. `nexon/` 은 보스 표를 모르고 넘겨받은 함수로 key 를 얻는다. */
+const TEST_BOSS_KEYS: Record<string, string> = {
+  '검은 마법사': 'black_mage',
+  스우: 'lotus',
+  루시드: 'lucid',
+  자쿰: 'zakum',
+}
+
+function resolve(apiName: string): string | null {
+  return TEST_BOSS_KEYS[apiName] ?? null
+}
+
 describe('normalizeSchedulerCharacterState', () => {
   const baseWire: NexonSchedulerCharacterStateWire = {
     date: '2026-07-09T00:00+09:00',
@@ -72,7 +84,7 @@ describe('normalizeSchedulerCharacterState', () => {
   }
 
   it('문자열 flag를 boolean으로, 필드명을 domain 표기로 변환한다', () => {
-    const result = normalizeSchedulerCharacterState(baseWire)
+    const result = normalizeSchedulerCharacterState(baseWire, resolve)
 
     expect(result.asOf).toBe('2026-07-09T00:00+09:00')
     expect(result.characterName).toBe('낟낟')
@@ -100,7 +112,7 @@ describe('normalizeSchedulerCharacterState', () => {
   })
 
   it('일간 quest_state 문자열을 숫자로 파싱하고 kind를 채운다', () => {
-    const result = normalizeSchedulerCharacterState(baseWire)
+    const result = normalizeSchedulerCharacterState(baseWire, resolve)
 
     expect(result.dailyContents[1]).toEqual({
       name: '[일일 퀘스트] 레헬른의 평온한 밤',
@@ -113,7 +125,7 @@ describe('normalizeSchedulerCharacterState', () => {
   })
 
   it('주간 quest_state 문자열도 일간과 동일하게 숫자로 파싱한다', () => {
-    const result = normalizeSchedulerCharacterState(baseWire)
+    const result = normalizeSchedulerCharacterState(baseWire, resolve)
 
     expect(result.weeklyContents[0]).toEqual({
       name: '에픽 던전 : 악몽선경',
@@ -126,23 +138,26 @@ describe('normalizeSchedulerCharacterState', () => {
     expect(result.weeklyContents[1].questState).toBe(0)
   })
 
-  it('difficulty 영문 표기를 한글로, cycle을 weekly/monthly로 변환한다', () => {
-    const result = normalizeSchedulerCharacterState(baseWire)
+  // API 난이도 값이 곧 난이도 key 다. 보스 key 는 넘겨받은 함수가 원문 이름으로 찾는다.
+  it('difficulty 는 영문 그대로 두고, cycle을 weekly/monthly로, 보스 key 를 resolver 로 채운다', () => {
+    const result = normalizeSchedulerCharacterState(baseWire, resolve)
 
-    const blackMage = result.bossContents.find((boss) => boss.name === '검은 마법사')
+    const blackMage = result.bossContents.find((boss) => boss.apiName === '검은 마법사')
     expect(blackMage).toEqual({
-      name: '검은 마법사',
-      difficulty: '익스트림',
+      bossKey: 'black_mage',
+      apiName: '검은 마법사',
+      difficulty: 'extreme',
       cycle: 'monthly',
       isRegistered: true,
       isComplete: true,
       ownComplete: true,
     })
 
-    const swoo = result.bossContents.find((boss) => boss.name === '스우')
+    const swoo = result.bossContents.find((boss) => boss.apiName === '스우')
     expect(swoo).toEqual({
-      name: '스우',
-      difficulty: '하드',
+      bossKey: 'lotus',
+      apiName: '스우',
+      difficulty: 'hard',
       cycle: 'weekly',
       isRegistered: true,
       isComplete: false,
@@ -151,14 +166,31 @@ describe('normalizeSchedulerCharacterState', () => {
   })
 
   it('cycle이 bossDaily인 항목은 결과의 bossContents에서 제외된다', () => {
-    const result = normalizeSchedulerCharacterState(baseWire)
+    const result = normalizeSchedulerCharacterState(baseWire, resolve)
 
-    expect(result.bossContents.find((boss) => boss.name === '힐라')).toBeUndefined()
+    expect(result.bossContents.find((boss) => boss.apiName === '힐라')).toBeUndefined()
     expect(result.bossContents).toHaveLength(2)
   })
 
+  // 새 보스가 나왔는데 보스 표를 아직 못 고친 경우다. 항목은 남기고 key 만 비운다.
+  it('resolver 가 못 찾는 보스는 bossKey 가 null 이고 API 원문 이름을 든다', () => {
+    const result = normalizeSchedulerCharacterState(
+      {
+        ...baseWire,
+        boss_contents: [
+          { content_name: '새 보스', difficulty: 'normal', cycle: 'bossWeekly', registration_flag: 'true', complete_flag: 'false' },
+        ],
+      },
+      resolve,
+    )
+
+    expect(result.bossContents).toEqual([
+      expect.objectContaining({ bossKey: null, apiName: '새 보스', difficulty: 'normal' }),
+    ])
+  })
+
   it('섹션에 내용이 있으면 stale 플래그가 전부 false다', () => {
-    const result = normalizeSchedulerCharacterState(baseWire)
+    const result = normalizeSchedulerCharacterState(baseWire, resolve)
 
     expect(result.isDailyStale).toBe(false)
     expect(result.isWeeklyStale).toBe(false)
@@ -187,12 +219,14 @@ describe('normalizeSchedulerCharacterState: 등록 난이도 ≠ 처치 난이�
         { content_name: '루시드', difficulty: 'easy', cycle: 'bossWeekly', registration_flag: 'true', complete_flag: 'false' },
         { content_name: '루시드', difficulty: 'normal', cycle: 'bossWeekly', registration_flag: 'false', complete_flag: 'true' },
       ]),
+      resolve,
     )
 
-    const easy = result.bossContents.find((boss) => boss.difficulty === '이지')
+    const easy = result.bossContents.find((boss) => boss.difficulty === 'easy')
     expect(easy).toEqual({
-      name: '루시드',
-      difficulty: '이지',
+      bossKey: 'lucid',
+      apiName: '루시드',
+      difficulty: 'easy',
       cycle: 'weekly',
       isRegistered: true,
       isComplete: true,
@@ -206,10 +240,11 @@ describe('normalizeSchedulerCharacterState: 등록 난이도 ≠ 처치 난이�
         { content_name: '루시드', difficulty: 'easy', cycle: 'bossWeekly', registration_flag: 'true', complete_flag: 'false' },
         { content_name: '루시드', difficulty: 'normal', cycle: 'bossWeekly', registration_flag: 'false', complete_flag: 'true' },
       ]),
+      resolve,
     )
 
-    const easy = result.bossContents.find((boss) => boss.difficulty === '이지')
-    const normal = result.bossContents.find((boss) => boss.difficulty === '노멀')
+    const easy = result.bossContents.find((boss) => boss.difficulty === 'easy')
+    const normal = result.bossContents.find((boss) => boss.difficulty === 'normal')
     // isComplete(카드 뱃지용)는 둘 다 true(이지는 승격, 노멀은 원본)지만, ownComplete는 실제로
     // 처치한 노멀만 true다. 보스 수익 계산기가 이 필드로 등록 난이도(이지)가 아니라 실제
     // 처치 난이도(노멀)를 골라낼 수 있다.
@@ -225,21 +260,24 @@ describe('normalizeSchedulerCharacterState: 등록 난이도 ≠ 처치 난이�
         { content_name: '루시드', difficulty: 'normal', cycle: 'bossWeekly', registration_flag: 'false', complete_flag: 'false' },
         { content_name: '루시드', difficulty: 'hard', cycle: 'bossWeekly', registration_flag: 'false', complete_flag: 'true' },
       ]),
+      resolve,
     )
 
-    const normal = result.bossContents.find((boss) => boss.difficulty === '노멀')
-    const hard = result.bossContents.find((boss) => boss.difficulty === '하드')
+    const normal = result.bossContents.find((boss) => boss.difficulty === 'normal')
+    const hard = result.bossContents.find((boss) => boss.difficulty === 'hard')
     expect(normal).toEqual({
-      name: '루시드',
-      difficulty: '노멀',
+      bossKey: 'lucid',
+      apiName: '루시드',
+      difficulty: 'normal',
       cycle: 'weekly',
       isRegistered: false,
       isComplete: false,
       ownComplete: false,
     })
     expect(hard).toEqual({
-      name: '루시드',
-      difficulty: '하드',
+      bossKey: 'lucid',
+      apiName: '루시드',
+      difficulty: 'hard',
       cycle: 'weekly',
       isRegistered: false,
       isComplete: true,
@@ -253,14 +291,16 @@ describe('normalizeSchedulerCharacterState: 등록 난이도 ≠ 처치 난이�
         { content_name: '힐라', difficulty: 'hard', cycle: 'bossDaily', registration_flag: 'true', complete_flag: 'true' },
         { content_name: '힐라', difficulty: 'normal', cycle: 'bossWeekly', registration_flag: 'true', complete_flag: 'false' },
       ]),
+      resolve,
     )
 
     // bossDaily 항목은 결과에서 제외되고(기존 정책), 무관한 그 완료가 bossWeekly 항목을
     // 잘못 승격시키지도 않아야 한다. 실제로는 노멀 힐라를 처치하지 않았다.
-    const weeklyHilla = result.bossContents.find((boss) => boss.name === '힐라')
+    const weeklyHilla = result.bossContents.find((boss) => boss.apiName === '힐라')
     expect(weeklyHilla).toEqual({
-      name: '힐라',
-      difficulty: '노멀',
+      bossKey: null,
+      apiName: '힐라',
+      difficulty: 'normal',
       cycle: 'weekly',
       isRegistered: true,
       isComplete: false,
@@ -273,6 +313,7 @@ describe('normalizeSchedulerCharacterState: 등록 난이도 ≠ 처치 난이�
       wireWith([
         { content_name: '자쿰', difficulty: 'chaos', cycle: 'bossWeekly', registration_flag: 'true', complete_flag: 'true' },
       ]),
+      resolve,
     )
 
     expect(result.bossContents[0].isComplete).toBe(true)
@@ -291,7 +332,7 @@ describe('normalizeSchedulerCharacterState: 미접속으로 인한 누락', () =
   }
 
   it('daily_contents/weekly_contents/boss_contents 필드 자체가 없어도 크래시 없이 빈 배열을 반환한다', () => {
-    const result = normalizeSchedulerCharacterState(minimalWire)
+    const result = normalizeSchedulerCharacterState(minimalWire, resolve)
 
     expect(result.dailyContents).toEqual([])
     expect(result.weeklyContents).toEqual([])
@@ -299,7 +340,7 @@ describe('normalizeSchedulerCharacterState: 미접속으로 인한 누락', () =
   })
 
   it('필드가 없으면 4개 stale 플래그가 모두 true다', () => {
-    const result = normalizeSchedulerCharacterState(minimalWire)
+    const result = normalizeSchedulerCharacterState(minimalWire, resolve)
 
     expect(result.isDailyStale).toBe(true)
     expect(result.isWeeklyStale).toBe(true)
@@ -313,7 +354,7 @@ describe('normalizeSchedulerCharacterState: 미접속으로 인한 누락', () =
       daily_contents: [],
       weekly_contents: [],
       boss_contents: [],
-    })
+    }, resolve)
 
     expect(result.isDailyStale).toBe(true)
     expect(result.isWeeklyStale).toBe(true)
@@ -327,7 +368,7 @@ describe('normalizeSchedulerCharacterState: 미접속으로 인한 누락', () =
       boss_contents: [
         { content_name: '스우', difficulty: 'hard', cycle: 'bossWeekly', registration_flag: 'true', complete_flag: 'false' },
       ],
-    })
+    }, resolve)
 
     expect(result.isWeeklyBossStale).toBe(false)
     expect(result.isMonthlyBossStale).toBe(true)
@@ -341,7 +382,7 @@ describe('normalizeSchedulerCharacterState: 미접속으로 인한 누락', () =
       boss_contents: [
         { content_name: '검은 마법사', difficulty: 'extreme', cycle: 'bossMonthly', registration_flag: 'true', complete_flag: 'true' },
       ],
-    })
+    }, resolve)
 
     expect(result.isWeeklyBossStale).toBe(true)
     expect(result.isMonthlyBossStale).toBe(true)
@@ -380,6 +421,7 @@ describe('축약 응답 판정 (isMonthlyBossStale)', () => {
         { content_name: '검은 마법사', difficulty: 'hard', cycle: 'bossMonthly' },
         { content_name: '검은 마법사', difficulty: 'extreme', cycle: 'bossMonthly' },
       ]),
+      resolve,
     )
 
     expect(state.isWeeklyBossStale).toBe(true)
@@ -392,6 +434,7 @@ describe('축약 응답 판정 (isMonthlyBossStale)', () => {
         { content_name: '자쿰', difficulty: 'chaos', cycle: 'bossWeekly' },
         { content_name: '검은 마법사', difficulty: 'hard', cycle: 'bossMonthly' },
       ]),
+      resolve,
     )
 
     expect(state.isWeeklyBossStale).toBe(false)
@@ -401,6 +444,7 @@ describe('축약 응답 판정 (isMonthlyBossStale)', () => {
   it('bossWeekly는 있는데 bossMonthly가 없으면 월간만 stale이다 (기존 판정 유지)', () => {
     const state = normalizeSchedulerCharacterState(
       wireWithBosses([{ content_name: '자쿰', difficulty: 'chaos', cycle: 'bossWeekly' }]),
+      resolve,
     )
 
     expect(state.isWeeklyBossStale).toBe(false)
@@ -408,7 +452,7 @@ describe('축약 응답 판정 (isMonthlyBossStale)', () => {
   })
 
   it('보스가 아예 없으면 둘 다 stale이다 (특수 월드·저레벨)', () => {
-    const state = normalizeSchedulerCharacterState(wireWithBosses([]))
+    const state = normalizeSchedulerCharacterState(wireWithBosses([]), resolve)
 
     expect(state.isWeeklyBossStale).toBe(true)
     expect(state.isMonthlyBossStale).toBe(true)

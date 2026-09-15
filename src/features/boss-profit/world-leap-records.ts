@@ -57,7 +57,7 @@ export function planWorldLeapRecordPairs(input: WorldLeapRecordPairsInput): Worl
     const kept = input.records.find(
       (candidate) =>
         candidate.ocid === input.toOcid &&
-        candidate.boss === stale.boss &&
+        candidate.bossKey === stale.bossKey &&
         candidate.difficulty === stale.difficulty &&
         candidate.periodKey === stale.periodKey,
     )
@@ -102,7 +102,7 @@ function dropsOf(drops: readonly BossDropRecord[], record: BossProfitRecord): Re
     .filter(
       (drop) =>
         drop.ocid === record.ocid &&
-        drop.boss === record.boss &&
+        drop.bossKey === record.bossKey &&
         drop.difficulty === record.difficulty &&
         drop.periodKey === record.periodKey,
     )
@@ -139,13 +139,13 @@ async function cleanUpLink(link: CharacterWorldLeap, now: Date): Promise<number>
     // 새 쪽을 먼저 쓰고 옛 쪽을 지운다. 중간에 앱이 죽어도 다음 회차가 같은 짝을 다시 찾고, 이미 합친
     // 드롭은 같은 타일이라 다시 안 붙는다.
     if (merged.length > keptDrops.length) {
-      await replaceBossDropRecords(kept.ocid, kept.boss, kept.difficulty, kept.periodKey, merged, recordedAt)
+      await replaceBossDropRecords(kept.ocid, kept.bossKey, kept.difficulty, kept.periodKey, merged, recordedAt)
     }
     if (keptChanged) {
       await upsertBossProfitRecord(kept)
     }
     if (staleDrops.length > 0) {
-      await replaceBossDropRecords(stale.ocid, stale.boss, stale.difficulty, stale.periodKey, [], recordedAt)
+      await replaceBossDropRecords(stale.ocid, stale.bossKey, stale.difficulty, stale.periodKey, [], recordedAt)
     }
     await deleteBossProfitRecord(stale)
   }

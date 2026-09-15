@@ -137,11 +137,14 @@ const PINNED_NOW = new Date('2026-09-12T12:00:00+09:00')
 // 확정되는 날 검증하려던 것과 반대 상태를 검증하게 된다. 벨로나가 실제로 그랬다
 // 어떤 보스도 이 이름을 갖지 않는다는 사실이 이 픽스처의 불변조건이다.
 const UNPRICED_BOSS = '미확정 보스'
+/** 보스 표에는 있지만 결정석 가격이 없는 보스의 key. 표에 없는 key 여도 key 가 있으면 수익 행은 선다. */
+const UNPRICED_BOSS_KEY = 'unpriced_boss'
 
 function bossContent(overrides: Partial<BossContent> = {}): BossContent {
   const merged = {
-    name: '자쿰',
-    difficulty: '카오스' as const,
+    bossKey: 'zakum',
+    apiName: '자쿰',
+    difficulty: 'chaos' as const,
     cycle: 'weekly' as const,
     isRegistered: true,
     isComplete: true,
@@ -258,8 +261,9 @@ describe('setBossDrops', () => {
     characterName: '캐릭터-1',
     imageUrl: null,
     world: null,
-    boss: '스우',
-    difficulty: '하드' as const,
+    bossKey: 'lotus',
+    bossName: '스우',
+    difficulty: 'hard' as const,
     cycle: 'weekly' as const,
     periodKey: '2026-W30',
     periodLabel: '이번 주',
@@ -284,19 +288,19 @@ describe('setBossDrops', () => {
       },
     ]
     await useBossProfitStore.getState().setBossDrops(
-      { ocid: 'ocid-1', boss: '스우', difficulty: '하드', cycle: 'weekly', periodKey: '2026-W30' },
+      { ocid: 'ocid-1', bossKey: 'lotus', difficulty: 'hard', cycle: 'weekly', periodKey: '2026-W30' },
       drops,
     )
 
     expect(replaceBossDropRecordsMock).toHaveBeenCalledWith(
       'ocid-1',
-      '스우',
-      '하드',
+      'lotus',
+      'hard',
       '2026-W30',
       drops,
       expect.any(String),
     )
-    expect(useBossProfitStore.getState().dropsByRowKey['ocid-1|스우|하드|2026-W30']).toEqual(drops)
+    expect(useBossProfitStore.getState().dropsByRowKey['ocid-1|lotus|hard|2026-W30']).toEqual(drops)
   })
 
   it('존재하지 않는 행이면 에러를 던지고 DB를 건드리지 않는다', async () => {
@@ -304,7 +308,7 @@ describe('setBossDrops', () => {
 
     await expect(
       useBossProfitStore.getState().setBossDrops(
-        { ocid: 'x', boss: 'x', difficulty: '하드', cycle: 'weekly', periodKey: 'x' },
+        { ocid: 'x', bossKey: 'x', difficulty: 'hard', cycle: 'weekly', periodKey: 'x' },
         [],
       ),
     ).rejects.toThrow('존재하지 않는 보스 행')
@@ -316,8 +320,9 @@ describe('처치 난이도 획득 불가 드롭 제거 (후속)', () => {
   function dropRecord(overrides: Record<string, unknown>): Record<string, unknown> {
     return {
       ocid: 'ocid-1',
+      bossKey: 'lotus',
       boss: '스우',
-      difficulty: '하드',
+      difficulty: 'hard',
       cycle: 'weekly',
       category: 'equipment',
       slot: null,
@@ -334,7 +339,7 @@ describe('처치 난이도 획득 불가 드롭 제거 (후속)', () => {
       syncResult({
         state: {
           ...syncResult().state!,
-          bossContents: [bossContent({ name: '스우', difficulty: '하드', isComplete: true, ownComplete: true })],
+          bossContents: [bossContent({ bossKey: 'lotus', apiName: '스우', difficulty: 'hard', isComplete: true, ownComplete: true })],
         },
       }),
     ])
@@ -345,14 +350,14 @@ describe('처치 난이도 획득 불가 드롭 제거 (후속)', () => {
 
     await useBossProfitStore.getState().refresh(['ocid-1'])
 
-    const key = `ocid-1|스우|하드|${period}`
+    const key = `ocid-1|lotus|hard|${period}`
     expect(useBossProfitStore.getState().dropsByRowKey[key].map((drop) => drop.itemName)).toEqual([
       '루즈 컨트롤 머신 마크',
     ])
     expect(replaceBossDropRecordsMock).toHaveBeenCalledWith(
       'ocid-1',
-      '스우',
-      '하드',
+      'lotus',
+      'hard',
       period,
       [expect.objectContaining({ itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' })],
       expect.any(String),
@@ -366,7 +371,7 @@ describe('처치 난이도 획득 불가 드롭 제거 (후속)', () => {
         state: {
           ...syncResult().state!,
           bossContents: [
-            bossContent({ name: '스우', difficulty: '하드', isRegistered: true, isComplete: false, ownComplete: false }),
+            bossContent({ bossKey: 'lotus', apiName: '스우', difficulty: 'hard', isRegistered: true, isComplete: false, ownComplete: false }),
           ],
         },
       }),
@@ -377,7 +382,7 @@ describe('처치 난이도 획득 불가 드롭 제거 (후속)', () => {
 
     await useBossProfitStore.getState().refresh(['ocid-1'])
 
-    const key = `ocid-1|스우|하드|${period}`
+    const key = `ocid-1|lotus|hard|${period}`
     expect(useBossProfitStore.getState().dropsByRowKey[key].map((drop) => drop.itemName)).toEqual([
       '컴플리트 언더컨트롤',
     ])
@@ -391,8 +396,9 @@ describe('처치 난이도 확정 시 드롭 이관', () => {
   function dropRecord(overrides: Record<string, unknown>): Record<string, unknown> {
     return {
       ocid: 'ocid-1',
+      bossKey: 'lotus',
       boss: '스우',
-      difficulty: '익스트림',
+      difficulty: 'extreme',
       periodKey: getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
       dropIndex: 0,
       category: 'equipment',
@@ -410,7 +416,7 @@ describe('처치 난이도 확정 시 드롭 이관', () => {
       syncResult({
         state: {
           ...syncResult().state!,
-          bossContents: [bossContent({ name: '스우', difficulty: '하드', isComplete: true, ownComplete: true })],
+          bossContents: [bossContent({ bossKey: 'lotus', apiName: '스우', difficulty: 'hard', isComplete: true, ownComplete: true })],
         },
       }),
     ])
@@ -423,16 +429,16 @@ describe('처치 난이도 확정 시 드롭 이관', () => {
 
     expect(replaceBossDropRecordsMock).toHaveBeenCalledWith(
       'ocid-1',
-      '스우',
-      '하드',
+      'lotus',
+      'hard',
       period,
       [expect.objectContaining({ itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' })],
       expect.any(String),
     )
     expect(replaceBossDropRecordsMock).toHaveBeenCalledWith(
       'ocid-1',
-      '스우',
-      '익스트림',
+      'lotus',
+      'extreme',
       period,
       [],
       expect.any(String),
@@ -445,7 +451,7 @@ describe('처치 난이도 확정 시 드롭 이관', () => {
         state: {
           ...syncResult().state!,
           bossContents: [
-            bossContent({ name: '스우', difficulty: '하드', isRegistered: true, isComplete: false, ownComplete: false }),
+            bossContent({ bossKey: 'lotus', apiName: '스우', difficulty: 'hard', isRegistered: true, isComplete: false, ownComplete: false }),
           ],
         },
       }),
@@ -485,8 +491,8 @@ describe('useBossProfitStore', () => {
         state: {
           ...syncResult().state!,
           bossContents: [
-            bossContent({ name: '자쿰', isRegistered: false, isComplete: false }),
-            bossContent({ name: '스우', difficulty: '노멀', isComplete: true }),
+            bossContent({ bossKey: 'zakum', apiName: '자쿰', isRegistered: false, isComplete: false }),
+            bossContent({ bossKey: 'lotus', apiName: '스우', difficulty: 'normal', isComplete: true }),
           ],
         },
       }),
@@ -496,7 +502,7 @@ describe('useBossProfitStore', () => {
 
     const rows = useBossProfitStore.getState().rows
     expect(rows).toHaveLength(1)
-    expect(rows[0].boss).toBe('스우')
+    expect(rows[0].bossName).toBe('스우')
   })
 
   it('등록됐지만 아직 미처치인 보스는 "미완료" placeholder row로 포함되고 0메소로 계산되며 DB에는 기록되지 않는다', async () => {
@@ -504,7 +510,7 @@ describe('useBossProfitStore', () => {
       syncResult({
         state: {
           ...syncResult().state!,
-          bossContents: [bossContent({ name: '자쿰', isRegistered: true, isComplete: false })],
+          bossContents: [bossContent({ bossKey: 'zakum', apiName: '자쿰', isRegistered: true, isComplete: false })],
         },
       }),
     ])
@@ -513,7 +519,7 @@ describe('useBossProfitStore', () => {
 
     const rows = useBossProfitStore.getState().rows
     expect(rows).toHaveLength(1)
-    expect(rows[0].boss).toBe('자쿰')
+    expect(rows[0].bossName).toBe('자쿰')
     expect(rows[0].isComplete).toBe(false)
     expect(rows[0].payoutMeso).toBe(0)
     expect(rows[0].partySize).toBeNull()
@@ -525,7 +531,7 @@ describe('useBossProfitStore', () => {
       syncResult({
         state: {
           ...syncResult().state!,
-          bossContents: [bossContent({ name: '자쿰', isRegistered: true, isComplete: false })],
+          bossContents: [bossContent({ bossKey: 'zakum', apiName: '자쿰', isRegistered: true, isComplete: false })],
         },
       }),
     ])
@@ -536,7 +542,7 @@ describe('useBossProfitStore', () => {
       syncResult({
         state: {
           ...syncResult().state!,
-          bossContents: [bossContent({ name: '자쿰', isRegistered: true, isComplete: true })],
+          bossContents: [bossContent({ bossKey: 'zakum', apiName: '자쿰', isRegistered: true, isComplete: true })],
         },
       }),
     ])
@@ -555,8 +561,8 @@ describe('useBossProfitStore', () => {
         state: {
           ...syncResult().state!,
           bossContents: [
-            bossContent({ name: '루시드', difficulty: '이지', isRegistered: true, isComplete: true, ownComplete: false }),
-            bossContent({ name: '루시드', difficulty: '노멀', isRegistered: false, isComplete: true, ownComplete: true }),
+            bossContent({ bossKey: 'lucid', apiName: '루시드', difficulty: 'easy', isRegistered: true, isComplete: true, ownComplete: false }),
+            bossContent({ bossKey: 'lucid', apiName: '루시드', difficulty: 'normal', isRegistered: false, isComplete: true, ownComplete: true }),
           ],
         },
       }),
@@ -566,7 +572,7 @@ describe('useBossProfitStore', () => {
 
     const rows = useBossProfitStore.getState().rows
     expect(rows).toHaveLength(1)
-    expect(rows[0].difficulty).toBe('노멀')
+    expect(rows[0].difficulty).toBe('normal')
     expect(rows[0].priceMeso).toBe(35_600_000)
   })
 
@@ -578,8 +584,8 @@ describe('useBossProfitStore', () => {
         state: {
           ...syncResult().state!,
           bossContents: [
-            bossContent({ name: '자쿰', cycle: 'weekly', isComplete: true }),
-            bossContent({ name: '검은 마법사', difficulty: '익스트림', cycle: 'monthly', isComplete: true }),
+            bossContent({ bossKey: 'zakum', apiName: '자쿰', cycle: 'weekly', isComplete: true }),
+            bossContent({ bossKey: 'black_mage', apiName: '검은 마법사', difficulty: 'extreme', cycle: 'monthly', isComplete: true }),
           ],
         },
       }),
@@ -588,13 +594,13 @@ describe('useBossProfitStore', () => {
     await useBossProfitStore.getState().refresh(['ocid-1'])
 
     const weeklyRows = useBossProfitStore.getState().rows
-    expect(weeklyRows.map((row) => row.boss)).toEqual(['검은마법사', '자쿰'])
+    expect(weeklyRows.map((row) => row.bossName)).toEqual(['검은 마법사', '자쿰'])
     expect(weeklyRows[0].cycle).toBe('monthly')
 
     await useBossProfitStore.getState().setTab('monthly')
 
     const monthlyRows = useBossProfitStore.getState().rows
-    expect(monthlyRows.map((row) => row.boss)).toEqual(['검은마법사'])
+    expect(monthlyRows.map((row) => row.bossName)).toEqual(['검은 마법사'])
     expect(monthlyRows[0].cycle).toBe('monthly')
     // setTab은 "현재 기간"으로만 이동하므로 API를 다시 호출하지 않는다(로컬 스냅샷에서 슬라이스).
     expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
@@ -610,8 +616,8 @@ describe('useBossProfitStore', () => {
         state: {
           ...syncResult().state!,
           bossContents: [
-            bossContent({ name: '자쿰', cycle: 'weekly', isComplete: true }),
-            bossContent({ name: '검은 마법사', difficulty: '익스트림', cycle: 'monthly', isComplete: true }),
+            bossContent({ bossKey: 'zakum', apiName: '자쿰', cycle: 'weekly', isComplete: true }),
+            bossContent({ bossKey: 'black_mage', apiName: '검은 마법사', difficulty: 'extreme', cycle: 'monthly', isComplete: true }),
           ],
         },
       }),
@@ -621,12 +627,12 @@ describe('useBossProfitStore', () => {
     await useBossProfitStore.getState().setTab('monthly')
 
     // 화면은 보던 대로 월간이다.
-    expect(useBossProfitStore.getState().rows.map((row) => row.boss)).toEqual(['검은마법사'])
+    expect(useBossProfitStore.getState().rows.map((row) => row.bossName)).toEqual(['검은 마법사'])
     // today 가 읽는 값에는 이번 주 행이 그대로 있다.
     const weeklyRows = useBossProfitStore
       .getState()
       .currentPeriodRows.filter((row) => row.cycle === 'weekly' && row.periodKey === weekKey)
-    expect(weeklyRows.map((row) => row.boss)).toEqual(['자쿰'])
+    expect(weeklyRows.map((row) => row.bossName)).toEqual(['자쿰'])
   })
 
   it('월간 탭으로 옮겨도 dropsByRowKey 가 이번 주 드롭을 잃지 않는다', async () => {
@@ -640,8 +646,9 @@ describe('useBossProfitStore', () => {
         ? [
             {
               ocid: 'ocid-1',
+              bossKey: 'zakum',
               boss: '자쿰',
-              difficulty: '카오스',
+              difficulty: 'chaos',
               periodKey: weekKey,
               dropIndex: 0,
               category: 'fixed',
@@ -661,19 +668,19 @@ describe('useBossProfitStore', () => {
         state: {
           ...syncResult().state!,
           bossContents: [
-            bossContent({ name: '자쿰', cycle: 'weekly', isComplete: true }),
-            bossContent({ name: '검은 마법사', difficulty: '익스트림', cycle: 'monthly', isComplete: true }),
+            bossContent({ bossKey: 'zakum', apiName: '자쿰', cycle: 'weekly', isComplete: true }),
+            bossContent({ bossKey: 'black_mage', apiName: '검은 마법사', difficulty: 'extreme', cycle: 'monthly', isComplete: true }),
           ],
         },
       }),
     ])
 
     await useBossProfitStore.getState().refresh(['ocid-1'])
-    expect(useBossProfitStore.getState().dropsByRowKey[`ocid-1|자쿰|카오스|${weekKey}`]).toHaveLength(1)
+    expect(useBossProfitStore.getState().dropsByRowKey[`ocid-1|zakum|chaos|${weekKey}`]).toHaveLength(1)
 
     await useBossProfitStore.getState().setTab('monthly')
 
-    expect(useBossProfitStore.getState().dropsByRowKey[`ocid-1|자쿰|카오스|${weekKey}`]).toHaveLength(1)
+    expect(useBossProfitStore.getState().dropsByRowKey[`ocid-1|zakum|chaos|${weekKey}`]).toHaveLength(1)
   })
 
   // 미완료 행에도 드롭과 가격을 적을 수 있는데, 그 행은 금액 자리에 `미완료` 배지를 세워 돈을
@@ -681,9 +688,10 @@ describe('useBossProfitStore', () => {
   // 가른다. 안 맞추면 같은 주가 두 탭에서 다른 숫자가 된다.
   it('월간 탭 주차 소계가 미완료 보스의 드롭 값을 안 더한다', async () => {
     const weekKey = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
-    const 값매긴드롭 = (boss: string, difficulty: string) => ({
+    const 값매긴드롭 = (bossKey: string, difficulty: string) => ({
       ocid: 'ocid-1',
-      boss,
+      bossKey,
+      boss: bossKey,
       difficulty,
       periodKey: weekKey,
       dropIndex: 0,
@@ -702,14 +710,14 @@ describe('useBossProfitStore', () => {
     })
 
     getBossDropRecordsMock.mockImplementation(async (_ocids: string[], periodKeys: string[]) =>
-      periodKeys.includes(weekKey) ? [값매긴드롭('스우', '노멀')] : [],
+      periodKeys.includes(weekKey) ? [값매긴드롭('lotus', 'normal')] : [],
     )
     syncSchedulesMock.mockResolvedValue([
       syncResult({
         state: {
           ...syncResult().state!,
           // 등록만 되고 아직 안 잡은 보스. 미완료 placeholder 행이 선다.
-          bossContents: [bossContent({ name: '스우', difficulty: '노멀', isComplete: false })],
+          bossContents: [bossContent({ bossKey: 'lotus', apiName: '스우', difficulty: 'normal', isComplete: false })],
         },
       }),
     ])
@@ -729,7 +737,7 @@ describe('useBossProfitStore', () => {
       syncResult({
         state: {
           ...syncResult().state!,
-          bossContents: [bossContent({ name: UNPRICED_BOSS, difficulty: '이지', isComplete: true })],
+          bossContents: [bossContent({ bossKey: UNPRICED_BOSS_KEY, apiName: UNPRICED_BOSS, difficulty: 'easy', isComplete: true })],
         },
       }),
     ])
@@ -749,7 +757,7 @@ describe('useBossProfitStore', () => {
         characterName: '캐릭터2',
         state: {
           ...syncResult().state!,
-          bossContents: [bossContent({ name: '스우', difficulty: '노멀', isComplete: true })],
+          bossContents: [bossContent({ bossKey: 'lotus', apiName: '스우', difficulty: 'normal', isComplete: true })],
         },
       }),
     ])
@@ -803,7 +811,7 @@ describe('useBossProfitStore', () => {
         characterName: '캐릭터-ocid-2',
         state: {
           ...syncResult().state!,
-          bossContents: [bossContent({ name: '스우', difficulty: '노멀', isComplete: true })],
+          bossContents: [bossContent({ bossKey: 'lotus', apiName: '스우', difficulty: 'normal', isComplete: true })],
         },
       }),
     ])
@@ -850,9 +858,9 @@ describe('useBossProfitStore', () => {
         state: {
           ...syncResult().state!,
           bossContents: [
-            bossContent({ name: '루시드', difficulty: '노멀', isComplete: true }),
-            bossContent({ name: '자쿰', difficulty: '카오스', isComplete: true }),
-            bossContent({ name: '스우', difficulty: '노멀', isComplete: true }),
+            bossContent({ bossKey: 'lucid', apiName: '루시드', difficulty: 'normal', isComplete: true }),
+            bossContent({ bossKey: 'zakum', apiName: '자쿰', difficulty: 'chaos', isComplete: true }),
+            bossContent({ bossKey: 'lotus', apiName: '스우', difficulty: 'normal', isComplete: true }),
           ],
         },
       }),
@@ -860,7 +868,7 @@ describe('useBossProfitStore', () => {
 
     await useBossProfitStore.getState().refresh(['ocid-1'])
 
-    expect(useBossProfitStore.getState().rows.map((row) => row.boss)).toEqual(['자쿰', '스우', '루시드'])
+    expect(useBossProfitStore.getState().rows.map((row) => row.bossName)).toEqual(['자쿰', '스우', '루시드'])
   })
 
   it('특정 캐릭터의 동기화 결과가 isStale이면 staleCharacterNames에 그 캐릭터명이 포함된다', async () => {
@@ -897,8 +905,9 @@ describe('useBossProfitStore', () => {
 
     const record: BossProfitRecord = {
       ocid: 'ocid-1',
+      bossKey: 'zakum',
       boss: '자쿰',
-      difficulty: '카오스',
+      difficulty: 'chaos',
       cycle: 'weekly',
       periodKey,
       partySize: 4,
@@ -924,8 +933,9 @@ describe('useBossProfitStore', () => {
 
     const record: BossProfitRecord = {
       ocid: 'ocid-1',
+      bossKey: 'zakum',
       boss: '자쿰',
-      difficulty: '카오스',
+      difficulty: 'chaos',
       cycle: 'weekly',
       periodKey,
       partySize: 2,
@@ -951,12 +961,13 @@ describe('useBossProfitStore', () => {
 
       await useBossProfitStore.getState().refresh(['ocid-1'])
 
-      expect(getBossPartySizeMock).toHaveBeenCalledWith('ocid-1', '자쿰', '카오스')
+      expect(getBossPartySizeMock).toHaveBeenCalledWith('ocid-1', 'zakum', 'chaos')
       expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
         expect.objectContaining({
           ocid: 'ocid-1',
+          bossKey: 'zakum',
           boss: '자쿰',
-          difficulty: '카오스',
+          difficulty: 'chaos',
           partySize: 1,
           priceMeso: 8080000,
           payoutMeso: 8080000,
@@ -976,8 +987,9 @@ describe('useBossProfitStore', () => {
       expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
         expect.objectContaining({
           ocid: 'ocid-1',
+          bossKey: 'zakum',
           boss: '자쿰',
-          difficulty: '카오스',
+          difficulty: 'chaos',
           partySize: 4,
           priceMeso: 8080000,
           payoutMeso: 2020000,
@@ -996,8 +1008,9 @@ describe('useBossProfitStore', () => {
 
       const record: BossProfitRecord = {
         ocid: 'ocid-1',
+        bossKey: 'zakum',
         boss: '자쿰',
-        difficulty: '카오스',
+        difficulty: 'chaos',
         cycle: 'weekly',
         periodKey,
         partySize: 4,
@@ -1040,7 +1053,7 @@ describe('useBossProfitStore', () => {
       await useBossProfitStore.getState().refresh(['ocid-1'])
 
       expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
-        expect.objectContaining({ ocid: 'ocid-1', boss: '자쿰', difficulty: '카오스', partySize: 1 }),
+        expect.objectContaining({ ocid: 'ocid-1', bossKey: 'zakum', boss: '자쿰', difficulty: 'chaos', partySize: 1 }),
       )
     })
 
@@ -1059,8 +1072,8 @@ describe('useBossProfitStore', () => {
           state: {
             ...syncResult().state!,
             bossContents: [
-              bossContent({ name: '자쿰', difficulty: '카오스', isComplete: true }),
-              bossContent({ name: '스우', difficulty: '노멀', isComplete: true }),
+              bossContent({ bossKey: 'zakum', apiName: '자쿰', difficulty: 'chaos', isComplete: true }),
+              bossContent({ bossKey: 'lotus', apiName: '스우', difficulty: 'normal', isComplete: true }),
             ],
           },
         }),
@@ -1077,7 +1090,7 @@ describe('useBossProfitStore', () => {
         syncResult({
           state: {
             ...syncResult().state!,
-            bossContents: [bossContent({ name: UNPRICED_BOSS, difficulty: '이지', isComplete: true })],
+            bossContents: [bossContent({ bossKey: UNPRICED_BOSS_KEY, apiName: UNPRICED_BOSS, difficulty: 'easy', isComplete: true })],
           },
         }),
       ])
@@ -1151,7 +1164,7 @@ describe('useBossProfitStore', () => {
         syncResult({
           state: {
             ...syncResult().state!,
-            bossContents: [bossContent({ name: '자쿰', isComplete: true, ...overrides })],
+            bossContents: [bossContent({ bossKey: 'zakum', apiName: '자쿰', isComplete: true, ...overrides })],
           },
         }),
       ])
@@ -1199,8 +1212,9 @@ describe('useBossProfitStore', () => {
       expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
         expect.objectContaining({
           ocid: 'ocid-1',
+          bossKey: 'zakum',
           boss: '자쿰',
-          difficulty: '카오스',
+          difficulty: 'chaos',
           partySize: 2,
           priceMeso: 8080000,
           payoutMeso: 4040000,
@@ -1212,7 +1226,7 @@ describe('useBossProfitStore', () => {
     })
 
     it('priceMeso가 null인 보스는 upsert를 호출하지 않지만 partySize는 로컬 상태에 반영된다', async () => {
-      const row = await seedRow({ name: UNPRICED_BOSS, difficulty: '이지' })
+      const row = await seedRow({ bossKey: UNPRICED_BOSS_KEY, apiName: UNPRICED_BOSS, difficulty: 'easy' })
 
       await useBossProfitStore.getState().setPartySize(row, 3)
 
@@ -1329,7 +1343,7 @@ describe('useBossProfitStore', () => {
       const midState = useBossProfitStore.getState()
       expect(midState.status).toBe('loading')
       expect(midState.rows).toHaveLength(1)
-      expect(midState.rows[0].boss).toBe('자쿰')
+      expect(midState.rows[0].bossName).toBe('자쿰')
       expect(midState.rows[0].ocid).toBe('ocid-1')
       expect(midState.rows[0].characterName).toBe('캐시캐릭터')
       expect(midState.rows[0].partySize).toBeNull()
@@ -1350,7 +1364,7 @@ describe('useBossProfitStore', () => {
       expect(finalState.rows).toHaveLength(1)
       expect(finalState.rows[0].partySize).toBe(1)
       expect(finalState.rows[0].payoutMeso).toBe(8080000)
-      expect(getBossPartySizeMock).toHaveBeenCalledWith('ocid-1', '자쿰', '카오스')
+      expect(getBossPartySizeMock).toHaveBeenCalledWith('ocid-1', 'zakum', 'chaos')
       expect(upsertBossProfitRecordMock).toHaveBeenCalled()
     })
 
@@ -1363,8 +1377,9 @@ describe('useBossProfitStore', () => {
 
       const record: BossProfitRecord = {
         ocid: 'ocid-1',
+        bossKey: 'zakum',
         boss: '자쿰',
-        difficulty: '카오스',
+        difficulty: 'chaos',
         cycle: 'weekly',
         periodKey,
         partySize: 2,
@@ -1463,8 +1478,9 @@ describe('useBossProfitStore', () => {
 
         const pastRecord: BossProfitRecord = {
           ocid: 'ocid-1',
+          bossKey: 'lotus',
           boss: '스우',
-          difficulty: '노멀',
+          difficulty: 'normal',
           cycle: 'weekly',
           periodKey: pastWeekKey,
           partySize: 2,
@@ -1537,8 +1553,9 @@ describe('useBossProfitStore', () => {
     function monthlyRecord(ocid: string, periodKey: string): BossProfitRecord {
       return {
         ocid,
+        bossKey: 'black_mage',
         boss: '검은 마법사',
-        difficulty: '하드',
+        difficulty: 'hard',
         cycle: 'monthly',
         periodKey,
         partySize: 1,
@@ -1570,7 +1587,7 @@ describe('useBossProfitStore', () => {
       expect(syncSchedulesMock).not.toHaveBeenCalled()
       const rows = useBossProfitStore.getState().rows
       expect(rows).toHaveLength(1)
-      expect(rows[0].boss).toBe('검은 마법사')
+      expect(rows[0].bossName).toBe('검은 마법사')
       expect(rows[0].periodKey).toBe(monthKey)
       expect(rows[0].payoutMeso).toBe(665_000_000)
     })
@@ -1625,14 +1642,15 @@ describe('useBossProfitStore', () => {
       )
       getBossProfitRecordsMock.mockImplementation(async (_ocids: string[], keys: string[]) =>
         keys.includes(weekKey)
-          ? [{ ...monthlyRecord('ocid-1', weekKey), boss: '스우', difficulty: '하드', cycle: 'weekly' as const }]
+          ? [{ ...monthlyRecord('ocid-1', weekKey), bossKey: 'lotus', boss: '스우', difficulty: 'hard', cycle: 'weekly' as const }]
           : [],
       )
       getBossDropRecordsMock.mockResolvedValue([
         {
           ocid: 'ocid-1',
+          bossKey: 'lotus',
           boss: '스우',
-          difficulty: '익스트림', // 복원 행이 루프를 타면 확정 난이도(하드)로 옮겨졌을 옛 키
+          difficulty: 'extreme', // 복원 행이 루프를 타면 확정 난이도(하드)로 옮겨졌을 옛 키
           periodKey: weekKey,
           dropIndex: 0,
           category: 'equipment',
@@ -1648,7 +1666,7 @@ describe('useBossProfitStore', () => {
 
       await useBossProfitStore.getState().refresh(['ocid-1'], { auto: true })
 
-      expect(useBossProfitStore.getState().rows.map((row) => row.boss)).toContain('스우') // 복원은 됐다
+      expect(useBossProfitStore.getState().rows.map((row) => row.bossName)).toContain('스우') // 복원은 됐다
       const recordedBosses = upsertBossProfitRecordMock.mock.calls.map((call) => call[0].boss)
       expect(recordedBosses).toEqual(['자쿰']) // 캐시 행만. 복원 행(스우)은 빠진다
       const migratedBosses = replaceBossDropRecordsMock.mock.calls.map((call) => call[1] as string)
@@ -1670,7 +1688,7 @@ describe('useBossProfitStore', () => {
       expect(syncSchedulesMock).toHaveBeenCalledTimes(1) // 건너뛴 진입이 아니다
       const rows = useBossProfitStore.getState().rows
       expect(rows).toHaveLength(1)
-      expect(rows[0].boss).toBe('검은 마법사')
+      expect(rows[0].bossName).toBe('검은 마법사')
     })
 
     // 복원 행이 정렬 밖에 남으면(그냥 뒤에 붙으면) 캐릭터 아코디언 순서가 흔들린다.
@@ -1691,7 +1709,7 @@ describe('useBossProfitStore', () => {
       getCachedSchedulerStateMock.mockImplementation(async (ocid: string) =>
         ocid === 'ocid-1'
           ? cachedEntry('낮은레벨', minutesAgo(5), [
-              bossContent({ name: '검은마법사', difficulty: '하드', cycle: 'monthly' }),
+              bossContent({ bossKey: 'black_mage', apiName: '검은마법사', difficulty: 'hard', cycle: 'monthly' }),
             ])
           : cachedEntry('높은레벨', minutesAgo(5)),
       )
@@ -1790,8 +1808,9 @@ describe('useBossProfitStore', () => {
 
       const pastRecord: BossProfitRecord = {
         ocid: 'ocid-1',
+        bossKey: 'zakum',
         boss: '자쿰',
-        difficulty: '카오스',
+        difficulty: 'chaos',
         cycle: 'weekly',
         periodKey: previousPeriodKey,
         partySize: 1,
@@ -1845,8 +1864,9 @@ describe('useBossProfitStore', () => {
     function record(overrides: Partial<BossProfitRecord> = {}): BossProfitRecord {
       return {
         ocid: 'ocid-1',
+        bossKey: 'zakum',
         boss: '자쿰',
-        difficulty: '카오스',
+        difficulty: 'chaos',
         cycle: 'weekly',
         periodKey: '2026-07-09',
         partySize: 1,
@@ -1865,7 +1885,7 @@ describe('useBossProfitStore', () => {
         syncSchedulesMock.mockResolvedValue([syncResult()])
         getBossProfitRecordsMock.mockImplementation(async (_ocids: string[], keys: string[]) =>
           keys.includes('2026-07-09')
-            ? [record({ payoutMeso: 5_000_000 }), record({ boss: '매그너스', payoutMeso: 3_000_000 })]
+            ? [record({ payoutMeso: 5_000_000 }), record({ bossKey: 'magnus', boss: '매그너스', payoutMeso: 3_000_000 })]
             : [],
         )
 
@@ -1887,7 +1907,7 @@ describe('useBossProfitStore', () => {
         getBossProfitRecordsMock.mockImplementation(async (_ocids: string[], keys: string[]) => {
           if (!keys.includes('2026-06')) return []
           return [
-            record({ cycle: 'monthly', boss: '검은 마법사', periodKey: '2026-06', payoutMeso: 10_000_000 }),
+            record({ cycle: 'monthly', bossKey: 'black_mage', boss: '검은 마법사', periodKey: '2026-06', payoutMeso: 10_000_000 }),
             record({ periodKey: '2026-06-04', payoutMeso: 1_000_000 }),
             record({ periodKey: '2026-06-25', payoutMeso: 2_000_000 }),
           ]
@@ -2009,8 +2029,9 @@ describe('useBossProfitStore', () => {
 
       const pastRecord: BossProfitRecord = {
         ocid: 'ocid-1',
+        bossKey: 'zakum',
         boss: '자쿰',
-        difficulty: '카오스',
+        difficulty: 'chaos',
         cycle: 'weekly',
         periodKey: previousPeriodKey,
         partySize: 3,
@@ -2055,8 +2076,9 @@ describe('useBossProfitStore', () => {
       getBossProfitRecordsMock.mockResolvedValue([
         {
           ocid: 'ocid-1',
+          bossKey: 'zakum',
           boss: '자쿰',
-          difficulty: '카오스',
+          difficulty: 'chaos',
           cycle: 'weekly',
           periodKey: previousPeriodKey,
           partySize: 3,
@@ -2094,8 +2116,9 @@ describe('useBossProfitStore', () => {
       getBossProfitRecordsMock.mockResolvedValue([
         {
           ocid: 'ocid-1',
+          bossKey: 'zakum',
           boss: '자쿰',
-          difficulty: '카오스',
+          difficulty: 'chaos',
           cycle: 'weekly',
           periodKey: previousPeriodKey,
           partySize: 3,
@@ -2301,8 +2324,9 @@ describe('useBossProfitStore', () => {
         // 2026-07-02는 롤링 윈도우 밖이지만, 윈도우 안이었을 때 저장해둔 기록이 남아 있다고 가정한다.
         const cachedRecord: BossProfitRecord = {
           ocid: 'ocid-1',
+          bossKey: 'zakum',
           boss: '자쿰',
-          difficulty: '카오스',
+          difficulty: 'chaos',
           cycle: 'weekly',
           periodKey: '2026-07-02',
           partySize: 2,
@@ -2331,7 +2355,7 @@ describe('useBossProfitStore', () => {
         expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
         const rows = useBossProfitStore.getState().rows
         expect(rows).toHaveLength(1)
-        expect(rows[0].boss).toBe('자쿰')
+        expect(rows[0].bossName).toBe('자쿰')
         expect(rows[0].payoutMeso).toBe(4_040_000)
       } finally {
         jest.useRealTimers()
@@ -2384,8 +2408,9 @@ describe('useBossProfitStore', () => {
         const pastWeekKey = '2026-07-02'
         const cachedRecord: BossProfitRecord = {
           ocid: 'ocid-1',
+          bossKey: 'zakum',
           boss: '자쿰',
-          difficulty: '카오스',
+          difficulty: 'chaos',
           cycle: 'weekly',
           periodKey: pastWeekKey,
           partySize: 2,
@@ -2422,8 +2447,9 @@ describe('useBossProfitStore', () => {
         getBossProfitRecordsMock.mockResolvedValue([
           {
             ocid: 'ocid-1',
+            bossKey: 'black_mage',
             boss: '검은마법사',
-            difficulty: '익스트림',
+            difficulty: 'extreme',
             cycle: 'monthly',
             periodKey: '2026-07',
             partySize: 1,
@@ -2483,8 +2509,9 @@ describe('useBossProfitStore', () => {
 
         const inProgressRecord: BossProfitRecord = {
           ocid: 'ocid-1',
+          bossKey: 'lotus',
           boss: '스우',
-          difficulty: '노멀',
+          difficulty: 'normal',
           cycle: 'weekly',
           periodKey: '2026-07-30',
           partySize: 2,
@@ -2526,8 +2553,9 @@ describe('useBossProfitStore', () => {
         getBossProfitRecordsMock.mockResolvedValue([
           {
             ocid: 'ocid-1',
+            bossKey: 'zakum',
             boss: '자쿰',
-            difficulty: '카오스',
+            difficulty: 'chaos',
             cycle: 'weekly',
             periodKey: '2026-07-30',
             partySize: 1,
@@ -2593,8 +2621,9 @@ describe('useBossProfitStore', () => {
       getBossProfitRecordsMock.mockResolvedValue([
         {
           ocid: 'ocid-1',
+          bossKey: 'zakum',
           boss: '자쿰',
-          difficulty: '카오스',
+          difficulty: 'chaos',
           cycle: 'weekly',
           periodKey: previousPeriodKey,
           partySize: 2,
@@ -2618,8 +2647,9 @@ describe('useBossProfitStore', () => {
       expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
         expect.objectContaining({
           ocid: 'ocid-1',
+          bossKey: 'zakum',
           boss: '자쿰',
-          difficulty: '카오스',
+          difficulty: 'chaos',
           periodKey: previousPeriodKey,
           partySize: 3,
         }),
@@ -2631,7 +2661,7 @@ describe('useBossProfitStore', () => {
   describe('수동 트래킹 모드 (#33)', () => {
     it('수동으로만 추가한(인게임 미등록·미처치) 보스도 미완료 placeholder row로 표시된다 (라이브 브랜치)', async () => {
       getTrackingModeMock.mockResolvedValue('manual')
-      getManualTrackedContentMock.mockResolvedValue([{ contentName: '스우', difficulty: '노멀', kind: 'boss' }])
+      getManualTrackedContentMock.mockResolvedValue([{ kind: 'boss', bossKey: 'lotus', difficulty: 'normal' }])
       // 동기화 결과에는 이 보스가 전혀 없다(등록도 처치도 안 함).
       syncSchedulesMock.mockResolvedValue([
         syncResult({ state: { ...syncResult().state!, bossContents: [] } }),
@@ -2641,7 +2671,7 @@ describe('useBossProfitStore', () => {
 
       const rows = useBossProfitStore.getState().rows
       expect(rows).toHaveLength(1)
-      expect(rows[0].boss).toBe('스우')
+      expect(rows[0].bossName).toBe('스우')
       expect(rows[0].isComplete).toBe(false)
       expect(rows[0].payoutMeso).toBe(0)
       expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
@@ -2649,7 +2679,7 @@ describe('useBossProfitStore', () => {
 
     it('수동으로만 추가한 보스도 캐시 우선 표시 단계(라이브 동기화 실패 시)에서 유지된다 (캐시 브랜치)', async () => {
       getTrackingModeMock.mockResolvedValue('manual')
-      getManualTrackedContentMock.mockResolvedValue([{ contentName: '스우', difficulty: '노멀', kind: 'boss' }])
+      getManualTrackedContentMock.mockResolvedValue([{ kind: 'boss', bossKey: 'lotus', difficulty: 'normal' }])
       getCachedSchedulerStateMock.mockResolvedValue({
         state: { ...syncResult().state!, bossContents: [] },
         cachedAt: '2026-07-10T00:00:00.000Z',
@@ -2662,19 +2692,19 @@ describe('useBossProfitStore', () => {
       const state = useBossProfitStore.getState()
       expect(state.status).toBe('error')
       expect(state.rows).toHaveLength(1)
-      expect(state.rows[0].boss).toBe('스우')
+      expect(state.rows[0].bossName).toBe('스우')
       expect(state.rows[0].payoutMeso).toBe(0)
     })
 
     it('수동 추적 보스가 실제로 처치되면 완료 row로 잡히고 정상 수익이 자동 기록된다', async () => {
       getTrackingModeMock.mockResolvedValue('manual')
-      getManualTrackedContentMock.mockResolvedValue([{ contentName: '자쿰', difficulty: '카오스', kind: 'boss' }])
+      getManualTrackedContentMock.mockResolvedValue([{ kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' }])
       // 동기화 결과에 같은 (보스명, 난이도)가 완료 상태로 존재한다.
       syncSchedulesMock.mockResolvedValue([
         syncResult({
           state: {
             ...syncResult().state!,
-            bossContents: [bossContent({ name: '자쿰', difficulty: '카오스', isRegistered: true, isComplete: true })],
+            bossContents: [bossContent({ bossKey: 'zakum', apiName: '자쿰', difficulty: 'chaos', isRegistered: true, isComplete: true })],
           },
         }),
       ])
@@ -2683,7 +2713,7 @@ describe('useBossProfitStore', () => {
 
       const rows = useBossProfitStore.getState().rows
       expect(rows).toHaveLength(1)
-      expect(rows[0].boss).toBe('자쿰')
+      expect(rows[0].bossName).toBe('자쿰')
       expect(rows[0].isComplete).toBe(true)
       expect(rows[0].partySize).toBe(1)
       expect(rows[0].payoutMeso).toBe(8080000)
@@ -2692,13 +2722,13 @@ describe('useBossProfitStore', () => {
     it('수동 추적한 난이도와 다른 난이도로 처치하면, 실제 처치한 난이도로 표시된다', async () => {
       getTrackingModeMock.mockResolvedValue('manual')
       // 자쿰을 "하드"로 추적했지만 실제로는 "카오스"를 처치했다.
-      getManualTrackedContentMock.mockResolvedValue([{ contentName: '자쿰', difficulty: '하드', kind: 'boss' }])
+      getManualTrackedContentMock.mockResolvedValue([{ kind: 'boss', bossKey: 'zakum', difficulty: 'hard' }])
       syncSchedulesMock.mockResolvedValue([
         syncResult({
           state: {
             ...syncResult().state!,
             bossContents: [
-              bossContent({ name: '자쿰', difficulty: '카오스', isRegistered: false, isComplete: true, ownComplete: true }),
+              bossContent({ bossKey: 'zakum', apiName: '자쿰', difficulty: 'chaos', isRegistered: false, isComplete: true, ownComplete: true }),
             ],
           },
         }),
@@ -2708,8 +2738,8 @@ describe('useBossProfitStore', () => {
 
       const rows = useBossProfitStore.getState().rows
       expect(rows).toHaveLength(1)
-      expect(rows[0].boss).toBe('자쿰')
-      expect(rows[0].difficulty).toBe('카오스')
+      expect(rows[0].bossName).toBe('자쿰')
+      expect(rows[0].difficulty).toBe('chaos')
       expect(rows[0].isComplete).toBe(true)
       expect(rows[0].payoutMeso).toBe(8080000)
     })
@@ -2717,13 +2747,13 @@ describe('useBossProfitStore', () => {
     it('추적하지 않은 보스라도 처치했으면 표시되고, 추적 중 미처치 보스는 placeholder로 함께 나온다', async () => {
       getTrackingModeMock.mockResolvedValue('manual')
       // 스우는 추적 중(미처치), 자쿰은 추적하지 않았지만 처치함.
-      getManualTrackedContentMock.mockResolvedValue([{ contentName: '스우', difficulty: '노멀', kind: 'boss' }])
+      getManualTrackedContentMock.mockResolvedValue([{ kind: 'boss', bossKey: 'lotus', difficulty: 'normal' }])
       syncSchedulesMock.mockResolvedValue([
         syncResult({
           state: {
             ...syncResult().state!,
             bossContents: [
-              bossContent({ name: '자쿰', difficulty: '카오스', isRegistered: false, isComplete: true, ownComplete: true }),
+              bossContent({ bossKey: 'zakum', apiName: '자쿰', difficulty: 'chaos', isRegistered: false, isComplete: true, ownComplete: true }),
             ],
           },
         }),
@@ -2732,7 +2762,7 @@ describe('useBossProfitStore', () => {
       await useBossProfitStore.getState().refresh(['ocid-1'])
 
       const rows = useBossProfitStore.getState().rows
-      const byBoss = Object.fromEntries(rows.map((row) => [row.boss, row]))
+      const byBoss = Object.fromEntries(rows.map((row) => [row.bossName, row]))
       expect(rows).toHaveLength(2)
       // 추적하지 않았지만 처치한 자쿰. 완료·정산 표시
       expect(byBoss['자쿰'].isComplete).toBe(true)
@@ -2744,7 +2774,7 @@ describe('useBossProfitStore', () => {
 
     it('자동 모드에서는 manualTrackedContent를 읽지 않는다 (수동 추적 보스가 목록에 새지 않음)', async () => {
       // 기본값(auto). 수동 목록이 저장돼 있어도 자동 모드에서는 무시돼야 한다.
-      getManualTrackedContentMock.mockResolvedValue([{ contentName: '스우', difficulty: '노멀', kind: 'boss' }])
+      getManualTrackedContentMock.mockResolvedValue([{ kind: 'boss', bossKey: 'lotus', difficulty: 'normal' }])
       syncSchedulesMock.mockResolvedValue([
         syncResult({ state: { ...syncResult().state!, bossContents: [] } }),
       ])
@@ -2795,7 +2825,7 @@ describe('useBossProfitStore', () => {
       expect(state.error).toBeNull()
       // 화면에 흔적을 남기지 않는다. 행은 캐시 우선 표시가 그대로 그린다.
       expect(state.rows).toHaveLength(1)
-      expect(state.rows[0].boss).toBe('자쿰')
+      expect(state.rows[0].bossName).toBe('자쿰')
       expect(state.rows[0].characterName).toBe('캐시캐릭터')
     })
 
@@ -2826,12 +2856,13 @@ describe('useBossProfitStore', () => {
         await useBossProfitStore.getState().refresh(['ocid-1'], { auto: true })
 
         // 기본 파티원 수는 boss_party_settings 조회값(없으면 1). 캐시가 아니라 그 자리에서 읽는다.
-        expect(getBossPartySizeMock).toHaveBeenCalledWith('ocid-1', '자쿰', '카오스')
+        expect(getBossPartySizeMock).toHaveBeenCalledWith('ocid-1', 'zakum', 'chaos')
         expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
           expect.objectContaining({
             ocid: 'ocid-1',
+            bossKey: 'zakum',
             boss: '자쿰',
-            difficulty: '카오스',
+            difficulty: 'chaos',
             cycle: 'weekly',
             partySize: 1,
             priceMeso: 8080000,
@@ -2918,7 +2949,7 @@ describe('useBossProfitStore', () => {
               ...entry.state,
               bossContents: [
                 bossContent(),
-                bossContent({ name: '검은마법사', difficulty: '하드', cycle: 'monthly' }),
+                bossContent({ bossKey: 'black_mage', apiName: '검은마법사', difficulty: 'hard', cycle: 'monthly' }),
               ],
             },
           })
@@ -2954,13 +2985,14 @@ describe('useBossProfitStore', () => {
         const entry = cachedEntry(minutesAgo(5))
         getCachedSchedulerStateMock.mockResolvedValue({
           ...entry,
-          state: { ...entry.state, bossContents: [bossContent({ name: '스우', difficulty: '하드' })] },
+          state: { ...entry.state, bossContents: [bossContent({ bossKey: 'lotus', apiName: '스우', difficulty: 'hard' })] },
         })
         getBossDropRecordsMock.mockResolvedValue([
           {
             ocid: 'ocid-1',
+            bossKey: 'lotus',
             boss: '스우',
-            difficulty: '익스트림', // 옛 난이도 키. 확정 난이도(하드)로 옮겨져야 한다
+            difficulty: 'extreme', // 옛 난이도 키. 확정 난이도(하드)로 옮겨져야 한다
             periodKey,
             dropIndex: 0,
             category: 'equipment',
@@ -2979,16 +3011,16 @@ describe('useBossProfitStore', () => {
         expect(syncSchedulesMock).not.toHaveBeenCalled()
         expect(replaceBossDropRecordsMock).toHaveBeenCalledWith(
           'ocid-1',
-          '스우',
-          '하드',
+          'lotus',
+          'hard',
           periodKey,
           [expect.objectContaining({ itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' })],
           expect.any(String),
         )
         expect(replaceBossDropRecordsMock).toHaveBeenCalledWith(
           'ocid-1',
-          '스우',
-          '익스트림',
+          'lotus',
+          'extreme',
           periodKey,
           [],
           expect.any(String),
@@ -3174,14 +3206,15 @@ describe('useBossProfitStore', () => {
 // 설 자리도 처치 기록도 없는 드롭은 지운다. 안 지우면 보스 수익에서는
 // 사라지고(그룹 합계가 행으로만 훑는다) 드롭 히스토리·today 위젯에는 영원히 남는다.
 describe('잡지 않은 보스의 드롭 정리', () => {
-  const WEEKLY = weeklyBossesData.weekly as { boss: string; difficulties: string[] }[]
+  const WEEKLY = weeklyBossesData.weekly as { key: string; name: string; difficulties: string[] }[]
   const WEEK_KEY = getCurrentBossProfitPeriod('weekly', PINNED_NOW).periodKey
 
   /** 끝에서부터 한도만큼 실제로 처치한 보스. 자쿰(목록 맨 앞)과 겹치지 않는다. */
   function clearedContents(count: number): BossContent[] {
     return WEEKLY.slice(-count).map((entry) =>
       bossContent({
-        name: entry.boss,
+        bossKey: entry.key,
+        apiName: entry.name,
         difficulty: entry.difficulties[0] as BossContent['difficulty'],
         isRegistered: true,
         isComplete: true,
@@ -3193,8 +3226,9 @@ describe('잡지 않은 보스의 드롭 정리', () => {
   function zakumDrop(): Record<string, unknown> {
     return {
       ocid: 'ocid-1',
+      bossKey: 'zakum',
       boss: '자쿰',
-      difficulty: '카오스',
+      difficulty: 'chaos',
       periodKey: WEEK_KEY,
       dropIndex: 0,
       category: 'equipment',
@@ -3219,7 +3253,7 @@ describe('잡지 않은 보스의 드롭 정리', () => {
           ...syncResult().state,
           bossContents: [
             // 등록만 되고 미처치. 한도를 채웠으면 행이 서지 않는다.
-            bossContent({ name: '자쿰', difficulty: '카오스', isComplete: false, ownComplete: false }),
+            bossContent({ bossKey: 'zakum', apiName: '자쿰', difficulty: 'chaos', isComplete: false, ownComplete: false }),
             ...clearedContents(clearedCount),
           ],
         } as SchedulerCharacterState,
@@ -3236,8 +3270,8 @@ describe('잡지 않은 보스의 드롭 정리', () => {
     await waitFor(() => {
       expect(replaceBossDropRecordsMock).toHaveBeenCalledWith(
         'ocid-1',
-        '자쿰',
-        '카오스',
+        'zakum',
+        'chaos',
         WEEK_KEY,
         [],
         expect.any(String),
@@ -3274,8 +3308,9 @@ describe('잡지 않은 보스의 드롭 정리', () => {
     getBossProfitRecordsMock.mockResolvedValue([
       {
         ocid: 'ocid-1',
+        bossKey: 'lotus',
         boss: '스우',
-        difficulty: '하드',
+        difficulty: 'hard',
         cycle: 'weekly',
         periodKey: previousPeriodKey,
         partySize: 1,
@@ -3291,8 +3326,8 @@ describe('잡지 않은 보스의 드롭 정리', () => {
 
     expect(replaceBossDropRecordsMock).toHaveBeenCalledWith(
       'ocid-1',
-      '자쿰',
-      '카오스',
+      'zakum',
+      'chaos',
       previousPeriodKey,
       [],
       expect.any(String),
@@ -3319,11 +3354,12 @@ describe('잡지 않은 보스의 드롭 정리', () => {
 // 추적 목록에서 뺀 캐릭터의 기록은 원래부터 안 지워졌다. 조회 범위가 추적 목록이라 화면에서만
 // 사라졌다. 동기화 대상과 표시 대상을 가른다.
 describe('추적에서 빠진 캐릭터의 기록', () => {
-  function 해제기록(periodKey: string, boss = '자쿰'): BossProfitRecord {
+  function 해제기록(periodKey: string, bossKey = 'zakum', boss = '자쿰'): BossProfitRecord {
     return {
       ocid: 'ocid-해제',
+      bossKey,
       boss,
-      difficulty: '카오스',
+      difficulty: 'chaos',
       cycle: 'weekly',
       periodKey,
       partySize: 1,
@@ -3608,8 +3644,9 @@ describe('추적에서 빠진 캐릭터의 기록', () => {
     getBossDropRecordsMock.mockResolvedValue([
       {
         ocid: 'ocid-해제',
+        bossKey: 'lotus',
         boss: '스우',
-        difficulty: '하드',
+        difficulty: 'hard',
         periodKey: previousPeriodKey,
         dropIndex: 0,
         category: 'equipment',
@@ -3696,8 +3733,9 @@ describe('기간을 미리 들고 있는다', () => {
     getBossProfitRecordsMock.mockResolvedValue([
       {
         ocid: 'ocid-1',
+        bossKey: 'zakum',
         boss: '자쿰',
-        difficulty: '카오스',
+        difficulty: 'chaos',
         cycle: 'weekly',
         periodKey: outOfWindowKey,
         partySize: 1,
@@ -3942,8 +3980,9 @@ describe('월드 리프한 기간의 중복 기록', () => {
   function 기록(ocid: string, partySize: number): BossProfitRecord {
     return {
       ocid,
+      bossKey: 'zakum',
       boss: '자쿰',
-      difficulty: '카오스',
+      difficulty: 'chaos',
       cycle: 'weekly',
       periodKey: getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
       partySize,

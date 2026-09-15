@@ -5,7 +5,7 @@
  * 날짜들을 이미 들고 있으므로 **부르지 않고 읽어서** 만든다.
  */
 import { monthKeyOf, resetWeekStartOf } from '../../lib/calendar'
-import { getBossCycleByName } from '../../lib/boss/boss-matching'
+import { bossCycleOf, bossNameOf } from '../../lib/boss/bosses'
 import { findPriceEntry } from '../../lib/boss/boss-crystal-prices'
 import {
   getCurrentBossProfitPeriod,
@@ -25,16 +25,16 @@ import { migrateDropsToConfirmedDifficulty } from '../boss-profit/drops-loader'
 import { withSqliteFallback, withSqliteTimeout } from '../boss-profit/sqlite-guards'
 import type { WindowFailure } from './window'
 
-/** 원장의 `이름|난이도` 를 가른다. 보스 이름에는 `|` 가 없다. */
+/** 원장의 `보스 key|난이도 key` 를 가른다. 보스 key 에는 `|` 가 없다. */
 function splitBossKey(key: string): CompletedBoss | null {
   const bar = key.indexOf('|')
-  // 난이도는 참조 데이터가 낸 값이 원장을 거쳐 돌아온 것이라 다섯 중 하나다. 값을 다시
+  // 난이도는 API 가 낸 값이 원장을 거쳐 돌아온 것이라 다섯 중 하나다. 값을 다시
   // 검사하지 않는 것은 `rows.ts`·`drop-price-store.ts` 가 같은 단언을 하는 것과 같은 이유다.
-  return bar <= 0 ? null : { boss: key.slice(0, bar), difficulty: key.slice(bar + 1) as BossDifficulty }
+  return bar <= 0 ? null : { bossKey: key.slice(0, bar), difficulty: key.slice(bar + 1) as BossDifficulty }
 }
 
 interface CompletedBoss {
-  boss: string
+  bossKey: string
   difficulty: BossDifficulty
 }
 
@@ -94,15 +94,15 @@ async function recordPeriod(
   ])
   const world = cachedBasic?.profile.world ?? null
 
-  for (const { boss, difficulty } of completed) {
+  for (const { bossKey, difficulty } of completed) {
     // 이관은 `alreadyRecorded` 판정보다 앞에 둔다. 이미 수익 기록이 있든 없든 이 관측이 말하는
     // 처치 난이도는 같고, 아래 continue 들에 막히면 안 된다.
-    await migrateDropsToConfirmedDifficulty({ ocid, boss, difficulty, periodKey }, dropRecords, now)
+    await migrateDropsToConfirmedDifficulty({ ocid, bossKey, difficulty, periodKey }, dropRecords, now)
 
     const alreadyRecorded = existingRecords.some(
       (record) =>
         record.ocid === ocid &&
-        record.boss === boss &&
+        record.bossKey === bossKey &&
         record.difficulty === difficulty &&
         record.periodKey === periodKey,
     )
@@ -110,15 +110,16 @@ async function recordPeriod(
 
     // 가격은 그 처치의 기간으로 고른다. 동기화한 날의 표로 고르면 패치 경계 주가 틀린 값으로 굳고,
     // 위의 `alreadyRecorded` 때문에 다시 고쳐지지 않는다.
-    const priceEntry = findPriceEntry(boss, difficulty, periodKey)
+    const priceEntry = findPriceEntry(bossKey, difficulty, periodKey)
     if (priceEntry === undefined || priceEntry.priceMeso === null) continue
 
-    const partySize = (await withSqliteFallback(getBossPartySize(ocid, boss, difficulty), null)) ?? 1
+    const partySize = (await withSqliteFallback(getBossPartySize(ocid, bossKey, difficulty), null)) ?? 1
 
     await withSqliteTimeout(
       upsertBossProfitRecord({
         ocid,
-        boss,
+        bossKey,
+        boss: bossNameOf(bossKey, bossKey),
         difficulty,
         cycle,
         periodKey,
@@ -154,7 +155,7 @@ export async function recordBossProfitFromWindow(ocids: readonly string[], now: 
       const completed = bosses
         .map(splitBossKey)
         .filter((entry): entry is CompletedBoss => entry !== null)
-        .filter((entry) => getBossCycleByName(entry.boss) === cycle)
+        .filter((entry) => bossCycleOf(entry.bossKey) === cycle)
 
       // **한 기간의 실패가 나머지를 죽이면 안 된다.** 쓰기는 타임아웃을 성공으로 위장하지 않아
       // 실제로 던지고(`withSqliteTimeout`), 그것이 여기서 새면 뒤의 기간과 뒤의 캐릭터가

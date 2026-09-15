@@ -124,7 +124,7 @@ Feature 단위 구조. 각 `features/*` 폴더가 그 기능의 상태·로직�
 2. `nexon/schedule` 이 저장된 키 + **추적 대상 캐릭터** ocid로만 `scheduler/character-state` 호출한다([[ADR-012]]. 계정 전체를 순차 호출하지 않는다). 병렬 정책은 [[ADR-008]] 정정(첫 캐릭터 프리플라이트 1건 + 나머지 `Promise.allSettled`). 같은 회차에 그 캐릭터들의 `character/basic` 도 **편승 갱신**한다([[ADR-097]] 결정 7. 프리플라이트 이후 병렬, best-effort. 실패해도 스케줄 결과를 `isStale` 로 만들지 않는다)
 3. 실패 시 [[ADR-008]] 분기 → 마지막 캐시 유지, 흐름 중단
 4. 응답의 `daily_contents`/`weekly_contents`/`boss_contents` 를 방어적 파싱. `boss_contents` 는 `cycle` 이 `bossWeekly`/`bossMonthly` 인 것만 사용(`bossDaily` 무시)
-5. 보스명·난이도 정규화(난이도 영↔한 = `nexon/normalize`, 보스명 공백제거 비교·`apiAlias` = `lib/boss/boss-matching`, [[ADR-007]]). 매핑 실패는 "알 수 없는 콘텐츠"
+5. 보스 key 채우기(`nexon/normalize` 가 부르는 쪽이 넘긴 `bossKeyOfApiName` 으로, 난이도는 API 값이 key, [[ADR-280]] 결정 12). 표에 없는 보스는 key 가 비어 기록되지 않는다
 6. 컨텐츠 스케줄러 캐시 병합([[ADR-030]])은 [features/content-scheduler.md](../features/content-scheduler.md) 참고
 7. `storage/` 에 캐시 + 동기화 시각 저장 → 각 feature 가 읽기 전용 표시. 이 **동기화 시각(`syncedAt`)이 위 게이트의 판정 근거**다. 성공한 동기화에서만 갱신되므로([[ADR-097]] 결정 2) 실패가 TTL 을 갱신해 조회를 막는 일이 없다
 
@@ -179,7 +179,7 @@ OTA 다운로드 크기다.
 - **렌더 트리 스냅샷을 쓰지 않는다**([[ADR-156]]). 스냅샷은 ‘달라졌다’만 말하고 ‘무엇이 맞는지’는 안 말한다. 맞는 값이 정해져 있으면 **그 값을 단언한다**([[ADR-064]] 결정 11 이 먼저 고른 방법).
 - 신규 기능은 **테스트 먼저(TDD)** 작성 후 통과 구현.
 - `lib/scheduler/reset-clock`: KST 자정/목요일/월·연 경계 단위 테스트(기기 타임존 무관 KST 계산 검증).
-- `nexon/schedule` 파싱/정규화: 실제 응답 fixture로 확인한다. 문자열 flag 파싱, 영↔한 난이도, 양방향 공백 정규화, `apiAlias`, `bossDaily` 필터, 미매핑 폴백.
+- `nexon/schedule` 파싱/정규화: 실제 응답 fixture로 확인한다. 문자열 flag 파싱, 난이도 key, 넘긴 매칭 함수로 채운 보스 key, `bossDaily` 필터, 미매핑 폴백. 보스 이름 규칙(NFC · 양방향 공백)은 `lib/boss/bosses` 테스트가 본다.
 - `nexon/schedule` 에러 경로 / `nexon/client` 큐잉·백오프 / `nexon/character` dedup·동률 대표 선정: [[ADR-008]] 표 각 행 대응 단위 테스트.
 - 컨텐츠 스케줄러 캐시 병합([[ADR-030]]): `lib/scheduler/scheduler-merge.test.ts`(폴백·shareScope 저장소 분기·원장 active 유지·리셋 진행값 리셋·maxCountOverride) + `features/schedule-sync/__tests__`(캐시·원장 읽기/쓰기).
 - 보스 수익 포뮬러(`floor(priceMeso / partySize)`) / 파티원 자동 기록(기본값 소스 [[ADR-019]]) / 파티 관리 upsert / 드롭다운 합계 / 물욕 환산 합산: 각 기능 구현 시 단위 테스트.

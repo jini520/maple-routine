@@ -1,5 +1,6 @@
 import { getSqlitePort } from '../ports'
 import type { SqliteDbConnection } from '../ports'
+import { BOSS_DROP_RECORDS_BODY, BOSS_PARTY_SETTINGS_BODY, BOSS_PROFIT_RECORDS_BODY } from './boss-tables'
 import { runVersionedMigrations } from './migrations'
 
 const DB_NAME = 'boss_profit'
@@ -69,41 +70,11 @@ const INCOME_RECORDS_BODY = `(
 const TABLE_DEFINITIONS = [
   {
     name: 'boss_profit_records',
-    createSql: `
-  CREATE TABLE IF NOT EXISTS boss_profit_records (
-    ocid TEXT NOT NULL,
-    boss TEXT NOT NULL,
-    difficulty TEXT NOT NULL,
-    cycle TEXT NOT NULL,
-    period_key TEXT NOT NULL,
-    party_size INTEGER NOT NULL,
-    price_meso INTEGER NOT NULL,
-    payout_meso INTEGER NOT NULL,
-    recorded_at TEXT NOT NULL,
-    -- 기록 시점의 월드 스냅샷. NULL이면 "월드 모름"이고 월드별 결정석 집계에서
-    -- 제외된다. 월드를 파생값(캐시된 character/basic)으로 두면 월드 리프가 모든 과거 주의 귀속을
-    -- 소급 이동시킨다. 분모(90 x 월드 수)까지 바뀐다.
-    world TEXT,
-    -- 처치 **날짜**(KST YYYY-MM-DD). period_key 는 주(목요일)·달이라 "며칟날" 을 못 든다.
-    -- NULL 은 "모름" 이고 가계부의 월간 칸 집계에서 조용히 빠진다(world 와 같은 모양). 키가
-    -- 아니므로 나중에 채워 넣어도 옛 행이 움직이지 않는다.
-    defeated_on TEXT,
-    PRIMARY KEY (ocid, boss, difficulty, period_key)
-  )
-`,
+    createSql: `CREATE TABLE IF NOT EXISTS boss_profit_records ${BOSS_PROFIT_RECORDS_BODY}`,
   },
   {
     name: 'boss_party_settings',
-    createSql: `
-  CREATE TABLE IF NOT EXISTS boss_party_settings (
-    ocid TEXT NOT NULL,
-    boss TEXT NOT NULL,
-    difficulty TEXT NOT NULL,
-    party_size INTEGER NOT NULL,
-    updated_at TEXT NOT NULL,
-    PRIMARY KEY (ocid, boss, difficulty)
-  )
-`,
+    createSql: `CREATE TABLE IF NOT EXISTS boss_party_settings ${BOSS_PARTY_SETTINGS_BODY}`,
   },
   {
     name: 'boss_profit_period_checks',
@@ -122,28 +93,7 @@ const TABLE_DEFINITIONS = [
   // 난이도 확정 이관·prune 삭제가 가격까지 함께 옮기고 지운다.
   {
     name: 'boss_drop_records',
-    createSql: `CREATE TABLE IF NOT EXISTS boss_drop_records (
-    ocid TEXT NOT NULL,
-    boss TEXT NOT NULL,
-    difficulty TEXT NOT NULL,
-    period_key TEXT NOT NULL,
-    drop_index INTEGER NOT NULL,
-    category TEXT NOT NULL,
-    item_key TEXT,
-    item_name TEXT NOT NULL,
-    slot TEXT,
-    box_origin_key TEXT,
-    box_origin TEXT,
-    ring_level INTEGER,
-    quantity INTEGER NOT NULL,
-    recorded_at TEXT NOT NULL,
-    -- 가격. 셋 다 nullable 이고 NULL 은 '미입력'이다. 0 을 쓰면
-    -- '0메소에 팔았다'가 되어 스킵·미입력과 구분이 사라진다.
-    price_state TEXT,
-    price_meso INTEGER,
-    price_share INTEGER,
-    PRIMARY KEY (ocid, boss, difficulty, period_key, drop_index)
-)`,
+    createSql: `CREATE TABLE IF NOT EXISTS boss_drop_records ${BOSS_DROP_RECORDS_BODY}`,
   },
   // 캐릭터 이름·초상의 스냅샷. 캐릭터당 한 행이고 기록에 이름과 얼굴을 붙이는 데만 쓴다.
   // `character-basic-cache` 와 값이 같고 수명이 다르다. 그쪽은 5분 TTL 캐시이고 캐시 비우기의

@@ -4,9 +4,9 @@ import {
   type SchedulerContentTemplateEntry,
 } from '../scheduler/manual-content-merge'
 import type { DailyContent } from '../../types'
-import type { ManualTrackedItem } from '../../types/scheduler'
+import type { ManualTrackedContentItem } from '../../types/scheduler'
 
-function contentItem(contentName: string): ManualTrackedItem {
+function contentItem(contentName: string): ManualTrackedContentItem {
   return { contentName, kind: 'daily' }
 }
 

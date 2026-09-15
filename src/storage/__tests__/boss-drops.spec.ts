@@ -35,8 +35,8 @@ describe('replaceBossDropRecords', () => {
 
     await replaceBossDropRecords(
       'ocid-1',
-      '스우',
-      '하드',
+      'lotus',
+      'hard',
       '2026-W30',
       drops,
       '2026-07-26T00:00:00.000Z',
@@ -46,15 +46,17 @@ describe('replaceBossDropRecords', () => {
 
     const [delSql, delValues] = runMock.mock.calls[0]
     expect(delSql).toContain('DELETE FROM boss_drop_records')
-    expect(delSql).toContain('WHERE ocid = ? AND boss = ? AND difficulty = ? AND period_key = ?')
-    expect(delValues).toEqual(['ocid-1', '스우', '하드', '2026-W30'])
+    expect(delSql).toContain('WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ?')
+    expect(delValues).toEqual(['ocid-1', 'lotus', 'hard', '2026-W30'])
 
     const [insSql, insValues0] = runMock.mock.calls[1]
     expect(insSql).toContain('INSERT INTO boss_drop_records')
     expect(insValues0).toEqual([
       'ocid-1',
+      'lotus',
+      // 이름 칸에는 보스 표의 이름을 함께 적는다.
       '스우',
-      '하드',
+      'hard',
       '2026-W30',
       0,
       'equipment',
@@ -74,8 +76,9 @@ describe('replaceBossDropRecords', () => {
     const [, insValues1] = runMock.mock.calls[2]
     expect(insValues1).toEqual([
       'ocid-1',
+      'lotus',
       '스우',
-      '하드',
+      'hard',
       '2026-W30',
       1,
       'consumable',
@@ -96,7 +99,7 @@ describe('replaceBossDropRecords', () => {
   it('드롭이 비면 DELETE만 하고 INSERT하지 않는다', async () => {
     const { replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
 
-    await replaceBossDropRecords('ocid-1', '스우', '하드', '2026-W30', [], '2026-07-26T00:00:00.000Z')
+    await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W30', [], '2026-07-26T00:00:00.000Z')
 
     expect(runMock).toHaveBeenCalledTimes(1)
     expect(runMock.mock.calls[0][0]).toContain('DELETE FROM boss_drop_records')
@@ -112,7 +115,7 @@ describe('subscribeBossDropRecordsRevision', () => {
     const listener = jest.fn()
     const unsubscribe = subscribeBossDropRecordsRevision(listener)
 
-    await replaceBossDropRecords('ocid-1', '스우', '하드', '2026-W30', drops, '2026-07-26T00:00:00.000Z')
+    await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W30', drops, '2026-07-26T00:00:00.000Z')
 
     expect(listener).toHaveBeenCalledTimes(1)
     unsubscribe()
@@ -126,7 +129,7 @@ describe('subscribeBossDropRecordsRevision', () => {
     runMock.mockRejectedValueOnce(new Error('database is locked'))
 
     await expect(
-      replaceBossDropRecords('ocid-1', '스우', '하드', '2026-W30', drops, '2026-07-26T00:00:00.000Z'),
+      replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W30', drops, '2026-07-26T00:00:00.000Z'),
     ).rejects.toThrow('database is locked')
 
     expect(listener).not.toHaveBeenCalled()
@@ -139,7 +142,7 @@ describe('subscribeBossDropRecordsRevision', () => {
     const listener = jest.fn()
     subscribeBossDropRecordsRevision(listener)()
 
-    await replaceBossDropRecords('ocid-1', '스우', '하드', '2026-W30', [], '2026-07-26T00:00:00.000Z')
+    await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W30', [], '2026-07-26T00:00:00.000Z')
 
     expect(listener).not.toHaveBeenCalled()
   })
@@ -166,8 +169,9 @@ describe('getBossDropRecords', () => {
       values: [
         {
           ocid: 'ocid-1',
+          boss_key: 'lotus',
           boss: '스우',
-          difficulty: '하드',
+          difficulty: 'hard',
           period_key: '2026-W30',
           drop_index: 1,
           category: 'consumable',
@@ -193,8 +197,9 @@ describe('getBossDropRecords', () => {
     expect(result).toEqual([
       {
         ocid: 'ocid-1',
+        bossKey: 'lotus',
         boss: '스우',
-        difficulty: '하드',
+        difficulty: 'hard',
         periodKey: '2026-W30',
         dropIndex: 1,
         category: 'consumable',
@@ -258,8 +263,9 @@ describe('getAllBossDropRecords', () => {
       values: [
         {
           ocid: 'ocid-1',
+          boss_key: 'lotus',
           boss: '스우',
-          difficulty: '하드',
+          difficulty: 'hard',
           period_key: '2026-07-09',
           drop_index: 0,
           category: 'equipment',
@@ -277,8 +283,9 @@ describe('getAllBossDropRecords', () => {
     await expect(getAllBossDropRecords(['ocid-1'])).resolves.toEqual([
       {
         ocid: 'ocid-1',
+        bossKey: 'lotus',
         boss: '스우',
-        difficulty: '하드',
+        difficulty: 'hard',
         periodKey: '2026-07-09',
         dropIndex: 0,
         category: 'equipment',
@@ -314,8 +321,8 @@ describe('가격 컬럼 왕복', () => {
 
     await replaceBossDropRecords(
       'ocid-1',
-      '스우',
-      '하드',
+      'lotus',
+      'hard',
       '2026-08-06',
       [
         {
@@ -342,8 +349,8 @@ describe('가격 컬럼 왕복', () => {
 
     await replaceBossDropRecords(
       'ocid-1',
-      '스우',
-      '하드',
+      'lotus',
+      'hard',
       '2026-08-06',
       [{ category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 }],
       '2026-08-10T00:00:00.000Z',
@@ -359,8 +366,9 @@ describe('가격 컬럼 왕복', () => {
       values: [
         {
           ocid: 'ocid-1',
+          boss_key: 'lotus',
           boss: '스우',
-          difficulty: '하드',
+          difficulty: 'hard',
           period_key: '2026-08-06',
           drop_index: 0,
           category: 'equipment',

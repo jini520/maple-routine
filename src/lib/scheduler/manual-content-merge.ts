@@ -1,5 +1,5 @@
 import type { DailyContent, WeeklyContent } from '../../types'
-import type { ManualTrackedItem } from '../../types/scheduler'
+import type { ManualTrackedContentItem } from '../../types/scheduler'
 import type { EffectivePeriod } from '../boss/boss-profit-period'
 
 // scheduler-content-template.json의 항목 shape. Nexon wire 응답(NexonDailyContentWire/
@@ -32,7 +32,7 @@ function parseQuestState(raw: '0' | '1' | '2' | null): 0 | 1 | 2 | null {
 // 반환 순서는 tracked(추가/삭제 순서)가 아니라 template 순서를 따른다. 항목을 추가·제거해도
 // 순서가 흔들리지 않고 컨텐츠 관리 화면과 동일하게 고정된다.
 export function mergeManualContentList(
-  tracked: ManualTrackedItem[],
+  tracked: ManualTrackedContentItem[],
   synced: DailyContent[] | WeeklyContent[],
   template: SchedulerContentTemplateEntry[],
 ): DailyContent[] {

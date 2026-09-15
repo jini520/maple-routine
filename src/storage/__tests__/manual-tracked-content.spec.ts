@@ -17,7 +17,7 @@ const SAMPLE_ITEMS: ManualTrackedItem[] = [
   { contentName: '몬스터파크', kind: 'daily', maxCount: 14 },
   { contentName: '[일일 퀘스트] 소멸의 여로 조사', kind: 'daily' },
   { contentName: '무릉도장', kind: 'weekly' },
-  { contentName: '검은 마법사', kind: 'boss', difficulty: 'extreme' },
+  { kind: 'boss', bossKey: 'black_mage', difficulty: 'extreme' },
 ]
 
 describe('저장된 값이 없는 경우', () => {
@@ -66,13 +66,13 @@ describe('레거시 kind 마이그레이션', () => {
     await prefs.set('manualTrackedContent:ocid-1', JSON.stringify([
         { contentName: '몬스터파크', kind: 'content', maxCount: 14 },
         { contentName: '무릉도장', kind: 'content' },
-        { contentName: '루시드', kind: 'boss', difficulty: '이지' },
+        { kind: 'boss', bossKey: 'lucid', difficulty: 'easy' },
       ]))
 
     await expect(getManualTrackedContent('ocid-1')).resolves.toEqual([
       { contentName: '몬스터파크', kind: 'daily', maxCount: 14 },
       { contentName: '무릉도장', kind: 'weekly' },
-      { contentName: '루시드', kind: 'boss', difficulty: '이지' },
+      { kind: 'boss', bossKey: 'lucid', difficulty: 'easy' },
     ])
   })
 
@@ -85,6 +85,34 @@ describe('레거시 kind 마이그레이션', () => {
     await expect(getManualTrackedContent('ocid-1')).resolves.toEqual([
       { contentName: '몬스터파크', kind: 'daily' },
     ])
+  })
+})
+
+// 보스가 key 대신 이름과 한글 난이도를 들던 모양. 읽을 때 보스 표에서 key 를 찾는다.
+describe('보스 항목 key 이관', () => {
+  it('보스 이름과 한글 난이도를 보스 key 와 난이도 key 로 옮긴다. 데이터 옛 표기도 찾는다', async () => {
+    await prefs.set('manualTrackedContent:ocid-1', JSON.stringify([
+        { contentName: '루시드', kind: 'boss', difficulty: '이지' },
+        { contentName: '검은마법사', kind: 'boss', difficulty: '익스트림' },
+        { contentName: '몬스터파크', kind: 'daily', maxCount: 14 },
+      ]))
+
+    await expect(getManualTrackedContent('ocid-1')).resolves.toEqual([
+      { kind: 'boss', bossKey: 'lucid', difficulty: 'easy' },
+      { kind: 'boss', bossKey: 'black_mage', difficulty: 'extreme' },
+      { contentName: '몬스터파크', kind: 'daily', maxCount: 14 },
+    ])
+  })
+
+  // 보스 표에 없는 보스는 추적할 key 가 없다.
+  it('보스 표에서 못 찾는 보스 항목은 빠진다', async () => {
+    await prefs.set('manualTrackedContent:ocid-1', JSON.stringify([
+        { contentName: '카이', kind: 'boss', difficulty: '노멀' },
+        { contentName: '루시드', kind: 'boss', difficulty: '헬' },
+        { contentName: '윌', kind: 'boss', difficulty: '하드' },
+      ]))
+
+    await expect(getManualTrackedContent('ocid-1')).resolves.toEqual([{ kind: 'boss', bossKey: 'will', difficulty: 'hard' }])
   })
 })
 

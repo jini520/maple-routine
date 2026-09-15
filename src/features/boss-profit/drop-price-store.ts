@@ -38,13 +38,16 @@ import { resolveDisplayProfiles } from '../character-profile/resolve'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import type { BossDifficulty } from '../../types'
 import type { RecordedDrop } from '../../types/drops'
+import { bossNameOf } from '../../lib/boss/bosses'
 
 /** 목록의 한 줄 = 기록 한 건. 어느 보스·누구의 것인지가 함께 붙어야 값을 매길 수 있다. */
 export interface DropPriceEntry {
-  /** `(ocid, boss, difficulty, periodKey, dropIndex)`. 저장할 때 대상을 되찾는 키다. */
+  /** `(ocid, bossKey, difficulty, periodKey, dropIndex)`. 저장할 때 대상을 되찾는 키다. */
   id: string
   ocid: string
-  boss: string
+  bossKey: string
+  /** 보이는 보스 이름. 보스 표 이름이고, 표에서 빠진 보스면 적어 둔 이름이다. */
+  bossName: string
   difficulty: BossDifficulty
   periodKey: string
   dropIndex: number
@@ -94,19 +97,18 @@ interface DropPriceState {
 // 히스토리와 같은 사정. 여기서 실패를 빈 배열로 바꾸면 "기록이 없습니다"라는 **거짓 빈 상태**가
 // 된다. 실패는 실패로 알린다.
 
-function entryId(record: Pick<BossDropRecord, 'ocid' | 'boss' | 'difficulty' | 'periodKey' | 'dropIndex'>): string {
-  return `${record.ocid}|${record.boss}|${record.difficulty}|${record.periodKey}|${record.dropIndex}`
+function entryId(record: Pick<BossDropRecord, 'ocid' | 'bossKey' | 'difficulty' | 'periodKey' | 'dropIndex'>): string {
+  return `${record.ocid}|${record.bossKey}|${record.difficulty}|${record.periodKey}|${record.dropIndex}`
 }
 
 /**
  * 저장 그룹의 키. `replaceBossDropRecords` 의 단위다(`dropIndex` 는 빠진다).
  *
  * `difficulty` 를 `string` 으로 받는 것은 저장 계층이 난이도를 좁히지 않은 문자열로 들고
- * 있어서다(매칭 실패 원문명이 들어올 수 있다). 같은 키 함수를 저장 행과 화면 엔트리 양쪽에
- * 쓰려면 넓은 쪽에 맞춰야 한다.
+ * 있어서다. 같은 키 함수를 저장 행과 화면 엔트리 양쪽에 쓰려면 넓은 쪽에 맞춰야 한다.
  */
-function saveGroupKey(entry: { ocid: string; boss: string; difficulty: string; periodKey: string }): string {
-  return `${entry.ocid}|${entry.boss}|${entry.difficulty}|${entry.periodKey}`
+function saveGroupKey(entry: { ocid: string; bossKey: string; difficulty: string; periodKey: string }): string {
+  return `${entry.ocid}|${entry.bossKey}|${entry.difficulty}|${entry.periodKey}`
 }
 
 function buildGroups(
@@ -132,7 +134,8 @@ function buildGroups(
     groups[index].entries.push({
       id: entryId(record),
       ocid: record.ocid,
-      boss: record.boss,
+      bossKey: record.bossKey,
+      bossName: bossNameOf(record.bossKey, record.boss),
       difficulty: record.difficulty as BossDifficulty,
       periodKey: record.periodKey,
       dropIndex: record.dropIndex,
@@ -340,7 +343,7 @@ function isMonthlyPeriodKey(periodKey: string): boolean {
 function standsInWeek(
   record: BossDropRecord,
   weeklyPeriodKey: string,
-  profitRecords: readonly { ocid: string; boss: string; difficulty: string; periodKey: string; defeatedOn?: string | null }[],
+  profitRecords: readonly { ocid: string; bossKey: string; difficulty: string; periodKey: string; defeatedOn?: string | null }[],
   weeksWithRecords: readonly string[],
 ): boolean {
   const profit = profitRecords.find((candidate) => saveGroupKey(candidate) === saveGroupKey(record))
@@ -378,7 +381,7 @@ async function writePrice(
 
   await replaceBossDropRecords(
     entry.ocid,
-    entry.boss,
+    entry.bossKey,
     entry.difficulty,
     entry.periodKey,
     nextDrops,
@@ -390,7 +393,7 @@ async function writePrice(
   // 화면에 남으면 저장된 것처럼 보인다.
   useBossProfitStore
     .getState()
-    .applyExternalDropEdit(entry.ocid, entry.boss, entry.difficulty, entry.periodKey, nextDrops)
+    .applyExternalDropEdit(entry.ocid, entry.bossKey, entry.difficulty, entry.periodKey, nextDrops)
 
   set({
     groups: get().groups.map((group) => ({

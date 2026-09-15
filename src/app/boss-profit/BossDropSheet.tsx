@@ -22,6 +22,7 @@ import { useDropEffectStore } from '../../features/drop-effect/store'
 import { getFixedDropIcons, type FixedDropIconSpec } from '../../lib/drop/fixed-drops'
 import { dropItemIconOf, getItemIconUrlByFile } from '../../lib/assets/asset-lookup'
 import { dropItemNameOf } from '../../lib/drop/drop-items'
+import { bossNameOf } from '../../lib/boss/bosses'
 import { isValuableDropItem } from '../../lib/drop/valuable-drops'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types'
 import type { DropCandidate, DropCategory, RecordedDrop, SelectableDropCategory } from '../../types/drops'
@@ -41,6 +42,7 @@ import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { DropEffectOverlay } from '../../components/organisms/DropEffectOverlay/DropEffectOverlay'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
+import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
 import { DropPricePadContent } from './DropPricePad'
 
 // 선택 가능한 카테고리(장비·소비)의 라벨과 아이콘(노란 점 대신 아이콘). 고정은
@@ -56,7 +58,8 @@ const CATEGORY_META: Record<
 const DISPLAY_ORDER: SelectableDropCategory[] = ['equipment', 'consumable']
 
 interface BossDropSheetProps {
-  boss: string
+  /** 보스 key. 드롭 표를 찾고, 머리의 이름은 보스 표에서 찾는다. */
+  bossKey: string
   // 수익 리스트 행의 난이도. 미완료면 시트 안 난이도 토글의 기본값, 완료면 그 난이도만 표시한다.
   difficulty: BossDifficulty
   /** 그 행의 기간. 그 기간에 나오는 아이템과 고정 보상만 선다. */
@@ -158,10 +161,10 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
 
   // 난이도별 표시: 장비·소비는 name+slot으로 통합된 후보에서 현재 난이도만 필터, 고정은 현재
   // 난이도 그룹만. 통합 후보는 등장 난이도(difficulties)를 담고 있어 그대로 필터에 쓴다.
-  const allCandidates = getBossDropCandidates(props.boss, props.periodKey)
-  const allFixedGroups = getBossFixedDrops(props.boss, props.periodKey)
+  const allCandidates = getBossDropCandidates(props.bossKey, props.periodKey)
+  const allFixedGroups = getBossFixedDrops(props.bossKey, props.periodKey)
   // 난이도 토글 후보 = 드롭 테이블에 있는 난이도 + 행 난이도(테이블에 없어도 기본값은 항상 노출).
-  const tableDifficulties = getBossDifficulties(props.boss)
+  const tableDifficulties = getBossDifficulties(props.bossKey)
   const difficultyOptions = BOSS_DIFFICULTIES.filter(
     (difficulty) => tableDifficulties.includes(difficulty) || difficulty === props.difficulty,
   )
@@ -192,7 +195,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   // 타일 key 가 없는 옛 기록은 판정하지 않고 남긴다. 못 찾은 것이 못 먹은 것은 아니다.
   function selectDifficulty(next: BossDifficulty): void {
     if (next === selectedDifficulty) return
-    const availableTileKeys = getObtainableTileKeys(props.boss, next, props.periodKey)
+    const availableTileKeys = getObtainableTileKeys(props.bossKey, next, props.periodKey)
     setSelected((prev) =>
       prev.filter((drop) => {
         const tileKey = dropTileKey(drop)
@@ -281,7 +284,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
           // 기록한 한 건이라 뒤로 누르는 것이 곧 같은 일이다.
           <DropPricePadContent
             drop={pricing}
-            boss={props.boss}
+            bossName={bossNameOf(props.bossKey, props.bossKey)}
             difficulty={selectedDifficulty}
             characterName={props.pricing.characterName}
             defaultShare={props.pricing.defaultShare}
@@ -299,7 +302,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
         ) : activeBox === null ? (
           <View>
             <View className="flex-row items-center gap-2 px-4 pb-1 pt-1">
-              <Text className="text-lg font-bold text-text">{props.boss}</Text>
+              <Text className="text-lg font-bold text-text">{bossNameOf(props.bossKey, props.bossKey)}</Text>
               <EffectToggle on={effectEnabled} onToggle={() => void setEffectEnabled(!effectEnabled)} />
             </View>
             <View className="flex-row flex-wrap items-center gap-x-2 gap-y-1.5 px-4 pb-3">
@@ -308,7 +311,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                 // 완료: 완료된 난이도만 표시(선택 불가). 미완료 토글과 동일하게 오른쪽 끝 정렬.
                 <View className="ml-auto">
                   <Badge variant={props.difficulty}>
-                    {props.difficulty}
+                    {DIFFICULTY_NAME[props.difficulty]}
                   </Badge>
                 </View>
               ) : (
@@ -320,13 +323,13 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                       <Pressable
                         key={difficulty}
                         role="button"
-                        aria-label={difficulty}
+                        aria-label={DIFFICULTY_NAME[difficulty]}
                         aria-selected={active}
                         onPress={() => selectDifficulty(difficulty)}
                         className={active ? '' : 'opacity-40'}
                       >
                         <Badge variant={difficulty}>
-                          {difficulty}
+                          {DIFFICULTY_NAME[difficulty]}
                         </Badge>
                       </Pressable>
                     )
@@ -434,7 +437,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                           <View className="rounded-xl border border-border bg-surface px-2 pb-3 pt-1">
                             <View className="flex-row">
                               <Badge variant={group.difficulty}>
-                                {group.difficulty}
+                                {DIFFICULTY_NAME[group.difficulty]}
                               </Badge>
                             </View>
                             <View className="mt-1.5 flex-row flex-wrap items-center justify-center gap-x-2 gap-y-2.5">

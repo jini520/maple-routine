@@ -21,7 +21,7 @@ import type { BossProfitRow } from './rows'
 /** 지울 드롭 한 무리. `replaceBossDropRecords` 의 삭제 단위와 같은 키다. */
 export interface OrphanDropGroup {
   ocid: string
-  boss: string
+  bossKey: string
   difficulty: string
   periodKey: string
   /** 이 무리가 들고 있던 기록 수. 토스트가 말할 값이다. */
@@ -30,7 +30,7 @@ export interface OrphanDropGroup {
 
 export interface OrphanDropPlanInput {
   /** 이 회차가 그린 행 전부(보고 있는 기간 ∪ 지금 기간). */
-  rows: readonly Pick<BossProfitRow, 'ocid' | 'boss' | 'periodKey'>[]
+  rows: readonly Pick<BossProfitRow, 'ocid' | 'bossKey' | 'periodKey'>[]
   /** 이미 읽어 둔 드롭 기록. */
   records: readonly BossDropRecord[]
   /**
@@ -42,7 +42,7 @@ export interface OrphanDropPlanInput {
   knownPeriodKeys: ReadonlySet<string>
 }
 
-const bossKey = (ocid: string, boss: string, periodKey: string): string => `${ocid}|${boss}|${periodKey}`
+const bossPeriodKeyOf = (ocid: string, bossKey: string, periodKey: string): string => `${ocid}|${bossKey}|${periodKey}`
 const periodKeyOf = (ocid: string, periodKey: string): string => `${ocid}|${periodKey}`
 
 /**
@@ -55,14 +55,14 @@ const periodKeyOf = (ocid: string, periodKey: string): string => `${ocid}|${peri
  * 2. 그 (ocid, 기간)에 행이 하나라도 있어야 한다. 백필된 적 없는 과거 주는 기록이 통째로 비어
  *    행 없음이 아무것도 뜻하지 않는다.
  * 3. 결정석 가격을 아는 (보스, 난이도)만. 가격 미확정 보스는 완료여도 자동 기록이 안 남으므로
- *    과거 기간에서 행이 없는 것이 정상이다. 실제로 막는 것은 매칭 실패 원문명이다.
+ *    과거 기간에서 행이 없는 것이 정상이다.
  * 4. 믿을 수 있는 캐릭터·아는 기간만.
  */
 export function planOrphanDropCleanup(input: OrphanDropPlanInput): OrphanDropGroup[] {
   const bossesWithRow = new Set<string>()
   const periodsWithRow = new Set<string>()
   for (const row of input.rows) {
-    bossesWithRow.add(bossKey(row.ocid, row.boss, row.periodKey))
+    bossesWithRow.add(bossPeriodKeyOf(row.ocid, row.bossKey, row.periodKey))
     periodsWithRow.add(periodKeyOf(row.ocid, row.periodKey))
   }
 
@@ -72,15 +72,15 @@ export function planOrphanDropCleanup(input: OrphanDropPlanInput): OrphanDropGro
     if (!input.trustedOcids.has(record.ocid)) continue
     if (!input.knownPeriodKeys.has(record.periodKey)) continue
     if (!periodsWithRow.has(periodKeyOf(record.ocid, record.periodKey))) continue
-    if (bossesWithRow.has(bossKey(record.ocid, record.boss, record.periodKey))) continue
-    if (findPriceEntry(record.boss, record.difficulty as BossDifficulty, record.periodKey) === undefined) continue
+    if (bossesWithRow.has(bossPeriodKeyOf(record.ocid, record.bossKey, record.periodKey))) continue
+    if (findPriceEntry(record.bossKey, record.difficulty as BossDifficulty, record.periodKey) === undefined) continue
 
-    const key = `${record.ocid}|${record.boss}|${record.difficulty}|${record.periodKey}`
+    const key = `${record.ocid}|${record.bossKey}|${record.difficulty}|${record.periodKey}`
     const group = groups.get(key)
     if (group === undefined) {
       groups.set(key, {
         ocid: record.ocid,
-        boss: record.boss,
+        bossKey: record.bossKey,
         difficulty: record.difficulty,
         periodKey: record.periodKey,
         dropCount: 1,
@@ -126,7 +126,7 @@ export async function sweepOrphanDrops(input: OrphanDropSweepInput): Promise<num
     // 순차 실행이다. `replaceBossDropRecords` 가 공유 커넥션에 자체 트랜잭션을 열어
     // 동시에 던지면 겹친다(`auto-record.ts` 의 upsert 루프와 같은 이유).
     await withSqliteFallback(
-      replaceBossDropRecords(group.ocid, group.boss, group.difficulty, group.periodKey, [], recordedAt),
+      replaceBossDropRecords(group.ocid, group.bossKey, group.difficulty, group.periodKey, [], recordedAt),
       undefined,
     )
     removed += group.dropCount

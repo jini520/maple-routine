@@ -12,6 +12,7 @@ import {
 import { useDataFreshness } from '../../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import weeklyBossesData from '../../../data/weekly-bosses.json'
+import { bossKeyOfApiName } from '../../../lib/boss/bosses'
 import { WEEKLY_BOSS_CLEAR_LIMIT, type MatchedBoss } from '../../../lib/boss/boss-matching'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
@@ -116,16 +117,19 @@ function character(overrides: Partial<BossCharacterView> = {}): BossCharacterVie
   }
 }
 
+/** 참조 데이터의 보스 이름에서 key. 목록을 이름으로 뽑는 케이스가 쓴다. */
+const keyOf = (name: string): string => bossKeyOfApiName(name) ?? name
+
 // 보스 이름·난이도는 **참조 데이터에 실재하는 것만** 쓴다(게임 수치를 지어내지 않는다).
 function boss(overrides: Partial<MatchedBoss> = {}): MatchedBoss {
   return {
     apiName: '자쿰',
-    difficulty: '카오스',
+    difficulty: 'chaos',
     cycle: 'weekly',
     isRegistered: true,
     isComplete: false,
     ownComplete: false,
-    matchedBossName: '자쿰',
+    bossKey: 'zakum',
     portraitSlug: 'zakum',
     isSeasonBoss: false,
     ...overrides,
@@ -243,13 +247,13 @@ describe('BossScreen: 목록', () => {
         character({
           weeklyBosses: [
             boss(),
-            boss({ apiName: '매그너스', matchedBossName: '매그너스', difficulty: '하드', isRegistered: false }),
+            boss({ apiName: '매그너스', bossKey: 'magnus', difficulty: 'hard', isRegistered: false }),
           ],
           monthlyBosses: [
             boss({
               apiName: '검은 마법사',
-              matchedBossName: '검은마법사',
-              difficulty: '하드',
+              bossKey: 'black_mage',
+              difficulty: 'hard',
               cycle: 'monthly',
               portraitSlug: 'blackMage',
               isComplete: true,
@@ -269,7 +273,7 @@ describe('BossScreen: 목록', () => {
 
     await renderScreen()
 
-    expect(screen.getByText('검은마법사')).toBeTruthy()
+    expect(screen.getByText('검은 마법사')).toBeTruthy()
     expect(screen.getByText('자쿰')).toBeTruthy()
     expect(screen.getByText('카오스')).toBeTruthy()
     expect(screen.queryByText('매그너스')).toBeNull()
@@ -315,8 +319,8 @@ describe('BossScreen: 목록', () => {
       characters: [
         character({
           weeklyBosses: [
-            boss({ apiName: '자쿰', matchedBossName: '자쿰', isRegistered: false, isComplete: true }),
-            boss({ apiName: '매그너스', matchedBossName: '매그너스', difficulty: '하드', isRegistered: false }),
+            boss({ apiName: '자쿰', bossKey: 'zakum', isRegistered: false, isComplete: true }),
+            boss({ apiName: '매그너스', bossKey: 'magnus', difficulty: 'hard', isRegistered: false }),
           ],
         }),
       ],
@@ -399,8 +403,8 @@ describe('BossScreen: 챌린저스 시즌 보스 배지', () => {
   const seasonBoss = (overrides: Partial<MatchedBoss> = {}): MatchedBoss =>
     boss({
       apiName: '시즌 보스 메이린',
-      matchedBossName: '시즌 보스 메이린',
-      difficulty: '하드',
+      bossKey: 'meirin',
+      difficulty: 'hard',
       portraitSlug: 'maerin',
       isSeasonBoss: true,
       isRegistered: false,
@@ -438,8 +442,8 @@ describe('BossScreen: 챌린저스 시즌 보스 배지', () => {
           monthlyBosses: [
             boss({
               apiName: '검은 마법사',
-              matchedBossName: '검은마법사',
-              difficulty: '하드',
+              bossKey: 'black_mage',
+              difficulty: 'hard',
               cycle: 'monthly',
               portraitSlug: 'blackMage',
               isRegistered: true,
@@ -667,14 +671,14 @@ describe('BossScreen: 실패의 목적지', () => {
 })
 
 describe('BossScreen: 솔로/파티 필터', () => {
-  const 스우 = boss({ apiName: '스우', matchedBossName: '스우', difficulty: '하드', portraitSlug: 'lucid' })
+  const 스우 = boss({ apiName: '스우', bossKey: 'lotus', difficulty: 'hard', portraitSlug: 'lucid' })
 
   const withFilterFixture = (): Store =>
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
       // 자쿰만 4인 파티. 나머지는 설정이 없어 솔로로 친다.
-      partySizes: { 'ocid-1:자쿰:카오스': 4 },
+      partySizes: { 'ocid-1:zakum:chaos': 4 },
       characters: [character({ weeklyBosses: [boss(), 스우] })],
     })
 
@@ -713,15 +717,15 @@ describe('BossScreen: 솔로/파티 필터', () => {
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
-      partySizes: { 'ocid-1:자쿰:카오스': 4 },
+      partySizes: { 'ocid-1:zakum:chaos': 4 },
       characters: [
         character({
           weeklyBosses: [boss(), 스우],
           monthlyBosses: [
             boss({
               apiName: '검은 마법사',
-              matchedBossName: '검은마법사',
-              difficulty: '하드',
+              bossKey: 'black_mage',
+              difficulty: 'hard',
               cycle: 'monthly',
               portraitSlug: 'blackMage',
             }),
@@ -735,7 +739,7 @@ describe('BossScreen: 솔로/파티 필터', () => {
 
     // 자쿰만 파티 설정(4인)이 있다. 검마와 스우는 미설정이라 솔로로 취급돼 함께 사라진다.
     expect(screen.getByText('자쿰')).toBeTruthy()
-    expect(screen.queryByText('검은마법사')).toBeNull()
+    expect(screen.queryByText('검은 마법사')).toBeNull()
     expect(screen.queryByText('스우')).toBeNull()
     // 무리가 비면 그 헤더도 함께 사라진다.
     expect(sectionOrder()).toEqual(['weekly'])
@@ -848,12 +852,29 @@ describe('BossScreen: 카드 탭 → 파티 인원 모달', () => {
     expect(screen.getByTestId('party-size-modal')).toBeTruthy()
   })
 
+  // 새 보스가 나왔는데 보스 표를 아직 못 고쳤다. 카드는 API 원문으로 서지만 파티 설정을 저장할 key 가 없다.
+  it('보스 표에 없는 보스는 API 이름으로 서고 카드를 누를 수 없다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [character({ weeklyBosses: [boss({ apiName: '새로운 보스', bossKey: null, portraitSlug: null })] })],
+    })
+    await renderScreen()
+
+    expect(screen.getByText('새로운 보스')).toBeTruthy()
+    expect(screen.queryByLabelText('새로운 보스 파티 설정')).toBeNull()
+
+    await press(screen.getByLabelText('새로운 보스'))
+
+    expect(screen.queryByTestId('party-size-modal')).toBeNull()
+  })
+
   it('스테퍼를 누르면 그 (보스, 난이도)로 setPartySize 를 부른다', async () => {
     const store = await opened()
 
     await press(screen.getByLabelText('자쿰 파티원 수 증가'))
 
-    expect(store.setPartySize).toHaveBeenCalledWith('ocid-1', '자쿰', '카오스', 2)
+    expect(store.setPartySize).toHaveBeenCalledWith('ocid-1', 'zakum', 'chaos', 2)
   })
 
   it('저장이 실패하면 관리 페이지와 같은 문구로 토스트를 띄운다', async () => {
@@ -881,7 +902,7 @@ describe('BossScreen: 카드 탭 → 파티 인원 모달', () => {
       characters: [
         character({
           weeklyBosses: [
-            boss({ apiName: '스우', matchedBossName: '스우', difficulty: '하드', portraitSlug: 'lucid' }),
+            boss({ apiName: '스우', bossKey: 'lotus', difficulty: 'hard', portraitSlug: 'lucid' }),
           ],
         }),
       ],
@@ -895,7 +916,7 @@ describe('BossScreen: 카드 탭 → 파티 인원 모달', () => {
 
     // 편집 대상이 옮겨졌다는 증거. 이제 스테퍼가 그 난이도로 저장한다.
     await press(screen.getByLabelText('스우 파티원 수 증가'))
-    expect(store.setPartySize).toHaveBeenCalledWith('ocid-1', '스우', '익스트림', 2)
+    expect(store.setPartySize).toHaveBeenCalledWith('ocid-1', 'lotus', 'extreme', 2)
   })
 
   it('수동 모드에서 난이도를 바꾸면 단일 액션으로 멤버십을 교체한다', async () => {
@@ -904,7 +925,7 @@ describe('BossScreen: 카드 탭 → 파티 인원 모달', () => {
       status: 'loaded',
       trackedOcids: ['ocid-1'],
       manualTrackedByOcid: {
-        'ocid-1': [{ kind: 'boss', contentName: '스우', difficulty: '하드' }],
+        'ocid-1': [{ kind: 'boss', bossKey: 'lotus', difficulty: 'hard' }],
       },
       characters: [character()],
     })
@@ -913,7 +934,7 @@ describe('BossScreen: 카드 탭 → 파티 인원 모달', () => {
     await press(screen.getByLabelText('스우 파티 설정'))
     await press(button('노멀'))
 
-    expect(store.setManualBossDifficulty).toHaveBeenCalledWith('ocid-1', '스우', '노멀')
+    expect(store.setManualBossDifficulty).toHaveBeenCalledWith('ocid-1', 'lotus', 'normal')
   })
 })
 
@@ -926,7 +947,7 @@ describe('BossScreen: 수동 모드', () => {
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
-      manualTrackedByOcid: { 'ocid-1': [{ kind: 'boss', contentName: '스우', difficulty: '하드' }] },
+      manualTrackedByOcid: { 'ocid-1': [{ kind: 'boss', bossKey: 'lotus', difficulty: 'hard' }] },
       // 게임에는 자쿰이 등록돼 있지만 추적 목록에는 없다.
       characters: [character({ weeklyBosses: [boss()] })],
     })
@@ -941,13 +962,13 @@ describe('BossScreen: 수동 모드', () => {
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
-      manualTrackedByOcid: { 'ocid-1': [{ kind: 'boss', contentName: '검은마법사', difficulty: '하드' }] },
+      manualTrackedByOcid: { 'ocid-1': [{ kind: 'boss', bossKey: 'black_mage', difficulty: 'hard' }] },
       characters: [character()],
     })
     await renderScreen()
 
     // 월간 참조표의 보스라 `월간` 무리에 선다. 탭을 누를 필요가 없다.
-    expect(screen.getByText('검은마법사')).toBeTruthy()
+    expect(screen.getByText('검은 마법사')).toBeTruthy()
     expect(sectionOrder()).toEqual(['monthly'])
   })
 })
@@ -955,7 +976,7 @@ describe('BossScreen: 수동 모드', () => {
 // 주간 12마리를 채우면 남은 미처치 주간 보스는 `완료` 자리에 `마감`을 단다.
 // 완료로 칠하지 않는 것이 핵심이다: 안 잡은 보스를 완료로 두면 그 거짓이 보스 수익의 금액이 된다.
 describe('BossScreen: 주간 한도 마감 배지', () => {
-  const WEEKLY_NAMES = (weeklyBossesData.weekly as { boss: string }[]).map((entry) => entry.boss)
+  const WEEKLY_NAMES = weeklyBossesData.weekly.map((entry) => entry.name)
   const PENDING = WEEKLY_NAMES[0]
 
   /** 끝에서부터 실제로 처치한 주간 보스들. `PENDING` 과 겹치지 않게 뒤에서 뽑는다. */
@@ -963,8 +984,8 @@ describe('BossScreen: 주간 한도 마감 배지', () => {
     return WEEKLY_NAMES.slice(-count).map((name) =>
       boss({
         apiName: name,
-        matchedBossName: name,
-        difficulty: '하드',
+        bossKey: keyOf(name),
+        difficulty: 'hard',
         isRegistered: true,
         isComplete: true,
         ownComplete: true,
@@ -979,7 +1000,7 @@ describe('BossScreen: 주간 한도 마감 배지', () => {
       characters: [
         character({
           weeklyBosses: [
-            boss({ apiName: PENDING, matchedBossName: PENDING, difficulty: '하드' }),
+            boss({ apiName: PENDING, bossKey: keyOf(PENDING), difficulty: 'hard' }),
             ...cleared(count),
           ],
           weeklyBossClearCount: count,
@@ -1033,7 +1054,7 @@ describe('BossScreen: 주간 한도 마감 배지', () => {
 //  후속. 한도를 채웠으면 진행 링도 꽉 찬다. 마감은 **이번 주에 더 할
 // 것이 없다** 이므로 링이 100%에 못 닿으면 링이 거짓을 말한다.
 describe('BossScreen: 한도 마감과 진행 링', () => {
-  const WEEKLY_NAMES = (weeklyBossesData.weekly as { boss: string }[]).map((entry) => entry.boss)
+  const WEEKLY_NAMES = weeklyBossesData.weekly.map((entry) => entry.name)
 
   /** 링의 접근성 이름에 실린 주간 n/m. 링을 나타내는 것이 이것뿐이라 계약이 여기 있다. */
   function ringLabel(): string {
@@ -1053,7 +1074,7 @@ describe('BossScreen: 한도 마감과 진행 링', () => {
       status: 'loaded',
       trackedOcids: ['ocid-1'],
       manualTrackedByOcid: {
-        'ocid-1': tracked.map((name) => ({ contentName: name, kind: 'boss' as const, difficulty: '하드' })),
+        'ocid-1': tracked.map((name) => ({ bossKey: keyOf(name), kind: 'boss' as const, difficulty: 'hard' as const })),
       },
       characters: [
         character({
@@ -1062,22 +1083,22 @@ describe('BossScreen: 한도 마감과 진행 링', () => {
             ...tracked.slice(0, 10).map((name) =>
               boss({
                 apiName: name,
-                matchedBossName: name,
-                difficulty: '하드',
+                bossKey: keyOf(name),
+                difficulty: 'hard',
                 isComplete: true,
                 ownComplete: true,
               }),
             ),
             // 나머지 둘은 미처치.
             ...tracked.slice(10).map((name) =>
-              boss({ apiName: name, matchedBossName: name, difficulty: '하드', isComplete: false }),
+              boss({ apiName: name, bossKey: keyOf(name), difficulty: 'hard', isComplete: false }),
             ),
             // 목록 밖 둘로 한도를 채웠다. 합이 12 처치다.
             ...outside.map((name) =>
               boss({
                 apiName: name,
-                matchedBossName: name,
-                difficulty: '하드',
+                bossKey: keyOf(name),
+                difficulty: 'hard',
                 isRegistered: false,
                 isComplete: true,
                 ownComplete: true,
@@ -1107,7 +1128,7 @@ describe('BossScreen: 한도 마감과 진행 링', () => {
       status: 'loaded',
       trackedOcids: ['ocid-1'],
       manualTrackedByOcid: {
-        'ocid-1': tracked.map((name) => ({ contentName: name, kind: 'boss' as const, difficulty: '하드' })),
+        'ocid-1': tracked.map((name) => ({ bossKey: keyOf(name), kind: 'boss' as const, difficulty: 'hard' as const })),
       },
       characters: [
         character({
@@ -1116,8 +1137,8 @@ describe('BossScreen: 한도 마감과 진행 링', () => {
             .map((name) =>
               boss({
                 apiName: name,
-                matchedBossName: name,
-                difficulty: '하드',
+                bossKey: keyOf(name),
+                difficulty: 'hard',
                 isComplete: true,
                 ownComplete: true,
               }),

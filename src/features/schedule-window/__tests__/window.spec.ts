@@ -45,7 +45,7 @@ function schedulerState(): unknown {
     dailyContents: [],
     weeklyContents: [],
     bossContents: [
-      { name: '스우', difficulty: '하드', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
+      { bossKey: 'lotus', apiName: '스우', difficulty: 'hard', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
     ],
     isDailyStale: false,
     isWeeklyStale: false,
@@ -54,7 +54,7 @@ function schedulerState(): unknown {
   }
 }
 
-const asked = (): string[] => fetchStateMock.mock.calls.map(([, , dateKey]) => dateKey).sort()
+const asked = (): string[] => fetchStateMock.mock.calls.map(([, , , dateKey]) => dateKey).sort()
 
 beforeEach(() => {
   getAuthConfigMock.mockReset().mockResolvedValue({ apiKey: 'key' })
@@ -88,7 +88,7 @@ describe('창을 채운다', () => {
     expect(recordProbeMock).toHaveBeenCalledWith(
       'o1',
       '2026-09-04',
-      expect.objectContaining({ kind: 'observed', bosses: ['스우|하드'] }),
+      expect.objectContaining({ kind: 'observed', bosses: ['lotus|hard'] }),
     )
   })
 })

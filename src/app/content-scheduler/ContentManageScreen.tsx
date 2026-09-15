@@ -126,8 +126,7 @@ export function ContentManageScreen(): React.JSX.Element {
 
   const trackedNames = new Set(
     (selected !== null ? (manualTrackedByOcid?.[selected.ocid] ?? []) : [])
-      .filter((item) => item.kind === activeTab)
-      .map((item) => item.contentName),
+      .flatMap((item) => (item.kind === activeTab ? [item.contentName] : [])),
   )
 
   // 전에는 void로 프로미스를 버려 저장 실패가 무음이었다. 체크가 조용히

@@ -21,7 +21,7 @@ import {
 } from '../../lib/boss/boss-matching'
 import { mergeManualBossList } from '../../lib/boss/manual-boss-merge'
 import type { BossContent, BossCycle } from '../../types'
-import type { ManualTrackedItem } from '../../types/scheduler'
+import type { ManualTrackedBossItem, ManualTrackedItem } from '../../types/scheduler'
 import type { TrackingMode } from '../../storage/tracking-mode'
 import type { BossCharacterView } from './store'
 
@@ -66,11 +66,14 @@ export function displayedBosses(
     )
   }
 
-  const items = (manualTrackedByOcid?.[character.ocid] ?? []).filter((item) => item.kind === 'boss')
+  const items = (manualTrackedByOcid?.[character.ocid] ?? []).filter(
+    (item): item is ManualTrackedBossItem => item.kind === 'boss',
+  )
   // synced 는 store 의 auto 목록(MatchedBoss)에서 BossContent 로 되돌려 넘긴다. MatchedBoss 는
   // BossContent 의 모든 필드를 갖고 있어 손실이 없다.
   const synced: BossContent[] = [...character.weeklyBosses, ...character.monthlyBosses].map((boss) => ({
-    name: boss.apiName,
+    bossKey: boss.bossKey,
+    apiName: boss.apiName,
     difficulty: boss.difficulty,
     cycle: boss.cycle,
     isRegistered: boss.isRegistered,
@@ -105,7 +108,7 @@ function stampLimitClosed(bosses: MatchedBoss[], limitReached: boolean): Display
 }
 
 /**
- * 무리 안의 차례. `weekly-bosses.json` 정규 순서 → 난이도 → 보스명.
+ * 무리 안의 차례. 보스 표 차례 → 난이도 → 보스 key. 표에 없는 보스는 API 원문으로 맨 뒤에 선다.
  *
  * 모드를 안 가른다. 수동 경로는 `mergeManualBossList` 가 이미 같은 비교자로 세워 두므로 여기서
  * 다시 세우는 것은 멱등이고, 대신 어느 순서로 내는가 계약이 한 줄이 된다.
@@ -113,13 +116,13 @@ function stampLimitClosed(bosses: MatchedBoss[], limitReached: boolean): Display
  * 비교자는 참조표의 소유자(`lib/boss/boss-matching`)가 든다. 여기서 자기 정렬을 쓰면 같은
  * 규칙이 앱에 네 벌이 된다.
  *
- * 완료는 자리를 안 바꾼다. 이 함수가 보는 것은 이름과 난이도뿐이다.
+ * 완료는 자리를 안 바꾼다. 이 함수가 보는 것은 보스와 난이도뿐이다.
  */
 function orderByReference(bosses: MatchedBoss[]): MatchedBoss[] {
   return [...bosses].sort((a, b) =>
     compareBossOrder(
-      { boss: a.matchedBossName ?? a.apiName, difficulty: a.difficulty },
-      { boss: b.matchedBossName ?? b.apiName, difficulty: b.difficulty },
+      { boss: a.bossKey ?? a.apiName, difficulty: a.difficulty },
+      { boss: b.bossKey ?? b.apiName, difficulty: b.difficulty },
     ),
   )
 }

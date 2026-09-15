@@ -3,6 +3,7 @@ import { useCharacterSelectionStore } from '../../../features/character-selectio
 import { act, fireEvent, screen, within } from '@testing-library/react-native'
 
 import weeklyBossesData from '../../../data/weekly-bosses.json'
+import { bossKeyOfApiName } from '../../../lib/boss/bosses'
 import {
   useBossSchedulerStore,
   type BossCharacterView,
@@ -11,7 +12,7 @@ import {
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
 import type { MatchedBoss } from '../../../lib/boss/boss-matching'
-import type { ManualTrackedItem } from '../../../types'
+import type { BossDifficulty, ManualTrackedItem } from '../../../types'
 
 import { flattenStyle, renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
@@ -41,17 +42,18 @@ const mockedNavigation = jest.mocked(useScreenNavigation)
 
 type Store = BossSchedulerStore
 
-/** 참조표에서 뽑은 이름. 손으로 적으면 데이터가 바뀔 때 조용히 어긋난다. */
-const WEEKLY_NAMES = weeklyBossesData.weekly
-  .filter((entry) => (entry as { status?: string }).status !== 'unreleased')
-  .map((entry) => entry.boss)
-const SEASON_NAME = weeklyBossesData.eventWeekly[0].boss
-const MONTHLY_NAME = weeklyBossesData.monthly[0].boss
+/** 참조표에서 뽑은 보이는 이름. 손으로 적으면 데이터가 바뀔 때 조용히 어긋난다. */
+const WEEKLY_NAMES = weeklyBossesData.weekly.map((entry) => entry.name)
+const SEASON_NAME = weeklyBossesData.eventWeekly[0].name
+const MONTHLY_NAME = weeklyBossesData.monthly[0].name
 // 미출시 보스는 있을 때도 없을 때도 있다. 벨로나 출시로 현재는 0개다.
 // `!` 로 단정하면 표본이 사라진 순간 `undefined` 를 찾는 검증이 되어 조용히 통과한다.
-const UNRELEASED_NAME = (weeklyBossesData.weekly as { boss: string; status?: string }[]).find(
+const UNRELEASED_NAME = (weeklyBossesData.weekly as { name: string; status?: string }[]).find(
   (entry) => entry.status === 'unreleased',
-)?.boss
+)?.name
+
+/** 보이는 이름에서 보스 key. 스토어 호출과 추적 항목은 key 를 든다. */
+const keyOf = (name: string): string => bossKeyOfApiName(name) ?? name
 
 function mockStore(overrides: Partial<Store> = {}): Store {
   const base = {
@@ -105,20 +107,20 @@ function character(overrides: Partial<BossCharacterView> = {}): BossCharacterVie
 function registeredBoss(overrides: Partial<MatchedBoss> = {}): MatchedBoss {
   return {
     apiName: '자쿰',
-    difficulty: '카오스',
+    difficulty: 'chaos',
     cycle: 'weekly',
     isRegistered: true,
     isComplete: false,
     ownComplete: false,
-    matchedBossName: '자쿰',
+    bossKey: 'zakum',
     portraitSlug: 'zakum',
     isSeasonBoss: false,
     ...overrides,
   }
 }
 
-function trackedBoss(contentName: string, difficulty: string): ManualTrackedItem {
-  return { kind: 'boss', contentName, difficulty } as ManualTrackedItem
+function trackedBoss(bossName: string, difficulty: BossDifficulty): ManualTrackedItem {
+  return { kind: 'boss', bossKey: keyOf(bossName), difficulty }
 }
 
 async function renderScreen(): Promise<ReturnType<typeof renderOverlay>> {
@@ -312,7 +314,7 @@ describe('BossManageScreen: 수동 모드', () => {
   it('주간 탭에 참조표의 주간 보스가 나오고, 추적 중인 보스만 선택 상태다', async () => {
     mockStore({
       characters: [character()],
-      manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', '카오스')] },
+      manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', 'chaos')] },
     })
 
     await renderScreen()
@@ -333,7 +335,7 @@ describe('BossManageScreen: 수동 모드', () => {
   it('추적 중인 행에만 난이도 세그먼트와 파티 스테퍼가 펼쳐진다', async () => {
     mockStore({
       characters: [character()],
-      manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', '하드')] },
+      manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'hard')] },
     })
 
     await renderScreen()
@@ -346,7 +348,7 @@ describe('BossManageScreen: 수동 모드', () => {
     const store = mockStore({
       characters: [
         character({
-          weeklyBosses: [registeredBoss({ apiName: '스우', matchedBossName: '스우', difficulty: '익스트림' })],
+          weeklyBosses: [registeredBoss({ apiName: '스우', bossKey: 'lotus', difficulty: 'extreme' })],
         }),
       ],
     })
@@ -354,7 +356,7 @@ describe('BossManageScreen: 수동 모드', () => {
 
     await press(rowToggle('스우'))
 
-    expect(store.addManualBoss).toHaveBeenCalledWith('ocid-1', '스우', '익스트림')
+    expect(store.addManualBoss).toHaveBeenCalledWith('ocid-1', 'lotus', 'extreme')
   })
 
   it('등록 난이도가 없으면 참조표의 첫 난이도로 부른다', async () => {
@@ -363,32 +365,32 @@ describe('BossManageScreen: 수동 모드', () => {
 
     await press(rowToggle('스우'))
 
-    expect(store.addManualBoss).toHaveBeenCalledWith('ocid-1', '스우', '노멀')
+    expect(store.addManualBoss).toHaveBeenCalledWith('ocid-1', 'lotus', 'normal')
   })
 
   it('추적 중인 보스를 탭하면 추적 난이도로 removeManualBoss 를 부른다', async () => {
     const store = mockStore({
       characters: [character()],
-      manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', '하드')] },
+      manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'hard')] },
     })
     await renderScreen()
 
     await press(rowToggle('스우'))
 
-    expect(store.removeManualBoss).toHaveBeenCalledWith('ocid-1', '스우', '하드')
+    expect(store.removeManualBoss).toHaveBeenCalledWith('ocid-1', 'lotus', 'hard')
   })
 
   // remove → add 2단계가 아니라 **쓰기 1회**다.
   it('추적 중인 보스의 다른 난이도를 누르면 단일 액션으로 교체한다', async () => {
     const store = mockStore({
       characters: [character()],
-      manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', '하드')] },
+      manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'hard')] },
     })
     await renderScreen()
 
     await press(button('익스트림'))
 
-    expect(store.setManualBossDifficulty).toHaveBeenCalledWith('ocid-1', '스우', '익스트림')
+    expect(store.setManualBossDifficulty).toHaveBeenCalledWith('ocid-1', 'lotus', 'extreme')
     expect(store.removeManualBoss).not.toHaveBeenCalled()
     expect(store.addManualBoss).not.toHaveBeenCalled()
   })
@@ -397,8 +399,8 @@ describe('BossManageScreen: 수동 모드', () => {
     // 스우 익스트림의 상한은 2인이다(`boss-crystal-prices.json`). 화면이 숫자를 정하지 않는다.
     const store = mockStore({
       characters: [character()],
-      manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', '익스트림')] },
-      partySizes: { 'ocid-1:스우:익스트림': 2 },
+      manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'extreme')] },
+      partySizes: { 'ocid-1:lotus:extreme': 2 },
     })
     await renderScreen()
 
@@ -406,7 +408,7 @@ describe('BossManageScreen: 수동 모드', () => {
 
     await press(screen.getByLabelText('스우 파티원 수 감소'))
 
-    expect(store.setPartySize).toHaveBeenCalledWith('ocid-1', '스우', '익스트림', 1)
+    expect(store.setPartySize).toHaveBeenCalledWith('ocid-1', 'lotus', 'extreme', 1)
   })
 
   // 저장 실패가 무음이면 체크가 조용히 되돌아가는 것 외에 설명이 없다.
@@ -425,7 +427,7 @@ describe('BossManageScreen: 수동 모드', () => {
   it('파티원 수 저장이 실패하면 스케줄러 모달과 같은 문구로 알린다', async () => {
     mockStore({
       characters: [character()],
-      manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', '카오스')] },
+      manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', 'chaos')] },
       setPartySize: jest.fn(async () => Promise.reject(new Error('boom'))) as Store['setPartySize'],
     })
     await renderScreen()
@@ -512,7 +514,7 @@ describe('BossManageScreen: 자동 모드', () => {
     const store = mockStore({
       characters: [
         character({
-          weeklyBosses: [registeredBoss({ apiName: '스우', matchedBossName: '스우', difficulty: '하드' })],
+          weeklyBosses: [registeredBoss({ apiName: '스우', bossKey: 'lotus', difficulty: 'hard' })],
         }),
       ],
     })
@@ -520,7 +522,7 @@ describe('BossManageScreen: 자동 모드', () => {
 
     await press(screen.getByLabelText('스우 파티원 수 증가'))
 
-    expect(store.setPartySize).toHaveBeenCalledWith('ocid-1', '스우', '하드', 2)
+    expect(store.setPartySize).toHaveBeenCalledWith('ocid-1', 'lotus', 'hard', 2)
   })
 
   // 자동 모드의 난이도 선택은 멤버십이 아니라 "편집 대상" 전환이다.
@@ -528,7 +530,7 @@ describe('BossManageScreen: 자동 모드', () => {
     const store = mockStore({
       characters: [
         character({
-          weeklyBosses: [registeredBoss({ apiName: '스우', matchedBossName: '스우', difficulty: '하드' })],
+          weeklyBosses: [registeredBoss({ apiName: '스우', bossKey: 'lotus', difficulty: 'hard' })],
         }),
       ],
     })
@@ -540,7 +542,7 @@ describe('BossManageScreen: 자동 모드', () => {
     expect(store.addManualBoss).not.toHaveBeenCalled()
 
     await press(screen.getByLabelText('스우 파티원 수 증가'))
-    expect(store.setPartySize).toHaveBeenCalledWith('ocid-1', '스우', '익스트림', 2)
+    expect(store.setPartySize).toHaveBeenCalledWith('ocid-1', 'lotus', 'extreme', 2)
   })
 
   // 이슈 #341. 고른 난이도는 어느 난이도의 파티 인원을 편집 중인가 라는 화면 전용 상태다.
@@ -550,12 +552,12 @@ describe('BossManageScreen: 자동 모드', () => {
     mockStore({
       characters: [
         character({
-          weeklyBosses: [registeredBoss({ apiName: '스우', matchedBossName: '스우', difficulty: '하드' })],
+          weeklyBosses: [registeredBoss({ apiName: '스우', bossKey: 'lotus', difficulty: 'hard' })],
         }),
         character({
           ocid: 'ocid-2',
           characterName: '캐릭터2',
-          weeklyBosses: [registeredBoss({ apiName: '스우', matchedBossName: '스우', difficulty: '노멀' })],
+          weeklyBosses: [registeredBoss({ apiName: '스우', bossKey: 'lotus', difficulty: 'normal' })],
         }),
       ],
     })
@@ -576,12 +578,12 @@ describe('BossManageScreen: 자동 모드', () => {
     const store = mockStore({
       characters: [
         character({
-          weeklyBosses: [registeredBoss({ apiName: '스우', matchedBossName: '스우', difficulty: '하드' })],
+          weeklyBosses: [registeredBoss({ apiName: '스우', bossKey: 'lotus', difficulty: 'hard' })],
         }),
         character({
           ocid: 'ocid-2',
           characterName: '캐릭터2',
-          weeklyBosses: [registeredBoss({ apiName: '스우', matchedBossName: '스우', difficulty: '노멀' })],
+          weeklyBosses: [registeredBoss({ apiName: '스우', bossKey: 'lotus', difficulty: 'normal' })],
         }),
       ],
     })
@@ -591,7 +593,7 @@ describe('BossManageScreen: 자동 모드', () => {
     await press(screen.getAllByTestId('character-portrait')[1])
     await press(screen.getByLabelText('스우 파티원 수 증가'))
 
-    expect(store.setPartySize).toHaveBeenCalledWith('ocid-2', '스우', '노멀', 2)
+    expect(store.setPartySize).toHaveBeenCalledWith('ocid-2', 'lotus', 'normal', 2)
   })
 })
 
@@ -602,7 +604,7 @@ describe('BossManageScreen: 주간 12개 한도', () => {
   const atLimit = (extra: Partial<Store> = {}): Store =>
     mockStore({
       characters: [character({ world: '챌린저스' })],
-      manualTrackedByOcid: { 'ocid-1': TWELVE.map((name) => trackedBoss(name, '노멀')) },
+      manualTrackedByOcid: { 'ocid-1': TWELVE.map((name) => trackedBoss(name, 'normal')) },
       ...extra,
     })
 
@@ -613,7 +615,7 @@ describe('BossManageScreen: 주간 12개 한도', () => {
   it('주간 탭 헤더에 n/12 카운터를 표시한다', async () => {
     mockStore({
       characters: [character()],
-      manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', '카오스'), trackedBoss('스우', '하드')] },
+      manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', 'chaos'), trackedBoss('스우', 'hard')] },
     })
 
     await renderScreen()
@@ -628,9 +630,9 @@ describe('BossManageScreen: 주간 12개 한도', () => {
       characters: [character({ world: '챌린저스' })],
       manualTrackedByOcid: {
         'ocid-1': [
-          trackedBoss('자쿰', '카오스'),
-          trackedBoss(SEASON_NAME, '하드'),
-          trackedBoss(MONTHLY_NAME, '하드'),
+          trackedBoss('자쿰', 'chaos'),
+          trackedBoss(SEASON_NAME, 'hard'),
+          trackedBoss(MONTHLY_NAME, 'hard'),
         ],
       },
     })
@@ -644,7 +646,7 @@ describe('BossManageScreen: 주간 12개 한도', () => {
   it('카운터는 `주간` 헤더에만 붙는다. 12는 주간 한도다', async () => {
     mockStore({
       characters: [character()],
-      manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', '카오스')] },
+      manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', 'chaos')] },
     })
 
     await renderScreen()
@@ -660,7 +662,7 @@ describe('BossManageScreen: 주간 12개 한도', () => {
     useTrackingModeStore.setState({ mode: 'auto' })
     mockStore({
       characters: [character()],
-      manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', '카오스')] },
+      manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', 'chaos')] },
     })
 
     await renderScreen()
@@ -713,7 +715,7 @@ describe('BossManageScreen: 주간 12개 한도', () => {
 
     await press(rowToggle(SEASON_NAME))
 
-    expect(store.addManualBoss).toHaveBeenCalledWith('ocid-1', SEASON_NAME, '노멀')
+    expect(store.addManualBoss).toHaveBeenCalledWith('ocid-1', keyOf(SEASON_NAME), 'normal')
   })
 
   it('한도에 도달해도 월간 보스는 선택할 수 있다', async () => {
@@ -772,7 +774,6 @@ describe('BossManageScreen: 목록 구성', () => {
     await renderScreen()
 
     expect(screen.queryByText(SEASON_NAME)).toBeNull()
-    if (UNRELEASED_NAME !== undefined) expect(screen.queryByText(UNRELEASED_NAME)).toBeNull()
   })
 })
 

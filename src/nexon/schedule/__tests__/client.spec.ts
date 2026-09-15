@@ -48,7 +48,7 @@ describe('fetchSchedulerCharacterState', () => {
     const fetchMock = jest.fn(async () => jsonResponse(200, schedulerFixture('낟낟')))
     stubGlobal('fetch', fetchMock)
 
-    const result = await fetchSchedulerCharacterState('test-api-key', 'ocid-123')
+    const result = await fetchSchedulerCharacterState('test-api-key', 'ocid-123', () => null)
 
     expect(result.characterName).toBe('낟낟')
     expect(fetchMock).toHaveBeenCalledWith(
@@ -59,11 +59,30 @@ describe('fetchSchedulerCharacterState', () => {
     )
   })
 
+  // nexon/ 은 보스 표를 모른다. 넘겨받은 함수로 보스 key 를 채운다.
+  it('넘긴 resolver 로 보스 항목의 key 를 채운다', async () => {
+    const wire: NexonSchedulerCharacterStateWire = {
+      ...schedulerFixture('낟낟'),
+      boss_contents: [
+        { content_name: '루시드', difficulty: 'hard', cycle: 'bossWeekly', registration_flag: 'true', complete_flag: 'false' },
+      ],
+    }
+    stubGlobal('fetch', jest.fn(async () => jsonResponse(200, wire)))
+
+    const result = await fetchSchedulerCharacterState('test-api-key', 'ocid-123', (name) =>
+      name === '루시드' ? 'lucid' : null,
+    )
+
+    expect(result.bossContents).toEqual([
+      expect.objectContaining({ bossKey: 'lucid', apiName: '루시드', difficulty: 'hard' }),
+    ])
+  })
+
   it('date가 주어지면 쿼리 파라미터에 date를 함께 담아 호출한다', async () => {
     const fetchMock = jest.fn(async () => jsonResponse(200, schedulerFixture('낟낟')))
     stubGlobal('fetch', fetchMock)
 
-    await fetchSchedulerCharacterState('test-api-key', 'ocid-123', '2026-06-01')
+    await fetchSchedulerCharacterState('test-api-key', 'ocid-123', () => null, '2026-06-01')
 
     expect(fetchMock).toHaveBeenCalledWith(
       'https://open.api.nexon.com/maplestory/v1/scheduler/character-state?ocid=ocid-123&date=2026-06-01',

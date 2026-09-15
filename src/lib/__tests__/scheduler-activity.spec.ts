@@ -27,8 +27,8 @@ function weekly(overrides: Partial<WeeklyContent> = {}): WeeklyContent {
 
 function boss(overrides: Partial<BossContent> = {}): BossContent {
   return {
-    name: '스우',
-    difficulty: '하드',
+    bossKey: 'lotus', apiName: '스우',
+    difficulty: 'hard',
     cycle: 'weekly',
     isRegistered: true,
     isComplete: false,
@@ -232,21 +232,37 @@ describe('getSectionPresence', () => {
 })
 
 // 조회 원장에 **그날 완료로 본 보스** 를 함께 남긴다. 그 목록이 처치 날짜를
-// 캐는 원재료이므로, **기록에 쓰는 것과 같은 이름·같은 난이도**로 적혀야 한다.
+// 캐는 원재료이므로, **기록에 쓰는 것과 같은 보스 key · 같은 난이도 key**로 적혀야 한다.
 describe('completedBossKeys', () => {
-  it('ownComplete 인 보스만, `이름|난이도`로 적는다', () => {
+  it('ownComplete 인 보스만, `보스 key|난이도 key`로 적는다', () => {
     const { completedBossKeys } = require('../scheduler/scheduler-activity') as typeof import('../scheduler/scheduler-activity')
 
     expect(
       completedBossKeys(
         state({
           bossContents: [
-            boss({ name: '스우', difficulty: '하드', ownComplete: true, isComplete: true }),
-            boss({ name: '데미안', difficulty: '하드', ownComplete: false }),
+            boss({ bossKey: 'lotus', apiName: '스우', difficulty: 'hard', ownComplete: true, isComplete: true }),
+            boss({ bossKey: 'damien', apiName: '데미안', difficulty: 'hard', ownComplete: false }),
           ],
         }),
       ),
-    ).toEqual(['스우|하드'])
+    ).toEqual(['lotus|hard'])
+  })
+
+  // 보스 표에 없는 보스는 기록되지 않는다. 원장에 적어도 그 이름으로 기록을 만들 key 가 없다.
+  it('보스 표에 없는 보스(key 가 없다)는 완료여도 안 적는다', () => {
+    const { completedBossKeys } = require('../scheduler/scheduler-activity') as typeof import('../scheduler/scheduler-activity')
+
+    expect(
+      completedBossKeys(
+        state({
+          bossContents: [
+            boss({ bossKey: null, apiName: '새로 나온 보스', difficulty: 'hard', ownComplete: true, isComplete: true }),
+            boss({ bossKey: 'lotus', apiName: '스우', difficulty: 'hard', ownComplete: true, isComplete: true }),
+          ],
+        }),
+      ),
+    ).toEqual(['lotus|hard'])
   })
 
   it('승격된 isComplete 는 안 센다. 다른 난이도의 완료가 옮겨 붙은 값이다', () => {
@@ -255,7 +271,7 @@ describe('completedBossKeys', () => {
     expect(
       completedBossKeys(
         state({
-          bossContents: [boss({ name: '스우', difficulty: '이지', isComplete: true, ownComplete: false })],
+          bossContents: [boss({ bossKey: 'lotus', apiName: '스우', difficulty: 'easy', isComplete: true, ownComplete: false })],
         }),
       ),
     ).toEqual([])
@@ -271,10 +287,10 @@ describe('completedBossKeys', () => {
     const { toProbeObservation } = require('../scheduler/scheduler-activity') as typeof import('../scheduler/scheduler-activity')
 
     const observation = toProbeObservation(
-      state({ bossContents: [boss({ name: '스우', difficulty: '하드', ownComplete: true })] }),
+      state({ bossContents: [boss({ bossKey: 'lotus', apiName: '스우', difficulty: 'hard', ownComplete: true })] }),
     )
 
-    expect(observation.bosses).toEqual(['스우|하드'])
+    expect(observation.bosses).toEqual(['lotus|hard'])
     expect(observation.hasCompletion).toBe(true)
   })
 })

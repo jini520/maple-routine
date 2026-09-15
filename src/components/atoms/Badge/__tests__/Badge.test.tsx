@@ -99,7 +99,7 @@ describe('평면 variant: 색만 갈리고 상자는 같다', () => {
 
 describe('난이도 variant: 그라디언트·테두리·그림자', () => {
   it('난이도마다 다른 세로 그라디언트를 깐다', async () => {
-    const { getByText } = await renderAtom(<Badge variant="익스트림">익스트림</Badge>)
+    const { getByText } = await renderAtom(<Badge variant="extreme">익스트림</Badge>)
 
     const box = boxOf(getByText('익스트림'))
     expect(box.props.colors).toEqual(['#3c3c3c', '#1c1414'].map(processColor))
@@ -109,13 +109,13 @@ describe('난이도 variant: 그라디언트·테두리·그림자', () => {
   })
 
   it('익스트림만 테두리가 1.5px 다', async () => {
-    const extreme = await renderAtom(<Badge variant="익스트림">익스트림</Badge>)
+    const extreme = await renderAtom(<Badge variant="extreme">익스트림</Badge>)
     expect(flattenStyle(boxOf(extreme.getByText('익스트림')).props.style)).toMatchObject({
       borderWidth: 1.5,
       borderColor: '#ef5d78',
     })
 
-    const chaos = await renderAtom(<Badge variant="카오스">카오스</Badge>)
+    const chaos = await renderAtom(<Badge variant="chaos">카오스</Badge>)
     expect(flattenStyle(boxOf(chaos.getByText('카오스')).props.style)).toMatchObject({
       borderWidth: 1,
       borderColor: '#caa87f',
@@ -123,7 +123,7 @@ describe('난이도 variant: 그라디언트·테두리·그림자', () => {
   })
 
   it('글자 그림자는 있는 난이도에만 있다', async () => {
-    const easy = await renderAtom(<Badge variant="이지">이지</Badge>)
+    const easy = await renderAtom(<Badge variant="easy">이지</Badge>)
     expect(flattenStyle(easy.getByText('이지').props.style)).toMatchObject({
       color: '#f5f6f7',
       textShadowColor: 'rgba(0,0,0,0.3)',
@@ -131,13 +131,13 @@ describe('난이도 variant: 그라디언트·테두리·그림자', () => {
       textShadowRadius: 1,
     })
 
-    const chaos = await renderAtom(<Badge variant="카오스">카오스</Badge>)
+    const chaos = await renderAtom(<Badge variant="chaos">카오스</Badge>)
     expect(flattenStyle(chaos.getByText('카오스').props.style).textShadowColor).toBeUndefined()
   })
 
   // 800 은 안 쓴다. 안드로이드가 그 굵기에서 잰 폭보다 넓게 그려 뒷 음절을 잃는다.
   it('난이도는 두께가 bold 다. 앱이 쓰는 최대 굵기다', async () => {
-    const { getByText } = await renderAtom(<Badge variant="하드">하드</Badge>)
+    const { getByText } = await renderAtom(<Badge variant="hard">하드</Badge>)
 
     expect(flattenStyle(getByText('하드').props.style).fontWeight).toBe('700')
   })
@@ -150,13 +150,13 @@ describe('size 둘', () => {
   // 난이도 배지만 평면 배지보다 커진다.
   it('난이도는 테두리 폭만큼 여백을 줄여 바깥 크기를 맞춘다', async () => {
     const 보통 = flattenStyle(
-      boxOf((await renderAtom(<Badge variant="노멀">노멀</Badge>)).getByText('노멀')).props.style,
+      boxOf((await renderAtom(<Badge variant="normal">노멀</Badge>)).getByText('노멀')).props.style,
     )
     expect(보통).toMatchObject({ borderWidth: 1, paddingHorizontal: 7, paddingVertical: 2 })
 
     // 익스트림만 테두리가 1.5px 라 여백이 그만큼 더 줄어든다.
     const 익스 = flattenStyle(
-      boxOf((await renderAtom(<Badge variant="익스트림">익스트림</Badge>)).getByText('익스트림')).props.style,
+      boxOf((await renderAtom(<Badge variant="extreme">익스트림</Badge>)).getByText('익스트림')).props.style,
     )
     expect(익스).toMatchObject({ borderWidth: 1.5, paddingHorizontal: 6.5, paddingVertical: 1.5 })
   })
@@ -173,7 +173,7 @@ describe('size 둘', () => {
     expect(아웃라인.paddingVertical).toBe(평면.paddingVertical - 1)
     expect(아웃라인.paddingHorizontal).toBe(평면.paddingHorizontal - 1)
 
-    for (const variant of ['이지', '노멀', '하드', '카오스', '익스트림'] as const) {
+    for (const variant of ['easy', 'normal', 'hard', 'chaos', 'extreme'] as const) {
       const 상자 = flattenStyle(
         boxOf((await renderAtom(<Badge variant={variant}>{variant}</Badge>)).getByText(variant)).props.style,
       ) as Record<string, number>
@@ -185,19 +185,19 @@ describe('size 둘', () => {
   // 난이도만 글자가 작다. 이름이 최대 넉 자라 12px 로는 배지가 넓어진다.
   it('난이도는 글자가 10px 다. 크기의 기본값을 variant 가 덮는다', async () => {
     const 평면 = await renderAtom(<Badge variant="muted">진행 불가</Badge>)
-    const 난이도 = await renderAtom(<Badge variant="하드">하드</Badge>)
+    const 난이도 = await renderAtom(<Badge variant="hard">하드</Badge>)
 
     expect(flattenStyle(평면.getByText('진행 불가').props.style).fontSize).toBe(12)
     expect(flattenStyle(난이도.getByText('하드').props.style).fontSize).toBe(10)
 
     // `mini` 는 더 좁은 자리를 위한 것이라 variant 의 10px 에 안 밀린다.
-    const 작게 = await renderAtom(<Badge variant="하드" size="mini">하드</Badge>)
+    const 작게 = await renderAtom(<Badge variant="hard" size="mini">하드</Badge>)
     expect(flattenStyle(작게.getByText('하드').props.style).fontSize).toBe(9)
   })
 
   it('mini 는 높이와 글자만 줄인다. 색은 한 값도 안 갈린다', async () => {
-    const 기본 = await renderAtom(<Badge variant="카오스">카오스</Badge>)
-    const 작게 = await renderAtom(<Badge variant="카오스" size="mini">카오스</Badge>)
+    const 기본 = await renderAtom(<Badge variant="chaos">카오스</Badge>)
+    const 작게 = await renderAtom(<Badge variant="chaos" size="mini">카오스</Badge>)
 
     const 상자 = (v: Awaited<ReturnType<typeof renderAtom>>): Record<string, unknown> =>
       flattenStyle(boxOf(v.getByText('카오스')).props.style) as Record<string, unknown>
@@ -233,7 +233,7 @@ describe('높이는 variant 를 안 탄다', () => {
       expect(합(s)).toBe(기준)
     }
 
-    for (const variant of ['이지', '노멀', '하드', '카오스', '익스트림'] as const) {
+    for (const variant of ['easy', 'normal', 'hard', 'chaos', 'extreme'] as const) {
       const 상자 = flattenStyle(
         boxOf((await renderAtom(<Badge variant={variant}>{variant}</Badge>)).getByText(variant))
           .props.style,
@@ -261,7 +261,7 @@ describe('글자 배수', () => {
 
       const 난이도 = flattenStyle(
         boxOf(
-          (await renderAtom(<Badge variant="하드" size={size}>하드</Badge>)).getByText('하드'),
+          (await renderAtom(<Badge variant="hard" size={size}>하드</Badge>)).getByText('하드'),
         ).props.style,
       )
       expect(난이도.height).toBeUndefined()
@@ -269,7 +269,7 @@ describe('글자 배수', () => {
   })
 
   it('mini 는 fixed 를 스스로 켠다', async () => {
-    const { getByText } = await renderAtom(<Badge variant="하드" size="mini">하드</Badge>)
+    const { getByText } = await renderAtom(<Badge variant="hard" size="mini">하드</Badge>)
 
     expect(getByText('하드').props.allowFontScaling).toBe(false)
   })

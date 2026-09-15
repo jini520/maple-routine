@@ -1,8 +1,10 @@
+import { bossNameOf } from '../lib/boss/bosses'
 import { getBossProfitDb } from './sqlite/db'
 
 export interface BossPartySetting {
   ocid: string
-  boss: string
+  /** 보스 key. */
+  bossKey: string
   difficulty: string
   partySize: number
   updatedAt: string // ISO 8601
@@ -10,28 +12,30 @@ export interface BossPartySetting {
 
 const UPSERT_SQL = `
   INSERT INTO boss_party_settings
-    (ocid, boss, difficulty, party_size, updated_at)
-  VALUES (?, ?, ?, ?, ?)
-  ON CONFLICT(ocid, boss, difficulty) DO UPDATE SET
+    (ocid, boss_key, boss, difficulty, party_size, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?)
+  ON CONFLICT(ocid, boss_key, difficulty) DO UPDATE SET
+    boss = excluded.boss,
     party_size = excluded.party_size,
     updated_at = excluded.updated_at
 `
 
 export async function setBossPartySize(
   ocid: string,
-  boss: string,
+  bossKey: string,
   difficulty: string,
   partySize: number,
   updatedAt: string,
 ): Promise<void> {
   const db = await getBossProfitDb()
-  await db.run(UPSERT_SQL, [ocid, boss, difficulty, partySize, updatedAt])
+  // 이름 칸은 적을 때의 이름이다. 기록 표들과 모양을 맞춘다.
+  await db.run(UPSERT_SQL, [ocid, bossKey, bossNameOf(bossKey, bossKey), difficulty, partySize, updatedAt])
 }
 
 function rowToSetting(row: Record<string, unknown>): BossPartySetting {
   return {
     ocid: row.ocid as string,
-    boss: row.boss as string,
+    bossKey: row.boss_key as string,
     difficulty: row.difficulty as string,
     partySize: row.party_size as number,
     updatedAt: row.updated_at as string,
@@ -40,13 +44,13 @@ function rowToSetting(row: Record<string, unknown>): BossPartySetting {
 
 export async function getBossPartySize(
   ocid: string,
-  boss: string,
+  bossKey: string,
   difficulty: string,
 ): Promise<number | null> {
   const db = await getBossProfitDb()
   const { values } = await db.query(
-    `SELECT * FROM boss_party_settings WHERE ocid = ? AND boss = ? AND difficulty = ?`,
-    [ocid, boss, difficulty],
+    `SELECT * FROM boss_party_settings WHERE ocid = ? AND boss_key = ? AND difficulty = ?`,
+    [ocid, bossKey, difficulty],
   )
 
   const row = values?.[0]
@@ -65,8 +69,8 @@ export async function copyMissingBossPartySettings(
 ): Promise<void> {
   const db = await getBossProfitDb()
   await db.run(
-    `INSERT OR IGNORE INTO boss_party_settings (ocid, boss, difficulty, party_size, updated_at)
-     SELECT ?, boss, difficulty, party_size, ? FROM boss_party_settings WHERE ocid = ?`,
+    `INSERT OR IGNORE INTO boss_party_settings (ocid, boss_key, boss, difficulty, party_size, updated_at)
+     SELECT ?, boss_key, boss, difficulty, party_size, ? FROM boss_party_settings WHERE ocid = ?`,
     [toOcid, updatedAt, fromOcid],
   )
 }

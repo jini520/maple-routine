@@ -7,16 +7,10 @@
 
 import { dropRowKey } from '../../features/boss-profit/store'
 import type { BossProfitRow, BossProfitWeeklySubtotal } from '../../features/boss-profit/store'
-import { isSeasonBossName } from '../../lib/boss/boss-matching'
+import { isSeasonBoss } from '../../lib/boss/bosses'
 import { isValuableDropItem } from '../../lib/drop/valuable-drops'
 import { sumDropPayout } from '../../lib/drop/drop-price'
 import type { RecordedDrop } from '../../types/drops'
-import weeklyBossesData from '../../data/weekly-bosses.json'
-
-export interface BossReferenceEntry {
-  boss: string
-  portraitSlug?: string
-}
 
 export interface CharacterGroup {
   ocid: string
@@ -34,17 +28,8 @@ export interface WorldCrystalSummary {
   monthlyCleared: number
 }
 
-export const REFERENCE_ENTRIES: BossReferenceEntry[] = [
-  ...(weeklyBossesData.weekly as BossReferenceEntry[]),
-  ...(weeklyBossesData.eventWeekly as BossReferenceEntry[]),
-  ...(weeklyBossesData.monthly as BossReferenceEntry[]),
-]
-export function findPortraitSlug(boss: string): string | null {
-  return REFERENCE_ENTRIES.find((entry) => entry.boss === boss)?.portraitSlug ?? null
-}
-
 export function rowKey(row: BossProfitRow): string {
-  return `${row.ocid}-${row.boss}-${row.difficulty}-${row.cycle}-${row.periodKey}`
+  return `${row.ocid}-${row.bossKey}-${row.difficulty}-${row.cycle}-${row.periodKey}`
 }
 
 export function clamp(value: number, min: number, max: number): number {
@@ -167,7 +152,7 @@ function confirmedDropsOf(
   dropsByRowKey: Record<string, RecordedDrop[]>,
 ): RecordedDrop[] {
   if (!row.isComplete) return []
-  return dropsByRowKey[dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)] ?? []
+  return dropsByRowKey[dropRowKey(row.ocid, row.bossKey, row.difficulty, row.periodKey)] ?? []
 }
 
 /**
@@ -225,7 +210,7 @@ export function collectGroupDrops(
   dropsByRowKey: Record<string, RecordedDrop[]>,
 ): RecordedDrop[] {
   return group.bossRows.flatMap(
-    (row) => dropsByRowKey[dropRowKey(row.ocid, row.boss, row.difficulty, row.periodKey)] ?? [],
+    (row) => dropsByRowKey[dropRowKey(row.ocid, row.bossKey, row.difficulty, row.periodKey)] ?? [],
   )
 }
 
@@ -239,17 +224,17 @@ export function collectAllValuableDrops(
 }
 
 // 이 캐릭터가 이번 주에 처치한 주간 보스 수. 처치 수는 스토어 필드가 아니라 rows 에서
-// 파생한다. 보스명 기준 distinct 라 같은 보스를 여러 난이도로 완료해도 1 로 센다. 게임 룰이
-// 그렇고 보스 스케줄러가 쓰는 `countClearedWeeklyBosses` 도 content_name 그룹당 1 이다.
+// 파생한다. 보스 key 기준 distinct 라 같은 보스를 여러 난이도로 완료해도 1 로 센다. 게임 룰이
+// 그렇고 보스 스케줄러가 쓰는 `countClearedWeeklyBosses` 도 보스 그룹당 1 이다.
 // 시즌 보스(메이린)는 12마리 제한 예외라 제외한다. 주간 탭의 행에는 그 주에 선 월간 보스도
 // 들어 있어, cycle 필터가 월간 보스를 12 · 90 한도에서 빼는 방어선이다.
 export function countGroupClearedWeeklyBosses(group: CharacterGroup): number {
-  const clearedBossNames = new Set<string>()
+  const clearedBossKeys = new Set<string>()
   for (const row of group.bossRows) {
-    if (row.cycle !== 'weekly' || !row.isComplete || isSeasonBossName(row.boss)) continue
-    clearedBossNames.add(row.boss)
+    if (row.cycle !== 'weekly' || !row.isComplete || isSeasonBoss(row.bossKey)) continue
+    clearedBossKeys.add(row.bossKey)
   }
-  return clearedBossNames.size
+  return clearedBossKeys.size
 }
 
 // 월드별 주간 결정석 소진량(90 은 계정이 아니라 월드당 한도다). 캐릭터별 처치 수는 위
@@ -263,12 +248,12 @@ export function countGroupClearedWeeklyBosses(group: CharacterGroup): number {
 // 한도(90)는 월드마다 따로 산정되므로 그 주의 판매량은 두 월드에 각각 계상돼야 한다.
 //
 // 같은 보스는 한 주에 한 번만 처치할 수 있어 한 행은 정확히 한 월드에 속한다. 그래서 행
-// 단위로 갈라도 보스명 distinct 의 의미가 유지된다.
+// 단위로 갈라도 보스 key distinct 의 의미가 유지된다.
 //
 // 캐릭터 카드의 진행 링은 이 함수를 쓰지 않는다. 클리어 수는 캐릭터 단위로 이어지므로 월드와
 // 무관하게 그 주 전체를 센다.
 export function summarizeWorldCrystals(groups: CharacterGroup[]): WorldCrystalSummary[] {
-  // 월드 → (캐릭터 → 그 월드에서 처치한 보스명 집합). 캐릭터를 한 번 더 갈라야 서로 다른
+  // 월드 → (캐릭터 → 그 월드에서 처치한 보스 key 집합). 캐릭터를 한 번 더 갈라야 서로 다른
   // 캐릭터가 같은 보스를 잡은 것이 하나로 합쳐지지 않는다. 주간과 월간은 한도가 갈려 집합도 따로다.
   const byWorld = new Map<string, Map<string, { weekly: Set<string>; monthly: Set<string> }>>()
 
@@ -280,33 +265,33 @@ export function summarizeWorldCrystals(groups: CharacterGroup[]): WorldCrystalSu
       // 월드 집합과 처치 수를 분리한다. 월드를 아는 행이 있으면 처치가 0 이어도 그 월드를
       // 목록에 넣어 `0 / 90` 을 보여준다. 완료 조건을 월드 판정에 섞으면 그 표시가 사라진다.
       const byCharacter = byWorld.get(row.world) ?? new Map<string, { weekly: Set<string>; monthly: Set<string> }>()
-      const bossNames = byCharacter.get(row.ocid) ?? { weekly: new Set<string>(), monthly: new Set<string>() }
-      if (row.isComplete && row.cycle === 'weekly' && !isSeasonBossName(row.boss)) {
-        bossNames.weekly.add(row.boss)
+      const bossKeys = byCharacter.get(row.ocid) ?? { weekly: new Set<string>(), monthly: new Set<string>() }
+      if (row.isComplete && row.cycle === 'weekly' && !isSeasonBoss(row.bossKey)) {
+        bossKeys.weekly.add(row.bossKey)
       }
       if (row.isComplete && row.cycle === 'monthly') {
-        bossNames.monthly.add(row.boss)
+        bossKeys.monthly.add(row.bossKey)
       }
-      byCharacter.set(row.ocid, bossNames)
+      byCharacter.set(row.ocid, bossKeys)
       byWorld.set(row.world, byCharacter)
     }
   }
 
   return [...byWorld].map(([world, byCharacter]) => ({
     world,
-    cleared: [...byCharacter.values()].reduce((sum, bossNames) => sum + bossNames.weekly.size, 0),
-    monthlyCleared: [...byCharacter.values()].reduce((sum, bossNames) => sum + bossNames.monthly.size, 0),
+    cleared: [...byCharacter.values()].reduce((sum, bossKeys) => sum + bossKeys.weekly.size, 0),
+    monthlyCleared: [...byCharacter.values()].reduce((sum, bossKeys) => sum + bossKeys.monthly.size, 0),
   }))
 }
 
-// 이 캐릭터가 이 달에 처치한 월간 보스 수(보스명 distinct. 같은 보스를 여러 난이도로 잡아도 1).
+// 이 캐릭터가 이 달에 처치한 월간 보스 수(보스 key distinct. 같은 보스를 여러 난이도로 잡아도 1).
 // 주간 쪽 `countGroupClearedWeeklyBosses` 와 대칭이며 월간 탭 진행 링이 쓴다. 결정석 칩의 월간
 // 수는 월드별로 세는 `summarizeWorldCrystals` 에서 나온다.
 export function countGroupClearedMonthlyBosses(group: CharacterGroup): number {
-  const clearedBossNames = new Set<string>()
+  const clearedBossKeys = new Set<string>()
   for (const row of group.bossRows) {
     if (row.cycle !== 'monthly' || !row.isComplete) continue
-    clearedBossNames.add(row.boss)
+    clearedBossKeys.add(row.bossKey)
   }
-  return clearedBossNames.size
+  return clearedBossKeys.size
 }

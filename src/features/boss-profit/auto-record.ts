@@ -78,7 +78,7 @@ export async function autoRecordRows({
     }
 
     const configuredPartySize = await withSqliteFallback(
-      getBossPartySize(row.ocid, row.boss, row.difficulty),
+      getBossPartySize(row.ocid, row.bossKey, row.difficulty),
       null,
     )
     const partySize = configuredPartySize ?? 1
@@ -87,7 +87,8 @@ export async function autoRecordRows({
     await withSqliteFallback(
       upsertBossProfitRecord({
         ocid: row.ocid,
-        boss: row.boss,
+        bossKey: row.bossKey,
+        boss: row.bossName,
         difficulty: row.difficulty,
         cycle: row.cycle,
         periodKey: row.periodKey,

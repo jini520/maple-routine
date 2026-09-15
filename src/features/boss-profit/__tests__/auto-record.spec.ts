@@ -33,8 +33,9 @@ function row(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     characterName: '낟낟',
     imageUrl: null,
     world: '스카니아',
-    boss: '자쿰',
-    difficulty: '카오스',
+    bossKey: 'zakum',
+    bossName: '자쿰',
+    difficulty: 'chaos',
     cycle: 'weekly',
     periodKey: '2026-08-06',
     periodLabel: '이번 주',
@@ -71,8 +72,9 @@ describe('autoRecordRows', () => {
     expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
       expect.objectContaining({
         ocid: 'ocid-1',
+        bossKey: 'zakum',
         boss: '자쿰',
-        difficulty: '카오스',
+        difficulty: 'chaos',
         cycle: 'weekly',
         periodKey: '2026-08-06',
         partySize: 1,
@@ -98,7 +100,7 @@ describe('autoRecordRows', () => {
       isSourceCurrent: () => true,
     })
 
-    expect(getBossPartySizeMock).toHaveBeenCalledWith('ocid-1', '자쿰', '카오스')
+    expect(getBossPartySizeMock).toHaveBeenCalledWith('ocid-1', 'zakum', 'chaos')
     expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
       expect.objectContaining({ partySize: 3, payoutMeso: 3_333_333 }),
     )
@@ -124,7 +126,7 @@ describe('autoRecordRows', () => {
 
   // 조회 실패를 "기록 없음"으로 읽으면 사용자가 저장한 파티원 수가 1로 덮인다.
   it('records가 null이면 아무 행도 기록하지 않고 드롭 이관도 하지 않는다', async () => {
-    const rows = [row(), row({ boss: '스우' })]
+    const rows = [row(), row({ bossKey: 'lotus', bossName: '스우' })]
 
     const result = await autoRecordRows({
       rows,
@@ -192,10 +194,10 @@ describe('autoRecordRows', () => {
 
   it('반환 배열의 순서가 입력과 같다. 기록한 행과 건너뛴 행이 섞여도', async () => {
     const rows = [
-      row({ boss: '자쿰' }),
-      row({ boss: '스우', isComplete: false }),
-      row({ boss: '루시드' }),
-      row({ boss: '윌', partySize: 2, payoutMeso: 1 }),
+      row({ bossKey: 'zakum', bossName: '자쿰' }),
+      row({ bossKey: 'lotus', bossName: '스우', isComplete: false }),
+      row({ bossKey: 'lucid', bossName: '루시드' }),
+      row({ bossKey: 'will', bossName: '윌', partySize: 2, payoutMeso: 1 }),
     ]
 
     const result = await autoRecordRows({
@@ -206,7 +208,7 @@ describe('autoRecordRows', () => {
       isSourceCurrent: () => true,
     })
 
-    expect(result.map((r) => r.boss)).toEqual(['자쿰', '스우', '루시드', '윌'])
+    expect(result.map((r) => r.bossName)).toEqual(['자쿰', '스우', '루시드', '윌'])
   })
 
   // upsertBossProfitRecord는 단일 공유 SQLite 커넥션에 자체 트랜잭션을 열므로 동시 실행하면
@@ -222,7 +224,7 @@ describe('autoRecordRows', () => {
     })
 
     await autoRecordRows({
-      rows: [row({ boss: '자쿰' }), row({ boss: '스우' }), row({ boss: '루시드' })],
+      rows: [row({ bossKey: 'zakum', bossName: '자쿰' }), row({ bossKey: 'lotus', bossName: '스우' }), row({ bossKey: 'lucid', bossName: '루시드' })],
       records: NO_RECORDS,
       dropRecords: NO_DROPS,
       now: NOW,

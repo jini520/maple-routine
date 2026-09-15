@@ -24,10 +24,12 @@ import { MesoAmountField } from '../../components/organisms/MesoPad/MesoAmountFi
 import { MesoKeypad } from '../../components/organisms/MesoPad/MesoKeypad'
 import { applyMesoKey, type MesoKey } from '../../components/organisms/MesoPad/meso-pad'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
+import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
 
 export interface DropPricePadProps {
   drop: RecordedDrop
-  boss: string
+  /** 보이는 보스 이름. */
+  bossName: string
   difficulty: BossDifficulty
   characterName: string
   /** 분배 인원 기본값. 그 행의 파티원 수(사용자 결정). 저장하면 이 값과 무관해진다. */
@@ -103,10 +105,10 @@ export function DropPricePadContent(
             </Text>
             <View className="mt-0.5 flex-row items-center gap-1.5">
               <Badge variant={props.difficulty}>
-                {props.difficulty}
+                {DIFFICULTY_NAME[props.difficulty]}
               </Badge>
               <Text numberOfLines={1} className="shrink text-11 text-text-muted">
-                {props.boss} · {props.characterName}
+                {props.bossName} · {props.characterName}
               </Text>
             </View>
           </View>

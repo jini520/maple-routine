@@ -3,7 +3,11 @@ import type { BossCycle } from '../types/scheduler'
 
 export interface BossProfitRecord {
   ocid: string
+  /** 보스 key. 기본키에 든다. */
+  bossKey: string
+  /** 기록할 때의 보스 이름. 보이는 이름은 key 로 보스 표에서 찾고, 표에서 빠진 보스일 때만 이 값을 쓴다. */
   boss: string
+  /** 난이도 key(`easy` 등). */
   difficulty: string
   cycle: BossCycle
   periodKey: string
@@ -34,9 +38,10 @@ export interface BossProfitRecord {
 
 const UPSERT_SQL = `
   INSERT INTO boss_profit_records
-    (ocid, boss, difficulty, cycle, period_key, party_size, price_meso, payout_meso, recorded_at, world)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  ON CONFLICT(ocid, boss, difficulty, period_key) DO UPDATE SET
+    (ocid, boss_key, boss, difficulty, cycle, period_key, party_size, price_meso, payout_meso, recorded_at, world)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  ON CONFLICT(ocid, boss_key, difficulty, period_key) DO UPDATE SET
+    boss = excluded.boss,
     cycle = excluded.cycle,
     party_size = excluded.party_size,
     price_meso = excluded.price_meso,
@@ -91,6 +96,7 @@ export async function upsertBossProfitRecord(record: BossProfitRecord): Promise<
   const db = await getBossProfitDb()
   await db.run(UPSERT_SQL, [
     record.ocid,
+    record.bossKey,
     record.boss,
     record.difficulty,
     record.cycle,
@@ -134,6 +140,7 @@ export async function fillMissingRecordWorlds(worldByOcid: Map<string, string>):
 function rowToRecord(row: Record<string, unknown>): BossProfitRecord {
   return {
     ocid: row.ocid as string,
+    bossKey: row.boss_key as string,
     boss: row.boss as string,
     difficulty: row.difficulty as string,
     cycle: row.cycle as BossCycle,
@@ -268,7 +275,7 @@ export async function findAdjacentPeriodKeyWithRecords(
 /** `boss_profit_records` 한 행을 식별하는 키(금액·파티원 수 없음). */
 export interface BossProfitRecordKey {
   ocid: string
-  boss: string
+  bossKey: string
   difficulty: string
   periodKey: string
 }
@@ -289,13 +296,13 @@ export async function getAllBossProfitRecordKeys(ocids: string[]): Promise<BossP
   const db = await getBossProfitDb()
   const ocidPlaceholders = ocids.map(() => '?').join(', ')
   const { values } = await db.query(
-    `SELECT ocid, boss, difficulty, period_key FROM boss_profit_records WHERE ocid IN (${ocidPlaceholders})`,
+    `SELECT ocid, boss_key, difficulty, period_key FROM boss_profit_records WHERE ocid IN (${ocidPlaceholders})`,
     [...ocids],
   )
 
   return (values ?? []).map((row) => ({
     ocid: (row as Record<string, unknown>).ocid as string,
-    boss: (row as Record<string, unknown>).boss as string,
+    bossKey: (row as Record<string, unknown>).boss_key as string,
     difficulty: (row as Record<string, unknown>).difficulty as string,
     periodKey: (row as Record<string, unknown>).period_key as string,
   }))
@@ -310,6 +317,8 @@ export async function getAllBossProfitRecordKeys(ocids: string[]): Promise<BossP
  */
 export interface DatedBossProfitRecord {
   ocid: string
+  bossKey: string
+  /** 기록할 때의 보스 이름. */
   boss: string
   difficulty: string
   periodKey: string
@@ -337,7 +346,7 @@ export async function getDatedBossProfitRecords(
   const db = await getBossProfitDb()
   const ocidPlaceholders = ocids.map(() => '?').join(', ')
   const { values } = await db.query(
-    `SELECT ocid, boss, difficulty, period_key, payout_meso, defeated_on
+    `SELECT ocid, boss_key, boss, difficulty, period_key, payout_meso, defeated_on
        FROM boss_profit_records
       WHERE ocid IN (${ocidPlaceholders})
         AND defeated_on IS NOT NULL
@@ -349,6 +358,7 @@ export async function getDatedBossProfitRecords(
     const record = row as Record<string, unknown>
     return {
       ocid: record.ocid as string,
+      bossKey: record.boss_key as string,
       boss: record.boss as string,
       difficulty: record.difficulty as string,
       periodKey: record.period_key as string,
@@ -361,6 +371,7 @@ export async function getDatedBossProfitRecords(
 /** 아직 날짜를 모르는 기록. **캐낼 대상**이다. */
 export interface UndatedBossProfitRecord {
   ocid: string
+  bossKey: string
   boss: string
   difficulty: string
   cycle: BossCycle
@@ -386,7 +397,7 @@ export async function getUndatedBossProfitRecords(
   const ocidPlaceholders = ocids.map(() => '?').join(', ')
   const periodKeyPlaceholders = periodKeys.map(() => '?').join(', ')
   const { values } = await db.query(
-    `SELECT ocid, boss, difficulty, cycle, period_key
+    `SELECT ocid, boss_key, boss, difficulty, cycle, period_key
        FROM boss_profit_records
       WHERE ocid IN (${ocidPlaceholders})
         AND period_key IN (${periodKeyPlaceholders})
@@ -398,6 +409,7 @@ export async function getUndatedBossProfitRecords(
     const record = row as Record<string, unknown>
     return {
       ocid: record.ocid as string,
+      bossKey: record.boss_key as string,
       boss: record.boss as string,
       difficulty: record.difficulty as string,
       cycle: record.cycle as BossCycle,
@@ -431,8 +443,8 @@ export async function getEarliestBossProfitPeriodKeys(
 export async function deleteBossProfitRecord(key: BossProfitRecordKey): Promise<void> {
   const db = await getBossProfitDb()
   await db.run(
-    `DELETE FROM boss_profit_records WHERE ocid = ? AND boss = ? AND difficulty = ? AND period_key = ?`,
-    [key.ocid, key.boss, key.difficulty, key.periodKey],
+    `DELETE FROM boss_profit_records WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ?`,
+    [key.ocid, key.bossKey, key.difficulty, key.periodKey],
   )
   recordsRevision += 1
 }
@@ -451,8 +463,8 @@ export async function setBossProfitDefeatedOn(
   const db = await getBossProfitDb()
   await db.run(
     `UPDATE boss_profit_records SET defeated_on = ?
-      WHERE ocid = ? AND boss = ? AND difficulty = ? AND period_key = ?`,
-    [defeatedOn, key.ocid, key.boss, key.difficulty, key.periodKey],
+      WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ?`,
+    [defeatedOn, key.ocid, key.bossKey, key.difficulty, key.periodKey],
   )
   bumpRecordsRevision()
 }

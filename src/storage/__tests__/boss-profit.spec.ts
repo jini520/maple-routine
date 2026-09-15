@@ -18,8 +18,9 @@ beforeEach(() => {
 
 const sampleRecord: BossProfitRecord = {
   ocid: 'ocid-1',
+  bossKey: 'black_mage',
   boss: '검은 마법사',
-  difficulty: '익스트림',
+  difficulty: 'extreme',
   cycle: 'monthly',
   periodKey: '2026-07',
   partySize: 2,
@@ -39,11 +40,12 @@ describe('upsertBossProfitRecord', () => {
     expect(runMock).toHaveBeenCalledTimes(2)
 
     const [firstSql, firstValues] = runMock.mock.calls[0]
-    expect(firstSql).toContain('ON CONFLICT(ocid, boss, difficulty, period_key) DO UPDATE SET')
+    expect(firstSql).toContain('ON CONFLICT(ocid, boss_key, difficulty, period_key) DO UPDATE SET')
     expect(firstValues).toEqual([
       'ocid-1',
+      'black_mage',
       '검은 마법사',
-      '익스트림',
+      'extreme',
       'monthly',
       '2026-07',
       2,
@@ -57,8 +59,9 @@ describe('upsertBossProfitRecord', () => {
     expect(secondSql).toBe(firstSql)
     expect(secondValues).toEqual([
       'ocid-1',
+      'black_mage',
       '검은 마법사',
-      '익스트림',
+      'extreme',
       'monthly',
       '2026-07',
       3,
@@ -92,8 +95,9 @@ describe('getBossProfitRecords', () => {
       values: [
         {
           ocid: 'ocid-1',
+          boss_key: 'black_mage',
           boss: '검은 마법사',
-          difficulty: '익스트림',
+          difficulty: 'extreme',
           cycle: 'monthly',
           period_key: '2026-07',
           party_size: 2,
@@ -146,8 +150,9 @@ describe('world 스냅샷', () => {
       values: [
         {
           ocid: 'ocid-1',
+          boss_key: 'zakum',
           boss: '자쿰',
-          difficulty: '카오스',
+          difficulty: 'chaos',
           cycle: 'weekly',
           period_key: '2026-07-30',
           party_size: 1,
@@ -201,7 +206,7 @@ describe('getAllBossProfitRecordKeys', () => {
     await getAllBossProfitRecordKeys(['ocid-1', 'ocid-2'])
 
     const [sql, values] = queryMock.mock.calls[0]
-    expect(sql).toContain('SELECT ocid, boss, difficulty, period_key FROM boss_profit_records')
+    expect(sql).toContain('SELECT ocid, boss_key, difficulty, period_key FROM boss_profit_records')
     expect(sql).toContain('WHERE ocid IN (?, ?)')
     expect(sql).not.toContain('period_key IN')
     expect(values).toEqual(['ocid-1', 'ocid-2'])
@@ -209,12 +214,12 @@ describe('getAllBossProfitRecordKeys', () => {
 
   it('행을 키 객체로 변환한다', async () => {
     queryMock.mockResolvedValue({
-      values: [{ ocid: 'ocid-1', boss: '스우', difficulty: '하드', period_key: '2026-07-09' }],
+      values: [{ ocid: 'ocid-1', boss_key: 'lotus', difficulty: 'hard', period_key: '2026-07-09' }],
     })
     const { getAllBossProfitRecordKeys } = require('../boss-profit') as typeof import('../boss-profit')
 
     await expect(getAllBossProfitRecordKeys(['ocid-1'])).resolves.toEqual([
-      { ocid: 'ocid-1', boss: '스우', difficulty: '하드', periodKey: '2026-07-09' },
+      { ocid: 'ocid-1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-07-09' },
     ])
   })
 
@@ -255,8 +260,9 @@ describe('처치 날짜', () => {
       values: [
         {
           ocid: 'ocid-1',
+          boss_key: 'lotus',
           boss: '스우',
-          difficulty: '하드',
+          difficulty: 'hard',
           period_key: '2026-08-20',
           payout_meso: 210_000_000,
           defeated_on: '2026-08-21',
@@ -268,8 +274,9 @@ describe('처치 날짜', () => {
     await expect(getDatedBossProfitRecords(['ocid-1'], '2026-08-01', '2026-08-31')).resolves.toEqual([
       {
         ocid: 'ocid-1',
+        bossKey: 'lotus',
         boss: '스우',
-        difficulty: '하드',
+        difficulty: 'hard',
         periodKey: '2026-08-20',
         payoutMeso: 210_000_000,
         defeatedOn: '2026-08-21',
@@ -301,14 +308,14 @@ describe('처치 날짜', () => {
     const { setBossProfitDefeatedOn } = require('../boss-profit') as typeof import('../boss-profit')
 
     await setBossProfitDefeatedOn(
-      { ocid: 'ocid-1', boss: '스우', difficulty: '하드', periodKey: '2026-08-20' },
+      { ocid: 'ocid-1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-08-20' },
       '2026-08-21',
     )
 
     const [sql, values] = runMock.mock.calls[0]
     expect(sql).toContain('UPDATE boss_profit_records SET defeated_on = ?')
-    expect(sql).toContain('WHERE ocid = ? AND boss = ? AND difficulty = ? AND period_key = ?')
-    expect(values).toEqual(['2026-08-21', 'ocid-1', '스우', '하드', '2026-08-20'])
+    expect(sql).toContain('WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ?')
+    expect(values).toEqual(['2026-08-21', 'ocid-1', 'lotus', 'hard', '2026-08-20'])
   })
 })
 
@@ -340,7 +347,7 @@ describe('getBossProfitRecordsRevision', () => {
     expect(getBossProfitRecordsRevision()).toBe(2)
 
     await setBossProfitDefeatedOn(
-      { ocid: 'ocid-1', boss: '스우', difficulty: '하드', periodKey: '2026-08-20' },
+      { ocid: 'ocid-1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-08-20' },
       '2026-08-21',
     )
     expect(getBossProfitRecordsRevision()).toBe(3)
@@ -386,7 +393,7 @@ describe('subscribeBossProfitRecordsRevision', () => {
 
     await upsertBossProfitRecord(sampleRecord)
     await setBossProfitDefeatedOn(
-      { ocid: 'ocid-1', boss: '스우', difficulty: '하드', periodKey: '2026-08-20' },
+      { ocid: 'ocid-1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-08-20' },
       '2026-08-21',
     )
 

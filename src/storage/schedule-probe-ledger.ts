@@ -29,7 +29,8 @@ export type ScheduleProbeRecord =
       hasCompletion: boolean
       sections: ProbeSectionPresence
       /**
-       * 그날 완료로 본 보스. `이름|난이도` 목록이고 처치 날짜를 캐는 원재료다.
+       * 그날 완료로 본 보스. `보스 key|난이도 key` 목록이고 처치 날짜를 캐는 원재료다. 보스 표에 없는
+       * 보스(key 가 없다)는 안 적는다.
        *
        * **`undefined` 와 `[]` 는 다른 뜻이다.** `[]` 는 그날 완료가 0건 이라는 관측이고,
        * `undefined` 는 이 칸이 생기기 전에 남은 기록이라 **보스를 안 본 관측**이다. 섞으면
@@ -83,6 +84,14 @@ export interface ScheduleProbeLedger {
   dates: Record<string, ScheduleProbeRecord>
 }
 
+/**
+ * 원장 값의 모양 번호. 번호가 다른 값은 없는 것으로 본다.
+ *
+ * 2 는 `bosses` 가 보스 이름 대신 보스 key 를 든 모양이다. 옛 이름은 옮기지 않고 버린다. 14일 창을 다시
+ * 불러 채우는 값이라서다. 다음 저장이 새 모양으로 덮어쓴다.
+ */
+const LEDGER_VERSION = 2
+
 // 오늘 … 오늘−13. 확정한 `date` 실효 구간(오늘−13 ~ 오늘−1)에 오늘을 더한 폭이다.
 export const PROBE_WINDOW_DAYS = 14
 
@@ -92,7 +101,10 @@ function parseLedger(value: string | null): ScheduleProbeLedger {
   }
 
   try {
-    const parsed = JSON.parse(value) as Partial<ScheduleProbeLedger>
+    const parsed = JSON.parse(value) as Partial<ScheduleProbeLedger> & { version?: number }
+    if (parsed.version !== LEDGER_VERSION) {
+      return { unavailable: false, dates: {} }
+    }
     return {
       unavailable: parsed.unavailable === true,
       dates: parsed.dates ?? {},
@@ -155,6 +167,7 @@ export async function recordScheduleProbe(
       scheduleProbeKey(ocid),
       JSON.stringify({
         ...ledger,
+        version: LEDGER_VERSION,
         dates: { ...ledger.dates, [dateKey]: record },
       }),
     )
@@ -177,7 +190,7 @@ export async function markScheduleProbeUnavailable(
 ): Promise<void> {
   await withLedgerLock(ocid, async () => {
     const ledger = await readLedger(ocid)
-    await preferences.set(scheduleProbeKey(ocid), JSON.stringify({ ...ledger, unavailable }))
+    await preferences.set(scheduleProbeKey(ocid), JSON.stringify({ ...ledger, version: LEDGER_VERSION, unavailable }))
   })
 }
 

@@ -78,8 +78,9 @@ var mockTrackingModeStateMock: { mode: 'auto' | 'manual' } = { mode: 'auto' }
 
 function bossContent(overrides: Partial<BossContent> = {}): BossContent {
   const merged = {
-    name: '자쿰',
-    difficulty: '카오스' as const,
+    bossKey: 'zakum',
+    apiName: '자쿰',
+    difficulty: 'chaos' as const,
     cycle: 'weekly' as const,
     isRegistered: true,
     isComplete: false,
@@ -183,8 +184,8 @@ describe('useBossSchedulerStore', () => {
         state: {
           ...syncResult().state!,
           bossContents: [
-            bossContent({ name: '자쿰', cycle: 'weekly' }),
-            bossContent({ name: '검은 마법사', cycle: 'monthly' }),
+            bossContent({ bossKey: 'zakum', apiName: '자쿰', cycle: 'weekly' }),
+            bossContent({ bossKey: 'black_mage', apiName: '검은 마법사', cycle: 'monthly' }),
           ],
         },
       }),
@@ -195,26 +196,26 @@ describe('useBossSchedulerStore', () => {
     const state = useBossSchedulerStore.getState()
     expect(state.characters[0].weeklyBosses).toEqual([
       {
+        bossKey: 'zakum',
         apiName: '자쿰',
-        difficulty: '카오스',
+        difficulty: 'chaos',
         cycle: 'weekly',
         isRegistered: true,
         isComplete: false,
         ownComplete: false,
-        matchedBossName: '자쿰',
         portraitSlug: 'zakum',
         isSeasonBoss: false,
       },
     ])
     expect(state.characters[0].monthlyBosses).toEqual([
       {
+        bossKey: 'black_mage',
         apiName: '검은 마법사',
-        difficulty: '카오스',
+        difficulty: 'chaos',
         cycle: 'monthly',
         isRegistered: true,
         isComplete: false,
         ownComplete: false,
-        matchedBossName: '검은마법사',
         portraitSlug: 'blackMage',
         isSeasonBoss: false,
       },
@@ -226,7 +227,7 @@ describe('useBossSchedulerStore', () => {
       syncResult({
         state: {
           ...syncResult().state!,
-          bossContents: [bossContent({ name: '검은 마법사', cycle: 'monthly' })],
+          bossContents: [bossContent({ bossKey: 'black_mage', apiName: '검은 마법사', cycle: 'monthly' })],
         },
       }),
     ])
@@ -274,7 +275,7 @@ describe('useBossSchedulerStore', () => {
         syncResult({
           state: {
             ...syncResult().state!,
-            bossContents: [bossContent({ name: '자쿰', isRegistered: false, isComplete: true })],
+            bossContents: [bossContent({ bossKey: 'zakum', apiName: '자쿰', isRegistered: false, isComplete: true })],
           },
         }),
       ])
@@ -290,8 +291,8 @@ describe('useBossSchedulerStore', () => {
           state: {
             ...syncResult().state!,
             bossContents: [
-              bossContent({ name: '자쿰', isComplete: true }),
-              bossContent({ name: '시즌 보스 메이린', difficulty: '노멀', isComplete: true }),
+              bossContent({ bossKey: 'zakum', apiName: '자쿰', isComplete: true }),
+              bossContent({ bossKey: 'meirin', apiName: '시즌 보스 메이린', difficulty: 'normal', isComplete: true }),
             ],
           },
         }),
@@ -651,7 +652,7 @@ describe('useBossSchedulerStore', () => {
 
     it('파티 설정은 동기화를 건너뛰어도 최종 집합 기준으로 다시 채워진다(로컬 조회)', async () => {
       getBossPartySettingsMock.mockResolvedValue([
-        { ocid: 'ocid-1', boss: '자쿰', difficulty: '카오스', partySize: 4, updatedAt: '2026-07-27T00:00:00.000Z' },
+        { ocid: 'ocid-1', bossKey: 'zakum', difficulty: 'chaos', partySize: 4, updatedAt: '2026-07-27T00:00:00.000Z' },
       ])
       useBossSchedulerStore.setState({
         trackedOcids: ['ocid-1', 'ocid-2'],
@@ -662,14 +663,14 @@ describe('useBossSchedulerStore', () => {
 
       expect(syncSchedulesMock).not.toHaveBeenCalled()
       expect(getBossPartySettingsMock).toHaveBeenCalledWith(['ocid-1'])
-      expect(useBossSchedulerStore.getState().partySizes).toEqual({ 'ocid-1:자쿰:카오스': 4 })
+      expect(useBossSchedulerStore.getState().partySizes).toEqual({ 'ocid-1:zakum:chaos': 4 })
     })
 
     it('수동 모드에서 캐릭터를 추가하면 시드된 멤버십이 manualTrackedByOcid에 반영된다', async () => {
       mockTrackingModeStateMock.mode = 'manual'
       syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-2', characterName: '새캐릭터' })])
       getManualTrackedContentMock.mockImplementation(async (ocid: string) =>
-        ocid === 'ocid-2' ? [{ contentName: '자쿰', kind: 'boss', difficulty: '카오스' }] : [],
+        ocid === 'ocid-2' ? [{ kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' }] : [],
       )
       useBossSchedulerStore.setState({
         trackedOcids: ['ocid-1'],
@@ -679,7 +680,7 @@ describe('useBossSchedulerStore', () => {
       await useBossSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
 
       expect(useBossSchedulerStore.getState().manualTrackedByOcid).toEqual({
-        'ocid-2': [{ contentName: '자쿰', kind: 'boss', difficulty: '카오스' }],
+        'ocid-2': [{ kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' }],
       })
     })
   })
@@ -728,14 +729,14 @@ describe('useBossSchedulerStore', () => {
       mockTrackingModeStateMock.mode = 'manual'
       syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1' })])
       getManualTrackedContentMock.mockImplementation(async (ocid: string) =>
-        ocid === 'ocid-1' ? [{ contentName: '자쿰', kind: 'boss', difficulty: '카오스' }] : [],
+        ocid === 'ocid-1' ? [{ kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' }] : [],
       )
 
       await useBossSchedulerStore.getState().refresh(['ocid-1'])
 
       expect(getManualTrackedContentMock).toHaveBeenCalledWith('ocid-1')
       expect(useBossSchedulerStore.getState().manualTrackedByOcid).toEqual({
-        'ocid-1': [{ contentName: '자쿰', kind: 'boss', difficulty: '카오스' }],
+        'ocid-1': [{ kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' }],
       })
     })
 
@@ -751,49 +752,49 @@ describe('useBossSchedulerStore', () => {
     it('addManualBoss는 저장소에 (보스, 난이도) 멤버십을 저장하고 상태를 갱신한다 (maxCount 없음)', async () => {
       getManualTrackedContentMock.mockResolvedValue([])
 
-      await useBossSchedulerStore.getState().addManualBoss('ocid-1', '자쿰', '카오스')
+      await useBossSchedulerStore.getState().addManualBoss('ocid-1', 'zakum', 'chaos')
 
       expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
-        { contentName: '자쿰', kind: 'boss', difficulty: '카오스' },
+        { kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' },
       ])
       expect(useBossSchedulerStore.getState().manualTrackedByOcid).toEqual({
-        'ocid-1': [{ contentName: '자쿰', kind: 'boss', difficulty: '카오스' }],
+        'ocid-1': [{ kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' }],
       })
     })
 
     it('addManualBoss는 이미 추적 중인 (보스, 난이도)면 중복 추가하지 않는다', async () => {
-      getManualTrackedContentMock.mockResolvedValue([{ contentName: '자쿰', kind: 'boss', difficulty: '카오스' }])
+      getManualTrackedContentMock.mockResolvedValue([{ kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' }])
 
-      await useBossSchedulerStore.getState().addManualBoss('ocid-1', '자쿰', '카오스')
+      await useBossSchedulerStore.getState().addManualBoss('ocid-1', 'zakum', 'chaos')
 
       expect(setManualTrackedContentMock).not.toHaveBeenCalled()
     })
 
     it('addManualBoss는 같은 보스의 다른 난이도는 별개 항목으로 추가한다', async () => {
-      getManualTrackedContentMock.mockResolvedValue([{ contentName: '루시드', kind: 'boss', difficulty: '이지' }])
+      getManualTrackedContentMock.mockResolvedValue([{ kind: 'boss', bossKey: 'lucid', difficulty: 'easy' }])
 
-      await useBossSchedulerStore.getState().addManualBoss('ocid-1', '루시드', '하드')
+      await useBossSchedulerStore.getState().addManualBoss('ocid-1', 'lucid', 'hard')
 
       expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
-        { contentName: '루시드', kind: 'boss', difficulty: '이지' },
-        { contentName: '루시드', kind: 'boss', difficulty: '하드' },
+        { kind: 'boss', bossKey: 'lucid', difficulty: 'easy' },
+        { kind: 'boss', bossKey: 'lucid', difficulty: 'hard' },
       ])
     })
 
     // weekly-bosses.json의 주간 보스 12종(시즌 보스 제외). 12개 한도를 채우는 데 쓴다.
     const WEEKLY_BOSS_NAMES = [
-      '자쿰',
-      '매그너스',
-      '파풀라투스',
-      '반반',
-      '피에르',
-      '블러디 퀸',
-      '벨룸',
-      '스우',
-      '데미안',
-      '가디언 엔젤 슬라임',
-      '루시드',
-      '윌',
+      'zakum',
+      'magnus',
+      'papulatus',
+      'von_bon',
+      'pierre',
+      'crimson_queen',
+      'vellum',
+      'lotus',
+      'damien',
+      'guardian_angel_slime',
+      'lucid',
+      'will',
     ]
 
     // 난이도 교체는 remove → add 2단계가 아니라 단일 액션이다.
@@ -802,39 +803,39 @@ describe('useBossSchedulerStore', () => {
     describe('setManualBossDifficulty', () => {
       it('쓰기 1회로 난이도를 교체한다. 중간 상태(보스가 빠진 배열)를 저장하지 않는다', async () => {
         getManualTrackedContentMock.mockResolvedValue([
-          { contentName: '스우', kind: 'boss', difficulty: '하드' },
+          { kind: 'boss', bossKey: 'lotus', difficulty: 'hard' },
           { contentName: '무릉도장', kind: 'weekly' },
         ])
 
-        await useBossSchedulerStore.getState().setManualBossDifficulty('ocid-1', '스우', '익스트림')
+        await useBossSchedulerStore.getState().setManualBossDifficulty('ocid-1', 'lotus', 'extreme')
 
         expect(setManualTrackedContentMock).toHaveBeenCalledTimes(1)
         expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
-          { contentName: '스우', kind: 'boss', difficulty: '익스트림' },
+          { kind: 'boss', bossKey: 'lotus', difficulty: 'extreme' },
           { contentName: '무릉도장', kind: 'weekly' },
         ])
       })
 
       it('제자리에서 교체해 배열 순서를 유지한다 (끝으로 밀지 않는다)', async () => {
         getManualTrackedContentMock.mockResolvedValue([
-          { contentName: '스우', kind: 'boss', difficulty: '하드' },
-          { contentName: '루시드', kind: 'boss', difficulty: '노멀' },
+          { kind: 'boss', bossKey: 'lotus', difficulty: 'hard' },
+          { kind: 'boss', bossKey: 'lucid', difficulty: 'normal' },
         ])
 
-        await useBossSchedulerStore.getState().setManualBossDifficulty('ocid-1', '스우', '익스트림')
+        await useBossSchedulerStore.getState().setManualBossDifficulty('ocid-1', 'lotus', 'extreme')
 
-        expect(setManualTrackedContentMock.mock.calls[0][1].map((item: ManualTrackedItem) => item.contentName)).toEqual([
-          '스우',
-          '루시드',
+        expect(setManualTrackedContentMock.mock.calls[0][1].map((item: ManualTrackedItem) => (item.kind === 'boss' ? item.bossKey : item.contentName))).toEqual([
+          'lotus',
+          'lucid',
         ])
       })
 
       it('저장이 실패하면 스토어 상태를 바꾸지 않는다 (롤백이 필요 없다)', async () => {
-        getManualTrackedContentMock.mockResolvedValue([{ contentName: '스우', kind: 'boss', difficulty: '하드' }])
+        getManualTrackedContentMock.mockResolvedValue([{ kind: 'boss', bossKey: 'lotus', difficulty: 'hard' }])
         setManualTrackedContentMock.mockRejectedValueOnce(new Error('write failed'))
 
         await expect(
-          useBossSchedulerStore.getState().setManualBossDifficulty('ocid-1', '스우', '익스트림'),
+          useBossSchedulerStore.getState().setManualBossDifficulty('ocid-1', 'lotus', 'extreme'),
         ).rejects.toThrow()
 
         expect(useBossSchedulerStore.getState().manualTrackedByOcid['ocid-1']).toBeUndefined()
@@ -842,21 +843,21 @@ describe('useBossSchedulerStore', () => {
 
       it('같은 보스가 두 난이도로 저장돼 있으면 하나로 수렴시킨다', async () => {
         getManualTrackedContentMock.mockResolvedValue([
-          { contentName: '스우', kind: 'boss', difficulty: '하드' },
-          { contentName: '스우', kind: 'boss', difficulty: '노멀' },
+          { kind: 'boss', bossKey: 'lotus', difficulty: 'hard' },
+          { kind: 'boss', bossKey: 'lotus', difficulty: 'normal' },
         ])
 
-        await useBossSchedulerStore.getState().setManualBossDifficulty('ocid-1', '스우', '익스트림')
+        await useBossSchedulerStore.getState().setManualBossDifficulty('ocid-1', 'lotus', 'extreme')
 
         expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
-          { contentName: '스우', kind: 'boss', difficulty: '익스트림' },
+          { kind: 'boss', bossKey: 'lotus', difficulty: 'extreme' },
         ])
       })
 
       it('추적 중이 아닌 보스면 아무것도 쓰지 않는다', async () => {
-        getManualTrackedContentMock.mockResolvedValue([{ contentName: '루시드', kind: 'boss', difficulty: '노멀' }])
+        getManualTrackedContentMock.mockResolvedValue([{ kind: 'boss', bossKey: 'lucid', difficulty: 'normal' }])
 
-        await useBossSchedulerStore.getState().setManualBossDifficulty('ocid-1', '스우', '익스트림')
+        await useBossSchedulerStore.getState().setManualBossDifficulty('ocid-1', 'lotus', 'extreme')
 
         expect(setManualTrackedContentMock).not.toHaveBeenCalled()
       })
@@ -864,54 +865,54 @@ describe('useBossSchedulerStore', () => {
       it('같은 이름의 컨텐츠(kind가 boss가 아닌 항목)는 건드리지 않는다', async () => {
         getManualTrackedContentMock.mockResolvedValue([
           { contentName: '스우', kind: 'weekly' },
-          { contentName: '스우', kind: 'boss', difficulty: '하드' },
+          { kind: 'boss', bossKey: 'lotus', difficulty: 'hard' },
         ])
 
-        await useBossSchedulerStore.getState().setManualBossDifficulty('ocid-1', '스우', '익스트림')
+        await useBossSchedulerStore.getState().setManualBossDifficulty('ocid-1', 'lotus', 'extreme')
 
         expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
           { contentName: '스우', kind: 'weekly' },
-          { contentName: '스우', kind: 'boss', difficulty: '익스트림' },
+          { kind: 'boss', bossKey: 'lotus', difficulty: 'extreme' },
         ])
       })
 
       // 개수가 안 변하므로 주간 12개 한도에 원리적으로 걸리지 않는다.
       it('주간 12개가 찬 상태에서도 난이도를 바꿀 수 있다', async () => {
         const twelve = Array.from({ length: 12 }, (_, index) => ({
-          contentName: WEEKLY_BOSS_NAMES[index],
           kind: 'boss' as const,
-          difficulty: '노멀',
+          bossKey: WEEKLY_BOSS_NAMES[index],
+          difficulty: 'normal',
         }))
         getManualTrackedContentMock.mockResolvedValue(twelve)
 
-        await useBossSchedulerStore.getState().setManualBossDifficulty('ocid-1', WEEKLY_BOSS_NAMES[0], '하드')
+        await useBossSchedulerStore.getState().setManualBossDifficulty('ocid-1', WEEKLY_BOSS_NAMES[0], 'hard')
 
         expect(setManualTrackedContentMock).toHaveBeenCalledTimes(1)
         expect(setManualTrackedContentMock.mock.calls[0][1]).toHaveLength(12)
         expect(setManualTrackedContentMock.mock.calls[0][1][0]).toEqual({
-          contentName: WEEKLY_BOSS_NAMES[0],
           kind: 'boss',
-          difficulty: '하드',
+          bossKey: WEEKLY_BOSS_NAMES[0],
+          difficulty: 'hard',
         })
       })
     })
 
     it('removeManualBoss는 해당 (보스, 난이도)만 제거하고 다른 난이도·다른 kind는 보존한다', async () => {
       getManualTrackedContentMock.mockResolvedValue([
-        { contentName: '루시드', kind: 'boss', difficulty: '이지' },
-        { contentName: '루시드', kind: 'boss', difficulty: '하드' },
+        { kind: 'boss', bossKey: 'lucid', difficulty: 'easy' },
+        { kind: 'boss', bossKey: 'lucid', difficulty: 'hard' },
         { contentName: '무릉도장', kind: 'weekly' },
       ])
 
-      await useBossSchedulerStore.getState().removeManualBoss('ocid-1', '루시드', '이지')
+      await useBossSchedulerStore.getState().removeManualBoss('ocid-1', 'lucid', 'easy')
 
       expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
-        { contentName: '루시드', kind: 'boss', difficulty: '하드' },
+        { kind: 'boss', bossKey: 'lucid', difficulty: 'hard' },
         { contentName: '무릉도장', kind: 'weekly' },
       ])
       expect(useBossSchedulerStore.getState().manualTrackedByOcid).toEqual({
         'ocid-1': [
-          { contentName: '루시드', kind: 'boss', difficulty: '하드' },
+          { kind: 'boss', bossKey: 'lucid', difficulty: 'hard' },
           { contentName: '무릉도장', kind: 'weekly' },
         ],
       })
@@ -923,28 +924,28 @@ describe('useBossSchedulerStore', () => {
   describe(': 수동 주간 보스 12개 한도', () => {
     // weekly-bosses.json 주간 섹션 앞부분 12종. 실재하는 이름이어야 주기·시즌 판정이 통한다.
     const TWELVE_WEEKLY_BOSSES = [
-      '자쿰',
-      '매그너스',
-      '파풀라투스',
-      '반반',
-      '피에르',
-      '블러디 퀸',
-      '벨룸',
-      '스우',
-      '데미안',
-      '가디언 엔젤 슬라임',
-      '루시드',
-      '윌',
+      'zakum',
+      'magnus',
+      'papulatus',
+      'von_bon',
+      'pierre',
+      'crimson_queen',
+      'vellum',
+      'lotus',
+      'damien',
+      'guardian_angel_slime',
+      'lucid',
+      'will',
     ]
 
     function trackedBosses(bossNames: string[]): ManualTrackedItem[] {
-      return bossNames.map((contentName) => ({ contentName, kind: 'boss' as const, difficulty: '노멀' }))
+      return bossNames.map((bossKey) => ({ kind: 'boss' as const, bossKey, difficulty: 'normal' as const }))
     }
 
     it('한도(12)에 도달하면 저장하지 않고 limitReached를 반환한다', async () => {
       getManualTrackedContentMock.mockResolvedValue(trackedBosses(TWELVE_WEEKLY_BOSSES))
 
-      const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', '더스크', '노멀')
+      const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', 'gloom', 'normal')
 
       expect(result).toBe('limitReached')
       expect(setManualTrackedContentMock).not.toHaveBeenCalled()
@@ -953,7 +954,7 @@ describe('useBossSchedulerStore', () => {
     it('한도 직전(11)이면 정상 추가한다', async () => {
       getManualTrackedContentMock.mockResolvedValue(trackedBosses(TWELVE_WEEKLY_BOSSES.slice(0, 11)))
 
-      const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', '더스크', '노멀')
+      const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', 'gloom', 'normal')
 
       expect(result).toBe('added')
       expect(setManualTrackedContentMock).toHaveBeenCalled()
@@ -962,7 +963,7 @@ describe('useBossSchedulerStore', () => {
     it('시즌 보스(메이린)는 한도가 찼어도 추가할 수 있다. 처치 카운트 제외 규칙과 동일', async () => {
       getManualTrackedContentMock.mockResolvedValue(trackedBosses(TWELVE_WEEKLY_BOSSES))
 
-      const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', '시즌 보스 메이린', '노멀')
+      const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', 'meirin', 'normal')
 
       expect(result).toBe('added')
       expect(setManualTrackedContentMock).toHaveBeenCalled()
@@ -971,7 +972,7 @@ describe('useBossSchedulerStore', () => {
     it('월간 보스(검은마법사)는 한도가 찼어도 추가할 수 있다. 12는 주간 한도다', async () => {
       getManualTrackedContentMock.mockResolvedValue(trackedBosses(TWELVE_WEEKLY_BOSSES))
 
-      const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', '검은마법사', '하드')
+      const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', 'black_mage', 'hard')
 
       expect(result).toBe('added')
       expect(setManualTrackedContentMock).toHaveBeenCalled()
@@ -980,20 +981,20 @@ describe('useBossSchedulerStore', () => {
     it('시즌·월간 보스는 주간 카운트를 채우지 않는다. 그 둘이 섞여 있어도 주간 12개까지 선택 가능', async () => {
       getManualTrackedContentMock.mockResolvedValue([
         ...trackedBosses(TWELVE_WEEKLY_BOSSES.slice(0, 11)),
-        { contentName: '시즌 보스 메이린', kind: 'boss', difficulty: '노멀' },
-        { contentName: '검은마법사', kind: 'boss', difficulty: '하드' },
+        { kind: 'boss', bossKey: 'meirin', difficulty: 'normal' },
+        { kind: 'boss', bossKey: 'black_mage', difficulty: 'hard' },
         { contentName: '무릉도장', kind: 'weekly' },
       ])
 
-      const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', '더스크', '노멀')
+      const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', 'gloom', 'normal')
 
       expect(result).toBe('added')
     })
 
     it('이미 추적 중인 (보스, 난이도)면 duplicate를 반환한다', async () => {
-      getManualTrackedContentMock.mockResolvedValue([{ contentName: '자쿰', kind: 'boss', difficulty: '카오스' }])
+      getManualTrackedContentMock.mockResolvedValue([{ kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' }])
 
-      const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', '자쿰', '카오스')
+      const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', 'zakum', 'chaos')
 
       expect(result).toBe('duplicate')
     })
@@ -1081,7 +1082,7 @@ describe('useBossSchedulerStore', () => {
 
   describe(': 파티 관리', () => {
     it('loadPartySizes([])는 getBossPartySettings를 호출하지 않고 partySizes를 빈 객체로 만든다', async () => {
-      useBossSchedulerStore.setState({ partySizes: { 'ocid-1:자쿰:카오스': 4 } })
+      useBossSchedulerStore.setState({ partySizes: { 'ocid-1:zakum:chaos': 4 } })
 
       await useBossSchedulerStore.getState().loadPartySizes([])
 
@@ -1091,13 +1092,13 @@ describe('useBossSchedulerStore', () => {
 
     it('loadPartySizes(ocids)는 조회 결과를 `ocid:boss:difficulty` 키로 partySizes에 채운다', async () => {
       getBossPartySettingsMock.mockResolvedValue([
-        { ocid: 'ocid-1', boss: '자쿰', difficulty: '카오스', partySize: 4, updatedAt: '2026-07-13T00:00:00.000Z' },
+        { ocid: 'ocid-1', bossKey: 'zakum', difficulty: 'chaos', partySize: 4, updatedAt: '2026-07-13T00:00:00.000Z' },
       ])
 
       await useBossSchedulerStore.getState().loadPartySizes(['ocid-1'])
 
       expect(getBossPartySettingsMock).toHaveBeenCalledWith(['ocid-1'])
-      expect(useBossSchedulerStore.getState().partySizes).toEqual({ 'ocid-1:자쿰:카오스': 4 })
+      expect(useBossSchedulerStore.getState().partySizes).toEqual({ 'ocid-1:zakum:chaos': 4 })
     })
 
     it('설정이 없는 보스는 partySizes 맵에 키 자체가 없다(1로 채우지 않음)', async () => {
@@ -1106,40 +1107,40 @@ describe('useBossSchedulerStore', () => {
       await useBossSchedulerStore.getState().loadPartySizes(['ocid-1'])
 
       expect(useBossSchedulerStore.getState().partySizes).toEqual({})
-      expect(useBossSchedulerStore.getState().partySizes['ocid-1:자쿰:카오스']).toBeUndefined()
+      expect(useBossSchedulerStore.getState().partySizes['ocid-1:zakum:chaos']).toBeUndefined()
     })
 
     it('refresh(ocids)는 loadPartySizes를 통해 파티 설정을 함께 반영한다', async () => {
       getBossPartySettingsMock.mockResolvedValue([
-        { ocid: 'ocid-1', boss: '자쿰', difficulty: '카오스', partySize: 3, updatedAt: '2026-07-13T00:00:00.000Z' },
+        { ocid: 'ocid-1', bossKey: 'zakum', difficulty: 'chaos', partySize: 3, updatedAt: '2026-07-13T00:00:00.000Z' },
       ])
       syncSchedulesMock.mockResolvedValue([syncResult()])
 
       await useBossSchedulerStore.getState().refresh(['ocid-1'])
 
       expect(getBossPartySettingsMock).toHaveBeenCalledWith(['ocid-1'])
-      expect(useBossSchedulerStore.getState().partySizes).toEqual({ 'ocid-1:자쿰:카오스': 3 })
+      expect(useBossSchedulerStore.getState().partySizes).toEqual({ 'ocid-1:zakum:chaos': 3 })
     })
 
     it('setPartySize는 storage에 upsert하고 partySizes 상태를 즉시 갱신한다', async () => {
       setBossPartySizeMock.mockResolvedValue(undefined)
 
-      await useBossSchedulerStore.getState().setPartySize('ocid-1', '자쿰', '카오스', 4)
+      await useBossSchedulerStore.getState().setPartySize('ocid-1', 'zakum', 'chaos', 4)
 
       expect(setBossPartySizeMock).toHaveBeenCalledWith(
         'ocid-1',
-        '자쿰',
-        '카오스',
+        'zakum',
+        'chaos',
         4,
         expect.any(String),
       )
-      expect(useBossSchedulerStore.getState().partySizes).toEqual({ 'ocid-1:자쿰:카오스': 4 })
+      expect(useBossSchedulerStore.getState().partySizes).toEqual({ 'ocid-1:zakum:chaos': 4 })
     })
 
     it('setPartySize가 성공하면 완료 토스트를 띄운다', async () => {
       setBossPartySizeMock.mockResolvedValue(undefined)
 
-      await useBossSchedulerStore.getState().setPartySize('ocid-1', '자쿰', '카오스', 4)
+      await useBossSchedulerStore.getState().setPartySize('ocid-1', 'zakum', 'chaos', 4)
 
       expect(showSuccessMock).toHaveBeenCalledWith('파티원 수를 저장했어요')
     })
@@ -1147,7 +1148,7 @@ describe('useBossSchedulerStore', () => {
     it('setPartySize는 해당 보스의 maxPartySize를 초과하면 에러를 던지고 storage를 호출하지 않는다', async () => {
       // 스우 익스트림은 boss-crystal-prices.json에서 maxPartySize: 2로 예외 지정되어 있다.
       await expect(
-        useBossSchedulerStore.getState().setPartySize('ocid-1', '스우', '익스트림', 3),
+        useBossSchedulerStore.getState().setPartySize('ocid-1', 'lotus', 'extreme', 3),
       ).rejects.toThrow()
 
       expect(setBossPartySizeMock).not.toHaveBeenCalled()
@@ -1156,10 +1157,10 @@ describe('useBossSchedulerStore', () => {
 
     it('setPartySize는 1 미만이거나 정수가 아니면 에러를 던진다', async () => {
       await expect(
-        useBossSchedulerStore.getState().setPartySize('ocid-1', '자쿰', '카오스', 0),
+        useBossSchedulerStore.getState().setPartySize('ocid-1', 'zakum', 'chaos', 0),
       ).rejects.toThrow()
       await expect(
-        useBossSchedulerStore.getState().setPartySize('ocid-1', '자쿰', '카오스', 1.5),
+        useBossSchedulerStore.getState().setPartySize('ocid-1', 'zakum', 'chaos', 1.5),
       ).rejects.toThrow()
 
       expect(setBossPartySizeMock).not.toHaveBeenCalled()
@@ -1315,8 +1316,8 @@ describe('useBossSchedulerStore', () => {
       getBossPartySettingsMock.mockResolvedValue([
         {
           ocid: 'ocid-1',
-          boss: '자쿰',
-          difficulty: '카오스',
+          bossKey: 'zakum',
+          difficulty: 'chaos',
           partySize: 4,
           updatedAt: '2026-08-06T00:00:00.000Z',
         },
@@ -1326,7 +1327,7 @@ describe('useBossSchedulerStore', () => {
 
       expect(syncSchedulesMock).not.toHaveBeenCalled()
       expect(getBossPartySettingsMock).toHaveBeenCalledWith(['ocid-1'])
-      expect(useBossSchedulerStore.getState().partySizes).toEqual({ 'ocid-1:자쿰:카오스': 4 })
+      expect(useBossSchedulerStore.getState().partySizes).toEqual({ 'ocid-1:zakum:chaos': 4 })
     })
   })
 })

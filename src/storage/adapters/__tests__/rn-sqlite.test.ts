@@ -135,7 +135,7 @@ describe('db.ts 와 맞물리는가', () => {
     await getBossProfitDb()
 
     const executed = mockOpened[0].statements.map((entry) => entry.statement.trim())
-    expect(executed.filter((statement) => statement.startsWith('ALTER TABLE'))).toEqual([
+    expect(executed.filter((statement) => /^ALTER TABLE \S+ ADD COLUMN/.test(statement))).toEqual([
       'ALTER TABLE character_profiles ADD COLUMN job_class TEXT',
       'ALTER TABLE boss_profit_records ADD COLUMN world TEXT',
       'ALTER TABLE boss_profit_records ADD COLUMN defeated_on TEXT',
@@ -216,10 +216,11 @@ describe('db.ts 와 맞물리는가', () => {
     await getBossProfitDb()
 
     const executed = mockOpened[0].statements.map((entry) => entry.statement.trim())
-    expect(executed.filter((statement) => statement.startsWith('ALTER TABLE'))).toEqual([])
+    expect(executed.filter((statement) => /^ALTER TABLE \S+ ADD COLUMN/.test(statement))).toEqual([])
     // 테이블 생성과 메이린 키 이관은 그대로 돈다. 개수를 박지 않는다. db.ts 가 테이블을 더할
     // 때마다 이 숫자가 조용히 스탈해진다.
-    expect(executed.filter((statement) => statement.startsWith('CREATE TABLE'))).toHaveLength(
+    // 버전 이관이 다시 만드는 표(`_rebuild`)는 세지 않는다. 그 수는 이관 단계가 정한다.
+    expect(executed.filter((statement) => /^CREATE TABLE IF NOT EXISTS/.test(statement))).toHaveLength(
       BOSS_PROFIT_TABLE_NAMES.length,
     )
     /**

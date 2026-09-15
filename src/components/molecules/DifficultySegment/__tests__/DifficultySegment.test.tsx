@@ -9,7 +9,7 @@ import { DifficultySegment } from '../DifficultySegment'
 describe('DifficultySegment', () => {
   it('난이도를 받은 순서대로 버튼으로 그린다', async () => {
     const rendered = await renderAtom(
-      <DifficultySegment difficulties={['노멀', '하드', '익스트림']} selected="하드" onSelect={jest.fn()} />,
+      <DifficultySegment difficulties={['normal', 'hard', 'extreme']} selected="hard" onSelect={jest.fn()} />,
     )
 
     expect(rendered.getAllByRole('button')).toHaveLength(3)
@@ -22,7 +22,7 @@ describe('DifficultySegment', () => {
 
   it('선택된 난이도만 선택 상태로 알린다', async () => {
     const { getAllByRole } = await renderAtom(
-      <DifficultySegment difficulties={['노멀', '하드']} selected="하드" onSelect={jest.fn()} />,
+      <DifficultySegment difficulties={['normal', 'hard']} selected="hard" onSelect={jest.fn()} />,
     )
 
 // RN 이 `aria-selected` 를 `accessibilityState.selected` 로 정규화한다.
@@ -35,7 +35,7 @@ describe('DifficultySegment', () => {
   // 미선택도 풀컬러 뱃지 그대로 두고 흐림만 건다. 색이 안 죽는다.
   it('미선택 난이도는 같은 뱃지에 opacity-40 만 걸어 그린다', async () => {
     const { getAllByRole } = await renderAtom(
-      <DifficultySegment difficulties={['노멀', '하드']} selected="하드" onSelect={jest.fn()} />,
+      <DifficultySegment difficulties={['normal', 'hard']} selected="hard" onSelect={jest.fn()} />,
     )
 
     // `toBeCloseTo` 인 이유는 값이 float32 를 거쳐 0.4000000059604645 로 돌아오기 때문이다.
@@ -48,10 +48,10 @@ describe('DifficultySegment', () => {
   // 아니라 뱃지 안 글자까지 함께 죽어 "무슨 난이도인지" 실루엣이 흐려진다.
   it('미선택 뱃지도 선택 뱃지와 같은 그라디언트를 갖는다 (색을 잃지 않는다)', async () => {
     const selected = await renderAtom(
-      <DifficultySegment difficulties={['카오스']} selected="카오스" onSelect={jest.fn()} />,
+      <DifficultySegment difficulties={['chaos']} selected="chaos" onSelect={jest.fn()} />,
     )
     const unselected = await renderAtom(
-      <DifficultySegment difficulties={['카오스']} selected={null} onSelect={jest.fn()} />,
+      <DifficultySegment difficulties={['chaos']} selected={null} onSelect={jest.fn()} />,
     )
 
     const colorsOf = (rendered: typeof selected): unknown =>
@@ -64,18 +64,18 @@ describe('DifficultySegment', () => {
   it('탭하면 그 난이도로 onSelect 를 부른다', async () => {
     const onSelect = jest.fn()
     const { getByText } = await renderAtom(
-      <DifficultySegment difficulties={['노멀', '하드']} selected="노멀" onSelect={onSelect} />,
+      <DifficultySegment difficulties={['normal', 'hard']} selected="normal" onSelect={onSelect} />,
     )
 
     await fireEvent.press(getByText('하드'))
 
-    expect(onSelect).toHaveBeenCalledWith('하드')
+    expect(onSelect).toHaveBeenCalledWith('hard')
   })
 
   it('이미 선택된 난이도를 다시 눌러도 onSelect 를 부르지 않는다', async () => {
     const onSelect = jest.fn()
     const { getByText } = await renderAtom(
-      <DifficultySegment difficulties={['노멀', '하드']} selected="하드" onSelect={onSelect} />,
+      <DifficultySegment difficulties={['normal', 'hard']} selected="hard" onSelect={onSelect} />,
     )
 
     await fireEvent.press(getByText('하드'))
@@ -86,7 +86,7 @@ describe('DifficultySegment', () => {
   it('disabled 면 버튼을 눌러도 onSelect 를 부르지 않는다', async () => {
     const onSelect = jest.fn()
     const { getByText } = await renderAtom(
-      <DifficultySegment difficulties={['노멀', '하드']} selected="노멀" onSelect={onSelect} disabled />,
+      <DifficultySegment difficulties={['normal', 'hard']} selected="normal" onSelect={onSelect} disabled />,
     )
 
     await fireEvent.press(getByText('하드'))
@@ -109,7 +109,7 @@ describe('DifficultySegment 의 촉각', () => {
 
   it('다른 칩을 누르면 한 번 난다', async () => {
     const { getByText } = await renderAtom(
-      <DifficultySegment difficulties={['노멀', '하드']} selected="노멀" onSelect={jest.fn()} />,
+      <DifficultySegment difficulties={['normal', 'hard']} selected="normal" onSelect={jest.fn()} />,
     )
 
     fireEvent.press(getByText('하드'))
@@ -119,7 +119,7 @@ describe('DifficultySegment 의 촉각', () => {
 
   it('고른 칩을 다시 눌러도 안 난다', async () => {
     const { getByText } = await renderAtom(
-      <DifficultySegment difficulties={['노멀', '하드']} selected="노멀" onSelect={jest.fn()} />,
+      <DifficultySegment difficulties={['normal', 'hard']} selected="normal" onSelect={jest.fn()} />,
     )
 
     fireEvent.press(getByText('노멀'))

@@ -54,6 +54,7 @@ interface DropHistoryState {
 function toHistoryRecord(record: BossDropRecord): DropHistoryRecord {
   return {
     ocid: record.ocid,
+    bossKey: record.bossKey,
     boss: record.boss,
     difficulty: record.difficulty,
     periodKey: record.periodKey,
@@ -107,7 +108,7 @@ export const useDropHistoryStore = create<DropHistoryState>((set) => ({
       ])
 
       const confirmedKeys = new Set(
-        profitKeys.map((key) => confirmedDropKey(key.ocid, key.boss, key.difficulty, key.periodKey)),
+        profitKeys.map((key) => confirmedDropKey(key.ocid, key.bossKey, key.difficulty, key.periodKey)),
       )
       const records = filterUnobtainableConfirmedDrops(dropRecords.map(toHistoryRecord), confirmedKeys)
 

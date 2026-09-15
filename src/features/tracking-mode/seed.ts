@@ -1,12 +1,11 @@
 import { setManualTrackedContent, type ManualTrackedItem } from '../../storage/manual-tracked-content'
-import { matchBossContent } from '../../lib/boss/boss-matching'
 import { TEMPLATE_DAILY_NAMES, TEMPLATE_WEEKLY_NAMES } from '../../lib/scheduler/scheduler-content-template'
 import type { SchedulerCharacterState } from '../../types'
 import { syncSchedules } from '../schedule-sync/schedule-sync'
 
 // 컨텐츠는 일간·주간 소스 배열로 kind 를 확정해 저장하고 템플릿에 없는 이름은 제외한다
 // (멤버십 ⊆ 템플릿. 관리 페이지 체크리스트에서 편집 불가능한 고아 방지). 보스는
-// `mergeManualBossList` 의 매칭 기준과 같게 `matchBossContent` 정규화 명으로 저장한다.
+// `mergeManualBossList` 의 매칭 기준과 같게 보스 key 로 저장하고, 보스 표에 없는 보스(key 가 없다)는 뺀다.
 // 저장하는 것은 멤버십(+보스 난이도)뿐이다. nowCount·isComplete 같은 값은 표시 시점에
 // schedulerCache 에서 조회한다.
 function toTrackedItems(state: SchedulerCharacterState): ManualTrackedItem[] {
@@ -21,13 +20,11 @@ function toTrackedItems(state: SchedulerCharacterState): ManualTrackedItem[] {
       .map((content) => ({ contentName: content.name, kind: 'weekly' as const })),
   ]
 
-  const bossItems: ManualTrackedItem[] = bossContents
-    .filter((boss) => boss.isRegistered)
-    .map((boss) => ({
-      contentName: matchBossContent(boss).matchedBossName ?? boss.name,
-      difficulty: boss.difficulty,
-      kind: 'boss' as const,
-    }))
+  const bossItems: ManualTrackedItem[] = bossContents.flatMap((boss) =>
+    boss.isRegistered && boss.bossKey !== null
+      ? [{ kind: 'boss' as const, bossKey: boss.bossKey, difficulty: boss.difficulty }]
+      : [],
+  )
 
   return [...contentItems, ...bossItems]
 }

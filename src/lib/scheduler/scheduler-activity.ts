@@ -69,9 +69,9 @@ export function hasCharacterScopeCompletion(state: SchedulerCharacterState): boo
   return hasContentCompletion || state.bossContents.some((boss) => boss.ownComplete)
 }
 
-/** 원장에 남기는 그날 잡은 것 의 표기. 기록의 키와 **같은 이름·같은 난이도**여야 한다. */
-export function bossCompletionKey(boss: string, difficulty: string): string {
-  return `${boss}|${difficulty}`
+/** 원장에 남기는 그날 잡은 것 의 표기. 기록의 키와 **같은 보스 key · 같은 난이도 key** 여야 한다. */
+export function bossCompletionKey(bossKey: string, difficulty: string): string {
+  return `${bossKey}|${difficulty}`
 }
 
 /**
@@ -79,7 +79,7 @@ export function bossCompletionKey(boss: string, difficulty: string): string {
  *
  * `selectBossProfitBosses` 를 타는 이유는 **기록이 그것을 타기 때문**이다(`auto-record`·`backfill`).
  * 등록 난이도와 실제 처치 난이도가 다를 수 있어 그룹당 실제 처치 난이도 하나를 골라야
- * 원장의 이름과 기록의 키가 맞는다. 이름도 같은 규칙으로 정규화한다(`matchedBossName ?? apiName`).
+ * 원장의 보스와 기록의 키가 맞는다. 보스 표에 없는 보스(key 가 없다)는 기록되지 않으므로 원장에도 안 적는다.
  *
  * `ownComplete` 만 본다. 승격된 `isComplete` 는 다른 난이도의 완료가 옮겨 붙은 값이다.
  *
@@ -87,9 +87,9 @@ export function bossCompletionKey(boss: string, difficulty: string): string {
  * 섹션이 통째로 비지만 **접속하지 않은 날에 보스를 잡을 수는 없으므로** 그 답이 맞다.
  */
 export function completedBossKeys(state: SchedulerCharacterState): string[] {
-  return selectBossProfitBosses(state.bossContents.map(matchBossContent))
-    .filter((boss) => boss.ownComplete)
-    .map((boss) => bossCompletionKey(boss.matchedBossName ?? boss.apiName, boss.difficulty))
+  return selectBossProfitBosses(state.bossContents.map(matchBossContent)).flatMap((boss) =>
+    boss.ownComplete && boss.bossKey !== null ? [bossCompletionKey(boss.bossKey, boss.difficulty)] : [],
+  )
 }
 
 /**

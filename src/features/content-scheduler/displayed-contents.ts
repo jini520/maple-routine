@@ -17,6 +17,7 @@ import {
 } from '../../lib/scheduler/manual-content-merge'
 import { CONTENT_TEMPLATE, effectiveTemplateEntries } from '../../lib/scheduler/scheduler-content-template'
 import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
+import type { ManualTrackedContentItem } from '../../types/scheduler'
 import type { TrackingMode } from '../../storage/tracking-mode'
 import type { DailyContent, WeeklyContent } from '../../types'
 
@@ -49,15 +50,17 @@ export interface DisplayedContentsInput {
  */
 function trackedInPeriod(
   items: ManualTrackedItem[],
-  kind: ManualTrackedItem['kind'],
+  kind: ManualTrackedContentItem['kind'],
   template: readonly SchedulerContentTemplateEntry[],
   weeklyPeriodKey: string,
-): ManualTrackedItem[] {
+): ManualTrackedContentItem[] {
   const effective = new Set(effectiveTemplateEntries(template, weeklyPeriodKey))
   const hidden = new Set(
     template.filter((entry) => !effective.has(entry)).map((entry) => entry.content_name),
   )
-  return items.filter((item) => item.kind === kind && !hidden.has(item.contentName))
+  return items.filter(
+    (item): item is ManualTrackedContentItem => item.kind === kind && !hidden.has(item.contentName),
+  )
 }
 
 /** @param weeklyPeriodKey 지금 주간 기간 키. 수동 모드가 시작 기간 전인 항목을 거르는 기준 */

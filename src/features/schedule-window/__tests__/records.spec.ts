@@ -45,7 +45,7 @@ beforeEach(() => {
 })
 
 const upserted = () =>
-  upsertMock.mock.calls.map(([r]) => `${r.boss}|${r.difficulty}|${r.cycle}|${r.periodKey}`)
+  upsertMock.mock.calls.map(([r]) => `${r.bossKey}|${r.difficulty}|${r.cycle}|${r.periodKey}`)
 
 describe('그 기간의 확정 상태는 조회 가능한 마지막 날의 응답이다', () => {
   it('같은 주의 마지막 관측이 이긴다. 앞의 관측은 그 기간을 안 정한다', async () => {
@@ -53,27 +53,27 @@ describe('그 기간의 확정 상태는 조회 가능한 마지막 날의 응�
       unavailable: false,
       dates: {
         // 08-27 주(8/27~9/2). 앞날엔 하드, 마지막 날엔 익스트림으로 잡혀 있다.
-        '2026-08-28': observed(['스우|하드']),
-        '2026-09-02': observed(['스우|익스트림']),
+        '2026-08-28': observed(['lotus|hard']),
+        '2026-09-02': observed(['lotus|extreme']),
       },
     })
 
     await recordBossProfitFromWindow(['o1'], NOW)
 
-    expect(upserted()).toContain('스우|익스트림|weekly|2026-08-27')
-    expect(upserted()).not.toContain('스우|하드|weekly|2026-08-27')
+    expect(upserted()).toContain('lotus|extreme|weekly|2026-08-27')
+    expect(upserted()).not.toContain('lotus|hard|weekly|2026-08-27')
   })
 
   it('주기가 다르면 다른 기간 키로 든다', async () => {
     getLedgerMock.mockResolvedValue({
       unavailable: false,
-      dates: { '2026-09-04': observed(['스우|하드', '검은마법사|하드']) },
+      dates: { '2026-09-04': observed(['lotus|hard', 'black_mage|hard']) },
     })
 
     await recordBossProfitFromWindow(['o1'], NOW)
 
-    expect(upserted()).toContain('스우|하드|weekly|2026-09-03')
-    expect(upserted()).toContain('검은마법사|하드|monthly|2026-09')
+    expect(upserted()).toContain('lotus|hard|weekly|2026-09-03')
+    expect(upserted()).toContain('black_mage|hard|monthly|2026-09')
   })
 })
 
@@ -81,15 +81,15 @@ describe('이미 있는 행은 안 건드린다', () => {
   it('같은 키의 기록이 있으면 다시 안 쓴다. 파티원 수를 덮으면 안 된다', async () => {
     getLedgerMock.mockResolvedValue({
       unavailable: false,
-      dates: { '2026-09-04': observed(['스우|하드']) },
+      dates: { '2026-09-04': observed(['lotus|hard']) },
     })
     getRecordsMock.mockResolvedValue([
-      { ocid: 'o1', boss: '스우', difficulty: '하드', cycle: 'weekly', periodKey: '2026-09-03', partySize: 3 },
+      { ocid: 'o1', bossKey: 'lotus', boss: '스우', difficulty: 'hard', cycle: 'weekly', periodKey: '2026-09-03', partySize: 3 },
     ])
 
     await recordBossProfitFromWindow(['o1'], NOW)
 
-    expect(upserted()).not.toContain('스우|하드|weekly|2026-09-03')
+    expect(upserted()).not.toContain('lotus|hard|weekly|2026-09-03')
   })
 })
 
@@ -103,7 +103,7 @@ describe('안 쓰는 길', () => {
   it('조회할 수 없는 캐릭터는 건너뛴다', async () => {
     getLedgerMock.mockResolvedValue({
       unavailable: true,
-      dates: { '2026-09-04': observed(['스우|하드']) },
+      dates: { '2026-09-04': observed(['lotus|hard']) },
     })
 
     await recordBossProfitFromWindow(['o1'], NOW)
@@ -127,25 +127,26 @@ describe('처치 난이도 확정', () => {
     // 등록 난이도(하드)가 아니라 실제 처치 난이도(익스트림)가 온다.
     getLedgerMock.mockResolvedValue({
       unavailable: false,
-      dates: { '2026-09-04': observed(['스우|익스트림']) },
+      dates: { '2026-09-04': observed(['lotus|extreme']) },
     })
 
     await recordBossProfitFromWindow(['o1'], NOW)
 
-    const 스우행 = upserted().filter((key) => key.startsWith('스우|'))
-    expect(스우행).toEqual(['스우|익스트림|weekly|2026-09-03'])
+    const 스우행 = upserted().filter((key) => key.startsWith('lotus|'))
+    expect(스우행).toEqual(['lotus|extreme|weekly|2026-09-03'])
   })
 
   it('확정 난이도로 옛 난이도 키의 드롭을 옮긴다', async () => {
     getLedgerMock.mockResolvedValue({
       unavailable: false,
-      dates: { '2026-09-04': observed(['스우|익스트림']) },
+      dates: { '2026-09-04': observed(['lotus|extreme']) },
     })
     getDropsMock.mockResolvedValue([
       {
         ocid: 'o1',
+        bossKey: 'lotus',
         boss: '스우',
-        difficulty: '하드',
+        difficulty: 'hard',
         periodKey: '2026-09-03',
         dropIndex: 0,
         category: 'equipment',
@@ -175,38 +176,38 @@ describe('가격은 처치의 기간으로 고른다', () => {
   const priceOf = (key: string): number | undefined =>
     upsertMock.mock.calls
       .map(([r]) => r)
-      .find((r) => `${r.boss}|${r.difficulty}|${r.cycle}|${r.periodKey}` === key)?.priceMeso
+      .find((r) => `${r.bossKey}|${r.difficulty}|${r.cycle}|${r.periodKey}` === key)?.priceMeso
 
   it('09-10 주 처치는 옛 가격, 09-17 주 처치는 새 가격이다', async () => {
     getLedgerMock.mockResolvedValue({
       unavailable: false,
       dates: {
-        '2026-09-16': observed(['자쿰|카오스']),
-        '2026-09-18': observed(['자쿰|카오스']),
+        '2026-09-16': observed(['zakum|chaos']),
+        '2026-09-18': observed(['zakum|chaos']),
       },
     })
 
     // KST 2026-09-19(토). 창은 9/6 ~ 9/18.
     await recordBossProfitFromWindow(['o1'], new Date('2026-09-19T03:00:00.000Z'))
 
-    expect(priceOf('자쿰|카오스|weekly|2026-09-10')).toBe(8_080_000)
-    expect(priceOf('자쿰|카오스|weekly|2026-09-17')).toBe(4_040_000)
+    expect(priceOf('zakum|chaos|weekly|2026-09-10')).toBe(8_080_000)
+    expect(priceOf('zakum|chaos|weekly|2026-09-17')).toBe(4_040_000)
   })
 
   it('검은마법사는 9월 기간이 옛 가격, 10월 기간이 새 가격이다', async () => {
     getLedgerMock.mockResolvedValue({
       unavailable: false,
       dates: {
-        '2026-09-29': observed(['검은마법사|하드']),
-        '2026-10-02': observed(['검은마법사|하드']),
+        '2026-09-29': observed(['black_mage|hard']),
+        '2026-10-02': observed(['black_mage|hard']),
       },
     })
 
     // KST 2026-10-03(토). 창은 9/20 ~ 10/2.
     await recordBossProfitFromWindow(['o1'], new Date('2026-10-03T03:00:00.000Z'))
 
-    expect(priceOf('검은마법사|하드|monthly|2026-09')).toBe(665_000_000)
-    expect(priceOf('검은마법사|하드|monthly|2026-10')).toBe(465_000_000)
+    expect(priceOf('black_mage|hard|monthly|2026-09')).toBe(665_000_000)
+    expect(priceOf('black_mage|hard|monthly|2026-10')).toBe(465_000_000)
   })
 })
 
@@ -217,8 +218,8 @@ describe('한 기간이 죽어도 나머지는 산다', () => {
     getLedgerMock.mockResolvedValue({
       unavailable: false,
       dates: {
-        '2026-09-04': observed(['스우|하드']),
-        '2026-09-02': observed(['벨로나|노멀']),
+        '2026-09-04': observed(['lotus|hard']),
+        '2026-09-02': observed(['bellona|normal']),
       },
     })
     // 이번 주(2026-09-03)를 먼저 돈다. 그 쓰기만 던지게 한다.
@@ -228,19 +229,19 @@ describe('한 기간이 죽어도 나머지는 산다', () => {
 
     await recordBossProfitFromWindow(['o1'], NOW)
 
-    expect(upserted()).toContain('벨로나|노멀|weekly|2026-08-27')
+    expect(upserted()).toContain('bellona|normal|weekly|2026-08-27')
   })
 
   it('한 캐릭터가 죽어도 다음 캐릭터를 쓴다', async () => {
     getLedgerMock.mockImplementation(async (ocid: string) =>
       ocid === 'o1'
         ? Promise.reject(new Error('preferences'))
-        : { unavailable: false, dates: { '2026-09-04': observed(['스우|하드']) } },
+        : { unavailable: false, dates: { '2026-09-04': observed(['lotus|hard']) } },
     )
 
     await recordBossProfitFromWindow(['o1', 'o2'], NOW)
 
-    expect(upserted()).toContain('스우|하드|weekly|2026-09-03')
+    expect(upserted()).toContain('lotus|hard|weekly|2026-09-03')
   })
 })
 
@@ -251,24 +252,24 @@ it('기록만 지운 뒤 원장만으로 지난 주가 되살아난다', async (
   getLedgerMock.mockResolvedValue({
     unavailable: false,
     dates: {
-      '2026-08-26': observed(['스우|하드']),
-      '2026-09-02': observed(['벨로나|노멀']),
-      '2026-09-04': observed(['카링|노멀']),
+      '2026-08-26': observed(['lotus|hard']),
+      '2026-09-02': observed(['bellona|normal']),
+      '2026-09-04': observed(['kaling|normal']),
     },
   })
   // 이번 주만 이미 기록돼 있다(라이브 자동 기록).
   getRecordsMock.mockImplementation(async (_ocids: string[], keys: string[]) =>
     keys.includes('2026-09-03')
-      ? [{ ocid: 'o1', boss: '카링', difficulty: '노멀', cycle: 'weekly', periodKey: '2026-09-03' }]
+      ? [{ ocid: 'o1', bossKey: 'kaling', boss: '카링', difficulty: 'normal', cycle: 'weekly', periodKey: '2026-09-03' }]
       : [],
   )
 
   await recordBossProfitFromWindow(['o1'], NOW)
 
-  expect(upserted()).toContain('벨로나|노멀|weekly|2026-08-27')
-  expect(upserted()).toContain('스우|하드|weekly|2026-08-20')
+  expect(upserted()).toContain('bellona|normal|weekly|2026-08-27')
+  expect(upserted()).toContain('lotus|hard|weekly|2026-08-20')
   // 이번 주는 이미 있으니 다시 안 쓴다.
-  expect(upserted()).not.toContain('카링|노멀|weekly|2026-09-03')
+  expect(upserted()).not.toContain('kaling|normal|weekly|2026-09-03')
 })
 
 // 400 `OPENAPI00004` 는 그 (캐릭터, 날짜)의 영구한 답이라 원장에 굳는다. 집계 전(00009)은

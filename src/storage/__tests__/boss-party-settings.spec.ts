@@ -18,8 +18,8 @@ beforeEach(() => {
 
 const sampleSetting: BossPartySetting = {
   ocid: 'ocid-1',
-  boss: '검은 마법사',
-  difficulty: '익스트림',
+  bossKey: 'black_mage',
+  difficulty: 'extreme',
   partySize: 4,
   updatedAt: '2026-07-13T00:05:00.000Z',
 }
@@ -28,18 +28,19 @@ describe('setBossPartySize', () => {
   it('동일 키로 두 번 호출하면 ON CONFLICT DO UPDATE로 최신 값을 덮어쓴다 (멱등성)', async () => {
     const { setBossPartySize } = require('../boss-party-settings') as typeof import('../boss-party-settings')
 
-    await setBossPartySize('ocid-1', '검은 마법사', '익스트림', 4, '2026-07-13T00:05:00.000Z')
-    await setBossPartySize('ocid-1', '검은 마법사', '익스트림', 2, '2026-07-13T01:00:00.000Z')
+    await setBossPartySize('ocid-1', 'black_mage', 'extreme', 4, '2026-07-13T00:05:00.000Z')
+    await setBossPartySize('ocid-1', 'black_mage', 'extreme', 2, '2026-07-13T01:00:00.000Z')
 
     expect(runMock).toHaveBeenCalledTimes(2)
 
     const [firstSql, firstValues] = runMock.mock.calls[0]
-    expect(firstSql).toContain('ON CONFLICT(ocid, boss, difficulty) DO UPDATE SET')
-    expect(firstValues).toEqual(['ocid-1', '검은 마법사', '익스트림', 4, '2026-07-13T00:05:00.000Z'])
+    expect(firstSql).toContain('ON CONFLICT(ocid, boss_key, difficulty) DO UPDATE SET')
+    // 이름 칸에는 보스 표의 이름을 함께 적는다.
+    expect(firstValues).toEqual(['ocid-1', 'black_mage', '검은 마법사', 'extreme', 4, '2026-07-13T00:05:00.000Z'])
 
     const [secondSql, secondValues] = runMock.mock.calls[1]
     expect(secondSql).toBe(firstSql)
-    expect(secondValues).toEqual(['ocid-1', '검은 마법사', '익스트림', 2, '2026-07-13T01:00:00.000Z'])
+    expect(secondValues).toEqual(['ocid-1', 'black_mage', '검은 마법사', 'extreme', 2, '2026-07-13T01:00:00.000Z'])
   })
 })
 
@@ -48,14 +49,14 @@ describe('getBossPartySize', () => {
     queryMock.mockResolvedValue({ values: [] })
     const { getBossPartySize } = require('../boss-party-settings') as typeof import('../boss-party-settings')
 
-    await expect(getBossPartySize('ocid-1', '검은 마법사', '익스트림')).resolves.toBeNull()
+    await expect(getBossPartySize('ocid-1', 'black_mage', 'extreme')).resolves.toBeNull()
   })
 
   it('조회 결과가 undefined여도 null을 반환한다', async () => {
     queryMock.mockResolvedValue({ values: undefined })
     const { getBossPartySize } = require('../boss-party-settings') as typeof import('../boss-party-settings')
 
-    await expect(getBossPartySize('ocid-1', '검은 마법사', '익스트림')).resolves.toBeNull()
+    await expect(getBossPartySize('ocid-1', 'black_mage', 'extreme')).resolves.toBeNull()
   })
 
   it('조회 결과가 있으면 party_size를 반환한다', async () => {
@@ -63,8 +64,9 @@ describe('getBossPartySize', () => {
       values: [
         {
           ocid: 'ocid-1',
+          boss_key: 'black_mage',
           boss: '검은 마법사',
-          difficulty: '익스트림',
+          difficulty: 'extreme',
           party_size: 4,
           updated_at: '2026-07-13T00:05:00.000Z',
         },
@@ -72,18 +74,18 @@ describe('getBossPartySize', () => {
     })
     const { getBossPartySize } = require('../boss-party-settings') as typeof import('../boss-party-settings')
 
-    await expect(getBossPartySize('ocid-1', '검은 마법사', '익스트림')).resolves.toBe(4)
+    await expect(getBossPartySize('ocid-1', 'black_mage', 'extreme')).resolves.toBe(4)
   })
 
   it('ocid/boss/difficulty 조건으로 조회한다', async () => {
     queryMock.mockResolvedValue({ values: [] })
     const { getBossPartySize } = require('../boss-party-settings') as typeof import('../boss-party-settings')
 
-    await getBossPartySize('ocid-1', '검은 마법사', '익스트림')
+    await getBossPartySize('ocid-1', 'black_mage', 'extreme')
 
     expect(queryMock).toHaveBeenCalledWith(
-      expect.stringContaining('WHERE ocid = ? AND boss = ? AND difficulty = ?'),
-      ['ocid-1', '검은 마법사', '익스트림'],
+      expect.stringContaining('WHERE ocid = ? AND boss_key = ? AND difficulty = ?'),
+      ['ocid-1', 'black_mage', 'extreme'],
     )
   })
 })
@@ -102,8 +104,9 @@ describe('getBossPartySettings', () => {
       values: [
         {
           ocid: 'ocid-1',
+          boss_key: 'black_mage',
           boss: '검은 마법사',
-          difficulty: '익스트림',
+          difficulty: 'extreme',
           party_size: 4,
           updated_at: '2026-07-13T00:05:00.000Z',
         },

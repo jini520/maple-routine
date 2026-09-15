@@ -154,11 +154,17 @@ function mergeSection(
 }
 
 // 보스는 전부 character 범위(확인)라 world/account 원장 단계가 필요 없다. cycle 내에서
-// 항목(이름+난이도) 단위로 병합한다(정정): fresh에 있으면 그대로 쓰고, fresh에 없는데
+// 항목(보스+난이도) 단위로 병합한다(정정): fresh에 있으면 그대로 쓰고, fresh에 없는데
 // previous에 있으면 isComplete·ownComplete를 false로 리셋해 복원한다. ownComplete도 함께 리셋해야
 // 한다. 안 그러면 지난 리셋에서의 완료 여부가 그대로 남아있어 보스 수익 계산기
 // (selectBossProfitBosses)가 이번 리셋에서 아직 처치하지 않은 보스를 "실제로 완료함"으로
 // 오판한다.
+/** 병합의 항목 신원. 보스 key 이고, 보스 표에 없는 보스는 API 원문이다. 두 모양이 겹치지 않게 앞에 표지를 붙인다. */
+function bossMergeKey(boss: BossContent): string {
+  const identity = boss.bossKey !== null ? `key:${boss.bossKey}` : `api:${boss.apiName}`
+  return `${identity}:${boss.difficulty}`
+}
+
 function mergeBossCycle(cycle: BossCycle, freshBossContents: BossContent[], previousBossContents: BossContent[]): BossContent[] {
   const items: BossContent[] = []
   const seen = new Set<string>()
@@ -166,11 +172,11 @@ function mergeBossCycle(cycle: BossCycle, freshBossContents: BossContent[], prev
   for (const boss of freshBossContents) {
     if (boss.cycle !== cycle) continue
     items.push(boss)
-    seen.add(`${boss.name}:${boss.difficulty}`)
+    seen.add(bossMergeKey(boss))
   }
   for (const boss of previousBossContents) {
     if (boss.cycle !== cycle) continue
-    const key = `${boss.name}:${boss.difficulty}`
+    const key = bossMergeKey(boss)
     if (seen.has(key)) continue
     items.push({ ...boss, isComplete: false, ownComplete: false })
     seen.add(key)

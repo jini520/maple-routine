@@ -13,6 +13,7 @@
 import { withSqliteFallback } from '../boss-profit/sqlite-guards'
 import type { BossDifficulty } from '../../types'
 import { compareBossOrder } from '../../lib/boss/boss-matching'
+import { bossNameOf } from '../../lib/boss/bosses'
 import type { CalendarAmounts, CalendarDayAmounts } from '../../lib/calendar'
 import { dropPayoutMeso } from '../../lib/drop/drop-price'
 import { incomeCategoryNameOf, spendCategoryNameOf } from '../../lib/cashbook/categories'
@@ -136,7 +137,7 @@ interface BossDaySummary {
    * 마리당 금액은 안 든다. 타일은 금액을 안 적는다. 파티원 수·정가와 함께 봐야 뜻이 생겨
    * 그 자리가 보스 수익 탭이다.
    */
-  bosses: { boss: string; difficulty: BossDifficulty }[]
+  bosses: DefeatedBoss[]
   dropMeso: number
   dropCount: number
   unpricedCount: number
@@ -149,11 +150,11 @@ function summaryKey(dateKey: string, ocid: string): string {
 /** 드롭이 짝인 수익 행을 찾는 키. 넷이 같으면 같은 처치다. */
 function bossRowKey(record: {
   ocid: string
-  boss: string
+  bossKey: string
   difficulty: string
   periodKey: string
 }): string {
-  return `${record.ocid}|${record.boss}|${record.difficulty}|${record.periodKey}`
+  return `${record.ocid}|${record.bossKey}|${record.difficulty}|${record.periodKey}`
 }
 
 /**
@@ -227,7 +228,8 @@ async function loadBossDaySummaries(
     bucket.crystalMeso += record.payoutMeso
     bucket.bossCount += 1
     bucket.bosses.push({
-      boss: record.boss,
+      bossKey: record.bossKey,
+      bossName: bossNameOf(record.bossKey, record.boss),
       // 이 컬럼이 드는 값은 다섯뿐이다. `rows.ts`·`drop-price-store.ts` 가 같은 단언을 한다.
       difficulty: record.difficulty as BossDifficulty,
     })
@@ -482,7 +484,10 @@ export type ManualDayRecord =
 
 /** 펼친 결정석 줄의 타일 하나. 초상·난이도·이름이 여기서 나온다. */
 export interface DefeatedBoss {
-  boss: string
+  /** 보스 key. 타일의 신원이다. */
+  bossKey: string
+  /** 보이는 보스 이름. 보스 표 이름이고, 표에서 빠진 보스면 적어 둔 이름이다. */
+  bossName: string
   difficulty: BossDifficulty
 }
 
@@ -727,12 +732,14 @@ function toAutoRecords(
         payoutMeso: summary.crystalMeso,
         count: summary.bossCount,
         /**
-         * `weekly-bosses.json` 정규 순서다. 앱에서 보스 무리가 서는 네 자리가 한 순서를 쓴다.
+         * 보스 표 차례다. 앱에서 보스 무리가 서는 네 자리가 한 순서를 쓴다.
          *
          * 비교자가 완전 결정적이라 `getDatedBossProfitRecords` 의 조회 순서에 안 기댄다. 그
          * SELECT 에는 `ORDER BY` 가 없다.
          */
-        bosses: [...summary.bosses].sort(compareBossOrder),
+        bosses: [...summary.bosses].sort((a, b) =>
+          compareBossOrder({ boss: a.bossKey, difficulty: a.difficulty }, { boss: b.bossKey, difficulty: b.difficulty }),
+        ),
       })
     }
     /**
