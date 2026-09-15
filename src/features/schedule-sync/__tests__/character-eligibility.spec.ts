@@ -1,5 +1,6 @@
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 import { NexonBadRequestError, NexonNetworkError } from '../../../nexon/errors'
+import { SCHEDULE_NAME_RESOLVERS } from '../../../lib/scheduler/schedule-name-resolvers'
 import {
   clearScheduleProbeLedger,
   getScheduleProbeLedger,
@@ -37,7 +38,8 @@ function state(overrides: Partial<SchedulerCharacterState> = {}): SchedulerChara
 const COMPLETED = state({
   dailyContents: [
     {
-      name: '[일일 퀘스트] 레헬른의 평온한 밤',
+      contentKey: 'daily_quest_lacheln',
+      apiName: '[일일 퀘스트] 레헬른의 평온한 밤',
       kind: 'quest',
       isRegistered: true,
       nowCount: 0,
@@ -120,8 +122,8 @@ describe('과거 날짜 스윕. 13일을 한꺼번에 태운다', () => {
 
     await resolveCharacterEligibility('key', 'ocid-1', false, NOW)
 
-    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key', 'ocid-1', expect.any(Function), '2026-08-02')
-    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(13, 'key', 'ocid-1', expect.any(Function), '2026-07-21')
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key', 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-08-02')
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(13, 'key', 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-21')
   })
 
   it('완료를 찾아도 13일이 다 나간다. 조기 종료를 포기한 대가다', async () => {
@@ -176,7 +178,7 @@ describe('같은 날짜를 두 번 조회하지 않는다 (= 이슈 #87 문제 1
       'ineligible',
     )
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
-    expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key', 'ocid-1', expect.any(Function), '2026-08-03')
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key', 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-08-03')
   })
 })
 

@@ -10,11 +10,8 @@
  */
 
 import { categorizeContentEntries, WEEKLY_CATEGORY_ORDER } from '../../lib/scheduler/content-category'
-import {
-  mergeManualContentList,
-  orderContentsByTemplate,
-  type SchedulerContentTemplateEntry,
-} from '../../lib/scheduler/manual-content-merge'
+import type { ContentEntry } from '../../lib/scheduler/contents'
+import { mergeManualContentList, orderContentsByTemplate } from '../../lib/scheduler/manual-content-merge'
 import { CONTENT_TEMPLATE, effectiveTemplateEntries } from '../../lib/scheduler/scheduler-content-template'
 import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
 import type { ManualTrackedContentItem } from '../../types/scheduler'
@@ -51,15 +48,13 @@ export interface DisplayedContentsInput {
 function trackedInPeriod(
   items: ManualTrackedItem[],
   kind: ManualTrackedContentItem['kind'],
-  template: readonly SchedulerContentTemplateEntry[],
+  template: readonly ContentEntry[],
   weeklyPeriodKey: string,
 ): ManualTrackedContentItem[] {
   const effective = new Set(effectiveTemplateEntries(template, weeklyPeriodKey))
-  const hidden = new Set(
-    template.filter((entry) => !effective.has(entry)).map((entry) => entry.content_name),
-  )
+  const hidden = new Set(template.filter((entry) => !effective.has(entry)).map((entry) => entry.key))
   return items.filter(
-    (item): item is ManualTrackedContentItem => item.kind === kind && !hidden.has(item.contentName),
+    (item): item is ManualTrackedContentItem => item.kind === kind && !hidden.has(item.contentKey),
   )
 }
 

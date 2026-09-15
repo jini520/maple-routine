@@ -353,13 +353,13 @@ describe('2026-09-17 패치', () => {
   })
 
   it('에픽 던전은 넷이고 max_count 는 총 스테이지 수 5 다', () => {
-    const epic = contentTemplate.weekly.filter((entry) => entry.content_name.startsWith('에픽 던전 : '))
+    const epic = contentTemplate.weekly.filter((entry) => entry.category === 'epic_dungeon')
 
-    expect(epic.map((entry) => entry.content_name)).toEqual([
-      '에픽 던전 : 하이마운틴',
-      '에픽 던전 : 앵글러 컴퍼니',
-      '에픽 던전 : 악몽선경',
-      '에픽 던전 : 아우룸 레기스',
+    expect(epic.map((entry) => entry.key)).toEqual([
+      'epic_dungeon_high_mountain',
+      'epic_dungeon_angler_company',
+      'epic_dungeon_nightmare_paradise',
+      'epic_dungeon_aurum_regis',
     ])
     for (const entry of epic) {
       expect(entry.max_count).toBe(5)
@@ -367,21 +367,16 @@ describe('2026-09-17 패치', () => {
   })
 })
 
-// 컨텐츠 줄도 시작 기간을 든다. 같은 컨텐츠가 파일 셋에 나뉘어 있어, 날짜가 갈리면 어느 자리는 서고
-// 어느 자리는 안 선다.
+// 컨텐츠 줄도 시작 기간을 든다. 같은 컨텐츠의 기간이 두 파일에 나뉘면 날짜가 갈려 어느 자리는 서고
+// 어느 자리는 안 선다. 컨텐츠 기간은 템플릿 줄 한 곳에만 둔다.
 describe('기간을 든 컨텐츠 줄', () => {
-  type ContentRow = PeriodRow & { name: string }
-  const catalogRows = (): ContentRow[] =>
-    [...contentCatalog.worldShared, ...contentCatalog.accountShared] as ContentRow[]
-  const templateRows = (): ContentRow[] =>
-    [...contentTemplate.daily, ...contentTemplate.weekly].map((row) => ({
-      ...(row as PeriodRow),
-      name: row.content_name,
-    }))
+  type ContentRow = PeriodRow & { key: string }
+  const catalogRows = () => [...contentCatalog.worldShared, ...contentCatalog.accountShared]
+  const templateRows = (): ContentRow[] => [...contentTemplate.daily, ...contentTemplate.weekly] as ContentRow[]
   const spendRows = () => spendCatalog.items as (PeriodRow & { name: string; tile: string })[]
 
   it('기간 칸은 YYYY-MM-DD 이고, 둘 다 있으면 from 이 until 보다 앞이다', () => {
-    const rows: ContentRow[] = [...catalogRows(), ...templateRows(), ...spendRows()]
+    const rows: PeriodRow[] = [...templateRows(), ...spendRows()]
     const invalid = rows.filter(
       (row) =>
         (row.from !== undefined && !DATE_KEY.test(row.from)) ||
@@ -391,16 +386,11 @@ describe('기간을 든 컨텐츠 줄', () => {
     expect(invalid).toEqual([])
   })
 
-  it('공유 카탈로그와 템플릿에서 이름이 같은 줄은 기간이 같다', () => {
-    const templateByName = new Map(templateRows().map((row) => [row.name, row]))
-    const mismatched = catalogRows()
-      .filter((row) => templateByName.has(row.name))
-      .filter((row) => {
-        const template = templateByName.get(row.name)
-        return template?.from !== row.from || template?.until !== row.until
-      })
-      .map((row) => row.name)
-    expect(mismatched).toEqual([])
+  it('공유 카탈로그 줄은 기간을 들지 않는다. 기간은 그 컨텐츠 key 의 템플릿 줄에서 읽는다', () => {
+    const withPeriod = catalogRows()
+      .filter((row) => 'from' in row || 'until' in row)
+      .map((row) => row.content)
+    expect(withPeriod).toEqual([])
   })
 
   // 한 대표의 단계가 서로 다른 날 서면 타일 하나가 반쪽만 선다.
@@ -414,17 +404,23 @@ describe('기간을 든 컨텐츠 줄', () => {
     expect([...byTile].filter(([, periods]) => periods.size > 1).map(([tile]) => tile)).toEqual([])
   })
 
-  it('아우룸 레기스는 네 줄 모두 2026-09-17 부터다', () => {
-    const rows = [
-      ...catalogRows().filter((row) => row.name === '에픽 던전 : 아우룸 레기스'),
-      ...templateRows().filter((row) => row.name === '에픽 던전 : 아우룸 레기스'),
+  it('아우룸 레기스는 템플릿 줄과 지출 두 줄 모두 2026-09-17 부터다', () => {
+    const rows: PeriodRow[] = [
+      ...templateRows().filter((row) => row.key === 'epic_dungeon_aurum_regis'),
       ...spendRows().filter((row) => row.tile === 'aurum_regis'),
     ]
 
-    expect(rows).toHaveLength(4)
+    expect(rows).toHaveLength(3)
     for (const row of rows) {
       expect(row).toMatchObject({ from: '2026-09-17' })
       expect(row.until).toBeUndefined()
     }
+  })
+
+  it('템플릿에서 기간을 든 줄은 아우룸 레기스 하나다', () => {
+    const keys = templateRows()
+      .filter((row) => row.from !== undefined || row.until !== undefined)
+      .map((row) => row.key)
+    expect(keys).toEqual(['epic_dungeon_aurum_regis'])
   })
 })

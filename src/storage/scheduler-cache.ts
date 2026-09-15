@@ -5,10 +5,10 @@ import { schedulerCacheKey } from './keys'
 /**
  * 캐시 값의 모양 번호. 번호가 다른 값은 없는 것으로 본다.
  *
- * 2 는 보스 항목이 보스 key 와 난이도 key 를 든 모양이다. 옛 캐시는 옮기지 않고 버린다. 다음 동기화가 다시
- * 받아 덮어쓰는 값이라서다.
+ * 2 는 보스 항목이 보스 key 와 난이도 key 를 든 모양이고, 3 은 컨텐츠 항목도 컨텐츠 key 를 든 모양이다. 옛 캐시는
+ * 옮기지 않고 버린다. 다음 동기화가 다시 받아 덮어쓰는 값이라서다.
  */
-const CACHE_VERSION = 2
+const CACHE_VERSION = 3
 
 export interface CachedSchedulerEntry {
   state: SchedulerCharacterState

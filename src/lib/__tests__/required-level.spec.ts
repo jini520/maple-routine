@@ -14,9 +14,16 @@ import {
 describe('참조표 조회', () => {
   // 값은 절차로 들어온 사용자 제공분이다. 여기서 확인하는 것은 **읽어 오는가** 이지
   // 값 자체가 아니다(값을 지키는 것은 `data/__tests__` 의 형태 검사다).
-  it('컨텐츠 이름으로 요구 레벨을 찾는다. 일간·주간 둘 다', () => {
-    expect(contentRequiredLevel('몬스터파크')).toBe(105)
-    expect(contentRequiredLevel('없는 컨텐츠')).toBeNull()
+  it('컨텐츠 key 로 요구 레벨을 찾는다. 일간·주간 둘 다', () => {
+    expect(contentRequiredLevel('monster_park')).toBe(105)
+    expect(contentRequiredLevel('epic_dungeon_aurum_regis')).toBe(290)
+    expect(contentRequiredLevel('unknown_content')).toBeNull()
+  })
+
+  // 표에 없는 컨텐츠는 요구 레벨을 모른다. 모르는 것을 진행 불가로 단정하지 않는다.
+  it('컨텐츠 key 가 없는 항목(null)은 요구 레벨이 없다', () => {
+    expect(contentRequiredLevel(null)).toBeNull()
+    expect(isContentBlocked(1, null)).toBe(false)
   })
 
   // 보스는 **`requiredLevel` 이 아니라 `requiredLevels`**(난이도별 맵)다. 이슈 본문이 이 필드명을
@@ -50,16 +57,16 @@ describe('isLevelBlocked', () => {
 })
 
 describe('항목별 판정', () => {
-  it('컨텐츠. 이름으로 참조표를 거쳐 답한다', () => {
-    expect(isContentBlocked(104, '몬스터파크')).toBe(true)
-    expect(isContentBlocked(105, '몬스터파크')).toBe(false)
+  it('컨텐츠. key 로 참조표를 거쳐 답한다', () => {
+    expect(isContentBlocked(104, 'monster_park')).toBe(true)
+    expect(isContentBlocked(105, 'monster_park')).toBe(false)
   })
 
   // 주간 컨텐츠 5개(유니온 둘· 길드 셋)에는 요구 레벨이 없다. 그 항목들은 어떤 레벨에서도
   // 진행 가능이다(`대가`).
   it('요구 레벨이 없는 컨텐츠는 어떤 레벨에서도 진행 가능이다', () => {
-    expect(contentRequiredLevel('[길드] 지하 수로')).toBeNull()
-    expect(isContentBlocked(1, '[길드] 지하 수로')).toBe(false)
+    expect(contentRequiredLevel('guild_underground_waterway')).toBeNull()
+    expect(isContentBlocked(1, 'guild_underground_waterway')).toBe(false)
   })
 
   it('보스. 난이도까지 보고 답한다', () => {

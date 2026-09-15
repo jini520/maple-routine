@@ -262,7 +262,7 @@ describe('displayedBosses: 수동 모드', () => {
 
   it('보스가 아닌 멤버십 항목(컨텐츠)은 걸러진다', () => {
     const result = displayedBosses(character(), 'weekly', 'manual', {
-      'ocid-1': [bossItem('스우', 'hard'), { contentName: '몬스터파크', kind: 'daily' }],
+      'ocid-1': [bossItem('스우', 'hard'), { contentKey: 'monster_park', kind: 'daily' }],
     })
 
     expect(result.map((entry) => entry.apiName)).toEqual(['스우'])

@@ -13,24 +13,20 @@
  */
 import { isClosedByWeeklyLimit } from '../../lib/scheduler/group-weekly-limit'
 import { isContentBlocked } from '../../lib/scheduler/required-level'
-import {
-  matchWeeklyQuestRegionSlug,
-  matchWeeklyRegionalQuestSlug,
-  stripWeeklyQuestPrefix,
-} from '../../lib/scheduler/quest-region-matching'
+import { findContent } from '../../lib/scheduler/contents'
 import type { DailyContent, WeeklyContent } from '../../types'
 
 import {
-  FAITHFUL_INVESTIGATION_BACKGROUND_SLUG,
-  MU_LUNG_DOJO_BACKGROUND_SLUG,
+  FAITHFUL_INVESTIGATION_KEY,
+  MU_LUNG_DOJO_KEY,
+  isWeeklyQuestContent,
+  isWeeklyRegionalContent,
 } from './content-badges'
-import { MONSTER_PARK_BACKGROUND_SLUG } from './DailyContentCards'
 import {
-  EPIC_DUNGEON_PREFIX,
-  GUILD_FLAG_RACE_NAME,
-  GUILD_MISSION_POINTS_NAME,
-  GUILD_UNDERGROUND_WATERWAY_NAME,
-  MAPLE_UNION_PREFIX,
+  GUILD_FLAG_RACE_KEY,
+  GUILD_MISSION_POINTS_KEY,
+  GUILD_UNDERGROUND_WATERWAY_KEY,
+  MONSTER_PARK_EXTREME_KEY,
 } from './WeeklyContentCards'
 
 /** `'unmeasurable'` = 끝이 없는 항목. 완료도 미완료도 아니라 세지 않는다. */
@@ -67,30 +63,29 @@ export function dailyContentCompletion(content: DailyContent): ContentCompletion
 }
 
 /**
- * 주간 항목. `renderWeeklyContentCard` 의 **갈래 순서를 그대로** 따른다. 순서가 곧 규칙이라
- * (이름 일치가 접두사 일치보다 앞이다) 재배열하면 판정이 달라진다.
+ * 주간 항목. `renderWeeklyContentCard` 의 **갈래를 같은 순서로** 따른다. 표에 없는 항목은 폴백 카드다.
  */
 export function weeklyContentCompletion(content: WeeklyContent): ContentCompletion {
   // 점수가 0 이 아니면 완료다. 점수에 상한이 없어 다 했다 를 카운트로는 못 재지만 그 주에
   // 참여했는가 는 잴 수 있고, 그것이 링이 물어야 할 것이다. 카드는 그대로 `n점` 배지다.
-  if (content.name === GUILD_UNDERGROUND_WATERWAY_NAME) return byParticipation(content)
-  if (content.name === GUILD_MISSION_POINTS_NAME) return byCount(content)
-  if (content.name === GUILD_FLAG_RACE_NAME) return byParticipation(content)
-  if (content.name.startsWith(EPIC_DUNGEON_PREFIX)) return byParticipation(content)
+  if (content.contentKey === GUILD_UNDERGROUND_WATERWAY_KEY) return byParticipation(content)
+  if (content.contentKey === GUILD_MISSION_POINTS_KEY) return byCount(content)
+  if (content.contentKey === GUILD_FLAG_RACE_KEY) return byParticipation(content)
 
-  const regionalSlug = matchWeeklyRegionalQuestSlug(content.name)
-  if (regionalSlug !== null) {
+  const entry = findContent(content.contentKey)
+  if (entry?.category === 'epic_dungeon') return byParticipation(content)
+
+  if (isWeeklyRegionalContent(entry)) {
     // 익스트림 몬스터파커만 실제 `quest_state` 를 준다(`WeeklyRegionalContentCard` 의 같은 분기).
-    return regionalSlug === MONSTER_PARK_BACKGROUND_SLUG ? byQuestState(content) : byCount(content)
+    return content.contentKey === MONSTER_PARK_EXTREME_KEY ? byQuestState(content) : byCount(content)
   }
 
-  if (content.name.startsWith(MAPLE_UNION_PREFIX)) return byQuestState(content)
+  if (entry?.category === 'maple_union') return byQuestState(content)
 
-  const questSlug = matchWeeklyQuestRegionSlug(stripWeeklyQuestPrefix(content.name))
-  if (questSlug !== null) {
+  if (isWeeklyQuestContent(entry)) {
     // `renderWeeklyQuestStatus` 의 두 예외.
-    if (questSlug === MU_LUNG_DOJO_BACKGROUND_SLUG) return 'unmeasurable'
-    if (questSlug === FAITHFUL_INVESTIGATION_BACKGROUND_SLUG) return byCount(content)
+    if (content.contentKey === MU_LUNG_DOJO_KEY) return 'unmeasurable'
+    if (content.contentKey === FAITHFUL_INVESTIGATION_KEY) return byCount(content)
     return byQuestState(content)
   }
 
@@ -120,8 +115,8 @@ function tally(completions: ContentCompletion[]): ContentProgress {
  * 안 줄어든다. 판정은 `lib/scheduler/required-level` 한 곳이 갖는다. 이 화면과 today 가 **같은 함수**를
  * 봐야(*"한 글자도 다르면 안 된다"*)이 성립한다.
  */
-function progressible<T extends { name: string }>(contents: T[], characterLevel: number | null): T[] {
-  return contents.filter((content) => !isContentBlocked(characterLevel, content.name))
+function progressible<T extends { contentKey: string | null }>(contents: T[], characterLevel: number | null): T[] {
+  return contents.filter((content) => !isContentBlocked(characterLevel, content.contentKey))
 }
 
 export function dailyContentProgress(
@@ -132,31 +127,35 @@ export function dailyContentProgress(
 }
 
 /**
- * 계열 주간 한도가 차서 더 진행할 수 없는 미완료 항목의 이름들. 카드의 `마감` 과 링이 같은 값을 본다.
+ * 계열 주간 한도가 차서 더 진행할 수 없는 미완료 항목의 컨텐츠 key 들. 카드의 `마감` 과 링이 같은 값을 본다.
  *
  * 넘기는 목록은 표시 목록이 아니라 **그 캐릭터의 병합된 목록 전체**다. 등록 안 한 던전의 완료도 한도를 채운다.
  */
-export function weeklyLimitClosedNames(contents: WeeklyContent[]): ReadonlySet<string> {
+export function weeklyLimitClosedKeys(contents: WeeklyContent[]): ReadonlySet<string> {
   const limited = contents.map((content) => ({
-    name: content.name,
+    contentKey: content.contentKey,
     isComplete: weeklyContentCompletion(content) === 'complete',
   }))
-  return new Set(limited.filter((content) => isClosedByWeeklyLimit(content, limited)).map((content) => content.name))
+  return new Set(
+    limited.flatMap((content) =>
+      content.contentKey !== null && isClosedByWeeklyLimit(content, limited) ? [content.contentKey] : [],
+    ),
+  )
 }
 
 /**
  * `마감` 은 분자에 든다. 이번 주 일이 끝난 것이라, 안 넣으면 링이 100% 에 절대 못 닿는다.
  *
- * @param closedNames `weeklyLimitClosedNames` 의 결과
+ * @param closedKeys `weeklyLimitClosedKeys` 의 결과
  */
 export function weeklyContentProgress(
   contents: WeeklyContent[],
   characterLevel: number | null,
-  closedNames: ReadonlySet<string>,
+  closedKeys: ReadonlySet<string>,
 ): ContentProgress {
   return tally(
     progressible(contents, characterLevel).map((content) =>
-      closedNames.has(content.name) ? 'complete' : weeklyContentCompletion(content),
+      content.contentKey !== null && closedKeys.has(content.contentKey) ? 'complete' : weeklyContentCompletion(content),
     ),
   )
 }

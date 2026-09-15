@@ -32,19 +32,21 @@ describe('BOSS_DIFFICULTIES / BOSS_CYCLES 상수', () => {
 describe('domain 타입 샘플 객체', () => {
   it('DailyContent 샘플이 필드를 모두 채워 구성된다', () => {
     const sample: DailyContent = {
-      name: '몬스터파크',
+      contentKey: 'monster_park',
+      apiName: '몬스터파크',
       kind: 'contents',
       isRegistered: true,
       nowCount: 7,
       maxCount: 14,
       questState: null,
     }
-    expect(sample.name).toBe('몬스터파크')
+    expect(sample.contentKey).toBe('monster_park')
   })
 
   it('WeeklyContent 샘플이 kind 유니온을 포함해 구성된다', () => {
     const sample: WeeklyContent = {
-      name: '에픽 던전 : 악몽선경',
+      contentKey: 'epic_dungeon_nightmare_paradise',
+      apiName: '에픽 던전 : 악몽선경',
       kind: 'contents',
       isRegistered: true,
       nowCount: 5,

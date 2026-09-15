@@ -13,6 +13,8 @@ import {
   isGuildContent,
   WEEKLY_CATEGORY_ORDER,
 } from '../../lib/scheduler/content-category'
+import type { ContentCategoryKey } from '../../lib/scheduler/content-categories'
+import type { ContentEntry } from '../../lib/scheduler/contents'
 import { useContentSchedulerStore, type ContentTab } from '../../features/content-scheduler/store'
 import { resolveSelectedCharacter } from '../../features/character-selection/selected-character'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
@@ -43,29 +45,24 @@ import { useOpenTab } from '../../hooks/useOpenTab'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 
 // 카테고리 → 아이콘은 표현 계층 결정이라 여기 둔다(카테고리 자체는 lib/content-category가 데이터에서 도출).
-// 매핑에 없는 카테고리·접두사 없는 단독 항목은 Sparkles로 폴백한다.
-const CATEGORY_ICON: Record<string, LucideIcon> = {
-  '일일 퀘스트': MapPinIcon,
-  '주간 퀘스트': MapPinIcon,
-  '에픽 던전': CastleIcon,
-  '메이플 유니온': LayoutGridIcon,
-  몬스터파크: SwordsIcon,
+const CATEGORY_ICON: Record<ContentCategoryKey, LucideIcon> = {
+  daily_quest: MapPinIcon,
+  weekly_quest: MapPinIcon,
+  epic_dungeon: CastleIcon,
+  maple_union: LayoutGridIcon,
+  monster_park: SwordsIcon,
   // 아케인리버 지역 퀘스트는 그룹화 전 단독 항목이 쓰던 기본 아이콘(Sparkles)을 그대로 유지한다.
-  '아케인리버 지역 퀘스트': SparklesIcon,
-  무릉도장: MedalIcon,
-  길드: FlagIcon,
-}
-
-function categoryIcon(label: string | null): LucideIcon {
-  return (label !== null ? CATEGORY_ICON[label] : undefined) ?? SparklesIcon
+  arcane_river_quest: SparklesIcon,
+  mu_lung_dojo: MedalIcon,
+  guild: FlagIcon,
 }
 
 // 컨텐츠 관리 페이지(수동 추적 항목 편집). 템플릿 전체를 일간/주간 탭 체크리스트로 항상
 // 보여주고 추적 중인 항목만 선택 상태로 그린다. 추가·삭제가 행 탭(토글) 하나로 통일되고,
 // 토글은 즉시 저장한다(로컬 Preferences 쓰기뿐이고 비파괴적이라 확인 버튼 없음). 대상 캐릭터는
 // 컨텐츠 스케줄러에서 선택된 캐릭터를 승계한다. 수동 모드 전용.
-// 리디자인(와이어프레임 리뷰): content_name에 이미 있는 접두사(lib/scheduler/content-category)로
-// 카테고리 그룹핑. 반복되는 "[일일 퀘스트] …"를 헤더로 한 번만 묶고 행에는 알맹이만 표시한다.
+// 리디자인(와이어프레임 리뷰): 템플릿 줄의 `category`(lib/scheduler/content-category)로
+// 카테고리 그룹핑. 카테고리 이름을 헤더로 한 번만 묶고 행에는 표의 `displayName` 만 표시한다.
 /** 주기 탭. 값은 스케줄러가 쓰는 주기이고 화면에는 라벨이 선다. */
 const CONTENT_TABS = ['daily', 'weekly'] as const
 const CONTENT_TAB_LABELS: Record<(typeof CONTENT_TABS)[number], string> = {
@@ -124,20 +121,20 @@ export function ContentManageScreen(): React.JSX.Element {
     rings: [],
   }))
 
-  const trackedNames = new Set(
+  const trackedKeys = new Set(
     (selected !== null ? (manualTrackedByOcid?.[selected.ocid] ?? []) : [])
-      .flatMap((item) => (item.kind === activeTab ? [item.contentName] : [])),
+      .flatMap((item) => (item.kind === activeTab ? [item.contentKey] : [])),
   )
 
   // 전에는 void로 프로미스를 버려 저장 실패가 무음이었다. 체크가 조용히
   // 되돌아가는 것 외에 설명이 없었다. 체크박스가 그 자리에 남으므로 토스트로 알린다.
-  async function handleToggle(contentName: string): Promise<void> {
+  async function handleToggle(contentKey: string): Promise<void> {
     if (selected === null) return
     try {
-      if (trackedNames.has(contentName)) {
-        await removeManualContent(selected.ocid, contentName, activeTab)
+      if (trackedKeys.has(contentKey)) {
+        await removeManualContent(selected.ocid, contentKey, activeTab)
       } else {
-        await addManualContent(selected.ocid, contentName, activeTab)
+        await addManualContent(selected.ocid, contentKey, activeTab)
       }
     } catch {
       useToastStore.getState().showError('추적 목록을 저장하지 못했습니다')
@@ -149,8 +146,8 @@ export function ContentManageScreen(): React.JSX.Element {
   const hasNoGuild = selected?.guildName === null
 
   // 이미 추적 중인 항목은 잠그지 않는다. 길드를 나가도 해제할 수 있어야 한다.
-  function isGuildBlocked(contentName: string): boolean {
-    return !trackedNames.has(contentName) && hasNoGuild && isGuildContent(contentName)
+  function isGuildBlocked(entry: ContentEntry): boolean {
+    return !trackedKeys.has(entry.key) && hasNoGuild && isGuildContent(entry)
   }
 
   return (
@@ -229,38 +226,34 @@ export function ContentManageScreen(): React.JSX.Element {
                 getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
               ),
               activeTab === 'weekly' ? WEEKLY_CATEGORY_ORDER : undefined,
-            ).map((group, groupIndex) => {
-              const GroupIcon = categoryIcon(group.label)
-              const trackedCount = group.items.filter((item) =>
-                trackedNames.has(item.entry.content_name),
-              ).length
+            ).map((group) => {
+              const GroupIcon = CATEGORY_ICON[group.category]
+              const trackedCount = group.items.filter((item) => trackedKeys.has(item.entry.key)).length
               return (
-                <View key={group.label ?? `standalone-${groupIndex}`}>
-                  {group.label !== null && (
-                    <View className="flex-row items-center gap-2 px-1 pb-2 pt-1">
-                      <View className="h-6 w-6 items-center justify-center rounded-lg bg-third-tint">
-                        <GroupIcon className="h-3.5 w-3.5 text-third-ink" strokeWidth={2} aria-hidden />
-                      </View>
-                      <Text className="text-xs font-bold text-text">{group.label}</Text>
-                      <Badge variant="muted" style={TABULAR_NUMS} className="ml-auto">
-                        {trackedCount}/{group.items.length}
-                      </Badge>
+                <View key={group.category}>
+                  <View className="flex-row items-center gap-2 px-1 pb-2 pt-1">
+                    <View className="h-6 w-6 items-center justify-center rounded-lg bg-third-tint">
+                      <GroupIcon className="h-3.5 w-3.5 text-third-ink" strokeWidth={2} aria-hidden />
                     </View>
-                  )}
+                    <Text className="text-xs font-bold text-text">{group.label}</Text>
+                    <Badge variant="muted" style={TABULAR_NUMS} className="ml-auto">
+                      {trackedCount}/{group.items.length}
+                    </Badge>
+                  </View>
                   <View className="gap-2">
                     {group.items.map(({ entry, displayName }) => {
-                      const isTracked = trackedNames.has(entry.content_name)
-                      const isLocked = isGuildBlocked(entry.content_name)
-                      const tag = contentCountTag(entry, group.label)
+                      const isTracked = trackedKeys.has(entry.key)
+                      const isLocked = isGuildBlocked(entry)
+                      const tag = contentCountTag(entry)
                       // 사유는 오른쪽 뱃지가 아니라 흐려진 행 위에 얹는 한 줄로 알린다.
                       // 보스 관리 화면과 같은 규칙(사용자 피드백).
                       return (
-                        <View key={entry.content_name}>
+                        <View key={entry.key}>
                           <Pressable
                             role="button"
                             aria-selected={isTracked}
                             disabled={isLocked}
-                            onPress={() => void handleToggle(entry.content_name)}
+                            onPress={() => void handleToggle(entry.key)}
                             className={
                               isTracked
                                 ? 'w-full flex-row items-center gap-3 rounded-[10px] border border-primary bg-primary-tint px-4 py-3'

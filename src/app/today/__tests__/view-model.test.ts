@@ -15,6 +15,7 @@ import type { BossProfitRow } from '../../../features/boss-profit/store'
 import type { ContentCharacterView } from '../../../features/content-scheduler/store'
 import type { BossCharacterView } from '../../../features/boss-scheduler/store'
 import type { CharacterBasicProfile, DailyContent, WeeklyContent } from '../../../types'
+import { findContent } from '../../../lib/scheduler/contents'
 
 import { buildTodayViewModel, type TodayViewModelInput } from '../view-model'
 
@@ -23,9 +24,16 @@ const NOW = new Date('2026-08-17T03:00:00.000Z')
 const WEEK_KEY = '2026-08-13'
 const HOUR_MS = 60 * 60 * 1000
 
+/** 표에 있는 컨텐츠의 신원 둘. API 이름은 표의 `content_name` 이다. */
+function content(contentKey: string): Pick<DailyContent, 'contentKey' | 'apiName'> {
+  return { contentKey, apiName: findContent(contentKey)!.content_name }
+}
+
+/** 기본값은 표에 없는 일일 퀘스트다. 공유 범위와 요구 레벨이 끼지 않는다. */
 function daily(overrides: Partial<DailyContent> = {}): DailyContent {
   return {
-    name: '일일 퀘스트',
+    contentKey: null,
+    apiName: '일일 퀘스트',
     kind: 'quest',
     isRegistered: true,
     nowCount: 0,
@@ -37,7 +45,7 @@ function daily(overrides: Partial<DailyContent> = {}): DailyContent {
 
 function weekly(overrides: Partial<WeeklyContent> = {}): WeeklyContent {
   return {
-    name: '[주간 퀘스트] 크리티아스',
+    ...content('weekly_quest_critias'),
     kind: 'quest',
     isRegistered: true,
     nowCount: 0,
@@ -250,8 +258,8 @@ describe('남은 스케줄. 분류 넷', () => {
         orderedOcids: ['a'],
         contentCharacters: [
           contentView('a', {
-            dailyContents: [daily({ name: 'd1', questState: 2 }), daily({ name: 'd2' }), daily({ name: 'd3' })],
-            weeklyContents: [weekly({ name: '[주간 퀘스트] 크리티아스', questState: 2 }), weekly({ name: '에르다 스펙트럼', kind: 'contents', nowCount: 0, maxCount: 1 })],
+            dailyContents: [daily({ apiName: 'd1', questState: 2 }), daily({ apiName: 'd2' }), daily({ apiName: 'd3' })],
+            weeklyContents: [weekly({ questState: 2 }), weekly({ ...content('erda_spectrum'), kind: 'contents', nowCount: 0, maxCount: 1 })],
           }),
         ],
       }),
@@ -268,13 +276,34 @@ describe('남은 스케줄. 분류 넷', () => {
         orderedOcids: ['a'],
         contentCharacters: [
           contentView('a', {
-            weeklyContents: [weekly({ name: '[주간 퀘스트] 무릉도장', nowCount: 0, maxCount: 0 })],
+            weeklyContents: [weekly({ ...content('mu_lung_dojo'), nowCount: 0, maxCount: 0 })],
           }),
         ],
       }),
     )
 
     expect(model.schedule[0].weeklyNames).toHaveLength(0)
+  })
+
+  // 좁은 자리라 표의 짧은 이름을 쓴다. 표에 없는 컨텐츠는 짧은 이름이 없어 API 이름 그대로다.
+  it('표에 있는 항목은 짧은 이름으로, 표에 없는 항목은 API 이름으로 선다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a'],
+        contentCharacters: [
+          contentView('a', {
+            dailyContents: [
+              daily(content('daily_quest_lacheln')),
+              daily({ contentKey: null, apiName: '[일일 퀘스트] 새 지역 조사' }),
+            ],
+            weeklyContents: [weekly()],
+          }),
+        ],
+      }),
+    )
+
+    expect(model.schedule[0].dailyNames).toEqual(['레헬른', '[일일 퀘스트] 새 지역 조사'])
+    expect(model.schedule[0].weeklyNames).toEqual(['크리티아스 주간 임무'])
   })
 
   it('주간 보스·검마는 displayedBosses 의 미완료 수다', () => {
@@ -384,7 +413,7 @@ describe('남은 스케줄. 분류 넷', () => {
 describe('남은 스케줄. 순서는 **관리 순서**뿐이다', () => {
   function withRemaining(ocid: string, remaining: number): ContentCharacterView {
     return contentView(ocid, {
-      dailyContents: Array.from({ length: remaining }, (_, index) => daily({ name: `${ocid}-${index}` })),
+      dailyContents: Array.from({ length: remaining }, (_, index) => daily({ apiName: `${ocid}-${index}` })),
     })
   }
 
@@ -915,14 +944,14 @@ describe('초기화 카운트다운', () => {
 // 공유 컨텐츠 (~31)
 //
 
-const MONSTER_PARK = '몬스터파크'
-const EXTREME = '[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?'
-const EPIC_HIGH = '에픽 던전 : 하이마운틴'
-const EPIC_ANGLER = '에픽 던전 : 앵글러 컴퍼니'
-const EPIC_NIGHTMARE = '에픽 던전 : 악몽선경'
-const UNION_WEEKLY = '[메이플 유니온] 주간 드래곤 퇴치'
-const UNION_PC = '[메이플 유니온] PC방 주간 드래곤 퇴치'
-const EPIC_AURUM = '에픽 던전 : 아우룸 레기스'
+const MONSTER_PARK = 'monster_park'
+const EXTREME = 'monster_park_extreme'
+const EPIC_HIGH = 'epic_dungeon_high_mountain'
+const EPIC_ANGLER = 'epic_dungeon_angler_company'
+const EPIC_NIGHTMARE = 'epic_dungeon_nightmare_paradise'
+const UNION_WEEKLY = 'maple_union_weekly_dragon'
+const UNION_PC = 'maple_union_pc_cafe_weekly_dragon'
+const EPIC_AURUM = 'epic_dungeon_aurum_regis'
 
 /** 아우룸 레기스가 서는 첫 주(2026-09-17 목) 안의 시각. 줄 넷을 모두 재는 케이스가 쓴다. */
 const PATCH_WEEK_NOW = new Date('2026-09-18T03:00:00.000Z')
@@ -932,14 +961,14 @@ const PRE_PATCH_WEEK_NOW = new Date('2026-09-16T03:00:00.000Z')
 /** 카탈로그의 일곱을 전부 등록해 둔 캐릭터. 값만 덮어 쓰며 쓴다. */
 function sharedView(ocid: string, overrides: Partial<ContentCharacterView> = {}): ContentCharacterView {
   return contentView(ocid, {
-    dailyContents: [daily({ name: MONSTER_PARK, kind: 'contents', maxCount: 14, questState: null })],
+    dailyContents: [daily({ ...content(MONSTER_PARK), kind: 'contents', maxCount: 14, questState: null })],
     weeklyContents: [
-      weekly({ name: EPIC_HIGH, kind: 'contents', maxCount: 0, questState: null }),
-      weekly({ name: EPIC_ANGLER, kind: 'contents', maxCount: 0, questState: null }),
-      weekly({ name: EPIC_NIGHTMARE, kind: 'contents', maxCount: 0, questState: null }),
-      weekly({ name: UNION_WEEKLY }),
-      weekly({ name: UNION_PC }),
-      weekly({ name: EXTREME, maxCount: 2 }),
+      weekly({ ...content(EPIC_HIGH), kind: 'contents', maxCount: 0, questState: null }),
+      weekly({ ...content(EPIC_ANGLER), kind: 'contents', maxCount: 0, questState: null }),
+      weekly({ ...content(EPIC_NIGHTMARE), kind: 'contents', maxCount: 0, questState: null }),
+      weekly({ ...content(UNION_WEEKLY) }),
+      weekly({ ...content(UNION_PC) }),
+      weekly({ ...content(EXTREME), maxCount: 2 }),
     ],
     ...overrides,
   })
@@ -947,7 +976,7 @@ function sharedView(ocid: string, overrides: Partial<ContentCharacterView> = {})
 
 function sharedRows(model: ReturnType<typeof buildTodayViewModel>) {
   return model.sharedContents.map((group) => [
-    group.group,
+    group.label,
     group.items.map((item) => [item.shortName, item.count, item.isComplete] as const),
   ])
 }
@@ -958,10 +987,10 @@ describe('공유 컨텐츠. 계열로 묶는다', () => {
       input({ orderedOcids: ['a'], contentCharacters: [sharedView('a')] }),
     )
 
-    expect(model.sharedContents.map((group) => group.group)).toEqual([
+    expect(model.sharedContents.map((group) => group.label)).toEqual([
       '몬스터파크',
       '메이플 유니온',
-      '에픽던전',
+      '에픽 던전',
     ])
   })
 
@@ -970,7 +999,7 @@ describe('공유 컨텐츠. 계열로 묶는다', () => {
       input({ now: PATCH_WEEK_NOW, orderedOcids: ['a'], contentCharacters: [sharedView('a')] }),
     )
 
-    const epic = model.sharedContents.find((group) => group.group === '에픽던전')
+    const epic = model.sharedContents.find((group) => group.category === 'epic_dungeon')
 
     expect(epic?.items.map((item) => item.shortName)).toEqual([
       '하이마운틴',
@@ -999,8 +1028,8 @@ describe('공유 컨텐츠. 계열로 묶는다', () => {
         contentCharacters: [
           sharedView('a', {
             dailyContents: [
-              daily({ name: MONSTER_PARK, kind: 'contents', maxCount: 14, questState: null }),
-              daily({ name: '[일일 퀘스트] 소멸의 여로 조사' }),
+              daily({ ...content(MONSTER_PARK), kind: 'contents', maxCount: 14, questState: null }),
+              daily(content('daily_quest_road_of_vanishing')),
             ],
           }),
         ],
@@ -1021,13 +1050,13 @@ describe('공유 컨텐츠. 오른쪽 열은 `maxCount > 0` 하나로 갈린다'
         contentCharacters: [
           sharedView('a', {
             dailyContents: [
-              daily({ name: MONSTER_PARK, kind: 'contents', nowCount: 7, maxCount: 14, questState: null }),
+              daily({ ...content(MONSTER_PARK), kind: 'contents', nowCount: 7, maxCount: 14, questState: null }),
             ],
           }),
         ],
       }),
     )
-    const park = model.sharedContents.find((group) => group.group === '몬스터파크')
+    const park = model.sharedContents.find((group) => group.category === 'monster_park')
 
     expect(park?.items[0]).toMatchObject({
       shortName: '일간',
@@ -1043,14 +1072,14 @@ describe('공유 컨텐츠. 오른쪽 열은 `maxCount > 0` 하나로 갈린다'
         contentCharacters: [
           sharedView('a', {
             weeklyContents: [
-              weekly({ name: EPIC_HIGH, kind: 'contents', nowCount: 1, maxCount: 0, questState: null }),
-              weekly({ name: EPIC_ANGLER, kind: 'contents', maxCount: 0, questState: null }),
+              weekly({ ...content(EPIC_HIGH), kind: 'contents', nowCount: 1, maxCount: 0, questState: null }),
+              weekly({ ...content(EPIC_ANGLER), kind: 'contents', maxCount: 0, questState: null }),
             ],
           }),
         ],
       }),
     )
-    const epic = model.sharedContents.find((group) => group.group === '에픽던전')
+    const epic = model.sharedContents.find((group) => group.category === 'epic_dungeon')
 
     expect(epic?.items[0]).toMatchObject({ shortName: '하이마운틴', count: null, isComplete: true })
     expect(epic?.items[1]).toMatchObject({ shortName: '앵글러컴퍼니', count: null, isComplete: false })
@@ -1064,12 +1093,12 @@ describe('공유 컨텐츠. 오른쪽 열은 `maxCount > 0` 하나로 갈린다'
         orderedOcids: ['a'],
         contentCharacters: [
           sharedView('a', {
-            weeklyContents: [weekly({ name: EXTREME, nowCount: 0, maxCount: 5, questState: 2 })],
+            weeklyContents: [weekly({ ...content(EXTREME), nowCount: 0, maxCount: 5, questState: 2 })],
           }),
         ],
       }),
     )
-    const park = model.sharedContents.find((group) => group.group === '몬스터파크')
+    const park = model.sharedContents.find((group) => group.category === 'monster_park')
     const extreme = park?.items.find((item) => item.shortName === '익스트림 몬스터파커')
 
     expect(extreme).toMatchObject({ count: null, isComplete: true })
@@ -1082,13 +1111,13 @@ describe('공유 컨텐츠. 오른쪽 열은 `maxCount > 0` 하나로 갈린다'
         contentCharacters: [
           sharedView('a', {
             dailyContents: [
-              daily({ name: MONSTER_PARK, kind: 'contents', nowCount: 14, maxCount: 14, questState: null }),
+              daily({ ...content(MONSTER_PARK), kind: 'contents', nowCount: 14, maxCount: 14, questState: null }),
             ],
           }),
         ],
       }),
     )
-    const park = model.sharedContents.find((group) => group.group === '몬스터파크')
+    const park = model.sharedContents.find((group) => group.category === 'monster_park')
 
     expect(park?.items[0]).toMatchObject({ shortName: '일간', count: null, isComplete: true })
   })
@@ -1099,7 +1128,7 @@ describe('공유 컨텐츠. 오른쪽 열은 `maxCount > 0` 하나로 갈린다'
         orderedOcids: ['a'],
         contentCharacters: [
           sharedView('a', {
-            weeklyContents: [weekly({ name: EXTREME, nowCount: 7, maxCount: 5, questState: 0 })],
+            weeklyContents: [weekly({ ...content(EXTREME), nowCount: 7, maxCount: 5, questState: 0 })],
           }),
         ],
       }),
@@ -1118,18 +1147,18 @@ describe('공유 컨텐츠. 오른쪽 열은 `maxCount > 0` 하나로 갈린다'
         contentCharacters: [
           sharedView('a', {
             dailyContents: [
-              daily({ name: MONSTER_PARK, kind: 'contents', nowCount: 2, maxCount: 14, questState: null }),
+              daily({ ...content(MONSTER_PARK), kind: 'contents', nowCount: 2, maxCount: 14, questState: null }),
             ],
           }),
           sharedView('b', {
             dailyContents: [
-              daily({ name: MONSTER_PARK, kind: 'contents', nowCount: 9, maxCount: 14, questState: null }),
+              daily({ ...content(MONSTER_PARK), kind: 'contents', nowCount: 9, maxCount: 14, questState: null }),
             ],
           }),
         ],
       }),
     )
-    const park = model.sharedContents.find((group) => group.group === '몬스터파크')
+    const park = model.sharedContents.find((group) => group.category === 'monster_park')
 
     expect(park?.items[0]?.count).toEqual({ now: 9, max: 14 })
   })
@@ -1141,7 +1170,7 @@ describe('공유 컨텐츠. 오른쪽 열은 `maxCount > 0` 하나로 갈린다'
 describe('공유 컨텐츠. 시작 기간 전인 줄은 안 그린다', () => {
   const epicNames = (now: Date): string[] =>
     buildTodayViewModel(input({ now, orderedOcids: ['a'], contentCharacters: [sharedView('a')] }))
-      .sharedContents.find((group) => group.group === '에픽던전')
+      .sharedContents.find((group) => group.category === 'epic_dungeon')
       ?.items.map((item) => item.shortName) ?? []
 
   it('2026-09-10 주에는 아우룸 레기스 줄이 없다', () => {
@@ -1160,13 +1189,13 @@ describe('공유 컨텐츠. 시작 기간 전인 줄은 안 그린다', () => {
         orderedOcids: ['a'],
         contentCharacters: [
           sharedView('a', {
-            weeklyContents: [weekly({ name: EPIC_AURUM, kind: 'contents', nowCount: 1, questState: null })],
+            weeklyContents: [weekly({ ...content(EPIC_AURUM), kind: 'contents', nowCount: 1, questState: null })],
           }),
         ],
       }),
     )
 
-    expect(model.sharedContents.flatMap((group) => group.items).map((item) => item.name)).not.toContain(
+    expect(model.sharedContents.flatMap((group) => group.items).map((item) => item.contentKey)).not.toContain(
       EPIC_AURUM,
     )
   })
@@ -1177,13 +1206,13 @@ describe('공유 컨텐츠. 시작 기간 전인 줄은 안 그린다', () => {
 describe('공유 컨텐츠. 에픽 던전 주간 한도', () => {
   const epicView = (nowCounts: [number, number, number, number], maxCount = 0) =>
     sharedView('a', {
-      weeklyContents: [EPIC_HIGH, EPIC_ANGLER, EPIC_NIGHTMARE, EPIC_AURUM].map((name, index) =>
-        weekly({ name, kind: 'contents', nowCount: nowCounts[index], maxCount, questState: null }),
+      weeklyContents: [EPIC_HIGH, EPIC_ANGLER, EPIC_NIGHTMARE, EPIC_AURUM].map((key, index) =>
+        weekly({ ...content(key), kind: 'contents', nowCount: nowCounts[index], maxCount, questState: null }),
       ),
     })
   const epicOf = (view: ContentCharacterView) =>
     buildTodayViewModel(input({ now: PATCH_WEEK_NOW, orderedOcids: ['a'], contentCharacters: [view] }))
-      .sharedContents.find((group) => group.group === '에픽던전')
+      .sharedContents.find((group) => group.category === 'epic_dungeon')
 
   it('계열 제목의 수는 완료한 에픽 던전 수와 한도 3 이다', () => {
     expect(epicOf(epicView([1, 1, 0, 0]))?.weeklyLimit).toEqual({ now: 2, max: 3 })
@@ -1194,7 +1223,7 @@ describe('공유 컨텐츠. 에픽 던전 주간 한도', () => {
       input({ now: PATCH_WEEK_NOW, orderedOcids: ['a'], contentCharacters: [sharedView('a')] }),
     )
 
-    expect(model.sharedContents.find((group) => group.group === '몬스터파크')?.weeklyLimit).toBeNull()
+    expect(model.sharedContents.find((group) => group.category === 'monster_park')?.weeklyLimit).toBeNull()
   })
 
   it('3종을 완료하면 남은 1줄이 막힌다. 체크는 완료한 3줄만이다', () => {
@@ -1221,6 +1250,21 @@ describe('공유 컨텐츠. 에픽 던전 주간 한도', () => {
 
     expect(epic?.items.some((item) => item.isWeeklyLimitClosed)).toBe(false)
   })
+
+  // 한도는 갈래로 센다. 표에 없는 컨텐츠는 갈래가 없어 이름이 에픽 던전처럼 보여도 세지 않는다.
+  it('표에 없는 컨텐츠는 완료해도 한도에 안 든다', () => {
+    const view = epicView([1, 1, 0, 0])
+    const epic = epicOf({
+      ...view,
+      weeklyContents: [
+        ...view.weeklyContents,
+        weekly({ contentKey: null, apiName: '에픽 던전 : 새 던전', kind: 'contents', nowCount: 1, questState: null }),
+      ],
+    })
+
+    expect(epic?.weeklyLimit).toEqual({ now: 2, max: 3 })
+    expect(epic?.items).toHaveLength(4)
+  })
 })
 
 describe('공유 컨텐츠. 유니온만 조건부다', () => {
@@ -1231,15 +1275,15 @@ describe('공유 컨텐츠. 유니온만 조건부다', () => {
         contentCharacters: [
           sharedView('a', {
             weeklyContents: [
-              weekly({ name: EPIC_HIGH, kind: 'contents', maxCount: 0, questState: null }),
-              weekly({ name: EXTREME, maxCount: 2 }),
+              weekly({ ...content(EPIC_HIGH), kind: 'contents', maxCount: 0, questState: null }),
+              weekly({ ...content(EXTREME), maxCount: 2 }),
             ],
           }),
         ],
       }),
     )
 
-    expect(model.sharedContents.map((group) => group.group)).toEqual(['몬스터파크', '에픽던전'])
+    expect(model.sharedContents.map((group) => group.category)).toEqual(['monster_park', 'epic_dungeon'])
   })
 
   it('둘 중 하나만 있으면 그 한 줄만 남는다. 계열이 아니라 항목 단위다', () => {
@@ -1248,12 +1292,12 @@ describe('공유 컨텐츠. 유니온만 조건부다', () => {
         orderedOcids: ['a'],
         contentCharacters: [
           sharedView('a', {
-            weeklyContents: [weekly({ name: UNION_PC })],
+            weeklyContents: [weekly({ ...content(UNION_PC) })],
           }),
         ],
       }),
     )
-    const union = model.sharedContents.find((group) => group.group === '메이플 유니온')
+    const union = model.sharedContents.find((group) => group.category === 'maple_union')
 
     expect(union?.items.map((item) => item.shortName)).toEqual(['PC방 주간 드래곤 퇴치'])
   })
@@ -1266,7 +1310,7 @@ describe('공유 컨텐츠. 유니온만 조건부다', () => {
     expect(sharedRows(model)).toEqual([
       ['몬스터파크', [['일간', null, false], ['익스트림 몬스터파커', null, false]]],
       [
-        '에픽던전',
+        '에픽 던전',
         [
           ['하이마운틴', null, false],
           ['앵글러컴퍼니', null, false],
@@ -1288,11 +1332,11 @@ describe('공유 컨텐츠. 유니온만 조건부다', () => {
       input({
         orderedOcids: ['a'],
         trackingMode: 'manual',
-        manualContentByOcid: { a: [{ contentName: UNION_PC, kind: 'weekly' }] },
+        manualContentByOcid: { a: [{ contentKey: UNION_PC, kind: 'weekly' }] },
         contentCharacters: [sharedView('a')],
       }),
     )
-    const union = model.sharedContents.find((group) => group.group === '메이플 유니온')
+    const union = model.sharedContents.find((group) => group.category === 'maple_union')
 
     expect(union?.items.map((item) => item.shortName)).toEqual(['PC방 주간 드래곤 퇴치'])
   })
@@ -1307,8 +1351,8 @@ describe('공유 컨텐츠. 유니온만 조건부다', () => {
 // 통과한다.
 describe('요구 레벨 미달은 남은 개수에서 빠진다', () => {
   const 항목 = [
-    daily({ name: '[일일 퀘스트] 소멸의 여로 조사' }), // 요구 레벨 200
-    daily({ name: '[일일 퀘스트] 츄츄 아일랜드 최고의 요리' }), // 요구 레벨 210
+    daily(content('daily_quest_road_of_vanishing')), // 요구 레벨 200
+    daily(content('daily_quest_chew_chew')), // 요구 레벨 210
   ]
 
   const 남은것 = (level?: number): readonly string[] =>

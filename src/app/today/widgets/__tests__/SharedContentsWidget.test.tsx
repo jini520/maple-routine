@@ -45,7 +45,7 @@ describe('계열이 축이다', () => {
     expect(getAllByTestId('shared-group-name').map((node) => node.props.children)).toEqual([
       '몬스터파크',
       '메이플 유니온',
-      '에픽던전',
+      '에픽 던전',
     ])
     expect(getByText('하이마운틴')).toBeTruthy()
     expect(getByText('익스트림 몬스터파커')).toBeTruthy()
@@ -76,7 +76,7 @@ describe('오른쪽 열은 `count` 유무 하나로 갈린다', () => {
   // 긴 이름을 말줄임으로 밀어냈다.
   it('완료해도 오른쪽에 배지가 안 선다. CLEAR 를 걷었다', async () => {
     const { queryAllByTestId, queryByText } = await 위젯([
-      공유계열('에픽던전', [
+      공유계열('epic_dungeon', [
         공유항목('하이마운틴', { isComplete: true }),
         공유항목('앵글러컴퍼니', { isComplete: true }),
         공유항목('악몽선경'),
@@ -89,7 +89,7 @@ describe('오른쪽 열은 `count` 유무 하나로 갈린다', () => {
   })
 
   it('미완료이고 카운트가 없으면 오른쪽을 비운다 (사용자 지정)', async () => {
-    const { queryAllByTestId } = await 위젯([공유계열('에픽던전', [공유항목('악몽선경')])])
+    const { queryAllByTestId } = await 위젯([공유계열('epic_dungeon', [공유항목('악몽선경')])])
 
     // `0/1`을 붙이려면 API 에 없는 분모를 앱이 지어내야 한다.
     expect(queryAllByTestId('shared-count')).toHaveLength(0)
@@ -97,7 +97,7 @@ describe('오른쪽 열은 `count` 유무 하나로 갈린다', () => {
 
   it('카운트가 있으면 분자와 분모를 붙여 그린다 ( 과 같은 이유)', async () => {
     const { getByText } = await 위젯([
-      공유계열('몬스터파크', [공유항목('일간', { count: { now: 7, max: 14 } })]),
+      공유계열('monster_park', [공유항목('일간', { count: { now: 7, max: 14 } })]),
     ])
 
     // 벌어지면 두 값, 붙으면 분수로 읽힌다. 한 `Text` 안에서 이어져야 **7/14** 로 읽힌다.
@@ -110,7 +110,7 @@ describe('오른쪽 열은 `count` 유무 하나로 갈린다', () => {
   // **몇 번 했나** 는 언제나 max 라 `14/14` 가 더 말하는 것이 없다.
   it('완료한 항목은 오른쪽이 통째로 빈다. 체크박스가 그 말을 한다', async () => {
     const { queryByTestId, getAllByTestId } = await 위젯([
-      공유계열('몬스터파크', [공유항목('일간', { isComplete: true })]),
+      공유계열('monster_park', [공유항목('일간', { isComplete: true })]),
     ])
 
     expect(queryByTestId('shared-count')).toBeNull()
@@ -122,7 +122,7 @@ describe('오른쪽 열은 `count` 유무 하나로 갈린다', () => {
 
   it('숫자에 `tabular-nums` 가 걸린다. 자릿수가 달라도 오른쪽 끝이 안 흔들린다', async () => {
     const { getByText } = await 위젯([
-      공유계열('몬스터파크', [
+      공유계열('monster_park', [
         공유항목('일간', { count: { now: 7, max: 14 } }),
         공유항목('익스트림 몬스터파커', { count: { now: 1, max: 5 } }),
       ]),
@@ -138,7 +138,7 @@ describe('두 열로 선다', () => {
   const 열이름 = (열: ReturnType<typeof within>): unknown[] =>
     열.queryAllByTestId('shared-group-name').map((node) => node.props.children)
 
-  // 6 대 4 로 가른다. 지그재그(홀짝)로 나누면 왼쪽이 **몬스터파크 + 에픽던전**(7줄)이 되어
+  // 6 대 4 로 가른다. 지그재그(홀짝)로 나누면 왼쪽이 **몬스터파크 + 에픽 던전**(7줄)이 되어
   // 타일이 한 줄 더 높다.
   it('계열 셋을 순서를 지키며 가른다. 높이가 가장 고른 지점에서', async () => {
     const { getAllByTestId } = await 위젯(공유컨텐츠())
@@ -146,7 +146,7 @@ describe('두 열로 선다', () => {
     const 열들 = getAllByTestId('shared-column')
     expect(열들).toHaveLength(2)
     expect(열이름(within(열들[0] as never))).toEqual(['몬스터파크', '메이플 유니온'])
-    expect(열이름(within(열들[1] as never))).toEqual(['에픽던전'])
+    expect(열이름(within(열들[1] as never))).toEqual(['에픽 던전'])
   })
 
   it('계열이 둘이면 한 열에 하나씩이다', async () => {
@@ -172,7 +172,7 @@ describe('완료는 체크와 취소선이 말한다', () => {
 
   it('항목마다 체크박스가 서고 완료한 것만 채워진다', async () => {
     const { getAllByTestId } = await 위젯([
-      공유계열('에픽던전', [
+      공유계열('epic_dungeon', [
         공유항목('하이마운틴', { isComplete: true }),
         공유항목('악몽선경'),
       ]),
@@ -195,7 +195,7 @@ describe('완료는 체크와 취소선이 말한다', () => {
   // 노드로 안 넘긴다. 상자의 두 값이 같은 토큰을 가리키는 것으로 되돌아가지 않았다 를 잡는다.
   it('채운 상자는 채움도 테두리도 primary 다. secondary 가 아니다', async () => {
     const { getAllByTestId } = await 위젯([
-      공유계열('에픽던전', [공유항목('하이마운틴', { isComplete: true })]),
+      공유계열('epic_dungeon', [공유항목('하이마운틴', { isComplete: true })]),
     ])
 
     const 상자 = flattenStyle(getAllByTestId('shared-checkbox', 숨은것포함)[0]?.props.style)
@@ -207,7 +207,7 @@ describe('완료는 체크와 취소선이 말한다', () => {
   // 취소선만으로는 **지운 것/흐린 것** 이 애매하고, 색만으로는 흑백 화면에서 안 보인다.
   it('완료한 이름에 취소선과 흐린 색이 **함께** 걸린다', async () => {
     const { getAllByTestId } = await 위젯([
-      공유계열('에픽던전', [
+      공유계열('epic_dungeon', [
         공유항목('하이마운틴', { isComplete: true }),
         공유항목('악몽선경'),
       ]),
@@ -239,7 +239,7 @@ describe('계열의 주간 한도', () => {
   const 숨은것포함 = { includeHiddenElements: true } as const
   const 한도참 = (): SharedContentGroupView[] => [
     공유계열(
-      '에픽던전',
+      'epic_dungeon',
       [
         공유항목('하이마운틴', { isComplete: true }),
         공유항목('앵글러컴퍼니', { isComplete: true }),
@@ -263,7 +263,7 @@ describe('계열의 주간 한도', () => {
 
   it('수의 모양은 줄의 n/max 와 같다', async () => {
     const { getByTestId } = await 위젯([
-      공유계열('에픽던전', [공유항목('악몽선경', { count: { now: 1, max: 5 } })], { now: 2, max: 3 }),
+      공유계열('epic_dungeon', [공유항목('악몽선경', { count: { now: 1, max: 5 } })], { now: 2, max: 3 }),
     ])
 
     expect(flattenStyle(getByTestId('shared-group-count').props.style)).toEqual(
@@ -272,7 +272,7 @@ describe('계열의 주간 한도', () => {
   })
 
   it('한도가 없는 계열은 수를 안 단다', async () => {
-    const { queryByTestId } = await 위젯([공유계열('몬스터파크', [공유항목('일간')])])
+    const { queryByTestId } = await 위젯([공유계열('monster_park', [공유항목('일간')])])
 
     expect(queryByTestId('shared-group-count')).toBeNull()
   })

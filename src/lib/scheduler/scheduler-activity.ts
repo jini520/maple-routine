@@ -8,8 +8,8 @@ import { getShareScope, isCumulativeScore } from './scheduler-content-scope'
 // 복원할 previous가 없다. 그래서 "그 섹션에 character 범위 항목이 하나라도 있는가"로 stale을 판정한다.
 // 캐릭터가 동기화되면 daily/weekly엔 항상 자기 범위 항목(일일/주간 퀘스트 등)이 들어오므로,
 // 공유 항목만 남았으면 이 캐릭터의 그 섹션은 아직 신뢰할 수 없다는 뜻이다.
-function hasCharacterScopeItem(items: { name: string }[]): boolean {
-  return items.some((item) => getShareScope(item.name) === 'character')
+function hasCharacterScopeItem(items: { contentKey: string | null }[]): boolean {
+  return items.some((item) => getShareScope(item.contentKey) === 'character')
 }
 
 // isXStale(완전 비었을 때)은 그대로 살리고, 비지 않았어도 character 범위 항목이 하나도 없으면
@@ -48,7 +48,7 @@ export function getSectionPresence(state: SchedulerCharacterState): SchedulerSec
 // 해본 적 있음 이 영원히 최근 14일에 했음 으로 읽힌다. `[길드] 지하 수로`(79579) 하나 때문에
 // 그 콘텐츠를 해본 캐릭터 전원이 자격을 얻고 있었다.
 function isCompletedContent(item: DailyContent | WeeklyContent): boolean {
-  if (isCumulativeScore(item.name)) {
+  if (isCumulativeScore(item.contentKey)) {
     return false
   }
   return item.nowCount > 0 || item.questState === 2
@@ -64,7 +64,7 @@ function isCompletedContent(item: DailyContent | WeeklyContent): boolean {
  */
 export function hasCharacterScopeCompletion(state: SchedulerCharacterState): boolean {
   const hasContentCompletion = [...state.dailyContents, ...state.weeklyContents].some(
-    (item) => getShareScope(item.name) === 'character' && isCompletedContent(item),
+    (item) => getShareScope(item.contentKey) === 'character' && isCompletedContent(item),
   )
   return hasContentCompletion || state.bossContents.some((boss) => boss.ownComplete)
 }

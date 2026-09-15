@@ -239,16 +239,16 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
             // 오른쪽이 비면 한 열이다. 반폭만 쓰면 그 자체가 여백이다.
             .filter((column) => column.length > 0)
             .map((column) => (
-              <View key={column[0]?.group} testID="shared-column" className="min-w-0 flex-1">
+              <View key={column[0]?.category} testID="shared-column" className="min-w-0 flex-1">
                 {column.map((group, index) => (
                   <View
-                    key={group.group}
+                    key={group.category}
                     testID="shared-group"
                     className={index === 0 ? '' : 'mt-2 border-t border-border pt-2'}
                   >
                     <View className="flex-row items-center justify-between gap-1.5">
                       <Text fixed testID="shared-group-name" className="text-[12.5px] font-bold text-text">
-                        {group.group}
+                        {group.label}
                       </Text>
                       {group.weeklyLimit !== null && (
                         <CountValue count={group.weeklyLimit} testID="shared-group-count" />
@@ -256,7 +256,7 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
                     </View>
                     <View className="mt-1.5 gap-1.5">
                       {group.items.map((item) => (
-                        <SharedItemRow key={item.name} item={item} />
+                        <SharedItemRow key={item.contentKey} item={item} />
                       ))}
                     </View>
                   </View>

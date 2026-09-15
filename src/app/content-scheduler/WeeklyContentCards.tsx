@@ -2,7 +2,7 @@
  * 주간 컨텐츠 카드. 에픽 던전·지역 주간 퀘스트·메이플 유니온·길드 3종.
  *
  * 카드마다 배경 일러스트와 배지 구성이 다르고, 어느 것을 그릴지는 `renderWeeklyContentCard` 가
- * 이름으로 가른다. 전부 자기 카드 안에서 끝나 화면의 고정 헤더와 무관하다.
+ * 컨텐츠 key 와 표의 `category` 로 가른다. 전부 자기 카드 안에서 끝나 화면의 고정 헤더와 무관하다.
  *
  * bleed 는 `FadedIllustration`, 껍데기는 `IllustratedCard` 가 든다. 일간 카드와 같은 규약이라
  * 사유는 `DailyContentCards.tsx` 에 한 번만 적는다.
@@ -16,11 +16,7 @@ import {
   getDailyQuestRegionIconUrl,
 } from '../../lib/assets/asset-lookup'
 import type { ImageCrop } from '../../lib/image-crop'
-import {
-  matchWeeklyQuestRegionSlug,
-  matchWeeklyRegionalQuestSlug,
-  stripWeeklyQuestPrefix,
-} from '../../lib/scheduler/quest-region-matching'
+import { contentDisplayNameOf, findContent } from '../../lib/scheduler/contents'
 import type { WeeklyContent } from '../../types'
 import { Image, View } from 'react-native'
 
@@ -29,34 +25,23 @@ import { ILLUSTRATION_TEXT_SHADOW_STYLE } from '../../constants/style/text-style
 import {
   QUEST_STATE_LABELS,
   QUEST_STATE_VARIANT,
+  isWeeklyQuestContent,
+  isWeeklyRegionalContent,
   renderWeeklyQuestStatus,
-  stripGuildPrefix,
 } from './content-badges'
-import { MONSTER_PARK_BACKGROUND_SLUG } from './DailyContentCards'
 import { IllustratedCard, FadedIllustration } from '../../components/molecules/FadedIllustration/FadedIllustration'
 
-// 주간 탭 카테고리 분류 상수
-export const EPIC_DUNGEON_PREFIX = '에픽 던전 : '
-export const EPIC_DUNGEON_BACKGROUND_SLUGS: Record<string, string> = {
-  하이마운틴: 'ancientGodMitra',
-  '앵글러 컴퍼니': 'senya',
-  악몽선경: 'baekyeon',
-  '아우룸 레기스': 'lesa',
-}
-export const GUILD_MISSION_POINTS_NAME = '[길드] 주간 미션 포인트'
-export const GUILD_UNDERGROUND_WATERWAY_NAME = '[길드] 지하 수로'
-export const GUILD_FLAG_RACE_NAME = '[길드] 플래그 레이스'
+// 주간 탭 카테고리 분류 상수. 길드 셋은 같은 갈래인데 카드가 저마다 달라 컨텐츠 key 로 가른다.
+export const GUILD_MISSION_POINTS_KEY = 'guild_weekly_mission_points'
+export const GUILD_UNDERGROUND_WATERWAY_KEY = 'guild_underground_waterway'
+export const GUILD_FLAG_RACE_KEY = 'guild_flag_race'
 export const GUILD_UNDERGROUND_WATERWAY_BACKGROUND_SLUG = 'arcanus'
 export const GUILD_MISSION_POINTS_BACKGROUND_SLUG = 'hallOfHeroes'
 export const GUILD_FLAG_RACE_BACKGROUND_SLUG = 'flagRace'
 // 메이플 유니온 주간 드래곤 퇴치. 실제로 등장하는 드래곤은 매주 바뀌지만 API 가 어떤 드래곤인지
 // 알려주지 않아, 에픽 던전 카드와 같이 대표 이미지 하나로 고정한다.
-export const MAPLE_UNION_PREFIX = '[메이플 유니온] '
 export const MAPLE_UNION_DRAGON_BOSS_SLUG = 'armorDragon'
-// "[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?"는 지역명이 문장 앞이 아니라 대괄호 태그로만
-// 나타나 daily-quest-matching 방식의 접두어 제거 후 startsWith 매칭이 통하지 않는다. 대신
-// weekly-regional-quests.json에 전체 문자열을 그대로 등록하고, 표시용으로만 이 접두어를 뗀다.
-export const MONSTER_PARK_EXTREME_PREFIX = '[몬스터파크] '
+export const MONSTER_PARK_EXTREME_KEY = 'monster_park_extreme'
 
 export function EpicDungeonCard(props: {
   content: WeeklyContent
@@ -67,10 +52,8 @@ export function EpicDungeonCard(props: {
   isWeeklyLimitClosed?: boolean
 }): React.JSX.Element {
   const { content } = props
-  const displayName = content.name.startsWith(EPIC_DUNGEON_PREFIX)
-    ? content.name.slice(EPIC_DUNGEON_PREFIX.length)
-    : content.name
-  const backgroundSlug = EPIC_DUNGEON_BACKGROUND_SLUGS[displayName] ?? null
+  const displayName = contentDisplayNameOf(content.contentKey, content.apiName)
+  const backgroundSlug = findContent(content.contentKey)?.background?.portrait ?? null
   const backgroundUrl = getBossPortraitUrl(backgroundSlug)
   const crop = props.crop ?? getBossPortraitCrop(backgroundSlug)
   const questState: 0 | 2 = content.nowCount > 0 ? 2 : 0
@@ -112,17 +95,15 @@ export function WeeklyRegionalContentCard(props: {
   isBlocked?: boolean
 }): React.JSX.Element {
   const { content } = props
-  const displayName = content.name.startsWith(MONSTER_PARK_EXTREME_PREFIX)
-    ? content.name.slice(MONSTER_PARK_EXTREME_PREFIX.length)
-    : content.name
-  const backgroundSlug = matchWeeklyRegionalQuestSlug(content.name)
+  const displayName = contentDisplayNameOf(content.contentKey, content.apiName)
+  const backgroundSlug = findContent(content.contentKey)?.background?.map ?? null
   const backgroundUrl = getDailyQuestBackgroundUrl(backgroundSlug)
   const iconUrl = getDailyQuestRegionIconUrl(backgroundSlug)
   const crop = props.crop ?? getDailyQuestRegionCrop(backgroundSlug)
   // 익스트림 몬스터파커는 다른 6개 지역 콘텐츠와 달리 now_count/max_count 가 아니라 실제
   // quest_state(0/1/2)로 진행 상태를 준다.
   const questState: 0 | 1 | 2 | null =
-    backgroundSlug === MONSTER_PARK_BACKGROUND_SLUG
+    content.contentKey === MONSTER_PARK_EXTREME_KEY
       ? content.questState
       : content.nowCount === content.maxCount && content.maxCount > 0
         ? 2
@@ -164,8 +145,8 @@ export function WeeklyQuestCard(props: {
   isBlocked?: boolean
 }): React.JSX.Element {
   const { content } = props
-  const displayName = stripWeeklyQuestPrefix(content.name)
-  const backgroundSlug = matchWeeklyQuestRegionSlug(displayName)
+  const displayName = contentDisplayNameOf(content.contentKey, content.apiName)
+  const backgroundSlug = findContent(content.contentKey)?.background?.map ?? null
   const backgroundUrl = getDailyQuestBackgroundUrl(backgroundSlug)
   const iconUrl = getDailyQuestRegionIconUrl(backgroundSlug)
   const crop = props.crop ?? getDailyQuestRegionCrop(backgroundSlug)
@@ -188,7 +169,7 @@ export function WeeklyQuestCard(props: {
         {props.isBlocked === true ? (
           <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
         ) : (
-          renderWeeklyQuestStatus(content, backgroundSlug)
+          renderWeeklyQuestStatus(content)
         )}
       </View>
     </IllustratedCard>
@@ -200,9 +181,7 @@ export function MapleUnionDragonCard(props: {
   crop?: ImageCrop
 }): React.JSX.Element {
   const { content } = props
-  const displayName = content.name.startsWith(MAPLE_UNION_PREFIX)
-    ? content.name.slice(MAPLE_UNION_PREFIX.length)
-    : content.name
+  const displayName = contentDisplayNameOf(content.contentKey, content.apiName)
   const backgroundUrl = getBossPortraitUrl(MAPLE_UNION_DRAGON_BOSS_SLUG)
   const crop = props.crop ?? getBossPortraitCrop(MAPLE_UNION_DRAGON_BOSS_SLUG)
 
@@ -233,7 +212,7 @@ export function GuildUndergroundWaterwayCard(props: {
   crop?: ImageCrop
 }): React.JSX.Element {
   const { content } = props
-  const displayName = stripGuildPrefix(content.name)
+  const displayName = contentDisplayNameOf(content.contentKey, content.apiName)
   const backgroundUrl = getBossPortraitUrl(GUILD_UNDERGROUND_WATERWAY_BACKGROUND_SLUG)
   const crop = props.crop ?? getBossPortraitCrop(GUILD_UNDERGROUND_WATERWAY_BACKGROUND_SLUG)
 
@@ -260,7 +239,7 @@ export function GuildMissionPointsCard(props: {
   crop?: ImageCrop
 }): React.JSX.Element {
   const { content } = props
-  const displayName = stripGuildPrefix(content.name)
+  const displayName = contentDisplayNameOf(content.contentKey, content.apiName)
   const backgroundUrl = getDailyQuestBackgroundUrl(GUILD_MISSION_POINTS_BACKGROUND_SLUG)
   const crop = props.crop ?? getDailyQuestRegionCrop(GUILD_MISSION_POINTS_BACKGROUND_SLUG)
   const progressPercent = content.maxCount > 0 ? Math.min((content.nowCount / content.maxCount) * 100, 100) : 0
@@ -302,7 +281,7 @@ export function GuildFlagRaceCard(props: {
   crop?: ImageCrop
 }): React.JSX.Element {
   const { content } = props
-  const displayName = stripGuildPrefix(content.name)
+  const displayName = contentDisplayNameOf(content.contentKey, content.apiName)
   const backgroundUrl = getDailyQuestBackgroundUrl(GUILD_FLAG_RACE_BACKGROUND_SLUG)
   const crop = props.crop ?? getDailyQuestRegionCrop(GUILD_FLAG_RACE_BACKGROUND_SLUG)
   const questState: 0 | 2 = content.nowCount > 0 ? 2 : 0
@@ -331,38 +310,39 @@ export function renderWeeklyContentCard(
   content: WeeklyContent,
   /** 이 카드를 보는 캐릭터의 레벨. 판정은 `lib/scheduler/required-level` 한 곳이 한다. */
   characterLevel: number | null,
-  /** 계열 주간 한도가 찬 미완료 항목인가. 판정은 `weeklyLimitClosedNames` 가 한다. */
+  /** 계열 주간 한도가 찬 미완료 항목인가. 판정은 `weeklyLimitClosedKeys` 가 한다. */
   isWeeklyLimitClosed: boolean,
 ): React.JSX.Element {
   // 길드 셋과 유니온 둘은 참조표에 요구 레벨이 **없다**. 어떤 레벨에서도 진행 가능이라
   // 그 카드들에는 이 프롭을 넘기지 않는다(`대가`).
-  const isBlocked = isContentBlocked(characterLevel, content.name)
+  const isBlocked = isContentBlocked(characterLevel, content.contentKey)
+  const entry = findContent(content.contentKey)
 
-  if (content.name === GUILD_UNDERGROUND_WATERWAY_NAME) {
+  if (content.contentKey === GUILD_UNDERGROUND_WATERWAY_KEY) {
     return <GuildUndergroundWaterwayCard content={content} />
   }
 
-  if (content.name === GUILD_MISSION_POINTS_NAME) {
+  if (content.contentKey === GUILD_MISSION_POINTS_KEY) {
     return <GuildMissionPointsCard content={content} />
   }
 
-  if (content.name === GUILD_FLAG_RACE_NAME) {
+  if (content.contentKey === GUILD_FLAG_RACE_KEY) {
     return <GuildFlagRaceCard content={content} />
   }
 
-  if (content.name.startsWith(EPIC_DUNGEON_PREFIX)) {
+  if (entry?.category === 'epic_dungeon') {
     return <EpicDungeonCard content={content} isBlocked={isBlocked} isWeeklyLimitClosed={isWeeklyLimitClosed} />
   }
 
-  if (matchWeeklyRegionalQuestSlug(content.name) !== null) {
+  if (isWeeklyRegionalContent(entry)) {
     return <WeeklyRegionalContentCard content={content} isBlocked={isBlocked} />
   }
 
-  if (content.name.startsWith(MAPLE_UNION_PREFIX)) {
+  if (entry?.category === 'maple_union') {
     return <MapleUnionDragonCard content={content} />
   }
 
-  if (matchWeeklyQuestRegionSlug(stripWeeklyQuestPrefix(content.name)) !== null) {
+  if (isWeeklyQuestContent(entry)) {
     return <WeeklyQuestCard content={content} isBlocked={isBlocked} />
   }
 
@@ -370,7 +350,7 @@ export function renderWeeklyContentCard(
     <Card className="gap-2 p-4">
       <View className="flex-row items-center justify-between gap-2">
         <Text className="shrink text-sm text-text">
-          {content.name} · {content.nowCount}/{content.maxCount}
+          {contentDisplayNameOf(content.contentKey, content.apiName)} · {content.nowCount}/{content.maxCount}
         </Text>
         {isBlocked && <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>}
       </View>

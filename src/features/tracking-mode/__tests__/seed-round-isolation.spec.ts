@@ -56,13 +56,14 @@ const { getTrackingMode: getTrackingModeMock, setTrackingMode: setTrackingModeMo
 import { resetSyncSingleFlightForTests } from '../../schedule-sync/schedule-sync'
 import { resetSyncRunStateForTests } from '../../schedule-sync/sync-run-state'
 import { useTrackingModeStore } from '../store'
+import { findContent } from '../../../lib/scheduler/contents'
 
 // ocid 마다 **다른** 일일 컨텐츠가 등록돼 있다. 오염되면 서로 구분된다. 셋 다 mockCharacter 범위
 // 항목이라(`getShareScope`) 선채움(`fillMissingSections`)이 안 돌고, 캐릭터당 호출이 정확히 1회다.
 const REGISTERED_DAILY: Record<string, string> = {
-  'ocid-a': '[일일 퀘스트] 레헬른의 평온한 밤',
-  'ocid-b': '[일일 퀘스트] 소멸의 여로 조사',
-  'ocid-c': '[일일 퀘스트] 츄츄 아일랜드 최고의 요리',
+  'ocid-a': 'daily_quest_lacheln',
+  'ocid-b': 'daily_quest_road_of_vanishing',
+  'ocid-c': 'daily_quest_chew_chew',
 }
 const TRACKED = Object.keys(REGISTERED_DAILY)
 
@@ -83,7 +84,8 @@ function stateFor(ocid: string): SchedulerCharacterState {
     jobClass: '렌',
     dailyContents: [
       {
-        name: REGISTERED_DAILY[ocid],
+        contentKey: REGISTERED_DAILY[ocid],
+        apiName: findContent(REGISTERED_DAILY[ocid])!.content_name,
         kind: 'contents',
         isRegistered: true,
         nowCount: 0,
@@ -136,7 +138,7 @@ describe('auto → manual 전환 시드', () => {
 
     for (const ocid of TRACKED) {
       expect(setManualTrackedContentMock).toHaveBeenCalledWith(ocid, [
-        { contentName: REGISTERED_DAILY[ocid], kind: 'daily' },
+        { contentKey: REGISTERED_DAILY[ocid], kind: 'daily' },
       ])
     }
   })

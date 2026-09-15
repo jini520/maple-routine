@@ -10,15 +10,20 @@ import type {
 } from '../../types'
 
 /**
- * API 보스 이름에서 보스 key. 못 찾으면 `null` 이다.
+ * API 이름에서 보스 key · 컨텐츠 key. 못 찾으면 `null` 이다.
  *
- * 부르는 쪽이 넘긴다. `nexon/` 은 `src/data/` 를 몰라야 응답 모양만으로 테스트할 수 있어서다.
+ * 부르는 쪽이 넘긴다. `nexon/` 은 `src/data/` 를 몰라야 응답 모양만으로 테스트할 수 있어서다. 앱은
+ * `lib/scheduler/schedule-name-resolvers` 의 `SCHEDULE_NAME_RESOLVERS` 를 넘긴다.
  */
-export type BossKeyResolver = (apiName: string) => string | null
+export interface ScheduleNameResolvers {
+  bossKey: (apiName: string) => string | null
+  contentKey: (apiName: string) => string | null
+}
 
-function normalizeDailyContent(wire: NexonDailyContentWire): DailyContent {
+function normalizeDailyContent(wire: NexonDailyContentWire, resolvers: ScheduleNameResolvers): DailyContent {
   return {
-    name: wire.content_name,
+    contentKey: resolvers.contentKey(wire.content_name),
+    apiName: wire.content_name,
     kind: wire.type,
     isRegistered: wire.registration_flag === 'true',
     nowCount: wire.now_count,
@@ -27,9 +32,10 @@ function normalizeDailyContent(wire: NexonDailyContentWire): DailyContent {
   }
 }
 
-function normalizeWeeklyContent(wire: NexonWeeklyContentWire): WeeklyContent {
+function normalizeWeeklyContent(wire: NexonWeeklyContentWire, resolvers: ScheduleNameResolvers): WeeklyContent {
   return {
-    name: wire.content_name,
+    contentKey: resolvers.contentKey(wire.content_name),
+    apiName: wire.content_name,
     kind: wire.type,
     isRegistered: wire.registration_flag === 'true',
     nowCount: wire.now_count,
@@ -50,7 +56,7 @@ function normalizeWeeklyContent(wire: NexonWeeklyContentWire): WeeklyContent {
 function normalizeBossContent(
   wire: NexonBossContentWire,
   completedNames: Set<string>,
-  resolveBossKey: BossKeyResolver,
+  resolvers: ScheduleNameResolvers,
 ): BossContent | null {
   if (wire.cycle === 'bossDaily') {
     return null
@@ -60,7 +66,7 @@ function normalizeBossContent(
   const ownComplete = wire.complete_flag === 'true'
 
   return {
-    bossKey: resolveBossKey(wire.content_name),
+    bossKey: resolvers.bossKey(wire.content_name),
     apiName: wire.content_name,
     // API 난이도 값이 곧 난이도 key 다.
     difficulty: wire.difficulty,
@@ -73,7 +79,7 @@ function normalizeBossContent(
 
 export function normalizeSchedulerCharacterState(
   wire: NexonSchedulerCharacterStateWire,
-  resolveBossKey: BossKeyResolver,
+  resolvers: ScheduleNameResolvers,
 ): SchedulerCharacterState {
   // 캐릭터가 해당 리셋 주기 이후 접속하지 않으면 이 필드들이 비거나(빈 배열) 아예
   // 없이(undefined) 온다. 두 경우를 동일하게 "이 섹션은 지금 신뢰할 수 없음"으로 취급한다.
@@ -98,10 +104,10 @@ export function normalizeSchedulerCharacterState(
     world: wire.world_name,
     level: wire.character_level,
     jobClass: wire.character_class,
-    dailyContents: dailyContentsWire.map(normalizeDailyContent),
-    weeklyContents: weeklyContentsWire.map(normalizeWeeklyContent),
+    dailyContents: dailyContentsWire.map((content) => normalizeDailyContent(content, resolvers)),
+    weeklyContents: weeklyContentsWire.map((content) => normalizeWeeklyContent(content, resolvers)),
     bossContents: bossContentsWire
-      .map((boss) => normalizeBossContent(boss, completedBossNames, resolveBossKey))
+      .map((boss) => normalizeBossContent(boss, completedBossNames, resolvers))
       .filter((content): content is BossContent => content !== null),
     isDailyStale: dailyContentsWire.length === 0,
     isWeeklyStale: weeklyContentsWire.length === 0,

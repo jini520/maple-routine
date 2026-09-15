@@ -1,5 +1,5 @@
 import type { NexonSchedulerCharacterStateWire } from '../../../types'
-import { normalizeSchedulerCharacterState } from '../normalize'
+import { normalizeSchedulerCharacterState, type ScheduleNameResolvers } from '../normalize'
 
 /** 테스트용 보스 표. `nexon/` 은 보스 표를 모르고 넘겨받은 함수로 key 를 얻는다. */
 const TEST_BOSS_KEYS: Record<string, string> = {
@@ -9,8 +9,17 @@ const TEST_BOSS_KEYS: Record<string, string> = {
   자쿰: 'zakum',
 }
 
-function resolve(apiName: string): string | null {
-  return TEST_BOSS_KEYS[apiName] ?? null
+/** 테스트용 컨텐츠 표. 보스와 같게 넘겨받은 함수로 key 를 얻는다. */
+const TEST_CONTENT_KEYS: Record<string, string> = {
+  몬스터파크: 'monster_park',
+  '[일일 퀘스트] 레헬른의 평온한 밤': 'daily_quest_lacheln',
+  '에픽 던전 : 악몽선경': 'epic_dungeon_nightmare_paradise',
+  '[메이플 유니온] 주간 드래곤 퇴치': 'maple_union_weekly_dragon',
+}
+
+const resolve: ScheduleNameResolvers = {
+  bossKey: (apiName) => TEST_BOSS_KEYS[apiName] ?? null,
+  contentKey: (apiName) => TEST_CONTENT_KEYS[apiName] ?? null,
 }
 
 describe('normalizeSchedulerCharacterState', () => {
@@ -93,7 +102,8 @@ describe('normalizeSchedulerCharacterState', () => {
     expect(result.jobClass).toBe('렌')
 
     expect(result.dailyContents[0]).toEqual({
-      name: '몬스터파크',
+      contentKey: 'monster_park',
+      apiName: '몬스터파크',
       kind: 'contents',
       isRegistered: true,
       nowCount: 7,
@@ -102,7 +112,8 @@ describe('normalizeSchedulerCharacterState', () => {
     })
 
     expect(result.weeklyContents[1]).toEqual({
-      name: '[메이플 유니온] 주간 드래곤 퇴치',
+      contentKey: 'maple_union_weekly_dragon',
+      apiName: '[메이플 유니온] 주간 드래곤 퇴치',
       kind: 'quest',
       isRegistered: false,
       nowCount: 0,
@@ -115,7 +126,8 @@ describe('normalizeSchedulerCharacterState', () => {
     const result = normalizeSchedulerCharacterState(baseWire, resolve)
 
     expect(result.dailyContents[1]).toEqual({
-      name: '[일일 퀘스트] 레헬른의 평온한 밤',
+      contentKey: 'daily_quest_lacheln',
+      apiName: '[일일 퀘스트] 레헬른의 평온한 밤',
       kind: 'quest',
       isRegistered: true,
       nowCount: 0,
@@ -128,7 +140,8 @@ describe('normalizeSchedulerCharacterState', () => {
     const result = normalizeSchedulerCharacterState(baseWire, resolve)
 
     expect(result.weeklyContents[0]).toEqual({
-      name: '에픽 던전 : 악몽선경',
+      contentKey: 'epic_dungeon_nightmare_paradise',
+      apiName: '에픽 던전 : 악몽선경',
       kind: 'contents',
       isRegistered: true,
       nowCount: 5,
@@ -187,6 +200,27 @@ describe('normalizeSchedulerCharacterState', () => {
     expect(result.bossContents).toEqual([
       expect.objectContaining({ bossKey: null, apiName: '새 보스', difficulty: 'normal' }),
     ])
+  })
+
+  // 새 컨텐츠가 나왔는데 컨텐츠 표를 아직 못 고친 경우다. 보스와 같게 항목은 남기고 key 만 비운다.
+  it('resolver 가 못 찾는 컨텐츠는 contentKey 가 null 이고 API 원문 이름을 든다', () => {
+    const result = normalizeSchedulerCharacterState(
+      {
+        ...baseWire,
+        daily_contents: [
+          { content_name: '[일일 퀘스트] 새 지역 조사', type: 'quest', registration_flag: 'true', now_count: 0, max_count: 0, quest_state: '0' },
+        ],
+        weekly_contents: [
+          { content_name: '새 주간 컨텐츠', type: 'contents', registration_flag: 'true', now_count: 1, max_count: 3, quest_state: null },
+        ],
+      },
+      resolve,
+    )
+
+    expect(result.dailyContents).toEqual([
+      expect.objectContaining({ contentKey: null, apiName: '[일일 퀘스트] 새 지역 조사' }),
+    ])
+    expect(result.weeklyContents).toEqual([expect.objectContaining({ contentKey: null, apiName: '새 주간 컨텐츠' })])
   })
 
   it('섹션에 내용이 있으면 stale 플래그가 전부 false다', () => {

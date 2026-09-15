@@ -156,7 +156,7 @@ describe('ContentManageScreen', () => {
   it('일간 템플릿 전체를 보여주고 추적 중인 항목만 선택 상태다', async () => {
     mockStore({
       characters: [character()],
-      manualTrackedByOcid: { 'ocid-1': [{ contentName: '몬스터파크', kind: 'daily' }] },
+      manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'monster_park', kind: 'daily' }] },
     })
 
     await renderScreen()
@@ -165,8 +165,8 @@ describe('ContentManageScreen', () => {
     expect(stateOf(row('몬스터파크')).selected).toBe(true)
   })
 
-  // 접두사를 그룹 헤더로 한 번만 말하고 행에는 알맹이만 남긴다.
-  it('반복 접두사는 그룹 헤더가 되고 행에는 뗀 이름만 남는다', async () => {
+  // 갈래 이름을 그룹 헤더로 한 번만 말하고 행에는 표의 `displayName` 만 남긴다.
+  it('갈래는 그룹 헤더가 되고 행에는 접두사 없는 이름만 남는다', async () => {
     mockStore({ characters: [character()] })
 
     await renderScreen()
@@ -191,19 +191,19 @@ describe('ContentManageScreen', () => {
 
     await press(row('몬스터파크'))
 
-    expect(store.addManualContent).toHaveBeenCalledWith('ocid-1', '몬스터파크', 'daily')
+    expect(store.addManualContent).toHaveBeenCalledWith('ocid-1', 'monster_park', 'daily')
   })
 
   it('추적 중 항목을 누르면 즉시 제거한다', async () => {
     const store = mockStore({
       characters: [character()],
-      manualTrackedByOcid: { 'ocid-1': [{ contentName: '몬스터파크', kind: 'daily' }] },
+      manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'monster_park', kind: 'daily' }] },
     })
     await renderScreen()
 
     await press(row('몬스터파크'))
 
-    expect(store.removeManualContent).toHaveBeenCalledWith('ocid-1', '몬스터파크', 'daily')
+    expect(store.removeManualContent).toHaveBeenCalledWith('ocid-1', 'monster_park', 'daily')
   })
 
   // 전에는 프로미스를 버려 저장 실패가 무음이었다.
@@ -248,7 +248,7 @@ describe('ContentManageScreen: 길드 미가입 잠금', () => {
       characters: [character({ guildName })],
       activeTab: 'weekly',
       manualTrackedByOcid: {
-        'ocid-1': tracked.map((contentName) => ({ contentName, kind: 'weekly' as const })),
+        'ocid-1': tracked.map((contentKey) => ({ contentKey, kind: 'weekly' as const })),
       },
     })
     await renderScreen()
@@ -283,7 +283,7 @@ describe('ContentManageScreen: 길드 미가입 잠금', () => {
 
   // 길드를 나가도 해제할 수 있어야 한다.
   it('이미 추적 중인 길드 콘텐츠는 미가입이어도 활성이다', async () => {
-    await renderWeekly(null, ['[길드] 지하 수로'])
+    await renderWeekly(null, ['guild_underground_waterway'])
 
     expect(stateOf(row(GUILD_ITEM)).disabled).toBeFalsy()
   })

@@ -19,19 +19,11 @@
 
 import type { BossDifficulty } from '../../types'
 import { bossRequiredLevel } from '../boss/bosses'
-import { CONTENT_TEMPLATE } from './scheduler-content-template'
+import { findContent } from './contents'
 
-/** 컨텐츠 이름 → 요구 레벨. 참조표에 없거나 값이 없으면 `null`. */
-const CONTENT_REQUIRED_LEVELS: ReadonlyMap<string, number> = new Map(
-  [...CONTENT_TEMPLATE.daily, ...CONTENT_TEMPLATE.weekly].flatMap((entry) => {
-    const required = (entry as { requiredLevel?: number }).requiredLevel
-    return required === undefined ? [] : [[entry.content_name, required] as const]
-  }),
-)
-
-/** 컨텐츠의 요구 레벨. 참조표에 없으면 `null`(제한 없음 으로 읽힌다). */
-export function contentRequiredLevel(contentName: string): number | null {
-  return CONTENT_REQUIRED_LEVELS.get(contentName) ?? null
+/** 컨텐츠의 요구 레벨. 표에 없는 컨텐츠(key 가 없다)거나 값이 없으면 `null`(제한 없음 으로 읽힌다). */
+export function contentRequiredLevel(contentKey: string | null): number | null {
+  return findContent(contentKey)?.requiredLevel ?? null
 }
 
 export { bossRequiredLevel }
@@ -47,8 +39,8 @@ export function isLevelBlocked(characterLevel: number | null, requiredLevel: num
 }
 
 /** 컨텐츠 한 항목이 이 캐릭터에게 진행 불가 인가. */
-export function isContentBlocked(characterLevel: number | null, contentName: string): boolean {
-  return isLevelBlocked(characterLevel, contentRequiredLevel(contentName))
+export function isContentBlocked(characterLevel: number | null, contentKey: string | null): boolean {
+  return isLevelBlocked(characterLevel, contentRequiredLevel(contentKey))
 }
 
 /** 보스 한 항목(난이도까지)이 이 캐릭터에게 진행 불가 인가. */
