@@ -165,18 +165,23 @@ PK: `from_ocid`. 칸은 `from_ocid`(옛 ocid) · `to_ocid`(새 ocid) · `linked_
 | `date_key` | KST `YYYY-MM-DD`. `date_create` 에서 뽑는다. 가계부 칸이 이 값으로 선다 |
 | `created_at` | `date_create` 원본(타임존 포함) |
 | `character_name` | 이름만이다. **ocid 가 없다.** 얻으려면 캐릭터마다 한 콜이라 안 받는다 |
-| `target_item` | 강화한 장비 이름. 셋 다 준다 |
+| `target_item` | 강화한 장비의 API 이름 원문. 셋 다 준다. 펼친 강화 줄은 띄어쓰기가 살아 있는 이 글자를 보인다 |
+| `item_key` | 장비 key([[ADR-280]] 결정 14). 응답을 받는 자리가 `target_item` 을 NFC 뒤 공백 제거 · 완전 일치로 장비 표(`equipment-items.json`)에서 찾는다. **표에 없는 장비면 NULL 이고 행은 남는다.** 그런 장비에 쓴 큐브 · 잠재도 실제 지출이라서다 |
 | `item_level` | 그 장비의 레벨. **스타포스 응답에는 없어서** 거기서는 NULL |
 | `payload` | 응답 줄 원본 JSON |
 | `cost_meso` | 쓴 메소. **표가 오기 전까지 NULL** |
 
 **장비 레벨 표는 이 표의 투영이다**([[ADR-223]] 결정 3.7). 스타포스 응답에 `item_level` 이 없는데
 큐브·잠재는 주고 셋이 `target_item` 을 같은 이름 체계로 쓴다. 1년치 27,187건에서 한 이름에 두
-레벨이 붙은 적이 없어, 별도 표 없이 이렇게 찾는다.
+레벨이 붙은 적이 없어, 별도 표 없이 이렇게 찾는다. 스타포스 레벨은 장비 key 로 찾은 장비 표의 레벨이 먼저고,
+이 투영은 장비 표에 없는 장비(key 가 NULL)를 받는다. 그래서 이름으로 찾는다(`loadObservedItemLevels`).
 
 ```sql
-SELECT DISTINCT target_item, item_level FROM enhancement_history WHERE item_level IS NOT NULL
+SELECT target_item, MAX(item_level) AS item_level FROM enhancement_history
+ WHERE item_level IS NOT NULL AND target_item <> '' GROUP BY target_item
 ```
+
+읽은 이름은 NFC 뒤 공백을 지운 글자로 맞춘다(`comparableEquipmentName`). 띄어쓰기만 다른 두 이름이 한 칸에 모이면 큰 레벨을 남긴다.
 
 **읽을 때 찾는다.** 쓸 때 채우면 그 시점에 표에 없던 장비가 영영 NULL 로 남는다. 표가 자라면
 예전에 넣은 행도 함께 값을 얻어야 한다.
@@ -296,8 +301,9 @@ COMMIT;
 | 2 | 가계부 기록에 key 를 채운다. `spend_records` 의 `category_key` · `item_key` · `form_item_keys` · `item_kind_key`, `income_records` 의 `category_key` · `item_key` 다. 이름으로 표를 찾고, 못 찾으면 key 를 비운 채 행을 남긴다([[ADR-280]] 결정 4) |
 | 4 | 보스 표 셋(`boss_profit_records` · `boss_party_settings` · `boss_drop_records`)을 다시 만들어 기본키의 `boss` 를 `boss_key` 로 바꾸고 한글 난이도를 key 로 옮긴다([[ADR-280]] 결정 12). 보스 key 는 `boss` 이름을 API 이름과 같은 규칙(NFC · 공백 제거)으로 찾는다. **보스를 못 찾는 행은 옮기지 않는다.** 기본키를 못 채우고, 표에 없는 보스는 기록하지 않는다는 결정과 같다 |
 | 3 | 드롭 기록에 key 를 채운다. `boss_drop_records` 의 `item_key` · `box_origin_key` 다([[ADR-280]] 결정 11). 이름은 NFC 로 맞추고 `drop-items.json` 에서 찾는다. 기본키에 아이템 이름이 없어 표를 다시 만들지 않는다. 드롭 기록은 key 를 채운 뒤에야 획득 판정을 돌린다 |
+| 5 | 강화 기록에 장비 key 를 채운다. `enhancement_history` 의 `item_key` 다([[ADR-280]] 결정 14). `target_item` 을 API 이름과 같은 규칙(NFC · 공백 제거)으로 `equipment-items.json` 에서 찾는다. 기본키가 응답의 `id` 라 표를 다시 만들지 않는다. **못 찾는 행은 key 만 비우고 남긴다** |
 
-새 기기는 CREATE 뒤 빈 테이블에 버전 1 ~ 4 가 돌고 `user_version` 이 4 가 된다. 이관은 진짜 엔진(`db-real-sqlite.test.ts`) 위에서 테스트한다.
+새 기기는 CREATE 뒤 빈 테이블에 버전 1 ~ 5 가 돌고 `user_version` 이 5 가 된다. 이관은 진짜 엔진(`db-real-sqlite.test.ts`) 위에서 테스트한다.
 
 ```sql
 UPDATE boss_party_settings SET boss = '시즌 보스 메이린' WHERE boss = '메이린';
