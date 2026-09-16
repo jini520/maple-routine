@@ -13,6 +13,7 @@
 import { act, fireEvent, screen, within } from '@testing-library/react-native'
 
 import { useDropHistoryStore } from '../../../features/boss-profit/drop-history-store'
+import { useSettlementStore } from '../../../features/settlement/store'
 import { useBossProfitStore, type BossProfitRow } from '../../../features/boss-profit/store'
 import { useBossSchedulerStore, type BossCharacterView } from '../../../features/boss-scheduler/store'
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
@@ -76,6 +77,10 @@ jest.mock('../../../server/notices', () => ({
   __esModule: true,
   fetchNotices: jest.fn(async () => []),
   fetchNotice: jest.fn(async () => null) }))
+// 결산 안내 줄도 같은 이유로 막는다. 줄 자체의 동작은 `SettlementBanner.test.tsx` 가 본다.
+jest.mock('../../../server/settlement', () => ({
+  __esModule: true,
+  fetchSettlement: jest.fn(async () => null) }))
 
 const mockedContent = jest.mocked(useContentSchedulerStore)
 const mockedBoss = jest.mocked(useBossSchedulerStore)
@@ -770,4 +775,32 @@ describe('TodayScreen: 격자', () => {
     }
   })
 
+})
+
+// 결산 줄이 공지 배너 **위**다. 공지는 읽을거리이고 결산 줄은 지금 화면의 값이 왜 안 맞는지를
+// 말하므로, 그 줄이 값보다 먼저 와야 한다.
+describe('TodayScreen: 결산 안내 줄', () => {
+  // 실물 스토어라 값이 케이스 사이로 샌다.
+  beforeEach(() => {
+    useSettlementStore.setState({ settling: false, startedAt: null, dismissedAt: null, visible: false })
+  })
+
+  it('결산 중이 아니면 안 선다', async () => {
+    await renderScreen()
+
+    expect(screen.queryByTestId('today-settlement-banner')).toBeNull()
+  })
+
+  it('결산 중이면 격자 위에 선다', async () => {
+    useSettlementStore.setState({
+      settling: true,
+      startedAt: '2026-08-16T14:00:00.000Z',
+      dismissedAt: null,
+      visible: true,
+    })
+
+    await renderScreen()
+
+    expect(screen.getByTestId('today-settlement-banner')).toBeTruthy()
+  })
 })
