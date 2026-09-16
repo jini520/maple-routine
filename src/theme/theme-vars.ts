@@ -108,6 +108,55 @@ export function resolveCardBody(definition: ThemeDefinition): string {
 }
 
 /**
+ * 결산 안내 줄의 색 넷. **테마를 안 따라간다.**
+ *
+ * 앞의 둘(`panel-border` · `card-body`)과 같은 자리이지만 하는 일이 다르다. 저쪽은 테마 값에서
+ * **계산**하고 이쪽은 라이트/다크 **상수 두 벌**이다.
+ *
+ * 테마를 따라가면 줄의 정체가 테마 수만큼 갈린다. 먼저 쓰던 `info-tint` 가 그랬다 - 머쉬맘에서는
+ * 노란 종이색이고 검은마법사에서는 `#22232E` 라 바탕과 거의 안 갈렸다. 이 줄이 말하는 것은
+ * 테마와 무관한 앱의 상태이므로 색도 테마와 무관해야 한다.
+ *
+ * 분기 기준은 반드시 `definition.mode` 다. 테마 이름으로 가르면 `DARK_THEMES` 수동 목록이
+ * 되살아난다.
+ */
+export const SETTLEMENT_TOKENS = {
+  tint: 'settlement-tint',
+  ink: 'settlement-ink',
+  inkMuted: 'settlement-ink-muted',
+  mark: 'settlement-mark',
+} as const
+
+export interface SettlementColors {
+  /** 띠 바탕. */
+  tint: string
+  /** 첫 줄. 무슨 일이 일어나는 중인가. */
+  ink: string
+  /** 둘째 줄과 닫기. 그래서 어떻게 되는가. */
+  inkMuted: string
+  /** 시계 표식. 글자와 갈려야 표식이 된다. */
+  mark: string
+}
+
+/** 사용자가 고른 값이다(2026-09-16). 계산이 아니라 결정이므로 다시 뽑지 말 것. */
+const SETTLEMENT_LIGHT: SettlementColors = {
+  tint: '#FCF1D8',
+  ink: '#5B410B',
+  inkMuted: '#8A6B22',
+  mark: '#B5800F',
+}
+const SETTLEMENT_DARK: SettlementColors = {
+  tint: '#2A2214',
+  ink: '#EBD39B',
+  inkMuted: '#B99C5F',
+  mark: '#DFA93C',
+}
+
+export function resolveSettlementColors(definition: ThemeDefinition): SettlementColors {
+  return definition.mode === 'light' ? SETTLEMENT_LIGHT : SETTLEMENT_DARK
+}
+
+/**
  * `:root` 에 해당하는 변수 맵. 38토큰 + 모드에서 파생되는 `--color-panel-border`.
  *
  * 배경 이미지(`--theme-bg-*`)는 내지 않는다. RN 은 벽지를 CSS 배경이 아니라 `<Image>` 로 그리므로
@@ -122,6 +171,12 @@ export function buildThemeVariables(definition: ThemeDefinition): Record<string,
   }
   variables[toColorVariableName(PANEL_BORDER_TOKEN)] = resolvePanelBorder(definition)
   variables[toColorVariableName(CARD_BODY_TOKEN)] = resolveCardBody(definition)
+
+  const settlement = resolveSettlementColors(definition)
+  variables[toColorVariableName(SETTLEMENT_TOKENS.tint)] = settlement.tint
+  variables[toColorVariableName(SETTLEMENT_TOKENS.ink)] = settlement.ink
+  variables[toColorVariableName(SETTLEMENT_TOKENS.inkMuted)] = settlement.inkMuted
+  variables[toColorVariableName(SETTLEMENT_TOKENS.mark)] = settlement.mark
   return variables
 }
 
