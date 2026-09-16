@@ -19,6 +19,8 @@
 > 합치고 제목을 **`가이드 및 문의`** 로 단다. ③ **설정 화면이 카드마다 제목을 단다** — `알림` · `캐릭터 · 테마` · `스케줄` · `앱 데이터` 넷이고,
 > [[ADR-248]] 의 「섹션 제목을 안 단다」를 뒤집는다. 행 배치는 그 문서 그대로이고 `캐릭터 관리`·`테마` 도 설정에 있다.
 > ④ 게임 공지 갈래 이름이 `게임 공지사항` 에서 **`공지 사항`** 이 된다([[ADR-282]] 결정 4 가 지은 이름을 고친다).
+> ⑤ **`전체` 목록 화면(`SettingsNoticesScreen`)도 스켈레톤을 세운다**([[ADR-287]] 정정 1) — 같은 버그가 그 화면에 그대로 있었다.
+> 배너 갈래는 `NoticeBannerCard` 모양 카드 셋, 글 갈래는 줄 여섯이다.
 > **여기 없는 것**: 테마 목록과 색 정책은 [theme.md](./theme.md), 온보딩 흐름은
 > [onboarding.md](./onboarding.md), OTA 적용은 [live-update.md](./live-update.md).
 > **관련 문서**: [../foundation/nexon-api.md](../foundation/nexon-api.md) ·
@@ -43,7 +45,7 @@
 | 화면 | `app/settings/SettingsScreen.tsx` | 더보기 본화면. 소식 갈래 다섯 + `가이드 및 문의` 카드 |
 | 화면 | `app/settings/AppSettingsScreen.tsx` | 설정. 머리의 톱니바퀴가 연다. 제목 붙은 카드 넷 |
 | 제목 | `app/settings/SectionTitle.tsx` | 카드 하나를 덮는 제목 줄. 두 화면이 공유한다 |
-| 로딩 | `components/atoms/Skeleton/` · `app/settings/NoticeSkeleton.tsx` | 소식 갈래의 조회 중 자리([[ADR-287]] 결정 1) |
+| 로딩 | `components/atoms/Skeleton/` · `app/settings/NoticeSkeleton.tsx` | 소식의 조회 중 자리. 더보기 갈래와 `전체` 목록 둘이 쓴다([[ADR-287]] 결정 1 · 정정 1) |
 | 화면 | `app/settings/SettingsFeatureGuideListScreen.tsx` | 기능 설명 카탈로그 |
 | 화면 | `app/settings/SettingsFeatureGuideScreen.tsx` | 기능 안내 상세. 목차 + 이미지 + 문단 |
 | 화면 | `app/settings/SettingsReleaseNotesScreen.tsx` | 개발 노트 |

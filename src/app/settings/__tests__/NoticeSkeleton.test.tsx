@@ -5,7 +5,7 @@
 // `noticeBannerRatio`, 글 줄은 `typography.cjs` 의 줄 높이다. 값이 바뀌면 이 테스트가 먼저 깨진다.
 import { renderAtom } from '../../../components/__tests__/render-atom'
 import { noticeBannerRatio } from '../../../features/notice/notice-display'
-import { NoticeBannerSkeleton, NoticeLinesSkeleton } from '../NoticeSkeleton'
+import { NoticeBannerCardSkeleton, NoticeBannerSkeleton, NoticeLinesSkeleton } from '../NoticeSkeleton'
 
 const HIDDEN = { includeHiddenElements: true } as const
 
@@ -14,7 +14,7 @@ const { fontSize } = require('../../../../typography.cjs') as {
   fontSize: Record<string, [string, { lineHeight: string }]>
 }
 
-function lineHeightOf(step: 'sm' | 'xs'): number {
+function lineHeightOf(step: 'sm' | 'xs' | '13'): number {
   return Number.parseInt(fontSize[step][1].lineHeight, 10)
 }
 
@@ -70,6 +70,33 @@ describe('NoticeLinesSkeleton', () => {
     const { getByTestId } = await renderAtom(<NoticeLinesSkeleton lines={2} />)
 
     const box = getByTestId('notice-lines-skeleton', HIDDEN)
+    expect(box.props.role).toBe('status')
+    expect(box.props['aria-busy']).toBe(true)
+  })
+})
+
+// 목록 화면(`전체`)의 카드 한 장. 위와 같은 규칙인데 재는 자리가 셋이다 - 그림 · 제목 · 기간.
+describe('NoticeBannerCardSkeleton', () => {
+  it('배너 갈래의 비율로 그림 자리를 잡는다', async () => {
+    const { getByTestId } = await renderAtom(<NoticeBannerCardSkeleton kind="event" />)
+
+    expect(getByTestId('notice-card-skeleton-art', HIDDEN)).toHaveStyle({
+      aspectRatio: noticeBannerRatio('event'),
+    })
+  })
+
+  it('제목과 기간 자리가 결과의 줄 높이를 그대로 든다', async () => {
+    const { getByTestId } = await renderAtom(<NoticeBannerCardSkeleton kind="cashshop" />)
+
+    // `NoticeBannerCard` 의 제목은 `text-13`, 기간은 `text-xs` 다.
+    expect(getByTestId('notice-card-skeleton-title', HIDDEN)).toHaveStyle({ height: lineHeightOf('13') })
+    expect(getByTestId('notice-card-skeleton-period', HIDDEN)).toHaveStyle({ height: lineHeightOf('xs') })
+  })
+
+  it('조회 중임을 보조기술에 알린다', async () => {
+    const { getByTestId } = await renderAtom(<NoticeBannerCardSkeleton kind="event" />)
+
+    const box = getByTestId('notice-card-skeleton', HIDDEN)
     expect(box.props.role).toBe('status')
     expect(box.props['aria-busy']).toBe(true)
   })
