@@ -127,13 +127,16 @@ function hasChevron(node: AtomElement): boolean {
 const ROW_LABELS = [
   // 맨 위에 혼자 선다. 이 화면에서 유일하게 밖으로 나가는 설정이라 성질이 다르다.
   '알림 설정',
-  '스케줄 관리 방법',
-  '테마',
-  // `테마` **아래**. 이 자리가 계약이다.
   '캐릭터 관리',
+  // `캐릭터 관리` **아래**. 이 자리가 계약이다.
+  '테마',
+  '스케줄 관리 방법',
   '계정 및 데이터',
   '앱 정보',
 ]
+
+/** 카드마다 달린 제목. 순서가 곧 화면 순서다(사용자 지정). */
+const SECTION_TITLES = ['알림', '캐릭터 · 테마', '스케줄', '앱 데이터']
 
 function mockThemeStore(overrides: Partial<ReturnType<typeof useThemeStore>> = {}): void {
   mockedUseThemeStore.mockReturnValue({
@@ -196,12 +199,12 @@ describe('AppSettingsScreen', () => {
     expect(view.getAllByTestId('settings-row-chevron')).toHaveLength(ROW_LABELS.length)
   })
 
-  // 카드 셋이 성질을 가른다. 알림(밖으로 나간다) · 값(앱 안에서 돈다) · 이동(다른 화면).
-  it('카드가 셋이고 알림이 혼자 맨 위다', async () => {
+  // 카드 넷이 주제를 가른다. 알림(밖으로 나간다) · 스케줄 · 캐릭터와 테마 · 앱 데이터.
+  it('카드가 넷이고 알림이 혼자 맨 위다', async () => {
     const view = await renderOverlay(<AppSettingsScreen />)
 
     const cards = view.getAllByTestId('app-settings-card')
-    expect(cards).toHaveLength(3)
+    expect(cards).toHaveLength(4)
 
     const labelsIn = (card: AtomElement): string[] =>
       ROW_LABELS.filter((label) => {
@@ -211,7 +214,20 @@ describe('AppSettingsScreen', () => {
       })
 
     expect(labelsIn(cards[0])).toEqual(['알림 설정'])
-    expect(labelsIn(cards[1])).toEqual(['스케줄 관리 방법', '테마', '캐릭터 관리'])
+    expect(labelsIn(cards[1])).toEqual(['캐릭터 관리', '테마'])
+    expect(labelsIn(cards[2])).toEqual(['스케줄 관리 방법'])
+    expect(labelsIn(cards[3])).toEqual(['계정 및 데이터', '앱 정보'])
+  })
+
+  // 카드 경계만으로는 여기서 무리가 갈린다는 말밖에 못 한다. 그 무리가 무엇인지 알려면 행 이름을
+  // 다 읽어야 했다(사용자 지정).
+  it('카드마다 제목이 붙고 순서가 화면 순서다', async () => {
+    const view = await renderOverlay(<AppSettingsScreen />)
+
+    const texts = textsIn(view.getByTestId('screen-AppSettings'))
+    expect(texts.filter((text) => SECTION_TITLES.includes(text))).toEqual(SECTION_TITLES)
+    // 제목은 카드 **위**에 선다.
+    expect(texts.indexOf('캐릭터 · 테마')).toBeLessThan(texts.indexOf('캐릭터 관리'))
   })
 
   it('"알림 설정" 행을 누르면 SettingsNoticeAlerts 로 민다', async () => {
@@ -233,6 +249,14 @@ describe('AppSettingsScreen', () => {
     const row = rowOf(view, label)
     expect(textsIn(row)).toEqual([label, value])
     expect(hasChevron(row)).toBe(true)
+  })
+
+  it('"테마"를 누르면 테마 선택 모달이 열린다', async () => {
+    const view = await renderOverlay(<AppSettingsScreen />)
+
+    await press(rowOf(view, '테마'))
+
+    expect(view.getByTestId('theme-modal-overlay')).toBeTruthy()
   })
 
   it('"계정 및 데이터" 우측에 캐시 총 용량(두 그룹의 합)을 표시한다', async () => {
@@ -348,14 +372,6 @@ describe('AppSettingsScreen', () => {
     expect(order).toEqual(['content', 'boss', 'profit'])
   })
 
-  it('"테마"를 누르면 테마 선택 모달이 열린다', async () => {
-    const view = await renderOverlay(<AppSettingsScreen />)
-
-    await press(rowOf(view, '테마'))
-
-    expect(view.getByTestId('theme-modal-overlay')).toBeTruthy()
-  })
-
   it.each(['계정 변경', '연결 해제', '캐시 데이터 삭제', 'API 키 재입력'])(
     '"%s" 행을 본화면에 두지 않는다',
     async (label) => {
@@ -366,8 +382,8 @@ describe('AppSettingsScreen', () => {
   )
 
 describe('AppSettingsScreen: 캐릭터 관리', () => {
-  // 파생·추정값이 아니라 저장된 목록의 길이다. **단위가 명 이 아니라 개** 인 것은
-  //  이 그 표기를 정정했기 때문이다. 캐릭터는 사람이 아니다.
+  // 파생·추정값이 아니라 저장된 목록의 길이다. **단위가 명 이 아니라 개** 인 것은 캐릭터가
+  // 사람이 아니어서다.
   it('행 오른쪽에 추적 캐릭터 수 배지와 chevron 이 함께 있다', async () => {
     mockContentStore({ trackedOcids: ['a', 'b', 'c'] })
     const view = await renderOverlay(<AppSettingsScreen />)
@@ -410,9 +426,6 @@ describe('AppSettingsScreen: 캐릭터 관리', () => {
 
     expect(mockedRoster).not.toHaveBeenCalled()
   })
-
-  // 보스 수익·두 스케줄러의 빈 상태가 캐릭터 관리를 **열어 둔 채로** 보낸다. 목적지가
-  // 모달에서 화면으로 바뀌어도 계약은 그대로다.
 })
 
 })

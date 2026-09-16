@@ -32,7 +32,9 @@ import { groupNoticesByKind, refreshNoticeKinds } from '../../features/notice/no
 import { getNotices } from '../../storage/notices'
 import { NOTICE_KINDS, type Notice, type NoticeKind } from '../../types/notice'
 import { NoticeBannerRail } from './NoticeBannerRail'
+import { NoticeBannerSkeleton, NoticeLinesSkeleton } from './NoticeSkeleton'
 import { NoticeLines } from './NoticeLines'
+import { SectionTitle } from './SectionTitle'
 import { SettingsLinkRow } from './SettingsLinkRow'
 import { SettingsRow } from './SettingsRow'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
@@ -47,18 +49,38 @@ import { storeReviewUrl } from './store-review-link'
  *
  * `lines` 는 글 갈래가 보이는 최근 글 수다. 배너 갈래는 받은 것 전부를 넘긴다.
  */
-const NOTICE_SECTIONS: readonly { label: string; kind: NoticeKind; lines?: number }[] = [
+interface NoticeSection {
+  label: string
+  kind: NoticeKind
+  /** 글 갈래가 보이는 최근 글 수. 없으면 배너 갈래다 */
+  lines?: number
+}
+
+const NOTICE_SECTIONS: readonly NoticeSection[] = [
   // 앱 공지 갈래의 이름은 영문 `NOTICE` 다(사용자 지정).
   { label: 'NOTICE', kind: 'app', lines: 3 },
   // 넥슨 이벤트 목록은 지금 게시 중인 글만 준다.
   { label: '진행 중인 이벤트', kind: 'event' },
   // 넥슨 캐시샵 공지는 캐시아이템 업데이트 소식이다.
   { label: '캐시샵 업데이트', kind: 'cashshop' },
-  { label: '게임 공지사항', kind: 'game', lines: 3 },
+  // 넥슨 게임 공지. 이름에 `게임` 을 안 붙인다(사용자 지정).
+  { label: '공지 사항', kind: 'game', lines: 3 },
   { label: '업데이트', kind: 'update', lines: 2 },
 ]
 
-const NO_NOTICES = groupNoticesByKind([])
+/**
+ * 갈래 하나의 상태. `null` 은 **아직 모른다** 이고 빈 배열은 **받아 봤는데 없다** 다.
+ *
+ * 둘을 가르지 않으면 받아 보기도 전에 `아직 받은 진행 중인 이벤트가 없습니다` 를 말하게 된다.
+ */
+type NoticeState = Record<NoticeKind, Notice[] | null>
+
+function noticeStateOf(pick: (kind: NoticeKind) => Notice[] | null): NoticeState {
+  return Object.fromEntries(NOTICE_KINDS.map((kind) => [kind, pick(kind)])) as NoticeState
+}
+
+/** 첫 프레임. 다섯 갈래가 전부 스켈레톤으로 선다. */
+const UNKNOWN_NOTICES = noticeStateOf(() => null)
 
 /** 갈래 제목 줄. 이름과 그 갈래의 목록 화면을 여는 `전체` 다. */
 function NoticeSectionHeader(props: { label: string; onOpenAll: () => void }): React.JSX.Element {
@@ -69,6 +91,50 @@ function NoticeSectionHeader(props: { label: string; onOpenAll: () => void }): R
         <Text className="text-xs font-semibold text-primary-ink">전체</Text>
       </Pressable>
     </View>
+  )
+}
+
+/**
+ * 갈래 하나의 본문. **상태 셋을 가르는 자리다** - 아직 모른다 · 받아 봤는데 없다 · 글이 있다.
+ *
+ * 셋을 안 가르면 받아 보기 전에 `없습니다` 를 말하고, 그러고 나서 내용이 도착할 때 아래가 밀린다.
+ *
+ * @param props.items `null` 이면 아직 모르는 갈래다
+ */
+function NoticeSectionBody(props: {
+  section: NoticeSection
+  items: Notice[] | null
+  onOpen: (notice: Notice) => void
+}): React.JSX.Element {
+  const { section, items } = props
+  const { lines } = section
+
+  if (items === null) {
+    return lines === undefined ? (
+      // 배너는 화면 양끝까지 닿는다. 화면 좌우 여백을 이 줄만 되돌린다.
+      <View className="-mx-4">
+        <NoticeBannerSkeleton kind={section.kind} />
+      </View>
+    ) : (
+      <NoticeLinesSkeleton lines={lines} />
+    )
+  }
+
+  if (items.length === 0) {
+    // 갈래를 숨기면 화면 순서가 바뀐다.
+    return (
+      <Card className="px-5 py-4">
+        <Text className="text-center text-sm text-text-disabled">{emptyNoticeText(section.label)}</Text>
+      </Card>
+    )
+  }
+
+  return lines === undefined ? (
+    <View className="-mx-4">
+      <NoticeBannerRail notices={items} onOpen={props.onOpen} />
+    </View>
+  ) : (
+    <NoticeLines notices={items.slice(0, lines)} titleLines={1} onPress={props.onOpen} />
   )
 }
 
@@ -92,11 +158,18 @@ export function SettingsScreen(): React.JSX.Element {
   }, [])
 
   const displayedVersion = useRunningAppVersion()
-  const [notices, setNotices] = useState<Record<NoticeKind, Notice[]>>(NO_NOTICES)
+  const [notices, setNotices] = useState<NoticeState>(UNKNOWN_NOTICES)
 
   // 받은 갈래 하나를 화면에 반영한다. 진입 조회와 당김이 같은 함수로 들어온다.
+  // 빈 배열이어도 그대로 둔다 - 넥슨이 `지금 게시 중인 글이 없다` 고 답한 것이라 확정이다.
   const showKind = useCallback((kind: NoticeKind, received: Notice[]): void => {
     setNotices((current) => ({ ...current, [kind]: received }))
+  }, [])
+
+  // 조회가 끝났다. 아직 모르는 갈래를 없는 것으로 확정한다. 실패한 갈래는 `showKind` 를 안 부르므로
+  // (`refreshNoticeKinds` 의 계약) 이 마무리가 없으면 그 갈래가 영영 스켈레톤으로 남는다.
+  const settleUnknown = useCallback((): void => {
+    setNotices((current) => noticeStateOf((kind) => current[kind] ?? []))
   }, [])
 
   // 들어올 때마다 다섯 목록을 다시 받는다. 사본을 먼저 그리고 분류마다 받은 것으로 바꾼다. 실패한 분류는 사본이 선다.
@@ -106,19 +179,24 @@ export function SettingsScreen(): React.JSX.Element {
       let alive = true
       void getNotices()
         .then((copy) => {
-          if (alive) setNotices(groupNoticesByKind(copy))
+          // 사본에 글이 있는 갈래만 그린다. 빈 갈래를 `[]` 로 내리면 아직 도는 조회를 두고
+          // `없습니다` 를 말한다.
+          const grouped = groupNoticesByKind(copy)
+          if (alive) setNotices(noticeStateOf((kind) => (grouped[kind].length > 0 ? grouped[kind] : null)))
         })
         .catch(() => undefined)
         .then(() => {
           // 진입은 실패해도 조용하다. 사용자가 부탁한 조회가 아니라 탭을 열었을 뿐이다.
           void refreshNoticeKinds(NOTICE_KINDS, (kind, received) => {
             if (alive) showKind(kind, received)
+          }).then(() => {
+            if (alive) settleUnknown()
           })
         })
       return () => {
         alive = false
       }
-    }, [showKind]),
+    }, [showKind, settleUnknown]),
   )
 
   // 당김은 사용자가 요청한 조회라 아무 일도 안 일어나면 고장으로 읽힌다. 그래서 전부 실패했을 때만
@@ -126,71 +204,63 @@ export function SettingsScreen(): React.JSX.Element {
   // 받고도 매번 토스트가 뜬다.
   const refresh = useCallback(async (): Promise<void> => {
     const { allFailed } = await refreshNoticeKinds(NOTICE_KINDS, showKind)
+    settleUnknown()
     if (allFailed) useToastStore.getState().showError('소식을 불러오지 못했습니다')
-  }, [showKind])
+  }, [showKind, settleUnknown])
 
   const openNotice = (notice: Notice): void => navigation.navigate('SettingsNoticeDetail', { noticeId: notice.id })
 
   return (
     <ScreenScroll onRefresh={refresh}>
-        {/* `screen-Settings` 는 나머지 세 탭 화면과 같은 관례다(`screen-Content`·`-Boss`·`-Profit`).
-            이것이 없어서 내비게이션 테스트가 **자리표시자의 같은 testID 를 보고 초록**이었고,
-            설정 탭이 통째로 빠진 것을 아무도 못 잡았다(실기기 관측). */}
-        <View className="gap-2 px-4 pb-4" testID="screen-Settings">
-          {/* 이 화면에는 `PageHeader` 가 없지만 제목 줄은 다른 탭과 **같은
-              프리미티브**다. 셸이 달라도 제목이 서는 선은 같아야 한다. */}
-          {/* 설정은 머리의 아이콘 뒤에 산다. 본문에 두면 매일 보는 소식이 가끔 쓰는 설정에
-              밀려 내려간다. 톱니바퀴가 하단 바에서 여기로 옮겨 온 그림이다. */}
-          <PageHeaderTitleRow>
-            <Text className="text-lg font-semibold text-text">더보기</Text>
-            <Pressable
-              role="button"
-              aria-label="설정"
-              onPress={() => {
-                tapFeedback()
-                navigation.navigate('AppSettings')
-              }}
-              className="ml-auto p-1"
-            >
-              {/* 제목 글자(18)보다 크다. 이 화면에서 유일하게 누를 수 있는 머리 요소라 뒤로
-                  가기(20)와 같은 크기면 눈에 안 걸린다. */}
-              <GearIcon className="h-6 w-6 text-text-muted" strokeWidth={2} aria-hidden />
-            </Pressable>
-          </PageHeaderTitleRow>
+      {/* `screen-Settings` 는 나머지 세 탭 화면과 같은 관례다(`screen-Content`·`-Boss`·`-Profit`).
+          이것이 없어서 내비게이션 테스트가 **자리표시자의 같은 testID 를 보고 초록**이었고,
+          설정 탭이 통째로 빠진 것을 아무도 못 잡았다(실기기 관측). */}
+      <View className="gap-2 px-4 pb-4" testID="screen-Settings">
+        {/* 이 화면에는 `PageHeader` 가 없지만 제목 줄은 다른 탭과 **같은
+            프리미티브**다. 셸이 달라도 제목이 서는 선은 같아야 한다. */}
+        {/* 설정은 머리의 아이콘 뒤에 산다. 본문에 두면 매일 보는 소식이 가끔 쓰는 설정에
+            밀려 내려간다. 톱니바퀴가 하단 바에서 여기로 옮겨 온 그림이다. */}
+        <PageHeaderTitleRow>
+          <Text className="text-lg font-semibold text-text">더보기</Text>
+          <Pressable
+            role="button"
+            aria-label="설정"
+            onPress={() => {
+              tapFeedback()
+              navigation.navigate('AppSettings')
+            }}
+            className="ml-auto p-1"
+          >
+            {/* 제목 글자(18)보다 크다. 이 화면에서 유일하게 누를 수 있는 머리 요소라 뒤로
+                가기(20)와 같은 크기면 눈에 안 걸린다. */}
+            <GearIcon className="h-6 w-6 text-text-muted" strokeWidth={2} aria-hidden />
+          </Pressable>
+        </PageHeaderTitleRow>
 
-          {/* 영역 사이만 넓힌다. 머리와 첫 영역까지 벌리면 제목이 내용과 떨어져 보인다. */}
-          <View className="gap-7">
-            {/* **소식이 맨 위다.** 이 페이지에서 유일하게 매일 바뀌는 것이고, 나머지는 다 `가끔
-                한 번` 이다. 자주 바뀌는 것을 아래 두면 사용자가 스크롤을 배워야 한다. */}
-            {NOTICE_SECTIONS.map((section) => {
-              const items = notices[section.kind]
-              return (
-                <View key={section.kind} className="gap-2">
-                  <NoticeSectionHeader
-                    label={section.label}
-                    onOpenAll={() =>
-                      navigation.navigate('SettingsNotices', { kinds: [section.kind], title: section.label })
-                    }
-                  />
-                  {items.length === 0 ? (
-                    // 갈래를 숨기면 화면 순서가 바뀐다.
-                    <Card className="px-5 py-4">
-                      <Text className="text-center text-sm text-text-disabled">{emptyNoticeText(section.label)}</Text>
-                    </Card>
-                  ) : section.lines === undefined ? (
-                    // 배너는 화면 양끝까지 닿는다. 화면 좌우 여백을 이 줄만 되돌린다.
-                    <View className="-mx-4">
-                      <NoticeBannerRail notices={items} onOpen={openNotice} />
-                    </View>
-                  ) : (
-                    <NoticeLines notices={items.slice(0, section.lines)} titleLines={1} onPress={openNotice} />
-                  )}
-                </View>
-              )
-            })}
+        {/* 영역 사이만 넓힌다. 머리와 첫 영역까지 벌리면 제목이 내용과 떨어져 보인다. */}
+        <View className="gap-7">
+          {/* **소식이 맨 위다.** 이 페이지에서 유일하게 매일 바뀌는 것이고, 나머지는 다 `가끔
+              한 번` 이다. 자주 바뀌는 것을 아래 두면 사용자가 스크롤을 배워야 한다. */}
+          {NOTICE_SECTIONS.map((section) => (
+            <View key={section.kind} className="gap-2">
+              <NoticeSectionHeader
+                label={section.label}
+                onOpenAll={() =>
+                  navigation.navigate('SettingsNotices', { kinds: [section.kind], title: section.label })
+                }
+              />
+              <NoticeSectionBody section={section} items={notices[section.kind]} onOpen={openNotice} />
+            </View>
+          ))}
 
-            {/* 읽는 것들. 설정과 갈라 둔 이유는 성질이 달라서다 - 이쪽은 한 번 읽고 끝나고
-                설정은 값을 바꾼다. */}
+          {/* **읽는 행 넷이 한 카드다.** 앞 둘은 읽고 끝나고 뒤 둘은 앱을 떠나는데, 카드를
+              갈라 두던 근거가 사라졌다 - 응원이 맨 아래여야 한다는 것이었고 고지 네 줄이 설정
+              화면으로 가면서 아래 카드가 곧 화면 끝이 됐다. 그러면 두 카드의 경계가 말하는 것이
+              없다.
+
+              제목은 `가이드 및 문의` 다(사용자 지정). 앞 둘이 가이드이고 뒤 둘이 문의다. */}
+          <View className="gap-2">
+            <SectionTitle>가이드 및 문의</SectionTitle>
             <Card className="px-6" testID="settings-card">
               {/* `기능 설명` 이 `개발 노트` 위다. 이 앱을 어떻게 쓰나 가 무엇이 바뀌었나 보다
                   자주 묻는 질문이고 설명의 원천도 이쪽이다. */}
@@ -204,30 +274,28 @@ export function SettingsScreen(): React.JSX.Element {
                   onPress={() => navigation.navigate('SettingsReleaseNotes')}
                 />
               </View>
-            </Card>
+              {/* 앱을 떠나 메일·스토어로 가는 행 둘이라 오른쪽이 chevron 이 아니라 외부 링크
+                  표식이다. chevron 을 쓰면 다른 이동 행과 같은 약속을 하고는 앱을 떠나 버린다.
 
-            {/* **응원은 맨 아래다.** 평생 한 번 누르는 것이라 자주 쓰는 것 위에 못 올린다.
-                사람들이 후원을 찾을 때 관습적으로 화면 끝부터 본다. */}
-            <Card className="px-6" testID="settings-card">
-              {/* 앱을 떠나 스토어로 가는 행이라 오른쪽이 chevron 이 아니라 외부 링크 표식이다.
-                  chevron 을 쓰면 다른 이동 행과 같은 약속을 하고는 앱을 떠나 버린다.
-
-                  후원 행은 수단을 정하면 이 카드로 돌아온다. 행이 하나만 남아도 카드를 지우지 않는
-                  이유가 그것이다. */}
-              {/* 문의는 응원보다 자주 써서 위다. 메일 앱이 안 열리면 주소를 적은 토스트로만 알린다(복사는 없다). */}
-              <SettingsLinkRow
-                label="문의하기"
-                href={contactMailUrl(contactDeviceOf(Platform, displayedVersion))}
-                onOpenFailed={() =>
-                  useToastStore.getState().showError(`메일 앱을 열지 못했습니다. ${CONTACT_EMAIL} 으로 보내 주세요`)
-                }
-              />
+                  문의는 응원보다 자주 써서 위다. 메일 앱이 안 열리면 주소를 적은 토스트로만
+                  알린다(복사는 없다). */}
+              <View className={SETTINGS_ROW_DIVIDER_CLASS}>
+                <SettingsLinkRow
+                  label="문의하기"
+                  href={contactMailUrl(contactDeviceOf(Platform, displayedVersion))}
+                  onOpenFailed={() =>
+                    useToastStore.getState().showError(`메일 앱을 열지 못했습니다. ${CONTACT_EMAIL} 으로 보내 주세요`)
+                  }
+                />
+              </View>
+              {/* 평생 한 번 누르는 것이라 맨 아래다. */}
               <View className={SETTINGS_ROW_DIVIDER_CLASS}>
                 <SettingsLinkRow label="개발자 응원하기(앱 리뷰)" href={storeReviewUrl(Platform.OS)} />
               </View>
             </Card>
           </View>
         </View>
-      </ScreenScroll>
+      </View>
+    </ScreenScroll>
   )
 }
