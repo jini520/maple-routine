@@ -1,26 +1,29 @@
 // 결정석 가격은 처치의 기간으로 고른다. 값은 2026-09-17 패치에서 사용자가 준 것이다(2026-09-11).
 import { findPriceEntry, getMaxPartySize } from '../boss/boss-crystal-prices'
 
+// 09-17 패치가 적용된 뒤. 경계 날이 곧 기간 첫날일 때만 시계를 보므로 다른 기간의 답은 안 바뀐다.
+const 패치후시각 = new Date('2026-09-18T12:00:00+09:00')
+
 describe('findPriceEntry: 그 기간의 가격', () => {
   it('주간 보스는 09-17 주부터 새 가격이다', () => {
-    expect(findPriceEntry('zakum', 'chaos', '2026-09-10')?.priceMeso).toBe(8_080_000)
-    expect(findPriceEntry('zakum', 'chaos', '2026-09-17')?.priceMeso).toBe(4_040_000)
+    expect(findPriceEntry('zakum', 'chaos', '2026-09-10', 패치후시각)?.priceMeso).toBe(8_080_000)
+    expect(findPriceEntry('zakum', 'chaos', '2026-09-17', 패치후시각)?.priceMeso).toBe(4_040_000)
   })
 
   it('검은마법사는 10월 기간부터 새 가격이다. 9월 기간은 옛 가격이다', () => {
-    expect(findPriceEntry('black_mage', 'hard', '2026-09')?.priceMeso).toBe(665_000_000)
-    expect(findPriceEntry('black_mage', 'hard', '2026-10')?.priceMeso).toBe(465_000_000)
-    expect(findPriceEntry('black_mage', 'extreme', '2026-10')?.priceMeso).toBe(5_680_000_000)
+    expect(findPriceEntry('black_mage', 'hard', '2026-09', 패치후시각)?.priceMeso).toBe(665_000_000)
+    expect(findPriceEntry('black_mage', 'hard', '2026-10', 패치후시각)?.priceMeso).toBe(465_000_000)
+    expect(findPriceEntry('black_mage', 'extreme', '2026-10', 패치후시각)?.priceMeso).toBe(5_680_000_000)
   })
 
   // 사용자가 목록에 주지 않은 것은 그대로다.
   it('바뀌지 않은 보스는 두 기간이 같다', () => {
-    expect(findPriceEntry('guardian_kalos', 'extreme', '2026-09-10')?.priceMeso).toBe(4_104_000_000)
-    expect(findPriceEntry('guardian_kalos', 'extreme', '2026-09-17')?.priceMeso).toBe(4_104_000_000)
+    expect(findPriceEntry('guardian_kalos', 'extreme', '2026-09-10', 패치후시각)?.priceMeso).toBe(4_104_000_000)
+    expect(findPriceEntry('guardian_kalos', 'extreme', '2026-09-17', 패치후시각)?.priceMeso).toBe(4_104_000_000)
   })
 
   it('없는 조합은 undefined 다', () => {
-    expect(findPriceEntry('no_such_boss', 'hard', '2026-09-17')).toBeUndefined()
+    expect(findPriceEntry('no_such_boss', 'hard', '2026-09-17', 패치후시각)).toBeUndefined()
   })
 })
 

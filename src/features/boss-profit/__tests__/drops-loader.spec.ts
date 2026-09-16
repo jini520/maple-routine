@@ -166,14 +166,16 @@ describe('loadDropsByRowKey: 기간으로 정리한다', () => {
     expect(replaceBossDropRecordsMock).not.toHaveBeenCalled()
   })
 
+  // 패치는 09-17 오전 10시인데 그 주는 00:00 에 열린다. 그 열 시간에 적은 기록을 지우면 안 되므로
+  // 패치가 한가운데 든 09-17 주는 통째로 남기고, 그 다음 주부터 정리한다.
   it('패치 뒤의 주에 적힌 교환권은 정리된다', async () => {
-    getBossDropRecordsMock.mockResolvedValue([교환권('2026-09-17')])
+    getBossDropRecordsMock.mockResolvedValue([교환권('2026-09-24')])
     const { loadDropsByRowKey } = require('../drops-loader') as typeof import('../drops-loader')
 
-    await loadDropsByRowKey(['ocid-1'], [가엔슬행('2026-09-17')], new Date('2026-09-19T00:00:00Z'))
+    await loadDropsByRowKey(['ocid-1'], [가엔슬행('2026-09-24')], new Date('2026-09-26T00:00:00Z'))
 
     const [, , , periodKey, written] = replaceBossDropRecordsMock.mock.calls[0]
-    expect(periodKey).toBe('2026-09-17')
+    expect(periodKey).toBe('2026-09-24')
     expect(written).toEqual([])
   })
 })

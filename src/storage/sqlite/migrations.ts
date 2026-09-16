@@ -10,6 +10,7 @@
  * 뒤에 돈다.
  */
 import { difficultyKeyOfName } from '../../constants/domain/boss-difficulty'
+import { findPriceEntry } from '../../lib/boss/boss-crystal-prices'
 import { bossKeyOfApiName } from '../../lib/boss/bosses'
 import {
   incomeCategoryKeyOfName,
@@ -26,7 +27,7 @@ import type { SqliteDbConnection } from '../ports'
 import { BOSS_KEYED_TABLES } from './boss-tables'
 
 /** 이 앱의 마지막 DB 버전. 새 기기는 곧바로 이 값이 된다. */
-export const DB_VERSION = 6
+export const DB_VERSION = 7
 
 /**
  * 갈래와 항목 이름을 바꾸며 옛 기록을 옮기던 문장들. 버전 1 이 한 번 돌린다.
@@ -198,6 +199,39 @@ async function fillWorldKeys(db: SqliteDbConnection): Promise<void> {
   }
 }
 
+/**
+ * 09-17 패치 값으로 굳은 그 주의 기록을 옛 가격으로 되돌린다. 버전 7 이 한 번 돌린다.
+ *
+ * 패치는 09-17 오전 10시에 적용되는데 주간 리셋은 그 날 00:00 이다. 그 열 시간에 잡은 보스는 옛
+ * 가격 결정석을 주는데, 시각을 안 보던 판정이 새 가격으로 굳혔다. 동기화는 이미 적힌 행을 다시
+ * 쓰지 않으므로(`alreadyRecorded`) 판정을 고치는 것만으로는 이 값이 안 움직인다.
+ */
+const PATCH_0917_INSTANT_UTC = '2026-09-17T01:00:00.000Z'
+/** 그 주가 열린 뒤 패치 전인 아무 때. 가격표에서 옛 줄을 고르게 한다. */
+const BEFORE_PATCH_0917 = new Date('2026-09-17T00:30:00+09:00')
+
+async function rewind0917PrePatchPrices(db: SqliteDbConnection): Promise<void> {
+  const WHERE_PRE_PATCH = `cycle = 'weekly' AND period_key = '2026-09-17' AND recorded_at < ?`
+  const { values } = await db.query(
+    `SELECT DISTINCT boss_key, difficulty, party_size FROM boss_profit_records WHERE ${WHERE_PRE_PATCH}`,
+    [PATCH_0917_INSTANT_UTC],
+  )
+  for (const row of (values ?? []) as Row[]) {
+    const bossKey = textOrNull(row.boss_key)
+    if (bossKey === null) continue
+    const difficulty = String(row.difficulty)
+    const price = findPriceEntry(bossKey, difficulty as BossDifficulty, '2026-09-17', BEFORE_PATCH_0917)?.priceMeso
+    if (price === null || price === undefined) continue
+    const partySize = Number(row.party_size)
+    const divisor = Number.isFinite(partySize) && partySize > 0 ? partySize : 1
+    await db.run(
+      `UPDATE boss_profit_records SET price_meso = ?, payout_meso = ?
+        WHERE ${WHERE_PRE_PATCH} AND boss_key = ? AND difficulty = ? AND party_size = ?`,
+      [price, Math.floor(price / divisor), PATCH_0917_INSTANT_UTC, bossKey, difficulty, partySize],
+    )
+  }
+}
+
 const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   async (db) => {
     for (const statement of LEGACY_NAME_MIGRATIONS) await db.execute(statement)
@@ -207,6 +241,7 @@ const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   rekeyBossTables,
   fillEnhancementItemKeys,
   fillWorldKeys,
+  rewind0917PrePatchPrices,
 ]
 
 async function userVersionOf(db: SqliteDbConnection): Promise<number> {

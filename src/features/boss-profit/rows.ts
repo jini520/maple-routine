@@ -141,7 +141,7 @@ export function buildBossProfitRow(
 ): BossProfitRow {
   const period = getCurrentBossProfitPeriod(boss.cycle, now)
   const periodLabel = formatBossProfitPeriodLabel(boss.cycle, period.periodKey, now).primary
-  const priceEntry = findPriceEntry(boss.bossKey, boss.difficulty, period.periodKey)
+  const priceEntry = findPriceEntry(boss.bossKey, boss.difficulty, period.periodKey, now)
   const priceMeso = priceEntry?.priceMeso ?? null
   const maxPartySize = priceEntry?.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE
 
@@ -380,7 +380,7 @@ export function toUpcomingWeekRows(
       ...row,
       periodKey: weeklyPeriodKey,
       periodLabel,
-      priceMeso: findPriceEntry(row.bossKey, row.difficulty, weeklyPeriodKey)?.priceMeso ?? null,
+      priceMeso: findPriceEntry(row.bossKey, row.difficulty, weeklyPeriodKey, now)?.priceMeso ?? null,
       // 미완료 자리는 항상 0메소다(`buildBossProfitRow` 와 같은 규약).
       payoutMeso: 0,
       isComplete: false,

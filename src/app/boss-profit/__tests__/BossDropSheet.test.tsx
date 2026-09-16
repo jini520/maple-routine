@@ -182,6 +182,16 @@ describe('BossDropSheet: 난이도 표시', () => {
 
 // 2026-09-17 패치. 시트는 그 행의 기간에 나오는 아이템과 고정 보상만 세운다.
 describe('BossDropSheet: 기간', () => {
+  // 패치는 09-17 오전 10시인데 그 주는 00:00 에 열린다. 시트는 시계까지 보므로 시계를 고정하지
+  // 않으면 이 스위트가 하루의 어느 때에 도느냐로 답이 갈린다.
+  beforeEach(() => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-09-17T10:00:00+09:00'))
+  })
+
+  afterEach(() => {
+    jest.useRealTimers()
+  })
+
   it('패치 뒤의 주에는 교환권 대신 소울 에테르가 선다', async () => {
     const { result } = renderSheet({ bossKey: 'kaling', difficulty: 'normal', periodKey: '2026-09-17' })
     const { getByLabelText, queryByLabelText } = await result

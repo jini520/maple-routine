@@ -214,10 +214,42 @@ export function periodStartDateKey(periodKey: string): string {
   return periodKey.split('-').length === 2 ? `${periodKey}-01` : periodKey
 }
 
-/** 기간을 든 참조 데이터 한 줄. `from` 날부터 `until` 날 전까지 유효하다(KST `YYYY-MM-DD`). */
+/**
+ * 기간을 든 참조 데이터 한 줄. `from` 부터 `until` 전까지 유효하다.
+ *
+ * 값은 KST `YYYY-MM-DD` 이거나 `YYYY-MM-DDTHH:mm` 이다. 시각이 없으면 그 날 00:00 이다. 시각을
+ * 드는 것은 패치가 리셋 시각과 다른 때 적용될 때다. 09-17 패치는 오전 10시인데 주간 리셋은 그 날
+ * 00:00 이라 열 시간이 어긋난다.
+ */
 export interface EffectivePeriod {
   from?: string
   until?: string
+}
+
+/** KST 벽시계를 경계와 견줄 수 있는 `YYYY-MM-DDTHH:mm` 으로. */
+function kstStamp(now: Date): string {
+  const kst = toKstWallClock(now)
+  const date = `${kst.getUTCFullYear()}-${pad(kst.getUTCMonth() + 1)}-${pad(kst.getUTCDate())}`
+  return `${date}T${pad(kst.getUTCHours())}:${pad(kst.getUTCMinutes())}`
+}
+
+/**
+ * 이 기간에서 그 경계가 이미 지났는가.
+ *
+ * 경계 날이 기간 첫날과 다르면 날짜만 견준다. 같을 때만 시계를 본다. 그래서 지난 기간과 다음
+ * 기간의 답이 안 바뀌고, 09-17 새벽 열 시간만 옛 줄을 쓴다.
+ *
+ * @param now 없으면 시각을 무시한다(그 날 00:00 로 본다).
+ */
+function boundaryReached(boundary: string, periodStart: string, now?: Date): boolean {
+  const boundaryDate = boundary.slice(0, 10)
+  if (boundaryDate !== periodStart) return boundaryDate < periodStart
+  if (boundary.length === boundaryDate.length || now === undefined) return true
+  const stamp = kstStamp(now)
+  // 아직 안 온 기간은 첫날로 판정한다. 다음 주 미리보기(`toUpcomingWeekRows`)가 이번 주의 시계에
+  // 끌려 그 주 내내 옛 값을 들면 안 된다. 그 주는 열 시간만 빼고 전부 새 값이다.
+  if (stamp.slice(0, 10) < periodStart) return true
+  return stamp >= boundary
 }
 
 /**
@@ -225,10 +257,28 @@ export interface EffectivePeriod {
  *
  * 드롭 기록에는 처치 날짜가 없어 기간 가운데의 날짜를 가를 수 없다. 첫날로 보면 적용일 전 날을
  * 품은 기간이 옛 줄을 쓴다. 9월 기간의 검은마법사가 09-17 에 빠진 교환권을 얻을 수 있는 이유다.
+ *
+ * @param now 경계가 기간 첫날 안에 시각까지 들고 있을 때만 쓴다. 안 주면 그 날 00:00 로 본다.
  */
-export function isEffectiveIn(row: EffectivePeriod, periodKey: string): boolean {
+export function isEffectiveIn(row: EffectivePeriod, periodKey: string, now?: Date): boolean {
   const start = periodStartDateKey(periodKey)
-  return (row.from === undefined || row.from <= start) && (row.until === undefined || start < row.until)
+  return (
+    (row.from === undefined || boundaryReached(row.from, start, now)) &&
+    (row.until === undefined || !boundaryReached(row.until, start, now))
+  )
+}
+
+/**
+ * 그 줄이 이 기간 **어느 때라도** 유효했는가.
+ *
+ * 기록을 지우는 판정이 쓴다. 시계로 가르면 09-17 09시에 적은 교환권을 10시에 앱이 지운다. 시각
+ * 없는 경계에서는 `isEffectiveIn` 과 답이 같다. 경계가 언제나 기간 첫날에 서기 때문이다.
+ */
+export function isEffectiveAnytimeIn(row: EffectivePeriod, periodKey: string): boolean {
+  const start = periodStartDateKey(periodKey)
+  // `until` 은 자른 날짜가 아니라 경계 그대로와 견준다. 시각을 든 경계는 첫날보다 뒤라서
+  // `'2026-09-17' < '2026-09-17T10:00'` 이 참이 되고, 그 날 안에서 끝나는 줄이 그 기간에 남는다.
+  return (row.from === undefined || row.from.slice(0, 10) <= start) && (row.until === undefined || start < row.until)
 }
 
 /**

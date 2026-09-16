@@ -17,10 +17,12 @@ import {
 // 2026-09-17 패치 앞뒤의 주. 기존 케이스는 패치 전 주로 본다.
 const 패치전 = '2026-09-10'
 const 패치후 = '2026-09-17'
+// 패치가 적용되는 09-17 오전 10시 뒤. 기록을 지우는 판정은 시계를 안 보고 `null` 을 받는다.
+const 패치후시각 = new Date('2026-09-18T12:00:00+09:00')
 
 describe('getBossDropCandidates', () => {
   it('보스의 전 난이도 선택 후보(장비·소비)를 통합해 반환한다 (스우)', () => {
-    const candidates = getBossDropCandidates('lotus', 패치전)
+    const candidates = getBossDropCandidates('lotus', 패치전, 패치후시각)
 
     expect(candidates.length).toBeGreaterThan(0)
     // 선택 후보는 장비·소비만 (고정은 읽기 전용이라 제외)
@@ -32,7 +34,7 @@ describe('getBossDropCandidates', () => {
 
   it('같은 아이템은 key+slot으로 통합하고 등장 난이도를 정규 순서로 담는다', () => {
     // 루즈 컨트롤 머신 마크(얼굴장식)는 스우 하드+익스트림에서 드롭 → 한 후보로 통합
-    const marks = getBossDropCandidates('lotus', 패치전).filter(
+    const marks = getBossDropCandidates('lotus', 패치전, 패치후시각).filter(
       (candidate) => candidate.name === '루즈 컨트롤 머신 마크',
     )
     expect(marks.length).toBe(1)
@@ -41,7 +43,7 @@ describe('getBossDropCandidates', () => {
   })
 
   it('난이도별로만 드롭되는 소비 상자도 모두 통합해 노출한다 (스우 녹옥/홍옥/백옥)', () => {
-    const names = getBossDropCandidates('lotus', 패치전).map((candidate) => candidate.name)
+    const names = getBossDropCandidates('lotus', 패치전, 패치후시각).map((candidate) => candidate.name)
     expect(names).toContain('녹옥의 보스 반지 상자') // 노멀
     expect(names).toContain('홍옥의 보스 반지 상자') // 하드
     expect(names).toContain('백옥의 보스 반지 상자') // 익스트림
@@ -50,7 +52,7 @@ describe('getBossDropCandidates', () => {
   // 옛 scroll 카테고리는 코드가 순회하지 않아 화면에 나온 적이 없다. consumable로
   // 흡수했으니 이제 선택 후보로 잡혀야 한다.
   it('주문서 교환권 3종은 소비 후보로 노출된다 (가디언 엔젤 슬라임 카오스)', () => {
-    const coupons = getBossDropCandidates('guardian_angel_slime', 패치전).filter((candidate) =>
+    const coupons = getBossDropCandidates('guardian_angel_slime', 패치전, 패치후시각).filter((candidate) =>
       candidate.name.endsWith('교환권'),
     )
 
@@ -66,7 +68,7 @@ describe('getBossDropCandidates', () => {
   })
 
   it('찬란한 흉성 노멀에도 교환권 3종이 있다 (신규 추가)', () => {
-    const coupons = getBossDropCandidates('radiant_malefic_star', 패치전).filter((candidate) =>
+    const coupons = getBossDropCandidates('radiant_malefic_star', 패치전, 패치후시각).filter((candidate) =>
       candidate.name.endsWith('교환권'),
     )
 
@@ -77,7 +79,7 @@ describe('getBossDropCandidates', () => {
   })
 
   it('듄켈 하드의 교환권은 하나로 통합된다. 옛 이름 갈림이 해소됐다', () => {
-    const names = getBossDropCandidates('darknell', 패치전)
+    const names = getBossDropCandidates('darknell', 패치전, 패치후시각)
       .map((candidate) => candidate.name)
       .filter((name) => name.includes('악세서리'))
 
@@ -85,13 +87,13 @@ describe('getBossDropCandidates', () => {
   })
 
   it('없는 보스는 빈 배열을 반환한다', () => {
-    expect(getBossDropCandidates('no_such_boss', 패치전)).toEqual([])
+    expect(getBossDropCandidates('no_such_boss', 패치전, 패치후시각)).toEqual([])
   })
 })
 
 describe('getBossFixedDrops', () => {
   it('고정 드롭을 난이도별 그룹(정규 순서)으로 반환한다 (스우)', () => {
-    const groups = getBossFixedDrops('lotus', 패치전)
+    const groups = getBossFixedDrops('lotus', 패치전, 패치후시각)
 
     expect(groups.map((group) => group.difficulty)).toEqual(['normal', 'hard', 'extreme'])
     // 같은 아이템도 난이도마다 값이 다름. 그룹별 값을 그대로 유지한다
@@ -106,7 +108,7 @@ describe('getBossFixedDrops', () => {
   })
 
   it('고정 드롭이 없는 보스는 빈 배열을 반환한다', () => {
-    expect(getBossFixedDrops('no_such_boss', 패치전)).toEqual([])
+    expect(getBossFixedDrops('no_such_boss', 패치전, 패치후시각)).toEqual([])
   })
 })
 
@@ -461,9 +463,9 @@ describe('planConfirmedDifficultyDropMigration: 가격 생존', () => {
 describe('2026-09-17 패치: 아이템이 기간을 든다', () => {
   const 교환권 = ['프리미엄 악세서리 스크롤 교환권', '프리미엄 펫장비 스크롤 교환권', '매지컬 무기 주문서 교환권']
   const namesOf = (boss: string, periodKey: string): string[] =>
-    getBossDropCandidates(boss, periodKey).map((candidate) => candidate.name)
+    getBossDropCandidates(boss, periodKey, 패치후시각).map((candidate) => candidate.name)
   const fixedOf = (boss: string, difficulty: string, periodKey: string) =>
-    getBossFixedDrops(boss, periodKey).find((group) => group.difficulty === difficulty)?.items ?? []
+    getBossFixedDrops(boss, periodKey, 패치후시각).find((group) => group.difficulty === difficulty)?.items ?? []
 
   it('교환권 셋은 패치 전 주에만 후보로 선다', () => {
     expect(namesOf('guardian_angel_slime', 패치전)).toEqual(expect.arrayContaining(교환권))
@@ -475,7 +477,7 @@ describe('2026-09-17 패치: 아이템이 기간을 든다', () => {
   it('소울 에테르는 패치 뒤의 주부터 교환 가능한 소비 후보로 선다', () => {
     expect(namesOf('kaling', 패치전)).not.toContain('1단계 소울 에테르')
 
-    expect(getBossDropCandidates('kaling', 패치후)).toContainEqual(
+    expect(getBossDropCandidates('kaling', 패치후, 패치후시각)).toContainEqual(
       expect.objectContaining({
         name: '1단계 소울 에테르',
         category: 'consumable',
@@ -522,7 +524,13 @@ describe('2026-09-17 패치: 아이템이 기간을 든다', () => {
   })
 
   it('패치 뒤의 주에 적힌 교환권은 정리된다', () => {
-    expect(pruneUnobtainableDrops('guardian_angel_slime', 'chaos', 패치후, [교환권기록])).toEqual([])
+    expect(pruneUnobtainableDrops('guardian_angel_slime', 'chaos', '2026-09-24', [교환권기록])).toEqual([])
+  })
+
+  // 패치는 09-17 오전 10시에 적용되고 그 주는 00:00 에 열린다. 그 열 시간에 적은 교환권을 지우면
+  // 실제로 먹은 기록이 사라진다.
+  it('패치 당일 주의 교환권은 10시가 지나도 안 지운다', () => {
+    expect(pruneUnobtainableDrops('guardian_angel_slime', 'chaos', 패치후, [교환권기록])).toEqual([교환권기록])
   })
 
   // 9월 기간은 9/1 에 시작한다. 처치 날짜가 없어 9월 초에 먹은 기록을 가를 수 없으므로 얻을 수
@@ -538,6 +546,7 @@ describe('2026-09-17 패치: 아이템이 기간을 든다', () => {
       { difficulty: 'hard', dropIndex: 1, category: 'consumable', itemKey: 'magical_weapon_scroll_voucher', itemName: '매지컬 무기 주문서 교환권', quantity: 1 },
     ])
 
-    expect(plan?.drops.map((drop) => drop.itemName)).toEqual(['1단계 소울 에테르'])
+    // 이관도 지우는 경로라 패치 당일 주는 둘 다 남긴다.
+    expect(plan?.drops.map((drop) => drop.itemName)).toEqual(['1단계 소울 에테르', '매지컬 무기 주문서 교환권'])
   })
 })

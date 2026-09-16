@@ -161,8 +161,10 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
 
   // 난이도별 표시: 장비·소비는 name+slot으로 통합된 후보에서 현재 난이도만 필터, 고정은 현재
   // 난이도 그룹만. 통합 후보는 등장 난이도(difficulties)를 담고 있어 그대로 필터에 쓴다.
-  const allCandidates = getBossDropCandidates(props.bossKey, props.periodKey)
-  const allFixedGroups = getBossFixedDrops(props.bossKey, props.periodKey)
+  // 패치가 기간 첫날 안에서 적용되는 날이 있어 시계를 넘긴다. 09-17 패치는 오전 10시다.
+  const now = new Date()
+  const allCandidates = getBossDropCandidates(props.bossKey, props.periodKey, now)
+  const allFixedGroups = getBossFixedDrops(props.bossKey, props.periodKey, now)
   // 난이도 토글 후보 = 드롭 테이블에 있는 난이도 + 행 난이도(테이블에 없어도 기본값은 항상 노출).
   const tableDifficulties = getBossDifficulties(props.bossKey)
   const difficultyOptions = BOSS_DIFFICULTIES.filter(

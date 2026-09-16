@@ -256,7 +256,8 @@ interface PriceRow extends PeriodRow {
 type DropItem = PeriodRow & { item: string; note?: string }
 
 const priceRows = bossCrystalPrices.prices as PriceRow[]
-const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/
+// 경계는 날짜만이거나 KST 시각까지 든다. 시각은 패치가 기간 첫날 00:00 이 아닌 때 적용될 때 쓴다.
+const BOUNDARY = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/
 
 function priceRowsByKey(): Map<string, PriceRow[]> {
   const groups = new Map<string, PriceRow[]>()
@@ -298,7 +299,7 @@ describe('기간을 든 줄', () => {
     for (const row of priceRows) {
       for (const date of [row.from, row.until]) {
         if (date === undefined) continue
-        const [year, month, day] = date.split('-').map(Number)
+        const [year, month, day] = date.slice(0, 10).split('-').map(Number)
         const onBoundary = monthlyBosses.has(row.boss)
           ? day === 1
           : new Date(Date.UTC(year, month - 1, day)).getUTCDay() === 4
@@ -316,12 +317,12 @@ describe('기간을 든 줄', () => {
     expect(mismatched).toEqual([])
   })
 
-  it('기간 칸은 YYYY-MM-DD 이고, 둘 다 있으면 from 이 until 보다 앞이다', () => {
+  it('기간 칸은 YYYY-MM-DD 이거나 YYYY-MM-DDTHH:mm 이고, 둘 다 있으면 from 이 until 보다 앞이다', () => {
     const rows: PeriodRow[] = [...priceRows, ...dropItems().map((entry) => entry.item)]
     const invalid = rows.filter(
       (row) =>
-        (row.from !== undefined && !DATE_KEY.test(row.from)) ||
-        (row.until !== undefined && !DATE_KEY.test(row.until)) ||
+        (row.from !== undefined && !BOUNDARY.test(row.from)) ||
+        (row.until !== undefined && !BOUNDARY.test(row.until)) ||
         (row.from !== undefined && row.until !== undefined && row.from >= row.until),
     )
     expect(invalid).toEqual([])
@@ -330,25 +331,25 @@ describe('기간을 든 줄', () => {
 
 // 2026-09-17 패치(사용자 제공 2026-09-11). 값을 전부 베끼지 않고 칸 수와 모양만 붙든다.
 describe('2026-09-17 패치', () => {
-  it('교환권 셋은 26칸 모두 2026-09-17 전까지다', () => {
+  it('교환권 셋은 26칸 모두 2026-09-17 오전 10시 전까지다', () => {
     for (const name of ['프리미엄 악세서리 스크롤 교환권', '프리미엄 펫장비 스크롤 교환권', '매지컬 무기 주문서 교환권']) {
       const found = dropItems().filter((entry) => dropNameByKey.get(entry.item.item) === name)
 
       expect(found).toHaveLength(26)
       for (const entry of found) {
-        expect(entry.item.until).toBe('2026-09-17')
+        expect(entry.item.until).toBe('2026-09-17T10:00')
         expect(entry.item.from).toBeUndefined()
       }
     }
   })
 
-  it('소울 에테르 넷은 16칸에 2026-09-17 부터 교환 가능한 소비로 선다', () => {
+  it('소울 에테르 넷은 16칸에 2026-09-17 오전 10시부터 교환 가능한 소비로 선다', () => {
     const found = dropItems().filter((entry) => dropNameByKey.get(entry.item.item)?.endsWith('소울 에테르'))
 
     expect(found).toHaveLength(16)
     for (const entry of found) {
       expect(entry.category).toBe('consumable')
-      expect(entry.item).toMatchObject({ note: '교환 가능', from: '2026-09-17' })
+      expect(entry.item).toMatchObject({ note: '교환 가능', from: '2026-09-17T10:00' })
     }
   })
 
@@ -379,8 +380,8 @@ describe('기간을 든 컨텐츠 줄', () => {
     const rows: PeriodRow[] = [...templateRows(), ...spendRows()]
     const invalid = rows.filter(
       (row) =>
-        (row.from !== undefined && !DATE_KEY.test(row.from)) ||
-        (row.until !== undefined && !DATE_KEY.test(row.until)) ||
+        (row.from !== undefined && !BOUNDARY.test(row.from)) ||
+        (row.until !== undefined && !BOUNDARY.test(row.until)) ||
         (row.from !== undefined && row.until !== undefined && row.from >= row.until),
     )
     expect(invalid).toEqual([])

@@ -54,7 +54,7 @@
           {
             "item": "memento_silver_cube",
             "amount": "1개",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "memento_bronze_additional_cube",
@@ -149,7 +149,7 @@
           {
             "item": "memento_silver_cube",
             "amount": "1개",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "memento_bronze_additional_cube",
@@ -216,12 +216,12 @@
           {
             "item": "memento_silver_cube",
             "amount": "2개",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "memento_silver_cube",
             "amount": "1개",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           },
           {
             "item": "memento_bronze_additional_cube",
@@ -243,17 +243,17 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           }
         ]
       }
@@ -421,12 +421,12 @@
           {
             "item": "memento_silver_cube",
             "amount": "2개",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "memento_silver_cube",
             "amount": "1개",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           },
           {
             "item": "memento_bronze_additional_cube",
@@ -499,12 +499,12 @@
           {
             "item": "memento_silver_cube",
             "amount": "2개",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "memento_silver_cube",
             "amount": "1개",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           },
           {
             "item": "memento_bronze_additional_cube",
@@ -531,17 +531,17 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           }
         ]
       }
@@ -562,7 +562,7 @@
           {
             "item": "memento_silver_cube",
             "amount": "1개",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "memento_bronze_additional_cube",
@@ -600,12 +600,12 @@
           {
             "item": "memento_silver_cube",
             "amount": "2개",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "memento_silver_cube",
             "amount": "1개",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           },
           {
             "item": "memento_bronze_additional_cube",
@@ -632,17 +632,17 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           }
         ]
       }
@@ -692,12 +692,12 @@
           {
             "item": "memento_silver_cube",
             "amount": "2개",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "memento_silver_cube",
             "amount": "1개",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           },
           {
             "item": "memento_bronze_additional_cube",
@@ -724,17 +724,17 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           }
         ]
       }
@@ -755,12 +755,12 @@
           {
             "item": "memento_gold_cube",
             "amount": "1개",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "memento_silver_cube",
             "amount": "2개",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           },
           {
             "item": "memento_bronze_additional_cube",
@@ -781,17 +781,17 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           }
         ]
       }
@@ -842,17 +842,17 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           }
         ]
       }
@@ -938,17 +938,17 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           }
         ]
       }
@@ -973,7 +973,7 @@
           {
             "item": "memento_gold_cube",
             "amount": "3개",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           }
         ],
         "consumable": [
@@ -988,17 +988,17 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           }
         ]
       }
@@ -1038,17 +1038,17 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           }
         ],
         "misc": [
@@ -1103,17 +1103,17 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           }
         ]
       }
@@ -1144,17 +1144,17 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           }
         ]
       }
@@ -1175,7 +1175,7 @@
           {
             "item": "memento_gold_cube",
             "amount": "3개",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           }
         ],
         "consumable": [
@@ -1190,22 +1190,22 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "soul_ether_1",
             "note": "교환 가능",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           }
         ]
       }
@@ -1250,22 +1250,22 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "soul_ether_1",
             "note": "교환 가능",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           }
         ]
       }
@@ -1319,22 +1319,22 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "soul_ether_1",
             "note": "교환 가능",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           }
         ]
       }
@@ -1369,17 +1369,17 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           }
         ],
         "misc": [
@@ -1406,7 +1406,7 @@
           {
             "item": "memento_gold_cube",
             "amount": "3개",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           }
         ],
         "equipment": [],
@@ -1426,22 +1426,22 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "soul_ether_1",
             "note": "교환 가능",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           }
         ]
       }
@@ -1485,22 +1485,22 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "soul_ether_1",
             "note": "교환 가능",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           }
         ]
       }
@@ -1553,22 +1553,22 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "soul_ether_1",
             "note": "교환 가능",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           }
         ]
       }
@@ -1589,7 +1589,7 @@
           {
             "item": "memento_gold_cube",
             "amount": "3개",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           }
         ],
         "consumable": [
@@ -1608,22 +1608,22 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "soul_ether_2",
             "note": "교환 가능",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           }
         ]
       }
@@ -1673,7 +1673,7 @@
           {
             "item": "soul_ether_2",
             "note": "교환 가능",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           }
         ]
       }
@@ -1690,7 +1690,7 @@
           {
             "item": "memento_gold_cube",
             "amount": "2개",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           }
         ],
         "consumable": [
@@ -1731,7 +1731,7 @@
           {
             "item": "soul_ether_2",
             "note": "교환 가능",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           }
         ]
       }
@@ -1777,7 +1777,7 @@
           {
             "item": "soul_ether_2",
             "note": "교환 가능",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           }
         ]
       }
@@ -1813,22 +1813,22 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "soul_ether_3",
             "note": "교환 가능",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           }
         ]
       }
@@ -1878,22 +1878,22 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "soul_ether_3",
             "note": "교환 가능",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           }
         ]
       }
@@ -1928,22 +1928,22 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "soul_ether_3",
             "note": "교환 가능",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           }
         ]
       }
@@ -1992,22 +1992,22 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "soul_ether_3",
             "note": "교환 가능",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           }
         ]
       }
@@ -2046,7 +2046,7 @@
           {
             "item": "soul_ether_4",
             "note": "교환 가능",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           }
         ]
       }
@@ -2096,7 +2096,7 @@
           {
             "item": "soul_ether_4",
             "note": "교환 가능",
-            "from": "2026-09-17"
+            "from": "2026-09-17T10:00"
           }
         ]
       }
@@ -2155,17 +2155,17 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           }
         ]
       }
@@ -2213,17 +2213,17 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           }
         ]
       }
@@ -2258,17 +2258,17 @@
           {
             "item": "premium_accessory_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "premium_pet_equipment_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           },
           {
             "item": "magical_weapon_scroll_voucher",
             "note": "교환 불가, 7일",
-            "until": "2026-09-17"
+            "until": "2026-09-17T10:00"
           }
         ]
       }
