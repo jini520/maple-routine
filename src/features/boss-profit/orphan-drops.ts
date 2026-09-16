@@ -12,7 +12,7 @@
  * 지우는 조건은 미처치이지 추적 해제가 아니다. 실제로 잡은 보스는 추적을 꺼도 화면에 계속
  * 뜬다. 술어를 추적 목록에 없다 로 쓰면 진짜 처치 기록의 드롭이 날아간다.
  */
-import { findPriceEntry } from '../../lib/boss/boss-crystal-prices'
+import { hasPriceEntry } from '../../lib/boss/boss-crystal-prices'
 import { getBossDropRecords, replaceBossDropRecords, type BossDropRecord } from '../../storage/boss-drops'
 import type { BossDifficulty } from '../../types'
 import { withSqliteFallback } from './sqlite-guards'
@@ -73,7 +73,7 @@ export function planOrphanDropCleanup(input: OrphanDropPlanInput): OrphanDropGro
     if (!input.knownPeriodKeys.has(record.periodKey)) continue
     if (!periodsWithRow.has(periodKeyOf(record.ocid, record.periodKey))) continue
     if (bossesWithRow.has(bossPeriodKeyOf(record.ocid, record.bossKey, record.periodKey))) continue
-    if (findPriceEntry(record.bossKey, record.difficulty as BossDifficulty, record.periodKey) === undefined) continue
+    if (!hasPriceEntry(record.bossKey, record.difficulty as BossDifficulty, record.periodKey)) continue
 
     const key = `${record.ocid}|${record.bossKey}|${record.difficulty}|${record.periodKey}`
     const group = groups.get(key)

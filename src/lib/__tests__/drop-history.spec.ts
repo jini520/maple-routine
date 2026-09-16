@@ -168,7 +168,8 @@ describe('filterUnobtainableConfirmedDrops', () => {
     expect(filterUnobtainableConfirmedDrops(records, confirmed)).toEqual(records)
   })
 
-  // 2026-09-17 패치로 교환권이 빠졌다. 판정은 기록의 기간으로 한다.
+  // 2026-09-17 패치로 교환권이 빠졌다. 판정은 기록의 기간으로 한다. 패치가 한가운데 든 09-17 주는
+  // 지우지 않는다. 그 주 첫 열 시간은 아직 교환권이 나왔다.
   it('기록의 기간으로 판정한다. 패치 전 주의 교환권은 남는다', () => {
     const 교환권 = (periodKey: string) =>
       record({
@@ -184,11 +185,15 @@ describe('filterUnobtainableConfirmedDrops', () => {
     const keys = new Set([
       confirmedDropKey('ocid-1', 'guardian_angel_slime', 'chaos', '2026-09-10'),
       confirmedDropKey('ocid-1', 'guardian_angel_slime', 'chaos', '2026-09-17'),
+      confirmedDropKey('ocid-1', 'guardian_angel_slime', 'chaos', '2026-09-24'),
     ])
 
-    const kept = filterUnobtainableConfirmedDrops([교환권('2026-09-10'), 교환권('2026-09-17')], keys)
+    const kept = filterUnobtainableConfirmedDrops(
+      [교환권('2026-09-10'), 교환권('2026-09-17'), 교환권('2026-09-24')],
+      keys,
+    )
 
-    expect(kept.map((entry) => entry.periodKey)).toEqual(['2026-09-10'])
+    expect(kept.map((entry) => entry.periodKey)).toEqual(['2026-09-10', '2026-09-17'])
   })
 })
 

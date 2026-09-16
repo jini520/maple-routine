@@ -390,7 +390,7 @@ describe('버전 이관: 가계부 기록에 key 를 채운다', () => {
   it('새 DB 는 이관할 것 없이 마지막 버전으로 선다', async () => {
     await getBossProfitDb()
 
-    expect(userVersion(real)).toBe(6)
+    expect(userVersion(real)).toBe(7)
   })
 
   it('옛 지출 기록의 이름으로 갈래 · 항목 · 형태별 항목 · 종류 key 를 채운다', async () => {
@@ -409,7 +409,7 @@ describe('버전 이관: 가계부 기록에 key 를 채운다', () => {
     })
     expect(byId.get('reward-split')).toMatchObject({ itemKey: null, formItemKeys: { exp: 'nightmare_paradise_2' } })
     expect(byId.get('purchase')).toMatchObject({ category: 'item_purchase', itemKey: null, itemKind: 'consumable' })
-    expect(userVersion(real)).toBe(6)
+    expect(userVersion(real)).toBe(7)
   })
 
   // 못 찾은 이름은 지우지 않는다. key 만 비고 그때 이름으로 선다.
@@ -508,7 +508,7 @@ describe('버전 이관: 드롭 기록에 아이템 key 를 채운다', () => {
       ['source_of_suffering', 'chaos_pitch_black_accessory_box'],
       [null, null],
     ])
-    expect(userVersion(real)).toBe(6)
+    expect(userVersion(real)).toBe(7)
   })
 
   // 못 찾은 이름은 지우지 않는다. key 만 비고 그때 이름과 가격이 남는다.
@@ -597,7 +597,7 @@ describe('버전 이관: 보스 기록 표의 기본키를 보스 key 로 다시
         ['lucid', '루시드', 'hard', '챌린저스2', '2026-09-12'],
       ].sort(),
     )
-    expect(userVersion(real)).toBe(6)
+    expect(userVersion(real)).toBe(7)
   })
 
   it('파티 설정과 드롭 기록도 보스 key 로 옮기고, 드롭의 아이템 key 와 가격을 지킨다', async () => {
@@ -658,7 +658,7 @@ describe('버전 이관: 보스 기록 표의 기본키를 보스 key 로 다시
         .map((column) => column.name),
     )
     expect(columns).toEqual(['ocid', 'boss_key', 'difficulty', 'period_key'])
-    expect(userVersion(real)).toBe(6)
+    expect(userVersion(real)).toBe(7)
   })
 })
 
@@ -705,7 +705,7 @@ describe('버전 이관: 강화 기록에 장비 key 를 채운다', () => {
       ['b', 'loose_control_machine_mark', '루즈 컨트롤 머신 마크'],
       ['c', null, '골드 히어로즈 엠블렘'],
     ])
-    expect(userVersion(real)).toBe(6)
+    expect(userVersion(real)).toBe(7)
   })
 })
 
@@ -783,6 +783,6 @@ describe('버전 이관: 수익 기록 · 프로필에 월드 key 를 채운다'
       ['ocid-2', '챌린저스2', 'challengers_2'],
       ['ocid-3', null, null],
     ])
-    expect(userVersion(real)).toBe(6)
+    expect(userVersion(real)).toBe(7)
   })
 })

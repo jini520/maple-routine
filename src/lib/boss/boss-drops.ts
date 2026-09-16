@@ -10,7 +10,7 @@ import {
 } from '../../types/drops'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types/scheduler'
 import { dropItemNameOf } from '../drop/drop-items'
-import { isEffectiveIn } from './boss-profit-period'
+import { isEffectiveAnytimeIn, isEffectiveIn } from './boss-profit-period'
 
 // item-drop-table.json / boss-ring-boxes.json / accessory-boxes.json 조회 헬퍼. 게임
 // 수치 데이터는 여기서 읽기만 하고 추정하지 않는다. 함수가 받는 `boss` 는 보스 key 이고 난이도는 난이도 key 다.
@@ -22,9 +22,9 @@ interface RawRewardItem {
   slot?: string
   set?: string
   note?: string
-  /** 이 날부터 나온다(KST `YYYY-MM-DD`). 패치로 생긴 아이템. */
+  /** 이 때부터 나온다(KST `YYYY-MM-DD` 또는 `YYYY-MM-DDTHH:mm`). 패치로 생긴 아이템. */
   from?: string
-  /** 이 날 전까지 나온다. 패치로 빠진 아이템. 줄을 지우면 패치 전 기록이 거짓 기록으로 지워진다. */
+  /** 이 때 전까지 나온다. 패치로 빠진 아이템. 줄을 지우면 패치 전 기록이 거짓 기록으로 지워진다. */
   until?: string
 }
 interface RawRewardEntry {
@@ -54,11 +54,17 @@ function entriesForBoss(bossKey: string): RawRewardEntry[] {
     .sort((a, b) => difficultyOrder(a.difficulty) - difficultyOrder(b.difficulty))
 }
 
+/** 그 줄이 이 기간에 든가. `now` 가 있으면 시계로 가르고, `null` 이면 기간 전체를 본다. */
+function effectiveNow(item: RawRewardItem, periodKey: string, now: Date | null): boolean {
+  return now === null ? isEffectiveAnytimeIn(item, periodKey) : isEffectiveIn(item, periodKey, now)
+}
+
 // 보스의 선택 가능한 드롭 후보(장비·소비)를 난이도 무관하게 통합해 반환한다.
 // 같은 아이템은 아이템 key+slot으로 dedupe하고, 등장하는 난이도를 difficulties에 정규 순서로 담는다.
 // 고정 드롭은 값이 난이도마다 달라 여기서 제외하고 getBossFixedDrops로 별도 표시한다.
-// 그 기간에 나오는 줄만 든다.
-export function getBossDropCandidates(boss: string, periodKey: string): DropCandidate[] {
+// 그 기간에 나오는 줄만 든다. `now` 를 주면 시계로 가르고(표시), `null` 이면 그 기간 어느 때라도
+// 나왔으면 든다(기록 정리). 갈라 두는 것은 09-17 09시에 적은 교환권을 10시에 지우지 않기 위해서다.
+export function getBossDropCandidates(boss: string, periodKey: string, now: Date | null): DropCandidate[] {
   const byKey = new Map<string, DropCandidate>()
   const order: string[] = []
 
@@ -66,7 +72,7 @@ export function getBossDropCandidates(boss: string, periodKey: string): DropCand
     const difficulty = entry.difficulty as BossDifficulty
     for (const category of SELECTABLE_DROP_CATEGORIES) {
       for (const item of entry.rewards[category] ?? []) {
-        if (!isEffectiveIn(item, periodKey)) continue
+        if (!effectiveNow(item, periodKey, now)) continue
         const key = `${category}|${item.item}|${nfc(item.slot ?? '')}`
         const existing = byKey.get(key)
         if (existing === undefined) {
@@ -90,10 +96,10 @@ export function getBossDropCandidates(boss: string, periodKey: string): DropCand
 }
 
 // 보스의 고정 드롭을 난이도별 그룹(정규 순서)으로 반환한다. 읽기 전용 표시용. 그 기간의 수량이다.
-export function getBossFixedDrops(boss: string, periodKey: string): FixedDropGroup[] {
+export function getBossFixedDrops(boss: string, periodKey: string, now: Date): FixedDropGroup[] {
   const groups: FixedDropGroup[] = []
   for (const entry of entriesForBoss(boss)) {
-    const items = (entry.rewards.fixed ?? []).filter((item) => isEffectiveIn(item, periodKey)).map((item) => ({
+    const items = (entry.rewards.fixed ?? []).filter((item) => isEffectiveIn(item, periodKey, now)).map((item) => ({
       key: item.item,
       name: dropItemNameOf(item.item, item.item),
       amount: item.amount,
@@ -124,7 +130,7 @@ export function getBossDifficulties(boss: string): BossDifficulty[] {
 // 결과는 상자 key(=타일 key) 기준. 시트 난이도 변경 재조정·처치 난이도 확정 정리에 공통으로 쓴다.
 export function getObtainableTileKeys(boss: string, difficulty: BossDifficulty, periodKey: string): Set<string> {
   return new Set(
-    getBossDropCandidates(boss, periodKey)
+    getBossDropCandidates(boss, periodKey, null)
       .filter((candidate) => candidate.difficulties.includes(difficulty))
       .map((candidate) => candidate.key),
   )
