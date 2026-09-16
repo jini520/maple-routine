@@ -28,7 +28,7 @@ import type { TabParamList } from '../../navigation/routes'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { tapFeedback } from '../../native/haptics'
 import { emptyNoticeText } from '../../features/notice/notice-display'
-import { groupNoticesByKind, refreshNoticeKind } from '../../features/notice/notice-feed'
+import { groupNoticesByKind, refreshNoticeKinds } from '../../features/notice/notice-feed'
 import { getNotices } from '../../storage/notices'
 import { NOTICE_KINDS, type Notice, type NoticeKind } from '../../types/notice'
 import { NoticeBannerRail } from './NoticeBannerRail'
@@ -94,6 +94,11 @@ export function SettingsScreen(): React.JSX.Element {
   const displayedVersion = useRunningAppVersion()
   const [notices, setNotices] = useState<Record<NoticeKind, Notice[]>>(NO_NOTICES)
 
+  // 받은 갈래 하나를 화면에 반영한다. 진입 조회와 당김이 같은 함수로 들어온다.
+  const showKind = useCallback((kind: NoticeKind, received: Notice[]): void => {
+    setNotices((current) => ({ ...current, [kind]: received }))
+  }, [])
+
   // 들어올 때마다 다섯 목록을 다시 받는다. 사본을 먼저 그리고 분류마다 받은 것으로 바꾼다. 실패한 분류는 사본이 선다.
   // 사본을 다 읽은 뒤에 부른다. 거꾸로면 늦게 끝난 사본 읽기가 방금 받은 목록을 덮는다.
   useFocusEffect(
@@ -105,22 +110,29 @@ export function SettingsScreen(): React.JSX.Element {
         })
         .catch(() => undefined)
         .then(() => {
-          for (const kind of NOTICE_KINDS) {
-            void refreshNoticeKind(kind).then((received) => {
-              if (alive && received !== null) setNotices((current) => ({ ...current, [kind]: received }))
-            })
-          }
+          // 진입은 실패해도 조용하다. 사용자가 부탁한 조회가 아니라 탭을 열었을 뿐이다.
+          void refreshNoticeKinds(NOTICE_KINDS, (kind, received) => {
+            if (alive) showKind(kind, received)
+          })
         })
       return () => {
         alive = false
       }
-    }, []),
+    }, [showKind]),
   )
+
+  // 당김은 사용자가 요청한 조회라 아무 일도 안 일어나면 고장으로 읽힌다. 그래서 전부 실패했을 때만
+  // 말한다 - 키가 없으면 넥슨 네 갈래가 언제나 실패라, 일부 실패에도 말하면 앱 공지를 제대로
+  // 받고도 매번 토스트가 뜬다.
+  const refresh = useCallback(async (): Promise<void> => {
+    const { allFailed } = await refreshNoticeKinds(NOTICE_KINDS, showKind)
+    if (allFailed) useToastStore.getState().showError('소식을 불러오지 못했습니다')
+  }, [showKind])
 
   const openNotice = (notice: Notice): void => navigation.navigate('SettingsNoticeDetail', { noticeId: notice.id })
 
   return (
-    <ScreenScroll>
+    <ScreenScroll onRefresh={refresh}>
         {/* `screen-Settings` 는 나머지 세 탭 화면과 같은 관례다(`screen-Content`·`-Boss`·`-Profit`).
             이것이 없어서 내비게이션 테스트가 **자리표시자의 같은 testID 를 보고 초록**이었고,
             설정 탭이 통째로 빠진 것을 아무도 못 잡았다(실기기 관측). */}

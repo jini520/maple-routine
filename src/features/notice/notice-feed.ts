@@ -43,6 +43,34 @@ export function refreshNoticeKind(kind: NoticeKind): Promise<Notice[] | null> {
   return request
 }
 
+/**
+ * 갈래 여럿을 한 번에 받는 함수. **화면 진입과 당겨서 새로고침이 같이 쓴다.**
+ *
+ * 도착하는 대로 알리고 전부 끝난 뒤에 판정을 낸다. 둘 다 필요하다. 점진 반영은 늦은 갈래 하나가
+ * 나머지를 붙잡지 않게 하고, 당김 인디케이터는 **전부 끝나야** 닫힌다. 먼저 끝난 갈래에서 닫으면
+ * 아직 도는 조회가 남은 채로 화면이 다 됐다고 말한다.
+ *
+ * @param kinds 받을 갈래
+ * @param onReceived 한 갈래가 도착할 때마다 부른다. **실패한 갈래는 안 부른다**. 사본이 그대로
+ *   서야 하는데 빈 배열로 알리면 화면이 그 갈래를 비운다
+ * @returns `allFailed` 는 준 갈래가 **전부** 실패했을 때만 참. 일부 실패는 흔하고 정상이다.
+ *   키가 없으면 넥슨 네 갈래가 언제나 `null` 이다
+ */
+export async function refreshNoticeKinds(
+  kinds: readonly NoticeKind[],
+  onReceived: (kind: NoticeKind, notices: Notice[]) => void,
+): Promise<{ allFailed: boolean }> {
+  const results = await Promise.all(
+    kinds.map(async (kind) => {
+      const received = await refreshNoticeKind(kind)
+      if (received !== null) onReceived(kind, received)
+      return received
+    }),
+  )
+
+  return { allFailed: results.every((received) => received === null) }
+}
+
 /** 한 건의 상세. id 모양이 넥슨 공지면 넥슨 상세, 아니면 서버 상세다. */
 export async function fetchNoticeDetail(id: string): Promise<NoticeLookup> {
   const ref = nexonNoticeRef(id)

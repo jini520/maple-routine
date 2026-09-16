@@ -8,7 +8,7 @@ import { fetchNotice, fetchNotices } from '../../../server/notices'
 import { getAuthConfig } from '../../../storage/api-key'
 import type { Notice, NoticeKind } from '../../../types/notice'
 import { saveNoticeResponse } from '../notice-copy'
-import { fetchNoticeDetail, groupNoticesByKind, refreshNoticeKind } from '../notice-feed'
+import { fetchNoticeDetail, groupNoticesByKind, refreshNoticeKind, refreshNoticeKinds } from '../notice-feed'
 
 jest.mock('../../../nexon/notice/client', () => ({
   __esModule: true,
@@ -103,6 +103,74 @@ describe('refreshNoticeKind', () => {
     nexonList.mockResolvedValueOnce([])
     await refreshNoticeKind('event')
     expect(nexonList).toHaveBeenCalledTimes(2)
+  })
+})
+
+// 진입 조회와 당김이 같이 쓰는 함수. 도착하는 대로 알리고, 전부 끝난 뒤에 판정을 낸다.
+describe('refreshNoticeKinds', () => {
+  it('준 갈래를 전부 부르고 도착하는 대로 알린다', async () => {
+    serverList.mockResolvedValueOnce([notice('notice-1', 'app')])
+    nexonList.mockResolvedValueOnce([notice('event-1', 'event')])
+    const received = jest.fn()
+
+    await refreshNoticeKinds(['app', 'event'], received)
+
+    expect(received).toHaveBeenCalledWith('app', [notice('notice-1', 'app')])
+    expect(received).toHaveBeenCalledWith('event', [notice('event-1', 'event')])
+  })
+
+  // 실패한 갈래는 사본이 그대로 서야 한다. 빈 배열로 알리면 화면이 그 갈래를 비운다.
+  it('실패한 갈래는 알리지 않는다', async () => {
+    serverList.mockResolvedValueOnce(null)
+    nexonList.mockResolvedValueOnce([notice('event-1', 'event')])
+    const received = jest.fn()
+
+    await refreshNoticeKinds(['app', 'event'], received)
+
+    expect(received).toHaveBeenCalledTimes(1)
+    expect(received).toHaveBeenCalledWith('event', [notice('event-1', 'event')])
+  })
+
+  // 키가 없으면 넥슨 네 갈래가 전부 null 이다. 그때도 앱 공지를 받았으면 사용자에게 할 말이 없다.
+  it('하나라도 성공하면 allFailed 가 거짓이다', async () => {
+    serverList.mockResolvedValueOnce([notice('notice-1', 'app')])
+    nexonList.mockRejectedValueOnce(new Error('망'))
+
+    await expect(refreshNoticeKinds(['app', 'event'], jest.fn())).resolves.toEqual({ allFailed: false })
+  })
+
+  it('전부 실패하면 allFailed 가 참이다', async () => {
+    serverList.mockResolvedValueOnce(null)
+    nexonList.mockRejectedValueOnce(new Error('망'))
+
+    await expect(refreshNoticeKinds(['app', 'event'], jest.fn())).resolves.toEqual({ allFailed: true })
+  })
+
+  // 빈 배열은 실패가 아니라 지금 게시 중인 글이 없다는 답이다.
+  it('빈 목록만 받아도 실패가 아니다', async () => {
+    nexonList.mockResolvedValueOnce([])
+    const received = jest.fn()
+
+    await expect(refreshNoticeKinds(['event'], received)).resolves.toEqual({ allFailed: false })
+    expect(received).toHaveBeenCalledWith('event', [])
+  })
+
+  // 인디케이터가 이 약속에 매달린다. 먼저 끝난 갈래에서 닫으면 아직 도는 조회가 남은 채로 다 됐다고 말한다.
+  it('갈래 하나라도 도는 동안은 안 끝난다', async () => {
+    let resolveEvent: (value: Notice[]) => void = () => {}
+    serverList.mockResolvedValueOnce([notice('notice-1', 'app')])
+    nexonList.mockReturnValueOnce(new Promise((r) => (resolveEvent = r)))
+    const done = jest.fn()
+
+    const pending = refreshNoticeKinds(['app', 'event'], jest.fn())
+    void pending.then(done)
+    // 앱 공지는 이미 끝났다. 몇 바퀴를 돌려도 event 가 남아 있는 한 안 끝나야 한다.
+    for (let i = 0; i < 10; i += 1) await Promise.resolve()
+    expect(done).not.toHaveBeenCalled()
+
+    resolveEvent([])
+    await pending
+    expect(done).toHaveBeenCalled()
   })
 })
 
