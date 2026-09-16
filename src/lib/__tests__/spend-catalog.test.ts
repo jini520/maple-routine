@@ -15,6 +15,8 @@ import {
   pickSpendOption,
   pointToMeso,
   spendGroupsOf,
+  rewardCoinMeso,
+  spendRewardCoins,
   spendRewardItemKeys,
   spendRewardPrice,
   tariffMesoOf,
@@ -272,6 +274,36 @@ describe('형태별 단계: 값과 이름', () => {
     it('0단계는 값이 없다. 둘 다 0단계면 0 이다', () => {
       expect(spendRewardPrice(하이마운틴, { exp: BASE_TIER, sol_erda: BASE_TIER })).toBe(0)
       expect(spendRewardPrice(하이마운틴, {})).toBe(0)
+    })
+  })
+
+  // 추가 리워드를 사면 세라자르 주화를 받고, 그 판매가가 지출에서 빠진다(사용자 제공 2026-09-16).
+  describe('spendRewardCoins: 고른 단계가 주는 주화', () => {
+    // 형태마다 각각 준다. 금액이 합인 것과 같은 이유다.
+    it('둘 다 고르면 두 개수를 더한다', () => {
+      expect(spendRewardCoins(하이마운틴, { exp: '1단계', sol_erda: '2단계' })).toBe(12)
+    })
+
+    it('하나만 고르면 그 개수 하나다', () => {
+      expect(spendRewardCoins(하이마운틴, { exp: '1단계' })).toBe(4)
+    })
+
+    // 0단계는 산 것이 아니라 받을 주화도 없다.
+    it('0단계는 주화가 없다. 둘 다 0단계면 0 이다', () => {
+      expect(spendRewardCoins(하이마운틴, { exp: BASE_TIER, sol_erda: BASE_TIER })).toBe(0)
+      expect(spendRewardCoins(하이마운틴, {})).toBe(0)
+    })
+
+    // 주화를 안 주는 대표(몬스터 파크)는 단계를 골라도 0 이다.
+    it('주화를 안 주는 대표는 0 이다', () => {
+      const 몬스터파크 = spendGroupsOf('content', 패치후)[1].choices[0]
+
+      expect(spendRewardCoins(몬스터파크, { exp: '1단계' })).toBe(0)
+    })
+
+    it('개수를 판매가로 바꾼다', () => {
+      expect(rewardCoinMeso(12)).toBe(480_000_000)
+      expect(rewardCoinMeso(0)).toBe(0)
     })
   })
 

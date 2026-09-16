@@ -46,6 +46,8 @@ export function sumDropPayout(drops: DropPriceFields[]): number {
  */
 export function formatMesoUnits(meso: number): string {
   if (meso === 0) return '0'
+  // 부호를 떼어 접고 다시 붙인다. 단위 나눗셈이 음수에서 0개로 떨어져 글자가 통째로 빈다.
+  if (meso < 0) return `-${formatMesoUnits(-meso)}`
   const parts: string[] = []
   let rest = meso
   for (const [size, suffix] of AMOUNT_UNITS) {

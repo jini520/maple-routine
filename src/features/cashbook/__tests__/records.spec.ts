@@ -229,7 +229,8 @@ describe('마지막 사냥 자리를 기억한다', () => {
 describe('spendMesoOf: 메소 축으로 접는다', () => {
   const { spendMesoOf } = require('../records') as typeof import('../records')
 
-  const 행 = { ...메포지출, id: 'x', recordedAt: '' }
+  // 환산만 보는 줄이라 주화를 안 받는 행이다. 주화는 아래 describe 가 따로 본다.
+  const 행 = { ...메포지출, id: 'x', recordedAt: '', formItemKeys: null }
 
   it('메포는 시세로 환산해 더한다', () => {
     expect(spendMesoOf(행)).toBe(2_542_372_881)
@@ -252,6 +253,61 @@ describe('spendMesoOf: 메소 축으로 접는다', () => {
   })
 })
 
+/**
+ * 에픽던전 추가 리워드는 세라자르 주화를 주고 그 판매가가 지출에서 빠진다(사용자 제공 2026-09-16).
+ *
+ * **읽을 때 센다.** 저장 칸이 없어 지난 기록도 다음 읽기부터 뺀 값으로 선다.
+ */
+describe('spendMesoOf: 세라자르 주화를 뺀다', () => {
+  const { spendMesoOf } = require('../records') as typeof import('../records')
+
+  const 행 = { ...메포지출, id: 'x', recordedAt: '' }
+
+  // 솔 에르다 2단계 하나라 주화 8개다. 8 × 40,000,000 = 320,000,000.
+  it('고른 단계의 주화 판매가만큼 뺀다', () => {
+    expect(spendMesoOf(행)).toBe(2_542_372_881 - 320_000_000)
+  })
+
+  // 형태마다 각각 주므로 둘을 다 사면 4 + 8 = 12개다.
+  it('형태 둘을 사면 두 형태의 주화를 다 뺀다', () => {
+    const 둘 = {
+      ...행,
+      formItemKeys: { exp: 'high_mountain_1', sol_erda: 'high_mountain_2' },
+      pointAmount: 37_500,
+    }
+
+    expect(spendMesoOf(둘)).toBe(3_177_966_101 - 480_000_000)
+  })
+
+  // 0 에서 멈추면 그 줄과 하루 합계가 조용히 달라진다(사용자 결정).
+  it('뺀 값이 음수면 음수 그대로다', () => {
+    const 비싼시세 = {
+      ...행,
+      formItemKeys: { exp: 'high_mountain_1' },
+      pointAmount: 7_500,
+      pointPer100mMeso: 10_000,
+    }
+
+    expect(spendMesoOf(비싼시세)).toBe(75_000_000 - 160_000_000)
+  })
+
+  // 무엇을 샀는지 모르는 행이라 셀 주화가 없다.
+  it('형태별 항목 key 가 없는 옛 행은 안 뺀다', () => {
+    expect(spendMesoOf({ ...행, formItemKeys: null })).toBe(2_542_372_881)
+  })
+
+  // 메포를 메소로 환산하지 않는 행이라 뺄 값을 얹을 축이 없다.
+  it('시세를 모르는 행은 안 뺀다', () => {
+    expect(spendMesoOf({ ...행, mesoAmount: 500_000, pointAmount: null, pointPer100mMeso: null }))
+      .toBe(500_000)
+  })
+
+  // 주화를 안 주는 갈래는 그대로다. 되짚어도 개수가 0 이다.
+  it('에픽던전이 아닌 행은 그대로다', () => {
+    expect(spendMesoOf({ ...행, category: 'etc', formItemKeys: null })).toBe(2_542_372_881)
+  })
+})
+
 describe('칸 금액', () => {
   it('두 원천을 날짜별로 접는다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([
@@ -264,7 +320,8 @@ describe('칸 금액', () => {
 
     expect(amounts['2026-08-23']).toEqual({
       incomeMeso: 1_743_000_000,
-      expenseMeso: 2_542_372_881,
+      // 메포 환산에서 주화 8개(320,000,000)가 빠진 값이다.
+      expenseMeso: 2_542_372_881 - 320_000_000,
     })
   })
 
@@ -1086,7 +1143,7 @@ describe('강화 지출이 칸에 든다', () => {
     enhancement.loadEnhancementHistory.mockResolvedValue([큐브()])
 
     expect((await 칸금액('2026-08-01', '2026-08-31'))['2026-08-23'].expenseMeso)
-      .toBe(2_542_372_881 + 450_000)
+      .toBe(2_542_372_881 - 320_000_000 + 450_000)
   })
 
   /**

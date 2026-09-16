@@ -353,10 +353,79 @@ describe('항목. 고르면 채워진다', () => {
 
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
-    // 30,000 메포 ÷ 1,180 × 1억 = 2,542,372,881 메소.
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('25억 4237만 2881')
-    expect(view.getByText('메소')).toBeTruthy()
+    // 30,000 메포 ÷ 1,180 × 1억 = 2,542,372,881 메소. 여기서 주화 8개(3억 2천만)가 빠진다.
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('22억 2237만 2881')
+    // 주화 줄도 메소를 적으므로 큰 숫자의 통화는 그 줄의 이름으로 짚는다.
+    expect(view.getByTestId('spend-sheet-amount-unit')).toHaveTextContent(/메소/)
     expect(view.queryByTestId('spend-sheet-amount-hint')).toBeNull()
+  })
+})
+
+/**
+ * 세라자르 주화(사용자 제공 2026-09-16). 추가 리워드를 사면 받고 상점에 팔면 메소가 되므로 그
+ * 판매가가 합계에서 빠진다. 줄은 **개수와 판매가**를 적는다(사용자 지정).
+ */
+describe('세라자르 주화', () => {
+  const 주화줄 = (view: Rendered) => view.getByTestId('spend-sheet-coins')
+
+  // 형태마다 각각 주므로 1단계 4개 + 2단계 8개다. 개수만 적으면 합계가 왜 줄었는지를 사람이
+  // 곱셈으로 이어야 한다.
+  it('개수와 그 개수를 판 메소를 적는다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180 })
+
+    await 에픽던전(view, '하이마운틴', '경험치', '1단계')
+    await 형태단계(view, '솔 에르다', '2단계')
+
+    expect(주화줄(view)).toHaveTextContent(/^12개주화 판매4억 8천만메소$/)
+  })
+
+  // 단계를 고를 때 줄이 새로 끼어들면 그 아래가 통째로 밀린다.
+  it('0단계뿐이어도 0개로 서 있다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180 })
+
+    await 누르기(view, '하이마운틴')
+
+    expect(주화줄(view)).toHaveTextContent(/^0개주화 판매0메소$/)
+  })
+
+  it('주화를 안 주는 대표에는 줄이 없다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180 })
+
+    await 누르기(view, '몬스터 파크')
+
+    expect(view.queryByTestId('spend-sheet-coins')).toBeNull()
+  })
+
+  it('합계에서 주화 판매가가 빠진다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180 })
+
+    await 에픽던전(view, '하이마운틴', '경험치', '1단계')
+    await 형태단계(view, '솔 에르다', '2단계')
+
+    // 37,500 메포 ÷ 1,180 × 1억 = 3,177,966,101 메소. 주화 12개는 4억 8천만이다.
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('26억 9796만 6101')
+  })
+
+  // 메포를 메소로 환산하지 않는 상태라 뺄 값을 얹을 축이 없다. 여기서 주화만 빼면 아직 아무것도
+  // 안 센 줄이 음수로 선다.
+  it('시세를 안 쳤으면 합계가 0 이다. 주화만큼 음수로 안 내려간다', async () => {
+    const view = await 그리기({ lastPointRate: null })
+
+    await 에픽던전(view, '하이마운틴', '경험치', '2단계')
+
+    // 주화 판매가는 시세와 무관한 값이라 그대로 선다. 안 빠지는 것은 합계뿐이다.
+    expect(주화줄(view)).toHaveTextContent(/^8개주화 판매3억 2천만메소$/)
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('0')
+  })
+
+  // 0 에서 멈추면 그 줄과 하루 합계가 조용히 달라진다(사용자 결정).
+  it('뺀 값이 음수면 음수 그대로 선다', async () => {
+    const view = await 그리기({ lastPointRate: 10_000 })
+
+    await 에픽던전(view, '하이마운틴', '경험치', '1단계')
+
+    // 7,500 메포 ÷ 10,000 × 1억 = 75,000,000 메소. 주화 4개는 1억 6천만이다.
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('-8500만')
   })
 })
 
@@ -747,13 +816,14 @@ describe('형태별 단계', () => {
   })
 
   // 큰 숫자는 그 합을 메소로 옮긴 값이다. 37,500 ÷ 1,180 × 1억 = 3,177,966,101 메소.
+  // 거기서 주화 12개(4억 8천만)가 빠진다.
   it('큰 숫자가 그 합을 메소로 든다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
 
     await 에픽던전(view, '하이마운틴', '경험치', '1단계')
     await 형태단계(view, '솔 에르다', '2단계')
 
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('31억 7796만 6101')
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('26억 9796만 6101')
   })
 
   // 0단계인 형태를 이름이나 key 에 적으면 **안 산 것이 산 것처럼** 읽힌다.
@@ -1287,7 +1357,8 @@ describe('시세가 비어 있을 때', () => {
       fireEvent.changeText(view.getByTestId('spend-sheet-rate'), '1180')
     })
 
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('25억 4237만 2881')
+    // 2,542,372,881 메소에서 주화 8개(3억 2천만)가 빠진 값이다.
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('22억 2237만 2881')
     // 별표는 **물어본 칸이라는 표시**라 값을 채워도 남는다. `왜 막혔나` 와는 다른 말이다.
     expect(view.getByTestId('spend-sheet-required')).toBeTruthy()
   })
@@ -1629,8 +1700,9 @@ describe('수량 줄', () => {
 
     await 에픽던전(view, '하이마운틴', '경험치', '1단계')
 
-    // 7,500 메포 × 1 ÷ 1,180 × 1억 = 635,593,220 메소. 낸 메포를 적던 힌트는 사라졌다.
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('6억 3559만 3220')
+    // 7,500 메포 × 1 ÷ 1,180 × 1억 = 635,593,220 메소에서 주화 4개(1억 6천만)가 빠진다.
+    // 낸 메포를 적던 힌트는 사라졌다.
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('4억 7559만 3220')
   })
 
   it('상한이 여럿인 항목은 수량이 그대로 선다. 규칙이지 특별 취급이 아니다', async () => {

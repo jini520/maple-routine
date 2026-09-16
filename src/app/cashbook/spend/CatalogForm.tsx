@@ -20,7 +20,8 @@ import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { formatMesoCompact } from '../../../lib/cashbook/meso-compact'
-import { spendIconOf } from '../../../lib/assets/asset-lookup'
+import { formatMesoUnits } from '../../../lib/drop/drop-price'
+import { getItemIconUrlByFile, spendIconOf } from '../../../lib/assets/asset-lookup'
 import { spendCategoryNameOf, spendFormOf } from '../../../lib/cashbook/categories'
 import {
   BASE_TIER,
@@ -33,10 +34,13 @@ import {
   optionItemOf,
   pickSpendOption,
   pointToMeso,
+  rewardCoinMeso,
   spendGroupsOf,
+  spendRewardCoins,
   spendRewardItemKeys,
   spendRewardPrice,
   tierNameOf,
+  SPEND_REWARD_COIN,
   type SpendCatalogChoice,
   type SpendCatalogItem,
   type SpendTileIcon,
@@ -76,6 +80,17 @@ function tilePriceLabel(items: readonly SpendCatalogItem[]): string {
  */
 const TILE_ICON_SIZE = 24
 const TITLE_ICON_SIZE = 18
+
+/** 주화 줄의 그림. 참조표가 파일 이름을 들어서 화면이 그 이름을 안 적는다. */
+const COIN_ICON = getItemIconUrlByFile(SPEND_REWARD_COIN.icon)
+
+/**
+ * 주화 개수 자리의 바닥 폭. 개수는 이 자리의 **오른쪽 끝**에 붙는다.
+ *
+ * `4` 와 `12` 의 글자 폭 차이가 뒤의 `주화 판매` 를 밀지 않는다. 왼쪽으로 붙이면 그 차이가
+ * 그대로 뒤로 전해진다.
+ */
+const COIN_COUNT_SLOT = { minWidth: 72 }
 
 function ItemTile(props: {
   /** 타일 key. 그림의 `testID` 가 쓴다. */
@@ -252,9 +267,18 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
       ? spendRewardPrice(choice, tierByForm)
       : (item?.unitPrice ?? 0)
   const amount = unitPrice * quantity
-  const totalMeso = usesPoint ? pointToMeso(amount, rate ?? 0) : amount
   // 메소로 셀 수 없는 상태. 시세 줄의 빨간 `*` 와 꺼진 저장 버튼이 그 사실을 말한다.
   const blocked = usesPoint && (rate === null || rate <= 0)
+  /** 고른 단계가 주는 세라자르 주화. 팔면 메소가 되므로 그만큼 덜 나간 것이다. */
+  const coins = choice === null ? 0 : spendRewardCoins(choice, tierByForm)
+  /** 주화를 주는 대표인가. 단계를 고르기 전에도 줄을 세울지 정하므로 고른 것을 안 본다. */
+  const givesCoins = choice !== null && choice.items.some((each) => (each.rewardCoins ?? 0) > 0)
+  /*
+   * 주화는 **시세를 칠 때까지 안 뺀다**. 그 전의 합계는 메포를 환산하지 않은 0 이라, 여기서
+   * 주화만 빼면 아직 아무것도 안 센 줄이 음수로 선다. 저장된 기록을 읽는 `spendMesoOf` 도
+   * 시세가 없는 행에서는 같은 이유로 안 뺀다.
+   */
+  const totalMeso = usesPoint ? pointToMeso(amount, rate ?? 0) - (blocked ? 0 : rewardCoinMeso(coins)) : amount
   const picked = forms.length > 0 ? rewardName !== null : item !== null
   const canSave = picked && !blocked
 
@@ -412,6 +436,49 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
               />
             </FieldRow>
           ))}
+
+          {givesCoins && (
+            /*
+             * 주화 줄. 개수와 **그 개수를 판 메소**를 적는다(사용자 지정). 판매가가 있어야
+             * 합계가 왜 줄었는지가 이 줄에서 읽힌다. 개수만 적으면 40,000,000 곱셈을 사람이 한다.
+             *
+             * 이름 자리를 그림이 진다. 수입 시트의 솔 에르다 조각 줄과 같은 방식이고, 글자 여섯
+             * 자 폭이 값으로 간다. 0단계뿐이어도 `0개` 로 서 있다. 단계를 고를 때 줄이 새로
+             * 끼어들면 그 아래가 통째로 밀린다.
+             */
+            <View
+              testID="spend-sheet-coins"
+              className="min-h-8 flex-row items-center gap-3 border-b border-border pb-2"
+            >
+              {COIN_ICON !== null && (
+                <Image
+                  source={COIN_ICON}
+                  className="h-6 w-6 shrink-0"
+                  resizeMode="contain"
+                  aria-label={SPEND_REWARD_COIN.name}
+                />
+              )}
+              <View className="flex-row items-baseline justify-end gap-1" style={COIN_COUNT_SLOT}>
+                <Text
+                  className={`text-sm font-semibold ${coins === 0 ? 'text-text-disabled' : 'text-text'}`}
+                  style={TABULAR_NUMS}
+                >
+                  {coins}
+                </Text>
+                <Text className="text-xs text-text-muted">개</Text>
+              </View>
+              <Text className="shrink-0 text-xs text-text-muted">주화 판매</Text>
+              <View className="ml-auto flex-row items-baseline gap-1">
+                <Text
+                  className={`text-sm font-semibold ${coins === 0 ? 'text-text-disabled' : 'text-text'}`}
+                  style={TABULAR_NUMS}
+                >
+                  {formatMesoUnits(rewardCoinMeso(coins))}
+                </Text>
+                <Text className="text-xs text-text-muted">메소</Text>
+              </View>
+            </View>
+          )}
 
           {/* 축마다 한 줄이고 처음에는 아무것도 안 골랐다. 남은 항목이 그 축을 안 가지면 잠긴다. */}
           {choice !== null &&
