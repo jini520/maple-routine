@@ -45,6 +45,55 @@ beforeEach(async () => {
     subscriptions: NO_SUBSCRIPTIONS,
     pending: {},
     blockedByPermission: false,
+    permissionGranted: null,
+  })
+})
+
+// 스위치는 켜져 있는데 기기가 꺼져 있으면 알림이 영영 안 온다. 그 어긋남은 켜려다 막힌 적이
+// 없어서 `blockedByPermission` 이 못 잡는다.
+describe('권한 읽기', () => {
+  it('허용돼 있으면 참으로 적는다', async () => {
+    hasPermission.mockResolvedValue(true)
+
+    await useNoticeStore.getState().refreshPermission()
+
+    expect(useNoticeStore.getState().permissionGranted).toBe(true)
+  })
+
+  it('꺼져 있으면 거짓으로 적는다', async () => {
+    hasPermission.mockResolvedValue(false)
+
+    await useNoticeStore.getState().refreshPermission()
+
+    expect(useNoticeStore.getState().permissionGranted).toBe(false)
+  })
+
+  // 화면에 들어온 것은 알림을 켜겠다고 말한 자리가 아니다. iOS 는 팝업을 한 번밖에 못 띄운다.
+  it('묻지 않는다', async () => {
+    hasPermission.mockResolvedValue(false)
+
+    await useNoticeStore.getState().refreshPermission()
+
+    expect(requestPermission).not.toHaveBeenCalled()
+  })
+
+  // 못 읽었는데 거짓으로 적으면 화면이 멀쩡한 기기를 꺼졌다고 말한다.
+  it('읽기가 던지면 값을 안 건드린다', async () => {
+    useNoticeStore.setState({ permissionGranted: true })
+    hasPermission.mockRejectedValue(new Error('권한 확인 실패'))
+
+    await expect(useNoticeStore.getState().refreshPermission()).resolves.toBeUndefined()
+
+    expect(useNoticeStore.getState().permissionGranted).toBe(true)
+  })
+
+  // 재구독은 이미 권한을 읽는다. 그 값을 버리면 같은 것을 두 번 묻게 된다.
+  it('재구독이 읽은 값도 남는다', async () => {
+    hasPermission.mockResolvedValue(false)
+
+    await useNoticeStore.getState().resubscribe()
+
+    expect(useNoticeStore.getState().permissionGranted).toBe(false)
   })
 })
 

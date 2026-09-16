@@ -7,10 +7,11 @@
  *
  * **이 화면은 스위치만 있어도 거짓말을 안 한다.** 이름이 `알림 설정` 이고 실제로 그것뿐이다.
  */
-import { useState } from 'react'
-import { Linking, Pressable, View } from 'react-native'
+import { useFocusEffect } from '@react-navigation/native'
+import { useCallback, useState } from 'react'
+import { Platform, Pressable, View } from 'react-native'
 
-import { Card, Switch, Text } from '../../components/atoms'
+import { Button, Card, Switch, Text } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
@@ -18,6 +19,7 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { useNoticeStore } from '../../features/notice/store'
 import { anySubscribed, NOTICE_TOPICS } from '../../features/notice/topics'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
+import { openNotificationSettings } from './notification-settings-link'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
 
 /**
@@ -47,11 +49,31 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
   const setSubscribed = useNoticeStore((state) => state.setSubscribed)
   const setAllSubscribed = useNoticeStore((state) => state.setAllSubscribed)
   const blockedByPermission = useNoticeStore((state) => state.blockedByPermission)
+  const permissionGranted = useNoticeStore((state) => state.permissionGranted)
+  const refreshPermission = useNoticeStore((state) => state.refreshPermission)
   /** 누른 값을 덮은 구독. 스위치가 왕복을 기다리지 않게 하는 값. */
   const shown = { ...subscriptions, ...pending }
   // **저장하지 않고 파생한다.** 저장하면 `전체는 켜졌는데 넷은 다 꺼진` 상태가 생기고, 그때
   // 화면은 스위치가 켜졌다고 말하면서 알림은 안 온다.
   const on = anySubscribed(shown)
+
+  // 들어올 때마다 읽는다. 기기 설정에 갔다 오는 사이 값이 바뀌고, 그 왕복이 이 화면에서 시작된다.
+  useFocusEffect(
+    useCallback(() => {
+      void refreshPermission()
+    }, [refreshPermission]),
+  )
+
+  /**
+   * 기기가 알림을 막고 있어 켜 둔 것이 안 오는 상태.
+   *
+   * `blockedByPermission` 만으로는 못 잡는다. 그것은 켜기를 눌러 본 적이 있어야 참인데, 권한을
+   * 받아 켜 둔 뒤 나중에 기기에서 끈 사용자는 누른 적이 없다.
+   *
+   * **켜 둔 것이 없으면 말하지 않는다.** 알림을 안 쓰기로 한 사용자에게는 잔소리이고, iOS 는
+   * 한 번도 안 물으면 설정에 그 앱의 알림 항목을 아예 안 만들어 보낼 곳이 없다.
+   */
+  const deviceBlocked = blockedByPermission || (permissionGranted === false && on)
   /**
    * 스위치를 못 켠 이유. **삼키면 화면이 아무 말도 안 한다.**
    *
@@ -73,9 +95,23 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
       hasTabBar={false}
       header={
         <PageHeader>
-          <PageHeaderTitleRow className="gap-2">
-            <BackButton onPress={() => navigation.goBack()} />
-            <Text className="text-lg font-semibold text-text">알림 설정</Text>
+          <PageHeaderTitleRow className="justify-between">
+            <View className="flex-row items-center gap-2">
+              <BackButton onPress={() => navigation.goBack()} />
+              <Text className="text-lg font-semibold text-text">알림 설정</Text>
+            </View>
+            {/* 아래 권한 카드는 **켜려다 막혔을 때만** 나온다. 막힌 적 없이 기기 쪽에서 알림을
+                끄거나 채널·방해 금지를 손보러 가려는 사용자에게는 앱 안에 길이 없었다. */}
+            <Button
+              variant="text"
+              size="compact"
+              aria-label="OS 알림 설정 열기"
+              onPress={() => {
+                void openNotificationSettings(Platform.OS).catch(() => undefined)
+              }}
+            >
+              기기 설정
+            </Button>
           </PageHeaderTitleRow>
         </PageHeader>
       }
@@ -112,13 +148,13 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
         {/* **전체 스위치 밖에 산다.** 전체를 켜려다 권한에 막히면 넷은 안 켜지고 `on` 은 거짓인데,
             안내가 그 안에 있으면 화면이 아무 말도 안 하고 사용자는 스위치가 안 켜지는 것만 본다.
             iOS 는 여기서 팝업을 다시 못 띄우므로 OS 설정으로 보내는 것 말고 할 수 있는 일이 없다. */}
-        {blockedByPermission && (
+        {deviceBlocked && (
           <Card className="px-6">
             <Pressable
               role="button"
               aria-label="알림 권한 설정 열기"
               onPress={() => {
-                void Linking.openSettings().catch(() => undefined)
+                void openNotificationSettings(Platform.OS).catch(() => undefined)
               }}
               className="py-4"
             >

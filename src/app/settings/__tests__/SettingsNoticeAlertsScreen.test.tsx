@@ -1,6 +1,7 @@
 // 소식 알림 스위치 넷. 목록에서 떼어 낸 화면이다 - 분류마다 목록이 생겨 스위치를 어느
 // 목록에 둬도 나머지 셋이 안 보인다.
 import { act, fireEvent } from '@testing-library/react-native'
+import { Platform } from 'react-native'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { useNoticeStore } from '../../../features/notice/store'
@@ -9,11 +10,27 @@ import { NO_SUBSCRIPTIONS } from '../../../types/notice'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { setHapticsPort, setNotificationsPort, setPushPort } from '../../../native/ports'
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
+import { openNotificationSettings } from '../notification-settings-link'
 import { SettingsNoticeAlertsScreen } from '../SettingsNoticeAlertsScreen'
 
 jest.mock('../../../hooks/useSettingsNavigation', () => ({
   __esModule: true,
   useSettingsNavigation: () => ({ navigate: jest.fn(), goBack: jest.fn() }),
+}))
+
+jest.mock('../notification-settings-link', () => ({
+  __esModule: true,
+  openNotificationSettings: jest.fn().mockResolvedValue(undefined),
+}))
+
+jest.mock('@react-navigation/native', () => ({
+  // 통째로 갈아 끼우면 이 패키지가 내보내는 컨텍스트까지 사라진다. 실물을 깔고 필요한 것만 덮는다.
+  ...jest.requireActual('@react-navigation/native'),
+  // `useFocusEffect` 는 내비게이션 컨텍스트를 요구한다. 마운트를 첫 포커스로 흉내 낸다.
+  useFocusEffect: (callback: () => void | (() => void)) => {
+    const react = require('react') as typeof import('react')
+    react.useEffect(callback, [callback])
+  },
 }))
 
 /** 전체 스위치가 켜진 상태. 넷 중 하나라도 켜져 있으면 켜진 것으로 파생된다. */
@@ -22,12 +39,17 @@ const 켜짐 = { ...NO_SUBSCRIPTIONS, app: true }
 /** 스토어의 진짜 동작. 아래 `beforeEach` 가 목으로 덮기 전에 붙잡아 둔다. */
 const 진짜 = useNoticeStore.getState()
 
+/** 화면이 들어올 때마다 부르는 권한 읽기. 네이티브를 안 타게 목으로 둔다. */
+const refreshPermission = jest.fn().mockResolvedValue(undefined)
+
 beforeEach(() => {
   jest.clearAllMocks()
   useNoticeStore.setState({
     subscriptions: 켜짐,
     pending: {},
     blockedByPermission: false,
+    permissionGranted: true,
+    refreshPermission,
     setSubscribed: jest.fn().mockResolvedValue(undefined),
     setAllSubscribed: jest.fn().mockResolvedValue(undefined),
   })
@@ -130,6 +152,70 @@ describe('구독 스위치', () => {
   })
 })
 
+// 아래 권한 카드와 가는 곳이 같지만 그 카드는 켜려다 막혔을 때만 나온다. 막힌 적 없이 기기
+// 쪽에서 알림을 끄거나 채널을 손보러 가려는 사용자에게는 앱 안에 길이 없었다.
+describe('헤더의 기기 설정', () => {
+  it('막히지 않았어도 늘 서 있다', async () => {
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    expect(view.getByLabelText('OS 알림 설정 열기')).toBeTruthy()
+  })
+
+  // 가는 길은 플랫폼마다 다르고 그 분기는 `notification-settings-link` 가 잰다. 여기서 재는
+  // 것은 누름이 거기로 이어지는가뿐이다.
+  it('누르면 OS 알림 설정을 연다', async () => {
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('OS 알림 설정 열기'))
+    })
+
+    expect(openNotificationSettings).toHaveBeenCalledWith(Platform.OS)
+  })
+})
+
+// 권한을 받아 켜 둔 뒤 나중에 기기에서 끈 사용자는 켜기를 누른 적이 없어 `blockedByPermission`
+// 이 거짓이다. 그러면 스위치는 켜져 있고 알림은 안 오는데 화면이 아무 말도 안 했다.
+describe('앱은 켜져 있는데 기기가 꺼져 있을 때', () => {
+  it('들어올 때 권한을 읽는다', async () => {
+    await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    expect(refreshPermission).toHaveBeenCalled()
+  })
+
+  it('꺼져 있으면 말해 준다', async () => {
+    useNoticeStore.setState({ subscriptions: 켜짐, permissionGranted: false })
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    expect(view.getByText('기기에서 알림이 꺼져 있어요')).toBeTruthy()
+    expect(view.getByLabelText('알림 권한 설정 열기')).toBeTruthy()
+  })
+
+  it('허용돼 있으면 안 그린다', async () => {
+    useNoticeStore.setState({ subscriptions: 켜짐, permissionGranted: true })
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    expect(view.queryByText('기기에서 알림이 꺼져 있어요')).toBeNull()
+  })
+
+  // 알림을 안 쓰기로 한 사용자에게는 잔소리다. iOS 는 한 번도 안 물으면 설정에 그 앱의 알림
+  // 항목을 아예 안 만들어서, 그 상태로 설정에 보내면 갈 곳이 없는 막다른 길이다.
+  it('켜 둔 것이 없으면 말하지 않는다', async () => {
+    useNoticeStore.setState({ subscriptions: NO_SUBSCRIPTIONS, permissionGranted: false })
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    expect(view.queryByText('기기에서 알림이 꺼져 있어요')).toBeNull()
+  })
+
+  // 못 읽었는데 꺼진 것으로 그리면 멀쩡한 기기를 꺼졌다고 말한다.
+  it('아직 못 읽었으면 말하지 않는다', async () => {
+    useNoticeStore.setState({ subscriptions: 켜짐, permissionGranted: null })
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    expect(view.queryByText('기기에서 알림이 꺼져 있어요')).toBeNull()
+  })
+})
+
 describe('권한이 없어 막혔을 때', () => {
   // 조용히 두면 사용자는 스위치가 안 켜지는 것을 고장으로 읽는다.
   // 전체를 켜려다 막히면 넷은 안 켜지고 전체 스위치도 꺼진 채다. 안내가 그 안에 있으면
@@ -152,6 +238,19 @@ describe('권한이 없어 막혔을 때', () => {
     const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
 
     expect(view.queryByLabelText('알림 권한 설정 열기')).toBeNull()
+  })
+
+  // 헤더 버튼과 가는 곳이 같아야 한다. 카드만 `openSettings()` 를 쓰면 안드로이드에서 한 화면의
+  // 두 문이 다른 곳으로 간다.
+  it('헤더 버튼과 같은 길로 간다', async () => {
+    useNoticeStore.setState({ blockedByPermission: true })
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('알림 권한 설정 열기'))
+    })
+
+    expect(openNotificationSettings).toHaveBeenCalledWith(Platform.OS)
   })
 })
 
