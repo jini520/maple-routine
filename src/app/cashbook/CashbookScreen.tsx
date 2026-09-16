@@ -82,6 +82,8 @@ import {
   dayTotalsOf,
   loadLastPointRate,
   loadLastHuntSelection,
+  loadLastHuntToggles,
+  nextHuntToggles,
   loadFragmentStorage,
   loadTrackedCharacters,
   recordIncome,
@@ -104,6 +106,7 @@ import {
   type SoldItem,
 } from '../../features/cashbook/records'
 import type { LastHuntSelection } from '../../storage/last-hunt-selection'
+import type { LastHuntToggles } from '../../storage/last-hunt-toggles'
 import { loadMesoRate } from '../../features/cashbook/meso-rate'
 // 보스 수익 탭의 행이 초상을 찾는 그 함수다. 같은 보스가 두 화면에서 다른 그림이면 안 된다.
 import { bossPortraitSlugOf } from '../../lib/boss/bosses'
@@ -620,6 +623,8 @@ export function CashbookScreen(): React.JSX.Element {
   const [lastPointRate, setLastPointRate] = useState<number | null>(null)
   /** 마지막에 적은 사냥 자리. 사냥 계산기의 `사냥터 자동 입력` 이 되살린다. */
   const [lastHuntSelection, setLastHuntSelection] = useState<LastHuntSelection | null>(null)
+  /** 마지막에 저장한 사냥 기록의 체크 셋. 새 사냥 시트가 이 값으로 열린다. */
+  const [lastHuntToggles, setLastHuntToggles] = useState<LastHuntToggles | null>(null)
   /**
    * 시트의 캐릭터 고르개가 쓸 목록. 화면이 읽는다(시트는 `storage/` 를 모른다).
    * 들어올 때 한 번이면 된다. 추적 목록이 시트를 여는 사이에 바뀌지 않는다.
@@ -763,6 +768,7 @@ export function CashbookScreen(): React.JSX.Element {
   useEffect(() => {
     void loadLastPointRate().then(setLastPointRate)
     void loadLastHuntSelection().then(setLastHuntSelection)
+    void loadLastHuntToggles().then(setLastHuntToggles)
     void loadTrackedCharacters().then(setCharacters)
   }, [])
 
@@ -802,6 +808,9 @@ export function CashbookScreen(): React.JSX.Element {
     if (draft.category === 'hunting' && draft.itemKey !== null) {
       setLastHuntSelection({ ocid: draft.ocid, groundKey: draft.itemKey })
     }
+    // 체크 셋도 같다. 남기는 규칙은 저장이 쓴 것과 같은 함수를 쓴다.
+    const hunt = draft.category === 'hunting' ? draft.hunt : null
+    if (hunt !== null) setLastHuntToggles((current) => nextHuntToggles(hunt, current))
     setReloadToken((token) => token + 1)
   }
 
@@ -1211,6 +1220,7 @@ export function CashbookScreen(): React.JSX.Element {
           characters={characters}
           lastPointRate={lastPointRate}
           lastHuntSelection={lastHuntSelection}
+          lastHuntToggles={lastHuntToggles}
           // 캐릭터의 메소 획득량. 시트는 `nexon/` 도 `storage/` 도 모른다.
           loadMesoRate={loadMesoRate}
           loadFragmentStorage={loadFragmentStorage}

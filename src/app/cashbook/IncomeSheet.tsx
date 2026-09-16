@@ -18,6 +18,7 @@ import { ChevronLeftIcon, Text } from '../../components/atoms'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import type { MesoRateLoad } from '../../features/cashbook/meso-rate'
 import type { LastHuntSelection } from '../../storage/last-hunt-selection'
+import type { LastHuntToggles } from '../../storage/last-hunt-toggles'
 import {
   INCOME_CATEGORIES,
   incomeCategoryNameOf,
@@ -61,6 +62,13 @@ export interface IncomeSheetProps {
    * 화면이 읽어서 넘긴다.
    */
   lastHuntSelection: LastHuntSelection | null
+  /**
+   * 마지막에 저장한 사냥 기록의 체크 셋(조각 가격 나중에 입력 · 켠 메소 획득률 아이템).
+   *
+   * **새 기록의 첫 값**이다. 수정으로 열면 그 기록에 박힌 값이 이긴다. `null` 이면 한 번도 안
+   * 적었다는 뜻이라 전부 꺼진 채 열린다. 시트는 `storage/` 를 모르므로 화면이 읽어서 넘긴다.
+   */
+  lastHuntToggles: LastHuntToggles | null
   /** 솔 에르다 조각 보관 개수 조회. 정산 폼이 쓰고 화면이 넘긴다. */
   loadFragmentStorage: LoadFragmentStorage
   /**
@@ -94,13 +102,17 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
    */
   const [huntMode, setHuntMode] = useState<HuntInputMode>(huntModeOf(props.editing))
   /**
-   * 조각 가격 나중에 입력. 수정으로 열면 기록이 정한다.
+   * 조각 가격 나중에 입력. 수정으로 열면 기록이 정하고, 새로 적을 때는 마지막에 저장한 값이 선다.
+   *
+   * 기억한 값이 수정을 이기면 옛 기록을 열어 보기만 해도 합계가 달라진다.
    *
    * 시트가 드는 것은 모드를 바꾸면 폼이 새로 심기기 때문이다(`key` 가 모드를 담는다). 폼 안에 두면
    * 모드를 옮길 때 풀린다.
    */
   const [fragmentsDeferred, setFragmentsDeferred] = useState(
-    props.editing?.hunt?.fragmentsDeferred ?? false,
+    props.editing === undefined
+      ? (props.lastHuntToggles?.fragmentsDeferred ?? false)
+      : (props.editing.hunt?.fragmentsDeferred ?? false),
   )
   /**
    * 시트 바닥에 서는 저장 줄의 값. 폼이 마운트 뒤에 올린다.
@@ -273,6 +285,7 @@ function IncomeForm(
       fragmentsDeferred={props.fragmentsDeferred}
       loadMesoRate={props.loadMesoRate}
       lastHuntSelection={props.lastHuntSelection}
+      lastHuntToggles={props.lastHuntToggles}
     />
   )
 }

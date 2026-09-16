@@ -23,6 +23,9 @@ jest.mock('../../../features/cashbook/records', () => {
     loadDayRecords: jest.fn(),
     loadLastPointRate: jest.fn(),
     loadLastHuntSelection: jest.fn(),
+    loadLastHuntToggles: jest.fn(),
+    // 저장 뒤 화면이 드는 값은 저장이 쓰는 그 규칙으로 낸다. 두 자리가 갈리면 안 되므로 진짜를 쓴다.
+    nextHuntToggles: actual.nextHuntToggles,
     loadTrackedCharacters: jest.fn(),
     recordIncome: jest.fn(),
     recordSpend: jest.fn(),
@@ -136,6 +139,7 @@ beforeEach(() => {
   records.loadMonthDays.mockReset().mockResolvedValue({})
   records.loadLastPointRate.mockReset().mockResolvedValue(null)
   records.loadLastHuntSelection.mockReset().mockResolvedValue(null)
+  records.loadLastHuntToggles.mockReset().mockResolvedValue(null)
   records.loadTrackedCharacters.mockReset().mockResolvedValue([])
   records.recordIncome.mockReset().mockResolvedValue(undefined)
   records.recordSpend.mockReset().mockResolvedValue(undefined)

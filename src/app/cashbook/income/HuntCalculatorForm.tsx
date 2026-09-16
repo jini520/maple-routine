@@ -43,6 +43,7 @@ import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { ImageAssetRef } from '../../../types/image-asset'
 import type { HuntingGround, HuntingRegion } from '../../../types/hunting-grounds'
 import type { LastHuntSelection } from '../../../storage/last-hunt-selection'
+import type { LastHuntToggles } from '../../../storage/last-hunt-toggles'
 import { CheckBox, FieldRow, QuantityStepper } from '../sheet-fields'
 import { ChainSelect } from '../../../components/organisms/ChainSelect/ChainSelect'
 import { HuntAutoFillButton } from './HuntAutoFillButton'
@@ -179,6 +180,8 @@ export function HuntCalculatorForm(
     loadMesoRate: (ocid: string) => Promise<MesoRateLoad>
     /** 마지막에 적은 사냥 자리. 화면이 읽어서 넘긴다. 없으면 자동 입력이 꺼진다. */
     lastHuntSelection: LastHuntSelection | null
+    /** 마지막에 저장한 체크 셋. 켠 아이템의 첫 값이고, 수정으로 열면 안 쓴다. */
+    lastHuntToggles: LastHuntToggles | null
     /** 조각 가격 나중에 입력. 시트가 들고 넘긴다. */
     fragmentsDeferred: boolean
   },
@@ -216,7 +219,21 @@ export function HuntCalculatorForm(
    * 바꾸면 같은 조각의 글자가 달라진다.
    */
   const [missedMobs, setMissedMobs] = useState(detail?.missedMobs ?? 0)
-  const [boosts, setBoosts] = useState<readonly string[]>(detail?.boosts ?? [])
+  /**
+   * 켠 메소 획득률 아이템. 수정으로 열면 기록이 정하고, 새로 적을 때는 마지막에 저장한 것이 선다.
+   *
+   * **참조표에 없는 id 는 뺀다.** 아이템을 지우거나 `id` 를 바꾸면 그 글자가 아무것도 안 가리키는데,
+   * 그대로 들면 화면에는 아무 체크도 없는데 새 기록의 `boosts` 에는 그 글자가 박힌다.
+   */
+  const [boosts, setBoosts] = useState<readonly string[]>(
+    () =>
+      detail?.boosts ??
+      (props.editing === undefined
+        ? (props.lastHuntToggles?.boosts.filter((id) =>
+            MESO_BOOSTS.some((each) => each.id === id),
+          ) ?? [])
+        : []),
+  )
   const [sojae, setSojae] = useState(detail?.sojae ?? 1)
   const [fragmentsText, setFragmentsText] = useState(mesoTextOf(detail?.fragments ?? 0))
   const [fragmentPriceText, setFragmentPriceText] = useState(mesoTextOf(detail?.fragmentPrice ?? 0))

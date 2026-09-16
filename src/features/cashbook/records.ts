@@ -60,6 +60,11 @@ import {
   type LastHuntSelection,
 } from '../../storage/last-hunt-selection'
 import {
+  getLastHuntToggles,
+  setLastHuntToggles,
+  type LastHuntToggles,
+} from '../../storage/last-hunt-toggles'
+import {
   deleteSpendRecord,
   getSpendRecordsBetween,
   insertSpendRecord,
@@ -86,6 +91,26 @@ export async function recordIncome(draft: IncomeDraft, now: Date): Promise<void>
   // 자리가 없다.
   if (draft.category === 'hunting' && draft.itemKey !== null) {
     await setLastHuntSelection({ ocid: draft.ocid, groundKey: draft.itemKey })
+  }
+  // 체크 셋도 같은 규칙이다. 계산 입력이 없는 옛 모양의 행에는 기억할 체크가 없다.
+  if (draft.category === 'hunting' && draft.hunt !== null) {
+    await setLastHuntToggles(nextHuntToggles(draft.hunt, await getLastHuntToggles()))
+  }
+}
+
+/**
+ * 저장한 사냥 기록이 다음 사냥 시트에 남길 체크 셋.
+ *
+ * 수동 폼에는 아이템 줄이 없다. 거기서 빈 값을 적으면 계산기에서 켜 두던 것이 지워지므로 켠
+ * 아이템은 그대로 둔다.
+ */
+export function nextHuntToggles(
+  hunt: NonNullable<IncomeDraft['hunt']>,
+  current: LastHuntToggles | null,
+): LastHuntToggles {
+  return {
+    fragmentsDeferred: hunt.fragmentsDeferred,
+    boosts: hunt.mode === 'calculator' ? [...hunt.boosts] : (current?.boosts ?? []),
   }
 }
 
@@ -483,6 +508,11 @@ export async function loadLastHuntSelection(): Promise<LastHuntSelection | null>
   return getLastHuntSelection().catch(() => null)
 }
 
+/** 새 사냥 시트가 세울 체크 셋. 그 아이템 id 가 참조표에 아직 있는지는 시트가 판정한다. */
+export async function loadLastHuntToggles(): Promise<LastHuntToggles | null> {
+  return getLastHuntToggles().catch(() => null)
+}
+
 
 /**
  * 그날 목록의 손입력 줄. 여기서 고치고 지운다.
@@ -829,7 +859,7 @@ const AUTO_LABELS: Record<AutoDayRecord['kind'], string> = {
  * 형태별 항목 key 로 이름을 다시 만든다.
  *
  * 사냥만 갈래로 적는다. 거기 적힌 이름은 사냥터인데 그 줄이 답하는 것은 오늘 무엇으로
- * 벌었나 이고 어느 맵이었나 는 열어 봐야 뜻이 생기는 값이다. 대신 몇 재획을 돌았나 가 세는
+ * 벌었나 이고 어느 맵이었나 는 열어 봐야 뜻이 생기는 값이다. 대신 몇 소재를 돌았나 가 세는
  * 칸에 선다(`recordCountLabelOf`).
  */
 function manualLabelOf(entry: ManualDayRecord): string {
@@ -924,16 +954,16 @@ export function recordCountLabelOf(entry: DayRecord): string | null {
       : `${entry.count}회`
   }
   /**
-   * 사냥은 몇 재획을 돌았나 다. 보스 줄의 n마리와 같은 자리·같은 모양이라 화면은 아무것도
-   * 안 가른다.
+   * 사냥은 몇 소재를 돌았나 다. 시트의 시간 줄이 세는 이름과 같은 글자라(1소재 = 30분) 한 수가
+   * 두 이름을 안 갖는다. 보스 줄의 n마리와 같은 자리·같은 모양이라 화면은 아무것도 안 가른다.
    *
    * 계산기로 적힌 행만 그 수를 안다. 수동으로 적은 행에는 소재 줄이 없어 칸이 안 선다.
    */
   // `!= null` 인 것은 옛 행이 `null` 이거나 칸이 아예 없을(`undefined`) 수 있어서다.
   if (entry.kind === 'income' && entry.record.hunt?.mode === 'calculator') {
-    return `${entry.record.hunt.sojae}재획`
+    return `${entry.record.hunt.sojae}소재`
   }
-  // 솔 에르다 조각 정산은 판 개수다. 사냥 줄의 재획이 서는 자리와 같다.
+  // 솔 에르다 조각 정산은 판 개수다. 사냥 줄의 소재가 서는 자리와 같다.
   if (entry.kind === 'income' && entry.record.category === 'sol_erda_fragment' && entry.record.quantity !== null) {
     return `${entry.record.quantity}개`
   }
