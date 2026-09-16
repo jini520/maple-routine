@@ -411,11 +411,13 @@ describe('BossScreen: 챌린저스 시즌 보스 배지', () => {
       ...overrides,
     })
 
+  // 배지는 `주간` 헤더에 얹히고 그 헤더는 카드가 한 장이라도 있어야 선다. 시즌 보스는 미등록이라
+  // 카드로 안 서므로 등록된 주간 보스를 함께 둔다.
   const withWorld = (worldKey: string | undefined, bosses: MatchedBoss[]): void => {
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
-      characters: [character({ worldKey, weeklyBosses: bosses })],
+      characters: [character({ worldKey, weeklyBosses: [boss(), ...bosses] })],
     })
   }
 
@@ -427,10 +429,9 @@ describe('BossScreen: 챌린저스 시즌 보스 배지', () => {
     expect(screen.getByText('season 미완료')).toBeTruthy()
   })
 
-  // **빈 무리는 헤더도 걷는다** 에 예외가 하나 있다. **배지를 싣고 있으면
-  // 남긴다.** 탭 시절 이 배지들은 목록이 비어도 탭 줄에 떠 있었고, 무리가 비었다는 이유로 지우면
-  // **이번 주 몇 마리 잡았나** 를 말할 자리가 아예 없어진다.
-  it('주간 카드가 하나도 안 서도 배지를 실은 `주간` 헤더는 남는다', async () => {
+  // 빈 무리는 헤더도 걷는다. 배지가 있어도 예외를 안 둔다. 검마만 등록한 챌린저스 캐릭터가 그
+  // 경우이고, `3/12` 와 시즌 완료는 사실이지만 그것을 실을 헤더가 없다.
+  it('주간 카드가 0장이면 배지가 있어도 `주간` 헤더를 걷는다', async () => {
     mockStore({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
@@ -457,10 +458,9 @@ describe('BossScreen: 챌린저스 시즌 보스 배지', () => {
 
     await renderScreen()
 
-    expect(sectionOrder()).toEqual(['monthly', 'weekly'])
-    const header = screen.getByTestId('boss-section-header-weekly')
-    expect(within(header).getByText('3/12')).toBeTruthy()
-    expect(within(header).getByText('season 미완료')).toBeTruthy()
+    expect(sectionOrder()).toEqual(['monthly'])
+    expect(screen.queryByText('3/12')).toBeNull()
+    expect(screen.queryByText('season 미완료')).toBeNull()
     expect(screen.queryByText('시즌 보스 메이린')).toBeNull()
   })
 
@@ -490,7 +490,7 @@ describe('BossScreen: 챌린저스 시즌 보스 배지', () => {
   })
 
   it('챌린저스 월드여도 시즌 보스 항목이 없으면 배지가 없다', async () => {
-    withWorld('challengers', [boss()])
+    withWorld('challengers', [])
 
     await renderScreen()
 
@@ -765,6 +765,101 @@ describe('BossScreen: 솔로/파티 필터', () => {
 
     expect(screen.getByText('자쿰')).toBeTruthy()
     expect(screen.queryByText('이 조건에 해당하는 보스가 없습니다')).toBeNull()
+  })
+})
+
+// `주간` 헤더는 카드가 한 장이라도 설 때만 선다. 헤더가 없으면 거기 얹히는 `n/12`·시즌 배지도 없다.
+// 필터가 비운 자리에 헤더만 서면 걸러진 카드가 아직 거기 있는 것으로 읽힌다.
+describe('BossScreen: 주간 헤더가 서는 조건', () => {
+  const 검마 = boss({
+    apiName: '검은 마법사',
+    bossKey: 'black_mage',
+    difficulty: 'hard',
+    cycle: 'monthly',
+    portraitSlug: 'blackMage',
+  })
+
+  // 검마만 4인 파티다. `파티` 를 고르면 주간이 통째로 걸러지고 월간 카드만 남는다.
+  const withWeeklyHiddenByFilter = (): void => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      partySizes: { 'ocid-1:black_mage:hard': 4 },
+      characters: [
+        character({
+          worldKey: 'challengers_2',
+          weeklyBosses: [boss()],
+          monthlyBosses: [검마],
+          weeklyBossClearCount: 3,
+          weeklyBossClearLimitCount: 12,
+        }),
+      ],
+    })
+  }
+
+  it('필터가 주간 보스를 전부 가리면 `주간` 헤더와 n/12 배지가 사라진다', async () => {
+    withWeeklyHiddenByFilter()
+    await renderScreen()
+
+    await press(button('파티'))
+
+    expect(screen.getByText('검은 마법사')).toBeTruthy()
+    expect(sectionOrder()).toEqual(['monthly'])
+    expect(screen.queryByText('3/12')).toBeNull()
+  })
+
+  it('필터를 `전체` 로 되돌리면 헤더와 배지가 다시 선다', async () => {
+    withWeeklyHiddenByFilter()
+    await renderScreen()
+    await press(button('파티'))
+
+    await press(button('전체'))
+
+    expect(sectionOrder()).toEqual(['monthly', 'weekly'])
+    expect(within(screen.getByTestId('boss-section-header-weekly')).getByText('3/12')).toBeTruthy()
+  })
+
+  it('필터가 전부 가려 빈 상태가 서면 그 밑에도 `주간` 헤더가 없다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      // 파티 설정이 하나도 없어 `파티` 필터의 결과가 0이다.
+      characters: [
+        character({
+          worldKey: 'challengers_2',
+          weeklyBosses: [boss()],
+          weeklyBossClearCount: 3,
+          weeklyBossClearLimitCount: 12,
+        }),
+      ],
+    })
+    await renderScreen()
+
+    await press(button('파티'))
+
+    expect(screen.getByText('이 조건에 해당하는 보스가 없습니다')).toBeTruthy()
+    expect(sectionOrder()).toEqual([])
+    expect(screen.queryByText('3/12')).toBeNull()
+  })
+
+  it('추적·등록된 보스가 0건이면 배지가 있어도 헤더가 없다', async () => {
+    mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      characters: [
+        character({
+          worldKey: 'challengers_2',
+          weeklyBossClearCount: 3,
+          weeklyBossClearLimitCount: 12,
+        }),
+      ],
+    })
+
+    await renderScreen()
+
+    expect(screen.getByText('등록된 보스가 없습니다')).toBeTruthy()
+    expect(sectionOrder()).toEqual([])
+    expect(screen.queryByText('3/12')).toBeNull()
   })
 })
 

@@ -275,19 +275,13 @@ export function BossScreen(): React.JSX.Element {
           ...section,
           bosses: filterByPartySize(section.bosses, selected.ocid, partyFilter),
         }))
-  // (`countClearedWeeklyBosses`), 시즌 완료 여부도 등록과 무관하다.
-  // `주간` 헤더가 싣는 배지. 이 값들은 **표시 목록과 무관하다.** 처치 수는 앱이 세고
+  // `주간` 헤더가 싣는 배지.
   const weeklySeasonState =
     seasonBosses.length === 0 ? null : isSeasonBossComplete ? ('complete' as const) : ('incomplete' as const)
-  const hasWeeklyBadges =
-    weeklySeasonState !== null ||
-    (selected?.weeklyBossClearCount != null && selected.weeklyBossClearLimitCount != null)
 
-  // **단 배지를 싣고 있으면 남긴다.** 지우면 이번 주 처치 수를 화면이 말할 자리가 없어진다.
-  // 빈 무리의 헤더는 걷는다. 이름만 남으면 **여기 뭔가 있었다** 로 읽힌다.
-  const visibleSections = filteredSections.filter(
-    (section) => section.bosses.length > 0 || (section.cycle === 'weekly' && hasWeeklyBadges),
-  )
+  // 빈 무리의 헤더는 걷는다. 이름만 남으면 **여기 뭔가 있었다** 로 읽힌다. 필터가 그 무리를 전부
+  // 가렸을 때도 같다. 헤더가 걷히면 거기 얹힌 `n/12`·시즌 배지도 함께 사라진다.
+  const visibleSections = filteredSections.filter((section) => section.bosses.length > 0)
   const displayedCount = sections.reduce((sum, section) => sum + section.bosses.length, 0)
   const filteredCount = filteredSections.reduce((sum, section) => sum + section.bosses.length, 0)
 
