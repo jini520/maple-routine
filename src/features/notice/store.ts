@@ -54,6 +54,26 @@ interface NoticeState {
    * iOS 는 여기서 팝업을 다시 못 띄우므로 말해 주는 것 말고 할 수 있는 일이 없다.
    */
   blockedByPermission: boolean
+  /**
+   * 기기가 이 앱에 알림을 허용하고 있나. 아직 안 읽었으면 `null`.
+   *
+   * `blockedByPermission` 과 다른 사실이다. 그것은 `켜려다 막혔다` 라 켜기를 눌러 본 적이
+   * 있어야 참이 되는데, 권한을 받아 켜 둔 뒤 나중에 기기에서 끈 사용자는 누른 적이 없다.
+   * 그러면 스위치는 켜져 있고 알림은 안 오는데 화면이 아무 말도 안 한다.
+   *
+   * 못 읽었을 때 거짓으로 떨어뜨리지 않는다. 멀쩡한 기기를 꺼졌다고 말하게 된다.
+   */
+  permissionGranted: boolean | null
+  /**
+   * 권한을 읽어 `permissionGranted` 에 적는다. **묻지 않는다.**
+   *
+   * 화면에 들어온 것은 알림을 켜겠다고 말한 자리가 아니고, iOS 는 팝업을 한 번밖에 못 띄운다.
+   *
+   * @example
+   * // 알림 설정 화면. 들어올 때마다 읽는다 - 기기 설정에 갔다 오는 사이 값이 바뀐다
+   * useFocusEffect(useCallback(() => void refreshPermission(), [refreshPermission]))
+   */
+  refreshPermission: () => Promise<void>
   /** 저장된 값을 상태에 올린다. 토픽을 다시 구독하지 않는다. */
   restore: () => Promise<void>
   /**
@@ -111,15 +131,25 @@ function enqueue(job: () => Promise<void>): Promise<void> {
 let waitingResubscribe: Promise<void> | null = null
 
 export const useNoticeStore = create<NoticeState>()((set, get) => {
+  /** 권한을 읽어 상태에 적고 그 값을 주는 함수. **못 읽으면 적지 않고 던진다.** */
+  async function readPermission(): Promise<boolean> {
+    const granted = await hasNotificationPermission()
+    set({ permissionGranted: granted })
+    return granted
+  }
+
   /** 구독하거나 해제하고, 성공하면 적는 함수. */
   async function apply(key: NoticeKind, subscribed: boolean): Promise<void> {
     if (subscribed) {
       // **켤 때만 권한을 본다.** 끄는 길은 권한과 무관하고, 거기서 막으면 권한 없는 사용자가
       // 구독을 해제할 방법이 없어진다.
-      if (!(await hasNotificationPermission()) && !(await ensurePermission())) {
+      if (!(await readPermission()) && !(await ensurePermission())) {
         set({ blockedByPermission: true })
         return
       }
+      // 팝업으로 방금 허용받았을 수 있다. 읽은 값이 거짓인 채로 남으면 화면이 멀쩡한 기기를
+      // 꺼졌다고 말한다.
+      set({ permissionGranted: true })
       await subscribeToPushTopic(topicName(key))
     } else {
       await unsubscribeFromPushTopic(topicName(key))
@@ -164,8 +194,13 @@ export const useNoticeStore = create<NoticeState>()((set, get) => {
     subscriptions: NO_SUBSCRIPTIONS,
     pending: {},
     blockedByPermission: false,
+    permissionGranted: null,
     async restore() {
       set({ subscriptions: await getNoticeSubscriptions() })
+    },
+    async refreshPermission() {
+      // 못 읽어도 조용히 넘긴다. 다음에 화면에 들어올 때 다시 읽는다.
+      await readPermission().catch(() => undefined)
     },
     resubscribe() {
       if (waitingResubscribe !== null) return waitingResubscribe
@@ -173,7 +208,8 @@ export const useNoticeStore = create<NoticeState>()((set, get) => {
       const job = enqueue(async () => {
         waitingResubscribe = null
         // 권한은 묻지 않는다. 앱을 켤 때와 돌아올 때 뜨는 팝업은 iOS 의 한 번뿐인 기회를 맥락 없이 쓴다.
-        if (!(await hasNotificationPermission())) return
+        // 읽은 값은 남긴다. 알림 설정 화면이 그것으로 `기기에서 꺼져 있어요` 를 그린다.
+        if (!(await readPermission())) return
 
         // 켜짐은 차례가 왔을 때 읽는다. 줄에 설 때 읽으면 기다리는 사이 끈 토픽을 다시 구독한다.
         const { subscriptions } = get()
