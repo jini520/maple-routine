@@ -20,6 +20,9 @@ jest.mock('../../../storage/schedule-probe-ledger', () => {
   }
 })
 jest.mock('../../../nexon/schedule', () => ({ fetchSchedulerCharacterState: jest.fn() }))
+jest.mock('../../settlement/store', () => ({ refreshSettlement: jest.fn() }))
+const { refreshSettlement: refreshSettlementMock } = jest.requireMock('../../settlement/store') as Record<string, jest.Mock>
+
 
 import { NexonBadRequestError } from '../../../nexon/errors'
 import { fillScheduleWindow } from '../window'
@@ -63,6 +66,7 @@ beforeEach(() => {
   markUnavailableMock.mockReset().mockResolvedValue(undefined)
   recordProbeMock.mockReset().mockResolvedValue(undefined)
   fetchStateMock.mockReset().mockResolvedValue(schedulerState())
+  refreshSettlementMock.mockReset().mockResolvedValue(undefined)
 })
 
 describe('창을 채운다', () => {
@@ -188,5 +192,22 @@ describe('진행을 알린다', () => {
     await fillScheduleWindow(['o1'], NOW, (done, total) => seen.push({ done, total }))
 
     expect(seen).toEqual([{ done: 0, total: 0 }])
+  })
+})
+
+// 스케줄러 데이터를 갱신하는 자리는 결산 여부도 함께 갱신한다. 값이 바뀌면 today 에 바로 선다.
+describe('결산 여부도 갱신한다', () => {
+  it('창을 채우면 결산도 다시 묻는다', async () => {
+    await fillScheduleWindow(['o1'], NOW)
+
+    expect(refreshSettlementMock).toHaveBeenCalled()
+  })
+
+  it('키가 없어 아무것도 안 부르면 결산도 안 묻는다', async () => {
+    getAuthConfigMock.mockResolvedValue(null)
+
+    await fillScheduleWindow(['o1'], NOW)
+
+    expect(refreshSettlementMock).not.toHaveBeenCalled()
   })
 })

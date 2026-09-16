@@ -27,6 +27,7 @@ import type { ScheduleSyncError } from './errors'
 import { latestSyncedAt } from '../../lib/data-freshness'
 import { useDataFreshness } from '../refresh/freshness'
 import { useRefreshProgress } from '../refresh/progress'
+import { refreshSettlement } from '../settlement/store'
 import { fetchCharacterBasicCached } from './character-basic-fetch'
 import {
   linkWorldLeapsFromRoster,
@@ -471,6 +472,10 @@ export async function syncSchedules(
     }
     onProgress?.(completed, total)
   }
+
+  // 스케줄러를 실제로 부르는 회차다. 결산 여부도 이 자리에서 함께 묻는다. 안 기다리는 것은
+  // 그 답이 늦어도 동기화가 늦으면 안 되기 때문이다.
+  void refreshSettlement()
 
   const round = runSyncRound(ocids, report)
   inFlightRound = { ocids: new Set(ocids), promise: round }

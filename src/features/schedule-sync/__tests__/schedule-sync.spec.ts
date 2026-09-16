@@ -29,6 +29,9 @@ jest.mock('../../../nexon/schedule', () => ({
 }))
 const { fetchSchedulerCharacterState: fetchSchedulerCharacterStateMock } = jest.requireMock('../../../nexon/schedule') as Record<string, jest.Mock>
 
+jest.mock('../../settlement/store', () => ({ refreshSettlement: jest.fn() }))
+const { refreshSettlement: refreshSettlementMock } = jest.requireMock('../../settlement/store') as Record<string, jest.Mock>
+
 jest.mock('../../../storage/api-key', () => ({
   getAuthConfig: jest.fn(),
 }))
@@ -161,6 +164,7 @@ beforeEach(async () => {
   // 같은 이유로 진행 중인 회차도 비운다. 끝내지 않은 회차를 남기면 다음 테스트가 거기에
   // 합류해 영영 안 끝난다.
   resetSyncSingleFlightForTests()
+  refreshSettlementMock.mockReset().mockResolvedValue(undefined)
   useRefreshProgress.getState().resetForTests()
   prefs = installFakePreferences()
   getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
@@ -206,6 +210,22 @@ describe('syncSchedules', () => {
     await syncSchedules([])
 
     expect(hasSyncAttemptedThisRun()).toBe(false)
+  })
+
+  // 스케줄러 데이터를 갱신하는 자리는 결산 여부도 함께 갱신한다. 값이 바뀌면 today 에 바로 선다.
+  it('회차가 돌면 결산도 다시 묻는다', async () => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1')])])
+    fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
+
+    await syncSchedules(['ocid-1'])
+
+    expect(refreshSettlementMock).toHaveBeenCalled()
+  })
+
+  it('ocids 가 비어 회차가 없으면 결산도 안 묻는다', async () => {
+    await syncSchedules([])
+
+    expect(refreshSettlementMock).not.toHaveBeenCalled()
   })
 
   it('실제로 조회하면 이번 실행에서 동기화를 시도한 것으로 표시한다', async () => {

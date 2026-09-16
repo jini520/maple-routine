@@ -39,6 +39,7 @@ import {
 } from '../../storage/schedule-probe-ledger'
 import { BOSS_CYCLES, type BossCycle } from '../../types'
 import { toScheduleSyncError } from '../schedule-sync/errors'
+import { refreshSettlement } from '../settlement/store'
 import { withSqliteFallback } from './sqlite-guards'
 
 export interface DefeatDateInput {
@@ -329,6 +330,10 @@ async function runResolveDefeatDates(ocids: readonly string[], now: Date): Promi
    * 것이 없는 건까지 0 으로 나가고, 키를 지운 기기에서는 오늘 잡은 보스가 영영 캘린더에 안 찍힌다.
    */
   const authConfig = await getAuthConfig()
+
+  // 여기서부터 스케줄러를 부른다. 결산 여부도 함께 묻는다(안 기다린다). 미확정 기록이 없어 위에서
+  // 돌아가는 길은 조회가 0회라 그 재진입을 이 요청으로 유료로 만들지 않는다.
+  if (authConfig !== null) void refreshSettlement()
 
   const byOcid = new Map<string, UndatedBossProfitRecord[]>()
   for (const candidate of candidates) {

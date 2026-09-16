@@ -12,6 +12,7 @@ import type { SchedulerCharacterState } from '../../types'
 // 정의처에서 직접 가져온다. `schedule-sync.ts` 는 이것을 재수출만 하는데, 그 파일이 다시
 // `character-roster.ts` → 이 파일을 부르므로 거기서 가져오면 런타임 import 사이클이 된다
 // (`character-roster.ts` 도 같은 이유로 `./errors` 를 직접 본다).
+import { refreshSettlement } from '../settlement/store'
 import { toScheduleSyncError } from './errors'
 
 /**
@@ -100,6 +101,10 @@ export async function resolveCharacterEligibility(
   }
 
   const dateKeys = getBackfillDateKeys(now).filter((dateKey) => ledger.dates[dateKey] === undefined)
+
+  // 여기서부터 스케줄러를 부른다. 결산 여부도 함께 묻는다(안 기다린다). 원장만으로 판정이 난
+  // 위쪽 길에서는 조회가 없으므로 묻지 않는다.
+  if (dateKeys.length > 0) void refreshSettlement()
 
   const outcomes = await Promise.all(
     dateKeys.map(async (dateKey): Promise<DayOutcome> => {
