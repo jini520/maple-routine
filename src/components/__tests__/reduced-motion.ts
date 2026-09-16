@@ -45,6 +45,9 @@ export function mockReducedMotion(next: boolean): void {
  */
 export const withRepeatSpy = jest.fn()
 
+/** `cancelAnimation` 이 불렸는지. 반복을 멈췄는지 보는 창이다(`withRepeatSpy` 와 같은 이유). */
+export const cancelAnimationSpy = jest.fn()
+
 /**
  * `jest.mock('react-native-reanimated', …)` 의 팩토리 몸통.
  *
@@ -57,6 +60,7 @@ export function reanimatedWithReducedMotion(): unknown {
   const actual = jest.requireActual('react-native-reanimated') as {
     default: unknown
     withRepeat: (...args: unknown[]) => unknown
+    cancelAnimation: (...args: unknown[]) => unknown
   }
 
   return {
@@ -68,6 +72,10 @@ export function reanimatedWithReducedMotion(): unknown {
     withRepeat: (...args: unknown[]) => {
       withRepeatSpy(...args)
       return actual.withRepeat(...args)
+    },
+    cancelAnimation: (...args: unknown[]) => {
+      cancelAnimationSpy(...args)
+      return actual.cancelAnimation(...args)
     },
   }
 }

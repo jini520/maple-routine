@@ -5,7 +5,7 @@
 // 본다. jsdom 은 스크롤을 그리지 않는다.
 import { act, fireEvent } from '@testing-library/react-native'
 
-import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import type { Notice } from '../../../types/notice'
 import { NoticeBannerCard } from '../NoticeBannerCard'
 import { NoticeBannerRail } from '../NoticeBannerRail'
@@ -31,6 +31,16 @@ describe('NoticeBannerRail', () => {
     expect(view.getAllByTestId('notice-banner-slide', { includeHiddenElements: true })).toHaveLength(5)
     expect(view.getAllByTestId('notice-banner-slide')).toHaveLength(3)
     expect(view.getAllByTestId('notice-banner-dot')).toHaveLength(3)
+  })
+
+  // 바탕이 반투명하면 RN iOS 가 그림자 모양을 못 만들어 점마다 픽셀 그림자를 뜬다. 배너가 보이는 동안 스크롤이 끊긴다.
+  it('점은 불투명한 흰 바탕 전체를 72% 로 옅게 해 흰색 72% 와 그림자를 낸다', async () => {
+    const view = await renderOverlay(<NoticeBannerRail notices={[banner(1), banner(2)]} onOpen={jest.fn()} />)
+    const dot = flattenStyle(view.getAllByTestId('notice-banner-dot')[0]?.props.style)
+
+    expect(dot.backgroundColor).toBe('#ffffff')
+    expect(dot.opacity).toBe(0.72)
+    expect(dot.shadowOpacity).toBe(0.35)
   })
 
   it('배너가 하나면 사본도 점도 없다', async () => {

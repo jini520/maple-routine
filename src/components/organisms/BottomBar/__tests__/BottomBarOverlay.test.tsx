@@ -2,11 +2,12 @@
 //
 // 여기서 묻는 것은 셋이다: **어디에 그리나**(선 자리가 아니라 호스트)· **누가 뒤에 서나**(바보다
 // 뒤여야 백드롭이 바를 덮는다)· **화면이 숨으면 어떻게 되나**(포털로 나간 그림은 저절로 안 숨는다).
-import { act, render, screen } from '@testing-library/react-native'
+import { render, screen } from '@testing-library/react-native'
 import { View } from 'react-native'
 import { PortalProvider } from '@gorhom/portal'
 import { NavigationContext } from '@react-navigation/native'
 
+import { 초점가짜 } from '../../../../hooks/__tests__/screen-focus-fake'
 import { BottomBarOverlay, BottomBarOverlayHost } from '../BottomBarOverlay'
 
 /** `toJSON` 트리를 훑어 그리는 순서대로 낸 testID 목록. 뒤에 있는 것이 위에 그려진다. */
@@ -65,37 +66,6 @@ it('호스트가 없으면 아무 데도 안 그린다', async () => {
 })
 
 describe('화면이 초점을 잃으면 안 그린다', () => {
-  interface 가짜내비 {
-    isFocused: () => boolean
-    addListener: (type: string, callback: () => void) => () => void
-  }
-
-  function 초점가짜(초기값: boolean): {
-    navigation: 가짜내비
-    보내기: (type: string) => Promise<void>
-  } {
-    let focused = 초기값
-    const listeners = new Map<string, Set<() => void>>()
-
-    return {
-      navigation: {
-        isFocused: () => focused,
-        addListener: (type, callback) => {
-          const bucket = listeners.get(type) ?? new Set()
-          bucket.add(callback)
-          listeners.set(type, bucket)
-          return () => bucket.delete(callback)
-        },
-      },
-      보내기: async (type) => {
-        focused = type === 'focus'
-        await act(async () => {
-          listeners.get(type)?.forEach((callback) => callback())
-        })
-      },
-    }
-  }
-
   async function 화면에그리기(초기값: boolean) {
     const 가짜 = 초점가짜(초기값)
 

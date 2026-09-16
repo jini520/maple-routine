@@ -6,41 +6,13 @@
  *
  * @see src/navigation/LayerStack.tsx 호스트를 바 뒤에 꽂는 자리
  */
-import { useCallback, useContext, useSyncExternalStore, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { Portal, PortalHost } from '@gorhom/portal'
-import { NavigationContext } from '@react-navigation/native'
+
+import { useScreenFocused } from '../../../hooks/useScreenFocused'
 
 /** 포털 호스트 이름. 시트의 루트 호스트와 달라야 둘이 안 섞인다. */
 const BOTTOM_BAR_OVERLAY_HOST = 'bottom-bar-overlay'
-
-/**
- * 이 컴포넌트가 선 화면이 지금 보이는지 내는 훅.
- *
- * `useIsFocused` 를 못 쓴다. 그 훅은 내비게이터 밖에서 던지는데 이 저장소의 컴포넌트 테스트는
- * 내비게이터 없이 렌더한다. 컨텍스트를 옵션으로 읽고 없으면 보이는 것으로 둔다.
- *
- * @returns 초점 여부. 내비게이터가 없으면 항상 `true`
- */
-function useScreenFocused(): boolean {
-  const navigation = useContext(NavigationContext)
-
-  const subscribe = useCallback(
-    (onChange: () => void) => {
-      if (navigation === undefined) return () => {}
-
-      const unsubscribeFocus = navigation.addListener('focus', onChange)
-      const unsubscribeBlur = navigation.addListener('blur', onChange)
-
-      return () => {
-        unsubscribeFocus()
-        unsubscribeBlur()
-      }
-    },
-    [navigation],
-  )
-
-  return useSyncExternalStore(subscribe, () => navigation?.isFocused() ?? true)
-}
 
 /**
  * 슬롯이 그려질 자리를 여는 호스트.
