@@ -93,6 +93,23 @@ export function bannerSlideFrame(index: number, step: BannerStep, width: number)
   return { visible: false, zIndex: 0, translateX: 0, veil: 0 }
 }
 
+/**
+ * 칸의 애니메이션 스타일. 숨은 칸에는 `transform` 을 싣지 않는다.
+ *
+ * Reanimated 는 이전 스타일과 얕게 비교해 다를 때만 커밋한다. `transform` 은 부를 때마다 새 배열이라 값이 같아도
+ * 다르다고 보므로, 실으면 숨은 칸 스무 개가 스크롤마다 커밋된다. 숨기 직전의 위치가 뷰에 남지만 보이지 않고, 다시
+ * 보일 때 새로 싣는다.
+ */
+export function bannerSlideStyle(frame: BannerSlideFrame): {
+  opacity: number
+  zIndex: number
+  transform?: [{ translateX: number }]
+} {
+  'worklet'
+  if (!frame.visible) return { opacity: 0, zIndex: 0 }
+  return { opacity: 1, zIndex: frame.zIndex, transform: [{ translateX: frame.translateX }] }
+}
+
 /** 스크롤 칸 수. 배너가 둘 이상이면 끝과 처음을 잇는 사본이 양끝에 하나씩 붙는다. */
 export function loopPageCount(bannerCount: number): number {
   'worklet'

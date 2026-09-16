@@ -3,6 +3,7 @@
 // 넘기기를 시작할 때 서 있던 칸이 이전 배너(base)이고 넘기는 쪽 옆 칸이 새 배너(target)다. d 는 base 에서 넘긴 정도(0~1)다.
 import {
   bannerSlideFrame,
+  bannerSlideStyle,
   bannerStep,
   loopPageCount,
   newBannerOpacity,
@@ -90,6 +91,41 @@ describe('bannerSlideFrame', () => {
     const rest = bannerStep(2, 2, 8)
     expect(bannerSlideFrame(2, rest, 360)).toEqual({ visible: true, zIndex: 1, translateX: 0, veil: 0 })
     expect(bannerSlideFrame(3, rest, 360).visible).toBe(false)
+  })
+})
+
+describe('bannerSlideStyle', () => {
+  /** Reanimated 가 커밋할지 가르는 비교와 같다. 키 수가 같고 값이 전부 `===` 다. */
+  function 얕게같다(a: object, b: object): boolean {
+    const aKeys = Object.keys(a)
+    return (
+      aKeys.length === Object.keys(b).length &&
+      aKeys.every((key) => (a as Record<string, unknown>)[key] === (b as Record<string, unknown>)[key])
+    )
+  }
+
+  // 스크롤마다 숨은 칸 스무 개가 커밋되면 안드로이드에서 터치 이동 하나에 4~10ms 가 걸린다.
+  it('숨은 칸은 스크롤이 움직여도 같은 스타일이라 커밋되지 않는다', () => {
+    const 앞 = bannerSlideStyle(bannerSlideFrame(5, bannerStep(2.2, 2, 8), 360))
+    const 뒤 = bannerSlideStyle(bannerSlideFrame(5, bannerStep(2.3, 2, 8), 360))
+
+    expect(앞.opacity).toBe(0)
+    expect(얕게같다(앞, 뒤)).toBe(true)
+  })
+
+  it('보이는 칸은 겹치는 순서와 위치를 싣는다', () => {
+    const step = bannerStep(2.5, 2, 8)
+
+    expect(bannerSlideStyle(bannerSlideFrame(2, step, 360))).toEqual({
+      opacity: 1,
+      zIndex: 1,
+      transform: [{ translateX: bannerSlideFrame(2, step, 360).translateX }],
+    })
+    expect(bannerSlideStyle(bannerSlideFrame(3, step, 360))).toEqual({
+      opacity: 1,
+      zIndex: 2,
+      transform: [{ translateX: 0 }],
+    })
   })
 })
 

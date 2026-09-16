@@ -22,6 +22,7 @@ import { NoticeBannerArt } from './NoticeBannerArt'
 import {
   BANNER_DOT_SIZE,
   bannerSlideFrame,
+  bannerSlideStyle,
   bannerStep,
   loopPageCount,
   realBannerIndex,
@@ -54,10 +55,9 @@ function BannerSlide(props: {
   onPress: () => void
 }): React.JSX.Element {
   const { page, pageCount, width, position, base } = props
-  const slideStyle = useAnimatedStyle(() => {
-    const frame = bannerSlideFrame(page, bannerStep(position.value, base.value, pageCount), width)
-    return { opacity: frame.visible ? 1 : 0, zIndex: frame.zIndex, transform: [{ translateX: frame.translateX }] }
-  })
+  const slideStyle = useAnimatedStyle(() =>
+    bannerSlideStyle(bannerSlideFrame(page, bannerStep(position.value, base.value, pageCount), width)),
+  )
   // 배너를 투명하게 하면 겹친 곳이 포개져 진해진다. 그림 위에 막을 덮어 옅게 한다.
   const veilStyle = useAnimatedStyle(() => ({
     opacity: bannerSlideFrame(page, bannerStep(position.value, base.value, pageCount), width).veil,
@@ -133,9 +133,15 @@ const BAR_BOX = {
   overflow: 'hidden',
 } as const
 
-/** 그림 위에서 읽히는 점. 테마 색이 아니라 그림 위에 얹는 흰 점이다. */
+/**
+ * 그림 위에서 읽히는 점. 테마 색이 아니라 그림 위에 얹는 흰 점이다.
+ *
+ * 바탕은 불투명하게 두고 점 전체를 옅게 한다. 바탕이 반투명하면 RN iOS 가 그림자 모양을 못 만들어 점마다 픽셀 그림자를 떠서,
+ * 배너가 보이는 동안 스크롤이 끊긴다. 그림자 진하기는 두 방식 모두 0.35 × 0.72 다.
+ */
 const DOT_ON_IMAGE = {
-  backgroundColor: 'rgba(255, 255, 255, 0.72)',
+  backgroundColor: '#ffffff',
+  opacity: 0.72,
   shadowColor: '#000',
   shadowOpacity: 0.35,
   shadowRadius: 1,
