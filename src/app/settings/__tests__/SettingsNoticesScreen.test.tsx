@@ -128,7 +128,7 @@ describe('모양', () => {
   it('글 공지는 제목을 자르지 않는 글 줄이다', async () => {
     notices.mockResolvedValue([notice('game-1', '아주 긴 게임 공지 제목', '2026-09-10T00:00:00Z', 'game')])
 
-    const view = await renderOverlay(<SettingsNoticesScreen route={{ params: { kinds: ['game'], title: '게임 공지사항' } }} />)
+    const view = await renderOverlay(<SettingsNoticesScreen route={{ params: { kinds: ['game'], title: '공지 사항' } }} />)
 
     await waitFor(() => expect(view.getByText('아주 긴 게임 공지 제목')).toBeTruthy())
     expect(view.getByText('아주 긴 게임 공지 제목').props.numberOfLines).toBeUndefined()
@@ -145,7 +145,7 @@ describe('모양', () => {
 
 describe('받기', () => {
   it('그 분류만 받는다', async () => {
-    await renderOverlay(<SettingsNoticesScreen route={{ params: { kinds: ['game'], title: '게임 공지사항' } }} />)
+    await renderOverlay(<SettingsNoticesScreen route={{ params: { kinds: ['game'], title: '공지 사항' } }} />)
 
     await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1))
     expect(refresh.mock.calls[0][0]).toEqual(['game'])

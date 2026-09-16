@@ -107,6 +107,9 @@ if (첫테마 === undefined || 다른테마 === undefined) throw new Error('테�
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
+/** 스켈레톤은 스스로 숨는 장식이라 숨은 요소까지 훑어야 보인다. */
+const HIDDEN = { includeHiddenElements: true } as const
+
 async function press(element: AtomElement): Promise<void> {
   await act(async () => {
     fireEvent.press(element)
@@ -151,7 +154,7 @@ const SECTIONS: readonly [string, NoticeKind][] = [
   ['진행 중인 이벤트', 'event'],
   // 넥슨 캐시샵 공지는 캐시아이템 업데이트 소식이다.
   ['캐시샵 업데이트', 'cashshop'],
-  ['게임 공지사항', 'game'],
+  ['공지 사항', 'game'],
   ['업데이트', 'update'],
 ]
 
@@ -249,7 +252,7 @@ describe('SettingsScreen', () => {
     expect(view.getByTestId('screen-scroll')).toBeTruthy()
   })
 
-  it('행이 정확히 4개이고 읽을거리 → 문의 · 응원 순이다', async () => {
+  it('읽는 행 넷이 읽을거리 → 문의 · 응원 순으로 선다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
 
     for (const label of ROW_LABELS) expect(view.getByText(label)).toBeTruthy()
@@ -259,11 +262,13 @@ describe('SettingsScreen', () => {
     expect(view.getAllByTestId('settings-row-external')).toHaveLength(2)
   })
 
-  it('두 카드가 성질대로 갈린다', async () => {
+  // 카드를 갈라 두던 근거가 사라졌다 - 응원이 맨 아래여야 한다는 것이었는데, 고지 네 줄이 설정
+  // 화면으로 가면서 아래 카드가 곧 화면 끝이 됐다.
+  it('읽는 행 넷이 한 카드에 선다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
 
     const cards = view.getAllByTestId('settings-card')
-    expect(cards).toHaveLength(2)
+    expect(cards).toHaveLength(1)
 
     const labelsIn = (card: AtomElement): string[] =>
       ROW_LABELS.filter((label) => {
@@ -272,9 +277,17 @@ describe('SettingsScreen', () => {
         return node === card
       })
 
-    expect(labelsIn(cards[0])).toEqual(['기능 설명', '개발 노트'])
-    // 앱을 떠나는 줄 둘이다. 후원 수단이 정해지면 그 자리에 다시 들어온다.
-    expect(labelsIn(cards[1])).toEqual(['문의하기', '개발자 응원하기(앱 리뷰)'])
+    expect(labelsIn(cards[0])).toEqual(ROW_LABELS)
+  })
+
+  // 앞 둘이 가이드이고 뒤 둘이 문의다(사용자 지정).
+  it('그 카드의 제목은 `가이드 및 문의` 이고 카드 바로 위에 선다', async () => {
+    const view = await renderOverlay(<SettingsScreen />)
+
+    const texts = textsIn(view.getByTestId('screen-Settings'))
+    expect(texts.indexOf('가이드 및 문의')).toBeLessThan(texts.indexOf('기능 설명'))
+    // 소식 갈래 제목이 아니므로 `전체` 를 안 단다 - 열 목록이 없다.
+    expect(view.queryByLabelText('가이드 및 문의 전체')).toBeNull()
   })
 
   it.each([
@@ -368,6 +381,14 @@ describe('SettingsScreen', () => {
   // 셋 다 `/settings/account-data` 로 내려갔다. 되돌아오면 값을 고르는 카드가 다시 혼종이 된다.
 
   // 버전 · 출처 표기는 설정 화면 맨 아래로 갔다. 소식 갈래로 길어진 이 화면 끝에 두면 멀리 밀린다.
+  // 값을 바꾸는 행은 전부 설정 화면에 산다. 같은 값을 바꾸는 행이 두 화면에 있으면 어느 쪽이
+  // 기준인지 화면이 말을 못 한다(사용자 결정).
+  it.each(['테마', '캐릭터 관리', '스케줄 관리 방법'])('"%s" 행을 두지 않는다', async (label) => {
+    const view = await renderOverlay(<SettingsScreen />)
+
+    expect(view.queryByText(label)).toBeNull()
+  })
+
   it('고지 블록을 두지 않는다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
 
@@ -394,14 +415,50 @@ describe('SettingsScreen: 소식 갈래', () => {
     expect(navigate).toHaveBeenCalledWith('SettingsNotices', { kinds: [kind], title: label })
   })
 
-  // 갈래를 숨기면 화면 순서가 바뀐다.
-  it('글이 없는 갈래도 제목과 빈 문구를 그린다', async () => {
+  // 받아 보기 전에 `없습니다` 라고 말하는 것은 거짓이고, 빈 문구 카드와 배너는 높이가 달라
+  // 도착할 때마다 아래가 밀렸다. 갈래가 다섯이라 그 밀림이 다섯 번 따로 일어난다.
+  it('받아 보기 전에는 갈래마다 스켈레톤이 선다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
 
-    expect(view.getByText('아직 받은 NOTICE가 없습니다')).toBeTruthy()
+    // 글 갈래 셋 · 배너 갈래 둘.
+    expect(view.getAllByTestId('notice-lines-skeleton', HIDDEN)).toHaveLength(3)
+    expect(view.getAllByTestId('notice-banner-skeleton', HIDDEN)).toHaveLength(2)
+    expect(view.queryByText('아직 받은 NOTICE가 없습니다')).toBeNull()
+    expect(view.queryByText('아직 받은 진행 중인 이벤트가 없습니다')).toBeNull()
+  })
+
+  // 갈래를 숨기면 화면 순서가 바뀐다.
+  it('받아 보고 없으면 그때 빈 문구로 바뀐다', async () => {
+    serveNotices({ app: [], event: [], cashshop: [], game: [], update: [] })
+
+    const view = await renderOverlay(<SettingsScreen />)
+
+    await waitFor(() => expect(view.getByText('아직 받은 NOTICE가 없습니다')).toBeTruthy())
     expect(view.getByText('아직 받은 진행 중인 이벤트가 없습니다')).toBeTruthy()
     expect(view.getByText('아직 받은 업데이트가 없습니다')).toBeTruthy()
     expect(view.getByText('아직 받은 캐시샵 업데이트가 없습니다')).toBeTruthy()
+    expect(view.queryAllByTestId('notice-lines-skeleton', HIDDEN)).toHaveLength(0)
+  })
+
+  // 실패한 갈래는 `onReceived` 를 안 부른다. 그 마무리가 없으면 영영 스켈레톤으로 남는다.
+  it('전부 실패해도 스켈레톤은 안 남는다', async () => {
+    serveNotices({})
+
+    const view = await renderOverlay(<SettingsScreen />)
+
+    await waitFor(() => expect(view.getByText('아직 받은 NOTICE가 없습니다')).toBeTruthy())
+    expect(view.queryAllByTestId('notice-banner-skeleton', HIDDEN)).toHaveLength(0)
+  })
+
+  // 보여줄 것이 있으면 기다리게 하지 않는다. 사본이 빈 갈래만 스켈레톤으로 남는다.
+  it('사본에 글이 있는 갈래는 스켈레톤을 건너뛴다', async () => {
+    mockedGetNotices.mockResolvedValue([notice('app-1', 'app')])
+
+    const view = await renderOverlay(<SettingsScreen />)
+
+    await waitFor(() => expect(view.getByText('제목 app-1')).toBeTruthy())
+    // NOTICE 는 사본이 섰고 나머지 글 갈래 둘만 스켈레톤이다.
+    expect(view.getAllByTestId('notice-lines-skeleton', HIDDEN)).toHaveLength(2)
   })
 
   it('들어오면 다섯 분류를 모두 받는다', async () => {

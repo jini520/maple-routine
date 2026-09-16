@@ -8,11 +8,17 @@
 > 누르면 받는 사람 · 제목 `[메이플 루틴 문의]` · 버그 신고 안내 · 기기 정보 줄이 채워진 메일 앱이 열리고, 안 열리면 주소를
 > 적은 토스트가 뜬다.
 > **더보기 화면은 [[ADR-282]] 가 다시 짰다(구현 완료 2026-09-16).** 소식 카드의 행 다섯을 걷고 첫 화면에 갈래 다섯(NOTICE(앱 공지) ·
-> 진행 중인 이벤트 · 캐시샵 업데이트 · 게임 공지사항 · 업데이트)을 펼친다. 아래 [footer](#footer) 의 네 줄은 설정 화면(`AppSettingsScreen`) 맨
+> 진행 중인 이벤트 · 캐시샵 업데이트 · 게임 공지사항(→ `공지 사항`, 아래 [[ADR-287]] 결정 5) · 업데이트)을 펼친다. 아래 [footer](#footer) 의 네 줄은 설정 화면(`AppSettingsScreen`) 맨
 > 아래로 간다.
 > **더보기 탭과 소식 전체 목록은 당겨서 새로고침한다**([[ADR-286]], 구현 완료 2026-09-16 · 실기기 미검증). 소식을 받는 화면이 되고도 재조회하는 문이 없어서
 > 갱신 수단이 탭을 떠났다 돌아오는 것 하나뿐이었다. 진입과 당김이 같은 함수(`refreshNoticeKinds`)를 부르고, 다섯 갈래가 **전부** 실패했을
 > 때만 토스트가 뜬다. `hh:mm:ss 기준` 줄은 안 세운다 — 소식은 [[ADR-231]] 정정 2 가 좁힌 실시간 조회 셋이 아니다.
+> **더보기 화면은 [[ADR-287]] 이 다시 손봤다(구현 완료 2026-09-16 · 실기기 미검증).** 셋이다. ① 첫 조회에 갈래 다섯이 `emptyNoticeText` 카드로 서던 것을
+> **스켈레톤**으로 바꾼다 - 받아 보기 전에 `없습니다` 라고 말하는 것이 거짓이고 배너·줄이 도착할 때마다 아래가 밀렸다. 상태가 `Notice[]` 에서
+> `Notice[] | null` 이 되고 `null` 이 `아직 모른다` 다. ② 읽는 행 넷(`기능 설명`·`개발 노트`·`문의하기`·`개발자 응원하기(앱 리뷰)`)을 **한 카드**로
+> 합치고 제목을 **`가이드 및 문의`** 로 단다. ③ **설정 화면이 카드마다 제목을 단다** — `알림` · `캐릭터 · 테마` · `스케줄` · `앱 데이터` 넷이고,
+> [[ADR-248]] 의 「섹션 제목을 안 단다」를 뒤집는다. 행 배치는 그 문서 그대로이고 `캐릭터 관리`·`테마` 도 설정에 있다.
+> ④ 게임 공지 갈래 이름이 `게임 공지사항` 에서 **`공지 사항`** 이 된다([[ADR-282]] 결정 4 가 지은 이름을 고친다).
 > **여기 없는 것**: 테마 목록과 색 정책은 [theme.md](./theme.md), 온보딩 흐름은
 > [onboarding.md](./onboarding.md), OTA 적용은 [live-update.md](./live-update.md).
 > **관련 문서**: [../foundation/nexon-api.md](../foundation/nexon-api.md) ·
@@ -34,7 +40,10 @@
 
 | 구분 | 파일 | 하는 일 |
 |---|---|---|
-| 화면 | `app/settings/SettingsScreen.tsx` | 본화면. 2카드 7행 + footer |
+| 화면 | `app/settings/SettingsScreen.tsx` | 더보기 본화면. 소식 갈래 다섯 + `가이드 및 문의` 카드 |
+| 화면 | `app/settings/AppSettingsScreen.tsx` | 설정. 머리의 톱니바퀴가 연다. 제목 붙은 카드 넷 |
+| 제목 | `app/settings/SectionTitle.tsx` | 카드 하나를 덮는 제목 줄. 두 화면이 공유한다 |
+| 로딩 | `components/atoms/Skeleton/` · `app/settings/NoticeSkeleton.tsx` | 소식 갈래의 조회 중 자리([[ADR-287]] 결정 1) |
 | 화면 | `app/settings/SettingsFeatureGuideListScreen.tsx` | 기능 설명 카탈로그 |
 | 화면 | `app/settings/SettingsFeatureGuideScreen.tsx` | 기능 안내 상세. 목차 + 이미지 + 문단 |
 | 화면 | `app/settings/SettingsReleaseNotesScreen.tsx` | 개발 노트 |
