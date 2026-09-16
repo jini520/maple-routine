@@ -24,6 +24,7 @@ import {
   markScheduleProbeUnavailable,
   recordScheduleProbe,
 } from '../../storage/schedule-probe-ledger'
+import { refreshSettlement } from '../settlement/store'
 import { toScheduleSyncError } from '../schedule-sync/errors'
 import { mapWithLimit } from './gate'
 
@@ -164,6 +165,10 @@ export async function fillScheduleWindow(
     return
   }
   const authConfig = { apiKey }
+
+  // 스케줄러를 실제로 부르는 회차다. 결산 여부도 이 자리에서 함께 묻는다. 안 기다리는 것은
+  // 그 답이 늦어도 창을 채우는 일이 늦으면 안 되기 때문이다.
+  void refreshSettlement()
 
   // 분모가 여기서 확정된다. 부를 것이 없어도 한 번은 알린다(화면이 바를 안 그리게).
   onProgress?.(0, jobs.length)

@@ -14,6 +14,10 @@ jest.mock('../../../nexon/schedule', () => ({
 }))
 const { fetchSchedulerCharacterState: fetchSchedulerCharacterStateMock } = jest.requireMock('../../../nexon/schedule') as Record<string, jest.Mock>
 
+jest.mock('../../settlement/store', () => ({ refreshSettlement: jest.fn() }))
+const { refreshSettlement: refreshSettlementMock } = jest.requireMock('../../settlement/store') as Record<string, jest.Mock>
+
+
 // KST 2026-08-03 12:00 → 백필 날짜는 2026-08-02 … 2026-07-21 (13일)
 const NOW = new Date('2026-08-03T03:00:00.000Z')
 
@@ -54,6 +58,7 @@ const COMPLETED = state({
 beforeEach(async () => {
   installFakePreferences()
   fetchSchedulerCharacterStateMock.mockReset()
+  refreshSettlementMock.mockReset().mockResolvedValue(undefined)
   await clearScheduleProbeLedger('ocid-1')
 })
 
@@ -256,5 +261,23 @@ describe('실패 종류별 기록 정책', () => {
       unavailable: false,
       dates: {},
     })
+  })
+})
+
+// 스케줄러 데이터를 갱신하는 자리는 결산 여부도 함께 갱신한다.
+describe('결산 여부도 갱신한다', () => {
+  it('날짜를 부르러 가면 결산도 다시 묻는다', async () => {
+    fetchSchedulerCharacterStateMock.mockResolvedValue(COMPLETED)
+
+    await resolveCharacterEligibility('key', 'ocid-1', false, NOW)
+
+    expect(refreshSettlementMock).toHaveBeenCalled()
+  })
+
+  // 원장만으로 판정이 나면 조회가 한 번도 안 나간다. 그 길에서는 묻지 않는다.
+  it('access_flag 로 곧바로 끝나면 결산도 안 묻는다', async () => {
+    await resolveCharacterEligibility('key', 'ocid-1', true, NOW)
+
+    expect(refreshSettlementMock).not.toHaveBeenCalled()
   })
 })

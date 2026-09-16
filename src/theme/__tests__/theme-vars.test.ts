@@ -18,6 +18,8 @@ import type { ThemeDefinition, ThemeName } from '../../types/theme'
 
 import {
   CARD_BODY_TOKEN,
+  SETTLEMENT_TOKENS,
+  resolveSettlementColors,
   PANEL_BORDER_TOKEN,
   SHEET_LIFT,
   buildMediaScopeVariables,
@@ -86,13 +88,17 @@ describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
   const definition = getThemeDefinition(name)
   const css = buildThemeCss(definition)
 
-  it('`:root` 변수가 core 의 출력과 이름·값 모두 같다(파생 토큰 둘만 더 낸다)', () => {
+  it('`:root` 변수가 core 의 출력과 이름·값 모두 같다(RN 이 더 내는 것만 뺀다)', () => {
     const variables = buildThemeVariables(definition)
     const {
       [PANEL_BORDER_VARIABLE]: panelBorder,
       [toColorVariableName(CARD_BODY_TOKEN)]: cardBody,
-      ...tokens
+      ...rest
     } = variables
+    // 결산 줄의 넷도 core 에는 없다. 테마 값이 아니라 모드 상수라서다.
+    const tokens = Object.fromEntries(
+      Object.entries(rest).filter(([name]) => !name.startsWith('--color-settlement-')),
+    )
 
     expect(panelBorder).toBe(resolvePanelBorder(definition))
     expect(cardBody).toBe(resolveCardBody(definition))
@@ -360,5 +366,63 @@ describe('resolveCardBody', () => {
     const definition = getThemeDefinition(THEME_NAMES[0])
 
     expect(buildThemeVariables(definition)['--color-card-body']).toBe(resolveCardBody(definition))
+  })
+})
+
+// 결산 안내 줄의 색. 앞의 둘과 달리 **테마 값에서 계산하지 않는다** — 라이트/다크 두 벌 상수다.
+// 그것이 이 색의 요건이다. 테마를 따라가면 여섯 테마에서 줄의 정체가 여섯 가지가 된다.
+describe('resolveSettlementColors. 테마를 안 따라가는 공통색', () => {
+  const 테마들 = THEME_NAMES.map((name) => getThemeDefinition(name))
+
+  it('같은 모드면 어느 테마든 값이 같다', () => {
+    for (const mode of ['light', 'dark'] as const) {
+      const 같은모드 = 테마들.filter((theme) => theme.mode === mode)
+      const 첫값 = resolveSettlementColors(같은모드[0])
+
+      for (const definition of 같은모드) {
+        expect(resolveSettlementColors(definition)).toEqual(첫값)
+      }
+    }
+  })
+
+  // 테마 이름으로 가르면 `DARK_THEMES` 수동 목록이 되살아난다. `panel-border` 와 같은 규칙이다.
+  it('모드만 보고 가른다. 테마의 다른 값이 바뀌어도 안 움직인다', () => {
+    const 원본 = 테마들.find((theme) => theme.mode === 'light')!
+    const 색만바꾼테마: ThemeDefinition = { ...원본, bg: '#FF0000', primary: '#00FF00' }
+
+    expect(resolveSettlementColors(색만바꾼테마)).toEqual(resolveSettlementColors(원본))
+  })
+
+  it('라이트와 다크가 서로 다르다', () => {
+    const light = resolveSettlementColors(테마들.find((theme) => theme.mode === 'light')!)
+    const dark = resolveSettlementColors(테마들.find((theme) => theme.mode === 'dark')!)
+
+    expect(light.tint).not.toBe(dark.tint)
+    expect(light.ink).not.toBe(dark.ink)
+  })
+
+  // 12px 글자가 그 바탕 위에서 읽혀야 한다. 흐린 둘째 줄까지 본다.
+  it('글자가 바탕 위에서 읽힌다', () => {
+    for (const mode of ['light', 'dark'] as const) {
+      const { tint, ink, inkMuted } = resolveSettlementColors(
+        테마들.find((theme) => theme.mode === mode)!,
+      )
+      const 밝기차 = (a: string, b: string): number =>
+        Math.abs(hexToOklch(a).l - hexToOklch(b).l)
+
+      expect(밝기차(tint, ink)).toBeGreaterThan(0.4)
+      expect(밝기차(tint, inkMuted)).toBeGreaterThan(0.25)
+    }
+  })
+
+  it('변수 맵에 넷이 다 실린다', () => {
+    const definition = getThemeDefinition(THEME_NAMES[0])
+    const variables = buildThemeVariables(definition)
+    const colors = resolveSettlementColors(definition)
+
+    expect(variables[toColorVariableName(SETTLEMENT_TOKENS.tint)]).toBe(colors.tint)
+    expect(variables[toColorVariableName(SETTLEMENT_TOKENS.ink)]).toBe(colors.ink)
+    expect(variables[toColorVariableName(SETTLEMENT_TOKENS.inkMuted)]).toBe(colors.inkMuted)
+    expect(variables[toColorVariableName(SETTLEMENT_TOKENS.mark)]).toBe(colors.mark)
   })
 })

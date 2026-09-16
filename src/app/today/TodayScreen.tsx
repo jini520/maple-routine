@@ -47,6 +47,7 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { CharacterManageButton } from './CharacterManageButton'
 import { NoticeBanner } from './NoticeBanner'
+import { SettlementBanner } from './SettlementBanner'
 import { buildTodayViewModel } from './view-model'
 import { WidgetGrid } from './WidgetGrid'
 
@@ -263,8 +264,12 @@ export function TodayScreen(): React.JSX.Element {
           </PageHeader>
         }
       >
-        {/* 배너는 이 래퍼 **밖**이다. 전폭이라 좌우 여백을 자기가 쥔다. 안에 넣고 음수 마진으로
-            밀어내면 아래 열 폭 계산이 깨진다. 세울 공지가 없으면 아무것도 안 그린다. */}
+        {/* 배너 둘은 이 래퍼 **밖**이다. 전폭이라 좌우 여백을 자기가 쥔다. 안에 넣고 음수 마진으로
+            밀어내면 아래 열 폭 계산이 깨진다. 세울 것이 없으면 둘 다 아무것도 안 그린다.
+
+            결산 줄이 공지 배너 **위**다. 공지는 읽을거리이고 결산 줄은 지금 화면의 값이 왜 안 맞는지를
+            말하므로, 그 줄이 값보다 먼저 와야 한다. */}
+        <SettlementBanner />
         <NoticeBanner />
         {/* 좌우 16 은 앱 공통 `px-4` 라 화면의 래퍼가 준다. 격자가 또 주면 두 겹이 되는데,
             열 폭 계산은 `창폭 − 32` 를 전제로 서 있다.

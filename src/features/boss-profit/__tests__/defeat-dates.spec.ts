@@ -32,6 +32,10 @@ const {
 } = jest.requireMock('../../../storage/schedule-probe-ledger') as Record<string, jest.Mock>
 const { fetchSchedulerCharacterState: fetchStateMock } = jest.requireMock('../../../nexon/schedule') as Record<string, jest.Mock>
 
+jest.mock('../../settlement/store', () => ({ refreshSettlement: jest.fn() }))
+const { refreshSettlement: refreshSettlementMock } = jest.requireMock('../../settlement/store') as Record<string, jest.Mock>
+
+
 beforeEach(() => {
   getAuthConfigMock.mockReset().mockResolvedValue({ apiKey: 'key' })
   getUndatedMock.mockReset().mockResolvedValue([])
@@ -39,6 +43,7 @@ beforeEach(() => {
   getLedgerMock.mockReset().mockResolvedValue({ unavailable: false, dates: {} })
   recordProbeMock.mockReset().mockResolvedValue(undefined)
   fetchStateMock.mockReset()
+  refreshSettlementMock.mockReset().mockResolvedValue(undefined)
 })
 
 function observed(entries: Record<string, string[]>): Map<string, ReadonlySet<string>> {
@@ -742,5 +747,32 @@ describe('resolveDefeatDates: 리프 경계는 원장에서 읽는다', () => {
     await resolveDefeatDates(['ocid-1'], new Date('2026-09-14T05:00:00.000Z'))
 
     expect(setDefeatedOnMock).not.toHaveBeenCalled()
+  })
+})
+
+// 스케줄러 데이터를 갱신하는 자리는 결산 여부도 함께 갱신한다.
+describe('결산 여부도 갱신한다', () => {
+  it('날짜를 캐러 조회에 들어가면 결산도 다시 묻는다', async () => {
+    getUndatedMock.mockResolvedValue([미확정_스우])
+    // 원장이 그 주를 다 보고 있어 이 회차는 넥슨을 한 번도 안 부르고 답을 낸다. 결산을 묻는
+    // 자리가 **조회 하나하나가 아니라 캐러 들어간 회차**라는 것을 이 픽스처가 말한다.
+    getLedgerMock.mockResolvedValue({
+      unavailable: false,
+      dates: {
+        '2026-08-20': { kind: 'observed', hasCompletion: false, sections: {}, bosses: [] },
+        '2026-08-21': { kind: 'observed', hasCompletion: true, sections: {}, bosses: ['lotus|hard'] },
+      },
+    })
+
+    await resolveDefeatDates(['ocid-1'], NOW)
+
+    expect(refreshSettlementMock).toHaveBeenCalled()
+  })
+
+  // 미확정 기록이 없는 정상 상태의 재진입은 조회가 0회다. 그 길을 이 요청으로 유료로 만들지 않는다.
+  it('캘 것이 없으면 결산도 안 묻는다', async () => {
+    await resolveDefeatDates(['ocid-1'], NOW)
+
+    expect(refreshSettlementMock).not.toHaveBeenCalled()
   })
 })
