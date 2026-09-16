@@ -55,6 +55,65 @@ beforeEach(() => {
   jest.mocked(useSettingsNavigation).mockReturnValue({ navigate, goBack } as never)
 })
 
+/** 스켈레톤은 스스로 숨는 장식이라 숨은 요소까지 훑어야 보인다. */
+const HIDDEN = { includeHiddenElements: true } as const
+
+// 더보기와 같은 버그가 이 화면에도 있었다. 상태 초깃값이 빈 배열이라, 받아 보기도 전에
+// `아직 받은 진행 중인 이벤트가 없습니다` 를 세우고 그다음에 카드가 들어왔다.
+describe('조회 중', () => {
+  /** 영원히 받는 중. 진입 조회가 안 끝나면 화면은 계속 모르는 상태다. */
+  function neverSettles(): void {
+    refresh.mockReturnValue(new Promise(() => {}))
+  }
+
+  it('배너 갈래는 카드 모양 스켈레톤이 선다', async () => {
+    neverSettles()
+
+    const view = await renderOverlay(
+      <SettingsNoticesScreen route={{ params: { kinds: ['event'], title: '진행 중인 이벤트' } }} />,
+    )
+
+    expect(view.getAllByTestId('notice-card-skeleton', HIDDEN).length).toBeGreaterThan(0)
+    expect(view.queryByText('아직 받은 진행 중인 이벤트가 없습니다')).toBeNull()
+  })
+
+  it('글 갈래는 줄 모양 스켈레톤이 선다', async () => {
+    neverSettles()
+
+    const view = await renderOverlay(
+      <SettingsNoticesScreen route={{ params: { kinds: ['game'], title: '공지 사항' } }} />,
+    )
+
+    expect(view.getByTestId('notice-lines-skeleton', HIDDEN)).toBeTruthy()
+    expect(view.queryByText('아직 받은 공지 사항이 없습니다')).toBeNull()
+  })
+
+  // 보여줄 것이 있으면 기다리게 하지 않는다.
+  it('사본에 글이 있으면 스켈레톤을 건너뛴다', async () => {
+    neverSettles()
+    notices.mockResolvedValue([notice('c-1', '사본 제목', '2026-09-15T00:00:00.000Z', 'game')])
+
+    const view = await renderOverlay(
+      <SettingsNoticesScreen route={{ params: { kinds: ['game'], title: '공지 사항' } }} />,
+    )
+
+    await waitFor(() => expect(view.getByText('사본 제목')).toBeTruthy())
+    expect(view.queryByTestId('notice-lines-skeleton', HIDDEN)).toBeNull()
+  })
+
+  // 실패한 갈래는 `onReceived` 를 안 부른다. 그 마무리가 없으면 영영 스켈레톤으로 남는다.
+  it('조회가 전부 실패해도 스켈레톤은 안 남는다', async () => {
+    serveNotices({})
+
+    const view = await renderOverlay(
+      <SettingsNoticesScreen route={{ params: { kinds: ['event'], title: '진행 중인 이벤트' } }} />,
+    )
+
+    await waitFor(() => expect(view.getByText('아직 받은 진행 중인 이벤트가 없습니다')).toBeTruthy())
+    expect(view.queryAllByTestId('notice-card-skeleton', HIDDEN)).toHaveLength(0)
+  })
+})
+
 describe('목록', () => {
   // 제목은 부르는 쪽이 준다. 소식 카드의 행 이름이 그대로 화면 제목이자 빈 상태 문구가 된다.
   it('받은 것이 없으면 그 분류 이름으로 빈 상태를 말한다', async () => {
