@@ -6,8 +6,9 @@
 //    목록에서 온 경로가 서로 다른 내용을 그릴 수 있다.
 import { act, fireEvent, waitFor } from '@testing-library/react-native'
 
-import { renderOverlay } from '../../../components/__tests__/render-atom'
-import { refreshNoticeKind } from '../../../features/notice/notice-feed'
+import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
+import { __resetToastsForTest, useToastStore } from '../../../features/toast/store'
+import { refreshNoticeKinds } from '../../../features/notice/notice-feed'
 import { getNotices } from '../../../storage/notices'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 import { SettingsNoticesScreen } from '../SettingsNoticesScreen'
@@ -16,7 +17,7 @@ import type { Notice, NoticeKind } from '../../../types/notice'
 jest.mock('../../../storage/notices', () => ({ __esModule: true, getNotices: jest.fn() }))
 jest.mock('../../../features/notice/notice-feed', () => ({
   __esModule: true,
-  refreshNoticeKind: jest.fn(async () => null),
+  refreshNoticeKinds: jest.fn(),
 }))
 jest.mock('../../../hooks/useSettingsNavigation', () => ({
   __esModule: true,
@@ -24,7 +25,21 @@ jest.mock('../../../hooks/useSettingsNavigation', () => ({
 }))
 
 const notices = jest.mocked(getNotices)
-const refresh = jest.mocked(refreshNoticeKind)
+const refresh = jest.mocked(refreshNoticeKinds)
+
+/**
+ * 갈래마다 받을 것을 정해 둔다. 빠진 갈래와 `null` 은 실패라 화면에 안 알린다
+ * (사본이 그대로 서야 한다).
+ */
+function serveNotices(byKind: Partial<Record<NoticeKind, Notice[] | null>>): void {
+  refresh.mockImplementation(async (kinds, onReceived) => {
+    for (const kind of kinds) {
+      const received = byKind[kind] ?? null
+      if (received !== null) onReceived(kind, received)
+    }
+    return { allFailed: kinds.every((kind) => (byKind[kind] ?? null) === null) }
+  })
+}
 const navigate = jest.fn()
 const goBack = jest.fn()
 
@@ -34,8 +49,9 @@ function notice(id: string, title: string, publishedAt: string, kind: NoticeKind
 
 beforeEach(() => {
   jest.clearAllMocks()
+  __resetToastsForTest()
   notices.mockResolvedValue([])
-  refresh.mockResolvedValue(null)
+  serveNotices({})
   jest.mocked(useSettingsNavigation).mockReturnValue({ navigate, goBack } as never)
 })
 
@@ -131,15 +147,15 @@ describe('받기', () => {
   it('그 분류만 받는다', async () => {
     await renderOverlay(<SettingsNoticesScreen route={{ params: { kinds: ['game'], title: '게임 공지사항' } }} />)
 
-    await waitFor(() => expect(refresh).toHaveBeenCalledWith('game'))
-    expect(refresh).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1))
+    expect(refresh.mock.calls[0][0]).toEqual(['game'])
   })
 
   // 기준(서버 · 넥슨 목록)에서 내린 글이 목록에 남던 자리. 사본을 바꾸는 일은 받는 쪽이 한다.
   it('성공하면 받은 목록을 그린다', async () => {
     const 남은것 = notice('kept', '남은 공지', '2026-09-01T00:00:00Z')
     notices.mockResolvedValue([notice('deleted', '지운 공지', '2026-09-05T00:00:00Z'), 남은것])
-    refresh.mockResolvedValue([남은것])
+    serveNotices({ app: [남은것] })
 
     const view = await renderOverlay(
       <SettingsNoticesScreen route={{ params: { kinds: ['app'], title: '앱 공지사항' } }} />,
@@ -151,7 +167,7 @@ describe('받기', () => {
 
   it('빈 목록을 받으면 빈 상태를 그린다', async () => {
     notices.mockResolvedValue([notice('deleted', '지운 공지', '2026-09-05T00:00:00Z')])
-    refresh.mockResolvedValue([])
+    serveNotices({ app: [] })
 
     const view = await renderOverlay(
       <SettingsNoticesScreen route={{ params: { kinds: ['app'], title: '앱 공지사항' } }} />,
@@ -178,18 +194,82 @@ describe('받기', () => {
       notice('app-old', '앱 공지 사본', '2026-09-02T00:00:00Z'),
       notice('game-old', '게임 공지 사본', '2026-09-01T00:00:00Z', 'game'),
     ])
-    refresh.mockImplementation(async (kind) =>
-      kind === 'game' ? [notice('game-new', '받은 게임 공지', '2026-09-09T00:00:00Z', 'game')] : null,
-    )
+    serveNotices({ game: [notice('game-new', '받은 게임 공지', '2026-09-09T00:00:00Z', 'game')] })
 
     const view = await renderOverlay(<SettingsNoticesScreen />)
 
     await waitFor(() => expect(view.getByText('받은 게임 공지')).toBeTruthy())
-    expect(refresh).toHaveBeenCalledTimes(5)
+    expect([...refresh.mock.calls[0][0]].sort()).toEqual(['app', 'cashshop', 'event', 'game', 'update'])
     expect(view.queryByText('게임 공지 사본')).toBeNull()
     expect(view.getAllByTestId('notice-row').map((row) => row.props.accessibilityLabel)).toEqual([
       '받은 게임 공지',
       '앱 공지 사본',
     ])
+  })
+})
+
+// 이 화면도 소식을 받고는 머무는 동안 다시 받을 길이 없었다. 더보기와 같은 이유로 당김이 선다.
+// 인디케이터 조립은 `ScreenScroll` 이 지고, 화면이 지는 것은 무엇을 부르는가 와 실패를 말하는가 다.
+describe('당겨서 새로고침', () => {
+  async function pull(view: { getByTestId: (id: string) => AtomElement }): Promise<void> {
+    await act(async () => {
+      view.getByTestId('screen-scroll').props.refreshControl.props.onRefresh()
+    })
+  }
+
+  it('당기면 보고 있는 갈래만 다시 받는다', async () => {
+    const view = await renderOverlay(
+      <SettingsNoticesScreen route={{ params: { kinds: ['event'], title: '진행 중인 이벤트' } }} />,
+    )
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1))
+
+    await pull(view)
+
+    expect(refresh).toHaveBeenCalledTimes(2)
+    expect(refresh.mock.calls[1][0]).toEqual(['event'])
+  })
+
+  it('당겨서 받은 것을 그린다', async () => {
+    const view = await renderOverlay(
+      <SettingsNoticesScreen route={{ params: { kinds: ['app'], title: '앱 공지사항' } }} />,
+    )
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1))
+    serveNotices({ app: [notice('app-new', '방금 올라온 공지', '2026-09-16T00:00:00Z')] })
+
+    await pull(view)
+
+    expect(view.getByText('방금 올라온 공지')).toBeTruthy()
+  })
+
+  // 당김은 사용자가 요청한 조회다. 아무 일도 안 일어나면 고장으로 읽힌다.
+  it('전부 실패하면 토스트로 말한다', async () => {
+    const view = await renderOverlay(
+      <SettingsNoticesScreen route={{ params: { kinds: ['app'], title: '앱 공지사항' } }} />,
+    )
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1))
+
+    await pull(view)
+
+    expect(useToastStore.getState().toasts.map((toast) => toast.message)).toEqual(['소식을 불러오지 못했습니다'])
+  })
+
+  it('받으면 조용하다', async () => {
+    serveNotices({ app: [notice('app-1', '공지', '2026-09-16T00:00:00Z')] })
+    const view = await renderOverlay(
+      <SettingsNoticesScreen route={{ params: { kinds: ['app'], title: '앱 공지사항' } }} />,
+    )
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1))
+
+    await pull(view)
+
+    expect(useToastStore.getState().toasts).toEqual([])
+  })
+
+  // 진입 조회는 사용자가 부탁한 적이 없다. 실패를 말하는 것은 당김뿐이다.
+  it('진입 조회가 실패해도 토스트는 없다', async () => {
+    await renderOverlay(<SettingsNoticesScreen route={{ params: { kinds: ['app'], title: '앱 공지사항' } }} />)
+
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1))
+    expect(useToastStore.getState().toasts).toEqual([])
   })
 })

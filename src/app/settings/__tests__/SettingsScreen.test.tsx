@@ -26,7 +26,7 @@ import { setHapticsPort } from '../../../native/ports'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { SettingsScreen } from '../SettingsScreen'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
-import { refreshNoticeKind } from '../../../features/notice/notice-feed'
+import { refreshNoticeKinds } from '../../../features/notice/notice-feed'
 import { getNotices } from '../../../storage/notices'
 import type { Notice, NoticeKind } from '../../../types/notice'
 
@@ -48,7 +48,7 @@ jest.mock('../../../storage/notices', () => ({ __esModule: true, getNotices: jes
 jest.mock('../../../features/notice/notice-feed', () => ({
   __esModule: true,
   ...jest.requireActual('../../../features/notice/notice-feed'),
-  refreshNoticeKind: jest.fn(),
+  refreshNoticeKinds: jest.fn(),
 }))
 
 // 저장은 컨텐츠 스케줄러 스토어의 액션을 그대로 부른다(세 번째 사본 금지).
@@ -160,7 +160,21 @@ function notice(id: string, kind: NoticeKind, patch: Partial<Notice> = {}): Noti
 }
 
 const mockedGetNotices = jest.mocked(getNotices)
-const mockedRefresh = jest.mocked(refreshNoticeKind)
+const mockedRefreshKinds = jest.mocked(refreshNoticeKinds)
+
+/**
+ * 갈래마다 받을 것을 정해 둔다. 빠진 갈래와 `null` 은 실패라 화면에 안 알린다
+ * (사본이 그대로 서야 한다).
+ */
+function serveNotices(byKind: Partial<Record<NoticeKind, Notice[] | null>>): void {
+  mockedRefreshKinds.mockImplementation(async (kinds, onReceived) => {
+    for (const kind of kinds) {
+      const received = byKind[kind] ?? null
+      if (received !== null) onReceived(kind, received)
+    }
+    return { allFailed: kinds.every((kind) => (byKind[kind] ?? null) === null) }
+  })
+}
 
 function mockThemeStore(overrides: Partial<ReturnType<typeof useThemeStore>> = {}): void {
   mockedUseThemeStore.mockReturnValue({
@@ -216,7 +230,7 @@ beforeEach(() => {
   mockLoadProfitTracked.mockResolvedValue(undefined)
   mockedGetNotices.mockResolvedValue([])
   // 기본은 "영원히 받는 중". 받은 결과가 필요한 케이스만 따로 세운다.
-  mockedRefresh.mockReturnValue(new Promise(() => {}))
+  mockedRefreshKinds.mockReturnValue(new Promise(() => {}))
 })
 
 afterEach(() => {
@@ -393,8 +407,8 @@ describe('SettingsScreen: 소식 갈래', () => {
   it('들어오면 다섯 분류를 모두 받는다', async () => {
     await renderOverlay(<SettingsScreen />)
 
-    await waitFor(() => expect(mockedRefresh).toHaveBeenCalledTimes(5))
-    expect(mockedRefresh.mock.calls.map(([kind]) => kind).sort()).toEqual(['app', 'cashshop', 'event', 'game', 'update'])
+    await waitFor(() => expect(mockedRefreshKinds).toHaveBeenCalledTimes(1))
+    expect([...mockedRefreshKinds.mock.calls[0][0]].sort()).toEqual(['app', 'cashshop', 'event', 'game', 'update'])
   })
 
   it('글 갈래는 최근 글을 앱 공지 3 · 게임 공지 3 · 업데이트 2 줄만 보인다', async () => {
@@ -415,9 +429,10 @@ describe('SettingsScreen: 소식 갈래', () => {
   it('사본을 먼저 그리고 받은 목록으로 바꾼다', async () => {
     mockedGetNotices.mockResolvedValue([notice('game-old', 'game')])
     let resolveGame: (value: Notice[]) => void = () => {}
-    mockedRefresh.mockImplementation((kind) =>
-      kind === 'game' ? new Promise((resolve) => (resolveGame = resolve)) : new Promise(() => {}),
-    )
+    mockedRefreshKinds.mockImplementation(async (_kinds, onReceived) => {
+      onReceived('game', await new Promise<Notice[]>((resolve) => (resolveGame = resolve)))
+      return { allFailed: false }
+    })
 
     const view = await renderOverlay(<SettingsScreen />)
     await waitFor(() => expect(view.getByText('제목 game-old')).toBeTruthy())
@@ -432,11 +447,11 @@ describe('SettingsScreen: 소식 갈래', () => {
 
   it('실패한 분류는 사본이 그대로 선다', async () => {
     mockedGetNotices.mockResolvedValue([notice('update-1', 'update')])
-    mockedRefresh.mockResolvedValue(null)
+    serveNotices({})
 
     const view = await renderOverlay(<SettingsScreen />)
 
-    await waitFor(() => expect(mockedRefresh).toHaveBeenCalledTimes(5))
+    await waitFor(() => expect(mockedRefreshKinds).toHaveBeenCalledTimes(1))
     expect(view.getByText('제목 update-1')).toBeTruthy()
   })
 
@@ -461,6 +476,74 @@ describe('SettingsScreen: 소식 갈래', () => {
     await waitFor(() => expect(view.getByLabelText('제목 notice-20260915-1')).toBeTruthy())
     await press(view.getByLabelText('제목 notice-20260915-1'))
     expect(navigate).toHaveBeenCalledWith('SettingsNoticeDetail', { noticeId: 'notice-20260915-1' })
+  })
+})
+
+// 이 탭은 소식을 받는 화면이 되고도 재조회하는 문이 없었다. 갱신 수단이 탭을 떠났다 돌아오는 것
+// 하나뿐이라, 더보기를 열어 둔 채로는 새 공지가 안 나타났다.
+//
+// 인디케이터 조립은 `ScreenScroll` 이 진다. 화면이 지는 것은 **무엇을 부르는가** 와
+// **실패를 말하는가** 둘이다.
+describe('SettingsScreen: 당겨서 새로고침', () => {
+  async function pull(view: Rendered): Promise<void> {
+    await act(async () => {
+      view.getByTestId('screen-scroll').props.refreshControl.props.onRefresh()
+    })
+  }
+
+  async function 진입을마친화면(): Promise<Rendered> {
+    const view = await renderOverlay(<SettingsScreen />)
+    await waitFor(() => expect(mockedRefreshKinds).toHaveBeenCalledTimes(1))
+    return view
+  }
+
+  it('당기면 다섯 갈래를 다시 받는다', async () => {
+    serveNotices({ app: [notice('app-1', 'app')] })
+    const view = await 진입을마친화면()
+
+    await pull(view)
+
+    expect(mockedRefreshKinds).toHaveBeenCalledTimes(2)
+    expect([...mockedRefreshKinds.mock.calls[1][0]].sort()).toEqual(['app', 'cashshop', 'event', 'game', 'update'])
+  })
+
+  it('당겨서 받은 것을 그린다', async () => {
+    serveNotices({})
+    const view = await 진입을마친화면()
+    serveNotices({ game: [notice('game-new', 'game')] })
+
+    await pull(view)
+
+    expect(view.getByText('제목 game-new')).toBeTruthy()
+  })
+
+  // 당김은 사용자가 명시적으로 요청한 행동이다. 아무 일도 안 일어나면 고장으로 읽힌다.
+  it('전부 실패하면 토스트로 말한다', async () => {
+    serveNotices({})
+    const view = await 진입을마친화면()
+
+    await pull(view)
+
+    expect(useToastStore.getState().toasts.map((toast) => toast.message)).toEqual(['소식을 불러오지 못했습니다'])
+  })
+
+  // 키가 없으면 넥슨 네 갈래가 언제나 실패다. 그때마다 말하면 앱 공지를 제대로 받고도 토스트가 뜬다.
+  it('하나라도 성공하면 조용하다', async () => {
+    serveNotices({ app: [notice('app-1', 'app')] })
+    const view = await 진입을마친화면()
+
+    await pull(view)
+
+    expect(useToastStore.getState().toasts).toEqual([])
+  })
+
+  // 진입 조회는 사용자가 부탁한 적이 없다. 실패를 말하는 것은 당김뿐이다.
+  it('진입 조회가 전부 실패해도 토스트는 없다', async () => {
+    serveNotices({})
+
+    await 진입을마친화면()
+
+    expect(useToastStore.getState().toasts).toEqual([])
   })
 })
 
