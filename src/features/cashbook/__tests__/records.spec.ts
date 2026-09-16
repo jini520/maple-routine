@@ -22,6 +22,10 @@ jest.mock('../../../storage/last-hunt-selection', () => ({
   setLastHuntSelection: jest.fn(),
   getLastHuntSelection: jest.fn(),
 }))
+jest.mock('../../../storage/last-hunt-toggles', () => ({
+  setLastHuntToggles: jest.fn(),
+  getLastHuntToggles: jest.fn(),
+}))
 jest.mock('../../../storage/boss-profit', () => ({
   getDatedBossProfitRecords: jest.fn(),
   getBossProfitRecordsRevision: jest.fn(),
@@ -46,6 +50,7 @@ const income = jest.requireMock('../../../storage/income') as Record<string, jes
 const spend = jest.requireMock('../../../storage/spend') as Record<string, jest.Mock>
 const rate = jest.requireMock('../../../storage/last-point-rate') as Record<string, jest.Mock>
 const huntSelection = jest.requireMock('../../../storage/last-hunt-selection') as Record<string, jest.Mock>
+const huntToggles = jest.requireMock('../../../storage/last-hunt-toggles') as Record<string, jest.Mock>
 const bossProfit = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 const bossDrops = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
 const selection = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
@@ -70,6 +75,7 @@ beforeEach(() => {
   enhancement.loadEnhancementHistory.mockResolvedValue([])
   enhancement.loadObservedItemLevels.mockResolvedValue(new Map())
   worldNames.getEventWorldNames.mockResolvedValue(new Set())
+  huntToggles.getLastHuntToggles.mockResolvedValue(null)
   income.getIncomeMonthRows.mockResolvedValue([])
   spend.getSpendMonthRows.mockResolvedValue([])
   bossProfit.getBossProfitMonthRows.mockResolvedValue([])
@@ -223,6 +229,102 @@ describe('마지막 사냥 자리를 기억한다', () => {
     await expect(recordIncome(수입, 지금)).rejects.toThrow()
 
     expect(huntSelection.setLastHuntSelection).not.toHaveBeenCalled()
+  })
+})
+
+/**
+ * 사냥 시트의 체크 셋은 매번 같은 것을 다시 켜게 되던 자리다. 저장이 성공한 뒤에만 남기고
+ * 시트를 새로 열 때 그 값으로 선다. 마지막 사냥 자리·시세를 기억하는 것과 같은 규칙이다.
+ */
+describe('마지막 체크 셋을 기억한다', () => {
+  // 앞 케이스가 저장을 던지게 해 두었고 `clearAllMocks` 는 구현을 안 지운다.
+  beforeEach(() => {
+    income.insertIncomeRecord.mockResolvedValue(undefined)
+  })
+
+  const 계산기사냥: IncomeDraft = {
+    ...수입,
+    ocid: 'ocid-1',
+    hunt: {
+      mode: 'calculator',
+      characterLevel: 294,
+      missedMobs: 0,
+      boosts: ['union', 'potion'],
+      sojae: 2,
+      fragments: 35,
+      fragmentPrice: 0,
+      fragmentsDeferred: true,
+      mesoRate: 149,
+    },
+  }
+
+  it('계산기로 적은 사냥은 조각 체크와 켠 아이템을 함께 남긴다', async () => {
+    const { recordIncome } = require('../records') as typeof import('../records')
+
+    await recordIncome(계산기사냥, 지금)
+
+    expect(huntToggles.setLastHuntToggles).toHaveBeenCalledWith({
+      fragmentsDeferred: true,
+      boosts: ['union', 'potion'],
+    })
+  })
+
+  // 수동 폼에는 아이템 줄이 없다. 거기서 빈 값을 적으면 계산기에서 켜 두던 것이 지워진다.
+  it('수동으로 적은 사냥은 조각 체크만 바꾸고 켠 아이템은 그대로 둔다', async () => {
+    huntToggles.getLastHuntToggles.mockResolvedValue({
+      fragmentsDeferred: false,
+      boosts: ['union'],
+    })
+    const { recordIncome } = require('../records') as typeof import('../records')
+
+    await recordIncome(
+      {
+        ...수입,
+        ocid: 'ocid-1',
+        item: null,
+        itemKey: null,
+        hunt: {
+          mode: 'manual',
+          typedMeso: 41_760_000,
+          fragments: 0,
+          fragmentPrice: 0,
+          fragmentsDeferred: true,
+        },
+      },
+      지금,
+    )
+
+    expect(huntToggles.setLastHuntToggles).toHaveBeenCalledWith({
+      fragmentsDeferred: true,
+      boosts: ['union'],
+    })
+  })
+
+  //  이전 행은 계산 입력이 없다. 그 행에는 기억할 체크가 없다.
+  it('계산 입력이 없는 사냥 행은 안 남긴다', async () => {
+    const { recordIncome } = require('../records') as typeof import('../records')
+
+    await recordIncome({ ...수입, ocid: 'ocid-1' }, 지금)
+
+    expect(huntToggles.setLastHuntToggles).not.toHaveBeenCalled()
+  })
+
+  it('다른 갈래는 안 남긴다. 그 시트에는 체크가 없다', async () => {
+    const { recordIncome } = require('../records') as typeof import('../records')
+
+    await recordIncome({ ...계산기사냥, category: 'item_sale' }, 지금)
+
+    expect(huntToggles.setLastHuntToggles).not.toHaveBeenCalled()
+  })
+
+  // 던진 입력의 체크를 다음 기본값으로 남기면 적지도 않은 사냥의 설정이 다음에 선다.
+  it('저장이 실패하면 기억하지 않는다', async () => {
+    income.insertIncomeRecord.mockRejectedValue(new Error('체크'))
+    const { recordIncome } = require('../records') as typeof import('../records')
+
+    await expect(recordIncome(계산기사냥, 지금)).rejects.toThrow()
+
+    expect(huntToggles.setLastHuntToggles).not.toHaveBeenCalled()
   })
 })
 
@@ -953,11 +1055,11 @@ describe('loadTrackedCharacters', () => {
 })
 
 /**
- * 사냥 줄은 `캐릭터 · 사냥` + `n재획` 이다.
+ * 사냥 줄은 `캐릭터 · 사냥` + `n소재` 다.
  *
  * 그 줄이 답하는 것은 오늘 무엇으로 벌었나 이고 어느 맵이었나 는 열어 봐야 뜻이 생기는 값이다.
- * 갈래 이름이 그 자리를 들고, 몇 재획을 돌았나 를 세는 칸이 보스 줄의 n마리와 같은 자리·같은
- * 모양으로 선다.
+ * 갈래 이름이 그 자리를 들고, 몇 소재를 돌았나 를 세는 칸이 보스 줄의 n마리와 같은 자리·같은
+ * 모양으로 선다. 글자가 시트의 시간 줄과 같은 이름이라(1소재 = 30분) 한 수가 두 이름을 안 갖는다.
  */
 describe('사냥 줄의 이름과 셈', () => {
   const 사냥기록 = {
@@ -996,14 +1098,14 @@ describe('사냥 줄의 이름과 셈', () => {
     expect(rows.map(recordTitleOf)).toEqual(['루디 · 사냥'])
   })
 
-  it('**n재획**을 센다. 보스 줄의 `n마리`와 같은 자리다', async () => {
+  it('**n소재**를 센다. 보스 줄의 `n마리`와 같은 자리다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([사냥기록])
     const { loadDayRecords, recordCountLabelOf } =
       require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
-    expect(recordCountLabelOf(rows[0])).toBe('2재획')
+    expect(recordCountLabelOf(rows[0])).toBe('2소재')
   })
 
   // 수동으로 적은 행에는 소재 줄이 없다. 셀 것이 없으니 칸도 안 선다.
@@ -1038,7 +1140,7 @@ describe('사냥 줄의 이름과 셈', () => {
 })
 
 /**
- * 솔 에르다 조각 정산 줄은 `캐릭터 · 솔 에르다 조각` + `n개` 다(사용자 지정). 개수는 사냥 줄의 `n재획` 이
+ * 솔 에르다 조각 정산 줄은 `캐릭터 · 솔 에르다 조각` + `n개` 다(사용자 지정). 개수는 사냥 줄의 `n소재` 가
  * 서는 자리다.
  */
 describe('솔 에르다 조각 정산 줄', () => {

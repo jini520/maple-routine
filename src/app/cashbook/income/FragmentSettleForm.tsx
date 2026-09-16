@@ -132,9 +132,6 @@ export function FragmentSettleForm(
         </View>
         <Text className="-ml-1.5 shrink-0 text-xs text-text-muted">개</Text>
       </View>
-      {storage !== null && storage <= 0 && (
-        <Text className="-mt-1 text-xs text-text-muted">보관 중인 조각이 없습니다</Text>
-      )}
 
       <FieldRow label="개당 가격">
         <AmountInput testID="income-sheet-settle-price" value={priceText} onChange={setPriceText} />

@@ -78,6 +78,8 @@ async function 시트열기(overrides: Partial<React.ComponentProps<typeof Incom
       loadMesoRate={async () => ({ kind: 'read' as const, percent: 0 })}
       // 기억이 없는 상태가 기본이다. 자동 입력을 보는 케이스만 값을 준다.
       lastHuntSelection={null}
+      // 체크 셋도 기억이 없는 상태가 기본이다. 전부 꺼진 채 열린다.
+      lastHuntToggles={null}
       // 보관이 없는 상태가 기본이다. 정산을 보는 케이스만 값을 준다.
       loadFragmentStorage={async () => 0}
       onSave={jest.fn()}
@@ -1864,6 +1866,111 @@ describe('조각 가격 나중에 입력', () => {
 })
 
 /**
+ * 사냥 시트의 체크 셋은 마지막에 저장한 것으로 열린다(2026-09-16 사용자 지정). 같은 사냥을 반복해
+ * 적는 자리라 매번 같은 셋을 다시 켜게 되던 것을 없앤다.
+ *
+ * 되살리는 것은 새 기록뿐이다. 수정으로 열면 그 기록에 박힌 값이 이긴다. 안 그러면 옛 기록을
+ * 열어 보기만 해도 금액이 달라진다.
+ */
+describe('기억한 체크 셋', () => {
+  const 기억 = { fragmentsDeferred: true, boosts: ['union', 'potion'] }
+
+  it('새 사냥은 기억한 셋이 켜진 채 열린다', async () => {
+    const view = await 그리기({ lastHuntToggles: 기억 }, 'hunting')
+
+    expect(view.getByLabelText('조각 가격 나중에 입력').props.accessibilityState?.checked).toBe(true)
+    expect(view.getByLabelText('유니온의 부').props.accessibilityState?.checked).toBe(true)
+    expect(view.getByLabelText('소형 재물 획득의 비약').props.accessibilityState?.checked).toBe(true)
+  })
+
+  // 저장값에도 그대로 실린다. 화면만 켜지고 기록이 안 따라가면 금액이 화면과 갈린다.
+  it('기억한 아이템이 금액과 저장값에 든다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({
+      onSave,
+      lastHuntToggles: { fragmentsDeferred: false, boosts: ['union'] },
+    })
+    await 사슬고르기(view, 'ocid-1')
+    await 사슬고르기(view, 'tallahart')
+    await 사슬고르기(view, 'tallahart_road_of_night_3')
+
+    // 21,168,000 × 1.5 = 31,752,000. 유니온의 부가 통 안에 들었다.
+    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 31,752,000')
+
+    await 이름으로누르기(view, '저장')
+    expect(onSave.mock.calls[0][0].hunt).toMatchObject({ boosts: ['union'] })
+  })
+
+  // 켜 둔 것을 끄는 길이 있어야 기억이 덫이 안 된다.
+  it('기억한 체크도 끌 수 있다', async () => {
+    const view = await 그리기({ lastHuntToggles: 기억 }, 'hunting')
+
+    await 이름으로누르기(view, '조각 가격 나중에 입력')
+    await 누르기(view, '유니온의 부')
+
+    expect(view.getByLabelText('조각 가격 나중에 입력').props.accessibilityState?.checked).toBe(false)
+    expect(view.getByLabelText('유니온의 부').props.accessibilityState?.checked).toBe(false)
+  })
+
+  it('수정으로 열면 그 기록에 박힌 값이 이긴다', async () => {
+    const view = await 그리기({
+      lastHuntToggles: 기억,
+      editing: {
+        ...옛사냥행,
+        id: 'inc-edit',
+        ocid: 'ocid-1',
+        item: '밤의 길 3',
+        itemKey: 'tallahart_road_of_night_3',
+        hunt: {
+          mode: 'calculator' as const,
+          characterLevel: 294,
+          missedMobs: 0,
+          boosts: [],
+          sojae: 1,
+          fragments: 0,
+          fragmentPrice: 0,
+          fragmentsDeferred: false,
+          mesoRate: 0,
+        },
+      },
+      onDelete: jest.fn(),
+    })
+
+    expect(view.getByLabelText('조각 가격 나중에 입력').props.accessibilityState?.checked).toBe(false)
+    expect(view.getByLabelText('유니온의 부').props.accessibilityState?.checked).toBe(false)
+    expect(view.getByLabelText('소형 재물 획득의 비약').props.accessibilityState?.checked).toBe(false)
+  })
+
+  /**
+   * 아이템을 지우거나 `id` 를 바꾸면 기억한 글자가 아무것도 안 가리킨다. 그대로 세우면 화면에는
+   * 아무 체크도 없는데 새 기록에는 그 글자가 박힌다.
+   */
+  it('참조표에 없는 id 는 안 세운다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({
+      onSave,
+      lastHuntToggles: { fragmentsDeferred: false, boosts: ['union', 'ghost'] },
+    })
+    await 사슬고르기(view, 'ocid-1')
+    await 사슬고르기(view, 'tallahart')
+    await 사슬고르기(view, 'tallahart_road_of_night_3')
+    await 이름으로누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0].hunt).toMatchObject({ boosts: ['union'] })
+  })
+
+  // 수동 입력에는 아이템 줄이 없다. 조각 체크 하나만 기억을 든다.
+  it('수동 입력에서도 조각 체크는 기억한 값으로 선다', async () => {
+    const view = await 그리기({ lastHuntToggles: 기억 }, 'hunting')
+
+    await 이름으로누르기(view, '획득 메소 직접 입력')
+
+    expect(view.getByLabelText('조각 가격 나중에 입력').props.accessibilityState?.checked).toBe(true)
+    expect(view.queryByLabelText('유니온의 부')).toBeNull()
+  })
+})
+
+/**
  * 사냥 기록은 캐릭터를 골라야 저장된다(2026-09-16 사용자 지정). 솔 에르다 조각 보관이 캐릭터별이라
  * 캐릭터 없는 사냥 기록의 조각은 갈 곳이 없다.
  */
@@ -2023,25 +2130,27 @@ describe('솔 에르다 조각 정산', () => {
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
 
-  /** 0 으로 맞추지 않아 오차가 드러난다. */
-  it('보관이 0 이하면 없다고 적고 저장이 꺼진다. 마이너스도 그대로 보인다', async () => {
+  /**
+   * 0 으로 맞추지 않아 오차가 드러난다. 무엇이 막고 있는지는 그 수가 말하므로 없다는 문구를
+   * 따로 안 적는다. 바로 위 줄이 같은 말을 한 번 더 하던 자리다.
+   */
+  it('보관이 0 이하면 저장이 꺼진다. 마이너스도 그대로 보이고 문구는 안 선다', async () => {
     const view = await 정산시트({ loadFragmentStorage: async () => -5 })
     await 사슬고르기(view, 'ocid-1')
     await 아이디로치기(view, 'income-sheet-settle-count', '1')
     await 아이디로치기(view, 'income-sheet-settle-price', '8000000')
 
     expect(view.getByTestId('income-sheet-fragment-storage')).toHaveTextContent('-5개')
-    expect(view.getByText('보관 중인 조각이 없습니다')).toBeTruthy()
+    expect(view.queryByText('보관 중인 조각이 없습니다')).toBeNull()
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
 
-  /** 못 읽은 것을 없다고 적으면 보관이 있는데도 없다는 말이 된다. */
-  it('보관을 못 읽으면 개수 자리가 비고 없다고 안 적는다', async () => {
+  /** 못 읽은 것을 0 으로 읽으면 보관이 있는데도 없다는 말이 된다. */
+  it('보관을 못 읽으면 개수 자리가 비고 저장이 꺼진다', async () => {
     const view = await 정산시트({ loadFragmentStorage: async () => null })
     await 사슬고르기(view, 'ocid-1')
 
     expect(view.getByTestId('income-sheet-fragment-storage')).toHaveTextContent('-')
-    expect(view.queryByText('보관 중인 조각이 없습니다')).toBeNull()
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
 
