@@ -1336,7 +1336,12 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         // 로 함께 보여준다. `selectBossProfitBosses` 가 그룹(같은 보스 key)당 실제로 처치한
         // 난이도를 우선하고 없으면 등록 난이도를 대신 고른다. 등록 난이도와 실제 처치 난이도가
         // 다를 수 있어 가격 계산에는 반드시 실제 처치 난이도를 써야 한다.
-        const displayBosses = selectProfitDisplayBosses(cached.state.bossContents, mode, manualItemsByOcid.get(ocid) ?? [])
+        const displayBosses = selectProfitDisplayBosses(
+          cached.state.bossContents,
+          mode,
+          manualItemsByOcid.get(ocid) ?? [],
+          worldKeyByOcid.get(ocid) ?? null,
+        )
         const profile: CharacterProfileInfo = {
           characterName: cached.state.characterName,
           imageUrl: imageUrlByOcid.get(ocid) ?? null,
@@ -1619,6 +1624,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         result.state?.bossContents ?? [],
         mode,
         manualItemsByOcid.get(result.ocid) ?? [],
+        profile.worldKey,
       )
 
       for (const boss of displayBosses) {

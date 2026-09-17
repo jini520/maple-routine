@@ -279,6 +279,58 @@ describe('toRecordedDrop: 가격 필드', () => {
 
 // 주간 한도를 채우면 미처치 placeholder 행은 아예 서지 않는다. `마감` 배지를
 // 여기까지 들고 오지 않는다: 이 페이지는 정산이라 **벌지 않은 것** 은 줄을 갖지 않는다.
+/**
+ * 시즌 보스는 챌린저스 월드 캐릭터에만 선다(2026-09-17 사용자 지정).
+ *
+ * 넥슨 API 는 일반 월드 캐릭터에도 메이린을 보스 목록에 넣어 준다(실기기 캐시 실측). 앞으로 나올 시즌 보스도
+ * 같아야 해서 보스 이름이 아니라 `eventWeekly` 분류로 거른다.
+ */
+describe('selectProfitDisplayBosses: 시즌 보스는 챌린저스 월드에만', () => {
+  const SEASON = (weeklyBossesData.eventWeekly as { key: string; name: string }[])[0]
+  const WEEKLY = (weeklyBossesData.weekly as { key: string; name: string }[])[0]
+
+  function content(entry: { key: string; name: string }, overrides: Partial<BossContent>): BossContent {
+    return {
+      bossKey: entry.key,
+      apiName: entry.name,
+      difficulty: 'hard',
+      cycle: 'weekly',
+      isRegistered: false,
+      isComplete: false,
+      ownComplete: false,
+      ...overrides,
+    }
+  }
+
+  const registered = content(SEASON, { isRegistered: true })
+  const killed = content(SEASON, { isRegistered: true, isComplete: true, ownComplete: true })
+  const keys = (bosses: ReturnType<typeof selectProfitDisplayBosses>): string[] =>
+    bosses.map((boss) => boss.bossKey)
+
+  it.each([
+    ['엘리시움', 'elysium'],
+    ['월드 모름', null],
+  ])('%s 캐릭터는 등록 · 처치로 와도 시즌 보스 행이 없다', (_label, worldKey) => {
+    expect(keys(selectProfitDisplayBosses([registered], 'auto', [], worldKey))).not.toContain(SEASON.key)
+    expect(keys(selectProfitDisplayBosses([killed], 'auto', [], worldKey))).not.toContain(SEASON.key)
+
+    const manual: ManualTrackedItem[] = [{ kind: 'boss', bossKey: SEASON.key, difficulty: 'hard' }]
+    expect(keys(selectProfitDisplayBosses([registered], 'manual', manual, worldKey))).not.toContain(SEASON.key)
+    expect(keys(selectProfitDisplayBosses([killed], 'manual', [], worldKey))).not.toContain(SEASON.key)
+  })
+
+  it('챌린저스 월드 캐릭터는 시즌 보스 행이 그대로 선다', () => {
+    expect(keys(selectProfitDisplayBosses([registered], 'auto', [], 'challengers_2'))).toContain(SEASON.key)
+    expect(keys(selectProfitDisplayBosses([killed], 'manual', [], 'challengers_2'))).toContain(SEASON.key)
+  })
+
+  it('일반 월드에서도 시즌 보스가 아닌 보스는 그대로 선다', () => {
+    const weekly = content(WEEKLY, { isRegistered: true, isComplete: true, ownComplete: true })
+
+    expect(keys(selectProfitDisplayBosses([weekly, killed], 'auto', [], 'elysium'))).toEqual([WEEKLY.key])
+  })
+})
+
 describe('selectProfitDisplayBosses: 주간 한도 마감', () => {
   const WEEKLY = weeklyBossesData.weekly as { key: string; name: string }[]
   const PENDING = WEEKLY[0].key
@@ -308,7 +360,7 @@ describe('selectProfitDisplayBosses: 주간 한도 마감', () => {
   it('자동 모드: 한도를 채우면 인게임 등록만 된 미처치 보스는 행이 서지 않는다', () => {
     const contents = [content({ bossKey: PENDING, isRegistered: true }), ...cleared(WEEKLY_BOSS_CLEAR_LIMIT)]
 
-    expect(keys(selectProfitDisplayBosses(contents, 'auto', []))).not.toContain(PENDING)
+    expect(keys(selectProfitDisplayBosses(contents, 'auto', [], null))).not.toContain(PENDING)
   })
 
   // 회귀 가드. 한도 전이면 미완료 placeholder 는 그대로 선다.
@@ -318,21 +370,21 @@ describe('selectProfitDisplayBosses: 주간 한도 마감', () => {
       ...cleared(WEEKLY_BOSS_CLEAR_LIMIT - 1),
     ]
 
-    expect(keys(selectProfitDisplayBosses(contents, 'auto', []))).toContain(PENDING)
+    expect(keys(selectProfitDisplayBosses(contents, 'auto', [], null))).toContain(PENDING)
   })
 
   it('수동 모드: 한도를 채우면 추적 중인 미처치 보스도 행이 서지 않는다', () => {
     const contents = cleared(WEEKLY_BOSS_CLEAR_LIMIT)
     const manual: ManualTrackedItem[] = [{ kind: 'boss', bossKey: PENDING, difficulty: 'hard' }]
 
-    expect(keys(selectProfitDisplayBosses(contents, 'manual', manual))).not.toContain(PENDING)
+    expect(keys(selectProfitDisplayBosses(contents, 'manual', manual, null))).not.toContain(PENDING)
   })
 
   // 마감은 **안 잡은 것** 에만 붙는다. 실제로 번 것은 정산에서 사라지면 안 된다.
   it('실제로 처치한 보스는 한도를 채워도 전부 남는다', () => {
     const contents = cleared(WEEKLY_BOSS_CLEAR_LIMIT)
 
-    expect(keys(selectProfitDisplayBosses(contents, 'auto', []))).toHaveLength(WEEKLY_BOSS_CLEAR_LIMIT)
+    expect(keys(selectProfitDisplayBosses(contents, 'auto', [], null))).toHaveLength(WEEKLY_BOSS_CLEAR_LIMIT)
   })
 
   it('시즌 보스는 한도 밖이라 미처치여도 남는다', () => {
@@ -341,7 +393,8 @@ describe('selectProfitDisplayBosses: 주간 한도 마감', () => {
       ...cleared(WEEKLY_BOSS_CLEAR_LIMIT),
     ]
 
-    expect(keys(selectProfitDisplayBosses(contents, 'auto', []))).toContain('meirin')
+    // 시즌 보스는 챌린저스 월드 캐릭터에만 선다.
+    expect(keys(selectProfitDisplayBosses(contents, 'auto', [], 'challengers'))).toContain('meirin')
   })
 
   it('월간 보스는 한도 밖이라 미처치여도 남는다', () => {
@@ -350,7 +403,7 @@ describe('selectProfitDisplayBosses: 주간 한도 마감', () => {
       ...cleared(WEEKLY_BOSS_CLEAR_LIMIT),
     ]
 
-    expect(keys(selectProfitDisplayBosses(contents, 'auto', []))).toContain('black_mage')
+    expect(keys(selectProfitDisplayBosses(contents, 'auto', [], null))).toContain('black_mage')
   })
 })
 
@@ -367,11 +420,11 @@ describe('selectProfitDisplayBosses: 보스 표에 없는 보스', () => {
   }
 
   it('자동 모드에서 처치했어도 행이 되지 않는다', () => {
-    expect(selectProfitDisplayBosses([모르는보스], 'auto', [])).toEqual([])
+    expect(selectProfitDisplayBosses([모르는보스], 'auto', [], null)).toEqual([])
   })
 
   it('수동 모드에서도 처치 행이 되지 않는다', () => {
-    expect(selectProfitDisplayBosses([모르는보스], 'manual', [])).toEqual([])
+    expect(selectProfitDisplayBosses([모르는보스], 'manual', [], null)).toEqual([])
   })
 })
 
