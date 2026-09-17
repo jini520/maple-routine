@@ -21,7 +21,12 @@ import { Segment } from '../../../components/molecules/Segment/Segment'
 import type { SelectOption } from '../../../components/organisms/SelectField/SelectField'
 import type { MesoRateLoad } from '../../../features/cashbook/meso-rate'
 import { FORCE_LABELS, forceIconOf, getItemIconUrlByFile } from '../../../lib/assets/asset-lookup'
-import { acceptMesoText, settleMesoText } from '../../../components/organisms/MesoPad/meso-pad'
+import {
+  acceptMesoText,
+  optionalMesoTextOf,
+  optionalMesoValueOf,
+  settleMesoText,
+} from '../../../components/organisms/MesoPad/meso-pad'
 import {
   findHuntingGround,
   findHuntingRegion,
@@ -182,8 +187,6 @@ export function HuntCalculatorForm(
     lastHuntSelection: LastHuntSelection | null
     /** 마지막에 저장한 체크 셋. 켠 아이템의 첫 값이고, 수정으로 열면 안 쓴다. */
     lastHuntToggles: LastHuntToggles | null
-    /** 조각 가격 나중에 입력. 시트가 들고 넘긴다. */
-    fragmentsDeferred: boolean
   },
 ): React.JSX.Element {
   const editing = props.editing !== undefined
@@ -236,7 +239,8 @@ export function HuntCalculatorForm(
   )
   const [sojae, setSojae] = useState(detail?.sojae ?? 1)
   const [fragmentsText, setFragmentsText] = useState(mesoTextOf(detail?.fragments ?? 0))
-  const [fragmentPriceText, setFragmentPriceText] = useState(mesoTextOf(detail?.fragmentPrice ?? 0))
+  /** 빈 칸은 가격을 안 적은 것이라 0 과 따로 든다. */
+  const [fragmentPriceText, setFragmentPriceText] = useState(optionalMesoTextOf(detail?.fragmentPrice ?? null))
   /**
    * 캐릭터의 메소 획득량. 읽었으면 못 치고, 못 읽었으면 치는 칸이 된다.
    *
@@ -247,20 +251,19 @@ export function HuntCalculatorForm(
   )
   /** 폴백 칸에 친 글자. 지우는 중간 상태가 있어 숫자가 아니라 글자로 든다. */
   const [mesoRateText, setMesoRateText] = useState('')
+  /** 폴백 칸을 고치는 중인가. 고치는 동안에만 캐릭터 메획이 보이고, 평소에는 결과가 보인다. */
+  const [mesoRateEditing, setMesoRateEditing] = useState(false)
+  /**
+   * 고치기 시작할 때 커서를 끝에 두는 선택. 결과에서 캐릭터 메획으로 값이 바뀌면 커서가 맨 앞으로 가서
+   * `9` 를 치면 `9156` 이 됐다. 치기 시작하면 놓아준다(붙들면 사용자가 옮긴 커서가 되돌아간다).
+   */
+  const [mesoRateSelection, setMesoRateSelection] = useState<{ start: number; end: number }>()
   /**
    * 마지막으로 요청한 캐릭터. 캐릭터를 빠르게 두 번 바꾸면 먼저 부른 응답이 늦게 도착해 남의
    * 메획이 박힐 수 있다. 그 값은 곧 금액이라 조용히 틀리면 안 된다.
    */
   const mesoRateRequest = useRef<string | null>(props.editing?.ocid ?? null)
   const { saving, submit, remove } = useSheetSubmit(props)
-
-  /** 마지막으로 그린 나중에 입력 값. 켜지는 순간을 그리는 중에 알아내려고 상태로 든다. */
-  const [deferredSeen, setDeferredSeen] = useState(props.fragmentsDeferred)
-  if (deferredSeen !== props.fragmentsDeferred) {
-    // 켜면 가격 칸이 빈다. 끄고 나서 켜기 전 가격이 되살아나면 안 판 조각에 값이 붙는다.
-    setDeferredSeen(props.fragmentsDeferred)
-    if (props.fragmentsDeferred) setFragmentPriceText('')
-  }
 
   const huntRegions = huntingRegionsForLevel(huntLevel)
   const huntRegion = regionKey === null ? null : findHuntingRegion(regionKey)
@@ -301,14 +304,8 @@ export function HuntCalculatorForm(
   /** 사냥터를 안 골랐으면 0 이다. 계산기가 반쯤 찬 상태이고, 그때도 조각 값은 선다. */
   const huntMeso = huntGround === null ? 0 : huntingMesoOf({ ...huntInput, ground: huntGround })
   const fragments = mesoValueOf(fragmentsText)
-  const fragmentPrice = mesoValueOf(fragmentPriceText)
-  const huntTotal = huntingTotalOf({
-    ...huntInput,
-    ground: huntGround,
-    fragments,
-    fragmentPrice,
-    fragmentsDeferred: props.fragmentsDeferred,
-  })
+  const fragmentPrice = optionalMesoValueOf(fragmentPriceText)
+  const huntTotal = huntingTotalOf({ ...huntInput, ground: huntGround, fragments, fragmentPrice })
   /**
    * 저장 가능 여부. **사냥터가 세는 메소와 캐릭터가 있어야 한다.**
    *
@@ -442,7 +439,6 @@ export function HuntCalculatorForm(
           sojae,
           fragments,
           fragmentPrice,
-          fragmentsDeferred: props.fragmentsDeferred,
           // **그때의** 메획이다. 장비를 갈아입어도 이 기록은 안 흔들린다.
           mesoRate: mesoRatePercent,
         },
@@ -605,27 +601,37 @@ export function HuntCalculatorForm(
         >
             {ocid !== null && mesoRate.kind === 'fallback' ? (
               <>
+                {/*
+                  폭을 못박는다. `flex-1` 이면 값 자리 내용이 최소 폭을 넘는 순간 이 칸이 줄이 내줄 수 있는 폭
+                  전부로 늘어나, 줄이 넘치고 값이 화면 밖으로 밀린다. 36 은 세 자리가 들어가는 폭이다.
+
+                  평소에는 결과를, 고치는 동안에는 캐릭터 메획을 보인다. 치는 값은 캐릭터 메획이라 결과를
+                  고치게 두면 친 수에 아이템이 한 번 더 붙는다.
+                */}
                 <SheetTextInput
                   testID="income-sheet-meso-rate-input"
-                  value={mesoRateText}
-                  onChangeText={(text) => setMesoRateText(text.replace(/[^\d]/g, ''))}
+                  value={
+                    mesoRateEditing || appliedRate === typedMesoRate ? mesoRateText : String(appliedRate)
+                  }
+                  selection={mesoRateSelection}
+                  onChangeText={(text) => {
+                    setMesoRateText(text.replace(/[^\d]/g, ''))
+                    setMesoRateSelection(undefined)
+                  }}
+                  onFocus={() => {
+                    setMesoRateEditing(true)
+                    setMesoRateSelection({ start: mesoRateText.length, end: mesoRateText.length })
+                  }}
+                  onBlur={() => {
+                    setMesoRateEditing(false)
+                    setMesoRateSelection(undefined)
+                  }}
                   keyboardType="number-pad"
                   placeholder="0"
-                  className="h-5 flex-1 text-right text-sm font-semibold text-text"
+                  className="h-5 w-[36px] text-right text-sm font-semibold text-text"
                   style={TABULAR_NUMS}
                 />
                 <Text className="ml-1.5 shrink-0 text-xs text-text-muted">%</Text>
-                {appliedRate !== typedMesoRate && (
-                  // 치는 칸에는 캐릭터 메획이 남고(사용자가 아는 값이 그것이다) 켠 것까지 더한
-                  // 총합은 그 옆에 선다. 한 칸에 겹치면 무엇을 친 것인지 사라진다.
-                  <Text
-                    testID="income-sheet-meso-rate-applied"
-                    className="ml-1.5 shrink-0 text-xs font-semibold text-text"
-                    style={TABULAR_NUMS}
-                  >
-                    → {appliedRate}%
-                  </Text>
-                )}
               </>
             ) : (
               <Text
@@ -678,20 +684,16 @@ export function HuntCalculatorForm(
           />
           <Text className="text-xs text-text-muted">개</Text>
         </View>
-        <View
-          className={`ml-auto min-w-0 flex-1 flex-row items-baseline gap-1.5${
-            props.fragmentsDeferred ? ' opacity-40' : ''
-          }`}
-        >
+        <View className="ml-auto min-w-0 flex-1 flex-row items-baseline gap-1.5">
           <SheetTextInput
             testID="income-sheet-fragment-price"
             aria-label="조각 가격"
-            editable={!props.fragmentsDeferred}
             value={fragmentPriceText}
             onChangeText={(text) => setFragmentPriceText(acceptMesoText(fragmentPriceText, text))}
-            onBlur={() => setFragmentPriceText(settleMesoText(fragmentPriceText))}
+            // 0 을 빈 칸으로 접지 않는다. 빈 칸은 보관이고 0 은 0 메소에 판 것이다.
+            onBlur={() => setFragmentPriceText(optionalMesoTextOf(optionalMesoValueOf(fragmentPriceText)))}
             keyboardType="number-pad"
-            placeholder="조각 가격"
+            placeholder="미입력 시 보관"
             className="h-5 flex-1 text-right text-sm font-semibold text-text"
             style={TABULAR_NUMS}
           />

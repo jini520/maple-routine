@@ -27,7 +27,7 @@ import type { SqliteDbConnection } from '../ports'
 import { BOSS_KEYED_TABLES } from './boss-tables'
 
 /** 이 앱의 마지막 DB 버전. 새 기기는 곧바로 이 값이 된다. */
-export const DB_VERSION = 7
+export const DB_VERSION = 9
 
 /**
  * 갈래와 항목 이름을 바꾸며 옛 기록을 옮기던 문장들. 버전 1 이 한 번 돌린다.
@@ -232,6 +232,52 @@ async function rewind0917PrePatchPrices(db: SqliteDbConnection): Promise<void> {
   }
 }
 
+/**
+ * 가격표에서 서로 바뀐 채 나간 두 새 가격. 이 값으로 굳은 기록만 고친다. 버전 8 이 한 번 돌린다.
+ *
+ * 틀린 값은 그 보스 · 난이도의 어느 가격 줄에도 없던 값이라, 가격만 봐도 틀린 표가 굳힌 행이 가려진다.
+ * 옛 가격이 든 행은 안 건드린다.
+ */
+const SWAPPED_0917_PRICES = [
+  { bossKey: 'kaling', difficulty: 'normal', wrongPriceMeso: 576_000_000 },
+  { bossKey: 'radiant_malefic_star', difficulty: 'normal', wrongPriceMeso: 593_000_000 },
+] as const
+
+/** 패치가 적용된 뒤인 아무 때. 가격표에서 새 줄을 고르게 한다. */
+const AFTER_PATCH_0917 = new Date('2026-09-17T10:30:00+09:00')
+
+async function fixSwapped0917Prices(db: SqliteDbConnection): Promise<void> {
+  const WHERE_WRONG = `boss_key = ? AND difficulty = ? AND price_meso = ?`
+  for (const { bossKey, difficulty, wrongPriceMeso } of SWAPPED_0917_PRICES) {
+    const price = findPriceEntry(bossKey, difficulty, '2026-09-17', AFTER_PATCH_0917)?.priceMeso
+    if (price === null || price === undefined) continue
+    const { values } = await db.query(
+      `SELECT DISTINCT party_size FROM boss_profit_records WHERE ${WHERE_WRONG}`,
+      [bossKey, difficulty, wrongPriceMeso],
+    )
+    for (const row of (values ?? []) as Row[]) {
+      const partySize = Number(row.party_size)
+      const divisor = Number.isFinite(partySize) && partySize > 0 ? partySize : 1
+      await db.run(
+        `UPDATE boss_profit_records SET price_meso = ?, payout_meso = ? WHERE ${WHERE_WRONG} AND party_size = ?`,
+        [price, Math.floor(price / divisor), bossKey, difficulty, wrongPriceMeso, partySize],
+      )
+    }
+  }
+}
+
+/**
+ * 사냥 기록의 조각 가격 0 을 안 적은 가격(`NULL`)으로 옮긴다. 버전 9 가 한 번 돌린다.
+ *
+ * 가격 칸이 빈 사냥 기록의 조각이 보관에 드는데, 그전까지 칸이 0 과 빈 칸을 못 갈라 빈 칸도 0 으로
+ * 저장됐다. 이 버전 뒤에 적힌 0 은 0 메소에 판 기록이라 다시 옮기지 않는다.
+ */
+async function clearZeroHuntFragmentPrices(db: SqliteDbConnection): Promise<void> {
+  await db.execute(
+    `UPDATE income_records SET hunt_fragment_price = NULL WHERE category_key = 'hunting' AND hunt_fragment_price = 0`,
+  )
+}
+
 const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   async (db) => {
     for (const statement of LEGACY_NAME_MIGRATIONS) await db.execute(statement)
@@ -242,6 +288,8 @@ const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   fillEnhancementItemKeys,
   fillWorldKeys,
   rewind0917PrePatchPrices,
+  fixSwapped0917Prices,
+  clearZeroHuntFragmentPrices,
 ]
 
 async function userVersionOf(db: SqliteDbConnection): Promise<number> {

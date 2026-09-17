@@ -12,11 +12,11 @@
  */
 import { closeBossProfitDb, getBossProfitDb } from '../db'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
-import { getIncomeRecordsBetween, insertIncomeRecord, type IncomeRecord } from '../../income'
+import { getFragmentStorage, getIncomeRecordsBetween, insertIncomeRecord, type IncomeRecord } from '../../income'
 import { getSpendRecordsBetween } from '../../spend'
 import { getAllBossDropRecords, replaceBossDropRecords } from '../../boss-drops'
 import { getBossPartySettings, setBossPartySize } from '../../boss-party-settings'
-import { getBossProfitRecords, upsertBossProfitRecord } from '../../boss-profit'
+import { getBossProfitRecords, upsertBossProfitRecord, type BossProfitRecord } from '../../boss-profit'
 import { getCharacterProfiles } from '../../character-profiles'
 import { loadEnhancementHistory } from '../../enhancement-history'
 import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
@@ -305,7 +305,6 @@ describe('기타를 메포·캐시로 적어도 저장된다 (목이 아닌 SQLi
         sojae: 4,
         fragments: 83,
         fragmentPrice: 2_500_000,
-        fragmentsDeferred: false,
         // **그때의** 캐릭터 메소 획득량. 칸이 하나 더 있다.
         mesoRate: 149,
       },
@@ -321,7 +320,6 @@ describe('기타를 메포·캐시로 적어도 저장된다 (목이 아닌 SQLi
       sojae: 4,
       fragments: 83,
       fragmentPrice: 2_500_000,
-      fragmentsDeferred: false,
       mesoRate: 149,
     })
   })
@@ -390,7 +388,7 @@ describe('버전 이관: 가계부 기록에 key 를 채운다', () => {
   it('새 DB 는 이관할 것 없이 마지막 버전으로 선다', async () => {
     await getBossProfitDb()
 
-    expect(userVersion(real)).toBe(7)
+    expect(userVersion(real)).toBe(9)
   })
 
   it('옛 지출 기록의 이름으로 갈래 · 항목 · 형태별 항목 · 종류 key 를 채운다', async () => {
@@ -409,7 +407,7 @@ describe('버전 이관: 가계부 기록에 key 를 채운다', () => {
     })
     expect(byId.get('reward-split')).toMatchObject({ itemKey: null, formItemKeys: { exp: 'nightmare_paradise_2' } })
     expect(byId.get('purchase')).toMatchObject({ category: 'item_purchase', itemKey: null, itemKind: 'consumable' })
-    expect(userVersion(real)).toBe(7)
+    expect(userVersion(real)).toBe(9)
   })
 
   // 못 찾은 이름은 지우지 않는다. key 만 비고 그때 이름으로 선다.
@@ -508,7 +506,7 @@ describe('버전 이관: 드롭 기록에 아이템 key 를 채운다', () => {
       ['source_of_suffering', 'chaos_pitch_black_accessory_box'],
       [null, null],
     ])
-    expect(userVersion(real)).toBe(7)
+    expect(userVersion(real)).toBe(9)
   })
 
   // 못 찾은 이름은 지우지 않는다. key 만 비고 그때 이름과 가격이 남는다.
@@ -597,7 +595,7 @@ describe('버전 이관: 보스 기록 표의 기본키를 보스 key 로 다시
         ['lucid', '루시드', 'hard', '챌린저스2', '2026-09-12'],
       ].sort(),
     )
-    expect(userVersion(real)).toBe(7)
+    expect(userVersion(real)).toBe(9)
   })
 
   it('파티 설정과 드롭 기록도 보스 key 로 옮기고, 드롭의 아이템 key 와 가격을 지킨다', async () => {
@@ -658,7 +656,7 @@ describe('버전 이관: 보스 기록 표의 기본키를 보스 key 로 다시
         .map((column) => column.name),
     )
     expect(columns).toEqual(['ocid', 'boss_key', 'difficulty', 'period_key'])
-    expect(userVersion(real)).toBe(7)
+    expect(userVersion(real)).toBe(9)
   })
 })
 
@@ -705,7 +703,7 @@ describe('버전 이관: 강화 기록에 장비 key 를 채운다', () => {
       ['b', 'loose_control_machine_mark', '루즈 컨트롤 머신 마크'],
       ['c', null, '골드 히어로즈 엠블렘'],
     ])
-    expect(userVersion(real)).toBe(7)
+    expect(userVersion(real)).toBe(9)
   })
 })
 
@@ -783,6 +781,156 @@ describe('버전 이관: 수익 기록 · 프로필에 월드 key 를 채운다'
       ['ocid-2', '챌린저스2', 'challengers_2'],
       ['ocid-3', null, null],
     ])
-    expect(userVersion(real)).toBe(7)
+    expect(userVersion(real)).toBe(9)
+  })
+})
+
+/** 이 버전까지 돈 기기로 되돌린다. 행을 넣은 뒤 부르면 다음 부팅에 그 뒤 버전이 그 행 위에서 돈다. */
+async function rewindTo(version: number): Promise<void> {
+  await closeBossProfitDb()
+  real.inspect((db) => db.exec(`PRAGMA user_version = ${version}`))
+}
+
+// OTA 1.0.10 의 가격표에서 두 새 가격이 서로 바뀌어 있었다. 틀린 값으로 굳은 행만 고친다.
+describe('버전 이관: 카링 노멀과 찬란한 흉성 노멀의 뒤바뀐 새 가격을 고친다', () => {
+  function record(overrides: Partial<BossProfitRecord>): BossProfitRecord {
+    return {
+      ocid: 'ocid-1',
+      bossKey: 'kaling',
+      boss: '카링',
+      difficulty: 'normal',
+      cycle: 'weekly',
+      periodKey: '2026-09-17',
+      partySize: 1,
+      priceMeso: 0,
+      payoutMeso: 0,
+      recordedAt: '2026-09-17T02:00:00.000Z',
+      world: '엘리시움',
+      worldKey: 'elysium',
+      ...overrides,
+    }
+  }
+
+  it('틀린 새 가격이 든 행을 인게임 가격과 그 분배액으로 다시 적는다', async () => {
+    await getBossProfitDb()
+    await upsertBossProfitRecord(record({ partySize: 2, priceMeso: 576_000_000, payoutMeso: 288_000_000 }))
+    await upsertBossProfitRecord(
+      record({
+        bossKey: 'radiant_malefic_star',
+        boss: '찬란한 흉성',
+        partySize: 3,
+        priceMeso: 593_000_000,
+        payoutMeso: 197_666_666,
+      }),
+    )
+    await rewindTo(7)
+
+    await getBossProfitDb()
+
+    const records = await getBossProfitRecords(['ocid-1'], ['2026-09-17'])
+    expect(records.map((each) => [each.bossKey, each.priceMeso, each.payoutMeso]).sort()).toEqual([
+      ['kaling', 593_000_000, 296_500_000],
+      ['radiant_malefic_star', 576_000_000, 192_000_000],
+    ])
+    expect(userVersion(real)).toBe(9)
+  })
+
+  // 10시 전에 굳었거나 버전 7 이 되돌린 행이다. 사용자가 옛 가격 행은 두라고 했다.
+  it('옛 가격이 든 행과 다른 난이도 · 보스는 안 건드린다', async () => {
+    await getBossProfitDb()
+    await upsertBossProfitRecord(record({ ocid: 'ocid-2', priceMeso: 678_000_000, payoutMeso: 678_000_000 }))
+    await upsertBossProfitRecord(
+      record({
+        ocid: 'ocid-2',
+        bossKey: 'radiant_malefic_star',
+        boss: '찬란한 흉성',
+        priceMeso: 625_000_000,
+        payoutMeso: 625_000_000,
+      }),
+    )
+    // 난이도가 다르면 같은 값이어도 안 건드린다.
+    await upsertBossProfitRecord(
+      record({ ocid: 'ocid-2', difficulty: 'hard', priceMeso: 576_000_000, payoutMeso: 576_000_000 }),
+    )
+    await rewindTo(7)
+
+    await getBossProfitDb()
+
+    const records = await getBossProfitRecords(['ocid-2'], ['2026-09-17'])
+    expect(records.map((each) => [each.bossKey, each.difficulty, each.priceMeso, each.payoutMeso]).sort()).toEqual([
+      ['kaling', 'hard', 576_000_000, 576_000_000],
+      ['kaling', 'normal', 678_000_000, 678_000_000],
+      ['radiant_malefic_star', 'normal', 625_000_000, 625_000_000],
+    ])
+  })
+})
+
+// 조각 가격 칸이 0 과 빈 칸을 못 가르던 때의 기록. 이번 한 번만 0 도 안 적은 가격으로 옮긴다.
+describe('버전 이관: 사냥 기록의 조각 가격 0 을 안 적은 가격으로 옮긴다', () => {
+  const hunt: IncomeRecord = {
+    id: '',
+    ocid: 'ocid-adele',
+    earnedOn: '2026-09-10',
+    category: 'hunting',
+    item: null,
+    itemKey: null,
+    mesoAmount: 1_000_000_000,
+    saleFeePercent: null,
+    saleFeeMeso: null,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    cashAmount: null,
+    quantity: null,
+    hunt: { mode: 'manual', typedMeso: 1_000_000_000, fragments: 80, fragmentPrice: 0 },
+    memo: null,
+    recordedAt: '2026-09-10T05:00:00.000Z',
+  }
+
+  async function seed(): Promise<void> {
+    await getBossProfitDb()
+    // 체크를 켜고 적은 기록. 가격은 언제나 0 이었다.
+    await insertIncomeRecord({ ...hunt, id: 'checked' })
+    real.inspect((db) => db.exec(`UPDATE income_records SET hunt_fragments_deferred = 1 WHERE id = 'checked'`))
+    // 체크를 안 켜고 가격을 비운 기록.
+    await insertIncomeRecord({ ...hunt, id: 'unchecked', hunt: { ...hunt.hunt!, fragments: 40 } as IncomeRecord['hunt'] })
+    // 가격을 적은 기록.
+    await insertIncomeRecord({
+      ...hunt,
+      id: 'sold',
+      mesoAmount: 1_080_000_000,
+      hunt: { mode: 'manual', typedMeso: 1_000_000_000, fragments: 10, fragmentPrice: 8_000_000 },
+    })
+    // 계산기 도입 전 행. 사냥 칸이 전부 비어 있다.
+    await insertIncomeRecord({ ...hunt, id: 'legacy', item: '엘리시움', hunt: null })
+    await rewindTo(8)
+  }
+
+  it('가격 0 을 NULL 로 옮기고, 적은 가격과 옛 행은 그대로 둔다. 금액도 그대로다', async () => {
+    await seed()
+
+    await getBossProfitDb()
+
+    const rows = await getIncomeRecordsBetween('2026-09-10', '2026-09-10')
+    const byId = new Map(rows.map((row) => [row.id, row]))
+    expect(byId.get('checked')?.hunt?.fragmentPrice).toBeNull()
+    expect(byId.get('unchecked')?.hunt?.fragmentPrice).toBeNull()
+    expect(byId.get('sold')?.hunt?.fragmentPrice).toBe(8_000_000)
+    expect(byId.get('legacy')?.hunt).toBeNull()
+    expect(rows.map((row) => [row.id, row.mesoAmount]).sort()).toEqual([
+      ['checked', 1_000_000_000],
+      ['legacy', 1_000_000_000],
+      ['sold', 1_080_000_000],
+      ['unchecked', 1_000_000_000],
+    ])
+    expect(userVersion(real)).toBe(9)
+  })
+
+  it('옮긴 두 기록의 조각이 보관에 들고, 이관 뒤에 0 으로 적은 조각은 안 든다', async () => {
+    await seed()
+
+    await getBossProfitDb()
+    await insertIncomeRecord({ ...hunt, id: 'zero-after', hunt: { ...hunt.hunt!, fragments: 5 } as IncomeRecord['hunt'] })
+
+    await expect(getFragmentStorage('ocid-adele', '2026-09-10')).resolves.toBe(120)
   })
 })

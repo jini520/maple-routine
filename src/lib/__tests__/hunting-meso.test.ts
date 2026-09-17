@@ -239,43 +239,41 @@ describe('huntingTotalOf', () => {
   it('합계는 **메소 + 조각 × 개당 가격**이다', () => {
     const meso = huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3 })
     expect(
-      huntingTotalOf({ ...BASE, ground: NIGHT_ROAD_3, fragments: 12, fragmentPrice: 8_000_000, fragmentsDeferred: false }),
+      huntingTotalOf({ ...BASE, ground: NIGHT_ROAD_3, fragments: 12, fragmentPrice: 8_000_000 }),
     ).toBe(meso + 96_000_000)
   })
 
   it('조각을 안 넣으면 메소뿐이다', () => {
     const meso = huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3 })
     expect(
-      huntingTotalOf({ ...BASE, ground: NIGHT_ROAD_3, fragments: 0, fragmentPrice: 8_000_000, fragmentsDeferred: false }),
+      huntingTotalOf({ ...BASE, ground: NIGHT_ROAD_3, fragments: 0, fragmentPrice: 8_000_000 }),
     ).toBe(meso)
   })
 
   it('사냥터를 아직 안 골랐으면 조각 값만 선다. 계산기가 반쯤 찬 상태다', () => {
     expect(
-      huntingTotalOf({ ...BASE, ground: null, fragments: 3, fragmentPrice: 1_000_000, fragmentsDeferred: false }),
+      huntingTotalOf({ ...BASE, ground: null, fragments: 3, fragmentPrice: 1_000_000 }),
     ).toBe(3_000_000)
   })
 
-  it('조각 가격 나중에 입력이면 조각 값이 빠지고 메소뿐이다', () => {
+  it('조각 가격을 안 적었으면(null) 조각 값이 빠지고 메소뿐이다', () => {
     const meso = huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3 })
-    expect(
-      huntingTotalOf({ ...BASE, ground: NIGHT_ROAD_3, fragments: 12, fragmentPrice: 8_000_000, fragmentsDeferred: true }),
-    ).toBe(meso)
+    expect(huntingTotalOf({ ...BASE, ground: NIGHT_ROAD_3, fragments: 12, fragmentPrice: null })).toBe(meso)
   })
 })
 
 /** 수동 폼은 획득 메소를 사람이 친다. 메소의 출처만 다르고 조각을 더하는 식은 계산기와 같다. */
 describe('huntTotalOf: 두 사냥 폼이 같은 식을 쓴다', () => {
   it('친 메소에 조각 × 개당 가격을 더한다', () => {
-    expect(huntTotalOf(500_000_000, { fragments: 10, fragmentPrice: 7_000_000, fragmentsDeferred: false })).toBe(
-      570_000_000,
-    )
+    expect(huntTotalOf(500_000_000, { fragments: 10, fragmentPrice: 7_000_000 })).toBe(570_000_000)
   })
 
-  it('나중에 입력이면 친 메소뿐이다. 조각 개수는 합계에 안 든다', () => {
-    expect(huntTotalOf(500_000_000, { fragments: 10, fragmentPrice: 7_000_000, fragmentsDeferred: true })).toBe(
-      500_000_000,
-    )
+  it('가격을 안 적었으면 친 메소뿐이다. 조각 개수는 합계에 안 든다', () => {
+    expect(huntTotalOf(500_000_000, { fragments: 10, fragmentPrice: null })).toBe(500_000_000)
+  })
+
+  it('가격 0 은 적은 값이다. 조각 값이 0 이라 친 메소와 같다', () => {
+    expect(huntTotalOf(500_000_000, { fragments: 10, fragmentPrice: 0 })).toBe(500_000_000)
   })
 })
 

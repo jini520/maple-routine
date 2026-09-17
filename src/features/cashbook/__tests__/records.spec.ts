@@ -252,29 +252,21 @@ describe('마지막 체크 셋을 기억한다', () => {
       boosts: ['union', 'potion'],
       sojae: 2,
       fragments: 35,
-      fragmentPrice: 0,
-      fragmentsDeferred: true,
+      fragmentPrice: null,
       mesoRate: 149,
     },
   }
 
-  it('계산기로 적은 사냥은 조각 체크와 켠 아이템을 함께 남긴다', async () => {
+  it('계산기로 적은 사냥은 켠 아이템을 남긴다', async () => {
     const { recordIncome } = require('../records') as typeof import('../records')
 
     await recordIncome(계산기사냥, 지금)
 
-    expect(huntToggles.setLastHuntToggles).toHaveBeenCalledWith({
-      fragmentsDeferred: true,
-      boosts: ['union', 'potion'],
-    })
+    expect(huntToggles.setLastHuntToggles).toHaveBeenCalledWith({ boosts: ['union', 'potion'] })
   })
 
   // 수동 폼에는 아이템 줄이 없다. 거기서 빈 값을 적으면 계산기에서 켜 두던 것이 지워진다.
-  it('수동으로 적은 사냥은 조각 체크만 바꾸고 켠 아이템은 그대로 둔다', async () => {
-    huntToggles.getLastHuntToggles.mockResolvedValue({
-      fragmentsDeferred: false,
-      boosts: ['union'],
-    })
+  it('수동으로 적은 사냥은 기억을 안 건드린다', async () => {
     const { recordIncome } = require('../records') as typeof import('../records')
 
     await recordIncome(
@@ -287,17 +279,24 @@ describe('마지막 체크 셋을 기억한다', () => {
           mode: 'manual',
           typedMeso: 41_760_000,
           fragments: 0,
-          fragmentPrice: 0,
-          fragmentsDeferred: true,
+          fragmentPrice: null,
         },
       },
       지금,
     )
 
-    expect(huntToggles.setLastHuntToggles).toHaveBeenCalledWith({
-      fragmentsDeferred: true,
-      boosts: ['union'],
-    })
+    expect(huntToggles.setLastHuntToggles).not.toHaveBeenCalled()
+  })
+
+  // 화면이 저장 뒤에 드는 기억도 같은 규칙이다.
+  it('nextHuntToggles 는 계산기면 켠 아이템으로 바꾸고 수동이면 그대로 둔다', () => {
+    const { nextHuntToggles } = require('../records') as typeof import('../records')
+
+    expect(nextHuntToggles(계산기사냥.hunt!, { boosts: [] })).toEqual({ boosts: ['union', 'potion'] })
+    expect(
+      nextHuntToggles({ mode: 'manual', typedMeso: 1, fragments: 0, fragmentPrice: null }, { boosts: ['union'] }),
+    ).toEqual({ boosts: ['union'] })
+    expect(nextHuntToggles({ mode: 'manual', typedMeso: 1, fragments: 0, fragmentPrice: null }, null)).toBeNull()
   })
 
   //  이전 행은 계산 입력이 없다. 그 행에는 기억할 체크가 없다.

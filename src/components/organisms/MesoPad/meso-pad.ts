@@ -94,6 +94,24 @@ export function mesoTextOf(value: number): string {
 }
 
 /**
+ * 비워 둔 칸과 0 을 가르는 칸의 값. **빈 칸은 `null`** 이고 `0` 은 0 이다.
+ *
+ * 사냥 폼의 조각 가격이 쓴다. 빈 칸은 가격을 안 적은 것이라 그 조각이 보관에 들고, 0 은 0 메소에 판 기록이다.
+ */
+export function optionalMesoValueOf(text: string): number | null {
+  return text === '' ? null : Number(text)
+}
+
+/**
+ * `optionalMesoValueOf` 의 짝. `null` 은 빈 칸이고 **0 은 `0`** 이다.
+ *
+ * 커서가 빠질 때 두 함수를 이어 부르면 앞자리 0 만 걷힌다. 0 을 빈 칸으로 접으면 적은 값이 보관으로 바뀐다.
+ */
+export function optionalMesoTextOf(value: number | null): string {
+  return value === null ? '' : String(value)
+}
+
+/**
  * 커서가 빠질 때의 정리. 앞자리 0 을 걷고 0 이면 빈 칸이다.
  *
  * 타건마다 하면 편집 중인 `0000000000` 이 즉시 빈 칸이 되어 처음부터 다시 쳐야 한다.

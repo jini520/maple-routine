@@ -24,10 +24,8 @@ export const STORAGE_KEYS = {
   lastPointRate: 'lastPointRate',
   // 마지막으로 계산기에 세운 사냥 자리(캐릭터 + 사냥터 이름). `사냥터 자동 입력` 이 되살린다.
   lastHuntSelection: 'lastHuntSelection',
-  // 마지막으로 저장한 사냥 기록의 체크 셋. `{ fragmentsDeferred, boosts }` JSON 한 칸이고 새 사냥
-  // 시트가 그 값으로 열린다.
-  //
-  // 키를 둘로 안 쪼개는 것은 읽는 쪽이 언제나 둘을 한 번에 쓰기 때문이다(시트를 열 때 한 번 읽는다).
+  // 마지막으로 계산기로 저장한 사냥 기록의 켠 메소 획득률 아이템. `{ boosts }` JSON 한 칸이고 새 사냥
+  // 시트가 그 값으로 열린다. 옛 값에 남은 `fragmentsDeferred` 는 읽을 때 무시한다.
   //
   // `KEEP_KEYS` 에는 안 넣는다. `lastHuntSelection` 과 같은 이유다. 한 번 적으면 다시 생기는 값이고
   // 지워지면 시트가 전부 꺼진 채 열릴 뿐이다.

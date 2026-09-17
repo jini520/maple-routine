@@ -9,6 +9,8 @@ import {
   applyMesoKey,
   mesoTextOf,
   mesoValueOf,
+  optionalMesoTextOf,
+  optionalMesoValueOf,
   parseMesoText,
   settleMesoText,
 } from '../meso-pad'
@@ -147,5 +149,31 @@ describe('settleMesoText', () => {
   it('멀쩡한 글자는 안 건드린다', () => {
     expect(settleMesoText('60000000000')).toBe('60000000000')
     expect(settleMesoText('')).toBe('')
+  })
+})
+
+/**
+ * 비워 둔 것과 0 을 친 것이 다른 칸. 사냥 폼의 조각 가격이 쓴다.
+ *
+ * 빈 칸은 가격을 안 적었다는 뜻이라 그 조각이 보관에 들고, 0 은 0 메소에 팔았다는 기록이다.
+ */
+describe('optionalMesoValueOf · optionalMesoTextOf', () => {
+  it('빈 칸은 null 이고 0 은 0 이다', () => {
+    expect(optionalMesoValueOf('')).toBeNull()
+    expect(optionalMesoValueOf('0')).toBe(0)
+    expect(optionalMesoValueOf('0012')).toBe(12)
+  })
+
+  it('null 은 빈 칸이고 0 은 `0` 이다', () => {
+    expect(optionalMesoTextOf(null)).toBe('')
+    expect(optionalMesoTextOf(0)).toBe('0')
+    expect(optionalMesoTextOf(1200)).toBe('1200')
+  })
+
+  // 커서가 빠질 때 두 함수를 이어 부른다. 앞자리 0 은 걷고 0 하나는 남는다.
+  it('이어 부르면 앞자리 0 만 걷힌다', () => {
+    expect(optionalMesoTextOf(optionalMesoValueOf('0000'))).toBe('0')
+    expect(optionalMesoTextOf(optionalMesoValueOf('007'))).toBe('7')
+    expect(optionalMesoTextOf(optionalMesoValueOf(''))).toBe('')
   })
 })

@@ -92,26 +92,22 @@ export async function recordIncome(draft: IncomeDraft, now: Date): Promise<void>
   if (draft.category === 'hunting' && draft.itemKey !== null) {
     await setLastHuntSelection({ ocid: draft.ocid, groundKey: draft.itemKey })
   }
-  // 체크 셋도 같은 규칙이다. 계산 입력이 없는 옛 모양의 행에는 기억할 체크가 없다.
-  if (draft.category === 'hunting' && draft.hunt !== null) {
-    await setLastHuntToggles(nextHuntToggles(draft.hunt, await getLastHuntToggles()))
-  }
+  // 켠 아이템도 같은 규칙이다. 아이템 줄은 계산기에만 있어 수동으로 적은 행은 안 남긴다.
+  const toggles = draft.category === 'hunting' && draft.hunt !== null ? nextHuntToggles(draft.hunt, null) : null
+  if (toggles !== null) await setLastHuntToggles(toggles)
 }
 
 /**
  * 저장한 사냥 기록이 다음 사냥 시트에 남길 체크 셋.
  *
- * 수동 폼에는 아이템 줄이 없다. 거기서 빈 값을 적으면 계산기에서 켜 두던 것이 지워지므로 켠
- * 아이템은 그대로 둔다.
+ * 수동 폼에는 아이템 줄이 없다. 거기서 빈 값을 적으면 계산기에서 켜 두던 것이 지워지므로 기억을
+ * 그대로 둔다.
  */
 export function nextHuntToggles(
   hunt: NonNullable<IncomeDraft['hunt']>,
   current: LastHuntToggles | null,
-): LastHuntToggles {
-  return {
-    fragmentsDeferred: hunt.fragmentsDeferred,
-    boosts: hunt.mode === 'calculator' ? [...hunt.boosts] : (current?.boosts ?? []),
-  }
+): LastHuntToggles | null {
+  return hunt.mode === 'calculator' ? { boosts: [...hunt.boosts] } : current
 }
 
 export async function recordSpend(draft: SpendDraft, now: Date): Promise<void> {
