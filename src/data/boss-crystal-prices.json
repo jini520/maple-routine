@@ -1,6 +1,6 @@
 {
   "updatedAt": "2026-09-11",
-  "source": "사용자 제공 시세표. 보스별 상세 보상 정보에 다른 금액이 함께 제공되었으나, 사용자가 이 시세표 값을 정답으로 확정하고 갱신일은 의미가 없다고 확인함. 2026-08-19 — 벨로나 출시분 3건을 사용자 확정값으로 채움(이지 440,000,000 / 노멀 890,000,000 / 하드 2,950,000,000, maxPartySize 3). 원본 「고정 보상」에 결정과 나란히 적힌 메소가 곧 그 결정의 판매가라는 사용자 확인에 따른 것이며([[ADR-151]] 결정 2), 같은 값을 item-drop-table.json에는 넣지 않는다 — 두 자리에 적으면 같은 돈이 두 번 세어진다. 2026-09-11 사용자 제공: 2026-09-17 패치분 46건. 주간 44건은 2026-09-17 주부터, 검은마법사 2건은 2026-10 기간부터다. 옛 줄을 지우지 않고 until 을 적은 뒤 같은 날의 from 을 든 새 줄을 더했다. 과거 기간이 옛 값을 계속 읽기 때문이다. 사용자가 주지 않은 10건은 그대로다. 2026-09-15: boss 는 보스 key(weekly-bosses.json), difficulty 는 난이도 key(API 영문 값)다([[ADR-280]] 결정 12).",
+  "source": "사용자 제공 시세표. 보스별 상세 보상 정보에 다른 금액이 함께 제공되었으나, 사용자가 이 시세표 값을 정답으로 확정하고 갱신일은 의미가 없다고 확인함. 2026-08-19 — 벨로나 출시분 3건을 사용자 확정값으로 채움(이지 440,000,000 / 노멀 890,000,000 / 하드 2,950,000,000, maxPartySize 3). 원본 「고정 보상」에 결정과 나란히 적힌 메소가 곧 그 결정의 판매가라는 사용자 확인에 따른 것이며([[ADR-151]] 결정 2), 같은 값을 item-drop-table.json에는 넣지 않는다 — 두 자리에 적으면 같은 돈이 두 번 세어진다. 2026-09-11 사용자 제공: 2026-09-17 패치분 46건. 주간 44건은 2026-09-17 주부터, 검은마법사 2건은 2026-10 기간부터다. 옛 줄을 지우지 않고 until 을 적은 뒤 같은 날의 from 을 든 새 줄을 더했다. 과거 기간이 옛 값을 계속 읽기 때문이다. 사용자가 주지 않은 10건은 그대로다. 2026-09-17 인게임 대조(사용자 제공): 카링 노멀과 찬란한 흉성 노멀의 새 가격이 서로 바뀌어 있어 카링 노멀 593,000,000 · 찬란한 흉성 노멀 576,000,000 으로 바로잡았다. 나머지 44건은 맞았다. 2026-09-15: boss 는 보스 key(weekly-bosses.json), difficulty 는 난이도 key(API 영문 값)다([[ADR-280]] 결정 12).",
   "priceBasis": "1인(솔로) 기준 정가. 대부분 '강력한 힘의 결정' 판매가 기준이나, 메이린(이벤트 주간 보스)은 결정이 아닌 황금 메소 주머니 총 가치(1개 = 1000만 메소) 기준 — 개별 entry의 note 참고. 파티원 수별 실수령액은 partySizeScaling 참고.",
   "periodNote": "줄마다 from(이 때부터)과 until(이 때 전까지)을 들 수 있다. 값은 KST YYYY-MM-DD 이거나 YYYY-MM-DDTHH:mm 이고, 처치 기간의 첫날(주간은 리셋 목요일, 월간은 1일)이 그 줄을 고른다. 경계 날이 곧 기간 첫날일 때만 시각까지 본다. 09-17 패치는 오전 10시에 적용되는데 주간 리셋은 그 날 00:00 이라 열 시간이 어긋난다. until 이 없는 줄이 지금 가격이다. 한 보스·난이도의 줄들은 겹침 없이 이어지고, 경계는 그 보스의 기간 경계에 서며, 같은 maxPartySize 를 든다(data-consistency.spec.ts).",
   "partySizeScaling": {
@@ -98,13 +98,13 @@
     { "boss": "kaling", "difficulty": "easy", "priceMeso": 377000000, "asOf": "2026-06-25", "until": "2026-09-17T10:00" },
     { "boss": "kaling", "difficulty": "easy", "priceMeso": 320000000, "asOf": "2026-09-11", "from": "2026-09-17T10:00" },
     { "boss": "kaling", "difficulty": "normal", "priceMeso": 678000000, "asOf": "2026-06-25", "until": "2026-09-17T10:00" },
-    { "boss": "kaling", "difficulty": "normal", "priceMeso": 576000000, "asOf": "2026-09-11", "from": "2026-09-17T10:00" },
+    { "boss": "kaling", "difficulty": "normal", "priceMeso": 593000000, "asOf": "2026-09-17", "from": "2026-09-17T10:00" },
     { "boss": "kaling", "difficulty": "hard", "priceMeso": 1739000000, "asOf": "2026-06-25", "until": "2026-09-17T10:00" },
     { "boss": "kaling", "difficulty": "hard", "priceMeso": 1560000000, "asOf": "2026-09-11", "from": "2026-09-17T10:00" },
     { "boss": "kaling", "difficulty": "extreme", "priceMeso": 5387000000, "asOf": "2026-06-25" },
 
     { "boss": "radiant_malefic_star", "difficulty": "normal", "priceMeso": 625000000, "asOf": "2026-06-25", "until": "2026-09-17T10:00", "maxPartySize": 3 },
-    { "boss": "radiant_malefic_star", "difficulty": "normal", "priceMeso": 593000000, "asOf": "2026-09-11", "from": "2026-09-17T10:00", "maxPartySize": 3 },
+    { "boss": "radiant_malefic_star", "difficulty": "normal", "priceMeso": 576000000, "asOf": "2026-09-17", "from": "2026-09-17T10:00", "maxPartySize": 3 },
     { "boss": "radiant_malefic_star", "difficulty": "hard", "priceMeso": 2678000000, "asOf": "2026-06-25", "maxPartySize": 3 },
 
     { "boss": "bellona", "difficulty": "easy", "priceMeso": 440000000, "asOf": "2026-08-19", "until": "2026-09-17T10:00", "maxPartySize": 3 },

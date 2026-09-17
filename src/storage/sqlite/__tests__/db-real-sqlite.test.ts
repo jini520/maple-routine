@@ -16,7 +16,7 @@ import { getIncomeRecordsBetween, insertIncomeRecord, type IncomeRecord } from '
 import { getSpendRecordsBetween } from '../../spend'
 import { getAllBossDropRecords, replaceBossDropRecords } from '../../boss-drops'
 import { getBossPartySettings, setBossPartySize } from '../../boss-party-settings'
-import { getBossProfitRecords, upsertBossProfitRecord } from '../../boss-profit'
+import { getBossProfitRecords, upsertBossProfitRecord, type BossProfitRecord } from '../../boss-profit'
 import { getCharacterProfiles } from '../../character-profiles'
 import { loadEnhancementHistory } from '../../enhancement-history'
 import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
@@ -390,7 +390,7 @@ describe('버전 이관: 가계부 기록에 key 를 채운다', () => {
   it('새 DB 는 이관할 것 없이 마지막 버전으로 선다', async () => {
     await getBossProfitDb()
 
-    expect(userVersion(real)).toBe(7)
+    expect(userVersion(real)).toBe(8)
   })
 
   it('옛 지출 기록의 이름으로 갈래 · 항목 · 형태별 항목 · 종류 key 를 채운다', async () => {
@@ -409,7 +409,7 @@ describe('버전 이관: 가계부 기록에 key 를 채운다', () => {
     })
     expect(byId.get('reward-split')).toMatchObject({ itemKey: null, formItemKeys: { exp: 'nightmare_paradise_2' } })
     expect(byId.get('purchase')).toMatchObject({ category: 'item_purchase', itemKey: null, itemKind: 'consumable' })
-    expect(userVersion(real)).toBe(7)
+    expect(userVersion(real)).toBe(8)
   })
 
   // 못 찾은 이름은 지우지 않는다. key 만 비고 그때 이름으로 선다.
@@ -508,7 +508,7 @@ describe('버전 이관: 드롭 기록에 아이템 key 를 채운다', () => {
       ['source_of_suffering', 'chaos_pitch_black_accessory_box'],
       [null, null],
     ])
-    expect(userVersion(real)).toBe(7)
+    expect(userVersion(real)).toBe(8)
   })
 
   // 못 찾은 이름은 지우지 않는다. key 만 비고 그때 이름과 가격이 남는다.
@@ -597,7 +597,7 @@ describe('버전 이관: 보스 기록 표의 기본키를 보스 key 로 다시
         ['lucid', '루시드', 'hard', '챌린저스2', '2026-09-12'],
       ].sort(),
     )
-    expect(userVersion(real)).toBe(7)
+    expect(userVersion(real)).toBe(8)
   })
 
   it('파티 설정과 드롭 기록도 보스 key 로 옮기고, 드롭의 아이템 key 와 가격을 지킨다', async () => {
@@ -658,7 +658,7 @@ describe('버전 이관: 보스 기록 표의 기본키를 보스 key 로 다시
         .map((column) => column.name),
     )
     expect(columns).toEqual(['ocid', 'boss_key', 'difficulty', 'period_key'])
-    expect(userVersion(real)).toBe(7)
+    expect(userVersion(real)).toBe(8)
   })
 })
 
@@ -705,7 +705,7 @@ describe('버전 이관: 강화 기록에 장비 key 를 채운다', () => {
       ['b', 'loose_control_machine_mark', '루즈 컨트롤 머신 마크'],
       ['c', null, '골드 히어로즈 엠블렘'],
     ])
-    expect(userVersion(real)).toBe(7)
+    expect(userVersion(real)).toBe(8)
   })
 })
 
@@ -783,6 +783,86 @@ describe('버전 이관: 수익 기록 · 프로필에 월드 key 를 채운다'
       ['ocid-2', '챌린저스2', 'challengers_2'],
       ['ocid-3', null, null],
     ])
-    expect(userVersion(real)).toBe(7)
+    expect(userVersion(real)).toBe(8)
+  })
+})
+
+/** 이 버전까지 돈 기기로 되돌린다. 행을 넣은 뒤 부르면 다음 부팅에 그 뒤 버전이 그 행 위에서 돈다. */
+async function rewindTo(version: number): Promise<void> {
+  await closeBossProfitDb()
+  real.inspect((db) => db.exec(`PRAGMA user_version = ${version}`))
+}
+
+// OTA 1.0.10 의 가격표에서 두 새 가격이 서로 바뀌어 있었다. 틀린 값으로 굳은 행만 고친다.
+describe('버전 이관: 카링 노멀과 찬란한 흉성 노멀의 뒤바뀐 새 가격을 고친다', () => {
+  function record(overrides: Partial<BossProfitRecord>): BossProfitRecord {
+    return {
+      ocid: 'ocid-1',
+      bossKey: 'kaling',
+      boss: '카링',
+      difficulty: 'normal',
+      cycle: 'weekly',
+      periodKey: '2026-09-17',
+      partySize: 1,
+      priceMeso: 0,
+      payoutMeso: 0,
+      recordedAt: '2026-09-17T02:00:00.000Z',
+      world: '엘리시움',
+      worldKey: 'elysium',
+      ...overrides,
+    }
+  }
+
+  it('틀린 새 가격이 든 행을 인게임 가격과 그 분배액으로 다시 적는다', async () => {
+    await getBossProfitDb()
+    await upsertBossProfitRecord(record({ partySize: 2, priceMeso: 576_000_000, payoutMeso: 288_000_000 }))
+    await upsertBossProfitRecord(
+      record({
+        bossKey: 'radiant_malefic_star',
+        boss: '찬란한 흉성',
+        partySize: 3,
+        priceMeso: 593_000_000,
+        payoutMeso: 197_666_666,
+      }),
+    )
+    await rewindTo(7)
+
+    await getBossProfitDb()
+
+    const records = await getBossProfitRecords(['ocid-1'], ['2026-09-17'])
+    expect(records.map((each) => [each.bossKey, each.priceMeso, each.payoutMeso]).sort()).toEqual([
+      ['kaling', 593_000_000, 296_500_000],
+      ['radiant_malefic_star', 576_000_000, 192_000_000],
+    ])
+    expect(userVersion(real)).toBe(8)
+  })
+
+  // 10시 전에 굳었거나 버전 7 이 되돌린 행이다. 사용자가 옛 가격 행은 두라고 했다.
+  it('옛 가격이 든 행과 다른 난이도 · 보스는 안 건드린다', async () => {
+    await getBossProfitDb()
+    await upsertBossProfitRecord(record({ ocid: 'ocid-2', priceMeso: 678_000_000, payoutMeso: 678_000_000 }))
+    await upsertBossProfitRecord(
+      record({
+        ocid: 'ocid-2',
+        bossKey: 'radiant_malefic_star',
+        boss: '찬란한 흉성',
+        priceMeso: 625_000_000,
+        payoutMeso: 625_000_000,
+      }),
+    )
+    // 난이도가 다르면 같은 값이어도 안 건드린다.
+    await upsertBossProfitRecord(
+      record({ ocid: 'ocid-2', difficulty: 'hard', priceMeso: 576_000_000, payoutMeso: 576_000_000 }),
+    )
+    await rewindTo(7)
+
+    await getBossProfitDb()
+
+    const records = await getBossProfitRecords(['ocid-2'], ['2026-09-17'])
+    expect(records.map((each) => [each.bossKey, each.difficulty, each.priceMeso, each.payoutMeso]).sort()).toEqual([
+      ['kaling', 'hard', 576_000_000, 576_000_000],
+      ['kaling', 'normal', 678_000_000, 678_000_000],
+      ['radiant_malefic_star', 'normal', 625_000_000, 625_000_000],
+    ])
   })
 })

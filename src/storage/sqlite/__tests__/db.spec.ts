@@ -90,7 +90,7 @@ describe('getBossProfitDb', () => {
   // 이름 이관은 부팅마다 돌지 않는다. 버전 번호가 이미 끝까지 올랐으면 한 문장도 안 나간다.
   it('user_version 이 마지막 버전이면 값을 옮기는 이관이 안 돈다', async () => {
     dbQueryMock.mockImplementation(async (sql: string) =>
-      sql === 'PRAGMA user_version' ? { values: [{ user_version: 7 }] } : { values: [{ name: 'world' }] },
+      sql === 'PRAGMA user_version' ? { values: [{ user_version: 8 }] } : { values: [{ name: 'world' }] },
     )
     const { getBossProfitDb } = require('../db') as typeof import('../db')
 
@@ -111,7 +111,7 @@ describe('getBossProfitDb', () => {
 
     const statements = dbExecuteMock.mock.calls.map(([sql]) => String(sql))
     const tail = statements.slice(statements.indexOf('BEGIN'))
-    const markers = ['BEGIN', 'COMMIT', 'PRAGMA user_version = 1', 'PRAGMA user_version = 2', 'PRAGMA user_version = 3', 'PRAGMA user_version = 4', 'PRAGMA user_version = 5', 'PRAGMA user_version = 6', 'PRAGMA user_version = 7']
+    const markers = ['BEGIN', 'COMMIT', 'PRAGMA user_version = 1', 'PRAGMA user_version = 2', 'PRAGMA user_version = 3', 'PRAGMA user_version = 4', 'PRAGMA user_version = 5', 'PRAGMA user_version = 6', 'PRAGMA user_version = 7', 'PRAGMA user_version = 8']
     expect(tail.filter((sql) => markers.includes(sql))).toEqual([
       'BEGIN',
       'PRAGMA user_version = 1',
@@ -133,6 +133,9 @@ describe('getBossProfitDb', () => {
       'COMMIT',
       'BEGIN',
       'PRAGMA user_version = 7',
+      'COMMIT',
+      'BEGIN',
+      'PRAGMA user_version = 8',
       'COMMIT',
     ])
   })
