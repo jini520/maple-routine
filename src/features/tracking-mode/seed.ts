@@ -1,5 +1,7 @@
 import { setManualTrackedContent, type ManualTrackedItem } from '../../storage/manual-tracked-content'
 import { TEMPLATE_DAILY_KEYS, TEMPLATE_WEEKLY_KEYS } from '../../lib/scheduler/scheduler-content-template'
+import { isSeasonBoss } from '../../lib/boss/bosses'
+import { isChallengersWorld } from '../../lib/world/worlds'
 import type { SchedulerCharacterState } from '../../types'
 import { syncSchedules } from '../schedule-sync/schedule-sync'
 
@@ -24,8 +26,12 @@ function toTrackedItems(state: SchedulerCharacterState): ManualTrackedItem[] {
     ),
   ]
 
+  // 시즌 보스는 챌린저스 월드 캐릭터에만 담는다. 리프로 넘어온 등록을 일반 월드 캐릭터에 담으면 보스 관리
+  // 화면이 시즌 보스 줄을 숨겨 사용자가 뺄 길이 없다.
   const bossItems: ManualTrackedItem[] = bossContents.flatMap((boss) =>
-    boss.isRegistered && boss.bossKey !== null
+    boss.isRegistered &&
+    boss.bossKey !== null &&
+    (!isSeasonBoss(boss.bossKey) || isChallengersWorld(state.worldKey))
       ? [{ kind: 'boss' as const, bossKey: boss.bossKey, difficulty: boss.difficulty }]
       : [],
   )

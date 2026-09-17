@@ -56,6 +56,36 @@ function bossItem(name: string, difficulty: BossDifficulty): ManualTrackedItem {
   return { kind: 'boss', bossKey: bossKeyOfApiName(name) ?? name, difficulty }
 }
 
+/**
+ * 시즌 보스는 챌린저스 월드 캐릭터에만 선다(2026-09-17 사용자 지정).
+ *
+ * 리프하면 챌린저스 때 등록이 새 ocid 로 넘어와 일반 월드 캐릭터에 메이린이 등록된 채로 온다(넥슨 API 실측).
+ * 이 목록을 보스 스케줄러 화면과 today 의 남은 스케줄이 함께 쓴다.
+ */
+describe('displayedBosses: 시즌 보스는 챌린저스 월드에만', () => {
+  const season = boss({ name: '시즌 보스 메이린', difficulty: 'hard', cycle: 'weekly', isRegistered: true })
+  const lucid = boss({ name: '루시드', difficulty: 'hard', cycle: 'weekly', isRegistered: true })
+  const keys = (entries: DisplayedBoss[]): (string | null)[] => entries.map((entry) => entry.bossKey)
+  const manual = { 'ocid-1': [bossItem('시즌 보스 메이린', 'hard'), bossItem('루시드', 'hard')] }
+
+  it.each([
+    ['엘리시움', 'elysium'],
+    ['월드 모름', null],
+  ])('%s 캐릭터는 등록 · 추적된 시즌 보스가 목록에 없다', (_label, worldKey) => {
+    const view = character({ worldKey, weeklyBosses: [season, lucid] })
+
+    expect(keys(displayedBosses(view, 'weekly', 'auto', null))).toEqual(['lucid'])
+    expect(keys(displayedBosses(view, 'weekly', 'manual', manual))).toEqual(['lucid'])
+  })
+
+  it('챌린저스 월드 캐릭터는 시즌 보스가 그대로 선다', () => {
+    const view = character({ worldKey: 'challengers_2', weeklyBosses: [season, lucid] })
+
+    expect(keys(displayedBosses(view, 'weekly', 'auto', null))).toContain('meirin')
+    expect(keys(displayedBosses(view, 'weekly', 'manual', manual))).toContain('meirin')
+  })
+})
+
 describe('displayedBosses: 자동 모드', () => {
   // 등록한 난이도가 있으면 그것만(중복 카드 방지), 없으면 완료한 난이도를 대신.
   it('등록된 보스와 **미등록이지만 완료된** 보스를 함께 보여준다', () => {
@@ -413,7 +443,8 @@ describe('displayedBosses: 주간 한도 마감', () => {
 
   it('시즌 보스는 한도 밖이라 마감이 없다', () => {
     const season = boss({ name: '시즌 보스 메이린', difficulty: 'normal', cycle: 'weekly', isRegistered: true })
-    const view = character({ weeklyBosses: [season, ...clearedBosses(WEEKLY_BOSS_CLEAR_LIMIT)] })
+    // 시즌 보스는 챌린저스 월드 캐릭터에만 선다.
+    const view = character({ worldKey: 'challengers', weeklyBosses: [season, ...clearedBosses(WEEKLY_BOSS_CLEAR_LIMIT)] })
 
     const entry = displayedBosses(view, 'weekly', 'auto', null).find(
       (item) => item.apiName === season.apiName,

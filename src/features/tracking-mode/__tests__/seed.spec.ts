@@ -141,6 +141,38 @@ describe('seedManualTrackedContent', () => {
     ])
   })
 
+  // 리프하면 챌린저스 때 등록이 넘어와 일반 월드 캐릭터에 메이린이 등록된 채로 온다. 담으면 보스 관리
+  // 화면이 시즌 보스 줄을 숨겨 사용자가 뺄 길이 없다.
+  it('챌린저스가 아닌 월드는 등록된 시즌 보스를 시드에 안 담는다', async () => {
+    jest.mocked(syncSchedules).mockResolvedValue([
+      buildSyncResult(
+        buildState({
+          bossContents: [buildBoss('시즌 보스 메이린', 'meirin', 'hard', true), buildBoss('루시드', 'lucid', 'hard', true)],
+        }),
+      ),
+    ])
+
+    await seedManualTrackedContent([OCID])
+
+    expect(setManualTrackedContent).toHaveBeenCalledWith(OCID, [{ kind: 'boss', bossKey: 'lucid', difficulty: 'hard' }])
+  })
+
+  it('챌린저스 월드는 등록된 시즌 보스를 시드에 담는다', async () => {
+    jest.mocked(syncSchedules).mockResolvedValue([
+      buildSyncResult(
+        buildState({
+          world: '챌린저스2',
+          worldKey: 'challengers_2',
+          bossContents: [buildBoss('시즌 보스 메이린', 'meirin', 'hard', true)],
+        }),
+      ),
+    ])
+
+    await seedManualTrackedContent([OCID])
+
+    expect(setManualTrackedContent).toHaveBeenCalledWith(OCID, [{ kind: 'boss', bossKey: 'meirin', difficulty: 'hard' }])
+  })
+
   // 보스 표에 없는 보스는 기록할 key 가 없다. 수동 추적 목록에 담으면 편집할 수 없는 고아가 된다.
   it('보스 표에 없는 보스(key 가 없다)는 등록돼 있어도 시드에서 제외한다', async () => {
     jest.mocked(syncSchedules).mockResolvedValue([

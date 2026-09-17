@@ -421,6 +421,15 @@ describe('BossScreen: 챌린저스 시즌 보스 배지', () => {
     })
   }
 
+  // 리프하면 챌린저스 때 등록이 넘어와 일반 월드 캐릭터에 메이린이 등록된 채로 온다(2026-09-17 제보).
+  it('일반 월드 캐릭터는 시즌 보스가 등록돼 있어도 카드가 안 선다', async () => {
+    withWorld('elysium', [seasonBoss({ isRegistered: true })])
+
+    await renderScreen()
+
+    expect(screen.queryByText('시즌 보스 메이린')).toBeNull()
+  })
+
   it('챌린저스 월드면 등록 여부와 무관하게 season 배지를 보여준다', async () => {
     withWorld('challengers_2', [seasonBoss()])
 
