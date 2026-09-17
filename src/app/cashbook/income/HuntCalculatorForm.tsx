@@ -594,13 +594,17 @@ export function HuntCalculatorForm(
         >
             {ocid !== null && mesoRate.kind === 'fallback' ? (
               <>
+                {/*
+                  폭을 못박는다. `flex-1` 이면 `→ n%` 가 서서 값 자리가 최소 폭을 넘는 순간 이 칸이 줄이 내줄 수
+                  있는 폭 전부로 늘어나, 줄이 넘치고 값이 화면 밖으로 밀린다. 36 은 세 자리가 들어가는 폭이다.
+                */}
                 <SheetTextInput
                   testID="income-sheet-meso-rate-input"
                   value={mesoRateText}
                   onChangeText={(text) => setMesoRateText(text.replace(/[^\d]/g, ''))}
                   keyboardType="number-pad"
                   placeholder="0"
-                  className="h-5 flex-1 text-right text-sm font-semibold text-text"
+                  className="h-5 w-[36px] text-right text-sm font-semibold text-text"
                   style={TABULAR_NUMS}
                 />
                 <Text className="ml-1.5 shrink-0 text-xs text-text-muted">%</Text>

@@ -2400,6 +2400,26 @@ describe('메소 획득량', () => {
     expect(view.getByTestId('income-sheet-meso-rate-input')).toBeTruthy()
   })
 
+  /**
+   * 못 읽어 치는 칸은 폭이 못박혀 있고 늘어나지 않는다(2026-09-17 사용자 보고).
+   *
+   * 아이템을 켜면 칸 옆에 `→ 199%` 가 서서 값 자리가 최소 폭을 넘는다. 그때 값 자리는 내용만큼 재는데, 칸이
+   * `flex-1` 이면 줄이 내줄 수 있는 폭 전부로 늘어난다. 줄이 넘쳐 `소비` 와 체크박스가 붙고 값이 화면 밖으로
+   * 밀려 안 보였다(시뮬레이터 실측).
+   */
+  it('못 읽어 치는 칸은 아이템을 켜도 폭이 그대로다', async () => {
+    const view = await 그리기({
+      loadMesoRate: async () => ({ kind: 'fallback' as const, percent: 149 }),
+    })
+    await 루디고르기(view)
+    await 누르기(view, '유니온의 부')
+
+    expect(view.getByTestId('income-sheet-meso-rate-applied')).toHaveTextContent('→ 199%')
+    const 칸 = flattenStyle(view.getByTestId('income-sheet-meso-rate-input').props.style)
+    expect(칸.flexGrow ?? 0).toBe(0)
+    expect(칸.width).toBe(36)
+  })
+
   it('저장하면 **그때의 메획**이 실린다 (결정 8)', async () => {
     const onSave = jest.fn()
     const view = await 그리기({
