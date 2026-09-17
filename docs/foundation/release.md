@@ -37,7 +37,7 @@ Xcode 아카이브다. 저장소 루트가 곧 Expo 프로젝트라 둘 다 루�
 먼저 쓴다.** OTA 배포든 스토어 바이너리든 순서는 같다.
 
 ```
-1. package.json 의 version 을 올린다        (x.y.z: 2단이면 OTA가 깨진다, ADR-024)
+1. package.json 의 version 을 올린다        (x.y.z 또는 같은 버전의 버그 수정이면 x.y.z+n: ADR-292. 2단이면 OTA가 깨진다, ADR-024)
      ↑ 저장소 루트 package.json 이 아니다. 루트는 워크스페이스 오케스트레이션용이라 version 이 없다
 2. src/data/release-notes.ts 에 그 버전 항목을 쓴다            ← 이 단계를 건너뛰면 3에서 막힌다
      · items:      변경 전부. 개발 노트 화면이 읽는다
