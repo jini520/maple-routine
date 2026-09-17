@@ -251,6 +251,13 @@ export function HuntCalculatorForm(
   )
   /** 폴백 칸에 친 글자. 지우는 중간 상태가 있어 숫자가 아니라 글자로 든다. */
   const [mesoRateText, setMesoRateText] = useState('')
+  /** 폴백 칸을 고치는 중인가. 고치는 동안에만 캐릭터 메획이 보이고, 평소에는 결과가 보인다. */
+  const [mesoRateEditing, setMesoRateEditing] = useState(false)
+  /**
+   * 고치기 시작할 때 커서를 끝에 두는 선택. 결과에서 캐릭터 메획으로 값이 바뀌면 커서가 맨 앞으로 가서
+   * `9` 를 치면 `9156` 이 됐다. 치기 시작하면 놓아준다(붙들면 사용자가 옮긴 커서가 되돌아간다).
+   */
+  const [mesoRateSelection, setMesoRateSelection] = useState<{ start: number; end: number }>()
   /**
    * 마지막으로 요청한 캐릭터. 캐릭터를 빠르게 두 번 바꾸면 먼저 부른 응답이 늦게 도착해 남의
    * 메획이 박힐 수 있다. 그 값은 곧 금액이라 조용히 틀리면 안 된다.
@@ -595,30 +602,36 @@ export function HuntCalculatorForm(
             {ocid !== null && mesoRate.kind === 'fallback' ? (
               <>
                 {/*
-                  폭을 못박는다. `flex-1` 이면 `→ n%` 가 서서 값 자리가 최소 폭을 넘는 순간 이 칸이 줄이 내줄 수
-                  있는 폭 전부로 늘어나, 줄이 넘치고 값이 화면 밖으로 밀린다. 36 은 세 자리가 들어가는 폭이다.
+                  폭을 못박는다. `flex-1` 이면 값 자리 내용이 최소 폭을 넘는 순간 이 칸이 줄이 내줄 수 있는 폭
+                  전부로 늘어나, 줄이 넘치고 값이 화면 밖으로 밀린다. 36 은 세 자리가 들어가는 폭이다.
+
+                  평소에는 결과를, 고치는 동안에는 캐릭터 메획을 보인다. 치는 값은 캐릭터 메획이라 결과를
+                  고치게 두면 친 수에 아이템이 한 번 더 붙는다.
                 */}
                 <SheetTextInput
                   testID="income-sheet-meso-rate-input"
-                  value={mesoRateText}
-                  onChangeText={(text) => setMesoRateText(text.replace(/[^\d]/g, ''))}
+                  value={
+                    mesoRateEditing || appliedRate === typedMesoRate ? mesoRateText : String(appliedRate)
+                  }
+                  selection={mesoRateSelection}
+                  onChangeText={(text) => {
+                    setMesoRateText(text.replace(/[^\d]/g, ''))
+                    setMesoRateSelection(undefined)
+                  }}
+                  onFocus={() => {
+                    setMesoRateEditing(true)
+                    setMesoRateSelection({ start: mesoRateText.length, end: mesoRateText.length })
+                  }}
+                  onBlur={() => {
+                    setMesoRateEditing(false)
+                    setMesoRateSelection(undefined)
+                  }}
                   keyboardType="number-pad"
                   placeholder="0"
                   className="h-5 w-[36px] text-right text-sm font-semibold text-text"
                   style={TABULAR_NUMS}
                 />
                 <Text className="ml-1.5 shrink-0 text-xs text-text-muted">%</Text>
-                {appliedRate !== typedMesoRate && (
-                  // 치는 칸에는 캐릭터 메획이 남고(사용자가 아는 값이 그것이다) 켠 것까지 더한
-                  // 총합은 그 옆에 선다. 한 칸에 겹치면 무엇을 친 것인지 사라진다.
-                  <Text
-                    testID="income-sheet-meso-rate-applied"
-                    className="ml-1.5 shrink-0 text-xs font-semibold text-text"
-                    style={TABULAR_NUMS}
-                  >
-                    → {appliedRate}%
-                  </Text>
-                )}
               </>
             ) : (
               <Text

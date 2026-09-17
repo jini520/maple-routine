@@ -2358,7 +2358,8 @@ describe('메소 획득량', () => {
     expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 75,950,784')
   })
 
-  it('못 읽어 치는 칸일 때도 켠 아이템이 반영된 총합을 보여준다', async () => {
+  // 결과만 보이면 된다(2026-09-17 사용자 지정). 친 값과 총합을 나란히 두던 `149 % → 199%` 를 걷었다.
+  it('못 읽어 치는 칸일 때도 칸에는 켠 아이템이 반영된 결과 하나만 보인다', async () => {
     const view = await 그리기({
       loadMesoRate: async () => ({ kind: 'fallback' as const, percent: 149 }),
     })
@@ -2366,9 +2367,39 @@ describe('메소 획득량', () => {
     await 루디고르기(view)
     await 누르기(view, '유니온의 부')
 
-    // 치는 칸에는 **캐릭터 메획**이 남고, 켠 것까지 더한 총합은 그 옆에 선다.
+    expect(view.getByTestId('income-sheet-meso-rate-input').props.value).toBe('199')
+    expect(view.queryByTestId('income-sheet-meso-rate-applied')).toBeNull()
+  })
+
+  /** 치는 것은 캐릭터 메획이다. 결과를 고치게 두면 친 수에 아이템이 한 번 더 붙는다. */
+  it('고치는 동안에는 캐릭터 메획이 보이고, 다 치면 다시 결과가 보인다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({
+      onSave,
+      loadMesoRate: async () => ({ kind: 'fallback' as const, percent: 149 }),
+    })
+    await 밤의길3(view)
+    await 루디고르기(view)
+    await 누르기(view, '유니온의 부')
+
+    await act(async () => {
+      fireEvent(view.getByTestId('income-sheet-meso-rate-input'), 'focus')
+    })
     expect(view.getByTestId('income-sheet-meso-rate-input').props.value).toBe('149')
-    expect(view.getByTestId('income-sheet-meso-rate-applied')).toHaveTextContent('→ 199%')
+    // 값이 바뀌며 커서가 맨 앞으로 가서 `9` 를 치면 `9149` 가 됐다(시뮬레이터 실측). 커서를 끝에 둔다.
+    expect(view.getByTestId('income-sheet-meso-rate-input').props.selection).toEqual({ start: 3, end: 3 })
+
+    await 아이디로치기(view, 'income-sheet-meso-rate-input', '100')
+    // 치기 시작하면 커서를 놓아준다. 계속 붙들면 사용자가 옮긴 커서가 되돌아간다.
+    expect(view.getByTestId('income-sheet-meso-rate-input').props.selection).toBeUndefined()
+    await act(async () => {
+      fireEvent(view.getByTestId('income-sheet-meso-rate-input'), 'blur')
+    })
+    // (100 + 100 + 50) − 100 = 150
+    expect(view.getByTestId('income-sheet-meso-rate-input').props.value).toBe('150')
+
+    await 이름으로누르기(view, '저장')
+    expect(onSave.mock.calls[0][0].hunt).toMatchObject({ boosts: ['union'], mesoRate: 100 })
   })
 
   /**
@@ -2403,9 +2434,9 @@ describe('메소 획득량', () => {
   /**
    * 못 읽어 치는 칸은 폭이 못박혀 있고 늘어나지 않는다(2026-09-17 사용자 보고).
    *
-   * 아이템을 켜면 칸 옆에 `→ 199%` 가 서서 값 자리가 최소 폭을 넘는다. 그때 값 자리는 내용만큼 재는데, 칸이
-   * `flex-1` 이면 줄이 내줄 수 있는 폭 전부로 늘어난다. 줄이 넘쳐 `소비` 와 체크박스가 붙고 값이 화면 밖으로
-   * 밀려 안 보였다(시뮬레이터 실측).
+   * 값 자리 내용이 최소 폭 56 을 넘으면 값 자리는 내용만큼 재는데, 칸이 `flex-1` 이면 줄이 내줄 수 있는 폭
+   * 전부로 늘어난다. 총합을 옆에 세우던 때 아이템을 켜면 그렇게 줄이 넘쳐 `소비` 와 체크박스가 붙고 값이
+   * 화면 밖으로 밀려 안 보였다(시뮬레이터 실측).
    */
   it('못 읽어 치는 칸은 아이템을 켜도 폭이 그대로다', async () => {
     const view = await 그리기({
@@ -2414,7 +2445,6 @@ describe('메소 획득량', () => {
     await 루디고르기(view)
     await 누르기(view, '유니온의 부')
 
-    expect(view.getByTestId('income-sheet-meso-rate-applied')).toHaveTextContent('→ 199%')
     const 칸 = flattenStyle(view.getByTestId('income-sheet-meso-rate-input').props.style)
     expect(칸.flexGrow ?? 0).toBe(0)
     expect(칸.width).toBe(36)
