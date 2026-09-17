@@ -20,6 +20,7 @@ import {
   type MatchedBoss,
 } from '../../lib/boss/boss-matching'
 import { mergeManualBossList } from '../../lib/boss/manual-boss-merge'
+import { isChallengersWorld } from '../../lib/world/worlds'
 import type { BossContent, BossCycle } from '../../types'
 import type { ManualTrackedBossItem, ManualTrackedItem } from '../../types/scheduler'
 import type { TrackingMode } from '../../storage/tracking-mode'
@@ -56,11 +57,14 @@ export function displayedBosses(
   // 한도는 캐릭터의 주간 전체로 판정한다. 추적 목록이 아니라 동기화 결과다. 겨누는 상황이
   // 목록 밖 보스로 12를 채웠다 라, 목록만 보면 영영 12가 안 된다.
   const limitReached = isWeeklyClearLimitReached(character.weeklyBosses)
+  // 시즌 보스는 챌린저스 월드 캐릭터에만 선다. 리프하면 챌린저스 때 등록이 새 ocid 로 넘어와 일반 월드
+  // 캐릭터에 시즌 보스가 등록된 채로 온다. 월드를 모르면 안 세운다.
+  const inWorld = (boss: MatchedBoss): boolean => !boss.isSeasonBoss || isChallengersWorld(character.worldKey)
 
   if (mode !== 'manual') {
     return stampLimitClosed(
       orderByReference(
-        selectDisplayBosses(cycle === 'weekly' ? character.weeklyBosses : character.monthlyBosses),
+        selectDisplayBosses(cycle === 'weekly' ? character.weeklyBosses : character.monthlyBosses).filter(inWorld),
       ),
       limitReached,
     )
@@ -84,7 +88,7 @@ export function displayedBosses(
     orderByReference(
       mergeManualBossList(items, synced)
         .map(matchBossContent)
-        .filter((boss) => boss.cycle === cycle),
+        .filter((boss) => boss.cycle === cycle && inWorld(boss)),
     ),
     limitReached,
   )
