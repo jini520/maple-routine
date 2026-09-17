@@ -290,7 +290,9 @@ COMMIT;
 
 > **재작성이 생기면서 `CREATE TABLE` 문의 진실성이 처음으로 강제된다.** `ensureColumn` 만 있을 때는 CREATE 문이 낡아도 아무 일도 안 일어났고 — 실제로 통화 칸 셋([[ADR-170]] 정정 15)이 `ensureColumn` 에만 있고 CREATE 문에는 없는 채로 멀쩡히 돌았다 — 재작성이 그 테이블을 만들려는 순간에야 「칸이 없다」 로 드러난다. **이제 칸을 더할 때는 두 자리를 함께 고친다**: CREATE 문(새 설치 · 재작성)과 `ensureColumn`(기존 기기).
 >
-> 예: `income_records.hunt_fragments_deferred`([[ADR-283]] 결정 2, 구현 완료 2026-09-16). `1` 이 솔 에르다 조각 가격 나중에 입력이고 옛 행은 `NULL`(지금 판매)이라 옮길 값이 없어 버전을 안 올린다.
+> 예: `income_records.hunt_fragments_deferred`([[ADR-283]] 결정 2, 구현 완료 2026-09-16). 옛 행은 `NULL` 이라 옮길 값이 없어 버전을 안 올렸다.
+>
+> **칸을 안 쓰게 돼도 지우지 않는다.** 그 칸은 [[ADR-290]] 결정 3 뒤로 읽지도 쓰지도 않지만 CREATE 문과 `ensureColumn` 에 남아 있다. OTA 를 되돌리면 옛 번들의 `INSERT` 가 그 칸을 적는데, 칸이 없으면 그 표에 한 행도 안 적힌다.
 
 > **목으로는 못 잡는 결함이다.** 제약은 목이 흉내 내라고 배운 목록에 없다 — 그래서 `node:sqlite`(노드 내장, 새 의존성 0)로 `SqlitePort` 를 구현해 **진짜 엔진 위에서 한 번 태우는** 경로를 뒀다(`src/storage/sqlite/__tests__/`). 스키마 제약을 만질 때는 그 파일에 케이스를 더할 것.
 
@@ -308,8 +310,11 @@ COMMIT;
 | 3 | 드롭 기록에 key 를 채운다. `boss_drop_records` 의 `item_key` · `box_origin_key` 다([[ADR-280]] 결정 11). 이름은 NFC 로 맞추고 `drop-items.json` 에서 찾는다. 기본키에 아이템 이름이 없어 표를 다시 만들지 않는다. 드롭 기록은 key 를 채운 뒤에야 획득 판정을 돌린다 |
 | 5 | 강화 기록에 장비 key 를 채운다. `enhancement_history` 의 `item_key` 다([[ADR-280]] 결정 14). `target_item` 을 API 이름과 같은 규칙(NFC · 공백 제거)으로 `equipment-items.json` 에서 찾는다. 기본키가 응답의 `id` 라 표를 다시 만들지 않는다. **못 찾는 행은 key 만 비우고 남긴다** |
 | 6 | 수익 기록(`boss_profit_records`)과 캐릭터 프로필(`character_profiles`)에 월드 key 를 채운다([[ADR-280]] 결정 15). `world` 이름을 API 이름과 같은 규칙(NFC · 공백 제거)으로 `worlds.json` 에서 찾는다. 두 표 모두 기본키에 월드가 없어 표를 다시 만들지 않는다. `world` 가 NULL 인 행은 key 도 NULL 이다 |
+| 7 | 09-17 주 수익 기록 중 패치 전(`recorded_at` 이 09-17 10:00 KST 전)에 새 가격으로 굳은 행을 옛 가격과 분배액으로 되돌린다([[ADR-261]] 정정 2) |
+| 8 | 카링 노멀 `price_meso = 576,000,000` · 찬란한 흉성 노멀 `593,000,000` 으로 굳은 수익 기록을 인게임 가격과 분배액으로 고친다. 두 값이 가격표에서 서로 바뀌어 있었고, 옛 가격이 든 행은 안 건드린다([[ADR-261]] 정정 3) |
+| 9 | 사냥 기록(`category_key = 'hunting'`)의 `hunt_fragment_price = 0` 을 `NULL` 로 옮긴다. 가격 칸이 빈 기록이 조각 보관에 드는데, 그전까지 칸이 0 과 빈 칸을 못 갈랐다([[ADR-290]] 결정 4) |
 
-새 기기는 CREATE 뒤 빈 테이블에 버전 1 ~ 6 이 돌고 `user_version` 이 6 이 된다. 이관은 진짜 엔진(`db-real-sqlite.test.ts`) 위에서 테스트한다.
+새 기기는 CREATE 뒤 빈 테이블에 버전 1 ~ 9 가 돌고 `user_version` 이 9 가 된다. 이관은 진짜 엔진(`db-real-sqlite.test.ts`) 위에서 테스트한다.
 
 ```sql
 UPDATE boss_party_settings SET boss = '시즌 보스 메이린' WHERE boss = '메이린';
