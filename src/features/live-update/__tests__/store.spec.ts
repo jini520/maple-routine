@@ -357,6 +357,26 @@ describe('useLiveUpdateStore', () => {
       expect(s().status).toBe('up-to-date')
     })
 
+    // 같은 버전의 버그 수정 OTA 는 패치 번호를 붙인다(`1.0.10+1`). semver 는 `+n` 을 비교에서 빼지만
+    // 그러면 패치를 받아도 안내가 안 뜬다.
+    it.each([
+      ['1.0.4', '1.0.4+1'],
+      ['1.0.4+1', '1.0.4+2'],
+      ['1.0.4+2', '1.0.5'],
+    ])('패치 번호가 올라가도 안내한다: %s → %s', async (last, current) => {
+      getCurrentBundleVersionMock.mockResolvedValue(current)
+      getLastRunBundleVersionMock.mockResolvedValue(last)
+      await s().checkOnBoot()
+      expect(s().status).toBe('updated')
+    })
+
+    it('패치 번호가 내려갔으면 안내하지 않는다', async () => {
+      getCurrentBundleVersionMock.mockResolvedValue('1.0.4+1')
+      getLastRunBundleVersionMock.mockResolvedValue('1.0.4+2')
+      await s().checkOnBoot()
+      expect(s().status).toBe('up-to-date')
+    })
+
     // 되돌아간 것을 "완료"라고 부를 수 없다. 판정이 "달라졌다"가 아니라 "올라갔다"인 이유다.
     it('자동 롤백으로 버전이 내려갔으면 안내하지 않는다', async () => {
       getLastRunBundleVersionMock.mockResolvedValue('1.0.5')

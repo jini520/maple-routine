@@ -11,6 +11,7 @@ import { useLiveUpdateStore } from '../../../features/live-update/store'
 import { setLiveUpdatePort, type LiveUpdatePort } from '../../../native/ports'
 
 import packageJson from '../../../../package.json'
+import { formatAppVersion } from '../../../lib/app-version'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { SettingsAboutScreen } from '../SettingsAboutScreen'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
@@ -133,7 +134,7 @@ describe('SettingsAboutScreen', () => {
 
     const view = await renderOverlay(<SettingsAboutScreen />)
 
-    expect(view.getByText(packageJson.version)).toBeTruthy()
+    expect(view.getByText(formatAppVersion(packageJson.version))).toBeTruthy()
   })
 
   // 앱을 벗어나던 링크가 앱 안 하위 페이지가 됐다.

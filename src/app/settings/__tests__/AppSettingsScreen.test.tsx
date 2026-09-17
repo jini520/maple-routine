@@ -20,6 +20,7 @@ import { THEME_NAMES } from '../../../lib/theme/theme-registry'
 
 import { useLiveUpdateStore } from '../../../features/live-update/store'
 import packageJson from '../../../../package.json'
+import { formatAppVersion } from '../../../lib/app-version'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { AppSettingsScreen } from '../AppSettingsScreen'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
@@ -285,7 +286,7 @@ describe('AppSettingsScreen', () => {
   it('"앱 정보" 우측에 앱 버전을 표시한다', async () => {
     const view = await renderOverlay(<AppSettingsScreen />)
 
-    expect(view.getAllByText(packageJson.version).length).toBeGreaterThan(0)
+    expect(view.getAllByText(formatAppVersion(packageJson.version)).length).toBeGreaterThan(0)
   })
 
   it('"앱 정보" 의 버전은 package.json 이 아니라 도는 번들의 버전이다', async () => {
@@ -299,11 +300,23 @@ describe('AppSettingsScreen', () => {
     }
   })
 
+  it('패치 번호가 붙은 버전은 괄호로 보인다', async () => {
+    useLiveUpdateStore.setState({ currentVersion: '9.9.9+2' })
+    try {
+      const view = await renderOverlay(<AppSettingsScreen />)
+
+      expect(view.getAllByText('9.9.9(2)').length).toBeGreaterThan(0)
+      expect(view.getByText('v9.9.9(2)')).toBeTruthy()
+    } finally {
+      useLiveUpdateStore.setState({ currentVersion: null })
+    }
+  })
+
   // 더보기 맨 아래에 있다가 옮겨 왔다. 더보기가 소식 갈래로 길어져 멀리 밀렸다.
   it('맨 아래에 앱 버전·카피라이트·NEXON Open API 출처 문구·비제휴 고지를 표시한다', async () => {
     const view = await renderOverlay(<AppSettingsScreen />)
 
-    expect(view.getByText(`v${packageJson.version}`)).toBeTruthy()
+    expect(view.getByText(`v${formatAppVersion(packageJson.version)}`)).toBeTruthy()
     expect(view.getByText(/©\s*\d{4}\s*메이플 루틴/)).toBeTruthy()
     expect(view.getByText('Data based on NEXON Open API')).toBeTruthy()
     expect(view.getByText('Maple Routine is not associated with NEXON Korea')).toBeTruthy()

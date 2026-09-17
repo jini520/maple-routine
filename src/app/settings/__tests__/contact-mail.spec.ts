@@ -24,8 +24,8 @@ describe('contactDeviceOf', () => {
 
 describe('contactDeviceLine', () => {
   it('안드로이드는 앱 버전 / 모델 / OS 버전이다', () => {
-    expect(contactDeviceLine({ platform: 'android', appVersion: '1.0.10', osVersion: '15', model: 'SM-F711N' })).toBe(
-      '앱 1.0.10 / SM-F711N / Android 15',
+    expect(contactDeviceLine({ platform: 'android', appVersion: '1.0.10+1', osVersion: '15', model: 'SM-F711N' })).toBe(
+      '앱 1.0.10(1) / SM-F711N / Android 15',
     )
   })
 

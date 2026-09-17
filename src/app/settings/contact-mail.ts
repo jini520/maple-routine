@@ -6,6 +6,7 @@
  *
  * 플랫폼 분기를 화면에 인라인으로 적지 않고 여기 두는 이유는 두 갈래를 다 재기 위해서다.
  */
+import { formatAppVersion } from '../../lib/app-version'
 
 export const CONTACT_EMAIL = 'support.mapleroutine@gmail.com'
 
@@ -67,7 +68,7 @@ const OS_NAME: Record<string, string> = { ios: 'iOS', android: 'Android' }
 export function contactDeviceLine(device: ContactDevice): string {
   const os = `${OS_NAME[device.platform] ?? device.platform} ${device.osVersion}`
   const model = device.model === null || device.model === '' ? [] : [device.model]
-  return [`앱 ${device.appVersion}`, ...model, os].join(' / ')
+  return [`앱 ${formatAppVersion(device.appVersion)}`, ...model, os].join(' / ')
 }
 
 /** 제목과 본문은 인코딩한다. 한글 · 줄바꿈 · `&` 가 날것으로 들어가면 메일 앱이 주소를 중간에서 자른다. */

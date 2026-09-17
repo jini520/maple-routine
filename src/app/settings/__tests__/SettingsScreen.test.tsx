@@ -21,6 +21,7 @@ import { THEME_NAMES } from '../../../lib/theme/theme-registry'
 
 import { __resetToastsForTest, useToastStore } from '../../../features/toast/store'
 import packageJson from '../../../../package.json'
+import { formatAppVersion } from '../../../lib/app-version'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { setHapticsPort } from '../../../native/ports'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
@@ -332,7 +333,7 @@ describe('SettingsScreen', () => {
     const url = String(openURL.mock.calls[0]?.[0])
     expect(url.startsWith('mailto:support.mapleroutine@gmail.com?')).toBe(true)
     expect(new URLSearchParams(url.slice(url.indexOf('?') + 1)).get('body')).toContain(
-      `앱 ${packageJson.version} / iOS`,
+      `앱 ${formatAppVersion(packageJson.version)} / iOS`,
     )
   })
 

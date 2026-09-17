@@ -11,6 +11,7 @@
 import { View } from 'react-native'
 
 import type { LiveUpdateStatus, LiveUpdateStore } from '../../features/live-update/store'
+import { formatAppVersion } from '../../lib/app-version'
 
 import { Badge, Button, Card, Text } from '../../components/atoms'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
@@ -42,7 +43,7 @@ export function AppUpdateSection(props: AppUpdateSectionProps): React.JSX.Elemen
     // `현재 버전` 행 바로 아래에 놓이는 값이라 주어가 생략되면 무엇이 최신인지가
     // 문장 안에 없다. 한 단어를 더해 그 자리에서 읽히게 한다.
     'up-to-date': '최신 버전입니다',
-    'update-available': `새 버전 v${state.availableVersion} 있음`,
+    'update-available': `새 버전 v${state.availableVersion === null ? null : formatAppVersion(state.availableVersion)} 있음`,
     'store-required': '스토어 업데이트 필요',
     'confirm-cellular': '다운로드 대기',
     downloading: `다운로드 중 ${state.downloadProgress}%`,
@@ -58,7 +59,7 @@ export function AppUpdateSection(props: AppUpdateSectionProps): React.JSX.Elemen
     unsupported: '이 플랫폼에서는 지원되지 않습니다',
   }
 
-  const displayedVersion = state.currentVersion ?? props.fallbackVersion
+  const displayedVersion = formatAppVersion(state.currentVersion ?? props.fallbackVersion)
   const isUnsupported = state.status === 'unsupported'
   const isBusy =
     state.status === 'checking' || state.status === 'downloading' || state.status === 'applying'
