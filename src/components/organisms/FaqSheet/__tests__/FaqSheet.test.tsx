@@ -53,7 +53,7 @@ it('머리에는 그 화면의 말이 선다', async () => {
   await 그리기()
 
   expect(screen.getByText('스케줄러 결산')).toBeTruthy()
-  // 「자주 묻는 질문」 은 무엇에 대한 설명인지를 안 말한다.
+  // `자주 묻는 질문` 은 무엇에 대한 설명인지를 안 말한다.
   expect(screen.queryByText('자주 묻는 질문')).toBeNull()
 })
 

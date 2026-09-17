@@ -53,7 +53,7 @@ export const useSettlementStore = create<SettlementState>()((set, get) => ({
         getDismissedSettlementAt().catch(() => null),
       ])
 
-      // 못 받은 것과 «결산 아님» 은 다른 사실이지만 화면이 하는 일은 같다. 안 세운다.
+      // 못 받은 것과 **결산 아님** 은 다른 사실이지만 화면이 하는 일은 같다. 안 세운다.
       const settling = remote?.settling ?? false
       const startedAt = remote?.startedAt ?? null
 

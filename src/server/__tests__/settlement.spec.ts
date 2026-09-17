@@ -49,7 +49,7 @@ it('5xx 도 null', async () => {
   await expect(fetchSettlement()).resolves.toBeNull()
 })
 
-// 옛 서버는 이 경로를 모른다. 404 를 «결산 아님» 으로 읽어도 화면은 같지만, 모르는 것과 아닌 것을
+// 옛 서버는 이 경로를 모른다. 404 를 **결산 아님** 으로 읽어도 화면은 같지만, 모르는 것과 아닌 것을
 // 가르는 편이 로그를 읽을 때 낫다.
 it('계약을 어긴 응답은 null', async () => {
   jest.spyOn(global, 'fetch').mockResolvedValue(ok({ settling: '네' }))
