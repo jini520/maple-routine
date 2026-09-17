@@ -89,6 +89,41 @@ it('기록에 캐시의 월드 이름과 월드 key 를 함께 적는다', async
   expect(upsertMock).toHaveBeenCalledWith(expect.objectContaining({ world: '스카니아', worldKey: 'scania' }))
 })
 
+// 시즌 보스는 챌린저스 월드 캐릭터에만 기록한다(2026-09-17 사용자 지정). 넥슨 API 는 일반 월드 캐릭터에도
+// 메이린을 목록에 넣어 준다.
+describe('시즌 보스는 챌린저스 월드 캐릭터만 기록한다', () => {
+  beforeEach(() => {
+    getLedgerMock.mockResolvedValue({
+      unavailable: false,
+      dates: { '2026-09-04': observed(['meirin|hard', 'lotus|hard']) },
+    })
+  })
+
+  it('일반 월드 캐릭터는 시즌 보스를 건너뛰고 나머지는 기록한다', async () => {
+    getBasicMock.mockResolvedValue({ profile: { world: '엘리시움', worldKey: 'elysium' } })
+
+    await recordBossProfitFromWindow(['o1'], NOW)
+
+    expect(upserted()).toEqual(['lotus|hard|weekly|2026-09-03'])
+  })
+
+  it('월드를 모르면 시즌 보스를 이번에 건너뛴다', async () => {
+    getBasicMock.mockResolvedValue(null)
+
+    await recordBossProfitFromWindow(['o1'], NOW)
+
+    expect(upserted()).toEqual(['lotus|hard|weekly|2026-09-03'])
+  })
+
+  it('챌린저스 월드 캐릭터는 시즌 보스도 기록한다', async () => {
+    getBasicMock.mockResolvedValue({ profile: { world: '챌린저스2', worldKey: 'challengers_2' } })
+
+    await recordBossProfitFromWindow(['o1'], NOW)
+
+    expect(upserted()).toContain('meirin|hard|weekly|2026-09-03')
+  })
+})
+
 describe('이미 있는 행은 안 건드린다', () => {
   it('같은 키의 기록이 있으면 다시 안 쓴다. 파티원 수를 덮으면 안 된다', async () => {
     getLedgerMock.mockResolvedValue({

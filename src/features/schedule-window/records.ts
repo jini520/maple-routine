@@ -5,7 +5,7 @@
  * 날짜들을 이미 들고 있으므로 **부르지 않고 읽어서** 만든다.
  */
 import { monthKeyOf, resetWeekStartOf } from '../../lib/calendar'
-import { bossCycleOf, bossNameOf } from '../../lib/boss/bosses'
+import { bossCycleOf, bossNameOf, isSeasonBoss } from '../../lib/boss/bosses'
 import { findPriceEntry } from '../../lib/boss/boss-crystal-prices'
 import {
   getCurrentBossProfitPeriod,
@@ -21,6 +21,7 @@ import { getBossProfitRecords, upsertBossProfitRecord } from '../../storage/boss
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getScheduleProbeLedger } from '../../storage/schedule-probe-ledger'
 import { BOSS_CYCLES, type BossCycle, type BossDifficulty } from '../../types'
+import { isChallengersWorld } from '../../lib/world/worlds'
 import { migrateDropsToConfirmedDifficulty } from '../boss-profit/drops-loader'
 import { withSqliteFallback, withSqliteTimeout } from '../boss-profit/sqlite-guards'
 import type { WindowFailure } from './window'
@@ -99,6 +100,10 @@ async function recordPeriod(
     // 이관은 `alreadyRecorded` 판정보다 앞에 둔다. 이미 수익 기록이 있든 없든 이 관측이 말하는
     // 처치 난이도는 같고, 아래 continue 들에 막히면 안 된다.
     await migrateDropsToConfirmedDifficulty({ ocid, bossKey, difficulty, periodKey }, dropRecords, now)
+
+    // 시즌 보스는 챌린저스 월드 캐릭터만 기록한다. 넥슨 API 가 일반 월드 캐릭터에도 시즌 보스를 준다. 월드를
+    // 모르면 이번 회차는 건너뛰고, 월드를 알게 된 회차가 기록한다(아래 이미 있는 행 판정이 안 막는다).
+    if (isSeasonBoss(bossKey) && !isChallengersWorld(worldKey)) continue
 
     const alreadyRecorded = existingRecords.some(
       (record) =>

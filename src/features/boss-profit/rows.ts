@@ -20,6 +20,7 @@ import { formatBossProfitPeriodLabel, getCurrentBossProfitPeriod } from '../../l
 import { isMonthlyRowInWeek } from '../../lib/boss/monthly-boss-week'
 import { bossNameOf } from '../../lib/boss/bosses'
 import { mergeManualBossList } from '../../lib/boss/manual-boss-merge'
+import { isChallengersWorld } from '../../lib/world/worlds'
 import type { BossDropRecord } from '../../storage/boss-drops'
 import type { BossProfitRecord, getBossProfitRecords } from '../../storage/boss-profit'
 import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
@@ -178,11 +179,16 @@ export function buildBossProfitRow(
 //   placeholder). 자동 모드와 대칭이며 placeholder 의 출처만 인게임 등록 → 수동 멤버십이다.
 //
 // 보스 표에 없는 보스(key 가 없다)는 어느 모드에서도 안 고른다. 결정석 가격도 기록할 key 도 없다.
+//
+// 시즌 보스는 챌린저스 월드 캐릭터에만 고른다. 넥슨 API 가 일반 월드 캐릭터에도 시즌 보스를 목록에 넣어
+// 주기 때문이다. 월드를 모르면 안 고른다(스케줄러 화면과 같은 판정). 자동 기록도 이 행에서만 쓴다.
 export function selectProfitDisplayBosses(
   bossContents: BossContent[],
   mode: TrackingMode,
   manualItems: ManualTrackedItem[],
+  worldKey: string | null,
 ): ProfitBoss[] {
+  const inWorld = (boss: MatchedBoss): boolean => !boss.isSeasonBoss || isChallengersWorld(worldKey)
   const matched = bossContents.map(matchBossContent)
   // 주간 한도를 채웠으면 미처치 placeholder 는 아예 안 세운다. 두 모드 공통이라 아래 ①②보다
   // 앞에 선다. 판정은 동기화 결과 전체로 한다. 겨누는 상황이 표시 목록 밖 보스로 12를 채웠다
@@ -195,7 +201,9 @@ export function selectProfitDisplayBosses(
     limitReached && boss.cycle === 'weekly' && !boss.isSeasonBoss && !boss.ownComplete
 
   if (mode !== 'manual') {
-    return selectBossProfitBosses(matched).filter(hasBossKey).filter((boss) => !isLimitClosed(boss))
+    return selectBossProfitBosses(matched)
+      .filter(hasBossKey)
+      .filter((boss) => inWorld(boss) && !isLimitClosed(boss))
   }
 
   // ① 실제 처치한 보스는 추적 여부와 무관하게 전부, 처치한 난이도·가격으로 노출한다. 이 페이지는
@@ -203,7 +211,7 @@ export function selectProfitDisplayBosses(
   // 모드에서 신뢰하지 않으므로 ownComplete 인 것만 남긴다.
   const kills = selectBossProfitBosses(matched)
     .filter(hasBossKey)
-    .filter((boss) => boss.ownComplete)
+    .filter((boss) => boss.ownComplete && inWorld(boss))
   const killedKeys = new Set(kills.map((boss) => boss.bossKey))
 
   // ② 수동 추적 중이지만 아직 처치하지 않은 보스는 고른 난이도로 미완료 placeholder. 보스 관리
@@ -214,7 +222,7 @@ export function selectProfitDisplayBosses(
   )
     .map(matchBossContent)
     .filter(hasBossKey)
-    .filter((boss) => !boss.ownComplete && !killedKeys.has(boss.bossKey) && !isLimitClosed(boss))
+    .filter((boss) => !boss.ownComplete && !killedKeys.has(boss.bossKey) && inWorld(boss) && !isLimitClosed(boss))
 
   return [...kills, ...placeholders]
 }
