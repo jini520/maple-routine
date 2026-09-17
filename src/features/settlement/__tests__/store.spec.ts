@@ -42,7 +42,7 @@ describe('refresh', () => {
     expect(useSettlementStore.getState().settling).toBe(false)
   })
 
-  // 못 받은 것과 «결산 아님» 은 다른 사실이지만 화면이 하는 일은 같다. 안 세운다.
+  // 못 받은 것과 **결산 아님** 은 다른 사실이지만 화면이 하는 일은 같다. 안 세운다.
   it('서버를 못 받으면 안 세운다', async () => {
     fetchOne.mockResolvedValue(null)
 

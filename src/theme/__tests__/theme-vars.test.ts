@@ -369,7 +369,7 @@ describe('resolveCardBody', () => {
   })
 })
 
-// 결산 안내 줄의 색. 앞의 둘과 달리 **테마 값에서 계산하지 않는다** — 라이트/다크 두 벌 상수다.
+// 결산 안내 줄의 색. 앞의 둘과 달리 **테마 값에서 계산하지 않는다**. 라이트/다크 두 벌 상수다.
 // 그것이 이 색의 요건이다. 테마를 따라가면 여섯 테마에서 줄의 정체가 여섯 가지가 된다.
 describe('resolveSettlementColors. 테마를 안 따라가는 공통색', () => {
   const 테마들 = THEME_NAMES.map((name) => getThemeDefinition(name))

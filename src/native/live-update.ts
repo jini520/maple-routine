@@ -1,3 +1,4 @@
+import { parseAppVersion } from '../lib/app-version'
 import { closeBossProfitDb } from '../storage/sqlite/db'
 import { getLiveUpdatePort, type LiveUpdateCheckResult, type NetworkType } from './ports'
 import { showSplashScreen } from './splash-screen'
@@ -14,25 +15,20 @@ import { showSplashScreen } from './splash-screen'
  */
 
 /**
- * `x.y.z` 세 자리를 비교해 후보가 더 새것인가.
+ * 후보가 더 새것인가. `x.y.z` 세 자리 다음에 패치 번호(`+n`, 없으면 0)까지 비교한다.
  *
- * 세 자리가 아니거나 숫자가 아니면 `false` 다. 네이티브 `versionName` 이 `1.0` 두 자리면 OTA
- * 가 한 번도 작동하지 않는 버그가 실제로 있었다. 파싱 못 하면 새것이 아니다 로 닫아 둔다.
- * 모르는 값을 새것으로 치면 그 순간 잘못된 번들이 나간다.
+ * semver 는 `+n` 을 비교에서 빼지만 그러면 같은 버전의 버그 수정 OTA 를 받아도 완료 안내가 안 뜬다.
+ *
+ * 읽지 못하면 `false` 다. 네이티브 `versionName` 이 `1.0` 두 자리면 OTA 가 한 번도 작동하지 않는
+ * 버그가 실제로 있었다. 모르는 값을 새것으로 치면 그 순간 잘못된 번들이 나간다.
  */
 export function isNewerVersion(current: string, candidate: string): boolean {
-  const parse = (value: string): number[] | null => {
-    const parts = value.split('.').map(Number)
-    if (parts.length !== 3 || parts.some((part) => Number.isNaN(part))) return null
-    return parts
-  }
+  const currentVersion = parseAppVersion(current)
+  const candidateVersion = parseAppVersion(candidate)
+  if (currentVersion === null || candidateVersion === null) return false
 
-  const currentParts = parse(current)
-  const candidateParts = parse(candidate)
-  if (!currentParts || !candidateParts) return false
-
-  for (let i = 0; i < 3; i++) {
-    if (candidateParts[i] !== currentParts[i]) return candidateParts[i] > currentParts[i]
+  for (const part of ['major', 'minor', 'patch', 'build'] as const) {
+    if (candidateVersion[part] !== currentVersion[part]) return candidateVersion[part] > currentVersion[part]
   }
   return false
 }

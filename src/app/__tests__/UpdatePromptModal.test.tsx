@@ -69,6 +69,13 @@ describe('UpdatePromptModal', () => {
     },
   )
 
+  // `package.json` 은 `1.0.10+1` 로 들고 화면은 `1.0.10(1)` 로 보인다.
+  it('패치 번호가 붙은 버전은 괄호로 보인다', async () => {
+    const { view } = await renderModal({ status: 'update-available', availableVersion: '1.0.10+1' })
+
+    expect(view.getByText('v1.0.10(1)')).toBeTruthy()
+  })
+
   it('update-available: 버전·용량 표시, [다운로드]→startDownload, [나중에]→dismiss', async () => {
     const { view, actions } = await renderModal({ status: 'update-available' })
 

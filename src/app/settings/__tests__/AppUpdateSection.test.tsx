@@ -108,6 +108,13 @@ describe('AppUpdateSection', () => {
     expect(view.getByText('최신 버전입니다')).toBeTruthy()
   })
 
+  it('패치 번호가 붙은 버전은 괄호로 보인다', async () => {
+    const view = await render({ status: 'update-available', currentVersion: '1.0.10+1', availableVersion: '1.0.10+2' })
+
+    expect(view.getByText('1.0.10(1)')).toBeTruthy()
+    expect(view.getByText('새 버전 v1.0.10(2) 있음')).toBeTruthy()
+  })
+
   it('새 버전이 있으면 상태에 버전을 표시한다', async () => {
     const view = await render({ status: 'update-available', availableVersion: '1.0.4' })
 

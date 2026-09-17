@@ -10,6 +10,7 @@ import { useState } from 'react'
 import { View } from 'react-native'
 
 import type { LiveUpdateStatus, LiveUpdateStore } from '../features/live-update/store'
+import { formatAppVersion } from '../lib/app-version'
 
 import {
   AlertTriangleIcon,
@@ -86,7 +87,7 @@ const GHOST_TEXT = 'text-xs'
 
 function VersionBadge({ version }: { version: string | null }): React.JSX.Element {
   return (
-    <Badge variant="outline" className="tabular-nums">v{version}</Badge>
+    <Badge variant="outline" className="tabular-nums">v{version === null ? null : formatAppVersion(version)}</Badge>
   )
 }
 

@@ -72,7 +72,7 @@ it('결산 중이 아니면 아무것도 안 그린다', async () => {
   expect(screen.queryByTestId('today-settlement-banner')).toBeNull()
 })
 
-// 못 받은 것은 «결산 아님» 과 다른 사실이지만 화면이 하는 일은 같다.
+// 못 받은 것은 **결산 아님** 과 다른 사실이지만 화면이 하는 일은 같다.
 it('서버를 못 받아 안 보이는 상태면 안 그린다', async () => {
   세우기({ visible: false })
 

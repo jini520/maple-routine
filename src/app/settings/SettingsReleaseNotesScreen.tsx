@@ -11,6 +11,7 @@
 import { Pressable, View } from 'react-native'
 
 import { useRunningAppVersion } from '../../features/live-update/use-running-app-version'
+import { baseAppVersion } from '../../lib/app-version'
 import {
   RELEASE_NOTES,
   RELEASE_NOTE_CATEGORY_LABELS,
@@ -68,7 +69,7 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
                 >
                   {note.version}
                 </Text>
-                {note.version === runningVersion && <Badge variant="primary">사용 중</Badge>}
+                {note.version === baseAppVersion(runningVersion) && <Badge variant="primary">사용 중</Badge>}
                 <Text style={TABULAR_NUMS} className="ml-auto text-xs text-text-disabled">
                   {note.date}
                 </Text>

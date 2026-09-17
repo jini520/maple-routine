@@ -30,6 +30,7 @@ import { fileURLToPath } from 'node:url'
 // 릴리스 노트의 진실 원천을 **그대로** 읽는다([[ADR-119]] 결정 1) — capacitor 스크립트와 같은 파일을
 // 같은 이유로 읽는다. 노트가 두 벌이 되면 갈라진 순간 어느 쪽이 사실인지 알 방법이 없다.
 import { findReleaseNote } from '../src/data/release-notes.ts'
+import { baseAppVersion, parseAppVersion } from '../src/lib/app-version.ts'
 // 노트 가드([[ADR-126]] 결정 8). **캐패시터 스크립트에 살던 것을 옮겨 왔다** — [[ADR-155]] 가 그
 // 패키지를 지우면서 이 import 가 고아가 됐고, 그때부터 이 파일은 첫 줄에서 죽어 있었다.
 import { describeReleaseNoteGap } from './release-note-gap.mjs'
@@ -163,17 +164,20 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   // `app.json` 은 지문 재료라, OTA 버전을 올리려고 건드리면 스토어 바이너리가 이 번들을 못 받는다.
   const { version: appVersion } = JSON.parse(readFileSync(join(appDir, 'package.json'), 'utf-8'))
   const appConfig = JSON.parse(readFileSync(join(appDir, 'app.json'), 'utf-8'))
-  if (!appVersion || !/^\d+\.\d+\.\d+$/.test(appVersion)) {
-    console.error(`package.json 의 version("${appVersion}")이 x.y.z 형식이 아닙니다.`)
+  // 같은 버전의 버그 수정은 패치 번호를 붙인다(`1.0.10+1`, 화면은 `1.0.10(1)`).
+  if (!appVersion || parseAppVersion(appVersion) === null) {
+    console.error(`package.json 의 version("${appVersion}")이 x.y.z 또는 x.y.z+n 형식이 아닙니다.`)
     process.exit(1)
   }
 
   // 노트·핵심 목록 없이는 배포가 나가지 않는다([[ADR-119]] 결정 6 + [[ADR-126]] 결정 8).
   // 빌드(몇 분)보다 **앞**인 것이 요점이다 — capacitor 스크립트가 같은 자리에 둔 이유와 같다.
-  const note = findReleaseNote(appVersion)
+  // 패치 노트는 기본 버전 노트에 이어 붙인다. `1.0.10+1` 은 `1.0.10` 노트를 쓴다.
+  const noteVersion = baseAppVersion(appVersion)
+  const note = findReleaseNote(noteVersion)
   const gap = describeReleaseNoteGap(note)
   if (gap !== null) {
-    console.error(`src/data/release-notes.ts 의 ${appVersion}: ${gap}`)
+    console.error(`src/data/release-notes.ts 의 ${noteVersion}: ${gap}`)
     process.exit(1)
   }
 
