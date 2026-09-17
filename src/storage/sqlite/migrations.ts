@@ -27,7 +27,7 @@ import type { SqliteDbConnection } from '../ports'
 import { BOSS_KEYED_TABLES } from './boss-tables'
 
 /** 이 앱의 마지막 DB 버전. 새 기기는 곧바로 이 값이 된다. */
-export const DB_VERSION = 8
+export const DB_VERSION = 9
 
 /**
  * 갈래와 항목 이름을 바꾸며 옛 기록을 옮기던 문장들. 버전 1 이 한 번 돌린다.
@@ -266,6 +266,18 @@ async function fixSwapped0917Prices(db: SqliteDbConnection): Promise<void> {
   }
 }
 
+/**
+ * 사냥 기록의 조각 가격 0 을 안 적은 가격(`NULL`)으로 옮긴다. 버전 9 가 한 번 돌린다.
+ *
+ * 가격 칸이 빈 사냥 기록의 조각이 보관에 드는데, 그전까지 칸이 0 과 빈 칸을 못 갈라 빈 칸도 0 으로
+ * 저장됐다. 이 버전 뒤에 적힌 0 은 0 메소에 판 기록이라 다시 옮기지 않는다.
+ */
+async function clearZeroHuntFragmentPrices(db: SqliteDbConnection): Promise<void> {
+  await db.execute(
+    `UPDATE income_records SET hunt_fragment_price = NULL WHERE category_key = 'hunting' AND hunt_fragment_price = 0`,
+  )
+}
+
 const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   async (db) => {
     for (const statement of LEGACY_NAME_MIGRATIONS) await db.execute(statement)
@@ -277,6 +289,7 @@ const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   fillWorldKeys,
   rewind0917PrePatchPrices,
   fixSwapped0917Prices,
+  clearZeroHuntFragmentPrices,
 ]
 
 async function userVersionOf(db: SqliteDbConnection): Promise<number> {

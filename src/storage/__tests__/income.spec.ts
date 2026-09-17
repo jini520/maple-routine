@@ -72,9 +72,7 @@ describe('insertIncomeRecord', () => {
       null,
       // 수량. `기타`가 아니라 비어 있다.
       null,
-      // 사냥 칸 아홉(조각 가격 나중에 입력 포함). 아이템
-      // 판매라 전부 비어 있다.
-      null,
+      // 사냥 칸 여덟. 아이템 판매라 전부 비어 있다.
       null,
       null,
       null,
@@ -307,7 +305,6 @@ describe('hunt_meso_rate: 그때의 메소 획득량', () => {
     sojae: 2,
     fragments: 83,
     fragmentPrice: 8_000_000,
-    fragmentsDeferred: false,
     mesoRate: 149,
   }
   const 계산기행: IncomeRecord = {
@@ -412,7 +409,6 @@ describe('hunt_typed_meso: 수동으로 적힌 사냥', () => {
     typedMeso: 1_000_000_000,
     fragments: 83,
     fragmentPrice: 8_000_000,
-    fragmentsDeferred: false,
   }
   const 수동행: IncomeRecord = {
     ...sample,
@@ -480,14 +476,13 @@ describe('hunt_typed_meso: 수동으로 적힌 사냥', () => {
     expect(record.hunt).toEqual({
       mode: 'manual',
       typedMeso: 1_000_000_000,
-      fragmentsDeferred: false,
       fragments: 83,
       fragmentPrice: 8_000_000,
     })
   })
 
-  // 조각을 안 넣은 수동 행. 합계가 곧 친 메소다.
-  it('조각이 없으면 0 으로 읽는다', async () => {
+  // 조각을 안 넣은 수동 행. 합계가 곧 친 메소다. 가격 칸이 비어 있으면 안 적은 것이다.
+  it('조각이 없으면 개수는 0, 가격은 null 로 읽는다', async () => {
     queryMock.mockResolvedValue({
       values: [
         {
@@ -508,9 +503,8 @@ describe('hunt_typed_meso: 수동으로 적힌 사냥', () => {
     expect(record.hunt).toEqual({
       mode: 'manual',
       typedMeso: 500_000_000,
-      fragmentsDeferred: false,
       fragments: 0,
-      fragmentPrice: 0,
+      fragmentPrice: null,
     })
   })
 
@@ -642,98 +636,87 @@ describe('quantity: 수입의 수량', () => {
   })
 })
 
-describe('hunt_fragments_deferred: 조각 가격 나중에 입력', () => {
-  const 나중에: HuntingManualDetail = {
+describe('hunt_fragment_price: 가격을 안 적은 조각은 NULL 이다', () => {
+  const 안적음: HuntingManualDetail = {
     mode: 'manual',
     typedMeso: 1_000_000_000,
     fragments: 80,
-    fragmentPrice: 0,
-    fragmentsDeferred: true,
+    fragmentPrice: null,
   }
-  const 사냥행: IncomeRecord = { ...sample, ocid: 'ocid-adele', category: 'hunting', item: null, mesoAmount: 1_000_000_000, hunt: 나중에 }
+  const 사냥행: IncomeRecord = { ...sample, ocid: 'ocid-adele', category: 'hunting', item: null, mesoAmount: 1_000_000_000, hunt: 안적음 }
 
-  // 가격 0 · NULL 인 옛 기록은 지금 판매다. 둘과 갈리는 칸이 따로 있어야 한다.
-  it('사냥 칸 여덟 뒤에 나중에 입력(1 · 0)을 싣는다', async () => {
+  // 빈 칸과 0 이 다른 뜻이다. 빈 칸은 보관이고 0 은 0 메소에 판 것이다.
+  it('안 적은 가격은 NULL 로, 0 은 0 으로 싣는다', async () => {
     const { insertIncomeRecord } = require('../income') as typeof import('../income')
 
     await insertIncomeRecord(사냥행)
-    await insertIncomeRecord({ ...사냥행, hunt: { ...나중에, fragmentsDeferred: false } })
+    await insertIncomeRecord({ ...사냥행, hunt: { ...안적음, fragmentPrice: 0 } })
 
-    const [sql, deferred] = runMock.mock.calls[0]
-    expect(sql).toContain('hunt_fragments_deferred')
-    expect(deferred[22]).toBe(1)
-    expect(runMock.mock.calls[1][1][22]).toBe(0)
+    expect(runMock.mock.calls[0][1][19]).toBeNull()
+    expect(runMock.mock.calls[1][1][19]).toBe(0)
   })
 
-  it('사냥이 아닌 행은 비운다', async () => {
-    const { insertIncomeRecord } = require('../income') as typeof import('../income')
+  // 칸은 스키마에 남지만 안 쓴다. 가격 칸과 같은 뜻을 두 칸이 들면 어긋난다.
+  it('hunt_fragments_deferred 칸은 적지 않는다', async () => {
+    const { insertIncomeRecord, updateIncomeRecord } = require('../income') as typeof import('../income')
 
-    await insertIncomeRecord(sample)
+    await insertIncomeRecord(사냥행)
+    await updateIncomeRecord(사냥행)
 
-    expect(runMock.mock.calls[0][1][22]).toBeNull()
+    expect(runMock.mock.calls[0][0]).not.toContain('hunt_fragments_deferred')
+    expect(runMock.mock.calls[1][0]).not.toContain('hunt_fragments_deferred')
   })
 
-  it('고칠 때도 함께 갈아 끼운다', async () => {
+  it('고칠 때도 NULL 로 갈아 끼운다', async () => {
     const { updateIncomeRecord } = require('../income') as typeof import('../income')
 
     await updateIncomeRecord(사냥행)
 
     const [sql, values] = runMock.mock.calls[0]
-    expect(sql).toContain('hunt_fragments_deferred = ?')
-    expect(values[21]).toBe(1)
+    expect(sql).toContain('hunt_fragment_price = ?')
+    expect(values[18]).toBeNull()
   })
 
-  it('1 이면 나중에 입력으로 읽고 NULL · 0 은 지금 판매다', async () => {
-    const row = (id: string, deferred: number | null): Record<string, unknown> => ({
+  it('NULL 은 null 로, 0 은 0 으로 읽는다. 수동 · 계산기가 같다', async () => {
+    const manual = (id: string, price: number | null): Record<string, unknown> => ({
       id,
       earned_on: '2026-09-01',
       category: '사냥',
       category_key: 'hunting',
       meso_amount: 1_000_000_000,
       hunt_fragments: 80,
-      hunt_fragment_price: 0,
+      hunt_fragment_price: price,
       hunt_typed_meso: 1_000_000_000,
-      hunt_fragments_deferred: deferred,
+      // 옛 체크 칸은 안 본다.
+      hunt_fragments_deferred: 1,
       recorded_at: '2026-09-01T05:00:00.000Z',
     })
-    queryMock.mockResolvedValue({ values: [row('a', 1), row('b', 0), row('c', null)] })
+    const calculator: Record<string, unknown> = {
+      id: 'calc',
+      earned_on: '2026-09-01',
+      category: '사냥',
+      category_key: 'hunting',
+      meso_amount: 900_000_000,
+      hunt_missed_mobs: 0,
+      hunt_boosts: '',
+      hunt_sojae: 4,
+      hunt_fragments: 50,
+      hunt_fragment_price: null,
+      hunt_meso_rate: 100,
+      recorded_at: '2026-09-01T05:00:00.000Z',
+    }
+    queryMock.mockResolvedValue({ values: [manual('a', null), manual('b', 0), manual('c', 7_000_000), calculator] })
     const { getIncomeRecordsBetween } = require('../income') as typeof import('../income')
 
     const records = await getIncomeRecordsBetween('2026-09-01', '2026-09-01')
 
-    expect(records.map((record) => record.hunt?.fragmentsDeferred)).toEqual([true, false, false])
-  })
-
-  it('계산기 행도 읽는다', async () => {
-    queryMock.mockResolvedValue({
-      values: [
-        {
-          id: 'calc',
-          earned_on: '2026-09-01',
-          category: '사냥',
-          category_key: 'hunting',
-          meso_amount: 900_000_000,
-          hunt_missed_mobs: 0,
-          hunt_boosts: '',
-          hunt_sojae: 4,
-          hunt_fragments: 50,
-          hunt_fragment_price: 0,
-          hunt_meso_rate: 100,
-          hunt_fragments_deferred: 1,
-          recorded_at: '2026-09-01T05:00:00.000Z',
-        },
-      ],
-    })
-    const { getIncomeRecordsBetween } = require('../income') as typeof import('../income')
-
-    const [record] = await getIncomeRecordsBetween('2026-09-01', '2026-09-01')
-
-    expect(record?.hunt).toMatchObject({ mode: 'calculator', fragments: 50, fragmentsDeferred: true })
+    expect(records.map((record) => record.hunt?.fragmentPrice)).toEqual([null, 0, 7_000_000, null])
+    expect(records.every((record) => record.hunt !== null && !('fragmentsDeferred' in record.hunt))).toBe(true)
   })
 })
 
 describe('getFragmentStorage: 캐릭터별 솔 에르다 조각 보관', () => {
-  // 보관은 따로 저장하지 않고 기록에서 센다. 나중에 입력 사냥의 조각 합 − 정산이 판 개수 합.
+  // 보관은 따로 저장하지 않고 기록에서 센다. 가격 칸이 빈 사냥의 조각 합 − 정산이 판 개수 합.
   it('캐릭터 · 고른 날까지 · 뺄 기록으로 한 번 묻는다', async () => {
     queryMock.mockResolvedValue({ values: [{ stored: 70 }] })
     const { getFragmentStorage } = require('../income') as typeof import('../income')
@@ -741,7 +724,8 @@ describe('getFragmentStorage: 캐릭터별 솔 에르다 조각 보관', () => {
     await expect(getFragmentStorage('ocid-adele', '2026-09-10', 'settle-1')).resolves.toBe(70)
 
     const [sql, values] = queryMock.mock.calls[0]
-    expect(sql).toContain('hunt_fragments_deferred = 1')
+    expect(sql).toContain("category_key = 'hunting' AND hunt_fragment_price IS NULL")
+    expect(sql).not.toContain('hunt_fragments_deferred')
     expect(sql).toContain("category_key = 'sol_erda_fragment'")
     expect(sql).toContain('earned_on <= ?')
     expect(values).toEqual(['ocid-adele', '2026-09-10', 'settle-1'])

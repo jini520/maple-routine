@@ -18,6 +18,8 @@ import {
   acceptMesoText,
   mesoTextOf,
   mesoValueOf,
+  optionalMesoTextOf,
+  optionalMesoValueOf,
   settleMesoText,
 } from '../../../components/organisms/MesoPad/meso-pad'
 import { Text } from '../../../components/atoms'
@@ -32,12 +34,7 @@ import { AmountInput, FieldRow } from '../sheet-fields'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 
-export function HuntManualForm(
-  props: IncomeFormProps & {
-    /** 조각 가격 나중에 입력. 시트가 들고 넘긴다. */
-    fragmentsDeferred: boolean
-  },
-): React.JSX.Element {
+export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
   const editing = props.editing !== undefined
   /**
    * 되살릴 입력. 수동으로 적힌 행일 때만 값이 있다.
@@ -56,29 +53,18 @@ export function HuntManualForm(
     mesoTextOf(detail?.typedMeso ?? props.editing?.mesoAmount ?? 0),
   )
   const [fragmentsText, setFragmentsText] = useState(mesoTextOf(detail?.fragments ?? 0))
-  const [fragmentPriceText, setFragmentPriceText] = useState(mesoTextOf(detail?.fragmentPrice ?? 0))
+  /** 빈 칸은 가격을 안 적은 것이라 0 과 따로 든다. 옛 행은 조각 칸이 없어 빈 칸이다. */
+  const [fragmentPriceText, setFragmentPriceText] = useState(optionalMesoTextOf(detail?.fragmentPrice ?? null))
   const { saving, submit, remove } = useSheetSubmit(props)
-
-  /** 마지막으로 그린 나중에 입력 값. 켜지는 순간을 그리는 중에 알아내려고 상태로 든다. */
-  const [deferredSeen, setDeferredSeen] = useState(props.fragmentsDeferred)
-  if (deferredSeen !== props.fragmentsDeferred) {
-    // 켜면 가격 칸이 빈다. 끄고 나서 켜기 전 가격이 되살아나면 안 판 조각에 값이 붙는다.
-    setDeferredSeen(props.fragmentsDeferred)
-    if (props.fragmentsDeferred) setFragmentPriceText('')
-  }
 
   /** 조각 줄의 그림. 계산기와 같은 파일을 본다. */
   const fragmentIcon = getItemIconUrlByFile('sol_erda_fragment.webp')
 
   const typedMeso = mesoValueOf(typedMesoText)
   const fragments = mesoValueOf(fragmentsText)
-  const fragmentPrice = mesoValueOf(fragmentPriceText)
+  const fragmentPrice = optionalMesoValueOf(fragmentPriceText)
   /** 계산기와 **같은 식**이고 메소의 출처만 다르다(거기서는 앱이 센다). */
-  const total = huntTotalOf(typedMeso, {
-    fragments,
-    fragmentPrice,
-    fragmentsDeferred: props.fragmentsDeferred,
-  })
+  const total = huntTotalOf(typedMeso, { fragments, fragmentPrice })
 
   useSaveSlot(props.setSave, {
     editing,
@@ -109,7 +95,6 @@ export function HuntManualForm(
           typedMeso,
           fragments,
           fragmentPrice,
-          fragmentsDeferred: props.fragmentsDeferred,
         },
         memo: null,
       }),
@@ -171,20 +156,16 @@ export function HuntManualForm(
           />
           <Text className="text-xs text-text-muted">개</Text>
         </View>
-        <View
-          className={`ml-auto min-w-0 flex-1 flex-row items-baseline gap-1.5${
-            props.fragmentsDeferred ? ' opacity-40' : ''
-          }`}
-        >
+        <View className="ml-auto min-w-0 flex-1 flex-row items-baseline gap-1.5">
           <SheetTextInput
             testID="income-sheet-fragment-price"
             aria-label="조각 가격"
-            editable={!props.fragmentsDeferred}
             value={fragmentPriceText}
             onChangeText={(text) => setFragmentPriceText(acceptMesoText(fragmentPriceText, text))}
-            onBlur={() => setFragmentPriceText(settleMesoText(fragmentPriceText))}
+            // 0 을 빈 칸으로 접지 않는다. 빈 칸은 보관이고 0 은 0 메소에 판 것이다.
+            onBlur={() => setFragmentPriceText(optionalMesoTextOf(optionalMesoValueOf(fragmentPriceText)))}
             keyboardType="number-pad"
-            placeholder="조각 가격"
+            placeholder="미입력 시 보관"
             className="h-5 flex-1 text-right text-sm font-semibold text-text"
             style={TABULAR_NUMS}
           />

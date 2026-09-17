@@ -63,7 +63,7 @@ export interface IncomeSheetProps {
    */
   lastHuntSelection: LastHuntSelection | null
   /**
-   * 마지막에 저장한 사냥 기록의 체크 셋(조각 가격 나중에 입력 · 켠 메소 획득률 아이템).
+   * 마지막에 계산기로 저장한 사냥 기록의 켠 메소 획득률 아이템.
    *
    * **새 기록의 첫 값**이다. 수정으로 열면 그 기록에 박힌 값이 이긴다. `null` 이면 한 번도 안
    * 적었다는 뜻이라 전부 꺼진 채 열린다. 시트는 `storage/` 를 모르므로 화면이 읽어서 넘긴다.
@@ -101,19 +101,6 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
    * 합계가 사람이 친 값으로 둔갑한다.
    */
   const [huntMode, setHuntMode] = useState<HuntInputMode>(huntModeOf(props.editing))
-  /**
-   * 조각 가격 나중에 입력. 수정으로 열면 기록이 정하고, 새로 적을 때는 마지막에 저장한 값이 선다.
-   *
-   * 기억한 값이 수정을 이기면 옛 기록을 열어 보기만 해도 합계가 달라진다.
-   *
-   * 시트가 드는 것은 모드를 바꾸면 폼이 새로 심기기 때문이다(`key` 가 모드를 담는다). 폼 안에 두면
-   * 모드를 옮길 때 풀린다.
-   */
-  const [fragmentsDeferred, setFragmentsDeferred] = useState(
-    props.editing === undefined
-      ? (props.lastHuntToggles?.fragmentsDeferred ?? false)
-      : (props.editing.hunt?.fragmentsDeferred ?? false),
-  )
   /**
    * 시트 바닥에 서는 저장 줄의 값. 폼이 마운트 뒤에 올린다.
    *
@@ -199,37 +186,24 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
       // 아래 여백을 안 붙인다. 바닥의 숨돌림은 껍데기가 한 값으로 낸다.
       <View className="gap-3 px-4">
         {/*
-          사냥만 갖는 줄. 계산기로 셀지 획득 메소를 직접 적을지, 조각 가격을 나중에 적을지 고른다.
-          수정에서는 모드를 못 바꾸므로 앞의 것이 빠진다.
+          사냥만 갖는 줄. 계산기로 셀지 획득 메소를 직접 적을지 고른다. 수정에서는 모드를 못 바꾸므로
+          줄째 안 선다. 빈 줄을 두면 간격만 한 칸 더 생긴다.
 
-          체크박스가 가로줄의 자식이라 각자 글자 폭만 누르는 자리다. 세로 스택의 자식으로 두면 줄
+          체크박스가 가로줄의 자식이라 글자 폭만 누르는 자리다. 세로 스택의 자식으로 두면 줄
           끝까지 늘어나 빈 자리를 눌러도 체크가 켜졌다(사용자 지적).
         */}
-        {category === 'hunting' && (
+        {category === 'hunting' && !editing && (
           <View testID="income-sheet-hunt-toggles" className="flex-row items-center gap-4">
-            {!editing && (
-              <Pressable
-                role="checkbox"
-                aria-label="획득 메소 직접 입력"
-                aria-checked={huntMode === 'manual'}
-                onPress={() => setHuntMode(huntMode === 'manual' ? 'calculator' : 'manual')}
-                hitSlop={8}
-                className="flex-row items-center gap-2"
-              >
-                <CheckBox checked={huntMode === 'manual'} />
-                <Text className="text-xs font-semibold text-text-muted">획득 메소 직접 입력</Text>
-              </Pressable>
-            )}
             <Pressable
               role="checkbox"
-              aria-label="조각 가격 나중에 입력"
-              aria-checked={fragmentsDeferred}
-              onPress={() => setFragmentsDeferred(!fragmentsDeferred)}
+              aria-label="획득 메소 직접 입력"
+              aria-checked={huntMode === 'manual'}
+              onPress={() => setHuntMode(huntMode === 'manual' ? 'calculator' : 'manual')}
               hitSlop={8}
               className="flex-row items-center gap-2"
             >
-              <CheckBox checked={fragmentsDeferred} />
-              <Text className="text-xs font-semibold text-text-muted">조각 가격 나중에 입력</Text>
+              <CheckBox checked={huntMode === 'manual'} />
+              <Text className="text-xs font-semibold text-text-muted">획득 메소 직접 입력</Text>
             </Pressable>
           </View>
         )}
@@ -238,7 +212,6 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
           key={`${category}:${huntMode}`}
           category={category}
           huntMode={huntMode}
-          fragmentsDeferred={fragmentsDeferred}
           {...props}
           formProps={formProps}
         />
@@ -264,7 +237,6 @@ function IncomeForm(
   props: IncomeSheetProps & {
     category: IncomeCategoryKey
     huntMode: HuntInputMode
-    fragmentsDeferred: boolean
     formProps: IncomeFormProps
   },
 ): React.JSX.Element {
@@ -278,11 +250,10 @@ function IncomeForm(
     return <EtcForm {...props.formProps} lastPointRate={props.lastPointRate} />
   }
   return props.huntMode === 'manual' ? (
-    <HuntManualForm {...props.formProps} fragmentsDeferred={props.fragmentsDeferred} />
+    <HuntManualForm {...props.formProps} />
   ) : (
     <HuntCalculatorForm
       {...props.formProps}
-      fragmentsDeferred={props.fragmentsDeferred}
       loadMesoRate={props.loadMesoRate}
       lastHuntSelection={props.lastHuntSelection}
       lastHuntToggles={props.lastHuntToggles}

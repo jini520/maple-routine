@@ -12,18 +12,22 @@ it('한 번도 안 적었으면 null 이다', async () => {
 })
 
 it('넣은 값을 그대로 돌려준다', async () => {
-  await setLastHuntToggles({ fragmentsDeferred: true, boosts: ['union', 'potion'] })
+  await setLastHuntToggles({ boosts: ['union', 'potion'] })
 
-  expect(await getLastHuntToggles()).toEqual({
-    fragmentsDeferred: true,
-    boosts: ['union', 'potion'],
-  })
+  expect(await getLastHuntToggles()).toEqual({ boosts: ['union', 'potion'] })
 })
 
 it('아무것도 안 켠 것도 기억한다. 끈 것과 안 적은 것은 다르다', async () => {
-  await setLastHuntToggles({ fragmentsDeferred: false, boosts: [] })
+  await setLastHuntToggles({ boosts: [] })
 
-  expect(await getLastHuntToggles()).toEqual({ fragmentsDeferred: false, boosts: [] })
+  expect(await getLastHuntToggles()).toEqual({ boosts: [] })
+})
+
+// 조각 체크박스가 있던 때 적은 값. 켠 아이템은 그대로 쓰고 체크는 버린다.
+it('옛 값의 fragmentsDeferred 는 무시하고 켠 아이템만 읽는다', async () => {
+  await prefs.set('lastHuntToggles', '{"fragmentsDeferred":true,"boosts":["union"]}')
+
+  expect(await getLastHuntToggles()).toEqual({ boosts: ['union'] })
 })
 
 /**
@@ -34,12 +38,9 @@ it('상한 값은 없는 것으로 본다', async () => {
   await prefs.set('lastHuntToggles', '{')
   expect(await getLastHuntToggles()).toBeNull()
 
-  await prefs.set('lastHuntToggles', '{"boosts":["union"]}')
+  await prefs.set('lastHuntToggles', '{"fragmentsDeferred":true}')
   expect(await getLastHuntToggles()).toBeNull()
 
-  await prefs.set('lastHuntToggles', '{"fragmentsDeferred":1,"boosts":[]}')
-  expect(await getLastHuntToggles()).toBeNull()
-
-  await prefs.set('lastHuntToggles', '{"fragmentsDeferred":true,"boosts":[1]}')
+  await prefs.set('lastHuntToggles', '{"boosts":[1]}')
   expect(await getLastHuntToggles()).toBeNull()
 })

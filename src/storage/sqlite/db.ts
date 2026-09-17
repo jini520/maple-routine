@@ -53,14 +53,14 @@ const INCOME_RECORDS_BODY = `(
     hunt_boosts TEXT, -- 켠 아이템 id 를 쉼표로. '' = 없음
     hunt_sojae INTEGER, -- 소재 수(하나가 30분)
     hunt_fragments INTEGER, -- 솔 에르다 조각 개수(사용자가 직접 넣는다. 결정 8)
-    hunt_fragment_price INTEGER, -- 조각 개당 메소
+    hunt_fragment_price INTEGER, -- 조각 개당 메소. NULL = 가격을 안 적었다 → 그 조각이 캐릭터 보관에 든다. 0 은 0 메소에 판 것
     hunt_meso_rate INTEGER, -- 그때의 캐릭터 메소 획득량(%). NULL = 이전 행 → 0 으로 읽는다
     -- 수동으로 적힌 사냥에서 사용자가 친 획득 메소. NULL 이 아니면 수동으로
     -- 적힌 행이고, 그때 위 계산기 칸 넷은 전부 NULL 이다. 0 과 NULL 이 갈린다. 조각만 먹은
     -- 사냥은 친 메소가 0 이면서 수동이다.
     hunt_typed_meso INTEGER,
-    -- 1 = 솔 에르다 조각 가격을 나중에 입력한 사냥이다. 조각 값이 합계에 없고 개수가 그 캐릭터의 보관에 든다.
-    -- NULL · 0 = 지금 판매다. 가격 0 인 옛 기록과 가르려고 가격 칸이 아니라 따로 둔다.
+    -- 안 쓰는 칸. 조각 보관은 hunt_fragment_price 의 NULL 이 가른다.
+    -- 지우지 않는다. OTA 를 되돌린 옛 번들의 INSERT 가 이 칸을 적어서, 없으면 수입이 하나도 안 적힌다.
     hunt_fragments_deferred INTEGER,
     memo TEXT,
     recorded_at TEXT NOT NULL,
@@ -396,7 +396,7 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'income_records', 'hunt_meso_rate', 'INTEGER')
   // 수동으로 적힌 사냥의 친 메소이자 **수동인가** 의 판정자.
   await ensureColumn(db, 'income_records', 'hunt_typed_meso', 'INTEGER')
-  // 솔 에르다 조각 가격 나중에 입력. 옛 행은 NULL(지금 판매)이라 옮길 값이 없다.
+  // 안 쓰는 칸이지만 옛 번들의 INSERT 가 적는다. CREATE 문과 함께 남긴다.
   await ensureColumn(db, 'income_records', 'hunt_fragments_deferred', 'INTEGER')
   // 기록이 이름 대신 key 로 카탈로그와 사냥터를 가리킨다. 값은 아래 버전 이관이 채운다.
   await ensureColumn(db, 'spend_records', 'category_key', 'TEXT')
