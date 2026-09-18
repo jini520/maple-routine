@@ -132,6 +132,18 @@ export interface RefreshOptions {
    * 낡아진 기간과 사용자가 직접 옮겨 간 기간이 같은 모양이다.
    */
   inPlace?: boolean
+  /**
+   * **넥슨을 다시 안 부른다.** 로컬에만 쓴 뒤 화면을 맞출 때 참으로 준다(직접 완료의 저장 ·
+   * 수정 · 취소).
+   *
+   * 그 기록은 넥슨이 모르는 것이라 재동기화가 화면에 보태는 것이 없는데, 값은 비싸다. 계측
+   * (시뮬레이터 · 캐릭터 한 명): 저장 뒤 958ms 중 696ms 가 동기화였다. 캐릭터가 여럿이면 더
+   * 는다(첫 캐릭터를 혼자 부른 뒤 나머지를 병렬로 부른다).
+   *
+   * 캐시 우선 단계가 곧 최종 화면이 된다. 그 단계가 이미 기록을 읽어 합치므로(`mergeRecordsIntoRows`
+   * · 직접 완료 표식) 방금 쓴 것이 그대로 선다.
+   */
+  skipSync?: boolean
 }
 
 export interface BossProfitState {
@@ -1422,8 +1434,12 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     const cachedSyncedAts = cachedByOcid
       .map((entry) => entry.syncedAt)
       .filter((syncedAt): syncedAt is string => syncedAt !== null)
-    const skipSync =
+    // 자동 진입의 건너뛰기와 **로컬 쓰기의 건너뛰기**를 갈라 둔다. 머리의 `기준` 시각은 앞엣것만
+    // 손댄다. 뒤엣것은 마지막 동기화 시각을 바꾼 일이 없으므로, 함께 쓰면 저장할 때마다 그 시각이
+    // 캐시의 옛 값으로 뒷걸음질한다.
+    const autoSkipSync =
       options?.auto === true && hasSyncAttemptedThisRun() && isSyncFresh(cachedSyncedAts, ocids.length, now)
+    const skipSync = options?.skipSync === true || autoSkipSync
     // 건너뛴 진입의 n분 전 은 판정에 쓴 가장 오래된 캐시 syncedAt 이다. 지금 시각으로 채우면
     // 하지 않은 동기화를 했다고 말하게 되고, null 로 두면 신선한 데이터를 보여주면서 동기화
     // 기록 없음 이라 말하게 된다.
@@ -1595,7 +1611,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
           cachedSortedRows,
           cachedCharacterProfiles,
         ),
-        ...(skipSync ? { lastSyncedAt: oldestCachedSyncedAt } : {}),
+        ...(autoSkipSync ? { lastSyncedAt: oldestCachedSyncedAt } : {}),
       })
       if (skipSync) return
     }
@@ -1999,7 +2015,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     }
 
     // 쓴 것을 화면에 반영한다. 보던 기간을 안 떠난다.
-    await get().refresh(get().trackedOcids ?? [], { inPlace: true })
+    await get().refresh(get().trackedOcids ?? [], { inPlace: true, skipSync: true })
   },
 
   async cancelManualCompletion(rowKey) {
@@ -2018,7 +2034,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       new Date(),
     )
 
-    await get().refresh(get().trackedOcids ?? [], { inPlace: true })
+    await get().refresh(get().trackedOcids ?? [], { inPlace: true, skipSync: true })
   },
 
   async setBossDrops(rowKey, drops) {

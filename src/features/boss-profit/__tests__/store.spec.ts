@@ -4263,6 +4263,45 @@ describe('직접 완료를 적으면 그 주로 데려간다', () => {
     expect(useBossProfitStore.getState().periodKey).toBe('2026-08-27')
   })
 
+  /**
+   * **로컬에 쓴 뒤 넥슨을 다시 부르지 않는다.**
+   *
+   * 직접 완료는 넥슨이 모르는 기록이라 재동기화가 화면에 보태는 것이 없다. 그런데도 저장 경로가
+   * `refresh` 를 그냥 불러 **추적 캐릭터 전부를 다시 조회**했다. 계측(시뮬레이터): 쓰기 41ms 인데
+   * 저장 뒤가 958ms 이고 그중 696ms 가 넥슨 동기화였다(캐릭터 한 명. 여럿이면 더 는다).
+   */
+  it('저장이 넥슨 동기화를 부르지 않는다', async () => {
+    syncSchedulesMock.mockResolvedValue([월간포함동기화()])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    // 실앱은 `loadTrackedOcids` 가 이 값을 채운다. 비어 있으면 저장 경로가 빈 목록으로
+    // `refresh` 를 불러 동기화 자체가 안 일어나 이 테스트가 헛돈다.
+    useBossProfitStore.setState({ trackedOcids: ['ocid-1'] })
+    const row = useBossProfitStore.getState().rows.find((candidate) => candidate.cycle === 'monthly')
+    syncSchedulesMock.mockClear()
+
+    await useBossProfitStore.getState().saveManualCompletion(row!, {
+      difficulty: 'extreme',
+      dateKey: '2026-09-11',
+      partySize: 1,
+    })
+
+    expect(syncSchedulesMock).not.toHaveBeenCalled()
+  })
+
+  it('취소도 넥슨 동기화를 부르지 않는다', async () => {
+    syncSchedulesMock.mockResolvedValue([월간포함동기화()])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    // 실앱은 `loadTrackedOcids` 가 이 값을 채운다. 비어 있으면 저장 경로가 빈 목록으로
+    // `refresh` 를 불러 동기화 자체가 안 일어나 이 테스트가 헛돈다.
+    useBossProfitStore.setState({ trackedOcids: ['ocid-1'] })
+    const row = useBossProfitStore.getState().rows.find((candidate) => candidate.cycle === 'monthly')
+    syncSchedulesMock.mockClear()
+
+    await useBossProfitStore.getState().cancelManualCompletion(row!)
+
+    expect(syncSchedulesMock).not.toHaveBeenCalled()
+  })
+
   it('보던 주에 잡았다고 적으면 기간을 안 떠난다', async () => {
     syncSchedulesMock.mockResolvedValue([월간포함동기화()])
     await useBossProfitStore.getState().refresh(['ocid-1'])
