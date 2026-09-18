@@ -26,7 +26,7 @@ docs/
 
 | 기능 | 문서 | 주요 소스(read/write) |
 |---|---|---|
-| 로그인 (API 키 입력·검증·무효화. 프렌즈 승급 시 OAuth2 가 이 자리다, [[ADR-215]]) | [features/auth.md](./features/auth.md) | `app/auth/` · `features/auth/` · `nexon/key-stage` · `nexon/character` · `storage/api-key` |
+| 로그인 (API 키 입력·검증·무효화. 프렌즈 승인이 나 **넥슨 Open ID 가 키 옆에 선다**. 대체가 아니라 병행이고 인증 수단이 목록이 된다, [[ADR-296]]. 메이플 ID 축은 [[ADR-297]]) | [features/auth.md](./features/auth.md) | `app/auth/` · `features/auth/` · `nexon/key-stage` · `nexon/character` · `storage/api-key` |
 | 앱 진입 (앱을 켜면 어느 화면이 서나 · 캐릭터 설정 화면 · 시드. **계정 선택·예열은 없다**, [[ADR-143]]) | [features/app-entry.md](./features/app-entry.md) | `app/character-setup/` · `features/app-entry/` · `navigation/RootNavigator` · `storage/character-basic-cache` · `storage/character-selection` |
 | 컨텐츠 스케줄러 | [features/content-scheduler.md](./features/content-scheduler.md) | `app/content-scheduler/` · `features/content-scheduler/` · `lib/scheduler/scheduler-merge` · `lib/scheduler/scheduler-content-scope` · `storage/scheduler-cache` · `storage/shared-progress-cache` |
 | 보스 스케줄러 (파티 관리 포함) | [features/boss-scheduler.md](./features/boss-scheduler.md) | `app/boss-scheduler/` · `features/boss-scheduler/` · `storage/boss-party-settings` · 보스 표 조회 `lib/boss/bosses`([[ADR-280]] 결정 12) · `lib/assets/asset-lookup` · `lib/boss/boss-matching` |
