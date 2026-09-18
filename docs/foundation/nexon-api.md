@@ -1,11 +1,22 @@
 # Nexon Open API 연동
 
-> **범위**: Nexon Open API 호출·인증·엔드포인트·정규화·호출 제한. 별도 서버/프록시 없이 사용자 개인 키로 기기에서 직접 호출한다([[ADR-003]], [[ADR-007]]).
+> **범위**: Nexon Open API 호출·인증·엔드포인트·정규화·호출 제한. 사용자 개인 키로 기기에서 직접 호출한다([[ADR-003]], [[ADR-007]]). **여기에 넥슨 Open ID 경로가 더해진다**([[ADR-296]], 설계 · 구현 전). 프렌즈 API 넷에 한해 서버를 거친다.
 > **관련 소스**: `nexon/client` · `nexon/character` · `nexon/schedule`(client/normalize) · `nexon/meso-rate`(+ `lib/cashbook/meso-rate` 파서) · `lib/boss/boss-matching`.
 > **관련 ADR**: [[ADR-007]] [[ADR-003]] [[ADR-006]] [[ADR-067]] [[ADR-177]]. **관련 문서**: [architecture.md](./architecture.md), [error-resilience.md](./error-resilience.md), [features/content-scheduler.md](../features/content-scheduler.md), [features/boss-scheduler.md](../features/boss-scheduler.md).
 
 ## 클라이언트·인증
 - 호출 도메인은 **`https://open.api.nexon.com/`**(문서 사이트 `openapi.nexon.com` 과 다름). 모든 요청 헤더에 **`x-nxopen-api-key: <저장된 개인 API 키>`**.
+- **인증이 둘로 갈린다**([[ADR-296]], 설계 · 구현 전). 아래 **프렌즈 API 넷**만 넥슨 Open ID 액세스 토큰(`Authorization: Bearer`)으로도 부를 수 있고, 나머지는 API 키만 받는다. 그래서 Open ID 가 키를 대체하지 못한다.
+
+| 프렌즈 API | 스코프 key |
+|---|---|
+| `/maplestory/v1/character/list` | `maplestory.characterlist` |
+| `/maplestory/v1/user/achievement` | `maplestory.achievement` |
+| `/maplestory/v1/history/cube` · `starforce` · `potential` · `soul-potential` | `maplestory.cube` · `starforce` · `potential` · `soulpotential` |
+| `/maplestory/v1/scheduler/character-state` | `maplestory.scheduler` |
+
+  - **토큰은 앱에 안 내려온다.** 토큰 교환이 `client_secret` 을 요구하고 PKCE 가 없어, 발급과 갱신을 `maple-routine-server` 가 한다. 앱은 서버 세션으로 위 넷을 부르고 나머지는 지금처럼 넥슨을 직접 부른다. 액세스 토큰 30분 · 갱신 토큰 14일이다.
+  - 목록은 `openapi.nexon.com/ko/friends/maplestory/` 에서 확인했다(2026-09-19). 공개 레퍼런스에는 같은 경로가 `x-nxopen-api-key` 로만 적혀 있어, 두 문서를 함께 봐야 두 갈래가 보인다.
 - **타임아웃 10초**(공식 권장값 없어 모바일 관례상 채택, 2026-07-09).
 - **호출 제한**: 개발 단계 초당 5건/일 1,000건, 서비스 단계 초당 500건/일 2,000만 건. **정상 사용자는 전부 서비스 단계 키다. 개발 단계 키는 로그인을 통과해 살아남을 수 없다**([[ADR-116]] 결정 1, 2026-08-08). 429 를 만나는 자리마다 `removeApiKey()` 로 저장된 키를 지우고 ‘서비스 단계 키로 다시 입력해주세요’ 모달을 거쳐 로그인 화면으로 되돌리기 때문이다(`features/auth/store.ts` 의 `confirmApiKeyNotice`). 그래서 **병렬 호출의 예산은 초당 500건**이고, 여러 캐릭터 동기화 병렬화([[ADR-008]] 2026-07-17 정정)와 날짜 스윕·백필 병렬화([[ADR-148]])가 그 위에 선다.
   - **이 전제를 떠받치는 것은 이제 둘이다.** ① **문**: 온보딩이 키를 저장하기 전에 `character/list` 를 10건 병렬로 쏴 429 가 오면 개발 단계로 판정하고 막는다([[ADR-214]] 결정 1·3, `nexon/key-stage.ts`). ② **사슬**: 그 문을 통과한 뒤에도 429 를 만나면 `useApiKeyNotice` → `noticeApiKeyIssue` → `confirmApiKeyNotice` → `removeApiKey` 가 저장된 키를 지운다([[ADR-116]] 결정 1). 사슬은 심층 방어로 남긴다([[ADR-214]] 결정 5) — 문의 판정이 **한쪽으로만 확실**해서다(429 를 봤으면 개발 단계인 것은 확실하지만, 못 봤다고 서비스 단계인 것은 아니다). **둘 중 하나를 걷으면 위 예산부터 다시 계산할 것.**
@@ -272,4 +283,4 @@ HTTP 400
 - ~~비활성 캐릭터(`access_flag: false`)는 API가 200을 반환하지 않는다(사용자 관찰, 이슈 #78 A 전제)~~ → **반증**. 세 엔드포인트 모두 200이고 응답 항목만 축약된다. 400의 실제 원인은 조회 불가 ocid(`OPENAPI00003`)와 날짜 문제(`OPENAPI00004`/`OPENAPI00009`)였다(실측 2026-07-31).
 - ~~개발 단계 호출량 상한(초당 5건/일 1,000건) 검증 필요~~ → 서비스 단계 키 사용이라 불필요(2026-07-09). → **재정정**: 그 문장은 개발자 본인 키에만 맞았다([[ADR-114]] 결정 5, 2026-08-08, 이슈 #158). ~~"이 앱은 사용자가 이미 승인받은 서비스 단계 키를 쓰므로 개발 단계 상한 검증은 불필요"~~ → 사용자·테스터는 각자 발급받은 **개발 단계 키**(초당 5건·일 1,000건)를 넣고, 앱은 그 한도를 실제로 넘긴다(피커가 대표 1명만 남는 증상으로 관측, 2026-08-07).
 - ~~**사용자·테스터는 개발 단계 키를 쓴다**. 그래서 병렬 호출이 *"서비스 단계 키라 한도와 충돌하지 않는다"* 는 근거를 잃었고, 동시성 캡은 별건으로 미뤄 둔다~~([[ADR-114]], 2026-08-08) → **개발 단계 키는 온보딩을 통과해 살아남지 못한다**([[ADR-116]] 결정 1, 같은 날 2026-08-08). 429 가 키를 지우고 키 입력 화면으로 되돌리므로 정상 사용자의 예산은 서비스 단계(초당 500건)로 **복원됐다**. 이 문서가 같은 날 나온 두 ADR 중 앞의 것만 반영한 채 11일을 남아 있었고, 그 낡은 줄이 실제로 [[ADR-148]] 설계 판단을 한 번 잘못 끌었다(2026-08-19).
-- ~~NEXON Open ID(OAuth) 연동 + 토큰 교환 서버 도입 검토~~ → 파트너스 승인 필요 + 개인 키 단독 호출 실측 확인으로 기각([[ADR-003]], [[ADR-007]]).
+- ~~NEXON Open ID(OAuth) 연동 + 토큰 교환 서버 도입 검토~~ → 파트너스 승인 필요 + 개인 키 단독 호출 실측 확인으로 기각([[ADR-003]], [[ADR-007]]). → **기각을 뒤집었다**([[ADR-296]], 2026-09-19). 프렌즈 승인이 나 앞의 근거가 사라졌고, 서버는 [[ADR-227]] 이 이미 들여 놨다. 뒤의 근거(개인 키로 다 된다)는 여전히 맞아서 **대체가 아니라 병행**이다.
