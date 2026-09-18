@@ -17,6 +17,9 @@ import { useCharacterSelectionStore } from '../character-selection/store'
 import { getBossPartySettings, setBossPartySize } from '../../storage/boss-party-settings'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getCachedSchedulerState } from '../../storage/scheduler-cache'
+import { getManualBossProfitRecordKeys } from '../../storage/boss-profit'
+import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
+import { manualCompletionKey } from '../../lib/boss/manual-completion'
 import type { BossDifficulty } from '../../types'
 import { compareByName } from '../../lib/character-order'
 import { useToastStore } from '../toast/store'
@@ -74,6 +77,13 @@ export interface BossSchedulerState {
   // 수동 모드에서 캐릭터별 추적 항목(멤버십). 값 필드는 여기 두지 않고 표시 시점에 characters 의
   // 동기화 값 또는 참조 테이블에서 조회한다.
   manualTrackedByOcid: Record<string, ManualTrackedItem[]>
+  /**
+   * 사용자가 직접 적은 완료(`bossKey|difficulty`)를 캐릭터별로. **이번 주·이번 달 것만** 든다.
+   *
+   * 스케줄 캐시에 안 쓰고 여기 따로 드는 이유는 다음 동기화가 캐시를 덮기 때문이다. 표시 판정
+   * (`displayedBosses`)이 이 값을 받아 카드 · 주간 한도 · today 남은 스케줄에 함께 얹는다.
+   */
+  manualCompletedByOcid: Record<string, string[]>
   // 화면 로컬 state 가 아니라 스토어가 소유한다. 화면이 언마운트돼도 살아남는다. 영속화하지 않는다.
   //
   // `activeTab` 은 여기 없다. 주간/월간 탭이 두 화면에서 함께 걷혔다. 되살리지 말 것. 공유할
@@ -115,6 +125,7 @@ const initialState: BossSchedulerState = {
   trackedOcids: null,
   partySizes: {},
   manualTrackedByOcid: {},
+  manualCompletedByOcid: {},
   partyFilter: 'all',
 }
 
@@ -190,6 +201,35 @@ function toUnknownBossView(view: BossCharacterView): BossCharacterView {
     weeklyBossClearCount: null,
     weeklyBossClearLimitCount: null,
   }
+}
+
+/**
+ * 직접 적은 완료를 캐릭터별로 읽는다. 이번 주와 이번 달 기록만 본다.
+ *
+ * 실패하면 빈 표다. 그 회차의 카드가 넥슨이 준 그대로 서고, 다음 회차가 다시 읽는다. 여기서
+ * 던지면 스케줄러 화면 전체가 못 선다.
+ */
+async function readManualCompleted(
+  ocids: string[],
+  now: Date,
+): Promise<Record<string, string[]>> {
+  if (ocids.length === 0) return {}
+
+  const periodKeys = [
+    getCurrentBossProfitPeriod('weekly', now).periodKey,
+    getCurrentBossProfitPeriod('monthly', now).periodKey,
+  ]
+  const byOcid: Record<string, string[]> = {}
+  try {
+    for (const record of await getManualBossProfitRecordKeys(ocids, periodKeys)) {
+      const keys = byOcid[record.ocid] ?? []
+      keys.push(manualCompletionKey(record.bossKey, record.difficulty))
+      byOcid[record.ocid] = keys
+    }
+  } catch {
+    return {}
+  }
+  return byOcid
 }
 
 export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => ({
@@ -312,6 +352,9 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       return
     }
 
+    // 직접 적은 완료. 모드와 무관하게 읽는다 - 카드의 완료 배지와 주간 한도가 이 값을 함께 본다.
+    const manualCompletedByOcid = await readManualCompleted(ocids, new Date())
+
     // 수동 모드에서만 캐릭터별 추적 항목(멤버십)을 읽어둔다. 표시 목록이 이 멤버십으로
     // 결정되기 때문. auto 모드는 등록 여부로 목록을 결정하므로 불필요한 읽기를 건너뛴다.
     const manualMode = useTrackingModeStore.getState().mode === 'manual'
@@ -386,11 +429,17 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
         ),
         error: null,
         manualTrackedByOcid,
+        manualCompletedByOcid,
       })
       return
     }
 
-    set({ status: 'loading', characters: await sortByCachedLevel(cachedCharacters), manualTrackedByOcid })
+    set({
+      status: 'loading',
+      characters: await sortByCachedLevel(cachedCharacters),
+      manualTrackedByOcid,
+      manualCompletedByOcid,
+    })
 
     let results: Awaited<ReturnType<typeof syncSchedules>>
     try {
@@ -440,6 +489,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       characters: await sortByCachedLevel([...characters, ...strandedViews]),
       error: null,
       manualTrackedByOcid,
+      manualCompletedByOcid,
     })
   },
 

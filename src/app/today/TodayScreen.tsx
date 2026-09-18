@@ -29,6 +29,7 @@ import { View } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
 
 import { useDataFreshness } from '../../features/refresh/freshness'
+import { useManualCompletionStore } from '../../features/manual-completion/store'
 import { useNoticeBannerStore } from '../../features/notice/banner-store'
 import { useDropHistoryStore } from '../../features/boss-profit/drop-history-store'
 import { getBossDropRecordsRevision } from '../../storage/boss-drops'
@@ -46,6 +47,7 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { CharacterManageButton } from './CharacterManageButton'
+import { ManualCompletionBanner } from './ManualCompletionBanner'
 import { NoticeBanner } from './NoticeBanner'
 import { SettlementBanner } from './SettlementBanner'
 import { buildTodayViewModel } from './view-model'
@@ -98,6 +100,7 @@ export function TodayScreen(): React.JSX.Element {
   const { mode } = useTrackingModeStore()
   const loadNoticeBanner = useNoticeBannerStore((state) => state.load)
   const refreshNoticeBanner = useNoticeBannerStore((state) => state.refresh)
+  const refreshManualCompletion = useManualCompletionStore((state) => state.refresh)
 
   // 프로필은 스토어가 아니라 저장소에서 온다(`character-basic-cache` 는 보스 수익·히스토리가 이미
   // 같은 방식으로 읽는다).
@@ -155,6 +158,18 @@ export function TodayScreen(): React.JSX.Element {
     }, [loadNoticeBanner]),
   )
 
+  /**
+   * 직접 완료를 열어 둔 보스. 진입할 때마다 서버에 묻는다.
+   *
+   * 스케줄러 갱신 회차에 안 실는 것은 이 값이 늦게 와서 늘어나는 것이 없어서다 - 배너가
+   * 늦게 설 뿐이다. 겉쳐 부르는 회차는 스토어가 하나로 접는다.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      void refreshManualCompletion()
+    }, [refreshManualCompletion]),
+  )
+
   // 화면 순서는 사용자가 캐릭터 관리에서 정한 저장 배열 순서다.
   const orderedOcids = content.trackedOcids ?? []
   // 배열 자체는 매 렌더 새 참조라 deps 로 쓸 수 없다. 목록이 실제로 바뀌었을 때만 다시 읽는다.
@@ -200,6 +215,7 @@ export function TodayScreen(): React.JSX.Element {
     // 추가해도 이 화면만 옛 값에 굳는다.
     manualContentByOcid: content.manualTrackedByOcid,
     manualBossByOcid: boss.manualTrackedByOcid,
+    manualCompletedByOcid: boss.manualCompletedByOcid,
     characterIssues: profit.characterIssues,
     // 보고 있는 것이 아니라 지금 기간이다. `rows` 는 `filterRowsForTab` 이 `cycle` 까지 걸러 낸
     // 보스 수익 화면의 한 조각이라, 그 화면을 월간 탭으로 옮기기만 해도 이 화면의 주간 수익·
@@ -270,6 +286,7 @@ export function TodayScreen(): React.JSX.Element {
             결산 줄이 공지 배너 **위**다. 공지는 읽을거리이고 결산 줄은 지금 화면의 값이 왜 안 맞는지를
             말하므로, 그 줄이 값보다 먼저 와야 한다. */}
         <SettlementBanner />
+        <ManualCompletionBanner />
         <NoticeBanner />
         {/* 좌우 16 은 앱 공통 `px-4` 라 화면의 래퍼가 준다. 격자가 또 주면 두 겹이 되는데,
             열 폭 계산은 `창폭 − 32` 를 전제로 서 있다.

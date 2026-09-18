@@ -117,6 +117,7 @@ function profitRow(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     payoutMeso: 100,
     isComplete: true,
     defeatedOn: null,
+    source: 'auto',
     ...overrides,
   }
 }
@@ -158,6 +159,7 @@ function input(overrides: Partial<TodayViewModelInput> = {}): TodayViewModelInpu
     representativeOcid: null,
     profilesByOcid: {},
     contentCharacters: [],
+    manualCompletedByOcid: {},
     bossCharacters: [],
     trackingMode: 'auto',
     manualContentByOcid: null,

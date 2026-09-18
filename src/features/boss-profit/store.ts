@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 import {
   containsInProgressWeek,
-  getAdjacentPeriodKey,
   getCurrentBossProfitPeriod,
   getWeeklyPeriodKeysInMonth,
   isLatestPeriod,
@@ -15,6 +14,7 @@ import {
   fillMissingRecordWorlds,
   getBossProfitRecords,
   getWeeklyPeriodKeysWithRecords,
+  getManualBossProfitRecordKeys,
   upsertBossProfitRecord,
   type BossProfitRecord,
 } from '../../storage/boss-profit'
@@ -27,12 +27,12 @@ import { resolveDisplayProfiles } from '../character-profile/resolve'
 import { getManualTrackedContent, type ManualTrackedItem } from '../../storage/manual-tracked-content'
 import { getCachedSchedulerState } from '../../storage/scheduler-cache'
 import { getTrackingMode } from '../../storage/tracking-mode'
-import { type BossCycle } from '../../types'
+import { type BossCycle, type BossDifficulty } from '../../types'
 import { compareByName } from '../../lib/character-order'
 import { syncSchedules, toScheduleSyncError, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
 import { hasSyncAttemptedThisRun } from '../schedule-sync/sync-run-state'
 import { isSyncFresh } from '../../lib/scheduler/sync-freshness'
-import { canPreviewNextWeek, isMonthlyRowInWeek } from '../../lib/boss/monthly-boss-week'
+import { isMonthlyRowInWeek, monthsOfWeek } from '../../lib/boss/monthly-boss-week'
 import {
   appendRecordOnlyRows,
   buildBossProfitRow,
@@ -44,7 +44,6 @@ import {
   selectProfitDisplayBosses,
   sortRowsByOcidOrder,
   sumRowsPayout,
-  toUpcomingWeekRows,
   toProfileSnapshot,
   toRecordedDrop,
   } from './rows'
@@ -55,7 +54,13 @@ export type { BossProfitRow } from './rows'
 export { dropRowKey } from './rows'
 import { getScheduleProbeLedger } from '../../storage/schedule-probe-ledger'
 import { withSqliteFallback } from './sqlite-guards'
-import { autoRecordRows } from './auto-record'
+import { autoRecordRows, nexonCompletedKeysOf } from './auto-record'
+import {
+  cancelManualCompletion,
+  saveManualCompletion,
+} from '../manual-completion/record'
+import { manualCompletionKey } from '../../lib/boss/manual-completion'
+import { resetWeekStartOf } from '../../lib/calendar'
 import { cleanUpWorldLeapDuplicates } from './world-leap-records'
 import {
   loadObservedPeriodKeys,
@@ -234,6 +239,18 @@ export interface BossProfitStore extends BossProfitState {
    */
   retryPeriod(): Promise<void>
   setPartySize(row: BossProfitRowKey, partySize: number): Promise<void>
+  /**
+   * 직접 적은 완료를 쓰거나 고친다. 쓰고 나서 이 기간을 다시 읽는다.
+   *
+   * 난이도를 바꾸면 기록 키가 바뀌므로 옛 줄을 지우고 드롭을 새 키로 옮긴다. 그 일은
+   * `features/manual-completion/record` 가 한다.
+   */
+  saveManualCompletion(
+    row: BossProfitRowKey,
+    input: { difficulty: BossDifficulty; dateKey: string; partySize: number },
+  ): Promise<void>
+  /** 직접 적은 완료를 취소한다. **그 기록의 드롭도 함께 지운다.** */
+  cancelManualCompletion(row: BossProfitRowKey): Promise<void>
   setBossDrops(row: BossProfitRowKey, drops: RecordedDrop[]): Promise<void>
   /**
    * 다른 화면이 같은 그룹을 DB 에 쓴 뒤 이 스토어의 스냅샷만 맞춘다. 쓰기는 없다.
@@ -416,30 +433,13 @@ async function buildWeeklySubtotalsForMonth(
     !hasLiveSource && weekKeys.includes(currentWeeklyPeriodKey)
       ? [...pastWeekKeys, currentWeeklyPeriodKey]
       : pastWeekKeys
-  // 월간 보스 수익도 그 보스가 선 주의 소계에 든다(사용자 지정). 그 기록의 `period_key` 는
-  // 달이라 주 키로는 안 걸리므로 달 키를 함께 넣는다. 안 넣으면 월간 탭의 카드 금액과 그 아래
-  // 줄들의 합이 안 맞는다.
+  // 달 키를 함께 넣는 것은 **이 캐릭터가 이 달에 뭔가 했나**(`hasMonthData`)를 월간 보스 기록도
+  // 증명하기 때문이다. 월간 보스만 잡은 달에 카드가 사라지면 안 된다.
+  //
+  // 금액은 안 담는다. 월간 보스 수익은 그 보스 줄이 들고 주차 소계는 주간 기록만 센다(사용자
+  // 선택). 소계가 품으면 화면에 보이는 줄들의 합이 카드 금액보다 커진다.
   const recordKeys = [...recordWeekKeys, monthPeriodKey]
-  const [records, weeksWithRecords] = await Promise.all([
-    withSqliteFallback(getBossProfitRecords(ocids, recordKeys), []),
-    loadWeeksWithRecords(ocids, monthPeriodKey),
-  ])
-
-  /** 이 (캐릭터, 주)에 서는 월간 보스 기록. 결정석과 드롭이 함께 그 주로 간다. */
-  const monthlyRecordsInWeek = (ocid: string, weekKey: string): BossProfitRecord[] =>
-    records.filter(
-      (record) =>
-        record.ocid === ocid &&
-        record.cycle === 'monthly' &&
-        isMonthlyRowInWeek({
-          weeklyPeriodKey: weekKey,
-          monthlyPeriodKey: record.periodKey,
-          isComplete: true,
-          defeatedOn: record.defeatedOn ?? null,
-          now,
-          weeksWithRecords,
-        }),
-    )
+  const records = await withSqliteFallback(getBossProfitRecords(ocids, recordKeys), [])
 
   // 지난 주의 상태를 판정하려면 관측 여부가 필요하다. 기록이 없는 주가 조회해서 0건을 본
   // 주인지 아직 못 받은 주인지는 그것만이 갈라 준다.
@@ -468,13 +468,10 @@ async function buildWeeklySubtotalsForMonth(
   const dropsByOcidWeek = new Map<string, RecordedDrop[]>()
   for (const record of weekDrops) {
     if (unpaidRowKeys.has(dropRowKey(record.ocid, record.bossKey, record.difficulty, record.periodKey))) continue
-    // 월간 보스의 드롭은 `period_key` 가 달이라 그대로 접으면 어느 주에도 안 든다. 그 보스가
-    // 선 주로 옮겨 담는다.
-    const weekKey =
-      record.periodKey === monthPeriodKey
-        ? weekKeys.find((key) => monthlyRecordsInWeek(record.ocid, key).length > 0)
-        : record.periodKey
-    if (weekKey === undefined) continue
+    // 월간 보스의 드롭은 그 보스 줄이 든다(금액과 같은 규칙). 주차 소계는 안 담는다. 조회에는
+    // 들어 있는데(`hasMonthData` 가 본다) 여기서 거른다.
+    if (record.periodKey === monthPeriodKey) continue
+    const weekKey = record.periodKey
     const key = `${record.ocid}|${weekKey}`
     const list = dropsByOcidWeek.get(key) ?? []
     list.push(toRecordedDrop(record))
@@ -535,12 +532,10 @@ async function buildWeeklySubtotalsForMonth(
         continue
       }
 
-      const matchingRecords = [
-        ...records.filter(
-          (record) => record.ocid === ocid && record.cycle === 'weekly' && record.periodKey === weekKey,
-        ),
-        ...monthlyRecordsInWeek(ocid, weekKey),
-      ]
+      // 주간 기록만 센다. 월간 보스 수익은 그 보스 줄의 몫이다.
+      const matchingRecords = records.filter(
+        (record) => record.ocid === ocid && record.cycle === 'weekly' && record.periodKey === weekKey,
+      )
       const recordedMeso = matchingRecords.reduce((sum, record) => sum + record.payoutMeso, 0)
 
       if (weekKey === currentWeeklyPeriodKey) {
@@ -548,12 +543,8 @@ async function buildWeeklySubtotalsForMonth(
         // 담는다), 없으면 이미 쌓인 기록에서 읽는다(달 경계를 걸친 주).
         const crystalMeso = hasLiveSource
           ? sumRowsPayout(
-              filterRowsForTab(
-                liveRows.filter((row) => row.ocid === ocid),
-                'weekly',
-                weekKey,
-                now,
-                weeksWithRecords,
+              liveRows.filter(
+                (row) => row.ocid === ocid && row.cycle === 'weekly' && row.periodKey === weekKey,
               ),
             )
           : recordedMeso
@@ -622,14 +613,17 @@ async function buildRowsFromRecords(
     return []
   }
 
-  // 주간 기간을 그릴 때는 **그 주가 속한 달의 월간 기록**도 함께 읽는다. 월간 보스가 이 목록
-  // 맨 위에 서고, 그 기록의 `period_key` 는 주가 아니라 달이라 이 키로는 안 걸린다.
-  const monthKey = cycle === 'weekly' ? periodKey.slice(0, 7) : null
-  const periodKeys = monthKey === null ? [periodKey] : [periodKey, monthKey]
-  const [allRecords, weeksWithRecords] = await Promise.all([
-    withSqliteFallback(getBossProfitRecords(ocids, periodKeys), []),
-    monthKey === null ? Promise.resolve<string[]>([]) : loadWeeksWithRecords(ocids, monthKey),
+  // 주간 기간을 그릴 때는 **그 주가 품은 달의 월간 기록**도 함께 읽는다. 월간 보스가 이 목록
+  // 맨 위에 서고, 그 기록의 `period_key` 는 주가 아니라 달이라 이 키로는 안 걸린다. 달 경계
+  // 주는 달이 둘이라 하나만 읽으면 9/1 에 잡은 9월 보스가 8/27 주에서 사라진다.
+  const monthKeys = cycle === 'weekly' ? monthsOfWeek(periodKey) : []
+  const [allRecords, weekLists] = await Promise.all([
+    withSqliteFallback(getBossProfitRecords(ocids, [periodKey, ...monthKeys]), []),
+    Promise.all(monthKeys.map(async (monthKey) => loadWeeksWithRecords(ocids, monthKey))),
   ])
+  // 날짜 모르는 기록을 놓을 주를 고르는 목록. `resolveUndatedWeek` 이 그 달 주차만 보므로 두
+  // 달을 합쳐 넘겨도 서로 섞이지 않는다.
+  const weeksWithRecords = weekLists.flat()
   const records = allRecords.filter(
     (record) =>
       record.cycle === cycle ||
@@ -909,18 +903,8 @@ async function buildPeriodSnapshot(input: PeriodBuildInput): Promise<PeriodBuild
 
   const outcomes = toPeriodOutcomes(getLastWindowFailures())
 
-  // 아직 시작하지 않은 주(달 경계 미리보기)는 기록이 없다. 이번 주의 등록 목록을 옮겨 와야
-  // 관리 캐릭터와 주간 보스가 다 보인다. 안 그러면 잡아 둔 월간 보스 한 줄만 남는다.
-  const upcomingRows =
-    tab === 'weekly' && periodKey > currentPeriodKey
-      ? toUpcomingWeekRows(latestSyncSnapshot?.rows ?? [], periodKey, now)
-      : []
-  // 기록 행이 앞이다. 월간 보스가 캐릭터 목록 맨 위에 서야 하고 그 행은 기록에서 나온다.
   const rows = sortRowsByOcidOrder(
-    [
-      ...(await buildRowsFromRecords(displayOcids, tab, periodKey, now, profileSnapshot)),
-      ...upcomingRows,
-    ],
+    await buildRowsFromRecords(displayOcids, tab, periodKey, now, profileSnapshot),
     sortedOcids,
   )
   const weeklySubtotals =
@@ -1066,7 +1050,9 @@ async function fillPeriodWindow(
   now: Date,
   myToken: number,
 ): Promise<void> {
-  const window = await resolvePeriodWindow(tab, periodKey, ocids, now)
+  // 창도 화살표와 같은 목록으로 계산한다. 추적 목록으로 계산하면 실제로 갈 기간이 아닌 곳을
+  // 미리 채워, 사용자가 도착한 기간이 매번 새로 조회된다.
+  const window = await resolvePeriodWindow(tab, periodKey, await resolveDisplayOcids(ocids), now)
   for (const entry of window) {
     if (!isPrefetchTokenCurrent(myToken)) return
     // **읽기 전에 찍는다.** 읽는 중에 들어온 변경을 본 것으로 표시하면 그 변경을 영영 놓친다.
@@ -1169,6 +1155,39 @@ let hydration: Promise<void> | null = null
  * 다시 안 읽으면 이번 회차 화면에 지운 옛 카드 행이 남고, 새 카드는 옮겨 온 파티원 수를 모른다. 기록
  * 조회가 실패했으면(`null`) 무엇이 있는지 모르는 상태라 정리하지 않는다.
  */
+/**
+ * 사용자가 직접 적은 완료를 캐릭터별 열쇠 집합으로. **이번 주·이번 달 것만** 본다.
+ *
+ * 행 고르기가 이 값을 봐야 스케줄러 카드와 이 화면이 같은 처치 수를 말한다. 실패하면 빈 표라
+ * 그 회차는 넥슨이 준 것만 그리고, 다음 회차가 다시 읽는다.
+ */
+async function readManualCompletedKeys(
+  ocids: string[],
+  now: Date,
+): Promise<Map<string, Set<string>>> {
+  const byOcid = new Map<string, Set<string>>()
+  if (ocids.length === 0) return byOcid
+
+  const periodKeys = [
+    getCurrentBossProfitPeriod('weekly', now).periodKey,
+    getCurrentBossProfitPeriod('monthly', now).periodKey,
+  ]
+  // 조회가 실패하면 빈 표다. 이 값이 없다고 화면 전체가 못 서면 안 된다 - 그 회차는 넥슨이 준
+  // 것만 그리고 다음 회차가 다시 읽는다.
+  let records: Awaited<ReturnType<typeof getManualBossProfitRecordKeys>>
+  try {
+    records = (await withSqliteFallback(getManualBossProfitRecordKeys(ocids, periodKeys), [])) ?? []
+  } catch {
+    return byOcid
+  }
+  for (const record of records) {
+    const keys = byOcid.get(record.ocid) ?? new Set<string>()
+    keys.add(manualCompletionKey(record.bossKey, record.difficulty))
+    byOcid.set(record.ocid, keys)
+  }
+  return byOcid
+}
+
 async function settleWorldLeapDuplicates(
   records: BossProfitRecord[] | null,
   ocids: string[],
@@ -1297,7 +1316,13 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // 수동 모드에서는 게임 등록·처치가 아니라 사용자 멤버십(manualTrackedContent)이 표시 목록을
     // 정하므로 캐시·라이브 양쪽에서 참조할 수동 목록을 미리 조회해 둔다. 자동 모드는 이 조회를
     // 하지 않는다. 자동 동작은 트래킹과 완전히 독립이다. 미선택(null)은 자동으로 동작한다.
-    const mode = (await getTrackingMode()) ?? 'auto'
+    // 트래킹 모드와 직접 적은 완료를 나란히 읽는다. 둘 다 캐시 단계가 행을 만들기 전에 필요하고,
+    // 차례로 기다리면 첫 페인트가 그만큼 늦는다.
+    const [trackingMode, manualCompletedKeys] = await Promise.all([
+      getTrackingMode(),
+      readManualCompletedKeys(displayOcids, now),
+    ])
+    const mode = trackingMode ?? 'auto'
     const manualItemsByOcid = new Map<string, ManualTrackedItem[]>()
     if (mode === 'manual') {
       await Promise.all(
@@ -1313,6 +1338,8 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       syncedAt: string | null
       profile: CharacterProfileInfo | null
       rows: BossProfitRow[]
+      /** 이 캐릭터의 캐시 원문이 완료로 주는 조합. 행이 아니라 원문에서 뽑아야 한다. */
+      nexonCompleted: string[]
     }
 
     // 캐시 우선 표시. 재검증(syncSchedules) 전에 마지막으로 성공한 스케줄 캐시가 있으면 완료된
@@ -1330,7 +1357,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       ocids.map(async (ocid): Promise<CachedCharacterEntry> => {
         const cached = await getCachedSchedulerState(ocid)
         if (cached === null) {
-          return { syncedAt: null, profile: null, rows: [] }
+          return { syncedAt: null, profile: null, rows: [], nexonCompleted: [] }
         }
         // 자동 모드는 완료된 보스뿐 아니라 등록만 되고 아직 처치 전인 보스도 미완료 placeholder
         // 로 함께 보여준다. `selectBossProfitBosses` 가 그룹(같은 보스 key)당 실제로 처치한
@@ -1341,6 +1368,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
           mode,
           manualItemsByOcid.get(ocid) ?? [],
           worldKeyByOcid.get(ocid) ?? null,
+          manualCompletedKeys.get(ocid),
         )
         const profile: CharacterProfileInfo = {
           characterName: cached.state.characterName,
@@ -1352,10 +1380,12 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
           syncedAt: cached.syncedAt,
           profile,
           rows: displayBosses.map((boss) => buildBossProfitRow(ocid, profile, boss, now)),
+          nexonCompleted: nexonCompletedKeysOf(ocid, cached.state.bossContents),
         }
       }),
     )
     const cachedRows = cachedByOcid.flatMap((entry) => entry.rows)
+    const cachedNexonCompleted = new Set(cachedByOcid.flatMap((entry) => entry.nexonCompleted))
 
     // 프로필 맵은 행이 아니라 캐시 엔트리에서 만든다. 행에서 만들면 축약 응답으로 행이 0인
     // 캐릭터는 프로필이 없고 `appendRecordOnlyRows` 가 그 캐릭터를 통째로 건너뛴다.
@@ -1452,6 +1482,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
           dropRecords: cachedDropRecordsForMigration,
           now,
           isSourceCurrent: isCachedRowCurrent,
+          nexonCompleted: cachedNexonCompleted,
         })
       : cachedMergedRows
     // 자동 기록을 한 진입만 리프 중복을 정리한다. 방금 쓴 새 기록의 짝을 봐야 해서 그 뒤다.
@@ -1602,6 +1633,8 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       toProfileSnapshot(syncedCharacterInfo),
     )
 
+    const syncedNexonCompleted = new Set<string>()
+
     for (const result of results) {
       const profile: CharacterProfileInfo = {
         characterName: result.characterName,
@@ -1620,11 +1653,16 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
           result.error?.kind === 'characterUnavailable' ? 'unavailable' : 'failed'
       }
 
+      for (const key of nexonCompletedKeysOf(result.ocid, result.state?.bossContents ?? [])) {
+        syncedNexonCompleted.add(key)
+      }
+
       const displayBosses = selectProfitDisplayBosses(
         result.state?.bossContents ?? [],
         mode,
         manualItemsByOcid.get(result.ocid) ?? [],
         profile.worldKey,
+        manualCompletedKeys.get(result.ocid),
       )
 
       for (const boss of displayBosses) {
@@ -1663,6 +1701,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       dropRecords: dropRecordsForMigration,
       now,
       isSourceCurrent: (row) => !staleOcids.has(row.ocid),
+      nexonCompleted: syncedNexonCompleted,
     })
 
     // 리프 중복 정리. 방금 쓴 새 기록의 짝을 봐야 해서 자동 기록 뒤다(위 캐시 단계와 같은 이유).
@@ -1819,9 +1858,13 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       return
     }
     const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
+    // **갈 곳은 그리는 목록으로 고른다.** 화살표가 사는지도 이 목록으로 판정하므로(`loadPeriod` 의
+    // `canReachPreviousPeriod`) 추적 목록으로 고르면 둘이 갈려, 관리 목록에서 뺀 캐릭터의 기록만
+    // 있는 기간을 **건너뛰고 그 앞으로** 넘어간다(사용자 보고).
+    const navigationOcids = await resolveDisplayOcids(ocids)
     // **한 칸이 아니라 기록이 있는 가장 가까운 기간이다.** 오래 쉬었다 돌아오면 그 사이가 전부
     // 조회 불가라, 한 칸씩 걸으면 예전 기록에 닿는 데 수십 번이 든다.
-    const newPeriodKey = await resolvePreviousPeriodKey(tab, periodKey, ocids)
+    const newPeriodKey = await resolvePreviousPeriodKey(tab, periodKey, navigationOcids)
     if (newPeriodKey === null) {
       return
     }
@@ -1842,18 +1885,13 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
   async goToNextPeriod() {
     const { tab, periodKey } = get()
     const now = new Date()
-    // 달 경계를 걸친 주에는 한 칸 앞을 미리 본다. 그 이틀 동안 이 달의 월간 보스가 화면
-    // 어디에도 없기 때문이다.
-    const previewing = tab === 'weekly' && canPreviewNextWeek(periodKey, now)
-    if (isLatestPeriod(tab, periodKey, now) && !previewing) {
+    if (isLatestPeriod(tab, periodKey, now)) {
       return
     }
     const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
-    // 미리보기는 **다음 한 칸 자체가 목적**이라 건너뛰지 않는다. 그 주에는 기록이 없는 것이
-    // 정상이다.
-    const newPeriodKey = previewing
-      ? getAdjacentPeriodKey(tab, periodKey, 'next')
-      : await resolveNextPeriodKey(tab, periodKey, ocids, now)
+    // 이전 화살표와 같은 목록이다(위 주석).
+    const navigationOcids = await resolveDisplayOcids(ocids)
+    const newPeriodKey = await resolveNextPeriodKey(tab, periodKey, navigationOcids, now)
     if (newPeriodKey === null) {
       return
     }
@@ -1900,6 +1938,9 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         recordedAt: new Date().toISOString(),
         world: row.world,
         worldKey: row.worldKey,
+        // 파티원 수만 고치는 upsert 가 **출처를 지우면 안 된다.** 안 넘기면 기본값이 `auto` 라
+        // 직접 적은 완료의 표식이 스테퍼 한 번에 사라진다.
+        source: row.source,
       })
     }
 
@@ -1917,6 +1958,67 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     }
 
     set({ rows: get().rows.map(applyEdit) })
+  },
+
+  async saveManualCompletion(rowKey, input) {
+    const row = get().rows.find((candidate) => matchesRowKey(candidate, rowKey))
+    if (row === undefined) {
+      throw new Error('saveManualCompletion: 존재하지 않는 보스 행입니다')
+    }
+
+    await saveManualCompletion(
+      {
+        ocid: row.ocid,
+        bossKey: row.bossKey,
+        bossName: row.bossName,
+        cycle: row.cycle,
+        periodKey: row.periodKey,
+        difficulty: input.difficulty,
+        partySize: input.partySize,
+        defeatedOn: input.dateKey,
+        world: row.world,
+        worldKey: row.worldKey,
+        // 난이도를 바꿨으면 옛 줄을 지워야 한다. 안 지우면 같은 처치가 두 줄이 된다.
+        previousDifficulty: row.source === 'manual' ? row.difficulty : undefined,
+      },
+      new Date(),
+    )
+
+    // **적은 날짜의 주로 데려간다**(사용자 지정). 월간 보스는 잡은 주에 서므로 날짜를 옮기면 그
+    // 행이 다른 주로 가고, 보던 주에 그대로 두면 방금 적은 것이 화면에서 사라진다.
+    //
+    // 주간 보스는 고를 수 있는 날이 그 주 안이라 언제나 같은 주다(시트가 기간의 날들로 가둔다).
+    const targetWeek = resetWeekStartOf(input.dateKey)
+    if (get().tab === 'weekly' && targetWeek !== get().periodKey) {
+      const myGeneration = ++requestGeneration
+      const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
+      // 화살표 판정은 이 로드가 끝나야 안다. 이동과 같은 규칙으로 그때까지 닫아 둔다.
+      set({ periodKey: targetWeek, canGoPreviousPeriod: false })
+      await loadPeriod(set, 'weekly', targetWeek, ocids, new Date(), myGeneration)
+      return
+    }
+
+    // 쓴 것을 화면에 반영한다. 보던 기간을 안 떠난다.
+    await get().refresh(get().trackedOcids ?? [], { inPlace: true })
+  },
+
+  async cancelManualCompletion(rowKey) {
+    const row = get().rows.find((candidate) => matchesRowKey(candidate, rowKey))
+    if (row === undefined) {
+      throw new Error('cancelManualCompletion: 존재하지 않는 보스 행입니다')
+    }
+
+    await cancelManualCompletion(
+      {
+        ocid: row.ocid,
+        bossKey: row.bossKey,
+        difficulty: row.difficulty,
+        periodKey: row.periodKey,
+      },
+      new Date(),
+    )
+
+    await get().refresh(get().trackedOcids ?? [], { inPlace: true })
   },
 
   async setBossDrops(rowKey, drops) {

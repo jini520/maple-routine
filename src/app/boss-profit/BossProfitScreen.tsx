@@ -31,7 +31,6 @@ import {
   getCurrentBossProfitPeriod,
   isLatestPeriod,
 } from '../../lib/boss/boss-profit-period'
-import { canPreviewNextWeek } from '../../lib/boss/monthly-boss-week'
 import { sumDropPayout } from '../../lib/drop/drop-price'
 import { FAB_CONTENT_GAP_PX, FAB_SPACE_PX } from '../../lib/fab-metrics'
 
@@ -55,6 +54,7 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
+import { useManualCompletionStore } from '../../features/manual-completion/store'
 import { useDataFreshness } from '../../features/refresh/freshness'
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { useLedgerData } from '../../features/ledger/useLedgerData'
@@ -149,6 +149,9 @@ export function BossProfitScreen(): React.JSX.Element {
 
   useEffect(() => {
     loadTrackedOcids()
+    // 직접 완료를 열어 둔 보스. 이 화면의 단추가 그 목록을 본다. today 와 같은 스토어라
+    // 두 화면을 빠르게 오가도 서버는 한 번만 부른다.
+    void useManualCompletionStore.getState().refresh()
     // 이 화면은 가계부와 함께 사는 층이 층 스택에서 빠질 때만 언마운트된다. 곧 수익·지출을 떠날
     // 때다. 가계부는 떠나면 주간 · 이번 주로 돌아오므로 보는 기간을 같게 맞춘다.
     return () => {
@@ -166,12 +169,12 @@ export function BossProfitScreen(): React.JSX.Element {
   const now = new Date()
   const isCurrentPeriod = isLatestPeriod(tab, periodKey, now)
   /**
-   * 오늘로 가는 길이 있나. `isCurrentPeriod` 와 갈라 둔다 - 달 경계를 걸친 주에는 한 칸 앞을
-   * 미리 보고 있을 수 있고(`canPreviewNextWeek`) 그때는 지금 기간이 아니다.
+   * 오늘로 가는 길이 있나. `isCurrentPeriod` 는 `>=` 라 지금보다 앞선 키도 참이므로, **지금 그
+   * 기간을 보고 있나**는 따로 묻는다.
    */
   const isOnCurrentPeriod = periodKey === getCurrentBossProfitPeriod(tab, now).periodKey
-  // 앞으로 갈 수 있나. 보통은 지금 기간이면 끝인데, 달 경계를 걸친 주에만 한 칸 더 열린다.
-  const canGoNext = !isCurrentPeriod || (tab === 'weekly' && canPreviewNextWeek(periodKey, now))
+  // 앞으로 갈 수 있나. 지금 기간이 하한이다.
+  const canGoNext = !isCurrentPeriod
 
   // 최상단 이동이 쓰는 스크롤 주체.
   const scrollRef = useRef<ScrollView | null>(null)

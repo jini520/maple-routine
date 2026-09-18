@@ -20,10 +20,19 @@ import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
 import { bossPortraitSlugOf } from '../../lib/boss/bosses'
 import { BossDropSheet } from './BossDropSheet'
+import { ManualCompletionButton } from './ManualCompletionButton'
+import { ManualCompletionMark } from './ManualCompletionMark'
+import { ManualCompletionSheet } from './ManualCompletionSheet'
 import { ItemRevenueTrigger } from './ItemRevenueTrigger'
 import { useBossProfitContext } from './boss-profit-context'
 import { clamp } from './character-groups'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
+import { useBossProfitStore } from '../../features/boss-profit/store'
+import { useManualCompletionStore } from '../../features/manual-completion/store'
+import { isManualCompletionOpen } from '../../lib/boss/manual-completion'
+import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
+import { NoticeModal } from '../../components/organisms/NoticeModal/NoticeModal'
+import { AlertTriangleIcon } from '../../components/atoms'
 import { ItemRevenuePopover } from './ItemRevenuePopover'
 
 // BossPortrait의 size prop 기본값(40px, 기존 h-10 관례)과 동일하게 시작값을 맞춘다.
@@ -97,8 +106,15 @@ export function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Eleme
 
 export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
   const { row } = props
-  const { setPartySize, setBossDrops } = useBossProfitContext()
+  const { setPartySize, setBossDrops, now } = useBossProfitContext()
   const [isDropSheetOpen, setIsDropSheetOpen] = useState(false)
+  // 직접 완료 시트. `null` 이면 안 열려 있고, 그 밖의 값이 여는 까닭이다.
+  const [manualSheet, setManualSheet] = useState<'create' | 'edit' | null>(null)
+  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false)
+  const openedBosses = useManualCompletionStore((state) => state.bosses)
+  const saveManualCompletion = useBossProfitStore((state) => state.saveManualCompletion)
+  const cancelManualCompletion = useBossProfitStore((state) => state.cancelManualCompletion)
+  const characterIssue = useBossProfitStore((state) => state.characterIssues[row.ocid])
   // 구조 분해가 필수다. `popover.toggle` 처럼 프로퍼티로 읽으면 `react-hooks/refs` 가 그 접근을
   // 렌더 중 ref 접근으로 본다. 훅이 안에서 `useRef` 를 쓰기 때문이다.
   const { ref: itemChipRef, isOpen: isItemPopoverOpen, anchor: itemAnchor, toggle: toggleItemPopover, close: closeItemPopover } =
@@ -108,6 +124,21 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
   // 스택과 목록이 같은 차례로 선다.
   const drops = sortDropsForDisplay(props.drops)
   const isPriceUnknown = row.priceMeso === null
+  /**
+   * 이 행에서 직접 완료를 적을 수 있나. 넷이 모두 참이어야 한다.
+   *
+   * 서버가 그 보스를 열어 뒀고 · 아직 미완료이고 · 보고 있는 기간이 지금 기간이고 · 그 캐릭터를
+   * 조회할 수 있어야 한다. 지난 기간은 지금 못 적는다 - 그 자리는 수익 수동 입력의 몫이다.
+   */
+  const canRecordManual =
+    !row.isComplete &&
+    characterIssue !== 'unavailable' &&
+    row.periodKey === getCurrentBossProfitPeriod(row.cycle, now).periodKey &&
+    isManualCompletionOpen(openedBosses, {
+      bossKey: row.bossKey,
+      cycle: row.cycle,
+      periodKey: row.periodKey,
+    })
   // 미완료(보스 스케줄러에 등록만 되고 아직 처치 전) placeholder는 파티원 수를 조정해도 의미가
   // 없다. 계산은 항상 0메소로 고정된다. "가격 미확정"과 동일한 비활성 처리를 재사용한다.
   const isEditable = row.isComplete && !isPriceUnknown
@@ -180,9 +211,13 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           <Text numberOfLines={1} className="shrink text-sm font-semibold text-text">
             {row.bossName}
           </Text>
+          {row.source === 'manual' && <ManualCompletionMark row={row} />}
           <DropIndicator drops={drops} />
         </Pressable>
 
+        {canRecordManual ? (
+          <ManualCompletionButton label={row.bossName} onPress={() => setManualSheet('create')} />
+        ) : (
         <View className="mt-2 flex-row items-center justify-between gap-2">
           <View
             className={
@@ -228,7 +263,20 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           ) : // 아이템이 섞이면 **금액 자체가 내역을 여는 버튼**이 된다. 없으면 래퍼조차 만들지
           // 않는다. 그 행의 트리가 달라지지 않아야 한다.
           dropTotal === 0 ? (
-            amount
+            <View className="flex-row items-center gap-3.5">
+              {row.source === 'manual' && (
+                <Pressable
+                  role="button"
+                  aria-label={`${row.bossName} 기록 수정`}
+                  onPress={() => setManualSheet('edit')}
+                  hitSlop={8}
+                  className="shrink-0 active:opacity-60"
+                >
+                  <Text className="text-11 font-bold text-primary-ink">수정</Text>
+                </Pressable>
+              )}
+              {amount}
+            </View>
           ) : (
             <ItemRevenueTrigger
               ref={itemChipRef}
@@ -240,6 +288,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
             </ItemRevenueTrigger>
           )}
         </View>
+        )}
       </View>
 
       {isItemPopoverOpen && (
@@ -249,6 +298,54 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           itemMeso={dropTotal}
           anchor={itemAnchor}
           onClose={closeItemPopover}
+        />
+      )}
+
+      {manualSheet !== null && (
+        <ManualCompletionSheet
+          row={row}
+          mode={manualSheet}
+          now={now}
+          onSave={async (input) => {
+            try {
+              await saveManualCompletion(row, input)
+            } catch {
+              useToastStore.getState().showError('완료 기록을 저장하지 못했습니다')
+            }
+          }}
+          onCancelCompletion={() => {
+            // 시트를 먼저 닫는다. 확인 창이 시트 위에 서면 두 겹이 되고, 되돌릴 수 없는 일을
+            // 묻는 자리가 다른 창에 가린다.
+            setManualSheet(null)
+            setIsCancelConfirmOpen(true)
+          }}
+          onClose={() => setManualSheet(null)}
+        />
+      )}
+
+      {isCancelConfirmOpen && (
+        <NoticeModal
+          testId="manual-completion-cancel"
+          icon={AlertTriangleIcon}
+          tone="error"
+          title="완료 기록을 취소할까요?"
+          description={
+            props.drops.length > 0
+              ? `${row.bossName} 완료와 이 보스에 적은 드롭 ${props.drops.length}개가 함께 지워집니다. 되돌릴 수 없습니다.`
+              : `${row.bossName} 완료 기록이 지워집니다. 되돌릴 수 없습니다.`
+          }
+          action={{ label: '그대로 두기', onPress: () => setIsCancelConfirmOpen(false) }}
+          secondaryAction={{
+            label: '완료 취소',
+            danger: true,
+            onPress: () => {
+              setIsCancelConfirmOpen(false)
+              void cancelManualCompletion(row).catch(() => {
+                useToastStore.getState().showError('완료 기록을 취소하지 못했습니다')
+              })
+            },
+          }}
+          onClose={() => setIsCancelConfirmOpen(false)}
         />
       )}
 

@@ -30,7 +30,7 @@ import {
   getRecordedCharacterOcids,
   getWeeklyPeriodKeysWithRecords,
 } from '../../storage/boss-profit'
-import { isMonthlyRowInWeek, monthOfWeek } from '../../lib/boss/monthly-boss-week'
+import { isMonthlyRowInWeek, monthsOfWeek } from '../../lib/boss/monthly-boss-week'
 import { bossRecordsStamp } from './period-cache'
 import { dropWindowPeriodKeys } from './period-window'
 import type { BossCycle } from '../../types'
@@ -214,8 +214,9 @@ async function fillWindowCache(periodKey: string): Promise<Map<string, DropPrice
     return built
   }
 
-  // 주간 키로 열었으면 그 주가 속한 달도 함께 읽는다. 그 달의 월간 보스가 이 주에 설 수 있다.
-  const monthKeys = cycle === 'weekly' ? [...new Set(windowKeys.map(monthOfWeek))] : []
+  // 주간 키로 열었으면 그 주가 품은 달도 함께 읽는다. 그 달의 월간 보스가 이 주에 설 수 있다.
+  // 달 경계 주는 달이 둘이다 - 하나만 읽으면 9/1 에 잡은 9월 보스의 드롭이 그 주에 안 걸린다.
+  const monthKeys = cycle === 'weekly' ? [...new Set(windowKeys.flatMap(monthsOfWeek))] : []
   const queryKeys = [...new Set([...windowKeys, ...monthKeys])]
 
   try {
@@ -244,13 +245,12 @@ async function fillWindowCache(periodKey: string): Promise<Map<string, DropPrice
     }
 
     for (const key of windowKeys) {
-      const monthKey = cycle === 'weekly' ? monthOfWeek(key) : null
+      const weekMonths = cycle === 'weekly' ? monthsOfWeek(key) : []
       const dropRecords = allDropRecords.filter(
         (record) =>
           record.periodKey === key ||
-          (monthKey !== null &&
-            record.periodKey === monthKey &&
-            standsInWeek(record, key, profitRecords, weeksByMonth.get(monthKey) ?? [])),
+          (weekMonths.includes(record.periodKey) &&
+            standsInWeek(record, key, profitRecords, weeksByMonth.get(record.periodKey) ?? [])),
       )
       const groups = buildGroups(dropRecords, characters, partySizes)
       built.set(key, groups)

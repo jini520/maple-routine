@@ -17,7 +17,6 @@ import {
   sortRowsByOcidOrder,
   sumRowsPayout,
   toRecordedDrop,
-  toUpcomingWeekRows,
   type ProfitBoss,
 } from '../rows'
 import type { BossProfitRow } from '../store'
@@ -41,6 +40,7 @@ function row(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     payoutMeso: 5_000_000,
     isComplete: true,
     defeatedOn: null,
+    source: 'auto',
     ...overrides,
   }
 }
@@ -452,75 +452,89 @@ it('mergeRecordsIntoRows 는 기록의 처치 날짜도 행에 싣는다', () =>
   expect(mergeRecordsIntoRows([target], [record])[0].defeatedOn).toBe('2026-09-19')
 })
 
-// 아직 시작하지 않은 주(달 경계 미리보기)는 기록이 없어 `buildRowsFromRecords` 로는 아무도 안
-// 선다. 그러면 잡아 둔 월간 보스 한 줄만 딸랑 남는다(사용자 지적). 이번 주의 등록 목록을 옮겨
-// 관리 캐릭터와 주간 보스가 다 보이게 한다.
-describe('toUpcomingWeekRows', () => {
-  const NOW = new Date('2026-09-07T12:00:00+09:00')
+// 직접 적은 완료는 넥슨 응답에 없다. 기록에서 뽑은 열쇠를 행 고르기와 병합 둘이 함께 봐야
+// 스케줄러가 `12/12` 라고 말하면서 이 화면이 `11/12` 라고 말하는 일이 안 생긴다.
+describe('직접 적은 완료', () => {
+  const BLACK_MAGE = { key: 'black_mage', name: '검은 마법사' }
 
-  const 이번주행 = (over: Partial<BossProfitRow> = {}): BossProfitRow => ({
-    ocid: 'o1',
-    characterName: '낟낟',
-    imageUrl: null,
-    world: '엘리시움',
-    worldKey: 'elysium',
-    bossKey: 'lotus',
-    bossName: '스우',
-    difficulty: 'hard',
-    cycle: 'weekly',
-    periodKey: '2026-09-03',
-    periodLabel: '이번 주',
-    priceMeso: 1_000_000,
-    maxPartySize: 6,
-    partySize: 2,
-    payoutMeso: 500_000,
-    isComplete: true,
-    defeatedOn: '2026-09-05',
-    ...over,
-  })
+  function monthly(overrides: Partial<BossContent> = {}): BossContent {
+    return {
+      bossKey: BLACK_MAGE.key,
+      apiName: BLACK_MAGE.name,
+      difficulty: 'hard',
+      cycle: 'monthly',
+      isRegistered: true,
+      isComplete: false,
+      ownComplete: false,
+      ...overrides,
+    }
+  }
 
-  it('주간 행을 다음 주 키로 옮기고 처치를 지운다', () => {
-    const [row] = toUpcomingWeekRows([이번주행()], '2026-09-10', NOW)
-
-    expect(row.periodKey).toBe('2026-09-10')
-    expect(row.isComplete).toBe(false)
-    expect(row.payoutMeso).toBe(0)
-    expect(row.defeatedOn).toBeNull()
-  })
-
-  // 파티원 수는 설정이지 그 주의 결과가 아니다.
-  it('파티원 수는 그대로 든다', () => {
-    const [row] = toUpcomingWeekRows([이번주행()], '2026-09-10', NOW)
-
-    expect(row.partySize).toBe(2)
-  })
-
-  // 시세는 기간마다 다를 수 있다(2026-09-17 패치). 이번 주의 값을 옮기면 다음 주가 옛 가격을 든다.
-  it('시세는 그 주의 표에서 다시 찾는다', () => {
-    const [row] = toUpcomingWeekRows(
-      [이번주행({ bossKey: 'zakum', bossName: '자쿰', difficulty: 'chaos', periodKey: '2026-09-10', priceMeso: 8_080_000 })],
-      '2026-09-17',
-      NOW,
+  it('넥슨이 미완료로 줘도 완료 행이 된다', () => {
+    const [행] = selectProfitDisplayBosses(
+      [monthly()],
+      'auto',
+      [],
+      'scania',
+      new Set(['black_mage|hard']),
     )
 
-    expect(row.priceMeso).toBe(4_040_000)
+    expect(행.ownComplete).toBe(true)
+    expect(행.isComplete).toBe(true)
   })
 
-  // 월간 보스는 기록이 자기 주를 정한다(`isMonthlyRowInWeek`). 여기서 옮기면 두 번 선다.
-  it('월간 행은 안 옮긴다', () => {
-    const rows = toUpcomingWeekRows(
-      [이번주행(), 이번주행({ bossKey: 'black_mage', bossName: '검은 마법사', cycle: 'monthly', periodKey: '2026-09' })],
-      '2026-09-10',
-      NOW,
+  it('주간 한도에도 든다', () => {
+    const weekly = (bossKey: string): BossContent => ({
+      bossKey,
+      apiName: bossKey,
+      difficulty: 'hard',
+      cycle: 'weekly',
+      isRegistered: true,
+      isComplete: true,
+      ownComplete: true,
+    })
+    const 열하나 = (weeklyBossesData.weekly as { key: string }[])
+      .slice(0, WEEKLY_BOSS_CLEAR_LIMIT - 1)
+      .map((entry) => weekly(entry.key))
+    // 열한 마리 목록에 없는 보스라야 열두째가 된다.
+    const 마지막 = { ...weekly('will'), isComplete: false, ownComplete: false }
+
+    // 열한 마리는 넥슨이 주고 하나는 사용자가 적었다. 그러면 열둘이라 미처치 행이 안 선다.
+    const rows = selectProfitDisplayBosses(
+      [...열하나, 마지막, { ...weekly('limbo'), isComplete: false, ownComplete: false }],
+      'auto',
+      [],
+      'scania',
+      new Set(['will|hard']),
     )
 
-    expect(rows).toHaveLength(1)
-    expect(rows[0].bossName).toBe('스우')
+    expect(rows.map((boss) => boss.bossKey)).not.toContain('limbo')
   })
 
-  it('기간 라벨도 그 주의 것으로 바꾼다', () => {
-    const [row] = toUpcomingWeekRows([이번주행()], '2026-09-10', NOW)
+  it('기록이 있으면 병합이 그 행을 완료로 만든다', () => {
+    const 미완료행 = row({ bossKey: 'black_mage', difficulty: 'hard', isComplete: false, payoutMeso: 0 })
+    const [병합] = mergeRecordsIntoRows(
+      [미완료행],
+      [
+        {
+          ocid: 미완료행.ocid,
+          bossKey: 'black_mage',
+          boss: '검은 마법사',
+          difficulty: 'hard',
+          cycle: 'monthly',
+          periodKey: 미완료행.periodKey,
+          partySize: 1,
+          priceMeso: 665_000_000,
+          payoutMeso: 665_000_000,
+          recordedAt: '2026-09-18T00:00:00.000Z',
+          world: null,
+          worldKey: null,
+          source: 'manual',
+        },
+      ],
+    )
 
-    expect(row.periodLabel).not.toBe('이번 주')
+    expect(병합.isComplete).toBe(true)
+    expect(병합.payoutMeso).toBe(665_000_000)
   })
 })

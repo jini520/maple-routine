@@ -20,6 +20,7 @@ import {
   type MatchedBoss,
 } from '../../lib/boss/boss-matching'
 import { mergeManualBossList } from '../../lib/boss/manual-boss-merge'
+import { applyManualCompletions } from '../../lib/boss/manual-completion'
 import { isChallengersWorld } from '../../lib/world/worlds'
 import type { BossContent, BossCycle } from '../../types'
 import type { ManualTrackedBossItem, ManualTrackedItem } from '../../types/scheduler'
@@ -53,10 +54,21 @@ export function displayedBosses(
   cycle: BossCycle,
   mode: TrackingMode,
   manualTrackedByOcid: Record<string, ManualTrackedItem[]> | null,
+  /**
+   * 사용자가 직접 적은 완료(`bossKey|difficulty`). 캐릭터별로 그 기간 기록에서 뽑아 넘긴다.
+   *
+   * 스케줄 캐시에 안 쓰고 여기서 얹는 이유는 다음 동기화가 캐시를 덮기 때문이다. 이 함수가
+   * 스케줄러 카드와 today 남은 스케줄의 공용 판정이라, 얹는 자리도 여기 하나다.
+   */
+  manualCompletedByOcid?: Record<string, readonly string[]> | null,
 ): DisplayedBoss[] {
+  const manualKeys = new Set(manualCompletedByOcid?.[character.ocid] ?? [])
+  const weeklyBosses = applyManualCompletions(character.weeklyBosses, manualKeys)
+  const monthlyBosses = applyManualCompletions(character.monthlyBosses, manualKeys)
   // 한도는 캐릭터의 주간 전체로 판정한다. 추적 목록이 아니라 동기화 결과다. 겨누는 상황이
-  // 목록 밖 보스로 12를 채웠다 라, 목록만 보면 영영 12가 안 된다.
-  const limitReached = isWeeklyClearLimitReached(character.weeklyBosses)
+  // 목록 밖 보스로 12를 채웠다 라, 목록만 보면 영영 12가 안 된다. 직접 적은 완료도 여기 든다 -
+  // 스케줄러가 `12/12` 라고 말하면서 보스 수익이 `11/12` 라고 말하면 안 된다.
+  const limitReached = isWeeklyClearLimitReached(weeklyBosses)
   // 시즌 보스는 챌린저스 월드 캐릭터에만 선다. 리프하면 챌린저스 때 등록이 새 ocid 로 넘어와 일반 월드
   // 캐릭터에 시즌 보스가 등록된 채로 온다. 월드를 모르면 안 세운다.
   const inWorld = (boss: MatchedBoss): boolean => !boss.isSeasonBoss || isChallengersWorld(character.worldKey)
@@ -64,7 +76,7 @@ export function displayedBosses(
   if (mode !== 'manual') {
     return stampLimitClosed(
       orderByReference(
-        selectDisplayBosses(cycle === 'weekly' ? character.weeklyBosses : character.monthlyBosses).filter(inWorld),
+        selectDisplayBosses(cycle === 'weekly' ? weeklyBosses : monthlyBosses).filter(inWorld),
       ),
       limitReached,
     )
@@ -75,7 +87,7 @@ export function displayedBosses(
   )
   // synced 는 store 의 auto 목록(MatchedBoss)에서 BossContent 로 되돌려 넘긴다. MatchedBoss 는
   // BossContent 의 모든 필드를 갖고 있어 손실이 없다.
-  const synced: BossContent[] = [...character.weeklyBosses, ...character.monthlyBosses].map((boss) => ({
+  const synced: BossContent[] = [...weeklyBosses, ...monthlyBosses].map((boss) => ({
     bossKey: boss.bossKey,
     apiName: boss.apiName,
     difficulty: boss.difficulty,
@@ -157,9 +169,10 @@ export function displayedBossSections(
   character: BossCharacterView,
   mode: TrackingMode,
   manualTrackedByOcid: Record<string, ManualTrackedItem[]> | null,
+  manualCompletedByOcid?: Record<string, readonly string[]> | null,
 ): BossSection[] {
   return BOSS_SECTION_ORDER.map((cycle) => ({
     cycle,
-    bosses: displayedBosses(character, cycle, mode, manualTrackedByOcid),
+    bosses: displayedBosses(character, cycle, mode, manualTrackedByOcid, manualCompletedByOcid),
   }))
 }

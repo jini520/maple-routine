@@ -145,17 +145,18 @@ describe('sumPayout: 금액을 모르는 행', () => {
   })
 })
 
-// 월간 탭은 금액의 원천이 주차 소계 하나다. 월간 보스 수익은 그 보스가 선 주의 소계 안에 이미
-// 들어 있고, 행은 아바타 진행 링을 위해서만 그룹에 실려 온다. 함께 더하면 두 번 센다.
-describe('월간 탭의 금액은 주차 소계가 전부다', () => {
-  it('주차 소계가 있으면 보스 행을 안 더한다', () => {
+// 월간 탭의 카드 금액은 **월간 보스 줄 + 주차별 합계**다(사용자 선택). 화면에 보이는 줄을 더하면
+// 카드가 되어야 한다. 월간 보스 줄이 열람용으로 보이게 된 뒤로는 소계가 그 돈을 품으면 줄들의
+// 합이 카드보다 커진다.
+describe('월간 탭의 금액은 월간 보스 줄 + 주차 소계다', () => {
+  it('주차 소계에 보스 행을 더한다', () => {
     const 월간행 = 보스행({ bossKey: 월간보스, cycle: 'monthly', periodKey: '2026-08', payoutMeso: 9_000_000_000 })
     const 소계 = 주차소계({ totalMeso: 20_000_000_000 })
 
-    expect(groupTotalMeso({ ...group([월간행]), weeklySubtotals: [소계] }, {})).toBe(20_000_000_000)
+    expect(groupTotalMeso({ ...group([월간행]), weeklySubtotals: [소계] }, {})).toBe(29_000_000_000)
   })
 
-  it('그 행에 붙은 드롭도 안 더한다', () => {
+  it('그 행에 붙은 드롭도 함께 더한다', () => {
     const 월간행 = 보스행({ bossKey: 월간보스, cycle: 'monthly', periodKey: '2026-08', payoutMeso: 0 })
     const drops = {
       [dropRowKey(월간행.ocid, 월간행.bossKey, 월간행.difficulty, 월간행.periodKey)]: [
@@ -165,6 +166,22 @@ describe('월간 탭의 금액은 주차 소계가 전부다', () => {
 
     expect(
       groupTotalMeso({ ...group([월간행]), weeklySubtotals: [주차소계({ totalMeso: 1_000 })] }, drops),
+    ).toBe(5_000_001_000)
+  })
+
+  // 미완료 행은 카드 겉면에 아무것도 못 만든다. 주간 탭과 같은 규칙이다.
+  it('미완료 월간 행은 안 더한다', () => {
+    const 미완료 = 보스행({
+      bossKey: 월간보스,
+      cycle: 'monthly',
+      periodKey: '2026-08',
+      isComplete: false,
+      partySize: null,
+      payoutMeso: 0,
+    })
+
+    expect(
+      groupTotalMeso({ ...group([미완료]), weeklySubtotals: [주차소계({ totalMeso: 1_000 })] }, {}),
     ).toBe(1_000)
   })
 })
@@ -188,15 +205,13 @@ describe('collectRevenueDrops: 상자가 읽는 드롭은 카드 금액과 같�
     expect(collectRevenueDrops(group([보스행()]), drops)).toEqual(priced)
   })
 
-  it('주차 소계가 있으면(월간 탭) 소계의 드롭만이다. 보스 행의 드롭을 안 더한다', () => {
+  it('주차 소계가 있으면(월간 탭) 소계의 드롭에 월간 보스 행의 드롭을 더한다', () => {
     const 월간행 = 보스행({ bossKey: 월간보스, cycle: 'monthly', periodKey: '2026-08', payoutMeso: 0 })
     const 월간드롭 = 반지(5_000_000_000)
     const 주간드롭 = 반지(1_000_000)
     const drops = { [dropRowKey(월간행.ocid, 월간행.bossKey, 월간행.difficulty, 월간행.periodKey)]: [월간드롭] }
-    const weeklySubtotals = [
-      주차소계({ periodKey: '2026-08-06', drops: [주간드롭] }),
-      주차소계({ periodKey: '2026-08-13', drops: [월간드롭] }),
-    ]
+    // 소계는 이제 월간 보스 드롭을 안 담는다. 담으면 상자가 그것을 두 번 센다.
+    const weeklySubtotals = [주차소계({ periodKey: '2026-08-06', drops: [주간드롭] })]
 
     expect(collectRevenueDrops({ ...group([월간행]), weeklySubtotals }, drops)).toEqual([주간드롭, 월간드롭])
   })

@@ -17,7 +17,11 @@ import {
 } from '../../lib/boss/boss-profit-period'
 import { getBossDropRecords } from '../../storage/boss-drops'
 import { getBossPartySize } from '../../storage/boss-party-settings'
-import { getBossProfitRecords, upsertBossProfitRecord } from '../../storage/boss-profit'
+import {
+  getBossProfitRecords,
+  markBossProfitRecordAuto,
+  upsertBossProfitRecord,
+} from '../../storage/boss-profit'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getScheduleProbeLedger } from '../../storage/schedule-probe-ledger'
 import { BOSS_CYCLES, type BossCycle, type BossDifficulty } from '../../types'
@@ -105,12 +109,27 @@ async function recordPeriod(
     // 모르면 이번 회차는 건너뛰고, 월드를 알게 된 회차가 기록한다(아래 이미 있는 행 판정이 안 막는다).
     if (isSeasonBoss(bossKey) && !isChallengersWorld(worldKey)) continue
 
-    const alreadyRecorded = existingRecords.some(
+    // 같은 난이도 기록이 사용자가 적은 것이면 표식을 걷는다. 값은 안 건드린다 - 사용자가 적은
+    // 날짜와 파티원 수가 더 정확하다.
+    const same = existingRecords.find(
       (record) =>
         record.ocid === ocid &&
         record.bossKey === bossKey &&
         record.difficulty === difficulty &&
         record.periodKey === periodKey,
+    )
+    if (same?.source === 'manual') {
+      await withSqliteFallback(
+        markBossProfitRecordAuto({ ocid, bossKey, difficulty, periodKey }),
+        undefined,
+      )
+    }
+
+    // 같은 (캐릭터, 보스, 기간)에 기록이 있으면 **난이도가 달라도** 안 쓴다. 한 주에 한 보스를 두
+    // 난이도로 잡을 수 없어(게임 규칙) 한 줄이 더 써지면 같은 처치를 두 번 세게 된다.
+    const alreadyRecorded = existingRecords.some(
+      (record) =>
+        record.ocid === ocid && record.bossKey === bossKey && record.periodKey === periodKey,
     )
     if (alreadyRecorded) continue
 

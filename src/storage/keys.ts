@@ -80,6 +80,13 @@ export const STORAGE_KEYS = {
   // `KEEP_KEYS` 에는 안 넣는다. 지워지면 이번 밤 결산 줄이 한 번 더 설 뿐이고, 그것은 거짓이
   // 아니라 이미 읽은 안내를 다시 보는 일이다.
   dismissedSettlement: 'dismissedSettlement',
+  // 직접 완료 안내 줄을 닫을 때 기억하는 **그때의 주간 기간 키**(목요일 `YYYY-MM-DD`).
+  // 지금 주간 키가 이 값과 같으면 줄을 안 세우고, 주가 바뀌면 다시 선다.
+  //
+  // 주간이 기준인 것은 월간 보스만 열려 있어도 주가 바뀌면 다시 물을 일이기 때문이다.
+  //
+  // `KEEP_KEYS` 에는 안 넣는다. 지워져도 이번 주에 줄이 한 번 더 설 뿐이다.
+  dismissedManualCompletion: 'dismissedManualCompletion',
   // 페이지별 마지막 데이터 호출 시각. `{ today: ISO, content: ISO, … }` 한 칸이다.
   //
   // 키를 다섯으로 쪼개지 않는 것은 읽는 쪽이 언제나 다섯을 한 번에 필요로 해서다(부팅 때 한 번

@@ -27,6 +27,9 @@ export const BOSS_PROFIT_RECORDS_BODY = `(
     -- NULL 은 "모름" 이고 가계부의 월간 칸 집계에서 조용히 빠진다(world 와 같은 모양). 키가
     -- 아니므로 나중에 채워 넣어도 옛 행이 움직이지 않는다.
     defeated_on TEXT,
+    -- 누가 썼나. 'auto' 는 동기화가 쓴 기록이고 'manual' 은 사용자가 직접 적은 완료다.
+    -- NULL 은 칸이 생기기 전의 기록이라 'auto' 로 읽는다.
+    source TEXT,
     PRIMARY KEY (ocid, boss_key, difficulty, period_key)
   )`
 
