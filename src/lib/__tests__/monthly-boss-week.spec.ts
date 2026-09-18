@@ -1,5 +1,5 @@
 // 월간 보스는 **한 달에 딱 한 주에만** 선다. 그 한 주를 고르는 규칙.
-import { canPreviewNextWeek, isMonthlyRowInWeek, resolveUndatedWeek } from '../boss/monthly-boss-week'
+import { isMonthlyRowInWeek, monthsOfWeek, resolveUndatedWeek } from '../boss/monthly-boss-week'
 
 // 2026-09 의 목요일: 09-03 · 09-10 · 09-17 · 09-24
 const 이번주 = '2026-09-10'
@@ -19,14 +19,47 @@ function 물음(overrides: Partial<Parameters<typeof isMonthlyRowInWeek>[0]> = {
   })
 }
 
-describe('달이 안 맞으면 아예 안 선다', () => {
-  // 주가 속한 달은 그 주의 **목요일** 기준이다(사용자 지정). 8/27 주는 9/1~9/2 를 품지만 8월이다.
-  it('8월 보스는 9월 주에 안 선다', () => {
+describe('주가 품은 달이 아니면 아예 안 선다', () => {
+  it('8월 보스는 8월 날이 없는 주에 안 선다', () => {
     expect(물음({ monthlyPeriodKey: '2026-08' })).toBe(false)
   })
 
-  it('9월 보스는 8/27 주에 안 선다', () => {
-    expect(물음({ weeklyPeriodKey: '2026-08-27' })).toBe(false)
+  it('9월 보스는 9월 날이 없는 주에 안 선다', () => {
+    expect(물음({ weeklyPeriodKey: '2026-08-20', isComplete: true, defeatedOn: '2026-09-01' })).toBe(false)
+  })
+})
+
+// 게임의 월간 보스는 1일 00:00 에 열린다. 8/27 주(8/27~9/2)는 8월이면서 9월이라, 그 주가 9월
+// 보스의 첫 자리다. 전에는 주가 속한 달을 목요일로 정해 **그 이틀에 잡은 기록이 어느 주에도
+// 없었다**(사용자 물음: 왜 사라져?).
+describe('달 경계 주는 두 달을 품는다', () => {
+  it('9/1 · 9/2 에 잡은 9월 보스가 8/27 주에 선다', () => {
+    expect(물음({ weeklyPeriodKey: '2026-08-27', isComplete: true, defeatedOn: '2026-09-01' })).toBe(true)
+    expect(물음({ weeklyPeriodKey: '2026-08-27', isComplete: true, defeatedOn: '2026-09-02' })).toBe(true)
+  })
+
+  it('그 기록은 9월 첫 주차에는 안 선다', () => {
+    expect(물음({ weeklyPeriodKey: '2026-09-03', isComplete: true, defeatedOn: '2026-09-01' })).toBe(false)
+  })
+
+  // 1일부터 자리가 있어야 한다. 그 날의 이번 주가 곧 8/27 주다.
+  it('9/1 에 아직 안 잡은 9월 보스도 8/27 주에 선다', () => {
+    expect(
+      물음({
+        weeklyPeriodKey: '2026-08-27',
+        now: new Date('2026-09-01T12:00:00+09:00'),
+        isComplete: false,
+      }),
+    ).toBe(true)
+  })
+
+  // 같은 주에 월간 행이 둘 선다. 둘 다 그 주에 실제로 일어난 일이다.
+  it('8월 처치와 9월 처치가 같은 주에 함께 선다', () => {
+    const 경계주 = (monthlyPeriodKey: string, defeatedOn: string): boolean =>
+      물음({ weeklyPeriodKey: '2026-08-27', monthlyPeriodKey, isComplete: true, defeatedOn })
+
+    expect(경계주('2026-08', '2026-08-28')).toBe(true)
+    expect(경계주('2026-09', '2026-09-01')).toBe(true)
   })
 })
 
@@ -176,28 +209,14 @@ describe('resolveUndatedWeek', () => {
   })
 })
 
-// 주가 속한 달은 목요일 기준이라, 9/1~9/2 는 아직 8/27 주다. 그 이틀 동안 9월 보스가 화면
-// 어디에도 없다. 그때만 앞으로 한 칸 연다.
-describe('canPreviewNextWeek', () => {
-  it('달이 바뀌었는데 주가 안 바뀐 이틀에만 참이다', () => {
-    expect(canPreviewNextWeek('2026-08-27', new Date('2026-09-01T12:00:00+09:00'))).toBe(true)
-    expect(canPreviewNextWeek('2026-08-27', new Date('2026-09-02T12:00:00+09:00'))).toBe(true)
+describe('monthsOfWeek', () => {
+  it('달을 걸친 주는 둘, 그 밖은 하나다', () => {
+    expect(monthsOfWeek('2026-08-27')).toEqual(['2026-08', '2026-09'])
+    expect(monthsOfWeek('2026-09-10')).toEqual(['2026-09'])
   })
 
-  it('그 주의 8월 쪽 날에는 거짓이다', () => {
-    expect(canPreviewNextWeek('2026-08-27', new Date('2026-08-31T12:00:00+09:00'))).toBe(false)
-  })
-
-  it('달과 주가 함께 바뀐 뒤에는 거짓이다', () => {
-    expect(canPreviewNextWeek('2026-09-03', new Date('2026-09-04T12:00:00+09:00'))).toBe(false)
-  })
-
-  // 열리는 것은 한 칸뿐이다. 그 주에 서면 이미 `현재 주` 가 아니라 더 못 간다.
-  it('미리 본 주에서는 더 못 간다', () => {
-    expect(canPreviewNextWeek('2026-09-03', new Date('2026-09-01T12:00:00+09:00'))).toBe(false)
-  })
-
-  it('지난 주에서는 거짓이다', () => {
-    expect(canPreviewNextWeek('2026-08-20', new Date('2026-09-01T12:00:00+09:00'))).toBe(false)
+  // 마지막 날이 1일인 주도 둘이다(목요일이 그 달 말일 직전).
+  it('마지막 하루만 다음 달이어도 둘이다', () => {
+    expect(monthsOfWeek('2026-06-25')).toEqual(['2026-06', '2026-07'])
   })
 })

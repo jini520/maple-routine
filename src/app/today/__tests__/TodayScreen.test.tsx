@@ -265,7 +265,7 @@ function profitRow(ocid: string, index: number): BossProfitRow {
     maxPartySize: 6,
     partySize: 1,
     payoutMeso: 1_000_000 * index,
-    isComplete: true, defeatedOn: null }
+    isComplete: true, defeatedOn: null, source: 'auto' }
 }
 
 function dropRecord(overrides: Partial<DropHistoryRecord> = {}): DropHistoryRecord {

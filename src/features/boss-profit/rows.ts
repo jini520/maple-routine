@@ -20,6 +20,7 @@ import { formatBossProfitPeriodLabel, getCurrentBossProfitPeriod } from '../../l
 import { isMonthlyRowInWeek } from '../../lib/boss/monthly-boss-week'
 import { bossNameOf } from '../../lib/boss/bosses'
 import { mergeManualBossList } from '../../lib/boss/manual-boss-merge'
+import { applyManualCompletions } from '../../lib/boss/manual-completion'
 import { isChallengersWorld } from '../../lib/world/worlds'
 import type { BossDropRecord } from '../../storage/boss-drops'
 import type { BossProfitRecord, getBossProfitRecords } from '../../storage/boss-profit'
@@ -55,6 +56,12 @@ export interface BossProfitRow {
    * 쓴다. 그쪽은 `periodKey` 가 이미 주라서 물을 것이 없다.
    */
   defeatedOn: string | null
+  /**
+   * 누가 이 완료를 적었나. `manual` 이면 표식과 수정 · 취소가 붙는다.
+   *
+   * 기록에서만 온다. 동기화가 만든 행은 기록을 만나기 전까지 `auto` 다(그 행은 아직 표에 없다).
+   */
+  source: 'auto' | 'manual'
 }
 
 export type BossProfitRowKey = Pick<BossProfitRow, 'ocid' | 'bossKey' | 'difficulty' | 'cycle' | 'periodKey'>
@@ -169,6 +176,8 @@ export function buildBossProfitRow(
     isComplete: boss.ownComplete,
     // 동기화·캐시에서 나온 행은 날짜를 모른다. 기록으로 되살아난 행만 값을 갖는다.
     defeatedOn: null,
+    // 동기화가 만든 행이다. 기록을 만나면 `mergeRecordsIntoRows` 가 기록의 출처로 갈아 준다.
+    source: 'auto',
   }
 }
 
@@ -187,9 +196,16 @@ export function selectProfitDisplayBosses(
   mode: TrackingMode,
   manualItems: ManualTrackedItem[],
   worldKey: string | null,
+  /**
+   * 사용자가 직접 적은 완료(`bossKey|difficulty`). 그 캐릭터의 그 기간 기록에서 뽑아 넘긴다.
+   *
+   * 스케줄러 화면이 쓰는 `displayedBosses` 와 **같은 값을 같은 함수**(`applyManualCompletions`)로
+   * 얹는다. 한쪽만 얹으면 같은 주에 두 화면이 다른 처치 수를 말한다.
+   */
+  manualCompleted: ReadonlySet<string> = new Set(),
 ): ProfitBoss[] {
   const inWorld = (boss: MatchedBoss): boolean => !boss.isSeasonBoss || isChallengersWorld(worldKey)
-  const matched = bossContents.map(matchBossContent)
+  const matched = applyManualCompletions(bossContents.map(matchBossContent), manualCompleted)
   // 주간 한도를 채웠으면 미처치 placeholder 는 아예 안 세운다. 두 모드 공통이라 아래 ①②보다
   // 앞에 선다. 판정은 동기화 결과 전체로 한다. 겨누는 상황이 표시 목록 밖 보스로 12를 채웠다
   // 라, 목록만 보면 영영 12가 안 된다.
@@ -257,6 +273,7 @@ export function buildRowFromRecord(
     payoutMeso: record.payoutMeso,
     isComplete: true, // 기록은 항상 완료된 보스만 남는다(backfillTarget/자동 기록이 완료 보스만 upsert)
     defeatedOn: record.defeatedOn ?? null,
+    source: record.source ?? 'auto',
   }
 }
 
@@ -287,6 +304,10 @@ export function mergeRecordsIntoRows(
       partySize: record.partySize,
       payoutMeso: record.payoutMeso,
       defeatedOn: record.defeatedOn ?? row.defeatedOn,
+      source: record.source ?? 'auto',
+      // **기록이 있으면 그 조합은 완료다.** 자동 기록은 완료 행만 만들고, 직접 적은 완료도 기록이
+      // 곧 완료다. 이 줄이 없으면 넥슨이 미완료로 주는 보스가 금액을 들고도 `미완료` 배지를 단다.
+      isComplete: true,
     }
   })
 }
@@ -360,40 +381,6 @@ export function filterRowsForTab(
       now,
     })
   })
-}
-
-/**
- * 아직 시작하지 않은 주의 행. 이번 주의 **등록 목록을 그대로 옮기고 처치는 지운다.**
- *
- * 그 주는 기록이 없어 `buildRowsFromRecords` 로는 아무도 안 선다. 그러면 화면에 잡아 둔 월간
- * 보스 한 줄만 딸랑 남는다(사용자 지적). 관리 캐릭터와 주간 보스가 다 보여야 이번 주에 아무것도
- * 안 잡은 화면과 같은 그림이 된다.
- *
- * **주간 행만 옮긴다.** 월간 보스는 기록이 자기 주를 정하므로(`isMonthlyRowInWeek`) 여기서
- * 옮기면 두 번 선다.
- *
- * 파티원 수는 그대로 든다. 설정이지 그 주의 결과가 아니다. 시세는 그 주의 표에서 다시 찾는다.
- * 기간마다 값이 다를 수 있어서다. 처치 관련 값(`payoutMeso`·`isComplete`·`defeatedOn`)은
- * 미완료로 되돌린다.
- */
-export function toUpcomingWeekRows(
-  rows: readonly BossProfitRow[],
-  weeklyPeriodKey: string,
-  now: Date,
-): BossProfitRow[] {
-  const periodLabel = formatBossProfitPeriodLabel('weekly', weeklyPeriodKey, now).primary
-  return rows
-    .filter((row) => row.cycle === 'weekly')
-    .map((row) => ({
-      ...row,
-      periodKey: weeklyPeriodKey,
-      periodLabel,
-      priceMeso: findPriceEntry(row.bossKey, row.difficulty, weeklyPeriodKey, now)?.priceMeso ?? null,
-      // 미완료 자리는 항상 0메소다(`buildBossProfitRow` 와 같은 규약).
-      payoutMeso: 0,
-      isComplete: false,
-      defeatedOn: null,
-    }))
 }
 
 export function sumRowsPayout(rows: BossProfitRow[]): number {

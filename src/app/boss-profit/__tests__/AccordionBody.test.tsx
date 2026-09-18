@@ -6,7 +6,8 @@
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
-import type { WeeklySubtotalState } from '../../../features/boss-profit/store'
+import type { BossProfitRow, WeeklySubtotalState } from '../../../features/boss-profit/store'
+import { useManualCompletionStore } from '../../../features/manual-completion/store'
 
 import { findAllOfType, flattenStyle, 기본테마 } from '../../../components/__tests__/render-atom'
 import { resolveCardBody } from '../../../theme/theme-vars'
@@ -16,6 +17,7 @@ import { 다른주간보스, 월간보스, 보스행, 주차소계, 컨텍스트
 
 beforeEach(() => {
   clearCountUpMemory()
+  useManualCompletionStore.setState({ bosses: null, dismissedWeek: null, visible: false })
 })
 
 describe('WeeklyAccordionBody', () => {
@@ -151,17 +153,100 @@ describe('WeeklySubtotalRow: 상태마다 얼굴이 다르다', () => {
 })
 
 describe('MonthlyAccordionBody', () => {
-  it('주차별 합계만 그린다. 월간 보스 상세는 주간 탭으로 갔다', async () => {
-    const { getByText, queryByTestId } = await renderProfit(
+  const 월간행 = (overrides: Partial<BossProfitRow> = {}): BossProfitRow =>
+    보스행({
+      bossKey: 월간보스,
+      cycle: 'monthly',
+      difficulty: 'extreme',
+      periodKey: '2026-09',
+      partySize: 2,
+      payoutMeso: 4_370_000_000,
+      defeatedOn: '2026-09-02',
+      ...overrides,
+    })
+
+  // 주간 목록은 기록하고 이 카드는 확인한다(사용자 지정). 옮기고 나서 처치 여부를 볼 자리가
+  // 없어진 것을 이 카드가 메운다.
+  it('월간 보스 띠와 열람 행을 주차별 합계 위에 그린다', async () => {
+    const { getByText, getByTestId, getAllByTestId } = await renderProfit(
+      <MonthlyAccordionBody bossRows={[월간행()]} weeklySubtotals={[주차소계()]} />,
+    )
+
+    expect(getByTestId('monthly-boss-view-row')).toBeTruthy()
+    const 띠 = getAllByTestId('accordion-band').map((node) => node.props.children)
+    expect(getByText('월간 보스')).toBeTruthy()
+    expect(getByText('주차별 합계')).toBeTruthy()
+    expect(띠).toHaveLength(2)
+  })
+
+  it('둘째 줄이 몇 인 · 며칟날 완료를 말한다', async () => {
+    const { getByText } = await renderProfit(
+      <MonthlyAccordionBody bossRows={[월간행()]} weeklySubtotals={[]} />,
+    )
+
+    expect(getByText('2인 · 9월 2일 완료')).toBeTruthy()
+  })
+
+  // 처치일은 그 달 앞 2주 안에 앱을 열었을 때만 채워진다. 없는 값을 지어내지 않는다.
+  it('처치일을 모르면 날짜를 뺀다', async () => {
+    const { getByText } = await renderProfit(
+      <MonthlyAccordionBody bossRows={[월간행({ defeatedOn: null })]} weeklySubtotals={[]} />,
+    )
+
+    expect(getByText('2인 · 완료')).toBeTruthy()
+  })
+
+  // 금액을 모르는 자리에 0 을 쓰지 않는다. 0 은 0메소 벌었다 로 읽힌다.
+  it('미완료면 금액 자리에 배지가 선다', async () => {
+    const { getByText, queryByText } = await renderProfit(
       <MonthlyAccordionBody
-        bossRows={[보스행({ bossKey: 월간보스, cycle: 'monthly' })]}
-        weeklySubtotals={[주차소계()]}
+        bossRows={[월간행({ isComplete: false, partySize: null, payoutMeso: 0, defeatedOn: null })]}
+        weeklySubtotals={[]}
       />,
     )
 
-    expect(getByText('주차별 합계')).toBeTruthy()
-    // 행은 그룹에 실려 온다(아바타 진행 링이 센다). 그리지만 않는다.
-    expect(queryByTestId('boss-profit-boss-row')).toBeNull()
+    expect(getByText('미완료')).toBeTruthy()
+    expect(queryByText(/메소/)).toBeNull()
+  })
+
+  it('가격 미확정이면 그 배지가 선다', async () => {
+    const { getByText } = await renderProfit(
+      <MonthlyAccordionBody bossRows={[월간행({ priceMeso: null })]} weeklySubtotals={[]} />,
+    )
+
+    expect(getByText('가격 미확정')).toBeTruthy()
+  })
+
+  // 열람 전용이다(사용자 지정). 기록은 주간 목록의 그 줄이 맡는다.
+  it('고칠 수 있는 것이 하나도 없다', async () => {
+    const row = 월간행()
+    const { queryByLabelText, queryByText } = await renderProfit(
+      <MonthlyAccordionBody bossRows={[row]} weeklySubtotals={[]} />,
+    )
+
+    expect(queryByLabelText(`${row.bossName} 익스트림 드롭 아이템 관리`)).toBeNull()
+    expect(queryByText('＋ 드롭 추가')).toBeNull()
+    expect(queryByLabelText(`${row.characterName} ${row.bossName} 익스트림 파티원 수 증가`)).toBeNull()
+    expect(queryByLabelText(`${row.bossName} 기록 수정`)).toBeNull()
+    expect(queryByText('완료 상태로 변경하기')).toBeNull()
+  })
+
+  // 직접 완료가 열린 보스여도 마찬가지다. 그 단추가 서는 자리는 주간 목록의 미완료 행 하나다.
+  it('직접 완료가 열려 있어도 단추가 안 선다', async () => {
+    useManualCompletionStore.setState({
+      bosses: [{ boss: 월간보스, from: '2026-09' }],
+      dismissedWeek: null,
+      visible: true,
+    })
+
+    const { queryByText } = await renderProfit(
+      <MonthlyAccordionBody
+        bossRows={[월간행({ isComplete: false, partySize: null, payoutMeso: 0, defeatedOn: null })]}
+        weeklySubtotals={[]}
+      />,
+    )
+
+    expect(queryByText('완료 상태로 변경하기')).toBeNull()
   })
 
   // 기간 이동이 기록이 있는 기간으로만 착지하면서 이 고지가 서던 자리가 사라졌다(사용자 지정).

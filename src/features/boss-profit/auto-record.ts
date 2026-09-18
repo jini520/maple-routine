@@ -8,11 +8,37 @@
  */
 
 import { getBossPartySize } from '../../storage/boss-party-settings'
-import { upsertBossProfitRecord, type BossProfitRecord } from '../../storage/boss-profit'
+import {
+  markBossProfitRecordAuto,
+  upsertBossProfitRecord,
+  type BossProfitRecord,
+} from '../../storage/boss-profit'
 import type { BossDropRecord } from '../../storage/boss-drops'
+import type { BossContent } from '../../types'
 import { migrateDropsToConfirmedDifficulty } from './drops-loader'
 import type { BossProfitRow } from './rows'
 import { withSqliteFallback } from './sqlite-guards'
+
+/** 넥슨 완료 목록의 키. 같은 보스·난이도라도 캐릭터가 다르면 다른 사실이라 ocid 가 든다. */
+export function nexonCompleteKey(ocid: string, bossKey: string, difficulty: string): string {
+  return `${ocid}|${bossKey}|${difficulty}`
+}
+
+/**
+ * 넥슨이 그 캐릭터에 완료로 준 조합. API 원문·캐시 원문에서 바로 뽑는다.
+ *
+ * 화면 행으로는 못 만든다. 직접 적은 완료가 행의 `isComplete` · `ownComplete` 를 켜기 때문에,
+ * 행에서 뽑으면 사용자가 방금 적은 것을 넥슨이 준 것으로 되읽는다.
+ */
+export function nexonCompletedKeysOf(ocid: string, bossContents: readonly BossContent[]): string[] {
+  const keys: string[] = []
+  for (const content of bossContents) {
+    if (content.ownComplete && content.bossKey !== null) {
+      keys.push(nexonCompleteKey(ocid, content.bossKey, content.difficulty))
+    }
+  }
+  return keys
+}
 
 export interface AutoRecordParams {
   rows: BossProfitRow[]
@@ -27,6 +53,11 @@ export interface AutoRecordParams {
    * - 캐시 경로: 캐시가 보스 리셋 경계를 넘어 지난 기간 처치를 이번 기간으로 굳히는 행을 배제한다
    */
   isSourceCurrent: (row: BossProfitRow) => boolean
+  /**
+   * 넥슨이 완료로 준 조합(`nexonCompletedKeysOf`). 직접 적은 완료의 표식을 걷을지가 이 목록으로
+   * 갈린다. 행의 완료 여부로 대신하면 방금 적은 표식을 그 기록 때문에 걷는다.
+   */
+  nexonCompleted: ReadonlySet<string>
 }
 
 /**
@@ -44,6 +75,7 @@ export async function autoRecordRows({
   dropRecords,
   now,
   isSourceCurrent,
+  nexonCompleted,
 }: AutoRecordParams): Promise<BossProfitRow[]> {
   const autoRecordedRows: BossProfitRow[] = []
 
@@ -56,6 +88,47 @@ export async function autoRecordRows({
     if (records !== null && sourceIsCurrent && row.isComplete) {
       await migrateDropsToConfirmedDifficulty(row, dropRecords, now)
     }
+
+    // 넥슨이 같은 난이도 완료를 주면 사용자가 직접 적은 기록의 표식을 걷는다. 값은 안 건드린다 -
+    // 사용자가 적은 날짜와 파티원 수가 더 정확하다.
+    //
+    // 판정은 `row.isComplete` 가 아니라 **넥슨이 준 목록**으로 한다. 직접 적은 기록이 그 행을
+    // 완료로 만들기 때문에, 행으로 판정하면 적는 순간 표식이 걷혀 수정·취소로 가는 문이 닫힌다.
+    if (
+      records !== null &&
+      sourceIsCurrent &&
+      nexonCompleted.has(nexonCompleteKey(row.ocid, row.bossKey, row.difficulty))
+    ) {
+      const same = records.find(
+        (record) =>
+          record.ocid === row.ocid &&
+          record.bossKey === row.bossKey &&
+          record.difficulty === row.difficulty &&
+          record.periodKey === row.periodKey,
+      )
+      if (same?.source === 'manual') {
+        await withSqliteFallback(
+          markBossProfitRecordAuto({
+            ocid: row.ocid,
+            bossKey: row.bossKey,
+            difficulty: row.difficulty,
+            periodKey: row.periodKey,
+          }),
+          undefined,
+        )
+      }
+    }
+
+    // 같은 (캐릭터, 보스, 기간)에 기록이 있으면 **난이도가 달라도** 새로 안 쓴다. 한 주에 한 보스를
+    // 두 난이도로 잡을 수 없어(게임 규칙) 한 줄이 더 써지면 같은 처치를 두 번 세게 된다.
+    const recordedInPeriod =
+      records !== null &&
+      records.some(
+        (record) =>
+          record.ocid === row.ocid &&
+          record.bossKey === row.bossKey &&
+          record.periodKey === row.periodKey,
+      )
 
     // 미완료 placeholder 는 절대 자동 기록하지 않는다. 여기서 기록하면 나중에 실제로 완료됐을 때
     // 이미 기록이 있다 고 오판해 0메소로 영구히 고정된다.
@@ -70,6 +143,7 @@ export async function autoRecordRows({
       records === null ||
       !sourceIsCurrent ||
       !row.isComplete ||
+      recordedInPeriod ||
       row.partySize !== null ||
       row.priceMeso === null
     ) {

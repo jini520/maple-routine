@@ -28,6 +28,10 @@ jest.mock('../../../storage/boss-profit', () => ({
   getBossProfitRecords: jest.fn(),
   // 기간 이동이 "기록이 있는 가장 가까운 기간"을 SQL 부등호로 묻는다.
   findAdjacentPeriodKeyWithRecords: jest.fn(),
+  getMonthlyDefeatDates: jest.fn(async () => []),
+  // 직접 완료를 적을 때 쓴다(난이도를 바꾸면 옛 줄을 지우고, 처치일만 고칠 때는 그 칸만 쓴다).
+  deleteBossProfitRecord: jest.fn(),
+  setBossProfitDefeatedOn: jest.fn(),
   fillMissingRecordWorlds: jest.fn(),
   upsertBossProfitRecord: jest.fn(),
   // 날짜 모르는 월간 보스가 설 주를 이 목록이 고른다.
@@ -36,8 +40,10 @@ jest.mock('../../../storage/boss-profit', () => ({
   getRecordedCharacterOcids: jest.fn(),
   // 기간 표의 판. 실물은 쓰기가 있을 때마다 오른다.
   getBossProfitRecordsRevision: jest.fn(() => mockRecordsRevision),
+  // 사용자가 직접 적은 완료. 행 고르기가 이 열쇠로 완료를 얹는다.
+  getManualBossProfitRecordKeys: jest.fn(),
 }))
-const { getBossProfitRecords: getBossProfitRecordsMock, findAdjacentPeriodKeyWithRecords: findAdjacentMock, fillMissingRecordWorlds: fillMissingRecordWorldsMock, upsertBossProfitRecord: upsertBossProfitRecordMock, getWeeklyPeriodKeysWithRecords: getWeeklyPeriodKeysWithRecordsMock, getRecordedCharacterOcids: getRecordedCharacterOcidsMock, getBossProfitRecordsRevision: getBossProfitRecordsRevisionMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
+const { getBossProfitRecords: getBossProfitRecordsMock, findAdjacentPeriodKeyWithRecords: findAdjacentMock, getMonthlyDefeatDates: getMonthlyDefeatDatesMock, deleteBossProfitRecord: deleteBossProfitRecordMock, setBossProfitDefeatedOn: setBossProfitDefeatedOnMock, fillMissingRecordWorlds: fillMissingRecordWorldsMock, upsertBossProfitRecord: upsertBossProfitRecordMock, getWeeklyPeriodKeysWithRecords: getWeeklyPeriodKeysWithRecordsMock, getRecordedCharacterOcids: getRecordedCharacterOcidsMock, getBossProfitRecordsRevision: getBossProfitRecordsRevisionMock, getManualBossProfitRecordKeys: getManualCompletedKeysMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 
 // 처치 날짜 캐기는 **동기화가 끝난 뒤 기다리지 않고** 튼다. 이 화면은
 // `defeated_on` 을 안 쓰므로 결과를 기다릴 이유가 없다. 목으로 **떴는가** 만 본다.
@@ -212,6 +218,11 @@ beforeEach(() => {
     lastSyncedAt: null,
   })
   getBossProfitRecordsMock.mockResolvedValue([])
+  getManualCompletedKeysMock.mockResolvedValue([])
+  // 주간 화살표가 월간 처치가 선 주도 연다. 그것을 안 보는 테스트는 빈 목록을 준다.
+  getMonthlyDefeatDatesMock.mockResolvedValue([])
+  deleteBossProfitRecordMock.mockResolvedValue(undefined)
+  setBossProfitDefeatedOnMock.mockResolvedValue(undefined)
   // 기본값은 **바로 옆 칸에 기록이 있다**. 건너뛰기를 안 보는 테스트들이 예전처럼 한 칸씩 움직인다.
   windowFailuresMock.mockReturnValue([])
   findAdjacentMock.mockImplementation(
@@ -276,6 +287,7 @@ describe('setBossDrops', () => {
     payoutMeso: 1000,
     isComplete: true,
     defeatedOn: null,
+    source: 'auto' as const,
   }
 
   it('드롭을 replaceBossDropRecords로 통째 교체하고 dropsByRowKey를 갱신한다', async () => {
@@ -2053,6 +2065,53 @@ describe('useBossProfitStore', () => {
       }
     })
 
+    // 사용자 물음 **왜 사라져?** 9/1~9/2 에 잡은 9월 월간 보스는 달 경계 주(8/27~9/2)에 선다.
+    // 그 주를 열 때 달 키를 하나만 읽으면 9월 기록이 조회에 안 걸려 행이 통째로 없어진다.
+    it('goToPreviousPeriod: 달 경계 주를 열면 그 주에 잡은 다음 달 월간 보스가 선다', async () => {
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-09-05T12:00:00+09:00')) // 이번 주 2026-09-03
+
+      try {
+        syncSchedulesMock.mockResolvedValue([syncResult()])
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+
+        getBossProfitRecordsMock.mockResolvedValue([
+          {
+            ocid: 'ocid-1',
+            bossKey: 'black_mage',
+            boss: '검은마법사',
+            difficulty: 'extreme',
+            cycle: 'monthly',
+            periodKey: '2026-09',
+            partySize: 1,
+            priceMeso: 15_000_000_000,
+            payoutMeso: 15_000_000_000,
+            recordedAt: '2026-09-01T00:00:00.000Z',
+            world: null,
+            worldKey: null,
+            defeatedOn: '2026-09-01',
+          } satisfies BossProfitRecord,
+        ])
+        mockRecordsRevision += 1
+        getCachedCharacterBasicMock.mockResolvedValue({
+          profile: { name: '낟낟', level: 200, imageUrl: 'x', accessFlag: true },
+          cachedAt: '2026-09-01T00:00:00.000Z',
+        })
+
+        await useBossProfitStore.getState().goToPreviousPeriod()
+
+        const state = useBossProfitStore.getState()
+        expect(state.periodKey).toBe('2026-08-27')
+        expect(state.rows.map((row) => row.bossKey)).toContain('black_mage')
+        expect(state.rows.find((row) => row.bossKey === 'black_mage')?.payoutMeso).toBe(15_000_000_000)
+        // 조회 키에 9월이 들어야 실물에서도 재료가 온다(모의는 키를 안 보고 답한다).
+        const queriedKeys = getBossProfitRecordsMock.mock.calls.flatMap((call) => call[1] as string[])
+        expect(queriedKeys).toContain('2026-09')
+      } finally {
+        jest.useRealTimers()
+      }
+    })
+
     it('goToPreviousPeriod: 이미 체크된 과거 주는 API 호출 없이 로컬 기록만으로 rows를 채운다', async () => {
       syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, 이번 주
       await useBossProfitStore.getState().refresh(['ocid-1'])
@@ -2470,9 +2529,9 @@ describe('useBossProfitStore', () => {
       }
     })
 
-    // 월간 탭은 `주간 기록의 총합` 이다(사용자 지정). 월간 보스 수익이 어느 주차에도 안 들면
-    // 카드 금액과 그 아래 줄들의 합이 안 맞는다.
-    it('월간 탭 주차별 합계: 월간 보스 수익이 그 보스가 선 주차에 든다', async () => {
+    // 월간 보스 수익은 **그 보스 줄**이 든다(사용자 선택). 열람 줄이 화면에 보이게 된 뒤로는
+    // 소계가 그 돈을 품으면 눈에 보이는 줄들의 합이 카드보다 커진다.
+    it('월간 탭 주차별 합계: 월간 보스 수익은 주차 소계에 안 든다', async () => {
       jest.useFakeTimers({ doNotFake: NOT_FAKED })
       jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00'))
 
@@ -2502,9 +2561,50 @@ describe('useBossProfitStore', () => {
         await useBossProfitStore.getState().setTab('monthly')
 
         const subtotals = useBossProfitStore.getState().weeklySubtotals
-        expect(subtotals.find((s) => s.periodKey === '2026-07-09')?.totalMeso).toBe(15_000_000_000)
-        // 다른 주차는 그 금액을 안 센다. 한 달에 딱 한 주다.
+        // 잡은 주에도 안 든다. 어느 주차도 그 돈을 세지 않는다.
+        expect(subtotals.find((s) => s.periodKey === '2026-07-09')?.totalMeso).toBe(0)
         expect(subtotals.find((s) => s.periodKey === '2026-07-02')?.totalMeso).toBe(0)
+      } finally {
+        jest.useRealTimers()
+      }
+    })
+
+    // 달 경계 주(8/27~9/2)에 잡은 9월 보스도 마찬가지다. 그 돈은 월간 보스 줄이 들고, 9월 탭의
+    // 어느 주차 줄도 세지 않는다. 그래서 첫 주 줄에 밀어 넣는 장치가 필요 없어졌다.
+    it('월간 탭 주차별 합계: 달 경계 주에 잡은 월간 보스도 주차 소계에 안 든다', async () => {
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-09-14T12:00:00+09:00'))
+
+      try {
+        syncSchedulesMock.mockResolvedValue([syncResult()])
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+
+        getBossProfitRecordsMock.mockResolvedValue([
+          {
+            ocid: 'ocid-1',
+            bossKey: 'black_mage',
+            boss: '검은마법사',
+            difficulty: 'extreme',
+            cycle: 'monthly',
+            periodKey: '2026-09',
+            partySize: 1,
+            priceMeso: 15_000_000_000,
+            payoutMeso: 15_000_000_000,
+            recordedAt: '2026-09-01T00:00:00.000Z',
+            world: null,
+            worldKey: null,
+            // 달 경계 주(8/27~9/2) 안이다. 그 주는 9월 탭에 자기 줄이 없다.
+            defeatedOn: '2026-09-01',
+          } satisfies BossProfitRecord,
+        ])
+        mockRecordsRevision += 1
+
+        await useBossProfitStore.getState().setTab('monthly')
+
+        const subtotals = useBossProfitStore.getState().weeklySubtotals
+        expect(subtotals.find((s) => s.periodKey === '2026-09-03')?.totalMeso).toBe(0)
+        const carrying = subtotals.filter((subtotal) => subtotal.totalMeso >= 15_000_000_000)
+        expect(carrying).toEqual([])
       } finally {
         jest.useRealTimers()
       }
@@ -3442,6 +3542,57 @@ describe('추적에서 빠진 캐릭터의 기록', () => {
     expect(rows[0].characterName).toBe('캐릭터-ocid-해제')
   })
 
+  /**
+   * **그리는 목록과 같은 목록으로 갈 곳을 고른다.**
+   *
+   * 화살표가 사는지는 표시 대상(`displayOcids`)으로 판정하는데 실제 이동은 추적 목록으로
+   * 골라, 해제한 캐릭터의 기록만 있는 기간을 **건너뛰고 그 앞으로** 넘어갔다(사용자 보고:
+   * 관리 목록에서 빼니 9월 1주차를 건너뛴다). 지운 적 없는 수익이 화살표로는 닿지 않는다.
+   *
+   * 착지한 기간으로 단언한다. 호출 인자로 보면 뒤따르는 로드의 게이트·프리페치가 같은 목을
+   * 부르는 통에 어느 호출이 이동을 고른 것인지가 흔들린다.
+   */
+  it('기간 이동은 해제한 캐릭터의 기록이 있는 기간에 착지한다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    const 시작 = useBossProfitStore.getState().periodKey
+    const 해제주 = '2026-05-07'
+
+    getRecordedCharacterOcidsMock.mockResolvedValue(['ocid-1', 'ocid-해제'])
+    // 해제한 캐릭터가 목록에 들면 그 주를, 안 들면 바로 옆 칸을 낸다. 두 답이 갈려야 어느
+    // 목록으로 골랐는지가 보인다.
+    findAdjacentMock.mockImplementation(
+      async (ocids: string[], tab: 'weekly' | 'monthly', key: string, direction: 'prev' | 'next') =>
+        ocids.includes('ocid-해제') ? 해제주 : getAdjacentPeriodKey(tab, key, direction),
+    )
+
+    await useBossProfitStore.getState().goToPreviousPeriod()
+
+    expect(useBossProfitStore.getState().periodKey).toBe(해제주)
+    expect(useBossProfitStore.getState().periodKey).not.toBe(
+      getAdjacentPeriodKey('weekly', 시작, 'prev'),
+    )
+  })
+
+  it('다음 기간도 같은 목록을 본다', async () => {
+    syncSchedulesMock.mockResolvedValue([syncResult()])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    await useBossProfitStore.getState().goToPreviousPeriod()
+    await useBossProfitStore.getState().goToPreviousPeriod()
+    const 시작 = useBossProfitStore.getState().periodKey
+    const 해제주 = getAdjacentPeriodKey('weekly', 시작, 'next')
+
+    getRecordedCharacterOcidsMock.mockResolvedValue(['ocid-1', 'ocid-해제'])
+    findAdjacentMock.mockImplementation(async (ocids: string[]) =>
+      ocids.includes('ocid-해제') ? 해제주 : null,
+    )
+
+    await useBossProfitStore.getState().goToNextPeriod()
+
+    // 목록이 좁으면 `null` 이라 이번 기간으로 튄다. 해제한 캐릭터의 그 주에 서야 한다.
+    expect(useBossProfitStore.getState().periodKey).toBe(해제주)
+  })
+
   // 이번 주 중간에 해제해도 그 주의 앞부분 수익이 사라지면 안 된다.
   it('현재 기간에서도 행이 선다', async () => {
     const currentPeriodKey = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
@@ -4068,5 +4219,101 @@ describe('월드 리프한 기간의 중복 기록', () => {
     await useBossProfitStore.getState().refresh(['new'])
 
     expect(cleanUpWorldLeapMock).not.toHaveBeenCalled()
+  })
+})
+
+/**
+ * 직접 완료는 **적은 날짜의 주로 데려간다.**
+ *
+ * 월간 보스는 잡은 주에 서므로(`isMonthlyRowInWeek`) 날짜를 옮기면 그 행이 다른 주로 간다. 보던
+ * 주에 그대로 두면 방금 적은 것이 화면에서 사라진다(사용자 보고).
+ */
+describe('직접 완료를 적으면 그 주로 데려간다', () => {
+  const 월간미완료 = () =>
+    bossContent({
+      bossKey: 'black_mage',
+      apiName: '검은 마법사',
+      difficulty: 'extreme',
+      cycle: 'monthly',
+      isRegistered: true,
+      isComplete: false,
+    })
+
+  /** 주간 하나 · 월간 미완료 하나. `state` 가 nullable 이라 한 자리에서 풀어 둔다. */
+  function 월간포함동기화(): CharacterScheduleSync {
+    const base = syncResult()
+    const state = base.state
+    if (state === null) throw new Error('syncResult 픽스처에 state 가 없다')
+    return { ...base, state: { ...state, bossContents: [bossContent(), 월간미완료()] } }
+  }
+
+  it('다른 주에 잡았다고 적으면 그 주로 옮긴다', async () => {
+    // PINNED_NOW 는 2026-09-12 라 이번 주가 09-10 이고, 9/2 는 08-27 주다(달 경계 주).
+    syncSchedulesMock.mockResolvedValue([월간포함동기화()])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    const row = useBossProfitStore.getState().rows.find((candidate) => candidate.cycle === 'monthly')
+    expect(row).toBeDefined()
+
+    await useBossProfitStore.getState().saveManualCompletion(row!, {
+      difficulty: 'extreme',
+      dateKey: '2026-09-02',
+      partySize: 1,
+    })
+
+    expect(useBossProfitStore.getState().periodKey).toBe('2026-08-27')
+  })
+
+  /**
+   * **로컬에 쓴 뒤 넥슨을 다시 부르지 않는다.**
+   *
+   * 직접 완료는 넥슨이 모르는 기록이라 재동기화가 화면에 보태는 것이 없다. 그런데도 저장 경로가
+   * `refresh` 를 그냥 불러 **추적 캐릭터 전부를 다시 조회**했다. 계측(시뮬레이터): 쓰기 41ms 인데
+   * 저장 뒤가 958ms 이고 그중 696ms 가 넥슨 동기화였다(캐릭터 한 명. 여럿이면 더 는다).
+   */
+  it('저장이 넥슨 동기화를 부르지 않는다', async () => {
+    syncSchedulesMock.mockResolvedValue([월간포함동기화()])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    // 실앱은 `loadTrackedOcids` 가 이 값을 채운다. 비어 있으면 저장 경로가 빈 목록으로
+    // `refresh` 를 불러 동기화 자체가 안 일어나 이 테스트가 헛돈다.
+    useBossProfitStore.setState({ trackedOcids: ['ocid-1'] })
+    const row = useBossProfitStore.getState().rows.find((candidate) => candidate.cycle === 'monthly')
+    syncSchedulesMock.mockClear()
+
+    await useBossProfitStore.getState().saveManualCompletion(row!, {
+      difficulty: 'extreme',
+      dateKey: '2026-09-11',
+      partySize: 1,
+    })
+
+    expect(syncSchedulesMock).not.toHaveBeenCalled()
+  })
+
+  it('취소도 넥슨 동기화를 부르지 않는다', async () => {
+    syncSchedulesMock.mockResolvedValue([월간포함동기화()])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    // 실앱은 `loadTrackedOcids` 가 이 값을 채운다. 비어 있으면 저장 경로가 빈 목록으로
+    // `refresh` 를 불러 동기화 자체가 안 일어나 이 테스트가 헛돈다.
+    useBossProfitStore.setState({ trackedOcids: ['ocid-1'] })
+    const row = useBossProfitStore.getState().rows.find((candidate) => candidate.cycle === 'monthly')
+    syncSchedulesMock.mockClear()
+
+    await useBossProfitStore.getState().cancelManualCompletion(row!)
+
+    expect(syncSchedulesMock).not.toHaveBeenCalled()
+  })
+
+  it('보던 주에 잡았다고 적으면 기간을 안 떠난다', async () => {
+    syncSchedulesMock.mockResolvedValue([월간포함동기화()])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    const 이번주 = useBossProfitStore.getState().periodKey
+    const row = useBossProfitStore.getState().rows.find((candidate) => candidate.cycle === 'monthly')
+
+    await useBossProfitStore.getState().saveManualCompletion(row!, {
+      difficulty: 'extreme',
+      dateKey: '2026-09-11',
+      partySize: 1,
+    })
+
+    expect(useBossProfitStore.getState().periodKey).toBe(이번주)
   })
 })

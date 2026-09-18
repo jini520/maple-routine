@@ -23,6 +23,7 @@ erDiagram
         TEXT recorded_at
         TEXT world
         TEXT defeated_on
+        TEXT source
     }
     boss_party_settings {
         TEXT ocid PK
@@ -80,6 +81,7 @@ erDiagram
 PK: `(ocid, boss_key, difficulty, period_key)`. **보스 key 와 난이도 key 가 기본키에 든다**([[ADR-280]] 결정 12, 2026-09-15, 이슈 #445). `boss` 는 적을 때의 보스 이름이고 보이는 이름은 key 로 보스 표에서 찾는다. 세 보스 표의 본문은 `storage/sqlite/boss-tables.ts` 한 벌을 CREATE 와 버전 4 가 함께 쓴다. 캐릭터가 특정 (보스, 난이도)를 특정 기간(`period_key`, 예: 주차)에 처치했을 때의 파티원 수·정가·실수령액 스냅샷.
 
 - **자동 생성**: 사용자가 화면에 들어오지 않아도, 스케줄러 동기화 응답에서 `complete_flag: true`인 (ocid, boss, difficulty, periodKey) 조합을 처음 만나는 순간 즉시 upsert된다([[ADR-014]]).
+- **`source` 칸은 누가 썼는지를 든다**([[ADR-293]] 결정 1, 구현 완료 2026-09-18). `auto` 는 동기화가 쓴 기록이고 `manual` 은 사용자가 직접 적은 완료다. 기본값은 `auto` 이고 기존 행은 `ensureColumn` 으로 빈 칸이 더해진다. 넥슨이 같은 난이도 완료를 주면 `manual` 이 `auto` 로 내려가고 날짜·파티 인원·금액은 그대로 남는다(결정 5). 수정과 취소는 `manual` 행에만 있다(결정 7).
 - **로컬 전용**: Nexon API는 최근 14일치만 조회 가능하므로, 장기 히스토리는 이 테이블에만 존재한다 — 삭제하면 서버 재동기화로도 복구 불가.
 - **파티원 수 기본값**: `boss_party_settings`에 같은 (ocid, boss, difficulty) 설정이 있으면 그 값을, 없으면 1(솔로)을 시딩한다([[ADR-019]]).
 - **`world` = 기록 시점의 월드 스냅샷**([[ADR-069]] 결정 1, nullable). 월드 리프가 **과거 주의 결정석 귀속을 소급 이동**시키는 것을 막는다 — 전에는 화면이 라이브 캐시(`getCachedCharacterBasic`)의 월드를 썼다. `NULL`은 "월드 모름"이고 월드별 집계에서 조용히 빠진다([[ADR-054]] 결정 5). 나중에 추가된 컬럼이라 이미 만들어진 DB에는 `CREATE TABLE IF NOT EXISTS`가 손대지 않는다 — `db.ts`의 `ensureColumn`이 `PRAGMA table_info`로 확인하고 없을 때만 `ALTER TABLE ... ADD COLUMN` 한다(SQLite에 `ADD COLUMN IF NOT EXISTS`가 없다).

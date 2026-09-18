@@ -350,6 +350,8 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'boss_profit_records', 'defeated_on', 'TEXT')
   // 월드도 이름 대신 월드 key 를 든다. 값은 아래 버전 이관이 채운다.
   await ensureColumn(db, 'boss_profit_records', 'world_key', 'TEXT')
+  // 사용자가 직접 적은 완료를 가르는 칸. 이미 기록을 쌓아 둔 기기에는 CREATE 가 안 붙인다.
+  await ensureColumn(db, 'boss_profit_records', 'source', 'TEXT')
   await ensureColumn(db, 'character_profiles', 'world_key', 'TEXT')
   // 이 브랜치에서 표를 세우는 동안 붙인 칸 둘. 아직 배포된 적이 없어 이관할 데이터도 없지만,
   // DDL 과 여기가 함께 가야 재작성이 만드는 표와 어긋나지 않는다.

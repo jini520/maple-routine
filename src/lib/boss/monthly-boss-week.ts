@@ -6,8 +6,9 @@
  *
  * 규칙은 셋이고 **한 달에 딱 한 주에만** 선다.
  *
- * 1. 그 주가 속한 달과 기록의 달이 같아야 한다. 주가 속한 달은 **그 주의 목요일** 기준이다
- *    (사용자 지정). 8/27 주는 9/1~9/2 를 품지만 8월이다.
+ * 1. 그 주가 **품은 달**이어야 한다. 이레 중 하루라도 그 달이면 된다(사용자 지정). 8/27 주는
+ *    8월이면서 9월이다. 게임의 월간 보스가 1일 00:00 에 열리므로 그 달 1일부터 자리가 있어야
+ *    한다. 그래서 달 경계 주에는 월간 행이 둘 설 수 있다.
  * 2. 아직 안 잡았으면 **이번 주에만** 선다. 지난 주에 미완료를 남기면 그 주에 할 일이 아니었던
  *    것이 할 일이었던 것으로 굳는다.
  * 3. 잡았으면 **잡은 주에** 선다. 날짜를 모르면 `resolveUndatedWeek` 이 고른다(그 달에서
@@ -21,9 +22,14 @@ import {
   getWeeklyPeriodKeysInMonth,
 } from './boss-profit-period'
 
-/** 주간 기간 키(`YYYY-MM-DD`, 목요일)가 속한 달. */
-export function monthOfWeek(weeklyPeriodKey: string): string {
-  return weeklyPeriodKey.slice(0, 7)
+/**
+ * 그 주가 품은 달. 이레가 한 달 안에 있으면 하나, 달 경계를 걸치면 둘이고 이른 달이 앞이다.
+ *
+ * 주간 기간을 열 때 읽을 달 키가 이것이다. 하나만 읽으면 경계 주에서 다음 달 월간 기록·드롭이
+ * 조회에 안 걸려 세울 재료가 없다.
+ */
+export function monthsOfWeek(weeklyPeriodKey: string): string[] {
+  return [...new Set(getPeriodDateKeys('weekly', weeklyPeriodKey).map((day) => day.slice(0, 7)))]
 }
 
 /**
@@ -74,7 +80,7 @@ export interface MonthlyRowWeekInput {
 }
 
 export function isMonthlyRowInWeek(input: MonthlyRowWeekInput): boolean {
-  if (input.monthlyPeriodKey !== monthOfWeek(input.weeklyPeriodKey)) {
+  if (!monthsOfWeek(input.weeklyPeriodKey).includes(input.monthlyPeriodKey)) {
     return false
   }
 
@@ -90,21 +96,4 @@ export function isMonthlyRowInWeek(input: MonthlyRowWeekInput): boolean {
   }
 
   return getPeriodDateKeys('weekly', input.weeklyPeriodKey).includes(input.defeatedOn)
-}
-
-/**
- * 다음 주를 미리 볼 수 있는가. **달 경계를 걸친 주의 이틀 남짓만** 참이다.
- *
- * 주가 속한 달은 그 주의 목요일 기준이라, 9월 보스는 9월 첫 목요일 주부터 선다. 그런데 9/1~9/2
- * 는 아직 8/27 주다. 그 이틀 동안 이 달의 월간 보스가 화면 어디에도 없다. 게임에서는 이미 잡을
- * 수 있는데 앱에는 자리가 없는 것이라, **그때만** 앞으로 한 칸 연다(사용자 지정).
- *
- * 그 밖에는 언제나 거짓이다. 이 함수가 참인 동안에도 열리는 것은 한 칸뿐이고, 그 주에 서면
- * `weeklyPeriodKey !== 현재 주` 라 더 못 간다.
- */
-export function canPreviewNextWeek(weeklyPeriodKey: string, now: Date): boolean {
-  if (weeklyPeriodKey !== getCurrentBossProfitPeriod('weekly', now).periodKey) {
-    return false
-  }
-  return getCurrentBossProfitPeriod('monthly', now).periodKey !== monthOfWeek(weeklyPeriodKey)
 }

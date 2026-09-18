@@ -3,6 +3,7 @@
 
 jest.mock('../../../storage/boss-profit', () => ({
   findAdjacentPeriodKeyWithRecords: jest.fn(),
+  getMonthlyDefeatDates: jest.fn(async () => []),
   getBossProfitRecords: jest.fn(),
 }))
 const { findAdjacentPeriodKeyWithRecords: findAdjacentMock } = jest.requireMock(

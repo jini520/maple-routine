@@ -333,6 +333,12 @@ export interface TodayViewModelInput {
    */
   manualContentByOcid: Record<string, ManualTrackedItem[]> | null
   manualBossByOcid: Record<string, ManualTrackedItem[]> | null
+  /**
+   * 사용자가 직접 적은 완료(`bossKey|difficulty`). 보스 스토어가 이번 주·이번 달 기록에서 뽑아 둔다.
+   *
+   * 남은 스케줄이 스케줄러 카드와 **같은 집합**을 세려면 같은 값을 같은 함수에 넘겨야 한다.
+   */
+  manualCompletedByOcid: Record<string, string[]>
   /** 보스 수익 스토어의 캐릭터 단위 실패 표식. 위젯 2·3 이 물려받는다. */
   characterIssues: Readonly<Record<string, 'unavailable' | 'failed'>>
   /** 보스 수익 스토어. 이번 주가 아닌 기간의 행은 이 파일이 걸러낸다. */
@@ -659,7 +665,13 @@ function remainingBosses(
   characterLevel: number | null,
 ): RemainingBossView[] {
   if (boss === undefined) return []
-  return displayedBosses(boss, cycle, input.trackingMode, input.manualBossByOcid)
+  return displayedBosses(
+    boss,
+    cycle,
+    input.trackingMode,
+    input.manualBossByOcid,
+    input.manualCompletedByOcid,
+  )
     .filter(
       (matched) =>
         !isBossBlocked(characterLevel, matched.bossKey, matched.difficulty),

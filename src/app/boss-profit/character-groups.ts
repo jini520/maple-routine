@@ -126,16 +126,14 @@ export function groupTotalMeso(
   group: CharacterGroup,
   dropsByRowKey: Record<string, RecordedDrop[]>,
 ): number {
-  // 월간 탭은 금액의 원천이 **주차 소계 하나**다. 월간 보스 수익은 그 보스가 선 주의 소계 안에
-  // 이미 들어 있고, 행은 아바타 진행 링을 위해서만 그룹에 실려 온다. 함께 더하면 두 번 센다.
+  // 화면에 보이는 줄을 더하면 카드 금액이 되어야 한다(사용자 선택). 월간 탭은 **월간 보스 줄 +
+  // 주차별 합계**이고, 주간 탭은 보스 행들이다. 그래서 산식이 하나로 합쳐진다 - 소계가 있으면
+  // 더 더할 뿐이다.
   //
-  // 소계가 있는가로 가르는 것은 그것이 곧 월간 탭이기 때문이다. 주간 탭은 소계를 안 만든다.
-  if (group.weeklySubtotals.length > 0) {
-    return sumSubtotals(group.weeklySubtotals)
-  }
-
+  // 월간 보스 수익을 주차 소계에서 뺀 것이 이 산식의 짝이다. 소계가 그 돈을 품으면 눈에 보이는
+  // 줄들의 합이 카드보다 커진다.
   const drops = group.bossRows.reduce((sum, row) => sum + sumDropPayout(confirmedDropsOf(row, dropsByRowKey)), 0)
-  return sumPayout(group.bossRows) + drops
+  return sumSubtotals(group.weeklySubtotals) + sumPayout(group.bossRows) + drops
 }
 
 /**
@@ -177,15 +175,18 @@ export function collectPayableDrops(
 /**
  * 수익 내역 상자의 목록과 `아이템` 줄이 읽는 드롭. `groupTotalMeso` 와 같은 원천이다.
  *
- * 주차 소계가 있으면(월간 탭) 소계의 드롭만 낸다. 월간 보스 드롭은 보스 행에도 남고 그 보스가 선
- * 주차 소계로도 옮겨 담겨, 둘을 합치면 두 번 센다.
+ * 주차 소계가 있으면(월간 탭) 소계의 드롭에 월간 보스 행의 드롭을 더한다. 소계는 그 보스의 것을
+ * 안 담으므로(금액과 같은 규칙) 겹치지 않는다.
  */
 export function collectRevenueDrops(
   group: CharacterGroup,
   dropsByRowKey: Record<string, RecordedDrop[]>,
 ): RecordedDrop[] {
   if (group.weeklySubtotals.length > 0) {
-    return group.weeklySubtotals.flatMap((subtotal) => subtotal.drops)
+    return [
+      ...group.weeklySubtotals.flatMap((subtotal) => subtotal.drops),
+      ...collectPayableDrops(group, dropsByRowKey),
+    ]
   }
   return collectPayableDrops(group, dropsByRowKey)
 }

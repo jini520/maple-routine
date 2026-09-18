@@ -143,6 +143,7 @@ export function BossScreen(): React.JSX.Element {
     trackedOcids,
     partySizes,
     manualTrackedByOcid,
+    manualCompletedByOcid,
     loadTrackedOcids,
     refresh,
     // 카드 탭 모달이 쓰는 두 액션. 난이도 교체는 수동 모드에서만 멤버십을 바꾼다.
@@ -203,7 +204,9 @@ export function BossScreen(): React.JSX.Element {
   //
   // **순서는 여기서 정하지 않는다.** `displayedBossSections` 가 정한 순서대로 그린다.
   const sections =
-    selected === null ? [] : displayedBossSections(selected, mode, manualTrackedByOcid)
+    selected === null
+      ? []
+      : displayedBossSections(selected, mode, manualTrackedByOcid, manualCompletedByOcid)
 
   // 솔로·파티 필터는 안 탄다. 필터는 지금 보고 싶은 것이지 진행이 아니다.
   //
@@ -236,7 +239,7 @@ export function BossScreen(): React.JSX.Element {
       {
         label: '주간',
         ...bossRingProgress(
-          displayedBosses(character, 'weekly', mode, manualTrackedByOcid),
+          displayedBosses(character, 'weekly', mode, manualTrackedByOcid, manualCompletedByOcid),
           character.level ?? null,
         ),
       },

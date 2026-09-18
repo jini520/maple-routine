@@ -7,7 +7,12 @@
 
 import { getComparisonPeriodKeys } from '../../lib/boss/boss-profit-delta'
 import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
-import { findAdjacentPeriodKeyWithRecords, getBossProfitRecords } from '../../storage/boss-profit'
+import { resetWeekStartOf } from '../../lib/calendar'
+import {
+  findAdjacentPeriodKeyWithRecords,
+  getBossProfitRecords,
+  getMonthlyDefeatDates,
+} from '../../storage/boss-profit'
 import type { BossCycle } from '../../types'
 import { withSqliteFallback } from './sqlite-guards'
 
@@ -54,7 +59,34 @@ export async function resolvePreviousPeriodKey(
   periodKey: string,
   ocids: string[],
 ): Promise<string | null> {
-  return withSqliteFallback(findAdjacentPeriodKeyWithRecords(ocids, tab, periodKey, 'prev'), null)
+  const [byRecords, byMonthlyKill] = await Promise.all([
+    withSqliteFallback(findAdjacentPeriodKeyWithRecords(ocids, tab, periodKey, 'prev'), null),
+    monthlyKillWeeks(tab, ocids),
+  ])
+  const earlier = byMonthlyKill.filter((week) => week < periodKey)
+  const nearest = earlier.length === 0 ? null : earlier.reduce((a, b) => (a > b ? a : b))
+  if (byRecords === null || nearest === null) {
+    return byRecords ?? nearest
+  }
+  return byRecords > nearest ? byRecords : nearest
+}
+
+/**
+ * 월간 처치가 선 주들(주간 탭에서만). **그 주에 주간 기록이 없어도 열려야 한다.**
+ *
+ * 월간 기록의 `period_key` 는 달이라 주간 키 비교에 안 걸린다. 달 경계 주가 특히 그렇다 - 9/1
+ * 에 잡은 9월 보스는 8/27 주에 서는데, 그 주에 주간 처치가 없으면 화살표가 안 열려 그 금액에
+ * 닿을 길이 사라진다.
+ *
+ * 날짜를 모르는 기록은 안 본다. 그쪽은 `resolveUndatedWeek` 이 **기록이 있는 주차**만 고르므로
+ * 이미 열리는 자리에 선다.
+ */
+async function monthlyKillWeeks(tab: BossCycle, ocids: string[]): Promise<string[]> {
+  if (tab !== 'weekly') {
+    return []
+  }
+  const dates = await withSqliteFallback(getMonthlyDefeatDates(ocids), [])
+  return dates.map(resetWeekStartOf)
 }
 
 /**
@@ -73,10 +105,18 @@ export async function resolveNextPeriodKey(
   if (periodKey >= current) {
     return null
   }
-  const found = await withSqliteFallback(
-    findAdjacentPeriodKeyWithRecords(ocids, tab, periodKey, 'next'),
-    null,
-  )
+  const [byRecords, byMonthlyKill] = await Promise.all([
+    withSqliteFallback(findAdjacentPeriodKeyWithRecords(ocids, tab, periodKey, 'next'), null),
+    monthlyKillWeeks(tab, ocids),
+  ])
+  const later = byMonthlyKill.filter((week) => week > periodKey)
+  const nearest = later.length === 0 ? null : later.reduce((a, b) => (a < b ? a : b))
+  const found =
+    byRecords === null || nearest === null
+      ? (byRecords ?? nearest)
+      : byRecords < nearest
+        ? byRecords
+        : nearest
   // 찾은 것이 지금보다 뒤일 수는 없지만, 값이 그렇게 오더라도 지금에서 멈춘다.
   return found === null || found > current ? current : found
 }

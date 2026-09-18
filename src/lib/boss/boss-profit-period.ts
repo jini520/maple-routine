@@ -246,8 +246,8 @@ function boundaryReached(boundary: string, periodStart: string, now?: Date): boo
   if (boundaryDate !== periodStart) return boundaryDate < periodStart
   if (boundary.length === boundaryDate.length || now === undefined) return true
   const stamp = kstStamp(now)
-  // 아직 안 온 기간은 첫날로 판정한다. 다음 주 미리보기(`toUpcomingWeekRows`)가 이번 주의 시계에
-  // 끌려 그 주 내내 옛 값을 들면 안 된다. 그 주는 열 시간만 빼고 전부 새 값이다.
+  // 아직 안 온 기간은 첫날로 판정한다. 그 기간이 이번 주의 시계에 끌려 내내 옛 값을 들면 안
+  // 된다. 그 주는 열 시간만 빼고 전부 새 값이다.
   if (stamp.slice(0, 10) < periodStart) return true
   return stamp >= boundary
 }

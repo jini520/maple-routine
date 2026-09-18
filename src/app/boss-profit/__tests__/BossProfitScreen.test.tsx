@@ -156,6 +156,7 @@ function 보스행(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     payoutMeso: 5_000_000,
     isComplete: true,
     defeatedOn: null,
+    source: 'auto',
     ...overrides }
 }
 
@@ -809,8 +810,8 @@ describe('총 수익 헤드라인', () => {
     expect(popover.getByText('3.0억')).toBeTruthy()
   })
 
-  // 월간 보스 드롭은 보스 행에도 남고 그 보스가 선 주차 소계로도 옮겨 담긴다.
-  it('월간 탭의 총 수익 상자는 주차 소계의 드롭에서 읽는다. 월간 보스 드롭을 두 번 안 센다', async () => {
+  // 상자는 주차 소계의 드롭에 월간 보스 행의 드롭을 더한다. 소계는 그 보스의 것을 안 담는다.
+  it('월간 탭의 총 수익 상자는 주차 소계와 월간 보스 행의 드롭을 함께 읽는다', async () => {
     const 월간드롭 = 드롭({ itemKey: null, itemName: '월간 아이템', priceState: 'entered', priceMeso: 4_000_000, priceShare: 1 })
     const 주간드롭 = 드롭({ itemKey: null, itemName: '주간 아이템', priceState: 'entered', priceMeso: 1_000_000, priceShare: 1 })
     mockStore({
@@ -822,10 +823,7 @@ describe('총 수익 헤드라인', () => {
       periodState: 'recorded',
       rows: [보스행({ bossKey: weeklyBossesData.monthly[0].key, cycle: 'monthly', periodKey: CURRENT_MONTHLY, payoutMeso: 0 })],
       dropsByRowKey: { [`ocid-1|${weeklyBossesData.monthly[0].key}|hard|${CURRENT_MONTHLY}`]: [월간드롭] },
-      weeklySubtotals: [
-        주차소계({ periodKey: '2026-01-01', totalMeso: 11_000_000, drops: [주간드롭] }),
-        주차소계({ periodKey: '2026-01-08', totalMeso: 4_000_000, drops: [월간드롭] }),
-      ] })
+      weeklySubtotals: [주차소계({ periodKey: '2026-01-01', totalMeso: 11_000_000, drops: [주간드롭] })] })
     const { getByLabelText, getByTestId } = await renderScreen()
 
     await act(async () => {

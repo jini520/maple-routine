@@ -14,6 +14,7 @@ jest.mock('../../../storage/schedule-probe-ledger', () => {
 jest.mock('../../../storage/boss-profit', () => ({
   getBossProfitRecords: jest.fn(),
   upsertBossProfitRecord: jest.fn(),
+  markBossProfitRecordAuto: jest.fn(),
 }))
 jest.mock('../../../storage/boss-drops', () => ({ getBossDropRecords: jest.fn(), replaceBossDropRecords: jest.fn() }))
 jest.mock('../../../storage/boss-party-settings', () => ({ getBossPartySize: jest.fn() }))
@@ -22,7 +23,11 @@ jest.mock('../../../storage/character-basic-cache', () => ({ getCachedCharacterB
 import { loadUnqueryablePeriodKeys, recordBossProfitFromWindow } from '../records'
 
 const { getScheduleProbeLedger: getLedgerMock } = jest.requireMock('../../../storage/schedule-probe-ledger') as Record<string, jest.Mock>
-const { getBossProfitRecords: getRecordsMock, upsertBossProfitRecord: upsertMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
+const {
+  getBossProfitRecords: getRecordsMock,
+  upsertBossProfitRecord: upsertMock,
+  markBossProfitRecordAuto: markAutoMock,
+} = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 const { getBossDropRecords: getDropsMock, replaceBossDropRecords: replaceDropsMock } = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
 const { getBossPartySize: getPartySizeMock } = jest.requireMock('../../../storage/boss-party-settings') as Record<string, jest.Mock>
 const { getCachedCharacterBasic: getBasicMock } = jest.requireMock('../../../storage/character-basic-cache') as Record<string, jest.Mock>
@@ -38,6 +43,7 @@ beforeEach(() => {
   getLedgerMock.mockReset().mockResolvedValue({ unavailable: false, dates: {} })
   getRecordsMock.mockReset().mockResolvedValue([])
   upsertMock.mockReset().mockResolvedValue(undefined)
+  markAutoMock.mockReset().mockResolvedValue(undefined)
   getDropsMock.mockReset().mockResolvedValue([])
   replaceDropsMock.mockReset().mockResolvedValue(undefined)
   getPartySizeMock.mockReset().mockResolvedValue(null)
@@ -373,5 +379,55 @@ describe('loadUnqueryablePeriodKeys', () => {
     const keys = await loadUnqueryablePeriodKeys(['o1'], NOW)
 
     expect(keys.has('o1|weekly|2026-08-20')).toBe(false)
+  })
+})
+
+// 사용자가 직접 적은 완료 위에 넥슨 기록이 얹히는 경로다. 난이도가 다르면 한 줄이 더 써지고 같은
+// 처치가 두 번 세어진다.
+describe('사용자가 적은 완료가 있으면', () => {
+  const 사용자기록 = {
+    ocid: 'ocid-1',
+    bossKey: 'black_mage',
+    boss: '검은 마법사',
+    difficulty: 'hard',
+    cycle: 'monthly' as const,
+    periodKey: '2026-09',
+    partySize: 2,
+    priceMeso: 665_000_000,
+    payoutMeso: 332_500_000,
+    recordedAt: '2026-09-02T00:00:00.000Z',
+    world: '스카니아',
+    worldKey: 'scania',
+    source: 'manual' as const,
+  }
+
+  it('넥슨이 다른 난이도 완료를 줘도 새로 안 쓴다', async () => {
+    getLedgerMock.mockResolvedValue({
+      unavailable: false,
+      dates: { '2026-09-04': observed(['black_mage|extreme']) },
+    })
+    getRecordsMock.mockResolvedValue([사용자기록])
+
+    await recordBossProfitFromWindow(['ocid-1'], NOW)
+
+    expect(upserted()).toEqual([])
+  })
+
+  it('넥슨이 같은 난이도 완료를 주면 표식을 걷는다', async () => {
+    getLedgerMock.mockResolvedValue({
+      unavailable: false,
+      dates: { '2026-09-04': observed(['black_mage|hard']) },
+    })
+    getRecordsMock.mockResolvedValue([사용자기록])
+
+    await recordBossProfitFromWindow(['ocid-1'], NOW)
+
+    expect(markAutoMock).toHaveBeenCalledWith({
+      ocid: 'ocid-1',
+      bossKey: 'black_mage',
+      difficulty: 'hard',
+      periodKey: '2026-09',
+    })
+    expect(upserted()).toEqual([])
   })
 })

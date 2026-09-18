@@ -51,6 +51,7 @@ function row(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     payoutMeso: 10_000_000,
     isComplete: true,
     defeatedOn: null,
+    source: 'auto',
     ...overrides,
   }
 }

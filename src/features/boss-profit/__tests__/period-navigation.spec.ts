@@ -7,10 +7,12 @@ jest.mock('../../../storage/boss-profit', () => ({
   getBossProfitRecords: jest.fn(),
   getAllBossProfitRecordKeys: jest.fn(),
   findAdjacentPeriodKeyWithRecords: jest.fn(),
+  getMonthlyDefeatDates: jest.fn(),
 }))
 const {
   getBossProfitRecords: getBossProfitRecordsMock,
   findAdjacentPeriodKeyWithRecords: findAdjacentMock,
+  getMonthlyDefeatDates: getMonthlyDefeatDatesMock,
 } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 jest.mock('../../../storage/boss-drops', () => ({
   getBossDropRecords: jest.fn(),
@@ -21,6 +23,50 @@ beforeEach(() => {
   getBossProfitRecordsMock.mockReset().mockResolvedValue([])
   getBossDropRecordsMock.mockReset().mockResolvedValue([])
   findAdjacentMock.mockReset().mockResolvedValue(null)
+  getMonthlyDefeatDatesMock.mockReset().mockResolvedValue([])
+})
+
+// 월간 보스는 잡은 주에 선다. 그 기록의 `period_key` 는 달이라 주간 화살표의 조회에 안 걸리는데,
+// 그러면 **화살표가 못 여는 주에 금액이 갇힌다.** 달 경계 주(9/1~9/2 를 품은 8/27 주)가 특히
+// 그렇다 - 그 주에 주간 처치가 없으면 9월 보스 수익에 닿을 길이 사라진다.
+describe('월간 처치가 선 주도 화살표가 연다', () => {
+  it('이전: 주간 기록이 없어도 월간 처치일이 든 주로 간다', async () => {
+    getMonthlyDefeatDatesMock.mockResolvedValue(['2026-09-02'])
+    const { resolvePreviousPeriodKey } =
+      require('../period-navigation') as typeof import('../period-navigation')
+
+    // 8/27 주(8/27~9/2)에 선다.
+    await expect(resolvePreviousPeriodKey('weekly', '2026-09-03', ['o1'])).resolves.toBe('2026-08-27')
+  })
+
+  it('이전: 주간 기록이 더 가까우면 그쪽으로 간다', async () => {
+    findAdjacentMock.mockResolvedValue('2026-09-03')
+    getMonthlyDefeatDatesMock.mockResolvedValue(['2026-08-05'])
+    const { resolvePreviousPeriodKey } =
+      require('../period-navigation') as typeof import('../period-navigation')
+
+    await expect(resolvePreviousPeriodKey('weekly', '2026-09-10', ['o1'])).resolves.toBe('2026-09-03')
+  })
+
+  it('다음: 앞쪽 월간 처치가 선 주로 간다', async () => {
+    getMonthlyDefeatDatesMock.mockResolvedValue(['2026-09-02'])
+    const { resolveNextPeriodKey } =
+      require('../period-navigation') as typeof import('../period-navigation')
+
+    await expect(
+      resolveNextPeriodKey('weekly', '2026-08-20', ['o1'], new Date('2026-09-25T12:00:00+09:00')),
+    ).resolves.toBe('2026-08-27')
+  })
+
+  // 월간 탭은 달 키로 이미 걸린다. 여기서 또 보면 같은 기록을 두 축으로 세는 셈이다.
+  it('월간 탭에서는 안 본다', async () => {
+    const { resolvePreviousPeriodKey } =
+      require('../period-navigation') as typeof import('../period-navigation')
+
+    await resolvePreviousPeriodKey('monthly', '2026-09', ['o1'])
+
+    expect(getMonthlyDefeatDatesMock).not.toHaveBeenCalled()
+  })
 })
 
 // 스케줄러 API 가 최근 14일만 주므로 오래 쉬었다 돌아오면 그 사이가 전부 조회 불가다. 한 칸씩

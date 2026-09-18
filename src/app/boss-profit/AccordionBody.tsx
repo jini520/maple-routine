@@ -18,6 +18,7 @@ import { AnimatedNumber, Badge, RefreshCwIcon, Text } from '../../components/ato
 import { UnavailableBadge } from '../../components/molecules/UnavailableBadge/UnavailableBadge'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { BossProfitBossRow } from './BossProfitBossRow'
+import { MonthlyBossViewRow } from './MonthlyBossViewRow'
 import { ItemRevenueTrigger } from './ItemRevenueTrigger'
 import { useBossProfitContext } from './boss-profit-context'
 import { rowKey } from './character-groups'
@@ -264,13 +265,14 @@ export function WeeklySubtotalRow(props: {
 }
 
 /**
- * 월간 본문. **주차별 합계만** 있다.
+ * 월간 본문. **월간 보스 열람 행**과 주차별 합계다.
  *
- * 월간 보스 상세는 여기 없다. 주간 탭의 그 캐릭터 목록 맨 위로 갔다(사용자 지정). 이 탭은
- * 순수하게 `그 달에 누가 얼마를 벌었나` 다.
+ * 열람 행은 잡았나 · 언제 · 몇 인 · 얼마만 말한다. 기록하는 자리는 주간 목록의 그 줄 하나다
+ * (사용자 지정 - 주간은 기록, 월간은 확인).
  *
- * `bossRows` 는 그래도 받는다. 아바타 진행 링이 그 행으로 월간 보스 처치를 세기 때문이다
- * (사용자 선택. 그래야 두 탭 사이에 링의 뜻이 안 갈린다). 그리지만 않는다.
+ * `bossRows` 는 전부터 받고 있었다. 아바타 진행 링이 그 행으로 월간 보스 처치를 세기 때문이고
+ * (그래야 두 탭 사이에 링의 뜻이 안 갈린다) 그동안 그리지만 않았다. 그래서 이 행을 되살리는 데
+ * 조회가 하나도 안 늘었다.
  */
 export function MonthlyAccordionBody(props: {
   bossRows: BossProfitRow[]
@@ -278,9 +280,24 @@ export function MonthlyAccordionBody(props: {
   /** 조회할 수 없는 캐릭터. 기록이 있는 주만 금액을 그리고 나머지는 배지가 선다. */
   unavailable?: boolean
 }): React.JSX.Element {
+  const { dropsByRowKey } = useBossProfitContext()
+  const monthlyRows = props.bossRows.filter((row) => row.cycle === 'monthly')
 
   return (
     <View testID="accordion-body" className={ACCORDION_BODY_CLASS}>
+      {monthlyRows.length > 0 && (
+        <>
+          <SectionBand label="월간 보스" monthly />
+          {monthlyRows.map((row) => (
+            <MonthlyBossViewRow
+              key={rowKey(row)}
+              row={row}
+              drops={dropsByRowKey[dropRowKey(row.ocid, row.bossKey, row.difficulty, row.periodKey)] ?? []}
+            />
+          ))}
+        </>
+      )}
+
       {props.weeklySubtotals.length > 0 && (
         <>
           <SectionBand label="주차별 합계" />

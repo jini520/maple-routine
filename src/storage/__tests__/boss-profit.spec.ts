@@ -55,6 +55,8 @@ describe('upsertBossProfitRecord', () => {
       '2026-07-09T00:05:00.000Z',
       null,
       null,
+      // 출처. 안 주면 동기화가 쓴 것으로 본다.
+      'auto',
     ])
 
     const [secondSql, secondValues] = runMock.mock.calls[1]
@@ -72,6 +74,8 @@ describe('upsertBossProfitRecord', () => {
       '2026-07-09T00:05:00.000Z',
       null,
       null,
+      // 출처. 안 주면 동기화가 쓴 것으로 본다.
+      'auto',
     ])
   })
 })
@@ -121,7 +125,7 @@ describe('getBossProfitRecords', () => {
       ['ocid-1', 'ocid-2', '2026-07'],
     )
     // 읽으면 언제나 `defeatedOn` 이 붙는다. 쓸 때만 없다(`upsert` 가 그 칸을 안 건드린다).
-    expect(result).toEqual([{ ...sampleRecord, defeatedOn: null }])
+    expect(result).toEqual([{ ...sampleRecord, defeatedOn: null, source: 'auto' }])
   })
 
   it('조회 결과가 없으면 빈 배열을 반환한다', async () => {
@@ -141,7 +145,7 @@ describe('world 스냅샷', () => {
     await upsertBossProfitRecord({ ...sampleRecord, world: '엘리시움', worldKey: 'elysium' })
 
     const [sql, values] = runMock.mock.calls[0]
-    expect(values.slice(-2)).toEqual(['엘리시움', 'elysium'])
+    expect(values.slice(-3, -1)).toEqual(['엘리시움', 'elysium'])
     // 파티원 수만 고치는 경로처럼 world를 모르고 upsert하는 경우가 있다. 그때 null로 덮어쓰면
     // 이미 박아둔 스냅샷이 지워진다. 월드 key 도 같다.
     expect(sql).toContain('world = COALESCE(excluded.world, boss_profit_records.world)')

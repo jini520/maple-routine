@@ -14,8 +14,12 @@ const { getBossPartySize: getBossPartySizeMock } = jest.requireMock('../../../st
 
 jest.mock('../../../storage/boss-profit', () => ({
   upsertBossProfitRecord: jest.fn(),
+  markBossProfitRecordAuto: jest.fn(),
 }))
-const { upsertBossProfitRecord: upsertBossProfitRecordMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
+const {
+  upsertBossProfitRecord: upsertBossProfitRecordMock,
+  markBossProfitRecordAuto: markAutoMock,
+} = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 
 jest.mock('../drops-loader', () => ({
   ...jest.requireActual<typeof import('../drops-loader')>('../drops-loader'),
@@ -46,17 +50,21 @@ function row(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     payoutMeso: null,
     isComplete: true,
     defeatedOn: null,
+    source: 'auto',
     ...overrides,
   }
 }
 
 const NO_DROPS: BossDropRecord[] = []
 const NO_RECORDS: BossProfitRecord[] = []
+// 넥슨 완료 목록은 직접 기록의 표식을 걷을지만 가른다. 그것을 보지 않는 테스트는 빈 목록을 준다.
+const 넥슨완료: ReadonlySet<string> = new Set()
 
 beforeEach(() => {
   jest.clearAllMocks()
   getBossPartySizeMock.mockResolvedValue(null)
   upsertBossProfitRecordMock.mockResolvedValue(undefined)
+  markAutoMock.mockResolvedValue(undefined)
   migrateDropsMock.mockResolvedValue(undefined)
 })
 
@@ -68,6 +76,7 @@ describe('autoRecordRows', () => {
       dropRecords: NO_DROPS,
       now: NOW,
       isSourceCurrent: () => true,
+      nexonCompleted: 넥슨완료,
     })
 
     expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
@@ -100,6 +109,7 @@ describe('autoRecordRows', () => {
       dropRecords: NO_DROPS,
       now: NOW,
       isSourceCurrent: () => true,
+      nexonCompleted: 넥슨완료,
     })
 
     expect(getBossPartySizeMock).toHaveBeenCalledWith('ocid-1', 'zakum', 'chaos')
@@ -119,6 +129,7 @@ describe('autoRecordRows', () => {
       dropRecords: NO_DROPS,
       now: NOW,
       isSourceCurrent: (candidate) => candidate.ocid !== 'stale',
+      nexonCompleted: 넥슨완료,
     })
 
     expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
@@ -136,6 +147,7 @@ describe('autoRecordRows', () => {
       dropRecords: NO_DROPS,
       now: NOW,
       isSourceCurrent: () => true,
+      nexonCompleted: 넥슨완료,
     })
 
     expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
@@ -153,6 +165,7 @@ describe('autoRecordRows', () => {
       dropRecords: NO_DROPS,
       now: NOW,
       isSourceCurrent: () => true,
+      nexonCompleted: 넥슨완료,
     })
 
     expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
@@ -171,6 +184,7 @@ describe('autoRecordRows', () => {
       dropRecords: NO_DROPS,
       now: NOW,
       isSourceCurrent: () => true,
+      nexonCompleted: 넥슨완료,
     })
 
     expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
@@ -187,6 +201,7 @@ describe('autoRecordRows', () => {
       dropRecords: NO_DROPS,
       now: NOW,
       isSourceCurrent: () => true,
+      nexonCompleted: 넥슨완료,
     })
 
     expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
@@ -208,6 +223,7 @@ describe('autoRecordRows', () => {
       dropRecords: NO_DROPS,
       now: NOW,
       isSourceCurrent: () => true,
+      nexonCompleted: 넥슨완료,
     })
 
     expect(result.map((r) => r.bossName)).toEqual(['자쿰', '스우', '루시드', '윌'])
@@ -231,9 +247,98 @@ describe('autoRecordRows', () => {
       dropRecords: NO_DROPS,
       now: NOW,
       isSourceCurrent: () => true,
+      nexonCompleted: 넥슨완료,
     })
 
     expect(upsertBossProfitRecordMock).toHaveBeenCalledTimes(3)
     expect(maxInFlight).toBe(1)
+  })
+})
+
+// 한 주에 한 보스를 두 난이도로 잡을 수 없다(게임 규칙, 사용자 확인). 난이도만 다른 기록을 한 줄 더
+// 쓰면 같은 처치가 두 번 세어진다. 사용자가 직접 적은 완료 위에 넥슨의 다른 난이도가 얹히는 경로가
+// 바로 이것이다.
+describe('같은 보스 · 같은 기간에 기록이 있으면', () => {
+  const 사용자기록: BossProfitRecord = {
+    ocid: 'ocid-1',
+    bossKey: 'zakum',
+    boss: '자쿰',
+    difficulty: 'normal',
+    cycle: 'weekly',
+    periodKey: '2026-08-06',
+    partySize: 2,
+    priceMeso: 8_000_000,
+    payoutMeso: 4_000_000,
+    recordedAt: '2026-08-07T00:00:00.000Z',
+    world: '스카니아',
+    worldKey: 'scania',
+    source: 'manual',
+  }
+
+  it('난이도가 달라도 새로 안 쓴다', async () => {
+    await autoRecordRows({
+      rows: [row({ difficulty: 'chaos' })],
+      records: [사용자기록],
+      dropRecords: NO_DROPS,
+      now: NOW,
+      isSourceCurrent: () => true,
+      nexonCompleted: 넥슨완료,
+    })
+
+    expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
+  })
+
+  it('넥슨이 같은 난이도 완료를 주면 사용자 기록을 자동 기록으로 내린다', async () => {
+    await autoRecordRows({
+      rows: [row({ difficulty: 'normal', partySize: 2, payoutMeso: 4_000_000 })],
+      records: [사용자기록],
+      dropRecords: NO_DROPS,
+      now: NOW,
+      isSourceCurrent: () => true,
+      // 넥슨 응답이 그 난이도를 완료로 줬다.
+      nexonCompleted: new Set(['ocid-1|zakum|normal']),
+    })
+
+    expect(markAutoMock).toHaveBeenCalledWith({
+      ocid: 'ocid-1',
+      bossKey: 'zakum',
+      difficulty: 'normal',
+      periodKey: '2026-08-06',
+    })
+    // 값은 한 칸도 안 건드린다. 사용자가 적은 파티원 수와 날짜가 더 정확하다.
+    expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
+  })
+
+  it('다른 캐릭터 · 다른 기간의 기록은 안 막는다', async () => {
+    await autoRecordRows({
+      rows: [row()],
+      records: [{ ...사용자기록, periodKey: '2026-07-30' }],
+      dropRecords: NO_DROPS,
+      now: NOW,
+      isSourceCurrent: () => true,
+      nexonCompleted: 넥슨완료,
+    })
+
+    expect(upsertBossProfitRecordMock).toHaveBeenCalledTimes(1)
+  })
+
+  /**
+   * **행이 완료인 것과 넥슨이 완료를 준 것은 다른 사실이다.**
+   *
+   * 직접 적은 기록이 있으면 그 행은 완료로 그려진다. 그것을 넥슨이 준 완료로 읽으면 방금 적은
+   * 표식을 저절로 걷어, 사용자는 수정·취소로 가는 문을 잃는다(실기기에서 그렇게 잃었다).
+   */
+  it('넥슨이 안 준 완료는 표식을 안 걷는다', async () => {
+    await autoRecordRows({
+      rows: [row({ difficulty: 'normal', partySize: 2, payoutMeso: 4_000_000 })],
+      records: [사용자기록],
+      dropRecords: NO_DROPS,
+      now: NOW,
+      isSourceCurrent: () => true,
+      // 넥슨은 이 보스를 미완료로 주고 있다. 그래서 목록이 비어 있다.
+      nexonCompleted: new Set(),
+    })
+
+    expect(markAutoMock).not.toHaveBeenCalled()
   })
 })

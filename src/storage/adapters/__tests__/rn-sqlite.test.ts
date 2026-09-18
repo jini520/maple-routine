@@ -141,6 +141,8 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE boss_profit_records ADD COLUMN defeated_on TEXT',
       // 월드도 이름 대신 월드 key 를 든다.
       'ALTER TABLE boss_profit_records ADD COLUMN world_key TEXT',
+      // 사용자가 직접 적은 완료를 가르는 칸.
+      'ALTER TABLE boss_profit_records ADD COLUMN source TEXT',
       'ALTER TABLE character_profiles ADD COLUMN world_key TEXT',
       "ALTER TABLE enhancement_history ADD COLUMN target_item TEXT NOT NULL DEFAULT ''",
       'ALTER TABLE enhancement_history ADD COLUMN item_level INTEGER',
@@ -218,6 +220,7 @@ describe('db.ts 와 맞물리는가', () => {
             { name: 'hunt_typed_meso' },
             { name: 'hunt_fragments_deferred' },
             { name: 'world_key' },
+            { name: 'source' },
           ]
         : []
 

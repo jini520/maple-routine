@@ -36,13 +36,24 @@ export interface BossProfitRecord {
    * 날짜는 나중에 `setBossProfitDefeatedOn` 이 따로 채운다. 그래서 옵셔널이다.
    */
   defeatedOn?: string | null
+  /**
+   * 누가 썼나. `auto` 는 동기화가 쓴 기록이고 `manual` 은 사용자가 직접 적은 완료다.
+   *
+   * 칸이 생기기 전 기록은 `NULL` 이라 읽을 때 `auto` 로 본다. 이 값이 바꾸는 것은 표식 · 수정 ·
+   * 취소가 붙는가 하나이고, 세는 방법은 자동 기록과 한 글자도 다르지 않다.
+   */
+  source?: BossProfitRecordSource
 }
+
+/** 기록을 쓴 주체. */
+export type BossProfitRecordSource = 'auto' | 'manual'
 
 const UPSERT_SQL = `
   INSERT INTO boss_profit_records
-    (ocid, boss_key, boss, difficulty, cycle, period_key, party_size, price_meso, payout_meso, recorded_at, world, world_key)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (ocid, boss_key, boss, difficulty, cycle, period_key, party_size, price_meso, payout_meso, recorded_at, world, world_key, source)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(ocid, boss_key, difficulty, period_key) DO UPDATE SET
+    source = excluded.source,
     boss = excluded.boss,
     cycle = excluded.cycle,
     party_size = excluded.party_size,
@@ -110,6 +121,7 @@ export async function upsertBossProfitRecord(record: BossProfitRecord): Promise<
     record.recordedAt,
     record.world,
     record.worldKey,
+    record.source ?? 'auto',
   ])
   // **쓰기가 끝난 뒤**에 올린다. 중간에 던지면 표가 안 바뀐 것이라, 그때 올리면 읽는 쪽이 헛일한다.
   bumpRecordsRevision()
@@ -159,6 +171,8 @@ function rowToRecord(row: Record<string, unknown>): BossProfitRecord {
     world: (row.world as string | null | undefined) ?? null,
     worldKey: (row.world_key as string | null | undefined) ?? null,
     defeatedOn: (row.defeated_on as string | null | undefined) ?? null,
+    // 칸이 생기기 전 기록은 `NULL` 이다. 그때는 전부 동기화가 쓴 것이었다.
+    source: row.source === 'manual' ? 'manual' : 'auto',
   }
 }
 
@@ -277,6 +291,30 @@ export async function findAdjacentPeriodKeyWithRecords(
   // 행이 없어도 집계 함수는 한 줄을 주고 그 값이 NULL 이다.
   const found = values?.[0]?.period_key
   return typeof found === 'string' ? found : null
+}
+
+/**
+ * 월간 기록의 **처치일**들. 중복 없이, 날짜를 모르는 기록은 빼고 준다.
+ *
+ * 주간 화살표가 이 값으로 월간 처치가 선 주를 찾는다. 월간 기록의 `period_key` 는 달이라
+ * 주간 키 비교에 안 걸리고, 그대로 두면 화살표가 못 여는 주에 그 금액이 갇힌다.
+ */
+export async function getMonthlyDefeatDates(ocids: string[]): Promise<string[]> {
+  if (ocids.length === 0) {
+    return []
+  }
+
+  const db = await getBossProfitDb()
+  const ocidPlaceholders = ocids.map(() => '?').join(', ')
+  const { values } = await db.query(
+    `SELECT DISTINCT defeated_on FROM boss_profit_records
+      WHERE ocid IN (${ocidPlaceholders}) AND cycle = 'monthly' AND defeated_on IS NOT NULL`,
+    [...ocids],
+  )
+
+  return (values ?? [])
+    .map((row) => (row as Record<string, unknown>).defeated_on)
+    .filter((date): date is string => typeof date === 'string')
 }
 
 /** `boss_profit_records` 한 행을 식별하는 키(금액·파티원 수 없음). */
@@ -474,4 +512,87 @@ export async function setBossProfitDefeatedOn(
     [defeatedOn, key.ocid, key.bossKey, key.difficulty, key.periodKey],
   )
   bumpRecordsRevision()
+}
+
+
+/**
+ * 사용자가 적은 완료를 **동기화가 쓴 것으로 내린다**. 표식만 걷고 값은 한 칸도 안 건드린다.
+ *
+ * 넥슨이 같은 난이도 완료를 뒤늦게 주면 그 기록은 더 이상 **사용자만 아는 것** 이 아니다. 날짜 ·
+ * 파티 인원 · 금액을 그대로 두는 것은 사용자가 적은 값이 더 정확하기 때문이다(사용자 지정).
+ *
+ * 이미 `auto` 인 행에는 아무 일도 안 일어난다(`WHERE source = 'manual'`).
+ */
+export async function markBossProfitRecordAuto(key: BossProfitRecordKey): Promise<void> {
+  const db = await getBossProfitDb()
+  await db.run(
+    `UPDATE boss_profit_records SET source = 'auto'
+      WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ? AND source = 'manual'`,
+    [key.ocid, key.bossKey, key.difficulty, key.periodKey],
+  )
+  // 바꾼 행이 없어도 판을 올린다. 포트의 `run` 이 바뀐 행 수를 안 돌려줘 물어볼 길이 없고, 판의
+  // 뜻은 **이 표가 바뀌었을 수 있다** 라 한 번 더 읽는 쪽이 안전하다.
+  bumpRecordsRevision()
+}
+
+/**
+ * 이 (캐릭터, 보스, 기간)에 **난이도를 안 가리고** 기록이 있나.
+ *
+ * 한 주에 한 보스를 두 난이도로 잡을 수 없다는 게임 규칙이라(사용자 확인) 난이도가 다른 기록이
+ * 한 줄 더 써지면 같은 처치를 두 번 세게 된다. 기록을 쓰는 두 자리가 이것을 먼저 묻는다.
+ */
+export async function hasBossProfitRecordInPeriod(
+  ocid: string,
+  bossKey: string,
+  periodKey: string,
+): Promise<boolean> {
+  const db = await getBossProfitDb()
+  const { values } = await db.query(
+    `SELECT 1 FROM boss_profit_records
+      WHERE ocid = ? AND boss_key = ? AND period_key = ? LIMIT 1`,
+    [ocid, bossKey, periodKey],
+  )
+  return (values ?? []).length > 0
+}
+
+/** 직접 적은 완료 한 줄의 신원. 표시 판정이 `bossKey|difficulty` 로 접어 쓴다. */
+export interface ManualBossProfitRecordKey {
+  ocid: string
+  bossKey: string
+  difficulty: string
+  periodKey: string
+}
+
+/**
+ * 사용자가 직접 적은 완료의 키만 읽는다. **금액·파티원 수는 안 읽는다.**
+ *
+ * 스케줄러 화면과 today 는 완료 여부만 알면 되고, 그 둘이 기록 전체를 들면 화면이 안 쓰는 값을
+ * 기간마다 나른다. 보스 수익은 어차피 기록 전체를 따로 읽는다.
+ */
+export async function getManualBossProfitRecordKeys(
+  ocids: string[],
+  periodKeys: string[],
+): Promise<ManualBossProfitRecordKey[]> {
+  if (ocids.length === 0 || periodKeys.length === 0) {
+    return []
+  }
+
+  const db = await getBossProfitDb()
+  const ocidPlaceholders = ocids.map(() => '?').join(', ')
+  const periodPlaceholders = periodKeys.map(() => '?').join(', ')
+  const { values } = await db.query(
+    `SELECT ocid, boss_key, difficulty, period_key FROM boss_profit_records
+      WHERE ocid IN (${ocidPlaceholders}) AND period_key IN (${periodPlaceholders}) AND source = 'manual'`,
+    [...ocids, ...periodKeys],
+  )
+
+  return (values ?? []).map((row) => {
+    const record = row as Record<string, unknown>
+    return {
+      ocid: record.ocid as string,
+      bossKey: record.boss_key as string,
+      difficulty: record.difficulty as string,
+      periodKey: record.period_key as string,
+    }
+  })
 }
