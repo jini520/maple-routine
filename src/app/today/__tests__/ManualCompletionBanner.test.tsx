@@ -95,7 +95,7 @@ it('줄을 탭하면 FAQ 시트가 열린다', async () => {
   await press(screen.getByLabelText('직접 완료가 무엇인지 보기'))
 
   expect(screen.getByText('직접 완료')).toBeTruthy()
-  expect(screen.getByText('잡았는데 왜 완료가 안 되나요?')).toBeTruthy()
+  expect(screen.getByText('보스를 잡았는데 완료가 되지 않아요.')).toBeTruthy()
 })
 
 it('닫기는 시트를 안 연다', async () => {
@@ -104,5 +104,5 @@ it('닫기는 시트를 안 연다', async () => {
 
   await press(screen.getByLabelText('직접 완료 안내 닫기'))
 
-  expect(screen.queryByText('잡았는데 왜 완료가 안 되나요?')).toBeNull()
+  expect(screen.queryByText('보스를 잡았는데 완료가 되지 않아요.')).toBeNull()
 })

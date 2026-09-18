@@ -153,7 +153,7 @@ describe('직접 적은 행', () => {
 
     await press(view, `${주간보스이름} 직접 기록 설명`)
 
-    expect(view.getByText('직접 완료로 표시한 기록이에요')).toBeTruthy()
+    expect(view.getByText('직접 완료로 작성된 기록이에요')).toBeTruthy()
   })
 
   it('금액 왼쪽 수정을 누르면 시트가 수정으로 열린다', async () => {
