@@ -74,10 +74,10 @@ export function ManualCompletionMark(props: { row: BossProfitRow }): React.JSX.E
               className="absolute rotate-45 border-l border-t border-border bg-surface"
             />
 
-            <Text className="text-11 font-bold text-text">직접 완료로 표시한 기록이에요</Text>
+            <Text className="text-11 font-bold text-text">직접 완료로 작성된 기록이에요</Text>
             <Text className="mt-1 text-11 leading-4 text-text-muted">
-              넥슨이 완료를 주지 않아 잡은 날과 난이도를 직접 적었어요. 넥슨이 같은 난이도로 완료를
-              주면 이 표시가 사라져요.
+              API 응답과 동기화되지 않은 기록이에요. API에서 완료 기록이 도착하면 이 표시가
+              사라져요.
             </Text>
             {props.row.defeatedOn !== null && (
               <Text
