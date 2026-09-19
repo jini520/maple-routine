@@ -7,6 +7,7 @@
 
 import { dropRowKey } from '../../features/boss-profit/store'
 import type { BossProfitRow, BossProfitWeeklySubtotal } from '../../features/boss-profit/store'
+import type { MonthlyCrystalsByWorld } from '../../features/boss-profit/monthly-crystals'
 import { isSeasonBoss } from '../../lib/boss/bosses'
 import { isValuableDropItem } from '../../lib/drop/valuable-drops'
 import { worldNameOf } from '../../lib/world/worlds'
@@ -257,7 +258,14 @@ export function countGroupClearedWeeklyBosses(group: CharacterGroup): number {
 //
 // 캐릭터 카드의 진행 링은 이 함수를 쓰지 않는다. 클리어 수는 캐릭터 단위로 이어지므로 월드와
 // 무관하게 그 주 전체를 센다.
-export function summarizeWorldCrystals(groups: CharacterGroup[]): WorldCrystalSummary[] {
+//
+// `monthlyByWorld` 가 오면 월간 몫은 그것이 대신한다(주간 탭의 그 달 누적 - 행에는 그 주에 선 월간
+// 보스만 있어 누적할 재료가 없다). 누적에만 있는 월드도 줄에 세운다. 칩의 수가 펼친 줄의 합이라
+// 그 월드가 빠지면 둘이 어긋난다.
+export function summarizeWorldCrystals(
+  groups: CharacterGroup[],
+  monthlyByWorld?: MonthlyCrystalsByWorld,
+): WorldCrystalSummary[] {
   // 월드 → (캐릭터 → 그 월드에서 처치한 보스 key 집합). 캐릭터를 한 번 더 갈라야 서로 다른
   // 캐릭터가 같은 보스를 잡은 것이 하나로 합쳐지지 않는다. 주간과 월간은 한도가 갈려 집합도 따로다.
   const byWorld = new Map<string, Map<string, { weekly: Set<string>; monthly: Set<string> }>>()
@@ -285,12 +293,23 @@ export function summarizeWorldCrystals(groups: CharacterGroup[]): WorldCrystalSu
     }
   }
 
-  return [...byWorld].map(([worldKey, byCharacter]) => ({
+  const summaries = [...byWorld].map(([worldKey, byCharacter]) => ({
     worldKey,
     world: worldNameOf(worldKey, nameByWorldKey.get(worldKey) ?? worldKey),
     cleared: [...byCharacter.values()].reduce((sum, bossKeys) => sum + bossKeys.weekly.size, 0),
     monthlyCleared: [...byCharacter.values()].reduce((sum, bossKeys) => sum + bossKeys.monthly.size, 0),
   }))
+  if (monthlyByWorld === undefined) return summaries
+
+  const merged = summaries.map((summary) => ({
+    ...summary,
+    monthlyCleared: monthlyByWorld[summary.worldKey]?.count ?? 0,
+  }))
+  for (const [worldKey, entry] of Object.entries(monthlyByWorld)) {
+    if (merged.some((summary) => summary.worldKey === worldKey)) continue
+    merged.push({ worldKey, world: worldNameOf(worldKey, entry.world), cleared: 0, monthlyCleared: entry.count })
+  }
+  return merged
 }
 
 // 이 캐릭터가 이 달에 처치한 월간 보스 수(보스 key distinct. 같은 보스를 여러 난이도로 잡아도 1).

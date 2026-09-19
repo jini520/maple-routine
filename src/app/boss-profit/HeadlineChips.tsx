@@ -11,6 +11,7 @@ import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss/boss-matching'
 import { computeProfitDelta, formatProfitDeltaBody, formatProfitDeltaLabel } from '../../lib/boss/boss-profit-delta'
 import { formatBossProfitPeriodLabel, getAdjacentPeriodKey } from '../../lib/boss/boss-profit-period'
 import type { BossCycle } from '../../types'
+import type { MonthlyCrystalsByWorld } from '../../features/boss-profit/monthly-crystals'
 
 import {
   ArrowDownIcon,
@@ -45,7 +46,16 @@ export const MONTHLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crys
 // 이유이고, 그 배지가 우측 끝을 쓰므로 칩은 좌측(라벨 옆)에 붙는다.
 //
 // 월드별 분해는 흐름이 아니라 별도 네이티브 창의 팝오버로 띄운다. 펼쳐도 헤더 높이가 변하지 않는다.
-export function CrystalSummaryChip(props: { groups: CharacterGroup[] }): React.JSX.Element | null {
+//
+// 월간 탭은 `variant="monthly"` 로 **월간 몫만** 싣는다. 주간 90 은 주마다의 한도라 한 달의 합에는 뜻이
+// 없다. 주간 탭의 월간 몫은 화면이 기록에서 센 **그 주까지의 그 달 누적**(`monthlyByWorld`)이다.
+export function CrystalSummaryChip(props: {
+  groups: CharacterGroup[]
+  variant?: 'weekly' | 'monthly'
+  /** 월드별 그 달 누적. 오면 행으로 센 월간 몫을 대신한다. */
+  monthlyByWorld?: MonthlyCrystalsByWorld
+}): React.JSX.Element | null {
+  const monthlyOnly = props.variant === 'monthly'
   // 구조 분해가 필수다. `popover.toggle` 처럼 프로퍼티로 읽으면 `react-hooks/refs` 가 그 접근을
   // 렌더 중 ref 접근으로 본다. 훅이 안에서 `useRef` 를 쓴다.
   const {
@@ -57,7 +67,7 @@ export function CrystalSummaryChip(props: { groups: CharacterGroup[] }): React.J
   } = useAnchoredPopover()
   const { width: windowWidth } = useWindowDimensions()
 
-  const worlds = summarizeWorldCrystals(props.groups)
+  const worlds = summarizeWorldCrystals(props.groups, props.monthlyByWorld)
   // 월드를 아는 캐릭터가 하나도 없으면(구버전 캐시만 있는 경우) 대비할 한도가 없다. 반대로 월드는
   // 알지만 처치 수가 0 이면 `0 / 90` 을 그대로 보여준다. 정보로서 유효하다.
   if (worlds.length === 0) return null
@@ -68,21 +78,27 @@ export function CrystalSummaryChip(props: { groups: CharacterGroup[] }): React.J
   // 각 월드가 각자 90 을 가지므로 복수 월드의 분모는 90 × 월드 수다.
   const limit = WEEKLY_CRYSTAL_SALE_LIMIT * worlds.length
   const isExpandable = worlds.length > 1
-  const label = `주간 결정석 판매 ${cleared} / ${limit}, 월간 결정석 ${monthlyCleared}개`
+  const label = monthlyOnly
+    ? `월간 결정석 ${monthlyCleared}개`
+    : `주간 결정석 판매 ${cleared} / ${limit}, 월간 결정석 ${monthlyCleared}개`
 
   // 칩은 화면에 간단히만. 월드 수·월드명 같은 부가 표기는 팝오버로 넘긴다.
   const chipContent = (
     <>
-      {WEEKLY_CRYSTAL_ICON_URL !== null && (
+      {!monthlyOnly && WEEKLY_CRYSTAL_ICON_URL !== null && (
         <Image source={WEEKLY_CRYSTAL_ICON_URL} resizeMode="contain" className="h-4 w-4 shrink-0" />
       )}
       {/* 숫자와 단위 사이는 마진이 아니라 실제 공백 문자로 띄운다. 마진만으론 읽는 문자열이
           `34/90` 으로 붙어 스크린리더가 이어 읽는다. `개` 는 한국어 표기상 숫자에 붙으므로
           공백을 넣지 않는다. */}
-      <Text className="text-xs font-bold leading-none text-primary-ink" style={TABULAR_NUMS}>
-        {cleared} <Text className="font-semibold opacity-70">/ {limit}</Text>
-      </Text>
-      <Text className="text-xs font-semibold leading-none text-primary-ink opacity-70">·</Text>
+      {!monthlyOnly && (
+        <>
+          <Text className="text-xs font-bold leading-none text-primary-ink" style={TABULAR_NUMS}>
+            {cleared} <Text className="font-semibold opacity-70">/ {limit}</Text>
+          </Text>
+          <Text className="text-xs font-semibold leading-none text-primary-ink opacity-70">·</Text>
+        </>
+      )}
       {MONTHLY_CRYSTAL_ICON_URL !== null && (
         <Image source={MONTHLY_CRYSTAL_ICON_URL} resizeMode="contain" className="h-4 w-4 shrink-0" />
       )}
@@ -171,7 +187,9 @@ export function CrystalSummaryChip(props: { groups: CharacterGroup[] }): React.J
                     <Text className="text-xs text-text-muted">{summary.world}</Text>
                     {/* 칩에 두 몫이 있으니 펼친 줄도 월드마다 두 몫을 함께 말한다. */}
                     <Text className="ml-auto pl-3 text-xs font-semibold text-text" style={TABULAR_NUMS}>
-                      {`${summary.cleared} / ${WEEKLY_CRYSTAL_SALE_LIMIT} | 월간 ${summary.monthlyCleared}개`}
+                      {monthlyOnly
+                        ? `월간 ${summary.monthlyCleared}개`
+                        : `${summary.cleared} / ${WEEKLY_CRYSTAL_SALE_LIMIT} | 월간 ${summary.monthlyCleared}개`}
                     </Text>
                   </View>
                 )

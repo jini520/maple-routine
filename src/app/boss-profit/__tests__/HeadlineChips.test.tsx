@@ -148,6 +148,85 @@ describe('CrystalSummaryChip', () => {
     expect(상자.getByText(`1 / ${WEEKLY_CRYSTAL_SALE_LIMIT} | 월간 1개`)).toBeTruthy()
   })
 
+  // 주간 탭의 월간 몫은 그 주 목록에 선 것이 아니라 **그 주가 끝날 때까지의 그 달 누적**이다(사용자
+  // 지정). 행에는 재료가 없어 화면이 기록에서 센 값을 넘긴다. 넘기면 그 값이 행으로 센 것을 대신한다.
+  it('월간 누적이 넘어오면 그 수로 선다', async () => {
+    const { getByLabelText } = await renderOverlay(
+      <CrystalSummaryChip
+        groups={[group([보스행({ world: '스카니아', worldKey: 'scania' })])]}
+        monthlyByWorld={{ scania: { world: '스카니아', count: 3 } }}
+      />,
+    )
+
+    expect(getByLabelText(`주간 결정석 판매 1 / ${WEEKLY_CRYSTAL_SALE_LIMIT}, 월간 결정석 3개`)).toBeTruthy()
+  })
+
+  // 그 주 목록에 한 줄도 없는 월드라도 그 달에 잡은 월간 보스가 있으면 펼친 줄에 선다. 칩의 수는
+  // 펼친 줄의 합이라 그 월드가 빠지면 둘이 어긋난다.
+  it('누적에만 있는 월드도 펼친 줄에 선다', async () => {
+    const { getByLabelText, getByTestId } = await renderOverlay(
+      <CrystalSummaryChip
+        groups={[group([보스행({ world: '스카니아', worldKey: 'scania' })])]}
+        monthlyByWorld={{
+          scania: { world: '스카니아', count: 1 },
+          luna: { world: '루나', count: 2 },
+        }}
+      />,
+    )
+
+    await act(async () => {
+      fireEvent.press(getByLabelText(/월간 결정석 3개/))
+    })
+
+    const 상자 = within(getByTestId('world-crystal-breakdown'))
+    expect(상자.getByText(`0 / ${WEEKLY_CRYSTAL_SALE_LIMIT} | 월간 2개`)).toBeTruthy()
+  })
+
+  // 월간 탭에는 **월간 결정석만** 선다(사용자 선택). 주간 90 은 주마다의 한도라 한 달의 합에는 뜻이 없다.
+  describe('월간 탭', () => {
+    it('월간 결정석 개수만 싣는다', async () => {
+      const { getByLabelText, queryByText } = await renderOverlay(
+        <CrystalSummaryChip
+          variant="monthly"
+          groups={[
+            group([월간행({ world: '스카니아', worldKey: 'scania' })]),
+            group([월간행({ ocid: 'ocid-2', world: '스카니아', worldKey: 'scania' })]),
+          ]}
+        />,
+      )
+
+      expect(getByLabelText('월간 결정석 2개')).toBeTruthy()
+      expect(queryByText(new RegExp(`/ ${WEEKLY_CRYSTAL_SALE_LIMIT}`))).toBeNull()
+    })
+
+    it('월드가 둘이면 월드마다 월간 몫만 펼친다', async () => {
+      const { getByLabelText, getByTestId } = await renderOverlay(
+        <CrystalSummaryChip
+          variant="monthly"
+          groups={[
+            group([월간행({ world: '스카니아', worldKey: 'scania' })]),
+            group([월간행({ ocid: 'ocid-2', world: '루나', worldKey: 'luna' })]),
+          ]}
+        />,
+      )
+
+      await act(async () => {
+        fireEvent.press(getByLabelText('월간 결정석 2개'))
+      })
+
+      const 상자 = within(getByTestId('world-crystal-breakdown'))
+      expect(상자.getAllByText('월간 1개')).toHaveLength(2)
+    })
+
+    it('월드를 아는 월간 행이 없으면 안 선다', async () => {
+      const { queryByLabelText } = await renderOverlay(
+        <CrystalSummaryChip variant="monthly" groups={[group([월간행()])]} />,
+      )
+
+      expect(queryByLabelText(/결정석/)).toBeNull()
+    })
+  })
+
   // 닫는 층과 내용이 **같은 창**에 있어야 한다. RN 의 `Modal` 은 앱 루트 뷰와 다른 네이티브 창이라
   // 항상 그 위이고 `zIndex` 로는 못 이긴다. 닫기 층만 창에 넣고 내용을 트리에 두면 투명한 닫기
   // 층이 상자 위에 깔려, 상자 안을 누르는 것이 전부 닫기로 먹힌다.
