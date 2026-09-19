@@ -4,6 +4,7 @@ import { waitFor } from '../../../__tests__/wait-for'
 import type { CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
 import type { BossContent, SchedulerCharacterState } from '../../../types'
 import type { BossProfitRecord } from '../../../storage/boss-profit'
+import type { BossProfitRow } from '../rows'
 import type { CachedSchedulerEntry } from '../../../storage/scheduler-cache'
 
 // 스토어가 toScheduleSyncError로 원인을 살리므로 그 매핑은 실물을 쓴다(부분 모킹).
@@ -4315,5 +4316,90 @@ describe('직접 완료를 적으면 그 주로 데려간다', () => {
     })
 
     expect(useBossProfitStore.getState().periodKey).toBe(이번주)
+  })
+})
+
+/**
+ * **주간에서 적은 월간 보스가 월간 탭에 바로 선다**(사용자 보고).
+ *
+ * 월간 탭의 이번 달 행은 SQLite 가 아니라 `latestSyncSnapshot` 에서 온다. 그 스냅샷은 `refresh` 가
+ * 맞추는데, 날짜를 다른 주로 옮긴 저장은 그 주로 바로 가느라 스냅샷을 안 건드렸다.
+ *
+ * 저장소를 작은 가짜로 둔다. 쓴 것을 읽기가 돌려줘야 저장 뒤 화면을 볼 수 있다.
+ */
+describe('직접 완료를 적으면 월간 탭에도 바로 선다', () => {
+  let 기록들: BossProfitRecord[]
+  const 같은키 = (a: BossProfitRecord, b: BossProfitRecord): boolean =>
+    a.ocid === b.ocid && a.bossKey === b.bossKey && a.difficulty === b.difficulty && a.periodKey === b.periodKey
+
+  beforeEach(() => {
+    기록들 = []
+    upsertBossProfitRecordMock.mockImplementation(async (record: BossProfitRecord) => {
+      기록들 = [...기록들.filter((candidate) => !같은키(candidate, record)), record]
+      mockRecordsRevision += 1
+    })
+    setBossProfitDefeatedOnMock.mockImplementation(
+      async (key: Omit<BossProfitRecord, 'boss'>, defeatedOn: string) => {
+        기록들 = 기록들.map((record) =>
+          같은키(record, key as BossProfitRecord) ? { ...record, defeatedOn } : record,
+        )
+        mockRecordsRevision += 1
+      },
+    )
+    getBossProfitRecordsMock.mockImplementation(async (ocids: string[], periodKeys: string[]) =>
+      기록들.filter((record) => ocids.includes(record.ocid) && periodKeys.includes(record.periodKey)),
+    )
+    getManualCompletedKeysMock.mockImplementation(async (ocids: string[], periodKeys: string[]) =>
+      기록들
+        .filter((record) => record.source === 'manual' && ocids.includes(record.ocid) && periodKeys.includes(record.periodKey))
+        .map(({ ocid, bossKey, difficulty, periodKey }) => ({ ocid, bossKey, difficulty, periodKey })),
+    )
+  })
+
+  const 월간미완료 = () =>
+    bossContent({
+      bossKey: 'black_mage',
+      apiName: '검은 마법사',
+      difficulty: 'extreme',
+      cycle: 'monthly',
+      isRegistered: true,
+      isComplete: false,
+    })
+
+  function 월간포함동기화(): CharacterScheduleSync {
+    const base = syncResult()
+    const state = base.state
+    if (state === null) throw new Error('syncResult 픽스처에 state 가 없다')
+    return { ...base, state: { ...state, bossContents: [bossContent(), 월간미완료()] } }
+  }
+
+  async function 적고월간으로(dateKey: string): Promise<BossProfitRow | undefined> {
+    syncSchedulesMock.mockResolvedValue([월간포함동기화()])
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    useBossProfitStore.setState({ trackedOcids: ['ocid-1'] })
+    const row = useBossProfitStore.getState().rows.find((candidate) => candidate.cycle === 'monthly')
+    expect(row?.isComplete).toBe(false)
+
+    await useBossProfitStore.getState().saveManualCompletion(row!, { difficulty: 'extreme', dateKey, partySize: 2 })
+    await useBossProfitStore.getState().setTab('monthly')
+
+    return useBossProfitStore.getState().rows.find((candidate) => candidate.cycle === 'monthly')
+  }
+
+  // PINNED_NOW 는 2026-09-12 라 이번 주가 09-10 이다.
+  it('보던 주에 잡았다고 적은 경우', async () => {
+    const monthly = await 적고월간으로('2026-09-11')
+
+    expect(monthly?.isComplete).toBe(true)
+    expect(monthly?.source).toBe('manual')
+    expect(monthly?.partySize).toBe(2)
+  })
+
+  it('다른 주에 잡았다고 적은 경우(그 주로 옮겨 간다)', async () => {
+    const monthly = await 적고월간으로('2026-09-02')
+
+    expect(monthly?.isComplete).toBe(true)
+    expect(monthly?.source).toBe('manual')
+    expect(monthly?.defeatedOn).toBe('2026-09-02')
   })
 })

@@ -37,4 +37,13 @@ export const MANUAL_COMPLETION_FAQ: readonly FaqItem[] = [
       },
     ],
   },
+  {
+    question: '어떻게 사용하나요?',
+    answer: [
+      {
+        kind: 'paragraph',
+        text: '수익 · 지출 탭 > 보스 수익 > 캐릭터 목록 열고 직접 완료하려고 하는 보스 카드에 "완료 상태로 변경하기" 통해 사용하실 수 있습니다.',
+      },
+    ],
+  },
 ]

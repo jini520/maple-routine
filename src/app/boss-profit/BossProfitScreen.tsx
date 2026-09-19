@@ -22,6 +22,7 @@ import { Pressable, View } from 'react-native'
 
 import { useBossProfitStore } from '../../features/boss-profit/store'
 import { usePeriodLoadErrorToast } from '../../features/boss-profit/use-period-error-toast'
+import { useMonthlyCrystalsUpToWeek } from '../../features/boss-profit/monthly-crystals'
 import {
   useScheduleSyncErrorToast,
   useStaleCharactersToast,
@@ -221,6 +222,13 @@ export function BossProfitScreen(): React.JSX.Element {
     0,
   )
 
+  // 주간 탭 칩의 월간 몫은 **그 주가 끝날 때까지의 그 달 누적**이다. 행에는 그 주에 선 월간 보스만
+  // 있어 기록에서 따로 센다. 세는 캐릭터는 카드가 선 캐릭터 - 칩의 주간 몫과 같은 범위다.
+  const monthlyCrystalsUpToWeek = useMonthlyCrystalsUpToWeek(
+    characterGroups.map((group) => group.ocid),
+    tab === 'weekly' ? periodKey : null,
+  )
+
   if (isEmpty) {
     // 헤더 셸을 쓰지 않는 가지라(제목 줄이 목록 없이 혼자 선다) 상단 안전영역을 여기서 먹는다.
     // 높이는 `flex-1` 이다. 탭 상자가 이미 탭바를 뺀 크기다.
@@ -389,7 +397,14 @@ export function BossProfitScreen(): React.JSX.Element {
               {/* 결정석 판매 현황은 라벨 텍스트 바로 옆이다. 우측 끝은 고가 드롭 배지의
                   절대배치 자리라 침범하지 않는다. 주간 탭에만 서고 월간 몫도 이 칩이 든다. 월간
                   보스가 주간 목록의 그 주에 서므로 그 주의 행이 월간 결정석을 이미 들고 있다. */}
-              {tab === 'weekly' && <CrystalSummaryChip groups={characterGroups} />}
+              {tab === 'weekly' ? (
+                <CrystalSummaryChip
+                  groups={characterGroups}
+                  monthlyByWorld={monthlyCrystalsUpToWeek ?? undefined}
+                />
+              ) : (
+                <CrystalSummaryChip variant="monthly" groups={characterGroups} />
+              )}
               {periodValuableDrops.length > 0 && (
                 <ValuableDropBadge
                   drops={periodValuableDrops}

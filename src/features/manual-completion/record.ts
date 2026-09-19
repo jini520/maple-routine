@@ -9,6 +9,7 @@
  */
 import { findPriceEntry } from '../../lib/boss/boss-crystal-prices'
 import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
+import { getBossPartySize } from '../../storage/boss-party-settings'
 import {
   deleteBossProfitRecord,
   setBossProfitDefeatedOn,
@@ -17,6 +18,7 @@ import {
 } from '../../storage/boss-profit'
 import type { BossCycle, BossDifficulty } from '../../types'
 import { migrateDropsToConfirmedDifficulty } from '../boss-profit/drops-loader'
+import { withSqliteFallback } from '../boss-profit/sqlite-guards'
 
 export interface ManualCompletionInput {
   ocid: string
@@ -33,6 +35,20 @@ export interface ManualCompletionInput {
   worldKey: string | null
   /** 고치기 전 난이도. 바뀌었으면 옛 키의 기록을 지우고 드롭을 새 키로 옮긴다. */
   previousDifficulty?: BossDifficulty
+}
+
+/**
+ * 파티 관리에 설정된 그 보스 · 그 난이도의 인원. 없거나 읽기가 실패하면 `null` 이다.
+ *
+ * 완료 기록 시트가 이 값으로 시작한다. 실패를 `null` 로 삼키는 것은 인원을 못 읽었다고 시트를 못
+ * 여는 것보다 1 인으로 여는 편이 낫기 때문이다(자동 기록과 같은 기본값).
+ */
+export async function loadConfiguredPartySize(
+  ocid: string,
+  bossKey: string,
+  difficulty: BossDifficulty,
+): Promise<number | null> {
+  return withSqliteFallback(getBossPartySize(ocid, bossKey, difficulty), null)
 }
 
 /** 가격을 모르는 조합은 기록할 수 없다. 금액 없이 완료만 남으면 이 화면이 세는 것이 틀린다. */

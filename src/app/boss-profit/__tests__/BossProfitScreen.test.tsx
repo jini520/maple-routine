@@ -908,8 +908,8 @@ describe('월간 탭', () => {
     expect(getByText('지내우시')).toBeTruthy()
   })
 
-  // 월간 결정석 칩은 주간 탭으로 옮겼다. 라벨행에는 `{기간} 총 수익` 과 고가 드롭 배지만 선다.
-  it('결정석 칩이 없다', async () => {
+  // 월간 탭에는 **월간 결정석만** 선다(사용자 지정). 주간 90 은 주마다의 한도라 한 달의 합에는 뜻이 없다.
+  it('월간 결정석 칩만 선다', async () => {
     mockStore({
       status: 'loaded',
       periodState: 'recorded',
@@ -919,10 +919,11 @@ describe('월간 탭', () => {
       loadedPeriodKey: CURRENT_MONTHLY,
       rows: [보스행({ bossKey: weeklyBossesData.monthly[0].key, cycle: 'monthly', periodKey: CURRENT_MONTHLY, world: '스카니아', worldKey: 'scania' })],
       weeklySubtotals: [주차소계()] })
-    const { getByText, queryByLabelText } = await renderScreen()
+    const { getByText, getByLabelText, queryByLabelText } = await renderScreen()
 
     expect(getByText(/총 수익$/)).toBeTruthy()
-    expect(queryByLabelText(/결정석/)).toBeNull()
+    expect(getByLabelText('월간 결정석 1개')).toBeTruthy()
+    expect(queryByLabelText(/주간 결정석 판매/)).toBeNull()
   })
 })
 

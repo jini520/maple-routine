@@ -7,7 +7,7 @@
  * 고칠 때는 같은 시트가 값을 물고 열리고 바닥에 `완료 취소` 가 한 줄 더 선다. 취소는 확인 창을
  * 거치는데, 그 기록의 드롭도 함께 지워지기 때문이다.
  */
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Pressable, View } from 'react-native'
 
 import { Badge, Text, MinusIcon, PlusIcon } from '../../components/atoms'
@@ -23,6 +23,7 @@ import { supportedDifficultiesOf } from '../../lib/boss/bosses'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { monthKeyOf } from '../../lib/calendar'
 import type { BossProfitRow } from '../../features/boss-profit/rows'
+import { loadConfiguredPartySize } from '../../features/manual-completion/record'
 import type { BossDifficulty } from '../../types'
 
 export interface ManualCompletionSheetProps {
@@ -48,6 +49,8 @@ export function ManualCompletionSheet(props: ManualCompletionSheetProps): React.
   const [difficulty, setDifficulty] = useState<BossDifficulty>(row.difficulty)
   const [dateKey, setDateKey] = useState(row.defeatedOn ?? maxDateKey)
   const [partySize, setPartySize] = useState(row.partySize ?? 1)
+  // 사용자가 스테퍼를 만졌나. 파티 관리 값은 비동기로 오므로, 그 사이 손댄 값을 덮으면 안 된다.
+  const partyTouched = useRef(false)
   const [monthKey, setMonthKey] = useState(monthKeyOf(row.defeatedOn ?? maxDateKey))
   const [saving, setSaving] = useState(false)
 
@@ -63,6 +66,27 @@ export function ManualCompletionSheet(props: ManualCompletionSheetProps): React.
   const maxPartySize = getMaxPartySize(row.bossKey, difficulty)
   const priceMeso = findPriceEntry(row.bossKey, difficulty, row.periodKey, props.now)?.priceMeso ?? null
   const payoutMeso = priceMeso === null ? null : Math.floor(priceMeso / partySize)
+
+  // **파티 관리에 설정된 그 보스 · 그 난이도의 인원으로 시작한다.** 파티 설정은 난이도마다 따로라
+  // 난이도를 바꾸면 다시 찾는다. 고칠 때 처음 연 순간만은 적어 둔 값이 시작이다 - 그 기록에 사용자가
+  // 이미 인원을 정했다.
+  useEffect(() => {
+    if (props.mode === 'edit' && difficulty === row.difficulty) return
+    let alive = true
+    partyTouched.current = false
+    void loadConfiguredPartySize(row.ocid, row.bossKey, difficulty).then((configured) => {
+      if (!alive || configured === null || partyTouched.current) return
+      setPartySize(Math.min(Math.max(configured, 1), getMaxPartySize(row.bossKey, difficulty)))
+    })
+    return () => {
+      alive = false
+    }
+  }, [props.mode, row.ocid, row.bossKey, row.difficulty, difficulty])
+
+  function changePartySize(next: number): void {
+    partyTouched.current = true
+    setPartySize(next)
+  }
 
   function changeDifficulty(next: BossDifficulty): void {
     setDifficulty(next)
@@ -149,7 +173,7 @@ export function ManualCompletionSheet(props: ManualCompletionSheetProps): React.
                 role="button"
                 aria-label="파티 인원 줄이기"
                 disabled={partySize <= 1}
-                onPress={() => setPartySize(partySize - 1)}
+                onPress={() => changePartySize(partySize - 1)}
                 hitSlop={8}
               >
                 <MinusIcon
@@ -165,7 +189,7 @@ export function ManualCompletionSheet(props: ManualCompletionSheetProps): React.
                 role="button"
                 aria-label="파티 인원 늘리기"
                 disabled={partySize >= maxPartySize}
-                onPress={() => setPartySize(partySize + 1)}
+                onPress={() => changePartySize(partySize + 1)}
                 hitSlop={8}
               >
                 <PlusIcon

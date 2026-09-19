@@ -1426,3 +1426,58 @@ describe('조회 불가면 캐시 단계부터 내용이 비어 있다', () => {
     expect(view?.weeklyBossClearCount).toBeNull()
   })
 })
+
+/**
+ * **직접 완료는 포커스마다 기록 판을 물어, 바뀌었을 때만 다시 읽는다.**
+ *
+ * 스케줄러 탭은 한 번 마운트되면 계속 살아 있고 진입 조회는 마운트 때 한 번뿐이다. 그 사이 보스
+ * 수익에서 적은 완료가 당겨서 새로고침 전까지 안 보였다(사용자 보고). 넥슨은 안 부른다.
+ */
+describe('reloadManualCompleted', () => {
+  const storage = require('../../../storage/boss-profit') as typeof import('../../../storage/boss-profit')
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  it('기록 판이 바뀌었으면 직접 완료만 다시 읽는다', async () => {
+    const revision = jest.spyOn(storage, 'getBossProfitRecordsRevision').mockReturnValue(1)
+    const keys = jest.spyOn(storage, 'getManualBossProfitRecordKeys').mockResolvedValue([])
+    useBossSchedulerStore.setState({ trackedOcids: ['ocid-1'], manualCompletedByOcid: {}, manualCompletedRevision: 1 })
+
+    // 다른 화면이 기록을 썼다.
+    revision.mockReturnValue(2)
+    keys.mockResolvedValue([{ ocid: 'ocid-1', bossKey: 'black_mage', difficulty: 'extreme', periodKey: '2026-09' }])
+    syncSchedulesMock.mockClear()
+
+    await useBossSchedulerStore.getState().reloadManualCompleted()
+
+    expect(useBossSchedulerStore.getState().manualCompletedByOcid).toEqual({ 'ocid-1': ['black_mage|extreme'] })
+    expect(useBossSchedulerStore.getState().manualCompletedRevision).toBe(2)
+    expect(syncSchedulesMock).not.toHaveBeenCalled()
+  })
+
+  it('판이 그대로면 안 읽는다', async () => {
+    jest.spyOn(storage, 'getBossProfitRecordsRevision').mockReturnValue(5)
+    const keys = jest.spyOn(storage, 'getManualBossProfitRecordKeys').mockResolvedValue([])
+    useBossSchedulerStore.setState({ trackedOcids: ['ocid-1'], manualCompletedByOcid: {}, manualCompletedRevision: 5 })
+
+    await useBossSchedulerStore.getState().reloadManualCompleted()
+
+    expect(keys).not.toHaveBeenCalled()
+  })
+
+  // 읽는 중에 들어온 쓰기를 본 것으로 표시하면 그 쓰기를 영영 놓친다. 판은 읽기 전에 찍는다.
+  it('판은 읽기 전의 값으로 적는다', async () => {
+    const revision = jest.spyOn(storage, 'getBossProfitRecordsRevision').mockReturnValue(2)
+    jest.spyOn(storage, 'getManualBossProfitRecordKeys').mockImplementation(async () => {
+      revision.mockReturnValue(3)
+      return []
+    })
+    useBossSchedulerStore.setState({ trackedOcids: ['ocid-1'], manualCompletedByOcid: {}, manualCompletedRevision: 1 })
+
+    await useBossSchedulerStore.getState().reloadManualCompleted()
+
+    expect(useBossSchedulerStore.getState().manualCompletedRevision).toBe(2)
+  })
+})

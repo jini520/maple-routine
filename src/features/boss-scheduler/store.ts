@@ -17,7 +17,7 @@ import { useCharacterSelectionStore } from '../character-selection/store'
 import { getBossPartySettings, setBossPartySize } from '../../storage/boss-party-settings'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getCachedSchedulerState } from '../../storage/scheduler-cache'
-import { getManualBossProfitRecordKeys } from '../../storage/boss-profit'
+import { getBossProfitRecordsRevision, getManualBossProfitRecordKeys } from '../../storage/boss-profit'
 import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
 import { manualCompletionKey } from '../../lib/boss/manual-completion'
 import type { BossDifficulty } from '../../types'
@@ -84,6 +84,11 @@ export interface BossSchedulerState {
    * (`displayedBosses`)이 이 값을 받아 카드 · 주간 한도 · today 남은 스케줄에 함께 얹는다.
    */
   manualCompletedByOcid: Record<string, string[]>
+  /**
+   * 위 값이 비추는 **기록 판**(`getBossProfitRecordsRevision`). 포커스가 이것과 지금 판을 견줘
+   * 바뀌었을 때만 다시 읽는다. `null` 은 아직 한 번도 안 읽었다는 뜻이다.
+   */
+  manualCompletedRevision: number | null
   // 화면 로컬 state 가 아니라 스토어가 소유한다. 화면이 언마운트돼도 살아남는다. 영속화하지 않는다.
   //
   // `activeTab` 은 여기 없다. 주간/월간 탭이 두 화면에서 함께 걷혔다. 되살리지 말 것. 공유할
@@ -94,6 +99,13 @@ export interface BossSchedulerState {
 
 export interface BossSchedulerStore extends BossSchedulerState {
   loadTrackedOcids(): Promise<void>
+  /**
+   * 직접 완료만 다시 읽는다. **기록 판이 바뀌었을 때만** 읽고 넥슨은 안 부른다.
+   *
+   * 화면이 포커스마다 부른다. 이 스토어를 쓰는 두 화면(스케줄러 · today)은 탭이라 계속 살아
+   * 있고 진입 조회는 마운트 때 한 번뿐이라, 그 사이 보스 수익에서 적은 완료를 이것이 들여온다.
+   */
+  reloadManualCompleted(): Promise<void>
   saveTrackedOcids(ocids: string[], onProgress?: (completed: number, total: number) => void): Promise<void>
   refresh(
     ocids: string[],
@@ -126,6 +138,7 @@ const initialState: BossSchedulerState = {
   partySizes: {},
   manualTrackedByOcid: {},
   manualCompletedByOcid: {},
+  manualCompletedRevision: null,
   partyFilter: 'all',
 }
 
@@ -255,6 +268,18 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     return hydration
   },
 
+  async reloadManualCompleted() {
+    // 판은 읽기 전에 찍는다(`refresh` 와 같은 이유).
+    const revision = getBossProfitRecordsRevision()
+    if (revision === get().manualCompletedRevision) return
+    const ocids = get().trackedOcids
+    // 추적 목록을 아직 안 읽었으면 진입 조회가 곧 읽는다. 여기서 빈 표를 적으면 그 회차보다
+    // 앞서 판을 소모해 버린다.
+    if (ocids === null) return
+    const manualCompletedByOcid = await readManualCompleted(ocids, new Date())
+    set({ manualCompletedByOcid, manualCompletedRevision: revision })
+  },
+
   async saveTrackedOcids(ocids, onProgress) {
     const previousOcids = get().trackedOcids ?? []
     try {
@@ -353,6 +378,8 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     }
 
     // 직접 적은 완료. 모드와 무관하게 읽는다 - 카드의 완료 배지와 주간 한도가 이 값을 함께 본다.
+    // 판은 **읽기 전에 찍는다.** 읽는 중에 들어온 쓰기를 본 것으로 적으면 그 쓰기를 영영 놓친다.
+    const manualCompletedRevision = getBossProfitRecordsRevision()
     const manualCompletedByOcid = await readManualCompleted(ocids, new Date())
 
     // 수동 모드에서만 캐릭터별 추적 항목(멤버십)을 읽어둔다. 표시 목록이 이 멤버십으로
@@ -430,6 +457,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
         error: null,
         manualTrackedByOcid,
         manualCompletedByOcid,
+        manualCompletedRevision,
       })
       return
     }
@@ -439,6 +467,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       characters: await sortByCachedLevel(cachedCharacters),
       manualTrackedByOcid,
       manualCompletedByOcid,
+      manualCompletedRevision,
     })
 
     let results: Awaited<ReturnType<typeof syncSchedules>>
@@ -490,6 +519,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       error: null,
       manualTrackedByOcid,
       manualCompletedByOcid,
+      manualCompletedRevision,
     })
   },
 
