@@ -14,6 +14,7 @@ export const ENHANCEMENT_CATEGORIES = [
   { key: 'starforce', name: '스타포스' },
   { key: 'potential', name: '잠재능력' },
   { key: 'additional_potential', name: '에디셔널 잠재능력' },
+  { key: 'soul_potential', name: '소울 잠재능력' },
 ] as const
 
 export type EnhancementCategory = (typeof ENHANCEMENT_CATEGORIES)[number]['key']

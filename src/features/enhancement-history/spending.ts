@@ -9,6 +9,7 @@
 import {
   cubeAppraisalCost,
   potentialResetCost,
+  soulPotentialResetCost,
   starforceCost,
   type PotentialResetType,
 } from '../../lib/enhancement/cost'
@@ -28,6 +29,7 @@ export interface EnhancementSpendingRow extends EnhancementHistoryEntry {
 function categoryOf(entry: EnhancementHistoryEntry): EnhancementCategory {
   if (entry.kind === 'cube') return 'cube_reset'
   if (entry.kind === 'starforce') return 'starforce'
+  if (entry.kind === 'soul_potential') return 'soul_potential'
   // 응답이 `에디셔널 잠재능력 재설정` 이라고 말한다. 그 값이 아니면 본 잠재다.
   return text(entry.payload, 'potential_type') === '에디셔널 잠재능력 재설정' ? 'additional_potential' : 'potential'
 }
@@ -79,18 +81,45 @@ function starforceMeso(
   return starforceCost(level, fromStar, discountRate(entry.payload), destroyDefence)
 }
 
+/** 등급 차례. 사용 전 옵션에서 가장 높은 것을 고를 때 쓴다. */
+const GRADE_ORDER = ['노멀', '레어', '에픽', '유니크', '레전드리']
+
+/**
+ * 재설정 전 등급. 사용 전 옵션 줄들의 `grade` 중 가장 높은 것. 옵션이 없거나 모르는 글자가 섞이면 `null`.
+ *
+ * 응답의 등급 칸(`potential_option_grade` 등)은 **오른 뒤** 등급이라 쓰지 않는다. 비용은 누르기 전
+ * 등급으로 내므로, 그 칸을 쓰면 등급이 오른 줄이 한 등급 비싸게 선다.
+ *
+ * @param optionsKey `before_potential_option` · `before_additional_potential_option` · `before_soul_potential_option`
+ */
+function gradeBeforeReset(payload: unknown, optionsKey: string): string | null {
+  const options = field(payload, optionsKey)
+  if (!Array.isArray(options) || options.length === 0) return null
+  let highest = -1
+  for (const option of options) {
+    const rank = GRADE_ORDER.indexOf(text(option, 'grade'))
+    if (rank < 0) return null
+    highest = Math.max(highest, rank)
+  }
+  return GRADE_ORDER[highest]
+}
+
 function potentialMeso(entry: EnhancementHistoryEntry): number | null {
   const type = text(entry.payload, 'potential_type')
   if (type !== '잠재능력 재설정' && type !== '에디셔널 잠재능력 재설정') return null
   if (entry.itemLevel === null) return null
 
-  // 종류가 어느 등급 칸을 볼지 정한다. 재설정은 등급을 안 바꾸므로 응답의 그 값이 곧 그때의 등급이다.
-  const grade =
-    type === '잠재능력 재설정'
-      ? text(entry.payload, 'potential_option_grade')
-      : text(entry.payload, 'additional_potential_option_grade')
+  // 종류가 어느 옵션을 볼지 정한다.
+  const grade = gradeBeforeReset(
+    entry.payload,
+    type === '잠재능력 재설정' ? 'before_potential_option' : 'before_additional_potential_option',
+  )
+  return grade === null ? null : potentialResetCost(type as PotentialResetType, entry.itemLevel, grade)
+}
 
-  return potentialResetCost(type as PotentialResetType, entry.itemLevel, grade)
+function soulPotentialMeso(entry: EnhancementHistoryEntry): number | null {
+  const grade = gradeBeforeReset(entry.payload, 'before_soul_potential_option')
+  return grade === null ? null : soulPotentialResetCost(grade)
 }
 
 /**
@@ -110,6 +139,7 @@ export function enhancementCostOf(
     return entry.itemLevel === null ? null : cubeAppraisalCost(entry.itemLevel)
   }
   if (entry.kind === 'potential') return potentialMeso(entry)
+  if (entry.kind === 'soul_potential') return soulPotentialMeso(entry)
   return starforceMeso(entry, observedLevels)
 }
 

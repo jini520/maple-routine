@@ -142,7 +142,7 @@ const TABLE_DEFINITIONS = [
     name: 'enhancement_history',
     createSql: `CREATE TABLE IF NOT EXISTS enhancement_history (
     id TEXT NOT NULL,
-    -- 'cube' | 'starforce' | 'potential'
+    -- 'cube' | 'starforce' | 'potential' | 'soul_potential'
     kind TEXT NOT NULL,
     -- KST YYYY-MM-DD. 가계부 칸이 이 값으로 선다.
     date_key TEXT NOT NULL,

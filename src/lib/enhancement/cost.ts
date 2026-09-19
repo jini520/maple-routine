@@ -17,6 +17,10 @@ interface GradeRow {
 }
 
 const RESET_ROWS = prices.potentialReset.byType as Record<string, GradeRow[]>
+const SOUL_RESET_BY_GRADE = prices.soulPotentialReset.byGrade as Record<string, number>
+
+/** 소울 잠재능력이 생긴 날(KST `YYYY-MM-DD`). 그 전 날짜는 소울 사용 내역이 있을 수 없다. */
+export const SOUL_POTENTIAL_FROM: string = prices.soulPotentialReset.from
 const STAR_STEPS = new Map(prices.starforce.steps.map((step) => [step.fromStar, step]))
 
 /**
@@ -33,8 +37,7 @@ export function cubeAppraisalCost(itemLevel: number): number {
 /**
  * 잠재 재설정 1회 비용. 등급을 모르거나 재설정할 수 없는 등급이면 `null`.
  *
- * @param grade 종류에 따라 다른 칸을 넘길 것. 본 잠재는 `potential_option_grade`,
- *   에디셔널은 `additional_potential_option_grade` 다.
+ * @param grade **누르기 전** 등급. 응답의 등급 칸은 오른 뒤 값이라 넘기면 안 된다.
  */
 export function potentialResetCost(
   type: PotentialResetType,
@@ -44,6 +47,11 @@ export function potentialResetCost(
   // 줄이 minLevel 내림차순이라 처음 걸리는 줄이 그 레벨의 줄이다.
   const row = RESET_ROWS[type]?.find((candidate) => itemLevel >= candidate.minLevel)
   return row?.[grade] ?? null
+}
+
+/** 소울 잠재능력 재설정 1회 비용. 레벨을 안 본다. 표에 없는 등급이면 `null`. */
+export function soulPotentialResetCost(grade: string): number | null {
+  return SOUL_RESET_BY_GRADE[grade] ?? null
 }
 
 /**

@@ -1,7 +1,7 @@
 /**
- * 계정 단위 강화 사용 내역. 큐브·스타포스·잠재 재설정 셋이 **같은 껍데기**를 쓴다.
+ * 계정 단위 강화 사용 내역. 큐브·스타포스·잠재 재설정·소울 잠재능력 재설정 넷이 **같은 껍데기**를 쓴다.
  *
- * 지금까지 앱이 쓰던 API 와 갈리는 성질이 셋이다. **계정 단위**라 ocid 축이 없고(하루가 3콜이지
+ * 지금까지 앱이 쓰던 API 와 갈리는 성질이 셋이다. **계정 단위**라 ocid 축이 없고(하루가 4콜이지
  * 캐릭터 수를 안 곱한다), 한 번에 오는 양에 상한이 있어 **커서로 이어받고**, 과거 날짜의 데이터는
  * **변하지 않는다**.
  *
@@ -15,7 +15,7 @@ import { requestJson } from '../http'
 /** 한 번에 달라고 하는 최대 건수. 상한이라 이보다 적게 올 수 있다. */
 const PAGE_SIZE = 1000
 
-export type EnhancementKind = 'cube' | 'starforce' | 'potential'
+export type EnhancementKind = 'cube' | 'starforce' | 'potential' | 'soul_potential'
 
 export interface EnhancementHistoryRow {
   /** 계정 전체에서 유일하다. 그대로 PK 로 쓴다 */
@@ -25,12 +25,12 @@ export interface EnhancementHistoryRow {
   createdAt: string
   /** KST `YYYY-MM-DD`. 가계부 칸이 이 값으로 선다 */
   dateKey: string
-  /** 강화한 장비의 API 이름 원문. 셋 다 준다. 화면은 띄어쓰기가 살아 있는 이 글자를 보인다 */
+  /** 강화한 장비의 API 이름 원문. 넷 다 준다. 화면은 띄어쓰기가 살아 있는 이 글자를 보인다 */
   targetItem: string
   /** 장비 key. 이름이 장비 표에 없으면 `null` 이고, 그 줄도 버리지 않는다 */
   itemKey: string | null
   /**
-   * 그 장비의 레벨. **스타포스 응답에는 없어서** 거기서는 `null` 이다.
+   * 그 장비의 레벨. **스타포스 · 소울 응답에는 없어서** 거기서는 `null` 이다.
    *
    * 큐브·잠재가 주는 이 값이 곧 장비 이름에서 레벨로 가는 표가 된다. 1년치 27,187건에서 한
    * 이름에 두 레벨이 붙은 적이 없다.
@@ -46,9 +46,17 @@ export interface EnhancementHistoryPage {
   nextCursor: string | null
 }
 
-/** 종류마다 배열 이름이 다르다. `cube_history` · `starforce_history` · `potential_history`. */
+/** 종류마다 배열 이름이 다르다. `cube_history` · `starforce_history` · `potential_history` · `soul_potential_history`. */
 function historyKeyOf(kind: EnhancementKind): string {
   return `${kind}_history`
+}
+
+/** 경로. 소울만 붙임표(`soul-potential`)라 배열 이름과 달리 `kind` 를 그대로 못 쓴다. */
+const PATH_BY_KIND: Record<EnhancementKind, string> = {
+  cube: 'cube',
+  starforce: 'starforce',
+  potential: 'potential',
+  soul_potential: 'soul-potential',
 }
 
 /**
@@ -82,7 +90,7 @@ export async function fetchEnhancementHistory(
 ): Promise<EnhancementHistoryPage> {
   const tail = query.cursor === undefined ? `date=${query.dateKey}` : `cursor=${query.cursor}`
   const body = await requestJson<Record<string, unknown>>(
-    `/maplestory/v1/history/${kind}?count=${PAGE_SIZE}&${tail}`,
+    `/maplestory/v1/history/${PATH_BY_KIND[kind]}?count=${PAGE_SIZE}&${tail}`,
     apiKey,
   )
 

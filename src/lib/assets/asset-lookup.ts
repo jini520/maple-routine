@@ -148,11 +148,12 @@ export interface SpendIcon {
  */
 const CASHBOOK_ROW_ICON_BY_KEY: Record<string, string> = {
   bossCrystal: 'intense_power_crystal_weekly.webp',
-  // 강화 갈래 넷. 열쇠는 `enhancement:갈래 key` 다. 큐브는 본잠·에디를 안 가르므로 그림도 하나다(사용자 지정).
+  // 강화 갈래 다섯. 열쇠는 `enhancement:갈래 key` 다. 큐브는 본잠·에디를 안 가르므로 그림도 하나다(사용자 지정).
   'enhancement:cube_reset': 'cube_gold.png',
   'enhancement:starforce': 'equipment_enhancement_scroll.png',
   'enhancement:potential': 'potential_reset.png',
   'enhancement:additional_potential': 'additional_potential_reset.png',
+  'enhancement:soul_potential': 'soul_weapon_potential.webp',
   // 손입력 갈래. 열쇠는 `기록 종류:갈래 key` 라 수익 · 지출의 같은 갈래 key(`etc`)가 안 겹친다.
   'income:hunting': 'wealth_acquisition_potion_small.webp',
   // 정산 줄은 시트 첫 화면의 솔 에르다 조각 카드와 같은 그림이다.

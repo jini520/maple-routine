@@ -1,7 +1,7 @@
 /**
- * 강화 사용 내역 수집기. 큐브·스타포스·잠재 셋을 **날짜별로** 받는다.
+ * 강화 사용 내역 수집기. 큐브·스타포스·잠재·소울 잠재 넷을 **날짜별로** 받는다.
  *
- * 계정 단위 API 라 ocid 축이 없다. 하루가 3콜이고 캐릭터 수를 안 곱한다.
+ * 계정 단위 API 라 ocid 축이 없다. 하루가 4콜이고 캐릭터 수를 안 곱한다.
  *
  * 창 채우기와 다른 점이 하나 있다. 창은 캐릭터 × 날짜가 작업이고 여기는 **종류 × 날짜**다.
  * 하루가 1000줄을 넘기면 커서로 콜이 더 나가는데, 콜을 세면 분모가 도는 중에 늘어난다. 커서는
@@ -24,11 +24,17 @@ import {
 } from '../../storage/enhancement-history'
 import { enhancementCostOf } from './spending'
 import { eventWorldCharacterNames } from '../../lib/enhancement/world'
+import { SOUL_POTENTIAL_FROM } from '../../lib/enhancement/cost'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { mapWithLimit } from '../schedule-window/gate'
 
-/** 세 종류. 순서가 진행 표시에 보이지 않으므로 아무래도 된다. */
-export const ENHANCEMENT_KINDS: readonly EnhancementKind[] = ['cube', 'starforce', 'potential']
+/** 네 종류. 순서가 진행 표시에 보이지 않으므로 아무래도 된다. */
+export const ENHANCEMENT_KINDS: readonly EnhancementKind[] = ['cube', 'starforce', 'potential', 'soul_potential']
+
+/** 그 날짜에 있을 수 있는 종류. 소울은 패치 전 날짜에 빈 응답만 오므로 안 부른다. */
+function kindsOn(dateKey: string): readonly EnhancementKind[] {
+  return dateKey < SOUL_POTENTIAL_FROM ? ENHANCEMENT_KINDS.filter((kind) => kind !== 'soul_potential') : ENHANCEMENT_KINDS
+}
 
 /**
  * 한 번에 나가는 조회 수. 창(6)보다 낮게 잡는다. 둘이 같은 회차에 돌 수 있어 합이 한도를 친다.
@@ -64,7 +70,7 @@ export async function planEnhancementHistory(
   const checks = await loadEnhancementChecks(days)
   const jobs: EnhancementHistoryJob[] = []
   for (const dateKey of days) {
-    for (const kind of ENHANCEMENT_KINDS) {
+    for (const kind of kindsOn(dateKey)) {
       const check = checks.get(checkKey(kind, dateKey))
       if (dateKey < todayDateKey && check?.settled === true) continue
       jobs.push({ kind, dateKey })
