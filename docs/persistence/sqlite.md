@@ -154,8 +154,8 @@ PK: `from_ocid`. 칸은 `from_ocid`(옛 ocid) · `to_ocid`(새 ocid) · `linked_
 
 ### `enhancement_history` — 계정 단위 강화 사용 내역 ([[ADR-223]])
 
-큐브·스타포스·잠재 재설정에 무엇을 썼는지. 넥슨의 `history/{cube,starforce,potential}` 세
-엔드포인트가 원천이고 **계정 단위**라 추적 목록 밖 캐릭터의 것도 함께 온다.
+큐브·스타포스·잠재 재설정·소울 잠재능력 재설정에 무엇을 썼는지. 넥슨의
+`history/{cube,starforce,potential,soul-potential}` 네 엔드포인트가 원천이고 **계정 단위**라 추적 목록 밖 캐릭터의 것도 함께 온다.
 
 `id` 가 자연키다. 응답의 줄마다 계정 전체에서 유일한 값이 붙어 있어 그것을 PK 로 쓴다.
 
@@ -166,13 +166,13 @@ PK: `from_ocid`. 칸은 `from_ocid`(옛 ocid) · `to_ocid`(새 ocid) · `linked_
 | 칸 | 뜻 |
 |---|---|
 | `id` | 응답 줄의 id. PK |
-| `kind` | `cube` · `starforce` · `potential` |
+| `kind` | `cube` · `starforce` · `potential` · `soul_potential`. 소울의 경로는 붙임표(`soul-potential`)이고 이 값은 밑줄이다([[ADR-300]] 결정 1) |
 | `date_key` | KST `YYYY-MM-DD`. `date_create` 에서 뽑는다. 가계부 칸이 이 값으로 선다 |
 | `created_at` | `date_create` 원본(타임존 포함) |
 | `character_name` | 이름만이다. **ocid 가 없다.** 얻으려면 캐릭터마다 한 콜이라 안 받는다 |
-| `target_item` | 강화한 장비의 API 이름 원문. 셋 다 준다. 펼친 강화 줄은 띄어쓰기가 살아 있는 이 글자를 보인다 |
+| `target_item` | 강화한 장비의 API 이름 원문. 넷 다 준다. 펼친 강화 줄은 띄어쓰기가 살아 있는 이 글자를 보인다 |
 | `item_key` | 장비 key([[ADR-280]] 결정 14). 응답을 받는 자리가 `target_item` 을 NFC 뒤 공백 제거 · 완전 일치로 장비 표(`equipment-items.json`)에서 찾는다. **표에 없는 장비면 NULL 이고 행은 남는다.** 그런 장비에 쓴 큐브 · 잠재도 실제 지출이라서다 |
-| `item_level` | 그 장비의 레벨. **스타포스 응답에는 없어서** 거기서는 NULL |
+| `item_level` | 그 장비의 레벨. **스타포스 · 소울 응답에는 없어서** 거기서는 NULL. 소울 비용은 레벨을 안 본다 |
 | `payload` | 응답 줄 원본 JSON |
 | `cost_meso` | 쓴 메소. **표가 오기 전까지 NULL** |
 
@@ -193,7 +193,8 @@ SELECT target_item, MAX(item_level) AS item_level FROM enhancement_history
 
 ### `enhancement_history_checks` — 날짜별 조회 원장 ([[ADR-223]] 결정 1)
 
-`(kind, date_key)` 하나가 키다. 계정 단위라 ocid 축이 없어 **하루가 3콜**이고 캐릭터 수를 안 곱한다.
+`(kind, date_key)` 하나가 키다. 계정 단위라 ocid 축이 없어 **하루가 4콜**이고 캐릭터 수를 안 곱한다.
+소울은 2026-09-17 부터만 부르므로 그 전 날짜는 3콜이고 행도 안 생긴다([[ADR-300]] 결정 4).
 
 | 칸 | 뜻 |
 |---|---|
