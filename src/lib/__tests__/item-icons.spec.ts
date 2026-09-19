@@ -66,6 +66,7 @@ describe('가계부 줄 표식', () => {
     'enhancement:starforce',
     'enhancement:potential',
     'enhancement:additional_potential',
+    'enhancement:soul_potential',
     'income:hunting',
     'income:sol_erda_fragment',
     'income:etc',

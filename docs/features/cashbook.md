@@ -239,9 +239,11 @@
 
 ## 하루 상세 목록의 줄 표식 ([[ADR-235]])
 
-- **여섯 줄이 갈래 그림을 갖는다**([[ADR-235]] 결정 1). 보스 결정석(주간 결정석) · 큐브 재설정 ·
-  스타포스 · 잠재능력 · 에디셔널 잠재능력 · 사냥(손입력 수익). 열쇠는 기록 종류와 갈래 key 다(`recordIconKeyOf`).
+- **일곱 줄이 갈래 그림을 갖는다**([[ADR-235]] 결정 1 · [[ADR-300]] 결정 6). 보스 결정석(주간 결정석) · 큐브 재설정 ·
+  스타포스 · 잠재능력 · 에디셔널 잠재능력 · 소울 잠재능력 · 사냥(손입력 수익). 열쇠는 기록 종류와 갈래 key 다(`recordIconKeyOf`).
   그림은 전부 `src/assets/items/` 에 있고 `ITEM_ASSETS` 하나로 찾는다.
+- **소울 잠재능력 줄은 소울 웨폰 잠재능력 그림이다**([[ADR-300]] 결정 6, 사용자 제공 2026-09-19).
+  `enhancement:soul_potential` → `soul_weapon_potential.webp`. 게임 원본 크기(31×39) 그림을 무손실 webp 로 바꿨다.
 - **큐브는 본잠·에디를 안 가른다**([[ADR-235]] 정정 1). 갈라 봤고 되돌렸다. 감정비용이 장비 레벨
   하나로 나와 종류를 안 가리므로 갈라도 값이 안 바뀌고 줄만 늘었다. 잠재 재설정 둘은 비용 표가
   아예 달라 계속 갈린다.
@@ -269,7 +271,7 @@
     첫 화면의 `기타` 갈래 카드가 쓰는 그림과 같다.
   - 아이템 판매(손입력) · 아이템 구매는 아이콘이다.
 - **강화 줄은 기록 종류와 갈래 key 로 잡는다**(`enhancement:cube_reset` · `enhancement:starforce` · `enhancement:potential` ·
-  `enhancement:additional_potential`, [[ADR-280]] 결정 14). 갈래 key 와 줄 제목 글자는 `lib/enhancement/categories.ts` 가 든다.
+  `enhancement:additional_potential` · `enhancement:soul_potential`, [[ADR-280]] 결정 14). 갈래 key 와 줄 제목 글자는 `lib/enhancement/categories.ts` 가 든다.
   줄 신원(`rowKeyOf`)과 testID 도 key 이고, 금액까지 같은 갈래 줄의 순서는 전처럼 글자 순서다. **결정석 · 판매 줄은 기록 종류
   하나가 열쇠다**(`bossCrystal` · `dropSale`).
 - **펼친 강화 줄의 장비 칸은 장비 key 로 묶는다**([[ADR-280]] 결정 14). 이름은 그 칸에 처음 든 기록의 API 이름(`target_item`)이다.

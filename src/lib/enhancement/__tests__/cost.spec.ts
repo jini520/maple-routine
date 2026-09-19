@@ -5,6 +5,7 @@
 import {
   cubeAppraisalCost,
   potentialResetCost,
+  soulPotentialResetCost,
   starforceCost,
 } from '../cost'
 
@@ -52,6 +53,21 @@ describe('잠재능력 재설정 비용', () => {
 
   it('노멀은 재설정할 수 없는 등급이라 값이 없다', () => {
     expect(potentialResetCost('잠재능력 재설정', 200, '노멀')).toBeNull()
+  })
+})
+
+// 사용자 제공(2026-09-19). 레벨을 안 보고 등급 하나로 정해진다.
+describe('소울 잠재능력 재설정 비용', () => {
+  it('등급 넷의 값', () => {
+    expect(soulPotentialResetCost('레어')).toBe(20_000_000)
+    expect(soulPotentialResetCost('에픽')).toBe(40_000_000)
+    expect(soulPotentialResetCost('유니크')).toBe(65_000_000)
+    expect(soulPotentialResetCost('레전드리')).toBe(88_000_000)
+  })
+
+  it('표에 없는 등급은 값이 없다', () => {
+    expect(soulPotentialResetCost('노멀')).toBeNull()
+    expect(soulPotentialResetCost('')).toBeNull()
   })
 })
 

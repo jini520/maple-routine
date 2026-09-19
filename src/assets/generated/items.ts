@@ -156,13 +156,14 @@ import a141 from '../items/soul_ether_1.webp'
 import a142 from '../items/soul_ether_2.webp'
 import a143 from '../items/soul_ether_3.webp'
 import a144 from '../items/soul_ether_4.webp'
-import a145 from '../items/spell_trace.webp'
-import a146 from '../items/union_wealth.webp'
-import a147 from '../items/vip_sauna_ticket.webp'
-import a148 from '../items/wealth_acquisition_potion.webp'
-import a149 from '../items/wealth_acquisition_potion_small.webp'
-import a150 from '../items/whetstone_faith.png'
-import a151 from '../items/whetstone_life.png'
+import a145 from '../items/soul_weapon_potential.webp'
+import a146 from '../items/spell_trace.webp'
+import a147 from '../items/union_wealth.webp'
+import a148 from '../items/vip_sauna_ticket.webp'
+import a149 from '../items/wealth_acquisition_potion.webp'
+import a150 from '../items/wealth_acquisition_potion_small.webp'
+import a151 from '../items/whetstone_faith.png'
+import a152 from '../items/whetstone_life.png'
 
 export const ITEM_ASSETS: Record<string, ImageAssetRef> = {
   "Berserker_Ring.png": a0,
@@ -310,11 +311,12 @@ export const ITEM_ASSETS: Record<string, ImageAssetRef> = {
   "soul_ether_2.webp": a142,
   "soul_ether_3.webp": a143,
   "soul_ether_4.webp": a144,
-  "spell_trace.webp": a145,
-  "union_wealth.webp": a146,
-  "vip_sauna_ticket.webp": a147,
-  "wealth_acquisition_potion.webp": a148,
-  "wealth_acquisition_potion_small.webp": a149,
-  "whetstone_faith.png": a150,
-  "whetstone_life.png": a151,
+  "soul_weapon_potential.webp": a145,
+  "spell_trace.webp": a146,
+  "union_wealth.webp": a147,
+  "vip_sauna_ticket.webp": a148,
+  "wealth_acquisition_potion.webp": a149,
+  "wealth_acquisition_potion_small.webp": a150,
+  "whetstone_faith.png": a151,
+  "whetstone_life.png": a152,
 }

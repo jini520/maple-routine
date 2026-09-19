@@ -1311,6 +1311,9 @@ describe('강화 줄', () => {
         potential_type: type,
         potential_option_grade: '유니크',
         additional_potential_option_grade: '유니크',
+        // 비용은 사용 전 옵션의 등급으로 매긴다. 등급 칸은 오른 뒤 값이다.
+        before_potential_option: [{ value: 'STR : +9%', grade: '유니크' }],
+        before_additional_potential_option: [{ value: '공격력 : +9', grade: '유니크' }],
       },
       ...over,
     })

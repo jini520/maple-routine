@@ -1,4 +1,4 @@
-// 계정 단위 강화 사용 내역. 세 엔드포인트가 **같은 껍데기**를 쓴다.
+// 계정 단위 강화 사용 내역. 네 엔드포인트가 **같은 껍데기**를 쓴다.
 //
 // 실측(2026-09-06): 정렬은 최신→과거, `count` 는 상한, 커서는 `date` 없이 이어받고, 같은
 // 요청 두 번에 커서·id 목록이 같다.
@@ -47,6 +47,23 @@ describe('경로와 질의', () => {
       '/maplestory/v1/history/starforce?count=1000&date=2026-09-04',
       'key',
     )
+  })
+
+  // 소울만 경로가 붙임표다. 배열 이름은 밑줄이라 `kind` 를 그대로 경로에 못 넣는다.
+  it('소울은 soul-potential 경로를 부르고 soul_potential_history 를 읽는다', async () => {
+    requestJsonMock.mockResolvedValue({
+      count: 1,
+      next_cursor: null,
+      soul_potential_history: [{ ...row('a', '2026-09-18T07:02:32+09:00'), soul_potential_grade: '레어' }],
+    })
+
+    const page = await fetchEnhancementHistory('key', 'soul_potential', itemKeyOf, { dateKey: '2026-09-18' })
+
+    expect(requestJsonMock).toHaveBeenCalledWith(
+      '/maplestory/v1/history/soul-potential?count=1000&date=2026-09-18',
+      'key',
+    )
+    expect(page.rows.map((r) => r.id)).toEqual(['a'])
   })
 
   // 커서가 날짜 맥락을 든다(실측). 함께 보내면 어느 쪽이 이기는지가 계약에 없다.

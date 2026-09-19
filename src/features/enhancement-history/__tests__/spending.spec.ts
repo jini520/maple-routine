@@ -50,19 +50,23 @@ describe('큐브 갈래', () => {
   })
 })
 
-// 잠재는 응답의 potential_type 이 본 잠재와 에디셔널을 가른다.
-it('스타포스 · 잠재능력 · 에디셔널 잠재능력은 각자 갈래 key 다', () => {
+// 잠재는 응답의 potential_type 이 본 잠재와 에디셔널을 가른다. 소울은 엔드포인트가 따로다.
+it('스타포스 · 잠재능력 · 에디셔널 잠재능력 · 소울 잠재능력은 각자 갈래 key 다', () => {
   const categories = toEnhancementSpending(
     [
       entry({ id: 's', kind: 'starforce', payload: { before_starforce_count: 0, upgrade_item: '' } }),
       entry({ id: 'p', kind: 'potential', payload: { potential_type: '잠재능력 재설정' } }),
       entry({ id: 'a', kind: 'potential', payload: { potential_type: '에디셔널 잠재능력 재설정' } }),
+      entry({ id: 'u', kind: 'soul_potential', payload: {} }),
     ],
     NO_EVENT,
   ).map((row) => row.category)
 
-  expect(categories).toEqual(['starforce', 'potential', 'additional_potential'])
+  expect(categories).toEqual(['starforce', 'potential', 'additional_potential', 'soul_potential'])
 })
+
+/** 사용 전 옵션 세 줄. 넥슨 응답처럼 줄마다 `grade` 를 든다. */
+const optionsOf = (grades: string[]) => grades.map((grade) => ({ value: '공격력 : +9%', grade }))
 
 describe('잠재 재설정', () => {
   const potential = (type: string, grade: string, additional: string) =>
@@ -71,17 +75,20 @@ describe('잠재 재설정', () => {
       itemLevel: 200,
       payload: {
         potential_type: type,
+        item_upgrade_result: '실패',
         potential_option_grade: grade,
         additional_potential_option_grade: additional,
+        before_potential_option: optionsOf([grade, grade, grade]),
+        before_additional_potential_option: optionsOf([additional, additional, additional]),
       },
     })
 
-  it('본 잠재는 potential_option_grade 를 본다', () => {
+  it('본 잠재는 사용 전 잠재 옵션을 본다', () => {
     expect(toEnhancementSpending([potential('잠재능력 재설정', '유니크', '레어')], NO_EVENT)[0].costMeso)
       .toBe(38_250_000)
   })
 
-  it('에디셔널은 additional 쪽을 본다', () => {
+  it('에디셔널은 사용 전 에디셔널 옵션을 본다', () => {
     expect(
       toEnhancementSpending([potential('에디셔널 잠재능력 재설정', '유니크', '레전드리')], NO_EVENT)[0].costMeso,
     ).toBe(88_000_000)
@@ -90,6 +97,109 @@ describe('잠재 재설정', () => {
   it('노멀은 재설정할 수 없는 등급이라 값이 없다', () => {
     expect(toEnhancementSpending([potential('잠재능력 재설정', '노멀', '노멀')], NO_EVENT)[0].costMeso)
       .toBeNull()
+  })
+
+  /**
+   * 응답의 등급 칸은 **오른 뒤** 등급이다(시뮬레이터 338건 실측). 재설정 비용은 누르기 전 등급으로
+   * 내므로 사용 전 옵션의 최고 등급으로 센다. 두 예는 그 실측의 줄이다.
+   */
+  describe('등급이 오른 줄', () => {
+    it('본 잠재는 오르기 전 등급으로 센다', () => {
+      const row = entry({
+        kind: 'potential',
+        itemLevel: 200,
+        targetItem: '제네시스 폴암',
+        payload: {
+          potential_type: '잠재능력 재설정',
+          item_upgrade_result: '성공',
+          potential_option_grade: '레전드리',
+          before_potential_option: optionsOf(['유니크', '에픽', '유니크']),
+        },
+      })
+
+      expect(toEnhancementSpending([row], NO_EVENT)[0].costMeso).toBe(38_250_000)
+    })
+
+    it('에디셔널도 오르기 전 등급으로 센다. 아랫줄의 노멀은 등급이 아니다', () => {
+      const row = entry({
+        kind: 'potential',
+        itemLevel: 160,
+        targetItem: '고통의 근원',
+        payload: {
+          potential_type: '에디셔널 잠재능력 재설정',
+          item_upgrade_result: '성공',
+          additional_potential_option_grade: '에픽',
+          before_additional_potential_option: optionsOf(['레어', '노멀', '노멀']),
+        },
+      })
+
+      expect(toEnhancementSpending([row], NO_EVENT)[0].costMeso).toBe(10_375_000)
+    })
+  })
+
+  // 등급 칸으로 물러서지 않는다. 그 칸은 오른 뒤 값이라 틀린 값이 조용히 선다.
+  it('사용 전 옵션이 없으면 값이 없다', () => {
+    const row = entry({
+      kind: 'potential',
+      payload: { potential_type: '잠재능력 재설정', potential_option_grade: '유니크' },
+    })
+
+    expect(toEnhancementSpending([row], NO_EVENT)[0].costMeso).toBeNull()
+  })
+
+  it('사용 전 옵션에 모르는 등급 글자가 있으면 값이 없다', () => {
+    const row = entry({
+      kind: 'potential',
+      payload: {
+        potential_type: '잠재능력 재설정',
+        potential_option_grade: '유니크',
+        before_potential_option: optionsOf(['Unique', '유니크', '유니크']),
+      },
+    })
+
+    expect(toEnhancementSpending([row], NO_EVENT)[0].costMeso).toBeNull()
+  })
+})
+
+// 응답 모양은 넥슨 문서의 `SoulPotentialHistory` 다. 값은 실물을 못 봐 잠재에서 잰 규칙을 옮겼다.
+describe('소울 잠재능력 재설정', () => {
+  const soul = (before: string[], grade: string, over: Record<string, unknown> = {}) =>
+    entry({
+      kind: 'soul_potential',
+      itemLevel: null,
+      targetItem: '제네시스 폴암',
+      payload: {
+        item_upgrade_result: '실패',
+        soul_potential_grade: grade,
+        before_soul_potential_option: optionsOf(before),
+        ...over,
+      },
+    })
+
+  // 응답에 `item_level` 이 없다. 소울 비용은 레벨을 안 본다.
+  it('등급 하나로 값을 매긴다. 레벨이 없어도 된다', () => {
+    expect(toEnhancementSpending([soul(['유니크', '유니크', '에픽'], '유니크')], NO_EVENT)[0].costMeso)
+      .toBe(65_000_000)
+  })
+
+  it('등급이 오른 줄은 오르기 전 등급으로 센다', () => {
+    const row = soul(['레어', '레어', '레어'], '에픽', { item_upgrade_result: '성공' })
+
+    expect(toEnhancementSpending([row], NO_EVENT)[0].costMeso).toBe(20_000_000)
+  })
+
+  it('등급 글자가 표에 없으면 값이 없다', () => {
+    expect(toEnhancementSpending([soul(['Legendary'], 'Legendary')], NO_EVENT)[0].costMeso).toBeNull()
+  })
+
+  // 응답에 `world_name` 이 없다. 큐브 · 잠재처럼 캐릭터 이름으로 거른다.
+  it('스페셜 캐릭터의 줄은 이름으로 뺀다', () => {
+    const rows = toEnhancementSpending(
+      [{ ...soul(['레어'], '레어'), characterName: '머리맨들맨둘' }],
+      new Set(['머리맨들맨둘']),
+    )
+
+    expect(rows).toEqual([])
   })
 })
 

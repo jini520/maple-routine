@@ -77,6 +77,16 @@ describe('계획', () => {
   it('내일 이후는 안 센다', async () => {
     expect(await planEnhancementHistory(['2026-09-07'], '2026-09-06')).toHaveLength(0)
   })
+
+  // 소울 잠재능력은 2026-09-17 패치로 생겼다. 그 전 날짜는 부를 것이 없다.
+  it('소울은 2026-09-17 부터만 센다', async () => {
+    const jobs = await planEnhancementHistory(['2026-09-16', '2026-09-17'], '2026-09-19')
+
+    expect(jobs.filter((job) => job.kind === 'soul_potential')).toEqual([
+      { kind: 'soul_potential', dateKey: '2026-09-17' },
+    ])
+    expect(jobs).toHaveLength(7)
+  })
 })
 
 // 층이 이것으로 두 가지를 정한다. 모달을 띄울지(`hasPast`)와 **진행 바의 분모**(`total`)다.
@@ -152,6 +162,14 @@ describe('수집', () => {
     await collectEnhancementHistory([], NOW, (done, total) => seen.push([done, total]))
 
     expect(seen).toEqual([[0, 0]])
+  })
+
+  it('패치 뒤의 날짜는 소울 사용 내역도 부른다', async () => {
+    await collectEnhancementHistory(['2026-09-18'], new Date('2026-09-19T12:00:00+09:00'))
+
+    expect(fetchEnhancementHistory.mock.calls.map((call) => call[1]).sort()).toEqual(
+      ['cube', 'potential', 'soul_potential', 'starforce'],
+    )
   })
 
   it('받은 줄을 넣는다', async () => {
