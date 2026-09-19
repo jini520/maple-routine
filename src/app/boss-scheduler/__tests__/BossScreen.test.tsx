@@ -46,6 +46,15 @@ jest.mock('../../../features/boss-scheduler/store', () => ({
 }))
 
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
+// `useFocusEffect` 는 내비게이션 컨텍스트를 요구한다. 이 하네스는 화면 하나만 띄우므로 포커스를
+// 이펙트로 흉내 낸다(마운트 = 첫 포커스, 실제와 같은 순서다). today 테스트와 같은 장치다.
+jest.mock('@react-navigation/native', () => ({
+  ...jest.requireActual('@react-navigation/native'),
+  useFocusEffect: (callback: () => void | (() => void)) => {
+    const react = require('react') as typeof import('react')
+    react.useEffect(callback, [callback])
+  },
+}))
 
 // **로스터 조회 목도 라우트 목도 여기 없다**. 이 화면은 더 이상 피커를 열지 않고 `openPicker`
 // 파라미터도 받지 않으므로 `schedule-sync` 와 `useRoute` 를 아예 부르지 않는다.
@@ -71,6 +80,7 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     partySizes: {},
     manualTrackedByOcid: {},
     loadTrackedOcids: jest.fn(),
+    reloadManualCompleted: jest.fn().mockResolvedValue(undefined),
     saveTrackedOcids: jest.fn(),
     // 실물은 `Promise<void>` 다. 당김 훅이 회차의 **끝** 을 기다린다.
     refresh: jest.fn().mockResolvedValue(undefined),
@@ -198,6 +208,17 @@ describe('BossScreen: 빈 상태와 마운트', () => {
     await renderScreen()
 
     expect(store.loadTrackedOcids).toHaveBeenCalled()
+  })
+
+  // 탭은 계속 살아 있어 진입 조회가 마운트 때 한 번뿐이다. 보스 수익에서 적은 완료는 포커스가
+  // 물어야 선다(사용자 보고). 넥슨을 안 타는 로컬 재조회다.
+  it('포커스마다 직접 완료를 다시 묻는다', async () => {
+    const store = mockStore()
+
+    await renderScreen()
+
+    expect(store.reloadManualCompleted).toHaveBeenCalledTimes(1)
+    expect(store.refresh).not.toHaveBeenCalled()
   })
 
   it('추적 목록이 빈 배열이면 빈 상태 안내만 보인다', async () => {

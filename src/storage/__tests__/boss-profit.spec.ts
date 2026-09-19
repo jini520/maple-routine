@@ -416,6 +416,19 @@ describe('subscribeBossProfitRecordsRevision', () => {
     unsubscribe()
   })
 
+  // 직접 완료 취소가 이 길이다. 판만 오르고 알림이 없으면 구독하는 배지가 취소를 놓친다.
+  it('지우기도 구독자를 부른다', async () => {
+    const { subscribeBossProfitRecordsRevision, deleteBossProfitRecord } =
+      require('../boss-profit') as typeof import('../boss-profit')
+    const listener = jest.fn()
+    const unsubscribe = subscribeBossProfitRecordsRevision(listener)
+
+    await deleteBossProfitRecord({ ocid: 'ocid-1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-08-20' })
+
+    expect(listener).toHaveBeenCalledTimes(1)
+    unsubscribe()
+  })
+
   it('쓰기가 던지면 안 부른다', async () => {
     const { subscribeBossProfitRecordsRevision, upsertBossProfitRecord } =
       require('../boss-profit') as typeof import('../boss-profit')

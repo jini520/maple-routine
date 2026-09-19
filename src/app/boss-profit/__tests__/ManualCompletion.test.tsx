@@ -26,12 +26,19 @@ jest.mock('@gorhom/bottom-sheet', () => {
   }
 })
 
+// 파티 관리의 인원은 기기 저장소에서 온다. 시트가 그 값으로 열리는지를 이 목으로 가른다.
+jest.mock('../../../features/manual-completion/record', () => ({
+  ...jest.requireActual('../../../features/manual-completion/record'),
+  loadConfiguredPartySize: jest.fn(),
+}))
+
 import { act, fireEvent } from '@testing-library/react-native'
 import type { render } from '@testing-library/react-native'
 
 import { useBossProfitStore } from '../../../features/boss-profit/store'
 import { useManualCompletionStore } from '../../../features/manual-completion/store'
 import { BossProfitBossRow } from '../BossProfitBossRow'
+import { loadConfiguredPartySize } from '../../../features/manual-completion/record'
 import { 보스행, 컨텍스트값, renderProfit, 주간보스, 주간보스이름, PERIOD, NOW } from './harness'
 
 const saveManualCompletion = jest.fn().mockResolvedValue(undefined)
@@ -50,8 +57,12 @@ function 서버가열었다(): void {
 const 미완료행 = () =>
   보스행({ difficulty: 'chaos', isComplete: false, partySize: null, payoutMeso: 0, periodKey: PERIOD })
 
+const mockedPartySize = jest.mocked(loadConfiguredPartySize)
+
 beforeEach(() => {
   jest.clearAllMocks()
+  // 파티 관리에 설정이 없는 것이 기본이다. 그때 시트는 1 인으로 연다.
+  mockedPartySize.mockResolvedValue(null)
   useManualCompletionStore.setState({ bosses: null, dismissedWeek: null, visible: false })
   useBossProfitStore.setState({
     characterIssues: {},
@@ -140,6 +151,60 @@ describe('시트', () => {
     expect(saveManualCompletion).toHaveBeenCalledWith(
       expect.objectContaining({ bossKey: 주간보스 }),
       expect.objectContaining({ partySize: 2, difficulty: 'chaos' }),
+    )
+  })
+})
+
+/**
+ * 파티 인원은 **파티 관리에 설정된 그 보스 · 그 난이도의 인원**으로 시작한다.
+ *
+ * 미완료 행은 `partySize` 가 비어 있어, 그 값으로 시작하면 늘 1 로 열렸다(사용자 지적). 사용자가
+ * 매주 같은 파티로 잡는다는 것을 이미 파티 관리에 적어 뒀는데 다시 올려야 했다.
+ */
+describe('파티 인원의 시작값', () => {
+  it('파티 관리에 설정된 인원으로 연다', async () => {
+    서버가열었다()
+    mockedPartySize.mockResolvedValue(3)
+    const view = await renderProfit(<BossProfitBossRow row={미완료행()} drops={[]} />, 컨텍스트값({ now: NOW }))
+
+    await press(view, `${주간보스이름} 완료 상태로 변경`)
+    await act(async () => {})
+    await press(view, '완료 상태로 변경')
+
+    expect(mockedPartySize).toHaveBeenCalledWith('ocid-1', 주간보스, 'chaos')
+    expect(saveManualCompletion).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ partySize: 3 }),
+    )
+  })
+
+  it('설정이 없으면 1 인이다', async () => {
+    서버가열었다()
+    const view = await renderProfit(<BossProfitBossRow row={미완료행()} drops={[]} />, 컨텍스트값({ now: NOW }))
+
+    await press(view, `${주간보스이름} 완료 상태로 변경`)
+    await act(async () => {})
+    await press(view, '완료 상태로 변경')
+
+    expect(saveManualCompletion).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ partySize: 1 }),
+    )
+  })
+
+  // 고칠 때는 **적어 둔 값**이 시작이다. 그 기록에 사용자가 이미 인원을 정했다.
+  it('수정은 기록의 인원으로 연다', async () => {
+    mockedPartySize.mockResolvedValue(3)
+    const 직접기록행 = 보스행({ difficulty: 'chaos', source: 'manual', periodKey: PERIOD, defeatedOn: PERIOD, partySize: 1 })
+    const view = await renderProfit(<BossProfitBossRow row={직접기록행} drops={[]} />, 컨텍스트값({ now: NOW }))
+
+    await press(view, `${주간보스이름} 기록 수정`)
+    await act(async () => {})
+    await press(view, '수정')
+
+    expect(saveManualCompletion).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ partySize: 1 }),
     )
   })
 })

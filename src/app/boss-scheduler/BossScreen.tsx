@@ -4,8 +4,9 @@
  * @see docs/features/boss-scheduler.md 완료 승격 · 시즌 판정 · 빈 상태 정책
  */
 import { isBossBlocked } from '../../lib/scheduler/required-level'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Pressable, View } from 'react-native'
+import { useFocusEffect } from '@react-navigation/native'
 
 import type { BossDifficulty } from '../../types'
 import {
@@ -145,6 +146,7 @@ export function BossScreen(): React.JSX.Element {
     manualTrackedByOcid,
     manualCompletedByOcid,
     loadTrackedOcids,
+    reloadManualCompleted,
     refresh,
     // 카드 탭 모달이 쓰는 두 액션. 난이도 교체는 수동 모드에서만 멤버십을 바꾼다.
     setPartySize,
@@ -170,6 +172,14 @@ export function BossScreen(): React.JSX.Element {
     loadTrackedOcids()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // 이 화면은 탭이라 계속 살아 있고 위 진입 조회는 마운트 때 한 번뿐이다. 그 사이 보스 수익에서
+  // 적은 직접 완료는 포커스가 물어야 선다. 스토어가 기록 판을 견줘 바뀌었을 때만 읽는다(넥슨 없음).
+  useFocusEffect(
+    useCallback(() => {
+      void reloadManualCompleted()
+    }, [reloadManualCompleted]),
+  )
 
   // `null` 은 0명이 아니라 **저장소를 아직 안 읽었다** 다. `||` 로 묶으면 첫 페인트가 모르는
   // 빈 상태는 읽고 0명임을 **확인한 뒤에만** 그린다.

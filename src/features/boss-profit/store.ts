@@ -2000,6 +2000,11 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       new Date(),
     )
 
+    // 쓴 것을 **이번 기간 스냅샷**에 먼저 들인다(넥슨 없음). 월간 탭의 이번 달 행과 다른 주에서
+    // 돌아올 이번 주가 SQLite 가 아니라 그 스냅샷을 읽으므로, 아래에서 다른 주로 옮겨 가더라도
+    // 이것을 건너뛰면 그쪽이 옛 값으로 남는다(사용자 보고: 주간에서 적은 월간 보스가 월간 탭에 안 섰다).
+    await get().refresh(get().trackedOcids ?? [], { inPlace: true, skipSync: true })
+
     // **적은 날짜의 주로 데려간다**(사용자 지정). 월간 보스는 잡은 주에 서므로 날짜를 옮기면 그
     // 행이 다른 주로 가고, 보던 주에 그대로 두면 방금 적은 것이 화면에서 사라진다.
     //
@@ -2011,11 +2016,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       // 화살표 판정은 이 로드가 끝나야 안다. 이동과 같은 규칙으로 그때까지 닫아 둔다.
       set({ periodKey: targetWeek, canGoPreviousPeriod: false })
       await loadPeriod(set, 'weekly', targetWeek, ocids, new Date(), myGeneration)
-      return
     }
-
-    // 쓴 것을 화면에 반영한다. 보던 기간을 안 떠난다.
-    await get().refresh(get().trackedOcids ?? [], { inPlace: true, skipSync: true })
   },
 
   async cancelManualCompletion(rowKey) {

@@ -108,7 +108,7 @@ interface TabStoreMock {
 }
 interface StoreMocks {
   content: TabStoreMock
-  boss: TabStoreMock
+  boss: TabStoreMock & { reloadManualCompleted: jest.Mock }
   profit: TabStoreMock
   dropHistory: { load: jest.Mock }
 }
@@ -148,6 +148,7 @@ function setStores(
     monthlyFilter: 'all',
     loadTrackedOcids: mocks.boss.loadTrackedOcids,
     refresh: mocks.boss.refresh,
+    reloadManualCompleted: mocks.boss.reloadManualCompleted,
     ...overrides.boss } as never)
 
   mockedProfit.mockReturnValue({
@@ -354,7 +355,11 @@ beforeEach(() => {
   mocks = {
     // 실물은 넷 다 `Promise` 다. 당김 훅이 `allSettled` 로 넷의 **끝** 을 기다린다.
     content: { loadTrackedOcids: jest.fn(), refresh: jest.fn().mockResolvedValue(undefined) },
-    boss: { loadTrackedOcids: jest.fn(), refresh: jest.fn().mockResolvedValue(undefined) },
+    boss: {
+      loadTrackedOcids: jest.fn(),
+      refresh: jest.fn().mockResolvedValue(undefined),
+      reloadManualCompleted: jest.fn().mockResolvedValue(undefined),
+    },
     profit: { loadTrackedOcids: jest.fn(), refresh: jest.fn().mockResolvedValue(undefined) },
     dropHistory: { load: jest.fn().mockResolvedValue(undefined) } }
   mockedGetRepresentative.mockResolvedValue(null)
@@ -402,6 +407,16 @@ describe('TodayScreen: 진입 조회', () => {
     await renderScreen()
 
     expect(mocks.dropHistory.load).toHaveBeenCalledTimes(1)
+  })
+
+  // 남은 스케줄이 보스 스케줄러 스토어의 직접 완료를 본다. 탭은 계속 살아 있어서, 보스 수익에서
+  // 적고 돌아와도 포커스가 안 물으면 옛 값이 선다(사용자 보고). 넥슨을 안 타는 로컬 재조회다.
+  it('포커스마다 직접 완료를 다시 묻는다', async () => {
+    await renderScreen()
+
+    expect(mocks.boss.reloadManualCompleted).toHaveBeenCalledTimes(1)
+    // 게이트를 우회하는 동기화가 아니다.
+    expect(mocks.boss.refresh).not.toHaveBeenCalled()
   })
 
 })

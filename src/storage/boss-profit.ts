@@ -491,7 +491,7 @@ export async function deleteBossProfitRecord(key: BossProfitRecordKey): Promise<
     `DELETE FROM boss_profit_records WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ?`,
     [key.ocid, key.bossKey, key.difficulty, key.periodKey],
   )
-  recordsRevision += 1
+  bumpRecordsRevision()
 }
 
 /**

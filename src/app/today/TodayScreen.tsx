@@ -147,6 +147,20 @@ export function TodayScreen(): React.JSX.Element {
   )
 
   /**
+   * 남은 스케줄의 직접 완료. 포커스마다 스토어에 묻는다.
+   *
+   * 남은 스케줄은 보스 스케줄러 스토어의 `manualCompletedByOcid` 를 본다. 이 화면은 탭이라 계속
+   * 살아 있어서, 보스 수익에서 적고 돌아와도 안 물으면 옛 값이 선다. 스토어가 기록 판을 견줘
+   * 바뀌었을 때만 읽는다(넥슨 없음).
+   */
+  const reloadManualCompleted = boss.reloadManualCompleted
+  useFocusEffect(
+    useCallback(() => {
+      void reloadManualCompleted()
+    }, [reloadManualCompleted]),
+  )
+
+  /**
    * 공지 배너. 포커스마다 기기를 다시 읽는다. 네트워크가 없어 싸다.
    *
    * 드롭 기록과 이펙트를 합치지 않는다. 저쪽은 리비전을 물어 실제로 바뀌었을 때만 도는데 이쪽은
