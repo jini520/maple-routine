@@ -186,7 +186,14 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
               keyboardType={isText ? undefined : 'number-pad'}
               placeholder={props.placeholder ?? (isText ? '' : '0')}
               autoFocus
-              className={`h-9 flex-1 text-2xl font-bold text-text ${isText ? 'text-left' : 'text-right'}`}
+              /*
+                **글자와 숫자의 크기가 다르다.** 숫자는 자릿수를 세는 값이라 크게 두고, 글자는
+                한 줄에 이름이 다 들어가야 해서 한 단계 작다. 둘을 같은 크기로 두면 글자 칸에서
+                자리표시자까지 카드를 꽉 채운다.
+              */
+              className={`h-9 flex-1 text-text ${
+                isText ? 'text-left text-xl font-semibold' : 'text-right text-2xl font-bold'
+              }`}
               style={isText ? undefined : TABULAR_NUMS}
             />
             {props.unit !== undefined && (

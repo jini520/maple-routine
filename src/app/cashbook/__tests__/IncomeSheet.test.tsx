@@ -132,11 +132,9 @@ async function 판매시트(
   return 그리기(overrides, 'item_sale')
 }
 
-/** 아이템 판매의 치는 자리는 **판매 대금 칸**이다. */
+/** 아이템 판매의 치는 자리는 **판매 대금 칸**이다. 그 칸은 입력 카드로 옮겨갔다. */
 async function 대금치기(view: Rendered, text: string): Promise<void> {
-  await act(async () => {
-    fireEvent.changeText(view.getByTestId('income-sheet-gross'), text)
-  })
+  await 칸에치기(view, 'income-sheet-gross', text)
 }
 
 /** 아이디로 집은 칸에 치는 도우미. 큰 숫자가 아닌 폼 안의 입력들이다. */
@@ -514,7 +512,7 @@ describe('판매 수수료', () => {
     await 누르기(view, '5%')
     await 누르기(view, '3%')
 
-    expect(view.getByTestId('income-sheet-gross').props.value).toBe('1200000000')
+    expect(줄글자(view, 'income-sheet-gross')).toBe('1200000000')
     // 못 치는 숫자는 칸이 아니라 글자다. 초기화 버튼도 없다.
     expect(view.getByTestId('income-sheet-amount').props.value).toBeUndefined()
     expect(view.queryByLabelText('금액 초기화')).toBeNull()
@@ -731,7 +729,7 @@ describe('수정 모드', () => {
     const view = await 그리기({ editing: 판매기록, onDelete: jest.fn() })
 
     expect(view.getByTestId('income-sheet-name-label')).toHaveTextContent('판매 아이템')
-    expect(view.getByTestId('income-sheet-gross').props.value).toBe('1200000000')
+    expect(줄글자(view, 'income-sheet-gross')).toBe('1200000000')
     expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent('캐릭터 선택')
   })
 
@@ -745,7 +743,7 @@ describe('수정 모드', () => {
       onDelete: jest.fn(),
     })
 
-    expect(view.getByTestId('income-sheet-gross').props.value).toBe('1200000000')
+    expect(줄글자(view, 'income-sheet-gross')).toBe('1200000000')
     expect(view.getByLabelText('5%').props.accessibilityState?.selected).toBe(true)
   })
 })
@@ -2723,7 +2721,7 @@ describe('날짜 바꾸기', () => {
 
     await 날짜고르기(view, '2026-08-22')
 
-    expect(view.getByTestId('income-sheet-gross').props.value).toBe('1200000000')
+    expect(줄글자(view, 'income-sheet-gross')).toBe('1200000000')
   })
 
   it('수정으로 열어도 바꿀 수 있다. 그 기록이 다른 날로 옮겨 간다', async () => {
