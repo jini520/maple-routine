@@ -1,0 +1,226 @@
+/**
+ * 시트의 칸 하나를 키보드 위에서 받는 카드.
+ *
+ * 시트는 키보드에 반응하지 않는다. 칸을 누르면 시트를 한 겹 더 덮고 이 카드가 떠서 그 칸만
+ * 받는다. 시트의 칸은 값을 보여 주는 누르개가 되고 실제 입력은 여기에만 있다.
+ *
+ * **칸 하나를 받고 닫힌다.** 다음 칸으로 넘기는 버튼이 없어서 이전 버튼도 없다. 다음 칸은 시트의
+ * 그 줄을 다시 눌러 새 카드를 연다. 그래서 폼이 치는 칸의 차례를 들 일이 없다. 조건에 따라
+ * 섰다 말았다 하는 줄이 여럿이라 그 목록은 고정으로 둘 수 없는 것이었다.
+ *
+ * **셈한 결과를 안 그린다.** 합계는 확인을 누르고 시트로 돌아가면 큰 숫자 자리에 이미 서 있다.
+ *
+ * 정리(앞자리 0 걷기 · 빈 칸과 0 가르기)는 **호출부가 한다**. 폼마다 규칙이 갈려서다. 사냥의
+ * 조각 가격은 빈 칸이 보관이고 0 은 0 메소에 판 것이다.
+
+ *
+ * @example
+ * <InputCard
+ *   label="조각 가격"
+ *   context="솔 에르다 조각 · 개당"
+ *   icon="meso"
+ *   unit="메소"
+ *   reading
+ *   chips={MESO_QUICK_ADDS}
+ *   value={fragmentPriceText}
+ *   onConfirm={(next) => setFragmentPriceText(optionalMesoTextOf(optionalMesoValueOf(next)))}
+ *   onCancel={() => setEditing(null)}
+ * />
+ */
+import { useState } from 'react'
+import { Image, Keyboard, Pressable, View, type StyleProp, type ViewStyle } from 'react-native'
+import Animated, { type AnimatedStyle } from 'react-native-reanimated'
+
+import { getItemIconUrlByFile } from '../../../lib/assets/asset-lookup'
+import { formatMesoUnits } from '../../../lib/drop/drop-price'
+import { Text, TextInput, XIcon } from '../../atoms'
+import { TABULAR_NUMS } from '../../../constants/style/text-styles'
+import { MAX_MESO, acceptMesoText, mesoTextOf, mesoValueOf } from '../MesoPad/meso-pad'
+
+/** 머리에 서는 표식. 메소를 받는 칸은 주머니, 조각 개수는 조각이다. */
+export type InputCardIcon = 'meso' | 'fragment'
+
+export interface InputCardProps {
+  /** 칸 이름. 머리의 큰 글자. */
+  label: string
+  /** 칸 이름 아래 한 줄. 어느 아이템의 값인지처럼 시트에서만 알 수 있는 맥락. */
+  context?: string
+  /**
+   * 반드시 있어야 하는 칸. 별표가 채워도 안 사라진다. `지금 비었다` 가 아니라 `이 칸은 반드시
+   * 있어야 한다` 를 말하기 때문이다.
+   */
+  required?: boolean
+  icon?: InputCardIcon
+  /** 값 오른쪽 단위. `메소` · `개` · `%` · `메포`. */
+  unit?: string
+  placeholder?: string
+  /** 시트가 든 지금 글자. 카드는 이것을 씨앗으로만 받는다. */
+  value: string
+  /**
+   * 한국어 단위 읽기(`1200만`)를 값 왼쪽에 적을지. 메소 금액에만 뜻이 있다. 개수 · 비율 · 시세는
+   * 자릿수가 작아 읽어 줄 것이 없고, 그 자리는 맥락 줄이 대신 진다.
+   */
+  reading?: boolean
+  /** 글자 칸. 글자판이 뜨고 값이 왼쪽 정렬이며 칩이 안 선다. */
+  text?: boolean
+  /** 값에 더하는 눈금. 글자 칸에서는 무시된다. */
+  chips?: readonly { label: string; value: number }[]
+  /** 확인. 친 글자를 그대로 준다. 정리는 받는 쪽이 한다. */
+  onConfirm: (next: string) => void
+  /**
+   * 버리고 닫기. **닫기 버튼(✕)과 안드로이드 뒤로가기**가 부른다.
+   *
+   * 스크림 탭은 안 부른다(사용자 지정). 실수로 판 밖을 눌러 치던 값이 날아가는 것을 막는다.
+   */
+  onCancel: () => void
+  /**
+   * 카드 판을 띄우는 자리. `InputCardLayer` 가 키보드 높이를 여기로 준다.
+   *
+   * **스크림이 아니라 판만 띄운다.** 바깥 상자에 여백을 주면 그 안에 사는 스크림이 여백 위에서
+   * 끊겨 키보드와 카드 사이에 안 덮인 띠가 남는다(사용자가 실기 화면에서 잡았다).
+   */
+  panelStyle?: StyleProp<AnimatedStyle<StyleProp<ViewStyle>>>
+}
+
+/** 표식 이름에서 그림으로. 없는 그림은 없는 채로 둔다. */
+function iconSourceOf(icon: InputCardIcon | undefined): ReturnType<typeof getItemIconUrlByFile> {
+  if (icon === undefined) return null
+  return getItemIconUrlByFile(icon === 'meso' ? 'meso_pouch.webp' : 'sol_erda_fragment.webp')
+}
+
+export function InputCard(props: InputCardProps): React.JSX.Element {
+  const [draft, setDraft] = useState(props.value)
+
+  const isText = props.text === true
+  const chips = isText ? [] : (props.chips ?? [])
+  const iconSource = iconSourceOf(props.icon)
+
+  function change(next: string): void {
+    setDraft(isText ? next : acceptMesoText(draft, next))
+  }
+
+  function add(step: number): void {
+    setDraft(mesoTextOf(Math.min(MAX_MESO, mesoValueOf(draft) + step)))
+  }
+
+  return (
+    // 자리는 `InputCardLayer` 가 준다. 카드는 자기가 키보드 위 어디에 앉는지 모른다.
+    <View className="flex-1 justify-end" testID="input-card">
+      {/*
+        시트 위에 한 겹 더. **누르면 키보드만 내린다**(사용자 지정). 카드는 안 닫힌다 — 닫는 것은
+        ✕ 뿐이다. 판의 빈 자리와 같은 일을 하므로 카드 안팎이 같은 규칙이 된다.
+
+        터치는 여기서 멈춘다. 카드가 열려 있는 동안 뒤의 시트는 안 눌린다.
+      */}
+      <Pressable
+        testID="input-card-scrim"
+        onPress={Keyboard.dismiss}
+        className="absolute inset-0 bg-scrim"
+      />
+
+      {/*
+        띄우는 상자와 그리는 상자를 **가른다**. 한 상자에 `style` 과 `className` 을 함께 주면
+        NativeWind 가 클래스를 `style` 로 푸는 바람에 한쪽이 덮여, 판의 바탕·모서리·여백이
+        통째로 사라진다(시뮬레이터에서 두 번 그렇게 났다).
+      */}
+      <Animated.View style={props.panelStyle}>
+        {/*
+          판의 **빈 자리를 누르면 키보드만 내린다**(사용자 지정). 카드는 제자리에 남는다 —
+          자리는 마지막으로 잰 키보드 높이를 붙들고 있어 안 흔들린다.
+
+          누르개가 아니면 아무 일도 안 일어난다. RN 은 터치가 닿은 가장 위 뷰에서 멈추고 뒤의
+          스크림으로 흘려보내지 않아서, 손에 익은 «입력 칸 밖을 누르면 키보드가 내려간다» 가
+          성립하지 않았다.
+        */}
+        <Pressable
+          testID="input-card-panel"
+          onPress={Keyboard.dismiss}
+          className="mx-3 mb-3 rounded-2xl border border-border-strong bg-surface p-4"
+        >
+          <View className="flex-row items-center gap-2.5">
+            {iconSource !== null && (
+              // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
+              <Image source={iconSource} resizeMode="contain" className="h-7 w-7 shrink-0" aria-hidden />
+            )}
+            <View className="min-w-0 flex-1">
+              <Text numberOfLines={1} className="text-sm font-bold text-text">
+                {props.label}
+                {props.required === true && (
+                  <Text testID="input-card-required" className="text-error-ink">
+                    {' *'}
+                  </Text>
+                )}
+              </Text>
+              {props.context !== undefined && (
+                <Text numberOfLines={1} className="text-11 text-text-muted">
+                  {props.context}
+                </Text>
+              )}
+            </View>
+            <Pressable
+              testID="input-card-close"
+              role="button"
+              aria-label="닫기"
+              onPress={props.onCancel}
+              className="-mr-2.5 h-11 w-11 items-center justify-center"
+            >
+              <XIcon className="h-5 w-5 text-text-muted" aria-hidden />
+            </Pressable>
+          </View>
+
+          {/*
+            읽기 칸은 값이 비어도 자리를 지킨다. 사라지면 첫 타건에 값이 왼쪽으로 밀린다.
+            글자 칸에는 읽어 줄 단위가 없어 그 자리를 아예 안 세운다.
+          */}
+          <View className="mt-3 h-14 flex-row items-center gap-2 rounded-xl border-[1.5px] border-primary bg-bg px-3.5">
+            {props.reading === true && (
+              <Text testID="input-card-reading" className="shrink-0 text-xs text-text-muted" style={TABULAR_NUMS}>
+                {draft === '' ? '' : formatMesoUnits(mesoValueOf(draft))}
+              </Text>
+            )}
+            <TextInput
+              testID="input-card-value"
+              aria-label={props.label}
+              value={draft}
+              onChangeText={change}
+              keyboardType={isText ? undefined : 'number-pad'}
+              placeholder={props.placeholder ?? (isText ? '' : '0')}
+              autoFocus
+              className={`h-9 flex-1 text-2xl font-bold text-text ${isText ? 'text-left' : 'text-right'}`}
+              style={isText ? undefined : TABULAR_NUMS}
+            />
+            {props.unit !== undefined && (
+              <Text className="shrink-0 text-xs font-semibold text-text-muted">{props.unit}</Text>
+            )}
+          </View>
+
+          {chips.length > 0 && (
+            <View className="mt-2 flex-row flex-wrap justify-end gap-1.5">
+              {chips.map((chip) => (
+                <Pressable
+                  key={chip.label}
+                  role="button"
+                  onPress={() => add(chip.value)}
+                  className="h-7 justify-center rounded-full border border-border px-2.5 active:bg-surface-2"
+                >
+                  <Text className="text-11 font-semibold text-text-muted" style={TABULAR_NUMS}>
+                    {chip.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
+
+          <Pressable
+            testID="input-card-confirm"
+            role="button"
+            onPress={() => props.onConfirm(draft)}
+            className="mt-3 h-11 items-center justify-center rounded-xl bg-primary"
+          >
+            <Text className="text-sm font-bold text-on-primary">확인</Text>
+          </Pressable>
+        </Pressable>
+      </Animated.View>
+    </View>
+  )
+}
