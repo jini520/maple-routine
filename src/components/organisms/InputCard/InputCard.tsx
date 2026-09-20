@@ -182,6 +182,13 @@ export interface InputCardProps {
    * 끊겨 키보드와 카드 사이에 안 덮인 띠가 남는다(사용자가 실기 화면에서 잡았다).
    */
   panelStyle?: StyleProp<AnimatedStyle<StyleProp<ViewStyle>>>
+  /**
+   * 부탁을 세는 수. **바뀌면 씨앗을 다시 심는다**.
+   *
+   * 잇따라 여는 흐름(드롭 판매가)이 쓴다. 카드를 다시 세워도 같은 일이 되지만, 그러면 칸이
+   * `autoFocus` 를 다시 걸어 키보드가 닫혔다 열린다.
+   */
+  seed?: number
 }
 
 /** 표식 이름에서 그림으로. 그림을 그대로 넘겼으면 그것이 답이다. 없는 그림은 없는 채로 둔다. */
@@ -195,6 +202,18 @@ function iconSourceOf(icon: InputCardIcon | undefined): ImageAssetRef | null {
 export function InputCard(props: InputCardProps): React.JSX.Element {
   const [draft, setDraft] = useState(props.value)
   const [step, setStep] = useState(props.stepper?.value ?? 0)
+  /**
+   * 씨앗을 다시 심는다. **그리는 중에** 바꾼다.
+   *
+   * 효과로 미루면 한 프레임 동안 앞 아이템의 값이 보인다. React 는 그리는 중의 자기 상태 갱신을
+   * 받아들이고 그 자리에서 다시 그린다.
+   */
+  const [seed, setSeed] = useState(props.seed)
+  if (props.seed !== seed) {
+    setSeed(props.seed)
+    setDraft(props.value)
+    setStep(props.stepper?.value ?? 0)
+  }
 
   const isText = props.text === true
   const chips = isText ? [] : (props.chips ?? [])
@@ -312,6 +331,15 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
               </Text>
             )}
             <TextInput
+              /*
+                **글자 칸만 다시 세운다.** 아톰이 글자 칸을 `defaultValue` 로 심는데(그래야 한글
+                조합이 안 깨진다) 그 값은 이미 선 칸에서는 안 갈린다. 씨앗이 바뀌었는데 안 갈리면
+                잇따라 여는 흐름에서 **안 친 글자가 저장된다**.
+
+                숫자 칸은 통제된 값이라 다시 세울 것이 없다. 다시 세우면 `autoFocus` 가 키보드를
+                닫았다 여는데, 잇따라 받는 흐름은 숫자 칸뿐이라 그 깜빡임이 사라진다.
+              */
+              key={isText ? props.seed : undefined}
               testID="input-card-value"
               aria-label={props.label}
               value={shown}

@@ -138,6 +138,52 @@ describe('InputCardHost', () => {
       expect(view.getByTestId('input-card-value').props.value).toBe('')
     })
 
+    /**
+     * **카드를 다시 세우지 않는다**(사용자 지적). 다시 세우면 칸이 `autoFocus` 를 다시 걸어
+     * 키보드가 닫혔다 열린다. 값만 다시 심으면 칸이 살아 있어 키보드가 그대로 있는다.
+     *
+     * 다시 세우나 안 세우나를 직접 볼 길이 없어 **상태가 살아남나**로 잰다. 다시 세우면 카드가
+     * 든 것이 전부 프롭에서 다시 시작한다.
+     */
+    it('같은 부탁이 그대로면 치던 값이 안 흔들린다', async () => {
+      const view = await renderOverlay(<></>)
+      await act(async () => {
+        openInputCard({ label: '창세의 뱃지', value: '', onConfirm: jest.fn() })
+      })
+
+      await act(async () => {
+        fireEvent.changeText(view.getByTestId('input-card-value'), '100')
+      })
+      // 스크림을 눌러 다시 그리게 한다. 부탁은 그대로다.
+      await act(async () => {
+        fireEvent.press(view.getByTestId('input-card-scrim'))
+      })
+
+      expect(view.getByTestId('input-card-value').props.value).toBe('100')
+    })
+
+    /**
+     * 글자 칸은 아톰이 `defaultValue` 로 심는다(한글 조합이 깨져서다). 그 값은 이미 선 칸에서는
+     * 안 갈리므로 **글자 칸만 다시 세운다**. 지금 잇따라 여는 흐름은 숫자 칸뿐이지만, 글자 칸이
+     * 그 흐름에 들면 안 친 글자가 저장된다.
+     */
+    it('글자 칸도 다음 카드의 씨앗으로 다시 심는다', async () => {
+      const view = await renderOverlay(<></>)
+      await act(async () => {
+        openInputCard({
+          label: '내용',
+          text: true,
+          value: '앞',
+          onConfirm: () => openInputCard({ label: '내용', text: true, value: '뒤', onConfirm: jest.fn() }),
+        })
+      })
+      await act(async () => {
+        fireEvent.press(view.getByTestId('input-card-confirm'))
+      })
+
+      expect(view.getByTestId('input-card-value').props.defaultValue).toBe('뒤')
+    })
+
     it('스테퍼도 다음 카드의 씨앗으로 다시 심는다', async () => {
       const 스테퍼 = { label: '분배 인원', value: 1, min: 1, max: 6, suffix: '인' }
       const view = await renderOverlay(<></>)
