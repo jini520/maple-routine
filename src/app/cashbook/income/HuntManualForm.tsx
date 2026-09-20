@@ -12,7 +12,7 @@
  */
 import { useState } from 'react'
 
-import { Image, View } from 'react-native'
+import { Image, Pressable, View } from 'react-native'
 
 import {
   acceptMesoText,
@@ -25,12 +25,13 @@ import {
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { ChainSelect } from '../../../components/organisms/ChainSelect/ChainSelect'
-import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 import { getItemIconUrlByFile } from '../../../lib/assets/asset-lookup'
 import { huntTotalOf } from '../../../lib/cashbook/hunting-meso'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { requiredCharacterOptions } from '../character-options'
 import { AmountInput, FieldRow } from '../sheet-fields'
+import { openInputCard } from '../../../features/input-card/store'
+import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 
@@ -125,6 +126,10 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
       <FieldRow label="획득 메소">
         <AmountInput
           testID="income-sheet-hunt-meso"
+          label="획득 메소"
+          icon="meso"
+          unit="메소"
+          reading
           value={typedMesoText}
           onChange={setTypedMesoText}
         />
@@ -142,35 +147,66 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
             aria-label="솔 에르다 조각"
           />
         )}
-        <View className="shrink-0 flex-row items-baseline gap-1">
-          <SheetTextInput
-            testID="income-sheet-fragments"
-            aria-label="솔 에르다 조각"
-            value={fragmentsText}
-            onChangeText={(text) => setFragmentsText(acceptMesoText(fragmentsText, text))}
-            onBlur={() => setFragmentsText(settleMesoText(fragmentsText))}
-            keyboardType="number-pad"
-            placeholder="0"
-            className="h-5 w-[52px] text-right text-sm font-semibold text-text"
+        <Pressable
+          testID="income-sheet-fragments"
+          role="button"
+          aria-label="솔 에르다 조각"
+          onPress={() =>
+            openInputCard({
+              label: '조각 개수',
+              context: '솔 에르다 조각',
+              icon: 'fragment',
+              unit: '개',
+              chips: COUNT_QUICK_ADDS,
+              value: fragmentsText,
+              onConfirm: (next) => setFragmentsText(settleMesoText(acceptMesoText(fragmentsText, next))),
+            })
+          }
+          className="shrink-0 flex-row items-baseline gap-1"
+        >
+          <Text
+            className={`w-[52px] text-right text-sm font-semibold ${
+              fragmentsText === '' ? 'text-text-disabled' : 'text-text'
+            }`}
             style={TABULAR_NUMS}
-          />
+          >
+            {fragmentsText === '' ? '0' : mesoValueOf(fragmentsText).toLocaleString()}
+          </Text>
           <Text className="text-xs text-text-muted">개</Text>
-        </View>
-        <View className="ml-auto min-w-0 flex-1 flex-row items-baseline gap-1.5">
-          <SheetTextInput
-            testID="income-sheet-fragment-price"
-            aria-label="조각 가격"
-            value={fragmentPriceText}
-            onChangeText={(text) => setFragmentPriceText(acceptMesoText(fragmentPriceText, text))}
-            // 0 을 빈 칸으로 접지 않는다. 빈 칸은 보관이고 0 은 0 메소에 판 것이다.
-            onBlur={() => setFragmentPriceText(optionalMesoTextOf(optionalMesoValueOf(fragmentPriceText)))}
-            keyboardType="number-pad"
-            placeholder="미입력 시 보관"
-            className="h-5 flex-1 text-right text-sm font-semibold text-text"
+        </Pressable>
+        <Pressable
+          testID="income-sheet-fragment-price"
+          role="button"
+          aria-label="조각 가격"
+          onPress={() =>
+            openInputCard({
+              label: '조각 가격',
+              context: '솔 에르다 조각 · 개당',
+              icon: 'meso',
+              unit: '메소',
+              reading: true,
+              placeholder: '미입력 시 보관',
+              value: fragmentPriceText,
+              // 0 을 빈 칸으로 접지 않는다. 빈 칸은 보관이고 0 은 0 메소에 판 것이다.
+              onConfirm: (next) =>
+                setFragmentPriceText(
+                  optionalMesoTextOf(optionalMesoValueOf(acceptMesoText(fragmentPriceText, next))),
+                ),
+            })
+          }
+          className="ml-auto min-w-0 flex-1 flex-row items-baseline justify-end gap-1.5"
+        >
+          <Text
+            numberOfLines={1}
+            className={`shrink text-right text-sm font-semibold ${
+              fragmentPriceText === '' ? 'text-text-disabled' : 'text-text'
+            }`}
             style={TABULAR_NUMS}
-          />
+          >
+            {fragmentPriceText === '' ? '미입력 시 보관' : mesoValueOf(fragmentPriceText).toLocaleString()}
+          </Text>
           <Text className="shrink-0 text-xs text-text-muted">메소</Text>
-        </View>
+        </Pressable>
       </View>
 
       <AmountFigure

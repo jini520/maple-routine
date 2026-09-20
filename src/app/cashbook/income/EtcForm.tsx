@@ -8,7 +8,7 @@
  * 숫자는 그 곱을 **메소 축으로 옮긴 값**이고 못 친다. 캐시만 환산 밖이다.
  */
 import { useState } from 'react'
-import { View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
@@ -23,10 +23,11 @@ import {
 } from '../../../lib/cashbook/free-currency'
 import { pointToMeso } from '../../../lib/cashbook/spend-catalog'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import { AmountInput, CharacterField, FieldRow, QuantityStepper } from '../sheet-fields'
+import { AmountInput, CharacterField, FieldRow, QuantityStepper, TextField } from '../sheet-fields'
+import { openInputCard } from '../../../features/input-card/store'
+import { POINT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
-import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
 export function EtcForm(
   props: IncomeFormProps & {
@@ -121,11 +122,12 @@ export function EtcForm(
       />
 
       <FieldRow label="내용" labelTestID="income-sheet-name-label">
-        <SheetTextInput
-          value={name}
-          onChangeText={setName}
+        <TextField
+          testID="income-sheet-name"
+          label="내용"
           placeholder="내용"
-          className="h-5 flex-1 text-right text-sm text-text"
+          value={name}
+          onChange={setName}
         />
       </FieldRow>
 
@@ -147,7 +149,16 @@ export function EtcForm(
 
       {/* **통화 밑**이다. 무엇으로 받았는지를 정한 다음에 얼마인지를 친다(지출 시트와 같은 차례). */}
       <FieldRow label="금액">
-        <AmountInput testID="income-sheet-unit-price" value={typedText} onChange={setTypedText} />
+        <AmountInput
+          testID="income-sheet-unit-price"
+          label="금액"
+          context={name === '' ? undefined : name}
+          icon={currency === 'meso' ? 'meso' : undefined}
+          unit={unitOfCurrency(currency)}
+          reading={currency === 'meso'}
+          value={typedText}
+          onChange={setTypedText}
+        />
         {/* 숫자만 있으면 무엇으로 받은 것인지 줄에서 사라진다. 이 줄이 묻는 것은 얼마인가 라
             라벨이 아니라 단위다. 캐시는 `원` 이고 큰 숫자와 같은 말이 된다. */}
         <Text
@@ -173,17 +184,33 @@ export function EtcForm(
             </Text>
           </Text>
           <View className="flex-1 flex-row items-center justify-end">
-            <SheetTextInput
+            <Pressable
               testID="income-sheet-rate"
-              value={rateText}
-              onChangeText={setRateText}
-              keyboardType="number-pad"
-              placeholder="메소마켓 시세"
-              className={`h-5 flex-1 text-right text-sm font-semibold ${
-                rate !== null ? 'text-text' : 'text-error-ink'
-              }`}
-              style={TABULAR_NUMS}
-            />
+              role="button"
+              aria-label="시세 · 1억당"
+              onPress={() =>
+                openInputCard({
+                  label: '시세 · 1억당',
+                  context: '메소마켓에서 1억 메소를 사는 메포',
+                  required: true,
+                  unit: '메포',
+                  chips: POINT_QUICK_ADDS,
+                  placeholder: '메소마켓 시세',
+                  value: rateText,
+                  onConfirm: setRateText,
+                })
+              }
+              className="h-5 flex-1"
+            >
+              <Text
+                className={`text-right text-sm font-semibold ${
+                  rateText === '' ? 'text-text-disabled' : rate !== null ? 'text-text' : 'text-error-ink'
+                }`}
+                style={TABULAR_NUMS}
+              >
+                {rateText === '' ? '메소마켓 시세' : mesoValueOf(rateText).toLocaleString()}
+              </Text>
+            </Pressable>
             <Text className="ml-1.5 shrink-0 text-xs text-text-muted">메포</Text>
           </View>
         </View>

@@ -10,9 +10,11 @@ import { Pressable, View } from 'react-native'
 import { ChevronLeftIcon, Text } from '../../../components/atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { SheetDateField } from '../sheet-fields'
+import { mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
+import { openInputCard } from '../../../features/input-card/store'
+import { POINT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import type { SpendCategoryKey } from '../../../lib/cashbook/categories'
 import { type SpendRecord } from '../../../storage/spend'
-import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
 /** 저장할 값에서 **어댑터가 아니라 화면이 정하는 것 둘**(`id`·`recordedAt`)을 뺀 나머지. */
 export type SpendDraft = Omit<SpendRecord, 'id' | 'recordedAt'>
@@ -135,17 +137,33 @@ export function RateRow(props: {
           {' *'}
         </Text>
       </Text>
-      <SheetTextInput
+      <Pressable
         testID="spend-sheet-rate"
-        value={props.value}
-        onChangeText={props.onChange}
-        keyboardType="number-pad"
-        placeholder="메소마켓 시세"
-        className={`h-5 flex-1 text-right text-sm font-semibold ${
-          props.valid ? 'text-text' : 'text-error-ink'
-        }`}
-        style={TABULAR_NUMS}
-      />
+        role="button"
+        aria-label="시세 · 1억당"
+        onPress={() =>
+          openInputCard({
+            label: '시세 · 1억당',
+            context: '메소마켓에서 1억 메소를 사는 메포',
+            required: true,
+            unit: '메포',
+            chips: POINT_QUICK_ADDS,
+            placeholder: '메소마켓 시세',
+            value: props.value,
+            onConfirm: props.onChange,
+          })
+        }
+        className="h-5 flex-1"
+      >
+        <Text
+          className={`text-right text-sm font-semibold ${
+            props.value === '' ? 'text-text-disabled' : props.valid ? 'text-text' : 'text-error-ink'
+          }`}
+          style={TABULAR_NUMS}
+        >
+          {props.value === '' ? '메소마켓 시세' : mesoValueOf(props.value).toLocaleString()}
+        </Text>
+      </Pressable>
       <Text className="shrink-0 text-xs text-text-muted">메포</Text>
     </View>
   )

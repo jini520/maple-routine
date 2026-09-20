@@ -619,7 +619,7 @@ describe('메소마켓 시세', () => {
 
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
-    expect(view.getByTestId('spend-sheet-rate').props.value).toBe('1180')
+    expect(줄글자(view, 'spend-sheet-rate')).toBe('1,180')
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(false)
   })
 
@@ -629,9 +629,7 @@ describe('메소마켓 시세', () => {
     const view = await 그리기({ onSave, lastPointRate: 1_180 })
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
-    await act(async () => {
-      fireEvent.changeText(view.getByTestId('spend-sheet-rate'), '2360')
-    })
+    await 카드칸에치기(view, 'spend-sheet-rate', '2360')
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({ pointPer100mMeso: 2_360 })
@@ -641,9 +639,7 @@ describe('메소마켓 시세', () => {
     const view = await 그리기({ lastPointRate: 1_180 })
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
-    await act(async () => {
-      fireEvent.changeText(view.getByTestId('spend-sheet-rate'), '')
-    })
+    await 카드칸에치기(view, 'spend-sheet-rate', '')
 
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
@@ -1031,10 +1027,41 @@ describe('주문서', () => {
 // 목록 갈래 셋과 폼이 통째로 다르다. 고를 것이 없고 **금액을 친다.**
 
 /** 기타는 큰 숫자가 합계라 **금액 칸**에 친다(라벨은). */
-async function 금액치기(view: Rendered, text: string): Promise<void> {
+/**
+ * 칸에 값을 넣는다. **치는 칸이 전부 입력 카드로 옮겨갔다.** 줄을 눌러 카드를 열고 쳐서 확인한다.
+ *
+ * 아직 안 옮긴 칸이 남아 있으면 그 줄이 곧 입력이라 바로 친다. 폼을 하나씩 옮기는 동안 이 도우미는
+ * 안 고쳐도 된다.
+ */
+async function 카드칸에치기(view: Rendered, testID: string, text: string): Promise<void> {
+  if (typeof view.getByTestId(testID).props.onChangeText === 'function') {
+    await act(async () => {
+      fireEvent.changeText(view.getByTestId(testID), text)
+    })
+    return
+  }
   await act(async () => {
-    fireEvent.changeText(view.getByTestId('spend-sheet-unit-price'), text)
+    fireEvent.press(view.getByTestId(testID))
   })
+  await act(async () => {
+    fireEvent.changeText(view.getByTestId('input-card-value'), text)
+  })
+  await act(async () => {
+    fireEvent.press(view.getByTestId('input-card-confirm'))
+  })
+}
+
+/** 카드로 옮겨간 칸이 줄에 적고 있는 글자. 그 줄은 누르개라 `props.value` 가 없다. */
+function 줄글자(view: Rendered, testID: string): string {
+  const 줄 = view.getByTestId(testID)
+  if (typeof 줄.props.onChangeText === 'function') return String(줄.props.value ?? '')
+  const 값 = within(줄).getAllByText(/.*/)[0]?.props.children
+  if (typeof 값 === 'string') return 값
+  return typeof 값 === 'number' ? String(값) : ''
+}
+
+async function 금액치기(view: Rendered, text: string): Promise<void> {
+  await 카드칸에치기(view, 'spend-sheet-unit-price', text)
 }
 
 /**
@@ -1054,9 +1081,7 @@ async function 관세고르기(view: Rendered, 조각: '없음' | '10%'): Promis
  * 장비는 곱할 수량이 없어 친 값이 곧 합계다.
  */
 async function 치기(view: Rendered, text: string): Promise<void> {
-  await act(async () => {
-    fireEvent.changeText(view.getByTestId('spend-sheet-unit-price'), text)
-  })
+  await 카드칸에치기(view, 'spend-sheet-unit-price', text)
 }
 
 describe('아이템 구매', () => {
@@ -1079,7 +1104,11 @@ describe('아이템 구매', () => {
     await 갈래바꾸기(view, '아이템 구매')
 
     expect(view.queryByLabelText('한 자리 지우기')).toBeNull()
-    expect(view.getByTestId('spend-sheet-unit-price').props.keyboardType).toBe('number-pad')
+    // 치는 자리가 입력 카드로 옮겨갔다. 숫자판을 부르는 것은 카드의 칸이다.
+    await act(async () => {
+      fireEvent.press(view.getByTestId('spend-sheet-unit-price'))
+    })
+    expect(view.getByTestId('input-card-value').props.keyboardType).toBe('number-pad')
   })
 
   /**
@@ -1106,7 +1135,7 @@ describe('아이템 구매', () => {
     await 갈래바꾸기(view, '기타')
     await 갈래바꾸기(view, '아이템 구매')
 
-    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('')
+    expect(줄글자(view, 'spend-sheet-unit-price')).toBe('0')
   })
 
   it('금액이 0 이면 저장할 수 없다', async () => {
@@ -1130,7 +1159,7 @@ describe('아이템 구매', () => {
 
     await 관세고르기(view, '10%')
 
-    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('850000000')
+    expect(줄글자(view, 'spend-sheet-unit-price')).toBe('850,000,000')
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('9억 3500만')
   })
 
@@ -1172,9 +1201,7 @@ describe('아이템 구매', () => {
     await 치기(view, '850000000')
     await 관세고르기(view, '10%')
 
-    await act(async () => {
-      fireEvent.changeText(view.getByTestId('spend-sheet-name'), '앱솔랩스 슈즈')
-    })
+    await 카드칸에치기(view, 'spend-sheet-name', '앱솔랩스 슈즈')
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
@@ -1321,7 +1348,7 @@ describe('기타. 캐시는 여기서만 산다', () => {
 
     await 누르기(view, '캐시')
 
-    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('123')
+    expect(줄글자(view, 'spend-sheet-unit-price')).toBe('123')
   })
 })
 
@@ -1363,9 +1390,7 @@ describe('시세가 비어 있을 때', () => {
   it('시세를 넣으면 합계가 메소로 서고 별표는 남는다', async () => {
     const view = await 메포항목()
 
-    await act(async () => {
-      fireEvent.changeText(view.getByTestId('spend-sheet-rate'), '1180')
-    })
+    await 카드칸에치기(view, 'spend-sheet-rate', '1180')
 
     // 2,542,372,881 메소에서 주화 8개(3억 2천만)가 빠진 값이다.
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('22억 2237만 2881')
@@ -1504,7 +1529,7 @@ describe('기타. 금액 × 수량', () => {
 
     // 60,000 메포 ÷ 1,180 × 1억 = 5,084,745,762 메소.
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('50억 8474만 5762')
-    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('30000')
+    expect(줄글자(view, 'spend-sheet-unit-price')).toBe('30,000')
   })
 
   it('저장에 총합과 수량이 함께 실린다', async () => {
@@ -1642,7 +1667,7 @@ describe('수정 모드', () => {
     const view = await 고치기()
 
     expect(view.queryByTestId('spend-sheet-quantity')).toBeNull()
-    expect(view.getByTestId('spend-sheet-rate').props.value).toBe('1180')
+    expect(줄글자(view, 'spend-sheet-rate')).toBe('1,180')
     expect(view.getByTestId('spend-sheet-chain-placeholder-trigger')).toBeTruthy()
   })
 
@@ -1920,15 +1945,11 @@ describe('아이템 구매의 종류', () => {
   }
 
   async function 단가치기(view: Rendered, text: string): Promise<void> {
-    await act(async () => {
-      fireEvent.changeText(view.getByTestId('spend-sheet-unit-price'), text)
-    })
+    await 카드칸에치기(view, 'spend-sheet-unit-price', text)
   }
 
   async function 수량치기(view: Rendered, text: string): Promise<void> {
-    await act(async () => {
-      fireEvent.changeText(view.getByTestId('spend-sheet-quantity'), text)
-    })
+    await 카드칸에치기(view, 'spend-sheet-quantity', text)
   }
 
   it('기본은 장비다. 수량 줄이 없고 관세가 있다', async () => {
@@ -1968,7 +1989,11 @@ describe('아이템 구매의 종류', () => {
     const view = await 구매('소비')
 
     expect(view.queryByLabelText('수량 늘리기')).toBeNull()
-    expect(view.getByTestId('spend-sheet-quantity').props.onChangeText).toBeDefined()
+    // 치는 칸이라 누르면 입력 카드가 숫자판으로 받는다. 스테퍼였다면 카드가 안 선다.
+    await act(async () => {
+      fireEvent.press(view.getByTestId('spend-sheet-quantity'))
+    })
+    expect(view.getByTestId('input-card-value').props.keyboardType).toBe('number-pad')
   })
 
   /**
@@ -1988,9 +2013,7 @@ describe('아이템 구매의 종류', () => {
     await 종류고르기(view, '소비')
     await 단가치기(view, '12000')
     await 수량치기(view, '300')
-    await act(async () => {
-      fireEvent.changeText(view.getByTestId('spend-sheet-name'), '주문서')
-    })
+    await 카드칸에치기(view, 'spend-sheet-name', '주문서')
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
@@ -2052,7 +2075,7 @@ describe('아이템 구매의 종류', () => {
 
     await 종류고르기(view, '소비')
 
-    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('12000')
+    expect(줄글자(view, 'spend-sheet-unit-price')).toBe('12,000')
   })
 
   /**
@@ -2177,8 +2200,8 @@ describe('되짚어 여는 식', () => {
       within(view.getByTestId('spend-sheet-item-kind')).getByLabelText('소비').props
         .accessibilityState?.selected,
     ).toBe(true)
-    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('12000')
-    expect(view.getByTestId('spend-sheet-quantity').props.value).toBe('300')
+    expect(줄글자(view, 'spend-sheet-unit-price')).toBe('12,000')
+    expect(줄글자(view, 'spend-sheet-quantity')).toBe('300')
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('360만')
   })
 
@@ -2219,7 +2242,7 @@ describe('되짚어 여는 식', () => {
       tariffMeso: null,
     })
 
-    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('10000')
+    expect(줄글자(view, 'spend-sheet-unit-price')).toBe('10,000')
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('3만')
   })
 })
@@ -2335,7 +2358,7 @@ describe('갈래마다 자기 폼', () => {
     await 갈래바꾸기(view, '아이템 구매')
     await 갈래바꾸기(view, '기타')
 
-    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('')
+    expect(줄글자(view, 'spend-sheet-unit-price')).toBe('0')
   })
 
   it('고른 대표·형태·단계가 갈래를 안 넘어간다', async () => {
@@ -2479,7 +2502,7 @@ describe('날짜 바꾸기', () => {
 
     await 날짜고르기(view, '2026-08-22')
 
-    expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('30000')
+    expect(줄글자(view, 'spend-sheet-unit-price')).toBe('30,000')
   })
 
   it('목록 갈래의 둘째 화면에서도 바꾼다', async () => {

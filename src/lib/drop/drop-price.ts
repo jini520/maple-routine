@@ -78,3 +78,30 @@ function unitCount(count: number): string {
   return count.toLocaleString()
 }
 
+
+/**
+ * 좁은 자리에 넣는 **축약 금액**. 단위 하나에 소수 첫째 자리까지다(`32.5억`).
+ *
+ * `formatMesoUnits` 는 단위를 이어 붙여(`32억 5천만`) 읽기에는 좋지만 72px 타일에는 안 들어간다.
+ * 여기서는 가장 큰 단위 하나만 쓰고 나머지를 소수로 접는다.
+ *
+ * **올림이 아니라 버림이다.** 올리면 안 받은 돈을 받은 것처럼 적는다. 정확한 값은 가격 카드가
+ * 들고 있고 이 글자는 훑어볼 때의 눈금이다.
+ *
+ * @example formatMesoCompact(3_250_000_000) // '32.5억'
+ * @example formatMesoCompact(1_000_000_000) // '10억'
+ * @example formatMesoCompact(10_000_000) // '1000만'
+ */
+export function formatMesoCompact(meso: number): string {
+  if (meso === 0) return '0'
+  if (meso < 0) return `-${formatMesoCompact(-meso)}`
+  for (const [size, suffix] of AMOUNT_UNITS) {
+    if (meso < size) continue
+    // 소수 첫째 자리에서 버린다. 곱한 뒤 나누는 것은 `0.1` 을 못 담는 부동소수를 피하려는 것이다.
+    const tenths = Math.floor((meso * 10) / size)
+    const whole = Math.floor(tenths / 10)
+    const rest = tenths % 10
+    return rest === 0 ? `${whole}${suffix}` : `${whole}.${rest}${suffix}`
+  }
+  return String(meso)
+}

@@ -43,6 +43,13 @@ export function ItemRevenuePopover(props: {
   onClose: () => void
   /** 이 층의 결정석 합과 아이템 합. 합계 줄은 목록이 아니라 이 두 값으로 만든다. */
   crystalMeso: number
+  /**
+   * `crystalMeso` **안에 든** 월간 보스 몫. 0 이거나 안 주면 결정석이 한 줄이다.
+   *
+   * 주간 몫을 따로 안 받는 것은 두 줄의 합이 합계 줄과 늘 맞아야 하기 때문이다. 여기서 빼서
+   * 만들면 어긋날 수가 없다.
+   */
+  monthlyCrystalMeso?: number
   itemMeso: number
   /** 주차마다 한 줄씩 서는 아이템 몫. 월간 탭의 캐릭터 카드에서만 쓴다. */
   weeklyLines?: { periodKey: string; label: string; meso: number }[]
@@ -76,6 +83,17 @@ export function ItemRevenuePopover(props: {
         }
       : takeTopDropsByPayout(props.drops, props.limit)
   const listed = top.shown
+
+  // 결정석은 한 줄이 기본이고, 월간 보스 몫이 있을 때만 둘로 갈린다. 월간 보스를 안 잡은 주가
+  // 대부분이라 늘 두 줄로 두면 `월간 결정석 0` 이 없는 것을 있다고 말한다.
+  const monthlyCrystal = props.monthlyCrystalMeso ?? 0
+  const crystalLines =
+    monthlyCrystal > 0
+      ? [
+          { label: '주간 결정석', meso: props.crystalMeso - monthlyCrystal },
+          { label: '월간 결정석', meso: monthlyCrystal },
+        ]
+      : [{ label: '결정석', meso: props.crystalMeso }]
 
   return (
     <Modal visible transparent animationType="none" statusBarTranslucent navigationBarTranslucent onRequestClose={props.onClose}>
@@ -165,12 +183,14 @@ export function ItemRevenuePopover(props: {
           </View>
         )}
         <View className="mt-2 gap-1 border-t border-border pt-2">
-          <View className="flex-row items-center justify-between">
-            <Text className="text-11 text-text-muted">결정석</Text>
-            <Text className="text-11 font-semibold text-text" style={TABULAR_NUMS}>
-              {props.crystalMeso.toLocaleString()}
-            </Text>
-          </View>
+          {crystalLines.map((line) => (
+            <View key={line.label} className="flex-row items-center justify-between">
+              <Text className="text-11 text-text-muted">{line.label}</Text>
+              <Text className="text-11 font-semibold text-text" style={TABULAR_NUMS}>
+                {line.meso.toLocaleString()}
+              </Text>
+            </View>
+          ))}
           <View className="flex-row items-center justify-between">
             <Text className="text-11 text-text-muted">아이템</Text>
             {/* 아이템 쪽만 잉크를 준다. 카드·행 칩과 같은 색이라 "그 색이 이 몫"이 이어진다. */}

@@ -23,6 +23,7 @@ function drop(overrides: Partial<RecordedDrop> = {}): RecordedDrop {
 function renderPopover(props: {
   drops: RecordedDrop[]
   crystalMeso?: number
+  monthlyCrystalMeso?: number
   itemMeso?: number
   anchor?: typeof ANCHOR | null
   weeklyLines?: { periodKey: string; label: string; meso: number }[]
@@ -34,6 +35,7 @@ function renderPopover(props: {
         <ItemRevenuePopover
           drops={props.drops}
           crystalMeso={props.crystalMeso ?? 0}
+          monthlyCrystalMeso={props.monthlyCrystalMeso}
           itemMeso={props.itemMeso ?? 0}
           anchor={props.anchor === undefined ? ANCHOR : props.anchor}
           onClose={jest.fn()}
@@ -218,5 +220,59 @@ describe('ItemRevenuePopover: 좌표를 모르면 그리되 보이지 않는다'
     expect(style.opacity).toBeUndefined()
     // 트리거 밑변(300 + 20) + 간격 8
     expect(style.top).toBe(328)
+  })
+})
+
+// 결정석 줄은 주간 보스와 월간 보스의 몫을 한 숫자로 말하고 있었다. 총 수익은 합친 값이 맞지만
+// 상자는 무엇이 얼마인지 말하는 자리다.
+//
+// 상자는 월간 몫을 **총합의 일부로** 받는다. 주간 몫을 빼서 만들어야 두 줄의 합이 합계 줄과
+// 어긋나지 않는다. 두 값을 각각 받으면 호출부마다 합을 다시 만들다 틀어진다.
+describe('ItemRevenuePopover: 결정석을 주간과 월간으로 가른다', () => {
+  it('월간 몫이 있으면 두 줄이 서고 주간은 뺀 나머지다', async () => {
+    const { getByText, queryByText } = await renderPopover({
+      drops: [],
+      crystalMeso: 3_000_000_000,
+      monthlyCrystalMeso: 1_200_000_000,
+      itemMeso: 0,
+    })
+
+    expect(getByText('주간 결정석')).toBeTruthy()
+    expect(getByText('1,800,000,000')).toBeTruthy()
+    expect(getByText('월간 결정석')).toBeTruthy()
+    expect(getByText('1,200,000,000')).toBeTruthy()
+    expect(queryByText('결정석')).toBeNull()
+  })
+
+  it('두 줄이어도 합계는 결정석 총합 + 아이템이다', async () => {
+    const { getByText } = await renderPopover({
+      drops: [],
+      crystalMeso: 3_000_000_000,
+      monthlyCrystalMeso: 1_200_000_000,
+      itemMeso: 500_000_000,
+    })
+
+    expect(getByText('3,500,000,000')).toBeTruthy()
+  })
+
+  // 월간 보스를 안 잡은 주가 대부분이다. 그 주에 `월간 결정석 0` 을 세우면 없는 것을 있다고 말한다.
+  it('월간 몫이 0 이면 결정석 한 줄이다', async () => {
+    const { getByText, queryByText } = await renderPopover({
+      drops: [],
+      crystalMeso: 3_000_000_000,
+      monthlyCrystalMeso: 0,
+      itemMeso: 0,
+    })
+
+    expect(getByText('결정석')).toBeTruthy()
+    expect(queryByText('주간 결정석')).toBeNull()
+    expect(queryByText('월간 결정석')).toBeNull()
+  })
+
+  it('안 넘기면 결정석 한 줄이다', async () => {
+    const { getByText, queryByText } = await renderPopover({ drops: [], crystalMeso: 3_000_000_000 })
+
+    expect(getByText('결정석')).toBeTruthy()
+    expect(queryByText('주간 결정석')).toBeNull()
   })
 })

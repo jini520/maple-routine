@@ -2,7 +2,7 @@
 //
 // 갈린 것 셋
 // ① **라우터가 없다**. 뒤로는 `goBack` 이 불렸는가로 본다.
-// ② 키패드 **내부** 계약은 `DropPricePad.test.tsx` 가 갖는다.
+// ② 입력 카드 **내부** 계약은 `organisms/InputCard` 의 테스트가 갖는다.
 //    여기서는 *"행을 누르면 그 기록을 들고 열리는가· 저장이 스토어까지 가는가"* 만 본다.
 // ③ **표시 계약을 케이스로 못박았다.** 미입력 자리에 `0` 이
 //    없는지, `priceMeso` 는 있고 `priceState` 가 없는 기록(가장 강한 반례)이 여전히 미입력으로
@@ -256,17 +256,17 @@ describe('DropPriceScreen: 기간을 이어받는다', () => {
 
 describe('DropPriceScreen: 값 매기기', () => {
   it('행을 탭하면 그 기록을 들고 키패드가 열리고, 저장하면 스토어로 간다', async () => {
-    const { getByLabelText, getByText } = await renderOverlay(<DropPriceScreen />)
+    const { getByLabelText, getByTestId, getByText } = await renderOverlay(<DropPriceScreen />)
 
     await act(async () => {
       fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크 가격 입력'))
     })
-    // 단위 칩으로 값을 만든다. 자릿수를 세지 않게 하는 것이 이 칩의 존재 이유다.
+    // 행을 누르면 카드가 곧장 뜬다. 가운데 있던 가격 입력 시트는 걷혔다.
     await act(async () => {
-      fireEvent.press(getByText('+1억'))
+      fireEvent.changeText(getByTestId('input-card-value'), '100000000')
     })
     await act(async () => {
-      fireEvent.press(getByText('저장'))
+      fireEvent.press(getByTestId('input-card-confirm'))
     })
 
     expect(savePrice).toHaveBeenCalledWith(
@@ -274,33 +274,35 @@ describe('DropPriceScreen: 값 매기기', () => {
       100_000_000,
       3,
     )
+    expect(getByText).toBeTruthy()
   })
 
   it('분배 인원 기본값은 그 행의 파티원 수다', async () => {
-    const { getByLabelText, getByText } = await renderOverlay(<DropPriceScreen />)
+    const { getByLabelText, getByTestId } = await renderOverlay(<DropPriceScreen />)
 
     await act(async () => {
       fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크 가격 입력'))
     })
 
-    expect(getByText('3인')).toBeTruthy()
+    expect(getByTestId('input-card-stepper-value').props.children).toBe('3')
   })
 
   it('저장이 실패하면 토스트로 알린다. 조용히 삼키면 저장된 줄 알고 떠난다', async () => {
     savePrice.mockRejectedValue(new Error('쓰기 실패'))
-    const { getByLabelText, getByText } = await renderOverlay(<DropPriceScreen />)
+    const { getByLabelText, getByTestId, getByText } = await renderOverlay(<DropPriceScreen />)
 
     await act(async () => {
       fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크 가격 입력'))
     })
     await act(async () => {
-      fireEvent.press(getByText('+1억'))
+      fireEvent.changeText(getByTestId('input-card-value'), '100000000')
     })
     await act(async () => {
-      fireEvent.press(getByText('저장'))
+      fireEvent.press(getByTestId('input-card-confirm'))
     })
 
     expect(mockShowError).toHaveBeenCalledWith('가격을 저장하지 못했습니다')
+    expect(getByText).toBeTruthy()
   })
 
   it('조회 실패는 빈 목록으로 위장하지 않는다', async () => {
@@ -481,29 +483,30 @@ describe('DropPriceScreen: 표시 규칙 정정 (2026-08-10)', () => {
 //   스킵 = "아직 안 팔렸다, 팔리면 넣겠다" → **아무것도 저장하지 않고** 미입력에 머문다
 describe('DropPriceScreen: 순차 입력', () => {
   it('"기록 안함" 은 결정을 저장한다', async () => {
-    const { getByLabelText, getByText } = await renderOverlay(<DropPriceScreen />)
+    const { getByLabelText, getByTestId } = await renderOverlay(<DropPriceScreen />)
 
     await act(async () => {
       fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크 가격 입력'))
     })
     await act(async () => {
-      fireEvent.press(getByText('기록 안함'))
+      fireEvent.press(getByTestId('input-card-exclude'))
     })
 
     expect(excludePrice).toHaveBeenCalledWith(expect.objectContaining({ bossKey: 주간보스 }))
   })
 
-  it('단건 편집에는 스킵이 없다. 닫으면 같은 일이라 버튼을 늘리지 않는다', async () => {
-    const { getByLabelText, queryByText } = await renderOverlay(<DropPriceScreen />)
+  it('단건 편집에는 이전이 없고 버튼이 닫기다', async () => {
+    const { getByLabelText, getByText, queryByTestId } = await renderOverlay(<DropPriceScreen />)
 
     await act(async () => {
       fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크 가격 입력'))
     })
 
-    expect(queryByText('스킵')).toBeNull()
+    expect(queryByTestId('input-card-prev')).toBeNull()
+    expect(getByText('닫기')).toBeTruthy()
   })
 
-  it('순차 모드의 스킵은 아무것도 저장하지 않고 다음 건으로만 간다', async () => {
+  it('빈 칸으로 넘기면 아무것도 저장하지 않고 다음 건으로만 간다', async () => {
     mockStores({
       price: {
         groups: 그룹([
@@ -512,22 +515,24 @@ describe('DropPriceScreen: 순차 입력', () => {
         ]),
       },
     })
-    const { getByText, getByTestId, queryByText } = await renderOverlay(<DropPriceScreen />)
+    const { getByText, getByTestId } = await renderOverlay(<DropPriceScreen />)
 
     await act(async () => {
       fireEvent.press(getByText('미입력 2건 이어서 입력'))
     })
+    expect(getByText('다음(2/2)')).toBeTruthy()
+
     await act(async () => {
-      fireEvent.press(getByText('스킵'))
+      fireEvent.press(getByTestId('input-card-confirm'))
     })
 
     expect(excludePrice).not.toHaveBeenCalled()
     expect(savePrice).not.toHaveBeenCalled()
-    // 다음 건으로 넘어갔다. 목록에도 같은 이름이 있으므로 키패드 안으로 좁힌다.
-    expect(within(getByTestId('drop-price-pad')).getByText('가디언 엔젤 링')).toBeTruthy()
-    // 마지막 건이라 진행 표기가 사라지고 버튼도 `다음` 이 아니라 `저장` 이다.
-    expect(within(getByTestId('drop-price-pad')).getByText('저장')).toBeTruthy()
-    expect(queryByText('스킵')).toBeNull()
+    // 다음 건으로 넘어갔다. 목록에도 같은 이름이 있으므로 카드의 머리로 좁힌다.
+    expect(getByTestId('input-card-label').props.children[0]).toBe('가디언 엔젤 링')
+    // 마지막 자리라 세는 말을 하고, 이전이 첫 자리를 가리킨다.
+    expect(getByText('0개 입력 완료')).toBeTruthy()
+    expect(getByText('이전(1/2)')).toBeTruthy()
   })
 })
 

@@ -15,9 +15,12 @@ import { CalendarPopover } from '../../components/organisms/CalendarPopover/Cale
 import { ChainSelect } from '../../components/organisms/ChainSelect/ChainSelect'
 import {
   acceptMesoText,
+  mesoValueOf,
   settleMesoText,
 } from '../../components/organisms/MesoPad/meso-pad'
-import { SheetTextInput } from '../../components/molecules/SheetTextInput/SheetTextInput'
+import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
+import { openInputCard } from '../../features/input-card/store'
+import type { InputCardIcon } from '../../components/organisms/InputCard/InputCard'
 import { characterOptions } from './character-options'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 import { monthKeyOf } from '../../lib/calendar'
@@ -137,29 +140,99 @@ export function CharacterField(props: {
 }
 
 /**
- * 금액을 받는 칸. 글자를 들고 셈은 부르는 쪽이 한다.
+ * 금액을 받는 칸. **누르면 입력 카드가 받는다.**
  *
- * 커서가 빠질 때 앞자리 0 을 걷는 것이 이 부품의 일이다. 칸마다 손으로 달면 한 곳이 빠졌을 때
- * 그 칸만 조용히 안 정리된다.
+ * 줄에는 값만 서고 실제 입력은 카드에만 있다. 카드는 칸 하나를 받고 닫히므로 이 부품은 차례를
+ * 안 든다.
  *
- * 키보드는 숫자판 그대로다. 값이 글자가 된 것과 무엇으로 치느냐는 다른 이야기다.
+ * 앞자리 0 을 걷는 정리가 이 부품의 일이다. 칸마다 손으로 달면 한 곳이 빠졌을 때 그 칸만 조용히
+ * 안 정리된다. 빈 칸과 0 을 갈라야 하는 자리(사냥의 조각 가격)는 `onConfirm` 을 직접 준다.
+ *
+ * @param label 카드 머리에 서는 칸 이름
+ * @param context 칸 이름 아래 한 줄. 어느 아이템의 값인지처럼 시트에서만 아는 맥락
  */
 export function AmountInput(props: {
   testID: string
+  label: string
   value: string
   onChange: (next: string) => void
+  context?: string
+  /** 값 오른쪽 단위. 줄에는 부르는 쪽이 따로 적고 여기 준 것은 카드가 쓴다. */
+  unit?: string
+  /** 한국어 단위 읽기(`1200만`). 메소 금액에만 뜻이 있다. */
+  reading?: boolean
+  icon?: InputCardIcon
+  chips?: readonly { label: string; value: number }[]
+  placeholder?: string
 }): React.JSX.Element {
+  const empty = props.value === ''
   return (
-    <SheetTextInput
+    <Pressable
       testID={props.testID}
-      value={props.value}
-      onChangeText={(text) => props.onChange(acceptMesoText(props.value, text))}
-      onBlur={() => props.onChange(settleMesoText(props.value))}
-      keyboardType="number-pad"
-      placeholder="0"
-      className="h-5 flex-1 text-right text-sm font-semibold text-text"
-      style={TABULAR_NUMS}
-    />
+      role="button"
+      aria-label={props.label}
+      onPress={() =>
+        openInputCard({
+          label: props.label,
+          context: props.context,
+          icon: props.icon,
+          unit: props.unit,
+          reading: props.reading,
+          chips: props.chips ?? MESO_QUICK_ADDS,
+          placeholder: props.placeholder,
+          value: props.value,
+          onConfirm: (next) => props.onChange(settleMesoText(acceptMesoText(props.value, next))),
+        })
+      }
+      className="h-5 flex-1"
+    >
+      <Text
+        className={`text-right text-sm font-semibold ${empty ? 'text-text-disabled' : 'text-text'}`}
+        style={TABULAR_NUMS}
+      >
+        {empty ? (props.placeholder ?? '0') : mesoValueOf(props.value).toLocaleString()}
+      </Text>
+    </Pressable>
+  )
+}
+
+/**
+ * 글자를 받는 칸. **누르면 입력 카드가 글자판으로 받는다.**
+ *
+ * 줄에는 오른쪽 정렬로 값만 서고 카드 안에서는 왼쪽 정렬이다. 오른쪽 정렬은 값을 읽는 자리의
+ * 규칙이고, 치는 동안에는 커서가 글자를 따라가는 쪽이 읽힌다. 이슈 #428(이름 칸이 오른쪽
+ * 정렬이라 끝 공백이 안 보인다)이 카드에서 사라지는 것도 그래서다.
+ *
+ * @param label 카드 머리에 서는 칸 이름
+ */
+export function TextField(props: {
+  testID: string
+  label: string
+  value: string
+  onChange: (next: string) => void
+  placeholder: string
+}): React.JSX.Element {
+  const empty = props.value === ''
+  return (
+    <Pressable
+      testID={props.testID}
+      role="button"
+      aria-label={props.label}
+      onPress={() =>
+        openInputCard({
+          label: props.label,
+          text: true,
+          placeholder: props.placeholder,
+          value: props.value,
+          onConfirm: props.onChange,
+        })
+      }
+      className="h-5 flex-1"
+    >
+      <Text numberOfLines={1} className={`text-right text-sm ${empty ? 'text-text-disabled' : 'text-text'}`}>
+        {empty ? props.placeholder : props.value}
+      </Text>
+    </Pressable>
   )
 }
 

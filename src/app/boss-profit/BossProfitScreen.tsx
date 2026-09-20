@@ -68,6 +68,7 @@ import {
   collectAllValuableDrops,
   collectRevenueDrops,
   groupTotalMeso,
+  monthlyCrystalMesoOf,
 } from './character-groups'
 // `DeltaChip` 은 증감 표시를 통계 기능으로 옮길 때까지 쓰이지 않는다. 컴포넌트와 테스트는
 // 그대로 두고 여기서 부르지만 않는다.
@@ -264,6 +265,8 @@ export function BossProfitScreen(): React.JSX.Element {
   const periodRevenueDrops = characterGroups.flatMap((group) => collectRevenueDrops(group, dropsByRowKey))
   const periodItemMeso = sumDropPayout(periodRevenueDrops)
   const crystalTotalMeso = totalMeso - periodItemMeso
+  // 결정석 총합 안의 월간 보스 몫. 두 탭 모두 한 기간에 두 주기가 섞인다.
+  const monthlyCrystalMeso = characterGroups.reduce((sum, group) => sum + monthlyCrystalMesoOf(group), 0)
   // 총 수익 헤드라인 우측 뱃지용. 이 기간 전체 고가 드롭.
   const periodValuableDrops = collectAllValuableDrops(characterGroups, dropsByRowKey)
 
@@ -540,6 +543,7 @@ export function BossProfitScreen(): React.JSX.Element {
             drops={periodRevenueDrops}
             limit={PERIOD_REVENUE_LIST_LIMIT}
             crystalMeso={crystalTotalMeso}
+            monthlyCrystalMeso={monthlyCrystalMeso}
             itemMeso={periodItemMeso}
             anchor={periodAnchor}
             onClose={closePeriodPopover}

@@ -20,6 +20,8 @@ import { PortalProvider } from '@gorhom/portal'
 import { SafeAreaProvider, type Metrics } from 'react-native-safe-area-context'
 
 import { BottomBarOverlayHost } from '../organisms/BottomBar/BottomBarOverlay'
+import { InputCardHost } from '../organisms/InputCard/InputCardHost'
+import { useInputCardStore } from '../../features/input-card/store'
 import { ThemeProvider } from '../../theme/ThemeProvider'
 
 /** 테스트가 보는 테마. `appearance-store` 의 초기값(`DEFAULT_THEME`)과 같아야 한다. */
@@ -49,6 +51,9 @@ export function renderOverlay(
   ui: ReactElement,
   metrics: Metrics = 테스트_안전영역,
 ): ReturnType<typeof render> {
+  // 앞 케이스가 열어 둔 카드를 물려받지 않는다. 스토어는 파일 안에서 살아남는다.
+  useInputCardStore.setState({ request: null })
+
   return render(
     <SafeAreaProvider initialMetrics={metrics}>
       <ThemeProvider>
@@ -63,6 +68,11 @@ export function renderOverlay(
         <PortalProvider shouldAddRootHost={false}>
           {ui}
           <BottomBarOverlayHost />
+          {/*
+            **앱 셸을 따라간다.** 입력 카드는 `BottomSheetModalProvider` 뒤에 서는 자리라
+            시트 안에서 그려지지 않는다. 하네스가 그 자리를 안 세우면 시트 테스트가 카드를 못 본다.
+          */}
+          <InputCardHost />
         </PortalProvider>
       </ThemeProvider>
     </SafeAreaProvider>,

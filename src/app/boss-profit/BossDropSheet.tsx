@@ -6,7 +6,7 @@
  * 그리고 기록 직후의 가격 물음.
  */
 import { useState } from 'react'
-import { Image, Pressable, View } from 'react-native'
+import { Image, Pressable, ScrollView, View } from 'react-native'
 
 import {
   dropTileKey,
@@ -22,6 +22,9 @@ import { useDropEffectStore } from '../../features/drop-effect/store'
 import { getFixedDropIcons, type FixedDropIconSpec } from '../../lib/drop/fixed-drops'
 import { dropItemIconOf, getItemIconUrlByFile } from '../../lib/assets/asset-lookup'
 import { dropItemNameOf } from '../../lib/drop/drop-items'
+import { dropPromptOf } from '../../lib/drop/drop-prompt'
+import { confirmLabels } from '../../lib/drop/price-card-labels'
+import { formatMesoCompact } from '../../lib/drop/drop-price'
 import { bossNameOf } from '../../lib/boss/bosses'
 import { isValuableDropItem } from '../../lib/drop/valuable-drops'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types'
@@ -33,7 +36,6 @@ import {
   FlaskConicalIcon,
   PackageOpenIcon,
   PinIcon,
-  ProfitIcon,
   SwordIcon,
   Switch,
   Text,
@@ -43,7 +45,9 @@ import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { DropEffectOverlay } from '../../components/organisms/DropEffectOverlay/DropEffectOverlay'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
-import { DropPricePadContent } from './DropPricePad'
+import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
+import { closeInputCard, openInputCard } from '../../features/input-card/store'
+import { mesoTextOf, mesoValueOf } from '../../components/organisms/MesoPad/meso-pad'
 
 // 선택 가능한 카테고리(장비·소비)의 라벨과 아이콘(노란 점 대신 아이콘). 고정은
 // 읽기 전용 별도 섹션이라 여기 없다.
@@ -76,6 +80,49 @@ interface BossDropSheetProps {
   pricing?: { defaultShare: number; maxShare: number; characterName: string }
 }
 
+/**
+ * 타일이 자기 상태를 말하는 알약. 그림 아래를 덮는다.
+ *
+ * 정한 것에만 붙는다. 값을 매겼으면 **얼마인지**, 기록 안함이면 **그 결정**을 적는다. 아직 안
+ * 정한 것은 비어 있고, 그 빈 자리가 곧 `남았다` 는 말이다.
+ *
+ * 그림 위에 겹치는 것은 게임 인벤토리가 수량을 얹는 자리와 같아서 낯익다. 폭은 글자만큼이다.
+ * 못박으면 `1억` 에는 빈자리가 남고 긴 금액은 넘친다.
+ */
+function TileLabel(props: { drop: RecordedDrop | undefined }): React.JSX.Element | null {
+  const state = props.drop?.priceState
+  if (state === undefined) return null
+
+  const 값 = state === 'entered'
+  return (
+    <View
+      role="img"
+      aria-label={값 ? '가격 입력됨' : '기록 안함'}
+      /*
+        기록 안함은 **강조색을 안 쓴다**. 둘 다 강조색이면 어두운 테마에서 두 알약이 같은 얼굴이
+        된다(실기 화면에서 잡았다). 값을 매긴 것만 색을 갖고, 안 매기기로 한 것은 조용한 칩이다.
+      */
+      className={`absolute -bottom-1.5 h-[15px] max-w-full justify-center rounded-full px-1.5 ${
+        값 ? 'bg-primary' : 'border border-border bg-surface-2'
+      }`}
+    >
+      <Text
+        numberOfLines={1}
+        className={`text-9 font-bold leading-none ${값 ? 'text-on-primary' : 'text-text-muted'}`}
+        style={값 ? TABULAR_NUMS : undefined}
+      >
+        {값 ? formatMesoCompact(props.drop?.priceMeso ?? 0) : '기록 안함'}
+      </Text>
+    </View>
+  )
+}
+
+/** 한 연쇄 안에서 매긴 값. 상태가 갈아 끼워져도 이전으로 돌아가면 이 값이 보인다. */
+interface PriceEdit {
+  meso: number
+  share: number
+}
+
 function ItemThumb(props: { itemKey: string | null; level?: number }): React.JSX.Element {
   const url = dropItemIconOf(props.itemKey)
   return (
@@ -85,8 +132,9 @@ function ItemThumb(props: { itemKey: string | null; level?: number }): React.JSX
       ) : (
         <View className="h-9 w-9 rounded-lg bg-surface-2" aria-hidden />
       )}
+      {/* 그림 **위쪽**이다. 아래는 금액 띠가 덮는다. */}
       {props.level !== undefined && (
-        <View className="absolute -bottom-1 -right-1 rounded-full bg-primary px-1 py-px">
+        <View className="absolute -right-1 -top-1 rounded-full bg-primary px-1 py-px">
           <Text className="text-8 font-bold leading-none text-on-primary">lv{props.level}</Text>
         </View>
       )}
@@ -144,18 +192,6 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   )
   // 고가 아이템을 새로 추가하면 전체화면 연출을 띄운다. 표시 여부는 전역 토글.
   const [effect, setEffect] = useState<{ itemKey: string } | null>(null)
-  // 가격을 입력하는 중인 드롭. `null` 이면 평소의 타일 그리드다.
-  //
-  // 상자 드릴다운과 같은 자리다. 시트를 닫고 새 시트를 여는 대신 시트 내용을 갈아 끼운다.
-  // 기록 직후 뜨는 확인 바로 두면 셋이 깨진다. ① 두 개를 찍으면 마지막 것의 가격밖에 못 넣고
-  // ② 입력하면 시트가 닫혀 고르던 작업이 끊기고 ③ 어느 타일이 값을 가졌는지 알 수 없다.
-  //
-  // 지금은 기록 직후의 확인 줄 하나이고 셋이 이렇게 갈린다. ① 물음이 그 기록 하나에 붙어
-  // 여러 개를 찍어도 섞이지 않고 ② 드릴다운이라 입력 후 시트가 살아서 그리드로 돌아오며
-  // ③ 상태는 타일의 수익 배지가 말한다.
-  const [pricing, setPricing] = useState<RecordedDrop | null>(null)
-  // 방금 기록한 드롭. 아래 확인 줄의 대상이다. 새로 기록하면 갈아타고, 그 기록을 취소하면 사라진다.
-  const [justAdded, setJustAdded] = useState<RecordedDrop | null>(null)
   const effectEnabled = useDropEffectStore((state) => state.enabled)
   const setEffectEnabled = useDropEffectStore((state) => state.setEnabled)
 
@@ -222,8 +258,6 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
       }
       return [...prev, added]
     })
-    // 해제한 아이템의 물음이 남아 있으면 없는 기록의 가격을 묻게 된다.
-    setJustAdded(isAdding ? added : null)
     if (isAdding && effectEnabled && isValuableDropItem(candidate.key)) {
       setEffect({ itemKey: candidate.key })
     }
@@ -246,14 +280,12 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
     }
     setSelected((prev) => [...prev.filter((drop) => !(drop.boxOrigin !== undefined && drop.boxOriginKey === box.key)), added])
     setActiveBox(null)
-    setJustAdded(added)
     if (effectEnabled && isValuableDropItem(itemKey)) {
       setEffect({ itemKey })
     }
   }
   function removeBoxResult(boxKey: string): void {
     setSelected((prev) => prev.filter((drop) => !(drop.boxOrigin !== undefined && drop.boxOriginKey === boxKey)))
-    setJustAdded(null)
   }
 
   /**
@@ -263,6 +295,82 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   function applyPrice(target: RecordedDrop, patch: Partial<RecordedDrop>): void {
     setSelected((prev) => prev.map((drop) => (drop === target ? { ...drop, ...patch } : drop)))
   }
+
+  /**
+   * 가격 카드를 연다. `items` 는 이 연쇄가 도는 전부이고 `index` 는 지금 자리다.
+   *
+   * 앞뒤로 오갈 수 있어야 해서 남은 것을 잘라 나가지 않고 **자리 번호**로 돈다. `edits` 는 이
+   * 연쇄 안에서 매긴 값이다. `applyPrice` 는 상태를 갈아 끼우지만 `items` 가 든 것은 열 때의
+   * 모습이라, 이것이 없으면 이전으로 돌아갔을 때 방금 매긴 값이 안 보인다.
+   *
+   * 자리를 벗어나면 닫는다. 확인은 카드가 스스로 닫지만 기록 안함은 안 닫아서, 마지막 건을
+   * 그것으로 끝내면 빈 카드가 남는다.
+   */
+  function openPriceCard(items: RecordedDrop[], index: number, edits = new Map<number, PriceEdit>()): void {
+    const target = items[index]
+    if (target === undefined || props.pricing === undefined) {
+      closeInputCard()
+      return
+    }
+    const { defaultShare, maxShare, characterName } = props.pricing
+    const edit = edits.get(index)
+    const 마지막 = index === items.length - 1
+    /** 값이 매겨질 개수. 지금 칸이 빈 채로 끝나는 경우와 채워 끝나는 경우가 다르다. */
+    const 매긴것 = items.filter(
+      (drop, at) => at !== index && (edits.has(at) || drop.priceState === 'entered'),
+    ).length
+    const 지금매김 = edit !== undefined || target.priceState === 'entered'
+
+    /** 값을 쓰고 자리를 옮긴다. 빈 칸이면 아무것도 안 쓴다. */
+    function move(to: number, next: string, share?: number): void {
+      const 다음편집 = new Map(edits)
+      if (next !== '') {
+        const meso = mesoValueOf(next)
+        applyPrice(target, { priceState: 'entered', priceMeso: meso, priceShare: share })
+        다음편집.set(index, { meso, share: share ?? defaultShare })
+      }
+      openPriceCard(items, to, 다음편집)
+    }
+
+    openInputCard({
+      // 머리가 그 아이템을 말한다. `판매 가격` 이라는 말은 이미 누른 버튼이 했다.
+      label: dropItemNameOf(target.itemKey, target.itemName),
+      context: `${characterName} · ${bossNameOf(props.bossKey, props.bossKey)}`,
+      icon: dropItemIconOf(target.itemKey) ?? 'meso',
+      unit: '메소',
+      reading: true,
+      chips: MESO_QUICK_ADDS,
+      value: mesoTextOf(edit?.meso ?? target.priceMeso ?? 0),
+      stepper: {
+        label: '분배 인원',
+        value: edit?.share ?? target.priceShare ?? defaultShare,
+        min: 1,
+        max: maxShare,
+      },
+      // 버튼 글자가 **지금 누르면 무슨 일이 나는가**를 말한다. 저장과 다음을 두 버튼으로
+      // 두었더니 어느 쪽이 값을 쓰는지가 안 읽혔다(사용자 지적).
+      ...confirmLabels({ 하나: items.length === 1, 마지막, 자리: index, 전체: items.length, 매긴것, 지금매김 }),
+      exclude: {
+        label: '기록 안함',
+        onPress: () => {
+          applyPrice(target, { priceState: 'excluded', priceMeso: undefined, priceShare: undefined })
+          const 다음편집 = new Map(edits)
+          다음편집.delete(index)
+          openPriceCard(items, index + 1, 다음편집)
+        },
+      },
+      prev:
+        index > 0
+          ? { label: `이전(${index}/${items.length})`, onPress: (next, share) => move(index - 1, next, share) }
+          : undefined,
+      onConfirm: (next, share) => move(index + 1, next, share),
+    })
+  }
+
+  /** 아직 값도 기록 안함도 안 정한 것. `가격 입력` 이 여는 차례이고 카드의 확인이 잇는다. */
+  const unpriced = selected.filter((drop) => drop.priceState === undefined)
+  /** 확인 줄이 할 말. 갈래가 다섯이라 `lib/drop/drop-prompt` 가 정한다. */
+  const prompt = dropPromptOf(selected)
 
   function handleTileTap(candidate: DropCandidate): void {
     if (isBoxItem(candidate.key)) {
@@ -280,28 +388,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   return (
     <>
       <BottomSheet onClose={props.onClose} testId="boss-drop-sheet" label="드롭 아이템 기록">
-        {pricing !== null && props.pricing !== undefined ? (
-          // 가격 드릴다운. 시트는 열린 채다. 저장·기록 안함 후 목록으로 돌아와 고르던 작업을
-          // 잇는다. `onLater`(스킵)는 넘기지 않는다. 그 버튼은 순차 모드 전용이고 여기는 방금
-          // 기록한 한 건이라 뒤로 누르는 것이 곧 같은 일이다.
-          <DropPricePadContent
-            drop={pricing}
-            bossName={bossNameOf(props.bossKey, props.bossKey)}
-            difficulty={selectedDifficulty}
-            characterName={props.pricing.characterName}
-            defaultShare={props.pricing.defaultShare}
-            maxShare={props.pricing.maxShare}
-            onBack={() => setPricing(null)}
-            onSave={(priceMeso, share) => {
-              applyPrice(pricing, { priceState: 'entered', priceMeso, priceShare: share })
-              setPricing(null)
-            }}
-            onExclude={() => {
-              applyPrice(pricing, { priceState: 'excluded', priceMeso: undefined, priceShare: undefined })
-              setPricing(null)
-            }}
-          />
-        ) : activeBox === null ? (
+        {activeBox === null ? (
           <View>
             <View className="flex-row items-center gap-2 px-4 pb-1 pt-1">
               <Text className="text-lg font-bold text-text">{bossNameOf(props.bossKey, props.bossKey)}</Text>
@@ -360,8 +447,21 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                         </View>
                         <Text className="text-xs font-bold text-text-muted">{label}</Text>
                       </View>
-                      {/* 4열. 간격은 자식 패딩 + 부모 음수 마진. */}
-                      <View className="-mx-1 -mb-2 flex-row flex-wrap">
+                      {/*
+                        **한 줄로 굴린다.** 계열마다 몇 개인지가 시트 높이를 안 정하게 하려는
+                        것이다. 390 폭에 다섯이 보이고 여섯째가 반쯤 걸치는데, 그 걸친 타일이
+                        곧 더 있다는 신호라 화살표나 점을 안 그린다.
+
+                        가로 여백을 `contentContainer` 가 아니라 바깥에서 지운다(`-mx-4 px-4`).
+                        그래야 굴러 나간 타일이 시트 가장자리까지 간다.
+                      */}
+                      <ScrollView
+                        testID={`drop-tile-row-${category}`}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        className="-mx-4"
+                        contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
+                      >
                         {(byCategory.get(category) ?? []).map((candidate) => {
                           const box = isBoxItem(candidate.key)
                           const boxDrop = box ? findBoxDrop(candidate.key) : undefined
@@ -372,45 +472,48 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                             boxDrop === undefined ? candidate.name : dropItemNameOf(boxDrop.itemKey, boxDrop.itemName)
                           const thumbKey = boxDrop === undefined ? candidate.key : boxDrop.itemKey
                           return (
-                            <View key={candidate.key} className="w-1/4 px-1 pb-2">
-                              <Pressable
+                            <Pressable
+                                key={candidate.key}
                                 role="button"
                                 aria-label={displayName}
                                 aria-selected={on}
                                 onPress={() => handleTileTap(candidate)}
-                                className={`w-full items-center gap-1 rounded-xl border p-2 pt-4 ${
+                                className={`w-[72px] items-center gap-1 rounded-xl border p-2 pt-4 ${
                                   on ? 'border-primary bg-primary-tint' : 'border-border bg-surface'
                                 } ${box ? 'border-dashed' : ''}`}
                               >
-                                {on && (
-                                  <View className="absolute right-1 top-1 h-4 w-4 items-center justify-center rounded-full bg-primary">
-                                    <Text className="text-10 text-on-primary">✓</Text>
-                                  </View>
-                                )}
-                                {/* 가격이 입력된 타일에만 수익 배지가 붙는다. 자리는 좌상단.
-                                    우상단은 선택 체크가 이미 쓴다. 크기·모양을 그 체크와 맞춰
-                                    두 배지가 한 쌍으로 읽힌다. 스킵은 기록된 가격이 아니므로
-                                    표식이 없다. 그 구분은 가격 기록 화면이 맡는다. */}
-                                {(boxDrop ?? normalDrop)?.priceState === 'entered' && (
-                                  <View
-                                    role="img"
-                                    aria-label="가격 입력됨"
-                                    className="absolute left-1 top-1 h-4 w-4 items-center justify-center rounded-full bg-primary"
-                                  >
-                                    <ProfitIcon className="h-2.5 w-2.5 text-on-primary" strokeWidth={2.5} aria-hidden />
-                                  </View>
-                                )}
-                                <ItemThumb itemKey={thumbKey} level={boxDrop?.ringLevel} />
+                                {/*
+                                  **고른 것에는 표식을 안 단다**(사용자 지정). 테두리와 바탕이
+                                  이미 그 말을 한다.
+
+                                  값을 매긴 타일은 **얼마인지를 말한다**(사용자 지정). 그림
+                                  아래를 덮는 띠에 금액이 선다. 표식만 달면 카드를 열어야 얼마인지
+                                  알 수 있었다. 띠가 그림 위에 겹치는 것은 게임 인벤토리가 수량을
+                                  얹는 자리와 같아서 낯익다.
+
+                                  **알약은 글자만큼만 넓다**(사용자 지정). 폭을 못박으면 `1억` 에는
+                                  빈자리가 남고 긴 금액은 넘친다. 자리는 그림 아래 가운데다.
+
+                                  금액은 **축약 표기**다(`formatMesoCompact`). 단위를 이어 붙인
+                                  `32억 5천만` 은 72 폭에 안 들어가서 `32.5억` 으로 접는다(사용자
+                                  지정). 바깥 상자가 `-mx-1.5` 로 타일 여백을 되먹어 68 을 쓴다.
+
+                                  스킵은 기록된 가격이 아니므로 표식이 없다. 그 구분은 아이템
+                                  가격 입력 화면이 맡는다.
+                                */}
+                                <View className="-mx-1.5 items-center">
+                                  <ItemThumb itemKey={thumbKey} level={boxDrop?.ringLevel} />
+                                  <TileLabel drop={boxDrop ?? normalDrop} />
+                                </View>
                                 <View className="h-8 w-full items-center justify-center">
                                   <Text numberOfLines={2} className="text-center text-10 leading-tight text-text">
                                     {displayName}
                                   </Text>
                                 </View>
                               </Pressable>
-                            </View>
                           )
                         })}
-                      </View>
+                      </ScrollView>
                     </View>
                   )
                 })}
@@ -436,13 +539,27 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                               : 'w-1/2 px-1 pb-2'
                           }
                         >
-                          <View className="rounded-xl border border-border bg-surface px-2 pb-3 pt-1">
-                            <View className="flex-row">
+                          {/*
+                            **배지는 자리를 안 먹는다**(사용자 지정). 처음엔 자기 줄을 먹었고,
+                            같은 줄로 합쳤더니 이번엔 가로를 먹어 드롭 목록이 오른쪽으로 밀렸다.
+                            띄워서 좌상단에 얹는다.
+
+                            그래서 드롭 목록은 **상자 전체 폭**에서 가운데로 선다. 위아래 여백은
+                            아이템 기준으로 같고, 배지가 얹히는 자리를 벌어야 해서 예전보다 넓다.
+                          */}
+                          <View
+                            testID={`fixed-drop-row-${group.difficulty}`}
+                            className="rounded-xl border border-border bg-surface px-2 py-4"
+                          >
+                            <View testID={`fixed-drop-badge-${group.difficulty}`} className="absolute left-2 top-2">
                               <Badge variant={group.difficulty}>
                                 {DIFFICULTY_NAME[group.difficulty]}
                               </Badge>
                             </View>
-                            <View className="mt-1.5 flex-row flex-wrap items-center justify-center gap-x-2 gap-y-2.5">
+                            <View
+                              testID={`fixed-drop-items-${group.difficulty}`}
+                              className="flex-row flex-wrap items-center justify-center gap-x-2 gap-y-2.5"
+                            >
                               {group.items.flatMap((item) =>
                                 getFixedDropIcons(item).map((icon, i) => (
                                   <FixedDropIcon key={`${item.key}-${icon.iconFile ?? 'item'}-${i}`} icon={icon} />
@@ -463,32 +580,35 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                   (입력 →) 복귀 이고 어느 갈래든 타일 그리드로 돌아온다. 차단하지 않는다.
                   일반 아이템은 확인창 없이 탭 즉시 기록된다. 기록은 이미 끝났고 이 줄은 그 옆에
                   설 뿐이라 무시하고 다음 아이템을 계속 골라도 된다. */}
-              {justAdded !== null && props.pricing !== undefined && (
+              {prompt !== null && props.pricing !== undefined && (
+                // **평평하다**(사용자 지정). 시트 바닥에 붙어 있는데 그림자가 있으면 시트 위에 뜬
+                // 또 하나의 판으로 읽힌다. 실제로는 아래 저장 줄과 같은 층이다.
+                //
+                // **고른 것이 있는 한 선다**(사용자 지정). 치우는 버튼을 안 둔다. 치우면 남은
+                // 미입력 건으로 돌아갈 길이 시트 안에 없어진다.
                 <View
                   testID="drop-price-prompt"
-                  className="mb-2.5 flex-row items-center gap-2 rounded-[14px] border border-border bg-surface px-3 py-2 shadow-lg"
+                  className="mb-2.5 flex-row items-center gap-2 rounded-[14px] bg-surface-2 px-3 py-2"
                 >
                   <View className="min-w-0 flex-1">
                     <Text numberOfLines={1} className="text-[12.5px] font-semibold leading-tight text-text">
-                      {dropItemNameOf(justAdded.itemKey, justAdded.itemName)}
-                      {justAdded.ringLevel !== undefined && ` ${justAdded.ringLevel}레벨`} 기록됨
+                      {prompt.title}
                     </Text>
-                    <Text className="text-[12.5px] font-medium leading-tight text-text-muted">
-                      판매 가격을 입력할까요?
-                    </Text>
+                    {prompt.detail !== '' && (
+                      <Text numberOfLines={1} className="text-[12.5px] font-medium leading-tight text-text-muted">
+                        {prompt.detail}
+                      </Text>
+                    )}
                   </View>
-                  <Pressable role="button" onPress={() => setJustAdded(null)} className="shrink-0 px-1">
-                    <Text className="text-[12.5px] font-semibold text-text-muted">나중에</Text>
-                  </Pressable>
+                  {/* 다 정했으면 여는 차례가 고른 것 전체다. 남은 것이 없으니 고치러 들어간다. */}
                   <Pressable
                     role="button"
-                    onPress={() => {
-                      setPricing(justAdded)
-                      setJustAdded(null)
-                    }}
+                    onPress={() => openPriceCard(unpriced.length > 0 ? unpriced : selected, 0)}
                     className="shrink-0 rounded-full bg-primary px-3 py-1.5"
                   >
-                    <Text className="text-[12.5px] font-bold text-on-primary">가격 입력</Text>
+                    <Text className="text-[12.5px] font-bold text-on-primary">
+                      {unpriced.length > 0 ? '가격 입력' : '가격 수정'}
+                    </Text>
                   </Pressable>
                 </View>
               )}

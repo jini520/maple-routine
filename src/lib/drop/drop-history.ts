@@ -81,16 +81,37 @@ export function getPeriodStartUtcMs(periodKey: string): number {
  *  수량·레벨을 붙이면 숫자가 섞인다.
  */
 export function objectParticle(word: string): '을' | '를' {
+  return hasFinalConsonant(word) ? '을' : '를'
+}
+
+/**
+ * 같은 자리를 보는 주격 조사(이/가).
+ *
+ * 드롭 시트의 확인 줄이 쓴다(`창세의 뱃지가 선택되었습니다`). 이름이 사용자 눈앞에 그대로
+ * 서므로 "이(가)" 로 도망가면 그 줄만 기계가 쓴 것처럼 읽힌다.
+ */
+export function subjectParticle(word: string): '이' | '가' {
+  return hasFinalConsonant(word) ? '이' : '가'
+}
+
+/**
+ * 마지막 **한글 음절**에 종성이 있나.
+ *
+ * 마지막 글자가 아니라 마지막 한글 음절을 본다. 슬롯별로 갈라진 익셉셔널 해머는 `)` 로 끝나고
+ * 수량·레벨을 붙이면 숫자가 섞인다. 한글이 하나도 없으면 있는 것으로 친다(받침 있는 쪽 조사가
+ * 외래어에 덜 어색하다).
+ */
+function hasFinalConsonant(word: string): boolean {
   const HANGUL_BASE = 0xac00
   const JONGSEONG_COUNT = 28
 
   for (let index = word.length - 1; index >= 0; index--) {
     const code = word.charCodeAt(index)
     if (code >= HANGUL_BASE && code <= 0xd7a3) {
-      return (code - HANGUL_BASE) % JONGSEONG_COUNT === 0 ? '를' : '을'
+      return (code - HANGUL_BASE) % JONGSEONG_COUNT !== 0
     }
   }
-  return '을'
+  return true
 }
 
 /**

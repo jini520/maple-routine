@@ -138,6 +138,19 @@ export function groupTotalMeso(
 }
 
 /**
+ * 이 캐릭터의 결정석 중 **월간 보스 몫**. 수익 내역 상자가 결정석 줄을 둘로 가르는 데 쓴다.
+ *
+ * 두 탭 모두 한 그룹이 두 주기를 든다. 주간 탭의 행에는 그 주에 선 월간 보스가 섞이고, 월간 탭은
+ * 주차 소계(주간 결정석)와 월간 보스 행을 함께 든다. `cycle` 로 거르면 두 경우가 한 산식이다.
+ *
+ * **총합에서 이 값을 빼서 주간 몫을 만들 것.** 주간 쪽을 따로 더하면 소계에 뭉쳐 들어온 몫을
+ * 놓쳐 두 줄의 합이 합계 줄과 어긋난다.
+ */
+export function monthlyCrystalMesoOf(group: CharacterGroup): number {
+  return sumPayout(group.bossRows.filter((row) => row.cycle === 'monthly'))
+}
+
+/**
  * **처치가 확정된** 행의 드롭. 미완료 행은 빈 배열이다.
  *
  * 미완료 행에도 드롭과 가격을 적을 수 있다. 처치 직후 `complete_flag` 가 갱신되기 전에 적으라고

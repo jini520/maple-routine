@@ -10,6 +10,7 @@ import './global.css'
 import { AppShell } from './src/app/AppShell'
 import { ErrorBoundary } from './src/components/organisms/ErrorBoundary/ErrorBoundary'
 import { ThemeProvider } from './src/theme/ThemeProvider'
+import { InputCardHost } from './src/components/organisms/InputCard/InputCardHost'
 
 /**
  * 앱 루트 — 프로바이더 셋과 에러 경계만 두르고, 부팅 순서는 `src/app/AppShell.tsx` 가 갖는다
@@ -63,6 +64,12 @@ export default function App(): React.JSX.Element {
               <AppShell />
             </ErrorBoundary>
           </BottomSheetModalProvider>
+          {/*
+            입력 카드는 프로바이더 **뒤**에 선다. 시트는 그 프로바이더가 자기 자식들 뒤에 그리므로,
+            시트 안에서 그린 카드는 무엇으로 감싸도 시트 위로 못 올라간다. 여기 두면 그 전부를
+            덮으면서 평범한 터치 트리 안에 있어 카드의 누르개가 산다.
+          */}
+          <InputCardHost />
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

@@ -7,17 +7,20 @@
  * 상태가 이 컴포넌트에 매여 있으므로 갈래를 옮기면 함께 사라진다.
  */
 import { useState } from 'react'
-import { View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { netProceedsMeso, type FeePercent } from '../../../lib/cashbook/item-split'
-import { AmountInput, CharacterField, FieldRow } from '../sheet-fields'
+import { CharacterField, FieldRow } from '../sheet-fields'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
-import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
+import { openInputCard } from '../../../features/input-card/store'
+import { MESO_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
+import { TABULAR_NUMS } from '../../../constants/style/text-styles'
+import { acceptMesoText, settleMesoText } from '../../../components/organisms/MesoPad/meso-pad'
 
 /**
  * 수수료 조각 셋. `없음` 이 첫 조각이고 기본값이다.
@@ -96,18 +99,61 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
       />
 
       <FieldRow label="판매 아이템" labelTestID="income-sheet-name-label">
-        <SheetTextInput
-          value={name}
-          onChangeText={setName}
-          placeholder="아이템 명"
-          className="h-5 flex-1 text-right text-sm text-text"
-        />
+        {/* 누르면 입력 카드가 글자판으로 받는다. 카드 안에서는 왼쪽 정렬이라 끝 공백이 보인다. */}
+        <Pressable
+          testID="income-sheet-name"
+          role="button"
+          aria-label="판매 아이템"
+          onPress={() =>
+            openInputCard({
+              label: '판매 아이템',
+              text: true,
+              placeholder: '아이템 명',
+              value: name,
+              onConfirm: setName,
+            })
+          }
+          className="h-5 flex-1"
+        >
+          <Text
+            numberOfLines={1}
+            className={`text-right text-sm ${name === '' ? 'text-text-disabled' : 'text-text'}`}
+          >
+            {name === '' ? '아이템 명' : name}
+          </Text>
+        </Pressable>
       </FieldRow>
 
       {/* 치는 자리는 여기다. 큰 숫자는 합계라 못 친다. 이름 아래에 서는 것은 계산 차례
           그대로이기 때문이다. 무엇을 · 얼마에 · 몇 % 떼고 → 합계. */}
       <FieldRow label="판매 대금">
-        <AmountInput testID="income-sheet-gross" value={grossText} onChange={setGrossText} />
+        <Pressable
+          testID="income-sheet-gross"
+          role="button"
+          aria-label="판매 대금"
+          onPress={() =>
+            openInputCard({
+              label: '판매 대금',
+              context: name === '' ? undefined : name,
+              icon: 'meso',
+              unit: '메소',
+              reading: true,
+              chips: MESO_QUICK_ADDS,
+              value: grossText,
+              onConfirm: (next) => setGrossText(settleMesoText(acceptMesoText(grossText, next))),
+            })
+          }
+          className="h-5 flex-1"
+        >
+          <Text
+            className={`text-right text-sm font-semibold ${
+              grossText === '' ? 'text-text-disabled' : 'text-text'
+            }`}
+            style={TABULAR_NUMS}
+          >
+            {grossText === '' ? '0' : mesoValueOf(grossText).toLocaleString()}
+          </Text>
+        </Pressable>
         {/* 큰 숫자는 수수료를 뗀 합계라 이 줄과 축이 같은지 헷갈린다. 둘 다 메소라는 것을
             여기서 말한다. */}
         <Text

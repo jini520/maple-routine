@@ -36,6 +36,8 @@ import {
 } from '@gorhom/bottom-sheet'
 
 import { vars } from 'nativewind'
+
+import { SheetInputFocusContext } from './sheet-input-focus'
 import { BlurView } from 'expo-blur'
 
 import { useBlurTint, useThemeAppearance } from '../../../theme/context'
@@ -378,6 +380,18 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
    * 라이브러리의 키보드 상태는 시트 안에서만 살아서 RN 이벤트를 직접 듣는다. iOS 는 `will`,
    * 안드로이드는 `did`(`will` 이 없다).
    */
+  /**
+   * 시트 **자기 칸**이 초점을 잡고 있는가.
+   *
+   * 키보드 리스너는 전역이라 시트 밖(입력 카드)에서 올린 키보드도 들린다. 그때 상한에서 높이를
+   * 빼면 시트가 짧아져 윗변이 내려간다(시뮬레이터에서 사용자가 잡은 것). 키보드에 맞춰 움직이는
+   * 것은 **그 키보드를 내가 부른 때**뿐이다.
+   *
+   * 치는 칸이 전부 입력 카드로 옮겨가면 이 상태와 아래 배선이 함께 걷힌다.
+   */
+  const [inputFocused, setInputFocused] = useState(false)
+  const reportInputFocus = useCallback((focused: boolean) => setInputFocused(focused), [])
+
   const [keyboardHeight, setKeyboardHeight] = useState(0)
   useEffect(() => {
     const show = Keyboard.addListener(
@@ -400,6 +414,9 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
     }
   }, [])
 
+  /** 시트가 실제로 따라야 하는 키보드 높이. 남이 올린 키보드는 0 이다. */
+  const ownKeyboardHeight = inputFocused ? keyboardHeight : 0
+
   // 키보드가 다 움직이면 그 속도를 놓는다. 다음 이동은 다시 여유로운 쪽이다.
   useEffect(() => {
     if (!byKeyboard) return
@@ -417,11 +434,11 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
    * 키보드가 뜨면 이야기가 다르다. 줄이 흐름에 있으면 키보드에 덮여 밀려 나간다. 그때만
    * 떼어서 키보드 위에 세운다.
    */
-  const pinFooter = props.footer !== undefined && keyboardHeight > 0
+  const pinFooter = props.footer !== undefined && ownKeyboardHeight > 0
 
   const scrollToEndOnKeyboard = props.scrollToEndOnKeyboard === true
   useEffect(() => {
-    if (!scrollToEndOnKeyboard || keyboardHeight === 0) return
+    if (!scrollToEndOnKeyboard || ownKeyboardHeight === 0) return
     /*
       시트가 줄어드는 **동안** 매 프레임 끝에 붙인다. 그래야 내용이 바닥에 붙은 채로 시트가
       줄어드는 한 몸의 움직임이 된다.
@@ -437,7 +454,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
     }
     pin()
     return () => cancelAnimationFrame(frame)
-  }, [scrollToEndOnKeyboard, keyboardHeight])
+  }, [scrollToEndOnKeyboard, ownKeyboardHeight])
 
   const renderBackdrop = useCallback(
     (backdropProps: BottomSheetBackdropProps) => (
@@ -453,6 +470,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
   )
 
   return (
+    <SheetInputFocusContext.Provider value={reportInputFocus}>
     <BottomSheetModal
       ref={ref}
       handleComponent={null}
@@ -483,7 +501,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
         시트를 올리는 것은 OS 가 아니라 라이브러리다. 올리는 방식이 시트를 통째로 미는 것이라
         상한을 그대로 두면 윗변이 82% 선보다 키보드 높이만큼 더 올라간다.
       */
-      maxDynamicContentSize={frame.height * MAX_HEIGHT_RATIO - keyboardHeight}
+      maxDynamicContentSize={frame.height * MAX_HEIGHT_RATIO - ownKeyboardHeight}
       animationConfigs={move}
       backdropComponent={renderBackdrop}
       accessibilityLabel={props.label}
@@ -574,7 +592,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
             ? footerHeight > 0
               ? footerHeight
               : FOOTER_GUESS
-            : (keyboardHeight > 0 ? 0 : insets.bottom) + 16,
+            : (ownKeyboardHeight > 0 ? 0 : insets.bottom) + 16,
         }}
       >
         {/*
@@ -594,7 +612,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       {/* 떼어 붙일 때만 선다. 겹칠 자리는 스크롤 내용의 `paddingBottom` 이 비워 둔다. */}
       <SheetFooterLayer
         onHeight={setFooterHeight}
-        keyboardPad={keyboardHeight}
+        keyboardPad={ownKeyboardHeight}
         moveMs={moveMs}
         moveEasing={moveCurve}
       >
@@ -606,7 +624,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
               paddingHorizontal: 16,
               paddingTop: 12,
               // 키보드가 덮고 있으면 홈 인디케이터 몫은 빈 띠가 된다.
-              paddingBottom: (keyboardHeight > 0 ? 0 : insets.bottom) + 16,
+              paddingBottom: (ownKeyboardHeight > 0 ? 0 : insets.bottom) + 16,
             }}
           >
             <View style={vars(sheetScope)}>{props.footer}</View>
@@ -617,5 +635,6 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       {/* 갈아 드는 흐림. 머리·내용·바닥 줄을 통째로 덮으므로 층 셋보다 위다. */}
       {step.busy && <StepVeil key={step.turn} onDone={step.done} />}
     </BottomSheetModal>
+    </SheetInputFocusContext.Provider>
   )
 }

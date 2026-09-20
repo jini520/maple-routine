@@ -180,7 +180,10 @@ export function DropPriceFab(props: {
             testID="drop-price-fab-badge"
             pointerEvents="none"
             aria-hidden
-            className="absolute right-0 top-0 h-4 min-w-4 items-center justify-center rounded-full bg-error px-1"
+            // 한 자리일 때 정원이 되도록 최소 너비를 높이와 같은 수로 준다. 최소 너비만 계단
+            // 이름(`min-w-4.5`)을 못 쓰고 박은 값이다. `tailwind-v4-axes.cjs` 가 `minWidth`
+            // 계단을 `full` 과 컨테이너 폭으로 갈아끼워 spacing 에서 파생되는 이름이 없다.
+            className="absolute right-0 top-0 h-4.5 min-w-[18px] items-center justify-center rounded-full bg-error px-1"
           >
             <Text className="text-10 font-bold leading-none text-on-error">
               {unpriced > BADGE_MAX_COUNT ? `${BADGE_MAX_COUNT}+` : String(unpriced)}

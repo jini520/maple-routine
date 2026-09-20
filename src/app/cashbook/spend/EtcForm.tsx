@@ -17,14 +17,14 @@ import {
   FREE_CURRENCY_LABELS,
   currencyOfLabel,
   labelOfCurrency,
+  unitOfCurrency,
   type FreeCurrency,
 } from '../../../lib/cashbook/free-currency'
 import { spendCategoryNameOf } from '../../../lib/cashbook/categories'
 import { pointToMeso } from '../../../lib/cashbook/spend-catalog'
-import { AmountInput, CharacterField, FieldRow, QuantityStepper } from '../sheet-fields'
+import { AmountInput, CharacterField, FieldRow, QuantityStepper, TextField } from '../sheet-fields'
 import { RateRow, SpendHeader, useSaveSlot, type SpendFormProps } from './form-shared'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
-import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
 export function EtcForm(props: SpendFormProps): React.JSX.Element {
   const editing = props.editing !== undefined
@@ -114,12 +114,12 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
       />
 
       <FieldRow label="내용" labelTestID="spend-sheet-name-label">
-        <SheetTextInput
+        <TextField
           testID="spend-sheet-name"
-          value={name}
-          onChangeText={setName}
+          label="내용"
           placeholder="내용"
-          className="h-5 flex-1 text-right text-sm text-text"
+          value={name}
+          onChange={setName}
         />
       </FieldRow>
 
@@ -134,7 +134,16 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
 
       {/* **통화 밑**이다. 무엇으로 내는지를 정한 다음에 얼마인지를 친다. */}
       <FieldRow label="금액">
-        <AmountInput testID="spend-sheet-unit-price" value={typedText} onChange={setTypedText} />
+        <AmountInput
+          testID="spend-sheet-unit-price"
+          label="금액"
+          context={name === '' ? undefined : name}
+          icon={currency === 'meso' ? 'meso' : undefined}
+          unit={unitOfCurrency(currency)}
+          reading={currency === 'meso'}
+          value={typedText}
+          onChange={setTypedText}
+        />
         {/* 통화를 고르는 자리라 숫자만 있으면 무엇으로 낸 것인지 줄에서 사라진다. 큰 숫자가
             이미 하는 일을 이 줄도 한다. */}
         <Text

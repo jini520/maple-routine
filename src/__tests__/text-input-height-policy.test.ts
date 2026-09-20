@@ -50,7 +50,8 @@ describe('치는 칸은 자기 높이를 갖는다', () => {
       0,
     )
 
-    expect(칸수).toBeGreaterThanOrEqual(11)
+    // 셋이다. 입력 카드 하나가 시트의 칸 전부를 받게 되면서 열하나였던 것이 줄었다.
+    expect(칸수).toBeGreaterThanOrEqual(3)
   })
 
   it('모든 칸의 `className` 에 높이가 있다', () => {

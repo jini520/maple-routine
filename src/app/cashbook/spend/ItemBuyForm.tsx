@@ -27,10 +27,10 @@ import {
   spendItemKindNameOf,
   type SpendItemKindKey,
 } from '../../../lib/cashbook/categories'
-import { AmountInput, CharacterField, FieldRow } from '../sheet-fields'
+import { AmountInput, CharacterField, FieldRow, TextField } from '../sheet-fields'
+import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { SpendHeader, useSaveSlot, type SpendFormProps } from './form-shared'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
-import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
 
 /**
  * 관세 조각 둘. **`없음` 이 첫 조각이고 기본값**이다.
@@ -140,12 +140,12 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
       />
 
       <FieldRow label="구매 아이템" labelTestID="spend-sheet-name-label">
-        <SheetTextInput
+        <TextField
           testID="spend-sheet-name"
-          value={name}
-          onChangeText={setName}
+          label="구매 아이템"
           placeholder="아이템 명"
-          className="h-5 flex-1 text-right text-sm text-text"
+          value={name}
+          onChange={setName}
         />
       </FieldRow>
 
@@ -161,7 +161,16 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
 
       {/* 늘 선다. 자리가 `종류` 바로 밑이라 장비의 줄 차례가 `종류 · 구매 비용 · 관세` 가 된다. */}
       <FieldRow label={counts ? '단가' : '구매 비용'}>
-        <AmountInput testID="spend-sheet-unit-price" value={typedText} onChange={setTypedText} />
+        <AmountInput
+          testID="spend-sheet-unit-price"
+          label={counts ? '단가' : '구매 비용'}
+          context={name === '' ? undefined : name}
+          icon="meso"
+          unit="메소"
+          reading
+          value={typedText}
+          onChange={setTypedText}
+        />
         <Text
           testID="spend-sheet-unit-price-unit"
           className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted"
@@ -195,6 +204,10 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
         <FieldRow label="수량">
           <AmountInput
             testID="spend-sheet-quantity"
+            label="수량"
+            context={name === '' ? undefined : name}
+            unit="개"
+            chips={COUNT_QUICK_ADDS}
             value={quantityText}
             onChange={setQuantityText}
           />

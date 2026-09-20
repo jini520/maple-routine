@@ -17,6 +17,7 @@ import { ChainSelect } from '../../../components/organisms/ChainSelect/ChainSele
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { requiredCharacterOptions } from '../character-options'
 import { AmountInput, FieldRow } from '../sheet-fields'
+import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 
@@ -128,13 +129,31 @@ export function FragmentSettleForm(
         </Text>
         <Text className="ml-auto shrink-0 text-xs text-text-muted">판 개수</Text>
         <View className="w-16 flex-row items-center">
-          <AmountInput testID="income-sheet-settle-count" value={countText} onChange={setCountText} />
+          <AmountInput
+            testID="income-sheet-settle-count"
+            label="판 개수"
+            context="솔 에르다 조각"
+            icon="fragment"
+            unit="개"
+            chips={COUNT_QUICK_ADDS}
+            value={countText}
+            onChange={setCountText}
+          />
         </View>
         <Text className="-ml-1.5 shrink-0 text-xs text-text-muted">개</Text>
       </View>
 
       <FieldRow label="개당 가격">
-        <AmountInput testID="income-sheet-settle-price" value={priceText} onChange={setPriceText} />
+        <AmountInput
+          testID="income-sheet-settle-price"
+          label="개당 가격"
+          context="솔 에르다 조각"
+          icon="meso"
+          unit="메소"
+          reading
+          value={priceText}
+          onChange={setPriceText}
+        />
         <Text className="ml-1.5 shrink-0 text-xs text-text-muted">메소</Text>
       </FieldRow>
 

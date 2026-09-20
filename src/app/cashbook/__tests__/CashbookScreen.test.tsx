@@ -246,10 +246,14 @@ async function 이름으로누르기(view: Rendered, label: string): Promise<voi
  * 못 친다. 시트는 **사냥으로 열리므로** 부르는 쪽이 갈래를 먼저 옮긴다.
  */
 async function 금액치기(view: Rendered, text: string): Promise<void> {
+  // 판매 대금은 입력 카드로 옮겨갔다. 줄을 눌러 카드를 열고 쳐서 확인한다.
+  await 누르기(view, 'income-sheet-gross')
   await act(async () => {
-    fireEvent.changeText(view.getByTestId('income-sheet-gross'), text)
+    fireEvent.changeText(view.getByTestId('input-card-value'), text)
   })
+  await 누르기(view, 'input-card-confirm')
 }
+
 
 describe('CashbookScreen: 자리와 머리', () => {
   it('화면과 제목이 **가계부** 다', async () => {
@@ -1035,7 +1039,7 @@ describe('펼침판이 시트를 연다', () => {
     await 누르기(view, 'spend-sheet-category-content')
     await 이름으로누르기(view, '하이마운틴')
 
-    expect(view.getByTestId('spend-sheet-rate').props.value).toBe('1180')
+    expect(view.getByTestId('spend-sheet-rate')).toHaveTextContent('1,180')
   })
 
   it('저장하면 적고 다시 읽는다', async () => {
@@ -1271,7 +1275,7 @@ describe('줄을 누르면 고칠 수 있다', () => {
     // **못 바꾼다**: 항목이 글자로 서고 되돌아가기가 없다.
     expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('몬스터 파크')
     // 그 행이 쓴 시세가 채워진다. `마지막으로 쓴 값` 이 아니다.
-    expect(view.getByTestId('spend-sheet-rate').props.value).toBe('1180')
+    expect(view.getByTestId('spend-sheet-rate')).toHaveTextContent('1,180')
     expect(view.getByTestId('spend-sheet-delete')).toBeTruthy()
   })
 
@@ -1290,7 +1294,8 @@ describe('줄을 누르면 고칠 수 있다', () => {
     await 누르기(view, 'cashbook-row-inc-1')
 
     expect(view.getByTestId('income-sheet-title')).toHaveTextContent('아이템 판매')
-    expect(view.getByTestId('income-sheet-gross').props.value).toBe('1200000000')
+    // 그 칸은 입력 카드로 옮겨가 누르개다. 줄에 적힌 글자로 본다.
+    expect(view.getByTestId('income-sheet-gross')).toHaveTextContent('1,200,000,000')
   })
 
   it('수정하면 갈아 끼우고 다시 읽는다', async () => {

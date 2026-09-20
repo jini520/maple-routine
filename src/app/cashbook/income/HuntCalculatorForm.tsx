@@ -22,7 +22,6 @@ import type { SelectOption } from '../../../components/organisms/SelectField/Sel
 import type { MesoRateLoad } from '../../../features/cashbook/meso-rate'
 import { FORCE_LABELS, forceIconOf, getItemIconUrlByFile } from '../../../lib/assets/asset-lookup'
 import {
-  acceptMesoText,
   optionalMesoTextOf,
   optionalMesoValueOf,
   settleMesoText,
@@ -55,7 +54,44 @@ import { HuntAutoFillButton } from './HuntAutoFillButton'
 import { requiredCharacterOptions } from '../character-options'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
-import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
+import type { InputCardProps } from '../../../components/organisms/InputCard/InputCard'
+import { openInputCard } from '../../../features/input-card/store'
+import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
+import { MESO_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
+
+/** 입력 카드가 받는 칸 셋. 나머지 줄은 누르는 칸이라 카드가 안 선다. */
+type EditingField = 'mesoRate' | 'fragments' | 'fragmentPrice'
+
+/**
+ * 칸마다 카드에 넘기는 것. 값과 확인 뒤 처리는 폼이 따로 준다.
+ *
+ * 메소 획득량은 표식이 없다. 메소를 받는 칸이 아니라 배수라 주머니를 달면 틀린 말이 되고,
+ * 읽기(`1200만`)도 세 자리에는 읽어 줄 것이 없다.
+ */
+const CARD_FIELDS: Record<EditingField, Omit<InputCardProps, 'value' | 'onConfirm' | 'onCancel' | 'panelStyle'>> = {
+  mesoRate: {
+    label: '메소 획득량',
+    context: '캐릭터에서 못 읽어 직접 입력',
+    unit: '%',
+    chips: COUNT_QUICK_ADDS,
+  },
+  fragments: {
+    label: '조각 개수',
+    context: '솔 에르다 조각',
+    icon: 'fragment',
+    unit: '개',
+    chips: COUNT_QUICK_ADDS,
+  },
+  fragmentPrice: {
+    label: '조각 가격',
+    context: '솔 에르다 조각 · 개당',
+    icon: 'meso',
+    unit: '메소',
+    reading: true,
+    chips: MESO_QUICK_ADDS,
+    placeholder: '미입력 시 보관',
+  },
+}
 
 /** lv.294·lv.200-201. 원 자료의 표기를 그대로 되돌린다. */
 function levelLabelOf(ground: HuntingGround): string {
@@ -251,13 +287,41 @@ export function HuntCalculatorForm(
   )
   /** 폴백 칸에 친 글자. 지우는 중간 상태가 있어 숫자가 아니라 글자로 든다. */
   const [mesoRateText, setMesoRateText] = useState('')
-  /** 폴백 칸을 고치는 중인가. 고치는 동안에만 캐릭터 메획이 보이고, 평소에는 결과가 보인다. */
-  const [mesoRateEditing, setMesoRateEditing] = useState(false)
+  /** 카드에 넘길 씨앗. 칸마다 폼이 든 글자가 다르다. */
+  function cardValueOf(field: EditingField): string {
+    if (field === 'mesoRate') return mesoRateText
+    return field === 'fragments' ? fragmentsText : fragmentPriceText
+  }
+
   /**
-   * 고치기 시작할 때 커서를 끝에 두는 선택. 결과에서 캐릭터 메획으로 값이 바뀌면 커서가 맨 앞으로 가서
-   * `9` 를 치면 `9156` 이 됐다. 치기 시작하면 놓아준다(붙들면 사용자가 옮긴 커서가 되돌아간다).
+   * 그 칸을 카드에 맡긴다. 카드는 앱 셸이 시트 뒤에 세운 자리에 선다.
+   *
+   * 차례를 안 든다. 카드가 칸 하나를 받고 닫히기 때문이다. 다음 칸은 그 줄을 다시 누른다.
    */
-  const [mesoRateSelection, setMesoRateSelection] = useState<{ start: number; end: number }>()
+  function editField(field: EditingField): void {
+    openInputCard({
+      ...CARD_FIELDS[field],
+      value: cardValueOf(field),
+      onConfirm: (next) => confirmCard(field, next),
+    })
+  }
+
+  /**
+   * 확인을 누른 값을 폼에 넣는다. **정리 규칙이 칸마다 다르다.**
+   *
+   * 조각 가격만 빈 칸과 0 을 가른다. 빈 칸은 안 판 조각이라 보관에 들고 0 은 0 메소에 판 것이다.
+   */
+  function confirmCard(field: EditingField, next: string): void {
+    if (field === 'mesoRate') {
+      setMesoRateText(next)
+      return
+    }
+    if (field === 'fragments') {
+      setFragmentsText(settleMesoText(next))
+      return
+    }
+    setFragmentPriceText(optionalMesoTextOf(optionalMesoValueOf(next)))
+  }
   /**
    * 마지막으로 요청한 캐릭터. 캐릭터를 빠르게 두 번 바꾸면 먼저 부른 응답이 늦게 도착해 남의
    * 메획이 박힐 수 있다. 그 값은 곧 금액이라 조용히 틀리면 안 된다.
@@ -600,39 +664,22 @@ export function HuntCalculatorForm(
           className="flex-row items-center justify-end"
         >
             {ocid !== null && mesoRate.kind === 'fallback' ? (
-              <>
-                {/*
-                  폭을 못박는다. `flex-1` 이면 값 자리 내용이 최소 폭을 넘는 순간 이 칸이 줄이 내줄 수 있는 폭
-                  전부로 늘어나, 줄이 넘치고 값이 화면 밖으로 밀린다. 36 은 세 자리가 들어가는 폭이다.
-
-                  평소에는 결과를, 고치는 동안에는 캐릭터 메획을 보인다. 치는 값은 캐릭터 메획이라 결과를
-                  고치게 두면 친 수에 아이템이 한 번 더 붙는다.
-                */}
-                <SheetTextInput
-                  testID="income-sheet-meso-rate-input"
-                  value={
-                    mesoRateEditing || appliedRate === typedMesoRate ? mesoRateText : String(appliedRate)
-                  }
-                  selection={mesoRateSelection}
-                  onChangeText={(text) => {
-                    setMesoRateText(text.replace(/[^\d]/g, ''))
-                    setMesoRateSelection(undefined)
-                  }}
-                  onFocus={() => {
-                    setMesoRateEditing(true)
-                    setMesoRateSelection({ start: mesoRateText.length, end: mesoRateText.length })
-                  }}
-                  onBlur={() => {
-                    setMesoRateEditing(false)
-                    setMesoRateSelection(undefined)
-                  }}
-                  keyboardType="number-pad"
-                  placeholder="0"
-                  className="h-5 w-[36px] text-right text-sm font-semibold text-text"
-                  style={TABULAR_NUMS}
-                />
+              /*
+                누르면 입력 카드가 캐릭터 메획을 받는다. 줄에 보이는 것은 결과(`appliedRate`)다.
+                치는 값은 캐릭터 메획이라 결과를 고치게 두면 친 수에 아이템이 한 번 더 붙는다.
+              */
+              <Pressable
+                testID="income-sheet-meso-rate-input"
+                role="button"
+                aria-label="메소 획득량"
+                onPress={() => editField('mesoRate')}
+                className="flex-row items-baseline"
+              >
+                <Text className="text-sm font-semibold text-text" style={TABULAR_NUMS}>
+                  {appliedRate}
+                </Text>
                 <Text className="ml-1.5 shrink-0 text-xs text-text-muted">%</Text>
-              </>
+              </Pressable>
             ) : (
               <Text
                 testID="income-sheet-meso-rate"
@@ -670,35 +717,45 @@ export function HuntCalculatorForm(
             aria-label="솔 에르다 조각"
           />
         )}
-        <View className="shrink-0 flex-row items-baseline gap-1">
-          <SheetTextInput
-            testID="income-sheet-fragments"
-            aria-label="솔 에르다 조각"
-            value={fragmentsText}
-            onChangeText={(text) => setFragmentsText(acceptMesoText(fragmentsText, text))}
-            onBlur={() => setFragmentsText(settleMesoText(fragmentsText))}
-            keyboardType="number-pad"
-            placeholder="0"
-            className="h-5 w-[52px] text-right text-sm font-semibold text-text"
+        {/*
+          누르면 입력 카드가 그 칸 하나를 받는다. 값이 비면 자리표시자가 그 자리에 선다.
+          폭을 못박는 것은 자릿수가 늘어도 줄이 안 움직이게 하기 위해서다.
+        */}
+        <Pressable
+          testID="income-sheet-fragments"
+          role="button"
+          aria-label="솔 에르다 조각"
+          onPress={() => editField('fragments')}
+          className="shrink-0 flex-row items-baseline gap-1"
+        >
+          <Text
+            className={`w-[52px] text-right text-sm font-semibold ${
+              fragmentsText === '' ? 'text-text-disabled' : 'text-text'
+            }`}
             style={TABULAR_NUMS}
-          />
+          >
+            {fragmentsText === '' ? '0' : mesoValueOf(fragmentsText).toLocaleString()}
+          </Text>
           <Text className="text-xs text-text-muted">개</Text>
-        </View>
-        <View className="ml-auto min-w-0 flex-1 flex-row items-baseline gap-1.5">
-          <SheetTextInput
-            testID="income-sheet-fragment-price"
-            aria-label="조각 가격"
-            value={fragmentPriceText}
-            onChangeText={(text) => setFragmentPriceText(acceptMesoText(fragmentPriceText, text))}
-            // 0 을 빈 칸으로 접지 않는다. 빈 칸은 보관이고 0 은 0 메소에 판 것이다.
-            onBlur={() => setFragmentPriceText(optionalMesoTextOf(optionalMesoValueOf(fragmentPriceText)))}
-            keyboardType="number-pad"
-            placeholder="미입력 시 보관"
-            className="h-5 flex-1 text-right text-sm font-semibold text-text"
+        </Pressable>
+        <Pressable
+          testID="income-sheet-fragment-price"
+          role="button"
+          aria-label="조각 가격"
+          onPress={() => editField('fragmentPrice')}
+          className="ml-auto min-w-0 flex-1 flex-row items-baseline justify-end gap-1.5"
+        >
+          <Text
+            numberOfLines={1}
+            className={`shrink text-right text-sm font-semibold ${
+              fragmentPriceText === '' ? 'text-text-disabled' : 'text-text'
+            }`}
             style={TABULAR_NUMS}
-          />
+          >
+            {fragmentPriceText === '' ? '미입력 시 보관' : mesoValueOf(fragmentPriceText).toLocaleString()}
+          </Text>
           <Text className="shrink-0 text-xs text-text-muted">메소</Text>
-        </View>
+        </Pressable>
       </View>
 
       {/*
@@ -727,7 +784,6 @@ export function HuntCalculatorForm(
         // **합계도 어림이다**. 조각 값만 실제로 받은 값이고 메소 쪽은 센 값이다.
         approximate
       />
-
     </>
   )
 }

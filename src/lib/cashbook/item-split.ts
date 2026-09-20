@@ -29,8 +29,8 @@ export type FeePercent = 3 | 5
  * 판매가 상한. **정밀도에서 온 값이지 게임 규칙이 아니다**(열린 질문).
  *
  * `netProceeds × 100` 이 `Number.MAX_SAFE_INTEGER`(≈9.007×10¹⁵) 안에 있어야 한다. 같은 값을
- * `DropPricePad` 의 `MAX_MESO` 도 쓰는데, 그쪽 근거는 *"조 단위를 넘기면 `Number` 정밀도가 아니라
- * 화면이 먼저 깨진다"* 이고 여기서는 정밀도 근거가 하나 더 붙는다.
+ * `MesoPad/meso-pad` 의 `MAX_MESO` 도 쓰는데, 그쪽 근거는 *"조 단위를 넘기면 `Number` 정밀도가
+ * 아니라 화면이 먼저 깨진다"* 이고 여기서는 정밀도 근거가 하나 더 붙는다.
  */
 export const MAX_SALE_PRICE_MESO = 9_999_999_999_999
 

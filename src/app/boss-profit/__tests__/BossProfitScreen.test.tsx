@@ -777,6 +777,45 @@ describe('총 수익 헤드라인', () => {
     expect(getByText('합계')).toBeTruthy()
   })
 
+  // 주간 탭의 행에는 그 주에 선 월간 보스가 섞인다. 총 수익은 합친 값이 맞지만 상자는 무엇이
+  // 얼마인지 말하는 자리다. 순수 함수 둘이 각각 맞아도 배선이 끊기면 여기서만 잡힌다.
+  it('주간 탭에 월간 보스가 서면 결정석이 주간·월간 두 줄로 갈린다', async () => {
+    mockStore({
+      status: 'loaded',
+      periodState: 'recorded',
+      rows: [
+        보스행({ payoutMeso: 6_000_000 }),
+        보스행({ bossKey: weeklyBossesData.monthly[0].key, cycle: 'monthly', payoutMeso: 4_000_000 }),
+      ] })
+    const { getByLabelText, getByTestId } = await renderScreen()
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('총 수익 자세히 보기'))
+    })
+
+    const popover = within(getByTestId('item-revenue-popover'))
+    expect(popover.getByText('주간 결정석')).toBeTruthy()
+    expect(popover.getByText('6,000,000')).toBeTruthy()
+    expect(popover.getByText('월간 결정석')).toBeTruthy()
+    expect(popover.getByText('4,000,000')).toBeTruthy()
+    expect(popover.queryByText('결정석')).toBeNull()
+    // 합계는 갈라도 그대로다.
+    expect(popover.getByText('10,000,000')).toBeTruthy()
+  })
+
+  it('월간 보스가 없는 주는 결정석 한 줄 그대로다', async () => {
+    mockStore({ status: 'loaded', periodState: 'recorded', rows: [보스행()] })
+    const { getByLabelText, getByTestId } = await renderScreen()
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('총 수익 자세히 보기'))
+    })
+
+    const popover = within(getByTestId('item-revenue-popover'))
+    expect(popover.getByText('결정석')).toBeTruthy()
+    expect(popover.queryByText('주간 결정석')).toBeNull()
+  })
+
   it('총 수익 상자는 모든 카드의 드롭에서 비싼 순 상위 10건과 나머지 한 줄이다', async () => {
     const 값매김 = (itemName: string, 억: number): RecordedDrop =>
       드롭({ itemKey: null, itemName, priceState: 'entered', priceMeso: 억 * 100_000_000, priceShare: 1 })
