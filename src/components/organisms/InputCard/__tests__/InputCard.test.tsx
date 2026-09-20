@@ -53,10 +53,27 @@ describe('InputCard', () => {
     expect(view.getByText('솔 에르다 조각 · 개당')).toBeTruthy()
   })
 
-  it('시트가 든 지금 값을 씨앗으로 받는다', async () => {
+  it('시트가 든 지금 값을 씨앗으로 받는다. 숫자는 콤마로 끊어 보인다', async () => {
     const { view } = await 그리기({ value: '12000000' })
 
-    expect(view.getByTestId('input-card-value').props.value).toBe('12000000')
+    expect(view.getByTestId('input-card-value').props.value).toBe('12,000,000')
+  })
+
+  /** 들고 있는 값은 숫자만이다. 콤마는 보이는 자리에서만 붙고 확인할 때는 안 나간다. */
+  it('콤마가 섞여 들어와도 값은 숫자만 나간다', async () => {
+    const { view, onConfirm } = await 그리기()
+
+    await 치기(view, '12,000,000')
+    await 누르기(view, 'input-card-confirm')
+
+    expect(onConfirm).toHaveBeenCalledWith('12000000')
+  })
+
+  /** 빈 칸과 0 은 뜻이 다르다. 사냥의 조각 가격에서 빈 칸은 보관이고 0 은 0 메소에 판 것이다. */
+  it('0 은 빈 칸으로 접지 않는다', async () => {
+    const { view } = await 그리기({ value: '0' })
+
+    expect(view.getByTestId('input-card-value').props.value).toBe('0')
   })
 
   it('확인을 누르면 친 값이 나간다', async () => {
@@ -92,7 +109,7 @@ describe('InputCard', () => {
     expect(내리기).toHaveBeenCalled()
     expect(onCancel).not.toHaveBeenCalled()
     expect(onConfirm).not.toHaveBeenCalled()
-    expect(view.getByTestId('input-card-value').props.value).toBe('34000000')
+    expect(view.getByTestId('input-card-value').props.value).toBe('34,000,000')
     내리기.mockRestore()
   })
 

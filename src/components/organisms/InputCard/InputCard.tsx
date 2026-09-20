@@ -95,6 +95,16 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
   const chips = isText ? [] : (props.chips ?? [])
   const iconSource = iconSourceOf(props.icon)
 
+  /**
+   * 칸에 보이는 글자. **숫자는 콤마로 끊는다**(사용자 지정). 자릿수가 커서 안 끊으면 억인지
+   * 조인지 눈으로 세야 한다.
+   *
+   * 들고 있는 값(`draft`)은 숫자만이다. 콤마는 보이는 자리에서만 붙이고, 돌아올 때 `acceptMesoText`
+   * 가 걷는다. `0` 을 빈 칸으로 접지 않는 것은 사냥의 조각 가격에서 **빈 칸은 보관이고 0 은 0 메소에
+   * 판 것**이라 뜻이 갈리기 때문이다.
+   */
+  const shown = isText || draft === '' ? draft : mesoValueOf(draft).toLocaleString()
+
   function change(next: string): void {
     setDraft(isText ? next : acceptMesoText(draft, next))
   }
@@ -172,7 +182,13 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
             읽기 칸은 값이 비어도 자리를 지킨다. 사라지면 첫 타건에 값이 왼쪽으로 밀린다.
             글자 칸에는 읽어 줄 단위가 없어 그 자리를 아예 안 세운다.
           */}
-          <View className="mt-3 h-14 flex-row items-center gap-2 rounded-xl border-[1.5px] border-primary bg-bg px-3.5">
+          {/*
+          **높이를 못박지 않고 여백으로 만든다.** 상자에 `h-14`, 안쪽 칸에 `h-9` 를 주면 둘의
+          가운데가 서로 어긋나 글자가 위로 붙었다(사용자 지적). 위아래 여백을 같은 값으로 주고
+          줄 높이가 상자를 정하면 대칭이 구조로 보장된다. `min-h-14` 는 값이 짧아도 상자가
+          작아지지 않게 하는 바닥이다.
+        */}
+        <View className="mt-3 min-h-14 flex-row items-center gap-2 rounded-xl border-[1.5px] border-primary bg-bg px-3.5 py-2.5">
             {props.reading === true && (
               <Text testID="input-card-reading" className="shrink-0 text-xs text-text-muted" style={TABULAR_NUMS}>
                 {draft === '' ? '' : formatMesoUnits(mesoValueOf(draft))}
@@ -181,7 +197,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
             <TextInput
               testID="input-card-value"
               aria-label={props.label}
-              value={draft}
+              value={shown}
               onChangeText={change}
               keyboardType={isText ? undefined : 'number-pad'}
               placeholder={props.placeholder ?? (isText ? '' : '0')}
@@ -191,10 +207,14 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                 한 줄에 이름이 다 들어가야 해서 한 단계 작다. 둘을 같은 크기로 두면 글자 칸에서
                 자리표시자까지 카드를 꽉 채운다.
               */
-              className={`h-9 flex-1 text-text ${
-                isText ? 'text-left text-xl font-semibold' : 'text-right text-2xl font-bold'
-              }`}
-              style={isText ? undefined : TABULAR_NUMS}
+              /*
+                **줄 높이를 아예 안 준다.** `text-*` 가 함께 넣는 `lineHeight` 가 iOS 에서 줄 상자를
+                아래로 밀어 위아래 여백이 어긋났고(위 18 · 아래 14.7 로 쟀다), `leading-none` 으로
+                글자 크기와 같게 맞췄더니 이번엔 숫자 윗부분이 잘렸다(사용자 지적). 크기만 주고
+                줄 높이는 글꼴이 정하게 두면 둘 다 안 난다.
+              */
+              className={`flex-1 text-text ${isText ? 'text-left font-semibold' : 'text-right font-bold'}`}
+              style={[isText ? null : TABULAR_NUMS, { fontSize: isText ? 16 : 20 }]}
             />
             {props.unit !== undefined && (
               <Text className="shrink-0 text-xs font-semibold text-text-muted">{props.unit}</Text>
