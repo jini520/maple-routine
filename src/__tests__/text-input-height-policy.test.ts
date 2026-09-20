@@ -15,13 +15,10 @@ import { join } from 'node:path'
 const SRC = join(__dirname, '..')
 
 /**
- * 아톰과 molecule 의 **정의 파일**. JSDoc 의 `@example` 이 칸을 그려서 스캐너에 잡힌다.
+ * 아톰의 **정의 파일**. JSDoc 의 `@example` 이 칸을 그려서 스캐너에 잡힌다.
  * 부품 자신은 치수를 안 정한다(호출부가 정한다).
  */
-const DEFINITIONS = new Set([
-  join(SRC, 'components', 'atoms', 'TextInput', 'TextInput.tsx'),
-  join(SRC, 'components', 'molecules', 'SheetTextInput', 'SheetTextInput.tsx'),
-])
+const DEFINITIONS = new Set([join(SRC, 'components', 'atoms', 'TextInput', 'TextInput.tsx')])
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {

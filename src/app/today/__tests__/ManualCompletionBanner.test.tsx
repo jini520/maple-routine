@@ -17,10 +17,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
     }),
     BottomSheetScrollView: (props: Record<string, unknown>) =>
       React.createElement(ReactNative.View, props),
-    useBottomSheetInternal: () => null,
     useBottomSheetTimingConfigs: (config: unknown) => config,
-    BottomSheetTextInput: (props: Record<string, unknown>) =>
-      React.createElement(ReactNative.TextInput, props),
     BottomSheetModalProvider: (props: { children: ReactNode }) => props.children,
   }
 })
