@@ -17,6 +17,7 @@ import {
   collectPayableDrops,
   collectRevenueDrops,
   groupTotalMeso,
+  monthlyCrystalMesoOf,
   sumPayout,
   summarizeWorldCrystals,
 } from '../character-groups'
@@ -320,5 +321,37 @@ describe('buildCharacterGroups 의 조회 불가 카드', () => {
 
   it('안 넘기면 지금과 같다', () => {
     expect(buildCharacterGroups([보스행()], [])).toHaveLength(1)
+  })
+})
+
+// 주간 탭의 행에는 그 주에 선 월간 보스가 섞여 있고, 월간 탭의 그룹은 주차 소계(주간 결정석)와
+// 월간 보스 행을 함께 든다. 수익 내역 상자의 결정석 줄이 그 둘을 한 숫자로 말하고 있었다.
+describe('monthlyCrystalMesoOf: 결정석에서 월간 몫만', () => {
+  it('월간 보스 행의 결정석만 센다', () => {
+    const rows = [보스행(), 보스행({ bossKey: 월간보스, cycle: 'monthly', payoutMeso: 2_000_000_000 })]
+
+    expect(monthlyCrystalMesoOf(group(rows))).toBe(2_000_000_000)
+  })
+
+  it('월간 보스가 없으면 0 이다. 그 값이 상자에서 한 줄짜리 결정석을 부른다', () => {
+    expect(monthlyCrystalMesoOf(group([보스행()]))).toBe(0)
+  })
+
+  // 금액을 모르는 행(미완료 · 가격 미확정)의 `null` 은 `sumPayout` 과 같은 규칙으로 0 이다.
+  // 여기서 달리 접으면 주간 몫(총합 빼기 이 값)이 그만큼 틀어진다.
+  it('금액이 null 인 월간 행은 0 으로 센다', () => {
+    const rows = [보스행({ bossKey: 월간보스, cycle: 'monthly', payoutMeso: null, isComplete: false })]
+
+    expect(monthlyCrystalMesoOf(group(rows))).toBe(0)
+  })
+
+  // 월간 탭 그룹. 주차 소계에 든 주간 결정석은 행이 아니라 소계에 있어 이 함수가 안 본다.
+  it('주차 소계는 안 본다. 소계의 몫은 주간 결정석이다', () => {
+    const 월간탭그룹: CharacterGroup = {
+      ...group([보스행({ bossKey: 월간보스, cycle: 'monthly', payoutMeso: 2_000_000_000 })]),
+      weeklySubtotals: [주차소계({ totalMeso: 9_000_000_000 })],
+    }
+
+    expect(monthlyCrystalMesoOf(월간탭그룹)).toBe(2_000_000_000)
   })
 })

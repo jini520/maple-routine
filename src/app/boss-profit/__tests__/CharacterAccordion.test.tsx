@@ -306,6 +306,44 @@ describe('카드 수익 내역 상자', () => {
     expect(view.getByText('5.0억')).toBeTruthy()
   })
 
+  // 주간 탭 카드에도 그 주에 선 월간 보스가 든다. 총 수익 상자와 같은 말을 해야 한다.
+  it('주간 탭 카드도 월간 보스 결정석을 갈라 말한다', async () => {
+    const group = 그룹([
+      보스행({ payoutMeso: 6_000_000 }),
+      보스행({ bossKey: 월간보스, cycle: 'monthly', payoutMeso: 4_000_000 }),
+    ])
+    const view = await 상자열기(
+      group,
+      컨텍스트값({
+        dropsByRowKey: { [dropRowKey('ocid-1', 주간보스, 'hard', PERIOD)]: [값매김('아이템', 1_000_000)] },
+      }),
+    )
+
+    expect(view.getByText('주간 결정석')).toBeTruthy()
+    expect(view.getByText('6,000,000')).toBeTruthy()
+    expect(view.getByText('월간 결정석')).toBeTruthy()
+    expect(view.getByText('4,000,000')).toBeTruthy()
+    expect(view.queryByText('결정석')).toBeNull()
+  })
+
+  // 월간 탭 카드는 주차 소계(주간 결정석)와 월간 보스 행을 함께 든다. 주간 몫은 총합에서 뺀
+  // 나머지라, 소계에 뭉쳐 들어와 낱개로 못 펼치는 결정석도 주간 줄에 그대로 선다.
+  it('월간 탭 카드는 주차 소계를 주간 결정석으로 둔다', async () => {
+    const 월간행 = 보스행({ bossKey: 월간보스, cycle: 'monthly', periodKey: '2026-08', payoutMeso: 4_000_000 })
+    const group = 그룹(
+      [월간행],
+      [주차소계({ periodKey: '2026-08-06', totalMeso: 6_000_000, drops: [값매김('주간 아이템', 1_000_000)] })],
+    )
+    const view = await 상자열기(group, 컨텍스트값({ tab: 'monthly' }))
+
+    // 소계 6,000,000 에서 아이템 1,000,000 을 뺀 5,000,000 이 주간 결정석이다.
+    expect(view.getByText('주간 결정석')).toBeTruthy()
+    expect(view.getByText('5,000,000')).toBeTruthy()
+    expect(view.getByText('월간 결정석')).toBeTruthy()
+    expect(view.getByText('4,000,000')).toBeTruthy()
+    expect(view.getByText('10,000,000')).toBeTruthy()
+  })
+
   // 상자는 주차 소계의 드롭에 **월간 보스 행의 드롭**을 더한다. 소계는 그 보스의 것을 안 담으므로
   // (금액과 같은 규칙) 겹치지 않는다. 둘 중 한쪽만 읽으면 아이템 줄과 결정석 줄이 어긋난다.
   it('월간 탭은 주차 소계와 월간 보스 행의 드롭을 함께 읽는다', async () => {

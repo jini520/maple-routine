@@ -47,6 +47,7 @@ import {
   countGroupClearedMonthlyBosses,
   countGroupClearedWeeklyBosses,
   groupTotalMeso,
+  monthlyCrystalMesoOf,
   type CharacterGroup,
 } from './character-groups'
 import { useAnchoredPopover, type PopoverAnchorRect } from '../../hooks/useAnchoredPopover'
@@ -350,6 +351,7 @@ export function CharacterAccordion(props: {
           limit={CARD_REVENUE_LIST_LIMIT}
           weeklyLines={weeklyItemLines}
           crystalMeso={totalMeso - itemTotal}
+          monthlyCrystalMeso={monthlyCrystalMesoOf(group)}
           itemMeso={itemTotal}
           anchor={itemAnchor}
           onClose={closeItemPopover}
