@@ -96,4 +96,27 @@ describe('SelectField', () => {
 
     expect(view.getByTestId('pick-trigger')).toHaveTextContent('캐릭터선택 안함')
   })
+
+  // 심볼 드롭다운이 첫 호출부다. 보기가 든 묶음 이름이 바뀌는 자리마다 라벨 줄이 하나 선다.
+  it('보기에 묶음이 있으면 묶음이 바뀌는 자리마다 라벨 줄을 세운다. 라벨은 못 누른다', async () => {
+    const view = await renderOverlay(
+      <SelectField
+        label="심볼"
+        options={[
+          { value: 'a1', label: '소멸의 여로', group: '아케인 심볼' },
+          { value: 'a2', label: '츄츄 아일랜드', group: '아케인 심볼' },
+          { value: 'b1', label: '세르니움', group: '어센틱 심볼' },
+        ]}
+        selected={null}
+        onSelect={jest.fn()}
+        testID="pick"
+      />,
+    )
+    await 누르기(view, 'pick-trigger')
+
+    const labels = view.getAllByTestId(/^pick-group-/).map((node) => node.props.children)
+    expect(labels).toEqual(['아케인 심볼', '어센틱 심볼'])
+    expect(view.getByTestId('pick-group-아케인 심볼').props.role).toBeUndefined()
+  })
 })
+

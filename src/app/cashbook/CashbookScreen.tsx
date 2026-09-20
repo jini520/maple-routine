@@ -71,6 +71,7 @@ import {
   apiWindowRange,
   floorMonthKey,
   floorWeekStartKey,
+  historyFloorDateKey,
   monthWindow,
 } from '../../features/cashbook/range'
 import { recordIconOf } from '../../features/cashbook/row-icon'
@@ -108,6 +109,7 @@ import {
 import type { LastHuntSelection } from '../../storage/last-hunt-selection'
 import type { LastHuntToggles } from '../../storage/last-hunt-toggles'
 import { loadMesoRate } from '../../features/cashbook/meso-rate'
+import { loadSymbolLevels } from '../../features/cashbook/symbol-levels'
 // 보스 수익 탭의 행이 초상을 찾는 그 함수다. 같은 보스가 두 화면에서 다른 그림이면 안 된다.
 import { bossPortraitSlugOf } from '../../lib/boss/bosses'
 import { dropItemIconOf } from '../../lib/assets/asset-lookup'
@@ -1226,6 +1228,7 @@ export function CashbookScreen(): React.JSX.Element {
           loadFragmentStorage={loadFragmentStorage}
           dateKey={typeof sheet === 'object' ? sheet.record.earnedOn : selectedDateKey}
           todayDateKey={todayDateKey}
+          earliestDateKey={historyFloorDateKey(todayDateKey)}
           editing={typeof sheet === 'object' ? sheet.record : undefined}
           onSave={
             typeof sheet === 'object' ? (draft) => saveEdit(sheet, draft) : saveIncome
@@ -1239,7 +1242,10 @@ export function CashbookScreen(): React.JSX.Element {
           characters={characters}
           dateKey={typeof sheet === 'object' ? sheet.record.spentOn : selectedDateKey}
           todayDateKey={todayDateKey}
+          earliestDateKey={historyFloorDateKey(todayDateKey)}
           lastPointRate={lastPointRate}
+          // 심볼 강화 드롭다운이 만렙인 심볼을 가를 때 부른다. 시트는 `nexon/` 도 `storage/` 도 모른다.
+          loadSymbolLevels={loadSymbolLevels}
           editing={typeof sheet === 'object' ? sheet.record : undefined}
           onSave={typeof sheet === 'object' ? (draft) => saveEdit(sheet, draft) : saveSpend}
           onDelete={typeof sheet === 'object' ? () => deleteEntry(sheet) : undefined}

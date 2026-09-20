@@ -13,7 +13,7 @@
 import { closeBossProfitDb, getBossProfitDb } from '../db'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 import { getFragmentStorage, getIncomeRecordsBetween, insertIncomeRecord, type IncomeRecord } from '../../income'
-import { getSpendRecordsBetween } from '../../spend'
+import { getSpendRecordsBetween, insertSpendRecord, type SpendRecord } from '../../spend'
 import { getAllBossDropRecords, replaceBossDropRecords } from '../../boss-drops'
 import { getBossPartySettings, setBossPartySize } from '../../boss-party-settings'
 import { getBossProfitRecords, upsertBossProfitRecord, type BossProfitRecord } from '../../boss-profit'
@@ -353,6 +353,55 @@ const OLD_SPEND_TABLE = `
 function userVersion(target: RealSqlite): number {
   return target.inspect((db) => (db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version)
 }
+
+// 칸을 더한 커밋 전에 테이블을 만든 기기는 CREATE 문이 칸을 안 붙인다. `ensureColumn` 이 붙여야 INSERT 가 통한다.
+describe('심볼 강화의 레벨 두 칸', () => {
+  const 심볼기록: SpendRecord = {
+    id: 'symbol',
+    ocid: null,
+    spentOn: '2026-09-19',
+    category: 'symbol',
+    item: '소멸의 여로 Lv.3 → 7',
+    itemKey: 'road_of_vanishing',
+    formItemKeys: null,
+    itemKind: null,
+    levelFrom: 3,
+    levelTo: 7,
+    quantity: null,
+    mesoAmount: 7_700_000,
+    tariffMeso: null,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    cashAmount: null,
+    memo: null,
+    recordedAt: '2026-09-19T10:00:00.000Z',
+  }
+
+  it('새 DB 에 적고 그대로 되읽는다', async () => {
+    await getBossProfitDb()
+
+    await insertSpendRecord(심볼기록)
+
+    expect(await getSpendRecordsBetween('2026-09-19', '2026-09-19')).toEqual([심볼기록])
+  })
+
+  it('레벨 칸이 없던 옛 기기의 테이블에도 적힌다. 옛 행의 두 칸은 NULL 이다', async () => {
+    real.inspect((db) => {
+      db.exec(OLD_SPEND_TABLE)
+      db.exec(
+        `INSERT INTO spend_records (id, spent_on, category, item, quantity, meso_amount, recorded_at)
+         VALUES ('old', '2026-09-19', '버프', '세이람의 영약', 1, 2000000, '2026-09-19T00:00:00.000Z')`,
+      )
+    })
+
+    await getBossProfitDb()
+    await insertSpendRecord(심볼기록)
+
+    const rows = await getSpendRecordsBetween('2026-09-19', '2026-09-19')
+    expect(rows.find((row) => row.id === 'old')).toMatchObject({ levelFrom: null, levelTo: null })
+    expect(rows.find((row) => row.id === 'symbol')).toMatchObject({ levelFrom: 3, levelTo: 7 })
+  })
+})
 
 // 이름만 저장된 옛 기록에 key 를 채운다. 이관은 버전 번호로 한 번씩 돈다.
 describe('버전 이관: 가계부 기록에 key 를 채운다', () => {

@@ -65,12 +65,23 @@ async function 그리기(
   return view
 }
 
+/** 머리의 `변경` 을 눌러 달력을 열고 그 날을 누른다. 보스 직접 완료 시트와 같은 부품이다. */
+async function 날짜고르기(view: Awaited<ReturnType<typeof renderOverlay>>, dateKey: string): Promise<void> {
+  for (const label of ['적는 날 고르기', dateKey]) {
+    await act(async () => {
+      fireEvent.press(view.getByLabelText(label))
+    })
+  }
+}
+
 async function 시트열기(overrides: Partial<React.ComponentProps<typeof IncomeSheet>> = {}) {
   return renderOverlay(
     <IncomeSheet
       dateKey="2026-08-23"
       // 오늘. 이 날 뒤로는 못 옮긴다. 앞뒤 이동을 재는 케이스가 있으므로 이틀 뒤로 둔다.
       todayDateKey="2026-08-25"
+      // 가계부 화면이 갈 수 있는 가장 이른 날. 화면이 오늘에서 읽어 넘긴다.
+      earliestDateKey="2025-02-27"
       characters={캐릭터둘}
       lastPointRate={null}
       // 기본은 **0** 이다. 메획이 테스트가 세는 금액을 흔들지 않는다.
@@ -2148,7 +2159,7 @@ describe('솔 에르다 조각 정산', () => {
     const view = await 정산시트({ loadFragmentStorage })
     await 사슬고르기(view, 'ocid-1')
 
-    await 아이디로누르기(view, 'income-sheet-date-prev')
+    await 날짜고르기(view, '2026-08-22')
 
     expect(loadFragmentStorage).toHaveBeenLastCalledWith('ocid-1', '2026-08-22', undefined)
     expect(view.getByTestId('income-sheet-fragment-storage')).toHaveTextContent('30개')
@@ -2634,37 +2645,31 @@ describe('사냥 폼의 줄 배치 (사용자 지정 2026-09-01)', () => {
  * 날을 잘못 골랐다는 것을 아는 자리가 여기다. 그때 닫고 다시 여는 것은 친 것을 버리는 일이다.
  */
 describe('날짜 바꾸기', () => {
-  it('하루씩 앞뒤로 옮긴다', async () => {
+  it('달력에서 고른 날로 옮긴다. 달력은 닫힌다', async () => {
     const view = await 그리기()
     expect(view.getByTestId('income-sheet-date')).toHaveTextContent('8월 23일 (일)')
 
-    await 아이디로누르기(view, 'income-sheet-date-prev')
-    expect(view.getByTestId('income-sheet-date')).toHaveTextContent('8월 22일 (토)')
+    await 날짜고르기(view, '2026-08-20')
 
-    await 아이디로누르기(view, 'income-sheet-date-next')
-    await 아이디로누르기(view, 'income-sheet-date-next')
-    expect(view.getByTestId('income-sheet-date')).toHaveTextContent('8월 24일 (월)')
+    expect(view.getByTestId('income-sheet-date')).toHaveTextContent('8월 20일 (목)')
+    expect(view.queryByTestId('calendar-popover')).toBeNull()
   })
 
-  /** 내일 번 메소는 없다. 뒤로 가는 길이 오늘에서 끊긴다. */
-  it('오늘 뒤로는 못 간다', async () => {
-    const view = await 그리기({ dateKey: '2026-08-25' })
-    expect(view.getByTestId('income-sheet-date')).toHaveTextContent('8월 25일 (화)')
+  /** 내일 번 메소는 없다. 가계부 화면이 못 가는 날도 못 고른다. */
+  it('오늘 뒤와 가계부의 첫날 앞은 못 누른다', async () => {
+    const view = await 그리기({ earliestDateKey: '2026-08-20' })
+    await 이름으로누르기(view, '적는 날 고르기')
 
-    await 아이디로누르기(view, 'income-sheet-date-next')
-
-    expect(view.getByTestId('income-sheet-date')).toHaveTextContent('8월 25일 (화)')
-    const 화살촉 = view.getByTestId('income-sheet-date-next')
-    expect(화살촉.props.accessibilityState.disabled).toBe(true)
-    // 못 누른다는 것이 눈에도 보여야 한다.
-    expect(flattenStyle(화살촉.props.style).opacity).toBeCloseTo(0.4)
+    expect(view.getByLabelText('2026-08-26').props.accessibilityState?.disabled).toBe(true)
+    expect(view.getByLabelText('2026-08-19').props.accessibilityState?.disabled).toBe(true)
+    expect(view.getByLabelText('2026-08-25').props.accessibilityState?.disabled).toBe(false)
   })
 
   it('바꾼 날짜로 저장된다', async () => {
     const onSave = jest.fn()
     const view = await 판매시트({ onSave })
     await 대금치기(view, '1200000000')
-    await 아이디로누르기(view, 'income-sheet-date-prev')
+    await 날짜고르기(view, '2026-08-22')
     await 이름으로누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({ earnedOn: '2026-08-22' })
@@ -2675,7 +2680,7 @@ describe('날짜 바꾸기', () => {
     const view = await 판매시트()
     await 대금치기(view, '1200000000')
 
-    await 아이디로누르기(view, 'income-sheet-date-prev')
+    await 날짜고르기(view, '2026-08-22')
 
     expect(view.getByTestId('income-sheet-gross').props.value).toBe('1200000000')
   })
@@ -2705,7 +2710,7 @@ describe('날짜 바꾸기', () => {
       },
     })
 
-    await 아이디로누르기(view, 'income-sheet-date-next')
+    await 날짜고르기(view, '2026-08-24')
     await 이름으로누르기(view, '수정')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({ earnedOn: '2026-08-24' })

@@ -43,8 +43,8 @@ type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
 /** 고르개가 실제로 고를 것이 있어야 선택 안함 이 기본이라는 말에 뜻이 생긴다. */
 const 캐릭터둘 = [
-  { ocid: 'ocid-1', name: '루디' },
-  { ocid: 'ocid-2', name: '아델' },
+  { ocid: 'ocid-1', name: '루디', level: 225 },
+  { ocid: 'ocid-2', name: '아델', level: 290 },
 ]
 
 /**
@@ -62,7 +62,10 @@ async function 그리기(
       dateKey="2026-08-23"
       // 오늘. 이 날 뒤로는 못 옮긴다. 앞뒤 이동을 재는 케이스가 있으므로 이틀 뒤로 둔다.
       todayDateKey="2026-08-25"
+      // 가계부 화면이 갈 수 있는 가장 이른 날. 화면이 오늘에서 읽어 넘긴다.
+      earliestDateKey="2025-02-27"
       characters={캐릭터둘}
+      loadSymbolLevels={async () => null}
       lastPointRate={null}
       onSave={jest.fn()}
       onClose={jest.fn()}
@@ -79,7 +82,7 @@ async function 누르기(view: Rendered, label: string): Promise<void> {
   })
 }
 
-type 갈래이름 = '컨텐츠' | '이벤트·BM' | '버프' | '주문서' | '아이템 구매' | '기타'
+type 갈래이름 = '컨텐츠' | '이벤트·BM' | '버프' | '주문서' | '심볼 강화' | '아이템 구매' | '기타'
 
 /** 카드의 `testID` 는 갈래 key 로 선다. 케이스는 읽히게 이름으로 적고 여기서 key 로 옮긴다. */
 const 갈래key: Record<갈래이름, SpendCategoryKey> = {
@@ -87,6 +90,7 @@ const 갈래key: Record<갈래이름, SpendCategoryKey> = {
   '이벤트·BM': 'event_bm',
   버프: 'buff',
   주문서: 'scroll',
+  '심볼 강화': 'symbol',
   '아이템 구매': 'item_purchase',
   기타: 'etc',
 }
@@ -154,8 +158,8 @@ describe('머리', () => {
 })
 
 describe('갈래', () => {
-  // 갈래 여섯. 목록 넷과 직접 입력 둘.
-  it('1차 시트가 갈래 여섯을 카드로 세운다', async () => {
+  // 갈래 일곱. 목록 넷, 심볼 강화, 직접 입력 둘.
+  it('1차 시트가 갈래 일곱을 카드로 세운다', async () => {
     const view = await 그리기({}, null)
 
     for (const label of Object.keys(갈래key) as 갈래이름[]) {
@@ -169,7 +173,7 @@ describe('갈래', () => {
    * 그림은 파일명으로 찾는다. 목록(`assets/generated/items`)은 커밋 시점에 생성되므로, 파일을
    * 더하고 `npm run assets:gen` 을 안 돌리면 하나가 조용히 빈 자리가 된다.
    */
-  it('카드 여섯이 저마다 게임 그림을 든다. 빈 자리가 없다', async () => {
+  it('카드 일곱이 저마다 게임 그림을 든다. 빈 자리가 없다', async () => {
     const view = await 그리기({}, null)
 
     // 그림은 `aria-hidden` 이라 기본 조회에서 빠진다. 낭독기는 카드 이름만 읽으면 된다.
@@ -710,6 +714,8 @@ const 악몽선경2 = {
   itemKey: null,
   formItemKeys: { exp: 'nightmare_paradise_2' },
   itemKind: null,
+  levelFrom: null,
+  levelTo: null,
   quantity: 1,
   mesoAmount: null,
   tariffMeso: null,
@@ -739,6 +745,8 @@ describe('저장', () => {
       itemKey: null,
       formItemKeys: { exp: 'high_mountain_2' },
       itemKind: null,
+      levelFrom: null,
+      levelTo: null,
       quantity: 1,
       mesoAmount: null,
       tariffMeso: null,
@@ -998,6 +1006,8 @@ describe('주문서', () => {
         itemKey: 'magical_two_handed_weapon_attack_scroll_100',
         formItemKeys: null,
         itemKind: null,
+        levelFrom: null,
+        levelTo: null,
         quantity: 2,
         mesoAmount: 120_000_000,
         tariffMeso: null,
@@ -1553,6 +1563,8 @@ describe('시작 기간 전인 항목', () => {
         itemKey: null,
         formItemKeys: { exp: 'aurum_regis_1', sol_erda: 'aurum_regis_2' },
         itemKind: null,
+        levelFrom: null,
+        levelTo: null,
         quantity: 1,
         mesoAmount: null,
         tariffMeso: null,
@@ -1580,6 +1592,8 @@ describe('수정 모드', () => {
     itemKey: null,
     formItemKeys: { exp: 'nightmare_paradise_2' },
     itemKind: null,
+    levelFrom: null,
+    levelTo: null,
     quantity: 1,
     mesoAmount: null,
     tariffMeso: null,
@@ -1668,6 +1682,8 @@ describe('수정 모드', () => {
         itemKey: null,
         formItemKeys: null,
         itemKind: null,
+        levelFrom: null,
+        levelTo: null,
         quantity: null,
       },
       onDelete: jest.fn(),
@@ -1981,6 +1997,8 @@ describe('아이템 구매의 종류', () => {
       category: 'item_purchase',
       item: '주문서',
       itemKind: 'consumable',
+      levelFrom: null,
+      levelTo: null,
       quantity: 300,
       mesoAmount: 3_600_000,
       tariffMeso: null,
@@ -1998,6 +2016,8 @@ describe('아이템 구매의 종류', () => {
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
       itemKind: 'equipment',
+      levelFrom: null,
+      levelTo: null,
       quantity: null,
       mesoAmount: 935_000_000,
       tariffMeso: 85_000_000,
@@ -2104,6 +2124,8 @@ describe('되짚어 여는 식', () => {
       category: 'item_purchase',
       item: '앱솔 무기',
       itemKind: 'equipment',
+      levelFrom: null,
+      levelTo: null,
       quantity: null,
       mesoAmount: 935_000_000,
       tariffMeso: 85_000_000,
@@ -2121,6 +2143,8 @@ describe('되짚어 여는 식', () => {
         category: 'item_purchase',
         item: '앱솔 무기',
         itemKind: 'equipment',
+        levelFrom: null,
+        levelTo: null,
         quantity: null,
         mesoAmount: 935_000_000,
         tariffMeso: 85_000_000,
@@ -2142,6 +2166,8 @@ describe('되짚어 여는 식', () => {
       category: 'item_purchase',
       item: '주문서',
       itemKind: 'consumable',
+      levelFrom: null,
+      levelTo: null,
       quantity: 300,
       mesoAmount: 3_600_000,
       tariffMeso: null,
@@ -2164,6 +2190,8 @@ describe('되짚어 여는 식', () => {
       category: 'item_purchase',
       item: '앱솔 무기',
       itemKind: null,
+      levelFrom: null,
+      levelTo: null,
       quantity: null,
       mesoAmount: 100_000,
       tariffMeso: null,
@@ -2184,6 +2212,8 @@ describe('되짚어 여는 식', () => {
       category: 'etc',
       item: '자유',
       itemKind: null,
+      levelFrom: null,
+      levelTo: null,
       quantity: 3,
       mesoAmount: 30_000,
       tariffMeso: null,
@@ -2341,6 +2371,8 @@ describe('수정으로 열 때의 큰 숫자', () => {
       itemKey: null,
       formItemKeys: null,
       itemKind: null,
+      levelFrom: null,
+      levelTo: null,
       quantity: 1,
       mesoAmount,
       tariffMeso: null,
@@ -2401,36 +2433,31 @@ describe('아이템 구매의 수량 단위', () => {
  * 한쪽만 되는 상태가 남으면 그 자체가 왜 저기선 안 되나 가 된다.
  */
 describe('날짜 바꾸기', () => {
-  async function 아이디로누르기(view: Rendered, testID: string): Promise<void> {
-    await act(async () => {
-      fireEvent.press(view.getByTestId(testID))
-    })
+  /** 머리의 `변경` 을 눌러 달력을 열고 그 날을 누른다. 보스 직접 완료 시트와 같은 부품이다. */
+  async function 날짜고르기(view: Rendered, dateKey: string): Promise<void> {
+    await 누르기(view, '적는 날 고르기')
+    await 누르기(view, dateKey)
   }
 
-  it('하루씩 앞뒤로 옮긴다', async () => {
+  it('달력에서 고른 날로 옮긴다. 달력은 닫힌다', async () => {
     const view = await 그리기()
     expect(view.getByTestId('spend-sheet-date')).toHaveTextContent('8월 23일 (일)')
 
-    await 아이디로누르기(view, 'spend-sheet-date-prev')
-    expect(view.getByTestId('spend-sheet-date')).toHaveTextContent('8월 22일 (토)')
+    await 날짜고르기(view, '2026-08-20')
 
-    await 아이디로누르기(view, 'spend-sheet-date-next')
-    await 아이디로누르기(view, 'spend-sheet-date-next')
-    expect(view.getByTestId('spend-sheet-date')).toHaveTextContent('8월 24일 (월)')
+    expect(view.getByTestId('spend-sheet-date')).toHaveTextContent('8월 20일 (목)')
+    expect(view.queryByTestId('calendar-popover')).toBeNull()
   })
 
-  /** 내일 쓴 메소는 없다. 뒤로 가는 길이 오늘에서 끊긴다. */
-  it('오늘 뒤로는 못 간다', async () => {
-    const view = await 그리기({ dateKey: '2026-08-25' })
-    expect(view.getByTestId('spend-sheet-date')).toHaveTextContent('8월 25일 (화)')
+  /** 내일 쓴 메소는 없다. 가계부 화면이 못 가는 날도 못 고른다. */
+  it('오늘 뒤와 가계부의 첫날 앞은 못 누른다', async () => {
+    const view = await 그리기({ earliestDateKey: '2026-08-20' })
+    await 누르기(view, '적는 날 고르기')
 
-    await 아이디로누르기(view, 'spend-sheet-date-next')
-
-    expect(view.getByTestId('spend-sheet-date')).toHaveTextContent('8월 25일 (화)')
-    const 화살촉 = view.getByTestId('spend-sheet-date-next')
-    expect(화살촉.props.accessibilityState.disabled).toBe(true)
-    // 못 누른다는 것이 눈에도 보여야 한다.
-    expect(flattenStyle(화살촉.props.style).opacity).toBeCloseTo(0.4)
+    expect(view.getByLabelText('2026-08-26').props.accessibilityState?.disabled).toBe(true)
+    expect(view.getByLabelText('2026-08-19').props.accessibilityState?.disabled).toBe(true)
+    expect(view.getByLabelText('2026-08-20').props.accessibilityState?.disabled).toBe(false)
+    expect(view.getByLabelText('2026-08-25').props.accessibilityState?.disabled).toBe(false)
   })
 
   it('바꾼 날짜로 저장된다', async () => {
@@ -2438,7 +2465,7 @@ describe('날짜 바꾸기', () => {
     const view = await 그리기({ onSave })
     await 갈래바꾸기(view, '기타')
     await 금액치기(view, '30000')
-    await 아이디로누르기(view, 'spend-sheet-date-prev')
+    await 날짜고르기(view, '2026-08-22')
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({ spentOn: '2026-08-22' })
@@ -2450,7 +2477,7 @@ describe('날짜 바꾸기', () => {
     await 갈래바꾸기(view, '기타')
     await 금액치기(view, '30000')
 
-    await 아이디로누르기(view, 'spend-sheet-date-prev')
+    await 날짜고르기(view, '2026-08-22')
 
     expect(view.getByTestId('spend-sheet-unit-price').props.value).toBe('30000')
   })
@@ -2459,10 +2486,212 @@ describe('날짜 바꾸기', () => {
     const view = await 그리기()
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
-    await 아이디로누르기(view, 'spend-sheet-date-prev')
+    await 날짜고르기(view, '2026-08-22')
 
     // 되돌아가는 누르개가 선 그 줄에서 날짜도 함께 산다.
     expect(view.getByTestId('spend-sheet-date')).toHaveTextContent('8월 22일 (토)')
     expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('하이마운틴')
+  })
+})
+
+/**
+ * **심볼 강화는 두 단계 시트다**(사용자 지정 2026-09-19). 갈래를 고르면 바로 폼이 서고, 심볼은 그림 붙은
+ * 드롭다운으로, 레벨은 레벨 칸 슬라이더로 고른다. 금액은 그 사이 단계 비용의 합이다.
+ */
+describe('심볼 강화', () => {
+  /** 표가 서는 날. 2026-09-17 주다. */
+  const 패치후 = '2026-09-19'
+
+  async function 열기(overrides: Partial<React.ComponentProps<typeof SpendSheet>> = {}) {
+    return 그리기({ dateKey: 패치후, todayDateKey: 패치후, ...overrides }, '심볼 강화')
+  }
+
+  async function 아이디로누르기(view: Rendered, testID: string): Promise<void> {
+    await act(async () => {
+      fireEvent.press(view.getByTestId(testID))
+    })
+  }
+
+  async function 심볼고르기(view: Rendered, key: string): Promise<void> {
+    await 아이디로누르기(view, 'spend-sheet-symbol')
+    await 아이디로누르기(view, `spend-sheet-symbol-option-${key}`)
+  }
+
+  async function 캐릭터고르기(view: Rendered, ocid: string): Promise<void> {
+    const 알약 = view.queryByTestId('spend-sheet-chain-badge-캐릭터')
+    await 아이디로누르기(view, 알약 === null ? 'spend-sheet-chain-placeholder-trigger' : 'spend-sheet-chain-badge-캐릭터')
+    await 아이디로누르기(view, `spend-sheet-chain-option-${ocid}`)
+  }
+
+  /** 열린 목록의 보기 key 들. 묶음 라벨은 `@라벨` 로 적는다. */
+  async function 목록(view: Rendered): Promise<string[]> {
+    await 아이디로누르기(view, 'spend-sheet-symbol')
+    const nodes = view.getAllByTestId(/^spend-sheet-symbol-(option|group)-/)
+    const 적은것 = nodes.map((node) => {
+      const id = node.props.testID as string
+      return id.startsWith('spend-sheet-symbol-group-')
+        ? `@${id.replace('spend-sheet-symbol-group-', '')}`
+        : id.replace('spend-sheet-symbol-option-', '')
+    })
+    await 아이디로누르기(view, 'spend-sheet-symbol-backdrop')
+    return 적은것
+  }
+
+  const 기록 = {
+    id: 'spd-symbol',
+    ocid: 'ocid-1',
+    spentOn: 패치후,
+    category: 'symbol' as const,
+    item: '소멸의 여로 Lv.3 → 7',
+    itemKey: 'road_of_vanishing',
+    formItemKeys: null,
+    itemKind: null,
+    levelFrom: 3,
+    levelTo: 7,
+    quantity: null,
+    mesoAmount: 7_700_000,
+    tariffMeso: null,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    cashAmount: null,
+    memo: null,
+    recordedAt: '2026-09-19T01:00:00.000Z',
+  }
+
+  it('갈래를 고르면 곧바로 폼이다. 심볼이 비어 있고 레벨이 잠기며 저장이 꺼져 있다', async () => {
+    const view = await 열기()
+
+    expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('심볼 강화')
+    expect(view.getByTestId('spend-sheet-symbol-trigger')).toHaveTextContent('심볼심볼 선택')
+    expect(view.getByText('심볼을 먼저 고르세요')).toBeTruthy()
+    expect(view.queryByLabelText('강화 전 레벨')).toBeNull()
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('0')
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  it('캐릭터를 안 고르면 열넷 전부를 묶음 라벨 셋으로 보여 준다', async () => {
+    const view = await 열기()
+
+    expect(await 목록(view)).toEqual([
+      '@아케인 심볼', 'road_of_vanishing', 'chew_chew', 'lacheln', 'arcana', 'morass', 'esfera',
+      '@어센틱 심볼', 'cernium', 'arcs', 'odium', 'dowonkyung', 'arteria', 'carcion',
+      '@그랜드 어센틱 심볼', 'tallahart', 'geardrak',
+    ])
+  })
+
+  it('캐릭터를 고르면 착용 레벨이 캐릭터 레벨 이하인 것만 서고, 만렙은 맨 끝 `만렙` 묶음이다', async () => {
+    const loadSymbolLevels = jest.fn(async () => ({ road_of_vanishing: 20 }))
+    const view = await 열기({ loadSymbolLevels })
+
+    await 캐릭터고르기(view, 'ocid-1')
+
+    expect(loadSymbolLevels).toHaveBeenCalledWith('ocid-1')
+    // 루디는 Lv.225 다.
+    expect(await 목록(view)).toEqual(['@아케인 심볼', 'chew_chew', 'lacheln', 'arcana', '@만렙', 'road_of_vanishing'])
+  })
+
+  it('심볼 레벨을 못 읽으면 만렙 묶음 없이 레벨로만 거른다', async () => {
+    const view = await 열기({ loadSymbolLevels: async () => null })
+
+    await 캐릭터고르기(view, 'ocid-1')
+
+    expect(await 목록(view)).toEqual(['@아케인 심볼', 'road_of_vanishing', 'chew_chew', 'lacheln', 'arcana'])
+  })
+
+  it('심볼을 고르면 그 그림과 이름이 줄에 서고, 아케인은 Lv.7 → 12 로 선다', async () => {
+    const view = await 열기()
+
+    await 심볼고르기(view, 'road_of_vanishing')
+
+    expect(view.getByTestId('spend-sheet-symbol-trigger')).toHaveTextContent('심볼소멸의 여로')
+    expect(view.getByTestId('spend-sheet-symbol-icon')).toBeTruthy()
+    expect(view.getByLabelText('강화 전 레벨')).toHaveAccessibilityValue({ min: 1, max: 20, now: 7 })
+    expect(view.getByLabelText('강화 후 레벨')).toHaveAccessibilityValue({ now: 12 })
+    // 7→8 365만 · 8→9 462만 · 9→10 572만 · 10→11 699만 · 11→12 840만
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('2938만')
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(false)
+  })
+
+  it('어센틱 · 그랜드 어센틱은 Lv.11 까지이고 Lv.5 → 8 로 선다', async () => {
+    const view = await 열기()
+
+    await 심볼고르기(view, 'cernium')
+    expect(view.getByLabelText('강화 전 레벨')).toHaveAccessibilityValue({ min: 1, max: 11, now: 5 })
+    expect(view.getByLabelText('강화 후 레벨')).toHaveAccessibilityValue({ now: 8 })
+
+    await 심볼고르기(view, 'geardrak')
+    expect(view.getByLabelText('강화 후 레벨')).toHaveAccessibilityValue({ max: 11, now: 8 })
+  })
+
+  it('칸을 눌러 옮긴 범위의 비용을 더해 레벨 칸과 함께 저장한다', async () => {
+    const onSave = jest.fn()
+    const view = await 열기({ onSave })
+    await 심볼고르기(view, 'road_of_vanishing')
+
+    await 누르기(view, 'Lv.3')
+    await 누르기(view, 'Lv.8')
+
+    await 누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toEqual({
+      ocid: null,
+      spentOn: 패치후,
+      category: 'symbol',
+      item: '소멸의 여로 Lv.3 → 8',
+      itemKey: 'road_of_vanishing',
+      formItemKeys: null,
+      itemKind: null,
+      levelFrom: 3,
+      levelTo: 8,
+      // 수량 칸의 뜻은 `unitPrice × 수량` 이라 여기서 안 쓴다.
+      quantity: null,
+      mesoAmount: 11_350_000,
+      tariffMeso: null,
+      pointAmount: null,
+      pointPer100mMeso: null,
+      cashAmount: null,
+      memo: null,
+    })
+  })
+
+  it('캐릭터를 바꿔 고른 심볼이 목록에서 빠지면 심볼 선택을 지운다', async () => {
+    const view = await 열기()
+    await 캐릭터고르기(view, 'ocid-2')
+    await 심볼고르기(view, 'odium')
+
+    // 루디(Lv.225)는 오디움(270)을 못 쓴다.
+    await 캐릭터고르기(view, 'ocid-1')
+
+    expect(view.getByTestId('spend-sheet-symbol-trigger')).toHaveTextContent('심볼심볼 선택')
+    expect(view.queryByLabelText('강화 전 레벨')).toBeNull()
+  })
+
+  it('9월 17일 전 날짜는 달력에서 못 누른다', async () => {
+    const view = await 열기()
+
+    await 누르기(view, '적는 날 고르기')
+
+    expect(view.getByLabelText('2026-09-16').props.accessibilityState?.disabled).toBe(true)
+    expect(view.getByLabelText('2026-09-17').props.accessibilityState?.disabled).toBe(false)
+  })
+
+  it('9월 17일 전 날짜로 열렸으면 저장이 꺼진다. 안내는 없다', async () => {
+    const view = await 열기({ dateKey: '2026-09-16' })
+
+    await 심볼고르기(view, 'road_of_vanishing')
+
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  it('수정으로 열면 심볼과 두 레벨을 되살린다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ editing: 기록, onDelete: jest.fn(), onSave, dateKey: 패치후, todayDateKey: 패치후 })
+
+    expect(view.getByTestId('spend-sheet-symbol-trigger')).toHaveTextContent('심볼소멸의 여로')
+    expect(view.getByLabelText('강화 전 레벨')).toHaveAccessibilityValue({ now: 3 })
+    expect(view.getByLabelText('강화 후 레벨')).toHaveAccessibilityValue({ now: 7 })
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('770만')
+
+    await 누르기(view, '수정')
+    expect(onSave.mock.calls[0][0]).toMatchObject({ ocid: 'ocid-1', itemKey: 'road_of_vanishing', levelFrom: 3, levelTo: 7 })
   })
 })

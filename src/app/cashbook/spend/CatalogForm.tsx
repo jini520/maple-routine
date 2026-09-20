@@ -345,6 +345,8 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
         // 종류는 아이템 구매의 것이다. 여기서는 `null` 이라 장비를 산 컨텐츠 지출 같은
         // 행이 생기지 않는다.
         itemKind: null,
+        levelFrom: null,
+        levelTo: null,
         quantity,
         mesoAmount: currency === 'meso' ? amount : null,
         tariffMeso: null,
@@ -362,6 +364,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
         title={title}
         dateKey={props.dateKey}
         todayDateKey={props.todayDateKey}
+        earliestDateKey={props.earliestDateKey}
         onDateChange={props.onDateChange}
         /*
          * 한 걸음씩 되돌아간다. 항목을 골랐으면 격자로, 격자에서는 1차로.

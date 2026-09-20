@@ -34,6 +34,7 @@
   - **`date`(YYYY-MM-DD) 쿼리 파라미터** 지원(공식 문서 확인, 2026-07-14, [[ADR-023]]). 보스 수익 과거 기간 재조회에 사용. 조회 가능 구간은 **하한과 상한이 모두 있다**. 아래 "date 조회 가능 구간" 참고([[ADR-032]], [[ADR-067]]).
 
 - **메소 획득량을 읽는 다섯** (`nexon/meso-rate`, ocid별: [[ADR-177]]): `GET /maplestory/v1/character/item-equipment` · `character/ability` · `character/symbol-equipment` · `user/union-raider` · `user/union-artifact`. **사냥 계산기가 캐릭터의 ‘메소 획득량’을 셀 때만** 부르고, 계기는 시트에서 **캐릭터를 고를 때**다(다섯은 병렬: 조작 하나에 5건이라 초당 500건 예산에 닿지 않는다). 파싱 규칙·프리셋·캡은 [[ADR-177]] 결정 2~5 이고 아래 ‘메소 획득량’ 절이 실측을 든다.
+- **심볼 레벨** ([[ADR-301]] 결정 4, 구현 완료 2026-09-20): `nexon/symbol-levels` 의 `GET /maplestory/v1/character/symbol-equipment` 하나(기능 쪽은 `features/cashbook/symbol-levels`). **지출 시트의 심볼 강화 폼에서 캐릭터를 고를 때** 부른다. `symbol[].symbol_name` 과 `symbol_level` 만 읽어, 만렙인 심볼을 드롭다운 맨 끝 `만렙` 묶음으로 보낸다. 이름은 NFC · 공백을 지운 뒤 비용 표의 지역 이름으로 끝나는지로 맞춘다. 응답의 이름 모양(`아케인심볼 : 소멸의 여로` 로 예상)은 첫 실제 응답과 대조할 가정이다. 실패하면 만렙 묶음 없이 선다.
   - ⚠️ **`character/stat` 의 환산값을 쓰지 않는다**([[ADR-177]] 결정 1). `final_stat` 에 ‘메소 획득량’이 이미 합산되어 오지만 ① **현재 프리셋**의 값이고 ② **일시 버프가 섞인다**. ‘추가 호출 전에 `character/basic` 부터 확인’ 규칙대로 확인했고 거기엔 메획이 **없다**.
 
 ### 공지 정보 엔드포인트 (실측 2026-09-10, [[ADR-247]])

@@ -31,6 +31,8 @@ const mesoSpend: SpendRecord = {
   itemKey: 'seiram_elixir',
   formItemKeys: null,
   itemKind: null,
+  levelFrom: null,
+  levelTo: null,
   quantity: 1,
   mesoAmount: 2_000_000,
   tariffMeso: null,
@@ -85,7 +87,30 @@ describe('insertSpendRecord', () => {
       null,
       null,
       '2026-08-23T05:00:00.000Z',
+      // 레벨 두 칸은 심볼 강화의 것이다. 다른 갈래에서는 NULL 이다.
+      null,
+      null,
     ])
+  })
+
+  it('심볼 강화는 강화 전 · 강화 후 레벨을 끝의 두 칸에 적는다', async () => {
+    const { insertSpendRecord } = require('../spend') as typeof import('../spend')
+
+    await insertSpendRecord({
+      ...mesoSpend,
+      category: 'symbol',
+      item: '소멸의 여로 Lv.3 → 7',
+      itemKey: 'road_of_vanishing',
+      levelFrom: 3,
+      levelTo: 7,
+      quantity: null,
+      mesoAmount: 7_700_000,
+    })
+
+    const [sql, values] = runMock.mock.calls[0]
+    expect(sql).toContain('level_from, level_to')
+    expect(values.slice(3, 5)).toEqual(['심볼 강화', 'symbol'])
+    expect(values.slice(-2)).toEqual([3, 7])
   })
 
   it('에픽던전 리워드는 형태별 항목 key 를 JSON 한 칸에 적는다', async () => {
@@ -279,6 +304,40 @@ describe('getSpendRecordsBetween', () => {
     expect(row).toMatchObject({ itemKey: null, formItemKeys: { sol_erda: 'high_mountain_2' } })
   })
 
+  it('심볼 강화의 두 레벨을 되읽는다', async () => {
+    queryMock.mockResolvedValue({
+      values: [
+        {
+          id: 'spd-5',
+          ocid: null,
+          spent_on: '2026-09-19',
+          category: '심볼 강화',
+          category_key: 'symbol',
+          item: '소멸의 여로 Lv.3 → 7',
+          item_key: 'road_of_vanishing',
+          form: null,
+          form_item_keys: null,
+          item_kind: null,
+          item_kind_key: null,
+          level_from: 3,
+          level_to: 7,
+          quantity: null,
+          meso_amount: 7_700_000,
+          tariff_meso: null,
+          point_amount: null,
+          point_per_100m_meso: null,
+          cash_amount: null,
+          memo: null,
+          recorded_at: '2026-09-19T05:00:00.000Z',
+        },
+      ],
+    })
+    const { getSpendRecordsBetween } = require('../spend') as typeof import('../spend')
+
+    const [row] = await getSpendRecordsBetween('2026-09-01', '2026-09-30')
+    expect(row).toMatchObject({ category: 'symbol', itemKey: 'road_of_vanishing', levelFrom: 3, levelTo: 7, quantity: null })
+  })
+
   it('값이 없으면 빈 배열이다', async () => {
     queryMock.mockResolvedValue({})
     const { getSpendRecordsBetween } = require('../spend') as typeof import('../spend')
@@ -329,6 +388,16 @@ describe('updateSpendRecord', () => {
 
     const [sql] = runMock.mock.calls[0]
     expect(sql.slice(0, sql.indexOf('WHERE'))).not.toContain('recorded_at')
+  })
+
+  it('두 레벨도 고친다. 수정 시트에서 손잡이를 옮길 수 있다', async () => {
+    const { updateSpendRecord } = require('../spend') as typeof import('../spend')
+
+    await updateSpendRecord({ ...mesoSpend, category: 'symbol', levelFrom: 2, levelTo: 9 })
+
+    const [sql, values] = runMock.mock.calls[0]
+    expect(sql).toContain('level_from = ?, level_to = ?')
+    expect(values.slice(-3)).toEqual([2, 9, 'spd-1'])
   })
 
   // 수정으로 시세 없는 메포 행을 만들 수 있으면 저장소의 방어가 반쪽이 된다.

@@ -26,7 +26,7 @@ import {
 } from '../../lib/cashbook/categories'
 import type { HuntInputMode, IncomeRecord } from '../../storage/income'
 import { CategoryPicker } from './CategoryPicker'
-import { CheckBox, DateStepper } from './sheet-fields'
+import { CheckBox, SheetDateField } from './sheet-fields'
 import { EtcForm } from './income/EtcForm'
 import { FragmentSettleForm, type LoadFragmentStorage } from './income/FragmentSettleForm'
 import { HuntCalculatorForm } from './income/HuntCalculatorForm'
@@ -53,6 +53,8 @@ export interface IncomeSheetProps {
   lastPointRate: number | null
   /** 오늘. 머리의 날짜를 이 날 뒤로 못 옮긴다. 화면이 읽어서 넘긴다. */
   todayDateKey: string
+  /** 머리의 날짜를 이 날 앞으로 못 옮긴다. 가계부 화면이 갈 수 있는 가장 이른 날이다. */
+  earliestDateKey: string
   /** 캐릭터의 메소 획득량을 읽어 오는 콜백. 시트는 `nexon/` 도 `storage/` 도 모른다. 사냥 폼만 쓴다. */
   loadMesoRate: (ocid: string) => Promise<MesoRateLoad>
   /**
@@ -163,9 +165,10 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
               </Text>
             </Pressable>
           )}
-          <DateStepper
+          <SheetDateField
             dateKey={dateKey}
-            latest={props.todayDateKey}
+            min={props.earliestDateKey}
+            max={props.todayDateKey}
             onChange={setDateKey}
             testID="income-sheet-date"
           />

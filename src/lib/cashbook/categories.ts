@@ -7,7 +7,8 @@
  */
 
 /**
- * 지출의 갈래. **차례가 곧 화면**이다. 앞의 넷은 선택 목록이고 뒤의 둘은 직접 입력이다.
+ * 지출의 갈래. **차례가 곧 화면**이다. 앞의 넷은 선택 목록이고, 심볼 강화는 비용 표로 금액을 내며,
+ * 뒤의 둘은 직접 입력이다.
  *
  * 앞의 넷의 key 는 `src/data/spend-catalog.json` 의 `categories` 와 같아야 한다. 그 파일의 항목이
  * 이 key 로 갈래를 가리킨다.
@@ -17,6 +18,7 @@ export const SPEND_CATEGORIES = [
   { key: 'event_bm', name: '이벤트·BM', icon: 'vip_sauna_ticket.webp' },
   { key: 'buff', name: '버프', icon: 'seiram_elixir.webp' },
   { key: 'scroll', name: '주문서', icon: 'amazing_positive_chaos_scroll.webp' },
+  { key: 'symbol', name: '심볼 강화', icon: 'authentic_symbol_selection_coupon.webp' },
   { key: 'item_purchase', name: '아이템 구매', icon: 'dark_boss_pendant.png' },
   { key: 'etc', name: '기타', icon: 'meso.webp' },
 ] as const

@@ -81,6 +81,8 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
         itemKey: null,
         formItemKeys: null,
         itemKind: null,
+        levelFrom: null,
+        levelTo: null,
         quantity,
         mesoAmount: currency === 'meso' ? amount : null,
         tariffMeso: null,
@@ -98,6 +100,7 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
         title={spendCategoryNameOf(props.category)}
         dateKey={props.dateKey}
         todayDateKey={props.todayDateKey}
+        earliestDateKey={props.earliestDateKey}
         onDateChange={props.onDateChange}
         // 수정 모드에는 되돌아갈 곳이 없다(고른 것을 못 바꾼다). 화살촉도 없다.
         onBack={editing ? undefined : props.onBack}

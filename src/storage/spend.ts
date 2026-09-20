@@ -45,6 +45,10 @@ export interface SpendRecord {
    * 연다. 그때는 치는 금액 + 관세 하나뿐이었고 그것이 정확히 장비의 모양이다.
    */
   itemKind: SpendItemKindKey | null
+  /** 심볼 강화의 강화 전 레벨. 다른 갈래에서는 `null` 이다. */
+  levelFrom: number | null
+  /** 심볼 강화의 강화 후 레벨. */
+  levelTo: number | null
   /**
    * 금액 = 카탈로그의 `unitPrice` × 이 값. **단위 이름은 안 적는다**.
    * 카탈로그가 항목별로 알고 있어(`unit`) 베끼면 목록이 바뀔 때 두 벌이 어긋난다.
@@ -84,8 +88,8 @@ const INSERT_SQL = `
     (id, ocid, spent_on, category, category_key, item, item_key, form, form_item_keys,
      item_kind, item_kind_key, quantity,
      meso_amount, tariff_meso, point_amount, point_per_100m_meso, cash_amount,
-     memo, recorded_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     memo, recorded_at, level_from, level_to)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 /**
@@ -144,6 +148,8 @@ export async function insertSpendRecord(record: SpendRecord): Promise<void> {
     record.cashAmount,
     record.memo,
     record.recordedAt,
+    record.levelFrom,
+    record.levelTo,
   ])
 }
 
@@ -160,7 +166,7 @@ const UPDATE_SQL = `
     ocid = ?, spent_on = ?, category = ?, category_key = ?, item = ?, item_key = ?, form = ?,
     form_item_keys = ?, item_kind = ?, item_kind_key = ?, quantity = ?,
     meso_amount = ?, tariff_meso = ?, point_amount = ?, point_per_100m_meso = ?,
-    cash_amount = ?, memo = ?
+    cash_amount = ?, memo = ?, level_from = ?, level_to = ?
   WHERE id = ?
 `
 
@@ -180,6 +186,8 @@ export async function updateSpendRecord(record: SpendRecord): Promise<void> {
     record.pointPer100mMeso,
     record.cashAmount,
     record.memo,
+    record.levelFrom,
+    record.levelTo,
     record.id,
   ])
 }
@@ -210,6 +218,8 @@ function rowToRecord(row: Record<string, unknown>): SpendRecord {
     itemKey: (row.item_key as string | null | undefined) ?? null,
     formItemKeys: parseFormItemKeys(row.form_item_keys),
     itemKind: (row.item_kind_key as SpendItemKindKey | null | undefined) ?? null,
+    levelFrom: nullable(row.level_from),
+    levelTo: nullable(row.level_to),
     quantity: nullable(row.quantity),
     mesoAmount: nullable(row.meso_amount),
     tariffMeso: nullable(row.tariff_meso),
