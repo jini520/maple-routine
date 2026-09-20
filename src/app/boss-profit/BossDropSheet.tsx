@@ -22,7 +22,7 @@ import { useDropEffectStore } from '../../features/drop-effect/store'
 import { getFixedDropIcons, type FixedDropIconSpec } from '../../lib/drop/fixed-drops'
 import { dropItemIconOf, getItemIconUrlByFile } from '../../lib/assets/asset-lookup'
 import { dropItemNameOf } from '../../lib/drop/drop-items'
-import { subjectParticle } from '../../lib/drop/drop-history'
+import { dropPromptOf } from '../../lib/drop/drop-prompt'
 import { confirmLabels } from '../../lib/drop/price-card-labels'
 import { formatMesoCompact } from '../../lib/drop/drop-price'
 import { bossNameOf } from '../../lib/boss/bosses'
@@ -78,6 +78,43 @@ interface BossDropSheetProps {
    * 수익 배지도 뜨지 않는다. 가격 개념이 없는 호출부에 누를 수 없는 표식을 만들지 않는다.
    */
   pricing?: { defaultShare: number; maxShare: number; characterName: string }
+}
+
+/**
+ * 타일이 자기 상태를 말하는 알약. 그림 아래를 덮는다.
+ *
+ * 정한 것에만 붙는다. 값을 매겼으면 **얼마인지**, 기록 안함이면 **그 결정**을 적는다. 아직 안
+ * 정한 것은 비어 있고, 그 빈 자리가 곧 `남았다` 는 말이다.
+ *
+ * 그림 위에 겹치는 것은 게임 인벤토리가 수량을 얹는 자리와 같아서 낯익다. 폭은 글자만큼이다.
+ * 못박으면 `1억` 에는 빈자리가 남고 긴 금액은 넘친다.
+ */
+function TileLabel(props: { drop: RecordedDrop | undefined }): React.JSX.Element | null {
+  const state = props.drop?.priceState
+  if (state === undefined) return null
+
+  const 값 = state === 'entered'
+  return (
+    <View
+      role="img"
+      aria-label={값 ? '가격 입력됨' : '기록 안함'}
+      /*
+        기록 안함은 **강조색을 안 쓴다**. 둘 다 강조색이면 어두운 테마에서 두 알약이 같은 얼굴이
+        된다(실기 화면에서 잡았다). 값을 매긴 것만 색을 갖고, 안 매기기로 한 것은 조용한 칩이다.
+      */
+      className={`absolute -bottom-1.5 h-[15px] max-w-full justify-center rounded-full px-1.5 ${
+        값 ? 'bg-primary' : 'border border-border bg-surface-2'
+      }`}
+    >
+      <Text
+        numberOfLines={1}
+        className={`text-9 font-bold leading-none ${값 ? 'text-on-primary' : 'text-text-muted'}`}
+        style={값 ? TABULAR_NUMS : undefined}
+      >
+        {값 ? formatMesoCompact(props.drop?.priceMeso ?? 0) : '기록 안함'}
+      </Text>
+    </View>
+  )
 }
 
 /** 한 연쇄 안에서 매긴 값. 상태가 갈아 끼워져도 이전으로 돌아가면 이 값이 보인다. */
@@ -330,21 +367,10 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
     })
   }
 
-  /** 아직 값도 기록 안함도 안 정한 것. `가격 입력` 이 여는 차례이고 카드의 `다음` 이 잇는다. */
+  /** 아직 값도 기록 안함도 안 정한 것. `가격 입력` 이 여는 차례이고 카드의 확인이 잇는다. */
   const unpriced = selected.filter((drop) => drop.priceState === undefined)
-  /**
-   * 확인 줄의 문구. **남은 미입력 건을 센다**(사용자 지정).
-   *
-   * 이름은 그중 **가장 먼저 고른 것**이라 이어 찍어도 안 갈아탄다. 값을 매길 때마다 수가 줄고,
-   * 다 정하면 줄이 그 사실을 말한다. 기록 안함도 정한 것이라 여기 든다. `다 정했다` 와
-   * `다 입력했다` 를 가르면 줄이 길어지는데, 이 줄이 답하는 물음은 `남은 것이 있나` 하나다.
-   */
-  const promptLabel = (() => {
-    if (unpriced.length === 0) return `선택한 ${selected.length}건을 모두 정했습니다`
-    const 이름 = dropItemNameOf(unpriced[0].itemKey, unpriced[0].itemName)
-    if (unpriced.length === 1) return `${이름}${subjectParticle(이름)} 선택되었습니다`
-    return `${이름} 외 ${unpriced.length - 1}건이 선택되었습니다`
-  })()
+  /** 확인 줄이 할 말. 갈래가 다섯이라 `lib/drop/drop-prompt` 가 정한다. */
+  const prompt = dropPromptOf(selected)
 
   function handleTileTap(candidate: DropCandidate): void {
     if (isBoxItem(candidate.key)) {
@@ -477,21 +503,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                                 */}
                                 <View className="-mx-1.5 items-center">
                                   <ItemThumb itemKey={thumbKey} level={boxDrop?.ringLevel} />
-                                  {(boxDrop ?? normalDrop)?.priceState === 'entered' && (
-                                    <View
-                                      role="img"
-                                      aria-label="가격 입력됨"
-                                      className="absolute -bottom-1.5 h-[15px] max-w-full justify-center rounded-full bg-primary px-1.5"
-                                    >
-                                      <Text
-                                        numberOfLines={1}
-                                        className="text-9 font-bold leading-none text-on-primary"
-                                        style={TABULAR_NUMS}
-                                      >
-                                        {formatMesoCompact((boxDrop ?? normalDrop)?.priceMeso ?? 0)}
-                                      </Text>
-                                    </View>
-                                  )}
+                                  <TileLabel drop={boxDrop ?? normalDrop} />
                                 </View>
                                 <View className="h-8 w-full items-center justify-center">
                                   <Text numberOfLines={2} className="text-center text-10 leading-tight text-text">
@@ -528,21 +540,26 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                           }
                         >
                           {/*
-                            **배지가 아이템과 같은 줄**이다. 자기 줄을 먹던 것을 합쳤다. 위아래
-                            여백이 같은 값인 것도 그래서다. 예전 값(위 4 · 아래 12)은 배지 줄을
-                            끼워 넣으려고 위를 좁힌 결과였다.
+                            **배지는 자리를 안 먹는다**(사용자 지정). 처음엔 자기 줄을 먹었고,
+                            같은 줄로 합쳤더니 이번엔 가로를 먹어 드롭 목록이 오른쪽으로 밀렸다.
+                            띄워서 좌상단에 얹는다.
 
-                            배지는 `items-center` 로 아이템 무리의 가운데에 선다. `items-start`
-                            면 아이템이 두 줄로 접힐 때 배지만 위에 붙는다.
+                            그래서 드롭 목록은 **상자 전체 폭**에서 가운데로 선다. 위아래 여백은
+                            아이템 기준으로 같고, 배지가 얹히는 자리를 벌어야 해서 예전보다 넓다.
                           */}
                           <View
                             testID={`fixed-drop-row-${group.difficulty}`}
-                            className="flex-row items-center gap-2 rounded-xl border border-border bg-surface px-2 py-2.5"
+                            className="rounded-xl border border-border bg-surface px-2 py-4"
                           >
-                            <Badge variant={group.difficulty}>
-                              {DIFFICULTY_NAME[group.difficulty]}
-                            </Badge>
-                            <View className="flex-1 flex-row flex-wrap items-center justify-center gap-x-2 gap-y-2.5">
+                            <View testID={`fixed-drop-badge-${group.difficulty}`} className="absolute left-2 top-2">
+                              <Badge variant={group.difficulty}>
+                                {DIFFICULTY_NAME[group.difficulty]}
+                              </Badge>
+                            </View>
+                            <View
+                              testID={`fixed-drop-items-${group.difficulty}`}
+                              className="flex-row flex-wrap items-center justify-center gap-x-2 gap-y-2.5"
+                            >
                               {group.items.flatMap((item) =>
                                 getFixedDropIcons(item).map((icon, i) => (
                                   <FixedDropIcon key={`${item.key}-${icon.iconFile ?? 'item'}-${i}`} icon={icon} />
@@ -563,7 +580,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                   (입력 →) 복귀 이고 어느 갈래든 타일 그리드로 돌아온다. 차단하지 않는다.
                   일반 아이템은 확인창 없이 탭 즉시 기록된다. 기록은 이미 끝났고 이 줄은 그 옆에
                   설 뿐이라 무시하고 다음 아이템을 계속 골라도 된다. */}
-              {selected.length > 0 && props.pricing !== undefined && (
+              {prompt !== null && props.pricing !== undefined && (
                 // **평평하다**(사용자 지정). 시트 바닥에 붙어 있는데 그림자가 있으면 시트 위에 뜬
                 // 또 하나의 판으로 읽힌다. 실제로는 아래 저장 줄과 같은 층이다.
                 //
@@ -575,11 +592,11 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                 >
                   <View className="min-w-0 flex-1">
                     <Text numberOfLines={1} className="text-[12.5px] font-semibold leading-tight text-text">
-                      {promptLabel}
+                      {prompt.title}
                     </Text>
-                    {unpriced.length > 0 && (
-                      <Text className="text-[12.5px] font-medium leading-tight text-text-muted">
-                        판매 가격을 입력할까요?
+                    {prompt.detail !== '' && (
+                      <Text numberOfLines={1} className="text-[12.5px] font-medium leading-tight text-text-muted">
+                        {prompt.detail}
                       </Text>
                     )}
                   </View>

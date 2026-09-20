@@ -468,7 +468,9 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
         fireEvent.press(view.getByTestId('input-card-exclude'))
       })
 
-      expect(view.getByText('선택한 2건을 모두 정했습니다')).toBeTruthy()
+      expect(view.getByText('모든 아이템의 가격을 입력했습니다')).toBeTruthy()
+      // 딸린 줄이 셈 둘을 나란히 적는다.
+      expect(view.getByText('가격 입력 1건 · 기록 안함 1건')).toBeTruthy()
       expect(view.getByText('가격 수정')).toBeTruthy()
       expect(view.queryByText('가격 입력')).toBeNull()
     })
@@ -888,6 +890,18 @@ describe('BossDropSheet: 타일의 표식', () => {
     expect(getByText('32.5억')).toBeTruthy()
   })
 
+  /** 기록 안함도 정한 것이다. 타일이 그 결정을 말한다(사용자 지정). */
+  it('기록 안함인 타일은 그렇게 적는다', async () => {
+    const { result } = renderSheet({
+      pricing: PRICING,
+      initialDrops: [드롭기록({ priceState: 'excluded', priceMeso: undefined, priceShare: undefined })],
+    })
+    const { getByLabelText, getByText } = await result
+
+    expect(getByLabelText('기록 안함')).toBeTruthy()
+    expect(getByText('기록 안함')).toBeTruthy()
+  })
+
   it('값을 안 매긴 타일에는 띠가 없다', async () => {
     const { result } = renderSheet({ pricing: PRICING })
     const { getByLabelText, queryByLabelText } = await result
@@ -897,6 +911,7 @@ describe('BossDropSheet: 타일의 표식', () => {
     })
 
     expect(queryByLabelText('가격 입력됨')).toBeNull()
+    expect(queryByLabelText('기록 안함')).toBeNull()
   })
 
   /** 띠와 레벨 배지가 그림 아래에서 겹쳤다. 레벨을 위로 올려 자리를 비운다. */
@@ -950,15 +965,38 @@ describe('BossDropSheet: 타일 배치', () => {
 })
 
 describe('BossDropSheet: 고정 영역', () => {
-  /** 배지가 자기 줄을 먹던 것을 합쳤다. 상자 안쪽 여백은 아이템 기준 위아래가 같다. */
-  it('난이도 배지가 아이템과 같은 줄에 선다', async () => {
+  /**
+   * **배지는 자리를 안 먹는다**(사용자 지정). 처음엔 자기 줄을 먹었고, 같은 줄로 합쳤더니
+   * 이번엔 가로를 먹어 드롭 목록이 오른쪽으로 밀렸다. 띄워서 좌상단에 얹는다.
+   */
+  it('난이도 배지는 좌상단에 떠 있고 자리를 안 먹는다', async () => {
     const { result } = renderSheet({ bossKey: 'lotus', difficulty: 'hard' })
     const { getByTestId } = await result
 
-    const 줄 = getByTestId('fixed-drop-row-hard')
-    const style = flattenStyle(줄.props.style)
-    expect(style).toMatchObject({ flexDirection: 'row' })
+    expect(flattenStyle(getByTestId('fixed-drop-badge-hard').props.style)).toMatchObject({
+      position: 'absolute',
+      left: 8,
+      top: 8,
+    })
+  })
+
+  it('드롭 목록은 상자 전체 폭에서 가운데로 선다', async () => {
+    const { result } = renderSheet({ bossKey: 'lotus', difficulty: 'hard' })
+    const { getByTestId } = await result
+
+    expect(flattenStyle(getByTestId('fixed-drop-items-hard').props.style)).toMatchObject({
+      justifyContent: 'center',
+    })
+  })
+
+  it('상자 안쪽 여백은 아이템 기준 위아래가 같다', async () => {
+    const { result } = renderSheet({ bossKey: 'lotus', difficulty: 'hard' })
+    const { getByTestId } = await result
+
+    const style = flattenStyle(getByTestId('fixed-drop-row-hard').props.style)
     expect(style.paddingTop).toBe(style.paddingBottom)
+    // 배지가 얹히는 자리를 벌어야 해서 예전(10)보다 넓다.
+    expect(Number(style.paddingTop)).toBeGreaterThan(10)
   })
 })
 
