@@ -24,6 +24,7 @@ import { dropItemIconOf, getItemIconUrlByFile } from '../../lib/assets/asset-loo
 import { dropItemNameOf } from '../../lib/drop/drop-items'
 import { subjectParticle } from '../../lib/drop/drop-history'
 import { confirmLabels } from '../../lib/drop/price-card-labels'
+import { formatMesoCompact } from '../../lib/drop/drop-price'
 import { bossNameOf } from '../../lib/boss/bosses'
 import { isValuableDropItem } from '../../lib/drop/valuable-drops'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types'
@@ -79,9 +80,6 @@ interface BossDropSheetProps {
   pricing?: { defaultShare: number; maxShare: number; characterName: string }
 }
 
-/** 값을 매긴 타일의 표식. 모듈에서 한 번만 찾는다. 타일마다 찾을 값이 아니다. */
-const mesoPouch = getItemIconUrlByFile('meso_pouch.webp')
-
 /** 한 연쇄 안에서 매긴 값. 상태가 갈아 끼워져도 이전으로 돌아가면 이 값이 보인다. */
 interface PriceEdit {
   meso: number
@@ -97,8 +95,9 @@ function ItemThumb(props: { itemKey: string | null; level?: number }): React.JSX
       ) : (
         <View className="h-9 w-9 rounded-lg bg-surface-2" aria-hidden />
       )}
+      {/* 그림 **위쪽**이다. 아래는 금액 띠가 덮는다. */}
       {props.level !== undefined && (
-        <View className="absolute -bottom-1 -right-1 rounded-full bg-primary px-1 py-px">
+        <View className="absolute -right-1 -top-1 rounded-full bg-primary px-1 py-px">
           <Text className="text-8 font-bold leading-none text-on-primary">lv{props.level}</Text>
         </View>
       )}
@@ -459,26 +458,41 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                               >
                                 {/*
                                   **고른 것에는 표식을 안 단다**(사용자 지정). 테두리와 바탕이
-                                  이미 그 말을 한다. 체크까지 달면 우상단이 늘 차 있어, 값을
-                                  매겼다는 표식이 설 자리가 안 보인다.
+                                  이미 그 말을 한다.
 
-                                  값을 매긴 타일에만 **메소 주머니**가 우상단에 붙는다. 알약에
-                                  싸지 않는다. 그 그림이 곧 메소이고, 테두리를 두르면 선택
-                                  체크가 있던 시절과 같은 얼굴이 된다.
+                                  값을 매긴 타일은 **얼마인지를 말한다**(사용자 지정). 그림
+                                  아래를 덮는 띠에 금액이 선다. 표식만 달면 카드를 열어야 얼마인지
+                                  알 수 있었다. 띠가 그림 위에 겹치는 것은 게임 인벤토리가 수량을
+                                  얹는 자리와 같아서 낯익다.
+
+                                  **알약은 글자만큼만 넓다**(사용자 지정). 폭을 못박으면 `1억` 에는
+                                  빈자리가 남고 긴 금액은 넘친다. 자리는 그림 아래 가운데다.
+
+                                  금액은 **축약 표기**다(`formatMesoCompact`). 단위를 이어 붙인
+                                  `32억 5천만` 은 72 폭에 안 들어가서 `32.5억` 으로 접는다(사용자
+                                  지정). 바깥 상자가 `-mx-1.5` 로 타일 여백을 되먹어 68 을 쓴다.
 
                                   스킵은 기록된 가격이 아니므로 표식이 없다. 그 구분은 아이템
                                   가격 입력 화면이 맡는다.
                                 */}
-                                {(boxDrop ?? normalDrop)?.priceState === 'entered' && mesoPouch !== null && (
-                                  <Image
-                                    source={mesoPouch}
-                                    resizeMode="contain"
-                                    role="img"
-                                    aria-label="가격 입력됨"
-                                    className="absolute right-1 top-1 h-4 w-4"
-                                  />
-                                )}
-                                <ItemThumb itemKey={thumbKey} level={boxDrop?.ringLevel} />
+                                <View className="-mx-1.5 items-center">
+                                  <ItemThumb itemKey={thumbKey} level={boxDrop?.ringLevel} />
+                                  {(boxDrop ?? normalDrop)?.priceState === 'entered' && (
+                                    <View
+                                      role="img"
+                                      aria-label="가격 입력됨"
+                                      className="absolute -bottom-1.5 h-[15px] max-w-full justify-center rounded-full bg-primary px-1.5"
+                                    >
+                                      <Text
+                                        numberOfLines={1}
+                                        className="text-9 font-bold leading-none text-on-primary"
+                                        style={TABULAR_NUMS}
+                                      >
+                                        {formatMesoCompact((boxDrop ?? normalDrop)?.priceMeso ?? 0)}
+                                      </Text>
+                                    </View>
+                                  )}
+                                </View>
                                 <View className="h-8 w-full items-center justify-center">
                                   <Text numberOfLines={2} className="text-center text-10 leading-tight text-text">
                                     {displayName}

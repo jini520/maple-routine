@@ -1,6 +1,6 @@
 // 드롭 판매가 → 수익 환산. 이 함수가 틀리면 캐릭터 합계·총 수익·증감 칩이
 // 한꺼번에 틀리므로 규칙을 여기서 못 박는다.
-import { dropPayoutMeso, formatMesoUnits, sumDropPayout } from '../drop/drop-price'
+import { dropPayoutMeso, formatMesoCompact, formatMesoUnits, sumDropPayout } from '../drop/drop-price'
 
 describe('dropPayoutMeso', () => {
   it('분배 인원으로 나눈 몫을 내림한다', () => {
@@ -98,3 +98,37 @@ describe('formatMesoUnits', () => {
   })
 })
 
+/**
+ * 좁은 자리에 넣는 축약 금액. 72px 타일의 알약이 쓴다.
+ *
+ * 여기서 지키는 것은 **안 받은 돈을 받은 것처럼 안 적는가**다. 올리면 그렇게 된다.
+ */
+describe('formatMesoCompact', () => {
+  it('가장 큰 단위 하나에 소수 첫째 자리까지 적는다', () => {
+    expect(formatMesoCompact(3_250_000_000)).toBe('32.5억')
+    expect(formatMesoCompact(1_000_000_000)).toBe('10억')
+    expect(formatMesoCompact(100_000_000)).toBe('1억')
+  })
+
+  it('만 단위도 같은 규칙이다', () => {
+    expect(formatMesoCompact(10_000_000)).toBe('1000만')
+    expect(formatMesoCompact(12_340_000)).toBe('1234만')
+    expect(formatMesoCompact(15_000)).toBe('1.5만')
+  })
+
+  it('조 단위까지 올라간다', () => {
+    expect(formatMesoCompact(1_000_000_000_000)).toBe('1조')
+    expect(formatMesoCompact(1_250_000_000_000)).toBe('1.2조')
+  })
+
+  /** 올리면 안 받은 돈을 받은 것처럼 적는다. */
+  it('소수 둘째 자리는 버린다', () => {
+    expect(formatMesoCompact(325_000_000)).toBe('3.2억')
+    expect(formatMesoCompact(399_000_000)).toBe('3.9억')
+  })
+
+  it('만 미만은 단위 없이 그대로다', () => {
+    expect(formatMesoCompact(9_999)).toBe('9999')
+    expect(formatMesoCompact(0)).toBe('0')
+  })
+})

@@ -60,6 +60,7 @@ import { installMemoryPreferences } from '../../../navigation/__tests__/memory-p
 
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { BossDropSheet } from '../BossDropSheet'
+import type { RecordedDrop } from '../../../types/drops'
 
 // 연출 토글은 전역 스토어라 케이스 사이 오염을 막기 위해 매번 기본값(연출 표시)으로 되돌린다.
 // 토글은 저장소까지 내려가므로 포트도 함께 주입한다.
@@ -839,6 +840,21 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
   })
 })
 
+/** 값이 매겨진 기록 한 건. 케이스마다 가격만 바꾼다. */
+function 드롭기록(patch: Partial<RecordedDrop> = {}): RecordedDrop {
+  return {
+    category: 'equipment',
+    itemKey: 'loose_control_machine_mark',
+    itemName: '루즈 컨트롤 머신 마크',
+    slot: '얼굴장식',
+    quantity: 1,
+    priceState: 'entered',
+    priceMeso: 100,
+    priceShare: 1,
+    ...patch,
+  }
+}
+
 describe('BossDropSheet: 타일의 표식', () => {
   /**
    * **고른 것에 체크를 안 단다**(사용자 지정). 테두리와 바탕이 이미 그 말을 한다. 표식이 둘이면
@@ -856,25 +872,58 @@ describe('BossDropSheet: 타일의 표식', () => {
     expect(queryByLabelText('가격 입력됨')).toBeNull()
   })
 
-  it('값을 매긴 타일에만 메소 주머니가 붙는다', async () => {
+  /**
+   * **값을 매긴 타일은 얼마인지를 말한다**(사용자 지정). 그림 아래를 덮는 띠에 금액이 선다.
+   * 표식만 달면 카드를 열어야 얼마인지를 알 수 있었다.
+   */
+  it('값을 매긴 타일은 그림 위 띠에 금액을 적는다', async () => {
     const { result } = renderSheet({
+      pricing: PRICING,
+      initialDrops: [드롭기록({ priceMeso: 3_250_000_000 })],
+    })
+    const { getByLabelText, getByText } = await result
+
+    expect(getByLabelText('가격 입력됨')).toBeTruthy()
+    // 단위를 이어 붙인 `32억 5천만` 은 72 폭에 안 들어간다.
+    expect(getByText('32.5억')).toBeTruthy()
+  })
+
+  it('값을 안 매긴 타일에는 띠가 없다', async () => {
+    const { result } = renderSheet({ pricing: PRICING })
+    const { getByLabelText, queryByLabelText } = await result
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크'))
+    })
+
+    expect(queryByLabelText('가격 입력됨')).toBeNull()
+  })
+
+  /** 띠와 레벨 배지가 그림 아래에서 겹쳤다. 레벨을 위로 올려 자리를 비운다. */
+  it('반지 레벨 배지는 그림 위쪽에 선다', async () => {
+    const { result } = renderSheet({
+      bossKey: 'gloom',
+      difficulty: 'chaos',
       pricing: PRICING,
       initialDrops: [
         {
-          category: 'equipment',
-          itemKey: 'loose_control_machine_mark',
-          itemName: '루즈 컨트롤 머신 마크',
-          slot: '얼굴장식',
+          category: 'consumable',
+          itemKey: 'restraint_ring',
+          itemName: '리스트레인트 링',
+          boxOriginKey: 'black_boss_ring_box',
+          boxOrigin: '흑옥의 보스 반지 상자',
+          ringLevel: 4,
           quantity: 1,
           priceState: 'entered',
-          priceMeso: 100,
-          priceShare: 1,
+          priceMeso: 3_250_000_000,
         },
       ],
     })
-    const { getByLabelText } = await result
+    const { getByText } = await result
 
-    expect(getByLabelText('가격 입력됨').props.source).toBeTruthy()
+    // 그림 위쪽. 아래는 금액 띠가 덮는다.
+    expect(flattenStyle(getByText('lv4').parent?.props.style)).toMatchObject({ top: -4 })
+    expect(getByText('32.5억')).toBeTruthy()
   })
 })
 
