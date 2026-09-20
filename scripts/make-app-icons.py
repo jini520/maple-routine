@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """앱 아이콘 한 장에서 iOS·안드로이드 산출물을 낸다. `python3 scripts/make-app-icons.py`
 
-바꾸려면 `SRC` 를 다른 원본으로 돌리고 다시 돌린다. 배경색(`values/colors.xml` 의
+바꾸려면 원본 경로를 인자로 준다(`python3 scripts/make-app-icons.py assets/belona_app_icon.png`). 배경색(`values/colors.xml` 의
 `iconBackground` 와 `app.json` 의 `adaptiveIcon.backgroundColor`)은 **손으로** 맞춘다 - 그림
 가장자리에서 뽑은 색이라 그림이 바뀌면 함께 바뀐다.
 
@@ -12,9 +12,11 @@
 그 보이는 사각형을 정확히 채운다. 그림이 꽉 찬 한 장이라 여백을 더 두면 런처 마스크 안에
 작은 사각형이 떠 있는 꼴이 된다.
 """
+import sys
+
 from PIL import Image, ImageDraw
 
-SRC = 'assets/pinkbeen_app_icon.png'
+SRC = sys.argv[1] if len(sys.argv) > 1 else 'assets/pinkbeen_app_icon.png'
 IOS = 'ios/app/Images.xcassets/AppIcon.appiconset/App-Icon-1024x1024@1x.png'
 RES = 'android/app/src/main/res'
 DENSITIES = {'mdpi': 1, 'hdpi': 1.5, 'xhdpi': 2, 'xxhdpi': 3, 'xxxhdpi': 4}
