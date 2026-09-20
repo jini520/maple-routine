@@ -225,8 +225,8 @@ describe('글자는 atom 한 곳에서만 나온다', () => {
   * `BottomSheetTextInput` 은 아무 데도 안 쓴다.
    *
   * 그 부품은 RN 의 입력이 아니라 `react-native-gesture-handler` 의 것을 감싼 것이고, 그 층이
-  * 안드로이드 한글 조합을 깬다. 지금은 아톰이 RN 입력을 그대로 그리고 시트가 보는 값
-  * (`animatedKeyboardState.target`)만 직접 채운다.
+  * 안드로이드 한글 조합을 깬다. 지금은 시트에 치는 칸이 아예 없다. 칸은 시트 밖 입력 카드가
+  * 받는다.
    *
   * 그 길로 들어오면 글자 크기 클램프가 빠지고 한글 조합까지 함께 깨진다. 둘 다 개발
   * 기기에서 안 보이는 회귀다.
@@ -236,9 +236,8 @@ describe('글자는 atom 한 곳에서만 나온다', () => {
       readFileSync(file, 'utf8').includes('BottomSheetTextInput'),
     ).map((file) => relative(SRC, file))
 
- // `왜 안 쓰는가`를 적는 주석에는 이름이 나온다. 코드가 아니라 글이다. 그 설명은 아톰과,
- // 값을 채우는 훅에 있다. 그 코드는 아톰 밖으로 나갔다.
-    const 설명하는_파일 = ['components/atoms/TextInput/TextInput.tsx', 'hooks/useSheetKeyboardTarget.ts']
+ // `왜 안 쓰는가`를 적는 주석에는 이름이 나온다. 코드가 아니라 글이다. 그 설명은 아톰에 있다.
+    const 설명하는_파일 = ['components/atoms/TextInput/TextInput.tsx']
     expect(offenders.filter((file) => !설명하는_파일.includes(file))).toEqual([])
   })
 })

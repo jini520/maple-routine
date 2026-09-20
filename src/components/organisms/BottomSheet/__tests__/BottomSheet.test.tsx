@@ -7,8 +7,8 @@
 //
 // 라이브러리를 진짜로 세워 마운트되는지는 옆 파일(`BottomSheet.wiring.test.tsx`)이 본다.
 import { useState, type ReactNode } from 'react'
-import { Keyboard, Pressable, Text, View } from 'react-native'
-import { act, fireEvent, screen, within } from '@testing-library/react-native'
+import { Pressable, Text, View } from 'react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 
 // `jest.mock` 팩토리는 호이스팅돼 스코프 밖 변수를 못 읽는다. **`mock` 접두 이름만** 예외다.
 const mockPresent = jest.fn()
@@ -30,10 +30,9 @@ jest.mock('@gorhom/bottom-sheet', () => {
       React.useImperativeHandle(ref as never, () => ({ scrollTo: mockScrollTo }))
       return React.createElement(ReactNative.View, props)
     }),
-    // 시트 밖과 같게 둔다. 아톰이 이 값으로 **시트 안인가** 를 묻는다.
-    // 목이 시트를 평범한 `View` 로 바꾸므로 여기서도 문맥이 없는 것이 사실이고, 그래서
-    // 아래 입력은 안 그려진다. 그래도 **있어야 한다**: `lib/nativewind-interop` 이 모듈을
-    // 읽는 순간 이것을 등록하므로, 없으면 스위트가 뜨기도 전에 죽는다.
+    // 아래 둘은 이제 아무도 안 부른다. 시트에 치는 칸이 없어지면서 그것들을 쓰던
+    // `SheetTextInput` 과 `useSheetKeyboardTarget` 이 함께 걷혔다. 목 팩토리는 라이브러리의
+    // 모듈 면을 흉내내는 것이라 남는 항목이 해가 없어 그대로 둔다(테스트 파일 여덟 곳이 같다).
     useBottomSheetInternal: () => null,
     // 넘긴 것을 그대로 돌려준다. 시트가 무엇을 넘겼는지는 프롭에서 본다.
     useBottomSheetTimingConfigs: (config: unknown) => config,
@@ -51,25 +50,10 @@ import {
 } from '../../../../theme/appearance-store'
 import { buildSheetScopeVariables } from '../../../../theme/theme-vars'
 import { BottomSheet } from '../BottomSheet'
-import { SheetTextInput } from '../../../molecules/SheetTextInput/SheetTextInput'
-
-/**
- * 시트 칸이 초점을 잡고 놓는 것.
- *
- * 시트는 자기 칸이 초점을 잡았을 때만 키보드를 따라간다. 키보드 리스너가 전역이라 입력 카드가
- * 시트 **밖에서** 올린 키보드까지 따라가면 시트가 짧아져 윗변이 내려간다. `target` 은 아무 수나
- * 되고, 켤 때와 끌 때가 같기만 하면 된다.
- */
-function 초점(잡는다: boolean): void {
-  const 칸 = screen.queryByTestId('시트-칸')
-  if (칸 === null) return
-  fireEvent(칸, 잡는다 ? 'focus' : 'blur', { nativeEvent: { target: 1 } })
-}
 
 const noop = (): void => {}
 
-/** 키보드 이벤트 손잡이. 내리는 쪽은 인자를 안 본다. */
-type 손잡이 = (event: { endCoordinates: { height: number } }) => void
+type 요소 = ReturnType<Awaited<ReturnType<typeof renderOverlay>>['getByTestId']>
 
 beforeEach(() => {
   mockPresent.mockClear()
@@ -77,45 +61,12 @@ beforeEach(() => {
 })
 
 describe('BottomSheet: 가 정한 값을 넘긴다', () => {
-  /**
-   * 키보드 이벤트는 네이티브에서 오므로 **등록된 손잡이를 직접 잡아 흔든다**. 등록 순서가
-   * 계약이다(뜨는 것· 내리는 것).
-   */
-  const 키보드손잡이: 손잡이[] = []
-
-  beforeEach(() => {
-    키보드손잡이.length = 0
-    jest.spyOn(Keyboard, 'addListener').mockImplementation(((_event: string, handler: 손잡이) => {
-      키보드손잡이.push(handler)
-      return { remove: jest.fn() }
-    }) as never)
-  })
-
-  afterEach(() => {
-    jest.restoreAllMocks()
-  })
-
   async function open(): Promise<ReturnType<typeof renderOverlay>> {
     return renderOverlay(
       <BottomSheet onClose={noop} testId="boss-drop-sheet" label="드롭 아이템 기록">
         <Text>시트 내용</Text>
-        {/* 시트가 **자기 칸** 을 가졌을 때만 키보드를 따라간다. 그 조건을 세우는 자리. */}
-        <SheetTextInput testID="시트-칸" />
       </BottomSheet>,
     )
-  }
-
-  /**
-   * 뜨는 손잡이는 높이를 실은 이벤트를 받는다. 내리는 쪽은 안 본다.
-   *
-   * **시트 칸의 초점을 함께 흉내낸다.** 시트는 자기 칸이 초점을 잡았을 때만 키보드를 따라간다
-   * (입력 카드가 시트 밖에서 올린 키보드까지 따라가면 시트가 짧아져 윗변이 내려간다).
-   */
-  async function 키보드(뜬다: boolean, 높이 = 336): Promise<void> {
-    await act(async () => {
-      초점(뜬다)
-      키보드손잡이[뜬다 ? 0 : 1]({ endCoordinates: { height: 높이 } })
-    })
   }
 
   it('children 과 testId 를 그대로 전달한다. 공개 API 는 웹과 같다', async () => {
@@ -187,110 +138,11 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
    *
    * 상한에서 그만큼을 빼면 윗변이 키보드가 있든 없든 같은 선에 선다.
    */
-  /**
-   * 키보드 리스너가 전역이라 시트는 **누가 올린 키보드인지** 를 스스로 모른다. 입력 카드는 시트
-   * 밖(RN `Modal`)에서 키보드를 올리는데, 시트가 그것까지 따라가면 상한이 줄어 시트가 짧아지고
-   * 윗변이 내려간다(시뮬레이터에서 사용자가 잡았다).
-   */
-  it('시트 칸이 초점을 안 잡았으면 키보드가 떠도 상한이 그대로다', async () => {
-    const { getByTestId } = await open()
-    const 상한 = (): number => getByTestId('sheet').props.maxDynamicContentSize as number
-
-    await act(async () => {
-      키보드손잡이[0]({ endCoordinates: { height: 336 } })
-    })
-
-    expect(상한()).toBeCloseTo(844 * 0.82)
-  })
-
-  it('키보드가 뜨면 상한에서 그 높이를 뺀다. 시트 + 키보드가 82% 다', async () => {
-    const { getByTestId } = await open()
-    const 상한 = (): number => getByTestId('sheet').props.maxDynamicContentSize as number
-
-    await 키보드(true, 336)
-    expect(상한()).toBeCloseTo(844 * 0.82 - 336)
-
-    await 키보드(false)
-    expect(상한()).toBeCloseTo(844 * 0.82)
-  })
-
-  /**
-   * 라이브러리는 창 모드를 **자기가 안 바꾼다**. 이 프롭은 키보드가 뜰 때 창이 실제로 어떻게
-   * 되는가 를 알려 주는 것이고, 그 값으로 자기 보정량을 정한다.
-   *
-   * 매니페스트의 `adjustResize` 를 믿으면 안 된다. 이 앱은 edge-to-edge 라
-   * (`android/gradle.properties` 의 `edgeToEdgeEnabled=true`) 그 값이 죽어 있다. API 36 에서
-   * 키보드가 312dp 떠도 `Dimensions.get('window').height` 는 914.29 그대로였고 내용도 안 밀렸다.
-   * OS 는 아무것도 안 한다.
-   *
-   * 그런데 `adjustResize` 를 넘기면 라이브러리는 OS 가 이미 했겠지 라며 자기 보정을 0 으로
-   * 둔다(소스: `heightWithinContainer = 0` 후 early return). 그래서 시트가 키보드에 그대로
-   * 가렸다. `adjustPan` 이 사실이다. 창은 안 움직인다, 네가 올려라.
-   */
-  it('창이 안 움직인다고 알려 준다. adjustPan (edge-to-edge 라 adjustResize 는 죽은 값)', async () => {
+  // 맞출 상대가 없다. 키보드에 맞추던 시절의 250ms 를 그대로 쓰면 휙 바뀐다(사용자 지적).
+  it('자리를 옮기는 시간은 380ms 한 갈래다', async () => {
     const { getByTestId } = await open()
 
-    expect(getByTestId('sheet').props.android_keyboardInputMode).toBe('adjustPan')
-  })
-
-  /**
-   * **올라간 것은 내려와야 한다**. 기본값 `none` 이면 라이브러리가 키보드
-   * 닫힘에서 **일찍 빠져나가** 위치를 다시 안 잰다:
-   *
-   *     if (status === HIDDEN && keyboardBlurBehavior === none) return
-   *
-   * 그러면 시트가 올라간 자리에 그대로 남는다(실기 보고).
-   */
-  it('키보드가 닫히면 제자리로 돌아온다. restore', async () => {
-    const { getByTestId } = await open()
-
-    expect(getByTestId('sheet').props.keyboardBlurBehavior).toBe('restore')
-  })
-
-  /**
-   * **키보드가 뜨면 아래 인셋을 안 남긴다**.
-   *
-   * 홈 인디케이터 몫(`insets.bottom`)은 화면 맨 아래가 손가락에 닿는 자리라 비워 둔다 는 값인데,
-   * 키보드가 그 자리를 이미 덮고 있으면 **아무것도 아닌 빈 띠**가 된다. 실기에서 빠른 칩과
-   * 키보드 사이가 50pt 벌어졌다(사용자 스크린샷).
-   */
-  it('키보드가 뜨면 아래 인셋을 걷는다', async () => {
-    const { getByTestId } = await open()
-    const 여백 = (): number =>
-      (getByTestId('boss-drop-sheet').props.contentContainerStyle as { paddingBottom: number })
-        .paddingBottom
-
-    // 테스트 인셋의 아래는 34(iPhone 계열). 거기에 숨돌림 16.
-    expect(여백()).toBe(34 + 16)
-
-    // 걷는 것은 **인셋뿐**이다. 숨돌림 16 은 남는다(마지막 줄이 키보드에 닿으면 누를 자리가 없다).
-    await 키보드(true)
-    expect(여백()).toBe(16)
-
-    await 키보드(false)
-    expect(여백()).toBe(34 + 16)
-  })
-
-  /**
-   * 옮기는 이유가 둘이고 **맞출 상대가 다르다**.
-   *
-   * 키보드는 자기 속도가 있다. 라이브러리 iOS 기본값은 과감쇠 스프링이라 다 앉는 데 530ms 가
-   * 걸렸는데(시뮬레이터 계측) 키보드는 265ms 만에 다 올라와, 시트의 아랫변이 아직 낮은 채로
-   * 덮였다. 거기 붙은 저장 줄이 200ms 넘게 사라졌다가 뒤늦게 나타났다.
-   *
-   * 단계가 갈려 옮길 때는 맞출 상대가 없다. 키보드의 250ms 를 그대로 쓰면 휙 바뀐다(사용자 지적).
-   */
-  it('키보드가 움직이면 그 시간에 맞춘다', async () => {
-    const { getByTestId } = await open()
-
-    // 기본은 여유로운 쪽이다. 키보드의 250 보다 길어야 휙 바뀌지 않는다.
     expect(getByTestId('sheet').props.animationConfigs).toMatchObject({ duration: 380 })
-
-    await act(async () => {
-      키보드손잡이[0]?.({ endCoordinates: { height: 336 } })
-    })
-
-    expect(getByTestId('sheet').props.animationConfigs).toMatchObject({ duration: 250 })
   })
 
   it('폭은 max-w-md(448) 중앙 정렬이다. 라이브러리 기본은 전폭이다', async () => {
@@ -355,41 +207,8 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
  * 서는지는 라이브러리가 컨테이너 좌표로 계산하는 일이라 이 목 위에서는 안 보인다. 그건 기기가
  * 답한다.
  */
-/** 줄의 키를 재는 상자. 줄이 없는 단계에도 서 있어서 0 을 올린다. */
-type 요소 = ReturnType<Awaited<ReturnType<typeof renderOverlay>>['getByTestId']>
-function 바닥층(getByTestId: (id: string) => 요소): 요소 {
-  return getByTestId('bottom-sheet-footer-layer')
-}
-
-/** 그 상자를 담은 층. 시트만큼 크고 흐름 밖이며 줄을 자기 바닥에 붙인다. */
-function 바닥상자(getByTestId: (id: string) => 요소): 요소 {
-  return 바닥층(getByTestId).parent as 요소
-}
-
-describe('BottomSheet: 머리와 바닥을 스크롤 밖에 고정한다', () => {
-  const 키보드손잡이: 손잡이[] = []
-
-  beforeEach(() => {
-    키보드손잡이.length = 0
-    jest.spyOn(Keyboard, 'addListener').mockImplementation(((_event: string, handler: 손잡이) => {
-      키보드손잡이.push(handler)
-      return { remove: jest.fn() }
-    }) as never)
-  })
-
-  afterEach(() => {
-    jest.restoreAllMocks()
-  })
-
-  /** 키보드를 올린다. 바닥 줄이 떼어져 붙는 것은 그때뿐이다. 시트 칸의 초점을 함께 흉내낸다. */
-async function 키보드올리기(height = 336): Promise<void> {
-  await act(async () => {
-    초점(true)
-    키보드손잡이[0]?.({ endCoordinates: { height } })
-  })
-}
-
-async function 고정시트(): Promise<ReturnType<typeof renderOverlay>> {
+describe('BottomSheet: 머리를 스크롤 밖에 고정한다', () => {
+  async function 고정시트(): Promise<ReturnType<typeof renderOverlay>> {
     return renderOverlay(
       <BottomSheet
         onClose={noop}
@@ -399,7 +218,6 @@ async function 고정시트(): Promise<ReturnType<typeof renderOverlay>> {
         footer={<Text>저장</Text>}
       >
         <Text>시트 내용</Text>
-        <SheetTextInput testID="시트-칸" />
       </BottomSheet>,
     )
   }
@@ -476,34 +294,20 @@ async function 고정시트(): Promise<ReturnType<typeof renderOverlay>> {
     )
   }
 
-  it('바닥 줄이 없는 단계에서도 층은 서 있다. 자리를 잃지 않는다', async () => {
+  // 줄은 내용의 마지막 줄이다. 단계가 갈려 줄이 사라져도 남는 것은 인셋(34)과 숨돌림(16)뿐이다.
+  it('바닥 줄은 스크롤 안에 선다. 단계가 갈리면 함께 사라진다', async () => {
     const view = await renderOverlay(<StepSheet />)
-    expect(view.queryByTestId('bottom-sheet-footer')).toBeTruthy()
+    expect(within(view.getByTestId('income-sheet')).queryByText('저장')).toBeTruthy()
 
     await act(async () => {
       fireEvent.press(view.getByLabelText('단계 바꾸기'))
     })
 
-    // 줄은 사라졌지만 **층은 그대로**다. 자리를 들고 있으므로 다음 단계에서 처음부터 제자리다.
     expect(view.queryByTestId('bottom-sheet-footer')).toBeNull()
-    expect(바닥층(view.getByTestId)).toBeTruthy()
-  })
-
-  // 줄이 없는 단계에서는 비워 둘 것도 없다. 홈 인디케이터 몫(34)과 숨돌림(16)만 남는다.
-  it('바닥 줄이 없으면 아래 여백이 인셋 + 16 으로 돌아온다', async () => {
-    const view = await renderOverlay(<StepSheet />)
-    await act(async () => {
-      fireEvent(바닥층(view.getByTestId), 'layout', { nativeEvent: { layout: { height: 106 } } })
-    })
-
-    await act(async () => {
-      fireEvent.press(view.getByLabelText('단계 바꾸기'))
-    })
-
     expect(
       (view.getByTestId('income-sheet').props.contentContainerStyle as { paddingBottom: number })
         .paddingBottom,
-    ).toBe(50)
+    ).toBe(34 + 16)
   })
 
   /**
@@ -512,152 +316,12 @@ async function 고정시트(): Promise<ReturnType<typeof renderOverlay>> {
    * 작아졌다가 잰 값이 도착하면 다시 커진다. 화면에서는 내용과 버튼이 따로 노는 것으로
    * 보인다(사용자 지적, 60fps 프레임에서 그 한 번 더 작아지는 구간을 확인했다).
    */
-  it('머리와 바닥은 재기 전에도 자리를 비워 둔다. 0 이 아니다', async () => {
+  it('머리는 재기 전에도 자리를 비워 둔다. 0 이 아니다', async () => {
     const { getByTestId } = await 고정시트()
-    await 키보드올리기()
-    const 여백 = getByTestId('income-sheet').props.contentContainerStyle as {
-      paddingTop: number
-      paddingBottom: number
-    }
 
-    // `layout` 을 한 번도 안 흘렸는데도 둘 다 잡혀 있다.
+    const 여백 = getByTestId('income-sheet').props.contentContainerStyle as { paddingTop: number }
+
     expect(여백.paddingTop).toBeGreaterThan(24)
-    expect(여백.paddingBottom).toBeGreaterThan(44)
-  })
-
-  it('잰 값이 오면 그것으로 갈아탄다', async () => {
-    const { getByTestId } = await 고정시트()
-    await 키보드올리기()
-
-    await act(async () => {
-      fireEvent(바닥층(getByTestId), 'layout', { nativeEvent: { layout: { height: 137 } } })
-    })
-
-    expect(
-      (getByTestId('income-sheet').props.contentContainerStyle as { paddingBottom: number })
-        .paddingBottom,
-    ).toBe(137)
-  })
-
-  it('바닥 줄의 높이를 스크롤 내용이 자리로 비워 둔다', async () => {
-    const { getByTestId } = await 고정시트()
-    await 키보드올리기()
-    const 아래여백 = (): number =>
-      (getByTestId('income-sheet').props.contentContainerStyle as { paddingBottom: number })
-        .paddingBottom
-
-    await act(async () => {
-      fireEvent(바닥층(getByTestId), 'layout', { nativeEvent: { layout: { height: 106 } } })
-    })
-
-    expect(아래여백()).toBe(106)
-    // 층이 흐름 밖이다. 스크롤이 시트를 가득 채우고 그 위에 겹쳐 선다.
-    const 층 = flattenStyle(바닥상자(getByTestId).props.style)
-    expect(층.position).toBe('absolute')
-    /*
-      **상자에 붙는다. 좇지 않는다.** 이 층은 라이브러리의 내용 상자 안이고 그 상자의 키가 곧
-      시트의 키다. `bottom` 으로 앉히므로 시트가 어떻게 움직이든 줄이 함께 간다. 시트의 키를
-      읽어 따로 애니메이션하면 상자와 줄이 두 애니메이션이 되어 도착 시각이 어긋난다.
-    */
-    expect(층.top).toBeUndefined()
-    expect(층.bottom).toBeDefined()
-  })
-
-  /**
-   * **떼는 것은 키보드가 떠 있을 때뿐이다**(사용자 지정). 키보드가 없으면 줄은 그냥 내용의
-   * 마지막 줄이라, 내용과 버튼이 한 상자에 있어 따로 움직일 것이 없다.
-   */
-  it('키보드가 없으면 바닥 줄은 스크롤 **안**이다', async () => {
-    const { getByTestId } = await 고정시트()
-
-    expect(within(getByTestId('income-sheet')).queryByText('저장')).toBeTruthy()
-  })
-
-  it('키보드가 뜨면 스크롤 밖으로 떼어 세운다', async () => {
-    const { getByTestId, queryByText } = await 고정시트()
-
-    await 키보드올리기()
-
-    expect(within(getByTestId('income-sheet')).queryByText('저장')).toBeNull()
-    expect(queryByText('저장')).toBeTruthy()
-  })
-
-  // 키보드가 덮고 있으면 홈 인디케이터 몫은 빈 띠가 된다.
-  it('떼어 세운 줄은 아래 인셋을 안 남긴다', async () => {
-    const { getByTestId } = await 고정시트()
-
-    await 키보드올리기()
-
-    expect(
-      flattenStyle(getByTestId('bottom-sheet-footer').props.style).paddingBottom,
-    ).toBe(16)
-  })
-
-  /**
-   * 치는 칸이 맨 아래에 모여 있는 시트만 켠다. 키보드가 뜨는 순간 보여야 할 것이 아래쪽이고,
-   * 위에서 잘리는 것은 이미 정해 놓은 값들이다.
-   */
-  it('키보드가 뜨면 스크롤을 끝으로 보낸다. 켠 시트만', async () => {
-    const { getByTestId } = await renderOverlay(
-      <BottomSheet
-        onClose={noop}
-        testId="income-sheet"
-        label="수입 기록"
-        scrollToEndOnKeyboard
-        footer={<Text>저장</Text>}
-      >
-        <Text>시트 내용</Text>
-        <SheetTextInput testID="시트-칸" />
-      </BottomSheet>,
-    )
-    expect(getByTestId('income-sheet')).toBeTruthy()
-    mockScrollTo.mockClear()
-
-    await 키보드올리기()
-
-    expect(mockScrollTo).toHaveBeenCalledWith(expect.objectContaining({ y: 99999 }))
-  })
-
-  /**
-   * 비우는 몫이 바닥 줄 높이를 그대로 따라가야 마지막 줄과 바닥 줄 사이가 늘 같다. 안 따라가면
-   * 키보드가 뜰 때 바닥 줄이 인셋만큼 짧아지면서 그 위에 없던 공백이 생긴다(사용자 보고).
-   */
-  it('비워 두는 몫이 바닥 줄 높이를 그대로 따라간다', async () => {
-    const { getByTestId } = await 고정시트()
-    await 키보드올리기()
-    const 아래여백 = (): number =>
-      (getByTestId('income-sheet').props.contentContainerStyle as { paddingBottom: number })
-        .paddingBottom
-
-    await act(async () => {
-      fireEvent(바닥층(getByTestId), 'layout', { nativeEvent: { layout: { height: 106 } } })
-    })
-    expect(아래여백()).toBe(106)
-
-    // 키보드가 뜨면 바닥 줄이 인셋 34 만큼 짧아진다. 비우는 몫도 그만큼 준다.
-    await act(async () => {
-      키보드손잡이[0]({ endCoordinates: { height: 336 } })
-    })
-    await act(async () => {
-      fireEvent(바닥층(getByTestId), 'layout', { nativeEvent: { layout: { height: 106 - 34 } } })
-    })
-
-    expect(아래여백()).toBe(106 - 34)
-  })
-
-  it('안 켜면 안 보낸다. 치는 칸이 중간에 있는 시트가 위로 밀리지 않는다', async () => {
-    await renderOverlay(
-      <BottomSheet onClose={noop} testId="income-sheet" label="수입 기록">
-        <Text>시트 내용</Text>
-      </BottomSheet>,
-    )
-    mockScrollTo.mockClear()
-
-    await act(async () => {
-      키보드손잡이[0]({ endCoordinates: { height: 336 } })
-    })
-
-    expect(mockScrollTo).not.toHaveBeenCalled()
   })
 
   it('안 넘기면 둘 다 안 선다. 나머지 시트는 그대로다', async () => {

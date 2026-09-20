@@ -34,9 +34,6 @@ const NUMERIC_KEYBOARDS = new Set<RNTextInputProps['keyboardType']>([
  *
  * 치수를 주고 싶으면 `className` 이나 `style` 로 주면 되고, 그쪽이 여기 기본값을 이긴다.
  *
- * **시트 안에서는 `organisms/SheetTextInput` 을 쓸 것**. 이 아톰은 자기가
- * 어디 담기는지 모른다.
- *
  * @example
  * // 숫자 칸. `keyboardType` 이 숫자면 `value` 로 통제하므로 서식이 산다
  * <TextInput

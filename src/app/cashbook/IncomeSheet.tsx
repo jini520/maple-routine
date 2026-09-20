@@ -133,8 +133,6 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
       testId="income-sheet"
       onClose={props.onClose}
       label="수입 기록"
-      // 치는 칸이 맨 아래에 모여 있다. 조각 개수와 조각 가격.
-      scrollToEndOnKeyboard
       // 단계가 갈리면 시트 전체가 흐려졌다 돌아온다.
       stepKey={category ?? '갈래'}
       header={
