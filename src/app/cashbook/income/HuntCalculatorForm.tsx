@@ -734,7 +734,7 @@ export function HuntCalculatorForm(
             }`}
             style={TABULAR_NUMS}
           >
-            {fragmentsText === '' ? '0' : fragmentsText}
+            {fragmentsText === '' ? '0' : mesoValueOf(fragmentsText).toLocaleString()}
           </Text>
           <Text className="text-xs text-text-muted">개</Text>
         </Pressable>
@@ -752,7 +752,7 @@ export function HuntCalculatorForm(
             }`}
             style={TABULAR_NUMS}
           >
-            {fragmentPriceText === '' ? '미입력 시 보관' : fragmentPriceText}
+            {fragmentPriceText === '' ? '미입력 시 보관' : mesoValueOf(fragmentPriceText).toLocaleString()}
           </Text>
           <Text className="shrink-0 text-xs text-text-muted">메소</Text>
         </Pressable>

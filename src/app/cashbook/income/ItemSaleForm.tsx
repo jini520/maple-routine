@@ -151,7 +151,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
             }`}
             style={TABULAR_NUMS}
           >
-            {grossText === '' ? '0' : grossText}
+            {grossText === '' ? '0' : mesoValueOf(grossText).toLocaleString()}
           </Text>
         </Pressable>
         {/* 큰 숫자는 수수료를 뗀 합계라 이 줄과 축이 같은지 헷갈린다. 둘 다 메소라는 것을

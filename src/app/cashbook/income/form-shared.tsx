@@ -9,6 +9,7 @@ import { Pressable } from 'react-native'
 
 import { Text } from '../../../components/atoms'
 import { AmountInput, FieldRow } from '../sheet-fields'
+import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import type { IncomeRecord } from '../../../storage/income'
 
 export type IncomeDraft = Omit<IncomeRecord, 'id' | 'recordedAt'>
@@ -60,6 +61,11 @@ export function FragmentFields(props: {
       <FieldRow label="솔 에르다 조각">
         <AmountInput
           testID="income-sheet-fragments"
+          label="조각 개수"
+          context="솔 에르다 조각"
+          icon="fragment"
+          unit="개"
+          chips={COUNT_QUICK_ADDS}
           value={props.fragments}
           onChange={props.onChangeFragments}
         />
@@ -67,8 +73,18 @@ export function FragmentFields(props: {
       </FieldRow>
 
       <FieldRow label="조각 가격">
+        {/*
+          빈 칸과 0 이 뜻이 다른 칸이다. 빈 칸은 안 판 조각이라 보관에 들고 0 은 0 메소에 판
+          것이다. 그래서 정리를 부품에 안 맡기고 여기서 한다.
+        */}
         <AmountInput
           testID="income-sheet-fragment-price"
+          label="조각 가격"
+          context="솔 에르다 조각 · 개당"
+          icon="meso"
+          unit="메소"
+          reading
+          placeholder="미입력 시 보관"
           value={props.fragmentPrice}
           onChange={props.onChangeFragmentPrice}
         />

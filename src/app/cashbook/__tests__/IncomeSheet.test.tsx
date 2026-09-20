@@ -139,9 +139,8 @@ async function 대금치기(view: Rendered, text: string): Promise<void> {
 
 /** 아이디로 집은 칸에 치는 도우미. 큰 숫자가 아닌 폼 안의 입력들이다. */
 async function 아이디로치기(view: Rendered, testID: string, text: string): Promise<void> {
-  await act(async () => {
-    fireEvent.changeText(view.getByTestId(testID), text)
-  })
+  // 치는 칸이 입력 카드로 옮겨가는 중이라 두 모양이 섞여 있다. `칸에치기` 가 그 갈림을 든다.
+  await 칸에치기(view, testID, text)
 }
 
 /**
@@ -245,9 +244,7 @@ async function 누르기(view: Rendered, label: string): Promise<void> {
  * 합계는 `금액 × 수량` 이라 이 칸만 치면 수량 1 이 곱해져 친 값이 곧 합계가 된다.
  */
 async function 치기(view: Rendered, text: string): Promise<void> {
-  await act(async () => {
-    fireEvent.changeText(view.getByTestId('income-sheet-unit-price'), text)
-  })
+  await 칸에치기(view, 'income-sheet-unit-price', text)
 }
 
 describe('갈래', () => {
@@ -357,7 +354,9 @@ describe('금액. OS 숫자 키보드다', () => {
   it('숫자 키보드를 부른다. 글자 키보드가 아니다', async () => {
     const view = await 직접치는시트()
 
-    expect(view.getByTestId('income-sheet-unit-price').props.keyboardType).toBe('number-pad')
+    // 치는 자리가 입력 카드로 옮겨갔다. 숫자판을 부르는 것은 카드의 칸이다.
+    await 아이디로누르기(view, 'income-sheet-unit-price')
+    expect(view.getByTestId('input-card-value').props.keyboardType).toBe('number-pad')
   })
 
   // 칸은 **친 글자 그대로**다. 콤마는 밑의 큰 숫자가 단위로 대신한다.
@@ -366,7 +365,7 @@ describe('금액. OS 숫자 키보드다', () => {
 
     await 치기(view, '1200')
 
-    expect(view.getByTestId('income-sheet-unit-price').props.value).toBe('1200')
+    expect(줄글자(view, 'income-sheet-unit-price')).toBe('1,200')
     // 큰 숫자는 `금액 × 수량` 이고 수량 기본값이 1 이라 친 값이 곧 합계다.
     expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('1200')
   })
@@ -377,7 +376,7 @@ describe('금액. OS 숫자 키보드다', () => {
 
     await 치기(view, '1,2000')
 
-    expect(view.getByTestId('income-sheet-unit-price').props.value).toBe('12000')
+    expect(줄글자(view, 'income-sheet-unit-price')).toBe('12,000')
   })
 
   /**
@@ -393,12 +392,12 @@ describe('금액. OS 숫자 키보드다', () => {
     // 커서를 8 뒤에 두고 지운 결과가 이 글자다.
     await 치기(view, '0000000000')
 
-    expect(view.getByTestId('income-sheet-unit-price').props.value).toBe('0000000000')
+    expect(줄글자(view, 'income-sheet-unit-price')).toBe('0')
 
     // 그 자리에 6 을 치면 원하던 값이 된다.
     await 치기(view, '60000000000')
 
-    expect(view.getByTestId('income-sheet-unit-price').props.value).toBe('60000000000')
+    expect(줄글자(view, 'income-sheet-unit-price')).toBe('60,000,000,000')
   })
 
   // 정리는 **커서가 빠질 때**만 한다. 타건마다 하면 위의 편집이 다시 깨진다.
@@ -410,7 +409,7 @@ describe('금액. OS 숫자 키보드다', () => {
       fireEvent(view.getByTestId('income-sheet-unit-price'), 'blur')
     })
 
-    expect(view.getByTestId('income-sheet-unit-price').props.value).toBe('')
+    expect(줄글자(view, 'income-sheet-unit-price')).toBe('0')
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
 
@@ -418,7 +417,10 @@ describe('금액. OS 숫자 키보드다', () => {
   it('0 이면 칸을 비우고 자리표시자로 `0` 을 둔다', async () => {
     const view = await 직접치는시트()
 
-    const 칸 = view.getByTestId('income-sheet-unit-price')
+    // 줄에는 자리표시자가 서고, 카드를 열면 그 칸이 비어 있다.
+    expect(줄글자(view, 'income-sheet-unit-price')).toBe('0')
+    await 아이디로누르기(view, 'income-sheet-unit-price')
+    const 칸 = view.getByTestId('input-card-value')
     expect(칸.props.value).toBe('')
     expect(칸.props.placeholder).toBe('0')
   })
@@ -512,9 +514,9 @@ describe('판매 수수료', () => {
     await 누르기(view, '5%')
     await 누르기(view, '3%')
 
-    expect(줄글자(view, 'income-sheet-gross')).toBe('1200000000')
+    expect(줄글자(view, 'income-sheet-gross')).toBe('1,200,000,000')
     // 못 치는 숫자는 칸이 아니라 글자다. 초기화 버튼도 없다.
-    expect(view.getByTestId('income-sheet-amount').props.value).toBeUndefined()
+    expect(view.getByTestId('income-sheet-amount').props.onChangeText).toBeUndefined()
     expect(view.queryByLabelText('금액 초기화')).toBeNull()
   })
 
@@ -729,7 +731,7 @@ describe('수정 모드', () => {
     const view = await 그리기({ editing: 판매기록, onDelete: jest.fn() })
 
     expect(view.getByTestId('income-sheet-name-label')).toHaveTextContent('판매 아이템')
-    expect(줄글자(view, 'income-sheet-gross')).toBe('1200000000')
+    expect(줄글자(view, 'income-sheet-gross')).toBe('1,200,000,000')
     expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent('캐릭터 선택')
   })
 
@@ -743,7 +745,7 @@ describe('수정 모드', () => {
       onDelete: jest.fn(),
     })
 
-    expect(줄글자(view, 'income-sheet-gross')).toBe('1200000000')
+    expect(줄글자(view, 'income-sheet-gross')).toBe('1,200,000,000')
     expect(view.getByLabelText('5%').props.accessibilityState?.selected).toBe(true)
   })
 })
@@ -907,7 +909,7 @@ describe('통화', () => {
       })
 
       // 총액(60,000,000)을 그대로 금액 칸에 넣으면 저장 한 번에 1.2억이 된다.
-      expect(view.getByTestId('income-sheet-unit-price').props.value).toBe('30000000')
+      expect(줄글자(view, 'income-sheet-unit-price')).toBe('30,000,000')
       expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('6천만')
     })
 
@@ -935,7 +937,7 @@ describe('통화', () => {
         onDelete: jest.fn(),
       })
 
-      expect(view.getByTestId('income-sheet-unit-price').props.value).toBe('15000')
+      expect(줄글자(view, 'income-sheet-unit-price')).toBe('15,000')
       expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('1만 5000')
     })
   })
@@ -964,7 +966,7 @@ describe('통화', () => {
     })
 
     expect(view.getByLabelText('메포').props.accessibilityState?.selected).toBe(true)
-    expect(view.getByTestId('income-sheet-rate').props.value).toBe('1180')
+    expect(줄글자(view, 'income-sheet-rate')).toBe('1,180')
   })
 })
 
@@ -1362,7 +1364,7 @@ describe('사냥 계산기', () => {
 
     await 칸에치기(view, 'income-sheet-fragments', '1,2340')
 
-    expect(줄글자(view, 'income-sheet-fragments')).toBe('12340')
+    expect(줄글자(view, 'income-sheet-fragments')).toBe('12,340')
   })
 
   /**
@@ -1473,7 +1475,7 @@ describe('사냥 계산기', () => {
     expect(view.getByLabelText('유니온의 부').props.accessibilityState?.checked).toBe(true)
     expect(view.getByTestId('income-sheet-sojae')).toHaveTextContent('3')
     expect(줄글자(view, 'income-sheet-fragments')).toBe('7')
-    expect(줄글자(view, 'income-sheet-fragment-price')).toBe('8000000')
+    expect(줄글자(view, 'income-sheet-fragment-price')).toBe('8,000,000')
   })
 
   // 계산기로 적힌 기록은 계산기로 열린다. 모드를 고르는 칸은 안 뜬다.
@@ -1719,7 +1721,7 @@ describe('사냥 수동 입력', () => {
     const view = await 그리기({ editing: 옛사냥행, onDelete: jest.fn() })
 
     expect(view.queryByTestId('income-sheet-meso-line')).toBeNull()
-    expect(view.getByTestId('income-sheet-hunt-meso').props.value).toBe('1200000000')
+    expect(줄글자(view, 'income-sheet-hunt-meso')).toBe('1,200,000,000')
     expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('12억')
     // 모드는 기록이 정했다. 바꾸는 칸이 없다.
     expect(view.queryByLabelText('획득 메소 직접 입력')).toBeNull()
@@ -1806,7 +1808,7 @@ describe('조각 가격을 비우면 보관', () => {
     await 아이디로누르기(view, 'input-card-close')
 
     await 이름으로누르기(view, '획득 메소 직접 입력')
-    expect(view.getByTestId('income-sheet-fragment-price').props.placeholder).toBe('미입력 시 보관')
+    expect(줄글자(view, 'income-sheet-fragment-price')).toBe('미입력 시 보관')
   })
 
   it('계산기에서 가격을 비우면 조각 값이 합계에서 빠지고 가격이 null 로 저장된다', async () => {
@@ -1903,7 +1905,7 @@ describe('조각 가격을 비우면 보관', () => {
       onDelete: jest.fn(),
       onSave,
     })
-    expect(줄글자(view, 'income-sheet-fragment-price')).toBe('7000000')
+    expect(줄글자(view, 'income-sheet-fragment-price')).toBe('7,000,000')
 
     await 칸에치기(view, 'income-sheet-fragment-price', '')
     await 이름으로누르기(view, '수정')
@@ -2222,8 +2224,8 @@ describe('솔 에르다 조각 정산', () => {
     expect(view.getByTestId('income-sheet-title')).toHaveTextContent('솔 에르다 조각')
     expect(loadFragmentStorage).toHaveBeenLastCalledWith('ocid-1', '2026-08-23', 'inc-settle')
     expect(view.getByTestId('income-sheet-fragment-storage')).toHaveTextContent('50개')
-    expect(view.getByTestId('income-sheet-settle-count').props.value).toBe('50')
-    expect(view.getByTestId('income-sheet-settle-price').props.value).toBe('8000000')
+    expect(줄글자(view, 'income-sheet-settle-count')).toBe('50')
+    expect(줄글자(view, 'income-sheet-settle-price')).toBe('8,000,000')
 
     await 이름으로누르기(view, '수정')
     expect(onSave).toHaveBeenCalledWith(
@@ -2721,7 +2723,7 @@ describe('날짜 바꾸기', () => {
 
     await 날짜고르기(view, '2026-08-22')
 
-    expect(줄글자(view, 'income-sheet-gross')).toBe('1200000000')
+    expect(줄글자(view, 'income-sheet-gross')).toBe('1,200,000,000')
   })
 
   it('수정으로 열어도 바꿀 수 있다. 그 기록이 다른 날로 옮겨 간다', async () => {

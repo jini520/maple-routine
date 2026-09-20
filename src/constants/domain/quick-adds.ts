@@ -12,3 +12,16 @@ export const COUNT_QUICK_ADDS = [
   { label: '+10', value: 10 },
   { label: '+1', value: 1 },
 ] as const
+
+/**
+ * 메소마켓 시세(메포)의 눈금. **큰 것이 왼쪽이다**(사용자 지정).
+ *
+ * 시세가 네 자리라 칩 넷이 곧 자릿수 넷이다. 1,350 을 +1000 한 번 · +100 세 번 · +10 다섯 번으로
+ * 만든다.
+ */
+export const POINT_QUICK_ADDS = [
+  { label: '+1000', value: 1000 },
+  { label: '+100', value: 100 },
+  { label: '+10', value: 10 },
+  { label: '+1', value: 1 },
+] as const
