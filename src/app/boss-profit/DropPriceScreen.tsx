@@ -214,11 +214,11 @@ export function DropPriceScreen(): React.JSX.Element {
       return
     }
     const characterName = groups.find((group) => group.ocid === target.ocid)?.characterName ?? ''
-    const 이름 = dropItemNameOf(target.drop.itemKey, target.drop.itemName)
     openInputCard({
-      label: '판매 가격',
-      context: `${이름} · ${target.bossName} · ${characterName}`,
-      icon: 'meso',
+      // 머리가 그 아이템을 말한다. `판매 가격` 이라는 말은 이미 누른 행이 했다.
+      label: dropItemNameOf(target.drop.itemKey, target.drop.itemName),
+      context: `${characterName} · ${target.bossName}`,
+      icon: dropItemIconOf(target.drop.itemKey) ?? 'meso',
       unit: '메소',
       reading: true,
       chips: MESO_QUICK_ADDS,
@@ -228,7 +228,6 @@ export function DropPriceScreen(): React.JSX.Element {
         value: target.drop.priceShare ?? target.partySize,
         min: 1,
         max: getMaxPartySize(target.bossKey, target.difficulty),
-        suffix: '인',
       },
       confirmLabel: '저장',
       exclude: {

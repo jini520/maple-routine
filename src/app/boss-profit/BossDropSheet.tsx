@@ -22,6 +22,7 @@ import { useDropEffectStore } from '../../features/drop-effect/store'
 import { getFixedDropIcons, type FixedDropIconSpec } from '../../lib/drop/fixed-drops'
 import { dropItemIconOf, getItemIconUrlByFile } from '../../lib/assets/asset-lookup'
 import { dropItemNameOf } from '../../lib/drop/drop-items'
+import { subjectParticle } from '../../lib/drop/drop-history'
 import { bossNameOf } from '../../lib/boss/bosses'
 import { isValuableDropItem } from '../../lib/drop/valuable-drops'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types'
@@ -146,9 +147,6 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   )
   // 고가 아이템을 새로 추가하면 전체화면 연출을 띄운다. 표시 여부는 전역 토글.
   const [effect, setEffect] = useState<{ itemKey: string } | null>(null)
-  // 방금 기록한 드롭. 아래 확인 줄이 이름을 딴다. 새로 기록하면 갈아타고, 그 기록을 취소하면
-  // 사라진다. 확인 줄이 세는 것은 이 하나가 아니라 **고른 것 전체**다.
-  const [justAdded, setJustAdded] = useState<RecordedDrop | null>(null)
   const effectEnabled = useDropEffectStore((state) => state.enabled)
   const setEffectEnabled = useDropEffectStore((state) => state.setEnabled)
 
@@ -215,8 +213,6 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
       }
       return [...prev, added]
     })
-    // 해제한 아이템의 물음이 남아 있으면 없는 기록의 가격을 묻게 된다.
-    setJustAdded(isAdding ? added : null)
     if (isAdding && effectEnabled && isValuableDropItem(candidate.key)) {
       setEffect({ itemKey: candidate.key })
     }
@@ -239,14 +235,12 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
     }
     setSelected((prev) => [...prev.filter((drop) => !(drop.boxOrigin !== undefined && drop.boxOriginKey === box.key)), added])
     setActiveBox(null)
-    setJustAdded(added)
     if (effectEnabled && isValuableDropItem(itemKey)) {
       setEffect({ itemKey })
     }
   }
   function removeBoxResult(boxKey: string): void {
     setSelected((prev) => prev.filter((drop) => !(drop.boxOrigin !== undefined && drop.boxOriginKey === boxKey)))
-    setJustAdded(null)
   }
 
   /**
@@ -271,11 +265,11 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
       return
     }
     const { defaultShare, maxShare, characterName } = props.pricing
-    const 이름 = dropItemNameOf(target.itemKey, target.itemName)
     openInputCard({
-      label: '판매 가격',
-      context: `${이름} · ${bossNameOf(props.bossKey, props.bossKey)} · ${characterName}`,
-      icon: 'meso',
+      // 머리가 그 아이템을 말한다. `판매 가격` 이라는 말은 이미 누른 버튼이 했다.
+      label: dropItemNameOf(target.itemKey, target.itemName),
+      context: `${characterName} · ${bossNameOf(props.bossKey, props.bossKey)}`,
+      icon: dropItemIconOf(target.itemKey) ?? 'meso',
       unit: '메소',
       reading: true,
       chips: MESO_QUICK_ADDS,
@@ -285,7 +279,6 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
         value: target.priceShare ?? defaultShare,
         min: 1,
         max: maxShare,
-        suffix: '인',
       },
       confirmLabel: '저장',
       exclude: {
@@ -304,20 +297,21 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
     })
   }
 
-  /**
-   * 확인 줄의 이름. **고른 것 전체를 센다**(사용자 지정).
-   *
-   * 마지막에 찍은 것이 이름을 갖고 나머지가 수로 접힌다. 하나만 말하던 시절에는 `나중에` 를
-   * 누르면 나머지를 잊었다.
-   */
-  const recordedLabel =
-    justAdded === null
-      ? ''
-      : `${dropItemNameOf(justAdded.itemKey, justAdded.itemName)}${
-          justAdded.ringLevel !== undefined ? ` ${justAdded.ringLevel}레벨` : ''
-        }${selected.length > 1 ? ` 외 ${selected.length - 1}건` : ''} 기록됨`
   /** 아직 값도 기록 안함도 안 정한 것. `가격 입력` 이 여는 차례이고 카드의 `다음` 이 잇는다. */
   const unpriced = selected.filter((drop) => drop.priceState === undefined)
+  /**
+   * 확인 줄의 문구. **남은 미입력 건을 센다**(사용자 지정).
+   *
+   * 이름은 그중 **가장 먼저 고른 것**이라 이어 찍어도 안 갈아탄다. 값을 매길 때마다 수가 줄고,
+   * 다 정하면 줄이 그 사실을 말한다. 기록 안함도 정한 것이라 여기 든다. `다 정했다` 와
+   * `다 입력했다` 를 가르면 줄이 길어지는데, 이 줄이 답하는 물음은 `남은 것이 있나` 하나다.
+   */
+  const promptLabel = (() => {
+    if (unpriced.length === 0) return `선택한 ${selected.length}건을 모두 정했습니다`
+    const 이름 = dropItemNameOf(unpriced[0].itemKey, unpriced[0].itemName)
+    if (unpriced.length === 1) return `${이름}${subjectParticle(이름)} 선택되었습니다`
+    return `${이름} 외 ${unpriced.length - 1}건이 선택되었습니다`
+  })()
 
   function handleTileTap(candidate: DropCandidate): void {
     if (isBoxItem(candidate.key)) {
@@ -518,33 +512,39 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                   (입력 →) 복귀 이고 어느 갈래든 타일 그리드로 돌아온다. 차단하지 않는다.
                   일반 아이템은 확인창 없이 탭 즉시 기록된다. 기록은 이미 끝났고 이 줄은 그 옆에
                   설 뿐이라 무시하고 다음 아이템을 계속 골라도 된다. */}
-              {justAdded !== null && props.pricing !== undefined && (
+              {selected.length > 0 && props.pricing !== undefined && (
                 // **평평하다**(사용자 지정). 시트 바닥에 붙어 있는데 그림자가 있으면 시트 위에 뜬
                 // 또 하나의 판으로 읽힌다. 실제로는 아래 저장 줄과 같은 층이다.
+                //
+                // **고른 것이 있는 한 선다**(사용자 지정). 치우는 버튼을 안 둔다. 치우면 남은
+                // 미입력 건으로 돌아갈 길이 시트 안에 없어진다.
                 <View
                   testID="drop-price-prompt"
                   className="mb-2.5 flex-row items-center gap-2 rounded-[14px] bg-surface-2 px-3 py-2"
                 >
                   <View className="min-w-0 flex-1">
                     <Text numberOfLines={1} className="text-[12.5px] font-semibold leading-tight text-text">
-                      {recordedLabel}
+                      {promptLabel}
                     </Text>
-                    <Text className="text-[12.5px] font-medium leading-tight text-text-muted">
-                      판매 가격을 입력할까요?
-                    </Text>
+                    {unpriced.length > 0 && (
+                      <Text className="text-[12.5px] font-medium leading-tight text-text-muted">
+                        판매 가격을 입력할까요?
+                      </Text>
+                    )}
                   </View>
-                  <Pressable role="button" onPress={() => setJustAdded(null)} className="shrink-0 px-1">
-                    <Text className="text-[12.5px] font-semibold text-text-muted">나중에</Text>
-                  </Pressable>
+                  {/* 다 정했으면 여는 차례가 고른 것 전체다. 남은 것이 없으니 고치러 들어간다. */}
                   <Pressable
                     role="button"
-                    onPress={() => {
-                      setJustAdded(null)
-                      openPriceCard(unpriced, unpriced.length)
-                    }}
+                    onPress={() =>
+                      unpriced.length > 0
+                        ? openPriceCard(unpriced, unpriced.length)
+                        : openPriceCard(selected, selected.length)
+                    }
                     className="shrink-0 rounded-full bg-primary px-3 py-1.5"
                   >
-                    <Text className="text-[12.5px] font-bold text-on-primary">가격 입력</Text>
+                    <Text className="text-[12.5px] font-bold text-on-primary">
+                      {unpriced.length > 0 ? '가격 입력' : '가격 수정'}
+                    </Text>
                   </Pressable>
                 </View>
               )}

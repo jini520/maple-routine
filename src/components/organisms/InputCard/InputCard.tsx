@@ -32,13 +32,19 @@ import { Image, Keyboard, Pressable, View, type StyleProp, type ViewStyle } from
 import Animated, { type AnimatedStyle } from 'react-native-reanimated'
 
 import { getItemIconUrlByFile } from '../../../lib/assets/asset-lookup'
+import type { ImageAssetRef } from '../../../types/image-asset'
 import { formatMesoUnits } from '../../../lib/drop/drop-price'
 import { Text, TextInput, XIcon } from '../../atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { MAX_MESO, acceptMesoText, mesoTextOf, mesoValueOf } from '../MesoPad/meso-pad'
 
-/** 머리에 서는 표식. 메소를 받는 칸은 주머니, 조각 개수는 조각이다. */
-export type InputCardIcon = 'meso' | 'fragment'
+/**
+ * 머리에 서는 표식. 메소를 받는 칸은 주머니, 조각 개수는 조각이다.
+ *
+ * 그림을 **직접 넘겨도 된다**. 드롭 판매가는 그 아이템 그림을 세운다. 이름 둘을 여기 더하지
+ * 않는 것은, 부품이 아는 그림이 늘수록 어느 화면이 무엇을 쓰는지가 이 파일로 새기 때문이다.
+ */
+export type InputCardIcon = 'meso' | 'fragment' | ImageAssetRef
 
 /**
  * 값 칸 아래 수 고르개. 라벨도 접미사도 호출부가 준다.
@@ -169,10 +175,12 @@ export interface InputCardProps {
   panelStyle?: StyleProp<AnimatedStyle<StyleProp<ViewStyle>>>
 }
 
-/** 표식 이름에서 그림으로. 없는 그림은 없는 채로 둔다. */
-function iconSourceOf(icon: InputCardIcon | undefined): ReturnType<typeof getItemIconUrlByFile> {
+/** 표식 이름에서 그림으로. 그림을 그대로 넘겼으면 그것이 답이다. 없는 그림은 없는 채로 둔다. */
+function iconSourceOf(icon: InputCardIcon | undefined): ImageAssetRef | null {
   if (icon === undefined) return null
-  return getItemIconUrlByFile(icon === 'meso' ? 'meso_pouch.webp' : 'sol_erda_fragment.webp')
+  if (icon === 'meso') return getItemIconUrlByFile('meso_pouch.webp')
+  if (icon === 'fragment') return getItemIconUrlByFile('sol_erda_fragment.webp')
+  return icon
 }
 
 export function InputCard(props: InputCardProps): React.JSX.Element {
@@ -241,7 +249,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
               <Image source={iconSource} resizeMode="contain" className="h-7 w-7 shrink-0" aria-hidden />
             )}
             <View className="min-w-0 flex-1">
-              <Text numberOfLines={1} className="text-sm font-bold text-text">
+              <Text testID="input-card-label" numberOfLines={1} className="text-sm font-bold text-text">
                 {props.label}
                 {props.required === true && (
                   <Text testID="input-card-required" className="text-error-ink">

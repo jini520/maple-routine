@@ -284,7 +284,7 @@ describe('DropPriceScreen: 값 매기기', () => {
       fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크 가격 입력'))
     })
 
-    expect(getByTestId('input-card-stepper-value').props.children).toBe('3인')
+    expect(getByTestId('input-card-stepper-value').props.children).toBe('3')
   })
 
   it('저장이 실패하면 토스트로 알린다. 조용히 삼키면 저장된 줄 알고 떠난다', async () => {
@@ -525,8 +525,8 @@ describe('DropPriceScreen: 순차 입력', () => {
 
     expect(excludePrice).not.toHaveBeenCalled()
     expect(savePrice).not.toHaveBeenCalled()
-    // 다음 건으로 넘어갔다. 목록에도 같은 이름이 있으므로 카드의 맥락 줄로 좁힌다.
-    expect(getByTestId('input-card-context').props.children).toMatch(/가디언 엔젤 링/)
+    // 다음 건으로 넘어갔다. 목록에도 같은 이름이 있으므로 카드의 머리로 좁힌다.
+    expect(getByTestId('input-card-label').props.children[0]).toBe('가디언 엔젤 링')
     // 마지막 건이라 다음 버튼이 사라진다.
     expect(queryByTestId('input-card-next')).toBeNull()
   })

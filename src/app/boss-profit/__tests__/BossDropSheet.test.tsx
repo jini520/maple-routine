@@ -395,22 +395,7 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
     expect(getByText('추가 완료 · 1개')).toBeTruthy()
   })
 
-  it('"나중에" 를 누르면 물음만 사라지고 기록은 남는다', async () => {
-    const { result } = renderSheet({ pricing: PRICING })
-    const { getByLabelText, getByText, queryByTestId } = await result
-
-    await act(async () => {
-      fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크'))
-    })
-    await act(async () => {
-      fireEvent.press(getByText('나중에'))
-    })
-
-    expect(queryByTestId('drop-price-prompt')).toBeNull()
-    expect(getByText('추가 완료 · 1개')).toBeTruthy()
-  })
-
-  it('다른 아이템을 이어 찍으면 물음이 그쪽으로 갈아탄다', async () => {
+  it('이름은 **가장 먼저 고른** 미입력 건으로 고정된다. 이어 찍어도 안 갈아탄다', async () => {
     // 한 난이도에 선택 가능한 장비가 둘인 보스라야 이 경우를 만들 수 있다.
     const { result } = renderSheet({ bossKey: 'gloom', difficulty: 'chaos', pricing: PRICING })
     const { getByLabelText, getByText } = await result
@@ -418,13 +403,101 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
     await act(async () => {
       fireEvent.press(getByLabelText('거대한 공포'))
     })
-    expect(getByText(/거대한 공포 기록됨/)).toBeTruthy()
+    expect(getByText('거대한 공포가 선택되었습니다')).toBeTruthy()
 
     await act(async () => {
       fireEvent.press(getByLabelText('에스텔라 이어링'))
     })
-    // 둘째를 찍으면 줄이 **외 1건** 으로 센다.
-    expect(getByText(/에스텔라 이어링 외 1건 기록됨/)).toBeTruthy()
+    expect(getByText('거대한 공포 외 1건이 선택되었습니다')).toBeTruthy()
+  })
+
+  it('받침에 따라 이/가 를 고른다', async () => {
+    const { result } = renderSheet({ pricing: PRICING })
+    const { getByLabelText, getByText } = await result
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크'))
+    })
+
+    expect(getByText('루즈 컨트롤 머신 마크가 선택되었습니다')).toBeTruthy()
+  })
+
+  /** 줄은 고른 것이 있는 한 선다. 치우는 방법은 없다(사용자 지정 · `나중에` 를 없앴다). */
+  it('가격 입력을 눌러도 줄이 안 사라진다. 나중에 버튼은 없다', async () => {
+    const { result } = renderSheet({ pricing: PRICING })
+    const { getByLabelText, getByTestId, getByText, queryByText } = await result
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크'))
+    })
+    expect(queryByText('나중에')).toBeNull()
+
+    await act(async () => {
+      fireEvent.press(getByText('가격 입력'))
+    })
+    await act(async () => {
+      fireEvent.press(getByTestId('input-card-close'))
+    })
+
+    expect(getByTestId('drop-price-prompt')).toBeTruthy()
+  })
+
+  describe('다 정하면 줄이 그것을 말한다', () => {
+    it('미입력이 없으면 문구와 버튼이 바뀐다. 기록 안함도 정한 것이다', async () => {
+      const { result } = renderSheet({ bossKey: 'gloom', difficulty: 'chaos', pricing: PRICING })
+      const view = await result
+
+      await act(async () => {
+        fireEvent.press(view.getByLabelText('거대한 공포'))
+      })
+      await act(async () => {
+        fireEvent.press(view.getByLabelText('에스텔라 이어링'))
+      })
+      await act(async () => {
+        fireEvent.press(view.getByText('가격 입력'))
+      })
+      await act(async () => {
+        fireEvent.changeText(view.getByTestId('input-card-value'), '100')
+      })
+      await act(async () => {
+        fireEvent.press(view.getByTestId('input-card-confirm'))
+      })
+      // 둘째는 기록 안함으로 끝낸다. 그래도 정한 것이다.
+      await act(async () => {
+        fireEvent.press(view.getByTestId('input-card-exclude'))
+      })
+
+      expect(view.getByText('선택한 2건을 모두 정했습니다')).toBeTruthy()
+      expect(view.getByText('가격 수정')).toBeTruthy()
+      expect(view.queryByText('가격 입력')).toBeNull()
+    })
+
+    it('가격 수정은 고른 것 전체를 처음부터 다시 돈다', async () => {
+      const { result } = renderSheet({
+        pricing: PRICING,
+        initialDrops: [
+          {
+            category: 'equipment',
+            itemKey: 'loose_control_machine_mark',
+            itemName: '루즈 컨트롤 머신 마크',
+            slot: '얼굴장식',
+            quantity: 1,
+            priceState: 'entered',
+            priceMeso: 100,
+            priceShare: 1,
+          },
+        ],
+      })
+      const view = await result
+
+      await act(async () => {
+        fireEvent.press(view.getByText('가격 수정'))
+      })
+
+      // 이미 매긴 값을 씨앗으로 들고 연다.
+      expect(view.getByTestId('input-card-value').props.value).toBe('100')
+      expect(view.getByTestId('input-card-stepper-value').props.children).toBe('1')
+    })
   })
 
   // 가운데 있던 가격 입력 시트를 걷었다. 누르기가 넷에서 둘이 된다.
@@ -440,13 +513,13 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
     })
 
     expect(getByTestId('input-card-value')).toBeTruthy()
-    expect(getByText('판매 가격')).toBeTruthy()
+    expect(getByTestId('input-card-label').props.children[0]).toBe('루즈 컨트롤 머신 마크')
     expect(onClose).not.toHaveBeenCalled()
     // 시트는 살아 있다. 카드를 닫으면 고르던 자리로 돌아온다.
     expect(getByText('추가 완료 · 1개')).toBeTruthy()
   })
 
-  it('카드가 분배 인원을 함께 받는다. 씨앗은 그 보스의 기본 인원이다', async () => {
+  it('카드가 분배 인원을 함께 받는다. 씨앗은 그 보스의 기본 인원이고 수만 선다', async () => {
     const { result } = renderSheet({ pricing: PRICING })
     const { getByLabelText, getByTestId, getByText } = await result
 
@@ -458,7 +531,23 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
     })
 
     expect(getByText('분배 인원')).toBeTruthy()
-    expect(getByTestId('input-card-stepper-value').props.children).toBe('3인')
+    expect(getByTestId('input-card-stepper-value').props.children).toBe('3')
+  })
+
+  /** 머리가 그 아이템을 말한다. 판매 가격 이라는 말은 이미 누른 버튼이 했다. */
+  it('카드 머리는 아이템 이름이고 맥락 줄은 캐릭터 · 보스다', async () => {
+    const { result } = renderSheet({ pricing: PRICING })
+    const { getByLabelText, getByTestId, getByText } = await result
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크'))
+    })
+    await act(async () => {
+      fireEvent.press(getByText('가격 입력'))
+    })
+
+    expect(getByTestId('input-card-label').props.children[0]).toBe('루즈 컨트롤 머신 마크')
+    expect(getByTestId('input-card-context').props.children).toBe('지내우시 · 스우')
   })
 
   it('카드에서 값을 매기면 그 기록에만 붙는다. 배지가 그 사실을 말한다', async () => {
@@ -539,7 +628,7 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
     it('둘 이상이면 확인 줄이 `외 n건` 으로 센다', async () => {
       const { view } = await 둘찍기()
 
-      expect(view.getByText(/에스텔라 이어링 외 1건 기록됨/)).toBeTruthy()
+      expect(view.getByText('거대한 공포 외 1건이 선택되었습니다')).toBeTruthy()
     })
 
     it('저장하면 다음 미입력 건의 카드가 이어 선다', async () => {
@@ -549,7 +638,7 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
         fireEvent.press(view.getByText('가격 입력'))
       })
       // 값을 안 매긴 첫 건이 먼저다. 찍은 차례가 곧 그 차례다.
-      expect(view.getByTestId('input-card-context').props.children).toMatch(/거대한 공포/)
+      expect(view.getByTestId('input-card-label').props.children[0]).toBe('거대한 공포')
       expect(view.getByTestId('input-card-next')).toBeTruthy()
 
       await act(async () => {
@@ -559,7 +648,7 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
         fireEvent.press(view.getByTestId('input-card-confirm'))
       })
 
-      expect(view.getByTestId('input-card-context').props.children).toMatch(/에스텔라 이어링/)
+      expect(view.getByTestId('input-card-label').props.children[0]).toBe('에스텔라 이어링')
     })
 
     it('마지막 건을 저장하면 카드가 닫힌다', async () => {
@@ -602,7 +691,7 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
         fireEvent.press(view.getByTestId('input-card-next'))
       })
 
-      expect(view.getByTestId('input-card-context').props.children).toMatch(/에스텔라 이어링/)
+      expect(view.getByTestId('input-card-label').props.children[0]).toBe('에스텔라 이어링')
 
       await act(async () => {
         fireEvent.press(view.getByTestId('input-card-close'))

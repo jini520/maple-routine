@@ -9,6 +9,7 @@ import {
   getPeriodStartUtcMs,
   groupDropRecordsByPeriod,
   objectParticle,
+  subjectParticle,
   summarizeValuableDrought,
   valuableDroughtHeadlineCount,
   WORD_JOINER,
@@ -272,6 +273,23 @@ describe('summarizeValuableDrought', () => {
 
   it('기록이 아예 없으면 null', () => {
     expect(summarizeValuableDrought([], now)).toBeNull()
+  })
+})
+
+describe('subjectParticle', () => {
+  it('받침이 있으면 "이", 없으면 "가"', () => {
+    expect(subjectParticle('가디언 엔젤링')).toBe('이') // 링. 받침 ㅇ
+    expect(subjectParticle('루즈 컨트롤 머신 마크')).toBe('가') // 크. 받침 없음
+    expect(subjectParticle('창세의 뱃지')).toBe('가') // 지. 받침 없음
+  })
+
+  it('목적격과 같은 자리를 본다. 마지막 한글 음절이다', () => {
+    expect(subjectParticle('익셉셔널 해머(벨트)')).toBe('가')
+    expect(subjectParticle('익셉셔널 해머(눈장식)')).toBe('이')
+  })
+
+  it('한글이 없으면 "이"로 둔다', () => {
+    expect(subjectParticle('MVP')).toBe('이')
   })
 })
 
