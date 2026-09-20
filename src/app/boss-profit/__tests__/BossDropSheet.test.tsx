@@ -839,6 +839,45 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
   })
 })
 
+describe('BossDropSheet: 타일의 표식', () => {
+  /**
+   * **고른 것에 체크를 안 단다**(사용자 지정). 테두리와 바탕이 이미 그 말을 한다. 표식이 둘이면
+   * 우상단이 늘 차 있어, 값을 매겼다는 표식이 설 자리가 안 보인다.
+   */
+  it('고르기만 하면 표식이 안 붙는다', async () => {
+    const { result } = renderSheet({ pricing: PRICING })
+    const { getByLabelText, queryByText, queryByLabelText } = await result
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크'))
+    })
+
+    expect(queryByText('✓')).toBeNull()
+    expect(queryByLabelText('가격 입력됨')).toBeNull()
+  })
+
+  it('값을 매긴 타일에만 메소 주머니가 붙는다', async () => {
+    const { result } = renderSheet({
+      pricing: PRICING,
+      initialDrops: [
+        {
+          category: 'equipment',
+          itemKey: 'loose_control_machine_mark',
+          itemName: '루즈 컨트롤 머신 마크',
+          slot: '얼굴장식',
+          quantity: 1,
+          priceState: 'entered',
+          priceMeso: 100,
+          priceShare: 1,
+        },
+      ],
+    })
+    const { getByLabelText } = await result
+
+    expect(getByLabelText('가격 입력됨').props.source).toBeTruthy()
+  })
+})
+
 describe('BossDropSheet: 타일 배치', () => {
   /**
    * 계열마다 **한 줄**이다. 4열로 접히던 시절에는 소비가 다섯을 넘으면 두 줄이 되어, 시트 높이가

@@ -35,7 +35,6 @@ import {
   FlaskConicalIcon,
   PackageOpenIcon,
   PinIcon,
-  ProfitIcon,
   SwordIcon,
   Switch,
   Text,
@@ -79,6 +78,9 @@ interface BossDropSheetProps {
    */
   pricing?: { defaultShare: number; maxShare: number; characterName: string }
 }
+
+/** 값을 매긴 타일의 표식. 모듈에서 한 번만 찾는다. 타일마다 찾을 값이 아니다. */
+const mesoPouch = getItemIconUrlByFile('meso_pouch.webp')
 
 /** 한 연쇄 안에서 매긴 값. 상태가 갈아 끼워져도 이전으로 돌아가면 이 값이 보인다. */
 interface PriceEdit {
@@ -455,23 +457,26 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                                   on ? 'border-primary bg-primary-tint' : 'border-border bg-surface'
                                 } ${box ? 'border-dashed' : ''}`}
                               >
-                                {on && (
-                                  <View className="absolute right-1 top-1 h-4 w-4 items-center justify-center rounded-full bg-primary">
-                                    <Text className="text-10 text-on-primary">✓</Text>
-                                  </View>
-                                )}
-                                {/* 가격이 입력된 타일에만 수익 배지가 붙는다. 자리는 좌상단.
-                                    우상단은 선택 체크가 이미 쓴다. 크기·모양을 그 체크와 맞춰
-                                    두 배지가 한 쌍으로 읽힌다. 스킵은 기록된 가격이 아니므로
-                                    표식이 없다. 그 구분은 가격 기록 화면이 맡는다. */}
-                                {(boxDrop ?? normalDrop)?.priceState === 'entered' && (
-                                  <View
+                                {/*
+                                  **고른 것에는 표식을 안 단다**(사용자 지정). 테두리와 바탕이
+                                  이미 그 말을 한다. 체크까지 달면 우상단이 늘 차 있어, 값을
+                                  매겼다는 표식이 설 자리가 안 보인다.
+
+                                  값을 매긴 타일에만 **메소 주머니**가 우상단에 붙는다. 알약에
+                                  싸지 않는다. 그 그림이 곧 메소이고, 테두리를 두르면 선택
+                                  체크가 있던 시절과 같은 얼굴이 된다.
+
+                                  스킵은 기록된 가격이 아니므로 표식이 없다. 그 구분은 아이템
+                                  가격 입력 화면이 맡는다.
+                                */}
+                                {(boxDrop ?? normalDrop)?.priceState === 'entered' && mesoPouch !== null && (
+                                  <Image
+                                    source={mesoPouch}
+                                    resizeMode="contain"
                                     role="img"
                                     aria-label="가격 입력됨"
-                                    className="absolute left-1 top-1 h-4 w-4 items-center justify-center rounded-full bg-primary"
-                                  >
-                                    <ProfitIcon className="h-2.5 w-2.5 text-on-primary" strokeWidth={2.5} aria-hidden />
-                                  </View>
+                                    className="absolute right-1 top-1 h-4 w-4"
+                                  />
                                 )}
                                 <ItemThumb itemKey={thumbKey} level={boxDrop?.ringLevel} />
                                 <View className="h-8 w-full items-center justify-center">
