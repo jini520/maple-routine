@@ -81,11 +81,11 @@ interface BossDropSheetProps {
 function ItemThumb(props: { itemKey: string | null; level?: number }): React.JSX.Element {
   const url = dropItemIconOf(props.itemKey)
   return (
-    <View className="h-8 w-8">
+    <View className="h-9 w-9">
       {url !== null ? (
-        <Image source={url} resizeMode="contain" className="h-8 w-8" />
+        <Image source={url} resizeMode="contain" className="h-9 w-9" />
       ) : (
-        <View className="h-8 w-8 rounded-lg bg-surface-2" aria-hidden />
+        <View className="h-9 w-9 rounded-lg bg-surface-2" aria-hidden />
       )}
       {props.level !== undefined && (
         <View className="absolute -bottom-1 -right-1 rounded-full bg-primary px-1 py-px">
@@ -425,7 +425,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                                 aria-label={displayName}
                                 aria-selected={on}
                                 onPress={() => handleTileTap(candidate)}
-                                className={`w-16 items-center gap-1 rounded-xl border p-1.5 pt-3.5 ${
+                                className={`w-[72px] items-center gap-1 rounded-xl border p-2 pt-4 ${
                                   on ? 'border-primary bg-primary-tint' : 'border-border bg-surface'
                                 } ${box ? 'border-dashed' : ''}`}
                               >
@@ -448,8 +448,8 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                                   </View>
                                 )}
                                 <ItemThumb itemKey={thumbKey} level={boxDrop?.ringLevel} />
-                                <View className="h-7 w-full items-center justify-center">
-                                  <Text numberOfLines={2} className="text-center text-9 leading-tight text-text">
+                                <View className="h-8 w-full items-center justify-center">
+                                  <Text numberOfLines={2} className="text-center text-10 leading-tight text-text">
                                     {displayName}
                                   </Text>
                                 </View>

@@ -701,11 +701,11 @@ describe('BossDropSheet: 타일 배치', () => {
     expect(getByTestId('drop-tile-row-consumable').props.horizontal).toBe(true)
   })
 
-  it('타일은 64 폭으로 못박힌다. 굴러야 하므로 비율로 둘 수 없다', async () => {
+  it('타일은 72 폭으로 못박힌다. 굴러야 하므로 비율로 둘 수 없다', async () => {
     const { result } = renderSheet()
     const { getByLabelText } = await result
 
-    expect(flattenStyle(getByLabelText('루즈 컨트롤 머신 마크').props.style)).toMatchObject({ width: 64 })
+    expect(flattenStyle(getByLabelText('루즈 컨트롤 머신 마크').props.style)).toMatchObject({ width: 72 })
   })
 })
 
