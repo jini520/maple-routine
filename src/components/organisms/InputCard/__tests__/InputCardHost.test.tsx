@@ -91,4 +91,74 @@ describe('InputCardHost', () => {
     expect(view.getByTestId('input-card-value').props.value).toBe('84')
     expect(view.getByText('개')).toBeTruthy()
   })
+
+  /**
+   * 드롭 판매가가 아이템을 잇따라 받는다. 한 건을 끝내고 다음 건의 카드를 여는데, 앞 건에 치던
+   * 값이 남으면 안 친 값이 저장된다.
+   */
+  describe('잇따라 여는 것', () => {
+    async function 이어열기(second: Record<string, unknown> = {}) {
+      const view = await renderOverlay(<></>)
+      await act(async () => {
+        openInputCard({
+          label: '창세의 뱃지',
+          value: '',
+          onConfirm: () =>
+            openInputCard({
+              label: '루즈 컨트롤 머신 마크',
+              value: '',
+              onConfirm: jest.fn(),
+              ...second,
+            }),
+        })
+      })
+      return view
+    }
+
+    it('확인 안에서 연 카드가 그대로 선다', async () => {
+      const view = await 이어열기()
+
+      await act(async () => {
+        fireEvent.press(view.getByTestId('input-card-confirm'))
+      })
+
+      expect(view.getByText('루즈 컨트롤 머신 마크')).toBeTruthy()
+    })
+
+    it('앞 카드에 친 값을 물고 오지 않는다', async () => {
+      const view = await 이어열기()
+
+      await act(async () => {
+        fireEvent.changeText(view.getByTestId('input-card-value'), '3250000000')
+      })
+      await act(async () => {
+        fireEvent.press(view.getByTestId('input-card-confirm'))
+      })
+
+      expect(view.getByTestId('input-card-value').props.value).toBe('')
+    })
+
+    it('스테퍼도 다음 카드의 씨앗으로 다시 심는다', async () => {
+      const 스테퍼 = { label: '분배 인원', value: 1, min: 1, max: 6, suffix: '인' }
+      const view = await renderOverlay(<></>)
+      await act(async () => {
+        openInputCard({
+          label: '창세의 뱃지',
+          value: '',
+          stepper: 스테퍼,
+          onConfirm: () =>
+            openInputCard({ label: '루즈 컨트롤 머신 마크', value: '', stepper: 스테퍼, onConfirm: jest.fn() }),
+        })
+      })
+
+      await act(async () => {
+        fireEvent.press(view.getByTestId('input-card-stepper-up'))
+      })
+      await act(async () => {
+        fireEvent.press(view.getByTestId('input-card-confirm'))
+      })
+
+      expect(view.getByTestId('input-card-stepper-value').props.children).toBe('1인')
+    })
+  })
 })

@@ -198,4 +198,90 @@ describe('InputCard', () => {
 
     expect(view.getByText('메소')).toBeTruthy()
   })
+
+  /**
+   * 드롭 판매가의 모양. 가격 입력 시트가 없어지면서 그 시트가 들던 분배 인원과 기록 안함이
+   * 카드로 왔다. 부품은 도메인 낱말을 모르고 라벨은 호출부가 준다.
+   */
+  describe('한 아이템의 한 기록을 받는 모양', () => {
+    const 스테퍼 = { label: '분배 인원', value: 1, min: 1, max: 6, suffix: '인' }
+
+    it('스테퍼를 넘기면 값 칸 아래에 그 라벨로 선다. 접미사는 호출부가 준다', async () => {
+      const { view } = await 그리기({ stepper: 스테퍼 })
+
+      expect(view.getByText('분배 인원')).toBeTruthy()
+      expect(view.getByTestId('input-card-stepper-value').props.children).toBe('1인')
+    })
+
+    /** 친 값과 같이 **카드가 든다**. 그래야 확인 한 번에 둘이 함께 나간다. */
+    it('스테퍼 값은 카드가 들고 확인이 친 값과 함께 내보낸다', async () => {
+      const { view, onConfirm } = await 그리기({ stepper: 스테퍼 })
+
+      await 누르기(view, 'input-card-stepper-up')
+      expect(view.getByTestId('input-card-stepper-value').props.children).toBe('2인')
+
+      await 치기(view, '3250000000')
+      await 누르기(view, 'input-card-confirm')
+
+      expect(onConfirm).toHaveBeenCalledWith('3250000000', 2)
+    })
+
+    it('하한에서는 더 못 내린다', async () => {
+      const { view } = await 그리기({ stepper: 스테퍼 })
+
+      await 누르기(view, 'input-card-stepper-down')
+      expect(view.getByTestId('input-card-stepper-value').props.children).toBe('1인')
+    })
+
+    it('상한에서는 더 못 올린다', async () => {
+      const { view } = await 그리기({ stepper: { ...스테퍼, value: 6 } })
+
+      await 누르기(view, 'input-card-stepper-up')
+      expect(view.getByTestId('input-card-stepper-value').props.children).toBe('6인')
+    })
+
+    it('확인 라벨을 호출부가 바꾼다', async () => {
+      const { view } = await 그리기({ confirmLabel: '저장' })
+
+      expect(view.getByText('저장')).toBeTruthy()
+      expect(view.queryByText('확인')).toBeNull()
+    })
+
+    /** 셋 다 지금 아이템을 처리하고 넘어가는 길이라 한 줄에 선다. */
+    it('곁들이 버튼 둘을 확인과 한 줄에 세운다', async () => {
+      const onExclude = jest.fn()
+      const onNext = jest.fn()
+      const { view } = await 그리기({
+        confirmLabel: '저장',
+        exclude: { label: '기록 안함', onPress: onExclude },
+        next: { label: '다음 (1/2)', onPress: onNext },
+      })
+
+      await 누르기(view, 'input-card-exclude')
+      expect(onExclude).toHaveBeenCalled()
+
+      await 누르기(view, 'input-card-next')
+      expect(onNext).toHaveBeenCalled()
+    })
+
+    /** 다음은 아무것도 안 쓰고 넘긴다. 친 값이 나가면 그 말이 거짓이 된다. */
+    it('다음은 친 값을 안 내보낸다', async () => {
+      const onNext = jest.fn()
+      const { view, onConfirm } = await 그리기({ next: { label: '다음', onPress: onNext } })
+
+      await 치기(view, '3250000000')
+      await 누르기(view, 'input-card-next')
+
+      expect(onNext).toHaveBeenCalled()
+      expect(onConfirm).not.toHaveBeenCalled()
+    })
+
+    it('안 넘기면 곁들이 버튼도 스테퍼도 안 선다', async () => {
+      const { view } = await 그리기()
+
+      expect(view.queryByTestId('input-card-stepper-value')).toBeNull()
+      expect(view.queryByTestId('input-card-exclude')).toBeNull()
+      expect(view.queryByTestId('input-card-next')).toBeNull()
+    })
+  })
 })

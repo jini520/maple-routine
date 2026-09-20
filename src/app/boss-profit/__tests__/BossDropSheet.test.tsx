@@ -6,9 +6,9 @@
 // **시트 안에서 무엇을 고르게 하는가**만 본다.
 //
 // 옮기지 않은 것 셋. ① 하단 바의 안전영역 패딩(**껍데기가
-// 준다**) ② 가격 키패드 **내부**(`DropPricePad.test.tsx` 가 갖는다. 여기서는 그 자리로 들어갔다
-// 나오는 흐름과 값이 그 기록 하나에 붙는지만 본다) ③ 난이도 뱃지의 흐림 정도(값이 아니라 그림이라
-// 육안 대조 목록).
+// 준다**) ② 입력 카드 **내부**(`organisms/InputCard` 의 테스트가 갖는다. 여기서는 카드가 그
+// 아이템을 들고 열리는지와 값이 그 기록 하나에 붙는지만 본다) ③ 난이도 뱃지의 흐림 정도(값이
+// 아니라 그림이라 육안 대조 목록).
 import type { ReactNode } from 'react'
 import { act, fireEvent } from '@testing-library/react-native'
 
@@ -58,7 +58,7 @@ import { useDropEffectStore } from '../../../features/drop-effect/store'
 
 import { installMemoryPreferences } from '../../../navigation/__tests__/memory-preferences'
 
-import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { BossDropSheet } from '../BossDropSheet'
 
 // 연출 토글은 전역 스토어라 케이스 사이 오염을 막기 위해 매번 기본값(연출 표시)으로 되돌린다.
@@ -423,14 +423,14 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
     await act(async () => {
       fireEvent.press(getByLabelText('에스텔라 이어링'))
     })
-    expect(getByText(/에스텔라 이어링 기록됨/)).toBeTruthy()
+    // 둘째를 찍으면 줄이 **외 1건** 으로 센다.
+    expect(getByText(/에스텔라 이어링 외 1건 기록됨/)).toBeTruthy()
   })
 
-  // 자리표시자를 `DropPricePadContent` 로 갈아 끼웠다. 지키는 계약은 그대로다.
-  // **시트가 살아서 하던 작업을 잇는다**.
-  it('"가격 입력" 은 시트를 닫지 않고 들어갔다가 그리드로 돌아온다', async () => {
+  // 가운데 있던 가격 입력 시트를 걷었다. 누르기가 넷에서 둘이 된다.
+  it('"가격 입력" 은 시트를 안 닫고 카드를 곧장 연다', async () => {
     const { result, onClose } = renderSheet({ pricing: PRICING })
-    const { getByLabelText, getByTestId, getByText, queryByTestId } = await result
+    const { getByLabelText, getByTestId, getByText } = await result
 
     await act(async () => {
       fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크'))
@@ -439,22 +439,16 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
       fireEvent.press(getByText('가격 입력'))
     })
 
-    expect(getByTestId('drop-price-amount')).toBeTruthy()
+    expect(getByTestId('input-card-value')).toBeTruthy()
+    expect(getByText('판매 가격')).toBeTruthy()
     expect(onClose).not.toHaveBeenCalled()
-
-    await act(async () => {
-      fireEvent.press(getByLabelText('뒤로'))
-    })
-
-    expect(queryByTestId('drop-price-amount')).toBeNull()
+    // 시트는 살아 있다. 카드를 닫으면 고르던 자리로 돌아온다.
     expect(getByText('추가 완료 · 1개')).toBeTruthy()
   })
 
-  // 드릴다운은 **순차 모드가 아니다**. 방금 기록한 한 건이라 뒤로가 곧 스킵이고, 그래서 그 버튼을
-  // 늘리지 않는다. 저장 버튼 문구도 `다음` 이 아니라 `저장` 이다.
-  it('드릴다운에는 스킵이 없고 저장 버튼은 "저장" 이다', async () => {
+  it('카드가 분배 인원을 함께 받는다. 씨앗은 그 보스의 기본 인원이다', async () => {
     const { result } = renderSheet({ pricing: PRICING })
-    const { getByLabelText, getByText, queryByText } = await result
+    const { getByLabelText, getByTestId, getByText } = await result
 
     await act(async () => {
       fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크'))
@@ -463,11 +457,11 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
       fireEvent.press(getByText('가격 입력'))
     })
 
-    expect(queryByText('스킵')).toBeNull()
-    expect(getByText('저장')).toBeTruthy()
+    expect(getByText('분배 인원')).toBeTruthy()
+    expect(getByTestId('input-card-stepper-value').props.children).toBe('3인')
   })
 
-  it('키패드에서 값을 매기면 그 기록에만 붙고 그리드로 돌아온다. 배지가 그 사실을 말한다', async () => {
+  it('카드에서 값을 매기면 그 기록에만 붙는다. 배지가 그 사실을 말한다', async () => {
     const { result, onSave } = renderSheet({ pricing: PRICING })
     const { getByLabelText, getAllByLabelText, getByTestId, getByText } = await result
 
@@ -478,16 +472,13 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
       fireEvent.press(getByText('가격 입력'))
     })
     await act(async () => {
-      fireEvent.press(getByTestId('drop-price-amount'))
-    })
-    await act(async () => {
       fireEvent.changeText(getByTestId('input-card-value'), '100')
     })
     await act(async () => {
-      fireEvent.press(getByTestId('input-card-confirm'))
+      fireEvent.press(getByTestId('input-card-stepper-up'))
     })
     await act(async () => {
-      fireEvent.press(getByText('저장'))
+      fireEvent.press(getByTestId('input-card-confirm'))
     })
 
     expect(getAllByLabelText('가격 입력됨')).toHaveLength(1)
@@ -501,9 +492,145 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
         itemName: '루즈 컨트롤 머신 마크',
         priceState: 'entered',
         priceMeso: 100,
-        priceShare: PRICING.defaultShare,
+        priceShare: 4,
       }),
     ])
+  })
+
+  it('카드의 기록 안함은 값 없이 그 결정만 쓴다', async () => {
+    const { result, onSave } = renderSheet({ pricing: PRICING })
+    const { getByLabelText, getByTestId, getByText, queryByLabelText } = await result
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크'))
+    })
+    await act(async () => {
+      fireEvent.press(getByText('가격 입력'))
+    })
+    await act(async () => {
+      fireEvent.press(getByTestId('input-card-exclude'))
+    })
+
+    // 기록된 가격이 아니라 표식이 없다.
+    expect(queryByLabelText('가격 입력됨')).toBeNull()
+
+    await act(async () => {
+      fireEvent.press(getByText('추가 완료 · 1개'))
+    })
+    expect(onSave).toHaveBeenCalledWith([
+      expect.objectContaining({ itemKey: 'loose_control_machine_mark', priceState: 'excluded' }),
+    ])
+  })
+
+  describe('여러 건을 이어 받는다', () => {
+    /** 장비 둘이 서는 보스. 둘을 찍어 놓고 연쇄를 본다. */
+    async function 둘찍기() {
+      const { result, onSave } = renderSheet({ bossKey: 'gloom', difficulty: 'chaos', pricing: PRICING })
+      const view = await result
+      await act(async () => {
+        fireEvent.press(view.getByLabelText('거대한 공포'))
+      })
+      await act(async () => {
+        fireEvent.press(view.getByLabelText('에스텔라 이어링'))
+      })
+      return { view, onSave }
+    }
+
+    it('둘 이상이면 확인 줄이 `외 n건` 으로 센다', async () => {
+      const { view } = await 둘찍기()
+
+      expect(view.getByText(/에스텔라 이어링 외 1건 기록됨/)).toBeTruthy()
+    })
+
+    it('저장하면 다음 미입력 건의 카드가 이어 선다', async () => {
+      const { view } = await 둘찍기()
+
+      await act(async () => {
+        fireEvent.press(view.getByText('가격 입력'))
+      })
+      // 값을 안 매긴 첫 건이 먼저다. 찍은 차례가 곧 그 차례다.
+      expect(view.getByTestId('input-card-context').props.children).toMatch(/거대한 공포/)
+      expect(view.getByTestId('input-card-next')).toBeTruthy()
+
+      await act(async () => {
+        fireEvent.changeText(view.getByTestId('input-card-value'), '100')
+      })
+      await act(async () => {
+        fireEvent.press(view.getByTestId('input-card-confirm'))
+      })
+
+      expect(view.getByTestId('input-card-context').props.children).toMatch(/에스텔라 이어링/)
+    })
+
+    it('마지막 건을 저장하면 카드가 닫힌다', async () => {
+      const { view, onSave } = await 둘찍기()
+
+      await act(async () => {
+        fireEvent.press(view.getByText('가격 입력'))
+      })
+      for (const meso of ['100', '200']) {
+        await act(async () => {
+          fireEvent.changeText(view.getByTestId('input-card-value'), meso)
+        })
+        await act(async () => {
+          fireEvent.press(view.getByTestId('input-card-confirm'))
+        })
+      }
+
+      expect(view.queryByTestId('input-card-value')).toBeNull()
+
+      await act(async () => {
+        fireEvent.press(view.getByText('추가 완료 · 2개'))
+      })
+      expect(onSave).toHaveBeenCalledWith([
+        expect.objectContaining({ itemName: '거대한 공포', priceMeso: 100 }),
+        expect.objectContaining({ itemName: '에스텔라 이어링', priceMeso: 200 }),
+      ])
+    })
+
+    /** 다음은 아무것도 안 쓴다. 친 값도 버린다(카드를 ✕ 로 닫는 것과 같은 규칙). */
+    it('다음은 지금 건을 안 쓰고 넘긴다', async () => {
+      const { view, onSave } = await 둘찍기()
+
+      await act(async () => {
+        fireEvent.press(view.getByText('가격 입력'))
+      })
+      await act(async () => {
+        fireEvent.changeText(view.getByTestId('input-card-value'), '100')
+      })
+      await act(async () => {
+        fireEvent.press(view.getByTestId('input-card-next'))
+      })
+
+      expect(view.getByTestId('input-card-context').props.children).toMatch(/에스텔라 이어링/)
+
+      await act(async () => {
+        fireEvent.press(view.getByTestId('input-card-close'))
+      })
+      await act(async () => {
+        fireEvent.press(view.getByText('추가 완료 · 2개'))
+      })
+      // 값도 결정도 안 붙었다. 둘 다 미입력으로 남는다.
+      const saved = onSave.mock.calls[0]?.[0] as { itemName: string; priceState?: string }[]
+      expect(saved.map((drop) => [drop.itemName, drop.priceState])).toEqual([
+        ['거대한 공포', undefined],
+        ['에스텔라 이어링', undefined],
+      ])
+    })
+
+    it('하나뿐이면 다음 버튼이 안 선다', async () => {
+      const { result } = renderSheet({ pricing: PRICING })
+      const view = await result
+
+      await act(async () => {
+        fireEvent.press(view.getByLabelText('루즈 컨트롤 머신 마크'))
+      })
+      await act(async () => {
+        fireEvent.press(view.getByText('가격 입력'))
+      })
+
+      expect(view.queryByTestId('input-card-next')).toBeNull()
+    })
   })
 
   it('pricing 을 넘기지 않으면 물음도 배지도 뜨지 않는다. 가격 개념이 없는 호출부 보호', async () => {
@@ -557,6 +684,41 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
     const { queryByLabelText } = await result
 
     expect(queryByLabelText('가격 입력됨')).toBeNull()
+  })
+})
+
+describe('BossDropSheet: 타일 배치', () => {
+  /**
+   * 계열마다 **한 줄**이다. 4열로 접히던 시절에는 소비가 다섯을 넘으면 두 줄이 되어, 시트 높이가
+   * 계열마다 몇 개냐에 달렸다.
+   */
+  it('계열마다 가로로 구르는 줄 하나를 둔다', async () => {
+    const { result } = renderSheet()
+    const { getByTestId } = await result
+
+    const 장비 = getByTestId('drop-tile-row-equipment')
+    expect(장비.props.horizontal).toBe(true)
+    expect(getByTestId('drop-tile-row-consumable').props.horizontal).toBe(true)
+  })
+
+  it('타일은 64 폭으로 못박힌다. 굴러야 하므로 비율로 둘 수 없다', async () => {
+    const { result } = renderSheet()
+    const { getByLabelText } = await result
+
+    expect(flattenStyle(getByLabelText('루즈 컨트롤 머신 마크').props.style)).toMatchObject({ width: 64 })
+  })
+})
+
+describe('BossDropSheet: 고정 영역', () => {
+  /** 배지가 자기 줄을 먹던 것을 합쳤다. 상자 안쪽 여백은 아이템 기준 위아래가 같다. */
+  it('난이도 배지가 아이템과 같은 줄에 선다', async () => {
+    const { result } = renderSheet({ bossKey: 'lotus', difficulty: 'hard' })
+    const { getByTestId } = await result
+
+    const 줄 = getByTestId('fixed-drop-row-hard')
+    const style = flattenStyle(줄.props.style)
+    expect(style).toMatchObject({ flexDirection: 'row' })
+    expect(style.paddingTop).toBe(style.paddingBottom)
   })
 })
 

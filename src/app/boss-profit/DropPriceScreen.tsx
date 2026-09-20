@@ -62,7 +62,9 @@ import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { CharacterAvatar } from '../../components/molecules/CharacterAvatar/CharacterAvatar'
 import { PORTRAIT_COMPACT } from '../../components/organisms/CharacterPortrait/portrait-metrics'
-import { DropPricePad } from './DropPricePad'
+import { closeInputCard, openInputCard } from '../../features/input-card/store'
+import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
+import { mesoTextOf, mesoValueOf } from '../../components/organisms/MesoPad/meso-pad'
 
 function characterTotal(group: DropPriceGroup): number {
   return group.entries.reduce((sum, entry) => sum + dropPayoutMeso(entry.drop), 0)
@@ -173,9 +175,6 @@ export function DropPriceScreen(): React.JSX.Element {
   const [week, setWeek] = useState(
     () => params?.periodKey ?? getCurrentBossProfitPeriod('weekly', now).periodKey,
   )
-  const [pricing, setPricing] = useState<DropPriceEntry | null>(null)
-  // 순차 모드에서 남은 미입력 건. 비어 있으면 단건 편집이다.
-  const [queue, setQueue] = useState<DropPriceEntry[]>([])
 
   useEffect(() => {
     void load(week)
@@ -195,25 +194,70 @@ export function DropPriceScreen(): React.JSX.Element {
    */
   const readThisPeriod = status === 'ready' && readPeriodKey === week
 
-  // 미입력만 골라 순차로 돈다. 첫 건을 열고 나머지는 큐에 쌓아 저장·스킵마다 하나씩 꺼낸다.
+  /** 미입력만 골라 순차로 돈다. 첫 건의 카드를 열고 나머지는 그 카드가 잇는다. */
   function startSequence(): void {
-    const [first, ...rest] = allEntries.filter((entry) => entry.drop.priceState === undefined)
-    if (first === undefined) return
-    setQueue(rest)
-    setPricing(first)
+    const queue = allEntries.filter((entry) => entry.drop.priceState === undefined)
+    openPriceCard(queue, queue.length)
   }
 
-  /** 저장·스킵 뒤 다음 행동. 순차 모드면 다음 건, 아니면 닫는다. */
-  function advance(): void {
-    const [next, ...rest] = queue
-    setQueue(rest)
-    setPricing(next ?? null)
+  /**
+   * 가격 카드를 연다. `queue` 는 **지금 것을 포함한 남은 건**이고 `total` 은 연쇄가 시작할 때의
+   * 개수다. 버튼의 `다음 (2/3)` 이 그 둘로 선다.
+   *
+   * 남은 것이 없으면 닫는다. 확인은 카드가 스스로 닫지만 곁들이 버튼은 안 닫아서, 마지막 건을
+   * 기록 안함으로 끝내면 빈 카드가 남는다.
+   */
+  function openPriceCard(queue: DropPriceEntry[], total: number): void {
+    const [target, ...rest] = queue
+    if (target === undefined) {
+      closeInputCard()
+      return
+    }
+    const characterName = groups.find((group) => group.ocid === target.ocid)?.characterName ?? ''
+    const 이름 = dropItemNameOf(target.drop.itemKey, target.drop.itemName)
+    openInputCard({
+      label: '판매 가격',
+      context: `${이름} · ${target.bossName} · ${characterName}`,
+      icon: 'meso',
+      unit: '메소',
+      reading: true,
+      chips: MESO_QUICK_ADDS,
+      value: mesoTextOf(target.drop.priceMeso ?? 0),
+      stepper: {
+        label: '분배 인원',
+        value: target.drop.priceShare ?? target.partySize,
+        min: 1,
+        max: getMaxPartySize(target.bossKey, target.difficulty),
+        suffix: '인',
+      },
+      confirmLabel: '저장',
+      exclude: {
+        label: '기록 안함',
+        onPress: () => void runWrite(() => excludePrice(target), rest, total),
+      },
+      // 아무것도 안 쓰고 넘긴다. 친 값도 버리는데 카드를 ✕ 로 닫는 것과 같은 규칙이다.
+      next:
+        rest.length > 0
+          ? { label: `다음 (${total - rest.length}/${total})`, onPress: () => openPriceCard(rest, total) }
+          : undefined,
+      onConfirm: (next, share) =>
+        void runWrite(
+          () => savePrice(target, mesoValueOf(next), share ?? target.partySize),
+          rest,
+          total,
+        ),
+    })
   }
 
-  async function runWrite(write: () => Promise<void>): Promise<void> {
+  /** 쓰고 나서 다음 건으로. 실패하면 **안 넘어간다**. 넘어가면 못 쓴 건을 지나친다. */
+  async function runWrite(
+    write: () => Promise<void>,
+    rest: DropPriceEntry[],
+    total: number,
+  ): Promise<void> {
     try {
       await write()
-      advance()
+      openPriceCard(rest, total)
     } catch {
       // 조용히 삼키면 저장된 줄 알고 화면을 떠난다(예외 원문 대신 토스트).
       useToastStore.getState().showError('가격을 저장하지 못했습니다')
@@ -375,7 +419,7 @@ export function DropPriceScreen(): React.JSX.Element {
                         key={entry.id}
                         entry={entry}
                         isLast={index === group.entries.length - 1}
-                        onSelect={() => setPricing(entry)}
+                        onSelect={() => openPriceCard([entry], 1)}
                       />
                     ))}
                   </View>
@@ -386,26 +430,6 @@ export function DropPriceScreen(): React.JSX.Element {
         </View>
       </ScreenScroll>
 
-      {/* 시트는 별도 네이티브 호스트에 떠서 갇힐 상자가 없으므로 형제로 둔다. */}
-      {pricing !== null && (
-        <DropPricePad
-          drop={pricing.drop}
-          bossName={pricing.bossName}
-          difficulty={pricing.difficulty}
-          characterName={groups.find((group) => group.ocid === pricing.ocid)?.characterName ?? ''}
-          defaultShare={pricing.partySize}
-          maxShare={getMaxPartySize(pricing.bossKey, pricing.difficulty)}
-          progress={queue.length > 0 ? { current: unpriced - queue.length, total: unpriced } : undefined}
-          onSave={(priceMeso, share) => void runWrite(() => savePrice(pricing, priceMeso, share))}
-          onExclude={() => void runWrite(() => excludePrice(pricing))}
-          // 스킵은 저장하지 않는다. 미입력에 그대로 두고 다음 건으로만 간다(정정).
-          onLater={queue.length > 0 ? advance : undefined}
-          onClose={() => {
-            setQueue([])
-            setPricing(null)
-          }}
-        />
-      )}
     </>
   )
 }

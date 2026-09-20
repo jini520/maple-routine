@@ -40,6 +40,70 @@ import { MAX_MESO, acceptMesoText, mesoTextOf, mesoValueOf } from '../MesoPad/me
 /** 머리에 서는 표식. 메소를 받는 칸은 주머니, 조각 개수는 조각이다. */
 export type InputCardIcon = 'meso' | 'fragment'
 
+/**
+ * 값 칸 아래 수 고르개. 라벨도 접미사도 호출부가 준다.
+ *
+ * `value` 는 **씨앗**이다. 그 뒤의 수는 카드가 들고, 확인이 친 값과 함께 내보낸다. 친 값과 같은
+ * 자리에 두는 것이 요점이다. 호출부가 들면 한 번 누를 때마다 카드를 다시 열어야 한다.
+ */
+export interface StepperSpec {
+  label: string
+  value: number
+  min: number
+  max: number
+  /** 수 뒤에 붙는 글자. `인` · `개`. 안 주면 수만 선다. */
+  suffix?: string
+}
+
+/**
+ * 수 고르개 한 줄. 알약 안에 `−` 값 `+` 다.
+ *
+ * 크기 22px 은 `PartySizeStepper` 의 두 크기(관리 행 24 · 모달 32) 중 어느 쪽도 아니다. 카드가
+ * 키보드 위 좁은 자리라 그보다 작다. 넷째 모양을 만들지 않으려고 그 molecule 로 접지 않는다.
+ */
+function StepperRow(props: StepperSpec & { value: number; onChange: (next: number) => void }): React.JSX.Element {
+  const atMin = props.value <= props.min
+  const atMax = props.value >= props.max
+  return (
+    <View className="mt-3 flex-row items-center justify-between gap-2.5">
+      <Text className="text-xs font-semibold text-text-muted">{props.label}</Text>
+      <View className="h-8 flex-row items-center gap-2.5 rounded-full border border-border px-1.5">
+        <Pressable
+          testID="input-card-stepper-down"
+          role="button"
+          onPress={() => props.onChange(props.value - 1)}
+          disabled={atMin}
+          aria-label={`${props.label} 감소`}
+          className={`h-[22px] w-[22px] items-center justify-center rounded-full bg-surface-2${
+            atMin ? ' opacity-40' : ''
+          }`}
+        >
+          <Text className="text-text">−</Text>
+        </Pressable>
+        <Text
+          testID="input-card-stepper-value"
+          className="min-w-[30px] text-center text-13 font-semibold text-text"
+          style={TABULAR_NUMS}
+        >
+          {`${props.value}${props.suffix ?? ''}`}
+        </Text>
+        <Pressable
+          testID="input-card-stepper-up"
+          role="button"
+          onPress={() => props.onChange(props.value + 1)}
+          disabled={atMax}
+          aria-label={`${props.label} 증가`}
+          className={`h-[22px] w-[22px] items-center justify-center rounded-full bg-surface-2${
+            atMax ? ' opacity-40' : ''
+          }`}
+        >
+          <Text className="text-text">+</Text>
+        </Pressable>
+      </View>
+    </View>
+  )
+}
+
 export interface InputCardProps {
   /** 칸 이름. 머리의 큰 글자. */
   label: string
@@ -65,8 +129,31 @@ export interface InputCardProps {
   text?: boolean
   /** 값에 더하는 눈금. 글자 칸에서는 무시된다. */
   chips?: readonly { label: string; value: number }[]
-  /** 확인. 친 글자를 그대로 준다. 정리는 받는 쪽이 한다. */
-  onConfirm: (next: string) => void
+  /**
+   * 값 칸 아래에 서는 **수 고르개 하나**. 넘기면 카드가 칸 둘을 받는 모양이 된다.
+   *
+   * 라벨은 호출부가 준다. 부품은 그 수가 무엇인지 모른다. 드롭 판매가가 `분배 인원` 으로 쓴다.
+   */
+  stepper?: StepperSpec
+  /** 확인 버튼의 글자. 기본은 `확인`. 값을 곧 저장하는 자리에서는 `저장` 이다. */
+  confirmLabel?: string
+  /**
+   * 확인 왼쪽에 서는 곁들이. 값을 안 쓰고 **다른 상태로 끝내는** 길이다. 드롭 판매가의
+   * `기록 안함` 이 쓴다.
+   */
+  exclude?: { label: string; onPress: () => void }
+  /**
+   * 확인 오른쪽에 서는 곁들이. **아무것도 안 쓰고** 다음으로 넘긴다. 친 값은 버려지는데,
+   * 확인 없이 닫으면 버린다는 규칙과 같다.
+   */
+  next?: { label: string; onPress: () => void }
+  /**
+   * 확인. 친 글자를 그대로 준다. 정리는 받는 쪽이 한다.
+   *
+   * 둘째 인자는 **스테퍼를 넘겼을 때만** 온다. 안 넘긴 카드는 인자 하나로 부른다. 없는 수를
+   * `0` 으로 채워 보내면 받는 쪽이 그것을 값으로 읽을 수 있다.
+   */
+  onConfirm: (next: string, stepper?: number) => void
   /**
    * 버리고 닫기. **닫기 버튼(✕)과 안드로이드 뒤로가기**가 부른다.
    *
@@ -90,6 +177,7 @@ function iconSourceOf(icon: InputCardIcon | undefined): ReturnType<typeof getIte
 
 export function InputCard(props: InputCardProps): React.JSX.Element {
   const [draft, setDraft] = useState(props.value)
+  const [step, setStep] = useState(props.stepper?.value ?? 0)
 
   const isText = props.text === true
   const chips = isText ? [] : (props.chips ?? [])
@@ -162,7 +250,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                 )}
               </Text>
               {props.context !== undefined && (
-                <Text numberOfLines={1} className="text-11 text-text-muted">
+                <Text testID="input-card-context" numberOfLines={1} className="text-11 text-text-muted">
                   {props.context}
                 </Text>
               )}
@@ -243,14 +331,55 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
             </View>
           )}
 
-          <Pressable
-            testID="input-card-confirm"
-            role="button"
-            onPress={() => props.onConfirm(draft)}
-            className="mt-3 h-11 items-center justify-center rounded-xl bg-primary"
-          >
-            <Text className="text-sm font-bold text-on-primary">확인</Text>
-          </Pressable>
+          {props.stepper !== undefined && (
+            <StepperRow
+              {...props.stepper}
+              value={step}
+              onChange={(next) =>
+                setStep(Math.min(props.stepper?.max ?? next, Math.max(props.stepper?.min ?? next, next)))
+              }
+            />
+          )}
+
+          {/*
+            버튼 줄. 곁들이가 없으면 확인 혼자 줄을 채운다(`flex-1`). 셋이 서면 확인이 가장
+            넓다. 셋 다 지금 것을 처리하고 끝내는 길이라 층을 안 나누고 한 줄에 둔다.
+          */}
+          <View className="mt-3 h-11 flex-row items-center gap-2">
+            {props.exclude !== undefined && (
+              <Pressable
+                testID="input-card-exclude"
+                role="button"
+                onPress={props.exclude.onPress}
+                className="h-11 shrink-0 justify-center rounded-xl border border-border px-3.5 active:bg-surface-2"
+              >
+                <Text className="text-xs font-semibold text-text-muted">{props.exclude.label}</Text>
+              </Pressable>
+            )}
+            <Pressable
+              testID="input-card-confirm"
+              role="button"
+              onPress={() => {
+                if (props.stepper === undefined) props.onConfirm(draft)
+                else props.onConfirm(draft, step)
+              }}
+              className="h-11 flex-1 items-center justify-center rounded-xl bg-primary"
+            >
+              <Text className="text-sm font-bold text-on-primary">{props.confirmLabel ?? '확인'}</Text>
+            </Pressable>
+            {props.next !== undefined && (
+              <Pressable
+                testID="input-card-next"
+                role="button"
+                onPress={props.next.onPress}
+                className="h-11 shrink-0 justify-center rounded-xl border border-border px-3.5 active:bg-surface-2"
+              >
+                <Text className="text-xs font-semibold text-text-muted" style={TABULAR_NUMS}>
+                  {props.next.label}
+                </Text>
+              </Pressable>
+            )}
+          </View>
         </Pressable>
       </Animated.View>
     </View>

@@ -14,6 +14,7 @@ import { InputCardLayer } from './InputCardLayer'
 
 export function InputCardHost(): React.JSX.Element | null {
   const request = useInputCardStore((state) => state.request)
+  const seq = useInputCardStore((state) => state.seq)
   const close = useInputCardStore((state) => state.close)
 
   /**
@@ -34,11 +35,21 @@ export function InputCardHost(): React.JSX.Element | null {
 
   const { onConfirm, ...card } = request
   return (
+    /*
+      `key` 가 부탁마다 카드를 다시 세운다. 카드는 친 값과 스테퍼 수를 자기가 드는데, 그것을
+      씨앗에서 심는 일은 처음 설 때만 일어난다. 잇따라 열면 앞 아이템의 값이 그대로 남는다.
+
+      **닫기를 확인보다 먼저** 부른다. 확인 안에서 다음 카드를 여는 흐름(드롭 판매가)이 있어,
+      뒤에 닫으면 방금 연 카드를 곧바로 닫는다.
+    */
     <InputCardLayer
+      key={seq}
       {...card}
-      onConfirm={(next) => {
-        onConfirm(next)
+      onConfirm={(...given) => {
+        // 받은 그대로 넘긴다. 스테퍼를 안 넘긴 카드는 인자 하나로 부르는데, 여기서 둘로 펴면
+        // 그 카드의 받는 쪽이 없는 수를 보게 된다.
         close()
+        onConfirm(...given)
       }}
       onCancel={close}
     />
