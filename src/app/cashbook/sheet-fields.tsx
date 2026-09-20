@@ -6,16 +6,12 @@
  * 세 번째 스테퍼 모양을 만들지 않는 것이 여기 모아 둔 이유다. 시트마다 하나씩 두면 다음은
  * 셋이 된다.
  */
+import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import {
-  CheckIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  MinusIcon,
-  PlusIcon,
-  Text,
-} from '../../components/atoms'
+import { CheckIcon, MinusIcon, PlusIcon, Text } from '../../components/atoms'
+import { DateSelect } from '../../components/molecules/DateSelect/DateSelect'
+import { CalendarPopover } from '../../components/organisms/CalendarPopover/CalendarPopover'
 import { ChainSelect } from '../../components/organisms/ChainSelect/ChainSelect'
 import {
   acceptMesoText,
@@ -23,61 +19,54 @@ import {
 } from '../../components/organisms/MesoPad/meso-pad'
 import { SheetTextInput } from '../../components/molecules/SheetTextInput/SheetTextInput'
 import { characterOptions } from './character-options'
-import { formatDayLabel, shiftDateKey } from '../../lib/calendar'
+import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
+import { monthKeyOf } from '../../lib/calendar'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 
 /**
- * 머리의 날짜 고르개. 두 시트가 함께 쓴다.
+ * 머리의 날짜 고르개. 두 시트가 함께 쓰고, 보스 직접 완료 시트와 같은 부품이다(`DateSelect` +
+ * `CalendarPopover`).
  *
  * 적고 나서 날을 잘못 골랐다는 것을 아는 자리가 여기다. 그때 시트를 닫고 캘린더로 돌아가 다시
  * 여는 것은 친 것을 버리는 일이다.
- *
- * 하루씩 옮긴다. 실제로 필요한 것은 어제 것을 오늘 칸에서 적고 있었다 같은 한두 칸이고, 멀리
- * 뛰는 것은 캘린더가 이미 한다.
- *
- * **뒤로는 오늘까지다.** 내일 쓴 메소는 없다.
  */
-export function DateStepper(props: {
+export function SheetDateField(props: {
   dateKey: string
   onChange: (next: string) => void
-  /** 갈 수 있는 마지막 날. 오늘이다. 화면이 읽어서 넘긴다(부품은 시계를 안 본다). */
-  latest: string
-  /** `{testID}` · `{testID}-prev` · `{testID}-next`. 두 시트가 자기 이름을 준다. */
+  /** 고를 수 있는 첫날 · 끝날(두 끝 포함). 화면이 읽어서 넘긴다(부품은 시계를 안 본다). */
+  min: string
+  max: string
+  /** 날짜 글자의 `testID`. 두 시트가 자기 이름을 준다. */
   testID: string
 }): React.JSX.Element {
-  // 열쇠가 `YYYY-MM-DD` 라 글자 비교가 곧 날짜 비교다.
-  const 끝 = props.dateKey >= props.latest
+  const { ref, isOpen, anchor, toggle, close } = useAnchoredPopover()
+  const [monthKey, setMonthKey] = useState(monthKeyOf(props.dateKey))
+
+  function open(): void {
+    // 달력은 언제나 지금 고른 날이 든 달로 열린다. 지난번에 넘겨 둔 달이 남으면 고른 날이 안 보인다.
+    setMonthKey(monthKeyOf(props.dateKey))
+    toggle()
+  }
+
   return (
-    <View className="shrink-0 flex-row items-center gap-1">
-      <Pressable
-        role="button"
-        aria-label="하루 앞으로"
-        testID={`${props.testID}-prev`}
-        onPress={() => props.onChange(shiftDateKey(props.dateKey, -1))}
-        hitSlop={8}
-      >
-        <ChevronLeftIcon className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden />
-      </Pressable>
-      <Text testID={props.testID} className="text-xs text-text-muted" style={TABULAR_NUMS}>
-        {formatDayLabel(props.dateKey)}
-      </Text>
-      <Pressable
-        role="button"
-        aria-label="하루 뒤로"
-        testID={`${props.testID}-next`}
-        disabled={끝}
-        onPress={() => props.onChange(shiftDateKey(props.dateKey, 1))}
-        hitSlop={8}
-        // 꺼진 화살촉은 흐린 색에 투명도까지 얹는다. 색만으로는 켜진 것과 잘 안 갈렸다.
-        className={끝 ? 'opacity-40' : undefined}
-      >
-        <ChevronRightIcon
-          className={`h-4 w-4 ${끝 ? 'text-text-disabled' : 'text-text-muted'}`}
-          strokeWidth={2}
-          aria-hidden
+    <>
+      <DateSelect ref={ref} dateKey={props.dateKey} label="적는 날" onPress={open} testID={props.testID} />
+      {isOpen && (
+        <CalendarPopover
+          selected={props.dateKey}
+          min={props.min}
+          max={props.max}
+          monthKey={monthKey}
+          anchor={anchor}
+          onChangeMonth={setMonthKey}
+          onSelect={(next) => {
+            props.onChange(next)
+            close()
+          }}
+          onClose={close}
         />
-      </Pressable>
-    </View>
+      )}
+    </>
   )
 }
 

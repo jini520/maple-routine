@@ -24,6 +24,8 @@ export interface DateSelectProps {
   /** 읽어 주는 이름의 뿌리. `잡은 날 고르기` 처럼 읽힌다. */
   label: string
   onPress: () => void
+  /** 날짜 글자의 `testID`. */
+  testID?: string
 }
 
 export const DateSelect = forwardRef<View, DateSelectProps>(function DateSelect(props, ref) {
@@ -43,7 +45,7 @@ export const DateSelect = forwardRef<View, DateSelectProps>(function DateSelect(
 
       <View className="flex-row items-center gap-1.5 rounded-full border border-border px-2.5 py-1">
         <CalendarIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2} aria-hidden />
-        <Text className="text-xs text-text" style={TABULAR_NUMS}>
+        <Text testID={props.testID} className="text-xs text-text" style={TABULAR_NUMS}>
           {formatDayLabel(props.dateKey)}
         </Text>
       </View>

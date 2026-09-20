@@ -1,7 +1,7 @@
 /**
  * 지출 기록 시트의 껍데기. 갈래가 안 바꾸는 것만 여기 있다.
  *
- * **갈래를 먼저 묻는다.** 안 골랐으면 카드 다섯이 서고, 고르면 그 갈래의 폼이 같은 시트에서
+ * **갈래를 먼저 묻는다.** 안 골랐으면 갈래 카드가 서고, 고르면 그 갈래의 폼이 같은 시트에서
  * 열린다. 그래서 2차에는 갈래를 옮기는 자리가 없고, 바꾸는 일은 1차로 돌아가는 일이 된다.
  *
  * 시트 상자와 지금 어느 갈래인가 하나뿐이고, 머리줄부터 저장까지는 갈래별 폼(`spend/`)이 든다.
@@ -26,6 +26,7 @@ import { CategoryPicker } from './CategoryPicker'
 import { CatalogForm } from './spend/CatalogForm'
 import { EtcForm } from './spend/EtcForm'
 import { ItemBuyForm } from './spend/ItemBuyForm'
+import { SymbolForm } from './spend/SymbolForm'
 import { SaveRow, type SpendFormProps, type SpendSaveSlot } from './spend/form-shared'
 
 export type { SpendDraft } from './spend/form-shared'
@@ -35,11 +36,15 @@ export interface SpendSheetProps {
   dateKey: string
   /** 오늘. 머리의 날짜를 이 날 뒤로 못 옮긴다. 화면이 읽어서 넘긴다. */
   todayDateKey: string
+  /** 머리의 날짜를 이 날 앞으로 못 옮긴다. 가계부 화면이 갈 수 있는 가장 이른 날이다. */
+  earliestDateKey: string
   /**
    * 고를 수 있는 캐릭터. 화면이 읽어서 넘긴다(시트는 `storage/` 를 모른다).
    * 비어 있으면 고르개에 선택 안함 하나만 선다.
    */
-  characters: ReadonlyArray<{ ocid: string; name: string }>
+  characters: ReadonlyArray<{ ocid: string; name: string; level: number | null }>
+  /** 캐릭터의 심볼 레벨(심볼 key 별)을 읽는 콜백. 모르면 `null`. 심볼 강화 폼만 쓴다. */
+  loadSymbolLevels: (ocid: string) => Promise<Readonly<Record<string, number>> | null>
   /**
    * 고칠 기록. 있으면 수정 모드다. 머리와 버튼 글자가 갈리고 삭제가 선다. 화면을 따로 만들지
    * 않는 것은 입력 규칙이 한 벌이어야 하기 때문이다.
@@ -116,6 +121,8 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
           onScrollKeyChange: setScrollKey,
           onDateChange: setDateKey,
           todayDateKey: props.todayDateKey,
+          earliestDateKey: props.earliestDateKey,
+          loadSymbolLevels: props.loadSymbolLevels,
         }
 
   return (
@@ -161,5 +168,6 @@ function SpendForm(props: {
 }): React.JSX.Element {
   if (props.category === 'item_purchase') return <ItemBuyForm {...props.formProps} />
   if (props.category === 'etc') return <EtcForm {...props.formProps} />
+  if (props.category === 'symbol') return <SymbolForm {...props.formProps} />
   return <CatalogForm {...props.formProps} />
 }

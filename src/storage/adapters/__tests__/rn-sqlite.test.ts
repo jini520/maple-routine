@@ -179,6 +179,8 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE spend_records ADD COLUMN item_key TEXT',
       'ALTER TABLE spend_records ADD COLUMN form_item_keys TEXT',
       'ALTER TABLE spend_records ADD COLUMN item_kind_key TEXT',
+      'ALTER TABLE spend_records ADD COLUMN level_from INTEGER',
+      'ALTER TABLE spend_records ADD COLUMN level_to INTEGER',
       'ALTER TABLE income_records ADD COLUMN category_key TEXT',
       'ALTER TABLE income_records ADD COLUMN item_key TEXT',
     ])
@@ -215,6 +217,8 @@ describe('db.ts 와 맞물리는가', () => {
             { name: 'item_key' },
             { name: 'form_item_keys' },
             { name: 'item_kind_key' },
+            { name: 'level_from' },
+            { name: 'level_to' },
             { name: 'box_origin_key' },
             { name: 'hunt_meso_rate' },
             { name: 'hunt_typed_meso' },

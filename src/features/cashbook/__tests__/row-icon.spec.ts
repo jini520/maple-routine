@@ -110,6 +110,14 @@ describe('recordIconOf', () => {
     expect(recordIconOf(spend({ category: 'event_bm', itemKey: 'nickname_change' }))).toBe(ITEM_ASSETS['npc_mr_newname.webp'])
   })
 
+  // 선택 목록이 아니라 비용 표에서 심볼을 되짚는다.
+  it('심볼 강화는 고른 심볼의 그림이다', () => {
+    expect(recordIconOf(spend({ category: 'symbol', itemKey: 'cernium', levelFrom: 1, levelTo: 2 }))).toBe(
+      ITEM_ASSETS['authentic_symbol_cernium.webp'],
+    )
+    expect(recordIconOf(spend({ category: 'symbol', itemKey: 'nope' }))).toBeNull()
+  })
+
   // 비슷한 그림을 갖다 붙이면 틀린 것을 그린다.
   it('그림 없는 타일과 되짚지 못한 기록은 그림이 없다', () => {
     expect(recordIconOf(spend({ category: 'event_bm', itemKey: 'tonic_buff_reset' }))).toBeNull()

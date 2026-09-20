@@ -9,7 +9,7 @@ import { Pressable, View } from 'react-native'
 
 import { ChevronLeftIcon, Text } from '../../../components/atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import { DateStepper } from '../sheet-fields'
+import { SheetDateField } from '../sheet-fields'
 import type { SpendCategoryKey } from '../../../lib/cashbook/categories'
 import { type SpendRecord } from '../../../storage/spend'
 import { SheetTextInput } from '../../../components/molecules/SheetTextInput/SheetTextInput'
@@ -33,7 +33,7 @@ export interface SpendFormProps {
   /** 저장 줄을 시트 바닥으로 올리는 손잡이. 폼이 값을 정하고 자리는 시트가 준다. */
   setSave: (slot: SpendSaveSlot) => void
   dateKey: string
-  characters: ReadonlyArray<{ ocid: string; name: string }>
+  characters: ReadonlyArray<{ ocid: string; name: string; level: number | null }>
   /** 1차에서 고른 갈래 key. 머리의 제목은 이 key 로 찾은 갈래 이름이다. */
   category: SpendCategoryKey
   /** 1차로 되돌아간다. 머리의 화살촉이 부른다. 수정 모드에서는 폼이 안 붙인다. */
@@ -49,6 +49,10 @@ export interface SpendFormProps {
   onDateChange: (next: string) => void
   /** 오늘. 머리의 날짜를 이 날 뒤로 못 옮긴다. */
   todayDateKey: string
+  /** 머리의 날짜를 이 날 앞으로 못 옮긴다. 가계부 화면이 갈 수 있는 가장 이른 날이다. */
+  earliestDateKey: string
+  /** 캐릭터의 심볼 레벨(심볼 key 별)을 읽는 콜백. 모르면 `null`. 심볼 강화 폼만 쓴다. */
+  loadSymbolLevels: (ocid: string) => Promise<Readonly<Record<string, number>> | null>
 }
 
 /**
@@ -65,6 +69,8 @@ export function SpendHeader(props: {
   dateKey: string
   /** 오늘. 머리의 날짜를 이 날 뒤로 못 옮긴다. */
   todayDateKey: string
+  /** 머리의 날짜를 이 날 앞으로 못 옮긴다. */
+  earliestDateKey: string
   /** 머리에서 날짜를 바꾸는 줄. 수입 시트와 **같은 부품**이다. */
   onDateChange: (next: string) => void
   /** 제목을 **되돌아가는 누르개**로 만드는 콜백. 수정 모드에는 되돌아갈 곳이 없어 안 준다. */
@@ -99,9 +105,10 @@ export function SpendHeader(props: {
           </Text>
         </Pressable>
       )}
-      <DateStepper
+      <SheetDateField
         dateKey={props.dateKey}
-        latest={props.todayDateKey}
+        min={props.earliestDateKey}
+        max={props.todayDateKey}
         onChange={props.onDateChange}
         testID="spend-sheet-date"
       />

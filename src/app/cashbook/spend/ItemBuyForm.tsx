@@ -105,6 +105,8 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
         itemKey: null,
         formItemKeys: null,
         itemKind,
+        levelFrom: null,
+        levelTo: null,
         // 수량은 **곱할 것이 있을 때만** 실린다. 그 `null` 이 곧 **곱하지 않은 행** 이라는 사실이다.
         quantity: counts ? quantity : null,
         mesoAmount: amount,
@@ -124,6 +126,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
         title={spendCategoryNameOf(props.category)}
         dateKey={props.dateKey}
         todayDateKey={props.todayDateKey}
+        earliestDateKey={props.earliestDateKey}
         onDateChange={props.onDateChange}
         // 수정 모드에는 되돌아갈 곳이 없다(고른 것을 못 바꾼다). 화살촉도 없다.
         onBack={editing ? undefined : props.onBack}

@@ -117,6 +117,8 @@ const 메포지출: SpendDraft = {
   itemKey: null,
   formItemKeys: { sol_erda: 'high_mountain_2' },
   itemKind: null,
+  levelFrom: null,
+  levelTo: null,
   quantity: 1,
   mesoAmount: null,
   tariffMeso: null,
@@ -470,6 +472,8 @@ const 지출행 = {
   itemKey: 'monster_park',
   formItemKeys: null,
   itemKind: null,
+  levelFrom: null,
+  levelTo: null,
   quantity: 2,
   mesoAmount: null,
   tariffMeso: null,
@@ -583,6 +587,25 @@ describe('줄에 적는 것', () => {
         characterName: '',
       }),
     ).toBe('하이마운틴 EXP 2단계, 솔 1단계')
+  })
+
+  // 심볼 강화는 선택 목록이 아니다. 비용 표의 지금 이름과 두 레벨로 이름을 다시 만든다.
+  it('심볼 강화는 심볼 key 와 두 레벨로 이름을 다시 만든다', () => {
+    const { recordTitleOf } = require('../records') as typeof import('../records')
+    const 심볼행 = {
+      ...지출행,
+      category: 'symbol' as const,
+      item: '옛 이름 Lv.3 → 7',
+      itemKey: 'road_of_vanishing',
+      levelFrom: 3,
+      levelTo: 7,
+      quantity: null,
+    }
+
+    expect(recordTitleOf({ kind: 'spend', record: 심볼행, characterName: '루디' })).toBe('루디 · 소멸의 여로 Lv.3 → 7')
+    expect(recordTitleOf({ kind: 'spend', record: { ...심볼행, itemKey: 'removed_symbol' }, characterName: '' })).toBe(
+      '옛 이름 Lv.3 → 7',
+    )
   })
 
   // 카탈로그에서 빠진 항목이다. 지우지 않고 그때 이름으로 선다.
@@ -974,7 +997,7 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
     ])
     spend.getSpendRecordsBetween.mockResolvedValue([
       {
-        id: 's1', spentOn: '2026-08-21', category: 'content', item: '몬스터 파크', itemKey: 'monster_park', formItemKeys: null, itemKind: null,
+        id: 's1', spentOn: '2026-08-21', category: 'content', item: '몬스터 파크', itemKey: 'monster_park', formItemKeys: null, itemKind: null, levelFrom: null, levelTo: null,
         quantity: 1, mesoAmount: 50_000_000, tariffMeso: null, pointAmount: 1_200,
         pointPer100mMeso: 1_180, cashAmount: null, memo: null, recordedAt: 'b',
       },

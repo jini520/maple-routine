@@ -17,12 +17,13 @@ import {
 // 가계부의 고정 목록 넷. 기록은 key 를 들고, 이름은 이 표에서 찾는다.
 describe('가계부 갈래 표', () => {
   // 차례가 곧 화면이다. 두 시트의 갈래 카드가 이 차례로 선다.
-  it('지출 갈래 여섯. 선택 목록 넷 다음 직접 입력 둘이다', () => {
+  it('지출 갈래 일곱. 선택 목록 넷, 심볼 강화, 직접 입력 둘이다', () => {
     expect(SPEND_CATEGORIES.map((each) => [each.key, each.name])).toEqual([
       ['content', '컨텐츠'],
       ['event_bm', '이벤트·BM'],
       ['buff', '버프'],
       ['scroll', '주문서'],
+      ['symbol', '심볼 강화'],
       ['item_purchase', '아이템 구매'],
       ['etc', '기타'],
     ])

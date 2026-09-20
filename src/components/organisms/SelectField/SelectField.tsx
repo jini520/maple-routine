@@ -29,6 +29,8 @@ export interface SelectOption {
   /** `null` 은 안 고름 이다. 고르개마다 그 뜻이 다르므로 라벨은 호출부가 준다. */
   value: string | null
   label: string
+  /** 묶음 이름. 앞 보기와 다르면 그 앞에 라벨 줄이 선다. */
+  group?: string
 }
 
 export interface SelectFieldProps {
@@ -183,36 +185,50 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
             <ScrollView>
               {/* 자연 높이를 재는 자리. `ScrollView` 안이라 바깥 `maxHeight` 에 안 눌린다. */}
               <View onLayout={(event) => setContentHeight(event.nativeEvent.layout.height)}>
-                {props.options.map((option) => {
+                {props.options.map((option, index) => {
                   const isSelected = option.value === props.selected
+                  const opensGroup =
+                    option.group !== undefined && option.group !== props.options[index - 1]?.group
                   return (
-                    <Pressable
-                      key={keyOf(option.value)}
-                      testID={`${props.testID}-option-${keyOf(option.value)}`}
-                      role="button"
-                      aria-label={option.label}
-                      aria-selected={isSelected}
-                      onPress={() => {
-                        props.onSelect(option.value)
-                        close()
-                      }}
-                      className={`px-3 py-2.5 active:bg-surface-2${
-                        isSelected ? ' bg-primary-tint' : ''
-                      }`}
-                    >
-                      {props.renderOption === undefined ? (
+                    <View key={keyOf(option.value)}>
+                      {opensGroup && (
+                        // 첫 묶음 말고는 위에 선을 긋는다. 라벨만으로는 앞 묶음의 끝이 안 보인다.
                         <Text
-                          numberOfLines={1}
-                          className={`text-sm ${
-                            isSelected ? 'font-semibold text-primary-ink' : 'text-text'
+                          testID={`${props.testID}-group-${option.group}`}
+                          className={`px-3 pb-1 pt-2.5 text-11 font-semibold text-text-disabled${
+                            index === 0 ? '' : ' border-t border-surface-2'
                           }`}
                         >
-                          {option.label}
+                          {option.group}
                         </Text>
-                      ) : (
-                        props.renderOption(option, isSelected)
                       )}
-                    </Pressable>
+                      <Pressable
+                        testID={`${props.testID}-option-${keyOf(option.value)}`}
+                        role="button"
+                        aria-label={option.label}
+                        aria-selected={isSelected}
+                        onPress={() => {
+                          props.onSelect(option.value)
+                          close()
+                        }}
+                        className={`px-3 py-2.5 active:bg-surface-2${
+                          isSelected ? ' bg-primary-tint' : ''
+                        }`}
+                      >
+                        {props.renderOption === undefined ? (
+                          <Text
+                            numberOfLines={1}
+                            className={`text-sm ${
+                              isSelected ? 'font-semibold text-primary-ink' : 'text-text'
+                            }`}
+                          >
+                            {option.label}
+                          </Text>
+                        ) : (
+                          props.renderOption(option, isSelected)
+                        )}
+                      </Pressable>
+                    </View>
                   )
                 })}
               </View>

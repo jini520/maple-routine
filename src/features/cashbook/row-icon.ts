@@ -9,6 +9,7 @@
  */
 import { cashbookRowIconOf, spendIconOf } from '../../lib/assets/asset-lookup'
 import { findSpendChoice, findSpendRewardChoice } from '../../lib/cashbook/spend-catalog'
+import { findSymbol } from '../../lib/cashbook/symbol-costs'
 import type { ImageAssetRef } from '../../types/image-asset'
 import { isManualRecord, type DayRecord } from './records'
 
@@ -33,6 +34,11 @@ export function recordIconKeyOf(entry: DayRecord): string {
 export function recordIconOf(entry: DayRecord): ImageAssetRef | null {
   if (entry.kind === 'spend') {
     const { category, itemKey, formItemKeys } = entry.record
+    // 심볼 강화는 선택 목록이 아니라 비용 표에서 심볼을 되짚는다.
+    if (category === 'symbol') {
+      const symbol = findSymbol(itemKey)?.symbol
+      return symbol === undefined ? null : (spendIconOf({ file: symbol.icon })?.ref ?? null)
+    }
     const choice = findSpendChoice(category, itemKey)?.choice ?? findSpendRewardChoice(category, formItemKeys)?.choice
     if (choice !== undefined) return spendIconOf(choice.icon)?.ref ?? null
   }

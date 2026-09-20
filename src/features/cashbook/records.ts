@@ -26,6 +26,7 @@ import {
   rewardCoinMeso,
   spendRewardCoins,
 } from '../../lib/cashbook/spend-catalog'
+import { findSymbol, symbolRecordName } from '../../lib/cashbook/symbol-costs'
 import { getBossDropRecords, getBossDropRecordsRevision } from '../../storage/boss-drops'
 import {
   getBossProfitRecordsRevision,
@@ -864,10 +865,18 @@ function manualLabelOf(entry: ManualDayRecord): string {
     return entry.record.category === 'hunting' ? categoryName : (entry.record.item ?? categoryName)
   }
   const { category, itemKey, formItemKeys, item } = entry.record
+  if (category === 'symbol') return symbolLabelOf(entry.record) ?? item ?? spendCategoryNameOf(category)
   const chosen = findSpendChoice(category, itemKey)?.item.name
   const reward = findSpendRewardChoice(category, formItemKeys)
   const rewardName = reward === null ? null : buildSpendRewardName(reward.choice, reward.tierByForm)
   return chosen ?? rewardName ?? item ?? spendCategoryNameOf(category)
+}
+
+/** 심볼 강화 기록의 이름. 비용 표의 지금 이름과 두 레벨로 다시 만든다. 못 찾으면 `null`. */
+function symbolLabelOf(record: SpendRecord): string | null {
+  const found = findSymbol(record.itemKey)
+  if (found === null || record.levelFrom === null || record.levelTo === null) return null
+  return symbolRecordName(found.symbol.name, record.levelFrom, record.levelTo)
 }
 
 export function recordTitleOf(entry: DayRecord): string {

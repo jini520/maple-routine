@@ -127,6 +127,9 @@ export interface NexonAbilityResponse {
  */
 export interface NexonSymbol {
   symbol_meso_rate?: string | null
+  /** `아케인심볼 : 소멸의 여로` 로 예상한다. 심볼 강화는 끝 일치로 맞춘다. */
+  symbol_name?: string | null
+  symbol_level?: number | null
 }
 
 export interface NexonSymbolEquipmentResponse {

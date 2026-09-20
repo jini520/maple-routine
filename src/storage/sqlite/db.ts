@@ -203,7 +203,7 @@ const TABLE_DEFINITIONS = [
     id TEXT NOT NULL,
     ocid TEXT,
     spent_on TEXT NOT NULL, -- 'YYYY-MM-DD' KST
-    -- 그때의 갈래 이름. 컨텐츠 · 이벤트·BM · 버프 · 주문서 · 아이템 구매 · 기타
+    -- 그때의 갈래 이름. 컨텐츠 · 이벤트·BM · 버프 · 주문서 · 심볼 강화 · 아이템 구매 · 기타
     category TEXT NOT NULL,
     -- 갈래 key. 버전 이관이 옛 행까지 채운다.
     category_key TEXT,
@@ -223,6 +223,9 @@ const TABLE_DEFINITIONS = [
     item_kind TEXT,
     -- 종류 key.
     item_kind_key TEXT,
+    -- 심볼 강화의 강화 전 · 강화 후 레벨. 다른 갈래는 NULL.
+    level_from INTEGER,
+    level_to INTEGER,
     -- 금액 = 카탈로그의 **unitPrice** × 이 값. 단위 이름은 안 적는다.
     -- **src/data/spend-catalog.json** 이 항목별로 알고 있어 베끼면 두 벌이 어긋난다.
     quantity INTEGER,
@@ -405,6 +408,9 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'spend_records', 'item_key', 'TEXT')
   await ensureColumn(db, 'spend_records', 'form_item_keys', 'TEXT')
   await ensureColumn(db, 'spend_records', 'item_kind_key', 'TEXT')
+  // 옛 행은 NULL 이라 옮길 값이 없다.
+  await ensureColumn(db, 'spend_records', 'level_from', 'INTEGER')
+  await ensureColumn(db, 'spend_records', 'level_to', 'INTEGER')
   await ensureColumn(db, 'income_records', 'category_key', 'TEXT')
   await ensureColumn(db, 'income_records', 'item_key', 'TEXT')
   // 칸이 다 선 뒤에 돈다. 값을 옮기는 이관은 버전 번호로 한 번씩만 돈다.
