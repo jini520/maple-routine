@@ -139,13 +139,22 @@ describe('미입력 건수 배지', () => {
   })
 
   // 알림이라 늘 빨간색이다. 채움 위 전경은 테마의 짝 토큰을 따른다.
-  it('높이 16 · 테마의 error 채움과 on-error 글자다', async () => {
+  it('높이 18 · 테마의 error 채움과 on-error 글자다', async () => {
     const view = await 그리기(3)
 
     const badge = view.getByTestId('drop-price-fab-badge', 숨김포함)
-    expect(flattenStyle(badge.props.style).height).toBe(16)
+    expect(flattenStyle(badge.props.style).height).toBe(18)
     expect(flattenStyle(badge.props.style).backgroundColor).toBe(기본테마.error)
     expect(flattenStyle(within(badge).getByText('3', 숨김포함).props.style).color).toBe(기본테마.onError)
+  })
+
+  // 한 자리 수는 글자 폭이 높이보다 좁아 최소 너비가 없으면 세로로 긴 타원이 된다. 이 단언이
+  // 없던 동안 `min-w-4` 가 스타일을 하나도 안 내고 있었다(그 계단 이름이 없다).
+  it('최소 너비가 높이와 같아 한 자리 수가 정원으로 선다', async () => {
+    const badge = (await 그리기(3)).getByTestId('drop-price-fab-badge', 숨김포함)
+
+    const style = flattenStyle(badge.props.style)
+    expect(style.minWidth).toBe(style.height)
   })
 })
 
