@@ -30,14 +30,8 @@ jest.mock('@gorhom/bottom-sheet', () => {
       React.useImperativeHandle(ref as never, () => ({ scrollTo: mockScrollTo }))
       return React.createElement(ReactNative.View, props)
     }),
-    // 아래 둘은 이제 아무도 안 부른다. 시트에 치는 칸이 없어지면서 그것들을 쓰던
-    // `SheetTextInput` 과 `useSheetKeyboardTarget` 이 함께 걷혔다. 목 팩토리는 라이브러리의
-    // 모듈 면을 흉내내는 것이라 남는 항목이 해가 없어 그대로 둔다(테스트 파일 여덟 곳이 같다).
-    useBottomSheetInternal: () => null,
     // 넘긴 것을 그대로 돌려준다. 시트가 무엇을 넘겼는지는 프롭에서 본다.
     useBottomSheetTimingConfigs: (config: unknown) => config,
-    BottomSheetTextInput: (props: Record<string, unknown>) =>
-      React.createElement(ReactNative.TextInput, props),
     BottomSheetModalProvider: (props: { children: ReactNode }) => props.children,
   }
 })

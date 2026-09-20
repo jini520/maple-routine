@@ -96,6 +96,17 @@ function openingTags(source: string, name: string): string[] {
 
 const FILES = sourceFiles(SRC)
 
+/** `src/` 의 모든 `.ts`·`.tsx`. `sourceFiles` 와 달리 `__tests__` 를 건너뛰지 않는다. */
+function everyFile(dir: string = SRC): string[] {
+  const out: string[] = []
+  for (const entry of readdirSync(dir)) {
+    const path = join(dir, entry)
+    if (statSync(path).isDirectory()) out.push(...(entry === '__snapshots__' ? [] : everyFile(path)))
+    else if (/\.tsx?$/.test(entry)) out.push(path)
+  }
+  return out
+}
+
 /** `{ Badge, type BadgeVariant }` → `['Badge', 'BadgeVariant']`. 여기서는 경로만 따지므로 타입도 든다. */
 function namedSpecifiers(clause: string): string[] {
   const braces = /\{([^}]*)\}/.exec(clause)
@@ -231,13 +242,16 @@ describe('글자는 atom 한 곳에서만 나온다', () => {
   * 그 길로 들어오면 글자 크기 클램프가 빠지고 한글 조합까지 함께 깨진다. 둘 다 개발
   * 기기에서 안 보이는 회귀다.
    */
-  it('`BottomSheetTextInput` 은 어디에서도 안 쓴다', () => {
-    const offenders = FILES.filter((file) =>
+  it('`BottomSheetTextInput` 은 어디에서도 안 쓴다. 테스트의 목에도 없다', () => {
+    // **테스트까지 훑는다**(`FILES` 는 `__tests__` 를 건너뛴다). 시트의 키보드 배선을 걷은 뒤
+    // 목 팩토리 열 곳에 그 이름이 남아 있었다. 쓰는 곳이 없어 아무 일도 안 했지만, 목에 있으면
+    // 다음 사람이 그것을 써도 되는 줄 안다. 자라지 않게 여기서 막는다.
+    const offenders = everyFile().filter((file) =>
       readFileSync(file, 'utf8').includes('BottomSheetTextInput'),
     ).map((file) => relative(SRC, file))
 
  // `왜 안 쓰는가`를 적는 주석에는 이름이 나온다. 코드가 아니라 글이다. 그 설명은 아톰에 있다.
-    const 설명하는_파일 = ['components/atoms/TextInput/TextInput.tsx']
+    const 설명하는_파일 = ['components/atoms/TextInput/TextInput.tsx', '__tests__/font-scaling-policy.test.ts']
     expect(offenders.filter((file) => !설명하는_파일.includes(file))).toEqual([])
   })
 })
