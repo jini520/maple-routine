@@ -15,6 +15,14 @@ Xcode 아카이브다. 저장소 루트가 곧 Expo 프로젝트라 둘 다 루�
 
 ## 다음 스토어 릴리스에서 같이 할 일
 
+> **CRITICAL: UIScene 을 채택하지 않으면 iOS 27 에서 켜자마자 죽는다**(이슈 #494, 2026-09-20 실측).
+> 이 Mac 의 Xcode 가 27.0 뿐이라 빌드가 iOS 27 SDK 로 나가고, 그 SDK 로 만든 앱은 UIScene 생명주기가
+> 없으면 UIKit 이 실행을 막는다(`_UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption`).
+> 앱은 `AppDelegate` 가 창을 직접 만들고 `Info.plist` 에 `UIApplicationSceneManifest` 가 없다.
+> 앱스토어판 1.0.8(15)은 Xcode 26 으로 구워 멀쩡하고, iOS 26.5 시뮬레이터에서도 안 드러난다.
+> **스토어 바이너리를 굽기 전에 이슈 #494 를 먼저 끝낼 것.** 네이티브 변경이라 OTA 로는 못 고친다.
+> 실기기 테스트 빌드에 쓴 우회(실행 파일의 SDK 기록만 26.5 로 바꿔 재서명)는 스토어에 쓸 수 없다.
+
 > **네이티브 트리에서 AdMob 앱 ID를 걷는다.** 2026-08-31에 앱 ID를 환경 변수로 옮겼지만
 > (`EXPO_PUBLIC_ADS_APP_ID_ANDROID`·`..._IOS`, `app.config.js`), 커밋된 prebuild 산출물에는
 > 옛 값이 그대로 남아 있다.
