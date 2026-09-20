@@ -65,6 +65,13 @@ import { PORTRAIT_COMPACT } from '../../components/organisms/CharacterPortrait/p
 import { closeInputCard, openInputCard } from '../../features/input-card/store'
 import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
 import { mesoTextOf, mesoValueOf } from '../../components/organisms/MesoPad/meso-pad'
+import { confirmLabels } from '../../lib/drop/price-card-labels'
+
+/** 한 연쇄 안에서 매긴 값. 스토어를 다시 읽어도 이전으로 돌아가면 이 값이 보인다. */
+interface PriceEdit {
+  meso: number
+  share: number
+}
 
 function characterTotal(group: DropPriceGroup): number {
   return group.entries.reduce((sum, entry) => sum + dropPayoutMeso(entry.drop), 0)
@@ -196,8 +203,10 @@ export function DropPriceScreen(): React.JSX.Element {
 
   /** 미입력만 골라 순차로 돈다. 첫 건의 카드를 열고 나머지는 그 카드가 잇는다. */
   function startSequence(): void {
-    const queue = allEntries.filter((entry) => entry.drop.priceState === undefined)
-    openPriceCard(queue, queue.length)
+    openPriceCard(
+      allEntries.filter((entry) => entry.drop.priceState === undefined),
+      0,
+    )
   }
 
   /**
@@ -207,13 +216,38 @@ export function DropPriceScreen(): React.JSX.Element {
    * 남은 것이 없으면 닫는다. 확인은 카드가 스스로 닫지만 곁들이 버튼은 안 닫아서, 마지막 건을
    * 기록 안함으로 끝내면 빈 카드가 남는다.
    */
-  function openPriceCard(queue: DropPriceEntry[], total: number): void {
-    const [target, ...rest] = queue
+  /**
+   * 가격 카드를 연다. `items` 는 이 연쇄가 도는 전부이고 `index` 는 지금 자리다.
+   *
+   * 앞뒤로 오갈 수 있어야 해서 남은 것을 잘라 나가지 않고 **자리 번호**로 돈다. `edits` 는 이
+   * 연쇄 안에서 매긴 값이다. 저장은 스토어를 다시 읽게 만들지만 `items` 가 든 것은 열 때의
+   * 모습이라, 이것이 없으면 이전으로 돌아갔을 때 방금 매긴 값이 안 보인다.
+   */
+  function openPriceCard(items: DropPriceEntry[], index: number, edits = new Map<number, PriceEdit>()): void {
+    const target = items[index]
     if (target === undefined) {
       closeInputCard()
       return
     }
     const characterName = groups.find((group) => group.ocid === target.ocid)?.characterName ?? ''
+    const edit = edits.get(index)
+    const 매긴것 = items.filter(
+      (entry, at) => at !== index && (edits.has(at) || entry.drop.priceState === 'entered'),
+    ).length
+    const 지금매김 = edit !== undefined || target.drop.priceState === 'entered'
+
+    /** 값을 쓰고 자리를 옮긴다. 빈 칸이면 쓰지 않고 옮기기만 한다. */
+    function move(to: number, next: string, share?: number): void {
+      if (next === '') {
+        openPriceCard(items, to, edits)
+        return
+      }
+      const meso = mesoValueOf(next)
+      const 몫 = share ?? target.partySize
+      const 다음편집 = new Map(edits).set(index, { meso, share: 몫 })
+      void runWrite(() => savePrice(target, meso, 몫), items, to, 다음편집)
+    }
+
     openInputCard({
       // 머리가 그 아이템을 말한다. `판매 가격` 이라는 말은 이미 누른 행이 했다.
       label: dropItemNameOf(target.drop.itemKey, target.drop.itemName),
@@ -222,41 +256,47 @@ export function DropPriceScreen(): React.JSX.Element {
       unit: '메소',
       reading: true,
       chips: MESO_QUICK_ADDS,
-      value: mesoTextOf(target.drop.priceMeso ?? 0),
+      value: mesoTextOf(edit?.meso ?? target.drop.priceMeso ?? 0),
       stepper: {
         label: '분배 인원',
-        value: target.drop.priceShare ?? target.partySize,
+        value: edit?.share ?? target.drop.priceShare ?? target.partySize,
         min: 1,
         max: getMaxPartySize(target.bossKey, target.difficulty),
       },
-      confirmLabel: '저장',
+      ...confirmLabels({
+        하나: items.length === 1,
+        마지막: index === items.length - 1,
+        자리: index,
+        전체: items.length,
+        매긴것,
+        지금매김,
+      }),
       exclude: {
         label: '기록 안함',
-        onPress: () => void runWrite(() => excludePrice(target), rest, total),
+        onPress: () => {
+          const 다음편집 = new Map(edits)
+          다음편집.delete(index)
+          void runWrite(() => excludePrice(target), items, index + 1, 다음편집)
+        },
       },
-      // 아무것도 안 쓰고 넘긴다. 친 값도 버리는데 카드를 ✕ 로 닫는 것과 같은 규칙이다.
-      next:
-        rest.length > 0
-          ? { label: `다음 (${total - rest.length}/${total})`, onPress: () => openPriceCard(rest, total) }
+      prev:
+        index > 0
+          ? { label: `이전(${index}/${items.length})`, onPress: (next, share) => move(index - 1, next, share) }
           : undefined,
-      onConfirm: (next, share) =>
-        void runWrite(
-          () => savePrice(target, mesoValueOf(next), share ?? target.partySize),
-          rest,
-          total,
-        ),
+      onConfirm: (next, share) => move(index + 1, next, share),
     })
   }
 
-  /** 쓰고 나서 다음 건으로. 실패하면 **안 넘어간다**. 넘어가면 못 쓴 건을 지나친다. */
+  /** 쓰고 나서 그 자리로. 실패하면 **안 넘어간다**. 넘어가면 못 쓴 건을 지나친다. */
   async function runWrite(
     write: () => Promise<void>,
-    rest: DropPriceEntry[],
-    total: number,
+    items: DropPriceEntry[],
+    to: number,
+    edits: Map<number, PriceEdit>,
   ): Promise<void> {
     try {
       await write()
-      openPriceCard(rest, total)
+      openPriceCard(items, to, edits)
     } catch {
       // 조용히 삼키면 저장된 줄 알고 화면을 떠난다(예외 원문 대신 토스트).
       useToastStore.getState().showError('가격을 저장하지 못했습니다')
@@ -418,7 +458,7 @@ export function DropPriceScreen(): React.JSX.Element {
                         key={entry.id}
                         entry={entry}
                         isLast={index === group.entries.length - 1}
-                        onSelect={() => openPriceCard([entry], 1)}
+                        onSelect={() => openPriceCard([entry], 0)}
                       />
                     ))}
                   </View>

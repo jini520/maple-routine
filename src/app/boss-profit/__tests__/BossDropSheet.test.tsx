@@ -631,7 +631,8 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
       expect(view.getByText('거대한 공포 외 1건이 선택되었습니다')).toBeTruthy()
     })
 
-    it('저장하면 다음 미입력 건의 카드가 이어 선다', async () => {
+    /** 버튼 글자가 **지금 누르면 무슨 일이 나는가**를 말한다. 저장과 다음을 가르지 않는다. */
+    it('빈 칸이면 다음, 값을 치면 저장 후 다음이다', async () => {
       const { view } = await 둘찍기()
 
       await act(async () => {
@@ -639,8 +640,26 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
       })
       // 값을 안 매긴 첫 건이 먼저다. 찍은 차례가 곧 그 차례다.
       expect(view.getByTestId('input-card-label').props.children[0]).toBe('거대한 공포')
-      expect(view.getByTestId('input-card-next')).toBeTruthy()
+      expect(view.getByText('다음(2/2)')).toBeTruthy()
 
+      await act(async () => {
+        fireEvent.changeText(view.getByTestId('input-card-value'), '100')
+      })
+      expect(view.getByText('저장 후 다음(2/2)')).toBeTruthy()
+
+      await act(async () => {
+        fireEvent.press(view.getByTestId('input-card-confirm'))
+      })
+      expect(view.getByTestId('input-card-label').props.children[0]).toBe('에스텔라 이어링')
+    })
+
+    /** 마지막 자리는 갈 곳이 없다. 버튼이 세는 것은 **정해질 가격의 개수**다. */
+    it('마지막 자리에서는 t개 입력 완료다. 누르면 닫힌다', async () => {
+      const { view, onSave } = await 둘찍기()
+
+      await act(async () => {
+        fireEvent.press(view.getByText('가격 입력'))
+      })
       await act(async () => {
         fireEvent.changeText(view.getByTestId('input-card-value'), '100')
       })
@@ -648,24 +667,16 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
         fireEvent.press(view.getByTestId('input-card-confirm'))
       })
 
-      expect(view.getByTestId('input-card-label').props.children[0]).toBe('에스텔라 이어링')
-    })
-
-    it('마지막 건을 저장하면 카드가 닫힌다', async () => {
-      const { view, onSave } = await 둘찍기()
+      // 한 건이 이미 들었고 지금 칸은 비었다.
+      expect(view.getByText('1개 입력 완료')).toBeTruthy()
+      await act(async () => {
+        fireEvent.changeText(view.getByTestId('input-card-value'), '200')
+      })
+      expect(view.getByText('2개 입력 완료')).toBeTruthy()
 
       await act(async () => {
-        fireEvent.press(view.getByText('가격 입력'))
+        fireEvent.press(view.getByTestId('input-card-confirm'))
       })
-      for (const meso of ['100', '200']) {
-        await act(async () => {
-          fireEvent.changeText(view.getByTestId('input-card-value'), meso)
-        })
-        await act(async () => {
-          fireEvent.press(view.getByTestId('input-card-confirm'))
-        })
-      }
-
       expect(view.queryByTestId('input-card-value')).toBeNull()
 
       await act(async () => {
@@ -677,29 +688,22 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
       ])
     })
 
-    /** 다음은 아무것도 안 쓴다. 친 값도 버린다(카드를 ✕ 로 닫는 것과 같은 규칙). */
-    it('다음은 지금 건을 안 쓰고 넘긴다', async () => {
+    it('빈 칸으로 넘기면 아무것도 안 쓴다', async () => {
       const { view, onSave } = await 둘찍기()
 
       await act(async () => {
         fireEvent.press(view.getByText('가격 입력'))
       })
       await act(async () => {
-        fireEvent.changeText(view.getByTestId('input-card-value'), '100')
+        fireEvent.press(view.getByTestId('input-card-confirm'))
       })
-      await act(async () => {
-        fireEvent.press(view.getByTestId('input-card-next'))
-      })
-
-      expect(view.getByTestId('input-card-label').props.children[0]).toBe('에스텔라 이어링')
-
       await act(async () => {
         fireEvent.press(view.getByTestId('input-card-close'))
       })
       await act(async () => {
         fireEvent.press(view.getByText('추가 완료 · 2개'))
       })
-      // 값도 결정도 안 붙었다. 둘 다 미입력으로 남는다.
+
       const saved = onSave.mock.calls[0]?.[0] as { itemName: string; priceState?: string }[]
       expect(saved.map((drop) => [drop.itemName, drop.priceState])).toEqual([
         ['거대한 공포', undefined],
@@ -707,7 +711,60 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
       ])
     })
 
-    it('하나뿐이면 다음 버튼이 안 선다', async () => {
+    describe('이전으로 돌아간다', () => {
+      it('첫 자리에는 이전이 안 선다', async () => {
+        const { view } = await 둘찍기()
+
+        await act(async () => {
+          fireEvent.press(view.getByText('가격 입력'))
+        })
+
+        expect(view.queryByTestId('input-card-prev')).toBeNull()
+      })
+
+      it('둘째 자리의 이전은 첫 자리를 가리킨다', async () => {
+        const { view } = await 둘찍기()
+
+        await act(async () => {
+          fireEvent.press(view.getByText('가격 입력'))
+        })
+        await act(async () => {
+          fireEvent.press(view.getByTestId('input-card-confirm'))
+        })
+
+        expect(view.getByText('이전(1/2)')).toBeTruthy()
+        await act(async () => {
+          fireEvent.press(view.getByTestId('input-card-prev'))
+        })
+        expect(view.getByTestId('input-card-label').props.children[0]).toBe('거대한 공포')
+      })
+
+      /** 앞뒤로 오가는 동안 친 값이 안 날아간다(사용자 지정). */
+      it('값을 치고 이전을 누르면 그 값이 저장된다', async () => {
+        const { view } = await 둘찍기()
+
+        await act(async () => {
+          fireEvent.press(view.getByText('가격 입력'))
+        })
+        await act(async () => {
+          fireEvent.press(view.getByTestId('input-card-confirm'))
+        })
+        await act(async () => {
+          fireEvent.changeText(view.getByTestId('input-card-value'), '200')
+        })
+        await act(async () => {
+          fireEvent.press(view.getByTestId('input-card-prev'))
+        })
+        // 첫 자리로 왔다. 다시 다음으로 가면 친 200 이 그대로 서 있다.
+        await act(async () => {
+          fireEvent.press(view.getByTestId('input-card-confirm'))
+        })
+
+        expect(view.getByTestId('input-card-value').props.value).toBe('200')
+      })
+    })
+
+    it('하나뿐이면 이전이 없고 버튼이 닫기다', async () => {
       const { result } = renderSheet({ pricing: PRICING })
       const view = await result
 
@@ -718,7 +775,13 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
         fireEvent.press(view.getByText('가격 입력'))
       })
 
-      expect(view.queryByTestId('input-card-next')).toBeNull()
+      expect(view.queryByTestId('input-card-prev')).toBeNull()
+      expect(view.getByText('닫기')).toBeTruthy()
+
+      await act(async () => {
+        fireEvent.changeText(view.getByTestId('input-card-value'), '100')
+      })
+      expect(view.getByText('완료')).toBeTruthy()
     })
   })
 

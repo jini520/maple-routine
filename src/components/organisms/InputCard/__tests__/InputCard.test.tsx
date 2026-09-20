@@ -7,7 +7,7 @@
 import { act, fireEvent } from '@testing-library/react-native'
 import { Keyboard } from 'react-native'
 
-import { renderOverlay } from '../../../__tests__/render-atom'
+import { flattenStyle, renderOverlay } from '../../../__tests__/render-atom'
 import { InputCard, type InputCardProps } from '../InputCard'
 
 const 메소칩 = [
@@ -247,33 +247,71 @@ describe('InputCard', () => {
       expect(view.queryByText('확인')).toBeNull()
     })
 
+    /**
+     * **친 값이 있나에 따라 확인이 다른 말을 한다.** 저장과 다음을 두 버튼으로 두었더니 어느
+     * 쪽이 값을 쓰는지가 안 읽혔다(사용자 지적). 버튼은 하나이고 글자가 지금 누르면 무슨 일이
+     * 나는가를 말한다.
+     */
+    it('빈 칸이면 빈 칸용 라벨이 선다', async () => {
+      const { view } = await 그리기({ confirmLabel: '저장 후 다음(3/3)', confirmEmptyLabel: '다음(3/3)' })
+
+      expect(view.getByText('다음(3/3)')).toBeTruthy()
+
+      await 치기(view, '100')
+      expect(view.getByText('저장 후 다음(3/3)')).toBeTruthy()
+      expect(view.queryByText('다음(3/3)')).toBeNull()
+    })
+
+    it('빈 칸용 라벨을 안 넘기면 둘이 같은 말을 한다', async () => {
+      const { view } = await 그리기({ confirmLabel: '완료' })
+
+      expect(view.getByText('완료')).toBeTruthy()
+    })
+
     /** 셋 다 지금 아이템을 처리하고 넘어가는 길이라 한 줄에 선다. */
-    it('곁들이 버튼 둘을 확인과 한 줄에 세운다', async () => {
+    it('기록 안함과 이전을 확인과 한 줄에 세운다', async () => {
       const onExclude = jest.fn()
-      const onNext = jest.fn()
+      const onPrev = jest.fn()
       const { view } = await 그리기({
-        confirmLabel: '저장',
+        confirmLabel: '저장 후 다음(3/3)',
         exclude: { label: '기록 안함', onPress: onExclude },
-        next: { label: '다음 (1/2)', onPress: onNext },
+        prev: { label: '이전(1/3)', onPress: onPrev },
       })
 
       await 누르기(view, 'input-card-exclude')
       expect(onExclude).toHaveBeenCalled()
 
-      await 누르기(view, 'input-card-next')
-      expect(onNext).toHaveBeenCalled()
+      await 누르기(view, 'input-card-prev')
+      expect(onPrev).toHaveBeenCalled()
     })
 
-    /** 다음은 아무것도 안 쓰고 넘긴다. 친 값이 나가면 그 말이 거짓이 된다. */
-    it('다음은 친 값을 안 내보낸다', async () => {
-      const onNext = jest.fn()
-      const { view, onConfirm } = await 그리기({ next: { label: '다음', onPress: onNext } })
+    /** 확인이 더 넓다. 앞뒤로 오가는 동안 손이 가는 자리가 안 흔들린다. */
+    it('확인이 이전보다 넓다', async () => {
+      const { view } = await 그리기({
+        confirmLabel: '저장 후 다음(3/3)',
+        prev: { label: '이전(1/3)', onPress: jest.fn() },
+      })
+
+      const 이전 = flattenStyle(view.getByTestId('input-card-prev').props.style)
+      const 확인 = flattenStyle(view.getByTestId('input-card-confirm').props.style)
+      expect(Number(확인.flexGrow)).toBeGreaterThan(Number(이전.flexGrow))
+    })
+
+    /**
+     * 이전도 친 값을 내보낸다(사용자 지정). 앞뒤로 오가는 동안 값이 안 날아간다. 그래서 확인과
+     * **같은 것을 넘긴다**. 쓸지 말지는 받는 쪽이 정한다.
+     */
+    it('이전도 친 값과 스테퍼를 함께 넘긴다', async () => {
+      const onPrev = jest.fn()
+      const { view } = await 그리기({
+        stepper: 스테퍼,
+        prev: { label: '이전(1/3)', onPress: onPrev },
+      })
 
       await 치기(view, '3250000000')
-      await 누르기(view, 'input-card-next')
+      await 누르기(view, 'input-card-prev')
 
-      expect(onNext).toHaveBeenCalled()
-      expect(onConfirm).not.toHaveBeenCalled()
+      expect(onPrev).toHaveBeenCalledWith('3250000000', 1)
     })
 
     it('안 넘기면 곁들이 버튼도 스테퍼도 안 선다', async () => {
@@ -281,7 +319,7 @@ describe('InputCard', () => {
 
       expect(view.queryByTestId('input-card-stepper-value')).toBeNull()
       expect(view.queryByTestId('input-card-exclude')).toBeNull()
-      expect(view.queryByTestId('input-card-next')).toBeNull()
+      expect(view.queryByTestId('input-card-prev')).toBeNull()
     })
   })
 })

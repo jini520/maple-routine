@@ -23,6 +23,7 @@ import { getFixedDropIcons, type FixedDropIconSpec } from '../../lib/drop/fixed-
 import { dropItemIconOf, getItemIconUrlByFile } from '../../lib/assets/asset-lookup'
 import { dropItemNameOf } from '../../lib/drop/drop-items'
 import { subjectParticle } from '../../lib/drop/drop-history'
+import { confirmLabels } from '../../lib/drop/price-card-labels'
 import { bossNameOf } from '../../lib/boss/bosses'
 import { isValuableDropItem } from '../../lib/drop/valuable-drops'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types'
@@ -77,6 +78,12 @@ interface BossDropSheetProps {
    * 수익 배지도 뜨지 않는다. 가격 개념이 없는 호출부에 누를 수 없는 표식을 만들지 않는다.
    */
   pricing?: { defaultShare: number; maxShare: number; characterName: string }
+}
+
+/** 한 연쇄 안에서 매긴 값. 상태가 갈아 끼워져도 이전으로 돌아가면 이 값이 보인다. */
+interface PriceEdit {
+  meso: number
+  share: number
 }
 
 function ItemThumb(props: { itemKey: string | null; level?: number }): React.JSX.Element {
@@ -252,19 +259,41 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   }
 
   /**
-   * 가격 카드를 연다. `queue` 는 **지금 것을 포함한 남은 건**이고 `total` 은 이 연쇄가 시작할 때의
-   * 개수다. 버튼의 `다음 (2/3)` 이 그 둘로 선다.
+   * 가격 카드를 연다. `items` 는 이 연쇄가 도는 전부이고 `index` 는 지금 자리다.
    *
-   * 남은 것이 없으면 닫는다. 확인은 카드가 스스로 닫지만 곁들이 버튼은 안 닫아서, 마지막 건을
-   * 기록 안함으로 끝내면 빈 카드가 남는다.
+   * 앞뒤로 오갈 수 있어야 해서 남은 것을 잘라 나가지 않고 **자리 번호**로 돈다. `edits` 는 이
+   * 연쇄 안에서 매긴 값이다. `applyPrice` 는 상태를 갈아 끼우지만 `items` 가 든 것은 열 때의
+   * 모습이라, 이것이 없으면 이전으로 돌아갔을 때 방금 매긴 값이 안 보인다.
+   *
+   * 자리를 벗어나면 닫는다. 확인은 카드가 스스로 닫지만 기록 안함은 안 닫아서, 마지막 건을
+   * 그것으로 끝내면 빈 카드가 남는다.
    */
-  function openPriceCard(queue: RecordedDrop[], total: number): void {
-    const [target, ...rest] = queue
+  function openPriceCard(items: RecordedDrop[], index: number, edits = new Map<number, PriceEdit>()): void {
+    const target = items[index]
     if (target === undefined || props.pricing === undefined) {
       closeInputCard()
       return
     }
     const { defaultShare, maxShare, characterName } = props.pricing
+    const edit = edits.get(index)
+    const 마지막 = index === items.length - 1
+    /** 값이 매겨질 개수. 지금 칸이 빈 채로 끝나는 경우와 채워 끝나는 경우가 다르다. */
+    const 매긴것 = items.filter(
+      (drop, at) => at !== index && (edits.has(at) || drop.priceState === 'entered'),
+    ).length
+    const 지금매김 = edit !== undefined || target.priceState === 'entered'
+
+    /** 값을 쓰고 자리를 옮긴다. 빈 칸이면 아무것도 안 쓴다. */
+    function move(to: number, next: string, share?: number): void {
+      const 다음편집 = new Map(edits)
+      if (next !== '') {
+        const meso = mesoValueOf(next)
+        applyPrice(target, { priceState: 'entered', priceMeso: meso, priceShare: share })
+        다음편집.set(index, { meso, share: share ?? defaultShare })
+      }
+      openPriceCard(items, to, 다음편집)
+    }
+
     openInputCard({
       // 머리가 그 아이템을 말한다. `판매 가격` 이라는 말은 이미 누른 버튼이 했다.
       label: dropItemNameOf(target.itemKey, target.itemName),
@@ -273,27 +302,30 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
       unit: '메소',
       reading: true,
       chips: MESO_QUICK_ADDS,
-      value: mesoTextOf(target.priceMeso ?? 0),
+      value: mesoTextOf(edit?.meso ?? target.priceMeso ?? 0),
       stepper: {
         label: '분배 인원',
-        value: target.priceShare ?? defaultShare,
+        value: edit?.share ?? target.priceShare ?? defaultShare,
         min: 1,
         max: maxShare,
       },
-      confirmLabel: '저장',
+      // 버튼 글자가 **지금 누르면 무슨 일이 나는가**를 말한다. 저장과 다음을 두 버튼으로
+      // 두었더니 어느 쪽이 값을 쓰는지가 안 읽혔다(사용자 지적).
+      ...confirmLabels({ 하나: items.length === 1, 마지막, 자리: index, 전체: items.length, 매긴것, 지금매김 }),
       exclude: {
         label: '기록 안함',
         onPress: () => {
           applyPrice(target, { priceState: 'excluded', priceMeso: undefined, priceShare: undefined })
-          openPriceCard(rest, total)
+          const 다음편집 = new Map(edits)
+          다음편집.delete(index)
+          openPriceCard(items, index + 1, 다음편집)
         },
       },
-      // 아무것도 안 쓰고 넘긴다. 친 값도 버리는데 카드를 ✕ 로 닫는 것과 같은 규칙이다.
-      next: rest.length > 0 ? { label: `다음 (${total - rest.length}/${total})`, onPress: () => openPriceCard(rest, total) } : undefined,
-      onConfirm: (next, share) => {
-        applyPrice(target, { priceState: 'entered', priceMeso: mesoValueOf(next), priceShare: share })
-        openPriceCard(rest, total)
-      },
+      prev:
+        index > 0
+          ? { label: `이전(${index}/${items.length})`, onPress: (next, share) => move(index - 1, next, share) }
+          : undefined,
+      onConfirm: (next, share) => move(index + 1, next, share),
     })
   }
 
@@ -535,11 +567,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                   {/* 다 정했으면 여는 차례가 고른 것 전체다. 남은 것이 없으니 고치러 들어간다. */}
                   <Pressable
                     role="button"
-                    onPress={() =>
-                      unpriced.length > 0
-                        ? openPriceCard(unpriced, unpriced.length)
-                        : openPriceCard(selected, selected.length)
-                    }
+                    onPress={() => openPriceCard(unpriced.length > 0 ? unpriced : selected, 0)}
                     className="shrink-0 rounded-full bg-primary px-3 py-1.5"
                   >
                     <Text className="text-[12.5px] font-bold text-on-primary">

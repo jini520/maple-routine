@@ -495,17 +495,18 @@ describe('DropPriceScreen: 순차 입력', () => {
     expect(excludePrice).toHaveBeenCalledWith(expect.objectContaining({ bossKey: 주간보스 }))
   })
 
-  it('단건 편집에는 다음이 없다. 닫으면 같은 일이라 버튼을 늘리지 않는다', async () => {
-    const { getByLabelText, queryByTestId } = await renderOverlay(<DropPriceScreen />)
+  it('단건 편집에는 이전이 없고 버튼이 닫기다', async () => {
+    const { getByLabelText, getByText, queryByTestId } = await renderOverlay(<DropPriceScreen />)
 
     await act(async () => {
       fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크 가격 입력'))
     })
 
-    expect(queryByTestId('input-card-next')).toBeNull()
+    expect(queryByTestId('input-card-prev')).toBeNull()
+    expect(getByText('닫기')).toBeTruthy()
   })
 
-  it('순차 모드의 다음은 아무것도 저장하지 않고 다음 건으로만 간다', async () => {
+  it('빈 칸으로 넘기면 아무것도 저장하지 않고 다음 건으로만 간다', async () => {
     mockStores({
       price: {
         groups: 그룹([
@@ -514,21 +515,24 @@ describe('DropPriceScreen: 순차 입력', () => {
         ]),
       },
     })
-    const { getByText, getByTestId, queryByTestId } = await renderOverlay(<DropPriceScreen />)
+    const { getByText, getByTestId } = await renderOverlay(<DropPriceScreen />)
 
     await act(async () => {
       fireEvent.press(getByText('미입력 2건 이어서 입력'))
     })
+    expect(getByText('다음(2/2)')).toBeTruthy()
+
     await act(async () => {
-      fireEvent.press(getByTestId('input-card-next'))
+      fireEvent.press(getByTestId('input-card-confirm'))
     })
 
     expect(excludePrice).not.toHaveBeenCalled()
     expect(savePrice).not.toHaveBeenCalled()
     // 다음 건으로 넘어갔다. 목록에도 같은 이름이 있으므로 카드의 머리로 좁힌다.
     expect(getByTestId('input-card-label').props.children[0]).toBe('가디언 엔젤 링')
-    // 마지막 건이라 다음 버튼이 사라진다.
-    expect(queryByTestId('input-card-next')).toBeNull()
+    // 마지막 자리라 세는 말을 하고, 이전이 첫 자리를 가리킨다.
+    expect(getByText('0개 입력 완료')).toBeTruthy()
+    expect(getByText('이전(1/2)')).toBeTruthy()
   })
 })
 

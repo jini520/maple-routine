@@ -144,15 +144,24 @@ export interface InputCardProps {
   /** 확인 버튼의 글자. 기본은 `확인`. 값을 곧 저장하는 자리에서는 `저장` 이다. */
   confirmLabel?: string
   /**
-   * 확인 왼쪽에 서는 곁들이. 값을 안 쓰고 **다른 상태로 끝내는** 길이다. 드롭 판매가의
+   * **칸이 비었을 때**의 확인 글자. 안 주면 `confirmLabel` 을 그대로 쓴다.
+   *
+   * 저장할 것이 있나 없나로 버튼이 하는 일이 갈리는 자리가 있다. 드롭 판매가는 빈 칸에서
+   * `다음(3/3)` 이고 값을 치면 `저장 후 다음(3/3)` 이다. 버튼을 둘로 두었더니 어느 쪽이 값을
+   * 쓰는지가 안 읽혔다(사용자 지적).
+   */
+  confirmEmptyLabel?: string
+  /**
+   * 확인 왼쪽 끝에 서는 작은 곁들이. 값을 안 쓰고 **다른 상태로 끝내는** 길이다. 드롭 판매가의
    * `기록 안함` 이 쓴다.
    */
   exclude?: { label: string; onPress: () => void }
   /**
-   * 확인 오른쪽에 서는 곁들이. **아무것도 안 쓰고** 다음으로 넘긴다. 친 값은 버려지는데,
-   * 확인 없이 닫으면 버린다는 규칙과 같다.
+   * 확인 바로 왼쪽에 서는 **뒤로**. 확인과 같은 것을 넘기고, 쓸지 말지는 받는 쪽이 정한다.
+   *
+   * 앞뒤로 오가는 동안 친 값이 안 날아가야 해서 값을 함께 준다(사용자 지정).
    */
-  next?: { label: string; onPress: () => void }
+  prev?: { label: string; onPress: (next: string, stepper?: number) => void }
   /**
    * 확인. 친 글자를 그대로 준다. 정리는 받는 쪽이 한다.
    *
@@ -207,6 +216,18 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
 
   function add(step: number): void {
     setDraft(mesoTextOf(Math.min(MAX_MESO, mesoValueOf(draft) + step)))
+  }
+
+  /**
+   * 지금 든 것을 넘긴다. 확인과 이전이 **같은 것을 준다**.
+   *
+   * 스테퍼를 안 넘긴 카드는 인자 하나로 부른다. 없는 수를 `0` 으로 채워 보내면 받는 쪽이 그것을
+   * 값으로 읽을 수 있다.
+   */
+  function give(to: ((next: string, stepper?: number) => void) | undefined): void {
+    if (to === undefined) return
+    if (props.stepper === undefined) to(draft)
+    else to(draft, step)
   }
 
   return (
@@ -350,8 +371,9 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
           )}
 
           {/*
-            버튼 줄. 곁들이가 없으면 확인 혼자 줄을 채운다(`flex-1`). 셋이 서면 확인이 가장
-            넓다. 셋 다 지금 것을 처리하고 끝내는 길이라 층을 안 나누고 한 줄에 둔다.
+            버튼 줄. 왼쪽부터 기록 안함 · 이전 · 확인이고 **확인이 가장 넓다**. 앞뒤로 오가는
+            동안 손이 가는 자리가 안 흔들린다. 셋 다 지금 것을 처리하고 넘어가는 길이라 층을
+            안 나누고 한 줄에 둔다.
           */}
           <View className="mt-3 h-11 flex-row items-center gap-2">
             {props.exclude !== undefined && (
@@ -359,34 +381,33 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                 testID="input-card-exclude"
                 role="button"
                 onPress={props.exclude.onPress}
-                className="h-11 shrink-0 justify-center rounded-xl border border-border px-3.5 active:bg-surface-2"
+                className="h-11 shrink-0 justify-center rounded-xl border border-border px-3 active:bg-surface-2"
               >
-                <Text className="text-xs font-semibold text-text-muted">{props.exclude.label}</Text>
+                <Text className="text-11 font-semibold text-text-muted">{props.exclude.label}</Text>
+              </Pressable>
+            )}
+            {props.prev !== undefined && (
+              <Pressable
+                testID="input-card-prev"
+                role="button"
+                onPress={() => give(props.prev?.onPress)}
+                className="h-11 flex-1 items-center justify-center rounded-xl border border-border active:bg-surface-2"
+              >
+                <Text className="text-xs font-semibold text-text-muted" style={TABULAR_NUMS}>
+                  {props.prev.label}
+                </Text>
               </Pressable>
             )}
             <Pressable
               testID="input-card-confirm"
               role="button"
-              onPress={() => {
-                if (props.stepper === undefined) props.onConfirm(draft)
-                else props.onConfirm(draft, step)
-              }}
-              className="h-11 flex-1 items-center justify-center rounded-xl bg-primary"
+              onPress={() => give(props.onConfirm)}
+              className="h-11 flex-[2] items-center justify-center rounded-xl bg-primary"
             >
-              <Text className="text-sm font-bold text-on-primary">{props.confirmLabel ?? '확인'}</Text>
+              <Text numberOfLines={1} className="text-sm font-bold text-on-primary" style={TABULAR_NUMS}>
+                {draft === '' ? (props.confirmEmptyLabel ?? props.confirmLabel ?? '확인') : (props.confirmLabel ?? '확인')}
+              </Text>
             </Pressable>
-            {props.next !== undefined && (
-              <Pressable
-                testID="input-card-next"
-                role="button"
-                onPress={props.next.onPress}
-                className="h-11 shrink-0 justify-center rounded-xl border border-border px-3.5 active:bg-surface-2"
-              >
-                <Text className="text-xs font-semibold text-text-muted" style={TABULAR_NUMS}>
-                  {props.next.label}
-                </Text>
-              </Pressable>
-            )}
           </View>
         </Pressable>
       </Animated.View>
