@@ -117,7 +117,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
     // 자리는 `InputCardLayer` 가 준다. 카드는 자기가 키보드 위 어디에 앉는지 모른다.
     <View className="flex-1 justify-end" testID="input-card">
       {/*
-        시트 위에 한 겹 더. **누르면 키보드만 내린다**(사용자 지정). 카드는 안 닫힌다 — 닫는 것은
+        시트 위에 한 겹 더. **누르면 키보드만 내린다**(사용자 지정). 카드는 안 닫힌다. 닫는 것은
         ✕ 뿐이다. 판의 빈 자리와 같은 일을 하므로 카드 안팎이 같은 규칙이 된다.
 
         터치는 여기서 멈춘다. 카드가 열려 있는 동안 뒤의 시트는 안 눌린다.
@@ -135,12 +135,12 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
       */}
       <Animated.View style={props.panelStyle}>
         {/*
-          판의 **빈 자리를 누르면 키보드만 내린다**(사용자 지정). 카드는 제자리에 남는다 —
-          자리는 마지막으로 잰 키보드 높이를 붙들고 있어 안 흔들린다.
+          판의 **빈 자리를 누르면 키보드만 내린다**(사용자 지정). 카드는 제자리에 남는다. 자리는
+          마지막으로 잰 키보드 높이를 붙들고 있어 안 흔들린다.
 
           누르개가 아니면 아무 일도 안 일어난다. RN 은 터치가 닿은 가장 위 뷰에서 멈추고 뒤의
-          스크림으로 흘려보내지 않아서, 손에 익은 «입력 칸 밖을 누르면 키보드가 내려간다» 가
-          성립하지 않았다.
+          스크림으로 흘려보내지 않는다. 그래서 손에 익은 **입력 칸 밖을 누르면 키보드가 내려간다**
+          가 저절로는 성립하지 않았다.
         */}
         <Pressable
           testID="input-card-panel"
@@ -212,8 +212,13 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                 아래로 밀어 위아래 여백이 어긋났고(위 18 · 아래 14.7 로 쟀다), `leading-none` 으로
                 글자 크기와 같게 맞췄더니 이번엔 숫자 윗부분이 잘렸다(사용자 지적). 크기만 주고
                 줄 높이는 글꼴이 정하게 두면 둘 다 안 난다.
+
+                **높이 `h-9` 는 못박는 값이다.** 안 주면 iOS 가 담은 글자의 종류대로 칸 키를 재서
+                한글을 칠 때와 숫자를 칠 때 상자가 다른 높이가 된다. 36 + 위아래 여백 20 이 상자의
+                바닥 `min-h-14`(56)와 같아서 지금 보이는 모양은 안 바뀐다. 글자는 이 36 안에서
+                가운데 선다.
               */
-              className={`flex-1 text-text ${isText ? 'text-left font-semibold' : 'text-right font-bold'}`}
+              className={`h-9 flex-1 text-text ${isText ? 'text-left font-semibold' : 'text-right font-bold'}`}
               style={[isText ? null : TABULAR_NUMS, { fontSize: isText ? 16 : 20 }]}
             />
             {props.unit !== undefined && (

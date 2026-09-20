@@ -256,14 +256,20 @@ describe('DropPriceScreen: 기간을 이어받는다', () => {
 
 describe('DropPriceScreen: 값 매기기', () => {
   it('행을 탭하면 그 기록을 들고 키패드가 열리고, 저장하면 스토어로 간다', async () => {
-    const { getByLabelText, getByText } = await renderOverlay(<DropPriceScreen />)
+    const { getByLabelText, getByTestId, getByText } = await renderOverlay(<DropPriceScreen />)
 
     await act(async () => {
       fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크 가격 입력'))
     })
-    // 단위 칩으로 값을 만든다. 자릿수를 세지 않게 하는 것이 이 칩의 존재 이유다.
+    // 금액은 입력 카드가 받는다. 줄을 눌러 카드를 열고 쳐서 확인한다.
     await act(async () => {
-      fireEvent.press(getByText('+1억'))
+      fireEvent.press(getByTestId('drop-price-amount'))
+    })
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-card-value'), '100000000')
+    })
+    await act(async () => {
+      fireEvent.press(getByTestId('input-card-confirm'))
     })
     await act(async () => {
       fireEvent.press(getByText('저장'))
@@ -288,13 +294,19 @@ describe('DropPriceScreen: 값 매기기', () => {
 
   it('저장이 실패하면 토스트로 알린다. 조용히 삼키면 저장된 줄 알고 떠난다', async () => {
     savePrice.mockRejectedValue(new Error('쓰기 실패'))
-    const { getByLabelText, getByText } = await renderOverlay(<DropPriceScreen />)
+    const { getByLabelText, getByTestId, getByText } = await renderOverlay(<DropPriceScreen />)
 
     await act(async () => {
       fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크 가격 입력'))
     })
     await act(async () => {
-      fireEvent.press(getByText('+1억'))
+      fireEvent.press(getByTestId('drop-price-amount'))
+    })
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-card-value'), '100000000')
+    })
+    await act(async () => {
+      fireEvent.press(getByTestId('input-card-confirm'))
     })
     await act(async () => {
       fireEvent.press(getByText('저장'))

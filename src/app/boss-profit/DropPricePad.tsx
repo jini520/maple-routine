@@ -1,13 +1,12 @@
 /**
- * 드롭 판매가 입력 키패드.
+ * 드롭 판매가 입력.
  *
- * **OS 키보드를 부르지 않는다.** 메소는 자릿수가 커서 시스템 숫자 키패드로는 0 을 세게 되고
- * (`keyboardType="numeric"` 이 못 고치는 것이 그것이다), `KeyboardAvoidingView` 는 플랫폼마다
- * 동작이 갈리는 데다 시트의 동적 높이와 겹친다. 앱이 자기 키패드를 그리면 보정할 것이 없다.
+ * **금액은 입력 카드가 받는다.** 예전에는 앱이 자기 키패드를 그렸다. 메소가 자릿수가 커서
+ * 시스템 키패드로는 0 을 세게 되고, 키보드가 뜨면 시트가 밀리거나 잘렸기 때문이다. 입력 카드가
+ * 시트를 키보드에서 떼어 내면서 뒤쪽 이유가 사라졌고, 자릿수는 카드 안의 빠른 칩이 맡는다.
+ * 그래서 앱 키패드를 걷고 앱 안에 숫자 입력 방식을 하나로 둔다.
  *
- * 층은 위에서 아래로 금액 → 단위 칩 → 분배 → 키패드 → 동작이고 강조색은 저장 버튼 하나뿐이다.
- *
- * 금액 칸·빠른 칩·키 그리드는 여기 없다. 쓰는 자리가 셋이 되어 `organisms/MesoPad` 로 나갔다.
+ * 층은 위에서 아래로 머리 → 금액 → 분배 → 동작이고 강조색은 저장 버튼 하나뿐이다.
  */
 import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
@@ -20,9 +19,10 @@ import type { RecordedDrop } from '../../types/drops'
 
 import { Badge, ChevronLeftIcon, Text } from '../../components/atoms'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
-import { MesoAmountField } from '../../components/organisms/MesoPad/MesoAmountField'
-import { MesoKeypad } from '../../components/organisms/MesoPad/MesoKeypad'
-import { applyMesoKey, type MesoKey } from '../../components/organisms/MesoPad/meso-pad'
+import { mesoTextOf, mesoValueOf } from '../../components/organisms/MesoPad/meso-pad'
+import { openInputCard } from '../../features/input-card/store'
+import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
+import { formatMesoUnits } from '../../lib/drop/drop-price'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
 
@@ -80,10 +80,6 @@ export function DropPricePadContent(
   const iconUrl = dropItemIconOf(props.drop.itemKey)
   const perPerson = share > 1 ? Math.floor(meso / share) : 0
 
-  function pressKey(key: MesoKey): void {
-    setMeso((prev) => applyMesoKey(prev, key))
-  }
-
   return (
     <View>
       <View className="px-5">
@@ -119,14 +115,43 @@ export function DropPricePadContent(
           )}
         </View>
 
-        {/* 금액 칸과 빠른 칩은 `molecules/MesoPad` 가 든다. 지출·수입 시트도 같은 것을 쓰므로
-            여기 두면 세 벌이 된다. 무엇을 왜 그렇게 그리는지는 그 파일에 있다. */}
-        <MesoAmountField
-          meso={meso}
-          onChange={setMeso}
-          resetLabel="가격 초기화"
-          amountTestID="drop-price-amount"
-        />
+        {/*
+          누르면 입력 카드가 받는다. 큰 숫자는 이 화면의 주인공이라 자리를 그대로 지킨다.
+          억/만 읽기는 자릿수를 눈으로 세지 않게 해 주는 값이라 줄에 남긴다.
+        */}
+        <Pressable
+          testID="drop-price-amount"
+          role="button"
+          aria-label="판매 가격"
+          onPress={() =>
+            openInputCard({
+              label: '판매 가격',
+              context: `${dropItemNameOf(props.drop.itemKey, props.drop.itemName)} · ${props.bossName} · ${props.characterName}`,
+              icon: 'meso',
+              unit: '메소',
+              reading: true,
+              chips: MESO_QUICK_ADDS,
+              value: mesoTextOf(meso),
+              onConfirm: (next) => setMeso(mesoValueOf(next)),
+            })
+          }
+          className="mt-5 border-b border-border pb-1.5"
+        >
+          <View className="flex-row items-end justify-end gap-1.5">
+            <Text
+              testID="drop-price-amount-value"
+              className={`text-32 font-bold tracking-[-.03em] ${meso === 0 ? 'text-text-disabled' : 'text-text'}`}
+              style={TABULAR_NUMS}
+            >
+              {meso.toLocaleString()}
+            </Text>
+            <Text className="pb-1 text-sm font-semibold text-text-muted">메소</Text>
+          </View>
+          {/* 항상 자리를 지킨다. 0 에서 사라지면 첫 타건에 아래가 통째로 밀린다. */}
+          <Text className="mt-1.5 min-h-4 text-right text-11 text-text-muted" style={TABULAR_NUMS}>
+            {meso > 0 ? formatMesoUnits(meso) : ''}
+          </Text>
+        </Pressable>
 
         {/* 분배 인원. 스테퍼는 파티 인원 모달과 같은 어휘를 축소한 것이다. `PartySizeStepper`
             로 접지 않는다. 그 molecule 이 정한 두 크기(관리 행 24 · 모달 32) 중 어느 쪽도
@@ -166,8 +191,6 @@ export function DropPricePadContent(
           {meso > 0 && share > 1 ? `1인당 ${perPerson.toLocaleString()} 메소` : ''}
         </Text>
       </View>
-
-      <MesoKeypad onKey={pressKey} />
 
       {/* 기록 안함은 값이 없다 가 아니라 값을 매기지 않기로 했다 는 결정이라 저장과 같은 층에
           선다. 스킵은 그 옆의 글자 버튼이다. 아무것도 저장하지 않고 다음으로만 가므로 테두리를

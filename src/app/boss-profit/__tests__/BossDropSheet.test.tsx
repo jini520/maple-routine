@@ -469,7 +469,7 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
 
   it('키패드에서 값을 매기면 그 기록에만 붙고 그리드로 돌아온다. 배지가 그 사실을 말한다', async () => {
     const { result, onSave } = renderSheet({ pricing: PRICING })
-    const { getByLabelText, getAllByLabelText, getByText } = await result
+    const { getByLabelText, getAllByLabelText, getByTestId, getByText } = await result
 
     await act(async () => {
       fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크'))
@@ -477,12 +477,14 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
     await act(async () => {
       fireEvent.press(getByText('가격 입력'))
     })
-    // `1` `00` → 100 메소. 자릿수 전체가 주 표기다.
     await act(async () => {
-      fireEvent.press(getByLabelText('1'))
+      fireEvent.press(getByTestId('drop-price-amount'))
     })
     await act(async () => {
-      fireEvent.press(getByLabelText('00'))
+      fireEvent.changeText(getByTestId('input-card-value'), '100')
+    })
+    await act(async () => {
+      fireEvent.press(getByTestId('input-card-confirm'))
     })
     await act(async () => {
       fireEvent.press(getByText('저장'))

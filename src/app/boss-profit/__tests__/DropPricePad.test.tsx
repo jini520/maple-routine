@@ -76,50 +76,75 @@ function renderPad(overrides: Partial<React.ComponentProps<typeof DropPricePadCo
   return { result, onSave, onExclude }
 }
 
+/** 금액은 입력 카드가 받는다. 줄을 눌러 카드를 열고 쳐서 확인한다. */
+async function 금액치기(view: Awaited<ReturnType<typeof renderPad>>['result'], text: string): Promise<void> {
+  const v = await view
+  await act(async () => {
+    fireEvent.press(v.getByTestId('drop-price-amount'))
+  })
+  await act(async () => {
+    fireEvent.changeText(v.getByTestId('input-card-value'), text)
+  })
+  await act(async () => {
+    fireEvent.press(v.getByTestId('input-card-confirm'))
+  })
+}
+
 describe('DropPricePad: 금액 입력', () => {
-  it('키를 누른 순서대로 자릿수가 자란다. 접지 않고 원시 표기다', async () => {
+  it('친 값이 줄에 콤마로 끊겨 선다. 접지 않고 원시 표기다', async () => {
     const { result } = renderPad()
-    const { getByLabelText, getByTestId } = await result
+    const { getByTestId } = await result
 
-    for (const key of ['1', '2', '3', '00']) {
-      await act(async () => {
-        fireEvent.press(getByLabelText(key))
-      })
-    }
+    await 금액치기(result, '12300')
 
-    expect(getByTestId('drop-price-amount').props.children).toBe('12,300')
+    expect(getByTestId('drop-price-amount-value').props.children).toBe('12,300')
   })
 
   it('억/만 환산은 보조 줄이고, 0이면 비되 자리는 남는다', async () => {
     const { result } = renderPad()
-    const { getByText, queryByText } = await result
+    const { queryByText } = await result
 
-    // 값이 0인 동안에는 환산 문구가 없다. 자리(높이)만 지킨다. 정확 일치로 묻는 이유는 단위 칩이
-    // `+1억` 이라 부분 일치로는 칩이 걸리기 때문이다.
+    // 값이 0인 동안에는 환산 문구가 없다. 자리(높이)만 지킨다.
     expect(queryByText('1억')).toBeNull()
 
-    await act(async () => {
-      fireEvent.press(getByText('+1억'))
-    })
+    await 금액치기(result, '100000000')
     expect(queryByText('1억')).toBeTruthy()
   })
 
-  it('⌫ 는 한 자리만 지우고 초기화는 통째로 지운다', async () => {
+  /** 빠른 칩은 이제 카드 안에 산다. 줄에는 안 선다. */
+  it('빠른 칩은 카드 안에서 값을 올린다', async () => {
     const { result } = renderPad()
-    const { getByLabelText, getByTestId, getByText } = await result
+    const v = await result
 
     await act(async () => {
-      fireEvent.press(getByText('+100만'))
+      fireEvent.press(v.getByTestId('drop-price-amount'))
     })
     await act(async () => {
-      fireEvent.press(getByLabelText('한 자리 지우기'))
+      fireEvent.press(v.getByText('+1억'))
     })
-    expect(getByTestId('drop-price-amount').props.children).toBe('100,000')
+    await act(async () => {
+      fireEvent.press(v.getByTestId('input-card-confirm'))
+    })
 
-    await act(async () => {
-      fireEvent.press(getByLabelText('가격 초기화'))
-    })
-    expect(getByTestId('drop-price-amount').props.children).toBe('0')
+    expect(v.getByTestId('drop-price-amount-value').props.children).toBe('100,000,000')
+  })
+
+  /**
+   * 앱 키패드를 걷으면서 `⌫` 와 `가격 초기화` 가 함께 사라졌다. 지우는 일은 OS 키보드의 지우기가
+   * 하고, 통째로 지우는 것은 카드에서 다 지우고 확인하는 것이다.
+   */
+  it('카드에서 다 지우면 줄이 0 으로 돌아온다', async () => {
+    const { result } = renderPad()
+    const { getByTestId, queryByLabelText } = await result
+
+    await 금액치기(result, '1000000')
+    expect(getByTestId('drop-price-amount-value').props.children).toBe('1,000,000')
+
+    await 금액치기(result, '')
+    expect(getByTestId('drop-price-amount-value').props.children).toBe('0')
+
+    expect(queryByLabelText('한 자리 지우기')).toBeNull()
+    expect(queryByLabelText('가격 초기화')).toBeNull()
   })
 
   // **미입력은 0원이 아니다**. 0을 저장할 수 있으면 "값을 매겼는데 0원"이라는
@@ -140,9 +165,7 @@ describe('DropPricePad: 금액 입력', () => {
     const { result, onSave } = renderPad()
     const { getByText } = await result
 
-    await act(async () => {
-      fireEvent.press(getByText('+1억'))
-    })
+    await 금액치기(result, '100000000')
     await act(async () => {
       fireEvent.press(getByText('저장'))
     })
@@ -179,11 +202,9 @@ describe('DropPricePad: 분배 인원', () => {
 
   it('1인이면 1인당 금액을 말하지 않는다. 나눌 상대가 없다', async () => {
     const { result } = renderPad({ defaultShare: 1 })
-    const { getByText, queryByText } = await result
+    const { queryByText } = await result
 
-    await act(async () => {
-      fireEvent.press(getByText('+1억'))
-    })
+    await 금액치기(result, '100000000')
     expect(queryByText(/1인당/)).toBeNull()
   })
 
@@ -191,9 +212,7 @@ describe('DropPricePad: 분배 인원', () => {
     const { result } = renderPad({ defaultShare: 3 })
     const { getByText } = await result
 
-    await act(async () => {
-      fireEvent.press(getByText('+100만'))
-    })
+    await 금액치기(result, '1000000')
     expect(getByText('1인당 333,333 메소')).toBeTruthy()
   })
 })
@@ -240,11 +259,10 @@ describe('DropPricePad: 이름', () => {
 
 describe('DropPricePad: 대상이 갈리면 값이 따라간다', () => {
   it('다른 아이템으로 바뀌면 금액과 인원이 그 아이템의 것으로 되돌아간다', async () => {
-    const { getByLabelText, getByTestId, getByText } = await renderOverlay(<PadHost />)
+    const view = await renderOverlay(<PadHost />)
+    const { getByLabelText, getByTestId, getByText } = view
 
-    await act(async () => {
-      fireEvent.press(getByText('+1억'))
-    })
+    await 금액치기(Promise.resolve(view), '100000000')
     await act(async () => {
       fireEvent.press(getByLabelText('분배 인원 증가'))
     })
@@ -254,7 +272,7 @@ describe('DropPricePad: 대상이 갈리면 값이 따라간다', () => {
       fireEvent.press(getByLabelText('다음 아이템'))
     })
 
-    expect(getByTestId('drop-price-amount').props.children).toBe('0')
+    expect(getByTestId('drop-price-amount-value').props.children).toBe('0')
     expect(getByText('3인')).toBeTruthy()
   })
 })

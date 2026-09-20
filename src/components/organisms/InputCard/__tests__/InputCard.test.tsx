@@ -97,7 +97,7 @@ describe('InputCard', () => {
 
   /**
    * 카드를 닫는 것은 ✕ 뿐이다(사용자 지정). 스크림은 판의 빈 자리와 같은 일을 해서 카드 안팎이
-   * 한 규칙이다 — 키보드만 내리고 치던 값은 남는다.
+   * 한 규칙이다. 키보드만 내리고 치던 값은 남는다.
    */
   it('스크림을 누르면 키보드만 내린다. 안 닫히고 치던 값도 남는다', async () => {
     const 내리기 = jest.spyOn(Keyboard, 'dismiss').mockImplementation(() => undefined)
