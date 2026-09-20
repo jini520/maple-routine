@@ -14,6 +14,8 @@ import type { TextInputProps } from 'react-native'
 
 import { useBottomSheetInternal } from '@gorhom/bottom-sheet'
 
+import { useSheetInputFocusReport } from '../components/organisms/BottomSheet/sheet-input-focus'
+
 /**
  * RN 의 프롭에서 뽑아 쓰는 초점 이벤트 형태. 그 타입의 이름과 자리가 RN 판마다 달라서
  * (`TextInputFocusEvent`·`FocusEvent`) 직접 가져오면 판을 올릴 때 조용히 어긋난다.
@@ -58,6 +60,11 @@ export function useSheetKeyboardTarget(
 ): SheetKeyboardTarget {
   /** 시트 밖에서는 이 훅이 던지므로 `unsafe`(`true`)로 묻는 자리. */
   const keyboardState = useBottomSheetInternal(true)?.animatedKeyboardState ?? null
+  /**
+   * 초점을 시트에 알리는 길. 시트는 키보드 리스너가 전역이라 **누가 올린 키보드인지** 를 스스로
+   * 모른다. 입력 카드가 시트 밖에서 올린 것까지 따라가면 시트가 짧아져 윗변이 내려간다.
+   */
+  const reportFocus = useSheetInputFocusReport()
   /** 내가 켰던 초점. 언마운트할 때 남의 것을 끄지 않으려고 기억한다. */
   const myTarget = useRef<number | undefined>(undefined)
 
@@ -66,9 +73,10 @@ export function useSheetKeyboardTarget(
     return () => {
       if (myTarget.current !== undefined && keyboardState.get().target === myTarget.current) {
         keyboardState.set((state) => ({ ...state, target: undefined }))
+        reportFocus?.(false)
       }
     }
-  }, [keyboardState])
+  }, [keyboardState, reportFocus])
 
   return {
     onFocus(event) {
@@ -76,6 +84,7 @@ export function useSheetKeyboardTarget(
       if (target !== undefined) {
         myTarget.current = target
         keyboardState?.set((state) => ({ ...state, target }))
+        reportFocus?.(true)
       }
       onFocus?.(event)
     },
@@ -88,6 +97,7 @@ export function useSheetKeyboardTarget(
       const target = targetOf(event)
       if (keyboardState !== null && target !== undefined && keyboardState.get().target === target) {
         keyboardState.set((state) => ({ ...state, target: undefined }))
+        reportFocus?.(false)
       }
       onBlur?.(event)
     },

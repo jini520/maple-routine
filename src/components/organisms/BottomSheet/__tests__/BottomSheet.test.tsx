@@ -8,7 +8,7 @@
 // 라이브러리를 진짜로 세워 마운트되는지는 옆 파일(`BottomSheet.wiring.test.tsx`)이 본다.
 import { useState, type ReactNode } from 'react'
 import { Keyboard, Pressable, Text, View } from 'react-native'
-import { act, fireEvent, within } from '@testing-library/react-native'
+import { act, fireEvent, screen, within } from '@testing-library/react-native'
 
 // `jest.mock` 팩토리는 호이스팅돼 스코프 밖 변수를 못 읽는다. **`mock` 접두 이름만** 예외다.
 const mockPresent = jest.fn()
@@ -51,6 +51,20 @@ import {
 } from '../../../../theme/appearance-store'
 import { buildSheetScopeVariables } from '../../../../theme/theme-vars'
 import { BottomSheet } from '../BottomSheet'
+import { SheetTextInput } from '../../../molecules/SheetTextInput/SheetTextInput'
+
+/**
+ * 시트 칸이 초점을 잡고 놓는 것.
+ *
+ * 시트는 자기 칸이 초점을 잡았을 때만 키보드를 따라간다. 키보드 리스너가 전역이라 입력 카드가
+ * 시트 **밖에서** 올린 키보드까지 따라가면 시트가 짧아져 윗변이 내려간다. `target` 은 아무 수나
+ * 되고, 켤 때와 끌 때가 같기만 하면 된다.
+ */
+function 초점(잡는다: boolean): void {
+  const 칸 = screen.queryByTestId('시트-칸')
+  if (칸 === null) return
+  fireEvent(칸, 잡는다 ? 'focus' : 'blur', { nativeEvent: { target: 1 } })
+}
 
 const noop = (): void => {}
 
@@ -85,13 +99,21 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
     return renderOverlay(
       <BottomSheet onClose={noop} testId="boss-drop-sheet" label="드롭 아이템 기록">
         <Text>시트 내용</Text>
+        {/* 시트가 **자기 칸** 을 가졌을 때만 키보드를 따라간다. 그 조건을 세우는 자리. */}
+        <SheetTextInput testID="시트-칸" />
       </BottomSheet>,
     )
   }
 
-  /** 뜨는 손잡이는 높이를 실은 이벤트를 받는다. 내리는 쪽은 안 본다. */
+  /**
+   * 뜨는 손잡이는 높이를 실은 이벤트를 받는다. 내리는 쪽은 안 본다.
+   *
+   * **시트 칸의 초점을 함께 흉내낸다.** 시트는 자기 칸이 초점을 잡았을 때만 키보드를 따라간다
+   * (입력 카드가 시트 밖에서 올린 키보드까지 따라가면 시트가 짧아져 윗변이 내려간다).
+   */
   async function 키보드(뜬다: boolean, 높이 = 336): Promise<void> {
     await act(async () => {
+      초점(뜬다)
       키보드손잡이[뜬다 ? 0 : 1]({ endCoordinates: { height: 높이 } })
     })
   }
@@ -165,6 +187,22 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
    *
    * 상한에서 그만큼을 빼면 윗변이 키보드가 있든 없든 같은 선에 선다.
    */
+  /**
+   * 키보드 리스너가 전역이라 시트는 **누가 올린 키보드인지** 를 스스로 모른다. 입력 카드는 시트
+   * 밖(RN `Modal`)에서 키보드를 올리는데, 시트가 그것까지 따라가면 상한이 줄어 시트가 짧아지고
+   * 윗변이 내려간다(시뮬레이터에서 사용자가 잡았다).
+   */
+  it('시트 칸이 초점을 안 잡았으면 키보드가 떠도 상한이 그대로다', async () => {
+    const { getByTestId } = await open()
+    const 상한 = (): number => getByTestId('sheet').props.maxDynamicContentSize as number
+
+    await act(async () => {
+      키보드손잡이[0]({ endCoordinates: { height: 336 } })
+    })
+
+    expect(상한()).toBeCloseTo(844 * 0.82)
+  })
+
   it('키보드가 뜨면 상한에서 그 높이를 뺀다. 시트 + 키보드가 82% 다', async () => {
     const { getByTestId } = await open()
     const 상한 = (): number => getByTestId('sheet').props.maxDynamicContentSize as number
@@ -343,9 +381,10 @@ describe('BottomSheet: 머리와 바닥을 스크롤 밖에 고정한다', () =>
     jest.restoreAllMocks()
   })
 
-  /** 키보드를 올린다. 바닥 줄이 떼어져 붙는 것은 그때뿐이다. */
+  /** 키보드를 올린다. 바닥 줄이 떼어져 붙는 것은 그때뿐이다. 시트 칸의 초점을 함께 흉내낸다. */
 async function 키보드올리기(height = 336): Promise<void> {
   await act(async () => {
+    초점(true)
     키보드손잡이[0]?.({ endCoordinates: { height } })
   })
 }
@@ -360,6 +399,7 @@ async function 고정시트(): Promise<ReturnType<typeof renderOverlay>> {
         footer={<Text>저장</Text>}
       >
         <Text>시트 내용</Text>
+        <SheetTextInput testID="시트-칸" />
       </BottomSheet>,
     )
   }
@@ -567,14 +607,13 @@ async function 고정시트(): Promise<ReturnType<typeof renderOverlay>> {
         footer={<Text>저장</Text>}
       >
         <Text>시트 내용</Text>
+        <SheetTextInput testID="시트-칸" />
       </BottomSheet>,
     )
     expect(getByTestId('income-sheet')).toBeTruthy()
     mockScrollTo.mockClear()
 
-    await act(async () => {
-      키보드손잡이[0]({ endCoordinates: { height: 336 } })
-    })
+    await 키보드올리기()
 
     expect(mockScrollTo).toHaveBeenCalledWith(expect.objectContaining({ y: 99999 }))
   })
