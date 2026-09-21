@@ -50,6 +50,27 @@ export interface FadedIllustrationProps {
   crop: ImageCrop
   /** 페이드 끝점. 기본은 카드, 모달 히어로는 `'hero'`. */
   variant?: IllustrationVariant
+  /**
+   * 덧칠할 표면색. 기본은 `mediaSurface` 다.
+   *
+   * **그림이 앉은 면의 색이어야 한다.** 다른 색을 덮으면 페이드 끝에 없는 색의 띠가 남는다.
+   * 라이트 테마에서 `mediaSurface` 와 `surface` 는 서로 반대쪽 밝기라 특히 눈에 띈다.
+   */
+  veilColor?: string
+  /**
+   * 베일을 이 부품이 그릴까. `false` 면 그림만 그린다.
+   *
+   * 직선 베일 둘(가로·세로)을 겹치면 **둘이 만나는 모서리에 꺾인 자국**이 남는다. 그 자리를
+   * 타원 하나로 덮는 호출부가 있다(파티 모달).
+   */
+  veil?: boolean
+  /**
+   * 그림을 얼마나 살려 둘까. 기본 `0.65` 는 카드 위 글자가 그림을 가로지를 때의 값이다.
+   *
+   * 글자가 그림 위에 안 앉는 자리(파티 모달의 오른쪽 띠)는 더 밝아도 읽히고, 어두우면 좁은
+   * 띠에서 보스가 안 보인다.
+   */
+  opacity?: number
 }
 
 export function FadedIllustration(props: FadedIllustrationProps): React.JSX.Element | null {
@@ -59,7 +80,7 @@ export function FadedIllustration(props: FadedIllustrationProps): React.JSX.Elem
   const veilLocations = VEIL_LOCATIONS[props.variant ?? 'card']
   const layout = resolveImageCropLayout(props.crop, imageNaturalSize(props.source))
   // 카드 안이라 표면색이 `surface` 가 아니라 `mediaSurface` 다. 그라데이션 색은 값이라 클래스로 못 낸다.
-  const veil = definition.mediaSurface
+  const veil = props.veilColor ?? definition.mediaSurface
 
   return (
     <>
@@ -70,7 +91,7 @@ export function FadedIllustration(props: FadedIllustrationProps): React.JSX.Elem
         aria-hidden
         pointerEvents="none"
         className="absolute inset-0"
-        style={{ opacity: VEIL_OPACITY, filter: VEIL_FILTER }}
+        style={{ opacity: props.opacity ?? VEIL_OPACITY, filter: VEIL_FILTER }}
       >
         <Image
           source={props.source}
@@ -80,6 +101,7 @@ export function FadedIllustration(props: FadedIllustrationProps): React.JSX.Elem
         />
       </View>
 
+      {props.veil === false ? null : (
       <LinearGradient
         testID="faded-illustration-veil"
         aria-hidden
@@ -95,6 +117,7 @@ export function FadedIllustration(props: FadedIllustrationProps): React.JSX.Elem
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
       />
+      )}
     </>
   )
 }

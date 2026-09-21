@@ -13,8 +13,9 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { Card, Text, TextInput } from '../../components/atoms'
+import { Card, Switch, Text, TextInput } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
+import { ShareField } from '../../components/molecules/ShareField/ShareField'
 import { PartySizeStepper } from '../../components/molecules/PartySizeStepper/PartySizeStepper'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
@@ -98,10 +99,19 @@ export function ItemSplitScreen(): React.JSX.Element {
   const navigation = useScreenNavigation()
   const [salePriceMeso, setSalePriceMeso] = useState(0)
   const [partySize, setPartySize] = useState(DEFAULT_PARTY_SIZE)
+  // 비율 약속은 흔한 일이 아니라 스위치를 켜야 선다. 끄면 지금 그대로 파티원 수로 균등이다.
+  const [shares, setShares] = useState<{ myShare: number; sharesTotal: number } | null>(null)
   const [saleFeePercent, setSaleFeePercent] = useState<FeePercent>(DEFAULT_FEE_PERCENT)
   const [splitFeePercent, setSplitFeePercent] = useState<FeePercent>(DEFAULT_FEE_PERCENT)
 
-  const transfer = transferPerMember({ salePriceMeso, partySize, saleFeePercent, splitFeePercent })
+  const transfer = transferPerMember({
+    salePriceMeso,
+    partySize,
+    saleFeePercent,
+    splitFeePercent,
+    myShare: shares?.myShare ?? null,
+    sharesTotal: shares?.sharesTotal ?? null,
+  })
 
   return (
     <ScreenScroll
@@ -163,13 +173,34 @@ export function ItemSplitScreen(): React.JSX.Element {
         </Card>
 
         <Card className="gap-3 px-4 py-4">
-          <Text className="text-xs font-semibold text-text-muted">파티원 수</Text>
-          <PartySizeStepper
-            label="분배"
-            value={partySize}
-            max={MAX_PARTY_SIZE}
-            onChange={setPartySize}
-          />
+          {/* 비율을 켜면 파티원 수가 사라진다. 비율은 `나 : 나머지` 라 두 쪽이고 인원이 식에
+              안 들어간다. */}
+          {shares === null && (
+            <>
+              <Text className="text-xs font-semibold text-text-muted">파티원 수</Text>
+              <PartySizeStepper
+                label="분배"
+                value={partySize}
+                max={MAX_PARTY_SIZE}
+                onChange={setPartySize}
+              />
+            </>
+          )}
+
+          <Switch
+            on={shares !== null}
+            label="비율로 입력"
+            size="lg"
+            className="justify-between"
+            // 반반으로 시작한다. 아무것도 약속하지 않은 상태다.
+            onToggle={() => setShares(shares === null ? { myShare: 1, sharesTotal: 2 } : null)}
+          >
+            <Text className="text-xs font-semibold text-text-muted">비율로 입력</Text>
+          </Switch>
+
+          {/* 받는 사람들의 비율은 나머지를 고르게 나눈 것으로 본다. 파는 사람이 아는 것은 자기
+              몫과 합뿐이다. */}
+          {shares !== null && <ShareField label="내 몫" value={shares} onChange={setShares} />}
         </Card>
 
         <Card className="gap-3 px-4 py-4">

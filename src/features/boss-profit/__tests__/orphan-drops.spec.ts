@@ -28,6 +28,7 @@ function record(overrides: Partial<BossDropRecord> = {}): BossDropRecord {
     priceState: null,
     priceMeso: null,
     priceShare: null,
+    priceMyShare: null,
     ...overrides,
   }
 }
@@ -49,6 +50,9 @@ function row(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     maxPartySize: 6,
     partySize: 1,
     payoutMeso: 10_000_000,
+    crystalMyShare: null,
+    crystalSharesTotal: null,
+    splitFeePercent: null,
     isComplete: true,
     defeatedOn: null,
     source: 'auto',

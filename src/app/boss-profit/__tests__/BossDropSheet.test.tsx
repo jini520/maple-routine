@@ -62,7 +62,7 @@ beforeEach(() => {
   useDropEffectStore.setState({ enabled: true })
 })
 
-const PRICING = { defaultShare: 3, maxShare: 6, characterName: '지내우시' }
+const PRICING = { defaultShare: { myShare: 1, sharesTotal: 3 }, characterName: '지내우시' }
 
 function renderSheet(overrides: Partial<React.ComponentProps<typeof BossDropSheet>> = {}) {
   const onSave = jest.fn()
@@ -492,7 +492,7 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
 
       // 이미 매긴 값을 씨앗으로 들고 연다.
       expect(view.getByTestId('input-card-value').props.value).toBe('100')
-      expect(view.getByTestId('input-card-stepper-value').props.children).toBe('1')
+      expect(view.getByTestId('share-field-ratio-분배 비율')).toHaveTextContent('100%')
     })
   })
 
@@ -515,7 +515,7 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
     expect(getByText('추가 완료 · 1개')).toBeTruthy()
   })
 
-  it('카드가 분배 인원을 함께 받는다. 씨앗은 그 보스의 기본 인원이고 수만 선다', async () => {
+  it('카드가 분배 비율을 함께 받는다. 씨앗은 그 보스의 기본 인원이 합으로 앉은 균등이다', async () => {
     const { result } = renderSheet({ pricing: PRICING })
     const { getByLabelText, getByTestId, getByText } = await result
 
@@ -526,8 +526,8 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
       fireEvent.press(getByText('가격 입력'))
     })
 
-    expect(getByText('분배 인원')).toBeTruthy()
-    expect(getByTestId('input-card-stepper-value').props.children).toBe('3')
+    expect(getByText('분배 비율')).toBeTruthy()
+    expect(getByTestId('share-field-ratio-분배 비율')).toHaveTextContent('33.3%')
   })
 
   /** 머리가 그 아이템을 말한다. 판매 가격 이라는 말은 이미 누른 버튼이 했다. */
@@ -560,7 +560,8 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
       fireEvent.changeText(getByTestId('input-card-value'), '100')
     })
     await act(async () => {
-      fireEvent.press(getByTestId('input-card-stepper-up'))
+      // 내 비율을 2 로 올린다. 합 3 은 그대로라 2:1 이 된다.
+      fireEvent.press(getByLabelText('분배 비율 비율 2'))
     })
     await act(async () => {
       fireEvent.press(getByTestId('input-card-confirm'))
@@ -577,7 +578,8 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
         itemName: '루즈 컨트롤 머신 마크',
         priceState: 'entered',
         priceMeso: 100,
-        priceShare: 4,
+        priceShare: 3,
+        priceMyShare: 2,
       }),
     ])
   })

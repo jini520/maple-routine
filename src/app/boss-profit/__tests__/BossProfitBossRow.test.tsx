@@ -51,13 +51,12 @@ describe('BossProfitBossRow: 금액을 모르는 행', () => {
     expect(queryByText(/메소/)).toBeNull()
   })
 
-  it('두 경우 모두 파티 스테퍼를 비활성한다. 조정해도 계산이 0으로 고정된다', async () => {
-    const { getByLabelText } = await renderProfit(
+  it('두 경우 모두 파티 줄에서 변경을 걷는다. 조정해도 계산이 0으로 고정된다', async () => {
+    const { queryByLabelText } = await renderProfit(
       <BossProfitBossRow row={보스행({ isComplete: false, payoutMeso: null })} drops={[]} />,
     )
 
-    expect(getByLabelText(`지내우시 ${주간보스이름} 하드 파티원 수 증가`).props.accessibilityState.disabled).toBe(true)
-    expect(getByLabelText(`지내우시 ${주간보스이름} 하드 파티원 수 감소`).props.accessibilityState.disabled).toBe(true)
+    expect(queryByLabelText(`지내우시 ${주간보스이름} 하드 파티 인원과 비율 변경`)).toBeNull()
   })
 })
 
@@ -233,31 +232,46 @@ describe('BossProfitBossRow: 아이템 차례', () => {
 })
 
 describe('BossProfitBossRow: 파티원 수', () => {
-  it('+ 를 누르면 스토어에 1 늘린 값을 저장한다', async () => {
-    const setPartySize = jest.fn().mockResolvedValue(undefined)
+  // 행에는 스테퍼가 없다. 수 하나만 올리고 내릴 수 있어 비율이 들어갈 자리가 없다.
+  it('변경을 누르면 모달이 열리고 그 안의 + 가 이 기록만 다시 센다', async () => {
+    const setRowParty = jest.fn().mockResolvedValue(undefined)
     const row = 보스행()
-    const { getByLabelText } = await renderProfit(
+    const { getByLabelText, getByText } = await renderProfit(
       <BossProfitBossRow row={row} drops={[]} />,
-      컨텍스트값({ setPartySize }),
+      컨텍스트값({ setRowParty }),
     )
 
     await act(async () => {
-      fireEvent.press(getByLabelText(`지내우시 ${주간보스이름} 하드 파티원 수 증가`))
+      fireEvent.press(getByLabelText(`지내우시 ${주간보스이름} 하드 파티 인원과 비율 변경`))
+    })
+    await act(async () => {
+      fireEvent.press(getByLabelText(`${주간보스이름} 파티원 수 증가`))
+    })
+    // 적용을 눌러야만 쓴다(사용자 결정). 고르개를 만지는 동안은 아무것도 안 나간다.
+    expect(setRowParty).not.toHaveBeenCalled()
+
+    await act(async () => {
+      fireEvent.press(getByText('적용'))
     })
 
-    expect(setPartySize).toHaveBeenCalledWith(row, 4)
+    expect(setRowParty).toHaveBeenCalledWith(row, {
+      partySize: 4,
+      shares: { myShare: null, sharesTotal: null, splitFeePercent: null },
+    })
   })
 
-  it('상한에서는 + 가, 1에서는 − 가 비활성이다', async () => {
-    const atMax = await renderProfit(<BossProfitBossRow row={보스행({ partySize: 6 })} drops={[]} />)
-    expect(atMax.getByLabelText(`지내우시 ${주간보스이름} 하드 파티원 수 증가`).props.accessibilityState.disabled).toBe(
-      true,
+  // 결정석은 이 기록이 굳힌 값이고 아이템은 지금 설정값이다. 기록에 아이템 칸이 없어서다.
+  it('비율이 있으면 인원 대신 결정석·아이템 두 열을 적는다', async () => {
+    const { getByText } = await renderProfit(
+      <BossProfitBossRow
+        row={보스행({ partySize: 2, crystalMyShare: 2, crystalSharesTotal: 3, splitFeePercent: 3 })}
+        drops={[]}
+      />,
     )
 
-    const atMin = await renderProfit(<BossProfitBossRow row={보스행({ partySize: 1 })} drops={[]} />)
-    expect(atMin.getByLabelText(`지내우시 ${주간보스이름} 하드 파티원 수 감소`).props.accessibilityState.disabled).toBe(
-      true,
-    )
+    expect(getByText('결정석')).toBeTruthy()
+    expect(getByText('66.7%')).toBeTruthy()
+    expect(getByText('아이템')).toBeTruthy()
   })
 })
 

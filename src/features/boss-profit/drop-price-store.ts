@@ -19,6 +19,13 @@
  * @see docs/features/item-drop.md 의 `창을 조회 둘로 한 번에 읽는다`
  */
 
+
+/** 기록 한 건의 분배 비율. 합이 곧 분배 인원이고 균등이면 내 비율이 1 이다. */
+export interface DropShare {
+  myShare: number
+  sharesTotal: number
+}
+
 import { withSqliteTimeout } from './sqlite-guards'
 import { create } from 'zustand'
 import { toRecordedDrop } from './rows'
@@ -52,7 +59,7 @@ export interface DropPriceEntry {
   periodKey: string
   dropIndex: number
   drop: RecordedDrop
-  /** 분배 인원 스테퍼의 **기본값**. 그 행의 파티원 수다. */
+  /** 분배 비율 고르개의 **기본값**. 합이 그 행의 파티원 수다. */
   partySize: number
 }
 
@@ -89,7 +96,7 @@ interface DropPriceState {
    * (`drop-price-store` → `store`).
    */
   warmWindow: (periodKey: string) => Promise<void>
-  savePrice: (entry: DropPriceEntry, priceMeso: number, share: number) => Promise<void>
+  savePrice: (entry: DropPriceEntry, priceMeso: number, share: DropShare) => Promise<void>
   /** 기록 안함. 값을 매기지 않기로 한 결정을 저장한다(스킵과 다르다 정정). */
   excludePrice: (entry: DropPriceEntry) => Promise<void>
 }
@@ -314,7 +321,12 @@ export const useDropPriceStore = create<DropPriceState>((set, get) => ({
   },
 
   async savePrice(entry, priceMeso, share) {
-    await writePrice(get, set, entry, { priceState: 'entered', priceMeso, priceShare: share })
+    await writePrice(get, set, entry, {
+      priceState: 'entered',
+      priceMeso,
+      priceShare: share.sharesTotal,
+      priceMyShare: share.myShare,
+    })
   },
 
   async excludePrice(entry) {
@@ -322,6 +334,7 @@ export const useDropPriceStore = create<DropPriceState>((set, get) => ({
       priceState: 'excluded',
       priceMeso: undefined,
       priceShare: undefined,
+      priceMyShare: undefined,
     })
   },
 }))
@@ -367,7 +380,7 @@ async function writePrice(
   get: () => DropPriceState,
   set: (partial: Partial<DropPriceState>) => void,
   entry: DropPriceEntry,
-  patch: Pick<RecordedDrop, 'priceState' | 'priceMeso' | 'priceShare'>,
+  patch: Pick<RecordedDrop, 'priceState' | 'priceMeso' | 'priceShare' | 'priceMyShare'>,
 ): Promise<void> {
   const groupKey = saveGroupKey(entry)
   const siblings = get()

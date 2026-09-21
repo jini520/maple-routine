@@ -15,7 +15,7 @@ import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 import { getFragmentStorage, getIncomeRecordsBetween, insertIncomeRecord, type IncomeRecord } from '../../income'
 import { getSpendRecordsBetween, insertSpendRecord, type SpendRecord } from '../../spend'
 import { getAllBossDropRecords, replaceBossDropRecords } from '../../boss-drops'
-import { getBossPartySettings, setBossPartySize } from '../../boss-party-settings'
+import { getBossPartySettings, setBossPartySetting } from '../../boss-party-settings'
 import { getBossProfitRecords, upsertBossProfitRecord, type BossProfitRecord } from '../../boss-profit'
 import { getCharacterProfiles } from '../../character-profiles'
 import { loadEnhancementHistory } from '../../enhancement-history'
@@ -682,11 +682,14 @@ describe('버전 이관: 보스 기록 표의 기본키를 보스 key 로 다시
       partySize: 3,
       priceMeso: 1000,
       payoutMeso: 333,
+      crystalMyShare: null,
+      crystalSharesTotal: null,
+      splitFeePercent: null,
       recordedAt: '2026-09-12T00:00:00.000Z',
       world: null,
       worldKey: null,
     })
-    await setBossPartySize('ocid-1', 'meirin', 'hard', 2, '2026-09-12T00:00:00.000Z')
+    await setBossPartySetting({ ocid: 'ocid-1', bossKey: 'meirin', difficulty: 'hard', partySize: 2, crystalMyShare: null, crystalSharesTotal: null, dropMyShare: null, dropSharesTotal: null, splitFeePercent: null, updatedAt: '2026-09-12T00:00:00.000Z' })
     await replaceBossDropRecords('ocid-1', 'lucid', 'hard', '2026-09-10', [], '2026-09-12T00:00:00.000Z')
 
     const lucid = (await getBossProfitRecords(['ocid-1'], ['2026-09-10'])).filter((row) => row.bossKey === 'lucid')
@@ -853,6 +856,9 @@ describe('버전 이관: 카링 노멀과 찬란한 흉성 노멀의 뒤바뀐 �
       partySize: 1,
       priceMeso: 0,
       payoutMeso: 0,
+      crystalMyShare: null,
+      crystalSharesTotal: null,
+      splitFeePercent: null,
       recordedAt: '2026-09-17T02:00:00.000Z',
       world: '엘리시움',
       worldKey: 'elysium',
@@ -870,6 +876,9 @@ describe('버전 이관: 카링 노멀과 찬란한 흉성 노멀의 뒤바뀐 �
         partySize: 3,
         priceMeso: 593_000_000,
         payoutMeso: 197_666_666,
+        crystalMyShare: null,
+        crystalSharesTotal: null,
+        splitFeePercent: null,
       }),
     )
     await rewindTo(7)
@@ -895,6 +904,9 @@ describe('버전 이관: 카링 노멀과 찬란한 흉성 노멀의 뒤바뀐 �
         boss: '찬란한 흉성',
         priceMeso: 625_000_000,
         payoutMeso: 625_000_000,
+        crystalMyShare: null,
+        crystalSharesTotal: null,
+        splitFeePercent: null,
       }),
     )
     // 난이도가 다르면 같은 값이어도 안 건드린다.

@@ -8,9 +8,9 @@ import type { BossDropRecord } from '../../../storage/boss-drops'
 import type { BossProfitRow } from '../rows'
 
 jest.mock('../../../storage/boss-party-settings', () => ({
-  getBossPartySize: jest.fn(),
+  getBossPartySetting: jest.fn(),
 }))
-const { getBossPartySize: getBossPartySizeMock } = jest.requireMock('../../../storage/boss-party-settings') as Record<string, jest.Mock>
+const { getBossPartySetting: getBossPartySettingMock } = jest.requireMock('../../../storage/boss-party-settings') as Record<string, jest.Mock>
 
 jest.mock('../../../storage/boss-profit', () => ({
   upsertBossProfitRecord: jest.fn(),
@@ -48,6 +48,9 @@ function row(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     maxPartySize: 6,
     partySize: null,
     payoutMeso: null,
+    crystalMyShare: null,
+    crystalSharesTotal: null,
+    splitFeePercent: null,
     isComplete: true,
     defeatedOn: null,
     source: 'auto',
@@ -62,11 +65,29 @@ const 넥슨완료: ReadonlySet<string> = new Set()
 
 beforeEach(() => {
   jest.clearAllMocks()
-  getBossPartySizeMock.mockResolvedValue(null)
+  getBossPartySettingMock.mockResolvedValue(null)
   upsertBossProfitRecordMock.mockResolvedValue(undefined)
   markAutoMock.mockResolvedValue(undefined)
   migrateDropsMock.mockResolvedValue(undefined)
 })
+
+
+/** 파티 설정 한 줄. 비율을 안 쓰는 파티라 칸 다섯이 전부 null 이다. */
+function partySetting(partySize: number, shares: Partial<Record<string, number>> = {}) {
+  return {
+    ocid: 'ocid-1',
+    bossKey: 'zakum',
+    difficulty: 'chaos',
+    partySize,
+    crystalMyShare: null,
+    crystalSharesTotal: null,
+    dropMyShare: null,
+    dropSharesTotal: null,
+    splitFeePercent: null,
+    updatedAt: '2026-09-12T00:00:00.000Z',
+    ...shares,
+  }
+}
 
 describe('autoRecordRows', () => {
   it('기록이 없는 완료 행을 기본 파티원 수 1로 기록한다', async () => {
@@ -90,6 +111,9 @@ describe('autoRecordRows', () => {
         partySize: 1,
         priceMeso: 10_000_000,
         payoutMeso: 10_000_000,
+        crystalMyShare: null,
+        crystalSharesTotal: null,
+        splitFeePercent: null,
         recordedAt: NOW.toISOString(),
         world: '스카니아',
         worldKey: 'scania',
@@ -101,7 +125,7 @@ describe('autoRecordRows', () => {
 
   // 파티 설정이 있으면 그 값이 기본값이고, 분배는 내림이다.
   it('파티 설정이 있으면 그 값으로 payoutMeso = floor(priceMeso / partySize)를 계산한다', async () => {
-    getBossPartySizeMock.mockResolvedValue(3)
+    getBossPartySettingMock.mockResolvedValue(partySetting(3))
 
     const result = await autoRecordRows({
       rows: [row({ priceMeso: 10_000_000 })],
@@ -112,7 +136,7 @@ describe('autoRecordRows', () => {
       nexonCompleted: 넥슨완료,
     })
 
-    expect(getBossPartySizeMock).toHaveBeenCalledWith('ocid-1', 'zakum', 'chaos')
+    expect(getBossPartySettingMock).toHaveBeenCalledWith('ocid-1', 'zakum', 'chaos')
     expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
       expect.objectContaining({ partySize: 3, payoutMeso: 3_333_333 }),
     )
@@ -269,6 +293,9 @@ describe('같은 보스 · 같은 기간에 기록이 있으면', () => {
     partySize: 2,
     priceMeso: 8_000_000,
     payoutMeso: 4_000_000,
+    crystalMyShare: null,
+    crystalSharesTotal: null,
+    splitFeePercent: null,
     recordedAt: '2026-08-07T00:00:00.000Z',
     world: '스카니아',
     worldKey: 'scania',

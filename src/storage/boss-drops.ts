@@ -34,8 +34,10 @@ export interface BossDropRecord {
   priceState: 'entered' | 'excluded' | null
   /** 판매 **총액**. 수량이 2 이상이어도 묶음가 하나다. */
   priceMeso: number | null
-  /** 분배 인원 스냅샷. 그 행의 `party_size` 와 다를 수 있다. */
+  /** 분배 인원 스냅샷. 그 행의 `party_size` 와 다를 수 있다. 비율을 쓰면 **비율 합**이다. */
   priceShare: number | null
+  /** 내 비율 스냅샷. `null` 은 1 이라 이 칸이 없던 옛 기록의 금액이 안 움직인다. */
+  priceMyShare: number | null
 }
 
 const DELETE_SQL = `
@@ -46,8 +48,8 @@ const DELETE_SQL = `
 const INSERT_SQL = `
   INSERT INTO boss_drop_records
     (ocid, boss_key, boss, difficulty, period_key, drop_index, category, item_key, item_name, slot, box_origin_key,
-     box_origin, ring_level, quantity, recorded_at, price_state, price_meso, price_share)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     box_origin, ring_level, quantity, recorded_at, price_state, price_meso, price_share, price_my_share)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 // 한 보스/기간의 드롭 집합을 통째로 교체한다(기존 삭제 후 0..n으로 재삽입). 빈 배열이면 삭제만.
@@ -134,6 +136,7 @@ export async function replaceBossDropRecords(
       drop.priceState ?? null,
       drop.priceMeso ?? null,
       drop.priceShare ?? null,
+      drop.priceMyShare ?? null,
     ])
   }
 
@@ -171,6 +174,7 @@ function rowToRecord(row: Record<string, unknown>): BossDropRecord {
     priceState: normalizePriceState(row.price_state),
     priceMeso: (row.price_meso as number | null | undefined) ?? null,
     priceShare: (row.price_share as number | null | undefined) ?? null,
+    priceMyShare: (row.price_my_share as number | null | undefined) ?? null,
   }
 }
 

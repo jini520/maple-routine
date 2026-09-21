@@ -16,6 +16,10 @@ export const BOSS_PROFIT_RECORDS_BODY = `(
     party_size INTEGER NOT NULL,
     price_meso INTEGER NOT NULL,
     payout_meso INTEGER NOT NULL,
+    -- 그 건의 분배 비율과 수수료율 스냅샷. NULL 은 균등이라 옛 행이 그대로 맞는다.
+    crystal_my_share INTEGER,
+    crystal_shares_total INTEGER,
+    split_fee_percent INTEGER,
     recorded_at TEXT NOT NULL,
     -- 기록 시점의 월드 스냅샷. NULL이면 "월드 모름"이고 월드별 결정석 집계에서
     -- 제외된다. 월드를 파생값(캐시된 character/basic)으로 두면 월드 리프가 모든 과거 주의 귀속을
@@ -39,6 +43,14 @@ export const BOSS_PARTY_SETTINGS_BODY = `(
     boss TEXT NOT NULL,
     difficulty TEXT NOT NULL,
     party_size INTEGER NOT NULL,
+    -- 분배 비율. 다섯 다 nullable 이고 NULL 은 '파티 인원으로 균등'이다. 그래서 칸이 붙기
+    -- 전의 행이 그대로 맞고 이관이 없다.
+    crystal_my_share INTEGER,
+    crystal_shares_total INTEGER,
+    drop_my_share INTEGER,
+    drop_shares_total INTEGER,
+    -- 차액 송금의 경매장 수수료율(3 또는 5). NULL 은 3 이다.
+    split_fee_percent INTEGER,
     updated_at TEXT NOT NULL,
     PRIMARY KEY (ocid, boss_key, difficulty)
   )`
@@ -63,7 +75,10 @@ export const BOSS_DROP_RECORDS_BODY = `(
     -- '0메소에 팔았다'가 되어 스킵·미입력과 구분이 사라진다.
     price_state TEXT,
     price_meso INTEGER,
+    -- 분배 인원. 비율을 쓰는 기록에서는 **비율 합**이다. 균등이면 둘이 같은 수라 옛 행의
+    -- 금액이 안 움직인다.
     price_share INTEGER,
+    price_my_share INTEGER,
     PRIMARY KEY (ocid, boss_key, difficulty, period_key, drop_index)
   )`
 

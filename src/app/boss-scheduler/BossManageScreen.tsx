@@ -13,6 +13,10 @@ import { useCharacterSelectionStore } from '../../features/character-selection/s
 import { useToastStore } from '../../features/toast/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
+import { partySizeForShares } from '../../lib/boss/party-shares'
+import type { BossPartyShareColumns } from '../../storage/boss-party-settings'
+import { PartySizeModal } from '../../components/organisms/PartySizeModal/PartySizeModal'
+import { bossPortraitSlugOf, supportedDifficultiesOf } from '../../lib/boss/bosses'
 import { countManualWeeklyBosses, WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss/boss-matching'
 import { bossCycleOf, bossesInSection, isSeasonBoss, type BossEntry } from '../../lib/boss/bosses'
 import { isChallengersWorld } from '../../lib/world/worlds'
@@ -27,7 +31,7 @@ import { CharacterUnavailableNotice } from '../../components/organisms/Character
 import { DifficultySegment } from '../../components/molecules/DifficultySegment/DifficultySegment'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { useOpenTab } from '../../hooks/useOpenTab'
-import { PartySizeStepper } from '../../components/molecules/PartySizeStepper/PartySizeStepper'
+import { PartyShareSummary } from '../../components/molecules/PartyShareSummary/PartyShareSummary'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -51,15 +55,25 @@ const MONTHLY_BOSSES: BossEntry[] = listedBosses('monthly')
 // 수동 모드는 행 탭이 추적 토글이고 즉시 저장한다. 체크된 행에만 난이도와 스테퍼가 펼쳐진다.
 // 자동 모드는 체크 없이 파티 인원만 설정하고, 미등록 보스도 미리 설정할 수 있다.
 // 행은 두 줄이다. 첫 줄이 초상 + 보스명 + 파티 스테퍼, 둘째 줄이 난이도 세그먼트다.
+/** 비율을 안 쓰는 파티. 설정이 없는 조합이 이 값을 그린다. */
+const NO_SHARES: BossPartyShareColumns = {
+  crystalMyShare: null,
+  crystalSharesTotal: null,
+  dropMyShare: null,
+  dropSharesTotal: null,
+  splitFeePercent: null,
+}
+
 export function BossManageScreen(): React.JSX.Element {
   const {
     status,
     characters: storeCharacters,
     trackedOcids,
     partySizes,
+    partyShares,
     manualTrackedByOcid,
     loadTrackedOcids,
-    setPartySize,
+    setPartySetting,
     addManualBoss,
     removeManualBoss,
     setManualBossDifficulty,
@@ -71,6 +85,8 @@ export function BossManageScreen(): React.JSX.Element {
   // 방향이 뒤집혀 읽힌다.
   // 스위치는 `모든 보스 보기`(기본 꺼짐)다. `거른다` 를 뜻하는 스위치는 끄면 더 보인다가 되어
   const [showAllBosses, setShowAllBosses] = useState(false)
+  // 행의 `변경` 으로 여는 파티 모달. 인원과 비율을 함께 고친다.
+  const [partyModal, setPartyModal] = useState<{ entry: BossEntry; difficulty: BossDifficulty } | null>(null)
   /**
    * 자동 모드에서 행마다 어느 난이도의 파티 인원을 편집 중인지. 멤버십이 아니라 저장하지 않는다.
    *
@@ -222,31 +238,64 @@ export function BossManageScreen(): React.JSX.Element {
     }
   }
 
-  async function handleSetPartySize(
+  const modalKey =
+    partyModal === null ? null : partySizeKey(selected?.ocid ?? '', partyModal.entry.key, partyModal.difficulty)
+  // 모달이 뜰 때의 값. 고치는 중인 값은 모달이 들고 있다가 적용할 때 한 번에 돌려준다.
+  const modalShares = modalKey === null ? NO_SHARES : partyShares[modalKey] ?? NO_SHARES
+
+  async function handleSetParty(
     bossKey: string,
     difficulty: BossDifficulty,
-    partySize: number,
+    input: { partySize: number; shares: BossPartyShareColumns },
   ): Promise<void> {
     if (selected === null) return
     try {
-      await setPartySize(selected.ocid, bossKey, difficulty, partySize)
+      await setPartySetting(selected.ocid, bossKey, difficulty, input)
     } catch {
       useToastStore.getState().showError('파티원 수를 저장하지 못했습니다')
     }
   }
 
-  // 콤팩트 스테퍼. 상한은 (보스, 난이도)마다 다르다. 화면이 숫자를 정하지 않고
-  // `getMaxPartySize` 에 묻는다.
-  function renderPartyStepper(entry: BossEntry, difficulty: BossDifficulty): React.JSX.Element {
+  /** 적용을 누른 자리. 여기서 처음 쓴다. 끌기 한 번이 저장 아홉 번이 되지 않는 까닭이다. */
+  async function applyParty(next: { partySize: number; shares: BossPartyShareColumns }): Promise<void> {
+    const target = partyModal
+    setPartyModal(null)
+    if (target === null) return
+    await handleSetParty(target.entry.key, target.difficulty, {
+      // 비율을 쓰면 두 쪽이라 2 다. 배지·필터가 그 수를 본다.
+      partySize: partySizeForShares(
+        {
+          myShare: next.shares.crystalMyShare,
+          sharesTotal: next.shares.crystalSharesTotal,
+          splitFeePercent: null,
+        },
+        next.partySize,
+      ),
+      shares: next.shares,
+    })
+  }
+
+  // 인원과 비율을 적고 모달로 보내는 줄. 스테퍼는 수 하나만 올리고 내릴 수 있어 비율이 들어갈
+  // 자리가 없다.
+  function renderPartySummary(entry: BossEntry, difficulty: BossDifficulty): React.JSX.Element {
     const ocid = selected?.ocid ?? ''
-    const value = partySizes[partySizeKey(ocid, entry.key, difficulty)] ?? 1
+    const key = partySizeKey(ocid, entry.key, difficulty)
+    const columns = partyShares[key] ?? NO_SHARES
     return (
-      <PartySizeStepper
-        size="compact"
+      <PartyShareSummary
         label={entry.name}
-        value={value}
-        max={getMaxPartySize(entry.key, difficulty)}
-        onChange={(next) => void handleSetPartySize(entry.key, difficulty, next)}
+        partySize={partySizes[key] ?? 1}
+        crystal={{
+          myShare: columns.crystalMyShare,
+          sharesTotal: columns.crystalSharesTotal,
+          splitFeePercent: columns.splitFeePercent,
+        }}
+        drop={{
+          myShare: columns.dropMyShare,
+          sharesTotal: columns.dropSharesTotal,
+          splitFeePercent: columns.splitFeePercent,
+        }}
+        onPress={() => setPartyModal({ entry, difficulty })}
       />
     )
   }
@@ -395,7 +444,7 @@ export function BossManageScreen(): React.JSX.Element {
                     ) : (
                       <View className="min-w-0 flex-1 flex-row items-center gap-3">{nameContent}</View>
                     )}
-                    {activeDifficulty !== null && renderPartyStepper(entry, activeDifficulty)}
+                    {activeDifficulty !== null && renderPartySummary(entry, activeDifficulty)}
                   </View>
 
                   {/* 2번째 줄: 난이도 세그먼트 */}
@@ -429,6 +478,25 @@ export function BossManageScreen(): React.JSX.Element {
           </View>
         )}
       </View>
+
+      {partyModal !== null && selected !== null && (
+        <PartySizeModal
+          bossName={partyModal.entry.name}
+          cycleLabel={bossCycleOf(partyModal.entry.key) === 'monthly' ? '월간 보스' : '주간 보스'}
+          portraitSlug={bossPortraitSlugOf(partyModal.entry.key)}
+          difficulties={supportedDifficultiesOf(partyModal.entry.key)}
+          difficulty={partyModal.difficulty}
+          partySize={partySizes[partySizeKey(selected.ocid, partyModal.entry.key, partyModal.difficulty)] ?? 1}
+          maxPartySize={getMaxPartySize(partyModal.entry.key, partyModal.difficulty)}
+          shares={modalShares}
+          // 이 화면의 난이도는 행의 세그먼트가 정한다. 모달에서 또 고치면 어느 쪽이 이기는지
+          // 흐려진다.
+          onSelectDifficulty={() => {}}
+          onApply={(next) => void applyParty(next)}
+          // 적용을 안 눌렀으면 고친 값은 버린다.
+          onClose={() => setPartyModal(null)}
+        />
+      )}
     </ScreenScroll>
   )
 }

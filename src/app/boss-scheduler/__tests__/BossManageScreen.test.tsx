@@ -62,13 +62,14 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     error: null,
     trackedOcids: ['ocid-1'],
     partySizes: {},
+    partyShares: {},
     manualTrackedByOcid: {},
     loadTrackedOcids: jest.fn(),
     saveTrackedOcids: jest.fn(),
     // 실물은 `Promise<void>` 다. 당김 훅이 회차의 **끝** 을 기다린다.
     refresh: jest.fn().mockResolvedValue(undefined),
     loadPartySizes: jest.fn(),
-    setPartySize: jest.fn(),
+    setPartySetting: jest.fn(),
     addManualBoss: jest.fn(async () => 'added'),
     removeManualBoss: jest.fn(),
     setManualBossDifficulty: jest.fn(),
@@ -332,7 +333,7 @@ describe('BossManageScreen: 수동 모드', () => {
     expect(screen.getByText('자쿰')).toBeTruthy()
   })
 
-  it('추적 중인 행에만 난이도 세그먼트와 파티 스테퍼가 펼쳐진다', async () => {
+  it('추적 중인 행에만 난이도 세그먼트와 파티 줄이 펼쳐진다', async () => {
     mockStore({
       characters: [character()],
       manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'hard')] },
@@ -340,8 +341,8 @@ describe('BossManageScreen: 수동 모드', () => {
 
     await renderScreen()
 
-    expect(screen.getByLabelText('스우 파티원 수 증가')).toBeTruthy()
-    expect(screen.queryByLabelText('자쿰 파티원 수 증가')).toBeNull()
+    expect(screen.getByLabelText('스우 파티 인원과 비율 변경')).toBeTruthy()
+    expect(screen.queryByLabelText('자쿰 파티 인원과 비율 변경')).toBeNull()
   })
 
   it('미추적 보스를 탭하면 기본 난이도(등록 난이도 우선)로 addManualBoss 를 부른다', async () => {
@@ -395,8 +396,35 @@ describe('BossManageScreen: 수동 모드', () => {
     expect(store.addManualBoss).not.toHaveBeenCalled()
   })
 
-  it('파티 스테퍼는 즉시 저장하고, 상한은 (보스, 난이도)마다 다르다', async () => {
-    // 스우 익스트림의 상한은 2인이다(`boss-crystal-prices.json`). 화면이 숫자를 정하지 않는다.
+  // 행에는 스테퍼가 없다. 수 하나만 올리고 내릴 수 있어 비율이 들어갈 자리가 없다.
+  it('파티 줄은 결정석·아이템 비율을 적고 변경으로 모달을 연다', async () => {
+    mockStore({
+      characters: [character()],
+      manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'extreme')] },
+      partySizes: { 'ocid-1:lotus:extreme': 2 },
+      partyShares: {
+        'ocid-1:lotus:extreme': {
+          crystalMyShare: 2,
+          crystalSharesTotal: 3,
+          dropMyShare: null,
+          dropSharesTotal: null,
+          splitFeePercent: 3,
+        },
+      },
+    })
+    await renderScreen()
+
+    expect(screen.getByText('결정석')).toBeTruthy()
+    expect(screen.getByText('66.7%')).toBeTruthy()
+    expect(screen.getByText('아이템')).toBeTruthy()
+
+    await press(screen.getByLabelText('스우 파티 인원과 비율 변경'))
+
+    expect(screen.getByTestId('party-size-modal')).toBeTruthy()
+  })
+
+  // 스우 익스트림의 상한은 2인이다(`boss-crystal-prices.json`). 화면이 숫자를 정하지 않는다.
+  it('모달에서 고른 인원이 적용으로 저장되고, 상한은 (보스, 난이도)마다 다르다', async () => {
     const store = mockStore({
       characters: [character()],
       manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'extreme')] },
@@ -404,11 +432,25 @@ describe('BossManageScreen: 수동 모드', () => {
     })
     await renderScreen()
 
+    await press(screen.getByLabelText('스우 파티 인원과 비율 변경'))
+
+    // 익스트림 상한은 2 다. 배지가 그것을 말하고 스테퍼의 + 가 막힌다.
+    expect(screen.getByText('최대 2명')).toBeTruthy()
     expect(stateOf(screen.getByLabelText('스우 파티원 수 증가')).disabled).toBe(true)
 
     await press(screen.getByLabelText('스우 파티원 수 감소'))
+    await press(screen.getByText('적용'))
 
-    expect(store.setPartySize).toHaveBeenCalledWith('ocid-1', 'lotus', 'extreme', 1)
+    expect(store.setPartySetting).toHaveBeenCalledWith('ocid-1', 'lotus', 'extreme', {
+      partySize: 1,
+      shares: {
+        crystalMyShare: null,
+        crystalSharesTotal: null,
+        dropMyShare: null,
+        dropSharesTotal: null,
+        splitFeePercent: null,
+      },
+    })
   })
 
   // 저장 실패가 무음이면 체크가 조용히 되돌아가는 것 외에 설명이 없다.
@@ -428,11 +470,13 @@ describe('BossManageScreen: 수동 모드', () => {
     mockStore({
       characters: [character()],
       manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', 'chaos')] },
-      setPartySize: jest.fn(async () => Promise.reject(new Error('boom'))) as Store['setPartySize'],
+      setPartySetting: jest.fn(async () => Promise.reject(new Error('boom'))) as Store['setPartySetting'],
     })
     await renderScreen()
 
+    await press(screen.getByLabelText('자쿰 파티 인원과 비율 변경'))
     await press(screen.getByLabelText('자쿰 파티원 수 증가'))
+    await press(screen.getByText('적용'))
 
     expect(mockShowError).toHaveBeenCalledWith('파티원 수를 저장하지 못했습니다')
   })
@@ -510,7 +554,7 @@ describe('BossManageScreen: 자동 모드', () => {
     expect(screen.getByText('매그너스')).toBeTruthy()
   })
 
-  it('등록 난이도가 기본 선택되고, 스테퍼는 그 난이도로 저장한다', async () => {
+  it('등록 난이도가 기본 선택되고, 적용은 그 난이도로 저장한다', async () => {
     const store = mockStore({
       characters: [
         character({
@@ -520,9 +564,20 @@ describe('BossManageScreen: 자동 모드', () => {
     })
     await renderScreen()
 
+    await press(screen.getByLabelText('스우 파티 인원과 비율 변경'))
     await press(screen.getByLabelText('스우 파티원 수 증가'))
+    await press(screen.getByText('적용'))
 
-    expect(store.setPartySize).toHaveBeenCalledWith('ocid-1', 'lotus', 'hard', 2)
+    expect(store.setPartySetting).toHaveBeenCalledWith('ocid-1', 'lotus', 'hard', {
+      partySize: 2,
+      shares: {
+        crystalMyShare: null,
+        crystalSharesTotal: null,
+        dropMyShare: null,
+        dropSharesTotal: null,
+        splitFeePercent: null,
+      },
+    })
   })
 
   // 자동 모드의 난이도 선택은 멤버십이 아니라 "편집 대상" 전환이다.
@@ -541,8 +596,19 @@ describe('BossManageScreen: 자동 모드', () => {
     expect(store.setManualBossDifficulty).not.toHaveBeenCalled()
     expect(store.addManualBoss).not.toHaveBeenCalled()
 
+    await press(screen.getByLabelText('스우 파티 인원과 비율 변경'))
     await press(screen.getByLabelText('스우 파티원 수 증가'))
-    expect(store.setPartySize).toHaveBeenCalledWith('ocid-1', 'lotus', 'extreme', 2)
+    await press(screen.getByText('적용'))
+    expect(store.setPartySetting).toHaveBeenCalledWith('ocid-1', 'lotus', 'extreme', {
+      partySize: 2,
+      shares: {
+        crystalMyShare: null,
+        crystalSharesTotal: null,
+        dropMyShare: null,
+        dropSharesTotal: null,
+        splitFeePercent: null,
+      },
+    })
   })
 
   // 이슈 #341. 고른 난이도는 어느 난이도의 파티 인원을 편집 중인가 라는 화면 전용 상태다.
@@ -574,7 +640,7 @@ describe('BossManageScreen: 자동 모드', () => {
 
   // 표시만 틀리는 것이 아니다. 같은 값이 스테퍼로 흘러가 `partySizeKey` 의 다른 칸을 열고,
   // 거기서 수를 고치면 그 캐릭터가 잡지도 않는 난이도의 파티 인원이 기기에 적힌다.
-  it('캐릭터를 옮긴 뒤 스테퍼는 그 캐릭터의 등록 난이도로 저장한다', async () => {
+  it('캐릭터를 옮긴 뒤 적용은 그 캐릭터의 등록 난이도로 저장한다', async () => {
     const store = mockStore({
       characters: [
         character({
@@ -591,9 +657,20 @@ describe('BossManageScreen: 자동 모드', () => {
 
     await press(button('익스트림'))
     await press(screen.getAllByTestId('character-portrait')[1])
+    await press(screen.getByLabelText('스우 파티 인원과 비율 변경'))
     await press(screen.getByLabelText('스우 파티원 수 증가'))
+    await press(screen.getByText('적용'))
 
-    expect(store.setPartySize).toHaveBeenCalledWith('ocid-2', 'lotus', 'normal', 2)
+    expect(store.setPartySetting).toHaveBeenCalledWith('ocid-2', 'lotus', 'normal', {
+      partySize: 2,
+      shares: {
+        crystalMyShare: null,
+        crystalSharesTotal: null,
+        dropMyShare: null,
+        dropSharesTotal: null,
+        splitFeePercent: null,
+      },
+    })
   })
 })
 

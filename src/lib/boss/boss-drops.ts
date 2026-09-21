@@ -232,6 +232,7 @@ function toRecordedDrop(record: StoredDropRecord): RecordedDrop {
     priceState: record.priceState,
     priceMeso: record.priceMeso,
     priceShare: record.priceShare,
+    priceMyShare: record.priceMyShare,
   }
 }
 

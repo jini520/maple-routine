@@ -372,31 +372,43 @@ L 0.13~0.15 라 **스크림을 완전 불투명 검정으로 만들어도 1.07 �
 보스 스케줄러 카드를 탭하면 열린다. 난이도 + 파티 인원을 함께 다룬다. 정책은 [../features/boss-scheduler.md](../features/boss-scheduler.md) '파티 인원 모달'.
 
 ```
-패널   Modal.Panel maxWidth="max-w-2xs"(288) · align="center"
+패널   Modal.Panel maxWidth="max-w-xs"(320) · align="center"
        (center 는 키보드를 안 띄우는 모달만: Modal 기본은 'top')
-껍데기 rounded-[14px] border border-border bg-surface overflow-hidden   ← 일러스트가 모서리를 넘는다
-히어로 media-scope · h-22(88) · bg-surface(= media-surface)
-       일러스트 absolute inset-0, 카드와 같은 필터·불투명도(saturate(.85) brightness(.8) / .65)
-       마스크 linear-gradient(90deg,#000 0%,#000 42%,transparent 82%)  ← 카드는 38/76, 모달이 넓어 끝점만 뒤로
-       베일   media-surface → transparent 세로 그라디언트(0% → 62%)
-       닫기   우상단 32px 원, bg-surface/60 + text-text (스코프 안이라 media 토큰), aria-label="닫기"
-       텍스트 키커 10px text-text-muted / 이름 text-xl font-extrabold text-text, 둘 다 ILLUSTRATION_TEXT_SHADOW_STYLE
-경계   본문에 border-t border-border   ← media-scope **바깥**
-본문   p-[18px] · 필드 간격 18
-난이도 라벨 + 난이도 배지 세그먼트(미선택 = 같은 뱃지 + opacity-40)
-파티   라벨 행: Users 14 + "파티 인원"(text-xs font-bold tracking-[.06em] text-text-muted)
-              + Badge tone="primary" 로 `n / max` (tabular-nums)
-       스테퍼: 전폭 h-10(40) rounded-full border-border bg-surface p-1
-              버튼 32(아이콘 16, 채움 없음, 비활성 opacity-40) · 값 19px extrabold · 단위 "인" 12px
-              가운데 min-w-[66px] + tabular-nums  ← 1↔6 에서 −/+ 가 안 움직인다
+껍데기 rounded-[14px] border border-panel-border bg-surface overflow-hidden   ← 그림이 모서리를 넘는다
+머리   relative h-[104px] overflow-hidden, 본문과의 경계선 없음
+       그림  오른쪽 170px 띠(absolute inset-y-0 right-0 **overflow-hidden**)
+             FadedIllustration variant="bleed" direction="left" veilColor=surface opacity=0.8
+             크롭 `auto 210%` / `52% 18%`   ← 높이 기준. 보스마다 안 갈린다
+             세로 베일 surface → 55% → 0, locations [0,.34,.72], 아래에서 위로
+       닫기  우상단 44×44, 칠 없음, XIcon h-5 text-text-muted, aria-label="닫기"
+       글자  왼쪽 16/16 고정, 간격 6. 키커 text-10 tracking-[.16em] text-text-muted
+             / 이름 text-22 font-bold / DifficultySegment
+본문   p-4 · 필드 간격 14
+분배   "분배"(text-13 font-bold) + Segment size="md" (균등 · 비율)
+비율   카드 둘이 좌우로(flex-row gap-2.5). 각 카드 flex-1 rounded-[12px] bg-surface-2 px-3 pb-3 pt-[11px]
+       안에 ShareField layout="stacked" 하나(결정석 · 아이템)
+       송금 수수료: 라벨 + Segment size="sm" (0% · 3% · 5%)
+균등   "파티 인원" + Badge variant="primary" `최대 n명` + PartySizeStepper size="compact"
+적용   Button variant="primary" 전폭, mt-1   ← 으뜸 동작. 누르기 전에는 아무것도 안 나간다
 ```
 
-- **폭 288 은 하한이다.** 4난이도 보스(칼로스·카링·최초의 대적자)의 칩 한 줄이 약 225px 라 본문 폭 252 에 여유 27px 로 들어간다. `max-w-3xs`(256)는 본문 220 이라 접히고, 접히면 그 필드만 세로로 자라 **보스마다 모달 높이가 달라진다**. 288 은 **모든 기기에서 폭이 같다**는 성질도 갖는다. `max-w-sm`(384)은 오버레이 `px-4` 에 먼저 걸려 390 기기 358 / 360 기기 328 로 갈렸다.
-- **히어로 경계선은 `media-scope` 바깥이다.** 다크 테마는 `media-surface ≈ surface` 이고 **검은마법사는 값이 완전히 동일**(`#1C1319`)이라 이 선이 유일한 경계다. 라이트 테마에선 어차피 대비가 17:1 이라 무해하다.
-- **−/+ 버튼에 채움을 두지 않는다.** `surface-2` 는 표면과 대비 **1.14~1.30**(6테마 실측)이라 어느 테마에서도 원이 안 보인다. 경계는 pill 의 `border-border` 가 그린다.
+- **폭 320 은 하한이다.** 비율 카드 둘이 나란히 서려면 288 로는 트랙이 안 남는다(본문 폭 256 에
+  카드 하나 123, 그 안에 트랙 99). `max-w-xs` 는 못박은 값이라 **모든 기기에서 폭이 같다**.
+  `max-w-sm`(384)은 오버레이 `px-4` 에 먼저 걸려 390 기기 358 / 360 기기 328 로 갈린다.
+- **머리에 경계선을 안 둔다.** 세로 베일이 그림을 본문 표면색으로 녹여 이어 주므로 선을 그으면
+  그 연결이 끊긴다. 그림이 오른쪽 띠에만 서서 본문과 맞닿는 면이 좁은 것도 있다.
+- **글자에 그림자를 안 쓴다.** 그림이 글자 뒤로 안 간다(오른쪽 170 · 글자는 왼쪽). 눌러 읽히게 할
+  일이 없어 이름을 크게 쓸 자리가 난다.
+- **띠에 `overflow-hidden` 이 필수다.** 크롭은 이미지를 상자보다 크게 그려 창을 옮기는 방식이라,
+  안 자르면 남는 부분이 띠 밖으로 흘러 글자를 덮는다. 베일은 띠 안만 덮으므로 그 부분이 생그림
+  사각형으로 남는다(실기기에서 드러났다).
+- **크롭은 높이 기준이다**(`auto 210%`). 170×104 는 눕고 좁은 상자라 폭으로 맞추면 얼굴이 위로
+  잘려 나간다. 카드 블리드 표(`boss-portrait-crops.json`)는 폭 기준이라 이 자리에 못 쓴다.
+- **−/+ 버튼에 채움을 두지 않는다.** `surface-2` 는 표면과 대비 **1.14~1.30**(6테마 실측)이라 어느
+  테마에서도 원이 안 보인다. 경계는 `border-border` 가 그린다.
 - **라벨은 `text-text-muted`.** `text-disabled` 는 6테마에서 3.10~4.22 로 4.5:1 미달이다.
-- **상한 표시는 `Badge tone="primary"`**. 주간 `n/12` 배지와 같은 컴포넌트다(신규 스타일 금지).
-- **일러스트 없는 보스**(`portraitSlug: null`)는 히어로를 비운다. 단색 + 이름. 폴백 디자인 없음.
+- **상한 표시는 `Badge variant="primary"`**. 주간 `n/12` 배지와 같은 컴포넌트다(신규 스타일 금지).
+- **일러스트 없는 보스**(`portraitSlug: null`)는 머리를 비운다. 단색 + 이름. 폴백 디자인 없음.
 
 - **CSS 를 RN 으로 옮긴 값** (`components/molecules/FadedIllustration`). 웹이 쓰던 CSS 와 RN 값이
   같은지는 **옮길 때 한 번 확인했고, 그 결과가 이 표다.** 웹 소스는 [[ADR-155]] 로 없어져 더 갈릴
@@ -405,9 +417,10 @@ L 0.13~0.15 라 **스크림을 완전 불투명 검정으로 만들어도 1.07 �
   | 웹 CSS | RN |
   |---|---|
   | `filter: saturate(.85) brightness(.8)` | `filter: [{ saturate: 0.85 }, { brightness: 0.8 }]` |
-  | `opacity: .65` | `opacity: 0.65` |
+  | `opacity: .65` | `opacity: 0.65` (기본) · 파티 모달의 오른쪽 띠만 `0.8` |
   | `mask-image: linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)` (카드) | 표면색 그라디언트를 **뒤집어** 얹는다. `locations [0, .38, .76, 1]` · `alphas [0, 0, 1, 1]` |
   | 같은 마스크의 히어로판 (`42% / 82%`) | `locations [0, .42, .82, 1]` |
+  | 옆으로 선 띠 (`68%` 에서 끝까지) | `locations [0, .68, 1, 1]` · `direction="left"` 로 오른쪽 기준. **눈이 읽는 것은 시작점이 아니라 반쯤 덮이는 자리(84%)** |
   | `text-shadow: 0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(0,0,0,.6)` | 그림자를 **하나만** 쓴다(RN `Text` 는 `textShadow*` 세 프롭이라 겹칠 수 없다). `constants/style/text-styles.ts` |
 
   RN 에는 `mask-image` 가 없다. 대신 **카드 표면색을 마스크의 반대 알파로 덧칠**하면 같은 색이
@@ -416,12 +429,56 @@ L 0.13~0.15 라 **스크림을 완전 불투명 검정으로 만들어도 1.07 �
 
 **스테퍼 `size` 변형** ([[ADR-121]]). 같은 레시피(보더 pill + `Users` + −/값/+)에 크기만 둘이다.
 ```
-compact  pill 28 · 버튼 24 · 아이콘 14 · 값 14 · 안쪽 Users 14   보스 관리 페이지 행(우상단)
-default  pill 40 · 버튼 32 · 아이콘 16 · 값 19 · 단위 "인" 12    파티 인원 모달(전폭)
+compact  pill 28 · 버튼 24 · 아이콘 14 · 값 14 · Users 없음     보스 관리 페이지 행 · 파티 모달
+default  pill 40 · 버튼 32 · 아이콘 16 · 값 19 · 단위 "인" 12    (지금 쓰는 곳 없음)
 ```
 - `compact` 는 **기존 관리 페이지 행의 값 그대로**다(이번에 크기를 바꾸지 않았다).
 - `default` 는 단위 "인"을 함께 그리고 **`Users` 를 스테퍼 안에 두지 않는다**. 모달은 라벨 줄에 `Users` 가 이미 서 있어 한 화면에 두 번 나오면 중복이다. 값 슬롯은 `min-w-[66px]` + `tabular-nums` 라 1↔6 을 오가도 −/+ 가 제자리다.
 - 두 크기 모두 버튼이 권장 타깃 44px 보다 작으므로 **히트 영역을 패딩으로 넓힌다**(시각 크기는 유지).
+
+### 파티 분배 요약: `PartyShareSummary`, [[ADR-305]] 결정 9 (2026-09-22)
+
+`변경` 글자 버튼 옆에 **라벨을 인 값**이 선다. 균등이면 열 하나, 비율이면 둘이다.
+
+```
+균등 · 혼자     균등 · 둘 이상   비율
+솔로            파티 3인         결정석 │ 아이템
+                                 66.7%  │ 50%
+
+크기 default  라벨 text-9 · 값 text-13 · 구분선 h-[22px] · gap 2   보스 관리 행
+크기 compact  라벨 text-8 · 값 text-xs · 구분선 h-4 · gap [7px]    보스 수익 카드
+```
+
+- **`compact` 는 두 줄 합이 20** 이다. 보스 수익 카드는 이 줄을 금액과 나눠 쓰므로, 커지면 카드가
+  통째로 커진다. 카드를 안 키우는 것이 그 자리의 제약이다.
+- 값은 **백분율**이다(`formatSharePercent`). `내 비율 : 나머지` 로 적으면 `2:1` 과 `4:2` 가 다른
+  값처럼 보이는데 둘은 같은 약속이다.
+- 열 사이는 **세로선 하나**다. 여백만으로 가르면 값 둘이 한 수로 읽힌다.
+- **균등은 라벨을 안 인다.** 나눌 것이 없어 무엇의 비율인가를 물을 일이 없다. 혼자면 `솔로` 라
+  적고 인원을 세지 않는다(`파티 1인` 은 파티가 아니다).
+
+### 분배 비율 고르개: `ShareField`, [[ADR-305]] (2026-09-21)
+
+내 비율과 비율 합 둘을 받는다. 정책은 [../features/boss-scheduler.md](../features/boss-scheduler.md) '분배 비율'.
+
+```
+줄 하나   높이 36. 트랙과 합이 한 줄이다(합을 내리면 고르개가 두 줄을 먹는다)
+트랙      높이 6 · rounded-full · bg-track. 채움 bg-primary 가 `내 비율 / 합` 만큼
+눈금      칸 경계마다 w-0.5 bg-surface. 채운 끝이 어디 섰는지 읽는 용도
+손잡이    18px 원 · bg-on-primary · shadow-md. 채운 끝에 선다
+합        오른쪽 w-7 세로: PlusIcon / 수(text-15) / MinusIcon · 상한 9 하한 2 에서 흐림
+표기      라벨 줄 오른쪽에 `2 : 1`(내 비율 : 나머지) · tabular-nums
+터치      줄 전체(36)가 받는다. 트랙이 얇아도 누르기 어려워지지 않는다
+```
+
+- **칸에 수를 안 적는다.** 심볼 강화의 `LevelRangeSlider` 는 1~20 을 세느라 칸마다 수를 적는데,
+  비율은 2~9 라 셀 일이 없다. 세어야 하는 것은 몇 칸인가가 아니라 얼마나 차지하는가다.
+
+- **파티원별 칸을 세우지 않는다**([[ADR-305]] 결정 1). 내 몫이 `내 비율 ÷ 합` 이라 남들 비율이 그
+  값에 안 들어간다. 칸을 인원만큼 세우면 쓰지도 않는 수를 입력하게 된다.
+- **합의 상한 9 는 입력 편의에서 온 값이다**. 게임 규칙이 아니고 [[ADR-305]] 의 열린 질문이다.
+- 쓰는 곳 셋이 같은 부품이다. 파티 인원 모달 · 드롭 가격 입력 카드 · 판매 분배금 계산기.
+  세 자리가 같은 것을 묻는데 모양이 갈리면 값이 무엇을 뜻하는지 매번 다시 읽어야 한다.
 
 ### 캐릭터 카드 그리드(다중 선택): 옛 `CharacterTrackingPicker`, [[ADR-015]] — **기록**
 

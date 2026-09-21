@@ -15,6 +15,7 @@
  *
  * @see docs/features/boss-profit.md 정책
  */
+import type { ShareValue } from '../../components/organisms/InputCard/InputCard'
 import { useEffect, useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 import { useRoute, type RouteProp } from '@react-navigation/native'
@@ -25,7 +26,6 @@ import {
   type DropPriceGroup,
 } from '../../features/boss-profit/drop-price-store'
 import { useToastStore } from '../../features/toast/store'
-import { getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
 import { formatMesoShort } from '../../lib/boss/boss-profit-delta'
 import {
   formatBossProfitPeriodLabel,
@@ -70,7 +70,7 @@ import { confirmLabels } from '../../lib/drop/price-card-labels'
 /** 한 연쇄 안에서 매긴 값. 스토어를 다시 읽어도 이전으로 돌아가면 이 값이 보인다. */
 interface PriceEdit {
   meso: number
-  share: number
+  share: ShareValue
 }
 
 function characterTotal(group: DropPriceGroup): number {
@@ -237,13 +237,13 @@ export function DropPriceScreen(): React.JSX.Element {
     const 지금매김 = edit !== undefined || target.drop.priceState === 'entered'
 
     /** 값을 쓰고 자리를 옮긴다. 빈 칸이면 쓰지 않고 옮기기만 한다. */
-    function move(to: number, next: string, share?: number): void {
+    function move(to: number, next: string, share?: ShareValue): void {
       if (next === '') {
         openPriceCard(items, to, edits)
         return
       }
       const meso = mesoValueOf(next)
-      const 몫 = share ?? target.partySize
+      const 몫 = share ?? { myShare: 1, sharesTotal: target.partySize }
       const 다음편집 = new Map(edits).set(index, { meso, share: 몫 })
       void runWrite(() => savePrice(target, meso, 몫), items, to, 다음편집)
     }
@@ -257,11 +257,10 @@ export function DropPriceScreen(): React.JSX.Element {
       reading: true,
       chips: MESO_QUICK_ADDS,
       value: mesoTextOf(edit?.meso ?? target.drop.priceMeso ?? 0),
-      stepper: {
-        label: '분배 인원',
-        value: edit?.share ?? target.drop.priceShare ?? target.partySize,
-        min: 1,
-        max: getMaxPartySize(target.bossKey, target.difficulty),
+      share: {
+        label: '분배 비율',
+        myShare: edit?.share.myShare ?? target.drop.priceMyShare ?? 1,
+        sharesTotal: edit?.share.sharesTotal ?? target.drop.priceShare ?? target.partySize,
       },
       ...confirmLabels({
         하나: items.length === 1,

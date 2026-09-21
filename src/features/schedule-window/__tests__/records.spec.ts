@@ -17,7 +17,7 @@ jest.mock('../../../storage/boss-profit', () => ({
   markBossProfitRecordAuto: jest.fn(),
 }))
 jest.mock('../../../storage/boss-drops', () => ({ getBossDropRecords: jest.fn(), replaceBossDropRecords: jest.fn() }))
-jest.mock('../../../storage/boss-party-settings', () => ({ getBossPartySize: jest.fn() }))
+jest.mock('../../../storage/boss-party-settings', () => ({ getBossPartySetting: jest.fn() }))
 jest.mock('../../../storage/character-basic-cache', () => ({ getCachedCharacterBasic: jest.fn() }))
 
 import { loadUnqueryablePeriodKeys, recordBossProfitFromWindow } from '../records'
@@ -29,7 +29,7 @@ const {
   markBossProfitRecordAuto: markAutoMock,
 } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 const { getBossDropRecords: getDropsMock, replaceBossDropRecords: replaceDropsMock } = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
-const { getBossPartySize: getPartySizeMock } = jest.requireMock('../../../storage/boss-party-settings') as Record<string, jest.Mock>
+const { getBossPartySetting: getPartySettingMock } = jest.requireMock('../../../storage/boss-party-settings') as Record<string, jest.Mock>
 const { getCachedCharacterBasic: getBasicMock } = jest.requireMock('../../../storage/character-basic-cache') as Record<string, jest.Mock>
 
 // KST 2026-09-05(토). 창은 8/23 ~ 9/4. 이번 주는 09-03, 지난 주는 08-27, 그 앞은 08-20.
@@ -46,12 +46,14 @@ beforeEach(() => {
   markAutoMock.mockReset().mockResolvedValue(undefined)
   getDropsMock.mockReset().mockResolvedValue([])
   replaceDropsMock.mockReset().mockResolvedValue(undefined)
-  getPartySizeMock.mockReset().mockResolvedValue(null)
+  getPartySettingMock.mockReset().mockResolvedValue(null)
   getBasicMock.mockReset().mockResolvedValue({ profile: { world: '스카니아', worldKey: 'scania' } })
 })
 
 const upserted = () =>
   upsertMock.mock.calls.map(([r]) => `${r.bossKey}|${r.difficulty}|${r.cycle}|${r.periodKey}`)
+
+
 
 describe('그 기간의 확정 상태는 조회 가능한 마지막 날의 응답이다', () => {
   it('같은 주의 마지막 관측이 이긴다. 앞의 관측은 그 기간을 안 정한다', async () => {

@@ -6,7 +6,7 @@
  */
 import { closeBossProfitDb } from '../db'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
-import { copyMissingBossPartySettings, getBossPartySettings, setBossPartySize } from '../../boss-party-settings'
+import { copyMissingBossPartySettings, getBossPartySettings, setBossPartySetting } from '../../boss-party-settings'
 import {
   deleteBossProfitRecord,
   getBossProfitRecords,
@@ -43,6 +43,9 @@ function record(overrides: Partial<BossProfitRecord>): BossProfitRecord {
     partySize: 1,
     priceMeso: 1_000_000,
     payoutMeso: 1_000_000,
+    crystalMyShare: null,
+    crystalSharesTotal: null,
+    splitFeePercent: null,
     recordedAt: '2026-09-11T00:00:00.000Z',
     world: '챌린저스2',
     worldKey: 'challengers_2',
@@ -72,9 +75,9 @@ describe('character_world_leaps', () => {
 
 describe('copyMissingBossPartySettings', () => {
   it('옛 캐릭터 설정을 전부 옮기고, 새 캐릭터에 이미 있는 설정은 안 덮는다', async () => {
-    await setBossPartySize('old', 'lotus', 'hard', 3, '2026-09-01T00:00:00.000Z')
-    await setBossPartySize('old', 'damien', 'hard', 2, '2026-09-01T00:00:00.000Z')
-    await setBossPartySize('new', 'lotus', 'hard', 6, '2026-09-12T00:00:00.000Z')
+    await setBossPartySetting({ ocid: 'old', bossKey: 'lotus', difficulty: 'hard', partySize: 3, crystalMyShare: null, crystalSharesTotal: null, dropMyShare: null, dropSharesTotal: null, splitFeePercent: null, updatedAt: '2026-09-01T00:00:00.000Z' })
+    await setBossPartySetting({ ocid: 'old', bossKey: 'damien', difficulty: 'hard', partySize: 2, crystalMyShare: null, crystalSharesTotal: null, dropMyShare: null, dropSharesTotal: null, splitFeePercent: null, updatedAt: '2026-09-01T00:00:00.000Z' })
+    await setBossPartySetting({ ocid: 'new', bossKey: 'lotus', difficulty: 'hard', partySize: 6, crystalMyShare: null, crystalSharesTotal: null, dropMyShare: null, dropSharesTotal: null, splitFeePercent: null, updatedAt: '2026-09-12T00:00:00.000Z' })
 
     await copyMissingBossPartySettings('old', 'new', '2026-09-14T00:00:00.000Z')
 

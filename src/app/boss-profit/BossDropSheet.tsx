@@ -5,6 +5,7 @@
  * 무엇을 고르게 할 것인가다. 난이도 필터, 장비·소비 타일, 읽기 전용 고정 드롭, 상자 드릴다운,
  * 그리고 기록 직후의 가격 물음.
  */
+import type { ShareValue } from '../../components/organisms/InputCard/InputCard'
 import { useState } from 'react'
 import { Image, Pressable, ScrollView, View } from 'react-native'
 
@@ -77,7 +78,7 @@ interface BossDropSheetProps {
    * 이 시트 안에서 가격까지 매길 수 있게 할지. 넘기지 않으면 기록 직후의 확인 줄도 타일의
    * 수익 배지도 뜨지 않는다. 가격 개념이 없는 호출부에 누를 수 없는 표식을 만들지 않는다.
    */
-  pricing?: { defaultShare: number; maxShare: number; characterName: string }
+  pricing?: { defaultShare: ShareValue; characterName: string }
 }
 
 /**
@@ -120,7 +121,7 @@ function TileLabel(props: { drop: RecordedDrop | undefined }): React.JSX.Element
 /** 한 연쇄 안에서 매긴 값. 상태가 갈아 끼워져도 이전으로 돌아가면 이 값이 보인다. */
 interface PriceEdit {
   meso: number
-  share: number
+  share: ShareValue
 }
 
 function ItemThumb(props: { itemKey: string | null; level?: number }): React.JSX.Element {
@@ -312,7 +313,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
       closeInputCard()
       return
     }
-    const { defaultShare, maxShare, characterName } = props.pricing
+    const { defaultShare, characterName } = props.pricing
     const edit = edits.get(index)
     const 마지막 = index === items.length - 1
     /** 값이 매겨질 개수. 지금 칸이 빈 채로 끝나는 경우와 채워 끝나는 경우가 다르다. */
@@ -322,12 +323,18 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
     const 지금매김 = edit !== undefined || target.priceState === 'entered'
 
     /** 값을 쓰고 자리를 옮긴다. 빈 칸이면 아무것도 안 쓴다. */
-    function move(to: number, next: string, share?: number): void {
+    function move(to: number, next: string, share?: ShareValue): void {
       const 다음편집 = new Map(edits)
       if (next !== '') {
         const meso = mesoValueOf(next)
-        applyPrice(target, { priceState: 'entered', priceMeso: meso, priceShare: share })
-        다음편집.set(index, { meso, share: share ?? defaultShare })
+        const 비율 = share ?? defaultShare
+        applyPrice(target, {
+          priceState: 'entered',
+          priceMeso: meso,
+          priceShare: 비율.sharesTotal,
+          priceMyShare: 비율.myShare,
+        })
+        다음편집.set(index, { meso, share: 비율 })
       }
       openPriceCard(items, to, 다음편집)
     }
@@ -341,11 +348,10 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
       reading: true,
       chips: MESO_QUICK_ADDS,
       value: mesoTextOf(edit?.meso ?? target.priceMeso ?? 0),
-      stepper: {
-        label: '분배 인원',
-        value: edit?.share ?? target.priceShare ?? defaultShare,
-        min: 1,
-        max: maxShare,
+      share: {
+        label: '분배 비율',
+        myShare: edit?.share.myShare ?? target.priceMyShare ?? defaultShare.myShare,
+        sharesTotal: edit?.share.sharesTotal ?? target.priceShare ?? defaultShare.sharesTotal,
       },
       // 버튼 글자가 **지금 누르면 무슨 일이 나는가**를 말한다. 저장과 다음을 두 버튼으로
       // 두었더니 어느 쪽이 값을 쓰는지가 안 읽혔다(사용자 지적).
@@ -353,7 +359,12 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
       exclude: {
         label: '기록 안함',
         onPress: () => {
-          applyPrice(target, { priceState: 'excluded', priceMeso: undefined, priceShare: undefined })
+          applyPrice(target, {
+            priceState: 'excluded',
+            priceMeso: undefined,
+            priceShare: undefined,
+            priceMyShare: undefined,
+          })
           const 다음편집 = new Map(edits)
           다음편집.delete(index)
           openPriceCard(items, index + 1, 다음편집)

@@ -8,15 +8,25 @@
 //   이라 감싸는 순간 기준 상자가 바뀌어 그림이 사라진다(컴포넌트 주석).
 // `aria-pressed` → **`accessibilityState.selected`**(`DifficultySegment` 가 `aria-selected` 를
 //   쓴다. RN 접근성 상태에 *pressed* 가 없다).
+import { useState } from 'react'
 import { fireEvent } from '@testing-library/react-native'
 
-import { renderOverlay, type AtomElement } from '../../../__tests__/render-atom'
-import { PartySizeModal } from '../PartySizeModal'
+import { findAllOfType, flattenStyle, renderOverlay, type AtomElement } from '../../../__tests__/render-atom'
+import { PartySizeModal, stripCrop } from '../PartySizeModal'
 
 /** 아트·베일은 `aria-hidden` 이라 기본 질의에서 빠진다(장식이라 그것이 옳다). */
 const HIDDEN = { includeHiddenElements: true } as const
 
 type Props = React.ComponentProps<typeof PartySizeModal>
+
+/** 비율을 안 쓰는 파티. 칸 다섯이 전부 null 이다. */
+const EVEN_SHARES = {
+  crystalMyShare: null,
+  crystalSharesTotal: null,
+  dropMyShare: null,
+  dropSharesTotal: null,
+  splitFeePercent: null,
+}
 
 function props(overrides: Partial<Props> = {}): Props {
   return {
@@ -27,11 +37,29 @@ function props(overrides: Partial<Props> = {}): Props {
     difficulty: 'hard',
     partySize: 4,
     maxPartySize: 6,
+    shares: EVEN_SHARES,
     onSelectDifficulty: jest.fn(),
-    onChangePartySize: jest.fn(),
+    onApply: jest.fn(),
     onClose: jest.fn(),
     ...overrides,
   }
+}
+
+/**
+ * 난이도를 들고 있는 호출부. 모달은 난이도를 자기가 안 쥐고 프롭으로 받으므로, 그것이 바뀔 때
+ * 초안이 다시 뜨는지는 이 배선이 있어야 잰다.
+ */
+function DifficultyHost(hostProps: { onApply: Props['onApply'] }): React.JSX.Element {
+  const [difficulty, setDifficulty] = useState<Props['difficulty']>('hard')
+  return (
+    <PartySizeModal
+      {...props({ onApply: hostProps.onApply })}
+      difficulty={difficulty}
+      partySize={difficulty === 'hard' ? 4 : 2}
+      maxPartySize={difficulty === 'hard' ? 6 : 2}
+      onSelectDifficulty={setDifficulty}
+    />
+  )
 }
 
 interface State {
@@ -50,6 +78,33 @@ function chip(getByText: (text: string) => AtomElement, label: string): AtomElem
   if (node === null) throw new Error(`칩을 찾지 못했다: ${label}`)
   return node
 }
+
+// 표의 `N% auto` 는 **그것이 앉은 상자의 폭 기준**이다. 358px 보스 카드의 값을 170px 띠에 그대로
+// 넣으면 보스가 절반 크기로 선다(실기기에서 그렇게 나왔다).
+describe('stripCrop: 카드 표를 띠 크기로', () => {
+  it('폭을 띠와 카드의 비만큼 키운다', () => {
+    // 띠 240 · 카드 358 이라 배수는 1.49 다.
+    expect(stripCrop({ size: '100% auto', position: '50% 35%' })).toEqual({
+      size: '149% auto',
+      position: '50% 35%',
+    })
+  })
+
+  it('보스마다 다른 표 값에도 같은 배수다', () => {
+    expect(stripCrop({ size: '70% auto', position: '50% 50%' }).size).toBe('104% auto')
+    expect(stripCrop({ size: '150% auto', position: '50% 20%' }).size).toBe('224% auto')
+  })
+
+  // 세로 자리는 비율이라 상자 크기와 무관하다. 건드리면 구도가 카드와 갈린다.
+  it('위치는 안 건드린다', () => {
+    expect(stripCrop({ size: '90% auto', position: '40% 25%' }).position).toBe('40% 25%')
+  })
+
+  it('읽을 수 없는 줄은 그대로 보낸다', () => {
+    const odd = { size: 'cover', position: '50% 50%' }
+    expect(stripCrop(odd)).toEqual(odd)
+  })
+})
 
 describe('PartySizeModal', () => {
   it('보스명과 주기를 헤더에 그린다', async () => {
@@ -76,24 +131,47 @@ describe('PartySizeModal', () => {
     expect(p.onSelectDifficulty).toHaveBeenCalledWith('extreme')
   })
 
-// 파티 인원은 (보스 + 난이도)에 붙어 있다. 스우는 하드 6인, 익스트림 2인. 한 케이스에서
-  // `cleanup` 뒤 다시 렌더했는데, RNTL 은 케이스마다 자동 정리하므로 둘로 나눈다.
+  // 파티 인원은 (보스 + 난이도)에 붙어 있다. 스우는 하드 6인, 익스트림 2인. 스테퍼는 그 수를
+  // 못 말하므로 배지가 옆에서 말한다.
   it.each([
-    [{}, '4 / 6'],
-    [{ difficulty: 'extreme' as const, partySize: 1, maxPartySize: 2 }, '1 / 2'],
-  ])('현재 인원과 상한을 n / max 로 함께 보여준다 (%#)', async (overrides, expected) => {
+    [{}, '최대 6명'],
+    [{ difficulty: 'extreme' as const, partySize: 1, maxPartySize: 2 }, '최대 2명'],
+  ])('상한을 배지로 말한다 (%#)', async (overrides, expected) => {
     const { getByText } = await renderOverlay(<PartySizeModal {...props(overrides)} />)
 
     expect(getByText(expected)).toBeTruthy()
   })
 
-  it('스테퍼로 인원을 바꾸면 onChangePartySize 를 부른다', async () => {
+  // 값은 모달 안에 머문다. 밖으로 나가는 길은 적용 하나다.
+  it('인원을 바꿔도 적용 전에는 아무것도 안 나간다', async () => {
     const p = props()
     const { getByLabelText } = await renderOverlay(<PartySizeModal {...p} />)
 
     await fireEvent.press(getByLabelText('스우 파티원 수 증가'))
 
-    expect(p.onChangePartySize).toHaveBeenCalledWith(5)
+    expect(p.onApply).not.toHaveBeenCalled()
+  })
+
+  it('적용을 누르면 고친 인원이 한 번에 나간다', async () => {
+    const p = props()
+    const { getByLabelText, getByText } = await renderOverlay(<PartySizeModal {...p} />)
+
+    await fireEvent.press(getByLabelText('스우 파티원 수 증가'))
+    await fireEvent.press(getByText('적용'))
+
+    expect(p.onApply).toHaveBeenCalledWith({ partySize: 5, shares: EVEN_SHARES })
+  })
+
+  // 적용을 안 눌렀으면 버린다(사용자 결정). 닫기는 저장하는 길이 아니다.
+  it('닫으면 고친 값을 안 내보낸다', async () => {
+    const p = props()
+    const { getByLabelText } = await renderOverlay(<PartySizeModal {...p} />)
+
+    await fireEvent.press(getByLabelText('스우 파티원 수 증가'))
+    await fireEvent.press(getByLabelText('닫기'))
+
+    expect(p.onApply).not.toHaveBeenCalled()
+    expect(p.onClose).toHaveBeenCalled()
   })
 
   it('상한에서 + 가 비활성이다', async () => {
@@ -123,19 +201,33 @@ describe('PartySizeModal', () => {
   })
 
   it('에셋이 있는 슬러그는 히어로에 일러스트를 그린다', async () => {
-    const { getByTestId } = await renderOverlay(<PartySizeModal {...props()} />)
+    const { getByTestId, queryByTestId } = await renderOverlay(<PartySizeModal {...props()} />)
 
     expect(getByTestId('faded-illustration', HIDDEN)).toBeTruthy()
-    expect(getByTestId('faded-illustration-veil', HIDDEN)).toBeTruthy()
+    // 직선 베일은 안 쓴다. 이 띠는 타원 하나로 덮는다.
+    expect(queryByTestId('faded-illustration-veil', HIDDEN)).toBeNull()
   })
 
   // 페이드 끝점이 카드와 다르다(히어로 42%/82%). 같은 값을 쓰면 넓고 낮은
   // 히어로에서 그림이 너무 일찍 끊긴다.
-  it('베일은 카드가 아니라 히어로 정지점을 쓴다', async () => {
+  // **실기기에서 드러난 결함**(2026-09-22). 크롭은 이미지를 상자보다 크게 그려 창을 옮기는
+  // 방식이라, 안 자르면 남는 부분이 띠 밖으로 흘러 글자를 덮는다. 베일은 띠 안만 덮으므로 그
+  // 부분이 생그림 사각형으로 남았다.
+  it('그림 띠가 넘치는 부분을 자른다', async () => {
     const { getByTestId } = await renderOverlay(<PartySizeModal {...props()} />)
 
-    // 히어로 끝점 42/82 + 네이티브 전용 끝점 1(`design-system.md` `파티 인원 모달`).
-    expect(getByTestId('faded-illustration-veil', HIDDEN).props.locations).toEqual([0, 0.42, 0.82, 1])
+    expect(flattenStyle(getByTestId('party-modal-art', HIDDEN).props.style).overflow).toBe('hidden')
+  })
+
+  // 직선 둘(가로·세로)이 만나는 모서리에 꺾인 자국이 남아 타원 하나로 갈아탔다(사용자 지적).
+  // `rx` 가 `cx` 이하여야 띠 왼쪽 끝에서 다 덮이고, 아니면 그 자리에 세로 이음선이 남는다.
+  it('타원 베일이 띠 왼쪽 끝에서 다 덮인다', async () => {
+    const { toJSON } = await renderOverlay(<PartySizeModal {...props()} />)
+
+    const [gradient] = findAllOfType(toJSON(), 'RNSVGRadialGradient')
+    expect(Number.parseFloat(gradient.props.rx as string)).toBeLessThanOrEqual(
+      Number.parseFloat(gradient.props.cx as string),
+    )
   })
 
   // 반대쪽. 매핑에 없는 슬러그는 아트를 안 만든다(그림 없는 보스가 타던 분기 그대로).
@@ -154,5 +246,100 @@ describe('PartySizeModal', () => {
 
     expect(stateOf(chip(getByText, '카오스')).selected).toBe(true)
   })
+})
 
+describe('분배 비율', () => {
+  it('스위치를 끄면 비율 고르개가 안 선다. 균등으로 잡는 대다수가 안 지난다', async () => {
+    const { queryByTestId } = await renderOverlay(<PartySizeModal {...props()} />)
+
+    expect(queryByTestId('share-field-ratio-결정석')).toBeNull()
+  })
+
+  it('비율로 갈아타면 반반이 놓인다. 아무것도 약속하지 않은 상태에서 시작한다', async () => {
+    const onApply = jest.fn()
+    const { getByLabelText, getByText } = await renderOverlay(<PartySizeModal {...props({ onApply })} />)
+
+    await fireEvent.press(getByLabelText('비율'))
+    await fireEvent.press(getByText('적용'))
+
+    expect(onApply).toHaveBeenCalledWith({
+      partySize: 4,
+      shares: {
+        crystalMyShare: 1,
+        crystalSharesTotal: 2,
+        dropMyShare: 1,
+        dropSharesTotal: 2,
+        splitFeePercent: 3,
+      },
+    })
+  })
+
+  // 비율은 `나 : 나머지` 라 두 쪽이다. 몇 명이 그 나머지를 이루는지는 금액에 안 들어가므로,
+  // 남겨 두면 아무것도 안 바꾸는 고르개가 모달에 서 있게 된다.
+  it('비율을 켜면 파티 인원 줄이 사라진다', async () => {
+    const shares = { ...EVEN_SHARES, crystalMyShare: 2, crystalSharesTotal: 3 }
+    const { queryByLabelText, queryByText } = await renderOverlay(<PartySizeModal {...props({ shares })} />)
+
+    expect(queryByText('파티 인원')).toBeNull()
+    expect(queryByLabelText('스우 파티원 수 증가')).toBeNull()
+  })
+
+  it('비율을 끄면 파티 인원 줄이 돌아온다', async () => {
+    const { getByLabelText, getByText } = await renderOverlay(<PartySizeModal {...props()} />)
+
+    expect(getByText('파티 인원')).toBeTruthy()
+    expect(getByLabelText('스우 파티원 수 증가')).toBeTruthy()
+  })
+
+  it('결정석과 아이템이 각각 선다. 둘을 다르게 약속하는 파티가 있다', async () => {
+    const shares = { ...EVEN_SHARES, crystalMyShare: 2, crystalSharesTotal: 3, dropMyShare: 1, dropSharesTotal: 2 }
+    const { getByTestId } = await renderOverlay(<PartySizeModal {...props({ shares })} />)
+
+    expect(getByTestId('share-field-ratio-결정석')).toHaveTextContent('66.7%')
+    expect(getByTestId('share-field-ratio-아이템')).toHaveTextContent('50%')
+  })
+
+  it('균등으로 갈아타면 비율 칸을 전부 비운다. 되돌리는 길이 이것뿐이다', async () => {
+    const onApply = jest.fn()
+    const shares = { ...EVEN_SHARES, crystalMyShare: 2, crystalSharesTotal: 3 }
+    const { getByLabelText, getByText } = await renderOverlay(
+      <PartySizeModal {...props({ shares, onApply })} />,
+    )
+
+    await fireEvent.press(getByLabelText('균등'))
+    await fireEvent.press(getByText('적용'))
+
+    expect(onApply).toHaveBeenCalledWith(expect.objectContaining({ shares: EVEN_SHARES }))
+  })
+
+
+  it('송금 수수료는 0 · 3 · 5 셋이고 고르면 그 값이 간다', async () => {
+    const onApply = jest.fn()
+    const shares = { ...EVEN_SHARES, crystalMyShare: 2, crystalSharesTotal: 3, splitFeePercent: 3 }
+    const { getByText } = await renderOverlay(<PartySizeModal {...props({ shares, onApply })} />)
+
+    expect(getByText('0%')).toBeTruthy()
+    expect(getByText('5%')).toBeTruthy()
+
+    await fireEvent.press(getByText('0%'))
+    await fireEvent.press(getByText('적용'))
+
+    expect(onApply).toHaveBeenCalledWith({
+      partySize: 4,
+      shares: expect.objectContaining({ splitFeePercent: 0 }),
+    })
+  })
+
+  // 난이도마다 인원 상한과 비율이 따로 산다(스우 하드 6인 · 익스트림 2인). 옛 난이도에서
+  // 고치던 값이 남으면 적용이 남의 값을 쓴다.
+  it('난이도가 바뀌면 초안을 그 난이도의 저장값으로 다시 뜬다', async () => {
+    const onApply = jest.fn()
+    const { getByLabelText, getByText } = await renderOverlay(<DifficultyHost onApply={onApply} />)
+
+    await fireEvent.press(getByLabelText('스우 파티원 수 증가'))
+    await fireEvent.press(chip(getByText, '익스트림'))
+    await fireEvent.press(getByText('적용'))
+
+    expect(onApply).toHaveBeenCalledWith({ partySize: 2, shares: EVEN_SHARES })
+  })
 })

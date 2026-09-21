@@ -32,9 +32,9 @@ const { getCachedCharacterBasic: getCachedCharacterBasicMock } = jest.requireMoc
 
 jest.mock('../../../storage/boss-party-settings', () => ({
   getBossPartySettings: jest.fn(),
-  setBossPartySize: jest.fn(),
+  setBossPartySetting: jest.fn(),
 }))
-const { getBossPartySettings: getBossPartySettingsMock, setBossPartySize: setBossPartySizeMock } = jest.requireMock('../../../storage/boss-party-settings') as Record<string, jest.Mock>
+const { getBossPartySettings: getBossPartySettingsMock, setBossPartySetting: setBossPartySettingMock } = jest.requireMock('../../../storage/boss-party-settings') as Record<string, jest.Mock>
 
 jest.mock('../../toast/store', () => {
   const showSuccess = jest.fn()
@@ -152,6 +152,15 @@ beforeEach(() => {
 afterEach(() => {
   jest.resetAllMocks()
 })
+
+/** 비율을 안 쓰는 파티. 인원만 고치는 기존 테스트들이 넘긴다. */
+const EVEN_SHARE_COLUMNS = {
+  crystalMyShare: null,
+  crystalSharesTotal: null,
+  dropMyShare: null,
+  dropSharesTotal: null,
+  splitFeePercent: null,
+}
 
 describe('useBossSchedulerStore', () => {
   it('초기 상태는 idle이고 캐릭터가 비어있다', () => {
@@ -1125,48 +1134,51 @@ describe('useBossSchedulerStore', () => {
       expect(useBossSchedulerStore.getState().partySizes).toEqual({ 'ocid-1:zakum:chaos': 3 })
     })
 
-    it('setPartySize는 storage에 upsert하고 partySizes 상태를 즉시 갱신한다', async () => {
-      setBossPartySizeMock.mockResolvedValue(undefined)
+    it('setPartySetting는 storage에 upsert하고 partySizes 상태를 즉시 갱신한다', async () => {
+      setBossPartySettingMock.mockResolvedValue(undefined)
 
-      await useBossSchedulerStore.getState().setPartySize('ocid-1', 'zakum', 'chaos', 4)
+      await useBossSchedulerStore.getState().setPartySetting('ocid-1', 'zakum', 'chaos', { partySize: 4, shares: EVEN_SHARE_COLUMNS })
 
-      expect(setBossPartySizeMock).toHaveBeenCalledWith(
-        'ocid-1',
-        'zakum',
-        'chaos',
-        4,
-        expect.any(String),
+      expect(setBossPartySettingMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ocid: 'ocid-1',
+          bossKey: 'zakum',
+          difficulty: 'chaos',
+          partySize: 4,
+          crystalMyShare: null,
+          updatedAt: expect.any(String),
+        }),
       )
       expect(useBossSchedulerStore.getState().partySizes).toEqual({ 'ocid-1:zakum:chaos': 4 })
     })
 
-    it('setPartySize가 성공하면 완료 토스트를 띄운다', async () => {
-      setBossPartySizeMock.mockResolvedValue(undefined)
+    it('setPartySetting가 성공하면 완료 토스트를 띄운다', async () => {
+      setBossPartySettingMock.mockResolvedValue(undefined)
 
-      await useBossSchedulerStore.getState().setPartySize('ocid-1', 'zakum', 'chaos', 4)
+      await useBossSchedulerStore.getState().setPartySetting('ocid-1', 'zakum', 'chaos', { partySize: 4, shares: EVEN_SHARE_COLUMNS })
 
       expect(showSuccessMock).toHaveBeenCalledWith('파티원 수를 저장했어요')
     })
 
-    it('setPartySize는 해당 보스의 maxPartySize를 초과하면 에러를 던지고 storage를 호출하지 않는다', async () => {
+    it('setPartySetting는 해당 보스의 maxPartySize를 초과하면 에러를 던지고 storage를 호출하지 않는다', async () => {
       // 스우 익스트림은 boss-crystal-prices.json에서 maxPartySize: 2로 예외 지정되어 있다.
       await expect(
-        useBossSchedulerStore.getState().setPartySize('ocid-1', 'lotus', 'extreme', 3),
+        useBossSchedulerStore.getState().setPartySetting('ocid-1', 'lotus', 'extreme', { partySize: 3, shares: EVEN_SHARE_COLUMNS }),
       ).rejects.toThrow()
 
-      expect(setBossPartySizeMock).not.toHaveBeenCalled()
+      expect(setBossPartySettingMock).not.toHaveBeenCalled()
       expect(useBossSchedulerStore.getState().partySizes).toEqual({})
     })
 
-    it('setPartySize는 1 미만이거나 정수가 아니면 에러를 던진다', async () => {
+    it('setPartySetting는 1 미만이거나 정수가 아니면 에러를 던진다', async () => {
       await expect(
-        useBossSchedulerStore.getState().setPartySize('ocid-1', 'zakum', 'chaos', 0),
+        useBossSchedulerStore.getState().setPartySetting('ocid-1', 'zakum', 'chaos', { partySize: 0, shares: EVEN_SHARE_COLUMNS }),
       ).rejects.toThrow()
       await expect(
-        useBossSchedulerStore.getState().setPartySize('ocid-1', 'zakum', 'chaos', 1.5),
+        useBossSchedulerStore.getState().setPartySetting('ocid-1', 'zakum', 'chaos', { partySize: 1.5, shares: EVEN_SHARE_COLUMNS }),
       ).rejects.toThrow()
 
-      expect(setBossPartySizeMock).not.toHaveBeenCalled()
+      expect(setBossPartySettingMock).not.toHaveBeenCalled()
     })
   })
 

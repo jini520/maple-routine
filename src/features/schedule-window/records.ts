@@ -16,7 +16,8 @@ import {
   MIN_SCHEDULER_DATE,
 } from '../../lib/boss/boss-profit-period'
 import { getBossDropRecords } from '../../storage/boss-drops'
-import { getBossPartySize } from '../../storage/boss-party-settings'
+import { crystalPayoutMeso } from '../../lib/boss/party-shares'
+import { getBossPartySetting } from '../../storage/boss-party-settings'
 import {
   getBossProfitRecords,
   markBossProfitRecordAuto,
@@ -138,7 +139,14 @@ async function recordPeriod(
     const priceEntry = findPriceEntry(bossKey, difficulty, periodKey, now)
     if (priceEntry === undefined || priceEntry.priceMeso === null) continue
 
-    const partySize = (await withSqliteFallback(getBossPartySize(ocid, bossKey, difficulty), null)) ?? 1
+    // 설정을 한 줄로 읽는다. 인원만 읽으면 비율 약속이 있는 보스가 균등으로 굳는다.
+    const configured = await withSqliteFallback(getBossPartySetting(ocid, bossKey, difficulty), null)
+    const partySize = configured?.partySize ?? 1
+    const shares = {
+      myShare: configured?.crystalMyShare ?? null,
+      sharesTotal: configured?.crystalSharesTotal ?? null,
+      splitFeePercent: configured?.splitFeePercent ?? null,
+    }
 
     await withSqliteTimeout(
       upsertBossProfitRecord({
@@ -150,7 +158,10 @@ async function recordPeriod(
         periodKey,
         partySize,
         priceMeso: priceEntry.priceMeso,
-        payoutMeso: Math.floor(priceEntry.priceMeso / partySize),
+        payoutMeso: crystalPayoutMeso(priceEntry.priceMeso, partySize, shares),
+        crystalMyShare: shares.myShare,
+        crystalSharesTotal: shares.sharesTotal,
+        splitFeePercent: shares.splitFeePercent,
         recordedAt: now.toISOString(),
         world,
         worldKey,

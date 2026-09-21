@@ -48,6 +48,11 @@ export interface BossProfitRow {
   maxPartySize: number
   partySize: number | null // 사용자가 아직 입력 안 했으면 null
   payoutMeso: number | null // partySize가 null이거나 priceMeso가 null이면 null
+  /** 그 기록의 결정석 분배 비율. `null` 이면 파티 인원으로 균등이다. */
+  crystalMyShare: number | null
+  crystalSharesTotal: number | null
+  /** 차액 송금의 수수료율. `null` 은 3 이다. */
+  splitFeePercent: number | null
   isComplete: boolean // false면 보스 스케줄러에 등록만 되고 아직 처치 전(미완료 placeholder). payoutMeso는 항상 0이고 DB에 기록되지 않는다
   /**
    * 며칟날 잡았나. 기록에서 나온 행만 값을 갖고 그 밖은 `null` 이다.
@@ -168,6 +173,9 @@ export function buildBossProfitRow(
     priceMeso,
     maxPartySize,
     partySize: null,
+    crystalMyShare: null,
+    crystalSharesTotal: null,
+    splitFeePercent: null,
     // 미완료(등록만 되고 아직 처치 전) 보스는 항상 0메소로 계산한다. 완료 보스는 null 로 두고
     // 자동 기록이나 `mergeRecordsIntoRows` 가 채운다. `isComplete`(카드 표시용 승격된 값)가
     // 아니라 `ownComplete`(승격 없는 원본)를 써야 한다. 여기 도달하는 boss 는 이미
@@ -271,6 +279,9 @@ export function buildRowFromRecord(
     maxPartySize,
     partySize: record.partySize,
     payoutMeso: record.payoutMeso,
+    crystalMyShare: record.crystalMyShare,
+    crystalSharesTotal: record.crystalSharesTotal,
+    splitFeePercent: record.splitFeePercent,
     isComplete: true, // 기록은 항상 완료된 보스만 남는다(backfillTarget/자동 기록이 완료 보스만 upsert)
     defeatedOn: record.defeatedOn ?? null,
     source: record.source ?? 'auto',
@@ -416,5 +427,6 @@ export function toRecordedDrop(record: BossDropRecord): RecordedDrop {
     priceState: record.priceState ?? undefined,
     priceMeso: record.priceMeso ?? undefined,
     priceShare: record.priceShare ?? undefined,
+    priceMyShare: record.priceMyShare ?? undefined,
   }
 }

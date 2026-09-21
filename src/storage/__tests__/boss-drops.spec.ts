@@ -71,6 +71,8 @@ describe('replaceBossDropRecords', () => {
       null,
       null,
       null,
+      // 내 비율. 안 적으면 1 이라 균등이다.
+      null,
     ])
 
     const [, insValues1] = runMock.mock.calls[2]
@@ -90,6 +92,7 @@ describe('replaceBossDropRecords', () => {
       3,
       1,
       '2026-07-26T00:00:00.000Z',
+      null,
       null,
       null,
       null,
@@ -214,6 +217,7 @@ describe('getBossDropRecords', () => {
         priceState: null,
         priceMeso: null,
         priceShare: null,
+        priceMyShare: null,
       },
     ])
   })
@@ -301,6 +305,7 @@ describe('getAllBossDropRecords', () => {
         priceState: null,
         priceMeso: null,
         priceShare: null,
+        priceMyShare: null,
       },
     ])
   })

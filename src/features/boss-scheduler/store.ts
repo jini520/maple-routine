@@ -14,7 +14,11 @@ import { hasSyncAttemptedThisRun } from '../schedule-sync/sync-run-state'
 import { isSyncFresh } from '../../lib/scheduler/sync-freshness'
 import { getTrackedCharacterOcids, setTrackedCharacterOcids } from '../../storage/character-selection'
 import { useCharacterSelectionStore } from '../character-selection/store'
-import { getBossPartySettings, setBossPartySize } from '../../storage/boss-party-settings'
+import {
+  getBossPartySettings,
+  setBossPartySetting,
+  type BossPartyShareColumns,
+} from '../../storage/boss-party-settings'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getCachedSchedulerState } from '../../storage/scheduler-cache'
 import { getBossProfitRecordsRevision, getManualBossProfitRecordKeys } from '../../storage/boss-profit'
@@ -74,6 +78,9 @@ export interface BossSchedulerState {
   // key: `${ocid}:${bossKey}:${difficulty}`. 맵에 키가 없으면 미설정(솔로)을 뜻한다. 이 스토어는
   // 없는 키를 1 로 채워 넣지 않는다. 그 해석은 UI 의 책임이다.
   partySizes: Record<string, number>
+  // 같은 키의 분배 비율. `partySizes` 와 나란히 사는 것은 인원을 읽는 곳(배지 · 필터 · 드롭
+  // 기본값)이 비율을 안 쓰기 때문이다. 둘은 아래 두 함수에서만 함께 쓰이고 따로 안 바뀐다.
+  partyShares: Record<string, BossPartyShareColumns>
   // 수동 모드에서 캐릭터별 추적 항목(멤버십). 값 필드는 여기 두지 않고 표시 시점에 characters 의
   // 동기화 값 또는 참조 테이블에서 조회한다.
   manualTrackedByOcid: Record<string, ManualTrackedItem[]>
@@ -113,7 +120,13 @@ export interface BossSchedulerStore extends BossSchedulerState {
     options?: RefreshOptions,
   ): Promise<void>
   loadPartySizes(ocids: string[]): Promise<void>
-  setPartySize(ocid: string, bossKey: string, difficulty: BossDifficulty, partySize: number): Promise<void>
+  /** 파티 인원과 분배 비율을 한 번에 저장한다. 균등으로 되돌리는 것도 `shares` 를 비우는 이 길이다. */
+  setPartySetting(
+    ocid: string,
+    bossKey: string,
+    difficulty: BossDifficulty,
+    input: { partySize: number; shares: BossPartyShareColumns },
+  ): Promise<void>
   addManualBoss(ocid: string, bossKey: string, difficulty: BossDifficulty): Promise<ManualBossAddResult>
   removeManualBoss(ocid: string, bossKey: string, difficulty: BossDifficulty): Promise<void>
   /**
@@ -136,6 +149,7 @@ const initialState: BossSchedulerState = {
   error: null,
   trackedOcids: null,
   partySizes: {},
+  partyShares: {},
   manualTrackedByOcid: {},
   manualCompletedByOcid: {},
   manualCompletedRevision: null,
@@ -373,7 +387,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
 
   async refresh(ocids, onProgress, options) {
     if (ocids.length === 0) {
-      set({ status: 'loaded', characters: [], error: null, partySizes: {} })
+      set({ status: 'loaded', characters: [], error: null, partySizes: {}, partyShares: {} })
       return
     }
 
@@ -529,28 +543,46 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
 
   async loadPartySizes(ocids) {
     if (ocids.length === 0) {
-      set({ partySizes: {} })
+      set({ partySizes: {}, partyShares: {} })
       return
     }
 
     const settings = await getBossPartySettings(ocids)
     const partySizes: Record<string, number> = {}
+    const partyShares: Record<string, BossPartyShareColumns> = {}
     for (const setting of settings) {
-      partySizes[partySizeKey(setting.ocid, setting.bossKey, setting.difficulty)] = setting.partySize
+      const key = partySizeKey(setting.ocid, setting.bossKey, setting.difficulty)
+      partySizes[key] = setting.partySize
+      partyShares[key] = {
+        crystalMyShare: setting.crystalMyShare,
+        crystalSharesTotal: setting.crystalSharesTotal,
+        dropMyShare: setting.dropMyShare,
+        dropSharesTotal: setting.dropSharesTotal,
+        splitFeePercent: setting.splitFeePercent,
+      }
     }
-    set({ partySizes })
+    set({ partySizes, partyShares })
   },
 
-  async setPartySize(ocid, bossKey, difficulty, partySize) {
+  async setPartySetting(ocid, bossKey, difficulty, { partySize, shares }) {
     const maxPartySize = getMaxPartySize(bossKey, difficulty)
     if (!Number.isInteger(partySize) || partySize < 1 || partySize > maxPartySize) {
-      throw new Error(`setPartySize: 파티원 수는 1 이상 ${maxPartySize} 이하의 정수여야 합니다`)
+      throw new Error(`setPartySetting: 파티원 수는 1 이상 ${maxPartySize} 이하의 정수여야 합니다`)
     }
 
-    await setBossPartySize(ocid, bossKey, difficulty, partySize, new Date().toISOString())
+    await setBossPartySetting({
+      ocid,
+      bossKey,
+      difficulty,
+      partySize,
+      ...shares,
+      updatedAt: new Date().toISOString(),
+    })
 
+    const key = partySizeKey(ocid, bossKey, difficulty)
     set({
-      partySizes: { ...get().partySizes, [partySizeKey(ocid, bossKey, difficulty)]: partySize },
+      partySizes: { ...get().partySizes, [key]: partySize },
+      partyShares: { ...get().partyShares, [key]: shares },
     })
     useToastStore.getState().showSuccess('파티원 수를 저장했어요')
   },
