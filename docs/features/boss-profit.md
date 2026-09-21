@@ -1686,13 +1686,18 @@ sticky도 없다(⛔ ADR-047. RN에서 안 만들기로 판정났다).
   라벨 옆: 결정석 판매 현황 칩(주간 탭·모든 기간. 월간 탭에는 월간 결정석만 선다 - [[ADR-298]] 결정 3). 흐름 안이지만 h-5라 줄 높이(h-6)를 밀지 않는다(아래 상세)
   우측: 기간 전체 고가 드롭 뱃지(있을 때만). absolute right-0 top-1/2 -translate-y-1/2
 금액행: mt-1.5 flex items-center gap-2.5
-  코인 엠블럼 h-8 w-8 rounded-full bg-primary-tint text-primary-ink + ProfitIcon h-[18px] w-[18px] (ADR-066: 옛 lucide Coins)
+  메소 주머니 그림 h-8 w-8 (`meso_pouch.webp` · 원 없음 · aria-hidden)
   금액 text-xl font-extrabold leading-none tabular-nums text-primary + 단위 "메소" text-xs font-bold text-text-muted
   금액 옆: 직전 기간 대비 증감 칩(ADR-087). h-5, 이 줄에 들어가므로 헤더 높이 불변
 헤어라인: mt-3 h-px bg-border (헤더 블록 바닥 경계 = 카드 테두리 대체)
 ```
 
-- **새 색을 만들지 않는다.** 기존 토큰만 쓴다(금액과 엠블럼은 `primary`, 라벨과 단위는 `text-muted`,
+- **금액 옆 표식은 메소 주머니 그림**이다(사용자 지정 2026-09-21). 종전의 코인 엠블럼(`bg-primary-tint`
+  원 + `ProfitIcon`)을 걷었다. **원을 다시 두지 말 것** - 그림이 32x31 픽셀 아트라 원에 맞춰 줄이면
+  비정수 배율로 뭉개진다. 원본 크기(`h-8 w-8` = 32)로 세워야 또렷하다. 입력 카드의 메소 표식과 같은
+  그림이라 「메소를 세는 자리」의 감각이 두 화면에서 이어진다. 뜻은 옆의 금액이 말하므로 그림은
+  `aria-hidden` 이고, 파일이 없으면 자리를 비운다(비슷한 것으로 안 때운다).
+- **새 색을 만들지 않는다.** 기존 토큰만 쓴다(금액은 `primary`, 라벨과 단위는 `text-muted`,
   결정석 수치는 `text`). 증감 칩의 `rise`·`fall` 은 이 규칙의 예외가 아니라 **토큰 체계 안에 들어온
   신규 시맨틱 색**이다([[ADR-087]] 결정 5).
 - **캐릭터 수는 표시하지 않는다**(중요 정보가 아니다. [[ADR-046]] 결정 5). 보스 처치 수도 같은 결정으로

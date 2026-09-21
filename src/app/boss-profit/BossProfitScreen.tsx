@@ -18,7 +18,9 @@
  */
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { ScrollView } from 'react-native'
-import { Pressable, View } from 'react-native'
+import { Image, Pressable, View } from 'react-native'
+
+import { getItemIconUrlByFile } from '../../lib/assets/asset-lookup'
 
 import { useBossProfitStore } from '../../features/boss-profit/store'
 import { usePeriodLoadErrorToast } from '../../features/boss-profit/use-period-error-toast'
@@ -85,6 +87,14 @@ const BOSS_PROFIT_TAB_LABELS: Record<(typeof BOSS_PROFIT_TABS)[number], string> 
 
 /** 총 수익 내역 상자에 싣는 아이템 건수. 나머지는 한 줄로 접는다. */
 const PERIOD_REVENUE_LIST_LIMIT = 10
+
+/**
+ * 총 수익 금액 옆 표식. 입력 카드의 메소 표식과 같은 그림이다.
+ *
+ * **원 안에 넣지 않는다.** 32x31 픽셀 아트라 원에 맞춰 줄이면 비정수 배율로 뭉개진다. 원본
+ * 크기(32)로 세워야 또렷하다. 파일이 없으면 `null` 이고 그때는 자리를 비운다.
+ */
+const MESO_POUCH_URL = getItemIconUrlByFile('meso_pouch.webp')
 
 export function BossProfitScreen(): React.JSX.Element {
   const {
@@ -418,9 +428,16 @@ export function BossProfitScreen(): React.JSX.Element {
             </View>
 
             <View className="mt-1.5 flex-row items-center gap-2.5">
-              <View className="h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-tint">
-                <ProfitIcon className="h-[18px] w-[18px] text-primary-ink" strokeWidth={2} aria-hidden />
-              </View>
+              {/* 그림이 없으면 그 자리를 비운다. 비슷한 것으로 때우지 않는다. */}
+              {MESO_POUCH_URL !== null && (
+                <Image
+                  testID="boss-profit-total-icon"
+                  source={MESO_POUCH_URL}
+                  resizeMode="contain"
+                  className="h-8 w-8 shrink-0"
+                  aria-hidden
+                />
+              )}
               {/* 단위는 별도 `Text` 로 격하하되 숫자와 사이에 **실제 공백 문자**를 남긴다. 마진만
                   으로 띄우면 읽는 문자열이 "N메소"로 붙어 스크린리더가 이어 읽는다. */}
               <Text
