@@ -57,7 +57,7 @@ import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
  *
  * 단위를 붙이는 것은 갈래 하나 안에서 통화가 갈리는 곳이 있어서다(버프의 영약은 메소, 보약은
  * 메포). 메소만 줄여 적는다. 메포는 200~50,000 이라 그대로가 읽히지만 메소는 백만 단위라
- * 1/3 폭 타일에서 잘린다.
+ * 반폭 타일에서 잘린다.
  *
  * 값이 모두 같으면 하나만 적는다. 같은 값을 셋 적으면 좁은 타일에서 잘리고, 갈래마다 값이
  * 다르다고 읽힌다.
@@ -78,8 +78,8 @@ function tilePriceLabel(items: readonly SpendCatalogItem[]): string {
  * 타일 왼쪽(기본)은 이름 두 줄(≈32)보다 낮으면 높이를 안 건드린다. 이름 옆(에픽던전 셋)은
  * 이름 한 줄(≈16)과 나란히 서므로 더 작아야 그 줄이 안 두꺼워진다.
  */
-const TILE_ICON_SIZE = 24
-const TITLE_ICON_SIZE = 18
+/** 타일 그림의 한 변. 1차 갈래 카드와 같은 수다. */
+const TILE_ICON_SIZE = 28
 
 /** 주화 줄의 그림. 참조표가 파일 이름을 들어서 화면이 그 이름을 안 적는다. */
 const COIN_ICON = getItemIconUrlByFile(SPEND_REWARD_COIN.icon)
@@ -111,54 +111,44 @@ function ItemTile(props: {
       aria-label={props.label}
       aria-selected={props.selected}
       disabled={props.disabled}
-      className={`w-1/3 p-1 ${props.disabled === true ? 'opacity-40' : ''}`}
+      className={`w-1/2 p-1 ${props.disabled === true ? 'opacity-40' : ''}`}
       onPress={props.onPress}
     >
       {/*
-        `h-full` 을 안 쓴다. 부모(`Pressable`)의 높이가 내용에서 나오는데 거기에 백분율 높이를
-        걸면 그 값이 위쪽의 늘어난 상자에서 풀려, 타일 하나가 목록 높이를 통째로 먹는다.
-        한 줄 안의 높이는 `flex-1` 이 맞춘다.
+        1차 갈래 카드와 **같은 상자**다(사용자 지정 2026-09-21). 이름이 제목이고 가격이 그
+        아래 설명 줄이라, 두 단계가 같은 격자로 읽힌다. 치수는 `CategoryPicker` 를 따른다.
 
-        그림 자리는 둘이다. 기본은 타일 왼쪽 끝이고(위에 얹으면 그림 있는 타일만 한 층 커진다),
-        에픽던전 셋만 이름 바로 옆이다. 어느 쪽인지는 `spendIconOf` 가 든다.
+        그림 자리가 둘이던 것(타일 왼쪽 끝 · 이름 바로 옆)이 여기서 하나가 됐다. 가로 상자에서는
+        그 둘이 같은 자리다.
       */}
       <View
-        className={`flex-1 flex-row items-center gap-1.5 rounded-xl border px-2 py-2.5 ${
+        testID={`spend-tile-box-${props.tileKey}`}
+        className={`h-[56px] flex-row items-center gap-2 rounded-[14px] border px-3 ${
           props.selected ? 'border-primary bg-primary-tint' : 'border-border bg-surface'
         }`}
       >
-        {icon !== null && !icon.beside && (
+        {icon !== null && (
           // 아이템 아이콘은 **원본 비율 그대로** 둔다. 상자에 맞춰 늘리면 도트가 뭉갠다.
           <Image
             testID={`spend-tile-icon-${props.tileKey}`}
-            source={icon.ref}
+            source={icon}
             resizeMode="contain"
             style={{ width: TILE_ICON_SIZE, height: TILE_ICON_SIZE }}
           />
         )}
         {/* 글자가 남은 폭을 갖는다. `min-w-0` 이 없으면 긴 이름이 그림을 밀어낸다. */}
-        <View className="min-w-0 flex-1 items-center gap-1">
-          <View className="w-full flex-row items-center justify-center gap-1">
-            {icon !== null && icon.beside && (
-              <Image
-                testID={`spend-tile-icon-${props.tileKey}`}
-                source={icon.ref}
-                resizeMode="contain"
-                style={{ width: TITLE_ICON_SIZE, height: TITLE_ICON_SIZE }}
-              />
-            )}
-            {/* `shrink` 가 없으면 긴 이름이 그림을 타일 밖으로 밀어낸다. */}
-            <Text numberOfLines={2} className="shrink text-center text-11 leading-4 text-text">
-              {props.label}
-            </Text>
-          </View>
+        <View className="min-w-0 flex-1">
+          <Text numberOfLines={1} className="text-13 font-semibold leading-tight text-text">
+            {props.label}
+          </Text>
           {props.price !== null && (
-            // 한 줄로 못박는다. 두 줄이 되면 그 타일만 키가 커지고, `items-stretch` 라 같은
-            // 줄의 타일이 통째로 따라 커진다. 좁으면 글자를 줄여 맞춘다.
+            // 좁으면 글자를 줄여 맞춘다. 말줄임표가 붙으면 숫자가 잘려 값이 거짓이 된다.
             <Text
               numberOfLines={1}
               adjustsFontSizeToFit
-              className={`text-11 ${props.selected ? 'text-primary-ink' : 'text-text-muted'}`}
+              className={`mt-0.5 text-10 leading-tight ${
+                props.selected ? 'text-primary-ink' : 'text-text-muted'
+              }`}
               style={TABULAR_NUMS}
             >
               {props.price}
@@ -385,11 +375,11 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
             <View key={row[0]!.key} className="gap-1">
               {/*
                 이름과 타일이 **같은 칸 폭**을 쓴다. 짝지은 줄에서는 이름 둘이 타일 둘 바로
-                위에 각각 서고, 타일은 3열 격자의 1열·2열 자리 그대로다(폭도 간격도 같다).
+                위에 각각 서고, 타일은 2열 격자의 1열·2열 자리 그대로다(폭도 간격도 같다).
               */}
               <View className="-mx-1 flex-row">
                 {row.map((group) => (
-                  <View key={group.key} className={row.length === 2 ? 'w-1/3 px-1' : 'px-1'}>
+                  <View key={group.key} className={row.length === 2 ? 'w-1/2 px-1' : 'px-1'}>
                     <GroupLabel groupKey={group.key} group={group.group} active={group.active} />
                   </View>
                 ))}

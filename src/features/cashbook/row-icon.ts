@@ -37,10 +37,10 @@ export function recordIconOf(entry: DayRecord): ImageAssetRef | null {
     // 심볼 강화는 선택 목록이 아니라 비용 표에서 심볼을 되짚는다.
     if (category === 'symbol') {
       const symbol = findSymbol(itemKey)?.symbol
-      return symbol === undefined ? null : (spendIconOf({ file: symbol.icon })?.ref ?? null)
+      return symbol === undefined ? null : spendIconOf({ file: symbol.icon })
     }
     const choice = findSpendChoice(category, itemKey)?.choice ?? findSpendRewardChoice(category, formItemKeys)?.choice
-    if (choice !== undefined) return spendIconOf(choice.icon)?.ref ?? null
+    if (choice !== undefined) return spendIconOf(choice.icon)
   }
   return cashbookRowIconOf(recordIconKeyOf(entry))
 }

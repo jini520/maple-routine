@@ -895,6 +895,21 @@ describe('주문서', () => {
     expect(view.queryByLabelText('매지컬 한손무기 마력 주문서 100%')).toBeNull()
   })
 
+  // 2단계 항목 타일도 1차 갈래 카드와 **같은 상자**다(사용자 지정 2026-09-21). 이름이 제목이고
+  // 가격이 그 아래 설명 줄이다. 폭·방향·이름 크기 셋을 함께 봐야 한쪽만 바뀐 상태를 잡는다.
+  it('항목 타일이 1차 카드와 같은 상자다. 가로 · 한 줄에 둘', async () => {
+    const view = await 그리기({}, '주문서')
+
+    const 타일 = view.getByLabelText('매지컬 주문서')
+    expect(flattenStyle(타일.props.style)).toMatchObject({ width: '50%' })
+
+    const 상자 = view.getByTestId('spend-tile-box-magical_scroll')
+    expect(flattenStyle(상자.props.style)).toMatchObject({ flexDirection: 'row', height: 56 })
+
+    // 이름 크기가 1차 카드와 같다(text-13).
+    expect(flattenStyle(within(타일).getByText('매지컬 주문서').props.style).fontSize).toBe(13)
+  })
+
   // 표의 파일 이름이 틀리면 그림이 **조용히** 빠진다. 타일 셋으로 그 길을 붙든다.
   it('타일이 저마다 그림을 든다', async () => {
     const view = await 그리기({}, '주문서')

@@ -128,17 +128,6 @@ export function getItemIconUrlByFile(fileName: string): ImageAssetRef | null {
 // 지출 타일
 
 /**
- * 그림과 서는 자리를 함께 든 값. `beside` 는 이름 바로 옆이고 아니면 타일 왼쪽 끝이다.
- *
- * 지역 아이콘이면 이름 옆 이 지금은 우연히 일치하지만 그 둘은 다른 이야기라, 자리를 표가
- * 아니라 이 값이 직접 말한다.
- */
-export interface SpendIcon {
-  readonly ref: ImageAssetRef
-  readonly beside: boolean
-}
-
-/**
  * 가계부 하루 상세 줄의 표식. 열쇠는 `features/cashbook/row-icon.ts` 가 만든다.
  *
  * 여기 없는 갈래는 `null` 이고 화면이 지금 아이콘을 그대로 쓴다. 비슷한 그림을 갖다 붙이면
@@ -172,18 +161,13 @@ export function cashbookRowIconOf(key: string): ImageAssetRef | null {
 /**
  * 지출 타일 그림을 자산으로 푼다. 그림 파일 이름은 카탈로그의 `tiles` 가 든다.
  *
- * 파일이면 타일 왼쪽, 지역 아이콘 slug 면 이름 옆에 선다. 못 찾으면 `null` 이고 화면은 그림 없이 선다.
+ * 원천이 둘이다. 아이템 그림은 파일 이름으로, 에픽던전 셋은 **지역 아이콘** slug 로 찾는다.
+ * 복사해 두 벌로 두면 한쪽만 갈린다. 못 찾으면 `null` 이고 화면은 그림 없이 선다.
  */
-export function spendIconOf(icon: { readonly file?: string; readonly map?: string } | undefined): SpendIcon | null {
-  if (icon?.file !== undefined) {
-    const ref = ITEM_ASSETS[icon.file]
-    return ref === undefined ? null : { ref, beside: false }
-  }
-
-  if (icon?.map !== undefined) {
-    const ref = DAILY_QUEST_ICON_ASSETS[icon.map]
-    return ref === undefined ? null : { ref, beside: true }
-  }
-
+export function spendIconOf(
+  icon: { readonly file?: string; readonly map?: string } | undefined,
+): ImageAssetRef | null {
+  if (icon?.file !== undefined) return ITEM_ASSETS[icon.file] ?? null
+  if (icon?.map !== undefined) return DAILY_QUEST_ICON_ASSETS[icon.map] ?? null
   return null
 }
