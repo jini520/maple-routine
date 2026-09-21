@@ -45,6 +45,27 @@ function text(payload: unknown, key: string): string {
   return typeof value === 'string' ? value : ''
 }
 
+/**
+ * 전용 재화로 하는 강화. **메소가 한 푼도 안 든다**(사용자 확인).
+ *
+ * 2026-09-16 공지로 큐브 사용 내역과 스타포스 내역에 들어왔다. 넥슨은 새 칸을 안 만들고 두 칸의
+ * 이름만 고쳐 적었다 - `cube_type` 이 `사용 큐브 및 특수 재화`, `upgrade_item` 이
+ * `사용 주문서 및 특수 재화 명` 이다. 그래서 재화 이름이 그 두 칸으로 온다.
+ *
+ * 값 글자는 실제 기록에서 확인했다(2026-09-21). 정확히 `펄스 인핸서` 다.
+ *
+ * 이름으로 가른다. 큐브는 `cube_type` 을 안 보고 줄마다 감정비용을 세므로, 안 가르면 펄스
+ * 인핸서로 돌린 줄에 감정비용이 붙는다(레벨 130 이면 338,000 메소).
+ */
+const SPECIAL_CURRENCY = new Set(['펄스 인핸서'])
+
+function usesSpecialCurrency(entry: EnhancementHistoryEntry): boolean {
+  return (
+    SPECIAL_CURRENCY.has(text(entry.payload, 'cube_type')) ||
+    SPECIAL_CURRENCY.has(text(entry.payload, 'upgrade_item'))
+  )
+}
+
 /** 스타포스 응답의 `world_name` 으로 찾은 월드 key. 큐브·잠재는 월드를 안 줘서 `null` 이다. 저장된 응답 원문이라 여기서 맞춘다. */
 function worldKeyOf(entry: EnhancementHistoryEntry): string | null {
   const world = text(entry.payload, 'world_name')
@@ -144,7 +165,11 @@ export function enhancementCostOf(
 }
 
 /**
- * 이벤트 월드 줄을 걷어내고 나머지에 값을 매긴다.
+ * 지출이 아닌 줄을 걷어내고 나머지에 값을 매긴다.
+ *
+ * 걷는 것이 둘이다. **이벤트 월드** 줄(재화에 가치가 없다)과 **전용 재화로 한 강화** 줄(메소가
+ * 안 든다). 뒤엣것을 0 원으로 세우지 않고 아예 빼는 것은, 안 쓴 돈이 건수로 잡히면 갈래 합계의
+ * 건수가 뜨기 때문이다(사용자 지정).
  *
  * @param eventNames 스페셜 캐릭터 이름. **목록을 못 받았으면 `null`** 이고, 그때는 월드를
  *   모르는 줄을 전부 뺀다. 가릴 수 없는 것을 세우면 지출이 두 배로 부푼다
@@ -158,6 +183,7 @@ export function toEnhancementSpending(
   const rows: EnhancementSpendingRow[] = []
   for (const entry of entries) {
     if (isSpendingRecord(worldKeyOf(entry), entry.characterName, eventNames) !== true) continue
+    if (usesSpecialCurrency(entry)) continue
     rows.push({ ...entry, costMeso: enhancementCostOf(entry, observedLevels), category: categoryOf(entry) })
   }
   return rows
