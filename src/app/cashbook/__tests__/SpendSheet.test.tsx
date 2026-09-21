@@ -156,7 +156,10 @@ describe('갈래', () => {
     const view = await 그리기({}, null)
 
     for (const label of Object.keys(갈래key) as 갈래이름[]) {
-      expect(view.getByTestId(`spend-sheet-category-${갈래key[label]}`)).toHaveTextContent(label)
+      // 카드 전체가 아니라 **이름 글자**를 본다. 아래에 설명 줄이 붙어서 카드의 글자를 통째로
+      // 견주면 이름과 설명이 이어 붙은 하나로 읽힌다.
+      const 카드 = view.getByTestId(`spend-sheet-category-${갈래key[label]}`)
+      expect(within(카드).getByText(label)).toBeTruthy()
     }
     // 고르기 전에는 목록도 폼도 없다. 무엇을 적을지가 아직 안 정해졌다.
     expect(view.queryByText('에픽던전 추가 리워드')).toBeNull()
@@ -174,12 +177,21 @@ describe('갈래', () => {
     expect(flattenStyle(상자.props.style)).toMatchObject({ flexDirection: 'row' })
   })
 
-  // 설명은 수입에만 있다(2026-09-21 기준). 없는 갈래는 줄을 안 세운다 - 빈 줄을 세우면 카드
-  // 안에 쓰지 않는 자리가 남는다.
-  it('설명이 없는 갈래는 그 줄을 안 세운다', async () => {
+  // 이름만으로는 `컨텐츠` 와 `이벤트·BM` 이 무엇을 담는지 안 읽힌다. 한 줄로 말한다
+  // (사용자 지정 2026-09-21).
+  it('카드마다 이름 아래에 설명이 선다', async () => {
     const view = await 그리기({}, null)
 
-    expect(view.queryByTestId('spend-sheet-category-desc-content')).toBeNull()
+    const 설명 = (key: string): string =>
+      String(view.getByTestId(`spend-sheet-category-desc-${key}`).props.children)
+
+    expect(설명('content')).toBe('몬파·에픽던전·퀵패스')
+    expect(설명('event_bm')).toBe('메포샵·보약 버프 등')
+    expect(설명('buff')).toBe('메소 구입 버프 아이템')
+    expect(설명('scroll')).toBe('장비·악세·펫장비')
+    expect(설명('symbol')).toBe('심볼 강화 비용')
+    expect(설명('item_purchase')).toBe('구매 아이템 지출')
+    expect(설명('etc')).toBe('각종 패스 등 기타 지출')
   })
 
   /**

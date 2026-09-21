@@ -12,15 +12,43 @@
  *
  * 앞의 넷의 key 는 `src/data/spend-catalog.json` 의 `categories` 와 같아야 한다. 그 파일의 항목이
  * 이 key 로 갈래를 가리킨다.
+ *
+ * `description` 은 갈래 카드에만 선다. 저장되는 값이 아니라 화면 글자뿐이라 바꿔도 기록이 안
+ * 움직인다. **한 줄에 들어가게 쓸 것** - 반폭 카드의 글자 폭이 390 화면에서 115 뿐이다.
  */
 export const SPEND_CATEGORIES = [
-  { key: 'content', name: '컨텐츠', icon: 'monster_park_ticket.webp' },
-  { key: 'event_bm', name: '이벤트·BM', icon: 'vip_sauna_ticket.webp' },
-  { key: 'buff', name: '버프', icon: 'seiram_elixir.webp' },
-  { key: 'scroll', name: '주문서', icon: 'amazing_positive_chaos_scroll.webp' },
-  { key: 'symbol', name: '심볼 강화', icon: 'authentic_symbol_selection_coupon.webp' },
-  { key: 'item_purchase', name: '아이템 구매', icon: 'dark_boss_pendant.png' },
-  { key: 'etc', name: '기타', icon: 'meso.webp' },
+  {
+    key: 'content',
+    name: '컨텐츠',
+    icon: 'monster_park_ticket.webp',
+    description: '몬파·에픽던전·퀵패스',
+  },
+  {
+    key: 'event_bm',
+    name: '이벤트·BM',
+    icon: 'vip_sauna_ticket.webp',
+    description: '메포샵·보약 버프 등',
+  },
+  { key: 'buff', name: '버프', icon: 'seiram_elixir.webp', description: '메소 구입 버프 아이템' },
+  {
+    key: 'scroll',
+    name: '주문서',
+    icon: 'amazing_positive_chaos_scroll.webp',
+    description: '장비·악세·펫장비',
+  },
+  {
+    key: 'symbol',
+    name: '심볼 강화',
+    icon: 'authentic_symbol_selection_coupon.webp',
+    description: '심볼 강화 비용',
+  },
+  {
+    key: 'item_purchase',
+    name: '아이템 구매',
+    icon: 'dark_boss_pendant.png',
+    description: '구매 아이템 지출',
+  },
+  { key: 'etc', name: '기타', icon: 'meso.webp', description: '각종 패스 등 기타 지출' },
 ] as const
 
 export type SpendCategoryKey = (typeof SPEND_CATEGORIES)[number]['key']
