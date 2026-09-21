@@ -888,7 +888,7 @@ describe('주문서', () => {
 
     // 묶음 이름과 타일 이름이 같은 자리가 있다(`펫장비 주문서`, 사용자 지정). 글자가 둘 선다.
     expect(view.getAllByText('펫장비 주문서').length).toBeGreaterThan(0)
-    for (const 타일 of ['매지컬 주문서', '프리미엄 악세', '귀 장식 주문서', '놀긍', '펫장비 주문서', '펫장비 이노센트', '펫장비 순백', '펫장비 리턴']) {
+    for (const 타일 of ['매지컬 주문서', '프악공·프악마', '귀 장식 주문서', '놀라운 긍정의 혼돈 주문서', '펫장비 주문서', '펫장비 이노센트', '펫장비 순백의 주문서', '펫장비 리턴 스크롤']) {
       expect(view.getByLabelText(타일)).toBeTruthy()
     }
     // 단계와 축 값은 목록에 안 선다. 타일을 고른 뒤에 나온다.
@@ -1004,7 +1004,7 @@ describe('주문서', () => {
   it('줄이 하나인 타일은 단계 줄로 고른다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave }, '주문서')
-    await 누르기(view, '놀긍')
+    await 누르기(view, '놀라운 긍정의 혼돈 주문서')
 
     await 누르기(view, '100%')
     await 누르기(view, '저장')

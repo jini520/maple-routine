@@ -420,7 +420,7 @@ describe('축 값: 줄 둘로 항목 하나를 고른다', () => {
   })
 
   it('축 값이 없는 타일은 줄이 없다', () => {
-    expect(optionAxesOf(tileOf('놀긍'))).toEqual([])
+    expect(optionAxesOf(tileOf('놀라운 긍정의 혼돈 주문서'))).toEqual([])
     expect(optionAxesOf(null)).toEqual([])
   })
 
