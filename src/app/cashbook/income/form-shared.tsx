@@ -10,6 +10,7 @@ import { Pressable } from 'react-native'
 import { Text } from '../../../components/atoms'
 import { AmountInput, FieldRow } from '../sheet-fields'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
+import { FRAGMENT_PRICE_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
 import type { IncomeRecord } from '../../../storage/income'
 
 export type IncomeDraft = Omit<IncomeRecord, 'id' | 'recordedAt'>
@@ -84,6 +85,7 @@ export function FragmentFields(props: {
           icon="meso"
           unit="메소"
           reading
+          chips={FRAGMENT_PRICE_QUICK_ADDS}
           placeholder="미입력 시 보관"
           value={props.fragmentPrice}
           onChange={props.onChangeFragmentPrice}

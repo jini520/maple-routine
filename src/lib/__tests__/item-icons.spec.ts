@@ -87,16 +87,14 @@ describe('가계부 줄 표식', () => {
 
 // 지출 타일 그림. 그림은 카탈로그의 `tiles` 가 들고 여기서는 자산으로 풀기만 한다.
 describe('spendIconOf', () => {
-  it('아이템 그림 파일은 타일 왼쪽에 선다', () => {
-    const icon = spendIconOf({ file: 'seiram_elixir.webp' })
-    expect(icon?.ref).toBeDefined()
-    expect(icon?.beside).toBe(false)
+  // 원천이 둘이다. 아이템은 파일 이름, 에픽던전 셋은 **지역 아이콘** slug 다. 서는 자리는
+  // 하나가 됐다(타일이 가로 상자가 되면서 `타일 왼쪽`과 `이름 옆`이 같은 자리다).
+  it('아이템 그림 파일을 푼다', () => {
+    expect(spendIconOf({ file: 'seiram_elixir.webp' })).toBeDefined()
   })
 
-  it('지역 아이콘은 이름 옆에 선다', () => {
-    const icon = spendIconOf({ map: 'highMountain' })
-    expect(icon?.ref).toBeDefined()
-    expect(icon?.beside).toBe(true)
+  it('지역 아이콘 slug 도 푼다', () => {
+    expect(spendIconOf({ map: 'highMountain' })).toBeDefined()
   })
 
   it('그림이 없거나 못 찾으면 null 이다', () => {

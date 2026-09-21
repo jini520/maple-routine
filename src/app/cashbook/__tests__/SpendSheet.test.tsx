@@ -156,10 +156,42 @@ describe('갈래', () => {
     const view = await 그리기({}, null)
 
     for (const label of Object.keys(갈래key) as 갈래이름[]) {
-      expect(view.getByTestId(`spend-sheet-category-${갈래key[label]}`)).toHaveTextContent(label)
+      // 카드 전체가 아니라 **이름 글자**를 본다. 아래에 설명 줄이 붙어서 카드의 글자를 통째로
+      // 견주면 이름과 설명이 이어 붙은 하나로 읽힌다.
+      const 카드 = view.getByTestId(`spend-sheet-category-${갈래key[label]}`)
+      expect(within(카드).getByText(label)).toBeTruthy()
     }
     // 고르기 전에는 목록도 폼도 없다. 무엇을 적을지가 아직 안 정해졌다.
     expect(view.queryByText('에픽던전 추가 리워드')).toBeNull()
+  })
+
+  // 수입과 **한 부품**이라 함께 바뀐다(사용자 선택). 갈래가 일곱이라 네 줄이 되지만 카드가
+  // 낮아져 전체 높이는 오히려 준다.
+  it('카드가 가로로 눕고 한 줄에 둘씩 선다', async () => {
+    const view = await 그리기({}, null)
+
+    const 칸 = view.getByTestId('spend-sheet-category-content')
+    expect(flattenStyle(칸.props.style)).toMatchObject({ width: '50%' })
+
+    const 상자 = view.getByTestId('spend-sheet-category-box-content')
+    expect(flattenStyle(상자.props.style)).toMatchObject({ flexDirection: 'row' })
+  })
+
+  // 이름만으로는 `컨텐츠` 와 `이벤트·BM` 이 무엇을 담는지 안 읽힌다. 한 줄로 말한다
+  // (사용자 지정 2026-09-21).
+  it('카드마다 이름 아래에 설명이 선다', async () => {
+    const view = await 그리기({}, null)
+
+    const 설명 = (key: string): string =>
+      String(view.getByTestId(`spend-sheet-category-desc-${key}`).props.children)
+
+    expect(설명('content')).toBe('몬파·에픽던전·퀵패스')
+    expect(설명('event_bm')).toBe('메포샵·보약 버프 등')
+    expect(설명('buff')).toBe('메소 구입 버프 아이템')
+    expect(설명('scroll')).toBe('장비·악세·펫장비')
+    expect(설명('symbol')).toBe('심볼 강화 비용')
+    expect(설명('item_purchase')).toBe('구매 아이템 지출')
+    expect(설명('etc')).toBe('각종 패스 등 기타 지출')
   })
 
   /**
@@ -856,11 +888,26 @@ describe('주문서', () => {
 
     // 묶음 이름과 타일 이름이 같은 자리가 있다(`펫장비 주문서`, 사용자 지정). 글자가 둘 선다.
     expect(view.getAllByText('펫장비 주문서').length).toBeGreaterThan(0)
-    for (const 타일 of ['매지컬 주문서', '프리미엄 악세', '귀 장식 주문서', '놀긍', '펫장비 주문서', '펫장비 이노센트', '펫장비 순백', '펫장비 리턴']) {
+    for (const 타일 of ['매지컬 주문서', '프악공·프악마', '귀 장식 주문서', '놀라운 긍정의 혼돈 주문서', '펫장비 주문서', '펫장비 이노센트', '펫장비 순백의 주문서', '펫장비 리턴 스크롤']) {
       expect(view.getByLabelText(타일)).toBeTruthy()
     }
     // 단계와 축 값은 목록에 안 선다. 타일을 고른 뒤에 나온다.
     expect(view.queryByLabelText('매지컬 한손무기 마력 주문서 100%')).toBeNull()
+  })
+
+  // 2단계 항목 타일도 1차 갈래 카드와 **같은 상자**다(사용자 지정 2026-09-21). 이름이 제목이고
+  // 가격이 그 아래 설명 줄이다. 폭·방향·이름 크기 셋을 함께 봐야 한쪽만 바뀐 상태를 잡는다.
+  it('항목 타일이 1차 카드와 같은 상자다. 가로 · 한 줄에 둘', async () => {
+    const view = await 그리기({}, '주문서')
+
+    const 타일 = view.getByLabelText('매지컬 주문서')
+    expect(flattenStyle(타일.props.style)).toMatchObject({ width: '50%' })
+
+    const 상자 = view.getByTestId('spend-tile-box-magical_scroll')
+    expect(flattenStyle(상자.props.style)).toMatchObject({ flexDirection: 'row', height: 56 })
+
+    // 이름 크기가 1차 카드와 같다(text-13).
+    expect(flattenStyle(within(타일).getByText('매지컬 주문서').props.style).fontSize).toBe(13)
   })
 
   // 표의 파일 이름이 틀리면 그림이 **조용히** 빠진다. 타일 셋으로 그 길을 붙든다.
@@ -957,7 +1004,7 @@ describe('주문서', () => {
   it('줄이 하나인 타일은 단계 줄로 고른다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave }, '주문서')
-    await 누르기(view, '놀긍')
+    await 누르기(view, '놀라운 긍정의 혼돈 주문서')
 
     await 누르기(view, '100%')
     await 누르기(view, '저장')

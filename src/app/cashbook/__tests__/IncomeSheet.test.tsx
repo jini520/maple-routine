@@ -252,6 +252,32 @@ describe('갈래', () => {
     expect(view.queryByTestId('income-sheet-meso-line')).toBeNull()
   })
 
+  // 카드가 **가로로 눕는다**(사용자 지정 2026-09-21). 그림과 이름이 한 줄에 서고 한 줄에 둘씩 든다.
+  // 세로 카드 3열이던 것을 바꾼 것이라, 폭과 방향 둘 다 봐야 한쪽만 바뀐 상태를 잡는다.
+  it('카드가 가로로 눕고 한 줄에 둘씩 선다', async () => {
+    const view = await 그리기({}, null)
+
+    const 칸 = view.getByTestId('income-sheet-category-hunting')
+    expect(flattenStyle(칸.props.style)).toMatchObject({ width: '50%' })
+
+    const 상자 = view.getByTestId('income-sheet-category-box-hunting')
+    expect(flattenStyle(상자.props.style)).toMatchObject({ flexDirection: 'row' })
+  })
+
+  // 이름만으로는 `솔 에르다 조각` 과 `사냥` 이 무엇을 가르는지 안 읽힌다. 한 줄로 말한다
+  // (사용자 지정 2026-09-21).
+  it('카드마다 이름 아래에 설명이 선다', async () => {
+    const view = await 그리기({}, null)
+
+    const 설명 = (key: string): string =>
+      String(view.getByTestId(`income-sheet-category-desc-${key}`).props.children)
+
+    expect(설명('hunting')).toBe('메소 · 조각 수익 기록')
+    expect(설명('sol_erda_fragment')).toBe('사냥 수익 조각 정산')
+    expect(설명('item_sale')).toBe('판매 아이템 수익')
+    expect(설명('etc')).toBe('이벤트 등 기타 수익')
+  })
+
   /**
    * 그림은 파일명으로 찾는다. 목록(`assets/generated/items`)은 커밋 시점에 생성되므로, 파일을
    * 더하고 `npm run assets:gen` 을 안 돌리면 셋 중 하나가 조용히 빈 자리가 된다.
@@ -1790,6 +1816,45 @@ describe('조각 가격을 비우면 보관', () => {
     const view = await 그리기({ editing: 사냥기록(계산기(40, null), 21_168_000), onDelete: jest.fn() })
 
     expect(view.queryByTestId('income-sheet-hunt-toggles')).toBeNull()
+  })
+
+  // 조각 하나가 몇 만 메소다. 메소의 자릿수 눈금(`+100만`부터)은 첫 칩이 이미 값을 넘겨
+  // 짚을 것이 없었다. 눈금을 두 자리 내린다(사용자 지정).
+  it('빠른 칩이 +1만 · +10만 · +100만 셋이다', async () => {
+    const view = await 그리기({}, 'hunting')
+
+    await 아이디로누르기(view, 'income-sheet-fragment-price')
+
+    const card = within(view.getByTestId('input-card'))
+    expect(card.getByText('+1만')).toBeTruthy()
+    expect(card.getByText('+10만')).toBeTruthy()
+    expect(card.getByText('+100만')).toBeTruthy()
+    expect(card.queryByText('+1000만')).toBeNull()
+    expect(card.queryByText('+1억')).toBeNull()
+  })
+
+  // 정산의 `개당 가격` 도 조각 개당 값이다. 이름이 달라도 넣는 값이 같아서 눈금을 맞춘다.
+  it('조각 정산의 개당 가격도 같은 칩을 든다', async () => {
+    const view = await 그리기({}, 'sol_erda_fragment')
+
+    await 아이디로누르기(view, 'income-sheet-settle-price')
+
+    const card = within(view.getByTestId('input-card'))
+    expect(card.getByText('+1만')).toBeTruthy()
+    expect(card.getByText('+100만')).toBeTruthy()
+    expect(card.queryByText('+1억')).toBeNull()
+  })
+
+  // 손으로 적는 폼은 칩을 아예 안 넘기고 있었다. 같은 이름의 칸이 두 폼에서 다르게 선다.
+  it('손입력 폼의 같은 칸도 같은 칩을 든다', async () => {
+    const view = await 그리기({}, 'hunting')
+    await 이름으로누르기(view, '획득 메소 직접 입력')
+
+    await 아이디로누르기(view, 'income-sheet-fragment-price')
+
+    const card = within(view.getByTestId('input-card'))
+    expect(card.getByText('+1만')).toBeTruthy()
+    expect(card.getByText('+100만')).toBeTruthy()
   })
 
   it('가격 칸의 자리표시자가 보관을 말한다. 두 폼이 같다', async () => {
