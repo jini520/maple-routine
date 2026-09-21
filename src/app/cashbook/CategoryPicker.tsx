@@ -4,9 +4,10 @@
  * 수입과 지출이 **한 벌을 쓴다**. 갈래를 고르면 그 갈래의 폼이 같은 시트에서 열린다. 그래서
  * 2차에는 갈래 칩이 없고, 갈래를 바꾸는 일은 여기로 돌아오는 일이 된다.
  *
- * 카드는 **가로로 눕고 한 줄에 둘**이다(사용자 지정 2026-09-21). 그림과 이름이 한 줄에 서므로
- * 카드가 92 에서 52 로 낮아진다. 갈래가 일곱인 지출은 줄이 셋에서 넷으로 늘지만, 줄당 높이가
- * 더 많이 줄어 시트 전체는 짧아진다.
+ * 카드는 **가로로 눕고 한 줄에 둘**이다(사용자 지정 2026-09-21). 그림 옆에 이름이 서고, 갈래 표가
+ * `description` 을 들면 그 아래 설명이 더 선다. 카드가 92 에서 52(설명 없음)·64(설명 있음)로
+ * 낮아진다. 갈래가 일곱인 지출은 줄이 셋에서 넷으로 늘지만, 줄당 높이가 더 많이 줄어 시트 전체는
+ * 짧아진다.
  *
  * 그림은 게임 아이템이고 **파일명으로 찾는다**. `dropItemIconOf` 는 드롭 아이템 마스터 표의 key 만
  * 알아서, 메소나 입장권처럼 표시 전용인 것은 그 표에 없다.
@@ -23,12 +24,30 @@ export function CategoryPicker<T extends string>(props: {
   /** 시트 제목. `수입 추가` · `지출 추가`. */
   title: string
   /** 갈래 표(`lib/cashbook/categories.ts`). 그림은 `src/assets/items/` 의 파일명이다. */
-  categories: ReadonlyArray<{ readonly key: T; readonly name: string; readonly icon: string }>
+  categories: ReadonlyArray<{
+    readonly key: T
+    readonly name: string
+    readonly icon: string
+    /** 이름 아래 한 줄. 없으면 그 줄을 안 세운다. 지출 갈래는 아직 안 든다. */
+    readonly description?: string
+  }>
   /** `testID` 뿌리. `income-sheet` · `spend-sheet`. */
   testIdPrefix: string
   onSelect: (category: T) => void
   onClose: () => void
 }): React.JSX.Element {
+  /*
+    카드 높이는 **갈래 표가 설명을 드는가**가 정한다. 한 시트의 갈래는 다 같이 들거나 다 같이
+    안 들어서, 이 한 값이 그 시트의 모든 카드를 같은 키로 맞춘다.
+
+    설명이 있으면 두 줄까지 잡는다. 반폭 카드의 글자 폭이 390 화면에서 115 인데
+    `사냥 메소 · 솔 에르다 조각 기록` 이 10px 로 약 149 라 한 줄에 안 든다. 그 한 줄 때문에
+    카드가 커지는 것이 줄여서 말줄임표를 다는 것보다 낫다.
+  */
+  const cardHeight = props.categories.some((each) => each.description !== undefined)
+    ? 'h-[64px]'
+    : 'h-[52px]'
+
   return (
     /*
       위 여백이 카드와의 간격보다 넓다. 고르는 것과 물러나는 것을 갈라 놓아야 손이 닫기로
@@ -53,7 +72,7 @@ export function CategoryPicker<T extends string>(props: {
             >
               <View
                 testID={`${props.testIdPrefix}-category-box-${category.key}`}
-                className="h-[52px] flex-row items-center gap-2 rounded-[14px] border border-border bg-surface px-3"
+                className={`${cardHeight} flex-row items-center gap-2 rounded-[14px] border border-border bg-surface px-3`}
               >
                 {/* 그림을 못 찾으면 자리만 지킨다. 카드 높이가 갈래마다 갈리지 않게. */}
                 {icon === null ? (
@@ -68,12 +87,26 @@ export function CategoryPicker<T extends string>(props: {
                     aria-hidden
                   />
                 )}
-                {/* 이름이 남은 폭을 다 쓴다. 두 줄까지 허용하는 것은 `솔 에르다 조각` 이 반폭
-                    카드에서 한 줄에 안 들어갈 수 있어서다. 높이가 못박혀 있어(52) 두 줄이 서도
-                    카드가 안 커진다 - 줄여서 말줄임표를 다느니 두 줄로 다 보이는 쪽이 낫다. */}
-                <Text numberOfLines={2} className="min-w-0 flex-1 text-13 font-semibold leading-tight text-text">
-                  {category.name}
-                </Text>
+                {/* 설명이 있으면 이름이 한 줄이어야 카드 높이가 갈래마다 안 갈린다. 없으면
+                    두 줄까지 허용한다 - 반폭 카드라 긴 이름이 한 줄에 안 들어갈 수 있고, 그때는
+                    줄여서 말줄임표를 다느니 두 줄로 다 보이는 쪽이 낫다. */}
+                <View className="min-w-0 flex-1">
+                  <Text
+                    numberOfLines={category.description === undefined ? 2 : 1}
+                    className="text-13 font-semibold leading-tight text-text"
+                  >
+                    {category.name}
+                  </Text>
+                  {category.description !== undefined && (
+                    <Text
+                      numberOfLines={2}
+                      testID={`${props.testIdPrefix}-category-desc-${category.key}`}
+                      className="mt-0.5 text-10 leading-tight text-text-muted"
+                    >
+                      {category.description}
+                    </Text>
+                  )}
+                </View>
               </View>
             </Pressable>
           )

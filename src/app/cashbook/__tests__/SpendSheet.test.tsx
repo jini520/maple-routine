@@ -174,6 +174,14 @@ describe('갈래', () => {
     expect(flattenStyle(상자.props.style)).toMatchObject({ flexDirection: 'row' })
   })
 
+  // 설명은 수입에만 있다(2026-09-21 기준). 없는 갈래는 줄을 안 세운다 - 빈 줄을 세우면 카드
+  // 안에 쓰지 않는 자리가 남는다.
+  it('설명이 없는 갈래는 그 줄을 안 세운다', async () => {
+    const view = await 그리기({}, null)
+
+    expect(view.queryByTestId('spend-sheet-category-desc-content')).toBeNull()
+  })
+
   /**
    * 그림은 파일명으로 찾는다. 목록(`assets/generated/items`)은 커밋 시점에 생성되므로, 파일을
    * 더하고 `npm run assets:gen` 을 안 돌리면 하나가 조용히 빈 자리가 된다.

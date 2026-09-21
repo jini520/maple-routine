@@ -264,6 +264,20 @@ describe('갈래', () => {
     expect(flattenStyle(상자.props.style)).toMatchObject({ flexDirection: 'row' })
   })
 
+  // 이름만으로는 `솔 에르다 조각` 과 `사냥` 이 무엇을 가르는지 안 읽힌다. 한 줄로 말한다
+  // (사용자 지정 2026-09-21).
+  it('카드마다 이름 아래에 설명이 선다', async () => {
+    const view = await 그리기({}, null)
+
+    const 설명 = (key: string): string =>
+      String(view.getByTestId(`income-sheet-category-desc-${key}`).props.children)
+
+    expect(설명('hunting')).toBe('사냥 메소 · 솔 에르다 조각 기록')
+    expect(설명('sol_erda_fragment')).toBe('사냥 수익 조각 정산')
+    expect(설명('item_sale')).toBe('판매한 아이템 수익 기록')
+    expect(설명('etc')).toBe('이벤트 등 기타 수익 기록')
+  })
+
   /**
    * 그림은 파일명으로 찾는다. 목록(`assets/generated/items`)은 커밋 시점에 생성되므로, 파일을
    * 더하고 `npm run assets:gen` 을 안 돌리면 셋 중 하나가 조용히 빈 자리가 된다.
