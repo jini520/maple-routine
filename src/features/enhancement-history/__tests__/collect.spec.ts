@@ -227,7 +227,7 @@ describe('수집', () => {
     fetchEnhancementHistory.mockImplementation((_key: string, kind: string) =>
       Promise.resolve(
         kind === 'starforce'
-          ? { rows: [{ ...page(['sf']).rows[0], payload: { upgrade_item: '주문의 흔적' } }], nextCursor: null }
+          ? { rows: [{ ...page(['sf']).rows[0], payload: { upgrade_item: '카르마 스타포스 17성 강화권' } }], nextCursor: null }
           : page([]),
       ),
     )

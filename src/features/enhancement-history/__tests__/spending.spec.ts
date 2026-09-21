@@ -246,7 +246,7 @@ describe('스타포스', () => {
   })
 
   it('강화권을 쓰면 메소가 안 든다', () => {
-    expect(toEnhancementSpending([starforce({ upgrade_item: '주문의 흔적' })], NO_EVENT)[0].costMeso).toBe(0)
+    expect(toEnhancementSpending([starforce({ upgrade_item: '카르마 스타포스 17성 강화권' })], NO_EVENT)[0].costMeso).toBe(0)
   })
 
   it('표에 없는 장비는 값이 없다', () => {
@@ -345,9 +345,10 @@ describe('펄스 인핸서는 지출이 아니다', () => {
   })
 
   // 다른 강화권은 그대로 선다. 그것들은 메소가 안 들 뿐 **쓴 물건**이라 기록으로 남는다.
+  // 값은 실제 기록에 있는 것이다. 142건에 `… 스타포스 N성 강화권` 꼴 다섯과 빈 값 136 이 있다.
   it('다른 강화권 줄은 그대로 선다. 0 원으로', () => {
     const rows = toEnhancementSpending(
-      [entry({ kind: 'starforce', payload: { upgrade_item: '주문의 흔적', world_name: '엘리시움' } })],
+      [entry({ kind: 'starforce', payload: { upgrade_item: '카르마 스타포스 17성 강화권', world_name: '엘리시움' } })],
       NO_EVENT,
     )
 
