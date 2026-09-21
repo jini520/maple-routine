@@ -1792,6 +1792,45 @@ describe('조각 가격을 비우면 보관', () => {
     expect(view.queryByTestId('income-sheet-hunt-toggles')).toBeNull()
   })
 
+  // 조각 하나가 몇 만 메소다. 메소의 자릿수 눈금(`+100만`부터)은 첫 칩이 이미 값을 넘겨
+  // 짚을 것이 없었다. 눈금을 두 자리 내린다(사용자 지정).
+  it('빠른 칩이 +1만 · +10만 · +100만 셋이다', async () => {
+    const view = await 그리기({}, 'hunting')
+
+    await 아이디로누르기(view, 'income-sheet-fragment-price')
+
+    const card = within(view.getByTestId('input-card'))
+    expect(card.getByText('+1만')).toBeTruthy()
+    expect(card.getByText('+10만')).toBeTruthy()
+    expect(card.getByText('+100만')).toBeTruthy()
+    expect(card.queryByText('+1000만')).toBeNull()
+    expect(card.queryByText('+1억')).toBeNull()
+  })
+
+  // 정산의 `개당 가격` 도 조각 개당 값이다. 이름이 달라도 넣는 값이 같아서 눈금을 맞춘다.
+  it('조각 정산의 개당 가격도 같은 칩을 든다', async () => {
+    const view = await 그리기({}, 'sol_erda_fragment')
+
+    await 아이디로누르기(view, 'income-sheet-settle-price')
+
+    const card = within(view.getByTestId('input-card'))
+    expect(card.getByText('+1만')).toBeTruthy()
+    expect(card.getByText('+100만')).toBeTruthy()
+    expect(card.queryByText('+1억')).toBeNull()
+  })
+
+  // 손으로 적는 폼은 칩을 아예 안 넘기고 있었다. 같은 이름의 칸이 두 폼에서 다르게 선다.
+  it('손입력 폼의 같은 칸도 같은 칩을 든다', async () => {
+    const view = await 그리기({}, 'hunting')
+    await 이름으로누르기(view, '획득 메소 직접 입력')
+
+    await 아이디로누르기(view, 'income-sheet-fragment-price')
+
+    const card = within(view.getByTestId('input-card'))
+    expect(card.getByText('+1만')).toBeTruthy()
+    expect(card.getByText('+100만')).toBeTruthy()
+  })
+
   it('가격 칸의 자리표시자가 보관을 말한다. 두 폼이 같다', async () => {
     const view = await 그리기({}, 'hunting')
     // 계산기는 줄이 누르개라 자리표시자가 줄에 서고, 카드를 열면 카드에도 같은 말이 선다.

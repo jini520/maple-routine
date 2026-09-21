@@ -32,6 +32,7 @@ import { requiredCharacterOptions } from '../character-options'
 import { AmountInput, FieldRow } from '../sheet-fields'
 import { openInputCard } from '../../../features/input-card/store'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
+import { FRAGMENT_PRICE_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 
@@ -185,6 +186,7 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
               icon: 'meso',
               unit: '메소',
               reading: true,
+              chips: FRAGMENT_PRICE_QUICK_ADDS,
               placeholder: '미입력 시 보관',
               value: fragmentPriceText,
               // 0 을 빈 칸으로 접지 않는다. 빈 칸은 보관이고 0 은 0 메소에 판 것이다.

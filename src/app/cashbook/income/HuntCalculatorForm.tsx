@@ -57,7 +57,7 @@ import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 import type { InputCardProps } from '../../../components/organisms/InputCard/InputCard'
 import { openInputCard } from '../../../features/input-card/store'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
-import { MESO_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
+import { FRAGMENT_PRICE_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
 
 /** 입력 카드가 받는 칸 셋. 나머지 줄은 누르는 칸이라 카드가 안 선다. */
 type EditingField = 'mesoRate' | 'fragments' | 'fragmentPrice'
@@ -88,7 +88,7 @@ const CARD_FIELDS: Record<EditingField, Omit<InputCardProps, 'value' | 'onConfir
     icon: 'meso',
     unit: '메소',
     reading: true,
-    chips: MESO_QUICK_ADDS,
+    chips: FRAGMENT_PRICE_QUICK_ADDS,
     placeholder: '미입력 시 보관',
   },
 }

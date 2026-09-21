@@ -18,6 +18,7 @@ import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { requiredCharacterOptions } from '../character-options'
 import { AmountInput, FieldRow } from '../sheet-fields'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
+import { FRAGMENT_PRICE_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 
@@ -151,6 +152,7 @@ export function FragmentSettleForm(
           icon="meso"
           unit="메소"
           reading
+          chips={FRAGMENT_PRICE_QUICK_ADDS}
           value={priceText}
           onChange={setPriceText}
         />
