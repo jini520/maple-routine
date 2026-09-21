@@ -42,7 +42,7 @@ export const INCOME_CATEGORIES = [
     key: 'hunting',
     name: '사냥',
     icon: 'wealth_acquisition_potion_small.webp',
-    description: '사냥 메소 · 솔 에르다 조각 기록',
+    description: '메소 · 조각 수익 기록',
   },
   {
     key: 'sol_erda_fragment',
@@ -54,9 +54,9 @@ export const INCOME_CATEGORIES = [
     key: 'item_sale',
     name: '아이템 판매',
     icon: 'dark_boss_pendant.png',
-    description: '판매한 아이템 수익 기록',
+    description: '판매 아이템 수익',
   },
-  { key: 'etc', name: '기타', icon: 'meso.webp', description: '이벤트 등 기타 수익 기록' },
+  { key: 'etc', name: '기타', icon: 'meso.webp', description: '이벤트 등 기타 수익' },
 ] as const
 
 export type IncomeCategoryKey = (typeof INCOME_CATEGORIES)[number]['key']

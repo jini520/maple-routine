@@ -5,7 +5,7 @@
  * 2차에는 갈래 칩이 없고, 갈래를 바꾸는 일은 여기로 돌아오는 일이 된다.
  *
  * 카드는 **가로로 눕고 한 줄에 둘**이다(사용자 지정 2026-09-21). 그림 옆에 이름이 서고, 갈래 표가
- * `description` 을 들면 그 아래 설명이 더 선다. 카드가 92 에서 52(설명 없음)·64(설명 있음)로
+ * `description` 을 들면 그 아래 설명이 더 선다. 카드가 92 에서 52(설명 없음)·56(설명 있음)으로
  * 낮아진다. 갈래가 일곱인 지출은 줄이 셋에서 넷으로 늘지만, 줄당 높이가 더 많이 줄어 시트 전체는
  * 짧아진다.
  *
@@ -40,12 +40,11 @@ export function CategoryPicker<T extends string>(props: {
     카드 높이는 **갈래 표가 설명을 드는가**가 정한다. 한 시트의 갈래는 다 같이 들거나 다 같이
     안 들어서, 이 한 값이 그 시트의 모든 카드를 같은 키로 맞춘다.
 
-    설명이 있으면 두 줄까지 잡는다. 반폭 카드의 글자 폭이 390 화면에서 115 인데
-    `사냥 메소 · 솔 에르다 조각 기록` 이 10px 로 약 149 라 한 줄에 안 든다. 그 한 줄 때문에
-    카드가 커지는 것이 줄여서 말줄임표를 다는 것보다 낫다.
+    **설명 글자는 한 줄에 들어가게 쓸 것.** 반폭 카드의 글자 폭이 390 화면에서 115 뿐이라
+    10px 로 열한 자 남짓이다. 지금 넷은 76~103 으로 든다. 넘치면 말줄임표가 붙는다.
   */
   const cardHeight = props.categories.some((each) => each.description !== undefined)
-    ? 'h-[64px]'
+    ? 'h-[56px]'
     : 'h-[52px]'
 
   return (
@@ -99,7 +98,7 @@ export function CategoryPicker<T extends string>(props: {
                   </Text>
                   {category.description !== undefined && (
                     <Text
-                      numberOfLines={2}
+                      numberOfLines={1}
                       testID={`${props.testIdPrefix}-category-desc-${category.key}`}
                       className="mt-0.5 text-10 leading-tight text-text-muted"
                     >

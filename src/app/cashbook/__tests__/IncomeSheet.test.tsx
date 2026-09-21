@@ -272,10 +272,10 @@ describe('갈래', () => {
     const 설명 = (key: string): string =>
       String(view.getByTestId(`income-sheet-category-desc-${key}`).props.children)
 
-    expect(설명('hunting')).toBe('사냥 메소 · 솔 에르다 조각 기록')
+    expect(설명('hunting')).toBe('메소 · 조각 수익 기록')
     expect(설명('sol_erda_fragment')).toBe('사냥 수익 조각 정산')
-    expect(설명('item_sale')).toBe('판매한 아이템 수익 기록')
-    expect(설명('etc')).toBe('이벤트 등 기타 수익 기록')
+    expect(설명('item_sale')).toBe('판매 아이템 수익')
+    expect(설명('etc')).toBe('이벤트 등 기타 수익')
   })
 
   /**
