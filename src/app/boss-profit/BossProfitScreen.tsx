@@ -91,8 +91,8 @@ const PERIOD_REVENUE_LIST_LIMIT = 10
 /**
  * 총 수익 금액 옆 표식. 입력 카드의 메소 표식과 같은 그림이다.
  *
- * **원 안에 넣지 않는다.** 32x31 픽셀 아트라 원에 맞춰 줄이면 비정수 배율로 뭉개진다. 원본
- * 크기(32)로 세워야 또렷하다. 파일이 없으면 `null` 이고 그때는 자리를 비운다.
+ * **원 안에 넣지 않는다.** 32x31 픽셀 아트라 원에 가둬 두면 그 원이 크기를 정하게 된다.
+ * 파일이 없으면 `null` 이고 그때는 자리를 비운다.
  */
 const MESO_POUCH_URL = getItemIconUrlByFile('meso_pouch.webp')
 
@@ -434,7 +434,7 @@ export function BossProfitScreen(): React.JSX.Element {
                   testID="boss-profit-total-icon"
                   source={MESO_POUCH_URL}
                   resizeMode="contain"
-                  className="h-8 w-8 shrink-0"
+                  className="ml-1.5 h-7 w-7 shrink-0"
                   aria-hidden
                 />
               )}

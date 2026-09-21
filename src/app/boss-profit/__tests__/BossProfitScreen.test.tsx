@@ -696,16 +696,16 @@ describe('총 수익 헤드라인', () => {
     expect(getByText(/^8,000,000 /)).toBeTruthy()
   })
 
-  // 금액 옆 표식이 메소 주머니다(사용자 지정 2026-09-21). 32x31 픽셀 아트라 원 안에 넣어 줄이면
-  // 비정수 배율로 뭉개진다. 원을 걷고 원본 크기로 세운다.
-  it('금액 옆에 메소 주머니가 선다. 그림 크기가 원본과 같다', async () => {
+  // 금액 옆 표식이 메소 주머니다(사용자 지정 2026-09-21). 원을 안 두는 것은 그 원이 그림 크기를
+  // 정하게 되기 때문이다. 크기와 왼쪽 여백은 사용자가 화면에서 보고 정한 값이다.
+  it('금액 옆에 메소 주머니가 28 로 서고 왼쪽에 여백을 둔다', async () => {
     mockStore({ status: 'loaded', periodState: 'recorded', rows: [보스행()] })
     const { getByTestId } = await renderScreen()
 
     // 뜻은 옆의 금액이 말한다. 그림은 장식이라 `aria-hidden` 이고 기본 쿼리가 건너뛴다.
     const 주머니 = getByTestId('boss-profit-total-icon', { includeHiddenElements: true })
     expect(주머니.props.source).toBe(getItemIconUrlByFile('meso_pouch.webp'))
-    expect(flattenStyle(주머니.props.style)).toMatchObject({ width: 32, height: 32 })
+    expect(flattenStyle(주머니.props.style)).toMatchObject({ width: 28, height: 28, marginLeft: 6 })
   })
 
   it('단위 앞에 **실제 공백 문자**를 남긴다. 스크린리더가 붙여 읽지 않게', async () => {
