@@ -252,6 +252,18 @@ describe('갈래', () => {
     expect(view.queryByTestId('income-sheet-meso-line')).toBeNull()
   })
 
+  // 카드가 **가로로 눕는다**(사용자 지정 2026-09-21). 그림과 이름이 한 줄에 서고 한 줄에 둘씩 든다.
+  // 세로 카드 3열이던 것을 바꾼 것이라, 폭과 방향 둘 다 봐야 한쪽만 바뀐 상태를 잡는다.
+  it('카드가 가로로 눕고 한 줄에 둘씩 선다', async () => {
+    const view = await 그리기({}, null)
+
+    const 칸 = view.getByTestId('income-sheet-category-hunting')
+    expect(flattenStyle(칸.props.style)).toMatchObject({ width: '50%' })
+
+    const 상자 = view.getByTestId('income-sheet-category-box-hunting')
+    expect(flattenStyle(상자.props.style)).toMatchObject({ flexDirection: 'row' })
+  })
+
   /**
    * 그림은 파일명으로 찾는다. 목록(`assets/generated/items`)은 커밋 시점에 생성되므로, 파일을
    * 더하고 `npm run assets:gen` 을 안 돌리면 셋 중 하나가 조용히 빈 자리가 된다.

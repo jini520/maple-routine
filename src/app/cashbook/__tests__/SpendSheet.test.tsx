@@ -162,6 +162,18 @@ describe('갈래', () => {
     expect(view.queryByText('에픽던전 추가 리워드')).toBeNull()
   })
 
+  // 수입과 **한 부품**이라 함께 바뀐다(사용자 선택). 갈래가 일곱이라 네 줄이 되지만 카드가
+  // 낮아져 전체 높이는 오히려 준다.
+  it('카드가 가로로 눕고 한 줄에 둘씩 선다', async () => {
+    const view = await 그리기({}, null)
+
+    const 칸 = view.getByTestId('spend-sheet-category-content')
+    expect(flattenStyle(칸.props.style)).toMatchObject({ width: '50%' })
+
+    const 상자 = view.getByTestId('spend-sheet-category-box-content')
+    expect(flattenStyle(상자.props.style)).toMatchObject({ flexDirection: 'row' })
+  })
+
   /**
    * 그림은 파일명으로 찾는다. 목록(`assets/generated/items`)은 커밋 시점에 생성되므로, 파일을
    * 더하고 `npm run assets:gen` 을 안 돌리면 하나가 조용히 빈 자리가 된다.
