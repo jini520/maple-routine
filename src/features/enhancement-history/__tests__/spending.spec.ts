@@ -316,3 +316,52 @@ describe('합계', () => {
     expect(rows.filter((row) => row.costMeso !== null)).toHaveLength(1)
   })
 })
+
+/*
+  펄스 인핸서는 **전용 재화로 하는 강화**다. 메소가 한 푼도 안 들어서 지출 목록에 설 자리가
+  없다(사용자 지정 2026-09-21). 0 원 줄로 세우면 안 쓴 돈이 건수로 잡혀 갈래 합계의 건수가 뜬다.
+
+  값 글자는 실제 기록에서 확인했다. 큐브는 `cube_type`, 스타포스는 `upgrade_item` 에 온다.
+  넥슨 문서가 두 칸의 이름을 `사용 큐브 및 특수 재화` · `사용 주문서 및 특수 재화 명` 으로 고쳐
+  적었고 새 칸은 없다.
+*/
+describe('펄스 인핸서는 지출이 아니다', () => {
+  it('큐브 줄이 목록에서 빠진다', () => {
+    const rows = toEnhancementSpending(
+      [entry({ payload: { cube_type: '펄스 인핸서' }, itemLevel: 130 })],
+      NO_EVENT,
+    )
+
+    expect(rows).toEqual([])
+  })
+
+  it('스타포스 줄도 목록에서 빠진다', () => {
+    const rows = toEnhancementSpending(
+      [entry({ kind: 'starforce', payload: { upgrade_item: '펄스 인핸서', world_name: '엘리시움' } })],
+      NO_EVENT,
+    )
+
+    expect(rows).toEqual([])
+  })
+
+  // 다른 강화권은 그대로 선다. 그것들은 메소가 안 들 뿐 **쓴 물건**이라 기록으로 남는다.
+  it('다른 강화권 줄은 그대로 선다. 0 원으로', () => {
+    const rows = toEnhancementSpending(
+      [entry({ kind: 'starforce', payload: { upgrade_item: '주문의 흔적', world_name: '엘리시움' } })],
+      NO_EVENT,
+    )
+
+    expect(rows).toHaveLength(1)
+    expect(rows[0].costMeso).toBe(0)
+  })
+
+  it('보통 큐브 줄은 그대로 선다', () => {
+    const rows = toEnhancementSpending(
+      [entry({ payload: { cube_type: '수상한 큐브' }, itemLevel: 130 })],
+      NO_EVENT,
+    )
+
+    expect(rows).toHaveLength(1)
+    expect(rows[0].costMeso).toBe(338_000)
+  })
+})
