@@ -1168,7 +1168,12 @@ describe('useBossProfitStore', () => {
     // "불러오는 중..."에서 영원히 멈췄다. refresh가 SQLite 응답을 무한정 기다리지 않고
     // 타임아웃 후 기본값(파티원 1인)으로라도 화면을 완성해야 한다.
     it('upsertBossProfitRecord가 응답하지 않아도(hang) 타임아웃 후 기본 파티원 수로 loaded 상태가 된다', async () => {
+      // **타이머를 감으려면 타이머도 가짜여야 한다.** `beforeEach` 는 시계만 세우므로
+      // (`doNotFake: NOT_FAKED`) 여기서 맨몸으로 다시 세우는데, 그러면 시계가 진짜 오늘로
+      // 되돌아가 못이 뽑힌다. 자쿰 카오스 가격이 2026-09-17 에 반으로 갈려 그 뒤로는 이 테스트가
+      // 옛 시세를 못 본다.
       jest.useFakeTimers()
+      jest.setSystemTime(PINNED_NOW)
       try {
         getBossPartySettingMock.mockResolvedValue(null)
         upsertBossProfitRecordMock.mockImplementation(() => new Promise(() => {}))
@@ -1191,7 +1196,9 @@ describe('useBossProfitStore', () => {
     // 유효하다. 다만 그때 party_size=1로 자동 기록하던 동작은으로 폐기했다.
     // 조회 실패를 "기록 없음"으로 읽고 사용자가 저장한 값을 덮어쓰는 데이터 손상 경로였다.
     it('getBossProfitRecords가 응답하지 않아도(hang) 타임아웃 후 멈추지 않고, 기본 파티원 수로 덮어쓰지도 않는다', async () => {
+      // 위와 같다. 타이머를 감으려고 다시 세우면 시계가 진짜 오늘로 돌아간다.
       jest.useFakeTimers()
+      jest.setSystemTime(PINNED_NOW)
       try {
         getBossProfitRecordsMock.mockImplementation(() => new Promise(() => {}))
         getBossPartySettingMock.mockResolvedValue(null)
