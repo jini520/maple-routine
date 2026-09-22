@@ -326,6 +326,8 @@ pop 되면 설정으로 돌아온다.
 - **저장은 컨텐츠 스케줄러 store의 `saveTrackedOcids` 를 그대로 부른다**([[ADR-140]] 결정 4. 세 번째
   사본을 만들지 않는다). 그 뒤 보스와 수익 store를 순차로 다시 읽힌다(결정 5). 로스터 로딩 · 실패 ·
   재시도 정책은 [content-scheduler.md](./content-scheduler.md) 의 "캐릭터 관리 피커" 절 그대로다.
+- **저장하는 동안 진행률 모달이 선다**(`캐릭터 정보를 저장하고 있어요`, 단위 `개`). 모양은 범용 진행률 부품(`TaskProgressModal`)이다
+  ([[ADR-307]] 결정 9, 구현 전). 네트워크 조회라 이어서 하는 작업에는 안 들고, 0.3초 규칙 없이 저장 동안 늘 선다.
 - **대표는 목록 저장 뒤에 선택 스토어의 `setRepresentative` 로 쓴다**([[ADR-275]] 결정 2). 저장소 함수
   (`setRepresentativeCharacter` · `clearRepresentativeCharacter`)를 바로 부르면 기기 값은 바뀌지만 today
   가 든 값이 안 바뀐다. 위 `reloadTabStores` 로는 못 푼다. 그 함수가 다시 읽히는 것은 스토어의 추적
