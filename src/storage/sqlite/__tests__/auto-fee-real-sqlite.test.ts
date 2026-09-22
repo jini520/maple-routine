@@ -4,8 +4,23 @@
  */
 import { closeBossProfitDb } from '../db'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
-import { type IncomeRecord, getAutoFeeIncomeRecords, getIncomeRecordsBetween, insertIncomeRecord, updateIncomeSaleFee } from '../../income'
-import { getAutoFeeDropRecords, getBossDropRecords, replaceBossDropRecords, updateDropFees } from '../../boss-drops'
+import {
+  type IncomeRecord,
+  applyAutoIncomeSaleFee,
+  getAutoFeeIncomeRecords,
+  getBulkFeeIncomeRecords,
+  getIncomeRecordsBetween,
+  insertIncomeRecord,
+  updateIncomeSaleFee,
+} from '../../income'
+import {
+  applyAutoDropFees,
+  getAutoFeeDropRecords,
+  getBossDropRecords,
+  getBulkFeeDropRecords,
+  replaceBossDropRecords,
+  updateDropFees,
+} from '../../boss-drops'
 import {
   type BossProfitRecord,
   getAutoFeeProfitRecords,
@@ -109,5 +124,45 @@ describe('결정석의 자동 송금 수수료', () => {
     await updateProfitSplitFees([{ ocid: 'ocid-1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-08-06', splitFeePercent: 3, payoutMeso: 610_000 }])
     const records = await getBossProfitRecords(['ocid-1'], ['2026-08-06'])
     expect(records.find((record) => record.bossKey === 'lotus')).toMatchObject({ splitFeePercent: 3, payoutMeso: 610_000, splitFeeAuto: true })
+  })
+})
+
+describe('일괄 적용 대상', () => {
+  it('수수료가 빈 판매 · 조각 정산 · 조각 가격을 적은 사냥만 고른다', async () => {
+    const empty = { ...sale, saleFeePercent: null, saleFeeMeso: null, saleFeeAuto: false }
+    await insertIncomeRecord({ ...empty, id: 'sale' })
+    await insertIncomeRecord({ ...empty, id: 'fragment', category: 'sol_erda_fragment' })
+    await insertIncomeRecord({ ...empty, id: 'etc', category: 'etc' })
+    await insertIncomeRecord({ ...sale, id: 'already' })
+    const hunt = { mode: 'manual' as const, typedMeso: 500_000_000, fragments: 20 }
+    await insertIncomeRecord({ ...empty, id: 'hunt-priced', category: 'hunting', hunt: { ...hunt, fragmentPrice: 5_000_000 } })
+    await insertIncomeRecord({ ...empty, id: 'hunt-kept', category: 'hunting', hunt: { ...hunt, fragmentPrice: null } })
+
+    const ids = (await getBulkFeeIncomeRecords()).map((record) => record.id).sort()
+    expect(ids).toEqual(['fragment', 'hunt-priced', 'sale'])
+  })
+
+  it('적용한 수입 기록은 자동이 된다', async () => {
+    await insertIncomeRecord({ ...sale, saleFeePercent: null, saleFeeMeso: null, saleFeeAuto: false })
+
+    await applyAutoIncomeSaleFee('sale-auto', { mesoAmount: 1_164_000_000, saleFeePercent: 3, saleFeeMeso: 36_000_000 })
+    const [record] = await getIncomeRecordsBetween('2026-08-23', '2026-08-23')
+    expect(record).toMatchObject({ mesoAmount: 1_164_000_000, saleFeePercent: 3, saleFeeAuto: true })
+  })
+
+  it('가격을 입력하고 두 수수료가 빈 드롭만 고르고, 적용하면 두 칸이 자동이 된다', async () => {
+    const base = { category: 'equipment' as const, itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 }
+    await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-08-06', [
+      { ...base, priceState: 'entered', priceMeso: 1_000_000_000, priceShare: 2 },
+      { ...base },
+      { ...base, priceState: 'entered', priceMeso: 1_000_000_000, priceShare: 2, saleFeePercent: 3 },
+    ], '2026-08-10T00:00:00.000Z')
+
+    const candidates = await getBulkFeeDropRecords()
+    expect(candidates.map((record) => record.dropIndex)).toEqual([0])
+
+    await applyAutoDropFees([{ ocid: 'ocid-1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-08-06', dropIndex: 0, saleFeePercent: 3, splitFeePercent: 3 }])
+    const [first] = await getBossDropRecords(['ocid-1'], ['2026-08-06'])
+    expect(first).toMatchObject({ saleFeePercent: 3, splitFeePercent: 3, saleFeeAuto: true, splitFeeAuto: true })
   })
 })

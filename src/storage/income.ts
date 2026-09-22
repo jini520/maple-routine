@@ -353,6 +353,33 @@ export async function updateIncomeSaleFee(
 }
 
 /**
+ * 일괄 적용 대상. 수수료가 빈 아이템 판매 · 조각 정산 · 조각 가격을 적은 사냥이다.
+ * 저장된 금액이 수수료를 안 뗀 값이라 되짚을 것이 없다.
+ */
+export async function getBulkFeeIncomeRecords(): Promise<IncomeRecord[]> {
+  const db = await getBossProfitDb()
+  const { values } = await db.query(
+    `SELECT * FROM income_records
+     WHERE sale_fee_percent IS NULL
+       AND (category_key IN ('item_sale', 'sol_erda_fragment')
+            OR (category_key = 'hunting' AND hunt_fragment_price IS NOT NULL))`,
+  )
+  return (values ?? []).map((row) => rowToRecord(row as Record<string, unknown>))
+}
+
+/** 일괄 적용. 세 칸을 적고 자동으로 바꾼다. 그 뒤 등급 기록을 고치면 함께 다시 센다. */
+export async function applyAutoIncomeSaleFee(
+  id: string,
+  fields: { mesoAmount: number; saleFeePercent: FeePercent; saleFeeMeso: number },
+): Promise<void> {
+  const db = await getBossProfitDb()
+  await db.run(
+    `UPDATE income_records SET meso_amount = ?, sale_fee_percent = ?, sale_fee_meso = ?, sale_fee_auto = 1 WHERE id = ?`,
+    [fields.mesoAmount, fields.saleFeePercent, fields.saleFeeMeso, id],
+  )
+}
+
+/**
  * 한 캐릭터의 솔 에르다 조각 보관 개수. 조각 가격을 안 적은(`NULL`) 사냥 기록의 조각 합에서 `솔 에르다 조각` 정산 기록이 판
  * 개수 합을 뺀 값이다.
  *

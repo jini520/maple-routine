@@ -247,6 +247,31 @@ export async function updateDropFees(updates: readonly DropFeeUpdate[]): Promise
   bumpRecordsRevision()
 }
 
+/** 일괄 적용 대상. 가격을 입력했고 두 수수료가 다 빈 드롭이다. */
+export async function getBulkFeeDropRecords(): Promise<BossDropRecord[]> {
+  const db = await getBossProfitDb()
+  const { values } = await db.query(
+    `SELECT * FROM boss_drop_records
+     WHERE price_state = 'entered' AND sale_fee_percent IS NULL AND split_fee_percent IS NULL
+     ORDER BY drop_index`,
+  )
+  return (values ?? []).map(rowToRecord)
+}
+
+/** 일괄 적용. 두 요율을 적고 두 칸을 자동으로 바꾼다. */
+export async function applyAutoDropFees(updates: readonly DropFeeUpdate[]): Promise<void> {
+  if (updates.length === 0) return
+  const db = await getBossProfitDb()
+  for (const update of updates) {
+    await db.run(
+      `UPDATE boss_drop_records SET sale_fee_percent = ?, split_fee_percent = ?, sale_fee_auto = 1, split_fee_auto = 1
+       WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ? AND drop_index = ?`,
+      [update.saleFeePercent, update.splitFeePercent, update.ocid, update.bossKey, update.difficulty, update.periodKey, update.dropIndex],
+    )
+  }
+  bumpRecordsRevision()
+}
+
 /**
  * 기간을 걸지 않고 읽는 이 캐릭터들의 전 기간 드롭 기록. 드롭 히스토리가 히스토리 전용
  * 테이블 없이 이 테이블 하나만 보고 동작하는 근거다. `getBossDropRecords` 는 `periodKeys` 가
