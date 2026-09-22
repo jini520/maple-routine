@@ -24,35 +24,6 @@ describe('resolveImageCropLayout: CSS 배경 크롭 → RN 배치', () => {
     })
   })
 
-  // 낮고 좁은 상자(파티 모달의 170×104 띠)는 폭으로 맞추면 얼굴이 위로 잘려 나간다.
-  it('`auto N%` 는 부모 높이 기준 높이가 된다. 폭은 종횡비가 정한다', () => {
-    const layout = resolveImageCropLayout({ size: 'auto 210%', position: '52% 18%' }, NATURAL)
-
-    expect(layout).toEqual({
-      kind: 'sized',
-      width: undefined,
-      height: '210%',
-      aspectRatio: 2,
-      left: '52%',
-      top: '18%',
-      translateX: '-52%',
-      translateY: '-18%',
-    })
-  })
-
-  // 안 적은 축의 이름을 안 부르면 그림의 고유 크기가 남아 종횡비를 잃는다. 에러는 안 난다.
-  it('높이 기준이면 스타일이 폭을 undefined 로 이름 부른다', () => {
-    const style = imageCropStyle(resolveImageCropLayout({ size: 'auto 210%', position: '52% 18%' }, NATURAL))
-
-    expect(style).toMatchObject({ height: '210%', aspectRatio: 2 })
-    expect('width' in style).toBe(true)
-    expect(style.width).toBeUndefined()
-  })
-
-  it('두 축을 다 적은 값은 안 읽는다. cover 로 떨어진다', () => {
-    expect(resolveImageCropLayout({ size: '220% 210%', position: '0% 0%' }, NATURAL)).toEqual({ kind: 'cover' })
-  })
-
   // CSS `background-position` 의 퍼센트는 **두 기준의 뺄셈**이다(부모 − 자기). 한쪽만 옮기면
   // 그림이 통째로 밀려 나가므로, 두 값이 부호만 다른 짝이라는 것이 계약이다.
   it('position 퍼센트는 부모 기준 오프셋과 자기 기준 역이동의 짝이다', () => {

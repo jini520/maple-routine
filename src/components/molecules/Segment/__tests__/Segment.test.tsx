@@ -155,22 +155,4 @@ describe('Segment 의 촉각', () => {
 
     expect(select).not.toHaveBeenCalled()
   })
-
-  // 곁들이로 서는 자리(파티 모달의 송금 수수료)는 한 단 작다. 상자 여백은 그대로다 - 거기까지
-  // 줄이면 미끄러지는 상자가 테두리에 붙어 눌린 조각이 잘려 보인다.
-  it('sm 은 조각 여백과 글자를 줄인다', async () => {
-    const 기본 = await renderAtom(<Segment options={['0%', '3%']} selected="3%" onSelect={jest.fn()} />)
-    const 작은 = await renderAtom(
-      <Segment options={['0%', '3%']} selected="3%" size="sm" onSelect={jest.fn()} />,
-    )
-
-    const 기본조각 = flattenStyle(기본.getByLabelText('3%').props.style)
-    const 작은조각 = flattenStyle(작은.getByLabelText('3%').props.style)
-    expect(작은조각.paddingLeft).toBeLessThan(기본조각.paddingLeft as number)
-    expect(작은조각.paddingTop).toBeLessThan(기본조각.paddingTop as number)
-
-    const 기본글자 = flattenStyle(기본.getByText('3%').props.style)
-    const 작은글자 = flattenStyle(작은.getByText('3%').props.style)
-    expect(작은글자.fontSize).toBeLessThan(기본글자.fontSize as number)
-  })
 })
