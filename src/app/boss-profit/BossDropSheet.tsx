@@ -5,7 +5,10 @@
  * 무엇을 고르게 할 것인가다. 난이도 필터, 장비·소비 타일, 읽기 전용 고정 드롭, 상자 드릴다운,
  * 그리고 기록 직후의 가격 물음.
  */
-import type { ShareValue } from '../../components/organisms/InputCard/InputCard'
+import type { FeesValue, ShareValue } from '../../components/organisms/InputCard/InputCard'
+import { dropFeeFields, dropFeeSeeds } from '../../features/boss-profit/drop-fees'
+import { autoFeeFrom, useMvpGradeContext } from '../../features/mvp-grade/store'
+import { periodStartDateKey } from '../../lib/boss/boss-profit-period'
 import { useState } from 'react'
 import { Image, Pressable, ScrollView, View } from 'react-native'
 
@@ -78,7 +81,7 @@ interface BossDropSheetProps {
    * 이 시트 안에서 가격까지 매길 수 있게 할지. 넘기지 않으면 기록 직후의 확인 줄도 타일의
    * 수익 배지도 뜨지 않는다. 가격 개념이 없는 호출부에 누를 수 없는 표식을 만들지 않는다.
    */
-  pricing?: { defaultShare: ShareValue; characterName: string }
+  pricing?: { defaultShare: ShareValue; characterName: string; ocid: string }
 }
 
 /**
@@ -122,6 +125,7 @@ function TileLabel(props: { drop: RecordedDrop | undefined }): React.JSX.Element
 interface PriceEdit {
   meso: number
   share: ShareValue
+  fees?: FeesValue
 }
 
 function ItemThumb(props: { itemKey: string | null; level?: number }): React.JSX.Element {
@@ -185,6 +189,7 @@ function EffectToggle(props: { on: boolean; onToggle: () => void }): React.JSX.E
 
 export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   const [selected, setSelected] = useState<RecordedDrop[]>(props.initialDrops)
+  const gradeContext = useMvpGradeContext()
   // 표시할 난이도. 기본값은 행 난이도(props.difficulty). 완료면 고정, 미완료면 토글로 변경한다.
   // 저장 키는 항상 행 난이도(display-only 필터)라 이 값은 표시·필터에만 쓴다.
   const [selectedDifficulty, setSelectedDifficulty] = useState<BossDifficulty>(props.difficulty)
@@ -313,7 +318,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
       closeInputCard()
       return
     }
-    const { defaultShare, characterName } = props.pricing
+    const { defaultShare, characterName, ocid } = props.pricing
     const edit = edits.get(index)
     const 마지막 = index === items.length - 1
     /** 값이 매겨질 개수. 지금 칸이 빈 채로 끝나는 경우와 채워 끝나는 경우가 다르다. */
@@ -323,7 +328,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
     const 지금매김 = edit !== undefined || target.priceState === 'entered'
 
     /** 값을 쓰고 자리를 옮긴다. 빈 칸이면 아무것도 안 쓴다. */
-    function move(to: number, next: string, share?: ShareValue): void {
+    function move(to: number, next: string, share?: ShareValue, fees?: FeesValue): void {
       const 다음편집 = new Map(edits)
       if (next !== '') {
         const meso = mesoValueOf(next)
@@ -333,11 +338,14 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
           priceMeso: meso,
           priceShare: 비율.sharesTotal,
           priceMyShare: 비율.myShare,
+          ...dropFeeFields(fees),
         })
-        다음편집.set(index, { meso, share: 비율 })
+        다음편집.set(index, { meso, share: 비율, fees })
       }
       openPriceCard(items, to, 다음편집)
     }
+
+    const [saleSeed, splitSeed] = dropFeeSeeds(target, edit?.fees)
 
     openInputCard({
       // 머리가 그 아이템을 말한다. `판매 가격` 이라는 말은 이미 누른 버튼이 했다.
@@ -353,6 +361,12 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
         myShare: edit?.share.myShare ?? target.priceMyShare ?? defaultShare.myShare,
         sharesTotal: edit?.share.sharesTotal ?? target.priceShare ?? defaultShare.sharesTotal,
       },
+      fees: {
+        // 드롭에는 날짜 칸이 없어 기간 첫날의 등급으로 센다(다시 계산도 같은 날을 본다).
+        autoFee: gradeContext === null ? null : autoFeeFrom(gradeContext, ocid, periodStartDateKey(props.periodKey)),
+        sale: saleSeed,
+        split: splitSeed,
+      },
       // 버튼 글자가 **지금 누르면 무슨 일이 나는가**를 말한다. 저장과 다음을 두 버튼으로
       // 두었더니 어느 쪽이 값을 쓰는지가 안 읽혔다(사용자 지적).
       ...confirmLabels({ 하나: items.length === 1, 마지막, 자리: index, 전체: items.length, 매긴것, 지금매김 }),
@@ -364,6 +378,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
             priceMeso: undefined,
             priceShare: undefined,
             priceMyShare: undefined,
+            ...dropFeeFields(undefined),
           })
           const 다음편집 = new Map(edits)
           다음편집.delete(index)
@@ -372,9 +387,9 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
       },
       prev:
         index > 0
-          ? { label: `이전(${index}/${items.length})`, onPress: (next, share) => move(index - 1, next, share) }
+          ? { label: `이전(${index}/${items.length})`, onPress: (next, share, fees) => move(index - 1, next, share, fees) }
           : undefined,
-      onConfirm: (next, share) => move(index + 1, next, share),
+      onConfirm: (next, share, fees) => move(index + 1, next, share, fees),
     })
   }
 

@@ -38,6 +38,8 @@ import { Text, TextInput, XIcon } from '../../atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { MAX_MESO, acceptMesoText, mesoTextOf, mesoValueOf } from '../MesoPad/meso-pad'
 import { ShareField } from '../../molecules/ShareField/ShareField'
+import { FeeRow } from '../FeeRow/FeeRow'
+import type { MvpGradeKey } from '../../../lib/mvp/grades'
 
 /**
  * 머리에 서는 표식. 메소를 받는 칸은 주머니, 조각 개수는 조각이다.
@@ -63,6 +65,41 @@ export interface ShareSpec {
 export interface ShareValue {
   myShare: number
   sharesTotal: number
+}
+
+/** 수수료 줄 하나의 씨앗. 손으로 고른 요율은 `percent`(`null` 은 없음) */
+export interface FeeSeed {
+  auto: boolean
+  percent: number | null
+}
+
+/**
+ * 비율 아래 판매 · 분배 수수료 줄 둘. 드롭 판매가가 쓴다.
+ *
+ * `autoFee` 는 자동의 명패와 요율이고, 그 기록 캐릭터 · 날짜의 등급에서 호출부가 찾는다.
+ */
+export interface FeesSpec {
+  autoFee: { grade: MvpGradeKey; percent: number } | null
+  sale: FeeSeed
+  split: FeeSeed
+}
+
+/** 카드가 돌려주는 수수료. 자동이면 요율은 그 등급 요율이다 */
+export interface FeesValue {
+  saleFeePercent: number | null
+  saleFeeAuto: boolean
+  splitFeePercent: number | null
+  splitFeeAuto: boolean
+}
+
+const FEE_OPTIONS = ['없음', '3%', '5%'] as const
+
+function feeOptionOf(percent: number | null): (typeof FEE_OPTIONS)[number] {
+  return percent === 3 ? '3%' : percent === 5 ? '5%' : '없음'
+}
+
+function feePercentOf(option: (typeof FEE_OPTIONS)[number]): number | null {
+  return option === '없음' ? null : Number(option.replace('%', ''))
 }
 
 
@@ -97,6 +134,8 @@ export interface InputCardProps {
    * 라벨은 호출부가 준다. 부품은 그 비율이 무엇의 몫인지 모른다. 드롭 판매가가 쓴다.
    */
   share?: ShareSpec
+  /** 비율 아래 판매 · 분배 수수료 줄. 넘기면 확인이 셋째 인자로 수수료를 준다 */
+  fees?: FeesSpec
   /** 확인 버튼의 글자. 기본은 `확인`. 값을 곧 저장하는 자리에서는 `저장` 이다. */
   confirmLabel?: string
   /**
@@ -117,14 +156,14 @@ export interface InputCardProps {
    *
    * 앞뒤로 오가는 동안 친 값이 안 날아가야 해서 값을 함께 준다(사용자 지정).
    */
-  prev?: { label: string; onPress: (next: string, share?: ShareValue) => void }
+  prev?: { label: string; onPress: (next: string, share?: ShareValue, fees?: FeesValue) => void }
   /**
    * 확인. 친 글자를 그대로 준다. 정리는 받는 쪽이 한다.
    *
    * 둘째 인자는 **스테퍼를 넘겼을 때만** 온다. 안 넘긴 카드는 인자 하나로 부른다. 없는 수를
    * `0` 으로 채워 보내면 받는 쪽이 그것을 값으로 읽을 수 있다.
    */
-  onConfirm: (next: string, share?: ShareValue) => void
+  onConfirm: (next: string, share?: ShareValue, fees?: FeesValue) => void
   /**
    * 버리고 닫기. **닫기 버튼(✕)과 안드로이드 뒤로가기**가 부른다.
    *
@@ -167,12 +206,19 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
    * 효과로 미루면 한 프레임 동안 앞 아이템의 값이 보인다. React 는 그리는 중의 자기 상태 갱신을
    * 받아들이고 그 자리에서 다시 그린다.
    */
+  const [saleFee, setSaleFee] = useState<FeeSeed>(props.fees?.sale ?? { auto: false, percent: null })
+  const [splitFee, setSplitFee] = useState<FeeSeed>(props.fees?.split ?? { auto: false, percent: null })
   const [seed, setSeed] = useState(props.seed)
   if (props.seed !== seed) {
     setSeed(props.seed)
     setDraft(props.value)
     setShare({ myShare: props.share?.myShare ?? 1, sharesTotal: props.share?.sharesTotal ?? 1 })
+    setSaleFee(props.fees?.sale ?? { auto: false, percent: null })
+    setSplitFee(props.fees?.split ?? { auto: false, percent: null })
   }
+  const autoFee = props.fees?.autoFee ?? null
+  // 내 비율이 합과 같으면 혼자 다 갖는 것이라 보낼 곳이 없다.
+  const splits = share.sharesTotal > share.myShare
 
   const isText = props.text === true
   const chips = isText ? [] : (props.chips ?? [])
@@ -202,10 +248,34 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
    * 비율을 안 넘긴 카드는 인자 하나로 부른다. 없는 비율을 채워 보내면 받는 쪽이 그것을 값으로
    * 읽을 수 있다.
    */
-  function give(to: ((next: string, share?: ShareValue) => void) | undefined): void {
+  function give(to: ((next: string, share?: ShareValue, fees?: FeesValue) => void) | undefined): void {
     if (to === undefined) return
-    if (props.share === undefined) to(draft)
+    if (props.fees !== undefined) {
+      const percentOf = (fee: FeeSeed) => (fee.auto ? (autoFee?.percent ?? null) : fee.percent)
+      to(draft, share, {
+        saleFeePercent: percentOf(saleFee),
+        saleFeeAuto: saleFee.auto,
+        splitFeePercent: percentOf(splitFee),
+        splitFeeAuto: splitFee.auto,
+      })
+    } else if (props.share === undefined) to(draft)
     else to(draft, share)
+  }
+
+  /** 수수료 줄 하나. 끄는 순간 방금까지 자동이던 요율을 고른 채 선다. */
+  function feeRow(label: string, testID: string, fee: FeeSeed, setFee: (next: FeeSeed) => void): React.JSX.Element {
+    return (
+      <FeeRow
+        testID={testID}
+        label={label}
+        auto={fee.auto}
+        onAutoChange={(auto) => setFee({ auto, percent: !auto && autoFee !== null ? autoFee.percent : fee.percent })}
+        autoFee={autoFee}
+        options={FEE_OPTIONS}
+        selected={feeOptionOf(fee.percent)}
+        onSelect={(option) => setFee({ auto: false, percent: feePercentOf(option) })}
+      />
+    )
   }
 
   return (
@@ -350,6 +420,13 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
           {props.share !== undefined && (
             <View className="mt-3">
               <ShareField label={props.share.label} value={share} onChange={setShare} />
+            </View>
+          )}
+
+          {props.fees !== undefined && (
+            <View className="mt-3 gap-2">
+              {feeRow('판매 수수료', 'input-card-sale-fee', saleFee, setSaleFee)}
+              {splits && feeRow('분배 수수료', 'input-card-split-fee', splitFee, setSplitFee)}
             </View>
           )}
 

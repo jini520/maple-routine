@@ -112,7 +112,7 @@ PK: `(ocid, boss_key, difficulty, period_key, drop_index)`. [[ADR-038]]에서 �
 - **아이템을 key 로 든다**([[ADR-280]] 결정 11, 2026-09-15, 이슈 #444). `item_key`(아이템 key) · `box_origin_key`(상자 결과면 상자의 아이템 key)와 그때 이름(`item_name` · `box_origin`)을 함께 적는다. 이름만 든 옛 행은 버전 3 이 key 를 채웠고, 못 찾은 행은 key 가 `NULL` 이다. **`RecordedDrop` 을 만드는 자리(아래 변환기 셋)가 두 key 칸을 빠뜨리면 기록의 key 가 조용히 사라진다.** 가격 칸과 같은 함정이다.
 - **고가 여부는 저장하지 않는다.** `isValuableDropItem`(`lib/drop/valuable-drops`)은 표시 시점 판정이라, 이 테이블에는 **선택 등록 가능한 모든 아이템**이 구분 없이 들어 있다 — 드롭 히스토리가 별도 테이블 없이 이 테이블만 읽는 근거다([[ADR-071]] 결정 1).
 - **날짜 컬럼이 없다 — 짝인 수익 행의 `defeated_on` 을 물려받는다**([[ADR-172]] 결정 6). «먹은 날» 이 맞는 축이고([[ADR-170]] 결정 4 ④), 두 벌로 박으면 갈라질 수 있는 값이 하나 는다. 수익 행이 없는 드롭(결정석 가격을 모르는 보스)은 물려받을 것이 없어 NULL 이다.
-- **판매 · 분배 수수료를 든다**([[ADR-306]] 결정 6 · 7, 칸과 `dropPayoutMeso` 식은 구현 완료 2026-09-22, 가격 카드가 채우는 것은 구현 전). `sale_fee_percent` · `split_fee_percent` 두 칸과
+- **판매 · 분배 수수료를 든다**([[ADR-306]] 결정 6 · 7, 구현 완료 2026-09-22). `sale_fee_percent` · `split_fee_percent` 두 칸과
   자동인지를 드는 `sale_fee_auto` · `split_fee_auto`(1 이 자동)를 `ensureColumn` 으로 붙인다. `NULL` 은 수수료를 안 센 옛 행이다.
   자동인 칸은 등급 기록이 바뀔 때 새 요율로 다시 적힌다. **`RecordedDrop` 을 만드는 자리 셋이 두 칸을 빠뜨리면
   값이 조용히 사라진다**(위 가격 칸과 같은 함정).

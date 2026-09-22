@@ -39,18 +39,29 @@ export interface AutoFee {
   percent: FeePercent
 }
 
+/** 그 캐릭터 · 날짜의 자동 수수료. 카드처럼 훅 밖에서 여는 자리가 쓴다. */
+export function autoFeeFrom(context: LoadedFeeContext, ocid: string, dateKey: string): AutoFee {
+  const grade = recordGradeAt(context, ocid, dateKey)
+  return { grade: grade ?? 'normal', percent: auctionFeePercentOf(grade) as FeePercent }
+}
+
+/** 등급 기록 · 소속. 처음 쓰면 읽고, 읽기 전이면 `null`. */
+export function useMvpGradeContext(): LoadedFeeContext | null {
+  const context = useMvpGradeStore((state) => state.context)
+  const load = useMvpGradeStore((state) => state.load)
+  useEffect(() => {
+    void load()
+  }, [load])
+  return context
+}
+
 /**
  * 그 캐릭터 · 날짜의 자동 수수료. 등급 기록을 아직 안 읽었거나 캐릭터를 고르기 전이면 `null`.
  *
  * @example const autoFee = useAutoFee(ocid, props.dateKey)
  */
 export function useAutoFee(ocid: string | null, dateKey: string): AutoFee | null {
-  const context = useMvpGradeStore((state) => state.context)
-  const load = useMvpGradeStore((state) => state.load)
-  useEffect(() => {
-    void load()
-  }, [load])
+  const context = useMvpGradeContext()
   if (context === null || ocid === null) return null
-  const grade = recordGradeAt(context, ocid, dateKey)
-  return { grade: grade ?? 'normal', percent: auctionFeePercentOf(grade) as FeePercent }
+  return autoFeeFrom(context, ocid, dateKey)
 }

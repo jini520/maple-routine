@@ -49,6 +49,14 @@ jest.mock('../../../features/toast/store', () => ({
 }))
 jest.mock('../../../features/boss-profit/store', () => ({ useBossProfitStore: jest.fn() }))
 jest.mock('../../../features/boss-profit/drop-price-store', () => ({ useDropPriceStore: jest.fn() }))
+// 가격 카드의 자동 수수료가 읽는 등급 기록. ocid-1 은 다이아 ID 다.
+jest.mock('../../../features/mvp-grade/fee-context', () => ({
+  loadFeeContext: jest.fn(async () => ({
+    histories: new Map([['A', [{ startDate: '2026-06-11', grade: 'diamond' }]]]),
+    sightings: [{ ocid: 'ocid-1', name: '루디', accountId: 'A', firstSeenOn: '2026-06-01', lastSeenOn: '2026-09-22' }],
+    fallbackOcid: 'ocid-1',
+  })),
+}))
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 
 // 기간은 라우트 파라미터가 준다. 떠 있는 버튼은 넘기고 today 타일은 안 넘긴다.
@@ -267,6 +275,8 @@ describe('DropPriceScreen: 값 매기기', () => {
       100_000_000,
       // 합이 그 행의 파티원 수인 균등. 내 비율 1 이라 값이 지금과 같다.
       { myShare: 1, sharesTotal: 3 },
+      // 새로 매긴 가격은 판매 · 분배 수수료가 자동이고 그 기간의 등급 요율이다.
+      { saleFeePercent: 3, saleFeeAuto: true, splitFeePercent: 3, splitFeeAuto: true },
     )
     expect(getByText).toBeTruthy()
   })

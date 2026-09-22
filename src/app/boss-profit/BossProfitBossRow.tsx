@@ -415,6 +415,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
             // 뿌린다. 균등이면 합이 곧 인원 수라 지금 값과 같다.
             defaultShare: { myShare: 1, sharesTotal: partySize },
             characterName: row.characterName,
+            ocid: row.ocid,
           }}
         />
       )}
