@@ -1,7 +1,12 @@
 import {
   type MvpGradeEntry,
+  changeWeekMin,
+  editWeekBounds,
   insertEndLimit,
   insertPeriod,
+  insertPeriodText,
+  insertStartSelectable,
+  moveGradeEntry,
   mvpGradeAt,
   removeGradeEntry,
   setGradeFrom,
@@ -117,5 +122,73 @@ describe('기록 지우기', () => {
       { startDate: '2026-06-11', grade: 'silver' },
     ]
     expect(removeGradeEntry(history, '2026-05-07')).toEqual([{ startDate: '2026-06-11', grade: 'silver' }])
+  })
+})
+
+describe('기록 고치기', () => {
+  it('주를 옮기고 등급을 바꾼다', () => {
+    expect(moveGradeEntry(HISTORY, '2026-07-30', '2026-08-06', 'red')).toEqual([
+      { startDate: '2026-06-11', grade: 'silver' },
+      { startDate: '2026-08-06', grade: 'red' },
+      { startDate: '2026-09-17', grade: 'diamond' },
+    ])
+  })
+
+  it('첫 기록을 옮겨도 그 뒤 등급 없음 줄은 남는다', () => {
+    const history: MvpGradeEntry[] = [
+      { startDate: '2026-05-07', grade: 'red' },
+      { startDate: '2026-05-21', grade: null },
+      { startDate: '2026-06-11', grade: 'silver' },
+    ]
+    expect(moveGradeEntry(history, '2026-05-07', '2026-04-30', 'red')).toEqual([
+      { startDate: '2026-04-30', grade: 'red' },
+      { startDate: '2026-05-21', grade: null },
+      { startDate: '2026-06-11', grade: 'silver' },
+    ])
+  })
+
+  it('옮길 수 있는 주는 앞뒤 기록 사이다', () => {
+    expect(editWeekBounds(HISTORY, '2026-07-30', '2025-02-27', '2026-09-17')).toEqual({ min: '2026-06-18', max: '2026-09-10' })
+    expect(editWeekBounds(HISTORY, '2026-06-11', '2025-02-27', '2026-09-17')).toEqual({ min: '2025-02-27', max: '2026-07-23' })
+    expect(editWeekBounds(HISTORY, '2026-09-17', '2025-02-27', '2026-09-17')).toEqual({ min: '2026-08-06', max: '2026-09-17' })
+  })
+})
+
+describe('등급 변경의 주', () => {
+  it('지금 기록이 시작된 주부터 고른다', () => {
+    expect(changeWeekMin(HISTORY, '2025-02-27')).toBe('2026-09-17')
+  })
+
+  it('기록이 없으면 가장 이른 주부터다', () => {
+    expect(changeWeekMin([], '2025-02-27')).toBe('2025-02-27')
+  })
+})
+
+describe('기간 추가', () => {
+  it('시작 주는 가장 이른 주부터 지난주까지, 기록이 없는 주만 고른다', () => {
+    const selectable = (week: string) => insertStartSelectable(HISTORY, week, '2025-02-27', '2026-09-17')
+    expect(selectable('2026-07-02')).toBe(true)
+    expect(selectable('2026-07-30')).toBe(false)
+    expect(selectable('2026-09-10')).toBe(true)
+    expect(selectable('2026-09-17')).toBe(false)
+    expect(selectable('2025-02-20')).toBe(false)
+  })
+
+  it('다시 이어지는 등급을 말한다', () => {
+    expect(insertPeriodText(HISTORY, '2026-07-02', '2026-07-09', 'red')).toBe(
+      '7월 2일 (목)부터 7월 15일 (수)까지 레드로 계산해요. 7월 16일부터는 다시 실버예요.',
+    )
+  })
+
+  it('다음 기록 바로 앞까지면 그 기록의 등급을 말한다', () => {
+    expect(insertPeriodText(HISTORY, '2026-07-02', '2026-07-23', 'black')).toBe(
+      '7월 2일 (목)부터 7월 29일 (수)까지 블랙으로 계산해요. 7월 30일부터는 골드예요.',
+    )
+  })
+
+  it('첫 기록보다 앞이면 그 뒤는 등급이 없다', () => {
+    expect(insertPeriodText(HISTORY, '2026-05-07', '2026-05-14', 'normal')).toBe(
+      '5월 7일 (목)부터 5월 20일 (수)까지 일반으로 계산해요. 5월 21일부터는 다시 등급이 없어요.',
+    )
   })
 })

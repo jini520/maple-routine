@@ -14,6 +14,8 @@ import { SettingsFeatureGuideScreen } from '../app/settings/SettingsFeatureGuide
 import { SettingsNoticeDetailScreen } from '../app/settings/SettingsNoticeDetailScreen'
 import { SettingsNoticesScreen } from '../app/settings/SettingsNoticesScreen'
 import { SettingsNoticeAlertsScreen } from '../app/settings/SettingsNoticeAlertsScreen'
+import { SettingsMvpGradeScreen } from '../app/settings/SettingsMvpGradeScreen'
+import { SettingsMvpGradeHistoryScreen } from '../app/settings/SettingsMvpGradeHistoryScreen'
 import { AppSettingsScreen } from '../app/settings/AppSettingsScreen'
 import { SettingsPrivacyScreen } from '../app/settings/SettingsPrivacyScreen'
 import { SettingsReleaseNotesScreen } from '../app/settings/SettingsReleaseNotesScreen'
@@ -48,6 +50,8 @@ const STACK_SCREENS = {
   SettingsCharacters: SettingsCharactersScreen,
   SettingsNotices: SettingsNoticesScreen,
   SettingsNoticeAlerts: SettingsNoticeAlertsScreen,
+  SettingsMvpGrade: SettingsMvpGradeScreen,
+  SettingsMvpGradeHistory: SettingsMvpGradeHistoryScreen,
   AppSettings: AppSettingsScreen,
   SettingsNoticeDetail: SettingsNoticeDetailScreen,
   UtilityItemSplit: ItemSplitScreen,

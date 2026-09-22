@@ -5,16 +5,13 @@
  */
 import { create } from 'zustand'
 
-import { summarizeAccount, type AccountSummaryView } from '../character-manage/derivations'
+import type { AccountSummaryView } from '../character-manage/derivations'
 import { resetWeekStartOf } from '../../lib/calendar'
 import type { MvpGradeKey } from '../../lib/mvp/grades'
 import { setGradeFrom, type MvpGradeEntry } from '../../lib/mvp/history'
-import { accountOfOcid } from '../../lib/mvp/membership'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
-import { getAuthConfig } from '../../storage/api-key'
 import { getBulkFeeDropRecords } from '../../storage/boss-drops'
 import { getCharacterAccountSightings } from '../../storage/character-accounts'
-import { getCharacterProfiles } from '../../storage/character-profiles'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { getBulkFeeIncomeRecords } from '../../storage/income'
 import {
@@ -26,13 +23,10 @@ import {
   setMvpWeeklyCheckOff,
 } from '../../storage/mvp-grade-prefs'
 import { getMvpGradeHistories, replaceMvpGradeHistory } from '../../storage/mvp-grades'
-import type { MapleAccount } from '../../types'
-import { useToastStore } from '../toast/store'
+import { loadAccountIdentities, trackedAccountIdsOf } from './accounts'
+import { afterGradeChange } from './after-change'
 import { decideMvpAsk, type MvpAsk } from './ask'
 import { applyFeesToPastRecords } from './bulk-apply'
-import { fetchAndRecordCharacterList } from './character-list'
-import { recalculateAutoFees } from './recalculate-fees'
-import { useMvpGradeStore } from './store'
 
 /** 모달의 ID 카드 하나. */
 export interface MvpAskAccount {
@@ -76,27 +70,15 @@ interface MvpAskState {
   complete: (result: MvpAskResult, now: Date) => Promise<void>
 }
 
-/** 목록을 받아 그 ID 들의 표시를 만든다. 못 받으면 표시 없이 ID 만 선다. */
+/** ID 표시에 지금 등급을 붙인다. */
 async function loadAccounts(accountIds: readonly string[], histories: Map<string, MvpGradeEntry[]>): Promise<MvpAskAccount[]> {
-  let lists: MapleAccount[] = []
-  const auth = await getAuthConfig().catch(() => null)
-  if (auth !== null) lists = await fetchAndRecordCharacterList(auth.apiKey).catch(() => [])
-  const summaries = new Map<string, AccountSummaryView>()
-  for (const account of lists) {
-    if (!accountIds.includes(account.accountId)) continue
-    const summary = summarizeAccount(account)
-    if (summary !== null) summaries.set(account.accountId, summary)
-  }
-  const profiles = await getCharacterProfiles([...summaries.values()].map((summary) => summary.representative.ocid)).catch(
-    () => new Map(),
-  )
+  const identities = await loadAccountIdentities(accountIds)
   return accountIds.map((accountId) => {
-    const summary = summaries.get(accountId) ?? null
     const history = histories.get(accountId) ?? []
     return {
       accountId,
-      summary,
-      portraitUrl: summary === null ? null : (profiles.get(summary.representative.ocid)?.imageUrl ?? null),
+      summary: identities.get(accountId)?.summary ?? null,
+      portraitUrl: identities.get(accountId)?.portraitUrl ?? null,
       currentGrade: history[history.length - 1]?.grade ?? null,
     }
   })
@@ -111,9 +93,7 @@ async function evaluateAsk(now: Date, set: (partial: Partial<MvpAskState>) => vo
     getMvpLastCheckedWeek(),
     getMvpBulkApplyAsked(),
   ])
-  const trackedAccountIds = (tracked ?? [])
-    .map((ocid) => accountOfOcid(sightings, ocid))
-    .filter((accountId): accountId is string => accountId !== null)
+  const trackedAccountIds = trackedAccountIdsOf(tracked, sightings)
   // 일괄 적용 대상은 물을 때만 센다. 한 번 물었으면 다시 안 세운다.
   const hasPastRecords = bulkAsked
     ? false
@@ -166,9 +146,7 @@ export const useMvpAskStore = create<MvpAskState>()((set, get) => ({
       await setMvpBulkApplyAsked()
       if (ask.bulk && result.bulkApply) await applyFeesToPastRecords()
     }
-    const recalculated = await recalculateAutoFees()
-    if (recalculated > 0) useToastStore.getState().showSuccess(`자동 수수료 기록 ${recalculated}건을 다시 계산했어요`)
-    await useMvpGradeStore.getState().reload()
+    await afterGradeChange()
     set({ ask: null, accounts: [] })
   },
 }))

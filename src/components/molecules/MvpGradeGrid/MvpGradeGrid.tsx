@@ -28,22 +28,31 @@ export function MvpGradeGrid(props: { selected: MvpGradeKey | null; onSelect: (g
             onPress={() => props.onSelect(grade.key)}
             className="flex-1 items-center gap-1.5"
           >
-            <View
-              style={{ width: TILE, height: TILE }}
-              className={`items-center justify-center overflow-hidden rounded-[8px] ${
-                on ? 'border-2 border-primary' : ''
-              } ${source === null ? 'bg-surface-2' : ''}`}
-            >
-              {source === null ? (
-                <Text fixed className="text-10 font-semibold text-text-muted">
-                  일반
-                </Text>
-              ) : (
-                // 높이를 타일에 맞추고 왼쪽에 붙이면 명패의 왼쪽 정사각(문양)이 보인다.
-                <Image
-                  source={source}
-                  style={[naturalAspectStyle(source, { height: TILE }), { position: 'absolute', left: 0, top: 0 }]}
-                  resizeMode="cover"
+            <View style={{ width: TILE, height: TILE }}>
+              <View
+                className={`h-full w-full items-center justify-center overflow-hidden rounded-[8px] ${
+                  source === null ? 'border border-border bg-surface-2' : ''
+                }`}
+              >
+                {source === null ? (
+                  <Text fixed className="text-10 font-semibold text-text-muted">
+                    일반
+                  </Text>
+                ) : (
+                  // 높이를 타일에 맞추고 왼쪽에 붙이면 명패의 왼쪽 정사각(문양)이 보인다.
+                  <Image
+                    source={source}
+                    style={[naturalAspectStyle(source, { height: TILE }), { position: 'absolute', left: 0, top: 0 }]}
+                    resizeMode="cover"
+                  />
+                )}
+              </View>
+              {/* 고른 표시는 타일 밖 3px 에 두른 링이다. 안쪽에 그리면 문양 가장자리를 덮는다. */}
+              {on && (
+                <View
+                  pointerEvents="none"
+                  style={{ top: -3, right: -3, bottom: -3, left: -3 }}
+                  className="absolute rounded-[11px] border-2 border-primary"
                 />
               )}
             </View>

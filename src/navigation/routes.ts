@@ -111,6 +111,11 @@ export interface NoticeDetailParams {
   noticeId: string
 }
 
+/** MVP 등급 이력 상세가 받는 파라미터. 이력은 스토어가 들고 있어 ID 만 넘긴다. */
+export interface MvpGradeHistoryParams {
+  accountId: string
+}
+
 /**
  * 아이템 가격 입력이 여는 주기와 기간.
  *
@@ -171,6 +176,10 @@ export type RootStackParamList = {
   SettingsNotices: { kinds?: NoticeKind[]; title?: string } | undefined
   /** 소식 알림 스위치 넷. 목록에서 떼어 냈다 - 분류마다 목록이 생겨 스위치가 갈 곳이 없어졌다. */
   SettingsNoticeAlerts: undefined
+  /** MVP 등급 목록. 메이플 ID 마다 지금 등급 한 줄과 매주 확인 스위치. 앱 설정의 `MVP 등급` 행이 연다. */
+  SettingsMvpGrade: undefined
+  /** 메이플 ID 하나의 등급 이력. 목록의 `이력 N건 보기` 가 연다. */
+  SettingsMvpGradeHistory: MvpGradeHistoryParams
   /**
    * 앱 설정. 더보기 머리의 톱니바퀴가 연다.
    *
@@ -320,6 +329,18 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
     path: '/settings/notices/alerts',
     screen: 'SettingsNoticeAlertsScreen',
     target: { kind: 'push', route: 'SettingsNoticeAlerts' },
+    origin: 'rn',
+  },
+  {
+    path: '/settings/mvp-grade',
+    screen: 'SettingsMvpGradeScreen',
+    target: { kind: 'push', route: 'SettingsMvpGrade' },
+    origin: 'rn',
+  },
+  {
+    path: '/settings/mvp-grade/history',
+    screen: 'SettingsMvpGradeHistoryScreen',
+    target: { kind: 'push', route: 'SettingsMvpGradeHistory' },
     origin: 'rn',
   },
   {

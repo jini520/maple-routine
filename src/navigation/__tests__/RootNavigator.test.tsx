@@ -118,7 +118,8 @@ describe('하위 페이지. 열둘', () => {
   // 착지점이 빈 화면이면 안 된다). 그래서 여기 값이 카탈로그와 어긋나면 이 테스트가 먼저 깨진다.
   const params: Partial<Record<(typeof STACK_ROUTE_NAMES)[number], object>> = {
     SettingsFeatureGuide: { guideId: GUIDE_ID },
-    SettingsReleaseNoteGuide: { guideId: GUIDE_ID } }
+    SettingsReleaseNoteGuide: { guideId: GUIDE_ID },
+    SettingsMvpGradeHistory: { accountId: 'A' } }
 
   it.each(STACK_ROUTE_NAMES)('%s 로 push 하면 그 화면이 열린다', async (name) => {
     useAppEntryStore.setState({ stage: 'ready' })

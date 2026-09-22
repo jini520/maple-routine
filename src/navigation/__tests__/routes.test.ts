@@ -57,7 +57,7 @@ describe('ROUTE_TABLE: 계획서 §1 대조', () => {
   //
   // 탭이 넷에서 셋이 됐다. 사냥 수익·지출 껍데기 둘이 빠지고 가계부 하나가 들어왔다. 둘은
   // 사라진 것이 아니라 그 화면 안으로 들어간다.
-  it('RN 에서 새로 생긴 화면은 열이고 셋은 탭·여섯은 하위 페이지·하나는 루트 화면이다', () => {
+  it('RN 에서 새로 생긴 화면은 열둘이고 셋은 탭·여덟은 하위 페이지·하나는 루트 화면이다', () => {
     const rnRows = ROUTE_TABLE.filter((row) => row.origin === 'rn')
 
     expect(rnRows.map((row) => row.target)).toEqual([
@@ -69,6 +69,8 @@ describe('ROUTE_TABLE: 계획서 §1 대조', () => {
       { kind: 'push', route: 'SettingsCharacters' },
       { kind: 'push', route: 'SettingsNotices' },
       { kind: 'push', route: 'SettingsNoticeAlerts' },
+      { kind: 'push', route: 'SettingsMvpGrade' },
+      { kind: 'push', route: 'SettingsMvpGradeHistory' },
       { kind: 'push', route: 'AppSettings' },
       { kind: 'push', route: 'SettingsNoticeDetail' },
     ])
@@ -126,7 +128,7 @@ describe('ROUTE_TABLE: 계획서 §1 대조', () => {
     expect(promoted[0]?.target).toEqual({ kind: 'tab', route: 'BossManage' })
   })
 
-  it('하위 페이지는 열여섯이고 이름이 겹치지 않는다', () => {
+  it('하위 페이지는 열여덟이고 이름이 겹치지 않는다', () => {
     expect(STACK_ROUTE_NAMES).toEqual([
       'ContentManage',
       'DropHistory',
@@ -145,6 +147,9 @@ describe('ROUTE_TABLE: 계획서 §1 대조', () => {
 // 공지사항. 목록이 구독 스위치를 함께 들고, 상세는 알림 탭이 곧장 연다.
       'SettingsNotices',
       'SettingsNoticeAlerts',
+// MVP 등급 목록과 ID 이력 상세.
+      'SettingsMvpGrade',
+      'SettingsMvpGradeHistory',
       'AppSettings',
       'SettingsNoticeDetail',
     ])
