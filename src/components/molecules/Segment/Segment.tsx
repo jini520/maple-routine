@@ -14,6 +14,19 @@ import { Text } from '../../atoms'
  */
 const AnimatedBox = Animated.createAnimatedComponent(View)
 
+/**
+ * 크기 두 벌. 상자 여백은 그대로 두고 **조각과 글자만** 줄인다.
+ *
+ * 상자 여백(`p-0.5`)까지 줄이면 미끄러지는 상자가 테두리에 붙어 눌린 조각이 잘려 보인다.
+ */
+const SIZES = {
+  default: { piece: 'px-2.5 py-0.5', label: 'text-11' },
+  /** 줄의 **주 고르개**. 파티 모달의 `분배` 가 쓴다. */
+  md: { piece: 'px-3.5 py-1', label: 'text-xs' },
+  /** 값이 짧고 **곁들이로** 서는 자리. 지금 쓰는 곳이 없다. */
+  sm: { piece: 'px-2 py-0', label: 'text-10' },
+} as const
+
 export function Segment<T extends string>(props: {
   options: readonly T[]
   /** `null` 이면 **아무것도 안 골랐다**. 형태처럼 기본값을 안 정하는 자리가 있다. */
@@ -29,7 +42,9 @@ export function Segment<T extends string>(props: {
   fixed?: boolean
   /** 잠긴 줄. 상자째 흐리고 조각이 안 눌린다. 고를 값이 남은 항목에 없을 때 쓴다. */
   disabled?: boolean
+  size?: keyof typeof SIZES
 }): React.JSX.Element {
+  const size = SIZES[props.size ?? 'default']
   const selectedIndex = props.selected === null ? -1 : props.options.indexOf(props.selected)
   const thumb = useSlidingThumb(selectedIndex)
   const { definition } = useThemeAppearance()
@@ -81,13 +96,13 @@ export function Segment<T extends string>(props: {
                 selectionFeedback()
                 props.onSelect(option)
               }}
-              className="rounded-full px-2.5 py-0.5"
+              className={`rounded-full ${size.piece}`}
             >
               {/* 글자색은 상자를 안 기다린다. 도착을 기다리면 누른 조각이 그동안 안 눌린
                   것처럼 보인다. */}
               <Text
                 fixed={props.fixed}
-                className={`text-11 font-semibold ${
+                className={`${size.label} font-semibold ${
                   isSelected ? 'text-primary-ink' : 'text-text-muted'
                 }`}
               >

@@ -10,6 +10,7 @@ import { THEME_BACKGROUND_ASSETS } from '../../assets/generated/themes'
 import { WORLD_EMBLEM_ASSETS } from '../../assets/generated/worlds'
 import bossCropsData from '../../data/boss-portrait-crops.json'
 import bossIconCropsData from '../../data/boss-portrait-icon-crops.json'
+import bossModalCropsData from '../../data/boss-portrait-modal-crops.json'
 /**
  * 이름표를 번들 에셋으로 바꾸는 조회. 앱의 그림은 이 길로만 화면에 붙는다.
  *
@@ -44,6 +45,7 @@ function bySlug(assets: AssetMap, slug: string | null): ImageAssetRef | null {
  */
 const BOSS_PORTRAIT_CROPS = bossCropsData as Record<string, ImageCrop>
 const BOSS_PORTRAIT_ICON_CROPS = bossIconCropsData as Record<string, ImageCrop>
+const BOSS_PORTRAIT_MODAL_CROPS = bossModalCropsData as Record<string, ImageCrop>
 const DAILY_QUEST_REGION_CROPS = dailyQuestCropsData as Record<string, ImageCrop>
 
 const DEFAULT_CROP: ImageCrop = { size: 'cover', position: 'center' }
@@ -63,6 +65,16 @@ export function getBossPortraitCrop(portraitSlug: string | null): ImageCrop {
 
 export function getBossPortraitIconCrop(portraitSlug: string | null): ImageCrop {
   return cropBySlug(BOSS_PORTRAIT_ICON_CROPS, portraitSlug)
+}
+
+/**
+ * 파티 분배 모달의 오른쪽 띠에 쓰는 크롭.
+ *
+ * **카드 표와 갈라 둔 표다.** 띠는 카드보다 좁고 높아 같은 값이 다른 구도를 낸다. 한 표를 같이
+ * 쓰면 모달을 맞출 때마다 보스 카드가 함께 움직인다.
+ */
+export function getBossPortraitModalCrop(portraitSlug: string | null): ImageCrop {
+  return cropBySlug(BOSS_PORTRAIT_MODAL_CROPS, portraitSlug)
 }
 
 // 일일·주간 퀘스트 지역

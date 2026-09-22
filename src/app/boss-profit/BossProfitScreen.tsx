@@ -122,7 +122,9 @@ export function BossProfitScreen(): React.JSX.Element {
     goToPreviousPeriod,
     goToNextPeriod,
     retryPeriod,
-    setPartySize,
+    setRowParty,
+    partyShares,
+    loadPartyShares,
     setBossDrops,
     dropsByRowKey,
   } = useBossProfitStore()
@@ -161,6 +163,9 @@ export function BossProfitScreen(): React.JSX.Element {
 
   useEffect(() => {
     loadTrackedOcids()
+    // 분배 비율 설정. 기록이 아니라 설정이라 기간을 안 타고, 캐시된 기간을 그릴 때도 최신이어야
+    // 해서 기간 로드와 따로 읽는다.
+    void loadPartyShares(trackedOcids ?? [])
     // 직접 완료를 열어 둔 보스. 이 화면의 단추가 그 목록을 본다. today 와 같은 스토어라
     // 두 화면을 빠르게 오가도 서버는 한 번만 부른다.
     void useManualCompletionStore.getState().refresh()
@@ -291,7 +296,8 @@ export function BossProfitScreen(): React.JSX.Element {
     loadedPeriodKey,
     now,
     dropsByRowKey,
-    setPartySize,
+    partyShares,
+    setRowParty,
     setBossDrops,
     onRetryPeriod: () => void retryPeriod(),
   }

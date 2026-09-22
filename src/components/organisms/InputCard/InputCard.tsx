@@ -37,6 +37,7 @@ import { formatMesoUnits } from '../../../lib/drop/drop-price'
 import { Text, TextInput, XIcon } from '../../atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { MAX_MESO, acceptMesoText, mesoTextOf, mesoValueOf } from '../MesoPad/meso-pad'
+import { ShareField } from '../../molecules/ShareField/ShareField'
 
 /**
  * 머리에 서는 표식. 메소를 받는 칸은 주머니, 조각 개수는 조각이다.
@@ -52,63 +53,18 @@ export type InputCardIcon = 'meso' | 'fragment' | ImageAssetRef
  * `value` 는 **씨앗**이다. 그 뒤의 수는 카드가 들고, 확인이 친 값과 함께 내보낸다. 친 값과 같은
  * 자리에 두는 것이 요점이다. 호출부가 들면 한 번 누를 때마다 카드를 다시 열어야 한다.
  */
-export interface StepperSpec {
+export interface ShareSpec {
   label: string
-  value: number
-  min: number
-  max: number
-  /** 수 뒤에 붙는 글자. `인` · `개`. 안 주면 수만 선다. */
-  suffix?: string
+  myShare: number
+  sharesTotal: number
 }
 
-/**
- * 수 고르개 한 줄. 알약 안에 `−` 값 `+` 다.
- *
- * 크기 22px 은 `PartySizeStepper` 의 두 크기(관리 행 24 · 모달 32) 중 어느 쪽도 아니다. 카드가
- * 키보드 위 좁은 자리라 그보다 작다. 넷째 모양을 만들지 않으려고 그 molecule 로 접지 않는다.
- */
-function StepperRow(props: StepperSpec & { value: number; onChange: (next: number) => void }): React.JSX.Element {
-  const atMin = props.value <= props.min
-  const atMax = props.value >= props.max
-  return (
-    <View className="mt-3 flex-row items-center justify-between gap-2.5">
-      <Text className="text-xs font-semibold text-text-muted">{props.label}</Text>
-      <View className="h-8 flex-row items-center gap-2.5 rounded-full border border-border px-1.5">
-        <Pressable
-          testID="input-card-stepper-down"
-          role="button"
-          onPress={() => props.onChange(props.value - 1)}
-          disabled={atMin}
-          aria-label={`${props.label} 감소`}
-          className={`h-[22px] w-[22px] items-center justify-center rounded-full bg-surface-2${
-            atMin ? ' opacity-40' : ''
-          }`}
-        >
-          <Text className="text-text">−</Text>
-        </Pressable>
-        <Text
-          testID="input-card-stepper-value"
-          className="min-w-[30px] text-center text-13 font-semibold text-text"
-          style={TABULAR_NUMS}
-        >
-          {`${props.value}${props.suffix ?? ''}`}
-        </Text>
-        <Pressable
-          testID="input-card-stepper-up"
-          role="button"
-          onPress={() => props.onChange(props.value + 1)}
-          disabled={atMax}
-          aria-label={`${props.label} 증가`}
-          className={`h-[22px] w-[22px] items-center justify-center rounded-full bg-surface-2${
-            atMax ? ' opacity-40' : ''
-          }`}
-        >
-          <Text className="text-text">+</Text>
-        </Pressable>
-      </View>
-    </View>
-  )
+/** 카드가 돌려주는 비율. 내 몫이 `내 비율 ÷ 합` 이다. */
+export interface ShareValue {
+  myShare: number
+  sharesTotal: number
 }
+
 
 export interface InputCardProps {
   /** 칸 이름. 머리의 큰 글자. */
@@ -136,11 +92,11 @@ export interface InputCardProps {
   /** 값에 더하는 눈금. 글자 칸에서는 무시된다. */
   chips?: readonly { label: string; value: number }[]
   /**
-   * 값 칸 아래에 서는 **수 고르개 하나**. 넘기면 카드가 칸 둘을 받는 모양이 된다.
+   * 값 칸 아래에 서는 **분배 비율 고르개**. 넘기면 카드가 칸 둘을 받는 모양이 된다.
    *
-   * 라벨은 호출부가 준다. 부품은 그 수가 무엇인지 모른다. 드롭 판매가가 `분배 인원` 으로 쓴다.
+   * 라벨은 호출부가 준다. 부품은 그 비율이 무엇의 몫인지 모른다. 드롭 판매가가 쓴다.
    */
-  stepper?: StepperSpec
+  share?: ShareSpec
   /** 확인 버튼의 글자. 기본은 `확인`. 값을 곧 저장하는 자리에서는 `저장` 이다. */
   confirmLabel?: string
   /**
@@ -161,14 +117,14 @@ export interface InputCardProps {
    *
    * 앞뒤로 오가는 동안 친 값이 안 날아가야 해서 값을 함께 준다(사용자 지정).
    */
-  prev?: { label: string; onPress: (next: string, stepper?: number) => void }
+  prev?: { label: string; onPress: (next: string, share?: ShareValue) => void }
   /**
    * 확인. 친 글자를 그대로 준다. 정리는 받는 쪽이 한다.
    *
    * 둘째 인자는 **스테퍼를 넘겼을 때만** 온다. 안 넘긴 카드는 인자 하나로 부른다. 없는 수를
    * `0` 으로 채워 보내면 받는 쪽이 그것을 값으로 읽을 수 있다.
    */
-  onConfirm: (next: string, stepper?: number) => void
+  onConfirm: (next: string, share?: ShareValue) => void
   /**
    * 버리고 닫기. **닫기 버튼(✕)과 안드로이드 뒤로가기**가 부른다.
    *
@@ -201,7 +157,10 @@ function iconSourceOf(icon: InputCardIcon | undefined): ImageAssetRef | null {
 
 export function InputCard(props: InputCardProps): React.JSX.Element {
   const [draft, setDraft] = useState(props.value)
-  const [step, setStep] = useState(props.stepper?.value ?? 0)
+  const [share, setShare] = useState<ShareValue>({
+    myShare: props.share?.myShare ?? 1,
+    sharesTotal: props.share?.sharesTotal ?? 1,
+  })
   /**
    * 씨앗을 다시 심는다. **그리는 중에** 바꾼다.
    *
@@ -212,7 +171,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
   if (props.seed !== seed) {
     setSeed(props.seed)
     setDraft(props.value)
-    setStep(props.stepper?.value ?? 0)
+    setShare({ myShare: props.share?.myShare ?? 1, sharesTotal: props.share?.sharesTotal ?? 1 })
   }
 
   const isText = props.text === true
@@ -240,13 +199,13 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
   /**
    * 지금 든 것을 넘긴다. 확인과 이전이 **같은 것을 준다**.
    *
-   * 스테퍼를 안 넘긴 카드는 인자 하나로 부른다. 없는 수를 `0` 으로 채워 보내면 받는 쪽이 그것을
-   * 값으로 읽을 수 있다.
+   * 비율을 안 넘긴 카드는 인자 하나로 부른다. 없는 비율을 채워 보내면 받는 쪽이 그것을 값으로
+   * 읽을 수 있다.
    */
-  function give(to: ((next: string, stepper?: number) => void) | undefined): void {
+  function give(to: ((next: string, share?: ShareValue) => void) | undefined): void {
     if (to === undefined) return
-    if (props.stepper === undefined) to(draft)
-    else to(draft, step)
+    if (props.share === undefined) to(draft)
+    else to(draft, share)
   }
 
   return (
@@ -388,14 +347,10 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
             </View>
           )}
 
-          {props.stepper !== undefined && (
-            <StepperRow
-              {...props.stepper}
-              value={step}
-              onChange={(next) =>
-                setStep(Math.min(props.stepper?.max ?? next, Math.max(props.stepper?.min ?? next, next)))
-              }
-            />
+          {props.share !== undefined && (
+            <View className="mt-3">
+              <ShareField label={props.share.label} value={share} onChange={setShare} />
+            </View>
           )}
 
           {/*

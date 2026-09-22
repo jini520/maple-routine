@@ -14,6 +14,11 @@ export interface BossProfitRecord {
   partySize: number
   priceMeso: number
   payoutMeso: number
+  /** 그 건의 결정석 분배 비율. `null` 이면 파티 인원으로 균등이라 옛 기록이 그대로 맞는다. */
+  crystalMyShare: number | null
+  crystalSharesTotal: number | null
+  /** 차액 송금의 수수료율 스냅샷. `null` 은 3 이다. */
+  splitFeePercent: number | null
   recordedAt: string // ISO 8601
   /**
    * 기록 시점의 월드 스냅샷. `null` 이면 "월드 모름"이고 월드별 결정석 집계에서
@@ -50,8 +55,9 @@ export type BossProfitRecordSource = 'auto' | 'manual'
 
 const UPSERT_SQL = `
   INSERT INTO boss_profit_records
-    (ocid, boss_key, boss, difficulty, cycle, period_key, party_size, price_meso, payout_meso, recorded_at, world, world_key, source)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (ocid, boss_key, boss, difficulty, cycle, period_key, party_size, price_meso, payout_meso,
+     crystal_my_share, crystal_shares_total, split_fee_percent, recorded_at, world, world_key, source)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(ocid, boss_key, difficulty, period_key) DO UPDATE SET
     source = excluded.source,
     boss = excluded.boss,
@@ -59,6 +65,9 @@ const UPSERT_SQL = `
     party_size = excluded.party_size,
     price_meso = excluded.price_meso,
     payout_meso = excluded.payout_meso,
+    crystal_my_share = excluded.crystal_my_share,
+    crystal_shares_total = excluded.crystal_shares_total,
+    split_fee_percent = excluded.split_fee_percent,
     recorded_at = excluded.recorded_at,
     -- 월드는 아는 값이 있을 때만 덮어쓴다. 파티원 수 수정처럼 월드를 모르는 경로에서 upsert가
     -- 일어나도(그때 world를 null로 넘긴다) 이미 박아둔 스냅샷을 지우지 않는다.
@@ -118,6 +127,10 @@ export async function upsertBossProfitRecord(record: BossProfitRecord): Promise<
     record.partySize,
     record.priceMeso,
     record.payoutMeso,
+    // SQLite 바인딩은 undefined 를 못 받는다. 칸이 없는 옛 픽스처도 NULL 로 떨어뜨린다.
+    record.crystalMyShare ?? null,
+    record.crystalSharesTotal ?? null,
+    record.splitFeePercent ?? null,
     record.recordedAt,
     record.world,
     record.worldKey,
@@ -166,6 +179,9 @@ function rowToRecord(row: Record<string, unknown>): BossProfitRecord {
     partySize: row.party_size as number,
     priceMeso: row.price_meso as number,
     payoutMeso: row.payout_meso as number,
+    crystalMyShare: (row.crystal_my_share as number | null | undefined) ?? null,
+    crystalSharesTotal: (row.crystal_shares_total as number | null | undefined) ?? null,
+    splitFeePercent: (row.split_fee_percent as number | null | undefined) ?? null,
     recordedAt: row.recorded_at as string,
     // 컬럼을 더하기 전 기록에는 없다. undefined도 null로 정규화해 호출부가 한 형태만 다루게 한다.
     world: (row.world as string | null | undefined) ?? null,

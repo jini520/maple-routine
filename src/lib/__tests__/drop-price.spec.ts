@@ -35,6 +35,37 @@ describe('dropPayoutMeso', () => {
     expect(dropPayoutMeso({ priceState: 'entered', priceMeso: 900, priceShare: 0 })).toBe(900)
     expect(dropPayoutMeso({ priceState: 'entered', priceMeso: 900 })).toBe(900)
   })
+
+  // 비율 약속. priceShare 가 비율 합이고 priceMyShare 가 내 비율이다.
+  it('내 비율만큼 가져간다. 30억을 2:1 로 나누면 20억이다', () => {
+    expect(
+      dropPayoutMeso({ priceState: 'entered', priceMeso: 3_000_000_000, priceShare: 3, priceMyShare: 2 }),
+    ).toBe(2_000_000_000)
+  })
+
+  it('나눠 떨어지지 않으면 내림한다. 남는 메소는 안 센다', () => {
+    expect(dropPayoutMeso({ priceState: 'entered', priceMeso: 1_000, priceShare: 3, priceMyShare: 2 })).toBe(666)
+  })
+
+  // 옛 행에는 이 칸이 없다. 그 행의 금액이 이 기능 때문에 움직이면 안 된다.
+  it('내 비율이 없으면 1 이다. 분배 인원만 적힌 옛 기록이 그대로 맞는다', () => {
+    expect(dropPayoutMeso({ priceState: 'entered', priceMeso: 10_000_000_000, priceShare: 3 })).toBe(
+      3_333_333_333,
+    )
+    expect(
+      dropPayoutMeso({ priceState: 'entered', priceMeso: 10_000_000_000, priceShare: 3, priceMyShare: null }),
+    ).toBe(3_333_333_333)
+  })
+
+  it('비율이 합과 같으면 전액이다. 혼자 다 갖는 약속', () => {
+    expect(
+      dropPayoutMeso({ priceState: 'entered', priceMeso: 1_200_000_000, priceShare: 3, priceMyShare: 3 }),
+    ).toBe(1_200_000_000)
+  })
+
+  it('내 비율이 0 이하면 1 로 본다. 0 메소를 벌었다고 적지 않는다', () => {
+    expect(dropPayoutMeso({ priceState: 'entered', priceMeso: 900, priceShare: 3, priceMyShare: 0 })).toBe(300)
+  })
 })
 
 describe('sumDropPayout', () => {

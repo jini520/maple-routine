@@ -71,6 +71,12 @@ export interface RecordedDrop {
   priceState?: 'entered' | 'excluded'
   /** 입력한 판매 **총액**(메소). 수량이 2 이상이어도 묶음가 하나다. */
   priceMeso?: number
-  /** 분배 인원 스냅샷. 입력 시 그 행의 파티원 수로 씨를 뿌리고 저장 후 독립한다. */
+  /**
+   * 분배 인원 스냅샷. 입력 시 그 행의 파티원 수로 씨를 뿌리고 저장 후 독립한다.
+   *
+   * 비율을 쓰는 기록에서는 **비율 합**이다. 균등이면 둘이 같은 수라 값이 안 움직인다.
+   */
   priceShare?: number
+  /** 내 비율 스냅샷. 없으면 1 이다. */
+  priceMyShare?: number
 }

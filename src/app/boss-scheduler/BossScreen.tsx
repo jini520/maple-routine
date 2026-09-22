@@ -31,6 +31,7 @@ import type { ImageCrop } from '../../lib/image-crop'
 import type { MatchedBoss } from '../../lib/boss/boss-matching'
 import { bossNameOf, supportedDifficultiesOf } from '../../lib/boss/bosses'
 import { getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
+import { partySizeForShares } from '../../lib/boss/party-shares'
 
 import {
   Badge,
@@ -45,7 +46,10 @@ import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { TabSegment } from '../../components/molecules/TabSegment/TabSegment'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { IllustratedCard, FadedIllustration } from '../../components/molecules/FadedIllustration/FadedIllustration'
-import { PartySizeModal } from '../../components/organisms/PartySizeModal/PartySizeModal'
+import {
+  PartySizeModal,
+  type PartyModalShares,
+} from '../../components/organisms/PartySizeModal/PartySizeModal'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -136,6 +140,15 @@ function BossCard(props: {
   )
 }
 
+/** 비율을 안 쓰는 파티. 설정이 없는 조합이 이 값을 그린다. */
+const NO_SHARES: PartyModalShares = {
+  crystalMyShare: null,
+  crystalSharesTotal: null,
+  dropMyShare: null,
+  dropSharesTotal: null,
+  splitFeePercent: null,
+}
+
 export function BossScreen(): React.JSX.Element {
   const {
     status,
@@ -143,13 +156,14 @@ export function BossScreen(): React.JSX.Element {
     error,
     trackedOcids,
     partySizes,
+    partyShares,
     manualTrackedByOcid,
     manualCompletedByOcid,
     loadTrackedOcids,
     reloadManualCompleted,
     refresh,
     // 카드 탭 모달이 쓰는 두 액션. 난이도 교체는 수동 모드에서만 멤버십을 바꾼다.
-    setPartySize,
+    setPartySetting,
     setManualBossDifficulty,
     // 탭과 필터는 스토어 소유다. 이 화면이 언마운트돼도 살아남고, 관리 페이지가 같은 탭 값을 읽는다.
     partyFilter,
@@ -162,7 +176,21 @@ export function BossScreen(): React.JSX.Element {
   const openTab = useOpenTab()
   const topSafeAreaPx = useTopSafeAreaPx()
   // 카드 탭으로 여는 파티 인원 모달. 편집 중인 난이도를 함께 든다.
-  const [partyModal, setPartyModal] = useState<{ boss: MatchedBoss; difficulty: BossDifficulty } | null>(null)
+  /**
+   * 파티 모달. `opened` 는 **열 때의 난이도**다.
+   *
+   * 수동 모드에서 난이도를 고르는 것은 추적 목록을 바꾸는 일인데, 그것도 적용을 눌러야 쓴다
+   * (사용자 결정). 바뀌었는지 알려면 열 때의 값이 있어야 한다.
+   */
+  const [partyModal, setPartyModal] = useState<
+    { boss: MatchedBoss; difficulty: BossDifficulty; opened: BossDifficulty } | null
+  >(null)
+  /**
+   * 모달이 고치는 중인 비율. **닫을 때 한 번 저장한다.**
+   *
+   * 슬라이더는 끌기 한 번에 값이 여러 번 바뀐다. 바뀔 때마다 쓰면 한 몸짓이 저장 아홉 번이 되고
+   * 성공 토스트도 그만큼 뜬다. `null` 이면 저장된 값을 그대로 그린다.
+   */
   // 동기화 전체 실패는 토스트로 알린다. 지속 상태는 새로고침 옆 표기가 이미 진다.
   useScheduleSyncErrorToast(error, { onRetry: () => refresh(trackedOcids ?? []) })
 
@@ -319,32 +347,62 @@ export function BossScreen(): React.JSX.Element {
   // 자동 모드에서는 카드가 그대로라 스토어만으로는 지금 무엇을 편집 중인지 알 수 없다.
   // 카드를 탭하면 열리는 파티 인원·난이도 모달. 편집 중인 난이도를 **모달이 따로 든다.**
   function openPartyModal(boss: MatchedBoss): void {
-    setPartyModal({ boss, difficulty: boss.difficulty })
+    setPartyModal({ boss, difficulty: boss.difficulty, opened: boss.difficulty })
   }
 
   // 모달은 보스 key 가 있는 카드에서만 열린다.
   const modalBossKey = partyModal?.boss.bossKey ?? null
+  // 모달이 뜰 때의 값. 고치는 중인 값은 모달이 들고 있다가 적용할 때 한 번에 돌려준다.
+  const modalShares =
+    selected !== null && modalBossKey !== null && partyModal !== null
+      ? partyShares[partySizeKey(selected.ocid, modalBossKey, partyModal.difficulty)] ?? NO_SHARES
+      : NO_SHARES
 
-  async function handleModalPartySize(next: number): Promise<void> {
-    if (partyModal === null || selected === null || modalBossKey === null) return
+  /**
+   * 적용을 누른 자리. 여기서 처음 쓴다. 끌기 한 번이 저장 아홉 번이 되지 않는 까닭이다.
+   *
+   * 난이도가 먼저다. 수동 모드에서 그것이 추적 목록을 바꾸는데, 파티 설정은 (보스 · 난이도)에
+   * 붙어 있어 목록에 없는 난이도에 먼저 쓰면 갈 곳 없는 줄이 생긴다.
+   */
+  async function applyParty(next: { partySize: number; shares: PartyModalShares }): Promise<void> {
+    const target = partyModal
+    setPartyModal(null)
+    if (target === null || selected === null || modalBossKey === null) return
+
+    if (mode === 'manual' && target.difficulty !== target.opened) {
+      try {
+        await setManualBossDifficulty(selected.ocid, modalBossKey, target.difficulty)
+      } catch {
+        useToastStore.getState().showError('추적 목록을 저장하지 못했습니다')
+        return
+      }
+    }
+
     try {
-      await setPartySize(selected.ocid, modalBossKey, partyModal.difficulty, next)
+      await setPartySetting(selected.ocid, modalBossKey, target.difficulty, {
+        // 비율을 쓰면 두 쪽이라 2 다. 배지·필터가 그 수를 본다.
+        partySize: partySizeForShares(
+          {
+            myShare: next.shares.crystalMyShare,
+            sharesTotal: next.shares.crystalSharesTotal,
+            splitFeePercent: null,
+          },
+          next.partySize,
+        ),
+        shares: next.shares,
+      })
     } catch {
       useToastStore.getState().showError('파티원 수를 저장하지 못했습니다')
     }
   }
 
-  // 수동 모드에서만 멤버십이 바뀐다. 자동 모드는 편집 대상만 옮긴다. 카드의 난이도는 게임 등록
-  // 수동 모드에서만 멤버십이 바뀐다. 자동 모드는 편집 대상만 옮긴다. 카드의 난이도는 게임 등록
-  async function handleModalDifficulty(difficulty: BossDifficulty): Promise<void> {
-    if (partyModal === null || selected === null || modalBossKey === null) return
+  /**
+   * 난이도를 골랐다. **편집 대상만 옮긴다.** 수동 모드에서 이것이 추적 목록을 바꾸는 일이지만
+   * 쓰는 것은 `applyParty` 다.
+   */
+  function handleModalDifficulty(difficulty: BossDifficulty): void {
+    if (partyModal === null) return
     setPartyModal({ ...partyModal, difficulty })
-    if (mode !== 'manual') return
-    try {
-      await setManualBossDifficulty(selected.ocid, modalBossKey, difficulty)
-    } catch {
-      useToastStore.getState().showError('추적 목록을 저장하지 못했습니다')
-    }
   }
 
   // 이 화면은 피커를 열지 않는다. 빈 상태 CTA 가 **설정 탭을 피커가 열린 채로** 연다.
@@ -552,8 +610,10 @@ export function BossScreen(): React.JSX.Element {
           difficulty={partyModal.difficulty}
           partySize={partySizes[partySizeKey(selected.ocid, modalBossKey, partyModal.difficulty)] ?? 1}
           maxPartySize={getMaxPartySize(modalBossKey, partyModal.difficulty)}
-          onSelectDifficulty={(difficulty) => void handleModalDifficulty(difficulty)}
-          onChangePartySize={(next) => void handleModalPartySize(next)}
+          shares={modalShares}
+          onSelectDifficulty={handleModalDifficulty}
+          onApply={(next) => void applyParty(next)}
+          // 적용을 안 눌렀으면 고친 값은 버린다.
           onClose={() => setPartyModal(null)}
         />
       )}

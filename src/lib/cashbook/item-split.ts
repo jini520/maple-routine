@@ -17,6 +17,8 @@
  * 정수 산술만 쓴다. 부동소수 곱은 메소 단위에서 값이 튄다.
  */
 
+import { parseShares } from '../boss/party-shares'
+
 /**
  * 수수료율(%). MVP 실버 등급 이상이면 경매장 수수료가 5% → 3% 로 내려간다.
  *
@@ -45,6 +47,10 @@ export interface ItemSplitInput {
   partySize: number
   saleFeePercent: FeePercent
   splitFeePercent: FeePercent
+  /** 파는 사람(나)의 비율. `null` 이면 균등이다. */
+  myShare?: number | null
+  /** 비율 합. `null` 이면 균등이다. */
+  sharesTotal?: number | null
 }
 
 /**
@@ -67,5 +73,16 @@ export function transferPerMember(input: ItemSplitInput): number | null {
   if (input.partySize < 2) return null
 
   const netProceeds = netProceedsMeso(input.salePriceMeso, input.saleFeePercent)
-  return Math.floor((netProceeds * 100) / (input.partySize * 100 - input.splitFeePercent))
+  const { myShare, sharesTotal, isEven } = parseShares({
+    myShare: input.myShare ?? null,
+    sharesTotal: input.sharesTotal ?? null,
+    splitFeePercent: null,
+  })
+  if (isEven) return Math.floor((netProceeds * 100) / (input.partySize * 100 - input.splitFeePercent))
+
+  // 비율 약속은 `나 : 나머지` 라 두 쪽이다. 파티 인원은 안 들어간다.
+  const others = sharesTotal - myShare
+  return Math.floor(
+    (100 * netProceeds * others) / (myShare * (100 - input.splitFeePercent) + 100 * others),
+  )
 }

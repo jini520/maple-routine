@@ -21,26 +21,81 @@ const sampleSetting: BossPartySetting = {
   bossKey: 'black_mage',
   difficulty: 'extreme',
   partySize: 4,
+  crystalMyShare: null,
+  crystalSharesTotal: null,
+  dropMyShare: null,
+  dropSharesTotal: null,
+  splitFeePercent: null,
   updatedAt: '2026-07-13T00:05:00.000Z',
 }
 
-describe('setBossPartySize', () => {
+describe('setBossPartySetting', () => {
   it('동일 키로 두 번 호출하면 ON CONFLICT DO UPDATE로 최신 값을 덮어쓴다 (멱등성)', async () => {
-    const { setBossPartySize } = require('../boss-party-settings') as typeof import('../boss-party-settings')
+    const { setBossPartySetting } = require('../boss-party-settings') as typeof import('../boss-party-settings')
 
-    await setBossPartySize('ocid-1', 'black_mage', 'extreme', 4, '2026-07-13T00:05:00.000Z')
-    await setBossPartySize('ocid-1', 'black_mage', 'extreme', 2, '2026-07-13T01:00:00.000Z')
+    await setBossPartySetting({ ...sampleSetting, partySize: 4 })
+    await setBossPartySetting({ ...sampleSetting, partySize: 2, updatedAt: '2026-07-13T01:00:00.000Z' })
 
     expect(runMock).toHaveBeenCalledTimes(2)
 
     const [firstSql, firstValues] = runMock.mock.calls[0]
     expect(firstSql).toContain('ON CONFLICT(ocid, boss_key, difficulty) DO UPDATE SET')
     // 이름 칸에는 보스 표의 이름을 함께 적는다.
-    expect(firstValues).toEqual(['ocid-1', 'black_mage', '검은 마법사', 'extreme', 4, '2026-07-13T00:05:00.000Z'])
+    expect(firstValues).toEqual([
+      'ocid-1',
+      'black_mage',
+      '검은 마법사',
+      'extreme',
+      4,
+      null,
+      null,
+      null,
+      null,
+      null,
+      '2026-07-13T00:05:00.000Z',
+    ])
 
     const [secondSql, secondValues] = runMock.mock.calls[1]
     expect(secondSql).toBe(firstSql)
-    expect(secondValues).toEqual(['ocid-1', 'black_mage', '검은 마법사', 'extreme', 2, '2026-07-13T01:00:00.000Z'])
+    expect(secondValues[4]).toBe(2)
+    expect(secondValues[10]).toBe('2026-07-13T01:00:00.000Z')
+  })
+
+  // 비율을 고치면 칸 다섯이 함께 간다. 인원만 쓰고 비율을 두고 오면 화면과 DB 가 갈린다.
+  it('비율과 수수료율을 함께 쓴다', async () => {
+    const { setBossPartySetting } = require('../boss-party-settings') as typeof import('../boss-party-settings')
+
+    await setBossPartySetting({
+      ...sampleSetting,
+      partySize: 2,
+      crystalMyShare: 2,
+      crystalSharesTotal: 3,
+      dropMyShare: 1,
+      dropSharesTotal: 2,
+      splitFeePercent: 5,
+    })
+
+    const [sql, values] = runMock.mock.calls[0]
+    for (const column of [
+      'crystal_my_share',
+      'crystal_shares_total',
+      'drop_my_share',
+      'drop_shares_total',
+      'split_fee_percent',
+    ]) {
+      expect(sql).toContain(column)
+    }
+    expect(values.slice(4, 10)).toEqual([2, 2, 3, 1, 2, 5])
+  })
+
+  // 균등으로 되돌리는 길은 NULL 로 덮는 것뿐이다. 지우는 API 를 따로 두지 않는다.
+  it('균등으로 되돌리면 비율 칸이 NULL 이 된다', async () => {
+    const { setBossPartySetting } = require('../boss-party-settings') as typeof import('../boss-party-settings')
+
+    await setBossPartySetting({ ...sampleSetting, crystalMyShare: null, crystalSharesTotal: null })
+
+    const [, values] = runMock.mock.calls[0]
+    expect(values.slice(5, 10)).toEqual([null, null, null, null, null])
   })
 })
 
@@ -68,6 +123,11 @@ describe('getBossPartySize', () => {
           boss: '검은 마법사',
           difficulty: 'extreme',
           party_size: 4,
+          crystal_my_share: null,
+          crystal_shares_total: null,
+          drop_my_share: null,
+          drop_shares_total: null,
+          split_fee_percent: null,
           updated_at: '2026-07-13T00:05:00.000Z',
         },
       ],
@@ -108,6 +168,11 @@ describe('getBossPartySettings', () => {
           boss: '검은 마법사',
           difficulty: 'extreme',
           party_size: 4,
+          crystal_my_share: null,
+          crystal_shares_total: null,
+          drop_my_share: null,
+          drop_shares_total: null,
+          split_fee_percent: null,
           updated_at: '2026-07-13T00:05:00.000Z',
         },
       ],
@@ -128,5 +193,25 @@ describe('getBossPartySettings', () => {
     const { getBossPartySettings } = require('../boss-party-settings') as typeof import('../boss-party-settings')
 
     await expect(getBossPartySettings(['ocid-1'])).resolves.toEqual([])
+  })
+
+  // 칸이 붙기 전에 쓰인 행은 그 칸이 아예 없다. undefined 를 그대로 실어 나르면 균등 판정이
+  // 갈린다.
+  it('비율 칸이 없는 옛 행은 null 로 읽는다', async () => {
+    queryMock.mockResolvedValue({
+      values: [
+        {
+          ocid: 'ocid-1',
+          boss_key: 'black_mage',
+          boss: '검은 마법사',
+          difficulty: 'extreme',
+          party_size: 4,
+          updated_at: '2026-07-13T00:05:00.000Z',
+        },
+      ],
+    })
+    const { getBossPartySettings } = require('../boss-party-settings') as typeof import('../boss-party-settings')
+
+    await expect(getBossPartySettings(['ocid-1'])).resolves.toEqual([sampleSetting])
   })
 })

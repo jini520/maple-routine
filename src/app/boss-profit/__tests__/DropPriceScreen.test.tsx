@@ -265,19 +265,20 @@ describe('DropPriceScreen: 값 매기기', () => {
     expect(savePrice).toHaveBeenCalledWith(
       expect.objectContaining({ bossKey: 주간보스 }),
       100_000_000,
-      3,
+      // 합이 그 행의 파티원 수인 균등. 내 비율 1 이라 값이 지금과 같다.
+      { myShare: 1, sharesTotal: 3 },
     )
     expect(getByText).toBeTruthy()
   })
 
-  it('분배 인원 기본값은 그 행의 파티원 수다', async () => {
+  it('분배 비율 기본값은 합이 그 행의 파티원 수인 균등이다', async () => {
     const { getByLabelText, getByTestId } = await renderOverlay(<DropPriceScreen />)
 
     await act(async () => {
       fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크 가격 입력'))
     })
 
-    expect(getByTestId('input-card-stepper-value').props.children).toBe('3')
+    expect(getByTestId('share-field-ratio-분배 비율')).toHaveTextContent('33.3%')
   })
 
   it('저장이 실패하면 토스트로 알린다. 조용히 삼키면 저장된 줄 알고 떠난다', async () => {

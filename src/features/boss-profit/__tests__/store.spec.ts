@@ -56,9 +56,9 @@ jest.mock('../../schedule-window/window', () => ({ getLastWindowFailures: jest.f
 const { getLastWindowFailures: windowFailuresMock } = jest.requireMock('../../schedule-window/window') as Record<string, jest.Mock>
 
 jest.mock('../../../storage/boss-party-settings', () => ({
-  getBossPartySize: jest.fn(),
+  getBossPartySetting: jest.fn(),
 }))
-const { getBossPartySize: getBossPartySizeMock } = jest.requireMock('../../../storage/boss-party-settings') as Record<string, jest.Mock>
+const { getBossPartySetting: getBossPartySettingMock } = jest.requireMock('../../../storage/boss-party-settings') as Record<string, jest.Mock>
 
 jest.mock('../../../storage/scheduler-cache', () => ({
   getCachedSchedulerState: jest.fn(),
@@ -128,6 +128,9 @@ import {
   resetSyncRunStateForTests,
 } from '../../schedule-sync/sync-run-state'
 import { useBossProfitStore } from '../store'
+
+/** 비율을 안 쓰는 파티. 인원만 고치는 기존 테스트들이 넘긴다. */
+const EVEN_SHARES = { myShare: null, sharesTotal: null, splitFeePercent: null }
 import { cachedPeriodKeysForTests, clearPeriodCacheForTests } from '../period-cache'
 // **Date 만 가짜로 만든다.** jest 는 `doNotFake` 로 **건드리지 말 것** 을 받는다. 그대로 두면
 // 타이머까지 전부 가짜가 되어 실제
@@ -235,7 +238,7 @@ beforeEach(() => {
   getBossDropRecordsMock.mockResolvedValue([])
   replaceBossDropRecordsMock.mockResolvedValue(undefined)
   upsertBossProfitRecordMock.mockResolvedValue(undefined)
-  getBossPartySizeMock.mockResolvedValue(null)
+  getBossPartySettingMock.mockResolvedValue(null)
   getCachedSchedulerStateMock.mockResolvedValue(null)
   getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
     profile: { name: `캐릭터-${ocid}`, level: 200, imageUrl: 'x', accessFlag: true },
@@ -269,6 +272,24 @@ afterEach(() => {
   jest.useRealTimers()
 })
 
+
+/** 파티 설정 한 줄. 비율을 안 쓰는 파티라 칸 다섯이 전부 null 이다. */
+function partySetting(partySize: number, shares: Partial<Record<string, number>> = {}) {
+  return {
+    ocid: 'ocid-1',
+    bossKey: 'zakum',
+    difficulty: 'chaos',
+    partySize,
+    crystalMyShare: null,
+    crystalSharesTotal: null,
+    dropMyShare: null,
+    dropSharesTotal: null,
+    splitFeePercent: null,
+    updatedAt: '2026-09-12T00:00:00.000Z',
+    ...shares,
+  }
+}
+
 describe('setBossDrops', () => {
   const sampleRow = {
     ocid: 'ocid-1',
@@ -286,6 +307,9 @@ describe('setBossDrops', () => {
     maxPartySize: 6,
     partySize: 1,
     payoutMeso: 1000,
+    crystalMyShare: null,
+    crystalSharesTotal: null,
+    splitFeePercent: null,
     isComplete: true,
     defeatedOn: null,
     source: 'auto' as const,
@@ -929,6 +953,9 @@ describe('useBossProfitStore', () => {
       partySize: 4,
       priceMeso: 8080000,
       payoutMeso: 2020000,
+      crystalMyShare: null,
+      crystalSharesTotal: null,
+      splitFeePercent: null,
       recordedAt: '2026-07-09T00:00:00.000Z',
       world: null,
       worldKey: null,
@@ -958,6 +985,9 @@ describe('useBossProfitStore', () => {
       partySize: 2,
       priceMeso: 7_000_000, // 과거 패치 시점 시세. 지금의 라이브 시세(8080000)와 다르다
       payoutMeso: 3_500_000,
+      crystalMyShare: null,
+      crystalSharesTotal: null,
+      splitFeePercent: null,
       recordedAt: '2026-07-09T00:00:00.000Z',
       world: null,
       worldKey: null,
@@ -974,12 +1004,12 @@ describe('useBossProfitStore', () => {
 
   describe('자동 파티원 수 기록 (기본값 소스는로 boss_party_settings 조회로 대체)', () => {
     it('기록도 파티 설정도 없는 새 완료 보스는 partySize 1(솔로)로 자동 기록된다', async () => {
-      getBossPartySizeMock.mockResolvedValue(null)
+      getBossPartySettingMock.mockResolvedValue(null)
       syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, priceMeso 8080000
 
       await useBossProfitStore.getState().refresh(['ocid-1'])
 
-      expect(getBossPartySizeMock).toHaveBeenCalledWith('ocid-1', 'zakum', 'chaos')
+      expect(getBossPartySettingMock).toHaveBeenCalledWith('ocid-1', 'zakum', 'chaos')
       expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
         expect.objectContaining({
           ocid: 'ocid-1',
@@ -989,6 +1019,9 @@ describe('useBossProfitStore', () => {
           partySize: 1,
           priceMeso: 8080000,
           payoutMeso: 8080000,
+          crystalMyShare: null,
+          crystalSharesTotal: null,
+          splitFeePercent: null,
         }),
       )
       const row = useBossProfitStore.getState().rows[0]
@@ -997,7 +1030,7 @@ describe('useBossProfitStore', () => {
     })
 
     it('boss_party_settings에 설정된 값이 있으면 그 값을 기본 파티원 수로 쓴다', async () => {
-      getBossPartySizeMock.mockResolvedValue(4)
+      getBossPartySettingMock.mockResolvedValue(partySetting(4))
       syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, priceMeso 8080000
 
       await useBossProfitStore.getState().refresh(['ocid-1'])
@@ -1011,6 +1044,9 @@ describe('useBossProfitStore', () => {
           partySize: 4,
           priceMeso: 8080000,
           payoutMeso: 2020000,
+          crystalMyShare: null,
+          crystalSharesTotal: null,
+          splitFeePercent: null,
         }),
       )
       const row = useBossProfitStore.getState().rows[0]
@@ -1034,17 +1070,20 @@ describe('useBossProfitStore', () => {
         partySize: 4,
         priceMeso: 8080000,
         payoutMeso: 2020000,
+        crystalMyShare: null,
+        crystalSharesTotal: null,
+        splitFeePercent: null,
         recordedAt: '2026-07-09T00:00:00.000Z',
         world: null,
         worldKey: null,
       }
       getBossProfitRecordsMock.mockResolvedValue([record])
-      getBossPartySizeMock.mockClear()
+      getBossPartySettingMock.mockClear()
       upsertBossProfitRecordMock.mockClear()
 
       await useBossProfitStore.getState().refresh(['ocid-1'])
 
-      expect(getBossPartySizeMock).not.toHaveBeenCalled()
+      expect(getBossPartySettingMock).not.toHaveBeenCalled()
       expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
       const row = useBossProfitStore.getState().rows[0]
       expect(row.partySize).toBe(4)
@@ -1056,7 +1095,7 @@ describe('useBossProfitStore', () => {
     // stale 커넥션으로 조회가 멈추는 상황에서 실제로 일어날 수 있는 데이터 손상이다.
     it('기록 조회 자체가 실패하면 자동 기록으로 기본 파티원 수를 덮어쓰지 않는다', async () => {
       getBossProfitRecordsMock.mockRejectedValue(new Error('SQLite 응답 없음'))
-      getBossPartySizeMock.mockResolvedValue(null)
+      getBossPartySettingMock.mockResolvedValue(null)
       syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, priceMeso 8080000
 
       await useBossProfitStore.getState().refresh(['ocid-1'])
@@ -1066,7 +1105,7 @@ describe('useBossProfitStore', () => {
 
     it('기록 조회가 성공했고 결과가 비어 있으면(진짜 기록 없음) 기존대로 자동 기록한다', async () => {
       getBossProfitRecordsMock.mockResolvedValue([])
-      getBossPartySizeMock.mockResolvedValue(null)
+      getBossPartySettingMock.mockResolvedValue(null)
       syncSchedulesMock.mockResolvedValue([syncResult()])
 
       await useBossProfitStore.getState().refresh(['ocid-1'])
@@ -1085,7 +1124,7 @@ describe('useBossProfitStore', () => {
         await new Promise((resolve) => setTimeout(resolve, 0))
         active -= 1
       })
-      getBossPartySizeMock.mockResolvedValue(null)
+      getBossPartySettingMock.mockResolvedValue(null)
       syncSchedulesMock.mockResolvedValue([
         syncResult({
           state: {
@@ -1116,7 +1155,7 @@ describe('useBossProfitStore', () => {
 
       await useBossProfitStore.getState().refresh(['ocid-1'])
 
-      expect(getBossPartySizeMock).not.toHaveBeenCalled()
+      expect(getBossPartySettingMock).not.toHaveBeenCalled()
       expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
       const row = useBossProfitStore.getState().rows[0]
       expect(row.partySize).toBeNull()
@@ -1131,7 +1170,7 @@ describe('useBossProfitStore', () => {
     it('upsertBossProfitRecord가 응답하지 않아도(hang) 타임아웃 후 기본 파티원 수로 loaded 상태가 된다', async () => {
       jest.useFakeTimers()
       try {
-        getBossPartySizeMock.mockResolvedValue(null)
+        getBossPartySettingMock.mockResolvedValue(null)
         upsertBossProfitRecordMock.mockImplementation(() => new Promise(() => {}))
         syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, priceMeso 8080000
 
@@ -1155,7 +1194,7 @@ describe('useBossProfitStore', () => {
       jest.useFakeTimers()
       try {
         getBossProfitRecordsMock.mockImplementation(() => new Promise(() => {}))
-        getBossPartySizeMock.mockResolvedValue(null)
+        getBossPartySettingMock.mockResolvedValue(null)
         syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, priceMeso 8080000
 
         const refreshPromise = useBossProfitStore.getState().refresh(['ocid-1'])
@@ -1177,7 +1216,7 @@ describe('useBossProfitStore', () => {
     })
   })
 
-  describe('setPartySize', () => {
+  describe('setRowParty', () => {
     async function seedRow(overrides: Partial<BossContent> = {}) {
       syncSchedulesMock.mockResolvedValue([
         syncResult({
@@ -1188,7 +1227,7 @@ describe('useBossProfitStore', () => {
         }),
       ])
       await useBossProfitStore.getState().refresh(['ocid-1'])
-      // refresh 자체의 자동 기록 호출 이력을 지워, 아래 테스트들이 setPartySize 호출만 검증하게 한다.
+      // refresh 자체의 자동 기록 호출 이력을 지워, 아래 테스트들이 setRowParty 호출만 검증하게 한다.
       upsertBossProfitRecordMock.mockClear()
       return useBossProfitStore.getState().rows[0]
     }
@@ -1196,14 +1235,14 @@ describe('useBossProfitStore', () => {
     it('0 이하 값은 에러를 던지고 저장하지 않는다', async () => {
       const row = await seedRow()
 
-      await expect(useBossProfitStore.getState().setPartySize(row, 0)).rejects.toThrow()
+      await expect(useBossProfitStore.getState().setRowParty(row, { partySize: 0, shares: EVEN_SHARES })).rejects.toThrow()
       expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
     })
 
     it('음수 값은 에러를 던지고 저장하지 않는다', async () => {
       const row = await seedRow()
 
-      await expect(useBossProfitStore.getState().setPartySize(row, -1)).rejects.toThrow()
+      await expect(useBossProfitStore.getState().setRowParty(row, { partySize: -1, shares: EVEN_SHARES })).rejects.toThrow()
       expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
     })
 
@@ -1211,7 +1250,7 @@ describe('useBossProfitStore', () => {
       const row = await seedRow() // 자쿰: maxPartySize 기본값 6
 
       await expect(
-        useBossProfitStore.getState().setPartySize(row, row.maxPartySize + 1),
+        useBossProfitStore.getState().setRowParty(row, { partySize: row.maxPartySize + 1, shares: EVEN_SHARES }),
       ).rejects.toThrow()
       expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
     })
@@ -1219,14 +1258,14 @@ describe('useBossProfitStore', () => {
     it('정수가 아닌 값은 에러를 던지고 저장하지 않는다', async () => {
       const row = await seedRow()
 
-      await expect(useBossProfitStore.getState().setPartySize(row, 1.5)).rejects.toThrow()
+      await expect(useBossProfitStore.getState().setRowParty(row, { partySize: 1.5, shares: EVEN_SHARES })).rejects.toThrow()
       expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
     })
 
     it('유효한 값은 payoutMeso를 계산해 저장하고 rows에 반영한다', async () => {
       const row = await seedRow() // 자쿰 카오스: priceMeso 8080000
 
-      await useBossProfitStore.getState().setPartySize(row, 2)
+      await useBossProfitStore.getState().setRowParty(row, { partySize: 2, shares: EVEN_SHARES })
 
       expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -1237,6 +1276,9 @@ describe('useBossProfitStore', () => {
           partySize: 2,
           priceMeso: 8080000,
           payoutMeso: 4040000,
+          crystalMyShare: null,
+          crystalSharesTotal: null,
+          splitFeePercent: null,
         }),
       )
       const updated = useBossProfitStore.getState().rows[0]
@@ -1244,10 +1286,54 @@ describe('useBossProfitStore', () => {
       expect(updated.payoutMeso).toBe(4040000)
     })
 
+    // 이 자리는 설정이 아니라 그 행의 기록을 다시 세는 곳이다. 비율도 그 건에만 남는다.
+    it('비율을 넘기면 수수료를 역산한 몫을 적고 비율을 스냅샷으로 남긴다', async () => {
+      const row = await seedRow() // 자쿰 카오스: priceMeso 8080000
+
+      await useBossProfitStore.getState().setRowParty(row, {
+        partySize: 2,
+        shares: { myShare: 2, sharesTotal: 3, splitFeePercent: 3 },
+      })
+
+      expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          partySize: 2,
+          priceMeso: 8080000,
+          // 균등이면 4,040,000 인데 2:1 이라 그보다 많다. 수수료만큼 20억분의 1 씩 깎인다.
+          payoutMeso: 5359461,
+          crystalMyShare: 2,
+          crystalSharesTotal: 3,
+          splitFeePercent: 3,
+        }),
+      )
+      const updated = useBossProfitStore.getState().rows[0]
+      expect(updated.payoutMeso).toBe(5359461)
+      expect(updated.crystalMyShare).toBe(2)
+    })
+
+    it('균등으로 되돌리면 비율 칸이 NULL 로 덮이고 금액이 1/n 로 돌아온다', async () => {
+      const row = await seedRow()
+
+      await useBossProfitStore.getState().setRowParty(row, {
+        partySize: 2,
+        shares: { myShare: 2, sharesTotal: 3, splitFeePercent: 3 },
+      })
+      await useBossProfitStore.getState().setRowParty(row, { partySize: 2, shares: EVEN_SHARES })
+
+      expect(upsertBossProfitRecordMock).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          payoutMeso: 4040000,
+          crystalMyShare: null,
+          crystalSharesTotal: null,
+          splitFeePercent: null,
+        }),
+      )
+    })
+
     it('priceMeso가 null인 보스는 upsert를 호출하지 않지만 partySize는 로컬 상태에 반영된다', async () => {
       const row = await seedRow({ bossKey: UNPRICED_BOSS_KEY, apiName: UNPRICED_BOSS, difficulty: 'easy' })
 
-      await useBossProfitStore.getState().setPartySize(row, 3)
+      await useBossProfitStore.getState().setRowParty(row, { partySize: 3, shares: EVEN_SHARES })
 
       expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
       const updated = useBossProfitStore.getState().rows[0]
@@ -1255,15 +1341,15 @@ describe('useBossProfitStore', () => {
       expect(updated.payoutMeso).toBeNull()
     })
 
-    // 회귀 재현: setPartySize가 get.rows만 갱신하고 모듈 스코프
+    // 회귀 재현: setRowParty가 get.rows만 갱신하고 모듈 스코프
     // latestSyncSnapshot은 건드리지 않으면, loadPeriod의 "현재 기간" 분기가 이 스냅샷에서
     // 슬라이스할 때 방금 수정한 값이 낡은 값으로 되돌아간다. "파티원 수를 고쳐도 파티관리
-    // 기본값으로 계속 돌아간다"로 보고된 증상의 실제 원인이었다. setPartySize가 스냅샷도
+    // 기본값으로 계속 돌아간다"로 보고된 증상의 실제 원인이었다. setRowParty가 스냅샷도
     // 함께 갱신하도록 고쳐 이 테스트가 통과한다.
-    it('setPartySize 이후 다른 탭으로 이동했다가 돌아와도 수정한 값이 유지된다', async () => {
+    it('setRowParty 이후 다른 탭으로 이동했다가 돌아와도 수정한 값이 유지된다', async () => {
       const row = await seedRow() // 자쿰 카오스: priceMeso 8080000, 자동 기록 partySize 1
 
-      await useBossProfitStore.getState().setPartySize(row, 4)
+      await useBossProfitStore.getState().setRowParty(row, { partySize: 4, shares: EVEN_SHARES })
       expect(useBossProfitStore.getState().rows[0].partySize).toBe(4)
 
       await useBossProfitStore.getState().setTab('monthly')
@@ -1371,7 +1457,7 @@ describe('useBossProfitStore', () => {
       // 캐시 단계도 기존 기록 유무를 확인하려고 getBossProfitRecords는 호출한다(읽기 전용).
       // 다만 자동 기록(upsert)·파티 설정 조회는 재검증 이후에만 수행한다.
       expect(getBossProfitRecordsMock).toHaveBeenCalled()
-      expect(getBossPartySizeMock).not.toHaveBeenCalled()
+      expect(getBossPartySettingMock).not.toHaveBeenCalled()
       expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
 
       resolveSync(
@@ -1384,7 +1470,7 @@ describe('useBossProfitStore', () => {
       expect(finalState.rows).toHaveLength(1)
       expect(finalState.rows[0].partySize).toBe(1)
       expect(finalState.rows[0].payoutMeso).toBe(8080000)
-      expect(getBossPartySizeMock).toHaveBeenCalledWith('ocid-1', 'zakum', 'chaos')
+      expect(getBossPartySettingMock).toHaveBeenCalledWith('ocid-1', 'zakum', 'chaos')
       expect(upsertBossProfitRecordMock).toHaveBeenCalled()
     })
 
@@ -1405,6 +1491,9 @@ describe('useBossProfitStore', () => {
         partySize: 2,
         priceMeso: 8080000,
         payoutMeso: 4040000,
+        crystalMyShare: null,
+        crystalSharesTotal: null,
+        splitFeePercent: null,
         recordedAt: '2026-07-10T00:00:00.000Z',
         world: null,
         worldKey: null,
@@ -1425,7 +1514,7 @@ describe('useBossProfitStore', () => {
       expect(midState.rows).toHaveLength(1)
       expect(midState.rows[0].partySize).toBe(2)
       expect(midState.rows[0].payoutMeso).toBe(4040000)
-      expect(getBossPartySizeMock).not.toHaveBeenCalled()
+      expect(getBossPartySettingMock).not.toHaveBeenCalled()
       expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
     })
 
@@ -1507,6 +1596,9 @@ describe('useBossProfitStore', () => {
           partySize: 2,
           priceMeso: 4_000_000,
           payoutMeso: 2_000_000,
+          crystalMyShare: null,
+          crystalSharesTotal: null,
+          splitFeePercent: null,
           recordedAt: '2026-07-01T00:00:00.000Z',
           world: null,
           worldKey: null,
@@ -1584,6 +1676,9 @@ describe('useBossProfitStore', () => {
         partySize: 1,
         priceMeso: 665_000_000,
         payoutMeso: 665_000_000,
+        crystalMyShare: null,
+        crystalSharesTotal: null,
+        splitFeePercent: null,
         recordedAt: '2026-07-01T00:00:00.000Z',
         world: '베라',
         worldKey: 'bera',
@@ -1857,6 +1952,9 @@ describe('useBossProfitStore', () => {
         partySize: 1,
         priceMeso: 8_080_000,
         payoutMeso: 8_080_000,
+        crystalMyShare: null,
+        crystalSharesTotal: null,
+        splitFeePercent: null,
         recordedAt: '2026-07-01T00:00:00.000Z',
         world: null,
         worldKey: null,
@@ -1915,6 +2013,9 @@ describe('useBossProfitStore', () => {
         partySize: 1,
         priceMeso: 8_080_000,
         payoutMeso: 8_080_000,
+        crystalMyShare: null,
+        crystalSharesTotal: null,
+        splitFeePercent: null,
         recordedAt: '2026-07-10T00:00:00.000Z',
         world: '베라',
         worldKey: 'bera',
@@ -2087,6 +2188,9 @@ describe('useBossProfitStore', () => {
             partySize: 1,
             priceMeso: 15_000_000_000,
             payoutMeso: 15_000_000_000,
+            crystalMyShare: null,
+            crystalSharesTotal: null,
+            splitFeePercent: null,
             recordedAt: '2026-09-01T00:00:00.000Z',
             world: null,
             worldKey: null,
@@ -2129,6 +2233,9 @@ describe('useBossProfitStore', () => {
         partySize: 3,
         priceMeso: 8_080_000,
         payoutMeso: 2_693_333,
+        crystalMyShare: null,
+        crystalSharesTotal: null,
+        splitFeePercent: null,
         recordedAt: '2026-06-01T00:00:00.000Z',
         world: null,
         worldKey: null,
@@ -2177,6 +2284,9 @@ describe('useBossProfitStore', () => {
           partySize: 3,
           priceMeso: 8_080_000,
           payoutMeso: 2_693_333,
+          crystalMyShare: null,
+          crystalSharesTotal: null,
+          splitFeePercent: null,
           recordedAt: '2026-06-01T00:00:00.000Z',
           world: null,
           worldKey: null,
@@ -2218,6 +2328,9 @@ describe('useBossProfitStore', () => {
           partySize: 3,
           priceMeso: 8_080_000,
           payoutMeso: 2_693_333,
+          crystalMyShare: null,
+          crystalSharesTotal: null,
+          splitFeePercent: null,
           recordedAt: '2026-06-01T00:00:00.000Z',
           world: null,
           worldKey: null,
@@ -2427,6 +2540,9 @@ describe('useBossProfitStore', () => {
           partySize: 2,
           priceMeso: 8_080_000,
           payoutMeso: 4_040_000,
+          crystalMyShare: null,
+          crystalSharesTotal: null,
+          splitFeePercent: null,
           recordedAt: '2026-07-08T00:00:00.000Z',
           world: null,
           worldKey: null,
@@ -2512,6 +2628,9 @@ describe('useBossProfitStore', () => {
           partySize: 2,
           priceMeso: 8_080_000,
           payoutMeso: 4_040_000,
+          crystalMyShare: null,
+          crystalSharesTotal: null,
+          splitFeePercent: null,
           recordedAt: '2026-07-08T00:00:00.000Z',
           world: null,
           worldKey: null,
@@ -2552,6 +2671,9 @@ describe('useBossProfitStore', () => {
             partySize: 1,
             priceMeso: 15_000_000_000,
             payoutMeso: 15_000_000_000,
+            crystalMyShare: null,
+            crystalSharesTotal: null,
+            splitFeePercent: null,
             recordedAt: '2026-07-12T00:00:00.000Z',
             world: null,
             worldKey: null,
@@ -2591,6 +2713,9 @@ describe('useBossProfitStore', () => {
             partySize: 1,
             priceMeso: 15_000_000_000,
             payoutMeso: 15_000_000_000,
+            crystalMyShare: null,
+            crystalSharesTotal: null,
+            splitFeePercent: null,
             recordedAt: '2026-09-01T00:00:00.000Z',
             world: null,
             worldKey: null,
@@ -2656,6 +2781,9 @@ describe('useBossProfitStore', () => {
           partySize: 2,
           priceMeso: 4_000_000,
           payoutMeso: 2_000_000,
+          crystalMyShare: null,
+          crystalSharesTotal: null,
+          splitFeePercent: null,
           recordedAt: '2026-08-01T00:00:00.000Z',
           world: null,
           worldKey: null,
@@ -2701,6 +2829,9 @@ describe('useBossProfitStore', () => {
             partySize: 1,
             priceMeso: 8_080_000,
             payoutMeso: 8_080_000,
+            crystalMyShare: null,
+            crystalSharesTotal: null,
+            splitFeePercent: null,
             recordedAt: '2026-08-02T00:00:00.000Z',
             world: null,
             worldKey: null,
@@ -2753,7 +2884,7 @@ describe('useBossProfitStore', () => {
       expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
     })
 
-    it('setPartySize는 과거 기간의 row에도 정상 동작한다(읽기 전용 처리 없음)', async () => {
+    it('setRowParty는 과거 기간의 row에도 정상 동작한다(읽기 전용 처리 없음)', async () => {
       syncSchedulesMock.mockResolvedValue([syncResult()])
       await useBossProfitStore.getState().refresh(['ocid-1'])
       const currentPeriodKey = useBossProfitStore.getState().periodKey
@@ -2770,6 +2901,9 @@ describe('useBossProfitStore', () => {
           partySize: 2,
           priceMeso: 8_080_000,
           payoutMeso: 4_040_000,
+          crystalMyShare: null,
+          crystalSharesTotal: null,
+          splitFeePercent: null,
           recordedAt: '2026-06-01T00:00:00.000Z',
           world: null,
           worldKey: null,
@@ -2784,7 +2918,7 @@ describe('useBossProfitStore', () => {
       upsertBossProfitRecordMock.mockClear()
       const pastRow = useBossProfitStore.getState().rows[0]
 
-      await useBossProfitStore.getState().setPartySize(pastRow, 3)
+      await useBossProfitStore.getState().setRowParty(pastRow, { partySize: 3, shares: EVEN_SHARES })
 
       expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -2999,7 +3133,7 @@ describe('useBossProfitStore', () => {
         await useBossProfitStore.getState().refresh(['ocid-1'], { auto: true })
 
         // 기본 파티원 수는 boss_party_settings 조회값(없으면 1). 캐시가 아니라 그 자리에서 읽는다.
-        expect(getBossPartySizeMock).toHaveBeenCalledWith('ocid-1', 'zakum', 'chaos')
+        expect(getBossPartySettingMock).toHaveBeenCalledWith('ocid-1', 'zakum', 'chaos')
         expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
           expect.objectContaining({
             ocid: 'ocid-1',
@@ -3010,6 +3144,9 @@ describe('useBossProfitStore', () => {
             partySize: 1,
             priceMeso: 8080000,
             payoutMeso: 8080000,
+            crystalMyShare: null,
+            crystalSharesTotal: null,
+            splitFeePercent: null,
           }),
         )
         // 기록만 남기고 화면에 안 흘리면 총 수익이 0으로 그려졌다가 점프한다. 둘 다 본다.
@@ -3068,7 +3205,7 @@ describe('useBossProfitStore', () => {
 
           expect(syncSchedulesMock).not.toHaveBeenCalled()
           expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
-          expect(getBossPartySizeMock).not.toHaveBeenCalled()
+          expect(getBossPartySettingMock).not.toHaveBeenCalled()
           // 표시는 그대로다. 미룬 것은 기록이고 다음 실제 동기화가 맡는다.
           expect(useBossProfitStore.getState().rows[0].payoutMeso).toBeNull()
         } finally {
@@ -3118,7 +3255,7 @@ describe('useBossProfitStore', () => {
 
         expect(syncSchedulesMock).not.toHaveBeenCalled()
         expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
-        expect(getBossPartySizeMock).not.toHaveBeenCalled()
+        expect(getBossPartySettingMock).not.toHaveBeenCalled()
       })
 
       // 드롭 이관은 자동 기록과 같은 순회에 있으므로 함께 딸려온다.
@@ -3181,7 +3318,7 @@ describe('useBossProfitStore', () => {
 
         expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
         expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
-        expect(getBossPartySizeMock).not.toHaveBeenCalled()
+        expect(getBossPartySettingMock).not.toHaveBeenCalled()
       })
     })
 
@@ -3459,6 +3596,9 @@ describe('잡지 않은 보스의 드롭 정리', () => {
         partySize: 1,
         priceMeso: 1000,
         payoutMeso: 1000,
+        crystalMyShare: null,
+        crystalSharesTotal: null,
+        splitFeePercent: null,
         recordedAt: '2026-08-20T00:00:00.000Z',
         world: null,
         worldKey: null,
@@ -3509,6 +3649,9 @@ describe('추적에서 빠진 캐릭터의 기록', () => {
       partySize: 1,
       priceMeso: 8_080_000,
       payoutMeso: 8_080_000,
+      crystalMyShare: null,
+      crystalSharesTotal: null,
+      splitFeePercent: null,
       recordedAt: '2026-06-01T00:00:00.000Z',
       world: null,
       worldKey: null,
@@ -3937,6 +4080,9 @@ describe('기간을 미리 들고 있는다', () => {
         partySize: 1,
         priceMeso: 8_080_000,
         payoutMeso: 8_080_000,
+        crystalMyShare: null,
+        crystalSharesTotal: null,
+        splitFeePercent: null,
         recordedAt: '2026-07-01T00:00:00.000Z',
         world: null,
         worldKey: null,
@@ -4185,6 +4331,9 @@ describe('월드 리프한 기간의 중복 기록', () => {
       partySize,
       priceMeso: 8_080_000,
       payoutMeso: Math.floor(8_080_000 / partySize),
+      crystalMyShare: null,
+      crystalSharesTotal: null,
+      splitFeePercent: null,
       recordedAt: '2026-09-11T00:00:00.000Z',
       world: ocid === 'old' ? '챌린저스2' : '엘리시움',
       worldKey: ocid === 'old' ? 'challengers_2' : 'elysium',
@@ -4259,6 +4408,7 @@ describe('직접 완료를 적으면 그 주로 데려간다', () => {
       difficulty: 'extreme',
       dateKey: '2026-09-02',
       partySize: 1,
+      shares: EVEN_SHARES,
     })
 
     expect(useBossProfitStore.getState().periodKey).toBe('2026-08-27')
@@ -4284,6 +4434,7 @@ describe('직접 완료를 적으면 그 주로 데려간다', () => {
       difficulty: 'extreme',
       dateKey: '2026-09-11',
       partySize: 1,
+      shares: EVEN_SHARES,
     })
 
     expect(syncSchedulesMock).not.toHaveBeenCalled()
@@ -4313,6 +4464,7 @@ describe('직접 완료를 적으면 그 주로 데려간다', () => {
       difficulty: 'extreme',
       dateKey: '2026-09-11',
       partySize: 1,
+      shares: EVEN_SHARES,
     })
 
     expect(useBossProfitStore.getState().periodKey).toBe(이번주)
@@ -4380,7 +4532,7 @@ describe('직접 완료를 적으면 월간 탭에도 바로 선다', () => {
     const row = useBossProfitStore.getState().rows.find((candidate) => candidate.cycle === 'monthly')
     expect(row?.isComplete).toBe(false)
 
-    await useBossProfitStore.getState().saveManualCompletion(row!, { difficulty: 'extreme', dateKey, partySize: 2 })
+    await useBossProfitStore.getState().saveManualCompletion(row!, { difficulty: 'extreme', dateKey, partySize: 2, shares: EVEN_SHARES })
     await useBossProfitStore.getState().setTab('monthly')
 
     return useBossProfitStore.getState().rows.find((candidate) => candidate.cycle === 'monthly')

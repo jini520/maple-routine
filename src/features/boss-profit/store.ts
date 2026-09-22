@@ -19,9 +19,12 @@ import {
   type BossProfitRecord,
 } from '../../storage/boss-profit'
 import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
+import { crystalPayoutMeso, type PartyShares } from '../../lib/boss/party-shares'
 import { sumDropPayout } from '../../lib/drop/drop-price'
 import type { RecordedDrop } from '../../types/drops'
 import { getRecordedCharacterOcids } from '../../storage/boss-profit'
+import { getBossPartySettings, type BossPartyShareColumns } from '../../storage/boss-party-settings'
+import { partySizeKey } from '../boss-scheduler/store'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { resolveDisplayProfiles } from '../character-profile/resolve'
 import { getManualTrackedContent, type ManualTrackedItem } from '../../storage/manual-tracked-content'
@@ -152,6 +155,13 @@ export interface BossProfitState {
   periodKey: string // 현재 tab 기준으로 선택된 기간
   rows: BossProfitRow[] // 선택된 (tab, periodKey)의 보스 row. monthly 탭이면 그 달의 monthly-cycle 보스만
   /**
+   * `partySizeKey(ocid, bossKey, difficulty)` → 지금 설정된 분배 비율.
+   *
+   * **기간 로드와 따로 돈다.** 기록이 아니라 설정이라 기간을 안 타고, 캐시된 기간을 그릴 때도
+   * 최신이어야 한다. 화면이 진입할 때 한 번 읽는다.
+   */
+  partyShares: Record<string, BossPartyShareColumns>
+  /**
    * 지금 `rows`·`weeklySubtotals` 에 담긴 데이터가 어느 (tab, periodKey) 의 것인가.
    *
    * 위의 `tab`·`periodKey` 는 사용자가 보려고 누른 기간이라 데이터보다 먼저 바뀐다. 그 사이 한
@@ -250,7 +260,15 @@ export interface BossProfitStore extends BossProfitState {
    * 백필한다. `refresh` 로는 대신할 수 없다. 그쪽은 현재 기간으로 되돌린다.
    */
   retryPeriod(): Promise<void>
-  setPartySize(row: BossProfitRowKey, partySize: number): Promise<void>
+  /**
+   * 그 행의 파티 인원과 분배 비율. **설정이 아니라 그 기록 한 건**을 다시 센다.
+   *
+   * 비율을 함께 받는 것은 둘이 따로 가면 금액과 표기가 갈리기 때문이다. 균등으로 되돌리는 것도
+   * `shares` 를 전부 `null` 로 넘기는 이 길 하나다.
+   */
+  /** 보스별 분배 비율 설정을 읽어 둔다. 카드의 아이템 비율이 이 값을 그린다. */
+  loadPartyShares(ocids: string[]): Promise<void>
+  setRowParty(row: BossProfitRowKey, input: { partySize: number; shares: PartyShares }): Promise<void>
   /**
    * 직접 적은 완료를 쓰거나 고친다. 쓰고 나서 이 기간을 다시 읽는다.
    *
@@ -259,7 +277,7 @@ export interface BossProfitStore extends BossProfitState {
    */
   saveManualCompletion(
     row: BossProfitRowKey,
-    input: { difficulty: BossDifficulty; dateKey: string; partySize: number },
+    input: { difficulty: BossDifficulty; dateKey: string; partySize: number; shares: PartyShares },
   ): Promise<void>
   /** 직접 적은 완료를 취소한다. **그 기록의 드롭도 함께 지운다.** */
   cancelManualCompletion(row: BossProfitRowKey): Promise<void>
@@ -1139,6 +1157,7 @@ const initialState: BossProfitState = {
   tab: 'weekly',
   periodKey: getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
   rows: [],
+  partyShares: {},
   loadedTab: 'weekly',
   loadedPeriodKey: getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
   currentPeriodRows: [],
@@ -1928,17 +1947,36 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     await loadPeriod(set, tab, periodKey, ocids, new Date(), myGeneration, true)
   },
 
-  async setPartySize(rowKey, partySize) {
+  async loadPartyShares(ocids) {
+    if (ocids.length === 0) {
+      set({ partyShares: {} })
+      return
+    }
+    const settings = await withSqliteFallback(getBossPartySettings(ocids), [])
+    const partyShares: Record<string, BossPartyShareColumns> = {}
+    for (const setting of settings) {
+      partyShares[partySizeKey(setting.ocid, setting.bossKey, setting.difficulty)] = {
+        crystalMyShare: setting.crystalMyShare,
+        crystalSharesTotal: setting.crystalSharesTotal,
+        dropMyShare: setting.dropMyShare,
+        dropSharesTotal: setting.dropSharesTotal,
+        splitFeePercent: setting.splitFeePercent,
+      }
+    }
+    set({ partyShares })
+  },
+
+  async setRowParty(rowKey, { partySize, shares }) {
     const row = get().rows.find((candidate) => matchesRowKey(candidate, rowKey))
     if (row === undefined) {
-      throw new Error('setPartySize: 존재하지 않는 보스 행입니다')
+      throw new Error('setRowParty: 존재하지 않는 보스 행입니다')
     }
 
     if (!Number.isInteger(partySize) || partySize < 1 || partySize > row.maxPartySize) {
-      throw new Error(`setPartySize: 파티원 수는 1 이상 ${row.maxPartySize} 이하의 정수여야 합니다`)
+      throw new Error(`setRowParty: 파티원 수는 1 이상 ${row.maxPartySize} 이하의 정수여야 합니다`)
     }
 
-    const payoutMeso = row.priceMeso === null ? null : Math.floor(row.priceMeso / partySize)
+    const payoutMeso = row.priceMeso === null ? null : crystalPayoutMeso(row.priceMeso, partySize, shares)
 
     if (row.priceMeso !== null) {
       await upsertBossProfitRecord({
@@ -1951,17 +1989,29 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         partySize,
         priceMeso: row.priceMeso,
         payoutMeso: payoutMeso as number,
+        crystalMyShare: shares.myShare,
+        crystalSharesTotal: shares.sharesTotal,
+        splitFeePercent: shares.splitFeePercent,
         recordedAt: new Date().toISOString(),
         world: row.world,
         worldKey: row.worldKey,
         // 파티원 수만 고치는 upsert 가 **출처를 지우면 안 된다.** 안 넘기면 기본값이 `auto` 라
-        // 직접 적은 완료의 표식이 스테퍼 한 번에 사라진다.
+        // 직접 적은 완료의 표식이 편집 한 번에 사라진다.
         source: row.source,
       })
     }
 
     const applyEdit = (candidate: BossProfitRow): BossProfitRow =>
-      matchesRowKey(candidate, rowKey) ? { ...candidate, partySize, payoutMeso } : candidate
+      matchesRowKey(candidate, rowKey)
+        ? {
+            ...candidate,
+            partySize,
+            payoutMeso,
+            crystalMyShare: shares.myShare,
+            crystalSharesTotal: shares.sharesTotal,
+            splitFeePercent: shares.splitFeePercent,
+          }
+        : candidate
 
     // latestSyncSnapshot 도 함께 갱신해야 한다. 그러지 않으면 이 수정 후 탭을 전환했다 돌아오거나
     // 기간을 이동했다 복귀할 때, loadPeriod 의 현재 기간 분기가 이 스냅샷에서 그대로 슬라이스해
@@ -1991,6 +2041,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         periodKey: row.periodKey,
         difficulty: input.difficulty,
         partySize: input.partySize,
+        shares: input.shares,
         defeatedOn: input.dateKey,
         world: row.world,
         worldKey: row.worldKey,

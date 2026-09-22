@@ -7,7 +7,8 @@
  * 두 경로가 다른 것은 이 행의 출처가 지금의 사실인가 하나뿐이라, 그 자리만 술어로 주입받는다.
  */
 
-import { getBossPartySize } from '../../storage/boss-party-settings'
+import { crystalPayoutMeso } from '../../lib/boss/party-shares'
+import { getBossPartySetting } from '../../storage/boss-party-settings'
 import {
   markBossProfitRecordAuto,
   upsertBossProfitRecord,
@@ -151,12 +152,18 @@ export async function autoRecordRows({
       continue
     }
 
-    const configuredPartySize = await withSqliteFallback(
-      getBossPartySize(row.ocid, row.bossKey, row.difficulty),
+    // 설정을 한 줄로 읽는다. 인원만 읽으면 비율 약속이 있는 보스가 균등으로 굳는다.
+    const configured = await withSqliteFallback(
+      getBossPartySetting(row.ocid, row.bossKey, row.difficulty),
       null,
     )
-    const partySize = configuredPartySize ?? 1
-    const payoutMeso = Math.floor(row.priceMeso / partySize)
+    const partySize = configured?.partySize ?? 1
+    const shares = {
+      myShare: configured?.crystalMyShare ?? null,
+      sharesTotal: configured?.crystalSharesTotal ?? null,
+      splitFeePercent: configured?.splitFeePercent ?? null,
+    }
+    const payoutMeso = crystalPayoutMeso(row.priceMeso, partySize, shares)
 
     await withSqliteFallback(
       upsertBossProfitRecord({
@@ -169,6 +176,9 @@ export async function autoRecordRows({
         partySize,
         priceMeso: row.priceMeso,
         payoutMeso,
+        crystalMyShare: shares.myShare,
+        crystalSharesTotal: shares.sharesTotal,
+        splitFeePercent: shares.splitFeePercent,
         recordedAt: now.toISOString(),
         world: row.world,
         worldKey: row.worldKey,
@@ -176,7 +186,14 @@ export async function autoRecordRows({
       undefined,
     )
 
-    autoRecordedRows.push({ ...row, partySize, payoutMeso })
+    autoRecordedRows.push({
+      ...row,
+      partySize,
+      payoutMeso,
+      crystalMyShare: shares.myShare,
+      crystalSharesTotal: shares.sharesTotal,
+      splitFeePercent: shares.splitFeePercent,
+    })
   }
 
   return autoRecordedRows

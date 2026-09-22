@@ -419,7 +419,7 @@ describe('world 컬럼 마이그레이션', () => {
 // 가격 세 컬럼도 같은 사정이다. 이미 드롭을 기록해 둔 사용자의 DB에는
 // `boss_drop_records` 가 이미 있으므로 CREATE 로는 컬럼이 붙지 않는다.
 describe('가격 컬럼 마이그레이션', () => {
-  it('없으면 price_state·price_meso·price_share 를 ALTER 로 더한다', async () => {
+  it('없으면 price_state·price_meso·price_share·price_my_share 를 ALTER 로 더한다', async () => {
     isConnectionMock.mockResolvedValue(false)
     dbQueryMock.mockResolvedValue({ values: [{ name: 'ocid' }] })
 
@@ -435,12 +435,21 @@ describe('가격 컬럼 마이그레이션', () => {
     expect(dbExecuteMock).toHaveBeenCalledWith(
       'ALTER TABLE boss_drop_records ADD COLUMN price_share INTEGER',
     )
+    // 비율 합(price_share)과 짝이다. 하나만 서면 내 몫이 늘 1/n 이 된다.
+    expect(dbExecuteMock).toHaveBeenCalledWith(
+      'ALTER TABLE boss_drop_records ADD COLUMN price_my_share INTEGER',
+    )
   })
 
   it('이미 있으면 더하지 않는다', async () => {
     isConnectionMock.mockResolvedValue(false)
     dbQueryMock.mockResolvedValue({
-      values: [{ name: 'price_state' }, { name: 'price_meso' }, { name: 'price_share' }],
+      values: [
+        { name: 'price_state' },
+        { name: 'price_meso' },
+        { name: 'price_share' },
+        { name: 'price_my_share' },
+      ],
     })
 
     const { getBossProfitDb } = require('../db') as typeof import('../db')

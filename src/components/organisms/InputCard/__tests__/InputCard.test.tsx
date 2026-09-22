@@ -45,6 +45,11 @@ async function 누르기(view: 화면, 대상: string): Promise<void> {
   })
 }
 
+/** 비율 고르개는 testID 가 아니라 라벨로 찾는다. 한 카드에 칸이 여럿이라 이름이 가른다. */
+async function 누르기카드(view: { getByLabelText: (label: string) => unknown }, label: string): Promise<void> {
+  await fireEvent.press(view.getByLabelText(label) as never)
+}
+
 describe('InputCard', () => {
   it('칸 이름과 맥락 줄을 머리에 그린다', async () => {
     const { view } = await 그리기({ context: '솔 에르다 조각 · 개당' })
@@ -204,40 +209,35 @@ describe('InputCard', () => {
    * 카드로 왔다. 부품은 도메인 낱말을 모르고 라벨은 호출부가 준다.
    */
   describe('한 아이템의 한 기록을 받는 모양', () => {
-    const 스테퍼 = { label: '분배 인원', value: 1, min: 1, max: 6, suffix: '인' }
+    const 비율 = { label: '분배 비율', myShare: 1, sharesTotal: 3 }
 
-    it('스테퍼를 넘기면 값 칸 아래에 그 라벨로 선다. 접미사는 호출부가 준다', async () => {
-      const { view } = await 그리기({ stepper: 스테퍼 })
+    it('비율을 넘기면 값 칸 아래에 그 라벨로 선다. 낱말은 호출부가 준다', async () => {
+      const { view } = await 그리기({ share: 비율 })
 
-      expect(view.getByText('분배 인원')).toBeTruthy()
-      expect(view.getByTestId('input-card-stepper-value').props.children).toBe('1인')
+      expect(view.getByText('분배 비율')).toBeTruthy()
+      expect(view.getByTestId('share-field-ratio-분배 비율')).toHaveTextContent('33.3%')
     })
 
     /** 친 값과 같이 **카드가 든다**. 그래야 확인 한 번에 둘이 함께 나간다. */
-    it('스테퍼 값은 카드가 들고 확인이 친 값과 함께 내보낸다', async () => {
-      const { view, onConfirm } = await 그리기({ stepper: 스테퍼 })
+    it('비율은 카드가 들고 확인이 친 값과 함께 내보낸다', async () => {
+      const { view, onConfirm } = await 그리기({ share: 비율 })
 
-      await 누르기(view, 'input-card-stepper-up')
-      expect(view.getByTestId('input-card-stepper-value').props.children).toBe('2인')
+      await 누르기카드(view, '분배 비율 비율 3')
+      expect(view.getByTestId('share-field-ratio-분배 비율')).toHaveTextContent('100%')
 
       await 치기(view, '3250000000')
       await 누르기(view, 'input-card-confirm')
 
-      expect(onConfirm).toHaveBeenCalledWith('3250000000', 2)
+      expect(onConfirm).toHaveBeenCalledWith('3250000000', { myShare: 3, sharesTotal: 3 })
     })
 
-    it('하한에서는 더 못 내린다', async () => {
-      const { view } = await 그리기({ stepper: 스테퍼 })
+    // 안 맞추면 내 비율이 합보다 커져 내 몫이 100%를 넘는다.
+    it('합을 내 비율 아래로 줄이면 내 비율이 따라 내려간다', async () => {
+      const { view } = await 그리기({ share: { ...비율, myShare: 3 } })
 
-      await 누르기(view, 'input-card-stepper-down')
-      expect(view.getByTestId('input-card-stepper-value').props.children).toBe('1인')
-    })
+      await 누르기카드(view, '분배 비율 비율 합 감소')
 
-    it('상한에서는 더 못 올린다', async () => {
-      const { view } = await 그리기({ stepper: { ...스테퍼, value: 6 } })
-
-      await 누르기(view, 'input-card-stepper-up')
-      expect(view.getByTestId('input-card-stepper-value').props.children).toBe('6인')
+      expect(view.getByTestId('share-field-ratio-분배 비율')).toHaveTextContent('100%')
     })
 
     it('확인 라벨을 호출부가 바꾼다', async () => {
@@ -301,23 +301,23 @@ describe('InputCard', () => {
      * 이전도 친 값을 내보낸다(사용자 지정). 앞뒤로 오가는 동안 값이 안 날아간다. 그래서 확인과
      * **같은 것을 넘긴다**. 쓸지 말지는 받는 쪽이 정한다.
      */
-    it('이전도 친 값과 스테퍼를 함께 넘긴다', async () => {
+    it('이전도 친 값과 비율을 함께 넘긴다', async () => {
       const onPrev = jest.fn()
       const { view } = await 그리기({
-        stepper: 스테퍼,
+        share: 비율,
         prev: { label: '이전(1/3)', onPress: onPrev },
       })
 
       await 치기(view, '3250000000')
       await 누르기(view, 'input-card-prev')
 
-      expect(onPrev).toHaveBeenCalledWith('3250000000', 1)
+      expect(onPrev).toHaveBeenCalledWith('3250000000', { myShare: 1, sharesTotal: 3 })
     })
 
-    it('안 넘기면 곁들이 버튼도 스테퍼도 안 선다', async () => {
+    it('안 넘기면 곁들이 버튼도 비율 고르개도 안 선다', async () => {
       const { view } = await 그리기()
 
-      expect(view.queryByTestId('input-card-stepper-value')).toBeNull()
+      expect(view.queryByTestId('share-field-track')).toBeNull()
       expect(view.queryByTestId('input-card-exclude')).toBeNull()
       expect(view.queryByTestId('input-card-prev')).toBeNull()
     })

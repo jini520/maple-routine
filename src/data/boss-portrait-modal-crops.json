@@ -1,0 +1,130 @@
+{
+  "zakum": {
+    "size": "149% auto",
+    "position": "50% 45%"
+  },
+  "magnus": {
+    "size": "149% auto",
+    "position": "50% 40%"
+  },
+  "papulatus": {
+    "size": "149% auto",
+    "position": "50% 35%"
+  },
+  "vonBon": {
+    "size": "149% auto",
+    "position": "20% 50%"
+  },
+  "pierre": {
+    "size": "149% auto",
+    "position": "20% 50%"
+  },
+  "crimsonQueen": {
+    "size": "149% auto",
+    "position": "50% 35%"
+  },
+  "vellum": {
+    "size": "129% auto",
+    "position": "-20% 70%"
+  },
+  "lotus": {
+    "size": "149% auto",
+    "position": "50% 35%"
+  },
+  "damien": {
+    "size": "149% auto",
+    "position": "30% 50%"
+  },
+  "slime": {
+    "size": "149% auto",
+    "position": "30% 50%"
+  },
+  "lucid": {
+    "size": "149% auto",
+    "position": "20% 60%"
+  },
+  "will": {
+    "size": "179% auto",
+    "position": "30% 30%"
+  },
+  "gloom": {
+    "size": "149% auto",
+    "position": "50% 30%"
+  },
+  "verusHilla": {
+    "size": "149% auto",
+    "position": "40% 40%"
+  },
+  "darknell": {
+    "size": "149% auto",
+    "position": "50% 35%"
+  },
+  "seren": {
+    "size": "179% auto",
+    "position": "50% 45%"
+  },
+  "kalos": {
+    "size": "149% auto",
+    "position": "20% 75%"
+  },
+  "adversary": {
+    "size": "149% auto",
+    "position": "20% 35%"
+  },
+  "kaling": {
+    "size": "134% auto",
+    "position": "60% 38%"
+  },
+  "maleficStar": {
+    "size": "149% auto",
+    "position": "30% 35%"
+  },
+  "bellona": {
+    "size": "142% auto",
+    "position": "40% 33%"
+  },
+  "limbo": {
+    "size": "149% auto",
+    "position": "30% 65%"
+  },
+  "bardrix": {
+    "size": "149% auto",
+    "position": "0% 40%"
+  },
+  "jupiter": {
+    "size": "149% auto",
+    "position": "40% 40%"
+  },
+  "maerin": {
+    "size": "149% auto",
+    "position": "50% 35%"
+  },
+  "blackMage": {
+    "size": "149% auto",
+    "position": "20% 35%"
+  },
+  "ancientGodMitra": {
+    "size": "224% auto",
+    "position": "50% 50%"
+  },
+  "senya": {
+    "size": "224% auto",
+    "position": "50% 35%"
+  },
+  "baekyeon": {
+    "size": "224% auto",
+    "position": "30% 40%"
+  },
+  "lesa": {
+    "size": "172% auto",
+    "position": "40% 35%"
+  },
+  "arcanus": {
+    "size": "104% auto",
+    "position": "66% 29%"
+  },
+  "armorDragon": {
+    "size": "119% auto",
+    "position": "130% 27%"
+  }
+}

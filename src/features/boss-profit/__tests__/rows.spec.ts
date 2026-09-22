@@ -38,6 +38,9 @@ function row(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     maxPartySize: 6,
     partySize: 2,
     payoutMeso: 5_000_000,
+    crystalMyShare: null,
+    crystalSharesTotal: null,
+    splitFeePercent: null,
     isComplete: true,
     defeatedOn: null,
     source: 'auto',
@@ -154,6 +157,9 @@ describe('buildRowFromRecord 의 월드', () => {
     partySize: 1,
     priceMeso: 1000,
     payoutMeso: 1000,
+    crystalMyShare: null,
+    crystalSharesTotal: null,
+    splitFeePercent: null,
     recordedAt: '2026-09-11T00:00:00.000Z',
   }
   const 지금캐릭터 = { characterName: '낟낟', imageUrl: null, world: '엘리시움', worldKey: 'elysium' }
@@ -222,6 +228,7 @@ describe('toRecordedDrop: 가격 필드', () => {
     ringLevel: null,
     quantity: 1,
     recordedAt: '2026-08-10T00:00:00.000Z',
+    priceMyShare: null,
   }
 
   it('저장소의 가격 세 컬럼을 도메인 드롭으로 옮긴다', () => {
@@ -443,6 +450,9 @@ it('mergeRecordsIntoRows 는 기록의 처치 날짜도 행에 싣는다', () =>
     partySize: 2,
     priceMeso: 100,
     payoutMeso: 50,
+    crystalMyShare: null,
+    crystalSharesTotal: null,
+    splitFeePercent: null,
     recordedAt: '2026-09-20T00:00:00.000Z',
     world: null,
     worldKey: null,
@@ -526,6 +536,9 @@ describe('직접 적은 완료', () => {
           partySize: 1,
           priceMeso: 665_000_000,
           payoutMeso: 665_000_000,
+          crystalMyShare: null,
+          crystalSharesTotal: null,
+          splitFeePercent: null,
           recordedAt: '2026-09-18T00:00:00.000Z',
           world: null,
           worldKey: null,

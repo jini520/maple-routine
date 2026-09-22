@@ -20,6 +20,8 @@ import type { BossCycle, BossDifficulty } from '../../types'
 import { migrateDropsToConfirmedDifficulty } from '../boss-profit/drops-loader'
 import { withSqliteFallback } from '../boss-profit/sqlite-guards'
 
+import { crystalPayoutMeso, type PartyShares } from '../../lib/boss/party-shares'
+
 export interface ManualCompletionInput {
   ocid: string
   bossKey: string
@@ -29,6 +31,8 @@ export interface ManualCompletionInput {
   periodKey: string
   difficulty: BossDifficulty
   partySize: number
+  /** 그 기록의 분배 비율. 파티 설정값으로 시작하고 여기서 바꿔도 설정은 안 움직인다. */
+  shares: PartyShares
   /** 잡은 날(KST `YYYY-MM-DD`). 사용자가 고른 날이고 날짜 캐기가 다시 안 정한다. */
   defeatedOn: string
   world: string | null
@@ -83,7 +87,10 @@ export async function saveManualCompletion(input: ManualCompletionInput, now: Da
     periodKey: input.periodKey,
     partySize: input.partySize,
     priceMeso: price.priceMeso,
-    payoutMeso: Math.floor(price.priceMeso / input.partySize),
+    payoutMeso: crystalPayoutMeso(price.priceMeso, input.partySize, input.shares),
+    crystalMyShare: input.shares.myShare,
+    crystalSharesTotal: input.shares.sharesTotal,
+    splitFeePercent: input.shares.splitFeePercent,
     recordedAt: now.toISOString(),
     world: input.world,
     worldKey: input.worldKey,

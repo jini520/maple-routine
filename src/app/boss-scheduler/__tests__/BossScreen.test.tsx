@@ -78,6 +78,7 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     error: null,
     trackedOcids: null,
     partySizes: {},
+    partyShares: {},
     manualTrackedByOcid: {},
     loadTrackedOcids: jest.fn(),
     reloadManualCompleted: jest.fn().mockResolvedValue(undefined),
@@ -85,7 +86,7 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     // 실물은 `Promise<void>` 다. 당김 훅이 회차의 **끝** 을 기다린다.
     refresh: jest.fn().mockResolvedValue(undefined),
     loadPartySizes: jest.fn(),
-    setPartySize: jest.fn(),
+    setPartySetting: jest.fn(),
     addManualBoss: jest.fn(),
     removeManualBoss: jest.fn(),
     setManualBossDifficulty: jest.fn(),
@@ -200,6 +201,15 @@ beforeEach(() => {
   useCharacterSelectionStore.setState({ selectedOcid: null })
   useDataFreshness.setState({ fetchedAt: null })
 })
+
+/** 비율을 안 쓰는 파티. 스테퍼만 눌렀을 때 함께 실려 가는 값이다. */
+const NO_SHARES = {
+  crystalMyShare: null,
+  crystalSharesTotal: null,
+  dropMyShare: null,
+  dropSharesTotal: null,
+  splitFeePercent: null,
+}
 
 describe('BossScreen: 빈 상태와 마운트', () => {
   it('마운트하면 loadTrackedOcids 를 부른다', async () => {
@@ -994,18 +1004,29 @@ describe('BossScreen: 카드 탭 → 파티 인원 모달', () => {
     expect(screen.queryByTestId('party-size-modal')).toBeNull()
   })
 
-  it('스테퍼를 누르면 그 (보스, 난이도)로 setPartySize 를 부른다', async () => {
+  it('적용을 누르면 그 (보스, 난이도)로 setPartySetting 를 부른다', async () => {
+    const store = await opened()
+
+    await press(screen.getByLabelText('자쿰 파티원 수 증가'))
+    await press(screen.getByText('적용'))
+
+    expect(store.setPartySetting).toHaveBeenCalledWith('ocid-1', 'zakum', 'chaos', { partySize: 2, shares: NO_SHARES })
+  })
+
+  // 적용을 눌러야만 쓴다(사용자 결정). 고르개를 만지는 동안은 아무것도 안 나간다.
+  it('적용 전에는 저장하지 않는다', async () => {
     const store = await opened()
 
     await press(screen.getByLabelText('자쿰 파티원 수 증가'))
 
-    expect(store.setPartySize).toHaveBeenCalledWith('ocid-1', 'zakum', 'chaos', 2)
+    expect(store.setPartySetting).not.toHaveBeenCalled()
   })
 
   it('저장이 실패하면 관리 페이지와 같은 문구로 토스트를 띄운다', async () => {
-    await opened({ setPartySize: jest.fn(async () => Promise.reject(new Error('boom'))) as Store['setPartySize'] })
+    await opened({ setPartySetting: jest.fn(async () => Promise.reject(new Error('boom'))) as Store['setPartySetting'] })
 
     await press(screen.getByLabelText('자쿰 파티원 수 증가'))
+    await press(screen.getByText('적용'))
 
     expect(mockShowError).toHaveBeenCalledWith('파티원 수를 저장하지 못했습니다')
   })
@@ -1039,9 +1060,10 @@ describe('BossScreen: 카드 탭 → 파티 인원 모달', () => {
 
     expect(store.setManualBossDifficulty).not.toHaveBeenCalled()
 
-    // 편집 대상이 옮겨졌다는 증거. 이제 스테퍼가 그 난이도로 저장한다.
+    // 편집 대상이 옮겨졌다는 증거. 이제 적용이 그 난이도로 저장한다.
     await press(screen.getByLabelText('스우 파티원 수 증가'))
-    expect(store.setPartySize).toHaveBeenCalledWith('ocid-1', 'lotus', 'extreme', 2)
+    await press(screen.getByText('적용'))
+    expect(store.setPartySetting).toHaveBeenCalledWith('ocid-1', 'lotus', 'extreme', { partySize: 2, shares: NO_SHARES })
   })
 
   it('수동 모드에서 난이도를 바꾸면 단일 액션으로 멤버십을 교체한다', async () => {
@@ -1058,8 +1080,30 @@ describe('BossScreen: 카드 탭 → 파티 인원 모달', () => {
 
     await press(screen.getByLabelText('스우 파티 설정'))
     await press(button('노멀'))
+    await press(screen.getByText('적용'))
 
     expect(store.setManualBossDifficulty).toHaveBeenCalledWith('ocid-1', 'lotus', 'normal')
+  })
+
+  // 난이도도 적용에 묶인다(사용자 결정). 세그먼트를 만지는 것만으로 추적 목록이 바뀌면
+  // 값을 보려고 눌러 본 것이 저장이 된다.
+  it('수동 모드에서도 적용 전에는 멤버십을 안 바꾼다', async () => {
+    useTrackingModeStore.setState({ mode: 'manual' })
+    const store = mockStore({
+      status: 'loaded',
+      trackedOcids: ['ocid-1'],
+      manualTrackedByOcid: {
+        'ocid-1': [{ kind: 'boss', bossKey: 'lotus', difficulty: 'hard' }],
+      },
+      characters: [character()],
+    })
+    await renderScreen()
+
+    await press(screen.getByLabelText('스우 파티 설정'))
+    await press(button('노멀'))
+    await press(screen.getByLabelText('닫기'))
+
+    expect(store.setManualBossDifficulty).not.toHaveBeenCalled()
   })
 })
 

@@ -46,6 +46,9 @@ function record(overrides: Partial<BossProfitRecord>): BossProfitRecord {
     partySize: 1,
     priceMeso: 1_000_000,
     payoutMeso: 1_000_000,
+    crystalMyShare: null,
+    crystalSharesTotal: null,
+    splitFeePercent: null,
     recordedAt: '2026-09-11T00:00:00.000Z',
     world: '챌린저스2',
     worldKey: 'challengers_2',
@@ -224,6 +227,7 @@ describe('cleanUpWorldLeapDuplicates', () => {
       priceState: null,
       priceMeso: null,
       priceShare: null,
+      priceMyShare: null,
       ...overrides,
     }
   }

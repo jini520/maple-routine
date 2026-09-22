@@ -413,6 +413,18 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'spend_records', 'level_to', 'INTEGER')
   await ensureColumn(db, 'income_records', 'category_key', 'TEXT')
   await ensureColumn(db, 'income_records', 'item_key', 'TEXT')
+  // 파티 분배 비율. NULL 이 '파티 인원으로 균등'이라 옛 행을 옮길 값이 없다.
+  await ensureColumn(db, 'boss_party_settings', 'crystal_my_share', 'INTEGER')
+  await ensureColumn(db, 'boss_party_settings', 'crystal_shares_total', 'INTEGER')
+  await ensureColumn(db, 'boss_party_settings', 'drop_my_share', 'INTEGER')
+  await ensureColumn(db, 'boss_party_settings', 'drop_shares_total', 'INTEGER')
+  await ensureColumn(db, 'boss_party_settings', 'split_fee_percent', 'INTEGER')
+  // 그 건의 비율 스냅샷. 설정을 고쳐도 과거 기록이 안 움직이는 규칙을 비율도 따른다.
+  await ensureColumn(db, 'boss_profit_records', 'crystal_my_share', 'INTEGER')
+  await ensureColumn(db, 'boss_profit_records', 'crystal_shares_total', 'INTEGER')
+  await ensureColumn(db, 'boss_profit_records', 'split_fee_percent', 'INTEGER')
+  // 드롭의 내 비율. price_share 가 비율 합이 되고 균등이면 그것이 곧 인원 수다.
+  await ensureColumn(db, 'boss_drop_records', 'price_my_share', 'INTEGER')
   // 칸이 다 선 뒤에 돈다. 값을 옮기는 이관은 버전 번호로 한 번씩만 돈다.
   await runVersionedMigrations(db)
 

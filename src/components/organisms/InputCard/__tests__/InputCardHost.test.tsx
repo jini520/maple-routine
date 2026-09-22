@@ -185,26 +185,26 @@ describe('InputCardHost', () => {
     })
 
     it('스테퍼도 다음 카드의 씨앗으로 다시 심는다', async () => {
-      const 스테퍼 = { label: '분배 인원', value: 1, min: 1, max: 6, suffix: '인' }
+      const 비율 = { label: '분배 비율', myShare: 1, sharesTotal: 3 }
       const view = await renderOverlay(<></>)
       await act(async () => {
         openInputCard({
           label: '창세의 뱃지',
           value: '',
-          stepper: 스테퍼,
+          share: 비율,
           onConfirm: () =>
-            openInputCard({ label: '루즈 컨트롤 머신 마크', value: '', stepper: 스테퍼, onConfirm: jest.fn() }),
+            openInputCard({ label: '루즈 컨트롤 머신 마크', value: '', share: 비율, onConfirm: jest.fn() }),
         })
       })
 
       await act(async () => {
-        fireEvent.press(view.getByTestId('input-card-stepper-up'))
+        fireEvent.press(view.getByLabelText('분배 비율 비율 2'))
       })
       await act(async () => {
         fireEvent.press(view.getByTestId('input-card-confirm'))
       })
 
-      expect(view.getByTestId('input-card-stepper-value').props.children).toBe('1인')
+      expect(view.getByTestId('share-field-ratio-분배 비율')).toHaveTextContent('33.3%')
     })
   })
 })

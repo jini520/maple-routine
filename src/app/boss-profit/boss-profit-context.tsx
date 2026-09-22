@@ -32,7 +32,9 @@ export interface BossProfitContextValue {
   now: Date
   /** 보스 행 키 → 기록된 드롭. */
   dropsByRowKey: Record<string, RecordedDrop[]>
-  setPartySize: BossProfitStore['setPartySize']
+  /** 보스별 분배 비율 설정. 카드의 아이템 비율이 이 값을 그린다(기록에는 없는 값이다). */
+  partyShares: BossProfitStore['partyShares']
+  setRowParty: BossProfitStore['setRowParty']
   setBossDrops: BossProfitStore['setBossDrops']
   /** 주차 행의 조회·다시 시도. 이 기간을 다시 로드한다(store.retryPeriod). */
   onRetryPeriod: () => void

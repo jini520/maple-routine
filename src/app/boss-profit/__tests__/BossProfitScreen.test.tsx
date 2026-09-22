@@ -123,6 +123,8 @@ function mockStore(overrides: Partial<BossProfitStore> = {}): void {
     trackedOcids: ['ocid-1'],
     lastSyncedAt: null,
     loadTrackedOcids: jest.fn(),
+    partyShares: {},
+    loadPartyShares: jest.fn().mockResolvedValue(undefined),
     // 실물은 `Promise<void>` 다. 당김 훅이 회차의 **끝** 을 기다린다.
     refresh: jest.fn().mockResolvedValue(undefined),
     setTab: jest.fn(),
@@ -155,6 +157,9 @@ function 보스행(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     maxPartySize: 6,
     partySize: 2,
     payoutMeso: 5_000_000,
+    crystalMyShare: null,
+    crystalSharesTotal: null,
+    splitFeePercent: null,
     isComplete: true,
     defeatedOn: null,
     source: 'auto',

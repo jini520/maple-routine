@@ -2,8 +2,12 @@
  * 드롭 판매가 → 수익 환산(#185).
  *
  * 가격은 **기록 한 건**에 붙는 실제 판매가이고(사용자 결정), 분배 인원도 그 건의 스냅샷이다.
- * 결정석의 `floor(priceMeso / partySize)` 와 같은 식이지만 나누는 수가 다르다. 결정석은 그 행의
- * 파티원 수, 드롭은 입력할 때 사용자가 정한 값이다(기본값만 파티원 수에서 온다).
+ * 나누는 수는 결정석과 다르다. 결정석은 그 행의 파티원 수, 드롭은 입력할 때 사용자가 정한
+ * 값이다(기본값만 파티원 수에서 온다).
+ *
+ * **드롭은 수수료를 안 센다.** 결정석이 비율 약속에서 수수료를 역산하는 것은 게임이 각자에게
+ * 직접 지급해 차액 송금이 생기기 때문이고, 드롭에는 그 송금이 없다. 한 명이 팔아 나눠 줄 때의
+ * 두 번 떼이는 수수료는 판매 분배금 계산기(`lib/cashbook/item-split`)가 따로 다룬다.
  */
 
 /**
@@ -15,7 +19,10 @@
 export interface DropPriceFields {
   priceState?: 'entered' | 'excluded' | null
   priceMeso?: number | null
+  /** 분배 인원. 비율을 쓰는 기록에서는 **비율 합**이다. 균등이면 둘이 같은 수다. */
   priceShare?: number | null
+  /** 내 비율. 없으면 1 이라 옛 기록의 금액이 안 움직인다. */
+  priceMyShare?: number | null
 }
 
 /**
@@ -27,7 +34,9 @@ export interface DropPriceFields {
 export function dropPayoutMeso(drop: DropPriceFields): number {
   if (drop.priceState !== 'entered' || drop.priceMeso === undefined || drop.priceMeso === null) return 0
   // 분배 인원이 없거나 0이면 1로 본다. 0으로 나누어 Infinity 가 수익에 섞이는 것을 막는다.
-  return Math.floor(drop.priceMeso / Math.max(1, drop.priceShare ?? 1))
+  const total = Math.max(1, drop.priceShare ?? 1)
+  // 내 비율도 최소 1 이다. 0 이면 번 돈을 0 으로 적는다.
+  return Math.floor((drop.priceMeso * Math.max(1, drop.priceMyShare ?? 1)) / total)
 }
 
 /** 한 보스 행에 기록된 드롭 전체가 그 행에 더하는 금액. */

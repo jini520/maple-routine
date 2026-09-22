@@ -14,8 +14,13 @@ import { sortDropsForDisplay } from '../../lib/drop/drop-order'
 import { dropItemIconOf } from '../../lib/assets/asset-lookup'
 import type { RecordedDrop } from '../../types/drops'
 
-import { AnimatedNumber, Badge, MinusIcon, PlusIcon, Text } from '../../components/atoms'
+import { AnimatedNumber, Badge, Text } from '../../components/atoms'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
+import { PartyShareSummary } from '../../components/molecules/PartyShareSummary/PartyShareSummary'
+import { PartySizeModal, type PartyModalShares } from '../../components/organisms/PartySizeModal/PartySizeModal'
+import { supportedDifficultiesOf } from '../../lib/boss/bosses'
+import { partySizeForShares } from '../../lib/boss/party-shares'
+import { partySizeKey } from '../../features/boss-scheduler/store'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
 import { bossPortraitSlugOf } from '../../lib/boss/bosses'
@@ -25,7 +30,6 @@ import { ManualCompletionMark } from './ManualCompletionMark'
 import { ManualCompletionSheet } from './ManualCompletionSheet'
 import { ItemRevenueTrigger } from './ItemRevenueTrigger'
 import { useBossProfitContext } from './boss-profit-context'
-import { clamp } from './character-groups'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 import { useBossProfitStore } from '../../features/boss-profit/store'
 import { useManualCompletionStore } from '../../features/manual-completion/store'
@@ -106,8 +110,10 @@ export function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Eleme
 
 export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
   const { row } = props
-  const { setPartySize, setBossDrops, now } = useBossProfitContext()
+  const { setRowParty, setBossDrops, now, partyShares } = useBossProfitContext()
   const [isDropSheetOpen, setIsDropSheetOpen] = useState(false)
+  // 행의 `변경` 으로 여는 파티 모달. 인원과 비율을 함께 고친다.
+  const [isPartyModalOpen, setIsPartyModalOpen] = useState(false)
   // 직접 완료 시트. `null` 이면 안 열려 있고, 그 밖의 값이 여는 까닭이다.
   const [manualSheet, setManualSheet] = useState<'create' | 'edit' | null>(null)
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false)
@@ -143,8 +149,18 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
   // 없다. 계산은 항상 0메소로 고정된다. "가격 미확정"과 동일한 비활성 처리를 재사용한다.
   const isEditable = row.isComplete && !isPriceUnknown
   const partySize = row.partySize ?? 1
-  const canDecrease = isEditable && partySize > 1
-  const canIncrease = isEditable && partySize < row.maxPartySize
+  const settingShares = partyShares[partySizeKey(row.ocid, row.bossKey, row.difficulty)]
+  /** 아이템 비율은 기록에 없다. 지금 설정된 값을 그린다. */
+  const dropShares = {
+    myShare: settingShares?.dropMyShare ?? null,
+    sharesTotal: settingShares?.dropSharesTotal ?? null,
+    splitFeePercent: settingShares?.splitFeePercent ?? null,
+  }
+  const recordShares = {
+    myShare: row.crystalMyShare,
+    sharesTotal: row.crystalSharesTotal,
+    splitFeePercent: row.splitFeePercent,
+  }
 
   // 금액 마크업은 한 벌이다. 칩이 붙든 안 붙든 같은 `Text` 라 두 갈래가 서로 어긋날 수 없다.
   //
@@ -171,17 +187,48 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
   )
 
   // 예외 메시지를 그대로 렌더하지 않고 토스트로 알린다. 개발자용 문구와 SQLite 네이티브 원문이
-  // 사용자에게 새는 자리가 여기다. 문구는 보스 관리 화면과 같아 두 경로가 통일된다.
-  async function handleChange(delta: number): Promise<void> {
-    const next = clamp(partySize + delta, 1, row.maxPartySize)
+  // 모달이 뜰 때의 값. 고치는 중인 값은 모달이 들고 있다가 적용할 때 한 번에 돌려준다.
+  // 드롭 비율은 이 표에 없다.
+  const modalShares: PartyModalShares = {
+    crystalMyShare: row.crystalMyShare,
+    crystalSharesTotal: row.crystalSharesTotal,
+    dropMyShare: null,
+    dropSharesTotal: null,
+    splitFeePercent: row.splitFeePercent,
+  }
+
+  async function saveParty(input: { partySize: number; shares: PartyModalShares }): Promise<void> {
     try {
-      await setPartySize(row, next)
+      // **이 자리는 설정이 아니라 그 행의 기록을 다시 센다.** 드롭 비율 칸은 이 표에 없어 버린다.
+      await setRowParty(row, {
+        partySize: input.partySize,
+        shares: {
+          myShare: input.shares.crystalMyShare,
+          sharesTotal: input.shares.crystalSharesTotal,
+          splitFeePercent: input.shares.splitFeePercent,
+        },
+      })
     } catch {
       useToastStore.getState().showError('파티원 수를 저장하지 못했습니다')
     }
   }
 
-  const stepperButtonClass = 'h-[18px] w-[18px] items-center justify-center rounded-full bg-surface-2'
+  /** 적용을 누른 자리. 여기서 처음 쓴다. 끌기 한 번이 저장 아홉 번이 되지 않는 까닭이다. */
+  async function applyParty(next: { partySize: number; shares: PartyModalShares }): Promise<void> {
+    setIsPartyModalOpen(false)
+    // 비율을 쓰면 두 쪽이라 2 다. 기록의 인원 칸도 화면과 같은 말을 해야 한다.
+    await saveParty({
+      partySize: partySizeForShares(
+        {
+          myShare: next.shares.crystalMyShare,
+          sharesTotal: next.shares.crystalSharesTotal,
+          splitFeePercent: null,
+        },
+        next.partySize,
+      ),
+      shares: next.shares,
+    })
+  }
 
   return (
     // 마지막 행도 테두리 "박스"는 남기고 색만 지운다.
@@ -219,35 +266,17 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           <ManualCompletionButton label={row.bossName} onPress={() => setManualSheet('create')} />
         ) : (
         <View className="mt-2 flex-row items-center justify-between gap-2">
-          <View
-            className={
-              isEditable
-                ? 'shrink-0 flex-row items-center gap-2 rounded-full border border-border px-1 py-0.5'
-                : 'shrink-0 flex-row items-center gap-2 rounded-full border border-border px-1 py-0.5 opacity-40'
-            }
-          >
-            <Pressable
-              role="button"
-              onPress={() => void handleChange(-1)}
-              disabled={!canDecrease}
-              aria-label={`${row.characterName} ${row.bossName} ${DIFFICULTY_NAME[row.difficulty]} 파티원 수 감소`}
-              className={`${stepperButtonClass}${canDecrease ? '' : ' opacity-40'}`}
-            >
-              <MinusIcon className="h-3 w-3 text-text" strokeWidth={2} aria-hidden />
-            </Pressable>
-            <Text className="text-xs text-text" style={TABULAR_NUMS}>
-              {partySize}
-            </Text>
-            <Pressable
-              role="button"
-              onPress={() => void handleChange(1)}
-              disabled={!canIncrease}
-              aria-label={`${row.characterName} ${row.bossName} ${DIFFICULTY_NAME[row.difficulty]} 파티원 수 증가`}
-              className={`${stepperButtonClass}${canIncrease ? '' : ' opacity-40'}`}
-            >
-              <PlusIcon className="h-3 w-3 text-text" strokeWidth={2} aria-hidden />
-            </Pressable>
-          </View>
+          <PartyShareSummary
+            label={`${row.characterName} ${row.bossName} ${DIFFICULTY_NAME[row.difficulty]}`}
+            partySize={partySize}
+            size="compact"
+            // 결정석은 **이 기록이 굳힌 값**이다. 금액을 그 비율로 셌으므로 지금 설정을 그리면
+            // 옆의 금액과 다른 말을 한다. 아이템은 기록에 없어 지금 설정을 그린다.
+            crystal={recordShares}
+            drop={dropShares}
+            disabled={!isEditable}
+            onPress={() => setIsPartyModalOpen(true)}
+          />
 
           {/* 금액을 모르는 행에 0 을 쓰지 않는다. 미완료는 아직 안 잡은 것이고 가격 미확정은
               참조 데이터에 값이 없는 것이라 둘 다 0메소 벌었다 가 아니다. 그래서 그 자리는
@@ -301,6 +330,24 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
         />
       )}
 
+      {isPartyModalOpen && (
+        <PartySizeModal
+          bossName={row.bossName}
+          cycleLabel={row.cycle === 'monthly' ? '월간 보스' : '주간 보스'}
+          portraitSlug={bossPortraitSlugOf(row.bossKey)}
+          difficulties={supportedDifficultiesOf(row.bossKey)}
+          difficulty={row.difficulty}
+          partySize={partySize}
+          maxPartySize={row.maxPartySize}
+          shares={modalShares}
+          // 이 기록의 난이도는 처치가 정한 사실이다. 여기서 못 바꾼다.
+          onSelectDifficulty={() => {}}
+          onApply={(next) => void applyParty(next)}
+          // 적용을 안 눌렀으면 고친 값은 버린다.
+          onClose={() => setIsPartyModalOpen(false)}
+        />
+      )}
+
       {manualSheet !== null && (
         <ManualCompletionSheet
           row={row}
@@ -308,7 +355,8 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           now={now}
           onSave={async (input) => {
             try {
-              await saveManualCompletion(row, input)
+              // 직접 적는 완료는 그 기록의 비율을 설정값에서 이어받는다. 시트는 인원만 묻는다.
+              await saveManualCompletion(row, { ...input, shares: recordShares })
             } catch {
               useToastStore.getState().showError('완료 기록을 저장하지 못했습니다')
             }
@@ -363,8 +411,9 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           // 기록한 자리에서 바로 값을 매긴다. 분배 기본값은 이 행의 파티원 수이고, 저장하면 그
           // 값과 독립한다. 나중에 파티원 수를 고쳐도 이미 매긴 금액이 흔들리지 않는다.
           pricing={{
-            defaultShare: partySize,
-            maxShare: row.maxPartySize,
+            // 드롭 비율 칸은 이 표에 없다. 기록의 결정석 비율이 아니라 파티 인원으로 씨를
+            // 뿌린다. 균등이면 합이 곧 인원 수라 지금 값과 같다.
+            defaultShare: { myShare: 1, sharesTotal: partySize },
             characterName: row.characterName,
           }}
         />
