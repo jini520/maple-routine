@@ -14,9 +14,11 @@ import {
   getPeriodDateKeys,
   getAdjacentPeriodKey,
   MIN_SCHEDULER_DATE,
+  periodStartDateKey,
 } from '../../lib/boss/boss-profit-period'
 import { getBossDropRecords } from '../../storage/boss-drops'
 import { crystalPayoutMeso } from '../../lib/boss/party-shares'
+import { lazyAutoFeePercent, settingSplitFee, type AutoFeePercentOf } from '../mvp-grade/auto-fee'
 import { getBossPartySetting } from '../../storage/boss-party-settings'
 import {
   getBossProfitRecords,
@@ -88,6 +90,7 @@ async function recordPeriod(
   periodKey: string,
   completed: readonly CompletedBoss[],
   now: Date,
+  autoFee: AutoFeePercentOf,
 ): Promise<void> {
   if (completed.length === 0) {
     return
@@ -142,10 +145,11 @@ async function recordPeriod(
     // 설정을 한 줄로 읽는다. 인원만 읽으면 비율 약속이 있는 보스가 균등으로 굳는다.
     const configured = await withSqliteFallback(getBossPartySetting(ocid, bossKey, difficulty), null)
     const partySize = configured?.partySize ?? 1
+    const splitFee = await settingSplitFee(configured, ocid, periodStartDateKey(periodKey), autoFee)
     const shares = {
       myShare: configured?.crystalMyShare ?? null,
       sharesTotal: configured?.crystalSharesTotal ?? null,
-      splitFeePercent: configured?.splitFeePercent ?? null,
+      splitFeePercent: splitFee.splitFeePercent,
     }
 
     await withSqliteTimeout(
@@ -162,6 +166,7 @@ async function recordPeriod(
         crystalMyShare: shares.myShare,
         crystalSharesTotal: shares.sharesTotal,
         splitFeePercent: shares.splitFeePercent,
+        splitFeeAuto: splitFee.splitFeeAuto,
         recordedAt: now.toISOString(),
         world,
         worldKey,
@@ -180,6 +185,7 @@ export async function recordBossProfitFromWindow(ocids: readonly string[], now: 
   const floorDateKey = rollingFloor > MIN_SCHEDULER_DATE ? rollingFloor : MIN_SCHEDULER_DATE
   const ceilingDateKey = getMaxQueryableDate(now)
   const periods = periodsInWindow(now, floorDateKey)
+  const autoFee = lazyAutoFeePercent()
 
   for (const ocid of ocids) {
     const ledger = await getScheduleProbeLedger(ocid, now).catch(() => null)
@@ -198,7 +204,7 @@ export async function recordBossProfitFromWindow(ocids: readonly string[], now: 
       // 실제로 던지고(`withSqliteTimeout`), 그것이 여기서 새면 뒤의 기간과 뒤의 캐릭터가
       // 통째로 안 써진다. 옛 백필은 (캐릭터, 기간)마다 자기 try 를 가져 그 성질이 있었다.
       try {
-        await recordPeriod(ocid, cycle, periodKey, completed, now)
+        await recordPeriod(ocid, cycle, periodKey, completed, now, autoFee)
       } catch {
         // 다음 회차가 다시 온다. 이 기간만 비어 있다.
       }
