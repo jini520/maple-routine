@@ -1,0 +1,14 @@
+{
+  "updatedAt": "2026-09-22",
+  "source": "사용자 확인 (2026-09-22, 이슈 #514). 경매장 수수료는 일반 · 브론즈 5%, 실버 이상 3%. 스타포스 할인은 일반 · 브론즈 없음, 실버 3%, 골드 5%, 다이아 · 레드 · 블랙 10%. [[ADR-006]] 대상이라 AI 가 추정해 채우지 않는다.",
+  "note": "줄의 차례가 등급의 높낮이다(앞이 낮다). 소속을 모르는 스타포스 줄이 그 날 가장 높은 등급을 찾을 때 이 차례를 쓴다. 스타포스 할인을 이벤트 할인과 겹치는 방식(곱연산)은 수치가 아니라 식이라 `lib/enhancement/cost.ts` 가 갖는다.",
+  "grades": [
+    { "key": "normal", "name": "일반", "auctionFeePercent": 5, "starforceDiscountPercent": 0 },
+    { "key": "bronze", "name": "브론즈", "auctionFeePercent": 5, "starforceDiscountPercent": 0 },
+    { "key": "silver", "name": "실버", "auctionFeePercent": 3, "starforceDiscountPercent": 3 },
+    { "key": "gold", "name": "골드", "auctionFeePercent": 3, "starforceDiscountPercent": 5 },
+    { "key": "diamond", "name": "다이아", "auctionFeePercent": 3, "starforceDiscountPercent": 10 },
+    { "key": "red", "name": "레드", "auctionFeePercent": 3, "starforceDiscountPercent": 10 },
+    { "key": "black", "name": "블랙", "auctionFeePercent": 3, "starforceDiscountPercent": 10 }
+  ]
+}
