@@ -51,6 +51,10 @@ import {
   loadObservedItemLevels,
 } from '../../storage/enhancement-history'
 import { toEnhancementSpending, type EnhancementSpendingRow } from '../enhancement-history/spending'
+import { getMvpGradeHistories } from '../../storage/mvp-grades'
+import { getCharacterAccountSightings } from '../../storage/character-accounts'
+import type { MvpGradeEntry } from '../../lib/mvp/history'
+import { starforceMvpDiscountResolver } from '../../lib/mvp/starforce'
 import { enhancementCategoryNameOf, type EnhancementCategory } from '../../lib/enhancement/categories'
 import { comparableEquipmentName } from '../../lib/equipment/equipment-items'
 import { datesBetween } from '../../lib/calendar'
@@ -312,12 +316,14 @@ async function loadEnhancementSpending(
   fromDateKey: string,
   toDateKey: string,
 ): Promise<EnhancementSpendingRow[]> {
-  const [entries, levels, eventNames] = await Promise.all([
+  const [entries, levels, eventNames, histories, sightings] = await Promise.all([
     withSqliteFallback(loadEnhancementHistory(datesBetween(fromDateKey, toDateKey)), []),
     withSqliteFallback(loadObservedItemLevels(), new Map<string, number>()),
     getEventWorldNames().catch(() => null),
+    withSqliteFallback(getMvpGradeHistories(), new Map<string, MvpGradeEntry[]>()),
+    withSqliteFallback(getCharacterAccountSightings(), []),
   ])
-  return toEnhancementSpending(entries, eventNames, levels)
+  return toEnhancementSpending(entries, eventNames, levels, starforceMvpDiscountResolver(histories, sightings))
 }
 
 /**
