@@ -101,6 +101,8 @@ export const STORAGE_KEYS = {
   mvpLastCheckedWeek: 'mvpLastCheckedWeek',
   // 기존 사용자의 첫 흐름을 마쳤다는 표시. 일괄 적용 체크박스를 다시 안 세운다. `KEEP_KEYS` 에 넣는다.
   mvpBulkApplyAsked: 'mvpBulkApplyAsked',
+  // 끝나지 않은 작업 표시. 지워지면 반쯤 바뀐 기록이 그대로 굳는다. `KEEP_KEYS` 에 넣는다.
+  pendingTasks: 'pendingTasks',
 } as const
 
 export function schedulerCacheKey(ocid: string): string {

@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { useAppEntryStore } from '../../features/app-entry/store'
 import { useMvpAskStore, type MvpAskResult } from '../../features/mvp-grade/flow-store'
+import { useTaskRunnerStore } from '../../features/resumable-task/store'
 import { useToastStore } from '../../features/toast/store'
 import { useReturnToForeground } from '../../hooks/useReturnToForeground'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
@@ -15,14 +16,16 @@ import { MvpGradeModal } from './MvpGradeModal'
 
 export function MvpGradeHost(): React.JSX.Element | null {
   const isReady = useAppEntryStore((state) => state.stage === 'ready')
+  // 끝나지 않은 작업이 먼저다. 등급 모달의 답이 새 작업을 만들어 줄이 꼬인다.
+  const tasksIdle = useTaskRunnerStore((state) => state.checked && !state.running && state.resume === null)
   const ask = useMvpAskStore((state) => state.ask)
   const accounts = useMvpAskStore((state) => state.accounts)
   const weeklyOff = useMvpAskStore((state) => state.weeklyOff)
   const [busy, setBusy] = useState(false)
 
   const evaluate = useCallback(() => {
-    if (isReady) void useMvpAskStore.getState().evaluate(new Date())
-  }, [isReady])
+    if (isReady && tasksIdle) void useMvpAskStore.getState().evaluate(new Date())
+  }, [isReady, tasksIdle])
 
   useEffect(evaluate, [evaluate])
   useReturnToForeground(evaluate)

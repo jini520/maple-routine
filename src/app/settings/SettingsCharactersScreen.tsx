@@ -25,11 +25,11 @@ import { useMvpAskStore } from '../../features/mvp-grade/flow-store'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useApiKeyNotice } from '../../features/auth/use-api-key-notice'
 
-import { Button, Text } from '../../components/atoms'
+import { Button, Text, UsersIcon } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { CharacterManageBody } from '../../components/organisms/CharacterManage/CharacterManageBody'
 import { useCharacterManage } from '../../hooks/useCharacterManage'
-import { ProgressModal } from '../../components/organisms/ProgressModal/ProgressModal'
+import { TaskProgressModal } from '../../components/organisms/TaskProgressModal/TaskProgressModal'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -132,9 +132,11 @@ export function SettingsCharactersScreen(): React.JSX.Element {
       </View>
 
       {saveProgress !== null && (
-        <ProgressModal
-          message="캐릭터 정보를 저장하고 있어요"
-          completed={saveProgress.completed}
+        <TaskProgressModal
+          icon={UsersIcon}
+          title="캐릭터 정보를 저장하고 있어요"
+          unit="개"
+          done={saveProgress.completed}
           total={saveProgress.total}
         />
       )}

@@ -24,6 +24,8 @@ const KEEP_KEYS = new Set<string>([
   STORAGE_KEYS.mvpWeeklyCheckOff,
   // 일괄 적용을 물었다는 표시. 지워지면 체크박스를 끄고 넘긴 빈 수수료 행이 다시 대상이 된다.
   STORAGE_KEYS.mvpBulkApplyAsked,
+  // 끝나지 않은 작업 표시. 지워지면 반쯤 바뀐 기록이 이어지지 않고 그대로 굳는다.
+  STORAGE_KEYS.pendingTasks,
 ])
 
 // 삭제 단위는 2그룹이다. 사용자가 해결하려는 갈등은 "용량은 비우고 싶은데 복구 불가능한

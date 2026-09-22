@@ -3,35 +3,36 @@ import type { FeePercent } from '../../lib/cashbook/item-split'
 import { withSaleFee } from '../../lib/cashbook/sale-fee'
 import { auctionFeePercentOf } from '../../lib/mvp/grades'
 import { recordGradeAt } from '../../lib/mvp/fees'
-import { applyAutoDropFees, getBulkFeeDropRecords, type DropFeeUpdate } from '../../storage/boss-drops'
-import { applyAutoIncomeSaleFee, getBulkFeeIncomeRecords } from '../../storage/income'
+import { getBulkFeeDropRecords, type DropFeeUpdate } from '../../storage/boss-drops'
+import { getBulkFeeIncomeRecords, type IncomeSaleFeeUpdate } from '../../storage/income'
 import { loadFeeContext } from './fee-context'
 
 /**
- * 기존 사용자의 첫 확인 화면에서 켠 일괄 적용. 수수료가 빈 지난 기록 가운데 그 날 등급이 있는 것에
- * 등급 요율을 붙이고 자동으로 바꾼다. 첫 시작 주보다 앞선 기록은 등급이 없어 건너뛴다. 적용한 수를 돌려준다.
+ * 일괄 적용이 고쳐 쓸 수입 기록. 수수료가 빈 기록 가운데 그 날 등급이 있는 것에 등급 요율을 붙인다.
+ * 첫 시작 주보다 앞선 기록은 등급이 없어 빠진다. 적용하면 수수료가 들어가 다시 안 잡힌다.
  */
-export async function applyFeesToPastRecords(): Promise<number> {
-  const [context, incomes, drops] = await Promise.all([loadFeeContext(), getBulkFeeIncomeRecords(), getBulkFeeDropRecords()])
-  let applied = 0
-
+export async function bulkIncomeUpdates(): Promise<IncomeSaleFeeUpdate[]> {
+  const [context, incomes] = await Promise.all([loadFeeContext(), getBulkFeeIncomeRecords()])
+  const updates: IncomeSaleFeeUpdate[] = []
   for (const record of incomes) {
     const grade = recordGradeAt(context, record.ocid ?? context.fallbackOcid, record.earnedOn)
     if (grade === null) continue
     const fields = withSaleFee(record, auctionFeePercentOf(grade) as FeePercent)
-    if (fields === null) continue
-    await applyAutoIncomeSaleFee(record.id, fields)
-    applied += 1
+    if (fields !== null) updates.push({ id: record.id, ...fields })
   }
+  return updates
+}
 
-  const dropUpdates: DropFeeUpdate[] = []
+/** 일괄 적용이 고쳐 쓸 드롭. 판매 · 분배 두 칸에 같은 요율을 붙인다. */
+export async function bulkDropUpdates(): Promise<DropFeeUpdate[]> {
+  const [context, drops] = await Promise.all([loadFeeContext(), getBulkFeeDropRecords()])
+  const updates: DropFeeUpdate[] = []
   for (const drop of drops) {
     const grade = recordGradeAt(context, drop.ocid, periodStartDateKey(drop.periodKey))
     if (grade === null) continue
     const percent = auctionFeePercentOf(grade)
     const { ocid, bossKey, difficulty, periodKey, dropIndex } = drop
-    dropUpdates.push({ ocid, bossKey, difficulty, periodKey, dropIndex, saleFeePercent: percent, splitFeePercent: percent })
+    updates.push({ ocid, bossKey, difficulty, periodKey, dropIndex, saleFeePercent: percent, splitFeePercent: percent })
   }
-  await applyAutoDropFees(dropUpdates)
-  return applied + dropUpdates.length
+  return updates
 }

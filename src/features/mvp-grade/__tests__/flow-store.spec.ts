@@ -14,15 +14,7 @@ jest.mock('../../../storage/boss-drops', () => ({ getBulkFeeDropRecords: jest.fn
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
 jest.mock('../../../storage/character-profiles', () => ({ getCharacterProfiles: jest.fn() }))
 jest.mock('../character-list', () => ({ fetchAndRecordCharacterList: jest.fn() }))
-jest.mock('../bulk-apply', () => ({ applyFeesToPastRecords: jest.fn() }))
-jest.mock('../recalculate-fees', () => ({ recalculateAutoFees: jest.fn() }))
-jest.mock('../store', () => ({ useMvpGradeStore: { getState: () => ({ reload: mockReload }) } }))
-jest.mock('../../toast/store', () => ({ useToastStore: { getState: () => ({ showSuccess: mockShowSuccess }) } }))
-
-var mockReload: jest.Mock
-var mockShowSuccess: jest.Mock
-mockReload = jest.fn()
-mockShowSuccess = jest.fn()
+jest.mock('../after-change', () => ({ afterGradeChange: jest.fn() }))
 
 import { getTrackedCharacterOcids } from '../../../storage/character-selection'
 import { getCharacterAccountSightings } from '../../../storage/character-accounts'
@@ -33,8 +25,7 @@ import { getBulkFeeDropRecords } from '../../../storage/boss-drops'
 import { getAuthConfig } from '../../../storage/api-key'
 import { getCharacterProfiles } from '../../../storage/character-profiles'
 import { fetchAndRecordCharacterList } from '../character-list'
-import { applyFeesToPastRecords } from '../bulk-apply'
-import { recalculateAutoFees } from '../recalculate-fees'
+import { afterGradeChange } from '../after-change'
 import { useMvpAskStore } from '../flow-store'
 
 const m = (fn: unknown) => fn as jest.Mock
@@ -59,7 +50,7 @@ beforeEach(() => {
     { accountId: 'A', characters: [{ ocid: 'a1', name: '에이', world: '스카니아', worldKey: 'scania', jobClass: '비숍', level: 280 }] },
   ])
   m(getCharacterProfiles).mockResolvedValue(new Map())
-  m(recalculateAutoFees).mockResolvedValue(0)
+  m(afterGradeChange).mockResolvedValue(undefined)
 })
 
 describe('evaluate', () => {
@@ -127,10 +118,23 @@ describe('complete', () => {
 
     expect(replaceMvpGradeHistory).toHaveBeenCalledWith('A', [{ startDate: '2026-09-10', grade: 'diamond' }], NOW.toISOString())
     expect(prefs.setMvpLastCheckedWeek).toHaveBeenCalledWith('2026-09-17')
-    expect(prefs.setMvpBulkApplyAsked).toHaveBeenCalled()
-    expect(applyFeesToPastRecords).not.toHaveBeenCalled()
-    expect(mockReload).toHaveBeenCalled()
+    // 첫 흐름이라 끝나지 않은 작업 표시를 적은 뒤 일괄 적용을 물었다고 적는다
+    expect(afterGradeChange).toHaveBeenCalledWith({ bulkApply: false, onRecorded: prefs.setMvpBulkApplyAsked })
     expect(useMvpAskStore.getState().ask).toBeNull()
+  })
+
+  it('작업을 돌리기 전에 모달을 닫는다', async () => {
+    await useMvpAskStore.getState().evaluate(NOW)
+    m(afterGradeChange).mockImplementation(async () => {
+      expect(useMvpAskStore.getState().ask).toBeNull()
+    })
+
+    await useMvpAskStore.getState().complete(
+      { choices: [{ accountId: 'A', grade: 'gold', startWeek: '2026-09-17', changed: true }], weeklyOff: false, bulkApply: false },
+      NOW,
+    )
+
+    expect(afterGradeChange).toHaveBeenCalled()
   })
 
   it('일괄 적용을 켰으면 지난 기록에 수수료를 붙인다', async () => {
@@ -141,7 +145,7 @@ describe('complete', () => {
       NOW,
     )
 
-    expect(applyFeesToPastRecords).toHaveBeenCalled()
+    expect(afterGradeChange).toHaveBeenCalledWith({ bulkApply: true, onRecorded: prefs.setMvpBulkApplyAsked })
     expect(prefs.setMvpWeeklyCheckOff).toHaveBeenCalledWith(true)
   })
 
@@ -158,6 +162,8 @@ describe('complete', () => {
 
     expect(replaceMvpGradeHistory).not.toHaveBeenCalled()
     expect(prefs.setMvpLastCheckedWeek).toHaveBeenCalledWith('2026-09-17')
+    // 주간 확인은 일괄 적용을 묻는 흐름이 아니다
+    expect(afterGradeChange).toHaveBeenCalledWith({ bulkApply: false, onRecorded: undefined })
   })
 
   it('지난 기록이 없어 체크박스가 안 섰어도 첫 흐름을 마치면 다시 안 묻는다', async () => {
@@ -170,18 +176,6 @@ describe('complete', () => {
       NOW,
     )
 
-    expect(prefs.setMvpBulkApplyAsked).toHaveBeenCalled()
-  })
-
-  it('다시 계산해 요율이 달라진 기록이 있으면 토스트로 알린다', async () => {
-    m(recalculateAutoFees).mockResolvedValue(12)
-    await useMvpAskStore.getState().evaluate(NOW)
-
-    await useMvpAskStore.getState().complete(
-      { choices: [{ accountId: 'A', grade: 'diamond', startWeek: '2026-09-17', changed: true }], weeklyOff: false, bulkApply: false },
-      NOW,
-    )
-
-    expect(mockShowSuccess).toHaveBeenCalledWith('자동 수수료 기록 12건을 다시 계산했어요')
+    expect(afterGradeChange).toHaveBeenCalledWith({ bulkApply: false, onRecorded: prefs.setMvpBulkApplyAsked })
   })
 })

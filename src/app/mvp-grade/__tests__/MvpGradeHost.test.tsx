@@ -4,6 +4,7 @@ import { act, fireEvent } from '@testing-library/react-native'
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { useAppEntryStore } from '../../../features/app-entry/store'
 import { useMvpAskStore } from '../../../features/mvp-grade/flow-store'
+import { useTaskRunnerStore } from '../../../features/resumable-task/store'
 import { MvpGradeHost } from '../MvpGradeHost'
 
 let evaluate: jest.Mock
@@ -13,9 +14,31 @@ beforeEach(() => {
   evaluate = jest.fn(async () => {})
   complete = jest.fn(async () => {})
   useMvpAskStore.setState({ ask: null, accounts: [], weeklyOff: false, evaluate, complete })
+  // 끝나지 않은 작업을 확인했고 도는 작업이 없다
+  useTaskRunnerStore.setState({ checked: true, running: false, resume: null, progress: null })
 })
 
 describe('MvpGradeHost', () => {
+  it('끝나지 않은 작업을 확인하기 전이나 작업이 남아 있으면 재지 않고, 끝나면 잰다', async () => {
+    useAppEntryStore.setState({ stage: 'ready' })
+    useTaskRunnerStore.setState({
+      checked: true,
+      resume: [{ name: '지난 기록 수수료 적용', done: 1, total: 2, unit: '건', waiting: false }],
+    })
+    await renderOverlay(<MvpGradeHost />)
+    expect(evaluate).not.toHaveBeenCalled()
+
+    await act(async () => {
+      useTaskRunnerStore.setState({ resume: null, running: true })
+    })
+    expect(evaluate).not.toHaveBeenCalled()
+
+    await act(async () => {
+      useTaskRunnerStore.setState({ running: false })
+    })
+    expect(evaluate).toHaveBeenCalledTimes(1)
+  })
+
   it('앱이 열리기 전에는 재지 않는다', async () => {
     useAppEntryStore.setState({ stage: 'characterSetup' })
 

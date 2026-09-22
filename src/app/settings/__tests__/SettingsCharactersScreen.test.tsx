@@ -894,6 +894,8 @@ describe('저장', () => {
     await press(saveButton(view))
 
     expect(view.getByText(/캐릭터 정보를 저장하고 있어요/)).toBeTruthy()
+    // 캐릭터는 `개` 로 센다(설정 배지와 같은 단위)
+    expect(view.getByText(/^0 \/ \d+개$/)).toBeTruthy()
 
     await act(async () => {
       resolveSave()

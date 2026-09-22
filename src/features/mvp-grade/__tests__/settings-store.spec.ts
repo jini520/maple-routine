@@ -5,17 +5,10 @@ jest.mock('../../../storage/mvp-grade-prefs', () => ({ getMvpWeeklyCheckOff: jes
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
 jest.mock('../../../storage/character-profiles', () => ({ getCharacterProfiles: jest.fn() }))
 jest.mock('../character-list', () => ({ fetchAndRecordCharacterList: jest.fn() }))
-jest.mock('../recalculate-fees', () => ({ recalculateAutoFees: jest.fn() }))
-jest.mock('../store', () => ({ useMvpGradeStore: { getState: () => ({ reload: mockReload }) } }))
-jest.mock('../../toast/store', () => ({
-  useToastStore: { getState: () => ({ showSuccess: mockShowSuccess, showError: mockShowError }) },
-}))
+jest.mock('../after-change', () => ({ afterGradeChange: jest.fn() }))
+jest.mock('../../toast/store', () => ({ useToastStore: { getState: () => ({ showError: mockShowError }) } }))
 
-var mockReload: jest.Mock
-var mockShowSuccess: jest.Mock
 var mockShowError: jest.Mock
-mockReload = jest.fn()
-mockShowSuccess = jest.fn()
 mockShowError = jest.fn()
 
 import { getTrackedCharacterOcids } from '../../../storage/character-selection'
@@ -25,7 +18,7 @@ import { getMvpWeeklyCheckOff, setMvpWeeklyCheckOff } from '../../../storage/mvp
 import { getAuthConfig } from '../../../storage/api-key'
 import { getCharacterProfiles } from '../../../storage/character-profiles'
 import { fetchAndRecordCharacterList } from '../character-list'
-import { recalculateAutoFees } from '../recalculate-fees'
+import { afterGradeChange } from '../after-change'
 import { useMvpGradeSettingsStore } from '../settings-store'
 
 const m = (fn: unknown) => fn as jest.Mock
@@ -50,7 +43,7 @@ beforeEach(() => {
     { accountId: 'A', characters: [{ ocid: 'a1', name: '에이', world: '스카니아', worldKey: 'scania', jobClass: '비숍', level: 280 }] },
   ])
   m(getCharacterProfiles).mockResolvedValue(new Map())
-  m(recalculateAutoFees).mockResolvedValue(0)
+  m(afterGradeChange).mockResolvedValue(undefined)
 })
 
 describe('useMvpGradeSettingsStore', () => {
@@ -74,17 +67,15 @@ describe('useMvpGradeSettingsStore', () => {
     expect(useMvpGradeSettingsStore.getState().status).toBe('failed')
   })
 
-  it('이력을 적으면 화면 값을 바꾸고 자동 수수료를 다시 계산해 알린다', async () => {
+  it('이력을 적으면 화면 값을 바꾸고 자동 수수료를 다시 세는 작업을 돌린다', async () => {
     await useMvpGradeSettingsStore.getState().load()
-    m(recalculateAutoFees).mockResolvedValue(3)
     const next = [{ startDate: '2026-09-10', grade: 'red' as const }]
 
     await useMvpGradeSettingsStore.getState().saveHistory('A', next, NOW)
 
     expect(replaceMvpGradeHistory).toHaveBeenCalledWith('A', next, NOW.toISOString())
     expect(useMvpGradeSettingsStore.getState().accounts?.[0].history).toEqual(next)
-    expect(mockShowSuccess).toHaveBeenCalledWith('자동 수수료 기록 3건을 다시 계산했어요')
-    expect(mockReload).toHaveBeenCalled()
+    expect(afterGradeChange).toHaveBeenCalledWith()
   })
 
   it('적지 못하면 알리고 화면 값은 그대로 둔다', async () => {
@@ -95,7 +86,7 @@ describe('useMvpGradeSettingsStore', () => {
 
     expect(mockShowError).toHaveBeenCalledWith('등급 기록을 저장하지 못했습니다')
     expect(useMvpGradeSettingsStore.getState().accounts[0].history).toEqual([{ startDate: '2026-09-17', grade: 'diamond' }])
-    expect(recalculateAutoFees).not.toHaveBeenCalled()
+    expect(afterGradeChange).not.toHaveBeenCalled()
   })
 
   it('매주 등급 확인 스위치는 저장값의 반대다', async () => {

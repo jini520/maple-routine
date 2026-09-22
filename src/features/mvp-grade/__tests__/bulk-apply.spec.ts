@@ -4,15 +4,15 @@ jest.mock('../../../storage/character-selection', () => ({
   getRepresentativeCharacter: jest.fn(),
   getTrackedCharacterOcids: jest.fn(),
 }))
-jest.mock('../../../storage/income', () => ({ getBulkFeeIncomeRecords: jest.fn(), applyAutoIncomeSaleFee: jest.fn() }))
-jest.mock('../../../storage/boss-drops', () => ({ getBulkFeeDropRecords: jest.fn(), applyAutoDropFees: jest.fn() }))
+jest.mock('../../../storage/income', () => ({ getBulkFeeIncomeRecords: jest.fn() }))
+jest.mock('../../../storage/boss-drops', () => ({ getBulkFeeDropRecords: jest.fn() }))
 
 import { getMvpGradeHistories } from '../../../storage/mvp-grades'
 import { getCharacterAccountSightings } from '../../../storage/character-accounts'
 import { getRepresentativeCharacter, getTrackedCharacterOcids } from '../../../storage/character-selection'
-import { applyAutoIncomeSaleFee, getBulkFeeIncomeRecords } from '../../../storage/income'
-import { applyAutoDropFees, getBulkFeeDropRecords } from '../../../storage/boss-drops'
-import { applyFeesToPastRecords } from '../bulk-apply'
+import { getBulkFeeIncomeRecords } from '../../../storage/income'
+import { getBulkFeeDropRecords } from '../../../storage/boss-drops'
+import { bulkDropUpdates, bulkIncomeUpdates } from '../bulk-apply'
 
 const mocked = (fn: unknown) => fn as jest.Mock
 
@@ -29,8 +29,8 @@ beforeEach(() => {
   mocked(getBulkFeeDropRecords).mockResolvedValue([])
 })
 
-describe('applyFeesToPastRecords', () => {
-  it('그 날 등급이 있는 기록에만 등급 요율을 붙이고 적용한 수를 센다', async () => {
+describe('일괄 적용이 고쳐 쓸 목록', () => {
+  it('그 날 등급이 있는 기록에만 등급 요율을 붙인다', async () => {
     mocked(getBulkFeeIncomeRecords).mockResolvedValue([
       { id: 'after', ocid: 'a1', earnedOn: '2026-08-10', category: 'item_sale', mesoAmount: 1_000_000_000, saleFeeMeso: null, hunt: null },
       // 첫 시작 주보다 앞이라 등급이 없다
@@ -39,9 +39,10 @@ describe('applyFeesToPastRecords', () => {
       { id: 'account-wide', ocid: null, earnedOn: '2026-08-10', category: 'item_sale', mesoAmount: 500_000_000, saleFeeMeso: null, hunt: null },
     ])
 
-    await expect(applyFeesToPastRecords()).resolves.toBe(2)
-    expect(applyAutoIncomeSaleFee).toHaveBeenCalledWith('after', { mesoAmount: 970_000_000, saleFeePercent: 3, saleFeeMeso: 30_000_000 })
-    expect(applyAutoIncomeSaleFee).toHaveBeenCalledWith('account-wide', { mesoAmount: 485_000_000, saleFeePercent: 3, saleFeeMeso: 15_000_000 })
+    await expect(bulkIncomeUpdates()).resolves.toEqual([
+      { id: 'after', mesoAmount: 970_000_000, saleFeePercent: 3, saleFeeMeso: 30_000_000 },
+      { id: 'account-wide', mesoAmount: 485_000_000, saleFeePercent: 3, saleFeeMeso: 15_000_000 },
+    ])
   })
 
   it('드롭은 판매 · 분배 두 칸에 같은 요율을 붙인다', async () => {
@@ -50,8 +51,7 @@ describe('applyFeesToPastRecords', () => {
       { ocid: 'a1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-07-30', dropIndex: 0 },
     ])
 
-    await expect(applyFeesToPastRecords()).resolves.toBe(1)
-    expect(applyAutoDropFees).toHaveBeenCalledWith([
+    await expect(bulkDropUpdates()).resolves.toEqual([
       { ocid: 'a1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-08-06', dropIndex: 0, saleFeePercent: 3, splitFeePercent: 3 },
     ])
   })

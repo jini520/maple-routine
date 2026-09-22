@@ -26,7 +26,6 @@ import { getMvpGradeHistories, replaceMvpGradeHistory } from '../../storage/mvp-
 import { loadAccountIdentities, trackedAccountIdsOf } from './accounts'
 import { afterGradeChange } from './after-change'
 import { decideMvpAsk, type MvpAsk } from './ask'
-import { applyFeesToPastRecords } from './bulk-apply'
 
 /** 모달의 ID 카드 하나. */
 export interface MvpAskAccount {
@@ -141,12 +140,14 @@ export const useMvpAskStore = create<MvpAskState>()((set, get) => ({
     }
     await setMvpLastCheckedWeek(resetWeekStartOf(getCurrentKstDateKey(now)))
     await setMvpWeeklyCheckOff(result.weeklyOff)
-    // 첫 흐름을 마치면 일괄 적용을 다시 안 묻는다. 체크박스가 안 섰던 사용자(지난 기록이 없던 온보딩)도 같다.
-    if (ask.kind !== 'weekly') {
-      await setMvpBulkApplyAsked()
-      if (ask.bulk && result.bulkApply) await applyFeesToPastRecords()
-    }
-    await afterGradeChange()
+    // 모달을 먼저 닫는다. 작업의 진행률은 그 뒤에 선다.
     set({ ask: null, accounts: [] })
+    const first = ask.kind !== 'weekly'
+    await afterGradeChange({
+      bulkApply: first && ask.bulk && result.bulkApply,
+      // 첫 흐름을 마치면 일괄 적용을 다시 안 묻는다(체크박스가 안 섰던 온보딩도 같다). 끝나지 않은 작업 표시를 적은 뒤에
+      // 적어야 그 사이 앱이 닫혀도 적용이 이어진다.
+      onRecorded: first ? setMvpBulkApplyAsked : undefined,
+    })
   },
 }))

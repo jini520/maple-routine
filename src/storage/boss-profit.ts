@@ -1,4 +1,5 @@
 import { getBossProfitDb } from './sqlite/db'
+import { inTransaction } from './sqlite/transaction'
 import type { BossCycle } from '../types/scheduler'
 
 export interface BossProfitRecord {
@@ -257,13 +258,15 @@ export interface ProfitSplitFeeUpdate {
 export async function updateProfitSplitFees(updates: readonly ProfitSplitFeeUpdate[]): Promise<void> {
   if (updates.length === 0) return
   const db = await getBossProfitDb()
-  for (const update of updates) {
-    await db.run(
-      `UPDATE boss_profit_records SET split_fee_percent = ?, payout_meso = ?
-       WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ?`,
-      [update.splitFeePercent, update.payoutMeso, update.ocid, update.bossKey, update.difficulty, update.periodKey],
-    )
-  }
+  await inTransaction(db, async () => {
+    for (const update of updates) {
+      await db.run(
+        `UPDATE boss_profit_records SET split_fee_percent = ?, payout_meso = ?
+         WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ?`,
+        [update.splitFeePercent, update.payoutMeso, update.ocid, update.bossKey, update.difficulty, update.periodKey],
+      )
+    }
+  })
   bumpRecordsRevision()
 }
 

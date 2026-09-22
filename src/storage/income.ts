@@ -13,6 +13,7 @@
 import { incomeCategoryNameOf, type IncomeCategoryKey } from '../lib/cashbook/categories'
 import type { FeePercent } from '../lib/cashbook/item-split'
 import { getBossProfitDb } from './sqlite/db'
+import { inTransaction } from './sqlite/transaction'
 
 export interface IncomeRecord {
   id: string
@@ -221,6 +222,20 @@ const INSERT_SQL = `
   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
+/**
+ * 수입 기록의 판. 이어서 하는 작업이 수수료를 고쳐 쓰면 오른다. 가계부가 포커스 때 이 판을 보고 다시 읽는다.
+ * 시트의 쓰기는 가계부가 스스로 다시 읽어 판을 안 올린다.
+ */
+let incomeRecordsRevision = 0
+
+export function getIncomeRecordsRevision(): number {
+  return incomeRecordsRevision
+}
+
+function bumpIncomeRecordsRevision(): void {
+  incomeRecordsRevision += 1
+}
+
 export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
   const db = await getBossProfitDb()
   await db.run(INSERT_SQL, [
@@ -338,18 +353,29 @@ export async function getAutoFeeIncomeRecords(): Promise<IncomeRecord[]> {
   return (values ?? []).map((row) => rowToRecord(row as Record<string, unknown>))
 }
 
-/** 자동 수수료를 다시 셀 때 세 칸만 고쳐 쓴다. 받는 돈이 뗀 몫과 함께 가야 합계가 맞는다. */
-export async function updateIncomeSaleFee(
-  id: string,
-  fields: { mesoAmount: number; saleFeePercent: FeePercent; saleFeeMeso: number },
-): Promise<void> {
+/** 수수료 세 칸을 고쳐 쓰는 한 줄. 받는 돈이 뗀 몫과 함께 가야 합계가 맞는다. */
+export interface IncomeSaleFeeUpdate {
+  id: string
+  mesoAmount: number
+  saleFeePercent: FeePercent
+  saleFeeMeso: number
+}
+
+/** 자동 수수료를 다시 셀 때 세 칸만 고쳐 쓴다. 조각 하나가 트랜잭션 하나다. */
+export async function updateIncomeSaleFees(updates: readonly IncomeSaleFeeUpdate[]): Promise<void> {
+  if (updates.length === 0) return
   const db = await getBossProfitDb()
-  await db.run(`UPDATE income_records SET meso_amount = ?, sale_fee_percent = ?, sale_fee_meso = ? WHERE id = ?`, [
-    fields.mesoAmount,
-    fields.saleFeePercent,
-    fields.saleFeeMeso,
-    id,
-  ])
+  await inTransaction(db, async () => {
+    for (const update of updates) {
+      await db.run(`UPDATE income_records SET meso_amount = ?, sale_fee_percent = ?, sale_fee_meso = ? WHERE id = ?`, [
+        update.mesoAmount,
+        update.saleFeePercent,
+        update.saleFeeMeso,
+        update.id,
+      ])
+    }
+  })
+  bumpIncomeRecordsRevision()
 }
 
 /**
@@ -367,16 +393,19 @@ export async function getBulkFeeIncomeRecords(): Promise<IncomeRecord[]> {
   return (values ?? []).map((row) => rowToRecord(row as Record<string, unknown>))
 }
 
-/** 일괄 적용. 세 칸을 적고 자동으로 바꾼다. 그 뒤 등급 기록을 고치면 함께 다시 센다. */
-export async function applyAutoIncomeSaleFee(
-  id: string,
-  fields: { mesoAmount: number; saleFeePercent: FeePercent; saleFeeMeso: number },
-): Promise<void> {
+/** 일괄 적용. 세 칸을 적고 자동으로 바꾼다. 그 뒤 등급 기록을 고치면 함께 다시 센다. 조각 하나가 트랜잭션 하나다. */
+export async function applyAutoIncomeSaleFees(updates: readonly IncomeSaleFeeUpdate[]): Promise<void> {
+  if (updates.length === 0) return
   const db = await getBossProfitDb()
-  await db.run(
-    `UPDATE income_records SET meso_amount = ?, sale_fee_percent = ?, sale_fee_meso = ?, sale_fee_auto = 1 WHERE id = ?`,
-    [fields.mesoAmount, fields.saleFeePercent, fields.saleFeeMeso, id],
-  )
+  await inTransaction(db, async () => {
+    for (const update of updates) {
+      await db.run(
+        `UPDATE income_records SET meso_amount = ?, sale_fee_percent = ?, sale_fee_meso = ?, sale_fee_auto = 1 WHERE id = ?`,
+        [update.mesoAmount, update.saleFeePercent, update.saleFeeMeso, update.id],
+      )
+    }
+  })
+  bumpIncomeRecordsRevision()
 }
 
 /**

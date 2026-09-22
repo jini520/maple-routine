@@ -1,5 +1,6 @@
 import { bossNameOf } from '../lib/boss/bosses'
 import { getBossProfitDb } from './sqlite/db'
+import { inTransaction } from './sqlite/transaction'
 import type { DropCategory, RecordedDrop } from '../types/drops'
 
 // 한 보스/기간의 드롭 집합은 시트에서 통째로 편집되므로 replace-all(DELETE→INSERT)이
@@ -237,13 +238,15 @@ export interface DropFeeUpdate {
 export async function updateDropFees(updates: readonly DropFeeUpdate[]): Promise<void> {
   if (updates.length === 0) return
   const db = await getBossProfitDb()
-  for (const update of updates) {
-    await db.run(
-      `UPDATE boss_drop_records SET sale_fee_percent = ?, split_fee_percent = ?
-       WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ? AND drop_index = ?`,
-      [update.saleFeePercent, update.splitFeePercent, update.ocid, update.bossKey, update.difficulty, update.periodKey, update.dropIndex],
-    )
-  }
+  await inTransaction(db, async () => {
+    for (const update of updates) {
+      await db.run(
+        `UPDATE boss_drop_records SET sale_fee_percent = ?, split_fee_percent = ?
+         WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ? AND drop_index = ?`,
+        [update.saleFeePercent, update.splitFeePercent, update.ocid, update.bossKey, update.difficulty, update.periodKey, update.dropIndex],
+      )
+    }
+  })
   bumpRecordsRevision()
 }
 
@@ -262,13 +265,15 @@ export async function getBulkFeeDropRecords(): Promise<BossDropRecord[]> {
 export async function applyAutoDropFees(updates: readonly DropFeeUpdate[]): Promise<void> {
   if (updates.length === 0) return
   const db = await getBossProfitDb()
-  for (const update of updates) {
-    await db.run(
-      `UPDATE boss_drop_records SET sale_fee_percent = ?, split_fee_percent = ?, sale_fee_auto = 1, split_fee_auto = 1
-       WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ? AND drop_index = ?`,
-      [update.saleFeePercent, update.splitFeePercent, update.ocid, update.bossKey, update.difficulty, update.periodKey, update.dropIndex],
-    )
-  }
+  await inTransaction(db, async () => {
+    for (const update of updates) {
+      await db.run(
+        `UPDATE boss_drop_records SET sale_fee_percent = ?, split_fee_percent = ?, sale_fee_auto = 1, split_fee_auto = 1
+         WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ? AND drop_index = ?`,
+        [update.saleFeePercent, update.splitFeePercent, update.ocid, update.bossKey, update.difficulty, update.periodKey, update.dropIndex],
+      )
+    }
+  })
   bumpRecordsRevision()
 }
 

@@ -2,16 +2,18 @@
 /**
  * 수수료가 자동인 기록을 읽고 고쳐 쓰는 저장 연산을 진짜 SQLite 로 태우는 자리.
  */
-import { closeBossProfitDb } from '../db'
+import { closeBossProfitDb, getBossProfitDb } from '../db'
+import { inTransaction } from '../transaction'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 import {
   type IncomeRecord,
-  applyAutoIncomeSaleFee,
+  applyAutoIncomeSaleFees,
   getAutoFeeIncomeRecords,
   getBulkFeeIncomeRecords,
   getIncomeRecordsBetween,
+  getIncomeRecordsRevision,
   insertIncomeRecord,
-  updateIncomeSaleFee,
+  updateIncomeSaleFees,
 } from '../../income'
 import {
   applyAutoDropFees,
@@ -71,9 +73,12 @@ describe('수입의 자동 수수료', () => {
     const auto = await getAutoFeeIncomeRecords()
     expect(auto.map((record) => record.id)).toEqual(['sale-auto'])
 
-    await updateIncomeSaleFee('sale-auto', { mesoAmount: 1_164_000_000, saleFeePercent: 3, saleFeeMeso: 36_000_000 })
+    const revision = getIncomeRecordsRevision()
+    await updateIncomeSaleFees([{ id: 'sale-auto', mesoAmount: 1_164_000_000, saleFeePercent: 3, saleFeeMeso: 36_000_000 }])
     const [updated] = (await getIncomeRecordsBetween('2026-08-23', '2026-08-23')).filter((record) => record.id === 'sale-auto')
     expect(updated).toMatchObject({ mesoAmount: 1_164_000_000, saleFeePercent: 3, saleFeeMeso: 36_000_000, saleFeeAuto: true })
+    // 가계부가 다음 포커스에 다시 읽게 판이 오른다
+    expect(getIncomeRecordsRevision()).toBeGreaterThan(revision)
   })
 })
 
@@ -145,7 +150,7 @@ describe('일괄 적용 대상', () => {
   it('적용한 수입 기록은 자동이 된다', async () => {
     await insertIncomeRecord({ ...sale, saleFeePercent: null, saleFeeMeso: null, saleFeeAuto: false })
 
-    await applyAutoIncomeSaleFee('sale-auto', { mesoAmount: 1_164_000_000, saleFeePercent: 3, saleFeeMeso: 36_000_000 })
+    await applyAutoIncomeSaleFees([{ id: 'sale-auto', mesoAmount: 1_164_000_000, saleFeePercent: 3, saleFeeMeso: 36_000_000 }])
     const [record] = await getIncomeRecordsBetween('2026-08-23', '2026-08-23')
     expect(record).toMatchObject({ mesoAmount: 1_164_000_000, saleFeePercent: 3, saleFeeAuto: true })
   })
@@ -164,5 +169,22 @@ describe('일괄 적용 대상', () => {
     await applyAutoDropFees([{ ocid: 'ocid-1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-08-06', dropIndex: 0, saleFeePercent: 3, splitFeePercent: 3 }])
     const [first] = await getBossDropRecords(['ocid-1'], ['2026-08-06'])
     expect(first).toMatchObject({ saleFeePercent: 3, splitFeePercent: 3, saleFeeAuto: true, splitFeeAuto: true })
+  })
+})
+
+describe('조각 하나가 트랜잭션 하나', () => {
+  it('중간에 던지면 그 조각에서 쓴 것이 전부 되돌아간다', async () => {
+    await insertIncomeRecord({ ...sale, saleFeePercent: null, saleFeeMeso: null, saleFeeAuto: false })
+    const db = await getBossProfitDb()
+
+    await expect(
+      inTransaction(db, async () => {
+        await db.run(`UPDATE income_records SET sale_fee_percent = 3 WHERE id = ?`, ['sale-auto'])
+        throw new Error('앱이 닫혔다')
+      }),
+    ).rejects.toThrow('앱이 닫혔다')
+
+    const [record] = await getIncomeRecordsBetween('2026-08-23', '2026-08-23')
+    expect(record.saleFeePercent).toBeNull()
   })
 })

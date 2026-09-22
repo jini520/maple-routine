@@ -41,6 +41,7 @@ import {
   deleteIncomeRecord,
   getFragmentStorage,
   getIncomeRecordsBetween,
+  getIncomeRecordsRevision,
   insertIncomeRecord,
   updateIncomeRecord,
   type IncomeRecord,
@@ -491,14 +492,14 @@ export async function loadTrackedCharacters(): Promise<
  * 여기 있는 이유는 화면이 `storage/` 를 직접 안 부르기 때문이다. 리비전만 예외로 두면 그 벽에
  * 구멍이 나고, 원천이 늘 때 화면을 다시 고쳐야 한다.
  *
- * 합인 이유는 두 수가 다 단조 증가라 어느 쪽이 올라도 합이 달라져서다. 어느 표가 바뀌었는지는
+ * 합인 이유는 세 수가 다 단조 증가라 어느 쪽이 올라도 합이 달라져서다. 어느 표가 바뀌었는지는
  * 화면이 알 필요가 없다.
  *
- * 손입력 둘(`income_records`·`spend_records`)은 안 든다. 쓰는 곳이 이 화면 하나뿐이고 그 자리에서
- * 이미 다시 읽는다.
+ * 수입 기록의 판은 이 화면 밖의 쓰기(자동 수수료를 고쳐 쓰는 작업)만 올린다. 시트의 쓰기는 이 화면이
+ * 그 자리에서 다시 읽는다. `spend_records` 는 이 화면 밖에서 안 쓴다.
  */
 export function cashbookDataRevision(): number {
-  return getBossDropRecordsRevision() + getBossProfitRecordsRevision()
+  return getBossDropRecordsRevision() + getBossProfitRecordsRevision() + getIncomeRecordsRevision()
 }
 
 /** 다음 입력의 시세 기본값. 화면이 `storage/` 를 직접 안 부르게 한 번 감싼다. */
