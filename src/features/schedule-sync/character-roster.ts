@@ -6,7 +6,8 @@
  */
 
 import { worldKeyOfApiName } from '../../lib/world/worlds'
-import { fetchCharacterBasic, fetchCharacterList } from '../../nexon/character'
+import { fetchCharacterBasic } from '../../nexon/character'
+import { fetchAndRecordCharacterList } from '../mvp-grade/character-list'
 import { NexonAuthError, NexonRateLimitError } from '../../nexon/errors'
 import {
   getAllCachedCharacterBasicOcids,
@@ -58,7 +59,7 @@ export async function resolveRegisteredCharacters(accountId?: string): Promise<{
 }> {
   const { apiKey, accountId: resolved } = await resolveAccountContext(accountId)
 
-  const accounts = await fetchCharacterList(apiKey, worldKeyOfApiName)
+  const accounts = await fetchAndRecordCharacterList(apiKey)
   const account = accounts.find((candidate) => candidate.accountId === resolved)
   if (account === undefined) {
     throw new Error('resolveRegisteredCharacters: 지정한 계정을 응답에서 찾을 수 없습니다')
@@ -107,7 +108,7 @@ export async function resolveTrackedCharacterContext(ocids: string[]): Promise<{
   }
 
   const wanted = new Set(ocids)
-  const accounts = await fetchCharacterList(authConfig.apiKey, worldKeyOfApiName)
+  const accounts = await fetchAndRecordCharacterList(authConfig.apiKey)
   const characters = accounts.flatMap((account) =>
     account.characters
       .filter((character) => wanted.has(character.ocid))

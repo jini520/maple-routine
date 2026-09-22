@@ -227,7 +227,8 @@ MVP 등급이 매주 목요일에 바뀌기 때문이다. 같은 주에 다시 �
 
 ### `character_accounts` - 캐릭터의 메이플 ID 소속 ([[ADR-306]] 결정 3, 설계만 · 구현 전)
 
-한 줄이 `(ocid, 이름, 메이플 ID, 본 날짜)` 다. `character/list` 를 받는 모든 자리가 쓴다. 스타포스 줄은 이름만 들고 있어
+PK: `(ocid, name, account_id)`. 칸은 `first_seen_on` · `last_seen_on`(KST `YYYY-MM-DD`)이다. `character/list` 를 받는 모든 자리가
+쓰고, 볼 때마다 줄을 쌓지 않고 두 날짜를 넓힌다(`MIN` · `MAX`). 스타포스 줄은 이름만 들고 있어
 **이름으로** 찾고, 그래서 옛 이름을 지우지 않는다. `character_profiles` 는 이름을 덮어써 이 용도로 못 쓴다.
 **`RECORD_TABLE_NAMES` 에 든다.** 옛 이름과 지워진 캐릭터는 다시 받을 수 없다.
 

@@ -249,6 +249,33 @@ const TABLE_DEFINITIONS = [
     PRIMARY KEY (id)
 )`,
   },
+  // 메이플 ID 의 MVP 등급 이력. 사용자가 적은 값이라 `RECORD_TABLE_NAMES` 에 직접 적혀 있어야 한다.
+  {
+    name: 'mvp_grade_history',
+    createSql: `CREATE TABLE IF NOT EXISTS mvp_grade_history (
+    account_id TEXT NOT NULL,
+    -- 그 주의 목요일 YYYY-MM-DD. MVP 등급이 매주 목요일에 바뀐다.
+    start_date TEXT NOT NULL,
+    -- 등급 key. NULL 은 등급 없음이고 첫 기록 앞에 끼워 넣은 기간을 닫는 줄이다.
+    grade TEXT,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (account_id, start_date)
+)`,
+  },
+  // 캐릭터의 메이플 ID 소속. 스타포스 줄은 이름만 들어 옛 이름을 지우면 안 된다.
+  // 옛 이름과 지운 캐릭터는 다시 받을 수 없어 `RECORD_TABLE_NAMES` 에 직접 적혀 있어야 한다.
+  {
+    name: 'character_accounts',
+    createSql: `CREATE TABLE IF NOT EXISTS character_accounts (
+    ocid TEXT NOT NULL,
+    name TEXT NOT NULL,
+    account_id TEXT NOT NULL,
+    -- KST YYYY-MM-DD. 볼 때마다 줄을 쌓지 않고 두 날짜를 넓힌다.
+    first_seen_on TEXT NOT NULL,
+    last_seen_on TEXT NOT NULL,
+    PRIMARY KEY (ocid, name, account_id)
+)`,
+  },
 ] as const
 
 export const BOSS_PROFIT_TABLE_NAMES: readonly string[] = TABLE_DEFINITIONS.map(

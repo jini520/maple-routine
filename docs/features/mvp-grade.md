@@ -8,19 +8,23 @@
 > **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md) ·
 > [../persistence/sqlite.md](../persistence/sqlite.md) · [app-entry.md](./app-entry.md) · [settings.md](./settings.md)
 
-> ⚪ **설계만 있고 코드가 없다**([[ADR-306]], 2026-09-22). 아래 소스 표는 만들 자리다.
+> ⚪ **구현 중**([[ADR-306]], 2026-09-22). 표의 `(만들 자리)` 는 아직 없는 파일이다.
 
 ## 관련 소스
 
 | 구분 | 파일 | 하는 일 |
 |---|---|---|
 | 데이터 | `src/data/mvp-grades.json` | 등급 일곱의 경매장 수수료 · 스타포스 할인. 사용자 확인값 |
-| 계산 | `lib/mvp/` | 등급 조회 · 날짜의 등급 · 가장 높은 등급 |
+| 계산 | `lib/mvp/grades.ts` | 요율 조회 · 등급이 없을 때의 요율 · 가장 높은 등급 |
+| 계산 | `lib/mvp/history.ts` | 그 날의 등급 · 등급 변경 · 기간 추가 · 종료 주 한계 · 지우기 |
+| 계산 | `lib/mvp/membership.ts` | 이름 · ocid 로 소속 찾기 |
+| 계산 | `lib/enhancement/cost.ts` | `starforceCost` 의 MVP 할인 곱하기 |
 | 저장 | `storage/mvp-grades.ts` | `mvp_grade_history` 어댑터 |
 | 저장 | `storage/character-accounts.ts` | `character_accounts` 어댑터. 캐릭터의 메이플 ID 소속 |
 | 저장 | `storage/keys.ts` | 주간 확인 끄기 · 마지막으로 확인한 주 · 일괄 적용을 물었는가 |
-| 상태 | `features/mvp-grade/` | 묻는 규칙 · 주간 확인 · 일괄 적용 |
-| 화면 | `app/mvp-grade/` | 모달(고르기 · 확인) |
+| 상태 | `features/mvp-grade/character-list.ts` | `character/list` 를 받고 소속을 적는 통과 지점. 목록을 받는 다섯 자리가 이것을 부른다 |
+| 상태 | `features/mvp-grade/` (만들 자리) | 묻는 규칙 · 주간 확인 · 일괄 적용 · 자동 수수료 다시 계산 |
+| 화면 | `app/mvp-grade/` (만들 자리) | 모달(고르기 · 확인) |
 | 그림 | `src/assets/mvp/*.webp` | 명패 여섯. 일반은 그림이 없다. `asset-groups.ts` 에 그룹을 더한다 |
 
 **관련 ADR**: [[ADR-306]](이 기능 전부) · [[ADR-006]](게임 수치는 사용자 확인) · [[ADR-223]](스타포스 비용 식) ·
