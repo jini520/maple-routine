@@ -214,6 +214,39 @@ export async function getBossDropRecords(
   return (values ?? []).map(rowToRecord)
 }
 
+/** 판매 · 분배 수수료 중 하나라도 자동인 기록 전부. 등급 기록이 바뀌면 다시 셀 대상이다. */
+export async function getAutoFeeDropRecords(): Promise<BossDropRecord[]> {
+  const db = await getBossProfitDb()
+  const { values } = await db.query(
+    `SELECT * FROM boss_drop_records WHERE sale_fee_auto = 1 OR split_fee_auto = 1 ORDER BY drop_index`,
+  )
+  return (values ?? []).map(rowToRecord)
+}
+
+export interface DropFeeUpdate {
+  ocid: string
+  bossKey: string
+  difficulty: string
+  periodKey: string
+  dropIndex: number
+  saleFeePercent: number | null
+  splitFeePercent: number | null
+}
+
+/** 드롭 기록들의 두 요율을 고쳐 쓴다. 수익은 읽을 때 `dropPayoutMeso` 가 센다. */
+export async function updateDropFees(updates: readonly DropFeeUpdate[]): Promise<void> {
+  if (updates.length === 0) return
+  const db = await getBossProfitDb()
+  for (const update of updates) {
+    await db.run(
+      `UPDATE boss_drop_records SET sale_fee_percent = ?, split_fee_percent = ?
+       WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ? AND drop_index = ?`,
+      [update.saleFeePercent, update.splitFeePercent, update.ocid, update.bossKey, update.difficulty, update.periodKey, update.dropIndex],
+    )
+  }
+  bumpRecordsRevision()
+}
+
 /**
  * 기간을 걸지 않고 읽는 이 캐릭터들의 전 기간 드롭 기록. 드롭 히스토리가 히스토리 전용
  * 테이블 없이 이 테이블 하나만 보고 동작하는 근거다. `getBossDropRecords` 는 `periodKeys` 가

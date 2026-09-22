@@ -331,6 +331,27 @@ export async function getIncomeRecordsBetween(
   return (values ?? []).map((row) => rowToRecord(row as Record<string, unknown>))
 }
 
+/** 수수료가 자동인 기록 전부. 등급 기록이 바뀌면 다시 셀 대상이다. */
+export async function getAutoFeeIncomeRecords(): Promise<IncomeRecord[]> {
+  const db = await getBossProfitDb()
+  const { values } = await db.query(`SELECT * FROM income_records WHERE sale_fee_auto = 1`)
+  return (values ?? []).map((row) => rowToRecord(row as Record<string, unknown>))
+}
+
+/** 자동 수수료를 다시 셀 때 세 칸만 고쳐 쓴다. 받는 돈이 뗀 몫과 함께 가야 합계가 맞는다. */
+export async function updateIncomeSaleFee(
+  id: string,
+  fields: { mesoAmount: number; saleFeePercent: FeePercent; saleFeeMeso: number },
+): Promise<void> {
+  const db = await getBossProfitDb()
+  await db.run(`UPDATE income_records SET meso_amount = ?, sale_fee_percent = ?, sale_fee_meso = ? WHERE id = ?`, [
+    fields.mesoAmount,
+    fields.saleFeePercent,
+    fields.saleFeeMeso,
+    id,
+  ])
+}
+
 /**
  * 한 캐릭터의 솔 에르다 조각 보관 개수. 조각 가격을 안 적은(`NULL`) 사냥 기록의 조각 합에서 `솔 에르다 조각` 정산 기록이 판
  * 개수 합을 뺀 값이다.

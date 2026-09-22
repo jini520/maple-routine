@@ -237,6 +237,36 @@ export async function getBossProfitRecords(
   return (values ?? []).map(rowToRecord)
 }
 
+/** 송금 수수료가 자동인 결정석 기록 전부. 등급 기록이 바뀌면 다시 셀 대상이다. */
+export async function getAutoFeeProfitRecords(): Promise<BossProfitRecord[]> {
+  const db = await getBossProfitDb()
+  const { values } = await db.query(`SELECT * FROM boss_profit_records WHERE split_fee_auto = 1`)
+  return (values ?? []).map(rowToRecord)
+}
+
+export interface ProfitSplitFeeUpdate {
+  ocid: string
+  bossKey: string
+  difficulty: string
+  periodKey: string
+  splitFeePercent: number
+  payoutMeso: number
+}
+
+/** 결정석 기록들의 송금 수수료와 받은 몫을 고쳐 쓴다. 받은 몫은 저장된 값이라 요율과 함께 간다. */
+export async function updateProfitSplitFees(updates: readonly ProfitSplitFeeUpdate[]): Promise<void> {
+  if (updates.length === 0) return
+  const db = await getBossProfitDb()
+  for (const update of updates) {
+    await db.run(
+      `UPDATE boss_profit_records SET split_fee_percent = ?, payout_meso = ?
+       WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ?`,
+      [update.splitFeePercent, update.payoutMeso, update.ocid, update.bossKey, update.difficulty, update.periodKey],
+    )
+  }
+  bumpRecordsRevision()
+}
+
 /**
  * 그 달에서 **주간 기록이 있는 주차**들. 오름차순이다.
  *
