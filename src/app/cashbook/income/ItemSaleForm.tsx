@@ -14,34 +14,16 @@ import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountF
 import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
 import { ChainSelect } from '../../../components/organisms/ChainSelect/ChainSelect'
 import { FeeRow } from '../../../components/organisms/FeeRow/FeeRow'
-import { useAutoFee } from '../../../features/mvp-grade/store'
-import { netProceedsMeso, type FeePercent } from '../../../lib/cashbook/item-split'
+import { netProceedsMeso } from '../../../lib/cashbook/item-split'
 import { requiredCharacterOptions } from '../character-options'
 import { FieldRow } from '../sheet-fields'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
+import { useSaleFeeChoice } from './sale-fee'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 import { openInputCard } from '../../../features/input-card/store'
 import { MESO_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { acceptMesoText, settleMesoText } from '../../../components/organisms/MesoPad/meso-pad'
-
-/**
- * `자동` 을 끄면 서는 수수료 조각 셋.
- *
- * 3%·5% 만 두면 직거래를 못 적고, 무엇보다 수수료 칸이 생기기 전에 적힌 행이 거짓이 된다.
- * 수정 시트가 그 행을 열 때 요율 하나를 억지로 세우면 열기만 해도 금액이 달라진다.
- */
-const FEE_OPTIONS = ['없음', '3%', '5%'] as const
-
-type FeeOption = (typeof FEE_OPTIONS)[number]
-
-function feeOptionOf(percent: FeePercent | null): FeeOption {
-  return percent === null ? '없음' : (`${percent}%` as FeeOption)
-}
-
-function feePercentOf(option: FeeOption): FeePercent | null {
-  return option === '없음' ? null : (Number(option.replace('%', '')) as FeePercent)
-}
 
 export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
   const editing = props.editing !== undefined
@@ -54,18 +36,15 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
   const [grossText, setGrossText] = useState(
     mesoTextOf((props.editing?.mesoAmount ?? 0) + (props.editing?.saleFeeMeso ?? 0)),
   )
-  // 새 기록은 자동으로 시작한다. 수정으로 연 옛 행은 칸이 없어 손으로 고른 값으로 연다.
-  const [feeAuto, setFeeAuto] = useState(props.editing === undefined ? true : props.editing.saleFeeAuto)
-  const [manualFee, setManualFee] = useState<FeePercent | null>(props.editing?.saleFeePercent ?? null)
-  const autoFee = useAutoFee(ocid, props.dateKey)
+  const fee = useSaleFeeChoice(props.editing, ocid, props.dateKey)
   const { saving, submit, remove } = useSheetSubmit(props)
 
-  const feePercent = feeAuto ? (autoFee?.percent ?? null) : manualFee
+  const feePercent = fee.percent
   const gross = mesoValueOf(grossText)
   /** 분배 계산기의 계산을 **그대로 부른다**. 수수료 쪽을 내림한다(= 손에 남는 쪽이 커진다). */
   const net = feePercent === null ? gross : netProceedsMeso(gross, feePercent)
   // 요율을 캐릭터가 속한 ID 의 등급에서 찾아 캐릭터를 골라야 저장된다.
-  const canSave = gross > 0 && ocid !== null && (!feeAuto || autoFee !== null)
+  const canSave = gross > 0 && ocid !== null && fee.ready
 
   useSaveSlot(props.setSave, {
     editing,
@@ -84,7 +63,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
         mesoAmount: net,
         saleFeePercent: feePercent,
         saleFeeMeso: feePercent === null ? null : gross - net,
-        saleFeeAuto: feeAuto,
+        saleFeeAuto: fee.auto,
         pointAmount: null,
         pointPer100mMeso: null,
         cashAmount: null,
@@ -176,20 +155,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
         </Text>
       </FieldRow>
 
-      <FeeRow
-        testID="income-sheet-fee"
-        label="수수료"
-        auto={feeAuto}
-        onAutoChange={(next) => {
-          // 끄는 순간 방금까지 자동이던 요율을 고른 채 선다. 끄는 것만으로는 금액이 안 움직인다.
-          if (!next && autoFee !== null) setManualFee(autoFee.percent)
-          setFeeAuto(next)
-        }}
-        autoFee={autoFee}
-        options={FEE_OPTIONS}
-        selected={feeOptionOf(manualFee)}
-        onSelect={(option) => setManualFee(feePercentOf(option))}
-      />
+      <FeeRow testID="income-sheet-fee" label="수수료" {...fee.row} />
 
       <AmountFigure
         // 아이템 판매의 큰 숫자는 합계다. 수수료를 뗀 값이고 앱이 세므로 못 친다.

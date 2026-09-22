@@ -7,6 +7,7 @@ import {
   boostPercentOf,
   efficiencyPercentOf,
   huntingMesoOf,
+  fragmentSaleFeeOf,
   huntTotalOf,
   huntingTotalOf,
   levelPenaltyPercent,
@@ -274,6 +275,19 @@ describe('huntTotalOf: 두 사냥 폼이 같은 식을 쓴다', () => {
 
   it('가격 0 은 적은 값이다. 조각 값이 0 이라 친 메소와 같다', () => {
     expect(huntTotalOf(500_000_000, { fragments: 10, fragmentPrice: 0 })).toBe(500_000_000)
+  })
+})
+
+// 조각을 그 자리에서 판 것이라 조각 몫에만 경매장 수수료가 붙는다.
+describe('fragmentSaleFeeOf: 조각 몫의 판매 수수료', () => {
+  it('조각 × 개당 가격에서 뗀 몫이다. 수수료 쪽을 내림한다', () => {
+    expect(fragmentSaleFeeOf({ fragments: 10, fragmentPrice: 7_000_000 }, 3)).toBe(2_100_000)
+    expect(fragmentSaleFeeOf({ fragments: 3, fragmentPrice: 333 }, 3)).toBe(29)
+  })
+
+  it('가격을 안 적었거나 요율이 없으면 0 이다', () => {
+    expect(fragmentSaleFeeOf({ fragments: 10, fragmentPrice: null }, 3)).toBe(0)
+    expect(fragmentSaleFeeOf({ fragments: 10, fragmentPrice: 7_000_000 }, null)).toBe(0)
   })
 })
 

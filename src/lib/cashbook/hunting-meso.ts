@@ -20,6 +20,7 @@
  *    사용자가 되짚을 방법이 없다.
  */
 import type { HuntingGround } from '../../types/hunting-grounds'
+import { netProceedsMeso, type FeePercent } from './item-split'
 
 /** 젠 주기. 분당 8회(사용자 제공). 40마리 맵의 1분은 320마리다. */
 export const SPAWNS_PER_MINUTE = 8
@@ -239,6 +240,17 @@ export interface HuntFragmentsInput {
  */
 export function huntTotalOf(meso: number, input: HuntFragmentsInput): number {
   return input.fragmentPrice === null ? meso : meso + input.fragments * input.fragmentPrice
+}
+
+/**
+ * 조각 몫에 붙는 판매 수수료. 가격을 안 적었거나 요율이 없으면 0 이고, 사냥 합계에서 이만큼 뺀다.
+ *
+ * @param percent 수수료율. `null` 은 없음
+ */
+export function fragmentSaleFeeOf(input: HuntFragmentsInput, percent: FeePercent | null): number {
+  if (input.fragmentPrice === null || percent === null) return 0
+  const gross = input.fragments * input.fragmentPrice
+  return gross - netProceedsMeso(gross, percent)
 }
 
 export interface HuntingTotalInput extends Omit<HuntingMesoInput, 'ground'>, HuntFragmentsInput {

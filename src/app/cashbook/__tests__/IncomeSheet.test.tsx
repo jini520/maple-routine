@@ -514,6 +514,19 @@ describe('금액. OS 숫자 키보드다', () => {
  * 요율은 분배 계산기의 `FeePercent`(3·5, 사용자 확인값)를 그대로 쓰고, 계산도
  * `netProceedsMeso` 를 그대로 부른다. 여기서 다시 짜면 분배 계산기와 1 메소가 어긋난다.
  */
+describe('사냥의 조각 판매 수수료', () => {
+  it('조각 가격을 적어야 수수료 줄이 선다', async () => {
+    const view = await 그리기({}, 'hunting')
+    await 사슬고르기(view, 'ocid-1')
+    expect(view.queryByTestId('income-sheet-fee')).toBeNull()
+
+    await 칸에치기(view, 'income-sheet-fragments', '12')
+    await 칸에치기(view, 'income-sheet-fragment-price', '8000000')
+
+    expect(within(view.getByTestId('income-sheet-fee')).getByLabelText('MVP 다이아')).toBeTruthy()
+  })
+})
+
 describe('판매 수수료', () => {
   // 사냥 메소에는 경매장이 없고, `기타` 에 붙이면 **무엇의 수수료인가** 가 안 읽힌다.
   it('판매 대금과 수수료 줄이 아이템 판매에만 선다', async () => {
@@ -1437,9 +1450,9 @@ describe('사냥 계산기', () => {
     expect(view.queryByLabelText('금액')).toBeNull()
     expect(view.queryByLabelText('금액 초기화')).toBeNull()
 
-    // 그 합계가 얼마인지는 **저장이 넘기는 값**이 말한다: 21,168,000 + 96,000,000.
+    // 그 합계가 얼마인지는 **저장이 넘기는 값**이 말한다: 21,168,000 + 96,000,000 − 조각 몫의 수수료 3%(2,880,000).
     await 이름으로누르기(view, '저장')
-    expect(onSave.mock.calls[0][0]).toMatchObject({ mesoAmount: 117_168_000 })
+    expect(onSave.mock.calls[0][0]).toMatchObject({ mesoAmount: 114_288_000, saleFeeMeso: 2_880_000 })
   })
 
   /**
@@ -1802,7 +1815,11 @@ describe('사냥 수동 입력', () => {
         category: 'hunting',
         item: null,
         itemKey: null,
-        mesoAmount: 1_664_000_000,
+        // 10억 + 83 × 800만 − 조각 몫의 수수료 3%(19,920,000)
+        mesoAmount: 1_644_080_000,
+        saleFeePercent: 3,
+        saleFeeMeso: 19_920_000,
+        saleFeeAuto: true,
         hunt: {
           mode: 'manual',
           typedMeso: 1_000_000_000,
@@ -2253,7 +2270,7 @@ describe('솔 에르다 조각 정산', () => {
     expect(view.getByTestId('income-sheet-fragment-storage')).toHaveTextContent('120개')
   })
 
-  it('판 개수 × 개당 가격이 금액이고 판 날에 적힌다', async () => {
+  it('판 개수 × 개당 가격에서 판매 수수료를 뗀 것이 금액이고 판 날에 적힌다', async () => {
     const onSave = jest.fn()
     const view = await 정산시트({ onSave, loadFragmentStorage: async () => 120 })
     await 사슬고르기(view, 'ocid-1')
@@ -2261,7 +2278,8 @@ describe('솔 에르다 조각 정산', () => {
     await 아이디로치기(view, 'income-sheet-settle-count', '50')
     await 아이디로치기(view, 'income-sheet-settle-price', '8000000')
 
-    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('4억')
+    // 4억에서 다이아 요율 3% 를 뗀다
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('3억 8800만')
     await 이름으로누르기(view, '저장')
     expect(onSave).toHaveBeenCalledWith({
       ocid: 'ocid-1',
@@ -2269,11 +2287,10 @@ describe('솔 에르다 조각 정산', () => {
       category: 'sol_erda_fragment',
       item: null,
       itemKey: null,
-      mesoAmount: 400_000_000,
-      // 수수료 줄이 없다. 수수료를 뗀 값을 원하면 개당 가격에 뗀 값을 친다.
-      saleFeePercent: null,
-      saleFeeMeso: null,
-      saleFeeAuto: false,
+      mesoAmount: 388_000_000,
+      saleFeePercent: 3,
+      saleFeeMeso: 12_000_000,
+      saleFeeAuto: true,
       pointAmount: null,
       pointPer100mMeso: null,
       cashAmount: null,
@@ -2353,6 +2370,34 @@ describe('솔 에르다 조각 정산', () => {
     await 사슬고르기(view, 'ocid-2')
 
     expect(view.getByTestId('income-sheet-fragment-storage')).toHaveTextContent('40개')
+  })
+
+  it('수수료 줄이 자동으로 선다. 끄면 없음으로 직거래를 적는다', async () => {
+    const onSave = jest.fn()
+    const view = await 정산시트({ onSave, loadFragmentStorage: async () => 120 })
+    await 사슬고르기(view, 'ocid-1')
+    await 아이디로치기(view, 'income-sheet-settle-count', '50')
+    await 아이디로치기(view, 'income-sheet-settle-price', '8000000')
+
+    expect(within(view.getByTestId('income-sheet-fee')).getByLabelText('MVP 다이아')).toBeTruthy()
+    await 자동누르기(view)
+    await 누르기(view, '없음')
+    await 이름으로누르기(view, '저장')
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ mesoAmount: 400_000_000, saleFeePercent: null, saleFeeMeso: null, saleFeeAuto: false }),
+    )
+  })
+
+  // 받은 돈만으로 나누면 수수료를 뗀 기록의 단가가 낮게 선다.
+  it('수정으로 열면 단가를 받은 돈과 뗀 몫을 더해 되짚는다', async () => {
+    const view = await 그리기({
+      editing: { ...정산기록, mesoAmount: 388_000_000, saleFeePercent: 3, saleFeeMeso: 12_000_000, saleFeeAuto: true },
+      onDelete: jest.fn(),
+      loadFragmentStorage: async () => 50,
+    })
+
+    expect(줄글자(view, 'income-sheet-settle-price')).toBe('8,000,000')
   })
 
   /** 지금 보관만 보면 보관을 다 판 기록은 열어서 저장만 해도 막힌다. */
