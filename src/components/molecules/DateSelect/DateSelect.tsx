@@ -26,6 +26,10 @@ export interface DateSelectProps {
   onPress: () => void
   /** 날짜 글자의 `testID`. */
   testID?: string
+  /** 날짜 대신 적을 글자. 기간(`7월 2일 ~ 7월 15일`)이나 아직 안 고른 자리(`주 선택`)가 쓴다 */
+  text?: string
+  /** 아직 안 고른 자리라 흐린 글자로 적는다 */
+  placeholder?: boolean
 }
 
 export const DateSelect = forwardRef<View, DateSelectProps>(function DateSelect(props, ref) {
@@ -45,8 +49,12 @@ export const DateSelect = forwardRef<View, DateSelectProps>(function DateSelect(
 
       <View className="flex-row items-center gap-1.5 rounded-full border border-border px-2.5 py-1">
         <CalendarIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2} aria-hidden />
-        <Text testID={props.testID} className="text-xs text-text" style={TABULAR_NUMS}>
-          {formatDayLabel(props.dateKey)}
+        <Text
+          testID={props.testID}
+          className={`text-xs ${props.placeholder === true ? 'text-text-disabled' : 'text-text'}`}
+          style={TABULAR_NUMS}
+        >
+          {props.text ?? formatDayLabel(props.dateKey)}
         </Text>
       </View>
     </Pressable>
