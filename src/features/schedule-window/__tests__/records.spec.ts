@@ -19,6 +19,18 @@ jest.mock('../../../storage/boss-profit', () => ({
 jest.mock('../../../storage/boss-drops', () => ({ getBossDropRecords: jest.fn(), replaceBossDropRecords: jest.fn() }))
 jest.mock('../../../storage/boss-party-settings', () => ({ getBossPartySetting: jest.fn() }))
 jest.mock('../../../storage/character-basic-cache', () => ({ getCachedCharacterBasic: jest.fn() }))
+// 판 알림을 모으는 반복. 쓰기가 그 안에서 도는지 깊이로 본다.
+jest.mock('../../../storage/record-revision-batch', () => ({
+  batchRecordWrites: async (write: () => Promise<unknown>) => {
+    mockBatchDepth += 1
+    try {
+      return await write()
+    } finally {
+      mockBatchDepth -= 1
+    }
+  },
+}))
+var mockBatchDepth = 0
 
 import { loadUnqueryablePeriodKeys, recordBossProfitFromWindow } from '../records'
 
@@ -83,6 +95,22 @@ describe('그 기간의 확정 상태는 조회 가능한 마지막 날의 응�
     expect(upserted()).toContain('lotus|hard|weekly|2026-09-03')
     expect(upserted()).toContain('black_mage|hard|monthly|2026-09')
   })
+})
+
+// 지난 기간을 통째로 적는다. 쓰기마다 알리면 판을 구독하는 화면이 그만큼 다시 그려진다.
+it('기간마다 적는 반복은 판 알림을 모으는 반복 안에서 돈다', async () => {
+  const depths: number[] = []
+  upsertMock.mockImplementation(async () => {
+    depths.push(mockBatchDepth)
+  })
+  getLedgerMock.mockResolvedValue({
+    unavailable: false,
+    dates: { '2026-09-04': observed(['lotus|hard', 'black_mage|hard']) },
+  })
+
+  await recordBossProfitFromWindow(['o1'], NOW)
+
+  expect(depths).toEqual([1, 1])
 })
 
 // 월드별 결정석 집계는 월드 key 로 가른다. 이름만 적으면 그 기록이 월드 모름으로 빠진다.

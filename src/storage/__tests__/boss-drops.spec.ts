@@ -139,6 +139,25 @@ describe('subscribeBossDropRecordsRevision', () => {
     unsubscribe()
   })
 
+  it('여러 건을 쓰는 반복 안에서는 판은 쓸 때마다 오르고 구독자는 끝날 때 한 번 부른다', async () => {
+    const { replaceBossDropRecords, subscribeBossDropRecordsRevision, getBossDropRecordsRevision } =
+      require('../boss-drops') as typeof import('../boss-drops')
+    const { batchRecordWrites } = require('../record-revision-batch') as typeof import('../record-revision-batch')
+    const listener = jest.fn()
+    const unsubscribe = subscribeBossDropRecordsRevision(listener)
+    const before = getBossDropRecordsRevision()
+
+    await batchRecordWrites(async () => {
+      await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W30', drops, '2026-07-26T00:00:00.000Z')
+      await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W31', drops, '2026-07-26T00:00:00.000Z')
+      expect(getBossDropRecordsRevision()).toBe(before + 2)
+      expect(listener).not.toHaveBeenCalled()
+    })
+
+    expect(listener).toHaveBeenCalledTimes(1)
+    unsubscribe()
+  })
+
   it('구독을 풀면 더 안 부른다', async () => {
     const { replaceBossDropRecords, subscribeBossDropRecordsRevision } =
       require('../boss-drops') as typeof import('../boss-drops')

@@ -452,6 +452,25 @@ describe('subscribeBossProfitRecordsRevision', () => {
     unsubscribe()
   })
 
+  it('여러 건을 쓰는 반복 안에서는 판은 쓸 때마다 오르고 구독자는 끝날 때 한 번 부른다', async () => {
+    const { subscribeBossProfitRecordsRevision, upsertBossProfitRecord, getBossProfitRecordsRevision } =
+      require('../boss-profit') as typeof import('../boss-profit')
+    const { batchRecordWrites } = require('../record-revision-batch') as typeof import('../record-revision-batch')
+    const listener = jest.fn()
+    const unsubscribe = subscribeBossProfitRecordsRevision(listener)
+    const before = getBossProfitRecordsRevision()
+
+    await batchRecordWrites(async () => {
+      await upsertBossProfitRecord(sampleRecord)
+      await upsertBossProfitRecord(sampleRecord)
+      expect(getBossProfitRecordsRevision()).toBe(before + 2)
+      expect(listener).not.toHaveBeenCalled()
+    })
+
+    expect(listener).toHaveBeenCalledTimes(1)
+    unsubscribe()
+  })
+
   it('구독을 풀면 더 안 부른다', async () => {
     const { subscribeBossProfitRecordsRevision, upsertBossProfitRecord } =
       require('../boss-profit') as typeof import('../boss-profit')
