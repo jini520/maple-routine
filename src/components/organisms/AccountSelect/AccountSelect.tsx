@@ -46,7 +46,7 @@ const EDGE_GAP_PX = 12
 /** 트리거와 목록 행이 공유하는 안쪽 여백. 둘이 어긋나면 한 덩어리 가 깨진다. */
 const ROW_PADDING = 'px-3 py-2.5'
 
-interface AccountRowProps {
+export interface AccountRowProps {
   summary: AccountSummaryView
   /** 캐시에 있을 때만 오는 초상 주소. 없으면 대표 이름의 첫 글자를 그린다. */
   portraitUrl: string | null
@@ -54,7 +54,8 @@ interface AccountRowProps {
   trailing?: React.ReactNode
 }
 
-function AccountRow(props: AccountRowProps): React.JSX.Element {
+/** 메이플 ID 표시 한 줄. 드롭다운 밖에서는 MVP 등급 모달의 ID 카드가 쓴다. */
+export function AccountRow(props: AccountRowProps): React.JSX.Element {
   const { accountId, representative, worldCounts } = props.summary
   const emblem = worldEmblemUrl(representative.worldKey)
   const worldName = worldNameOf(representative.worldKey, representative.world)

@@ -26,7 +26,9 @@ import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { ChainSelect } from '../../../components/organisms/ChainSelect/ChainSelect'
 import { getItemIconUrlByFile } from '../../../lib/assets/asset-lookup'
-import { huntTotalOf } from '../../../lib/cashbook/hunting-meso'
+import { fragmentSaleFeeOf, huntTotalOf } from '../../../lib/cashbook/hunting-meso'
+import { FeeRow } from '../../../components/organisms/FeeRow/FeeRow'
+import { useSaleFeeChoice } from './sale-fee'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { requiredCharacterOptions } from '../character-options'
 import { AmountInput, FieldRow } from '../sheet-fields'
@@ -65,14 +67,17 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
   const typedMeso = mesoValueOf(typedMesoText)
   const fragments = mesoValueOf(fragmentsText)
   const fragmentPrice = optionalMesoValueOf(fragmentPriceText)
+  const fee = useSaleFeeChoice(props.editing, ocid, props.dateKey)
+  /** 조각을 그 자리에서 판 몫에만 붙는 판매 수수료. 가격을 안 적었으면 0 이다. */
+  const fragmentFee = fragmentSaleFeeOf({ fragments, fragmentPrice }, fee.percent)
   /** 계산기와 **같은 식**이고 메소의 출처만 다르다(거기서는 앱이 센다). */
-  const total = huntTotalOf(typedMeso, { fragments, fragmentPrice })
+  const total = huntTotalOf(typedMeso, { fragments, fragmentPrice }) - fragmentFee
 
   useSaveSlot(props.setSave, {
     editing,
     // 본체는 사람이 치는 획득 메소다. 조각은 곁다리라 그것만으로는 못 적는다(사용자 지시).
     // 캐릭터도 있어야 한다. 조각 보관이 캐릭터별이다.
-    canSave: typedMeso > 0 && ocid !== null,
+    canSave: typedMeso > 0 && ocid !== null && (fragmentPrice === null || fee.ready),
     saving,
     onSave: () =>
       void submit({
@@ -85,8 +90,10 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
         // 수동 입력에는 사냥터 칸이 없다. 옛 행이 들고 있던 사냥터는 그대로 들고 간다.
         itemKey: props.editing?.itemKey ?? null,
         mesoAmount: total,
-        saleFeePercent: null,
-        saleFeeMeso: null,
+        // 조각 가격을 안 적었으면 판 것이 없어 수수료 칸이 빈다.
+        saleFeePercent: fragmentPrice === null ? null : fee.percent,
+        saleFeeMeso: fragmentPrice === null || fee.percent === null ? null : fragmentFee,
+        saleFeeAuto: fee.auto,
         pointAmount: null,
         pointPer100mMeso: null,
         cashAmount: null,
@@ -210,6 +217,9 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
           <Text className="shrink-0 text-xs text-text-muted">메소</Text>
         </Pressable>
       </View>
+
+      {/* 조각 가격을 안 적어도 선다. 비면 판 것이 없어 떼는 돈이 0 이다. */}
+      <FeeRow testID="income-sheet-fee" label="수수료" {...fee.row} />
 
       <AmountFigure
         // 큰 숫자는 여기서도 합계다. 사람이 치는 것은 획득 메소이지 합계가 아니라, 앱이 센

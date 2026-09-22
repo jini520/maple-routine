@@ -15,7 +15,10 @@
  *
  * @see docs/features/boss-profit.md 정책
  */
-import type { ShareValue } from '../../components/organisms/InputCard/InputCard'
+import type { FeesValue, ShareValue } from '../../components/organisms/InputCard/InputCard'
+import { dropFeeSeeds } from '../../features/boss-profit/drop-fees'
+import { autoFeeFrom, useMvpGradeContext } from '../../features/mvp-grade/store'
+import { periodStartDateKey } from '../../lib/boss/boss-profit-period'
 import { useEffect, useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 import { useRoute, type RouteProp } from '@react-navigation/native'
@@ -71,6 +74,7 @@ import { confirmLabels } from '../../lib/drop/price-card-labels'
 interface PriceEdit {
   meso: number
   share: ShareValue
+  fees?: FeesValue
 }
 
 function characterTotal(group: DropPriceGroup): number {
@@ -174,6 +178,7 @@ export function DropPriceScreen(): React.JSX.Element {
   const topSafeAreaPx = useTopSafeAreaPx()
   const { params } = useRoute<RouteProp<RootStackParamList, 'DropPrice'>>()
   const { status, periodKey: readPeriodKey, groups, load, savePrice, excludePrice } = useDropPriceStore()
+  const gradeContext = useMvpGradeContext()
 
   // 화면이 한 번만 만든 지금. 두 번 부르면 기간 경계를 사이에 두고 갈릴 수 있다.
   const [now] = useState(() => new Date())
@@ -237,16 +242,18 @@ export function DropPriceScreen(): React.JSX.Element {
     const 지금매김 = edit !== undefined || target.drop.priceState === 'entered'
 
     /** 값을 쓰고 자리를 옮긴다. 빈 칸이면 쓰지 않고 옮기기만 한다. */
-    function move(to: number, next: string, share?: ShareValue): void {
+    function move(to: number, next: string, share?: ShareValue, fees?: FeesValue): void {
       if (next === '') {
         openPriceCard(items, to, edits)
         return
       }
       const meso = mesoValueOf(next)
       const 몫 = share ?? { myShare: 1, sharesTotal: target.partySize }
-      const 다음편집 = new Map(edits).set(index, { meso, share: 몫 })
-      void runWrite(() => savePrice(target, meso, 몫), items, to, 다음편집)
+      const 다음편집 = new Map(edits).set(index, { meso, share: 몫, fees })
+      void runWrite(() => savePrice(target, meso, 몫, fees), items, to, 다음편집)
     }
+
+    const [saleSeed, splitSeed] = dropFeeSeeds(target.drop, edit?.fees)
 
     openInputCard({
       // 머리가 그 아이템을 말한다. `판매 가격` 이라는 말은 이미 누른 행이 했다.
@@ -261,6 +268,13 @@ export function DropPriceScreen(): React.JSX.Element {
         label: '분배 비율',
         myShare: edit?.share.myShare ?? target.drop.priceMyShare ?? 1,
         sharesTotal: edit?.share.sharesTotal ?? target.drop.priceShare ?? target.partySize,
+      },
+      fees: {
+        // 드롭에는 날짜 칸이 없어 기간 첫날의 등급으로 센다(다시 계산도 같은 날을 본다).
+        autoFee:
+          gradeContext === null ? null : autoFeeFrom(gradeContext, target.ocid, periodStartDateKey(target.periodKey)),
+        sale: saleSeed,
+        split: splitSeed,
       },
       ...confirmLabels({
         하나: items.length === 1,
@@ -280,9 +294,9 @@ export function DropPriceScreen(): React.JSX.Element {
       },
       prev:
         index > 0
-          ? { label: `이전(${index}/${items.length})`, onPress: (next, share) => move(index - 1, next, share) }
+          ? { label: `이전(${index}/${items.length})`, onPress: (next, share, fees) => move(index - 1, next, share, fees) }
           : undefined,
-      onConfirm: (next, share) => move(index + 1, next, share),
+      onConfirm: (next, share, fees) => move(index + 1, next, share, fees),
     })
   }
 

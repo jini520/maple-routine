@@ -7,6 +7,7 @@ import {
   buildCalendarMonth,
   datesBetween,
   formatDayLabel,
+  formatMonthDay,
   getAdjacentMonthKey,
   getCurrentMonthKey,
   heatLevel,
@@ -53,6 +54,12 @@ describe('getAdjacentMonthKey: 해를 넘긴다', () => {
   })
 })
 
+
+describe('formatMonthDay', () => {
+  it('요일 없이 달과 날만 적는다', () => {
+    expect(formatMonthDay('2026-07-16')).toBe('7월 16일')
+  })
+})
 
 describe('formatDayLabel', () => {
   it('**8월 23일 (일)**. 요일까지 붙는다', () => {

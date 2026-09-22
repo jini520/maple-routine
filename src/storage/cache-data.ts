@@ -20,6 +20,12 @@ const KEEP_KEYS = new Set<string>([
   // today 배너에서 닫은 공지. 지워지면 사용자가 이미 닫은 공지가 첫 화면에 되살아난다.
   // 받은 공지 자체(`notices`)는 서버가 다시 주지만 닫았다는 사실은 기기에만 있다.
   STORAGE_KEYS.dismissedNotices,
+  // 주간 확인을 끈 체크박스. 지워지면 끈 확인이 되살아난다.
+  STORAGE_KEYS.mvpWeeklyCheckOff,
+  // 일괄 적용을 물었다는 표시. 지워지면 체크박스를 끄고 넘긴 빈 수수료 행이 다시 대상이 된다.
+  STORAGE_KEYS.mvpBulkApplyAsked,
+  // 끝나지 않은 작업 표시. 지워지면 반쯤 바뀐 기록이 이어지지 않고 그대로 굳는다.
+  STORAGE_KEYS.pendingTasks,
 ])
 
 // 삭제 단위는 2그룹이다. 사용자가 해결하려는 갈등은 "용량은 비우고 싶은데 복구 불가능한
@@ -61,6 +67,10 @@ export const RECORD_TABLE_NAMES: readonly string[] = [
   'character_profiles',
   // 리프한 기간의 중복 기록을 지우는 연결이다. 기록만 남고 연결이 사라지면 두 번 센 채로 굳는다.
   'character_world_leaps',
+  // 사용자가 적은 등급 이력. 지우면 지난 스타포스와 자동 수수료가 등급 없이 선다.
+  'mvp_grade_history',
+  // 옛 이름과 지운 캐릭터의 소속은 다시 받을 수 없다.
+  'character_accounts',
 ]
 
 // db.ts에 테이블이 추가되면 자동으로 여기 들어와 계속 삭제 대상으로 남는다.

@@ -120,6 +120,14 @@ export function AppSettingsScreen(): React.JSX.Element {
             </Card>
           </View>
 
+          {/* 계정마다 받은 등급이라 캐릭터 바로 아래 선다. 수수료와 스타포스 비용이 이 값을 따른다. */}
+          <View className="gap-2">
+            <SectionTitle>MVP 등급</SectionTitle>
+            <Card className="px-6" testID="app-settings-card">
+              <SettingsRow label="MVP 등급" onPress={() => navigation.navigate('SettingsMvpGrade')} />
+            </Card>
+          </View>
+
           {/* 앞 카드와 성질이 같은데도(둘 다 값을 고르는 행) 가른 것은 **주제**가 달라서다.
               이쪽은 기록을 어떻게 모으나이고 저쪽은 내 캐릭터와 앱 생김새다. 제목을 달면서 둘을
               한 카드에 두면 제목이 둘을 다 덮는 말이어야 하는데, 그 말이 `설정` 밖에 없다. */}

@@ -145,6 +145,14 @@ describe('그룹 ↔ 테이블 분할', () => {
     expect(RECORD_TABLE_NAMES).toContain('character_world_leaps')
     expect(GENERAL_TABLE_NAMES).not.toContain('character_world_leaps')
   })
+
+  // 사용자가 적은 값과, 옛 이름 · 지운 캐릭터처럼 다시 받을 수 없는 소속이다.
+  it('MVP 등급 이력과 캐릭터 소속도 `기록` 그룹이다', () => {
+    expect(RECORD_TABLE_NAMES).toContain('mvp_grade_history')
+    expect(RECORD_TABLE_NAMES).toContain('character_accounts')
+    expect(GENERAL_TABLE_NAMES).not.toContain('mvp_grade_history')
+    expect(GENERAL_TABLE_NAMES).not.toContain('character_accounts')
+  })
 })
 
 describe('clearCacheData', () => {
@@ -167,6 +175,21 @@ describe('clearCacheData', () => {
     for (const key of KEEP_KEY_NAMES) {
       expect(await prefs.get(key)).not.toBeNull()
     }
+  })
+
+  // 주간 확인을 끈 체크박스와 일괄 적용을 물었다는 표시는 사용자가 만든 값이다. 지워지면 끈 확인이
+  // 되살아나거나, 체크박스를 끄고 넘긴 빈 수수료 행이 다시 일괄 적용 대상이 된다.
+  // 마지막으로 확인한 주는 지워져도 한 번 더 물을 뿐이라 지운다.
+  it('MVP 주간 확인 끄기와 일괄 적용 물음 표시는 남기고 마지막 확인 주는 지운다', async () => {
+    await prefs.set('mvpWeeklyCheckOff', 'true')
+    await prefs.set('mvpBulkApplyAsked', 'true')
+    await prefs.set('mvpLastCheckedWeek', '2026-09-17')
+
+    await clearCacheData({ general: true, records: false })
+
+    expect(await prefs.get('mvpWeeklyCheckOff')).toBe('true')
+    expect(await prefs.get('mvpBulkApplyAsked')).toBe('true')
+    expect(await prefs.get('mvpLastCheckedWeek')).toBeNull()
   })
 
   // 인자 없는 호출은 선택 삭제 도입 전과 같아야 한다(호출부 호환).

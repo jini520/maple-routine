@@ -26,6 +26,16 @@ jest.mock('../../tracking-mode/seed', () => ({
 }))
 const { seedManualTrackedContent: seedManualTrackedContentMock } = jest.requireMock('../../tracking-mode/seed') as Record<string, jest.Mock>
 
+jest.mock('../../../storage/mvp-grade-prefs', () => ({
+  getMvpOnboardingPending: jest.fn(),
+  setMvpOnboardingPending: jest.fn(),
+}))
+const { getMvpOnboardingPending: getMvpOnboardingPendingMock, setMvpOnboardingPending: setMvpOnboardingPendingMock } =
+  jest.requireMock('../../../storage/mvp-grade-prefs') as Record<string, jest.Mock>
+
+jest.mock('../../mvp-grade/onboarding', () => ({ needsMvpOnboarding: jest.fn() }))
+const { needsMvpOnboarding: needsMvpOnboardingMock } = jest.requireMock('../../mvp-grade/onboarding') as Record<string, jest.Mock>
+
 import { useAppEntryStore } from '../store'
 
 // 팩토리가 **모듈 평가보다 먼저** 불릴 수 있어(스토어를 import 하는 순간) `var` 로 올리고
@@ -56,6 +66,9 @@ beforeEach(() => {
   // 기본값 = 앱이 열리는 상태
   getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
   getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-acc-1'])
+  getMvpOnboardingPendingMock.mockResolvedValue(false)
+  setMvpOnboardingPendingMock.mockResolvedValue(undefined)
+  needsMvpOnboardingMock.mockResolvedValue(false)
 })
 
 afterEach(() => {
@@ -93,6 +106,26 @@ describe('useAppEntryStore.resolveFromStorage', () => {
     await useAppEntryStore.getState().resolveFromStorage()
 
     expect(useAppEntryStore.getState().stage).toBe('ready')
+    expect(useAppEntryStore.getState().resumeTo).toBeNull()
+  })
+
+  // 온보딩은 뒤로 갈 수 있는 한 스택이다. 부팅이 그 단계까지 스택을 다시 놓게 남긴다.
+  it('온보딩 중간이면 그 단계까지 스택을 다시 놓으라고 남기고, 받은 쪽이 지운다', async () => {
+    getTrackedCharacterOcidsMock.mockResolvedValue(null)
+
+    await useAppEntryStore.getState().resolveFromStorage()
+    expect(useAppEntryStore.getState().resumeTo).toBe('characterSetup')
+
+    useAppEntryStore.getState().consumeResume()
+    expect(useAppEntryStore.getState().resumeTo).toBeNull()
+  })
+
+  it('MVP 화면에서 꺼졌으면 mvpGrade 로 이어간다', async () => {
+    getMvpOnboardingPendingMock.mockResolvedValue(true)
+
+    await useAppEntryStore.getState().resolveFromStorage()
+
+    expect(useAppEntryStore.getState()).toMatchObject({ stage: 'mvpGrade', resumeTo: 'mvpGrade' })
   })
 })
 
@@ -218,6 +251,36 @@ describe('useAppEntryStore.completeCharacterSetup', () => {
     await useAppEntryStore.getState().completeCharacterSetup(['ocid-a'], onSeedStart)
 
     expect(onSeedStart).not.toHaveBeenCalled()
+  })
+})
+
+describe('MVP 등급 온보딩', () => {
+  it('등급을 물을 메이플 ID 가 있으면 캐릭터 설정 뒤 mvpGrade 로 가고 표시를 적는다', async () => {
+    needsMvpOnboardingMock.mockResolvedValue(true)
+
+    await expect(useAppEntryStore.getState().completeCharacterSetup(['ocid-a'])).resolves.toBe('mvpGrade')
+
+    expect(setMvpOnboardingPendingMock).toHaveBeenCalledWith(true)
+    expect(useAppEntryStore.getState().stage).toBe('mvpGrade')
+  })
+
+  // MVP 화면에서 로그인까지 뒤로 가 다른 키로 캐릭터를 다시 고르면 물을 ID 가 없을 수 있다. 앞서 적은 표시가 남으면
+  // 다음 부팅이 열린 앱 대신 MVP 화면을 세운다.
+  it('물을 ID 가 없으면 곧장 ready 이고, 앞서 적은 표시가 있으면 지운다', async () => {
+    await expect(useAppEntryStore.getState().completeCharacterSetup(['ocid-a'])).resolves.toBe('ready')
+
+    expect(setMvpOnboardingPendingMock).not.toHaveBeenCalledWith(true)
+    expect(setMvpOnboardingPendingMock).toHaveBeenCalledWith(false)
+    expect(useAppEntryStore.getState().stage).toBe('ready')
+  })
+
+  it('시작하기를 마치면 표시를 지우고 앱을 연다', async () => {
+    useAppEntryStore.setState({ stage: 'mvpGrade' })
+
+    await useAppEntryStore.getState().finishMvpOnboarding()
+
+    expect(setMvpOnboardingPendingMock).toHaveBeenCalledWith(false)
+    expect(useAppEntryStore.getState().stage).toBe('ready')
   })
 })
 

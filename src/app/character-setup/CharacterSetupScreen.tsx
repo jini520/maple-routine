@@ -34,6 +34,7 @@ import { Button, MapleSweepSpinner, Text } from '../../components/atoms'
 import { CharacterManageBody } from '../../components/organisms/CharacterManage/CharacterManageBody'
 import { EntryScroll } from '../../components/templates/EntryScroll/EntryScroll'
 import { useCharacterManage } from '../../hooks/useCharacterManage'
+import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 
 /** 대기의 두 단. `saving` 은 CTA 스피너, `seeding` 은 화면 전체 스피너. */
 type SetupPhase = 'idle' | 'saving' | 'seeding'
@@ -41,6 +42,7 @@ type SetupPhase = 'idle' | 'saving' | 'seeding'
 export function CharacterSetupScreen(): React.JSX.Element {
   const completeCharacterSetup = useAppEntryStore((state) => state.completeCharacterSetup)
   const setRepresentative = useCharacterSelectionStore((state) => state.setRepresentative)
+  const navigation = useScreenNavigation()
   const manage = useCharacterManage()
   // 끌어서 순서를 바꾸는 동안 굴릴 스크롤 뷰. 셸이 그것을 소유한다.
   const scrollableRef = useAnimatedRef<ScrollView>()
@@ -55,11 +57,13 @@ export function CharacterSetupScreen(): React.JSX.Element {
     const representativeOcid = manage.representativeOcid
     setPhase('saving')
     try {
-      await completeCharacterSetup(manage.selectedOcids, () => setPhase('seeding'))
+      const next = await completeCharacterSetup(manage.selectedOcids, () => setPhase('seeding'))
       // 실패는 삼킨다: 여기 도달했다는 것은 목록이 이미 저장돼 **설정이 끝났다**는 뜻이고, 대표는
       // 표식뿐이라 없어도 화면이 성립한다. 되던지면 호출부가 `void` 라 미처리 rejection 이 되고,
       // 사용자에게 돌아가는 것은 그래도 없다.
       await setRepresentative(representativeOcid).catch(() => {})
+      // 앱이 열리면(`ready`) 스택이 통째로 바뀌어 밀 것이 없다. 등급을 물을 ID 가 있을 때만 다음 화면을 민다.
+      if (next === 'mvpGrade') navigation.navigate('MvpGradePick')
     } finally {
       setPhase('idle')
     }
@@ -90,6 +94,7 @@ export function CharacterSetupScreen(): React.JSX.Element {
       <EntryScroll
         scrollRef={scrollableRef}
         tracksScrollOffset
+        onBack={() => navigation.goBack()}
         footer={
           <Button
             variant="primary"

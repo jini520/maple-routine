@@ -11,7 +11,7 @@
  * 이 스토어가 드는 것은 **지금 열린 부탁 하나**다. 차례를 안 든다. 드롭 판매가처럼 잇따라 받는
  * 흐름은 확인 안에서 다음 부탁을 다시 열고, 남은 것이 무엇인지는 부르는 쪽이 안다.
  */
-import type { ShareValue } from '../../components/organisms/InputCard/InputCard'
+import type { FeesValue, ShareValue } from '../../components/organisms/InputCard/InputCard'
 import { create } from 'zustand'
 
 import type { InputCardProps } from '../../components/organisms/InputCard/InputCard'
@@ -28,9 +28,9 @@ export type InputCardRequest = Omit<InputCardProps, 'panelStyle' | 'onConfirm' |
    *
    * 먼저 닫는 것은 여기서 **다음 카드를 열 수 있게** 하기 위해서다. 드롭 판매가가 그렇게 잇는다.
    *
-   * 둘째 인자는 비율 고르개를 넘긴 부탁에만 온다.
+   * 둘째 인자는 비율 고르개를, 셋째 인자는 수수료 줄을 넘긴 부탁에만 온다.
    */
-  onConfirm: (next: string, share?: ShareValue) => void
+  onConfirm: (next: string, share?: ShareValue, fees?: FeesValue) => void
 }
 
 interface InputCardStore {

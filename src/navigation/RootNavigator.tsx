@@ -6,6 +6,7 @@ import { DropPriceScreen } from '../app/boss-profit/DropPriceScreen'
 import { ContentManageScreen } from '../app/content-scheduler/ContentManageScreen'
 import { SignInScreen } from '../app/auth/SignInScreen'
 import { CharacterSetupScreen } from '../app/character-setup/CharacterSetupScreen'
+import { MvpGradeConfirmScreen, MvpGradePickScreen } from '../app/mvp-grade/MvpGradeOnboarding'
 import { SettingsAboutScreen } from '../app/settings/SettingsAboutScreen'
 import { SettingsAccountDataScreen } from '../app/settings/SettingsAccountDataScreen'
 import { SettingsCharactersScreen } from '../app/settings/SettingsCharactersScreen'
@@ -14,6 +15,8 @@ import { SettingsFeatureGuideScreen } from '../app/settings/SettingsFeatureGuide
 import { SettingsNoticeDetailScreen } from '../app/settings/SettingsNoticeDetailScreen'
 import { SettingsNoticesScreen } from '../app/settings/SettingsNoticesScreen'
 import { SettingsNoticeAlertsScreen } from '../app/settings/SettingsNoticeAlertsScreen'
+import { SettingsMvpGradeScreen } from '../app/settings/SettingsMvpGradeScreen'
+import { SettingsMvpGradeHistoryScreen } from '../app/settings/SettingsMvpGradeHistoryScreen'
 import { AppSettingsScreen } from '../app/settings/AppSettingsScreen'
 import { SettingsPrivacyScreen } from '../app/settings/SettingsPrivacyScreen'
 import { SettingsReleaseNotesScreen } from '../app/settings/SettingsReleaseNotesScreen'
@@ -48,6 +51,8 @@ const STACK_SCREENS = {
   SettingsCharacters: SettingsCharactersScreen,
   SettingsNotices: SettingsNoticesScreen,
   SettingsNoticeAlerts: SettingsNoticeAlertsScreen,
+  SettingsMvpGrade: SettingsMvpGradeScreen,
+  SettingsMvpGradeHistory: SettingsMvpGradeHistoryScreen,
   AppSettings: AppSettingsScreen,
   SettingsNoticeDetail: SettingsNoticeDetailScreen,
   UtilityItemSplit: ItemSplitScreen,
@@ -79,12 +84,12 @@ function screenFor(name: StackRouteName): React.ComponentType<Record<string, nev
  * 를 쓰므로 **하위 페이지처럼 열린다** 가 값이 아니라 구조로 성립한다.
  *
  * 진입 게이트는 리다이렉트가 아니라 화면 목록 자체가 갈린다. 딥링크가 없어 주소로 들어올 경로가
- * 없으므로 라우트마다 문을 잠글 이유가 없다. 앱을 아직 못 열면 스택에 그 화면 **하나뿐**이고
- * 열리면 탭과 하위 페이지로 통째로 바뀐다. 도달할 화면이 존재하지 않으므로 되돌아갈 히스토리도
- * 없다.
+ * 없으므로 라우트마다 문을 잠글 이유가 없다. 앱을 아직 못 열면 온보딩 화면 넷만 있고, 열리면 탭과
+ * 하위 페이지로 통째로 바뀐다. 앱이 열린 뒤에는 온보딩으로 되돌아갈 히스토리가 없다.
  *
- * 로그인과 캐릭터 설정을 함께 등록하지 않는 것도 같은 이유다. 둘을 나란히 두면 그 사이에 뒤로
- * 가기가 생기는데 되돌아갈 곳이 없다.
+ * 온보딩 넷은 한 스택에 함께 등록한다. 화면이 다음 화면을 밀고 뒤로가기가 빼내서, 기기 뒤로가기가
+ * 하위 페이지와 같이 된다. 첫 화면은 늘 로그인이고, 부팅이 온보딩 중간을 찾으면 로그인 화면이 그
+ * 단계까지 다시 쌓는다(`resumeTo`).
  */
 export function RootNavigator(): React.JSX.Element {
   const stage = useAppEntryStore((state) => state.stage)
@@ -104,11 +109,14 @@ export function RootNavigator(): React.JSX.Element {
             <Stack.Screen key={name} name={name} component={screenFor(name)} />
           ))}
         </Stack.Group>
-      ) : stage === 'signIn' ? (
-        // 분기 테스트가 쓰는 `screen-<라우트 이름>` testID 는 각 화면의 루트가 든다.
-        <Stack.Screen name="SignIn" component={SignInScreen} />
       ) : (
-        <Stack.Screen name="CharacterSetup" component={CharacterSetupScreen} />
+        // 분기 테스트가 쓰는 `screen-<라우트 이름>` testID 는 각 화면의 루트가 든다.
+        <Stack.Group>
+          <Stack.Screen name="SignIn" component={SignInScreen} />
+          <Stack.Screen name="CharacterSetup" component={CharacterSetupScreen} />
+          <Stack.Screen name="MvpGradePick" component={MvpGradePickScreen} />
+          <Stack.Screen name="MvpGradeConfirm" component={MvpGradeConfirmScreen} />
+        </Stack.Group>
       )}
     </Stack.Navigator>
   )

@@ -1,5 +1,6 @@
 import { notifyAfterBatch } from './record-revision-batch'
 import { getBossProfitDb } from './sqlite/db'
+import { inTransaction } from './sqlite/transaction'
 import type { BossCycle } from '../types/scheduler'
 
 export interface BossProfitRecord {
@@ -20,6 +21,8 @@ export interface BossProfitRecord {
   crystalSharesTotal: number | null
   /** 차액 송금의 수수료율 스냅샷. `null` 은 3 이다. */
   splitFeePercent: number | null
+  /** 송금 수수료가 등급을 따라가나. 없으면 손으로 고른 값이다 */
+  splitFeeAuto?: boolean
   recordedAt: string // ISO 8601
   /**
    * 기록 시점의 월드 스냅샷. `null` 이면 "월드 모름"이고 월드별 결정석 집계에서
@@ -57,8 +60,8 @@ export type BossProfitRecordSource = 'auto' | 'manual'
 const UPSERT_SQL = `
   INSERT INTO boss_profit_records
     (ocid, boss_key, boss, difficulty, cycle, period_key, party_size, price_meso, payout_meso,
-     crystal_my_share, crystal_shares_total, split_fee_percent, recorded_at, world, world_key, source)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     crystal_my_share, crystal_shares_total, split_fee_percent, split_fee_auto, recorded_at, world, world_key, source)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(ocid, boss_key, difficulty, period_key) DO UPDATE SET
     source = excluded.source,
     boss = excluded.boss,
@@ -69,6 +72,7 @@ const UPSERT_SQL = `
     crystal_my_share = excluded.crystal_my_share,
     crystal_shares_total = excluded.crystal_shares_total,
     split_fee_percent = excluded.split_fee_percent,
+    split_fee_auto = excluded.split_fee_auto,
     recorded_at = excluded.recorded_at,
     -- 월드는 아는 값이 있을 때만 덮어쓴다. 파티원 수 수정처럼 월드를 모르는 경로에서 upsert가
     -- 일어나도(그때 world를 null로 넘긴다) 이미 박아둔 스냅샷을 지우지 않는다.
@@ -136,6 +140,7 @@ export async function upsertBossProfitRecord(record: BossProfitRecord): Promise<
     record.crystalMyShare ?? null,
     record.crystalSharesTotal ?? null,
     record.splitFeePercent ?? null,
+    record.splitFeeAuto === true ? 1 : null,
     record.recordedAt,
     record.world,
     record.worldKey,
@@ -187,6 +192,7 @@ function rowToRecord(row: Record<string, unknown>): BossProfitRecord {
     crystalMyShare: (row.crystal_my_share as number | null | undefined) ?? null,
     crystalSharesTotal: (row.crystal_shares_total as number | null | undefined) ?? null,
     splitFeePercent: (row.split_fee_percent as number | null | undefined) ?? null,
+    splitFeeAuto: Number(row.split_fee_auto) === 1,
     recordedAt: row.recorded_at as string,
     // 컬럼을 더하기 전 기록에는 없다. undefined도 null로 정규화해 호출부가 한 형태만 다루게 한다.
     world: (row.world as string | null | undefined) ?? null,
@@ -235,6 +241,38 @@ export async function getBossProfitRecords(
   )
 
   return (values ?? []).map(rowToRecord)
+}
+
+/** 송금 수수료가 자동인 결정석 기록 전부. 등급 기록이 바뀌면 다시 셀 대상이다. */
+export async function getAutoFeeProfitRecords(): Promise<BossProfitRecord[]> {
+  const db = await getBossProfitDb()
+  const { values } = await db.query(`SELECT * FROM boss_profit_records WHERE split_fee_auto = 1`)
+  return (values ?? []).map(rowToRecord)
+}
+
+export interface ProfitSplitFeeUpdate {
+  ocid: string
+  bossKey: string
+  difficulty: string
+  periodKey: string
+  splitFeePercent: number
+  payoutMeso: number
+}
+
+/** 결정석 기록들의 송금 수수료와 받은 몫을 고쳐 쓴다. 받은 몫은 저장된 값이라 요율과 함께 간다. */
+export async function updateProfitSplitFees(updates: readonly ProfitSplitFeeUpdate[]): Promise<void> {
+  if (updates.length === 0) return
+  const db = await getBossProfitDb()
+  await inTransaction(db, async () => {
+    for (const update of updates) {
+      await db.run(
+        `UPDATE boss_profit_records SET split_fee_percent = ?, payout_meso = ?
+         WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ?`,
+        [update.splitFeePercent, update.payoutMeso, update.ocid, update.bossKey, update.difficulty, update.periodKey],
+      )
+    }
+  })
+  bumpRecordsRevision()
 }
 
 /**

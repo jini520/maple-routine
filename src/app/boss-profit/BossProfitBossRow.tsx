@@ -34,7 +34,8 @@ import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 import { useBossProfitStore } from '../../features/boss-profit/store'
 import { useManualCompletionStore } from '../../features/manual-completion/store'
 import { isManualCompletionOpen } from '../../lib/boss/manual-completion'
-import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
+import { getCurrentBossProfitPeriod, periodStartDateKey } from '../../lib/boss/boss-profit-period'
+import { autoFeeFrom, useMvpGradeContext } from '../../features/mvp-grade/store'
 import { NoticeModal } from '../../components/organisms/NoticeModal/NoticeModal'
 import { AlertTriangleIcon } from '../../components/atoms'
 import { ItemRevenuePopover } from './ItemRevenuePopover'
@@ -160,6 +161,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
     myShare: row.crystalMyShare,
     sharesTotal: row.crystalSharesTotal,
     splitFeePercent: row.splitFeePercent,
+    splitFeeAuto: row.splitFeeAuto,
   }
 
   // 금액 마크업은 한 벌이다. 칩이 붙든 안 붙든 같은 `Text` 라 두 갈래가 서로 어긋날 수 없다.
@@ -189,12 +191,14 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
   // 예외 메시지를 그대로 렌더하지 않고 토스트로 알린다. 개발자용 문구와 SQLite 네이티브 원문이
   // 모달이 뜰 때의 값. 고치는 중인 값은 모달이 들고 있다가 적용할 때 한 번에 돌려준다.
   // 드롭 비율은 이 표에 없다.
+  const gradeContext = useMvpGradeContext()
   const modalShares: PartyModalShares = {
     crystalMyShare: row.crystalMyShare,
     crystalSharesTotal: row.crystalSharesTotal,
     dropMyShare: null,
     dropSharesTotal: null,
     splitFeePercent: row.splitFeePercent,
+    splitFeeAuto: row.splitFeeAuto,
   }
 
   async function saveParty(input: { partySize: number; shares: PartyModalShares }): Promise<void> {
@@ -206,6 +210,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           myShare: input.shares.crystalMyShare,
           sharesTotal: input.shares.crystalSharesTotal,
           splitFeePercent: input.shares.splitFeePercent,
+          splitFeeAuto: input.shares.splitFeeAuto,
         },
       })
     } catch {
@@ -340,6 +345,12 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           partySize={partySize}
           maxPartySize={row.maxPartySize}
           shares={modalShares}
+          // 이 자리는 그 기록 한 건을 고친다. 자동 요율도 그 기록 날짜의 등급이다.
+          autoFee={
+            gradeContext === null
+              ? null
+              : autoFeeFrom(gradeContext, row.ocid, row.defeatedOn ?? periodStartDateKey(row.periodKey))
+          }
           // 이 기록의 난이도는 처치가 정한 사실이다. 여기서 못 바꾼다.
           onSelectDifficulty={() => {}}
           onApply={(next) => void applyParty(next)}
@@ -415,6 +426,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
             // 뿌린다. 균등이면 합이 곧 인원 수라 지금 값과 같다.
             defaultShare: { myShare: 1, sharesTotal: partySize },
             characterName: row.characterName,
+            ocid: row.ocid,
           }}
         />
       )}

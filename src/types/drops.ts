@@ -79,4 +79,12 @@ export interface RecordedDrop {
   priceShare?: number
   /** 내 비율 스냅샷. 없으면 1 이다. */
   priceMyShare?: number
+  /** 판매 수수료(%). 없으면 없음 */
+  saleFeePercent?: number
+  /** 분배 수수료(%). 없으면 없음 */
+  splitFeePercent?: number
+  /** 판매 수수료가 등급을 따라가나 */
+  saleFeeAuto?: boolean
+  /** 분배 수수료가 등급을 따라가나 */
+  splitFeeAuto?: boolean
 }

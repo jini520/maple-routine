@@ -35,7 +35,9 @@ import { FadedIllustration } from '../../molecules/FadedIllustration/FadedIllust
 import { PartySizeStepper } from '../../molecules/PartySizeStepper/PartySizeStepper'
 import { Segment } from '../../molecules/Segment/Segment'
 import { ShareField } from '../../molecules/ShareField/ShareField'
+import { FeeRow } from '../FeeRow/FeeRow'
 import { Modal } from '../Modal/Modal'
+import type { MvpGradeKey } from '../../../lib/mvp/grades'
 
 /** 모달이 다루는 비율 칸 다섯. 저장 칸과 같은 모양이라 옮겨 담을 것이 없다. */
 export interface PartyModalShares {
@@ -44,6 +46,8 @@ export interface PartyModalShares {
   dropMyShare: number | null
   dropSharesTotal: number | null
   splitFeePercent: number | null
+  /** 송금 수수료가 등급을 따라가나. 적용하면 요율은 그 등급 요율로 나간다 */
+  splitFeeAuto?: boolean
 }
 
 /**
@@ -122,6 +126,11 @@ export function PartySizeModal(props: {
   /** 이 난이도에 저장돼 있는 비율. `null` 칸은 균등이다. */
   shares: PartyModalShares
   /**
+   * 송금 수수료 `자동` 의 명패와 요율. 설정 자리는 이번 주 등급, 보스 수익 행은 그 기록 날짜의 등급을 넘긴다.
+   * 모르면 `null` 이라 값 자리가 빈다.
+   */
+  autoFee?: { grade: MvpGradeKey; percent: number } | null
+  /**
    * 난이도를 골랐다. **저장하지 않는다.** 호출부는 자기 모달 상태만 옮겨 인원·상한·비율
    * 프롭을 그 난이도 것으로 바꿔 주고, 쓰는 일은 `onApply` 에서 한다.
    */
@@ -160,6 +169,8 @@ export function PartySizeModal(props: {
     sharesTotal: draft.shares.dropSharesTotal ?? SEED_SHARES.sharesTotal,
   }
   const splitFeePercent = draft.shares.splitFeePercent ?? 3
+  const splitFeeAuto = draft.shares.splitFeeAuto === true
+  const autoFee = props.autoFee ?? null
 
   // 그림이 판 위에 바로 앉는다. 덧칠할 색이 `mediaSurface` 가 아니라 판의 `surface` 다.
   const { definition } = useThemeAppearance()
@@ -271,7 +282,9 @@ export function PartySizeModal(props: {
                           crystalSharesTotal: SEED_SHARES.sharesTotal,
                           dropMyShare: SEED_SHARES.myShare,
                           dropSharesTotal: SEED_SHARES.sharesTotal,
-                          splitFeePercent: 3,
+                          // 비율로 바꿀 때 송금 수수료는 자동으로 시작한다(내 등급 요율).
+                          splitFeePercent: null,
+                          splitFeeAuto: true,
                         },
                   )
                 }
@@ -307,17 +320,25 @@ export function PartySizeModal(props: {
                   />
                 </View>
 
-                <View className="flex-row items-center justify-between gap-2.5">
-                  <Text className="text-11 font-semibold tracking-[.04em] text-text-muted">수수료</Text>
-                  <Segment
-                    options={FEE_OPTIONS}
-                    selected={`${splitFeePercent}%`}
-                    fixed
-                    onSelect={(option) =>
-                      setShares({ ...draft.shares, splitFeePercent: Number.parseInt(option, 10) })
-                    }
-                  />
-                </View>
+                <FeeRow
+                  variant="compact"
+                  label="수수료"
+                  auto={splitFeeAuto}
+                  onAutoChange={(auto) =>
+                    // 끄는 순간 방금까지 자동이던 요율을 고른 채 선다.
+                    setShares({
+                      ...draft.shares,
+                      splitFeeAuto: auto,
+                      splitFeePercent: !auto && autoFee !== null ? autoFee.percent : draft.shares.splitFeePercent,
+                    })
+                  }
+                  autoFee={autoFee}
+                  options={FEE_OPTIONS}
+                  selected={`${splitFeePercent}%` as (typeof FEE_OPTIONS)[number]}
+                  onSelect={(option) =>
+                    setShares({ ...draft.shares, splitFeeAuto: false, splitFeePercent: Number.parseInt(option, 10) })
+                  }
+                />
               </>
             ) : (
               /* 상한은 (보스 · 난이도)마다 다르다. 스테퍼는 그 수를 못 말하므로 배지가 옆에서
@@ -349,7 +370,14 @@ export function PartySizeModal(props: {
             <Button
               variant="primary"
               testID="party-size-modal-apply"
-              onPress={() => props.onApply(draft)}
+              onPress={() =>
+                props.onApply(
+                  // 자동이면 요율은 그 등급 요율로 내보낸다. 보스 수익 행이 이 값으로 그 기록을 다시 센다.
+                  splitFeeAuto
+                    ? { ...draft, shares: { ...draft.shares, splitFeePercent: autoFee?.percent ?? draft.shares.splitFeePercent } }
+                    : draft,
+                )
+              }
               className="mt-1 w-full items-center"
             >
               적용

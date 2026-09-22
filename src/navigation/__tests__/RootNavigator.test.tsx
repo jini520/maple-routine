@@ -18,6 +18,7 @@ import { act, render, screen } from '@testing-library/react-native'
 import { createNavigationContainerRef } from '@react-navigation/native'
 import { FEATURE_GUIDES } from '../../data/feature-guides'
 import { useAppEntryStore } from '../../features/app-entry/store'
+import { useMvpAskStore } from '../../features/mvp-grade/flow-store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { setLiveUpdatePort } from '../../native/ports'
 
@@ -68,16 +69,38 @@ describe('진입 분기', () => {
     expect(screen.queryByTestId('screen-Today', { includeHiddenElements: true })).toBeNull()
   })
 
-  // 로그인과 캐릭터 설정이 **함께 서지 않는다**. 나란히 두면 그 사이에 뒤로 가기가 생기는데
-  // 되돌아갈 곳이 없다.
-  it('캐릭터 설정 단계면 그 화면만 서고 로그인도 탭도 없다', async () => {
-    useAppEntryStore.setState({ stage: 'characterSetup' })
+  // 온보딩은 뒤로 갈 수 있는 한 스택이다. 부팅이 캐릭터 설정에서 멈춘 것을 찾으면 로그인 위에 캐릭터 설정을 쌓아,
+  // 뒤로가기가 로그인으로 간다.
+  it('캐릭터 설정 단계로 부팅하면 로그인 위에 캐릭터 설정이 서고 뒤로 가면 로그인이다', async () => {
+    useAppEntryStore.setState({ stage: 'characterSetup', resumeTo: 'characterSetup' })
+    const navigationRef = createNavigationContainerRef<RootStackParamList>()
 
-    await render(<NavigationHarness />)
+    await render(<NavigationHarness navigationRef={navigationRef} />)
 
     expect(screen.getByTestId('screen-CharacterSetup')).toBeTruthy()
-    expect(screen.queryByTestId('screen-SignIn', { includeHiddenElements: true })).toBeNull()
+    expect(screen.getByTestId('screen-SignIn', { includeHiddenElements: true })).toBeTruthy()
     expect(screen.queryByTestId('screen-Today', { includeHiddenElements: true })).toBeNull()
+    expect(useAppEntryStore.getState().resumeTo).toBeNull()
+
+    await act(async () => {
+      navigationRef.goBack()
+    })
+    expect(screen.getByTestId('screen-SignIn')).toBeTruthy()
+  })
+
+  it('MVP 등급 단계로 부팅하면 로그인 · 캐릭터 설정 · MVP 고르기가 쌓인다', async () => {
+    useAppEntryStore.setState({ stage: 'mvpGrade', resumeTo: 'mvpGrade' })
+    // 물을 것이 이미 서 있으면 고르기 화면이 재지 않는다. 여기서는 저장소를 안 탄다.
+    useMvpAskStore.setState({ ask: { kind: 'select', accountIds: [], bulk: false }, accounts: [] })
+    const navigationRef = createNavigationContainerRef<RootStackParamList>()
+
+    await render(<NavigationHarness navigationRef={navigationRef} />)
+
+    expect(screen.getByTestId('screen-MvpGradePick')).toBeTruthy()
+    await act(async () => {
+      navigationRef.goBack()
+    })
+    expect(screen.getByTestId('screen-CharacterSetup')).toBeTruthy()
   })
 
   it('열리면 탭이 그려지고 진입 화면은 사라진다', async () => {
@@ -118,7 +141,8 @@ describe('하위 페이지. 열둘', () => {
   // 착지점이 빈 화면이면 안 된다). 그래서 여기 값이 카탈로그와 어긋나면 이 테스트가 먼저 깨진다.
   const params: Partial<Record<(typeof STACK_ROUTE_NAMES)[number], object>> = {
     SettingsFeatureGuide: { guideId: GUIDE_ID },
-    SettingsReleaseNoteGuide: { guideId: GUIDE_ID } }
+    SettingsReleaseNoteGuide: { guideId: GUIDE_ID },
+    SettingsMvpGradeHistory: { accountId: 'A' } }
 
   it.each(STACK_ROUTE_NAMES)('%s 로 push 하면 그 화면이 열린다', async (name) => {
     useAppEntryStore.setState({ stage: 'ready' })

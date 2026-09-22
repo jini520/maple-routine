@@ -30,8 +30,7 @@ import {
   toScheduleSyncError,
   type ScheduleSyncError,
 } from '../features/schedule-sync/schedule-sync'
-import { worldKeyOfApiName } from '../lib/world/worlds'
-import { fetchCharacterList } from '../nexon/character'
+import { fetchAndRecordCharacterList } from '../features/mvp-grade/character-list'
 import { getAuthConfig } from '../storage/api-key'
 import type { CharacterPickerEntry } from '../types'
 
@@ -133,7 +132,7 @@ export function useAccountRosters(): AccountRosters {
         if (authConfig === null) {
           throw new Error('useAccountRosters: API 키가 없습니다')
         }
-        const list = await fetchCharacterList(authConfig.apiKey, worldKeyOfApiName)
+        const list = await fetchAndRecordCharacterList(authConfig.apiKey)
         if (cancelled) return
         // 캐릭터 0명 계정은 `normalizeCharacterList` 가 이미 걸렀고,
         // `summarizeAccount` 의 `null` 은 그 규칙이 뚫렸을 때의 안전망이다. 렌더 중에 던지지 않는다.

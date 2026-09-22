@@ -24,6 +24,18 @@ jest.mock('@gorhom/bottom-sheet', () => {
   }
 })
 
+// 자동 수수료가 읽는 등급 기록. 루디(ocid-1)는 다이아 ID, 아델(ocid-2)은 등급이 없는 ID 다.
+jest.mock('../../../features/mvp-grade/fee-context', () => ({
+  loadFeeContext: jest.fn(async () => ({
+    histories: new Map([['A', [{ startDate: '2026-06-11', grade: 'diamond' }]]]),
+    sightings: [
+      { ocid: 'ocid-1', name: '루디', accountId: 'A', firstSeenOn: '2026-06-01', lastSeenOn: '2026-09-22' },
+      { ocid: 'ocid-2', name: '아델', accountId: 'B', firstSeenOn: '2026-06-01', lastSeenOn: '2026-09-22' },
+    ],
+    fallbackOcid: 'ocid-1',
+  })),
+}))
+
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { IncomeSheet } from '../IncomeSheet'
 import type { IncomeRecord } from '../../../storage/income'
@@ -125,6 +137,23 @@ async function 판매시트(
   return 그리기(overrides, 'item_sale')
 }
 
+/** 캐릭터까지 고른 아이템 판매 시트. 수수료 요율이 캐릭터의 ID 등급에서 와서 캐릭터를 골라야 저장된다. */
+async function 고른판매시트(
+  overrides: Partial<React.ComponentProps<typeof IncomeSheet>> = {},
+  ocid = 'ocid-1',
+): Promise<Rendered> {
+  const view = await 판매시트(overrides)
+  await 사슬고르기(view, ocid)
+  return view
+}
+
+/** 수수료 줄의 `자동` 체크박스를 누른다. */
+async function 자동누르기(view: Rendered): Promise<void> {
+  await act(async () => {
+    fireEvent.press(within(view.getByTestId('income-sheet-fee')).getByRole('checkbox'))
+  })
+}
+
 /** 아이템 판매의 치는 자리는 **판매 대금 칸**이다. 그 칸은 입력 카드로 옮겨갔다. */
 async function 대금치기(view: Rendered, text: string): Promise<void> {
   await 칸에치기(view, 'income-sheet-gross', text)
@@ -185,6 +214,7 @@ const 옛사냥행 = {
   mesoAmount: 1_200_000_000,
   saleFeePercent: null,
   saleFeeMeso: null,
+  saleFeeAuto: false,
   pointAmount: null,
   pointPer100mMeso: null,
   cashAmount: null,
@@ -484,36 +514,88 @@ describe('금액. OS 숫자 키보드다', () => {
  * 요율은 분배 계산기의 `FeePercent`(3·5, 사용자 확인값)를 그대로 쓰고, 계산도
  * `netProceedsMeso` 를 그대로 부른다. 여기서 다시 짜면 분배 계산기와 1 메소가 어긋난다.
  */
+describe('사냥의 조각 판매 수수료', () => {
+  it('조각 가격을 안 적어도 수수료 줄이 선다', async () => {
+    const view = await 그리기({}, 'hunting')
+    await 사슬고르기(view, 'ocid-1')
+    expect(within(view.getByTestId('income-sheet-fee')).getByLabelText('MVP 다이아')).toBeTruthy()
+
+    await 칸에치기(view, 'income-sheet-fragments', '12')
+    await 칸에치기(view, 'income-sheet-fragment-price', '8000000')
+
+    expect(within(view.getByTestId('income-sheet-fee')).getByLabelText('MVP 다이아')).toBeTruthy()
+  })
+
+  it('획득 메소 직접 입력 폼에도 늘 선다', async () => {
+    const view = await 그리기({}, 'hunting')
+    await act(async () => {
+      fireEvent.press(view.getByRole('checkbox', { name: '획득 메소 직접 입력' }))
+    })
+
+    expect(view.getByTestId('income-sheet-fee')).toBeTruthy()
+  })
+})
+
 describe('판매 수수료', () => {
-  // 사냥 메소에는 경매장이 없고, `기타` 에 붙이면 **무엇의 수수료인가** 가 안 읽힌다.
-  it('판매 대금과 수수료 줄이 아이템 판매에만 선다', async () => {
+  // `기타` 에 붙이면 **무엇의 수수료인가** 가 안 읽힌다. 사냥은 조각 몫에만 붙어 판매 대금 칸이 없다.
+  it('판매 대금은 아이템 판매에만 서고, 수수료 줄은 기타에 안 선다', async () => {
     const 판매 = await 판매시트()
     expect(판매.getByTestId('income-sheet-gross')).toBeTruthy()
     expect(판매.getByTestId('income-sheet-fee')).toBeTruthy()
 
-    for (const 갈래 of ['hunting', 'etc'] as const) {
-      const view = await 그리기({}, 갈래)
-      expect(view.queryByTestId('income-sheet-gross')).toBeNull()
-      expect(view.queryByTestId('income-sheet-fee')).toBeNull()
-    }
+    const 사냥 = await 그리기({}, 'hunting')
+    expect(사냥.queryByTestId('income-sheet-gross')).toBeNull()
+    expect(사냥.getByTestId('income-sheet-fee')).toBeTruthy()
+
+    const 기타 = await 그리기({}, 'etc')
+    expect(기타.queryByTestId('income-sheet-gross')).toBeNull()
+    expect(기타.queryByTestId('income-sheet-fee')).toBeNull()
   })
 
-  /**
-   * **기본이 `없음`** 이다. 직거래는 수수료가 없고, 셋 중 하나를 억지로 세우면
-   * 시트를 열기만 해도 금액이 달라진다.
-   */
-  it('기본이 없음 이다', async () => {
-    const view = await 판매시트()
+  /** 새 기록은 **자동**으로 시작한다. 캐릭터가 속한 ID 의 그 날 등급 명패와 요율이 선다. */
+  it('기본이 자동이다. 캐릭터 ID 의 등급 명패와 요율이 선다', async () => {
+    const view = await 고른판매시트()
+    const 줄 = within(view.getByTestId('income-sheet-fee'))
 
-    expect(view.getByLabelText('없음').props.accessibilityState?.selected).toBe(true)
-    expect(view.getByLabelText('3%')).toBeTruthy()
+    expect(줄.getByRole('checkbox').props.accessibilityState?.checked).toBe(true)
+    expect(줄.getByLabelText('MVP 다이아')).toBeTruthy()
+    expect(줄.getByText('3%')).toBeTruthy()
+    expect(줄.queryByTestId('segment')).toBeNull()
+  })
+
+  it('캐릭터를 고르기 전에는 자동의 값 자리가 캐릭터를 고르라고 말하고 저장되지 않는다', async () => {
+    const onSave = jest.fn()
+    const view = await 판매시트({ onSave })
+    await 대금치기(view, '1200000000')
+    const 줄 = within(view.getByTestId('income-sheet-fee'))
+
+    expect(줄.getByText('캐릭터를 선택해 주세요')).toBeTruthy()
+    expect(줄.queryByText('3%')).toBeNull()
+    await 이름으로누르기(view, '저장')
+    expect(onSave).not.toHaveBeenCalled()
+
+    await 사슬고르기(view, 'ocid-1')
+    expect(줄.queryByText('캐릭터를 선택해 주세요')).toBeNull()
+    expect(줄.getByText('3%')).toBeTruthy()
+  })
+
+  /** 자동을 끄면 방금까지 자동이던 요율을 고른 채 `없음 · 3% · 5%` 가 선다. */
+  it('자동을 끄면 그 요율을 고른 세그먼트가 선다', async () => {
+    const view = await 고른판매시트()
+
+    await 자동누르기(view)
+
+    expect(view.getByLabelText('3%').props.accessibilityState?.selected).toBe(true)
+    expect(view.getByLabelText('없음')).toBeTruthy()
     expect(view.getByLabelText('5%')).toBeTruthy()
   })
 
   /** 큰 숫자가 적는 것은 **받는 돈**이다. 판매 대금이 아니라 수수료를 뗀 값. */
   it('요율을 고르면 합계가 받는 돈으로 내려간다', async () => {
-    const view = await 판매시트()
+    const view = await 고른판매시트()
     await 대금치기(view, '1200000000')
+    await 자동누르기(view)
+    await 누르기(view, '없음')
 
     expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('12억')
 
@@ -527,8 +609,9 @@ describe('판매 수수료', () => {
    * 큰 숫자는 앱이 세는 합계라 **못 친다**.
    */
   it('판매 대금은 그 자리에 남고 합계는 못 친다', async () => {
-    const view = await 판매시트()
+    const view = await 고른판매시트()
     await 대금치기(view, '1200000000')
+    await 자동누르기(view)
 
     await 누르기(view, '5%')
     await 누르기(view, '3%')
@@ -543,19 +626,20 @@ describe('판매 수수료', () => {
    * **받는 돈과 뗀 몫을 둘 다 박는다**. 집계는 `mesoAmount` 한 칸만 보고, 판매 대금은
    * 받는 돈 + 뗀 몫 으로 되짚는다.
    */
-  it('받는 돈과 뗀 몫을 함께 저장한다', async () => {
+  it('받는 돈과 뗀 몫을 함께 저장한다. 자동이면 자동으로 적는다', async () => {
     const onSave = jest.fn()
-    const view = await 판매시트({ onSave })
+    const view = await 고른판매시트({ onSave })
     await 대금치기(view, '1200000000')
-    await 누르기(view, '3%')
 
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
+      ocid: 'ocid-1',
       category: 'item_sale',
       mesoAmount: 1_164_000_000,
       saleFeePercent: 3,
       saleFeeMeso: 36_000_000,
+      saleFeeAuto: true,
       pointAmount: null,
       pointPer100mMeso: null,
       cashAmount: null,
@@ -591,9 +675,21 @@ describe('판매 수수료', () => {
     expect(within(view.getByTestId('bottom-sheet-footer')).getAllByLabelText('저장')).toHaveLength(1)
   })
 
+  it('손으로 고른 요율은 수동으로 적는다', async () => {
+    const onSave = jest.fn()
+    const view = await 고른판매시트({ onSave })
+    await 대금치기(view, '1200000000')
+    await 자동누르기(view)
+    await 누르기(view, '5%')
+
+    await 누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({ saleFeePercent: 5, saleFeeMeso: 60_000_000, saleFeeAuto: false })
+  })
+
   it('저장을 누르면 폼의 손잡이가 돈다. ref 로 넘긴 최신 것이다', async () => {
     const onSave = jest.fn()
-    const view = await 판매시트({ onSave })
+    const view = await 고른판매시트({ onSave })
     await 대금치기(view, '1200')
 
     await act(async () => {
@@ -637,6 +733,7 @@ describe('저장', () => {
       // `기타`에는 수수료 줄이 아예 없다. 칸은 `null` 로 나간다.
       saleFeePercent: null,
       saleFeeMeso: null,
+      saleFeeAuto: false,
       pointAmount: null,
       pointPer100mMeso: null,
       cashAmount: null,
@@ -650,7 +747,7 @@ describe('저장', () => {
 
   it('저장하면 닫는다', async () => {
     const onClose = jest.fn()
-    const view = await 판매시트({ onClose })
+    const view = await 고른판매시트({ onClose })
 
     await 대금치기(view, '1')
     await 누르기(view, '저장')
@@ -702,13 +799,22 @@ describe('캐릭터 귀속', () => {
     expect(onSave.mock.calls[0][0]).toMatchObject({ ocid: 'ocid-2' })
   })
 
-  it('안 고르면 계정 단위로 저장한다. `ocid` 가 `null` 이다', async () => {
+  it('기타는 안 고르면 계정 단위로 저장한다. `ocid` 가 `null` 이다', async () => {
     const onSave = jest.fn()
-    const view = await 판매시트({ onSave })
-    await 대금치기(view, '1200')
+    const view = await 그리기({ onSave }, 'etc')
+    await 치기(view, '12')
     await 이름으로누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({ ocid: null })
+  })
+
+  // 수수료 요율을 캐릭터가 속한 ID 의 등급에서 찾는다. 계정 단위로 적을 수 없다.
+  it('아이템 판매는 캐릭터 목록에 선택 안함이 없다', async () => {
+    const view = await 판매시트()
+    await 아이디로누르기(view, 'income-sheet-chain-placeholder-trigger')
+
+    expect(view.queryByTestId('income-sheet-chain-option-null')).toBeNull()
+    expect(view.queryByText('선택 안함')).toBeNull()
   })
 })
 
@@ -727,6 +833,7 @@ describe('수정 모드', () => {
     mesoAmount: 1_200_000_000,
     saleFeePercent: null,
     saleFeeMeso: null,
+    saleFeeAuto: false,
     pointAmount: null,
     pointPer100mMeso: null,
     cashAmount: null,
@@ -916,6 +1023,7 @@ describe('통화', () => {
           mesoAmount: 60_000_000,
           saleFeePercent: null,
           saleFeeMeso: null,
+          saleFeeAuto: false,
           pointAmount: null,
           pointPer100mMeso: null,
           cashAmount: null,
@@ -945,6 +1053,7 @@ describe('통화', () => {
           mesoAmount: 15_000,
           saleFeePercent: null,
           saleFeeMeso: null,
+          saleFeeAuto: false,
           pointAmount: null,
           pointPer100mMeso: null,
           cashAmount: null,
@@ -973,6 +1082,7 @@ describe('통화', () => {
         mesoAmount: null,
         saleFeePercent: null,
         saleFeeMeso: null,
+        saleFeeAuto: false,
         pointAmount: 3_000,
         pointPer100mMeso: 1_180,
         cashAmount: null,
@@ -1357,9 +1467,9 @@ describe('사냥 계산기', () => {
     expect(view.queryByLabelText('금액')).toBeNull()
     expect(view.queryByLabelText('금액 초기화')).toBeNull()
 
-    // 그 합계가 얼마인지는 **저장이 넘기는 값**이 말한다: 21,168,000 + 96,000,000.
+    // 그 합계가 얼마인지는 **저장이 넘기는 값**이 말한다: 21,168,000 + 96,000,000 − 조각 몫의 수수료 3%(2,880,000).
     await 이름으로누르기(view, '저장')
-    expect(onSave.mock.calls[0][0]).toMatchObject({ mesoAmount: 117_168_000 })
+    expect(onSave.mock.calls[0][0]).toMatchObject({ mesoAmount: 114_288_000, saleFeeMeso: 2_880_000 })
   })
 
   /**
@@ -1465,6 +1575,7 @@ describe('사냥 계산기', () => {
         mesoAmount: 50_000_000,
         saleFeePercent: null,
         saleFeeMeso: null,
+        saleFeeAuto: false,
         pointAmount: null,
         pointPer100mMeso: null,
         cashAmount: null,
@@ -1721,7 +1832,11 @@ describe('사냥 수동 입력', () => {
         category: 'hunting',
         item: null,
         itemKey: null,
-        mesoAmount: 1_664_000_000,
+        // 10억 + 83 × 800만 − 조각 몫의 수수료 3%(19,920,000)
+        mesoAmount: 1_644_080_000,
+        saleFeePercent: 3,
+        saleFeeMeso: 19_920_000,
+        saleFeeAuto: true,
         hunt: {
           mode: 'manual',
           typedMeso: 1_000_000_000,
@@ -2172,7 +2287,7 @@ describe('솔 에르다 조각 정산', () => {
     expect(view.getByTestId('income-sheet-fragment-storage')).toHaveTextContent('120개')
   })
 
-  it('판 개수 × 개당 가격이 금액이고 판 날에 적힌다', async () => {
+  it('판 개수 × 개당 가격에서 판매 수수료를 뗀 것이 금액이고 판 날에 적힌다', async () => {
     const onSave = jest.fn()
     const view = await 정산시트({ onSave, loadFragmentStorage: async () => 120 })
     await 사슬고르기(view, 'ocid-1')
@@ -2180,7 +2295,8 @@ describe('솔 에르다 조각 정산', () => {
     await 아이디로치기(view, 'income-sheet-settle-count', '50')
     await 아이디로치기(view, 'income-sheet-settle-price', '8000000')
 
-    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('4억')
+    // 4억에서 다이아 요율 3% 를 뗀다
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('3억 8800만')
     await 이름으로누르기(view, '저장')
     expect(onSave).toHaveBeenCalledWith({
       ocid: 'ocid-1',
@@ -2188,10 +2304,10 @@ describe('솔 에르다 조각 정산', () => {
       category: 'sol_erda_fragment',
       item: null,
       itemKey: null,
-      mesoAmount: 400_000_000,
-      // 수수료 줄이 없다. 수수료를 뗀 값을 원하면 개당 가격에 뗀 값을 친다.
-      saleFeePercent: null,
-      saleFeeMeso: null,
+      mesoAmount: 388_000_000,
+      saleFeePercent: 3,
+      saleFeeMeso: 12_000_000,
+      saleFeeAuto: true,
       pointAmount: null,
       pointPer100mMeso: null,
       cashAmount: null,
@@ -2271,6 +2387,34 @@ describe('솔 에르다 조각 정산', () => {
     await 사슬고르기(view, 'ocid-2')
 
     expect(view.getByTestId('income-sheet-fragment-storage')).toHaveTextContent('40개')
+  })
+
+  it('수수료 줄이 자동으로 선다. 끄면 없음으로 직거래를 적는다', async () => {
+    const onSave = jest.fn()
+    const view = await 정산시트({ onSave, loadFragmentStorage: async () => 120 })
+    await 사슬고르기(view, 'ocid-1')
+    await 아이디로치기(view, 'income-sheet-settle-count', '50')
+    await 아이디로치기(view, 'income-sheet-settle-price', '8000000')
+
+    expect(within(view.getByTestId('income-sheet-fee')).getByLabelText('MVP 다이아')).toBeTruthy()
+    await 자동누르기(view)
+    await 누르기(view, '없음')
+    await 이름으로누르기(view, '저장')
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ mesoAmount: 400_000_000, saleFeePercent: null, saleFeeMeso: null, saleFeeAuto: false }),
+    )
+  })
+
+  // 받은 돈만으로 나누면 수수료를 뗀 기록의 단가가 낮게 선다.
+  it('수정으로 열면 단가를 받은 돈과 뗀 몫을 더해 되짚는다', async () => {
+    const view = await 그리기({
+      editing: { ...정산기록, mesoAmount: 388_000_000, saleFeePercent: 3, saleFeeMeso: 12_000_000, saleFeeAuto: true },
+      onDelete: jest.fn(),
+      loadFragmentStorage: async () => 50,
+    })
+
+    expect(줄글자(view, 'income-sheet-settle-price')).toBe('8,000,000')
   })
 
   /** 지금 보관만 보면 보관을 다 판 기록은 열어서 저장만 해도 막힌다. */
@@ -2587,6 +2731,7 @@ describe('메소 획득량', () => {
         mesoAmount: 50_000_000,
         saleFeePercent: null,
         saleFeeMeso: null,
+        saleFeeAuto: false,
         pointAmount: null,
         pointPer100mMeso: null,
         cashAmount: null,
@@ -2631,6 +2776,7 @@ describe('수정으로 열 때의 큰 숫자', () => {
       mesoAmount,
       saleFeePercent: null,
       saleFeeMeso: null,
+      saleFeeAuto: false,
       pointAmount: null,
       pointPer100mMeso: null,
       cashAmount: null,
@@ -2766,7 +2912,7 @@ describe('날짜 바꾸기', () => {
 
   it('바꾼 날짜로 저장된다', async () => {
     const onSave = jest.fn()
-    const view = await 판매시트({ onSave })
+    const view = await 고른판매시트({ onSave })
     await 대금치기(view, '1200000000')
     await 날짜고르기(view, '2026-08-22')
     await 이름으로누르기(view, '저장')
@@ -2791,7 +2937,7 @@ describe('날짜 바꾸기', () => {
       onDelete: jest.fn(),
       editing: {
         id: 'inc-1',
-        ocid: null,
+        ocid: 'ocid-1',
         earnedOn: '2026-08-23',
         category: 'item_sale' as const,
         item: '앱솔랩스 케이프',
@@ -2799,6 +2945,7 @@ describe('날짜 바꾸기', () => {
         mesoAmount: 1_200_000_000,
         saleFeePercent: null,
         saleFeeMeso: null,
+        saleFeeAuto: false,
         pointAmount: null,
         pointPer100mMeso: null,
         cashAmount: null,

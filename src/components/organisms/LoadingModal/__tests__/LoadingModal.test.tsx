@@ -51,7 +51,7 @@ describe('분모가 아직 없을 때', () => {
 })
 
 // 완료 시점에만 프로그램으로 닫는다. 오버레이를 눌러 닫으면 사용자가 **오는 중인데 안 온다**
-// 고 읽는 화면에 남는다(`ProgressModal` 과 같은 이유).
+// 고 읽는 화면에 남는다(`TaskProgressModal` 과 같은 이유).
 it('오버레이를 눌러도 안 닫힌다', async () => {
   const view = await renderOverlay(<LoadingModal title="불러오는 중" />)
 

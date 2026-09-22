@@ -1,6 +1,7 @@
 import { bossNameOf } from '../lib/boss/bosses'
 import { notifyAfterBatch } from './record-revision-batch'
 import { getBossProfitDb } from './sqlite/db'
+import { inTransaction } from './sqlite/transaction'
 import type { DropCategory, RecordedDrop } from '../types/drops'
 
 // 한 보스/기간의 드롭 집합은 시트에서 통째로 편집되므로 replace-all(DELETE→INSERT)이
@@ -39,6 +40,14 @@ export interface BossDropRecord {
   priceShare: number | null
   /** 내 비율 스냅샷. `null` 은 1 이라 이 칸이 없던 옛 기록의 금액이 안 움직인다. */
   priceMyShare: number | null
+  /** 판매 수수료(%). `null` 은 없음 */
+  saleFeePercent: number | null
+  /** 분배 수수료(%). `null` 은 없음 */
+  splitFeePercent: number | null
+  /** 판매 수수료가 등급을 따라가나 */
+  saleFeeAuto: boolean
+  /** 분배 수수료가 등급을 따라가나 */
+  splitFeeAuto: boolean
 }
 
 const DELETE_SQL = `
@@ -49,8 +58,9 @@ const DELETE_SQL = `
 const INSERT_SQL = `
   INSERT INTO boss_drop_records
     (ocid, boss_key, boss, difficulty, period_key, drop_index, category, item_key, item_name, slot, box_origin_key,
-     box_origin, ring_level, quantity, recorded_at, price_state, price_meso, price_share, price_my_share)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     box_origin, ring_level, quantity, recorded_at, price_state, price_meso, price_share, price_my_share,
+     sale_fee_percent, split_fee_percent, sale_fee_auto, split_fee_auto)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 // 한 보스/기간의 드롭 집합을 통째로 교체한다(기존 삭제 후 0..n으로 재삽입). 빈 배열이면 삭제만.
@@ -142,6 +152,10 @@ export async function replaceBossDropRecords(
       drop.priceMeso ?? null,
       drop.priceShare ?? null,
       drop.priceMyShare ?? null,
+      drop.saleFeePercent ?? null,
+      drop.splitFeePercent ?? null,
+      drop.saleFeeAuto === true ? 1 : null,
+      drop.splitFeeAuto === true ? 1 : null,
     ])
   }
 
@@ -180,6 +194,10 @@ function rowToRecord(row: Record<string, unknown>): BossDropRecord {
     priceMeso: (row.price_meso as number | null | undefined) ?? null,
     priceShare: (row.price_share as number | null | undefined) ?? null,
     priceMyShare: (row.price_my_share as number | null | undefined) ?? null,
+    saleFeePercent: (row.sale_fee_percent as number | null | undefined) ?? null,
+    splitFeePercent: (row.split_fee_percent as number | null | undefined) ?? null,
+    saleFeeAuto: Number(row.sale_fee_auto) === 1,
+    splitFeeAuto: Number(row.split_fee_auto) === 1,
   }
 }
 
@@ -200,6 +218,68 @@ export async function getBossDropRecords(
   )
 
   return (values ?? []).map(rowToRecord)
+}
+
+/** 판매 · 분배 수수료 중 하나라도 자동인 기록 전부. 등급 기록이 바뀌면 다시 셀 대상이다. */
+export async function getAutoFeeDropRecords(): Promise<BossDropRecord[]> {
+  const db = await getBossProfitDb()
+  const { values } = await db.query(
+    `SELECT * FROM boss_drop_records WHERE sale_fee_auto = 1 OR split_fee_auto = 1 ORDER BY drop_index`,
+  )
+  return (values ?? []).map(rowToRecord)
+}
+
+export interface DropFeeUpdate {
+  ocid: string
+  bossKey: string
+  difficulty: string
+  periodKey: string
+  dropIndex: number
+  saleFeePercent: number | null
+  splitFeePercent: number | null
+}
+
+/** 드롭 기록들의 두 요율을 고쳐 쓴다. 수익은 읽을 때 `dropPayoutMeso` 가 센다. */
+export async function updateDropFees(updates: readonly DropFeeUpdate[]): Promise<void> {
+  if (updates.length === 0) return
+  const db = await getBossProfitDb()
+  await inTransaction(db, async () => {
+    for (const update of updates) {
+      await db.run(
+        `UPDATE boss_drop_records SET sale_fee_percent = ?, split_fee_percent = ?
+         WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ? AND drop_index = ?`,
+        [update.saleFeePercent, update.splitFeePercent, update.ocid, update.bossKey, update.difficulty, update.periodKey, update.dropIndex],
+      )
+    }
+  })
+  bumpRecordsRevision()
+}
+
+/** 일괄 적용 대상. 가격을 입력했고 두 수수료가 다 빈 드롭이다. */
+export async function getBulkFeeDropRecords(): Promise<BossDropRecord[]> {
+  const db = await getBossProfitDb()
+  const { values } = await db.query(
+    `SELECT * FROM boss_drop_records
+     WHERE price_state = 'entered' AND sale_fee_percent IS NULL AND split_fee_percent IS NULL
+     ORDER BY drop_index`,
+  )
+  return (values ?? []).map(rowToRecord)
+}
+
+/** 일괄 적용. 두 요율을 적고 두 칸을 자동으로 바꾼다. */
+export async function applyAutoDropFees(updates: readonly DropFeeUpdate[]): Promise<void> {
+  if (updates.length === 0) return
+  const db = await getBossProfitDb()
+  await inTransaction(db, async () => {
+    for (const update of updates) {
+      await db.run(
+        `UPDATE boss_drop_records SET sale_fee_percent = ?, split_fee_percent = ?, sale_fee_auto = 1, split_fee_auto = 1
+         WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ? AND drop_index = ?`,
+        [update.saleFeePercent, update.splitFeePercent, update.ocid, update.bossKey, update.difficulty, update.periodKey, update.dropIndex],
+      )
+    }
+  })
+  bumpRecordsRevision()
 }
 
 /**

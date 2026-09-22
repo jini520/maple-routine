@@ -53,6 +53,8 @@ export interface BossProfitRow {
   crystalSharesTotal: number | null
   /** 차액 송금의 수수료율. `null` 은 3 이다. */
   splitFeePercent: number | null
+  /** 송금 수수료가 등급을 따라가나. 기록에서 나온 행만 값을 갖는다 */
+  splitFeeAuto?: boolean
   isComplete: boolean // false면 보스 스케줄러에 등록만 되고 아직 처치 전(미완료 placeholder). payoutMeso는 항상 0이고 DB에 기록되지 않는다
   /**
    * 며칟날 잡았나. 기록에서 나온 행만 값을 갖고 그 밖은 `null` 이다.
@@ -282,6 +284,7 @@ export function buildRowFromRecord(
     crystalMyShare: record.crystalMyShare,
     crystalSharesTotal: record.crystalSharesTotal,
     splitFeePercent: record.splitFeePercent,
+    splitFeeAuto: record.splitFeeAuto === true,
     isComplete: true, // 기록은 항상 완료된 보스만 남는다(backfillTarget/자동 기록이 완료 보스만 upsert)
     defeatedOn: record.defeatedOn ?? null,
     source: record.source ?? 'auto',
@@ -428,5 +431,9 @@ export function toRecordedDrop(record: BossDropRecord): RecordedDrop {
     priceMeso: record.priceMeso ?? undefined,
     priceShare: record.priceShare ?? undefined,
     priceMyShare: record.priceMyShare ?? undefined,
+    saleFeePercent: record.saleFeePercent ?? undefined,
+    splitFeePercent: record.splitFeePercent ?? undefined,
+    saleFeeAuto: record.saleFeeAuto || undefined,
+    splitFeeAuto: record.splitFeeAuto || undefined,
   }
 }

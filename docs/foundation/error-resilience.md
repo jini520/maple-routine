@@ -2,7 +2,7 @@
 
 > **범위**: 실패 처리·빈 상태·참조 무결성·멱등성·엣지 케이스의 제품 원칙과 계층별 구현 지점. 결정의 이유·트레이드오프는 [[ADR-008]].
 > **관련 소스**: `nexon/client` · `nexon/schedule` · `nexon/character` · `storage/*` 어댑터 · `native/notification-sync` · `lib/error-reporting` · 앱 전역 에러 바운더리.
-> **관련 ADR**: [[ADR-008]] [[ADR-004]] [[ADR-030]] [[ADR-067]] [[ADR-101]] [[ADR-114]] [[ADR-115]] [[ADR-116]]. **관련 문서**: [architecture.md](./architecture.md), [nexon-api.md](./nexon-api.md), [../features/app-entry.md](../features/app-entry.md)(401 이후의 단계 재개).
+> **관련 ADR**: [[ADR-008]] [[ADR-004]] [[ADR-307]] [[ADR-030]] [[ADR-067]] [[ADR-101]] [[ADR-114]] [[ADR-115]] [[ADR-116]]. **관련 문서**: [architecture.md](./architecture.md), [nexon-api.md](./nexon-api.md), [../features/app-entry.md](../features/app-entry.md)(401 이후의 단계 재개).
 
 ## 제품 원칙
 1. **실패는 숨기지 않는다**. 조용히 이전 상태를 유지하는 대신 무엇이 실패했고 마지막 성공이 언제인지 보여준다("마지막 동기화 n분 전" + 새로고침).
@@ -71,6 +71,22 @@
 
 ## 멱등성
 보스 수익 기록은 `(characterId, boss, difficulty, weekOf)` 를 유니크 키로 upsert: 같은 주에 여러 번 동기화해도 중복 생성 안 됨. **이 키는 ocid 를 품어 월드 리프에는 안 닿는다.** 리프는 ocid 를 새로 만들고 완료는 새 ocid 로 넘어오므로, 같은 처치가 다른 키로 한 번 더 쓰인다. 그 중복은 upsert 가 아니라 기록 뒤의 정리가 푼다([[ADR-274]]).
+
+## 앱이 중간에 닫혀도 끝나는 작업 ([[ADR-307]], 구현 완료 2026-09-22)
+
+기존 기록을 다시 쓰는 작업은 **남은 일을 스스로 찾는 단계**로 짓고, 조각(200개) 하나를 트랜잭션 하나로 처리한다. 처리한 일은 다시 남은 일로
+안 잡혀서, 멈춘 자리를 따로 적지 않아도 다시 돌리면 남은 것부터 한다. SQLite 이관(`storage/sqlite/migrations.ts`)이 스키마 버전에 묶여 부팅 때
+조용히 도는 것과 달리, 이쪽은 사용자가 고른 때에 돈다.
+
+- 시작 전에 preferences `pendingTasks` 에 작업 `id` 와 단계별 시작 때의 남은 수를 적고, 남은 일이 0 이 되면 지운다. 캐시 삭제에서 보존한다.
+- 0.3초 넘게 걸리면 진행률 모달(`TaskProgressModal`)이 선다. 앱을 다시 열 때 표시가 남아 있으면 재진행 확인(`TaskResumeModal`)이
+  `이어서 진행하기` 하나로 뜬다. `나중에` 는 없다.
+- 실패하면 토스트로 알리고 모달을 닫는다. 표시는 남아 다음에 열 때 다시 묻는다. 곧바로 다시 묻지 않는 것은 되풀이되는 실패가 앱을 막지 않게 하려는 것이다.
+- 작업이 바꾼 표는 판(revision)을 올린다. 가계부는 수입 기록 판까지 보고 다시 읽는다.
+- 첫 사용처는 MVP 등급의 일괄 적용과 자동 수수료 다시 계산이다([features/mvp-grade.md](../features/mvp-grade.md)).
+- 새 작업을 붙이는 법: `features/resumable-task/task.ts` 의 `ResumableTask` 로 정의하고(단계마다 `remaining` · `runChunk`),
+  `app/resumable-task/registry.ts` 에 한 줄을 더한 뒤 `useTaskRunnerStore.getState().run([task])` 로 돌린다. 등록부에서 빠진 작업의
+  표시는 다음에 열 때 묻지 않고 지워진다.
 
 ## 엣지 케이스
 - **신규 캐릭터, 게임 내 미등록**: `registration_flag` 전부 `"false"`. 에러 아닌 정상 빈 상태("게임에서 스케줄러에 등록해주세요").

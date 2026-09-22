@@ -31,6 +31,9 @@ const INCOME_RECORDS_BODY = `(
     -- 뗀 몫. **판매 대금 = meso_amount + sale_fee_meso** 로 정확히 되짚는다. 내림이 섞여 있어
     -- 요율만으로는 역산이 안 된다.
     sale_fee_meso INTEGER,
+    -- 1 이면 수수료가 등급을 따라간다(자동). 등급 기록이 바뀔 때 위 세 칸과 meso_amount 가 다시 적힌다.
+    -- NULL 은 손으로 고른 값이거나 이 칸이 생기기 전 행이다.
+    sale_fee_auto INTEGER,
     -- 통화 칸 셋. **기타**는 메포·캐시로도 들어오고, **지출과 같은 이름**을
     -- 써야 집계가 한 모양으로 접힌다(incomeMesoOf = spendMesoOf). 뜻과 단위는 spend_records 의
     -- 같은 이름 칸들과 같다. 시세는 1억 메소당 메포이고, 캐시는 환산하지 않는다.
@@ -249,6 +252,33 @@ const TABLE_DEFINITIONS = [
     PRIMARY KEY (id)
 )`,
   },
+  // 메이플 ID 의 MVP 등급 이력. 사용자가 적은 값이라 `RECORD_TABLE_NAMES` 에 직접 적혀 있어야 한다.
+  {
+    name: 'mvp_grade_history',
+    createSql: `CREATE TABLE IF NOT EXISTS mvp_grade_history (
+    account_id TEXT NOT NULL,
+    -- 그 주의 목요일 YYYY-MM-DD. MVP 등급이 매주 목요일에 바뀐다.
+    start_date TEXT NOT NULL,
+    -- 등급 key. NULL 은 등급 없음이고 첫 기록 앞에 끼워 넣은 기간을 닫는 줄이다.
+    grade TEXT,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (account_id, start_date)
+)`,
+  },
+  // 캐릭터의 메이플 ID 소속. 스타포스 줄은 이름만 들어 옛 이름을 지우면 안 된다.
+  // 옛 이름과 지운 캐릭터는 다시 받을 수 없어 `RECORD_TABLE_NAMES` 에 직접 적혀 있어야 한다.
+  {
+    name: 'character_accounts',
+    createSql: `CREATE TABLE IF NOT EXISTS character_accounts (
+    ocid TEXT NOT NULL,
+    name TEXT NOT NULL,
+    account_id TEXT NOT NULL,
+    -- KST YYYY-MM-DD. 볼 때마다 줄을 쌓지 않고 두 날짜를 넓힌다.
+    first_seen_on TEXT NOT NULL,
+    last_seen_on TEXT NOT NULL,
+    PRIMARY KEY (ocid, name, account_id)
+)`,
+  },
 ] as const
 
 export const BOSS_PROFIT_TABLE_NAMES: readonly string[] = TABLE_DEFINITIONS.map(
@@ -413,6 +443,8 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'spend_records', 'level_to', 'INTEGER')
   await ensureColumn(db, 'income_records', 'category_key', 'TEXT')
   await ensureColumn(db, 'income_records', 'item_key', 'TEXT')
+  // 수수료가 등급을 따라가나. NULL 인 옛 행은 손으로 고른 값으로 읽는다.
+  await ensureColumn(db, 'income_records', 'sale_fee_auto', 'INTEGER')
   // 파티 분배 비율. NULL 이 '파티 인원으로 균등'이라 옛 행을 옮길 값이 없다.
   await ensureColumn(db, 'boss_party_settings', 'crystal_my_share', 'INTEGER')
   await ensureColumn(db, 'boss_party_settings', 'crystal_shares_total', 'INTEGER')
@@ -423,8 +455,16 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'boss_profit_records', 'crystal_my_share', 'INTEGER')
   await ensureColumn(db, 'boss_profit_records', 'crystal_shares_total', 'INTEGER')
   await ensureColumn(db, 'boss_profit_records', 'split_fee_percent', 'INTEGER')
+  // 송금 수수료가 등급을 따라가나. NULL 인 옛 행은 손으로 고른 값으로 읽는다.
+  await ensureColumn(db, 'boss_party_settings', 'split_fee_auto', 'INTEGER')
+  await ensureColumn(db, 'boss_profit_records', 'split_fee_auto', 'INTEGER')
   // 드롭의 내 비율. price_share 가 비율 합이 되고 균등이면 그것이 곧 인원 수다.
   await ensureColumn(db, 'boss_drop_records', 'price_my_share', 'INTEGER')
+  // 드롭의 판매 · 분배 수수료와 자동인지. NULL 인 옛 행은 수수료 없는 옛 식 그대로 센다.
+  await ensureColumn(db, 'boss_drop_records', 'sale_fee_percent', 'INTEGER')
+  await ensureColumn(db, 'boss_drop_records', 'split_fee_percent', 'INTEGER')
+  await ensureColumn(db, 'boss_drop_records', 'sale_fee_auto', 'INTEGER')
+  await ensureColumn(db, 'boss_drop_records', 'split_fee_auto', 'INTEGER')
   // 칸이 다 선 뒤에 돈다. 값을 옮기는 이관은 버전 번호로 한 번씩만 돈다.
   await runVersionedMigrations(db)
 

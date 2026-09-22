@@ -559,6 +559,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
         dropMyShare: setting.dropMyShare,
         dropSharesTotal: setting.dropSharesTotal,
         splitFeePercent: setting.splitFeePercent,
+        splitFeeAuto: setting.splitFeeAuto,
       }
     }
     set({ partySizes, partyShares })

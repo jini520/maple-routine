@@ -8,6 +8,8 @@ import type { ImageAssetRef } from '../../types/image-asset'
 import type { ImageCrop } from '../image-crop'
 import { THEME_BACKGROUND_ASSETS } from '../../assets/generated/themes'
 import { WORLD_EMBLEM_ASSETS } from '../../assets/generated/worlds'
+import { MVP_PLATE_ASSETS } from '../../assets/generated/mvp'
+import type { MvpGradeKey } from '../mvp/grades'
 import bossCropsData from '../../data/boss-portrait-crops.json'
 import bossIconCropsData from '../../data/boss-portrait-icon-crops.json'
 import bossModalCropsData from '../../data/boss-portrait-modal-crops.json'
@@ -106,6 +108,13 @@ export function worldEmblemUrl(worldKey: string | null | undefined): ImageAssetR
   if (basename === undefined) return null
 
   return WORLD_EMBLEM_ASSETS[basename] ?? null
+}
+
+// MVP 등급
+
+/** 등급의 명패. 일반은 그림이 없어 `null` 이다. */
+export function mvpPlateAsset(grade: MvpGradeKey): ImageAssetRef | null {
+  return MVP_PLATE_ASSETS[grade] ?? null
 }
 
 // 포스

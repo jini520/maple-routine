@@ -8,6 +8,8 @@
  */
 
 import { crystalPayoutMeso } from '../../lib/boss/party-shares'
+import { periodStartDateKey } from '../../lib/boss/boss-profit-period'
+import { lazyAutoFeePercent, settingSplitFee } from '../mvp-grade/auto-fee'
 import { getBossPartySetting } from '../../storage/boss-party-settings'
 import {
   markBossProfitRecordAuto,
@@ -85,6 +87,7 @@ async function recordEachRow({
   nexonCompleted,
 }: AutoRecordParams): Promise<BossProfitRow[]> {
   const autoRecordedRows: BossProfitRow[] = []
+  const autoFee = lazyAutoFeePercent()
 
   for (const row of rows) {
     const sourceIsCurrent = isSourceCurrent(row)
@@ -164,10 +167,11 @@ async function recordEachRow({
       null,
     )
     const partySize = configured?.partySize ?? 1
+    const splitFee = await settingSplitFee(configured, row.ocid, periodStartDateKey(row.periodKey), autoFee)
     const shares = {
       myShare: configured?.crystalMyShare ?? null,
       sharesTotal: configured?.crystalSharesTotal ?? null,
-      splitFeePercent: configured?.splitFeePercent ?? null,
+      splitFeePercent: splitFee.splitFeePercent,
     }
     const payoutMeso = crystalPayoutMeso(row.priceMeso, partySize, shares)
 
@@ -185,6 +189,7 @@ async function recordEachRow({
         crystalMyShare: shares.myShare,
         crystalSharesTotal: shares.sharesTotal,
         splitFeePercent: shares.splitFeePercent,
+        splitFeeAuto: splitFee.splitFeeAuto,
         recordedAt: now.toISOString(),
         world: row.world,
         worldKey: row.worldKey,

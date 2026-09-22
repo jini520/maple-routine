@@ -27,6 +27,9 @@ jest.mock('../drops-loader', () => ({
 }))
 const { migrateDropsToConfirmedDifficulty: migrateDropsMock } = jest.requireMock('../drops-loader') as Record<string, jest.Mock>
 
+jest.mock('../../mvp-grade/fee-context', () => ({ loadFeeContext: jest.fn() }))
+const { loadFeeContext: loadFeeContextMock } = jest.requireMock('../../mvp-grade/fee-context') as Record<string, jest.Mock>
+
 // 판 알림을 모으는 반복. 쓰기가 그 안에서 도는지 깊이로 본다.
 jest.mock('../../../storage/record-revision-batch', () => ({
   batchRecordWrites: async (write: () => Promise<unknown>) => {
@@ -173,6 +176,32 @@ describe('autoRecordRows', () => {
       expect.objectContaining({ partySize: 3, payoutMeso: 3_333_333 }),
     )
     expect(result[0].payoutMeso).toBe(3_333_333)
+  })
+
+  // 송금 수수료가 자동인 설정은 그 기간 첫날의 등급 요율로 적고 기록도 자동이다. 등급 기록이 바뀌면 다시 센다.
+  it('파티 설정의 송금 수수료가 자동이면 그 기간의 등급 요율로 적는다', async () => {
+    getBossPartySettingMock.mockResolvedValue(
+      { ...partySetting(2, { crystalMyShare: 2, crystalSharesTotal: 3 }), splitFeeAuto: true },
+    )
+    loadFeeContextMock.mockResolvedValue({
+      histories: new Map([['A', [{ startDate: '2026-08-06', grade: 'silver' }]]]),
+      sightings: [{ ocid: 'ocid-1', name: '낟낟', accountId: 'A', firstSeenOn: '2026-08-01', lastSeenOn: '2026-08-08' }],
+      fallbackOcid: 'ocid-1',
+    })
+
+    await autoRecordRows({
+      rows: [row({ priceMeso: 1_000_000 })],
+      records: NO_RECORDS,
+      dropRecords: NO_DROPS,
+      now: NOW,
+      isSourceCurrent: () => true,
+      nexonCompleted: 넥슨완료,
+    })
+
+    // 500,000 × (200 − 3) × 2 / (300 − 3)
+    expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
+      expect.objectContaining({ splitFeePercent: 3, splitFeeAuto: true, payoutMeso: 663_299 }),
+    )
   })
 
   // 출처가 지금의 사실인가 하나가 두 작업을 함께 막는다.

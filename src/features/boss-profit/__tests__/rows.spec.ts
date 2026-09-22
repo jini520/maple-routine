@@ -229,6 +229,10 @@ describe('toRecordedDrop: 가격 필드', () => {
     quantity: 1,
     recordedAt: '2026-08-10T00:00:00.000Z',
     priceMyShare: null,
+    saleFeePercent: null,
+    splitFeePercent: null,
+    saleFeeAuto: false,
+    splitFeeAuto: false,
   }
 
   it('저장소의 가격 세 컬럼을 도메인 드롭으로 옮긴다', () => {

@@ -95,6 +95,17 @@ export const STORAGE_KEYS = {
   // `KEEP_KEYS` 에 **안 넣는다**. 이 값은 캐시가 언제 것인가 라서 캐시와 함께 지워지는 것이
   // 맞다. 캐시를 비웠는데 시각만 남으면 새로 받은 데이터에 옛 시각이 붙는다.
   dataFetchedAt: 'dataFetchedAt',
+  // MVP 등급 주간 확인을 끈 체크박스(`앞으로 등급은 직접 바꿀게요`). `KEEP_KEYS` 에 넣는다.
+  mvpWeeklyCheckOff: 'mvpWeeklyCheckOff',
+  // 마지막으로 등급을 확인한 주의 기간 키(목요일 `YYYY-MM-DD`). 지워져도 한 번 더 물을 뿐이라 `KEEP_KEYS` 밖이다.
+  mvpLastCheckedWeek: 'mvpLastCheckedWeek',
+  // 기존 사용자의 첫 흐름을 마쳤다는 표시. 일괄 적용 체크박스를 다시 안 세운다. `KEEP_KEYS` 에 넣는다.
+  mvpBulkApplyAsked: 'mvpBulkApplyAsked',
+  // 캐릭터 설정을 마치고 온보딩 MVP 등급 화면에 들어갔다는 표시. 시작하기를 마치면 지운다. 등급 이력이 없는 것만으로는
+  // 온보딩 중인 사용자와 업데이트한 기존 사용자를 못 가른다.
+  mvpOnboardingPending: 'mvpOnboardingPending',
+  // 끝나지 않은 작업 표시. 지워지면 반쯤 바뀐 기록이 그대로 굳는다. `KEEP_KEYS` 에 넣는다.
+  pendingTasks: 'pendingTasks',
 } as const
 
 export function schedulerCacheKey(ocid: string): string {

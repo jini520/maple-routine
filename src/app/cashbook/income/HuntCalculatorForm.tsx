@@ -14,7 +14,7 @@
 import { useRef, useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
-import { Text } from '../../../components/atoms'
+import { CheckBox, Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
@@ -39,16 +39,19 @@ import {
   boostMultiplierOf,
   boostPercentOf,
   efficiencyPercentOf,
+  fragmentSaleFeeOf,
   huntingMesoOf,
   huntingTotalOf,
   killedMobsOf,
 } from '../../../lib/cashbook/hunting-meso'
+import { FeeRow } from '../../../components/organisms/FeeRow/FeeRow'
+import { useSaleFeeChoice } from './sale-fee'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { ImageAssetRef } from '../../../types/image-asset'
 import type { HuntingGround, HuntingRegion } from '../../../types/hunting-grounds'
 import type { LastHuntSelection } from '../../../storage/last-hunt-selection'
 import type { LastHuntToggles } from '../../../storage/last-hunt-toggles'
-import { CheckBox, FieldRow, QuantityStepper } from '../sheet-fields'
+import { FieldRow, QuantityStepper } from '../sheet-fields'
 import { ChainSelect } from '../../../components/organisms/ChainSelect/ChainSelect'
 import { HuntAutoFillButton } from './HuntAutoFillButton'
 import { requiredCharacterOptions } from '../character-options'
@@ -369,14 +372,17 @@ export function HuntCalculatorForm(
   const huntMeso = huntGround === null ? 0 : huntingMesoOf({ ...huntInput, ground: huntGround })
   const fragments = mesoValueOf(fragmentsText)
   const fragmentPrice = optionalMesoValueOf(fragmentPriceText)
-  const huntTotal = huntingTotalOf({ ...huntInput, ground: huntGround, fragments, fragmentPrice })
+  const fee = useSaleFeeChoice(props.editing, ocid, props.dateKey)
+  /** 조각을 그 자리에서 판 몫에만 붙는 판매 수수료. 가격을 안 적었으면 0 이다. */
+  const fragmentFee = fragmentSaleFeeOf({ fragments, fragmentPrice }, fee.percent)
+  const huntTotal = huntingTotalOf({ ...huntInput, ground: huntGround, fragments, fragmentPrice }) - fragmentFee
   /**
    * 저장 가능 여부. **사냥터가 세는 메소와 캐릭터가 있어야 한다.**
    *
    * 이 기록의 본체는 획득 메소이고 계산기에서 그것은 사냥터가 정한다. 조각은 곁다리라
    * 그것만 적힌 행은 사냥 기록이 아니다(사용자 지시). 캐릭터는 조각 보관이 캐릭터별이라 필요하다.
    */
-  const canSave = huntMeso > 0 && ocid !== null
+  const canSave = huntMeso > 0 && ocid !== null && (fragmentPrice === null || fee.ready)
 
   /**
    * 캐릭터를 고르면 레벨이 따라 바뀌고, 그 레벨로 못 가는 지역은 사냥터와 함께 풀린다.
@@ -486,8 +492,10 @@ export function HuntCalculatorForm(
         itemKey: huntGround?.key ?? null,
         // **합계**다(메소 + 조각 × 가격). 큰 숫자에 서는 그 값이다.
         mesoAmount: huntTotal,
-        saleFeePercent: null,
-        saleFeeMeso: null,
+        // 조각 가격을 안 적었으면 판 것이 없어 수수료 칸이 빈다.
+        saleFeePercent: fragmentPrice === null ? null : fee.percent,
+        saleFeeMeso: fragmentPrice === null || fee.percent === null ? null : fragmentFee,
+        saleFeeAuto: fee.auto,
         pointAmount: null,
         pointPer100mMeso: null,
         cashAmount: null,
@@ -757,6 +765,9 @@ export function HuntCalculatorForm(
           <Text className="shrink-0 text-xs text-text-muted">메소</Text>
         </Pressable>
       </View>
+
+      {/* 조각 가격을 안 적어도 선다. 비면 판 것이 없어 떼는 돈이 0 이다. */}
+      <FeeRow testID="income-sheet-fee" label="수수료" {...fee.row} />
 
       {/*
         못 치는 값이 총액 덩어리로 들어왔다. 자기 줄을 쓰면 줄 28 에 갭 12 를 지는데 여기서는

@@ -9,6 +9,7 @@ jest.mock('../../../storage/income', () => ({
   getIncomeRecordsBetween: jest.fn(),
   getIncomeMonthRows: jest.fn(),
   getFragmentStorage: jest.fn(),
+  getIncomeRecordsRevision: jest.fn(),
 }))
 jest.mock('../../../storage/spend', () => ({
   insertSpendRecord: jest.fn(),
@@ -69,6 +70,7 @@ beforeEach(() => {
   bossProfit.getBossProfitRecordsRevision.mockReturnValue(0)
   bossDrops.getBossDropRecords.mockResolvedValue([])
   bossDrops.getBossDropRecordsRevision.mockReturnValue(0)
+  income.getIncomeRecordsRevision.mockReturnValue(0)
   selection.getTrackedCharacterOcids.mockResolvedValue(['ocid-1'])
   bossProfit.getRecordedCharacterOcids.mockResolvedValue([])
   basicCache.getCachedCharacterBasic.mockResolvedValue({ profile: { name: '루디' } })
@@ -103,6 +105,7 @@ const 수입: IncomeDraft = {
   // 사냥에는 경매장이 없다. 수수료 칸 둘은 언제나 `null` 이다.
   saleFeePercent: null,
   saleFeeMeso: null,
+  saleFeeAuto: false,
   pointAmount: null,
   pointPer100mMeso: null,
   cashAmount: null,
@@ -456,6 +459,7 @@ const 수입행 = {
   mesoAmount: 1_200_000_000,
   saleFeePercent: null,
   saleFeeMeso: null,
+  saleFeeAuto: false,
   pointAmount: null,
   pointPer100mMeso: null,
   cashAmount: null,
@@ -1094,6 +1098,7 @@ describe('사냥 줄의 이름과 셈', () => {
     mesoAmount: 41_760_000,
     saleFeePercent: null,
     saleFeeMeso: null,
+    saleFeeAuto: false,
     pointAmount: null,
     pointPer100mMeso: null,
     cashAmount: null,
@@ -1176,6 +1181,7 @@ describe('솔 에르다 조각 정산 줄', () => {
     mesoAmount: 400_000_000,
     saleFeePercent: null,
     saleFeeMeso: null,
+    saleFeeAuto: false,
     pointAmount: null,
     pointPer100mMeso: null,
     cashAmount: null,
@@ -1225,7 +1231,7 @@ describe('loadFragmentStorage', () => {
  * (CLAUDE.md CRITICAL) 두 표의 판을 여기서 하나로 접는다.
  */
 describe('cashbookDataRevision', () => {
-  it('원천 둘의 판을 합한다. 어느 쪽이 올라도 값이 달라진다', () => {
+  it('원천 셋의 판을 합한다. 어느 쪽이 올라도 값이 달라진다', () => {
     const { cashbookDataRevision } = require('../records') as typeof import('../records')
 
     expect(cashbookDataRevision()).toBe(0)
@@ -1235,6 +1241,10 @@ describe('cashbookDataRevision', () => {
 
     bossProfit.getBossProfitRecordsRevision.mockReturnValue(4)
     expect(cashbookDataRevision()).toBe(5)
+
+    // 이어서 하는 작업이 수입 기록의 수수료를 고쳐 쓰면 오른다
+    income.getIncomeRecordsRevision.mockReturnValue(2)
+    expect(cashbookDataRevision()).toBe(7)
   })
 })
 

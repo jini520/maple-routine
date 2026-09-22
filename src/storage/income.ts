@@ -13,6 +13,7 @@
 import { incomeCategoryNameOf, type IncomeCategoryKey } from '../lib/cashbook/categories'
 import type { FeePercent } from '../lib/cashbook/item-split'
 import { getBossProfitDb } from './sqlite/db'
+import { inTransaction } from './sqlite/transaction'
 
 export interface IncomeRecord {
   id: string
@@ -60,6 +61,8 @@ export interface IncomeRecord {
   saleFeePercent: FeePercent | null
   /** 뗀 몫. **판매 대금 = `mesoAmount` + 이것** 이다. 요율만으로는 내림 때문에 역산이 안 된다. */
   saleFeeMeso: number | null
+  /** 수수료가 등급을 따라가나. 자동인 행은 등급 기록이 바뀔 때 요율 · 뗀 몫 · 받는 돈이 다시 적힌다 */
+  saleFeeAuto: boolean
   /**
    * 사냥 갈래를 어떻게 적었나.
    *
@@ -211,13 +214,27 @@ function huntToValues(hunt: HuntingIncomeDetail | null): Array<number | string |
 const INSERT_SQL = `
   INSERT INTO income_records
     (id, ocid, earned_on, category, category_key, item, item_key, meso_amount,
-     sale_fee_percent, sale_fee_meso,
+     sale_fee_percent, sale_fee_meso, sale_fee_auto,
      point_amount, point_per_100m_meso, cash_amount, quantity,
      hunt_character_level, hunt_missed_mobs, hunt_boosts, hunt_sojae, hunt_fragments,
      hunt_fragment_price, hunt_meso_rate, hunt_typed_meso,
      memo, recorded_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
+
+/**
+ * 수입 기록의 판. 이어서 하는 작업이 수수료를 고쳐 쓰면 오른다. 가계부가 포커스 때 이 판을 보고 다시 읽는다.
+ * 시트의 쓰기는 가계부가 스스로 다시 읽어 판을 안 올린다.
+ */
+let incomeRecordsRevision = 0
+
+export function getIncomeRecordsRevision(): number {
+  return incomeRecordsRevision
+}
+
+function bumpIncomeRecordsRevision(): void {
+  incomeRecordsRevision += 1
+}
 
 export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
   const db = await getBossProfitDb()
@@ -232,6 +249,7 @@ export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
     record.mesoAmount,
     record.saleFeePercent,
     record.saleFeeMeso,
+    record.saleFeeAuto ? 1 : null,
     record.pointAmount,
     record.pointPer100mMeso,
     record.cashAmount,
@@ -246,7 +264,7 @@ export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
 const UPDATE_SQL = `
   UPDATE income_records SET
     ocid = ?, earned_on = ?, category = ?, category_key = ?, item = ?, item_key = ?, meso_amount = ?,
-    sale_fee_percent = ?, sale_fee_meso = ?,
+    sale_fee_percent = ?, sale_fee_meso = ?, sale_fee_auto = ?,
     point_amount = ?, point_per_100m_meso = ?, cash_amount = ?, quantity = ?,
     hunt_character_level = ?, hunt_missed_mobs = ?, hunt_boosts = ?, hunt_sojae = ?,
     hunt_fragments = ?, hunt_fragment_price = ?, hunt_meso_rate = ?, hunt_typed_meso = ?,
@@ -266,6 +284,7 @@ export async function updateIncomeRecord(record: IncomeRecord): Promise<void> {
     record.mesoAmount,
     record.saleFeePercent,
     record.saleFeeMeso,
+    record.saleFeeAuto ? 1 : null,
     record.pointAmount,
     record.pointPer100mMeso,
     record.cashAmount,
@@ -295,6 +314,7 @@ function rowToRecord(row: Record<string, unknown>): IncomeRecord {
     mesoAmount: (row.meso_amount as number | null | undefined) ?? null,
     saleFeePercent: (row.sale_fee_percent as FeePercent | null | undefined) ?? null,
     saleFeeMeso: (row.sale_fee_meso as number | null | undefined) ?? null,
+    saleFeeAuto: Number(row.sale_fee_auto) === 1,
     pointAmount: (row.point_amount as number | null | undefined) ?? null,
     pointPer100mMeso: (row.point_per_100m_meso as number | null | undefined) ?? null,
     cashAmount: (row.cash_amount as number | null | undefined) ?? null,
@@ -324,6 +344,68 @@ export async function getIncomeRecordsBetween(
   )
 
   return (values ?? []).map((row) => rowToRecord(row as Record<string, unknown>))
+}
+
+/** 수수료가 자동인 기록 전부. 등급 기록이 바뀌면 다시 셀 대상이다. */
+export async function getAutoFeeIncomeRecords(): Promise<IncomeRecord[]> {
+  const db = await getBossProfitDb()
+  const { values } = await db.query(`SELECT * FROM income_records WHERE sale_fee_auto = 1`)
+  return (values ?? []).map((row) => rowToRecord(row as Record<string, unknown>))
+}
+
+/** 수수료 세 칸을 고쳐 쓰는 한 줄. 받는 돈이 뗀 몫과 함께 가야 합계가 맞는다. */
+export interface IncomeSaleFeeUpdate {
+  id: string
+  mesoAmount: number
+  saleFeePercent: FeePercent
+  saleFeeMeso: number
+}
+
+/** 자동 수수료를 다시 셀 때 세 칸만 고쳐 쓴다. 조각 하나가 트랜잭션 하나다. */
+export async function updateIncomeSaleFees(updates: readonly IncomeSaleFeeUpdate[]): Promise<void> {
+  if (updates.length === 0) return
+  const db = await getBossProfitDb()
+  await inTransaction(db, async () => {
+    for (const update of updates) {
+      await db.run(`UPDATE income_records SET meso_amount = ?, sale_fee_percent = ?, sale_fee_meso = ? WHERE id = ?`, [
+        update.mesoAmount,
+        update.saleFeePercent,
+        update.saleFeeMeso,
+        update.id,
+      ])
+    }
+  })
+  bumpIncomeRecordsRevision()
+}
+
+/**
+ * 일괄 적용 대상. 수수료가 빈 아이템 판매 · 조각 정산 · 조각 가격을 적은 사냥이다.
+ * 저장된 금액이 수수료를 안 뗀 값이라 되짚을 것이 없다.
+ */
+export async function getBulkFeeIncomeRecords(): Promise<IncomeRecord[]> {
+  const db = await getBossProfitDb()
+  const { values } = await db.query(
+    `SELECT * FROM income_records
+     WHERE sale_fee_percent IS NULL
+       AND (category_key IN ('item_sale', 'sol_erda_fragment')
+            OR (category_key = 'hunting' AND hunt_fragment_price IS NOT NULL))`,
+  )
+  return (values ?? []).map((row) => rowToRecord(row as Record<string, unknown>))
+}
+
+/** 일괄 적용. 세 칸을 적고 자동으로 바꾼다. 그 뒤 등급 기록을 고치면 함께 다시 센다. 조각 하나가 트랜잭션 하나다. */
+export async function applyAutoIncomeSaleFees(updates: readonly IncomeSaleFeeUpdate[]): Promise<void> {
+  if (updates.length === 0) return
+  const db = await getBossProfitDb()
+  await inTransaction(db, async () => {
+    for (const update of updates) {
+      await db.run(
+        `UPDATE income_records SET meso_amount = ?, sale_fee_percent = ?, sale_fee_meso = ?, sale_fee_auto = 1 WHERE id = ?`,
+        [update.mesoAmount, update.saleFeePercent, update.saleFeeMeso, update.id],
+      )
+    }
+  })
+  bumpIncomeRecordsRevision()
 }
 
 /**

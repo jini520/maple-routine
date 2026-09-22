@@ -4,6 +4,8 @@
  * @see docs/features/boss-scheduler.md 완료 승격 · 시즌 판정 · 빈 상태 정책
  */
 import { isBossBlocked } from '../../lib/scheduler/required-level'
+import { autoFeeFrom, useMvpGradeContext } from '../../features/mvp-grade/store'
+import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { useCallback, useEffect, useState } from 'react'
 import { Pressable, View } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
@@ -169,6 +171,7 @@ export function BossScreen(): React.JSX.Element {
     partyFilter,
     setPartyFilter,
   } = useBossSchedulerStore()
+  const gradeContext = useMvpGradeContext()
   // 선택한 캐릭터는 앱 전체가 한 벌로 든다.
   const { selectedOcid, select } = useCharacterSelectionStore()
   // **당김이 시작한 회차에만** 인디케이터가 돈다. 헤더 버튼과 자동 조회는 안 연다.
@@ -611,6 +614,8 @@ export function BossScreen(): React.JSX.Element {
           partySize={partySizes[partySizeKey(selected.ocid, modalBossKey, partyModal.difficulty)] ?? 1}
           maxPartySize={getMaxPartySize(modalBossKey, partyModal.difficulty)}
           shares={modalShares}
+          // 설정은 앞으로 적힐 기록의 약속이라 이번 주 등급을 보인다.
+          autoFee={gradeContext === null ? null : autoFeeFrom(gradeContext, selected.ocid, getCurrentKstDateKey(new Date()))}
           onSelectDifficulty={handleModalDifficulty}
           onApply={(next) => void applyParty(next)}
           // 적용을 안 눌렀으면 고친 값은 버린다.

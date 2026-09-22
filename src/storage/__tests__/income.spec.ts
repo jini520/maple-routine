@@ -35,6 +35,7 @@ const sample: IncomeRecord = {
   mesoAmount: 1_200_000_000,
   saleFeePercent: null,
   saleFeeMeso: null,
+  saleFeeAuto: false,
   pointAmount: null,
   pointPer100mMeso: null,
   cashAmount: null,
@@ -65,6 +66,8 @@ describe('insertIncomeRecord', () => {
       null,
       1_200_000_000,
       null,
+      null,
+      // 수수료가 등급을 따라가나. 수수료가 없는 행이라 비어 있다.
       null,
       // 통화 칸 셋. 메소로 번 것이라 셋 다 비어 있다.
       null,
@@ -150,6 +153,7 @@ describe('getIncomeRecordsBetween', () => {
         mesoAmount: 1_200_000_000,
         saleFeePercent: null,
         saleFeeMeso: null,
+        saleFeeAuto: false,
         pointAmount: null,
         pointPer100mMeso: null,
         cashAmount: null,
@@ -221,6 +225,7 @@ describe('판매 수수료 칸 둘', () => {
     mesoAmount: 1_140_000_000,
     saleFeePercent: 5,
     saleFeeMeso: 60_000_000,
+    saleFeeAuto: false,
     pointAmount: null,
     pointPer100mMeso: null,
     cashAmount: null,
@@ -428,7 +433,7 @@ describe('hunt_typed_meso: 수동으로 적힌 사냥', () => {
     expect(sql).toContain('hunt_typed_meso')
     // 사냥 칸 여덟. 레벨· 놓침· 아이템· 소재· 조각· 조각가· 메획· **친 메소**.
     // 계산기 칸 넷이 null 인 것이 **앱이 센 값이 아니다** 를 말한다.
-    expect(values.slice(14, 22)).toEqual([
+    expect(values.slice(15, 23)).toEqual([
       null,
       null,
       null,
@@ -578,7 +583,7 @@ describe('quantity: 수입의 수량', () => {
 
     const [sql, values] = runMock.mock.calls[0]
     expect(sql).toContain('quantity')
-    expect(values[13]).toBe(3)
+    expect(values[14]).toBe(3)
   })
 
   it('고칠 때도 함께 갈아 끼운다', async () => {
@@ -652,8 +657,8 @@ describe('hunt_fragment_price: 가격을 안 적은 조각은 NULL 이다', () =
     await insertIncomeRecord(사냥행)
     await insertIncomeRecord({ ...사냥행, hunt: { ...안적음, fragmentPrice: 0 } })
 
-    expect(runMock.mock.calls[0][1][19]).toBeNull()
-    expect(runMock.mock.calls[1][1][19]).toBe(0)
+    expect(runMock.mock.calls[0][1][20]).toBeNull()
+    expect(runMock.mock.calls[1][1][20]).toBe(0)
   })
 
   // 칸은 스키마에 남지만 안 쓴다. 가격 칸과 같은 뜻을 두 칸이 들면 어긋난다.
@@ -674,7 +679,7 @@ describe('hunt_fragment_price: 가격을 안 적은 조각은 NULL 이다', () =
 
     const [sql, values] = runMock.mock.calls[0]
     expect(sql).toContain('hunt_fragment_price = ?')
-    expect(values[18]).toBeNull()
+    expect(values[19]).toBeNull()
   })
 
   it('NULL 은 null 로, 0 은 0 으로 읽는다. 수동 · 계산기가 같다', async () => {

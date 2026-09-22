@@ -87,6 +87,7 @@ function discountRate(payload: unknown): number {
 function starforceMeso(
   entry: EnhancementHistoryEntry,
   observedLevels: ReadonlyMap<string, number>,
+  mvpDiscountRate: number,
 ): number | null {
   // 강화권은 메소가 안 든다. 0 이지 모르는 것이 아니다.
   if (text(entry.payload, 'upgrade_item') !== '') return 0
@@ -99,7 +100,7 @@ function starforceMeso(
 
   // 모르는 값이면 추가분 없이 센다. 시도 비용은 확실히 들었다.
   const destroyDefence = text(entry.payload, 'destroy_defence') === '파괴 방지 적용'
-  return starforceCost(level, fromStar, discountRate(entry.payload), destroyDefence)
+  return starforceCost(level, fromStar, discountRate(entry.payload), destroyDefence, mvpDiscountRate)
 }
 
 /** 등급 차례. 사용 전 옵션에서 가장 높은 것을 고를 때 쓴다. */
@@ -151,17 +152,19 @@ function soulPotentialMeso(entry: EnhancementHistoryEntry): number | null {
  * (사용자 지정). 읽는 쪽과 버리는 쪽이 같은 함수를 봐야 화면에 없는 줄이 DB 에만 남지 않는다.
  *
  * @param observedLevels 이름에서 레벨로. 스타포스 응답에 `item_level` 이 없어 이 표가 받는다
+ * @param mvpDiscountRate 스타포스의 MVP 할인(%). 응답의 할인 목록에 MVP 할인이 없다
  */
 export function enhancementCostOf(
   entry: EnhancementHistoryEntry,
   observedLevels: ReadonlyMap<string, number>,
+  mvpDiscountRate = 0,
 ): number | null {
   if (entry.kind === 'cube') {
     return entry.itemLevel === null ? null : cubeAppraisalCost(entry.itemLevel)
   }
   if (entry.kind === 'potential') return potentialMeso(entry)
   if (entry.kind === 'soul_potential') return soulPotentialMeso(entry)
-  return starforceMeso(entry, observedLevels)
+  return starforceMeso(entry, observedLevels, mvpDiscountRate)
 }
 
 /**
@@ -174,17 +177,20 @@ export function enhancementCostOf(
  * @param eventNames 스페셜 캐릭터 이름. **목록을 못 받았으면 `null`** 이고, 그때는 월드를
  *   모르는 줄을 전부 뺀다. 가릴 수 없는 것을 세우면 지출이 두 배로 부푼다
  * @param observedLevels 이름에서 레벨로. 장비 표에 없는 장비를 받는다
+ * @param mvpDiscountOf 캐릭터 이름과 날짜에서 스타포스 MVP 할인(%). `lib/mvp/starforce` 가 만든다
  */
 export function toEnhancementSpending(
   entries: readonly EnhancementHistoryEntry[],
   eventNames: ReadonlySet<string> | null,
   observedLevels: ReadonlyMap<string, number> = new Map(),
+  mvpDiscountOf: (characterName: string, dateKey: string) => number = () => 0,
 ): EnhancementSpendingRow[] {
   const rows: EnhancementSpendingRow[] = []
   for (const entry of entries) {
     if (isSpendingRecord(worldKeyOf(entry), entry.characterName, eventNames) !== true) continue
     if (usesSpecialCurrency(entry)) continue
-    rows.push({ ...entry, costMeso: enhancementCostOf(entry, observedLevels), category: categoryOf(entry) })
+    const mvpDiscountRate = entry.kind === 'starforce' ? mvpDiscountOf(entry.characterName, entry.dateKey) : 0
+    rows.push({ ...entry, costMeso: enhancementCostOf(entry, observedLevels, mvpDiscountRate), category: categoryOf(entry) })
   }
   return rows
 }

@@ -4,7 +4,7 @@
  * 여기서 지키는 것은 **값이 언제 나가고 언제 안 나가는가**다. 카드가 어디에 앉는지(키보드 높이를
  * 따라가는 것)는 `keyboard-offset` 의 훅이 지고 이 테스트는 안 본다.
  */
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 import { Keyboard } from 'react-native'
 
 import { flattenStyle, renderOverlay } from '../../../__tests__/render-atom'
@@ -312,6 +312,51 @@ describe('InputCard', () => {
       await 누르기(view, 'input-card-prev')
 
       expect(onPrev).toHaveBeenCalledWith('3250000000', { myShare: 1, sharesTotal: 3 })
+    })
+
+    // 드롭은 경매장에 팔 때 한 번, 파티원에게 보낼 때 한 번 수수료를 문다.
+    describe('판매 · 분배 수수료', () => {
+      const 수수료 = {
+        autoFee: { grade: 'diamond' as const, percent: 3 },
+        sale: { auto: true, percent: null },
+        split: { auto: true, percent: null },
+      }
+
+      it('비율 아래에 판매 · 분배 수수료 줄이 자동으로 선다', async () => {
+        const { view } = await 그리기({ share: 비율, fees: 수수료 })
+
+        expect(view.getByTestId('input-card-sale-fee')).toBeTruthy()
+        expect(view.getByTestId('input-card-split-fee')).toBeTruthy()
+        expect(view.getAllByLabelText('MVP 다이아')).toHaveLength(2)
+      })
+
+      it('혼자면 분배 수수료 줄이 안 선다. 보낼 곳이 없다', async () => {
+        const { view } = await 그리기({ share: { ...비율, sharesTotal: 1 }, fees: 수수료 })
+
+        expect(view.getByTestId('input-card-sale-fee')).toBeTruthy()
+        expect(view.queryByTestId('input-card-split-fee')).toBeNull()
+      })
+
+      it('확인이 자동이면 등급 요율을, 손으로 고르면 그 요율을 수수료와 함께 내보낸다', async () => {
+        const { view, onConfirm } = await 그리기({ share: 비율, fees: 수수료 })
+        await 치기(view, '1000000000')
+
+        // 분배 수수료만 끄고 5% 를 고른다
+        await act(async () => {
+          fireEvent.press(within(view.getByTestId('input-card-split-fee')).getByRole('checkbox'))
+        })
+        await act(async () => {
+          fireEvent.press(within(view.getByTestId('input-card-split-fee')).getByLabelText('5%'))
+        })
+        await 누르기(view, 'input-card-confirm')
+
+        expect(onConfirm).toHaveBeenCalledWith('1000000000', { myShare: 1, sharesTotal: 3 }, {
+          saleFeePercent: 3,
+          saleFeeAuto: true,
+          splitFeePercent: 5,
+          splitFeeAuto: false,
+        })
+      })
     })
 
     it('안 넘기면 곁들이 버튼도 비율 고르개도 안 선다', async () => {

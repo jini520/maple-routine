@@ -111,6 +111,11 @@ export interface NoticeDetailParams {
   noticeId: string
 }
 
+/** MVP 등급 이력 상세가 받는 파라미터. 이력은 스토어가 들고 있어 ID 만 넘긴다. */
+export interface MvpGradeHistoryParams {
+  accountId: string
+}
+
 /**
  * 아이템 가격 입력이 여는 주기와 기간.
  *
@@ -125,14 +130,13 @@ export interface DropPriceParams {
 
 export type RootStackParamList = {
   /**
-   * 앱을 열기 전 화면 둘. 탭과 배타로 그려지고 **한 번에 하나만** 스택에 선다.
-   *
-   * 둘을 함께 등록하지 않는 것이 계약이다. 함께 두면 둘 사이에 뒤로 가기와 가장자리 스와이프가
-   * 생기는데, 로그인에서 캐릭터 설정으로 간 뒤 되돌아갈 곳은 없다. 어느 것이 설지는
-   * `features/app-entry` 의 `EntryStage` 가 정한다.
+   * 앱을 열기 전 화면 넷. 탭과 배타로 그려지고 **한 스택에 함께** 쌓인다. 앞으로 가면 밀고 뒤로 가면 빼서, 기기 뒤로가기와
+   * 머리 줄의 뒤로가기 버튼이 하위 페이지와 같이 된다. 부팅 때 어디까지 쌓을지는 `features/app-entry` 의 `EntryStage` 가 정한다.
    */
   SignIn: undefined
   CharacterSetup: undefined
+  MvpGradePick: undefined
+  MvpGradeConfirm: undefined
   /**
    * 탭 레이어를 대신하는 화면 하나. 안에 층 스택과 바가 형제로 산다.
    *
@@ -171,6 +175,10 @@ export type RootStackParamList = {
   SettingsNotices: { kinds?: NoticeKind[]; title?: string } | undefined
   /** 소식 알림 스위치 넷. 목록에서 떼어 냈다 - 분류마다 목록이 생겨 스위치가 갈 곳이 없어졌다. */
   SettingsNoticeAlerts: undefined
+  /** MVP 등급 목록. 메이플 ID 마다 지금 등급 한 줄과 매주 확인 스위치. 앱 설정의 `MVP 등급` 행이 연다. */
+  SettingsMvpGrade: undefined
+  /** 메이플 ID 하나의 등급 이력. 목록의 `이력 N건 보기` 가 연다. */
+  SettingsMvpGradeHistory: MvpGradeHistoryParams
   /**
    * 앱 설정. 더보기 머리의 톱니바퀴가 연다.
    *
@@ -184,7 +192,7 @@ export type RootStackParamList = {
 
 export type StackRouteName = Exclude<
   keyof RootStackParamList,
-  'SignIn' | 'CharacterSetup' | 'Main'
+  'SignIn' | 'CharacterSetup' | 'MvpGradePick' | 'MvpGradeConfirm' | 'Main'
 >
 
 /**
@@ -197,7 +205,7 @@ export type StackRouteName = Exclude<
  */
 export type RouteTarget =
   | { readonly kind: 'initial'; readonly route: TabRouteName }
-  | { readonly kind: 'root'; readonly route: 'SignIn' | 'CharacterSetup' }
+  | { readonly kind: 'root'; readonly route: 'SignIn' | 'CharacterSetup' | 'MvpGradePick' | 'MvpGradeConfirm' }
   | { readonly kind: 'tab'; readonly route: TabRouteName }
   | { readonly kind: 'push'; readonly route: StackRouteName }
 
@@ -233,6 +241,19 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
     path: '/character-setup',
     screen: 'CharacterSetupScreen',
     target: { kind: 'root', route: 'CharacterSetup' },
+    origin: 'rn',
+  },
+  // 캐릭터 설정 다음의 온보딩 화면 둘. 웹에는 없던 자리라 `path` 는 이름표다.
+  {
+    path: '/onboarding/mvp-grade',
+    screen: 'MvpGradePickScreen',
+    target: { kind: 'root', route: 'MvpGradePick' },
+    origin: 'rn',
+  },
+  {
+    path: '/onboarding/mvp-grade/confirm',
+    screen: 'MvpGradeConfirmScreen',
+    target: { kind: 'root', route: 'MvpGradeConfirm' },
     origin: 'rn',
   },
 
@@ -320,6 +341,18 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
     path: '/settings/notices/alerts',
     screen: 'SettingsNoticeAlertsScreen',
     target: { kind: 'push', route: 'SettingsNoticeAlerts' },
+    origin: 'rn',
+  },
+  {
+    path: '/settings/mvp-grade',
+    screen: 'SettingsMvpGradeScreen',
+    target: { kind: 'push', route: 'SettingsMvpGrade' },
+    origin: 'rn',
+  },
+  {
+    path: '/settings/mvp-grade/history',
+    screen: 'SettingsMvpGradeHistoryScreen',
+    target: { kind: 'push', route: 'SettingsMvpGradeHistory' },
     origin: 'rn',
   },
   {

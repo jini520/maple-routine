@@ -26,6 +26,8 @@ export interface DropShare {
   sharesTotal: number
 }
 
+import type { FeesValue } from '../../components/organisms/InputCard/InputCard'
+import { dropFeeFields } from './drop-fees'
 import { withSqliteTimeout } from './sqlite-guards'
 import { create } from 'zustand'
 import { toRecordedDrop } from './rows'
@@ -96,7 +98,8 @@ interface DropPriceState {
    * (`drop-price-store` → `store`).
    */
   warmWindow: (periodKey: string) => Promise<void>
-  savePrice: (entry: DropPriceEntry, priceMeso: number, share: DropShare) => Promise<void>
+  /** `fees` 는 판매 · 분배 수수료와 자동 여부다. 안 넘기면 수수료를 안 센 기록이다 */
+  savePrice: (entry: DropPriceEntry, priceMeso: number, share: DropShare, fees?: FeesValue) => Promise<void>
   /** 기록 안함. 값을 매기지 않기로 한 결정을 저장한다(스킵과 다르다 정정). */
   excludePrice: (entry: DropPriceEntry) => Promise<void>
 }
@@ -320,12 +323,13 @@ export const useDropPriceStore = create<DropPriceState>((set, get) => ({
     if (queued !== null) void get().warmWindow(queued)
   },
 
-  async savePrice(entry, priceMeso, share) {
+  async savePrice(entry, priceMeso, share, fees) {
     await writePrice(get, set, entry, {
       priceState: 'entered',
       priceMeso,
       priceShare: share.sharesTotal,
       priceMyShare: share.myShare,
+      ...dropFeeFields(fees),
     })
   },
 
@@ -335,6 +339,7 @@ export const useDropPriceStore = create<DropPriceState>((set, get) => ({
       priceMeso: undefined,
       priceShare: undefined,
       priceMyShare: undefined,
+      ...dropFeeFields(undefined),
     })
   },
 }))
@@ -380,7 +385,17 @@ async function writePrice(
   get: () => DropPriceState,
   set: (partial: Partial<DropPriceState>) => void,
   entry: DropPriceEntry,
-  patch: Pick<RecordedDrop, 'priceState' | 'priceMeso' | 'priceShare' | 'priceMyShare'>,
+  patch: Pick<
+    RecordedDrop,
+    | 'priceState'
+    | 'priceMeso'
+    | 'priceShare'
+    | 'priceMyShare'
+    | 'saleFeePercent'
+    | 'splitFeePercent'
+    | 'saleFeeAuto'
+    | 'splitFeeAuto'
+  >,
 ): Promise<void> {
   const groupKey = saveGroupKey(entry)
   const siblings = get()

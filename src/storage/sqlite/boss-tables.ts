@@ -20,6 +20,8 @@ export const BOSS_PROFIT_RECORDS_BODY = `(
     crystal_my_share INTEGER,
     crystal_shares_total INTEGER,
     split_fee_percent INTEGER,
+    -- 1 이면 송금 수수료가 등급을 따라간다(자동). 등급 기록이 바뀔 때 split_fee_percent 와 payout_meso 가 다시 적힌다.
+    split_fee_auto INTEGER,
     recorded_at TEXT NOT NULL,
     -- 기록 시점의 월드 스냅샷. NULL이면 "월드 모름"이고 월드별 결정석 집계에서
     -- 제외된다. 월드를 파생값(캐시된 character/basic)으로 두면 월드 리프가 모든 과거 주의 귀속을
@@ -51,6 +53,8 @@ export const BOSS_PARTY_SETTINGS_BODY = `(
     drop_shares_total INTEGER,
     -- 차액 송금의 경매장 수수료율(3 또는 5). NULL 은 3 이다.
     split_fee_percent INTEGER,
+    -- 1 이면 송금 수수료가 등급을 따라간다(자동). 새 결정석 기록이 그 날의 등급 요율로 적힌다.
+    split_fee_auto INTEGER,
     updated_at TEXT NOT NULL,
     PRIMARY KEY (ocid, boss_key, difficulty)
   )`
@@ -79,6 +83,12 @@ export const BOSS_DROP_RECORDS_BODY = `(
     -- 금액이 안 움직인다.
     price_share INTEGER,
     price_my_share INTEGER,
+    -- 판매 · 분배 수수료(%). 둘 다 NULL 이면 수수료를 안 센 옛 행이라 옛 식 그대로 센다.
+    sale_fee_percent INTEGER,
+    split_fee_percent INTEGER,
+    -- 1 이면 자동. 등급 기록이 바뀔 때 새 요율로 다시 적힌다. NULL 은 손으로 고른 값이다.
+    sale_fee_auto INTEGER,
+    split_fee_auto INTEGER,
     PRIMARY KEY (ocid, boss_key, difficulty, period_key, drop_index)
   )`
 

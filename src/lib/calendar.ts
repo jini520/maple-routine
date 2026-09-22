@@ -109,6 +109,12 @@ export function formatDayLabel(dateKey: string): string {
   return `${date.getUTCMonth() + 1}월 ${date.getUTCDate()}일 (${weekday})`
 }
 
+/** 7월 16일. 요일이 없는 짧은 날짜(기간 알약 · 다시 이어지는 날). */
+export function formatMonthDay(dateKey: string): string {
+  const date = new Date(Date.parse(`${dateKey}T00:00:00Z`))
+  return `${date.getUTCMonth() + 1}월 ${date.getUTCDate()}일`
+}
+
 /**
  * 하루 단위로 옮긴 날짜 열쇠. 달·해 경계와 윤년을 `Date` 가 알아서 넘긴다.
  *

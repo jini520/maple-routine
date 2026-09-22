@@ -249,6 +249,24 @@ describe('스타포스', () => {
     expect(toEnhancementSpending([starforce({ upgrade_item: '카르마 스타포스 17성 강화권' })], NO_EVENT)[0].costMeso).toBe(0)
   })
 
+  it('그 줄의 캐릭터와 날짜로 찾은 MVP 할인을 이벤트 할인에 곱한다', () => {
+    const asked: [string, string][] = []
+    const mvpDiscountOf = (name: string, dateKey: string) => {
+      asked.push([name, dateKey])
+      return 10
+    }
+    const list = [{ cost_discount_rate: '30' }]
+    const [row] = toEnhancementSpending([starforce({ starforce_event_list: list })], NO_EVENT, new Map(), mvpDiscountOf)
+
+    expect(row.costMeso).toBe(Math.floor((324_061_900 * 70 * 90) / 10000))
+    expect(asked).toEqual([['낟낟', '2026-09-05']])
+  })
+
+  it('MVP 할인은 스타포스에만 붙는다', () => {
+    const [row] = toEnhancementSpending([entry({ itemLevel: 150 })], NO_EVENT, new Map(), () => 10)
+    expect(row.costMeso).toBe(450_000)
+  })
+
   it('표에 없는 장비는 값이 없다', () => {
     expect(toEnhancementSpending([entry({
       kind: 'starforce', itemLevel: null, targetItem: '왕푸', itemKey: null,

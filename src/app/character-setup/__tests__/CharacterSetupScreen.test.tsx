@@ -38,6 +38,8 @@ import { CharacterSetupScreen } from '../CharacterSetupScreen'
 const mockGetRoster = jest.fn()
 const mockNoticeApiKeyIssue = jest.fn()
 const mockCompleteCharacterSetup = jest.fn()
+const mockNavigate = jest.fn()
+const mockGoBack = jest.fn()
 
 jest.mock('../../../nexon/character', () => ({ fetchCharacterList: jest.fn() }))
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
@@ -72,6 +74,9 @@ jest.mock('../../../features/auth/store', () => ({
 jest.mock('../../../features/app-entry/store', () => ({
   useAppEntryStore: (selector: (state: unknown) => unknown) =>
     selector({ completeCharacterSetup: mockCompleteCharacterSetup }),
+}))
+jest.mock('../../../hooks/useScreenNavigation', () => ({
+  useScreenNavigation: () => ({ navigate: mockNavigate, goBack: mockGoBack }),
 }))
 
 const mockedFetchCharacterList = jest.mocked(fetchCharacterList)
@@ -227,6 +232,25 @@ describe('CharacterSetupScreen: 머리와 CTA', () => {
     await press(pressableOf(view.getByText('낟낟')))
 
     expect(stateOf(button(view, '계속하기')).disabled).toBe(false)
+  })
+
+  // 온보딩은 뒤로 갈 수 있는 한 스택이다.
+  it('머리 줄의 뒤로가기는 로그인으로 돌아간다', async () => {
+    const { view } = await renderStep()
+
+    await press(view.getByLabelText('뒤로'))
+
+    expect(mockGoBack).toHaveBeenCalled()
+  })
+
+  it('등급을 물을 메이플 ID 가 있으면 계속하기 뒤 MVP 등급 화면을 민다', async () => {
+    mockCompleteCharacterSetup.mockResolvedValue('mvpGrade')
+    const { view } = await renderStep()
+    await press(pressableOf(view.getByText('낟낟')))
+
+    await press(button(view, '계속하기'))
+
+    expect(mockNavigate).toHaveBeenCalledWith('MvpGradePick')
   })
 
   // 대기의 첫 단. 저장이 도는 동안에는 CTA 만 스피너다.

@@ -5,9 +5,8 @@
  * 나누는 수는 결정석과 다르다. 결정석은 그 행의 파티원 수, 드롭은 입력할 때 사용자가 정한
  * 값이다(기본값만 파티원 수에서 온다).
  *
- * **드롭은 수수료를 안 센다.** 결정석이 비율 약속에서 수수료를 역산하는 것은 게임이 각자에게
- * 직접 지급해 차액 송금이 생기기 때문이고, 드롭에는 그 송금이 없다. 한 명이 팔아 나눠 줄 때의
- * 두 번 떼이는 수수료는 판매 분배금 계산기(`lib/cashbook/item-split`)가 따로 다룬다.
+ * 드롭은 경매장에 팔 때 판매 수수료를, 파티원에게 나눠 보낼 때 분배 수수료를 문다. 두 칸이 다 빈 옛 기록은
+ * 수수료 없이 나눈 옛 식 그대로 센다.
  */
 
 /**
@@ -23,6 +22,10 @@ export interface DropPriceFields {
   priceShare?: number | null
   /** 내 비율. 없으면 1 이라 옛 기록의 금액이 안 움직인다. */
   priceMyShare?: number | null
+  /** 경매장 판매 수수료(%). `null` 은 없음 */
+  saleFeePercent?: number | null
+  /** 파티원에게 보낼 때의 분배 수수료(%). `null` 은 없음 */
+  splitFeePercent?: number | null
 }
 
 /**
@@ -36,7 +39,21 @@ export function dropPayoutMeso(drop: DropPriceFields): number {
   // 분배 인원이 없거나 0이면 1로 본다. 0으로 나누어 Infinity 가 수익에 섞이는 것을 막는다.
   const total = Math.max(1, drop.priceShare ?? 1)
   // 내 비율도 최소 1 이다. 0 이면 번 돈을 0 으로 적는다.
-  return Math.floor((drop.priceMeso * Math.max(1, drop.priceMyShare ?? 1)) / total)
+  const mine = Math.max(1, drop.priceMyShare ?? 1)
+  const saleFee = drop.saleFeePercent ?? null
+  const splitFee = drop.splitFeePercent ?? null
+  if (saleFee === null && splitFee === null) return Math.floor((drop.priceMeso * mine) / total)
+
+  // 판매 분배금 계산기(`lib/cashbook/item-split`)와 같은 역산이다. 받는 쪽이 분배 수수료를 물고도 약속한 몫이 되게 보낸다.
+  const net = drop.priceMeso - Math.floor((drop.priceMeso * (saleFee ?? 0)) / 100)
+  if (mine >= total) return net
+  const d = splitFee ?? 0
+  if (drop.priceMyShare == null) {
+    const perMember = Math.floor((net * 100) / (total * 100 - d))
+    return net - perMember * (total - 1)
+  }
+  const others = total - mine
+  return net - Math.floor((100 * net * others) / (mine * (100 - d) + 100 * others))
 }
 
 /** 한 보스 행에 기록된 드롭 전체가 그 행에 더하는 금액. */

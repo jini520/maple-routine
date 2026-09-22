@@ -9,7 +9,7 @@
 // ④ 하단 버전은 실행 중인 OTA 번들이 아니라 빌드 시점 값이다.
 // ⑤ 캐릭터 관리 행의 계약은 셋뿐이다. 배지(단위 개), 누르면 그 화면을 민다, `openPicker` 로
 //    들어와도 같은 곳으로 민다. 조회·저장·401/429 배선은 `SettingsCharactersScreen` 이 갖는다.
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 
 import { loadCacheDataSizes } from '../../../features/settings/cache-data'
 import { useThemeStore } from '../../../features/theme/store'
@@ -137,7 +137,7 @@ const ROW_LABELS = [
 ]
 
 /** 카드마다 달린 제목. 순서가 곧 화면 순서다(사용자 지정). */
-const SECTION_TITLES = ['알림', '캐릭터 · 테마', '스케줄', '앱 데이터']
+const SECTION_TITLES = ['알림', '캐릭터 · 테마', 'MVP 등급', '스케줄', '앱 데이터']
 
 function mockThemeStore(overrides: Partial<ReturnType<typeof useThemeStore>> = {}): void {
   mockedUseThemeStore.mockReturnValue({
@@ -193,11 +193,13 @@ afterEach(() => {
 })
 
 describe('AppSettingsScreen', () => {
-  it('행이 정확히 여섯이고 값 카드 → 이동 카드다', async () => {
+  it('행이 정확히 일곱이고 값 카드 → 이동 카드다', async () => {
     const view = await renderOverlay(<AppSettingsScreen />)
 
     for (const label of ROW_LABELS) expect(view.getByText(label)).toBeTruthy()
-    expect(view.getAllByTestId('settings-row-chevron')).toHaveLength(ROW_LABELS.length)
+    // `MVP 등급` 행은 구역 제목과 이름이 같아 `ROW_LABELS` 밖이다.
+    expect(view.getAllByText('MVP 등급')).toHaveLength(2)
+    expect(view.getAllByTestId('settings-row-chevron')).toHaveLength(ROW_LABELS.length + 1)
   })
 
   // 카드 넷이 주제를 가른다. 알림(밖으로 나간다) · 스케줄 · 캐릭터와 테마 · 앱 데이터.
@@ -205,7 +207,7 @@ describe('AppSettingsScreen', () => {
     const view = await renderOverlay(<AppSettingsScreen />)
 
     const cards = view.getAllByTestId('app-settings-card')
-    expect(cards).toHaveLength(4)
+    expect(cards).toHaveLength(5)
 
     const labelsIn = (card: AtomElement): string[] =>
       ROW_LABELS.filter((label) => {
@@ -216,8 +218,10 @@ describe('AppSettingsScreen', () => {
 
     expect(labelsIn(cards[0])).toEqual(['알림 설정'])
     expect(labelsIn(cards[1])).toEqual(['캐릭터 관리', '테마'])
-    expect(labelsIn(cards[2])).toEqual(['스케줄 관리 방법'])
-    expect(labelsIn(cards[3])).toEqual(['계정 및 데이터', '앱 정보'])
+    // 구역 제목과 행 이름이 같아 `ROW_LABELS` 로는 못 찾는다. 카드 안에서 본다.
+    expect(within(cards[2]).getByText('MVP 등급')).toBeTruthy()
+    expect(labelsIn(cards[3])).toEqual(['스케줄 관리 방법'])
+    expect(labelsIn(cards[4])).toEqual(['계정 및 데이터', '앱 정보'])
   })
 
   // 카드 경계만으로는 여기서 무리가 갈린다는 말밖에 못 한다. 그 무리가 무엇인지 알려면 행 이름을
@@ -226,9 +230,18 @@ describe('AppSettingsScreen', () => {
     const view = await renderOverlay(<AppSettingsScreen />)
 
     const texts = textsIn(view.getByTestId('screen-AppSettings'))
-    expect(texts.filter((text) => SECTION_TITLES.includes(text))).toEqual(SECTION_TITLES)
+    // `MVP 등급` 은 제목과 행 이름이 같아 두 번 나온다. 처음 나온 자리로 순서를 본다.
+    expect([...new Set(texts.filter((text) => SECTION_TITLES.includes(text)))]).toEqual(SECTION_TITLES)
     // 제목은 카드 **위**에 선다.
     expect(texts.indexOf('캐릭터 · 테마')).toBeLessThan(texts.indexOf('캐릭터 관리'))
+  })
+
+  it('"MVP 등급" 행을 누르면 SettingsMvpGrade 로 민다', async () => {
+    const view = await renderOverlay(<AppSettingsScreen />)
+
+    await press(within(view.getAllByTestId('app-settings-card')[2]).getByRole('button'))
+
+    expect(navigate).toHaveBeenCalledWith('SettingsMvpGrade')
   })
 
   it('"알림 설정" 행을 누르면 SettingsNoticeAlerts 로 민다', async () => {
