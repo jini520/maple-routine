@@ -104,6 +104,18 @@ describe('스타포스 비용', () => {
     expect(starforceCost(160, 17, 30, false)).toBe(46_839_170)
   })
 
+  // 200제 16→17성, 샤이닝 스타포스(30%) + 파괴 방지. 사용자가 게임 값과 대조했다(2026-09-22).
+  it('MVP 할인은 이벤트 할인에 곱한다', () => {
+    expect(starforceCost(200, 16, 30, true, 0)).toBe(226_798_920)
+    expect(starforceCost(200, 16, 30, true, 3)).toBe(225_034_928)
+    expect(starforceCost(200, 16, 30, true, 5)).toBe(223_858_934)
+    expect(starforceCost(200, 16, 30, true, 10)).toBe(220_918_948)
+  })
+
+  it('MVP 할인만 있어도 반올림 뒤에 깎는다', () => {
+    expect(starforceCost(160, 18, 0, false, 10)).toBe(Math.floor((165_920_200 * 90) / 100))
+  })
+
   it('성수를 벗어나면 값이 없다', () => {
     expect(starforceCost(160, 30)).toBeNull()
     expect(starforceCost(160, -1)).toBeNull()
