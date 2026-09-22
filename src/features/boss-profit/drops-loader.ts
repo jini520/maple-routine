@@ -7,6 +7,7 @@
 
 import { planConfirmedDifficultyDropMigration, pruneUnobtainableDrops } from '../../lib/boss/boss-drops'
 import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
+import { batchRecordWrites } from '../../storage/record-revision-batch'
 import type { BossDropRecord } from '../../storage/boss-drops'
 import type { RecordedDrop } from '../../types/drops'
 import { dropRowKey, toRecordedDrop } from './rows'
@@ -84,20 +85,23 @@ export async function loadDropsByRowKey(
   // 때문이다. 변경이 있으면 DB 에도 영구 반영한다(멱등). 미완료 행은 아직 처치 난이도가 없어
   // 건드리지 않는다. 판정은 그 행의 기간으로 한다. 패치로 빠진 아이템의 패치 전 기록이 지워지면
   // 안 된다.
-  for (const row of rows) {
-    if (!row.isComplete) continue
-    const key = dropRowKey(row.ocid, row.bossKey, row.difficulty, row.periodKey)
-    const drops = map[key]
-    if (drops === undefined || drops.length === 0) continue
-    const pruned = pruneUnobtainableDrops(row.bossKey, row.difficulty, row.periodKey, drops)
-    if (pruned.length !== drops.length) {
-      map[key] = pruned
-      await withSqliteFallback(
-        replaceBossDropRecords(row.ocid, row.bossKey, row.difficulty, row.periodKey, pruned, now.toISOString()),
-        undefined,
-      )
+  // 행마다 다시 쓸 수 있다. 판 알림은 반복이 끝날 때 한 번이다.
+  await batchRecordWrites(async () => {
+    for (const row of rows) {
+      if (!row.isComplete) continue
+      const key = dropRowKey(row.ocid, row.bossKey, row.difficulty, row.periodKey)
+      const drops = map[key]
+      if (drops === undefined || drops.length === 0) continue
+      const pruned = pruneUnobtainableDrops(row.bossKey, row.difficulty, row.periodKey, drops)
+      if (pruned.length !== drops.length) {
+        map[key] = pruned
+        await withSqliteFallback(
+          replaceBossDropRecords(row.ocid, row.bossKey, row.difficulty, row.periodKey, pruned, now.toISOString()),
+          undefined,
+        )
+      }
     }
-  }
 
+  })
   return map
 }

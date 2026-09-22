@@ -37,6 +37,7 @@ import {
   markScheduleProbeUnavailable,
   recordScheduleProbe,
 } from '../../storage/schedule-probe-ledger'
+import { batchRecordWrites } from '../../storage/record-revision-batch'
 import { BOSS_CYCLES, type BossCycle } from '../../types'
 import { toScheduleSyncError } from '../schedule-sync/errors'
 import { refreshSettlement } from '../settlement/store'
@@ -385,19 +386,22 @@ async function runResolveDefeatDates(ocids: readonly string[], now: Date): Promi
   const knownFor = new Map(knownByOcid)
 
   let dated = 0
-  for (const candidate of candidates) {
-    const known = knownFor.get(candidate.ocid)
-    const defeatedOn = resolveFor(
-      candidate,
-      known?.observed ?? EMPTY_OBSERVED,
-      known?.unobservable ?? EMPTY_DAYS,
-      todayDateKey,
-      floorDateKey,
-    )
-    if (defeatedOn === null) continue
+  // 첫 수집은 백 건 넘게 적는다. 판 알림은 반복이 끝날 때 한 번이다. 위의 조회는 안 묶는다.
+  await batchRecordWrites(async () => {
+    for (const candidate of candidates) {
+      const known = knownFor.get(candidate.ocid)
+      const defeatedOn = resolveFor(
+        candidate,
+        known?.observed ?? EMPTY_OBSERVED,
+        known?.unobservable ?? EMPTY_DAYS,
+        todayDateKey,
+        floorDateKey,
+      )
+      if (defeatedOn === null) continue
 
-    await withSqliteFallback(setBossProfitDefeatedOn(candidate, defeatedOn), undefined)
-    dated += 1
-  }
+      await withSqliteFallback(setBossProfitDefeatedOn(candidate, defeatedOn), undefined)
+      dated += 1
+    }
+  })
   return dated
 }

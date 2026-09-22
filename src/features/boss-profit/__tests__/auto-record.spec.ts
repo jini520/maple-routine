@@ -27,6 +27,19 @@ jest.mock('../drops-loader', () => ({
 }))
 const { migrateDropsToConfirmedDifficulty: migrateDropsMock } = jest.requireMock('../drops-loader') as Record<string, jest.Mock>
 
+// 판 알림을 모으는 반복. 쓰기가 그 안에서 도는지 깊이로 본다.
+jest.mock('../../../storage/record-revision-batch', () => ({
+  batchRecordWrites: async (write: () => Promise<unknown>) => {
+    mockBatchDepth += 1
+    try {
+      return await write()
+    } finally {
+      mockBatchDepth -= 1
+    }
+  },
+}))
+var mockBatchDepth = 0
+
 const { autoRecordRows } = require('../auto-record') as typeof import('../auto-record')
 
 const NOW = new Date('2026-08-08T09:00:00.000Z')
@@ -90,6 +103,25 @@ function partySetting(partySize: number, shares: Partial<Record<string, number>>
 }
 
 describe('autoRecordRows', () => {
+  // 한 회차가 수십 건을 적는다. 쓰기마다 알리면 판을 구독하는 화면이 그만큼 다시 그려진다.
+  it('행마다 적는 반복은 판 알림을 모으는 반복 안에서 돈다', async () => {
+    const depths: number[] = []
+    upsertBossProfitRecordMock.mockImplementation(async () => {
+      depths.push(mockBatchDepth)
+    })
+
+    await autoRecordRows({
+      rows: [row(), row({ bossKey: 'lucid', bossName: '루시드' })],
+      records: NO_RECORDS,
+      dropRecords: NO_DROPS,
+      now: NOW,
+      isSourceCurrent: () => true,
+      nexonCompleted: 넥슨완료,
+    })
+
+    expect(depths).toEqual([1, 1])
+  })
+
   it('기록이 없는 완료 행을 기본 파티원 수 1로 기록한다', async () => {
     const result = await autoRecordRows({
       rows: [row()],

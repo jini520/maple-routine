@@ -25,6 +25,7 @@ import {
 } from '../../storage/boss-profit'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getScheduleProbeLedger } from '../../storage/schedule-probe-ledger'
+import { batchRecordWrites } from '../../storage/record-revision-batch'
 import { BOSS_CYCLES, type BossCycle, type BossDifficulty } from '../../types'
 import { isChallengersWorld } from '../../lib/world/worlds'
 import { migrateDropsToConfirmedDifficulty } from '../boss-profit/drops-loader'
@@ -171,7 +172,12 @@ async function recordPeriod(
 }
 
 /** 창에 걸친 모든 기간의 기록을 굳힌다. 창을 채운 **뒤에** 부른다. */
-export async function recordBossProfitFromWindow(ocids: readonly string[], now: Date): Promise<void> {
+export function recordBossProfitFromWindow(ocids: readonly string[], now: Date): Promise<void> {
+  // 지난 기간을 통째로 적는다. 판 알림은 반복이 끝날 때 한 번이다.
+  return batchRecordWrites(() => recordWindow(ocids, now))
+}
+
+async function recordWindow(ocids: readonly string[], now: Date): Promise<void> {
   if (ocids.length === 0) {
     return
   }

@@ -17,6 +17,18 @@ jest.mock('../../../storage/schedule-probe-ledger', () => ({
   recordScheduleProbe: jest.fn(),
 }))
 jest.mock('../../../nexon/schedule', () => ({ fetchSchedulerCharacterState: jest.fn() }))
+// 판 알림을 모으는 반복. 쓰기가 그 안에서 도는지 깊이로 본다.
+jest.mock('../../../storage/record-revision-batch', () => ({
+  batchRecordWrites: async (write: () => Promise<unknown>) => {
+    mockBatchDepth += 1
+    try {
+      return await write()
+    } finally {
+      mockBatchDepth -= 1
+    }
+  },
+}))
+var mockBatchDepth = 0
 
 import { NexonBadRequestError } from '../../../nexon/errors'
 import { resolveDefeatDates, resolveDefeatedOn } from '../defeat-dates'
@@ -501,6 +513,26 @@ describe('resolveDefeatDates: 캐낸 값을 박는다', () => {
     await expect(resolveDefeatDates(['ocid-1'], NOW)).resolves.toBe(1)
 
     expect(setDefeatedOnMock).toHaveBeenCalledWith(미확정_스우, '2026-08-24')
+  })
+
+  // 첫 수집은 날짜를 백 건 넘게 적는다. 쓰기마다 알리면 판을 구독하는 화면이 그만큼 다시 그려진다.
+  // 조회까지 감싸면 조회가 도는 동안 다른 곳의 알림까지 묶인다.
+  it('날짜를 적는 반복은 판 알림을 모으는 반복 안에서 돈다. 조회는 그 밖이다', async () => {
+    const depths = { fetch: [] as number[], write: [] as number[] }
+    getUndatedMock.mockResolvedValue([미확정_스우, { ...미확정_스우, bossKey: 'lucid' }])
+    fetchStateMock.mockImplementation(async () => {
+      depths.fetch.push(mockBatchDepth)
+      return schedulerState([])
+    })
+    setDefeatedOnMock.mockImplementation(async () => {
+      depths.write.push(mockBatchDepth)
+    })
+
+    await expect(resolveDefeatDates(['ocid-1'], NOW)).resolves.toBe(2)
+
+    expect(depths.write).toEqual([1, 1])
+    expect(depths.fetch.length).toBeGreaterThan(0)
+    expect(depths.fetch.every((depth) => depth === 0)).toBe(true)
   })
 
   it('조회가 실패한 날은 구멍이라 확정하지 않는다', async () => {
