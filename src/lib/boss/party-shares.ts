@@ -21,6 +21,8 @@ export interface PartyShares {
   myShare: number | null
   sharesTotal: number | null
   splitFeePercent: number | null
+  /** 송금 수수료가 등급을 따라가나. 계산은 안 보고 기록에 함께 적힌다 */
+  splitFeeAuto?: boolean
 }
 
 /** 계산이 쓰는 모양. `isEven` 이면 나눌 것이 비율이 아니라 파티 인원이다. */

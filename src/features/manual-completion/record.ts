@@ -21,6 +21,7 @@ import { migrateDropsToConfirmedDifficulty } from '../boss-profit/drops-loader'
 import { withSqliteFallback } from '../boss-profit/sqlite-guards'
 
 import { crystalPayoutMeso, type PartyShares } from '../../lib/boss/party-shares'
+import { lazyAutoFeePercent } from '../mvp-grade/auto-fee'
 
 export interface ManualCompletionInput {
   ocid: string
@@ -77,6 +78,11 @@ export async function saveManualCompletion(input: ManualCompletionInput, now: Da
 
   const changedDifficulty =
     input.previousDifficulty !== undefined && input.previousDifficulty !== input.difficulty
+  // 송금 수수료가 자동이면 잡은 날의 등급 요율이다. 등급 기록이 바뀌면 다시 센다.
+  const splitFeeAuto = input.shares.splitFeeAuto === true
+  const shares: PartyShares = splitFeeAuto
+    ? { ...input.shares, splitFeePercent: await lazyAutoFeePercent()(input.ocid, input.defeatedOn) }
+    : input.shares
 
   await upsertBossProfitRecord({
     ocid: input.ocid,
@@ -87,10 +93,11 @@ export async function saveManualCompletion(input: ManualCompletionInput, now: Da
     periodKey: input.periodKey,
     partySize: input.partySize,
     priceMeso: price.priceMeso,
-    payoutMeso: crystalPayoutMeso(price.priceMeso, input.partySize, input.shares),
-    crystalMyShare: input.shares.myShare,
-    crystalSharesTotal: input.shares.sharesTotal,
-    splitFeePercent: input.shares.splitFeePercent,
+    payoutMeso: crystalPayoutMeso(price.priceMeso, input.partySize, shares),
+    crystalMyShare: shares.myShare,
+    crystalSharesTotal: shares.sharesTotal,
+    splitFeePercent: shares.splitFeePercent,
+    splitFeeAuto,
     recordedAt: now.toISOString(),
     world: input.world,
     worldKey: input.worldKey,

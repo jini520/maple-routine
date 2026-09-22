@@ -4,6 +4,8 @@
  * 행의 원형 `BossPortrait` 에는 프롭을 그대로 넘기기만 하고 계산을 갖지 않는다.
  */
 import { useEffect, useState } from 'react'
+import { autoFeeFrom, useMvpGradeContext } from '../../features/mvp-grade/store'
+import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { Pressable, View } from 'react-native'
 
 import { partySizeKey, useBossSchedulerStore } from '../../features/boss-scheduler/store'
@@ -79,6 +81,7 @@ export function BossManageScreen(): React.JSX.Element {
     setManualBossDifficulty,
     // 선택 캐릭터는 스케줄러와 공유한다. 두 화면이 갈라지면 안 된다.
   } = useBossSchedulerStore()
+  const gradeContext = useMvpGradeContext()
   // 선택한 캐릭터는 앱 전체가 한 벌로 든다.
   const { selectedOcid, select } = useCharacterSelectionStore()
   const { mode } = useTrackingModeStore()
@@ -489,6 +492,8 @@ export function BossManageScreen(): React.JSX.Element {
           partySize={partySizes[partySizeKey(selected.ocid, partyModal.entry.key, partyModal.difficulty)] ?? 1}
           maxPartySize={getMaxPartySize(partyModal.entry.key, partyModal.difficulty)}
           shares={modalShares}
+          // 설정은 앞으로 적힐 기록의 약속이라 이번 주 등급을 보인다.
+          autoFee={gradeContext === null ? null : autoFeeFrom(gradeContext, selected.ocid, getCurrentKstDateKey(new Date()))}
           // 이 화면의 난이도는 행의 세그먼트가 정한다. 모달에서 또 고치면 어느 쪽이 이기는지
           // 흐려진다.
           onSelectDifficulty={() => {}}

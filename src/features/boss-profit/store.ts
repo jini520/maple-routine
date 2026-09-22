@@ -1961,6 +1961,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         dropMyShare: setting.dropMyShare,
         dropSharesTotal: setting.dropSharesTotal,
         splitFeePercent: setting.splitFeePercent,
+        splitFeeAuto: setting.splitFeeAuto,
       }
     }
     set({ partyShares })
@@ -1992,6 +1993,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         crystalMyShare: shares.myShare,
         crystalSharesTotal: shares.sharesTotal,
         splitFeePercent: shares.splitFeePercent,
+        splitFeeAuto: shares.splitFeeAuto === true,
         recordedAt: new Date().toISOString(),
         world: row.world,
         worldKey: row.worldKey,
@@ -2010,6 +2012,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
             crystalMyShare: shares.myShare,
             crystalSharesTotal: shares.sharesTotal,
             splitFeePercent: shares.splitFeePercent,
+            splitFeeAuto: shares.splitFeeAuto === true,
           }
         : candidate
 

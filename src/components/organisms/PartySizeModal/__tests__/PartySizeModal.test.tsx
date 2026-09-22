@@ -232,9 +232,11 @@ describe('분배 비율', () => {
   })
 
   // 반반(1:2)은 2인 균등과 같은 값이라 켠 티가 안 난다. 비율을 켰으면 뜻이 있는 값이어야 한다.
-  it('비율로 갈아타면 2 : 1 이 놓인다. 반반은 균등과 같은 값이라 안 쓴다', async () => {
+  it('비율로 갈아타면 2 : 1 이 놓이고 송금 수수료는 자동이다', async () => {
     const onApply = jest.fn()
-    const { getByLabelText, getByText } = await renderOverlay(<PartySizeModal {...props({ onApply })} />)
+    const { getByLabelText, getByText } = await renderOverlay(
+      <PartySizeModal {...props({ onApply, autoFee: { grade: 'diamond', percent: 3 } })} />,
+    )
 
     await fireEvent.press(getByLabelText('비율'))
     await fireEvent.press(getByText('적용'))
@@ -246,9 +248,25 @@ describe('분배 비율', () => {
         crystalSharesTotal: 3,
         dropMyShare: 2,
         dropSharesTotal: 3,
+        // 자동이면 요율은 그 등급 요율이다. 보스 수익 행이 이 값으로 그 기록을 다시 센다.
         splitFeePercent: 3,
+        splitFeeAuto: true,
       },
     })
+  })
+
+  it('자동이면 명패와 요율이 서고, 끄면 그 요율을 고른 0 · 3 · 5 가 선다', async () => {
+    const shares = { ...EVEN_SHARES, crystalMyShare: 2, crystalSharesTotal: 3, splitFeeAuto: true }
+    const { getByLabelText, getByRole, queryByText } = await renderOverlay(
+      <PartySizeModal {...props({ shares, autoFee: { grade: 'gold', percent: 3 } })} />,
+    )
+
+    expect(getByLabelText('MVP 골드')).toBeTruthy()
+    expect(queryByText('0%')).toBeNull()
+
+    await fireEvent.press(getByRole('checkbox'))
+
+    expect(getByLabelText('3%').props.accessibilityState?.selected).toBe(true)
   })
 
   // 비율은 `나 : 나머지` 라 두 쪽이다. 몇 명이 그 나머지를 이루는지는 금액에 안 들어가므로,
@@ -292,7 +310,7 @@ describe('분배 비율', () => {
 
   it('송금 수수료는 0 · 3 · 5 셋이고 고르면 그 값이 간다', async () => {
     const onApply = jest.fn()
-    const shares = { ...EVEN_SHARES, crystalMyShare: 2, crystalSharesTotal: 3, splitFeePercent: 3 }
+    const shares = { ...EVEN_SHARES, crystalMyShare: 2, crystalSharesTotal: 3, splitFeePercent: 3, splitFeeAuto: false }
     const { getByText } = await renderOverlay(<PartySizeModal {...props({ shares, onApply })} />)
 
     expect(getByText('0%')).toBeTruthy()
@@ -303,7 +321,7 @@ describe('분배 비율', () => {
 
     expect(onApply).toHaveBeenCalledWith({
       partySize: 4,
-      shares: expect.objectContaining({ splitFeePercent: 0 }),
+      shares: expect.objectContaining({ splitFeePercent: 0, splitFeeAuto: false }),
     })
   })
 
