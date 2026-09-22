@@ -166,6 +166,8 @@ async function recordPeriod(
         payoutMeso: crystalPayoutMeso(priceEntry.priceMeso, partySize, shares),
         crystalMyShare: shares.myShare,
         crystalSharesTotal: shares.sharesTotal,
+        dropMyShare: configured?.dropMyShare ?? null,
+        dropSharesTotal: configured?.dropSharesTotal ?? null,
         splitFeePercent: shares.splitFeePercent,
         splitFeeAuto: splitFee.splitFeeAuto,
         recordedAt: now.toISOString(),

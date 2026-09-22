@@ -188,6 +188,9 @@ async function recordEachRow({
         payoutMeso,
         crystalMyShare: shares.myShare,
         crystalSharesTotal: shares.sharesTotal,
+        // 설정을 나중에 바꿔도 이 기록은 그때의 약속을 말한다.
+        dropMyShare: configured?.dropMyShare ?? null,
+        dropSharesTotal: configured?.dropSharesTotal ?? null,
         splitFeePercent: shares.splitFeePercent,
         splitFeeAuto: splitFee.splitFeeAuto,
         recordedAt: now.toISOString(),

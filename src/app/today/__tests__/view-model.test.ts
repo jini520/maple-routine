@@ -117,6 +117,8 @@ function profitRow(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     payoutMeso: 100,
     crystalMyShare: null,
     crystalSharesTotal: null,
+    dropMyShare: null,
+    dropSharesTotal: null,
     splitFeePercent: null,
     isComplete: true,
     defeatedOn: null,

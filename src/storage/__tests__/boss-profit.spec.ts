@@ -28,6 +28,8 @@ const sampleRecord: BossProfitRecord = {
   payoutMeso: 500_000,
   crystalMyShare: null,
   crystalSharesTotal: null,
+  dropMyShare: null,
+  dropSharesTotal: null,
   splitFeePercent: null,
   splitFeeAuto: false,
   recordedAt: '2026-07-09T00:05:00.000Z',
@@ -56,7 +58,9 @@ describe('upsertBossProfitRecord', () => {
       2,
       1_000_000,
       500_000,
-      // 비율 셋. 균등이라 NULL 이다.
+      // 비율 넷과 송금 수수료율. 균등이라 NULL 이다.
+      null,
+      null,
       null,
       null,
       null,
@@ -81,6 +85,8 @@ describe('upsertBossProfitRecord', () => {
       3,
       1_000_000,
       333_333,
+      null,
+      null,
       null,
       null,
       null,
@@ -413,6 +419,38 @@ describe('getBossProfitRecordsRevision', () => {
 
 // 판이 바뀐 것을 물어볼 뿐 아니라 **알림을 받아야** 하는 쪽이 있다. 아이템 가격 입력 버튼의 배지는
 // 쓰기마다 그 주 창을 다시 채운다.
+// 보스 수익 행에서 고친 비율은 그 주차의 값이다. 결정석처럼 아이템도 이 표가 든다.
+it('드롭 비율 칸을 쓰고 그대로 읽는다', async () => {
+  const { upsertBossProfitRecord, getBossProfitRecords } = require('../boss-profit') as typeof import('../boss-profit')
+
+  await upsertBossProfitRecord({ ...sampleRecord, dropMyShare: 2, dropSharesTotal: 3 })
+
+  const [, values] = runMock.mock.calls[0]
+  expect(values).toContain(2)
+  expect(values).toContain(3)
+
+  queryMock.mockResolvedValueOnce({
+    values: [
+      {
+        ocid: 'ocid-1',
+        boss_key: 'black_mage',
+        boss: '검은 마법사',
+        difficulty: 'extreme',
+        cycle: 'monthly',
+        period_key: '2026-07',
+        party_size: 2,
+        price_meso: 1_000_000,
+        payout_meso: 500_000,
+        drop_my_share: 2,
+        drop_shares_total: 3,
+        recorded_at: '2026-07-09T00:05:00.000Z',
+      },
+    ],
+  })
+  const [read] = await getBossProfitRecords(['ocid-1'], ['2026-07'])
+  expect(read).toMatchObject({ dropMyShare: 2, dropSharesTotal: 3 })
+})
+
 describe('subscribeBossProfitRecordsRevision', () => {
   it('판이 오를 때마다 구독자를 부른다', async () => {
     const { subscribeBossProfitRecordsRevision, upsertBossProfitRecord, setBossProfitDefeatedOn } =

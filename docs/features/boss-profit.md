@@ -169,6 +169,8 @@ Nexon API는 파티원 수를 모른다. 그래서 **캐릭터 + 보스 + 난이
 
 기록이 비율과 수수료율을 스냅샷으로 든다([[ADR-305]] 결정 8). `boss_profit_records` 에
 `crystal_my_share` · `crystal_shares_total` · `split_fee_percent` 가 붙고 전부 `NULL` 이 균등이다.
+**아이템 비율도 이 표가 든다**([[ADR-311]]) — `drop_my_share` · `drop_shares_total` 이고 `NULL` 은 그 기록이 비율을 안
+들었다는 뜻이라 화면이 설정값을 본다. 보스 수익 행에서 고친 값은 그 주차의 것이라 설정이 아니라 기록에 남는다.
 안 담으면 그 기록의 비율을 다시 고칠 때 무엇을 고치는 중인지 읽을 곳이 없다.
 
 **그 스냅샷을 행에 싣는 것은 `mergeRecordsIntoRows` 다.** 이번 기간의 행은 동기화가 만들고 비율을 모르므로, 안 실으면 비율로

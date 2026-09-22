@@ -454,6 +454,9 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   // 그 건의 비율 스냅샷. 설정을 고쳐도 과거 기록이 안 움직이는 규칙을 비율도 따른다.
   await ensureColumn(db, 'boss_profit_records', 'crystal_my_share', 'INTEGER')
   await ensureColumn(db, 'boss_profit_records', 'crystal_shares_total', 'INTEGER')
+  // 아이템 비율. 보스 수익 행에서 고친 값은 그 주차의 것이라 기록이 든다.
+  await ensureColumn(db, 'boss_profit_records', 'drop_my_share', 'INTEGER')
+  await ensureColumn(db, 'boss_profit_records', 'drop_shares_total', 'INTEGER')
   await ensureColumn(db, 'boss_profit_records', 'split_fee_percent', 'INTEGER')
   // 송금 수수료가 등급을 따라가나. NULL 인 옛 행은 손으로 고른 값으로 읽는다.
   await ensureColumn(db, 'boss_party_settings', 'split_fee_auto', 'INTEGER')

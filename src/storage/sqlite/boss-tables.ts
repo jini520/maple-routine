@@ -19,6 +19,9 @@ export const BOSS_PROFIT_RECORDS_BODY = `(
     -- 그 건의 분배 비율과 수수료율 스냅샷. NULL 은 균등이라 옛 행이 그대로 맞는다.
     crystal_my_share INTEGER,
     crystal_shares_total INTEGER,
+    -- 아이템 비율. 보스 수익 행에서 고친 값은 그 주차의 것이라 이 표가 든다.
+    drop_my_share INTEGER,
+    drop_shares_total INTEGER,
     split_fee_percent INTEGER,
     -- 1 이면 송금 수수료가 등급을 따라간다(자동). 등급 기록이 바뀔 때 split_fee_percent 와 payout_meso 가 다시 적힌다.
     split_fee_auto INTEGER,

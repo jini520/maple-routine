@@ -17,6 +17,7 @@ import type { RecordedDrop } from '../../types/drops'
 import { AnimatedNumber, Badge, Text } from '../../components/atoms'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { PartyShareSummary } from '../../components/molecules/PartyShareSummary/PartyShareSummary'
+import { dropShareSeedOf } from '../../features/boss-profit/rows'
 import { PartySizeModal, type PartyModalShares } from '../../components/organisms/PartySizeModal/PartySizeModal'
 import { supportedDifficultiesOf } from '../../lib/boss/bosses'
 import { partySizeForShares } from '../../lib/boss/party-shares'
@@ -151,10 +152,10 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
   const isEditable = row.isComplete && !isPriceUnknown
   const partySize = row.partySize ?? 1
   const settingShares = partyShares[partySizeKey(row.ocid, row.bossKey, row.difficulty)]
-  /** 아이템 비율은 기록에 없다. 지금 설정된 값을 그린다. */
+  /** 아이템 비율. 그 기록이 든 값이 먼저고, 안 들었으면 지금 설정된 값이다. */
   const dropShares = {
-    myShare: settingShares?.dropMyShare ?? null,
-    sharesTotal: settingShares?.dropSharesTotal ?? null,
+    myShare: row.dropMyShare ?? settingShares?.dropMyShare ?? null,
+    sharesTotal: row.dropSharesTotal ?? settingShares?.dropSharesTotal ?? null,
     splitFeePercent: settingShares?.splitFeePercent ?? null,
   }
   const recordShares = {
@@ -195,15 +196,15 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
   const modalShares: PartyModalShares = {
     crystalMyShare: row.crystalMyShare,
     crystalSharesTotal: row.crystalSharesTotal,
-    dropMyShare: null,
-    dropSharesTotal: null,
+    dropMyShare: dropShares.myShare,
+    dropSharesTotal: dropShares.sharesTotal,
     splitFeePercent: row.splitFeePercent,
     splitFeeAuto: row.splitFeeAuto,
   }
 
   async function saveParty(input: { partySize: number; shares: PartyModalShares }): Promise<void> {
     try {
-      // **이 자리는 설정이 아니라 그 행의 기록을 다시 센다.** 드롭 비율 칸은 이 표에 없어 버린다.
+      // **이 자리는 설정이 아니라 그 행의 기록을 다시 센다.** 아이템 비율도 그 기록에 남는다.
       await setRowParty(row, {
         partySize: input.partySize,
         shares: {
@@ -212,6 +213,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           splitFeePercent: input.shares.splitFeePercent,
           splitFeeAuto: input.shares.splitFeeAuto,
         },
+        dropShares: { myShare: input.shares.dropMyShare, sharesTotal: input.shares.dropSharesTotal },
       })
     } catch {
       useToastStore.getState().showError('파티원 수를 저장하지 못했습니다')
@@ -422,9 +424,8 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           // 기록한 자리에서 바로 값을 매긴다. 분배 기본값은 이 행의 파티원 수이고, 저장하면 그
           // 값과 독립한다. 나중에 파티원 수를 고쳐도 이미 매긴 금액이 흔들리지 않는다.
           pricing={{
-            // 드롭 비율 칸은 이 표에 없다. 기록의 결정석 비율이 아니라 파티 인원으로 씨를
-            // 뿌린다. 균등이면 합이 곧 인원 수라 지금 값과 같다.
-            defaultShare: { myShare: 1, sharesTotal: partySize },
+            // 그 기록의 아이템 비율이 씨앗이다. 안 들었으면 파티 인원으로 균등하다.
+            defaultShare: dropShareSeedOf(row),
             characterName: row.characterName,
             ocid: row.ocid,
           }}

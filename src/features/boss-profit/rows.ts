@@ -51,6 +51,9 @@ export interface BossProfitRow {
   /** 그 기록의 결정석 분배 비율. `null` 이면 파티 인원으로 균등이다. */
   crystalMyShare: number | null
   crystalSharesTotal: number | null
+  /** 아이템 비율. 기록이 안 들었으면 `null` 이고 화면이 설정값을 본다 */
+  dropMyShare: number | null
+  dropSharesTotal: number | null
   /** 차액 송금의 수수료율. `null` 은 3 이다. */
   splitFeePercent: number | null
   /** 송금 수수료가 등급을 따라가나. 기록에서 나온 행만 값을 갖는다 */
@@ -176,6 +179,8 @@ export function buildBossProfitRow(
     maxPartySize,
     partySize: null,
     crystalMyShare: null,
+    dropMyShare: null,
+    dropSharesTotal: null,
     crystalSharesTotal: null,
     splitFeePercent: null,
     // 미완료(등록만 되고 아직 처치 전) 보스는 항상 0메소로 계산한다. 완료 보스는 null 로 두고
@@ -283,6 +288,8 @@ export function buildRowFromRecord(
     payoutMeso: record.payoutMeso,
     crystalMyShare: record.crystalMyShare,
     crystalSharesTotal: record.crystalSharesTotal,
+    dropMyShare: record.dropMyShare ?? null,
+    dropSharesTotal: record.dropSharesTotal ?? null,
     splitFeePercent: record.splitFeePercent,
     splitFeeAuto: record.splitFeeAuto === true,
     isComplete: true, // 기록은 항상 완료된 보스만 남는다(backfillTarget/자동 기록이 완료 보스만 upsert)
@@ -321,6 +328,8 @@ export function mergeRecordsIntoRows(
       // 화면을 떠났다 오는 순간 균등으로 보이고 파티 모달도 균등으로 열린다.
       crystalMyShare: record.crystalMyShare,
       crystalSharesTotal: record.crystalSharesTotal,
+      dropMyShare: record.dropMyShare ?? null,
+      dropSharesTotal: record.dropSharesTotal ?? null,
       splitFeePercent: record.splitFeePercent,
       splitFeeAuto: record.splitFeeAuto === true,
       defeatedOn: record.defeatedOn ?? row.defeatedOn,
@@ -442,4 +451,16 @@ export function toRecordedDrop(record: BossDropRecord): RecordedDrop {
     saleFeeAuto: record.saleFeeAuto || undefined,
     splitFeeAuto: record.splitFeeAuto || undefined,
   }
+}
+
+/**
+ * 드롭 가격 카드가 받는 분배 씨앗. 기록이 아이템 비율을 들었으면 그 비율이고, 안 들었으면 그 행의 파티 인원으로 균등하다.
+ *
+ * @example const defaultShare = dropShareSeedOf(row)
+ */
+export function dropShareSeedOf(row: BossProfitRow): { myShare: number; sharesTotal: number } {
+  if (row.dropMyShare !== null && row.dropSharesTotal !== null) {
+    return { myShare: row.dropMyShare, sharesTotal: row.dropSharesTotal }
+  }
+  return { myShare: 1, sharesTotal: row.partySize ?? 1 }
 }

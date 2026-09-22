@@ -268,6 +268,8 @@ function profitRow(ocid: string, index: number): BossProfitRow {
     payoutMeso: 1_000_000 * index,
     crystalMyShare: null,
     crystalSharesTotal: null,
+    dropMyShare: null,
+    dropSharesTotal: null,
     splitFeePercent: null,
     isComplete: true, defeatedOn: null, source: 'auto' }
 }
