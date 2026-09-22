@@ -1,4 +1,5 @@
 import { bossNameOf } from '../lib/boss/bosses'
+import { notifyAfterBatch } from './record-revision-batch'
 import { getBossProfitDb } from './sqlite/db'
 import { inTransaction } from './sqlite/transaction'
 import type { DropCategory, RecordedDrop } from '../types/drops'
@@ -101,9 +102,13 @@ export function subscribeBossDropRecordsRevision(listener: () => void): () => vo
   }
 }
 
+function notifyRevisionListeners(): void {
+  for (const listener of revisionListeners) listener()
+}
+
 function bumpRecordsRevision(): void {
   recordsRevision += 1
-  for (const listener of revisionListeners) listener()
+  notifyAfterBatch(notifyRevisionListeners)
 }
 
 /** 테스트 전용. 모듈 수준 상태라 테스트끼리 오염된다. 프로덕션에서 부르지 말 것. */

@@ -17,6 +17,7 @@ import {
   type BossProfitRecord,
 } from '../../storage/boss-profit'
 import type { BossDropRecord } from '../../storage/boss-drops'
+import { batchRecordWrites } from '../../storage/record-revision-batch'
 import type { BossContent } from '../../types'
 import { migrateDropsToConfirmedDifficulty } from './drops-loader'
 import type { BossProfitRow } from './rows'
@@ -72,7 +73,12 @@ export interface AutoRecordParams {
  *
  * 입력 rows 와 같은 순서로, 자동 기록된 행은 partySize·payoutMeso 가 채워진 새 배열을 돌려준다.
  */
-export async function autoRecordRows({
+export function autoRecordRows(params: AutoRecordParams): Promise<BossProfitRow[]> {
+  // 한 회차가 수십 건을 적는다. 판 알림은 반복이 끝날 때 한 번이다.
+  return batchRecordWrites(() => recordEachRow(params))
+}
+
+async function recordEachRow({
   rows,
   records,
   dropRecords,
