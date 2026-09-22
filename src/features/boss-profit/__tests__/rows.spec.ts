@@ -466,6 +466,38 @@ it('mergeRecordsIntoRows 는 기록의 처치 날짜도 행에 싣는다', () =>
   expect(mergeRecordsIntoRows([target], [record])[0].defeatedOn).toBe('2026-09-19')
 })
 
+// 이번 기간의 행은 동기화가 만들고 비율을 모른다. 안 실으면 보스 수익 행에서 비율로 저장한 기록이
+// 화면을 떠났다 오는 순간 균등으로 보이고(`파티 2인`), 파티 모달도 균등으로 열린다.
+it('mergeRecordsIntoRows 는 기록의 비율과 송금 수수료도 행에 싣는다', () => {
+  const target = row({ crystalMyShare: null, crystalSharesTotal: null, splitFeePercent: null })
+  const record = {
+    ocid: target.ocid,
+    bossKey: target.bossKey,
+    boss: target.bossName,
+    difficulty: target.difficulty,
+    cycle: 'weekly' as const,
+    periodKey: target.periodKey,
+    partySize: 2,
+    priceMeso: 300,
+    payoutMeso: 200,
+    crystalMyShare: 2,
+    crystalSharesTotal: 3,
+    splitFeePercent: 5,
+    splitFeeAuto: true,
+    recordedAt: '2026-07-10T00:00:00.000Z',
+    world: null,
+    worldKey: null,
+    defeatedOn: null,
+  }
+
+  expect(mergeRecordsIntoRows([target], [record])[0]).toMatchObject({
+    crystalMyShare: 2,
+    crystalSharesTotal: 3,
+    splitFeePercent: 5,
+    splitFeeAuto: true,
+  })
+})
+
 // 직접 적은 완료는 넥슨 응답에 없다. 기록에서 뽑은 열쇠를 행 고르기와 병합 둘이 함께 봐야
 // 스케줄러가 `12/12` 라고 말하면서 이 화면이 `11/12` 라고 말하는 일이 안 생긴다.
 describe('직접 적은 완료', () => {

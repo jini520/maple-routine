@@ -317,6 +317,12 @@ export function mergeRecordsIntoRows(
       priceMeso: record.priceMeso,
       partySize: record.partySize,
       payoutMeso: record.payoutMeso,
+      // 비율도 기록값이다. 동기화가 만든 행은 비율을 모르므로, 안 실으면 비율로 저장한 기록이
+      // 화면을 떠났다 오는 순간 균등으로 보이고 파티 모달도 균등으로 열린다.
+      crystalMyShare: record.crystalMyShare,
+      crystalSharesTotal: record.crystalSharesTotal,
+      splitFeePercent: record.splitFeePercent,
+      splitFeeAuto: record.splitFeeAuto === true,
       defeatedOn: record.defeatedOn ?? row.defeatedOn,
       source: record.source ?? 'auto',
       // **기록이 있으면 그 조합은 완료다.** 자동 기록은 완료 행만 만들고, 직접 적은 완료도 기록이
