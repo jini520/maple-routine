@@ -49,3 +49,14 @@ describe('가장 높은 등급', () => {
     expect(highestMvpGrade([null, null])).toBeNull()
   })
 })
+
+describe('명패 그림', () => {
+  const { mvpPlateAsset } = jest.requireActual<typeof import('../../assets/asset-lookup')>('../../assets/asset-lookup')
+
+  it('일반을 뺀 여섯 등급에 명패가 있다', () => {
+    for (const grade of MVP_GRADES) {
+      if (grade.key === 'normal') expect(mvpPlateAsset(grade.key)).toBeNull()
+      else expect(mvpPlateAsset(grade.key)).not.toBeNull()
+    }
+  })
+})

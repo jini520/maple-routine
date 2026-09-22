@@ -68,6 +68,15 @@ export const ASSET_GROUPS: AssetGroup[] = [
     purpose: '월드 엠블럼. `lib/assets/asset-lookup.ts` 의 `worldEmblemUrl` 이 `worlds.json` 의 `emblem` 으로 찾는다',
   },
   {
+    file: 'mvp',
+    exportName: 'MVP_PLATE_ASSETS',
+    kind: 'record',
+    key: 'slug',
+    dirs: ['mvp'],
+    extensions: ['webp'],
+    purpose: 'MVP 등급 명패. `lib/assets/asset-lookup.ts` 의 `mvpPlateAsset` 이 등급 key 로 찾는다. 일반은 그림이 없다',
+  },
+  {
     file: 'themes',
     exportName: 'THEME_BACKGROUND_ASSETS',
     kind: 'record',

@@ -14,7 +14,7 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { ChevronLeftIcon, Text } from '../../components/atoms'
+import { CheckBox, ChevronLeftIcon, Text } from '../../components/atoms'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import type { MesoRateLoad } from '../../features/cashbook/meso-rate'
 import type { LastHuntSelection } from '../../storage/last-hunt-selection'
@@ -26,7 +26,7 @@ import {
 } from '../../lib/cashbook/categories'
 import type { HuntInputMode, IncomeRecord } from '../../storage/income'
 import { CategoryPicker } from './CategoryPicker'
-import { CheckBox, SheetDateField } from './sheet-fields'
+import { SheetDateField } from './sheet-fields'
 import { EtcForm } from './income/EtcForm'
 import { FragmentSettleForm, type LoadFragmentStorage } from './income/FragmentSettleForm'
 import { HuntCalculatorForm } from './income/HuntCalculatorForm'

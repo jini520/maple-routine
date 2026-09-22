@@ -21,6 +21,7 @@ import { FORCE_ASSETS } from '../force'
 import { ITEM_ASSETS } from '../items'
 import { DAILY_QUEST_ICON_ASSETS } from '../map-icons'
 import { DAILY_QUEST_BACKGROUND_ASSETS } from '../maps'
+import { MVP_PLATE_ASSETS } from '../mvp'
 import { THEME_BACKGROUND_ASSETS } from '../themes'
 import { WORLD_EMBLEM_ASSETS } from '../worlds'
 
@@ -31,6 +32,7 @@ const GENERATED: Record<string, Record<string, unknown>> = {
   bosses: BOSS_PORTRAIT_ASSETS,
   items: ITEM_ASSETS,
   worlds: WORLD_EMBLEM_ASSETS,
+  mvp: MVP_PLATE_ASSETS,
   themes: THEME_BACKGROUND_ASSETS,
   maps: DAILY_QUEST_BACKGROUND_ASSETS,
   'map-icons': DAILY_QUEST_ICON_ASSETS,
