@@ -35,6 +35,7 @@ import CircleUserRound from 'lucide-react-native/icons/circle-user-round'
 import Clock from 'lucide-react-native/icons/clock'
 import CloudDownload from 'lucide-react-native/icons/cloud-download'
 import Crosshair from 'lucide-react-native/icons/crosshair'
+import Crown from 'lucide-react-native/icons/crown'
 import ExternalLink from 'lucide-react-native/icons/external-link'
 import Eye from 'lucide-react-native/icons/eye'
 import EyeOff from 'lucide-react-native/icons/eye-off'
@@ -99,6 +100,8 @@ export const CalculatorIcon = withIconInterop(Calculator)
 export const CalendarCheckIcon = withIconInterop(CalendarCheck)
 
 export const CastleIcon = withIconInterop(Castle)
+/** MVP 등급을 묻는 모달의 배지. `MvpGradeModal`. */
+export const CrownIcon = withIconInterop(Crown)
 /** 선택 표식. `CacheClearConfirm` 체크박스 · `ThemeSelector` 선택 타일. */
 export const CheckIcon = withIconInterop(Check)
 /** 성공 토스트. `Toast`(success). lucide 실물 이름은 `circle-check-big` 다. */

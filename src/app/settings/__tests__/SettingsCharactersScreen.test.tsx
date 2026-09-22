@@ -51,6 +51,7 @@ import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 const mockGetRoster = jest.fn()
 const mockNoticeApiKeyIssue = jest.fn()
 const mockLoadBossTracked = jest.fn()
+const mockEvaluateMvpAsk = jest.fn()
 const mockLoadProfitTracked = jest.fn()
 
 jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation: jest.fn() }))
@@ -83,6 +84,10 @@ jest.mock('../../../features/boss-scheduler/store', () => ({
 }))
 jest.mock('../../../features/boss-profit/store', () => ({
   useBossProfitStore: { getState: () => ({ loadTrackedOcids: mockLoadProfitTracked }) },
+}))
+// 저장 뒤 새 메이플 ID 의 등급을 묻는다.
+jest.mock('../../../features/mvp-grade/flow-store', () => ({
+  useMvpAskStore: { getState: () => ({ evaluate: mockEvaluateMvpAsk }) },
 }))
 // 401·429 는 키 재입력 진입점으로 간다.
 jest.mock('../../../features/auth/store', () => ({
@@ -830,6 +835,7 @@ describe('저장', () => {
     // 목록 저장이 먼저 돌아야 한다. `setTrackedCharacterOcids` 가 목록에 없는 대표를 지운다.
     expect(order).toEqual(['save', 'representative', 'boss', 'profit'])
     expect(goBack).toHaveBeenCalled()
+    expect(mockEvaluateMvpAsk).toHaveBeenCalled()
   })
 
   // today 는 탭이라 이 화면을 다녀와도 다시 마운트되지 않는다. 저장소만 고치면 today 가 든 값이

@@ -3,6 +3,7 @@ import {
   auctionFeePercentOf,
   findMvpGrade,
   highestMvpGrade,
+  mvpBenefitText,
   starforceDiscountPercentOf,
 } from '../grades'
 
@@ -47,6 +48,13 @@ describe('가장 높은 등급', () => {
   it('등급이 하나도 없으면 없다', () => {
     expect(highestMvpGrade([])).toBeNull()
     expect(highestMvpGrade([null, null])).toBeNull()
+  })
+})
+
+describe('혜택 한 줄', () => {
+  it('수수료와 할인을 적고 할인이 없으면 없다고 적는다', () => {
+    expect(mvpBenefitText('diamond')).toBe('경매장 수수료 3% · 스타포스 10% 할인')
+    expect(mvpBenefitText('bronze')).toBe('경매장 수수료 5% · 스타포스 할인 없음')
   })
 })
 

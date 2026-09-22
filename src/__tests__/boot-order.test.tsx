@@ -150,6 +150,9 @@ jest.mock('../navigation/AppNavigation', () => {
   }
 })
 
+// MVP 등급 모달은 앱이 열린 뒤 저장소를 읽는다. 순서 관측 대상이 아니다(자기 테스트가 따로 있다).
+jest.mock('../app/mvp-grade/MvpGradeHost', () => ({ __esModule: true, MvpGradeHost: () => null }))
+
 import { AppShell } from '../app/AppShell'
 import { renderOverlay } from '../components/__tests__/render-atom'
 

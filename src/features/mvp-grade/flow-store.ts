@@ -65,7 +65,12 @@ export interface MvpAskResult {
 interface MvpAskState {
   ask: MvpAsk | null
   accounts: MvpAskAccount[]
-  /** 추적 캐릭터와 이력 · preferences 를 읽어 물을 것을 정한다. 물을 것이 있을 때만 ID 표시를 받는다. */
+  /** 저장된 `앞으로 등급은 직접 바꿀게요`. 모달의 체크박스가 이 값으로 선다 */
+  weeklyOff: boolean
+  /**
+   * 추적 캐릭터와 이력 · preferences 를 읽어 물을 것을 정한다. 물을 것이 있을 때만 ID 표시를 받는다.
+   * 모달이 떠 있으면 안 잰다. 고르던 값이 새 물음으로 덮인다.
+   */
   evaluate: (now: Date) => Promise<void>
   /** 모달의 답을 적고 모달을 닫는다. */
   complete: (result: MvpAskResult, now: Date) => Promise<void>
@@ -97,40 +102,52 @@ async function loadAccounts(accountIds: readonly string[], histories: Map<string
   })
 }
 
+async function evaluateAsk(now: Date, set: (partial: Partial<MvpAskState>) => void): Promise<void> {
+  const [tracked, sightings, histories, weeklyOff, lastCheckedWeek, bulkAsked] = await Promise.all([
+    getTrackedCharacterOcids(),
+    getCharacterAccountSightings(),
+    getMvpGradeHistories(),
+    getMvpWeeklyCheckOff(),
+    getMvpLastCheckedWeek(),
+    getMvpBulkApplyAsked(),
+  ])
+  const trackedAccountIds = (tracked ?? [])
+    .map((ocid) => accountOfOcid(sightings, ocid))
+    .filter((accountId): accountId is string => accountId !== null)
+  // 일괄 적용 대상은 물을 때만 센다. 한 번 물었으면 다시 안 세운다.
+  const hasPastRecords = bulkAsked
+    ? false
+    : (await getBulkFeeIncomeRecords()).length + (await getBulkFeeDropRecords()).length > 0
+  const ask = decideMvpAsk({
+    trackedAccountIds,
+    historyAccountIds: new Set([...histories].filter(([, entries]) => entries.length > 0).map(([id]) => id)),
+    weeklyOff,
+    lastCheckedWeek,
+    thisWeek: resetWeekStartOf(getCurrentKstDateKey(now)),
+    bulkAsked,
+    hasPastRecords,
+  })
+  if (ask === null) {
+    set({ ask: null, accounts: [], weeklyOff })
+    return
+  }
+  set({ ask, accounts: await loadAccounts(ask.accountIds, histories), weeklyOff })
+}
+
+/** 진행 중인 `evaluate`. 부팅 · 복귀 · 캐릭터 저장이 겹쳐도 목록을 한 번만 받는다. */
+let evaluating: Promise<void> | null = null
+
 export const useMvpAskStore = create<MvpAskState>()((set, get) => ({
   ask: null,
   accounts: [],
+  weeklyOff: false,
 
-  async evaluate(now) {
-    const [tracked, sightings, histories, weeklyOff, lastCheckedWeek, bulkAsked] = await Promise.all([
-      getTrackedCharacterOcids(),
-      getCharacterAccountSightings(),
-      getMvpGradeHistories(),
-      getMvpWeeklyCheckOff(),
-      getMvpLastCheckedWeek(),
-      getMvpBulkApplyAsked(),
-    ])
-    const trackedAccountIds = (tracked ?? [])
-      .map((ocid) => accountOfOcid(sightings, ocid))
-      .filter((accountId): accountId is string => accountId !== null)
-    // 일괄 적용 대상은 물을 때만 센다. 한 번 물었으면 다시 안 세운다.
-    const hasPastRecords = bulkAsked
-      ? false
-      : (await getBulkFeeIncomeRecords()).length + (await getBulkFeeDropRecords()).length > 0
-    const ask = decideMvpAsk({
-      trackedAccountIds,
-      historyAccountIds: new Set([...histories].filter(([, entries]) => entries.length > 0).map(([id]) => id)),
-      weeklyOff,
-      lastCheckedWeek,
-      thisWeek: resetWeekStartOf(getCurrentKstDateKey(now)),
-      bulkAsked,
-      hasPastRecords,
+  evaluate(now) {
+    if (get().ask !== null) return Promise.resolve()
+    evaluating ??= evaluateAsk(now, set).finally(() => {
+      evaluating = null
     })
-    if (ask === null) {
-      set({ ask: null, accounts: [] })
-      return
-    }
-    set({ ask, accounts: await loadAccounts(ask.accountIds, histories) })
+    return evaluating
   },
 
   async complete(result, now) {

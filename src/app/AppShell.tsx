@@ -14,6 +14,7 @@ import { AppNavigation } from '../navigation/AppNavigation'
 import { BootSplash } from './BootSplash'
 import { ThemeBackdrop } from '../components/templates/ThemeBackdrop/ThemeBackdrop'
 import { ApiKeyNoticeModal } from './auth/ApiKeyNoticeModal'
+import { MvpGradeHost } from './mvp-grade/MvpGradeHost'
 import { prehydrateTabStores } from './prehydrate'
 import { useKeyboardVisible } from '../hooks/useKeyboardVisible'
 import { useReturnToForeground } from '../hooks/useReturnToForeground'
@@ -154,6 +155,8 @@ export function AppShell(): React.JSX.Element {
           테마에서는 아무것도 그리지 않는다. */}
       <ThemeBackdrop />
       <AppNavigation />
+      {/* MVP 등급을 묻는 모달. 키 안내 모달보다 앞이라 둘이 겹치면 키 안내가 위에 선다. */}
+      <MvpGradeHost />
       {/* 저장된 키가 무효화되거나 호출 한도를 넘기면
           원래 화면 위에 닫을 수 없는 안내 모달이 덮이고, "확인"을 눌러야 키 입력 화면으로
           이동한다. 내비게이터 **밖**이라 어느 화면에서 감지되든 뜬다(웹에서 라우트 밖이던 자리). */}

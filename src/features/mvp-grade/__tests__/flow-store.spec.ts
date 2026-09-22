@@ -83,6 +83,39 @@ describe('evaluate', () => {
   })
 })
 
+describe('evaluate 가드', () => {
+  it('저장된 직접 바꾸기 값을 함께 준다. 새 ID 흐름이 그 체크박스를 끄지 않게', async () => {
+    m(getMvpGradeHistories).mockResolvedValue(new Map([['B', [{ startDate: '2026-09-10', grade: 'gold' }]]]))
+    m(getTrackedCharacterOcids).mockResolvedValue(['a1', 'b1'])
+    m(getCharacterAccountSightings).mockResolvedValue([
+      { ocid: 'a1', name: '에이', accountId: 'A', firstSeenOn: '2026-09-01', lastSeenOn: '2026-09-22' },
+      { ocid: 'b1', name: '비', accountId: 'B', firstSeenOn: '2026-09-01', lastSeenOn: '2026-09-22' },
+    ])
+    m(prefs.getMvpWeeklyCheckOff).mockResolvedValue(true)
+
+    await useMvpAskStore.getState().evaluate(NOW)
+
+    expect(useMvpAskStore.getState().ask?.kind).toBe('newId')
+    expect(useMvpAskStore.getState().weeklyOff).toBe(true)
+  })
+
+  it('모달이 떠 있으면 다시 안 잰다', async () => {
+    const ask = { kind: 'select' as const, accountIds: ['A'], bulk: false }
+    useMvpAskStore.setState({ ask })
+
+    await useMvpAskStore.getState().evaluate(NOW)
+
+    expect(getTrackedCharacterOcids).not.toHaveBeenCalled()
+    expect(useMvpAskStore.getState().ask).toBe(ask)
+  })
+
+  it('겹쳐 불러도 목록은 한 번만 받는다', async () => {
+    await Promise.all([useMvpAskStore.getState().evaluate(NOW), useMvpAskStore.getState().evaluate(NOW)])
+
+    expect(fetchAndRecordCharacterList).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe('complete', () => {
   it('고른 등급을 그 주부터 적고, 이번 주를 확인한 주로 남긴다', async () => {
     await useMvpAskStore.getState().evaluate(NOW)

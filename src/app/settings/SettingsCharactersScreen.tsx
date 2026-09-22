@@ -21,6 +21,7 @@ import { View, type ScrollView } from 'react-native'
 import { useAnimatedRef } from 'react-native-reanimated'
 
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
+import { useMvpAskStore } from '../../features/mvp-grade/flow-store'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useApiKeyNotice } from '../../features/auth/use-api-key-notice'
 
@@ -75,6 +76,8 @@ export function SettingsCharactersScreen(): React.JSX.Element {
     }
     // 컨텐츠는 빠진다. 저장의 주체가 그 스토어라 이미 최신이다.
     reloadTabStores(['boss', 'profit'])
+    // 다른 메이플 ID 의 캐릭터를 더했으면 그 ID 의 등급을 바로 묻는다.
+    void useMvpAskStore.getState().evaluate(new Date())
   }
 
   return (

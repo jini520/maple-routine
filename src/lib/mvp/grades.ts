@@ -40,3 +40,9 @@ export function highestMvpGrade(keys: readonly (MvpGradeKey | null)[]): MvpGrade
   }
   return best
 }
+
+/** 고른 등급의 혜택 한 줄. `경매장 수수료 3% · 스타포스 10% 할인` */
+export function mvpBenefitText(key: MvpGradeKey): string {
+  const discount = starforceDiscountPercentOf(key)
+  return `경매장 수수료 ${auctionFeePercentOf(key)}% · 스타포스 ${discount === 0 ? '할인 없음' : `${discount}% 할인`}`
+}
