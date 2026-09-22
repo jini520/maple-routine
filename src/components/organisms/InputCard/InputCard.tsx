@@ -38,6 +38,10 @@ import { Text, TextInput, XIcon } from '../../atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { MAX_MESO, acceptMesoText, mesoTextOf, mesoValueOf } from '../MesoPad/meso-pad'
 import { ShareField } from '../../molecules/ShareField/ShareField'
+import { PartySizeStepper } from '../../molecules/PartySizeStepper/PartySizeStepper'
+import { Segment } from '../../molecules/Segment/Segment'
+import { Badge } from '../../atoms/Badge/Badge'
+import { DEFAULT_MAX_PARTY_SIZE } from '../../../lib/boss/boss-crystal-prices'
 import { FeeRow } from '../FeeRow/FeeRow'
 import type { MvpGradeKey } from '../../../lib/mvp/grades'
 
@@ -59,6 +63,8 @@ export interface ShareSpec {
   label: string
   myShare: number
   sharesTotal: number
+  /** `기본` 의 인원 상한. 그 보스 · 난이도의 최대 파티 인원이다 */
+  maxPartySize?: number
 }
 
 /** 카드가 돌려주는 비율. 내 몫이 `내 비율 ÷ 합` 이다. */
@@ -93,6 +99,12 @@ export interface FeesValue {
 }
 
 const FEE_OPTIONS = ['없음', '3%', '5%'] as const
+
+/** 분배 방식. `기본` 은 인원으로 균등하게 나누고 `비율` 은 내 비율과 합으로 나눈다. */
+const SPLIT_OPTIONS = ['기본', '비율'] as const
+
+/** `비율` 로 갈아탈 때 놓이는 값. 파티 모달과 같은 `2 : 1`(66.7%)이다. */
+const SEED_RATIO = { myShare: 2, sharesTotal: 3 }
 
 function feeOptionOf(percent: number | null): (typeof FEE_OPTIONS)[number] {
   return percent === 3 ? '3%' : percent === 5 ? '5%' : '없음'
@@ -206,6 +218,8 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
    * 효과로 미루면 한 프레임 동안 앞 아이템의 값이 보인다. React 는 그리는 중의 자기 상태 갱신을
    * 받아들이고 그 자리에서 다시 그린다.
    */
+  /** 비율로 나누나. 저장된 내 비율이 1 이면 인원으로 균등하게 나눈 것이라 `기본` 으로 연다. */
+  const [usesRatio, setUsesRatio] = useState((props.share?.myShare ?? 1) !== 1)
   const [saleFee, setSaleFee] = useState<FeeSeed>(props.fees?.sale ?? { auto: false, percent: null })
   const [splitFee, setSplitFee] = useState<FeeSeed>(props.fees?.split ?? { auto: false, percent: null })
   const [seed, setSeed] = useState(props.seed)
@@ -213,6 +227,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
     setSeed(props.seed)
     setDraft(props.value)
     setShare({ myShare: props.share?.myShare ?? 1, sharesTotal: props.share?.sharesTotal ?? 1 })
+    setUsesRatio((props.share?.myShare ?? 1) !== 1)
     setSaleFee(props.fees?.sale ?? { auto: false, percent: null })
     setSplitFee(props.fees?.split ?? { auto: false, percent: null })
   }
@@ -418,8 +433,48 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
           )}
 
           {props.share !== undefined && (
-            <View className="mt-3">
-              <ShareField label={props.share.label} value={share} onChange={setShare} />
+            <View className="mt-3 gap-2.5">
+              <View className="flex-row items-center justify-between gap-2.5">
+                <Text className="text-13 font-bold text-text">분배 방식</Text>
+                <Segment
+                  options={SPLIT_OPTIONS}
+                  selected={usesRatio ? '비율' : '기본'}
+                  size="md"
+                  fixed
+                  onSelect={(option) => {
+                    const ratio = option === '비율'
+                    setUsesRatio(ratio)
+                    // 되돌아올 때 인원이 살아 있게, 기본으로 갈 때는 지금 합을 인원으로 쓴다.
+                    setShare(ratio ? SEED_RATIO : { myShare: 1, sharesTotal: Math.max(1, share.sharesTotal) })
+                  }}
+                />
+              </View>
+
+              {usesRatio ? (
+                // 파티 모달의 비율 카드와 같은 바탕이다. 드롭 하나의 값이라 카드가 한 장이다.
+                <View className="rounded-[12px] bg-bg px-3 pb-3 pt-[11px]">
+                  <ShareField label={props.share.label} value={share} onChange={setShare} />
+                </View>
+              ) : (
+                // 상한은 (보스 · 난이도)마다 다르다. 스테퍼는 그 수를 못 말하므로 배지가 옆에서 말한다.
+                <View className="flex-row items-center justify-between gap-2.5">
+                  <View className="flex-row items-center gap-2">
+                    <Text className="text-11 font-semibold leading-[14px] tracking-[.04em] text-text-muted">
+                      파티 인원
+                    </Text>
+                    <Badge variant="primary" size="mini" style={TABULAR_NUMS}>
+                      최대 {props.share.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE}명
+                    </Badge>
+                  </View>
+                  <PartySizeStepper
+                    size="compact"
+                    label={props.share.label}
+                    value={share.sharesTotal}
+                    max={props.share.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE}
+                    onChange={(next) => setShare({ myShare: 1, sharesTotal: next })}
+                  />
+                </View>
+              )}
             </View>
           )}
 

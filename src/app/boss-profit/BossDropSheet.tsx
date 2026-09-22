@@ -49,6 +49,7 @@ import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { DropEffectOverlay } from '../../components/organisms/DropEffectOverlay/DropEffectOverlay'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
+import { getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
 import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
 import { closeInputCard, openInputCard } from '../../features/input-card/store'
 import { mesoTextOf, mesoValueOf } from '../../components/organisms/MesoPad/meso-pad'
@@ -360,6 +361,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
         label: '분배 비율',
         myShare: edit?.share.myShare ?? target.priceMyShare ?? defaultShare.myShare,
         sharesTotal: edit?.share.sharesTotal ?? target.priceShare ?? defaultShare.sharesTotal,
+        maxPartySize: getMaxPartySize(props.bossKey, selectedDifficulty),
       },
       fees: {
         // 드롭에는 날짜 칸이 없어 기간 첫날의 등급으로 센다(다시 계산도 같은 날을 본다).

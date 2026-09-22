@@ -1,8 +1,8 @@
 // 파티 분배를 적고 모달로 보내는 줄.
 //
-// 여기서 갈리는 것 둘. **균등이면 라벨 없이 한 줄**이고(나눌 것이 없어 무엇의 비율인가를
-// 물을 일이 없다), **비율이면 라벨을 인 결정석·아이템 두 열**이다.
-import { fireEvent } from '@testing-library/react-native'
+// 여기서 갈리는 것 둘. **균등이면 배지 하나**이고(나눌 것이 없어 무엇의 비율인가를 물을 일이
+// 없다), **비율이면 라벨을 인 결정석·아이템 두 열을 상자로 두른다**.
+import { fireEvent, within } from '@testing-library/react-native'
 
 import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
 import { PartyShareSummary } from '../PartyShareSummary'
@@ -19,6 +19,27 @@ describe('PartyShareSummary', () => {
 
     expect(getByText('파티 3인')).toBeTruthy()
     expect(queryByText('결정석')).toBeNull()
+  })
+
+  // 무엇이 설정된 상태인지 한눈에 갈리라고 균등과 비율의 모양을 나눴다.
+  it('균등은 배지 하나이고 비율 상자가 없다', async () => {
+    const { getByTestId, queryByTestId } = await renderAtom(
+      <PartyShareSummary label="스우" partySize={3} crystal={EVEN} drop={EVEN} onPress={jest.fn()} />,
+    )
+
+    expect(getByTestId('party-share-badge')).toHaveTextContent('파티 3인')
+    expect(queryByTestId('party-share-ratio-box')).toBeNull()
+  })
+
+  it('비율은 두 칸을 상자로 두르고 배지가 없다', async () => {
+    const { getByTestId, queryByTestId } = await renderAtom(
+      <PartyShareSummary label="스우" partySize={2} crystal={이대일} drop={반반} onPress={jest.fn()} />,
+    )
+
+    const box = within(getByTestId('party-share-ratio-box'))
+    expect(box.getByText('결정석')).toBeTruthy()
+    expect(box.getByText('아이템')).toBeTruthy()
+    expect(queryByTestId('party-share-badge')).toBeNull()
   })
 
   // 혼자면 인원을 세지 않는다. `파티 1인` 은 파티가 아니다.

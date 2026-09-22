@@ -490,9 +490,9 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
         fireEvent.press(view.getByText('가격 수정'))
       })
 
-      // 이미 매긴 값을 씨앗으로 들고 연다.
+      // 이미 매긴 값을 씨앗으로 들고 연다. 내 비율이 1 이라 `기본` 으로 열린다.
       expect(view.getByTestId('input-card-value').props.value).toBe('100')
-      expect(view.getByTestId('share-field-ratio-분배 비율')).toHaveTextContent('100%')
+      expect(view.getByText('파티 인원')).toBeTruthy()
     })
   })
 
@@ -515,9 +515,9 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
     expect(getByText('추가 완료 · 1개')).toBeTruthy()
   })
 
-  it('카드가 분배 비율을 함께 받는다. 씨앗은 그 보스의 기본 인원이 합으로 앉은 균등이다', async () => {
+  it('카드가 분배를 함께 받는다. 기본으로 열리고 인원이 그 보스의 기본 인원이다', async () => {
     const { result } = renderSheet({ pricing: PRICING })
-    const { getByLabelText, getByTestId, getByText } = await result
+    const { getByLabelText, getByText, queryByTestId } = await result
 
     await act(async () => {
       fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크'))
@@ -526,8 +526,9 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
       fireEvent.press(getByText('가격 입력'))
     })
 
-    expect(getByText('분배 비율')).toBeTruthy()
-    expect(getByTestId('share-field-ratio-분배 비율')).toHaveTextContent('33.3%')
+    expect(getByText('분배 방식')).toBeTruthy()
+    expect(getByText('파티 인원')).toBeTruthy()
+    expect(queryByTestId('share-field-ratio-분배 비율')).toBeNull()
   })
 
   /** 머리가 그 아이템을 말한다. 판매 가격 이라는 말은 이미 누른 버튼이 했다. */
@@ -558,6 +559,9 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
     })
     await act(async () => {
       fireEvent.changeText(getByTestId('input-card-value'), '100')
+    })
+    await act(async () => {
+      fireEvent.press(getByText('비율'))
     })
     await act(async () => {
       // 내 비율을 2 로 올린다. 합 3 은 그대로라 2:1 이 된다.

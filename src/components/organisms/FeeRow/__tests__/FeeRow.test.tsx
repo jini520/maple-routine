@@ -1,4 +1,4 @@
-/** 수수료 줄. `자동` 체크박스를 켜면 명패와 요율, 끄면 세그먼트와 설명 한 줄이다. */
+/** 수수료 줄. `자동` 체크박스를 켜면 명패와 요율, 끄면 세그먼트다. 설명 줄은 없다. */
 import { fireEvent } from '@testing-library/react-native'
 
 import { renderAtom } from '../../../__tests__/render-atom'
@@ -41,22 +41,22 @@ describe('FeeRow', () => {
     expect(screen.getByText('캐릭터를 선택해 주세요')).toBeTruthy()
   })
 
-  it('자동이면 명패와 요율이 이 순서로 서고 설명 줄이 없다', async () => {
+  it('자동이면 명패와 요율이 이 순서로 선다', async () => {
     const { view } = render(true)
     const screen = await view
 
     expect(screen.getByLabelText('MVP 다이아')).toBeTruthy()
     expect(screen.getByText('3%')).toBeTruthy()
     expect(screen.queryByTestId('segment')).toBeNull()
-    expect(screen.queryByText('직접 고른 요율이라 등급이 바뀌어도 그대로예요.')).toBeNull()
   })
 
-  it('자동을 끄면 세그먼트와 설명 한 줄이 선다', async () => {
+  // 체크박스가 꺼져 있는 것이 이미 **직접 고른 요율**을 말한다. 설명 줄은 폼마다 줄 높이를 늘렸다.
+  it('자동을 끄면 세그먼트만 서고 설명 줄이 없다', async () => {
     const { view } = render(false)
     const screen = await view
 
     expect(screen.getByTestId('segment')).toBeTruthy()
-    expect(screen.getByText('직접 고른 요율이라 등급이 바뀌어도 그대로예요.')).toBeTruthy()
+    expect(screen.queryByText(/직접 고른 요율/)).toBeNull()
   })
 
   it('체크박스를 누르면 자동을 뒤집는다', async () => {

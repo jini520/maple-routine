@@ -6,11 +6,10 @@ import { Segment } from '../../molecules/Segment/Segment'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { MvpGradeKey } from '../../../lib/mvp/grades'
 
-/** 손으로 고른 요율 아래 한 줄. 자동일 때는 명패가 등급을 말해 설명이 없다. */
-const MANUAL_HINT = '직접 고른 요율이라 등급이 바뀌어도 그대로예요.'
-
 /**
  * 수수료 줄. `자동` 체크박스를 켜면 값 자리에 등급 명패와 요율, 끄면 세그먼트가 선다.
+ *
+ * 끈 이유를 적는 설명 줄은 없다. 체크박스가 꺼져 있는 것이 그 말이고, 줄이 하나 늘면 폼마다 높이가 는다.
  *
  * @example
  * <FeeRow label="수수료" auto={auto} onAutoChange={setAuto} autoFee={useAutoFee(ocid, dateKey)}
@@ -33,7 +32,7 @@ export function FeeRow<T extends string>(props: {
 }): React.JSX.Element {
   const compact = props.variant === 'compact'
   return (
-    <View testID={props.testID} className="gap-1.5">
+    <View testID={props.testID}>
       <View
         className={
           compact
@@ -80,7 +79,6 @@ export function FeeRow<T extends string>(props: {
           )}
         </View>
       </View>
-      {!props.auto && <Text className="text-11 text-text-muted">{MANUAL_HINT}</Text>}
     </View>
   )
 }

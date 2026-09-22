@@ -281,14 +281,24 @@ describe('DropPriceScreen: 값 매기기', () => {
     expect(getByText).toBeTruthy()
   })
 
-  it('분배 비율 기본값은 합이 그 행의 파티원 수인 균등이다', async () => {
-    const { getByLabelText, getByTestId } = await renderOverlay(<DropPriceScreen />)
+  // 카드는 `기본` 으로 열린다. 내 몫이 `1 ÷ 인원` 이라 인원 하나만 받으면 된다.
+  it('분배는 기본으로 열리고 인원이 그 행의 파티원 수다', async () => {
+    const { getByLabelText, getByText, getByTestId, queryByTestId } = await renderOverlay(<DropPriceScreen />)
 
     await act(async () => {
       fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크 가격 입력'))
     })
+    expect(getByText('파티 인원')).toBeTruthy()
+    expect(queryByTestId('share-field-ratio-분배 비율')).toBeNull()
 
-    expect(getByTestId('share-field-ratio-분배 비율')).toHaveTextContent('33.3%')
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-card-value'), '100')
+    })
+    await act(async () => {
+      fireEvent.press(getByTestId('input-card-confirm'))
+    })
+
+    expect(savePrice).toHaveBeenCalledWith(expect.anything(), 100, { myShare: 1, sharesTotal: 3 }, expect.anything())
   })
 
   it('저장이 실패하면 토스트로 알린다. 조용히 삼키면 저장된 줄 알고 떠난다', async () => {

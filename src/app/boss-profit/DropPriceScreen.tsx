@@ -69,6 +69,7 @@ import { closeInputCard, openInputCard } from '../../features/input-card/store'
 import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
 import { mesoTextOf, mesoValueOf } from '../../components/organisms/MesoPad/meso-pad'
 import { confirmLabels } from '../../lib/drop/price-card-labels'
+import { getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
 
 /** 한 연쇄 안에서 매긴 값. 스토어를 다시 읽어도 이전으로 돌아가면 이 값이 보인다. */
 interface PriceEdit {
@@ -268,6 +269,7 @@ export function DropPriceScreen(): React.JSX.Element {
         label: '분배 비율',
         myShare: edit?.share.myShare ?? target.drop.priceMyShare ?? 1,
         sharesTotal: edit?.share.sharesTotal ?? target.drop.priceShare ?? target.partySize,
+        maxPartySize: getMaxPartySize(target.bossKey, target.difficulty),
       },
       fees: {
         // 드롭에는 날짜 칸이 없어 기간 첫날의 등급으로 센다(다시 계산도 같은 날을 본다).
