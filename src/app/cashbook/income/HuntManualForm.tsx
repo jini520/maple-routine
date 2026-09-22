@@ -218,7 +218,8 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
         </Pressable>
       </View>
 
-      {fragmentPrice !== null && <FeeRow testID="income-sheet-fee" label="수수료" {...fee.row} />}
+      {/* 조각 가격을 안 적어도 선다. 비면 판 것이 없어 떼는 돈이 0 이다. */}
+      <FeeRow testID="income-sheet-fee" label="수수료" {...fee.row} />
 
       <AmountFigure
         // 큰 숫자는 여기서도 합계다. 사람이 치는 것은 획득 메소이지 합계가 아니라, 앱이 센

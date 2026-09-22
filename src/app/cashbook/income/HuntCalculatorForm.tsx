@@ -766,7 +766,8 @@ export function HuntCalculatorForm(
         </Pressable>
       </View>
 
-      {fragmentPrice !== null && <FeeRow testID="income-sheet-fee" label="수수료" {...fee.row} />}
+      {/* 조각 가격을 안 적어도 선다. 비면 판 것이 없어 떼는 돈이 0 이다. */}
+      <FeeRow testID="income-sheet-fee" label="수수료" {...fee.row} />
 
       {/*
         못 치는 값이 총액 덩어리로 들어왔다. 자기 줄을 쓰면 줄 28 에 갭 12 를 지는데 여기서는

@@ -515,30 +515,41 @@ describe('금액. OS 숫자 키보드다', () => {
  * `netProceedsMeso` 를 그대로 부른다. 여기서 다시 짜면 분배 계산기와 1 메소가 어긋난다.
  */
 describe('사냥의 조각 판매 수수료', () => {
-  it('조각 가격을 적어야 수수료 줄이 선다', async () => {
+  it('조각 가격을 안 적어도 수수료 줄이 선다', async () => {
     const view = await 그리기({}, 'hunting')
     await 사슬고르기(view, 'ocid-1')
-    expect(view.queryByTestId('income-sheet-fee')).toBeNull()
+    expect(within(view.getByTestId('income-sheet-fee')).getByLabelText('MVP 다이아')).toBeTruthy()
 
     await 칸에치기(view, 'income-sheet-fragments', '12')
     await 칸에치기(view, 'income-sheet-fragment-price', '8000000')
 
     expect(within(view.getByTestId('income-sheet-fee')).getByLabelText('MVP 다이아')).toBeTruthy()
   })
+
+  it('획득 메소 직접 입력 폼에도 늘 선다', async () => {
+    const view = await 그리기({}, 'hunting')
+    await act(async () => {
+      fireEvent.press(view.getByRole('checkbox', { name: '획득 메소 직접 입력' }))
+    })
+
+    expect(view.getByTestId('income-sheet-fee')).toBeTruthy()
+  })
 })
 
 describe('판매 수수료', () => {
-  // 사냥 메소에는 경매장이 없고, `기타` 에 붙이면 **무엇의 수수료인가** 가 안 읽힌다.
-  it('판매 대금과 수수료 줄이 아이템 판매에만 선다', async () => {
+  // `기타` 에 붙이면 **무엇의 수수료인가** 가 안 읽힌다. 사냥은 조각 몫에만 붙어 판매 대금 칸이 없다.
+  it('판매 대금은 아이템 판매에만 서고, 수수료 줄은 기타에 안 선다', async () => {
     const 판매 = await 판매시트()
     expect(판매.getByTestId('income-sheet-gross')).toBeTruthy()
     expect(판매.getByTestId('income-sheet-fee')).toBeTruthy()
 
-    for (const 갈래 of ['hunting', 'etc'] as const) {
-      const view = await 그리기({}, 갈래)
-      expect(view.queryByTestId('income-sheet-gross')).toBeNull()
-      expect(view.queryByTestId('income-sheet-fee')).toBeNull()
-    }
+    const 사냥 = await 그리기({}, 'hunting')
+    expect(사냥.queryByTestId('income-sheet-gross')).toBeNull()
+    expect(사냥.getByTestId('income-sheet-fee')).toBeTruthy()
+
+    const 기타 = await 그리기({}, 'etc')
+    expect(기타.queryByTestId('income-sheet-gross')).toBeNull()
+    expect(기타.queryByTestId('income-sheet-fee')).toBeNull()
   })
 
   /** 새 기록은 **자동**으로 시작한다. 캐릭터가 속한 ID 의 그 날 등급 명패와 요율이 선다. */
