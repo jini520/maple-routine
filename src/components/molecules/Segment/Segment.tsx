@@ -23,7 +23,7 @@ const SIZES = {
   default: { piece: 'px-2.5 py-0.5', label: 'text-11' },
   /** 줄의 **주 고르개**. 파티 모달의 `분배` 가 쓴다. */
   md: { piece: 'px-3.5 py-1', label: 'text-xs' },
-  /** 값이 짧고 **곁들이로** 서는 자리. 파티 모달의 송금 수수료가 쓴다. */
+  /** 값이 짧고 **곁들이로** 서는 자리. 지금 쓰는 곳이 없다. */
   sm: { piece: 'px-2 py-0', label: 'text-10' },
 } as const
 

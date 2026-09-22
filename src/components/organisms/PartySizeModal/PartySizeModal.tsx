@@ -21,12 +21,11 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { getBossPortraitCrop, getBossPortraitUrl } from '../../../lib/assets/asset-lookup'
+import { getBossPortraitModalCrop, getBossPortraitUrl } from '../../../lib/assets/asset-lookup'
 import type { BossDifficulty } from '../../../types'
-import type { ImageCrop } from '../../../lib/image-crop'
 
 import { StyleSheet } from 'react-native'
-import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg'
+import Svg, { Defs, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg'
 
 import { Badge, Button, Text, XIcon } from '../../atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
@@ -55,43 +54,32 @@ export interface PartyModalShares {
 const FEE_OPTIONS = ['0%', '3%', '5%'] as const
 
 
-/** 비율로 갈아탈 때 놓이는 값. 반반이라 아무것도 약속하지 않은 상태에서 시작한다. */
-const SEED_SHARES = { myShare: 1, sharesTotal: 2 }
+/**
+ * 비율로 갈아탈 때 놓이는 값. **`2 : 1`(66.7%)** 이다.
+ *
+ * 반반(`1 : 2`)으로 두면 2인 균등과 한 메소도 안 다른 값이라, 비율을 켜 놓고 아무것도 안 고른
+ * 상태가 켜기 전과 같아진다. 고르개를 세워 놓고 뜻이 없는 자리다.
+ */
+const SEED_SHARES = { myShare: 2, sharesTotal: 3 }
 
 /** 분배를 가르는 두 조각. 글자가 곧 상태다. */
-const SPLIT_OPTIONS = ['균등', '비율'] as const
+const SPLIT_OPTIONS = ['기본', '비율'] as const
 
 /**
  * 그림이 서는 띠의 폭.
  *
  * **흐림이 어디서 시작할 수 있는지를 이 수가 정한다.** 그림은 띠 왼쪽 끝에서 판 표면색과 같아져야
  * 하므로, 띠가 좁으면 흐림이 그만큼 오른쪽에서 시작한다. 170 에서는 판 한가운데를 못 벗어났다.
+ *
+ * 크롭 표(`boss-portrait-modal-crops.json`)의 `N% auto` 가 이 폭 기준이다. 여기를 바꾸면 그림
+ * 크기가 같은 비율로 따라 변하므로 표도 함께 봐야 한다.
  */
 const ART_WIDTH = 240
 
-/** 보스 카드에서 그림이 그려지는 폭. 390 기기의 카드 폭이다. */
-const CARD_IMAGE_WIDTH = 358
-
-/**
- * 카드 크롭 표를 이 띠로 옮기는 배수.
- *
- * **표의 `N% auto` 는 그것이 앉은 상자의 폭 기준이다.** 358px 보스 카드에서 358px 로 그려지던
- * 그림이 좁은 띠에서는 그만큼 작아진다. 표를 그대로 넣었더니 보스가 절반 크기로 섰다. 두 자리에서
- * 같은 크기로 보이려면 이 배수를 얹어야 하고, **띠 폭을 바꾸면 배수가 따라와야 한다**.
- *
- * 세로 자리(`position`)는 안 건드린다. 그쪽은 비율이라 상자 크기와 무관하다.
- */
-const CARD_WIDTH_RATIO = CARD_IMAGE_WIDTH / ART_WIDTH
-
-/** 카드 표 한 줄을 띠 크기로. 읽을 수 없는 줄은 그대로 보내 `cover` 로 떨어지게 둔다. */
-export function stripCrop(crop: ImageCrop): ImageCrop {
-  const width = Number.parseFloat(crop.size)
-  if (!Number.isFinite(width)) return crop
-  return { size: `${Math.round(width * CARD_WIDTH_RATIO)}% auto`, position: crop.position }
-}
-
-/** 타원 베일의 id. SVG `url(#…)` 참조라 한 문서 안에서 겹치면 안 된다. */
-const VEIL_ID = 'party-art-veil'
+/** 베일 셋의 id. SVG `url(#…)` 참조라 한 문서 안에서 겹치면 안 된다. */
+const VEIL_H = 'party-art-veil-h'
+const VEIL_V = 'party-art-veil-v'
+const VEIL_CORNER = 'party-art-veil-corner'
 
 /** 띠 위에서의 그림 밝기. 글자가 그림 위에 안 앉아 카드 기본(0.65)보다 살려 둔다. */
 const ART_OPACITY = 0.8
@@ -112,7 +100,10 @@ function ShareCard(props: {
   onChange: (next: { myShare: number; sharesTotal: number }) => void
 }): React.JSX.Element {
   return (
-    <View className="flex-1 rounded-[12px] bg-surface-2 px-3 pb-3 pt-[11px]">
+    // 칠이 `surface-2` 가 아니라 `bg` 다. 라이트에서 판(L .985)과 `surface-2`(L .90)의 단차가
+    // 커 카드가 탁해 보였다(사용자 지적). `bg`(L .95)는 단차가 절반이고 채도도 낮다. 다크에서는
+    // 판(L .20)보다 어두워져 파인 자리가 된다.
+    <View className="flex-1 rounded-[12px] bg-bg px-3 pb-3 pt-[11px]">
       <ShareField label={props.label} value={props.value} layout="stacked" onChange={props.onChange} />
     </View>
   )
@@ -175,9 +166,9 @@ export function PartySizeModal(props: {
   const surface = definition.surface
 
   const portraitUrl = getBossPortraitUrl(props.portraitSlug)
-  // **보스 카드와 같은 표다**(`boss-portrait-crops.json`). 보스마다 사람이 맞춰 둔 값이라 한 보스에
-  // 맞춘 고정값보다 낫고, 두 자리가 같은 그림을 같은 구도로 말한다. 띠가 카드보다 좁아 배수만 얹는다.
-  const crop = stripCrop(getBossPortraitCrop(props.portraitSlug))
+  // **띠 전용 표다**(`boss-portrait-modal-crops.json`). 카드 표와 갈라 둔 것은 띠가 카드보다 좁고
+  // 높아 같은 값이 다른 구도를 내기 때문이고, 한 표를 같이 쓰면 여기를 맞출 때마다 카드가 움직인다.
+  const crop = getBossPortraitModalCrop(props.portraitSlug)
 
   return (
     // align="center": 이 모달은 키보드를 띄우지 않는다(`Modal` 기본은 'top').
@@ -204,25 +195,38 @@ export function PartySizeModal(props: {
             >
               <FadedIllustration source={portraitUrl} crop={crop} veil={false} opacity={ART_OPACITY} />
 
-              {/* **타원 하나로 덮는다.** 가로와 세로를 직선 둘로 나눠 덮으면 둘이 만나는 왼쪽
-                  아래 모서리에 꺾인 자국이 남는다(사용자 지적).
+              {/* 베일 셋을 겹친다. **가로와 세로는 직선**이고, 둘이 만나는 왼쪽 아래
+                  모서리만 둥글게 깎는다.
 
-                  중심이 얼굴 쪽(오른쪽 위)이고 거기서 사방으로 퍼진다. `rx` 가 `cx` 보다 작아
-                  **띠 왼쪽 끝에서 다 덮인다** - 덜 덮이면 띠가 끝나는 자리에 세로 이음선이
-                  남는다. 위·오른쪽은 반지름 안이라 그림이 모서리까지 나간다.
+                  타원 하나로 덮어 봤더니 위·오른쪽까지 휘어 어색했다(사용자 지적). 직선 둘만
+                  겹치면 이번엔 그 모서리가 각지게 접힌다. 셋째가 그 자리만 메운다.
 
-                  글자 자리(판 왼쪽 155)에는 그림이 옅게 깔린다. 흐림을 판 한가운데보다 왼쪽에서
-                  시작하게 하려면 피할 수 없고, 거기 남는 농도는 20% 아래다. */}
+                  겹치는 순서는 상관없다. 알파가 `1-(1-가로)(1-세로)(1-모서리)` 로 쌓여서 어느
+                  하나가 다 덮으면 그 자리는 판 표면색이다.
+
+                  **왼쪽 끝과 아래 끝은 완전히 덮여야 한다.** 덜 덮이면 띠가 끝나는 자리에
+                  이음선이 남는다. 글자 자리(판 왼쪽 155)에 옅게 깔리는 것은 감수한 것이다. */}
               <Svg aria-hidden pointerEvents="none" style={StyleSheet.absoluteFill}>
                 <Defs>
-                  <RadialGradient id={VEIL_ID} cx="72%" cy="24%" rx="66%" ry="62%">
-                    <Stop offset="0" stopColor={surface} stopOpacity={0} />
-                    {/* 여기까지가 선명한 자리. 이 수를 올리면 흐림이 왼쪽에서 시작한다. */}
-                    <Stop offset="0.33" stopColor={surface} stopOpacity={0} />
+                  {/* 가로. 왼쪽 5% 부터 완전히 덮고 58% 에서 걷힌다. */}
+                  <LinearGradient id={VEIL_H} x1="0" y1="0" x2="1" y2="0">
+                    <Stop offset="0.05" stopColor={surface} stopOpacity={1} />
+                    <Stop offset="0.58" stopColor={surface} stopOpacity={0} />
+                  </LinearGradient>
+                  {/* 세로. 머리와 본문 사이에 선이 없어 그림이 본문으로 그대로 이어진다. */}
+                  <LinearGradient id={VEIL_V} x1="0" y1="0" x2="0" y2="1">
+                    <Stop offset="0.55" stopColor={surface} stopOpacity={0} />
                     <Stop offset="1" stopColor={surface} stopOpacity={1} />
+                  </LinearGradient>
+                  {/* 모서리. 왼쪽 아래 귀퉁이에서만 퍼져 각진 접힘을 깎는다. */}
+                  <RadialGradient id={VEIL_CORNER} cx="0%" cy="100%" rx="34%" ry="30%">
+                    <Stop offset="0" stopColor={surface} stopOpacity={1} />
+                    <Stop offset="1" stopColor={surface} stopOpacity={0} />
                   </RadialGradient>
                 </Defs>
-                <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${VEIL_ID})`} />
+                <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${VEIL_H})`} />
+                <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${VEIL_V})`} />
+                <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${VEIL_CORNER})`} />
               </Svg>
             </View>
 
@@ -252,15 +256,15 @@ export function PartySizeModal(props: {
 
           <View className="gap-3.5 p-4">
             <View className="flex-row items-center justify-between gap-2.5">
-              <Text className="text-13 font-bold text-text">분배</Text>
+              <Text className="text-13 font-bold text-text">분배 방식</Text>
               <Segment
                 options={SPLIT_OPTIONS}
-                selected={usesShares ? '비율' : '균등'}
+                selected={usesShares ? '비율' : '기본'}
                 size="md"
                 fixed
                 onSelect={(option) =>
                   setShares(
-                    option === '균등'
+                    option === '기본'
                       ? NO_SHARES
                       : {
                           crystalMyShare: SEED_SHARES.myShare,
@@ -304,11 +308,10 @@ export function PartySizeModal(props: {
                 </View>
 
                 <View className="flex-row items-center justify-between gap-2.5">
-                  <Text className="text-11 font-semibold tracking-[.04em] text-text-muted">송금 수수료</Text>
+                  <Text className="text-11 font-semibold tracking-[.04em] text-text-muted">수수료</Text>
                   <Segment
                     options={FEE_OPTIONS}
                     selected={`${splitFeePercent}%`}
-                    size="sm"
                     fixed
                     onSelect={(option) =>
                       setShares({ ...draft.shares, splitFeePercent: Number.parseInt(option, 10) })
@@ -321,8 +324,13 @@ export function PartySizeModal(props: {
                  말한다. */
               <View className="flex-row items-center justify-between gap-2.5">
                 <View className="flex-row items-center gap-2">
-                  <Text className="text-11 font-semibold tracking-[.04em] text-text-muted">파티 인원</Text>
-                  <Badge variant="primary" style={TABULAR_NUMS}>
+                  {/* 줄 높이를 글꼴 자연 상자(11 × 1.19 ≈ 13)에 붙인다. `text-11` 의 기본 16 은
+                      iOS 에서 남는 여유가 전부 글자 **위**로 가서(기준선이 `줄높이 − descent`)
+                      글자가 3px 내려앉고, 옆의 배지만 위로 붙어 보인다. */}
+                  <Text className="text-11 font-semibold leading-[14px] tracking-[.04em] text-text-muted">
+                    파티 인원
+                  </Text>
+                  <Badge variant="primary" size="mini" style={TABULAR_NUMS}>
                     최대 {props.maxPartySize}명
                   </Badge>
                 </View>

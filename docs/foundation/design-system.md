@@ -384,11 +384,11 @@ L 0.13~0.15 라 **스크림을 완전 불투명 검정으로 만들어도 1.07 �
        글자  왼쪽 16/16 고정, 간격 6. 키커 text-10 tracking-[.16em] text-text-muted
              / 이름 text-22 font-bold / DifficultySegment
 본문   p-4 · 필드 간격 14
-분배   "분배"(text-13 font-bold) + Segment size="md" (균등 · 비율)
+분배   "분배 방식"(text-13 font-bold) + Segment size="md" (기본 · 비율)
 비율   카드 둘이 좌우로(flex-row gap-2.5). 각 카드 flex-1 rounded-[12px] bg-surface-2 px-3 pb-3 pt-[11px]
        안에 ShareField layout="stacked" 하나(결정석 · 아이템)
-       송금 수수료: 라벨 + Segment size="sm" (0% · 3% · 5%)
-균등   "파티 인원" + Badge variant="primary" `최대 n명` + PartySizeStepper size="compact"
+       수수료: 라벨 + Segment (0% · 3% · 5%)   ← 기본 크기. 송금 수수료를 뜻한다
+기본   "파티 인원" + Badge variant="primary" size="mini" `최대 n명` + PartySizeStepper size="compact"
 적용   Button variant="primary" 전폭, mt-1   ← 으뜸 동작. 누르기 전에는 아무것도 안 나간다
 ```
 

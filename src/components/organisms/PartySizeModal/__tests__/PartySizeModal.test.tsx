@@ -12,7 +12,7 @@ import { useState } from 'react'
 import { fireEvent } from '@testing-library/react-native'
 
 import { findAllOfType, flattenStyle, renderOverlay, type AtomElement } from '../../../__tests__/render-atom'
-import { PartySizeModal, stripCrop } from '../PartySizeModal'
+import { PartySizeModal } from '../PartySizeModal'
 
 /** 아트·베일은 `aria-hidden` 이라 기본 질의에서 빠진다(장식이라 그것이 옳다). */
 const HIDDEN = { includeHiddenElements: true } as const
@@ -78,33 +78,6 @@ function chip(getByText: (text: string) => AtomElement, label: string): AtomElem
   if (node === null) throw new Error(`칩을 찾지 못했다: ${label}`)
   return node
 }
-
-// 표의 `N% auto` 는 **그것이 앉은 상자의 폭 기준**이다. 358px 보스 카드의 값을 170px 띠에 그대로
-// 넣으면 보스가 절반 크기로 선다(실기기에서 그렇게 나왔다).
-describe('stripCrop: 카드 표를 띠 크기로', () => {
-  it('폭을 띠와 카드의 비만큼 키운다', () => {
-    // 띠 240 · 카드 358 이라 배수는 1.49 다.
-    expect(stripCrop({ size: '100% auto', position: '50% 35%' })).toEqual({
-      size: '149% auto',
-      position: '50% 35%',
-    })
-  })
-
-  it('보스마다 다른 표 값에도 같은 배수다', () => {
-    expect(stripCrop({ size: '70% auto', position: '50% 50%' }).size).toBe('104% auto')
-    expect(stripCrop({ size: '150% auto', position: '50% 20%' }).size).toBe('224% auto')
-  })
-
-  // 세로 자리는 비율이라 상자 크기와 무관하다. 건드리면 구도가 카드와 갈린다.
-  it('위치는 안 건드린다', () => {
-    expect(stripCrop({ size: '90% auto', position: '40% 25%' }).position).toBe('40% 25%')
-  })
-
-  it('읽을 수 없는 줄은 그대로 보낸다', () => {
-    const odd = { size: 'cover', position: '50% 50%' }
-    expect(stripCrop(odd)).toEqual(odd)
-  })
-})
 
 describe('PartySizeModal', () => {
   it('보스명과 주기를 헤더에 그린다', async () => {
@@ -219,15 +192,18 @@ describe('PartySizeModal', () => {
     expect(flattenStyle(getByTestId('party-modal-art', HIDDEN).props.style).overflow).toBe('hidden')
   })
 
-  // 직선 둘(가로·세로)이 만나는 모서리에 꺾인 자국이 남아 타원 하나로 갈아탔다(사용자 지적).
-  // `rx` 가 `cx` 이하여야 띠 왼쪽 끝에서 다 덮이고, 아니면 그 자리에 세로 이음선이 남는다.
-  it('타원 베일이 띠 왼쪽 끝에서 다 덮인다', async () => {
+  // 가로·세로는 직선이고 모서리만 깎는다. 타원 하나로 덮으면 위·오른쪽까지 휘어 어색했다
+  // (사용자 지적). **왼쪽 끝이 완전히 덮여야** 띠가 끝나는 자리에 이음선이 안 남는다.
+  it('베일 셋을 겹치고 왼쪽 끝을 완전히 덮는다', async () => {
     const { toJSON } = await renderOverlay(<PartySizeModal {...props()} />)
 
-    const [gradient] = findAllOfType(toJSON(), 'RNSVGRadialGradient')
-    expect(Number.parseFloat(gradient.props.rx as string)).toBeLessThanOrEqual(
-      Number.parseFloat(gradient.props.cx as string),
-    )
+    const [horizontal] = findAllOfType(toJSON(), 'RNSVGLinearGradient')
+    const [corner] = findAllOfType(toJSON(), 'RNSVGRadialGradient')
+
+    // 가로는 왼쪽(offset 0.05)에서 알파 1 이고, SVG 는 그 앞을 첫 정지점으로 채운다.
+    expect((horizontal.props.gradient as number[])[0]).toBe(0.05)
+    expect(corner.props.cx).toBe('0%')
+    expect(corner.props.cy).toBe('100%')
   })
 
   // 반대쪽. 매핑에 없는 슬러그는 아트를 안 만든다(그림 없는 보스가 타던 분기 그대로).
@@ -255,7 +231,8 @@ describe('분배 비율', () => {
     expect(queryByTestId('share-field-ratio-결정석')).toBeNull()
   })
 
-  it('비율로 갈아타면 반반이 놓인다. 아무것도 약속하지 않은 상태에서 시작한다', async () => {
+  // 반반(1:2)은 2인 균등과 같은 값이라 켠 티가 안 난다. 비율을 켰으면 뜻이 있는 값이어야 한다.
+  it('비율로 갈아타면 2 : 1 이 놓인다. 반반은 균등과 같은 값이라 안 쓴다', async () => {
     const onApply = jest.fn()
     const { getByLabelText, getByText } = await renderOverlay(<PartySizeModal {...props({ onApply })} />)
 
@@ -265,10 +242,10 @@ describe('분배 비율', () => {
     expect(onApply).toHaveBeenCalledWith({
       partySize: 4,
       shares: {
-        crystalMyShare: 1,
-        crystalSharesTotal: 2,
-        dropMyShare: 1,
-        dropSharesTotal: 2,
+        crystalMyShare: 2,
+        crystalSharesTotal: 3,
+        dropMyShare: 2,
+        dropSharesTotal: 3,
         splitFeePercent: 3,
       },
     })
@@ -299,14 +276,14 @@ describe('분배 비율', () => {
     expect(getByTestId('share-field-ratio-아이템')).toHaveTextContent('50%')
   })
 
-  it('균등으로 갈아타면 비율 칸을 전부 비운다. 되돌리는 길이 이것뿐이다', async () => {
+  it('기본으로 갈아타면 비율 칸을 전부 비운다. 되돌리는 길이 이것뿐이다', async () => {
     const onApply = jest.fn()
     const shares = { ...EVEN_SHARES, crystalMyShare: 2, crystalSharesTotal: 3 }
     const { getByLabelText, getByText } = await renderOverlay(
       <PartySizeModal {...props({ shares, onApply })} />,
     )
 
-    await fireEvent.press(getByLabelText('균등'))
+    await fireEvent.press(getByLabelText('기본'))
     await fireEvent.press(getByText('적용'))
 
     expect(onApply).toHaveBeenCalledWith(expect.objectContaining({ shares: EVEN_SHARES }))
