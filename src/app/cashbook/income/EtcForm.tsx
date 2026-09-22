@@ -101,6 +101,7 @@ export function EtcForm(
         mesoAmount: currency === 'meso' ? amount : null,
         saleFeePercent: null,
         saleFeeMeso: null,
+        saleFeeAuto: false,
         pointAmount: currency === 'point' ? amount : null,
         pointPer100mMeso: currency === 'point' ? rate : null,
         cashAmount: currency === 'cash' ? amount : null,

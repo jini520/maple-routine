@@ -488,6 +488,7 @@ export function HuntCalculatorForm(
         mesoAmount: huntTotal,
         saleFeePercent: null,
         saleFeeMeso: null,
+        saleFeeAuto: false,
         pointAmount: null,
         pointPer100mMeso: null,
         cashAmount: null,

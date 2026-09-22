@@ -68,6 +68,48 @@ describe('dropPayoutMeso', () => {
   })
 })
 
+// 판매 수수료를 뗀 N 에서 파티원에게 보낼 금액을 역산하고, 내 몫은 N 에서 보낸 금액을 뺀 것이다.
+describe('dropPayoutMeso 수수료', () => {
+  it('혼자면 판매 수수료만 뗀다', () => {
+    expect(
+      dropPayoutMeso({ priceState: 'entered', priceMeso: 1_000_000_000, priceShare: 1, saleFeePercent: 3, splitFeePercent: 3 }),
+    ).toBe(970_000_000)
+  })
+
+  it('균등이면 보낸 뒤에도 받는 쪽과 몫이 같도록 역산한다', () => {
+    // N = 11억 6400만, 한 명에게 floor(100N / 297) = 391,919,191, 둘에게 보낸 나머지가 내 몫
+    expect(
+      dropPayoutMeso({ priceState: 'entered', priceMeso: 1_200_000_000, priceShare: 3, saleFeePercent: 3, splitFeePercent: 3 }),
+    ).toBe(380_161_618)
+  })
+
+  it('비율이면 상대 한 쪽에 보낼 금액을 역산한다', () => {
+    // N = 28억 5천만, 상대에게 floor(100N / (2×95 + 100)) = 982,758,620
+    expect(
+      dropPayoutMeso({
+        priceState: 'entered',
+        priceMeso: 3_000_000_000,
+        priceShare: 3,
+        priceMyShare: 2,
+        saleFeePercent: 5,
+        splitFeePercent: 5,
+      }),
+    ).toBe(1_867_241_380)
+  })
+
+  it('분배 수수료가 없으면 판매 수수료를 뗀 금액을 나눈다', () => {
+    expect(
+      dropPayoutMeso({ priceState: 'entered', priceMeso: 1_000_000_000, priceShare: 2, saleFeePercent: 5, splitFeePercent: null }),
+    ).toBe(475_000_000)
+  })
+
+  it('두 칸이 다 비면 옛 식 그대로다. 칸을 더해도 옛 기록의 금액이 안 움직인다', () => {
+    expect(
+      dropPayoutMeso({ priceState: 'entered', priceMeso: 10_000_000_000, priceShare: 3, saleFeePercent: null, splitFeePercent: null }),
+    ).toBe(3_333_333_333)
+  })
+})
+
 describe('sumDropPayout', () => {
   it('입력된 것만 더한다', () => {
     expect(

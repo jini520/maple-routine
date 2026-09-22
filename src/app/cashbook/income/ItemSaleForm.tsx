@@ -78,6 +78,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
         mesoAmount: net,
         saleFeePercent: feePercent,
         saleFeeMeso: feePercent === null ? null : gross - net,
+        saleFeeAuto: false,
         pointAmount: null,
         pointPer100mMeso: null,
         cashAmount: null,

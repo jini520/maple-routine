@@ -26,6 +26,7 @@ const sampleSetting: BossPartySetting = {
   dropMyShare: null,
   dropSharesTotal: null,
   splitFeePercent: null,
+  splitFeeAuto: false,
   updatedAt: '2026-07-13T00:05:00.000Z',
 }
 
@@ -52,13 +53,15 @@ describe('setBossPartySetting', () => {
       null,
       null,
       null,
+      // 송금 수수료가 등급을 따라가나. 손으로 고른 값이라 비어 있다.
+      null,
       '2026-07-13T00:05:00.000Z',
     ])
 
     const [secondSql, secondValues] = runMock.mock.calls[1]
     expect(secondSql).toBe(firstSql)
     expect(secondValues[4]).toBe(2)
-    expect(secondValues[10]).toBe('2026-07-13T01:00:00.000Z')
+    expect(secondValues[11]).toBe('2026-07-13T01:00:00.000Z')
   })
 
   // 비율을 고치면 칸 다섯이 함께 간다. 인원만 쓰고 비율을 두고 오면 화면과 DB 가 갈린다.

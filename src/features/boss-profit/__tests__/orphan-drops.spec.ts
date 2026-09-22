@@ -29,6 +29,10 @@ function record(overrides: Partial<BossDropRecord> = {}): BossDropRecord {
     priceMeso: null,
     priceShare: null,
     priceMyShare: null,
+    saleFeePercent: null,
+    splitFeePercent: null,
+    saleFeeAuto: false,
+    splitFeeAuto: false,
     ...overrides,
   }
 }

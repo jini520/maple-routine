@@ -183,6 +183,7 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE spend_records ADD COLUMN level_to INTEGER',
       'ALTER TABLE income_records ADD COLUMN category_key TEXT',
       'ALTER TABLE income_records ADD COLUMN item_key TEXT',
+      'ALTER TABLE income_records ADD COLUMN sale_fee_auto INTEGER',
       'ALTER TABLE boss_party_settings ADD COLUMN crystal_my_share INTEGER',
       'ALTER TABLE boss_party_settings ADD COLUMN crystal_shares_total INTEGER',
       'ALTER TABLE boss_party_settings ADD COLUMN drop_my_share INTEGER',
@@ -191,7 +192,13 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE boss_profit_records ADD COLUMN crystal_my_share INTEGER',
       'ALTER TABLE boss_profit_records ADD COLUMN crystal_shares_total INTEGER',
       'ALTER TABLE boss_profit_records ADD COLUMN split_fee_percent INTEGER',
+      'ALTER TABLE boss_party_settings ADD COLUMN split_fee_auto INTEGER',
+      'ALTER TABLE boss_profit_records ADD COLUMN split_fee_auto INTEGER',
       'ALTER TABLE boss_drop_records ADD COLUMN price_my_share INTEGER',
+      'ALTER TABLE boss_drop_records ADD COLUMN sale_fee_percent INTEGER',
+      'ALTER TABLE boss_drop_records ADD COLUMN split_fee_percent INTEGER',
+      'ALTER TABLE boss_drop_records ADD COLUMN sale_fee_auto INTEGER',
+      'ALTER TABLE boss_drop_records ADD COLUMN split_fee_auto INTEGER',
     ])
   })
 
@@ -240,6 +247,8 @@ describe('db.ts 와 맞물리는가', () => {
             { name: 'drop_shares_total' },
             { name: 'split_fee_percent' },
             { name: 'price_my_share' },
+            { name: 'sale_fee_auto' },
+            { name: 'split_fee_auto' },
           ]
         : []
 

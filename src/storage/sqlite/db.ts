@@ -31,6 +31,9 @@ const INCOME_RECORDS_BODY = `(
     -- 뗀 몫. **판매 대금 = meso_amount + sale_fee_meso** 로 정확히 되짚는다. 내림이 섞여 있어
     -- 요율만으로는 역산이 안 된다.
     sale_fee_meso INTEGER,
+    -- 1 이면 수수료가 등급을 따라간다(자동). 등급 기록이 바뀔 때 위 세 칸과 meso_amount 가 다시 적힌다.
+    -- NULL 은 손으로 고른 값이거나 이 칸이 생기기 전 행이다.
+    sale_fee_auto INTEGER,
     -- 통화 칸 셋. **기타**는 메포·캐시로도 들어오고, **지출과 같은 이름**을
     -- 써야 집계가 한 모양으로 접힌다(incomeMesoOf = spendMesoOf). 뜻과 단위는 spend_records 의
     -- 같은 이름 칸들과 같다. 시세는 1억 메소당 메포이고, 캐시는 환산하지 않는다.
@@ -440,6 +443,8 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'spend_records', 'level_to', 'INTEGER')
   await ensureColumn(db, 'income_records', 'category_key', 'TEXT')
   await ensureColumn(db, 'income_records', 'item_key', 'TEXT')
+  // 수수료가 등급을 따라가나. NULL 인 옛 행은 손으로 고른 값으로 읽는다.
+  await ensureColumn(db, 'income_records', 'sale_fee_auto', 'INTEGER')
   // 파티 분배 비율. NULL 이 '파티 인원으로 균등'이라 옛 행을 옮길 값이 없다.
   await ensureColumn(db, 'boss_party_settings', 'crystal_my_share', 'INTEGER')
   await ensureColumn(db, 'boss_party_settings', 'crystal_shares_total', 'INTEGER')
@@ -450,8 +455,16 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'boss_profit_records', 'crystal_my_share', 'INTEGER')
   await ensureColumn(db, 'boss_profit_records', 'crystal_shares_total', 'INTEGER')
   await ensureColumn(db, 'boss_profit_records', 'split_fee_percent', 'INTEGER')
+  // 송금 수수료가 등급을 따라가나. NULL 인 옛 행은 손으로 고른 값으로 읽는다.
+  await ensureColumn(db, 'boss_party_settings', 'split_fee_auto', 'INTEGER')
+  await ensureColumn(db, 'boss_profit_records', 'split_fee_auto', 'INTEGER')
   // 드롭의 내 비율. price_share 가 비율 합이 되고 균등이면 그것이 곧 인원 수다.
   await ensureColumn(db, 'boss_drop_records', 'price_my_share', 'INTEGER')
+  // 드롭의 판매 · 분배 수수료와 자동인지. NULL 인 옛 행은 수수료 없는 옛 식 그대로 센다.
+  await ensureColumn(db, 'boss_drop_records', 'sale_fee_percent', 'INTEGER')
+  await ensureColumn(db, 'boss_drop_records', 'split_fee_percent', 'INTEGER')
+  await ensureColumn(db, 'boss_drop_records', 'sale_fee_auto', 'INTEGER')
+  await ensureColumn(db, 'boss_drop_records', 'split_fee_auto', 'INTEGER')
   // 칸이 다 선 뒤에 돈다. 값을 옮기는 이관은 버전 번호로 한 번씩만 돈다.
   await runVersionedMigrations(db)
 

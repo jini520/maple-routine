@@ -233,6 +233,10 @@ function toRecordedDrop(record: StoredDropRecord): RecordedDrop {
     priceMeso: record.priceMeso,
     priceShare: record.priceShare,
     priceMyShare: record.priceMyShare,
+    saleFeePercent: record.saleFeePercent,
+    splitFeePercent: record.splitFeePercent,
+    saleFeeAuto: record.saleFeeAuto,
+    splitFeeAuto: record.splitFeeAuto,
   }
 }
 

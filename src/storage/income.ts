@@ -60,6 +60,8 @@ export interface IncomeRecord {
   saleFeePercent: FeePercent | null
   /** 뗀 몫. **판매 대금 = `mesoAmount` + 이것** 이다. 요율만으로는 내림 때문에 역산이 안 된다. */
   saleFeeMeso: number | null
+  /** 수수료가 등급을 따라가나. 자동인 행은 등급 기록이 바뀔 때 요율 · 뗀 몫 · 받는 돈이 다시 적힌다 */
+  saleFeeAuto: boolean
   /**
    * 사냥 갈래를 어떻게 적었나.
    *
@@ -211,12 +213,12 @@ function huntToValues(hunt: HuntingIncomeDetail | null): Array<number | string |
 const INSERT_SQL = `
   INSERT INTO income_records
     (id, ocid, earned_on, category, category_key, item, item_key, meso_amount,
-     sale_fee_percent, sale_fee_meso,
+     sale_fee_percent, sale_fee_meso, sale_fee_auto,
      point_amount, point_per_100m_meso, cash_amount, quantity,
      hunt_character_level, hunt_missed_mobs, hunt_boosts, hunt_sojae, hunt_fragments,
      hunt_fragment_price, hunt_meso_rate, hunt_typed_meso,
      memo, recorded_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
@@ -232,6 +234,7 @@ export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
     record.mesoAmount,
     record.saleFeePercent,
     record.saleFeeMeso,
+    record.saleFeeAuto ? 1 : null,
     record.pointAmount,
     record.pointPer100mMeso,
     record.cashAmount,
@@ -246,7 +249,7 @@ export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
 const UPDATE_SQL = `
   UPDATE income_records SET
     ocid = ?, earned_on = ?, category = ?, category_key = ?, item = ?, item_key = ?, meso_amount = ?,
-    sale_fee_percent = ?, sale_fee_meso = ?,
+    sale_fee_percent = ?, sale_fee_meso = ?, sale_fee_auto = ?,
     point_amount = ?, point_per_100m_meso = ?, cash_amount = ?, quantity = ?,
     hunt_character_level = ?, hunt_missed_mobs = ?, hunt_boosts = ?, hunt_sojae = ?,
     hunt_fragments = ?, hunt_fragment_price = ?, hunt_meso_rate = ?, hunt_typed_meso = ?,
@@ -266,6 +269,7 @@ export async function updateIncomeRecord(record: IncomeRecord): Promise<void> {
     record.mesoAmount,
     record.saleFeePercent,
     record.saleFeeMeso,
+    record.saleFeeAuto ? 1 : null,
     record.pointAmount,
     record.pointPer100mMeso,
     record.cashAmount,
@@ -295,6 +299,7 @@ function rowToRecord(row: Record<string, unknown>): IncomeRecord {
     mesoAmount: (row.meso_amount as number | null | undefined) ?? null,
     saleFeePercent: (row.sale_fee_percent as FeePercent | null | undefined) ?? null,
     saleFeeMeso: (row.sale_fee_meso as number | null | undefined) ?? null,
+    saleFeeAuto: Number(row.sale_fee_auto) === 1,
     pointAmount: (row.point_amount as number | null | undefined) ?? null,
     pointPer100mMeso: (row.point_per_100m_meso as number | null | undefined) ?? null,
     cashAmount: (row.cash_amount as number | null | undefined) ?? null,

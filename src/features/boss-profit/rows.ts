@@ -428,5 +428,9 @@ export function toRecordedDrop(record: BossDropRecord): RecordedDrop {
     priceMeso: record.priceMeso ?? undefined,
     priceShare: record.priceShare ?? undefined,
     priceMyShare: record.priceMyShare ?? undefined,
+    saleFeePercent: record.saleFeePercent ?? undefined,
+    splitFeePercent: record.splitFeePercent ?? undefined,
+    saleFeeAuto: record.saleFeeAuto || undefined,
+    splitFeeAuto: record.splitFeeAuto || undefined,
   }
 }

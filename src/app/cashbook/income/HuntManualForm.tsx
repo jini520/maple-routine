@@ -87,6 +87,7 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
         mesoAmount: total,
         saleFeePercent: null,
         saleFeeMeso: null,
+        saleFeeAuto: false,
         pointAmount: null,
         pointPer100mMeso: null,
         cashAmount: null,

@@ -73,6 +73,11 @@ describe('replaceBossDropRecords', () => {
       null,
       // 내 비율. 안 적으면 1 이라 균등이다.
       null,
+      // 판매 · 분배 수수료와 자동인지. 안 적으면 수수료를 안 센 행이다.
+      null,
+      null,
+      null,
+      null,
     ])
 
     const [, insValues1] = runMock.mock.calls[2]
@@ -92,6 +97,10 @@ describe('replaceBossDropRecords', () => {
       3,
       1,
       '2026-07-26T00:00:00.000Z',
+      null,
+      null,
+      null,
+      null,
       null,
       null,
       null,
@@ -218,6 +227,10 @@ describe('getBossDropRecords', () => {
         priceMeso: null,
         priceShare: null,
         priceMyShare: null,
+        saleFeePercent: null,
+        splitFeePercent: null,
+        saleFeeAuto: false,
+        splitFeeAuto: false,
       },
     ])
   })
@@ -306,6 +319,10 @@ describe('getAllBossDropRecords', () => {
         priceMeso: null,
         priceShare: null,
         priceMyShare: null,
+        saleFeePercent: null,
+        splitFeePercent: null,
+        saleFeeAuto: false,
+        splitFeeAuto: false,
       },
     ])
   })
@@ -362,8 +379,8 @@ describe('가격 컬럼 왕복', () => {
     )
 
     const insert = runMock.mock.calls.find(([sql]) => String(sql).includes('INSERT'))
-    // 마지막 세 자리가 가격 컬럼이다. 0 으로 넣으면 "0메소에 팔았다"가 되어 미입력과 구분이 사라진다.
-    expect(insert?.[1].slice(-3)).toEqual([null, null, null])
+    // 16~18 번째 자리가 가격 컬럼이다. 0 으로 넣으면 "0메소에 팔았다"가 되어 미입력과 구분이 사라진다.
+    expect(insert?.[1].slice(15, 18)).toEqual([null, null, null])
   })
 
   it('조회 결과의 가격 컬럼을 BossDropRecord 로 옮긴다', async () => {
@@ -396,5 +413,56 @@ describe('가격 컬럼 왕복', () => {
     expect(record).toEqual(
       expect.objectContaining({ priceState: 'entered', priceMeso: 15_000_000_000, priceShare: 3 }),
     )
+  })
+})
+
+describe('드롭 수수료 칸', () => {
+  it('판매 · 분배 수수료와 자동인지를 적고 읽는다', async () => {
+    const { replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
+
+    await replaceBossDropRecords(
+      'ocid-1',
+      'lotus',
+      'hard',
+      '2026-08-06',
+      [
+        {
+          category: 'equipment',
+          itemKey: 'loose_control_machine_mark',
+          itemName: '루즈 컨트롤 머신 마크',
+          quantity: 1,
+          priceState: 'entered',
+          priceMeso: 1_000_000_000,
+          priceShare: 3,
+          saleFeePercent: 3,
+          splitFeePercent: 5,
+          saleFeeAuto: true,
+          splitFeeAuto: false,
+        },
+      ],
+      '2026-08-10T00:00:00.000Z',
+    )
+
+    const insert = runMock.mock.calls.find(([sql]) => String(sql).includes('INSERT'))
+    expect(insert?.[0]).toContain('sale_fee_percent, split_fee_percent, sale_fee_auto, split_fee_auto')
+    expect(insert?.[1].slice(-4)).toEqual([3, 5, 1, null])
+  })
+
+  it('자동 칸의 1 만 자동으로 읽는다', async () => {
+    queryMock.mockResolvedValue({
+      values: [
+        {
+          ocid: 'ocid-1', boss_key: 'lotus', boss: '스우', difficulty: 'hard', period_key: '2026-08-06', drop_index: 0,
+          category: 'equipment', item_key: 'loose_control_machine_mark', item_name: '루즈 컨트롤 머신 마크', slot: null,
+          box_origin_key: null, box_origin: null, ring_level: null, quantity: 1, recorded_at: '2026-08-10T00:00:00.000Z',
+          price_state: 'entered', price_meso: 1_000_000_000, price_share: 3, price_my_share: null,
+          sale_fee_percent: 3, split_fee_percent: 5, sale_fee_auto: 1, split_fee_auto: null,
+        },
+      ],
+    })
+    const { getBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
+
+    const [record] = await getBossDropRecords(['ocid-1'], ['2026-08-06'])
+    expect(record).toMatchObject({ saleFeePercent: 3, splitFeePercent: 5, saleFeeAuto: true, splitFeeAuto: false })
   })
 })
