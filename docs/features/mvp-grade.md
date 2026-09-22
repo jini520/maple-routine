@@ -8,23 +8,32 @@
 > **관련 문서**: [../foundation/game-data.md](../foundation/game-data.md) ·
 > [../persistence/sqlite.md](../persistence/sqlite.md) · [app-entry.md](./app-entry.md) · [settings.md](./settings.md)
 
-> ⚪ **구현 중**([[ADR-306]], 2026-09-22). 표의 `(만들 자리)` 는 아직 없는 파일이다.
+> 🟢 **구현 완료**([[ADR-306]], 2026-09-22, 브랜치 `feat/mvp-grade`) · 실기기 미검증. 구현 때 정한 문구 다섯은 사용자 확인 전이다
+> ([[ADR-306]] 열린 질문).
 
 ## 관련 소스
 
 | 구분 | 파일 | 하는 일 |
 |---|---|---|
 | 데이터 | `src/data/mvp-grades.json` | 등급 일곱의 경매장 수수료 · 스타포스 할인. 사용자 확인값 |
-| 계산 | `lib/mvp/grades.ts` | 요율 조회 · 등급이 없을 때의 요율 · 가장 높은 등급 |
-| 계산 | `lib/mvp/history.ts` | 그 날의 등급 · 등급 변경 · 기간 추가 · 종료 주 한계 · 지우기 |
+| 계산 | `lib/mvp/grades.ts` | 요율 조회 · 등급이 없을 때의 요율 · 가장 높은 등급 · 혜택 한 줄 |
+| 계산 | `lib/mvp/history.ts` | 그 날의 등급 · 등급 변경 · 기간 추가 · 종료 주 한계 · 지우기 · 고치기(옮길 수 있는 주) · 기간 추가의 뜻 한 줄 |
+| 계산 | `lib/mvp/fees.ts` · `lib/mvp/starforce.ts` | 기록의 자동 요율 · 스타포스 줄의 MVP 할인 |
 | 계산 | `lib/mvp/membership.ts` | 이름 · ocid 로 소속 찾기 |
 | 계산 | `lib/enhancement/cost.ts` | `starforceCost` 의 MVP 할인 곱하기 |
 | 저장 | `storage/mvp-grades.ts` | `mvp_grade_history` 어댑터 |
 | 저장 | `storage/character-accounts.ts` | `character_accounts` 어댑터. 캐릭터의 메이플 ID 소속 |
-| 저장 | `storage/keys.ts` | 주간 확인 끄기 · 마지막으로 확인한 주 · 일괄 적용을 물었는가 |
+| 저장 | `storage/mvp-grade-prefs.ts` | 주간 확인 끄기 · 마지막으로 확인한 주 · 일괄 적용을 물었는가(키는 `storage/keys.ts`) |
 | 상태 | `features/mvp-grade/character-list.ts` | `character/list` 를 받고 소속을 적는 통과 지점. 목록을 받는 다섯 자리가 이것을 부른다 |
-| 상태 | `features/mvp-grade/` (만들 자리) | 묻는 규칙 · 주간 확인 · 일괄 적용 · 자동 수수료 다시 계산 |
-| 화면 | `app/mvp-grade/` (만들 자리) | 모달(고르기 · 확인) |
+| 상태 | `features/mvp-grade/ask.ts` · `flow-store.ts` | 묻는 규칙 · 모달의 답을 적는 흐름 |
+| 상태 | `features/mvp-grade/settings-store.ts` | 설정 목록과 ID 이력 상세가 함께 읽는 이력 · 매주 확인 스위치 |
+| 상태 | `features/mvp-grade/accounts.ts` | 추적 캐릭터의 ID · ID 표시(대표 캐릭터 · 초상) |
+| 상태 | `features/mvp-grade/store.ts` · `fee-context.ts` · `auto-fee.ts` | 화면이 읽는 등급 문맥 · 자리마다의 자동 요율 |
+| 상태 | `features/mvp-grade/recalculate-fees.ts` · `bulk-apply.ts` · `after-change.ts` | 자동 수수료 다시 계산 · 일괄 적용 · 바꾼 뒤의 토스트 |
+| 화면 | `app/mvp-grade/MvpGradeModal.tsx` · `MvpGradeHost.tsx` | 모달(고르기 · 확인)과 그것을 띄우는 자리(`AppShell`) |
+| 화면 | `app/mvp-grade/MvpGradeSheets.tsx` · `GradeTimelineRow.tsx` | 등급 변경 · 기록 고치기 · 기록 추가 시트, 타임라인 한 줄 |
+| 화면 | `app/settings/SettingsMvpGradeScreen.tsx` · `SettingsMvpGradeHistoryScreen.tsx` | 설정의 목록 · ID 이력 상세 |
+| 부품 | `components/molecules/MvpGradeGrid` · `MvpPlate` · `organisms/FeeRow` · `organisms/WeekCalendarPopover` | 7칸 격자 · 명패 · 수수료 줄 · 주 고르기 달력 |
 | 그림 | `src/assets/mvp/*.webp` | 명패 여섯. 일반은 그림이 없다. `asset-groups.ts` 에 그룹을 더한다 |
 
 **관련 ADR**: [[ADR-306]](이 기능 전부) · [[ADR-006]](게임 수치는 사용자 확인) · [[ADR-223]](스타포스 비용 식) ·
@@ -113,6 +122,9 @@
   거기서 **ID 이력 상세 페이지**(연도로 끊은 타임라인 · 줄을 누르면 고치기)로 들어간다. 등급 변경과 기록 고치기는 **바텀시트**다. 지난 기간을 끼워 넣는 것은 이력 머리의 `+ 추가` 다. 시작 주와 종료 주를 고르고(기간 알약 하나, 달력 위 `시작 주 | 종료 주` 탭),
   종료 주 다음 주부터는 그 기간을 감싸던 등급이 다시 이어진다. 끝이 닫힌 기간이라 지난주까지만 고르고, 지금 기록 안의 지난 몇 주도
   된다(이번 주가 든 기간은 `등급 변경`). 첫 기록보다 앞선 기간이면 종료 뒤는 `등급 없음` 이다.
+- **재는 때는 셋이다.** 앱이 열릴 때(온보딩의 `계속하기` 뒤 포함) · 앱으로 돌아올 때 · 캐릭터 관리에서 저장한 뒤. 모달은 바깥 탭이나
+  뒤로가기로 안 닫힌다. 설정 목록에는 추적 캐릭터의 ID 가 먼저, 이력만 남은 ID 가 뒤에 선다. 기록 고치기의 주는 앞뒤 기록 사이다
+  ([[ADR-306]] 구현).
 
 ## 모달 모양 ([[ADR-306]] 결정 13 · 14)
 

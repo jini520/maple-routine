@@ -207,12 +207,13 @@ signIn → characterSetup → ready
 [../trouble/2026-08-12-onboarding-empty-account-crash.md](../trouble/2026-08-12-onboarding-empty-account-crash.md)
 에 있다.
 
-### ‘계속하기’ 뒤에 MVP 등급 모달이 뜬다 ([[ADR-306]] 결정 11, 설계만 · 구현 전)
+### ‘계속하기’ 뒤에 MVP 등급 모달이 뜬다 ([[ADR-306]] 결정 11, 구현 완료 2026-09-22)
 
 캐릭터를 고른 뒤라야 어느 메이플 ID 의 등급을 물을지 안다. 그래서 **캐릭터 선택이 먼저**이고, 고른 캐릭터가
 속한 ID 들의 등급을 모달로 받는다. **진입 단계는 늘리지 않는다**(`signIn → characterSetup → ready` 그대로).
 모달은 `ready` 위에 뜨고, 규칙은 온보딩만의 것이 아니다. 추적 캐릭터가 속한 ID 가운데 등급 이력이 없는 것이
-있으면 언제든 뜬다. 자세한 흐름은 [mvp-grade.md](./mvp-grade.md) 에 있다.
+있으면 언제든 뜬다. 띄우는 것은 `AppShell` 의 `MvpGradeHost` 이고 진입 단계가 `ready` 가 될 때 잰다.
+자세한 흐름은 [mvp-grade.md](./mvp-grade.md) 에 있다.
 
 
 ## 시드

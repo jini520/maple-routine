@@ -66,13 +66,13 @@ flowchart TD
 | `worldSharedProgress:{worldKey}` | 키의 월드 부분은 월드 key 다(`worldSharedProgress:elysium`, [[ADR-280]] 결정 15). 월드 이름을 키에 든 옛 원장(`worldSharedProgress:엘리시움`)은 읽거나 쓸 때 새 키로 옮기고 옛 키를 지운다. 새 키에 값이 이미 있으면 덮지 않는다. 캐릭터 상태의 월드 key 가 없으면 이 원장을 읽지도 쓰지도 않는다. `Record<contentKey, SharedProgressEntry>` (JSON). 컨텐츠 이름을 열쇠로 든 옛 원장은 읽을 때 key 로 옮기고 못 찾는 이름은 버린다([[ADR-280]] 결정 13). 한 번이라도 활성으로 본 적이 있는지를 쌓은 값이라 다시 받을 수 없어서다 | `storage/shared-progress-cache.ts` | 삭제 | 월드 단위로 완료가 공유되는 콘텐츠(예: 몬스터파크) 진행 원장([[ADR-030]]) |
 | `accountSharedProgress:{accountId}` | `Record<contentKey, SharedProgressEntry>` (JSON). 옛 이름 열쇠는 `worldSharedProgress` 와 같게 읽을 때 옮긴다([[ADR-280]] 결정 13) | `storage/shared-progress-cache.ts` | 삭제 | 계정 단위로 공유되는 콘텐츠(예: 에픽 던전) 진행 원장([[ADR-030]]). **`{accountId}` 는 «지금 고른 계정» 이 아니라 «그 캐릭터가 사는 계정» 이다**([[ADR-143]] 결정 6) — 추적 목록이 계정을 넘으면 이 키가 **동시에 여러 개** 살아 있고, 캐릭터마다 자기 것을 읽고 쓴다. 한 계정 것으로 몰면 계정 공유 완료가 계정을 넘어 번진다 |
 
-### MVP 등급 (**설계만, 구현 전**. [[ADR-306]])
+### MVP 등급 (구현 완료. [[ADR-306]])
 
 | 키 | 값 형태 | 어댑터 | 캐시 삭제 시 | 비고 |
 |---|---|---|---|---|
-| `mvpWeeklyCheckOff` | `'yes'` | `storage/mvp-grades.ts` | **보존**(`KEEP_KEYS`) | 확인 화면의 `앞으로 등급은 직접 바꿀게요`. 사용자가 만든 값이다 |
-| `mvpLastCheckedWeek` | 주간 기간 키(목요일 `YYYY-MM-DD`) | `storage/mvp-grades.ts` | 삭제 | 지워지면 이번 주에 한 번 더 물을 뿐이다 |
-| `mvpBulkApplyAsked` | `'yes'` | `storage/mvp-grades.ts` | **보존**(`KEEP_KEYS`) | 지난 기록 일괄 적용을 물었는가. 지워져 다시 적용하면 `없음` 으로 되돌린 직거래 행(`NULL`)에 수수료가 다시 붙는다 |
+| `mvpWeeklyCheckOff` | `'true'`(끄면 키를 지운다) | `storage/mvp-grade-prefs.ts` | **보존**(`KEEP_KEYS`) | 확인 화면의 `앞으로 등급은 직접 바꿀게요`. 사용자가 만든 값이다 |
+| `mvpLastCheckedWeek` | 주간 기간 키(목요일 `YYYY-MM-DD`) | `storage/mvp-grade-prefs.ts` | 삭제 | 지워지면 이번 주에 한 번 더 물을 뿐이다 |
+| `mvpBulkApplyAsked` | `'true'` | `storage/mvp-grade-prefs.ts` | **보존**(`KEEP_KEYS`) | 지난 기록 일괄 적용을 물었는가. 지워져 다시 적용하면 `없음` 으로 되돌린 직거래 행(`NULL`)에 수수료가 다시 붙는다 |
 
 ### 알림 (**설계 완료, 구현 전** — [[ADR-146]])
 

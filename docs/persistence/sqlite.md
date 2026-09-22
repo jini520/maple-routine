@@ -216,7 +216,7 @@ SELECT target_item, MAX(item_level) AS item_level FROM enhancement_history
 그쪽은 14일 뒤 스스로 떨어지지만 이쪽은 날짜가 영구히 쌓인다. preferences 에 두면 한 계정의
 JSON 하나가 무한히 자란다.
 
-### `mvp_grade_history` - 메이플 ID 의 MVP 등급 이력 ([[ADR-306]] 결정 2, 설계만 · 구현 전)
+### `mvp_grade_history` - 메이플 ID 의 MVP 등급 이력 ([[ADR-306]] 결정 2, 구현 완료)
 
 PK: `(account_id, start_date)`. 한 줄이 `(메이플 ID, 시작 날짜, 등급)` 이고 **`start_date` 는 늘 목요일**(주간 기간 키)이다.
 MVP 등급이 매주 목요일에 바뀌기 때문이다. 같은 주에 다시 고르면 덮는다.
@@ -225,7 +225,7 @@ MVP 등급이 매주 목요일에 바뀌기 때문이다. 같은 주에 다시 �
 첫 줄보다 앞선 것과 같이 등급이 없다([[ADR-306]] 결정 11).
 스타포스 비용을 읽을 때 계산하므로 이 이력이 과거 지출을 지킨다. **`RECORD_TABLE_NAMES` 에 든다.**
 
-### `character_accounts` - 캐릭터의 메이플 ID 소속 ([[ADR-306]] 결정 3, 설계만 · 구현 전)
+### `character_accounts` - 캐릭터의 메이플 ID 소속 ([[ADR-306]] 결정 3, 구현 완료)
 
 PK: `(ocid, name, account_id)`. 칸은 `first_seen_on` · `last_seen_on`(KST `YYYY-MM-DD`)이다. `character/list` 를 받는 모든 자리가
 쓰고, 볼 때마다 줄을 쌓지 않고 두 날짜를 넓힌다(`MIN` · `MAX`). 스타포스 줄은 이름만 들고 있어
