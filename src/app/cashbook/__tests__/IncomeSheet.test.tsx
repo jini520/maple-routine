@@ -552,14 +552,20 @@ describe('판매 수수료', () => {
     expect(줄.queryByTestId('segment')).toBeNull()
   })
 
-  it('캐릭터를 고르기 전에는 자동의 값 자리가 비고 저장되지 않는다', async () => {
+  it('캐릭터를 고르기 전에는 자동의 값 자리가 캐릭터를 고르라고 말하고 저장되지 않는다', async () => {
     const onSave = jest.fn()
     const view = await 판매시트({ onSave })
     await 대금치기(view, '1200000000')
+    const 줄 = within(view.getByTestId('income-sheet-fee'))
 
-    expect(within(view.getByTestId('income-sheet-fee')).queryByText('3%')).toBeNull()
+    expect(줄.getByText('캐릭터를 선택해 주세요')).toBeTruthy()
+    expect(줄.queryByText('3%')).toBeNull()
     await 이름으로누르기(view, '저장')
     expect(onSave).not.toHaveBeenCalled()
+
+    await 사슬고르기(view, 'ocid-1')
+    expect(줄.queryByText('캐릭터를 선택해 주세요')).toBeNull()
+    expect(줄.getByText('3%')).toBeTruthy()
   })
 
   /** 자동을 끄면 방금까지 자동이던 요율을 고른 채 `없음 · 3% · 5%` 가 선다. */

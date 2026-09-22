@@ -20,8 +20,10 @@ export function FeeRow<T extends string>(props: {
   label: string
   auto: boolean
   onAutoChange: (auto: boolean) => void
-  /** 자동의 명패와 요율. 캐릭터를 고르기 전이면 `null` 이라 값 자리가 빈다 */
+  /** 자동의 명패와 요율. 캐릭터를 고르기 전이면 `null` */
   autoFee: { grade: MvpGradeKey; percent: number } | null
+  /** 자동인데 요율을 아직 모를 때 값 자리에 흐리게 서는 안내 */
+  autoPlaceholder?: string
   options: readonly T[]
   selected: T | null
   onSelect: (value: T) => void
@@ -61,13 +63,17 @@ export function FeeRow<T extends string>(props: {
         </Pressable>
         <View className="flex-1 flex-row items-center justify-end gap-1.5">
           {props.auto ? (
-            props.autoFee !== null && (
+            props.autoFee !== null ? (
               <>
                 <MvpPlate grade={props.autoFee.grade} height={18} />
                 <Text className="text-13 font-semibold text-text" style={TABULAR_NUMS}>
                   {props.autoFee.percent}%
                 </Text>
               </>
+            ) : (
+              props.autoPlaceholder !== undefined && (
+                <Text className="text-13 text-text-disabled">{props.autoPlaceholder}</Text>
+              )
             )
           ) : (
             <Segment options={props.options} selected={props.selected} fixed onSelect={props.onSelect} />

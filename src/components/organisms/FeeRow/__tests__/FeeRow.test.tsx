@@ -24,6 +24,23 @@ function render(auto: boolean, autoFee: { grade: 'diamond' | 'normal'; percent: 
 }
 
 describe('FeeRow', () => {
+  it('자동인데 요율을 아직 모르면 받은 안내를 흐린 글자로 세운다', async () => {
+    const screen = await renderAtom(
+      <FeeRow
+        label="수수료"
+        auto
+        onAutoChange={jest.fn()}
+        autoFee={null}
+        autoPlaceholder="캐릭터를 선택해 주세요"
+        options={OPTIONS}
+        selected="5%"
+        onSelect={jest.fn()}
+      />,
+    )
+
+    expect(screen.getByText('캐릭터를 선택해 주세요')).toBeTruthy()
+  })
+
   it('자동이면 명패와 요율이 이 순서로 서고 설명 줄이 없다', async () => {
     const { view } = render(true)
     const screen = await view
