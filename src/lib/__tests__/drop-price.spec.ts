@@ -225,3 +225,27 @@ describe('dropSplitLabel', () => {
     expect(dropSplitLabel({ priceState: null, priceShare: 4 })).toBeNull()
   })
 })
+
+// 보내는 쪽이 수수료를 문다. 몫이 작은 쪽이 보내면 큰 금액에 수수료가 붙어 둘 다 손해다.
+describe('비율에서 보내는 쪽은 몫이 큰 쪽이다', () => {
+  const 백억 = 10_000_000_000
+
+  it('내 몫이 작으면 상대가 보낸 것으로 센다', () => {
+    expect(
+      dropPayoutMeso({ priceState: 'entered', priceMeso: 백억, priceShare: 4, priceMyShare: 1, splitFeePercent: 3 }),
+    ).toBe(2_480_818_414)
+  })
+
+  it('내 몫이 크면 내가 보낸 것으로 센다', () => {
+    expect(
+      dropPayoutMeso({ priceState: 'entered', priceMeso: 백억, priceShare: 4, priceMyShare: 3, splitFeePercent: 3 }),
+    ).toBe(7_442_455_243)
+  })
+
+  // 반반은 어느 쪽이 보내든 같은 값이다.
+  it('반반이면 방향이 갈리지 않는다', () => {
+    expect(
+      dropPayoutMeso({ priceState: 'entered', priceMeso: 백억, priceShare: 2, priceMyShare: 1, splitFeePercent: 3 }),
+    ).toBe(4_923_857_869)
+  })
+})

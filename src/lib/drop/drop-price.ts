@@ -55,6 +55,9 @@ export function dropPayoutMeso(drop: DropPriceFields): number {
     return net - perMember * (total - 1)
   }
   const others = total - mine
+  // **보내는 쪽은 몫이 큰 쪽이다.** 내 몫이 작으면 상대가 팔아 나에게 보낸 것으로 센다. 내가 큰 금액을 보내는 것으로
+  // 세면 수수료가 그만큼 더 나가 둘 다 손해다(결정석의 `crystalPayoutMeso` 와 같은 규칙).
+  if (mine < others) return Math.floor((net * mine * (100 - d)) / (others * (100 - d) + 100 * mine))
   return net - Math.floor((100 * net * others) / (mine * (100 - d) + 100 * others))
 }
 
