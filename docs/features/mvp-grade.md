@@ -29,7 +29,9 @@
 | 상태 | `features/mvp-grade/settings-store.ts` | 설정 목록과 ID 이력 상세가 함께 읽는 이력 · 매주 확인 스위치 |
 | 상태 | `features/mvp-grade/accounts.ts` | 추적 캐릭터의 ID · ID 표시(대표 캐릭터 · 초상) |
 | 상태 | `features/mvp-grade/store.ts` · `fee-context.ts` · `auto-fee.ts` | 화면이 읽는 등급 문맥 · 자리마다의 자동 요율 |
-| 상태 | `features/mvp-grade/recalculate-fees.ts` · `bulk-apply.ts` · `after-change.ts` | 자동 수수료 다시 계산 · 일괄 적용 · 바꾼 뒤의 토스트 |
+| 상태 | `features/mvp-grade/tasks.ts` | 이어서 하는 작업 둘(지난 기록 수수료 적용 · 자동 수수료 다시 계산, [[ADR-307]]) |
+| 상태 | `features/mvp-grade/bulk-apply.ts` · `recalculate-fees.ts` | 두 작업이 고쳐 쓸 목록. 쓴 기록은 목록에서 빠져 이어서 할 수 있다 |
+| 상태 | `features/mvp-grade/after-change.ts` | 등급 기록을 바꾼 뒤 등급 문맥을 다시 읽고 다시 계산 작업을 돌린다 |
 | 화면 | `app/mvp-grade/MvpGradeModal.tsx` · `MvpGradeHost.tsx` | 모달(고르기 · 확인)과 그것을 띄우는 자리(`AppShell`) |
 | 화면 | `app/mvp-grade/MvpGradeSheets.tsx` · `GradeTimelineRow.tsx` | 등급 변경 · 기록 고치기 · 기록 추가 시트, 타임라인 한 줄 |
 | 화면 | `app/settings/SettingsMvpGradeScreen.tsx` · `SettingsMvpGradeHistoryScreen.tsx` | 설정의 목록 · ID 이력 상세 |
@@ -101,7 +103,7 @@
 - 송금 · 분배 수수료도 기본값은 **내 등급**이다. 받는 쪽이거나 파티원이 판 드롭이면 실제 요율이 다를 수 있어 사용자가 체크박스를 끄고 고른다.
 - **기존 사용자의 첫 확인 화면에 체크박스로 일괄 적용을 묻는다**(따로 모달이 없다). 대상은 첫 시작 날짜 이후 수수료가 빈
   아이템 판매 · 조각 정산 · 사냥의 조각 몫 · 드롭 판매가다. 직거래 행도 붙으므로 사용자가 `없음` 으로 고친다.
-- **일괄 적용과 다시 계산은 이어서 하는 작업이다**([[ADR-307]], 구현 전). 0.3초 넘게 걸리면 진행률 모달이 서고, 앱이 중간에 닫히면
+- **일괄 적용과 다시 계산은 이어서 하는 작업이다**([[ADR-307]]). 0.3초 넘게 걸리면 진행률 모달이 서고, 앱이 중간에 닫히면
   다시 열 때 재진행 확인이 뜬다. 끝나면 완료 토스트(`지난 기록 N건에 수수료를 적용했어요` · `자동 수수료 기록 N건을 다시 계산했어요`)가 뜬다.
 
 ## 묻는 자리 ([[ADR-306]] 결정 11 · 12)

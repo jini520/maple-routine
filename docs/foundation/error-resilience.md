@@ -72,7 +72,7 @@
 ## 멱등성
 보스 수익 기록은 `(characterId, boss, difficulty, weekOf)` 를 유니크 키로 upsert: 같은 주에 여러 번 동기화해도 중복 생성 안 됨. **이 키는 ocid 를 품어 월드 리프에는 안 닿는다.** 리프는 ocid 를 새로 만들고 완료는 새 ocid 로 넘어오므로, 같은 처치가 다른 키로 한 번 더 쓰인다. 그 중복은 upsert 가 아니라 기록 뒤의 정리가 푼다([[ADR-274]]).
 
-## 앱이 중간에 닫혀도 끝나는 작업 ([[ADR-307]], 설계 · 구현 전)
+## 앱이 중간에 닫혀도 끝나는 작업 ([[ADR-307]], 구현 완료 2026-09-22)
 
 기존 기록을 다시 쓰는 작업은 **남은 일을 스스로 찾는 단계**로 짓고, 조각(200개) 하나를 트랜잭션 하나로 처리한다. 처리한 일은 다시 남은 일로
 안 잡혀서, 멈춘 자리를 따로 적지 않아도 다시 돌리면 남은 것부터 한다. SQLite 이관(`storage/sqlite/migrations.ts`)이 스키마 버전에 묶여 부팅 때
@@ -84,6 +84,9 @@
 - 실패하면 토스트로 알리고 모달을 닫는다. 표시는 남아 다음에 열 때 다시 묻는다. 곧바로 다시 묻지 않는 것은 되풀이되는 실패가 앱을 막지 않게 하려는 것이다.
 - 작업이 바꾼 표는 판(revision)을 올린다. 가계부는 수입 기록 판까지 보고 다시 읽는다.
 - 첫 사용처는 MVP 등급의 일괄 적용과 자동 수수료 다시 계산이다([features/mvp-grade.md](../features/mvp-grade.md)).
+- 새 작업을 붙이는 법: `features/resumable-task/task.ts` 의 `ResumableTask` 로 정의하고(단계마다 `remaining` · `runChunk`),
+  `app/resumable-task/registry.ts` 에 한 줄을 더한 뒤 `useTaskRunnerStore.getState().run([task])` 로 돌린다. 등록부에서 빠진 작업의
+  표시는 다음에 열 때 묻지 않고 지워진다.
 
 ## 엣지 케이스
 - **신규 캐릭터, 게임 내 미등록**: `registration_flag` 전부 `"false"`. 에러 아닌 정상 빈 상태("게임에서 스케줄러에 등록해주세요").
