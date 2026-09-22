@@ -26,14 +26,8 @@ export type ImageCropLayout =
   | { kind: 'cover' }
   | {
       kind: 'sized'
-      /**
-       * 부모 기준. **둘 중 표가 적은 축 하나만 온다**(`N% auto` 면 폭, `auto N%` 면 높이).
-       *
-       * 낮고 넓은 상자에 세로로 긴 그림을 앉힐 때 높이 기준이 필요하다. 폭으로 적으면 그림
-       * 비율마다 잘리는 높이가 달라진다.
-       */
-      width?: `${number}%`
-      height?: `${number}%`
+      /** 부모 폭 기준. */
+      width: `${number}%`
       aspectRatio: number
       left: `${number}%`
       top: `${number}%`
@@ -42,8 +36,7 @@ export type ImageCropLayout =
       translateY: `${number}%`
     }
 
-const WIDTH_SIZE_PATTERN = /^(\d+(?:\.\d+)?)%\s+auto$/
-const HEIGHT_SIZE_PATTERN = /^auto\s+(\d+(?:\.\d+)?)%$/
+const SIZE_PATTERN = /^(\d+(?:\.\d+)?)%\s+auto$/
 const POSITION_PATTERN = /^(-?\d+(?:\.\d+)?)%\s+(-?\d+(?:\.\d+)?)%$/
 
 /**
@@ -66,18 +59,17 @@ export function resolveImageCropLayout(
   if (!Number.isFinite(natural.width) || natural.width <= 0) return { kind: 'cover' }
   if (!Number.isFinite(natural.height) || natural.height <= 0) return { kind: 'cover' }
 
-  const widthSize = WIDTH_SIZE_PATTERN.exec(crop.size)
-  const heightSize = HEIGHT_SIZE_PATTERN.exec(crop.size)
+  const size = SIZE_PATTERN.exec(crop.size)
   const position = POSITION_PATTERN.exec(crop.position)
-  if ((widthSize === null && heightSize === null) || position === null) return { kind: 'cover' }
+  if (size === null || position === null) return { kind: 'cover' }
 
+  const widthPercent = Number(size[1])
   const x = Number(position[1])
   const y = Number(position[2])
 
   return {
     kind: 'sized',
-    width: widthSize === null ? undefined : `${Number(widthSize[1])}%`,
-    height: heightSize === null ? undefined : `${Number(heightSize[1])}%`,
+    width: `${widthPercent}%`,
     aspectRatio: natural.width / natural.height,
     left: `${x}%`,
     top: `${y}%`,
@@ -110,7 +102,7 @@ export function imageCropStyle(layout: ImageCropLayout): ImageStyle {
   return {
     position: 'absolute',
     width: layout.width,
-    height: layout.height,
+    height: undefined,
     aspectRatio: layout.aspectRatio,
     left: layout.left,
     top: layout.top,
